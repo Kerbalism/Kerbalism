@@ -8,6 +8,7 @@
                               Hundreds of Kerbals were killed in the making of this mod.
 =======================================================================================================================
 
+*Coming soon*
 
 #INTRODUCTION
 
