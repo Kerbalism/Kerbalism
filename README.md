@@ -14,9 +14,9 @@
 
 #INTRODUCTION
 
-  Kerbalism is a mod for Kerbal Space Program that features a simple life support and
-  quality-of-life system, malfunctions & signals mechanics, magnetic storms, a decent GUI
-  to monitor existing vessels and to plan new ones, and coherent background simulation.
+  Kerbalism is a mod for Kerbal Space Program that features life support, quality-of-life,
+  malfunctions, signal, radiation, space weather, a decent GUI to monitor existing vessels
+  and to plan new ones, and coherent background simulation.
 
   
 #CLIMATE CONTROL
@@ -33,15 +33,6 @@
   All Kerbals require a constant supply of Food and Oxygen to survive. All manned command
   pods can store a small amount of both, and a few container parts are included. Kerbals
   can go without Food for a few days, but will last only a few minutes if deprived of Oxygen.
-  
-  
-#QUALITY OF LIFE
-
-  Do not underestimate the consequences of living in extremely close quarters for extremely
-  long time. Kerbals will lose their mind, and their lives, if placed in cramped vessels
-  for a long time. Mitigate this problem by providing ample living space and entertainment,
-  and by rotating the crew regularly. Some stock parts provide entertainment, like the cupola.
-  When Kerbals start to breakdown, science data may be lost and parts may be damaged. 
   
   
 #SCRUBBERS
@@ -65,12 +56,20 @@
   body will be left floating in space.
   
   
+#QUALITY OF LIFE
+
+  Do not underestimate the consequences of living in extremely close quarters for extremely
+  long time. Kerbals will lose their mind if placed in cramped vessels for a long time, with
+  unexpected consequences. Mitigate the problem by providing ample living space and entertainment,
+  and by rotating the crew regularly. Some stock parts provide entertainment, like the cupola.
+  
+  
 #MALFUNCTIONS
 
   Components can malfunction and their specs are reduced. A component never fail completely,
   but multiple malfunctions can effectively reduce its specs to the point of it being useless.
   Luckily, Engineers can fix malfunctioned components while on EVA. The manufacturing quality of
-  components can be increased by researching specific technologies.
+  components can be increased by researching material science technologies.
   
   
 #SIGNALS
@@ -79,14 +78,21 @@
   Celestial bodies block the signal, while other vessels can act as relay. Relay must be enabled
   per-antenna, as relaying has extra Electric Charge requirements, even in background.
   Antennas have range and wildly different data transmission costs, that scale with distance.
-  Signal processing can be improved by researching specific technologies, leading to increased range.
+  Signal processing can be improved by researching signal processing technologies, leading to increased range.
+  
+  
+#RADIATION
+
+  Celestial bodies can have a magnetosphere that protect Kerbals from radiation, as well as a radiation
+  belt: an extreme radiation zone. Cosmic radiation is ever present in the vast distances of space.
+  Vessels can be shielded to offer some protection, at the expense of greatly increased mass.
   
 
-#MAGNETIC STORMS
+#SPACE WEATHER
 
-  Coronal mass ejections from the Sun can hit planets magnetospheres from time to time, causing magnetic
-  storms that disrupt communications with the vessels around the planet for some time. Frequency of the
-  storms as well as time to impact depend on distance of the body from the Sun.
+  Coronal mass ejections from the Sun can hit planetary systems from time to time, causing magnetic storm
+  inside magnetospheres that disrupt communications, as well as intense radiation over the whole system.
+  Frequency of the storms as well as time to impact depend on distance of the body from the Sun.
   
   
 #COHERENT BACKGROUND SIMULATION
@@ -100,16 +106,16 @@
 
   A simple gui is available in the space center or in flight. It show the status for vessels and
   Kerbals, including: battery, food & oxygen levels, scrubber & greenhouse status, signal status,
-  malfunctions, if the vessel is in direct sunlight, and kerbal physical and mental health problems.
-  It also allow to enable and disable warning messages per-vessel, just click on it.
+  malfunctions, if the vessel is in direct sunlight, kerbal physical and mental health problems, and more.
+  It also allow to enable and disable warning messages and to take notes per-vessel, just click on it.
   
   
 #VESSEL PLANNER
 
-  A simple gui is available in the editor, to help in designing missions. It show the estimated life
-  expectancy of the crew as well as how long will the vessel electric charge last in shadow or sunlight.
-  The estimates are relative to a target body and situation, that can be changed and influence the calculations
-  It support pods, solar panels, generators, fuel cells, active radiators, wheels, drills, ISRU and SCANsat.
+  A simple gui is available in the editor, to help in designing missions. It show the life expectancy
+  of the crew as well as how long will the vessel electric charge last in shadow or sunlight, and much more.
+  The estimates are relative to a target body and situation, that can be changed. It support pods, solar
+  panels, generators, fuel cells, radiators, wheels, drills, ISRU and SCANsat in addition to all mod mechanics.
   
   
 #SCIENCE TWEAKS
