@@ -1,3 +1,4 @@
 #CHANGELOG
 
-**0.9.9.0** Initial Release (*coming soon*)
+0.9.9.0
+  First public release
