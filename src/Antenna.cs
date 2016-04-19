@@ -11,36 +11,36 @@ using UnityEngine;
 
 
 namespace KERBALISM {
-  
-  
+
+
 public class Antenna : ModuleDataTransmitter, IScienceDataTransmitter
-{   
+{
   // cfg
   [KSPField(isPersistant = true)] public string scope;                   // descriptive scope of the antenna (orbit, home, near, far)
   //[KSPField(isPersistant = true)] public double range;                   // max theoretical range in meters
   [KSPField(isPersistant = true)] public double relay_cost;              // ec consumption rate per-second for relaying data
   [KSPField(isPersistant = true)] public double min_transmission_cost;   // transmission cost per-packet at 0 range
   [KSPField(isPersistant = true)] public double max_transmission_cost;   // transmission cost per-packet at max range
-  [KSPField(isPersistant = true)] public bool relay;                     // specify if this antenna will relay link to other vessels  
-  
+  [KSPField(isPersistant = true)] public bool relay;                     // specify if this antenna will relay link to other vessels
+
   // data
   public bool can_transmit;                                              // enable or disable data transmission
   public double transmission_distance;                                   // current distance from home world or nearest relay
   public double penalty = 1.0;                                           // damage penalty applied to range
-  
-  
+
+
   // rmb ui status
   [KSPField(guiActive = true, guiName = "Relay", guiActiveEditor = true)] public string RelayStatus;
   [KSPField(guiActive = true, guiName = "Range", guiActiveEditor = true)] public string RangeStatus;
   [KSPField(guiActive = true, guiName = "Rate")] public string CostStatus;
-  
-  
+
+
   // rmb enable relay
   [KSPEvent(guiActive = true, guiName = "Enable Relay", active = false)]
   public void ActivateRelayEvent()
   {
     Events["ActivateRelayEvent"].active = false;
-    Events["DeactivateRelayEvent"].active = true;      
+    Events["DeactivateRelayEvent"].active = true;
     relay = true;
   }
 
@@ -49,18 +49,18 @@ public class Antenna : ModuleDataTransmitter, IScienceDataTransmitter
   public void DeactivateRelayEvent()
   {
     Events["ActivateRelayEvent"].active = true;
-    Events["DeactivateRelayEvent"].active = false;      
+    Events["DeactivateRelayEvent"].active = false;
     relay = false;
   }
-  
+
   // editor toggle relay
   [KSPEvent(guiActiveEditor = true, guiName = "Toggle Relay", active = true)]
   public void ToggleRelayInEditorEvent()
   {
     relay = !relay;
   }
-  
-  
+
+
   // editor/r&d info
   public override string GetInfo()
   {
@@ -70,38 +70,38 @@ public class Antenna : ModuleDataTransmitter, IScienceDataTransmitter
          + " - Transmission (max): <b>" + max_transmission_cost.ToString("F1") + " EC/Mbit</b>\n"
          + " - Relay: <b>" + relay_cost.ToString("F2") + " EC/s</b>";
   }
-  
-  
+
+
   // pseudo-ctor
   public override void OnStart(StartState state)
   {
     // call base class pseudo-ctor
     base.OnStart(state);
-    
+
     // normalize packet interval/size, force EC as required resource
     // note: done here to simplify the addition of new antenna parts
     this.packetInterval = 1.0f;
     this.packetSize = 1.0f;
     this.requiredResource = "ElectricCharge";
-    
+
     // enable/disable rmb ui events based on initial relay state as per .cfg files
     Events["ActivateRelayEvent"].active = !relay;
     Events["DeactivateRelayEvent"].active = relay;
-  } 
-  
+  }
+
 
   public void Update()
-  {       
+  {
     // get range
     double range = Signal.Range(scope, penalty, Signal.ECC());
-    
+
     // update rmb ui status
-    RangeStatus = Lib.HumanReadableRange(range);     
+    RangeStatus = Lib.HumanReadableRange(range);
     RelayStatus = relay ? "Active" : "Disabled";
-    
+
     // when in flight
     if (HighLogic.LoadedSceneIsFlight)
-    {    
+    {
       // determine currect packet cost
       // note: we set it to max float if out of range, to indirectly specify antenna score
       if (transmission_distance <= range)
@@ -112,78 +112,78 @@ public class Antenna : ModuleDataTransmitter, IScienceDataTransmitter
       {
         this.packetResourceCost = float.MaxValue;
       }
-      
+
       // update rmb ui status
       CostStatus = this.packetResourceCost.ToString("F2") + " EC/Mbit";
     }
   }
-  
-  
+
+
   void IScienceDataTransmitter.TransmitData(List<ScienceData> dataQueue)
-  {    
+  {
     // if there is no signal
     if (!can_transmit)
     {
       // show a message to the user
       Message.Post(Severity.warning, "No signal", "We can't send the data");
-      
+
       // return data to the containers
       ReturnData(dataQueue);
-      
+
       // do not transmit the data
       return;
     }
-    
+
     // calculate total ec cost of transmission
     double total_amount = 0.0;
     foreach(ScienceData sd in dataQueue) total_amount += sd.dataAmount;
     double total_cost = total_amount * this.packetResourceCost;
-    
+
     // if there is no EC to transmit the data
     if (total_cost > Lib.GetResourceAmount(vessel, "ElectricCharge"))
     {
       // show a message to the user
       Message.Post(Severity.warning, "Not enough power, <b>" +  total_cost.ToString("F0") + " ElectricCharge</b> required", "We can't send the data");
-      
+
       // return data to the containers
       ReturnData(dataQueue);
-      
+
       // do not transmit the data
       return;
     }
-    
+
     // transmit the data
     ModuleDataTransmitter transmitter = (ModuleDataTransmitter)this;
     transmitter.TransmitData(dataQueue);
   }
-  
-  
+
+
   void ReturnData(List<ScienceData> dataQueue)
   {
     // note: returning data to its original container/experiment has multiple problems:
     // - experiment.ReturnData() seems to do nothing
     // - a part can have multiple container/experiments and is impossible to discern the right one from the part id only
-    
+
     // return data to the first available container
     // note: this work only if there is a data container on the vessel, excluding experiments
     //       for this reason, a data container has been added to probe cores using MM
     //       transmitting is only possible if vessel can be controlled, therefore a pod or probe core
-    //       must be present, and so in this way we are sure there is a data container on the vessel    
+    //       must be present, and so in this way we are sure there is a data container on the vessel
     foreach(ScienceData data in dataQueue)
     {
       foreach(ModuleScienceContainer container in vessel.FindPartModulesImplementing<ModuleScienceContainer>())
       {
         // add the data to the container
         container.ReturnData(data);
-        
+
         // if, for some reasons, it wasn't possible to add the data, try the next container
         // note: this also deal with multiple versions of same data in the entire vessel
         if (!container.HasData(data)) continue;
-        
+
         // data was added, process the next data
-        break;        
+        break;
       }
-    }    
+    }
   }
 }
 

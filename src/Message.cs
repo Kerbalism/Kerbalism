@@ -9,8 +9,8 @@ using UnityEngine;
 
 
 namespace KERBALISM {
-  
-  
+
+
 public enum Severity
 {
   relax,    // something went back to nominal
@@ -49,32 +49,32 @@ public enum KerbalBreakdown
   wrong_valve,      // oxygen has been lost
   argument          // stress increased for all the crew
 }
-   
-  
+
+
 [KSPAddon(KSPAddon.Startup.MainMenu, true)]
 public class Message : MonoBehaviour
-{  
+{
   // constants
   const float offset = 200.0f;  // TODO [1.1] increase message offset to comply with bigger navball
-  
+
   // represent an entry in the message list
   public class Entry
   {
     public string msg;
     public float first_seen;
   }
-  
+
   // store entries
   private static Queue<Entry> entries = new Queue<Entry>();
-  
+
   // styles
   GUIStyle style;
-  
-  
+
+
   // keep it alive
   Message() { DontDestroyOnLoad(this); }
-  
-  
+
+
   // pseudo-ctor
   public void Start()
   {
@@ -91,67 +91,67 @@ public class Message : MonoBehaviour
     style.border = new RectOffset(0, 0, 0, 0);
     style.padding = new RectOffset(2, 2, 2, 2);
   }
-  
-  
+
+
   // called every frame
   public void OnGUI()
-  {    
+  {
     // if queue is empty, do nothing
     if (entries.Count == 0) return;
-    
+
     // get current time
     float time = Time.realtimeSinceStartup;
-    
+
     // get first entry in the queue
     Entry e = entries.Peek();
-    
+
     // if never visualized, remember first time shown
     if (e.first_seen <= float.Epsilon) e.first_seen = time;
-    
+
     // if visualized for too long, remove from the queue and skip this update
     if (e.first_seen + Settings.MessageLength < time) { entries.Dequeue(); return; }
-    
+
     // calculate content size
     GUIContent content = new GUIContent(e.msg);
     Vector2 size = style.CalcSize(content);
     size = style.CalcScreenSize(size);
     size.x += style.padding.left + style.padding.right;
     size.y += style.padding.bottom + style.padding.top;
-    
+
     // calculate position
     Rect rect = new Rect((Screen.width - size.x) * 0.5f, (Screen.height - size.y - offset), size.x, size.y);
-    
+
     // render the message
     var prev_style = GUI.skin.label;
     GUI.skin.label = style;
     GUI.Label(rect, e.msg);
-    GUI.skin.label = prev_style; 
+    GUI.skin.label = prev_style;
   }
-  
-  
+
+
   // add a plain message
   public static void Post(string msg)
-  { 
+  {
     // avoid adding the same message if already present in the queue
     foreach(Entry e in entries) { if (e.msg == msg) return; }
-    
+
     // compile entry
-    Entry entry = new Entry();    
+    Entry entry = new Entry();
     entry.msg = msg;
     entry.first_seen = 0;
-    
+
     // add entry
     entries.Enqueue(entry);
   }
-    
-  
+
+
   // add a message
   public static void Post(string text, string subtext)
   {
     Post(text + "\n<i>" + subtext + "</i>");
   }
-  
-  
+
+
   // add a message
   public static void Post(Severity severity, string text, string subtext="")
   {
@@ -163,11 +163,11 @@ public class Message : MonoBehaviour
       case Severity.danger:     title = "<color=#BB0000><b>DANGER</b></color>\n"; Lib.StopWarp(); break;
       case Severity.fatality:   title = "<color=#BB0000><b>FATALITY</b></color>\n"; Lib.StopWarp(); break;
       case Severity.breakdown:  title = "<color=#BB0000><b>BREAKDOWN</b></color>\n"; Lib.StopWarp(); break;
-    }    
+    }
     Post(title + text + (subtext.Length > 0 ? "\n<i>" + subtext + "</i>" : ""));
   }
-  
-  
+
+
   // add a message related to vessel resources
   public static void Post(Severity severity, VesselEvent e, Vessel v)
   {
@@ -175,22 +175,22 @@ public class Message : MonoBehaviour
     bool is_probe = Lib.CrewCapacity(v) == 0;
     string text = "";
     string subtext = "";
-    
+
     // vessel
     if (!v.isEVA)
-    {   
-      switch(e) 
+    {
+      switch(e)
       {
         // electric charge
         case VesselEvent.ec:
-        
+
           // manned vessel
           if (Lib.CrewCapacity(v) > 0)
           {
             switch(severity)
             {
-              case Severity.relax:    text = "$VESSEL batteries recharged"; subtext = "The crew is allowed music again"; break;                
-              case Severity.warning:  text = "On $VESSEL, batteries are almost empty"; subtext = "We are squeezing the last bit of juice"; break;                
+              case Severity.relax:    text = "$VESSEL batteries recharged"; subtext = "The crew is allowed music again"; break;
+              case Severity.warning:  text = "On $VESSEL, batteries are almost empty"; subtext = "We are squeezing the last bit of juice"; break;
               case Severity.danger:   text = "There is no more electric charge on $VESSEL"; subtext = "Life support systems are off"; break;
             }
           }
@@ -199,31 +199,31 @@ public class Message : MonoBehaviour
           {
             switch(severity)
             {
-              case Severity.relax:    text = "$VESSEL batteries recharged";  subtext = "Systems are back online"; break;                
-              case Severity.warning:  text = "On $VESSEL, batteries are almost empty"; subtext = "Shutting down non-essential systems"; break;                
+              case Severity.relax:    text = "$VESSEL batteries recharged";  subtext = "Systems are back online"; break;
+              case Severity.warning:  text = "On $VESSEL, batteries are almost empty"; subtext = "Shutting down non-essential systems"; break;
               case Severity.danger:   text = "There is no more electric charge on $VESSEL"; subtext = "We lost control"; break;
             }
           }
           break;
-         
-        // food          
+
+        // food
         case VesselEvent.food:
 
           switch(severity)
           {
-            case Severity.relax:      text = "$VESSEL food reserves restored"; subtext = "Double snack rations for everybody"; break;              
-            case Severity.warning:    text = "On $VESSEL, food reserves are getting low"; subtext = "Anything edible is being scrutinized"; break;              
+            case Severity.relax:      text = "$VESSEL food reserves restored"; subtext = "Double snack rations for everybody"; break;
+            case Severity.warning:    text = "On $VESSEL, food reserves are getting low"; subtext = "Anything edible is being scrutinized"; break;
             case Severity.danger:     text = "There is no more food on $VESSEL"; subtext = "The crew prepare to the inevitable"; break;
           }
           break;
-          
+
         // oxygen
         case VesselEvent.oxygen:
-        
+
           switch(severity)
           {
-            case Severity.relax:      text = "$VESSEL oxygen reserves restored"; subtext = "The crew is taking a breather"; break;              
-            case Severity.warning:    text = "On $VESSEL, oxygen reserves are dangerously low"; subtext = "There is mildly panic among the crew"; break;              
+            case Severity.relax:      text = "$VESSEL oxygen reserves restored"; subtext = "The crew is taking a breather"; break;
+            case Severity.warning:    text = "On $VESSEL, oxygen reserves are dangerously low"; subtext = "There is mildly panic among the crew"; break;
             case Severity.danger:     text = "There is no more oxygen on $VESSEL"; subtext = "Everybody stop breathing"; break;
           }
           break;
@@ -236,45 +236,45 @@ public class Message : MonoBehaviour
       {
         // electric charge
         case VesselEvent.ec:
-        
+
           switch(severity)
           {
-            case Severity.relax:      text = "$VESSEL recharged the battery"; break;              
-            case Severity.warning:    text = "$VESSEL is running out of power"; break;              
+            case Severity.relax:      text = "$VESSEL recharged the battery"; break;
+            case Severity.warning:    text = "$VESSEL is running out of power"; break;
             case Severity.danger:     text = "$VESSEL is out of power"; break;
           }
           break;
-          
+
         // oxygen
         case VesselEvent.oxygen:
-        
+
           switch(severity)
           {
-            case Severity.relax:      text = "$VESSEL oxygen tank has been refilled"; break;              
-            case Severity.warning:    text = "$VESSEL is running out of oxygen"; break;             
+            case Severity.relax:      text = "$VESSEL oxygen tank has been refilled"; break;
+            case Severity.warning:    text = "$VESSEL is running out of oxygen"; break;
             case Severity.danger:     text = "$VESSEL is out of oxygen"; break;
           }
           break;
       }
     }
-    
+
     text = text.Replace("$VESSEL", "<color=ffffff>" + v.vesselName + "</color>");
-    
+
     Post(severity, text, subtext);
   }
-  
-  
+
+
   public static void Post(Severity severity, KerbalEvent e, Vessel v, ProtoCrewMember c, KerbalBreakdown breakdown = KerbalBreakdown.mumbling)
   {
     string pretext = (!v.isActiveVessel ? ("On " + (v.isEVA ? "EVA" : v.vesselName) + ", ") : "") + "<color=#ffffff>" + c.name + "</color> ";
     string text = "";
     string subtext = "";
-    
-    switch(e) 
+
+    switch(e)
     {
       // climate (cold)
       case KerbalEvent.climate_low:
-        
+
         switch(severity)
         {
           case Severity.relax:      text = "hypothermia is under control"; break;
@@ -283,7 +283,7 @@ public class Message : MonoBehaviour
           case Severity.fatality:   text = "freezed to death"; break;
         }
         break;
-        
+
       // climate (hot)
       case KerbalEvent.climate_high:
 
@@ -295,7 +295,7 @@ public class Message : MonoBehaviour
           case Severity.fatality:   text = "burned alive"; break;
         }
         break;
-        
+
       // food
       case KerbalEvent.food:
 
@@ -307,10 +307,10 @@ public class Message : MonoBehaviour
           case Severity.fatality:   text = "starved to death"; break;
         }
         break;
-        
+
       // oxygen
       case KerbalEvent.oxygen:
-      
+
         switch(severity)
         {
           case Severity.relax:      text = "is breathing again"; break;
@@ -319,10 +319,10 @@ public class Message : MonoBehaviour
           case Severity.fatality:   text = "suffocated to death"; break;
         }
         break;
-        
+
       // radiation
       case KerbalEvent.radiation:
-      
+
         switch(severity)
         {
           // note: no recovery from radiation
@@ -331,10 +331,10 @@ public class Message : MonoBehaviour
           case Severity.fatality:   text = "died after being exposed to extreme radiation"; break;
         }
         break;
-        
+
       // quality-of-life
       case KerbalEvent.stress:
-      
+
         switch(severity)
         {
           // note: no recovery from stress
@@ -354,12 +354,12 @@ public class Message : MonoBehaviour
         }
         break;
     }
-    
+
     text = text.Replace("$HIS_HER", c.gender == ProtoCrewMember.Gender.Male ? "his" : "her");
     text = text.Replace("$HIM_HER", c.gender == ProtoCrewMember.Gender.Male ? "him" : "her");
-    
+
     Post(severity, pretext + text, subtext);
-  }  
+  }
 
 }
 

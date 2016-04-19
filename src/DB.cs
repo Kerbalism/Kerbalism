@@ -9,8 +9,8 @@ using UnityEngine;
 
 
 namespace KERBALISM {
-    
-  
+
+
 // store per-kerbal data
 public class kerbal_data
 {
@@ -79,14 +79,14 @@ public class DB : ScenarioModule
   private Dictionary<string, body_data> bodies = new Dictionary<string, body_data>();
   private notification_data notifications = new notification_data();
   private static DB instance = null;
-  
+
   public DB()
   {
     instance = this;
   }
-  
+
   public override void OnLoad(ConfigNode node)
-  {    
+  {
     kerbals.Clear();
     if (node.HasNode("kerbals"))
     {
@@ -108,10 +108,10 @@ public class DB : ScenarioModule
         kd.msg_radiation   = Convert.ToUInt32( kerbal_node.GetValue("msg_radiation") );
         kd.resque          = Convert.ToUInt32( kerbal_node.GetValue("resque") );
         kd.disabled        = Convert.ToUInt32( kerbal_node.GetValue("disabled") );
-        kerbals.Add(kerbal_node.name.Replace("___", " "), kd);        
-      }      
+        kerbals.Add(kerbal_node.name.Replace("___", " "), kd);
+      }
     }
-    
+
     vessels.Clear();
     if (node.HasNode("vessels"))
     {
@@ -132,7 +132,7 @@ public class DB : ScenarioModule
         vessels.Add(new Guid(vessel_node.name), vd);
       }
     }
-    
+
     bodies.Clear();
     if (node.HasNode("bodies"))
     {
@@ -147,7 +147,7 @@ public class DB : ScenarioModule
         bodies.Add(body_node.name.Replace("___", " "), bd);
       }
     }
-    
+
     notifications = new notification_data();
     if (node.HasNode("notifications"))
     {
@@ -161,18 +161,18 @@ public class DB : ScenarioModule
       notifications.first_malfunction   = Convert.ToUInt32( notifications_node.GetValue("first_malfunction") );
     }
   }
-    
+
   public override void OnSave(ConfigNode node)
-  { 
+  {
     ConfigNode kerbals_node = node.AddNode("kerbals");
     foreach(var p in kerbals)
     {
-      kerbal_data kd = p.Value;      
+      kerbal_data kd = p.Value;
       ConfigNode kerbal_node = kerbals_node.AddNode(p.Key.Replace(" ", "___"));
       kerbal_node.AddValue("temperature", kd.temperature);
       kerbal_node.AddValue("starved", kd.starved);
       kerbal_node.AddValue("deprived", kd.deprived);
-      kerbal_node.AddValue("stressed", kd.stressed);      
+      kerbal_node.AddValue("stressed", kd.stressed);
       kerbal_node.AddValue("radiation", kd.radiation);
       kerbal_node.AddValue("time_since_food", kd.time_since_food);
       kerbal_node.AddValue("msg_freezing", kd.msg_freezing);
@@ -184,7 +184,7 @@ public class DB : ScenarioModule
       kerbal_node.AddValue("resque", kd.resque);
       kerbal_node.AddValue("disabled", kd.disabled);
     }
-    
+
     ConfigNode vessels_node = node.AddNode("vessels");
     foreach(var p in vessels)
     {
@@ -201,7 +201,7 @@ public class DB : ScenarioModule
       vessel_node.AddValue("cfg_signal", vd.cfg_signal);
       vessel_node.AddValue("notes", vd.notes.Replace("\n", "$NEWLINE"));
     }
-    
+
     ConfigNode bodies_node = node.AddNode("bodies");
     foreach(var p in bodies)
     {
@@ -223,71 +223,71 @@ public class DB : ScenarioModule
     notifications_node.AddValue("first_malfunction", notifications.first_malfunction.ToString());
   }
 
-  
+
   public static bool Ready()
   {
     return instance != null;
   }
-  
+
   public static kerbal_data KerbalData(string k_name)
   {
     if (!instance.kerbals.ContainsKey(k_name)) instance.kerbals.Add(k_name, new kerbal_data());
     return instance.kerbals[k_name];
   }
-  
+
   public static vessel_data VesselData(Guid v_id)
   {
     if (!instance.vessels.ContainsKey(v_id)) instance.vessels.Add(v_id, new vessel_data());
     return instance.vessels[v_id];
   }
-  
+
   public static body_data BodyData(string b_name)
   {
     if (!instance.bodies.ContainsKey(b_name)) instance.bodies.Add(b_name, new body_data());
     return instance.bodies[b_name];
   }
-  
+
   public static notification_data NotificationData()
   {
     return instance.notifications;
   }
-  
+
   public static void ForgetKerbal(string k_name)
   {
     instance.kerbals.Remove(k_name);
   }
-  
+
   public static void ForgetVessel(Guid v_id)
   {
     instance.vessels.Remove(v_id);
   }
-  
+
   public static void ForgetBody(string b_name)
   {
     instance.bodies.Remove(b_name);
   }
-  
+
   public static Dictionary<string, kerbal_data> Kerbals()
   {
     return instance.kerbals;
   }
-  
+
   public static Dictionary<Guid, vessel_data> Vessels()
   {
     return instance.vessels;
   }
-  
+
   public static Dictionary<string, body_data> Bodies()
   {
     return instance.bodies;
   }
-  
+
   // for use by the hooks system
   public static void DisableKerbal(string k_name, bool disabled)
   {
     KerbalData(k_name).disabled = disabled ? 1u : 0;
   }
 }
-  
-  
+
+
 } // KERBALISM

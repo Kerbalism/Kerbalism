@@ -9,11 +9,11 @@ using UnityEngine;
 
 
 namespace KERBALISM {
-  
+
 
 public class Planner
-{  
-  public class environment_data  
+{
+  public class environment_data
   {
     public CelestialBody body;                            // target body
     public double altitude;                               // target altitude
@@ -33,19 +33,19 @@ public class Planner
     public double orbital_period;                         // length of orbit
     public double shadow_period;                          // length of orbit in shadow
     public double shadow_time;                            // proportion of orbit that is in shadow
-    public double temp_diff;                              // average difference from survival temperature 
-    public double atmo_factor;                            // proportion of sun flux not absorbed by the atmosphere    
+    public double temp_diff;                              // average difference from survival temperature
+    public double atmo_factor;                            // proportion of sun flux not absorbed by the atmosphere
   }
-  
-  
+
+
   public class crew_data
   {
     public uint count;                                    // number of crew on board
     public uint capacity;                                 // crew capacity of the vessel
     public bool engineer;                                 // true if an engineer is on board
   }
-  
-  
+
+
   public class ec_data
   {
     public double storage;                                // ec stored
@@ -56,8 +56,8 @@ public class Planner
     public double life_expectancy_shadow;                 // time-to-death for lack of climatization in shadow
     public double best_ec_generator;                      // rate of best generator (for redundancy calculation)
   }
-  
-  
+
+
   public class food_data
   {
     public double storage;                                // food stored
@@ -67,8 +67,8 @@ public class Planner
     public double greenhouse_cost;                        // ec cost of artificial lighting for the greenhouses
     public string cultivated_tooltip = "";                // contain time-to-harvest for all the greenhouses
   }
-  
-  
+
+
   public class oxygen_data
   {
     public double scrubber_efficiency;                    // tech-dependent scrubber efficiency
@@ -78,8 +78,8 @@ public class Planner
     public double life_expectancy;                        // time-to-death for lack of oxygen
     public double scrubber_cost;                          // ec cost of all scrubbers
   }
-  
-  
+
+
   public class qol_data
   {
     public double living_space;                           // living space per-crew
@@ -87,30 +87,30 @@ public class Planner
     public string factors;                                // description of other quality-of-life factors
     public double time_to_instability;                    // time-to-instability for stress
   }
-  
-  
+
+
   public class radiation_data
   {
     public double shielding_amount;                       // capacity of radiation shielding on the vessel
-    public double shielding_capacity;                     // amount of radiation shielding on the vessel                           
+    public double shielding_capacity;                     // amount of radiation shielding on the vessel
     public double[] life_expectancy;                      // time-to-death or time-to-safemode for radiations (cosmic/storm/belt levels)
   }
-  
-  
+
+
   public class reliability_data
   {
     public double quality;                                // manufacturing quality
     public double failure_year;                           // estimated failures per-year, averaged per-component
-    public string redundancy;                             // verbose description of redundancies 
+    public string redundancy;                             // verbose description of redundancies
   }
-  
-  
+
+
   public class signal_data
   {
     public double ecc;                                    // error correcting code efficiency
     public double range;                                  // range of best antenna, if any
     public double transmission_cost_min;                  // min data transmission cost of best antenna, if any
-    public double transmission_cost_max;                  // max data transmission cost of best antenna, if any    
+    public double transmission_cost_max;                  // max data transmission cost of best antenna, if any
     public double relay_range;                            // range of best relay antenna, if any
     public double relay_cost;                             // relay cost of best relay antenna, if any
     public double second_best_range;                      // range of second-best antenna (for reliability calculation)
@@ -121,15 +121,15 @@ public class Planner
   GUIStyle leftmenu_style;
   GUIStyle midmenu_style;
   GUIStyle rightmenu_style;
-  GUIStyle row_style;     
+  GUIStyle row_style;
   GUIStyle title_style;
   GUIStyle content_style;
   GUIStyle quote_style;
-  
+
   // body index & situation
   int body_index;
   int situation_index;
-  
+
   // current planner page
   uint page;
 
@@ -140,7 +140,7 @@ public class Planner
     // set default body index & situation
     body_index = FlightGlobals.GetHomeBodyIndex();
     situation_index = 1;
-    
+
     // left menu style
     leftmenu_style = new GUIStyle(HighLogic.Skin.label);
     leftmenu_style.richText = true;
@@ -149,22 +149,22 @@ public class Planner
     leftmenu_style.stretchHeight = true;
     leftmenu_style.fontSize = 10;
     leftmenu_style.alignment = TextAnchor.MiddleLeft;
-    
+
     // mid menu style
     midmenu_style = new GUIStyle(leftmenu_style);
     midmenu_style.fixedWidth = 0.0f;
     midmenu_style.stretchWidth = true;
     midmenu_style.alignment = TextAnchor.MiddleCenter;
-    
+
     // right menu style
     rightmenu_style = new GUIStyle(leftmenu_style);
     rightmenu_style.alignment = TextAnchor.MiddleRight;
-     
+
     // row style
     row_style = new GUIStyle();
     row_style.stretchWidth = true;
     row_style.fixedHeight = 16.0f;
-    
+
     // title style
     title_style = new GUIStyle(HighLogic.Skin.label);
     title_style.normal.background = Lib.GetTexture("black-background");
@@ -176,7 +176,7 @@ public class Planner
     title_style.border = new RectOffset(0, 0, 0, 0);
     title_style.padding = new RectOffset(3, 4, 3, 4);
     title_style.alignment = TextAnchor.MiddleCenter;
-    
+
     // content style
     content_style = new GUIStyle(HighLogic.Skin.label);
     content_style.richText = true;
@@ -185,7 +185,7 @@ public class Planner
     content_style.stretchHeight = true;
     content_style.fontSize = 12;
     content_style.alignment = TextAnchor.MiddleLeft;
-    
+
     // quote style
     quote_style = new GUIStyle(HighLogic.Skin.label);
     quote_style.richText = true;
@@ -195,25 +195,25 @@ public class Planner
     quote_style.fontSize = 11;
     quote_style.alignment = TextAnchor.LowerCenter;
   }
-  
-  
+
+
   public static environment_data analyze_environment(CelestialBody body, double altitude_mult)
   {
     // shortcuts
-    CelestialBody sun = Sim.Sun();    
-    
+    CelestialBody sun = Sim.Sun();
+
     // calculate data
-    environment_data env = new environment_data();    
+    environment_data env = new environment_data();
     env.body = body;
     env.altitude = body.Radius * altitude_mult;
     env.landed = env.altitude <= double.Epsilon;
-    env.breathable = env.landed && body.atmosphereContainsOxygen;    
-    env.sun_dist = Sim.Apoapsis(Lib.PlanetarySystem(body)) - sun.Radius - body.Radius;    
+    env.breathable = env.landed && body.atmosphereContainsOxygen;
+    env.sun_dist = Sim.Apoapsis(Lib.PlanetarySystem(body)) - sun.Radius - body.Radius;
     Vector3d sun_dir = (sun.position - body.position).normalized;
     env.sun_flux = Sim.SolarFlux(env.sun_dist);
     env.body_flux = Sim.BodyFlux(body, body.position + sun_dir * (body.Radius + env.altitude));
     env.body_back_flux = Sim.BodyFlux(body, body.position - sun_dir * (body.Radius + env.altitude));
-    env.background_temp = Sim.BackgroundTemperature();        
+    env.background_temp = Sim.BackgroundTemperature();
     env.sun_temp = Sim.BlackBody(env.sun_flux);
     env.body_temp = Sim.BlackBody(env.body_flux);
     env.body_back_temp = Sim.BlackBody(env.body_back_flux);
@@ -227,17 +227,17 @@ public class Planner
       ? Math.Abs(Settings.SurvivalTemperature - env.atmo_temp)
       : Lib.Mix(Math.Abs(Settings.SurvivalTemperature - env.light_temp), Math.Abs(Settings.SurvivalTemperature - env.shadow_temp), env.shadow_time);
     env.atmo_factor = env.landed ? Sim.AtmosphereFactor(body, 0.7071) : 1.0;
-    
+
     // return data
     return env;
   }
-  
-  
+
+
   public static crew_data analyze_crew(List<Part> parts)
   {
     // store data
     crew_data crew = new crew_data();
-    
+
     // get number of kerbals assigned to the vessel in the editor
     // note: crew manifest is not reset after root part is deleted
     if (CMAssignmentDialog.Instance != null && CMAssignmentDialog.Instance.GetManifest() != null)
@@ -246,37 +246,37 @@ public class Planner
       crew.count = (uint)manifest.Count;
       crew.engineer = manifest.Find(k => k.trait == "Engineer") != null;
     }
-    
+
     // scan the parts
     foreach(Part p in parts)
     {
       // accumulate crew capacity
       crew.capacity += (uint)p.CrewCapacity;
     }
-    
+
     // return data
     return crew;
   }
-    
-  
+
+
   public static ec_data analyze_ec(List<Part> parts, environment_data env, crew_data crew, food_data food, oxygen_data oxygen, signal_data signal)
-  { 
+  {
     // store data
     ec_data ec = new ec_data();
-    
+
     // calculate climate cost
     ec.consumed = (double)crew.count * env.temp_diff * Settings.ElectricChargePerSecond;
-    
+
     // scan the parts
     foreach(Part p in parts)
     {
       // accumulate EC storage
       ec.storage += Lib.GetResourceAmount(p, "ElectricCharge");
-      
+
       // remember if we already considered a resource converter module
       // rationale: we assume only the first module in a converter is active
       bool first_converter = true;
-      
+
       // for each module
       foreach(PartModule m in p.Modules)
       {
@@ -306,7 +306,7 @@ public class Planner
         {
           // skip launch clamps, that include a generator
           if (p.partInfo.name == "launchClamp1") continue;
-            
+
           ModuleGenerator mm = (ModuleGenerator)m;
           foreach(ModuleGenerator.GeneratorResource res in mm.inputList)
           {
@@ -392,42 +392,42 @@ public class Planner
         }
       }
     }
-    
+
     // include cost from greenhouses artificial lighting
     ec.consumed += food.greenhouse_cost;
-    
+
     // include cost from scrubbers
     ec.consumed += oxygen.scrubber_cost;
-    
+
     // include relay cost for the best relay antenna
     ec.consumed += signal.relay_cost;
-    
+
     // finally, calculate life expectancy of ec
     ec.life_expectancy_sunlight = ec.storage / Math.Max(ec.consumed - ec.generated_sunlight, 0.0);
     ec.life_expectancy_shadow = ec.storage / Math.Max(ec.consumed - ec.generated_shadow, 0.0);
-    
+
     // return data
     return ec;
   }
-  
-  
+
+
   public static food_data analyze_food(List<Part> parts, environment_data env, crew_data crew)
   {
     // store data
     food_data food = new food_data();
-    
+
     // calculate food consumed
     food.consumed = (double)crew.count * Settings.FoodPerMeal / Settings.MealFrequency;
-    
+
     // deduce waste produced by the crew per-second
     double simulated_waste = food.consumed;
-    
+
     // scan the parts
     foreach(Part p in parts)
     {
       // accumulate food storage
       food.storage += Lib.GetResourceAmount(p, "Food");
-      
+
       // for each module
       foreach(PartModule m in p.Modules)
       {
@@ -435,32 +435,32 @@ public class Planner
         if (m.moduleName == "Greenhouse")
         {
           Greenhouse mm = (Greenhouse)m;
-            
-          // calculate natural lighting 
+
+          // calculate natural lighting
           double natural_lighting = Greenhouse.NaturalLighting(env.sun_dist);
-            
+
           // calculate ec consumed
           food.greenhouse_cost += mm.ec_rate * mm.lamps;
-            
+
           // calculate lighting
           double lighting = natural_lighting * (mm.door_opened ? 1.0 : 0.0) + mm.lamps * (mm.door_opened ? 1.0 : 1.0 + Settings.GreenhouseDoorBonus);
-            
+
           // calculate waste used
           double waste_used = Math.Min(simulated_waste, mm.waste_rate);
           double waste_perc = waste_used / mm.waste_rate;
           simulated_waste -= waste_used;
-            
+
           // calculate growth bonus
           double growth_bonus = 0.0;
           growth_bonus += Settings.GreenhouseSoilBonus * (env.landed ? 1.0 : 0.0);
           growth_bonus += Settings.GreenhouseWasteBonus * waste_perc;
-            
+
           // calculate growth factor
           double growth_factor = (mm.growth_rate * (1.0 + growth_bonus)) * lighting;
-            
+
           // calculate food cultivated
           food.cultivated += mm.harvest_size * growth_factor;
-            
+
           // calculate time-to-harvest
           if (growth_factor > double.Epsilon)
           {
@@ -470,38 +470,38 @@ public class Planner
         }
       }
     }
-    
+
     // calculate life expectancy
     food.life_expectancy = food.storage / Math.Max(food.consumed - food.cultivated, 0.0);
-    
+
     // add formatting to tooltip
     if (food.cultivated_tooltip.Length > 0) food.cultivated_tooltip = "<i>" + food.cultivated_tooltip + "</i>";
-    
+
     // return data
     return food;
   }
-  
-  
+
+
   public static oxygen_data analyze_oxygen(List<Part> parts, environment_data env, crew_data crew)
   {
     // store data
     oxygen_data oxygen = new oxygen_data();
-    
+
     // get scrubber efficiency
     oxygen.scrubber_efficiency = Scrubber.DeduceEfficiency();
-    
+
     // calculate oxygen consumed
-    oxygen.consumed = !env.breathable ? (double)crew.count * Settings.OxygenPerSecond : 0.0;    
-    
+    oxygen.consumed = !env.breathable ? (double)crew.count * Settings.OxygenPerSecond : 0.0;
+
     // deduce co2 produced by the crew per-second
     double simulated_co2 = oxygen.consumed;
-    
+
     // scan the parts
     foreach(Part p in parts)
     {
       // accumulate food storage
       oxygen.storage += Lib.GetResourceAmount(p, "Oxygen");
-      
+
       // for each module
       foreach(PartModule m in p.Modules)
       {
@@ -509,7 +509,7 @@ public class Planner
         if (m.moduleName == "Scrubber")
         {
           Scrubber mm = (Scrubber)m;
-          
+
           // do nothing inside breathable atmosphere
           if (mm.is_enabled && !env.breathable)
           {
@@ -524,20 +524,20 @@ public class Planner
         }
       }
     }
-    
+
     // calculate life expectancy
     oxygen.life_expectancy = !env.breathable ? oxygen.storage / Math.Max(oxygen.consumed - oxygen.recycled, 0.0) : double.NaN;
-    
+
     // return data
     return oxygen;
   }
-  
-  
+
+
   public static qol_data analyze_qol(List<Part> parts, environment_data env, crew_data crew, signal_data signal)
   {
     // store data
     qol_data qol = new qol_data();
-    
+
     // scan the parts
     foreach(Part p in parts)
     {
@@ -549,18 +549,18 @@ public class Planner
         {
           Entertainment mm = (Entertainment)m;
           qol.entertainment *= mm.rate;
-        }  
+        }
       }
     }
-    
+
     // calculate Quality-Of-Life bonus
-    // note: ignore kerbal-specific variance    
+    // note: ignore kerbal-specific variance
     if (crew.capacity > 0)
     {
       double bonus = QualityOfLife.Bonus(crew.count, crew.capacity, qol.entertainment, env.landed, signal.range > 0.0);
       qol.living_space = QualityOfLife.LivingSpace(crew.count, crew.capacity);
       qol.time_to_instability = bonus / Settings.StressedDegradationRate;
-      List<string> factors = new List<string>();      
+      List<string> factors = new List<string>();
       if (crew.count > 1) factors.Add("not-alone");
       if (signal.range > 0.0) factors.Add("call-home");
       if (env.landed) factors.Add("firm-ground");
@@ -573,17 +573,17 @@ public class Planner
       qol.time_to_instability = double.NaN;
       qol.factors = "none";
     }
-    
+
     // return data
     return qol;
   }
-  
-  
+
+
   public static radiation_data analyze_radiation(List<Part> parts, environment_data env, crew_data crew)
   {
     // store data
     radiation_data radiation = new radiation_data();
-    
+
     // scan the parts
     foreach(Part p in parts)
     {
@@ -591,7 +591,7 @@ public class Planner
       radiation.shielding_amount += Lib.GetResourceAmount(p, "Shielding");
       radiation.shielding_capacity += Lib.GetResourceCapacity(p, "Shielding");
     }
-    
+
     // calculate radiation data
     double shielding = Radiation.Shielding(radiation.shielding_amount, radiation.shielding_capacity);
     double belt_strength = Settings.BeltRadiation * Radiation.Dynamo(env.body) * 0.5; //< account for the 'ramp'
@@ -608,23 +608,23 @@ public class Planner
     {
       radiation.life_expectancy = new double[]{double.NaN, double.NaN, double.NaN};
     }
-    
+
     // return data
     return radiation;
   }
-  
-  
+
+
   public static reliability_data analyze_reliability(List<Part> parts, ec_data ec, signal_data signal)
   {
     // store data
     reliability_data reliability = new reliability_data();
-    
+
     // get manufacturing quality
     reliability.quality = Malfunction.DeduceQuality();
-    
+
     // count parts that can fail
     uint components = 0;
-    
+
     // scan the parts
     foreach(Part p in parts)
     {
@@ -641,7 +641,7 @@ public class Planner
         }
       }
     }
-    
+
     // calculate reliability data
     if (components > 0) reliability.failure_year /= (double)components;
     double ec_redundancy = ec.best_ec_generator < ec.generated_sunlight ? (ec.generated_sunlight - ec.best_ec_generator) / ec.generated_sunlight : 0.0;
@@ -651,20 +651,20 @@ public class Planner
     if (antenna_redundancy >= 0.99) redundancies.Add("antenna");
     if (redundancies.Count == 0) redundancies.Add("none");
     reliability.redundancy = String.Join(", ", redundancies.ToArray());
-    
+
     // return data
     return reliability;
   }
-  
-  
+
+
   public static signal_data analyze_signal(List<Part> parts)
   {
     // store data
     signal_data signal = new signal_data();
-    
+
     // get error correcting code factor
     signal.ecc = Signal.ECC();
-    
+
     // scan the parts
     foreach(Part p in parts)
     {
@@ -675,61 +675,61 @@ public class Planner
         if (m.moduleName == "Antenna")
         {
           Antenna mm = (Antenna)m;
-          
+
           // calculate actual range
           double range = Signal.Range(mm.scope, mm.penalty, signal.ecc);
-          
+
           // maintain 2nd best antenna
           signal.second_best_range = range > signal.range ? signal.range : Math.Max(signal.second_best_range, range);
-          
+
           // keep track of best antenna
           if (range > signal.range)
           {
             signal.range = range;
             signal.transmission_cost_min = mm.min_transmission_cost;
             signal.transmission_cost_max = mm.max_transmission_cost;
-          }            
-          
+          }
+
           // keep track of best relay antenna
           if (mm.relay && range > signal.relay_range)
           {
             signal.relay_range = range;
             signal.relay_cost = mm.relay_cost;
-          }      
+          }
         }
       }
-    }      
-    
+    }
+
     // return data
     return signal;
   }
-  
-  
+
+
   void render_title(string title)
   {
     GUILayout.BeginHorizontal();
     GUILayout.Label(title, title_style);
     GUILayout.EndHorizontal();
   }
-  
-  
+
+
   void render_content(string desc, string value, string tooltip="")
   {
     GUILayout.BeginHorizontal(row_style);
     GUILayout.Label(new GUIContent(desc + ": <b>" + value + "</b>", tooltip.Length > 0 ? "<i>" + tooltip + "</i>" : ""), content_style);
     GUILayout.EndHorizontal();
   }
-  
-  
+
+
   void render_space()
   {
     GUILayout.Space(10.0f);
   }
-  
-  
+
+
   void render_environment(environment_data env)
   {
-    
+
     bool in_atmosphere = env.landed && env.body.atmosphere;
     string temperature_str = in_atmosphere
       ? Lib.HumanReadableTemp(env.atmo_temp)
@@ -747,23 +747,23 @@ public class Planner
       + "pressure: <b>" + env.body.atmospherePressureSeaLevel.ToString("F0") + " kPa</b>\n"
       + "breathable: <b>" + (env.body.atmosphereContainsOxygen ? "yes" : "no") + "</b>"
       : "";
-    string shadowtime_str = Lib.HumanReadableDuration(env.shadow_period) + " (" + (env.shadow_time * 100.0).ToString("F0") + "%)";    
-    
+    string shadowtime_str = Lib.HumanReadableDuration(env.shadow_period) + " (" + (env.shadow_time * 100.0).ToString("F0") + "%)";
+
     render_title("ENVIRONMENT");
     render_content("temperature", temperature_str, temperature_tooltip);
     render_content("temp diff", env.temp_diff.ToString("F0") + "K", "average difference between\nexternal and survival temperature");
-    render_content("inside atmosphere", in_atmosphere ? "yes" : "no", atmosphere_tooltip); 
+    render_content("inside atmosphere", in_atmosphere ? "yes" : "no", atmosphere_tooltip);
     render_content("shadow time", shadowtime_str);
     render_space();
   }
-  
-  
+
+
   void render_ec(ec_data ec)
   {
     bool shadow_different = Math.Abs(ec.generated_sunlight - ec.generated_shadow) > double.Epsilon;
     string generated_str = Lib.HumanReadableRate(ec.generated_sunlight) + (shadow_different ? "</b> / <b>" + Lib.HumanReadableRate(ec.generated_shadow) : "");
     string life_str = Lib.HumanReadableDuration(ec.life_expectancy_sunlight) + (shadow_different ? "</b> / <b>" + Lib.HumanReadableDuration(ec.life_expectancy_shadow) : "");
-    
+
     render_title("ELECTRIC CHARGE");
     render_content("storage", Lib.ValueOrNone(ec.storage));
     render_content("consumed", Lib.HumanReadableRate(ec.consumed));
@@ -771,10 +771,10 @@ public class Planner
     render_content("life expectancy", life_str, "sunlight / shadow");
     render_space();
   }
-  
-  
+
+
   void render_food(food_data food)
-  {    
+  {
     render_title("FOOD");
     render_content("storage", Lib.ValueOrNone(food.storage));
     render_content("consumed", Lib.HumanReadableRate(food.consumed));
@@ -782,12 +782,12 @@ public class Planner
     render_content("life expectancy", Lib.HumanReadableDuration(food.life_expectancy));
     render_space();
   }
-  
-  
+
+
   void render_oxygen(oxygen_data oxygen)
   {
     string recycled_tooltip = "efficiency: " + (oxygen.scrubber_efficiency * 100.0).ToString("F0") + "%";
-    
+
     render_title("OXYGEN");
     render_content("storage", Lib.ValueOrNone(oxygen.storage));
     render_content("consumed", Lib.HumanReadableRate(oxygen.consumed));
@@ -795,8 +795,8 @@ public class Planner
     render_content("life expectancy", Lib.HumanReadableDuration(oxygen.life_expectancy));
     render_space();
   }
-  
-  
+
+
   void render_qol(qol_data qol)
   {
     render_title("QUALITY OF LIFE");
@@ -806,8 +806,8 @@ public class Planner
     render_content("time to instability", Lib.HumanReadableDuration(qol.time_to_instability));
     render_space();
   }
-  
-  
+
+
   void render_radiation(radiation_data radiation, environment_data env, crew_data crew)
   {
     string magnetosphere_str = Radiation.HasMagnetosphere(env.body) ? Lib.HumanReadableRange(Radiation.MagnAltitude(env.body)) : "none";
@@ -822,7 +822,7 @@ public class Planner
       life_str += "</b> / <b>" + Lib.HumanReadableDuration(radiation.life_expectancy[2]);
       life_tooltip += " / belt";
     }
-    
+
     render_title("RADIATION");
     render_content("magnetosphere", magnetosphere_str, "protect from cosmic radiation");
     render_content("radiation belt", belt_str, "abnormal radiation zone" + belt_strength_str);
@@ -830,8 +830,8 @@ public class Planner
     render_content("life expectancy", crew.capacity > 0 ? life_str : "perpetual", crew.capacity > 0 ? life_tooltip : "");
     render_space();
   }
-  
-  
+
+
   void render_reliability(reliability_data reliability, crew_data crew)
   {
     render_title("RELIABILITY");
@@ -841,8 +841,8 @@ public class Planner
     render_content("engineer", crew.engineer ? "yes" : "no");
     render_space();
   }
-  
-  
+
+
   void render_signal(signal_data signal, environment_data env, crew_data crew)
   {
     // approximate min/max distance between home and target body
@@ -857,7 +857,7 @@ public class Planner
     else if (env.body.referenceBody == home)
     {
       home_dist_min = Sim.Periapsis(env.body);
-      home_dist_max = Sim.Apoapsis(env.body);      
+      home_dist_max = Sim.Apoapsis(env.body);
     }
     else
     {
@@ -868,7 +868,7 @@ public class Planner
       home_dist_min = Math.Min(Math.Abs(home_a - body_p), Math.Abs(home_p - body_a));
       home_dist_max = home_a + body_a;
     }
-    
+
     // calculate if antenna is out of range from target body
     string range_tooltip = "";
     if (signal.range > double.Epsilon)
@@ -888,8 +888,8 @@ public class Planner
     double cost = signal.range > double.Epsilon
       ? signal.transmission_cost_min + (signal.transmission_cost_max - signal.transmission_cost_min) * Math.Min(home_dist_max, signal.range) / signal.range
       : 0.0;
-    string cost_str = signal.range > double.Epsilon ? cost.ToString("F1") + " EC/Mbit" : "none";    
-    
+    string cost_str = signal.range > double.Epsilon ? cost.ToString("F1") + " EC/Mbit" : "none";
+
     // generate ecc table
     Func<double, double, double, string> deduce_color = (double range, double dist_min, double dist_max) =>
     {
@@ -908,29 +908,29 @@ public class Planner
       + "\n66%\t"  + deduce_color(signal_66, home_dist_min, home_dist_max) + Lib.HumanReadableRange(signal_66) + "</color>"
       + "\n100%\t" + deduce_color(signal_100,home_dist_min, home_dist_max) + Lib.HumanReadableRange(signal_100) + "</color>"
       : "";
-    
-    
+
+
     render_title("SIGNAL");
     render_content("range", Lib.HumanReadableRange(signal.range), range_tooltip);
     render_content("relay", signal.relay_range <= double.Epsilon ? "none" : signal.relay_range < signal.range ? Lib.HumanReadableRange(signal.relay_range) : "yes");
-    render_content("transmission", cost_str, "worst case data transmission cost\nfrom destination body");    
+    render_content("transmission", cost_str, "worst case data transmission cost\nfrom destination body");
     render_content("error correction", (signal.ecc * 100.0).ToString("F0") + "%", ecc_tooltip);
     render_space();
   }
-  
-  
+
+
   public float width()
   {
     return 300.0f;
   }
-  
-  
+
+
   public float height()
   {
     return 425.0f;
   }
-  
-  
+
+
   public void render()
   {
     // if there is something in the editor
@@ -939,15 +939,15 @@ public class Planner
       // store situations and altitude multipliers
       string[] situations = {"Landed", "Low Orbit", "Orbit", "High Orbit"};
       double[] altitude_mults = {0.0, 0.33, 1.0, 3.0};
-      
+
       // get body, situation and altitude multiplier
       CelestialBody body = FlightGlobals.Bodies[body_index];
       string situation = situations[situation_index];
       double altitude_mult = altitude_mults[situation_index];
-      
+
       // get parts recursively
       List<Part> parts = Lib.GetPartsRecursively(EditorLogic.RootPart);
-      
+
       // analyze
       environment_data env = analyze_environment(body, altitude_mult);
       crew_data crew = analyze_crew(parts);
@@ -958,14 +958,14 @@ public class Planner
       radiation_data radiation = analyze_radiation(parts, env, crew);
       ec_data ec = analyze_ec(parts, env, crew, food, oxygen, signal);
       reliability_data reliability = analyze_reliability(parts, ec, signal);
-      
+
       // render menu
       GUILayout.BeginHorizontal(row_style);
       if (GUILayout.Button(body.name, leftmenu_style)) { body_index = (body_index + 1) % FlightGlobals.Bodies.Count; if (body_index == 0) ++body_index; }
       if (GUILayout.Button("["+ (page + 1) + "/2]", midmenu_style)) { page = (page + 1) % 2; }
       if (GUILayout.Button(situation, rightmenu_style)) { situation_index = (situation_index + 1) % situations.Length; }
       GUILayout.EndHorizontal();
-      
+
       // page 1/2
       if (page == 0)
       {
@@ -978,7 +978,7 @@ public class Planner
       // page 2/2
       else
       {
-        // render        
+        // render
         render_radiation(radiation, env, crew);
         render_reliability(reliability, crew);
         render_signal(signal, env, crew);
@@ -998,5 +998,5 @@ public class Planner
   }
 }
 
-  
+
 } // KERBALISM

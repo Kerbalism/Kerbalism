@@ -10,49 +10,49 @@ using UnityEngine;
 
 
 namespace KERBALISM {
-  
-  
+
+
 public class EVA : PartModule
 {
   [KSPField(isPersistant = true)] public bool has_helmet = true;          // indicate if eva kerbal has an helmet (and oxygen)
   [KSPField(isPersistant = true)] public bool is_dead = false;            // indicate if eva kerbal is dead
-  
-  
-  public void FixedUpdate()  
+
+
+  public void FixedUpdate()
   {
     // get KerbalEVA module
     KerbalEVA kerbal = part.FindModuleImplementing<KerbalEVA>();
-    
+
     // show/hide helmet
     SetHelmet(kerbal, has_helmet);
-    
+
     // consume EC for the headlamp
     if (has_helmet && kerbal.lampOn) part.RequestResource("ElectricCharge", Settings.HeadlightCost * TimeWarp.fixedDeltaTime);
 
     // determine if it has EC left
-    bool ec_left = Lib.GetResourceAmount(part, "ElectricCharge") > double.Epsilon;  
-      
+    bool ec_left = Lib.GetResourceAmount(part, "ElectricCharge") > double.Epsilon;
+
     // force the headlamp lights on/off depending on ec amount left and if it has an helmet
     SetHeadlamp(kerbal, has_helmet && kerbal.lampOn && ec_left);
-          
+
     // synchronize helmet flares with headlamp state
     SetFlares(kerbal, has_helmet && kerbal.lampOn && ec_left);
-      
+
     // if dead
     if (is_dead)
     {
       // enforce freezed state
       SetFreezed(kerbal);
-    
+
       // remove plant flag action
       kerbal.flagItems = 0;
-            
+
       // remove experiment actions (game engine keeps readding them)
       RemoveExperiments(kerbal);
     }
   }
 
-  
+
   // return true if a vessel is a dead EVA kerbal
   public static bool IsDead(Vessel vessel)
   {
@@ -67,8 +67,8 @@ public class EVA : PartModule
     }
     return false;
   }
-  
-  
+
+
   // set the kerbal as dead
   public static void Kill(Vessel vessel)
   {
@@ -86,14 +86,14 @@ public class EVA : PartModule
     }
   }
 
-  
+
   // set headlamp on or off
   public static void SetHeadlamp(KerbalEVA kerbal, bool b)
   {
     kerbal.headLamp.GetComponent<Light>().intensity = b ? 1.0f : 0.0f;
   }
-  
-  
+
+
   // set helmet of a kerbal
   public static void SetHelmet(KerbalEVA kerbal, bool b)
   {
@@ -105,7 +105,7 @@ public class EVA : PartModule
       }
     }
   }
-  
+
   // set helmet flares of a kerbal
   public static void SetFlares(KerbalEVA kerbal, bool b)
   {
@@ -117,8 +117,8 @@ public class EVA : PartModule
       }
     }
   }
-  
-  
+
+
   // remove experiments from kerbal
   public static void RemoveExperiments(KerbalEVA kerbal)
   {
@@ -127,32 +127,32 @@ public class EVA : PartModule
       kerbal.part.RemoveModule(m);
     }
   }
-    
-  
+
+
   // set kerbal to the 'freezed' unescapable state
   public static void SetFreezed(KerbalEVA kerbal)
-  {    
+  {
     // do nothing if already freezed
     if (kerbal.fsm.currentStateName != "freezed")
-    {    
+    {
       // create freezed state
-      KFSMState freezed = new KFSMState("freezed");   
-      
+      KFSMState freezed = new KFSMState("freezed");
+
       // create freeze event
       KFSMEvent eva_freeze = new KFSMEvent("EVAfreeze");
       eva_freeze.GoToStateOnEvent = freezed;
       eva_freeze.updateMode = KFSMUpdateMode.MANUAL_TRIGGER;
       kerbal.fsm.AddEvent(eva_freeze, kerbal.fsm.CurrentState);
-      
+
       // trigger eva death event
       kerbal.fsm.RunEvent(eva_freeze);
     }
-    
+
     // stop animations
     kerbal.animation.Stop();
     kerbal.animation.animatePhysics = true;
   }
 }
-  
-  
+
+
 } // KERBALISM

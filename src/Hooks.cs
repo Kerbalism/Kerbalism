@@ -10,7 +10,7 @@
 using System;
 using System.Reflection;
 
-  
+
 public static class Kerbalism_Hooks
 {
   // return true if Kerbalism is installed
@@ -22,7 +22,7 @@ public static class Kerbalism_Hooks
     }
     return false;
   }
-  
+
   // enable/disable resource consumption for a specific kerbal, do nothing if Kerbalism isn't installed
   // - k_name: name of the kerbal
   // - disabled: true to disable resource consumption, false to re-enable it

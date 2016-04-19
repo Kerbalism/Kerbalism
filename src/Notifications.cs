@@ -10,26 +10,26 @@ using UnityEngine;
 
 
 namespace KERBALISM {
-   
-  
+
+
 [KSPAddon(KSPAddon.Startup.MainMenu, true)]
 public class Notifications : MonoBehaviour
-{  
+{
   // store a notification
   public class Entry
   {
     public Entry(string title, string msg) { this.title = title; this.msg = msg; }
-    
+
     public string title;
     public string msg;
   }
-  
+
   // time of last conditions check
   private float last_check = 0.0f;
-  
+
   // time interval between checks
   private const float check_interval = 30.0f;
-  
+
   // world of encouragements for the death reports
   private readonly static Entry[] death_report =
   {
@@ -38,7 +38,7 @@ public class Notifications : MonoBehaviour
     new Entry("He's gone, Jeb, HE IS GONE", "We knew space was hard. But sometime it feels like it is actually fighting against us."),
     new Entry("We are losing count", "The gravestones in the Space Memorial keeps popping up like skyscrapers in the 20s.")
   };
-  
+
   // tutorial notifications
   private readonly static Entry[] tutorials =
   {
@@ -48,7 +48,7 @@ public class Notifications : MonoBehaviour
             + "at the expense of extra Electric Charge consumption. Their efficiency depend on the technological level of your space agency. Take a look in the Tech Tree.\n\n"
             + "<b>Greenhouses</b>\n"
             + "Greenhouses can grow food on the surface of planets and in space, even far from the Sun. But their mass makes them impractical for short-term missions.\n"),
-    
+
     new Entry("Electric Charge", "As you have probably figured out already, Electric Charge is a precious resource in space.\n\n"
             + "<b>Climate Control</b>\n"
             + "We are in a constant battle against the hostile environment of space, where temperatures range from "
@@ -56,7 +56,7 @@ public class Notifications : MonoBehaviour
             + "to the external temperature. Use the thermometer to get some insight on it.\n\n"
             + "<b>Tracking panels</b>\n"
             + "Tracking panels are invaluable to guarantee a stable Electric Charge generation rate over long periods of time.\n"),
-    
+
     new Entry("Radiation", "Just when you through that space may not be that hard after all, turns out it is filled with deadly radiation.\n\n"
             + "<b>Magnetospheres</b>\n"
             + "Some celestial bodies have a magnetosphere that extend far into space, protecting anything inside it.\n\n"
@@ -68,10 +68,10 @@ public class Notifications : MonoBehaviour
             + "We didn't notice it before because our magnetosphere protect us from it.\n\n"
             + "<b>Space Weather</b>\n"
             + "Coronal mass ejections from the Sun will hit planetary systems from time to time, causing short but intense radiation to all vessels caught outside "
-            + "a magnetosphere and in direct line of sight with the Sun.\n\n"                        
+            + "a magnetosphere and in direct line of sight with the Sun.\n\n"
             + "<b>Shielding</b>\n"
             + "We have the means to protect us from radiation. Well, not exactly, but at least we can delay their effects by equipping our vessels with Shielding.\n"),
-    
+
     new Entry("Quality of Life", "Kerbals were susceptible to mental instability even on the surface of Kerbin, let alone in the deeps of space.\n\n"
             + "<b>Living Space</b>\n"
             + "Do not underestimate the consequences of living in extremely close quarters for extremely long times.\n"
@@ -86,7 +86,7 @@ public class Notifications : MonoBehaviour
             + "Resources and data may be lost, and some components can become the target of your Kerbals rage.\n\n"
             + "<b>Crew Rotations</b>\n"
             + "Ultimately, Kerbals will break after some time. Rotate the crew on your space stations and bases, from time to time.\n"),
-    
+
     new Entry("Signals", "Transmitting science data and controlling probes remotely require a link with the space center.\n\n"
             + "<b>Ranges and Transmission Costs</b>\n"
             + "Choose the right antenna for the job as these have wildly different ranges and transmission costs. Bigger doesn't always mean better.\n\n"
@@ -96,7 +96,7 @@ public class Notifications : MonoBehaviour
             + "The error-correcting code used in our communication protocol can be further developed by researching specific technologies, leading to improved ranges.\n\n"
             + "<b>Blackouts</b>\n"
             + "When a coronal mass ejections from the Sun hit a magnetosphere, the signal-to-noise ratio drop to zero. Communications will blackout until the solar storm is over.\n"),
-    
+
     new Entry("Malfunctions", "Components fail and usually they do it just when you need them. Their specs get reduced sensibly in that case. Plan for redundancy.\n\n"
             + "<b>Engineers</b>\n"
             + "Our Engineers are the only ones capable of repairing malfunctioned components. This mean they need to be out there, fixing things, and not sit "
@@ -104,7 +104,7 @@ public class Notifications : MonoBehaviour
             + "<b>Manufacturing Quality</b>\n"
             + "Some technologies increase the quality of your components, making them last longer in the extreme conditions of space. Look in the tech tree.\n")
   };
-  
+
   // tutorial conditions
   private static bool tutorial_condition(uint i)
   {
@@ -119,52 +119,52 @@ public class Notifications : MonoBehaviour
         {
           if (b != ProgressTracking.Instance.celestialBodyHome && b.flyBy.IsComplete) return true;
         }
-        return false;         
+        return false;
       case 4: return DB.NotificationData().first_signal_loss > 0;                                   // 'signals'
       case 5: return DB.NotificationData().first_malfunction > 0;                                   // 'malfunctions'
     }
     return false;
   }
-  
+
   // keep it alive
   Notifications() { DontDestroyOnLoad(this); }
-  
+
   // called after resources are loaded
   public void Start()
   {
     // register callback for kerbal death
     GameEvents.onCrewKilled.Add(RegisterDeathEvent);
   }
-  
+
   // called by the engine when a kerbal die
   public void RegisterDeathEvent(EventReport e)
   {
     ++DB.NotificationData().death_counter;
   }
-  
+
   // called manually to register a death (used for eva death)
   public static void RegisterDeath()
-  {    
+  {
     ++DB.NotificationData().death_counter;
   }
-  
+
   // called every frame
   public void OnGUI()
-  { 
+  {
     // avoid case when DB isn't ready for whatever reason
     if (!DB.Ready()) return;
-    
+
     // check only when at the space center
     if (HighLogic.LoadedScene != GameScenes.SPACECENTER) return;
-    
+
     // check once in a while
     float time = Time.realtimeSinceStartup;
     if (last_check + check_interval > time) return;
     last_check = time;
-    
+
     // get notification data
     notification_data nd = DB.NotificationData();
-    
+
     // if there are tutorials left to show
     if (nd.next_tutorial < tutorials.Length)
     {
@@ -174,29 +174,29 @@ public class Notifications : MonoBehaviour
         // show notification
         Entry e = tutorials[nd.next_tutorial];
         Notification(e.title, e.msg, "INFO");
-        
+
         // move to next tutorial
         ++nd.next_tutorial;
       }
     }
-    
+
     // if there is one or more new deaths
     if (nd.death_counter > nd.last_death_counter)
     {
       // show notification
       Entry e = death_report[nd.next_death_report];
       Notification(e.title, e.msg, "ALERT");
-      
+
       // move to next tutorial, cycle throwgh all of them repetatedly
       // note: done this way because modulo didn't work...
       ++nd.next_death_report;
       if (nd.next_death_report >= death_report.Length) nd.next_death_report -= (uint)death_report.Length;
     }
-    
+
     // remember number of death kerbals
     nd.last_death_counter = nd.death_counter;
   }
-  
+
   // show a generic notification
   public static void Notification(string title, string msg, string type)
   {
