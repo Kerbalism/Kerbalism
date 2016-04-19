@@ -28,19 +28,19 @@ public class Kerbalism : MonoBehaviour
     
     // set callbacks
     GameEvents.onCrewOnEva.Add(this.toEVA);
-	  GameEvents.onCrewBoardVessel.Add(this.fromEVA);
-	  GameEvents.onVesselRecovered.Add(this.vesselRecovered);
-	  GameEvents.onVesselTerminated.Add(this.vesselTerminated);
-	  GameEvents.onVesselWillDestroy.Add(this.vesselDestroyed);	  
-	  GameEvents.onPartCouple.Add(this.vesselDock);	  
-	  GameEvents.OnTechnologyResearched.Add(this.techResearched);
-		  
-	  // add module to EVA vessel part prefab
-	  // note: done here because non-standard modules are not serialized for eva kerbals
-	  // note: try..catch travesty required to avoid spurious exception, that seem to have no negative effects
+    GameEvents.onCrewBoardVessel.Add(this.fromEVA);
+    GameEvents.onVesselRecovered.Add(this.vesselRecovered);
+    GameEvents.onVesselTerminated.Add(this.vesselTerminated);
+    GameEvents.onVesselWillDestroy.Add(this.vesselDestroyed);   
+    GameEvents.onPartCouple.Add(this.vesselDock);   
+    GameEvents.OnTechnologyResearched.Add(this.techResearched);
+      
+    // add module to EVA vessel part prefab
+    // note: done here because non-standard modules are not serialized for eva kerbals
+    // note: try..catch travesty required to avoid spurious exception, that seem to have no negative effects
     // note: dummy test for null char required to avoid compiler warning  
     try { PartLoader.getPartInfoByName("kerbalEVA").partPrefab.AddModule("EVA"); } catch(Exception ex) { if (ex.Message.Contains("\0")) {} }
- 		try { PartLoader.getPartInfoByName("kerbalEVAfemale").partPrefab.AddModule("EVA"); } catch(Exception ex) { if (ex.Message.Contains("\0")) {} }
+    try { PartLoader.getPartInfoByName("kerbalEVAfemale").partPrefab.AddModule("EVA"); } catch(Exception ex) { if (ex.Message.Contains("\0")) {} }
   }
     
 
@@ -267,10 +267,10 @@ public class Kerbalism : MonoBehaviour
       
     // lock controls for probes without signal
     if (v.GetCrewCount() == 0 && !Signal.Link(v).linked)
-	  {
-	    InputLockManager.SetControlLock(ControlTypes.ALL_SHIP_CONTROLS, "no_signal_lock");
-	    FlightInputHandler.state.mainThrottle = 0.0f;
-	  }
+    {
+      InputLockManager.SetControlLock(ControlTypes.ALL_SHIP_CONTROLS, "no_signal_lock");
+      FlightInputHandler.state.mainThrottle = 0.0f;
+    }
   }
   
   
@@ -304,30 +304,30 @@ public class Kerbalism : MonoBehaviour
     if (EVA.IsDead(v)) return;
     
     // deal with resque missions
-  	foreach(ProtoCrewMember c in v.GetVesselCrew())
-	  { 
-  	  // get kerbal data
-  	  kerbal_data kd = DB.KerbalData(c.name);
+    foreach(ProtoCrewMember c in v.GetVesselCrew())
+    { 
+      // get kerbal data
+      kerbal_data kd = DB.KerbalData(c.name);
 
-  	  // flag the kerbal as not resque at prelaunch
-   	  if (v.situation == Vessel.Situations.PRELAUNCH) kd.resque = 0;
-  	    
-   	  // if the kerbal belong to a resque mission
-   	  if (kd.resque == 1)
-   	  {
-   	    // give the vessel some supply
-   	    Lib.RequestResource(v, v.isEVA ? "EVA Propellant" : "MonoPropellant", -Settings.ResqueMonoPropellant);
-   	    Lib.RequestResource(v, "ElectricCharge", -Settings.ResqueElectricCharge);	      
-   	    Lib.RequestResource(v, "Food", -Settings.ResqueFood);
-   	    Lib.RequestResource(v, "Oxygen", -Settings.ResqueOxygen);
-    	      
-   	    // flag the kerbal as non-resque
-   	    // note: enable life support mechanics for the kerbal
-   	    kd.resque = 0;
-    	      
+      // flag the kerbal as not resque at prelaunch
+      if (v.situation == Vessel.Situations.PRELAUNCH) kd.resque = 0;
+        
+      // if the kerbal belong to a resque mission
+      if (kd.resque == 1)
+      {
+        // give the vessel some supply
+        Lib.RequestResource(v, v.isEVA ? "EVA Propellant" : "MonoPropellant", -Settings.ResqueMonoPropellant);
+        Lib.RequestResource(v, "ElectricCharge", -Settings.ResqueElectricCharge);       
+        Lib.RequestResource(v, "Food", -Settings.ResqueFood);
+        Lib.RequestResource(v, "Oxygen", -Settings.ResqueOxygen);
+            
+        // flag the kerbal as non-resque
+        // note: enable life support mechanics for the kerbal
+        kd.resque = 0;
+            
        // show a message
        Message.Post("We found <b>" + c.name + "</b>", (c.gender == ProtoCrewMember.Gender.Male ? "He" : "She") + "'s still alive!");
-  	  }
+      }
     }
   }
   
@@ -335,99 +335,99 @@ public class Kerbalism : MonoBehaviour
   void resourceWarnings()
   {
     // for each vessel
-	  foreach(Vessel v in FlightGlobals.Vessels)
-	  {	    	    
-	    // skip invalid vessels
-	    if (!Lib.IsVessel(v)) continue;
-	    
+    foreach(Vessel v in FlightGlobals.Vessels)
+    {           
+      // skip invalid vessels
+      if (!Lib.IsVessel(v)) continue;
+      
       // skip resque missions
       if (Lib.IsResqueMission(v)) continue;
-	    
-	    // skip dead eva kerbal
-	    if (EVA.IsDead(v)) continue;
-	    
-	    // get vessel data
-	    vessel_data vd = DB.VesselData(v.id);
-	    
-  	  // get EC amount and capacity
-  	  double ec_amount = Lib.GetResourceAmount(v, "ElectricCharge");
-  	  double ec_capacity = Lib.GetResourceCapacity(v, "ElectricCharge");
-  	  double ec_perc = ec_capacity > 0.0 ? ec_amount / ec_capacity : 0.0;
-  	  
-  	  // if it has EC capacity
-  	  if (ec_capacity > 0.0)
-  	  {
-      	// check EC thresholds and show messages
-    	  if (ec_perc <= Settings.ResourceDangerThreshold && vd.msg_ec < 2)
-    	  {
-    	    if (vd.cfg_ec == 1) Message.Post(Severity.danger, VesselEvent.ec, v);
-    	    vd.msg_ec = 2;
-    	  }
-    	  else if (ec_perc <= Settings.ResourceWarningThreshold && vd.msg_ec < 1)
-    	  {
-    	    if (vd.cfg_ec == 1) Message.Post(Severity.warning, VesselEvent.ec, v);
-    	    vd.msg_ec = 1;
-    	  }
+      
+      // skip dead eva kerbal
+      if (EVA.IsDead(v)) continue;
+      
+      // get vessel data
+      vessel_data vd = DB.VesselData(v.id);
+      
+      // get EC amount and capacity
+      double ec_amount = Lib.GetResourceAmount(v, "ElectricCharge");
+      double ec_capacity = Lib.GetResourceCapacity(v, "ElectricCharge");
+      double ec_perc = ec_capacity > 0.0 ? ec_amount / ec_capacity : 0.0;
+      
+      // if it has EC capacity
+      if (ec_capacity > 0.0)
+      {
+        // check EC thresholds and show messages
+        if (ec_perc <= Settings.ResourceDangerThreshold && vd.msg_ec < 2)
+        {
+          if (vd.cfg_ec == 1) Message.Post(Severity.danger, VesselEvent.ec, v);
+          vd.msg_ec = 2;
+        }
+        else if (ec_perc <= Settings.ResourceWarningThreshold && vd.msg_ec < 1)
+        {
+          if (vd.cfg_ec == 1) Message.Post(Severity.warning, VesselEvent.ec, v);
+          vd.msg_ec = 1;
+        }
         else if (ec_perc > Settings.ResourceWarningThreshold && vd.msg_ec > 0)
         {
           if (vd.cfg_ec == 1) Message.Post(Severity.relax, VesselEvent.ec, v);
           vd.msg_ec = 0;
         }
-  	  }
+      }
       
       // get food amount and capacity
-  	  double food_amount = Lib.GetResourceAmount(v, "Food");
-  	  double food_capacity = Lib.GetResourceCapacity(v, "Food");
-  	  double food_perc = food_capacity > 0.0 ? food_amount / food_capacity : 0.0;
-  	  
-  	  // if it has food capacity
-  	  if (food_capacity > 0.0)
-  	  {  	  
-      	// check food thresholds and show messages
-      	// note: no warnings at prelaunch
-    	  if (food_perc <= Settings.ResourceDangerThreshold && vd.msg_food < 2)
-    	  {
-    	    if (vd.cfg_supply == 1 && v.situation != Vessel.Situations.PRELAUNCH) Message.Post(Severity.danger, VesselEvent.food, v);
-    	    vd.msg_food = 2;
-    	  }
-    	  else if (food_perc <= Settings.ResourceWarningThreshold && vd.msg_food < 1)
-    	  {
-    	    if (vd.cfg_supply == 1 && v.situation != Vessel.Situations.PRELAUNCH) Message.Post(Severity.warning, VesselEvent.food, v);
-    	    vd.msg_food = 1;
-    	  }
+      double food_amount = Lib.GetResourceAmount(v, "Food");
+      double food_capacity = Lib.GetResourceCapacity(v, "Food");
+      double food_perc = food_capacity > 0.0 ? food_amount / food_capacity : 0.0;
+      
+      // if it has food capacity
+      if (food_capacity > 0.0)
+      {     
+        // check food thresholds and show messages
+        // note: no warnings at prelaunch
+        if (food_perc <= Settings.ResourceDangerThreshold && vd.msg_food < 2)
+        {
+          if (vd.cfg_supply == 1 && v.situation != Vessel.Situations.PRELAUNCH) Message.Post(Severity.danger, VesselEvent.food, v);
+          vd.msg_food = 2;
+        }
+        else if (food_perc <= Settings.ResourceWarningThreshold && vd.msg_food < 1)
+        {
+          if (vd.cfg_supply == 1 && v.situation != Vessel.Situations.PRELAUNCH) Message.Post(Severity.warning, VesselEvent.food, v);
+          vd.msg_food = 1;
+        }
         else if (food_perc > Settings.ResourceWarningThreshold && vd.msg_food > 0)
         {
           if (vd.cfg_supply == 1 && v.situation != Vessel.Situations.PRELAUNCH) Message.Post(Severity.relax, VesselEvent.food, v);
           vd.msg_food = 0;
         }
-  	  }
+      }
       
       // get oxygen amount and capacity
-  	  double oxygen_amount = Lib.GetResourceAmount(v, "Oxygen");
-  	  double oxygen_capacity = Lib.GetResourceCapacity(v, "Oxygen");
-  	  double oxygen_perc = oxygen_capacity > 0.0 ? oxygen_amount / oxygen_capacity : 0.0;
-  	  
-  	  // if it has oxygen capacity
-  	  if (oxygen_capacity > 0.0)
-  	  {  	  
-      	// check oxygen thresholds and show messages
-    	  if (oxygen_perc <= Settings.ResourceDangerThreshold && vd.msg_oxygen < 2)
-    	  {
-    	    if (vd.cfg_supply == 1) Message.Post(Severity.danger, VesselEvent.oxygen, v);
-    	    vd.msg_oxygen = 2;
-    	  }
-    	  else if (oxygen_perc <= Settings.ResourceWarningThreshold && vd.msg_oxygen < 1)
-    	  {
-    	    if (vd.cfg_supply == 1) Message.Post(Severity.warning, VesselEvent.oxygen, v);
-    	    vd.msg_oxygen = 1;
-    	  }      
+      double oxygen_amount = Lib.GetResourceAmount(v, "Oxygen");
+      double oxygen_capacity = Lib.GetResourceCapacity(v, "Oxygen");
+      double oxygen_perc = oxygen_capacity > 0.0 ? oxygen_amount / oxygen_capacity : 0.0;
+      
+      // if it has oxygen capacity
+      if (oxygen_capacity > 0.0)
+      {     
+        // check oxygen thresholds and show messages
+        if (oxygen_perc <= Settings.ResourceDangerThreshold && vd.msg_oxygen < 2)
+        {
+          if (vd.cfg_supply == 1) Message.Post(Severity.danger, VesselEvent.oxygen, v);
+          vd.msg_oxygen = 2;
+        }
+        else if (oxygen_perc <= Settings.ResourceWarningThreshold && vd.msg_oxygen < 1)
+        {
+          if (vd.cfg_supply == 1) Message.Post(Severity.warning, VesselEvent.oxygen, v);
+          vd.msg_oxygen = 1;
+        }      
         else if (oxygen_perc > Settings.ResourceWarningThreshold && vd.msg_oxygen > 0)
         {
           if (vd.cfg_supply == 1) Message.Post(Severity.relax, VesselEvent.oxygen, v);
           vd.msg_oxygen = 0;
         }
-  	  }
-	  }
+      }
+    }
   }    
   
 
@@ -458,7 +458,7 @@ public class Kerbalism : MonoBehaviour
   
   
   public void FixedUpdate()
-  {	  
+  {   
     // do nothing if db isn't ready
     if (!DB.Ready()) return;
     
@@ -507,67 +507,67 @@ public class Kerbalism : MonoBehaviour
   
   
   // kill a kerbal
-	public static void Kill(Vessel v, ProtoCrewMember c)
-	{
-  	// forget kerbal data
-  	DB.ForgetKerbal(c.name);
-  	    
-  	// if on pod
-  	if (!v.isEVA)
-  	{
-  	  // if vessel is loaded
-  	  if (v.loaded)
-  	  {
-    	  // find part
-    	  Part part = null;
-    	  foreach(Part p in v.parts)
-    	  {
-    	    if (p.protoModuleCrew.Find(k => k.name == c.name) != null) { part = p; break; }
-    	  }
-    	  
-    	  // remove kerbal and kill it
-    	  part.RemoveCrewmember(c);
-     	  c.Die();	
-  	  }
-  	  // if vessel is not loaded
-  	  else
-  	  {
-  	    // find proto part
-  	    ProtoPartSnapshot part = null;
-  	    foreach(ProtoPartSnapshot p in v.protoVessel.protoPartSnapshots)
-  	    {
-  	      if (p.HasCrew(c.name)) { part = p; break; }
-  	    }
-  	    
-	      // remove from vessel
-	      part.RemoveCrew(c.name);
-	      
-	      // flag as dead
-	      c.rosterStatus = ProtoCrewMember.RosterStatus.Dead;
-	      
-	      // register background death manually for death report notifications
+  public static void Kill(Vessel v, ProtoCrewMember c)
+  {
+    // forget kerbal data
+    DB.ForgetKerbal(c.name);
+        
+    // if on pod
+    if (!v.isEVA)
+    {
+      // if vessel is loaded
+      if (v.loaded)
+      {
+        // find part
+        Part part = null;
+        foreach(Part p in v.parts)
+        {
+          if (p.protoModuleCrew.Find(k => k.name == c.name) != null) { part = p; break; }
+        }
+        
+        // remove kerbal and kill it
+        part.RemoveCrewmember(c);
+        c.Die();  
+      }
+      // if vessel is not loaded
+      else
+      {
+        // find proto part
+        ProtoPartSnapshot part = null;
+        foreach(ProtoPartSnapshot p in v.protoVessel.protoPartSnapshots)
+        {
+          if (p.HasCrew(c.name)) { part = p; break; }
+        }
+        
+        // remove from vessel
+        part.RemoveCrew(c.name);
+        
+        // flag as dead
+        c.rosterStatus = ProtoCrewMember.RosterStatus.Dead;
+        
+        // register background death manually for death report notifications
         Notifications.RegisterDeath();
-  	  }
-  	}
-  	// else it must be an eva death
-  	else
-  	{
+      }
+    }
+    // else it must be an eva death
+    else
+    {
       // flag as eva death
       EVA.Kill(v);
-         	    
+              
       // rename vessel
       v.vesselName = c.name + "'s body";
           
       // register eva death manually for death report notifications
       Notifications.RegisterDeath();
-  	}
-	    
+    }
+      
     // remove reputation
     if (HighLogic.CurrentGame.Mode == Game.Modes.CAREER)
     {
       Reputation.Instance.AddReputation(-Settings.DeathReputationPenalty, TransactionReasons.Any);
     }
-	}
+  }
 }
   
   

@@ -27,24 +27,24 @@ public class EVA : PartModule
     SetHelmet(kerbal, has_helmet);
     
     // consume EC for the headlamp
- 	  if (has_helmet && kerbal.lampOn) part.RequestResource("ElectricCharge", Settings.HeadlightCost * TimeWarp.fixedDeltaTime);
+    if (has_helmet && kerbal.lampOn) part.RequestResource("ElectricCharge", Settings.HeadlightCost * TimeWarp.fixedDeltaTime);
 
     // determine if it has EC left
- 	  bool ec_left = Lib.GetResourceAmount(part, "ElectricCharge") > double.Epsilon; 	
- 	    
+    bool ec_left = Lib.GetResourceAmount(part, "ElectricCharge") > double.Epsilon;  
+      
     // force the headlamp lights on/off depending on ec amount left and if it has an helmet
     SetHeadlamp(kerbal, has_helmet && kerbal.lampOn && ec_left);
- 	        
+          
     // synchronize helmet flares with headlamp state
     SetFlares(kerbal, has_helmet && kerbal.lampOn && ec_left);
- 	    
+      
     // if dead
     if (is_dead)
     {
       // enforce freezed state
       SetFreezed(kerbal);
     
- 	    // remove plant flag action
+      // remove plant flag action
       kerbal.flagItems = 0;
             
       // remove experiment actions (game engine keeps readding them)
@@ -97,25 +97,25 @@ public class EVA : PartModule
   // set helmet of a kerbal
   public static void SetHelmet(KerbalEVA kerbal, bool b)
   {
-  	foreach (var comp in kerbal.GetComponentsInChildren<Renderer>())
-  	{
-  	  if (comp.name == "helmet" || comp.name == "visor" || comp.name == "flare1" || comp.name == "flare2")
-  	  {
-  		  comp.enabled = b;
-  	  }
-  	}
+    foreach (var comp in kerbal.GetComponentsInChildren<Renderer>())
+    {
+      if (comp.name == "helmet" || comp.name == "visor" || comp.name == "flare1" || comp.name == "flare2")
+      {
+        comp.enabled = b;
+      }
+    }
   }
   
   // set helmet flares of a kerbal
   public static void SetFlares(KerbalEVA kerbal, bool b)
   {
-  	foreach (var comp in kerbal.GetComponentsInChildren<Renderer>())
-  	{
-  	  if (comp.name == "flare1" || comp.name == "flare2")
-  	  {
-  		  comp.enabled = b;
-  	  }
-  	}
+    foreach (var comp in kerbal.GetComponentsInChildren<Renderer>())
+    {
+      if (comp.name == "flare1" || comp.name == "flare2")
+      {
+        comp.enabled = b;
+      }
+    }
   }
   
   
@@ -136,15 +136,15 @@ public class EVA : PartModule
     if (kerbal.fsm.currentStateName != "freezed")
     {    
       // create freezed state
-  		KFSMState freezed = new KFSMState("freezed");		
-  		
-  		// create freeze event
-  		KFSMEvent eva_freeze = new KFSMEvent("EVAfreeze");
-  		eva_freeze.GoToStateOnEvent = freezed;
-  		eva_freeze.updateMode = KFSMUpdateMode.MANUAL_TRIGGER;
-  		kerbal.fsm.AddEvent(eva_freeze, kerbal.fsm.CurrentState);
-  		
-  		// trigger eva death event
+      KFSMState freezed = new KFSMState("freezed");   
+      
+      // create freeze event
+      KFSMEvent eva_freeze = new KFSMEvent("EVAfreeze");
+      eva_freeze.GoToStateOnEvent = freezed;
+      eva_freeze.updateMode = KFSMUpdateMode.MANUAL_TRIGGER;
+      kerbal.fsm.AddEvent(eva_freeze, kerbal.fsm.CurrentState);
+      
+      // trigger eva death event
       kerbal.fsm.RunEvent(eva_freeze);
     }
     

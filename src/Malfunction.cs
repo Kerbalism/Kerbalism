@@ -14,7 +14,7 @@ namespace KERBALISM {
   
   
 public class Malfunction : PartModule
-{	  
+{   
   // cfg
   [KSPField(isPersistant = true)] public double min_lifetime;             // no-malfunctions guaranteed lifetime in seconds
   [KSPField(isPersistant = true)] public double max_lifetime;             // malfunctions guaranteed lifetime in seconds
@@ -413,5 +413,5 @@ public class Malfunction : PartModule
   }
 }
 
-	
+  
 } // KERBALISM

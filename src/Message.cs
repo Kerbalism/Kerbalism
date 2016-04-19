@@ -171,14 +171,14 @@ public class Message : MonoBehaviour
   // add a message related to vessel resources
   public static void Post(Severity severity, VesselEvent e, Vessel v)
   {
-	  bool is_eva = v.isEVA;
-	  bool is_probe = Lib.CrewCapacity(v) == 0;
-	  string text = "";
-	  string subtext = "";
-	  
+    bool is_eva = v.isEVA;
+    bool is_probe = Lib.CrewCapacity(v) == 0;
+    string text = "";
+    string subtext = "";
+    
     // vessel
-	  if (!v.isEVA)
-	  {	  
+    if (!v.isEVA)
+    {   
       switch(e) 
       {
         // electric charge
@@ -228,39 +228,39 @@ public class Message : MonoBehaviour
           }
           break;
       }
-	  }
-	  // eva
-	  else
-	  {
-	    switch(e)
-	    {
-	      // electric charge
-  	    case VesselEvent.ec:
-  	    
-  	      switch(severity)
-  	      {
-  	        case Severity.relax:      text = "$VESSEL recharged the battery"; break;  	          
-  	        case Severity.warning:    text = "$VESSEL is running out of power"; break;  	          
-  	        case Severity.danger:     text = "$VESSEL is out of power"; break;
-  	      }
-  	      break;
-  	      
-  	    // oxygen
-  	    case VesselEvent.oxygen:
-  	    
-  	      switch(severity)
-  	      {
-  	        case Severity.relax:      text = "$VESSEL oxygen tank has been refilled"; break;  	          
-  	        case Severity.warning:    text = "$VESSEL is running out of oxygen"; break;  	          
-  	        case Severity.danger:     text = "$VESSEL is out of oxygen"; break;
-  	      }
-  	      break;
-	    }
-	  }
-	  
+    }
+    // eva
+    else
+    {
+      switch(e)
+      {
+        // electric charge
+        case VesselEvent.ec:
+        
+          switch(severity)
+          {
+            case Severity.relax:      text = "$VESSEL recharged the battery"; break;              
+            case Severity.warning:    text = "$VESSEL is running out of power"; break;              
+            case Severity.danger:     text = "$VESSEL is out of power"; break;
+          }
+          break;
+          
+        // oxygen
+        case VesselEvent.oxygen:
+        
+          switch(severity)
+          {
+            case Severity.relax:      text = "$VESSEL oxygen tank has been refilled"; break;              
+            case Severity.warning:    text = "$VESSEL is running out of oxygen"; break;             
+            case Severity.danger:     text = "$VESSEL is out of oxygen"; break;
+          }
+          break;
+      }
+    }
+    
     text = text.Replace("$VESSEL", "<color=ffffff>" + v.vesselName + "</color>");
-	  
-	  Post(severity, text, subtext);
+    
+    Post(severity, text, subtext);
   }
   
   

@@ -143,8 +143,8 @@ public class Planner
     
     // left menu style
     leftmenu_style = new GUIStyle(HighLogic.Skin.label);
- 		leftmenu_style.richText = true;
- 		leftmenu_style.normal.textColor = new Color(0.75f, 0.75f, 0.75f, 1.0f);
+    leftmenu_style.richText = true;
+    leftmenu_style.normal.textColor = new Color(0.75f, 0.75f, 0.75f, 1.0f);
     leftmenu_style.fixedWidth = 120.0f;
     leftmenu_style.stretchHeight = true;
     leftmenu_style.fontSize = 10;
@@ -161,14 +161,14 @@ public class Planner
     rightmenu_style.alignment = TextAnchor.MiddleRight;
      
     // row style
- 		row_style = new GUIStyle();
- 		row_style.stretchWidth = true;
- 		row_style.fixedHeight = 16.0f;
+    row_style = new GUIStyle();
+    row_style.stretchWidth = true;
+    row_style.fixedHeight = 16.0f;
     
     // title style
     title_style = new GUIStyle(HighLogic.Skin.label);
     title_style.normal.background = Lib.GetTexture("black-background");
- 		title_style.normal.textColor = Color.white;
+    title_style.normal.textColor = Color.white;
     title_style.stretchWidth = true;
     title_style.stretchHeight = false;
     title_style.fixedHeight = 16.0f;
@@ -179,8 +179,8 @@ public class Planner
     
     // content style
     content_style = new GUIStyle(HighLogic.Skin.label);
- 		content_style.richText = true;
- 		content_style.normal.textColor = Color.white;
+    content_style.richText = true;
+    content_style.normal.textColor = Color.white;
     content_style.stretchWidth = true;
     content_style.stretchHeight = true;
     content_style.fontSize = 12;
@@ -189,7 +189,7 @@ public class Planner
     // quote style
     quote_style = new GUIStyle(HighLogic.Skin.label);
     quote_style.richText = true;
- 		quote_style.normal.textColor = Color.white;
+    quote_style.normal.textColor = Color.white;
     quote_style.stretchWidth = true;
     quote_style.stretchHeight = true;
     quote_style.fontSize = 11;
@@ -454,7 +454,7 @@ public class Planner
           double growth_bonus = 0.0;
           growth_bonus += Settings.GreenhouseSoilBonus * (env.landed ? 1.0 : 0.0);
           growth_bonus += Settings.GreenhouseWasteBonus * waste_perc;
-        	  
+            
           // calculate growth factor
           double growth_factor = (mm.growth_rate * (1.0 + growth_bonus)) * lighting;
             

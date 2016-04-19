@@ -75,97 +75,97 @@ public class Radiation : MonoBehaviour
   }
   
   
-	// implement radiation mechanics
-	public void FixedUpdate()
-	{ 
-	  // avoid case when DB isn't ready for whatever reason
-	  if (!DB.Ready()) return;
-	  
-	  // do nothing in the editors and the menus    
+  // implement radiation mechanics
+  public void FixedUpdate()
+  { 
+    // avoid case when DB isn't ready for whatever reason
+    if (!DB.Ready()) return;
+    
+    // do nothing in the editors and the menus    
     if (!Lib.SceneIsGame()) return;
-	  
-	  // do nothing if paused
-	  if (Lib.IsPaused()) return;
-	  
-	  // get time elapsed from last update
-  	double elapsed_s = TimeWarp.fixedDeltaTime;
-	  
-	  // for each vessel
-	  foreach(Vessel v in FlightGlobals.Vessels)
-	  {
+    
+    // do nothing if paused
+    if (Lib.IsPaused()) return;
+    
+    // get time elapsed from last update
+    double elapsed_s = TimeWarp.fixedDeltaTime;
+    
+    // for each vessel
+    foreach(Vessel v in FlightGlobals.Vessels)
+    {
       // skip invalid vessels
-  	  if (!Lib.IsVessel(v)) continue;  
-	  
-  	  // skip dead eva kerbals
-  	  if (EVA.IsDead(v)) continue;
-  	  
-  	  // get crew
-  	  List<ProtoCrewMember> crew = v.loaded ? v.GetVesselCrew() : v.protoVessel.GetVesselCrew();
-  	  
-  	  // get crew count
-  	  int crew_count = Lib.CrewCount(v);
-	  
-  	  // get vessel info from the cache
-  	  vessel_info info = Cache.VesselInfo(v);
-  	  
-  	  // get vessel data
-  	  vessel_data vd = DB.VesselData(v.id);
-  	    	  
-  	  
-  	  // belt warnings
-  	  // note: we only show it for manned vesssels, but the first time we also show it for probes
-  	  if (crew_count > 0 || DB.NotificationData().first_belt_crossing == 0)
-  	  {
-    	  if (InsideBelt(v) && vd.msg_belt < 1)
-    	  {
-  	      Message.Post("<b>" + v.vesselName + "</b> is crossing <i>" + v.mainBody.bodyName + " radiation belt</i>", "Exposed to extreme radiation");
-    	    vd.msg_belt = 1;
-    	    DB.NotificationData().first_belt_crossing = 1; //< record first belt crossing
-    	  }
-    	  else if (!InsideBelt(v) && vd.msg_belt > 0)
-    	  {
-    	    // no message after crossing the belt
-    	    vd.msg_belt = 0;
-    	  }
-  	  }
-  	    
-  	  
-  	  // for each crew
-  	  foreach(ProtoCrewMember c in crew)
-	    {   	    
-  	    // get kerbal data
-  	    kerbal_data kd = DB.KerbalData(c.name);
-  	    
-  	    // skip resque kerbals
-  	    if (kd.resque == 1) continue;
-	    
-  	    // skip disabled kerbals
-  	    if (kd.disabled == 1) continue;
-  	    
- 	      // accumulate radiation
- 	      kd.radiation += info.radiation * elapsed_s;
-  	    
-  	    // kill kerbal if necessary
-  	    if (kd.radiation >= Settings.RadiationFatalThreshold)
-  	    {
-  	      Message.Post(Severity.fatality, KerbalEvent.radiation, v, c);
-  	      Kerbalism.Kill(v, c);
-  	    }
-  	    // show warnings
-  	    else if (kd.radiation >= Settings.RadiationDangerThreshold && kd.msg_radiation < 2)
-  	    {
-  	      Message.Post(Severity.danger, KerbalEvent.radiation, v, c);
-  	      kd.msg_radiation = 2;
-  	    }
-  	    else if (kd.radiation >= Settings.RadiationWarningThreshold && kd.msg_radiation < 1)
-  	    {
-  	      Message.Post(Severity.danger, KerbalEvent.radiation, v, c);
-  	      kd.msg_radiation = 1;
-  	    }
-  	    // note: no recovery from radiations
-  	  }
-	  }
-	}
+      if (!Lib.IsVessel(v)) continue;  
+    
+      // skip dead eva kerbals
+      if (EVA.IsDead(v)) continue;
+      
+      // get crew
+      List<ProtoCrewMember> crew = v.loaded ? v.GetVesselCrew() : v.protoVessel.GetVesselCrew();
+      
+      // get crew count
+      int crew_count = Lib.CrewCount(v);
+    
+      // get vessel info from the cache
+      vessel_info info = Cache.VesselInfo(v);
+      
+      // get vessel data
+      vessel_data vd = DB.VesselData(v.id);
+            
+      
+      // belt warnings
+      // note: we only show it for manned vesssels, but the first time we also show it for probes
+      if (crew_count > 0 || DB.NotificationData().first_belt_crossing == 0)
+      {
+        if (InsideBelt(v) && vd.msg_belt < 1)
+        {
+          Message.Post("<b>" + v.vesselName + "</b> is crossing <i>" + v.mainBody.bodyName + " radiation belt</i>", "Exposed to extreme radiation");
+          vd.msg_belt = 1;
+          DB.NotificationData().first_belt_crossing = 1; //< record first belt crossing
+        }
+        else if (!InsideBelt(v) && vd.msg_belt > 0)
+        {
+          // no message after crossing the belt
+          vd.msg_belt = 0;
+        }
+      }
+        
+      
+      // for each crew
+      foreach(ProtoCrewMember c in crew)
+      {         
+        // get kerbal data
+        kerbal_data kd = DB.KerbalData(c.name);
+        
+        // skip resque kerbals
+        if (kd.resque == 1) continue;
+      
+        // skip disabled kerbals
+        if (kd.disabled == 1) continue;
+        
+        // accumulate radiation
+        kd.radiation += info.radiation * elapsed_s;
+        
+        // kill kerbal if necessary
+        if (kd.radiation >= Settings.RadiationFatalThreshold)
+        {
+          Message.Post(Severity.fatality, KerbalEvent.radiation, v, c);
+          Kerbalism.Kill(v, c);
+        }
+        // show warnings
+        else if (kd.radiation >= Settings.RadiationDangerThreshold && kd.msg_radiation < 2)
+        {
+          Message.Post(Severity.danger, KerbalEvent.radiation, v, c);
+          kd.msg_radiation = 2;
+        }
+        else if (kd.radiation >= Settings.RadiationWarningThreshold && kd.msg_radiation < 1)
+        {
+          Message.Post(Severity.danger, KerbalEvent.radiation, v, c);
+          kd.msg_radiation = 1;
+        }
+        // note: no recovery from radiations
+      }
+    }
+  }
   
   
   // return magnetism strength for a body

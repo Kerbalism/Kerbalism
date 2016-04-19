@@ -34,9 +34,9 @@ public class Notifications : MonoBehaviour
   private readonly static Entry[] death_report =
   {
     new Entry("In memoriam", "Every time we'll look at the star, we'll see him. His pale green face, his preposterous big eyes, his dumb smile that never failed to raise our own."),
-	  new Entry("The revenge of reality", "All our dreams have been met with the harsh reality of space travel. I wonder if, perhaps, we weren't meant to survive at all."),
+    new Entry("The revenge of reality", "All our dreams have been met with the harsh reality of space travel. I wonder if, perhaps, we weren't meant to survive at all."),
     new Entry("He's gone, Jeb, HE IS GONE", "We knew space was hard. But sometime it feels like it is actually fighting against us."),
-	  new Entry("We are losing count", "The gravestones in the Space Memorial keeps popping up like skyscrapers in the 20s.")
+    new Entry("We are losing count", "The gravestones in the Space Memorial keeps popping up like skyscrapers in the 20s.")
   };
   
   // tutorial notifications

@@ -62,15 +62,15 @@ public class Monitor
   // ctor
   public Monitor()
   {
- 		// style for vessel row
- 		row_style = new GUIStyle();
- 		row_style.stretchWidth = true;
- 		row_style.fixedHeight = 16.0f; //< required for icon vertical alignment
- 		
- 		// style for vessel name
+    // style for vessel row
+    row_style = new GUIStyle();
+    row_style.stretchWidth = true;
+    row_style.fixedHeight = 16.0f; //< required for icon vertical alignment
+    
+    // style for vessel name
     name_style = new GUIStyle(HighLogic.Skin.label);
- 		name_style.richText = true;
- 		name_style.normal.textColor = Color.white;
+    name_style.richText = true;
+    name_style.normal.textColor = Color.white;
     name_style.fixedWidth = 120.0f;
     name_style.stretchHeight = true;
     name_style.fontSize = 12;
@@ -78,8 +78,8 @@ public class Monitor
     
     // style for body name
     body_style = new GUIStyle(HighLogic.Skin.label);
- 		body_style.richText = true;
- 		body_style.normal.textColor = new Color(0.75f, 0.75f, 0.75f, 1.0f);
+    body_style.richText = true;
+    body_style.normal.textColor = new Color(0.75f, 0.75f, 0.75f, 1.0f);
     body_style.fixedWidth = 36.0f;
     body_style.stretchHeight = true;
     body_style.fontSize = 8;
@@ -343,12 +343,12 @@ public class Monitor
   uint render_vessel(Vessel v)
   { 
     // avoid case when DB isn't ready for whatever reason
-	  if (!DB.Ready()) return 0;
-	  
-	  // skip invalid vessels
-	  if (!Lib.IsVessel(v)) return 0;
-	  
-	  // skip resque missions
+    if (!DB.Ready()) return 0;
+    
+    // skip invalid vessels
+    if (!Lib.IsVessel(v)) return 0;
+    
+    // skip resque missions
     if (Lib.IsResqueMission(v)) return 0;
     
     // skip dead eva kerbals
@@ -469,10 +469,10 @@ public class Monitor
     uint count = 0;
     foreach(Vessel v in FlightGlobals.Vessels)
     {
-  	  // skip invalid vessels
-  	  if (!Lib.IsVessel(v)) continue;
-  	  
-  	  // skip resque missions
+      // skip invalid vessels
+      if (!Lib.IsVessel(v)) continue;
+      
+      // skip resque missions
       if (Lib.IsResqueMission(v)) continue;
       
       // skip dead eva kerbals

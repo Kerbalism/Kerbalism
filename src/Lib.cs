@@ -128,14 +128,14 @@ public static class Lib
   // return proto part from a vessel 
   public static ProtoPartSnapshot GetProtoPart(Vessel vessel, uint partFlightID)
   {
-		foreach(ProtoPartSnapshot pps in vessel.protoVessel.protoPartSnapshots)
-		{
+    foreach(ProtoPartSnapshot pps in vessel.protoVessel.protoPartSnapshots)
+    {
       if (pps.flightID == partFlightID)
-			{
-				return pps;
-			}
-		}
-		return null;
+      {
+        return pps;
+      }
+    }
+    return null;
   }
     
   // return proto module from a vessel
@@ -525,13 +525,13 @@ public static class Lib
     
     // when going to eva (and possibly other occasions), for a single update the vessel is not properly set
     // this can be detected by vessel.distanceToSun being 0 (an impossibility otherwise)
-	  // in this case, just wait a tick for the data being set by the game engine
-	  if (v.loaded && v.distanceToSun <= double.Epsilon) return false;
-	  
-	  // if the vessel is a debris, a flag or an asteroid, ignore it
-	  // note: the user can change vessel type, in that case he is actually disabling this mod for the vessel
-	  // the alternative is to scan the vessel for ModuleCommand, but that is slower, and resque vessels have no module command
-	  if (v.vesselType == VesselType.Debris || v.vesselType == VesselType.Flag || v.vesselType == VesselType.SpaceObject) return false;
+    // in this case, just wait a tick for the data being set by the game engine
+    if (v.loaded && v.distanceToSun <= double.Epsilon) return false;
+    
+    // if the vessel is a debris, a flag or an asteroid, ignore it
+    // note: the user can change vessel type, in that case he is actually disabling this mod for the vessel
+    // the alternative is to scan the vessel for ModuleCommand, but that is slower, and resque vessels have no module command
+    if (v.vesselType == VesselType.Debris || v.vesselType == VesselType.Flag || v.vesselType == VesselType.SpaceObject) return false;
 
     // the vessel is valid
     return true;

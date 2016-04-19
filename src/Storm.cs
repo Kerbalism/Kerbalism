@@ -18,14 +18,14 @@ public class Storm : MonoBehaviour
   Storm() { DontDestroyOnLoad(this); }
   
   // called every simulation tick
-	public void FixedUpdate()
-	{
-	  // do nothing if paused
-	  if (Lib.IsPaused()) return;
-	  
-	  // avoid case when DB isn't ready for whatever reason
-	  if (!DB.Ready()) return;
-	  
+  public void FixedUpdate()
+  {
+    // do nothing if paused
+    if (Lib.IsPaused()) return;
+    
+    // avoid case when DB isn't ready for whatever reason
+    if (!DB.Ready()) return;
+    
     // do nothing in the editors and the menus    
     if (!Lib.SceneIsGame()) return;
     
@@ -98,102 +98,102 @@ public class Storm : MonoBehaviour
         bd.msg_storm = 0;
       }
     }
-	}
-	
-	
-	// influence the frequency of solar storms
-	// - body: reference body of the planetary system
-	double storm_frequency(CelestialBody body)
-	{
-	  // note: we deal with the case of a planet mod setting homebody as a moon
-	  CelestialBody home = Lib.PlanetarySystem(FlightGlobals.GetHomeBody());
-	  return home.orbit.semiMajorAxis / body.orbit.semiMajorAxis;
-	}
-	
-	
-	// return time to impact from CME event, in seconds
-	// - body: reference body of the planetary system
-	double time_to_impact(CelestialBody body)
-	{
-	  return body.orbit.semiMajorAxis / Settings.StormEjectionSpeed;
-	}
-	
-	
-	// return true if body is relevant to the player
-	// - body: reference body of the planetary system
-	bool body_is_relevant(CelestialBody body)
-	{
-	  // special case: home system is always relevant
-	  // note: we deal with the case of a planet mod setting homebody as a moon
-	  if (body == Lib.PlanetarySystem(FlightGlobals.GetHomeBody())) return true;
-	  
-	  // for each vessel
-	  foreach(Vessel v in FlightGlobals.Vessels)
-	  {
-	    // if inside the system
-	    if (Lib.PlanetarySystem(v.mainBody) == body)
-	    {  	    
-  	    // skip invalid vessels
-  	    if (!Lib.IsVessel(v)) continue;
-  	    
+  }
+  
+  
+  // influence the frequency of solar storms
+  // - body: reference body of the planetary system
+  double storm_frequency(CelestialBody body)
+  {
+    // note: we deal with the case of a planet mod setting homebody as a moon
+    CelestialBody home = Lib.PlanetarySystem(FlightGlobals.GetHomeBody());
+    return home.orbit.semiMajorAxis / body.orbit.semiMajorAxis;
+  }
+  
+  
+  // return time to impact from CME event, in seconds
+  // - body: reference body of the planetary system
+  double time_to_impact(CelestialBody body)
+  {
+    return body.orbit.semiMajorAxis / Settings.StormEjectionSpeed;
+  }
+  
+  
+  // return true if body is relevant to the player
+  // - body: reference body of the planetary system
+  bool body_is_relevant(CelestialBody body)
+  {
+    // special case: home system is always relevant
+    // note: we deal with the case of a planet mod setting homebody as a moon
+    if (body == Lib.PlanetarySystem(FlightGlobals.GetHomeBody())) return true;
+    
+    // for each vessel
+    foreach(Vessel v in FlightGlobals.Vessels)
+    {
+      // if inside the system
+      if (Lib.PlanetarySystem(v.mainBody) == body)
+      {       
+        // skip invalid vessels
+        if (!Lib.IsVessel(v)) continue;
+        
         // skip resque missions
         if (Lib.IsResqueMission(v)) continue;
-  	    
-  	    // skip dead eva kerbal
-  	    if (EVA.IsDead(v)) continue;
-  	    
-  	    // body is relevant
-  	    return true;
-	    }
-	  }
-	  return false;
-	}
-	
-	
-	// return true if a storm is incoming
-	public static bool Incoming(CelestialBody body)
-	{
-	  if (body.flightGlobalsIndex == 0) return false;
-	  return DB.Ready() && DB.BodyData(Lib.PlanetarySystem(body).name).storm_state == 1;
-	}
-	
-	
-	// return true if a storm is in progress
-	public static bool InProgress(CelestialBody body)
-	{
-	  if (body.flightGlobalsIndex == 0) return false;
-	  return DB.Ready() && DB.BodyData(Lib.PlanetarySystem(body).name).storm_state == 2;
-	}
-	
-	
-	// return true if a storm just ended
-	// used to avoid sending 'signal is back' messages en-masse after the storm is over
-	// - delta_time: time between calls to this function
-	public static bool JustEnded(CelestialBody body, double delta_time)
-	{
-	  if (body.flightGlobalsIndex == 0) return false;
-	  return DB.Ready() && DB.BodyData(Lib.PlanetarySystem(body).name).storm_age < TimeWarp.deltaTime * 2.0;
-	}
-	
-	
-	// return time left until CME impact
-	public static double TimeBeforeCME(CelestialBody body)
-	{
-	  if (body.flightGlobalsIndex == 0) return 0.0;
-	  if (!DB.Ready()) return 0.0;
-	  body_data bd = DB.BodyData(Lib.PlanetarySystem(body).name);
-	  return Math.Max(0.0, bd.storm_time - bd.storm_age - Settings.StormDuration);
-	}
-	
-	
-	// return time left until CME is over
-	public static double TimeLeftCME(CelestialBody body)
-	{
+        
+        // skip dead eva kerbal
+        if (EVA.IsDead(v)) continue;
+        
+        // body is relevant
+        return true;
+      }
+    }
+    return false;
+  }
+  
+  
+  // return true if a storm is incoming
+  public static bool Incoming(CelestialBody body)
+  {
+    if (body.flightGlobalsIndex == 0) return false;
+    return DB.Ready() && DB.BodyData(Lib.PlanetarySystem(body).name).storm_state == 1;
+  }
+  
+  
+  // return true if a storm is in progress
+  public static bool InProgress(CelestialBody body)
+  {
+    if (body.flightGlobalsIndex == 0) return false;
+    return DB.Ready() && DB.BodyData(Lib.PlanetarySystem(body).name).storm_state == 2;
+  }
+  
+  
+  // return true if a storm just ended
+  // used to avoid sending 'signal is back' messages en-masse after the storm is over
+  // - delta_time: time between calls to this function
+  public static bool JustEnded(CelestialBody body, double delta_time)
+  {
+    if (body.flightGlobalsIndex == 0) return false;
+    return DB.Ready() && DB.BodyData(Lib.PlanetarySystem(body).name).storm_age < TimeWarp.deltaTime * 2.0;
+  }
+  
+  
+  // return time left until CME impact
+  public static double TimeBeforeCME(CelestialBody body)
+  {
     if (body.flightGlobalsIndex == 0) return 0.0;
-	  if (!DB.Ready()) return 0.0;
-	  body_data bd = DB.BodyData(Lib.PlanetarySystem(body).name);
-	  return Math.Max(0.0, bd.storm_time - bd.storm_age);
-	}
+    if (!DB.Ready()) return 0.0;
+    body_data bd = DB.BodyData(Lib.PlanetarySystem(body).name);
+    return Math.Max(0.0, bd.storm_time - bd.storm_age - Settings.StormDuration);
+  }
+  
+  
+  // return time left until CME is over
+  public static double TimeLeftCME(CelestialBody body)
+  {
+    if (body.flightGlobalsIndex == 0) return 0.0;
+    if (!DB.Ready()) return 0.0;
+    body_data bd = DB.BodyData(Lib.PlanetarySystem(body).name);
+    return Math.Max(0.0, bd.storm_time - bd.storm_age);
+  }
 }
 
 

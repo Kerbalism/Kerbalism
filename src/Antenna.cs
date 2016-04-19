@@ -14,7 +14,7 @@ namespace KERBALISM {
   
   
 public class Antenna : ModuleDataTransmitter, IScienceDataTransmitter
-{	  
+{   
   // cfg
   [KSPField(isPersistant = true)] public string scope;                   // descriptive scope of the antenna (orbit, home, near, far)
   //[KSPField(isPersistant = true)] public double range;                   // max theoretical range in meters
@@ -91,7 +91,7 @@ public class Antenna : ModuleDataTransmitter, IScienceDataTransmitter
   
 
   public void Update()
-  {	      
+  {       
     // get range
     double range = Signal.Range(scope, penalty, Signal.ECC());
     

@@ -14,17 +14,17 @@ namespace KERBALISM {
   
   
 public class Scrubber : PartModule
-{	  
+{   
   // .cfg
   // note: persistent because required in background processing
   [KSPField(isPersistant = true)] public double ec_rate;                    // EC consumption rate per-second  
   [KSPField(isPersistant = true)] public double co2_rate;                   // CO2 consumption rate per-second
   [KSPField(isPersistant = true)] public double efficiency = 0.0;           // CO2->Oxygen conversion rate
-	  
+    
   // persistence
   // note: also configurable per-part
   [KSPField(isPersistant = true)] public bool is_enabled = true;            // if the scrubber is enabled
-	  
+    
   // rmb status
   [KSPField(guiActive = true, guiName = "Scrubber")] public string Status;  // description of current scrubber state
   
@@ -89,32 +89,32 @@ public class Scrubber : PartModule
     // if for some reason efficiency wasn't set, default to 50%
     // note: for example, resque vessels never get to prelaunch
     if (efficiency <= double.Epsilon) efficiency = 0.5;
-	  
-	  // get time elapsed from last update
-	  double elapsed_s = TimeWarp.fixedDeltaTime;
-	  
-	  // if inside breathable atmosphere
-	  if (LifeSupport.BreathableAtmosphere(this.vessel))
-	  {
-	    // produce oxygen from the intake
-	    this.part.RequestResource("Oxygen", -Settings.IntakeOxygenRate * elapsed_s);
-	    
-	    // set status
-	    Status = "Intake";
-	  }
-	  // if outside breathable atmosphere and enabled
-	  else if (is_enabled)
-	  {
-	    // recycle CO2+EC into oxygen
-	    double co2_required = co2_rate * elapsed_s;
-	    double co2 = this.part.RequestResource("CO2", co2_required);
-	    double ec_required = ec_rate * elapsed_s * (co2 / co2_required);
+    
+    // get time elapsed from last update
+    double elapsed_s = TimeWarp.fixedDeltaTime;
+    
+    // if inside breathable atmosphere
+    if (LifeSupport.BreathableAtmosphere(this.vessel))
+    {
+      // produce oxygen from the intake
+      this.part.RequestResource("Oxygen", -Settings.IntakeOxygenRate * elapsed_s);
+      
+      // set status
+      Status = "Intake";
+    }
+    // if outside breathable atmosphere and enabled
+    else if (is_enabled)
+    {
+      // recycle CO2+EC into oxygen
+      double co2_required = co2_rate * elapsed_s;
+      double co2 = this.part.RequestResource("CO2", co2_required);
+      double ec_required = ec_rate * elapsed_s * (co2 / co2_required);
       double ec = this.part.RequestResource("ElectricCharge", ec_required);
       this.part.RequestResource("Oxygen", -co2 * efficiency);
       
       // set status
       Status = co2 <= double.Epsilon ? "No CO2" : ec <= double.Epsilon ? "No Power" : "Running";
-	  }
+    }
     // if outside breathable atmosphere and disabled
     else
     {
@@ -141,24 +141,24 @@ public class Scrubber : PartModule
     if (efficiency <= double.Epsilon) efficiency = 0.5;
     
     // get time elapsed from last update
-	  double elapsed_s = TimeWarp.fixedDeltaTime;
-	  
-	  // if inside breathable atmosphere
-	  if (LifeSupport.BreathableAtmosphere(vessel))
-	  {
-	    // produce oxygen from the intake
-	    Lib.RequestResource(vessel, "Oxygen", -Settings.IntakeOxygenRate * elapsed_s);
-	  }
-	  // if outside breathable atmosphere and enabled
-	  else if (is_enabled)
-	  {
-	    // recycle CO2+EC into oxygen
-	    double co2_required = co2_rate * elapsed_s;
-	    double co2 = Lib.RequestResource(vessel, "CO2", co2_required);
-	    double ec_required = ec_rate * elapsed_s * (co2 / co2_required);
+    double elapsed_s = TimeWarp.fixedDeltaTime;
+    
+    // if inside breathable atmosphere
+    if (LifeSupport.BreathableAtmosphere(vessel))
+    {
+      // produce oxygen from the intake
+      Lib.RequestResource(vessel, "Oxygen", -Settings.IntakeOxygenRate * elapsed_s);
+    }
+    // if outside breathable atmosphere and enabled
+    else if (is_enabled)
+    {
+      // recycle CO2+EC into oxygen
+      double co2_required = co2_rate * elapsed_s;
+      double co2 = Lib.RequestResource(vessel, "CO2", co2_required);
+      double ec_required = ec_rate * elapsed_s * (co2 / co2_required);
       double ec = Lib.RequestResource(vessel, "ElectricCharge", ec_required);
       Lib.RequestResource(vessel, "Oxygen", -co2 * efficiency);
-	  }
+    }
   }
   
   // deduce efficiency from technological level
@@ -198,5 +198,5 @@ public class Scrubber : PartModule
   }
 }
 
-	
+  
 } // KERBALISM

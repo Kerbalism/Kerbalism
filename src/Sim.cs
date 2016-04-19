@@ -164,26 +164,26 @@ public static class Sim
   public static double SolarLuminosity()
   {
     // return solar luminosity
-		// note: it is 0 before loading first vessel in a game session, we compute it in that case
-		if (PhysicsGlobals.SolarLuminosity <= double.Epsilon)
-		{
-		  double A = FlightGlobals.GetHomeBody().orbit.semiMajorAxis;
-  		return A * A * 12.566370614359172 * PhysicsGlobals.SolarLuminosityAtHome;
-		}
-		return PhysicsGlobals.SolarLuminosity;
+    // note: it is 0 before loading first vessel in a game session, we compute it in that case
+    if (PhysicsGlobals.SolarLuminosity <= double.Epsilon)
+    {
+      double A = FlightGlobals.GetHomeBody().orbit.semiMajorAxis;
+      return A * A * 12.566370614359172 * PhysicsGlobals.SolarLuminosityAtHome;
+    }
+    return PhysicsGlobals.SolarLuminosity;
   }
     
   
   // return energy flux from the sun
   // - distance from the sun surface
   public static double SolarFlux(double dist)
-  {	
+  { 
     // note: for consistency we always consider distances to bodies to be relative to the surface
     // however, flux, luminosity and irradiance consider distance to the sun center, and not surface    
     dist += Sun().Radius;
     
-	  // calculate solar flux
-	  return SolarLuminosity() / (12.566370614359172 * dist * dist);
+    // calculate solar flux
+    return SolarLuminosity() / (12.566370614359172 * dist * dist);
   }
   
   
@@ -275,19 +275,19 @@ public static class Sim
     altitude -= body.Radius;
     altitude = Math.Abs(altitude); //< deal with underwater & fp precision issues
     
-	  double static_pressure = body.GetPressure(altitude);
-	  if (static_pressure > 0.0)
-	  {
-	    double density = body.GetDensity(static_pressure, body.GetTemperature(altitude));
-	    
-	    // nonrefracting radially symmetrical atmosphere model [Schoenberg 1929]
-	    double Ra = body.Radius + altitude;
-	    double Ya = body.atmosphereDepth - altitude;
-	    double q = Ra * Math.Max(0.0, Vector3d.Dot(up, sun_dir));
-	    double path = Math.Sqrt(q * q + 2.0 * Ra * Ya + Ya * Ya) - q;
-	    return body.GetSolarPowerFactor(density) * Ya / path;
-	  }
-	  return 1.0;
+    double static_pressure = body.GetPressure(altitude);
+    if (static_pressure > 0.0)
+    {
+      double density = body.GetDensity(static_pressure, body.GetTemperature(altitude));
+      
+      // nonrefracting radially symmetrical atmosphere model [Schoenberg 1929]
+      double Ra = body.Radius + altitude;
+      double Ya = body.atmosphereDepth - altitude;
+      double q = Ra * Math.Max(0.0, Vector3d.Dot(up, sun_dir));
+      double path = Math.Sqrt(q * q + 2.0 * Ra * Ya + Ya * Ya) - q;
+      return body.GetSolarPowerFactor(density) * Ya / path;
+    }
+    return 1.0;
   }
   
   
@@ -296,19 +296,19 @@ public static class Sim
   // - cos_a: cosine of angle between zenith and sun, in [0..1] range
   public static double AtmosphereFactor(CelestialBody body, double cos_a)
   {
-	  double static_pressure = body.GetPressure(0.0);
-	  if (static_pressure > 0.0)
-	  {
-	    double density = body.GetDensity(static_pressure, body.GetTemperature(0.0));	    
-	    
-	    // nonrefracting radially symmetrical atmosphere model [Schoenberg 1929]
-	    double Ra = body.Radius;
-	    double Ya = body.atmosphereDepth;
-	    double q = Ra * cos_a;
-	    double path = Math.Sqrt(q * q + 2.0 * Ra * Ya + Ya * Ya) - q;
-	    return body.GetSolarPowerFactor(density) * Ya / path;
-	  }
-	  return 1.0;
+    double static_pressure = body.GetPressure(0.0);
+    if (static_pressure > 0.0)
+    {
+      double density = body.GetDensity(static_pressure, body.GetTemperature(0.0));      
+      
+      // nonrefracting radially symmetrical atmosphere model [Schoenberg 1929]
+      double Ra = body.Radius;
+      double Ya = body.atmosphereDepth;
+      double q = Ra * cos_a;
+      double path = Math.Sqrt(q * q + 2.0 * Ra * Ya + Ya * Ya) - q;
+      return body.GetSolarPowerFactor(density) * Ya / path;
+    }
+    return 1.0;
   }
   
   

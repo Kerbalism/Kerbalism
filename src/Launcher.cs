@@ -49,24 +49,24 @@ public class Launcher : MonoBehaviour
   // called after resources are loaded
   public void Start()
   {
- 		// add toolbar-related callbacks
- 		GameEvents.onGUIApplicationLauncherReady.Add(this.init);
- 		
- 		// window style
- 		Color white = new Color(1.0f, 1.0f, 1.0f, 1.0f);
- 		window_style = new GUIStyle(HighLogic.Skin.window);
- 		window_style.normal.textColor = white;
- 		window_style.focused.textColor = white;
- 		window_style.richText = true;
- 		window_style.stretchWidth = true;
- 		window_style.stretchHeight = true;
- 		window_style.padding.top = 0;
- 		window_style.padding.bottom = 0;
- 		
+    // add toolbar-related callbacks
+    GameEvents.onGUIApplicationLauncherReady.Add(this.init);
+    
+    // window style
+    Color white = new Color(1.0f, 1.0f, 1.0f, 1.0f);
+    window_style = new GUIStyle(HighLogic.Skin.window);
+    window_style.normal.textColor = white;
+    window_style.focused.textColor = white;
+    window_style.richText = true;
+    window_style.stretchWidth = true;
+    window_style.stretchHeight = true;
+    window_style.padding.top = 0;
+    window_style.padding.bottom = 0;
+    
     // tooltip style
     tooltip_style = new GUIStyle(HighLogic.Skin.label);
     tooltip_style.normal.background = Lib.GetTexture("black-background");
- 		tooltip_style.normal.textColor = white;
+    tooltip_style.normal.textColor = white;
     tooltip_style.stretchWidth = true;
     tooltip_style.stretchHeight = true;
     tooltip_style.fontSize = 12;

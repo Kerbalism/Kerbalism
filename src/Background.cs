@@ -29,17 +29,17 @@ public class Background : MonoBehaviour
     // shortcuts
     Quaternion rot = part.rotation;
     Vector3d normal = panel.part.FindModelComponent<Transform>(panel.raycastTransformName).forward;
-	  
-	  // calculate cosine factor
+    
+    // calculate cosine factor
     // note: for gameplay reasons, we ignore tracking panel pivots
     double cosine_factor = panel.sunTracking ? 1.0 : Math.Max(Vector3d.Dot(sun_dir, (vessel.transform.rotation * rot * normal).normalized), 0.0);
     
     // calculate solar flux
-	  double solar_flux = Sim.SolarFlux(sun_dist);
+    double solar_flux = Sim.SolarFlux(sun_dist);
     
     // reduce solar flux inside atmosphere
     solar_flux *= atmo_factor;
-		
+    
     // finally, calculate output
     return panel.chargeRate * cosine_factor * (panel.useCurve ? panel.powerCurve.Evaluate((float)sun_dist) : solar_flux / Sim.SolarFluxAtHome());
   }  
@@ -47,9 +47,9 @@ public class Background : MonoBehaviour
   
   // called at every simulation step
   public void FixedUpdate()
-	{     
+  {     
     // do nothing if paused
-	  if (Lib.IsPaused()) return;
+    if (Lib.IsPaused()) return;
     
     // for each vessel
     foreach(Vessel vessel in FlightGlobals.Vessels)
@@ -252,21 +252,21 @@ public class Background : MonoBehaviour
               
               // detect amount of ore in the ground
               AbundanceRequest request = new AbundanceRequest
-					    {
-    					  Altitude = vessel.altitude,
-    						BodyId = vessel.mainBody.flightGlobalsIndex,
-    						CheckForLock = false,
-    						Latitude = vessel.latitude,
-    						Longitude = vessel.longitude,
-    						ResourceType = (HarvestTypes)harvester.HarvesterType,
-    					  ResourceName = harvester.ResourceName
-    					};
-					    double abundance = ResourceMap.Instance.GetAbundance(request);
-					    
-					    // if there is actually something (should be if active when unloaded)
-					    if (abundance > harvester.HarvestThreshold)
-					    {
-					      // calculate worst required resource percentual
+              {
+                Altitude = vessel.altitude,
+                BodyId = vessel.mainBody.flightGlobalsIndex,
+                CheckForLock = false,
+                Latitude = vessel.latitude,
+                Longitude = vessel.longitude,
+                ResourceType = (HarvestTypes)harvester.HarvesterType,
+                ResourceName = harvester.ResourceName
+              };
+              double abundance = ResourceMap.Instance.GetAbundance(request);
+              
+              // if there is actually something (should be if active when unloaded)
+              if (abundance > harvester.HarvestThreshold)
+              {
+                // calculate worst required resource percentual
                 double worst_input = 1.0;
                 foreach(var ir in harvester.inputList)
                 {
@@ -281,13 +281,13 @@ public class Background : MonoBehaviour
                   // consume the resource
                   Lib.RequestResource(vessel, ir.ResourceName, ir.Ratio * worst_input * TimeWarp.fixedDeltaTime);
                 }
-					      
-					      // determine resource produced
-					      double res = abundance * harvester.Efficiency * crew_bonus * worst_input * Malfunction.Penalty(part);
-					      
-					      // accumulate ore
-					      Lib.RequestResource(vessel, harvester.ResourceName, -res * TimeWarp.fixedDeltaTime);
-					    }
+                
+                // determine resource produced
+                double res = abundance * harvester.Efficiency * crew_bonus * worst_input * Malfunction.Penalty(part);
+                
+                // accumulate ore
+                Lib.RequestResource(vessel, harvester.ResourceName, -res * TimeWarp.fixedDeltaTime);
+              }
                 
               // undo stock behaviour by forcing last_update_time to now
               module.moduleValues.SetValue("lastUpdateTime", Planetarium.GetUniversalTime().ToString());
@@ -363,7 +363,6 @@ public class Background : MonoBehaviour
             }
           }
           // SCANSAT support
-          // note: currently scanning isn't disabled when vessel run out of ec
           else if (module.moduleName == "SCANsat")
           {
             // determine if scanning

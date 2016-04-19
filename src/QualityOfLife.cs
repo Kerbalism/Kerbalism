@@ -17,86 +17,86 @@ public class QualityOfLife : MonoBehaviour
   // keep it alive
   QualityOfLife() { DontDestroyOnLoad(this); }
   
-  		
-	// implement quality-of-life mechanics
-	public void FixedUpdate()
-	{ 
-	  // avoid case when DB isn't ready for whatever reason
-	  if (!DB.Ready()) return;
-	  
-	  // do nothing in the editors and the menus    
+      
+  // implement quality-of-life mechanics
+  public void FixedUpdate()
+  { 
+    // avoid case when DB isn't ready for whatever reason
+    if (!DB.Ready()) return;
+    
+    // do nothing in the editors and the menus    
     if (!Lib.SceneIsGame()) return;
-	  
-	  // do nothing if paused
-	  if (Lib.IsPaused()) return;
-	  
-	  // get time elapsed from last update
-  	double elapsed_s = TimeWarp.fixedDeltaTime;
-  	
-	  // for each vessel
-	  foreach(Vessel v in FlightGlobals.Vessels)
-	  {	
+    
+    // do nothing if paused
+    if (Lib.IsPaused()) return;
+    
+    // get time elapsed from last update
+    double elapsed_s = TimeWarp.fixedDeltaTime;
+    
+    // for each vessel
+    foreach(Vessel v in FlightGlobals.Vessels)
+    { 
       // skip invalid vessels
-  	  if (!Lib.IsVessel(v)) continue;  
-	  
-  	  // skip dead eva kerbals
-  	  if (EVA.IsDead(v)) continue;
-  	  
-  	  // get crew
-  	  List<ProtoCrewMember> crew = v.loaded ? v.GetVesselCrew() : v.protoVessel.GetVesselCrew();
-  	  
+      if (!Lib.IsVessel(v)) continue;  
+    
+      // skip dead eva kerbals
+      if (EVA.IsDead(v)) continue;
+      
+      // get crew
+      List<ProtoCrewMember> crew = v.loaded ? v.GetVesselCrew() : v.protoVessel.GetVesselCrew();
+      
       // calculate quality-of-life bonus
       double qol = Bonus(v);
       
-  	  // for each crew
-  	  foreach(ProtoCrewMember c in crew)
-	    {   	    
-  	    // get kerbal data
-  	    kerbal_data kd = DB.KerbalData(c.name);
-  	    
-  	    // skip resque kerbals
-  	    if (kd.resque == 1) continue;
-	    
-  	    // skip disabled kerbals
-  	    if (kd.disabled == 1) continue;
-  	    
-	      // accumulate stress
-	      kd.stressed += Settings.StressedDegradationRate * elapsed_s / (qol * Variance(c));
-  	    
-  	    // in case of breakdown
-  	    if (kd.stressed >= Settings.StressedEventThreshold)
-  	    {
-  	      // trigger breakdown event
-  	      Breakdown(v, c);
-  	      
-  	      // reset stress halfway between danger and event threshold
-  	      kd.stressed = (Settings.StressedDangerThreshold + Settings.StressedEventThreshold) * 0.5;
-  	    }
-  	    // show warning messages
-  	    else if (kd.stressed >= Settings.StressedDangerThreshold && kd.msg_stressed < 2)
-  	    {
-  	      Message.Post(Severity.danger, KerbalEvent.stress, v, c);
-  	      kd.msg_stressed = 2;
-  	    }
-  	    else if (kd.stressed >= Settings.StressedWarningThreshold && kd.msg_stressed < 1)
-  	    {
-  	      Message.Post(Severity.warning, KerbalEvent.stress, v, c);
-  	      kd.msg_stressed = 1;
-  	    }
-  	    // note: no recovery from stress 
-  	  }
-	  }
-	}
-	
-	
-	void Breakdown(Vessel v, ProtoCrewMember c)
-	{
-	  // constants
-	  const double food_penality = 0.2;        // proportion of food lost on 'depressed'
-	  const double oxygen_penality = 0.2;      // proportion of oxygen lost on 'wrong_valve'
-	  
-	  // get info	  
-	  double food_amount = Lib.GetResourceAmount(v, "Food");
+      // for each crew
+      foreach(ProtoCrewMember c in crew)
+      {         
+        // get kerbal data
+        kerbal_data kd = DB.KerbalData(c.name);
+        
+        // skip resque kerbals
+        if (kd.resque == 1) continue;
+      
+        // skip disabled kerbals
+        if (kd.disabled == 1) continue;
+        
+        // accumulate stress
+        kd.stressed += Settings.StressedDegradationRate * elapsed_s / (qol * Variance(c));
+        
+        // in case of breakdown
+        if (kd.stressed >= Settings.StressedEventThreshold)
+        {
+          // trigger breakdown event
+          Breakdown(v, c);
+          
+          // reset stress halfway between danger and event threshold
+          kd.stressed = (Settings.StressedDangerThreshold + Settings.StressedEventThreshold) * 0.5;
+        }
+        // show warning messages
+        else if (kd.stressed >= Settings.StressedDangerThreshold && kd.msg_stressed < 2)
+        {
+          Message.Post(Severity.danger, KerbalEvent.stress, v, c);
+          kd.msg_stressed = 2;
+        }
+        else if (kd.stressed >= Settings.StressedWarningThreshold && kd.msg_stressed < 1)
+        {
+          Message.Post(Severity.warning, KerbalEvent.stress, v, c);
+          kd.msg_stressed = 1;
+        }
+        // note: no recovery from stress 
+      }
+    }
+  }
+  
+  
+  void Breakdown(Vessel v, ProtoCrewMember c)
+  {
+    // constants
+    const double food_penality = 0.2;        // proportion of food lost on 'depressed'
+    const double oxygen_penality = 0.2;      // proportion of oxygen lost on 'wrong_valve'
+    
+    // get info   
+    double food_amount = Lib.GetResourceAmount(v, "Food");
     double oxygen_amount = Lib.GetResourceAmount(v, "Oxygen");
     
     // compile list of events with condition satisfied
@@ -107,27 +107,27 @@ public class QualityOfLife : MonoBehaviour
     if (Malfunction.CanMalfunction(v)) events.Add(KerbalBreakdown.rage);
     if (food_amount > double.Epsilon) events.Add(KerbalBreakdown.depressed);
     if (oxygen_amount > double.Epsilon) events.Add(KerbalBreakdown.wrong_valve);
-	  
+    
     // choose a breakdown event
     KerbalBreakdown breakdown = events[Lib.RandomInt(events.Count)];
-  	      
-  	// post message first so this one is shown before malfunction message
-  	Message.Post(Severity.breakdown, KerbalEvent.stress, v, c, breakdown);
-  	      
-  	// trigger the event
-  	switch(breakdown)
-  	{
-  	  case KerbalBreakdown.mumbling: break; // do nothing
-  	  case KerbalBreakdown.argument: break; // do nothing
-  	  case KerbalBreakdown.fat_finger: Lib.RemoveData(v); break;
-  	  case KerbalBreakdown.rage: Malfunction.CauseMalfunction(v); break;
-  	  case KerbalBreakdown.depressed: Lib.RequestResource(v, "Food", food_amount * food_penality); break;
-  	  case KerbalBreakdown.wrong_valve: Lib.RequestResource(v, "Oxygen", oxygen_amount * oxygen_penality); break;    
-  	}
-	}
-	
-	
-	// return quality-of-life bonus
+          
+    // post message first so this one is shown before malfunction message
+    Message.Post(Severity.breakdown, KerbalEvent.stress, v, c, breakdown);
+          
+    // trigger the event
+    switch(breakdown)
+    {
+      case KerbalBreakdown.mumbling: break; // do nothing
+      case KerbalBreakdown.argument: break; // do nothing
+      case KerbalBreakdown.fat_finger: Lib.RemoveData(v); break;
+      case KerbalBreakdown.rage: Malfunction.CauseMalfunction(v); break;
+      case KerbalBreakdown.depressed: Lib.RequestResource(v, "Food", food_amount * food_penality); break;
+      case KerbalBreakdown.wrong_valve: Lib.RequestResource(v, "Oxygen", oxygen_amount * oxygen_penality); break;    
+    }
+  }
+  
+  
+  // return quality-of-life bonus
   public static double Bonus(Vessel v)
   {
     // deduce crew count and capacity
@@ -197,7 +197,7 @@ public class QualityOfLife : MonoBehaviour
   public static double LivingSpace(uint crew_count, uint crew_capacity)
   {
     return crew_count == 0 ? 1.0 : ((double)crew_capacity / (double)crew_count) * Settings.QoL_LivingSpaceBonus;
-  }	
+  } 
   
   
   // traduce living space value to string

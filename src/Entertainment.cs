@@ -13,7 +13,7 @@ namespace KERBALISM {
   
   
 public class Entertainment : PartModule
-{	  
+{   
   // .cfg
   [KSPField(isPersistant = true)] public string description;
   [KSPField(isPersistant = true)] public double rate;
@@ -25,5 +25,5 @@ public class Entertainment : PartModule
   }
 }
 
-	
+  
 } // KERBALISM
