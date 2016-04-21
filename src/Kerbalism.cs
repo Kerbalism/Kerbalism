@@ -55,9 +55,10 @@ public class Kerbalism : MonoBehaviour
     if (!breathable) Lib.SetupResource(data.to, "Oxygen", 0.0, Settings.OxygenOnEVA);
 
 
+    // TODO re-enable when EVA Propellant bug is resolved
     // determine how much MonoPropellant to get
     // note: never more that the 'share' of this kerbal
-    double monoprop = Math.Min(Lib.GetResourceAmount(data.from.vessel, "MonoPropellant") / tot_crew, Settings.MonoPropellantOnEVA);
+    //double monoprop = Math.Min(Lib.GetResourceAmount(data.from.vessel, "MonoPropellant") / tot_crew, Settings.MonoPropellantOnEVA);
 
     // determine how much ElectricCharge to get
     // note: never more that the 'share' of this kerbal
@@ -65,11 +66,13 @@ public class Kerbalism : MonoBehaviour
     double ec = Math.Min(Lib.GetResourceAmount(data.from.vessel, "ElectricCharge") / (tot_crew * 2.0), Settings.ElectricChargeOnEVA);
 
 
-    // EVA vessels start with 5 units of eva fuel, remove them
-    data.to.RequestResource("EVA Propellant", 5.0);
+    // TODO re-enable when EVA Propellant bug is resolved
+    // [disabled] EVA vessels start with 5 units of eva fuel, remove them
+    //data.to.RequestResource("EVA Propellant", 5.0);
 
+    // TODO re-enable when EVA Propellant bug is resolved
     // transfer monoprop
-    data.to.RequestResource("EVA Propellant", -data.from.RequestResource("MonoPropellant", monoprop));
+    //data.to.RequestResource("EVA Propellant", -data.from.RequestResource("MonoPropellant", monoprop));
 
     // transfer ec
     data.to.RequestResource("ElectricCharge", -data.from.RequestResource("ElectricCharge", ec));
@@ -102,25 +105,28 @@ public class Kerbalism : MonoBehaviour
     data.to.FindModuleImplementing<EVA>().has_helmet = !breathable;
 
 
+    // TODO re-enable when EVA Propellant bug is resolved
     // show warning if there isn't monoprop in the eva suit
-    if (monoprop <= double.Epsilon && !Lib.Landed(data.from.vessel))
-    {
-      Message.Post(Severity.danger, "There isn't any <b>MonoPropellant</b> in the EVA suit", "Don't let the ladder go!");
-    }
+    //if (monoprop <= double.Epsilon && !Lib.Landed(data.from.vessel))
+    //{
+    //  Message.Post(Severity.danger, "There isn't any <b>MonoPropellant</b> in the EVA suit", "Don't let the ladder go!");
+    //}
   }
 
 
   void fromEVA(GameEvents.FromToAction<Part, Part> data)
   {
+    // TODO re-enable when EVA Propellant bug is resolved
     // get any leftover monoprop (eva fuel in reality) from EVA vessel
-    double monoprop = data.from.RequestResource("EVA Propellant", Settings.MonoPropellantOnEVA);
+    //double monoprop = data.from.RequestResource("EVA Propellant", Settings.MonoPropellantOnEVA);
 
     // get any leftover ec
     double ec = data.from.RequestResource("ElectricCharge", Settings.ElectricChargeOnEVA);
 
 
+    // TODO re-enable when EVA Propellant bug is resolved
     // add the leftover monoprop back to the pod
-    data.to.RequestResource("MonoPropellant", -monoprop);
+    //data.to.RequestResource("MonoPropellant", -monoprop);
 
     // add the leftover ec back to the pod
     data.to.RequestResource("ElectricCharge", -ec);
@@ -313,7 +319,7 @@ public class Kerbalism : MonoBehaviour
       if (kd.resque == 1)
       {
         // give the vessel some supply
-        Lib.RequestResource(v, v.isEVA ? "EVA Propellant" : "MonoPropellant", -Settings.ResqueMonoPropellant);
+        //Lib.RequestResource(v, v.isEVA ? "EVA Propellant" : "MonoPropellant", -Settings.ResqueMonoPropellant); TODO re-enable when EVA Propellant bug is resolved
         Lib.RequestResource(v, "ElectricCharge", -Settings.ResqueElectricCharge);
         Lib.RequestResource(v, "Food", -Settings.ResqueFood);
         Lib.RequestResource(v, "Oxygen", -Settings.ResqueOxygen);
