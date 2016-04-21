@@ -1,5 +1,10 @@
 #CHANGELOG
 
+0.9.9.2
+  - added tags to parts
+  - reverted to stock monoprop behavior from/to EVA due to bug in stock game
+
+
 0.9.9.1
   - ported to KSP 1.1.0.1230
   - removed assumptions on technologies order
