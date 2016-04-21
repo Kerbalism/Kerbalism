@@ -31,6 +31,7 @@ public class Scrubber : PartModule
   // rmb status in editor
   [KSPField(guiActiveEditor = true, guiName = "Scrubber")] public string EditorStatus; // description of current scrubber state (in the editor)
 
+
   // rmb enable
   [KSPEvent(guiActive = true, guiName = "Enable Scrubber", active = false)]
   public void ActivateEvent()
@@ -39,6 +40,7 @@ public class Scrubber : PartModule
     Events["DeactivateEvent"].active = true;
     is_enabled = true;
   }
+
 
   // rmb disable
   [KSPEvent(guiActive = true, guiName = "Disable Scrubber", active = false)]
@@ -49,6 +51,7 @@ public class Scrubber : PartModule
     is_enabled = false;
   }
 
+
   // editor toggle
   [KSPEvent(guiActiveEditor = true, guiName = "Toggle Scrubber", active = true)]
   public void ToggleInEditorEvent()
@@ -56,6 +59,7 @@ public class Scrubber : PartModule
     is_enabled = !is_enabled;
     EditorStatus = is_enabled ? "Active" : "Disabled";
   }
+
 
   // pseudo-ctor
   public override void OnStart(StartState state)
@@ -68,6 +72,7 @@ public class Scrubber : PartModule
     EditorStatus = is_enabled ? "Active" : "Disabled";
   }
 
+
   // editor/r&d info
   public override string GetInfo()
   {
@@ -75,6 +80,7 @@ public class Scrubber : PartModule
          + "<color=#99FF00>Requires:</color>\n"
          + " - ElectricCharge: " + (ec_rate * 60.0 * 60.0) + "/hour";
   }
+
 
   // implement scrubber mechanics
   public void FixedUpdate()
@@ -126,6 +132,7 @@ public class Scrubber : PartModule
     Status += " (Efficiency: " + (efficiency * 100.0).ToString("F0") + "%)";
   }
 
+
   // implement scrubber mechanics for unloaded vessels
   public static void BackgroundUpdate(Vessel vessel, uint flight_id)
   {
@@ -161,15 +168,16 @@ public class Scrubber : PartModule
     }
   }
 
+
   // deduce efficiency from technological level
   public static double DeduceEfficiency()
   {
-    if (ResearchAndDevelopment.GetTechnologyState("experimentalScience") == RDTech.State.Available) return 0.9;
-    else if (ResearchAndDevelopment.GetTechnologyState("scienceTech") == RDTech.State.Available) return 0.8;
-    else if (ResearchAndDevelopment.GetTechnologyState("precisionEngineering") == RDTech.State.Available) return 0.7;
-    else if (ResearchAndDevelopment.GetTechnologyState("miniaturization") == RDTech.State.Available) return 0.6;
-    else return 0.5; // "start"
+    // note: this support the case when a mod reorder these techs in the tree
+    string[] techs = {"miniaturization", "precisionEngineering", "scienceTech", "experimentalScience"};
+    double[] value = {0.5, 0.6, 0.7, 0.8, 0.9};
+    return value[Lib.CountTechs(techs)];
   }
+
 
   // return read-only list of scrubbers in a vessel
   public static List<Scrubber> GetScrubbers(Vessel v)

@@ -55,7 +55,7 @@ public enum KerbalBreakdown
 public class Message : MonoBehaviour
 {
   // constants
-  const float offset = 200.0f;  // TODO [1.1] increase message offset to comply with bigger navball
+  const float offset = 266.0f;
 
   // represent an entry in the message list
   public class Entry
@@ -264,6 +264,7 @@ public class Message : MonoBehaviour
   }
 
 
+  // add a message related to a kerbal
   public static void Post(Severity severity, KerbalEvent e, Vessel v, ProtoCrewMember c, KerbalBreakdown breakdown = KerbalBreakdown.mumbling)
   {
     string pretext = (!v.isActiveVessel ? ("On " + (v.isEVA ? "EVA" : v.vesselName) + ", ") : "") + "<color=#ffffff>" + c.name + "</color> ";
@@ -360,7 +361,6 @@ public class Message : MonoBehaviour
 
     Post(severity, pretext + text, subtext);
   }
-
 }
 
 

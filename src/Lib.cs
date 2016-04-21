@@ -37,7 +37,8 @@ public static class Lib
   // return string limited to len, with ... at the end
   public static string Epsilon(string s, uint len)
   {
-    return s.Length <= len ? s : s.Substring(0, 17) + "...";
+    len = Math.Max(len, 3u);
+    return s.Length <= len ? s : s.Substring(0, (int)len - 3) + "...";
   }
 
   // return amount of a resource in a part
@@ -196,9 +197,9 @@ public static class Lib
     if (rate >= 0.01) return rate.ToString("F2") + "/m";
     rate *= 60.0; // per-hour
     if (rate >= 0.01) return rate.ToString("F2") + "/h";
-    rate *= Lib.HoursInDay();  // per-day
+    rate *= HoursInDay();  // per-day
     if (rate >= 0.01) return rate.ToString("F2") + "/d";
-    return (rate * 426.0).ToString("F2") + "/y";
+    return (rate * DaysInYear()).ToString("F2") + "/y";
   }
 
   // pretty-print a duration
@@ -281,6 +282,7 @@ public static class Lib
 
 
   // stop time warping
+  // TODO: test if in 1.1 is now safe to stop warp all at once
   public static void StopWarp()
   {
     // note: instant switching from 10^n speed to 1 speed changes orbit!!!
@@ -340,8 +342,10 @@ public static class Lib
     }
   }
 
+
   // store the random number generator
   static System.Random rng = new System.Random((int)DateTime.Now.Ticks);
+
 
   // return random integer
   public static int RandomInt(int max_value)
@@ -603,6 +607,54 @@ public static class Lib
 
     //return the hash
     return h;
+  }
+
+
+  // return number of techs researched among the list specified
+  public static int CountTechs(string[] techs)
+  {
+    int n = 0;
+    foreach(string tech in techs) n += ResearchAndDevelopment.GetTechnologyState(tech) == RDTech.State.Available ? 1 : 0;
+    return n;
+  }
+
+
+  // write a message to the log
+  public static void Log(string msg)
+  {
+    MonoBehaviour.print("[Kerbalism] " + msg);
+  }
+
+
+  // write the value of a variable to the log
+  public static void Debug<T>(string name, T value)
+  {
+    Log(name + ": " + value.ToString());
+  }
+
+
+  // render a textfield with placeholder
+  // - id: an unique name for the textfield
+  // - text: the previous textfield content
+  // - placeholder: the text to show if the content is empty
+  // - style: GUIStyle to use for the textfield
+  public static string TextFieldPlaceholder(string id, string text, string placeholder, GUIStyle style)
+  {
+    GUI.SetNextControlName(id);
+    text = GUILayout.TextField(text, style);
+
+    if (Event.current.type == EventType.Repaint)
+    {
+      if (GUI.GetNameOfFocusedControl() == id)
+      {
+        if (text == placeholder) text = "";
+      }
+      else
+      {
+        if (text.Length == 0) text = placeholder;
+      }
+    }
+    return text;
   }
 }
 

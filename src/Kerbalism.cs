@@ -22,9 +22,8 @@ public class Kerbalism : MonoBehaviour
 
   public void Start()
   {
-    // log something
-    AssemblyName ass = Assembly.GetExecutingAssembly().GetName();
-    print(ass.Name + " " + ass.Version);
+    // log version
+    Lib.Log("version " + Assembly.GetExecutingAssembly().GetName().Version);
 
     // set callbacks
     GameEvents.onCrewOnEva.Add(this.toEVA);
@@ -36,7 +35,6 @@ public class Kerbalism : MonoBehaviour
     GameEvents.OnTechnologyResearched.Add(this.techResearched);
 
     // add module to EVA vessel part prefab
-    // note: done here because non-standard modules are not serialized for eva kerbals
     // note: try..catch travesty required to avoid spurious exception, that seem to have no negative effects
     // note: dummy test for null char required to avoid compiler warning
     try { PartLoader.getPartInfoByName("kerbalEVA").partPrefab.AddModule("EVA"); } catch(Exception ex) { if (ex.Message.Contains("\0")) {} }
@@ -143,8 +141,10 @@ public class Kerbalism : MonoBehaviour
   }
 
 
-  void vesselRecovered(ProtoVessel vessel)
+  void vesselRecovered(ProtoVessel vessel, bool b)
   {
+    // note: this is called multiple times when a vessel is recovered, but its safe
+
     // find out if this was an EVA kerbal and if it was dead
     bool is_eva_dead = false;
     foreach(ProtoPartSnapshot p in vessel.protoPartSnapshots)
@@ -186,8 +186,6 @@ public class Kerbalism : MonoBehaviour
 
   void vesselDestroyed(Vessel vessel)
   {
-    // note: binding against OnVesselWillDestroy because VesselDestroyed is called when Scenario modules are not alive
-
     // forget vessel data
     DB.ForgetVessel(vessel.id);
 
@@ -253,7 +251,6 @@ public class Kerbalism : MonoBehaviour
     // remove control locks
     InputLockManager.RemoveControlLock("eva_dead_lock");
     InputLockManager.RemoveControlLock("no_signal_lock");
-    InputLockManager.RemoveControlLock("safemode_lock");
   }
 
 
@@ -325,8 +322,8 @@ public class Kerbalism : MonoBehaviour
         // note: enable life support mechanics for the kerbal
         kd.resque = 0;
 
-       // show a message
-       Message.Post("We found <b>" + c.name + "</b>", (c.gender == ProtoCrewMember.Gender.Male ? "He" : "She") + "'s still alive!");
+        // show a message
+        Message.Post("We found <b>" + c.name + "</b>", (c.gender == ProtoCrewMember.Gender.Male ? "He" : "She") + "'s still alive!");
       }
     }
   }
@@ -434,7 +431,7 @@ public class Kerbalism : MonoBehaviour
   void atmosphereDecay()
   {
     // [disabled] disable 'terminate' button in tracking station
-    // note: we could forbid the user from terminating debris, especially since we make them decay
+    // note: we could forbid the user from terminating debris, if we make them decay (in atmosphere and not)
     // however there are still cases when it is desiderable to terminate a vessel, so we leave it enabled
     //HighLogic.CurrentGame.Parameters.TrackingStation.CanAbortVessel = false;
 
@@ -459,14 +456,14 @@ public class Kerbalism : MonoBehaviour
 
   public void FixedUpdate()
   {
-    // do nothing if db isn't ready
+    // remove control locks in any case
+    clearLocks();
+
+    // do nothing else if db isn't ready
     if (!DB.Ready()) return;
 
-    // do nothing in the editors and the menus
+    // do nothing else in the editors and the menus
     if (!Lib.SceneIsGame()) return;
-
-    // remove control locks
-    clearLocks();
 
     // if there is an active vessel
     Vessel v = FlightGlobals.ActiveVessel;
@@ -568,6 +565,25 @@ public class Kerbalism : MonoBehaviour
       Reputation.Instance.AddReputation(-Settings.DeathReputationPenalty, TransactionReasons.Any);
     }
   }
+
+
+  // hook: DisableKerbal()
+  public static void hook_DisableKerbal(string k_name, bool disabled)
+  {
+    if (!DB.Ready()) return;
+    if (!DB.Kerbals().ContainsKey(k_name)) return;
+    DB.KerbalData(k_name).disabled = disabled ? 1u : 0;
+  }
+
+
+  // hook: InjectRadiation()
+  public static void hook_InjectRadiation(string k_name, double amount)
+  {
+    if (!DB.Ready()) return;
+    if (!DB.Kerbals().ContainsKey(k_name)) return;
+    kerbal_data kd = DB.KerbalData(k_name);
+    kd.radiation = Math.Max(kd.radiation + amount, 0.0);
+  }
 }
 
 
@@ -598,7 +614,7 @@ class something
     double k = Math.Min(Vector3d.Dot(a, look), Vector3d.Dot(b, look));
     if (k > 0.05) //< avoid glitches
     {
-      line = new VectorLine("whatthefuck", new Vector3[]{a, b}, MapView.OrbitLinesMaterial, 5.0f);
+      line = new VectorLine("l_i_n_e", new Vector3[]{a, b}, MapView.OrbitLinesMaterial, 5.0f);
       Vector.SetColor(line, Color.red);
       Vector.DrawLine(line);
     }
@@ -618,7 +634,7 @@ class something
     k = Math.Min(Vector3d.Dot(p0, look), Math.Min(Vector3d.Dot(p1, look), Vector3d.Dot(p2, look)));
     if (k > 0.05) //< avoid glitches
     {
-      spline = new VectorLine("wtf_spline", new Vector3[128], MapView.OrbitLinesMaterial, 5.0f);
+      spline = new VectorLine("s_p_l_i_n_e", new Vector3[128], MapView.OrbitLinesMaterial, 5.0f);
       Vector.SetColor(spline, Color.cyan);
       Vector.MakeSplineInLine(spline, new Vector3[]{p0,p1,p2});
       Vector.DrawLine(spline);

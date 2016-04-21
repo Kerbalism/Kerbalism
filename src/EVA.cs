@@ -149,8 +149,7 @@ public class EVA : PartModule
     }
 
     // stop animations
-    kerbal.animation.Stop();
-    kerbal.animation.animatePhysics = true;
+    kerbal.GetComponent<Animation>().Stop();
   }
 }
 

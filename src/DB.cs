@@ -44,6 +44,7 @@ public class vessel_data
   public uint   cfg_malfunction     = 1;            // enable/disable message: malfunctions
   public uint   cfg_signal          = 1;            // enable/disable message: link status
   public string notes               = "";           // vessel notes
+  public string group               = "NONE";       // vessel group
 }
 
 
@@ -74,19 +75,38 @@ public class notification_data
 [KSPScenario(ScenarioCreationOptions.AddToAllGames, new GameScenes[]{GameScenes.SPACECENTER, GameScenes.TRACKSTATION, GameScenes.FLIGHT})]
 public class DB : ScenarioModule
 {
+  // store data per-kerbal
   private Dictionary<string, kerbal_data> kerbals = new Dictionary<string, kerbal_data>();
+
+  // store data per-vessel
   private Dictionary<Guid, vessel_data> vessels = new Dictionary<Guid, vessel_data>();
+
+  // store data per-body
   private Dictionary<string, body_data> bodies = new Dictionary<string, body_data>();
+
+  // store data for the notifications system
   private notification_data notifications = new notification_data();
+
+  // current savegame version
+  private const string current_version = "0.9.9.1";
+
+  // allow global access
   private static DB instance = null;
+
 
   public DB()
   {
     instance = this;
   }
 
+
   public override void OnLoad(ConfigNode node)
   {
+    // get version of the savegame
+    // note: if there isn't a version this is either a new game, or the first public release (that didn't have versioning)
+    string version = node.HasValue("version") ? node.GetValue("version") : node.HasNode("kerbals") ? "0.9.9.0" : current_version;
+
+
     kerbals.Clear();
     if (node.HasNode("kerbals"))
     {
@@ -129,6 +149,7 @@ public class DB : ScenarioModule
         vd.cfg_malfunction = Convert.ToUInt32( vessel_node.GetValue("cfg_malfunction") );
         vd.cfg_signal      = Convert.ToUInt32( vessel_node.GetValue("cfg_signal") );
         vd.notes           = vessel_node.GetValue("notes").Replace("$NEWLINE", "\n");
+        vd.group           = string.CompareOrdinal(version, "0.9.9.0") > 0 ? vessel_node.GetValue("group") : "NONE";
         vessels.Add(new Guid(vessel_node.name), vd);
       }
     }
@@ -160,10 +181,18 @@ public class DB : ScenarioModule
       notifications.first_signal_loss   = Convert.ToUInt32( notifications_node.GetValue("first_signal_loss") );
       notifications.first_malfunction   = Convert.ToUInt32( notifications_node.GetValue("first_malfunction") );
     }
+
+
+    // if an old savegame was imported, log some debug info
+    if (version != current_version) Lib.Log("savegame converted from version " + version);
   }
+
 
   public override void OnSave(ConfigNode node)
   {
+    // save current version
+    node.AddValue("version", current_version);
+
     ConfigNode kerbals_node = node.AddNode("kerbals");
     foreach(var p in kerbals)
     {
@@ -200,6 +229,7 @@ public class DB : ScenarioModule
       vessel_node.AddValue("cfg_malfunction", vd.cfg_malfunction);
       vessel_node.AddValue("cfg_signal", vd.cfg_signal);
       vessel_node.AddValue("notes", vd.notes.Replace("\n", "$NEWLINE"));
+      vessel_node.AddValue("group", vd.group);
     }
 
     ConfigNode bodies_node = node.AddNode("bodies");
@@ -229,11 +259,13 @@ public class DB : ScenarioModule
     return instance != null;
   }
 
+
   public static kerbal_data KerbalData(string k_name)
   {
     if (!instance.kerbals.ContainsKey(k_name)) instance.kerbals.Add(k_name, new kerbal_data());
     return instance.kerbals[k_name];
   }
+
 
   public static vessel_data VesselData(Guid v_id)
   {
@@ -241,21 +273,25 @@ public class DB : ScenarioModule
     return instance.vessels[v_id];
   }
 
+
   public static body_data BodyData(string b_name)
   {
     if (!instance.bodies.ContainsKey(b_name)) instance.bodies.Add(b_name, new body_data());
     return instance.bodies[b_name];
   }
 
+
   public static notification_data NotificationData()
   {
     return instance.notifications;
   }
 
+
   public static void ForgetKerbal(string k_name)
   {
     instance.kerbals.Remove(k_name);
   }
+
 
   public static void ForgetVessel(Guid v_id)
   {
@@ -267,25 +303,22 @@ public class DB : ScenarioModule
     instance.bodies.Remove(b_name);
   }
 
+
   public static Dictionary<string, kerbal_data> Kerbals()
   {
     return instance.kerbals;
   }
+
 
   public static Dictionary<Guid, vessel_data> Vessels()
   {
     return instance.vessels;
   }
 
+
   public static Dictionary<string, body_data> Bodies()
   {
     return instance.bodies;
-  }
-
-  // for use by the hooks system
-  public static void DisableKerbal(string k_name, bool disabled)
-  {
-    KerbalData(k_name).disabled = disabled ? 1u : 0;
   }
 }
 

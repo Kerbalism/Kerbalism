@@ -17,7 +17,6 @@ public class Antenna : ModuleDataTransmitter, IScienceDataTransmitter
 {
   // cfg
   [KSPField(isPersistant = true)] public string scope;                   // descriptive scope of the antenna (orbit, home, near, far)
-  //[KSPField(isPersistant = true)] public double range;                   // max theoretical range in meters
   [KSPField(isPersistant = true)] public double relay_cost;              // ec consumption rate per-second for relaying data
   [KSPField(isPersistant = true)] public double min_transmission_cost;   // transmission cost per-packet at 0 range
   [KSPField(isPersistant = true)] public double max_transmission_cost;   // transmission cost per-packet at max range
@@ -44,6 +43,7 @@ public class Antenna : ModuleDataTransmitter, IScienceDataTransmitter
     relay = true;
   }
 
+
   // rmb disable relay
   [KSPEvent(guiActive = true, guiName = "Disable Relay", active = false)]
   public void DeactivateRelayEvent()
@@ -52,6 +52,7 @@ public class Antenna : ModuleDataTransmitter, IScienceDataTransmitter
     Events["DeactivateRelayEvent"].active = false;
     relay = false;
   }
+
 
   // editor toggle relay
   [KSPEvent(guiActiveEditor = true, guiName = "Toggle Relay", active = true)]

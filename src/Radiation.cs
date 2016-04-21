@@ -69,7 +69,7 @@ public class Radiation : MonoBehaviour
       // - if magnetopause is lower than 2 radii, there is no belt
       info.belt_altitude = info.dynamo > 0.1888 && info.magn_altitude > body.Radius * 2.0 ? body.Radius : 0.0;
 
-      // store magnetosphere info
+      // add magnetosphere info to the cache
       bodies.Add(body.flightGlobalsIndex, info);
     }
   }

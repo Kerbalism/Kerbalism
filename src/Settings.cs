@@ -65,7 +65,7 @@ public static class Settings
 
   // Resources thresholds
   public const double ResourceWarningThreshold    = 0.20;                                                           // 20%
-  public const double ResourceDangerThreshold     = double.Epsilon;                                                 // empty
+  public const double ResourceDangerThreshold     = 0.0001;                                                         // empty (this isn't double.Epsilon to fix some fp issues)
 
   // greenhouse
   public const double GreenhouseWasteBonus        = 0.2;                                                            // bonus applied to growth if waste is available
@@ -78,7 +78,7 @@ public static class Settings
   public const double ResqueFood                  = 999.0;                                                          // food to give to resque mission kerbals
   public const double ResqueOxygen                = 999.0;                                                          // oxygen to give to resque mission kerbals
 
-  // geomagnetic storms
+  // space weather
   public const double StormMinTime                = 648000.0;                                                       // safe time between storms (at home body), 1 month
   public const double StormMaxTime                = 2592000.0;                                                      // time at which a storm is guaranteed (at home body), 4 months
   public const double StormDuration               = 21600.0;                                                        // storm length, 1 kerbin-day
@@ -93,7 +93,7 @@ public static class Settings
   public const double RadiationWarningThreshold   = 15.0;                                                           // dose at which warning is displayed, in rad
   public const double RadiationDangerThreshold    = 22.5;                                                           // dose at which danger is displayed, in rad
   public const double RadiationFatalThreshold     = 30.0;                                                           // fatal dose, in rad
-  public const double ShieldingEfficiency         = 0.9;                                                            // max proportion of radiations blocked by shielding
+  public const double ShieldingEfficiency         = 0.95;                                                           // max proportion of radiations blocked by shielding
 
   // penalities
   public const float DeathReputationPenalty       = 50.0f;                                                          // penalty applied on deaths related to life support

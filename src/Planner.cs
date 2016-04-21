@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using ModuleWheels;
 using UnityEngine;
 
 
@@ -240,9 +241,10 @@ public class Planner
 
     // get number of kerbals assigned to the vessel in the editor
     // note: crew manifest is not reset after root part is deleted
-    if (CMAssignmentDialog.Instance != null && CMAssignmentDialog.Instance.GetManifest() != null)
+    var cad = KSP.UI.CrewAssignmentDialog.Instance;
+    if (cad != null && cad.GetManifest() != null)
     {
-      List<ProtoCrewMember> manifest = CMAssignmentDialog.Instance.GetManifest().GetAllCrew(false);
+      List<ProtoCrewMember> manifest = cad.GetManifest().GetAllCrew(false);
       crew.count = (uint)manifest.Count;
       crew.engineer = manifest.Find(k => k.trait == "Engineer") != null;
     }
@@ -308,14 +310,14 @@ public class Planner
           if (p.partInfo.name == "launchClamp1") continue;
 
           ModuleGenerator mm = (ModuleGenerator)m;
-          foreach(ModuleGenerator.GeneratorResource res in mm.inputList)
+          foreach(ModuleResource res in mm.inputList)
           {
             if (res.name == "ElectricCharge")
             {
               ec.consumed += res.rate;
             }
           }
-          foreach(ModuleGenerator.GeneratorResource res in mm.outputList)
+          foreach(ModuleResource res in mm.outputList)
           {
             if (res.name == "ElectricCharge")
             {
@@ -366,29 +368,39 @@ public class Planner
         else if (m.moduleName == "ModuleActiveRadiator")
         {
           ModuleActiveRadiator mm = (ModuleActiveRadiator)m;
-          foreach(var rr in mm.inputResources)
+          if (mm.IsCooling)
           {
-            if (rr.name == "ElectricCharge")
+            foreach(var rr in mm.inputResources)
             {
-              ec.consumed += rr.rate;
+              if (rr.name == "ElectricCharge")
+              {
+                ec.consumed += rr.rate;
+              }
             }
           }
         }
         // wheels
-        else if (m.moduleName == "ModuleWheel")
+        else if (m.moduleName == "ModuleWheelMotor")
         {
-          ModuleWheel mm = (ModuleWheel)m;
-          ec.consumed += mm.resourceConsumptionRate;
+          ModuleWheelMotor mm = (ModuleWheelMotor)m;
+          if (mm.motorEnabled && mm.inputResource.name == "ElectricCharge")
+          {
+            ec.consumed += mm.inputResource.rate;
+          }
+        }
+        else if (m.moduleName == "ModuleWheelMotorSteering")
+        {
+          ModuleWheelMotorSteering mm = (ModuleWheelMotorSteering)m;
+          if (mm.motorEnabled && mm.inputResource.name == "ElectricCharge")
+          {
+            ec.consumed += mm.inputResource.rate;
+          }
         }
         // SCANsat support
-        else if (m.moduleName == "SCANsat")
+        else if (m.moduleName == "SCANsat" || m.moduleName == "ModuleSCANresourceScanner")
         {
-          // only include the ec cost if the scanner is extended
-          if (m.Events["editorRetract"].active)
-          {
-            // get power consumption
-            ec.consumed += Lib.ReflectionValue<float>(m, "power");
-          }
+          // include it in ec consumption, if deployed
+          if (SCANsat.isDeployed(p, m)) ec.consumed += Lib.ReflectionValue<float>(m, "power");
         }
       }
     }
@@ -729,7 +741,6 @@ public class Planner
 
   void render_environment(environment_data env)
   {
-
     bool in_atmosphere = env.landed && env.body.atmosphere;
     string temperature_str = in_atmosphere
       ? Lib.HumanReadableTemp(env.atmo_temp)

@@ -20,12 +20,26 @@ public class Monitor
   // store vessel whose configs are being edited, if any
   Guid configured_id;
 
+  // group filter placeholder
+  const string filter_placeholder = "FILTER BY GROUP";
+
+  // store group filter, if any
+  string filter = "";
+
+  // determine if filter is shown
+  bool show_filter;
+
+  // used by scroll window mechanics
+  Vector2 scroll_pos;
+
   // styles
-  GUIStyle row_style;
-  GUIStyle name_style;
-  GUIStyle body_style;
-  GUIStyle icon_style;
-  GUIStyle config_style;
+  GUIStyle row_style;               // all monitor rows
+  GUIStyle name_style;              // vessel name
+  GUIStyle body_style;              // vessel body
+  GUIStyle icon_style;              // vessel icon
+  GUIStyle filter_style;            // vessel filter
+  GUIStyle config_style;            // config entry label
+  GUIStyle group_style;             // config group textfield
 
   // icons
   readonly Texture icon_battery_danger      = Lib.GetTexture("battery-red");
@@ -56,6 +70,7 @@ public class Monitor
   readonly Texture icon_radiation_nominal   = Lib.GetTexture("radiation-white");
   readonly Texture icon_empty               = Lib.GetTexture("empty");
   readonly Texture icon_notes               = Lib.GetTexture("notes");
+  readonly Texture icon_group               = Lib.GetTexture("search");
   readonly Texture[] icon_toggle            ={Lib.GetTexture("toggle-disabled"),
                                               Lib.GetTexture("toggle-enabled")};
 
@@ -89,6 +104,15 @@ public class Monitor
     icon_style = new GUIStyle();
     icon_style.alignment = TextAnchor.MiddleRight;
 
+    // filter style
+    filter_style = new GUIStyle(HighLogic.Skin.label);
+    filter_style.normal.textColor = new Color(0.66f, 0.66f, 0.66f, 1.0f);
+    filter_style.stretchWidth = true;
+    filter_style.fontSize = 12;
+    filter_style.alignment = TextAnchor.MiddleCenter;
+    filter_style.fixedHeight = 16.0f;
+    filter_style.border = new RectOffset(0, 0, 0, 0);
+
     // vessel config style
     config_style = new GUIStyle(HighLogic.Skin.label);
     config_style.normal.textColor = Color.white;
@@ -96,6 +120,12 @@ public class Monitor
     config_style.alignment = TextAnchor.MiddleLeft;
     config_style.imagePosition = ImagePosition.ImageLeft;
     config_style.fontSize = 9;
+
+    // group texfield style
+    group_style = new GUIStyle(config_style);
+    group_style.imagePosition = ImagePosition.TextOnly;
+    group_style.stretchWidth = true;
+    group_style.normal.textColor = Color.cyan;
   }
 
 
@@ -116,30 +146,66 @@ public class Monitor
   }
 
 
-  GUIContent indicator_supplies(Vessel v)
+  GUIContent indicator_supplies(Vessel v, List<Scrubber> scrubbers, List<Greenhouse> greenhouses)
   {
-    // note: on EVA, food is always ignored and oxygen is ignored if inside breathable atmosphere
-    // note: if there isn't food/oxygen capacity, show nominal (eg: probe, eva on breathable atmosphere)
-
+    // get food & oxygen info
     double food_amount = Lib.GetResourceAmount(v, "Food");
     double food_capacity = Lib.GetResourceCapacity(v, "Food");
-    double food_level = food_capacity > 0.0 ? food_amount / food_capacity : 0.0;
+    double food_level = food_capacity > 0.0 ? food_amount / food_capacity : 1.0;
     double oxygen_amount = Lib.GetResourceAmount(v, "Oxygen");
     double oxygen_capacity = Lib.GetResourceCapacity(v, "Oxygen");
-    double oxygen_level = oxygen_capacity > 0.0 ? oxygen_amount / oxygen_capacity : 0.0;
-    double level = v.isEVA ? (LifeSupport.BreathableAtmosphere(v) ? 1.0 : oxygen_level) : Math.Min(food_level, oxygen_level);
-    double capacity = food_capacity + oxygen_capacity;
+    double oxygen_level = oxygen_capacity > 0.0 ? oxygen_amount / oxygen_capacity : 1.0;
+    double level = Math.Min(food_level, oxygen_level);
 
+    // store the icon and tooltip
     GUIContent state = new GUIContent();
-    if (capacity > double.Epsilon)
-    {
-      if (level <= Settings.ResourceDangerThreshold) state.image = icon_supplies_danger;
-      else if (level <= Settings.ResourceWarningThreshold) state.image = icon_supplies_warning;
-      else state.image = icon_supplies_nominal;
-      state.tooltip = v.isEVA ? "" : "Food: " + (food_level * 100.0).ToString("F0") + "%, ";
-      state.tooltip += (v.isEVA && LifeSupport.BreathableAtmosphere(v)) ? "" : "Oxygen: " + (oxygen_level * 100.0).ToString("F0") + "%";
-    }
+
+    // choose an icon
+    if (level <= Settings.ResourceDangerThreshold) state.image = icon_supplies_danger;
+    else if (level <= Settings.ResourceWarningThreshold) state.image = icon_supplies_warning;
     else state.image = icon_supplies_nominal;
+
+    // if there is someone on board
+    List<string> tooltips = new List<string>();
+    int crew_count = Lib.CrewCount(v);
+    if (crew_count > 0)
+    {
+      // get oxygen recycled by scrubbers
+      double oxygen_recycled = 0.0;
+      double ec_left = Lib.GetResourceAmount(v, "ElectricCharge");
+      double co2_left = Lib.GetResourceAmount(v, "ElectricCharge");
+      foreach(Scrubber scrubber in scrubbers)
+      {
+        if (scrubber.is_enabled)
+        {
+          ec_left -= scrubber.ec_rate;
+          co2_left -= scrubber.co2_rate;
+          if (ec_left > -double.Epsilon && co2_left > -double.Epsilon) oxygen_recycled += scrubber.co2_rate * scrubber.efficiency;
+          else break;
+        }
+      }
+
+      // calculate time until depletion for food
+      double food_consumption = (double)crew_count * Settings.FoodPerMeal / Settings.MealFrequency;
+      if (food_capacity > double.Epsilon && food_consumption > double.Epsilon)
+      {
+        double food_depletion = food_amount / food_consumption;
+        tooltips.Add(food_amount / food_capacity > Settings.ResourceDangerThreshold
+          ? "Food: <b>" + (food_level * 100.0).ToString("F0") + "%, </b>deplete in <b>" + Lib.HumanReadableDuration(food_depletion) + "</b>"
+          : "Food: <b>depleted</b>");
+      }
+
+      // calculate time until depletion for oxygen
+      double oxygen_consumption = !LifeSupport.BreathableAtmosphere(v) ? (double)crew_count * Settings.OxygenPerSecond - oxygen_recycled : 0.0;
+      if (oxygen_capacity > double.Epsilon && oxygen_consumption > double.Epsilon)
+      {
+        double oxygen_depletion = oxygen_amount / oxygen_consumption;
+        tooltips.Add(oxygen_amount / oxygen_capacity > Settings.ResourceDangerThreshold
+          ? "Oxygen: <b>" + (oxygen_level * 100.0).ToString("F0") + "%, </b>deplete in <b>" + Lib.HumanReadableDuration(oxygen_depletion) + "</b>"
+          : "Oxygen: <b>depleted</b>");
+      }
+    }
+    state.tooltip = string.Join("\n", tooltips.ToArray());
     return state;
   }
 
@@ -217,10 +283,9 @@ public class Monitor
   }
 
 
-  void problem_scrubbers(Vessel v, ref List<Texture> icons, ref List<string> tooltips)
+  void problem_scrubbers(Vessel v, List<Scrubber> scrubbers, ref List<Texture> icons, ref List<string> tooltips)
   {
     bool no_ec_left = Lib.GetResourceAmount(v, "ElectricCharge") <= double.Epsilon;
-    List<Scrubber> scrubbers = Scrubber.GetScrubbers(v);
     bool scrubber_disabled = false;
     bool scrubber_nopower = false;
     foreach(Scrubber scrubber in scrubbers)
@@ -241,9 +306,8 @@ public class Monitor
   }
 
 
-  void problem_greenhouses(Vessel v, ref List<Texture> icons, ref List<string> tooltips)
+  void problem_greenhouses(Vessel v, List<Greenhouse> greenhouses, ref List<Texture> icons, ref List<string> tooltips)
   {
-    List<Greenhouse> greenhouses = Greenhouse.GetGreenhouses(v);
     bool greenhouse_slowgrowth = false;
     bool greenhouse_nogrowth = false;
     foreach(Greenhouse greenhouse in greenhouses)
@@ -289,7 +353,6 @@ public class Monitor
       // radiation
       if (kd.radiation > Settings.RadiationDangerThreshold) { health_severity = Math.Max(health_severity, 2); tooltips.Add(c.name + " exposed to extreme radiation"); }
       else if (kd.radiation > Settings.RadiationWarningThreshold) { health_severity = Math.Max(health_severity, 1); tooltips.Add(c.name + " exposed to intense radiation"); }
-
 
       // stress
       if (kd.stressed > Settings.StressedDangerThreshold) { stress_severity = Math.Max(stress_severity, 2); tooltips.Add(c.name + " mind is breaking"); }
@@ -360,6 +423,9 @@ public class Monitor
     // get vessel data from the db
     vessel_data vd = DB.VesselData(v.id);
 
+    // skip filtered vessels
+    if (filtered() && vd.group != filter) return 0;
+
     // get vessel crew
     List<ProtoCrewMember> crew = v.loaded ? v.GetVesselCrew() : v.protoVessel.GetVesselCrew();
 
@@ -368,6 +434,12 @@ public class Monitor
 
     // get body name
     string body_name = v.mainBody.name.ToUpper();
+
+    // get list of scrubbers
+    List<Scrubber> scrubbers = Scrubber.GetScrubbers(v);
+
+    // get list of greenhouses
+    List<Greenhouse> greenhouses = Greenhouse.GetGreenhouses(v);
 
     // store problems icons & tooltips
     List<Texture> problem_icons = new List<Texture>();
@@ -380,12 +452,9 @@ public class Monitor
     {
       problem_kerbals(crew, ref problem_icons, ref problem_tooltips);
       problem_radiation(vi, ref problem_icons, ref problem_tooltips);
-      problem_scrubbers(v, ref problem_icons, ref problem_tooltips);
+      problem_scrubbers(v, scrubbers, ref problem_icons, ref problem_tooltips);
     }
-    problem_greenhouses(v, ref problem_icons, ref problem_tooltips);
-
-
-
+    problem_greenhouses(v, greenhouses, ref problem_icons, ref problem_tooltips);
 
     // choose problem icon
     const UInt64 problem_icon_time = 3;
@@ -401,11 +470,11 @@ public class Monitor
 
     // render vessel name & icons
     GUILayout.BeginHorizontal(row_style);
-    GUILayout.Label(new GUIContent("<b>" + Lib.Epsilon(vessel_name, 24) + "</b>", vessel_name.Length > 24 ? vessel_name : ""), name_style);
+    GUILayout.Label(new GUIContent("<b>" + Lib.Epsilon(vessel_name, 20) + "</b>", vessel_name.Length > 20 ? vessel_name : ""), name_style);
     GUILayout.Label(new GUIContent(Lib.Epsilon(body_name, 8), body_name.Length > 8 ? body_name : ""), body_style);
     GUILayout.Label(new GUIContent(problem_icon, problem_tooltip), icon_style);
     GUILayout.Label(indicator_ec(v), icon_style);
-    GUILayout.Label(indicator_supplies(v), icon_style);
+    GUILayout.Label(indicator_supplies(v, scrubbers, greenhouses), icon_style);
     GUILayout.Label(indicator_reliability(v), icon_style);
     GUILayout.Label(indicator_signal(v), icon_style);
     GUILayout.EndHorizontal();
@@ -450,10 +519,30 @@ public class Monitor
     GUILayout.Label(new GUIContent(" SIGNAL MESSAGES", icon_toggle[vd.cfg_signal]), config_style);
     if (Lib.IsClicked()) vd.cfg_signal = (vd.cfg_signal == 0 ? 1u : 0);
     GUILayout.EndHorizontal();
+    if (!filtered())
+    {
+      GUILayout.BeginHorizontal(row_style);
+      GUILayout.Label(new GUIContent(" GROUP: ", icon_group), config_style, new[]{GUILayout.Width(48.0f)});
+      vd.group = Lib.TextFieldPlaceholder("Kerbalism_group", vd.group, "NONE", group_style).ToUpper();
+      GUILayout.EndHorizontal();
+    }
     GUILayout.BeginHorizontal(row_style);
     GUILayout.Label(new GUIContent(" NOTES", icon_notes), config_style);
     if (Lib.IsClicked()) Notepad.Toggle(v);
     GUILayout.EndHorizontal();
+  }
+
+
+  void render_filter()
+  {
+    // show the group filter
+    GUILayout.BeginHorizontal(row_style);
+    filter = Lib.TextFieldPlaceholder("Kerbalism_filter", filter, filter_placeholder, filter_style).ToUpper();
+    GUILayout.EndHorizontal();
+    GUILayout.Space(10.0f);
+
+    // if the filter is focused, forget config id
+    if (GUI.GetNameOfFocusedControl() == "Kerbalism_filter") configured_id = Guid.Empty;
   }
 
 
@@ -465,8 +554,11 @@ public class Monitor
 
   public float height()
   {
+    // note: this function is abused to determine if the filter must be shown
+
     // guess vessel count
     uint count = 0;
+    show_filter = false;
     foreach(Vessel v in FlightGlobals.Vessels)
     {
       // skip invalid vessels
@@ -478,12 +570,31 @@ public class Monitor
       // skip dead eva kerbals
       if (EVA.IsDead(v)) continue;
 
-      ++ count;
+      // avoid problems if the DB isn't ready
+      if (DB.Ready())
+      {
+        // get vessel data
+        vessel_data vd = DB.VesselData(v.id);
+
+        // determine if filter must be shown
+        show_filter |= vd.group.Length > 0 && vd.group != "NONE";
+
+        // if the panel is filtered, skip filtered vessels
+        if (filtered() && vd.group != filter) continue;
+      }
+
+      // the vessel will be rendered
+      ++count;
     }
-    count = Math.Max(1u, count); //< deal with no vessels case
+
+    // deal with no vessels case
+    count = Math.Max(1u, count);
 
     // calculate height
-    return Math.Min(10.0f + (float)count * (16.0f + 10.0f) + (configured_id == Guid.Empty ? 0.0f : 80.0f), Screen.height * 0.5f);
+    float vessels_height = 10.0f + (float)count * (16.0f + 10.0f);
+    float config_height = configured_id == Guid.Empty ? 0.0f : filtered() ? 80.0f : 96.0f;
+    float filter_height = show_filter ? 16.0f + 10.0f : 0.0f;
+    return Math.Min(vessels_height + config_height + filter_height, Screen.height * 0.5f);
   }
 
 
@@ -495,8 +606,11 @@ public class Monitor
     // forget edited vessel if it doesn't exist anymore
     if (FlightGlobals.Vessels.Find(k => k.id == configured_id) == null) configured_id = Guid.Empty;
 
-    // store vessels rendered
+    // store number of vessels rendered
     uint vessels_rendered = 0;
+
+    // start scrolling view
+    scroll_pos = GUILayout.BeginScrollView(scroll_pos, HighLogic.Skin.horizontalScrollbar, HighLogic.Skin.verticalScrollbar);
 
     // draw active vessel if any
     if (FlightGlobals.ActiveVessel != null)
@@ -521,6 +635,9 @@ public class Monitor
       configured_id = (last_clicked_id == configured_id ? Guid.Empty : last_clicked_id);
     }
 
+    // end scroll view
+    GUILayout.EndScrollView();
+
     // no-vessels case
     if (vessels_rendered == 0)
     {
@@ -529,6 +646,16 @@ public class Monitor
       GUILayout.EndHorizontal();
       GUILayout.Space(10.0f);
     }
+
+    // if at least one vessel is assigned to a group, render the filter
+    if (show_filter) render_filter();
+  }
+
+
+  // return true if the list of vessels is filtered
+  bool filtered()
+  {
+    return filter.Length > 0 && filter != filter_placeholder;
   }
 }
 

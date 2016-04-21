@@ -51,6 +51,9 @@ public class Background : MonoBehaviour
     // do nothing if paused
     if (Lib.IsPaused()) return;
 
+    // do nothing if DB isn't ready
+    if (!DB.Ready()) return;
+
     // for each vessel
     foreach(Vessel vessel in FlightGlobals.Vessels)
     {
@@ -362,8 +365,54 @@ public class Background : MonoBehaviour
               module.moduleValues.SetValue("lastUpdateTime", Planetarium.GetUniversalTime().ToString());
             }
           }
-          // SCANSAT support
-          else if (module.moduleName == "SCANsat")
+          // SCANSAT support (new version)
+          // TODO: re-enable and check this when DMagic fix that little bug, and remove the old one below
+          /*else if (module.moduleName == "SCANsat" || module.moduleName == "ModuleSCANresourceScanner")
+          {
+            // get ec consumption rate
+            PartModule scansat = part_prefab.Modules[module.moduleName];
+            double power = Lib.ReflectionValue<float>(scansat, "power");
+            double ec_required = power * TimeWarp.fixedDeltaTime;
+
+            // if it was scanning
+            if (SCANsat.wasScanning(module))
+            {
+              // if there is enough ec
+              double ec_amount = Lib.GetResourceAmount(vessel, "ElectricCharge");
+              double ec_capacity = Lib.GetResourceCapacity(vessel, "ElectricCharge");
+              if (ec_capacity > double.Epsilon && ec_amount / ec_capacity > 0.15) //< re-enable at 15% EC
+              {
+                // re-enable the scanner
+                SCANsat.resumeScanner(vessel, module, part_prefab);
+
+                // give the user some feedback
+                if (DB.VesselData(vessel.id).cfg_ec == 1)
+                  Message.Post(Severity.relax, "SCANsat> sensor on <b>" + vessel.vesselName + "</b> resumed operations", "we got enough ElectricCharge");
+              }
+            }
+
+            // if it is scanning
+            if (SCANsat.isScanning(module))
+            {
+              // consume ec
+              double ec_consumed = Lib.RequestResource(vessel, "ElectricCharge", ec_required);
+
+              // if there isn't enough ec
+              if (ec_consumed < ec_required * 0.99 && ec_required > double.Epsilon)
+              {
+                // unregister scanner, and remember it
+                SCANsat.stopScanner(vessel, module, part_prefab);
+
+                // give the user some feedback
+                if (DB.VesselData(vessel.id).cfg_ec == 1)
+                  Message.Post(Severity.warning, "SCANsat sensor was disabled on <b>" + vessel.vesselName + "</b>", "for lack of ElectricCharge");
+              }
+            }
+          }*/
+          // SCANSAT support (old version)
+          // note: this one doesn't support re-activation, is a bit slower and less clean
+          //       waiting for DMagic to fix a little bug
+          else if (module.moduleName == "SCANsat" || module.moduleName == "ModuleSCANresourceScanner")
           {
             // determine if scanning
             bool scanning = Convert.ToBoolean(module.moduleValues.GetValue("scanning"));
@@ -372,7 +421,7 @@ public class Background : MonoBehaviour
             if (scanning)
             {
               // get ec consumption
-              PartModule scansat = part_prefab.Modules["SCANsat"];
+              PartModule scansat = part_prefab.Modules[module.moduleName];
               double power = Lib.ReflectionValue<float>(scansat, "power");
 
               // consume ec
@@ -397,7 +446,8 @@ public class Background : MonoBehaviour
                 module.moduleValues.SetValue("scanning", false.ToString());
 
                 // give the user some feedback
-                Message.Post(Severity.warning, "SCANsat sensor was disabled on <b>" + vessel.vesselName + "</b>", "for lack of ElectricCharge");
+                if (DB.VesselData(vessel.id).cfg_ec == 1)
+                  Message.Post(Severity.warning, "SCANsat sensor was disabled on <b>" + vessel.vesselName + "</b>", "for lack of ElectricCharge");
               }
             }
           }

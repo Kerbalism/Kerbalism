@@ -6,7 +6,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-// TODO [1.1] using KSP.UI.Screens
+using KSP.UI.Screens;
 
 
 namespace KERBALISM {
@@ -24,18 +24,12 @@ public class Launcher : MonoBehaviour
   // applauncher button icons
   readonly Texture launcher_icon = Lib.GetTexture("applauncher");
 
-  // show window flag
-  bool show_window;
-
-  // used to avoid problems in some scene changes
+  // used to remember previous visibility state in some scene changes
   bool last_show_window;
 
   // styles
   GUIStyle window_style;
   GUIStyle tooltip_style;
-
-  // used by scroll window mechanics
-  Vector2 scroll_pos;
 
   // the vessel planner
   Planner planner = new Planner();
@@ -83,16 +77,7 @@ public class Launcher : MonoBehaviour
 
     // create the button
     // note: for some weird reasons, the callbacks can be called BEFORE this function return
-    launcher_btn = ApplicationLauncher.Instance.AddApplication
-    (
-      show, // toggle on
-      hide, // toggle off
-      null,
-      null,
-      null,
-      hide, // hide window on other scenes
-      launcher_icon
-    );
+    launcher_btn = ApplicationLauncher.Instance.AddApplication(null, null, null, null, null, null, launcher_icon);
     ui_initialized = true;
 
     // enable the launcher button for some scenes
@@ -105,7 +90,10 @@ public class Launcher : MonoBehaviour
       | ApplicationLauncher.AppScenes.SPH;
 
     // toggle off launcher button & hide window after scene changes
-    GameEvents.onGameSceneSwitchRequested.Add((GameEvents.FromToAction<GameScenes, GameScenes> _) => hide_and_toggle_off());
+    GameEvents.onGameSceneSwitchRequested.Add((GameEvents.FromToAction<GameScenes, GameScenes> _) => hide());
+
+    // hide on launch screen spawn to avoid window visible during vessel load
+    GameEvents.onGUILaunchScreenSpawn.Add((GameEvents.VesselSpawnInfo _) => hide());
 
     // hide and remember state on 'minor scenes' spawn
     GameEvents.onGUIAdministrationFacilitySpawn.Add(hide_and_remember);
@@ -115,14 +103,11 @@ public class Launcher : MonoBehaviour
     GameEvents.onHideUI.Add(hide_and_remember);
 
     // restore previous window state on 'minor scenes' despawn
-    GameEvents.onGUIAdministrationFacilityDespawn.Add(show_if_previous);
-    GameEvents.onGUIAstronautComplexDespawn.Add(show_if_previous);
-    GameEvents.onGUIMissionControlDespawn.Add(show_if_previous);
-    GameEvents.onGUIRnDComplexDespawn.Add(show_if_previous);
-    GameEvents.onShowUI.Add(show_if_previous);
-
-    // hide on launch screen spawn to avoid window visible during vessel load
-    GameEvents.onGUILaunchScreenSpawn.Add((GameEvents.VesselSpawnInfo _) => hide_and_toggle_off());
+    GameEvents.onGUIAdministrationFacilityDespawn.Add(show_again);
+    GameEvents.onGUIAstronautComplexDespawn.Add(show_again);
+    GameEvents.onGUIMissionControlDespawn.Add(show_again);
+    GameEvents.onGUIRnDComplexDespawn.Add(show_again);
+    GameEvents.onShowUI.Add(show_again);
   }
 
 
@@ -133,15 +118,13 @@ public class Launcher : MonoBehaviour
     if (!ui_initialized) return;
 
     // render the window
-    if (show_window || launcher_btn.toggleButton.IsHovering)
+    if (launcher_btn.toggleButton.Value || launcher_btn.IsHovering)
     {
-      // TODO [1.1] deal with vertical applauncher during flight scenes
-
       // hard-coded offsets
-      const float at_top_offset_x = 0.0f;
-      const float at_top_offset_y = 38.0f;
-      const float at_bottom_offset_x = 70.0f;
-      const float at_bottom_offset_y = 38.0f;
+      const float at_top_offset_x = 40.0f;
+      const float at_top_offset_y = 0.0f;
+      const float at_bottom_offset_x = 0.0f;
+      const float at_bottom_offset_y = 40.0f;
 
       // get screen size
       float screen_width = (float)Screen.width;
@@ -175,18 +158,12 @@ public class Launcher : MonoBehaviour
       // note: we don't use GUILayout.Window, because it is evil
       GUILayout.BeginArea(win_rect, window_style);
 
-      // start scrolling view
-      scroll_pos = GUILayout.BeginScrollView(scroll_pos, HighLogic.Skin.horizontalScrollbar, HighLogic.Skin.verticalScrollbar);
-
       // a bit of spacing between title and content
       GUILayout.Space(10.0f);
 
       // draw planner in the editors, monitor everywhere else
       if (!HighLogic.LoadedSceneIsEditor) monitor.render();
       else planner.render();
-
-      // end scroll view
-      GUILayout.EndScrollView();
 
       // end window area
       GUILayout.EndArea();
@@ -238,35 +215,25 @@ public class Launcher : MonoBehaviour
   }
 
 
-  // show the window
-  public void show()
-  {
-    show_window = true;
-  }
-
   // hide the window
   public void hide()
   {
-    show_window = false;
+    launcher_btn.toggleButton.Value = false;
   }
 
-  // hide the window and toggle button off
-  public void hide_and_toggle_off()
-  {
-    launcher_btn.SetFalse();
-  }
 
   // hide the window and remember last state
   public void hide_and_remember()
   {
-    last_show_window = show_window;
-    show_window = false;
+    last_show_window = launcher_btn.toggleButton.Value;
+    launcher_btn.toggleButton.Value = false;
   }
 
-  // show the window if previously shown at time of last call to hide_and_remember()
-  public void show_if_previous()
+
+  // show the window if was visible at time of last call to hide_and_remember()
+  public void show_again()
   {
-    show_window = last_show_window;
+    launcher_btn.toggleButton.Value = last_show_window;
   }
 }
 

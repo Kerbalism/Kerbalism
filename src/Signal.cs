@@ -220,7 +220,7 @@ public class Signal : MonoBehaviour
         // rationale: optimization, the indirect visibility it never used in this case
         if (direct_visibility_cache[v.id] > double.Epsilon && direct_visibility_cache[w.id] > double.Epsilon) continue;
 
-        // generate ordered merged guid
+        // generate merged guid
         Guid id = Lib.CombineGuid(v.id, w.id);
 
         // avoid raycasting the same pair twice
@@ -441,10 +441,10 @@ public class Signal : MonoBehaviour
   // get ecc level from tech
   static public double ECC()
   {
-    if (ResearchAndDevelopment.GetTechnologyState("experimentalElectrics") == RDTech.State.Available) return 1.0;
-    else if (ResearchAndDevelopment.GetTechnologyState("largeElectrics") == RDTech.State.Available) return 0.66;
-    else if (ResearchAndDevelopment.GetTechnologyState("advElectrics") == RDTech.State.Available) return 0.33;
-    else return 0.15; // "start"
+    // note: this support the case when a mod reorder these techs in the tree
+    string[] techs = {"advElectrics", "largeElectrics", "experimentalElectrics"};
+    double[] value = {0.15, 0.33, 0.66, 1.0};
+    return value[Lib.CountTechs(techs)];
   }
 
 

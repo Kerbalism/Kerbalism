@@ -265,7 +265,7 @@ public static class Sim
 
   // return proportion of flux not blocked by atmosphere
   // note: while intuitively you are thinking to use this to calculate temperature inside an atmosphere,
-  //       undertand that atmospheric climate is complex and the game is using float curves to approximate it
+  //       understand that atmospheric climate is complex and the game is using float curves to approximate it
   public static double AtmosphereFactor(CelestialBody body, Vector3d position, Vector3d sun_dir)
   {
     // get up vector & altitude

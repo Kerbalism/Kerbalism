@@ -21,7 +21,7 @@ public class vessel_info
   public double   cosmic_radiation;   // cosmic radiation if outside magnetosphere
   public double   belt_radiation;     // radiation from belt if inside one
   public double   storm_radiation;    // radiation from coronal mass ejection
-  public double   radiation;          // total radiation
+  public double   radiation;          // total radiation, after shielding
 }
 
 

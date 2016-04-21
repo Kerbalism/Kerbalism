@@ -272,11 +272,10 @@ public class Malfunction : PartModule
   // deduce quality from technological level
   public static double DeduceQuality()
   {
-    if (ResearchAndDevelopment.GetTechnologyState("metaMaterials") == RDTech.State.Available) return 8.0;
-    else if (ResearchAndDevelopment.GetTechnologyState("composites") == RDTech.State.Available) return 6.0;
-    else if (ResearchAndDevelopment.GetTechnologyState("specializedConstruction") == RDTech.State.Available) return 4.0;
-    else if (ResearchAndDevelopment.GetTechnologyState("advConstruction") == RDTech.State.Available) return 2.0;
-    else return 1.0; // "start"
+    // note: this support the case when a mod reorder these techs in the tree
+    string[] techs = {"advConstruction", "specializedConstruction", "composites", "metaMaterials"};
+    double[] value = {1.0, 2.0, 4.0, 6.0, 8.0};
+    return value[Lib.CountTechs(techs)];
   }
 
 
@@ -348,7 +347,7 @@ public class Malfunction : PartModule
   }
 
 
-  // return some kind of percentual value for quality
+  // return some kind of human readable description for quality
   public static string QualityToString(double quality)
   {
     if (quality <= 1.5) return "poor";

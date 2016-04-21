@@ -161,7 +161,7 @@ public class Notepad : MonoBehaviour
   // toggle the notepad
   public static void Toggle(Vessel v)
   {
-    // if vessel is different or hidden, show it
+    // if vessel is different, show it
     // if vessel is the same, hide it
     instance.vessel_id = (instance.vessel_id == v.id ? Guid.Empty : v.id);
   }

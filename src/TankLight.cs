@@ -1,6 +1,6 @@
 ﻿// ===================================================================================================================
 // TankLight module
-// play an animation when LS in a tank get low, and play it in reverse when LS in the tank get nominal
+// play an animation when a resource in a tank get below a threshold, and play it in reverse when it get back above it
 // ===================================================================================================================
 
 
@@ -14,8 +14,8 @@ namespace KERBALISM {
 
 public class TankLight : PartModule
 {
-  [KSPField] public string animation_name;    // name of animation to play
-  [KSPField] public string resource_name;     // name of resource to check
+  [KSPField] public string animation_name;     // name of animation to play
+  [KSPField] public string resource_name;      // name of resource to check
   [KSPField] public double threshold = 0.15;   // amount of resource considered low, proportional to capacity
 
   public bool green_status;

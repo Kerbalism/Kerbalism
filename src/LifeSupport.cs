@@ -79,7 +79,6 @@ public class LifeSupport : MonoBehaviour
         if (ec_required <= double.Epsilon || ec_perc >= 1.0 - double.Epsilon)
         {
           kd.temperature = 0.0;
-
         }
         else
         {
