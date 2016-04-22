@@ -2,7 +2,7 @@
 
 0.9.9.2
   - added tags to parts
-  - reverted to stock monoprop behavior from/to EVA due to bug in stock game
+  - reverted to stock monoprop behavior from/to EVA temporarely
 
 
 0.9.9.1
