@@ -1,5 +1,21 @@
 #CHANGELOG
 
+0.9.9.3
+  - technologies can be customized  
+  - radiation influence malfunctions
+  - support for NearFutureSolar
+  - moved all parts to utility menu
+  - no more oxygen warnings at prelaunch  
+  - tweaked some EnergyTweaks values  
+  - MM patches in directory tweaks can now be deleted
+  - fix: problem with EVA monoprop    
+  - fix: planner doesn't cover staging icons anymore
+  - fix: monitor was visible in main menu
+  - fix: monitor tooltip problems with scrubber
+  - fix: problem with negative part 
+  - fix: bug in malfunction penality
+  
+
 0.9.9.2
   - added tags to parts
   - reverted to stock monoprop behavior from/to EVA temporarely
