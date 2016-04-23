@@ -45,6 +45,43 @@ public class Background : MonoBehaviour
   }
 
 
+  static double CurvedPanelOutput(Vessel vessel, ProtoPartSnapshot part, Part prefab, Vector3d sun_dir, double sun_dist, double atmo_factor)
+  {
+    // if, for whatever reason, sun_dist is zero (or negative), we do not return any output
+    if (sun_dist <= double.Epsilon) return 0.0;
+
+    // shortcuts
+    Quaternion rot = part.rotation;
+
+    // get values from part
+    string transform_name = part.partData.GetValue("PanelTransformName");
+    float k = Convert.ToSingle(part.partData.GetValue("chargePerTransform"));
+
+    // get components
+    Transform[] components = prefab.FindModelTransforms(transform_name);
+    if (components.Length == 0) return 0.0;
+
+    // calculate solar flux
+    double solar_flux = Sim.SolarFlux(sun_dist);
+
+    // reduce solar flux inside atmosphere
+    solar_flux *= atmo_factor;
+
+    // normalize against solar flux at home
+    solar_flux /= Sim.SolarFluxAtHome();
+    solar_flux *= k;
+
+    // for each one of the components the curved panel is composed of
+    double output = 0.0;
+    foreach(Transform t in prefab.FindModelTransforms(transform_name))
+    {
+      double cosine_factor = Math.Max(Vector3d.Dot(sun_dir, (vessel.transform.rotation * rot * t.forward).normalized), 0.0);
+      output += cosine_factor * solar_flux;
+    }
+    return output;
+  }
+
+
   // called at every simulation step
   public void FixedUpdate()
   {
@@ -366,7 +403,7 @@ public class Background : MonoBehaviour
             }
           }
           // SCANSAT support (new version)
-          // TODO: re-enable and check this when DMagic fix that little bug, and remove the old one below
+          // TODO: enable better SCANsat support
           /*else if (module.moduleName == "SCANsat" || module.moduleName == "ModuleSCANresourceScanner")
           {
             // get ec consumption rate
@@ -449,6 +486,22 @@ public class Background : MonoBehaviour
                 if (DB.VesselData(vessel.id).cfg_ec == 1)
                   Message.Post(Severity.warning, "SCANsat sensor was disabled on <b>" + vessel.vesselName + "</b>", "for lack of ElectricCharge");
               }
+            }
+          }
+          // NearFutureSolar support
+          // note: we assume deployed, this is a current limitation
+          else if (module.moduleName == "ModuleCurvedSolarPanel")
+          {
+            // [unused] determine if extended
+            //string state = module.moduleValues.GetValue("SavedState");
+            //bool extended = state == ModuleDeployableSolarPanel.panelStates.EXTENDED.ToString();
+
+            // if in sunlight
+            if (info.sunlight)
+            {
+              // produce electric charge
+              double output = CurvedPanelOutput(vessel, part, part_prefab, info.sun_dir, info.sun_dist, atmo_factor) * Malfunction.Penalty(part);
+              Lib.RequestResource(vessel, "ElectricCharge", -output * TimeWarp.fixedDeltaTime);
             }
           }
           // KERBALISM modules

@@ -63,11 +63,11 @@ public static class Kerbalism_Hooks
   // - amount: amount of radiation to inject, in rad
   // note: you can use negative amounts to remove radiation from a kerbal
   // note: if you are calling this function at every simulation step it will make sense to scale the amount by TimeWarp.FixedDeltaTime
-  public static void InjectRadiation(string k_name, double amount)
+  public static void InjectRadiation(string k_name, double rad_amount)
   {
     lazy_init();
     if (K == null) return;
-    K.GetMethod("hook_InjectRadiation").Invoke(null, new System.Object[]{k_name, amount});
+    K.GetMethod("hook_InjectRadiation").Invoke(null, new System.Object[]{k_name, rad_amount});
   }
 }
 

@@ -402,6 +402,20 @@ public class Planner
           // include it in ec consumption, if deployed
           if (SCANsat.isDeployed(p, m)) ec.consumed += Lib.ReflectionValue<float>(m, "power");
         }
+        // NearFutureSolar support
+        // note: assume half the components are in sunlight, and average inclination is half
+        else if (m.moduleName == "ModuleCurvedSolarPanel")
+        {
+          // get total rate
+          double tot_rate = Lib.ReflectionValue<float>(m, "TotalEnergyRate");
+
+          // get number of components
+          int components = p.FindModelTransforms(Lib.ReflectionValue<string>(m, "PanelTransformName")).Length;
+
+          // approximate output
+          // 0.7071: average clamped cosine
+          ec.generated_sunlight += 0.7071 * tot_rate;
+        }
       }
     }
 

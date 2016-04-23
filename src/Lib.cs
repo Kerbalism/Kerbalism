@@ -401,6 +401,15 @@ public static class Lib
   }
 
 
+  // set a value from a module using reflection
+  // note: useful when the module is from another assembly, unknown at build time
+  // note: useful when the value isn't persistent
+  public static void ReflectionValue<T>(PartModule m, string value_name, T value)
+  {
+    m.GetType().GetField(value_name).SetValue(m, value);
+  }
+
+
   // return true if game is paused
   public static bool IsPaused()
   {
@@ -626,13 +635,6 @@ public static class Lib
   }
 
 
-  // write the value of a variable to the log
-  public static void Debug<T>(string name, T value)
-  {
-    Log(name + ": " + value.ToString());
-  }
-
-
   // render a textfield with placeholder
   // - id: an unique name for the textfield
   // - text: the previous textfield content
@@ -655,6 +657,21 @@ public static class Lib
       }
     }
     return text;
+  }
+
+
+  // get a set of values from the config system
+  public static ConfigNode ParseConfig(string path)
+  {
+    ConfigNode node = GameDatabase.Instance.GetConfigNode(path);
+    return node != null ? node : new ConfigNode();
+  }
+
+
+  // get a value from config
+  public static T ConfigValue<T>(ConfigNode cfg, string key, T def_value)
+  {
+    return cfg.HasValue(key) ? (T)Convert.ChangeType(cfg.GetValue(key), typeof(T)) : def_value;
   }
 }
 

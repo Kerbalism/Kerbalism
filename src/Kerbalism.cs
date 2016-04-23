@@ -55,10 +55,9 @@ public class Kerbalism : MonoBehaviour
     if (!breathable) Lib.SetupResource(data.to, "Oxygen", 0.0, Settings.OxygenOnEVA);
 
 
-    // TODO re-enable when EVA Propellant bug is resolved
     // determine how much MonoPropellant to get
     // note: never more that the 'share' of this kerbal
-    //double monoprop = Math.Min(Lib.GetResourceAmount(data.from.vessel, "MonoPropellant") / tot_crew, Settings.MonoPropellantOnEVA);
+    double monoprop = Math.Min(Lib.GetResourceAmount(data.from.vessel, "MonoPropellant") / tot_crew, Settings.MonoPropellantOnEVA);
 
     // determine how much ElectricCharge to get
     // note: never more that the 'share' of this kerbal
@@ -66,13 +65,11 @@ public class Kerbalism : MonoBehaviour
     double ec = Math.Min(Lib.GetResourceAmount(data.from.vessel, "ElectricCharge") / (tot_crew * 2.0), Settings.ElectricChargeOnEVA);
 
 
-    // TODO re-enable when EVA Propellant bug is resolved
-    // [disabled] EVA vessels start with 5 units of eva fuel, remove them
-    //data.to.RequestResource("EVA Propellant", 5.0);
+    // EVA vessels start with 5 units of eva fuel, remove them
+    data.to.RequestResource("EVA Propellant", 5.0);
 
-    // TODO re-enable when EVA Propellant bug is resolved
     // transfer monoprop
-    //data.to.RequestResource("EVA Propellant", -data.from.RequestResource("MonoPropellant", monoprop));
+    data.to.RequestResource("EVA Propellant", -data.from.RequestResource("MonoPropellant", monoprop));
 
     // transfer ec
     data.to.RequestResource("ElectricCharge", -data.from.RequestResource("ElectricCharge", ec));
@@ -105,28 +102,25 @@ public class Kerbalism : MonoBehaviour
     data.to.FindModuleImplementing<EVA>().has_helmet = !breathable;
 
 
-    // TODO re-enable when EVA Propellant bug is resolved
     // show warning if there isn't monoprop in the eva suit
-    //if (monoprop <= double.Epsilon && !Lib.Landed(data.from.vessel))
-    //{
-    //  Message.Post(Severity.danger, "There isn't any <b>MonoPropellant</b> in the EVA suit", "Don't let the ladder go!");
-    //}
+    if (monoprop <= double.Epsilon && !Lib.Landed(data.from.vessel))
+    {
+      Message.Post(Severity.danger, "There isn't any <b>MonoPropellant</b> in the EVA suit", "Don't let the ladder go!");
+    }
   }
 
 
   void fromEVA(GameEvents.FromToAction<Part, Part> data)
   {
-    // TODO re-enable when EVA Propellant bug is resolved
     // get any leftover monoprop (eva fuel in reality) from EVA vessel
-    //double monoprop = data.from.RequestResource("EVA Propellant", Settings.MonoPropellantOnEVA);
+    double monoprop = data.from.Resources.list[0].amount;
 
     // get any leftover ec
-    double ec = data.from.RequestResource("ElectricCharge", Settings.ElectricChargeOnEVA);
+    double ec = data.from.Resources.list[1].amount;
 
 
-    // TODO re-enable when EVA Propellant bug is resolved
     // add the leftover monoprop back to the pod
-    //data.to.RequestResource("MonoPropellant", -monoprop);
+    data.to.RequestResource("MonoPropellant", -monoprop);
 
     // add the leftover ec back to the pod
     data.to.RequestResource("ElectricCharge", -ec);
@@ -224,30 +218,17 @@ public class Kerbalism : MonoBehaviour
   {
     if (data.target != RDTech.OperationResult.Successful) return;
     const string title = "<color=cyan><b>PROGRESS</b></color>\n";
-    switch(data.host.techID)
+    if (Array.IndexOf(Scrubber.scrubber_efficiency.techs, data.host.techID) >= 0)
     {
-      // scrubber efficiency
-      case "miniaturization":
-      case "precisionEngineering":
-      case "scienceTech":
-      case "experimentalScience":
-        Message.Post(title + "We have access to more efficient <b>CO2 scrubbers</b> now", "Our research efforts are paying off, after all");
-        break;
-
-      // manufacturing quality
-      case "advConstruction":
-      case "specializedConstruction":
-      case "composites":
-      case "metaMaterials":
-        Message.Post(title + "Advances in material science have led to improved <b>manufacturing quality</b>", "New components will last longer in extreme environments");
-        break;
-
-      // signal processing
-      case "advElectrics":
-      case "largeElectrics":
-      case "experimentalElectrics":
-        Message.Post(title + "Our scientists just made a breakthrough in <b>signal processing</b>", "New and existing antennas range has improved");
-        break;
+      Message.Post(title + "We have access to more efficient <b>CO2 scrubbers</b> now", "Our research efforts are paying off, after all");
+    }
+    if (Array.IndexOf(Malfunction.manufacturing_quality.techs, data.host.techID) >= 0)
+    {
+      Message.Post(title + "Advances in material science have led to improved <b>manufacturing quality</b>", "New components will last longer in extreme environments");
+    }
+    if (Array.IndexOf(Signal.signal_processing.techs, data.host.techID) >= 0)
+    {
+      Message.Post(title + "Our scientists just made a breakthrough in <b>signal processing</b>", "New and existing antennas range has improved");
     }
   }
 
@@ -319,7 +300,7 @@ public class Kerbalism : MonoBehaviour
       if (kd.resque == 1)
       {
         // give the vessel some supply
-        //Lib.RequestResource(v, v.isEVA ? "EVA Propellant" : "MonoPropellant", -Settings.ResqueMonoPropellant); TODO re-enable when EVA Propellant bug is resolved
+        Lib.RequestResource(v, v.isEVA ? "EVA Propellant" : "MonoPropellant", -Settings.ResqueMonoPropellant);
         Lib.RequestResource(v, "ElectricCharge", -Settings.ResqueElectricCharge);
         Lib.RequestResource(v, "Food", -Settings.ResqueFood);
         Lib.RequestResource(v, "Oxygen", -Settings.ResqueOxygen);
@@ -414,19 +395,20 @@ public class Kerbalism : MonoBehaviour
       if (oxygen_capacity > 0.0)
       {
         // check oxygen thresholds and show messages
+        // note: no warnings at prelaunch
         if (oxygen_perc <= Settings.ResourceDangerThreshold && vd.msg_oxygen < 2)
         {
-          if (vd.cfg_supply == 1) Message.Post(Severity.danger, VesselEvent.oxygen, v);
+          if (vd.cfg_supply == 1 && v.situation != Vessel.Situations.PRELAUNCH) Message.Post(Severity.danger, VesselEvent.oxygen, v);
           vd.msg_oxygen = 2;
         }
         else if (oxygen_perc <= Settings.ResourceWarningThreshold && vd.msg_oxygen < 1)
         {
-          if (vd.cfg_supply == 1) Message.Post(Severity.warning, VesselEvent.oxygen, v);
+          if (vd.cfg_supply == 1 && v.situation != Vessel.Situations.PRELAUNCH) Message.Post(Severity.warning, VesselEvent.oxygen, v);
           vd.msg_oxygen = 1;
         }
         else if (oxygen_perc > Settings.ResourceWarningThreshold && vd.msg_oxygen > 0)
         {
-          if (vd.cfg_supply == 1) Message.Post(Severity.relax, VesselEvent.oxygen, v);
+          if (vd.cfg_supply == 1 && v.situation != Vessel.Situations.PRELAUNCH) Message.Post(Severity.relax, VesselEvent.oxygen, v);
           vd.msg_oxygen = 0;
         }
       }
@@ -597,6 +579,10 @@ public class Kerbalism : MonoBehaviour
 
 
 #if false
+// CONFIG
+//ConfigNode settings_node = GameDatabase.Instance.GetConfigNode("Kerbalism/KerbalismSettings");
+//launcher_btn.onRightClick = ()=> Message.Post("Right Click");
+
 // LINE/SPLINE RENDERING EXPERIMENTS
 
 class something

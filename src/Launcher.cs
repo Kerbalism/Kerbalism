@@ -118,13 +118,14 @@ public class Launcher : MonoBehaviour
     if (!ui_initialized) return;
 
     // render the window
-    if (launcher_btn.toggleButton.Value || launcher_btn.IsHovering)
+    if ((launcher_btn.toggleButton.Value || launcher_btn.IsHovering) && (Lib.SceneIsGame() || HighLogic.LoadedScene == GameScenes.EDITOR))
     {
       // hard-coded offsets
       const float at_top_offset_x = 40.0f;
       const float at_top_offset_y = 0.0f;
       const float at_bottom_offset_x = 0.0f;
       const float at_bottom_offset_y = 40.0f;
+      const float at_bottom_editor_offset_x = 66.0f;
 
       // get screen size
       float screen_width = (float)Screen.width;
@@ -147,7 +148,7 @@ public class Launcher : MonoBehaviour
       }
       else
       {
-        left -= at_bottom_offset_x;
+        left -= !HighLogic.LoadedSceneIsEditor ? at_bottom_offset_x : at_bottom_editor_offset_x;
         top -= at_bottom_offset_y;
       }
 

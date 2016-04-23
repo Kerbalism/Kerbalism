@@ -96,6 +96,9 @@ public class Message : MonoBehaviour
   // called every frame
   public void OnGUI()
   {
+    // do nothing in the main menu
+    if (!(Lib.SceneIsGame() || HighLogic.LoadedScene == GameScenes.EDITOR)) return;
+
     // if queue is empty, do nothing
     if (entries.Count == 0) return;
 

@@ -173,14 +173,15 @@ public class Monitor
       // get oxygen recycled by scrubbers
       double oxygen_recycled = 0.0;
       double ec_left = Lib.GetResourceAmount(v, "ElectricCharge");
-      double co2_left = Lib.GetResourceAmount(v, "ElectricCharge");
+      double co2_left = Lib.GetResourceAmount(v, "CO2");
       foreach(Scrubber scrubber in scrubbers)
       {
         if (scrubber.is_enabled)
         {
+          double co2_consumed = Math.Max(co2_left, scrubber.co2_rate);
           ec_left -= scrubber.ec_rate;
-          co2_left -= scrubber.co2_rate;
-          if (ec_left > -double.Epsilon && co2_left > -double.Epsilon) oxygen_recycled += scrubber.co2_rate * scrubber.efficiency;
+          co2_left -= co2_consumed;
+          if (ec_left > -double.Epsilon && co2_left > -double.Epsilon) oxygen_recycled += co2_consumed * scrubber.efficiency;
           else break;
         }
       }

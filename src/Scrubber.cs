@@ -15,6 +15,21 @@ namespace KERBALISM {
 
 public class Scrubber : PartModule
 {
+  // scrubber efficiency technologies
+  public class ScrubberEfficiency
+  {
+    public ScrubberEfficiency()
+    {
+      var cfg = Lib.ParseConfig("Kerbalism/Patches/LifeSupport/ScrubberEfficiency");
+      this.techs[0] = Lib.ConfigValue(cfg, "tech0", "miniaturization");
+      this.techs[1] = Lib.ConfigValue(cfg, "tech1", "precisionEngineering");
+      this.techs[2] = Lib.ConfigValue(cfg, "tech2", "scienceTech");
+      this.techs[3] = Lib.ConfigValue(cfg, "tech3", "experimentalScience");
+    }
+    public string[] techs = {"", "", "", ""};
+  }
+  public static ScrubberEfficiency scrubber_efficiency = new ScrubberEfficiency();
+
   // .cfg
   // note: persistent because required in background processing
   [KSPField(isPersistant = true)] public double ec_rate;                    // EC consumption rate per-second
@@ -172,10 +187,8 @@ public class Scrubber : PartModule
   // deduce efficiency from technological level
   public static double DeduceEfficiency()
   {
-    // note: this support the case when a mod reorder these techs in the tree
-    string[] techs = {"miniaturization", "precisionEngineering", "scienceTech", "experimentalScience"};
     double[] value = {0.5, 0.6, 0.7, 0.8, 0.9};
-    return value[Lib.CountTechs(techs)];
+    return value[Lib.CountTechs(scrubber_efficiency.techs)];
   }
 
 

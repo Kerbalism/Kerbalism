@@ -51,6 +51,20 @@ public class Signal : MonoBehaviour
   // finally, we do not compute indirect visibility in the case both vessels are directly visible, leading to
   // the final complexity O(N+N*M/2), M being the number of non-directly-visible vessels, always sensibly less than N
 
+  // signal processing technologies
+  public class SignalProcessing
+  {
+    public SignalProcessing()
+    {
+      var cfg = Lib.ParseConfig("Kerbalism/Patches/Signal/SignalProcessing");
+      this.techs[0] = Lib.ConfigValue(cfg, "tech0", "advElectrics");
+      this.techs[1] = Lib.ConfigValue(cfg, "tech1", "largeElectrics");
+      this.techs[2] = Lib.ConfigValue(cfg, "tech2", "experimentalElectrics");
+    }
+    public string[] techs = {"", "", ""};
+  }
+  public static SignalProcessing signal_processing = new SignalProcessing();
+
   // store ranges
   Dictionary<string, double> range_values = new Dictionary<string, double>();
 
@@ -441,10 +455,8 @@ public class Signal : MonoBehaviour
   // get ecc level from tech
   static public double ECC()
   {
-    // note: this support the case when a mod reorder these techs in the tree
-    string[] techs = {"advElectrics", "largeElectrics", "experimentalElectrics"};
     double[] value = {0.15, 0.33, 0.66, 1.0};
-    return value[Lib.CountTechs(techs)];
+    return value[Lib.CountTechs(signal_processing.techs)];
   }
 
 

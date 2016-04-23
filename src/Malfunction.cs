@@ -15,6 +15,22 @@ namespace KERBALISM {
 
 public class Malfunction : PartModule
 {
+  // manufacturing quality technologies
+  public class ManufacturingQuality
+  {
+    public ManufacturingQuality()
+    {
+      var cfg = Lib.ParseConfig("Kerbalism/Patches/Malfunctions/ManufacturingQuality");
+      this.techs[0] = Lib.ConfigValue(cfg, "tech0", "advConstruction");
+      this.techs[1] = Lib.ConfigValue(cfg, "tech1", "specializedConstruction");
+      this.techs[2] = Lib.ConfigValue(cfg, "tech2", "composites");
+      this.techs[3] = Lib.ConfigValue(cfg, "tech2", "metaMaterials");
+    }
+    public string[] techs = {"", "", "", ""};
+  }
+  public static ManufacturingQuality manufacturing_quality = new ManufacturingQuality();
+
+
   // cfg
   [KSPField(isPersistant = true)] public double min_lifetime;             // no-malfunctions guaranteed lifetime in seconds
   [KSPField(isPersistant = true)] public double max_lifetime;             // malfunctions guaranteed lifetime in seconds
@@ -151,6 +167,7 @@ public class Malfunction : PartModule
         case "ModuleResourceHarvester":     Apply((ModuleResourceHarvester)m, k);    break;
         case "ModuleReactionWheel":         Apply((ModuleReactionWheel)m, k);        break;
         case "Antenna":                     Apply((Antenna)m, k);                    break;
+        //TODO: ModuleCurvedSolarPanel malfunctions
       }
     }
   }
@@ -226,7 +243,7 @@ public class Malfunction : PartModule
     }
 
     // accumulate age
-    age += TimeWarp.fixedDeltaTime / quality;
+    age += TimeWarp.fixedDeltaTime * RadiationInfluence(vessel) / quality;
 
     // check age and malfunction if needed
     if (age > lifetime) Break();
@@ -257,7 +274,7 @@ public class Malfunction : PartModule
     }
 
     // accumulate age
-    age += TimeWarp.fixedDeltaTime / quality;
+    age += TimeWarp.fixedDeltaTime * RadiationInfluence(vessel) / quality;
 
     // save data
     // note: done before checking for malfunction because proto Break change data again
@@ -272,17 +289,20 @@ public class Malfunction : PartModule
   // deduce quality from technological level
   public static double DeduceQuality()
   {
-    // note: this support the case when a mod reorder these techs in the tree
-    string[] techs = {"advConstruction", "specializedConstruction", "composites", "metaMaterials"};
     double[] value = {1.0, 2.0, 4.0, 6.0, 8.0};
-    return value[Lib.CountTechs(techs)];
+    return value[Lib.CountTechs(manufacturing_quality.techs)];
   }
 
 
   // return malfunction penalty of a part
   public static double Penalty(ProtoPartSnapshot p)
   {
+    // get the module
+    // note: if the part has no malfunction, default to no penality
     ProtoPartModuleSnapshot m = p.modules.Find(k => k.moduleName == "Malfunction");
+    if (m == null) return 1.0;
+
+    // return penality;
     uint malfunctions = Lib.GetProtoValue<uint>(m, "malfunctions");
     return Math.Pow(0.5, (double)malfunctions);
   }
@@ -409,6 +429,16 @@ public class Malfunction : PartModule
       }
     }
     return false;
+  }
+
+
+  // used to influence aging speed using radiation
+  public static double RadiationInfluence(Vessel v)
+  {
+    vessel_info vi = Cache.VesselInfo(v);
+    return vi.radiation > Settings.StormRadiation * 0.9
+      ? (Lib.CrewCapacity(v) > 0 ? 3.0 : 5.0)
+      : 1.0;
   }
 }
 
