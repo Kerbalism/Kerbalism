@@ -1,20 +1,38 @@
 #CHANGELOG
 
+0.9.9.4
+  - new part! an artificial gravity hab by mehka
+  - new part! small food container by Nazari1382
+  - new part! a better 1.25m food container by tygoo7
+  - added support for ConnectedLivingSpace
+  - vessel info window  
+  - minor changes in the EnergyTweaks
+  - reduced radiation influence over malfunctions
+  - MM patches for NearFutureElectrical and NearFuturePropulsion by Fraz86
+  - default antenna patch by speedwaystar
+  - greenhouse module can specify an emissive object for the lamps
+  - fix: greenhouse module do not assume there is a shutter anymore
+  - fix: monitor tooltip, this time for real
+  - fix: antennas should work with contracts now
+  - fix: issue with EVA prop getting created out of thin air
+  - fix: curved solar panels weren't working
+
+
 0.9.9.3
-  - technologies can be customized  
+  - technologies can be customized
   - radiation influence malfunctions
   - support for NearFutureSolar
   - moved all parts to utility menu
-  - no more oxygen warnings at prelaunch  
-  - tweaked some EnergyTweaks values  
+  - no more oxygen warnings at prelaunch
+  - tweaked some EnergyTweaks values
   - MM patches in directory tweaks can now be deleted
-  - fix: problem with EVA monoprop    
+  - fix: problem with EVA monoprop
   - fix: planner doesn't cover staging icons anymore
   - fix: monitor was visible in main menu
   - fix: monitor tooltip problems with scrubber
-  - fix: problem with negative part 
+  - fix: problem with negative part
   - fix: bug in malfunction penality
-  
+
 
 0.9.9.2
   - added tags to parts
