@@ -6,7 +6,7 @@
   - new part! a better 1.25m food container by tygoo7
   - added support for ConnectedLivingSpace
   - vessel info window
-  - new 'medium' scope for antennas
+  - new 'medium' scope for antennas  
   - doubled amount of EC on eva suits
   - minor changes in the EnergyTweaks
   - reduced radiation influence over malfunctions
@@ -18,6 +18,7 @@
   - fix: antennas should work with contracts now
   - fix: issue with EVA prop getting created out of thin air
   - fix: curved solar panels weren't working
+  - fix: kerbals don't stop eating anymore
 
 
 0.9.9.3
