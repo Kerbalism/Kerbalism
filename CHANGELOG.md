@@ -5,7 +5,8 @@
   - new part! small food container by Nazari1382
   - new part! a better 1.25m food container by tygoo7
   - added support for ConnectedLivingSpace
-  - vessel info window  
+  - vessel info window
+  - new 'medium' scope for antennas
   - minor changes in the EnergyTweaks
   - reduced radiation influence over malfunctions
   - MM patches for NearFutureElectrical and NearFuturePropulsion by Fraz86
