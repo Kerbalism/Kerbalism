@@ -7,6 +7,7 @@
   - added support for ConnectedLivingSpace
   - vessel info window
   - new 'medium' scope for antennas
+  - doubled amount of EC on eva suits
   - minor changes in the EnergyTweaks
   - reduced radiation influence over malfunctions
   - MM patches for NearFutureElectrical and NearFuturePropulsion by Fraz86
