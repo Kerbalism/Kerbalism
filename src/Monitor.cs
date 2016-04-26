@@ -71,6 +71,7 @@ public class Monitor
   readonly Texture icon_empty               = Lib.GetTexture("empty");
   readonly Texture icon_notes               = Lib.GetTexture("notes");
   readonly Texture icon_group               = Lib.GetTexture("search");
+  readonly Texture icon_info                = Lib.GetTexture("info");
   readonly Texture[] icon_toggle            ={Lib.GetTexture("toggle-disabled"),
                                               Lib.GetTexture("toggle-enabled")};
 
@@ -146,67 +147,30 @@ public class Monitor
   }
 
 
-  GUIContent indicator_supplies(Vessel v, List<Scrubber> scrubbers, List<Greenhouse> greenhouses)
+  GUIContent indicator_supplies(Vessel v, vessel_info vi)
   {
-    // get food & oxygen info
-    double food_amount = Lib.GetResourceAmount(v, "Food");
-    double food_capacity = Lib.GetResourceCapacity(v, "Food");
-    double food_level = food_capacity > 0.0 ? food_amount / food_capacity : 1.0;
-    double oxygen_amount = Lib.GetResourceAmount(v, "Oxygen");
-    double oxygen_capacity = Lib.GetResourceCapacity(v, "Oxygen");
-    double oxygen_level = oxygen_capacity > 0.0 ? oxygen_amount / oxygen_capacity : 1.0;
-    double level = Math.Min(food_level, oxygen_level);
-
     // store the icon and tooltip
     GUIContent state = new GUIContent();
 
     // choose an icon
+    double level = Math.Min(vi.food_level, vi.oxygen_level);
     if (level <= Settings.ResourceDangerThreshold) state.image = icon_supplies_danger;
     else if (level <= Settings.ResourceWarningThreshold) state.image = icon_supplies_warning;
     else state.image = icon_supplies_nominal;
 
-    // if there is someone on board
-    List<string> tooltips = new List<string>();
-    int crew_count = Lib.CrewCount(v);
-    if (crew_count > 0)
+    // generate tooltips
+    if (Lib.CrewCount(v) > 0)
     {
-      // get oxygen recycled by scrubbers
-      double oxygen_recycled = 0.0;
-      double ec_left = Lib.GetResourceAmount(v, "ElectricCharge");
-      double co2_left = Lib.GetResourceAmount(v, "CO2");
-      foreach(Scrubber scrubber in scrubbers)
-      {
-        if (scrubber.is_enabled)
-        {
-          double co2_consumed = Math.Max(co2_left, scrubber.co2_rate);
-          ec_left -= scrubber.ec_rate;
-          co2_left -= co2_consumed;
-          if (ec_left > -double.Epsilon && co2_left > -double.Epsilon) oxygen_recycled += co2_consumed * scrubber.efficiency;
-          else break;
-        }
-      }
-
-      // calculate time until depletion for food
-      double food_consumption = (double)crew_count * Settings.FoodPerMeal / Settings.MealFrequency;
-      if (food_capacity > double.Epsilon && food_consumption > double.Epsilon)
-      {
-        double food_depletion = food_amount / food_consumption;
-        tooltips.Add(food_amount / food_capacity > Settings.ResourceDangerThreshold
-          ? "Food: <b>" + (food_level * 100.0).ToString("F0") + "%, </b>deplete in <b>" + Lib.HumanReadableDuration(food_depletion) + "</b>"
-          : "Food: <b>depleted</b>");
-      }
-
-      // calculate time until depletion for oxygen
-      double oxygen_consumption = !LifeSupport.BreathableAtmosphere(v) ? (double)crew_count * Settings.OxygenPerSecond - oxygen_recycled : 0.0;
-      if (oxygen_capacity > double.Epsilon && oxygen_consumption > double.Epsilon)
-      {
-        double oxygen_depletion = oxygen_amount / oxygen_consumption;
-        tooltips.Add(oxygen_amount / oxygen_capacity > Settings.ResourceDangerThreshold
-          ? "Oxygen: <b>" + (oxygen_level * 100.0).ToString("F0") + "%, </b>deplete in <b>" + Lib.HumanReadableDuration(oxygen_depletion) + "</b>"
+      List<string> tooltips = new List<string>();
+      tooltips.Add(vi.food_level > Settings.ResourceDangerThreshold
+        ? "Food: <b>" + (vi.food_level * 100.0).ToString("F0") + "%, </b>deplete in <b>" + Lib.HumanReadableDuration(vi.food_depletion) + "</b>"
+        : "Food: <b>depleted</b>");
+        tooltips.Add(vi.oxygen_level > Settings.ResourceDangerThreshold
+          ? "Oxygen: <b>" + (vi.oxygen_level * 100.0).ToString("F0") + "%, </b>deplete in <b>" + Lib.HumanReadableDuration(vi.oxygen_depletion) + "</b>"
           : "Oxygen: <b>depleted</b>");
-      }
+      state.tooltip = string.Join("\n", tooltips.ToArray());
     }
-    state.tooltip = string.Join("\n", tooltips.ToArray());
+
     return state;
   }
 
@@ -368,7 +332,7 @@ public class Monitor
 
   void problem_radiation(vessel_info info, ref List<Texture> icons, ref List<string> tooltips)
   {
-    string radiation_str = " (<i>" + (info.radiation * 60.0 * 60.0).ToString("F2") + " rad/h)</i>";
+    string radiation_str = " (<i>" + (info.env_radiation * 60.0 * 60.0).ToString("F2") + " rad/h)</i>";
     if (info.belt_radiation > double.Epsilon)
     {
       icons.Add(icon_radiation_danger);
@@ -475,10 +439,11 @@ public class Monitor
     GUILayout.Label(new GUIContent(Lib.Epsilon(body_name, 8), body_name.Length > 8 ? body_name : ""), body_style);
     GUILayout.Label(new GUIContent(problem_icon, problem_tooltip), icon_style);
     GUILayout.Label(indicator_ec(v), icon_style);
-    GUILayout.Label(indicator_supplies(v, scrubbers, greenhouses), icon_style);
+    GUILayout.Label(indicator_supplies(v, vi), icon_style);
     GUILayout.Label(indicator_reliability(v), icon_style);
     GUILayout.Label(indicator_signal(v), icon_style);
     GUILayout.EndHorizontal();
+    if (Lib.IsClicked(1)) Info.Toggle(v);
 
     // remember last vessel clicked
     if (Lib.IsClicked()) last_clicked_id = v.id;
@@ -530,6 +495,10 @@ public class Monitor
     GUILayout.BeginHorizontal(row_style);
     GUILayout.Label(new GUIContent(" NOTES", icon_notes), config_style);
     if (Lib.IsClicked()) Notepad.Toggle(v);
+    GUILayout.EndHorizontal();
+    GUILayout.BeginHorizontal(row_style);
+    GUILayout.Label(new GUIContent(" DETAILS", icon_info), config_style);
+    if (Lib.IsClicked()) Info.Toggle(v);
     GUILayout.EndHorizontal();
   }
 
@@ -593,7 +562,7 @@ public class Monitor
 
     // calculate height
     float vessels_height = 10.0f + (float)count * (16.0f + 10.0f);
-    float config_height = configured_id == Guid.Empty ? 0.0f : filtered() ? 80.0f : 96.0f;
+    float config_height = configured_id == Guid.Empty ? 0.0f : filtered() ? 96.0f : 112.0f;
     float filter_height = show_filter ? 16.0f + 10.0f : 0.0f;
     return Math.Min(vessels_height + config_height + filter_height, Screen.height * 0.5f);
   }

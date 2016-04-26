@@ -53,6 +53,9 @@
     <Reference Include="Assembly-CSharp-firstpass">
       <HintPath>C:\Games\KSP\KSP_x64_Data\Managed\Assembly-CSharp-firstpass.dll</HintPath>
     </Reference>
+    <Reference Include="CLSInterfaces">
+      <HintPath>C:\Games\KSP\GameData\Kerbalism\CLSInterfaces.dll</HintPath>
+    </Reference>
     <Reference Include="KSPUtil">
       <HintPath>C:\Games\KSP\KSP_x64_Data\Managed\KSPUtil.dll</HintPath>
     </Reference>
@@ -75,9 +78,12 @@
     <Compile Include="Antenna.cs" />
     <Compile Include="Background.cs" />
     <Compile Include="Cache.cs" />
+    <Compile Include="CLS.cs" />
     <Compile Include="DB.cs" />
     <Compile Include="Entertainment.cs" />
     <Compile Include="EVA.cs" />
+    <Compile Include="GravityRing.cs" />
+    <Compile Include="Info.cs" />
     <Compile Include="SCANsat.cs" />
     <Compile Include="Hooks.cs" />
     <Compile Include="Malfunction.cs" />

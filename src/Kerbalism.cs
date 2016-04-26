@@ -66,6 +66,7 @@ public class Kerbalism : MonoBehaviour
 
 
     // EVA vessels start with 5 units of eva fuel, remove them
+    data.to.Resources.list[0].flowState = true;
     data.to.RequestResource("EVA Propellant", 5.0);
 
     // transfer monoprop
@@ -420,7 +421,7 @@ public class Kerbalism : MonoBehaviour
   {
     // [disabled] disable 'terminate' button in tracking station
     // note: we could forbid the user from terminating debris, if we make them decay (in atmosphere and not)
-    // however there are still cases when it is desiderable to terminate a vessel, so we leave it enabled
+    // however there are still cases when is desiderable to terminate a vessel, so we leave it enabled
     //HighLogic.CurrentGame.Parameters.TrackingStation.CanAbortVessel = false;
 
     // decay unloaded vessels inside atmosphere
@@ -437,6 +438,62 @@ public class Kerbalism : MonoBehaviour
 
         // decay the orbit
         v.orbit.semiMajorAxis -= decay_speed * TimeWarp.fixedDeltaTime;
+      }
+    }
+  }
+
+
+  void updateConnectedSpaces()
+  {
+    // avoid case when DB isn't ready for whatever reason
+    if (!DB.Ready()) return;
+
+    // do nothing in the editors and the menus
+    if (!Lib.SceneIsGame()) return;
+
+    // do nothing if paused
+    if (Lib.IsPaused()) return;
+
+    // get CLS
+    ConnectedLivingSpace.ICLSAddon cls = CLS.GetCLS();
+    
+
+    foreach(Vessel v in FlightGlobals.Vessels)
+    {
+      // skip invalid vessels
+      if (!Lib.IsVessel(v)) continue;
+
+      // skip dead eva kerbals
+      if (EVA.IsDead(v)) continue;
+
+      // calculate whole-space
+      if (cls == null)
+      {
+        foreach(var c in v.loaded ? v.GetVesselCrew() : v.protoVessel.GetVesselCrew())
+        {
+          kerbal_data kd = DB.KerbalData(c.name);
+          kd.living_space = QualityOfLife.LivingSpace((uint)Lib.CrewCount(v), (uint)Lib.CrewCapacity(v));
+          kd.entertainment = QualityOfLife.Entertainment(v);
+          kd.shielding = Radiation.Shielding(v);
+          kd.space_name = "";
+        }
+      }
+      // calculate connected-space
+      // note: avoid problem at scene changes
+      else if (v.loaded && cls.Vessel != null)
+      {
+        // calculate connected spaces spaces
+        foreach(var space in cls.Vessel.Spaces)
+        {
+          foreach(var c in space.Crew)
+          {
+            kerbal_data kd = DB.KerbalData(c.Kerbal.name);
+            kd.living_space = QualityOfLife.LivingSpace(space);
+            kd.entertainment = QualityOfLife.Entertainment(space);
+            kd.shielding = Radiation.Shielding(space);
+            kd.space_name = space.Name;
+          }
+        }
       }
     }
   }
@@ -472,6 +529,9 @@ public class Kerbalism : MonoBehaviour
 
     // decay debris orbits
     atmosphereDecay();
+
+    // update connected spaces using CLS, for QoL and Radiation mechanics
+    updateConnectedSpaces();
 
 
     // FIXME: forcing warp rate here essentially stop the 'slow warp change' done in Lib.StopWarp(), temporarely disabled

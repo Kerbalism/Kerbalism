@@ -15,7 +15,7 @@ public static class Settings
 {
   // EVA related
   public const double MonoPropellantOnEVA         = 5.0;                                                            // keep the stock behaviour
-  public const double ElectricChargeOnEVA         = 10.0;                                                           // about 15min autonomy (at average LKO temp diff)
+  public const double ElectricChargeOnEVA         = 20.0;                                                           // about 16min autonomy (at average LKO temp diff)
   public const double OxygenOnEVA                 = 0.05;                                                           // about 20min autonomy
   public const double HeadlightCost               = 0.005;                                                          // Headlight EC cost per-second
 
@@ -65,12 +65,11 @@ public static class Settings
 
   // Resources thresholds
   public const double ResourceWarningThreshold    = 0.20;                                                           // 20%
-  public const double ResourceDangerThreshold     = 0.0001;                                                         // empty (this isn't double.Epsilon to fix some fp issues)
+  public const double ResourceDangerThreshold     = double.Epsilon * 2.0;                                           // empty
 
   // greenhouse
   public const double GreenhouseWasteBonus        = 0.2;                                                            // bonus applied to growth if waste is available
   public const double GreenhouseSoilBonus         = 1.0;                                                            // bonus applied to growth if landed
-  public const double GreenhouseDoorBonus         = 0.2;                                                            // bonus applied to artificial lights if door closed
 
   // resque missions resupply
   public const double ResqueMonoPropellant        = 2.5;                                                            // monoprop to give to resque mission kerbals
@@ -85,8 +84,8 @@ public static class Settings
   public const double StormEjectionSpeed          = 1000000.0;                                                      // CME speed in m/s
 
   // radiation
-  public const double MagnetosphereFalloff        = 0.2;                                                            // falloff zone outside magnetosphere, proportional
-  public const double BeltFalloff                 = 0.05;                                                           // falloff zone around radiation belt, proportional
+  public const double MagnetosphereFalloff        = 0.5;                                                            // falloff zone outside magnetosphere, proportional
+  public const double BeltFalloff                 = 0.1;                                                            // falloff zone around radiation belt, proportional
   public const double CosmicRadiation             = 0.02 / (60.0 * 60.0);                                           // radiation outside a magnetosphere, in rad/s (0.02 rad/h)
   public const double BeltRadiation               = 20.0 / (60.0 * 60.0);                                           // radiation inside a belt, in rad/s (20.0 rad/h)
   public const double StormRadiation              = 2.0 / (60.0 * 60.0);                                            // radiation during a magnetic storm, in rad/s (2.0 rad/h)

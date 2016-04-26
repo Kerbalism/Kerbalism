@@ -19,7 +19,8 @@ public class Greenhouse : PartModule
   [KSPField(isPersistant = true)] public double waste_rate;                   // waste consumption rate per-second, to provide waste bonus
   [KSPField(isPersistant = true)] public double harvest_size;                 // amount of food produced at harvest time
   [KSPField(isPersistant = true)] public double growth_rate;                  // growth speed in average lighting conditions
-  [KSPField] public string animation_name;                                    // name of animation to play (for the shutters)
+  [KSPField] public string animation_name;                                    // name of animation to play for the shutters, optional
+  [KSPField] public string emissive_object;                                   // name of an object with an emissive texture to use for the lamps, optional
 
   // persistence
   // note: also configurable per-part
@@ -36,26 +37,34 @@ public class Greenhouse : PartModule
   // note: persistant so it is accessible from proto vessel
   [KSPField(isPersistant = true)] public double lighting = 0.0;
 
+  // store current growing speed per-second
+  [KSPField(isPersistant = true)] public double growing = 0.0;
+
   // rmb status
-  [KSPField(guiActive = true, guiName = "Growth")] public string GrowthStatus;        // description of current greenhouse state (growth percentual)
-  [KSPField(guiActive = true, guiName = "Light")] public string LightStatus;          // description of current greenhouse state (lighting conditions)
-  [KSPField(guiActive = true, guiName = "Waste")] public string WasteStatus;          // description of current greenhouse state (waste bonus)
-  [KSPField(guiActive = true, guiName = "Soil")] public string SoilStatus;            // description of current greenhouse state (soil bonus)
+  [KSPField(guiActive = true, guiName = "Growth")] public string GrowthStatus;        // growth percentual)
+  [KSPField(guiActive = true, guiName = "Light")] public string LightStatus;          // lighting conditions
+  [KSPField(guiActive = true, guiName = "Waste")] public string WasteStatus;          // waste bonus
+  [KSPField(guiActive = true, guiName = "Soil")] public string SoilStatus;            // soil bonus
+  [KSPField(guiActive = true, guiName = "Time to harvest")] public string TTAStatus;  // soil bonus
 
   // rmb open door
   [KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "Open shutters", active = false)]
   public void OpenDoor()
   {
-    Events["OpenDoor"].active = false;
-    Events["CloseDoor"].active = true;
     door_opened = true;
 
-    Animation[] anim = this.part.FindModelAnimators(animation_name);
-    if (anim.Length > 0)
+    if (animation_name.Length > 0)
     {
-      anim[0][animation_name].normalizedTime = 0.0f;
-      anim[0][animation_name].speed = Math.Abs(anim[0][animation_name].speed);
-      anim[0].Play(animation_name);
+      Events["OpenDoor"].active = false;
+      Events["CloseDoor"].active = true;
+
+      Animation[] anim = this.part.FindModelAnimators(animation_name);
+      if (anim.Length > 0)
+      {
+        anim[0][animation_name].normalizedTime = 0.0f;
+        anim[0][animation_name].speed = Math.Abs(anim[0][animation_name].speed);
+        anim[0].Play(animation_name);
+      }
     }
   }
 
@@ -63,16 +72,20 @@ public class Greenhouse : PartModule
   [KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "Close shutters", active = false)]
   public void CloseDoor()
   {
-    Events["OpenDoor"].active = true;
-    Events["CloseDoor"].active = false;
     door_opened = false;
 
-    Animation[] anim = this.part.FindModelAnimators(animation_name);
-    if (anim.Length > 0)
+    if (animation_name.Length > 0)
     {
-      anim[0][animation_name].normalizedTime = 1.0f;
-      anim[0][animation_name].speed = -Math.Abs(anim[0][animation_name].speed);
-      anim[0].Play(animation_name);
+      Events["OpenDoor"].active = true;
+      Events["CloseDoor"].active = false;
+
+      Animation[] anim = this.part.FindModelAnimators(animation_name);
+      if (anim.Length > 0)
+      {
+        anim[0][animation_name].normalizedTime = 1.0f;
+        anim[0][animation_name].speed = -Math.Abs(anim[0][animation_name].speed);
+        anim[0].Play(animation_name);
+      }
     }
   }
 
@@ -96,25 +109,28 @@ public class Greenhouse : PartModule
   // pseudo-ctor
   public override void OnStart(StartState state)
   {
-    // enable/disable rmb ui events based on initial door state as per .cfg files
-    Events["OpenDoor"].active = !door_opened;
-    Events["CloseDoor"].active = door_opened;
-
-    // set shutter animation to beginning or end
-    Animation[] anim = this.part.FindModelAnimators(animation_name);
-    if (anim.Length > 0)
+    if (animation_name.Length > 0)
     {
-      if (door_opened)
+      // enable/disable rmb ui events based on initial door state as per .cfg files
+      Events["OpenDoor"].active = !door_opened;
+      Events["CloseDoor"].active = door_opened;
+
+      // set shutter animation to beginning or end
+      Animation[] anim = this.part.FindModelAnimators(animation_name);
+      if (anim.Length > 0)
       {
-        anim[0][animation_name].normalizedTime = 1.0f;
-        anim[0][animation_name].speed = Math.Abs(anim[0][animation_name].speed);
-        anim[0].Play(animation_name);
-      }
-      else
-      {
-        anim[0][animation_name].normalizedTime = 0.0f;
-        anim[0][animation_name].speed = -Math.Abs(anim[0][animation_name].speed);
-        anim[0].Play(animation_name);
+        if (door_opened)
+        {
+          anim[0][animation_name].normalizedTime = 1.0f;
+          anim[0][animation_name].speed = Math.Abs(anim[0][animation_name].speed);
+          anim[0].Play(animation_name);
+        }
+        else
+        {
+          anim[0][animation_name].normalizedTime = 0.0f;
+          anim[0][animation_name].speed = -Math.Abs(anim[0][animation_name].speed);
+          anim[0].Play(animation_name);
+        }
       }
     }
   }
@@ -132,9 +148,12 @@ public class Greenhouse : PartModule
   public void FixedUpdate()
   {
     // set emissive intensity from lamp tweakable
-    foreach(Renderer rdr in part.GetComponentsInChildren<Renderer>())
+    if (emissive_object.Length > 0)
     {
-      if (rdr.name == "Cylinder001") { rdr.material.SetColor("_EmissiveColor", new Color(lamps, lamps, lamps, 1.0f)); break; }
+      foreach(Renderer rdr in part.GetComponentsInChildren<Renderer>())
+      {
+        if (rdr.name == emissive_object) { rdr.material.SetColor("_EmissiveColor", new Color(lamps, lamps, lamps, 1.0f)); break; }
+      }
     }
 
     // do nothing else in the editor
@@ -168,8 +187,7 @@ public class Greenhouse : PartModule
     // note: we ignore sun direction for gameplay reasons: else the user must reorient the greenhouse as the planets dance over time
     // - natural light depend on: distance from sun, direct sunlight, door status
     // - artificial light depend on: lamps tweakable and ec available, door status
-    lighting = NaturalLighting(info.sun_dist) * (info.sunlight ? 1.0 : 0.0) * (door_opened ? 1.0 : 0.0)
-             + lamps * ec_light_perc * (door_opened ? 1.0 : 1.0 + Settings.GreenhouseDoorBonus);
+    lighting = NaturalLighting(info.sun_dist) * (info.sunlight ? 1.0 : 0.0) * (door_opened ? 1.0 : 0.0) + lamps * ec_light_perc;
 
 
     // consume waste
@@ -184,7 +202,8 @@ public class Greenhouse : PartModule
     growth_bonus += Settings.GreenhouseWasteBonus * waste_perc;
 
     // grow the crop
-    growth += elapsed_s * (growth_rate * (1.0 + growth_bonus)) * lighting;
+    growing = (growth_rate * (1.0 + growth_bonus)) * lighting;
+    growth += elapsed_s * growing;
 
     // if it is harvest time
     if (growth >= 1.0)
@@ -204,6 +223,7 @@ public class Greenhouse : PartModule
     LightStatus = (lighting * 100.0).ToString("F0") + "%";
     WasteStatus = (waste_perc * 100.0).ToString("F0") + "%";
     SoilStatus = Lib.Landed(vessel) ? "yes" : "no";
+    TTAStatus = Lib.HumanReadableDuration(growing > double.Epsilon ? 1.0 / growing : 0.0);
 
     // enable/disable emergency harvest
     Events["EmergencyHarvest"].active = (growth >= 0.5);
@@ -251,8 +271,7 @@ public class Greenhouse : PartModule
     // note: we ignore sun direction for gameplay reasons: else the user must reorient the greenhouse as the planets dance over time
     // - natural light depend on: distance from sun, direct sunlight, door status
     // - artificial light depend on: lamps tweakable and ec available, door status
-    lighting = NaturalLighting(info.sun_dist) * (info.sunlight ? 1.0 : 0.0) * (door_opened ? 1.0 : 0.0)
-             + lamps * ec_light_perc * (door_opened ? 1.0 : 1.0 + Settings.GreenhouseDoorBonus);
+    lighting = NaturalLighting(info.sun_dist) * (info.sunlight ? 1.0 : 0.0) * (door_opened ? 1.0 : 0.0) + lamps * ec_light_perc;
 
 
     // consume waste
@@ -267,7 +286,8 @@ public class Greenhouse : PartModule
     growth_bonus += Settings.GreenhouseWasteBonus * waste_perc;
 
     // grow the crop
-    growth += elapsed_s * (growth_rate * (1.0 + growth_bonus)) * lighting;
+    double growing = (growth_rate * (1.0 + growth_bonus)) * lighting;
+    growth += elapsed_s * growing;
 
     // if it is harvest time
     if (growth >= 1.0)
@@ -284,8 +304,9 @@ public class Greenhouse : PartModule
 
     // store data
     Lib.SetProtoValue(m, "growth", growth);
-    Lib.SetProtoValue(m, "lighting", lighting);
     Lib.SetProtoValue(m, "lamps", lamps);
+    Lib.SetProtoValue(m, "lighting", lighting);
+    Lib.SetProtoValue(m, "growth_diff", growing);
   }
 
 
@@ -320,6 +341,7 @@ public class Greenhouse : PartModule
             greenhouse.growth = Lib.GetProtoValue<double>(module, "growth");
             greenhouse.lamps = Lib.GetProtoValue<float>(module, "lamps");
             greenhouse.lighting = Lib.GetProtoValue<double>(module, "lighting");
+            greenhouse.growing = Lib.GetProtoValue<double>(module, "growing");
             ret.Add(greenhouse);
           }
         }

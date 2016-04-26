@@ -259,6 +259,14 @@ public static class Lib
   }
 
 
+  // pretty-print radiation
+  public static string HumanReadableRadiationRate(double rad)
+  {
+    if (rad <= double.Epsilon) return "none";
+    return (rad * 3600.0).ToString("F3") + " rad/h";
+  }
+
+
   // format a value, or return 'none'
   public static string ValueOrNone(double value, string append = "")
   {
@@ -533,6 +541,9 @@ public static class Lib
   // return true if this is a 'vessel'
   public static bool IsVessel(Vessel v)
   {
+    // something weird is going on
+    if (v == null) return false;
+
     // if the vessel is in DEAD status, we consider it invalid
     if (v.state == Vessel.State.DEAD) return false;
 
@@ -578,7 +589,7 @@ public static class Lib
   public static bool IsClicked(int button=0)
   {
     return Event.current.type == EventType.MouseDown
-        && Event.current.button == 0
+        && Event.current.button == button
         && GUILayoutUtility.GetLastRect().Contains(Event.current.mousePosition);
   }
 
@@ -672,6 +683,19 @@ public static class Lib
   public static T ConfigValue<T>(ConfigNode cfg, string key, T def_value)
   {
     return cfg.HasValue(key) ? (T)Convert.ChangeType(cfg.GetValue(key), typeof(T)) : def_value;
+  }
+
+
+  // return a progressbar made of text
+  // - len: length in characters
+  // - value: value to represent
+  // - yellow/red: thresholds for color
+  // - max: max value representable
+  // - force_color: use specified color instead of computing it
+  public static string ProgressBar(uint len, double value, double yellow, double red, double max, string force_color="")
+  {
+    string color = force_color.Length > 0 ? force_color : value >= red - double.Epsilon ? "red" : value >= yellow ? "yellow" : "gray";
+    return "<color=" + color + ">" + new string('=', Math.Max((int)((double)len * value / max + 0.5), 1)) + "</color>";
   }
 }
 

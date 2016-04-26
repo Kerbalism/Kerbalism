@@ -1,6 +1,5 @@
 ﻿// ===================================================================================================================
-// Entertainment module
-// influence the Quality Of Life mechanic
+// store entertainment rate
 // ===================================================================================================================
 
 
@@ -21,7 +20,7 @@ public class Entertainment : PartModule
   // editor/r&d info
   public override string GetInfo()
   {
-    return description + "\n\n<color=#999999>Factor: <b>" + rate.ToString("F2") + "</b></color>";
+    return description + (rate > double.Epsilon ? "\n\n<color=#999999>Factor: <b>" + rate.ToString("F2") + "</b></color>" : "");
   }
 }
 

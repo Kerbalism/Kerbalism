@@ -216,7 +216,7 @@ public class Message : MonoBehaviour
           {
             case Severity.relax:      text = "$VESSEL food reserves restored"; subtext = "Double snack rations for everybody"; break;
             case Severity.warning:    text = "On $VESSEL, food reserves are getting low"; subtext = "Anything edible is being scrutinized"; break;
-            case Severity.danger:     text = "There is no more food on $VESSEL"; subtext = "The crew prepare to the inevitable"; break;
+            case Severity.danger:     text = "There is no more food on $VESSEL"; subtext = "The crew prepare for the inevitable"; break;
           }
           break;
 
@@ -226,7 +226,7 @@ public class Message : MonoBehaviour
           switch(severity)
           {
             case Severity.relax:      text = "$VESSEL oxygen reserves restored"; subtext = "The crew is taking a breather"; break;
-            case Severity.warning:    text = "On $VESSEL, oxygen reserves are dangerously low"; subtext = "There is mildly panic among the crew"; break;
+            case Severity.warning:    text = "On $VESSEL, oxygen reserves are dangerously low"; subtext = "There is mild panic among the crew"; break;
             case Severity.danger:     text = "There is no more oxygen on $VESSEL"; subtext = "Everybody stop breathing"; break;
           }
           break;
@@ -284,7 +284,7 @@ public class Message : MonoBehaviour
           case Severity.relax:      text = "hypothermia is under control"; break;
           case Severity.warning:    text = "feels cold"; break;
           case Severity.danger:     text = "is freezing to death"; break;
-          case Severity.fatality:   text = "freezed to death"; break;
+          case Severity.fatality:   text = "froze to death"; break;
         }
         break;
 
@@ -296,7 +296,7 @@ public class Message : MonoBehaviour
           case Severity.relax:      text = "is hugging the climatizer"; break;
           case Severity.warning:    text = "is sweating"; break;
           case Severity.danger:     text = "is burning alive"; break;
-          case Severity.fatality:   text = "burned alive"; break;
+          case Severity.fatality:   text = "was burned alive"; break;
         }
         break;
 
@@ -318,7 +318,7 @@ public class Message : MonoBehaviour
         switch(severity)
         {
           case Severity.relax:      text = "is breathing again"; break;
-          case Severity.warning:    text = "can't breath"; break;
+          case Severity.warning:    text = "can't breathe"; break;
           case Severity.danger:     text = "is suffocating"; break;
           case Severity.fatality:   text = "suffocated to death"; break;
         }

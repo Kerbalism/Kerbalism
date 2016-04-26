@@ -45,7 +45,7 @@ public class Background : MonoBehaviour
   }
 
 
-  static double CurvedPanelOutput(Vessel vessel, ProtoPartSnapshot part, Part prefab, Vector3d sun_dir, double sun_dist, double atmo_factor)
+  static double CurvedPanelOutput(Vessel vessel, ProtoPartSnapshot part, Part prefab, PartModule m, Vector3d sun_dir, double sun_dist, double atmo_factor)
   {
     // if, for whatever reason, sun_dist is zero (or negative), we do not return any output
     if (sun_dist <= double.Epsilon) return 0.0;
@@ -54,8 +54,8 @@ public class Background : MonoBehaviour
     Quaternion rot = part.rotation;
 
     // get values from part
-    string transform_name = part.partData.GetValue("PanelTransformName");
-    float k = Convert.ToSingle(part.partData.GetValue("chargePerTransform"));
+    string transform_name = Lib.ReflectionValue<string>(m, "PanelTransformName");
+    float tot_rate = Lib.ReflectionValue<float>(m, "TotalEnergyRate");
 
     // get components
     Transform[] components = prefab.FindModelTransforms(transform_name);
@@ -67,16 +67,12 @@ public class Background : MonoBehaviour
     // reduce solar flux inside atmosphere
     solar_flux *= atmo_factor;
 
-    // normalize against solar flux at home
-    solar_flux /= Sim.SolarFluxAtHome();
-    solar_flux *= k;
-
     // for each one of the components the curved panel is composed of
     double output = 0.0;
-    foreach(Transform t in prefab.FindModelTransforms(transform_name))
+    foreach(Transform t in components)
     {
-      double cosine_factor = Math.Max(Vector3d.Dot(sun_dir, (vessel.transform.rotation * rot * t.forward).normalized), 0.0);
-      output += cosine_factor * solar_flux;
+      double cosine_factor = Math.Max(Vector3d.Dot(sun_dir, (vessel.transform.rotation * rot * t.forward.normalized).normalized), 0.0);
+      output += (double)tot_rate / (double)components.Length * cosine_factor * solar_flux / Sim.SolarFluxAtHome();
     }
     return output;
   }
@@ -492,21 +488,18 @@ public class Background : MonoBehaviour
           // note: we assume deployed, this is a current limitation
           else if (module.moduleName == "ModuleCurvedSolarPanel")
           {
-            // [unused] determine if extended
-            //string state = module.moduleValues.GetValue("SavedState");
-            //bool extended = state == ModuleDeployableSolarPanel.panelStates.EXTENDED.ToString();
-
             // if in sunlight
             if (info.sunlight)
             {
-              // produce electric charge
-              double output = CurvedPanelOutput(vessel, part, part_prefab, info.sun_dir, info.sun_dist, atmo_factor) * Malfunction.Penalty(part);
+              PartModule curved_panel = part_prefab.Modules[module.moduleName];
+              double output = CurvedPanelOutput(vessel, part, part_prefab, curved_panel, info.sun_dir, info.sun_dist, atmo_factor) * Malfunction.Penalty(part);
               Lib.RequestResource(vessel, "ElectricCharge", -output * TimeWarp.fixedDeltaTime);
             }
           }
           // KERBALISM modules
           else if (module.moduleName == "Scrubber") { Scrubber.BackgroundUpdate(vessel, part.flightID); }
           else if (module.moduleName == "Greenhouse") { Greenhouse.BackgroundUpdate(vessel, part.flightID); }
+          else if (module.moduleName == "GravityRing") { GravityRing.BackgroundUpdate(vessel, part.flightID); }
           else if (module.moduleName == "Malfunction") { Malfunction.BackgroundUpdate(vessel, part.flightID); }
         }
       }

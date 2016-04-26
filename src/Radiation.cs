@@ -143,7 +143,7 @@ public class Radiation : MonoBehaviour
         if (kd.disabled == 1) continue;
 
         // accumulate radiation
-        kd.radiation += info.radiation * elapsed_s;
+        kd.radiation += info.env_radiation * (1.0 - kd.shielding) * elapsed_s;
 
         // kill kerbal if necessary
         if (kd.radiation >= Settings.RadiationFatalThreshold)
@@ -269,15 +269,35 @@ public class Radiation : MonoBehaviour
   }
 
 
+  public static double Shielding(ConnectedLivingSpace.ICLSSpace space)
+  {
+    double amount = 0.0;
+    double capacity = 0.0;
+    foreach(var part in space.Parts)
+    {
+      amount += Lib.GetResourceAmount(part.Part, "Shielding");
+      capacity += Lib.GetResourceCapacity(part.Part, "Shielding");
+    }
+    return Shielding(amount, capacity);
+  }
+
+
+  // return a verbose description of shielding capability
+  public static string ShieldingToString(double shielding_factor)
+  {
+    if (shielding_factor <= double.Epsilon) return "none";
+    if (shielding_factor <= 0.33) return "poor";
+    if (shielding_factor <= 0.66) return "moderate";
+    if (shielding_factor <= 0.99) return "decent";
+    return "hardened";
+  }
+
+
   // return a verbose description of shielding capability
   public static string ShieldingToString(double amount, double capacity)
   {
     double level = capacity > double.Epsilon ? amount / capacity : 0.0;
-    if (level <= double.Epsilon) return "none";
-    if (level <= 0.33) return "poor";
-    if (level <= 0.66) return "moderate";
-    if (level <= 0.99) return "decent";
-    return "hardened";
+    return ShieldingToString(level);
   }
 }
 

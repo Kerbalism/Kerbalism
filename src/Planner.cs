@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.Remoting.Messaging;
 using ModuleWheels;
 using UnityEngine;
 
@@ -416,6 +417,15 @@ public class Planner
           // 0.7071: average clamped cosine
           ec.generated_sunlight += 0.7071 * tot_rate;
         }
+        // gravity ring hab
+        else if (m.moduleName == "GravityRing")
+        {
+          GravityRing mm = (GravityRing)m;
+          if (mm.opened)
+          {
+            ec.consumed += mm.ec_rate * mm.speed;
+          }
+        }
       }
     }
 
@@ -469,7 +479,7 @@ public class Planner
           food.greenhouse_cost += mm.ec_rate * mm.lamps;
 
           // calculate lighting
-          double lighting = natural_lighting * (mm.door_opened ? 1.0 : 0.0) + mm.lamps * (mm.door_opened ? 1.0 : 1.0 + Settings.GreenhouseDoorBonus);
+          double lighting = natural_lighting * (mm.door_opened ? 1.0 : 0.0) + mm.lamps;
 
           // calculate waste used
           double waste_used = Math.Min(simulated_waste, mm.waste_rate);
@@ -576,6 +586,11 @@ public class Planner
           Entertainment mm = (Entertainment)m;
           qol.entertainment *= mm.rate;
         }
+        else if (m.moduleName == "GravityRing")
+        {
+          GravityRing mm = (GravityRing)m;
+          qol.entertainment *= 1.0 + (mm.entertainment_rate - 1.0) * mm.speed;
+        }
       }
     }
 
@@ -583,8 +598,9 @@ public class Planner
     // note: ignore kerbal-specific variance
     if (crew.capacity > 0)
     {
-      double bonus = QualityOfLife.Bonus(crew.count, crew.capacity, qol.entertainment, env.landed, signal.range > 0.0);
       qol.living_space = QualityOfLife.LivingSpace(crew.count, crew.capacity);
+      double bonus = QualityOfLife.Bonus(qol.living_space, qol.entertainment, env.landed, signal.range > 0.0, crew.count == 1);
+
       qol.time_to_instability = bonus / Settings.StressedDegradationRate;
       List<string> factors = new List<string>();
       if (crew.count > 1) factors.Add("not-alone");
@@ -958,6 +974,8 @@ public class Planner
 
   public void render()
   {
+    // TODO: consider connected spaces in calculations
+
     // if there is something in the editor
     if (EditorLogic.RootPart != null)
     {

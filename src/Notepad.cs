@@ -33,6 +33,9 @@ public class Notepad : MonoBehaviour
   GUIStyle txt_style;
   GUILayoutOption[] txt_options;
 
+  // store window id
+  int win_id;
+
   // store window geometry
   Rect win_rect;
 
@@ -53,6 +56,9 @@ public class Notepad : MonoBehaviour
 
     // keep it alive
     DontDestroyOnLoad(this);
+
+    // generate unique id, hopefully
+    win_id = Lib.RandomInt(int.MaxValue);
 
     // setup window geometry
     win_rect = new Rect((Screen.width - width) * 0.5f, (Screen.height - height) * 0.5f, width, height);
@@ -102,12 +108,12 @@ public class Notepad : MonoBehaviour
     win_rect.yMax += offset_y;
 
     // draw the window
-    win_rect = GUI.Window(66666666, win_rect, render, "", win_style);
+    win_rect = GUI.Window(win_id, win_rect, render, "", win_style);
   }
 
 
   // draw the window
-  void render(int win_id)
+  void render(int id)
   {
     // get vessel data
     vessel_data vd = DB.VesselData(vessel_id);

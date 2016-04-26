@@ -118,6 +118,7 @@ public class Signal : MonoBehaviour
     range_values.Add("near", (Sim.Apoapsis(home) + Sim.Apoapsis(near)) * 1.6);
     range_values.Add("far", (Sim.Apoapsis(home) + Sim.Apoapsis(far)) * 1.1);
     range_values.Add("extreme", (Sim.Apoapsis(home) + Sim.Apoapsis(far)) * 4.0);
+    range_values.Add("medium", (range_values["near"] + range_values["far"]) * 0.5);
   }
 
 

@@ -167,7 +167,6 @@ public class Malfunction : PartModule
         case "ModuleResourceHarvester":     Apply((ModuleResourceHarvester)m, k);    break;
         case "ModuleReactionWheel":         Apply((ModuleReactionWheel)m, k);        break;
         case "Antenna":                     Apply((Antenna)m, k);                    break;
-        //TODO: ModuleCurvedSolarPanel malfunctions
       }
     }
   }
@@ -436,9 +435,7 @@ public class Malfunction : PartModule
   public static double RadiationInfluence(Vessel v)
   {
     vessel_info vi = Cache.VesselInfo(v);
-    return vi.radiation > Settings.StormRadiation * 0.9
-      ? (Lib.CrewCapacity(v) > 0 ? 3.0 : 5.0)
-      : 1.0;
+    return vi.env_radiation > Settings.StormRadiation * 0.9 ? 2.0 : 1.0;
   }
 }
 

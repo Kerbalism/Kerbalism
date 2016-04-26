@@ -21,7 +21,13 @@ public class vessel_info
   public double   cosmic_radiation;   // cosmic radiation if outside magnetosphere
   public double   belt_radiation;     // radiation from belt if inside one
   public double   storm_radiation;    // radiation from coronal mass ejection
-  public double   radiation;          // total radiation, after shielding
+  public double   env_radiation;      // sun of all incoming radiation
+  public double   food_depletion;     // time-to-depletion for food
+  public double   oxygen_depletion;   // time-to-depletion for oxygen
+  public double   food_consumption;   // food consumed per-second
+  public double   oxygen_consumption; // oxygen consumed per-second
+  public double   food_level;         // percentual of food
+  public double   oxygen_level;       // percentual of oxygen
 }
 
 
@@ -65,7 +71,9 @@ public class Cache : MonoBehaviour
     info.cosmic_radiation = Radiation.CosmicRadiation(v);
     info.belt_radiation = Radiation.BeltRadiation(v);
     info.storm_radiation = Radiation.StormRadiation(v, info.sunlight);
-    info.radiation = (info.cosmic_radiation + info.belt_radiation + info.storm_radiation) * (1.0 - Radiation.Shielding(v));
+    info.env_radiation = info.cosmic_radiation + info.belt_radiation + info.storm_radiation;
+    info.food_depletion = LifeSupport.TimeToDepletionFood(v, out info.food_consumption, out info.food_level);
+    info.oxygen_depletion = LifeSupport.TimeToDepletionOxygen(v, out info.oxygen_consumption, out info.oxygen_level);
 
     // store vessel info in the cache
     instance.vessels.Add(v.id, info);

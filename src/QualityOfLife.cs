@@ -45,9 +45,6 @@ public class QualityOfLife : MonoBehaviour
       // get crew
       List<ProtoCrewMember> crew = v.loaded ? v.GetVesselCrew() : v.protoVessel.GetVesselCrew();
 
-      // calculate quality-of-life bonus
-      double qol = Bonus(v);
-
       // for each crew
       foreach(ProtoCrewMember c in crew)
       {
@@ -61,7 +58,7 @@ public class QualityOfLife : MonoBehaviour
         if (kd.disabled == 1) continue;
 
         // accumulate stress
-        kd.stressed += Settings.StressedDegradationRate * elapsed_s / (qol * Variance(c));
+        kd.stressed += Settings.StressedDegradationRate * elapsed_s / (Bonus(v, c.name) * Variance(c));
 
         // in case of breakdown
         if (kd.stressed >= Settings.StressedEventThreshold)
@@ -128,42 +125,22 @@ public class QualityOfLife : MonoBehaviour
 
 
   // return quality-of-life bonus
-  public static double Bonus(Vessel v)
+  public static double Bonus(Vessel v, string k_name)
   {
-    // deduce crew count and capacity
-    int crew_count = Lib.CrewCount(v);
-    int crew_capacity = Lib.CrewCapacity(v);
-
-    // deduce entertainment bonus, multiplying all entertainment factors
-    double entertainment = 1.0;
-    if (v.loaded)
-    {
-      foreach(Entertainment m in v.FindPartModulesImplementing<Entertainment>())
-      {
-        entertainment *= m.rate;
-      }
-    }
-    else
-    {
-      foreach(ProtoPartSnapshot part in v.protoVessel.protoPartSnapshots)
-      {
-        foreach(ProtoPartModuleSnapshot m in part.modules)
-        {
-          if (m.moduleName == "Entertainment") entertainment *= Lib.GetProtoValue<double>(m, "rate");
-        }
-      }
-    }
+    // get QoL data from db
+    kerbal_data kd = DB.KerbalData(k_name);
 
     // calculate quality of life bonus
-    return Bonus((uint)crew_count, (uint)crew_capacity, entertainment, Lib.Landed(v), Signal.Link(v).linked);
+    return Bonus(kd.living_space, kd.entertainment, Lib.Landed(v), Signal.Link(v).linked, Lib.CrewCount(v) < 2u);
   }
 
 
   // return quality-of-life bonus
-  public static double Bonus(uint crew_count, uint crew_capacity, double entertainment, bool landed, bool linked)
+  public static double Bonus(double living_space, double entertainment, bool landed, bool linked, bool alone)
   {
-    // deduce living space bonus in [1..n] range
-    double living_space = LivingSpace(crew_count, crew_capacity);
+    // sanitize input, can happen when loading vessel from old save
+    living_space = Math.Max(living_space, 1.0);
+    entertainment = Math.Max(entertainment, 1.0);
 
     // deduce firm ground bonus in [1..1+bonus] range
     double firm_ground = (landed ? Settings.QoL_FirmGroundBonus : 0.0) + 1.0;
@@ -172,7 +149,7 @@ public class QualityOfLife : MonoBehaviour
     double phone_home = (linked ? Settings.QoL_PhoneHomeBonus : 0.0) + 1.0;
 
     // deduce not alone bonus in [bonus..bonus*n] range
-    double not_alone = (crew_count > 1 ? Settings.QoL_NotAloneBonus : 0.0) + 1.0;
+    double not_alone = (!alone ? Settings.QoL_NotAloneBonus : 0.0) + 1.0;
 
     // finally, return quality of life bonus
     return entertainment * living_space * firm_ground * phone_home * not_alone;
@@ -200,6 +177,13 @@ public class QualityOfLife : MonoBehaviour
   }
 
 
+  // return living space inside a connected space
+  public static double LivingSpace(ConnectedLivingSpace.ICLSSpace space)
+  {
+    return QualityOfLife.LivingSpace((uint)space.Crew.Count, (uint)space.MaxCrew);
+  }
+
+
   // traduce living space value to string
   public static string LivingSpaceToString(double living_space)
   {
@@ -209,10 +193,61 @@ public class QualityOfLife : MonoBehaviour
     else return "none";
   }
 
+
+  // return entertainment on a vessel
+  public static double Entertainment(Vessel v)
+  {
+    // deduce entertainment bonus, multiplying all entertainment factors
+    double entertainment = 1.0;
+    if (v.loaded)
+    {
+      foreach(Entertainment m in v.FindPartModulesImplementing<Entertainment>())
+      {
+        entertainment *= m.rate;
+      }
+      foreach(GravityRing m in v.FindPartModulesImplementing<GravityRing>())
+      {
+        entertainment *= m.rate;
+      }
+    }
+    else
+    {
+      foreach(ProtoPartSnapshot part in v.protoVessel.protoPartSnapshots)
+      {
+        foreach(ProtoPartModuleSnapshot m in part.modules)
+        {
+          if (m.moduleName == "Entertainment") entertainment *= Lib.GetProtoValue<double>(m, "rate");
+          else if (m.moduleName == "GravityRing") entertainment *= Lib.GetProtoValue<double>(m, "rate");
+        }
+      }
+    }
+    return entertainment;
+  }
+
+
+  public static double Entertainment(ConnectedLivingSpace.ICLSSpace space)
+  {
+    double entertainment = 1.0;
+    foreach(var part in space.Parts)
+    {
+      foreach(Entertainment m in part.Part.FindModulesImplementing<Entertainment>())
+      {
+        entertainment *= m.rate;
+      }
+      foreach(GravityRing m in part.Part.FindModulesImplementing<GravityRing>())
+      {
+        entertainment *= m.rate;
+      }
+    }
+    return entertainment;
+  }
+
+
   // traduce entertainment value to string
   public static string EntertainmentToString(double entertainment)
   {
-    if (entertainment >= 2.5) return "tolerable";
+    if (entertainment >= 6.0) return "good";
+    else if (entertainment >= 3.0) return "tolerable";
     else if (entertainment >= 1.5) return "boring";
     else return "none";
   }

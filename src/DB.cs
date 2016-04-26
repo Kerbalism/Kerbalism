@@ -28,6 +28,10 @@ public class kerbal_data
   public uint   msg_radiation       = 0;            // message flag: radiation poisoning
   public uint   resque              = 1;            // used to deal with resque mission kerbals
   public uint   disabled            = 0;            // a generic flag to disable resource consumption, for use by other mods
+  public double living_space        = 1.0;          // living space factor of the connected-space or whole-space contaning this kerbal
+  public double entertainment       = 1.0;          // entertainment factor of the connected-space or whole-space contaning this kerbal
+  public double shielding           = 0.0;          // shielding factor of the connected-space or whole-space contaning this kerbal
+  public string space_name          = "";           // a name for the space where the kerbal is, or empty for the whole-vessel space
 }
 
 
@@ -88,7 +92,7 @@ public class DB : ScenarioModule
   private notification_data notifications = new notification_data();
 
   // current savegame version
-  private const string current_version = "0.9.9.3";
+  private const string current_version = "0.9.9.4";
 
   // allow global access
   private static DB instance = null;
@@ -128,6 +132,10 @@ public class DB : ScenarioModule
         kd.msg_radiation   = Convert.ToUInt32( kerbal_node.GetValue("msg_radiation") );
         kd.resque          = Convert.ToUInt32( kerbal_node.GetValue("resque") );
         kd.disabled        = Convert.ToUInt32( kerbal_node.GetValue("disabled") );
+        kd.living_space    = string.CompareOrdinal(version, "0.9.9.3") > 0 ? Convert.ToDouble(kerbal_node.GetValue("living_space")) : 0.0;
+        kd.entertainment   = string.CompareOrdinal(version, "0.9.9.3") > 0 ? Convert.ToDouble(kerbal_node.GetValue("entertainment")) : 0.0;
+        kd.shielding       = string.CompareOrdinal(version, "0.9.9.3") > 0 ? Convert.ToDouble(kerbal_node.GetValue("shielding")) : 0.0;
+        kd.space_name      = string.CompareOrdinal(version, "0.9.9.3") > 0 ? kerbal_node.GetValue("space_name") : "";
         kerbals.Add(kerbal_node.name.Replace("___", " "), kd);
       }
     }
@@ -212,6 +220,10 @@ public class DB : ScenarioModule
       kerbal_node.AddValue("msg_radiation", kd.msg_radiation);
       kerbal_node.AddValue("resque", kd.resque);
       kerbal_node.AddValue("disabled", kd.disabled);
+      kerbal_node.AddValue("living_space", kd.living_space);
+      kerbal_node.AddValue("entertainment", kd.entertainment);
+      kerbal_node.AddValue("shielding", kd.shielding);
+      kerbal_node.AddValue("space_name", kd.space_name);
     }
 
     ConfigNode vessels_node = node.AddNode("vessels");
