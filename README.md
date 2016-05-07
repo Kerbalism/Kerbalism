@@ -123,6 +123,42 @@
   Probes can store data and perform a simple telemetry experiment.
 
 
+#CUSTOMIZATION
+
+  Kerbalism can run arbitrary 'rules' that deal with life support and the environment. These rules are
+  grouped in 'profiles' and you can find some in the profiles/ directory, including the default one.
+  Profiles are also used to enable and disable some of the mechanics. If Kerbalism run without a profile
+  it will degenerate into a background resource simulation with a decent EC monitor/planner ui.
+  The signal mechanic is disabled automatically if you have RemoteTech or AntennaRange installed, and
+  the malfunction mechanic do the same if you have DangIt. Finally, check out the file settings.cfg to
+  tweak the environment simulation parameters.
+
+
+#SUPPORTED MODS
+
+  Kerbalism interact with the following mods:
+
+    ConnectedLivingSpace:
+      . the environment properties are calculated for each connected internal space,
+        instead of being calculated for the entire vessel
+
+    SCANsat:
+      . sensors consume EC in background and are included in the planner EC cost (if deployed)
+      . sensors are shut down in background if there isn't enough EC left
+      . likewise, sensors are re-started in background if the EC comes back
+
+    DeepFreeze:
+      . all mechanics are suspended for hibernated Kerbals
+      . the vessel info window show frozen Kerbals with a different color
+
+    NearFuture:
+      . curved solar panels, reactors, fission and radioisotope generators
+        produce EC in background and are considered by the planner
+
+    PlanetaryBaseSystem:
+      . the coverters will work in background and are considered by the planner
+
+
 #FAQs
 
   - ***I think I've founded a bug or any other undesired behaviour***

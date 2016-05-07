@@ -1,12 +1,76 @@
 #CHANGELOG
 
+0.9.9.5
+  BIG REFACTOR
+  - can run arbitrary rules that consume a resource and accumulate a value per-kerbal
+  - rules can be influenced by environment
+  - existing mechanics reimplemented as a set of rules and enabled by default
+  - with no rules it degenerate into a background simulation of the resources with ui
+  - you can write your own rules, go check in profiles/ directory
+  CRP COMPATIBILITY
+  - food/oxygen properties have been changed to match CRP ones
+  - food/oxygen consumption changed to more realistic rates
+  - previous savegames will keep working (yay!)
+  CONFIGURATION
+  - settings.cfg to customize the simulation
+  - choose a file in the profiles/ directory, create your own, or don't use one at all
+  - signal mechanic is disabled automatically if you are using RemoteTech or AntennaRange
+  - malfunction mechanic is disabled automatically if you are using DangIt
+  OTHER MODS SUPPORT
+  - SCANsat modules re-enable automatically when EC is back
+  - support for NearFuture reactors, fission generators and radioisotope generators
+  - support Planetary Base System converters
+  - support for Origami antennas
+  - NearFutureSpacecraft, CryoTanks and KerbalAtomics MM patches by Fraz86
+  - greenhouse & scrubber modules work on arbitrary resources
+  - more hooks added, go check out
+  MALFUNCTIONS
+  - malfunctioned components are highlighted, can be toggled on/off from the monitor ui
+  - engineers can inspect parts and get an estimate of lifetime
+  - use new curve for part aging
+  - use new method to incentive redundancy
+  - seriously lowered the malfunction rate
+  - antennas will last longer
+  - limit of 2 malfunctions per-component at max
+  - reduced range penalty for antenna malfunctions
+  - radiation don't influence malfunctions anymore
+  - planner show correct malfunctions/year estimates
+  MISC
+  - recompiled against KSP 1.1.2
+  - tech descriptions are updated automatically, no need to do that in MM patches anymore
+  - improved tech description visibility
+  - phased out the high-tech 1.25m food container
+  - more robust depletion estimates
+  - new Sensor module to add environment readings to a part
+  - storm messages can be disabled per-vessel
+  - storms can be turn off in settings
+  - added a partlist icon in the vab and moved parts there
+  BALANCE
+  - lowered mass of shielding
+  - reduced mass of parts in general
+  - breakdown events also incur a reputation penalty
+  - increased time before breakdown a bit
+  - reduced frequency of storms
+  - increased science value of experiments a bit
+  - moved small fixed panel to basic science
+  - rebalanced solar panels outputs to visually match number of panels
+  BUGFIXES
+  - fix: bug with multiple ModuleResourceConverters in background and active flag
+  - fix: helmet state no forced on top of KIS anymore
+  - fix: problems with flowState
+  - fix: problems with resque kerbals on eva
+  - fix: setup resources for resque missions
+  - fix: kerbal climate property recover slowly to avoid exploit
+  - fix: thermometer readings
+
+
 0.9.9.4
   - new part! an artificial gravity hab by mehka
   - new part! small food container by Nazari1382
   - new part! a better 1.25m food container by tygoo7
   - added support for ConnectedLivingSpace
   - vessel info window
-  - new 'medium' scope for antennas  
+  - new 'medium' scope for antennas
   - doubled amount of EC on eva suits
   - minor changes in the EnergyTweaks
   - reduced radiation influence over malfunctions
