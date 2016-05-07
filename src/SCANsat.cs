@@ -32,7 +32,7 @@ public static class SCANsat
       {
         if (a.name == "SCANsat" && a.assembly.GetName().Version.Major == 1 && a.assembly.GetName().Version.Minor >= 6)
         {
-          SCANUtils = a.assembly.GetType("SCANsat.SCANUtils");
+          SCANUtils = a.assembly.GetType("SCANsat.SCANUtil");
           break;
         }
       }
@@ -40,24 +40,7 @@ public static class SCANsat
     }
   }
 
-
-  // return true if a SCANsat module is scanning
-  // - m: protomodule of a SCANsat or a resource scanner
-  public static bool isScanning(ProtoPartModuleSnapshot m)
-  {
-    return Convert.ToBoolean(m.moduleValues.GetValue("scanning"));
-  }
-
-
-  // return true if a SCANsat module *was* scanning, before we stopped it for lack of EC
-  // - m: protomodule of a SCANsat or a resource scanner
-  public static bool wasScanning(ProtoPartModuleSnapshot m)
-  {
-    return Convert.ToBoolean(m.moduleValues.GetValue("was_scanning"));
-  }
-
-
-  // interrupt scanning of a SCANsat module, and record this in the 'was_scanning' entry in the protomodule
+  // interrupt scanning of a SCANsat module
   // - v: vessel that own the module
   // - m: protomodule of a SCANsat or a resource scanner
   // - p: prefab of the part owning the module
@@ -66,14 +49,13 @@ public static class SCANsat
     lazy_init();
     if (SCANUtils != null)
     {
-      m.moduleValues.AddValue("was_scanning", true.ToString());
       return (bool)SCANUtils.GetMethod("unregisterSensorExternal").Invoke(null, new System.Object[]{v, m, part_prefab});
     }
     return false;
   }
 
 
-  // resume scanning of a SCANsat module, and clear the entry 'was_scanning' in the protomodule
+  // resume scanning of a SCANsat module
   // - v: vessel that own the module
   // - m: protomodule of a SCANsat or a resource scanner
   // - p: prefab of the part owning the module
@@ -82,7 +64,6 @@ public static class SCANsat
     lazy_init();
     if (SCANUtils != null)
     {
-      m.moduleValues.RemoveValue("was_scanning");
       return (bool)SCANUtils.GetMethod("registerSensorExternal").Invoke(null, new System.Object[]{v, m, part_prefab});
     }
     return false;

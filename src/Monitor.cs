@@ -132,45 +132,58 @@ public class Monitor
 
   GUIContent indicator_ec(Vessel v)
   {
-    // note: if there isn't ec capacity, show danger
-
     double amount = Lib.GetResourceAmount(v, "ElectricCharge");
     double capacity = Lib.GetResourceCapacity(v, "ElectricCharge");
-    double level = capacity > 0.0 ? amount / capacity : 0.0;
+    double level = capacity > 0.0 ? amount / capacity : 1.0;
 
     GUIContent state = new GUIContent();
-    state.tooltip = "EC: " + (level * 100.0).ToString("F0") + "%";
-    if (level <= Settings.ResourceDangerThreshold) state.image = icon_battery_danger;
-    else if (level <= Settings.ResourceWarningThreshold) state.image = icon_battery_warning;
-    else state.image = icon_battery_nominal;
+    state.tooltip = capacity > 0.0 ? "EC: " + (level * 100.0).ToString("F0") + "%" : "";
+    state.image = icon_battery_nominal;
+
+    double low_threshold = 0.15;
+    foreach(var p in Kerbalism.rules)
+    {
+      Rule r = p.Value;
+      if (r.resource_name == "ElectricCharge")
+      {
+        low_threshold = r.low_threshold;
+        break;
+      }
+    }
+
+    if (level <= double.Epsilon) state.image = icon_battery_danger;
+    else if (level <= low_threshold) state.image = icon_battery_warning;
     return state;
   }
 
 
   GUIContent indicator_supplies(Vessel v, vessel_info vi)
   {
-    // store the icon and tooltip
     GUIContent state = new GUIContent();
-
-    // choose an icon
-    double level = Math.Min(vi.food_level, vi.oxygen_level);
-    if (level <= Settings.ResourceDangerThreshold) state.image = icon_supplies_danger;
-    else if (level <= Settings.ResourceWarningThreshold) state.image = icon_supplies_warning;
-    else state.image = icon_supplies_nominal;
-
-    // generate tooltips
+    List<string> tooltips = new List<string>();
+    uint max_severity = 0;
     if (Lib.CrewCount(v) > 0)
     {
-      List<string> tooltips = new List<string>();
-      tooltips.Add(vi.food_level > Settings.ResourceDangerThreshold
-        ? "Food: <b>" + (vi.food_level * 100.0).ToString("F0") + "%, </b>deplete in <b>" + Lib.HumanReadableDuration(vi.food_depletion) + "</b>"
-        : "Food: <b>depleted</b>");
-        tooltips.Add(vi.oxygen_level > Settings.ResourceDangerThreshold
-          ? "Oxygen: <b>" + (vi.oxygen_level * 100.0).ToString("F0") + "%, </b>deplete in <b>" + Lib.HumanReadableDuration(vi.oxygen_depletion) + "</b>"
-          : "Oxygen: <b>depleted</b>");
-      state.tooltip = string.Join("\n", tooltips.ToArray());
+      foreach(Rule r in Kerbalism.supply_rules)
+      {
+        var vmon = vi.vmon[r.name];
+        string deplete_str = vmon.depletion <= double.Epsilon
+          ? ", depleted"
+          : double.IsNaN(vmon.depletion)
+          ? ""
+          : ", deplete in <b>" + Lib.HumanReadableDuration(vmon.depletion) + "</b>";
+        tooltips.Add(r.resource_name + ": <b>" + (vmon.level * 100.0).ToString("F0") + "%</b>" + deplete_str);
+        uint severity = vmon.level <= double.Epsilon ? 2u : vmon.level <= r.low_threshold ? 1u : 0;
+        max_severity = Math.Max(max_severity, severity);
+      }
     }
-
+    switch(max_severity)
+    {
+      case 0: state.image = icon_supplies_nominal; break;
+      case 1: state.image = icon_supplies_warning; break;
+      case 2: state.image = icon_supplies_danger; break;
+    }
+    state.tooltip = string.Join("\n", tooltips.ToArray());
     return state;
   }
 
@@ -305,23 +318,24 @@ public class Monitor
       // skip disabled kerbals
       if (kd.disabled == 1) continue;
 
-      // health
-      if (kd.starved > Settings.StarvedDangerThreshold) { health_severity = Math.Max(health_severity, 2); tooltips.Add(c.name + " is starving"); }
-      else if (kd.starved > Settings.StarvedWarningThreshold) { health_severity = Math.Max(health_severity, 1); tooltips.Add(c.name + " is hungry"); }
-      if (kd.deprived > Settings.DeprivedDangerThreshold) { health_severity = Math.Max(health_severity, 2); tooltips.Add(c.name + " is suffocating"); }
-      else if (kd.deprived > Settings.DeprivedWarningThreshold) { health_severity = Math.Max(health_severity, 1); tooltips.Add(c.name + " is gasping"); }
-      if (kd.temperature < -Settings.TemperatureDangerThreshold) { health_severity = Math.Max(health_severity, 2); tooltips.Add(c.name + " is freezing"); }
-      else if (kd.temperature < -Settings.TemperatureWarningThreshold) { health_severity = Math.Max(health_severity, 1); tooltips.Add(c.name + " feels cold"); }
-      else if (kd.temperature > Settings.TemperatureDangerThreshold) { health_severity = Math.Max(health_severity, 2); tooltips.Add(c.name + " is burning"); }
-      else if (kd.temperature > Settings.TemperatureWarningThreshold) { health_severity = Math.Max(health_severity, 1); tooltips.Add(c.name + " feels hot"); }
+      foreach(var p in Kerbalism.rules)
+      {
+        Rule r = p.Value;
+        kmon_data kmon = DB.KmonData(c.name, r.name);
+        if (kmon.problem > r.danger_threshold)
+        {
+          if (!r.breakdown) health_severity = Math.Max(health_severity, 2);
+          else stress_severity = Math.Max(stress_severity, 2);
+          tooltips.Add(c.name + " (" + r.name + ")");
+        }
+        else if (kmon.problem > r.warning_threshold)
+        {
+          if (!r.breakdown) health_severity = Math.Max(health_severity, 1);
+          else stress_severity = Math.Max(stress_severity, 1);
+          tooltips.Add(c.name + " (" + r.name + ")");
+        }
+      }
 
-      // radiation
-      if (kd.radiation > Settings.RadiationDangerThreshold) { health_severity = Math.Max(health_severity, 2); tooltips.Add(c.name + " exposed to extreme radiation"); }
-      else if (kd.radiation > Settings.RadiationWarningThreshold) { health_severity = Math.Max(health_severity, 1); tooltips.Add(c.name + " exposed to intense radiation"); }
-
-      // stress
-      if (kd.stressed > Settings.StressedDangerThreshold) { stress_severity = Math.Max(stress_severity, 2); tooltips.Add(c.name + " mind is breaking"); }
-      else if (kd.stressed > Settings.StressedWarningThreshold) { stress_severity = Math.Max(stress_severity, 1); tooltips.Add(c.name + " is stressed"); }
     }
     if (health_severity == 1) icons.Add(icon_health_warning);
     else if (health_severity == 2) icons.Add(icon_health_danger);
@@ -439,9 +453,9 @@ public class Monitor
     GUILayout.Label(new GUIContent(Lib.Epsilon(body_name, 8), body_name.Length > 8 ? body_name : ""), body_style);
     GUILayout.Label(new GUIContent(problem_icon, problem_tooltip), icon_style);
     GUILayout.Label(indicator_ec(v), icon_style);
-    GUILayout.Label(indicator_supplies(v, vi), icon_style);
-    GUILayout.Label(indicator_reliability(v), icon_style);
-    GUILayout.Label(indicator_signal(v), icon_style);
+    if (Kerbalism.supply_rules.Count > 0) GUILayout.Label(indicator_supplies(v, vi), icon_style);
+    if (Kerbalism.features.malfunction) GUILayout.Label(indicator_reliability(v), icon_style);
+    if (Kerbalism.features.signal) GUILayout.Label(indicator_signal(v), icon_style);
     GUILayout.EndHorizontal();
     if (Lib.IsClicked(1)) Info.Toggle(v);
 
@@ -469,22 +483,45 @@ public class Monitor
     vessel_data vd = DB.VesselData(v.id);
 
     // draw the config
-    GUILayout.BeginHorizontal(row_style);
-    GUILayout.Label(new GUIContent(" EC MESSAGES", icon_toggle[vd.cfg_ec]), config_style);
-    if (Lib.IsClicked()) vd.cfg_ec = (vd.cfg_ec == 0 ? 1u : 0);
-    GUILayout.EndHorizontal();
-    GUILayout.BeginHorizontal(row_style);
-    GUILayout.Label(new GUIContent(" SUPPLY MESSAGES", icon_toggle[vd.cfg_supply]), config_style);
-    if (Lib.IsClicked()) vd.cfg_supply = (vd.cfg_supply == 0 ? 1u : 0);
-    GUILayout.EndHorizontal();
-    GUILayout.BeginHorizontal(row_style);
-    GUILayout.Label(new GUIContent(" MALFUNCTIONS MESSAGES", icon_toggle[vd.cfg_malfunction]), config_style);
-    if (Lib.IsClicked()) vd.cfg_malfunction = (vd.cfg_malfunction == 0 ? 1u : 0);
-    GUILayout.EndHorizontal();
-    GUILayout.BeginHorizontal(row_style);
-    GUILayout.Label(new GUIContent(" SIGNAL MESSAGES", icon_toggle[vd.cfg_signal]), config_style);
-    if (Lib.IsClicked()) vd.cfg_signal = (vd.cfg_signal == 0 ? 1u : 0);
-    GUILayout.EndHorizontal();
+    if (Kerbalism.ec_rule != null)
+    {
+      GUILayout.BeginHorizontal(row_style);
+      GUILayout.Label(new GUIContent(" EC MESSAGES", icon_toggle[vd.cfg_ec]), config_style);
+      if (Lib.IsClicked()) vd.cfg_ec = (vd.cfg_ec == 0 ? 1u : 0);
+      GUILayout.EndHorizontal();
+    }
+    if (Kerbalism.supply_rules.Count > 0)
+    {
+      GUILayout.BeginHorizontal(row_style);
+      GUILayout.Label(new GUIContent(" SUPPLY MESSAGES", icon_toggle[vd.cfg_supply]), config_style);
+      if (Lib.IsClicked()) vd.cfg_supply = (vd.cfg_supply == 0 ? 1u : 0);
+      GUILayout.EndHorizontal();
+    }
+    if (Kerbalism.features.signal)
+    {
+      GUILayout.BeginHorizontal(row_style);
+      GUILayout.Label(new GUIContent(" SIGNAL MESSAGES", icon_toggle[vd.cfg_signal]), config_style);
+      if (Lib.IsClicked()) vd.cfg_signal = (vd.cfg_signal == 0 ? 1u : 0);
+      GUILayout.EndHorizontal();
+    }
+    if (Settings.StormDuration > double.Epsilon)
+    {
+      GUILayout.BeginHorizontal(row_style);
+      GUILayout.Label(new GUIContent(" STORM MESSAGES", icon_toggle[vd.cfg_storm]), config_style);
+      if (Lib.IsClicked()) vd.cfg_storm = (vd.cfg_storm == 0 ? 1u : 0);
+      GUILayout.EndHorizontal();
+    }
+    if (Kerbalism.features.malfunction)
+    {
+      GUILayout.BeginHorizontal(row_style);
+      GUILayout.Label(new GUIContent(" RELIABILITY MESSAGES", icon_toggle[vd.cfg_malfunction]), config_style);
+      if (Lib.IsClicked()) vd.cfg_malfunction = (vd.cfg_malfunction == 0 ? 1u : 0);
+      GUILayout.EndHorizontal();
+      GUILayout.BeginHorizontal(row_style);
+      GUILayout.Label(new GUIContent(" HIGHLIGHT MALFUNCTIONS", icon_toggle[vd.cfg_highlights]), config_style);
+      if (Lib.IsClicked()) vd.cfg_highlights = (vd.cfg_highlights == 0 ? 1u : 0);
+      GUILayout.EndHorizontal();
+    }
     if (!filtered())
     {
       GUILayout.BeginHorizontal(row_style);
@@ -518,7 +555,10 @@ public class Monitor
 
   public float width()
   {
-    return 300.0f;
+    return 300.0f
+      - (!Kerbalism.features.malfunction ? 20.0f : 0.0f)
+      - (!Kerbalism.features.signal ? 20.0f : 0.0f)
+      - (Kerbalism.supply_rules.Count == 0 ? 20.0f : 0.0f);
   }
 
 
@@ -562,7 +602,27 @@ public class Monitor
 
     // calculate height
     float vessels_height = 10.0f + (float)count * (16.0f + 10.0f);
-    float config_height = configured_id == Guid.Empty ? 0.0f : filtered() ? 96.0f : 112.0f;
+    uint config_entries = 0;
+    if (configured_id != Guid.Empty)
+    {
+      config_entries = 3u; // group, info & notes
+      if (Kerbalism.ec_rule != null) ++config_entries;
+      if (Kerbalism.supply_rules.Count > 0) ++config_entries;
+      if (Kerbalism.features.signal) ++config_entries;
+      if (Kerbalism.features.malfunction) config_entries += 2u;
+      if (Settings.StormDuration > double.Epsilon) ++config_entries;
+      if (filtered()) ++config_entries;
+    }
+    /*int config_entries = configured_id == Guid.Empty ? 0 : 9;
+    if (filtered()) ++config_entries;
+    if (Kerbalism.ec_rule == null) --config_entries;
+    if (Kerbalism.supply_rules.Count == 0) --config_entries;
+    if (!Kerbalism.features.signal) --config_entries;
+    if (!Kerbalism.features.malfunction) config_entries -= 2;
+    if (Settings.StormDuration <= double.Epsilon) --config_entries;
+    config_entries = Math.Max(config_entries, 0);
+    */
+    float config_height = (float)config_entries * 16.0f;
     float filter_height = show_filter ? 16.0f + 10.0f : 0.0f;
     return Math.Min(vessels_height + config_height + filter_height, Screen.height * 0.5f);
   }

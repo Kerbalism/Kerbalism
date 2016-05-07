@@ -11,8 +11,9 @@ using UnityEngine;
 namespace KERBALISM {
 
 
-[KSPAddon(KSPAddon.Startup.MainMenu, true)]
-public class Radiation : MonoBehaviour
+//[KSPAddon(KSPAddon.Startup.MainMenu, true)]
+//public class Radiation : MonoBehaviour
+public static class Radiation
 {
   class body_info
   {
@@ -22,19 +23,19 @@ public class Radiation : MonoBehaviour
   }
 
   // cache of body info, computed once
-  Dictionary<int, body_info> bodies = new Dictionary<int, body_info>();
+  static Dictionary<int, body_info> bodies = new Dictionary<int, body_info>();
 
   // permit global access
-  private static Radiation instance = null;
+  //private static Radiation instance = null;
 
   // ctor
-  Radiation()
+  static Radiation()
   {
     // enable global access
-    instance = this;
+    //instance = this;
 
     // keep it alive
-    DontDestroyOnLoad(this);
+    //DontDestroyOnLoad(this);
 
     // compute magnetosphere of bodies
     CelestialBody home = FlightGlobals.GetHomeBody();
@@ -75,104 +76,11 @@ public class Radiation : MonoBehaviour
   }
 
 
-  // implement radiation mechanics
-  public void FixedUpdate()
-  {
-    // avoid case when DB isn't ready for whatever reason
-    if (!DB.Ready()) return;
-
-    // do nothing in the editors and the menus
-    if (!Lib.SceneIsGame()) return;
-
-    // do nothing if paused
-    if (Lib.IsPaused()) return;
-
-    // get time elapsed from last update
-    double elapsed_s = TimeWarp.fixedDeltaTime;
-
-    // for each vessel
-    foreach(Vessel v in FlightGlobals.Vessels)
-    {
-      // skip invalid vessels
-      if (!Lib.IsVessel(v)) continue;
-
-      // skip dead eva kerbals
-      if (EVA.IsDead(v)) continue;
-
-      // get crew
-      List<ProtoCrewMember> crew = v.loaded ? v.GetVesselCrew() : v.protoVessel.GetVesselCrew();
-
-      // get crew count
-      int crew_count = Lib.CrewCount(v);
-
-      // get vessel info from the cache
-      vessel_info info = Cache.VesselInfo(v);
-
-      // get vessel data
-      vessel_data vd = DB.VesselData(v.id);
-
-
-      // belt warnings
-      // note: we only show it for manned vesssels, but the first time we also show it for probes
-      if (crew_count > 0 || DB.NotificationData().first_belt_crossing == 0)
-      {
-        if (InsideBelt(v) && vd.msg_belt < 1)
-        {
-          Message.Post("<b>" + v.vesselName + "</b> is crossing <i>" + v.mainBody.bodyName + " radiation belt</i>", "Exposed to extreme radiation");
-          vd.msg_belt = 1;
-          DB.NotificationData().first_belt_crossing = 1; //< record first belt crossing
-        }
-        else if (!InsideBelt(v) && vd.msg_belt > 0)
-        {
-          // no message after crossing the belt
-          vd.msg_belt = 0;
-        }
-      }
-
-
-      // for each crew
-      foreach(ProtoCrewMember c in crew)
-      {
-        // get kerbal data
-        kerbal_data kd = DB.KerbalData(c.name);
-
-        // skip resque kerbals
-        if (kd.resque == 1) continue;
-
-        // skip disabled kerbals
-        if (kd.disabled == 1) continue;
-
-        // accumulate radiation
-        kd.radiation += info.env_radiation * (1.0 - kd.shielding) * elapsed_s;
-
-        // kill kerbal if necessary
-        if (kd.radiation >= Settings.RadiationFatalThreshold)
-        {
-          Message.Post(Severity.fatality, KerbalEvent.radiation, v, c);
-          Kerbalism.Kill(v, c);
-        }
-        // show warnings
-        else if (kd.radiation >= Settings.RadiationDangerThreshold && kd.msg_radiation < 2)
-        {
-          Message.Post(Severity.danger, KerbalEvent.radiation, v, c);
-          kd.msg_radiation = 2;
-        }
-        else if (kd.radiation >= Settings.RadiationWarningThreshold && kd.msg_radiation < 1)
-        {
-          Message.Post(Severity.danger, KerbalEvent.radiation, v, c);
-          kd.msg_radiation = 1;
-        }
-        // note: no recovery from radiations
-      }
-    }
-  }
-
-
   // return magnetism strength for a body
   public static double Dynamo(CelestialBody body)
   {
     if (body.flightGlobalsIndex == 0) return 0.0;
-    return instance.bodies[body.flightGlobalsIndex].dynamo;
+    return bodies[body.flightGlobalsIndex].dynamo;
   }
 
 
@@ -180,7 +88,7 @@ public class Radiation : MonoBehaviour
   public static double MagnAltitude(CelestialBody body)
   {
      if (body.flightGlobalsIndex == 0) return 0.0;
-     return instance.bodies[body.flightGlobalsIndex].magn_altitude;
+     return bodies[body.flightGlobalsIndex].magn_altitude;
   }
 
 
@@ -188,7 +96,7 @@ public class Radiation : MonoBehaviour
   public static double BeltAltitude(CelestialBody body)
   {
      if (body.flightGlobalsIndex == 0) return 0.0;
-     return instance.bodies[body.flightGlobalsIndex].belt_altitude;
+     return bodies[body.flightGlobalsIndex].belt_altitude;
   }
 
 
@@ -196,7 +104,7 @@ public class Radiation : MonoBehaviour
   public static bool HasMagnetosphere(CelestialBody body)
   {
     if (body.flightGlobalsIndex == 0) return false;
-    return instance.bodies[body.flightGlobalsIndex].magn_altitude > double.Epsilon;
+    return bodies[body.flightGlobalsIndex].magn_altitude > double.Epsilon;
   }
 
 
@@ -204,7 +112,7 @@ public class Radiation : MonoBehaviour
   public static bool HasBelt(CelestialBody body)
   {
     if (body.flightGlobalsIndex == 0) return false;
-    return instance.bodies[body.flightGlobalsIndex].belt_altitude > double.Epsilon;
+    return bodies[body.flightGlobalsIndex].belt_altitude > double.Epsilon;
   }
 
 
@@ -212,7 +120,7 @@ public class Radiation : MonoBehaviour
   public static bool InsideMagnetosphere(Vessel v)
   {
     if (v.mainBody.flightGlobalsIndex == 0) return false;
-    return v.altitude < instance.bodies[v.mainBody.flightGlobalsIndex].magn_altitude;
+    return v.altitude < bodies[v.mainBody.flightGlobalsIndex].magn_altitude;
   }
 
 
@@ -220,7 +128,7 @@ public class Radiation : MonoBehaviour
   public static bool InsideBelt(Vessel v)
   {
     if (v.mainBody.flightGlobalsIndex == 0) return false;
-    double belt_altitude = instance.bodies[v.mainBody.flightGlobalsIndex].belt_altitude;
+    double belt_altitude = bodies[v.mainBody.flightGlobalsIndex].belt_altitude;
     return Math.Abs(v.altitude - belt_altitude) < belt_altitude * Settings.BeltFalloff;
   }
 
@@ -229,7 +137,7 @@ public class Radiation : MonoBehaviour
   public static double CosmicRadiation(Vessel v)
   {
     if (v.mainBody.flightGlobalsIndex == 0) return Settings.CosmicRadiation;
-    double magn_altitude = instance.bodies[v.mainBody.flightGlobalsIndex].magn_altitude;
+    double magn_altitude = bodies[v.mainBody.flightGlobalsIndex].magn_altitude;
     double magn_k = magn_altitude > double.Epsilon ? Lib.Clamp((v.altitude - magn_altitude) / (magn_altitude * Settings.MagnetosphereFalloff), 0.0, 1.0) : 1.0;
     return Settings.CosmicRadiation * magn_k;
   }
@@ -239,7 +147,7 @@ public class Radiation : MonoBehaviour
   public static double BeltRadiation(Vessel v)
   {
     if (v.mainBody.flightGlobalsIndex == 0) return 0.0;
-    body_info info = instance.bodies[v.mainBody.flightGlobalsIndex];
+    body_info info = bodies[v.mainBody.flightGlobalsIndex];
     double belt_altitude = info.belt_altitude;
     double dynamo = info.dynamo;
     double belt_k = belt_altitude > double.Epsilon ? 1.0 - Math.Min(Math.Abs(v.altitude - belt_altitude) / (belt_altitude * Settings.BeltFalloff), 1.0) : 0.0;
@@ -286,9 +194,9 @@ public class Radiation : MonoBehaviour
   public static string ShieldingToString(double shielding_factor)
   {
     if (shielding_factor <= double.Epsilon) return "none";
-    if (shielding_factor <= 0.33) return "poor";
-    if (shielding_factor <= 0.66) return "moderate";
-    if (shielding_factor <= 0.99) return "decent";
+    if (shielding_factor <= 0.25) return "poor";
+    if (shielding_factor <= 0.50) return "moderate";
+    if (shielding_factor <= 0.75) return "decent";
     return "hardened";
   }
 

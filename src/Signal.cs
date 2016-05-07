@@ -56,7 +56,7 @@ public class Signal : MonoBehaviour
   {
     public SignalProcessing()
     {
-      var cfg = Lib.ParseConfig("Kerbalism/Patches/Signal/SignalProcessing");
+      var cfg = Lib.ParseConfig("Kerbalism/Patches/System/SignalProcessing");
       this.techs[0] = Lib.ConfigValue(cfg, "tech0", "advElectrics");
       this.techs[1] = Lib.ConfigValue(cfg, "tech1", "largeElectrics");
       this.techs[2] = Lib.ConfigValue(cfg, "tech2", "experimentalElectrics");
@@ -167,7 +167,7 @@ public class Signal : MonoBehaviour
           {
             if (m.moduleName == "Antenna")
             {
-              double range = Range(m.moduleValues.GetValue("scope"), Malfunction.Penalty(p), ecc);
+              double range = Range(m.moduleValues.GetValue("scope"), Malfunction.Penalty(p, 0.7071), ecc);
               double relay_cost = Lib.GetProtoValue<double>(m, "relay_cost");
               bool relay = Lib.GetProtoValue<bool>(m, "relay");
               best_range = Math.Max(best_range, range);
@@ -377,6 +377,9 @@ public class Signal : MonoBehaviour
   // - during scene changes the vessel list change asynchronously, but is synched every frame, apparently
   public void Update()
   {
+    // play nice with RemoteTech and AntennaRange
+    if (!Kerbalism.features.signal) return;
+
     // get existing antennas
     BuildAntennas();
 
@@ -411,6 +414,9 @@ public class Signal : MonoBehaviour
 
   public void FixedUpdate()
   {
+    // play nice with RemoteTech and AntennaRange
+    if (!Kerbalism.features.signal) return;
+
     // do nothing if paused
     if (Lib.IsPaused()) return;
 
@@ -436,6 +442,9 @@ public class Signal : MonoBehaviour
   // return link status of a vessel
   public static link_data Link(Vessel v)
   {
+    // play nice with RemoteTech and AntennaRange
+    if (!Kerbalism.features.signal) return new link_data(true, link_status.direct_link, double.MaxValue);
+
     // if, for some reasons, there isn't link data for the vessel, return 'no antenna'
     // note: this for example may happen when a resque mission vessel get enabled
     link_data ld;
@@ -449,7 +458,7 @@ public class Signal : MonoBehaviour
   // return range of an antenna
   static public double Range(string scope, double penalty, double ecc)
   {
-    return instance.range_values[scope] *  penalty * ecc;
+    return instance.range_values[scope] * penalty * ecc;
   }
 
 

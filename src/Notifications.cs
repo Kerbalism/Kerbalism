@@ -107,7 +107,7 @@ public class Notifications : MonoBehaviour
   };
 
   // tutorial conditions
-  private static bool tutorial_condition(uint i)
+  static bool tutorial_condition(uint i)
   {
     if (ProgressTracking.Instance == null) return false;
     switch(i)
@@ -123,6 +123,41 @@ public class Notifications : MonoBehaviour
         return false;
       case 4: return DB.NotificationData().first_signal_loss > 0;                                   // 'signals'
       case 5: return DB.NotificationData().first_malfunction > 0;                                   // 'malfunctions'
+    }
+    return false;
+  }
+
+  // return true if the relative feature is enabled
+  static bool tutorial_feature(uint i)
+  {
+    if (ProgressTracking.Instance == null) return false;
+    switch(i)
+    {
+      case 0: // 'food & oxygen'
+        return Kerbalism.supply_rules.Find(k => k.resource_name == "Food") != null
+            && Kerbalism.supply_rules.Find(k => k.resource_name == "Oxygen") != null
+            && Kerbalism.features.scrubber;
+
+      case 1: // 'electric charge'
+        foreach(var p in Kerbalism.rules)
+        { if (p.Value.modifier == "temperature" && p.Value.resource_name == "ElectricCharge") return true; }
+        return false;
+
+      case 2: // 'radiation'
+        foreach(var p in Kerbalism.rules)
+        { if (p.Value.modifier == "radiation") return true; }
+        return false;
+
+      case 3: // 'quality of life'
+        foreach(var p in Kerbalism.rules)
+        { if (p.Value.modifier == "qol") return true; }
+        return false;
+
+      case 4: // 'signals'
+        return Kerbalism.features.signal;
+
+      case 5: // 'malfunctions'
+        return Kerbalism.features.malfunction;
     }
     return false;
   }
@@ -172,9 +207,13 @@ public class Notifications : MonoBehaviour
       // check tutorial condition
       if (tutorial_condition(nd.next_tutorial))
       {
-        // show notification
-        Entry e = tutorials[nd.next_tutorial];
-        Notification(e.title, e.msg, "INFO");
+        // check if the relative feature is enabled
+        if (tutorial_feature(nd.next_tutorial))
+        {
+          // show notification
+          Entry e = tutorials[nd.next_tutorial];
+          Notification(e.title, e.msg, "INFO");
+        }
 
         // move to next tutorial
         ++nd.next_tutorial;

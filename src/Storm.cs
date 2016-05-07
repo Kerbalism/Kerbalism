@@ -20,6 +20,9 @@ public class Storm : MonoBehaviour
   // called every simulation tick
   public void FixedUpdate()
   {
+    // do nothing if storms are disabled
+    if (Settings.StormDuration <= double.Epsilon) return;
+
     // do nothing if paused
     if (Lib.IsPaused()) return;
 
@@ -141,6 +144,9 @@ public class Storm : MonoBehaviour
 
         // skip dead eva kerbal
         if (EVA.IsDead(v)) continue;
+
+        // obey message config
+        if (DB.VesselData(v.id).cfg_storm == 0) continue;
 
         // body is relevant
         return true;

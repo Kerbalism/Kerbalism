@@ -60,25 +60,15 @@ public class Planner
   }
 
 
-  public class food_data
+  public class supply_data
   {
-    public double storage;                                // food stored
-    public double consumed;                               // food consumed
-    public double cultivated;                             // food cultivated
-    public double life_expectancy;                        // time-to-death for lack of food
-    public double greenhouse_cost;                        // ec cost of artificial lighting for the greenhouses
-    public string cultivated_tooltip = "";                // contain time-to-harvest for all the greenhouses
-  }
-
-
-  public class oxygen_data
-  {
-    public double scrubber_efficiency;                    // tech-dependent scrubber efficiency
-    public double storage;                                // oxygen stored
-    public double consumed;                               // oxygen consumed
-    public double recycled;                               // oxygen recycled
-    public double life_expectancy;                        // time-to-death for lack of oxygen
-    public double scrubber_cost;                          // ec cost of all scrubbers
+    public double storage;                                // amount of supply
+    public double consumed;                               // supply consumed per-second
+    public double produced;                               // supply recycled/produced per-second
+    public double tta;                                    // best time-to-harvest among all greenhouses, in seconds
+    public double life_expectancy;                        // time-to-death for lack of supply
+    public bool   has_greenhouse;                         // true if it has a greenhouse with same resource
+    public bool   has_scrubber;                           // true if it has a scrubber with same resource
   }
 
 
@@ -135,6 +125,17 @@ public class Planner
   // current planner page
   uint page;
 
+  // useful rules
+  bool rules_detected = false;
+  Rule rule_temp = null;
+  Rule rule_radiation = null;
+  Rule rule_qol = null;
+
+  // automatic page layout of panels
+  uint panels_count;
+  uint panels_per_page;
+  uint pages_count;
+
 
   // ctor
   public Planner()
@@ -146,7 +147,7 @@ public class Planner
     // left menu style
     leftmenu_style = new GUIStyle(HighLogic.Skin.label);
     leftmenu_style.richText = true;
-    leftmenu_style.normal.textColor = new Color(0.75f, 0.75f, 0.75f, 1.0f);
+    leftmenu_style.normal.textColor = new Color(0.0f, 0.0f, 0.0f, 1.0f);
     leftmenu_style.fixedWidth = 120.0f;
     leftmenu_style.stretchHeight = true;
     leftmenu_style.fontSize = 10;
@@ -226,8 +227,8 @@ public class Planner
     env.shadow_period = Sim.ShadowPeriod(body, env.altitude);
     env.shadow_time = env.shadow_period / env.orbital_period;
     env.temp_diff = env.landed && body.atmosphere
-      ? Math.Abs(Settings.SurvivalTemperature - env.atmo_temp)
-      : Lib.Mix(Math.Abs(Settings.SurvivalTemperature - env.light_temp), Math.Abs(Settings.SurvivalTemperature - env.shadow_temp), env.shadow_time);
+      ? Sim.TempDiff(env.atmo_temp)
+      : Lib.Mix(Sim.TempDiff(env.light_temp), Sim.TempDiff(env.shadow_temp), env.shadow_time);
     env.atmo_factor = env.landed ? Sim.AtmosphereFactor(body, 0.7071) : 1.0;
 
     // return data
@@ -262,13 +263,13 @@ public class Planner
   }
 
 
-  public static ec_data analyze_ec(List<Part> parts, environment_data env, crew_data crew, food_data food, oxygen_data oxygen, signal_data signal)
+  public static ec_data analyze_ec(List<Part> parts, environment_data env, crew_data crew, Rule rule_temp)
   {
     // store data
     ec_data ec = new ec_data();
 
     // calculate climate cost
-    ec.consumed = (double)crew.count * env.temp_diff * Settings.ElectricChargePerSecond;
+    ec.consumed = rule_temp != null ? (double)crew.count * env.temp_diff * rule_temp.rate : 0.0;
 
     // scan the parts
     foreach(Part p in parts)
@@ -331,7 +332,8 @@ public class Planner
         // converter
         // note: only electric charge is considered for resource converters
         // note: we only consider the first resource converter in a part, and ignore the rest
-        else if (m.moduleName == "ModuleResourceConverter" && first_converter)
+        // note: support PlanetaryBaseSystem converters
+        else if ((m.moduleName == "ModuleResourceConverter" || m.moduleName == "ModuleKPBSConverter") && first_converter)
         {
           ModuleResourceConverter mm = (ModuleResourceConverter)m;
           foreach(ResourceRatio rr in mm.inputList)
@@ -397,6 +399,33 @@ public class Planner
             ec.consumed += mm.inputResource.rate;
           }
         }
+        // scrubber
+        else if (m.moduleName == "Scrubber")
+        {
+          Scrubber scrubber = (Scrubber)m;
+          if (scrubber.is_enabled && !env.breathable)
+          {
+            ec.consumed += scrubber.ec_rate;
+          }
+        }
+        // greenhouse
+        else if (m.moduleName == "Greenhouse")
+        {
+          Greenhouse greenhouse = (Greenhouse)m;
+          ec.consumed += greenhouse.ec_rate * greenhouse.lamps;
+        }
+        // gravity ring hab
+        else if (m.moduleName == "GravityRing")
+        {
+          GravityRing mm = (GravityRing)m;
+          if (mm.opened) ec.consumed += mm.ec_rate * mm.speed;
+        }
+        // antennas
+        else if (m.moduleName == "Antenna")
+        {
+          Antenna antenna = (Antenna)m;
+          if (antenna.relay) ec.consumed += antenna.relay_cost;
+        }
         // SCANsat support
         else if (m.moduleName == "SCANsat" || m.moduleName == "ModuleSCANresourceScanner")
         {
@@ -417,26 +446,27 @@ public class Planner
           // 0.7071: average clamped cosine
           ec.generated_sunlight += 0.7071 * tot_rate;
         }
-        // gravity ring hab
-        else if (m.moduleName == "GravityRing")
+        // NearFutureElectrical support
+        else if (m.moduleName == "FissionGenerator")
         {
-          GravityRing mm = (GravityRing)m;
-          if (mm.opened)
-          {
-            ec.consumed += mm.ec_rate * mm.speed;
-          }
+          double max_rate = Lib.ReflectionValue<float>(m, "PowerGeneration");
+
+          // get fission reactor tweakable, will default to 1.0 for other modules
+          var reactor = p.FindModuleImplementing<ModuleResourceConverter>();
+          double tweakable = reactor == null ? 1.0 : Lib.ReflectionValue<float>(reactor, "CurrentPowerPercent") * 0.01f;
+
+          ec.generated_sunlight += max_rate * tweakable;
+          ec.generated_shadow += max_rate * tweakable;
+        }
+        else if (m.moduleName == "ModuleRadioisotopeGenerator")
+        {
+          double max_rate = Lib.ReflectionValue<float>(m, "BasePower");
+
+          ec.generated_sunlight += max_rate;
+          ec.generated_shadow += max_rate;
         }
       }
     }
-
-    // include cost from greenhouses artificial lighting
-    ec.consumed += food.greenhouse_cost;
-
-    // include cost from scrubbers
-    ec.consumed += oxygen.scrubber_cost;
-
-    // include relay cost for the best relay antenna
-    ec.consumed += signal.relay_cost;
 
     // finally, calculate life expectancy of ec
     ec.life_expectancy_sunlight = ec.storage / Math.Max(ec.consumed - ec.generated_sunlight, 0.0);
@@ -447,22 +477,24 @@ public class Planner
   }
 
 
-  public static food_data analyze_food(List<Part> parts, environment_data env, crew_data crew)
+  public static supply_data analyze_supply(List<Part> parts, environment_data env, crew_data crew, Rule rule)
   {
     // store data
-    food_data food = new food_data();
+    supply_data data = new supply_data();
 
-    // calculate food consumed
-    food.consumed = (double)crew.count * Settings.FoodPerMeal / Settings.MealFrequency;
+    // calculate resource consumed
+    // note: this assume the waste of the rule is the same as the waste on the scrubber/greenhouse
+    data.consumed = (double)crew.count * (rule.interval > 0 ? rule.rate / rule.interval : rule.rate);
+    if (rule.modifier == "breathable" && env.breathable) data.consumed = 0;
 
-    // deduce waste produced by the crew per-second
-    double simulated_waste = food.consumed;
+    // calculate waste produced
+    double sim_waste = data.consumed * rule.waste_ratio;
 
     // scan the parts
     foreach(Part p in parts)
     {
-      // accumulate food storage
-      food.storage += Lib.GetResourceAmount(p, "Food");
+      // accumulate storage
+      data.storage += Lib.GetResourceAmount(p, rule.resource_name);
 
       // for each module
       foreach(PartModule m in p.Modules)
@@ -470,91 +502,54 @@ public class Planner
         // greenhouse
         if (m.moduleName == "Greenhouse")
         {
-          Greenhouse mm = (Greenhouse)m;
+          Greenhouse greenhouse = (Greenhouse)m;
+          if (greenhouse.resource_name != rule.resource_name) continue;
+          data.has_greenhouse = true;
 
           // calculate natural lighting
           double natural_lighting = Greenhouse.NaturalLighting(env.sun_dist);
 
-          // calculate ec consumed
-          food.greenhouse_cost += mm.ec_rate * mm.lamps;
-
           // calculate lighting
-          double lighting = natural_lighting * (mm.door_opened ? 1.0 : 0.0) + mm.lamps;
+          double lighting = natural_lighting * (greenhouse.door_opened ? 1.0 : 0.0) + greenhouse.lamps;
 
           // calculate waste used
-          double waste_used = Math.Min(simulated_waste, mm.waste_rate);
-          double waste_perc = waste_used / mm.waste_rate;
-          simulated_waste -= waste_used;
+          double waste_perc = 0.0;
+          if (greenhouse.waste_name.Length > 0)
+          {
+            double waste_used = Math.Min(sim_waste, greenhouse.waste_rate);
+            waste_perc = waste_used / greenhouse.waste_rate;
+            sim_waste -= waste_used;
+          }
 
           // calculate growth bonus
           double growth_bonus = 0.0;
-          growth_bonus += Settings.GreenhouseSoilBonus * (env.landed ? 1.0 : 0.0);
-          growth_bonus += Settings.GreenhouseWasteBonus * waste_perc;
+          growth_bonus += greenhouse.soil_bonus * (env.landed ? 1.0 : 0.0);
+          growth_bonus += greenhouse.waste_bonus * waste_perc;
 
           // calculate growth factor
-          double growth_factor = (mm.growth_rate * (1.0 + growth_bonus)) * lighting;
+          double growth_factor = (greenhouse.growth_rate * (1.0 + growth_bonus)) * lighting;
 
           // calculate food cultivated
-          food.cultivated += mm.harvest_size * growth_factor;
+          data.produced += greenhouse.harvest_size * growth_factor;
 
           // calculate time-to-harvest
-          if (growth_factor > double.Epsilon)
-          {
-            food.cultivated_tooltip += (food.cultivated_tooltip.Length > 0 ? "\n" : "")
-              + "Time-to-harvest: <b>" + Lib.HumanReadableDuration(1.0 / growth_factor) + "</b>";
-          }
+          if (growth_factor > double.Epsilon) data.tta = 1.0 / growth_factor;
         }
-      }
-    }
-
-    // calculate life expectancy
-    food.life_expectancy = food.storage / Math.Max(food.consumed - food.cultivated, 0.0);
-
-    // add formatting to tooltip
-    if (food.cultivated_tooltip.Length > 0) food.cultivated_tooltip = "<i>" + food.cultivated_tooltip + "</i>";
-
-    // return data
-    return food;
-  }
-
-
-  public static oxygen_data analyze_oxygen(List<Part> parts, environment_data env, crew_data crew)
-  {
-    // store data
-    oxygen_data oxygen = new oxygen_data();
-
-    // get scrubber efficiency
-    oxygen.scrubber_efficiency = Scrubber.DeduceEfficiency();
-
-    // calculate oxygen consumed
-    oxygen.consumed = !env.breathable ? (double)crew.count * Settings.OxygenPerSecond : 0.0;
-
-    // deduce co2 produced by the crew per-second
-    double simulated_co2 = oxygen.consumed;
-
-    // scan the parts
-    foreach(Part p in parts)
-    {
-      // accumulate food storage
-      oxygen.storage += Lib.GetResourceAmount(p, "Oxygen");
-
-      // for each module
-      foreach(PartModule m in p.Modules)
-      {
         // scrubber
-        if (m.moduleName == "Scrubber")
+        else if (m.moduleName == "Scrubber")
         {
-          Scrubber mm = (Scrubber)m;
+          Scrubber scrubber = (Scrubber)m;
+          if (scrubber.resource_name != rule.resource_name) continue;
+          data.has_scrubber = true;
 
           // do nothing inside breathable atmosphere
-          if (mm.is_enabled && !env.breathable)
+          if (scrubber.is_enabled && !env.breathable)
           {
-            double co2_scrubbed = Math.Min(simulated_co2, mm.co2_rate);
+            double co2_scrubbed = Math.Min(sim_waste, scrubber.co2_rate);
             if (co2_scrubbed > double.Epsilon)
             {
-              oxygen.scrubber_cost += mm.ec_rate * (co2_scrubbed / mm.co2_rate);
-              oxygen.recycled += co2_scrubbed * oxygen.scrubber_efficiency;
-              simulated_co2 -= co2_scrubbed;
+              data.produced += co2_scrubbed * Scrubber.DeduceEfficiency();
+              sim_waste -= co2_scrubbed;
             }
           }
         }
@@ -562,14 +557,14 @@ public class Planner
     }
 
     // calculate life expectancy
-    oxygen.life_expectancy = !env.breathable ? oxygen.storage / Math.Max(oxygen.consumed - oxygen.recycled, 0.0) : double.NaN;
+    data.life_expectancy = data.storage / Math.Max(data.consumed - data.produced, 0.0);
 
     // return data
-    return oxygen;
+    return data;
   }
 
 
-  public static qol_data analyze_qol(List<Part> parts, environment_data env, crew_data crew, signal_data signal)
+  public static qol_data analyze_qol(List<Part> parts, environment_data env, crew_data crew, signal_data signal, Rule rule_qol)
   {
     // store data
     qol_data qol = new qol_data();
@@ -601,7 +596,7 @@ public class Planner
       qol.living_space = QualityOfLife.LivingSpace(crew.count, crew.capacity);
       double bonus = QualityOfLife.Bonus(qol.living_space, qol.entertainment, env.landed, signal.range > 0.0, crew.count == 1);
 
-      qol.time_to_instability = bonus / Settings.StressedDegradationRate;
+      qol.time_to_instability = bonus / rule_qol.degeneration;
       List<string> factors = new List<string>();
       if (crew.count > 1) factors.Add("not-alone");
       if (signal.range > 0.0) factors.Add("call-home");
@@ -621,7 +616,7 @@ public class Planner
   }
 
 
-  public static radiation_data analyze_radiation(List<Part> parts, environment_data env, crew_data crew)
+  public static radiation_data analyze_radiation(List<Part> parts, environment_data env, crew_data crew, Rule rule_radiation)
   {
     // store data
     radiation_data radiation = new radiation_data();
@@ -641,9 +636,9 @@ public class Planner
     {
       radiation.life_expectancy = new double[]
       {
-        Settings.RadiationFatalThreshold / (Settings.CosmicRadiation * (1.0 - shielding)),
-        Settings.RadiationFatalThreshold / (Settings.StormRadiation * (1.0 - shielding)),
-        Radiation.HasBelt(env.body) ? Settings.RadiationFatalThreshold / (belt_strength * (1.0 - shielding)) : double.NaN
+        rule_radiation.fatal_threshold / (Settings.CosmicRadiation * (1.0 - shielding)),
+        rule_radiation.fatal_threshold / (Settings.StormRadiation * (1.0 - shielding)),
+        Radiation.HasBelt(env.body) ? rule_radiation.fatal_threshold / (belt_strength * (1.0 - shielding)) : double.NaN
       };
     }
     else
@@ -668,6 +663,7 @@ public class Planner
     uint components = 0;
 
     // scan the parts
+    double year_time = 60.0 * 60.0 * Lib.HoursInDay() * Lib.DaysInYear();
     foreach(Part p in parts)
     {
       // for each module
@@ -679,13 +675,12 @@ public class Planner
           Malfunction mm = (Malfunction)m;
           ++components;
           double avg_lifetime = (mm.min_lifetime + mm.max_lifetime) * 0.5 * reliability.quality;
-          reliability.failure_year += (60.0 * 60.0 * Lib.HoursInDay() * Lib.DaysInYear()) / avg_lifetime;
+          reliability.failure_year += year_time / avg_lifetime;
         }
       }
     }
 
     // calculate reliability data
-    if (components > 0) reliability.failure_year /= (double)components;
     double ec_redundancy = ec.best_ec_generator < ec.generated_sunlight ? (ec.generated_sunlight - ec.best_ec_generator) / ec.generated_sunlight : 0.0;
     double antenna_redundancy = signal.second_best_range > 0.0 ? signal.second_best_range / signal.range : 0.0;
     List<string> redundancies = new List<string>();
@@ -794,7 +789,7 @@ public class Planner
     render_content("temperature", temperature_str, temperature_tooltip);
     render_content("temp diff", env.temp_diff.ToString("F0") + "K", "average difference between\nexternal and survival temperature");
     render_content("inside atmosphere", in_atmosphere ? "yes" : "no", atmosphere_tooltip);
-    render_content("shadow time", shadowtime_str);
+    render_content("shadow time", shadowtime_str, "the time in shadow\nduring the orbit");
     render_space();
   }
 
@@ -814,37 +809,26 @@ public class Planner
   }
 
 
-  void render_food(food_data food)
+  void render_supply(supply_data supply, Rule rule)
   {
-    render_title("FOOD");
-    render_content("storage", Lib.ValueOrNone(food.storage));
-    render_content("consumed", Lib.HumanReadableRate(food.consumed));
-    render_content("cultivated", Lib.HumanReadableRate(food.cultivated), food.cultivated_tooltip);
-    render_content("life expectancy", Lib.HumanReadableDuration(food.life_expectancy));
+    render_title(rule.resource_name.ToUpper());
+    render_content("storage", Lib.ValueOrNone(supply.storage));
+    render_content("consumed", Lib.HumanReadableRate(supply.consumed));
+    if (supply.has_greenhouse) render_content("time to harvest", Lib.HumanReadableDuration(supply.tta));
+    else if (supply.has_scrubber) render_content("recycled", Lib.HumanReadableRate(supply.produced));
+    else render_content("produced", Lib.HumanReadableRate(supply.produced));
+    render_content(rule.breakdown ? "time to instability" : "life expectancy", Lib.HumanReadableDuration(supply.life_expectancy));
     render_space();
   }
 
 
-  void render_oxygen(oxygen_data oxygen)
-  {
-    string recycled_tooltip = "efficiency: " + (oxygen.scrubber_efficiency * 100.0).ToString("F0") + "%";
-
-    render_title("OXYGEN");
-    render_content("storage", Lib.ValueOrNone(oxygen.storage));
-    render_content("consumed", Lib.HumanReadableRate(oxygen.consumed));
-    render_content("recycled", Lib.HumanReadableRate(oxygen.recycled), recycled_tooltip);
-    render_content("life expectancy", Lib.HumanReadableDuration(oxygen.life_expectancy));
-    render_space();
-  }
-
-
-  void render_qol(qol_data qol)
+  void render_qol(qol_data qol, Rule rule)
   {
     render_title("QUALITY OF LIFE");
     render_content("living space", QualityOfLife.LivingSpaceToString(qol.living_space));
     render_content("entertainment", QualityOfLife.EntertainmentToString(qol.entertainment));
     render_content("other factors", qol.factors);
-    render_content("time to instability", Lib.HumanReadableDuration(qol.time_to_instability));
+    render_content(rule.breakdown ? "time to instability" : "life expectancy", Lib.HumanReadableDuration(qol.time_to_instability));
     render_space();
   }
 
@@ -876,7 +860,7 @@ public class Planner
   void render_reliability(reliability_data reliability, crew_data crew)
   {
     render_title("RELIABILITY");
-    render_content("malfunctions", Lib.ValueOrNone(reliability.failure_year, "/y"), "per-component average case estimate");
+    render_content("malfunctions", Lib.ValueOrNone(reliability.failure_year, "/y"), "average case estimate\nfor the whole vessel");
     render_content("redundancy", reliability.redundancy);
     render_content("quality", Malfunction.QualityToString(reliability.quality), "manufacturing quality");
     render_content("engineer", crew.engineer ? "yes" : "no");
@@ -954,7 +938,7 @@ public class Planner
     render_title("SIGNAL");
     render_content("range", Lib.HumanReadableRange(signal.range), range_tooltip);
     render_content("relay", signal.relay_range <= double.Epsilon ? "none" : signal.relay_range < signal.range ? Lib.HumanReadableRange(signal.relay_range) : "yes");
-    render_content("transmission", cost_str, "worst case data transmission cost\nfrom destination body");
+    render_content("transmission", cost_str, "worst case data transmission cost");
     render_content("error correction", (signal.ecc * 100.0).ToString("F0") + "%", ecc_tooltip);
     render_space();
   }
@@ -968,13 +952,19 @@ public class Planner
 
   public float height()
   {
-    return 425.0f;
+    // detect rules first time
+    detect_rules();
+
+    return 26.0f + 100.0f * (float)panels_per_page;
   }
 
 
   public void render()
   {
     // TODO: consider connected spaces in calculations
+
+    // detect rules first time
+    detect_rules();
 
     // if there is something in the editor
     if (EditorLogic.RootPart != null)
@@ -991,42 +981,88 @@ public class Planner
       // get parts recursively
       List<Part> parts = Lib.GetPartsRecursively(EditorLogic.RootPart);
 
-      // analyze
+      // analyze some stuff
       environment_data env = analyze_environment(body, altitude_mult);
       crew_data crew = analyze_crew(parts);
-      food_data food = analyze_food(parts, env, crew);
-      oxygen_data oxygen = analyze_oxygen(parts, env, crew);
+      ec_data ec = analyze_ec(parts, env, crew, rule_temp);
       signal_data signal = analyze_signal(parts);
-      qol_data qol = analyze_qol(parts, env, crew, signal);
-      radiation_data radiation = analyze_radiation(parts, env, crew);
-      ec_data ec = analyze_ec(parts, env, crew, food, oxygen, signal);
-      reliability_data reliability = analyze_reliability(parts, ec, signal);
 
       // render menu
       GUILayout.BeginHorizontal(row_style);
       if (GUILayout.Button(body.name, leftmenu_style)) { body_index = (body_index + 1) % FlightGlobals.Bodies.Count; if (body_index == 0) ++body_index; }
-      if (GUILayout.Button("["+ (page + 1) + "/2]", midmenu_style)) { page = (page + 1) % 2; }
+      if (GUILayout.Button("["+ (page + 1) + "/" + pages_count + "]", midmenu_style)) { page = (page + 1) % pages_count; }
       if (GUILayout.Button(situation, rightmenu_style)) { situation_index = (situation_index + 1) % situations.Length; }
       GUILayout.EndHorizontal();
 
-      // page 1/2
-      if (page == 0)
+      uint panel_index = 0;
+
+      // ec
+      if (panel_index / panels_per_page == page)
       {
-        // render
         render_ec(ec);
-        render_food(food);
-        render_oxygen(oxygen);
-        render_qol(qol);
       }
-      // page 2/2
-      else
+      ++panel_index;
+
+      // supplies
+      foreach(Rule r in Kerbalism.supply_rules)
       {
-        // render
-        render_radiation(radiation, env, crew);
-        render_reliability(reliability, crew);
-        render_signal(signal, env, crew);
+        if (panel_index / panels_per_page == page)
+        {
+          supply_data supply = analyze_supply(parts, env, crew, r);
+          render_supply(supply, r);
+        }
+        ++panel_index;
+      }
+
+      // qol
+      if (rule_qol != null)
+      {
+        if (panel_index / panels_per_page == page)
+        {
+          qol_data qol = analyze_qol(parts, env, crew, signal, rule_qol);
+          render_qol(qol, rule_qol);
+        }
+        ++panel_index;
+      }
+
+      // radiation
+      if (rule_radiation != null)
+      {
+        if (panel_index / panels_per_page == page)
+        {
+          radiation_data radiation = analyze_radiation(parts, env, crew, rule_radiation);
+          render_radiation(radiation, env, crew);
+        }
+        ++panel_index;
+      }
+
+      // reliability
+      if (Kerbalism.features.malfunction)
+      {
+        if (panel_index / panels_per_page == page)
+        {
+          reliability_data reliability = analyze_reliability(parts, ec, signal);
+          render_reliability(reliability, crew);
+        }
+        ++panel_index;
+      }
+
+      // signal
+      if (Kerbalism.features.signal)
+      {
+        if (panel_index / panels_per_page == page)
+        {
+          render_signal(signal, env, crew);
+        }
+        ++panel_index;
+      }
+
+      // environment
+      if (panel_index / panels_per_page == page)
+      {
         render_environment(env);
       }
+      ++panel_index;
     }
     // if there is nothing in the editor
     else
@@ -1037,6 +1073,47 @@ public class Planner
       GUILayout.Label("<i>In preparing for space, I have always found that\nplans are useless but planning is indispensable.\nWernher von Kerman</i>", quote_style);
       GUILayout.EndHorizontal();
       GUILayout.Space(10.0f);
+    }
+  }
+
+
+  void detect_rules()
+  {
+    if (!rules_detected)
+    {
+      foreach(var p in Kerbalism.rules)
+      {
+        Rule r = p.Value;
+        if (r.modifier == "radiation") rule_radiation = r;
+        else if (r.modifier == "qol") rule_qol = r;
+        else if (r.modifier == "temperature" && r.resource_name == "ElectricCharge") rule_temp = r;
+      }
+      rules_detected = true;
+
+      // guess number of panels
+      panels_count = 2u
+                   + (uint)Kerbalism.supply_rules.Count
+                   + (rule_qol != null ? 1u : 0)
+                   + (rule_radiation != null ? 1u : 0)
+                   + (Kerbalism.features.malfunction ? 1u : 0)
+                   + (Kerbalism.features.signal ? 1u : 0);
+
+      // calculate number of panels per page and number of pages
+      switch(panels_count)
+      {
+        case 2u: panels_per_page = 2u; break;
+        case 3u: panels_per_page = 3u; break;
+        case 4u: panels_per_page = 4u; break;
+        case 5u: panels_per_page = 3u; break;
+        case 6u: panels_per_page = 3u; break;
+        case 7u: panels_per_page = 4u; break;
+        case 8u: panels_per_page = 4u; break;
+        case 9u: panels_per_page = 3u; break;
+        default: panels_per_page = 4u; break;
+      }
+
+      // calculate number of pages
+      pages_count = (panels_count - 1u) / panels_per_page + 1u;
     }
   }
 }

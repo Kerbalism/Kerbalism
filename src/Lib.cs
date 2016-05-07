@@ -156,6 +156,12 @@ public static class Lib
     return (T)Convert.ChangeType(module.moduleValues.GetValue(value_name), typeof(T));
   }
 
+  // return a value from a proto module or a default one
+  public static T GetProtoValue<T>(ProtoPartModuleSnapshot module, string value_name, T def_value)
+  {
+    return module.moduleValues.HasValue(value_name) ? (T)Convert.ChangeType(module.moduleValues.GetValue(value_name), typeof(T)) : def_value;
+  }
+
   // set a value in a proto module
   public static void SetProtoValue<T>(ProtoPartModuleSnapshot module, string value_name, T value)
   {
@@ -206,7 +212,7 @@ public static class Lib
   // - duration: duration in seconds, must be positive
   public static string HumanReadableDuration(double duration)
   {
-    if (duration <= double.Epsilon) return "none";
+    if (duration <= double.Epsilon) return "never";
     if (double.IsInfinity(duration) || double.IsNaN(duration)) return "perpetual";
 
     double hours_in_day = HoursInDay();
@@ -290,10 +296,8 @@ public static class Lib
 
 
   // stop time warping
-  // TODO: test if in 1.1 is now safe to stop warp all at once
   public static void StopWarp()
   {
-    // note: instant switching from 10^n speed to 1 speed changes orbit!!!
     if (TimeWarp.CurrentRateIndex > 4) TimeWarp.SetRate(4, true);
     if (TimeWarp.CurrentRateIndex > 0) TimeWarp.SetRate(0, false);
   }
@@ -686,7 +690,7 @@ public static class Lib
   }
 
 
-  // return a progressbar made of text
+  // return a progressbar made of text, from a simpler era
   // - len: length in characters
   // - value: value to represent
   // - yellow/red: thresholds for color
@@ -696,6 +700,25 @@ public static class Lib
   {
     string color = force_color.Length > 0 ? force_color : value >= red - double.Epsilon ? "red" : value >= yellow ? "yellow" : "gray";
     return "<color=" + color + ">" + new string('=', Math.Max((int)((double)len * value / max + 0.5), 1)) + "</color>";
+  }
+
+
+  // return message with the macro expanded
+  // - variant: tokenize the string by '|' and select one
+  public static string ExpandMsg(string txt, Vessel v = null, ProtoCrewMember c = null, uint variant = 0)
+  {
+    // get variant
+    var variants = txt.Split('|');
+    if (variants.Length > variant) txt = variants[variant];
+
+    // macro expansion
+    string v_name = v != null ? (v.isEVA ? "EVA" : v.vesselName) : "";
+    string c_name = c != null ? c.name : "";
+    return txt.Replace("$NEWLINE", "\n")
+              .Replace("$VESSEL", "<b>" + v_name + "</b>")
+              .Replace("$KERBAL", "<b>" + c_name + "</b>")
+              .Replace("$ON_VESSEL", v != null && v.isActiveVessel ? "" : "On <b>" + v_name + "</b>, ")
+              .Replace("$HIS_HER", c != null && c.gender == ProtoCrewMember.Gender.Male ? "his" : "her");
   }
 }
 

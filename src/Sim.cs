@@ -15,6 +15,57 @@ namespace KERBALISM {
 
 public static class Sim
 {
+  // --------------------------------------------------------------------------
+  // GENERAL
+  // --------------------------------------------------------------------------
+
+
+  // return period of an orbit at specified altitude over a body
+  public static double OrbitalPeriod(CelestialBody body, double altitude)
+  {
+    if (altitude <= double.Epsilon) return body.rotationPeriod;
+    double Ra = altitude + body.Radius;
+    return 2.0 * Math.PI * Math.Sqrt(Ra * Ra * Ra / body.gravParameter);
+  }
+
+
+  // return period in shadow of an orbit at specified altitude over a body
+  public static double ShadowPeriod(CelestialBody body, double altitude)
+  {
+    if (altitude <= double.Epsilon) return body.rotationPeriod * 0.5;
+    double Ra = altitude + body.Radius;
+    double h = Math.Sqrt(Ra * body.gravParameter);
+    return (2.0 * Ra * Ra / h) * Math.Asin(body.Radius / Ra);
+  }
+
+
+  // return rotation speed at body surface
+  public static double SurfaceSpeed(CelestialBody body)
+  {
+    return 2.0 * Math.PI * body.Radius / body.rotationPeriod;
+  }
+
+  // return gravity at body surface
+  public static double SurfaceGravity(CelestialBody body)
+  {
+    return body.gravParameter / (body.Radius * body.Radius);
+  }
+
+
+  // return apoapsis of a body orbit
+  public static double Apoapsis(CelestialBody body)
+  {
+    return (1.0 + body.orbit.eccentricity) * body.orbit.semiMajorAxis;
+  }
+
+
+  // return periapsis of a body orbit
+  public static double Periapsis(CelestialBody body)
+  {
+    return (1.0 - body.orbit.eccentricity) * body.orbit.semiMajorAxis;
+  }
+
+
   // return the sun celestial body
   public static CelestialBody Sun()
   {
@@ -28,6 +79,11 @@ public static class Sim
     CelestialBody sun = Sun();
     return Vector3d.Distance(Lib.VesselPosition(vessel), sun.position) - sun.Radius;
   }
+
+
+  // --------------------------------------------------------------------------
+  // RAYTRACING
+  // --------------------------------------------------------------------------
 
 
   // calculate hit point of the ray indicated by origin + direction * t with the sphere centered at 0,0,0 and with radius 'radius'
@@ -141,6 +197,11 @@ public static class Sim
     // return true if body is visible from vessel
     return dist < min_dist;
   }
+
+
+  // --------------------------------------------------------------------------
+  // TEMPERATURE
+  // --------------------------------------------------------------------------
 
 
   // return temperature of background radiation
@@ -263,6 +324,18 @@ public static class Sim
   }
 
 
+  // return difference from survival temperature
+  public static double TempDiff(double k)
+  {
+    return Math.Max(Math.Abs(k - Settings.SurvivalTemperature) - Settings.SurvivalRange, 0.0);
+  }
+
+
+  // --------------------------------------------------------------------------
+  // ATMOSPHERE
+  // --------------------------------------------------------------------------
+
+
   // return proportion of flux not blocked by atmosphere
   // note: while intuitively you are thinking to use this to calculate temperature inside an atmosphere,
   //       understand that atmospheric climate is complex and the game is using float curves to approximate it
@@ -312,47 +385,10 @@ public static class Sim
   }
 
 
-  // return period of an orbit at specified altitude over a body
-  public static double OrbitalPeriod(CelestialBody body, double altitude)
+  // return true if inside a breathable atmosphere
+  public static bool Breathable(Vessel v)
   {
-    double Ra = altitude + body.Radius;
-    return 2.0 * Math.PI * Math.Sqrt(Ra * Ra * Ra / body.gravParameter);
-  }
-
-
-  // return period in shadow of an orbit at specified altitude over a body
-  public static double ShadowPeriod(CelestialBody body, double altitude)
-  {
-    double Ra = altitude + body.Radius;
-    double h = Math.Sqrt(Ra * body.gravParameter);
-    return (2.0 * Ra * Ra / h) * Math.Asin(body.Radius / Ra);
-  }
-
-
-  // return rotation speed at body surface
-  public static double SurfaceSpeed(CelestialBody body)
-  {
-    return 2.0 * Math.PI * body.Radius / body.rotationPeriod;
-  }
-
-  // return gravity at body surface
-  public static double SurfaceGravity(CelestialBody body)
-  {
-    return body.gravParameter / (body.Radius * body.Radius);
-  }
-
-
-  // return apoapsis of a body orbit
-  public static double Apoapsis(CelestialBody body)
-  {
-    return (1.0 + body.orbit.eccentricity) * body.orbit.semiMajorAxis;
-  }
-
-
-  // return periapsis of a body orbit
-  public static double Periapsis(CelestialBody body)
-  {
-    return (1.0 - body.orbit.eccentricity) * body.orbit.semiMajorAxis;
+    return v.mainBody.atmosphereContainsOxygen && v.mainBody.GetPressure(v.altitude) > 25.0;
   }
 }
 

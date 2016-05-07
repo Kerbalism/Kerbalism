@@ -1,6 +1,6 @@
 ﻿// ===================================================================================================================
 // Scrubber module
-// recycle CO2 into Oxygen
+// recycle a resource into another
 // ===================================================================================================================
 
 
@@ -20,7 +20,7 @@ public class Scrubber : PartModule
   {
     public ScrubberEfficiency()
     {
-      var cfg = Lib.ParseConfig("Kerbalism/Patches/LifeSupport/ScrubberEfficiency");
+      var cfg = Lib.ParseConfig("Kerbalism/Patches/System/ScrubberEfficiency");
       this.techs[0] = Lib.ConfigValue(cfg, "tech0", "miniaturization");
       this.techs[1] = Lib.ConfigValue(cfg, "tech1", "precisionEngineering");
       this.techs[2] = Lib.ConfigValue(cfg, "tech2", "scienceTech");
@@ -33,8 +33,11 @@ public class Scrubber : PartModule
   // .cfg
   // note: persistent because required in background processing
   [KSPField(isPersistant = true)] public double ec_rate;                    // EC consumption rate per-second
-  [KSPField(isPersistant = true)] public double co2_rate;                   // CO2 consumption rate per-second
-  [KSPField(isPersistant = true)] public double efficiency = 0.0;           // CO2->Oxygen conversion rate
+  [KSPField(isPersistant = true)] public double co2_rate;                   // waste consumption rate per-second
+  [KSPField(isPersistant = true)] public double efficiency = 0.0;           // waste->resource conversion rate
+  [KSPField(isPersistant = true)] public double intake_rate = 1.0;         // Oxygen production rate inside breathable atmosphere
+  [KSPField(isPersistant = true)] public string resource_name = "Oxygen";   // name of resource recycled
+  [KSPField(isPersistant = true)] public string waste_name = "CO2";         // name of resource recycled
 
   // persistence
   // note: also configurable per-part
@@ -91,9 +94,9 @@ public class Scrubber : PartModule
   // editor/r&d info
   public override string GetInfo()
   {
-    return "Reclaim some of the Oxygen.\n\n"
+    return "Reclaim some of the " + resource_name + ".\n\n"
          + "<color=#99FF00>Requires:</color>\n"
-         + " - ElectricCharge: " + (ec_rate * 60.0 * 60.0) + "/hour";
+         + " - ElectricCharge: " + Lib.HumanReadableRate(ec_rate);
   }
 
 
@@ -115,10 +118,10 @@ public class Scrubber : PartModule
     double elapsed_s = TimeWarp.fixedDeltaTime;
 
     // if inside breathable atmosphere
-    if (LifeSupport.BreathableAtmosphere(this.vessel))
+    if (Cache.VesselInfo(this.vessel).breathable)
     {
       // produce oxygen from the intake
-      this.part.RequestResource("Oxygen", -Settings.IntakeOxygenRate * elapsed_s);
+      this.part.RequestResource(resource_name, -intake_rate * elapsed_s);
 
       // set status
       Status = "Intake";
@@ -128,13 +131,13 @@ public class Scrubber : PartModule
     {
       // recycle CO2+EC into oxygen
       double co2_required = co2_rate * elapsed_s;
-      double co2 = this.part.RequestResource("CO2", co2_required);
+      double co2 = this.part.RequestResource(waste_name, co2_required);
       double ec_required = ec_rate * elapsed_s * (co2 / co2_required);
       double ec = this.part.RequestResource("ElectricCharge", ec_required);
-      this.part.RequestResource("Oxygen", -co2 * efficiency);
+      this.part.RequestResource(resource_name, -co2 * efficiency);
 
       // set status
-      Status = co2 <= double.Epsilon ? "No CO2" : ec <= double.Epsilon ? "No Power" : "Running";
+      Status = co2 <= double.Epsilon ? "No " + waste_name : ec <= double.Epsilon ? "No Power" : "Running";
     }
     // if outside breathable atmosphere and disabled
     else
@@ -154,9 +157,13 @@ public class Scrubber : PartModule
     // get data
     ProtoPartModuleSnapshot m = Lib.GetProtoModule(vessel, flight_id, "Scrubber");
     bool is_enabled = Lib.GetProtoValue<bool>(m, "is_enabled");
+    double capacity = Lib.GetProtoValue<double>(m, "capacity", 1.0); //< support versions before 0.9.9.5
     double ec_rate = Lib.GetProtoValue<double>(m, "ec_rate");
     double co2_rate = Lib.GetProtoValue<double>(m, "co2_rate");
     double efficiency = Lib.GetProtoValue<double>(m, "efficiency");
+    double intake_rate = Lib.GetProtoValue(m, "intake_rate", 1.0); //< support versions before 0.9.9.5
+    string resource_name = Lib.GetProtoValue(m, "resource_name", "Oxygen"); //< support versions before 0.9.9.5
+    string waste_name = Lib.GetProtoValue(m, "waste_name", "CO2"); //< support versions before 0.9.9.5
 
     // if for some reason efficiency wasn't set, default to 50%
     // note: for example, resque vessels scrubbers get background update without prelaunch
@@ -166,20 +173,20 @@ public class Scrubber : PartModule
     double elapsed_s = TimeWarp.fixedDeltaTime;
 
     // if inside breathable atmosphere
-    if (LifeSupport.BreathableAtmosphere(vessel))
+    if (Cache.VesselInfo(vessel).breathable)
     {
       // produce oxygen from the intake
-      Lib.RequestResource(vessel, "Oxygen", -Settings.IntakeOxygenRate * elapsed_s);
+      Lib.RequestResource(vessel, resource_name, -intake_rate * elapsed_s);
     }
     // if outside breathable atmosphere and enabled
     else if (is_enabled)
     {
       // recycle CO2+EC into oxygen
-      double co2_required = co2_rate * elapsed_s;
-      double co2 = Lib.RequestResource(vessel, "CO2", co2_required);
-      double ec_required = ec_rate * elapsed_s * (co2 / co2_required);
+      double co2_required = co2_rate * elapsed_s * capacity;
+      double co2 = Lib.RequestResource(vessel, waste_name, co2_required);
+      double ec_required = ec_rate * elapsed_s * (co2 / co2_required) * capacity;
       double ec = Lib.RequestResource(vessel, "ElectricCharge", ec_required);
-      Lib.RequestResource(vessel, "Oxygen", -co2 * efficiency);
+      Lib.RequestResource(vessel, resource_name, -co2 * efficiency);
     }
   }
 
@@ -193,9 +200,14 @@ public class Scrubber : PartModule
 
 
   // return read-only list of scrubbers in a vessel
-  public static List<Scrubber> GetScrubbers(Vessel v)
+  public static List<Scrubber> GetScrubbers(Vessel v, string resource_name="")
   {
-    if (v.loaded) return v.FindPartModulesImplementing<Scrubber>();
+    if (v.loaded)
+    {
+      var ret = v.FindPartModulesImplementing<Scrubber>();
+      if (resource_name.Length > 0) ret = ret.FindAll(k => k.resource_name == resource_name);
+      return ret == null ? new List<Scrubber>() : ret;
+    }
     else
     {
       List<Scrubber> ret = new List<Scrubber>();
@@ -210,7 +222,10 @@ public class Scrubber : PartModule
             scrubber.ec_rate = Lib.GetProtoValue<double>(module, "ec_rate");
             scrubber.co2_rate = Lib.GetProtoValue<double>(module, "co2_rate");
             scrubber.efficiency = Lib.GetProtoValue<double>(module, "efficiency");
-            ret.Add(scrubber);
+            scrubber.intake_rate = Lib.GetProtoValue(module, "intake_rate", 1.0); //< support versions before 0.9.9.5
+            scrubber.resource_name = Lib.GetProtoValue(module, "resource_name", "Oxygen"); //< support versions before 0.9.9.5
+            scrubber.waste_name = Lib.GetProtoValue(module, "waste_name", "CO2"); //< support versions before 0.9.9.5
+            if (resource_name.Length == 0 || scrubber.resource_name == resource_name) ret.Add(scrubber);
           }
         }
       }

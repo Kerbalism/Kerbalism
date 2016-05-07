@@ -13,92 +13,74 @@ namespace KERBALISM {
 
 public static class Settings
 {
-  // EVA related
-  public const double MonoPropellantOnEVA         = 5.0;                                                            // keep the stock behaviour
-  public const double ElectricChargeOnEVA         = 20.0;                                                           // about 16min autonomy (at average LKO temp diff)
-  public const double OxygenOnEVA                 = 0.05;                                                           // about 20min autonomy
-  public const double HeadlightCost               = 0.005;                                                          // Headlight EC cost per-second
+  static Settings()
+  {
+    var cfg = Lib.ParseConfig("Kerbalism/Settings");
 
-  // climate mechanic
-  public const double SurvivalTemperature         = 295;                                                            // ideal kerbal survival temperature
-  public const double TempDiffLKO                 = 161.08;                                                         // average temp diff from survival range in 80km orbit
-  public const double ElectricChargePerSecond     = 0.02 / TempDiffLKO;                                             // per-kelvin, 0.02 per-second (at average LKO temp diff)
-  public const double TemperatureDegradationRate  = 1.0 / (60.0 * 30.0 * TempDiffLKO);                              // 30min time-to-death (at average LKO temp diff)
+    // temperature
+    SurvivalTemperature         = Lib.ConfigValue(cfg, "SurvivalTemperature",         295.0);
+    SurvivalRange               = Lib.ConfigValue(cfg, "SurvivalRange",               0.0);
 
-  // food mechanic
-  public const double FoodPerMeal                 = 1.0;                                                            // 1 per-day (consumed per-meal)
-  public const double MealFrequency               = 60.0 * 60.0 * 6.0;                                              // interval between meals (1 day)
-  public const double StarvedDegradationRate      = 1.0 / (60.0 * 60.0 * 6.0 * 8.0);                                // 8days time-to-death
+    // quality-of-life
+    QoL_LivingSpace             = Lib.ConfigValue(cfg, "QoL_LivingSpace",             1.0);
+    QoL_FirmGround              = Lib.ConfigValue(cfg, "QoL_FirmGround",              0.5);
+    QoL_PhoneHome               = Lib.ConfigValue(cfg, "QoL_PhoneHome",               0.5);
+    QoL_NotAlone                = Lib.ConfigValue(cfg, "QoL_NotAlone",                0.5);
 
-  // oxygen mechanic
-  public const double OxygenPerSecond             = 1.0 / (60.0 * 60.0 * 6.0);                                      // 1 per-day
-  public const double DeprivedDegradationRate     = 1.0 / (60.0 * 8.0);                                             // 8min time-to-death
-  public const double IntakeOxygenRate            = 0.005;                                                          // Oxygen generated per-second from scrubbers when inside breathable atmo
+    // radiation
+    CosmicRadiation             = Lib.ConfigValue(cfg, "CosmicRadiation",             0.0000055555); // 0.02 rad/h
+    StormRadiation              = Lib.ConfigValue(cfg, "StormRadiation",              0.0005555555); // 2.0 rad/h
+    BeltRadiation               = Lib.ConfigValue(cfg, "BeltRadiation",               0.0055555555); // 20.0 rad/h
+    ShieldingEfficiency         = Lib.ConfigValue(cfg, "ShieldingEfficiency",         0.95);
+    MagnetosphereFalloff        = Lib.ConfigValue(cfg, "MagnetosphereFalloff",        0.33);
+    BeltFalloff                 = Lib.ConfigValue(cfg, "BeltFalloff",                 0.1);
 
-  // quality-of-life mechanic
-  public const double StressedDegradationRate     = 1.0 / (60.0 * 60.0 * 6.0 * 40.0);                               // 40days time-to-instability (in worse conditions)
-  public const double QoL_LivingSpaceBonus        = 1.0;
-  public const double QoL_FirmGroundBonus         = 0.5;                                                            // bonus applied when landed
-  public const double QoL_PhoneHomeBonus          = 0.5;                                                            // bonus applied when linked
-  public const double QoL_NotAloneBonus           = 0.5;                                                            // bonus applied when not alone
-  public const double QoL_KerbalVariance          = 0.33;                                                           // kerbal-specific variance scale
+    // storm
+    StormMinTime                = Lib.ConfigValue(cfg, "StormMinTime",                2160000.0); // 100 days
+    StormMaxTime                = Lib.ConfigValue(cfg, "StormMaxTime",                8640000.0); // 400 days
+    StormDuration               = Lib.ConfigValue(cfg, "StormDuration",               21600.0);   // 1 day
+    StormEjectionSpeed          = Lib.ConfigValue(cfg, "StormEjectionSpeed",          1000000.0); // 0.33% c
 
-  // Temperature thresholds
-  public const double TemperatureWarningThreshold = 1.0 - TemperatureDegradationRate * 60.0 * 20.0 * TempDiffLKO;   // 20min time-to-death (at average LKO temp diff)
-  public const double TemperatureDangerThreshold  = 1.0 - TemperatureDegradationRate * 60.0 * 10.0 * TempDiffLKO;   // 10min time-to-death (at average LKO temp diff)
-  public const double TemperatureFatalThreshold   = 1.0;
+    // misc
+    MonoPropellantOnEVA         = Lib.ConfigValue(cfg, "MonoPropellantOnEVA",         5.0);
+    MonoPropellantOnResque      = Lib.ConfigValue(cfg, "MonoPropellantOnResque",      5.0);
+    HeadlightCost               = Lib.ConfigValue(cfg, "HeadlightCost",               0.005);
+    DeathReputationPenalty      = Lib.ConfigValue(cfg, "DeathReputationPenalty",      50.0f);
+    BreakdownReputationPenalty  = Lib.ConfigValue(cfg, "BreakdownReputationPenalty",  10.0f);
+    MessageLength               = Lib.ConfigValue(cfg, "MessageLength",               6.66f);
+  }
 
-  // Starved thresholds
-  public const double StarvedWarningThreshold     = 1.0 - StarvedDegradationRate * 60.0 * 60.0 * 6.0 * 6.0;         // 6days time-to-death
-  public const double StarvedDangerThreshold      = 1.0 - StarvedDegradationRate * 60.0 * 60.0 * 6.0 * 4.0;         // 4days time-to-death
-  public const double StarvedFatalThreshold       = 1.0;
+  // temperature
+  public static double SurvivalTemperature;               // ideal living temperature
+  public static double SurvivalRange;                     // sweet spot around survival temperature
 
-  // Deprived thresholds
-  public const double DeprivedWarningThreshold    = 1.0 - DeprivedDegradationRate * 60.0 * 6.0;                     // 6min time-to-death
-  public const double DeprivedDangerThreshold     = 1.0 - DeprivedDegradationRate * 60.0 * 4.0;                     // 4min time-to-death
-  public const double DeprivedFatalThreshold      = 1.0;
-
-  // Stress thresholds
-  public const double StressedWarningThreshold    = 1.0 - StressedDegradationRate * 60.0 * 60.0 * 6.0 * 20.0;       // 20days time-to-instability
-  public const double StressedDangerThreshold     = 1.0 - StressedDegradationRate * 60.0 * 60.0 * 6.0 * 10.0;       // 10days time-to-instability
-  public const double StressedEventThreshold      = 1.0;                                                            // trigger stress event
-
-  // Resources thresholds
-  public const double ResourceWarningThreshold    = 0.20;                                                           // 20%
-  public const double ResourceDangerThreshold     = double.Epsilon * 2.0;                                           // empty
-
-  // greenhouse
-  public const double GreenhouseWasteBonus        = 0.2;                                                            // bonus applied to growth if waste is available
-  public const double GreenhouseSoilBonus         = 1.0;                                                            // bonus applied to growth if landed
-
-  // resque missions resupply
-  public const double ResqueMonoPropellant        = 2.5;                                                            // monoprop to give to resque mission kerbals
-  public const double ResqueElectricCharge        = 999.0;                                                          // ec to give to resque mission kerbals
-  public const double ResqueFood                  = 999.0;                                                          // food to give to resque mission kerbals
-  public const double ResqueOxygen                = 999.0;                                                          // oxygen to give to resque mission kerbals
-
-  // space weather
-  public const double StormMinTime                = 648000.0;                                                       // safe time between storms (at home body), 1 month
-  public const double StormMaxTime                = 2592000.0;                                                      // time at which a storm is guaranteed (at home body), 4 months
-  public const double StormDuration               = 21600.0;                                                        // storm length, 1 kerbin-day
-  public const double StormEjectionSpeed          = 1000000.0;                                                      // CME speed in m/s
+  // quality-of-life
+  public static double QoL_LivingSpace;                   // scale living space factor up or down
+  public static double QoL_FirmGround;                    // bonus to apply to quality-of-life when landed
+  public static double QoL_PhoneHome;                     // bonus to apply to quality-of-life when linked
+  public static double QoL_NotAlone;                      // bonus to apply to quality-of-life when crew count is >= 2
 
   // radiation
-  public const double MagnetosphereFalloff        = 0.5;                                                            // falloff zone outside magnetosphere, proportional
-  public const double BeltFalloff                 = 0.1;                                                            // falloff zone around radiation belt, proportional
-  public const double CosmicRadiation             = 0.02 / (60.0 * 60.0);                                           // radiation outside a magnetosphere, in rad/s (0.02 rad/h)
-  public const double BeltRadiation               = 20.0 / (60.0 * 60.0);                                           // radiation inside a belt, in rad/s (20.0 rad/h)
-  public const double StormRadiation              = 2.0 / (60.0 * 60.0);                                            // radiation during a magnetic storm, in rad/s (2.0 rad/h)
-  public const double RadiationWarningThreshold   = 15.0;                                                           // dose at which warning is displayed, in rad
-  public const double RadiationDangerThreshold    = 22.5;                                                           // dose at which danger is displayed, in rad
-  public const double RadiationFatalThreshold     = 30.0;                                                           // fatal dose, in rad
-  public const double ShieldingEfficiency         = 0.95;                                                           // max proportion of radiations blocked by shielding
+  public static double CosmicRadiation;                   // radiation outside a magnetosphere
+  public static double StormRadiation;                    // radiation during a magnetic storm
+  public static double BeltRadiation;                     // radiation inside a belt
+  public static double ShieldingEfficiency;               // proportion of radiation blocked by shielding (at max amount)
+  public static double MagnetosphereFalloff;              // the magnetosphere intensity fade out gradually outside it
+  public static double BeltFalloff;                       // the bel intensity fade in/out gradually when crossing it
 
-  // penalities
-  public const float DeathReputationPenalty       = 50.0f;                                                          // penalty applied on deaths related to life support
+  // storm
+  public static double StormMinTime;                      // minimum interval between storms over a system
+  public static double StormMaxTime;                      // maximum interval between storms over a system
+  public static double StormDuration;                     // how long a storm last once it hit
+  public static double StormEjectionSpeed;                // cme speed in m/s
 
-  // screen messages
-  public const float MessageLength                = 6.66f;                                                          // time duration of messages on screen, in seconds
+  // misc
+  public static double MonoPropellantOnEVA;               // how much monopropellant to take on EVA
+  public static double MonoPropellantOnResque;            // how much monopropellant to gift to resque missions
+  public static double HeadlightCost;                     // EC/s cost if eva headlights are on
+  public static float  DeathReputationPenalty;            // reputation to remove in case of death
+  public static float  BreakdownReputationPenalty;        // reputation to remove in case of breakdown
+  public static float  MessageLength;                     // duration of messages on screen in seconds
 }
 
 
