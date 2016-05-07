@@ -14,41 +14,32 @@ namespace KERBALISM {
 // store per-kerbal data
 public class kerbal_data
 {
-  public double temperature         = 0.0;          // climate mechanic accumulator
-  public double starved             = 0.0;          // food starving accumulator
-  public double deprived            = 0.0;          // oxygen deprivation accumulator
-  public double stressed            = 0.0;          // stress accumulator
-  public double radiation           = 0.0;          // radiation accumulator
-  public double time_since_food     = 0.0;          // keep track of last meal
-  public uint   msg_freezing        = 0;            // message flag: freezing
-  public uint   msg_burning         = 0;            // message flag: burning
-  public uint   msg_starved         = 0;            // message flag: starving
-  public uint   msg_deprived        = 0;            // message flag: suffocating
-  public uint   msg_stressed        = 0;            // message flag: QoL
-  public uint   msg_radiation       = 0;            // message flag: radiation poisoning
   public uint   resque              = 1;            // used to deal with resque mission kerbals
   public uint   disabled            = 0;            // a generic flag to disable resource consumption, for use by other mods
   public double living_space        = 1.0;          // living space factor of the connected-space or whole-space contaning this kerbal
   public double entertainment       = 1.0;          // entertainment factor of the connected-space or whole-space contaning this kerbal
   public double shielding           = 0.0;          // shielding factor of the connected-space or whole-space contaning this kerbal
   public string space_name          = "";           // a name for the space where the kerbal is, or empty for the whole-vessel space
+  public Dictionary<string, kmon_data> kmon = new Dictionary<string, kmon_data>(); // rule data
 }
 
 
 // store per-vessel data
 public class vessel_data
 {
-  public uint   msg_ec              = 0;            // message flag: ec level
-  public uint   msg_food            = 0;            // message flag: food level
-  public uint   msg_oxygen          = 0;            // message flag: oxygen level
   public uint   msg_signal          = 0;            // message flag: link status
   public uint   msg_belt            = 0;            // message flag: crossing radiation belt
   public uint   cfg_ec              = 1;            // enable/disable message: ec level
-  public uint   cfg_supply          = 1;            // enable/disable message: food/oxygen level
-  public uint   cfg_malfunction     = 1;            // enable/disable message: malfunctions
+  public uint   cfg_supply          = 1;            // enable/disable message: supplies level
   public uint   cfg_signal          = 1;            // enable/disable message: link status
+  public uint   cfg_malfunction     = 1;            // enable/disable message: malfunctions
+  public uint   cfg_storm           = 1;            // enable/disable message: storms
+  public uint   cfg_highlights      = 1;            // show/hide malfunction highlights
+
   public string notes               = "";           // vessel notes
   public string group               = "NONE";       // vessel group
+  public Dictionary<string, vmon_data> vmon = new Dictionary<string, vmon_data>(); // rule data
+  public List<uint> scansat_id = new List<uint>();  // used to remember scansat sensors that were disabled
 }
 
 
@@ -92,7 +83,7 @@ public class DB : ScenarioModule
   private notification_data notifications = new notification_data();
 
   // current savegame version
-  private const string current_version = "0.9.9.4";
+  private const string current_version = "0.9.9.5";
 
   // allow global access
   private static DB instance = null;
@@ -110,6 +101,18 @@ public class DB : ScenarioModule
     // note: if there isn't a version this is either a new game, or the first public release (that didn't have versioning)
     string version = node.HasValue("version") ? node.GetValue("version") : node.HasNode("kerbals") ? "0.9.9.0" : current_version;
 
+    // this is an unsupported version, attempt a total clean up and pray
+    // note: currently unused
+    if (string.CompareOrdinal(version, "0.9.9.0") < 0)
+    {
+      Lib.Log("loading save from unsupported version " + version);
+      kerbals.Clear();
+      vessels.Clear();
+      bodies.Clear();
+      notifications = new notification_data();
+      return;
+    }
+
 
     kerbals.Clear();
     if (node.HasNode("kerbals"))
@@ -118,24 +121,24 @@ public class DB : ScenarioModule
       foreach(ConfigNode kerbal_node in kerbals_node.GetNodes())
       {
         kerbal_data kd = new kerbal_data();
-        kd.temperature     = Convert.ToDouble( kerbal_node.GetValue("temperature") );
-        kd.starved         = Convert.ToDouble( kerbal_node.GetValue("starved") );
-        kd.deprived        = Convert.ToDouble( kerbal_node.GetValue("deprived") );
-        kd.stressed        = Convert.ToDouble( kerbal_node.GetValue("stressed") );
-        kd.radiation       = Convert.ToDouble( kerbal_node.GetValue("radiation") );
-        kd.time_since_food = Convert.ToDouble( kerbal_node.GetValue("time_since_food") );
-        kd.msg_freezing    = Convert.ToUInt32( kerbal_node.GetValue("msg_freezing") );
-        kd.msg_burning     = Convert.ToUInt32( kerbal_node.GetValue("msg_burning") );
-        kd.msg_starved     = Convert.ToUInt32( kerbal_node.GetValue("msg_starved") );
-        kd.msg_deprived    = Convert.ToUInt32( kerbal_node.GetValue("msg_deprived") );
-        kd.msg_stressed    = Convert.ToUInt32( kerbal_node.GetValue("msg_stressed") );
-        kd.msg_radiation   = Convert.ToUInt32( kerbal_node.GetValue("msg_radiation") );
-        kd.resque          = Convert.ToUInt32( kerbal_node.GetValue("resque") );
-        kd.disabled        = Convert.ToUInt32( kerbal_node.GetValue("disabled") );
-        kd.living_space    = string.CompareOrdinal(version, "0.9.9.3") > 0 ? Convert.ToDouble(kerbal_node.GetValue("living_space")) : 0.0;
-        kd.entertainment   = string.CompareOrdinal(version, "0.9.9.3") > 0 ? Convert.ToDouble(kerbal_node.GetValue("entertainment")) : 0.0;
-        kd.shielding       = string.CompareOrdinal(version, "0.9.9.3") > 0 ? Convert.ToDouble(kerbal_node.GetValue("shielding")) : 0.0;
-        kd.space_name      = string.CompareOrdinal(version, "0.9.9.3") > 0 ? kerbal_node.GetValue("space_name") : "";
+        kd.resque          = Lib.ConfigValue(kerbal_node, "resque", 1u);
+        kd.disabled        = Lib.ConfigValue(kerbal_node, "disabled", 0u);
+        kd.living_space    = Lib.ConfigValue(kerbal_node, "living_space", 1.0); // since 0.9.9.4
+        kd.entertainment   = Lib.ConfigValue(kerbal_node, "entertainment", 1.0); // since 0.9.9.4
+        kd.shielding       = Lib.ConfigValue(kerbal_node, "shielding", 0.0); // since 0.9.9.4
+        kd.space_name      = Lib.ConfigValue(kerbal_node, "space_name", ""); // since 0.9.9.4
+        kd.kmon = new Dictionary<string, kmon_data>();
+        if (kerbal_node.HasNode("kmon")) // since 0.9.9.5
+        {
+          foreach(var cfg in kerbal_node.GetNode("kmon").GetNodes())
+          {
+            kmon_data kmon = new kmon_data();
+            kmon.problem = Lib.ConfigValue(cfg, "problem", 0.0);
+            kmon.message = Lib.ConfigValue(cfg, "message", 0u);
+            kmon.time_since = Lib.ConfigValue(cfg, "time_since", 0.0);
+            kd.kmon.Add(cfg.name, kmon);
+          }
+        }
         kerbals.Add(kerbal_node.name.Replace("___", " "), kd);
       }
     }
@@ -147,17 +150,31 @@ public class DB : ScenarioModule
       foreach(ConfigNode vessel_node in vessels_node.GetNodes())
       {
         vessel_data vd = new vessel_data();
-        vd.msg_ec          = Convert.ToUInt32( vessel_node.GetValue("msg_ec") );
-        vd.msg_food        = Convert.ToUInt32( vessel_node.GetValue("msg_food") );
-        vd.msg_oxygen      = Convert.ToUInt32( vessel_node.GetValue("msg_oxygen") );
-        vd.msg_signal      = Convert.ToUInt32( vessel_node.GetValue("msg_signal") );
-        vd.msg_belt        = Convert.ToUInt32( vessel_node.GetValue("msg_belt") );
-        vd.cfg_ec          = Convert.ToUInt32( vessel_node.GetValue("cfg_ec") );
-        vd.cfg_supply      = Convert.ToUInt32( vessel_node.GetValue("cfg_supply") );
-        vd.cfg_malfunction = Convert.ToUInt32( vessel_node.GetValue("cfg_malfunction") );
-        vd.cfg_signal      = Convert.ToUInt32( vessel_node.GetValue("cfg_signal") );
-        vd.notes           = vessel_node.GetValue("notes").Replace("$NEWLINE", "\n");
-        vd.group           = string.CompareOrdinal(version, "0.9.9.0") > 0 ? vessel_node.GetValue("group") : "NONE";
+        vd.msg_signal      = Lib.ConfigValue(vessel_node, "msg_signal", 0u);
+        vd.msg_belt        = Lib.ConfigValue(vessel_node, "msg_belt", 0u);
+        vd.cfg_ec          = Lib.ConfigValue(vessel_node, "cfg_ec", 1u);
+        vd.cfg_supply      = Lib.ConfigValue(vessel_node, "cfg_supply", 1u);
+        vd.cfg_signal      = Lib.ConfigValue(vessel_node, "cfg_signal", 1u);
+        vd.cfg_malfunction = Lib.ConfigValue(vessel_node, "cfg_malfunction", 1u);
+        vd.cfg_storm       = Lib.ConfigValue(vessel_node, "cfg_storm", 1u); // since 0,9.9.5
+        vd.cfg_highlights  = Lib.ConfigValue(vessel_node, "cfg_highlights", 1u); // since 0,9.9.5
+        vd.notes           = Lib.ConfigValue(vessel_node, "notes", "").Replace("$NEWLINE", "\n"); // since 0.9.9.1
+        vd.group           = Lib.ConfigValue(vessel_node, "group", "NONE"); // since 0.9.9.1
+        vd.vmon = new Dictionary<string, vmon_data>();
+        if (vessel_node.HasNode("vmon")) // since 0.9.9.5
+        {
+          foreach(var cfg in vessel_node.GetNode("vmon").GetNodes())
+          {
+            vmon_data vmon = new vmon_data();
+            vmon.message = Lib.ConfigValue(cfg, "message", 0u);
+            vd.vmon.Add(cfg.name, vmon);
+          }
+        }
+        vd.scansat_id = new List<uint>();
+        foreach(string s in vessel_node.GetValues("scansat_id")) // since 0.9.9.5
+        {
+          vd.scansat_id.Add(Convert.ToUInt32(s));
+        }
         vessels.Add(new Guid(vessel_node.name), vd);
       }
     }
@@ -169,10 +186,10 @@ public class DB : ScenarioModule
       foreach(ConfigNode body_node in bodies_node.GetNodes())
       {
         body_data bd = new body_data();
-        bd.storm_time  = Convert.ToDouble( body_node.GetValue("storm_time") );
-        bd.storm_age   = Convert.ToDouble( body_node.GetValue("storm_age") );
-        bd.storm_state = Convert.ToUInt32( body_node.GetValue("storm_state") );
-        bd.msg_storm   = Convert.ToUInt32( body_node.GetValue("msg_storm") );
+        bd.storm_time  = Lib.ConfigValue(body_node, "storm_time", 0.0);
+        bd.storm_age   = Lib.ConfigValue(body_node, "storm_age", 0.0);
+        bd.storm_state = Lib.ConfigValue(body_node, "storm_state", 0u);
+        bd.msg_storm   = Lib.ConfigValue(body_node, "msg_storm", 0u);
         bodies.Add(body_node.name.Replace("___", " "), bd);
       }
     }
@@ -180,14 +197,49 @@ public class DB : ScenarioModule
     notifications = new notification_data();
     if (node.HasNode("notifications"))
     {
-      ConfigNode notifications_node = node.GetNode("notifications");
-      notifications.next_death_report   = Convert.ToUInt32( notifications_node.GetValue("next_death_report") );
-      notifications.next_tutorial       = Convert.ToUInt32( notifications_node.GetValue("next_tutorial") );
-      notifications.death_counter       = Convert.ToUInt32( notifications_node.GetValue("death_counter") );
-      notifications.last_death_counter  = Convert.ToUInt32( notifications_node.GetValue("last_death_counter") );
-      notifications.first_belt_crossing = Convert.ToUInt32( notifications_node.GetValue("first_belt_crossing") );
-      notifications.first_signal_loss   = Convert.ToUInt32( notifications_node.GetValue("first_signal_loss") );
-      notifications.first_malfunction   = Convert.ToUInt32( notifications_node.GetValue("first_malfunction") );
+      ConfigNode n_node = node.GetNode("notifications");
+      notifications.next_death_report   = Lib.ConfigValue(n_node, "next_death_report", 0u);
+      notifications.next_tutorial       = Lib.ConfigValue(n_node, "next_tutorial", 0u);
+      notifications.death_counter       = Lib.ConfigValue(n_node, "death_counter", 0u);
+      notifications.last_death_counter  = Lib.ConfigValue(n_node, "last_death_counter", 0u);
+      notifications.first_belt_crossing = Lib.ConfigValue(n_node, "first_belt_crossing", 0u);
+      notifications.first_signal_loss   = Lib.ConfigValue(n_node, "first_signal_loss", 0u);
+      notifications.first_malfunction   = Lib.ConfigValue(n_node, "first_malfunction", 0u);
+    }
+
+
+    // versions before 0.9.9.5 used a different structure to remember message sent
+    // mute the message system for a few seconds to avoid the user being bombarded by messages
+    if (string.CompareOrdinal(version, "0.9.9.5") < 0)
+    {
+      Message.Mute();
+      base.StartCoroutine(CallbackUtil.DelayedCallback(10.0f, Message.Unmute));
+    }
+
+
+    // versions before 0.9.9.5 didn't have profiles, and didn't use CRP food/oxygen values
+    // scale all amounts of them in existing vessels, to not break savegames
+    if (string.CompareOrdinal(version, "0.9.9.5") < 0)
+    {
+      foreach(Vessel v in FlightGlobals.Vessels.FindAll(k => !k.loaded))
+      {
+        foreach(var part in v.protoVessel.protoPartSnapshots)
+        {
+          var food = part.resources.Find(k => k.resourceName == "Food");
+          if (food != null)
+          {
+            food.resourceValues.SetValue("amount", (Lib.ConfigValue(food.resourceValues, "amount", 0.0f) * 10.0f).ToString());
+            food.resourceValues.SetValue("maxAmount", (Lib.ConfigValue(food.resourceValues, "maxAmount", 0.0f) * 10.0f).ToString());
+          }
+
+          var oxygen = part.resources.Find(k => k.resourceName == "Oxygen");
+          if (oxygen != null)
+          {
+            oxygen.resourceValues.SetValue("amount", (Lib.ConfigValue(oxygen.resourceValues, "amount", 0.0f) * 1000.0f).ToString());
+            oxygen.resourceValues.SetValue("maxAmount", (Lib.ConfigValue(oxygen.resourceValues, "maxAmount", 0.0f) * 1000.0f).ToString());
+          }
+        }
+      }
     }
 
 
@@ -206,24 +258,20 @@ public class DB : ScenarioModule
     {
       kerbal_data kd = p.Value;
       ConfigNode kerbal_node = kerbals_node.AddNode(p.Key.Replace(" ", "___"));
-      kerbal_node.AddValue("temperature", kd.temperature);
-      kerbal_node.AddValue("starved", kd.starved);
-      kerbal_node.AddValue("deprived", kd.deprived);
-      kerbal_node.AddValue("stressed", kd.stressed);
-      kerbal_node.AddValue("radiation", kd.radiation);
-      kerbal_node.AddValue("time_since_food", kd.time_since_food);
-      kerbal_node.AddValue("msg_freezing", kd.msg_freezing);
-      kerbal_node.AddValue("msg_burning", kd.msg_burning);
-      kerbal_node.AddValue("msg_starved", kd.msg_starved);
-      kerbal_node.AddValue("msg_deprived", kd.msg_deprived);
-      kerbal_node.AddValue("msg_stressed", kd.msg_stressed);
-      kerbal_node.AddValue("msg_radiation", kd.msg_radiation);
       kerbal_node.AddValue("resque", kd.resque);
       kerbal_node.AddValue("disabled", kd.disabled);
       kerbal_node.AddValue("living_space", kd.living_space);
       kerbal_node.AddValue("entertainment", kd.entertainment);
       kerbal_node.AddValue("shielding", kd.shielding);
       kerbal_node.AddValue("space_name", kd.space_name);
+      var kmon_node = kerbal_node.AddNode("kmon");
+      foreach(var q in kd.kmon)
+      {
+        var kmon_subnode = kmon_node.AddNode(q.Key);
+        kmon_subnode.AddValue("problem", q.Value.problem);
+        kmon_subnode.AddValue("message", q.Value.message);
+        kmon_subnode.AddValue("time_since", q.Value.time_since);
+      }
     }
 
     ConfigNode vessels_node = node.AddNode("vessels");
@@ -231,17 +279,26 @@ public class DB : ScenarioModule
     {
       vessel_data vd = p.Value;
       ConfigNode vessel_node = vessels_node.AddNode(p.Key.ToString());
-      vessel_node.AddValue("msg_ec", vd.msg_ec);
-      vessel_node.AddValue("msg_food", vd.msg_food);
-      vessel_node.AddValue("msg_oxygen", vd.msg_oxygen);
       vessel_node.AddValue("msg_signal", vd.msg_signal);
       vessel_node.AddValue("msg_belt", vd.msg_belt);
       vessel_node.AddValue("cfg_ec", vd.cfg_ec);
       vessel_node.AddValue("cfg_supply", vd.cfg_supply);
-      vessel_node.AddValue("cfg_malfunction", vd.cfg_malfunction);
       vessel_node.AddValue("cfg_signal", vd.cfg_signal);
+      vessel_node.AddValue("cfg_malfunction", vd.cfg_malfunction);
+      vessel_node.AddValue("cfg_storm", vd.cfg_storm);
+      vessel_node.AddValue("cfg_highlights", vd.cfg_highlights);
       vessel_node.AddValue("notes", vd.notes.Replace("\n", "$NEWLINE"));
       vessel_node.AddValue("group", vd.group);
+      var vmon_node = vessel_node.AddNode("vmon");
+      foreach(var q in vd.vmon)
+      {
+        var vmon_subnode = vmon_node.AddNode(q.Key);
+        vmon_subnode.AddValue("message", q.Value.message);
+      }
+      foreach(uint id in vd.scansat_id)
+      {
+        vessel_node.AddValue("scansat_id", id.ToString());
+      }
     }
 
     ConfigNode bodies_node = node.AddNode("bodies");
@@ -290,6 +347,22 @@ public class DB : ScenarioModule
   {
     if (!instance.bodies.ContainsKey(b_name)) instance.bodies.Add(b_name, new body_data());
     return instance.bodies[b_name];
+  }
+
+
+  public static vmon_data VmonData(Guid v_id, string rule_name)
+  {
+    var vd = VesselData(v_id);
+    if (!vd.vmon.ContainsKey(rule_name)) vd.vmon.Add(rule_name, new vmon_data());
+    return vd.vmon[rule_name];
+  }
+
+
+  public static kmon_data KmonData(string k_name, string rule_name)
+  {
+    var kd = KerbalData(k_name);
+    if (!kd.kmon.ContainsKey(rule_name)) kd.kmon.Add(rule_name, new kmon_data());
+    return kd.kmon[rule_name];
   }
 
 

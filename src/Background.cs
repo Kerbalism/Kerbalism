@@ -96,6 +96,9 @@ public class Background : MonoBehaviour
       // skip loaded vessels
       if (vessel.loaded) continue;
 
+      // get vessel data from the db
+      vessel_data vd = DB.VesselData(vessel.id);
+
       // get vessel info from the cache
       vessel_info info = Cache.VesselInfo(vessel);
 
@@ -207,17 +210,19 @@ public class Background : MonoBehaviour
           // note: ignore autoshutdown
           // note: ignore crew experience bonus (seem that stock ignore it too)
           // note: 'undo' stock behaviour by forcing lastUpdateTime to now (to minimize overlapping calculations from this and stock post-facto simulation)
-          else if (module.moduleName == "ModuleResourceConverter")
+          // note: support PlanetaryBaseSystem converters
+          // note: support NearFuture reactors
+          else if (module.moduleName == "ModuleResourceConverter" || module.moduleName == "ModuleKPBSConverter" || module.moduleName == "FissionReactor")
           {
+            // get module from prefab
+            ModuleResourceConverter converter = part_prefab.Modules.GetModules<ModuleResourceConverter>()[converter_index++];
+
             // determine if active
             bool activated = Convert.ToBoolean(module.moduleValues.GetValue("IsActivated"));
 
             // if active
             if (activated)
             {
-              // get module from prefab
-              ModuleResourceConverter converter = part_prefab.Modules.GetModules<ModuleResourceConverter>()[converter_index++];
-
               // determine if vessel is full of all output resources
               bool full = true;
               foreach(var or in converter.outputList)
@@ -275,16 +280,17 @@ public class Background : MonoBehaviour
               // get module from prefab
               ModuleResourceHarvester harvester = part_prefab.Modules.GetModules<ModuleResourceHarvester>()[0];
 
+              // [disabled] reason: not working
               // deduce crew bonus
-              double experience_bonus = 0.0;
+              /*double experience_bonus = 0.0;
               if (harvester.UseSpecialistBonus)
               {
                 foreach(ProtoCrewMember c in vessel.protoVessel.GetVesselCrew())
                 {
                   experience_bonus = Math.Max(experience_bonus, (c.trait == harvester.Specialty) ? (double)c.experienceLevel : 0.0);
                 }
-              }
-              double crew_bonus = harvester.SpecialistBonusBase + (experience_bonus + 1.0) * harvester.SpecialistEfficiencyFactor;
+              }*/
+              const double crew_bonus = 1.0; //harvester.SpecialistBonusBase + (experience_bonus + 1.0) * harvester.SpecialistEfficiencyFactor;
 
               // detect amount of ore in the ground
               AbundanceRequest request = new AbundanceRequest
@@ -345,16 +351,17 @@ public class Background : MonoBehaviour
               // get module from prefab
               ModuleAsteroidDrill asteroid_drill = part_prefab.Modules.GetModules<ModuleAsteroidDrill>()[0];
 
+              // [disabled] reason: not working
               // deduce crew bonus
-              double experience_bonus = 0.0;
+              /*double experience_bonus = 0.0;
               if (asteroid_drill.UseSpecialistBonus)
               {
                 foreach(ProtoCrewMember c in vessel.protoVessel.GetVesselCrew())
                 {
                   experience_bonus = Math.Max(experience_bonus, (c.trait == asteroid_drill.Specialty) ? (double)c.experienceLevel : 0.0);
                 }
-              }
-              double crew_bonus = asteroid_drill.SpecialistBonusBase + (experience_bonus + 1.0) * asteroid_drill.SpecialistEfficiencyFactor;
+              }*/
+              const double crew_bonus = 1.0; //asteroid_drill.SpecialistBonusBase + (experience_bonus + 1.0) * asteroid_drill.SpecialistEfficiencyFactor;
 
               // get asteroid data
               ProtoPartModuleSnapshot asteroid_info = null;
@@ -398,91 +405,55 @@ public class Background : MonoBehaviour
               module.moduleValues.SetValue("lastUpdateTime", Planetarium.GetUniversalTime().ToString());
             }
           }
-          // SCANSAT support (new version)
-          // TODO: enable better SCANsat support
-          /*else if (module.moduleName == "SCANsat" || module.moduleName == "ModuleSCANresourceScanner")
+          // SCANSAT support
+          else if (module.moduleName == "SCANsat" || module.moduleName == "ModuleSCANresourceScanner")
           {
             // get ec consumption rate
             PartModule scansat = part_prefab.Modules[module.moduleName];
             double power = Lib.ReflectionValue<float>(scansat, "power");
             double ec_required = power * TimeWarp.fixedDeltaTime;
+            bool is_scanning = Lib.GetProtoValue<bool>(module, "scanning");
+            bool was_disabled = vd.scansat_id.Contains(part.flightID);
 
-            // if it was scanning
-            if (SCANsat.wasScanning(module))
+            // if its scanning
+            if (Lib.GetProtoValue<bool>(module, "scanning"))
+            {
+              // consume ec
+              double ec_consumed = Lib.RequestResource(vessel, "ElectricCharge", ec_required);
+
+              // if there isn't enough ec
+              if (ec_consumed < ec_required * 0.99 && ec_required > double.Epsilon)
+              {
+                // unregister scanner
+                SCANsat.stopScanner(vessel, module, part_prefab);
+
+                // remember disabled scanner
+                vd.scansat_id.Add(part.flightID);
+
+                // give the user some feedback
+                if (DB.VesselData(vessel.id).cfg_ec == 1)
+                  Message.Post("SCANsat sensor was disabled on <b>" + vessel.vesselName + "</b>");
+              }
+            }
+            // if it was disabled
+            else if (vd.scansat_id.Contains(part.flightID))
             {
               // if there is enough ec
               double ec_amount = Lib.GetResourceAmount(vessel, "ElectricCharge");
               double ec_capacity = Lib.GetResourceCapacity(vessel, "ElectricCharge");
-              if (ec_capacity > double.Epsilon && ec_amount / ec_capacity > 0.15) //< re-enable at 15% EC
+              if (ec_capacity > double.Epsilon && ec_amount / ec_capacity > 0.25) //< re-enable at 25% EC
               {
                 // re-enable the scanner
                 SCANsat.resumeScanner(vessel, module, part_prefab);
 
                 // give the user some feedback
                 if (DB.VesselData(vessel.id).cfg_ec == 1)
-                  Message.Post(Severity.relax, "SCANsat> sensor on <b>" + vessel.vesselName + "</b> resumed operations", "we got enough ElectricCharge");
+                  Message.Post("SCANsat sensor resumed operations on <b>" + vessel.vesselName + "</b>");
               }
             }
 
-            // if it is scanning
-            if (SCANsat.isScanning(module))
-            {
-              // consume ec
-              double ec_consumed = Lib.RequestResource(vessel, "ElectricCharge", ec_required);
-
-              // if there isn't enough ec
-              if (ec_consumed < ec_required * 0.99 && ec_required > double.Epsilon)
-              {
-                // unregister scanner, and remember it
-                SCANsat.stopScanner(vessel, module, part_prefab);
-
-                // give the user some feedback
-                if (DB.VesselData(vessel.id).cfg_ec == 1)
-                  Message.Post(Severity.warning, "SCANsat sensor was disabled on <b>" + vessel.vesselName + "</b>", "for lack of ElectricCharge");
-              }
-            }
-          }*/
-          // SCANSAT support (old version)
-          // note: this one doesn't support re-activation, is a bit slower and less clean
-          //       waiting for DMagic to fix a little bug
-          else if (module.moduleName == "SCANsat" || module.moduleName == "ModuleSCANresourceScanner")
-          {
-            // determine if scanning
-            bool scanning = Convert.ToBoolean(module.moduleValues.GetValue("scanning"));
-
-            // consume ec
-            if (scanning)
-            {
-              // get ec consumption
-              PartModule scansat = part_prefab.Modules[module.moduleName];
-              double power = Lib.ReflectionValue<float>(scansat, "power");
-
-              // consume ec
-              double ec_required = power * TimeWarp.fixedDeltaTime;
-              double ec_consumed = Lib.RequestResource(vessel, "ElectricCharge", ec_required);
-
-              // if there isn't enough ec
-              if (ec_consumed < ec_required * 0.99 && ec_required > double.Epsilon)
-              {
-                // unregister scanner using reflection
-                foreach(var a in AssemblyLoader.loadedAssemblies)
-                {
-                  if (a.name == "SCANsat")
-                  {
-                    Type controller_type = a.assembly.GetType("SCANsat.SCANcontroller");
-                    System.Object controller = controller_type.GetProperty("controller", BindingFlags.Public | BindingFlags.Static).GetValue(null, null);
-                    controller_type.InvokeMember("removeVessel", BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Instance, null, controller, new System.Object[]{vessel});
-                  }
-                }
-
-                // disable scanning
-                module.moduleValues.SetValue("scanning", false.ToString());
-
-                // give the user some feedback
-                if (DB.VesselData(vessel.id).cfg_ec == 1)
-                  Message.Post(Severity.warning, "SCANsat sensor was disabled on <b>" + vessel.vesselName + "</b>", "for lack of ElectricCharge");
-              }
-            }
+            // forget active scanners
+            if (Lib.GetProtoValue<bool>(module, "scanning")) vd.scansat_id.Remove(part.flightID);
           }
           // NearFutureSolar support
           // note: we assume deployed, this is a current limitation
@@ -495,6 +466,28 @@ public class Background : MonoBehaviour
               double output = CurvedPanelOutput(vessel, part, part_prefab, curved_panel, info.sun_dir, info.sun_dist, atmo_factor) * Malfunction.Penalty(part);
               Lib.RequestResource(vessel, "ElectricCharge", -output * TimeWarp.fixedDeltaTime);
             }
+          }
+          // NearFutureElectrical support
+          // note: fission generator ignore heat
+          // note: radioisotope generator doesn't support easy mode
+          else if (module.moduleName == "FissionGenerator")
+          {
+            PartModule generator = part_prefab.Modules[module.moduleName];
+            double power = Lib.ReflectionValue<float>(generator, "PowerGeneration");
+
+            // get fission reactor tweakable, will default to 1.0 for other modules
+            var reactor = part.modules.Find(k => k.moduleName == "FissionReactor");
+            double tweakable = reactor == null ? 1.0 : Lib.ConfigValue(reactor.moduleValues, "CurrentPowerPercent", 100.0) * 0.01;
+            Lib.RequestResource(vessel, "ElectricCharge", -power * tweakable * TimeWarp.fixedDeltaTime);
+          }
+          else if (module.moduleName == "ModuleRadioisotopeGenerator")
+          {
+            double mission_time = vessel.missionTime / (3600.0 * Lib.HoursInDay() * Lib.DaysInYear());
+            PartModule generator = part_prefab.Modules[module.moduleName];
+            double half_life = Lib.ReflectionValue<float>(generator, "HalfLife");
+            double remaining = Math.Pow(2.0, (-mission_time) / half_life);
+            double power = Lib.ReflectionValue<float>(generator, "BasePower");
+            Lib.RequestResource(vessel, "ElectricCharge", -power * remaining * TimeWarp.fixedDeltaTime);
           }
           // KERBALISM modules
           else if (module.moduleName == "Scrubber") { Scrubber.BackgroundUpdate(vessel, part.flightID); }

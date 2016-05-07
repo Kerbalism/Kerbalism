@@ -19,6 +19,10 @@ public class Greenhouse : PartModule
   [KSPField(isPersistant = true)] public double waste_rate;                   // waste consumption rate per-second, to provide waste bonus
   [KSPField(isPersistant = true)] public double harvest_size;                 // amount of food produced at harvest time
   [KSPField(isPersistant = true)] public double growth_rate;                  // growth speed in average lighting conditions
+  [KSPField(isPersistant = true)] public double waste_bonus = 0.2;            // bonus applied to growth if waste is available
+  [KSPField(isPersistant = true)] public double soil_bonus = 0.5;             // bonus applied to growth if landed
+  [KSPField(isPersistant = true)] public string resource_name = "Food";       // resource produced
+  [KSPField(isPersistant = true)] public string waste_name = "Crap";          // resource used for waste
   [KSPField] public string animation_name;                                    // name of animation to play for the shutters, optional
   [KSPField] public string emissive_object;                                   // name of an object with an emissive texture to use for the lamps, optional
 
@@ -97,13 +101,13 @@ public class Greenhouse : PartModule
     double reduced_harvest = harvest_size * growth * 0.5;
 
     // produce reduced quantity of food, proportional to current growth
-    part.RequestResource("Food", -reduced_harvest);
+    part.RequestResource(resource_name, -reduced_harvest);
 
     // reset growth
     growth = 0.0;
 
     // show message
-    Message.Post("On <color=FFFFFF>" + vessel.vesselName + "</color> an emergency harved produced <color=FFFFFF>" + reduced_harvest.ToString("F0") + " Food</color>");
+    Message.Post("On <color=FFFFFF>" + vessel.vesselName + "</color> an emergency harved produced <color=FFFFFF>" + reduced_harvest.ToString("F0") + " " + resource_name + "</color>");
   }
 
   // pseudo-ctor
@@ -139,7 +143,7 @@ public class Greenhouse : PartModule
   public override string GetInfo()
   {
     return "Grow food in space.\n\n"
-         + "- Harvest size: <b>" + harvest_size + " Food</b>\n"
+         + "- Harvest size: <b>" + harvest_size + " " + resource_name + "</b>\n"
          + "- Harvest time: <b>" + Lib.HumanReadableDuration(1.0 / growth_rate) + "</b>\n"
          + "- Lamps EC rate: <b> " + Lib.HumanReadableRate(ec_rate) + "</b>";
   }
@@ -191,15 +195,19 @@ public class Greenhouse : PartModule
 
 
     // consume waste
-    double waste_required = waste_rate * elapsed_s;
-    double waste = part.RequestResource("Waste", waste_required);
-    double waste_perc = waste / waste_required;
+    double waste_perc = 0.0;
+    if (waste_name.Length > 0)
+    {
+      double waste_required = waste_rate * elapsed_s;
+      double waste = part.RequestResource(waste_name, waste_required);
+      waste_perc = waste / waste_required;
+    }
 
 
     // determine growth bonus
     double growth_bonus = 0.0;
-    growth_bonus += Settings.GreenhouseSoilBonus * (Lib.Landed(vessel) ? 1.0 : 0.0);
-    growth_bonus += Settings.GreenhouseWasteBonus * waste_perc;
+    growth_bonus += soil_bonus * (Lib.Landed(vessel) ? 1.0 : 0.0);
+    growth_bonus += waste_bonus * waste_perc;
 
     // grow the crop
     growing = (growth_rate * (1.0 + growth_bonus)) * lighting;
@@ -212,10 +220,10 @@ public class Greenhouse : PartModule
       growth = 0.0;
 
       // produce food
-      part.RequestResource("Food", -harvest_size);
+      part.RequestResource(resource_name, -harvest_size);
 
       // show a message to the user
-      Message.Post("On <color=FFFFFF>" + vessel.vesselName + "</color> the crop harvest produced <color=FFFFFF>" + harvest_size.ToString("F0") + " Food</color>");
+      Message.Post("On <color=FFFFFF>" + vessel.vesselName + "</color> the crop harvest produced <color=FFFFFF>" + harvest_size.ToString("F0") + " " + resource_name + "</color>");
     }
 
     // set rmb ui status
@@ -238,6 +246,10 @@ public class Greenhouse : PartModule
     double waste_rate = Lib.GetProtoValue<double>(m, "waste_rate");
     double harvest_size = Lib.GetProtoValue<double>(m, "harvest_size");
     double growth_rate = Lib.GetProtoValue<double>(m, "growth_rate");
+    double waste_bonus = Lib.GetProtoValue<double>(m, "waste_bonus", 0.2); //< support versions before 0.9.9.5
+    double soil_bonus = Lib.GetProtoValue<double>(m, "soil_bonus", 0.5);  //< support versions before 0.9.9.5
+    string resource_name = Lib.GetProtoValue(m, "resource_name", "Food");  //< support versions before 0.9.9.5
+    string waste_name = Lib.GetProtoValue(m, "waste_name", "Crap");  //< support versions before 0.9.9.5
     bool door_opened = Lib.GetProtoValue<bool>(m, "door_opened");
     double growth = Lib.GetProtoValue<double>(m, "growth");
     float lamps = Lib.GetProtoValue<float>(m, "lamps");
@@ -275,15 +287,18 @@ public class Greenhouse : PartModule
 
 
     // consume waste
-    double waste_required = waste_rate * elapsed_s;
-    double waste = Lib.RequestResource(vessel, "Waste", waste_required);
-    double waste_perc = waste / waste_required;
-
+    double waste_perc = 0.0;
+    if (waste_name.Length > 0)
+    {
+      double waste_required = waste_rate * elapsed_s;
+      double waste = Lib.RequestResource(vessel, waste_name, waste_required);
+      waste_perc = waste / waste_required;
+    }
 
     // determine growth bonus
     double growth_bonus = 0.0;
-    growth_bonus += Settings.GreenhouseSoilBonus * (Lib.Landed(vessel) ? 1.0 : 0.0);
-    growth_bonus += Settings.GreenhouseWasteBonus * waste_perc;
+    growth_bonus += soil_bonus * (Lib.Landed(vessel) ? 1.0 : 0.0);
+    growth_bonus += waste_bonus * waste_perc;
 
     // grow the crop
     double growing = (growth_rate * (1.0 + growth_bonus)) * lighting;
@@ -296,10 +311,10 @@ public class Greenhouse : PartModule
       growth = 0.0;
 
       // produce food
-      Lib.RequestResource(vessel, "Food", -harvest_size);
+      Lib.RequestResource(vessel, resource_name, -harvest_size);
 
       // show a message to the user
-      Message.Post("On <color=FFFFFF>" + vessel.vesselName + "</color> the crop harvest produced <color=FFFFFF>" + harvest_size.ToString("F0") + " Food</color>");
+      Message.Post("On <color=FFFFFF>" + vessel.vesselName + "</color> the crop harvest produced <color=FFFFFF>" + harvest_size.ToString("F0") + " " + resource_name + "</color>");
     }
 
     // store data
@@ -320,9 +335,14 @@ public class Greenhouse : PartModule
 
 
   // return read-only list of greenhouses in a vessel
-  public static List<Greenhouse> GetGreenhouses(Vessel v)
+  public static List<Greenhouse> GetGreenhouses(Vessel v, string resource_name="")
   {
-    if (v.loaded) return v.FindPartModulesImplementing<Greenhouse>();
+    if (v.loaded)
+    {
+      var ret = v.FindPartModulesImplementing<Greenhouse>();
+      if (resource_name.Length > 0) ret = ret.FindAll(k => k.resource_name == resource_name);
+      return ret == null ? new List<Greenhouse>() : ret;
+    }
     else
     {
       List<Greenhouse> ret = new List<Greenhouse>();
@@ -337,12 +357,16 @@ public class Greenhouse : PartModule
             greenhouse.waste_rate = Lib.GetProtoValue<double>(module, "waste_rate");
             greenhouse.harvest_size = Lib.GetProtoValue<double>(module, "harvest_size");
             greenhouse.growth_rate = Lib.GetProtoValue<double>(module, "growth_rate");
+            greenhouse.waste_bonus = Lib.GetProtoValue(module, "waste_bonus", 0.2); //< support versions before 0.9.9.5
+            greenhouse.soil_bonus = Lib.GetProtoValue(module, "soil_bonus", 0.5);  //< support versions before 0.9.9.5
+            greenhouse.resource_name = Lib.GetProtoValue(module, "resource_name", "Food");  //< support versions before 0.9.9.5
+            greenhouse.waste_name = Lib.GetProtoValue(module, "waste_name", "Crap");  //< support versions before 0.9.9.5
             greenhouse.door_opened = Lib.GetProtoValue<bool>(module, "door_opened");
             greenhouse.growth = Lib.GetProtoValue<double>(module, "growth");
             greenhouse.lamps = Lib.GetProtoValue<float>(module, "lamps");
             greenhouse.lighting = Lib.GetProtoValue<double>(module, "lighting");
             greenhouse.growing = Lib.GetProtoValue<double>(module, "growing");
-            ret.Add(greenhouse);
+            if (resource_name.Length == 0 || greenhouse.resource_name == resource_name) ret.Add(greenhouse);
           }
         }
       }

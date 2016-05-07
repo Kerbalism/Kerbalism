@@ -47,6 +47,33 @@ public static class Kerbalism_Hooks
   }
 
 
+  // post something using kerbalism message system
+  public static void Message(string msg)
+  {
+    lazy_init();
+    if (K == null) return;
+    K.GetMethod("hook_Message").Invoke(null, new Object[]{msg});
+  }
+
+
+  // kill a kerbal
+  public static void Kill(Vessel v, ProtoCrewMember c)
+  {
+    lazy_init();
+    if (K == null) return;
+    K.GetMethod("hook_Kill").Invoke(null, new Object[]{v, c});
+  }
+
+
+  // trigger a breakdown event for a kerbal
+  public static void Breakdown(Vessel v, ProtoCrewMember c)
+  {
+    lazy_init();
+    if (K == null) return;
+    K.GetMethod("hook_Breakdown").Invoke(null, new Object[]{v, c});
+  }
+
+
   // enable/disable resource consumption for a specific kerbal, do nothing if Kerbalism isn't installed
   // - k_name: name of the kerbal
   // - disabled: true to disable resource consumption, false to re-enable it
@@ -54,7 +81,7 @@ public static class Kerbalism_Hooks
   {
     lazy_init();
     if (K == null) return;
-    K.GetMethod("hook_DisableKerbal").Invoke(null, new System.Object[]{k_name, disabled});
+    K.GetMethod("hook_DisableKerbal").Invoke(null, new Object[]{k_name, disabled});
   }
 
 
@@ -67,7 +94,95 @@ public static class Kerbalism_Hooks
   {
     lazy_init();
     if (K == null) return;
-    K.GetMethod("hook_InjectRadiation").Invoke(null, new System.Object[]{k_name, rad_amount});
+    K.GetMethod("hook_InjectRadiation").Invoke(null, new Object[]{k_name, rad_amount});
+  }
+
+
+  // return true if the vessel is in sunlight
+  // this does the same as v.directSunlight, but also work in background
+  public static bool InSunlight(Vessel v)
+  {
+    lazy_init();
+    if (K == null) return false;
+    return (bool)K.GetMethod("hook_InSunlight").Invoke(null, new Object[]{v});
+  }
+
+
+  // return true if the vessel is in a breathable atmosphere
+  public static bool Breathable(Vessel v)
+  {
+    lazy_init();
+    if (K == null) return false;
+    return (bool)K.GetMethod("hook_Breathable").Invoke(null, new Object[]{v});
+  }
+
+
+  // return the radiation level for a vessel, in rad/s
+  public static double RadiationLevel(Vessel v)
+  {
+    lazy_init();
+    if (K == null) return 0.0;
+    return (double)K.GetMethod("hook_RadiationLevel").Invoke(null, new Object[]{v});
+  }
+
+
+  // return the link state of a vessel
+  //   0: no link
+  //   1: indirect link (relayed)
+  //   2: direct link
+  public static uint LinkStatus(Vessel v)
+  {
+    lazy_init();
+    if (K == null) return 0;
+    return (uint)K.GetMethod("hook_LinkStatus").Invoke(null, new Object[]{v});
+  }
+
+
+  // return how bad the malfunction situation is for a vessel
+  //  0: no malfunction in any part
+  //  1: at least a part has up to 1 malfunction
+  //  2: at least a part has up to 2 malfunctions
+  public static uint Malfunctions(Vessel v)
+  {
+    lazy_init();
+    if (K == null) return 0;
+    return (uint)K.GetMethod("hook_Malfunctions").Invoke(null, new Object[]{v});
+  }
+
+
+  // return true if a storm is inbound toward the vessel location
+  public static bool StormIncoming(Vessel v)
+  {
+    lazy_init();
+    if (K == null) return false;
+    return (bool)K.GetMethod("hook_StormIncoming").Invoke(null, new Object[]{v});
+  }
+
+
+  // return true if a storm is in progress at the vessel location
+  public static bool StormInProgress(Vessel v)
+  {
+    lazy_init();
+    if (K == null) return false;
+    return (bool)K.GetMethod("hook_StormInProgress").Invoke(null, new Object[]{v});
+  }
+
+
+  // return true if the vessel is inside a magnetosphere
+  public static bool InsideMagnetosphere(Vessel v)
+  {
+    lazy_init();
+    if (K == null) return false;
+    return (bool)K.GetMethod("hook_InsideMagnetosphere").Invoke(null, new Object[]{v});
+  }
+
+
+  // return true if the vessel is inside a radiation belt
+  public static bool InsideBelt(Vessel v)
+  {
+    lazy_init();
+    if (K == null) return false;
+    return (bool)K.GetMethod("hook_InsideBelt").Invoke(null, new Object[]{v});
   }
 }
 

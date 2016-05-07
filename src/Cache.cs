@@ -22,12 +22,8 @@ public class vessel_info
   public double   belt_radiation;     // radiation from belt if inside one
   public double   storm_radiation;    // radiation from coronal mass ejection
   public double   env_radiation;      // sun of all incoming radiation
-  public double   food_depletion;     // time-to-depletion for food
-  public double   oxygen_depletion;   // time-to-depletion for oxygen
-  public double   food_consumption;   // food consumed per-second
-  public double   oxygen_consumption; // oxygen consumed per-second
-  public double   food_level;         // percentual of food
-  public double   oxygen_level;       // percentual of oxygen
+  public bool     breathable;         // true if inside breathable atmosphere
+  public Dictionary<string, vmon_cache> vmon = new Dictionary<string, vmon_cache>();
 }
 
 
@@ -64,7 +60,19 @@ public class Cache : MonoBehaviour
     if (instance.vessels.TryGetValue(v.id, out info)) return info;
 
     // compute vessel info
-    info = new vessel_info();
+    info = Compute(v);
+
+    // store vessel info in the cache
+    instance.vessels.Add(v.id, info);
+
+    // return the vessel info
+    return info;
+  }
+
+
+  static vessel_info Compute(Vessel v)
+  {
+    vessel_info info = new vessel_info();
     info.position = Lib.VesselPosition(v);
     info.sunlight = Sim.RaytraceBody(v, Sim.Sun(), out info.sun_dir, out info.sun_dist);
     info.temperature = Sim.Temperature(v, info.sunlight);
@@ -72,13 +80,20 @@ public class Cache : MonoBehaviour
     info.belt_radiation = Radiation.BeltRadiation(v);
     info.storm_radiation = Radiation.StormRadiation(v, info.sunlight);
     info.env_radiation = info.cosmic_radiation + info.belt_radiation + info.storm_radiation;
-    info.food_depletion = LifeSupport.TimeToDepletionFood(v, out info.food_consumption, out info.food_level);
-    info.oxygen_depletion = LifeSupport.TimeToDepletionOxygen(v, out info.oxygen_consumption, out info.oxygen_level);
-
-    // store vessel info in the cache
-    instance.vessels.Add(v.id, info);
-
-    // return the vessel info
+    info.breathable = Sim.Breathable(v);
+    foreach(var p in Kerbalism.rules)
+    {
+      Rule r = p.Value;
+      if (r.resource_name.Length > 0)
+      {
+        var vmon = new vmon_cache();
+        vmon.depletion = r.EstimateLifetime(v);
+        double amount = Lib.GetResourceAmount(v, r.resource_name);
+        double capacity = Lib.GetResourceCapacity(v, r.resource_name);
+        vmon.level = capacity > double.Epsilon ? amount / capacity : 1.0; //< level is 1 with no capacity
+        info.vmon.Add(p.Value.name, vmon);
+      }
+    }
     return info;
   }
 }

@@ -19,7 +19,6 @@ public class Info : MonoBehaviour
   class space_details
   {
     public uint   crew_count = 0;
-    public double temperature = 0.0;
     public double living_space = 1.0;
     public double entertainment = 1.0;
     public double shielding = 0.0;
@@ -187,7 +186,7 @@ public class Info : MonoBehaviour
   }
 
 
-  // show the notepad
+  // show the window
   public static void Open(Vessel v)
   {
     // setting vessel id show the window
@@ -195,7 +194,7 @@ public class Info : MonoBehaviour
   }
 
 
-  // close the notepad
+  // close the window
   public static void Close()
   {
     // resetting vessel id hide the window
@@ -203,12 +202,19 @@ public class Info : MonoBehaviour
   }
 
 
-  // toggle the notepad
+  // toggle the window
   public static void Toggle(Vessel v)
   {
     // if vessel is different, show it
     // if vessel is the same, hide it
     instance.vessel_id = (instance.vessel_id == v.id ? Guid.Empty : v.id);
+  }
+
+
+  // return true if the window is open
+  public static bool IsOpen()
+  {
+    return instance.vessel_id != Guid.Empty;
   }
 
 
@@ -234,6 +240,10 @@ public class Info : MonoBehaviour
   }
 
 
+  // temp, totally
+  string fix_title(string title) { return title.Length < 9 ? title + "\t\t" : title + "\t"; }
+
+
   void render_info()
   {
     // find vessel
@@ -246,31 +256,43 @@ public class Info : MonoBehaviour
     vessel_info vi = Cache.VesselInfo(v);
 
     render_title("ENVIRONMENT");
-    render_content("temperature:\t", Lib.HumanReadableTemp(vi.temperature));
-    render_content("radiation:\t", Lib.HumanReadableRadiationRate(vi.env_radiation));
-    render_content("atmosphere:\t", v.mainBody.atmosphere ? " yes" + (LifeSupport.BreathableAtmosphere(v) ? " (breathable)" : "") : "no");
+    render_content("Temperature:\t", Lib.HumanReadableTemp(vi.temperature));
+    render_content("Radiation:\t", Lib.HumanReadableRadiationRate(vi.env_radiation));
+    render_content("Atmosphere:\t", v.mainBody.atmosphere ? " yes" + (vi.breathable ? " <i>(breathable)</i>" : "") : "no");
     render_space();
 
-    render_title("SUPPLIES");
-    render_content("food:\t\t", Lib.HumanReadableDuration(vi.food_depletion));
-    render_content("oxygen:\t\t", Lib.HumanReadableDuration(vi.oxygen_depletion));
-    render_space();
-    
+    // render supplies
+    if (Kerbalism.supply_rules.Count > 0 || Kerbalism.ec_rule != null)
+    {
+      render_title("SUPPLIES");
+      if (Kerbalism.ec_rule != null)
+      {
+        var vmon = vi.vmon[Kerbalism.ec_rule.name];
+        render_content(fix_title("Battery:"), vmon.level > double.Epsilon ? Lib.HumanReadableDuration(vmon.depletion) : "none");
+      }
+      foreach(Rule r in Kerbalism.supply_rules)
+      {
+        var vmon = vi.vmon[r.resource_name];
+        render_content(fix_title(r.resource_name + ":"), vmon.level > double.Epsilon ? Lib.HumanReadableDuration(vmon.depletion) : "none");
+      }
+      render_space();
+    }
+
+
     // get crew
     var crew = v.loaded ? v.GetVesselCrew() : v.protoVessel.GetVesselCrew();
-    
+
     // do not render internal spaces info for eva vessels
     if (!v.isEVA)
     {
       // collect set of spaces
-      Dictionary<string, space_details> spaces = new Dictionary<string, space_details>();      
+      Dictionary<string, space_details> spaces = new Dictionary<string, space_details>();
       foreach(var c in crew)
       {
         kerbal_data kd = DB.KerbalData(c.name);
         if (!spaces.ContainsKey(kd.space_name))
         {
           space_details sd = new space_details();
-          sd.temperature = Lib.Mix(Settings.SurvivalTemperature, vi.temperature, kd.temperature); //< nice hack, but unused
           sd.living_space = kd.living_space;
           sd.entertainment = kd.entertainment;
           sd.shielding = kd.shielding;
@@ -278,21 +300,21 @@ public class Info : MonoBehaviour
         }
         ++(spaces[kd.space_name].crew_count);
       }
-  
+
       // for each space
       foreach(var space in spaces)
       {
         string space_name = space.Key;
         space_details det = space.Value;
-  
+
         string radiation_txt = vi.env_radiation > double.Epsilon
           ? " <i>(" + Lib.HumanReadableRadiationRate(vi.env_radiation * (1.0 - det.shielding)) + ")</i>"
           : "";
-  
+
         render_title(space_name.Length > 0 ? space_name.ToUpper() : v.isEVA ? "EVA" : "VESSEL");
-        render_content("living space:\t", QualityOfLife.LivingSpaceToString(det.living_space));
-        render_content("entertainment:\t", QualityOfLife.EntertainmentToString(det.entertainment));
-        render_content("shielding:\t", Radiation.ShieldingToString(det.shielding) + radiation_txt);
+        render_content("Living space:\t", QualityOfLife.LivingSpaceToString(det.living_space));
+        render_content("Entertainment:\t", QualityOfLife.EntertainmentToString(det.entertainment));
+        render_content("Shielding:\t", Radiation.ShieldingToString(det.shielding) + radiation_txt);
         render_space();
       }
     }
@@ -301,62 +323,19 @@ public class Info : MonoBehaviour
     foreach(var c in crew)
     {
       kerbal_data kd = DB.KerbalData(c.name);
-
-      string force_color = kd.disabled > 0 ? "cyan" : "";
-      string temp_progress = Lib.ProgressBar
-      (
-        24,
-        Math.Abs(kd.temperature),
-        Settings.TemperatureWarningThreshold,
-        Settings.TemperatureDangerThreshold,
-        Settings.TemperatureFatalThreshold,
-        force_color
-      );
-      string food_progress = Lib.ProgressBar
-      (
-        24,
-        kd.starved,
-        Settings.StarvedWarningThreshold,
-        Settings.StarvedDangerThreshold,
-        Settings.StarvedFatalThreshold,
-        force_color
-      );
-      string oxygen_progress = Lib.ProgressBar
-      (
-        24,
-        kd.deprived,
-        Settings.DeprivedWarningThreshold,
-        Settings.DeprivedDangerThreshold,
-        Settings.DeprivedFatalThreshold,
-        force_color
-      );
-      string stress_progress = Lib.ProgressBar
-      (
-        24,
-        kd.stressed,
-        Settings.StressedWarningThreshold,
-        Settings.StressedDangerThreshold,
-        Settings.StressedEventThreshold,
-        force_color
-      );
-      string radiation_progress = Lib.ProgressBar
-      (
-        24,
-        kd.radiation,
-        Settings.RadiationWarningThreshold,
-        Settings.RadiationDangerThreshold,
-        Settings.RadiationFatalThreshold,
-        force_color
-      );
-
       render_title(c.name.ToUpper());
-      render_content("climate:\t\t", temp_progress);
-      render_content("food:\t\t", food_progress);
-      render_content("oxygen:\t\t", oxygen_progress);
-      render_content("stress:\t\t", stress_progress);
-      render_content("radiation:\t", radiation_progress);
-      if (kd.disabled > 0) render_content("hibernated:\t", "yes");
-      if (kd.space_name.Length > 0 && !v.isEVA) render_content("inside space:\t", kd.space_name);
+      foreach(var q in Kerbalism.rules)
+      {
+        Rule r = q.Value;
+        if (r.degeneration > double.Epsilon)
+        {
+          var kmon = DB.KmonData(c.name, r.name);
+          var bar = Lib.ProgressBar(23, kmon.problem, r.warning_threshold, r.danger_threshold, r.fatal_threshold, kd.disabled > 0 ? "cyan" : "");
+          render_content(fix_title(r.name + ":"), bar);
+        }
+      }
+      if (kd.space_name.Length > 0 && !v.isEVA) render_content("Inside:\t\t", kd.space_name);
+      if (kd.disabled > 0) render_content("Hibernated:\t", "yes");
       render_space();
     }
 
@@ -365,9 +344,9 @@ public class Info : MonoBehaviour
     foreach(var greenhouse in greenhouses)
     {
       render_title("GREENHOUSE");
-      render_content("lighting:\t\t", (greenhouse.lighting * 100.0).ToString("F0") + "%");
-      render_content("growth:\t\t", (greenhouse.growth * 100.0).ToString("F0") + "%");
-      render_content("time-to-harvest:\t", Lib.HumanReadableDuration(greenhouse.growing > double.Epsilon ? 1.0 / greenhouse.growing : 0.0));
+      render_content("Lighting:\t\t", (greenhouse.lighting * 100.0).ToString("F0") + "%");
+      render_content("Growth:\t\t", (greenhouse.growth * 100.0).ToString("F0") + "%");
+      render_content("Harvest:\t\t", Lib.HumanReadableDuration(greenhouse.growing > double.Epsilon ? 1.0 / greenhouse.growing : 0.0));
       render_space();
     }
   }

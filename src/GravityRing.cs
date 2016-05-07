@@ -36,7 +36,7 @@ public class GravityRing : PartModule
   public override string GetInfo()
   {
     return description + "\n"
-        + "\n<color=#999999>Entertainment: <b>" + entertainment_rate.ToString("F2") + "</b></color>"
+        + "\n<color=#999999>Comfort (max): <b>" + entertainment_rate.ToString("F1") + "</b></color>"
         + "\n<color=#999999>EC consumption: <b>" + Lib.HumanReadableRate(ec_rate) + "</b></color>";
   }
 
