@@ -1,0 +1,105 @@
+A profile is a .cfg file defining a set of rules for the framework.
+
+With no rules Kerbalism degenerate into a background resource simulation with
+a decent EC planner and monitor ui.
+
+Only a profile should be enabled at the same time. To disable a profile, rename
+it from file.cfg to file.cfg-disabled and do the opposite to enable it.
+
+If you are interested in creating your own profile, look at Default.cfg and read below.
+
+
+===============================================================================
+Rules
+===============================================================================
+A rule describe a mechanic that increment an accumulator per-kerbal based on
+the environment and the availability of resources. Each rule is implemented as:
+
+ A property per-kerbal:
+ - keep track of an accumulator for a kerbal, serialized
+ - consume a resource at a rate (continuous or piecewise), if specified
+ - produce waste in proportion, if specified
+ - increment the accumulator either all the time (if no resource specified)
+   or only when resource is missing (if resource is specified)
+ - accumulator change can be scaled by a value from the environment using modifier
+
+ A monitor for the property
+ - keep track of the state of the accumulator level for a kerbal, serialized
+ - show warnings when an accumulator switch between levels, if specified
+ - include the accumulator in the 'problem icons' as 'health' in the Monitor
+ - include the accumulator in the 'kerbals' area of the Vessel Info Window
+ - include a panel with estimates for the lifetime in the Planner
+
+ A monitor for the associated vessel resource
+ - keep track of the state of the resource level in a vessel, serialized
+ - show warnings when a resource switch between levels, if specified
+ - include the resource in the 'supply icon' in the Monitor
+ - include the resource in the 'supplies' area of the Vessel Info Window
+
+
+ SPECS
+
+     name               unique name that identifies the rule, no spaces allowed
+
+     resource_name      name of resource required, if any
+
+     waste_name         name of waste resource produced, if any
+
+     waste_ratio        proportion of resource converted to waste
+
+     rate               amount of resource consumed per-second (or each 'interval' seconds if interval is > 0)
+     
+     interval           if 0, the resource is consumed continuously - if > 0, the resource is consumed at every 'interval' seconds
+
+     degeneration       value added to the accumulator of this property per-second (or each 'interval' seconds if interval > 0)
+                        if resource_name is specified, accumulation only happen if the resource is missing
+                        if instead resource_name isn't specified, accumulation happen all the time
+
+     variance           if specified, the degeneration is multiplied by a kerbal-specific value in [1 - variance, 1 + variance]
+
+     modifier           multiply degeneration with a value taken from the environment:
+
+        'breathable'        only consume and degenerate if outside breathable atmosphere              
+                            FUNC: breathable(v) ? 0.0 : 1.0
+
+        'temperature'       make consumption/degeneration proportional to diff between external and survival temp
+                            FUNC: max(abs(ext_temperature - survival_temperature) - survival_range, 0.0)
+
+        'radiation'         make consumption/degeneration proportional to exposure to radiation after shielding, in rad/s
+                            FUNC: env_radiation * (1.0 - shielding)
+
+        'qol'               make degeneration proportional to quality-of-life factor
+                            FUNC: 1.0 / max(living_space * entertainment * other_bonuses, 1.0)
+     
+    on_eva              the amount of resource to take when going on EVA, you probably want this
+
+    on_resque           the amount of resources to gift to resque kerbals on first contact
+    
+    breakdown           true to trigger a problematic event on the vessel instead of killing the kerbal
+    
+    warning_threshold   
+    danger_threshold
+    fatal_threshold     the accumulator thresholds, fatal trigger the penality, warning/danger are used to set health icon color
+
+    warning_message     
+    danger_message
+    fatal_message
+    relax_message       if specified, crossing the respective threshold will send a message to the user, and stop timewarp
+                        you can specify two variants separed by '|', optionally, to be used depending on temperature (cold|hot)
+                        the text can contain unity format tags, some macro substitution is applied to the content of messages:
+
+        $NEWLINE            add a newline, as you can't insert newlines otherwise
+        $VESSEL             replaced with name of the vessel this kerbal belong
+        $KERBAL             replaced with name of the kerbal
+        $ON_VESSEL          replaced by 'On $VESSEL, ' if the vessel is not active, or by nothing if the vessel is active
+        $HIS_HER            replaced by 'his' or 'her' based on Kerbal gender
+
+
+   low_threshold   
+   empty_threshold      the resource level thresholds: all send a message (if specified)
+
+   low_message
+   empty_message
+   refill_message       if specified, crossing the respective threshold will send a message to the user, and stop timewarp
+                        you can specify two variants separed by '|', optionally, to be used if the vessel is manned or not (manned|probe)
+                        the text can contain unity format tags, the same macro substitution is applied to the content of messages

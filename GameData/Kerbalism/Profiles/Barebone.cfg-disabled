@@ -1,0 +1,36 @@
+// Just play with the quality of life mechanic, without anything else
+
+
+// Quality of Life
+Rule
+{
+  name = Stress
+  degeneration = 0.00000086805 // 60 days in worst conditions
+  variance = 0.33 // add per-kerbal variance
+  modifier = qol // influence degeneration by quality-of-life factor
+  breakdown = true // trigger breakdown event instead of death
+
+  warning_message = $ON_VESSEL$KERBAL is losing $HIS_HER mind$NEWLINE<i>Concentration is becoming a problem</i>
+  danger_message = $ON_VESSEL$KERBAL is about to breakdown$NEWLINE<i>Starting to hear voices</i>
+  // no fatal_message because breakdown message is generated automatically per-event
+  // no relax_message because there is no recovery from stress
+}
+
+
+// Add warning messages for battery level
+Rule
+{
+  name = BatteryLevel
+  resource_name = ElectricCharge
+
+  low_threshold = 0.15
+  low_message = Battery level is getting low on $VESSEL
+  empty_message = Battery is empty on $VESSEL
+  refill_message = Battery recharged on $VESSEL
+}
+
+
+// Remove resource-related parts
+!PART[InlineFoodSmall|InlineFood125_2|InlineFoodBig|kismfoodsm] {}
+!PART[RadialOxygenSmall|RadialOxygenBig] {}
+!PART[Greenhouse] {}
