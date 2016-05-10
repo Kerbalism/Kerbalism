@@ -787,7 +787,7 @@ public class Kerbalism : MonoBehaviour
   {
     // mute/unmute messages with keyboard
     // done in update because unity is a mess
-    if ((Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)) && Input.GetKeyUp(KeyCode.M))
+    if ((Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)) && Input.GetKeyUp(KeyCode.N))
     {
       if (!Message.IsMuted())
       {
