@@ -195,8 +195,9 @@ public class Greenhouse : PartModule
 
 
     // consume waste
+    // note: not consumed when there is no lighting
     double waste_perc = 0.0;
-    if (waste_name.Length > 0)
+    if (waste_name.Length > 0 && lighting >= double.Epsilon)
     {
       double waste_required = waste_rate * elapsed_s;
       double waste = part.RequestResource(waste_name, waste_required);

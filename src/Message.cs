@@ -39,6 +39,7 @@ public class Message : MonoBehaviour
 
   // disable message rendering
   static bool muted = false;
+  static bool muted_internal = false;
 
   // styles
   GUIStyle style;
@@ -109,7 +110,7 @@ public class Message : MonoBehaviour
   public static void Post(string msg)
   {
     // ignore the message if muted
-    if (muted) return;
+    if (muted || muted_internal) return;
 
     // avoid adding the same message if already present in the queue
     foreach(Entry e in entries) { if (e.msg == msg) return; }
@@ -157,6 +158,36 @@ public class Message : MonoBehaviour
   public static void Unmute()
   {
     muted = false;
+  }
+
+
+  // return true if user channel is muted
+  public static bool IsMuted()
+  {
+    return muted;
+  }
+
+
+  // disable rendering of messages
+  // this one mute the internal channel, instead of the user one
+  public static void MuteInternal()
+  {
+    muted_internal = true;
+  }
+
+
+  // re-enable rendering of messages
+  // this one unmute the internal channel, instead of the user one
+  public static void UnmuteInternal()
+  {
+    muted_internal = false;
+  }
+
+
+  // return true if internal channel is muted
+  public static bool IsMutedInternal()
+  {
+    return muted_internal;
   }
 }
 

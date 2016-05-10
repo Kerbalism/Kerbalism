@@ -107,7 +107,7 @@ public class Kerbalism : MonoBehaviour
     Lib.Log("- malfunction: " + features.malfunction);
     Lib.Log("- scrubber: " + features.scrubber);
     Lib.Log("- shielding: " + features.shielding);
-    
+
     // shortcut to the resource library
     var reslib = PartResourceLibrary.Instance.resourceDefinitions;
 
@@ -127,7 +127,8 @@ public class Kerbalism : MonoBehaviour
     foreach(var r in rules) Lib.Log("- " + r.Value.name);
     if (rules.Count == 0) Lib.Log("- none");
 
-    // add resources to manned parts    
+    // add resources to manned parts
+    double daylen = 60.0 * 60.0 * Lib.HoursInDay();
     foreach (UrlDir.UrlConfig url in GameDatabase.Instance.root.AllConfigs)
     {
       string crew_capacity_str = "";
@@ -136,42 +137,45 @@ public class Kerbalism : MonoBehaviour
         int crew_capacity_int = 0;
         if (int.TryParse(crew_capacity_str, out crew_capacity_int))
         {
-          double crew_capacity = (double)crew_capacity_int;
-          double extra_cost = 0.0;
-          foreach(var p in rules)
+          if (crew_capacity_int > 0)
           {
-            Rule r = p.Value;
-            if (r.resource_name.Length > 0 && r.on_pod > 0.0 && reslib.Contains(r.resource_name))
+            double crew_capacity = (double)crew_capacity_int;
+            double extra_cost = 0.0;
+            foreach(var p in rules)
             {
-              var res = url.config.AddNode("RESOURCE");
-              res.AddValue("name", r.resource_name);
-              res.AddValue("amount", r.on_pod * crew_capacity);
-              res.AddValue("maxAmount", r.on_pod * crew_capacity);
-              extra_cost += (double)reslib[r.resource_name].unitCost * r.on_pod * crew_capacity;
+              Rule r = p.Value;
+              if (r.resource_name.Length > 0 && r.on_pod > 0.0 && reslib.Contains(r.resource_name))
+              {
+                var res = url.config.AddNode("RESOURCE");
+                res.AddValue("name", r.resource_name);
+                res.AddValue("amount", r.on_pod * crew_capacity);
+                res.AddValue("maxAmount", r.on_pod * crew_capacity);
+                extra_cost += (double)reslib[r.resource_name].unitCost * r.on_pod * crew_capacity;
+              }
             }
-          }
-          foreach(var p in rules)
-          {
-            Rule r = p.Value;
-            if (r.waste_name.Length > 0 && reslib.Contains(r.waste_name))
+            foreach(var p in rules)
             {
-              double waste_per_day = r.rate / (r.interval > 0.0 ? r.interval : 1.0) * r.waste_ratio;
+              Rule r = p.Value;
+              double waste_per_day = (r.rate / (r.interval > 0.0 ? r.interval : 1.0)) * daylen * r.waste_ratio;
+              if (r.waste_name.Length > 0 && waste_per_day > double.Epsilon && reslib.Contains(r.waste_name))
+              {
+                var res = url.config.AddNode("RESOURCE");
+                res.AddValue("name", r.waste_name);
+                res.AddValue("amount", "0.0");
+                res.AddValue("maxAmount", waste_per_day * crew_capacity);
+                extra_cost += (double)reslib[r.waste_name].unitCost * waste_per_day * crew_capacity;
+              }
+            }
+            if (features.shielding && reslib.Contains("Shielding"))
+            {
               var res = url.config.AddNode("RESOURCE");
-              res.AddValue("name", r.waste_name);
+              res.AddValue("name", "Shielding");
               res.AddValue("amount", "0.0");
               res.AddValue("maxAmount", crew_capacity);
-              extra_cost += (double)reslib[r.waste_name].unitCost * waste_per_day * crew_capacity;
+              extra_cost += (double)reslib["Shielding"].unitCost * crew_capacity;
             }
+            url.config.SetValue("cost", (Lib.ConfigValue(url.config, "cost", 0.0) + extra_cost).ToString(), true);
           }
-          if (features.shielding && reslib.Contains("Shielding"))
-          {
-            var res = url.config.AddNode("RESOURCE");
-            res.AddValue("name", "Shielding");
-            res.AddValue("amount", "0.0");
-            res.AddValue("maxAmount", crew_capacity);
-            extra_cost += (double)reslib["Shielding"].unitCost * crew_capacity;
-          }
-          url.config.SetValue("cost", (Lib.ConfigValue(url.config, "cost", 0.0) + extra_cost).ToString(), true);
         }
       }
     }
@@ -256,8 +260,8 @@ public class Kerbalism : MonoBehaviour
     data.to.FindModuleImplementing<EVA>().has_helmet = !breathable;
 
     // mute messages for a couple seconds
-    Message.Mute();
-    base.StartCoroutine(CallbackUtil.DelayedCallback(2.0f, Message.Unmute));
+    Message.MuteInternal();
+    base.StartCoroutine(CallbackUtil.DelayedCallback(2.0f, Message.UnmuteInternal));
 
     // if vessel info is open, switch to the eva kerbal
     if (Info.IsOpen()) Info.Open(data.to.vessel);
@@ -361,8 +365,8 @@ public class Kerbalism : MonoBehaviour
     // forget vessel being docked
     DB.ForgetVessel(e.from.vessel.id);
   }
-  
-  
+
+
   void addEditorCategory()
   {
     if (PartLoader.LoadedPartsList.Find(k => k.tags.IndexOf("_kerbalism", StringComparison.Ordinal) >= 0) != null)
@@ -457,7 +461,7 @@ public class Kerbalism : MonoBehaviour
       {
         var reslib = PartResourceLibrary.Instance.resourceDefinitions;
         var parts = Lib.GetPartsRecursively(v.rootPart); //< what's the reason for this?
-        
+
         // give the vessel some monoprop
         string monoprop_name = v.isEVA ? "EVA Propellant" : "MonoPropellant";
         foreach(var part in parts)
@@ -468,7 +472,7 @@ public class Kerbalism : MonoBehaviour
           }
         }
         Lib.RequestResource(v, monoprop_name, -Settings.MonoPropellantOnResque);
-        
+
         // give the vessel some supplies
         foreach(var p in rules)
         {
@@ -576,14 +580,14 @@ public class Kerbalism : MonoBehaviour
       }
     }
   }
-  
-  
+
+
   void externalSeats(Vessel v)
   {
     if (!v.loaded) return;
-    
+
     var reslib = PartResourceLibrary.Instance.resourceDefinitions;
-    foreach(KerbalSeat seat in v.FindPartModulesImplementing<KerbalSeat>())   
+    foreach(KerbalSeat seat in v.FindPartModulesImplementing<KerbalSeat>())
     {
       foreach(var p in rules)
       {
@@ -774,6 +778,26 @@ public class Kerbalism : MonoBehaviour
             kmon.message = 0;
           }
         }
+      }
+    }
+  }
+
+
+  public void Update()
+  {
+    // mute/unmute messages with keyboard
+    // done in update because unity is a mess
+    if ((Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)) && Input.GetKeyUp(KeyCode.M))
+    {
+      if (!Message.IsMuted())
+      {
+        Message.Post("Messages muted", "Be careful out there");
+        Message.Mute();
+      }
+      else
+      {
+        Message.Unmute();
+        Message.Post("Messages unmuted");
       }
     }
   }

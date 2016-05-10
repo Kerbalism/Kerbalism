@@ -270,10 +270,13 @@ public class Info : MonoBehaviour
         var vmon = vi.vmon[Kerbalism.ec_rule.name];
         render_content(fix_title("Battery:"), vmon.level > double.Epsilon ? Lib.HumanReadableDuration(vmon.depletion) : "none");
       }
-      foreach(Rule r in Kerbalism.supply_rules)
+      if (Lib.CrewCapacity(v) > 0)
       {
-        var vmon = vi.vmon[r.resource_name];
-        render_content(fix_title(r.resource_name + ":"), vmon.level > double.Epsilon ? Lib.HumanReadableDuration(vmon.depletion) : "none");
+        foreach(Rule r in Kerbalism.supply_rules)
+        {
+          var vmon = vi.vmon[r.resource_name];
+          render_content(fix_title(r.resource_name + ":"), vmon.level > double.Epsilon ? Lib.HumanReadableDuration(vmon.depletion) : "none");
+        }
       }
       render_space();
     }

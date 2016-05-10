@@ -51,15 +51,15 @@ public class Rule
     // get prev amount for the vessel
     double prev_amount = 0.0;
     if (!prev_amounts.TryGetValue(v.id, out prev_amount)) prev_amount = 0.0;
-    
+
     // calculate delta
     double amount = Lib.GetResourceAmount(v, this.resource_name);
     double meal_rate = this.interval > double.Epsilon ? this.rate / this.interval : 0.0;
-    double delta = (amount - prev_amount) / TimeWarp.fixedDeltaTime - meal_rate;
-    
+    double delta = (amount - prev_amount) / TimeWarp.fixedDeltaTime - meal_rate * Lib.CrewCount(v);
+
     // remember prev amount
     prev_amounts[v.id] = amount;
-    
+
     // return lifetime in seconds
     return amount <= double.Epsilon ? 0.0 : delta >= -double.Epsilon ? double.NaN : amount / -delta;
   }

@@ -83,7 +83,7 @@ public class DB : ScenarioModule
   private notification_data notifications = new notification_data();
 
   // current savegame version
-  private const string current_version = "0.9.9.5";
+  private const string current_version = "0.9.9.6";
 
   // allow global access
   private static DB instance = null;
@@ -212,8 +212,8 @@ public class DB : ScenarioModule
     // mute the message system for a few seconds to avoid the user being bombarded by messages
     if (string.CompareOrdinal(version, "0.9.9.5") < 0)
     {
-      Message.Mute();
-      base.StartCoroutine(CallbackUtil.DelayedCallback(10.0f, Message.Unmute));
+      Message.MuteInternal();
+      base.StartCoroutine(CallbackUtil.DelayedCallback(10.0f, Message.UnmuteInternal));
     }
 
 

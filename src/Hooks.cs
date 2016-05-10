@@ -140,8 +140,8 @@ public static class Kerbalism_Hooks
 
   // return how bad the malfunction situation is for a vessel
   //  0: no malfunction in any part
-  //  1: at least a part has up to 1 malfunction
-  //  2: at least a part has up to 2 malfunctions
+  //  1: at least a component has up to 1 malfunction
+  //  2: at least a component has up to 2 malfunctions
   public static uint Malfunctions(Vessel v)
   {
     lazy_init();
