@@ -59,12 +59,12 @@ Rule
 // ============================================================================
 
 
-@PART[InlineFoodSmall|InlineFood125_2|InlineFoodBig|kismfoodsm]
+@PART[kerbalism-food-*]
 {
   @RESOURCE[Food] { @name = Snacks }
 }
 
-!PART[RadialOxygenSmall|RadialOxygenBig] {}
+!PART[kerbalism-oxygen-*|RadialOxygenBig] {}
 
 
 // ============================================================================

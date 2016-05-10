@@ -31,6 +31,8 @@ Rule
 
 
 // Remove resource-related parts
-!PART[InlineFoodSmall|InlineFood125_2|InlineFoodBig|kismfoodsm] {}
-!PART[RadialOxygenSmall|RadialOxygenBig] {}
+!PART[kerbalism-food-*] {}
+!PART[kerbalism-oxygen-*] {}
+!PART[RadialOxygenBig] {}
 !PART[Greenhouse] {}
+

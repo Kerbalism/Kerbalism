@@ -1,4 +1,14 @@
-// This is the default profile
+//  _____  _____ ___ ___ ___ __  __ ___ _  _ _____ _   _
+// | __\ \/ / _ \ __| _ \_ _|  \/  | __| \| |_   _/_\ | |
+// | _| >  <|  _/ _||   /| || |\/| | _|| .` | | |/ _ \| |__
+// |___/_/\_\_| |___|_|_\___|_|  |_|___|_|\_| |_/_/ \_\____|
+//
+// Only for testing purposes, use at your own risk.
+
+// This profile emulate the life-support aspect of TAC-LS, while keeping the
+// climate, quality-of-life and radiation of Kerbalism. You will need some
+// Water containers, as there are none included in Kerbalism.
+// Special thanks to Rhedd
 
 
 // ============================================================================
@@ -51,51 +61,76 @@ Rule
 }
 
 
-// FOOD
-Rule
-{
-  name = Food
-  resource_name = Food
-  waste_name = Crap // Waste
-  rate = 2.5 // 10 per-day
-  interval = 5400.0 // 0.25 days
-  degeneration = 0.03125 // 32 meals, 8 days
-  on_pod = 100.0
-  on_eva = 0.0
-  on_resque = 10.0
-
-  warning_message = $ON_VESSEL$KERBAL is hungry
-  danger_message = $ON_VESSEL$KERBAL is starving
-  fatal_message = $ON_VESSEL$KERBAL starved to death
-  relax_message = $ON_VESSEL$KERBAL has got a mouthful of snacks now
-
-  low_message = Food reserves are getting low on $VESSEL$NEWLINE<i>Anything edible is being scrutinized</i>
-  empty_message = There is no more food on $VESSEL$NEWLINE<i>The crew prepare for the inevitable</i>
-  refill_message = $VESSEL food reserves restored$NEWLINE<i>Double snack rations for everybody</i>
-}
-
-
 // OXYGEN
 Rule
 {
   name = Oxygen
   resource_name = Oxygen
-  waste_name = CO2
-  rate = 0.04629629 // 1000 per-day
-  degeneration = 0.002083333 // 8 minutes
-  on_pod = 5000.0
-  on_eva = 100.0 // about 30min
-  on_resque = 1000.0
+  rate = 0.001713537562
+  waste_name = CarbonDioxide
+  waste_ratio = 0.864
+  degeneration = 0.002083333 // about 8 minutes
+  on_pod = 112
+  on_eva = 3.08 // about 30min
+  on_resque = 6.0
   modifier = breathable
 
   warning_message = $ON_VESSEL$KERBAL can't breathe
   danger_message = $ON_VESSEL$KERBAL is suffocating
-  fatal_message = $ON_VESSEL$KERBAL suffocated to death
-  relax_message = $ON_VESSEL$KERBAL is breathing again
+  fatal_message = $ON_VESSEL$KERBAL suffocated
+  relax_message = $ON_VESSEL$KERBAL is gasping but alive
 
   low_message = Oxygen reserves are dangerously low on $VESSEL$NEWLINE<i>There is mild panic among the crew</i>
-  empty_message = There is no more oxygen on $VESSEL$NEWLINE<i>Everybody stop breathing</i>
-  refill_message = $VESSEL oxygen reserves restored$NEWLINE<i>The crew is taking a breather</i>
+  empty_message = There is no more oxygen on $VESSEL$NEWLINE<i>The crew is quickly turning blue</i>
+  refill_message = $VESSEL oxygen reserves restored$NEWLINE<i>The crew hopes that doesn't happen again</i>
+}
+
+
+// FOOD
+Rule
+{
+  name = Food
+  resource_name = Food
+  rate = 0.1828125
+  interval = 10800.0 // eat twice per day
+  waste_name = Waste
+  waste_ratio = 0.0909
+  degeneration = 0.016666666 // 30 days - Accrues each time a meal is missed, so = 1/intervals per day/days
+  on_pod = 1.097
+  on_resque = 0.365
+
+  warning_message = $ON_VESSEL$KERBAL is hungry
+  danger_message = $ON_VESSEL$KERBAL is starving
+  fatal_message = $ON_VESSEL$KERBAL starved to death
+  relax_message = $ON_VESSEL$KERBAL is trying not to eat everything at once
+
+  low_message = Food reserves are getting low on $VESSEL$NEWLINE<i>Anything edible is being scrutinized</i>
+  empty_message = There is no more food on $VESSEL$NEWLINE<i>The crew prepare for the inevitable</i>
+  refill_message = $VESSEL food reserves restored$NEWLINE<i>It's like Thanksgiving... only freeze-dried</i>
+}
+
+
+// WATER
+Rule
+{
+  name = Water
+  resource_name = Water
+  rate = 0.060415625
+  interval = 5400.0 // use water 4 times per day
+  waste_name = WasteWater
+  waste_ratio = 1.0
+  degeneration = 0.08333333 // 3 days - Accrues each time an interval is missed, so = 1/intervals per day/days
+  on_pod = 0.7249875
+  on_resque = 0.24
+
+  warning_message = $ON_VESSEL$KERBAL is thirsty
+  danger_message = $ON_VESSEL$KERBAL is dehydrated
+  fatal_message = $ON_VESSEL$KERBAL died of dehydration
+  relax_message = $ON_VESSEL$KERBAL thinks it's time for a bath
+
+  low_message = Water supplies are getting low on $VESSEL$NEWLINE<i>Bathing has been reduced</i>
+  empty_message = There is no more water on $VESSEL$NEWLINE<i>The crew contemplates a painful end</i>
+  refill_message = $VESSEL has been resupplied with water $NEWLINE<i>Personal hygene thanks you</i>
 }
 
 
@@ -143,8 +178,8 @@ Rule
   @RESOURCE[Food]
   {
     @name = Food
-    @amount *= 1.0
-    @maxAmount *= 1.0
+    @amount *= 0.1
+    @maxAmount *= 0.1
   }
 }
 
@@ -154,36 +189,8 @@ Rule
   @RESOURCE[Oxygen]
   {
     @name = Oxygen
-    @amount *= 1.0
-    @maxAmount *= 1.0
-  }
-}
-
-
-// ============================================================================
-// Add scrubbers to pods
-// ============================================================================
-
-
-@PART[*]:HAS[@MODULE[ModuleCommand],#CrewCapacity[>0]]
-{
-  MODULE
-  {
-    name = Scrubber
-
-    // change scrubbed resource
-    resource_name = Oxygen
-
-    // change waste name
-    waste_name = CO2
-
-    // change ec/s per-crew
-    ec_rate = 0.01
-    @ec_rate *= #$/CrewCapacity$
-
-    // change waste/s per-crew
-    co2_rate = 0.04629629
-    @co2_rate *= #$/CrewCapacity$
+    @amount *= 0.1
+    @maxAmount *= 0.1
   }
 }
 
@@ -201,13 +208,13 @@ Rule
     @resource_name = Food
 
     // change waste resource
-    @waste_name = Crap
+    @waste_name = Waste
 
     // change ec rate for the lamps
     @ec_rate = 0.5
 
     // change waste rate
-    @waste_rate = 0.00138888 // waste/s for crew of 3
+    @waste_rate = 0.000004616015625 // waste/s for crew of 3
 
     // change harvest size
     @harvest_size = 5000.0
@@ -219,34 +226,7 @@ Rule
 
 
 // ============================================================================
-// Resources
+// Provide TAC-LS, as far as ModuleManager is concerned, to unlock parts
 // ============================================================================
 
-
-// Food & Oxygen are defined in CommunityResourcePack
-
-
-// waste pseudo-resource
-RESOURCE_DEFINITION
-{
-  name = Crap
-  density = 0.0
-  unitCost = 0.0
-  flowMode = ALL_VESSEL
-  transfer = NONE
-  isTweakable = false
-  isVisible = false
-}
-
-
-// waste pseudo-resource
-RESOURCE_DEFINITION
-{
-  name = CO2
-  density = 0.0
-  unitCost = 0.0
-  flowMode = ALL_VESSEL
-  transfer = NONE
-  isTweakable = false
-  isVisible = false
-}
+@Settings:FOR[TacLifeSupport] {}

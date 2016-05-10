@@ -1,4 +1,14 @@
-// This is the default profile
+//  _____  _____ ___ ___ ___ __  __ ___ _  _ _____ _   _
+// | __\ \/ / _ \ __| _ \_ _|  \/  | __| \| |_   _/_\ | |
+// | _| >  <|  _/ _||   /| || |\/| | _|| .` | | |/ _ \| |__
+// |___/_/\_\_| |___|_|_\___|_|  |_|___|_|\_| |_/_/ \_\____|
+//
+// Only for testing purposes, use at your own risk.
+
+// This profile is geared toward more realism oriented players.
+// In comparison to the default profile, this one add water, has more realistic
+// consumption rates, is mass-conserving and provide a water recycler in pods.
+// Special thanks to Barrin
 
 
 // ============================================================================
@@ -56,13 +66,14 @@ Rule
 {
   name = Food
   resource_name = Food
-  waste_name = Crap // Waste
-  rate = 2.5 // 10 per-day
-  interval = 5400.0 // 0.25 days
+  waste_name = Waste
+  waste_ratio = 0.36498207977208
+  rate = 1.5 // 6 per-day
+  interval = 5400.0 // four meals a day
   degeneration = 0.03125 // 32 meals, 8 days
-  on_pod = 100.0
+  on_pod = 60.0
   on_eva = 0.0
-  on_resque = 10.0
+  on_resque = 6.0
 
   warning_message = $ON_VESSEL$KERBAL is hungry
   danger_message = $ON_VESSEL$KERBAL is starving
@@ -75,17 +86,42 @@ Rule
 }
 
 
+// WATER
+Rule
+{
+  name = Water
+  resource_name = Water
+  waste_name = WasteWater
+  rate = 0.75 // 3 liters per-day
+  interval = 5400.0 // 4 drinks per day
+  degeneration = 0.0625 // 16 drinks, 4 days
+  on_pod = 30.0
+  on_eva = 0.0
+  on_resque = 3.0
+
+  warning_message = $ON_VESSEL$KERBAL is thirsty
+  danger_message = $ON_VESSEL$KERBAL is very dehydrated
+  fatal_message = $ON_VESSEL$KERBAL died from dehydration
+  relax_message = $ON_VESSEL$KERBAL has access to water again
+
+  low_message = Water reserves are getting low on $VESSEL$NEWLINE<i>The crew wants to know if LOx is potable</i>
+  empty_message = There is no more water on $VESSEL$NEWLINE<i>The crew prepare for the inevitable</i>
+  refill_message = $VESSEL water reserves have been refilled$NEWLINE<i>Drinks all around</i>
+}
+
+
 // OXYGEN
 Rule
 {
   name = Oxygen
   resource_name = Oxygen
-  waste_name = CO2
-  rate = 0.04629629 // 1000 per-day
+  waste_name = CarbonDioxide
+  waste_ratio = 0.75
+  rate = 0.025 // 540 liters of Oxygen consumed per-day
   degeneration = 0.002083333 // 8 minutes
-  on_pod = 5000.0
-  on_eva = 100.0 // about 30min
-  on_resque = 1000.0
+  on_pod = 1620.0
+  on_eva = 90.0 // One hour of oxygen
+  on_resque = 540.0 // One day of oxygen
   modifier = breathable
 
   warning_message = $ON_VESSEL$KERBAL can't breathe
@@ -143,8 +179,8 @@ Rule
   @RESOURCE[Food]
   {
     @name = Food
-    @amount *= 1.0
-    @maxAmount *= 1.0
+    @amount *= 0.6
+    @maxAmount *= 0.6
   }
 }
 
@@ -154,14 +190,14 @@ Rule
   @RESOURCE[Oxygen]
   {
     @name = Oxygen
-    @amount *= 1.0
-    @maxAmount *= 1.0
+    @amount *= 0.54
+    @maxAmount *= 0.54
   }
 }
 
 
 // ============================================================================
-// Add scrubbers to pods
+// Add scrubbers and water recyclers to command pods
 // ============================================================================
 
 
@@ -175,15 +211,46 @@ Rule
     resource_name = Oxygen
 
     // change waste name
-    waste_name = CO2
+    waste_name = CarbonDioxide
 
     // change ec/s per-crew
     ec_rate = 0.01
     @ec_rate *= #$/CrewCapacity$
 
     // change waste/s per-crew
-    co2_rate = 0.04629629
+    co2_rate = 0.03
     @co2_rate *= #$/CrewCapacity$
+  }
+
+
+  // NOTE: this is temporary, it will be replaced by an ad-hoc Recycler module
+  MODULE
+  {
+    name = ModuleResourceConverter
+    ConverterName = Water Filtration System
+    StartActionName = Start Water Filtration
+    StopActionName = Stop Water Filtration
+    FillAmount = 1
+    AutoShutdown = true
+    UseSpecializationBonus = false
+    INPUT_RESOURCE
+    {
+      ResourceName = ElectricCharge
+      Ratio = 0.05
+      FlowMode = STAGE_PRIORITY_FLOW
+    }
+    INPUT_RESOURCE
+    {
+      ResourceName = WasteWater
+      Ratio = 0.00023148 // recycle 5 liters per-day
+      FlowMode = STAGE_PRIORITY_FLOW
+    }
+    OUTPUT_RESOURCE
+    {
+      ResourceName = Water
+      Ratio = 0.00023148 // recycle 5 liters per-day
+      DumpExcess = false
+    }
   }
 }
 
@@ -201,16 +268,16 @@ Rule
     @resource_name = Food
 
     // change waste resource
-    @waste_name = Crap
+    @waste_name = Waste
 
     // change ec rate for the lamps
     @ec_rate = 0.5
 
     // change waste rate
-    @waste_rate = 0.00138888 // waste/s for crew of 3
+    @waste_rate = 0.0003041517331434 // waste/s for crew of 3
 
     // change harvest size
-    @harvest_size = 5000.0
+    @harvest_size = 5400.0 // food consumed for 3 crew over 300 days at 6 food per day == 5400 food
 
     // change growth rate
     @growth_rate = 0.00000015432 // 300 days
@@ -219,34 +286,33 @@ Rule
 
 
 // ============================================================================
-// Resources
+// Explicitly set hidden waste resource capacity in pods
 // ============================================================================
 
 
-// Food & Oxygen are defined in CommunityResourcePack
-
-
-// waste pseudo-resource
-RESOURCE_DEFINITION
+@PART[*]:HAS[#CrewCapacity[>0]]
 {
-  name = Crap
-  density = 0.0
-  unitCost = 0.0
-  flowMode = ALL_VESSEL
-  transfer = NONE
-  isTweakable = false
-  isVisible = false
-}
+  %RESOURCE[Waste]
+  {
+    %isTweakable = false
+    %isVisible = false
+    %maxAmount = 20.0
+    @maxAmount *= #$/CrewCapacity$
+  }
 
+  %RESOURCE[WasteWater]
+  {
+    %isTweakable = false
+    %isVisible = false
+    %maxAmount = 30.0
+    @maxAmount *= #$/CrewCapacity$
+  }
 
-// waste pseudo-resource
-RESOURCE_DEFINITION
-{
-  name = CO2
-  density = 0.0
-  unitCost = 0.0
-  flowMode = ALL_VESSEL
-  transfer = NONE
-  isTweakable = false
-  isVisible = false
+  %RESOURCE[CarbonDioxide]
+  {
+    %isTweakable = false
+    %isVisible = false
+    %maxAmount = 1215.0
+    @maxAmount *= #$/CrewCapacity$
+  }
 }
