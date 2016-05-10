@@ -195,6 +195,7 @@
 #REQUIREMENTS
 
   - ModuleManager
+  - CommunityResourcePack
 
 
 #LICENSE

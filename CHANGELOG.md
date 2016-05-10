@@ -1,5 +1,21 @@
 #CHANGELOG
 
+0.9.9.6
+  - this mod now require CommunityResourcePack
+  - NEW PARTS! inline food containers and radial oxygen tank by Tygoo7
+  - NEW PART! geiger counter by Naazari1382
+  - phased out old food and oxygen containers
+  - messages can be muted and unmuted by using CTRL+M
+  - moved gravity ring higher in the tech tree
+  - experimental Realism profile
+  - experimental TAC-LS emulation profile
+  - fix: depletion estimates with meal-based rules
+  - fix: probes and other parts getting supply resources in some occasions
+  - fix: vessel info window doesn't show supplies depletion estimates for unmanned vessels
+  - fix: corrected automatic waste capacity in pods
+  - fix: correct depletion estimates at extreme timewarps
+  - fix: greenhouse doesn't consume waste when there is no lighting
+
 0.9.9.5
   BIG REFACTOR
   - can run arbitrary rules that consume a resource and accumulate a value per-kerbal
