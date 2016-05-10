@@ -1,7 +1,11 @@
 #CHANGELOG
 
+0.9.9.7
+  - re-added Food/Oxygen definitions temporarely to the default profile
+  - changed key combination to mute/unmute messages to CTRL+N
+
 0.9.9.6
-  - this mod now require CommunityResourcePack
+  - the default profile now require CommunityResourcePack
   - NEW PARTS! inline food containers and radial oxygen tank by Tygoo7
   - NEW PART! geiger counter by Naazari1382
   - phased out old food and oxygen containers
