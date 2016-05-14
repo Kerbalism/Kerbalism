@@ -54,7 +54,7 @@ public static class QualityOfLife
   // return living space inside a connected space
   public static double LivingSpace(ConnectedLivingSpace.ICLSSpace space)
   {
-    return QualityOfLife.LivingSpace((uint)space.Crew.Count, (uint)space.MaxCrew);
+    return LivingSpace((uint)space.Crew.Count, (uint)space.MaxCrew);
   }
 
 

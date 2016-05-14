@@ -32,12 +32,14 @@ public enum link_status { no_antenna, no_link, indirect_link, direct_link };
 public struct link_data
 {
   public link_data(bool linked, link_status status, double distance)
-  { this.linked = linked; this.status = status; this.distance = distance; path = new List<string>(); }
+  { this.linked = linked; this.status = status; this.distance = distance;
+    this.path = new List<string>(); this.path_id = new List<Guid>(); }
 
   public bool linked;             // true if linked, false otherwise
   public link_status status;      // kind of link
   public double distance;         // distance to first relay or home planet
   public List<string> path;       // list of relay names in reverse order
+  public List<Guid> path_id;      // list of relay ids in reverse order
 }
 
 
@@ -113,12 +115,36 @@ public class Signal : MonoBehaviour
       if (dist < min_dist) { min_dist = dist; near = body; }
       if (dist > max_dist) { max_dist = dist; far = body; }
     }
+
+    // generate default antenna scopes
     range_values.Add("orbit", home.sphereOfInfluence * 1.05);
     range_values.Add("home", home.sphereOfInfluence * 4.0 * 1.05);
     range_values.Add("near", (Sim.Apoapsis(home) + Sim.Apoapsis(near)) * 1.6);
     range_values.Add("far", (Sim.Apoapsis(home) + Sim.Apoapsis(far)) * 1.1);
     range_values.Add("extreme", (Sim.Apoapsis(home) + Sim.Apoapsis(far)) * 4.0);
     range_values.Add("medium", (range_values["near"] + range_values["far"]) * 0.5);
+
+    // parse user-defined antenna scopes
+    var user_scopes = Lib.ParseConfigs("AntennaScope");
+    foreach(var scope in user_scopes)
+    {
+      string scope_name = Lib.ConfigValue(scope, "name", "").Trim();
+      double scope_range = Lib.ConfigValue(scope, "range", 0.0);
+
+      if (scope_name.Length > 0 && scope_range > double.Epsilon)
+      {
+        if (!range_values.ContainsKey(scope_name))
+        {
+          range_values.Add(scope_name, scope_range);
+          Lib.Log("Added user-defined antenna scope '" + scope_name + "' with range " + Lib.HumanReadableRange(scope_range));
+        }
+        else
+        {
+          range_values[scope_name] = scope_range;
+          Lib.Log("Using user-defined range " + Lib.HumanReadableRange(scope_range) + " for antenna scope '" + scope_name + "'");
+        }
+      }
+    }
   }
 
 
@@ -313,6 +339,7 @@ public class Signal : MonoBehaviour
           next_link.status = link_status.indirect_link;
           next_link.distance = indirect_visible_dist; //< store distance of last link
           next_link.path.Add(w.vesselName);
+          next_link.path_id.Add(w.id);
           return next_link;
         }
       }
@@ -458,7 +485,8 @@ public class Signal : MonoBehaviour
   // return range of an antenna
   static public double Range(string scope, double penalty, double ecc)
   {
-    return instance.range_values[scope] * penalty * ecc;
+    double range;
+    return instance.range_values.TryGetValue(scope, out range) ? range * penalty * ecc : 0.0;
   }
 
 
@@ -475,6 +503,168 @@ public class Signal : MonoBehaviour
   {
     return Storm.InProgress(v.mainBody) && Radiation.InsideMagnetosphere(v);
   }
+}
+
+
+// manage a line object
+public class Line : MonoBehaviour
+{
+  public Line()
+  {
+    lr = gameObject.AddComponent<LineRenderer>();
+    lr.SetVertexCount(2);
+    lr.material = MapView.OrbitLinesMaterial;
+    gameObject.layer = 31;
+    DontDestroyOnLoad(this);
+  }
+
+  public void OnDestroy()
+  {
+    Show(false);
+    Destroy(lr);
+  }
+
+  public void Show(bool b)
+  {
+    lr.enabled = b;
+    gameObject.SetActive(b);
+  }
+
+  public void UpdatePoints(Vector3d a, Vector3d b, Color clr)
+  {
+    var cam = PlanetariumCamera.Camera;
+    a = cam.WorldToScreenPoint(ScaledSpace.LocalToScaledSpace(a));
+    b = cam.WorldToScreenPoint(ScaledSpace.LocalToScaledSpace(b));
+
+    if (a.z <= 0.0 || b.z <= 0.0) a = b; //< hack away
+
+    if (!MapView.Draw3DLines)
+    {
+      a.z = b.z = 0.0f;
+    }
+    else
+    {
+      a = cam.ScreenToWorldPoint(a);
+      b = cam.ScreenToWorldPoint(b);
+    }
+
+    float width = MapView.Draw3DLines ? MapView.MapCamera.Distance * 0.01f : 3.6f;
+    lr.SetWidth(width, width);
+    lr.SetPosition(0, a);
+    lr.SetPosition(1, b);
+    lr.SetColors(clr, clr);
+  }
+
+
+  public static Line Create()
+  {
+    return new GameObject(Lib.RandomInt(int.MaxValue).ToString(), typeof(Line)).GetComponent<Line>();
+  }
+
+
+  LineRenderer lr;
+}
+
+
+
+[KSPAddon(KSPAddon.Startup.MainMenu, true)]
+public class LinkRenderer : MonoBehaviour
+{
+  // keep it alive
+  LinkRenderer() { DontDestroyOnLoad(this); }
+
+  // called at every frame
+  public void Update()
+  {
+    // FIXME: can't double-click on vessel to switch active one, if line is rendered
+
+    // hide all lines
+    foreach(var l in lines) l.Value.Show(false);
+
+    // do nothing if db isn't ready
+    if (!DB.Ready()) return;
+
+    // do nothing if signal is disabled
+    if (!Kerbalism.features.signal) return;
+
+    // do nothing if not in map view or tracking station
+    if (!MapView.MapIsEnabled) return;
+
+    // get homebody position
+    Vector3d home = FlightGlobals.GetHomeBody().position;
+
+    // iterate all vessels
+    foreach(Vessel v in FlightGlobals.Vessels)
+    {
+      // skip invalid vessels
+      if (!Lib.IsVessel(v)) continue;
+
+      // skip resque missions
+      if (Lib.IsResqueMission(v)) continue;
+
+      // skip EVA kerbals
+      if (v.isEVA) continue;
+
+      // get vessel data
+      vessel_data vd = DB.VesselData(v.id);
+
+      // do nothing if showlink is disabled
+      if (vd.cfg_showlink == 0) continue;
+
+      // get link status
+      link_data ld = Signal.Link(v);
+
+      // if there is an antenna
+      if (ld.status != link_status.no_antenna)
+      {
+        // get line renderer from the cache
+        Line line = getLine(v.id);
+
+        // start of the line
+        Vector3d a = Lib.VesselPosition(v);
+
+        // determine end of line and color
+        Vector3d b;
+        Color clr;
+        if (ld.status == link_status.direct_link)
+        {
+          b = home;
+          clr = Color.green;
+        }
+        else if (ld.status == link_status.indirect_link)
+        {
+          Vessel relay = FlightGlobals.Vessels.Find(k => k.id == ld.path_id[ld.path.Count - 1]);
+          if (relay == null) { line.Show(false); continue; } //< skip if it doesn't exist anymore
+          b = Lib.VesselPosition(relay);
+          clr = Color.yellow;
+        }
+        else // no link
+        {
+          b = home;
+          clr = Color.red;
+        }
+
+        // setup the line and show it
+        line.UpdatePoints(a, b, clr);
+        line.Show(true);
+      }
+    }
+  }
+
+  // create a line renderer or return it from the cache
+  Line getLine(Guid id)
+  {
+    Line line;
+    if (!lines.TryGetValue(id, out line))
+    {
+      line = Line.Create();
+      lines.Add(id, line);
+    }
+    return line;
+  }
+
+  // store unity line renderers per-vessel
+  Dictionary<Guid, Line> lines = new Dictionary<Guid, Line>();
 }
 
 

@@ -254,7 +254,13 @@ public static class Lib
     range /= 1000.0;
     if (range < 1000.0) return range.ToString("F1") + " Mm";
     range /= 1000.0;
-    return range.ToString("F1") + " Gm";
+    if (range < 1000.0) return range.ToString("F1") + " Gm";
+    range /= 1000.0;
+    if (range < 1000.0) return range.ToString("F1") + " Tm";
+    range /= 1000.0;
+    if (range < 1000.0) return range.ToString("F1") + " Pm";
+    range /= 1000.0;
+    return range.ToString("F1") + " Em";
   }
 
 
@@ -356,7 +362,7 @@ public static class Lib
 
 
   // store the random number generator
-  static System.Random rng = new System.Random((int)DateTime.Now.Ticks);
+  static System.Random rng = new System.Random();
 
 
   // return random integer
@@ -559,7 +565,7 @@ public static class Lib
     // if the vessel is a debris, a flag or an asteroid, ignore it
     // note: the user can change vessel type, in that case he is actually disabling this mod for the vessel
     // the alternative is to scan the vessel for ModuleCommand, but that is slower, and resque vessels have no module command
-    if (v.vesselType == VesselType.Debris || v.vesselType == VesselType.Flag || v.vesselType == VesselType.SpaceObject) return false;
+    if (v.vesselType == VesselType.Debris || v.vesselType == VesselType.Flag || v.vesselType == VesselType.SpaceObject || v.vesselType == VesselType.Unknown) return false;
 
     // the vessel is valid
     return true;
@@ -675,18 +681,32 @@ public static class Lib
   }
 
 
-  // get a set of values from the config system
+  // get a config node from the config system
   public static ConfigNode ParseConfig(string path)
   {
-    ConfigNode node = GameDatabase.Instance.GetConfigNode(path);
-    return node != null ? node : new ConfigNode();
+    return GameDatabase.Instance.GetConfigNode(path) ?? new ConfigNode();
+  }
+
+
+  // get a set of config nodes from the config system
+  public static ConfigNode[] ParseConfigs(string path)
+  {
+    return GameDatabase.Instance.GetConfigNodes(path);
   }
 
 
   // get a value from config
   public static T ConfigValue<T>(ConfigNode cfg, string key, T def_value)
   {
-    return cfg.HasValue(key) ? (T)Convert.ChangeType(cfg.GetValue(key), typeof(T)) : def_value;
+    try
+    {
+      return cfg.HasValue(key) ? (T)Convert.ChangeType(cfg.GetValue(key), typeof(T)) : def_value;
+    }
+    catch(Exception e)
+    {
+      Lib.Log("error while trying to parse '" + key + "' from " + cfg.name + " (" + e.Message + ")");
+      return def_value;
+    }
   }
 
 
@@ -719,6 +739,20 @@ public static class Lib
               .Replace("$KERBAL", "<b>" + c_name + "</b>")
               .Replace("$ON_VESSEL", v != null && v.isActiveVessel ? "" : "On <b>" + v_name + "</b>, ")
               .Replace("$HIS_HER", c != null && c.gender == ProtoCrewMember.Gender.Male ? "his" : "her");
+  }
+
+
+  // tokenize a string
+  public static List<string> Tokenize(string txt, char separator)
+  {
+    List<string> ret = new List<string>();
+    string[] strings = txt.Split(separator);
+    foreach(string s in strings)
+    {
+      string trimmed = s.Trim();
+      if (trimmed.Length > 0) ret.Add(trimmed);
+    }
+    return ret;
   }
 }
 

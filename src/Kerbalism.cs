@@ -16,7 +16,6 @@ using UnityEngine;
 namespace KERBALISM {
 
 
-
 [KSPAddon(KSPAddon.Startup.MainMenu, true)]
 public class Kerbalism : MonoBehaviour
 {
@@ -58,7 +57,7 @@ public class Kerbalism : MonoBehaviour
   // store enabled features
   public static Features features = new Features();
 
-  // store set of rules
+  // store all the rules
   public static Dictionary<string, Rule> rules = new Dictionary<string, Rule>();
 
   // only the 'supply' rules
@@ -72,9 +71,15 @@ public class Kerbalism : MonoBehaviour
   Kerbalism() { DontDestroyOnLoad(this); }
 
 
-  // called by MM after resources are loaded but before parts are compiled
-  public static void ModuleManagerPostLoad()
+  public void Start()
   {
+    // shortcut to the resource library
+    var reslib = PartResourceLibrary.Instance.resourceDefinitions;
+
+    // length of a day in seconds
+    double daylen = 60.0 * 60.0 * Lib.HoursInDay();
+
+
     // log version
     Lib.Log("version " + Assembly.GetExecutingAssembly().GetName().Version);
 
@@ -108,11 +113,8 @@ public class Kerbalism : MonoBehaviour
     Lib.Log("- scrubber: " + features.scrubber);
     Lib.Log("- shielding: " + features.shielding);
 
-    // shortcut to the resource library
-    var reslib = PartResourceLibrary.Instance.resourceDefinitions;
-
     // get all the rules
-    var r_cfg = GameDatabase.Instance.GetConfigNodes("Rule");
+    var r_cfg = Lib.ParseConfigs("Rule");
     foreach(var node in r_cfg)
     {
       Rule r = new Rule(node);
@@ -124,66 +126,84 @@ public class Kerbalism : MonoBehaviour
       }
     }
     Lib.Log("rules:");
-    foreach(var r in rules) Lib.Log("- " + r.Value.name);
+    foreach(var p in rules)
+    {
+      Rule r = p.Value;
+      string modifiers = r.modifier.Count > 0 ? string.Join(", ", r.modifier.ToArray()) : "none";
+      Lib.Log("- " + r.name + " (modifier: " + modifiers + ")");
+    }
     if (rules.Count == 0) Lib.Log("- none");
 
     // add resources to manned parts
-    double daylen = 60.0 * 60.0 * Lib.HoursInDay();
-    foreach (UrlDir.UrlConfig url in GameDatabase.Instance.root.AllConfigs)
+    foreach(AvailablePart part in PartLoader.LoadedPartsList)
     {
-      string crew_capacity_str = "";
-      if (url.config.TryGetValue("CrewCapacity", ref crew_capacity_str))
+      // get the prefab
+      Part prefab = part.partPrefab;
+
+      // avoid problems with some parts that don't have a resource container (EVA kerbals, flags)
+      if (prefab.Resources == null) continue;
+
+      // if manned
+      if (prefab.CrewCapacity > 0)
       {
-        int crew_capacity_int = 0;
-        if (int.TryParse(crew_capacity_str, out crew_capacity_int))
+        double crew_capacity = (double)prefab.CrewCapacity;
+        double extra_cost = 0.0;
+        foreach(var p in rules)
         {
-          if (crew_capacity_int > 0)
+          Rule r = p.Value;
+
+          // add rule's resource
+          if (r.resource_name.Length > 0 && r.on_pod > 0.0 && reslib.Contains(r.resource_name) && !prefab.Resources.Contains(r.resource_name))
           {
-            double crew_capacity = (double)crew_capacity_int;
-            double extra_cost = 0.0;
-            foreach(var p in rules)
-            {
-              Rule r = p.Value;
-              if (r.resource_name.Length > 0 && r.on_pod > 0.0 && reslib.Contains(r.resource_name))
-              {
-                var res = url.config.AddNode("RESOURCE");
-                res.AddValue("name", r.resource_name);
-                res.AddValue("amount", r.on_pod * crew_capacity);
-                res.AddValue("maxAmount", r.on_pod * crew_capacity);
-                extra_cost += (double)reslib[r.resource_name].unitCost * r.on_pod * crew_capacity;
-              }
-            }
-            foreach(var p in rules)
-            {
-              Rule r = p.Value;
-              double waste_per_day = (r.rate / (r.interval > 0.0 ? r.interval : 1.0)) * daylen * r.waste_ratio;
-              if (r.waste_name.Length > 0 && waste_per_day > double.Epsilon && reslib.Contains(r.waste_name))
-              {
-                var res = url.config.AddNode("RESOURCE");
-                res.AddValue("name", r.waste_name);
-                res.AddValue("amount", "0.0");
-                res.AddValue("maxAmount", waste_per_day * crew_capacity);
-                extra_cost += (double)reslib[r.waste_name].unitCost * waste_per_day * crew_capacity;
-              }
-            }
-            if (features.shielding && reslib.Contains("Shielding"))
-            {
-              var res = url.config.AddNode("RESOURCE");
-              res.AddValue("name", "Shielding");
-              res.AddValue("amount", "0.0");
-              res.AddValue("maxAmount", crew_capacity);
-              extra_cost += (double)reslib["Shielding"].unitCost * crew_capacity;
-            }
-            url.config.SetValue("cost", (Lib.ConfigValue(url.config, "cost", 0.0) + extra_cost).ToString(), true);
+            var res = new ConfigNode("RESOURCE");
+            res.AddValue("name", r.resource_name);
+            res.AddValue("amount", r.on_pod * crew_capacity);
+            res.AddValue("maxAmount", r.on_pod * crew_capacity);
+            prefab.Resources.Add(res);
+            extra_cost += (double)reslib[r.resource_name].unitCost * r.on_pod * crew_capacity;
           }
         }
+        // loop the rules a second time to give the resources a nice order
+        foreach(var p in rules)
+        {
+          Rule r = p.Value;
+          
+          // add rule's waste resource
+          double waste_per_day = (r.rate / (r.interval > 0.0 ? r.interval : 1.0)) * daylen * r.waste_ratio;
+          double waste_amount = waste_per_day * r.waste_buffer * crew_capacity;
+          if (r.waste_name.Length > 0 && waste_amount > double.Epsilon && reslib.Contains(r.waste_name) && !prefab.Resources.Contains(r.waste_name))
+          {
+            var res = new ConfigNode("RESOURCE");
+            res.AddValue("name", r.waste_name);
+            res.AddValue("amount", "0.0");
+            res.AddValue("maxAmount", waste_amount);
+            if (r.hide_waste)
+            {
+              res.AddValue("isTweakable", false.ToString());
+              res.AddValue("isVisible", false.ToString());
+            }
+            prefab.Resources.Add(res);
+            extra_cost += (double)reslib[r.waste_name].unitCost * waste_amount;
+          }
+        }
+
+        // add shielding
+        if (features.shielding && reslib.Contains("Shielding") && !prefab.Resources.Contains("Shielding"))
+        {
+          var res = new ConfigNode("RESOURCE");
+          res.AddValue("name", "Shielding");
+          res.AddValue("amount", "0.0");
+          res.AddValue("maxAmount", crew_capacity);
+          prefab.Resources.Add(res);
+          extra_cost += (double)reslib["Shielding"].unitCost * crew_capacity;
+        }
+
+        // add the extra cost
+        part.cost += (float)extra_cost;
+        part.cost = Mathf.Round(part.cost + 0.5f);
       }
     }
-  }
 
-
-  public void Start()
-  {
     // set callbacks
     GameEvents.onCrewOnEva.Add(this.toEVA);
     GameEvents.onCrewBoardVessel.Add(this.fromEVA);
@@ -236,7 +256,7 @@ public class Kerbalism : MonoBehaviour
       double amount = Math.Min(Lib.GetResourceAmount(data.from.vessel, r.resource_name) / tot_crew, r.on_eva);
 
       // deal with breathable modifier
-      if (Sim.Breathable(data.from.vessel) && r.modifier == "breathable") continue;
+      if (Sim.Breathable(data.from.vessel) && r.modifier.Contains("breathable")) continue;
 
       // remove resource from the vessel
       amount = Lib.RequestResource(data.from.vessel, r.resource_name, amount);
@@ -363,7 +383,7 @@ public class Kerbalism : MonoBehaviour
   void vesselDock(GameEvents.FromToAction<Part, Part> e)
   {
     // forget vessel being docked
-    DB.ForgetVessel(e.from.vessel.id);
+    if (DB.Ready()) DB.ForgetVessel(e.from.vessel.id);
   }
 
 
@@ -677,23 +697,26 @@ public class Kerbalism : MonoBehaviour
 
         // get modifier
         double k = 1.0;
-        switch(r.modifier)
+        foreach(string modifier in r.modifier)
         {
-          case "breathable":
-            k = Sim.Breathable(v) ? 0.0 : 1.0;
-            break;
+          switch(modifier)
+          {
+            case "breathable":
+              k *= Sim.Breathable(v) ? 0.0 : 1.0;
+              break;
 
-          case "temperature":
-            k = v.altitude < 2000.0 && v.mainBody == FlightGlobals.GetHomeBody() ? 0.0 : Sim.TempDiff(vi.temperature);
-            break;
+            case "temperature":
+              k *= v.altitude < 2000.0 && v.mainBody == FlightGlobals.GetHomeBody() ? 0.0 : Sim.TempDiff(vi.temperature);
+              break;
 
-          case "radiation":
-            k = vi.env_radiation * (1.0 - kd.shielding);
-            break;
+            case "radiation":
+              k *= vi.env_radiation * (1.0 - kd.shielding);
+              break;
 
-          case "qol":
-            k = 1.0 / QualityOfLife.Bonus(v, c.name);
-            break;
+            case "qol":
+              k *= 1.0 / QualityOfLife.Bonus(v, c.name);
+              break;
+          }
         }
 
         // meal-wise consumption and generation
@@ -1060,7 +1083,7 @@ public class Kerbalism : MonoBehaviour
     foreach(var p in Kerbalism.rules)
     {
       var r = p.Value;
-      if (r.modifier == "radiation")
+      if (r.modifier.Contains("radiation"))
       {
         var kmon = DB.KmonData(k_name, r.name);
         kmon.problem = Math.Max(kmon.problem + amount, 0.0);
@@ -1140,70 +1163,53 @@ public class Kerbalism : MonoBehaviour
   }
 
 
+  // hook: LivingSpace()
+  public static double hook_LivingSpace(string k_name)
+  {
+    if (!DB.Ready()) return 1.0;
+    if (!DB.Kerbals().ContainsKey(k_name)) return 1.0;
+    return DB.KerbalData(k_name).living_space;
+  }
 
+
+  // hook: Entertainment()
+  public static double hook_Entertainment(string k_name)
+  {
+    if (!DB.Ready()) return 1.0;
+    if (!DB.Kerbals().ContainsKey(k_name)) return 1.0;
+    return DB.KerbalData(k_name).entertainment;
+  }
+
+
+  // hook: Shielding()
+  public static double hook_Shielding(string k_name)
+  {
+    if (!DB.Ready()) return 0.0;
+    if (!DB.Kerbals().ContainsKey(k_name)) return 0.0;
+    return DB.KerbalData(k_name).shielding;
+  }
+  
+  
+  // hook: Malfunctioned()
+  public static bool hook_Malfunctioned(Part part)
+  {
+    foreach(var m in part.FindModulesImplementing<Malfunction>())   
+    {
+      if (m.malfunctions > 0) return true;
+    }
+    return false;
+  }
+  
+  
+  // hook: Repair()
+  public static void hook_Repair(Part part)
+  {
+    foreach(var m in part.FindModulesImplementing<Malfunction>())
+    {
+      m.Repair();
+    }
+  }
 }
 
 
 } // KERBALISM
-
-
-#if false
-// CONFIG
-//ConfigNode settings_node = GameDatabase.Instance.GetConfigNode("Kerbalism/KerbalismSettings");
-//launcher_btn.onRightClick = ()=> Message.Post("Right Click");
-
-// LINE/SPLINE RENDERING EXPERIMENTS
-
-class something
-{
-  void somefunc()
-  {
-    // # draw line
-
-    // destroy previous line if any
-    if (line != null) Vector.DestroyLine(ref line);
-
-    Vector3d a = FlightGlobals.GetHomeBody().position;
-    Vector3d b = FlightGlobals.Bodies[2].position;
-
-    // tranform points in scaled space
-    a = ScaledSpace.LocalToScaledSpace(a);
-    b = ScaledSpace.LocalToScaledSpace(b);
-
-    // detect if one is behind
-    Vector3d look = MapView.MapCamera.transform.forward;
-    double k = Math.Min(Vector3d.Dot(a, look), Vector3d.Dot(b, look));
-    if (k > 0.05) //< avoid glitches
-    {
-      line = new VectorLine("l_i_n_e", new Vector3[]{a, b}, MapView.OrbitLinesMaterial, 5.0f);
-      Vector.SetColor(line, Color.red);
-      Vector.DrawLine(line);
-    }
-
-    // # draw spline
-    if (spline != null) Vector.DestroyLine(ref spline);
-
-    Vector3d p0 = FlightGlobals.Bodies[1].position;
-    Vector3d p1 = FlightGlobals.Bodies[2].position;
-    Vector3d p2 = FlightGlobals.Bodies[3].position;
-
-    // tranform points in scaled space
-    p0 = ScaledSpace.LocalToScaledSpace(p0);
-    p1 = ScaledSpace.LocalToScaledSpace(p1);
-    p2 = ScaledSpace.LocalToScaledSpace(p2);
-
-    k = Math.Min(Vector3d.Dot(p0, look), Math.Min(Vector3d.Dot(p1, look), Vector3d.Dot(p2, look)));
-    if (k > 0.05) //< avoid glitches
-    {
-      spline = new VectorLine("s_p_l_i_n_e", new Vector3[128], MapView.OrbitLinesMaterial, 5.0f);
-      Vector.SetColor(spline, Color.cyan);
-      Vector.MakeSplineInLine(spline, new Vector3[]{p0,p1,p2});
-      Vector.DrawLine(spline);
-    }
-  }
-
-  VectorLine line;
-  VectorLine spline;
-}
-
-#endif

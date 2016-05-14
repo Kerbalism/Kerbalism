@@ -68,7 +68,7 @@ public class Planner
     public double tta;                                    // best time-to-harvest among all greenhouses, in seconds
     public double life_expectancy;                        // time-to-death for lack of supply
     public bool   has_greenhouse;                         // true if it has a greenhouse with same resource
-    public bool   has_scrubber;                           // true if it has a scrubber with same resource
+    public bool   has_recycler;                           // true if it has a scrubber/recycler with same resource
   }
 
 
@@ -408,6 +408,15 @@ public class Planner
             ec.consumed += scrubber.ec_rate;
           }
         }
+        // recycler
+        else if (m.moduleName == "Recycler")
+        {
+          Recycler recycler = (Recycler)m;
+          if (recycler.is_enabled)
+          {
+            ec.consumed += recycler.ec_rate;
+          }
+        }
         // greenhouse
         else if (m.moduleName == "Greenhouse")
         {
@@ -485,7 +494,7 @@ public class Planner
     // calculate resource consumed
     // note: this assume the waste of the rule is the same as the waste on the scrubber/greenhouse
     data.consumed = (double)crew.count * (rule.interval > 0 ? rule.rate / rule.interval : rule.rate);
-    if (rule.modifier == "breathable" && env.breathable) data.consumed = 0;
+    if (rule.modifier.Contains("breathable") && env.breathable) data.consumed = 0;
 
     // calculate waste produced
     double sim_waste = data.consumed * rule.waste_ratio;
@@ -540,7 +549,7 @@ public class Planner
         {
           Scrubber scrubber = (Scrubber)m;
           if (scrubber.resource_name != rule.resource_name) continue;
-          data.has_scrubber = true;
+          data.has_recycler = true;
 
           // do nothing inside breathable atmosphere
           if (scrubber.is_enabled && !env.breathable)
@@ -550,6 +559,23 @@ public class Planner
             {
               data.produced += co2_scrubbed * Scrubber.DeduceEfficiency();
               sim_waste -= co2_scrubbed;
+            }
+          }
+        }
+        // recycler
+        else if (m.moduleName == "Recycler")
+        {
+          Recycler recycler = (Recycler)m;
+          if (recycler.resource_name != rule.resource_name) continue;
+          data.has_recycler = true;
+
+          if (recycler.is_enabled)
+          {
+            double waste_recycled = Math.Min(sim_waste, recycler.waste_rate);
+            if (waste_recycled > double.Epsilon)
+            {
+              data.produced += waste_recycled * recycler.waste_ratio;
+              sim_waste -= waste_recycled;
             }
           }
         }
@@ -593,13 +619,15 @@ public class Planner
     // note: ignore kerbal-specific variance
     if (crew.capacity > 0)
     {
+      bool linked = signal.range > 0.0 || !Kerbalism.features.signal;
+
       qol.living_space = QualityOfLife.LivingSpace(crew.count, crew.capacity);
-      double bonus = QualityOfLife.Bonus(qol.living_space, qol.entertainment, env.landed, signal.range > 0.0, crew.count == 1);
+      double bonus = QualityOfLife.Bonus(qol.living_space, qol.entertainment, env.landed, linked, crew.count == 1);
 
       qol.time_to_instability = bonus / rule_qol.degeneration;
       List<string> factors = new List<string>();
       if (crew.count > 1) factors.Add("not-alone");
-      if (signal.range > 0.0) factors.Add("call-home");
+      if (linked) factors.Add("call-home");
       if (env.landed) factors.Add("firm-ground");
       if (factors.Count == 0) factors.Add("none");
       qol.factors = String.Join(", ", factors.ToArray());
@@ -815,7 +843,7 @@ public class Planner
     render_content("storage", Lib.ValueOrNone(supply.storage));
     render_content("consumed", Lib.HumanReadableRate(supply.consumed));
     if (supply.has_greenhouse) render_content("time to harvest", Lib.HumanReadableDuration(supply.tta));
-    else if (supply.has_scrubber) render_content("recycled", Lib.HumanReadableRate(supply.produced));
+    else if (supply.has_recycler) render_content("recycled", Lib.HumanReadableRate(supply.produced));
     else render_content("produced", Lib.HumanReadableRate(supply.produced));
     render_content(rule.breakdown ? "time to instability" : "life expectancy", Lib.HumanReadableDuration(supply.life_expectancy));
     render_space();
@@ -989,9 +1017,15 @@ public class Planner
 
       // render menu
       GUILayout.BeginHorizontal(row_style);
-      if (GUILayout.Button(body.name, leftmenu_style)) { body_index = (body_index + 1) % FlightGlobals.Bodies.Count; if (body_index == 0) ++body_index; }
-      if (GUILayout.Button("["+ (page + 1) + "/" + pages_count + "]", midmenu_style)) { page = (page + 1) % pages_count; }
-      if (GUILayout.Button(situation, rightmenu_style)) { situation_index = (situation_index + 1) % situations.Length; }
+      GUILayout.Label(body.name, leftmenu_style);
+      if (Lib.IsClicked()) { body_index = (body_index + 1) % FlightGlobals.Bodies.Count; if (body_index == 0) ++body_index; }
+      else if (Lib.IsClicked(1)) { body_index = (body_index - 1) % FlightGlobals.Bodies.Count; if (body_index == 0) body_index = FlightGlobals.Bodies.Count - 1; }
+      GUILayout.Label("["+ (page + 1) + "/" + pages_count + "]", midmenu_style);
+      if (Lib.IsClicked()) { page = (page + 1) % pages_count; }
+      else if (Lib.IsClicked(1)) { page = (page == 0 ? pages_count : page) - 1u; }
+      GUILayout.Label(situation, rightmenu_style);
+      if (Lib.IsClicked()) { situation_index = (situation_index + 1) % situations.Length; }
+      else if (Lib.IsClicked(1)) { situation_index = (situation_index == 0 ? situations.Length : situation_index) - 1; }
       GUILayout.EndHorizontal();
 
       uint panel_index = 0;
@@ -1004,7 +1038,7 @@ public class Planner
       ++panel_index;
 
       // supplies
-      foreach(Rule r in Kerbalism.supply_rules)
+      foreach(Rule r in Kerbalism.supply_rules.FindAll(k => k.degeneration > 0.0))
       {
         if (panel_index / panels_per_page == page)
         {
@@ -1084,15 +1118,15 @@ public class Planner
       foreach(var p in Kerbalism.rules)
       {
         Rule r = p.Value;
-        if (r.modifier == "radiation") rule_radiation = r;
-        else if (r.modifier == "qol") rule_qol = r;
-        else if (r.modifier == "temperature" && r.resource_name == "ElectricCharge") rule_temp = r;
+        if (r.modifier.Contains("radiation")) rule_radiation = r;
+        if (r.modifier.Contains("qol")) rule_qol = r;
+        if (r.modifier.Contains("temperature") && r.resource_name == "ElectricCharge") rule_temp = r;
       }
       rules_detected = true;
 
       // guess number of panels
       panels_count = 2u
-                   + (uint)Kerbalism.supply_rules.Count
+                   + (uint)Kerbalism.supply_rules.FindAll(k => k.degeneration > 0.0).Count
                    + (rule_qol != null ? 1u : 0)
                    + (rule_radiation != null ? 1u : 0)
                    + (Kerbalism.features.malfunction ? 1u : 0)

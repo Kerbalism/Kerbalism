@@ -25,10 +25,12 @@ public class Rule
     this.interval = Lib.ConfigValue(node, "interval", 0.0);
     this.degeneration = Lib.ConfigValue(node, "degeneration", 0.0);
     this.variance = Lib.ConfigValue(node, "variance", 0.0);
-    this.modifier = Lib.ConfigValue(node, "modifier", "");
+    this.modifier =  Lib.Tokenize(Lib.ConfigValue(node, "modifier", ""), ',');
     this.on_pod = Lib.ConfigValue(node, "on_pod", 0.0);
     this.on_eva = Lib.ConfigValue(node, "on_eva", 0.0);
     this.on_resque = Lib.ConfigValue(node, "on_resque", 999.0);
+    this.waste_buffer = Lib.ConfigValue(node, "waste_buffer", 1.0);
+    this.hide_waste = Lib.ConfigValue(node, "hide_waste", false);
     this.breakdown = Lib.ConfigValue(node, "breakdown", false);
     this.warning_threshold = Lib.ConfigValue(node, "warning_threshold", 0.33);
     this.danger_threshold = Lib.ConfigValue(node, "danger_threshold", 0.66);
@@ -73,10 +75,12 @@ public class Rule
   public double interval;                           // if 0, the resource is consumed constantly - if more than 0, the resource is consumed every 'interval' seconds
   public double degeneration;                       // rate to add to the accumulator per-second (if interval is 0) or per-interval (if iterval is more than 0)
   public double variance;                           // variance for degeneration, unique per-kerbal and in range [1.0-variance, 1.0+variance]
-  public string modifier;                           // if specified, consumption and degeneration are influenced by a parameter from the environment
+  public List<string> modifier = new List<string>();// if specified, consumption and degeneration are influenced by a parameter from the environment
   public double on_pod;                             // how much resource to add to manned parts, per-kerbal
   public double on_eva;                             // how much resource to take on eva, if any
   public double on_resque;                          // how much resource to gift to resque missions
+  public double waste_buffer;                       // how many days worth of waste capacity to add to pods
+  public bool   hide_waste;                         // if true, hide the waste resource on pods
   public bool   breakdown;                          // if true, trigger a breakdown instead of killing the kerbal
   public double warning_threshold;                  // threshold of degeneration used to show warning messages and yellow status color
   public double danger_threshold;                   // threshold of degeneration used to show danger messages and red status color

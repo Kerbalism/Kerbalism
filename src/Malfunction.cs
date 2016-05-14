@@ -285,7 +285,6 @@ public class Malfunction : PartModule
     // accumulate age
     age += TimeWarp.fixedDeltaTime
          * AgingCurve(age, min_lifetime, max_lifetime)
-         * IncentiveRedundancy(vessel, part.flightID)
          / quality;
 
     // check age and malfunction if needed
@@ -346,7 +345,6 @@ public class Malfunction : PartModule
     // accumulate age
     age += TimeWarp.fixedDeltaTime
          * AgingCurve(age, min_lifetime, max_lifetime)
-         * IncentiveRedundancy(vessel, flight_id)
          / quality;
 
     // save data
@@ -518,16 +516,17 @@ public class Malfunction : PartModule
     }
     return false;
   }
-  
-  
+
+
+  // [DISABLED] this function is very slow for vessels with a lot of components
   // used to incentive redundancy by slowing down aging when another part with the same module already failed
   // note: this assume there is only a supported module per-part, if that isn't the case the last one is used
-  static double IncentiveRedundancy(Vessel v, uint flight_id)  
-  {  
+  /*static double IncentiveRedundancy(Vessel v, uint flight_id)
+  {
     if (v.loaded)
     {
       string module_name = "";
-      foreach(var p in v.Parts)      
+      foreach(var p in v.Parts)
       {
         if (p.flightID == flight_id)
         {
@@ -551,10 +550,10 @@ public class Malfunction : PartModule
           if (module_name.Length == 0) return 1.0;
         }
       }
-      
+
       foreach(var p in v.Parts)
       {
-        if (p.flightID == flight_id) continue;        
+        if (p.flightID == flight_id) continue;
         if (p.Modules.Contains("Malfunction") && p.Modules.Contains(module_name))
         {
           return 1.0 / (double)(p.Modules.GetModule<Malfunction>().malfunctions + 1u);
@@ -564,7 +563,7 @@ public class Malfunction : PartModule
     else
     {
       string module_name = "";
-      foreach(var p in v.protoVessel.protoPartSnapshots)      
+      foreach(var p in v.protoVessel.protoPartSnapshots)
       {
         if (p.flightID == flight_id)
         {
@@ -588,10 +587,10 @@ public class Malfunction : PartModule
           if (module_name.Length == 0) return 1.0;
         }
       }
-      
+
       foreach(var p in v.protoVessel.protoPartSnapshots)
       {
-        if (p.flightID == flight_id) continue;        
+        if (p.flightID == flight_id) continue;
         var m = p.modules.Find(k => k.moduleName == "Malfunction");
         if (m != null && p.modules.Find(k => k.moduleName == module_name) != null)
         {
@@ -600,7 +599,7 @@ public class Malfunction : PartModule
       }
     }
     return 1.0;
-  }
+  }*/
 
 
   // used to make malfunctions less relevant in the middle of lifetime
@@ -609,7 +608,7 @@ public class Malfunction : PartModule
   {
     double k = Math.Min(Math.Max(age - min_lifetime, 0.0) / max_lifetime, 1.0);
     return (1.0 - (Math.Min(Math.Min(1.0, k + 0.75), Math.Min(1.0, 1.75 - k)) - 0.75) * 2.0) * 1.6;
-  } 
+  }
 }
 
 

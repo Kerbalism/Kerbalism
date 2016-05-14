@@ -15,7 +15,7 @@ public static class Settings
 {
   static Settings()
   {
-    var cfg = Lib.ParseConfig("Kerbalism/Settings");
+    var cfg = Lib.ParseConfig("Kerbalism/Kerbalism");
 
     // temperature
     SurvivalTemperature         = Lib.ConfigValue(cfg, "SurvivalTemperature",         295.0);

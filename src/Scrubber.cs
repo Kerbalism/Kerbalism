@@ -1,6 +1,5 @@
 ﻿// ===================================================================================================================
 // Scrubber module
-// recycle a resource into another
 // ===================================================================================================================
 
 
@@ -157,7 +156,6 @@ public class Scrubber : PartModule
     // get data
     ProtoPartModuleSnapshot m = Lib.GetProtoModule(vessel, flight_id, "Scrubber");
     bool is_enabled = Lib.GetProtoValue<bool>(m, "is_enabled");
-    double capacity = Lib.GetProtoValue<double>(m, "capacity", 1.0); //< support versions before 0.9.9.5
     double ec_rate = Lib.GetProtoValue<double>(m, "ec_rate");
     double co2_rate = Lib.GetProtoValue<double>(m, "co2_rate");
     double efficiency = Lib.GetProtoValue<double>(m, "efficiency");
@@ -182,9 +180,9 @@ public class Scrubber : PartModule
     else if (is_enabled)
     {
       // recycle CO2+EC into oxygen
-      double co2_required = co2_rate * elapsed_s * capacity;
+      double co2_required = co2_rate * elapsed_s;
       double co2 = Lib.RequestResource(vessel, waste_name, co2_required);
-      double ec_required = ec_rate * elapsed_s * (co2 / co2_required) * capacity;
+      double ec_required = ec_rate * elapsed_s * (co2 / co2_required);
       double ec = Lib.RequestResource(vessel, "ElectricCharge", ec_required);
       Lib.RequestResource(vessel, resource_name, -co2 * efficiency);
     }

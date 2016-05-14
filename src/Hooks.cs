@@ -184,6 +184,51 @@ public static class Kerbalism_Hooks
     if (K == null) return false;
     return (bool)K.GetMethod("hook_InsideBelt").Invoke(null, new Object[]{v});
   }
+
+
+  // return the living space factor for the internal space that contain the specified kerbal
+  public static double LivingSpace(string k_name)
+  {
+    lazy_init();
+    if (K == null) return 1.0;
+    return (double)K.GetMethod("hook_LivingSpace").Invoke(null, new Object[]{k_name});
+  }
+
+
+  // return the entertainment factor for the internal space that contain the specified kerbal
+  public static double Entertainment(string k_name)
+  {
+    lazy_init();
+    if (K == null) return 1.0;
+    return (double)K.GetMethod("hook_Entertainment").Invoke(null, new Object[]{k_name});
+  }
+
+
+  // return the shielding factor for the internal space that contain the specified kerbal
+  public static double Shielding(string k_name)
+  {
+    lazy_init();
+    if (K == null) return 0.0;
+    return (double)K.GetMethod("hook_Shielding").Invoke(null, new Object[]{k_name});
+  }
+  
+  
+  // return true if a part in a loaded vessel has one or more malfunctions
+  public static bool Malfunctioned(Part part)
+  {
+    lazy_init();
+    if (K == null) return false;
+    return (bool)K.GetMethod("hook_Malfunctioned").Invoke(null, new Object[]{part});
+  }
+  
+  
+  // repair a malfunctioned part in a loaded vessel
+  public static void Repair(Part part)
+  {
+    lazy_init();
+    if (K == null) return;
+    K.GetMethod("hook_Repair").Invoke(null, new Object[]{part});
+  }
 }
 
 

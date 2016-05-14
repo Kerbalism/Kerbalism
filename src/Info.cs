@@ -323,23 +323,26 @@ public class Info : MonoBehaviour
     }
 
     // for each kerbal
-    foreach(var c in crew)
+    if (Kerbalism.rules.Count > 0)
     {
-      kerbal_data kd = DB.KerbalData(c.name);
-      render_title(c.name.ToUpper());
-      foreach(var q in Kerbalism.rules)
+      foreach(var c in crew)
       {
-        Rule r = q.Value;
-        if (r.degeneration > double.Epsilon)
+        kerbal_data kd = DB.KerbalData(c.name);
+        render_title(c.name.ToUpper());
+        foreach(var q in Kerbalism.rules)
         {
-          var kmon = DB.KmonData(c.name, r.name);
-          var bar = Lib.ProgressBar(23, kmon.problem, r.warning_threshold, r.danger_threshold, r.fatal_threshold, kd.disabled > 0 ? "cyan" : "");
-          render_content(fix_title(r.name + ":"), bar);
+          Rule r = q.Value;
+          if (r.degeneration > double.Epsilon)
+          {
+            var kmon = DB.KmonData(c.name, r.name);
+            var bar = Lib.ProgressBar(23, kmon.problem, r.warning_threshold, r.danger_threshold, r.fatal_threshold, kd.disabled > 0 ? "cyan" : "");
+            render_content(fix_title(r.name + ":"), bar);
+          }
         }
+        if (kd.space_name.Length > 0 && !v.isEVA) render_content("Inside:\t\t", kd.space_name);
+        if (kd.disabled > 0) render_content("Hibernated:\t", "yes");
+        render_space();
       }
-      if (kd.space_name.Length > 0 && !v.isEVA) render_content("Inside:\t\t", kd.space_name);
-      if (kd.disabled > 0) render_content("Hibernated:\t", "yes");
-      render_space();
     }
 
     // for each greenhouse

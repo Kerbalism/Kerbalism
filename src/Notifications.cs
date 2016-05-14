@@ -140,17 +140,17 @@ public class Notifications : MonoBehaviour
 
       case 1: // 'electric charge'
         foreach(var p in Kerbalism.rules)
-        { if (p.Value.modifier == "temperature" && p.Value.resource_name == "ElectricCharge") return true; }
+        { if (p.Value.modifier.Contains("temperature") && p.Value.resource_name == "ElectricCharge") return true; }
         return false;
 
       case 2: // 'radiation'
         foreach(var p in Kerbalism.rules)
-        { if (p.Value.modifier == "radiation") return true; }
+        { if (p.Value.modifier.Contains("radiation")) return true; }
         return false;
 
       case 3: // 'quality of life'
         foreach(var p in Kerbalism.rules)
-        { if (p.Value.modifier == "qol") return true; }
+        { if (p.Value.modifier.Contains("qol")) return true; }
         return false;
 
       case 4: // 'signals'

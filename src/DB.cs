@@ -35,6 +35,7 @@ public class vessel_data
   public uint   cfg_malfunction     = 1;            // enable/disable message: malfunctions
   public uint   cfg_storm           = 1;            // enable/disable message: storms
   public uint   cfg_highlights      = 1;            // show/hide malfunction highlights
+  public uint   cfg_showlink        = 0;            // show/hide link line
 
   public string notes               = "";           // vessel notes
   public string group               = "NONE";       // vessel group
@@ -83,7 +84,7 @@ public class DB : ScenarioModule
   private notification_data notifications = new notification_data();
 
   // current savegame version
-  private const string current_version = "0.9.9.7";
+  private const string current_version = "0.9.9.8";
 
   // allow global access
   private static DB instance = null;
@@ -156,8 +157,9 @@ public class DB : ScenarioModule
         vd.cfg_supply      = Lib.ConfigValue(vessel_node, "cfg_supply", 1u);
         vd.cfg_signal      = Lib.ConfigValue(vessel_node, "cfg_signal", 1u);
         vd.cfg_malfunction = Lib.ConfigValue(vessel_node, "cfg_malfunction", 1u);
-        vd.cfg_storm       = Lib.ConfigValue(vessel_node, "cfg_storm", 1u); // since 0,9.9.5
-        vd.cfg_highlights  = Lib.ConfigValue(vessel_node, "cfg_highlights", 1u); // since 0,9.9.5
+        vd.cfg_storm       = Lib.ConfigValue(vessel_node, "cfg_storm", 1u); // since 0.9.9.5
+        vd.cfg_highlights  = Lib.ConfigValue(vessel_node, "cfg_highlights", 1u); // since 0.9.9.5
+        vd.cfg_showlink    = Lib.ConfigValue(vessel_node, "cfg_showlink", 0u); // since 0.9.9.8
         vd.notes           = Lib.ConfigValue(vessel_node, "notes", "").Replace("$NEWLINE", "\n"); // since 0.9.9.1
         vd.group           = Lib.ConfigValue(vessel_node, "group", "NONE"); // since 0.9.9.1
         vd.vmon = new Dictionary<string, vmon_data>();
@@ -287,6 +289,7 @@ public class DB : ScenarioModule
       vessel_node.AddValue("cfg_malfunction", vd.cfg_malfunction);
       vessel_node.AddValue("cfg_storm", vd.cfg_storm);
       vessel_node.AddValue("cfg_highlights", vd.cfg_highlights);
+      vessel_node.AddValue("cfg_showlink", vd.cfg_showlink);
       vessel_node.AddValue("notes", vd.notes.Replace("\n", "$NEWLINE"));
       vessel_node.AddValue("group", vd.group);
       var vmon_node = vessel_node.AddNode("vmon");

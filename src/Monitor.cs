@@ -261,25 +261,54 @@ public class Monitor
   }
 
 
-  void problem_scrubbers(Vessel v, List<Scrubber> scrubbers, ref List<Texture> icons, ref List<string> tooltips)
+  void problem_recyclers(Vessel v, List<Scrubber> scrubbers, List<Recycler> recyclers, ref List<Texture> icons, ref List<string> tooltips)
   {
     bool no_ec_left = Lib.GetResourceAmount(v, "ElectricCharge") <= double.Epsilon;
-    bool scrubber_disabled = false;
-    bool scrubber_nopower = false;
+
+    HashSet<string> disabled_recyclers = new HashSet<string>();
+    HashSet<string> no_power_recyclers = new HashSet<string>();
+    HashSet<string> no_filter_recyclers = new HashSet<string>();
+
+    // analyze scrubbers
     foreach(Scrubber scrubber in scrubbers)
     {
-      scrubber_disabled |= !scrubber.is_enabled;
-      scrubber_nopower |= scrubber.is_enabled && no_ec_left;
+      if (!scrubber.is_enabled) disabled_recyclers.Add("Scrubber");
+      else if (no_ec_left) no_power_recyclers.Add("Scrubber");
     }
-    if (scrubber_disabled)
+
+    // analyze recyclers
+    foreach(Recycler recycler in recyclers)
+    {
+      if (!recycler.is_enabled) disabled_recyclers.Add(recycler.display_name);
+      else if (no_ec_left) no_power_recyclers.Add(recycler.display_name);
+      else
+      {
+        if (recycler.filter_name.Length > 0 && recycler.filter_rate > 0.0)
+        {
+          if (Lib.GetResourceAmount(v, recycler.filter_name) <= double.Epsilon)
+          {
+            no_filter_recyclers.Add(recycler.display_name);
+          }
+        }
+      }
+    }
+
+    if (disabled_recyclers.Count > 0)
     {
       icons.Add(icon_scrubber_warning);
-      tooltips.Add("Scrubber disabled");
+      foreach(string s in disabled_recyclers) tooltips.Add(s + " disabled");
     }
-    if (scrubber_nopower)
+
+    if (no_power_recyclers.Count > 0)
     {
       icons.Add(icon_scrubber_danger);
-      tooltips.Add("Scrubber has no power");
+      foreach(string s in no_power_recyclers) tooltips.Add(s + " has no power");
+    }
+
+    if (no_filter_recyclers.Count > 0)
+    {
+      icons.Add(icon_scrubber_danger);
+      foreach(string s in no_filter_recyclers) tooltips.Add(s + " has no filter left");
     }
   }
 
@@ -290,8 +319,9 @@ public class Monitor
     bool greenhouse_nogrowth = false;
     foreach(Greenhouse greenhouse in greenhouses)
     {
-      greenhouse_slowgrowth |= greenhouse.lighting <= 0.5;
-      greenhouse_nogrowth |= greenhouse.lighting <= double.Epsilon;
+      double g = greenhouse.growing / greenhouse.growth_rate;
+      greenhouse_slowgrowth |= g <= 0.5;
+      greenhouse_nogrowth |= g <= double.Epsilon;
     }
     if (greenhouse_nogrowth)
     {
@@ -414,8 +444,9 @@ public class Monitor
     // get body name
     string body_name = v.mainBody.name.ToUpper();
 
-    // get list of scrubbers
+    // get list of recyclers
     List<Scrubber> scrubbers = Scrubber.GetScrubbers(v);
+    List<Recycler> recyclers = Recycler.GetRecyclers(v);
 
     // get list of greenhouses
     List<Greenhouse> greenhouses = Greenhouse.GetGreenhouses(v);
@@ -431,7 +462,7 @@ public class Monitor
     {
       problem_kerbals(crew, ref problem_icons, ref problem_tooltips);
       problem_radiation(vi, ref problem_icons, ref problem_tooltips);
-      problem_scrubbers(v, scrubbers, ref problem_icons, ref problem_tooltips);
+      problem_recyclers(v, scrubbers, recyclers, ref problem_icons, ref problem_tooltips);
     }
     problem_greenhouses(v, greenhouses, ref problem_icons, ref problem_tooltips);
 
@@ -522,6 +553,13 @@ public class Monitor
       if (Lib.IsClicked()) vd.cfg_highlights = (vd.cfg_highlights == 0 ? 1u : 0);
       GUILayout.EndHorizontal();
     }
+    if (Kerbalism.features.signal)
+    {
+      GUILayout.BeginHorizontal(row_style);
+      GUILayout.Label(new GUIContent(" SHOW LINK", icon_toggle[vd.cfg_showlink]), config_style);
+      if (Lib.IsClicked()) vd.cfg_showlink = (vd.cfg_showlink == 0 ? 1u : 0);
+      GUILayout.EndHorizontal();
+    }
     if (!filtered())
     {
       GUILayout.BeginHorizontal(row_style);
@@ -608,20 +646,11 @@ public class Monitor
       config_entries = 3u; // group, info & notes
       if (Kerbalism.ec_rule != null) ++config_entries;
       if (Kerbalism.supply_rules.Count > 0) ++config_entries;
-      if (Kerbalism.features.signal) ++config_entries;
+      if (Kerbalism.features.signal) config_entries += 2u;
       if (Kerbalism.features.malfunction) config_entries += 2u;
       if (Settings.StormDuration > double.Epsilon) ++config_entries;
       if (filtered()) ++config_entries;
     }
-    /*int config_entries = configured_id == Guid.Empty ? 0 : 9;
-    if (filtered()) ++config_entries;
-    if (Kerbalism.ec_rule == null) --config_entries;
-    if (Kerbalism.supply_rules.Count == 0) --config_entries;
-    if (!Kerbalism.features.signal) --config_entries;
-    if (!Kerbalism.features.malfunction) config_entries -= 2;
-    if (Settings.StormDuration <= double.Epsilon) --config_entries;
-    config_entries = Math.Max(config_entries, 0);
-    */
     float config_height = (float)config_entries * 16.0f;
     float filter_height = show_filter ? 16.0f + 10.0f : 0.0f;
     return Math.Min(vessels_height + config_height + filter_height, Screen.height * 0.5f);

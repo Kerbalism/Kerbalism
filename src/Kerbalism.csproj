@@ -84,6 +84,7 @@
     <Compile Include="EVA.cs" />
     <Compile Include="GravityRing.cs" />
     <Compile Include="Info.cs" />
+    <Compile Include="Recycler.cs" />
     <Compile Include="Rule.cs" />
     <Compile Include="SCANsat.cs" />
     <Compile Include="Hooks.cs" />
