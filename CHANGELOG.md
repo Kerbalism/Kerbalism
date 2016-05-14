@@ -14,7 +14,6 @@
   - new module: Recycler, full support in planner and monitor
   - Greenhouse module can consume an optional input resource
   - more hooks, check them out
-  - waste buffer increased to 10 days worth of waste per-crew
   - disabled the 'redundancy incentive' function, that was too slow
   - fix: planner calculate phone-home bonus when signal is disabled
   - fix: do not show unknown objects in monitor anymore
