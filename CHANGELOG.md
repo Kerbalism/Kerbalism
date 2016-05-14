@@ -1,5 +1,26 @@
 #CHANGELOG
 
+0.9.9.8
+  - depend on CommunityResourcePack, for real this time
+  - the Realism profile just got better: water filters and more, check it out
+  - can show signal link line per-vessel, in map and trackingview
+  - it is now possible to define custom antenna range scopes
+    and to redefine the ranges of the default scopes
+  - solar panels output rebalanced
+  - right click in the planner menu to go back in the lists
+  - rule: can be influenced by a comma-separed list of modifiers
+  - rule: waste buffer size configurable
+  - rule: can force waste resources to be hidden in pods    
+  - new module: Recycler, full support in planner and monitor
+  - Greenhouse module can consume an optional input resource
+  - more hooks, check them out
+  - waste buffer increased to 10 days worth of waste per-crew
+  - disabled the 'redundancy incentive' function, that was too slow
+  - fix: planner calculate phone-home bonus when signal is disabled
+  - fix: do not show unknown objects in monitor anymore
+  - fix: potential problem with docking in the tutorials
+  - fix: can now take data from a geiger counter 
+
 0.9.9.7
   - re-added Food/Oxygen definitions temporarely to the default profile
   - changed key combination to mute/unmute messages to CTRL+N
