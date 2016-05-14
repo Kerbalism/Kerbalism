@@ -48,7 +48,7 @@ the environment and the availability of resources. Each rule is implemented as:
      waste_ratio        proportion of resource converted to waste
 
      rate               amount of resource consumed per-second (or each 'interval' seconds if interval is > 0)
-     
+
      interval           if 0, the resource is consumed continuously - if > 0, the resource is consumed at every 'interval' seconds
 
      degeneration       value added to the accumulator of this property per-second (or each 'interval' seconds if interval > 0)
@@ -57,9 +57,9 @@ the environment and the availability of resources. Each rule is implemented as:
 
      variance           if specified, the degeneration is multiplied by a kerbal-specific value in [1 - variance, 1 + variance]
 
-     modifier           multiply degeneration with a value taken from the environment:
+     modifier           multiply degeneration with a value taken from the environment, accept a comma-separed list
 
-        'breathable'        only consume and degenerate if outside breathable atmosphere              
+        'breathable'        only consume and degenerate if outside breathable atmosphere
                             FUNC: breathable(v) ? 0.0 : 1.0
 
         'temperature'       make consumption/degeneration proportional to diff between external and survival temp
@@ -70,18 +70,24 @@ the environment and the availability of resources. Each rule is implemented as:
 
         'qol'               make degeneration proportional to quality-of-life factor
                             FUNC: 1.0 / max(living_space * entertainment * other_bonuses, 1.0)
-     
+
+    on_pod              the amount of resource to add to all manned pods, per-crew
+
     on_eva              the amount of resource to take when going on EVA, you probably want this
 
     on_resque           the amount of resources to gift to resque kerbals on first contact
-    
+
+    waste_buffer        how many days worth of waste capacity to add to manned pods, default to 1.0
+
+    hide_waste          if true the waste resource in pods will be hidden, if false the resource definition will determine visibility
+
     breakdown           true to trigger a problematic event on the vessel instead of killing the kerbal
-    
-    warning_threshold   
+
+    warning_threshold
     danger_threshold
     fatal_threshold     the accumulator thresholds, fatal trigger the penality, warning/danger are used to set health icon color
 
-    warning_message     
+    warning_message
     danger_message
     fatal_message
     relax_message       if specified, crossing the respective threshold will send a message to the user, and stop timewarp
@@ -95,7 +101,7 @@ the environment and the availability of resources. Each rule is implemented as:
         $HIS_HER            replaced by 'his' or 'her' based on Kerbal gender
 
 
-   low_threshold   
+   low_threshold
    empty_threshold      the resource level thresholds: all send a message (if specified)
 
    low_message

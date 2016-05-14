@@ -1,4 +1,4 @@
-// Something similar to Snacks!, made using this framework
+// Something similar to Snacks!, made using this framework as an example
 
 
 // ============================================================================
@@ -23,7 +23,7 @@ Rule
 
   warning_message = $ON_VESSEL$KERBAL has no more snacks left
   danger_message = $ON_VESSEL$KERBAL want a snack, badly
-  relax_message = $ON_VESSEL$KERBAL has got a mouthful of snacks now
+  relax_message = $ON_VESSEL$KERBAL is enjoying the little things$NEWLINE<i>Munching a snack after the other</i>
 }
 
 
