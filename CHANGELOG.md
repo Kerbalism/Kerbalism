@@ -1,5 +1,13 @@
 #CHANGELOG
 
+0.9.9.9
+  - science lab EC consumption is simulated in background
+  - science labs EC cost tweaked
+  - fix: ui offsets respect scaling
+  - fix: removed signal lock exploit for unmanned debris
+  - fix: missing data in part prefabs will no longer break background simulation
+  - fix: problem with vessel info and resource names being used instead of rule names
+
 0.9.9.8
   - depend on CommunityResourcePack, for real this time
   - the Realism profile just got better: water filters and more, check it out
