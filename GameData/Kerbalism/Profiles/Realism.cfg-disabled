@@ -27,6 +27,7 @@
 // RULES
 // ============================================================================
 
+
 // CLIMATE
 Rule
 {
@@ -57,6 +58,7 @@ Rule
   waste_name = Waste
   waste_ratio = 0.36498207977208
   waste_buffer = 0.0 // Flush Waste into space by default, unless a greenhouse or waste storage tank is attached.
+  hide_waste = true
   rate = 1.5 // 6 per-day
   interval = 5400.0 // four meals a day
   degeneration = 0.015625 // 64 meals, 16 days
@@ -83,6 +85,7 @@ Rule
   resource_name = Water
   waste_name = WasteWater
   waste_buffer = 2.5 // Large enough, but not enormous. Water needs to be reclaimed/filtered to avoid loss.
+  hide_waste = true
   rate = 0.75 // 3 liters per-day
   interval = 5400.0 // 4 drinks per day
   degeneration = 0.0625 // 16 drinks, 4 days
@@ -124,6 +127,7 @@ Rule
   waste_name = CarbonDioxide
   waste_ratio = 0.75
   waste_buffer = 6.0 // Large holding tank for now, switch to a smaller tank and slow poisoning when waste poisoning implemented.
+  hide_waste = true
   rate = 0.025 // 540 liters of Oxygen consumed per-day
   degeneration = 0.002083333 // 8 minutes
   on_pod = 8100.0 // 15 days of oxygen, 24 days with active scrubber at baseline efficiency
@@ -288,7 +292,7 @@ PART
   subcategory = 0
   title = Inline Water Tank
   manufacturer = Nazari Storage Services
-  description = A small water canister.
+  description = A small water canister, guaranteed to be 'sealed' and 'leak-free' for as long as 1 to 4 hours at sea level. Integrity not guaranteed on impact, in flight, in vacuum, or at high accelerations.
   mass = 0.1
 
   tags = _kerbalism water life
