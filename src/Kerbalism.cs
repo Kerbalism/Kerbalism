@@ -167,7 +167,7 @@ public class Kerbalism : MonoBehaviour
         foreach(var p in rules)
         {
           Rule r = p.Value;
-          
+
           // add rule's waste resource
           double waste_per_day = (r.rate / (r.interval > 0.0 ? r.interval : 1.0)) * daylen * r.waste_ratio;
           double waste_amount = waste_per_day * r.waste_buffer * crew_capacity;
@@ -846,13 +846,14 @@ public class Kerbalism : MonoBehaviour
 
     // if there is an active vessel
     Vessel av = FlightGlobals.ActiveVessel;
-    if (av != null && Lib.IsVessel(av))
+    if (av != null)
     {
       // set control locks if necessary
+      // note: this will lock control on unmanned debris
       setLocks(av);
 
       // manage resque mission mechanics
-      manageResqueMission(av);
+      if (Lib.IsVessel(av)) manageResqueMission(av);
     }
 
     // for each vessel
@@ -1188,19 +1189,19 @@ public class Kerbalism : MonoBehaviour
     if (!DB.Kerbals().ContainsKey(k_name)) return 0.0;
     return DB.KerbalData(k_name).shielding;
   }
-  
-  
+
+
   // hook: Malfunctioned()
   public static bool hook_Malfunctioned(Part part)
   {
-    foreach(var m in part.FindModulesImplementing<Malfunction>())   
+    foreach(var m in part.FindModulesImplementing<Malfunction>())
     {
       if (m.malfunctions > 0) return true;
     }
     return false;
   }
-  
-  
+
+
   // hook: Repair()
   public static void hook_Repair(Part part)
   {

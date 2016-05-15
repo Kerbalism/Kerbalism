@@ -274,7 +274,7 @@ public class Info : MonoBehaviour
       {
         foreach(Rule r in Kerbalism.supply_rules)
         {
-          var vmon = vi.vmon[r.resource_name];
+          var vmon = vi.vmon[r.name];
           render_content(fix_title(r.resource_name + ":"), vmon.level > double.Epsilon ? Lib.HumanReadableDuration(vmon.depletion) : "none");
         }
       }

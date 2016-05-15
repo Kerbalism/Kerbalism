@@ -118,6 +118,9 @@ public class Background : MonoBehaviour
         // for each module
         foreach(ProtoPartModuleSnapshot module in part.modules)
         {
+          // something weird is going on, skip this
+          if (!part_prefab.Modules.Contains(module.moduleName)) continue;
+
           // command module
           if (module.moduleName == "ModuleCommand")
           {
@@ -403,6 +406,23 @@ public class Background : MonoBehaviour
 
               // undo stock behaviour by forcing last_update_time to now
               module.moduleValues.SetValue("lastUpdateTime", Planetarium.GetUniversalTime().ToString());
+            }
+          }
+          // science lab
+          // note: we are only simulating the EC consumption
+          // note: there is no easy way to 'stop' the lab when there isn't enough EC
+          else if (module.moduleName == "ModuleScienceConverter")
+          {
+            // get module from prefab
+            ModuleScienceConverter lab = part_prefab.Modules.GetModules<ModuleScienceConverter>()[0];
+
+            // determine if active
+            bool activated = Convert.ToBoolean(module.moduleValues.GetValue("IsActivated"));
+
+            // if active
+            if (activated)
+            {
+              Lib.RequestResource(vessel, "ElectricCharge", lab.powerRequirement * TimeWarp.fixedDeltaTime);
             }
           }
           // SCANSAT support

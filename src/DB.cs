@@ -84,7 +84,7 @@ public class DB : ScenarioModule
   private notification_data notifications = new notification_data();
 
   // current savegame version
-  private const string current_version = "0.9.9.8";
+  private const string current_version = "0.9.9.9";
 
   // allow global access
   private static DB instance = null;

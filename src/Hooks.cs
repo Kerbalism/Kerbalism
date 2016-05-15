@@ -211,8 +211,8 @@ public static class Kerbalism_Hooks
     if (K == null) return 0.0;
     return (double)K.GetMethod("hook_Shielding").Invoke(null, new Object[]{k_name});
   }
-  
-  
+
+
   // return true if a part in a loaded vessel has one or more malfunctions
   public static bool Malfunctioned(Part part)
   {
@@ -220,8 +220,8 @@ public static class Kerbalism_Hooks
     if (K == null) return false;
     return (bool)K.GetMethod("hook_Malfunctioned").Invoke(null, new Object[]{part});
   }
-  
-  
+
+
   // repair a malfunctioned part in a loaded vessel
   public static void Repair(Part part)
   {

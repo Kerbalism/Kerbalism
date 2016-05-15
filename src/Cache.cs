@@ -69,7 +69,7 @@ public class Cache : MonoBehaviour
     return info;
   }
 
-
+  // calculate a cache entry for the vessel
   static vessel_info Compute(Vessel v)
   {
     vessel_info info = new vessel_info();

@@ -469,11 +469,12 @@ public class Signal : MonoBehaviour
   // return link status of a vessel
   public static link_data Link(Vessel v)
   {
-    // play nice with RemoteTech and AntennaRange
+    // assume linked if signal mechanic is disabled
     if (!Kerbalism.features.signal) return new link_data(true, link_status.direct_link, double.MaxValue);
 
-    // if, for some reasons, there isn't link data for the vessel, return 'no antenna'
-    // note: this for example may happen when a resque mission vessel get enabled
+    // if there isn't link data for the vessel, return 'no antenna'
+    // this for example may happen when a resque mission vessel get enabled
+    // this also can happen when Link() is called with a non-valid vessel (eg: debris)
     link_data ld;
     if (!instance.links.TryGetValue(v.id, out ld)) ld.status = link_status.no_antenna;
 
