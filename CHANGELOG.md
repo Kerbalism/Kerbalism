@@ -1,5 +1,25 @@
 #CHANGELOG
 
+1.0.0.0
+  - optimized everything
+  - improved planner calculations, thanks Barrin!
+  - contracts: put a kerbal in orbit for 30 days, cross the radiation belt, harvest food in space
+  - temperature simulation and storm mechanic will work for arbitrarily deep body hierarchies
+  - made the telemetry experiment more interesting
+  - only show belt warnings if a radiation rule is present
+  - MM patch for Tundra Exploration
+  - tweaked entertainment factor
+  - realism profile has been tweaked
+  - barebone profile now also include radiation mechanic
+  - science tweaks support for Dmagic and Universal Storage experiments
+  - coverters and drills background simulation consider trait bonus
+  - fix: correct sunlight evaluation at extreme timewarp
+  - fix: problem with interval-based rules at extreme timewarp
+  - fix: resource-related breakdown events
+  - fix: muting messages will also prevent stopwarp
+  - fix: resources given to resque mission when claw is used
+  - fix: geiger counter is considered for satellite contracts
+
 0.9.9.9
   - science lab EC consumption is simulated in background
   - science labs EC cost tweaked
@@ -18,7 +38,7 @@
   - right click in the planner menu to go back in the lists
   - rule: can be influenced by a comma-separed list of modifiers
   - rule: waste buffer size configurable
-  - rule: can force waste resources to be hidden in pods    
+  - rule: can force waste resources to be hidden in pods
   - new module: Recycler, full support in planner and monitor
   - Greenhouse module can consume an optional input resource
   - more hooks, check them out
@@ -26,7 +46,7 @@
   - fix: planner calculate phone-home bonus when signal is disabled
   - fix: do not show unknown objects in monitor anymore
   - fix: potential problem with docking in the tutorials
-  - fix: can now take data from a geiger counter 
+  - fix: can now take data from a geiger counter
 
 0.9.9.7
   - re-added Food/Oxygen definitions temporarely to the default profile
