@@ -1,23 +1,35 @@
-// This profile is geared toward more realism oriented players.
+//    _____  _____ ___ ___ ___ __  __ ___ _  _ _____ _   _
+//   | __\ \/ / _ \ __| _ \_ _|  \/  | __| \| |_   _/_\ | |
+//   | _| >  <|  _/ _||   /| || |\/| | _|| .` | | |/ _ \| |__
+//   |___/_/\_\_| |___|_|_\___|_|  |_|___|_|\_| |_/_/ \_\____|
+//
+//          This profile may break support in other mods
+//                    Use at your own risk
+//
+// A profile geared toward more realism oriented players.
 // In comparison to the default profile, this one adds water, has more realistic
 // consumption rates, and provides a water filtration mechanism on command pods.
-// Special thanks to Barrin
+// Author: Barrin
 
 
 // ============================================================================
 // ENABLE FEATURES
 // ============================================================================
 
+
 // comment out to disable the signal mechanic
 // disabled automatically if RemoteTech or AntennaRange are detected
 @Kerbalism:FOR[EnableSignal] {}
+
 
 // comment out to disable malfunctions
 // disabled automatically if DangIt is detected
 @Kerbalism:FOR[EnableMalfunction] {}
 
+
 // comment out to remove scrubbers from the game
 @Kerbalism:FOR[EnableScrubber] {}
+
 
 // comment out to remove shielding from the game
 @Kerbalism:FOR[EnableShielding] {}
@@ -56,14 +68,14 @@ Rule
   name = Food
   resource_name = Food
   waste_name = Waste
-  waste_ratio = 0.36498207977208
+  waste_ratio = 0.358453746438747
   waste_buffer = 0.0 // Flush Waste into space by default, unless a greenhouse or waste storage tank is attached.
-  hide_waste = true
-  rate = 1.5 // 6 per-day
-  interval = 5400.0 // four meals a day
-  degeneration = 0.015625 // 64 meals, 16 days
-  on_pod = 48.0 // 8 days of supply (+16 of degen before starvation, for a total of 24 days)
-  on_resque = 3.0 // Less than one day of food (but the slow degeneration adds plenty of time.)
+  hidden_waste = true
+  rate = 1.0 // 1 unit per meal
+  interval = 21600.0 // 1 meal every 6-hour day
+  degeneration = 0.0625 // 16 meals, 16 days
+  on_pod = 8.0 // 8 days of supply (+16 days of degeneration before starvation, for a total of 24 days)
+  on_resque = 1.0 // One day of food (but the slow degeneration adds plenty of time.)
 
   warning_threshold = 0.5625 // 1 week remaining
   danger_threshold = 0.8125 // 3 days remaining
@@ -78,19 +90,20 @@ Rule
   refill_message = $VESSEL now has a supply of food onboard$NEWLINE<i>Double rations for everybody.</i>
 }
 
+
 // WATER
 Rule
 {
   name = Water
   resource_name = Water
   waste_name = WasteWater
-  waste_buffer = 2.5 // Large enough, but not enormous. Water needs to be reclaimed/filtered to avoid loss.
-  hide_waste = true
-  rate = 0.75 // 3 liters per-day
+  waste_buffer = 2.0 // Large enough, but not enormous. Water needs to be reclaimed/filtered to avoid loss.
+  hidden_waste = true
+  rate = 0.25 // 0.25 liters per drink
   interval = 5400.0 // 4 drinks per day
   degeneration = 0.0625 // 16 drinks, 4 days
-  on_pod = 12.0 // 4 days of supply per crew member (+12 days with default Filtration Material)
-  on_resque = 18.0 // 6 days of water (+4 days with Filtration Material)
+  on_pod = 4.0 // 4 days of supply per crew member (+default Filtration Material)
+  on_resque = 6.0 // 6 days of water (+default Filtration Material)
 
   warning_threshold = 0.25 // 3 days remaining
   danger_threshold = 0.75 // 1 day remaining
@@ -104,6 +117,7 @@ Rule
   empty_message = There is no more clean water on $VESSEL$NEWLINE<i>The crew is preparing for the inevitable.</i>
   refill_message = $VESSEL now has a supply of clean water available$NEWLINE<i>Drinks all around.</i>
 }
+
 
 // WATER FILTRATION
 Rule
@@ -119,6 +133,7 @@ Rule
   refill_message = $VESSEL has been resupplied with water filtration material$NEWLINE<i>Everyone can stop hoarding their water now.</i>
 }
 
+
 // OXYGEN
 Rule
 {
@@ -126,13 +141,13 @@ Rule
   resource_name = Oxygen
   waste_name = CarbonDioxide
   waste_ratio = 0.75
-  waste_buffer = 6.0 // Large holding tank for now, switch to a smaller tank and slow poisoning when waste poisoning implemented.
-  hide_waste = true
-  rate = 0.025 // 540 liters of Oxygen consumed per-day
+  waste_buffer = 45.0 // Holding tank for now, switch to a smaller tank and slow poisoning when waste poisoning implemented.
+  hidden_waste = true
+  rate = 0.00625 // 135 liters of Oxygen consumed per 6-hour day
   degeneration = 0.002083333 // 8 minutes
-  on_pod = 8100.0 // 15 days of oxygen, 24 days with active scrubber at baseline efficiency
-  on_eva = 90.0 // One hour of oxygen
-  on_resque = 5400.0 // 10 days of oxygen
+  on_pod = 2700.0 // 20 days of oxygen, 32 days with active scrubber at baseline efficiency
+  on_eva = 22.5 // One hour of oxygen
+  on_resque = 1350.0 // 10 days of oxygen
   modifier = breathable
 
   warning_message = $ON_VESSEL$KERBAL can't breathe.
@@ -144,6 +159,7 @@ Rule
   empty_message = There is no more oxygen on $VESSEL$NEWLINE<i>Everybody stop breathing!</i>
   refill_message = $VESSEL oxygen reserves restored$NEWLINE<i>The crew is taking a breather.</i>
 }
+
 
 // QUALITY OF LIFE
 Rule
@@ -159,6 +175,7 @@ Rule
   // no fatal_message because breakdown message is generated automatically
   // no relax_message because there is no recovery from stress
 }
+
 
 // RADIATION POISONING
 Rule
@@ -182,6 +199,7 @@ Rule
 // Customize resource containers
 // ============================================================================
 
+
 @PART[kerbalism-food-small] // 8 day supply of food
 {
   @title = Small Supply Container
@@ -190,8 +208,8 @@ Rule
   @mass = 0.1
   @RESOURCE[Food]
   {
-    @amount = 48.0
-    @maxAmount = 48.0
+    @amount = 8.0
+    @maxAmount = 8.0
   }
 }
 
@@ -204,8 +222,8 @@ Rule
   @mass = 0.5
   @RESOURCE[Food]
   {
-    @amount = 240.0
-    @maxAmount = 240.0
+    @amount = 40.0
+    @maxAmount = 40.0
   }
 
   RESOURCE
@@ -216,6 +234,7 @@ Rule
   }
 }
 
+
 @PART[kerbalism-food-250] // 240 day supply for 1 crew member
 {
   @title = Large Supply Container
@@ -223,35 +242,36 @@ Rule
 
   @RESOURCE[Food]
   {
-    @amount = 1440.0
-    @maxAmount = 1440.0
+    @amount = 320.0
+    @maxAmount = 320.0
   }
 
   RESOURCE
   {
     name = FiltrationMaterial
-    amount = 60.0
-    maxAmount = 60.0
+    amount = 80.0
+    maxAmount = 80.0
   }
 }
+
 
 @PART[kerbalism-oxygen-radial]
 {
   @RESOURCE[Oxygen]
   {
     @name = Oxygen
-    @amount = 13500.0
-    @maxAmount = 13500.0
+    @amount = 4050.0
+    @maxAmount = 4050.0
   }
 }
 
-@PART[RadialOxygenBig]
+@PART[kerbalism-oxygen-radial-big|RadialOxygenBig]
 {
   @RESOURCE[Oxygen]
   {
     @name = Oxygen
-    @amount = 108000.0
-    @maxAmount = 108000.0
+    @amount = 27000.0
+    @maxAmount = 27000.0
   }
 }
 
@@ -260,7 +280,7 @@ PART
 {
   name = kerbalism-water-small
   module = Part
-  author = Barrin // tweaked from Nazari1382's small inline food canister
+  author = Nazari1382 // re-textured by Barrin
 
   MODEL
   {
@@ -300,87 +320,16 @@ PART
   RESOURCE
   {
     name = Water
-    amount = 48
-    maxAmount = 48
+    amount = 8
+    maxAmount = 8
   }
 }
 
-
-// ============================================================================
-// Enable Life support parts from Universal Storage parts if it is installed.
-// ============================================================================
-
-@Settings:FOR[TacLifeSupport]:NEEDS[UniversalStorage] {}
-
-
-// ============================================================================
-// Adjust Universal Storage food/resource values for balance.
-// ============================================================================
-
-@PART[US_Radial_R40_Food]:NEEDS[UniversalStorage]:AFTER[UniversalStorage]
-{
-  @RESOURCE[Food]
-  {
-    @amount = 24
-    @maxAmount = 24
-  }
-}
-
-@PART[US_1R320_Wedge_Food]:NEEDS[UniversalStorage]:AFTER[UniversalStorage]
-{
-  @RESOURCE[Food]
-  {
-    @amount = 144
-    @maxAmount = 144
-  }
-}
-
-@PART[US_2R340_Radial_Oxygen]:NEEDS[UniversalStorage]:AFTER[UniversalStorage]
-{
-  @RESOURCE[Oxygen]
-  {
-    @amount = 6750
-    @maxAmount = 6750
-  }
-}
-
-@PART[US_1R340_Wedge_Oxygen]:NEEDS[UniversalStorage]:AFTER[UniversalStorage]
-{
-  @RESOURCE[Oxygen]
-  {
-    @amount = 40500
-    @maxAmount = 40500
-  }
-}
-
-@PART[US_Radial_R30_Water]:NEEDS[UniversalStorage]:AFTER[UniversalStorage]
-{
-  @RESOURCE[Water]
-  {
-    @amount = 12
-    @maxAmount = 12
-  }
-}
-
-@PART[US_1R360_Wedge_Water]:NEEDS[UniversalStorage]:AFTER[UniversalStorage]
-{
-  @RESOURCE[Water]
-  {
-    @amount = 24
-    @maxAmount = 24
-  }
-
-  RESOURCE
-  {
-    name = FiltrationMaterial
-    amount = 5.0
-    maxAmount = 5.0
-  }
-}
 
 // ============================================================================
 // Add scrubbers and water recyclers to command pods
 // ============================================================================
+
 
 @PART[*]:HAS[@MODULE[ModuleCommand],#CrewCapacity[>0]]
 {
@@ -399,7 +348,7 @@ PART
     @ec_rate *= #$/CrewCapacity$
 
     // change waste/s per-crew
-    co2_rate = 0.03
+    co2_rate = 0.006
     @co2_rate *= #$/CrewCapacity$
   }
 
@@ -412,20 +361,19 @@ PART
     waste_name = WasteWater // waste resource recycled
     filter_name = FiltrationMaterial // filtration material used up in the process
 
-    ec_rate = 4.0 // ec per second
-    waste_rate = 0.12 // waste removed per second
-    filter_rate = 0.01 // filtration material used up per second
+    //Each unit of filtration material can clean 4 units of waste water at the total cost of 400 EC
+    //1 unit of water per day per kerbonaut, so total cost of 100 EC per kerbonaut each day
 
-    //Each unit of filtration material can clean 12 units of waste water at the total cost of 400 EC
-    //3 units of water per day per kerbonaut, so total cost of 100 EC per kerbonaut each day
+    ec_rate = 0.00625 // ec per second
+    waste_rate = 0.0000625 // waste removed per second
+    filter_rate = 0.000015625 // filtration material used up per second
 
-    // Scale water filtration system control variables by crew size
     @ec_rate *= #$/CrewCapacity$
     @waste_rate *= #$/CrewCapacity$
     @filter_rate *= #$/CrewCapacity$
 
     // disabled by default when added to a vessel
-    is_enabled = false
+    // is_enabled = false
   }
 
   RESOURCE
@@ -448,6 +396,7 @@ PART
 // Customize greenhouse
 // ============================================================================
 
+
 @PART[Greenhouse]
 {
   @MODULE[Greenhouse]
@@ -462,10 +411,10 @@ PART
     @ec_rate = 0.5
 
     // change waste rate
-    @waste_rate = 0.0003 // requires slightly less than waste/s for crew of 3
+    @waste_rate = 0.00004 // requires slightly less than waste/s for crew of 3
 
     // change harvest size
-    @harvest_size = 1440.0 // food consumed for 3 crew over 80 days at 6 food per day == 1440 food
+    @harvest_size = 240.0 // food consumed for 3 crew over 80 days at 1 food per day == 240 food
 
     // change growth rate
     @growth_rate = 0.0000005787 // 80 days
@@ -474,9 +423,10 @@ PART
   RESOURCE
   {
     name = Waste
-    isTweakable = false
+    isTweakable = true
     isVisible = true
-    maxAmount = 90.0 // Large enough to store ~2 weeks of waste for a 3 man crew
+    amount = 0.0
+    maxAmount = 15.0 // Large enough to store ~2 weeks of waste for a 3 man crew
   }
 }
 
@@ -484,6 +434,7 @@ PART
 // ============================================================================
 // Filtration material
 // ============================================================================
+
 
 // Cover the 'wet cost' of Filtration Material added to parts
 @PART[*]:HAS[@RESOURCE[FiltrationMaterial]]

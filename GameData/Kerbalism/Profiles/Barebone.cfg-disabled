@@ -1,4 +1,8 @@
-// Just play with the quality of life mechanic, without anything else
+// Just play with the radiation and quality of life mechanic, without anything else
+
+
+// comment out to remove radiation from the game
+@Kerbalism:FOR[EnableShielding] {}
 
 
 // Quality of Life
@@ -14,6 +18,25 @@ Rule
   danger_message = $ON_VESSEL$KERBAL is about to breakdown$NEWLINE<i>Starting to hear voices</i>
   // no fatal_message because breakdown message is generated automatically per-event
   // no relax_message because there is no recovery from stress
+}
+
+
+// Radiation
+Rule
+{
+  name = Radiation
+  degeneration = 1.0 // just use the modifier
+  variance = 0.1 // add per-kerbal variance
+  modifier = radiation
+
+  warning_threshold = 15.0 // in rad
+  danger_threshold = 22.5 // in rad
+  fatal_threshold = 30.0 // in rad
+
+  warning_message = $ON_VESSEL$KERBAL has been exposed to intense radiation
+  danger_message = $ON_VESSEL$KERBAL is reporting symptoms of radiation poisoning
+  fatal_message = $ON_VESSEL$KERBAL died after being exposed to extreme radiation
+  // no relax_message because there is no recovery from radiation
 }
 
 
@@ -33,6 +56,5 @@ Rule
 // Remove resource-related parts
 !PART[kerbalism-food-*] {}
 !PART[kerbalism-oxygen-*] {}
-!PART[RadialOxygenBig] {}
 !PART[Greenhouse] {}
 

@@ -1,7 +1,7 @@
 // This profile emulate the life-support aspect of TAC-LS, while keeping the
 // climate, quality-of-life and radiation of Kerbalism. You will need some
 // Water containers, as there are none included in Kerbalism.
-// Special thanks to Rhedd
+// Author: Rhedd
 
 
 // ============================================================================
@@ -177,7 +177,7 @@ Rule
 }
 
 
-@PART[kerbalism-oxygen-*|RadialOxygenBig]
+@PART[kerbalism-oxygen-*]
 {
   @RESOURCE[Oxygen]
   {
@@ -221,5 +221,6 @@ Rule
 // ============================================================================
 // Provide TAC-LS, as far as ModuleManager is concerned, to unlock parts
 // ============================================================================
+
 
 @Kerbalism:FOR[TacLifeSupport] {}

@@ -79,7 +79,9 @@ the environment and the availability of resources. Each rule is implemented as:
 
     waste_buffer        how many days worth of waste capacity to add to manned pods, default to 1.0
 
-    hide_waste          if true the waste resource in pods will be hidden, if false the resource definition will determine visibility
+    hidden_waste        if true the waste resource in pods will be hidden, if false the resource definition will determine visibility
+
+    massless_waste      if true the waste resource in pods will be massless, if false the resource definition will determine density
 
     breakdown           true to trigger a problematic event on the vessel instead of killing the kerbal
 

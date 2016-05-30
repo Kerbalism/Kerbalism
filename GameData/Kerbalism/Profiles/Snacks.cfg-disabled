@@ -18,12 +18,14 @@ Rule
   on_eva = 1.0
   on_resque = 50.0
 
-  warning_threshold = 0.2
+  warning_threshold = 0.4
   danger_threshold = 0.8
 
-  warning_message = $ON_VESSEL$KERBAL has no more snacks left
-  danger_message = $ON_VESSEL$KERBAL want a snack, badly
-  relax_message = $ON_VESSEL$KERBAL is enjoying the little things$NEWLINE<i>Munching a snack after the other</i>
+  danger_message = $ON_VESSEL$KERBAL is hungry$NEWLINE<i>Reconsidering his career decision</i>
+  relax_message = $ON_VESSEL$KERBAL is munching a snack after the other$NEWLINE<i>Enjoying the little things</i>
+
+  low_message = On $VESSEL, the crew is almost out of snacks$NEWLINE<i>Digging the hidden stash below the command panel</i>
+  empty_message = On $VESSEL, the crew just ate the last snack$NEWLINE<i>At least it was delicious</i>
 }
 
 
@@ -61,10 +63,15 @@ Rule
 
 @PART[kerbalism-food-*]
 {
-  @RESOURCE[Food] { @name = Snacks }
+  @RESOURCE[Food]
+  {
+    @name = Snacks
+    @amount *= 0.25
+    @maxAmount *= 0.25
+  }
 }
 
-!PART[kerbalism-oxygen-*|RadialOxygenBig] {}
+!PART[kerbalism-oxygen-*] {}
 
 
 // ============================================================================
