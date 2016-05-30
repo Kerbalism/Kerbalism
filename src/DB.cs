@@ -64,12 +64,13 @@ public class notification_data
   public uint   first_belt_crossing = 0;            // record first time the radiation belt is crossed, to show tutorial notification
   public uint   first_signal_loss   = 0;            // record first signal loss, to show tutorial notification
   public uint   first_malfunction   = 0;            // record first malfunction, to show tutorial notification
+  public uint   first_space_harvest = 0;            // record first greenhouse harvest in space
 }
 
 
 // store, serialize and make globally accessible data
 [KSPScenario(ScenarioCreationOptions.AddToAllGames, new GameScenes[]{GameScenes.SPACECENTER, GameScenes.TRACKSTATION, GameScenes.FLIGHT})]
-public class DB : ScenarioModule
+public sealed class DB : ScenarioModule
 {
   // store data per-kerbal
   private Dictionary<string, kerbal_data> kerbals = new Dictionary<string, kerbal_data>();
@@ -84,7 +85,7 @@ public class DB : ScenarioModule
   private notification_data notifications = new notification_data();
 
   // current savegame version
-  private const string current_version = "0.9.9.9";
+  private const string current_version = "1.0.0.0";
 
   // allow global access
   private static DB instance = null;
@@ -175,7 +176,7 @@ public class DB : ScenarioModule
         vd.scansat_id = new List<uint>();
         foreach(string s in vessel_node.GetValues("scansat_id")) // since 0.9.9.5
         {
-          vd.scansat_id.Add(Convert.ToUInt32(s));
+          vd.scansat_id.Add(Lib.Parse.ToUInt(s));
         }
         vessels.Add(new Guid(vessel_node.name), vd);
       }
@@ -207,6 +208,7 @@ public class DB : ScenarioModule
       notifications.first_belt_crossing = Lib.ConfigValue(n_node, "first_belt_crossing", 0u);
       notifications.first_signal_loss   = Lib.ConfigValue(n_node, "first_signal_loss", 0u);
       notifications.first_malfunction   = Lib.ConfigValue(n_node, "first_malfunction", 0u);
+      notifications.first_space_harvest = Lib.ConfigValue(n_node, "first_space_harvest", 0u);
     }
 
 
@@ -323,6 +325,7 @@ public class DB : ScenarioModule
     notifications_node.AddValue("first_belt_crossing", notifications.first_belt_crossing.ToString());
     notifications_node.AddValue("first_signal_loss", notifications.first_signal_loss.ToString());
     notifications_node.AddValue("first_malfunction", notifications.first_malfunction.ToString());
+    notifications_node.AddValue("first_space_harvest", notifications.first_space_harvest.ToString());
   }
 
 

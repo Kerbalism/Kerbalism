@@ -13,7 +13,7 @@ namespace KERBALISM {
 
 
 [KSPAddon(KSPAddon.Startup.MainMenu, true)]
-public class Info : MonoBehaviour
+public sealed class Info : MonoBehaviour
 {
   // store data for the space scanning
   class space_details
@@ -229,7 +229,7 @@ public class Info : MonoBehaviour
   void render_content(string desc, string value)
   {
     GUILayout.BeginHorizontal(row_style);
-    GUILayout.Label(desc + "<b>" + value + "</b>", content_style);
+    GUILayout.Label(Lib.BuildString(desc, "<b>", value, "</b>"), content_style);
     GUILayout.EndHorizontal();
   }
 
@@ -241,7 +241,7 @@ public class Info : MonoBehaviour
 
 
   // temp, totally
-  string fix_title(string title) { return title.Length < 9 ? title + "\t\t" : title + "\t"; }
+  string fix_title(string title) { return Lib.BuildString(title, ":", title.Length < 8 ? "\t\t" : "\t"); }
 
 
   void render_info()
@@ -249,16 +249,19 @@ public class Info : MonoBehaviour
     // find vessel
     Vessel v = FlightGlobals.Vessels.Find(k => k.id == vessel_id);
 
-    // forget vessel if it doesn't exist anymore, or if its a dead eva kerbal
-    if (v == null || EVA.IsDead(v)) { vessel_id = Guid.Empty; return; }
+    // forget vessel if it doesn't exist anymore
+    if (v == null) { vessel_id = Guid.Empty; return; }
 
     // get info from the cache
     vessel_info vi = Cache.VesselInfo(v);
 
+    // forget vessel if it is dead eva kerbal
+    if (vi.is_eva_dead) { vessel_id = Guid.Empty; return; }
+
     render_title("ENVIRONMENT");
     render_content("Temperature:\t", Lib.HumanReadableTemp(vi.temperature));
     render_content("Radiation:\t", Lib.HumanReadableRadiationRate(vi.env_radiation));
-    render_content("Atmosphere:\t", v.mainBody.atmosphere ? " yes" + (vi.breathable ? " <i>(breathable)</i>" : "") : "no");
+    render_content("Atmosphere:\t", v.mainBody.atmosphere ? Lib.BuildString(" yes", (vi.breathable ? " <i>(breathable)</i>" : "")) : "no");
     render_space();
 
     // render supplies
@@ -267,15 +270,13 @@ public class Info : MonoBehaviour
       render_title("SUPPLIES");
       if (Kerbalism.ec_rule != null)
       {
-        var vmon = vi.vmon[Kerbalism.ec_rule.name];
-        render_content(fix_title("Battery:"), vmon.level > double.Epsilon ? Lib.HumanReadableDuration(vmon.depletion) : "none");
+        render_content(fix_title("Battery"), Cache.ResourceInfo(v, "ElectricCharge").level > double.Epsilon ? Lib.HumanReadableDuration(Kerbalism.ec_rule.Depletion(v)) : "none");
       }
-      if (Lib.CrewCapacity(v) > 0)
+      if (vi.crew_capacity > 0)
       {
         foreach(Rule r in Kerbalism.supply_rules)
         {
-          var vmon = vi.vmon[r.name];
-          render_content(fix_title(r.resource_name + ":"), vmon.level > double.Epsilon ? Lib.HumanReadableDuration(vmon.depletion) : "none");
+          render_content(fix_title(r.resource_name), Cache.ResourceInfo(v, r.resource_name).level > double.Epsilon ? Lib.HumanReadableDuration(r.Depletion(v)) : "none");
         }
       }
       render_space();
@@ -311,13 +312,13 @@ public class Info : MonoBehaviour
         space_details det = space.Value;
 
         string radiation_txt = vi.env_radiation > double.Epsilon
-          ? " <i>(" + Lib.HumanReadableRadiationRate(vi.env_radiation * (1.0 - det.shielding)) + ")</i>"
+          ? Lib.BuildString(" <i>(", Lib.HumanReadableRadiationRate(vi.env_radiation * (1.0 - det.shielding)), ")</i>")
           : "";
 
-        render_title(space_name.Length > 0 ? space_name.ToUpper() : v.isEVA ? "EVA" : "VESSEL");
+        render_title(space_name.Length > 0 ? Lib.Epsilon(space_name.ToUpper(), 26) : v.isEVA ? "EVA" : "VESSEL");
         render_content("Living space:\t", QualityOfLife.LivingSpaceToString(det.living_space));
         render_content("Entertainment:\t", QualityOfLife.EntertainmentToString(det.entertainment));
-        render_content("Shielding:\t", Radiation.ShieldingToString(det.shielding) + radiation_txt);
+        render_content("Shielding:\t", Lib.BuildString(Radiation.ShieldingToString(det.shielding), radiation_txt));
         render_space();
       }
     }
@@ -336,23 +337,23 @@ public class Info : MonoBehaviour
           {
             var kmon = DB.KmonData(c.name, r.name);
             var bar = Lib.ProgressBar(23, kmon.problem, r.warning_threshold, r.danger_threshold, r.fatal_threshold, kd.disabled > 0 ? "cyan" : "");
-            render_content(fix_title(r.name + ":"), bar);
+            render_content(fix_title(r.name), bar);
           }
         }
-        if (kd.space_name.Length > 0 && !v.isEVA) render_content("Inside:\t\t", kd.space_name);
+        if (kd.space_name.Length > 0 && !v.isEVA) render_content("Inside:\t\t", Lib.Epsilon(kd.space_name, 18));
         if (kd.disabled > 0) render_content("Hibernated:\t", "yes");
         render_space();
       }
     }
 
     // for each greenhouse
-    var greenhouses = Greenhouse.GetGreenhouses(v);
+    var greenhouses = Greenhouse.PartialData(v);
     foreach(var greenhouse in greenhouses)
     {
       render_title("GREENHOUSE");
-      render_content("Lighting:\t\t", (greenhouse.lighting * 100.0).ToString("F0") + "%");
-      render_content("Growth:\t\t", (greenhouse.growth * 100.0).ToString("F0") + "%");
-      render_content("Harvest:\t\t", Lib.HumanReadableDuration(greenhouse.growing > double.Epsilon ? 1.0 / greenhouse.growing : 0.0));
+      render_content("Lighting:\t\t", Lib.HumanReadablePerc(greenhouse.lighting));
+      render_content("Growth:\t\t", Lib.HumanReadablePerc(greenhouse.growth));
+      render_content("Harvest:\t\t", Lib.HumanReadableDuration(greenhouse.growing > double.Epsilon ? (1.0 - greenhouse.growth) / greenhouse.growing : 0.0));
       render_space();
     }
   }

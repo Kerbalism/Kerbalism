@@ -14,7 +14,7 @@ namespace KERBALISM {
 
 
 [KSPAddon(KSPAddon.Startup.MainMenu, true)]
-public class Notifications : MonoBehaviour
+public sealed class Notifications : MonoBehaviour
 {
   // store a notification
   public class Entry

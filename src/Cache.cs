@@ -11,10 +11,59 @@ using UnityEngine;
 namespace KERBALISM {
 
 
+
 public class vessel_info
 {
+  public vessel_info(Vessel v)
+  {
+    // determine if this is a valid vessel
+    is_vessel = Lib.IsVessel(v);
+    if (!is_vessel) return;
+
+    // determine if this is a resque mission vessel
+    is_resque = Lib.IsResqueMission(v);
+    if (is_resque) return;
+
+    // determine if this is an EVA death kerbal
+    is_eva_dead = EVA.IsDead(v);
+    if (is_eva_dead) return;
+
+    // calculate crew capacity for the vessel
+    crew_capacity = Lib.CrewCapacity(v);
+
+    // calculate vessel position
+    position = Lib.VesselPosition(v);
+
+    // determine if in sunlight, calculate sun direction and distance
+    sunlight = Sim.RaytraceBody(v, Sim.Sun(), out sun_dir, out sun_dist) ? 1.0 : 0.0;
+
+    // if the orbit length vs simulation step is lower than an acceptable threshold, use discrete sun visibility
+    if (v.mainBody.flightGlobalsIndex != 0)
+    {
+      double orbit_period = Sim.OrbitalPeriod(v);
+      if (orbit_period / TimeWarp.fixedDeltaTime < 16.0) sunlight = 1.0 - Sim.ShadowPeriod(v) / orbit_period;
+    }
+
+    // calculate temperature at vessel position
+    temperature = Sim.Temperature(v, sunlight);
+
+    // calculate radiation
+    cosmic_radiation = Radiation.CosmicRadiation(v);
+    belt_radiation = Radiation.BeltRadiation(v);
+    storm_radiation = Radiation.StormRadiation(v, sunlight);
+    env_radiation = cosmic_radiation + belt_radiation + storm_radiation;
+
+    // calculate atmospheric parameters
+    atmo_factor = Sim.AtmosphereFactor(v.mainBody, position, sun_dir);
+    breathable = Sim.Breathable(v);
+  }
+
+  public bool     is_vessel;          // true if this is a valid vessel
+  public bool     is_resque;          // true if this is a resque mission vessel
+  public bool     is_eva_dead;        // true if this an EVA death
+  public int      crew_capacity;      // crew capacity of the vessel
   public Vector3d position;           // vessel position
-  public bool     sunlight;           // if the vessel is in direct sunlight
+  public double   sunlight;           // if the vessel is in direct sunlight
   public Vector3d sun_dir;            // normalized vector from vessel to sun
   public double   sun_dist;           // distance from vessel to sun
   public double   temperature;        // vessel temperature
@@ -22,20 +71,29 @@ public class vessel_info
   public double   belt_radiation;     // radiation from belt if inside one
   public double   storm_radiation;    // radiation from coronal mass ejection
   public double   env_radiation;      // sun of all incoming radiation
+  public double   atmo_factor;        // proportion of flux not blocked by atmosphere
   public bool     breathable;         // true if inside breathable atmosphere
-  public Dictionary<string, vmon_cache> vmon = new Dictionary<string, vmon_cache>();
+}
+
+
+public class resource_info
+{
+  public resource_info(Vessel v, string resource_name)
+  {
+    amount = Lib.Resource.Amount(v, resource_name);
+    capacity = Lib.Resource.Capacity(v, resource_name);
+    level = capacity > double.Epsilon ? amount / capacity : 0.0;
+  }
+
+  public double amount;               // amount of resource
+  public double capacity;             // capacity of resource
+  public double level;                // amount vs capacity, or 1 if there is no capacity
 }
 
 
 [KSPAddon(KSPAddon.Startup.MainMenu, true)]
-public class Cache : MonoBehaviour
+public sealed class Cache : MonoBehaviour
 {
-  // cache of vessel info, recomputed every simulation step
-  Dictionary<Guid, vessel_info> vessels = new Dictionary<Guid, vessel_info>();
-
-  // permit global access
-  private static Cache instance = null;
-
   // ctor
   Cache()
   {
@@ -46,57 +104,59 @@ public class Cache : MonoBehaviour
     DontDestroyOnLoad(this);
   }
 
+
   void FixedUpdate()
   {
-    // clear the cache, that is recomputed every simulation step
+    // clear the vessel and resource cache, that are recomputed every simulation step
     vessels.Clear();
+    resources.Clear();
   }
 
-  // get vessel info from the cache, or compute a new one and add it to the cache
+
   public static vessel_info VesselInfo(Vessel v)
   {
+    // get vessel id
+    UInt32 id = Lib.VesselID(v);
+
     // get the info from the cache, if it exist
     vessel_info info;
-    if (instance.vessels.TryGetValue(v.id, out info)) return info;
+    if (instance.vessels.TryGetValue(id, out info)) return info;
 
     // compute vessel info
-    info = Compute(v);
+    info = new vessel_info(v);
 
     // store vessel info in the cache
-    instance.vessels.Add(v.id, info);
+    instance.vessels.Add(id, info);
 
     // return the vessel info
     return info;
   }
 
-  // calculate a cache entry for the vessel
-  static vessel_info Compute(Vessel v)
+
+  public static resource_info ResourceInfo(Vessel v, string resource_name)
   {
-    vessel_info info = new vessel_info();
-    info.position = Lib.VesselPosition(v);
-    info.sunlight = Sim.RaytraceBody(v, Sim.Sun(), out info.sun_dir, out info.sun_dist);
-    info.temperature = Sim.Temperature(v, info.sunlight);
-    info.cosmic_radiation = Radiation.CosmicRadiation(v);
-    info.belt_radiation = Radiation.BeltRadiation(v);
-    info.storm_radiation = Radiation.StormRadiation(v, info.sunlight);
-    info.env_radiation = info.cosmic_radiation + info.belt_radiation + info.storm_radiation;
-    info.breathable = Sim.Breathable(v);
-    foreach(var p in Kerbalism.rules)
-    {
-      Rule r = p.Value;
-      if (r.resource_name.Length > 0)
-      {
-        var vmon = new vmon_cache();
-        vmon.depletion = r.EstimateLifetime(v);
-        double amount = Lib.GetResourceAmount(v, r.resource_name);
-        double capacity = Lib.GetResourceCapacity(v, r.resource_name);
-        vmon.level = capacity > double.Epsilon ? amount / capacity : 1.0; //< level is 1 with no capacity
-        info.vmon.Add(p.Value.name, vmon);
-      }
-    }
+    resource_info info;
+    UInt32 id = Lib.CombinedID(Lib.VesselID(v), Lib.Hash32(resource_name));
+    if (instance.resources.TryGetValue(id, out info)) return info;
+
+    info = new resource_info(v, resource_name);
+
+    instance.resources.Add(id, info);
+
     return info;
   }
+
+
+  // permit global access
+  private static Cache instance = null;
+
+  // vessel cache
+  private Dictionary<UInt32, vessel_info> vessels = new Dictionary<UInt32, vessel_info>();
+
+  // resource cache
+  private Dictionary<UInt32, resource_info> resources = new Dictionary<UInt32, resource_info>();
 }
+
 
 
 } // KERBALISM

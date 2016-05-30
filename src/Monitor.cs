@@ -5,14 +5,13 @@
 
 using System;
 using System.Collections.Generic;
-using LibNoise.Unity.Operator;
 using UnityEngine;
 
 
 namespace KERBALISM {
 
 
-public class Monitor
+public sealed class Monitor
 {
   // store last vessel clicked in the monitor ui, if any
   Guid last_clicked_id;
@@ -132,12 +131,10 @@ public class Monitor
 
   GUIContent indicator_ec(Vessel v)
   {
-    double amount = Lib.GetResourceAmount(v, "ElectricCharge");
-    double capacity = Lib.GetResourceCapacity(v, "ElectricCharge");
-    double level = capacity > 0.0 ? amount / capacity : 1.0;
+    resource_info ec = Cache.ResourceInfo(v, "ElectricCharge");
 
     GUIContent state = new GUIContent();
-    state.tooltip = capacity > 0.0 ? "EC: " + (level * 100.0).ToString("F0") + "%" : "";
+    state.tooltip = ec.capacity > 0.0 ? "EC: " + Lib.HumanReadablePerc(ec.level) : "";
     state.image = icon_battery_nominal;
 
     double low_threshold = 0.15;
@@ -151,8 +148,8 @@ public class Monitor
       }
     }
 
-    if (level <= double.Epsilon) state.image = icon_battery_danger;
-    else if (level <= low_threshold) state.image = icon_battery_warning;
+    if (ec.level <= double.Epsilon) state.image = icon_battery_danger;
+    else if (ec.level <= low_threshold) state.image = icon_battery_warning;
     return state;
   }
 
@@ -166,22 +163,26 @@ public class Monitor
     {
       foreach(Rule r in Kerbalism.supply_rules)
       {
-        var vmon = vi.vmon[r.name];
-        string deplete_str = vmon.depletion <= double.Epsilon
-          ? ", depleted"
-          : double.IsNaN(vmon.depletion)
-          ? ""
-          : ", deplete in <b>" + Lib.HumanReadableDuration(vmon.depletion) + "</b>";
-        tooltips.Add(r.resource_name + ": <b>" + (vmon.level * 100.0).ToString("F0") + "%</b>" + deplete_str);
-        uint severity = vmon.level <= double.Epsilon ? 2u : vmon.level <= r.low_threshold ? 1u : 0;
-        max_severity = Math.Max(max_severity, severity);
+        resource_info res = Cache.ResourceInfo(v, r.resource_name);
+        if (res.capacity > double.Epsilon)
+        {
+          double depletion = r.Depletion(v);
+          string deplete_str = depletion <= double.Epsilon
+            ? ", depleted"
+            : double.IsNaN(depletion)
+            ? ""
+            : Lib.BuildString(", deplete in <b>", Lib.HumanReadableDuration(depletion), "</b>");
+          tooltips.Add(Lib.BuildString(r.resource_name, ": <b>", Lib.HumanReadablePerc(res.level), "</b>", deplete_str));
+          uint severity = res.level <= double.Epsilon ? 2u : res.level <= r.low_threshold ? 1u : 0;
+          max_severity = Math.Max(max_severity, severity);
+        }
       }
     }
     switch(max_severity)
     {
       case 0: state.image = icon_supplies_nominal; break;
       case 1: state.image = icon_supplies_warning; break;
-      case 2: state.image = icon_supplies_danger; break;
+      case 2: state.image = icon_supplies_danger;  break;
     }
     state.tooltip = string.Join("\n", tooltips.ToArray());
     return state;
@@ -208,7 +209,7 @@ public class Monitor
       state.tooltip = "Major malfunctions";
     }
     double avg_quality = Malfunction.AverageQuality(v);
-    if (avg_quality > 0.0) state.tooltip += "\n<i>Quality: " + Malfunction.QualityToString(avg_quality) + "</i>";
+    if (avg_quality > 0.0) state.tooltip += Lib.BuildString("\n<i>Quality: ", Malfunction.QualityToString(avg_quality), "</i>");
     return state;
   }
 
@@ -228,12 +229,12 @@ public class Monitor
         state.image = icon_signal_relay;
         if (ld.path.Count == 1)
         {
-          state.tooltip = "Signal relayed by <b>" + ld.path[ld.path.Count - 1] + "</b>";
+          state.tooltip = Lib.BuildString("Signal relayed by <b>", ld.path[ld.path.Count - 1], "</b>");
         }
         else
         {
           state.tooltip = "Signal relayed by:";
-          for(int i=ld.path.Count-1; i>0; --i) state.tooltip += "\n<b>" + ld.path[i] + "</b>";
+          for(int i=ld.path.Count-1; i>0; --i) state.tooltip += Lib.BuildString("\n<b>", ld.path[i], "</b>");
         }
         break;
 
@@ -253,7 +254,7 @@ public class Monitor
 
   void problem_sunlight(vessel_info info, ref List<Texture> icons, ref List<string> tooltips)
   {
-    if (!info.sunlight)
+    if (info.sunlight <= double.Epsilon)
     {
       icons.Add(icon_sun_shadow);
       tooltips.Add("In shadow");
@@ -261,74 +262,65 @@ public class Monitor
   }
 
 
-  void problem_recyclers(Vessel v, List<Scrubber> scrubbers, List<Recycler> recyclers, ref List<Texture> icons, ref List<string> tooltips)
+  void problem_scrubbers(Vessel v, List<Scrubber.partial_data> scrubbers, ref List<Texture> icons, ref List<string> tooltips)
   {
-    bool no_ec_left = Lib.GetResourceAmount(v, "ElectricCharge") <= double.Epsilon;
+    if (scrubbers.Count == 0) return;
 
-    HashSet<string> disabled_recyclers = new HashSet<string>();
-    HashSet<string> no_power_recyclers = new HashSet<string>();
-    HashSet<string> no_filter_recyclers = new HashSet<string>();
-
-    // analyze scrubbers
-    foreach(Scrubber scrubber in scrubbers)
+    bool no_ec_left = Cache.ResourceInfo(v, "ElectricCharge").amount <= double.Epsilon;
+    bool disabled = false;
+    foreach(var scrubber in scrubbers)
     {
-      if (!scrubber.is_enabled) disabled_recyclers.Add("Scrubber");
-      else if (no_ec_left) no_power_recyclers.Add("Scrubber");
+      disabled |= !scrubber.is_enabled;
     }
-
-    // analyze recyclers
-    foreach(Recycler recycler in recyclers)
+    if (no_ec_left)
     {
-      if (!recycler.is_enabled) disabled_recyclers.Add(recycler.display_name);
-      else if (no_ec_left) no_power_recyclers.Add(recycler.display_name);
-      else
-      {
-        if (recycler.filter_name.Length > 0 && recycler.filter_rate > 0.0)
-        {
-          if (Lib.GetResourceAmount(v, recycler.filter_name) <= double.Epsilon)
-          {
-            no_filter_recyclers.Add(recycler.display_name);
-          }
-        }
-      }
+      icons.Add(icon_scrubber_danger);
+      tooltips.Add("Scrubber has no power");
     }
-
-    if (disabled_recyclers.Count > 0)
+    else if (disabled)
     {
       icons.Add(icon_scrubber_warning);
-      foreach(string s in disabled_recyclers) tooltips.Add(s + " disabled");
-    }
-
-    if (no_power_recyclers.Count > 0)
-    {
-      icons.Add(icon_scrubber_danger);
-      foreach(string s in no_power_recyclers) tooltips.Add(s + " has no power");
-    }
-
-    if (no_filter_recyclers.Count > 0)
-    {
-      icons.Add(icon_scrubber_danger);
-      foreach(string s in no_filter_recyclers) tooltips.Add(s + " has no filter left");
+      tooltips.Add("Scrubber disabled");
     }
   }
 
 
-  void problem_greenhouses(Vessel v, List<Greenhouse> greenhouses, ref List<Texture> icons, ref List<string> tooltips)
+  void problem_recyclers(Vessel v, List<Recycler.partial_data> recyclers, ref List<Texture> icons, ref List<string> tooltips)
   {
-    bool greenhouse_slowgrowth = false;
-    bool greenhouse_nogrowth = false;
-    foreach(Greenhouse greenhouse in greenhouses)
+    if (recyclers.Count == 0) return;
+
+    bool no_ec_left = Cache.ResourceInfo(v, "ElectricCharge").amount <= double.Epsilon;
+    bool disabled = false;
+    foreach(var recycler in recyclers)
     {
-      double g = greenhouse.growing / greenhouse.growth_rate;
-      greenhouse_slowgrowth |= g <= 0.5;
-      greenhouse_nogrowth |= g <= double.Epsilon;
+      disabled |= !recycler.is_enabled;
     }
-    if (greenhouse_nogrowth)
+    if (no_ec_left)
+    {
+      icons.Add(icon_scrubber_danger);
+      tooltips.Add("Recycler has no power");
+    }
+    else if (disabled)
+    {
+      icons.Add(icon_scrubber_warning);
+      tooltips.Add("Recycler disabled");
+    }
+  }
+
+
+  void problem_greenhouses(Vessel v, List<Greenhouse.partial_data> greenhouses, ref List<Texture> icons, ref List<string> tooltips)
+  {
+    if (greenhouses.Count == 0) return;
+
+    double min_growing = double.MaxValue;
+    foreach(var greenhouse in greenhouses) min_growing = Math.Min(min_growing, greenhouse.growing);
+
+    if (min_growing <= double.Epsilon)
     {
       icons.Add(icon_greenhouse_danger);
       tooltips.Add("Greenhouse not growing");
     }
-    else if (greenhouse_slowgrowth)
+    else if (min_growing < 0.00000005)
     {
       icons.Add(icon_greenhouse_warning);
       tooltips.Add("Greenhouse growing slowly");
@@ -356,13 +348,13 @@ public class Monitor
         {
           if (!r.breakdown) health_severity = Math.Max(health_severity, 2);
           else stress_severity = Math.Max(stress_severity, 2);
-          tooltips.Add(c.name + " (" + r.name + ")");
+          tooltips.Add(Lib.BuildString(c.name, " (", r.name, ")"));
         }
         else if (kmon.problem > r.warning_threshold)
         {
           if (!r.breakdown) health_severity = Math.Max(health_severity, 1);
           else stress_severity = Math.Max(stress_severity, 1);
-          tooltips.Add(c.name + " (" + r.name + ")");
+          tooltips.Add(Lib.BuildString(c.name, " (", r.name, ")"));
         }
       }
 
@@ -376,21 +368,21 @@ public class Monitor
 
   void problem_radiation(vessel_info info, ref List<Texture> icons, ref List<string> tooltips)
   {
-    string radiation_str = " (<i>" + (info.env_radiation * 60.0 * 60.0).ToString("F2") + " rad/h)</i>";
+    string radiation_str = Lib.BuildString(" (<i>", (info.env_radiation * 60.0 * 60.0).ToString("F2"), " rad/h)</i>");
     if (info.belt_radiation > double.Epsilon)
     {
       icons.Add(icon_radiation_danger);
-      tooltips.Add("Crossing radiation belt" + radiation_str);
+      tooltips.Add(Lib.BuildString("Crossing radiation belt", radiation_str));
     }
     else if (info.storm_radiation > double.Epsilon)
     {
       icons.Add(icon_radiation_danger);
-      tooltips.Add("Exposed to solar storm" + radiation_str);
+      tooltips.Add(Lib.BuildString("Exposed to solar storm", radiation_str));
     }
     else if (info.cosmic_radiation > double.Epsilon)
     {
       icons.Add(icon_radiation_warning);
-      tooltips.Add("Exposed to cosmic radiation" + radiation_str);
+      tooltips.Add(Lib.BuildString("Exposed to cosmic radiation", radiation_str));
     }
   }
 
@@ -400,12 +392,12 @@ public class Monitor
     if (Storm.Incoming(v.mainBody))
     {
       icons.Add(icon_storm_warning);
-      tooltips.Add("Coronal mass ejection incoming <i>(" + Lib.HumanReadableDuration(Storm.TimeBeforeCME(v.mainBody)) + ")</i>");
+      tooltips.Add(Lib.BuildString("Coronal mass ejection incoming <i>(", Lib.HumanReadableDuration(Storm.TimeBeforeCME(v.mainBody)), ")</i>"));
     }
     if (Storm.InProgress(v.mainBody))
     {
       icons.Add(icon_storm_danger);
-      tooltips.Add("Solar storm in progress <i>(" + Lib.HumanReadableDuration(Storm.TimeLeftCME(v.mainBody)) + ")</i>");
+      tooltips.Add(Lib.BuildString("Solar storm in progress <i>(", Lib.HumanReadableDuration(Storm.TimeLeftCME(v.mainBody)), ")</i>"));
     }
   }
 
@@ -414,20 +406,20 @@ public class Monitor
   // - return: 1 if vessel wasn't skipped
   uint render_vessel(Vessel v)
   {
+    // get vessel info from cache
+    vessel_info vi = Cache.VesselInfo(v);
+
     // avoid case when DB isn't ready for whatever reason
     if (!DB.Ready()) return 0;
 
     // skip invalid vessels
-    if (!Lib.IsVessel(v)) return 0;
+    if (!vi.is_vessel) return 0;
 
     // skip resque missions
-    if (Lib.IsResqueMission(v)) return 0;
+    if (vi.is_resque) return 0;
 
     // skip dead eva kerbals
-    if (EVA.IsDead(v)) return 0;
-
-    // get vessel info from cache
-    vessel_info vi = Cache.VesselInfo(v);
+    if (vi.is_eva_dead) return 0;
 
     // get vessel data from the db
     vessel_data vd = DB.VesselData(v.id);
@@ -444,13 +436,6 @@ public class Monitor
     // get body name
     string body_name = v.mainBody.name.ToUpper();
 
-    // get list of recyclers
-    List<Scrubber> scrubbers = Scrubber.GetScrubbers(v);
-    List<Recycler> recyclers = Recycler.GetRecyclers(v);
-
-    // get list of greenhouses
-    List<Greenhouse> greenhouses = Greenhouse.GetGreenhouses(v);
-
     // store problems icons & tooltips
     List<Texture> problem_icons = new List<Texture>();
     List<string> problem_tooltips = new List<string>();
@@ -462,16 +447,17 @@ public class Monitor
     {
       problem_kerbals(crew, ref problem_icons, ref problem_tooltips);
       problem_radiation(vi, ref problem_icons, ref problem_tooltips);
-      problem_recyclers(v, scrubbers, recyclers, ref problem_icons, ref problem_tooltips);
+      problem_scrubbers(v, Scrubber.PartialData(v), ref problem_icons, ref problem_tooltips);
+      problem_recyclers(v, Recycler.PartialData(v), ref problem_icons, ref problem_tooltips);
     }
-    problem_greenhouses(v, greenhouses, ref problem_icons, ref problem_tooltips);
+    problem_greenhouses(v, Greenhouse.PartialData(v), ref problem_icons, ref problem_tooltips);
 
     // choose problem icon
     const UInt64 problem_icon_time = 3;
     Texture problem_icon = icon_empty;
     if (problem_icons.Count > 0)
     {
-      UInt64 problem_index = (Convert.ToUInt64(Time.realtimeSinceStartup) / problem_icon_time) % (UInt64)(problem_icons.Count);
+      UInt64 problem_index = ((UInt64)Time.realtimeSinceStartup / problem_icon_time) % (UInt64)(problem_icons.Count);
       problem_icon = problem_icons[(int)problem_index];
     }
 
@@ -480,7 +466,7 @@ public class Monitor
 
     // render vessel name & icons
     GUILayout.BeginHorizontal(row_style);
-    GUILayout.Label(new GUIContent("<b>" + Lib.Epsilon(vessel_name, 20) + "</b>", vessel_name.Length > 20 ? vessel_name : ""), name_style);
+    GUILayout.Label(new GUIContent(Lib.BuildString("<b>", Lib.Epsilon(vessel_name, 20), "</b>"), vessel_name.Length > 20 ? vessel_name : ""), name_style);
     GUILayout.Label(new GUIContent(Lib.Epsilon(body_name, 8), body_name.Length > 8 ? body_name : ""), body_style);
     GUILayout.Label(new GUIContent(problem_icon, problem_tooltip), icon_style);
     GUILayout.Label(indicator_ec(v), icon_style);
@@ -609,14 +595,17 @@ public class Monitor
     show_filter = false;
     foreach(Vessel v in FlightGlobals.Vessels)
     {
+      // get info from the cache
+      vessel_info vi = Cache.VesselInfo(v);
+
       // skip invalid vessels
-      if (!Lib.IsVessel(v)) continue;
+      if (!vi.is_vessel) continue;
 
       // skip resque missions
-      if (Lib.IsResqueMission(v)) continue;
+      if (vi.is_resque) continue;
 
       // skip dead eva kerbals
-      if (EVA.IsDead(v)) continue;
+      if (vi.is_eva_dead) continue;
 
       // avoid problems if the DB isn't ready
       if (DB.Ready())

@@ -13,7 +13,7 @@ using UnityEngine;
 namespace KERBALISM {
 
 
-public class Malfunction : PartModule
+public sealed class Malfunction : PartModule
 {
   // manufacturing quality technologies
   public class ManufacturingQuality
@@ -32,17 +32,17 @@ public class Malfunction : PartModule
 
 
   // cfg
-  [KSPField(isPersistant = true)] public double min_lifetime;             // no-malfunctions guaranteed lifetime in seconds
-  [KSPField(isPersistant = true)] public double max_lifetime;             // malfunctions guaranteed lifetime in seconds
+  [KSPField] public double min_lifetime;             // no-malfunctions guaranteed lifetime in seconds
+  [KSPField] public double max_lifetime;             // malfunctions guaranteed lifetime in seconds
+  [KSPField] public string malfunction_msg;          // malfunction message content
+  [KSPField] public string repair_msg;               // repair message content
+  [KSPField] public string status_msg;               // rmb status message content
 
   // data
   [KSPField(isPersistant = true)] public uint malfunctions;               // level of malfunctions
   [KSPField(isPersistant = true)] public double age;                      // age since last malfunction
   [KSPField(isPersistant = true)] public double lifetime;                 // current lifetime
   [KSPField(isPersistant = true)] public double quality;                  // tech dependent quality factor
-  [KSPField(isPersistant = true)] public string malfunction_msg;          // malfunction message content
-  [KSPField(isPersistant = true)] public string repair_msg;               // repair message content
-  [KSPField(isPersistant = true)] public string status_msg;               // rmb status message content
 
   // rmb status
   [KSPField(guiActive = false, guiName = "Malfunction")] public string Status;
@@ -56,11 +56,12 @@ public class Malfunction : PartModule
 
   public static string PrepareMsg(string s, Vessel v, uint malfunctions)
   {
-    return s.Replace("$VESSEL", v.vesselName)
-            .Replace("$PERC", (Math.Pow(0.5, (double)malfunctions) * 100.0).ToString("F0") + "%")
-            .Replace("$OVERHEATING", (Math.Pow(4.0, (double)malfunctions) * 100.0).ToString("F0") + "%")
-            .Replace("$RANGE", (Math.Pow(0.7071, (double)malfunctions) * 100.0).ToString("F0") + "%")
-            .Replace("$NEWLINE", "\n");
+    return s
+      .Replace("$VESSEL", v.vesselName)
+      .Replace("$PERC", Lib.HumanReadablePerc(Math.Pow(0.5, (double)malfunctions)))
+      .Replace("$OVERHEATING", Lib.HumanReadablePerc(Math.Pow(4.0, (double)malfunctions)))
+      .Replace("$RANGE", Lib.HumanReadablePerc(Math.Pow(0.7071, (double)malfunctions)))
+      .Replace("$NEWLINE", "\n");
   }
 
 
@@ -80,7 +81,7 @@ public class Malfunction : PartModule
   {
     // do nothing if something is wrong, or the eva kerbal is dead
     Vessel v = FlightGlobals.ActiveVessel;
-    if (v == null || !v.isEVA || EVA.IsDead(v)) return;
+    if (v == null || !v.isEVA || Cache.VesselInfo(v).is_eva_dead) return;
 
     // if the kerbal isn't an engineer, show a message and do nothing
     if (v.GetVesselCrew()[0].trait != "Engineer")
@@ -110,7 +111,7 @@ public class Malfunction : PartModule
   {
     // do nothing if something is wrong, or the eva kerbal is dead
     Vessel v = FlightGlobals.ActiveVessel;
-    if (v == null || !v.isEVA || EVA.IsDead(v)) return;
+    if (v == null || !v.isEVA || Cache.VesselInfo(v).is_eva_dead) return;
 
     // if the kerbal isn't an engineer, show a message and do nothing
     if (v.GetVesselCrew()[0].trait != "Engineer")
@@ -156,13 +157,12 @@ public class Malfunction : PartModule
 
 
   // trigger malfunction for unloaded module
-  public static void Break(Vessel v, ProtoPartModuleSnapshot m)
+  public static void Break(Vessel v, ProtoPartModuleSnapshot m, Malfunction malfunction)
   {
     // get data
-    uint malfunctions = Lib.GetProtoValue<uint>(m, "malfunctions");
-    double lifetime = Lib.GetProtoValue<double>(m, "lifetime");
-    double age = Lib.GetProtoValue<double>(m, "age");
-    string malfunction_msg = m.moduleValues.GetValue("malfunction_msg");
+    uint malfunctions = Lib.Proto.GetUInt(m, "malfunctions");
+    double lifetime = Lib.Proto.GetDouble(m, "lifetime");
+    double age = Lib.Proto.GetDouble(m, "age");
 
     // limit number of malfunctions per-component
     if (malfunctions >= 2u) return;
@@ -177,16 +177,16 @@ public class Malfunction : PartModule
     // show message
     if (DB.Ready() && DB.VesselData(v.id).cfg_malfunction == 1)
     {
-      Message.Post(Severity.warning, PrepareMsg(malfunction_msg, v, malfunctions));
+      Message.Post(Severity.warning, PrepareMsg(malfunction.malfunction_msg, v, malfunctions));
     }
 
     // record first malfunction
     if (DB.Ready()) DB.NotificationData().first_malfunction = 1;
 
     // save data
-    Lib.SetProtoValue<uint>(m, "malfunctions", malfunctions);
-    Lib.SetProtoValue<double>(m, "lifetime", lifetime);
-    Lib.SetProtoValue<double>(m, "age", age);
+    Lib.Proto.Set(m, "malfunctions", malfunctions);
+    Lib.Proto.Set(m, "lifetime", lifetime);
+    Lib.Proto.Set(m, "age", age);
   }
 
 
@@ -283,9 +283,7 @@ public class Malfunction : PartModule
     }
 
     // accumulate age
-    age += TimeWarp.fixedDeltaTime
-         * AgingCurve(age, min_lifetime, max_lifetime)
-         / quality;
+    age += TimeWarp.fixedDeltaTime / quality;
 
     // check age and malfunction if needed
     if (age > lifetime) Break();
@@ -320,17 +318,15 @@ public class Malfunction : PartModule
 
 
   // implement malfunction mechanics for unloaded vessels
-  public static void BackgroundUpdate(Vessel vessel, uint flight_id)
+  public static void BackgroundUpdate(Vessel vessel, ProtoPartModuleSnapshot m, Malfunction malfunction)
   {
     // get data
-    ProtoPartModuleSnapshot m = Lib.GetProtoModule(vessel, flight_id, "Malfunction");
-    uint malfunctions = Lib.GetProtoValue<uint>(m, "malfunctions");
-    double min_lifetime = Lib.GetProtoValue<double>(m, "min_lifetime");
-    double max_lifetime = Lib.GetProtoValue<double>(m, "max_lifetime");
-    double lifetime = Lib.GetProtoValue<double>(m, "lifetime");
-    double age = Lib.GetProtoValue<double>(m, "age");
-    double quality = Lib.GetProtoValue<double>(m, "quality");
-    string malfunction_msg = m.moduleValues.GetValue("malfunction_msg");
+    uint malfunctions = Lib.Proto.GetUInt(m, "malfunctions");
+    double min_lifetime = malfunction.min_lifetime;
+    double max_lifetime = malfunction.max_lifetime;
+    double lifetime = Lib.Proto.GetDouble(m, "lifetime");
+    double age = Lib.Proto.GetDouble(m, "age");
+    double quality = Lib.Proto.GetDouble(m, "quality");
 
     // if for some reason quality wasn't set, default to 1.0 (but don't save it)
     // note: for example, resque vessels failure get background update without prelaunch
@@ -343,17 +339,15 @@ public class Malfunction : PartModule
     }
 
     // accumulate age
-    age += TimeWarp.fixedDeltaTime
-         * AgingCurve(age, min_lifetime, max_lifetime)
-         / quality;
+    age += TimeWarp.fixedDeltaTime / quality;
 
     // save data
     // note: done before checking for malfunction because proto Break change data again
-    Lib.SetProtoValue<double>(m, "lifetime", lifetime);
-    Lib.SetProtoValue<double>(m, "age", age);
+    Lib.Proto.Set(m, "lifetime", lifetime);
+    Lib.Proto.Set(m, "age", age);
 
     // check age and malfunction if needed
-    if (age > lifetime) Break(vessel, m);
+    if (age > lifetime) Break(vessel, m, malfunction);
   }
 
 
@@ -374,7 +368,7 @@ public class Malfunction : PartModule
     if (m == null) return 1.0;
 
     // return penalty;
-    uint malfunctions = Lib.GetProtoValue<uint>(m, "malfunctions");
+    uint malfunctions = Lib.Proto.GetUInt(m, "malfunctions");
     return Math.Pow(scale, (double)malfunctions);
   }
 
@@ -403,7 +397,7 @@ public class Malfunction : PartModule
           {
             if (module_name.Length == 0 || p.modules.Find(k => k.moduleName == module_name) != null)
             {
-              max_malfunction = Math.Max(max_malfunction, Lib.GetProtoValue<uint>(m, "malfunctions"));
+              max_malfunction = Math.Max(max_malfunction, Lib.Proto.GetUInt(m, "malfunctions"));
             }
           }
         }
@@ -434,7 +428,7 @@ public class Malfunction : PartModule
         {
           if (m.moduleName == "Malfunction")
           {
-            quality_sum += Lib.GetProtoValue<double>(m, "quality");
+            quality_sum += Lib.Proto.GetDouble(m, "quality", 1.0);
             quality_count += 1.0;
           }
         }
@@ -482,11 +476,16 @@ public class Malfunction : PartModule
         }
       }
       if (modules.Count == 0) return;
-      var p = modules[Lib.RandomInt(modules.Count)];
-      var m = p.Value;
+      var pair = modules[Lib.RandomInt(modules.Count)];
+      var p = pair.Key;
+      var m = pair.Value;
+
+      // get malfunction module from prefab, avoid corner case
+      Malfunction malfunction = p.partInfo.partPrefab.FindModuleImplementing<Malfunction>();
+      if (malfunction == null) return;
 
       // break it
-      Malfunction.Break(v, m);
+      Malfunction.Break(v, m, malfunction);
     }
   }
 
@@ -509,7 +508,7 @@ public class Malfunction : PartModule
         {
           if (m.moduleName == "Malfunction")
           {
-            if (Lib.GetProtoValue<uint>(m, "malfunctions") < 2u) return true;
+            if (Lib.Proto.GetUInt(m, "malfunctions") < 2u) return true;
           }
         }
       }
@@ -602,13 +601,14 @@ public class Malfunction : PartModule
   }*/
 
 
+  // [DISABLED]
   // used to make malfunctions less relevant in the middle of lifetime
   // note: normalized so it return 1.0 on average
-  public static double AgingCurve(double age, double min_lifetime, double max_lifetime)
+  /*public static double AgingCurve(double age, double min_lifetime, double max_lifetime)
   {
     double k = Math.Min(Math.Max(age - min_lifetime, 0.0) / max_lifetime, 1.0);
     return (1.0 - (Math.Min(Math.Min(1.0, k + 0.75), Math.Min(1.0, 1.75 - k)) - 0.75) * 2.0) * 1.6;
-  }
+  }*/
 }
 
 

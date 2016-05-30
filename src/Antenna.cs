@@ -13,7 +13,7 @@ using UnityEngine;
 namespace KERBALISM {
 
 
-public class Antenna : ModuleDataTransmitter, IScienceDataTransmitter
+public sealed class Antenna : ModuleDataTransmitter, IScienceDataTransmitter
 {
   // cfg
   [KSPField(isPersistant = true)] public string scope;                   // descriptive scope of the antenna (orbit, home, near, far)
@@ -65,11 +65,14 @@ public class Antenna : ModuleDataTransmitter, IScienceDataTransmitter
   // editor/r&d info
   public override string GetInfo()
   {
-    return "Send data and provide a link to the space center and to other vessels.\n\n"
-         + "<color=#99FF00>Costs:</color>\n"
-         + " - Transmission (min): <b>" + min_transmission_cost.ToString("F1") + " EC/Mbit</b>\n"
-         + " - Transmission (max): <b>" + max_transmission_cost.ToString("F1") + " EC/Mbit</b>\n"
-         + " - Relay: <b>" + relay_cost.ToString("F2") + " EC/s</b>";
+    return Lib.BuildString
+    (
+      "Send data and provide a link to the space center and to other vessels.\n\n",
+      "<color=#99FF00>Costs:</color>\n",
+      " - Transmission (min): <b>", min_transmission_cost.ToString("F1"), " EC/Mbit</b>\n",
+      " - Transmission (max): <b>", max_transmission_cost.ToString("F1"), " EC/Mbit</b>\n",
+      " - Relay: <b>", relay_cost.ToString("F2"), " EC/s</b>"
+    );
   }
 
 
@@ -115,7 +118,7 @@ public class Antenna : ModuleDataTransmitter, IScienceDataTransmitter
       }
 
       // update rmb ui status
-      CostStatus = this.packetResourceCost.ToString("F2") + " EC/Mbit";
+      CostStatus = Lib.BuildString(this.packetResourceCost.ToString("F2"), " EC/Mbit");
     }
   }
 
@@ -141,10 +144,10 @@ public class Antenna : ModuleDataTransmitter, IScienceDataTransmitter
     double total_cost = total_amount * this.packetResourceCost;
 
     // if there is no EC to transmit the data
-    if (total_cost > Lib.GetResourceAmount(vessel, "ElectricCharge"))
+    if (total_cost > Cache.ResourceInfo(vessel, "ElectricCharge").amount)
     {
       // show a message to the user
-      Message.Post(Severity.warning, "Not enough power, <b>" +  total_cost.ToString("F0") + " ElectricCharge</b> required", "We can't send the data");
+      Message.Post(Severity.warning, Lib.BuildString("Not enough power, <b>", total_cost.ToString("F0"), " ElectricCharge</b> required"), "We can't send the data");
 
       // return data to the containers
       ReturnData(dataQueue);

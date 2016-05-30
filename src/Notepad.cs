@@ -13,7 +13,7 @@ namespace KERBALISM {
 
 
 [KSPAddon(KSPAddon.Startup.MainMenu, true)]
-public class Notepad : MonoBehaviour
+public sealed class Notepad : MonoBehaviour
 {
   // constants
   const float width = 300.0f;

@@ -12,7 +12,7 @@ namespace KERBALISM {
 
 
 [KSPAddon(KSPAddon.Startup.MainMenu, true)]
-public class Storm : MonoBehaviour
+public sealed class Storm : MonoBehaviour
 {
   // keep it alive
   Storm() { DontDestroyOnLoad(this); }
@@ -78,8 +78,8 @@ public class Storm : MonoBehaviour
       {
         if (body_is_relevant(body))
         {
-          Message.Post(Severity.danger, "The coronal mass ejection hit <b>" + body.name + "</b> system",
-            "Storm duration: " + Lib.HumanReadableDuration(TimeLeftCME(body)));
+          Message.Post(Severity.danger, Lib.BuildString("The coronal mass ejection hit <b>", body.name, "</b> system"),
+            Lib.BuildString("Storm duration: ", Lib.HumanReadableDuration(TimeLeftCME(body))));
         }
         bd.msg_storm = 2;
       }
@@ -87,8 +87,8 @@ public class Storm : MonoBehaviour
       {
         if (body_is_relevant(body))
         {
-          Message.Post(Severity.warning, "Our observatories report a coronal mass ejection directed toward <b>" + body.name + "</b> system",
-            "Time to impact: " + Lib.HumanReadableDuration(TimeBeforeCME(body)));
+          Message.Post(Severity.warning, Lib.BuildString("Our observatories report a coronal mass ejection directed toward <b>", body.name, "</b> system"),
+            Lib.BuildString("Time to impact: ", Lib.HumanReadableDuration(TimeBeforeCME(body))));
         }
         bd.msg_storm = 1;
       }
@@ -96,7 +96,7 @@ public class Storm : MonoBehaviour
       {
         if (body_is_relevant(body))
         {
-          Message.Post(Severity.relax, "The solar storm at <b>" + body.name + "</b> system is over");
+          Message.Post(Severity.relax, Lib.BuildString("The solar storm at <b>", body.name, "</b> system is over"));
         }
         bd.msg_storm = 0;
       }
@@ -136,14 +136,17 @@ public class Storm : MonoBehaviour
       // if inside the system
       if (Lib.PlanetarySystem(v.mainBody) == body)
       {
+        // get info from the cache
+        vessel_info vi = Cache.VesselInfo(v);
+
         // skip invalid vessels
-        if (!Lib.IsVessel(v)) continue;
+        if (!vi.is_vessel) continue;
 
         // skip resque missions
-        if (Lib.IsResqueMission(v)) continue;
+        if (vi.is_resque) continue;
 
         // skip dead eva kerbal
-        if (EVA.IsDead(v)) continue;
+        if (vi.is_eva_dead) continue;
 
         // obey message config
         if (DB.VesselData(v.id).cfg_storm == 0) continue;

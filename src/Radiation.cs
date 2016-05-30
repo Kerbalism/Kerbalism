@@ -11,8 +11,6 @@ using UnityEngine;
 namespace KERBALISM {
 
 
-//[KSPAddon(KSPAddon.Startup.MainMenu, true)]
-//public class Radiation : MonoBehaviour
 public static class Radiation
 {
   class body_info
@@ -25,18 +23,9 @@ public static class Radiation
   // cache of body info, computed once
   static Dictionary<int, body_info> bodies = new Dictionary<int, body_info>();
 
-  // permit global access
-  //private static Radiation instance = null;
-
   // ctor
   static Radiation()
   {
-    // enable global access
-    //instance = this;
-
-    // keep it alive
-    //DontDestroyOnLoad(this);
-
     // compute magnetosphere of bodies
     CelestialBody home = FlightGlobals.GetHomeBody();
     double home_surfspeed = Sim.SurfaceSpeed(home);
@@ -156,9 +145,9 @@ public static class Radiation
 
 
   // return solar storm radiation hitting the vessel, in rad/s
-  public static double StormRadiation(Vessel v, bool sunlight)
+  public static double StormRadiation(Vessel v, double sunlight)
   {
-    double storm_k = Storm.InProgress(v.mainBody) && !InsideMagnetosphere(v) && sunlight ? 1.0 : 0.0;
+    double storm_k = (Storm.InProgress(v.mainBody) && !InsideMagnetosphere(v) ? 1.0 : 0.0) * sunlight;
     return Settings.StormRadiation * storm_k;
   }
 
@@ -173,7 +162,7 @@ public static class Radiation
   // return percentage of radiations blocked by shielding
   public static double Shielding(Vessel v)
   {
-    return Shielding(Lib.GetResourceAmount(v, "Shielding"), Lib.GetResourceCapacity(v, "Shielding"));
+    return Shielding(Lib.Resource.Amount(v, "Shielding"), Lib.Resource.Capacity(v, "Shielding"));
   }
 
 
@@ -183,8 +172,8 @@ public static class Radiation
     double capacity = 0.0;
     foreach(var part in space.Parts)
     {
-      amount += Lib.GetResourceAmount(part.Part, "Shielding");
-      capacity += Lib.GetResourceCapacity(part.Part, "Shielding");
+      amount += Lib.Resource.Amount(part.Part, "Shielding");
+      capacity += Lib.Resource.Capacity(part.Part, "Shielding");
     }
     return Shielding(amount, capacity);
   }

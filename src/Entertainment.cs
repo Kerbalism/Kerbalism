@@ -20,7 +20,7 @@ public class Entertainment : PartModule
   // editor/r&d info
   public override string GetInfo()
   {
-    return description + (rate > double.Epsilon ? "\n\n<color=#999999>Comfort: <b>" + rate.ToString("F1") + "</b></color>" : "");
+    return Lib.BuildString(description, "\n\n<color=#999999>Comfort: <b>", rate.ToString("F1"), "</b></color>");
   }
 }
 

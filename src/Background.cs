@@ -13,7 +13,7 @@ namespace KERBALISM {
 
 
 [KSPAddon(KSPAddon.Startup.MainMenu, true)]
-public class Background : MonoBehaviour
+public sealed class Background : MonoBehaviour
 {
   // keep it alive
   Background() { DontDestroyOnLoad(this); }
@@ -21,7 +21,7 @@ public class Background : MonoBehaviour
 
   // return solar panel EC output
   // note: we ignore temperature curve, and make sure it is not relavant in the MM patch
-  static double PanelOutput(Vessel vessel, ProtoPartSnapshot part, ModuleDeployableSolarPanel panel, Vector3d sun_dir, double sun_dist, double atmo_factor)
+  static double PanelOutput(Vessel vessel, ProtoPartSnapshot part, ModuleDeployableSolarPanel panel, Vector3d sun_dir, double sun_dist)
   {
     // if, for whatever reason, sun_dist is zero (or negative), we do not return any output
     if (sun_dist <= double.Epsilon) return 0.0;
@@ -37,15 +37,12 @@ public class Background : MonoBehaviour
     // calculate solar flux
     double solar_flux = Sim.SolarFlux(sun_dist);
 
-    // reduce solar flux inside atmosphere
-    solar_flux *= atmo_factor;
-
     // finally, calculate output
     return panel.chargeRate * cosine_factor * (panel.useCurve ? panel.powerCurve.Evaluate((float)sun_dist) : solar_flux / Sim.SolarFluxAtHome());
   }
 
 
-  static double CurvedPanelOutput(Vessel vessel, ProtoPartSnapshot part, Part prefab, PartModule m, Vector3d sun_dir, double sun_dist, double atmo_factor)
+  static double CurvedPanelOutput(Vessel vessel, ProtoPartSnapshot part, Part prefab, PartModule m, Vector3d sun_dir, double sun_dist)
   {
     // if, for whatever reason, sun_dist is zero (or negative), we do not return any output
     if (sun_dist <= double.Epsilon) return 0.0;
@@ -64,9 +61,6 @@ public class Background : MonoBehaviour
     // calculate solar flux
     double solar_flux = Sim.SolarFlux(sun_dist);
 
-    // reduce solar flux inside atmosphere
-    solar_flux *= atmo_factor;
-
     // for each one of the components the curved panel is composed of
     double output = 0.0;
     foreach(Transform t in components)
@@ -76,6 +70,9 @@ public class Background : MonoBehaviour
     }
     return output;
   }
+
+
+
 
 
   // called at every simulation step
@@ -88,437 +85,508 @@ public class Background : MonoBehaviour
     if (!DB.Ready()) return;
 
     // for each vessel
-    foreach(Vessel vessel in FlightGlobals.Vessels)
+    foreach(Vessel v in FlightGlobals.Vessels)
     {
+      // get vessel info from the cache
+      vessel_info info = Cache.VesselInfo(v);
+
       // skip invalid vessels
-      if (!Lib.IsVessel(vessel)) continue;
+      if (!info.is_vessel) continue;
 
       // skip loaded vessels
-      if (vessel.loaded) continue;
+      if (v.loaded) continue;
 
       // get vessel data from the db
-      vessel_data vd = DB.VesselData(vessel.id);
-
-      // get vessel info from the cache
-      vessel_info info = Cache.VesselInfo(vessel);
-
-      // calculate atmospheric factor (proportion of flux not blocked by atmosphere)
-      double atmo_factor = Sim.AtmosphereFactor(vessel.mainBody, info.position, info.sun_dir);
+      vessel_data vd = DB.VesselData(v.id);
 
       // for each part
-      foreach(ProtoPartSnapshot part in vessel.protoVessel.protoPartSnapshots)
+      foreach(ProtoPartSnapshot p in v.protoVessel.protoPartSnapshots)
       {
-        // get part prefab (required for module properties)
-        Part part_prefab = PartLoader.getPartInfoByName(part.partName).partPrefab;
-
         // store index of ModuleResourceConverter to process
         // rationale: a part can contain multiple resource converters
         int converter_index = 0;
 
+        // get part prefab (required for module properties)
+        Part part_prefab = PartLoader.getPartInfoByName(p.partName).partPrefab;
+
         // for each module
-        foreach(ProtoPartModuleSnapshot module in part.modules)
+        foreach(ProtoPartModuleSnapshot m in p.modules)
         {
           // something weird is going on, skip this
-          if (!part_prefab.Modules.Contains(module.moduleName)) continue;
+          if (!part_prefab.Modules.Contains(m.moduleName)) continue;
 
-          // command module
-          if (module.moduleName == "ModuleCommand")
+          // process modules
+          switch(m.moduleName)
           {
-            // get module from prefab
-            ModuleCommand command = part_prefab.Modules.GetModules<ModuleCommand>()[0];
+            case "ModuleCommand":
+              ModuleCommand command = part_prefab.Modules[m.moduleName] as ModuleCommand;
+              if (command != null) ProcessCommand(v, p, m, command);
+              break;
 
-            // do not consume if this is a MCM with no crew
-            // rationale: for consistency, the game doesn't consume resources for MCM without crew in loaded vessels
-            //            this make some sense: you left a vessel with some battery and nobody on board, you expect it to not consume EC
-            if (command.minimumCrew == 0 || part.protoModuleCrew.Count > 0)
-            {
-              // for each input resource
-              foreach(ModuleResource ir in command.inputResources)
+            case "ModuleDeployableSolarPanel":
+              ModuleDeployableSolarPanel panel = part_prefab.Modules[m.moduleName] as ModuleDeployableSolarPanel;
+              if (panel != null) ProcessPanel(v, p, m, panel, info);
+              break;
+
+            case "ModuleGenerator":
+              ModuleGenerator generator = part_prefab.Modules[m.moduleName] as ModuleGenerator;
+              if (generator != null) ProcessGenerator(v, p, m, generator);
+              break;
+
+            case "ModuleResourceConverter":
+            case "ModuleKPBSConverter":
+            case "FissionReactor":
+              var module_prefabs = part_prefab.Modules.GetModules<ModuleResourceConverter>();
+              if (converter_index < module_prefabs.Count)
               {
-                // consume the resource
-                Lib.RequestResource(vessel, ir.name, ir.rate * TimeWarp.fixedDeltaTime);
+                ModuleResourceConverter converter = module_prefabs[converter_index++] as ModuleResourceConverter;
+                if (converter != null) ProcessConverter(v, p, m, converter);
               }
-            }
+              break;
+
+            case "ModuleResourceHarvester":
+              ModuleResourceHarvester harvester = part_prefab.Modules[m.moduleName] as ModuleResourceHarvester;
+              if (harvester != null) ProcessHarvester(v, p, m, harvester);
+              break;
+
+            case "ModuleAsteroidDrill":
+              ModuleAsteroidDrill drill = part_prefab.Modules[m.moduleName] as ModuleAsteroidDrill;
+              if (drill != null) ProcessAsteroidDrill(v, p, m, drill);
+              break;
+
+            case "ModuleScienceConverter":
+              ModuleScienceConverter lab = part_prefab.Modules[m.moduleName] as ModuleScienceConverter;
+              if (lab != null) ProcessLab(v, p, m, lab);
+              break;
+
+            case "SCANsat":
+            case "ModuleSCANresourceScanner":
+              ProcessScanner(v, p, m, part_prefab.Modules[m.moduleName], part_prefab, vd);
+              break;
+
+            case "ModuleCurvedSolarPanel":
+              ProcessCurvedPanel(v, p, m, part_prefab.Modules[m.moduleName], part_prefab, info);
+              break;
+
+            case "FissionGenerator":
+              ProcessFissionGenerator(v, p, m, part_prefab.Modules[m.moduleName]);
+              break;
+
+            case "ModuleRadioisotopeGenerator":
+              ProcessRadioisotopeGenerator(v, p, m, part_prefab.Modules[m.moduleName]);
+              break;
+
+            case "Scrubber":
+              Scrubber scrubber = part_prefab.Modules[m.moduleName] as Scrubber;
+              if (scrubber != null) Scrubber.BackgroundUpdate(v, m, scrubber);
+              break;
+
+            case "Recycler":
+              Recycler recycler = part_prefab.Modules[m.moduleName] as Recycler;
+              if (recycler != null) Recycler.BackgroundUpdate(v, m, recycler);
+              break;
+
+            case "Greenhouse":
+              Greenhouse greenhouse = part_prefab.Modules[m.moduleName] as Greenhouse;
+              if (greenhouse != null) Greenhouse.BackgroundUpdate(v, m, greenhouse);
+              break;
+
+            case "GravityRing":
+              GravityRing ring = part_prefab.Modules[m.moduleName] as GravityRing;
+              if (ring != null) GravityRing.BackgroundUpdate(v, m, ring);
+              break;
+
+            case "Malfunction":
+              Malfunction malfunction = part_prefab.Modules[m.moduleName] as Malfunction;
+              if (malfunction != null) Malfunction.BackgroundUpdate(v, m, malfunction);
+              break;
           }
-          // solar panel
-          else if (module.moduleName == "ModuleDeployableSolarPanel")
-          {
-            // determine if extended
-            bool extended = module.moduleValues.GetValue("stateString") == ModuleDeployableSolarPanel.panelStates.EXTENDED.ToString();
-
-            // if in sunlight and extended
-            if (info.sunlight && extended)
-            {
-              // get module from prefab
-              ModuleDeployableSolarPanel panel = part_prefab.Modules.GetModules<ModuleDeployableSolarPanel>()[0];
-
-              // produce electric charge
-              Lib.RequestResource(vessel, "ElectricCharge", -PanelOutput(vessel, part, panel, info.sun_dir, info.sun_dist, atmo_factor) * TimeWarp.fixedDeltaTime * Malfunction.Penalty(part));
-            }
-          }
-          // generator
-          // note: assume generators require all input
-          else if (module.moduleName == "ModuleGenerator")
-          {
-            // determine if active
-            bool activated = Convert.ToBoolean(module.moduleValues.GetValue("generatorIsActive"));
-
-            // if active
-            if (activated)
-            {
-              // get module from prefab
-              ModuleGenerator generator = part_prefab.Modules.GetModules<ModuleGenerator>()[0];
-
-              // determine if vessel is full of all output resources
-              bool full = true;
-              foreach(var or in generator.outputList)
-              {
-                double amount = Lib.GetResourceAmount(vessel, or.name);
-                double capacity = Lib.GetResourceCapacity(vessel, or.name);
-                double perc = capacity > 0.0 ? amount / capacity : 0.0;
-                full &= (perc >= 1.0 - double.Epsilon);
-              }
-
-              // if not full
-              if (!full)
-              {
-                // calculate worst required resource percentual
-                double worst_input = 1.0;
-                foreach(var ir in generator.inputList)
-                {
-                  double required = ir.rate * TimeWarp.fixedDeltaTime;
-                  double amount = Lib.GetResourceAmount(vessel, ir.name);
-                  worst_input = Math.Min(worst_input, amount / required);
-                }
-
-                // for each input resource
-                foreach(var ir in generator.inputList)
-                {
-                  // consume the resource
-                  Lib.RequestResource(vessel, ir.name, ir.rate * worst_input * TimeWarp.fixedDeltaTime);
-                }
-
-                // for each output resource
-                foreach(var or in generator.outputList)
-                {
-                  // produce the resource
-                  Lib.RequestResource(vessel, or.name, -or.rate * worst_input * TimeWarp.fixedDeltaTime * Malfunction.Penalty(part));
-                }
-              }
-            }
-          }
-          // converter
-          // note: support multiple resource converters
-          // note: ignore stock temperature mechanic of converters
-          // note: ignore autoshutdown
-          // note: ignore crew experience bonus (seem that stock ignore it too)
-          // note: 'undo' stock behaviour by forcing lastUpdateTime to now (to minimize overlapping calculations from this and stock post-facto simulation)
-          // note: support PlanetaryBaseSystem converters
-          // note: support NearFuture reactors
-          else if (module.moduleName == "ModuleResourceConverter" || module.moduleName == "ModuleKPBSConverter" || module.moduleName == "FissionReactor")
-          {
-            // get module from prefab
-            ModuleResourceConverter converter = part_prefab.Modules.GetModules<ModuleResourceConverter>()[converter_index++];
-
-            // determine if active
-            bool activated = Convert.ToBoolean(module.moduleValues.GetValue("IsActivated"));
-
-            // if active
-            if (activated)
-            {
-              // determine if vessel is full of all output resources
-              bool full = true;
-              foreach(var or in converter.outputList)
-              {
-                double amount = Lib.GetResourceAmount(vessel, or.ResourceName);
-                double capacity = Lib.GetResourceCapacity(vessel, or.ResourceName);
-                double perc = capacity > 0.0 ? amount / capacity : 0.0;
-                full &= (perc >= converter.FillAmount - double.Epsilon);
-              }
-
-              // if not full
-              if (!full)
-              {
-                // calculate worst required resource percentual
-                double worst_input = 1.0;
-                foreach(var ir in converter.inputList)
-                {
-                  double required = ir.Ratio * TimeWarp.fixedDeltaTime;
-                  double amount = Lib.GetResourceAmount(vessel, ir.ResourceName);
-                  worst_input = Math.Min(worst_input, amount / required);
-                }
-
-                // for each input resource
-                foreach(var ir in converter.inputList)
-                {
-                  // consume the resource
-                  Lib.RequestResource(vessel, ir.ResourceName, ir.Ratio * worst_input * TimeWarp.fixedDeltaTime);
-                }
-
-                // for each output resource
-                foreach(var or in converter.outputList)
-                {
-                  // produce the resource
-                  Lib.RequestResource(vessel, or.ResourceName, -or.Ratio * worst_input * TimeWarp.fixedDeltaTime * Malfunction.Penalty(part));
-                }
-              }
-
-              // undo stock behaviour by forcing last_update_time to now
-              module.moduleValues.SetValue("lastUpdateTime", Planetarium.GetUniversalTime().ToString());
-            }
-          }
-          // drill
-          // note: ignore stock temperature mechanic of harvesters
-          // note: ignore autoshutdown
-          // note: ignore depletion (stock seem to do the same)
-          // note: 'undo' stock behaviour by forcing lastUpdateTime to now (to minimize overlapping calculations from this and stock post-facto simulation)
-          else if (module.moduleName == "ModuleResourceHarvester")
-          {
-            // determine if active
-            bool activated = Convert.ToBoolean(module.moduleValues.GetValue("IsActivated"));
-
-            // if active
-            if (activated)
-            {
-              // get module from prefab
-              ModuleResourceHarvester harvester = part_prefab.Modules.GetModules<ModuleResourceHarvester>()[0];
-
-              // [disabled] reason: not working
-              // deduce crew bonus
-              /*double experience_bonus = 0.0;
-              if (harvester.UseSpecialistBonus)
-              {
-                foreach(ProtoCrewMember c in vessel.protoVessel.GetVesselCrew())
-                {
-                  experience_bonus = Math.Max(experience_bonus, (c.trait == harvester.Specialty) ? (double)c.experienceLevel : 0.0);
-                }
-              }*/
-              const double crew_bonus = 1.0; //harvester.SpecialistBonusBase + (experience_bonus + 1.0) * harvester.SpecialistEfficiencyFactor;
-
-              // detect amount of ore in the ground
-              AbundanceRequest request = new AbundanceRequest
-              {
-                Altitude = vessel.altitude,
-                BodyId = vessel.mainBody.flightGlobalsIndex,
-                CheckForLock = false,
-                Latitude = vessel.latitude,
-                Longitude = vessel.longitude,
-                ResourceType = (HarvestTypes)harvester.HarvesterType,
-                ResourceName = harvester.ResourceName
-              };
-              double abundance = ResourceMap.Instance.GetAbundance(request);
-
-              // if there is actually something (should be if active when unloaded)
-              if (abundance > harvester.HarvestThreshold)
-              {
-                // calculate worst required resource percentual
-                double worst_input = 1.0;
-                foreach(var ir in harvester.inputList)
-                {
-                  double required = ir.Ratio * TimeWarp.fixedDeltaTime;
-                  double amount = Lib.GetResourceAmount(vessel, ir.ResourceName);
-                  worst_input = Math.Min(worst_input, amount / required);
-                }
-
-                // for each input resource
-                foreach(var ir in harvester.inputList)
-                {
-                  // consume the resource
-                  Lib.RequestResource(vessel, ir.ResourceName, ir.Ratio * worst_input * TimeWarp.fixedDeltaTime);
-                }
-
-                // determine resource produced
-                double res = abundance * harvester.Efficiency * crew_bonus * worst_input * Malfunction.Penalty(part);
-
-                // accumulate ore
-                Lib.RequestResource(vessel, harvester.ResourceName, -res * TimeWarp.fixedDeltaTime);
-              }
-
-              // undo stock behaviour by forcing last_update_time to now
-              module.moduleValues.SetValue("lastUpdateTime", Planetarium.GetUniversalTime().ToString());
-            }
-          }
-          // asteroid drill
-          // note: untested
-          // note: ignore stock temperature mechanic of asteroid drills
-          // note: ignore autoshutdown
-          // note: 'undo' stock behaviour by forcing lastUpdateTime to now (to minimize overlapping calculations from this and stock post-facto simulation)
-          else if (module.moduleName == "ModuleAsteroidDrill")
-          {
-            // determine if active
-            bool activated = Convert.ToBoolean(module.moduleValues.GetValue("IsActivated"));
-
-            // if active
-            if (activated)
-            {
-              // get module from prefab
-              ModuleAsteroidDrill asteroid_drill = part_prefab.Modules.GetModules<ModuleAsteroidDrill>()[0];
-
-              // [disabled] reason: not working
-              // deduce crew bonus
-              /*double experience_bonus = 0.0;
-              if (asteroid_drill.UseSpecialistBonus)
-              {
-                foreach(ProtoCrewMember c in vessel.protoVessel.GetVesselCrew())
-                {
-                  experience_bonus = Math.Max(experience_bonus, (c.trait == asteroid_drill.Specialty) ? (double)c.experienceLevel : 0.0);
-                }
-              }*/
-              const double crew_bonus = 1.0; //asteroid_drill.SpecialistBonusBase + (experience_bonus + 1.0) * asteroid_drill.SpecialistEfficiencyFactor;
-
-              // get asteroid data
-              ProtoPartModuleSnapshot asteroid_info = null;
-              ProtoPartModuleSnapshot asteroid_resource = null;
-              foreach(ProtoPartSnapshot p in vessel.protoVessel.protoPartSnapshots)
-              {
-                if (asteroid_info == null) asteroid_info = p.modules.Find(k => k.moduleName == "ModuleAsteroidInfo");
-                if (asteroid_resource == null) asteroid_resource = p.modules.Find(k => k.moduleName == "ModuleAsteroidResource");
-              }
-
-              // if there is actually an asteroid attached to this active asteroid drill (it should)
-              if (asteroid_info != null && asteroid_resource != null)
-              {
-                // get some data
-                double mass_threshold = Convert.ToDouble(asteroid_info.moduleValues.GetValue("massThresholdVal"));
-                double mass = Convert.ToDouble(asteroid_info.moduleValues.GetValue("currentMassVal"));
-                double abundance = Convert.ToDouble(asteroid_resource.moduleValues.GetValue("abundance"));
-                string res_name = asteroid_resource.moduleValues.GetValue("resourceName");
-                double res_density = PartResourceLibrary.Instance.GetDefinition(res_name).density;
-
-                // if asteroid isn't depleted
-                if (mass > mass_threshold && abundance > double.Epsilon)
-                {
-                  // consume EC
-                  double ec_required = asteroid_drill.PowerConsumption * TimeWarp.fixedDeltaTime;
-                  double ec_consumed = Lib.RequestResource(vessel, "ElectricCharge", ec_required);
-                  double ec_ratio = ec_consumed / ec_required;
-
-                  // determine resource extracted
-                  double res_amount = abundance * asteroid_drill.Efficiency * crew_bonus * ec_ratio * TimeWarp.fixedDeltaTime;
-
-                  // produce mined resource
-                  Lib.RequestResource(vessel, res_name, -res_amount);
-
-                  // consume asteroid mass
-                  asteroid_info.moduleValues.SetValue("currentMassVal", (mass - res_density * res_amount).ToString());
-                }
-              }
-
-              // undo stock behaviour by forcing last_update_time to now
-              module.moduleValues.SetValue("lastUpdateTime", Planetarium.GetUniversalTime().ToString());
-            }
-          }
-          // science lab
-          // note: we are only simulating the EC consumption
-          // note: there is no easy way to 'stop' the lab when there isn't enough EC
-          else if (module.moduleName == "ModuleScienceConverter")
-          {
-            // get module from prefab
-            ModuleScienceConverter lab = part_prefab.Modules.GetModules<ModuleScienceConverter>()[0];
-
-            // determine if active
-            bool activated = Convert.ToBoolean(module.moduleValues.GetValue("IsActivated"));
-
-            // if active
-            if (activated)
-            {
-              Lib.RequestResource(vessel, "ElectricCharge", lab.powerRequirement * TimeWarp.fixedDeltaTime);
-            }
-          }
-          // SCANSAT support
-          else if (module.moduleName == "SCANsat" || module.moduleName == "ModuleSCANresourceScanner")
-          {
-            // get ec consumption rate
-            PartModule scansat = part_prefab.Modules[module.moduleName];
-            double power = Lib.ReflectionValue<float>(scansat, "power");
-            double ec_required = power * TimeWarp.fixedDeltaTime;
-            bool is_scanning = Lib.GetProtoValue<bool>(module, "scanning");
-            bool was_disabled = vd.scansat_id.Contains(part.flightID);
-
-            // if its scanning
-            if (Lib.GetProtoValue<bool>(module, "scanning"))
-            {
-              // consume ec
-              double ec_consumed = Lib.RequestResource(vessel, "ElectricCharge", ec_required);
-
-              // if there isn't enough ec
-              if (ec_consumed < ec_required * 0.99 && ec_required > double.Epsilon)
-              {
-                // unregister scanner
-                SCANsat.stopScanner(vessel, module, part_prefab);
-
-                // remember disabled scanner
-                vd.scansat_id.Add(part.flightID);
-
-                // give the user some feedback
-                if (DB.VesselData(vessel.id).cfg_ec == 1)
-                  Message.Post("SCANsat sensor was disabled on <b>" + vessel.vesselName + "</b>");
-              }
-            }
-            // if it was disabled
-            else if (vd.scansat_id.Contains(part.flightID))
-            {
-              // if there is enough ec
-              double ec_amount = Lib.GetResourceAmount(vessel, "ElectricCharge");
-              double ec_capacity = Lib.GetResourceCapacity(vessel, "ElectricCharge");
-              if (ec_capacity > double.Epsilon && ec_amount / ec_capacity > 0.25) //< re-enable at 25% EC
-              {
-                // re-enable the scanner
-                SCANsat.resumeScanner(vessel, module, part_prefab);
-
-                // give the user some feedback
-                if (DB.VesselData(vessel.id).cfg_ec == 1)
-                  Message.Post("SCANsat sensor resumed operations on <b>" + vessel.vesselName + "</b>");
-              }
-            }
-
-            // forget active scanners
-            if (Lib.GetProtoValue<bool>(module, "scanning")) vd.scansat_id.Remove(part.flightID);
-          }
-          // NearFutureSolar support
-          // note: we assume deployed, this is a current limitation
-          else if (module.moduleName == "ModuleCurvedSolarPanel")
-          {
-            // if in sunlight
-            if (info.sunlight)
-            {
-              PartModule curved_panel = part_prefab.Modules[module.moduleName];
-              double output = CurvedPanelOutput(vessel, part, part_prefab, curved_panel, info.sun_dir, info.sun_dist, atmo_factor) * Malfunction.Penalty(part);
-              Lib.RequestResource(vessel, "ElectricCharge", -output * TimeWarp.fixedDeltaTime);
-            }
-          }
-          // NearFutureElectrical support
-          // note: fission generator ignore heat
-          // note: radioisotope generator doesn't support easy mode
-          else if (module.moduleName == "FissionGenerator")
-          {
-            PartModule generator = part_prefab.Modules[module.moduleName];
-            double power = Lib.ReflectionValue<float>(generator, "PowerGeneration");
-
-            // get fission reactor tweakable, will default to 1.0 for other modules
-            var reactor = part.modules.Find(k => k.moduleName == "FissionReactor");
-            double tweakable = reactor == null ? 1.0 : Lib.ConfigValue(reactor.moduleValues, "CurrentPowerPercent", 100.0) * 0.01;
-            Lib.RequestResource(vessel, "ElectricCharge", -power * tweakable * TimeWarp.fixedDeltaTime);
-          }
-          else if (module.moduleName == "ModuleRadioisotopeGenerator")
-          {
-            double mission_time = vessel.missionTime / (3600.0 * Lib.HoursInDay() * Lib.DaysInYear());
-            PartModule generator = part_prefab.Modules[module.moduleName];
-            double half_life = Lib.ReflectionValue<float>(generator, "HalfLife");
-            double remaining = Math.Pow(2.0, (-mission_time) / half_life);
-            double power = Lib.ReflectionValue<float>(generator, "BasePower");
-            Lib.RequestResource(vessel, "ElectricCharge", -power * remaining * TimeWarp.fixedDeltaTime);
-          }
-          // KERBALISM modules
-          else if (module.moduleName == "Scrubber") { Scrubber.BackgroundUpdate(vessel, part.flightID); }
-          else if (module.moduleName == "Greenhouse") { Greenhouse.BackgroundUpdate(vessel, part.flightID); }
-          else if (module.moduleName == "GravityRing") { GravityRing.BackgroundUpdate(vessel, part.flightID); }
-          else if (module.moduleName == "Malfunction") { Malfunction.BackgroundUpdate(vessel, part.flightID); }
         }
       }
     }
+  }
+
+
+  static void ProcessCommand(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleCommand command)
+  {
+    // do not consume if this is a MCM with no crew
+    // rationale: for consistency, the game doesn't consume resources for MCM without crew in loaded vessels
+    //            this make some sense: you left a vessel with some battery and nobody on board, you expect it to not consume EC
+    if (command.minimumCrew == 0 || p.protoModuleCrew.Count > 0)
+    {
+      // for each input resource
+      foreach(ModuleResource ir in command.inputResources)
+      {
+        // consume the resource
+        Lib.Resource.Request(v, ir.name, ir.rate * TimeWarp.fixedDeltaTime);
+      }
+    }
+  }
+
+
+  static void ProcessPanel(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleDeployableSolarPanel panel, vessel_info info)
+  {
+    // determine if extended
+    bool extended = m.moduleValues.GetValue("stateString") == ModuleDeployableSolarPanel.panelStates.EXTENDED.ToString();
+
+    // if in sunlight and extended
+    if (info.sunlight > double.Epsilon && extended)
+    {
+      // produce electric charge
+      double output = PanelOutput(v, p, panel, info.sun_dir, info.sun_dist) * info.atmo_factor * info.sunlight;
+      Lib.Resource.Request(v, "ElectricCharge", -output * TimeWarp.fixedDeltaTime * Malfunction.Penalty(p));
+    }
+  }
+
+
+  static void ProcessGenerator(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleGenerator generator)
+  {
+    // determine if active
+    bool activated = Lib.Proto.GetBool(m, "generatorIsActive");
+
+    // if active
+    if (activated)
+    {
+      // determine if vessel is full of all output resources
+      bool full = true;
+      foreach(var or in generator.outputList)
+      {
+        full &= (Cache.ResourceInfo(v, or.name).level >= 1.0 - double.Epsilon);
+      }
+
+      // if not full
+      if (!full)
+      {
+        // calculate worst required resource percentual
+        double worst_input = 1.0;
+        foreach(var ir in generator.inputList)
+        {
+          double required = ir.rate * TimeWarp.fixedDeltaTime;
+          double amount = Cache.ResourceInfo(v, ir.name).amount;
+          worst_input = Math.Min(worst_input, amount / required);
+        }
+
+        // for each input resource
+        foreach(var ir in generator.inputList)
+        {
+          // consume the resource
+          Lib.Resource.Request(v, ir.name, ir.rate * worst_input * TimeWarp.fixedDeltaTime);
+        }
+
+        // for each output resource
+        foreach(var or in generator.outputList)
+        {
+          // produce the resource
+          Lib.Resource.Request(v, or.name, -or.rate * worst_input * TimeWarp.fixedDeltaTime * Malfunction.Penalty(p));
+        }
+      }
+    }
+  }
+
+
+  static void ProcessConverter(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleResourceConverter converter)
+  {
+    // note: support multiple resource converters
+    // note: ignore stock temperature mechanic of converters
+    // note: ignore autoshutdown
+    // note: using hard-coded crew bonus values from the wiki because the module data make zero sense (DERP ALERT)
+    // note: non-mandatory resources 'dynamically scale the ratios', that is exactly what mandatory resources do too (DERP ALERT)
+    // note: 'undo' stock behaviour by forcing lastUpdateTime to now (to minimize overlapping calculations from this and stock post-facto simulation)
+    // note: support PlanetaryBaseSystem converters
+    // note: support NearFuture reactors
+
+    // determine if active
+    bool activated = Lib.Proto.GetBool(m, "IsActivated");
+
+    // if active
+    if (activated)
+    {
+      // deduce crew bonus
+      int exp_level = -1;
+      if (converter.UseSpecialistBonus)
+      {
+        foreach(ProtoCrewMember c in v.protoVessel.GetVesselCrew())
+          exp_level = Math.Max(exp_level, c.trait == converter.Specialty ? c.experienceLevel : -1);
+      }
+      double exp_bonus = exp_level < 0 ? 1.0 : 5.0 + (double)exp_level * 4.0;
+
+      // determine if vessel is full of all output resources
+      bool full = true;
+      foreach(var or in converter.outputList)
+      {
+        full &= (Cache.ResourceInfo(v, or.ResourceName).level >= converter.FillAmount - double.Epsilon);
+      }
+
+      // if not full
+      if (!full)
+      {
+        // calculate worst required resource percentual
+        double worst_input = 1.0;
+        foreach(var ir in converter.inputList)
+        {
+          double required = ir.Ratio * TimeWarp.fixedDeltaTime;
+          double amount = Cache.ResourceInfo(v, ir.ResourceName).amount;
+          worst_input = Math.Min(worst_input, amount / required);
+        }
+
+        // for each input resource
+        foreach(var ir in converter.inputList)
+        {
+          // consume the resource
+          Lib.Resource.Request(v, ir.ResourceName, ir.Ratio * worst_input * TimeWarp.fixedDeltaTime);
+        }
+
+        // for each output resource
+        foreach(var or in converter.outputList)
+        {
+          // produce the resource
+          Lib.Resource.Request(v, or.ResourceName, -or.Ratio * worst_input * TimeWarp.fixedDeltaTime * exp_bonus * Malfunction.Penalty(p));
+        }
+      }
+
+      // undo stock behaviour by forcing last_update_time to now
+      Lib.Proto.Set(m, "lastUpdateTime", Planetarium.GetUniversalTime());
+    }
+  }
+
+
+  static void ProcessHarvester(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleResourceHarvester harvester)
+  {
+    // note: ignore stock temperature mechanic of harvesters
+    // note: ignore autoshutdown
+    // note: ignore depletion (stock seem to do the same)
+    // note: using hard-coded crew bonus values from the wiki because the module data make zero sense (DERP ALERT)
+    // note: 'undo' stock behaviour by forcing lastUpdateTime to now (to minimize overlapping calculations from this and stock post-facto simulation)
+
+    // determine if active
+    bool activated = Lib.Proto.GetBool(m, "IsActivated");
+
+    // if active
+    if (activated)
+    {
+      // deduce crew bonus
+      int exp_level = -1;
+      if (harvester.UseSpecialistBonus)
+      {
+        foreach(ProtoCrewMember c in v.protoVessel.GetVesselCrew())
+          exp_level = Math.Max(exp_level, c.trait == harvester.Specialty ? c.experienceLevel : -1);
+      }
+      double exp_bonus = exp_level < 0 ? 1.0 : 5.0 + (double)exp_level * 4.0;
+
+      // detect amount of ore in the ground
+      AbundanceRequest request = new AbundanceRequest
+      {
+        Altitude = v.altitude,
+        BodyId = v.mainBody.flightGlobalsIndex,
+        CheckForLock = false,
+        Latitude = v.latitude,
+        Longitude = v.longitude,
+        ResourceType = (HarvestTypes)harvester.HarvesterType,
+        ResourceName = harvester.ResourceName
+      };
+      double abundance = ResourceMap.Instance.GetAbundance(request);
+
+      // if there is actually something (should be if active when unloaded)
+      if (abundance > harvester.HarvestThreshold)
+      {
+        // calculate worst required resource percentual
+        double worst_input = 1.0;
+        foreach(var ir in harvester.inputList)
+        {
+          double required = ir.Ratio * TimeWarp.fixedDeltaTime;
+          double amount = Cache.ResourceInfo(v, ir.ResourceName).amount;
+          worst_input = Math.Min(worst_input, amount / required);
+        }
+
+        // for each input resource
+        foreach(var ir in harvester.inputList)
+        {
+          // consume the resource
+          Lib.Resource.Request(v, ir.ResourceName, ir.Ratio * worst_input * TimeWarp.fixedDeltaTime);
+        }
+
+        // determine resource produced
+        double res = abundance * harvester.Efficiency * exp_bonus * worst_input * Malfunction.Penalty(p);
+
+        // accumulate ore
+        Lib.Resource.Request(v, harvester.ResourceName, -res * TimeWarp.fixedDeltaTime);
+      }
+
+      // undo stock behaviour by forcing last_update_time to now
+      Lib.Proto.Set(m, "lastUpdateTime", Planetarium.GetUniversalTime());
+    }
+  }
+
+
+  static void ProcessAsteroidDrill(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleAsteroidDrill asteroid_drill)
+  {
+    // note: untested
+    // note: ignore stock temperature mechanic of asteroid drills
+    // note: ignore autoshutdown
+    // note: using hard-coded crew bonus values from the wiki because the module data make zero sense (DERP ALERT)
+    // note: 'undo' stock behaviour by forcing lastUpdateTime to now (to minimize overlapping calculations from this and stock post-facto simulation)
+
+    // determine if active
+    bool activated = Lib.Proto.GetBool(m, "IsActivated");
+
+    // if active
+    if (activated)
+    {
+      // deduce crew bonus
+      int exp_level = -1;
+      if (asteroid_drill.UseSpecialistBonus)
+      {
+        foreach(ProtoCrewMember c in v.protoVessel.GetVesselCrew())
+          exp_level = Math.Max(exp_level, c.trait == asteroid_drill.Specialty ? c.experienceLevel : -1);
+      }
+      double exp_bonus = exp_level < 0 ? 1.0 : 5.0 + (double)exp_level * 4.0;
+
+      // get asteroid data
+      ProtoPartModuleSnapshot asteroid_info = null;
+      ProtoPartModuleSnapshot asteroid_resource = null;
+      foreach(ProtoPartSnapshot pp in v.protoVessel.protoPartSnapshots)
+      {
+        if (asteroid_info == null) asteroid_info = pp.modules.Find(k => k.moduleName == "ModuleAsteroidInfo");
+        if (asteroid_resource == null) asteroid_resource = pp.modules.Find(k => k.moduleName == "ModuleAsteroidResource");
+      }
+
+      // if there is actually an asteroid attached to this active asteroid drill (it should)
+      if (asteroid_info != null && asteroid_resource != null)
+      {
+        // get some data
+        double mass_threshold = Lib.Proto.GetDouble(asteroid_info, "massThresholdVal");
+        double mass = Lib.Proto.GetDouble(asteroid_info, "currentMassVal");
+        double abundance = Lib.Proto.GetDouble(asteroid_resource, "abundance");
+        string res_name = Lib.Proto.GetString(asteroid_resource, "resourceName");
+        double res_density = PartResourceLibrary.Instance.GetDefinition(res_name).density;
+
+        // if asteroid isn't depleted
+        if (mass > mass_threshold && abundance > double.Epsilon)
+        {
+          // consume EC
+          double ec_required = asteroid_drill.PowerConsumption * TimeWarp.fixedDeltaTime;
+          double ec_consumed = Lib.Resource.Request(v, "ElectricCharge", ec_required);
+          double ec_ratio = ec_consumed / ec_required;
+
+          // determine resource extracted
+          double res_amount = abundance * asteroid_drill.Efficiency * exp_bonus * ec_ratio * TimeWarp.fixedDeltaTime;
+
+          // produce mined resource
+          Lib.Resource.Request(v, res_name, -res_amount);
+
+          // consume asteroid mass
+          Lib.Proto.Set(asteroid_info, "currentMassVal", (mass - res_density * res_amount));
+        }
+      }
+
+      // undo stock behaviour by forcing last_update_time to now
+      Lib.Proto.Set(m, "lastUpdateTime", Planetarium.GetUniversalTime());
+    }
+  }
+
+
+  static void ProcessLab(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleScienceConverter lab)
+  {
+    // note: we are only simulating the EC consumption
+    // note: there is no easy way to 'stop' the lab when there isn't enough EC
+
+    // determine if active
+    bool activated = Lib.Proto.GetBool(m, "IsActivated");
+
+    // if active
+    if (activated)
+    {
+      Lib.Resource.Request(v, "ElectricCharge", lab.powerRequirement * TimeWarp.fixedDeltaTime);
+    }
+  }
+
+
+  static void ProcessScanner(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule scanner, Part part_prefab, vessel_data vd)
+  {
+    // get ec consumption rate
+    double power = Lib.ReflectionValue<float>(scanner, "power");
+    double ec_required = power * TimeWarp.fixedDeltaTime;
+    bool is_scanning = Lib.Proto.GetBool(m, "scanning");
+    bool was_disabled = vd.scansat_id.Contains(p.flightID);
+
+    // if its scanning
+    if (is_scanning)
+    {
+      // consume ec
+      double ec_consumed = Lib.Resource.Request(v, "ElectricCharge", ec_required);
+
+      // if there isn't enough ec
+      if (ec_consumed < ec_required * 0.99 && ec_required > double.Epsilon)
+      {
+        // unregister scanner
+        SCANsat.stopScanner(v, m, part_prefab);
+        is_scanning = false;
+
+        // remember disabled scanner
+        vd.scansat_id.Add(p.flightID);
+
+        // give the user some feedback
+        if (DB.VesselData(v.id).cfg_ec == 1)
+          Message.Post(Lib.BuildString("SCANsat sensor was disabled on <b>", v.vesselName, "</b>"));
+      }
+    }
+    // if it was disabled
+    else if (vd.scansat_id.Contains(p.flightID))
+    {
+      // if there is enough ec
+      if (Cache.ResourceInfo(v, "ElectricCharge").level > 0.25) //< re-enable at 25% EC
+      {
+        // re-enable the scanner
+        SCANsat.resumeScanner(v, m, part_prefab);
+        is_scanning = true;
+
+        // give the user some feedback
+        if (DB.VesselData(v.id).cfg_ec == 1)
+          Message.Post(Lib.BuildString("SCANsat sensor resumed operations on <b>", v.vesselName, "</b>"));
+      }
+    }
+
+    // forget active scanners
+    if (is_scanning) vd.scansat_id.Remove(p.flightID);
+  }
+
+
+  static void ProcessCurvedPanel(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule curved_panel, Part part_prefab, vessel_info info)
+  {
+    // note: we assume deployed, this is a current limitation
+
+    // if in sunlight
+    if (info.sunlight > double.Epsilon)
+    {
+      double output = CurvedPanelOutput(v, p, part_prefab, curved_panel, info.sun_dir, info.sun_dist) * info.atmo_factor * info.sunlight;
+      Lib.Resource.Request(v, "ElectricCharge", -output * TimeWarp.fixedDeltaTime * Malfunction.Penalty(p));
+    }
+  }
+
+
+  static void ProcessFissionGenerator(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule fission_generator)
+  {
+    // note: ignore heat
+
+    double power = Lib.ReflectionValue<float>(fission_generator, "PowerGeneration");
+    var reactor = p.modules.Find(k => k.moduleName == "FissionReactor");
+    double tweakable = reactor == null ? 1.0 : Lib.ConfigValue(reactor.moduleValues, "CurrentPowerPercent", 100.0) * 0.01;
+    Lib.Resource.Request(v, "ElectricCharge", -power * tweakable * TimeWarp.fixedDeltaTime);
+  }
+
+
+  static void ProcessRadioisotopeGenerator(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule radioisotope_generator)
+  {
+    // note: doesn't support easy mode
+
+    double half_life = Lib.ReflectionValue<float>(radioisotope_generator, "HalfLife");
+    double power = Lib.ReflectionValue<float>(radioisotope_generator, "BasePower");
+    double mission_time = v.missionTime / (3600.0 * Lib.HoursInDay() * Lib.DaysInYear());
+    double remaining = Math.Pow(2.0, (-mission_time) / half_life);
+    Lib.Resource.Request(v, "ElectricCharge", -power * remaining * TimeWarp.fixedDeltaTime);
   }
 }
 
 
 } // KERBALISM
+

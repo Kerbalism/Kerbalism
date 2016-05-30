@@ -5,9 +5,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Net.Sockets;
-using KSPAchievements;
-using LibNoise.Unity.Operator;
+using System.ComponentModel;
+using System.Text;
 using UnityEngine;
 
 
@@ -38,134 +37,7 @@ public static class Lib
   public static string Epsilon(string s, uint len)
   {
     len = Math.Max(len, 3u);
-    return s.Length <= len ? s : s.Substring(0, (int)len - 3) + "...";
-  }
-
-  // return amount of a resource in a part
-  public static double GetResourceAmount(Part part, string resource_name)
-  {
-    foreach(PartResource res in part.Resources)
-    {
-      if (res.flowState && res.resourceName == resource_name) return res.amount;
-    }
-    return 0.0;
-  }
-
-  // return amount of a resource in a proto part
-  public static double GetResourceAmount(ProtoPartSnapshot pps, string resource_name)
-  {
-    foreach(ProtoPartResourceSnapshot pprs in pps.resources)
-    {
-      if (pprs.resourceName == resource_name && Convert.ToBoolean(pprs.resourceValues.GetValue("flowState")))
-        return Convert.ToDouble(pprs.resourceValues.GetValue("amount"));
-    }
-    return 0.0;
-  }
-
-  // return amount of a resource in a vessel
-  public static double GetResourceAmount(Vessel vessel, string resource_name)
-  {
-    double amount = 0.0;
-    if (vessel.loaded)
-    {
-      foreach(Part part in vessel.Parts)
-      {
-        amount += GetResourceAmount(part, resource_name);
-      }
-    }
-    else
-    {
-      foreach(ProtoPartSnapshot pps in vessel.protoVessel.protoPartSnapshots)
-      {
-        amount += GetResourceAmount(pps, resource_name);
-      }
-    }
-    return amount;
-  }
-
-
-  // return capacity of a resource in a part
-  public static double GetResourceCapacity(Part part, string resource_name)
-  {
-    foreach(PartResource res in part.Resources)
-    {
-      if (res.flowState && res.resourceName == resource_name) return res.maxAmount;
-    }
-    return 0.0;
-  }
-
-  // return capacity of a resource in a proto part
-  public static double GetResourceCapacity(ProtoPartSnapshot pps, string resource_name)
-  {
-    foreach(ProtoPartResourceSnapshot pprs in pps.resources)
-    {
-      if (pprs.resourceName == resource_name && Convert.ToBoolean(pprs.resourceValues.GetValue("flowState")))
-        return Convert.ToDouble(pprs.resourceValues.GetValue("maxAmount"));
-    }
-    return 0.0;
-  }
-
-  // return capacity of a resource in a vessel
-  public static double GetResourceCapacity(Vessel vessel, string resource_name)
-  {
-    double max_amount = 0.0;
-    if (vessel.loaded)
-    {
-      foreach(Part part in vessel.Parts)
-      {
-        max_amount += GetResourceCapacity(part, resource_name);
-      }
-    }
-    else
-    {
-      foreach(ProtoPartSnapshot pps in vessel.protoVessel.protoPartSnapshots)
-      {
-        max_amount += GetResourceCapacity(pps, resource_name);
-      }
-    }
-    return max_amount;
-  }
-
-  // return proto part from a vessel
-  public static ProtoPartSnapshot GetProtoPart(Vessel vessel, uint partFlightID)
-  {
-    foreach(ProtoPartSnapshot pps in vessel.protoVessel.protoPartSnapshots)
-    {
-      if (pps.flightID == partFlightID)
-      {
-        return pps;
-      }
-    }
-    return null;
-  }
-
-  // return proto module from a vessel
-  public static ProtoPartModuleSnapshot GetProtoModule(Vessel vessel, uint partFlightID, string module_name)
-  {
-    ProtoPartSnapshot pps = GetProtoPart(vessel, partFlightID);
-    foreach(ProtoPartModuleSnapshot ppms in pps.modules)
-    {
-      if (ppms.moduleName == module_name) return ppms;
-    }
-    return null;
-  }
-
-  // return a value from a proto module
-  public static T GetProtoValue<T>(ProtoPartModuleSnapshot module, string value_name)
-  {
-    return (T)Convert.ChangeType(module.moduleValues.GetValue(value_name), typeof(T));
-  }
-
-  // return a value from a proto module or a default one
-  public static T GetProtoValue<T>(ProtoPartModuleSnapshot module, string value_name, T def_value)
-  {
-    return module.moduleValues.HasValue(value_name) ? (T)Convert.ChangeType(module.moduleValues.GetValue(value_name), typeof(T)) : def_value;
-  }
-
-  // set a value in a proto module
-  public static void SetProtoValue<T>(ProtoPartModuleSnapshot module, string value_name, T value)
-  {
-    module.moduleValues.SetValue(value_name, value.ToString(), true);
+    return s.Length <= len ? s : Lib.BuildString(s.Substring(0, (int)len - 3), "...");
   }
 
   // get list of parts recursively, useful from the editors
@@ -198,100 +70,100 @@ public static class Lib
   public static string HumanReadableRate(double rate)
   {
     if (rate <= double.Epsilon) return "none";
-    if (rate >= 0.01) return rate.ToString("F2") + "/s";
+    if (rate >= 0.01) return BuildString(rate.ToString("F2"), "/s");
     rate *= 60.0; // per-minute
-    if (rate >= 0.01) return rate.ToString("F2") + "/m";
+    if (rate >= 0.01) return BuildString(rate.ToString("F2"), "/m");
     rate *= 60.0; // per-hour
-    if (rate >= 0.01) return rate.ToString("F2") + "/h";
+    if (rate >= 0.01) return BuildString(rate.ToString("F2"), "/h");
     rate *= HoursInDay();  // per-day
-    if (rate >= 0.01) return rate.ToString("F2") + "/d";
-    return (rate * DaysInYear()).ToString("F2") + "/y";
+    if (rate >= 0.01) return BuildString(rate.ToString("F2"), "/d");
+    return BuildString((rate * DaysInYear()).ToString("F2"), "/y");
   }
 
   // pretty-print a duration
   // - duration: duration in seconds, must be positive
   public static string HumanReadableDuration(double duration)
   {
-    if (duration <= double.Epsilon) return "never";
+    if (duration <= double.Epsilon) return "none";
     if (double.IsInfinity(duration) || double.IsNaN(duration)) return "perpetual";
 
     double hours_in_day = HoursInDay();
     double days_in_year = DaysInYear();
 
     // seconds
-    if (duration < 60.0) return duration.ToString("F0") + "s";
+    if (duration < 60.0) return BuildString(duration.ToString("F0"), "s");
 
     // minutes + seconds
     double duration_min = Math.Floor(duration / 60.0);
     duration -= duration_min * 60.0;
-    if (duration_min < 60.0) return duration_min.ToString("F0") + "m" + (duration < 1.0 ? "" : " " + duration.ToString("F0") + "s");
+    if (duration_min < 60.0) return BuildString(duration_min.ToString("F0"), "m", (duration < 1.0 ? "" : BuildString(" ", duration.ToString("F0"), "s")));
 
     // hours + minutes
     double duration_h = Math.Floor(duration_min / 60.0);
     duration_min -= duration_h * 60.0;
-    if (duration_h < hours_in_day) return duration_h.ToString("F0") + "h" + (duration_min < 1.0 ? "" : " " + duration_min.ToString("F0") + "m");
+    if (duration_h < hours_in_day) return BuildString(duration_h.ToString("F0"), "h", (duration_min < 1.0 ? "" : BuildString(" ", duration_min.ToString("F0"), "m")));
 
     // days + hours
     double duration_d = Math.Floor(duration_h / hours_in_day);
     duration_h -= duration_d * hours_in_day;
-    if (duration_d < days_in_year) return duration_d.ToString("F0") + "d" + (duration_h < 1.0 ? "" : " " + duration_h.ToString("F0") + "h");
+    if (duration_d < days_in_year) return BuildString(duration_d.ToString("F0"), "d", (duration_h < 1.0 ? "" : BuildString(" ", duration_h.ToString("F0"), "h")));
 
     // years + days
     double duration_y = Math.Floor(duration_d / days_in_year);
     duration_d -= duration_y * days_in_year;
-    return duration_y.ToString("F0") + "y" + (duration_d < 1.0 ? "" : " " + duration_d.ToString("F0") + "d");
+    return BuildString(duration_y.ToString("F0"), "y", (duration_d < 1.0 ? "" : BuildString(" ", duration_d.ToString("F0"), "d")));
   }
-
 
   // pretty-print a range
   // - range: range in meters, must be positive
   public static string HumanReadableRange(double range)
   {
     if (range <= double.Epsilon) return "none";
-    if (range < 1000.0) return range.ToString("F1") + " m";
+    if (range < 1000.0) return BuildString(range.ToString("F1"), " m");
     range /= 1000.0;
-    if (range < 1000.0) return range.ToString("F1") + " Km";
+    if (range < 1000.0) return BuildString(range.ToString("F1"), " Km");
     range /= 1000.0;
-    if (range < 1000.0) return range.ToString("F1") + " Mm";
+    if (range < 1000.0) return BuildString(range.ToString("F1"), " Mm");
     range /= 1000.0;
-    if (range < 1000.0) return range.ToString("F1") + " Gm";
+    if (range < 1000.0) return BuildString(range.ToString("F1"), " Gm");
     range /= 1000.0;
-    if (range < 1000.0) return range.ToString("F1") + " Tm";
+    if (range < 1000.0) return BuildString(range.ToString("F1"), " Tm");
     range /= 1000.0;
-    if (range < 1000.0) return range.ToString("F1") + " Pm";
+    if (range < 1000.0) return BuildString(range.ToString("F1"), " Pm");
     range /= 1000.0;
-    return range.ToString("F1") + " Em";
+    return BuildString(range.ToString("F1"), " Em");
   }
-
 
   // pretty-print temperature
   public static string HumanReadableTemp(double temp)
   {
-    return temp.ToString("F0") + "K";
+    return BuildString(temp.ToString("F0"), "K");
   }
-
 
   // pretty-print radiation
   public static string HumanReadableRadiationRate(double rad)
   {
     if (rad <= double.Epsilon) return "none";
-    return (rad * 3600.0).ToString("F3") + " rad/h";
+    return BuildString((rad * 3600.0).ToString("F3"), " rad/h");
   }
 
+  // pretty-print percentual
+  public static string HumanReadablePerc(double v)
+  {
+    return BuildString((v * 100.0).ToString("F0"), "%");
+  }
 
   // format a value, or return 'none'
   public static string ValueOrNone(double value, string append = "")
   {
-    return (Math.Abs(value) <= double.Epsilon ? "none" : value.ToString("F2") + append);
+    return (Math.Abs(value) <= double.Epsilon ? "none" : BuildString(value.ToString("F2"), append));
   }
-
 
   // return hours in a day
   public static double HoursInDay()
   {
     return GameSettings.KERBIN_TIME ? 6.0 : 24.0;
   }
-
 
   // return year length
   public static double DaysInYear()
@@ -300,14 +172,12 @@ public static class Lib
     return Math.Floor(FlightGlobals.GetHomeBody().orbit.period / (HoursInDay() * 60.0 * 60.0));
   }
 
-
   // stop time warping
   public static void StopWarp()
   {
     if (TimeWarp.CurrentRateIndex > 4) TimeWarp.SetRate(4, true);
     if (TimeWarp.CurrentRateIndex > 0) TimeWarp.SetRate(0, false);
   }
-
 
   // combine two guid, irregardless of their order (eg: Combine(a,b) == Combine(b,a))
   public static Guid CombineGuid(Guid a, Guid b)
@@ -319,7 +189,6 @@ public static class Lib
     return new Guid(c_buf);
   }
 
-
   // combine two guid, in a non-commutative way
   public static Guid OrderedCombineGuid(Guid a, Guid b)
   {
@@ -330,7 +199,6 @@ public static class Lib
     return new Guid(c_buf);
   }
 
-
   // return true if landed somewhere
   public static bool Landed(Vessel vessel)
   {
@@ -338,32 +206,27 @@ public static class Lib
     else return vessel.protoVessel.landed || vessel.protoVessel.splashed;
   }
 
-
   // return vessel position
   public static Vector3d VesselPosition(Vessel vessel)
   {
-    // if simulated (or landed, or orbit is invalid - read below)
+    // GetWorldPos3D work when not simulated, with an exception:
+    //   when orbiting the sun, and switching from flight to space center scene,
+    //   for a single tick the position returned is the same as the sun!
+    // so we resolve the orbit directly, that is reliable in all cases
+    // note: landed vessels have non-valid orbits
+    // note: we don't use the orbit if invalid, for whatever reason
     if (vessel.loaded || Landed(vessel) || double.IsNaN(vessel.orbit.inclination))
     {
       return vessel.GetWorldPos3D();
     }
-    // if not simulated
     else
     {
-      // GetWorldPos3D work when not simulated, with an exception:
-      //   when orbiting the sun, and switching from flight to space center scene,
-      //   for a single tick the position returned is the same as the sun!
-      // so we resolve the orbit directly, that is reliable in all cases
-      // note: landed vessels have non-valid orbits
-      // note: we don't use the orbit if invalid, for whatever reason
       return vessel.orbit.getPositionAtUT(Planetarium.GetUniversalTime());
     }
   }
 
-
   // store the random number generator
   static System.Random rng = new System.Random();
-
 
   // return random integer
   public static int RandomInt(int max_value)
@@ -371,13 +234,11 @@ public static class Lib
     return rng.Next(max_value);
   }
 
-
   // return random double [0..1]
   public static double RandomDouble()
   {
     return rng.NextDouble();
   }
-
 
   // return true if the current scene is not the menus nor the editors
   public static bool SceneIsGame()
@@ -385,13 +246,11 @@ public static class Lib
     return HighLogic.LoadedScene == GameScenes.FLIGHT || HighLogic.LoadedScene == GameScenes.SPACECENTER || HighLogic.LoadedScene == GameScenes.TRACKSTATION;
   }
 
-
   // return crew count of a vessel, even if not loaded
   public static int CrewCount(Vessel v)
   {
     return v.isEVA ? 1 : v.loaded ? v.GetCrewCount() : v.protoVessel.GetVesselCrew().Count;
   }
-
 
   // return crew capacity of a vessel, even if not loaded
   public static int CrewCapacity(Vessel v)
@@ -403,12 +262,11 @@ public static class Lib
       int capacity = 0;
       foreach(ProtoPartSnapshot part in v.protoVessel.protoPartSnapshots)
       {
-        capacity += Convert.ToInt32(part.partInfo.partConfig.GetValue("CrewCapacity"));
+        capacity += part.partInfo.partPrefab.CrewCapacity;
       }
       return capacity;
     }
   }
-
 
   // return a value from a module using reflection
   // note: useful when the module is from another assembly, unknown at build time
@@ -418,7 +276,6 @@ public static class Lib
     return (T)m.GetType().GetField(value_name).GetValue(m);
   }
 
-
   // set a value from a module using reflection
   // note: useful when the module is from another assembly, unknown at build time
   // note: useful when the value isn't persistent
@@ -427,45 +284,11 @@ public static class Lib
     m.GetType().GetField(value_name).SetValue(m, value);
   }
 
-
   // return true if game is paused
   public static bool IsPaused()
   {
     return FlightDriver.Pause || Planetarium.Pause;
   }
-
-
-  // produce or consume a resource on a vessel, irregardless if loaded or not
-  public static double RequestResource(Vessel vessel, string resource_name, double quantity)
-  {
-    if (vessel.loaded)
-    {
-      return vessel.rootPart.RequestResource(resource_name, quantity, ResourceFlowMode.ALL_VESSEL_BALANCE);
-    }
-    else
-    {
-      double diff = quantity;
-      double amount = 0.0;
-      double capacity = 0.0;
-      foreach(ProtoPartSnapshot part in vessel.protoVessel.protoPartSnapshots)
-      {
-        foreach(ProtoPartResourceSnapshot res in part.resources)
-        {
-          if (res.resourceName == resource_name && Convert.ToBoolean(res.resourceValues.GetValue("flowState")))
-          {
-            amount = Convert.ToDouble(res.resourceValues.GetValue("amount"));
-            capacity = Convert.ToDouble(res.resourceValues.GetValue("maxAmount"));
-            double new_amount = Lib.Clamp(amount - diff, 0.0, capacity);
-            res.resourceValues.SetValue("amount", new_amount.ToString());
-            diff -= amount - new_amount;
-            if (Math.Abs(diff) <= double.Epsilon) return quantity;
-          }
-        }
-      }
-      return quantity - diff;
-    }
-  }
-
 
   // return true if there is experiment data on the vessel
   public static bool HasData(Vessel v)
@@ -500,7 +323,6 @@ public static class Lib
     // there was no data
     return false;
   }
-
 
   // remove one experiment at random from the vessel
   public static void RemoveData(Vessel v)
@@ -547,7 +369,6 @@ public static class Lib
     }
   }
 
-
   // return true if this is a 'vessel'
   public static bool IsVessel(Vessel v)
   {
@@ -571,7 +392,6 @@ public static class Lib
     return true;
   }
 
-
   // return true if the vessel is a resque mission
   public static bool IsResqueMission(Vessel v)
   {
@@ -594,7 +414,6 @@ public static class Lib
     return false;
   }
 
-
   // return true if last GUIlayout element was clicked
   public static bool IsClicked(int button=0)
   {
@@ -603,42 +422,19 @@ public static class Lib
         && GUILayoutUtility.GetLastRect().Contains(Event.current.mousePosition);
   }
 
-
   // return reference body of the planetary system that contain the specified body
   public static CelestialBody PlanetarySystem(CelestialBody body)
   {
     if (body.flightGlobalsIndex == 0) return body;
-    return body.referenceBody.flightGlobalsIndex == 0 ? body : body.referenceBody;
+    while(body.referenceBody.flightGlobalsIndex != 0) body = body.referenceBody;
+    return body;
   }
-
 
   // get a texture
   public static Texture2D GetTexture(string name)
   {
     return GameDatabase.Instance.GetTexture("Kerbalism/Textures/" + name, false);
   }
-
-
-  // get 32bit FNV-1a hash of a string
-  public static UInt32 Hash32(string s)
-  {
-    // offset basis
-    UInt32 h = 2166136261u;
-
-    // for each byte of the buffer
-    for(int i=0; i < s.Length; ++i)
-    {
-      // xor the bottom with the current octet
-      h ^= Convert.ToUInt32(s[i]);
-
-      // equivalent to h *= 16777619 (FNV magic prime mod 2^32)
-      h += (h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24);
-    }
-
-    //return the hash
-    return h;
-  }
-
 
   // return number of techs researched among the list specified
   public static int CountTechs(string[] techs)
@@ -648,13 +444,11 @@ public static class Lib
     return n;
   }
 
-
   // write a message to the log
   public static void Log(string msg)
   {
     MonoBehaviour.print("[Kerbalism] " + msg);
   }
-
 
   // render a textfield with placeholder
   // - id: an unique name for the textfield
@@ -680,20 +474,17 @@ public static class Lib
     return text;
   }
 
-
   // get a config node from the config system
   public static ConfigNode ParseConfig(string path)
   {
     return GameDatabase.Instance.GetConfigNode(path) ?? new ConfigNode();
   }
 
-
   // get a set of config nodes from the config system
   public static ConfigNode[] ParseConfigs(string path)
   {
     return GameDatabase.Instance.GetConfigNodes(path);
   }
-
 
   // get a value from config
   public static T ConfigValue<T>(ConfigNode cfg, string key, T def_value)
@@ -709,7 +500,6 @@ public static class Lib
     }
   }
 
-
   // return a progressbar made of text, from a simpler era
   // - len: length in characters
   // - value: value to represent
@@ -719,9 +509,8 @@ public static class Lib
   public static string ProgressBar(uint len, double value, double yellow, double red, double max, string force_color="")
   {
     string color = force_color.Length > 0 ? force_color : value >= red - double.Epsilon ? "red" : value >= yellow ? "yellow" : "gray";
-    return "<color=" + color + ">" + new string('=', Math.Max((int)((double)len * value / max + 0.5), 1)) + "</color>";
+    return BuildString("<color=", color, ">", new string('=', Math.Max((int)((double)len * value / max + 0.5), 1)), "</color>");
   }
-
 
   // return message with the macro expanded
   // - variant: tokenize the string by '|' and select one
@@ -734,13 +523,13 @@ public static class Lib
     // macro expansion
     string v_name = v != null ? (v.isEVA ? "EVA" : v.vesselName) : "";
     string c_name = c != null ? c.name : "";
-    return txt.Replace("$NEWLINE", "\n")
-              .Replace("$VESSEL", "<b>" + v_name + "</b>")
-              .Replace("$KERBAL", "<b>" + c_name + "</b>")
-              .Replace("$ON_VESSEL", v != null && v.isActiveVessel ? "" : "On <b>" + v_name + "</b>, ")
-              .Replace("$HIS_HER", c != null && c.gender == ProtoCrewMember.Gender.Male ? "his" : "her");
+    return txt
+      .Replace("$NEWLINE", "\n")
+      .Replace("$VESSEL", BuildString("<b>", v_name, "</b>"))
+      .Replace("$KERBAL", "<b>" + c_name + "</b>")
+      .Replace("$ON_VESSEL", v != null && v.isActiveVessel ? "" : BuildString("On <b>", v_name, "</b>, "))
+      .Replace("$HIS_HER", c != null && c.gender == ProtoCrewMember.Gender.Male ? "his" : "her");
   }
-
 
   // tokenize a string
   public static List<string> Tokenize(string txt, char separator)
@@ -753,6 +542,283 @@ public static class Lib
       if (trimmed.Length > 0) ret.Add(trimmed);
     }
     return ret;
+  }
+
+  // get 32bit FNV-1a hash of a string
+  public static UInt32 Hash32(string s)
+  {
+    // offset basis
+    UInt32 h = 2166136261u;
+
+    // for each byte of the buffer
+    for(int i=0; i < s.Length; ++i)
+    {
+      // xor the bottom with the current octet
+      h ^= (uint)s[i];
+
+      // equivalent to h *= 16777619 (FNV magic prime mod 2^32)
+      h += (h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24);
+    }
+
+    //return the hash
+    return h;
+  }
+
+  // return a 32bit id for a vessel
+  public static UInt32 VesselID(Vessel v)
+  {
+    return (UInt32)v.GetInstanceID();
+  }
+
+  // combine two 32bit ids in a single one
+  public static UInt32 CombinedID(UInt32 a, UInt32 b)
+  {
+    return a ^ b;
+  }
+
+  // compose a set of strings together, without creating temporary objects
+  // note: the objective here is to minimize number of temporary variables for GC
+  static StringBuilder sb = new StringBuilder(256);
+  public static string BuildString(string a, string b)
+  {
+    sb.Length = 0;
+    sb.Append(a);
+    sb.Append(b);
+    return sb.ToString();
+  }
+  public static string BuildString(string a, string b, string c)
+  {
+    sb.Length = 0;
+    sb.Append(a);
+    sb.Append(b);
+    sb.Append(c);
+    return sb.ToString();
+  }
+  public static string BuildString(string a, string b, string c, string d)
+  {
+    sb.Length = 0;
+    sb.Append(a);
+    sb.Append(b);
+    sb.Append(c);
+    sb.Append(d);
+    return sb.ToString();
+  }
+  public static string BuildString(string a, string b, string c, string d, string e)
+  {
+    sb.Length = 0;
+    sb.Append(a);
+    sb.Append(b);
+    sb.Append(c);
+    sb.Append(d);
+    sb.Append(e);
+    return sb.ToString();
+  }
+  public static string BuildString(string a, string b, string c, string d, string e, string f)
+  {
+    sb.Length = 0;
+    sb.Append(a);
+    sb.Append(b);
+    sb.Append(c);
+    sb.Append(d);
+    sb.Append(e);
+    sb.Append(f);
+    return sb.ToString();
+  }
+  public static string BuildString(params string[] args)
+  {
+    sb.Length = 0;
+    foreach(string s in args) sb.Append(s);
+    return sb.ToString();
+  }
+
+
+  public static class Resource
+  {
+    // return amount of a resource in a part
+    public static double Amount(Part part, string resource_name)
+    {
+      foreach(PartResource res in part.Resources)
+      {
+        if (res.flowState && res.resourceName == resource_name) return res.amount;
+      }
+      return 0.0;
+    }
+
+    // return amount of a resource in a proto part
+    public static double Amount(ProtoPartSnapshot pps, string resource_name)
+    {
+      foreach(ProtoPartResourceSnapshot pprs in pps.resources)
+      {
+        if (pprs.resourceName == resource_name && Parse.ToBool(pprs.resourceValues.GetValue("flowState")))
+          return Parse.ToDouble(pprs.resourceValues.GetValue("amount"));
+      }
+      return 0.0;
+    }
+
+    // return amount of a resource in a vessel
+    public static double Amount(Vessel vessel, string resource_name)
+    {
+      double amount = 0.0;
+      if (vessel.loaded)
+      {
+        foreach(Part part in vessel.Parts)
+        {
+          amount += Amount(part, resource_name);
+        }
+      }
+      else
+      {
+        foreach(ProtoPartSnapshot pps in vessel.protoVessel.protoPartSnapshots)
+        {
+          amount += Amount(pps, resource_name);
+        }
+      }
+      return amount;
+    }
+
+    // return capacity of a resource in a part
+    public static double Capacity(Part part, string resource_name)
+    {
+      foreach(PartResource res in part.Resources)
+      {
+        if (res.flowState && res.resourceName == resource_name) return res.maxAmount;
+      }
+      return 0.0;
+    }
+
+    // return capacity of a resource in a proto part
+    public static double Capacity(ProtoPartSnapshot pps, string resource_name)
+    {
+      foreach(ProtoPartResourceSnapshot pprs in pps.resources)
+      {
+        if (pprs.resourceName == resource_name && Parse.ToBool(pprs.resourceValues.GetValue("flowState")))
+          return Parse.ToDouble(pprs.resourceValues.GetValue("maxAmount"));
+      }
+      return 0.0;
+    }
+
+    // return capacity of a resource in a vessel
+    public static double Capacity(Vessel vessel, string resource_name)
+    {
+      double max_amount = 0.0;
+      if (vessel.loaded)
+      {
+        foreach(Part part in vessel.Parts)
+        {
+          max_amount += Capacity(part, resource_name);
+        }
+      }
+      else
+      {
+        foreach(ProtoPartSnapshot pps in vessel.protoVessel.protoPartSnapshots)
+        {
+          max_amount += Capacity(pps, resource_name);
+        }
+      }
+      return max_amount;
+    }
+
+    public static double Request(Vessel v, string resource_name, double quantity)
+    {
+      if (v.loaded)
+      {
+        return v.rootPart.RequestResource(resource_name, quantity, ResourceFlowMode.ALL_VESSEL_BALANCE);
+      }
+      else
+      {
+        double diff = quantity;
+        double amount = 0.0;
+        double capacity = 0.0;
+        foreach(ProtoPartSnapshot part in v.protoVessel.protoPartSnapshots)
+        {
+          foreach(ProtoPartResourceSnapshot res in part.resources)
+          {
+            if (res.resourceName == resource_name && Lib.Parse.ToBool(res.resourceValues.GetValue("flowState")))
+            {
+              amount = Lib.Parse.ToDouble(res.resourceValues.GetValue("amount"));
+              capacity = Lib.Parse.ToDouble(res.resourceValues.GetValue("maxAmount"));
+              double new_amount = Lib.Clamp(amount - diff, 0.0, capacity);
+              res.resourceValues.SetValue("amount", new_amount.ToString());
+              diff -= amount - new_amount;
+              if (Math.Abs(diff) <= double.Epsilon) return quantity;
+            }
+          }
+        }
+        return quantity - diff;
+      }
+    }
+  }
+
+
+  public static class Proto
+  {
+    public static bool GetBool(ProtoPartModuleSnapshot m, string name, bool def_value = false)
+    {
+      bool v;
+      string s = m.moduleValues.GetValue(name);
+      return s != null && bool.TryParse(s, out v) ? v : def_value;
+    }
+
+    public static uint GetUInt(ProtoPartModuleSnapshot m, string name, uint def_value = 0)
+    {
+      uint v;
+      string s = m.moduleValues.GetValue(name);
+      return s != null && uint.TryParse(s, out v) ? v : def_value;
+    }
+
+    public static float GetFloat(ProtoPartModuleSnapshot m, string name, float def_value = 0.0f)
+    {
+      float v;
+      string s = m.moduleValues.GetValue(name);
+      return s != null && float.TryParse(s, out v) ? v : def_value;
+    }
+
+    public static double GetDouble(ProtoPartModuleSnapshot m, string name, double def_value = 0.0)
+    {
+      double v;
+      string s = m.moduleValues.GetValue(name);
+      return s != null && double.TryParse(s, out v) ? v : def_value;
+    }
+
+    public static string GetString(ProtoPartModuleSnapshot m, string name, string def_value = "")
+    {
+      string s = m.moduleValues.GetValue(name);
+      return s != null ? s : def_value;
+    }
+
+    // set a value in a proto module
+    public static void Set<T>(ProtoPartModuleSnapshot module, string value_name, T value)
+    {
+      module.moduleValues.SetValue(value_name, value.ToString(), true);
+    }
+  }
+
+
+  public static class Parse
+  {
+    public static bool ToBool(string s, bool def_value = false)
+    {
+      bool v;
+      return s != null && bool.TryParse(s, out v) ? v : def_value;
+    }
+
+    public static uint ToUInt(string s, uint def_value = 0)
+    {
+      uint v;
+      return s != null && uint.TryParse(s, out v) ? v : def_value;
+    }
+
+    public static float ToFloat(string s, float def_value = 0.0f)
+    {
+      float v;
+      return s != null && float.TryParse(s, out v) ? v : def_value;
+    }
+
+    public static double ToDouble(string s, double def_value = 0.0)
+    {
+      double v;
+      return s != null && double.TryParse(s, out v) ? v : def_value;
+    }
   }
 }
 

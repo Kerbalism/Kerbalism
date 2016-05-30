@@ -22,10 +22,9 @@ public static class Settings
     SurvivalRange               = Lib.ConfigValue(cfg, "SurvivalRange",               0.0);
 
     // quality-of-life
-    QoL_LivingSpace             = Lib.ConfigValue(cfg, "QoL_LivingSpace",             1.0);
-    QoL_FirmGround              = Lib.ConfigValue(cfg, "QoL_FirmGround",              0.5);
+    QoL_FirmGround              = Lib.ConfigValue(cfg, "QoL_FirmGround",              1.0);
     QoL_PhoneHome               = Lib.ConfigValue(cfg, "QoL_PhoneHome",               0.5);
-    QoL_NotAlone                = Lib.ConfigValue(cfg, "QoL_NotAlone",                0.5);
+    QoL_NotAlone                = Lib.ConfigValue(cfg, "QoL_NotAlone",                1.5);
 
     // radiation
     CosmicRadiation             = Lib.ConfigValue(cfg, "CosmicRadiation",             0.0000055555); // 0.02 rad/h
@@ -42,6 +41,7 @@ public static class Settings
     StormEjectionSpeed          = Lib.ConfigValue(cfg, "StormEjectionSpeed",          1000000.0); // 0.33% c
 
     // misc
+    RemoteControlLink           = Lib.ConfigValue(cfg, "RemoteControlLink",           true);
     MonoPropellantOnEVA         = Lib.ConfigValue(cfg, "MonoPropellantOnEVA",         5.0);
     MonoPropellantOnResque      = Lib.ConfigValue(cfg, "MonoPropellantOnResque",      5.0);
     HeadlightCost               = Lib.ConfigValue(cfg, "HeadlightCost",               0.005);
@@ -55,7 +55,6 @@ public static class Settings
   public static double SurvivalRange;                     // sweet spot around survival temperature
 
   // quality-of-life
-  public static double QoL_LivingSpace;                   // scale living space factor up or down
   public static double QoL_FirmGround;                    // bonus to apply to quality-of-life when landed
   public static double QoL_PhoneHome;                     // bonus to apply to quality-of-life when linked
   public static double QoL_NotAlone;                      // bonus to apply to quality-of-life when crew count is >= 2
@@ -75,6 +74,7 @@ public static class Settings
   public static double StormEjectionSpeed;                // cme speed in m/s
 
   // misc
+  public static bool   RemoteControlLink;                 // if true, a link home is required to control probes
   public static double MonoPropellantOnEVA;               // how much monopropellant to take on EVA
   public static double MonoPropellantOnResque;            // how much monopropellant to gift to resque missions
   public static double HeadlightCost;                     // EC/s cost if eva headlights are on

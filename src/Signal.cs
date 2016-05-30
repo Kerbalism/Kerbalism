@@ -33,18 +33,18 @@ public struct link_data
 {
   public link_data(bool linked, link_status status, double distance)
   { this.linked = linked; this.status = status; this.distance = distance;
-    this.path = new List<string>(); this.path_id = new List<Guid>(); }
+    this.path = new List<string>(); this.path_id = new List<UInt32>(); }
 
   public bool linked;             // true if linked, false otherwise
   public link_status status;      // kind of link
   public double distance;         // distance to first relay or home planet
   public List<string> path;       // list of relay names in reverse order
-  public List<Guid> path_id;      // list of relay ids in reverse order
+  public List<UInt32> path_id;    // list of relay ids in reverse order
 }
 
 
 [KSPAddon(KSPAddon.Startup.MainMenu, true)]
-public class Signal : MonoBehaviour
+public sealed class Signal : MonoBehaviour
 {
   // note: complexity
   // the original problem was O(N+N^N), N being the number of vessels
@@ -71,22 +71,22 @@ public class Signal : MonoBehaviour
   Dictionary<string, double> range_values = new Dictionary<string, double>();
 
   // store data about antennas
-  Dictionary<Guid, antenna_data> antennas = new Dictionary<Guid, antenna_data>();
+  Dictionary<UInt32, antenna_data> antennas = new Dictionary<UInt32, antenna_data>();
 
   // store visibility cache between vessel and homebody
   // note: value store distance, visible if value > 0.0
-  Dictionary<Guid, double> direct_visibility_cache = new Dictionary<Guid, double>();
+  Dictionary<UInt32, double> direct_visibility_cache = new Dictionary<UInt32, double>();
 
   // store visibility cache between vessels
   // note: value store distance, visible if value > 0.0
   // note: the visibility stored is the relay-agnostic, symmetric one
-  Dictionary<Guid, double> indirect_visibility_cache = new Dictionary<Guid, double>();
+  Dictionary<UInt32, double> indirect_visibility_cache = new Dictionary<UInt32, double>();
 
   // store link status
-  Dictionary<Guid, link_data> links = new Dictionary<Guid, link_data>();
+  Dictionary<UInt32, link_data> links = new Dictionary<UInt32, link_data>();
 
   // store list of active relays, and their relay cost
-  Dictionary<Guid, double> active_relays = new Dictionary<Guid, double>();
+  Dictionary<UInt32, double> active_relays = new Dictionary<UInt32, double>();
 
   // permit global access
   private static Signal instance = null;
@@ -160,8 +160,11 @@ public class Signal : MonoBehaviour
     // for each vessel
     foreach(Vessel v in FlightGlobals.Vessels)
     {
+      // get info from the cache
+      vessel_info vi = Cache.VesselInfo(v);
+
       // skip invalid vessels
-      if (!Lib.IsVessel(v)) continue;
+      if (!vi.is_vessel) continue;
 
       // store best antenna values
       double best_range = 0.0;
@@ -169,7 +172,7 @@ public class Signal : MonoBehaviour
       double best_relay_cost = 0.0;
 
       // get ec available
-      double ec_amount = Lib.GetResourceAmount(v, "ElectricCharge");
+      double ec_amount = Cache.ResourceInfo(v, "ElectricCharge").amount;
 
       // if the vessel is loaded
       if (v.loaded)
@@ -194,8 +197,8 @@ public class Signal : MonoBehaviour
             if (m.moduleName == "Antenna")
             {
               double range = Range(m.moduleValues.GetValue("scope"), Malfunction.Penalty(p, 0.7071), ecc);
-              double relay_cost = Lib.GetProtoValue<double>(m, "relay_cost");
-              bool relay = Lib.GetProtoValue<bool>(m, "relay");
+              double relay_cost = Lib.Proto.GetDouble(m, "relay_cost");
+              bool relay = Lib.Proto.GetBool(m, "relay");
               best_range = Math.Max(best_range, range);
               if (relay && range > best_relay_range && ec_amount >= relay_cost * TimeWarp.deltaTime)
               { best_relay_range = range; best_relay_cost = relay_cost; }
@@ -205,7 +208,7 @@ public class Signal : MonoBehaviour
       }
 
       // add antenna data
-      antennas.Add(v.id, new antenna_data(Lib.VesselPosition(v), best_range, best_relay_range, best_relay_cost));
+      antennas.Add(Lib.VesselID(v), new antenna_data(vi.position, best_range, best_relay_range, best_relay_cost));
     }
   }
 
@@ -220,11 +223,14 @@ public class Signal : MonoBehaviour
     direct_visibility_cache.Clear();
     foreach(Vessel v in FlightGlobals.Vessels)
     {
+      // get info from the cache
+      vessel_info vi = Cache.VesselInfo(v);
+
       // skip invalid vessels
-      if (!Lib.IsVessel(v)) continue;
+      if (!vi.is_vessel) continue;
 
       // get antenna data
-      antenna_data ad = antennas[v.id];
+      antenna_data ad = antennas[Lib.VesselID(v)];
 
       // raytrace home body
       Vector3d dir;
@@ -234,7 +240,7 @@ public class Signal : MonoBehaviour
 
       // store in visibility cache
       // note: we store distance & visibility flag at the same time
-      direct_visibility_cache.Add(v.id, visible && dist < ad.range ? dist : 0.0);
+      direct_visibility_cache.Add(Lib.VesselID(v), visible && dist < ad.range ? dist : 0.0);
     }
 
 
@@ -243,32 +249,38 @@ public class Signal : MonoBehaviour
     foreach(Vessel v in FlightGlobals.Vessels)
     {
       // skip invalid vessels
-      if (!Lib.IsVessel(v)) continue;
+      if (!Cache.VesselInfo(v).is_vessel) continue;
+
+      // get id of first vessel
+      UInt32 v_id = Lib.VesselID(v);
 
       // get antenna data
-      antenna_data v_ad = antennas[v.id];
+      antenna_data v_ad = antennas[v_id];
 
       // for each vessel
       foreach(Vessel w in FlightGlobals.Vessels)
       {
         // skip invalid vessels
-        if (!Lib.IsVessel(w)) continue;
+        if (!Cache.VesselInfo(w).is_vessel) continue;
 
         // do not test with itself
         if (v == w) continue;
 
+        // get id of second vessel
+        UInt32 w_id = Lib.VesselID(w);
+
         // do not compute visibility when both vessels have a direct link
         // rationale: optimization, the indirect visibility it never used in this case
-        if (direct_visibility_cache[v.id] > double.Epsilon && direct_visibility_cache[w.id] > double.Epsilon) continue;
+        if (direct_visibility_cache[v_id] > double.Epsilon && direct_visibility_cache[w_id] > double.Epsilon) continue;
 
-        // generate merged guid
-        Guid id = Lib.CombineGuid(v.id, w.id);
+        // generate combined id
+        UInt32 id = Lib.CombinedID(v_id, w_id);
 
         // avoid raycasting the same pair twice
         if (indirect_visibility_cache.ContainsKey(id)) continue;
 
         // get antenna data
-        antenna_data w_ad = antennas[w.id];
+        antenna_data w_ad = antennas[w_id];
 
         // raytrace the vessel
         Vector3d dir;
@@ -284,45 +296,51 @@ public class Signal : MonoBehaviour
   }
 
 
-  public link_data ComputeLink(Vessel v, HashSet<Guid> avoid_inf_recursion)
+  public link_data ComputeLink(Vessel v, HashSet<UInt32> avoid_inf_recursion)
   {
+    // get id of first vessel
+    UInt32 v_id = Lib.VesselID(v);
+
     // if it has no antenna
-    if (antennas[v.id].range <= double.Epsilon) return new link_data(false, link_status.no_antenna, 0.0);
+    if (antennas[v_id].range <= double.Epsilon) return new link_data(false, link_status.no_antenna, 0.0);
 
     // if there is a storm and the vessel is inside a magnetosphere
     if (Blackout(v)) return new link_data(false, link_status.no_link, 0.0);
 
     // check for direct link
     // note: we also get distance from the cache and store it in the link
-    double direct_visible_dist = direct_visibility_cache[v.id];
+    double direct_visible_dist = direct_visibility_cache[v_id];
     bool direct_visible = direct_visible_dist > 0.0;
     if (direct_visible) return new link_data(true, link_status.direct_link, direct_visible_dist);
 
     // avoid infinite recursion
-    avoid_inf_recursion.Add(v.id);
+    avoid_inf_recursion.Add(v_id);
 
     // get antenna data
-    antenna_data v_ad = antennas[v.id];
+    antenna_data v_ad = antennas[v_id];
 
     // check for indirect link
     foreach(Vessel w in FlightGlobals.Vessels)
     {
       // skip invalid vessels
-      if (!Lib.IsVessel(w)) continue;
+      if (!Cache.VesselInfo(w).is_vessel) continue;
+
+      // get id of second vessel
+      UInt32 w_id = Lib.VesselID(w);
 
       // avoid infinite recursion
-      if (avoid_inf_recursion.Contains(w.id)) continue;
+      if (avoid_inf_recursion.Contains(w_id)) continue;
 
       // avoid testing against itself
-      if (v == w) continue;
+      if (v_id == w_id) continue;
 
       // get antenna data
-      antenna_data w_ad = antennas[w.id];
+      antenna_data w_ad = antennas[w_id];
 
       // check for indirect link to home body
       // note: we also get distance from the cache
       // note: we check the relay range, that is asymmetric
-      double indirect_visible_dist = indirect_visibility_cache[Lib.CombineGuid(v.id, w.id)];
+      double indirect_visible_dist = indirect_visibility_cache[Lib.CombinedID(v_id, w_id)];
       bool indirect_visible = indirect_visible_dist > 0.0 && indirect_visible_dist < Math.Min(v_ad.range, w_ad.relay_range);
       if (indirect_visible)
       {
@@ -333,13 +351,13 @@ public class Signal : MonoBehaviour
         if (next_link.linked)
         {
           // flag the relay for ec consumption, but only once
-          if (!active_relays.ContainsKey(w.id)) active_relays.Add(w.id, w_ad.relay_cost);
+          if (!active_relays.ContainsKey(w_id)) active_relays.Add(w_id, w_ad.relay_cost);
 
           // update the link data and return it
           next_link.status = link_status.indirect_link;
           next_link.distance = indirect_visible_dist; //< store distance of last link
           next_link.path.Add(w.vesselName);
-          next_link.path_id.Add(w.id);
+          next_link.path_id.Add(w_id);
           return next_link;
         }
       }
@@ -362,11 +380,11 @@ public class Signal : MonoBehaviour
     foreach(Vessel v in FlightGlobals.Vessels)
     {
       // skip invalid vessels
-      if (!Lib.IsVessel(v)) continue;
+      if (!Cache.VesselInfo(v).is_vessel) continue;
 
       // generate and store link status
-      link_data ld = ComputeLink(v, new HashSet<Guid>());
-      links.Add(v.id, ld);
+      link_data ld = ComputeLink(v, new HashSet<UInt32>());
+      links.Add(Lib.VesselID(v), ld);
 
       // maintain and send messages
       // - do nothing if db isn't ready
@@ -381,7 +399,8 @@ public class Signal : MonoBehaviour
           if (vd.cfg_signal == 1 && !Blackout(v)) //< do not send message during storms
           {
             bool is_probe = (v.loaded ? v.GetCrewCount() == 0 : v.protoVessel.GetVesselCrew().Count == 0);
-            Message.Post(Severity.warning, "Signal lost with <b>" + v.vesselName + "</b>", is_probe ? "Remote control disabled" : "Data transmission disabled");
+            Message.Post(Severity.warning, Lib.BuildString("Signal lost with <b>", v.vesselName, "</b>"),
+              is_probe && Settings.RemoteControlLink ? "Remote control disabled" : "Data transmission disabled");
           }
         }
         else if (vd.msg_signal > 0 && ld.linked)
@@ -389,8 +408,8 @@ public class Signal : MonoBehaviour
           vd.msg_signal = 0;
           if (vd.cfg_signal == 1 && !Storm.JustEnded(v.mainBody, TimeWarp.deltaTime)) //< do not send messages after a storm
           {
-            Message.Post(Severity.relax, "<b>" + v.vesselName + "</b> signal is back",
-              ld.path.Count == 0 ? "We got a direct link with the space center" : "Relayed by <b>" + ld.path[ld.path.Count - 1] + "</b>");
+            Message.Post(Severity.relax, Lib.BuildString("<b>", v.vesselName, "</b> signal is back"),
+              ld.path.Count == 0 ? "We got a direct link with the space center" : Lib.BuildString("Relayed by <b>", ld.path[ld.path.Count - 1], "</b>"));
           }
         }
       }
@@ -404,7 +423,7 @@ public class Signal : MonoBehaviour
   // - during scene changes the vessel list change asynchronously, but is synched every frame, apparently
   public void Update()
   {
-    // play nice with RemoteTech and AntennaRange
+    // do nothing if signal mechanic is disabled
     if (!Kerbalism.features.signal) return;
 
     // get existing antennas
@@ -418,10 +437,10 @@ public class Signal : MonoBehaviour
 
     // if there is an active vessel, and is valid
     Vessel v = FlightGlobals.ActiveVessel;
-    if (v != null && Lib.IsVessel(v))
+    if (v != null && Cache.VesselInfo(v).is_vessel)
     {
       // get link state
-      link_data ld = links[v.id];
+      link_data ld = links[Lib.VesselID(v)];
 
       // for each antenna
       foreach(Antenna m in v.FindPartModulesImplementing<Antenna>())
@@ -451,16 +470,16 @@ public class Signal : MonoBehaviour
     foreach(var p in active_relays)
     {
       // shortcuts
-      Guid id = p.Key;
+      UInt32 id = p.Key;
       double relay_cost = p.Value;
 
       // find the vessel
-      Vessel v = FlightGlobals.Vessels.Find(k => k.id == id);
+      Vessel v = FlightGlobals.Vessels.Find(k => Lib.VesselID(k) == id);
 
       // consume the relay ec
       if (v != null)
       {
-        Lib.RequestResource(v, "ElectricCharge", relay_cost * TimeWarp.fixedDeltaTime);
+        Lib.Resource.Request(v, "ElectricCharge", relay_cost * TimeWarp.fixedDeltaTime);
       }
     }
   }
@@ -476,7 +495,7 @@ public class Signal : MonoBehaviour
     // this for example may happen when a resque mission vessel get enabled
     // this also can happen when Link() is called with a non-valid vessel (eg: debris)
     link_data ld;
-    if (!instance.links.TryGetValue(v.id, out ld)) ld.status = link_status.no_antenna;
+    if (!instance.links.TryGetValue(Lib.VesselID(v), out ld)) ld.status = link_status.no_antenna;
 
     // return link status from the cache
     return ld;
@@ -577,8 +596,6 @@ public class LinkRenderer : MonoBehaviour
   // called at every frame
   public void Update()
   {
-    // FIXME: can't double-click on vessel to switch active one, if line is rendered
-
     // hide all lines
     foreach(var l in lines) l.Value.Show(false);
 
@@ -597,11 +614,14 @@ public class LinkRenderer : MonoBehaviour
     // iterate all vessels
     foreach(Vessel v in FlightGlobals.Vessels)
     {
+      // get info from the cache
+      vessel_info vi = Cache.VesselInfo(v);
+
       // skip invalid vessels
-      if (!Lib.IsVessel(v)) continue;
+      if (!vi.is_vessel) continue;
 
       // skip resque missions
-      if (Lib.IsResqueMission(v)) continue;
+      if (vi.is_resque) continue;
 
       // skip EVA kerbals
       if (v.isEVA) continue;
@@ -619,10 +639,10 @@ public class LinkRenderer : MonoBehaviour
       if (ld.status != link_status.no_antenna)
       {
         // get line renderer from the cache
-        Line line = getLine(v.id);
+        Line line = getLine(Lib.VesselID(v));
 
         // start of the line
-        Vector3d a = Lib.VesselPosition(v);
+        Vector3d a = vi.position;
 
         // determine end of line and color
         Vector3d b;
@@ -634,9 +654,9 @@ public class LinkRenderer : MonoBehaviour
         }
         else if (ld.status == link_status.indirect_link)
         {
-          Vessel relay = FlightGlobals.Vessels.Find(k => k.id == ld.path_id[ld.path.Count - 1]);
+          Vessel relay = FlightGlobals.Vessels.Find(k => Lib.VesselID(k) == ld.path_id[ld.path.Count - 1]);
           if (relay == null) { line.Show(false); continue; } //< skip if it doesn't exist anymore
-          b = Lib.VesselPosition(relay);
+          b = Cache.VesselInfo(relay).position;
           clr = Color.yellow;
         }
         else // no link
@@ -653,7 +673,7 @@ public class LinkRenderer : MonoBehaviour
   }
 
   // create a line renderer or return it from the cache
-  Line getLine(Guid id)
+  Line getLine(UInt32 id)
   {
     Line line;
     if (!lines.TryGetValue(id, out line))
@@ -665,7 +685,7 @@ public class LinkRenderer : MonoBehaviour
   }
 
   // store unity line renderers per-vessel
-  Dictionary<Guid, Line> lines = new Dictionary<Guid, Line>();
+  Dictionary<UInt32, Line> lines = new Dictionary<UInt32, Line>();
 }
 
 

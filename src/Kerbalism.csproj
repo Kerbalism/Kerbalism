@@ -24,7 +24,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <BaseAddress>4194304</BaseAddress>
     <RegisterForComInterop>False</RegisterForComInterop>
-    <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
+    <GenerateSerializationAssemblies>Off</GenerateSerializationAssemblies>
     <FileAlignment>4096</FileAlignment>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
@@ -42,7 +42,6 @@
     <DebugType>None</DebugType>
     <Optimize>True</Optimize>
     <CheckForOverflowUnderflow>False</CheckForOverflowUnderflow>
-    <DefineConstants>TRACE</DefineConstants>
     <BaseIntermediateOutputPath>obj\</BaseIntermediateOutputPath>
     <StartAction>Project</StartAction>
   </PropertyGroup>
@@ -79,11 +78,13 @@
     <Compile Include="Background.cs" />
     <Compile Include="Cache.cs" />
     <Compile Include="CLS.cs" />
+    <Compile Include="Contracts.cs" />
     <Compile Include="DB.cs" />
     <Compile Include="Entertainment.cs" />
     <Compile Include="EVA.cs" />
     <Compile Include="GravityRing.cs" />
     <Compile Include="Info.cs" />
+    <Compile Include="Profiler.cs" />
     <Compile Include="Recycler.cs" />
     <Compile Include="Rule.cs" />
     <Compile Include="SCANsat.cs" />

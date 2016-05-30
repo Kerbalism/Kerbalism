@@ -5,14 +5,13 @@
 
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using UnityEngine;
 
 
 namespace KERBALISM {
 
 
-public class EVA : PartModule
+public sealed class EVA : PartModule
 {
   [KSPField(isPersistant = true)] public bool has_helmet = true;          // indicate if eva kerbal has an helmet (and oxygen)
   [KSPField(isPersistant = true)] public bool is_dead = false;            // indicate if eva kerbal is dead
@@ -38,7 +37,7 @@ public class EVA : PartModule
     if (has_helmet && kerbal.lampOn) part.RequestResource("ElectricCharge", Settings.HeadlightCost * TimeWarp.fixedDeltaTime);
 
     // determine if it has EC left
-    bool ec_left = Lib.GetResourceAmount(part, "ElectricCharge") > double.Epsilon;
+    bool ec_left = Lib.Resource.Amount(part, "ElectricCharge") > double.Epsilon;
 
     // force the headlamp lights on/off depending on ec amount left and if it has an helmet
     SetHeadlamp(kerbal, has_helmet && kerbal.lampOn && ec_left);
@@ -75,7 +74,7 @@ public class EVA : PartModule
     {
       foreach(ProtoPartModuleSnapshot module in part.modules)
       {
-        if (module.moduleName == "EVA") return Lib.GetProtoValue<bool>(module, "is_dead");
+        if (module.moduleName == "EVA") return Lib.Proto.GetBool(module, "is_dead");
       }
     }
     return false;
@@ -98,7 +97,7 @@ public class EVA : PartModule
       {
         foreach(ProtoPartModuleSnapshot module in part.modules)
         {
-          if (module.moduleName == "EVA") Lib.SetProtoValue(module, "is_dead", true);
+          if (module.moduleName == "EVA") Lib.Proto.Set(module, "is_dead", true);
         }
       }
     }

@@ -12,6 +12,9 @@ namespace KERBALISM {
 
 public static class QualityOfLife
 {
+  // max entertainment value
+  public static double MaxEntertainmnent = 5.0;
+
   // return quality-of-life bonus
   public static double Bonus(Vessel v, string k_name)
   {
@@ -47,7 +50,7 @@ public static class QualityOfLife
   // return living space
   public static double LivingSpace(uint crew_count, uint crew_capacity)
   {
-    return crew_count == 0 ? 1.0 : ((double)crew_capacity / (double)crew_count) * Settings.QoL_LivingSpace;
+    return crew_count == 0 ? 1.0 : ((double)crew_capacity / (double)crew_count);
   }
 
 
@@ -61,7 +64,8 @@ public static class QualityOfLife
   // traduce living space value to string
   public static string LivingSpaceToString(double living_space)
   {
-    if (living_space >= 2.5) return "modest";
+    if (living_space >= 3.5) return "good";
+    else if (living_space >= 2.5) return "modest";
     else if (living_space >= 1.5) return "poor";
     else if (living_space > double.Epsilon) return "cramped";
     else return "none";
@@ -90,12 +94,12 @@ public static class QualityOfLife
       {
         foreach(ProtoPartModuleSnapshot m in part.modules)
         {
-          if (m.moduleName == "Entertainment") entertainment *= Lib.GetProtoValue<double>(m, "rate");
-          else if (m.moduleName == "GravityRing") entertainment *= Lib.GetProtoValue<double>(m, "rate");
+          if (m.moduleName == "Entertainment") entertainment *= Lib.Proto.GetDouble(m, "rate");
+          else if (m.moduleName == "GravityRing") entertainment *= Lib.Proto.GetDouble(m, "rate");
         }
       }
     }
-    return entertainment;
+    return Math.Min(entertainment, MaxEntertainmnent);
   }
 
 
@@ -113,16 +117,16 @@ public static class QualityOfLife
         entertainment *= m.rate;
       }
     }
-    return entertainment;
+    return Math.Min(entertainment, MaxEntertainmnent);
   }
 
 
   // traduce entertainment value to string
   public static string EntertainmentToString(double entertainment)
   {
-    if (entertainment >= 6.0) return "good";
-    else if (entertainment >= 3.0) return "tolerable";
-    else if (entertainment >= 1.5) return "boring";
+    if (entertainment >= 4.5) return "good";
+    else if (entertainment >= 2.5) return "tolerable";
+    else if (entertainment >= 1.25) return "boring";
     else return "none";
   }
 }

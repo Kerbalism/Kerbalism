@@ -11,12 +11,12 @@ using UnityEngine;
 namespace KERBALISM {
 
 
-public class GravityRing : PartModule
+public sealed class GravityRing : PartModule
 {
   // .cfg
   [KSPField] public string description;
-  [KSPField(isPersistant = true)] public double entertainment_rate;
-  [KSPField(isPersistant = true)] public double ec_rate;
+  [KSPField] public double entertainment_rate;
+  [KSPField] public double ec_rate;
   [KSPField] public string open_animation;
   [KSPField] public string rotate_animation;
 
@@ -35,9 +35,12 @@ public class GravityRing : PartModule
   // editor/r&d info
   public override string GetInfo()
   {
-    return description + "\n"
-        + "\n<color=#999999>Comfort (max): <b>" + entertainment_rate.ToString("F1") + "</b></color>"
-        + "\n<color=#999999>EC consumption: <b>" + Lib.HumanReadableRate(ec_rate) + "</b></color>";
+    return Lib.BuildString
+    (
+      description, "\n",
+      "\n<color=#999999>Comfort (max): <b>", entertainment_rate.ToString("F1"), "</b></color>",
+      "\n<color=#999999>EC consumption: <b>", Lib.HumanReadableRate(ec_rate), "</b></color>"
+    );
   }
 
   [KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "Open", active = false)]
@@ -180,23 +183,22 @@ public class GravityRing : PartModule
 
 
   // implement gravity ring mechanics for unloaded vessels
-  public static void BackgroundUpdate(Vessel vessel, uint flight_id)
+  public static void BackgroundUpdate(Vessel vessel, ProtoPartModuleSnapshot m, GravityRing ring)
   {
     // get time elapsed from last update
     double elapsed_s = TimeWarp.fixedDeltaTime;
 
     // get data
-    ProtoPartModuleSnapshot m = Lib.GetProtoModule(vessel, flight_id, "GravityRing");
-    double entertainment_rate = Lib.GetProtoValue<double>(m, "entertainment_rate");
-    double ec_rate = Lib.GetProtoValue<double>(m, "ec_rate");
-    float speed = Lib.GetProtoValue<float>(m, "speed");
+    double entertainment_rate = ring.entertainment_rate;
+    double ec_rate = ring.ec_rate;
+    float speed = Lib.Proto.GetFloat(m, "speed");
 
     // consume ec
     double ec_light_perc = 0.0;
     if (speed > float.Epsilon)
     {
       double ec_light_required = ec_rate * elapsed_s * speed;
-      double ec_light = Lib.RequestResource(vessel, "ElectricCharge", ec_light_required);
+      double ec_light = Lib.Resource.Request(vessel, "ElectricCharge", ec_light_required);
       ec_light_perc = ec_light / ec_light_required;
 
       // if there isn't enough ec
@@ -211,8 +213,8 @@ public class GravityRing : PartModule
     double rate = 1.0 + (entertainment_rate - 1.0) * speed;
 
     // write back data
-    Lib.SetProtoValue(m, "speed", speed);
-    Lib.SetProtoValue(m, "rate", rate);
+    Lib.Proto.Set(m, "speed", speed);
+    Lib.Proto.Set(m, "rate", rate);
   }
 }
 

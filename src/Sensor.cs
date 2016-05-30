@@ -11,7 +11,7 @@ using UnityEngine;
 namespace KERBALISM {
 
 
-public class Sensor : PartModule
+public sealed class Sensor : PartModule
 {
   // type of sensor
   [KSPField] public string type;

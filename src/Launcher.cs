@@ -13,7 +13,7 @@ namespace KERBALISM {
 
 
 [KSPAddon(KSPAddon.Startup.MainMenu, true)]
-public class Launcher : MonoBehaviour
+public sealed class Launcher : MonoBehaviour
 {
   // initialized flag
   bool ui_initialized;

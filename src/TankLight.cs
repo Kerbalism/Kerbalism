@@ -12,7 +12,7 @@ using UnityEngine;
 namespace KERBALISM {
 
 
-public class TankLight : PartModule
+public sealed class TankLight : PartModule
 {
   [KSPField] public string animation_name;     // name of animation to play
   [KSPField] public string resource_name;      // name of resource to check
@@ -25,17 +25,15 @@ public class TankLight : PartModule
     Animation[] anim = this.part.FindModelAnimators(animation_name);
     if (anim.Length > 0)
     {
-      double ls = Lib.GetResourceAmount(this.part, resource_name);
-      double capacity = Lib.GetResourceCapacity(this.part, resource_name);
-      double red_capacity = capacity * threshold;
-      if (ls <= red_capacity)
+      resource_info res = Cache.ResourceInfo(vessel, resource_name);
+      if (res.level <= threshold)
       {
         anim[0][animation_name].normalizedTime = 1.0f;
         anim[0][animation_name].speed = Math.Abs(anim[0][animation_name].speed);
         anim[0].Play(animation_name);
         green_status = false;
       }
-      if (ls > red_capacity)
+      else
       {
         anim[0][animation_name].normalizedTime = 0.0f;
         anim[0][animation_name].speed = -Math.Abs(anim[0][animation_name].speed);
@@ -50,17 +48,15 @@ public class TankLight : PartModule
     Animation[] anim = this.part.FindModelAnimators(animation_name);
     if (anim.Length > 0)
     {
-      double ls = Lib.GetResourceAmount(this.part, resource_name);
-      double capacity = Lib.GetResourceCapacity(this.part, resource_name);
-      double red_capacity = capacity * threshold;
-      if (ls <= red_capacity && green_status)
+      resource_info res = Cache.ResourceInfo(vessel, resource_name);
+      if (res.level <= threshold && green_status)
       {
         anim[0][animation_name].normalizedTime = 0.0f;
         anim[0][animation_name].speed = Math.Abs(anim[0][animation_name].speed);
         anim[0].Play(animation_name);
         green_status = false;
       }
-      if (ls > red_capacity && !green_status)
+      if (res.level > threshold && !green_status)
       {
         anim[0][animation_name].normalizedTime = 1.0f;
         anim[0][animation_name].speed = -Math.Abs(anim[0][animation_name].speed);

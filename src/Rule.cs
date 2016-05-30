@@ -5,18 +5,17 @@
 
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using UnityEngine;
 
 
 namespace KERBALISM {
 
 
-public class Rule
+public sealed class Rule
 {
-  // parse rule from config
   public Rule(ConfigNode node)
   {
+    // parse rule from config
     this.name = Lib.ConfigValue(node, "name", "");
     this.resource_name = Lib.ConfigValue(node, "resource_name", "");
     this.waste_name = Lib.ConfigValue(node, "waste_name", "");
@@ -29,8 +28,9 @@ public class Rule
     this.on_pod = Lib.ConfigValue(node, "on_pod", 0.0);
     this.on_eva = Lib.ConfigValue(node, "on_eva", 0.0);
     this.on_resque = Lib.ConfigValue(node, "on_resque", 999.0);
-    this.waste_buffer = Lib.ConfigValue(node, "waste_buffer", 1.0);
-    this.hide_waste = Lib.ConfigValue(node, "hide_waste", false);
+    this.waste_buffer = Lib.ConfigValue(node, "waste_buffer", 10.0);
+    this.hidden_waste = Lib.ConfigValue(node, "hidden_waste", false);
+    this.massless_waste = Lib.ConfigValue(node, "massless_waste", false);
     this.breakdown = Lib.ConfigValue(node, "breakdown", false);
     this.warning_threshold = Lib.ConfigValue(node, "warning_threshold", 0.33);
     this.danger_threshold = Lib.ConfigValue(node, "danger_threshold", 0.66);
@@ -45,25 +45,40 @@ public class Rule
     this.refill_message = Lib.ConfigValue(node, "refill_message", "");
   }
 
-  // estimate lifetime for the rule resource
-  // note: this function must be called only once for simulation step
-  // return 0 if no resource left, NaN if rate of change is positive, or seconds left in other cases
-  public double EstimateLifetime(Vessel v)
+
+  // calculate depletion time for the specified vessel
+  // note: need to be called once per simulation step
+  public void CalculateDepletion(Vessel v)
   {
-    // get prev amount for the vessel
-    double prev_amount = 0.0;
-    if (!prev_amounts.TryGetValue(v.id, out prev_amount)) prev_amount = 0.0;
+    // get 32bit vessel id
+    UInt32 id = Lib.VesselID(v);
+
+    // create depletion info the first time this function is called for a particular vessel
+    if (!depletions.ContainsKey(id)) depletions.Add(id, new depletion_info());
+
+    // get depletion info entry
+    depletion_info di = depletions[id];
+
+    // get resource amount
+    double amount = Cache.ResourceInfo(v, this.resource_name).amount;
 
     // calculate delta
-    double amount = Lib.GetResourceAmount(v, this.resource_name);
     double meal_rate = this.interval > double.Epsilon ? this.rate / this.interval : 0.0;
-    double delta = (amount - prev_amount) / TimeWarp.fixedDeltaTime - meal_rate * Lib.CrewCount(v);
+    double delta = (amount - di.prev_amount) / TimeWarp.fixedDeltaTime - meal_rate * Lib.CrewCount(v);
 
     // remember prev amount
-    prev_amounts[v.id] = amount;
+    di.prev_amount = amount;
 
     // return lifetime in seconds
-    return amount <= double.Epsilon ? 0.0 : delta >= -double.Epsilon ? double.NaN : amount / -delta;
+    di.depletion = amount <= double.Epsilon ? 0.0 : delta >= -double.Epsilon ? double.NaN : amount / -delta;
+  }
+
+
+  // return depletion time for the specified vessel
+  public double Depletion(Vessel v)
+  {
+    depletion_info di;
+    return depletions.TryGetValue(Lib.VesselID(v), out di) ? di.depletion : 0.0;
   }
 
 
@@ -80,7 +95,8 @@ public class Rule
   public double on_eva;                             // how much resource to take on eva, if any
   public double on_resque;                          // how much resource to gift to resque missions
   public double waste_buffer;                       // how many days worth of waste capacity to add to pods
-  public bool   hide_waste;                         // if true, hide the waste resource on pods
+  public bool   hidden_waste;                       // if true, hide the waste resource on pods, if false visibility is determined by resource definition
+  public bool   massless_waste;                     // if true, set waste to be massless, if false density is determined by resource definition
   public bool   breakdown;                          // if true, trigger a breakdown instead of killing the kerbal
   public double warning_threshold;                  // threshold of degeneration used to show warning messages and yellow status color
   public double danger_threshold;                   // threshold of degeneration used to show danger messages and red status color
@@ -93,7 +109,14 @@ public class Rule
   public string low_message;                        // messages shown on resource level threshold crossings
   public string empty_message;                      // .
   public string refill_message;                     // .
-  Dictionary<Guid, double> prev_amounts = new Dictionary<Guid, double>(); // used to keep track of depletion time
+
+  // store data for depletion estimate
+  class depletion_info
+  {
+    public double depletion;
+    public double prev_amount;
+  }
+  Dictionary<UInt32, depletion_info> depletions = new Dictionary<UInt32, depletion_info>();
 }
 
 
@@ -111,15 +134,6 @@ public class vmon_data
 {
   public uint message = 0;                          // used to avoid sending messages multiple times
 }
-
-
-// store vessel monitor cache
-public class vmon_cache
-{
-  public double depletion;                          // seconds until depletion, or 0 if never deplete
-  public double level;                              // percentual of capacity filled
-}
-
 
 
 } // KERBALISM

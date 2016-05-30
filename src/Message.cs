@@ -22,7 +22,7 @@ public enum Severity
 
 
 [KSPAddon(KSPAddon.Startup.MainMenu, true)]
-public class Message : MonoBehaviour
+public sealed class Message : MonoBehaviour
 {
   // constants
   const float offset = 266.0f;
@@ -128,13 +128,19 @@ public class Message : MonoBehaviour
   // add a message
   public static void Post(string text, string subtext)
   {
-    Post(text + "\n<i>" + subtext + "</i>");
+    // ignore the message if muted
+    if (muted || muted_internal) return;
+
+    Post(Lib.BuildString(text, "\n<i>", subtext, "</i>"));
   }
 
 
   // add a message
   public static void Post(Severity severity, string text, string subtext="")
   {
+    // ignore the message if muted
+    if (muted || muted_internal) return;
+
     string title = "";
     switch(severity)
     {
@@ -144,7 +150,8 @@ public class Message : MonoBehaviour
       case Severity.fatality:   title = "<color=#BB0000><b>FATALITY</b></color>\n"; Lib.StopWarp(); break;
       case Severity.breakdown:  title = "<color=#BB0000><b>BREAKDOWN</b></color>\n"; Lib.StopWarp(); break;
     }
-    Post(title + text + (subtext.Length > 0 ? "\n<i>" + subtext + "</i>" : ""));
+    if (subtext.Length == 0) Post(Lib.BuildString(title, text));
+    else Post(Lib.BuildString(title, text, "\n<i>", subtext, "</i>"));
   }
 
   // disable rendering of messages

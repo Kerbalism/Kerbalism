@@ -16,28 +16,26 @@ namespace KERBALISM {
 
 static class CLS
 {
-  private static ConnectedLivingSpace.ICLSAddon _CLS = null;
-  private static bool? _CLSAvailable = null;
+  static PropertyInfo cls;
 
-  public static ConnectedLivingSpace.ICLSAddon GetCLS()
+  static CLS()
   {
-    Type CLSAddonType = AssemblyLoader.loadedAssemblies.SelectMany(a => a.assembly.GetExportedTypes()).SingleOrDefault(t => t.FullName == "ConnectedLivingSpace.CLSAddon");
-    if (CLSAddonType != null)
-    {
-      object realCLSAddon = CLSAddonType.GetProperty("Instance", BindingFlags.Public | BindingFlags.Static).GetValue(null, null);
-      _CLS =   (ConnectedLivingSpace.ICLSAddon)realCLSAddon;
-    }
-    return _CLS;
+    Type cls_type = AssemblyLoader
+      .loadedAssemblies
+      .SelectMany(a => a.assembly.GetExportedTypes())
+      .SingleOrDefault(t => t.FullName == "ConnectedLivingSpace.CLSAddon");
+
+    if (cls_type != null) cls = cls_type.GetProperty("Instance", BindingFlags.Public | BindingFlags.Static);
   }
 
-  public static bool CLSInstalled
+  public static bool has()
   {
-    get
-    {
-      if (_CLSAvailable == null)
-        _CLSAvailable = GetCLS() != null;
-      return (bool)_CLSAvailable;
-    }
+    return cls != null;
+  }
+
+  public static ConnectedLivingSpace.ICLSAddon get()
+  {
+    return cls == null ? null : (ConnectedLivingSpace.ICLSAddon)cls.GetValue(null, null);
   }
 }
 

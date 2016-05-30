@@ -38,6 +38,34 @@ public static class Sim
     return (2.0 * Ra * Ra / h) * Math.Asin(body.Radius / Ra);
   }
 
+  // return orbital period of the specified vessel
+  public static double OrbitalPeriod(Vessel v)
+  {
+    if (Lib.Landed(v) || double.IsNaN(v.orbit.inclination))
+    {
+      return v.mainBody.rotationPeriod;
+    }
+    else
+    {
+      return v.orbit.period;
+    }
+  }
+
+  // return period in shadow of the specified vessel orbit
+  public static double ShadowPeriod(Vessel v)
+  {
+    if (Lib.Landed(v) || double.IsNaN(v.orbit.inclination))
+    {
+      return v.mainBody.rotationPeriod * 0.5;
+    }
+    else
+    {
+      double Ra = v.altitude + v.mainBody.Radius;
+      double h = Math.Sqrt(Ra * v.mainBody.gravParameter);
+      return (2.0 * Ra * Ra / h) * Math.Asin(v.mainBody.Radius / Ra);
+    }
+  }
+
 
   // return rotation speed at body surface
   public static double SurfaceSpeed(CelestialBody body)
@@ -63,6 +91,22 @@ public static class Sim
   public static double Periapsis(CelestialBody body)
   {
     return (1.0 - body.orbit.eccentricity) * body.orbit.semiMajorAxis;
+  }
+
+
+  // return apoapsis of a vessel orbit
+  public static double Apoapsis(Vessel v)
+  {
+    if (double.IsNaN(v.orbit.inclination)) return 0.0;
+    return (1.0 + v.orbit.eccentricity) * v.orbit.semiMajorAxis;
+  }
+
+
+  // return periapsis of a vessel orbit
+  public static double Periapsis(Vessel v)
+  {
+    if (double.IsNaN(v.orbit.inclination)) return 0.0;
+    return (1.0 - v.orbit.eccentricity) * v.orbit.semiMajorAxis;
   }
 
 
@@ -302,10 +346,10 @@ public static class Sim
 
 
   // return temperature of a vessel
-  public static double Temperature(Vessel vessel, bool in_sunlight)
+  public static double Temperature(Vessel vessel, double sunlight)
   {
     // get flux from the sun
-    double solar_flux = !in_sunlight ? 0.0 : SolarFlux(SunDistance(vessel));
+    double solar_flux = SolarFlux(SunDistance(vessel)) * sunlight;
 
     // get flux from the main body
     double body_flux = vessel.mainBody == Sun() ? 0.0 : BodyFlux(vessel.mainBody, Lib.VesselPosition(vessel));
