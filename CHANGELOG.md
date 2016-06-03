@@ -1,5 +1,16 @@
 #CHANGELOG
 
+1.0.1
+  - atmosphere is not considered breathable under the ocean surface
+  - is possible to force kerbals to have helmet and oxygen by holding SHIFT when going to EVA
+  - simulate CryoTanks boiloff in background, CryoTanks EC consumption supported in planner
+  - use Hydrazine instread of MonoPropellant for the EVA suit, if RealFuels is installed
+  - made RealFuels aware of default profile waste resources
+  - some modules are not simulated in background if BackgroundProcessing is detected
+  - fix: shortAntenna will not break existing vessels when signal mechanic is disabled
+  - fix: telemetry experiment data size reverted to previous behaviour
+  - fix: 'put a kerbal in orbit for 30 days' contract will not consider resque missions
+
 1.0.0.0
   - optimized everything
   - improved planner calculations, thanks Barrin!
