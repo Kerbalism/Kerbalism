@@ -261,7 +261,7 @@ public sealed class Info : MonoBehaviour
     render_title("ENVIRONMENT");
     render_content("Temperature:\t", Lib.HumanReadableTemp(vi.temperature));
     render_content("Radiation:\t", Lib.HumanReadableRadiationRate(vi.env_radiation));
-    render_content("Atmosphere:\t", v.mainBody.atmosphere ? Lib.BuildString(" yes", (vi.breathable ? " <i>(breathable)</i>" : "")) : "no");
+    render_content("Atmosphere:\t", Sim.Underwater(v) ? "ocean" : v.mainBody.atmosphere ? (vi.breathable ? "breathable" : "not breathable") : "none");
     render_space();
 
     // render supplies

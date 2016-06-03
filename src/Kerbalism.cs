@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Reflection;
 using System.Runtime.Remoting.Messaging;
 using CameraFXModules;
@@ -30,6 +31,8 @@ public sealed class Kerbalism : MonoBehaviour
     public bool RemoteTech;
     public bool AntennaRange;
     public bool DangIt;
+    public bool BackgroundProcessing;
+    public bool RealFuels;
   }
 
   // features to enable or disable
@@ -101,6 +104,8 @@ public sealed class Kerbalism : MonoBehaviour
     detected_mods.RemoteTech = Lib.ConfigValue(mods, "RemoteTech", false);
     detected_mods.AntennaRange = Lib.ConfigValue(mods, "AntennaRange", false);
     detected_mods.DangIt = Lib.ConfigValue(mods, "DangIt", false);
+    detected_mods.BackgroundProcessing = Lib.ConfigValue(mods, "BackgroundProcessing", false);
+    detected_mods.RealFuels = Lib.ConfigValue(mods, "RealFuels", false);
     Lib.Log("detected:");
     Lib.Log("- SCANsat: " + detected_mods.SCANsat);
     Lib.Log("- CLS: " + detected_mods.CLS);
@@ -109,6 +114,8 @@ public sealed class Kerbalism : MonoBehaviour
     Lib.Log("- RemoteTech: " + detected_mods.RemoteTech);
     Lib.Log("- AntennaRange: " + detected_mods.AntennaRange);
     Lib.Log("- DangIt: " + detected_mods.DangIt);
+    Lib.Log("- BackgroundProcessing: " + detected_mods.BackgroundProcessing);
+    Lib.Log("- RealFuels: " + detected_mods.RealFuels);
 
     // determine features
     var f_cfg = Lib.ParseConfig("Kerbalism/Patches/System/Features");
@@ -241,8 +248,12 @@ public sealed class Kerbalism : MonoBehaviour
 
   void toEVA(GameEvents.FromToAction<Part, Part> data)
   {
+    // use Hydrazine instead of MonoPropellant if RealFuel is installed
+    string monoprop_name = detected_mods.RealFuels ? "Hydrazine" : "MonoPropellant";
+
     // determine if inside breathable atmosphere
-    bool breathable = Cache.VesselInfo(data.from.vessel).breathable;
+    // note: the user can force the helmet + oxygen by pressing shift when going on eva
+    bool breathable = Cache.VesselInfo(data.from.vessel).breathable && !(Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift));
 
     // get total crew in the origin vessel
     double tot_crew = (double)data.from.vessel.GetVesselCrew().Count + 1.0;
@@ -252,15 +263,15 @@ public sealed class Kerbalism : MonoBehaviour
 
     // determine how much MonoPropellant to get
     // note: never more that the 'share' of this kerbal
-    double monoprop = Math.Min(Lib.Resource.Amount(data.from.vessel, "MonoPropellant") / tot_crew, Settings.MonoPropellantOnEVA);
+    double monoprop = Math.Min(Lib.Resource.Amount(data.from.vessel, monoprop_name) / tot_crew, Settings.MonoPropellantOnEVA);
 
     // transfer monoprop
-    data.to.RequestResource("EVA Propellant", -data.from.RequestResource("MonoPropellant", monoprop));
+    data.to.RequestResource("EVA Propellant", -data.from.RequestResource(monoprop_name, monoprop));
 
     // show warning if there isn't monoprop in the eva suit
     if (monoprop <= double.Epsilon && !Lib.Landed(data.from.vessel))
     {
-      Message.Post(Severity.danger, "There isn't any <b>MonoPropellant</b> in the EVA suit", "Don't let the ladder go!");
+      Message.Post(Severity.danger, Lib.BuildString("There isn't any <b>", monoprop_name, "</b> in the EVA suit", "Don't let the ladder go!"));
     }
 
     // manage resources from rules
@@ -273,7 +284,7 @@ public sealed class Kerbalism : MonoBehaviour
       double amount = Math.Min(Lib.Resource.Amount(data.from.vessel, r.resource_name) / tot_crew, r.on_eva);
 
       // deal with breathable modifier
-      if (Sim.Breathable(data.from.vessel) && r.modifier.Contains("breathable")) continue;
+      if (breathable && r.modifier.Contains("breathable")) continue;
 
       // remove resource from the vessel
       amount = data.from.RequestResource(r.resource_name, amount);
@@ -307,11 +318,14 @@ public sealed class Kerbalism : MonoBehaviour
 
   void fromEVA(GameEvents.FromToAction<Part, Part> data)
   {
-    // get any leftover monoprop (eva fuel) from EVA vessel
+    // use Hydrazine instead of MonoPropellant if RealFuel is installed
+    string monoprop_name = detected_mods.RealFuels ? "Hydrazine" : "MonoPropellant";
+
+    // get any leftover EVA Fuel from EVA vessel
     double monoprop = data.from.Resources.list[0].amount;
 
     // add the leftover monoprop back to the pod
-    data.to.RequestResource("MonoPropellant", -monoprop);
+    data.to.RequestResource(monoprop_name, -monoprop);
 
     // manage resources in rules
     foreach(var p in rules)
@@ -325,6 +339,10 @@ public sealed class Kerbalism : MonoBehaviour
 
     // forget vessel data
     DB.ForgetVessel(data.from.vessel.id);
+
+    // mute messages for a couple seconds
+    Message.MuteInternal();
+    base.StartCoroutine(CallbackUtil.DelayedCallback(2.0f, Message.UnmuteInternal));
 
     // if vessel info is open, switch to the vessel
     if (Info.IsOpen()) Info.Open(data.to.vessel);
@@ -496,7 +514,7 @@ public sealed class Kerbalism : MonoBehaviour
         var parts = Lib.GetPartsRecursively(v.rootPart); //< what's the reason for this?
 
         // give the vessel some monoprop
-        string monoprop_name = v.isEVA ? "EVA Propellant" : "MonoPropellant";
+        string monoprop_name = v.isEVA ? "EVA Propellant" : !detected_mods.RealFuels ? "Hydrazine" : "MonoPropellant";
         foreach(var part in parts)
         {
           if (part.CrewCapacity > 0 || part.FindModuleImplementing<KerbalEVA>() != null)
@@ -636,7 +654,7 @@ public sealed class Kerbalism : MonoBehaviour
     List<ProtoCrewMember> crew = v.loaded ? v.GetVesselCrew() : v.protoVessel.GetVesselCrew();
 
     // get breathable modifier
-    double breathable = Sim.Breathable(v) ? 0.0 : 1.0;
+    double breathable = vi.breathable ? 0.0 : 1.0;
 
     // get temp diff modifier
     double temp_diff = v.altitude < 2000.0 && v.mainBody == FlightGlobals.GetHomeBody() ? 0.0 : Sim.TempDiff(vi.temperature);

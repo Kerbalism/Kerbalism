@@ -176,6 +176,10 @@ public sealed class Background : MonoBehaviour
               ProcessRadioisotopeGenerator(v, p, m, part_prefab.Modules[m.moduleName]);
               break;
 
+            case "ModuleCryoTank":
+              ProcessCryoTank(v, p, m, part_prefab.Modules[m.moduleName]);
+              break;
+
             case "Scrubber":
               Scrubber scrubber = part_prefab.Modules[m.moduleName] as Scrubber;
               if (scrubber != null) Scrubber.BackgroundUpdate(v, m, scrubber);
@@ -209,6 +213,9 @@ public sealed class Background : MonoBehaviour
 
   static void ProcessCommand(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleCommand command)
   {
+    // play nice with BackgroundProcessing
+    if (Kerbalism.detected_mods.BackgroundProcessing) return;
+
     // do not consume if this is a MCM with no crew
     // rationale: for consistency, the game doesn't consume resources for MCM without crew in loaded vessels
     //            this make some sense: you left a vessel with some battery and nobody on board, you expect it to not consume EC
@@ -226,6 +233,9 @@ public sealed class Background : MonoBehaviour
 
   static void ProcessPanel(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleDeployableSolarPanel panel, vessel_info info)
   {
+    // play nice with BackgroundProcessing
+    if (Kerbalism.detected_mods.BackgroundProcessing) return;
+
     // determine if extended
     bool extended = m.moduleValues.GetValue("stateString") == ModuleDeployableSolarPanel.panelStates.EXTENDED.ToString();
 
@@ -241,6 +251,9 @@ public sealed class Background : MonoBehaviour
 
   static void ProcessGenerator(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleGenerator generator)
   {
+    // play nice with BackgroundProcessing
+    if (Kerbalism.detected_mods.BackgroundProcessing) return;
+
     // determine if active
     bool activated = Lib.Proto.GetBool(m, "generatorIsActive");
 
@@ -584,6 +597,55 @@ public sealed class Background : MonoBehaviour
     double mission_time = v.missionTime / (3600.0 * Lib.HoursInDay() * Lib.DaysInYear());
     double remaining = Math.Pow(2.0, (-mission_time) / half_life);
     Lib.Resource.Request(v, "ElectricCharge", -power * remaining * TimeWarp.fixedDeltaTime);
+  }
+
+
+  static void ProcessCryoTank(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule simple_boiloff)
+  {
+    // note: cryotank module already does a post-facto simulation of background boiling, and we could use that for the boiling
+    // however, it also does simulate the ec consumption that way, so we have to disable the post-facto simulation
+
+    // get if cooling is enabled
+    bool cooling = Lib.Proto.GetBool(m, "CoolingEnabled", false);
+
+    // get cooling ec cost per 1000 units of fuel, per-second
+    double cooling_cost = Lib.ReflectionValue<float>(simple_boiloff, "CoolingCost");
+
+    // get fuel name
+    string fuel_name = Lib.ReflectionValue<string>(simple_boiloff, "FuelName");
+
+    // get boiloff rate in proportion to fuel amount, per-second
+    double boiloff_rate = Lib.ReflectionValue<float>(simple_boiloff, "BoiloffRate") * 0.00000277777;
+
+
+    // get amount of fuel
+    double fuel_amount = Lib.Resource.Amount(p, fuel_name);
+
+    // determine ec required for cooling
+    double ec_required = cooling_cost * fuel_amount * 0.001 * TimeWarp.fixedDeltaTime;
+
+    // determine fuel to boil off
+    double to_boil = fuel_amount * (1.0 - Math.Pow(1.0 - boiloff_rate, TimeWarp.fixedDeltaTime));
+
+
+    // if there is some fuel
+    if (fuel_amount > double.Epsilon)
+    {
+      // cool the fuel
+      if(cooling && Lib.Resource.Amount(v, "ElectricCharge") >= ec_required)
+      {
+        Lib.Resource.Request(v, "ElectricCharge", ec_required);
+      }
+      // or let it boil off
+      else
+      {
+        Lib.Resource.Request(p, fuel_name, to_boil);
+      }
+    }
+
+
+    // disable post-facto simulation
+    Lib.Proto.Set(m, "LastUpdateTime", v.missionTime);
   }
 }
 

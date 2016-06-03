@@ -747,6 +747,27 @@ public static class Lib
         return quantity - diff;
       }
     }
+
+
+    public static double Request(ProtoPartSnapshot part, string resource_name, double quantity)
+    {
+      double diff = quantity;
+      double amount = 0.0;
+      double capacity = 0.0;
+      foreach(ProtoPartResourceSnapshot res in part.resources)
+      {
+        if (res.resourceName == resource_name && Lib.Parse.ToBool(res.resourceValues.GetValue("flowState")))
+        {
+          amount = Lib.Parse.ToDouble(res.resourceValues.GetValue("amount"));
+          capacity = Lib.Parse.ToDouble(res.resourceValues.GetValue("maxAmount"));
+          double new_amount = Lib.Clamp(amount - diff, 0.0, capacity);
+          res.resourceValues.SetValue("amount", new_amount.ToString());
+          diff -= amount - new_amount;
+          if (Math.Abs(diff) <= double.Epsilon) return quantity;
+        }
+      }
+      return quantity - diff;
+    }
   }
 
 

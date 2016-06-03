@@ -429,10 +429,18 @@ public static class Sim
   }
 
 
+  // return true if the vessel is under water
+  public static bool Underwater(Vessel v)
+  {
+    double safe_threshold = v.isEVA ? -0.5 : -2.0;
+    return v.mainBody.ocean && v.altitude < safe_threshold;
+  }
+
+
   // return true if inside a breathable atmosphere
   public static bool Breathable(Vessel v)
   {
-    return v.mainBody.atmosphereContainsOxygen && v.mainBody.GetPressure(v.altitude) > 25.0;
+    return v.mainBody.atmosphereContainsOxygen && v.mainBody.GetPressure(v.altitude) > 25.0 && !Underwater(v);
   }
 }
 

@@ -43,7 +43,7 @@ public static class QualityOfLife
     double not_alone = (!alone ? Settings.QoL_NotAlone : 0.0) + 1.0;
 
     // finally, return quality of life bonus
-    return entertainment * living_space * firm_ground * phone_home * not_alone;
+    return living_space * entertainment * firm_ground * phone_home * not_alone;
   }
 
 

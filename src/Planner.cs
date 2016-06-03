@@ -424,6 +424,14 @@ public sealed class Planner
           ec.generated_sunlight += max_rate;
           ec.generated_shadow += max_rate;
         }
+        else if (m.moduleName == "ModuleCryoTank")
+        {
+          // note: assume cooling is active
+          double cooling_cost = Lib.ReflectionValue<float>(m, "CoolingCost");
+          string fuel_name = Lib.ReflectionValue<string>(m, "FuelName");
+
+          ec.consumed += cooling_cost * Lib.Resource.Amount(p, fuel_name) * 0.001;
+        }
       }
     }
 

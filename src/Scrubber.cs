@@ -120,7 +120,7 @@ public sealed class Scrubber : PartModule
     double elapsed_s = TimeWarp.fixedDeltaTime;
 
     // if inside breathable atmosphere
-    if (Sim.Breathable(this.vessel))
+    if (Cache.VesselInfo(this.vessel).breathable)
     {
       // produce oxygen from the intake
       this.part.RequestResource(resource_name, -intake_rate * elapsed_s);
@@ -173,7 +173,7 @@ public sealed class Scrubber : PartModule
     double elapsed_s = TimeWarp.fixedDeltaTime;
 
     // if inside breathable atmosphere
-    if (Sim.Breathable(vessel))
+    if (Cache.VesselInfo(vessel).breathable)
     {
       // produce oxygen from the intake
       Lib.Resource.Request(vessel, resource_name, -intake_rate * elapsed_s);
