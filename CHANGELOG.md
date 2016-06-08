@@ -1,5 +1,12 @@
 #CHANGELOG
 
+1.0.2
+  - planner: warn the user if resource capacity isn't enough to avoid inconsistencies at extreme timewarp
+  - tweaked MOLE solar panel output
+  - realism and tac emulation profiles presence can be queried using NEEDS[]
+  - fix: typo in EC amount checking for relay antennas
+  - fix: resque missions getting hydrazine instead of monoprop when RealFuel isn't installed
+
 1.0.1
   - atmosphere is not considered breathable under the ocean surface
   - is possible to force kerbals to have helmet and oxygen by holding SHIFT when going to EVA
