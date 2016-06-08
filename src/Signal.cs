@@ -182,7 +182,7 @@ public sealed class Signal : MonoBehaviour
         {
           double range = Range(a.scope, a.penalty, ecc);
           best_range = Math.Max(best_range, range);
-          if (a.relay && range > best_relay_range && ec_amount >= a.relay_cost * TimeWarp.deltaTime)
+          if (a.relay && range > best_relay_range && ec_amount >= a.relay_cost * TimeWarp.fixedDeltaTime)
           { best_relay_range = range; best_relay_cost = a.relay_cost; }
         }
       }
@@ -200,7 +200,7 @@ public sealed class Signal : MonoBehaviour
               double relay_cost = Lib.Proto.GetDouble(m, "relay_cost");
               bool relay = Lib.Proto.GetBool(m, "relay");
               best_range = Math.Max(best_range, range);
-              if (relay && range > best_relay_range && ec_amount >= relay_cost * TimeWarp.deltaTime)
+              if (relay && range > best_relay_range && ec_amount >= relay_cost * TimeWarp.fixedDeltaTime)
               { best_relay_range = range; best_relay_cost = relay_cost; }
             }
           }

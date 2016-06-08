@@ -53,6 +53,7 @@ public sealed class Planner
   public class ec_data
   {
     public double storage;                                // ec stored
+    public double capacity;                               // ec capacity
     public double consumed;                               // ec consumed
     public double generated_sunlight;                     // ec generated in sunlight
     public double generated_shadow;                       // ec generated in shadow
@@ -262,6 +263,9 @@ public sealed class Planner
     {
       // accumulate EC storage
       ec.storage += Lib.Resource.Amount(p, "ElectricCharge");
+
+      // accumulate EC capacity
+      ec.capacity += Lib.Resource.Capacity(p, "ElectricCharge");
 
       // remember if we already considered a resource converter module
       // rationale: we assume only the first module in a converter is active
@@ -687,14 +691,20 @@ public sealed class Planner
   }
 
 
+
+
   void render_ec(ec_data ec)
   {
+    string storage_warning = "";
+    string storage_tooltip = "";
+    timewarp_capacity_warning(ec.consumed, ec.generated_sunlight, ec.capacity, ref storage_warning, ref storage_tooltip);
+
     bool shadow_different = Math.Abs(ec.generated_sunlight - ec.generated_shadow) > double.Epsilon;
     string generated_str = Lib.BuildString(Lib.HumanReadableRate(ec.generated_sunlight), (shadow_different ? Lib.BuildString("</b> / <b>", Lib.HumanReadableRate(ec.generated_shadow)) : ""));
     string life_str = Lib.BuildString(Lib.HumanReadableDuration(ec.life_expectancy_sunlight), (shadow_different ? Lib.BuildString("</b> / <b>", Lib.HumanReadableDuration(ec.life_expectancy_shadow)) : ""));
 
     render_title("ELECTRIC CHARGE");
-    render_content("storage", Lib.ValueOrNone(ec.storage));
+    render_content("storage", Lib.BuildString(Lib.ValueOrNone(ec.storage), storage_warning), storage_tooltip);
     render_content("consumed", Lib.HumanReadableRate(ec.consumed));
     render_content("generated", generated_str, "sunlight / shadow");
     render_content("life expectancy", life_str, "sunlight / shadow");
@@ -705,8 +715,13 @@ public sealed class Planner
   void render_resource(Rule r, resource_simulator sim)
   {
     var res = sim.get_resource(r.resource_name);
+
+    string storage_warning = "";
+    string storage_tooltip = "";
+    timewarp_capacity_warning(res.consumed, res.produced, res.capacity, ref storage_warning, ref storage_tooltip);
+
     render_title(r.resource_name.ToUpper());
-    render_content("storage", Lib.ValueOrNone(res.storage));
+    render_content("storage", Lib.BuildString(Lib.ValueOrNone(res.storage), storage_warning), storage_tooltip);
     render_content("consumed", Lib.HumanReadableRate(res.consumed));
     if (res.has_greenhouse) render_content("harvest", res.time_to_harvest <= double.Epsilon ? "none" : Lib.BuildString(res.harvest_size.ToString("F0"), " in ", Lib.HumanReadableDuration(res.time_to_harvest)));
     else if (res.has_recycler) render_content("recycled", Lib.HumanReadableRate(res.produced));
@@ -1210,599 +1225,38 @@ public sealed class Planner
 
     Dictionary<string, resource_data> resources = new Dictionary<string, resource_data>();
   }
+
+
+  // determine if resource capacity is not enough to avoid inconsistencies at max simulation timestep
+  void timewarp_capacity_warning(double consumed, double produced, double capacity, ref string warning, ref string tooltip)
+  {
+    // seconds per simulation step at max timewarp
+    const double max_step = 2400.0;
+
+    // if one of consumed or produced is zero, there is no inconsistency
+    if (consumed <= double.Epsilon || produced <= double.Epsilon) return;
+
+    // deduce safe capacity
+    double safe_capacity = Math.Max(consumed, produced) * max_step;
+
+    // if below safe capacity
+    if (capacity > double.Epsilon && capacity < safe_capacity)
+    {
+      warning =  " <b><color=yellow>!</color></b>";
+      tooltip = Lib.BuildString
+      (
+        "<color=yellow>Resource simulation may be\n",
+        "inconsistent at high timewarp\n\n</color>",
+        "current capacity: <b>", capacity.ToString("F0"), "</b>\n",
+        "suggested capacity: <b>", safe_capacity.ToString("F0"), "</b>"
+       );
+    }
+
+    // [unused] worst-case real production and consumption at max step
+    //double real_produced = Math.Min(produced * max_step, capacity) / max_step;
+    //double real_consumed = Math.Min(consumed * max_step, capacity) / max_step;
+  }
 }
 
 
 } // KERBALISM
-
-
-
-
-
-
-
-
-
-// Barrin code
-/*
-  // === NEW CODE ===
-  // store data about a resource
-  public class resource_data
-  {
-    public double amount;                                  // initial resource supply
-    public double capacity;                                // maximum amount of resources that can be stored
-    public double draw;                                    // resources drained per second by rules and Kerbalism modules, when available
-    public double consumed;                                // rate at which resources are being consumed, per second
-    public double produced;                                // rate at which resources are being produced, per second
-    public bool hasScrubber;
-    public bool hasRecycler;
-    public bool hasGreenhouse;
-    public double harvestTime;
-    public double harvestSize;
-    public List<string> supplyRequires = new List<string>();
-  }
-
-  // resource_data dictionary wrapper
-  public class resource_collection
-  {
-    public Dictionary<string, resource_data> resources = new Dictionary<string, resource_data>();
-
-    public resource_data this[string name] { get { return resources[name]; } }
-
-    // Add provided resource data to named resource
-    public void Add(string name, resource_data r_data)
-    {
-      if (!resources.ContainsKey(name)) resources.Add(name, new resource_data());
-      resource_data res = resources[name];
-      res.amount += r_data.amount;
-      res.capacity += r_data.capacity;
-      res.draw += r_data.draw;
-      res.consumed += r_data.consumed;
-      res.produced += r_data.produced;
-      res.hasScrubber |= r_data.hasScrubber;
-      res.hasRecycler |= r_data.hasRecycler;
-      res.hasGreenhouse |= r_data.hasGreenhouse;
-      res.harvestTime = Math.Max(res.harvestTime, r_data.harvestTime);
-      res.harvestSize = Math.Max(res.harvestSize, r_data.harvestSize);
-      res.supplyRequires = res.supplyRequires.Union(r_data.supplyRequires).ToList();
-    }
-
-    //Add new empty resource by name if resource is not currently in dictionary
-    public void Add(string name)
-    {
-      if(!resources.ContainsKey(name)) resources.Add(name, new resource_data());
-    }
-
-    public void AddDraw(string name, double draw)
-    {
-      if (!resources.ContainsKey(name)) resources.Add(name, new resource_data());
-      resources[name].draw += draw;
-    }
-
-    public void AddConsumption(string name, double consumption)
-    {
-      if (!resources.ContainsKey(name)) resources.Add(name, new resource_data());
-      resources[name].consumed += consumption;
-    }
-
-    public void AddProduction(string name, double production)
-    {
-      if (!resources.ContainsKey(name)) resources.Add(name, new resource_data());
-      resources[name].produced += production;
-    }
-
-    public void ApplyConsumption(resource_collection consumption)
-    {
-      foreach(var pair in consumption.resources)
-      {
-        if (resources.ContainsKey(pair.Key))
-        {
-          resources[pair.Key].consumed += pair.Value.consumed;
-          resources[pair.Key].draw -= pair.Value.draw;
-        }
-      }
-    }
-
-    public void ApplyProduction(resource_collection production)
-    {
-      foreach(var pair in production.resources)
-      {
-        if (resources.ContainsKey(pair.Key)) resources[pair.Key].produced += pair.Value.produced;
-      }
-    }
-
-    public double Availability(string name)
-    {
-      if (!resources.ContainsKey(name)) return 0.0;     //Resource not in dictionary
-      if (resources[name].amount > 0.0) return 1.0;     //Resource has supply available, regardless of resupply rate.
-      if (resources[name].draw <= 0.0) return 0.0;
-      return Math.Max(Math.Min((resources[name].produced - resources[name].consumed) / resources[name].draw, 1.0), 0.0);
-    }
-
-    // Combine resource_collections appropriately with + operator
-    public static resource_collection operator+(resource_collection a, resource_collection b)
-    {
-      resource_collection collSum = new resource_collection();
-      foreach(var pair in a.resources) collSum.Add(pair.Key, pair.Value);
-      foreach(var pair in b.resources) collSum.Add(pair.Key, pair.Value);
-      return collSum;
-    }
-
-    public double lifeTime(string res_name, int n = 0)
-    {
-      resource_data res = resources[res_name];
-
-      double timeLeft = 0.0;
-      if (n > 3) return timeLeft; //If function has stepped through 4 resources each requiring the next, assume we're caught in a loop and break out.
-      if (res.amount <= double.Epsilon)
-      {
-        return 0.0;
-      }
-      else if ((res.consumed - res.produced) > double.Epsilon)
-      {
-        timeLeft = res.amount / (res.consumed - res.produced); //If resource delta is negative, calculate time remaining until resource is exhausted.
-      }
-      else
-      {
-        timeLeft = double.NaN; //If resource delta is positive or zero, this resource should last indefinitely (barring dependency on some other resource with a limited lifetime.)
-      }
-      if (res.supplyRequires.Count > 0)
-      {
-        timeLeft = res.amount / res.consumed; // Lifetime sans production, once dependency runs out.
-        double dependentTime = double.MaxValue;
-        foreach (string dependency in res.supplyRequires)
-        {
-          dependentTime = Math.Min(dependentTime, lifeTime(dependency, n + 1));
-        }
-        timeLeft += dependentTime;
-      }
-      return timeLeft;
-    }
-  }
-
-  public class resource_transaction
-  {
-    public object target;                                // Rule, Scrubber, Recycler, or Greenhouse object to be applied when this transaction is processed.
-    public string type;                                  // Type of module/rule set as target. ("Rule", "Scrubber", etc.)
-    public double baseRate;                              // Base rate of resource effects when transaction runs (set from Rule and Converter rates, with environmental modifiers.)
-    public List<string> inputs = new List<string>();     // Resources that are consumed in this transaction.
-    public List<string> output = new List<string>();     // Resources produced in this transaction.
-    public bool hasRun;                                  // Flagged as true when this transaction has been processed.
-    public bool hasSupply;                               // If all input resources have sufficient supply, set to true, and transaction runs regardless of blockingTransactions.
-
-    List<resource_transaction> blockingTransactions = new List<resource_transaction>(); // Resource transactions affecting supply resource(s), which should run first, if possible.
-
-    // Run this transaction on a given resource_collection, return a collection (delta) with resource values after the transaction.
-    public resource_collection Run(resource_collection collection, environment_data env)
-    {
-      resource_collection delta = new resource_collection();
-
-      // add placeholder resources
-      foreach(var pair in collection.resources) delta.Add(pair.Key);
-
-      switch(type)
-      {
-        case "Rule":
-        {
-          Rule rule = target as Rule;
-          double rateMod = collection.Availability(rule.resource_name);
-          if (rule.resource_name.Length > 0)
-          {
-            delta[rule.resource_name].consumed += baseRate * rateMod;
-            delta[rule.resource_name].draw -= baseRate;
-          }
-          if (rule.waste_name.Length > 0)
-          {
-            delta[rule.waste_name].produced += baseRate * rateMod * rule.waste_ratio;
-          }
-        }
-        break;
-
-        case "Scrubber":
-        {
-          Scrubber scrubber = target as Scrubber;
-          if (!env.breathable)
-          {
-            double rateMod = collection.Availability(scrubber.waste_name);
-            delta[scrubber.waste_name].consumed += rateMod * baseRate;
-            delta[scrubber.waste_name].draw -= baseRate;
-            delta[scrubber.resource_name].produced += rateMod * baseRate * Scrubber.DeduceEfficiency();
-            delta[scrubber.resource_name].hasScrubber = true;
-          }
-          else
-          {
-            delta[scrubber.resource_name].produced += scrubber.intake_rate;
-            delta[scrubber.resource_name].hasScrubber = true;
-          }
-        }
-        break;
-
-        case "Recycler":
-        {
-          Recycler recycler = target as Recycler;
-          double rateMod = collection.Availability(recycler.waste_name);
-          if (recycler.filter_name.Length > 0) rateMod = Math.Min(rateMod, collection.Availability(recycler.filter_name));
-          delta[recycler.waste_name].consumed += rateMod * baseRate;
-          delta[recycler.waste_name].draw -= baseRate;
-          delta[recycler.resource_name].produced += rateMod * baseRate * recycler.waste_ratio;
-          delta[recycler.resource_name].hasRecycler = true;
-          if (recycler.filter_name.Length > 0)
-          {
-            delta[recycler.filter_name].consumed += rateMod * recycler.filter_rate;
-            delta[recycler.filter_name].draw -= recycler.filter_rate;
-          }
-        }
-        break;
-
-        case "Greenhouse":
-        {
-          Greenhouse greenhouse = target as Greenhouse;
-          double rateMod = 1.0;
-          if (greenhouse.input_name.Length > 0) rateMod = collection.Availability(greenhouse.input_name);
-          double wastePerc = collection.Availability(greenhouse.waste_name);
-          double natural_lighting = Greenhouse.NaturalLighting(env.sun_dist);
-          double lighting = (greenhouse.door_opened ? natural_lighting : 0.0) + greenhouse.lamps;
-          double growth_bonus = (env.landed ? greenhouse.soil_bonus : 0.0) + (greenhouse.waste_bonus * wastePerc);
-          double growth_factor = (greenhouse.growth_rate * (1.0 + growth_bonus)) * lighting;
-          if (growth_factor > double.Epsilon)
-          {
-            double cycleTime = rateMod / growth_factor;
-            delta[greenhouse.waste_name].consumed += wastePerc * greenhouse.waste_rate;
-            delta[greenhouse.waste_name].draw -= greenhouse.waste_rate;
-            delta[greenhouse.resource_name].produced += Math.Min(greenhouse.harvest_size, collection[greenhouse.resource_name].capacity) / cycleTime;
-            delta[greenhouse.resource_name].hasGreenhouse = true;
-            delta[greenhouse.resource_name].harvestTime = cycleTime;
-            delta[greenhouse.resource_name].harvestSize = Math.Min(greenhouse.harvest_size, collection[greenhouse.resource_name].capacity);
-            if (greenhouse.input_name.Length > 0)
-            {
-              delta[greenhouse.input_name].consumed += rateMod * greenhouse.input_rate;
-              delta[greenhouse.input_name].draw -= greenhouse.input_rate;
-            }
-          }
-        }
-        break;
-      }
-      hasRun = true;
-      return delta;
-    }
-
-    public bool hasSomeSupply(resource_collection resourcePool)
-    {
-      if (type == "Rule")
-      {
-        Rule rule = target as Rule;
-        if (resourcePool.Availability(rule.resource_name) <= double.Epsilon) return false;
-      }
-      else if (type == "Scrubber")
-      {
-        Scrubber scrubber = target as Scrubber;
-        if (resourcePool.Availability(scrubber.waste_name) <= double.Epsilon) return false;
-      }
-      else if (type == "Recycler")
-      {
-        Recycler recycler = target as Recycler;
-        if (resourcePool.Availability(recycler.waste_name) <= double.Epsilon) return false;
-        if (recycler.filter_name.Length > 0 && resourcePool.Availability(recycler.filter_name) <= double.Epsilon) return false;
-      }
-      else if (type == "Greenhouse")
-      {
-        Greenhouse greenhouse = target as Greenhouse;
-        if (greenhouse.input_name.Length > 0 && resourcePool.Availability(greenhouse.input_name) <= double.Epsilon) return false;
-      }
-      return true;
-    }
-
-    // Check if this transaction should run.
-    public bool ShouldRun()
-    {
-      if (hasSupply) return true; // If we have sufficient supply to meet all input resource needs, there's no need to wait on blockingTransactions.
-      foreach(resource_transaction rt in blockingTransactions)
-      {
-        if (!rt.hasRun) return false; // If any blockingTransaction has not run, this should not run.
-      }
-      return true;
-    }
-
-    public void SetBlocking(List<resource_transaction> transactions)
-    {
-      foreach(resource_transaction rt in transactions)
-      {
-        // A transform should not block itself, even if it has an input and output resource in common.
-        if (rt != this)
-        {
-          foreach (string input in inputs)
-          {
-            // If an output in rt matches an input in this transaction and the blocking list does not already contain rt, add it.
-            if (rt.output.Contains(input) && !blockingTransactions.Contains(rt)) blockingTransactions.Add(rt);
-          }
-        }
-      }
-    }
-  }
-
-  public static resource_collection analyze_resources(List<Rule> rules, List<Part> parts, environment_data env, crew_data crew, qol_data qol)
-  {
-    resource_collection collection = new resource_collection ();
-    List<resource_transaction> transactionSet = new List<resource_transaction>();
-
-    // Modeling resource lifetimes:
-    // I.    Build resource dictionary and transaction list based on Rules and Converters (Scrubbers, Recyclers, etc.)
-    // II.   Add amount/capacity of resources from List<Part> parts to resource dictionary.
-    // III.  Use transaction list to set transaction blocking for each transaction.
-    // IV.   Loop through transaction list, executing transactions, until all transactions have executed, or some set remain blocked because of looping inputs.
-    // V.    If some transactions remain... well it's complicated. (See below)
-    // VI.   With all resource values populated (resupply, consumption, etc.), it is now possible to calculate an accurate lifetime for each resource.
-
-    // I. Build resource dictionary and transaction list based on Rules and Converters (Scrubbers, Recyclers, etc.)
-    // I.a: Rules
-    foreach (Rule r in rules.FindAll(k => k.rate > 0.0))
-    {
-      double rate = (double)crew.count * (r.interval > 0 ? r.rate / r.interval : r.rate);
-      foreach(string modifier in r.modifier)
-      {
-        switch (modifier)
-        {
-          case "breathable":  rate *= env.breathable ? 0.0 : 1.0;          break;
-          case "temperature": rate *= env.temp_diff;                       break;
-          case "qol":         rate *= qol != null ? 1.0 / qol.bonus : 1.0; break;
-        }
-      }
-
-      resource_transaction transaction = new resource_transaction();
-      transaction.type = "Rule";
-      transaction.target = r;
-      transaction.baseRate = rate;
-      if (r.resource_name.Length > 0 && r.rate > 0.0)
-      {
-        collection.Add(r.resource_name);
-        collection[r.resource_name].draw += rate;
-        transaction.inputs.Add(r.resource_name);
-      }
-      if (r.waste_name.Length > 0)
-      {
-        collection.Add(r.waste_name);
-        collection[r.waste_name].draw -= rate * r.waste_ratio;
-        transaction.output.Add(r.waste_name);
-      }
-      transactionSet.Add(transaction);
-    }
-
-    // I.b: Converters (Scrubbers, Recyclers, and Greenhouses)
-    foreach(Part p in parts)
-    {
-      foreach(PartModule m in p.Modules)
-      {
-        switch (m.moduleName)
-        {
-          case "Scrubber":
-          {
-            Scrubber scrubber = m as Scrubber;
-            collection.Add(scrubber.resource_name);
-            collection.Add(scrubber.waste_name);
-            if (!scrubber.is_enabled) break; //If module not enabled, break out early
-            if (!env.breathable) collection[scrubber.waste_name].draw += scrubber.co2_rate; //No draw in breathable atmosphere
-            // Add transactions
-            resource_transaction transaction = new resource_transaction();
-            transaction.type = "Scrubber";
-            transaction.target = m;
-            if (!env.breathable) transaction.baseRate = scrubber.co2_rate;
-            transaction.output.Add(scrubber.resource_name);
-            if (!env.breathable) transaction.inputs.Add(scrubber.waste_name);
-            transactionSet.Add(transaction);
-          }
-          break;
-
-          case "Recycler":
-          {
-            Recycler recycler = m as Recycler;
-            collection.Add(recycler.resource_name);
-            collection.Add(recycler.waste_name);
-            if (recycler.filter_name.Length > 0) collection.Add(recycler.filter_name);
-            if (!recycler.is_enabled) break; //If module not enabled, break out early
-            collection[recycler.waste_name].draw += recycler.waste_rate;
-            if (recycler.filter_name.Length > 0)
-            {
-              collection[recycler.filter_name].draw += recycler.filter_rate;
-              collection[recycler.resource_name].supplyRequires.Add(recycler.filter_name);
-            }
-            // Add transactions
-            resource_transaction transaction = new resource_transaction();
-            transaction.type = "Recycler";
-            transaction.target = m;
-            transaction.baseRate = recycler.waste_rate;
-            transaction.output.Add(recycler.resource_name);
-            transaction.inputs.Add(recycler.waste_name);
-            if (recycler.filter_name.Length > 0) transaction.inputs.Add(recycler.filter_name);
-            transactionSet.Add(transaction);
-          }
-          break;
-
-          case "Greenhouse":
-          {
-            Greenhouse greenhouse = m as Greenhouse;
-            collection.Add(greenhouse.resource_name);
-            collection.Add(greenhouse.waste_name);
-            collection[greenhouse.waste_name].draw += greenhouse.waste_rate;
-            if (greenhouse.input_name.Length > 0)
-            {
-              collection.Add(greenhouse.input_name);
-              collection[greenhouse.input_name].draw += greenhouse.input_rate;
-            }
-            // Add transactions
-            resource_transaction transaction = new resource_transaction();
-            transaction.type = "Greenhouse";
-            transaction.target = m;
-            transaction.output.Add(greenhouse.resource_name);
-            transaction.inputs.Add(greenhouse.waste_name);
-            if (greenhouse.input_name.Length > 0) transaction.inputs.Add(greenhouse.input_name);
-            transactionSet.Add(transaction);
-          }
-          break;
-        }
-      }
-    }
-
-    // II. Add amount/capacity of resources from List<Part> parts to resource dictionary.
-    foreach(Part p in parts)
-    {
-      foreach(var pair in collection.resources)
-      {
-        pair.Value.amount += Lib.Resource.Amount(p, pair.Key);
-        pair.Value.capacity += Lib.Resource.Capacity(p, pair.Key);
-      }
-    }
-
-    // III.  Use transaction list to find/set blocking transactions for each transaction. Also, set hasSupply flag.
-    foreach(resource_transaction rt in transactionSet)
-    {
-      rt.SetBlocking(transactionSet);
-      rt.hasSupply = true;
-      foreach(string inputResource in rt.inputs)
-      {
-        rt.hasSupply &= collection[inputResource].amount > double.Epsilon;
-      }
-    }
-
-    // IV. Loop through transaction list, executing transactions, until all transactions have executed, or some set remain blocked because of looping inputs.
-    bool done;
-    do
-    {
-      done = true;
-      foreach (resource_transaction transaction in transactionSet)
-      {
-        if (!transaction.hasRun && transaction.ShouldRun())
-        {
-          collection += transaction.Run(collection, env);
-          done = false;
-        }
-      }
-    }
-    while(!done);
-
-    // V. The remainder...
-    // If there are any transactions left, they're either duds that will never run (because of some resource requirement that is never met) or they have looping inputs/outputs.
-    // Duds we can ignore at this point, as they won't have any effect on anything else. Loops, though, require some special handling.
-    //
-    // Because of the feedback between looped rules/converters, the steady state a looping system quickly falls into is a function of the sum of an infinite geometric series,
-    // based on the efficiency of the system, and the initial input. Thankfully, we only actually need to know the initial input and two iterations of the system to calculate
-    // the final value at infinite iterations using this equation: The FinalRate will equal the BaseRate + (RateDelta1 / (1 - (RateDelta2/RateDelta1)))
-    //
-    // So, as an example, a system with a resupply rate of 8 units per second initially, 11/s after one iteration (delta1 = +3), and 12.125/s the next (delta2 = +1.125),
-    // would have an actual rate of resupply of 8 + (3/(1-(1.125/3))) = 12.8 per second after a moment or two, and that's the value to use when calculating resource lifetime.
-    //
-    List<resource_transaction> blockedTransactions = transactionSet.FindAll(tr => tr.hasRun == false); //Transactions that did not run because they have looping inputs/ouputs.
-
-    if (blockedTransactions.Count != 0)
-    {
-      resource_collection[] deltaSlice = new resource_collection[4];
-      deltaSlice[0] = new resource_collection() + collection; //Initial state for iteration
-
-      int iteration = 0;
-      do
-      {
-        // initialize next iteration to baseline
-        deltaSlice[iteration + 1] = new resource_collection();
-        foreach(var pair in collection.resources)
-          deltaSlice[iteration+1].AddDraw(pair.Key, pair.Value.draw);
-
-        //Spend initial resource supply from previous iteration/baserate
-        foreach(resource_transaction transaction in blockedTransactions.FindAll(tr => tr.hasSomeSupply(deltaSlice[iteration])))
-          deltaSlice[iteration] += transaction.Run(deltaSlice[iteration], env);
-
-        //Then loop through the transaction list looking for any transactions that are now unblocked, adding the result to the next iteration
-        do
-        {
-          done = true;
-          foreach (resource_transaction transaction in blockedTransactions)
-          {
-            if (transaction.ShouldRun() && !transaction.hasRun)
-            {
-              resource_collection delta = transaction.Run(deltaSlice[iteration], env);
-              deltaSlice[iteration].ApplyConsumption(delta);
-              deltaSlice[iteration+1].ApplyProduction(delta);
-              done = false;
-            }
-          }
-        }
-        while(!done);
-
-        //Reset hasRun flag for all transactions in blockedTransactions to prepare for next iteration
-        foreach (resource_transaction transaction in blockedTransactions) transaction.hasRun = false;
-        iteration++;
-      }
-      while(iteration < 3);
-
-      // Calculate results and add them back to resources.
-      resource_collection calculatedDelta = new resource_collection();
-
-      foreach(var pair in deltaSlice[0].resources)
-      {
-        string res_name = pair.Key;
-        resource_data res = pair.Value;
-
-        double[] conDelta = new double[3];
-        conDelta[0] = res.consumed;
-        conDelta[1] = deltaSlice[1][res_name].consumed;
-        conDelta[2] = deltaSlice[2][res_name].consumed;
-
-        double[] prodDelta = new double[3];
-        prodDelta[0] = res.produced;
-        prodDelta[1] = deltaSlice[1][res_name].produced;
-        prodDelta[2] = deltaSlice[2][res_name].produced;
-
-        double consumption;
-        if (conDelta[1] <= double.Epsilon)
-        {
-          consumption = conDelta[0];
-        }
-        else if (conDelta[2] >= conDelta[1])
-        {
-          consumption = collection[res_name].draw; //Infinite/accelerating growth, rate capped by draw
-        }
-        else
-        {
-          consumption = conDelta[0] + (conDelta[1] / (1.0 - (conDelta[2] / conDelta[1])));
-        }
-
-        double production;
-        if (prodDelta[1] <= double.Epsilon)
-        {
-          production = prodDelta[0];
-        }
-        else if (prodDelta[2] >= prodDelta[1])
-        {
-          production = collection[res_name].draw; //Infinite/accelerating growth, rate capped by draw
-        }
-        else
-        {
-          production = prodDelta[0] + (prodDelta[1] / (1.0 - (prodDelta[2] / prodDelta[1])));
-        }
-
-        foreach(resource_transaction rt in blockedTransactions)
-        {
-          if (rt.inputs.Contains(res_name) || rt.output.Contains(res_name))
-          {
-            calculatedDelta.AddConsumption(res_name, consumption);
-            calculatedDelta.AddProduction(res_name, production);
-          }
-        }
-      }
-      collection += calculatedDelta;
-    }
-    return collection;
-  }
-
-  void render_resource(resource_collection collection, string name, Rule rule)
-  {
-    resource_data resource = collection[name];
-    render_title(rule.resource_name.ToUpper());
-    render_content("storage", Lib.ValueOrNone(resource.capacity));
-    render_content("consumed", Lib.HumanReadableRate(resource.consumed));
-    if (resource.hasGreenhouse) render_content("time to harvest", Lib.HumanReadableDuration(resource.harvestTime), Lib.BuildString("quantity: <b>", resource.harvestSize.ToString("F0"), "</b>"));
-    else if (resource.hasRecycler) render_content("recycled", Lib.HumanReadableRate(resource.produced));
-    else if (resource.hasScrubber) render_content("scrubbed", Lib.HumanReadableRate(resource.produced));
-    else render_content("produced", Lib.HumanReadableRate(resource.produced));
-    render_content(rule.breakdown ? "time to instability" : "life expectancy", Lib.HumanReadableDuration(collection.lifeTime(name)));
-    render_space();
-  }
-  */

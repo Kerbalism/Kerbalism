@@ -179,6 +179,15 @@ public static class Lib
     if (TimeWarp.CurrentRateIndex > 0) TimeWarp.SetRate(0, false);
   }
 
+  // disable time warping above a specified level
+  public static void DisableWarp(uint max_level)
+  {
+    for(uint i = max_level + 1u; i < 8; ++i)
+    {
+      TimeWarp.fetch.warpRates[i] = TimeWarp.fetch.warpRates[max_level];
+    }
+  }
+
   // combine two guid, irregardless of their order (eg: Combine(a,b) == Combine(b,a))
   public static Guid CombineGuid(Guid a, Guid b)
   {

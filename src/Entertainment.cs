@@ -15,7 +15,7 @@ public class Entertainment : PartModule
 {
   // .cfg
   [KSPField(isPersistant = true)] public string description;
-  [KSPField(isPersistant = true)] public double rate;
+  [KSPField(isPersistant = true)] public double rate = 1.5;
 
   // editor/r&d info
   public override string GetInfo()

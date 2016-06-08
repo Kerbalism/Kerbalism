@@ -181,7 +181,7 @@ public sealed class Storm : MonoBehaviour
   public static bool JustEnded(CelestialBody body, double delta_time)
   {
     if (body.flightGlobalsIndex == 0) return false;
-    return DB.Ready() && DB.BodyData(Lib.PlanetarySystem(body).name).storm_age < TimeWarp.deltaTime * 2.0;
+    return DB.Ready() && DB.BodyData(Lib.PlanetarySystem(body).name).storm_age < delta_time * 2.0;
   }
 
 

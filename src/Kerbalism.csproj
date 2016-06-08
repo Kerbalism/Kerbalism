@@ -80,6 +80,7 @@
     <Compile Include="CLS.cs" />
     <Compile Include="Contracts.cs" />
     <Compile Include="DB.cs" />
+    <Compile Include="Engine.cs" />
     <Compile Include="Entertainment.cs" />
     <Compile Include="EVA.cs" />
     <Compile Include="GravityRing.cs" />

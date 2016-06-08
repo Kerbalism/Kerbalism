@@ -514,7 +514,7 @@ public sealed class Kerbalism : MonoBehaviour
         var parts = Lib.GetPartsRecursively(v.rootPart); //< what's the reason for this?
 
         // give the vessel some monoprop
-        string monoprop_name = v.isEVA ? "EVA Propellant" : !detected_mods.RealFuels ? "Hydrazine" : "MonoPropellant";
+        string monoprop_name = v.isEVA ? "EVA Propellant" : detected_mods.RealFuels ? "Hydrazine" : "MonoPropellant";
         foreach(var part in parts)
         {
           if (part.CrewCapacity > 0 || part.FindModuleImplementing<KerbalEVA>() != null)
