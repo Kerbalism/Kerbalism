@@ -224,3 +224,11 @@ Rule
 
 
 @Kerbalism:FOR[TacLifeSupport] {}
+
+
+// ============================================================================
+// Export the profile in use so MM patches can NEEDS[] it
+// ============================================================================
+
+
+@Kerbalism:FOR[TacEmulationProfile] {}

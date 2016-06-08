@@ -455,3 +455,11 @@ RESOURCE_DEFINITION
   isVisible = true
   unitCost = 40.0 // Moderately expensive, but easier to get into orbit than the equivalent amount of water
 }
+
+
+// ============================================================================
+// Export the profile in use so MM patches can NEEDS[] it
+// ============================================================================
+
+
+@Kerbalism:FOR[RealismProfile] {}
