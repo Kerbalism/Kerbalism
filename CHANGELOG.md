@@ -1,5 +1,12 @@
 #CHANGELOG
 
+1.0.3
+  - recompiled for KSP 1.1.3
+  - interplanetary coronal mass ejections
+  - fix: scrubber efficiency reverting to 50%
+  - fix: 30 days manned orbit contract not generated again after completion
+  - patch to allow Shielding production on Extra Planetary Launchpad, by Enceos  
+
 1.0.2
   - planner: warn the user if resource capacity isn't enough to avoid inconsistencies at extreme timewarp
   - tweaked MOLE solar panel output
