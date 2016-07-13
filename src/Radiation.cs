@@ -147,7 +147,7 @@ public static class Radiation
   // return solar storm radiation hitting the vessel, in rad/s
   public static double StormRadiation(Vessel v, double sunlight)
   {
-    double storm_k = (Storm.InProgress(v.mainBody) && !InsideMagnetosphere(v) ? 1.0 : 0.0) * sunlight;
+    double storm_k = (Storm.InProgress(v) && !InsideMagnetosphere(v) ? 1.0 : 0.0) * sunlight;
     return Settings.StormRadiation * storm_k;
   }
 

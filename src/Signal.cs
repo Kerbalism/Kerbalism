@@ -406,7 +406,7 @@ public sealed class Signal : MonoBehaviour
         else if (vd.msg_signal > 0 && ld.linked)
         {
           vd.msg_signal = 0;
-          if (vd.cfg_signal == 1 && !Storm.JustEnded(v.mainBody, TimeWarp.deltaTime)) //< do not send messages after a storm
+          if (vd.cfg_signal == 1 && !Storm.JustEnded(v, TimeWarp.deltaTime)) //< do not send messages after a storm
           {
             Message.Post(Severity.relax, Lib.BuildString("<b>", v.vesselName, "</b> signal is back"),
               ld.path.Count == 0 ? "We got a direct link with the space center" : Lib.BuildString("Relayed by <b>", ld.path[ld.path.Count - 1], "</b>"));
@@ -521,7 +521,7 @@ public sealed class Signal : MonoBehaviour
   // return true if vessel is inside a magnetosphere and there is a storm in progress
   public static bool Blackout(Vessel v)
   {
-    return Storm.InProgress(v.mainBody) && Radiation.InsideMagnetosphere(v);
+    return Storm.InProgress(v) && Radiation.InsideMagnetosphere(v);
   }
 }
 

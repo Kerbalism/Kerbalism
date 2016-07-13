@@ -389,15 +389,15 @@ public sealed class Monitor
 
   void problem_storm(Vessel v, ref List<Texture> icons, ref List<string> tooltips)
   {
-    if (Storm.Incoming(v.mainBody))
+    if (Storm.Incoming(v))
     {
       icons.Add(icon_storm_warning);
-      tooltips.Add(Lib.BuildString("Coronal mass ejection incoming <i>(", Lib.HumanReadableDuration(Storm.TimeBeforeCME(v.mainBody)), ")</i>"));
+      tooltips.Add(Lib.BuildString("Coronal mass ejection incoming <i>(", Lib.HumanReadableDuration(Storm.TimeBeforeCME(v)), ")</i>"));
     }
-    if (Storm.InProgress(v.mainBody))
+    if (Storm.InProgress(v))
     {
       icons.Add(icon_storm_danger);
-      tooltips.Add(Lib.BuildString("Solar storm in progress <i>(", Lib.HumanReadableDuration(Storm.TimeLeftCME(v.mainBody)), ")</i>"));
+      tooltips.Add(Lib.BuildString("Solar storm in progress <i>(", Lib.HumanReadableDuration(Storm.TimeLeftCME(v)), ")</i>"));
     }
   }
 

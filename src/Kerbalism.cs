@@ -79,6 +79,9 @@ public sealed class Kerbalism : MonoBehaviour
   // the rule relative to radiation, if any
   public static Rule rad_rule = null;
 
+  // 1 AU: distance from home body to sun
+  public static double AU = 0.0;
+
   // keep it alive
   Kerbalism() { DontDestroyOnLoad(this); }
 
@@ -243,6 +246,9 @@ public sealed class Kerbalism : MonoBehaviour
     // note: dummy test for null char required to avoid compiler warning
     try { PartLoader.getPartInfoByName("kerbalEVA").partPrefab.AddModule("EVA"); } catch(Exception ex) { if (ex.Message.Contains("\0")) {} }
     try { PartLoader.getPartInfoByName("kerbalEVAfemale").partPrefab.AddModule("EVA"); } catch(Exception ex) { if (ex.Message.Contains("\0")) {} }
+
+    // precompute 1 AU
+    AU = Lib.PlanetarySystem(FlightGlobals.GetHomeBody()).orbit.semiMajorAxis;
   }
 
 
@@ -1168,14 +1174,14 @@ public sealed class Kerbalism : MonoBehaviour
   // hook: StormIncoming()
   public static bool hook_StormIncoming(Vessel v)
   {
-    return Cache.VesselInfo(v).is_vessel && Storm.Incoming(Lib.PlanetarySystem(v.mainBody));
+    return Cache.VesselInfo(v).is_vessel && Storm.Incoming(v);
   }
 
 
   // hook: StormInProgress()
   public static bool hook_StormInProgress(Vessel v)
   {
-    return Cache.VesselInfo(v).is_vessel && Storm.InProgress(Lib.PlanetarySystem(v.mainBody));
+    return Cache.VesselInfo(v).is_vessel && Storm.InProgress(v);
   }
 
 

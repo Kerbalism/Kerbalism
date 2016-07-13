@@ -51,7 +51,7 @@ public sealed class Storm : MonoBehaviour
       }
 
       // accumulate age
-      bd.storm_age += TimeWarp.fixedDeltaTime * storm_frequency(body);
+      bd.storm_age += TimeWarp.fixedDeltaTime * storm_frequency(body.orbit.semiMajorAxis);
 
       // if storm is over
       if (bd.storm_age > bd.storm_time)
@@ -59,7 +59,6 @@ public sealed class Storm : MonoBehaviour
         bd.storm_age = 0.0;
         bd.storm_time = 0.0;
         bd.storm_state = 0;
-
       }
       // if storm is in progress
       else if (bd.storm_age > bd.storm_time - Settings.StormDuration)
@@ -67,7 +66,7 @@ public sealed class Storm : MonoBehaviour
         bd.storm_state = 2;
       }
       // if storm is incoming
-      else if (bd.storm_age > bd.storm_time - Settings.StormDuration  - time_to_impact(body))
+      else if (bd.storm_age > bd.storm_time - Settings.StormDuration  - time_to_impact(body.orbit.semiMajorAxis))
       {
         bd.storm_state = 1;
       }
@@ -79,7 +78,7 @@ public sealed class Storm : MonoBehaviour
         if (body_is_relevant(body))
         {
           Message.Post(Severity.danger, Lib.BuildString("The coronal mass ejection hit <b>", body.name, "</b> system"),
-            Lib.BuildString("Storm duration: ", Lib.HumanReadableDuration(TimeLeftCME(body))));
+            Lib.BuildString("Storm duration: ", Lib.HumanReadableDuration(TimeLeftCME(bd.storm_time, bd.storm_age))));
         }
         bd.msg_storm = 2;
       }
@@ -88,7 +87,7 @@ public sealed class Storm : MonoBehaviour
         if (body_is_relevant(body))
         {
           Message.Post(Severity.warning, Lib.BuildString("Our observatories report a coronal mass ejection directed toward <b>", body.name, "</b> system"),
-            Lib.BuildString("Time to impact: ", Lib.HumanReadableDuration(TimeBeforeCME(body))));
+            Lib.BuildString("Time to impact: ", Lib.HumanReadableDuration(TimeBeforeCME(bd.storm_time, bd.storm_age))));
         }
         bd.msg_storm = 1;
       }
@@ -101,24 +100,83 @@ public sealed class Storm : MonoBehaviour
         bd.msg_storm = 0;
       }
     }
+
+    // for each vessel
+    foreach(Vessel v in FlightGlobals.Vessels)
+    {
+      // only consider vessels in interplanetary space
+      if (v.mainBody.flightGlobalsIndex != 0) continue;
+
+      // get vessel info
+      vessel_info vi = Cache.VesselInfo(v);
+
+      // skip invalid vessels
+      if (!vi.is_vessel) continue;
+
+      // skip resque missions
+      if (vi.is_resque) continue;
+
+      // skip dead eva kerbals
+      if (vi.is_eva_dead) continue;
+
+      // skip unmanned vessels
+      if (Lib.CrewCount(v) == 0) continue;
+
+      // get vessel data
+      vessel_data vd = DB.VesselData(v.id);
+
+      // generate storm time if necessary
+      if (vd.storm_time <= double.Epsilon)
+      {
+        vd.storm_time = Settings.StormMinTime + (Settings.StormMaxTime - Settings.StormMinTime) * Lib.RandomDouble();
+      }
+
+      // accumulate age
+      vd.storm_age += TimeWarp.fixedDeltaTime * storm_frequency(vi.sun_dist);
+
+      // if storm is over
+      if (vd.storm_age > vd.storm_time && vd.storm_state == 2)
+      {
+        vd.storm_age = 0.0;
+        vd.storm_time = 0.0;
+        vd.storm_state = 0;
+
+        // send message
+        Message.Post(Severity.relax, Lib.BuildString("The solar storm around <b>", v.vesselName, "</b> is over"));
+      }
+      // if storm is in progress
+      else if (vd.storm_age > vd.storm_time - Settings.StormDuration && vd.storm_state == 1)
+      {
+        vd.storm_state = 2;
+
+        // send message
+        Message.Post(Severity.danger, Lib.BuildString("The coronal mass ejection hit <b>", v.vesselName, "</b>"),
+        Lib.BuildString("Storm duration: ", Lib.HumanReadableDuration(TimeLeftCME(vd.storm_time, vd.storm_age))));
+      }
+      // if storm is incoming
+      else if (vd.storm_age > vd.storm_time - Settings.StormDuration - time_to_impact(vi.sun_dist) && vd.storm_state == 0)
+      {
+        vd.storm_state = 1;
+
+        // send message
+        Message.Post(Severity.warning, Lib.BuildString("Our observatories report a coronal mass ejection directed toward <b>", v.vesselName, "</b>"),
+        Lib.BuildString("Time to impact: ", Lib.HumanReadableDuration(TimeBeforeCME(vd.storm_time, vd.storm_age))));
+      }
+    }
   }
 
 
-  // influence the frequency of solar storms
-  // - body: reference body of the planetary system
-  double storm_frequency(CelestialBody body)
+  // return storm frequency factor by distance from sun
+  double storm_frequency(double dist)
   {
-    // note: we deal with the case of a planet mod setting homebody as a moon
-    CelestialBody home = Lib.PlanetarySystem(FlightGlobals.GetHomeBody());
-    return home.orbit.semiMajorAxis / body.orbit.semiMajorAxis;
+    return Kerbalism.AU / dist;
   }
 
 
   // return time to impact from CME event, in seconds
-  // - body: reference body of the planetary system
-  double time_to_impact(CelestialBody body)
+  double time_to_impact(double dist)
   {
-    return body.orbit.semiMajorAxis / Settings.StormEjectionSpeed;
+    return dist / Settings.StormEjectionSpeed;
   }
 
 
@@ -160,48 +218,112 @@ public sealed class Storm : MonoBehaviour
 
 
   // return true if a storm is incoming
-  public static bool Incoming(CelestialBody body)
+  public static bool Incoming(Vessel v)
   {
-    if (body.flightGlobalsIndex == 0) return false;
-    return DB.Ready() && DB.BodyData(Lib.PlanetarySystem(body).name).storm_state == 1;
+    if (!DB.Ready()) return false;
+
+    // if in interplanetary space
+    if (v.mainBody.flightGlobalsIndex == 0)
+    {
+      return DB.VesselData(v.id).storm_state == 1;
+    }
+    // if inside a planetary system
+    else
+    {
+      return DB.BodyData(Lib.PlanetarySystem(v.mainBody).name).storm_state == 1;
+    }
   }
 
 
   // return true if a storm is in progress
-  public static bool InProgress(CelestialBody body)
+  public static bool InProgress(Vessel v)
   {
-    if (body.flightGlobalsIndex == 0) return false;
-    return DB.Ready() && DB.BodyData(Lib.PlanetarySystem(body).name).storm_state == 2;
+    if (!DB.Ready()) return false;
+
+    // if in interplanetary space
+    if (v.mainBody.flightGlobalsIndex == 0)
+    {
+      return DB.VesselData(v.id).storm_state == 2;
+    }
+    // if inside a planetary system
+    else
+    {
+      return DB.BodyData(Lib.PlanetarySystem(v.mainBody).name).storm_state == 2;
+    }
   }
 
 
   // return true if a storm just ended
   // used to avoid sending 'signal is back' messages en-masse after the storm is over
   // - delta_time: time between calls to this function
-  public static bool JustEnded(CelestialBody body, double delta_time)
+  public static bool JustEnded(Vessel v, double delta_time)
   {
-    if (body.flightGlobalsIndex == 0) return false;
-    return DB.Ready() && DB.BodyData(Lib.PlanetarySystem(body).name).storm_age < delta_time * 2.0;
+    if (!DB.Ready()) return false;
+
+    // if in interplanetary space
+    if (v.mainBody.flightGlobalsIndex == 0)
+    {
+      return DB.VesselData(v.id).storm_age < delta_time * 2.0;
+    }
+    // if inside a planetary system
+    else
+    {
+      return DB.BodyData(Lib.PlanetarySystem(v.mainBody).name).storm_age < delta_time * 2.0;
+    }
   }
 
 
   // return time left until CME impact
-  public static double TimeBeforeCME(CelestialBody body)
+  static double TimeBeforeCME(double storm_time, double storm_age)
   {
-    if (body.flightGlobalsIndex == 0) return 0.0;
+    return Math.Max(0.0, storm_time - storm_age - Settings.StormDuration);
+  }
+
+
+  // return time left until CME impact
+  public static double TimeBeforeCME(Vessel v)
+  {
     if (!DB.Ready()) return 0.0;
-    body_data bd = DB.BodyData(Lib.PlanetarySystem(body).name);
-    return Math.Max(0.0, bd.storm_time - bd.storm_age - Settings.StormDuration);
+
+    // if in interplanetary space
+    if (v.mainBody.flightGlobalsIndex == 0)
+    {
+      vessel_data vd = DB.VesselData(v.id);
+      return TimeBeforeCME(vd.storm_time, vd.storm_age);
+    }
+    // if inside a planetary system
+    else
+    {
+      body_data bd = DB.BodyData(Lib.PlanetarySystem(v.mainBody).name);
+      return TimeBeforeCME(bd.storm_time, bd.storm_age);
+    }
   }
 
 
   // return time left until CME is over
-  public static double TimeLeftCME(CelestialBody body)
+  static double TimeLeftCME(double storm_time, double storm_age)
   {
-    if (body.flightGlobalsIndex == 0) return 0.0;
+    return Math.Max(0.0, storm_time - storm_age);
+  }
+
+
+  // return time left until CME is over
+  public static double TimeLeftCME(Vessel v)
+  {
     if (!DB.Ready()) return 0.0;
-    body_data bd = DB.BodyData(Lib.PlanetarySystem(body).name);
-    return Math.Max(0.0, bd.storm_time - bd.storm_age);
+
+    // if in interplanetary space
+    if (v.mainBody.flightGlobalsIndex == 0)
+    {
+      vessel_data vd = DB.VesselData(v.id);
+      return TimeLeftCME(vd.storm_time, vd.storm_age);
+    }
+    // if inside a planetary system
+    else
+    {
+      body_data bd = DB.BodyData(Lib.PlanetarySystem(v.mainBody).name);
+      return TimeLeftCME(bd.storm_time, bd.storm_age);
+    }
   }
 }
 

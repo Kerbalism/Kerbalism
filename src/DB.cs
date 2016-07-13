@@ -36,7 +36,9 @@ public class vessel_data
   public uint   cfg_storm           = 1;            // enable/disable message: storms
   public uint   cfg_highlights      = 1;            // show/hide malfunction highlights
   public uint   cfg_showlink        = 0;            // show/hide link line
-
+  public double storm_time          = 0.0;          // time of next storm (interplanetary CME)
+  public double storm_age           = 0.0;          // time since last storm (interplanetary CME)
+  public uint   storm_state         = 0;            // 0: none, 1: inbound, 2: inprogress (interplanetary CME)
   public string notes               = "";           // vessel notes
   public string group               = "NONE";       // vessel group
   public Dictionary<string, vmon_data> vmon = new Dictionary<string, vmon_data>(); // rule data
@@ -65,6 +67,7 @@ public class notification_data
   public uint   first_signal_loss   = 0;            // record first signal loss, to show tutorial notification
   public uint   first_malfunction   = 0;            // record first malfunction, to show tutorial notification
   public uint   first_space_harvest = 0;            // record first greenhouse harvest in space
+  public uint   manned_orbit_contract = 0;          // keep track of 30days manned orbit contract completion, to avoid generating it again
 }
 
 
@@ -85,7 +88,7 @@ public sealed class DB : ScenarioModule
   private notification_data notifications = new notification_data();
 
   // current savegame version
-  private const string current_version = "1.0.2.0";
+  private const string current_version = "1.0.3.0";
 
   // allow global access
   private static DB instance = null;
@@ -161,6 +164,9 @@ public sealed class DB : ScenarioModule
         vd.cfg_storm       = Lib.ConfigValue(vessel_node, "cfg_storm", 1u); // since 0.9.9.5
         vd.cfg_highlights  = Lib.ConfigValue(vessel_node, "cfg_highlights", 1u); // since 0.9.9.5
         vd.cfg_showlink    = Lib.ConfigValue(vessel_node, "cfg_showlink", 0u); // since 0.9.9.8
+        vd.storm_time      = Lib.ConfigValue(vessel_node, "storm_time", 0.0); // since 1.0.3
+        vd.storm_age       = Lib.ConfigValue(vessel_node, "storm_age", 0.0); // since 1.0.3
+        vd.storm_state     = Lib.ConfigValue(vessel_node, "storm_state", 0u); // since 1.0.3
         vd.notes           = Lib.ConfigValue(vessel_node, "notes", "").Replace("$NEWLINE", "\n"); // since 0.9.9.1
         vd.group           = Lib.ConfigValue(vessel_node, "group", "NONE"); // since 0.9.9.1
         vd.vmon = new Dictionary<string, vmon_data>();
@@ -201,14 +207,15 @@ public sealed class DB : ScenarioModule
     if (node.HasNode("notifications"))
     {
       ConfigNode n_node = node.GetNode("notifications");
-      notifications.next_death_report   = Lib.ConfigValue(n_node, "next_death_report", 0u);
-      notifications.next_tutorial       = Lib.ConfigValue(n_node, "next_tutorial", 0u);
-      notifications.death_counter       = Lib.ConfigValue(n_node, "death_counter", 0u);
-      notifications.last_death_counter  = Lib.ConfigValue(n_node, "last_death_counter", 0u);
-      notifications.first_belt_crossing = Lib.ConfigValue(n_node, "first_belt_crossing", 0u);
-      notifications.first_signal_loss   = Lib.ConfigValue(n_node, "first_signal_loss", 0u);
-      notifications.first_malfunction   = Lib.ConfigValue(n_node, "first_malfunction", 0u);
-      notifications.first_space_harvest = Lib.ConfigValue(n_node, "first_space_harvest", 0u);
+      notifications.next_death_report     = Lib.ConfigValue(n_node, "next_death_report", 0u);
+      notifications.next_tutorial         = Lib.ConfigValue(n_node, "next_tutorial", 0u);
+      notifications.death_counter         = Lib.ConfigValue(n_node, "death_counter", 0u);
+      notifications.last_death_counter    = Lib.ConfigValue(n_node, "last_death_counter", 0u);
+      notifications.first_belt_crossing   = Lib.ConfigValue(n_node, "first_belt_crossing", 0u);
+      notifications.first_signal_loss     = Lib.ConfigValue(n_node, "first_signal_loss", 0u);
+      notifications.first_malfunction     = Lib.ConfigValue(n_node, "first_malfunction", 0u);
+      notifications.first_space_harvest   = Lib.ConfigValue(n_node, "first_space_harvest", 0u);
+      notifications.manned_orbit_contract = Lib.ConfigValue(n_node, "manned_orbit_contract", 0u);
     }
 
 
@@ -292,6 +299,9 @@ public sealed class DB : ScenarioModule
       vessel_node.AddValue("cfg_storm", vd.cfg_storm);
       vessel_node.AddValue("cfg_highlights", vd.cfg_highlights);
       vessel_node.AddValue("cfg_showlink", vd.cfg_showlink);
+      vessel_node.AddValue("storm_time", vd.storm_time);
+      vessel_node.AddValue("storm_age", vd.storm_age);
+      vessel_node.AddValue("storm_state", vd.storm_state);
       vessel_node.AddValue("notes", vd.notes.Replace("\n", "$NEWLINE"));
       vessel_node.AddValue("group", vd.group);
       var vmon_node = vessel_node.AddNode("vmon");
@@ -326,6 +336,7 @@ public sealed class DB : ScenarioModule
     notifications_node.AddValue("first_signal_loss", notifications.first_signal_loss.ToString());
     notifications_node.AddValue("first_malfunction", notifications.first_malfunction.ToString());
     notifications_node.AddValue("first_space_harvest", notifications.first_space_harvest.ToString());
+    notifications_node.AddValue("manned_orbit_contract", notifications.manned_orbit_contract.ToString());
   }
 
 

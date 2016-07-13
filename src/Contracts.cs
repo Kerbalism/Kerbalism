@@ -59,7 +59,8 @@ public sealed class KerbalismMannedOrbit : Contract
     {
       meet_requirements =
         (Kerbalism.ec_rule != null || Kerbalism.supply_rules.Count > 0) // some resource-related life support rule is present
-        && ProgressTracking.Instance != null && ProgressTracking.Instance.celestialBodyHome.orbit.IsComplete; // first orbit completed
+        && ProgressTracking.Instance != null && ProgressTracking.Instance.celestialBodyHome.orbit.IsComplete // first orbit completed
+        && DB.Ready() && DB.NotificationData().manned_orbit_contract == 0; // contract never completed
     }
     return meet_requirements;
   }
@@ -90,9 +91,10 @@ public sealed class KerbalismMannedOrbitCondition : Contracts.ContractParameter
       bool manned = v.loaded ? v.GetCrewCount() > 0 : v.protoVessel.GetVesselCrew().Count > 0;
       bool in_orbit = Sim.Apoapsis(v) > v.mainBody.atmosphereDepth && Sim.Periapsis(v) > v.mainBody.atmosphereDepth;
       bool for_30days = v.missionTime > 60.0 * 60.0 * Lib.HoursInDay() * 30.0;
-      if (manned && in_orbit && for_30days)
+      if (manned && in_orbit && for_30days && DB.Ready())
       {
         base.SetComplete();
+        DB.NotificationData().manned_orbit_contract = 1; //< remember that contract was completed
         break;
       }
     }

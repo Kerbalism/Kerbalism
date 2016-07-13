@@ -33,7 +33,7 @@ public sealed class Scrubber : PartModule
   // note: persistent because required in background processing
   [KSPField] public double ec_rate;                    // EC consumption rate per-second
   [KSPField] public double co2_rate;                   // waste consumption rate per-second
-  [KSPField] public double efficiency = 0.0;           // waste->resource conversion rate
+  [KSPField(isPersistant = true)] public double efficiency = 0.0; // waste->resource conversion rate
   [KSPField] public double intake_rate = 1.0;         // Oxygen production rate inside breathable atmosphere
   [KSPField] public string resource_name = "Oxygen";   // name of resource recycled
   [KSPField] public string waste_name = "CO2";         // name of resource recycled
