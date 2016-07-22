@@ -13,8 +13,10 @@ namespace KERBALISM {
 
 public class Entertainment : PartModule
 {
-  // .cfg
-  [KSPField(isPersistant = true)] public string description;
+  // config
+  [KSPField] public string description;
+
+  // persistence
   [KSPField(isPersistant = true)] public double rate = 1.5;
 
   // editor/r&d info

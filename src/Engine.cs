@@ -165,6 +165,9 @@ public sealed class Engine : MonoBehaviour
       // update storm data
       storm.update(last_v, last_vi, last_vd, last_time);
 
+      // decay unloaded vessels inside atmosphere
+      //Kerbalism.atmosphereDecay(last_v, last_vi, last_time);
+
       // remove from unloaded data container
       unloaded.Remove(last_vi.id);
     }

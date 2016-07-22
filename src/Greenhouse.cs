@@ -13,8 +13,7 @@ namespace KERBALISM {
 
 public sealed class Greenhouse : PartModule
 {
-  // .cfg
-  // note: persistent because required in background processing
+  // config
   [KSPField] public string resource_name = "Food";       // resource produced
   [KSPField] public string waste_name = "Crap";          // resource used for waste
   [KSPField] public double ec_rate;                      // EC consumption rate per-second, normalized for lamps=1.0
@@ -27,7 +26,6 @@ public sealed class Greenhouse : PartModule
   [KSPField] public string emissive_object;              // name of an object with an emissive texture to use for the lamps, optional
 
   // persistence
-  // note: also configurable per-part
   [KSPField(isPersistant = true)] public bool door_opened = false;            // if the door is opened
   [KSPField(isPersistant = true)] public double growth = 0.0;                 // current growth level
 
@@ -37,7 +35,6 @@ public sealed class Greenhouse : PartModule
   public float lamps = 0.0f;
 
   // store current lighting conditions
-  // note: here so the gui is able to display a status color for the greenhouse
   // note: persistant so it is accessible from proto vessel
   [KSPField(isPersistant = true)] public double lighting = 0.0;
 

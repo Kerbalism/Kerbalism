@@ -472,7 +472,7 @@ public sealed class Kerbalism : MonoBehaviour
     const string title = "<color=cyan><b>PROGRESS</b></color>\n";
     if (features.scrubber && Array.IndexOf(Scrubber.scrubber_efficiency.techs, data.host.techID) >= 0)
     {
-      Message.Post(Lib.BuildString(title, "We have access to more efficient <b>CO2 scrubbers</b> now", "Our research efforts are paying off, after all"));
+      Message.Post(Lib.BuildString(title, "We have access to more efficient <b>CO2 scrubbers</b> and <b>recyclers</b> now", "Our research efforts are paying off, after all"));
     }
     if (features.malfunction && Array.IndexOf(Malfunction.manufacturing_quality.techs, data.host.techID) >= 0)
     {
@@ -495,7 +495,7 @@ public sealed class Kerbalism : MonoBehaviour
     if (rnd.node_description.text.IndexOf("\n\n", StringComparison.Ordinal) == -1)
     {
       if (features.scrubber && Scrubber.scrubber_efficiency.techs.IndexOf(techID) >= 0)
-        rnd.node_description.text += "\n\n<color=cyan>Improve scrubbers efficiency</color>";
+        rnd.node_description.text += "\n\n<color=cyan>Improve scrubbers and recyclers efficiency</color>";
       if (features.malfunction && Malfunction.manufacturing_quality.techs.IndexOf(techID) >= 0)
         rnd.node_description.text += "\n\n<color=cyan>Improve manufacturing quality</color>";
       if (features.signal && Signal.signal_processing.techs.IndexOf(techID) >= 0)
@@ -646,27 +646,6 @@ public sealed class Kerbalism : MonoBehaviour
   }
 
 
-  void atmosphereDecay()
-  {
-    // decay unloaded vessels inside atmosphere
-    foreach(Vessel v in FlightGlobals.Vessels.FindAll(k => !k.loaded && !Lib.Landed(k)))
-    {
-      // get pressure
-      double p = v.mainBody.GetPressure(v.altitude);
-
-      // if inside some kind of atmosphere
-      if (p > 0.0)
-      {
-        // calculate decay speed to be 1km/s per-kPa
-        double decay_speed = 1000.0 * p;
-
-        // decay the orbit
-        v.orbit.semiMajorAxis -= decay_speed * elapsed_s;
-      }
-    }
-  }
-
-
   public void Update()
   {
     // mute/unmute messages with keyboard
@@ -720,20 +699,21 @@ public sealed class Kerbalism : MonoBehaviour
       // note: this will lock control on unmanned debris
       setLocks(v, vi);
 
-      // skip invalid vessels
+      // skip debris/asteroids/flags/...
       // skip eva dead kerbals (rationale: getting the kerbal data will create it again, leading to spurious resque mission detection)
       if (vi.is_vessel && !vi.is_eva_dead)
       {
         // manage resque mission mechanics
         manageResqueMission(v);
+      }
 
+      // skip invalid vessels
+      if (vi.is_valid)
+      {
         // update connected spaces using CLS, for QoL and Radiation mechanics
         updateConnectedSpaces(v, vi);
       }
     }
-
-    // decay debris orbits
-    atmosphereDecay();
 
     // add progress descriptions to technologies
     techDescriptions();
@@ -860,6 +840,27 @@ public sealed class Kerbalism : MonoBehaviour
     if (HighLogic.CurrentGame.Mode == Game.Modes.CAREER)
     {
       Reputation.Instance.AddReputation(-Settings.BreakdownReputationPenalty, TransactionReasons.Any);
+    }
+  }
+
+
+  // decay unloaded vessels inside atmosphere
+  static public void atmosphereDecay(Vessel v, vessel_info vi, double elapsed_s)
+  {
+    if (!vi.landed)
+    {
+      // get pressure
+      double p = v.mainBody.GetPressure(v.altitude);
+
+      // if inside some kind of atmosphere
+      if (p > 0.0)
+      {
+        // calculate decay speed to be 1km/s per-kPa
+        double decay_speed = 1000.0 * p;
+
+        // decay the orbit
+        v.orbit.semiMajorAxis -= decay_speed * elapsed_s;
+      }
     }
   }
 

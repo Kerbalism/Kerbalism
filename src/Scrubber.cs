@@ -28,18 +28,16 @@ public sealed class Scrubber : PartModule
   }
   public static ScrubberEfficiency scrubber_efficiency = new ScrubberEfficiency();
 
-  // .cfg
-  // note: persistent because required in background processing
+  // config
   [KSPField] public double ec_rate;                    // EC consumption rate per-second
   [KSPField] public double co2_rate;                   // waste consumption rate per-second
-  [KSPField(isPersistant = true)] public double efficiency = 0.5; // waste->resource conversion rate
-  [KSPField] public double intake_rate = 1.0;         // Oxygen production rate inside breathable atmosphere
+  [KSPField] public double intake_rate = 1.0;          // Oxygen production rate inside breathable atmosphere
   [KSPField] public string resource_name = "Oxygen";   // name of resource recycled
   [KSPField] public string waste_name = "CO2";         // name of resource recycled
 
   // persistence
-  // note: also configurable per-part
-  [KSPField(isPersistant = true)] public bool is_enabled = true;            // if the scrubber is enabled
+  [KSPField(isPersistant = true)] public bool is_enabled = true;  // if the scrubber is enabled
+  [KSPField(isPersistant = true)] public double efficiency = 0.5; // waste->resource conversion rate
 
   // rmb status
   [KSPField(guiActive = true, guiName = "Scrubber")] public string Status;  // description of current scrubber state
@@ -139,9 +137,6 @@ public sealed class Scrubber : PartModule
 
       // set status
       Status = "Running";
-      /*bool has_waste = resources.Info(vessel, waste_name).amount > double.Epsilon;
-      bool has_ec = resources.Info(vessel, "ElectricCharge").amount > double.Epsilon;
-      Status = !has_waste ? Lib.BuildString("No ", waste_name) : !has_ec ? "No Power" : "Running";*/
     }
     // if outside breathable atmosphere and disabled
     else

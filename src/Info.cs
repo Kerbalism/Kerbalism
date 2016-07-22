@@ -306,8 +306,7 @@ public sealed class Info
     }
 
     // for each greenhouse
-    var greenhouses = Greenhouse.PartialData(v);
-    foreach(var greenhouse in greenhouses)
+    foreach(var greenhouse in vi.greenhouses)
     {
       render_title("GREENHOUSE");
       render_content("Lighting:\t\t", Lib.HumanReadablePerc(greenhouse.lighting));

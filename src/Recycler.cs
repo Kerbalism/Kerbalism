@@ -22,10 +22,12 @@ public sealed class Recycler : PartModule
   [KSPField] public string display_name = "Recycler";  // short identifier for the recycler in the RMB ui
   [KSPField] public string filter_name = "";           // name of a special filter resource, if any
   [KSPField] public double filter_rate;                // filter consumption rate per-second
+  [KSPField] public bool   use_efficiency;             // true to influence the recycler by efficiency
 
   // persistence
   // note: also configurable per-part
-  [KSPField(isPersistant = true)] public bool is_enabled = true;            // if the recycler is enabled
+  [KSPField(isPersistant = true)] public bool is_enabled = true;  // if the recycler is enabled
+  [KSPField(isPersistant = true)] public double efficiency = 1.0; // waste->resource conversion rate
 
   // rmb status
   [KSPField(guiActive = true, guiName = "Recycler")] public string Status;  // description of current state
@@ -107,6 +109,17 @@ public sealed class Recycler : PartModule
     // do nothing in the editor
     if (HighLogic.LoadedSceneIsEditor) return;
 
+    if (use_efficiency)
+    {
+      // deduce quality from technological level if necessary
+      // note: done at prelaunch to avoid problems with start()/load() and the tech tree being not consistent
+      if (vessel.situation == Vessel.Situations.PRELAUNCH) efficiency = Scrubber.DeduceEfficiency();
+
+      // if for some reason efficiency wasn't set, default to 50%
+      // note: for example, resque vessels never get to prelaunch
+      if (efficiency <= double.Epsilon) efficiency = 0.5;
+    }
+
     if (is_enabled)
     {
       // get resource cache
@@ -120,20 +133,19 @@ public sealed class Recycler : PartModule
       {
         recipe.Input(filter_name, filter_rate * Kerbalism.elapsed_s);
       }
-      recipe.Output(resource_name, waste_rate * waste_ratio * Kerbalism.elapsed_s);
+      recipe.Output(resource_name, waste_rate * waste_ratio * efficiency * Kerbalism.elapsed_s);
       resources.Transform(recipe);
 
       // set status
       Status = "Running";
-      /*bool has_waste = resources.Info(vessel, waste_name).amount > double.Epsilon;
-      bool has_ec = resources.Info(vessel, "ElectricCharge").amount > double.Epsilon;
-      bool has_filter = filter_name.Length == 0 || resources.Info(vessel, filter_name).amount > double.Epsilon;
-      Status = !has_waste ? Lib.BuildString("No ", waste_name) : !has_ec ? "No Power" : !has_filter ? Lib.BuildString("No ", filter_name) : "Running";*/
     }
     else
     {
       Status = "Off";
     }
+
+    // add efficiency to status
+    if (use_efficiency) Status += Lib.BuildString(" (Efficiency: ", (efficiency * 100.0).ToString("F0"), "%)");
   }
 
 
@@ -150,7 +162,7 @@ public sealed class Recycler : PartModule
       {
         recipe.Input(recycler.filter_name, recycler.filter_rate * elapsed_s);
       }
-      recipe.Output(recycler.resource_name, recycler.waste_rate * recycler.waste_ratio * elapsed_s);
+      recipe.Output(recycler.resource_name, recycler.waste_rate * recycler.waste_ratio * Lib.Proto.GetDouble(m, "efficiency", 1.0) * elapsed_s);
       resources.Transform(recipe);
     }
   }

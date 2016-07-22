@@ -65,6 +65,8 @@ public static class QualityOfLife
   // return entertainment on a vessel
   public static double Entertainment(Vessel v)
   {
+    // note: entertainment is only recomputed for active vessel, so this doesn't ever get called for unloaded ones
+
     // deduce entertainment bonus, multiplying all entertainment factors
     double entertainment = 1.0;
     if (v.loaded)

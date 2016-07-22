@@ -77,6 +77,11 @@ public class vessel_info
     avoid_inf_recursion.Add(v.id);
     link = Signal.Link(v, antenna, avoid_inf_recursion);
     avoid_inf_recursion.Remove(v.id);
+
+    // partial data about modules, used by vessel info/monitor
+    scrubbers = Scrubber.PartialData(v);
+    recyclers = Recycler.PartialData(v);
+    greenhouses = Greenhouse.PartialData(v);
   }
 
 
@@ -102,8 +107,12 @@ public class vessel_info
   public uint     max_malfunction;    // max malfunction level among all vessel modules
   public double   avg_quality;        // average manufacturing quality among all vessel modules
   public antenna_data antenna;        // best antenna/relay data
-  public link_data link;
-  static HashSet<Guid> avoid_inf_recursion = new HashSet<Guid>();
+  public link_data link;              // link data
+  static HashSet<Guid> avoid_inf_recursion = new HashSet<Guid>(); // used to avoid infinite recursion while calculating link data
+  public List<Scrubber.partial_data> scrubbers;       // partial module data
+  public List<Recycler.partial_data> recyclers;       // ..
+  public List<Greenhouse.partial_data> greenhouses;   // ..
+
 }
 
 

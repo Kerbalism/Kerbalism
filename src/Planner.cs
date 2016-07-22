@@ -1121,7 +1121,7 @@ public sealed class Planner
         double k = get_resource(recycler.waste_name).consume(recycler.waste_rate);
         k *= get_resource("ElectricCharge").consume(recycler.ec_rate * k);
         k *= recycler.filter_name.Length > 0 ? get_resource(recycler.filter_name).consume(recycler.filter_rate * k) : 1.0;
-        res.produce(recycler.waste_rate * recycler.waste_ratio * k);
+        res.produce(recycler.waste_rate * recycler.waste_ratio * k * (recycler.use_efficiency ? Scrubber.DeduceEfficiency() : 1.0));
         if (recycler.filter_name.Length > 0) res.depends.Add(get_resource(recycler.filter_name));
       }
       res.has_recycler = true;

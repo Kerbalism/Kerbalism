@@ -198,6 +198,8 @@ public sealed class GravityRing : PartModule
     }
 
     // set entertainment
+    // note: entertainmnent is only recomputed for loaded vessels,
+    // so changing rate here does nothing until vessel is reloaded
     double rate = 1.0 + (ring.entertainment_rate - 1.0) * speed;
     Lib.Proto.Set(m, "rate", rate);
   }

@@ -15,6 +15,13 @@ public class antenna_data
 {
   public antenna_data(Vessel v)
   {
+    // [disabled] EVA kerbals have an implicit antenna
+    //if (v.isEVA)
+    //{
+    //  range = 1000.0; //< 1Km
+    //  return;
+    //}
+
     // get error-correcting code factor
     double ecc = Signal.ECC();
 

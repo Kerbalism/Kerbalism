@@ -14,16 +14,18 @@ namespace KERBALISM {
 
 public sealed class Antenna : ModuleDataTransmitter, IScienceDataTransmitter
 {
-  // cfg
-  [KSPField] public string scope;                   // descriptive scope of the antenna (orbit, home, near, far)
-  [KSPField] public double relay_cost;              // ec consumption rate per-second for relaying data
-  [KSPField] public double min_transmission_cost;                        // transmission cost per-packet at 0 range
-  [KSPField] public double max_transmission_cost;                        // transmission cost per-packet at max range
-  [KSPField(isPersistant = true)] public bool relay;                     // specify if this antenna will relay link to other vessels
+  // configuration
+  [KSPField] public string scope;                           // descriptive scope of the antenna (orbit, home, near, far)
+  [KSPField] public double relay_cost;                      // ec consumption rate per-second for relaying data
+  [KSPField] public double min_transmission_cost;           // transmission cost per-packet at 0 range
+  [KSPField] public double max_transmission_cost;           // transmission cost per-packet at max range
+
+  // persistence
+  [KSPField(isPersistant = true)] public bool relay;        // specify if this antenna will relay link to other vessels
 
   // data
-  public bool can_transmit;                                              // enable or disable data transmission
-  public double penalty = 1.0;                                           // damage penalty applied to range
+  public bool can_transmit;                                 // enable or disable data transmission
+  public double penalty = 1.0;                              // damage penalty applied to range
 
 
   // rmb ui status

@@ -379,10 +379,10 @@ public sealed class Monitor
     {
       problem_kerbals(crew, ref problem_icons, ref problem_tooltips);
       problem_radiation(vi, ref problem_icons, ref problem_tooltips);
-      problem_scrubbers(v, Scrubber.PartialData(v), ref problem_icons, ref problem_tooltips);
-      problem_recyclers(v, Recycler.PartialData(v), ref problem_icons, ref problem_tooltips);
+      problem_scrubbers(v, vi.scrubbers, ref problem_icons, ref problem_tooltips);
+      problem_recyclers(v, vi.recyclers, ref problem_icons, ref problem_tooltips);
     }
-    problem_greenhouses(v, Greenhouse.PartialData(v), ref problem_icons, ref problem_tooltips);
+    problem_greenhouses(v, vi.greenhouses, ref problem_icons, ref problem_tooltips);
 
     // choose problem icon
     const UInt64 problem_icon_time = 3;
