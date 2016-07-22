@@ -1,5 +1,10 @@
 #CHANGELOG
 
+1.0.5
+  - optimized vessel monitor
+  - optimized debris decay in atmosphere
+  - recycler module efficiency can depend on technology progression
+
 1.0.4  
   - refactored overall architecture
   - new resource system: faster, stronger
