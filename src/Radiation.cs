@@ -21,7 +21,7 @@ public static class Radiation
   }
 
   // cache of body info, computed once
-  static Dictionary<int, body_info> bodies = new Dictionary<int, body_info>();
+  static Dictionary<int, body_info> bodies = new Dictionary<int, body_info>(64);
 
   // ctor
   static Radiation()
@@ -153,6 +153,13 @@ public static class Radiation
 
 
   // return percentual of radiations blocked by shielding
+  public static double Shielding(double level)
+  {
+    return level * Settings.ShieldingEfficiency;
+  }
+
+
+  // return percentual of radiations blocked by shielding
   public static double Shielding(double amount, double capacity)
   {
     return capacity > double.Epsilon ? Settings.ShieldingEfficiency * amount / capacity : 0.0;
@@ -162,7 +169,7 @@ public static class Radiation
   // return percentage of radiations blocked by shielding
   public static double Shielding(Vessel v)
   {
-    return Shielding(Lib.Resource.Amount(v, "Shielding"), Lib.Resource.Capacity(v, "Shielding"));
+    return Shielding(ResourceCache.Info(v, "Shielding").level);
   }
 
 
@@ -172,14 +179,16 @@ public static class Radiation
     double capacity = 0.0;
     foreach(var part in space.Parts)
     {
-      amount += Lib.Resource.Amount(part.Part, "Shielding");
-      capacity += Lib.Resource.Capacity(part.Part, "Shielding");
+      amount += Lib.Amount(part.Part, "Shielding");
+      capacity += Lib.Capacity(part.Part, "Shielding");
     }
-    return Shielding(amount, capacity);
+    double level = capacity > double.Epsilon ? amount / capacity : 0.0;
+    return Shielding(level);
   }
 
 
   // return a verbose description of shielding capability
+  // - shielding_factor: you can use Shielding level here
   public static string ShieldingToString(double shielding_factor)
   {
     if (shielding_factor <= double.Epsilon) return "none";
@@ -190,11 +199,28 @@ public static class Radiation
   }
 
 
-  // return a verbose description of shielding capability
-  public static string ShieldingToString(double amount, double capacity)
+  // show warning message when a vessel crossing a radiation belt
+  public static void beltWarnings(Vessel v, vessel_info vi, vessel_data vd)
   {
-    double level = capacity > double.Epsilon ? amount / capacity : 0.0;
-    return ShieldingToString(level);
+    // do nothing without a radiation rule
+    if (Kerbalism.rad_rule == null) return;
+
+    // we only show it for manned vessels, but the first time we also show it for probes
+    if (vi.crew_count > 0 || DB.NotificationData().first_belt_crossing == 0)
+    {
+      bool inside_belt = Radiation.InsideBelt(v);
+      if (inside_belt && vd.msg_belt < 1)
+      {
+        Message.Post(Lib.BuildString("<b>", v.vesselName, "</b> is crossing <i>", v.mainBody.bodyName, " radiation belt</i>"), "Exposed to extreme radiation");
+        vd.msg_belt = 1;
+        DB.NotificationData().first_belt_crossing = 1; //< record first belt crossing
+      }
+      else if (!inside_belt && vd.msg_belt > 0)
+      {
+        // no message after crossing the belt
+        vd.msg_belt = 0;
+      }
+    }
   }
 }
 

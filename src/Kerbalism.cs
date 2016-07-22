@@ -1,17 +1,12 @@
 ﻿// ====================================================================================================================
-// deal with KSP events, and with things that can't be done elsewhere
+// detect mods and features, parse the rules, manage the callbacks, provide the hooks, and more
 // ====================================================================================================================
 
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Reflection;
-using System.Runtime.Remoting.Messaging;
-using CameraFXModules;
-using KSP.UI;
 using KSP.UI.Screens;
-using KSP.UI.Screens.Flight;
 using UnityEngine;
 
 
@@ -62,10 +57,10 @@ public sealed class Kerbalism : MonoBehaviour
   public static Features features = new Features();
 
   // store all the rules
-  public static Dictionary<string, Rule> rules = new Dictionary<string, Rule>();
+  public static Dictionary<string, Rule> rules = new Dictionary<string, Rule>(32);
 
   // all the rules with a resource different than Electric Charge
-  public static List<Rule> supply_rules = new List<Rule>();
+  public static List<Rule> supply_rules = new List<Rule>(32);
 
   // the rule relative to EC, if any
   public static Rule ec_rule = null;
@@ -81,6 +76,18 @@ public sealed class Kerbalism : MonoBehaviour
 
   // 1 AU: distance from home body to sun
   public static double AU = 0.0;
+
+  // equivalent to TimeWarp.fixedDeltaTime
+  // note: stored here to avoid converting it to double every time
+  public static double elapsed_s;
+
+  // equivalent to 1 / TimeWarp.fixedDeltaTime
+  // note: stored here to avoid fp division
+  public static double inv_elapsed_s;
+
+  // number of steps from last warp blending
+  public static uint warp_blending;
+
 
   // keep it alive
   Kerbalism() { DontDestroyOnLoad(this); }
@@ -241,7 +248,7 @@ public sealed class Kerbalism : MonoBehaviour
     GameEvents.OnTechnologyResearched.Add(this.techResearched);
     GameEvents.onGUIEditorToolbarReady.Add(this.addEditorCategory);
 
-    // add module to EVA vessel part prefab
+    // add modules to EVA vessel part prefab
     // note: try..catch travesty required to avoid spurious exception, that seem to have no negative effects
     // note: dummy test for null char required to avoid compiler warning
     try { PartLoader.getPartInfoByName("kerbalEVA").partPrefab.AddModule("EVA"); } catch(Exception ex) { if (ex.Message.Contains("\0")) {} }
@@ -254,12 +261,15 @@ public sealed class Kerbalism : MonoBehaviour
 
   void toEVA(GameEvents.FromToAction<Part, Part> data)
   {
+    // get info from the cache
+    vessel_info from_info = Cache.VesselInfo(data.from.vessel);
+
     // use Hydrazine instead of MonoPropellant if RealFuel is installed
     string monoprop_name = detected_mods.RealFuels ? "Hydrazine" : "MonoPropellant";
 
     // determine if inside breathable atmosphere
     // note: the user can force the helmet + oxygen by pressing shift when going on eva
-    bool breathable = Cache.VesselInfo(data.from.vessel).breathable && !(Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift));
+    bool breathable = from_info.breathable && !(Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift));
 
     // get total crew in the origin vessel
     double tot_crew = (double)data.from.vessel.GetVesselCrew().Count + 1.0;
@@ -269,13 +279,16 @@ public sealed class Kerbalism : MonoBehaviour
 
     // determine how much MonoPropellant to get
     // note: never more that the 'share' of this kerbal
-    double monoprop = Math.Min(Lib.Resource.Amount(data.from.vessel, monoprop_name) / tot_crew, Settings.MonoPropellantOnEVA);
+    double monoprop = Math.Min(ResourceCache.Info(data.from.vessel, monoprop_name).amount / tot_crew, Settings.MonoPropellantOnEVA);
 
-    // transfer monoprop
-    data.to.RequestResource("EVA Propellant", -data.from.RequestResource(monoprop_name, monoprop));
+    // get monoprop from the vessel
+    monoprop = data.from.RequestResource(monoprop_name, monoprop);
+
+    // transfer monoprop to the EVA kerbal
+    data.to.RequestResource("EVA Propellant", -monoprop);
 
     // show warning if there isn't monoprop in the eva suit
-    if (monoprop <= double.Epsilon && !Lib.Landed(data.from.vessel))
+    if (monoprop <= double.Epsilon && !from_info.landed)
     {
       Message.Post(Severity.danger, Lib.BuildString("There isn't any <b>", monoprop_name, "</b> in the EVA suit", "Don't let the ladder go!"));
     }
@@ -287,7 +300,7 @@ public sealed class Kerbalism : MonoBehaviour
       if (r.resource_name.Length == 0 || r.on_eva <= double.Epsilon) continue;
 
       // determine amount to take, never more that his own share
-      double amount = Math.Min(Lib.Resource.Amount(data.from.vessel, r.resource_name) / tot_crew, r.on_eva);
+      double amount = Math.Min(ResourceCache.Info(data.from.vessel, r.resource_name).amount / tot_crew, r.on_eva);
 
       // deal with breathable modifier
       if (breathable && r.modifier.Contains("breathable")) continue;
@@ -338,13 +351,15 @@ public sealed class Kerbalism : MonoBehaviour
     {
       Rule r = p.Value;
       if (r.resource_name.Length == 0 || r.on_eva <= double.Epsilon) continue;
-
-      double leftover = Lib.Resource.Amount(data.from.vessel, r.resource_name);
+      double leftover = ResourceCache.Info(data.from.vessel, r.resource_name).amount;
       data.to.RequestResource(r.resource_name, -leftover);
     }
 
     // forget vessel data
     DB.ForgetVessel(data.from.vessel.id);
+
+    // purge vessel from resource cache
+    ResourceCache.Purge(data.from.vessel.id);
 
     // mute messages for a couple seconds
     Message.MuteInternal();
@@ -357,7 +372,7 @@ public sealed class Kerbalism : MonoBehaviour
 
   void vesselRecovered(ProtoVessel vessel, bool b)
   {
-    // note: this is called multiple times when a vessel is recovered, but its safe
+    // note: this is called multiple times when a vessel is recovered
 
     // find out if this was an EVA kerbal and if it was dead
     bool is_eva_dead = false;
@@ -385,6 +400,9 @@ public sealed class Kerbalism : MonoBehaviour
 
     // forget vessel data
     DB.ForgetVessel(vessel.vesselID);
+
+    // purge vessel from resource cache
+    ResourceCache.Purge(vessel.vesselID);
   }
 
 
@@ -395,6 +413,9 @@ public sealed class Kerbalism : MonoBehaviour
 
     // forget vessel data
     DB.ForgetVessel(vessel.vesselID);
+
+    // purge vessel from resource cache
+    ResourceCache.Purge(vessel.vesselID);
   }
 
 
@@ -402,6 +423,9 @@ public sealed class Kerbalism : MonoBehaviour
   {
     // forget vessel data
     DB.ForgetVessel(vessel.id);
+
+    // purge vessel from resource cache
+    ResourceCache.Purge(vessel.id);
 
     // rescan the damn kerbals
     // note: vessel crew is empty at destruction time
@@ -425,6 +449,9 @@ public sealed class Kerbalism : MonoBehaviour
   {
     // forget vessel being docked
     if (DB.Ready()) DB.ForgetVessel(e.from.vessel.id);
+
+    // purge vessel from resource cache
+    ResourceCache.Purge(e.from.vessel.id);
   }
 
 
@@ -494,7 +521,7 @@ public sealed class Kerbalism : MonoBehaviour
     }
 
     // lock controls for probes without signal
-    if (Settings.RemoteControlLink && v.GetCrewCount() == 0 && !Signal.Link(v).linked)
+    if (vi.is_valid && !vi.link.linked && Settings.RemoteControlLink && v.GetCrewCount() == 0)
     {
       InputLockManager.SetControlLock(ControlTypes.ALL_SHIP_CONTROLS, "no_signal_lock");
       FlightInputHandler.state.mainThrottle = 0.0f;
@@ -504,6 +531,9 @@ public sealed class Kerbalism : MonoBehaviour
 
   void manageResqueMission(Vessel v)
   {
+    // true if we detected this was a resque mission vessel
+    bool detected = false;
+
     // deal with resque missions
     foreach(ProtoCrewMember c in v.GetVesselCrew())
     {
@@ -516,42 +546,8 @@ public sealed class Kerbalism : MonoBehaviour
       // if the kerbal belong to a resque mission
       if (kd.resque == 1)
       {
-        var reslib = PartResourceLibrary.Instance.resourceDefinitions;
-        var parts = Lib.GetPartsRecursively(v.rootPart); //< what's the reason for this?
-
-        // give the vessel some monoprop
-        string monoprop_name = v.isEVA ? "EVA Propellant" : detected_mods.RealFuels ? "Hydrazine" : "MonoPropellant";
-        foreach(var part in parts)
-        {
-          if (part.CrewCapacity > 0 || part.FindModuleImplementing<KerbalEVA>() != null)
-          {
-            if (part.Resources.list.Find(k => k.resourceName == monoprop_name) == null)
-            {
-              Lib.SetupResource(part, monoprop_name, 0.0, Settings.MonoPropellantOnResque);
-            }
-            break;
-          }
-        }
-        Lib.Resource.Request(v, monoprop_name, -Settings.MonoPropellantOnResque);
-
-        // give the vessel some supplies
-        foreach(var p in rules)
-        {
-          Rule r = p.Value;
-          if (r.resource_name.Length == 0 || r.on_resque <= double.Epsilon || !reslib.Contains(r.resource_name)) continue;
-          foreach(var part in parts)
-          {
-            if (part.CrewCapacity > 0 || part.FindModuleImplementing<KerbalEVA>() != null)
-            {
-              if (part.Resources.list.Find(k => k.resourceName == r.resource_name) == null)
-              {
-                Lib.SetupResource(part, r.resource_name, 0.0, r.on_resque);
-              }
-              break;
-            }
-          }
-          Lib.Resource.Request(v, r.resource_name, -r.on_resque);
-        }
+        // remember it
+        detected = true;
 
         // flag the kerbal as non-resque
         // note: enable life support mechanics for the kerbal
@@ -561,10 +557,51 @@ public sealed class Kerbalism : MonoBehaviour
         Message.Post(Lib.BuildString("We found <b>", c.name, "</b>"), Lib.BuildString((c.gender == ProtoCrewMember.Gender.Male ? "He" : "She"), "'s still alive!"));
       }
     }
+
+    // gift resources
+    if (detected)
+    {
+      var reslib = PartResourceLibrary.Instance.resourceDefinitions;
+      var parts = Lib.GetPartsRecursively(v.rootPart); //< what's the reason for this?
+
+      // give the vessel some monoprop
+      string monoprop_name = v.isEVA ? "EVA Propellant" : detected_mods.RealFuels ? "Hydrazine" : "MonoPropellant";
+      foreach(var part in parts)
+      {
+        if (part.CrewCapacity > 0 || part.FindModuleImplementing<KerbalEVA>() != null)
+        {
+          if (part.Resources.list.Find(k => k.resourceName == monoprop_name) == null)
+          {
+            Lib.SetupResource(part, monoprop_name, 0.0, Settings.MonoPropellantOnResque);
+          }
+          break;
+        }
+      }
+      ResourceCache.Produce(v, monoprop_name, Settings.MonoPropellantOnResque);
+
+      // give the vessel some supplies
+      foreach(var p in rules)
+      {
+        Rule r = p.Value;
+        if (r.resource_name.Length == 0 || r.on_resque <= double.Epsilon || !reslib.Contains(r.resource_name)) continue;
+        foreach(var part in parts)
+        {
+          if (part.CrewCapacity > 0 || part.FindModuleImplementing<KerbalEVA>() != null)
+          {
+            if (part.Resources.list.Find(k => k.resourceName == r.resource_name) == null)
+            {
+              Lib.SetupResource(part, r.resource_name, 0.0, r.on_resque);
+            }
+            break;
+          }
+        }
+        ResourceCache.Produce(v, r.resource_name, r.on_resque);
+      }
+    }
   }
 
 
-  void updateConnectedSpaces(Vessel v)
+  void updateConnectedSpaces(Vessel v, vessel_info vi)
   {
     // get CLS handler
     var cls = CLS.get();
@@ -572,7 +609,7 @@ public sealed class Kerbalism : MonoBehaviour
     // calculate whole-space
     if (cls == null)
     {
-      double living_space = QualityOfLife.LivingSpace((uint)Lib.CrewCount(v), (uint)Cache.VesselInfo(v).crew_capacity);
+      double living_space = QualityOfLife.LivingSpace((uint)vi.crew_count, (uint)vi.crew_capacity);
       double entertainment = QualityOfLife.Entertainment(v);
       double shielding = Radiation.Shielding(v);
 
@@ -609,30 +646,6 @@ public sealed class Kerbalism : MonoBehaviour
   }
 
 
-  void beltWarnings(Vessel v, vessel_data vd)
-  {
-    // do nothing without a radiation rule
-    if (rad_rule == null) return;
-
-    // we only show it for manned vessels, but the first time we also show it for probes
-    if (Lib.CrewCount(v) > 0 || DB.NotificationData().first_belt_crossing == 0)
-    {
-      bool inside_belt = Radiation.InsideBelt(v);
-      if (inside_belt && vd.msg_belt < 1)
-      {
-        Message.Post(Lib.BuildString("<b>", v.vesselName, "</b> is crossing <i>", v.mainBody.bodyName, " radiation belt</i>"), "Exposed to extreme radiation");
-        vd.msg_belt = 1;
-        DB.NotificationData().first_belt_crossing = 1; //< record first belt crossing
-      }
-      else if (!inside_belt && vd.msg_belt > 0)
-      {
-        // no message after crossing the belt
-        vd.msg_belt = 0;
-      }
-    }
-  }
-
-
   void atmosphereDecay()
   {
     // decay unloaded vessels inside atmosphere
@@ -648,186 +661,7 @@ public sealed class Kerbalism : MonoBehaviour
         double decay_speed = 1000.0 * p;
 
         // decay the orbit
-        v.orbit.semiMajorAxis -= decay_speed * TimeWarp.fixedDeltaTime;
-      }
-    }
-  }
-
-
-  void applyRules(Vessel v, vessel_data vd, vessel_info vi)
-  {
-    // get crew
-    List<ProtoCrewMember> crew = v.loaded ? v.GetVesselCrew() : v.protoVessel.GetVesselCrew();
-
-    // get breathable modifier
-    double breathable = vi.breathable ? 0.0 : 1.0;
-
-    // get temp diff modifier
-    double temp_diff = v.altitude < 2000.0 && v.mainBody == FlightGlobals.GetHomeBody() ? 0.0 : Sim.TempDiff(vi.temperature);
-
-    // for each rule
-    foreach(var p in rules)
-    {
-      // shortcuts
-      Rule r = p.Value;
-
-      // if a resource is specified
-      if (r.resource_name.Length > 0)
-      {
-        // calculate depletion time
-        r.CalculateDepletion(v);
-
-        // get data
-        vmon_data vmon = DB.VmonData(v.id, r.name);
-        resource_info res = Cache.ResourceInfo(v, r.resource_name);
-
-        // message obey user config
-        bool show_msg = (r.resource_name == "ElectricCharge" ? vd.cfg_ec > 0 : vd.cfg_supply > 0);
-
-        // no messages with no capacity
-        if (res.capacity > double.Epsilon)
-        {
-          uint variant = crew.Count > 0 ? 0 : 1u; //< manned/probe variant
-
-          // manage messages
-          if (res.level <= double.Epsilon && vmon.message < 2)
-          {
-            if (r.empty_message.Length > 0 && show_msg) Message.Post(Severity.danger, Lib.ExpandMsg(r.empty_message, v, null, variant));
-            vmon.message = 2;
-          }
-          else if (res.level < r.low_threshold && vmon.message < 1)
-          {
-            if (r.low_message.Length > 0 && show_msg) Message.Post(Severity.warning, Lib.ExpandMsg(r.low_message, v, null, variant));
-            vmon.message = 1;
-          }
-          else if (res.level > r.low_threshold && vmon.message > 0)
-          {
-            if (r.refill_message.Length > 0 && show_msg) Message.Post(Severity.relax, Lib.ExpandMsg(r.refill_message, v, null, variant));
-            vmon.message = 0;
-          }
-        }
-      }
-
-      // for each crew
-      foreach(ProtoCrewMember c in crew)
-      {
-        // get kerbal data
-        kerbal_data kd = DB.KerbalData(c.name);
-
-        // skip resque kerbals
-        if (kd.resque == 1) continue;
-
-        // skip disabled kerbals
-        if (kd.disabled == 1) continue;
-
-        // get supply data from db
-        kmon_data kmon = DB.KmonData(c.name, r.name);
-
-        // calculate variance
-        double variance = Variance(c, r.variance);
-
-        // get modifier
-        double k = 1.0;
-        foreach(string modifier in r.modifier)
-        {
-          switch(modifier)
-          {
-            case "breathable":  k *= breathable;                              break;
-            case "temperature": k *= temp_diff;                               break;
-            case "radiation":   k *= vi.env_radiation * (1.0 - kd.shielding); break;
-            case "qol":         k *= 1.0 / QualityOfLife.Bonus(v, c.name);    break;
-          }
-        }
-
-        // if continuous
-        double step;
-        if (r.interval <= double.Epsilon)
-        {
-          // influence consumption by elapsed time
-          step = TimeWarp.fixedDeltaTime;
-        }
-        // if interval-based
-        else
-        {
-          // accumulate time
-          kmon.time_since += TimeWarp.fixedDeltaTime;
-
-          // determine number of steps
-          step = Math.Floor(kmon.time_since / r.interval);
-
-          // consume time
-          kmon.time_since -= step * r.interval;
-        }
-
-        // if continuous, or if interval elapsed
-        if (step > double.Epsilon)
-        {
-          // if there is a resource specified
-          if (r.resource_name.Length > 0 && r.rate > double.Epsilon)
-          {
-            // consume resource
-            double required = r.rate * step * k;
-            double consumed = Lib.Resource.Request(v, r.resource_name, required);
-
-            // produce waste
-            if (r.waste_name.Length > 0) Lib.Resource.Request(v, r.waste_name, -consumed * r.waste_ratio);
-
-            // reset degeneration when consumed, or when not required at all
-            if (consumed > required - 0.00000001)
-            {
-              // slowly recover instead of instant reset
-              kmon.problem *= 1.0 / (1.0 + Math.Max(r.interval, 1.0) * step * 0.002);
-              kmon.problem = Math.Max(kmon.problem, 0.0);
-            }
-            else
-            {
-              // degenerate
-              kmon.problem += r.degeneration * step * k * variance;
-            }
-          }
-          else
-          {
-            // degenerate
-            kmon.problem += r.degeneration * step * k * variance;
-          }
-
-
-          // determine message variant
-          uint variant = vi.temperature < Settings.SurvivalTemperature ? 0 : 1u;
-
-          // kill kerbal if necessary
-          if (kmon.problem >= r.fatal_threshold)
-          {
-            if (r.fatal_message.Length > 0)
-              Message.Post(r.breakdown ? Severity.breakdown : Severity.fatality, Lib.ExpandMsg(r.fatal_message, v, c, variant));
-
-            if (r.breakdown)
-            {
-              Kerbalism.Breakdown(v, c);
-              kmon.problem = r.danger_threshold * 1.01; //< move back to danger threshold
-            }
-            else
-            {
-              Kill(v, c);
-            }
-          }
-          // show messages
-          else if (kmon.problem >= r.danger_threshold && kmon.message < 2)
-          {
-            if (r.danger_message.Length > 0) Message.Post(Severity.danger, Lib.ExpandMsg(r.danger_message, v, c, variant));
-            kmon.message = 2;
-          }
-          else if (kmon.problem >= r.warning_threshold && kmon.message < 1)
-          {
-            if (r.warning_message.Length > 0) Message.Post(Severity.warning, Lib.ExpandMsg(r.warning_message, v, c, variant));
-            kmon.message = 1;
-          }
-          else if (kmon.problem < r.warning_threshold && kmon.message > 0)
-          {
-            if (r.relax_message.Length > 0) Message.Post(Severity.relax, Lib.ExpandMsg(r.relax_message, v, c, variant));
-            kmon.message = 0;
-          }
-        }
+        v.orbit.semiMajorAxis -= decay_speed * elapsed_s;
       }
     }
   }
@@ -867,52 +701,35 @@ public sealed class Kerbalism : MonoBehaviour
     // do nothing if paused
     if (Lib.IsPaused()) return;
 
+    // maintain elapsed_s, converting to double only once
+    // and detect warp blending
+    double fixedDeltaTime = TimeWarp.fixedDeltaTime;
+    if (Math.Abs(fixedDeltaTime - elapsed_s) > double.Epsilon) warp_blending = 0;
+    else ++warp_blending;
+    elapsed_s = fixedDeltaTime;
+    inv_elapsed_s = 1.0 / elapsed_s;
+
     // if there is an active vessel
-    Vessel av = FlightGlobals.ActiveVessel;
-    if (av != null)
+    Vessel v = FlightGlobals.ActiveVessel;
+    if (v != null)
     {
       // get info from cache
-      vessel_info avi = Cache.VesselInfo(av);
+      vessel_info vi = Cache.VesselInfo(v);
 
       // set control locks if necessary
       // note: this will lock control on unmanned debris
-      setLocks(av, avi);
+      setLocks(v, vi);
 
       // skip invalid vessels
       // skip eva dead kerbals (rationale: getting the kerbal data will create it again, leading to spurious resque mission detection)
-      if (avi.is_vessel && !avi.is_eva_dead)
+      if (vi.is_vessel && !vi.is_eva_dead)
       {
         // manage resque mission mechanics
-        manageResqueMission(av);
+        manageResqueMission(v);
 
         // update connected spaces using CLS, for QoL and Radiation mechanics
-        updateConnectedSpaces(av);
+        updateConnectedSpaces(v, vi);
       }
-    }
-
-    // for each vessel
-    foreach(Vessel v in FlightGlobals.Vessels)
-    {
-      // get vessel info
-      vessel_info vi = Cache.VesselInfo(v);
-
-      // skip invalid vessels
-      if (!vi.is_vessel) continue;
-
-      // skip resque missions
-      if (vi.is_resque) continue;
-
-      // skip dead eva kerbals
-      if (vi.is_eva_dead) continue;
-
-      // get vessel data
-      vessel_data vd = DB.VesselData(v.id);
-
-      // show belt warnings
-      beltWarnings(v, vd);
-
-      // simulate rules
-      applyRules(v, vd, vi);
     }
 
     // decay debris orbits
@@ -991,11 +808,11 @@ public sealed class Kerbalism : MonoBehaviour
   public static void Breakdown(Vessel v, ProtoCrewMember c)
   {
     // constants
-    const double res_penalty = 0.2;        // proportion of food lost on 'depressed' and 'wrong_valve'
+    const double res_penalty = 0.1;        // proportion of food lost on 'depressed' and 'wrong_valve'
 
     // get info
     Rule supply = supply_rules.Count > 0 ? supply_rules[Lib.RandomInt(supply_rules.Count)] : null;
-    double res_amount = supply != null ? Cache.ResourceInfo(v, supply.resource_name).amount : 0.0;
+    resource_info res = supply != null ? ResourceCache.Info(v, supply.resource_name) : null;
 
     // compile list of events with condition satisfied
     List<KerbalBreakdown> events = new List<KerbalBreakdown>();
@@ -1003,7 +820,7 @@ public sealed class Kerbalism : MonoBehaviour
     if (Lib.CrewCount(v) > 1) events.Add(KerbalBreakdown.argument); //< do nothing, add some variation to messages
     if (Lib.HasData(v)) events.Add(KerbalBreakdown.fat_finger);
     if (Malfunction.CanMalfunction(v)) events.Add(KerbalBreakdown.rage);
-    if (res_amount > double.Epsilon)
+    if (supply != null && res.amount > double.Epsilon)
     {
       events.Add(KerbalBreakdown.depressed);
       events.Add(KerbalBreakdown.wrong_valve);
@@ -1036,7 +853,7 @@ public sealed class Kerbalism : MonoBehaviour
       case KerbalBreakdown.fat_finger: Lib.RemoveData(v); break;
       case KerbalBreakdown.rage: Malfunction.CauseMalfunction(v); break;
       case KerbalBreakdown.depressed:
-      case KerbalBreakdown.wrong_valve: Lib.Resource.Request(v, supply.resource_name, res_amount * res_penalty); break;
+      case KerbalBreakdown.wrong_valve: res.Consume(res.amount * res_penalty); break;
     }
 
     // remove reputation
@@ -1047,26 +864,11 @@ public sealed class Kerbalism : MonoBehaviour
   }
 
 
-  // return per-kerbal variance, in the range [1-variance,1+variance]
-  public static double Variance(ProtoCrewMember c, double variance)
-  {
-    // get a value in [0..1] range associated with a kerbal
-    double k = (double)Lib.Hash32(c.name.Replace(" Kerman", "")) / (double)UInt32.MaxValue;
-
-    // move in [-1..+1] range
-    k = k * 2.0 - 1.0;
-
-    // return kerbal-specific variance in range [1-n .. 1+n]
-    return 1.0 + variance * k;
-  }
-
-
   // --------------------------------------------------------------------------
   // THE HOOKS
   // --------------------------------------------------------------------------
   // Feel free to call these directly by reflection.
   // Anything prefixed with 'hook_' is not going to change in new versions.
-
 
   // hook: Message()
   public static void hook_Message(string msg)
@@ -1074,11 +876,10 @@ public sealed class Kerbalism : MonoBehaviour
     Message.Post(msg);
   }
 
-
   // hook: Kill()
   public static void hook_Kill(Vessel v, ProtoCrewMember c)
   {
-    if (!Cache.VesselInfo(v).is_vessel) return;
+    if (!Cache.VesselInfo(v).is_valid) return;
     if (!DB.Ready()) return;
     if (!DB.Vessels().ContainsKey(v.id)) return;
     if (!DB.Kerbals().ContainsKey(c.name)) return;
@@ -1086,18 +887,16 @@ public sealed class Kerbalism : MonoBehaviour
     Kill(v, c);
   }
 
-
   // hook: Breakdown
   public static void hook_Breakdown(Vessel v, ProtoCrewMember c)
   {
-    if (!Cache.VesselInfo(v).is_vessel) return;
+    if (!Cache.VesselInfo(v).is_valid) return;
     if (!DB.Ready()) return;
     if (!DB.Vessels().ContainsKey(v.id)) return;
     if (!DB.Kerbals().ContainsKey(c.name)) return;
 
     Breakdown(v, c);
   }
-
 
   // hook: DisableKerbal()
   public static void hook_DisableKerbal(string k_name, bool disabled)
@@ -1106,7 +905,6 @@ public sealed class Kerbalism : MonoBehaviour
     if (!DB.Kerbals().ContainsKey(k_name)) return;
     DB.KerbalData(k_name).disabled = disabled ? 1u : 0;
   }
-
 
   // hook: InjectRadiation()
   public static void hook_InjectRadiation(string k_name, double amount)
@@ -1125,37 +923,31 @@ public sealed class Kerbalism : MonoBehaviour
     }
   }
 
-
   // hook: InSunlight()
   public static bool hook_InSunlight(Vessel v)
   {
-    vessel_info vi = Cache.VesselInfo(v);
-    return vi.is_vessel && vi.sunlight >= double.Epsilon;
+    return Cache.VesselInfo(v).sunlight > double.Epsilon;
   }
-
 
   // hook: Breathable()
   public static bool hook_Breathable(Vessel v)
   {
-    vessel_info vi = Cache.VesselInfo(v);
-    return vi.is_vessel && vi.breathable;
+    return Cache.VesselInfo(v).breathable;
   }
-
 
   // hook: RadiationLevel()
   public static double hook_RadiationLevel(Vessel v)
   {
     vessel_info vi = Cache.VesselInfo(v);
-    if (!vi.is_vessel) return 0.0;
     return vi.cosmic_radiation + vi.storm_radiation + vi.belt_radiation;
   }
-
 
   // hook: LinkStatus()
   public static uint hook_LinkStatus(Vessel v)
   {
-    link_data ld = Signal.Link(v);
-    switch(ld.status)
+    vessel_info vi = Cache.VesselInfo(v);
+    if (!vi.is_valid) return 0;
+    switch(vi.link.status)
     {
       case link_status.direct_link: return 2u;
       case link_status.indirect_link: return 1u;
@@ -1163,41 +955,35 @@ public sealed class Kerbalism : MonoBehaviour
     }
   }
 
-
   // hook: Malfunctions()
   public static uint hook_Malfunctions(Vessel v)
   {
-    return Cache.VesselInfo(v).is_vessel ? Malfunction.MaxMalfunction(v) : 0;
+    return Cache.VesselInfo(v).max_malfunction;
   }
-
 
   // hook: StormIncoming()
   public static bool hook_StormIncoming(Vessel v)
   {
-    return Cache.VesselInfo(v).is_vessel && Storm.Incoming(v);
+    return Cache.VesselInfo(v).is_valid && Storm.Incoming(v);
   }
-
 
   // hook: StormInProgress()
   public static bool hook_StormInProgress(Vessel v)
   {
-    return Cache.VesselInfo(v).is_vessel && Storm.InProgress(v);
+    return Cache.VesselInfo(v).is_valid && Storm.InProgress(v);
   }
-
 
   // hook: InsideMagnetosphere()
   public static bool hook_InsideMagnetosphere(Vessel v)
   {
-    return Cache.VesselInfo(v).is_vessel && Radiation.InsideMagnetosphere(v);
+    return Cache.VesselInfo(v).is_valid && Radiation.InsideMagnetosphere(v);
   }
-
 
   // hook: InsideBelt()
   public static bool hook_InsideBelt(Vessel v)
   {
-    return Cache.VesselInfo(v).is_vessel && Radiation.InsideBelt(v);
+    return Cache.VesselInfo(v).is_valid && Radiation.InsideBelt(v);
   }
-
 
   // hook: LivingSpace()
   public static double hook_LivingSpace(string k_name)
@@ -1207,7 +993,6 @@ public sealed class Kerbalism : MonoBehaviour
     return DB.KerbalData(k_name).living_space;
   }
 
-
   // hook: Entertainment()
   public static double hook_Entertainment(string k_name)
   {
@@ -1216,7 +1001,6 @@ public sealed class Kerbalism : MonoBehaviour
     return DB.KerbalData(k_name).entertainment;
   }
 
-
   // hook: Shielding()
   public static double hook_Shielding(string k_name)
   {
@@ -1224,7 +1008,6 @@ public sealed class Kerbalism : MonoBehaviour
     if (!DB.Kerbals().ContainsKey(k_name)) return 0.0;
     return DB.KerbalData(k_name).shielding;
   }
-
 
   // hook: Malfunctioned()
   public static bool hook_Malfunctioned(Part part)
@@ -1235,7 +1018,6 @@ public sealed class Kerbalism : MonoBehaviour
     }
     return false;
   }
-
 
   // hook: Repair()
   public static void hook_Repair(Part part)

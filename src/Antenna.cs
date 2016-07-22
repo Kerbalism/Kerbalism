@@ -1,5 +1,4 @@
 ﻿// ===================================================================================================================
-// Antenna module
 // add range and signal mechanics to the data transmitter
 // ===================================================================================================================
 
@@ -16,15 +15,14 @@ namespace KERBALISM {
 public sealed class Antenna : ModuleDataTransmitter, IScienceDataTransmitter
 {
   // cfg
-  [KSPField(isPersistant = true)] public string scope;                   // descriptive scope of the antenna (orbit, home, near, far)
-  [KSPField(isPersistant = true)] public double relay_cost;              // ec consumption rate per-second for relaying data
-  [KSPField(isPersistant = true)] public double min_transmission_cost;   // transmission cost per-packet at 0 range
-  [KSPField(isPersistant = true)] public double max_transmission_cost;   // transmission cost per-packet at max range
+  [KSPField] public string scope;                   // descriptive scope of the antenna (orbit, home, near, far)
+  [KSPField] public double relay_cost;              // ec consumption rate per-second for relaying data
+  [KSPField] public double min_transmission_cost;                        // transmission cost per-packet at 0 range
+  [KSPField] public double max_transmission_cost;                        // transmission cost per-packet at max range
   [KSPField(isPersistant = true)] public bool relay;                     // specify if this antenna will relay link to other vessels
 
   // data
   public bool can_transmit;                                              // enable or disable data transmission
-  public double transmission_distance;                                   // current distance from home world or nearest relay
   public double penalty = 1.0;                                           // damage penalty applied to range
 
 
@@ -106,19 +104,27 @@ public sealed class Antenna : ModuleDataTransmitter, IScienceDataTransmitter
     // when in flight
     if (HighLogic.LoadedSceneIsFlight)
     {
+      // remove incomplete data toggle
+      Events["TransmitIncompleteToggle"].active = false;
+
+      // get link state
+      link_data link = Cache.VesselInfo(vessel).link;
+
+      // enable/disable science transmission
+      can_transmit = link.linked;
+
       // determine currect packet cost
       // note: we set it to max float if out of range, to indirectly specify antenna score
-      if (transmission_distance <= range)
+      if (link.distance <= range)
       {
-        this.packetResourceCost = (float)(min_transmission_cost + (max_transmission_cost - min_transmission_cost) * transmission_distance / range);
+        this.packetResourceCost = (float)(min_transmission_cost + (max_transmission_cost - min_transmission_cost) * link.distance / range);
+        CostStatus = Lib.BuildString(this.packetResourceCost.ToString("F2"), " EC/Mbit");
       }
       else
       {
         this.packetResourceCost = float.MaxValue;
+        CostStatus = "";
       }
-
-      // update rmb ui status
-      CostStatus = Lib.BuildString(this.packetResourceCost.ToString("F2"), " EC/Mbit");
     }
   }
 
@@ -144,7 +150,8 @@ public sealed class Antenna : ModuleDataTransmitter, IScienceDataTransmitter
     double total_cost = total_amount * this.packetResourceCost;
 
     // if there is no EC to transmit the data
-    if (total_cost > Cache.ResourceInfo(vessel, "ElectricCharge").amount)
+    // note: comparing against amount in previous simulation step
+    if (total_cost > ResourceCache.Info(vessel, "ElectricCharge").amount)
     {
       // show a message to the user
       Message.Post(Severity.warning, Lib.BuildString("Not enough power, <b>", total_cost.ToString("F0"), " ElectricCharge</b> required"), "We can't send the data");

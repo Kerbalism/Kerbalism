@@ -1,5 +1,4 @@
 ﻿// ===================================================================================================================
-// TankLight module
 // play an animation when a resource in a tank get below a threshold, and play it in reverse when it get back above it
 // ===================================================================================================================
 
@@ -25,8 +24,7 @@ public sealed class TankLight : PartModule
     Animation[] anim = this.part.FindModelAnimators(animation_name);
     if (anim.Length > 0)
     {
-      resource_info res = Cache.ResourceInfo(vessel, resource_name);
-      if (res.level <= threshold)
+      if (ResourceCache.Info(vessel, resource_name).level <= threshold)
       {
         anim[0][animation_name].normalizedTime = 1.0f;
         anim[0][animation_name].speed = Math.Abs(anim[0][animation_name].speed);
@@ -48,15 +46,15 @@ public sealed class TankLight : PartModule
     Animation[] anim = this.part.FindModelAnimators(animation_name);
     if (anim.Length > 0)
     {
-      resource_info res = Cache.ResourceInfo(vessel, resource_name);
-      if (res.level <= threshold && green_status)
+      double level = ResourceCache.Info(vessel, resource_name).level;
+      if (level <= threshold && green_status)
       {
         anim[0][animation_name].normalizedTime = 0.0f;
         anim[0][animation_name].speed = Math.Abs(anim[0][animation_name].speed);
         anim[0].Play(animation_name);
         green_status = false;
       }
-      if (res.level > threshold && !green_status)
+      if (level > threshold && !green_status)
       {
         anim[0][animation_name].normalizedTime = 1.0f;
         anim[0][animation_name].speed = -Math.Abs(anim[0][animation_name].speed);

@@ -1,5 +1,5 @@
 ﻿// ====================================================================================================================
-// quality-of-life mechanics
+// functions related to quality-of-life mechanics
 // ====================================================================================================================
 
 
@@ -14,16 +14,6 @@ public static class QualityOfLife
 {
   // max entertainment value
   public static double MaxEntertainmnent = 5.0;
-
-  // return quality-of-life bonus
-  public static double Bonus(Vessel v, string k_name)
-  {
-    // get QoL data from db
-    kerbal_data kd = DB.KerbalData(k_name);
-
-    // calculate quality of life bonus
-    return Bonus(kd.living_space, kd.entertainment, Lib.Landed(v), Signal.Link(v).linked, Lib.CrewCount(v) < 2u);
-  }
 
 
   // return quality-of-life bonus

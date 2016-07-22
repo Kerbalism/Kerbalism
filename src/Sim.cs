@@ -1,12 +1,10 @@
 ﻿// ====================================================================================================================
-// functions implementing various simulation mechanics
+// collection of functions used to simulate the environment
 // ====================================================================================================================
 
 
 using System;
 using System.Collections.Generic;
-using System.Net.Mime;
-using FinePrint.Utilities;
 using UnityEngine;
 
 
@@ -18,7 +16,6 @@ public static class Sim
   // --------------------------------------------------------------------------
   // GENERAL
   // --------------------------------------------------------------------------
-
 
   // return period of an orbit at specified altitude over a body
   public static double OrbitalPeriod(CelestialBody body, double altitude)
@@ -110,18 +107,11 @@ public static class Sim
   }
 
 
-  // return the sun celestial body
-  public static CelestialBody Sun()
-  {
-    return FlightGlobals.Bodies[0];
-  }
-
-
   // get distance from the sun
-  public static double SunDistance(Vessel vessel)
+  public static double SunDistance(Vector3d pos)
   {
-    CelestialBody sun = Sun();
-    return Vector3d.Distance(Lib.VesselPosition(vessel), sun.position) - sun.Radius;
+    CelestialBody sun = FlightGlobals.Bodies[0];
+    return Vector3d.Distance(pos, sun.position) - sun.Radius;
   }
 
 
@@ -129,8 +119,7 @@ public static class Sim
   // RAYTRACING
   // --------------------------------------------------------------------------
 
-
-  // calculate hit point of the ray indicated by origin + direction * t with the sphere centered at 0,0,0 and with radius 'radius'
+  // calculate hit point of the ray indicated by origin + direction * t with the sphere described by center and radius
   // if there is no hit return double max value
   // it there is an hit return distance from origin to hit point
   public static double RaytraceSphere(Vector3d origin, Vector3d direction, Vector3d center, double radius)
@@ -164,37 +153,24 @@ public static class Sim
   public static bool RaytraceBody(Vessel vessel, CelestialBody body, out Vector3d dir, out double dist)
   {
     // shortcuts
-    CelestialBody sun = Sun();
     CelestialBody mainbody = vessel.mainBody;
-    CelestialBody refbody = vessel.mainBody.referenceBody;
+    CelestialBody refbody = mainbody.referenceBody;
 
     // generate ray parameters
-    Vector3d vessel_pos = Lib.VesselPosition(vessel);
+    Vector3d vessel_pos = vessel.GetWorldPos3D();
     dir = body.position - vessel_pos;
     dist = dir.magnitude;
     dir /= dist;
     dist -= body.Radius;
 
-    // store list of occluders
-    List<CelestialBody> occluders = new List<CelestialBody>();
-
-    // do not trace against the mainbody if that is our target
-    if (body != mainbody) occluders.Add(mainbody);
-
-    // do not trace against the reference body if that is our target, or if there isn't one (eg: mainbody is the sun)
-    if (body != refbody || refbody == null) occluders.Add(refbody);
-
-    // trace against any satellites, but not when mainbody is the sun (eg: mainbody is a planet)
-    // we avoid the mainbody=sun case because it has a lot of satellites and the chances of occlusion are very low
-    // and they probably will occlude the sun only partially at best in that case
-    if (mainbody != sun) occluders.AddRange(mainbody.orbitingBodies);
-
     // do the raytracing
     double min_dist = double.MaxValue;
-    foreach(CelestialBody cb in occluders)
-    {
-      min_dist = Math.Min(min_dist, RaytraceSphere(vessel_pos, dir, cb.position, cb.Radius));
-    }
+
+    // do not trace against the mainbody if that is our target
+    if (body != mainbody) min_dist = Math.Min(min_dist, RaytraceSphere(vessel_pos, dir, mainbody.position, mainbody.Radius));
+
+    // do not trace against the reference body if that is our target, or if there isn't one (eg: mainbody is the sun)
+    if (body != refbody && refbody != null) min_dist = Math.Min(min_dist, RaytraceSphere(vessel_pos, dir, refbody.position, refbody.Radius));
 
     // return true if body is visible from vessel
     return dist < min_dist;
@@ -209,36 +185,30 @@ public static class Sim
   public static bool RaytraceVessel(Vessel a, Vessel b, out Vector3d dir, out double dist)
   {
     // shortcuts
-    CelestialBody sun = Sun();
-    CelestialBody refbody_a = a.mainBody.referenceBody;
-    CelestialBody refbody_b = b.mainBody.referenceBody;
+    CelestialBody mainbody_a = a.mainBody;
+    CelestialBody mainbody_b = b.mainBody;
+    CelestialBody refbody_a = mainbody_a.referenceBody;
+    CelestialBody refbody_b = mainbody_b.referenceBody;
 
     // generate ray parameters
-    Vector3d pos_a = Lib.VesselPosition(a);
-    Vector3d pos_b = Lib.VesselPosition(b);
+    Vector3d pos_a = a.GetWorldPos3D();
+    Vector3d pos_b = b.GetWorldPos3D();
     dir = pos_b - pos_a;
     dist = dir.magnitude;
     dir /= dist;
 
-    // store list of occluders
-    // note: there are too many special cases of bodies to handle for two vessels, so we use an hashset
-    // note: we still avoid adding satellites of the sun
-    HashSet<CelestialBody> occluders = new HashSet<CelestialBody>();
-    occluders.Add(a.mainBody);
-    occluders.Add(b.mainBody);
-    if (refbody_a != null) occluders.Add(refbody_a);
-    if (refbody_b != null) occluders.Add(refbody_b);
-    if (a.mainBody != sun) { foreach(var cb in a.mainBody.orbitingBodies) occluders.Add(cb); }
-    if (b.mainBody != sun) { foreach(var cb in b.mainBody.orbitingBodies) occluders.Add(cb); }
-
     // do the raytracing
     double min_dist = double.MaxValue;
-    foreach(CelestialBody cb in occluders)
-    {
-      min_dist = Math.Min(min_dist, RaytraceSphere(pos_a, dir, cb.position, cb.Radius));
-    }
 
-    // return true if body is visible from vessel
+    // trace against the main bodies
+    min_dist = Math.Min(min_dist, RaytraceSphere(pos_a, dir, mainbody_a.position, mainbody_a.Radius));
+    min_dist = Math.Min(min_dist, RaytraceSphere(pos_a, dir, mainbody_b.position, mainbody_b.Radius));
+
+    // do not trace against the reference bodies if not present
+    if (refbody_a != null) min_dist = Math.Min(min_dist, RaytraceSphere(pos_a, dir, refbody_a.position, refbody_a.Radius));
+    if (refbody_b != null) min_dist = Math.Min(min_dist, RaytraceSphere(pos_a, dir, refbody_b.position, refbody_b.Radius));
+
+    // return true if the two vessels see each other
     return dist < min_dist;
   }
 
@@ -246,7 +216,6 @@ public static class Sim
   // --------------------------------------------------------------------------
   // TEMPERATURE
   // --------------------------------------------------------------------------
-
 
   // return temperature of background radiation
   public static double BackgroundTemperature()
@@ -285,7 +254,7 @@ public static class Sim
   {
     // note: for consistency we always consider distances to bodies to be relative to the surface
     // however, flux, luminosity and irradiance consider distance to the sun center, and not surface
-    dist += Sun().Radius;
+    dist += FlightGlobals.Bodies[0].Radius;
 
     // calculate solar flux
     return SolarLuminosity() / (12.566370614359172 * dist * dist);
@@ -310,7 +279,7 @@ public static class Sim
     // - body_flux: RQD / (PI * 4 * dist * dist)
 
     // shortcut to the sun
-    CelestialBody sun = Sun();
+    CelestialBody sun = FlightGlobals.Bodies[0];
 
     // calculate sun direction and distance
     Vector3d sun_dir = sun.position - body.transform.position;
@@ -348,11 +317,14 @@ public static class Sim
   // return temperature of a vessel
   public static double Temperature(Vessel vessel, double sunlight)
   {
+    // get vessel position
+    Vector3d pos = vessel.GetWorldPos3D();
+
     // get flux from the sun
-    double solar_flux = SolarFlux(SunDistance(vessel)) * sunlight;
+    double solar_flux = SolarFlux(SunDistance(pos)) * sunlight;
 
     // get flux from the main body
-    double body_flux = vessel.mainBody == Sun() ? 0.0 : BodyFlux(vessel.mainBody, Lib.VesselPosition(vessel));
+    double body_flux = vessel.mainBody.flightGlobalsIndex == 0 ? 0.0 : BodyFlux(vessel.mainBody, pos);
 
     // calculate temperature
     double space_temp = BackgroundTemperature() + BlackBody(solar_flux) + BlackBody(body_flux);
@@ -378,7 +350,6 @@ public static class Sim
   // --------------------------------------------------------------------------
   // ATMOSPHERE
   // --------------------------------------------------------------------------
-
 
   // return proportion of flux not blocked by atmosphere
   // note: while intuitively you are thinking to use this to calculate temperature inside an atmosphere,

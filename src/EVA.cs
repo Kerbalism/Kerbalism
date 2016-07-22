@@ -1,5 +1,5 @@
 ﻿// ====================================================================================================================
-// contain functions that deal with EVA kerbals
+// functions that deal with EVA kerbals
 // ====================================================================================================================
 
 
@@ -33,17 +33,17 @@ public sealed class EVA : PartModule
       has_helmet = HasHelmet(kerbal);
     }
 
-    // consume EC for the headlamp
-    if (has_helmet && kerbal.lampOn) part.RequestResource("ElectricCharge", Settings.HeadlightCost * TimeWarp.fixedDeltaTime);
+    // get resource handler
+    resource_info ec = ResourceCache.Info(vessel, "ElectricCharge");
 
-    // determine if it has EC left
-    bool ec_left = Lib.Resource.Amount(part, "ElectricCharge") > double.Epsilon;
+    // consume EC for the headlamp
+    if (has_helmet && kerbal.lampOn) ec.Consume(Settings.HeadlightCost * Kerbalism.elapsed_s);
 
     // force the headlamp lights on/off depending on ec amount left and if it has an helmet
-    SetHeadlamp(kerbal, has_helmet && kerbal.lampOn && ec_left);
+    SetHeadlamp(kerbal, has_helmet && kerbal.lampOn && ec.amount > double.Epsilon);
 
     // synchronize helmet flares with headlamp state
-    SetFlares(kerbal, has_helmet && kerbal.lampOn && ec_left);
+    SetFlares(kerbal, has_helmet && kerbal.lampOn && ec.amount > double.Epsilon);
 
     // if dead
     if (is_dead)

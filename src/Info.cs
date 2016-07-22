@@ -5,15 +5,13 @@
 
 using System;
 using System.Collections.Generic;
-using HighlightingSystem;
 using UnityEngine;
 
 
 namespace KERBALISM {
 
 
-[KSPAddon(KSPAddon.Startup.MainMenu, true)]
-public sealed class Info : MonoBehaviour
+public sealed class Info
 {
   // store data for the space scanning
   class space_details
@@ -24,52 +22,14 @@ public sealed class Info : MonoBehaviour
     public double shielding = 0.0;
   }
 
-  // constants
-  const float width = 300.0f;
-  const float height = 600.0f;
-  const float top_height = 20.0f;
-  const float bot_height = 20.0f;
-  const float margin = 10.0f;
-  const float spacing = 10.0f;
-
-  // permit global access
-  private static Info instance = null;
-
-  // styles
-  GUIStyle win_style;
-  GUIStyle top_style;
-  GUIStyle bot_style;
-  GUIStyle txt_style;
-  GUILayoutOption[] txt_options;
-  GUIStyle row_style;
-  GUIStyle title_style;
-  GUIStyle content_style;
-
-  // store window id
-  int win_id;
-
-  // store window geometry
-  Rect win_rect;
-
-  // store dragbox geometry
-  Rect drag_rect;
-
-  // used by scroll window mechanics
-  Vector2 scroll_pos;
-
-  // store vessel id, if any
-  Guid vessel_id;
 
   // ctor
-  Info()
+  public Info()
   {
     // enable global access
     instance = this;
 
-    // keep it alive
-    DontDestroyOnLoad(this);
-
-    // generate unique id, hopefully
+    // generate unique id
     win_id = Lib.RandomInt(int.MaxValue);
 
     // setup window geometry
@@ -122,11 +82,20 @@ public sealed class Info : MonoBehaviour
     content_style.stretchHeight = true;
     content_style.fontSize = 12;
     content_style.alignment = TextAnchor.MiddleLeft;
+
+    // rate style
+    rate_style = new GUIStyle(HighLogic.Skin.label);
+    content_style.richText = true;
+    rate_style.fixedWidth = 100.0f;
+    rate_style.stretchHeight = true;
+    rate_style.fontSize = 12;
+    rate_style.alignment = TextAnchor.MiddleRight;
+    rate_style.fontStyle = FontStyle.Bold;
   }
 
 
   // called every frame
-  public void OnGUI()
+  public void on_gui()
   {
     // do nothing if db isn't ready
     if (!DB.Ready()) return;
@@ -186,38 +155,6 @@ public sealed class Info : MonoBehaviour
   }
 
 
-  // show the window
-  public static void Open(Vessel v)
-  {
-    // setting vessel id show the window
-    instance.vessel_id = v.id;
-  }
-
-
-  // close the window
-  public static void Close()
-  {
-    // resetting vessel id hide the window
-    instance.vessel_id = Guid.Empty;
-  }
-
-
-  // toggle the window
-  public static void Toggle(Vessel v)
-  {
-    // if vessel is different, show it
-    // if vessel is the same, hide it
-    instance.vessel_id = (instance.vessel_id == v.id ? Guid.Empty : v.id);
-  }
-
-
-  // return true if the window is open
-  public static bool IsOpen()
-  {
-    return instance.vessel_id != Guid.Empty;
-  }
-
-
   void render_title(string title)
   {
     GUILayout.BeginHorizontal();
@@ -234,14 +171,26 @@ public sealed class Info : MonoBehaviour
   }
 
 
+  void render_content(string desc, string value, double rate)
+  {
+    string clr = rate > 0.0 ? "<color=#00ff00>" : "<color=#ff0000>";
+    GUILayout.BeginHorizontal(row_style);
+    GUILayout.Label(Lib.BuildString(desc, "<b>", value, "</b>"), content_style);
+    GUILayout.Label(Math.Abs(rate) >= 0.0001 ? Lib.BuildString(clr, Math.Abs(rate).ToString("F4"), "/s</color>") : string.Empty, rate_style);
+    GUILayout.EndHorizontal();
+  }
+
+
   void render_space()
   {
     GUILayout.Space(10.0f);
   }
 
 
-  // temp, totally
-  string fix_title(string title) { return Lib.BuildString(title, ":", title.Length < 8 ? "\t\t" : "\t"); }
+  string fix_title(string title)
+  {
+    return Lib.BuildString(title, ":", title.Length < 8 ? "\t\t" : "\t");
+  }
 
 
   void render_info()
@@ -258,10 +207,18 @@ public sealed class Info : MonoBehaviour
     // forget vessel if it is dead eva kerbal
     if (vi.is_eva_dead) { vessel_id = Guid.Empty; return; }
 
+    // determine atmosphere
+    string atmo_desc = "none";
+    if (Sim.Underwater(v)) atmo_desc = "ocean";
+    else if (vi.atmo_factor < 1.0) //< inside an atmosphere
+    {
+      atmo_desc = vi.breathable ? "breathable" : "not breathable";
+    }
+
     render_title("ENVIRONMENT");
     render_content("Temperature:\t", Lib.HumanReadableTemp(vi.temperature));
     render_content("Radiation:\t", Lib.HumanReadableRadiationRate(vi.env_radiation));
-    render_content("Atmosphere:\t", Sim.Underwater(v) ? "ocean" : v.mainBody.atmosphere ? (vi.breathable ? "breathable" : "not breathable") : "none");
+    render_content("Atmosphere:\t", atmo_desc);
     render_space();
 
     // render supplies
@@ -270,13 +227,15 @@ public sealed class Info : MonoBehaviour
       render_title("SUPPLIES");
       if (Kerbalism.ec_rule != null)
       {
-        render_content(fix_title("Battery"), Cache.ResourceInfo(v, "ElectricCharge").level > double.Epsilon ? Lib.HumanReadableDuration(Kerbalism.ec_rule.Depletion(v)) : "none");
+        resource_info res = ResourceCache.Info(v, "ElectricCharge");
+        render_content(fix_title("Battery"), res.level > double.Epsilon ? Lib.HumanReadableDuration(Kerbalism.ec_rule.Depletion(v, res)) : "none", res.rate);
       }
       if (vi.crew_capacity > 0)
       {
         foreach(Rule r in Kerbalism.supply_rules)
         {
-          render_content(fix_title(r.resource_name), Cache.ResourceInfo(v, r.resource_name).level > double.Epsilon ? Lib.HumanReadableDuration(r.Depletion(v)) : "none");
+          resource_info res = ResourceCache.Info(v, r.resource_name);
+          render_content(fix_title(r.resource_name), res.level > double.Epsilon ? Lib.HumanReadableDuration(r.Depletion(v, res)) : "none", res.rate);
         }
       }
       render_space();
@@ -357,6 +316,76 @@ public sealed class Info : MonoBehaviour
       render_space();
     }
   }
+
+
+  // show the window
+  public static void Open(Vessel v)
+  {
+    // setting vessel id show the window
+    instance.vessel_id = v.id;
+  }
+
+
+  // close the window
+  public static void Close()
+  {
+    // resetting vessel id hide the window
+    instance.vessel_id = Guid.Empty;
+  }
+
+
+  // toggle the window
+  public static void Toggle(Vessel v)
+  {
+    // if vessel is different, show it
+    // if vessel is the same, hide it
+    instance.vessel_id = (instance.vessel_id == v.id ? Guid.Empty : v.id);
+  }
+
+
+  // return true if the window is open
+  public static bool IsOpen()
+  {
+    return instance.vessel_id != Guid.Empty;
+  }
+
+
+  // constants
+  const float width = 300.0f;
+  const float height = 600.0f;
+  const float top_height = 20.0f;
+  const float bot_height = 20.0f;
+  const float margin = 10.0f;
+  const float spacing = 10.0f;
+
+  // styles
+  GUIStyle win_style;
+  GUIStyle top_style;
+  GUIStyle bot_style;
+  GUIStyle txt_style;
+  GUILayoutOption[] txt_options;
+  GUIStyle row_style;
+  GUIStyle title_style;
+  GUIStyle content_style;
+  GUIStyle rate_style;
+
+  // store window id
+  int win_id;
+
+  // store window geometry
+  Rect win_rect;
+
+  // store dragbox geometry
+  Rect drag_rect;
+
+  // used by scroll window mechanics
+  Vector2 scroll_pos;
+
+  // store vessel id, if any
+  Guid vessel_id;
+
+  // permit global access
+  static Info instance;
 }
 
 

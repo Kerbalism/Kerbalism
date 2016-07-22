@@ -1,5 +1,4 @@
 ﻿// ===================================================================================================================
-// Malfunction module
 // implement the malfunction mechanic
 // ===================================================================================================================
 
@@ -42,7 +41,7 @@ public sealed class Malfunction : PartModule
   [KSPField(isPersistant = true)] public uint malfunctions;               // level of malfunctions
   [KSPField(isPersistant = true)] public double age;                      // age since last malfunction
   [KSPField(isPersistant = true)] public double lifetime;                 // current lifetime
-  [KSPField(isPersistant = true)] public double quality;                  // tech dependent quality factor
+  [KSPField(isPersistant = true)] public double quality = 1.0;            // tech dependent quality factor
 
   // rmb status
   [KSPField(guiActive = false, guiName = "Malfunction")] public string Status;
@@ -59,7 +58,7 @@ public sealed class Malfunction : PartModule
     return s
       .Replace("$VESSEL", v.vesselName)
       .Replace("$PERC", Lib.HumanReadablePerc(Math.Pow(0.5, (double)malfunctions)))
-      .Replace("$OVERHEATING", Lib.HumanReadablePerc(Math.Pow(4.0, (double)malfunctions)))
+      .Replace("$OVERHEATING", Math.Pow(2.0, (double)malfunctions).ToString("F0") + "x")
       .Replace("$RANGE", Lib.HumanReadablePerc(Math.Pow(0.7071, (double)malfunctions)))
       .Replace("$NEWLINE", "\n");
   }
@@ -72,6 +71,183 @@ public sealed class Malfunction : PartModule
 
     // apply serialized malfunction level
     if (malfunctions > 0) Apply(Math.Pow(0.5, malfunctions));
+  }
+
+
+  // implement malfunction mechanics
+  public void FixedUpdate()
+  {
+    // do nothing in the editor
+    if (HighLogic.LoadedSceneIsEditor) return;
+
+    // deduce quality from technological level if necessary
+    // note: done at prelaunch to avoid problems with start()/load() and the tech tree being not consistent
+    if (vessel.situation == Vessel.Situations.PRELAUNCH) quality = DeduceQuality();
+
+    // if for some reason quality wasn't set, default to 1.0
+    // note: for example, resque vessels never get to prelaunch
+    if (quality <= double.Epsilon) quality = 1.0;
+
+    // generate lifetime the first time
+    if (lifetime <= double.Epsilon)
+    {
+      lifetime = min_lifetime + (max_lifetime - min_lifetime) * Lib.RandomDouble();
+    }
+
+    // update rmb ui
+    var av = FlightGlobals.ActiveVessel;
+    Events["Repair"].active = malfunctions > 0 && av != null && av.isEVA;
+    Events["Inspect"].active = malfunctions == 0 && av != null && av.isEVA;
+    Fields["Status"].guiActive = malfunctions > 0;
+    Status = malfunctions == 0 ? "" : PrepareMsg(status_msg, vessel, malfunctions);
+
+    // accumulate age
+    age += Kerbalism.elapsed_s / quality;
+
+    // check age and malfunction if needed
+    if (age > lifetime) Break();
+
+    // set highlighting
+    if (DB.Ready() && DB.VesselData(this.vessel.id).cfg_highlights > 0)
+    {
+      switch(malfunctions)
+      {
+        case 0:
+          part.SetHighlightDefault();
+          break;
+
+        case 1:
+          part.SetHighlightType(Part.HighlightType.AlwaysOn);
+          part.SetHighlightColor(Color.yellow);
+          part.SetHighlight(true, false);
+          break;
+
+        default:
+          part.SetHighlightType(Part.HighlightType.AlwaysOn);
+          part.SetHighlightColor(Color.red);
+          part.SetHighlight(true, false);
+          break;
+      }
+    }
+    else
+    {
+      part.SetHighlightDefault();
+    }
+  }
+
+
+  // implement malfunction mechanics for unloaded vessels
+  public static void BackgroundUpdate(Vessel vessel, ProtoPartModuleSnapshot m, Malfunction malfunction, double elapsed_s)
+  {
+    // get data
+    double lifetime = Lib.Proto.GetDouble(m, "lifetime");
+    double age = Lib.Proto.GetDouble(m, "age");
+    double quality = Lib.Proto.GetDouble(m, "quality");
+
+    // if for some reason quality wasn't set, default to 1.0
+    // note: for example, this may happen with vessels launched before kerbalism is installed
+    if (quality <= double.Epsilon)
+    {
+      quality = 1.0;
+      Lib.Proto.Set(m, "quality", quality);
+    }
+
+    // generate lifetime if necessary
+    // note: for example, this may happen with vessels launched before kerbalism is installed
+    if (lifetime <= double.Epsilon)
+    {
+      lifetime = malfunction.min_lifetime + (malfunction.max_lifetime - malfunction.min_lifetime) * Lib.RandomDouble();
+      Lib.Proto.Set(m, "lifetime", lifetime);
+    }
+
+    // accumulate age
+    age += elapsed_s / quality;
+    Lib.Proto.Set(m, "age", age);
+
+    // check age and malfunction if needed
+    if (age > lifetime) Break(vessel, m, malfunction);
+  }
+
+
+  // trigger malfunction
+  public void Break()
+  {
+    // limit number of malfunctions per-component
+    if (malfunctions >= 2u) return;
+
+    // apply malfunction penalty immediately
+    Apply(0.5);
+
+    // increase malfunctions
+    ++malfunctions;
+
+    // reset age
+    age = 0.0;
+
+    // generate new lifetime
+    lifetime = min_lifetime + (max_lifetime - min_lifetime) * Lib.RandomDouble();
+
+    // show message
+    if (DB.Ready() && DB.VesselData(vessel.id).cfg_malfunction == 1)
+    {
+      Message.Post(Severity.warning, PrepareMsg(malfunction_msg, vessel, malfunctions));
+    }
+
+    // record first malfunction
+    if (DB.Ready()) DB.NotificationData().first_malfunction = 1;
+  }
+
+
+  // trigger malfunction for unloaded module
+  public static void Break(Vessel v, ProtoPartModuleSnapshot m, Malfunction malfunction)
+  {
+    // get data
+    uint malfunctions = Lib.Proto.GetUInt(m, "malfunctions");
+
+    // limit number of malfunctions per-component
+    if (malfunctions >= 2u) return;
+
+    // increase malfunction
+    ++malfunctions;
+    Lib.Proto.Set(m, "malfunctions", malfunctions);
+
+    // reset age
+    double age = 0.0;
+    Lib.Proto.Set(m, "age", age);
+
+    // generate new lifetime
+    double lifetime = malfunction.min_lifetime + (malfunction.max_lifetime - malfunction.min_lifetime) * Lib.RandomDouble();
+    Lib.Proto.Set(m, "lifetime", lifetime);
+
+    // show message
+    if (DB.Ready() && DB.VesselData(v.id).cfg_malfunction == 1)
+    {
+      Message.Post(Severity.warning, PrepareMsg(malfunction.malfunction_msg, v, malfunctions));
+    }
+
+    // record first malfunction
+    if (DB.Ready()) DB.NotificationData().first_malfunction = 1;
+  }
+
+
+  public void Apply(double k)
+  {
+    foreach(PartModule m in part.Modules)
+    {
+      switch(m.moduleName)
+      {
+        case "ModuleEngines":               Apply((ModuleEngines)m, k);              break;
+        case "ModuleEnginesFX":             Apply((ModuleEnginesFX)m, k);            break;
+        case "ModuleDeployableSolarPanel":  Apply((ModuleDeployableSolarPanel)m, k); break;
+        case "ModuleGenerator":             Apply((ModuleGenerator)m, k);            break;
+        case "ModuleResourceConverter":
+        case "ModuleKPBSConverter":                                                         //< support PlanetaryBaseSystem converter
+        case "FissionReactor":              Apply((ModuleResourceConverter)m, k);    break; //< support NearFuture reactor
+        case "ModuleResourceHarvester":     Apply((ModuleResourceHarvester)m, k);    break;
+        case "ModuleReactionWheel":         Apply((ModuleReactionWheel)m, k);        break;
+        case "Antenna":                     Apply((Antenna)m, k);                    break;
+      }
+    }
   }
 
 
@@ -129,91 +305,9 @@ public sealed class Malfunction : PartModule
   }
 
 
-  // trigger malfunction
-  public void Break()
-  {
-    // limit number of malfunctions per-component
-    if (malfunctions >= 2u) return;
-
-    // apply malfunction penalty immediately
-    Apply(0.5);
-
-    // increase malfunctions
-    ++malfunctions;
-
-    // reset age and lifetime
-    age = 0.0;
-    lifetime = 0.0;
-
-    // show message
-    if (DB.Ready() && DB.VesselData(vessel.id).cfg_malfunction == 1)
-    {
-      Message.Post(Severity.warning, PrepareMsg(malfunction_msg, vessel, malfunctions));
-    }
-
-    // record first malfunction
-    if (DB.Ready()) DB.NotificationData().first_malfunction = 1;
-  }
-
-
-  // trigger malfunction for unloaded module
-  public static void Break(Vessel v, ProtoPartModuleSnapshot m, Malfunction malfunction)
-  {
-    // get data
-    uint malfunctions = Lib.Proto.GetUInt(m, "malfunctions");
-    double lifetime = Lib.Proto.GetDouble(m, "lifetime");
-    double age = Lib.Proto.GetDouble(m, "age");
-
-    // limit number of malfunctions per-component
-    if (malfunctions >= 2u) return;
-
-    // increase malfunction
-    ++malfunctions;
-
-    // reset age and lifetime
-    age = 0.0;
-    lifetime = 0.0;
-
-    // show message
-    if (DB.Ready() && DB.VesselData(v.id).cfg_malfunction == 1)
-    {
-      Message.Post(Severity.warning, PrepareMsg(malfunction.malfunction_msg, v, malfunctions));
-    }
-
-    // record first malfunction
-    if (DB.Ready()) DB.NotificationData().first_malfunction = 1;
-
-    // save data
-    Lib.Proto.Set(m, "malfunctions", malfunctions);
-    Lib.Proto.Set(m, "lifetime", lifetime);
-    Lib.Proto.Set(m, "age", age);
-  }
-
-
-  public void Apply(double k)
-  {
-    foreach(PartModule m in part.Modules)
-    {
-      switch(m.moduleName)
-      {
-        case "ModuleEngines":               Apply((ModuleEngines)m, k);              break;
-        case "ModuleEnginesFX":             Apply((ModuleEnginesFX)m, k);            break;
-        case "ModuleDeployableSolarPanel":  Apply((ModuleDeployableSolarPanel)m, k); break;
-        case "ModuleGenerator":             Apply((ModuleGenerator)m, k);            break;
-        case "ModuleResourceConverter":
-        case "ModuleKPBSConverter":                                                         //< support PlanetaryBaseSystem converter
-        case "FissionReactor":              Apply((ModuleResourceConverter)m, k);    break; //< support NearFuture reactor
-        case "ModuleResourceHarvester":     Apply((ModuleResourceHarvester)m, k);    break;
-        case "ModuleReactionWheel":         Apply((ModuleReactionWheel)m, k);        break;
-        case "Antenna":                     Apply((Antenna)m, k);                    break;
-      }
-    }
-  }
-
-
   void Apply(ModuleEngines m, double k)
   {
-    m.heatProduction /= (float)(k * k);
+    m.heatProduction /= (float)k;
   }
 
 
@@ -255,102 +349,6 @@ public sealed class Malfunction : PartModule
   }
 
 
-  // implement malfunction mechanics
-  public void FixedUpdate()
-  {
-    // do nothing in the editor
-    if (HighLogic.LoadedSceneIsEditor) return;
-
-    // deduce quality from technological level if necessary
-    // note: done at prelaunch to avoid problems with start()/load() and the tech tree being not consistent
-    if (vessel.situation == Vessel.Situations.PRELAUNCH) quality = DeduceQuality();
-
-    // if for some reason quality wasn't set, default to 1.0
-    // note: for example, resque vessels never get to prelaunch
-    if (quality <= double.Epsilon) quality = 1.0;
-
-    // update rmb ui
-    var av = FlightGlobals.ActiveVessel;
-    Events["Repair"].active = malfunctions > 0 && av != null && av.isEVA;
-    Events["Inspect"].active = malfunctions == 0 && av != null && av.isEVA;
-    Fields["Status"].guiActive = malfunctions > 0;
-    Status = malfunctions == 0 ? "" : PrepareMsg(status_msg, vessel, malfunctions);
-
-    // generate lifetime if necessary
-    if (lifetime <= double.Epsilon)
-    {
-      lifetime = min_lifetime + (max_lifetime - min_lifetime) * Lib.RandomDouble();
-    }
-
-    // accumulate age
-    age += TimeWarp.fixedDeltaTime / quality;
-
-    // check age and malfunction if needed
-    if (age > lifetime) Break();
-
-    // set highlighting
-    if (DB.Ready() && DB.VesselData(this.vessel.id).cfg_highlights > 0)
-    {
-      switch(malfunctions)
-      {
-        case 0:
-          part.SetHighlightDefault();
-          break;
-
-        case 1:
-          part.SetHighlightType(Part.HighlightType.AlwaysOn);
-          part.SetHighlightColor(Color.yellow);
-          part.SetHighlight(true, false);
-          break;
-
-        default:
-          part.SetHighlightType(Part.HighlightType.AlwaysOn);
-          part.SetHighlightColor(Color.red);
-          part.SetHighlight(true, false);
-          break;
-      }
-    }
-    else
-    {
-      part.SetHighlightDefault();
-    }
-  }
-
-
-  // implement malfunction mechanics for unloaded vessels
-  public static void BackgroundUpdate(Vessel vessel, ProtoPartModuleSnapshot m, Malfunction malfunction)
-  {
-    // get data
-    uint malfunctions = Lib.Proto.GetUInt(m, "malfunctions");
-    double min_lifetime = malfunction.min_lifetime;
-    double max_lifetime = malfunction.max_lifetime;
-    double lifetime = Lib.Proto.GetDouble(m, "lifetime");
-    double age = Lib.Proto.GetDouble(m, "age");
-    double quality = Lib.Proto.GetDouble(m, "quality");
-
-    // if for some reason quality wasn't set, default to 1.0 (but don't save it)
-    // note: for example, resque vessels failure get background update without prelaunch
-    if (quality <= double.Epsilon) quality = 1.0;
-
-    // generate lifetime if necessary
-    if (lifetime <= double.Epsilon)
-    {
-      lifetime = min_lifetime + (max_lifetime - min_lifetime) * Lib.RandomDouble();
-    }
-
-    // accumulate age
-    age += TimeWarp.fixedDeltaTime / quality;
-
-    // save data
-    // note: done before checking for malfunction because proto Break change data again
-    Lib.Proto.Set(m, "lifetime", lifetime);
-    Lib.Proto.Set(m, "age", age);
-
-    // check age and malfunction if needed
-    if (age > lifetime) Break(vessel, m, malfunction);
-  }
-
-
   // deduce quality from technological level
   public static double DeduceQuality()
   {
@@ -374,17 +372,14 @@ public sealed class Malfunction : PartModule
 
 
   // return max malfunction count among all parts of a vessel, or all parts containing the specified module
-  public static uint MaxMalfunction(Vessel v, string module_name = "")
+  public static uint MaxMalfunction(Vessel v)
   {
     uint max_malfunction = 0;
     if (v.loaded)
     {
       foreach(Malfunction m in v.FindPartModulesImplementing<Malfunction>())
       {
-        if (module_name.Length == 0 || m.part.Modules.Contains(module_name))
-        {
-          max_malfunction = Math.Max(max_malfunction, m.malfunctions);
-        }
+        max_malfunction = Math.Max(max_malfunction, m.malfunctions);
       }
     }
     else
@@ -395,10 +390,7 @@ public sealed class Malfunction : PartModule
         {
           if (m.moduleName == "Malfunction")
           {
-            if (module_name.Length == 0 || p.modules.Find(k => k.moduleName == module_name) != null)
-            {
-              max_malfunction = Math.Max(max_malfunction, Lib.Proto.GetUInt(m, "malfunctions"));
-            }
+            max_malfunction = Math.Max(max_malfunction, Lib.Proto.GetUInt(m, "malfunctions"));
           }
         }
       }
@@ -428,7 +420,8 @@ public sealed class Malfunction : PartModule
         {
           if (m.moduleName == "Malfunction")
           {
-            quality_sum += Lib.Proto.GetDouble(m, "quality", 1.0);
+            // note: deal with vessels launched before kerbalism was installed
+            quality_sum += Math.Min(Lib.Proto.GetDouble(m, "quality", 1.0), 1.0);
             quality_count += 1.0;
           }
         }
@@ -515,100 +508,6 @@ public sealed class Malfunction : PartModule
     }
     return false;
   }
-
-
-  // [DISABLED] this function is very slow for vessels with a lot of components
-  // used to incentive redundancy by slowing down aging when another part with the same module already failed
-  // note: this assume there is only a supported module per-part, if that isn't the case the last one is used
-  /*static double IncentiveRedundancy(Vessel v, uint flight_id)
-  {
-    if (v.loaded)
-    {
-      string module_name = "";
-      foreach(var p in v.Parts)
-      {
-        if (p.flightID == flight_id)
-        {
-          foreach(PartModule m in p.Modules)
-          {
-            switch(m.moduleName)
-            {
-              case "ModuleEngines":
-              case "ModuleEnginesFX":
-              case "ModuleDeployableSolarPanel":
-              case "ModuleGenerator":
-              case "ModuleResourceConverter":
-              case "ModuleKPBSConverter":
-              case "FissionReactor":
-              case "ModuleResourceHarvester":
-              case "ModuleReactionWheel":
-              case "Antenna":
-                module_name = m.moduleName; break;
-            }
-          }
-          if (module_name.Length == 0) return 1.0;
-        }
-      }
-
-      foreach(var p in v.Parts)
-      {
-        if (p.flightID == flight_id) continue;
-        if (p.Modules.Contains("Malfunction") && p.Modules.Contains(module_name))
-        {
-          return 1.0 / (double)(p.Modules.GetModule<Malfunction>().malfunctions + 1u);
-        }
-      }
-    }
-    else
-    {
-      string module_name = "";
-      foreach(var p in v.protoVessel.protoPartSnapshots)
-      {
-        if (p.flightID == flight_id)
-        {
-          foreach(var m in p.modules)
-          {
-            switch(m.moduleName)
-            {
-              case "ModuleEngines":
-              case "ModuleEnginesFX":
-              case "ModuleDeployableSolarPanel":
-              case "ModuleGenerator":
-              case "ModuleResourceConverter":
-              case "ModuleKPBSConverter":
-              case "FissionReactor":
-              case "ModuleResourceHarvester":
-              case "ModuleReactionWheel":
-              case "Antenna":
-                module_name = m.moduleName; break;
-            }
-          }
-          if (module_name.Length == 0) return 1.0;
-        }
-      }
-
-      foreach(var p in v.protoVessel.protoPartSnapshots)
-      {
-        if (p.flightID == flight_id) continue;
-        var m = p.modules.Find(k => k.moduleName == "Malfunction");
-        if (m != null && p.modules.Find(k => k.moduleName == module_name) != null)
-        {
-          return 1.0 / (double)(Lib.ConfigValue(m.moduleValues, "malfunctions", 0u) + 1u);
-        }
-      }
-    }
-    return 1.0;
-  }*/
-
-
-  // [DISABLED]
-  // used to make malfunctions less relevant in the middle of lifetime
-  // note: normalized so it return 1.0 on average
-  /*public static double AgingCurve(double age, double min_lifetime, double max_lifetime)
-  {
-    double k = Math.Min(Math.Max(age - min_lifetime, 0.0) / max_lifetime, 1.0);
-    return (1.0 - (Math.Min(Math.Min(1.0, k + 0.75), Math.Min(1.0, 1.75 - k)) - 0.75) * 2.0) * 1.6;
-  }*/
 }
 
 

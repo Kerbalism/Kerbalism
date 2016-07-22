@@ -7,7 +7,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.AccessControl;
 using ModuleWheels;
 using UnityEngine;
 
@@ -75,8 +74,7 @@ public sealed class Planner
 
   public class radiation_data
   {
-    public double shielding_amount;                       // capacity of radiation shielding on the vessel
-    public double shielding_capacity;                     // amount of radiation shielding on the vessel
+    public double shielding_level;                        // amount vs capacity of radiation shielding on the vessel
     public double[] life_expectancy;                      // time-to-death or time-to-safemode for radiations (cosmic/storm/belt levels)
   }
 
@@ -99,29 +97,6 @@ public sealed class Planner
     public double relay_cost;                             // relay cost of best relay antenna, if any
     public double second_best_range;                      // range of second-best antenna (for reliability calculation)
   }
-
-
-  // styles
-  GUIStyle leftmenu_style;
-  GUIStyle midmenu_style;
-  GUIStyle rightmenu_style;
-  GUIStyle row_style;
-  GUIStyle title_style;
-  GUIStyle content_style;
-  GUIStyle quote_style;
-
-  // body index & situation
-  int body_index;
-  int situation_index;
-
-  // current planner page
-  uint page;
-
-  // automatic page layout of panels
-  bool layout_detected;
-  uint panels_count;
-  uint panels_per_page;
-  uint pages_count;
 
 
   // ctor
@@ -187,10 +162,10 @@ public sealed class Planner
   }
 
 
-  public static environment_data analyze_environment(CelestialBody body, double altitude_mult)
+  static environment_data analyze_environment(CelestialBody body, double altitude_mult)
   {
     // shortcuts
-    CelestialBody sun = Sim.Sun();
+    CelestialBody sun = FlightGlobals.Bodies[0];
 
     // calculate data
     environment_data env = new environment_data();
@@ -223,7 +198,7 @@ public sealed class Planner
   }
 
 
-  public static crew_data analyze_crew(List<Part> parts)
+  static crew_data analyze_crew(List<Part> parts)
   {
     // store data
     crew_data crew = new crew_data();
@@ -250,7 +225,7 @@ public sealed class Planner
   }
 
 
-  public static ec_data analyze_ec(List<Part> parts, environment_data env, crew_data crew, Rule rule_temp, resource_simulator sim)
+  static ec_data analyze_ec(List<Part> parts, environment_data env, crew_data crew, Rule rule_temp, resource_simulator sim)
   {
     // store data
     ec_data ec = new ec_data();
@@ -262,10 +237,10 @@ public sealed class Planner
     foreach(Part p in parts)
     {
       // accumulate EC storage
-      ec.storage += Lib.Resource.Amount(p, "ElectricCharge");
+      ec.storage += Lib.Amount(p, "ElectricCharge");
 
       // accumulate EC capacity
-      ec.capacity += Lib.Resource.Capacity(p, "ElectricCharge");
+      ec.capacity += Lib.Capacity(p, "ElectricCharge");
 
       // remember if we already considered a resource converter module
       // rationale: we assume only the first module in a converter is active
@@ -434,7 +409,7 @@ public sealed class Planner
           double cooling_cost = Lib.ReflectionValue<float>(m, "CoolingCost");
           string fuel_name = Lib.ReflectionValue<string>(m, "FuelName");
 
-          ec.consumed += cooling_cost * Lib.Resource.Amount(p, fuel_name) * 0.001;
+          ec.consumed += cooling_cost * Lib.Amount(p, fuel_name) * 0.001;
         }
       }
     }
@@ -451,7 +426,7 @@ public sealed class Planner
   }
 
 
-  public static qol_data analyze_qol(List<Part> parts, environment_data env, crew_data crew, signal_data signal, Rule rule_qol)
+  static qol_data analyze_qol(List<Part> parts, environment_data env, crew_data crew, signal_data signal, Rule rule_qol)
   {
     // store data
     qol_data qol = new qol_data();
@@ -507,21 +482,24 @@ public sealed class Planner
   }
 
 
-  public static radiation_data analyze_radiation(List<Part> parts, environment_data env, crew_data crew, Rule rule_radiation)
+  static radiation_data analyze_radiation(List<Part> parts, environment_data env, crew_data crew, Rule rule_radiation)
   {
     // store data
     radiation_data radiation = new radiation_data();
 
     // scan the parts
+    double amount = 0.0;
+    double capacity = 0.0;
     foreach(Part p in parts)
     {
       // accumulate shielding amount and capacity
-      radiation.shielding_amount += Lib.Resource.Amount(p, "Shielding");
-      radiation.shielding_capacity += Lib.Resource.Capacity(p, "Shielding");
+      amount += Lib.Amount(p, "Shielding");
+      capacity += Lib.Capacity(p, "Shielding");
     }
 
     // calculate radiation data
-    double shielding = Radiation.Shielding(radiation.shielding_amount, radiation.shielding_capacity);
+    radiation.shielding_level = capacity > 0.0 ? amount / capacity : 0.0;
+    double shielding = Radiation.Shielding(radiation.shielding_level);
     double belt_strength = Settings.BeltRadiation * Radiation.Dynamo(env.body) * 0.5; //< account for the 'ramp'
     if (crew.capacity > 0)
     {
@@ -542,7 +520,7 @@ public sealed class Planner
   }
 
 
-  public static reliability_data analyze_reliability(List<Part> parts, ec_data ec, signal_data signal)
+  static reliability_data analyze_reliability(List<Part> parts, ec_data ec, signal_data signal)
   {
     // store data
     reliability_data reliability = new reliability_data();
@@ -585,7 +563,7 @@ public sealed class Planner
   }
 
 
-  public static signal_data analyze_signal(List<Part> parts)
+  static signal_data analyze_signal(List<Part> parts)
   {
     // store data
     signal_data signal = new signal_data();
@@ -691,20 +669,14 @@ public sealed class Planner
   }
 
 
-
-
   void render_ec(ec_data ec)
   {
-    string storage_warning = "";
-    string storage_tooltip = "";
-    timewarp_capacity_warning(ec.consumed, ec.generated_sunlight, ec.capacity, ref storage_warning, ref storage_tooltip);
-
     bool shadow_different = Math.Abs(ec.generated_sunlight - ec.generated_shadow) > double.Epsilon;
     string generated_str = Lib.BuildString(Lib.HumanReadableRate(ec.generated_sunlight), (shadow_different ? Lib.BuildString("</b> / <b>", Lib.HumanReadableRate(ec.generated_shadow)) : ""));
     string life_str = Lib.BuildString(Lib.HumanReadableDuration(ec.life_expectancy_sunlight), (shadow_different ? Lib.BuildString("</b> / <b>", Lib.HumanReadableDuration(ec.life_expectancy_shadow)) : ""));
 
     render_title("ELECTRIC CHARGE");
-    render_content("storage", Lib.BuildString(Lib.ValueOrNone(ec.storage), storage_warning), storage_tooltip);
+    render_content("storage", Lib.ValueOrNone(ec.storage));
     render_content("consumed", Lib.HumanReadableRate(ec.consumed));
     render_content("generated", generated_str, "sunlight / shadow");
     render_content("life expectancy", life_str, "sunlight / shadow");
@@ -716,12 +688,8 @@ public sealed class Planner
   {
     var res = sim.get_resource(r.resource_name);
 
-    string storage_warning = "";
-    string storage_tooltip = "";
-    timewarp_capacity_warning(res.consumed, res.produced, res.capacity, ref storage_warning, ref storage_tooltip);
-
     render_title(r.resource_name.ToUpper());
-    render_content("storage", Lib.BuildString(Lib.ValueOrNone(res.storage), storage_warning), storage_tooltip);
+    render_content("storage", Lib.ValueOrNone(res.storage));
     render_content("consumed", Lib.HumanReadableRate(res.consumed));
     if (res.has_greenhouse) render_content("harvest", res.time_to_harvest <= double.Epsilon ? "none" : Lib.BuildString(res.harvest_size.ToString("F0"), " in ", Lib.HumanReadableDuration(res.time_to_harvest)));
     else if (res.has_recycler) render_content("recycled", Lib.HumanReadableRate(res.produced));
@@ -747,8 +715,8 @@ public sealed class Planner
     string magnetosphere_str = Radiation.HasMagnetosphere(env.body) ? Lib.HumanReadableRange(Radiation.MagnAltitude(env.body)) : "none";
     string belt_strength_str = Radiation.HasBelt(env.body) ? Lib.BuildString(" (", (Radiation.Dynamo(env.body) * Settings.BeltRadiation * (60.0 * 60.0)).ToString("F0"), " rad/h)") : "";
     string belt_str = Radiation.HasBelt(env.body) ? Lib.HumanReadableRange(Radiation.BeltAltitude(env.body)) : "none";
-    string shield_str = Radiation.ShieldingToString(radiation.shielding_amount, radiation.shielding_capacity);
-    string shield_tooltip = radiation.shielding_capacity > 0 ? "average over the vessel" : "";
+    string shield_str = Radiation.ShieldingToString(radiation.shielding_level);
+    string shield_tooltip = radiation.shielding_level > 0.0 ? "average over the vessel" : "";
     string life_str = Lib.BuildString(Lib.HumanReadableDuration(radiation.life_expectancy[0]), "</b> / <b>", Lib.HumanReadableDuration(radiation.life_expectancy[1]));
     string life_tooltip = "cosmic / storm";
     if (Radiation.HasBelt(env.body))
@@ -1029,6 +997,29 @@ public sealed class Planner
   }
 
 
+  // styles
+  GUIStyle leftmenu_style;
+  GUIStyle midmenu_style;
+  GUIStyle rightmenu_style;
+  GUIStyle row_style;
+  GUIStyle title_style;
+  GUIStyle content_style;
+  GUIStyle quote_style;
+
+  // body index & situation
+  int body_index;
+  int situation_index;
+
+  // current planner page
+  uint page;
+
+  // automatic page layout of panels
+  bool layout_detected;
+  uint panels_count;
+  uint panels_per_page;
+  uint pages_count;
+
+
   // simulate resource consumption & production
   public class resource_simulator
   {
@@ -1063,6 +1054,7 @@ public sealed class Planner
       }
     }
 
+
     public resource_data get_resource(string name)
     {
       resource_data res;
@@ -1074,13 +1066,15 @@ public sealed class Planner
       return res;
     }
 
+
     void process_part(Part p, string res_name)
     {
       resource_data res = get_resource(res_name);
-      res.storage += Lib.Resource.Amount(p, res_name);
-      res.amount += Lib.Resource.Amount(p, res_name);
-      res.capacity += Lib.Resource.Capacity(p, res_name);
+      res.storage += Lib.Amount(p, res_name);
+      res.amount += Lib.Amount(p, res_name);
+      res.capacity += Lib.Capacity(p, res_name);
     }
+
 
     void process_rule(Rule r, environment_data env, qol_data qol, crew_data crew)
     {
@@ -1101,6 +1095,7 @@ public sealed class Planner
       if (r.waste_name.Length > 0) get_resource(r.waste_name).produce(rate * r.waste_ratio * k);
     }
 
+
     void process_scrubber(Scrubber scrubber, environment_data env)
     {
       resource_data res = get_resource(scrubber.resource_name);
@@ -1117,6 +1112,7 @@ public sealed class Planner
       res.has_recycler = true;
     }
 
+
     void process_recycler(Recycler recycler)
     {
       resource_data res = get_resource(recycler.resource_name);
@@ -1130,6 +1126,7 @@ public sealed class Planner
       }
       res.has_recycler = true;
     }
+
 
     void process_greenhouse(Greenhouse greenhouse, environment_data env)
     {
@@ -1153,12 +1150,9 @@ public sealed class Planner
       // calculate growth factor
       double growth_factor = (greenhouse.growth_rate * (1.0 + growth_bonus)) * lighting;
 
-      // consume input resource
-      double input_k = greenhouse.input_name.Length > 0 ? get_resource(greenhouse.input_name).consume(greenhouse.input_rate * growth_factor) : 1.0;
-
       // produce food
       resource_data res = get_resource(greenhouse.resource_name);
-      res.produce(Math.Min(greenhouse.harvest_size, res.capacity) * growth_factor * input_k);
+      res.produce(Math.Min(greenhouse.harvest_size, res.capacity) * growth_factor);
 
       // calculate time to harvest
       double tta = growth_factor > double.Epsilon ? 1.0 / growth_factor : 0.0;
@@ -1170,15 +1164,18 @@ public sealed class Planner
       res.has_greenhouse = true;
     }
 
+
     void process_ring(GravityRing ring)
     {
       if (ring.opened) get_resource("ElectricCharge").consume(ring.ec_rate * ring.speed);
     }
 
+
     void process_antenna(Antenna antenna)
     {
       if (antenna.relay) get_resource("ElectricCharge").consume(antenna.relay_cost);
     }
+
 
     public class resource_data
     {
@@ -1190,6 +1187,7 @@ public sealed class Planner
         return amount > 0.0 ? correct_amount / amount : 0.0;
       }
 
+
       public double produce(double amount)
       {
         double correct_amount = Math.Min(amount, this.capacity - this.amount);
@@ -1197,6 +1195,7 @@ public sealed class Planner
         this.produced += correct_amount;
         return amount > 0.0 ? correct_amount / amount : 0.0;
       }
+
 
       public double lifetime()
       {
@@ -1211,6 +1210,7 @@ public sealed class Planner
         return time;
       }
 
+
       public double storage;
       public double capacity;
       public double amount;
@@ -1223,38 +1223,8 @@ public sealed class Planner
       public List<resource_data> depends = new List<resource_data>();
     }
 
-    Dictionary<string, resource_data> resources = new Dictionary<string, resource_data>();
-  }
 
-
-  // determine if resource capacity is not enough to avoid inconsistencies at max simulation timestep
-  void timewarp_capacity_warning(double consumed, double produced, double capacity, ref string warning, ref string tooltip)
-  {
-    // seconds per simulation step at max timewarp
-    const double max_step = 2400.0;
-
-    // if one of consumed or produced is zero, there is no inconsistency
-    if (consumed <= double.Epsilon || produced <= double.Epsilon) return;
-
-    // deduce safe capacity
-    double safe_capacity = Math.Max(consumed, produced) * max_step;
-
-    // if below safe capacity
-    if (capacity > double.Epsilon && capacity < safe_capacity)
-    {
-      warning =  " <b><color=yellow>!</color></b>";
-      tooltip = Lib.BuildString
-      (
-        "<color=yellow>Resource simulation may be\n",
-        "inconsistent at high timewarp\n\n</color>",
-        "current capacity: <b>", capacity.ToString("F0"), "</b>\n",
-        "suggested capacity: <b>", safe_capacity.ToString("F0"), "</b>"
-       );
-    }
-
-    // [unused] worst-case real production and consumption at max step
-    //double real_produced = Math.Min(produced * max_step, capacity) / max_step;
-    //double real_consumed = Math.Min(consumed * max_step, capacity) / max_step;
+    Dictionary<string, resource_data> resources = new Dictionary<string, resource_data>(32);
   }
 }
 

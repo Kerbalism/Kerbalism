@@ -4,58 +4,19 @@
 
 
 using System;
-using System.Collections.Generic;
-using HighlightingSystem;
 using UnityEngine;
 
 
 namespace KERBALISM {
 
 
-[KSPAddon(KSPAddon.Startup.MainMenu, true)]
-public sealed class Notepad : MonoBehaviour
+public sealed class Notepad
 {
-  // constants
-  const float width = 300.0f;
-  const float height = 200.0f;
-  const float top_height = 20.0f;
-  const float bot_height = 20.0f;
-  const float margin = 10.0f;
-  const float spacing = 10.0f;
-
-  // permit global access
-  private static Notepad instance = null;
-
-  // styles
-  GUIStyle win_style;
-  GUIStyle top_style;
-  GUIStyle bot_style;
-  GUIStyle txt_style;
-  GUILayoutOption[] txt_options;
-
-  // store window id
-  int win_id;
-
-  // store window geometry
-  Rect win_rect;
-
-  // store dragbox geometry
-  Rect drag_rect;
-
-  // used by scroll window mechanics
-  Vector2 scroll_pos;
-
-  // store vessel id, if any
-  Guid vessel_id;
-
   // ctor
-  Notepad()
+  public Notepad()
   {
     // enable global access
     instance = this;
-
-    // keep it alive
-    DontDestroyOnLoad(this);
 
     // generate unique id, hopefully
     win_id = Lib.RandomInt(int.MaxValue);
@@ -88,7 +49,7 @@ public sealed class Notepad : MonoBehaviour
 
 
   // called every frame
-  public void OnGUI()
+  public void on_gui()
   {
     // do nothing if db isn't ready
     if (!DB.Ready()) return;
@@ -172,6 +133,39 @@ public sealed class Notepad : MonoBehaviour
     instance.vessel_id = (instance.vessel_id == v.id ? Guid.Empty : v.id);
   }
 
+
+  // constants
+  const float width = 300.0f;
+  const float height = 200.0f;
+  const float top_height = 20.0f;
+  const float bot_height = 20.0f;
+  const float margin = 10.0f;
+  const float spacing = 10.0f;
+
+  // styles
+  GUIStyle win_style;
+  GUIStyle top_style;
+  GUIStyle bot_style;
+  GUIStyle txt_style;
+  GUILayoutOption[] txt_options;
+
+  // store window id
+  int win_id;
+
+  // store window geometry
+  Rect win_rect;
+
+  // store dragbox geometry
+  Rect drag_rect;
+
+  // used by scroll window mechanics
+  Vector2 scroll_pos;
+
+  // store vessel id, if any
+  Guid vessel_id;
+
+  // permit global access
+  static Notepad instance;
 }
 
 

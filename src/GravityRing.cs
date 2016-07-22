@@ -1,5 +1,5 @@
 ﻿// ===================================================================================================================
-// implement gravity ring mechanics
+// a gravity ring habitat that improve quality of life
 // ===================================================================================================================
 
 
@@ -138,6 +138,7 @@ public sealed class GravityRing : PartModule
     this.Fields["speed"].guiActive = opened;
     this.Fields["speed"].guiActiveEditor = opened;
 
+    // manage animation
     if (rotate != null)
     {
       // set rotating animation speed
@@ -158,24 +159,18 @@ public sealed class GravityRing : PartModule
     // do nothing else in the editor
     if (HighLogic.LoadedSceneIsEditor) return;
 
-    // get time elapsed from last update
-    double elapsed_s = TimeWarp.fixedDeltaTime;
+    // get resource cache
+    vessel_resources resources = ResourceCache.Get(vessel);
+
+    // get resource handler
+    resource_info ec = resources.Info(vessel, "ElectricCharge");
 
     // consume ec
-    double ec_light_perc = 0.0;
-    if (speed > float.Epsilon)
-    {
-      double ec_light_required = ec_rate * elapsed_s * speed;
-      double ec_light = part.RequestResource("ElectricCharge", ec_light_required);
-      ec_light_perc = ec_light / ec_light_required;
+    ec.Consume(ec_rate * speed * Kerbalism.elapsed_s);
 
-      // if there isn't enough ec
-      if (ec_light <= double.Epsilon)
-      {
-        // reset speed
-        speed = 0.0f;
-      }
-    }
+    // reset speed if there isn't enough ec
+    // note: comparing against amount in previous simulation step
+    if (ec.amount <= double.Epsilon) speed = 0.0f;
 
     // set entertainment
     rate = 1.0 + (entertainment_rate - 1.0) * speed;
@@ -183,37 +178,27 @@ public sealed class GravityRing : PartModule
 
 
   // implement gravity ring mechanics for unloaded vessels
-  public static void BackgroundUpdate(Vessel vessel, ProtoPartModuleSnapshot m, GravityRing ring)
+  public static void BackgroundUpdate(Vessel vessel, ProtoPartModuleSnapshot m, GravityRing ring, vessel_resources resources, double elapsed_s)
   {
-    // get time elapsed from last update
-    double elapsed_s = TimeWarp.fixedDeltaTime;
-
-    // get data
-    double entertainment_rate = ring.entertainment_rate;
-    double ec_rate = ring.ec_rate;
+    // get protomodule data
     float speed = Lib.Proto.GetFloat(m, "speed");
 
-    // consume ec
-    double ec_light_perc = 0.0;
-    if (speed > float.Epsilon)
-    {
-      double ec_light_required = ec_rate * elapsed_s * speed;
-      double ec_light = Lib.Resource.Request(vessel, "ElectricCharge", ec_light_required);
-      ec_light_perc = ec_light / ec_light_required;
+    // get resource handler
+    resource_info ec = resources.Info(vessel, "ElectricCharge");
 
-      // if there isn't enough ec
-      if (ec_light <= double.Epsilon)
-      {
-        // reset speed
-        speed = 0.0f;
-      }
+    // consume ec
+    ec.Consume(ring.ec_rate * speed * elapsed_s);
+
+    // reset speed if there isn't enough ec
+    // note: comparing against amount in previous simulation step
+    if (ec.amount <= double.Epsilon)
+    {
+      speed = 0.0f;
+      Lib.Proto.Set(m, "speed", speed);
     }
 
     // set entertainment
-    double rate = 1.0 + (entertainment_rate - 1.0) * speed;
-
-    // write back data
-    Lib.Proto.Set(m, "speed", speed);
+    double rate = 1.0 + (ring.entertainment_rate - 1.0) * speed;
     Lib.Proto.Set(m, "rate", rate);
   }
 }

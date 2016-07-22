@@ -1,7 +1,6 @@
 ﻿// ===================================================================================================================
-// Scrubber module
+// scrub co2 from a vessel, in a simplistic way
 // ===================================================================================================================
-
 
 
 using System;
@@ -33,7 +32,7 @@ public sealed class Scrubber : PartModule
   // note: persistent because required in background processing
   [KSPField] public double ec_rate;                    // EC consumption rate per-second
   [KSPField] public double co2_rate;                   // waste consumption rate per-second
-  [KSPField(isPersistant = true)] public double efficiency = 0.0; // waste->resource conversion rate
+  [KSPField(isPersistant = true)] public double efficiency = 0.5; // waste->resource conversion rate
   [KSPField] public double intake_rate = 1.0;         // Oxygen production rate inside breathable atmosphere
   [KSPField] public string resource_name = "Oxygen";   // name of resource recycled
   [KSPField] public string waste_name = "CO2";         // name of resource recycled
@@ -116,14 +115,14 @@ public sealed class Scrubber : PartModule
     // note: for example, resque vessels never get to prelaunch
     if (efficiency <= double.Epsilon) efficiency = 0.5;
 
-    // get time elapsed from last update
-    double elapsed_s = TimeWarp.fixedDeltaTime;
+    // get resource cache
+    vessel_resources resources = ResourceCache.Get(vessel);
 
     // if inside breathable atmosphere
-    if (Cache.VesselInfo(this.vessel).breathable)
+    if (Cache.VesselInfo(vessel).breathable)
     {
       // produce oxygen from the intake
-      this.part.RequestResource(resource_name, -intake_rate * elapsed_s);
+      resources.Produce(vessel, resource_name, intake_rate * Kerbalism.elapsed_s);
 
       // set status
       Status = "Intake";
@@ -131,15 +130,18 @@ public sealed class Scrubber : PartModule
     // if outside breathable atmosphere and enabled
     else if (is_enabled)
     {
-      // recycle CO2+EC into oxygen
-      double co2_required = co2_rate * elapsed_s;
-      double co2 = this.part.RequestResource(waste_name, co2_required);
-      double ec_required = ec_rate * elapsed_s * (co2 / co2_required);
-      double ec = this.part.RequestResource("ElectricCharge", ec_required);
-      this.part.RequestResource(resource_name, -co2 * efficiency);
+      // transform waste + ec into resource
+      resource_recipe recipe = new resource_recipe(resource_recipe.scrubber_priority);
+      recipe.Input(waste_name, co2_rate * Kerbalism.elapsed_s);
+      recipe.Input("ElectricCharge", ec_rate * Kerbalism.elapsed_s);
+      recipe.Output(resource_name, co2_rate * efficiency * Kerbalism.elapsed_s);
+      resources.Transform(recipe);
 
       // set status
-      Status = co2 <= double.Epsilon ? Lib.BuildString("No ", waste_name) : ec <= double.Epsilon ? "No Power" : "Running";
+      Status = "Running";
+      /*bool has_waste = resources.Info(vessel, waste_name).amount > double.Epsilon;
+      bool has_ec = resources.Info(vessel, "ElectricCharge").amount > double.Epsilon;
+      Status = !has_waste ? Lib.BuildString("No ", waste_name) : !has_ec ? "No Power" : "Running";*/
     }
     // if outside breathable atmosphere and disabled
     else
@@ -154,39 +156,23 @@ public sealed class Scrubber : PartModule
 
 
   // implement scrubber mechanics for unloaded vessels
-  public static void BackgroundUpdate(Vessel vessel, ProtoPartModuleSnapshot m, Scrubber scrubber)
+  public static void BackgroundUpdate(Vessel vessel, ProtoPartModuleSnapshot m, Scrubber scrubber, vessel_info info, vessel_resources resources, double elapsed_s)
   {
-    // get data
-    bool is_enabled = Lib.Proto.GetBool(m, "is_enabled");
-    double ec_rate = scrubber.ec_rate;
-    double co2_rate = scrubber.co2_rate;
-    double efficiency = Lib.Proto.GetDouble(m, "efficiency");
-    double intake_rate = scrubber.intake_rate;
-    string resource_name = scrubber.resource_name;
-    string waste_name = scrubber.waste_name;
-
-    // if for some reason efficiency wasn't set, default to 50%
-    // note: for example, resque vessels scrubbers get background update without prelaunch
-    if (efficiency <= double.Epsilon) efficiency = 0.5;
-
-    // get time elapsed from last update
-    double elapsed_s = TimeWarp.fixedDeltaTime;
-
     // if inside breathable atmosphere
-    if (Cache.VesselInfo(vessel).breathable)
+    if (info.breathable)
     {
       // produce oxygen from the intake
-      Lib.Resource.Request(vessel, resource_name, -intake_rate * elapsed_s);
+      resources.Produce(vessel, scrubber.resource_name, scrubber.intake_rate * elapsed_s);
     }
     // if outside breathable atmosphere and enabled
-    else if (is_enabled)
+    else if (Lib.Proto.GetBool(m, "is_enabled"))
     {
-      // recycle CO2+EC into oxygen
-      double co2_required = co2_rate * elapsed_s;
-      double co2 = Lib.Resource.Request(vessel, waste_name, co2_required);
-      double ec_required = ec_rate * elapsed_s * (co2 / co2_required);
-      double ec = Lib.Resource.Request(vessel, "ElectricCharge", ec_required);
-      Lib.Resource.Request(vessel, resource_name, -co2 * efficiency);
+      // transform waste + ec into resource
+      resource_recipe recipe = new resource_recipe(resource_recipe.scrubber_priority);
+      recipe.Input(scrubber.waste_name, scrubber.co2_rate * elapsed_s);
+      recipe.Input("ElectricCharge", scrubber.ec_rate * elapsed_s);
+      recipe.Output(scrubber.resource_name, scrubber.co2_rate * Lib.Proto.GetDouble(m, "efficiency", 0.5) * elapsed_s);
+      resources.Transform(recipe);
     }
   }
 

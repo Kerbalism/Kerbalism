@@ -1,11 +1,10 @@
 ﻿// ====================================================================================================================
-// implement life support mechanics for a set of arbitrary resources
+// implement life-support-like mechanics that can be influenced by environmental factors
 // ====================================================================================================================
 
 
 using System;
 using System.Collections.Generic;
-using UnityEngine;
 
 
 namespace KERBALISM {
@@ -46,40 +45,241 @@ public sealed class Rule
   }
 
 
-  // calculate depletion time for the specified vessel
-  // note: need to be called once per simulation step
-  public void CalculateDepletion(Vessel v)
+  // return seconds until depletion, 0.0 if there is no resource and NaN if it will never deplete
+  public double Depletion(Vessel v, resource_info res)
   {
-    // get 32bit vessel id
-    UInt32 id = Lib.VesselID(v);
+    // [unused] Newton–Raphson, 1 step
+    // C = amount
+    // R = delta
+    // A = change in delta
+    // t0 = C / -R              // eyeball estimate
+    // F' = 0.5 * t0 * t0       // differential of F
+    // F = C + R * t0 + A * F'  // equation of motion, constant acceleration
+    // t1 = t0 - F / F'         // time until depletion
 
-    // create depletion info the first time this function is called for a particular vessel
-    if (!depletions.ContainsKey(id)) depletions.Add(id, new depletion_info());
+    // calculate rate of change from interval-based rule
+    double meal_rate = interval > double.Epsilon ? rate / interval : 0.0;
 
-    // get depletion info entry
-    depletion_info di = depletions[id];
+    // calculate total rate of change
+    double delta = res.rate - meal_rate * Lib.CrewCount(v);
 
-    // get resource amount
-    double amount = Cache.ResourceInfo(v, this.resource_name).amount;
-
-    // calculate delta
-    double meal_rate = this.interval > double.Epsilon ? this.rate / this.interval : 0.0;
-    double delta = (amount - di.prev_amount) / TimeWarp.fixedDeltaTime - meal_rate * Lib.CrewCount(v);
-
-    // remember prev amount
-    di.prev_amount = amount;
-
-    // return lifetime in seconds
-    di.depletion = amount <= double.Epsilon ? 0.0 : delta >= -double.Epsilon ? double.NaN : amount / -delta;
+    // return depletion
+    return res.amount <= double.Epsilon ? 0.0 : delta >= -0.0001 ? double.NaN : res.amount / -delta;
   }
 
 
-  // return depletion time for the specified vessel
-  public double Depletion(Vessel v)
+  // return per-kerbal variance, in the range [1-variance,1+variance]
+  static double Variance(ProtoCrewMember c, double variance)
   {
-    depletion_info di;
-    return depletions.TryGetValue(Lib.VesselID(v), out di) ? di.depletion : 0.0;
+    // get a value in [0..1] range associated with a kerbal
+    double k = (double)Lib.Hash32(c.name.Replace(" Kerman", "")) / (double)UInt32.MaxValue;
+
+    // move in [-1..+1] range
+    k = k * 2.0 - 1.0;
+
+    // return kerbal-specific variance in range [1-n .. 1+n]
+    return 1.0 + variance * k;
   }
+
+
+  public static void applyRules(Vessel v, vessel_info vi, vessel_data vd, vessel_resources resources, double elapsed_s)
+  {
+    // get crew
+    List<ProtoCrewMember> crew = v.loaded ? v.GetVesselCrew() : v.protoVessel.GetVesselCrew();
+
+    // get breathable modifier
+    double breathable = vi.breathable ? 0.0 : 1.0;
+
+    // get temp diff modifier
+    double temp_diff = v.altitude < 2000.0 && v.mainBody == FlightGlobals.GetHomeBody() ? 0.0 : Sim.TempDiff(vi.temperature);
+
+    // for each rule
+    foreach(var p in Kerbalism.rules)
+    {
+      // shortcuts
+      Rule r = p.Value;
+
+      // get resource handler
+      resource_info res = r.resource_name.Length > 0 ? resources.Info(v, r.resource_name) : null;
+
+      // if a resource is specified
+      if (res != null)
+      {
+        // get data from db
+        vmon_data vmon = DB.VmonData(v.id, r.name);
+
+        // message obey user config
+        bool show_msg = (r.resource_name == "ElectricCharge" ? vd.cfg_ec > 0 : vd.cfg_supply > 0);
+
+        // no messages with no capacity
+        if (res.capacity > double.Epsilon)
+        {
+          uint variant = crew.Count > 0 ? 0 : 1u; //< manned/probe variant
+
+          // manage messages
+          if (res.level <= double.Epsilon && vmon.message < 2)
+          {
+            if (r.empty_message.Length > 0 && show_msg) Message.Post(Severity.danger, Lib.ExpandMsg(r.empty_message, v, null, variant));
+            vmon.message = 2;
+          }
+          else if (res.level < r.low_threshold && vmon.message < 1)
+          {
+            if (r.low_message.Length > 0 && show_msg) Message.Post(Severity.warning, Lib.ExpandMsg(r.low_message, v, null, variant));
+            vmon.message = 1;
+          }
+          else if (res.level > r.low_threshold && vmon.message > 0)
+          {
+            if (r.refill_message.Length > 0 && show_msg) Message.Post(Severity.relax, Lib.ExpandMsg(r.refill_message, v, null, variant));
+            vmon.message = 0;
+          }
+        }
+      }
+
+      // for each crew
+      foreach(ProtoCrewMember c in crew)
+      {
+        // get kerbal data
+        kerbal_data kd = DB.KerbalData(c.name);
+
+        // skip resque kerbals
+        if (kd.resque == 1) continue;
+
+        // skip disabled kerbals
+        if (kd.disabled == 1) continue;
+
+        // get supply data from db
+        kmon_data kmon = DB.KmonData(c.name, r.name);
+
+
+        // get product of all environment modifiers
+        double k = 1.0;
+        foreach(string modifier in r.modifier)
+        {
+          switch(modifier)
+          {
+            case "breathable":  k *= breathable;                              break;
+            case "temperature": k *= temp_diff;                               break;
+            case "radiation":   k *= vi.env_radiation * (1.0 - kd.shielding); break;
+            case "qol":         k /= QualityOfLife.Bonus(kd.living_space, kd.entertainment, vi.landed, vi.link.linked, vi.crew_count == 1); break;
+          }
+        }
+
+
+        // if continuous
+        double step;
+        if (r.interval <= double.Epsilon)
+        {
+          // influence consumption by elapsed time
+          step = elapsed_s;
+        }
+        // if interval-based
+        else
+        {
+          // accumulate time
+          kmon.time_since += elapsed_s;
+
+          // determine number of steps
+          step = Math.Floor(kmon.time_since / r.interval);
+
+          // consume time
+          kmon.time_since -= step * r.interval;
+        }
+
+
+        // if continuous, or if one or more intervals elapsed
+        if (step > double.Epsilon)
+        {
+          // indicate if we must degenerate
+          bool must_degenerate = true;
+
+          // if there is a resource specified, and this isn't just a monitoring rule
+          if (res != null && r.rate > double.Epsilon)
+          {
+            // determine amount of resource to consume
+            double required = r.rate          // rate per-second or per interval
+                            * k               // product of environment modifiers
+                            * step;           // seconds elapsed or by number of steps
+
+            // if there is no waste
+            if (r.waste_name.Length == 0)
+            {
+              // simply consume (that is faster)
+              res.Consume(required);
+
+            }
+            // if there is waste
+            else
+            {
+              // transform resource into waste
+              resource_recipe recipe = new resource_recipe(resource_recipe.rule_priority);
+              recipe.Input(r.resource_name, required);
+              recipe.Output(r.waste_name, required * r.waste_ratio);
+              resources.Transform(recipe);
+            }
+
+            // reset degeneration when consumed, or when not required at all
+            // note: evaluating amount from previous simulation step
+            if (required <= double.Epsilon || res.amount > double.Epsilon)
+            {
+              // slowly recover instead of instant reset
+              kmon.problem *= 1.0 / (1.0 + Math.Max(r.interval, 1.0) * step * 0.002);
+              kmon.problem = Math.Max(kmon.problem, 0.0);
+
+              // do not degenerate
+              must_degenerate = false;
+            }
+          }
+
+          // degenerate if this rule is resource-less, or if there was not enough resource in the vessel
+          if (must_degenerate)
+          {
+            kmon.problem += r.degeneration            // degeneration rate per-second or per-interval
+                          * k                         // product of environment modifiers
+                          * step                      // seconds elapsed or by number of steps
+                          * Variance(c, r.variance);  // kerbal-specific variance
+          }
+
+
+          // determine message variant
+          uint variant = vi.temperature < Settings.SurvivalTemperature ? 0 : 1u;
+
+          // kill kerbal if necessary
+          if (kmon.problem >= r.fatal_threshold)
+          {
+            if (r.fatal_message.Length > 0)
+              Message.Post(r.breakdown ? Severity.breakdown : Severity.fatality, Lib.ExpandMsg(r.fatal_message, v, c, variant));
+
+            if (r.breakdown)
+            {
+              Kerbalism.Breakdown(v, c);
+              kmon.problem = r.danger_threshold * 1.01; //< move back to danger threshold
+            }
+            else
+            {
+              Kerbalism.Kill(v, c);
+            }
+          }
+          // show messages
+          else if (kmon.problem >= r.danger_threshold && kmon.message < 2)
+          {
+            if (r.danger_message.Length > 0) Message.Post(Severity.danger, Lib.ExpandMsg(r.danger_message, v, c, variant));
+            kmon.message = 2;
+          }
+          else if (kmon.problem >= r.warning_threshold && kmon.message < 1)
+          {
+            if (r.warning_message.Length > 0) Message.Post(Severity.warning, Lib.ExpandMsg(r.warning_message, v, c, variant));
+            kmon.message = 1;
+          }
+          else if (kmon.problem < r.warning_threshold && kmon.message > 0)
+          {
+            if (r.relax_message.Length > 0) Message.Post(Severity.relax, Lib.ExpandMsg(r.relax_message, v, c, variant));
+            kmon.message = 0;
+          }
+        }
+      }
+    }
+  }
+
 
 
   public string name;                               // rule name
@@ -109,14 +309,6 @@ public sealed class Rule
   public string low_message;                        // messages shown on resource level threshold crossings
   public string empty_message;                      // .
   public string refill_message;                     // .
-
-  // store data for depletion estimate
-  class depletion_info
-  {
-    public double depletion;
-    public double prev_amount;
-  }
-  Dictionary<UInt32, depletion_info> depletions = new Dictionary<UInt32, depletion_info>();
 }
 
 

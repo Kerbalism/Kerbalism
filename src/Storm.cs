@@ -1,5 +1,5 @@
 ﻿// ====================================================================================================================
-// implement solar storm mechanic
+// implement space weather mechanics
 // ====================================================================================================================
 
 
@@ -11,170 +11,141 @@ using UnityEngine;
 namespace KERBALISM {
 
 
-[KSPAddon(KSPAddon.Startup.MainMenu, true)]
-public sealed class Storm : MonoBehaviour
-{
-  // keep it alive
-  Storm() { DontDestroyOnLoad(this); }
 
-  // called every simulation tick
-  public void FixedUpdate()
+public sealed class Storm
+{
+  public void update(CelestialBody body, double elapsed_s)
   {
     // do nothing if storms are disabled
     if (Settings.StormDuration <= double.Epsilon) return;
 
-    // do nothing if paused
-    if (Lib.IsPaused()) return;
+    // skip the sun
+    if (body.flightGlobalsIndex == 0) return;
 
-    // avoid case when DB isn't ready for whatever reason
-    if (!DB.Ready()) return;
+    // skip moons
+    if (body.referenceBody.flightGlobalsIndex != 0) return;
 
-    // do nothing in the editors and the menus
-    if (!Lib.SceneIsGame()) return;
+    // get body data
+    body_data bd = DB.BodyData(body.name);
 
-    // for each celestial body
-    foreach(CelestialBody body in FlightGlobals.Bodies)
+    // generate storm time if necessary
+    if (bd.storm_time <= double.Epsilon)
     {
-      // skip the sun
-      if (body.flightGlobalsIndex == 0) continue;
-
-      // skip moons
-      if (body.referenceBody.flightGlobalsIndex != 0) continue;
-
-      // get body data
-      body_data bd = DB.BodyData(body.name);
-
-      // generate storm time if necessary
-      if (bd.storm_time <= double.Epsilon)
-      {
-        bd.storm_time = Settings.StormMinTime + (Settings.StormMaxTime - Settings.StormMinTime) * Lib.RandomDouble();
-      }
-
-      // accumulate age
-      bd.storm_age += TimeWarp.fixedDeltaTime * storm_frequency(body.orbit.semiMajorAxis);
-
-      // if storm is over
-      if (bd.storm_age > bd.storm_time)
-      {
-        bd.storm_age = 0.0;
-        bd.storm_time = 0.0;
-        bd.storm_state = 0;
-      }
-      // if storm is in progress
-      else if (bd.storm_age > bd.storm_time - Settings.StormDuration)
-      {
-        bd.storm_state = 2;
-      }
-      // if storm is incoming
-      else if (bd.storm_age > bd.storm_time - Settings.StormDuration  - time_to_impact(body.orbit.semiMajorAxis))
-      {
-        bd.storm_state = 1;
-      }
-
-      // send messages
-      // note: separed from state management to support the case when the user enter the SOI of a body under storm or about to be hit
-      if (bd.msg_storm < 2 && bd.storm_state == 2)
-      {
-        if (body_is_relevant(body))
-        {
-          Message.Post(Severity.danger, Lib.BuildString("The coronal mass ejection hit <b>", body.name, "</b> system"),
-            Lib.BuildString("Storm duration: ", Lib.HumanReadableDuration(TimeLeftCME(bd.storm_time, bd.storm_age))));
-        }
-        bd.msg_storm = 2;
-      }
-      else if (bd.msg_storm < 1 && bd.storm_state == 1)
-      {
-        if (body_is_relevant(body))
-        {
-          Message.Post(Severity.warning, Lib.BuildString("Our observatories report a coronal mass ejection directed toward <b>", body.name, "</b> system"),
-            Lib.BuildString("Time to impact: ", Lib.HumanReadableDuration(TimeBeforeCME(bd.storm_time, bd.storm_age))));
-        }
-        bd.msg_storm = 1;
-      }
-      else if (bd.msg_storm > 1 && bd.storm_state == 0)
-      {
-        if (body_is_relevant(body))
-        {
-          Message.Post(Severity.relax, Lib.BuildString("The solar storm at <b>", body.name, "</b> system is over"));
-        }
-        bd.msg_storm = 0;
-      }
+      bd.storm_time = Settings.StormMinTime + (Settings.StormMaxTime - Settings.StormMinTime) * Lib.RandomDouble();
     }
 
-    // for each vessel
-    foreach(Vessel v in FlightGlobals.Vessels)
+    // accumulate age
+    bd.storm_age += elapsed_s * storm_frequency(body.orbit.semiMajorAxis);
+
+    // if storm is over
+    if (bd.storm_age > bd.storm_time)
     {
-      // only consider vessels in interplanetary space
-      if (v.mainBody.flightGlobalsIndex != 0) continue;
+      bd.storm_age = 0.0;
+      bd.storm_time = 0.0;
+      bd.storm_state = 0;
+    }
+    // if storm is in progress
+    else if (bd.storm_age > bd.storm_time - Settings.StormDuration)
+    {
+      bd.storm_state = 2;
+    }
+    // if storm is incoming
+    else if (bd.storm_age > bd.storm_time - Settings.StormDuration  - time_to_impact(body.orbit.semiMajorAxis))
+    {
+      bd.storm_state = 1;
+    }
 
-      // get vessel info
-      vessel_info vi = Cache.VesselInfo(v);
-
-      // skip invalid vessels
-      if (!vi.is_vessel) continue;
-
-      // skip resque missions
-      if (vi.is_resque) continue;
-
-      // skip dead eva kerbals
-      if (vi.is_eva_dead) continue;
-
-      // skip unmanned vessels
-      if (Lib.CrewCount(v) == 0) continue;
-
-      // get vessel data
-      vessel_data vd = DB.VesselData(v.id);
-
-      // generate storm time if necessary
-      if (vd.storm_time <= double.Epsilon)
+    // send messages
+    // note: separed from state management to support the case when the user enter the SOI of a body under storm or about to be hit
+    if (bd.msg_storm < 2 && bd.storm_state == 2)
+    {
+      if (body_is_relevant(body))
       {
-        vd.storm_time = Settings.StormMinTime + (Settings.StormMaxTime - Settings.StormMinTime) * Lib.RandomDouble();
+        Message.Post(Severity.danger, Lib.BuildString("The coronal mass ejection hit <b>", body.name, "</b> system"),
+          Lib.BuildString("Storm duration: ", Lib.HumanReadableDuration(TimeLeftCME(bd.storm_time, bd.storm_age))));
       }
-
-      // accumulate age
-      vd.storm_age += TimeWarp.fixedDeltaTime * storm_frequency(vi.sun_dist);
-
-      // if storm is over
-      if (vd.storm_age > vd.storm_time && vd.storm_state == 2)
+      bd.msg_storm = 2;
+    }
+    else if (bd.msg_storm < 1 && bd.storm_state == 1)
+    {
+      if (body_is_relevant(body))
       {
-        vd.storm_age = 0.0;
-        vd.storm_time = 0.0;
-        vd.storm_state = 0;
-
-        // send message
-        Message.Post(Severity.relax, Lib.BuildString("The solar storm around <b>", v.vesselName, "</b> is over"));
+        Message.Post(Severity.warning, Lib.BuildString("Our observatories report a coronal mass ejection directed toward <b>", body.name, "</b> system"),
+          Lib.BuildString("Time to impact: ", Lib.HumanReadableDuration(TimeBeforeCME(bd.storm_time, bd.storm_age))));
       }
-      // if storm is in progress
-      else if (vd.storm_age > vd.storm_time - Settings.StormDuration && vd.storm_state == 1)
+      bd.msg_storm = 1;
+    }
+    else if (bd.msg_storm > 1 && bd.storm_state == 0)
+    {
+      if (body_is_relevant(body))
       {
-        vd.storm_state = 2;
-
-        // send message
-        Message.Post(Severity.danger, Lib.BuildString("The coronal mass ejection hit <b>", v.vesselName, "</b>"),
-        Lib.BuildString("Storm duration: ", Lib.HumanReadableDuration(TimeLeftCME(vd.storm_time, vd.storm_age))));
+        Message.Post(Severity.relax, Lib.BuildString("The solar storm at <b>", body.name, "</b> system is over"));
       }
-      // if storm is incoming
-      else if (vd.storm_age > vd.storm_time - Settings.StormDuration - time_to_impact(vi.sun_dist) && vd.storm_state == 0)
-      {
-        vd.storm_state = 1;
+      bd.msg_storm = 0;
+    }
+  }
 
-        // send message
-        Message.Post(Severity.warning, Lib.BuildString("Our observatories report a coronal mass ejection directed toward <b>", v.vesselName, "</b>"),
-        Lib.BuildString("Time to impact: ", Lib.HumanReadableDuration(TimeBeforeCME(vd.storm_time, vd.storm_age))));
-      }
+
+  public void update(Vessel v, vessel_info vi, vessel_data vd, double elapsed_s)
+  {
+    // do nothing if storms are disabled
+    if (Settings.StormDuration <= double.Epsilon) return;
+
+    // only consider vessels in interplanetary space
+    if (v.mainBody.flightGlobalsIndex != 0) return;
+
+    // skip unmanned vessels
+    if (vi.crew_count == 0) return;
+
+    // generate storm time if necessary
+    if (vd.storm_time <= double.Epsilon)
+    {
+      vd.storm_time = Settings.StormMinTime + (Settings.StormMaxTime - Settings.StormMinTime) * Lib.RandomDouble();
+    }
+
+    // accumulate age
+    vd.storm_age += elapsed_s * storm_frequency(vi.sun_dist);
+
+    // if storm is over
+    if (vd.storm_age > vd.storm_time && vd.storm_state == 2)
+    {
+      vd.storm_age = 0.0;
+      vd.storm_time = 0.0;
+      vd.storm_state = 0;
+
+      // send message
+      Message.Post(Severity.relax, Lib.BuildString("The solar storm around <b>", v.vesselName, "</b> is over"));
+    }
+    // if storm is in progress
+    else if (vd.storm_age > vd.storm_time - Settings.StormDuration && vd.storm_state == 1)
+    {
+      vd.storm_state = 2;
+
+      // send message
+      Message.Post(Severity.danger, Lib.BuildString("The coronal mass ejection hit <b>", v.vesselName, "</b>"),
+      Lib.BuildString("Storm duration: ", Lib.HumanReadableDuration(TimeLeftCME(vd.storm_time, vd.storm_age))));
+    }
+    // if storm is incoming
+    else if (vd.storm_age > vd.storm_time - Settings.StormDuration - time_to_impact(vi.sun_dist) && vd.storm_state == 0)
+    {
+      vd.storm_state = 1;
+
+      // send message
+      Message.Post(Severity.warning, Lib.BuildString("Our observatories report a coronal mass ejection directed toward <b>", v.vesselName, "</b>"),
+      Lib.BuildString("Time to impact: ", Lib.HumanReadableDuration(TimeBeforeCME(vd.storm_time, vd.storm_age))));
     }
   }
 
 
   // return storm frequency factor by distance from sun
-  double storm_frequency(double dist)
+  static double storm_frequency(double dist)
   {
     return Kerbalism.AU / dist;
   }
 
 
   // return time to impact from CME event, in seconds
-  double time_to_impact(double dist)
+  static double time_to_impact(double dist)
   {
     return dist / Settings.StormEjectionSpeed;
   }
@@ -182,7 +153,7 @@ public sealed class Storm : MonoBehaviour
 
   // return true if body is relevant to the player
   // - body: reference body of the planetary system
-  bool body_is_relevant(CelestialBody body)
+  static bool body_is_relevant(CelestialBody body)
   {
     // special case: home system is always relevant
     // note: we deal with the case of a planet mod setting homebody as a moon
@@ -198,13 +169,7 @@ public sealed class Storm : MonoBehaviour
         vessel_info vi = Cache.VesselInfo(v);
 
         // skip invalid vessels
-        if (!vi.is_vessel) continue;
-
-        // skip resque missions
-        if (vi.is_resque) continue;
-
-        // skip dead eva kerbal
-        if (vi.is_eva_dead) continue;
+        if (!vi.is_valid) continue;
 
         // obey message config
         if (DB.VesselData(v.id).cfg_storm == 0) continue;
@@ -213,6 +178,23 @@ public sealed class Storm : MonoBehaviour
         return true;
       }
     }
+    return false;
+  }
+
+
+  // used by the engine to update one body per-step
+  public static bool skip_body(CelestialBody body)
+  {
+    // skip all bodies if storms are disabled
+    if (Settings.StormDuration <= double.Epsilon) return true;
+
+    // skip the sun
+    if (body.flightGlobalsIndex == 0) return true;
+
+    // skip moons
+    if (body.referenceBody.flightGlobalsIndex != 0) return true;
+
+    // do not skip the body
     return false;
   }
 

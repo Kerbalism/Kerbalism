@@ -13,67 +13,6 @@ namespace KERBALISM {
 
 public sealed class Monitor
 {
-  // store last vessel clicked in the monitor ui, if any
-  Guid last_clicked_id;
-
-  // store vessel whose configs are being edited, if any
-  Guid configured_id;
-
-  // group filter placeholder
-  const string filter_placeholder = "FILTER BY GROUP";
-
-  // store group filter, if any
-  string filter = "";
-
-  // determine if filter is shown
-  bool show_filter;
-
-  // used by scroll window mechanics
-  Vector2 scroll_pos;
-
-  // styles
-  GUIStyle row_style;               // all monitor rows
-  GUIStyle name_style;              // vessel name
-  GUIStyle body_style;              // vessel body
-  GUIStyle icon_style;              // vessel icon
-  GUIStyle filter_style;            // vessel filter
-  GUIStyle config_style;            // config entry label
-  GUIStyle group_style;             // config group textfield
-
-  // icons
-  readonly Texture icon_battery_danger      = Lib.GetTexture("battery-red");
-  readonly Texture icon_battery_warning     = Lib.GetTexture("battery-yellow");
-  readonly Texture icon_battery_nominal     = Lib.GetTexture("battery-white");
-  readonly Texture icon_supplies_danger     = Lib.GetTexture("box-red");
-  readonly Texture icon_supplies_warning    = Lib.GetTexture("box-yellow");
-  readonly Texture icon_supplies_nominal    = Lib.GetTexture("box-white");
-  readonly Texture icon_malfunction_danger  = Lib.GetTexture("wrench-red");
-  readonly Texture icon_malfunction_warning = Lib.GetTexture("wrench-yellow");
-  readonly Texture icon_malfunction_nominal = Lib.GetTexture("wrench-white");
-  readonly Texture icon_sun_shadow          = Lib.GetTexture("sun-black");
-  readonly Texture icon_signal_none         = Lib.GetTexture("signal-red");
-  readonly Texture icon_signal_relay        = Lib.GetTexture("signal-yellow");
-  readonly Texture icon_signal_direct       = Lib.GetTexture("signal-white");
-  readonly Texture icon_scrubber_danger     = Lib.GetTexture("recycle-red");
-  readonly Texture icon_scrubber_warning    = Lib.GetTexture("recycle-yellow");
-  readonly Texture icon_greenhouse_danger   = Lib.GetTexture("plant-red");
-  readonly Texture icon_greenhouse_warning  = Lib.GetTexture("plant-yellow");
-  readonly Texture icon_health_danger       = Lib.GetTexture("health-red");
-  readonly Texture icon_health_warning      = Lib.GetTexture("health-yellow");
-  readonly Texture icon_stress_danger       = Lib.GetTexture("brain-red");
-  readonly Texture icon_stress_warning      = Lib.GetTexture("brain-yellow");
-  readonly Texture icon_storm_danger        = Lib.GetTexture("storm-red");
-  readonly Texture icon_storm_warning       = Lib.GetTexture("storm-yellow");
-  readonly Texture icon_radiation_danger    = Lib.GetTexture("radiation-red");
-  readonly Texture icon_radiation_warning   = Lib.GetTexture("radiation-yellow");
-  readonly Texture icon_radiation_nominal   = Lib.GetTexture("radiation-white");
-  readonly Texture icon_empty               = Lib.GetTexture("empty");
-  readonly Texture icon_notes               = Lib.GetTexture("notes");
-  readonly Texture icon_group               = Lib.GetTexture("search");
-  readonly Texture icon_info                = Lib.GetTexture("info");
-  readonly Texture[] icon_toggle            ={Lib.GetTexture("toggle-disabled"),
-                                              Lib.GetTexture("toggle-enabled")};
-
   // ctor
   public Monitor()
   {
@@ -131,7 +70,7 @@ public sealed class Monitor
 
   GUIContent indicator_ec(Vessel v)
   {
-    resource_info ec = Cache.ResourceInfo(v, "ElectricCharge");
+    resource_info ec = ResourceCache.Info(v, "ElectricCharge");
 
     GUIContent state = new GUIContent();
     state.tooltip = ec.capacity > 0.0 ? "EC: " + Lib.HumanReadablePerc(ec.level) : "";
@@ -159,14 +98,14 @@ public sealed class Monitor
     GUIContent state = new GUIContent();
     List<string> tooltips = new List<string>();
     uint max_severity = 0;
-    if (Lib.CrewCount(v) > 0)
+    if (vi.crew_count > 0)
     {
       foreach(Rule r in Kerbalism.supply_rules)
       {
-        resource_info res = Cache.ResourceInfo(v, r.resource_name);
+        resource_info res = ResourceCache.Info(v, r.resource_name);
         if (res.capacity > double.Epsilon)
         {
-          double depletion = r.Depletion(v);
+          double depletion = r.Depletion(v, res);
           string deplete_str = depletion <= double.Epsilon
             ? ", depleted"
             : double.IsNaN(depletion)
@@ -189,10 +128,10 @@ public sealed class Monitor
   }
 
 
-  GUIContent indicator_reliability(Vessel v)
+  GUIContent indicator_reliability(Vessel v, vessel_info vi)
   {
     GUIContent state = new GUIContent();
-    uint max_malfunctions = Malfunction.MaxMalfunction(v);
+    uint max_malfunctions = vi.max_malfunction;
     if (max_malfunctions == 0)
     {
       state.image = icon_malfunction_nominal;
@@ -208,16 +147,15 @@ public sealed class Monitor
       state.image = icon_malfunction_danger;
       state.tooltip = "Major malfunctions";
     }
-    double avg_quality = Malfunction.AverageQuality(v);
-    if (avg_quality > 0.0) state.tooltip += Lib.BuildString("\n<i>Quality: ", Malfunction.QualityToString(avg_quality), "</i>");
+    if (vi.avg_quality > 0.0) state.tooltip += Lib.BuildString("\n<i>Quality: ", Malfunction.QualityToString(vi.avg_quality), "</i>");
     return state;
   }
 
 
-  GUIContent indicator_signal(Vessel v)
+  GUIContent indicator_signal(Vessel v, vessel_info vi)
   {
     GUIContent state = new GUIContent();
-    link_data ld = Signal.Link(v);
+    link_data ld = vi.link;
     switch(ld.status)
     {
       case link_status.direct_link:
@@ -229,12 +167,12 @@ public sealed class Monitor
         state.image = icon_signal_relay;
         if (ld.path.Count == 1)
         {
-          state.tooltip = Lib.BuildString("Signal relayed by <b>", ld.path[ld.path.Count - 1], "</b>");
+          state.tooltip = Lib.BuildString("Signal relayed by <b>", ld.path[ld.path.Count - 1].vesselName, "</b>");
         }
         else
         {
           state.tooltip = "Signal relayed by:";
-          for(int i=ld.path.Count-1; i>0; --i) state.tooltip += Lib.BuildString("\n<b>", ld.path[i], "</b>");
+          for(int i=ld.path.Count-1; i>0; --i) state.tooltip += Lib.BuildString("\n<b>", ld.path[i].vesselName, "</b>");
         }
         break;
 
@@ -266,7 +204,7 @@ public sealed class Monitor
   {
     if (scrubbers.Count == 0) return;
 
-    bool no_ec_left = Cache.ResourceInfo(v, "ElectricCharge").amount <= double.Epsilon;
+    bool no_ec_left = ResourceCache.Info(v, "ElectricCharge").amount <= double.Epsilon;
     bool disabled = false;
     foreach(var scrubber in scrubbers)
     {
@@ -289,7 +227,7 @@ public sealed class Monitor
   {
     if (recyclers.Count == 0) return;
 
-    bool no_ec_left = Cache.ResourceInfo(v, "ElectricCharge").amount <= double.Epsilon;
+    bool no_ec_left = ResourceCache.Info(v, "ElectricCharge").amount <= double.Epsilon;
     bool disabled = false;
     foreach(var recycler in recyclers)
     {
@@ -413,13 +351,7 @@ public sealed class Monitor
     if (!DB.Ready()) return 0;
 
     // skip invalid vessels
-    if (!vi.is_vessel) return 0;
-
-    // skip resque missions
-    if (vi.is_resque) return 0;
-
-    // skip dead eva kerbals
-    if (vi.is_eva_dead) return 0;
+    if (!vi.is_valid) return 0;
 
     // get vessel data from the db
     vessel_data vd = DB.VesselData(v.id);
@@ -471,8 +403,8 @@ public sealed class Monitor
     GUILayout.Label(new GUIContent(problem_icon, problem_tooltip), icon_style);
     GUILayout.Label(indicator_ec(v), icon_style);
     if (Kerbalism.supply_rules.Count > 0) GUILayout.Label(indicator_supplies(v, vi), icon_style);
-    if (Kerbalism.features.malfunction) GUILayout.Label(indicator_reliability(v), icon_style);
-    if (Kerbalism.features.signal) GUILayout.Label(indicator_signal(v), icon_style);
+    if (Kerbalism.features.malfunction) GUILayout.Label(indicator_reliability(v, vi), icon_style);
+    if (Kerbalism.features.signal) GUILayout.Label(indicator_signal(v, vi), icon_style);
     GUILayout.EndHorizontal();
     if (Lib.IsClicked(1)) Info.Toggle(v);
 
@@ -599,13 +531,7 @@ public sealed class Monitor
       vessel_info vi = Cache.VesselInfo(v);
 
       // skip invalid vessels
-      if (!vi.is_vessel) continue;
-
-      // skip resque missions
-      if (vi.is_resque) continue;
-
-      // skip dead eva kerbals
-      if (vi.is_eva_dead) continue;
+      if (!vi.is_valid) continue;
 
       // avoid problems if the DB isn't ready
       if (DB.Ready())
@@ -705,6 +631,68 @@ public sealed class Monitor
   {
     return filter.Length > 0 && filter != filter_placeholder;
   }
+
+
+  // store last vessel clicked in the monitor ui, if any
+  Guid last_clicked_id;
+
+  // store vessel whose configs are being edited, if any
+  Guid configured_id;
+
+  // group filter placeholder
+  const string filter_placeholder = "FILTER BY GROUP";
+
+  // store group filter, if any
+  string filter = "";
+
+  // determine if filter is shown
+  bool show_filter;
+
+  // used by scroll window mechanics
+  Vector2 scroll_pos;
+
+  // styles
+  GUIStyle row_style;               // all monitor rows
+  GUIStyle name_style;              // vessel name
+  GUIStyle body_style;              // vessel body
+  GUIStyle icon_style;              // vessel icon
+  GUIStyle filter_style;            // vessel filter
+  GUIStyle config_style;            // config entry label
+  GUIStyle group_style;             // config group textfield
+
+  // icons
+  readonly Texture icon_battery_danger      = Lib.GetTexture("battery-red");
+  readonly Texture icon_battery_warning     = Lib.GetTexture("battery-yellow");
+  readonly Texture icon_battery_nominal     = Lib.GetTexture("battery-white");
+  readonly Texture icon_supplies_danger     = Lib.GetTexture("box-red");
+  readonly Texture icon_supplies_warning    = Lib.GetTexture("box-yellow");
+  readonly Texture icon_supplies_nominal    = Lib.GetTexture("box-white");
+  readonly Texture icon_malfunction_danger  = Lib.GetTexture("wrench-red");
+  readonly Texture icon_malfunction_warning = Lib.GetTexture("wrench-yellow");
+  readonly Texture icon_malfunction_nominal = Lib.GetTexture("wrench-white");
+  readonly Texture icon_sun_shadow          = Lib.GetTexture("sun-black");
+  readonly Texture icon_signal_none         = Lib.GetTexture("signal-red");
+  readonly Texture icon_signal_relay        = Lib.GetTexture("signal-yellow");
+  readonly Texture icon_signal_direct       = Lib.GetTexture("signal-white");
+  readonly Texture icon_scrubber_danger     = Lib.GetTexture("recycle-red");
+  readonly Texture icon_scrubber_warning    = Lib.GetTexture("recycle-yellow");
+  readonly Texture icon_greenhouse_danger   = Lib.GetTexture("plant-red");
+  readonly Texture icon_greenhouse_warning  = Lib.GetTexture("plant-yellow");
+  readonly Texture icon_health_danger       = Lib.GetTexture("health-red");
+  readonly Texture icon_health_warning      = Lib.GetTexture("health-yellow");
+  readonly Texture icon_stress_danger       = Lib.GetTexture("brain-red");
+  readonly Texture icon_stress_warning      = Lib.GetTexture("brain-yellow");
+  readonly Texture icon_storm_danger        = Lib.GetTexture("storm-red");
+  readonly Texture icon_storm_warning       = Lib.GetTexture("storm-yellow");
+  readonly Texture icon_radiation_danger    = Lib.GetTexture("radiation-red");
+  readonly Texture icon_radiation_warning   = Lib.GetTexture("radiation-yellow");
+  readonly Texture icon_radiation_nominal   = Lib.GetTexture("radiation-white");
+  readonly Texture icon_empty               = Lib.GetTexture("empty");
+  readonly Texture icon_notes               = Lib.GetTexture("notes");
+  readonly Texture icon_group               = Lib.GetTexture("search");
+  readonly Texture icon_info                = Lib.GetTexture("info");
+  readonly Texture[] icon_toggle            ={Lib.GetTexture("toggle-disabled"),
+                                              Lib.GetTexture("toggle-enabled")};
 }
 
 

@@ -1,5 +1,5 @@
 ﻿// ====================================================================================================================
-// manage the toolbar button and the GUI
+// manage the toolbar button, show the monitor and planner GUI
 // ====================================================================================================================
 
 
@@ -12,36 +12,10 @@ using KSP.UI.Screens;
 namespace KERBALISM {
 
 
-[KSPAddon(KSPAddon.Startup.MainMenu, true)]
-public sealed class Launcher : MonoBehaviour
+public sealed class Launcher
 {
-  // initialized flag
-  bool ui_initialized;
-
-  // store reference to applauncher button
-  ApplicationLauncherButton launcher_btn;
-
-  // applauncher button icons
-  readonly Texture launcher_icon = Lib.GetTexture("applauncher");
-
-  // used to remember previous visibility state in some scene changes
-  bool last_show_window;
-
-  // styles
-  GUIStyle window_style;
-  GUIStyle tooltip_style;
-
-  // the vessel planner
-  Planner planner = new Planner();
-
-  // the vessel monitor
-  Monitor monitor = new Monitor();
-
-  // keep it alive
-  Launcher() { DontDestroyOnLoad(this); }
-
-  // called after resources are loaded
-  public void Start()
+  // ctor
+  public Launcher()
   {
     // add toolbar-related callbacks
     GameEvents.onGUIApplicationLauncherReady.Add(this.init);
@@ -68,6 +42,7 @@ public sealed class Launcher : MonoBehaviour
     tooltip_style.padding = new RectOffset(6, 6, 3, 3);
     tooltip_style.alignment = TextAnchor.MiddleCenter;
   }
+
 
   // called after applauncher is created
   public void init()
@@ -112,13 +87,14 @@ public sealed class Launcher : MonoBehaviour
 
 
   // called every frame
-  public void OnGUI()
+  public void on_gui()
   {
     // do nothing if GUI has not been initialized
     if (!ui_initialized) return;
 
     // render the window
-    if ((launcher_btn.toggleButton.Value || launcher_btn.IsHovering) && (Lib.SceneIsGame() || HighLogic.LoadedScene == GameScenes.EDITOR))
+    if ((Lib.SceneIsGame() || HighLogic.LoadedScene == GameScenes.EDITOR) &&
+        (launcher_btn.toggleButton.Value || launcher_btn.IsHovering || (win_rect.width > 0 && win_rect.Contains(Mouse.screenPos))))
     {
       // hard-coded offsets
       float at_top_offset_x = 40.0f * GameSettings.UI_SCALE_APPS;
@@ -153,7 +129,7 @@ public sealed class Launcher : MonoBehaviour
       }
 
       // store window geometry
-      Rect win_rect = new Rect(left, top, width, height);
+      win_rect = new Rect(left, top, width, height);
 
       // begin window area
       // note: we don't use GUILayout.Window, because it is evil
@@ -170,13 +146,18 @@ public sealed class Launcher : MonoBehaviour
       GUILayout.EndArea();
 
       // draw tooltips if any
-      if (GUI.tooltip.Length > 0) draw_tooltip(GUI.tooltip, win_rect);
+      if (GUI.tooltip.Length > 0) draw_tooltip(GUI.tooltip);
+    }
+    else
+    {
+      // set zero area win_rect
+      win_rect.width = 0;
     }
   }
 
 
   // draw tooltip
-  void draw_tooltip(string msg, Rect win_rect)
+  void draw_tooltip(string msg)
   {
     // set alignment
     if (msg.IndexOf("<align=left />", StringComparison.Ordinal) != -1)
@@ -236,6 +217,32 @@ public sealed class Launcher : MonoBehaviour
   {
     launcher_btn.toggleButton.Value = last_show_window;
   }
+
+
+  // initialized flag
+  bool ui_initialized;
+
+  // store reference to applauncher button
+  ApplicationLauncherButton launcher_btn;
+
+  // applauncher button icons
+  readonly Texture launcher_icon = Lib.GetTexture("applauncher");
+
+  // used to remember previous visibility state in some scene changes
+  bool last_show_window;
+
+  // styles
+  GUIStyle window_style;
+  GUIStyle tooltip_style;
+
+  // window geometry
+  Rect win_rect;
+
+  // the vessel planner
+  Planner planner = new Planner();
+
+  // the vessel monitor
+  Monitor monitor = new Monitor();
 }
 
 

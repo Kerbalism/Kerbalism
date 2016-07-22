@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using Contracts.Parameters;
 using KSP.UI.Screens;
 using UnityEngine;
 
@@ -13,11 +12,10 @@ using UnityEngine;
 namespace KERBALISM {
 
 
-[KSPAddon(KSPAddon.Startup.MainMenu, true)]
-public sealed class Notifications : MonoBehaviour
+public sealed class Notifications
 {
   // store a notification
-  public class Entry
+  class Entry
   {
     public Entry(string title, string msg) { this.title = title; this.msg = msg; }
 
@@ -25,14 +23,106 @@ public sealed class Notifications : MonoBehaviour
     public string msg;
   }
 
-  // time of last conditions check
-  private float last_check = 0.0f;
+
+  // ctor
+  public Notifications()
+  {
+    // register callback for kerbal death
+    GameEvents.onCrewKilled.Add(RegisterDeathEvent);
+  }
+
+
+  // called every frame
+  public void on_gui()
+  {
+    // avoid case when DB isn't ready for whatever reason
+    if (!DB.Ready()) return;
+
+    // check only when at the space center
+    if (HighLogic.LoadedScene != GameScenes.SPACECENTER) return;
+
+    // check once in a while
+    float time = Time.realtimeSinceStartup;
+    if (last_check + check_interval > time) return;
+    last_check = time;
+
+    // get notification data
+    notification_data nd = DB.NotificationData();
+
+    // if there are tutorials left to show
+    if (nd.next_tutorial < tutorials.Length)
+    {
+      // check tutorial condition
+      if (tutorial_condition(nd.next_tutorial))
+      {
+        // check if the relative feature is enabled
+        if (tutorial_feature(nd.next_tutorial))
+        {
+          // show notification
+          Entry e = tutorials[nd.next_tutorial];
+          Notification(e.title, e.msg, "INFO");
+        }
+
+        // move to next tutorial
+        ++nd.next_tutorial;
+      }
+    }
+
+    // if there is one or more new deaths
+    if (nd.death_counter > nd.last_death_counter)
+    {
+      // show notification
+      Entry e = death_report[nd.next_death_report];
+      Notification(e.title, e.msg, "ALERT");
+
+      // move to next tutorial, cycle throwgh all of them repetatedly
+      // note: done this way because modulo didn't work...
+      ++nd.next_death_report;
+      if (nd.next_death_report >= death_report.Length) nd.next_death_report -= (uint)death_report.Length;
+    }
+
+    // remember number of death kerbals
+    nd.last_death_counter = nd.death_counter;
+  }
+
+
+  // show a notification
+  void Notification(string title, string msg, string type)
+  {
+    MessageSystemButton.MessageButtonColor msg_clr = MessageSystemButton.MessageButtonColor.BLUE;
+    MessageSystemButton.ButtonIcons msg_icon = MessageSystemButton.ButtonIcons.MESSAGE;
+    if (type == "ALERT")
+    {
+      msg_clr = MessageSystemButton.MessageButtonColor.RED;
+      msg_icon = MessageSystemButton.ButtonIcons.ALERT;
+    }
+    MessageSystem.Instance.AddMessage(new MessageSystem.Message(title, msg, msg_clr, msg_icon));
+  }
+
+
+  // called by the engine when a kerbal die
+  public void RegisterDeathEvent(EventReport e)
+  {
+    ++DB.NotificationData().death_counter;
+  }
+
+
+  // called manually to register a death (used for eva death)
+  public static void RegisterDeath()
+  {
+    ++DB.NotificationData().death_counter;
+  }
+
 
   // time interval between checks
-  private const float check_interval = 30.0f;
+  const float check_interval = 30.0f;
+
+  // time of last conditions check
+  float last_check;
+
 
   // world of encouragements for the death reports
-  private readonly static Entry[] death_report =
+  readonly static Entry[] death_report =
   {
     new Entry("In memoriam", "Every time we'll look at the star, we'll see him. His pale green face, his preposterous big eyes, his dumb smile that never failed to raise our own."),
     new Entry("The revenge of reality", "All our dreams have been met with the harsh reality of space travel. I wonder if, perhaps, we weren't meant to survive at all."),
@@ -40,8 +130,9 @@ public sealed class Notifications : MonoBehaviour
     new Entry("We are losing count", "The gravestones in the Space Memorial keeps popping up like skyscrapers in the 20s.")
   };
 
+
   // tutorial notifications
-  private readonly static Entry[] tutorials =
+  readonly static Entry[] tutorials =
   {
     new Entry("Food and Oxygen", "All Kerbals need a constant supply of Food and Oxygen to survive. Plan accordingly.\n\n"
             + "<b>Scrubbers</b>\n"
@@ -106,6 +197,7 @@ public sealed class Notifications : MonoBehaviour
             + "Some technologies increase the quality of your components, making them last longer in the extreme conditions of space. Look in the tech tree.\n")
   };
 
+
   // tutorial conditions
   static bool tutorial_condition(uint i)
   {
@@ -126,6 +218,7 @@ public sealed class Notifications : MonoBehaviour
     }
     return false;
   }
+
 
   // return true if the relative feature is enabled
   static bool tutorial_feature(uint i)
@@ -160,94 +253,6 @@ public sealed class Notifications : MonoBehaviour
         return Kerbalism.features.malfunction;
     }
     return false;
-  }
-
-  // keep it alive
-  Notifications() { DontDestroyOnLoad(this); }
-
-  // called after resources are loaded
-  public void Start()
-  {
-    // register callback for kerbal death
-    GameEvents.onCrewKilled.Add(RegisterDeathEvent);
-  }
-
-  // called by the engine when a kerbal die
-  public void RegisterDeathEvent(EventReport e)
-  {
-    ++DB.NotificationData().death_counter;
-  }
-
-  // called manually to register a death (used for eva death)
-  public static void RegisterDeath()
-  {
-    ++DB.NotificationData().death_counter;
-  }
-
-  // called every frame
-  public void OnGUI()
-  {
-    // avoid case when DB isn't ready for whatever reason
-    if (!DB.Ready()) return;
-
-    // check only when at the space center
-    if (HighLogic.LoadedScene != GameScenes.SPACECENTER) return;
-
-    // check once in a while
-    float time = Time.realtimeSinceStartup;
-    if (last_check + check_interval > time) return;
-    last_check = time;
-
-    // get notification data
-    notification_data nd = DB.NotificationData();
-
-    // if there are tutorials left to show
-    if (nd.next_tutorial < tutorials.Length)
-    {
-      // check tutorial condition
-      if (tutorial_condition(nd.next_tutorial))
-      {
-        // check if the relative feature is enabled
-        if (tutorial_feature(nd.next_tutorial))
-        {
-          // show notification
-          Entry e = tutorials[nd.next_tutorial];
-          Notification(e.title, e.msg, "INFO");
-        }
-
-        // move to next tutorial
-        ++nd.next_tutorial;
-      }
-    }
-
-    // if there is one or more new deaths
-    if (nd.death_counter > nd.last_death_counter)
-    {
-      // show notification
-      Entry e = death_report[nd.next_death_report];
-      Notification(e.title, e.msg, "ALERT");
-
-      // move to next tutorial, cycle throwgh all of them repetatedly
-      // note: done this way because modulo didn't work...
-      ++nd.next_death_report;
-      if (nd.next_death_report >= death_report.Length) nd.next_death_report -= (uint)death_report.Length;
-    }
-
-    // remember number of death kerbals
-    nd.last_death_counter = nd.death_counter;
-  }
-
-  // show a generic notification
-  public static void Notification(string title, string msg, string type)
-  {
-    MessageSystemButton.MessageButtonColor msg_clr = MessageSystemButton.MessageButtonColor.BLUE;
-    MessageSystemButton.ButtonIcons msg_icon = MessageSystemButton.ButtonIcons.MESSAGE;
-    if (type == "ALERT")
-    {
-      msg_clr = MessageSystemButton.MessageButtonColor.RED;
-      msg_icon = MessageSystemButton.ButtonIcons.ALERT;
-    }
-    MessageSystem.Instance.AddMessage(new MessageSystem.Message(title, msg, msg_clr, msg_icon));
   }
 }
 

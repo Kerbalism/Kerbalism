@@ -52,14 +52,18 @@ public sealed class Profiler : MonoBehaviour
   // an entry in the profiler
   class entry
   {
-    public UInt64 calls;        // number of calls in last frame
-    public UInt64 time;         // total time in last frame
-    public UInt64 start;
+    public UInt64 start;        // used to measure call time
+    public UInt64 calls;        // number of calls in current simulation step
+    public UInt64 time;         // time in current simulation step
+    public UInt64 prev_calls;   // number of calls in previous simulation step
+    public UInt64 prev_time;    // time in previous simulation step
+    public UInt64 tot_calls;    // number of calls in total
+    public UInt64 tot_time;     // total time
+
   }
 
   // store all entries
   Dictionary<string, entry> entries = new Dictionary<string, entry>();
-  Dictionary<string, entry> last_entries;
 
 
   // ctor
@@ -133,19 +137,19 @@ public sealed class Profiler : MonoBehaviour
     scroll_pos = GUILayout.BeginScrollView(scroll_pos, HighLogic.Skin.horizontalScrollbar, HighLogic.Skin.verticalScrollbar);
     GUILayout.BeginHorizontal();
     GUILayout.Label("<b>NAME</b>", name_style);
-    GUILayout.Label("<b>TIME</b>", value_style);
+    GUILayout.Label("<b>LAST</b>", value_style);
     GUILayout.Label("<b>AVG</b>", value_style);
     GUILayout.Label("<b>CALLS</b>", value_style);
     GUILayout.EndHorizontal();
-    foreach(var pair in last_entries)
+    foreach(var pair in entries)
     {
       string e_name = pair.Key;
       entry e = pair.Value;
       GUILayout.BeginHorizontal();
       GUILayout.Label(e_name, name_style);
-      GUILayout.Label(Microseconds(e.time).ToString("F2"), value_style);
-      GUILayout.Label(e.calls > 0 ? Microseconds(e.time / e.calls).ToString("F2") : "", value_style);
-      GUILayout.Label(e.calls.ToString(), value_style);
+      GUILayout.Label(e.prev_calls > 0 ? Microseconds(e.prev_time / e.prev_calls).ToString("F2") : "", value_style);
+      GUILayout.Label(e.tot_calls > 0 ? Microseconds(e.tot_time / e.tot_calls).ToString("F2") : "", value_style);
+      GUILayout.Label(e.prev_calls.ToString(), value_style);
       GUILayout.EndHorizontal();
     }
     GUILayout.EndScrollView();
@@ -160,12 +164,24 @@ public sealed class Profiler : MonoBehaviour
 
   public void Update()
   {
-    last_entries = entries;
-    entries = new Dictionary<string, entry>();
-
     if ((Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)) && Input.GetKeyUp(KeyCode.P))
     {
       visible = !visible;
+    }
+  }
+
+
+  public void FixedUpdate()
+  {
+    foreach(var p in entries)
+    {
+      entry e = p.Value;
+      e.prev_calls = e.calls;
+      e.prev_time = e.time;
+      e.tot_calls += e.calls;
+      e.tot_time += e.time;
+      e.calls = 0;
+      e.time = 0;
     }
   }
 

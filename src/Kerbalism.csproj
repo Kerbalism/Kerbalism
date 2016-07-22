@@ -87,6 +87,7 @@
     <Compile Include="Info.cs" />
     <Compile Include="Profiler.cs" />
     <Compile Include="Recycler.cs" />
+    <Compile Include="Resource.cs" />
     <Compile Include="Rule.cs" />
     <Compile Include="SCANsat.cs" />
     <Compile Include="Hooks.cs" />

@@ -1,5 +1,4 @@
 ﻿// ===================================================================================================================
-// Recycler module
 // recycle a resource into another
 // ===================================================================================================================
 
@@ -110,29 +109,26 @@ public sealed class Recycler : PartModule
 
     if (is_enabled)
     {
-      // calculate worst required resource percentual
-      double worst_input = 1.0;
-      double waste_required = waste_rate * TimeWarp.fixedDeltaTime;
-      double waste_amount = Cache.ResourceInfo(vessel, waste_name).amount;
-      worst_input = Math.Min(worst_input, waste_amount / waste_required);
-      double ec_required = ec_rate * TimeWarp.fixedDeltaTime;
-      double ec_amount = Cache.ResourceInfo(vessel, "ElectricCharge").amount;
-      worst_input = Math.Min(worst_input, ec_amount / ec_required);
-      double filter_required = filter_rate * TimeWarp.fixedDeltaTime;
-      if (filter_name.Length > 0 && filter_rate > 0.0)
-      {
-        double filter_amount = Cache.ResourceInfo(vessel, filter_name).amount;
-        worst_input = Math.Min(worst_input, filter_amount / filter_required);
-      }
+      // get resource cache
+      vessel_resources resources = ResourceCache.Get(vessel);
 
       // recycle EC+waste+filter into resource
-      this.part.RequestResource(waste_name, waste_required * worst_input);
-      this.part.RequestResource("ElectricCharge", ec_required * worst_input);
-      this.part.RequestResource(filter_name, filter_required * worst_input);
-      this.part.RequestResource(resource_name, -waste_required * worst_input * waste_ratio);
+      resource_recipe recipe = new resource_recipe(resource_recipe.scrubber_priority);
+      recipe.Input(waste_name, waste_rate * Kerbalism.elapsed_s);
+      recipe.Input("ElectricCharge", ec_rate * Kerbalism.elapsed_s);
+      if (filter_name.Length > 0 && filter_rate > double.Epsilon)
+      {
+        recipe.Input(filter_name, filter_rate * Kerbalism.elapsed_s);
+      }
+      recipe.Output(resource_name, waste_rate * waste_ratio * Kerbalism.elapsed_s);
+      resources.Transform(recipe);
 
       // set status
-      Status = waste_amount <= double.Epsilon ? Lib.BuildString("No ", waste_name) : ec_amount <= double.Epsilon ? "No Power" : "Running";
+      Status = "Running";
+      /*bool has_waste = resources.Info(vessel, waste_name).amount > double.Epsilon;
+      bool has_ec = resources.Info(vessel, "ElectricCharge").amount > double.Epsilon;
+      bool has_filter = filter_name.Length == 0 || resources.Info(vessel, filter_name).amount > double.Epsilon;
+      Status = !has_waste ? Lib.BuildString("No ", waste_name) : !has_ec ? "No Power" : !has_filter ? Lib.BuildString("No ", filter_name) : "Running";*/
     }
     else
     {
@@ -142,40 +138,20 @@ public sealed class Recycler : PartModule
 
 
   // implement recycler mechanics for unloaded vessels
-  public static void BackgroundUpdate(Vessel vessel, ProtoPartModuleSnapshot m, Recycler recycler)
+  public static void BackgroundUpdate(Vessel vessel, ProtoPartModuleSnapshot m, Recycler recycler, vessel_resources resources, double elapsed_s)
   {
-    // get data
-    string resource_name = recycler.resource_name;
-    string waste_name = recycler.waste_name;
-    double ec_rate = recycler.ec_rate;
-    double waste_rate = recycler.waste_rate;
-    double waste_ratio = recycler.waste_ratio;
-    string filter_name = recycler.filter_name;
-    double filter_rate = recycler.filter_rate;
-    bool is_enabled = Lib.Proto.GetBool(m, "is_enabled");
-
-    if (is_enabled)
+    if (Lib.Proto.GetBool(m, "is_enabled"))
     {
-      // calculate worst required resource percentual
-      double worst_input = 1.0;
-      double waste_required = waste_rate * TimeWarp.fixedDeltaTime;
-      double waste_amount = Cache.ResourceInfo(vessel, waste_name).amount;
-      worst_input = Math.Min(worst_input, waste_amount / waste_required);
-      double ec_required = ec_rate * TimeWarp.fixedDeltaTime;
-      double ec_amount = Cache.ResourceInfo(vessel, "ElectricCharge").amount;
-      worst_input = Math.Min(worst_input, ec_amount / ec_required);
-      double filter_required = filter_rate * TimeWarp.fixedDeltaTime;
-      if (filter_name.Length > 0 && filter_rate > 0.0)
-      {
-        double filter_amount = Cache.ResourceInfo(vessel, filter_name).amount;
-        worst_input = Math.Min(worst_input, filter_amount / filter_required);
-      }
-
       // recycle EC+waste+filter into resource
-      Lib.Resource.Request(vessel, waste_name, waste_required * worst_input);
-      Lib.Resource.Request(vessel, "ElectricCharge", ec_required * worst_input);
-      Lib.Resource.Request(vessel, filter_name, filter_required * worst_input);
-      Lib.Resource.Request(vessel, resource_name, -waste_required * worst_input * waste_ratio);
+      resource_recipe recipe = new resource_recipe(resource_recipe.scrubber_priority);
+      recipe.Input(recycler.waste_name, recycler.waste_rate * elapsed_s);
+      recipe.Input("ElectricCharge", recycler.ec_rate * elapsed_s);
+      if (recycler.filter_name.Length > 0 && recycler.filter_rate > double.Epsilon)
+      {
+        recipe.Input(recycler.filter_name, recycler.filter_rate * elapsed_s);
+      }
+      recipe.Output(recycler.resource_name, recycler.waste_rate * recycler.waste_ratio * elapsed_s);
+      resources.Transform(recipe);
     }
   }
 

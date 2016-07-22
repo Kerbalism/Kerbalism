@@ -1,5 +1,5 @@
 ﻿// ====================================================================================================================
-// used to avoid computing vessel stuff multiple times per simulation step
+// cache for vessel-related data, using a smart eviction strategy to decouple computation time per-step from number of vessels
 // ====================================================================================================================
 
 
@@ -14,8 +14,13 @@ namespace KERBALISM {
 
 public class vessel_info
 {
-  public vessel_info(Vessel v)
+  public vessel_info(Vessel v, uint vessel_id, UInt64 inc, int vessels_in_cache)
   {
+    // NOTE: anything used here can't in turn use cache, unless you know what you are doing
+
+    // associate with an unique incremental id
+    this.inc = inc;
+
     // determine if this is a valid vessel
     is_vessel = Lib.IsVessel(v);
     if (!is_vessel) return;
@@ -28,20 +33,25 @@ public class vessel_info
     is_eva_dead = EVA.IsDead(v);
     if (is_eva_dead) return;
 
-    // calculate crew capacity for the vessel
+    // shortcut for common tests
+    is_valid = true;
+
+    // generate id once
+    id = vessel_id;
+
+    // calculate crew info for the vessel
+    crew_count = Lib.CrewCount(v);
     crew_capacity = Lib.CrewCapacity(v);
 
-    // calculate vessel position
-    position = Lib.VesselPosition(v);
-
     // determine if in sunlight, calculate sun direction and distance
-    sunlight = Sim.RaytraceBody(v, Sim.Sun(), out sun_dir, out sun_dist) ? 1.0 : 0.0;
+    sunlight = Sim.RaytraceBody(v, FlightGlobals.Bodies[0], out sun_dir, out sun_dist) ? 1.0 : 0.0;
 
     // if the orbit length vs simulation step is lower than an acceptable threshold, use discrete sun visibility
+    // note: the number of samples in the threshold is scaled by number of vessels in cache, to deal with the FIFO eviction strategy
     if (v.mainBody.flightGlobalsIndex != 0)
     {
       double orbit_period = Sim.OrbitalPeriod(v);
-      if (orbit_period / TimeWarp.fixedDeltaTime < 16.0) sunlight = 1.0 - Sim.ShadowPeriod(v) / orbit_period;
+      if (orbit_period * Kerbalism.inv_elapsed_s < 10.0 * (double)vessels_in_cache) sunlight = 1.0 - Sim.ShadowPeriod(v) / orbit_period;
     }
 
     // calculate temperature at vessel position
@@ -53,16 +63,31 @@ public class vessel_info
     storm_radiation = Radiation.StormRadiation(v, sunlight);
     env_radiation = cosmic_radiation + belt_radiation + storm_radiation;
 
-    // calculate atmospheric parameters
-    atmo_factor = Sim.AtmosphereFactor(v.mainBody, position, sun_dir);
+    // calculate environment stuff
+    atmo_factor = Sim.AtmosphereFactor(v.mainBody, v.GetWorldPos3D(), sun_dir);
     breathable = Sim.Breathable(v);
+    landed = Lib.Landed(v);
+
+    // calculate malfunction stuff
+    max_malfunction = Malfunction.MaxMalfunction(v);
+    avg_quality = Malfunction.AverageQuality(v);
+
+    // calculate signal info
+    antenna = new antenna_data(v);
+    avoid_inf_recursion.Add(v.id);
+    link = Signal.Link(v, antenna, avoid_inf_recursion);
+    avoid_inf_recursion.Remove(v.id);
   }
 
+
+  public UInt64   inc;                // unique incremental id for the entry
   public bool     is_vessel;          // true if this is a valid vessel
   public bool     is_resque;          // true if this is a resque mission vessel
   public bool     is_eva_dead;        // true if this an EVA death
+  public bool     is_valid;           // equivalent to (is_vessel && !is_resque && !is_eva_dead)
+  public UInt32   id;                 // generate the id once
+  public int      crew_count;         // number of crew on the vessel
   public int      crew_capacity;      // crew capacity of the vessel
-  public Vector3d position;           // vessel position
   public double   sunlight;           // if the vessel is in direct sunlight
   public Vector3d sun_dir;            // normalized vector from vessel to sun
   public double   sun_dist;           // distance from vessel to sun
@@ -73,43 +98,39 @@ public class vessel_info
   public double   env_radiation;      // sun of all incoming radiation
   public double   atmo_factor;        // proportion of flux not blocked by atmosphere
   public bool     breathable;         // true if inside breathable atmosphere
+  public bool     landed;             // true if on the surface of a body
+  public uint     max_malfunction;    // max malfunction level among all vessel modules
+  public double   avg_quality;        // average manufacturing quality among all vessel modules
+  public antenna_data antenna;        // best antenna/relay data
+  public link_data link;
+  static HashSet<Guid> avoid_inf_recursion = new HashSet<Guid>();
 }
 
 
-public class resource_info
-{
-  public resource_info(Vessel v, string resource_name)
-  {
-    amount = Lib.Resource.Amount(v, resource_name);
-    capacity = Lib.Resource.Capacity(v, resource_name);
-    level = capacity > double.Epsilon ? amount / capacity : 0.0;
-  }
-
-  public double amount;               // amount of resource
-  public double capacity;             // capacity of resource
-  public double level;                // amount vs capacity, or 1 if there is no capacity
-}
-
-
-[KSPAddon(KSPAddon.Startup.MainMenu, true)]
-public sealed class Cache : MonoBehaviour
+public sealed class Cache
 {
   // ctor
-  Cache()
+  public Cache()
   {
     // enable global access
     instance = this;
-
-    // keep it alive
-    DontDestroyOnLoad(this);
   }
 
 
-  void FixedUpdate()
+  public void update()
   {
-    // clear the vessel and resource cache, that are recomputed every simulation step
-    vessels.Clear();
-    resources.Clear();
+    // purge the oldest entry from the vessel cache
+    UInt64 oldest_inc = UInt64.MaxValue;
+    UInt32 oldest_id = 0;
+    foreach(KeyValuePair<UInt32, vessel_info> pair in vessels)
+    {
+      if (pair.Value.inc < oldest_inc)
+      {
+        oldest_inc = pair.Value.inc;
+        oldest_id = pair.Key;
+      }
+    }
+    if (oldest_id > 0) vessels.Remove(oldest_id);
   }
 
 
@@ -123,7 +144,7 @@ public sealed class Cache : MonoBehaviour
     if (instance.vessels.TryGetValue(id, out info)) return info;
 
     // compute vessel info
-    info = new vessel_info(v);
+    info = new vessel_info(v, id, instance.next_inc++, instance.vessels.Count + 1);
 
     // store vessel info in the cache
     instance.vessels.Add(id, info);
@@ -133,30 +154,15 @@ public sealed class Cache : MonoBehaviour
   }
 
 
-  public static resource_info ResourceInfo(Vessel v, string resource_name)
-  {
-    resource_info info;
-    UInt32 id = Lib.CombinedID(Lib.VesselID(v), Lib.Hash32(resource_name));
-    if (instance.resources.TryGetValue(id, out info)) return info;
+  // vessel cache
+  Dictionary<UInt32, vessel_info> vessels = new Dictionary<UInt32, vessel_info>(512);
 
-    info = new resource_info(v, resource_name);
-
-    instance.resources.Add(id, info);
-
-    return info;
-  }
-
+  // used to generate unique id
+  UInt64 next_inc;
 
   // permit global access
-  private static Cache instance = null;
-
-  // vessel cache
-  private Dictionary<UInt32, vessel_info> vessels = new Dictionary<UInt32, vessel_info>();
-
-  // resource cache
-  private Dictionary<UInt32, resource_info> resources = new Dictionary<UInt32, resource_info>();
+  static Cache instance;
 }
-
 
 
 } // KERBALISM

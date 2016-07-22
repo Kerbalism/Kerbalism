@@ -1,5 +1,5 @@
 ﻿// ===================================================================================================================
-// Greenhouse module
+// grow food in space
 // ===================================================================================================================
 
 
@@ -17,10 +17,8 @@ public sealed class Greenhouse : PartModule
   // note: persistent because required in background processing
   [KSPField] public string resource_name = "Food";       // resource produced
   [KSPField] public string waste_name = "Crap";          // resource used for waste
-  [KSPField] public string input_name = "";              // optional input resource required
   [KSPField] public double ec_rate;                      // EC consumption rate per-second, normalized for lamps=1.0
   [KSPField] public double waste_rate;                   // waste consumption rate per-second, to provide waste bonus
-  [KSPField] public double input_rate;                   // input consumption rate per-second
   [KSPField] public double harvest_size;                 // amount of food produced at harvest time
   [KSPField] public double growth_rate;                  // growth speed in average lighting conditions
   [KSPField] public double waste_bonus = 0.2;            // bonus applied to growth if waste is available
@@ -49,7 +47,6 @@ public sealed class Greenhouse : PartModule
   // rmb status
   [KSPField(guiActive = true, guiName = "Growth")] public string GrowthStatus;        // growth percentual)
   [KSPField(guiActive = true, guiName = "Light")] public string LightStatus;          // lighting conditions
-  [KSPField(guiActive = true, guiName = "Input")] public string InputStatus;          // input resource conditions
   [KSPField(guiActive = true, guiName = "Waste")] public string WasteStatus;          // waste bonus
   [KSPField(guiActive = true, guiName = "Soil")] public string SoilStatus;            // soil bonus
   [KSPField(guiActive = true, guiName = "Time to harvest")] public string TTAStatus;  // soil bonus
@@ -104,7 +101,7 @@ public sealed class Greenhouse : PartModule
     double reduced_harvest = harvest_size * growth * 0.5;
 
     // produce reduced quantity of food, proportional to current growth
-    part.RequestResource(resource_name, -reduced_harvest);
+    ResourceCache.Produce(vessel, resource_name, reduced_harvest);
 
     // reset growth
     growth = 0.0;
@@ -144,22 +141,23 @@ public sealed class Greenhouse : PartModule
         }
       }
     }
+    else
+    {
+      Events["OpenDoor"].active = false;
+      Events["CloseDoor"].active = false;
+      door_opened = true;
+    }
   }
 
   // editor/r&d info
   public override string GetInfo()
   {
-    string input_str = input_name.Length > 0 && input_rate > 0.0
-      ? Lib.BuildString("\n\n<color=cyan>Require:</color>\n- ", input_name, ": <b>", Lib.HumanReadableRate(input_rate), "</b>")
-      : "";
-
     return Lib.BuildString
     (
       "Grow food in space.\n\n",
       "- Harvest size: <b>", harvest_size.ToString("F0"), " ", resource_name, "</b>\n",
       "- Harvest time: <b>", Lib.HumanReadableDuration(1.0 / growth_rate), "</b>\n",
-      "- Lamps EC rate: <b> ", Lib.HumanReadableRate(ec_rate), "</b>",
-      input_str
+      "- Lamps EC rate: <b> ", Lib.HumanReadableRate(ec_rate), "</b>"
     );
   }
 
@@ -181,58 +179,50 @@ public sealed class Greenhouse : PartModule
     // get vessel info from the cache
     vessel_info info = Cache.VesselInfo(vessel);
 
-    // get time elapsed from last update
-    double elapsed_s = TimeWarp.fixedDeltaTime;
+    // get resource cache
+    vessel_resources resources = ResourceCache.Get(vessel);
 
-    // consume ec for lighting
-    double ec_light_perc = 0.0;
+    // if lamp is on
     if (lamps > float.Epsilon)
     {
-      double ec_light_required = ec_rate * elapsed_s * lamps;
-      double ec_light = part.RequestResource("ElectricCharge", ec_light_required);
-      ec_light_perc = ec_light / ec_light_required;
+      // get resource handler
+      resource_info ec = resources.Info(vessel, "ElectricCharge");
 
-      // if there isn't enough ec for lighting
-      if (ec_light <= double.Epsilon)
-      {
-        // shut down the light
-        lamps = 0.0f;
-      }
+      // consume ec
+      ec.Consume(ec_rate * lamps * Kerbalism.elapsed_s);
+
+      // shut down the light if there isn't enough ec
+      // note: comparing against amount at previous simulation step
+      if (ec.amount <= double.Epsilon) lamps = 0.0f;
     }
 
     // determine lighting conditions
     // note: we ignore sun direction for gameplay reasons: else the user must reorient the greenhouse as the planets dance over time
     // - natural light depend on: distance from sun, direct sunlight, door status
     // - artificial light depend on: lamps tweakable and ec available, door status
-    lighting = NaturalLighting(info.sun_dist) * info.sunlight * (door_opened ? 1.0 : 0.0) + lamps * ec_light_perc;
+    lighting = NaturalLighting(info.sun_dist) * info.sunlight * (door_opened ? 1.0 : 0.0) + lamps;
 
-    // consume input resource if any
-    double input_perc = 1.0;
-    if (input_name.Length > 0 && input_rate > 0.0 && lighting > double.Epsilon)
-    {
-      double input_required = input_rate * elapsed_s;
-      double input = part.RequestResource(input_name, input_required);
-      input_perc = input / input_required;
-    }
-
-    // consume waste
-    // note: not consumed when there is no lighting
+    // if can use waste, and there is some lighting
     double waste_perc = 0.0;
     if (waste_name.Length > 0 && lighting > double.Epsilon)
     {
-      double waste_required = waste_rate * elapsed_s;
-      double waste = part.RequestResource(waste_name, waste_required);
-      waste_perc = waste / waste_required;
+      // get resource handler
+      resource_info waste = resources.Info(vessel, waste_name);
+
+      // consume waste
+      waste.Consume(waste_rate * Kerbalism.elapsed_s);
+
+      // determine waste bonus
+      // note: comparing against amount from previous simulation step
+      waste_perc = waste.amount / waste_rate;
     }
 
     // determine growth bonus
-    double growth_bonus = 0.0;
-    growth_bonus += soil_bonus * (Lib.Landed(vessel) ? 1.0 : 0.0);
-    growth_bonus += waste_bonus * waste_perc;
+    double growth_bonus = soil_bonus * (info.landed ? 1.0 : 0.0) + waste_bonus * waste_perc;
 
     // grow the crop
-    growing = growth_rate * (1.0 + growth_bonus) * input_perc * lighting;
-    growth += elapsed_s * growing;
+    growing = growth_rate * (1.0 + growth_bonus) * lighting;
+    growth += Kerbalism.elapsed_s * growing;
 
     // if it is harvest time
     if (growth >= 1.0)
@@ -241,25 +231,22 @@ public sealed class Greenhouse : PartModule
       growth = 0.0;
 
       // produce food
-      part.RequestResource(resource_name, -harvest_size);
+      resources.Produce(vessel, resource_name, harvest_size);
 
       // show a message to the user
       Message.Post(Lib.BuildString("On <color=FFFFFF>", vessel.vesselName, "</color> the crop harvest produced <color=FFFFFF>",
         harvest_size.ToString("F0"), " ", resource_name, "</color>"));
 
       // record first space harvest
-      if (!Lib.Landed(vessel) && DB.Ready()) DB.NotificationData().first_space_harvest = 1;
+      if (!info.landed && DB.Ready()) DB.NotificationData().first_space_harvest = 1;
     }
 
     // set rmb ui status
     GrowthStatus = Lib.HumanReadablePerc(growth);
     LightStatus = Lib.HumanReadablePerc(lighting);
-    InputStatus = Lib.HumanReadablePerc(input_perc);
     WasteStatus = Lib.HumanReadablePerc(waste_perc);
-    SoilStatus = Lib.Landed(vessel) ? "yes" : "no";
+    SoilStatus = info.landed ? "yes" : "no";
     TTAStatus = Lib.HumanReadableDuration(growing > double.Epsilon ? (1.0 - growth) / growing : 0.0);
-    Fields["InputStatus"].guiName = input_name;
-    Fields["InputStatus"].guiActive = input_name.Length > 0 && input_rate > 0.0;
 
 
     // enable/disable emergency harvest
@@ -267,79 +254,54 @@ public sealed class Greenhouse : PartModule
   }
 
   // implement greenhouse mechanics for unloaded vessels
-  public static void BackgroundUpdate(Vessel vessel, ProtoPartModuleSnapshot m, Greenhouse greenhouse)
+  public static void BackgroundUpdate(Vessel vessel, ProtoPartModuleSnapshot m, Greenhouse greenhouse, vessel_info info, vessel_resources resources, double elapsed_s)
   {
-    // get data
-    string resource_name = greenhouse.resource_name;
-    string waste_name = greenhouse.waste_name;
-    string input_name = greenhouse.input_name;
-    double ec_rate = greenhouse.ec_rate;
-    double waste_rate = greenhouse.waste_rate;
-    double input_rate = greenhouse.input_rate;
-    double harvest_size = greenhouse.harvest_size;
-    double growth_rate = greenhouse.growth_rate;
-    double waste_bonus = greenhouse.waste_bonus;
-    double soil_bonus = greenhouse.soil_bonus;
-
+    // get protomodule data
     bool door_opened = Lib.Proto.GetBool(m, "door_opened");
     double growth = Lib.Proto.GetDouble(m, "growth");
     float lamps = Lib.Proto.GetFloat(m, "lamps");
     double lighting = Lib.Proto.GetDouble(m, "lighting");
 
-    // get time elapsed from last update
-    double elapsed_s = TimeWarp.fixedDeltaTime;
-
-    // get vessel info from the cache
-    vessel_info info = Cache.VesselInfo(vessel);
-
-    // consume ec for lighting
-    double ec_light_perc = 0.0;
+    // if lamp is on
     if (lamps > float.Epsilon)
     {
-      double ec_light_required = ec_rate * elapsed_s * lamps;
-      double ec_light = Lib.Resource.Request(vessel, "ElectricCharge", ec_light_required);
-      ec_light_perc = ec_light / ec_light_required;
+      // get resource handler
+      resource_info ec = resources.Info(vessel, "ElectricCharge");
 
-      // if there isn't enough ec for lighting
-      if (ec_light <= double.Epsilon)
-      {
-        // shut down the light
-        lamps = 0.0f;
-      }
+      // consume ec
+      ec.Consume(greenhouse.ec_rate * lamps * elapsed_s);
+
+      // shut down the light if there isn't enough ec
+      // note: comparing against amount at previous simulation step
+      if (ec.amount <= double.Epsilon) lamps = 0.0f;
     }
 
     // determine lighting conditions
     // note: we ignore sun direction for gameplay reasons: else the user must reorient the greenhouse as the planets dance over time
     // - natural light depend on: distance from sun, direct sunlight, door status
     // - artificial light depend on: lamps tweakable and ec available, door status
-    lighting = NaturalLighting(info.sun_dist) * info.sunlight * (door_opened ? 1.0 : 0.0) + lamps * ec_light_perc;
+    lighting = NaturalLighting(info.sun_dist) * info.sunlight * (door_opened ? 1.0 : 0.0) + lamps;
 
-    // consume input resource if any
-    double input_perc = 1.0;
-    if (input_name.Length > 0 && input_rate > 0.0 && lighting > double.Epsilon)
-    {
-      double input_required = input_rate * elapsed_s;
-      double input = Lib.Resource.Request(vessel, input_name, input_required);
-      input_perc = input / input_required;
-    }
-
-    // consume waste
-    // note: not consumed when there is no lighting
+    // if can use waste, and there is some lighting
     double waste_perc = 0.0;
-    if (waste_name.Length > 0 && lighting > double.Epsilon)
+    if (greenhouse.waste_name.Length > 0 && lighting > double.Epsilon)
     {
-      double waste_required = waste_rate * elapsed_s;
-      double waste = Lib.Resource.Request(vessel, waste_name, waste_required);
-      waste_perc = waste / waste_required;
+      // get resource handler
+      resource_info waste = resources.Info(vessel, greenhouse.waste_name);
+
+      // consume waste
+      waste.Consume(greenhouse.waste_rate * elapsed_s);
+
+      // determine waste bonus
+      // note: comparing against amount from previous simulation step
+      waste_perc = waste.amount / greenhouse.waste_rate;
     }
 
     // determine growth bonus
-    double growth_bonus = 0.0;
-    growth_bonus += soil_bonus * (Lib.Landed(vessel) ? 1.0 : 0.0);
-    growth_bonus += waste_bonus * waste_perc;
+    double growth_bonus = greenhouse.soil_bonus * (info.landed ? 1.0 : 0.0) + greenhouse.waste_bonus * waste_perc;
 
     // grow the crop
-    double growing = growth_rate * (1.0 + growth_bonus) * input_perc * lighting;
+    double growing = greenhouse.growth_rate * (1.0 + growth_bonus) * lighting;
     growth += elapsed_s * growing;
 
     // if it is harvest time
@@ -349,14 +311,14 @@ public sealed class Greenhouse : PartModule
       growth = 0.0;
 
       // produce food
-      Lib.Resource.Request(vessel, resource_name, -harvest_size);
+      resources.Produce(vessel, greenhouse.resource_name, greenhouse.harvest_size);
 
       // show a message to the user
       Message.Post(Lib.BuildString("On <color=FFFFFF>", vessel.vesselName, "</color> the crop harvest produced <color=FFFFFF>",
-        harvest_size.ToString("F0"), " ", resource_name, "</color>"));
+        greenhouse.harvest_size.ToString("F0"), " ", greenhouse.resource_name, "</color>"));
 
       // record first space harvest
-      if (!Lib.Landed(vessel) && DB.Ready()) DB.NotificationData().first_space_harvest = 1;
+      if (!info.landed && DB.Ready()) DB.NotificationData().first_space_harvest = 1;
     }
 
     // store data

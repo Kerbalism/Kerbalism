@@ -21,37 +21,23 @@ public enum Severity
 }
 
 
-[KSPAddon(KSPAddon.Startup.MainMenu, true)]
-public sealed class Message : MonoBehaviour
+public sealed class Message
 {
-  // constants
-  const float offset = 266.0f;
-
   // represent an entry in the message list
-  public class Entry
+  class Entry
   {
     public string msg;
     public float first_seen;
   }
 
-  // store entries
-  private static Queue<Entry> entries = new Queue<Entry>();
 
-  // disable message rendering
-  static bool muted = false;
-  static bool muted_internal = false;
-
-  // styles
-  GUIStyle style;
-
-
-  // keep it alive
-  Message() { DontDestroyOnLoad(this); }
-
-
-  // pseudo-ctor
-  public void Start()
+  // ctor
+  public Message()
   {
+    // enable global access
+    instance = this;
+
+    // setup style
     style = new GUIStyle();
     style.normal.background = Lib.GetTexture("black-background");
     style.normal.textColor = new Color(0.66f, 0.66f, 0.66f, 1.0f);
@@ -68,7 +54,7 @@ public sealed class Message : MonoBehaviour
 
 
   // called every frame
-  public void OnGUI()
+  public void on_gui()
   {
     // do nothing in the main menu
     if (!(Lib.SceneIsGame() || HighLogic.LoadedScene == GameScenes.EDITOR)) return;
@@ -110,10 +96,10 @@ public sealed class Message : MonoBehaviour
   public static void Post(string msg)
   {
     // ignore the message if muted
-    if (muted || muted_internal) return;
+    if (instance.muted || instance.muted_internal) return;
 
     // avoid adding the same message if already present in the queue
-    foreach(Entry e in entries) { if (e.msg == msg) return; }
+    foreach(Entry e in instance.entries) { if (e.msg == msg) return; }
 
     // compile entry
     Entry entry = new Entry();
@@ -121,7 +107,7 @@ public sealed class Message : MonoBehaviour
     entry.first_seen = 0;
 
     // add entry
-    entries.Enqueue(entry);
+    instance.entries.Enqueue(entry);
   }
 
 
@@ -129,7 +115,7 @@ public sealed class Message : MonoBehaviour
   public static void Post(string text, string subtext)
   {
     // ignore the message if muted
-    if (muted || muted_internal) return;
+    if (instance.muted || instance.muted_internal) return;
 
     Post(Lib.BuildString(text, "\n<i>", subtext, "</i>"));
   }
@@ -139,7 +125,7 @@ public sealed class Message : MonoBehaviour
   public static void Post(Severity severity, string text, string subtext="")
   {
     // ignore the message if muted
-    if (muted || muted_internal) return;
+    if (instance.muted || instance.muted_internal) return;
 
     string title = "";
     switch(severity)
@@ -154,24 +140,25 @@ public sealed class Message : MonoBehaviour
     else Post(Lib.BuildString(title, text, "\n<i>", subtext, "</i>"));
   }
 
+
   // disable rendering of messages
   public static void Mute()
   {
-    muted = true;
+    instance.muted = true;
   }
 
 
   // re-enable rendering of messages
   public static void Unmute()
   {
-    muted = false;
+    instance.muted = false;
   }
 
 
   // return true if user channel is muted
   public static bool IsMuted()
   {
-    return muted;
+    return instance.muted;
   }
 
 
@@ -179,7 +166,7 @@ public sealed class Message : MonoBehaviour
   // this one mute the internal channel, instead of the user one
   public static void MuteInternal()
   {
-    muted_internal = true;
+    instance.muted_internal = true;
   }
 
 
@@ -187,15 +174,32 @@ public sealed class Message : MonoBehaviour
   // this one unmute the internal channel, instead of the user one
   public static void UnmuteInternal()
   {
-    muted_internal = false;
+    instance.muted_internal = false;
   }
 
 
   // return true if internal channel is muted
   public static bool IsMutedInternal()
   {
-    return muted_internal;
+    return instance.muted_internal;
   }
+
+
+  // constants
+  const float offset = 266.0f;
+
+  // store entries
+  Queue<Entry> entries = new Queue<Entry>();
+
+  // disable message rendering
+  bool muted;
+  bool muted_internal;
+
+  // styles
+  GUIStyle style;
+
+  // permit global access
+  static Message instance;
 }
 
 

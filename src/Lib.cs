@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Text;
 using UnityEngine;
 
@@ -31,6 +32,14 @@ public static class Lib
   public static double Mix(double a, double b, double k)
   {
     return a * (1.0 - k) + b * k;
+  }
+
+  // swap two variables
+  public static void Swap<T>(ref T a, ref T b)
+  {
+    T tmp = b;
+    b = a;
+    a = tmp;
   }
 
   // return string limited to len, with ... at the end
@@ -215,25 +224,6 @@ public static class Lib
     else return vessel.protoVessel.landed || vessel.protoVessel.splashed;
   }
 
-  // return vessel position
-  public static Vector3d VesselPosition(Vessel vessel)
-  {
-    // GetWorldPos3D work when not simulated, with an exception:
-    //   when orbiting the sun, and switching from flight to space center scene,
-    //   for a single tick the position returned is the same as the sun!
-    // so we resolve the orbit directly, that is reliable in all cases
-    // note: landed vessels have non-valid orbits
-    // note: we don't use the orbit if invalid, for whatever reason
-    if (vessel.loaded || Landed(vessel) || double.IsNaN(vessel.orbit.inclination))
-    {
-      return vessel.GetWorldPos3D();
-    }
-    else
-    {
-      return vessel.orbit.getPositionAtUT(Planetarium.GetUniversalTime());
-    }
-  }
-
   // store the random number generator
   static System.Random rng = new System.Random();
 
@@ -253,6 +243,26 @@ public static class Lib
   public static bool SceneIsGame()
   {
     return HighLogic.LoadedScene == GameScenes.FLIGHT || HighLogic.LoadedScene == GameScenes.SPACECENTER || HighLogic.LoadedScene == GameScenes.TRACKSTATION;
+  }
+
+  // return amount of a resource in a part
+  public static double Amount(Part part, string resource_name)
+  {
+    foreach(PartResource res in part.Resources)
+    {
+      if (res.flowState && res.resourceName == resource_name) return res.amount;
+    }
+    return 0.0;
+  }
+
+  // return capacity of a resource in a part
+  public static double Capacity(Part part, string resource_name)
+  {
+    foreach(PartResource res in part.Resources)
+    {
+      if (res.flowState && res.resourceName == resource_name) return res.maxAmount;
+    }
+    return 0.0;
   }
 
   // return crew count of a vessel, even if not loaded
@@ -276,6 +286,25 @@ public static class Lib
       return capacity;
     }
   }
+
+  // return a module from a part by name, or null if it doesn't exist
+  public static PartModule FindModule(Part p, string module_name)
+  {
+    foreach(PartModule m in p.Modules)
+    {
+      if (m.moduleName == module_name) return m;
+    }
+    return null;
+  }
+
+
+  // return a module from a part by name, or null if it doesn't exist
+  public static T FindModuleAs<T>(Part p, string module_name) where T : class
+  {
+    PartModule m = FindModule(p, module_name);
+    return m ? m as T : null;
+  }
+
 
   // return a value from a module using reflection
   // note: useful when the module is from another assembly, unknown at build time
@@ -509,7 +538,7 @@ public static class Lib
     }
   }
 
-  // return a progressbar made of text, from a simpler era
+  // return an ascii progressbar, from a simpler era
   // - len: length in characters
   // - value: value to represent
   // - yellow/red: thresholds for color
@@ -576,13 +605,7 @@ public static class Lib
   // return a 32bit id for a vessel
   public static UInt32 VesselID(Vessel v)
   {
-    return (UInt32)v.GetInstanceID();
-  }
-
-  // combine two 32bit ids in a single one
-  public static UInt32 CombinedID(UInt32 a, UInt32 b)
-  {
-    return a ^ b;
+    return BitConverter.ToUInt32(v.id.ToByteArray(), 0);
   }
 
   // compose a set of strings together, without creating temporary objects
@@ -638,145 +661,6 @@ public static class Lib
     sb.Length = 0;
     foreach(string s in args) sb.Append(s);
     return sb.ToString();
-  }
-
-
-  public static class Resource
-  {
-    // return amount of a resource in a part
-    public static double Amount(Part part, string resource_name)
-    {
-      foreach(PartResource res in part.Resources)
-      {
-        if (res.flowState && res.resourceName == resource_name) return res.amount;
-      }
-      return 0.0;
-    }
-
-    // return amount of a resource in a proto part
-    public static double Amount(ProtoPartSnapshot pps, string resource_name)
-    {
-      foreach(ProtoPartResourceSnapshot pprs in pps.resources)
-      {
-        if (pprs.resourceName == resource_name && Parse.ToBool(pprs.resourceValues.GetValue("flowState")))
-          return Parse.ToDouble(pprs.resourceValues.GetValue("amount"));
-      }
-      return 0.0;
-    }
-
-    // return amount of a resource in a vessel
-    public static double Amount(Vessel vessel, string resource_name)
-    {
-      double amount = 0.0;
-      if (vessel.loaded)
-      {
-        foreach(Part part in vessel.Parts)
-        {
-          amount += Amount(part, resource_name);
-        }
-      }
-      else
-      {
-        foreach(ProtoPartSnapshot pps in vessel.protoVessel.protoPartSnapshots)
-        {
-          amount += Amount(pps, resource_name);
-        }
-      }
-      return amount;
-    }
-
-    // return capacity of a resource in a part
-    public static double Capacity(Part part, string resource_name)
-    {
-      foreach(PartResource res in part.Resources)
-      {
-        if (res.flowState && res.resourceName == resource_name) return res.maxAmount;
-      }
-      return 0.0;
-    }
-
-    // return capacity of a resource in a proto part
-    public static double Capacity(ProtoPartSnapshot pps, string resource_name)
-    {
-      foreach(ProtoPartResourceSnapshot pprs in pps.resources)
-      {
-        if (pprs.resourceName == resource_name && Parse.ToBool(pprs.resourceValues.GetValue("flowState")))
-          return Parse.ToDouble(pprs.resourceValues.GetValue("maxAmount"));
-      }
-      return 0.0;
-    }
-
-    // return capacity of a resource in a vessel
-    public static double Capacity(Vessel vessel, string resource_name)
-    {
-      double max_amount = 0.0;
-      if (vessel.loaded)
-      {
-        foreach(Part part in vessel.Parts)
-        {
-          max_amount += Capacity(part, resource_name);
-        }
-      }
-      else
-      {
-        foreach(ProtoPartSnapshot pps in vessel.protoVessel.protoPartSnapshots)
-        {
-          max_amount += Capacity(pps, resource_name);
-        }
-      }
-      return max_amount;
-    }
-
-    public static double Request(Vessel v, string resource_name, double quantity)
-    {
-      if (v.loaded)
-      {
-        return v.rootPart.RequestResource(resource_name, quantity, ResourceFlowMode.ALL_VESSEL_BALANCE);
-      }
-      else
-      {
-        double diff = quantity;
-        double amount = 0.0;
-        double capacity = 0.0;
-        foreach(ProtoPartSnapshot part in v.protoVessel.protoPartSnapshots)
-        {
-          foreach(ProtoPartResourceSnapshot res in part.resources)
-          {
-            if (res.resourceName == resource_name && Lib.Parse.ToBool(res.resourceValues.GetValue("flowState")))
-            {
-              amount = Lib.Parse.ToDouble(res.resourceValues.GetValue("amount"));
-              capacity = Lib.Parse.ToDouble(res.resourceValues.GetValue("maxAmount"));
-              double new_amount = Lib.Clamp(amount - diff, 0.0, capacity);
-              res.resourceValues.SetValue("amount", new_amount.ToString());
-              diff -= amount - new_amount;
-              if (Math.Abs(diff) <= double.Epsilon) return quantity;
-            }
-          }
-        }
-        return quantity - diff;
-      }
-    }
-
-
-    public static double Request(ProtoPartSnapshot part, string resource_name, double quantity)
-    {
-      double diff = quantity;
-      double amount = 0.0;
-      double capacity = 0.0;
-      foreach(ProtoPartResourceSnapshot res in part.resources)
-      {
-        if (res.resourceName == resource_name && Lib.Parse.ToBool(res.resourceValues.GetValue("flowState")))
-        {
-          amount = Lib.Parse.ToDouble(res.resourceValues.GetValue("amount"));
-          capacity = Lib.Parse.ToDouble(res.resourceValues.GetValue("maxAmount"));
-          double new_amount = Lib.Clamp(amount - diff, 0.0, capacity);
-          res.resourceValues.SetValue("amount", new_amount.ToString());
-          diff -= amount - new_amount;
-          if (Math.Abs(diff) <= double.Epsilon) return quantity;
-        }
-      }
-      return quantity - diff;
-    }
   }
 
 

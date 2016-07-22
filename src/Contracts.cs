@@ -1,5 +1,5 @@
 ﻿// ===================================================================================================================
-// Some landmark contracts related to Kerbalism mechanics
+// some landmark contracts related to Kerbalism mechanics
 // ===================================================================================================================
 
 
@@ -87,7 +87,7 @@ public sealed class KerbalismMannedOrbitCondition : Contracts.ContractParameter
     foreach(Vessel v in FlightGlobals.Vessels)
     {
       vessel_info vi = Cache.VesselInfo(v);
-      if (!vi.is_vessel || vi.is_resque || vi.is_eva_dead) continue;
+      if (!vi.is_valid) continue;
       bool manned = v.loaded ? v.GetCrewCount() > 0 : v.protoVessel.GetVesselCrew().Count > 0;
       bool in_orbit = Sim.Apoapsis(v) > v.mainBody.atmosphereDepth && Sim.Periapsis(v) > v.mainBody.atmosphereDepth;
       bool for_30days = v.missionTime > 60.0 * 60.0 * Lib.HoursInDay() * 30.0;

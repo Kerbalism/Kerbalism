@@ -1,5 +1,5 @@
 ﻿// ====================================================================================================================
-// store globally accessible data
+// store and serialize data
 // ====================================================================================================================
 
 
@@ -20,7 +20,7 @@ public class kerbal_data
   public double entertainment       = 1.0;          // entertainment factor of the connected-space or whole-space contaning this kerbal
   public double shielding           = 0.0;          // shielding factor of the connected-space or whole-space contaning this kerbal
   public string space_name          = "";           // a name for the space where the kerbal is, or empty for the whole-vessel space
-  public Dictionary<string, kmon_data> kmon = new Dictionary<string, kmon_data>(); // rule data
+  public Dictionary<string, kmon_data> kmon = new Dictionary<string, kmon_data>(32); // rule data
 }
 
 
@@ -41,7 +41,7 @@ public class vessel_data
   public uint   storm_state         = 0;            // 0: none, 1: inbound, 2: inprogress (interplanetary CME)
   public string notes               = "";           // vessel notes
   public string group               = "NONE";       // vessel group
-  public Dictionary<string, vmon_data> vmon = new Dictionary<string, vmon_data>(); // rule data
+  public Dictionary<string, vmon_data> vmon = new Dictionary<string, vmon_data>(32); // rule data
   public List<uint> scansat_id = new List<uint>();  // used to remember scansat sensors that were disabled
 }
 
@@ -76,19 +76,19 @@ public class notification_data
 public sealed class DB : ScenarioModule
 {
   // store data per-kerbal
-  private Dictionary<string, kerbal_data> kerbals = new Dictionary<string, kerbal_data>();
+  private Dictionary<string, kerbal_data> kerbals = new Dictionary<string, kerbal_data>(64);
 
   // store data per-vessel
-  private Dictionary<Guid, vessel_data> vessels = new Dictionary<Guid, vessel_data>();
+  private Dictionary<Guid, vessel_data> vessels = new Dictionary<Guid, vessel_data>(512);
 
   // store data per-body
-  private Dictionary<string, body_data> bodies = new Dictionary<string, body_data>();
+  private Dictionary<string, body_data> bodies = new Dictionary<string, body_data>(64);
 
   // store data for the notifications system
   private notification_data notifications = new notification_data();
 
   // current savegame version
-  private const string current_version = "1.0.3.0";
+  private const string current_version = "1.0.4.0";
 
   // allow global access
   private static DB instance = null;
@@ -132,7 +132,6 @@ public sealed class DB : ScenarioModule
         kd.entertainment   = Lib.ConfigValue(kerbal_node, "entertainment", 1.0); // since 0.9.9.4
         kd.shielding       = Lib.ConfigValue(kerbal_node, "shielding", 0.0); // since 0.9.9.4
         kd.space_name      = Lib.ConfigValue(kerbal_node, "space_name", ""); // since 0.9.9.4
-        kd.kmon = new Dictionary<string, kmon_data>();
         if (kerbal_node.HasNode("kmon")) // since 0.9.9.5
         {
           foreach(var cfg in kerbal_node.GetNode("kmon").GetNodes())
@@ -169,7 +168,6 @@ public sealed class DB : ScenarioModule
         vd.storm_state     = Lib.ConfigValue(vessel_node, "storm_state", 0u); // since 1.0.3
         vd.notes           = Lib.ConfigValue(vessel_node, "notes", "").Replace("$NEWLINE", "\n"); // since 0.9.9.1
         vd.group           = Lib.ConfigValue(vessel_node, "group", "NONE"); // since 0.9.9.1
-        vd.vmon = new Dictionary<string, vmon_data>();
         if (vessel_node.HasNode("vmon")) // since 0.9.9.5
         {
           foreach(var cfg in vessel_node.GetNode("vmon").GetNodes())
@@ -179,7 +177,6 @@ public sealed class DB : ScenarioModule
             vd.vmon.Add(cfg.name, vmon);
           }
         }
-        vd.scansat_id = new List<uint>();
         foreach(string s in vessel_node.GetValues("scansat_id")) // since 0.9.9.5
         {
           vd.scansat_id.Add(Lib.Parse.ToUInt(s));
