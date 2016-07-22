@@ -1,5 +1,24 @@
 #CHANGELOG
 
+1.0.4  
+  - refactored overall architecture
+  - new resource system: faster, stronger
+  - optimized signal system
+  - optimized background resource simulation  
+  - vessel cache: smart FIFO eviction strategy
+  - optimized malfunction module
+  - more stable depletion estimates
+  - improved signal link rendering
+  - vessel info show consumption/production rates  
+  - vessel monitor and planner ui remain visible on mouse over    
+  - balance: decreased malfunction rate
+  - balance: reduced engine malfunction penalty  
+  - fix: background resource simulation inconsistencies at extreme timewarp
+  - fix: vessels not getting included in relay network calculations
+  - fix: scrubber and recycler inconsistencies during timewarp blending
+  - fix: greenhouse assuming the part has shutters
+  - fix: atmosphere description in vessel info window
+
 1.0.3
   - recompiled for KSP 1.1.3
   - interplanetary coronal mass ejections
