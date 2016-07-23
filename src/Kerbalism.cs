@@ -845,9 +845,9 @@ public sealed class Kerbalism : MonoBehaviour
 
 
   // decay unloaded vessels inside atmosphere
-  static public void atmosphereDecay(Vessel v, vessel_info vi, double elapsed_s)
+  public static void atmosphereDecay(Vessel v, vessel_info vi, double elapsed_s)
   {
-    if (!vi.landed)
+    if (Settings.AtmosphereDecay && !vi.landed)
     {
       // get pressure
       double p = v.mainBody.GetPressure(v.altitude);
