@@ -1107,7 +1107,7 @@ public sealed class Planner
       {
         double k = get_resource(scrubber.waste_name).consume(scrubber.co2_rate);
         k *= get_resource("ElectricCharge").consume(scrubber.ec_rate * k);
-        res.produce(scrubber.co2_rate * k * Scrubber.DeduceEfficiency());
+        res.produce(scrubber.co2_rate * scrubber.co2_ratio * k * Scrubber.DeduceEfficiency());
       }
       res.has_recycler = true;
     }

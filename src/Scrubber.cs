@@ -31,6 +31,7 @@ public sealed class Scrubber : PartModule
   // config
   [KSPField] public double ec_rate;                    // EC consumption rate per-second
   [KSPField] public double co2_rate;                   // waste consumption rate per-second
+  [KSPField] public double co2_ratio = 1.0;            // proportion of waste recycled into resource
   [KSPField] public double intake_rate = 1.0;          // Oxygen production rate inside breathable atmosphere
   [KSPField] public string resource_name = "Oxygen";   // name of resource recycled
   [KSPField] public string waste_name = "CO2";         // name of resource recycled
@@ -132,7 +133,7 @@ public sealed class Scrubber : PartModule
       resource_recipe recipe = new resource_recipe(resource_recipe.scrubber_priority);
       recipe.Input(waste_name, co2_rate * Kerbalism.elapsed_s);
       recipe.Input("ElectricCharge", ec_rate * Kerbalism.elapsed_s);
-      recipe.Output(resource_name, co2_rate * efficiency * Kerbalism.elapsed_s);
+      recipe.Output(resource_name, co2_rate * co2_ratio * efficiency * Kerbalism.elapsed_s);
       resources.Transform(recipe);
 
       // set status
@@ -166,7 +167,7 @@ public sealed class Scrubber : PartModule
       resource_recipe recipe = new resource_recipe(resource_recipe.scrubber_priority);
       recipe.Input(scrubber.waste_name, scrubber.co2_rate * elapsed_s);
       recipe.Input("ElectricCharge", scrubber.ec_rate * elapsed_s);
-      recipe.Output(scrubber.resource_name, scrubber.co2_rate * Lib.Proto.GetDouble(m, "efficiency", 0.5) * elapsed_s);
+      recipe.Output(scrubber.resource_name, scrubber.co2_rate * scrubber.co2_ratio * Lib.Proto.GetDouble(m, "efficiency", 0.5) * elapsed_s);
       resources.Transform(recipe);
     }
   }
