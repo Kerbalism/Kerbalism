@@ -1,23 +1,39 @@
 #CHANGELOG
 
+1.0.6
+  - a better temperature model
+  - vessel info window can show solar, albedo and body flux
+  - planner consider all resources from all supported modules
+  - improved planner calculations for scrubbers & recyclers    
+  - relativistic time dilation on resource consumption and production (disabled by default)
+  - optimized raytracing
+  - atmospheric decay of unloaded vessels can be disabled in settings
+  - RTG output decay over time can be disabled in settings
+  - scrubber module: waste to resource ratio can be configured
+  - sensor module: more environment readings available
+  - fix: greenhouse waste bonus calculation
+  - fix: antenna throwing exceptions on active debris
+  - fix: greenhouse natural lighting now consider atmospheric absorption
+  - fix: exception when re-entering a debris from eva with vessel info opened
+
 1.0.5
   - optimized vessel monitor
   - optimized debris decay in atmosphere
   - recycler module efficiency can depend on technology progression
 
-1.0.4  
+1.0.4
   - refactored overall architecture
   - new resource system: faster, stronger
   - optimized signal system
-  - optimized background resource simulation  
+  - optimized background resource simulation
   - vessel cache: smart FIFO eviction strategy
   - optimized malfunction module
   - more stable depletion estimates
   - improved signal link rendering
-  - vessel info show consumption/production rates  
-  - vessel monitor and planner ui remain visible on mouse over    
+  - vessel info show consumption/production rates
+  - vessel monitor and planner ui remain visible on mouse over
   - balance: decreased malfunction rate
-  - balance: reduced engine malfunction penalty  
+  - balance: reduced engine malfunction penalty
   - fix: background resource simulation inconsistencies at extreme timewarp
   - fix: vessels not getting included in relay network calculations
   - fix: scrubber and recycler inconsistencies during timewarp blending
@@ -29,7 +45,7 @@
   - interplanetary coronal mass ejections
   - fix: scrubber efficiency reverting to 50%
   - fix: 30 days manned orbit contract not generated again after completion
-  - patch to allow Shielding production on Extra Planetary Launchpad, by Enceos  
+  - patch to allow Shielding production on Extra Planetary Launchpad, by Enceos
 
 1.0.2
   - planner: warn the user if resource capacity isn't enough to avoid inconsistencies at extreme timewarp
