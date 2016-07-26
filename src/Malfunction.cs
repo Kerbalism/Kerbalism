@@ -101,8 +101,14 @@ public sealed class Malfunction : PartModule
     Fields["Status"].guiActive = malfunctions > 0;
     Status = malfunctions == 0 ? "" : PrepareMsg(status_msg, vessel, malfunctions);
 
+    // get vessel info from the cache
+    vessel_info vi = Cache.VesselInfo(vessel);
+
+    // get elapsed time
+    double elapsed_s = Kerbalism.elapsed_s * vi.time_dilation;
+
     // accumulate age
-    age += Kerbalism.elapsed_s / quality;
+    age += elapsed_s / quality;
 
     // check age and malfunction if needed
     if (age > lifetime) Break();

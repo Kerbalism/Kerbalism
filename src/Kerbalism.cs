@@ -57,7 +57,7 @@ public sealed class Kerbalism : MonoBehaviour
   public static Features features = new Features();
 
   // store all the rules
-  public static Dictionary<string, Rule> rules = new Dictionary<string, Rule>(32);
+  public static List<Rule> rules = new List<Rule>(32);
 
   // all the rules with a resource different than Electric Charge
   public static List<Rule> supply_rules = new List<Rule>(32);
@@ -80,10 +80,6 @@ public sealed class Kerbalism : MonoBehaviour
   // equivalent to TimeWarp.fixedDeltaTime
   // note: stored here to avoid converting it to double every time
   public static double elapsed_s;
-
-  // equivalent to 1 / TimeWarp.fixedDeltaTime
-  // note: stored here to avoid fp division
-  public static double inv_elapsed_s;
 
   // number of steps from last warp blending
   public static uint warp_blending;
@@ -144,9 +140,9 @@ public sealed class Kerbalism : MonoBehaviour
     foreach(var node in r_cfg)
     {
       Rule r = new Rule(node);
-      if (r.name.Length > 0 && !rules.ContainsKey(r.name))
+      if (r.name.Length > 0 && rules.Find(k => k.name == r.name) == null)
       {
-        rules.Add(r.name, r);
+        rules.Add(r);
         if (r.resource_name == "ElectricCharge") ec_rule = r;
         if (r.modifier.Contains("temperature") && r.resource_name == "ElectricCharge") temp_rule = r;
         if (r.modifier.Contains("qol")) qol_rule = r;
@@ -155,9 +151,8 @@ public sealed class Kerbalism : MonoBehaviour
       }
     }
     Lib.Log("rules:");
-    foreach(var p in rules)
+    foreach(Rule r in rules)
     {
-      Rule r = p.Value;
       string modifiers = r.modifier.Count > 0 ? string.Join(", ", r.modifier.ToArray()) : "none";
       Lib.Log("- " + r.name + " (modifier: " + modifiers + ")");
     }
@@ -177,10 +172,8 @@ public sealed class Kerbalism : MonoBehaviour
       {
         double crew_capacity = (double)prefab.CrewCapacity;
         double extra_cost = 0.0;
-        foreach(var p in rules)
+        foreach(Rule r in rules)
         {
-          Rule r = p.Value;
-
           // add rule's resource
           if (r.resource_name.Length > 0 && r.on_pod > 0.0 && reslib.Contains(r.resource_name) && !prefab.Resources.Contains(r.resource_name))
           {
@@ -193,10 +186,8 @@ public sealed class Kerbalism : MonoBehaviour
           }
         }
         // loop the rules a second time to give the resources a nice order
-        foreach(var p in rules)
+        foreach(Rule r in rules)
         {
-          Rule r = p.Value;
-
           // add rule's waste resource
           double waste_per_day = (r.rate / (r.interval > 0.0 ? r.interval : 1.0)) * daylen * r.waste_ratio;
           double waste_amount = waste_per_day * r.waste_buffer * crew_capacity;
@@ -294,9 +285,8 @@ public sealed class Kerbalism : MonoBehaviour
     }
 
     // manage resources from rules
-    foreach(var p in rules)
+    foreach(Rule r in rules)
     {
-      Rule r = p.Value;
       if (r.resource_name.Length == 0 || r.on_eva <= double.Epsilon) continue;
 
       // determine amount to take, never more that his own share
@@ -347,9 +337,8 @@ public sealed class Kerbalism : MonoBehaviour
     data.to.RequestResource(monoprop_name, -monoprop);
 
     // manage resources in rules
-    foreach(var p in rules)
+    foreach(Rule r in rules)
     {
-      Rule r = p.Value;
       if (r.resource_name.Length == 0 || r.on_eva <= double.Epsilon) continue;
       double leftover = ResourceCache.Info(data.from.vessel, r.resource_name).amount;
       data.to.RequestResource(r.resource_name, -leftover);
@@ -472,15 +461,15 @@ public sealed class Kerbalism : MonoBehaviour
     const string title = "<color=cyan><b>PROGRESS</b></color>\n";
     if (features.scrubber && Array.IndexOf(Scrubber.scrubber_efficiency.techs, data.host.techID) >= 0)
     {
-      Message.Post(Lib.BuildString(title, "We have access to more efficient <b>CO2 scrubbers</b> and <b>recyclers</b> now", "Our research efforts are paying off, after all"));
+      Message.Post(Lib.BuildString(title, "We have access to more efficient <b>CO2 scrubbers</b> and <b>recyclers</b> now"), "Our research efforts are paying off, after all");
     }
     if (features.malfunction && Array.IndexOf(Malfunction.manufacturing_quality.techs, data.host.techID) >= 0)
     {
-      Message.Post(Lib.BuildString(title, "Advances in material science have led to improved <b>manufacturing quality</b>", "New components will last longer in extreme environments"));
+      Message.Post(Lib.BuildString(title, "Advances in material science have led to improved <b>manufacturing quality</b>"), "New components will last longer in extreme environments");
     }
     if (features.signal && Array.IndexOf(Signal.signal_processing.techs, data.host.techID) >= 0)
     {
-      Message.Post(Lib.BuildString(title, "Our scientists just made a breakthrough in <b>signal processing</b>", "New and existing antennas range has improved"));
+      Message.Post(Lib.BuildString(title, "Our scientists just made a breakthrough in <b>signal processing</b>"), "New and existing antennas range has improved");
     }
   }
 
@@ -580,9 +569,8 @@ public sealed class Kerbalism : MonoBehaviour
       ResourceCache.Produce(v, monoprop_name, Settings.MonoPropellantOnResque);
 
       // give the vessel some supplies
-      foreach(var p in rules)
+      foreach(Rule r in rules)
       {
-        Rule r = p.Value;
         if (r.resource_name.Length == 0 || r.on_resque <= double.Epsilon || !reslib.Contains(r.resource_name)) continue;
         foreach(var part in parts)
         {
@@ -663,6 +651,9 @@ public sealed class Kerbalism : MonoBehaviour
         Message.Post("Messages unmuted");
       }
     }
+
+    // add progress descriptions to technologies
+    techDescriptions();
   }
 
 
@@ -686,7 +677,6 @@ public sealed class Kerbalism : MonoBehaviour
     if (Math.Abs(fixedDeltaTime - elapsed_s) > double.Epsilon) warp_blending = 0;
     else ++warp_blending;
     elapsed_s = fixedDeltaTime;
-    inv_elapsed_s = 1.0 / elapsed_s;
 
     // if there is an active vessel
     Vessel v = FlightGlobals.ActiveVessel;
@@ -714,9 +704,6 @@ public sealed class Kerbalism : MonoBehaviour
         updateConnectedSpaces(v, vi);
       }
     }
-
-    // add progress descriptions to technologies
-    techDescriptions();
   }
 
 
@@ -913,9 +900,8 @@ public sealed class Kerbalism : MonoBehaviour
     if (!DB.Ready()) return;
     if (!DB.Kerbals().ContainsKey(k_name)) return;
     kerbal_data kd = DB.KerbalData(k_name);
-    foreach(var p in Kerbalism.rules)
+    foreach(Rule r in Kerbalism.rules)
     {
-      var r = p.Value;
       if (r.modifier.Contains("radiation"))
       {
         var kmon = DB.KmonData(k_name, r.name);

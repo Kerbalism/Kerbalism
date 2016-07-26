@@ -94,11 +94,8 @@ public sealed class Rule
     double temp_diff = v.altitude < 2000.0 && v.mainBody == FlightGlobals.GetHomeBody() ? 0.0 : Sim.TempDiff(vi.temperature);
 
     // for each rule
-    foreach(var p in Kerbalism.rules)
+    foreach(Rule r in Kerbalism.rules)
     {
-      // shortcuts
-      Rule r = p.Value;
-
       // get resource handler
       resource_info res = r.resource_name.Length > 0 ? resources.Info(v, r.resource_name) : null;
 

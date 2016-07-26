@@ -119,36 +119,29 @@ public static class Sim
   // RAYTRACING
   // --------------------------------------------------------------------------
 
-  // calculate hit point of the ray indicated by origin + direction * t with the sphere described by center and radius
-  // if there is no hit return double max value
-  // it there is an hit return distance from origin to hit point
-  public static double RaytraceSphere(Vector3d origin, Vector3d direction, Vector3d center, double radius)
+  // return true if the ray 'dir' starting at 'p' doesn't hit 'body'
+  // - p: ray origin
+  // - dir: ray direction
+  // - body: obstacle
+  public static bool Raytrace(Vector3d p, Vector3d dir, CelestialBody body)
   {
-    // operate in sphere object space, so the origin is translated by -sphere_pos
-    origin -= center;
+    // ray from origin to body center
+    Vector3d diff = body.position - p;
 
-    double A = Vector3d.Dot(direction, direction);
-    double B = 2.0 * Vector3d.Dot(direction, origin);
-    double C = Vector3d.Dot(origin, origin) - radius * radius;
-    double discriminant = B * B - 4.0 * A * C;
+    // projection of origin->body center ray over the raytracing direction
+    double k = Vector3d.Dot(diff, dir);
 
-    // ray missed the sphere (we consider single hits as misses)
-    if (discriminant <= 0.0) return double.MaxValue;
-
-    double q = (-B - Math.Sign(B) * Math.Sqrt(discriminant)) * 0.5;
-    double t0 = q / A;
-    double t1 = C / q;
-    double dist = Math.Min(t0, t1);
-
-    // if sphere is behind, return maxvalue, else it is visible and distance is returned
-    return dist < 0.0 ? double.MaxValue : dist;
+    // the ray doesn't hit body if its minimal analytical distance along the ray is less than its radius
+    // simplified from 'p + dir * k - body.position'
+    return k < 0.0 || (dir * k - diff).magnitude > body.Radius;
   }
 
 
   // return true if the body is visible from the vessel
-  // - vessel: vessel to test
-  // - dir: normalized vector from vessel to body
-  // - dist: distance from vector to body surface
+  // - vessel: origin
+  // - body: target
+  // - dir: will contain normalized vector from vessel to body
+  // - dist: will contain distance from vessel to body surface
   // - return: true if visible, false otherwise
   public static bool RaytraceBody(Vessel vessel, CelestialBody body, out Vector3d dir, out double dist)
   {
@@ -163,24 +156,17 @@ public static class Sim
     dir /= dist;
     dist -= body.Radius;
 
-    // do the raytracing
-    double min_dist = double.MaxValue;
-
-    // do not trace against the mainbody if that is our target
-    if (body != mainbody) min_dist = Math.Min(min_dist, RaytraceSphere(vessel_pos, dir, mainbody.position, mainbody.Radius));
-
-    // do not trace against the reference body if that is our target, or if there isn't one (eg: mainbody is the sun)
-    if (body != refbody && refbody != null) min_dist = Math.Min(min_dist, RaytraceSphere(vessel_pos, dir, refbody.position, refbody.Radius));
-
-    // return true if body is visible from vessel
-    return dist < min_dist;
+    // raytrace
+    return (body == mainbody || Raytrace(vessel_pos, dir, mainbody))
+        && (body == refbody || refbody == null || Raytrace(vessel_pos, dir, refbody));
   }
 
 
   // return true if a vessel is visible from another one
-  // - a, b: vessels to test
-  // - dir: normalized vector from vessel to body
-  // - dist: distance from vector to body surface
+  // - a: origin
+  // - b: target
+  // - dir: will contain normalized vector from a to b
+  // - dist: will contain distance between a and b
   // - return: true if visible, false otherwise
   public static bool RaytraceVessel(Vessel a, Vessel b, out Vector3d dir, out double dist)
   {
@@ -197,19 +183,11 @@ public static class Sim
     dist = dir.magnitude;
     dir /= dist;
 
-    // do the raytracing
-    double min_dist = double.MaxValue;
-
-    // trace against the main bodies
-    min_dist = Math.Min(min_dist, RaytraceSphere(pos_a, dir, mainbody_a.position, mainbody_a.Radius));
-    min_dist = Math.Min(min_dist, RaytraceSphere(pos_a, dir, mainbody_b.position, mainbody_b.Radius));
-
-    // do not trace against the reference bodies if not present
-    if (refbody_a != null) min_dist = Math.Min(min_dist, RaytraceSphere(pos_a, dir, refbody_a.position, refbody_a.Radius));
-    if (refbody_b != null) min_dist = Math.Min(min_dist, RaytraceSphere(pos_a, dir, refbody_b.position, refbody_b.Radius));
-
-    // return true if the two vessels see each other
-    return dist < min_dist;
+    // raytrace
+    return Raytrace(pos_a, dir, mainbody_a)
+        && Raytrace(pos_a, dir, mainbody_b)
+        && (refbody_a == null || Raytrace(pos_a, dir, refbody_a))
+        && (refbody_b == null || Raytrace(pos_b, dir, refbody_b));
   }
 
 
@@ -217,22 +195,182 @@ public static class Sim
   // TEMPERATURE
   // --------------------------------------------------------------------------
 
-  // return temperature of background radiation
-  public static double BackgroundTemperature()
+  // calculate temperature in K from irradiance in W/m2, as per Stefan-Boltzmann equation
+  public static double BlackBodyTemperature(double flux)
   {
-    return PhysicsGlobals.SpaceTemperature;
+    return Math.Pow(flux / PhysicsGlobals.StefanBoltzmanConstant, 0.25);
   }
 
-
-  // return temperature of a blackbody emitting flux specified (or receiving, same thing)
-  // note: assume albedo of 30%
-  // note: flux is not associative
-  public static double BlackBody(double flux)
+  // calculate irradiance in W/m2 from solar flux reflected on a celestial body in direction of the vessel
+  public static double AlbedoFlux(CelestialBody body, Vector3d pos)
   {
-    const double albedo = 0.3;
-    return Math.Pow(flux * (1.0 - albedo) * 0.25 / PhysicsGlobals.StefanBoltzmanConstant, 1.0 / 4.0);
+    CelestialBody sun = FlightGlobals.Bodies[0];
+    Vector3d sun_dir = sun.position - body.position;
+    double sun_dist = sun_dir.magnitude;
+    sun_dir /= sun_dist;
+    sun_dist -= sun.Radius;
+
+    Vector3d body_dir = pos - body.position;
+    double body_dist = body_dir.magnitude;
+    body_dir /= body_dist;
+    body_dist -= body.Radius;
+
+    // used to scale with distance
+    double d = Math.Min((body.Radius + body.atmosphereDepth) / (body.Radius + body_dist), 1.0);
+
+    return SolarFlux(sun_dist)                            // solar radiation
+      * body.albedo                                       // reflected
+      * Math.Max(0.0, Vector3d.Dot(sun_dir, body_dir))    // clamped cosine
+      * d * d;                                            // scale with distance
   }
 
+  // return irradiance from the surface of a body in W/m2
+  public static double BodyFlux(CelestialBody body, double altitude)
+  {
+    CelestialBody sun = FlightGlobals.Bodies[0];
+    Vector3d sun_dir = sun.position - body.position;
+    double sun_dist = sun_dir.magnitude;
+    sun_dir /= sun_dist;
+    sun_dist -= sun.Radius;
+
+    // heat capacities, in J/(g K)
+    const double water_k = 4.181;
+    const double regolith_k = 0.67;
+    const double hydrogen_k = 14.300;
+    const double helium_k = 5.193;
+    const double oxygen_k = 0.918;
+    const double silicum_k = 0.703;
+    const double aluminium_k = 0.897;
+    const double iron_k = 0.412;
+    const double co2_k = 0.839;
+    const double nitrogen_k = 1.040;
+    const double argon_k = 0.520;
+    const double earth_surf_k = oxygen_k * 0.54 + silicum_k * 0.31 + aluminium_k * 0.09 + iron_k * 0.06;
+    const double earth_atmo_k = nitrogen_k * 0.78 + oxygen_k * 0.21 + argon_k * 0.01;
+    const double hell_atmo_k = co2_k * 0.96 + nitrogen_k * 0.04;
+    const double gas_giant_k = hydrogen_k * 0.75 + helium_k * 0.25;
+
+    // proportion of flux not absorbed by atmosphere
+    double atmo_factor = AtmosphereFactor(body, 0.7071);
+
+    // try to determine if this is a gas giant
+    bool is_gas_giant = body.Density / FlightGlobals.GetHomeBody().Density < 0.2;
+
+    // try to determine if this is a greenhouse planet
+    bool is_hell = atmo_factor < 0.5;
+
+    // store heat capacity coefficients
+    double surf_k = 0.0;
+    double atmo_k = 0.0;
+
+    // deduce surface and atmosphere heat capacity coefficients
+    if (is_gas_giant)
+    {
+      surf_k = gas_giant_k;
+      atmo_k = gas_giant_k;
+    }
+    else
+    {
+      if (body.atmosphere)
+      {
+        surf_k = !body.ocean ? earth_surf_k : earth_surf_k * 0.29 + water_k * 0.71;
+        atmo_k = !is_hell ? earth_atmo_k : hell_atmo_k;
+      }
+      else
+      {
+        surf_k = !body.ocean ? regolith_k : regolith_k * 0.5 + water_k * 0.5;
+      }
+    }
+
+    // how much flux a part of surface is able to store, in J
+    double surf_capacity = surf_k // heat capacity, in J/(g K)
+      * body.Radius / 6000.0      // volume of ground considered, 1x1xN m (100 m^3 at kerbin)
+      * body.Density              // convert to grams
+      / 4.0;                      // lighter matter on surface compared to overall density
+
+    // how much flux the atmosphere is able to store, in J
+    double atmo_capacity = atmo_k
+      * body.atmospherePressureSeaLevel
+      * 1000.0
+      * SurfaceGravity(body);
+
+    // solar flux striking the body, and not being reflected away
+    double solar_flux = SolarFlux(sun_dist);
+
+    // duration of lit and unlit periods
+    double half_day = body.solarDayLength * 0.5;
+
+    // flux stored by surface during daylight, and re-emitted during whole day
+    double surf_flux = Math.Min
+    (
+        solar_flux              // incoming flux
+      * (1.0 - body.albedo)     // not reflected
+      * atmo_factor             // not absorbed by atmosphere
+      * 0.7071                  // clamped cosine average
+      * half_day,               // accumulated during daylight period
+        surf_capacity           // clamped to storage capacity
+    ) / body.solarDayLength;    // released during whole day
+
+    // flux stored by atmosphere during daylight, and re-emitted during whole day
+    double atmo_flux = Math.Min
+    (
+        solar_flux              // incoming flux
+      * (1.0 - body.albedo)     // not reflected
+      * (1.0 - atmo_factor)     // absorbed by atmosphere
+      * half_day,               // accumulated during daylight period
+        atmo_capacity           // clamped to storage capacity
+    ) / body.solarDayLength;    // released during whole day
+
+    // used to scale with distance
+    double d = Math.Min((body.Radius + body.atmosphereDepth) / (body.Radius + altitude), 1.0);
+
+    // return radiative cooling flux from the body
+    return (surf_flux + atmo_flux) * d * d;
+  }
+
+  // return CMB irradiance in W/m2
+  public static double BackgroundFlux()
+  {
+    return 3.14E-6;
+  }
+
+  // return temperature of a vessel
+  public static double Temperature(Vessel v, double sunlight, double atmo_factor, out double solar_flux, out double albedo_flux, out double body_flux, out double total_flux)
+  {
+    // get vessel body
+    CelestialBody body = v.mainBody;
+
+    // get vessel position
+    Vector3d pos = v.GetWorldPos3D();
+
+    // get solar radiation
+    solar_flux = SolarFlux(SunDistance(pos)) * sunlight * atmo_factor;
+
+    // get albedo radiation
+    albedo_flux = body.flightGlobalsIndex == 0 ? 0.0 : AlbedoFlux(body, pos);
+
+    // get cooling radiation from the body
+    body_flux = body.flightGlobalsIndex == 0 ? 0.0 : BodyFlux(body, v.altitude);
+
+    // calculate total flux
+    total_flux = solar_flux + albedo_flux + body_flux + BackgroundFlux();
+
+    // calculate temperature
+    double temp = BlackBodyTemperature(total_flux);
+
+    // if inside atmosphere
+    if (body.atmosphere && v.altitude < body.atmosphereDepth)
+    {
+      // calculate atmospheric temperature
+      double atmo_temp = v.loaded ? v.rootPart.skinTemperature : body.GetTemperature(v.altitude);
+
+      // mix between our temperature and the stock atmospheric model
+      temp = Lib.Mix(atmo_temp, temp, Lib.Clamp(v.altitude / body.atmosphereDepth, 0.0, 1.0));
+    }
+
+    // finally, return the temperature
+    return temp;
+  }
 
   // return sun luminosity
   public static double SolarLuminosity()
@@ -247,7 +385,6 @@ public static class Sim
     return PhysicsGlobals.SolarLuminosity;
   }
 
-
   // return energy flux from the sun
   // - distance from the sun surface
   public static double SolarFlux(double dist)
@@ -260,85 +397,11 @@ public static class Sim
     return SolarLuminosity() / (12.566370614359172 * dist * dist);
   }
 
-
   // return solar flux at home
   public static double SolarFluxAtHome()
   {
     return PhysicsGlobals.SolarLuminosityAtHome;
   }
-
-
-  // return albedo radiation from a body
-  public static double BodyFlux(CelestialBody body, Vector3d point)
-  {
-    // - solar_flux calculated as usual
-    // - total solar energy: E = solar_flux * PI * body.radius^2
-    // - reflected solar energy: R = E * body.albedo
-    // - reflected solar energy from visible hemisphere, pseudo-integral: RQ = R / 4
-    // - reflected solar energy in a direction: k = clamped wrapped cosine, RQD = RQ * k
-    // - body_flux: RQD / (PI * 4 * dist * dist)
-
-    // shortcut to the sun
-    CelestialBody sun = FlightGlobals.Bodies[0];
-
-    // calculate sun direction and distance
-    Vector3d sun_dir = sun.position - body.transform.position;
-    double sun_dist = sun_dir.magnitude;
-    sun_dir /= sun_dist;
-    sun_dist -= sun.Radius;
-
-    // calculate point direction and distance
-    Vector3d point_dir = point - body.transform.position;
-    double point_dist = point_dir.magnitude;
-    point_dir /= point_dist;
-    point_dist -= body.Radius;
-
-    // clamp point to planet surface distance to a fraction of planet radius
-    // rationale: our algorithm break at low distances
-    point_dist = Math.Max(body.Radius * 0.33, point_dist);
-
-    // calculate solar flux at planet position
-    double flux = SolarFlux(sun_dist);
-
-    // calculate total energy from the sun
-    double incoming_energy = flux * Math.PI * body.Radius * body.Radius;
-
-    // calculate reflected energy (only an hemisphere is visible from point, and the average N*L is 0.5)
-    double reflected_energy = incoming_energy * body.albedo * 0.25;
-
-    // calculate clamped cosine factor (note: 'wrapped')
-    double k = Math.Max(0.0, (Vector3d.Dot(sun_dir, point_dir) + 1.05) / 2.05);
-
-    // return flux from the body to point specified
-    return reflected_energy * k / (12.566370614359172 * point_dist * point_dist);
-  }
-
-
-  // return temperature of a vessel
-  public static double Temperature(Vessel vessel, double sunlight)
-  {
-    // get vessel position
-    Vector3d pos = vessel.GetWorldPos3D();
-
-    // get flux from the sun
-    double solar_flux = SolarFlux(SunDistance(pos)) * sunlight;
-
-    // get flux from the main body
-    double body_flux = vessel.mainBody.flightGlobalsIndex == 0 ? 0.0 : BodyFlux(vessel.mainBody, pos);
-
-    // calculate temperature
-    double space_temp = BackgroundTemperature() + BlackBody(solar_flux) + BlackBody(body_flux);
-
-    // calculate atmospheric temp
-    double atmospheric_temp = vessel.mainBody.GetTemperature(vessel.altitude);
-
-    // if the vessel is loaded. and inside an atmosphere, use the part skin temperature as atmospheric temp
-    if (vessel.loaded && vessel.mainBody.atmosphere && vessel.altitude < vessel.mainBody.atmosphereDepth) atmospheric_temp = vessel.rootPart.skinTemperature;
-
-    // blend between atmosphere and space temp
-    return !vessel.mainBody.atmosphere ? space_temp : Lib.Mix(atmospheric_temp, space_temp, Math.Min(vessel.altitude / vessel.mainBody.atmosphereDepth, 1.0));
-  }
-
 
   // return difference from survival temperature
   public static double TempDiff(double k)
@@ -412,6 +475,18 @@ public static class Sim
   public static bool Breathable(Vessel v)
   {
     return v.mainBody.atmosphereContainsOxygen && v.mainBody.GetPressure(v.altitude) > 25.0 && !Underwater(v);
+  }
+
+
+  // return time dilation effect due to special relativity
+  // multiply the return value by elapsed time according to the observer (eg: the one that measure mission time)
+  public static double TimeDilation(Vessel v)
+  {
+    if (!Settings.RelativisticTime) return 1.0;
+
+    double C = 299792458.0 * Settings.LightSpeedScale;
+    double V = v.orbit.orbitalSpeed;
+    return Math.Sqrt(1.0 - V * V / (C * C));
   }
 }
 

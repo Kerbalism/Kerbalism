@@ -125,12 +125,15 @@ public sealed class Info
     // get vessel data
     vessel_data vd = DB.VesselData(vessel_id);
 
-    // get vessel name
-    string vessel_name = FlightGlobals.Vessels.Find(k => k.id == vessel_id).vesselName;
+    // get vessel
+    Vessel v = FlightGlobals.Vessels.Find(k => k.id == vessel_id);
+
+    // ignore this frame if vessel isn't there for whatever reason
+    if (v == null) return;
 
     // draw pseudo-title
     GUILayout.BeginHorizontal();
-    GUILayout.Label(vessel_name, top_style);
+    GUILayout.Label(v.vesselName, top_style);
     GUILayout.EndHorizontal();
 
     // draw top spacing
@@ -176,7 +179,7 @@ public sealed class Info
     string clr = rate > 0.0 ? "<color=#00ff00>" : "<color=#ff0000>";
     GUILayout.BeginHorizontal(row_style);
     GUILayout.Label(Lib.BuildString(desc, "<b>", value, "</b>"), content_style);
-    GUILayout.Label(Math.Abs(rate) >= 0.0001 ? Lib.BuildString(clr, Math.Abs(rate).ToString("F4"), "/s</color>") : string.Empty, rate_style);
+    GUILayout.Label(Math.Abs(rate) >= 0.0001 ? Lib.BuildString(clr, Math.Abs(rate).ToString("F3"), "/s</color>") : string.Empty, rate_style);
     GUILayout.EndHorizontal();
   }
 
@@ -204,8 +207,10 @@ public sealed class Info
     // get info from the cache
     vessel_info vi = Cache.VesselInfo(v);
 
-    // forget vessel if it is dead eva kerbal
-    if (vi.is_eva_dead) { vessel_id = Guid.Empty; return; }
+    // forget vessel that was invalid (eg: when re-entering from eva on a debris)
+    // or that has just become invalid (eg: the user changed vessel type to debris)
+    // or that has just died (eg: the vessel is now eva dead)
+    if (!vi.is_valid) { vessel_id = Guid.Empty; return; }
 
     // determine atmosphere
     string atmo_desc = "none";
@@ -219,6 +224,19 @@ public sealed class Info
     render_content("Temperature:\t", Lib.HumanReadableTemp(vi.temperature));
     render_content("Radiation:\t", Lib.HumanReadableRadiationRate(vi.env_radiation));
     render_content("Atmosphere:\t", atmo_desc);
+    if (Settings.ShowFlux)
+    {
+      render_content("Solar flux:\t", Lib.HumanReadableFlux(vi.solar_flux));
+      if (v.mainBody.flightGlobalsIndex != 0)
+      {
+        render_content("Albedo flux:\t", Lib.HumanReadableFlux(vi.albedo_flux));
+        render_content("Body flux:\t", Lib.HumanReadableFlux(vi.body_flux));
+      }
+    }
+    if (Settings.RelativisticTime)
+    {
+      render_content("Time dilation:\t", Lib.HumanReadablePerc(1.0 / vi.time_dilation));
+    }
     render_space();
 
     // render supplies
@@ -289,9 +307,8 @@ public sealed class Info
       {
         kerbal_data kd = DB.KerbalData(c.name);
         render_title(c.name.ToUpper());
-        foreach(var q in Kerbalism.rules)
+        foreach(Rule r in Kerbalism.rules)
         {
-          Rule r = q.Value;
           if (r.degeneration > double.Epsilon)
           {
             var kmon = DB.KmonData(c.name, r.name);

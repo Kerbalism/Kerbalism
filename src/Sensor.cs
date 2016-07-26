@@ -32,6 +32,9 @@ public sealed class Sensor : PartModule
     {
       case "temperature": Fields["Status"].guiName = "Temperature"; break;
       case "radiation": Fields["Status"].guiName = "Radiation"; break;
+      case "solar_flux": Fields["Status"].guiName = "Solar flux"; break;
+      case "albedo_flux": Fields["Status"].guiName = "Albedo flux"; break;
+      case "body_flux": Fields["Status"].guiName = "Body flux"; break;
     }
 
 
@@ -64,6 +67,9 @@ public sealed class Sensor : PartModule
     {
       case "temperature": Status = Lib.HumanReadableTemp(vi.temperature); break;
       case "radiation": Status = vi.env_radiation > double.Epsilon ? Lib.HumanReadableRadiationRate(vi.env_radiation) : "nominal"; break;
+      case "solar_flux": Status = Lib.HumanReadableFlux(vi.solar_flux); break;
+      case "albedo_flux": Status = Lib.HumanReadableFlux(vi.albedo_flux); break;
+      case "body_flux": Status = Lib.HumanReadableFlux(vi.body_flux); break;
     }
 
     if (pinanim != null && type == "radiation")

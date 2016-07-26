@@ -114,14 +114,20 @@ public sealed class Scrubber : PartModule
     // note: for example, resque vessels never get to prelaunch
     if (efficiency <= double.Epsilon) efficiency = 0.5;
 
+    // get vessel info from the cache
+    vessel_info vi = Cache.VesselInfo(vessel);
+
     // get resource cache
     vessel_resources resources = ResourceCache.Get(vessel);
 
+    // get elapsed time
+    double elapsed_s = Kerbalism.elapsed_s * vi.time_dilation;
+
     // if inside breathable atmosphere
-    if (Cache.VesselInfo(vessel).breathable)
+    if (vi.breathable)
     {
       // produce oxygen from the intake
-      resources.Produce(vessel, resource_name, intake_rate * Kerbalism.elapsed_s);
+      resources.Produce(vessel, resource_name, intake_rate * elapsed_s);
 
       // set status
       Status = "Intake";
@@ -131,9 +137,9 @@ public sealed class Scrubber : PartModule
     {
       // transform waste + ec into resource
       resource_recipe recipe = new resource_recipe(resource_recipe.scrubber_priority);
-      recipe.Input(waste_name, co2_rate * Kerbalism.elapsed_s);
-      recipe.Input("ElectricCharge", ec_rate * Kerbalism.elapsed_s);
-      recipe.Output(resource_name, co2_rate * co2_ratio * efficiency * Kerbalism.elapsed_s);
+      recipe.Input(waste_name, co2_rate * elapsed_s);
+      recipe.Input("ElectricCharge", ec_rate * elapsed_s);
+      recipe.Output(resource_name, co2_rate * co2_ratio * efficiency * elapsed_s);
       resources.Transform(recipe);
 
       // set status

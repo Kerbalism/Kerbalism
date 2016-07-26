@@ -108,12 +108,15 @@ public sealed class Background
       // note: for gameplay reasons, we ignore tracking panel pivots
       double cosine_factor = panel.sunTracking ? 1.0 : Math.Max(Vector3d.Dot(info.sun_dir, (v.transform.rotation * p.rotation * normal).normalized), 0.0);
 
+      // calculate normalized solar flux
+      // note: this include fractional sunlight if integrated over orbit
+      // note: this include atmospheric absorption if inside an atmosphere
+      double norm_solar_flux = info.solar_flux / Sim.SolarFluxAtHome();
+
       // calculate output
       double output = panel.chargeRate                                      // nominal panel charge rate at 1 AU
-                    * Sim.SolarFlux(info.sun_dist) / Sim.SolarFluxAtHome()  // normalized flux at panel distance from sun
+                    * norm_solar_flux                                       // normalized flux at panel distance from sun
                     * cosine_factor                                         // cosine factor of panel orientation
-                    * info.atmo_factor                                      // proportion of flux not blocked by atmosphere
-                    * info.sunlight                                         // can be fractional if sun visibility is integrated over the orbit
                     * Malfunction.Penalty(p);                               // malfunctioned panel penalty
 
       // produce EC
@@ -403,7 +406,9 @@ public sealed class Background
       if (components.Length == 0) return;
 
       // calculate normalized solar flux
-      double norm_solar_flux = Sim.SolarFlux(info.sun_dist) / Sim.SolarFluxAtHome();
+      // note: this include fractional sunlight if integrated over orbit
+      // note: this include atmospheric absorption if inside an atmosphere
+      double norm_solar_flux = info.solar_flux / Sim.SolarFluxAtHome();
 
       // calculate rate per component
       double rate = (double)tot_rate / (double)components.Length;
@@ -419,9 +424,7 @@ public sealed class Background
                 * norm_solar_flux                                                          // normalized solar flux at panel distance from sun
                 * Math.Max(Vector3d.Dot(info.sun_dir, (rot * t.forward).normalized), 0.0); // cosine factor of component orientation
       }
-      output *= info.atmo_factor                                                           // proportion of flux not blocked by atmosphere
-              * info.sunlight                                                              // can be fractional if sun visibility is integrated over the orbit
-              * Malfunction.Penalty(p);                                                    // malfunctioned panel penalty
+      output *= Malfunction.Penalty(p);                                                    // malfunctioned panel penalty
 
       // produce EC
       ec.Produce(output * elapsed_s);
@@ -448,7 +451,7 @@ public sealed class Background
     double remaining = 1.0;
     if (Settings.RTGDecay)
     {
-      double half_life = Lib.ReflectionValue<float>(radioisotope_generator, "HalfLife");    
+      double half_life = Lib.ReflectionValue<float>(radioisotope_generator, "HalfLife");
       double mission_time = v.missionTime / (3600.0 * Lib.HoursInDay() * Lib.DaysInYear());
       remaining = Math.Pow(2.0, (-mission_time) / half_life);
     }

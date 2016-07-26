@@ -65,10 +65,8 @@ public sealed class Engine : MonoBehaviour
     // get elapsed time
     double elapsed_s = Kerbalism.elapsed_s;
 
-
     // evict oldest entry from vessel cache
     cache.update();
-
 
     // store info for oldest unloaded vessel
     double last_time = 0.0;
@@ -76,7 +74,6 @@ public sealed class Engine : MonoBehaviour
     vessel_info last_vi = null;
     vessel_data last_vd = null;
     vessel_resources last_resources = null;
-
 
     // for each vessel
     foreach(Vessel v in FlightGlobals.Vessels)
@@ -99,17 +96,17 @@ public sealed class Engine : MonoBehaviour
       // if loaded
       if (v.loaded)
       {
-        // consume relay EC and show signal warnings
-        signal.update(v, vi, vd, resources, elapsed_s);
-
         // show belt warnings
         Radiation.beltWarnings(v, vi, vd);
 
-        // apply rules
-        Rule.applyRules(v, vi, vd, resources, elapsed_s);
-
         // update storm data
         storm.update(v, vi, vd, elapsed_s);
+
+        // consume relay EC and show signal warnings
+        signal.update(v, vi, vd, resources, elapsed_s * vi.time_dilation);
+
+        // apply rules
+        Rule.applyRules(v, vi, vd, resources, elapsed_s * vi.time_dilation);
 
         // apply deferred requests
         resources.Sync(v, elapsed_s);
@@ -147,26 +144,26 @@ public sealed class Engine : MonoBehaviour
     // if the oldest unloaded vessel was selected
     if (last_v != null)
     {
-      // consume relay EC and show signal warnings
-      signal.update(last_v, last_vi, last_vd, last_resources, last_time);
-
       // show belt warnings
       Radiation.beltWarnings(last_v, last_vi, last_vd);
 
-      // apply rules
-      Rule.applyRules(last_v, last_vi, last_vd, last_resources, last_time);
-
-      // simulate modules in background
-      Background.update(last_v, last_vi, last_vd, last_resources, last_time);
-
-      // apply deferred requests
-      last_resources.Sync(last_v, last_time);
+      // decay unloaded vessels inside atmosphere
+      Kerbalism.atmosphereDecay(last_v, last_vi, last_time);
 
       // update storm data
       storm.update(last_v, last_vi, last_vd, last_time);
 
-      // decay unloaded vessels inside atmosphere
-      Kerbalism.atmosphereDecay(last_v, last_vi, last_time);
+      // consume relay EC and show signal warnings
+      signal.update(last_v, last_vi, last_vd, last_resources, last_time * last_vi.time_dilation);
+
+      // apply rules
+      Rule.applyRules(last_v, last_vi, last_vd, last_resources, last_time * last_vi.time_dilation);
+
+      // simulate modules in background
+      Background.update(last_v, last_vi, last_vd, last_resources, last_time * last_vi.time_dilation);
+
+      // apply deferred requests
+      last_resources.Sync(last_v, last_time);
 
       // remove from unloaded data container
       unloaded.Remove(last_vi.id);

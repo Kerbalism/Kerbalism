@@ -146,7 +146,13 @@ public static class Lib
   // pretty-print temperature
   public static string HumanReadableTemp(double temp)
   {
-    return BuildString(temp.ToString("F0"), "K");
+    return BuildString(temp.ToString("F1"), " K");
+  }
+
+  // pretty-print temperature
+  public static string HumanReadableFlux(double flux)
+  {
+    return BuildString(flux >= 0.0001 ? flux.ToString("F1") : flux.ToString(), " W/m²");
   }
 
   // pretty-print radiation

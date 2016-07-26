@@ -109,21 +109,35 @@ public sealed class Antenna : ModuleDataTransmitter, IScienceDataTransmitter
       // remove incomplete data toggle
       Events["TransmitIncompleteToggle"].active = false;
 
-      // get link state
-      link_data link = Cache.VesselInfo(vessel).link;
+      // get vessel info from the cache
+      vessel_info info = Cache.VesselInfo(vessel);
 
-      // enable/disable science transmission
-      can_transmit = link.linked;
-
-      // determine currect packet cost
-      // note: we set it to max float if out of range, to indirectly specify antenna score
-      if (link.distance <= range)
+      // proper antenna mechanics for valid vessels
+      if (info.is_valid)
       {
-        this.packetResourceCost = (float)(min_transmission_cost + (max_transmission_cost - min_transmission_cost) * link.distance / range);
-        CostStatus = Lib.BuildString(this.packetResourceCost.ToString("F2"), " EC/Mbit");
+        // shortcut
+        link_data link = info.link;
+
+        // enable/disable science transmission
+        can_transmit = link.linked;
+
+        // determine currect packet cost
+        // note: we set it to max float if out of range, to indirectly specify antenna score
+        if (link.distance <= range)
+        {
+          this.packetResourceCost = (float)(min_transmission_cost + (max_transmission_cost - min_transmission_cost) * link.distance / range);
+          CostStatus = Lib.BuildString(this.packetResourceCost.ToString("F2"), " EC/Mbit");
+        }
+        else
+        {
+          this.packetResourceCost = float.MaxValue;
+          CostStatus = "";
+        }
       }
+      // sane defaults for invalid vessels
       else
       {
+        can_transmit = false;
         this.packetResourceCost = float.MaxValue;
         CostStatus = "";
       }

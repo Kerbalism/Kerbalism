@@ -19,6 +19,9 @@ public sealed class EVA : PartModule
 
   public void FixedUpdate()
   {
+    // get vessel info from the cache
+    vessel_info vi = Cache.VesselInfo(vessel);
+
     // get KerbalEVA module
     KerbalEVA kerbal = part.FindModuleImplementing<KerbalEVA>();
 
@@ -37,7 +40,7 @@ public sealed class EVA : PartModule
     resource_info ec = ResourceCache.Info(vessel, "ElectricCharge");
 
     // consume EC for the headlamp
-    if (has_helmet && kerbal.lampOn) ec.Consume(Settings.HeadlightCost * Kerbalism.elapsed_s);
+    if (has_helmet && kerbal.lampOn) ec.Consume(Settings.HeadlightCost * Kerbalism.elapsed_s * vi.time_dilation);
 
     // force the headlamp lights on/off depending on ec amount left and if it has an helmet
     SetHeadlamp(kerbal, has_helmet && kerbal.lampOn && ec.amount > double.Epsilon);

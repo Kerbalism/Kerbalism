@@ -23,6 +23,7 @@ public sealed class Storm
     if (body.flightGlobalsIndex == 0) return;
 
     // skip moons
+    // note: referenceBody is never null here
     if (body.referenceBody.flightGlobalsIndex != 0) return;
 
     // get body data
@@ -192,6 +193,7 @@ public sealed class Storm
     if (body.flightGlobalsIndex == 0) return true;
 
     // skip moons
+    // note: referenceBody is never null here
     if (body.referenceBody.flightGlobalsIndex != 0) return true;
 
     // do not skip the body

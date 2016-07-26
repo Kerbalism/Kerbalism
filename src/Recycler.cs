@@ -122,18 +122,24 @@ public sealed class Recycler : PartModule
 
     if (is_enabled)
     {
+      // get vessel info from the cache
+      vessel_info vi = Cache.VesselInfo(vessel);
+
+      // get elapsed time
+      double elapsed_s = Kerbalism.elapsed_s * vi.time_dilation;
+
       // get resource cache
       vessel_resources resources = ResourceCache.Get(vessel);
 
       // recycle EC+waste+filter into resource
       resource_recipe recipe = new resource_recipe(resource_recipe.scrubber_priority);
-      recipe.Input(waste_name, waste_rate * Kerbalism.elapsed_s);
-      recipe.Input("ElectricCharge", ec_rate * Kerbalism.elapsed_s);
+      recipe.Input(waste_name, waste_rate * elapsed_s);
+      recipe.Input("ElectricCharge", ec_rate * elapsed_s);
       if (filter_name.Length > 0 && filter_rate > double.Epsilon)
       {
-        recipe.Input(filter_name, filter_rate * Kerbalism.elapsed_s);
+        recipe.Input(filter_name, filter_rate * elapsed_s);
       }
-      recipe.Output(resource_name, waste_rate * waste_ratio * efficiency * Kerbalism.elapsed_s);
+      recipe.Output(resource_name, waste_rate * waste_ratio * efficiency * elapsed_s);
       resources.Transform(recipe);
 
       // set status

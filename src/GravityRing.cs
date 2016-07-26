@@ -159,6 +159,9 @@ public sealed class GravityRing : PartModule
     // do nothing else in the editor
     if (HighLogic.LoadedSceneIsEditor) return;
 
+    // get vessel info from the cache
+    vessel_info vi = Cache.VesselInfo(vessel);
+
     // get resource cache
     vessel_resources resources = ResourceCache.Get(vessel);
 
@@ -166,7 +169,7 @@ public sealed class GravityRing : PartModule
     resource_info ec = resources.Info(vessel, "ElectricCharge");
 
     // consume ec
-    ec.Consume(ec_rate * speed * Kerbalism.elapsed_s);
+    ec.Consume(ec_rate * speed * Kerbalism.elapsed_s * vi.time_dilation);
 
     // reset speed if there isn't enough ec
     // note: comparing against amount in previous simulation step

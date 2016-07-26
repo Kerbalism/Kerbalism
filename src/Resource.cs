@@ -92,8 +92,7 @@ public class resource_info
       // note: do not update rate during and immediately after warp blending
       // rationale: stock modules do not use our awesome resource system and
       // are subject to instabilities when time per-step change
-      if (Kerbalism.warp_blending > 50)
-        rate = (new_amount - amount) / elapsed_s;
+      if (Kerbalism.warp_blending > 50) rate = (new_amount - amount) / elapsed_s;
 
       // update amount
       amount = new_amount;

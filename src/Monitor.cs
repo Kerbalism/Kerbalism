@@ -77,15 +77,7 @@ public sealed class Monitor
     state.image = icon_battery_nominal;
 
     double low_threshold = 0.15;
-    foreach(var p in Kerbalism.rules)
-    {
-      Rule r = p.Value;
-      if (r.resource_name == "ElectricCharge")
-      {
-        low_threshold = r.low_threshold;
-        break;
-      }
-    }
+    if (Kerbalism.ec_rule != null) low_threshold = Kerbalism.ec_rule.low_threshold;
 
     if (ec.level <= double.Epsilon) state.image = icon_battery_danger;
     else if (ec.level <= low_threshold) state.image = icon_battery_warning;
@@ -278,9 +270,8 @@ public sealed class Monitor
       // skip disabled kerbals
       if (kd.disabled == 1) continue;
 
-      foreach(var p in Kerbalism.rules)
+      foreach(Rule r in Kerbalism.rules)
       {
-        Rule r = p.Value;
         kmon_data kmon = DB.KmonData(c.name, r.name);
         if (kmon.problem > r.danger_threshold)
         {

@@ -174,10 +174,13 @@ public sealed class Greenhouse : PartModule
     if (HighLogic.LoadedSceneIsEditor) return;
 
     // get vessel info from the cache
-    vessel_info info = Cache.VesselInfo(vessel);
+    vessel_info vi = Cache.VesselInfo(vessel);
 
     // get resource cache
     vessel_resources resources = ResourceCache.Get(vessel);
+
+    // get elapsed time
+    double elapsed_s = Kerbalism.elapsed_s * vi.time_dilation;
 
     // if lamp is on
     if (lamps > float.Epsilon)
@@ -186,7 +189,7 @@ public sealed class Greenhouse : PartModule
       resource_info ec = resources.Info(vessel, "ElectricCharge");
 
       // consume ec
-      ec.Consume(ec_rate * lamps * Kerbalism.elapsed_s);
+      ec.Consume(ec_rate * lamps * elapsed_s);
 
       // shut down the light if there isn't enough ec
       // note: comparing against amount at previous simulation step
@@ -195,9 +198,7 @@ public sealed class Greenhouse : PartModule
 
     // determine lighting conditions
     // note: we ignore sun direction for gameplay reasons: else the user must reorient the greenhouse as the planets dance over time
-    // - natural light depend on: distance from sun, direct sunlight, door status
-    // - artificial light depend on: lamps tweakable and ec available, door status
-    lighting = NaturalLighting(info.sun_dist) * info.sunlight * (door_opened ? 1.0 : 0.0) + lamps;
+    lighting = vi.solar_flux / Sim.SolarFluxAtHome() * (door_opened ? 1.0 : 0.0) + lamps;
 
     // if can use waste, and there is some lighting
     double waste_perc = 0.0;
@@ -207,19 +208,19 @@ public sealed class Greenhouse : PartModule
       resource_info waste = resources.Info(vessel, waste_name);
 
       // consume waste
-      waste.Consume(waste_rate * Kerbalism.elapsed_s);
+      waste.Consume(waste_rate * elapsed_s);
 
       // determine waste bonus
       // note: comparing against amount from previous simulation step
-      waste_perc = waste.amount / waste_rate;
+      waste_perc = Math.Min(waste.amount / waste_rate, 1.0);
     }
 
     // determine growth bonus
-    double growth_bonus = soil_bonus * (info.landed ? 1.0 : 0.0) + waste_bonus * waste_perc;
+    double growth_bonus = soil_bonus * (vi.landed ? 1.0 : 0.0) + waste_bonus * waste_perc;
 
     // grow the crop
     growing = growth_rate * (1.0 + growth_bonus) * lighting;
-    growth += Kerbalism.elapsed_s * growing;
+    growth += elapsed_s * growing;
 
     // if it is harvest time
     if (growth >= 1.0)
@@ -235,14 +236,14 @@ public sealed class Greenhouse : PartModule
         harvest_size.ToString("F0"), " ", resource_name, "</color>"));
 
       // record first space harvest
-      if (!info.landed && DB.Ready()) DB.NotificationData().first_space_harvest = 1;
+      if (!vi.landed && DB.Ready()) DB.NotificationData().first_space_harvest = 1;
     }
 
     // set rmb ui status
     GrowthStatus = Lib.HumanReadablePerc(growth);
     LightStatus = Lib.HumanReadablePerc(lighting);
     WasteStatus = Lib.HumanReadablePerc(waste_perc);
-    SoilStatus = info.landed ? "yes" : "no";
+    SoilStatus = vi.landed ? "yes" : "no";
     TTAStatus = Lib.HumanReadableDuration(growing > double.Epsilon ? (1.0 - growth) / growing : 0.0);
 
 
@@ -277,7 +278,7 @@ public sealed class Greenhouse : PartModule
     // note: we ignore sun direction for gameplay reasons: else the user must reorient the greenhouse as the planets dance over time
     // - natural light depend on: distance from sun, direct sunlight, door status
     // - artificial light depend on: lamps tweakable and ec available, door status
-    lighting = NaturalLighting(info.sun_dist) * info.sunlight * (door_opened ? 1.0 : 0.0) + lamps;
+    lighting = info.solar_flux / Sim.SolarFluxAtHome() * (door_opened ? 1.0 : 0.0) + lamps;
 
     // if can use waste, and there is some lighting
     double waste_perc = 0.0;
@@ -291,7 +292,7 @@ public sealed class Greenhouse : PartModule
 
       // determine waste bonus
       // note: comparing against amount from previous simulation step
-      waste_perc = waste.amount / greenhouse.waste_rate;
+      waste_perc = Math.Min(waste.amount / greenhouse.waste_rate, 1.0);
     }
 
     // determine growth bonus
@@ -323,15 +324,6 @@ public sealed class Greenhouse : PartModule
     Lib.Proto.Set(m, "lamps", lamps);
     Lib.Proto.Set(m, "lighting", lighting);
     Lib.Proto.Set(m, "growth_diff", growing);
-  }
-
-
-  // return normalized natural lighting at specified distance from the sun (1 in the home world)
-  public static double NaturalLighting(double sun_dist)
-  {
-    // return natural lighting
-    // note: should be 1 at kerbin
-    return Sim.SolarFlux(sun_dist) / Sim.SolarFluxAtHome();
   }
 
 

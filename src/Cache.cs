@@ -51,22 +51,22 @@ public class vessel_info
     if (v.mainBody.flightGlobalsIndex != 0)
     {
       double orbit_period = Sim.OrbitalPeriod(v);
-      if (orbit_period * Kerbalism.inv_elapsed_s < 10.0 * (double)vessels_in_cache) sunlight = 1.0 - Sim.ShadowPeriod(v) / orbit_period;
+      if (orbit_period / Kerbalism.elapsed_s < 10.0 * (double)vessels_in_cache) sunlight = 1.0 - Sim.ShadowPeriod(v) / orbit_period;
     }
 
+    // calculate environment stuff
+    atmo_factor = Sim.AtmosphereFactor(v.mainBody, v.GetWorldPos3D(), sun_dir);
+    breathable = Sim.Breathable(v);
+    landed = Lib.Landed(v);
+
     // calculate temperature at vessel position
-    temperature = Sim.Temperature(v, sunlight);
+    temperature = Sim.Temperature(v, sunlight, atmo_factor, out solar_flux, out albedo_flux, out body_flux, out total_flux);
 
     // calculate radiation
     cosmic_radiation = Radiation.CosmicRadiation(v);
     belt_radiation = Radiation.BeltRadiation(v);
     storm_radiation = Radiation.StormRadiation(v, sunlight);
     env_radiation = cosmic_radiation + belt_radiation + storm_radiation;
-
-    // calculate environment stuff
-    atmo_factor = Sim.AtmosphereFactor(v.mainBody, v.GetWorldPos3D(), sun_dir);
-    breathable = Sim.Breathable(v);
-    landed = Lib.Landed(v);
 
     // calculate malfunction stuff
     max_malfunction = Malfunction.MaxMalfunction(v);
@@ -82,6 +82,9 @@ public class vessel_info
     scrubbers = Scrubber.PartialData(v);
     recyclers = Recycler.PartialData(v);
     greenhouses = Greenhouse.PartialData(v);
+
+    // woot relativity
+    time_dilation = Sim.TimeDilation(v);
   }
 
 
@@ -96,6 +99,10 @@ public class vessel_info
   public double   sunlight;           // if the vessel is in direct sunlight
   public Vector3d sun_dir;            // normalized vector from vessel to sun
   public double   sun_dist;           // distance from vessel to sun
+  public double   solar_flux;         // solar flux at vessel position
+  public double   albedo_flux;        // solar flux reflected from the nearest body
+  public double   body_flux;          // infrared radiative flux from the nearest body
+  public double   total_flux;         // total flux at vessel position
   public double   temperature;        // vessel temperature
   public double   cosmic_radiation;   // cosmic radiation if outside magnetosphere
   public double   belt_radiation;     // radiation from belt if inside one
@@ -112,6 +119,7 @@ public class vessel_info
   public List<Scrubber.partial_data> scrubbers;       // partial module data
   public List<Recycler.partial_data> recyclers;       // ..
   public List<Greenhouse.partial_data> greenhouses;   // ..
+  public double   time_dilation;      // time dilation effect according to special relativity
 
 }
 

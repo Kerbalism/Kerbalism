@@ -97,6 +97,7 @@ public sealed class Launcher
         (launcher_btn.toggleButton.Value || launcher_btn.IsHovering || (win_rect.width > 0 && win_rect.Contains(Mouse.screenPos))))
     {
       // hard-coded offsets
+      // note: there is a bug in stock that only set appscale properly in non-flight-mode after you go in flight-mode at least once
       float at_top_offset_x = 40.0f * GameSettings.UI_SCALE_APPS;
       float at_top_offset_y = 0.0f * GameSettings.UI_SCALE_APPS;
       float at_bottom_offset_x = 0.0f * GameSettings.UI_SCALE_APPS;
