@@ -149,7 +149,7 @@ public static class Lib
     return BuildString(temp.ToString("F1"), " K");
   }
 
-  // pretty-print temperature
+  // pretty-print flux
   public static string HumanReadableFlux(double flux)
   {
     return BuildString(flux >= 0.0001 ? flux.ToString("F1") : flux.ToString(), " W/m²");

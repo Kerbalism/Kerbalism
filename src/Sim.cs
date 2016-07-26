@@ -294,7 +294,7 @@ public static class Sim
       * 1000.0
       * SurfaceGravity(body);
 
-    // solar flux striking the body, and not being reflected away
+    // solar flux striking the body
     double solar_flux = SolarFlux(sun_dist);
 
     // duration of lit and unlit periods
