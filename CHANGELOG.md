@@ -1,7 +1,7 @@
 #CHANGELOG
 
 1.0.7
-  - improved planner and vessel monitor ui
+  - improved planner and vessel info ui
   - removed the old parts that were disabled ages ago, can still be downloaded from here:
     https://github.com/ShotgunNinja/Kerbalism/raw/master/misc/OldParts.zip
 
