@@ -93,46 +93,54 @@ public sealed class Planner
     leftmenu_style = new GUIStyle(HighLogic.Skin.label);
     leftmenu_style.richText = true;
     leftmenu_style.normal.textColor = new Color(0.0f, 0.0f, 0.0f, 1.0f);
-    leftmenu_style.fixedWidth = 120.0f;
+    leftmenu_style.fixedWidth = 80.0f;
     leftmenu_style.stretchHeight = true;
     leftmenu_style.fontSize = 10;
     leftmenu_style.alignment = TextAnchor.MiddleLeft;
 
-    // mid menu style
-    midmenu_style = new GUIStyle(leftmenu_style);
-    midmenu_style.fixedWidth = 0.0f;
-    midmenu_style.stretchWidth = true;
-    midmenu_style.alignment = TextAnchor.MiddleCenter;
-
     // right menu style
     rightmenu_style = new GUIStyle(leftmenu_style);
     rightmenu_style.alignment = TextAnchor.MiddleRight;
+
+    // title container
+    title_container_style = new GUIStyle();
+    title_container_style.stretchWidth = true;
+    title_container_style.fixedHeight = 16.0f;
+    title_container_style.normal.background = Lib.GetTexture("black-background");
+    title_container_style.margin.bottom = 4;
+    title_container_style.margin.top = 4;
+
+    // title label
+    title_label_style = new GUIStyle(HighLogic.Skin.label);
+    title_label_style.fontSize = 12;
+    title_label_style.alignment = TextAnchor.MiddleCenter;
+    title_label_style.normal.textColor = Color.white;
+    title_label_style.stretchWidth = true;
+    title_label_style.stretchHeight = true;
 
     // row style
     row_style = new GUIStyle();
     row_style.stretchWidth = true;
     row_style.fixedHeight = 16.0f;
 
-    // title style
-    title_style = new GUIStyle(HighLogic.Skin.label);
-    title_style.normal.background = Lib.GetTexture("black-background");
-    title_style.normal.textColor = Color.white;
-    title_style.stretchWidth = true;
-    title_style.stretchHeight = false;
-    title_style.fixedHeight = 16.0f;
-    title_style.fontSize = 12;
-    title_style.border = new RectOffset(0, 0, 0, 0);
-    title_style.padding = new RectOffset(3, 4, 3, 4);
-    title_style.alignment = TextAnchor.MiddleCenter;
+    // label style
+    label_style = new GUIStyle(HighLogic.Skin.label);
+    label_style.richText = true;
+    label_style.normal.textColor = Color.white;
+    label_style.stretchWidth = true;
+    label_style.stretchHeight = true;
+    label_style.fontSize = 12;
+    label_style.alignment = TextAnchor.MiddleLeft;
 
-    // content style
-    content_style = new GUIStyle(HighLogic.Skin.label);
-    content_style.richText = true;
-    content_style.normal.textColor = Color.white;
-    content_style.stretchWidth = true;
-    content_style.stretchHeight = true;
-    content_style.fontSize = 12;
-    content_style.alignment = TextAnchor.MiddleLeft;
+    // value style
+    value_style = new GUIStyle(HighLogic.Skin.label);
+    value_style.richText = true;
+    value_style.normal.textColor = Color.white;
+    value_style.stretchWidth = true;
+    value_style.stretchHeight = true;
+    value_style.fontSize = 12;
+    value_style.alignment = TextAnchor.MiddleRight;
+    value_style.fontStyle = FontStyle.Bold;
 
     // quote style
     quote_style = new GUIStyle(HighLogic.Skin.label);
@@ -394,8 +402,8 @@ public sealed class Planner
 
   void render_title(string title)
   {
-    GUILayout.BeginHorizontal();
-    GUILayout.Label(title, title_style);
+    GUILayout.BeginHorizontal(title_container_style);
+    GUILayout.Label(title, title_label_style);
     GUILayout.EndHorizontal();
   }
 
@@ -403,7 +411,8 @@ public sealed class Planner
   void render_content(string desc, string value, string tooltip="")
   {
     GUILayout.BeginHorizontal(row_style);
-    GUILayout.Label(new GUIContent(Lib.BuildString(desc, ": <b>", value, "</b>"), tooltip.Length > 0 ? Lib.BuildString("<i>", tooltip, "</i>") : ""), content_style);
+    GUILayout.Label(desc, label_style);
+    GUILayout.Label(new GUIContent(value, tooltip.Length > 0 ? Lib.BuildString("<i>", tooltip, "</i>") : ""), value_style);
     GUILayout.EndHorizontal();
   }
 
@@ -449,7 +458,7 @@ public sealed class Planner
   {
     simulated_resource res = sim.resource(resource_name);
 
-    render_title(resource_name == "ElectricCharge" ? "ELECTRIC CHARGE" : resource_name.ToUpper());
+    render_title(resource_name.AddSpacesOnCaps().ToUpper());
     render_content("storage", Lib.ValueOrNone(res.storage));
     render_content("consumed", Lib.HumanReadableRate(res.consumed));
     if (!res.has_greenhouse)
@@ -482,24 +491,45 @@ public sealed class Planner
 
   void render_radiation(radiation_data radiation, environment_data env, crew_data crew)
   {
-    string magnetosphere_str = Radiation.HasMagnetosphere(env.body) ? Lib.HumanReadableRange(Radiation.MagnAltitude(env.body)) : "none";
-    string belt_strength_str = Radiation.HasBelt(env.body) ? Lib.BuildString(" (", (Radiation.Dynamo(env.body) * Settings.BeltRadiation * (60.0 * 60.0)).ToString("F0"), " rad/h)") : "";
-    string belt_str = Radiation.HasBelt(env.body) ? Lib.HumanReadableRange(Radiation.BeltAltitude(env.body)) : "none";
-    string shield_str = Radiation.ShieldingToString(radiation.shielding_level);
-    string shield_tooltip = radiation.shielding_level > 0.0 ? "average over the vessel" : "";
-    string life_str = Lib.BuildString(Lib.HumanReadableDuration(radiation.life_expectancy[0]), "</b> / <b>", Lib.HumanReadableDuration(radiation.life_expectancy[1]));
-    string life_tooltip = "cosmic / storm";
+    string magnetosphere_tooltip = Lib.BuildString
+    (
+      "<align=left />",
+      "magnetopause: <b>", Lib.HumanReadableRange(Radiation.MagnAltitude(env.body)), "</b>\n",
+      "intensity: <b>", Lib.HumanReadableField(Radiation.Dynamo(env.body) * 45.0), "</b>"
+    );
+
+    string belt_tooltip = Lib.BuildString
+    (
+      "<align=left />",
+      "altitude: <b>", Lib.HumanReadableRange(Radiation.BeltAltitude(env.body)), "</b>\n",
+      "extension: <b>", Lib.HumanReadableRange(Radiation.BeltAltitude(env.body) * Settings.BeltFalloff * 2.0), "</b>\n",
+      "strength: <b>", Lib.HumanReadableRadiationRate(Radiation.Dynamo(env.body) * Settings.BeltRadiation), "</b>"
+    );
+
+    string life_tooltip = Lib.BuildString
+    (
+      "<align=left />",
+      "<b>\tradiation\ttime</b>\n",
+      "cosmic\t", Lib.HumanReadableRadiationRate(Settings.CosmicRadiation), "\t", Lib.HumanReadableDuration(radiation.life_expectancy[0]), "\n",
+      "storm\t", Lib.HumanReadableRadiationRate(Settings.StormRadiation), "\t", Lib.HumanReadableDuration(radiation.life_expectancy[1])
+    );
     if (Radiation.HasBelt(env.body))
     {
-      life_str += Lib.BuildString("</b> / <b>", Lib.HumanReadableDuration(radiation.life_expectancy[2]));
-      life_tooltip += " / belt";
+      life_tooltip = Lib.BuildString
+      (
+        life_tooltip, "\n",
+        "belt\t", Lib.HumanReadableRadiationRate(Radiation.Dynamo(env.body) * Settings.BeltRadiation), "\t", Lib.HumanReadableDuration(radiation.life_expectancy[2])
+      );
     }
 
     render_title("RADIATION");
-    render_content("magnetosphere", magnetosphere_str, "protect from cosmic radiation");
-    render_content("radiation belt", belt_str, Lib.BuildString("abnormal radiation zone", belt_strength_str));
-    render_content("shielding", shield_str, shield_tooltip);
-    render_content("life expectancy", crew.capacity > 0 ? life_str : "perpetual", crew.capacity > 0 ? life_tooltip : "");
+    if (Radiation.HasMagnetosphere(env.body)) render_content("magnetosphere", "yes", magnetosphere_tooltip);
+    else render_content("magnetosphere", "no");
+    if (Radiation.HasBelt(env.body)) render_content("radiation belt", "yes", belt_tooltip);
+    else render_content("radiation belt", "no");
+    render_content("shielding", Radiation.ShieldingToString(radiation.shielding_level));
+    if (crew.capacity > 0) render_content("life expectancy", Lib.HumanReadableDuration(radiation.life_expectancy[0]), life_tooltip);
+    else render_content("life expectancy", "perpetual");
     render_space();
   }
 
@@ -599,7 +629,7 @@ public sealed class Planner
 
   public float width()
   {
-    return 300.0f;
+    return 260.0f;
   }
 
 
@@ -609,9 +639,8 @@ public sealed class Planner
     detect_layout();
 
     // deduce height
-    return 26.0f                             // header + margin
-         + 100.0f * (float)panels_per_page   // panels
-         + (pages_count > 1 ? 14.0f : 0.0f); // footer
+    return 26.0f                              // header + margin
+         + 100.0f * (float)panels_per_page;   // panels
   }
 
 
@@ -638,21 +667,43 @@ public sealed class Planner
       qol_data qol = Kerbalism.qol_rule != null ? analyze_qol(parts, env, crew, signal, Kerbalism.qol_rule) : null;
       resource_simulator sim = new resource_simulator(parts, Kerbalism.supply_rules, env, qol, crew);
 
-      // render header
+      // start header
       GUILayout.BeginHorizontal(row_style);
+
+      // body selector
       GUILayout.Label(body.name, leftmenu_style);
       if (Lib.IsClicked()) { body_index = (body_index + 1) % FlightGlobals.Bodies.Count; if (body_index == 0) ++body_index; }
       else if (Lib.IsClicked(1)) { body_index = (body_index - 1) % FlightGlobals.Bodies.Count; if (body_index == 0) body_index = FlightGlobals.Bodies.Count - 1; }
+
+      // previous page button
+      if (pages_count > 1)
+      {
+        GUILayout.Label(arrow_left, icon_style);
+        if (Lib.IsClicked()) page = (page == 0 ? pages_count : page) - 1u;
+      }
+
+      // sunlight selector
       GUILayout.Label(icon_sunlight[sunlight ? 1 : 0], icon_style);
-      if (Lib.IsClicked() || Lib.IsClicked(1)) { sunlight = !sunlight; }
+      if (Lib.IsClicked()) sunlight = !sunlight;
+
+      // next page button
+      if (pages_count > 1)
+      {
+        GUILayout.Label(arrow_right, icon_style);
+        if (Lib.IsClicked()) page = (page + 1) % pages_count;
+      }
+
+      // situation selector
       GUILayout.Label(situation, rightmenu_style);
       if (Lib.IsClicked()) { situation_index = (situation_index + 1) % situations.Length; }
       else if (Lib.IsClicked(1)) { situation_index = (situation_index == 0 ? situations.Length : situation_index) - 1; }
+
+      // end header
       GUILayout.EndHorizontal();
 
-      uint panel_index = 0;
 
       // ec
+      uint panel_index = 0;
       if (panel_index / panels_per_page == page)
       {
         render_resource("ElectricCharge", Kerbalism.ec_rule != null && Kerbalism.ec_rule.breakdown, sim);
@@ -717,16 +768,6 @@ public sealed class Planner
         render_environment(env);
       }
       ++panel_index;
-
-      // render footer
-      if (pages_count > 1)
-      {
-        GUILayout.BeginHorizontal(row_style);
-        GUILayout.Label(new GUIContent(Lib.BuildString("[", (page + 1).ToString(), "/", pages_count.ToString(), "]"), "change page"), midmenu_style);
-        if (Lib.IsClicked()) { page = (page + 1) % pages_count; }
-        else if (Lib.IsClicked(1)) { page = (page == 0 ? pages_count : page) - 1u; }
-        GUILayout.EndHorizontal();
-      }
     }
     // if there is nothing in the editor
     else
@@ -779,13 +820,18 @@ public sealed class Planner
   // sunlight selector textures
   Texture[] icon_sunlight = { Lib.GetTexture("sun-black"), Lib.GetTexture("sun-white") };
 
+  // arrow icons
+  Texture arrow_left = Lib.GetTexture("left-black");
+  Texture arrow_right = Lib.GetTexture("right-black");
+
   // styles
   GUIStyle leftmenu_style;
-  GUIStyle midmenu_style;
   GUIStyle rightmenu_style;
+  GUIStyle title_container_style;
+  GUIStyle title_label_style;
   GUIStyle row_style;
-  GUIStyle title_style;
-  GUIStyle content_style;
+  GUIStyle label_style;
+  GUIStyle value_style;
   GUIStyle quote_style;
   GUIStyle icon_style;
 

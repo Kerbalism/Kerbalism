@@ -49,8 +49,8 @@ public static class Settings
     BreakdownReputationPenalty  = Lib.ConfigValue(cfg, "BreakdownReputationPenalty",  10.0f);
     MessageLength               = Lib.ConfigValue(cfg, "MessageLength",               6.66f);
     AtmosphereDecay             = Lib.ConfigValue(cfg, "AtmosphereDecay",             true);
-    RTGDecay                    = Lib.ConfigValue(cfg, "RTGDecay",                    true);
-    ShowFlux                    = Lib.ConfigValue(cfg, "ShowFlux",                    true);
+    ShowFlux                    = Lib.ConfigValue(cfg, "ShowFlux",                    false);
+    ShowRates                   = Lib.ConfigValue(cfg, "ShowRates",                   false);
     RelativisticTime            = Lib.ConfigValue(cfg, "RelativisticTime",            false);
     LightSpeedScale             = Lib.ConfigValue(cfg, "LightSpeedScale",             1.0);
   }
@@ -87,8 +87,8 @@ public static class Settings
   public static float  BreakdownReputationPenalty;        // reputation to remove in case of breakdown
   public static float  MessageLength;                     // duration of messages on screen in seconds
   public static bool   AtmosphereDecay;                   // if true, unloaded vessel orbits inside atmosphere will decay
-  public static bool   RTGDecay;                          // if true, radioisotope thermoelectric generator output will decay over time
   public static bool   ShowFlux;                          // if true, show solar/albedo/body flux in vessel info window
+  public static bool   ShowRates;                         // if true, show consumption/production rates in vessel info window
   public static bool   RelativisticTime;                  // if true, time on vessel dilate according to special relativity
   public static double LightSpeedScale;                   // used to scale the speed of light for gameplay purposes
 }

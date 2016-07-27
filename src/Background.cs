@@ -448,13 +448,9 @@ public sealed class Background
     // note: doesn't support easy mode
 
     double power = Lib.ReflectionValue<float>(radioisotope_generator, "BasePower");
-    double remaining = 1.0;
-    if (Settings.RTGDecay)
-    {
-      double half_life = Lib.ReflectionValue<float>(radioisotope_generator, "HalfLife");
-      double mission_time = v.missionTime / (3600.0 * Lib.HoursInDay() * Lib.DaysInYear());
-      remaining = Math.Pow(2.0, (-mission_time) / half_life);
-    }
+    double half_life = Lib.ReflectionValue<float>(radioisotope_generator, "HalfLife");
+    double mission_time = v.missionTime / (3600.0 * Lib.HoursInDay() * Lib.DaysInYear());
+    double remaining = Math.Pow(2.0, (-mission_time) / half_life);
     ec.Produce(power * remaining * elapsed_s);
   }
 

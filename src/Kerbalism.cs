@@ -28,6 +28,7 @@ public sealed class Kerbalism : MonoBehaviour
     public bool DangIt;
     public bool BackgroundProcessing;
     public bool RealFuels;
+    public bool DeepFreeze;
   }
 
   // features to enable or disable
@@ -112,6 +113,7 @@ public sealed class Kerbalism : MonoBehaviour
     detected_mods.DangIt = Lib.ConfigValue(mods, "DangIt", false);
     detected_mods.BackgroundProcessing = Lib.ConfigValue(mods, "BackgroundProcessing", false);
     detected_mods.RealFuels = Lib.ConfigValue(mods, "RealFuels", false);
+    detected_mods.DeepFreeze = Lib.ConfigValue(mods, "DeepFreeze", false);
     Lib.Log("detected:");
     Lib.Log("- SCANsat: " + detected_mods.SCANsat);
     Lib.Log("- CLS: " + detected_mods.CLS);
@@ -122,6 +124,7 @@ public sealed class Kerbalism : MonoBehaviour
     Lib.Log("- DangIt: " + detected_mods.DangIt);
     Lib.Log("- BackgroundProcessing: " + detected_mods.BackgroundProcessing);
     Lib.Log("- RealFuels: " + detected_mods.RealFuels);
+    Lib.Log("- DeepFreeze: " + detected_mods.DeepFreeze);
 
     // determine features
     var f_cfg = Lib.ParseConfig("Kerbalism/Patches/System/Features");

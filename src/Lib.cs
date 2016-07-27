@@ -155,6 +155,12 @@ public static class Lib
     return BuildString(flux >= 0.0001 ? flux.ToString("F1") : flux.ToString(), " W/m²");
   }
 
+  // pretty-print magnetic strength
+  public static string HumanReadableField(double strength)
+  {
+    return BuildString(strength.ToString("F1"), " uT"); //< micro-tesla
+  }
+
   // pretty-print radiation
   public static string HumanReadableRadiationRate(double rad)
   {
@@ -421,11 +427,6 @@ public static class Lib
 
     // if the vessel is in DEAD status, we consider it invalid
     if (v.state == Vessel.State.DEAD) return false;
-
-    // when going to eva (and possibly other occasions), for a single update the vessel is not properly set
-    // this can be detected by vessel.distanceToSun being 0 (an impossibility otherwise)
-    // in this case, just wait a tick for the data being set by the game engine
-    if (v.loaded && v.distanceToSun <= double.Epsilon) return false;
 
     // if the vessel is a debris, a flag or an asteroid, ignore it
     // note: the user can change vessel type, in that case he is actually disabling this mod for the vessel
