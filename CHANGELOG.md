@@ -2,7 +2,8 @@
 
 1.0.7
   - improved planner and vessel monitor ui
-  - removed the old part that were phased out ages ago
+  - removed the old parts that were disabled ages ago, can still be downloaded from here:
+    https://github.com/ShotgunNinja/Kerbalism/raw/master/misc/OldParts.zip
 
 1.0.6
   - a better temperature model
