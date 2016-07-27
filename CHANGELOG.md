@@ -1,5 +1,9 @@
 #CHANGELOG
 
+1.0.7
+  - improved planner and vessel monitor ui
+  - removed the old part that were phased out ages ago
+
 1.0.6
   - a better temperature model
   - vessel info window can show solar, albedo and body flux
