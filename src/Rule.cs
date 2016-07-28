@@ -64,7 +64,7 @@ public sealed class Rule
     double delta = res.rate - meal_rate * Lib.CrewCount(v);
 
     // return depletion
-    return res.amount <= double.Epsilon ? 0.0 : delta >= -0.0001 ? double.NaN : res.amount / -delta;
+    return res.amount <= double.Epsilon ? 0.0 : delta >= -0.000001 ? double.NaN : res.amount / -delta;
   }
 
 
