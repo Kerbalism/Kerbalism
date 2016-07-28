@@ -427,7 +427,7 @@ public sealed class Malfunction : PartModule
           if (m.moduleName == "Malfunction")
           {
             // note: deal with vessels launched before kerbalism was installed
-            quality_sum += Math.Min(Lib.Proto.GetDouble(m, "quality", 1.0), 1.0);
+            quality_sum += Math.Max(Lib.Proto.GetDouble(m, "quality", 1.0), 1.0);
             quality_count += 1.0;
           }
         }
