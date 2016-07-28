@@ -240,9 +240,7 @@ public sealed class Kerbalism : MonoBehaviour
 
       // remove all malfunction modules except one
       List<Malfunction> malfunctions = prefab.Modules.GetModules<Malfunction>();
-      if (malfunctions.Count > 0) Lib.Log("found " + malfunctions.Count + " malfunction modules in " + prefab.partName); // TODO
       for(int i=1; i<malfunctions.Count; ++i) prefab.RemoveModule(malfunctions[i]);
-      if (malfunctions.Count > 0) Lib.Log("" + prefab.Modules.GetModules<Malfunction>().Count + " malfunction modules remain in " + prefab.partName); // TODO
     }
 
     // set callbacks
