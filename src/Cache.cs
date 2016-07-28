@@ -171,6 +171,18 @@ public sealed class Cache
   }
 
 
+  public static vessel_info TryGetVesselInfo(Vessel v)
+  {
+    // get vessel id
+    UInt32 id = Lib.VesselID(v);
+
+    // get the info from the cache, if it exist
+    // if it doesn't, don't create it and return null
+    vessel_info info;
+    return instance.vessels.TryGetValue(id, out info) ? info : null;
+  }
+
+
   // vessel cache
   Dictionary<UInt32, vessel_info> vessels = new Dictionary<UInt32, vessel_info>(512);
 
