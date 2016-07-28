@@ -88,7 +88,7 @@ public sealed class DB : ScenarioModule
   private notification_data notifications = new notification_data();
 
   // current savegame version
-  private const string current_version = "1.0.7.0";
+  private const string current_version = "1.0.8.0";
 
   // allow global access
   private static DB instance = null;
@@ -107,8 +107,7 @@ public sealed class DB : ScenarioModule
     string version = node.HasValue("version") ? node.GetValue("version") : node.HasNode("kerbals") ? "0.9.9.0" : current_version;
 
     // this is an unsupported version, attempt a total clean up and pray
-    // note: currently unused
-    if (string.CompareOrdinal(version, "0.9.9.0") < 0)
+    if (string.CompareOrdinal(version, "0.9.9.5") < 0)
     {
       Lib.Log("loading save from unsupported version " + version);
       kerbals.Clear();
@@ -117,7 +116,6 @@ public sealed class DB : ScenarioModule
       notifications = new notification_data();
       return;
     }
-
 
     kerbals.Clear();
     if (node.HasNode("kerbals"))
@@ -128,11 +126,11 @@ public sealed class DB : ScenarioModule
         kerbal_data kd = new kerbal_data();
         kd.resque          = Lib.ConfigValue(kerbal_node, "resque", 1u);
         kd.disabled        = Lib.ConfigValue(kerbal_node, "disabled", 0u);
-        kd.living_space    = Lib.ConfigValue(kerbal_node, "living_space", 1.0); // since 0.9.9.4
-        kd.entertainment   = Lib.ConfigValue(kerbal_node, "entertainment", 1.0); // since 0.9.9.4
-        kd.shielding       = Lib.ConfigValue(kerbal_node, "shielding", 0.0); // since 0.9.9.4
-        kd.space_name      = Lib.ConfigValue(kerbal_node, "space_name", ""); // since 0.9.9.4
-        if (kerbal_node.HasNode("kmon")) // since 0.9.9.5
+        kd.living_space    = Lib.ConfigValue(kerbal_node, "living_space", 1.0);
+        kd.entertainment   = Lib.ConfigValue(kerbal_node, "entertainment", 1.0);
+        kd.shielding       = Lib.ConfigValue(kerbal_node, "shielding", 0.0);
+        kd.space_name      = Lib.ConfigValue(kerbal_node, "space_name", "");
+        if (kerbal_node.HasNode("kmon"))
         {
           foreach(var cfg in kerbal_node.GetNode("kmon").GetNodes())
           {
@@ -160,15 +158,15 @@ public sealed class DB : ScenarioModule
         vd.cfg_supply      = Lib.ConfigValue(vessel_node, "cfg_supply", 1u);
         vd.cfg_signal      = Lib.ConfigValue(vessel_node, "cfg_signal", 1u);
         vd.cfg_malfunction = Lib.ConfigValue(vessel_node, "cfg_malfunction", 1u);
-        vd.cfg_storm       = Lib.ConfigValue(vessel_node, "cfg_storm", 1u); // since 0.9.9.5
-        vd.cfg_highlights  = Lib.ConfigValue(vessel_node, "cfg_highlights", 1u); // since 0.9.9.5
-        vd.cfg_showlink    = Lib.ConfigValue(vessel_node, "cfg_showlink", 0u); // since 0.9.9.8
-        vd.storm_time      = Lib.ConfigValue(vessel_node, "storm_time", 0.0); // since 1.0.3
-        vd.storm_age       = Lib.ConfigValue(vessel_node, "storm_age", 0.0); // since 1.0.3
-        vd.storm_state     = Lib.ConfigValue(vessel_node, "storm_state", 0u); // since 1.0.3
-        vd.notes           = Lib.ConfigValue(vessel_node, "notes", "").Replace("$NEWLINE", "\n"); // since 0.9.9.1
-        vd.group           = Lib.ConfigValue(vessel_node, "group", "NONE"); // since 0.9.9.1
-        if (vessel_node.HasNode("vmon")) // since 0.9.9.5
+        vd.cfg_storm       = Lib.ConfigValue(vessel_node, "cfg_storm", 1u);
+        vd.cfg_highlights  = Lib.ConfigValue(vessel_node, "cfg_highlights", 1u);
+        vd.cfg_showlink    = Lib.ConfigValue(vessel_node, "cfg_showlink", 0u);
+        vd.storm_time      = Lib.ConfigValue(vessel_node, "storm_time", 0.0);
+        vd.storm_age       = Lib.ConfigValue(vessel_node, "storm_age", 0.0);
+        vd.storm_state     = Lib.ConfigValue(vessel_node, "storm_state", 0u);
+        vd.notes           = Lib.ConfigValue(vessel_node, "notes", "").Replace("$NEWLINE", "\n");
+        vd.group           = Lib.ConfigValue(vessel_node, "group", "NONE");
+        if (vessel_node.HasNode("vmon"))
         {
           foreach(var cfg in vessel_node.GetNode("vmon").GetNodes())
           {
@@ -177,7 +175,7 @@ public sealed class DB : ScenarioModule
             vd.vmon.Add(cfg.name, vmon);
           }
         }
-        foreach(string s in vessel_node.GetValues("scansat_id")) // since 0.9.9.5
+        foreach(string s in vessel_node.GetValues("scansat_id"))
         {
           vd.scansat_id.Add(Lib.Parse.ToUInt(s));
         }
@@ -214,42 +212,6 @@ public sealed class DB : ScenarioModule
       notifications.first_space_harvest   = Lib.ConfigValue(n_node, "first_space_harvest", 0u);
       notifications.manned_orbit_contract = Lib.ConfigValue(n_node, "manned_orbit_contract", 0u);
     }
-
-
-    // versions before 0.9.9.5 used a different structure to remember message sent
-    // mute the message system for a few seconds to avoid the user being bombarded by messages
-    if (string.CompareOrdinal(version, "0.9.9.5") < 0)
-    {
-      Message.MuteInternal();
-      base.StartCoroutine(CallbackUtil.DelayedCallback(10.0f, Message.UnmuteInternal));
-    }
-
-
-    // versions before 0.9.9.5 didn't have profiles, and didn't use CRP food/oxygen values
-    // scale all amounts of them in existing vessels, to not break savegames
-    if (string.CompareOrdinal(version, "0.9.9.5") < 0)
-    {
-      foreach(Vessel v in FlightGlobals.Vessels.FindAll(k => !k.loaded))
-      {
-        foreach(var part in v.protoVessel.protoPartSnapshots)
-        {
-          var food = part.resources.Find(k => k.resourceName == "Food");
-          if (food != null)
-          {
-            food.resourceValues.SetValue("amount", (Lib.ConfigValue(food.resourceValues, "amount", 0.0f) * 10.0f).ToString());
-            food.resourceValues.SetValue("maxAmount", (Lib.ConfigValue(food.resourceValues, "maxAmount", 0.0f) * 10.0f).ToString());
-          }
-
-          var oxygen = part.resources.Find(k => k.resourceName == "Oxygen");
-          if (oxygen != null)
-          {
-            oxygen.resourceValues.SetValue("amount", (Lib.ConfigValue(oxygen.resourceValues, "amount", 0.0f) * 1000.0f).ToString());
-            oxygen.resourceValues.SetValue("maxAmount", (Lib.ConfigValue(oxygen.resourceValues, "maxAmount", 0.0f) * 1000.0f).ToString());
-          }
-        }
-      }
-    }
-
 
     // if an old savegame was imported, log some debug info
     if (version != current_version) Lib.Log("savegame converted from version " + version);
