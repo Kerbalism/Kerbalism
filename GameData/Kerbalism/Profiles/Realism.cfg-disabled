@@ -331,7 +331,7 @@ PART
 // ============================================================================
 
 
-@PART[*]:HAS[@MODULE[ModuleCommand],#CrewCapacity[>0]]
+@PART[*]:HAS[@MODULE[ModuleCommand],#CrewCapacity[>0]]:NEEDS[EnableScrubber]
 {
   MODULE
   {
