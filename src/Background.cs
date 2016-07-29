@@ -489,12 +489,9 @@ public sealed class Background
         // get boiloff rate in proportion to fuel amount, per-second
         double boiloff_rate = Lib.ReflectionValue<float>(simple_boiloff, "BoiloffRate") * 0.00000277777;
 
-        // calculate amount to boil
-        // note: using amount from previous simulation step
-        double to_boil = fuel.amount * (1.0 - Math.Pow(1.0 - boiloff_rate, elapsed_s));
-
         // let it boil off
-        fuel.Consume(to_boil * elapsed_s);
+        // note: using amount from previous simulation step
+        fuel.Consume(fuel.amount * (1.0 - Math.Pow(1.0 - boiloff_rate, elapsed_s)));
       }
     }
 
