@@ -1,5 +1,15 @@
 #CHANGELOG
 
+1.0.8
+  - stable signal link rendering
+  - science experiment definitions for the geiger counter, thanks BashGordon33!
+  - dropped support for savegames from version 0.9.9.4 or older
+  - only allow 1 malfunction module per-part
+  - fix: monitor reporting poor manufacturing quality for all vessels
+  - fix: depletion estimates reporting perpetual with rates smaller than 10E-4 per-second
+  - fix: possible division by zero in resource simulation
+  - fix: wrong amount of ec consumed by cryotank background simulation
+
 1.0.7
   - improved planner and vessel info ui
   - removed the old parts that were disabled ages ago, can still be downloaded from here:
