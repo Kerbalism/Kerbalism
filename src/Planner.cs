@@ -1295,8 +1295,11 @@ public sealed class simulated_recipe
     double worst_input = 1.0;
     foreach(var pair in inputs)
     {
-      simulated_resource res = sim.resource(pair.Key);
-      worst_input = Math.Min(worst_input, Math.Max(0.0, res.amount / pair.Value));
+      if (pair.Value > double.Epsilon) //< avoid division by zero
+      {
+        simulated_resource res = sim.resource(pair.Key);
+        worst_input = Math.Min(worst_input, Math.Max(0.0, res.amount / pair.Value));
+      }
     }
 
     // consume inputs

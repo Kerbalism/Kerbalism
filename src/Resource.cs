@@ -174,8 +174,11 @@ public sealed class resource_recipe
     double worst_input = 1.0;
     foreach(var pair in inputs)
     {
-      resource_info res = resources.Info(v, pair.Key);
-      worst_input = Math.Min(worst_input, Math.Max(0.0, res.amount + res.deferred) / pair.Value);
+      if (pair.Value > double.Epsilon) //< avoid division by zero
+      {
+        resource_info res = resources.Info(v, pair.Key);
+        worst_input = Math.Min(worst_input, Math.Max(0.0, res.amount + res.deferred) / pair.Value);
+      }
     }
 
     // consume inputs
