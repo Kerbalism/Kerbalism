@@ -6,7 +6,7 @@
   - dropped support for savegames from version 0.9.9.4 or older
   - only allow 1 malfunction module per-part
   - fix: monitor reporting poor manufacturing quality for all vessels
-  - fix: depletion estimates reporting perpetual with rates smaller than 10E-4 per-second
+  - fix: depletion estimates reporting perpetual with very small rates
   - fix: possible division by zero in resource simulation
   - fix: wrong amount of ec consumed by cryotank background simulation
 
