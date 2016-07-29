@@ -90,9 +90,6 @@ public sealed class Engine : MonoBehaviour
       // get resource cache
       vessel_resources resources = ResourceCache.Get(v);
 
-      // render signal links
-      signal.render_links(v, vi, vd);
-
       // if loaded
       if (v.loaded)
       {
@@ -191,6 +188,22 @@ public sealed class Engine : MonoBehaviour
   }
 
 
+  void Update()
+  {
+    // do nothing if DB isn't ready
+    if (!DB.Ready()) return;
+
+    // only commit in map view or tracking station
+    if (!MapView.MapIsEnabled) return;
+
+    // attach map renderer to planetarium camera once
+    if (map_renderer == null) map_renderer = PlanetariumCamera.Camera.gameObject.AddComponent<MapRenderer>();
+
+    // commit link lines
+    signal.render();
+  }
+
+
   // subsystems
   Cache           cache;
   ResourceCache   resource_cache;
@@ -202,6 +215,7 @@ public sealed class Engine : MonoBehaviour
   Notepad         notepad;
   Message         message;
   Notifications   notifications;
+  MapRenderer     map_renderer;
 
   // store time until last update for unloaded vessels
   public class unloaded_data { public double time; }; //< reference wrapper

@@ -314,30 +314,60 @@ public sealed class Signal
   }
 
 
-  public void render_links(Vessel v, vessel_info vi, vessel_data vd)
+  public void render()
   {
-    // do nothing if signal mechanic is disabled
-    if (!Kerbalism.features.signal) return;
+    // get home body position
+    Vector3 home = FlightGlobals.GetHomeBody().position;
 
-    // get link data
-    link_data link = vi.link;
-
-    // manage and render link lines
-    link_renderer link_rdr;
-    bool has_renderer = link_renderers.TryGetValue(vi.id, out link_rdr);
-    if (link.status != link_status.no_antenna && vd.cfg_showlink == 1 && MapView.MapIsEnabled)
+    // for each vessel
+    foreach(Vessel v in FlightGlobals.Vessels)
     {
-      if (!has_renderer)
+      // get info from the cache
+      vessel_info vi = Cache.VesselInfo(v);
+
+      // skip invalid vessels
+      if (!vi.is_valid) continue;
+
+      // get data from db
+      vessel_data vd = DB.VesselData(v.id);
+
+      // skip vessels with showlink disabled
+      if (vd.cfg_showlink == 0) continue;
+
+      // get link data
+      link_data link = vi.link;
+
+      // skip vessels with no antenna
+      if (link.status == link_status.no_antenna) continue;
+
+      // start of the line
+      Vector3 a = v.GetWorldPos3D();
+
+      // determine end of line and color
+      Vector3 b;
+      Color color;
+      if (link.status == link_status.no_link)
       {
-        link_rdr = new link_renderer();
-        link_renderers.Add(vi.id, link_rdr);
+        b = home;
+        color = Color.red;
       }
-      link_rdr.render(v, link);
-    }
-    else if (has_renderer)
-    {
-      link_rdr.destroy();
-      link_renderers.Remove(vi.id);
+      else if (link.status == link_status.direct_link)
+      {
+        b = home;
+        color = Color.green;
+      }
+      else //< indirect link
+      {
+        // get link path
+        var path = link.path;
+
+        // use relay position
+        b = path[path.Count - 1].GetWorldPos3D();
+        color = Color.yellow;
+      }
+
+      // commit the line
+      MapRenderer.commit(a, b, color);
     }
   }
 
@@ -368,94 +398,11 @@ public sealed class Signal
   // store range scope values
   Dictionary<string, double> range_values = new Dictionary<string, double>(32);
 
-  // store link renderers
-  Dictionary<uint, link_renderer> link_renderers = new Dictionary<uint, link_renderer>(32);
-
   // permit global access
   static Signal instance;
 }
 
 
-// manage a line renderer and render the signal link for a vessel
-public class link_renderer
-{
-  public link_renderer()
-  {
-    go = new GameObject(Lib.RandomInt(int.MaxValue).ToString());
-    lr = go.AddComponent<LineRenderer>();
-
-    lr.SetVertexCount(2);
-    lr.material = MapView.OrbitLinesMaterial;
-    go.layer = 31;
-  }
-
-  public void destroy()
-  {
-    lr = null;
-    go.DestroyGameObject();
-    go = null;
-  }
-
-
-  public void render(Vessel v, link_data link)
-  {
-    // get home body
-    Vector3 home = FlightGlobals.GetHomeBody().position;
-
-    // start of the line
-    Vector3 a = v.GetWorldPos3D();
-
-    // determine end of line and color
-    Vector3 b;
-    Color clr;
-    if (link.status == link_status.no_link)
-    {
-      b = home;
-      clr = Color.red;
-      lr.sortingOrder = 0;
-    }
-    else if (link.status == link_status.direct_link)
-    {
-      b = home;
-      clr = Color.green;
-      lr.sortingOrder = 1;
-    }
-    else // indirect link
-    {
-      // get link path
-      var path = link.path;
-
-      // use relay position
-      b = path[path.Count - 1].GetWorldPos3D();
-      clr = Color.yellow;
-      lr.sortingOrder = 2;
-    }
-
-    // setup and draw line
-    var cam = PlanetariumCamera.Camera;
-    a = cam.WorldToScreenPoint(ScaledSpace.LocalToScaledSpace(a));
-    b = cam.WorldToScreenPoint(ScaledSpace.LocalToScaledSpace(b));
-    if (!MapView.Draw3DLines)
-    {
-      if (a.z < 0.0f) { a.x = Screen.width - a.x; a.y = Screen.height - a.y; a.z = -Screen.height; } else a.z = Screen.height;
-      if (b.z < 0.0f) { b.x = Screen.width - b.x; b.y = Screen.height - b.y; b.z = -Screen.height; } else b.z = Screen.height;
-    }
-    else
-    {
-      a = cam.ScreenToWorldPoint(a);
-      b = cam.ScreenToWorldPoint(b);
-    }
-    float width = MapView.Draw3DLines ? MapView.MapCamera.Distance * 0.00666f : 3.6f;
-    lr.SetWidth(width, width);
-    lr.SetPosition(0, a);
-    lr.SetPosition(1, b);
-    lr.SetColors(clr, clr);
-  }
-
-
-  LineRenderer lr;
-  GameObject go;
-}
 
 
 } // KERBALISM
