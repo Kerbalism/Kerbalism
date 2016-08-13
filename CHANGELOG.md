@@ -1,5 +1,21 @@
 #CHANGELOG
 
+1.0.9
+  - new magnetosphere & radiation models
+  - press ALT+N on map view or tracking station to show/hide the fields
+  - you can also press Keypad 0/1/2/3 to quickly toggle between them
+  - tech progression patch for ETT by autumnalequinox
+  - OPM science definitions for geiger counter by BashGordon33
+  - pressing ALT in the VAB make the planner consider the crew at full capacity
+  - optimized line rendering and improved antialiasing
+  - fix: issue with greenhouse when waste_rate is zero
+  - fix: greenhouse growth becoming NaN when attached using KIS
+  - fix: signal disconnections in some circumstances
+  - fix: detect when converters are full in background
+  - fix: cryotank background cooling and boiloff rates proportional to capacity
+  - fix: vessel info window height when unmanned vessel is selected
+  - fix: support SCANsat version 16.4+
+
 1.0.8
   - stable signal link rendering
   - science experiment definitions for the geiger counter, thanks BashGordon33!
