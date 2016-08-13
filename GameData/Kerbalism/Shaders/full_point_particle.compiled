@@ -21,7 +21,7 @@ SubShader {
   Cull Off
   Blend SrcAlpha One
   ColorMask RGB
-  GpuProgramID 5880
+  GpuProgramID 64260
 Program "vp" {
 SubProgram "opengl " {
 // Stats: 6 math
