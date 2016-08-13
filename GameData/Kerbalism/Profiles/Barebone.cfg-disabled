@@ -1,7 +1,7 @@
 // Just play with the radiation and quality of life mechanic, without anything else
 
 
-// comment out to remove radiation from the game
+// comment out to remove shielding from the game
 @Kerbalism:FOR[EnableShielding] {}
 
 
