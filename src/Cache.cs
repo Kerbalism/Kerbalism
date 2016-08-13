@@ -14,7 +14,7 @@ namespace KERBALISM {
 
 public class vessel_info
 {
-  public vessel_info(Vessel v, uint vessel_id, UInt64 inc, int vessels_in_cache)
+  public vessel_info(Vessel v, uint vessel_id, UInt64 inc)
   {
     // NOTE: anything used here can't in turn use cache, unless you know what you are doing
 
@@ -47,15 +47,15 @@ public class vessel_info
     sunlight = Sim.RaytraceBody(v, FlightGlobals.Bodies[0], out sun_dir, out sun_dist) ? 1.0 : 0.0;
 
     // if the orbit length vs simulation step is lower than an acceptable threshold, use discrete sun visibility
-    // note: the number of samples in the threshold is scaled by number of vessels in cache, to deal with the FIFO eviction strategy
     if (v.mainBody.flightGlobalsIndex != 0)
     {
       double orbit_period = Sim.OrbitalPeriod(v);
-      if (orbit_period / Kerbalism.elapsed_s < 10.0 * (double)vessels_in_cache) sunlight = 1.0 - Sim.ShadowPeriod(v) / orbit_period;
+      if (orbit_period / Kerbalism.elapsed_s < 16.0) sunlight = 1.0 - Sim.ShadowPeriod(v) / orbit_period;
     }
 
     // calculate environment stuff
     atmo_factor = Sim.AtmosphereFactor(v.mainBody, v.GetWorldPos3D(), sun_dir);
+    gamma_transparency = Sim.GammaTransparency(v.mainBody, v.altitude);
     breathable = Sim.Breathable(v);
     landed = Lib.Landed(v);
 
@@ -63,10 +63,7 @@ public class vessel_info
     temperature = Sim.Temperature(v, sunlight, atmo_factor, out solar_flux, out albedo_flux, out body_flux, out total_flux);
 
     // calculate radiation
-    cosmic_radiation = Radiation.CosmicRadiation(v);
-    belt_radiation = Radiation.BeltRadiation(v);
-    storm_radiation = Radiation.StormRadiation(v, sunlight);
-    env_radiation = cosmic_radiation + belt_radiation + storm_radiation;
+    radiation = Radiation.Compute(v, gamma_transparency, out blackout, out inner_body, out outer_body, out pause_body);
 
     // calculate malfunction stuff
     max_malfunction = Malfunction.MaxMalfunction(v);
@@ -75,7 +72,7 @@ public class vessel_info
     // calculate signal info
     antenna = new antenna_data(v);
     avoid_inf_recursion.Add(v.id);
-    link = Signal.Link(v, antenna, avoid_inf_recursion);
+    link = Signal.Link(v, antenna, blackout, avoid_inf_recursion);
     avoid_inf_recursion.Remove(v.id);
 
     // partial data about modules, used by vessel info/monitor
@@ -85,6 +82,7 @@ public class vessel_info
 
     // woot relativity
     time_dilation = Sim.TimeDilation(v);
+
   }
 
 
@@ -104,11 +102,13 @@ public class vessel_info
   public double   body_flux;          // infrared radiative flux from the nearest body
   public double   total_flux;         // total flux at vessel position
   public double   temperature;        // vessel temperature
-  public double   cosmic_radiation;   // cosmic radiation if outside magnetosphere
-  public double   belt_radiation;     // radiation from belt if inside one
-  public double   storm_radiation;    // radiation from coronal mass ejection
-  public double   env_radiation;      // sun of all incoming radiation
+  public double   radiation;          // environment radiation at vessel position
+  public int      inner_body;         // if the vessel is inside an inner belt, the index of that body, else -1
+  public int      outer_body;         // if the vessel is inside an outer belt, the index of that body, else -1
+  public int      pause_body;         // if the vessel is inside a magnetopause, the index of that body, else -1
+  public bool     blackout;           // true if the vessel is inside a magnetopause (except the sun) and under storm
   public double   atmo_factor;        // proportion of flux not blocked by atmosphere
+  public double   gamma_transparency; // proportion of ionizing radiation not blocked by atmosphere
   public bool     breathable;         // true if inside breathable atmosphere
   public bool     landed;             // true if on the surface of a body
   public uint     max_malfunction;    // max malfunction level among all vessel modules
@@ -120,6 +120,7 @@ public class vessel_info
   public List<Recycler.partial_data> recyclers;       // ..
   public List<Greenhouse.partial_data> greenhouses;   // ..
   public double   time_dilation;      // time dilation effect according to special relativity
+
 
 }
 
@@ -161,7 +162,7 @@ public sealed class Cache
     if (instance.vessels.TryGetValue(id, out info)) return info;
 
     // compute vessel info
-    info = new vessel_info(v, id, instance.next_inc++, instance.vessels.Count + 1);
+    info = new vessel_info(v, id, instance.next_inc++);
 
     // store vessel info in the cache
     instance.vessels.Add(id, info);

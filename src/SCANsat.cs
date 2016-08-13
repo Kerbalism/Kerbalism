@@ -16,10 +16,13 @@ namespace KERBALISM {
 public static class SCANsat
 {
   // store initialized flag, for lazy initialization
-  static bool initialized = false;
+  static bool initialized;
+
+  // true to get ec consumption for versions before 16.4
+  static bool legacy_ec;
 
   // reflection type of SCANUtils static class in SCANsat assembly, if present
-  static Type SCANUtils = null;
+  static Type SCANUtils;
 
 
   // obtain the SCANUtils class from SCANsat assembly if it is loaded, only called once
@@ -30,9 +33,11 @@ public static class SCANsat
     {
       foreach(var a in AssemblyLoader.loadedAssemblies)
       {
-        if (a.name == "SCANsat" && a.assembly.GetName().Version.Major == 1 && a.assembly.GetName().Version.Minor >= 6)
+        var version = a.assembly.GetName().Version;
+        if (a.name == "SCANsat" && version.Major == 1 && version.Minor >= 6)
         {
           SCANUtils = a.assembly.GetType("SCANsat.SCANUtil");
+          legacy_ec = version.Minor == 6 && version.Revision < 4;
           break;
         }
       }
@@ -103,6 +108,25 @@ public static class SCANsat
       return deployed;
     }
     return false; //< make the compiler happy
+  }
+
+
+  public static double EcConsumption(PartModule m)
+  {
+    if (!legacy_ec)
+    {
+      List<ModuleResource> resources = Lib.ReflectionValue<List<ModuleResource>>(m, "resourceInputs");
+      foreach(ModuleResource res in resources)
+      {
+        if (res.name == "ElectricCharge") return res.rate;
+      }
+      return 0.0;
+    }
+    // versions before 16.4
+    else
+    {
+      return Lib.ReflectionValue<float>(m, "power");
+    }
   }
 }
 

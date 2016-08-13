@@ -170,7 +170,7 @@ public sealed class Monitor
 
       case link_status.no_link:
         state.image = icon_signal_none;
-        state.tooltip = !Signal.Blackout(v) ? "No signal" : "Blackout";
+        state.tooltip = !vi.blackout ? "No signal" : "Blackout";
         break;
 
       case link_status.no_antenna:
@@ -297,21 +297,21 @@ public sealed class Monitor
 
   void problem_radiation(vessel_info info, ref List<Texture> icons, ref List<string> tooltips)
   {
-    string radiation_str = Lib.BuildString(" (<i>", (info.env_radiation * 60.0 * 60.0).ToString("F2"), " rad/h)</i>");
-    if (info.belt_radiation > double.Epsilon)
+    string radiation_str = Lib.BuildString(" (<i>", (info.radiation * 60.0 * 60.0).ToString("F3"), " rad/h)</i>");
+    if (info.radiation > 5.0 / 3600.0)
     {
       icons.Add(icon_radiation_danger);
-      tooltips.Add(Lib.BuildString("Crossing radiation belt", radiation_str));
+      tooltips.Add(Lib.BuildString("Exposed to extreme radiation", radiation_str));
     }
-    else if (info.storm_radiation > double.Epsilon)
-    {
-      icons.Add(icon_radiation_danger);
-      tooltips.Add(Lib.BuildString("Exposed to solar storm", radiation_str));
-    }
-    else if (info.cosmic_radiation > double.Epsilon)
+    else if (info.radiation > 1.0 / 3600.0)
     {
       icons.Add(icon_radiation_warning);
-      tooltips.Add(Lib.BuildString("Exposed to cosmic radiation", radiation_str));
+      tooltips.Add(Lib.BuildString("Exposed to intense radiation", radiation_str));
+    }
+    else if (info.radiation > 0.009 / 3600.0)
+    {
+      icons.Add(icon_radiation_warning);
+      tooltips.Add(Lib.BuildString("Exposed to moderate radiation", radiation_str));
     }
   }
 
@@ -337,9 +337,6 @@ public sealed class Monitor
   {
     // get vessel info from cache
     vessel_info vi = Cache.VesselInfo(v);
-
-    // avoid case when DB isn't ready for whatever reason
-    if (!DB.Ready()) return 0;
 
     // skip invalid vessels
     if (!vi.is_valid) return 0;
@@ -389,7 +386,7 @@ public sealed class Monitor
 
     // render vessel name & icons
     GUILayout.BeginHorizontal(row_style);
-    GUILayout.Label(new GUIContent(Lib.BuildString("<b>", Lib.Epsilon(vessel_name, 20), "</b>"), vessel_name.Length > 20 ? vessel_name : ""), name_style);
+    GUILayout.Label(new GUIContent(Lib.BuildString("<b>", Lib.Epsilon(vessel_name, 18), "</b>"), vessel_name.Length > 18 ? vessel_name : ""), name_style);
     GUILayout.Label(new GUIContent(Lib.Epsilon(body_name, 8), body_name.Length > 8 ? body_name : ""), body_style);
     GUILayout.Label(new GUIContent(problem_icon, problem_tooltip), icon_style);
     GUILayout.Label(indicator_ec(v), icon_style);
@@ -416,9 +413,6 @@ public sealed class Monitor
   // draw vessel config
   void render_config(Vessel v)
   {
-    // do nothing if db isn' ready
-    if (!DB.Ready()) return;
-
     // get vessel data
     vessel_data vd = DB.VesselData(v.id);
 
@@ -524,18 +518,14 @@ public sealed class Monitor
       // skip invalid vessels
       if (!vi.is_valid) continue;
 
-      // avoid problems if the DB isn't ready
-      if (DB.Ready())
-      {
-        // get vessel data
-        vessel_data vd = DB.VesselData(v.id);
+      // get vessel data
+      vessel_data vd = DB.VesselData(v.id);
 
-        // determine if filter must be shown
-        show_filter |= vd.group.Length > 0 && vd.group != "NONE";
+      // determine if filter must be shown
+      show_filter |= vd.group.Length > 0 && vd.group != "NONE";
 
-        // if the panel is filtered, skip filtered vessels
-        if (filtered() && vd.group != filter) continue;
-      }
+      // if the panel is filtered, skip filtered vessels
+      if (filtered() && vd.group != filter) continue;
 
       // the vessel will be rendered
       ++count;

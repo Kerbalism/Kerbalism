@@ -51,9 +51,6 @@ public sealed class Notepad
   // called every frame
   public void on_gui()
   {
-    // do nothing if db isn't ready
-    if (!DB.Ready()) return;
-
     // forget vessel if it doesn't exist anymore
     if (vessel_id != Guid.Empty && FlightGlobals.Vessels.Find(k => k.id == vessel_id) == null) vessel_id = Guid.Empty;
 

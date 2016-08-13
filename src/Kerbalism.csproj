@@ -76,15 +76,20 @@
   <ItemGroup>
     <Compile Include="Antenna.cs" />
     <Compile Include="Background.cs" />
+    <Compile Include="BodyInfo.cs" />
     <Compile Include="Cache.cs" />
     <Compile Include="CLS.cs" />
     <Compile Include="Contracts.cs" />
     <Compile Include="DB.cs" />
     <Compile Include="Engine.cs" />
     <Compile Include="Entertainment.cs" />
+    <Compile Include="Radiation.cs" />
     <Compile Include="EVA.cs" />
     <Compile Include="GravityRing.cs" />
     <Compile Include="Info.cs" />
+    <Compile Include="LineRenderer.cs" />
+    <Compile Include="ParticleMesh.cs" />
+    <Compile Include="ParticleRenderer.cs" />
     <Compile Include="Profiler.cs" />
     <Compile Include="Recycler.cs" />
     <Compile Include="Resource.cs" />
@@ -99,7 +104,6 @@
     <Compile Include="Notepad.cs" />
     <Compile Include="Planner.cs" />
     <Compile Include="QualityOfLife.cs" />
-    <Compile Include="Radiation.cs" />
     <Compile Include="Sensor.cs" />
     <Compile Include="Sim.cs" />
     <Compile Include="Message.cs" />
@@ -111,7 +115,6 @@
     <Compile Include="TankLight.cs" />
     <Compile Include="Lib.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="MapRenderer.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

@@ -5,9 +5,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Diagnostics;
+using System.Reflection;
 using System.Text;
+using System.IO;
+using System.Diagnostics;
 using UnityEngine;
 
 
@@ -32,6 +33,12 @@ public static class Lib
   public static double Mix(double a, double b, double k)
   {
     return a * (1.0 - k) + b * k;
+  }
+
+  // blend between two values
+  public static float Mix(float a, float b, float k)
+  {
+    return a * (1.0f - k) + b * k;
   }
 
   // swap two variables
@@ -245,6 +252,12 @@ public static class Lib
     return rng.Next(max_value);
   }
 
+  // return random float [0..1]
+  public static float RandomFloat()
+  {
+    return (float)rng.NextDouble();
+  }
+
   // return random double [0..1]
   public static double RandomDouble()
   {
@@ -321,6 +334,7 @@ public static class Lib
   // return a value from a module using reflection
   // note: useful when the module is from another assembly, unknown at build time
   // note: useful when the value isn't persistent
+  // note: this function break hard when external API change, by design
   public static T ReflectionValue<T>(PartModule m, string value_name)
   {
     return (T)m.GetType().GetField(value_name).GetValue(m);
@@ -329,6 +343,7 @@ public static class Lib
   // set a value from a module using reflection
   // note: useful when the module is from another assembly, unknown at build time
   // note: useful when the value isn't persistent
+  // note: this function break hard when external API change, by design
   public static void ReflectionValue<T>(PartModule m, string value_name, T value)
   {
     m.GetType().GetField(value_name).SetValue(m, value);
@@ -433,6 +448,12 @@ public static class Lib
     // the alternative is to scan the vessel for ModuleCommand, but that is slower, and resque vessels have no module command
     if (v.vesselType == VesselType.Debris || v.vesselType == VesselType.Flag || v.vesselType == VesselType.SpaceObject || v.vesselType == VesselType.Unknown) return false;
 
+    // [disabled: there are no consequences for eva kerbals, and we get seamless vessel info display when going out on eva]
+    // when going to eva (and possibly other occasions), for a single update the vessel is not properly set
+    // this can be detected by vessel.distanceToSun being 0 (an impossibility otherwise)
+    // in this case, just wait a tick for the data being set by the game engine
+    //if (v.loaded && v.distanceToSun <= double.Epsilon) return false;
+
     // the vessel is valid
     return true;
   }
@@ -475,10 +496,35 @@ public static class Lib
     return body;
   }
 
+  // return path of directory containing the DLL
+  public static string Directory()
+  {
+    string dll_path = Assembly.GetExecutingAssembly().Location;
+    return dll_path.Substring(0, dll_path.LastIndexOf(Path.DirectorySeparatorChar));
+  }
+
   // get a texture
   public static Texture2D GetTexture(string name)
   {
     return GameDatabase.Instance.GetTexture("Kerbalism/Textures/" + name, false);
+  }
+
+  // get a material with the shader specified
+  public static Material GetShader(string name)
+  {
+    // portable directory separator
+    string sep = System.IO.Path.DirectorySeparatorChar.ToString();
+
+    // build the portable path
+    string file_path = BuildString(Directory(), sep, "Shaders", sep, name, ".compiled");
+
+    // get shader source
+    string shader_src = File.ReadAllText(file_path);
+
+    // create and return material
+    #pragma warning disable 618
+    return new Material(shader_src);
+    #pragma warning restore 618
   }
 
   // return number of techs researched among the list specified
@@ -615,6 +661,42 @@ public static class Lib
     return BitConverter.ToUInt32(v.id.ToByteArray(), 0);
   }
 
+
+  // return random float in [-1,+1] range
+  static int fast_float_seed = 1;
+  public static float FastRandomFloat()
+  {
+    fast_float_seed *= 16807;
+    return (float)fast_float_seed * 4.6566129e-010f;
+  }
+
+
+  // get current time
+  public static UInt64 Clocks()
+  {
+    return (UInt64)Stopwatch.GetTimestamp();
+  }
+
+
+  // convert from clocks to microseconds
+  public static double Microseconds(UInt64 clocks)
+  {
+    return (double)clocks * 1000000.0 / (double)Stopwatch.Frequency;
+  }
+
+
+  public static double Milliseconds(UInt64 clocks)
+  {
+    return (double)clocks * 1000.0 / (double)Stopwatch.Frequency;
+  }
+
+
+  public static double Seconds(UInt64 clocks)
+  {
+    return (double)clocks / (double)Stopwatch.Frequency;
+  }
+
+
   // compose a set of strings together, without creating temporary objects
   // note: the objective here is to minimize number of temporary variables for GC
   static StringBuilder sb = new StringBuilder(256);
@@ -663,6 +745,31 @@ public static class Lib
     sb.Append(f);
     return sb.ToString();
   }
+  public static string BuildString(string a, string b, string c, string d, string e, string f, string g)
+  {
+    sb.Length = 0;
+    sb.Append(a);
+    sb.Append(b);
+    sb.Append(c);
+    sb.Append(d);
+    sb.Append(e);
+    sb.Append(f);
+    sb.Append(g);
+    return sb.ToString();
+  }
+  public static string BuildString(string a, string b, string c, string d, string e, string f, string g, string h)
+  {
+    sb.Length = 0;
+    sb.Append(a);
+    sb.Append(b);
+    sb.Append(c);
+    sb.Append(d);
+    sb.Append(e);
+    sb.Append(f);
+    sb.Append(g);
+    sb.Append(h);
+    return sb.ToString();
+  }
   public static string BuildString(params string[] args)
   {
     sb.Length = 0;
@@ -689,16 +796,18 @@ public static class Lib
 
     public static float GetFloat(ProtoPartModuleSnapshot m, string name, float def_value = 0.0f)
     {
+      // note: we set NaN values to zero, to cover some weird inter-mod interactions
       float v;
       string s = m.moduleValues.GetValue(name);
-      return s != null && float.TryParse(s, out v) ? v : def_value;
+      return s != null && float.TryParse(s, out v) && !float.IsNaN(v) ? v : def_value;
     }
 
     public static double GetDouble(ProtoPartModuleSnapshot m, string name, double def_value = 0.0)
     {
+      // note: we set NaN values to zero, to cover some weird inter-mod interactions
       double v;
       string s = m.moduleValues.GetValue(name);
-      return s != null && double.TryParse(s, out v) ? v : def_value;
+      return s != null && double.TryParse(s, out v) && !double.IsNaN(v) ? v : def_value;
     }
 
     public static string GetString(ProtoPartModuleSnapshot m, string name, string def_value = "")
@@ -741,6 +850,57 @@ public static class Lib
       return s != null && double.TryParse(s, out v) ? v : def_value;
     }
   }
+}
+
+
+// represent a 3d reference frame
+public struct Space
+{
+  public Space(Vector3 x_axis, Vector3 y_axis, Vector3 z_axis, Vector3 origin, float scale)
+  {
+    this.x_axis = x_axis;
+    this.y_axis = y_axis;
+    this.z_axis = z_axis;
+    this.origin = origin;
+    this.scale = scale;
+  }
+
+  public Vector3 transform_in(Vector3 p)
+  {
+    float inv_scale = 1.0f / scale;
+    p -= origin;
+    p /= scale;
+    return new Vector3
+    (
+      Vector3.Dot(p, x_axis),
+      Vector3.Dot(p, y_axis),
+      Vector3.Dot(p, z_axis)
+    );
+  }
+
+  public Vector3 transform_out(Vector3 p)
+  {
+    return origin
+      + x_axis * (p.x * scale)
+      + y_axis * (p.y * scale)
+      + z_axis * (p.z * scale);
+  }
+
+  public Matrix4x4 look_at()
+  {
+    return Matrix4x4.TRS
+    (
+      origin,
+      Quaternion.LookRotation(z_axis, y_axis),
+      new Vector3(scale, scale, scale)
+    );
+  }
+
+  public Vector3 x_axis;
+  public Vector3 y_axis;
+  public Vector3 z_axis;
+  public Vector3 origin;
+  public float   scale;
 }
 
 

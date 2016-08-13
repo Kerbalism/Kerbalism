@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using UnityEngine;
 
 
@@ -115,15 +116,30 @@ public static class Sim
   }
 
 
+  // return time dilation effect due to special relativity
+  // multiply the return value by elapsed time according to the observer (eg: the one that measure mission time)
+  public static double TimeDilation(Vessel v)
+  {
+    if (!Settings.RelativisticTime) return 1.0;
+
+    if (Lib.Landed(v)) return 1.0;
+
+    double C = 299792458.0 * Settings.LightSpeedScale;
+    double V = v.orbit.orbitalSpeed;
+    return Math.Sqrt(1.0 - V * V / (C * C));
+  }
+
+
   // --------------------------------------------------------------------------
   // RAYTRACING
   // --------------------------------------------------------------------------
 
-  // return true if the ray 'dir' starting at 'p' doesn't hit 'body'
+  // return true if the ray 'dir' starting at 'p' and of length 'dist' doesn't hit 'body'
   // - p: ray origin
   // - dir: ray direction
+  // - dist: ray length
   // - body: obstacle
-  public static bool Raytrace(Vector3d p, Vector3d dir, CelestialBody body)
+  public static bool Raytrace(Vector3d p, Vector3d dir, double dist, CelestialBody body)
   {
     // ray from origin to body center
     Vector3d diff = body.position - p;
@@ -133,7 +149,7 @@ public static class Sim
 
     // the ray doesn't hit body if its minimal analytical distance along the ray is less than its radius
     // simplified from 'p + dir * k - body.position'
-    return k < 0.0 || (dir * k - diff).magnitude > body.Radius;
+    return k < 0.0 || k > dist || (dir * k - diff).magnitude > body.Radius ;
   }
 
 
@@ -157,8 +173,8 @@ public static class Sim
     dist -= body.Radius;
 
     // raytrace
-    return (body == mainbody || Raytrace(vessel_pos, dir, mainbody))
-        && (body == refbody || refbody == null || Raytrace(vessel_pos, dir, refbody));
+    return (body == mainbody || Raytrace(vessel_pos, dir, dist, mainbody))
+        && (body == refbody || refbody == null || Raytrace(vessel_pos, dir, dist, refbody));
   }
 
 
@@ -184,10 +200,10 @@ public static class Sim
     dir /= dist;
 
     // raytrace
-    return Raytrace(pos_a, dir, mainbody_a)
-        && Raytrace(pos_a, dir, mainbody_b)
-        && (refbody_a == null || Raytrace(pos_a, dir, refbody_a))
-        && (refbody_b == null || Raytrace(pos_b, dir, refbody_b));
+    return Raytrace(pos_a, dir, dist, mainbody_a)
+        && Raytrace(pos_a, dir, dist, mainbody_b)
+        && (refbody_a == null || Raytrace(pos_a, dir, dist, refbody_a))
+        && (refbody_b == null || Raytrace(pos_b, dir, dist, refbody_b));
   }
 
 
@@ -463,6 +479,38 @@ public static class Sim
   }
 
 
+  // return proportion of ionizing radiation not blocked by atmosphere
+  public static double GammaTransparency(CelestialBody body, double altitude)
+  {
+    // deal with underwater & fp precision issues
+    altitude = Math.Abs(altitude);
+
+    // get pressure
+    double static_pressure = body.GetPressure(altitude);
+    if (static_pressure > 0.0)
+    {
+      // get density
+      double density = body.GetDensity(static_pressure, body.GetTemperature(altitude));
+
+      // math, you know
+      double Ra = body.Radius + altitude;
+      double Ya = body.atmosphereDepth - altitude;
+      double path = Math.Sqrt(Ra * Ra + 2.0 * Ra * Ya + Ya * Ya) - Ra;
+      double factor = body.GetSolarPowerFactor(density) * Ya / path;
+
+      // ozone layer
+      if (body.atmosphereContainsOxygen) factor -= 0.42 * (1.0 - Lib.Clamp(altitude / body.atmosphereDepth, 0.0, 1.0));
+
+      // water vapor
+      if (body.ocean) factor -= 0.42 * (1.0 - Lib.Clamp(altitude / body.atmosphereDepth, 0.0, 1.0));
+
+      // totally non-physical
+      return Math.Max(0.0, factor);
+    }
+    return 1.0;
+  }
+
+
   // return true if the vessel is under water
   public static bool Underwater(Vessel v)
   {
@@ -475,18 +523,6 @@ public static class Sim
   public static bool Breathable(Vessel v)
   {
     return v.mainBody.atmosphereContainsOxygen && v.mainBody.GetPressure(v.altitude) > 25.0 && !Underwater(v);
-  }
-
-
-  // return time dilation effect due to special relativity
-  // multiply the return value by elapsed time according to the observer (eg: the one that measure mission time)
-  public static double TimeDilation(Vessel v)
-  {
-    if (!Settings.RelativisticTime) return 1.0;
-
-    double C = 299792458.0 * Settings.LightSpeedScale;
-    double V = v.orbit.orbitalSpeed;
-    return Math.Sqrt(1.0 - V * V / (C * C));
   }
 }
 

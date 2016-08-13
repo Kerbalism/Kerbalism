@@ -106,9 +106,6 @@ public sealed class Info
   // called every frame
   public void on_gui()
   {
-    // do nothing if db isn't ready
-    if (!DB.Ready()) return;
-
     // if there is a vessel id specified
     if (vessel_id != Guid.Empty)
     {
@@ -259,7 +256,7 @@ public sealed class Info
 
     render_title("ENVIRONMENT");
     render_content("temperature", Lib.HumanReadableTemp(vi.temperature));
-    render_content("radiation", Lib.HumanReadableRadiationRate(vi.env_radiation));
+    render_content("radiation", Lib.HumanReadableRadiationRate(vi.radiation));
     render_content("atmosphere", atmo_desc);
     if (Settings.ShowFlux)
     {
@@ -329,8 +326,8 @@ public sealed class Info
     space_details space = spaces[space_index % spaces.Count];
 
     // render it
-    string radiation_txt = vi.env_radiation > double.Epsilon
-      ? Lib.BuildString(" <i>(", Lib.HumanReadableRadiationRate(vi.env_radiation * (1.0 - space.shielding)), ")</i>")
+    string radiation_txt = vi.radiation > double.Epsilon
+      ? Lib.BuildString(" <i>(", Lib.HumanReadableRadiationRate(vi.radiation * (1.0 - space.shielding)), ")</i>")
       : "";
     render_title(space.name.Length > 0 && spaces.Count > 1 ? Lib.Epsilon(space.name.ToUpper(), 20) : "VESSEL", ref space_index, spaces.Count);
     render_content("living space", QualityOfLife.LivingSpaceToString(space.living_space));
@@ -407,9 +404,9 @@ public sealed class Info
     h += panel_height(3 + (Settings.ShowFlux ? 3 : 0) + (Settings.RelativisticTime ? 1 : 0));
 
     // supply panel
-    if (Kerbalism.supply_rules.Count > 0 || Kerbalism.ec_rule != null)
+    if ((vi.crew_capacity > 0 && Kerbalism.supply_rules.Count > 0) || Kerbalism.ec_rule != null)
     {
-      h += panel_height((Kerbalism.ec_rule != null ? 1 : 0) + Kerbalism.supply_rules.Count);
+      h += panel_height((Kerbalism.ec_rule != null ? 1 : 0) + (vi.crew_capacity > 0 ? Kerbalism.supply_rules.Count : 0));
     }
 
     // internal space panel

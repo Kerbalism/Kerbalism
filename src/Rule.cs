@@ -147,6 +147,8 @@ public sealed class Rule
         // get supply data from db
         kmon_data kmon = DB.KmonData(c.name, r.name);
 
+        // calculate radiation factor from the atmosphere
+
 
         // get product of all environment modifiers
         double k = 1.0;
@@ -156,7 +158,7 @@ public sealed class Rule
           {
             case "breathable":  k *= breathable;                              break;
             case "temperature": k *= temp_diff;                               break;
-            case "radiation":   k *= vi.env_radiation * (1.0 - kd.shielding); break;
+            case "radiation":   k *= vi.radiation * (1.0 - kd.shielding);     break;
             case "qol":         k /= QualityOfLife.Bonus(kd.living_space, kd.entertainment, vi.landed, vi.link.linked, vi.crew_count == 1); break;
           }
         }

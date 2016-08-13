@@ -19,9 +19,6 @@ public sealed class EVA : PartModule
 
   public void FixedUpdate()
   {
-    // get vessel info from the cache
-    vessel_info vi = Cache.VesselInfo(vessel);
-
     // get KerbalEVA module
     KerbalEVA kerbal = part.FindModuleImplementing<KerbalEVA>();
 
@@ -40,7 +37,7 @@ public sealed class EVA : PartModule
     resource_info ec = ResourceCache.Info(vessel, "ElectricCharge");
 
     // consume EC for the headlamp
-    if (has_helmet && kerbal.lampOn) ec.Consume(Settings.HeadlightCost * Kerbalism.elapsed_s * vi.time_dilation);
+    if (has_helmet && kerbal.lampOn) ec.Consume(Settings.HeadlightCost * Kerbalism.elapsed_s); //< ignore time dilation
 
     // force the headlamp lights on/off depending on ec amount left and if it has an helmet
     SetHeadlamp(kerbal, has_helmet && kerbal.lampOn && ec.amount > double.Epsilon);
@@ -120,7 +117,7 @@ public sealed class EVA : PartModule
     // do not touch the helmet if the user has KIS installed
     if (Kerbalism.detected_mods.KIS) return;
 
-    foreach (var comp in kerbal.GetComponentsInChildren<Renderer>())
+    foreach (var comp in kerbal.GetComponentsInChildren<UnityEngine.Renderer>())
     {
       if (comp.name == "helmet" || comp.name == "visor" || comp.name == "flare1" || comp.name == "flare2")
       {
@@ -132,7 +129,7 @@ public sealed class EVA : PartModule
   // set helmet flares of a kerbal
   public static void SetFlares(KerbalEVA kerbal, bool b)
   {
-    foreach(var comp in kerbal.GetComponentsInChildren<Renderer>())
+    foreach(var comp in kerbal.GetComponentsInChildren<UnityEngine.Renderer>())
     {
       if (comp.name == "flare1" || comp.name == "flare2")
       {
@@ -145,7 +142,7 @@ public sealed class EVA : PartModule
   // return true if the helmet is visible
   public static bool HasHelmet(KerbalEVA kerbal)
   {
-    foreach(var comp in kerbal.GetComponentsInChildren<Renderer>())
+    foreach(var comp in kerbal.GetComponentsInChildren<UnityEngine.Renderer>())
     {
       if (comp.name == "helmet") return comp.enabled;
     }

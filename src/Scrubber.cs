@@ -117,6 +117,9 @@ public sealed class Scrubber : PartModule
     // get vessel info from the cache
     vessel_info vi = Cache.VesselInfo(vessel);
 
+    // do nothing if vessel is invalid
+    if (!vi.is_valid) return;
+
     // get resource cache
     vessel_resources resources = ResourceCache.Get(vessel);
 

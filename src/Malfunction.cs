@@ -104,6 +104,9 @@ public sealed class Malfunction : PartModule
     // get vessel info from the cache
     vessel_info vi = Cache.VesselInfo(vessel);
 
+    // do nothing if vessel is invalid
+    if (!vi.is_valid) return;
+
     // get elapsed time
     double elapsed_s = Kerbalism.elapsed_s * vi.time_dilation;
 

@@ -35,9 +35,13 @@ public sealed class Engine : MonoBehaviour
     storm           = new Storm();
     launcher        = new Launcher();
     info            = new Info();
+    body_info       = new BodyInfo();
     notepad         = new Notepad();
     message         = new Message();
     notifications   = new Notifications();
+    Radiation.init();
+    LineRenderer.init();
+    ParticleRenderer.init();
 
     // prepare storm data
     foreach(CelestialBody body in FlightGlobals.Bodies)
@@ -179,9 +183,13 @@ public sealed class Engine : MonoBehaviour
   // called every frame twice, first to compute ui layout and then to draw the ui
   void OnGUI()
   {
+    // do nothing if DB isn't ready for whatever reason, unless we are in the editor
+    if (!DB.Ready() && HighLogic.LoadedScene != GameScenes.EDITOR) return;
+
     // render subsystems
     launcher.on_gui();
     info.on_gui();
+    body_info.on_gui();
     notepad.on_gui();
     message.on_gui();
     notifications.on_gui();
@@ -190,17 +198,9 @@ public sealed class Engine : MonoBehaviour
 
   void Update()
   {
-    // do nothing if DB isn't ready
-    if (!DB.Ready()) return;
-
-    // only commit in map view or tracking station
-    if (!MapView.MapIsEnabled) return;
-
     // attach map renderer to planetarium camera once
-    if (map_renderer == null) map_renderer = PlanetariumCamera.Camera.gameObject.AddComponent<MapRenderer>();
-
-    // commit link lines
-    signal.render();
+    if (MapView.MapIsEnabled && map_camera_script == null)
+      map_camera_script = PlanetariumCamera.Camera.gameObject.AddComponent<MapCameraScript>();
   }
 
 
@@ -212,10 +212,11 @@ public sealed class Engine : MonoBehaviour
   Storm           storm;
   Launcher        launcher;
   Info            info;
+  BodyInfo        body_info;
   Notepad         notepad;
   Message         message;
   Notifications   notifications;
-  MapRenderer     map_renderer;
+  MapCameraScript map_camera_script;
 
   // store time until last update for unloaded vessels
   public class unloaded_data { public double time; }; //< reference wrapper
@@ -228,6 +229,27 @@ public sealed class Engine : MonoBehaviour
 
   // permit global access
   static Engine instance;
+}
+
+
+public sealed class MapCameraScript : MonoBehaviour
+{
+  void OnPostRender()
+  {
+    // do nothing if DB isn't ready for whatever reason
+    if (!DB.Ready()) return;
+
+    // do nothing when not in map view
+    if (!MapView.MapIsEnabled) return;
+
+    // commit all geometry
+    Signal.render();
+    Radiation.render();
+
+    // render all committed geometry
+    LineRenderer.render();
+    ParticleRenderer.render();
+  }
 }
 
 

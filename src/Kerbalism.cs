@@ -233,6 +233,7 @@ public sealed class Kerbalism : MonoBehaviour
     }
 
     // only allow 1 malfunction module per-part
+    // note: it is possible that RemoveModule is evil
     foreach(AvailablePart part in PartLoader.LoadedPartsList)
     {
       // get the prefab
@@ -266,15 +267,12 @@ public sealed class Kerbalism : MonoBehaviour
 
   void toEVA(GameEvents.FromToAction<Part, Part> data)
   {
-    // get info from the cache
-    vessel_info from_info = Cache.VesselInfo(data.from.vessel);
-
     // use Hydrazine instead of MonoPropellant if RealFuel is installed
     string monoprop_name = detected_mods.RealFuels ? "Hydrazine" : "MonoPropellant";
 
     // determine if inside breathable atmosphere
     // note: the user can force the helmet + oxygen by pressing shift when going on eva
-    bool breathable = from_info.breathable && !(Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift));
+    bool breathable = Sim.Breathable(data.from.vessel) && !(Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift));
 
     // get total crew in the origin vessel
     double tot_crew = (double)data.from.vessel.GetVesselCrew().Count + 1.0;
@@ -293,7 +291,7 @@ public sealed class Kerbalism : MonoBehaviour
     data.to.RequestResource("EVA Propellant", -monoprop);
 
     // show warning if there isn't monoprop in the eva suit
-    if (monoprop <= double.Epsilon && !from_info.landed)
+    if (monoprop <= double.Epsilon && !Lib.Landed(data.from.vessel))
     {
       Message.Post(Severity.danger, Lib.BuildString("There isn't any <b>", monoprop_name, "</b> in the EVA suit", "Don't let the ladder go!"));
     }
@@ -335,6 +333,9 @@ public sealed class Kerbalism : MonoBehaviour
     base.StartCoroutine(CallbackUtil.DelayedCallback(2.0f, Message.UnmuteInternal));
 
     // if vessel info is open, switch to the eva kerbal
+    // note: for a single tick, the EVA vessel is not valid (sun_dist is zero)
+    // this make IsVessel() return false, that in turn close the vessel info instantly
+    // for this reason, we wait a small amount of time before switching the info window
     if (Info.IsOpen()) Info.Open(data.to.vessel);
   }
 
@@ -652,7 +653,7 @@ public sealed class Kerbalism : MonoBehaviour
   {
     // mute/unmute messages with keyboard
     // done in update because unity is a mess
-    if ((Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)) && Input.GetKeyUp(KeyCode.N))
+    if ((Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)) && Input.GetKeyDown(KeyCode.N))
     {
       if (!Message.IsMuted())
       {
@@ -664,6 +665,12 @@ public sealed class Kerbalism : MonoBehaviour
         Message.Unmute();
         Message.Post("Messages unmuted");
       }
+    }
+
+    // toggle body info window with keyboard
+    if ((Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.LeftAlt)) && Input.GetKeyDown(KeyCode.N))
+    {
+      BodyInfo.Toggle();
     }
 
     // add progress descriptions to technologies
@@ -940,7 +947,7 @@ public sealed class Kerbalism : MonoBehaviour
   public static double hook_RadiationLevel(Vessel v)
   {
     vessel_info vi = Cache.VesselInfo(v);
-    return vi.cosmic_radiation + vi.storm_radiation + vi.belt_radiation;
+    return vi.radiation;
   }
 
   // hook: LinkStatus()
@@ -977,13 +984,16 @@ public sealed class Kerbalism : MonoBehaviour
   // hook: InsideMagnetosphere()
   public static bool hook_InsideMagnetosphere(Vessel v)
   {
-    return Cache.VesselInfo(v).is_valid && Radiation.InsideMagnetosphere(v);
+    // note: this doesn't consider the sun heliopause
+    vessel_info vi = Cache.VesselInfo(v);
+    return vi.is_valid && vi.pause_body > 0;
   }
 
   // hook: InsideBelt()
   public static bool hook_InsideBelt(Vessel v)
   {
-    return Cache.VesselInfo(v).is_valid && Radiation.InsideBelt(v);
+    vessel_info vi = Cache.VesselInfo(v);
+    return vi.is_valid && (vi.inner_body > 0 || vi.outer_body > 0);
   }
 
   // hook: LivingSpace()

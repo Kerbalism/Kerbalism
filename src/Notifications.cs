@@ -35,9 +35,6 @@ public sealed class Notifications
   // NOTE: this should really be called every frame once, and not twice as it is now
   public void on_gui()
   {
-    // avoid case when DB isn't ready for whatever reason
-    if (!DB.Ready()) return;
-
     // check only when at the space center
     if (HighLogic.LoadedScene != GameScenes.SPACECENTER) return;
 
@@ -151,16 +148,16 @@ public sealed class Notifications
 
     new Entry("Radiation", "Just when you through that space may not be that hard after all, turns out it is filled with deadly radiation.\n\n"
             + "<b>Magnetospheres</b>\n"
-            + "Some celestial bodies have a magnetosphere that extend far into space, protecting anything inside it.\n\n"
+            + "Some celestial bodies have a magnetosphere that extend far into space, offering some protection from radiation.\n\n"
             + "<b>Radiation Belts</b>\n"
-            + "Magnetospheres may have a region populated by extremely charged particles. "
-            + "Unfortunately we have to cross it if we want to explore other celestial bodies.\n\n"
+            + "Magnetospheres may have regions populated by extremely charged particles.\n\n"
             + "<b>Cosmic Radiation</b>\n"
-            + "The vast expanse of space seems to be filled with radiation coming from the galaxy. "
-            + "We didn't notice it before because our magnetosphere protect us from it.\n\n"
+            + "The vast expanse of space seems to be filled with radiation coming from the galaxy.\n\n"
+            + "<b>Interstellar Radiation</b>\n"
+            + "Beyond the relative confort of our heliopause lies an immense, hostile environment.\n\n"
             + "<b>Space Weather</b>\n"
-            + "Coronal mass ejections from the Sun will hit planetary systems from time to time, causing short but intense radiation to all vessels caught outside "
-            + "a magnetosphere and in direct line of sight with the Sun.\n\n"
+            + "Coronal mass ejections from the Sun will hit planetary systems from time to time, causing short but intense radiation to all vessels caught "
+            + "in direct line of sight with the Sun and outside a magnetopause.\n\n"
             + "<b>Shielding</b>\n"
             + "We have the means to protect us from radiation. Well, not exactly, but at least we can delay their effects by equipping our vessels with Shielding.\n"),
 

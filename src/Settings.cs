@@ -27,12 +27,9 @@ public static class Settings
     QoL_NotAlone                = Lib.ConfigValue(cfg, "QoL_NotAlone",                1.5);
 
     // radiation
-    CosmicRadiation             = Lib.ConfigValue(cfg, "CosmicRadiation",             0.0000055555); // 0.02 rad/h
-    StormRadiation              = Lib.ConfigValue(cfg, "StormRadiation",              0.0005555555); // 2.0 rad/h
-    BeltRadiation               = Lib.ConfigValue(cfg, "BeltRadiation",               0.0055555555); // 20.0 rad/h
-    ShieldingEfficiency         = Lib.ConfigValue(cfg, "ShieldingEfficiency",         0.95);
-    MagnetosphereFalloff        = Lib.ConfigValue(cfg, "MagnetosphereFalloff",        0.33);
-    BeltFalloff                 = Lib.ConfigValue(cfg, "BeltFalloff",                 0.1);
+    ShieldingEfficiency         = Lib.ConfigValue(cfg, "ShieldingEfficiency",         0.9);
+    StormRadiation              = Lib.ConfigValue(cfg, "StormRadiation",              0.001111111); // 4.0 rad/h
+    InterstellarRadiation       = Lib.ConfigValue(cfg, "InterstellarRadiation",       0.000011111); // 0.04 rad/h
 
     // storm
     StormMinTime                = Lib.ConfigValue(cfg, "StormMinTime",                2160000.0); // 100 days
@@ -53,6 +50,7 @@ public static class Settings
     ShowRates                   = Lib.ConfigValue(cfg, "ShowRates",                   false);
     RelativisticTime            = Lib.ConfigValue(cfg, "RelativisticTime",            false);
     LightSpeedScale             = Lib.ConfigValue(cfg, "LightSpeedScale",             1.0);
+    LowQualityFieldRendering    = Lib.ConfigValue(cfg, "LowQualityFieldRendering",    false);
   }
 
   // temperature
@@ -65,12 +63,9 @@ public static class Settings
   public static double QoL_NotAlone;                      // bonus to apply to quality-of-life when crew count is >= 2
 
   // radiation
-  public static double CosmicRadiation;                   // radiation outside a magnetosphere
-  public static double StormRadiation;                    // radiation during a magnetic storm
-  public static double BeltRadiation;                     // radiation inside a belt
   public static double ShieldingEfficiency;               // proportion of radiation blocked by shielding (at max amount)
-  public static double MagnetosphereFalloff;              // the magnetosphere intensity fade out gradually outside it
-  public static double BeltFalloff;                       // the bel intensity fade in/out gradually when crossing it
+  public static double StormRadiation;                    // radiation during a solar storm
+  public static double InterstellarRadiation;             // radiation outside the heliopause
 
   // storm
   public static double StormMinTime;                      // minimum interval between storms over a system
@@ -91,6 +86,7 @@ public static class Settings
   public static bool   ShowRates;                         // if true, show consumption/production rates in vessel info window
   public static bool   RelativisticTime;                  // if true, time on vessel dilate according to special relativity
   public static double LightSpeedScale;                   // used to scale the speed of light for gameplay purposes
+  public static bool   LowQualityFieldRendering;          // use less particles to render the magnetic fields
 }
 
 

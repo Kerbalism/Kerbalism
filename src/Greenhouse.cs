@@ -164,7 +164,7 @@ public sealed class Greenhouse : PartModule
     // set emissive intensity from lamp tweakable
     if (emissive_object.Length > 0)
     {
-      foreach(Renderer rdr in part.GetComponentsInChildren<Renderer>())
+      foreach(var rdr in part.GetComponentsInChildren<UnityEngine.Renderer>())
       {
         if (rdr.name == emissive_object) { rdr.material.SetColor("_EmissiveColor", new Color(lamps, lamps, lamps, 1.0f)); break; }
       }
@@ -176,11 +176,18 @@ public sealed class Greenhouse : PartModule
     // get vessel info from the cache
     vessel_info vi = Cache.VesselInfo(vessel);
 
+    // do nothing if vessel is invalid
+    if (!vi.is_valid) return;
+
     // get resource cache
     vessel_resources resources = ResourceCache.Get(vessel);
 
     // get elapsed time
     double elapsed_s = Kerbalism.elapsed_s * vi.time_dilation;
+
+    // when the greenhouse is assembled using KIS, the growth field is set to NaN
+    // at that point it remain NaN forever, so we fix it
+    if (double.IsNaN(growth)) growth = 0.0;
 
     // if lamp is on
     if (lamps > float.Epsilon)
@@ -202,7 +209,7 @@ public sealed class Greenhouse : PartModule
 
     // if can use waste, and there is some lighting
     double waste_perc = 0.0;
-    if (waste_name.Length > 0 && lighting > double.Epsilon)
+    if (waste_name.Length > 0 && waste_rate > double.Epsilon && lighting > double.Epsilon)
     {
       // get resource handler
       resource_info waste = resources.Info(vessel, waste_name);

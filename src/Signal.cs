@@ -192,7 +192,7 @@ public sealed class Signal
   }
 
 
-  public static link_data Link(Vessel v, antenna_data antenna, HashSet<Guid> avoid_inf_recursion)
+  public static link_data Link(Vessel v, antenna_data antenna, bool blackout, HashSet<Guid> avoid_inf_recursion)
   {
     // assume linked if signal mechanic is disabled
     if (!Kerbalism.features.signal) return new link_data(true, link_status.direct_link, double.MaxValue);
@@ -201,7 +201,7 @@ public sealed class Signal
     if (antenna.range <= double.Epsilon) return new link_data(false, link_status.no_antenna, 0.0);
 
     // if there is a storm and the vessel is inside a magnetosphere
-    if (Blackout(v)) return new link_data(false, link_status.no_link, 0.0);
+    if (blackout) return new link_data(false, link_status.no_link, 0.0);
 
     // store raytracing data
     Vector3d dir;
@@ -294,7 +294,7 @@ public sealed class Signal
       {
         vd.msg_signal = 1;
         DB.NotificationData().first_signal_loss = 1; //< record first signal loss
-        if (vd.cfg_signal == 1 && !Blackout(v)) //< do not send message during storms
+        if (vd.cfg_signal == 1 && !vi.blackout) //< do not send message during storms
         {
           Message.Post(Severity.warning, Lib.BuildString("Signal lost with <b>", v.vesselName, "</b>"),
             vi.crew_count == 0 && Settings.RemoteControlLink ? "Remote control disabled" : "Data transmission disabled");
@@ -314,10 +314,10 @@ public sealed class Signal
   }
 
 
-  public void render()
+  public static void render()
   {
     // get home body position
-    Vector3 home = FlightGlobals.GetHomeBody().position;
+    Vector3 home = ScaledSpace.LocalToScaledSpace(FlightGlobals.GetHomeBody().position);
 
     // for each vessel
     foreach(Vessel v in FlightGlobals.Vessels)
@@ -341,7 +341,7 @@ public sealed class Signal
       if (link.status == link_status.no_antenna) continue;
 
       // start of the line
-      Vector3 a = v.GetWorldPos3D();
+      Vector3 a = ScaledSpace.LocalToScaledSpace(v.GetWorldPos3D());
 
       // determine end of line and color
       Vector3 b;
@@ -362,15 +362,14 @@ public sealed class Signal
         var path = link.path;
 
         // use relay position
-        b = path[path.Count - 1].GetWorldPos3D();
+        b = ScaledSpace.LocalToScaledSpace(path[path.Count - 1].GetWorldPos3D());
         color = Color.yellow;
       }
 
       // commit the line
-      MapRenderer.commit(a, b, color);
+      LineRenderer.commit(a, b, color);
     }
   }
-
 
   // return range of an antenna
   static public double Range(string scope, double penalty, double ecc)
@@ -385,13 +384,6 @@ public sealed class Signal
   {
     double[] value = {0.15, 0.33, 0.66, 1.0};
     return value[Lib.CountTechs(signal_processing.techs)];
-  }
-
-
-  // return true if vessel is inside a magnetosphere and there is a storm in progress
-  public static bool Blackout(Vessel v)
-  {
-    return Storm.InProgress(v) && Radiation.InsideMagnetosphere(v);
   }
 
 

@@ -147,8 +147,8 @@ public sealed class Profiler : MonoBehaviour
       entry e = pair.Value;
       GUILayout.BeginHorizontal();
       GUILayout.Label(e_name, name_style);
-      GUILayout.Label(e.prev_calls > 0 ? Microseconds(e.prev_time / e.prev_calls).ToString("F2") : "", value_style);
-      GUILayout.Label(e.tot_calls > 0 ? Microseconds(e.tot_time / e.tot_calls).ToString("F2") : "", value_style);
+      GUILayout.Label(e.prev_calls > 0 ? Lib.Microseconds(e.prev_time / e.prev_calls).ToString("F2") : "", value_style);
+      GUILayout.Label(e.tot_calls > 0 ? Lib.Microseconds(e.tot_time / e.tot_calls).ToString("F2") : "", value_style);
       GUILayout.Label(e.prev_calls.ToString(), value_style);
       GUILayout.EndHorizontal();
     }
@@ -194,7 +194,7 @@ public sealed class Profiler : MonoBehaviour
     if (!instance.entries.ContainsKey(e_name)) instance.entries.Add(e_name, new entry());
 
     entry e = instance.entries[e_name];
-    e.start = Clocks();
+    e.start = Lib.Clocks();
   }
 
 
@@ -206,21 +206,7 @@ public sealed class Profiler : MonoBehaviour
     entry e = instance.entries[e_name];
 
     ++e.calls;
-    e.time += Clocks() - e.start;
-  }
-
-
-  // get current time
-  static UInt64 Clocks()
-  {
-    return (UInt64)Stopwatch.GetTimestamp();
-  }
-
-
-  // convert from clocks to microseconds
-  static double Microseconds(UInt64 clocks)
-  {
-    return (double)clocks * 1000000.0 / (double)Stopwatch.Frequency;
+    e.time += Lib.Clocks() - e.start;
   }
 }
 

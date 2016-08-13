@@ -56,7 +56,8 @@ public sealed class Planner
 
   public class radiation_data
   {
-    public double shielding_level;                        // amount vs capacity of radiation shielding on the vessel
+    public double shielding;                              // amount vs capacity of radiation shielding on the vessel
+    public double[] rate;                                 // rates in rad/s
     public double[] life_expectancy;                      // time-to-death or time-to-safemode for radiations (cosmic/storm/belt levels)
   }
 
@@ -168,7 +169,7 @@ public sealed class Planner
     env.altitude = body.Radius * altitude_mult;
     env.landed = env.altitude <= double.Epsilon;
     env.breathable = env.landed && body.atmosphereContainsOxygen;
-    env.atmo_factor = env.landed ? Sim.AtmosphereFactor(body, 0.7071) : 1.0;
+    env.atmo_factor = Sim.AtmosphereFactor(body, 0.7071);
     env.sun_dist = Sim.Apoapsis(Lib.PlanetarySystem(body)) - sun.Radius - body.Radius;
     Vector3d sun_dir = (sun.position - body.position).normalized;
     env.solar_flux = sunlight ? Sim.SolarFlux(env.sun_dist) * env.atmo_factor : 0.0;
@@ -207,6 +208,9 @@ public sealed class Planner
       // accumulate crew capacity
       crew.capacity += (uint)p.CrewCapacity;
     }
+
+    // if the user press ALT, the planner consider the vessel crewed at full capacity
+    if (Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt)) crew.count = crew.capacity;
 
     // return data
     return crew;
@@ -286,21 +290,38 @@ public sealed class Planner
     }
 
     // calculate radiation data
-    radiation.shielding_level = capacity > 0.0 ? amount / capacity : 0.0;
-    double shielding = Radiation.Shielding(radiation.shielding_level);
-    double belt_strength = Settings.BeltRadiation * Radiation.Dynamo(env.body) * 0.5; //< account for the 'ramp'
+    radiation.shielding = capacity > 0.0 ? amount / capacity : 0.0;
+    radiation.shielding = Radiation.Shielding(radiation.shielding);
     if (crew.capacity > 0)
     {
+      var rb = Radiation.Info(env.body);
+      var sun = Radiation.Info(FlightGlobals.Bodies[0]);
+      double surface_rad = rb.model.has_pause ? rb.radiation_pause : sun.model.has_pause ? sun.radiation_pause : Settings.InterstellarRadiation;
+      radiation.rate = new double[]
+      {
+        surface_rad * (1.0 - radiation.shielding) * Sim.GammaTransparency(env.body, 0),     // surface radiation
+        rb.radiation_pause * (1.0 - radiation.shielding),                                   // inside magnetopause
+        rb.radiation_inner * (1.0 - radiation.shielding),                                   // inside inner belt
+        rb.radiation_outer * (1.0 - radiation.shielding),                                   // inside outer belt
+        sun.radiation_pause * (1.0 - radiation.shielding),                                  // interplanetary
+        Settings.InterstellarRadiation * (1.0 - radiation.shielding),                       // interstellar
+        Settings.StormRadiation * (1.0 - radiation.shielding)                               // storm
+      };
       radiation.life_expectancy = new double[]
       {
-        rule_radiation.fatal_threshold / (Settings.CosmicRadiation * (1.0 - shielding)),
-        rule_radiation.fatal_threshold / (Settings.StormRadiation * (1.0 - shielding)),
-        Radiation.HasBelt(env.body) ? rule_radiation.fatal_threshold / (belt_strength * (1.0 - shielding)) : double.NaN
+        rule_radiation.fatal_threshold / radiation.rate[0],
+        rule_radiation.fatal_threshold / radiation.rate[1],
+        rule_radiation.fatal_threshold / radiation.rate[2],
+        rule_radiation.fatal_threshold / radiation.rate[3],
+        rule_radiation.fatal_threshold / radiation.rate[4],
+        rule_radiation.fatal_threshold / radiation.rate[5],
+        rule_radiation.fatal_threshold / radiation.rate[6]
       };
     }
     else
     {
-      radiation.life_expectancy = new double[]{double.NaN, double.NaN, double.NaN};
+      radiation.rate = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+      radiation.life_expectancy = new double[]{double.NaN, double.NaN, double.NaN, double.NaN, double.NaN};
     }
 
     // return data
@@ -434,21 +455,20 @@ public sealed class Planner
       "background\t", Lib.HumanReadableFlux(Sim.BackgroundFlux()), "\t", Lib.HumanReadableTemp(Sim.BlackBodyTemperature(Sim.BackgroundFlux())), "\n",
       "total\t\t", Lib.HumanReadableFlux(env.total_flux), "\t", Lib.HumanReadableTemp(Sim.BlackBodyTemperature(env.total_flux))
     );
-    bool in_atmosphere = env.landed && env.body.atmosphere;
-    string atmosphere_tooltip = in_atmosphere
-      ? Lib.BuildString
-      (
-        "light absorption: <b>", Lib.HumanReadablePerc(1.0 - env.atmo_factor), "</b>\n",
-        "pressure: <b>", env.body.atmospherePressureSeaLevel.ToString("F0"), " kPa</b>\n",
-        "breathable: <b>", (env.body.atmosphereContainsOxygen ? "yes" : "no"), "</b>"
-      )
-      : "";
+    string atmosphere_tooltip = Lib.BuildString
+    (
+      "<align=left />",
+      "breathable\t\t<b>", (env.body.atmosphereContainsOxygen ? "yes" : "no"), "</b>\n",
+      "pressure\t\t<b>", env.body.atmospherePressureSeaLevel.ToString("F0"), " kPa</b>\n",
+      "visible absorption\t<b>", Lib.HumanReadablePerc(1.0 - env.atmo_factor), "</b>\n",
+      "gamma absorption\t<b>", Lib.HumanReadablePerc(1.0 - Sim.GammaTransparency(env.body, 0.0)), "</b>"
+    );
     string shadowtime_str = Lib.HumanReadableDuration(env.shadow_period) + " (" + (env.shadow_time * 100.0).ToString("F0") + "%)";
 
     render_title("ENVIRONMENT");
-    render_content("temperature", Lib.HumanReadableTemp(env.temperature), in_atmosphere ? "atmospheric" : flux_tooltip);
+    render_content("temperature", Lib.HumanReadableTemp(env.temperature), env.body.atmosphere ? "atmospheric" : flux_tooltip);
     render_content("temp diff", Lib.HumanReadableTemp(env.temp_diff), "difference between external and survival temperature");
-    render_content("inside atmosphere", in_atmosphere ? "yes" : "no", atmosphere_tooltip);
+    render_content("atmosphere", env.body.atmosphere ? "yes" : "no", atmosphere_tooltip);
     render_content("shadow time", shadowtime_str, "the time in shadow\nduring the orbit");
     render_space();
   }
@@ -491,45 +511,42 @@ public sealed class Planner
 
   void render_radiation(radiation_data radiation, environment_data env, crew_data crew)
   {
-    string magnetosphere_tooltip = Lib.BuildString
+    RadiationBody rb = Radiation.Info(env.body);
+    RadiationModel mf = rb.model;
+
+    // alternate between life-times / radiation levels
+    int alternate = (int)(((UInt64)Time.realtimeSinceStartup / 3ul) % 2ul);
+
+    string levels_tooltip = crew.capacity == 0 ? "" : alternate == 0 ? Lib.BuildString
     (
       "<align=left />",
-      "magnetopause: <b>", Lib.HumanReadableRange(Radiation.MagnAltitude(env.body)), "</b>\n",
-      "intensity: <b>", Lib.HumanReadableField(Radiation.Dynamo(env.body) * 45.0), "</b>"
+      "surface\t\t<b>", Lib.HumanReadableDuration(radiation.life_expectancy[0]), "</b>\n",
+      "magnetopause\t<b>", Lib.HumanReadableDuration(radiation.life_expectancy[1]), "</b>\n",
+      mf.has_inner ? Lib.BuildString("inner belt\t<b>", Lib.HumanReadableDuration(radiation.life_expectancy[2]), "</b>\n") : "",
+      mf.has_outer ? Lib.BuildString("outer belt\t<b>", Lib.HumanReadableDuration(radiation.life_expectancy[3]), "</b>\n") : "",
+      "interplanetary\t<b>", Lib.HumanReadableDuration(radiation.life_expectancy[4]), "</b>\n",
+      "interstellar\t<b>", Lib.HumanReadableDuration(radiation.life_expectancy[5]), "</b>\n",
+      "storm\t\t<b>", Lib.HumanReadableDuration(radiation.life_expectancy[6]), "</b>"
+    )
+    : Lib.BuildString
+    (
+      "<align=left />",
+      "surface\t\t<b>", Lib.HumanReadableRadiationRate(radiation.rate[0]), "</b>\n",
+      "magnetopause\t<b>", Lib.HumanReadableRadiationRate(radiation.rate[1]), "</b>\n",
+      mf.has_inner ? Lib.BuildString("inner belt\t<b>", Lib.HumanReadableRadiationRate(radiation.rate[2]), "</b>\n") : "",
+      mf.has_outer ? Lib.BuildString("outer belt\t<b>", Lib.HumanReadableRadiationRate(radiation.rate[3]), "</b>\n") : "",
+      "interplanetary\t<b>", Lib.HumanReadableRadiationRate(radiation.rate[4]), "</b>\n",
+      "interstellar\t<b>", Lib.HumanReadableRadiationRate(radiation.rate[5]), "</b>\n",
+      "storm\t\t<b>", Lib.HumanReadableRadiationRate(radiation.rate[6]), "</b>"
     );
 
-    string belt_tooltip = Lib.BuildString
-    (
-      "<align=left />",
-      "altitude: <b>", Lib.HumanReadableRange(Radiation.BeltAltitude(env.body)), "</b>\n",
-      "extension: <b>", Lib.HumanReadableRange(Radiation.BeltAltitude(env.body) * Settings.BeltFalloff * 2.0), "</b>\n",
-      "strength: <b>", Lib.HumanReadableRadiationRate(Radiation.Dynamo(env.body) * Settings.BeltRadiation), "</b>"
-    );
-
-    string life_tooltip = Lib.BuildString
-    (
-      "<align=left />",
-      "<b>\tradiation\ttime</b>\n",
-      "cosmic\t", Lib.HumanReadableRadiationRate(Settings.CosmicRadiation), "\t", Lib.HumanReadableDuration(radiation.life_expectancy[0]), "\n",
-      "storm\t", Lib.HumanReadableRadiationRate(Settings.StormRadiation), "\t", Lib.HumanReadableDuration(radiation.life_expectancy[1])
-    );
-    if (Radiation.HasBelt(env.body))
-    {
-      life_tooltip = Lib.BuildString
-      (
-        life_tooltip, "\n",
-        "belt\t", Lib.HumanReadableRadiationRate(Radiation.Dynamo(env.body) * Settings.BeltRadiation), "\t", Lib.HumanReadableDuration(radiation.life_expectancy[2])
-      );
-    }
 
     render_title("RADIATION");
-    if (Radiation.HasMagnetosphere(env.body)) render_content("magnetosphere", "yes", magnetosphere_tooltip);
-    else render_content("magnetosphere", "no");
-    if (Radiation.HasBelt(env.body)) render_content("radiation belt", "yes", belt_tooltip);
-    else render_content("radiation belt", "no");
-    render_content("shielding", Radiation.ShieldingToString(radiation.shielding_level));
-    if (crew.capacity > 0) render_content("life expectancy", Lib.HumanReadableDuration(radiation.life_expectancy[0]), life_tooltip);
-    else render_content("life expectancy", "perpetual");
+    if (env.body.atmosphere || !mf.has_pause) render_content("surface", Lib.HumanReadableDuration(radiation.life_expectancy[0]), levels_tooltip);
+    else render_content("magnetopause", rb.model.has_pause ? Lib.HumanReadableDuration(radiation.life_expectancy[1]) : "no", levels_tooltip);
+    render_content("interplanetary", Lib.HumanReadableDuration(radiation.life_expectancy[4]), levels_tooltip);
+    render_content("storm", Lib.HumanReadableDuration(radiation.life_expectancy[6]), levels_tooltip);
+    render_content("shielding", Radiation.ShieldingToString(radiation.shielding), levels_tooltip);
     render_space();
   }
 
@@ -665,7 +682,7 @@ public sealed class Planner
       crew_data crew = analyze_crew(parts);
       signal_data signal = analyze_signal(parts);
       qol_data qol = Kerbalism.qol_rule != null ? analyze_qol(parts, env, crew, signal, Kerbalism.qol_rule) : null;
-      resource_simulator sim = new resource_simulator(parts, Kerbalism.supply_rules, env, qol, crew);
+      resource_simulator sim = new resource_simulator(parts, Kerbalism.rules, env, qol, crew);
 
       // start header
       GUILayout.BeginHorizontal(row_style);
@@ -866,7 +883,7 @@ public class resource_simulator
     }
 
     // process all rules
-    foreach(Rule r in Kerbalism.rules)
+    foreach(Rule r in rules)
     {
       if (r.resource_name.Length > 0 && r.rate > 0.0)
       {
@@ -1167,7 +1184,7 @@ public class resource_simulator
     // consume ec if deployed
     if (SCANsat.isDeployed(p, m))
     {
-      resource("ElectricCharge").consume(Lib.ReflectionValue<float>(m, "power"));
+      resource("ElectricCharge").consume(SCANsat.EcConsumption(m));
     }
   }
 
@@ -1214,7 +1231,7 @@ public class resource_simulator
      double cooling_cost = Lib.ReflectionValue<float>(m, "CoolingCost");
      string fuel_name = Lib.ReflectionValue<string>(m, "FuelName");
 
-     resource("ElectricCharge").consume(cooling_cost * Lib.Amount(p, fuel_name) * 0.001);
+     resource("ElectricCharge").consume(cooling_cost * Lib.Capacity(p, fuel_name) * 0.001);
   }
 
 

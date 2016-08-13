@@ -50,9 +50,9 @@ public sealed class Sensor : PartModule
 
         pinfc = new FloatCurve();
         pinfc.Add(0.0f, 0.0f);
-        pinfc.Add((float)Settings.CosmicRadiation, 0.33f);
-        pinfc.Add((float)Settings.StormRadiation, 0.66f);
-        pinfc.Add((float)Settings.BeltRadiation, 1.0f);
+        pinfc.Add(0.005f, 0.33f);
+        pinfc.Add(1.0f, 0.66f);
+        pinfc.Add(11.0f, 1.0f);
       }
     }
   }
@@ -62,19 +62,27 @@ public sealed class Sensor : PartModule
   {
     if (HighLogic.LoadedSceneIsEditor) return;
 
+    // get info from cache
     vessel_info vi = Cache.VesselInfo(this.vessel);
+
+    // do nothing if vessel is invalid
+    if (!vi.is_valid) return;
+
+    // set reading
     switch(type)
     {
       case "temperature": Status = Lib.HumanReadableTemp(vi.temperature); break;
-      case "radiation": Status = vi.env_radiation > double.Epsilon ? Lib.HumanReadableRadiationRate(vi.env_radiation) : "nominal"; break;
+      case "radiation": Status = vi.radiation > double.Epsilon ? Lib.HumanReadableRadiationRate(vi.radiation) : "nominal"; break;
       case "solar_flux": Status = Lib.HumanReadableFlux(vi.solar_flux); break;
       case "albedo_flux": Status = Lib.HumanReadableFlux(vi.albedo_flux); break;
       case "body_flux": Status = Lib.HumanReadableFlux(vi.body_flux); break;
     }
 
+    // manage pin animation on geiger counter
     if (pinanim != null && type == "radiation")
     {
-      pinanim["pinanim"].normalizedTime = pinfc.Evaluate((float)vi.env_radiation);
+      pinanim["pinanim"].normalizedTime = Lib.Clamp(pinfc.Evaluate((float)(vi.radiation * 3600.0)), 0.0f, 1.0f);
+      pinanim.Play();
     }
   }
 }

@@ -17,9 +17,6 @@ public sealed class Background
   // called at every simulation step
   public static void update(Vessel v, vessel_info vi, vessel_data vd, vessel_resources resources, double elapsed_s)
   {
-    // this vessel is not properly set up by the game engine, skip it
-    if (vi.sun_dist <= double.Epsilon) return;
-
     // get most used resource handlers
     resource_info ec = resources.Info(v, "ElectricCharge");
 
@@ -106,6 +103,7 @@ public sealed class Background
 
       // calculate cosine factor
       // note: for gameplay reasons, we ignore tracking panel pivots
+      // note: a possible optimization here is to cache the transform lookup (unity was coded by monkeys)
       double cosine_factor = panel.sunTracking ? 1.0 : Math.Max(Vector3d.Dot(info.sun_dir, (v.transform.rotation * p.rotation * normal).normalized), 0.0);
 
       // calculate normalized solar flux
@@ -171,29 +169,42 @@ public sealed class Background
     // if active
     if (Lib.Proto.GetBool(m, "IsActivated"))
     {
-      // get malfunction penalty
-      double penalty = Malfunction.Penalty(p);
-
-      // deduce crew bonus
-      int exp_level = -1;
-      if (converter.UseSpecialistBonus)
-      {
-        foreach(ProtoCrewMember c in v.protoVessel.GetVesselCrew())
-          exp_level = Math.Max(exp_level, c.trait == converter.Specialty ? c.experienceLevel : -1);
-      }
-      double exp_bonus = exp_level < 0 ? 1.0 : 5.0 + (double)exp_level * 4.0;
-
-      // create and commit recipe
-      resource_recipe recipe = new resource_recipe(resource_recipe.converter_priority);
-      foreach(var ir in converter.inputList)
-      {
-        recipe.Input(ir.ResourceName, ir.Ratio * elapsed_s);
-      }
+      // determine if vessel is full of all output resources
+      // note: comparing against previous amount
+      bool full = true;
       foreach(var or in converter.outputList)
       {
-        recipe.Output(or.ResourceName, or.Ratio * penalty * exp_bonus * elapsed_s);
+        resource_info res = resources.Info(v, or.ResourceName);
+        full &= (res.level >= converter.FillAmount - double.Epsilon);
       }
-      resources.Transform(recipe);
+
+      // if not full
+      if (!full)
+      {
+        // get malfunction penalty
+        double penalty = Malfunction.Penalty(p);
+
+        // deduce crew bonus
+        int exp_level = -1;
+        if (converter.UseSpecialistBonus)
+        {
+          foreach(ProtoCrewMember c in v.protoVessel.GetVesselCrew())
+            exp_level = Math.Max(exp_level, c.trait == converter.Specialty ? c.experienceLevel : -1);
+        }
+        double exp_bonus = exp_level < 0 ? 1.0 : 5.0 + (double)exp_level * 4.0;
+
+        // create and commit recipe
+        resource_recipe recipe = new resource_recipe(resource_recipe.converter_priority);
+        foreach(var ir in converter.inputList)
+        {
+          recipe.Input(ir.ResourceName, ir.Ratio * elapsed_s);
+        }
+        foreach(var or in converter.outputList)
+        {
+          recipe.Output(or.ResourceName, or.Ratio * penalty * exp_bonus * elapsed_s);
+        }
+        resources.Transform(recipe);
+      }
 
       // undo stock behaviour by forcing last_update_time to now
       Lib.Proto.Set(m, "lastUpdateTime", Planetarium.GetUniversalTime());
@@ -212,42 +223,47 @@ public sealed class Background
     // if active
     if (Lib.Proto.GetBool(m, "IsActivated"))
     {
-      // get malfunction penalty
-      double penalty = Malfunction.Penalty(p);
-
-      // deduce crew bonus
-      int exp_level = -1;
-      if (harvester.UseSpecialistBonus)
+      // do nothing if full
+      // note: comparing against previous amount
+      if (resources.Info(v, harvester.ResourceName).level < harvester.FillAmount - double.Epsilon)
       {
-        foreach(ProtoCrewMember c in v.protoVessel.GetVesselCrew())
-          exp_level = Math.Max(exp_level, c.trait == harvester.Specialty ? c.experienceLevel : -1);
-      }
-      double exp_bonus = exp_level < 0 ? 1.0 : 5.0 + (double)exp_level * 4.0;
+        // get malfunction penalty
+        double penalty = Malfunction.Penalty(p);
 
-      // detect amount of ore in the ground
-      AbundanceRequest request = new AbundanceRequest
-      {
-        Altitude = v.altitude,
-        BodyId = v.mainBody.flightGlobalsIndex,
-        CheckForLock = false,
-        Latitude = v.latitude,
-        Longitude = v.longitude,
-        ResourceType = (HarvestTypes)harvester.HarvesterType,
-        ResourceName = harvester.ResourceName
-      };
-      double abundance = ResourceMap.Instance.GetAbundance(request);
-
-      // if there is actually something (should be if active when unloaded)
-      if (abundance > harvester.HarvestThreshold)
-      {
-        // create and commit recipe
-        resource_recipe recipe = new resource_recipe(resource_recipe.harvester_priority);
-        foreach(var ir in harvester.inputList)
+        // deduce crew bonus
+        int exp_level = -1;
+        if (harvester.UseSpecialistBonus)
         {
-          recipe.Input(ir.ResourceName, ir.Ratio * elapsed_s);
+          foreach(ProtoCrewMember c in v.protoVessel.GetVesselCrew())
+            exp_level = Math.Max(exp_level, c.trait == harvester.Specialty ? c.experienceLevel : -1);
         }
-        recipe.Output(harvester.ResourceName, abundance * harvester.Efficiency * exp_bonus * penalty * elapsed_s);
-        resources.Transform(recipe);
+        double exp_bonus = exp_level < 0 ? 1.0 : 5.0 + (double)exp_level * 4.0;
+
+        // detect amount of ore in the ground
+        AbundanceRequest request = new AbundanceRequest
+        {
+          Altitude = v.altitude,
+          BodyId = v.mainBody.flightGlobalsIndex,
+          CheckForLock = false,
+          Latitude = v.latitude,
+          Longitude = v.longitude,
+          ResourceType = (HarvestTypes)harvester.HarvesterType,
+          ResourceName = harvester.ResourceName
+        };
+        double abundance = ResourceMap.Instance.GetAbundance(request);
+
+        // if there is actually something (should be if active when unloaded)
+        if (abundance > harvester.HarvestThreshold)
+        {
+          // create and commit recipe
+          resource_recipe recipe = new resource_recipe(resource_recipe.harvester_priority);
+          foreach(var ir in harvester.inputList)
+          {
+            recipe.Input(ir.ResourceName, ir.Ratio * elapsed_s);
+          }
+          recipe.Output(harvester.ResourceName, abundance * harvester.Efficiency * exp_bonus * penalty * elapsed_s);
+          resources.Transform(recipe);
+        }
       }
 
       // undo stock behaviour by forcing last_update_time to now
@@ -340,7 +356,7 @@ public sealed class Background
   static void ProcessScanner(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule scanner, Part part_prefab, vessel_data vd, resource_info ec, double elapsed_s)
   {
     // get ec consumption rate
-    double power = Lib.ReflectionValue<float>(scanner, "power");
+    double power = SCANsat.EcConsumption(scanner);
 
     // if the scanner doesn't require power to operate, we aren't interested in simulating it
     if (power <= double.Epsilon) return;
@@ -414,6 +430,7 @@ public sealed class Background
       double rate = (double)tot_rate / (double)components.Length;
 
       // calculate world-space part rotation quaternion
+      // note: a possible optimization here is to cache the transform lookup (unity was coded by monkeys)
       Quaternion rot = v.transform.rotation * p.rotation;
 
       // calculate output of all components
@@ -480,8 +497,7 @@ public sealed class Background
         double cooling_cost = Lib.ReflectionValue<float>(simple_boiloff, "CoolingCost");
 
         // consume ec
-        // note: using fuel amount from previous simulation step
-        ec.Consume(cooling_cost * fuel.amount * 0.001 * elapsed_s);
+        ec.Consume(cooling_cost * fuel.capacity * 0.001 * elapsed_s);
       }
       // if there wasn't ec, or if cooling is disabled
       else
@@ -490,8 +506,7 @@ public sealed class Background
         double boiloff_rate = Lib.ReflectionValue<float>(simple_boiloff, "BoiloffRate") * 0.00000277777;
 
         // let it boil off
-        // note: using amount from previous simulation step
-        fuel.Consume(fuel.amount * (1.0 - Math.Pow(1.0 - boiloff_rate, elapsed_s)));
+        fuel.Consume(fuel.capacity * (1.0 - Math.Pow(1.0 - boiloff_rate, elapsed_s)));
       }
     }
 
