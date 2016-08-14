@@ -20,9 +20,6 @@ Shader "Custom/PointParticle"
       #pragma fragment frag
       #pragma target 3.0
 
-      fixed4 POINT_COLOR;
-      float POINT_SIZE;
-
       struct v2f
       {
         float size : PSIZE;

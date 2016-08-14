@@ -1,4 +1,4 @@
-// Compiled shader for custom platforms, uncompressed size: 14.6KB
+// Compiled shader for custom platforms, uncompressed size: 14.5KB
 
 // Skipping shader variants that would not be included into build of current scene.
 
@@ -21,7 +21,7 @@ SubShader {
   Cull Off
   Blend SrcAlpha One
   ColorMask RGB
-  GpuProgramID 64260
+  GpuProgramID 35984
 Program "vp" {
 SubProgram "opengl " {
 // Stats: 6 math
@@ -279,8 +279,6 @@ uniform 	vec4 unity_SpecCube1_BoxMax;
 uniform 	vec4 unity_SpecCube1_BoxMin;
 uniform 	vec4 unity_SpecCube1_ProbePosition;
 uniform 	mediump vec4 unity_SpecCube1_HDR;
-uniform 	lowp vec4 POINT_COLOR;
-uniform 	float POINT_SIZE;
 in highp vec4 in_POSITION0;
 in lowp vec4 in_COLOR0;
 in highp vec2 in_TEXCOORD0;
@@ -406,8 +404,6 @@ uniform 	vec4 unity_SpecCube1_BoxMax;
 uniform 	vec4 unity_SpecCube1_BoxMin;
 uniform 	vec4 unity_SpecCube1_ProbePosition;
 uniform 	vec4 unity_SpecCube1_HDR;
-uniform 	vec4 POINT_COLOR;
-uniform 	float POINT_SIZE;
 in  vec4 in_POSITION0;
 in  vec4 in_COLOR0;
 in  vec2 in_TEXCOORD0;

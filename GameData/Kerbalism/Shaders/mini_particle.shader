@@ -1,5 +1,6 @@
 // render a 1 pixel point sprite
 // - POINT_COLOR: point color
+// - 
 
 
 Shader "Custom/MiniParticle"
@@ -33,7 +34,7 @@ Shader "Custom/MiniParticle"
       v2f vert(float4 in_pos : POSITION)
       {
         // output clip-space vertex position
-        v2f o;
+        v2f o;        
         o.pos = mul(UNITY_MATRIX_MVP, in_pos);
 
         // pass down point size
