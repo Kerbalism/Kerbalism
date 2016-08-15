@@ -80,9 +80,9 @@
 
 #RADIATION
 
-  Celestial bodies can have a magnetosphere that protect Kerbals from radiation, as well as a radiation
-  belt: an extreme radiation zone. Cosmic radiation is ever present in the vast distances of space.
-  Vessels can be shielded to offer some protection, at the expense of greatly increased mass.
+  Celestial bodies have complex radiation environments, with magnetopauses and radiation belts.
+  Beyond the heliopause, cosmic radiation is ever present in the vast distances of space.
+  Vessels can be shielded in multiple ways.
 
 
 #SPACE WEATHER
