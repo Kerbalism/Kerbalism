@@ -2,8 +2,12 @@
 
 1.0.9
   - new magnetosphere & radiation models
-  - press ALT+N on map view or tracking station to show/hide the fields
+  - support for stock bodies, OPM & RSS
+  - press ALT+N on map view or tracking station to show/hide the magnetic fields
   - you can also press Keypad 0/1/2/3 to quickly toggle between them
+  - new module: Emitter, can add/remove radiation from a vessel
+  - the stock nuclear engine emit some radiation
+  - the old high-tech food container has been repurposed as an active shield
   - tech progression patch for ETT by autumnalequinox
   - OPM science definitions for geiger counter by BashGordon33
   - pressing ALT in the VAB make the planner consider the crew at full capacity
@@ -35,7 +39,7 @@
   - a better temperature model
   - vessel info window can show solar, albedo and body flux
   - planner consider all resources from all supported modules
-  - improved planner calculations for scrubbers & recyclers    
+  - improved planner calculations for scrubbers & recyclers
   - relativistic time dilation on resource consumption and production (disabled by default)
   - optimized raytracing
   - atmospheric decay of unloaded vessels can be disabled in settings
