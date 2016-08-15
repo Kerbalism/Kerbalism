@@ -7,8 +7,8 @@
 //                    Use at your own risk
 //
 // A profile geared toward more realism oriented players.
-// In comparison to the default profile, this one adds water, has more realistic
-// consumption rates, and provides a water filtration mechanism on command pods.
+// In comparison to the default profile, this one adds water and provides
+// a water filtration mechanism on command pods.
 // Author: Barrin
 
 
@@ -165,33 +165,33 @@ Rule
 Rule
 {
   name = Stress
-  degeneration = 0.00000086805 // 60 days
+  degeneration = 0.00000086805 // 53 days
   variance = 0.33 // add per-kerbal variance
   modifier = qol
   breakdown = true // trigger breakdown event instead of death
 
   warning_message = $ON_VESSEL$KERBAL is losing $HIS_HER mind$NEWLINE<i>Concentration is becoming a problem</i>
   danger_message = $ON_VESSEL$KERBAL is about to breakdown$NEWLINE<i>Starting to hear voices</i>
-  // no fatal_message because breakdown message is generated automatically
-  // no relax_message because there is no recovery from stress
+  relax_message = $ON_VESSEL$KERBAL is thinking straight now$NEWLINE<i>Let's do it again!</i>
 }
 
 
-// RADIATION POISONING
+// RADIATION
 Rule
 {
   name = Radiation
   degeneration = 1.0 // just use the modifier
+  variance = 0.1 // add per-kerbal variance
   modifier = radiation
 
-  warning_threshold = 15.0 // in rad
-  danger_threshold = 22.5 // in rad
-  fatal_threshold = 30.0 // in rad
+  warning_threshold = 25.0
+  danger_threshold = 37.5
+  fatal_threshold = 50.0
 
-  warning_message = $ON_VESSEL$KERBAL has been exposed to intense radiation.
-  danger_message = $ON_VESSEL$KERBAL is reporting symptoms of radiation poisoning!
-  fatal_message = $ON_VESSEL$KERBAL died after being exposed to extreme radiation.
-  // no relax_message because there is no recovery from radiation
+  warning_message = $ON_VESSEL$KERBAL has been exposed to intense radiation
+  danger_message = $ON_VESSEL$KERBAL is reporting symptoms of radiation poisoning
+  fatal_message = $ON_VESSEL$KERBAL died after being exposed to extreme radiation
+  relax_message = $ON_VESSEL$KERBAL has recovered from radiation exposure
 }
 
 
