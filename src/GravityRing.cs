@@ -37,9 +37,9 @@ public sealed class GravityRing : PartModule
   {
     return Lib.BuildString
     (
-      description, "\n",
-      "\n<color=#999999>Comfort (max): <b>", entertainment_rate.ToString("F1"), "</b></color>",
-      "\n<color=#999999>EC consumption: <b>", Lib.HumanReadableRate(ec_rate), "</b></color>"
+      Lib.Specifics(description),
+      Lib.Specifics(true, "Comfort (max)", entertainment_rate.ToString("F1")),
+      Lib.Specifics(true, "ElectricCharge", Lib.HumanReadableRate(ec_rate))
     );
   }
 

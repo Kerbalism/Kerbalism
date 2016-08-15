@@ -4,6 +4,7 @@
 
 
 using System;
+using System.CodeDom;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics;
@@ -171,7 +172,7 @@ public sealed class RadiationBody
   }
 
   // ctor: deserialize
-  public RadiationBody(ConfigNode node, Dictionary<string, RadiationModel> models)
+  public RadiationBody(ConfigNode node, Dictionary<string, RadiationModel> models, CelestialBody body)
   {
     name = Lib.ConfigValue(node, "name", "");
     radiation_inner = Lib.ConfigValue(node, "radiation_inner", 0.0) / 3600.0;
@@ -182,7 +183,7 @@ public sealed class RadiationBody
     if (!models.TryGetValue(Lib.ConfigValue(node, "radiation_model", ""), out model)) model = RadiationModel.none;
 
     // get the body, UB if it doesn't exist
-    body = FlightGlobals.Bodies.Find(k => k.name == name);
+    this.body = body;
   }
 
 
@@ -218,7 +219,12 @@ public static class Radiation
     foreach(var body_node in body_nodes)
     {
       string name = Lib.ConfigValue(body_node, "name", "");
-      if (!bodies.ContainsKey(name)) bodies.Add(name, new RadiationBody(body_node, models));
+      if (!bodies.ContainsKey(name))
+      {
+        CelestialBody body = FlightGlobals.Bodies.Find(k => k.bodyName == name);
+        if (body == null) continue; // skip non-existing bodies
+        bodies.Add(name, new RadiationBody(body_node, models, body));
+      }
     }
 
     // create body environments for all the other planets
@@ -313,23 +319,28 @@ public static class Radiation
 
 
   // generate GSM-space coordinate
-  // note: we use the rotation axis as magnetic axis
-  // note: we let the basis became not orthonormal when the sun direction
-  // is not perpendicular with the magnetic axis, to get a nice deformation effect
+  // note: we use the rotation axis as initial guess for magnetic axis
+  // note: we don't let the basis became not orthonormal when the sun plane change
+  // (the deformation was confusing)
   public static Space gsm_space(CelestialBody body)
   {
     Space gsm;
     gsm.origin = ScaledSpace.LocalToScaledSpace(body.position);
     gsm.scale = ScaledSpace.InverseScaleFactor * (float)body.Radius;
-    gsm.x_axis = body.flightGlobalsIndex > 0
-      ?((Vector3)ScaledSpace.LocalToScaledSpace(FlightGlobals.Bodies[0].position) - gsm.origin).normalized
-      : new Vector3(1.0f, 0.0f, 0.0f); //< galactic rotation
-    gsm.y_axis = body.flightGlobalsIndex > 0
-      ? (Vector3)body.RotationAxis
-      : new Vector3(0.0f, 1.0f, 0.0f);
-    gsm.z_axis = body.flightGlobalsIndex > 0
-      ? Vector3.Cross(gsm.x_axis, gsm.y_axis).normalized
-      : new Vector3(0.0f, 0.0f, 1.0f);
+    if (body.flightGlobalsIndex > 0)
+    {
+      gsm.x_axis = ((Vector3)ScaledSpace.LocalToScaledSpace(FlightGlobals.Bodies[0].position) - gsm.origin).normalized;
+      gsm.y_axis = (Vector3)body.RotationAxis; //< initial guess
+      gsm.z_axis = Vector3.Cross(gsm.x_axis, gsm.y_axis).normalized;
+      gsm.y_axis = Vector3.Cross(gsm.z_axis, gsm.x_axis).normalized; //< orthonormalize
+    }
+    else
+    {
+      // galactic rotation
+      gsm.x_axis = new Vector3(1.0f, 0.0f, 0.0f);
+      gsm.y_axis = new Vector3(0.0f, 1.0f, 0.0f);
+      gsm.z_axis = new Vector3(0.0f, 0.0f, 1.0f);
+    }
     return gsm;
   }
 
@@ -434,22 +445,22 @@ public static class Radiation
         }
       }
 
-
-      // enable material
-      mat.SetPass(0);
-
-      // generate radii-normalized GMS space, then convert to matrix
-      Matrix4x4 m = gsm_space(body).look_at();
+      // generate radii-normalized GMS space
+      Space gsm = gsm_space(body);
 
       // [debug] show axis
-      //MapRenderer.commit_line(gsm.origin, gsm.origin + gsm.x_axis * gsm.scale * 5.0f, Color.red);
-      //MapRenderer.commit_line(gsm.origin, gsm.origin + gsm.y_axis * gsm.scale * 5.0f, Color.green);
-      //MapRenderer.commit_line(gsm.origin, gsm.origin + gsm.z_axis * gsm.scale * 5.0f, Color.blue);
+      LineRenderer.commit(gsm.origin, gsm.origin + gsm.x_axis * gsm.scale * 5.0f, Color.red);
+      LineRenderer.commit(gsm.origin, gsm.origin + gsm.y_axis * gsm.scale * 5.0f, Color.green);
+      LineRenderer.commit(gsm.origin, gsm.origin + gsm.z_axis * gsm.scale * 5.0f, Color.blue);
 
       // get magnetic field data
       RadiationModel mf = Info(body).model;
 
+      // enable material
+      mat.SetPass(0);
+
       // render active body fields
+      Matrix4x4 m = gsm.look_at();
       if (show_inner && mf.has_inner) mf.inner_pmesh.render(m);
       if (show_outer && mf.has_outer) mf.outer_pmesh.render(m);
       if (show_pause && mf.has_pause) mf.pause_pmesh.render(m);
@@ -465,14 +476,13 @@ public static class Radiation
 
 
   // return the total environent radiation at position specified
-  public static double Compute(Vessel v, double gamma_transparency, out bool blackout, out int inner_body, out int outer_body, out int pause_body)
+  public static double Compute(Vessel v, double gamma_transparency, double sunlight, out bool blackout, out bool inside_pause, out bool inside_belt)
   {
     blackout = false;
-    inner_body = 0;
-    outer_body = 0;
-    pause_body = 0;
+    inside_pause = false;
+    inside_belt = false;
 
-    double radiation = Settings.InterstellarRadiation; // radiation outside all fields
+    double radiation = 0.0;
     CelestialBody body = v.mainBody;
     while(body != null)
     {
@@ -487,41 +497,49 @@ public static class Radiation
         Vector3 p = gsm.transform_in(ScaledSpace.LocalToScaledSpace(v.GetWorldPos3D()));
 
         // determine if inside zones
-        bool inside_inner = mf.has_inner && mf.inner_func(p) < 0.0f;
-        bool inside_outer = mf.has_outer && mf.outer_func(p) < 0.0f;
-        bool inside_pause = mf.has_pause && mf.pause_func(p) < 0.0f;
+        bool in_inner = mf.has_inner && mf.inner_func(p) < 0.0f;
+        bool in_outer = mf.has_outer && mf.outer_func(p) < 0.0f;
+        bool in_pause = mf.has_pause && mf.pause_func(p) < 0.0f;
 
-        // remember body of last zone
-        // note: we ignore the sun, on purpose, by having the 'null' index being 0
-        if (inside_inner) inner_body = rb.body.flightGlobalsIndex;
-        if (inside_outer) outer_body = rb.body.flightGlobalsIndex;
-        if (inside_pause) pause_body = rb.body.flightGlobalsIndex;
+        // accumulate radiation
+        radiation += in_inner ? rb.radiation_inner : 0.0;
+        radiation += in_outer ? rb.radiation_outer : 0.0;
+        radiation += in_pause ? rb.radiation_pause : 0.0;
 
-        // return radiation if inside a zone
-        if (inside_inner)      { radiation = rb.radiation_inner; break; }
-        else if (inside_outer) { radiation = rb.radiation_outer; break; }
-        else if (inside_pause) { radiation = rb.radiation_pause; break; }
+        // maintain flags
+        inside_belt &= in_inner || in_outer;
+        inside_pause &= in_pause && rb.body.flightGlobalsIndex != 0;
       }
 
       // avoid loops in the chain
       body = (body.referenceBody != null && body.referenceBody.referenceBody == body) ? null : body.referenceBody;
     }
 
-    bool stormed = Storm.InProgress(v);
-    if (stormed && pause_body > 0) blackout = true;
-    if (stormed && pause_body == 0) radiation += Settings.StormRadiation;
+    // add extern radiation
+    radiation += Settings.ExternRadiation;
+
+    // add emitter radiation
+    radiation += Emitter.Total(v);
+
+    // if there is a storm in progress
+    if (Storm.InProgress(v))
+    {
+      // inside a magnetopause (except heliosphere), blackout the signal
+      // outside, add storm radiations modulated by sun visibility
+      if (inside_pause) blackout = true;
+      else radiation += Settings.StormRadiation * sunlight;
+    }
+
+    // clamp radiation to positive range
+    // note: we avoid radiation going to zero by using a small positive value
+    radiation = Math.Max(radiation, Nominal);
+
+    // return radiation, scaled by gamma transparency if inside atmosphere
     return radiation * gamma_transparency;
   }
 
 
-  // return percentual of radiations blocked by shielding
-  public static double Shielding(double level)
-  {
-    return level * Settings.ShieldingEfficiency;
-  }
-
-
-  // return percentual of radiations blocked by shielding
+  // return percentage of radiations blocked by shielding
   public static double Shielding(double amount, double capacity)
   {
     return capacity > double.Epsilon ? Settings.ShieldingEfficiency * amount / capacity : 0.0;
@@ -531,7 +549,7 @@ public static class Radiation
   // return percentage of radiations blocked by shielding
   public static double Shielding(Vessel v)
   {
-    return Shielding(ResourceCache.Info(v, "Shielding").level);
+    return ResourceCache.Info(v, "Shielding").level * Settings.ShieldingEfficiency;
   }
 
 
@@ -545,8 +563,7 @@ public static class Radiation
       amount += Lib.Amount(part.Part, "Shielding");
       capacity += Lib.Capacity(part.Part, "Shielding");
     }
-    double level = capacity > double.Epsilon ? amount / capacity : 0.0;
-    return Shielding(level);
+    return Shielding(amount, capacity);
   }
 
 
@@ -571,14 +588,13 @@ public static class Radiation
     // we only show it for manned vessels, but the first time we also show it for probes
     if (vi.crew_count > 0 || DB.NotificationData().first_belt_crossing == 0)
     {
-      bool inside_belt = vi.inner_body > 0 || vi.outer_body > 0;
-      if (inside_belt && vd.msg_belt < 1)
+      if (vi.inside_belt && vd.msg_belt < 1)
       {
         Message.Post(Lib.BuildString("<b>", v.vesselName, "</b> is crossing <i>", v.mainBody.bodyName, " radiation belt</i>"), "Exposed to extreme radiation");
         vd.msg_belt = 1;
         DB.NotificationData().first_belt_crossing = 1; //< record first belt crossing
       }
-      else if (!inside_belt && vd.msg_belt > 0)
+      else if (!vi.inside_belt && vd.msg_belt > 0)
       {
         // no message after crossing the belt
         vd.msg_belt = 0;
@@ -623,6 +639,9 @@ public static class Radiation
   public static bool show_inner;
   public static bool show_outer;
   public static bool show_pause;
+
+  // nominal radiation is used to never allow zero radiation
+  public static double Nominal = 0.00000001;
 }
 
 

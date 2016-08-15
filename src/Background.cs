@@ -46,6 +46,7 @@ public sealed class Background
           case "Recycler":                    Recycler.BackgroundUpdate(v, m, module_prefab as Recycler, resources, elapsed_s);           break;
           case "Greenhouse":                  Greenhouse.BackgroundUpdate(v, m, module_prefab as Greenhouse, vi, resources, elapsed_s);   break;
           case "GravityRing":                 GravityRing.BackgroundUpdate(v, m, module_prefab as GravityRing, resources, elapsed_s);     break;
+          case "Emitter":                     Emitter.BackgroundUpdate(v, m, module_prefab as Emitter, ec, elapsed_s);                    break;
           case "ModuleCommand":               ProcessCommand(v, p, m, module_prefab as ModuleCommand, resources, elapsed_s);              break;
           case "ModuleDeployableSolarPanel":  ProcessPanel(v, p, m, module_prefab as ModuleDeployableSolarPanel, vi, ec, elapsed_s);      break;
           case "ModuleGenerator":             ProcessGenerator(v, p, m, module_prefab as ModuleGenerator, resources, elapsed_s);          break;

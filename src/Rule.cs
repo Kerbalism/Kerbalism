@@ -147,8 +147,6 @@ public sealed class Rule
         // get supply data from db
         kmon_data kmon = DB.KmonData(c.name, r.name);
 
-        // calculate radiation factor from the atmosphere
-
 
         // get product of all environment modifiers
         double k = 1.0;

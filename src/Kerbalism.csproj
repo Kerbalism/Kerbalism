@@ -81,6 +81,7 @@
     <Compile Include="CLS.cs" />
     <Compile Include="Contracts.cs" />
     <Compile Include="DB.cs" />
+    <Compile Include="Emitter.cs" />
     <Compile Include="Engine.cs" />
     <Compile Include="Entertainment.cs" />
     <Compile Include="Radiation.cs" />

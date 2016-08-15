@@ -85,6 +85,13 @@ public sealed class Sensor : PartModule
       pinanim.Play();
     }
   }
+
+
+  // editor/r&d tooltip
+  public override string GetInfo()
+  {
+    return Lib.BuildString("Measure ", type);
+  }
 }
 
 

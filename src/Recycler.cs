@@ -87,18 +87,13 @@ public sealed class Recycler : PartModule
   // editor/r&d info
   public override string GetInfo()
   {
-    string filter_str = filter_name.Length > 0 && filter_rate > 0.0
-      ? Lib.BuildString("\n - ", filter_name, ": ", Lib.HumanReadableRate(filter_rate))
-      : "";
-
     return Lib.BuildString
     (
-      "Recycle some of the ", resource_name, ".\n\n",
-      "<color=#99FF00>Requires:</color>\n",
-       " - ElectricCharge: ", Lib.HumanReadableRate(ec_rate), "\n",
-       " - ", resource_name, ": ", Lib.HumanReadableRate(waste_rate * waste_ratio), "\n",
-       " - ", waste_name, ": ", Lib.HumanReadableRate(waste_rate),
-       filter_str
+      Lib.Specifics(Lib.BuildString("Recycle ", waste_name, " into ", resource_name, ".")),
+      Lib.Specifics(true, "ElectricCharge", Lib.HumanReadableRate(ec_rate)),
+      Lib.Specifics(true, resource_name, Lib.HumanReadableRate(waste_rate * waste_ratio)),
+      Lib.Specifics(true, waste_name, Lib.HumanReadableRate(waste_rate)),
+      Lib.Specifics(filter_name.Length > 0, filter_name, Lib.HumanReadableRate(filter_rate))
     );
   }
 

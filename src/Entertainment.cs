@@ -22,7 +22,11 @@ public class Entertainment : PartModule
   // editor/r&d info
   public override string GetInfo()
   {
-    return Lib.BuildString(description, "\n\n<color=#999999>Comfort: <b>", rate.ToString("F1"), "</b></color>");
+    return Lib.BuildString
+    (
+      Lib.Specifics(description),
+      Lib.Specifics(true, "Comfort", rate.ToString("F1"))
+    );
   }
 }
 

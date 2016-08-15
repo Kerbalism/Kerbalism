@@ -67,11 +67,10 @@ public sealed class Antenna : ModuleDataTransmitter, IScienceDataTransmitter
   {
     return Lib.BuildString
     (
-      "Send data and provide a link to the space center and to other vessels.\n\n",
-      "<color=#99FF00>Costs:</color>\n",
-      " - Transmission (min): <b>", min_transmission_cost.ToString("F1"), " EC/Mbit</b>\n",
-      " - Transmission (max): <b>", max_transmission_cost.ToString("F1"), " EC/Mbit</b>\n",
-      " - Relay: <b>", relay_cost.ToString("F2"), " EC/s</b>"
+      Lib.Specifics("Send data and provide a link to the space center and to other vessels."),
+      Lib.Specifics(true, "Transmission (min)", min_transmission_cost.ToString("F1") + " EC/Mbit"),
+      Lib.Specifics(true, "Transmission (max)", max_transmission_cost.ToString("F1") + " EC/Mbit"),
+      Lib.Specifics(true, "Relay", relay_cost.ToString("F2") + " EC/s")
     );
   }
 

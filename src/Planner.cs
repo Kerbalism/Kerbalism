@@ -57,7 +57,6 @@ public sealed class Planner
   public class radiation_data
   {
     public double shielding;                              // amount vs capacity of radiation shielding on the vessel
-    public double[] rate;                                 // rates in rad/s
     public double[] life_expectancy;                      // time-to-death or time-to-safemode for radiations (cosmic/storm/belt levels)
   }
 
@@ -282,45 +281,47 @@ public sealed class Planner
     // scan the parts
     double amount = 0.0;
     double capacity = 0.0;
+    double rad = 0.0;
     foreach(Part p in parts)
     {
       // accumulate shielding amount and capacity
       amount += Lib.Amount(p, "Shielding");
       capacity += Lib.Capacity(p, "Shielding");
+
+      // accumulate emitter radiation
+      foreach(Emitter m in p.FindModulesImplementing<Emitter>())
+      {
+        rad += m.radiation * m.intensity;
+      }
     }
 
     // calculate radiation data
-    radiation.shielding = capacity > 0.0 ? amount / capacity : 0.0;
-    radiation.shielding = Radiation.Shielding(radiation.shielding);
+    radiation.shielding = Radiation.Shielding(amount, capacity);
     if (crew.capacity > 0)
     {
       var rb = Radiation.Info(env.body);
       var sun = Radiation.Info(FlightGlobals.Bodies[0]);
-      double surface_rad = rb.model.has_pause ? rb.radiation_pause : sun.model.has_pause ? sun.radiation_pause : Settings.InterstellarRadiation;
-      radiation.rate = new double[]
-      {
-        surface_rad * (1.0 - radiation.shielding) * Sim.GammaTransparency(env.body, 0),     // surface radiation
-        rb.radiation_pause * (1.0 - radiation.shielding),                                   // inside magnetopause
-        rb.radiation_inner * (1.0 - radiation.shielding),                                   // inside inner belt
-        rb.radiation_outer * (1.0 - radiation.shielding),                                   // inside outer belt
-        sun.radiation_pause * (1.0 - radiation.shielding),                                  // interplanetary
-        Settings.InterstellarRadiation * (1.0 - radiation.shielding),                       // interstellar
-        Settings.StormRadiation * (1.0 - radiation.shielding)                               // storm
-      };
+      double extern_rad = Settings.ExternRadiation + rad;
+      double heliopause_rad = extern_rad + sun.radiation_pause;
+      double magnetopause_rad = heliopause_rad + rb.radiation_pause;
+      double inner_rad = magnetopause_rad + rb.radiation_inner;
+      double outer_rad = magnetopause_rad + rb.radiation_outer;
+      double surface_rad = magnetopause_rad * Sim.GammaTransparency(env.body, 0.0);
+      double storm_rad = heliopause_rad + Settings.StormRadiation * (env.solar_flux > double.Epsilon ? 1.0 : 0.0);
       radiation.life_expectancy = new double[]
       {
-        rule_radiation.fatal_threshold / radiation.rate[0],
-        rule_radiation.fatal_threshold / radiation.rate[1],
-        rule_radiation.fatal_threshold / radiation.rate[2],
-        rule_radiation.fatal_threshold / radiation.rate[3],
-        rule_radiation.fatal_threshold / radiation.rate[4],
-        rule_radiation.fatal_threshold / radiation.rate[5],
-        rule_radiation.fatal_threshold / radiation.rate[6]
+        rule_radiation.fatal_threshold / Math.Max(Radiation.Nominal, surface_rad * (1.0 - radiation.shielding)),        // surface radiation
+        rule_radiation.fatal_threshold / Math.Max(Radiation.Nominal, magnetopause_rad * (1.0 - radiation.shielding)),   // inside magnetopause
+        rule_radiation.fatal_threshold / Math.Max(Radiation.Nominal, inner_rad * (1.0 - radiation.shielding)),          // inside inner belt
+        rule_radiation.fatal_threshold / Math.Max(Radiation.Nominal, outer_rad * (1.0 - radiation.shielding)),          // inside outer belt
+        rule_radiation.fatal_threshold / Math.Max(Radiation.Nominal, heliopause_rad * (1.0 - radiation.shielding)),     // interplanetary
+        rule_radiation.fatal_threshold / Math.Max(Radiation.Nominal, extern_rad * (1.0 - radiation.shielding)),         // interstellar
+        rule_radiation.fatal_threshold / Math.Max(Radiation.Nominal, storm_rad * (1.0 - radiation.shielding))           // storm
       };
     }
     else
     {
-      radiation.rate = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+      //radiation.rate = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
       radiation.life_expectancy = new double[]{double.NaN, double.NaN, double.NaN, double.NaN, double.NaN};
     }
 
@@ -513,36 +514,21 @@ public sealed class Planner
   {
     RadiationBody rb = Radiation.Info(env.body);
     RadiationModel mf = rb.model;
-
-    // alternate between life-times / radiation levels
-    int alternate = (int)(((UInt64)Time.realtimeSinceStartup / 3ul) % 2ul);
-
-    string levels_tooltip = crew.capacity == 0 ? "" : alternate == 0 ? Lib.BuildString
+    string levels_tooltip = crew.capacity == 0 ? "" : Lib.BuildString
     (
       "<align=left />",
       "surface\t\t<b>", Lib.HumanReadableDuration(radiation.life_expectancy[0]), "</b>\n",
-      "magnetopause\t<b>", Lib.HumanReadableDuration(radiation.life_expectancy[1]), "</b>\n",
+      mf.has_pause ? Lib.BuildString("magnetopause\t<b>", Lib.HumanReadableDuration(radiation.life_expectancy[1]), "</b>\n") : "",
       mf.has_inner ? Lib.BuildString("inner belt\t<b>", Lib.HumanReadableDuration(radiation.life_expectancy[2]), "</b>\n") : "",
       mf.has_outer ? Lib.BuildString("outer belt\t<b>", Lib.HumanReadableDuration(radiation.life_expectancy[3]), "</b>\n") : "",
       "interplanetary\t<b>", Lib.HumanReadableDuration(radiation.life_expectancy[4]), "</b>\n",
       "interstellar\t<b>", Lib.HumanReadableDuration(radiation.life_expectancy[5]), "</b>\n",
       "storm\t\t<b>", Lib.HumanReadableDuration(radiation.life_expectancy[6]), "</b>"
-    )
-    : Lib.BuildString
-    (
-      "<align=left />",
-      "surface\t\t<b>", Lib.HumanReadableRadiationRate(radiation.rate[0]), "</b>\n",
-      "magnetopause\t<b>", Lib.HumanReadableRadiationRate(radiation.rate[1]), "</b>\n",
-      mf.has_inner ? Lib.BuildString("inner belt\t<b>", Lib.HumanReadableRadiationRate(radiation.rate[2]), "</b>\n") : "",
-      mf.has_outer ? Lib.BuildString("outer belt\t<b>", Lib.HumanReadableRadiationRate(radiation.rate[3]), "</b>\n") : "",
-      "interplanetary\t<b>", Lib.HumanReadableRadiationRate(radiation.rate[4]), "</b>\n",
-      "interstellar\t<b>", Lib.HumanReadableRadiationRate(radiation.rate[5]), "</b>\n",
-      "storm\t\t<b>", Lib.HumanReadableRadiationRate(radiation.rate[6]), "</b>"
     );
 
 
     render_title("RADIATION");
-    if (env.body.atmosphere || !mf.has_pause) render_content("surface", Lib.HumanReadableDuration(radiation.life_expectancy[0]), levels_tooltip);
+    if (env.landed || !mf.has_pause) render_content("surface", Lib.HumanReadableDuration(radiation.life_expectancy[0]), levels_tooltip);
     else render_content("magnetopause", rb.model.has_pause ? Lib.HumanReadableDuration(radiation.life_expectancy[1]) : "no", levels_tooltip);
     render_content("interplanetary", Lib.HumanReadableDuration(radiation.life_expectancy[4]), levels_tooltip);
     render_content("storm", Lib.HumanReadableDuration(radiation.life_expectancy[6]), levels_tooltip);
@@ -907,6 +893,7 @@ public class resource_simulator
           case "Greenhouse":                  process_greenhouse(m as Greenhouse, env);                             break;
           case "GravityRing":                 process_ring(m as GravityRing);                                       break;
           case "Antenna":                     process_antenna(m as Antenna);                                        break;
+          case "Emitter":                     process_emitter(m as Emitter);                                        break;
           case "ModuleCommand":               process_command(m as ModuleCommand);                                  break;
           case "ModuleDeployableSolarPanel":  process_panel(m as ModuleDeployableSolarPanel, env);                  break;
           case "ModuleGenerator":             process_generator(m as ModuleGenerator, p);                           break;
@@ -1081,6 +1068,12 @@ public class resource_simulator
   void process_antenna(Antenna antenna)
   {
     if (antenna.relay) resource("ElectricCharge").consume(antenna.relay_cost);
+  }
+
+
+  void process_emitter(Emitter emitter)
+  {
+    resource("ElectricCharge").consume(emitter.ec_rate * emitter.intensity);
   }
 
 

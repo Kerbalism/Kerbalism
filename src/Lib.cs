@@ -697,6 +697,17 @@ public static class Lib
   }
 
 
+  // used to make the part tooltips look all the same
+  public static string Specifics(string desc)
+  {
+    return BuildString(desc, "\n");
+  }
+  public static string Specifics(bool b, string label, string value)
+  {
+    return b ? BuildString("\n - ", label, ": <b>", value, "</b>") : string.Empty;
+  }
+
+
   // compose a set of strings together, without creating temporary objects
   // note: the objective here is to minimize number of temporary variables for GC
   static StringBuilder sb = new StringBuilder(256);
@@ -867,7 +878,6 @@ public struct Space
 
   public Vector3 transform_in(Vector3 p)
   {
-    float inv_scale = 1.0f / scale;
     p -= origin;
     p /= scale;
     return new Vector3

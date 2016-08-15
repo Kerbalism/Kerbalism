@@ -63,7 +63,7 @@ public class vessel_info
     temperature = Sim.Temperature(v, sunlight, atmo_factor, out solar_flux, out albedo_flux, out body_flux, out total_flux);
 
     // calculate radiation
-    radiation = Radiation.Compute(v, gamma_transparency, out blackout, out inner_body, out outer_body, out pause_body);
+    radiation = Radiation.Compute(v, gamma_transparency, sunlight, out blackout, out inside_pause, out inside_belt);
 
     // calculate malfunction stuff
     max_malfunction = Malfunction.MaxMalfunction(v);
@@ -103,9 +103,8 @@ public class vessel_info
   public double   total_flux;         // total flux at vessel position
   public double   temperature;        // vessel temperature
   public double   radiation;          // environment radiation at vessel position
-  public int      inner_body;         // if the vessel is inside an inner belt, the index of that body, else -1
-  public int      outer_body;         // if the vessel is inside an outer belt, the index of that body, else -1
-  public int      pause_body;         // if the vessel is inside a magnetopause, the index of that body, else -1
+  public bool     inside_pause;       // true if vessel is inside a magnetopause (except the heliosphere)
+  public bool     inside_belt;        // true if vessel is inside a radiation belt
   public bool     blackout;           // true if the vessel is inside a magnetopause (except the sun) and under storm
   public double   atmo_factor;        // proportion of flux not blocked by atmosphere
   public double   gamma_transparency; // proportion of ionizing radiation not blocked by atmosphere

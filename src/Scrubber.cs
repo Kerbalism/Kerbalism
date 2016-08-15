@@ -93,9 +93,10 @@ public sealed class Scrubber : PartModule
   {
     return Lib.BuildString
     (
-      "Reclaim some of the ", resource_name, ".\n\n",
-      "<color=#99FF00>Requires:</color>\n",
-      " - ElectricCharge: ", Lib.HumanReadableRate(ec_rate)
+      Lib.Specifics(Lib.BuildString("Scrub ", waste_name, " from the internal atmosphere.")),
+      Lib.Specifics(true, "ElectricCharge", Lib.HumanReadableRate(ec_rate)),
+      Lib.Specifics(true, resource_name, Lib.HumanReadableRate(co2_rate * co2_ratio)),
+      Lib.Specifics(true, waste_name, Lib.HumanReadableRate(co2_rate))
     );
   }
 

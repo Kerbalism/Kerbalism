@@ -986,14 +986,14 @@ public sealed class Kerbalism : MonoBehaviour
   {
     // note: this doesn't consider the sun heliopause
     vessel_info vi = Cache.VesselInfo(v);
-    return vi.is_valid && vi.pause_body > 0;
+    return vi.is_valid && vi.inside_pause;
   }
 
   // hook: InsideBelt()
   public static bool hook_InsideBelt(Vessel v)
   {
     vessel_info vi = Cache.VesselInfo(v);
-    return vi.is_valid && (vi.inner_body > 0 || vi.outer_body > 0);
+    return vi.is_valid && vi.inside_belt;
   }
 
   // hook: LivingSpace()

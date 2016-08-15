@@ -151,10 +151,10 @@ public sealed class Greenhouse : PartModule
   {
     return Lib.BuildString
     (
-      "Grow food in space.\n\n",
-      "- Harvest size: <b>", harvest_size.ToString("F0"), " ", resource_name, "</b>\n",
-      "- Harvest time: <b>", Lib.HumanReadableDuration(1.0 / growth_rate), "</b>\n",
-      "- Lamps EC rate: <b> ", Lib.HumanReadableRate(ec_rate), "</b>"
+        Lib.Specifics("Grow food in space."),
+        Lib.Specifics(true, "Harvest size", Lib.BuildString(harvest_size.ToString("F0"), " ", resource_name)),
+        Lib.Specifics(true, "Harvest time", Lib.HumanReadableDuration(1.0 / growth_rate)),
+        Lib.Specifics(true, "Lamps EC rate", Lib.HumanReadableRate(ec_rate))
     );
   }
 

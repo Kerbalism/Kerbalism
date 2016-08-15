@@ -27,9 +27,9 @@ public static class Settings
     QoL_NotAlone                = Lib.ConfigValue(cfg, "QoL_NotAlone",                1.5);
 
     // radiation
-    ShieldingEfficiency         = Lib.ConfigValue(cfg, "ShieldingEfficiency",         0.9);
-    StormRadiation              = Lib.ConfigValue(cfg, "StormRadiation",              0.001111111); // 4.0 rad/h
-    InterstellarRadiation       = Lib.ConfigValue(cfg, "InterstellarRadiation",       0.000011111); // 0.04 rad/h
+    ShieldingEfficiency         = Lib.ConfigValue(cfg, "ShieldingEfficiency",         0.95);
+    StormRadiation              = Lib.ConfigValue(cfg, "StormRadiation",              3.0) / 3600.0;  // 3.0 rad/h
+    ExternRadiation             = Lib.ConfigValue(cfg, "ExternRadiation",             0.06) / 3600.0; // 0.06 rad/h
 
     // storm
     StormMinTime                = Lib.ConfigValue(cfg, "StormMinTime",                2160000.0); // 100 days
@@ -65,7 +65,7 @@ public static class Settings
   // radiation
   public static double ShieldingEfficiency;               // proportion of radiation blocked by shielding (at max amount)
   public static double StormRadiation;                    // radiation during a solar storm
-  public static double InterstellarRadiation;             // radiation outside the heliopause
+  public static double ExternRadiation;                   // radiation outside the heliopause
 
   // storm
   public static double StormMinTime;                      // minimum interval between storms over a system

@@ -24,7 +24,9 @@ public sealed class TankLight : PartModule
     Animation[] anim = this.part.FindModelAnimators(animation_name);
     if (anim.Length > 0)
     {
-      if (ResourceCache.Info(vessel, resource_name).level <= threshold)
+      double capacity = Lib.Capacity(part, resource_name);
+      double level = capacity > 0.0 ? Lib.Amount(part, resource_name) / capacity : 0.0;
+      if (level <= threshold)
       {
         anim[0][animation_name].normalizedTime = 1.0f;
         anim[0][animation_name].speed = Math.Abs(anim[0][animation_name].speed);
@@ -46,7 +48,8 @@ public sealed class TankLight : PartModule
     Animation[] anim = this.part.FindModelAnimators(animation_name);
     if (anim.Length > 0)
     {
-      double level = ResourceCache.Info(vessel, resource_name).level;
+      double capacity = Lib.Capacity(part, resource_name);
+      double level = capacity > 0.0 ? Lib.Amount(part, resource_name) / capacity : 0.0;
       if (level <= threshold && green_status)
       {
         anim[0][animation_name].normalizedTime = 0.0f;
