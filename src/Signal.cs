@@ -192,7 +192,7 @@ public sealed class Signal
   }
 
 
-  public static link_data Link(Vessel v, antenna_data antenna, bool blackout, HashSet<Guid> avoid_inf_recursion)
+  public static link_data Link(Vessel v, Vector3d position, antenna_data antenna, bool blackout, HashSet<Guid> avoid_inf_recursion)
   {
     // assume linked if signal mechanic is disabled
     if (!Kerbalism.features.signal) return new link_data(true, link_status.direct_link, double.MaxValue);
@@ -209,7 +209,7 @@ public sealed class Signal
     bool visible;
 
     // raytrace home body
-    visible = Sim.RaytraceBody(v, FlightGlobals.GetHomeBody(), out dir, out dist);
+    visible = Sim.RaytraceBody(v, position, FlightGlobals.GetHomeBody(), out dir, out dist);
     dist = visible && antenna.range > dist ? dist : double.MaxValue;
 
     // if directly linked
@@ -235,7 +235,7 @@ public sealed class Signal
       if (wi.antenna.relay_range <= double.Epsilon || !wi.link.linked) continue;
 
       // raytrace the other vessel
-      visible = Sim.RaytraceVessel(v, w, out dir, out dist);
+      visible = Sim.RaytraceVessel(v, w, position, wi.position, out dir, out dist);
       dist = visible && antenna.range > dist ? dist : double.MaxValue;
 
       // if indirectly linked

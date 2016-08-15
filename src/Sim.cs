@@ -159,14 +159,13 @@ public static class Sim
   // - dir: will contain normalized vector from vessel to body
   // - dist: will contain distance from vessel to body surface
   // - return: true if visible, false otherwise
-  public static bool RaytraceBody(Vessel vessel, CelestialBody body, out Vector3d dir, out double dist)
+  public static bool RaytraceBody(Vessel vessel, Vector3d vessel_pos, CelestialBody body, out Vector3d dir, out double dist)
   {
     // shortcuts
     CelestialBody mainbody = vessel.mainBody;
     CelestialBody refbody = mainbody.referenceBody;
 
     // generate ray parameters
-    Vector3d vessel_pos = vessel.GetWorldPos3D();
     dir = body.position - vessel_pos;
     dist = dir.magnitude;
     dir /= dist;
@@ -184,7 +183,7 @@ public static class Sim
   // - dir: will contain normalized vector from a to b
   // - dist: will contain distance between a and b
   // - return: true if visible, false otherwise
-  public static bool RaytraceVessel(Vessel a, Vessel b, out Vector3d dir, out double dist)
+  public static bool RaytraceVessel(Vessel a, Vessel b, Vector3d pos_a, Vector3d pos_b, out Vector3d dir, out double dist)
   {
     // shortcuts
     CelestialBody mainbody_a = a.mainBody;
@@ -193,8 +192,6 @@ public static class Sim
     CelestialBody refbody_b = mainbody_b.referenceBody;
 
     // generate ray parameters
-    Vector3d pos_a = a.GetWorldPos3D();
-    Vector3d pos_b = b.GetWorldPos3D();
     dir = pos_b - pos_a;
     dist = dir.magnitude;
     dir /= dist;
@@ -351,19 +348,16 @@ public static class Sim
   }
 
   // return temperature of a vessel
-  public static double Temperature(Vessel v, double sunlight, double atmo_factor, out double solar_flux, out double albedo_flux, out double body_flux, out double total_flux)
+  public static double Temperature(Vessel v, Vector3d position, double sunlight, double atmo_factor, out double solar_flux, out double albedo_flux, out double body_flux, out double total_flux)
   {
     // get vessel body
     CelestialBody body = v.mainBody;
 
-    // get vessel position
-    Vector3d pos = v.GetWorldPos3D();
-
     // get solar radiation
-    solar_flux = SolarFlux(SunDistance(pos)) * sunlight * atmo_factor;
+    solar_flux = SolarFlux(SunDistance(position)) * sunlight * atmo_factor;
 
     // get albedo radiation
-    albedo_flux = body.flightGlobalsIndex == 0 ? 0.0 : AlbedoFlux(body, pos);
+    albedo_flux = body.flightGlobalsIndex == 0 ? 0.0 : AlbedoFlux(body, position);
 
     // get cooling radiation from the body
     body_flux = body.flightGlobalsIndex == 0 ? 0.0 : BodyFlux(body, v.altitude);

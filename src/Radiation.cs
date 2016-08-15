@@ -475,12 +475,21 @@ public static class Radiation
 
 
   // return the total environent radiation at position specified
-  public static double Compute(Vessel v, double gamma_transparency, double sunlight, out bool blackout, out bool inside_pause, out bool inside_belt)
+  public static double Compute(Vessel v, Vector3d position, double gamma_transparency, double sunlight, out bool blackout, out bool inside_pause, out bool inside_belt)
   {
+    // store stuff
+    Space gsm;
+    Vector3 p;
+
+    // prepare out parameters
     blackout = false;
     inside_pause = false;
     inside_belt = false;
 
+    // transform to local space once
+    position = ScaledSpace.LocalToScaledSpace(position);
+
+    // accumulate radiation
     double radiation = 0.0;
     CelestialBody body = v.mainBody;
     while(body != null)
@@ -490,10 +499,10 @@ public static class Radiation
       if (mf.has_field())
       {
         // generate radii-normalized GSM space
-        Space gsm = gsm_space(rb.body);
+        gsm = gsm_space(rb.body);
 
         // move the poing in GSM space
-        Vector3 p = gsm.transform_in(ScaledSpace.LocalToScaledSpace(v.GetWorldPos3D()));
+        p = gsm.transform_in(position);
 
         // determine if inside zones
         bool in_inner = mf.has_inner && mf.inner_func(p) < 0.0f;

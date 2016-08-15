@@ -43,8 +43,11 @@ public class vessel_info
     crew_count = Lib.CrewCount(v);
     crew_capacity = Lib.CrewCapacity(v);
 
+    // get vessel position once
+    position = v.GetWorldPos3D();
+
     // determine if in sunlight, calculate sun direction and distance
-    sunlight = Sim.RaytraceBody(v, FlightGlobals.Bodies[0], out sun_dir, out sun_dist) ? 1.0 : 0.0;
+    sunlight = Sim.RaytraceBody(v, position, FlightGlobals.Bodies[0], out sun_dir, out sun_dist) ? 1.0 : 0.0;
 
     // if the orbit length vs simulation step is lower than an acceptable threshold, use discrete sun visibility
     if (v.mainBody.flightGlobalsIndex != 0)
@@ -54,16 +57,16 @@ public class vessel_info
     }
 
     // calculate environment stuff
-    atmo_factor = Sim.AtmosphereFactor(v.mainBody, v.GetWorldPos3D(), sun_dir);
+    atmo_factor = Sim.AtmosphereFactor(v.mainBody, position, sun_dir);
     gamma_transparency = Sim.GammaTransparency(v.mainBody, v.altitude);
     breathable = Sim.Breathable(v);
     landed = Lib.Landed(v);
 
     // calculate temperature at vessel position
-    temperature = Sim.Temperature(v, sunlight, atmo_factor, out solar_flux, out albedo_flux, out body_flux, out total_flux);
+    temperature = Sim.Temperature(v, position, sunlight, atmo_factor, out solar_flux, out albedo_flux, out body_flux, out total_flux);
 
     // calculate radiation
-    radiation = Radiation.Compute(v, gamma_transparency, sunlight, out blackout, out inside_pause, out inside_belt);
+    radiation = Radiation.Compute(v, position, gamma_transparency, sunlight, out blackout, out inside_pause, out inside_belt);
 
     // calculate malfunction stuff
     max_malfunction = Malfunction.MaxMalfunction(v);
@@ -72,7 +75,7 @@ public class vessel_info
     // calculate signal info
     antenna = new antenna_data(v);
     avoid_inf_recursion.Add(v.id);
-    link = Signal.Link(v, antenna, blackout, avoid_inf_recursion);
+    link = Signal.Link(v, position, antenna, blackout, avoid_inf_recursion);
     avoid_inf_recursion.Remove(v.id);
 
     // partial data about modules, used by vessel info/monitor
@@ -94,6 +97,7 @@ public class vessel_info
   public UInt32   id;                 // generate the id once
   public int      crew_count;         // number of crew on the vessel
   public int      crew_capacity;      // crew capacity of the vessel
+  public Vector3d position;           // vessel position
   public double   sunlight;           // if the vessel is in direct sunlight
   public Vector3d sun_dir;            // normalized vector from vessel to sun
   public double   sun_dist;           // distance from vessel to sun
