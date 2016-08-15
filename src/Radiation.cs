@@ -4,7 +4,6 @@
 
 
 using System;
-using System.CodeDom;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics;
@@ -449,9 +448,9 @@ public static class Radiation
       Space gsm = gsm_space(body);
 
       // [debug] show axis
-      LineRenderer.commit(gsm.origin, gsm.origin + gsm.x_axis * gsm.scale * 5.0f, Color.red);
-      LineRenderer.commit(gsm.origin, gsm.origin + gsm.y_axis * gsm.scale * 5.0f, Color.green);
-      LineRenderer.commit(gsm.origin, gsm.origin + gsm.z_axis * gsm.scale * 5.0f, Color.blue);
+      //LineRenderer.commit(gsm.origin, gsm.origin + gsm.x_axis * gsm.scale * 5.0f, Color.red);
+      //LineRenderer.commit(gsm.origin, gsm.origin + gsm.y_axis * gsm.scale * 5.0f, Color.green);
+      //LineRenderer.commit(gsm.origin, gsm.origin + gsm.z_axis * gsm.scale * 5.0f, Color.blue);
 
       // get magnetic field data
       RadiationModel mf = Info(body).model;

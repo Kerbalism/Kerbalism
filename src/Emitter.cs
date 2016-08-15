@@ -129,7 +129,6 @@ public sealed class Emitter : PartModule
   }
 
 
-  // implement scrubber mechanics for unloaded vessels
   public static void BackgroundUpdate(Vessel vessel, ProtoPartModuleSnapshot m, Emitter emitter, resource_info ec, double elapsed_s)
   {
     // if there is enough EC

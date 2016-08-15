@@ -27,9 +27,9 @@ public static class Settings
     QoL_NotAlone                = Lib.ConfigValue(cfg, "QoL_NotAlone",                1.5);
 
     // radiation
-    ShieldingEfficiency         = Lib.ConfigValue(cfg, "ShieldingEfficiency",         0.95);
-    StormRadiation              = Lib.ConfigValue(cfg, "StormRadiation",              3.0) / 3600.0;  // 3.0 rad/h
-    ExternRadiation             = Lib.ConfigValue(cfg, "ExternRadiation",             0.06) / 3600.0; // 0.06 rad/h
+    ShieldingEfficiency         = Lib.ConfigValue(cfg, "ShieldingEfficiency",         0.9);
+    StormRadiation              = Lib.ConfigValue(cfg, "StormRadiation",              5.0) / 3600.0;  // 5.0 rad/h
+    ExternRadiation             = Lib.ConfigValue(cfg, "ExternRadiation",             0.04) / 3600.0; // 0.04 rad/h
 
     // storm
     StormMinTime                = Lib.ConfigValue(cfg, "StormMinTime",                2160000.0); // 100 days
