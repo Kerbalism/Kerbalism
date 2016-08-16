@@ -1,7 +1,7 @@
 // render a point sprite, with the point color and size specified per-particle
 
 
-Shader "Custom/PointParticle"
+Shader "Custom/FullPointParticle"
 {
   Properties
   {

@@ -1,6 +1,4 @@
-// Compiled shader for custom platforms, uncompressed size: 11.9KB
-
-// Skipping shader variants that would not be included into build of current scene.
+// Compiled shader for all platforms, uncompressed size: 13.8KB
 
 Shader "Custom/AntiAliasedLine" {
 SubShader { 
@@ -11,10 +9,12 @@ SubShader {
  //       d3d11 : 5 math
  //        d3d9 : 8 math
  //        gles : 4 math
+ //       metal : 2 math
  //      opengl : 4 math
  // Stats for Fragment shader:
  //       d3d11 : 3 math
  //        d3d9 : 5 math
+ //       metal : 4 math
  Pass {
   Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
   ZWrite Off
@@ -280,6 +280,46 @@ void main()
 #endif
 "
 }
+SubProgram "metal " {
+// Stats: 2 math
+Bind "vertex" ATTR0
+Bind "color" ATTR1
+Bind "texcoord" ATTR2
+ConstBuffer "$Globals" 64
+Matrix 0 [glstate_matrix_mvp]
+"metal_vs
+#include <metal_stdlib>
+using namespace metal;
+struct xlatMtlShaderInput {
+  float4 _glesVertex [[attribute(0)]];
+  float4 _glesColor [[attribute(1)]];
+  float4 _glesMultiTexCoord0 [[attribute(2)]];
+};
+struct xlatMtlShaderOutput {
+  float4 gl_Position [[position]];
+  half4 xlv_COLOR;
+  float xlv_TEXCOORD0;
+  float xlv_NORMAL;
+};
+struct xlatMtlShaderUniform {
+  float4x4 glstate_matrix_mvp;
+};
+vertex xlatMtlShaderOutput xlatMtlMain (xlatMtlShaderInput _mtl_i [[stage_in]], constant xlatMtlShaderUniform& _mtl_u [[buffer(0)]])
+{
+  xlatMtlShaderOutput _mtl_o;
+  half4 tmpvar_1;
+  tmpvar_1 = half4(_mtl_i._glesColor);
+  float4 pos_2;
+  pos_2 = (_mtl_u.glstate_matrix_mvp * _mtl_i._glesVertex);
+  _mtl_o.gl_Position = pos_2;
+  _mtl_o.xlv_COLOR = tmpvar_1;
+  _mtl_o.xlv_TEXCOORD0 = (_mtl_i._glesMultiTexCoord0.x * pos_2.z);
+  _mtl_o.xlv_NORMAL = pos_2.z;
+  return _mtl_o;
+}
+
+"
+}
 SubProgram "glcore " {
 "!!GL3x
 #ifdef VERTEX
@@ -437,6 +477,35 @@ SubProgram "gles " {
 }
 SubProgram "gles3 " {
 "!!GLES3"
+}
+SubProgram "metal " {
+// Stats: 4 math
+"metal_fs
+#include <metal_stdlib>
+using namespace metal;
+struct xlatMtlShaderInput {
+  half4 xlv_COLOR;
+  float xlv_TEXCOORD0;
+  float xlv_NORMAL;
+};
+struct xlatMtlShaderOutput {
+  half4 _glesFragData_0 [[color(0)]];
+};
+struct xlatMtlShaderUniform {
+};
+fragment xlatMtlShaderOutput xlatMtlMain (xlatMtlShaderInput _mtl_i [[stage_in]], constant xlatMtlShaderUniform& _mtl_u [[buffer(0)]])
+{
+  xlatMtlShaderOutput _mtl_o;
+  half4 xlat_varoutput_1;
+  float tmpvar_2;
+  tmpvar_2 = (1.0 - abs((_mtl_i.xlv_TEXCOORD0 / _mtl_i.xlv_NORMAL)));
+  xlat_varoutput_1.xyz = _mtl_i.xlv_COLOR.xyz;
+  xlat_varoutput_1.w = half(((float)_mtl_i.xlv_COLOR.w * tmpvar_2));
+  _mtl_o._glesFragData_0 = xlat_varoutput_1;
+  return _mtl_o;
+}
+
+"
 }
 SubProgram "glcore " {
 "!!GL3x"

@@ -1,6 +1,4 @@
-// Compiled shader for custom platforms, uncompressed size: 14.1KB
-
-// Skipping shader variants that would not be included into build of current scene.
+// Compiled shader for all platforms, uncompressed size: 15.4KB
 
 Shader "Custom/MiniParticle" {
 Properties {
@@ -13,6 +11,7 @@ SubShader {
  // Stats for Vertex shader:
  //       d3d11 : 4 math
  //        d3d9 : 5 math
+ //       metal : 2 math
  // Stats for Fragment shader:
  //        d3d9 : 1 math
  Pass {
@@ -287,6 +286,34 @@ void main()
 #endif
 "
 }
+SubProgram "metal " {
+// Stats: 2 math
+Bind "vertex" ATTR0
+ConstBuffer "$Globals" 64
+Matrix 0 [glstate_matrix_mvp]
+"metal_vs
+#include <metal_stdlib>
+using namespace metal;
+struct xlatMtlShaderInput {
+  float4 _glesVertex [[attribute(0)]];
+};
+struct xlatMtlShaderOutput {
+  float gl_PointSize [[point_size]];
+  float4 gl_Position [[position]];
+};
+struct xlatMtlShaderUniform {
+  float4x4 glstate_matrix_mvp;
+};
+vertex xlatMtlShaderOutput xlatMtlMain (xlatMtlShaderInput _mtl_i [[stage_in]], constant xlatMtlShaderUniform& _mtl_u [[buffer(0)]])
+{
+  xlatMtlShaderOutput _mtl_o;
+  _mtl_o.gl_PointSize = 1.0;
+  _mtl_o.gl_Position = (_mtl_u.glstate_matrix_mvp * _mtl_i._glesVertex);
+  return _mtl_o;
+}
+
+"
+}
 SubProgram "glcore " {
 "!!GL3x
 #ifdef VERTEX
@@ -490,6 +517,31 @@ SubProgram "gles " {
 }
 SubProgram "gles3 " {
 "!!GLES3"
+}
+SubProgram "metal " {
+ConstBuffer "$Globals" 8
+VectorHalf 0 [POINT_COLOR] 4
+"metal_fs
+#include <metal_stdlib>
+using namespace metal;
+struct xlatMtlShaderInput {
+};
+struct xlatMtlShaderOutput {
+  half4 _glesFragData_0 [[color(0)]];
+};
+struct xlatMtlShaderUniform {
+  half4 POINT_COLOR;
+};
+fragment xlatMtlShaderOutput xlatMtlMain (xlatMtlShaderInput _mtl_i [[stage_in]], constant xlatMtlShaderUniform& _mtl_u [[buffer(0)]])
+{
+  xlatMtlShaderOutput _mtl_o;
+  half4 tmpvar_1;
+  tmpvar_1 = _mtl_u.POINT_COLOR;
+  _mtl_o._glesFragData_0 = tmpvar_1;
+  return _mtl_o;
+}
+
+"
 }
 SubProgram "glcore " {
 "!!GL3x"

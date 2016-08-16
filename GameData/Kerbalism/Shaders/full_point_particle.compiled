@@ -1,8 +1,6 @@
-// Compiled shader for custom platforms, uncompressed size: 14.5KB
+// Compiled shader for all platforms, uncompressed size: 16.8KB
 
-// Skipping shader variants that would not be included into build of current scene.
-
-Shader "Custom/PointParticle" {
+Shader "Custom/FullPointParticle" {
 SubShader { 
  Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
 
@@ -11,10 +9,12 @@ SubShader {
  //       d3d11 : 9 math
  //        d3d9 : 15 math
  //        gles : 6 math
+ //       metal : 7 math
  //      opengl : 6 math
  // Stats for Fragment shader:
  //       d3d11 : 5 math
  //        d3d9 : 9 math
+ //       metal : 6 math
  Pass {
   Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
   ZWrite Off
@@ -331,6 +331,56 @@ void main()
 #endif
 "
 }
+SubProgram "metal " {
+// Stats: 7 math
+Bind "vertex" ATTR0
+Bind "color" ATTR1
+Bind "texcoord" ATTR2
+ConstBuffer "$Globals" 80
+Matrix 16 [glstate_matrix_mvp]
+Vector 0 [_ScreenParams]
+"metal_vs
+#include <metal_stdlib>
+using namespace metal;
+struct xlatMtlShaderInput {
+  float4 _glesVertex [[attribute(0)]];
+  float4 _glesColor [[attribute(1)]];
+  float4 _glesMultiTexCoord0 [[attribute(2)]];
+};
+struct xlatMtlShaderOutput {
+  float gl_PointSize [[point_size]];
+  float4 gl_Position [[position]];
+  float xlv_TEXCOORD0;
+  float2 xlv_TEXCOORD1;
+  float4 xlv_TEXCOORD2;
+};
+struct xlatMtlShaderUniform {
+  float4 _ScreenParams;
+  float4x4 glstate_matrix_mvp;
+};
+vertex xlatMtlShaderOutput xlatMtlMain (xlatMtlShaderInput _mtl_i [[stage_in]], constant xlatMtlShaderUniform& _mtl_u [[buffer(0)]])
+{
+  xlatMtlShaderOutput _mtl_o;
+  half4 tmpvar_1;
+  tmpvar_1 = half4(_mtl_i._glesColor);
+  float4 pos_2;
+  float2 tmpvar_3;
+  float4 tmpvar_4;
+  pos_2 = (_mtl_u.glstate_matrix_mvp * _mtl_i._glesVertex);
+  tmpvar_4 = float4(tmpvar_1);
+  tmpvar_3 = (((pos_2.xy / pos_2.w) * 0.5) + 0.5);
+  tmpvar_3 = (tmpvar_3 * _mtl_u._ScreenParams.xy);
+  tmpvar_3.y = (_mtl_u._ScreenParams.y - tmpvar_3.y);
+  _mtl_o.gl_Position = pos_2;
+  _mtl_o.gl_PointSize = _mtl_i._glesMultiTexCoord0.x;
+  _mtl_o.xlv_TEXCOORD0 = (2.0 / _mtl_i._glesMultiTexCoord0.x);
+  _mtl_o.xlv_TEXCOORD1 = tmpvar_3;
+  _mtl_o.xlv_TEXCOORD2 = tmpvar_4;
+  return _mtl_o;
+}
+
+"
+}
 SubProgram "glcore " {
 "!!GL3x
 #ifdef VERTEX
@@ -505,6 +555,40 @@ SubProgram "gles " {
 }
 SubProgram "gles3 " {
 "!!GLES3"
+}
+SubProgram "metal " {
+// Stats: 6 math
+"metal_fs
+#include <metal_stdlib>
+using namespace metal;
+struct xlatMtlShaderInput {
+  float4 gl_FragCoord [[position]];
+  float xlv_TEXCOORD0;
+  float2 xlv_TEXCOORD1;
+  float4 xlv_TEXCOORD2;
+};
+struct xlatMtlShaderOutput {
+  half4 _glesFragData_0 [[color(0)]];
+};
+struct xlatMtlShaderUniform {
+};
+fragment xlatMtlShaderOutput xlatMtlMain (xlatMtlShaderInput _mtl_i [[stage_in]], constant xlatMtlShaderUniform& _mtl_u [[buffer(0)]])
+{
+  xlatMtlShaderOutput _mtl_o;
+  half4 xlat_varoutput_1;
+  float2 tmpvar_2;
+  tmpvar_2 = (_mtl_i.gl_FragCoord.xy - _mtl_i.xlv_TEXCOORD1);
+  float tmpvar_3;
+  tmpvar_3 = (1.0 - (sqrt(
+    dot (tmpvar_2, tmpvar_2)
+  ) * _mtl_i.xlv_TEXCOORD0));
+  xlat_varoutput_1 = half4(_mtl_i.xlv_TEXCOORD2);
+  xlat_varoutput_1.w = half(((float)xlat_varoutput_1.w * tmpvar_3));
+  _mtl_o._glesFragData_0 = xlat_varoutput_1;
+  return _mtl_o;
+}
+
+"
 }
 SubProgram "glcore " {
 "!!GL3x"
