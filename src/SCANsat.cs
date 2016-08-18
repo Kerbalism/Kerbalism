@@ -20,6 +20,9 @@ public static class SCANsat
 
   // true to get ec consumption for versions before 16.4
   static bool legacy_ec;
+  
+  // true to use workaround against issue #234, for versions before 16.6
+  static bool workarond_234;
 
   // reflection type of SCANUtils static class in SCANsat assembly, if present
   static Type SCANUtils;
@@ -36,8 +39,11 @@ public static class SCANsat
         var version = a.assembly.GetName().Version;
         if (a.name == "SCANsat" && version.Major == 1 && version.Minor >= 6)
         {
-          SCANUtils = a.assembly.GetType("SCANsat.SCANUtil");
+          SCANUtils = a.assembly.GetType("SCANsat.SCANUtil");          
           legacy_ec = version.Minor == 6 && version.Revision < 4;
+          workarond_234 = version.Minor == 6 && version.Revision < 6;
+          if (legacy_ec) Lib.Log("using SCANsat legacy EC consumption");
+          if (workarond_234) Lib.Log("using workaround against SCANsat issue #234");
           break;
         }
       }
@@ -54,22 +60,26 @@ public static class SCANsat
     lazy_init();
     if (SCANUtils != null)
     {
-      // disabled until SCANsat issue #234 is fixed      
-      //return (bool)SCANUtils.GetMethod("unregisterSensorExternal").Invoke(null, new System.Object[]{v, m, part_prefab});
-      
-      // workaround for SCANsat issue #234
-      foreach(var a in AssemblyLoader.loadedAssemblies)
+      if (!workarond_234)
       {
-        if (a.name == "SCANsat")
+        return (bool)SCANUtils.GetMethod("unregisterSensorExternal").Invoke(null, new System.Object[]{v, m, part_prefab});
+      }
+      // workaround for SCANsat issue #234
+      else
+      {      
+        foreach(var a in AssemblyLoader.loadedAssemblies)
         {
-          int sensor = Lib.ReflectionValue<int>(scanner, "sensorType");          
-          Type controller_type = a.assembly.GetType("SCANsat.SCANcontroller");
-          System.Object controller = controller_type.GetProperty("controller", BindingFlags.Public | BindingFlags.Static).GetValue(null, null);
-          Type sensor_type = a.assembly.GetType("SCANsat.SCAN_Data.SCANtype");          
-          object sensor_obj = Enum.ToObject(sensor_type, sensor);
-          controller_type.InvokeMember("unregisterSensor", BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Instance, null, controller, new System.Object[]{v, sensor_obj});
-          Lib.Proto.Set(m, "scanning", false);
-          return true;
+          if (a.name == "SCANsat")
+          {
+            int sensor = Lib.ReflectionValue<int>(scanner, "sensorType");          
+            Type controller_type = a.assembly.GetType("SCANsat.SCANcontroller");
+            System.Object controller = controller_type.GetProperty("controller", BindingFlags.Public | BindingFlags.Static).GetValue(null, null);
+            Type sensor_type = a.assembly.GetType("SCANsat.SCAN_Data.SCANtype");          
+            object sensor_obj = Enum.ToObject(sensor_type, sensor);
+            controller_type.InvokeMember("unregisterSensor", BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Instance, null, controller, new System.Object[]{v, sensor_obj});
+            Lib.Proto.Set(m, "scanning", false);
+            return true;
+          }
         }
       }
     }
@@ -86,26 +96,30 @@ public static class SCANsat
     lazy_init();
     if (SCANUtils != null)
     {
-      // disabled until SCANsat issue #234 is fixed      
-      //return (bool)SCANUtils.GetMethod("registerSensorExternal").Invoke(null, new System.Object[]{v, m, part_prefab});
-      
-      // workaround for SCANsat issue #234
-      foreach(var a in AssemblyLoader.loadedAssemblies)
+      if (!workarond_234)
       {
-        if (a.name == "SCANsat")
+        return (bool)SCANUtils.GetMethod("registerSensorExternal").Invoke(null, new System.Object[]{v, m, part_prefab});
+      }
+      // workaround for SCANsat issue #234
+      else
+      {      
+        foreach(var a in AssemblyLoader.loadedAssemblies)
         {
-          int sensor = Lib.ReflectionValue<int>(scanner, "sensorType");
-          double fov = Lib.ReflectionValue<float>(scanner, "fov");
-          double min = Lib.ReflectionValue<float>(scanner, "min_alt");
-          double max = Lib.ReflectionValue<float>(scanner, "max_alt");
-          double best = Lib.ReflectionValue<float>(scanner, "best_alt");          
-          Type controller_type = a.assembly.GetType("SCANsat.SCANcontroller");
-          System.Object controller = controller_type.GetProperty("controller", BindingFlags.Public | BindingFlags.Static).GetValue(null, null);
-          Type sensor_type = a.assembly.GetType("SCANsat.SCAN_Data.SCANtype");
-          object sensor_obj = Enum.ToObject(sensor_type, sensor);
-          controller_type.InvokeMember("registerSensor", BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Instance, null, controller, new System.Object[]{v, sensor_obj, fov, min, max, best});
-          Lib.Proto.Set(m, "scanning", true);
-          return true;
+          if (a.name == "SCANsat")
+          {
+            int sensor = Lib.ReflectionValue<int>(scanner, "sensorType");
+            double fov = Lib.ReflectionValue<float>(scanner, "fov");
+            double min = Lib.ReflectionValue<float>(scanner, "min_alt");
+            double max = Lib.ReflectionValue<float>(scanner, "max_alt");
+            double best = Lib.ReflectionValue<float>(scanner, "best_alt");          
+            Type controller_type = a.assembly.GetType("SCANsat.SCANcontroller");
+            System.Object controller = controller_type.GetProperty("controller", BindingFlags.Public | BindingFlags.Static).GetValue(null, null);
+            Type sensor_type = a.assembly.GetType("SCANsat.SCAN_Data.SCANtype");
+            object sensor_obj = Enum.ToObject(sensor_type, sensor);
+            controller_type.InvokeMember("registerSensor", BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Instance, null, controller, new System.Object[]{v, sensor_obj, fov, min, max, best});
+            Lib.Proto.Set(m, "scanning", true);
+            return true;
+          }
         }
       }
     }
