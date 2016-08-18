@@ -376,7 +376,7 @@ public sealed class Background
       if (ec.amount <= double.Epsilon)
       {
         // unregister scanner
-        SCANsat.stopScanner(v, m, part_prefab);
+        bool b = SCANsat.stopScanner(v, m, part_prefab, scanner);
         is_scanning = false;
 
         // remember disabled scanner
@@ -394,7 +394,7 @@ public sealed class Background
       if (ec.level > 0.25) //< re-enable at 25% EC
       {
         // re-enable the scanner
-        SCANsat.resumeScanner(v, m, part_prefab);
+        bool b = SCANsat.resumeScanner(v, m, part_prefab, scanner);
         is_scanning = true;
 
         // give the user some feedback

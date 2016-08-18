@@ -49,12 +49,29 @@ public static class SCANsat
   // - v: vessel that own the module
   // - m: protomodule of a SCANsat or a resource scanner
   // - p: prefab of the part owning the module
-  public static bool stopScanner(Vessel v, ProtoPartModuleSnapshot m, Part part_prefab)
+  public static bool stopScanner(Vessel v, ProtoPartModuleSnapshot m, Part part_prefab, PartModule scanner)
   {
     lazy_init();
     if (SCANUtils != null)
     {
-      return (bool)SCANUtils.GetMethod("unregisterSensorExternal").Invoke(null, new System.Object[]{v, m, part_prefab});
+      // disabled until SCANsat issue #234 is fixed      
+      //return (bool)SCANUtils.GetMethod("unregisterSensorExternal").Invoke(null, new System.Object[]{v, m, part_prefab});
+      
+      // workaround for SCANsat issue #234
+      foreach(var a in AssemblyLoader.loadedAssemblies)
+      {
+        if (a.name == "SCANsat")
+        {
+          int sensor = Lib.ReflectionValue<int>(scanner, "sensorType");          
+          Type controller_type = a.assembly.GetType("SCANsat.SCANcontroller");
+          System.Object controller = controller_type.GetProperty("controller", BindingFlags.Public | BindingFlags.Static).GetValue(null, null);
+          Type sensor_type = a.assembly.GetType("SCANsat.SCAN_Data.SCANtype");          
+          object sensor_obj = Enum.ToObject(sensor_type, sensor);
+          controller_type.InvokeMember("unregisterSensor", BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Instance, null, controller, new System.Object[]{v, sensor_obj});
+          Lib.Proto.Set(m, "scanning", false);
+          return true;
+        }
+      }
     }
     return false;
   }
@@ -64,12 +81,33 @@ public static class SCANsat
   // - v: vessel that own the module
   // - m: protomodule of a SCANsat or a resource scanner
   // - p: prefab of the part owning the module
-  public static bool resumeScanner(Vessel v, ProtoPartModuleSnapshot m, Part part_prefab)
+  public static bool resumeScanner(Vessel v, ProtoPartModuleSnapshot m, Part part_prefab, PartModule scanner)
   {
     lazy_init();
     if (SCANUtils != null)
     {
-      return (bool)SCANUtils.GetMethod("registerSensorExternal").Invoke(null, new System.Object[]{v, m, part_prefab});
+      // disabled until SCANsat issue #234 is fixed      
+      //return (bool)SCANUtils.GetMethod("registerSensorExternal").Invoke(null, new System.Object[]{v, m, part_prefab});
+      
+      // workaround for SCANsat issue #234
+      foreach(var a in AssemblyLoader.loadedAssemblies)
+      {
+        if (a.name == "SCANsat")
+        {
+          int sensor = Lib.ReflectionValue<int>(scanner, "sensorType");
+          double fov = Lib.ReflectionValue<float>(scanner, "fov");
+          double min = Lib.ReflectionValue<float>(scanner, "min_alt");
+          double max = Lib.ReflectionValue<float>(scanner, "max_alt");
+          double best = Lib.ReflectionValue<float>(scanner, "best_alt");          
+          Type controller_type = a.assembly.GetType("SCANsat.SCANcontroller");
+          System.Object controller = controller_type.GetProperty("controller", BindingFlags.Public | BindingFlags.Static).GetValue(null, null);
+          Type sensor_type = a.assembly.GetType("SCANsat.SCAN_Data.SCANtype");
+          object sensor_obj = Enum.ToObject(sensor_type, sensor);
+          controller_type.InvokeMember("registerSensor", BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Instance, null, controller, new System.Object[]{v, sensor_obj, fov, min, max, best});
+          Lib.Proto.Set(m, "scanning", true);
+          return true;
+        }
+      }
     }
     return false;
   }
