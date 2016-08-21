@@ -67,6 +67,12 @@ public sealed class Notepad
 
     // draw the window
     win_rect = GUI.Window(win_id, win_rect, render, "", win_style);
+
+    // disable camera mouse scrolling on mouse over
+    if (win_rect.Contains(Event.current.mousePosition))
+    {
+      GameSettings.AXIS_MOUSEWHEEL.primary.scale = 0.0f;
+    }
   }
 
 
@@ -155,7 +161,7 @@ public sealed class Notepad
   // store dragbox geometry
   Rect drag_rect;
 
-  // used by scroll window mechanics
+  // used by scroll area
   Vector2 scroll_pos;
 
   // store vessel id, if any

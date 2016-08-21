@@ -76,22 +76,25 @@ public class notification_data
 public sealed class DB : ScenarioModule
 {
   // store data per-kerbal
-  private Dictionary<string, kerbal_data> kerbals = new Dictionary<string, kerbal_data>(64);
+  Dictionary<string, kerbal_data> kerbals = new Dictionary<string, kerbal_data>(64);
 
   // store data per-vessel
-  private Dictionary<Guid, vessel_data> vessels = new Dictionary<Guid, vessel_data>(512);
+  Dictionary<Guid, vessel_data> vessels = new Dictionary<Guid, vessel_data>(512);
 
   // store data per-body
-  private Dictionary<string, body_data> bodies = new Dictionary<string, body_data>(64);
-
+  Dictionary<string, body_data> bodies = new Dictionary<string, body_data>(64);
+  /*
+  // store computers
+  Dictionary<uint, COMPUTER.Computer> computers = new Dictionary<uint, KERBALISM.COMPUTER.Computer>(32);
+  */
   // store data for the notifications system
-  private notification_data notifications = new notification_data();
+  notification_data notifications = new notification_data();
 
   // current savegame version
-  private const string current_version = "1.0.9.0";
+  const string current_version = "1.1.0.0";
 
   // allow global access
-  private static DB instance = null;
+  static DB instance = null;
 
 
   public DB()
@@ -213,6 +216,18 @@ public sealed class DB : ScenarioModule
       notifications.manned_orbit_contract = Lib.ConfigValue(n_node, "manned_orbit_contract", 0u);
     }
 
+    /*
+    computers.Clear();
+    if (node.HasNode("computers"))
+    {
+      ConfigNode computers_node = node.GetNode("computers");
+      foreach(ConfigNode computer_node in computers_node.GetNodes())
+      {
+        computers.Add(uint.Parse(computer_node.name), new COMPUTER.Computer(computer_node));
+      }
+    }
+    */
+
     // if an old savegame was imported, log some debug info
     if (version != current_version) Lib.Log("savegame converted from version " + version);
   }
@@ -296,6 +311,15 @@ public sealed class DB : ScenarioModule
     notifications_node.AddValue("first_malfunction", notifications.first_malfunction.ToString());
     notifications_node.AddValue("first_space_harvest", notifications.first_space_harvest.ToString());
     notifications_node.AddValue("manned_orbit_contract", notifications.manned_orbit_contract.ToString());
+
+    /*
+    ConfigNode computers_node = node.AddNode("computers");
+    foreach(var p in computers)
+    {
+      ConfigNode computer_node = computers_node.AddNode(p.Key.ToString());
+      p.Value.save(computer_node);
+    }
+    */
   }
 
 
@@ -342,6 +366,15 @@ public sealed class DB : ScenarioModule
   }
 
 
+  /*
+  public static COMPUTER.Computer ComputerData(uint id)
+  {
+    if (!instance.computers.ContainsKey(id)) instance.computers.Add(id, new COMPUTER.Computer());
+    return instance.computers[id];
+  }
+  */
+
+
   public static notification_data NotificationData()
   {
     return instance.notifications;
@@ -359,10 +392,19 @@ public sealed class DB : ScenarioModule
     instance.vessels.Remove(v_id);
   }
 
+
   public static void ForgetBody(string b_name)
   {
     instance.bodies.Remove(b_name);
   }
+
+
+  /*
+  public static void ForgetComputer(uint id)
+  {
+    instance.computers.Remove(id);
+  }
+  */
 
 
   public static Dictionary<string, kerbal_data> Kerbals()
@@ -381,6 +423,14 @@ public sealed class DB : ScenarioModule
   {
     return instance.bodies;
   }
+
+
+  /*
+  public static Dictionary<uint, COMPUTER.Computer> Computers()
+  {
+    return instance.computers;
+  }
+  */
 }
 
 

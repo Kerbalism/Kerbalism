@@ -133,7 +133,7 @@ public sealed class Info
           win_rect.yMax += offset_y;
 
           // draw the window
-          win_rect = GUI.Window(win_id, win_rect, render, "", win_style);
+          win_rect = GUILayout.Window(win_id, win_rect, render, "", win_style);
         }
         // if the vessel is invalid
         else

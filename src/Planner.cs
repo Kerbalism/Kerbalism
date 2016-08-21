@@ -321,8 +321,7 @@ public sealed class Planner
     }
     else
     {
-      //radiation.rate = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-      radiation.life_expectancy = new double[]{double.NaN, double.NaN, double.NaN, double.NaN, double.NaN};
+      radiation.life_expectancy = new double[]{double.NaN, double.NaN, double.NaN, double.NaN, double.NaN, double.NaN, double.NaN};
     }
 
     // return data

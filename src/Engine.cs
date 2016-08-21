@@ -5,6 +5,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using KSP.UI.Screens;
 using UnityEngine;
 
 
@@ -39,6 +41,8 @@ public sealed class Engine : MonoBehaviour
     notepad         = new Notepad();
     message         = new Message();
     notifications   = new Notifications();
+    //console         = new COMPUTER.Console();
+    //editor          = new COMPUTER.Editor();
     Radiation.init();
     LineRenderer.init();
     ParticleRenderer.init();
@@ -183,18 +187,27 @@ public sealed class Engine : MonoBehaviour
   // called every frame twice, first to compute ui layout and then to draw the ui
   void OnGUI()
   {
-    // do nothing if DB isn't ready for whatever reason, unless we are in the editor
-    if (!DB.Ready() && HighLogic.LoadedScene != GameScenes.EDITOR) return;
+    // re-enable camera mouse scrolling, as some of the following functions can
+    // disable it on mouse-hover, but can't re-enable it again consistently
+    // (eg: you mouse-hover and then close the window with the cursor still inside it)
+    // note: we are ignoring user preference on mouse wheel
+    GameSettings.AXIS_MOUSEWHEEL.primary.scale = 1.0f;
+
+    // always render the launcher
+    launcher.on_gui();
+
+    // do nothing else if DB isn't ready or if we are in the editor
+    if (!DB.Ready() || !Lib.SceneIsGame()) return;
 
     // render subsystems
-    launcher.on_gui();
     info.on_gui();
     body_info.on_gui();
     notepad.on_gui();
     message.on_gui();
     notifications.on_gui();
+    //console.on_gui();
+    //editor.on_gui();
   }
-
 
   void Update()
   {
@@ -205,18 +218,20 @@ public sealed class Engine : MonoBehaviour
 
 
   // subsystems
-  Cache           cache;
-  ResourceCache   resource_cache;
-  Background      background;
-  Signal          signal;
-  Storm           storm;
-  Launcher        launcher;
-  Info            info;
-  BodyInfo        body_info;
-  Notepad         notepad;
-  Message         message;
-  Notifications   notifications;
-  MapCameraScript map_camera_script;
+  Cache             cache;
+  ResourceCache     resource_cache;
+  Background        background;
+  Signal            signal;
+  Storm             storm;
+  Launcher          launcher;
+  Info              info;
+  BodyInfo          body_info;
+  Notepad           notepad;
+  Message           message;
+  Notifications     notifications;
+  MapCameraScript   map_camera_script;
+  //COMPUTER.Console  console;
+  //COMPUTER.Editor   editor;
 
   // store time until last update for unloaded vessels
   public class unloaded_data { public double time; }; //< reference wrapper

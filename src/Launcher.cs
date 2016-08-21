@@ -148,6 +148,12 @@ public sealed class Launcher
 
       // draw tooltips if any
       if (GUI.tooltip.Length > 0) draw_tooltip(GUI.tooltip);
+
+      // disable camera mouse scrolling on mouse over
+      if (win_rect.Contains(Event.current.mousePosition))
+      {
+        GameSettings.AXIS_MOUSEWHEEL.primary.scale = 0.0f;
+      }
     }
     else
     {

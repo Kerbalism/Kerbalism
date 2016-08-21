@@ -480,12 +480,18 @@ public static class Lib
     return false;
   }
 
-  // return true if last GUIlayout element was clicked
+  // return true if last GUILayout element was clicked
   public static bool IsClicked(int button=0)
   {
     return Event.current.type == EventType.MouseDown
         && Event.current.button == button
         && GUILayoutUtility.GetLastRect().Contains(Event.current.mousePosition);
+  }
+
+  // return true if the mouse is inside the last GUILayout element
+  public static bool IsHover()
+  {
+    return GUILayoutUtility.GetLastRect().Contains(Event.current.mousePosition);
   }
 
   // return reference body of the planetary system that contain the specified body
@@ -705,6 +711,38 @@ public static class Lib
   public static string Specifics(bool b, string label, string value)
   {
     return b ? BuildString("\n - ", label, ": <b>", value, "</b>") : string.Empty;
+  }
+
+
+  // return human-readable timestamp of planetarium time
+  public static string PlanetariumTimestamp()
+  {
+    double t = Planetarium.GetUniversalTime();
+    const double len_min = 60.0;
+    const double len_hour = len_min * 60.0;
+    double len_day = len_hour * Lib.HoursInDay();
+    double len_year = len_day * Lib.DaysInYear();
+
+    double year = Math.Floor(t / len_year);
+    t -= year * len_year;
+    double day = Math.Floor(t / len_day);
+    t -= day * len_day;
+    double hour = Math.Floor(t / len_hour);
+    t -= hour * len_hour;
+    double min = Math.Floor(t / len_min);
+
+    return BuildString
+    (
+      "[",
+      ((uint)year).ToString("D4"),
+      "-",
+      ((uint)day + 1).ToString("D2"),
+      " ",
+      ((uint)hour).ToString("D2"),
+      ":",
+      ((uint)min).ToString("D2"),
+      "]"
+    );
   }
 
 

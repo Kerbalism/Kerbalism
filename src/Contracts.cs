@@ -132,13 +132,13 @@ public sealed class KerbalismCrossBelt : Contract
 
   protected override string GetDescription()
   {
-    return "A brilliant scientist predicted a belt of super-charged particles surrounding the planet. "
-      + "Now we need to confirm its existance and find out how deadly it is.";
+    return "A brilliant scientist predicted two belts of super-charged particles surrounding the planet. "
+      + "Now we need to confirm their existance and find out how deadly they really are.";
   }
 
   protected override string MessageCompleted()
   {
-    return "The mission confirmed the presence of a radiation belt around the planet. Early data suggest extreme levels of radiation: we should be careful in crossing it.";
+    return "The mission confirmed the presence of two radiation belts around the planet. Early data suggest extreme levels of radiation: we should be careful in crossing them.";
   }
 
   public override bool MeetRequirements()

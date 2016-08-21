@@ -651,9 +651,12 @@ public sealed class Kerbalism : MonoBehaviour
 
   public void Update()
   {
+    bool ctrl = Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
+    bool alt  = Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.LeftAlt);
+
     // mute/unmute messages with keyboard
     // done in update because unity is a mess
-    if ((Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)) && Input.GetKeyDown(KeyCode.N))
+    if (ctrl && Input.GetKeyDown(KeyCode.N))
     {
       if (!Message.IsMuted())
       {
@@ -668,10 +671,17 @@ public sealed class Kerbalism : MonoBehaviour
     }
 
     // toggle body info window with keyboard
-    if ((Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.LeftAlt)) && Input.GetKeyDown(KeyCode.N))
+    if (alt && Input.GetKeyDown(KeyCode.N))
     {
       BodyInfo.Toggle();
     }
+
+    // open/close console with ALT+C
+    /*if (alt && Input.GetKeyDown(KeyCode.C))
+    {
+      // TODO: open a terminal to the first computer on the active vessel, if there is one
+      COMPUTER.Console.Toggle(0);
+    }*/
 
     // add progress descriptions to technologies
     techDescriptions();

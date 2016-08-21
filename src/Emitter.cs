@@ -14,10 +14,10 @@ namespace KERBALISM {
 public sealed class Emitter : PartModule
 {
   // config
-  [KSPField] public double radiation;                  // radiation in rad/s
-  [KSPField] public double ec_rate;                    // EC consumption rate per-second (optional)
-  [KSPField] public string tooltip = "";               // short description for part tooltip
-  [KSPField] public string animation_name;             // name of animation to play
+  [KSPField(isPersistant = true)] public double radiation;  // radiation in rad/s
+  [KSPField] public double ec_rate;                         // EC consumption rate per-second (optional)
+  [KSPField] public string tooltip = "";                    // short description for part tooltip
+  [KSPField] public string animation_name;                  // name of animation to play
 
   // tweakable
   [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Intensity"),

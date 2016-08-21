@@ -480,6 +480,7 @@ public static class Radiation
     // store stuff
     Space gsm;
     Vector3 p;
+    float D;
 
     // prepare out parameters
     blackout = false;
@@ -504,19 +505,25 @@ public static class Radiation
         // move the poing in GSM space
         p = gsm.transform_in(position);
 
-        // determine if inside zones
-        bool in_inner = mf.has_inner && mf.inner_func(p) < 0.0f;
-        bool in_outer = mf.has_outer && mf.outer_func(p) < 0.0f;
-        bool in_pause = mf.has_pause && mf.pause_func(p) < 0.0f;
-
-        // accumulate radiation
-        radiation += in_inner ? rb.radiation_inner : 0.0;
-        radiation += in_outer ? rb.radiation_outer : 0.0;
-        radiation += in_pause ? rb.radiation_pause : 0.0;
-
-        // maintain flags
-        inside_belt &= in_inner || in_outer;
-        inside_pause &= in_pause && rb.body.flightGlobalsIndex != 0;
+        // accumulate radiation and determine pause/belt flags
+        if (mf.has_inner)
+        {
+          D = mf.inner_func(p);
+          radiation += Lib.Clamp(D / -0.0666f, 0.0f, 1.0f) * rb.radiation_inner;
+          inside_belt &= D < 0.0f;
+        }
+        if (mf.has_outer)
+        {
+          D = mf.outer_func(p);
+          radiation += Lib.Clamp(D / -0.0333f, 0.0f, 1.0f) * rb.radiation_outer;
+          inside_belt &= D < 0.0f;
+        }
+        if (mf.has_pause)
+        {
+          D = mf.pause_func(p);
+          radiation += Lib.Clamp(D / -0.1332f, 0.0f, 1.0f) * rb.radiation_pause;
+          inside_pause &= D < 0.0f && rb.body.flightGlobalsIndex != 0; //< ignore heliopause
+        }
       }
 
       // avoid loops in the chain
@@ -590,17 +597,17 @@ public static class Radiation
   // show warning message when a vessel crossing a radiation belt
   public static void beltWarnings(Vessel v, vessel_info vi, vessel_data vd)
   {
-    // do nothing without a radiation rule
-    if (Kerbalism.rad_rule == null) return;
-
-    // we only show it for manned vessels, but the first time we also show it for probes
-    if (vi.crew_count > 0 || DB.NotificationData().first_belt_crossing == 0)
+    // if there is a radiation rule
+    if (Kerbalism.rad_rule != null)
     {
-      if (vi.inside_belt && vd.msg_belt < 1)
+      // we only show the warning for manned vessels, or for all vessels the first time its crossed
+      bool must_warn = vi.crew_count > 0 || DB.NotificationData().first_belt_crossing == 0;
+
+      // show the message
+      if (vi.inside_belt && vd.msg_belt < 1 && must_warn)
       {
         Message.Post(Lib.BuildString("<b>", v.vesselName, "</b> is crossing <i>", v.mainBody.bodyName, " radiation belt</i>"), "Exposed to extreme radiation");
         vd.msg_belt = 1;
-        DB.NotificationData().first_belt_crossing = 1; //< record first belt crossing
       }
       else if (!vi.inside_belt && vd.msg_belt > 0)
       {
@@ -608,6 +615,9 @@ public static class Radiation
         vd.msg_belt = 0;
       }
     }
+
+    // record first belt crossing
+    if (vi.inside_belt) DB.NotificationData().first_belt_crossing = 1;
   }
 
 

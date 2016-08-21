@@ -100,11 +100,30 @@ public class resource_info
     // for unloaded vessels
     else
     {
+      // if BackgroundProcessing was detected, we need to scan the parts and find
+      // the current amount of resource, that may have changed in the meanwhile,
+      // and add the difference with the amount stored at last update to deferred
+      double ext = 0.0;
+      if (Kerbalism.detected_mods.BackgroundProcessing)
+      {
+        foreach(ProtoPartSnapshot pps in v.protoVessel.protoPartSnapshots)
+        {
+          foreach(ProtoPartResourceSnapshot res in pps.resources)
+          {
+            if (res.resourceName == resource_name && Lib.Parse.ToBool(res.resourceValues.GetValue("flowState")))
+            {
+              ext += Lib.Parse.ToDouble(res.resourceValues.GetValue("amount"));
+            }
+          }
+        }
+        ext -= amount;
+      }
+
       // apply all deferred requests
-      amount = Lib.Clamp(amount + deferred, 0.0, capacity);
+      amount = Lib.Clamp(amount + deferred + ext, 0.0, capacity);
 
       // calculate rate of change per-second
-      rate = Lib.Clamp(deferred, -amount, capacity - amount) / elapsed_s;
+      rate = Lib.Clamp(deferred + ext, -amount, capacity - amount) / elapsed_s;
 
       // syncronize the amount to the vessel
       foreach(ProtoPartSnapshot pps in v.protoVessel.protoPartSnapshots)
