@@ -1,4 +1,4 @@
-// Compiled shader for all platforms, uncompressed size: 15.4KB
+// Compiled shader for all platforms, uncompressed size: 17.6KB
 
 Shader "Custom/MiniParticle" {
 Properties {
@@ -10,6 +10,7 @@ SubShader {
 
  // Stats for Vertex shader:
  //       d3d11 : 4 math
+ //    d3d11_9x : 4 math
  //        d3d9 : 5 math
  //       metal : 2 math
  // Stats for Fragment shader:
@@ -20,7 +21,7 @@ SubShader {
   Cull Off
   Blend SrcAlpha One
   ColorMask RGB
-  GpuProgramID 18064
+  GpuProgramID 31278
 Program "vp" {
 SubProgram "opengl " {
 "!!GLSL#version 120
@@ -50,16 +51,14 @@ SubProgram "d3d9 " {
 // Stats: 5 math
 Bind "vertex" Vertex
 Matrix 0 [glstate_matrix_mvp]
-"vs_3_0
+"vs_2_0
 def c4, 1, 0, 0, 0
 dcl_position v0
-dcl_psize o0
-dcl_position o1
-dp4 o1.x, c0, v0
-dp4 o1.y, c1, v0
-dp4 o1.z, c2, v0
-dp4 o1.w, c3, v0
-mov o0, c4.x
+dp4 oPos.x, c0, v0
+dp4 oPos.y, c1, v0
+dp4 oPos.z, c2, v0
+dp4 oPos.w, c3, v0
+mov oPts, c4.x
 
 "
 }
@@ -71,12 +70,12 @@ Matrix 0 [glstate_matrix_mvp]
 BindCB  "UnityPerDraw" 0
 "vs_4_0
 root12:aaabaaaa
-eefieceddndagjbkiamnodpfiophpgcibggdkhhjabaaaaaaleabaaaaadaaaaaa
+eefiecedofkoecfdomeckjkgjfmobfifpjmjfeeaabaaaaaaleabaaaaadaaaaaa
 cmaaaaaagaaaaaaaleaaaaaaejfdeheocmaaaaaaabaaaaaaaiaaaaaacaaaaaaa
 aaaaaaaaaaaaaaaaadaaaaaaaaaaaaaaapapaaaafaepfdejfeejepeoaaklklkl
 epfdeheoemaaaaaaacaaaaaaaiaaaaaadiaaaaaaaaaaaaaaaaaaaaaaadaaaaaa
 aaaaaaaaabaoaaaadoaaaaaaaaaaaaaaabaaaaaaadaaaaaaabaaaaaaapaaaaaa
-fafdejfkefaafdfgfpfaepfdejfeejepeoaaklklfdeieefcpiaaaaaaeaaaabaa
+fafdejfkefaafdfgfpfagphdgjhegjgpgoaaklklfdeieefcpiaaaaaaeaaaabaa
 doaaaaaafjaaaaaeegiocaaaaaaaaaaaaeaaaaaafpaaaaadpcbabaaaaaaaaaaa
 gfaaaaadbccabaaaaaaaaaaaghaaaaaepccabaaaabaaaaaaabaaaaaagiaaaaac
 abaaaaaadgaaaaafbccabaaaaaaaaaaaabeaaaaaaaaaiadpdiaaaaaipcaabaaa
@@ -113,6 +112,36 @@ void main ()
 
 #endif
 "
+}
+SubProgram "d3d11_9x " {
+// Stats: 4 math
+Bind "vertex" Vertex
+ConstBuffer "UnityPerDraw" 352
+Matrix 0 [glstate_matrix_mvp]
+BindCB  "UnityPerDraw" 0
+"vs_4_0_level_9_1
+root12:aaabaaaa
+eefiecedijacjndaamohjonndkonbjahfgmdamlhabaaaaaajiacaaaaaeaaaaaa
+daaaaaaabaabaaaabaacaaaaeeacaaaaebgpgodjniaaaaaaniaaaaaaaaacpopp
+keaaaaaadeaaaaaaabaaceaaaaaadaaaaaaadaaaaaaaceaaabaadaaaaaaaaaaa
+aeaaabaaaaaaaaaaaaaaaaaaaaacpoppfbaaaaafafaaapkaaaaaiadpaaaaaaaa
+aaaaaaaaaaaaaaaabpaaaaacafaaaaiaaaaaapjaafaaaaadaaaaapiaaaaaffja
+acaaoekaaeaaaaaeaaaaapiaabaaoekaaaaaaajaaaaaoeiaaeaaaaaeaaaaapia
+adaaoekaaaaakkjaaaaaoeiaaeaaaaaeaaaaapiaaeaaoekaaaaappjaaaaaoeia
+aeaaaaaeaaaaadmaaaaappiaaaaaoekaaaaaoeiaabaaaaacaaaaammaaaaaoeia
+abaaaaacaaaaaboaafaaaakappppaaaafdeieefcpiaaaaaaeaaaabaadoaaaaaa
+fjaaaaaeegiocaaaaaaaaaaaaeaaaaaafpaaaaadpcbabaaaaaaaaaaagfaaaaad
+bccabaaaaaaaaaaaghaaaaaepccabaaaabaaaaaaabaaaaaagiaaaaacabaaaaaa
+dgaaaaafbccabaaaaaaaaaaaabeaaaaaaaaaiadpdiaaaaaipcaabaaaaaaaaaaa
+fgbfbaaaaaaaaaaaegiocaaaaaaaaaaaabaaaaaadcaaaaakpcaabaaaaaaaaaaa
+egiocaaaaaaaaaaaaaaaaaaaagbabaaaaaaaaaaaegaobaaaaaaaaaaadcaaaaak
+pcaabaaaaaaaaaaaegiocaaaaaaaaaaaacaaaaaakgbkbaaaaaaaaaaaegaobaaa
+aaaaaaaadcaaaaakpccabaaaabaaaaaaegiocaaaaaaaaaaaadaaaaaapgbpbaaa
+aaaaaaaaegaobaaaaaaaaaaadoaaaaabejfdeheocmaaaaaaabaaaaaaaiaaaaaa
+caaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaaapapaaaafaepfdejfeejepeo
+aaklklklepfdeheoemaaaaaaacaaaaaaaiaaaaaadiaaaaaaaaaaaaaaaaaaaaaa
+adaaaaaaaaaaaaaaabaoaaaadoaaaaaaaaaaaaaaabaaaaaaadaaaaaaabaaaaaa
+apaaaaaafafdejfkefaafdfgfpfagphdgjhegjgpgoaaklkl"
 }
 SubProgram "gles3 " {
 "!!GLES3
@@ -492,7 +521,7 @@ SubProgram "opengl " {
 SubProgram "d3d9 " {
 // Stats: 1 math
 Vector 0 [POINT_COLOR]
-"ps_3_0
+"ps_2_0
 mov_pp oC0, c0
 
 "
@@ -503,10 +532,10 @@ Vector 0 [POINT_COLOR]
 BindCB  "$Globals" 0
 "ps_4_0
 root12:aaabaaaa
-eefiecednacpplincjggkegmejcdimnagmkmhehmabaaaaaapmaaaaaaadaaaaaa
+eefiecedpllleiajdmbkciligjpkfhdbpdbnakjhabaaaaaapmaaaaaaadaaaaaa
 cmaaaaaaiaaaaaaaleaaaaaaejfdeheoemaaaaaaacaaaaaaaiaaaaaadiaaaaaa
 aaaaaaaaaaaaaaaaadaaaaaaaaaaaaaaabaaaaaadoaaaaaaaaaaaaaaabaaaaaa
-adaaaaaaabaaaaaaapaaaaaafafdejfkefaafdfgfpfaepfdejfeejepeoaaklkl
+adaaaaaaabaaaaaaapaaaaaafafdejfkefaafdfgfpfagphdgjhegjgpgoaaklkl
 epfdeheocmaaaaaaabaaaaaaaiaaaaaacaaaaaaaaaaaaaaaaaaaaaaaadaaaaaa
 aaaaaaaaapaaaaaafdfgfpfegbhcghgfheaaklklfdeieefceaaaaaaaeaaaaaaa
 baaaaaaafjaaaaaeegiocaaaaaaaaaaaabaaaaaagfaaaaadpccabaaaaaaaaaaa
@@ -514,6 +543,24 @@ dgaaaaagpccabaaaaaaaaaaaegiocaaaaaaaaaaaaaaaaaaadoaaaaab"
 }
 SubProgram "gles " {
 "!!GLES"
+}
+SubProgram "d3d11_9x " {
+ConstBuffer "$Globals" 16
+Vector 0 [POINT_COLOR]
+BindCB  "$Globals" 0
+"ps_4_0_level_9_1
+root12:aaabaaaa
+eefiecedjlcgnljmcmepcgpfpaeaclmfcdlolfalabaaaaaaemabaaaaaeaaaaaa
+daaaaaaahmaaaaaameaaaaaabiabaaaaebgpgodjeeaaaaaaeeaaaaaaaaacpppp
+beaaaaaadaaaaaaaabaaceaaaaaadaaaaaaadaaaaaaaceaaaaaadaaaaaaaaaaa
+abaaaaaaaaaaaaaaaaacppppabaaaaacaaaicpiaaaaaoekappppaaaafdeieefc
+eaaaaaaaeaaaaaaabaaaaaaafjaaaaaeegiocaaaaaaaaaaaabaaaaaagfaaaaad
+pccabaaaaaaaaaaadgaaaaagpccabaaaaaaaaaaaegiocaaaaaaaaaaaaaaaaaaa
+doaaaaabejfdeheoemaaaaaaacaaaaaaaiaaaaaadiaaaaaaaaaaaaaaaaaaaaaa
+adaaaaaaaaaaaaaaabaaaaaadoaaaaaaaaaaaaaaabaaaaaaadaaaaaaabaaaaaa
+apaaaaaafafdejfkefaafdfgfpfagphdgjhegjgpgoaaklklepfdeheocmaaaaaa
+abaaaaaaaiaaaaaacaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaaapaaaaaa
+fdfgfpfegbhcghgfheaaklkl"
 }
 SubProgram "gles3 " {
 "!!GLES3"
