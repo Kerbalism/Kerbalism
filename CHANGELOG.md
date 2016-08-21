@@ -1,5 +1,18 @@
 #CHANGELOG
 
+1.1.0
+  - scrolling inside a window will not zoom the camera anymore
+  - optimization: compute vessel position only once
+  - balance: radiation levels fade off between zones
+  - balance: increased NERV radiation
+  - fix: fields rendering on some Nvidia GPUs
+  - fix: planner exception with unmanned vessels
+  - fix: Vall use 'surface' radiation model
+  - fix: workaround for SCANsat issue #234 (versions before 16.6)
+  - fix: resource cache will not break BackgroundProcessing
+  - fix: cross belts contract can be completed with unmanned vessels
+  - fix: active shield not working in background
+
 1.0.9
   - new magnetosphere & radiation models
   - support for stock bodies, OPM & RSS
