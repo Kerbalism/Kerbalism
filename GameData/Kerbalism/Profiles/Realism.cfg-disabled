@@ -71,8 +71,8 @@ Rule
   waste_ratio = 0.358453746438747
   waste_buffer = 0.0 // Flush Waste into space by default, unless a greenhouse or waste storage tank is attached.
   hidden_waste = true
-  rate = 1.0 // 1 unit per meal
-  interval = 21600.0 // 1 meal every 6-hour day
+  rate = 0.5 // 1 unit per 6-hour day
+  interval = 10800.0 // 1 meal every 3-hour, twice per 6-hour day
   degeneration = 0.0625 // 16 meals, 16 days
   on_pod = 8.0 // 8 days of supply (+16 days of degeneration before starvation, for a total of 24 days)
   on_resque = 1.0 // One day of food (but the slow degeneration adds plenty of time.)
@@ -141,7 +141,7 @@ Rule
   resource_name = Oxygen
   waste_name = CarbonDioxide
   waste_ratio = 0.75
-  waste_buffer = 45.0 // Holding tank for now, switch to a smaller tank and slow poisoning when waste poisoning implemented.
+  waste_buffer = 5.0
   hidden_waste = true
   rate = 0.00625 // 135 liters of Oxygen consumed per 6-hour day
   degeneration = 0.002083333 // 8 minutes
