@@ -1,5 +1,20 @@
 #CHANGELOG
 
+1.1.1
+  - new automation system: vessel computer, console, scripts
+  - vessel info show crew specialization
+  - lights consume ec in background and are considered in planner
+  - support: KerbalAtomics engines radiation patch by TheSaint
+  - support: NewHorizons radiation definitions patch by BashGordon33
+  - support: SampleReturnCapsule antenna patch  
+  - support: SurfaceLights in planner and background simulation
+  - balance: reduced Vall/Io surface radiation
+  - balance: (realism profile) less co2 capacity in pods
+  - balance: (realism profile) kerbals eat twice per-day  
+  - fix: crossing belt contract condition & warnings
+  - fix: hiding the GUI will not show any window
+  - fix: EVA headlight not working without a profile
+
 1.1.0
   - scrolling inside a window will not zoom the camera anymore
   - optimization: compute vessel position only once
