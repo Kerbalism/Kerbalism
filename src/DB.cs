@@ -39,10 +39,10 @@ public class vessel_data
   public double storm_time          = 0.0;          // time of next storm (interplanetary CME)
   public double storm_age           = 0.0;          // time since last storm (interplanetary CME)
   public uint   storm_state         = 0;            // 0: none, 1: inbound, 2: inprogress (interplanetary CME)
-  public string notes               = "";           // vessel notes
   public string group               = "NONE";       // vessel group
   public Dictionary<string, vmon_data> vmon = new Dictionary<string, vmon_data>(32); // rule data
   public List<uint> scansat_id = new List<uint>();  // used to remember scansat sensors that were disabled
+  public Computer computer = new Computer();        // the vessel computer
 }
 
 
@@ -83,15 +83,12 @@ public sealed class DB : ScenarioModule
 
   // store data per-body
   Dictionary<string, body_data> bodies = new Dictionary<string, body_data>(64);
-  /*
-  // store computers
-  Dictionary<uint, COMPUTER.Computer> computers = new Dictionary<uint, KERBALISM.COMPUTER.Computer>(32);
-  */
+
   // store data for the notifications system
   notification_data notifications = new notification_data();
 
   // current savegame version
-  const string current_version = "1.1.0.0";
+  const string current_version = "1.1.1.0";
 
   // allow global access
   static DB instance = null;
@@ -167,7 +164,6 @@ public sealed class DB : ScenarioModule
         vd.storm_time      = Lib.ConfigValue(vessel_node, "storm_time", 0.0);
         vd.storm_age       = Lib.ConfigValue(vessel_node, "storm_age", 0.0);
         vd.storm_state     = Lib.ConfigValue(vessel_node, "storm_state", 0u);
-        vd.notes           = Lib.ConfigValue(vessel_node, "notes", "").Replace("$NEWLINE", "\n");
         vd.group           = Lib.ConfigValue(vessel_node, "group", "NONE");
         if (vessel_node.HasNode("vmon"))
         {
@@ -181,6 +177,15 @@ public sealed class DB : ScenarioModule
         foreach(string s in vessel_node.GetValues("scansat_id"))
         {
           vd.scansat_id.Add(Lib.Parse.ToUInt(s));
+        }
+        if (vessel_node.HasNode("computer"))
+        {
+          vd.computer = new Computer(vessel_node.GetNode("computer"));
+        }
+        // import old notes into new computer system
+        else if (string.CompareOrdinal(version, "1.1.1.0") < 0)
+        {
+          vd.computer.files["doc/notes"].content = Lib.ConfigValue(vessel_node, "notes", "").Replace("$NEWLINE", "\n");
         }
         vessels.Add(new Guid(vessel_node.name), vd);
       }
@@ -215,18 +220,6 @@ public sealed class DB : ScenarioModule
       notifications.first_space_harvest   = Lib.ConfigValue(n_node, "first_space_harvest", 0u);
       notifications.manned_orbit_contract = Lib.ConfigValue(n_node, "manned_orbit_contract", 0u);
     }
-
-    /*
-    computers.Clear();
-    if (node.HasNode("computers"))
-    {
-      ConfigNode computers_node = node.GetNode("computers");
-      foreach(ConfigNode computer_node in computers_node.GetNodes())
-      {
-        computers.Add(uint.Parse(computer_node.name), new COMPUTER.Computer(computer_node));
-      }
-    }
-    */
 
     // if an old savegame was imported, log some debug info
     if (version != current_version) Lib.Log("savegame converted from version " + version);
@@ -276,7 +269,6 @@ public sealed class DB : ScenarioModule
       vessel_node.AddValue("storm_time", vd.storm_time);
       vessel_node.AddValue("storm_age", vd.storm_age);
       vessel_node.AddValue("storm_state", vd.storm_state);
-      vessel_node.AddValue("notes", vd.notes.Replace("\n", "$NEWLINE"));
       vessel_node.AddValue("group", vd.group);
       var vmon_node = vessel_node.AddNode("vmon");
       foreach(var q in vd.vmon)
@@ -288,6 +280,8 @@ public sealed class DB : ScenarioModule
       {
         vessel_node.AddValue("scansat_id", id.ToString());
       }
+      ConfigNode computer_node = vessel_node.AddNode("computer");
+      vd.computer.save(computer_node);
     }
 
     ConfigNode bodies_node = node.AddNode("bodies");
@@ -311,15 +305,6 @@ public sealed class DB : ScenarioModule
     notifications_node.AddValue("first_malfunction", notifications.first_malfunction.ToString());
     notifications_node.AddValue("first_space_harvest", notifications.first_space_harvest.ToString());
     notifications_node.AddValue("manned_orbit_contract", notifications.manned_orbit_contract.ToString());
-
-    /*
-    ConfigNode computers_node = node.AddNode("computers");
-    foreach(var p in computers)
-    {
-      ConfigNode computer_node = computers_node.AddNode(p.Key.ToString());
-      p.Value.save(computer_node);
-    }
-    */
   }
 
 
@@ -366,15 +351,6 @@ public sealed class DB : ScenarioModule
   }
 
 
-  /*
-  public static COMPUTER.Computer ComputerData(uint id)
-  {
-    if (!instance.computers.ContainsKey(id)) instance.computers.Add(id, new COMPUTER.Computer());
-    return instance.computers[id];
-  }
-  */
-
-
   public static notification_data NotificationData()
   {
     return instance.notifications;
@@ -399,14 +375,6 @@ public sealed class DB : ScenarioModule
   }
 
 
-  /*
-  public static void ForgetComputer(uint id)
-  {
-    instance.computers.Remove(id);
-  }
-  */
-
-
   public static Dictionary<string, kerbal_data> Kerbals()
   {
     return instance.kerbals;
@@ -423,14 +391,6 @@ public sealed class DB : ScenarioModule
   {
     return instance.bodies;
   }
-
-
-  /*
-  public static Dictionary<uint, COMPUTER.Computer> Computers()
-  {
-    return instance.computers;
-  }
-  */
 }
 
 

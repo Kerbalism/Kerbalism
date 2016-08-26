@@ -887,27 +887,30 @@ public class resource_simulator
       {
         switch(m.moduleName)
         {
-          case "Scrubber":                    process_scrubber(m as Scrubber, env);                                 break;
-          case "Recycler":                    process_recycler(m as Recycler);                                      break;
-          case "Greenhouse":                  process_greenhouse(m as Greenhouse, env);                             break;
-          case "GravityRing":                 process_ring(m as GravityRing);                                       break;
-          case "Antenna":                     process_antenna(m as Antenna);                                        break;
-          case "Emitter":                     process_emitter(m as Emitter);                                        break;
-          case "ModuleCommand":               process_command(m as ModuleCommand);                                  break;
-          case "ModuleDeployableSolarPanel":  process_panel(m as ModuleDeployableSolarPanel, env);                  break;
-          case "ModuleGenerator":             process_generator(m as ModuleGenerator, p);                           break;
-          case "ModuleResourceConverter":     process_converter(m as ModuleResourceConverter, ref first_converter); break;
-          case "ModuleKPBSConverter":         process_converter(m as ModuleResourceConverter, ref first_converter); break;
-          case "ModuleResourceHarvester":     process_harvester(m as ModuleResourceHarvester);                      break;
-          case "ModuleActiveRadiator":        process_radiator(m as ModuleActiveRadiator);                          break;
-          case "ModuleWheelMotor":            process_wheel_motor(m as ModuleWheelMotor);                           break;
-          case "ModuleWheelMotorSteering":    process_wheel_steering(m as ModuleWheelMotorSteering);                break;
-          case "SCANsat":                     process_scanner(p, m);                                                break;
-          case "ModuleSCANresourceScanner":   process_scanner(p, m);                                                break;
-          case "ModuleCurvedSolarPanel":      process_curved_panel(p, m, env);                                      break;
-          case "FissionGenerator":            process_fission_generator(p, m);                                      break;
-          case "ModuleRadioisotopeGenerator": process_radioisotope_generator(p, m);                                 break;
-          case "ModuleCryoTank":              process_cryotank(p, m);                                               break;
+          case "Scrubber":                     process_scrubber(m as Scrubber, env);                                 break;
+          case "Recycler":                     process_recycler(m as Recycler);                                      break;
+          case "Greenhouse":                   process_greenhouse(m as Greenhouse, env);                             break;
+          case "GravityRing":                  process_ring(m as GravityRing);                                       break;
+          case "Antenna":                      process_antenna(m as Antenna);                                        break;
+          case "Emitter":                      process_emitter(m as Emitter);                                        break;
+          case "ModuleCommand":                process_command(m as ModuleCommand);                                  break;
+          case "ModuleDeployableSolarPanel":   process_panel(m as ModuleDeployableSolarPanel, env);                  break;
+          case "ModuleGenerator":              process_generator(m as ModuleGenerator, p);                           break;
+          case "ModuleResourceConverter":      process_converter(m as ModuleResourceConverter, ref first_converter); break;
+          case "ModuleKPBSConverter":          process_converter(m as ModuleResourceConverter, ref first_converter); break;
+          case "ModuleResourceHarvester":      process_harvester(m as ModuleResourceHarvester);                      break;
+          case "ModuleActiveRadiator":         process_radiator(m as ModuleActiveRadiator);                          break;
+          case "ModuleWheelMotor":             process_wheel_motor(m as ModuleWheelMotor);                           break;
+          case "ModuleWheelMotorSteering":     process_wheel_steering(m as ModuleWheelMotorSteering);                break;
+          case "ModuleLight":                  process_light(m as ModuleLight);                                      break;
+          case "ModuleColoredLensLight":       process_light(m as ModuleLight);                                      break;
+          case "ModuleMultiPointSurfaceLight": process_light(m as ModuleLight);                                      break;
+          case "SCANsat":                      process_scanner(p, m);                                                break;
+          case "ModuleSCANresourceScanner":    process_scanner(p, m);                                                break;
+          case "ModuleCurvedSolarPanel":       process_curved_panel(p, m, env);                                      break;
+          case "FissionGenerator":             process_fission_generator(p, m);                                      break;
+          case "ModuleRadioisotopeGenerator":  process_radioisotope_generator(p, m);                                 break;
+          case "ModuleCryoTank":               process_cryotank(p, m);                                               break;
         }
       }
     }
@@ -1167,6 +1170,15 @@ public class resource_simulator
     if (steering.motorEnabled)
     {
       resource(steering.inputResource.name).consume(steering.inputResource.rate);
+    }
+  }
+
+
+  void process_light(ModuleLight light)
+  {
+    if (light.useResources && light.isOn)
+    {
+      resource("ElectricCharge").consume(light.resourceAmount);
     }
   }
 

@@ -41,27 +41,30 @@ public sealed class Background
         // process modules
         switch(m.moduleName)
         {
-          case "Malfunction":                 Malfunction.BackgroundUpdate(v, m, module_prefab as Malfunction, elapsed_s);                break;
-          case "Scrubber":                    Scrubber.BackgroundUpdate(v, m, module_prefab as Scrubber, vi, resources, elapsed_s);       break;
-          case "Recycler":                    Recycler.BackgroundUpdate(v, m, module_prefab as Recycler, resources, elapsed_s);           break;
-          case "Greenhouse":                  Greenhouse.BackgroundUpdate(v, m, module_prefab as Greenhouse, vi, resources, elapsed_s);   break;
-          case "GravityRing":                 GravityRing.BackgroundUpdate(v, m, module_prefab as GravityRing, resources, elapsed_s);     break;
-          case "Emitter":                     Emitter.BackgroundUpdate(v, m, module_prefab as Emitter, ec, elapsed_s);                    break;
-          case "ModuleCommand":               ProcessCommand(v, p, m, module_prefab as ModuleCommand, resources, elapsed_s);              break;
-          case "ModuleDeployableSolarPanel":  ProcessPanel(v, p, m, module_prefab as ModuleDeployableSolarPanel, vi, ec, elapsed_s);      break;
-          case "ModuleGenerator":             ProcessGenerator(v, p, m, module_prefab as ModuleGenerator, resources, elapsed_s);          break;
+          case "Malfunction":                  Malfunction.BackgroundUpdate(v, m, module_prefab as Malfunction, elapsed_s);                break;
+          case "Scrubber":                     Scrubber.BackgroundUpdate(v, m, module_prefab as Scrubber, vi, resources, elapsed_s);       break;
+          case "Recycler":                     Recycler.BackgroundUpdate(v, m, module_prefab as Recycler, resources, elapsed_s);           break;
+          case "Greenhouse":                   Greenhouse.BackgroundUpdate(v, m, module_prefab as Greenhouse, vi, resources, elapsed_s);   break;
+          case "GravityRing":                  GravityRing.BackgroundUpdate(v, m, module_prefab as GravityRing, resources, elapsed_s);     break;
+          case "Emitter":                      Emitter.BackgroundUpdate(v, m, module_prefab as Emitter, ec, elapsed_s);                    break;
+          case "ModuleCommand":                ProcessCommand(v, p, m, module_prefab as ModuleCommand, resources, elapsed_s);              break;
+          case "ModuleDeployableSolarPanel":   ProcessPanel(v, p, m, module_prefab as ModuleDeployableSolarPanel, vi, ec, elapsed_s);      break;
+          case "ModuleGenerator":              ProcessGenerator(v, p, m, module_prefab as ModuleGenerator, resources, elapsed_s);          break;
           case "ModuleResourceConverter":
           case "ModuleKPBSConverter":
-          case "FissionReactor":              ProcessConverter(v, p, m, part_prefab, converter_index++, resources, elapsed_s);            break;
-          case "ModuleResourceHarvester":     ProcessHarvester(v, p, m, module_prefab as ModuleResourceHarvester, resources, elapsed_s);  break;
-          case "ModuleAsteroidDrill":         ProcessAsteroidDrill(v, p, m, module_prefab as ModuleAsteroidDrill, resources, elapsed_s);  break;
-          case "ModuleScienceConverter":      ProcessLab(v, p, m, module_prefab as ModuleScienceConverter, ec, elapsed_s);                break;
+          case "FissionReactor":               ProcessConverter(v, p, m, part_prefab, converter_index++, resources, elapsed_s);            break;
+          case "ModuleResourceHarvester":      ProcessHarvester(v, p, m, module_prefab as ModuleResourceHarvester, resources, elapsed_s);  break;
+          case "ModuleAsteroidDrill":          ProcessAsteroidDrill(v, p, m, module_prefab as ModuleAsteroidDrill, resources, elapsed_s);  break;
+          case "ModuleScienceConverter":       ProcessLab(v, p, m, module_prefab as ModuleScienceConverter, ec, elapsed_s);                break;
+          case "ModuleLight":
+          case "ModuleColoredLensLight":
+          case "ModuleMultiPointSurfaceLight": ProcessLight(v, p, m, module_prefab as ModuleLight, ec, elapsed_s);                         break;
           case "SCANsat":
-          case "ModuleSCANresourceScanner":   ProcessScanner(v, p, m, module_prefab, part_prefab, vd, ec, elapsed_s);                     break;
-          case "ModuleCurvedSolarPanel":      ProcessCurvedPanel(v, p, m, module_prefab, part_prefab, vi, ec, elapsed_s);                 break;
-          case "FissionGenerator":            ProcessFissionGenerator(v, p, m, module_prefab, ec, elapsed_s);                             break;
-          case "ModuleRadioisotopeGenerator": ProcessRadioisotopeGenerator(v, p, m, module_prefab, ec, elapsed_s);                        break;
-          case "ModuleCryoTank":              ProcessCryoTank(v, p, m, module_prefab, resources, elapsed_s);                              break;
+          case "ModuleSCANresourceScanner":    ProcessScanner(v, p, m, module_prefab, part_prefab, vd, ec, elapsed_s);                     break;
+          case "ModuleCurvedSolarPanel":       ProcessCurvedPanel(v, p, m, module_prefab, part_prefab, vi, ec, elapsed_s);                 break;
+          case "FissionGenerator":             ProcessFissionGenerator(v, p, m, module_prefab, ec, elapsed_s);                             break;
+          case "ModuleRadioisotopeGenerator":  ProcessRadioisotopeGenerator(v, p, m, module_prefab, ec, elapsed_s);                        break;
+          case "ModuleCryoTank":               ProcessCryoTank(v, p, m, module_prefab, resources, elapsed_s);                              break;
         }
       }
     }
@@ -350,6 +353,15 @@ public sealed class Background
     {
       // consume ec
       ec.Consume(lab.powerRequirement * elapsed_s);
+    }
+  }
+
+
+  static void ProcessLight(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleLight light, resource_info ec, double elapsed_s)
+  {
+    if (light.useResources && Lib.Proto.GetBool(m, "isOn"))
+    {
+      ec.Consume(light.resourceAmount * elapsed_s);
     }
   }
 

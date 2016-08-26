@@ -525,7 +525,7 @@ public static class Lib
     string file_path = BuildString(Directory(), sep, "Shaders", sep, name, ".compiled");
 
     // get shader source
-    string shader_src = File.ReadAllText(file_path);
+    string shader_src = System.IO.File.ReadAllText(file_path);
 
     // create and return material
     #pragma warning disable 618
@@ -734,8 +734,8 @@ public static class Lib
     return BuildString
     (
       "[",
-      ((uint)year).ToString("D4"),
-      "-",
+      ((uint)year + 1).ToString("D4"),
+      "/",
       ((uint)day + 1).ToString("D2"),
       " ",
       ((uint)hour).ToString("D2"),
@@ -748,6 +748,7 @@ public static class Lib
 
   // compose a set of strings together, without creating temporary objects
   // note: the objective here is to minimize number of temporary variables for GC
+  // note: okay to call recursively, as long as all individual concatenation is atomic
   static StringBuilder sb = new StringBuilder(256);
   public static string BuildString(string a, string b)
   {

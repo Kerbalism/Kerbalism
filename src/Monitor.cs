@@ -64,6 +64,7 @@ public sealed class Monitor
     group_style = new GUIStyle(config_style);
     group_style.imagePosition = ImagePosition.TextOnly;
     group_style.stretchWidth = true;
+    group_style.fixedHeight = 11.0f;
     group_style.normal.textColor = Color.cyan;
   }
 
@@ -395,6 +396,7 @@ public sealed class Monitor
     if (Kerbalism.features.signal) GUILayout.Label(indicator_signal(v, vi), icon_style);
     GUILayout.EndHorizontal();
     if (Lib.IsClicked(1)) Info.Toggle(v);
+    else if (Lib.IsClicked(2) && !v.isEVA) Console.Toggle(v);
 
     // remember last vessel clicked
     if (Lib.IsClicked()) last_clicked_id = v.id;
@@ -466,14 +468,21 @@ public sealed class Monitor
     if (!filtered())
     {
       GUILayout.BeginHorizontal(row_style);
-      GUILayout.Label(new GUIContent(" GROUP: ", icon_group), config_style, new[]{GUILayout.Width(48.0f)});
+      GUILayout.Label(new GUIContent(" GROUP: ", icon_group), config_style, new[]{GUILayout.Width(52.0f)});
       vd.group = Lib.TextFieldPlaceholder("Kerbalism_group", vd.group, "NONE", group_style).ToUpper();
       GUILayout.EndHorizontal();
     }
-    GUILayout.BeginHorizontal(row_style);
-    GUILayout.Label(new GUIContent(" NOTES", icon_notes), config_style);
-    if (Lib.IsClicked()) Notepad.Toggle(v);
-    GUILayout.EndHorizontal();
+    if (!v.isEVA)
+    {
+      GUILayout.BeginHorizontal(row_style);
+      GUILayout.Label(new GUIContent(" CONSOLE", icon_console), config_style);
+      if (Lib.IsClicked()) Console.Toggle(v);
+      GUILayout.EndHorizontal();
+      GUILayout.BeginHorizontal(row_style);
+      GUILayout.Label(new GUIContent(" NOTES", icon_notes), config_style);
+      if (Lib.IsClicked()) Editor.Toggle(v, "doc/notes");
+      GUILayout.EndHorizontal();
+    }
     GUILayout.BeginHorizontal(row_style);
     GUILayout.Label(new GUIContent(" DETAILS", icon_info), config_style);
     if (Lib.IsClicked()) Info.Toggle(v);
@@ -539,7 +548,7 @@ public sealed class Monitor
     uint config_entries = 0;
     if (configured_id != Guid.Empty)
     {
-      config_entries = 3u; // group, info & notes
+      config_entries = 4u; // group, info, console, notes
       if (Kerbalism.ec_rule != null) ++config_entries;
       if (Kerbalism.supply_rules.Count > 0) ++config_entries;
       if (Kerbalism.features.signal) config_entries += 2u;
@@ -670,6 +679,7 @@ public sealed class Monitor
   readonly Texture icon_radiation_nominal   = Lib.GetTexture("radiation-white");
   readonly Texture icon_empty               = Lib.GetTexture("empty");
   readonly Texture icon_notes               = Lib.GetTexture("notes");
+  readonly Texture icon_console             = Lib.GetTexture("console");
   readonly Texture icon_group               = Lib.GetTexture("search");
   readonly Texture icon_info                = Lib.GetTexture("info");
   readonly Texture[] icon_toggle            ={Lib.GetTexture("toggle-disabled"),

@@ -38,11 +38,10 @@ public sealed class Engine : MonoBehaviour
     launcher        = new Launcher();
     info            = new Info();
     body_info       = new BodyInfo();
-    notepad         = new Notepad();
     message         = new Message();
     notifications   = new Notifications();
-    //console         = new COMPUTER.Console();
-    //editor          = new COMPUTER.Editor();
+    console         = new Console();
+    editor          = new Editor();
     Radiation.init();
     LineRenderer.init();
     ParticleRenderer.init();
@@ -116,6 +115,9 @@ public sealed class Engine : MonoBehaviour
         // apply deferred requests
         resources.Sync(v, elapsed_s);
 
+        // update computer
+        vd.computer.update(v, elapsed_s);
+
         // remove from unloaded data container
         unloaded.Remove(vi.id);
       }
@@ -170,6 +172,9 @@ public sealed class Engine : MonoBehaviour
       // apply deferred requests
       last_resources.Sync(last_v, last_time);
 
+      // update computer
+      last_vd.computer.update(last_v, last_time);
+
       // remove from unloaded data container
       unloaded.Remove(last_vi.id);
     }
@@ -199,14 +204,16 @@ public sealed class Engine : MonoBehaviour
     // do nothing else if DB isn't ready or if we are in the editor
     if (!DB.Ready() || !Lib.SceneIsGame()) return;
 
+    // do nothing if GUI should be hidden
+    if (launcher.must_hide_ui) return;
+
     // render subsystems
     info.on_gui();
     body_info.on_gui();
-    notepad.on_gui();
     message.on_gui();
     notifications.on_gui();
-    //console.on_gui();
-    //editor.on_gui();
+    console.on_gui();
+    editor.on_gui();
   }
 
   void Update()
@@ -226,12 +233,11 @@ public sealed class Engine : MonoBehaviour
   Launcher          launcher;
   Info              info;
   BodyInfo          body_info;
-  Notepad           notepad;
   Message           message;
   Notifications     notifications;
   MapCameraScript   map_camera_script;
-  //COMPUTER.Console  console;
-  //COMPUTER.Editor   editor;
+  Console           console;
+  Editor            editor;
 
   // store time until last update for unloaded vessels
   public class unloaded_data { public double time; }; //< reference wrapper

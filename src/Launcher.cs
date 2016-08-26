@@ -216,6 +216,8 @@ public sealed class Launcher
   {
     last_show_window = launcher_btn.toggleButton.Value;
     launcher_btn.toggleButton.Value = false;
+
+    must_hide_ui = true;
   }
 
 
@@ -223,6 +225,8 @@ public sealed class Launcher
   public void show_again()
   {
     launcher_btn.toggleButton.Value = last_show_window;
+
+    must_hide_ui = false;
   }
 
 
@@ -250,6 +254,9 @@ public sealed class Launcher
 
   // the vessel monitor
   Monitor monitor = new Monitor();
+
+  // used by engine to hide other windows when appropriate
+  public bool must_hide_ui;
 }
 
 

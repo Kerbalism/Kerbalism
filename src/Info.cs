@@ -360,6 +360,7 @@ public sealed class Info
       var bar = Lib.ProgressBar(20, kmon.problem, r.warning_threshold, r.danger_threshold, r.fatal_threshold, kd.disabled > 0 ? "cyan" : "");
       render_content(r.name.AddSpacesOnCaps().ToLower(), bar);
     }
+    render_content("specialization", kerbal.trait);
     if (Kerbalism.detected_mods.DeepFreeze) render_content("hibernated", kd.disabled > 0 ? "yes" : "no");
     if (Kerbalism.detected_mods.CLS) render_content("inside", v.isEVA ? "EVA" : Lib.Epsilon(kd.space_name.Length == 0 ? v.vesselName : kd.space_name, 24));
     render_space();
@@ -418,7 +419,7 @@ public sealed class Info
     // crew panel
     if (degen_rules.Count > 0 && crew.Count > 0)
     {
-      h += panel_height(degen_rules.Count + (Kerbalism.detected_mods.CLS ? 1 : 0) + (Kerbalism.detected_mods.DeepFreeze ? 1 : 0));
+      h += panel_height(degen_rules.Count + 1 + (Kerbalism.detected_mods.CLS ? 1 : 0) + (Kerbalism.detected_mods.DeepFreeze ? 1 : 0));
     }
 
     // greenhouse panel

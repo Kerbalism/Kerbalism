@@ -232,18 +232,6 @@ public sealed class Kerbalism : MonoBehaviour
       }
     }
 
-    // only allow 1 malfunction module per-part
-    // note: it is possible that RemoveModule is evil
-    foreach(AvailablePart part in PartLoader.LoadedPartsList)
-    {
-      // get the prefab
-      Part prefab = part.partPrefab;
-
-      // remove all malfunction modules except one
-      List<Malfunction> malfunctions = prefab.Modules.GetModules<Malfunction>();
-      for(int i=1; i<malfunctions.Count; ++i) prefab.RemoveModule(malfunctions[i]);
-    }
-
     // set callbacks
     GameEvents.onCrewOnEva.Add(this.toEVA);
     GameEvents.onCrewBoardVessel.Add(this.fromEVA);
@@ -328,7 +316,10 @@ public sealed class Kerbalism : MonoBehaviour
     // remember if the kerbal has an helmet in the EVA module
     data.to.FindModuleImplementing<EVA>().has_helmet = !breathable;
 
-    // mute messages for a couple seconds
+    // execute script on vessel computer
+    if (DB.Ready()) DB.VesselData(data.from.vessel.id).computer.execute("run", "auto/eva_out", string.Empty, data.from.vessel);
+
+    // mute messages for a couple seconds to avoid warning messages from the vessel resource amounts
     Message.MuteInternal();
     base.StartCoroutine(CallbackUtil.DelayedCallback(2.0f, Message.UnmuteInternal));
 
@@ -365,7 +356,10 @@ public sealed class Kerbalism : MonoBehaviour
     // purge vessel from resource cache
     ResourceCache.Purge(data.from.vessel.id);
 
-    // mute messages for a couple seconds
+    // execute script on vessel computer
+    if (DB.Ready()) DB.VesselData(data.to.vessel.id).computer.execute("run", "auto/eva_in", string.Empty, data.to.vessel);
+
+    // mute messages for a couple seconds to avoid warning messages from the vessel resource amounts
     Message.MuteInternal();
     base.StartCoroutine(CallbackUtil.DelayedCallback(2.0f, Message.UnmuteInternal));
 
@@ -401,6 +395,9 @@ public sealed class Kerbalism : MonoBehaviour
         DB.ForgetKerbal(c.name);
       }
     }
+
+    // TODO: add science data from recovered vessel
+    // beware of double calls to this function
 
     // forget vessel data
     DB.ForgetVessel(vessel.vesselID);
@@ -451,6 +448,8 @@ public sealed class Kerbalism : MonoBehaviour
 
   void vesselDock(GameEvents.FromToAction<Part, Part> e)
   {
+    // TODO: merge computer data from vessel A to vessel B on docking
+
     // forget vessel being docked
     if (DB.Ready()) DB.ForgetVessel(e.from.vessel.id);
 
@@ -676,13 +675,6 @@ public sealed class Kerbalism : MonoBehaviour
       BodyInfo.Toggle();
     }
 
-    // open/close console with ALT+C
-    /*if (alt && Input.GetKeyDown(KeyCode.C))
-    {
-      // TODO: open a terminal to the first computer on the active vessel, if there is one
-      COMPUTER.Console.Toggle(0);
-    }*/
-
     // add progress descriptions to technologies
     techDescriptions();
   }
@@ -865,13 +857,14 @@ public sealed class Kerbalism : MonoBehaviour
   // decay unloaded vessels inside atmosphere
   public static void atmosphereDecay(Vessel v, vessel_info vi, double elapsed_s)
   {
-    if (Settings.AtmosphereDecay && !vi.landed)
+    CelestialBody body = v.mainBody;
+    if (Settings.AtmosphereDecay && body.atmosphere && v.altitude < body.atmosphereDepth && !vi.landed)
     {
       // get pressure
-      double p = v.mainBody.GetPressure(v.altitude);
+      double p = body.GetPressure(v.altitude);
 
       // if inside some kind of atmosphere
-      if (p > 0.0)
+      if (p > double.Epsilon)
       {
         // calculate decay speed to be 1km/s per-kPa
         double decay_speed = 1000.0 * p;

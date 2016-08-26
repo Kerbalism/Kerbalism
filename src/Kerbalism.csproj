@@ -79,6 +79,23 @@
     <Compile Include="BodyInfo.cs" />
     <Compile Include="Cache.cs" />
     <Compile Include="CLS.cs" />
+    <Compile Include="Computer\Device.cs" />
+    <Compile Include="Computer\Devices\Converter.cs" />
+    <Compile Include="Computer\Devices\Crew.cs" />
+    <Compile Include="Computer\Devices\Drill.cs" />
+    <Compile Include="Computer\Devices\Emitter.cs" />
+    <Compile Include="Computer\Devices\Generator.cs" />
+    <Compile Include="Computer\Devices\Greenhouse.cs" />
+    <Compile Include="Computer\Devices\Light.cs" />
+    <Compile Include="Computer\Devices\Network.cs" />
+    <Compile Include="Computer\Devices\Panel.cs" />
+    <Compile Include="Computer\Devices\Recycler.cs" />
+    <Compile Include="Computer\Devices\Ring.cs" />
+    <Compile Include="Computer\Devices\Scrubber.cs" />
+    <Compile Include="Computer\Computer.cs" />
+    <Compile Include="Computer\Console.cs" />
+    <Compile Include="Computer\Editor.cs" />
+    <Compile Include="Computer\File.cs" />
     <Compile Include="Contracts.cs" />
     <Compile Include="DB.cs" />
     <Compile Include="Emitter.cs" />
@@ -102,9 +119,9 @@
     <Compile Include="Launcher.cs" />
     <Compile Include="Kerbalism.cs" />
     <Compile Include="Monitor.cs" />
-    <Compile Include="Notepad.cs" />
     <Compile Include="Planner.cs" />
     <Compile Include="QualityOfLife.cs" />
+    <Compile Include="Science.cs" />
     <Compile Include="Sensor.cs" />
     <Compile Include="Sim.cs" />
     <Compile Include="Message.cs" />
@@ -116,6 +133,10 @@
     <Compile Include="TankLight.cs" />
     <Compile Include="Lib.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Computer" />
+    <Folder Include="Computer\Devices" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

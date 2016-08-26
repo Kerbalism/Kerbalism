@@ -510,19 +510,19 @@ public static class Radiation
         {
           D = mf.inner_func(p);
           radiation += Lib.Clamp(D / -0.0666f, 0.0f, 1.0f) * rb.radiation_inner;
-          inside_belt &= D < 0.0f;
+          inside_belt |= D < 0.0f;
         }
         if (mf.has_outer)
         {
           D = mf.outer_func(p);
           radiation += Lib.Clamp(D / -0.0333f, 0.0f, 1.0f) * rb.radiation_outer;
-          inside_belt &= D < 0.0f;
+          inside_belt |= D < 0.0f;
         }
         if (mf.has_pause)
         {
           D = mf.pause_func(p);
           radiation += Lib.Clamp(D / -0.1332f, 0.0f, 1.0f) * rb.radiation_pause;
-          inside_pause &= D < 0.0f && rb.body.flightGlobalsIndex != 0; //< ignore heliopause
+          inside_pause |= D < 0.0f && rb.body.flightGlobalsIndex != 0; //< ignore heliopause
         }
       }
 

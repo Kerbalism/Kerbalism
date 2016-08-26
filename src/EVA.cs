@@ -40,10 +40,11 @@ public sealed class EVA : PartModule
     if (has_helmet && kerbal.lampOn) ec.Consume(Settings.HeadlightCost * Kerbalism.elapsed_s); //< ignore time dilation
 
     // force the headlamp lights on/off depending on ec amount left and if it has an helmet
-    SetHeadlamp(kerbal, has_helmet && kerbal.lampOn && ec.amount > double.Epsilon);
-
     // synchronize helmet flares with headlamp state
-    SetFlares(kerbal, has_helmet && kerbal.lampOn && ec.amount > double.Epsilon);
+    // support case when there is no ec rule (or no profile at all)
+    bool b = has_helmet && kerbal.lampOn && (ec.amount > double.Epsilon || ec.capacity <= double.Epsilon);
+    SetHeadlamp(kerbal, b);
+    SetFlares(kerbal, b);
 
     // if dead
     if (is_dead)
