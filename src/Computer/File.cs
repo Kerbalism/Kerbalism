@@ -16,6 +16,11 @@ public sealed class File
   public File()
   {}
 
+  public File(string content)
+  {
+    this.content = content;
+  }
+
   public File(Device device)
   {
     this.device = device;

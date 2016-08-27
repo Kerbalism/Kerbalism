@@ -100,11 +100,18 @@ public sealed class Computer
   // call automation scripts and transfer data
   public void update(Vessel environment, double elapsed_s)
   {
+    // do nothing if there is no EC left on the vessel
+    resource_info ec = ResourceCache.Info(environment, "ElectricCharge");
+    if (ec.amount <= double.Epsilon)
+    {
+      return;
+    }
+
     // get current states
     vessel_info vi = Cache.VesselInfo(environment);
     Vessel.Situations situation = environment.situation;
     bool sunlight = vi.sunlight > double.Epsilon;
-    bool power = ResourceCache.Info(environment, "ElectricCharge").level >= 0.1;
+    bool power = ec.level >= 0.15; //< 15%
     bool radiation = vi.radiation <= 0.00001388; //< 0.05 rad/h
     bool signal = vi.link.linked;
 
@@ -158,21 +165,21 @@ public sealed class Computer
     prev_radiation = radiation;
 
 
+    // create network devices
+    boot_network(environment);
+
     // transmit all files flagged for transmission to their destination
     List<string> to_remove = new List<string>();
     foreach(var pair in files)
     {
       // if file must be sent
+      string filename = pair.Key;
       File file = pair.Value;
       if (file.send.Length > 0)
       {
         // get target
         File target;
-        if (!files.TryGetValue(file.send, out target))
-        {
-          // the target doesn't exist, don't send but keep it in case it comes alive later
-        }
-        else
+        if (files.TryGetValue(file.send, out target))
         {
           // target is alive, get it
           NetworkDevice nd = target.device as NetworkDevice;
@@ -182,14 +189,14 @@ public sealed class Computer
           if (file.data <= double.Epsilon)
           {
             // add file to remote machine, overwrite as necessary
-            if (remote_machine.files.ContainsKey(pair.Key))
+            if (remote_machine.files.ContainsKey(filename))
             {
-              remote_machine.files.Remove(pair.Key);
+              remote_machine.files.Remove(filename);
             }
-            remote_machine.files.Add(pair.Key, pair.Value);
+            remote_machine.files.Add(filename, new File(file.content));
 
             // flag local file for removal
-            to_remove.Add(pair.Key);
+            to_remove.Add(filename);
           }
           // science data files are transmitted over time
           else
@@ -198,16 +205,24 @@ public sealed class Computer
             // remember: subtract amount from file.value until it is zero, then remove the file if reach zero
           }
         }
+        else
+        {
+          // the target doesn't exist, don't send but keep it in case it comes alive later
+        }
       }
     }
 
     // delete local files flagged for removal
     foreach(string s in to_remove) files.Remove(s);
+
+    // delete network devices
+    cleanup();
+
   }
 
 
   // execute a command string on the computer
-  public void execute(string cmd, Vessel environment)
+  public void execute(string cmd, Vessel environment, bool remote = false)
   {
     // parse commandline
     char[] chars = cmd.ToCharArray();
@@ -241,16 +256,32 @@ public sealed class Computer
       args[0],
       args.Length > 1 ? args[1] : string.Empty,
       args.Length > 2 ? args[2] : string.Empty,
-      environment
+      environment,
+      remote
     );
   }
 
 
   // execute a command on the computer
-  public void execute(string cmd, string arg0, string arg1, Vessel environment)
+  public void execute(string cmd, string arg0, string arg1, Vessel environment, bool remote = false)
   {
     // do nothing if cmd is empty
     if (cmd.Length == 0) return;
+
+    // check if there is EC on the vessel
+    if (ResourceCache.Info(environment, "ElectricCharge").amount <= double.Epsilon)
+    {
+      error("no electric charge");
+      return;
+    }
+
+    // check if there is signal in case the command is remote
+    vessel_info vi = Cache.VesselInfo(environment);
+    if (remote && !vi.link.linked && vi.crew_count == 0)
+    {
+      error("no signal");
+      return;
+    }
 
     // add 'device files' from all the drivers
     if (environment != null)
@@ -282,12 +313,7 @@ public sealed class Computer
     }
 
     // remove all device files
-    Dictionary<string, File> _files = new Dictionary<string, File>();
-    foreach(var pair in files)
-    {
-      if (pair.Value.device == null) _files.Add(pair.Key, pair.Value);
-    }
-    files = _files;
+    cleanup();
 
     // execute script in a clear environment
     if (cmd == "run") run(arg0, environment);
@@ -356,6 +382,12 @@ public sealed class Computer
         sb.Append("<color=cyan>");
         sb.Append(s);
         sb.Append("</color>");
+        File file = files[s];
+        if (file.send.Length > 0)
+        {
+          sb.Append("#sending to ");
+          sb.Append(file.send);
+        }
       }
     }
     success(sb.ToString());
@@ -588,7 +620,7 @@ public sealed class Computer
     {
       foreach(var p in files)
       {
-        if (p.Key.Split('/')[0] == path[0] && p.Value.device != null)
+        if (p.Key.Split('/')[0] == path[0] && p.Value.device == null)
         {
           p.Value.send = devname;
         }
@@ -642,9 +674,7 @@ public sealed class Computer
       }
       else
       {
-        File dst = new File();
-        dst.content = src.content;
-        files.Add(dst_filename, dst);
+        files.Add(dst_filename, new File(src.content));
         success();
       }
     }
@@ -654,12 +684,9 @@ public sealed class Computer
       Dictionary<string,File> to_add = new Dictionary<string, File>();
       foreach(var p in files)
       {
-        if (p.Key.Split('/')[0] == src_path[0] && p.Value.device != null)
+        if (p.Key.Split('/')[0] == src_path[0] && p.Value.device == null)
         {
-          File src = p.Value;
-          File dst = new File();
-          dst.content = src.content;
-          to_add.Add(Lib.BuildString(dst_path[0], "/", p.Key.Split('/')[1]), dst);
+          to_add.Add(Lib.BuildString(dst_path[0], "/", p.Key.Split('/')[1]), new File(p.Value.content));
         }
       }
       foreach(var p in to_add) files.Add(p.Key, p.Value);
@@ -724,7 +751,7 @@ public sealed class Computer
       Dictionary<string,File> to_add = new Dictionary<string, File>();
       foreach(var p in files)
       {
-        if (p.Key.Split('/')[0] == src_path[0] && p.Value.device != null)
+        if (p.Key.Split('/')[0] == src_path[0] && p.Value.device == null)
         {
           to_remove.Add(p.Key);
           to_add.Add(Lib.BuildString(dst_path[0], "/", p.Key.Split('/')[1]), p.Value);
@@ -778,7 +805,7 @@ public sealed class Computer
       List<string> to_remove = new List<string>();
       foreach(var p in files)
       {
-        if (p.Key.Split('/')[0] == path[0] && p.Value.device != null)
+        if (p.Key.Split('/')[0] == path[0] && p.Value.device == null)
         {
           to_remove.Add(p.Key);
         }
@@ -845,11 +872,11 @@ public sealed class Computer
       sb.Append("  <b>copy</b>\t[file|dir] [file|dir]\n");
       sb.Append("  <b>move</b>\t[file|dir] [file|dir]\n");
       sb.Append("  <b>del</b>\t[file|dir]\n");
-      sb.Append("  <b>switch</b>\t[file]\n");
+      sb.Append("  <b>switch</b>\t[target]\n");
       sb.Append("  <b>edit</b>\t[file]\n");
-      sb.Append("  <b>log</b>\t[txt]\n");
-      sb.Append("  <b>msg</b>\t[txt] {subtxt}\n");
-      sb.Append("  <b>help</b>\t[cmd]\n");
+      sb.Append("  <b>log</b>\t[text]\n");
+      sb.Append("  <b>msg</b>\t[text] {subtext}\n");
+      sb.Append("  <b>help</b>\t[command]\n");
       sb.Append("  <b>clear</b>\n");
       sb.Append("  <b>exit</b>");
     }
@@ -898,17 +925,17 @@ public sealed class Computer
           break;
 
         case "log":
-          sb.Append("<b>log</b> [txt]\n");
+          sb.Append("<b>log</b> [text]\n");
           sb.Append("<i>append a timestamped line to doc/log</i>");
           break;
 
         case "msg":
-          sb.Append("<b>msg</b> [txt] {subtxt}\n");
+          sb.Append("<b>msg</b> [text] {subtext}\n");
           sb.Append("<i>show a message on screen</i>");
           break;
 
         case "switch":
-          sb.Append("<b>switch</b> [file]\n");
+          sb.Append("<b>switch</b> [target]\n");
           sb.Append("<i>move the console to another machine</i>");
           break;
 
@@ -1045,7 +1072,8 @@ public sealed class Computer
     if (!vi.is_valid) return;
     if (!vi.link.linked) return;
 
-    files.Add("net/home", new File(new NetworkDevice(null)));
+    // [disabled]
+    //files.Add("net/home", new File(new NetworkDevice(null)));
 
     foreach(Vessel w in FlightGlobals.Vessels)
     {
@@ -1235,6 +1263,17 @@ public sealed class Computer
         }
       }
     }
+  }
+
+  // remove all device files
+  void cleanup()
+  {
+    Dictionary<string, File> _files = new Dictionary<string, File>();
+    foreach(var pair in files)
+    {
+      if (pair.Value.device == null) _files.Add(pair.Key, pair.Value);
+    }
+    files = _files;
   }
 
 

@@ -152,8 +152,8 @@ public sealed class Console
     // get the environment
     Vessel environment = FlightGlobals.Vessels.Find(k => k.id == vessel_id);
 
-    // execute current prompt
-    cpu.execute(prompt, environment);
+    // execute current prompt as a remote command
+    cpu.execute(prompt, environment, true);
 
     // write the command string on the buffer
     buffer.Add(Lib.BuildString(">> ", prompt));
