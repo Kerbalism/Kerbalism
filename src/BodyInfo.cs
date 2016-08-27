@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Xml.Schema;
 using UnityEngine;
 
 
@@ -24,7 +23,7 @@ public sealed class BodyInfo
     win_id = Lib.RandomInt(int.MaxValue);
 
     // setup window geometry
-    win_rect = new Rect(250.0f, 80.0f, width, 0.0f); //< height set automatically later
+    win_rect = new Rect(245.0f, 41.0f, width, 0.0f); //< height set automatically later
 
     // setup dragbox geometry
     drag_rect = new Rect(0.0f, 0.0f, width, top_height);
@@ -138,6 +137,10 @@ public sealed class BodyInfo
     double total_flux = solar_flux + albedo_flux + body_flux + Sim.BackgroundFlux();
     double temperature = body.atmosphere ? body.GetTemperature(0.0) : Sim.BlackBodyTemperature(total_flux);
 
+    // calculate night-side temperature    
+    double total_flux_min = Sim.AlbedoFlux(body, body.position - sun_dir * body.Radius) + body_flux + Sim.BackgroundFlux();
+    double temperature_min = Sim.BlackBodyTemperature(total_flux_min);
+
     // calculate radiation at body surface
     double radiation = Radiation.ComputeSurface(body, gamma_factor);
 
@@ -147,10 +150,13 @@ public sealed class BodyInfo
     GUILayout.EndHorizontal();
 
     // surface panel
+    string temperature_str = body.atmosphere
+      ? Lib.HumanReadableTemp(temperature)
+      : Lib.BuildString(Lib.HumanReadableTemp(temperature_min), " / ", Lib.HumanReadableTemp(temperature));
     render_title("SURFACE");
-    render_content("temperature", Lib.HumanReadableTemp(temperature));
+    render_content("temperature", temperature_str);
     render_content("radiation", Lib.HumanReadableRadiationRate(radiation));
-    render_content("solar flux", Lib.HumanReadableFlux(total_flux));
+    render_content("solar flux", Lib.HumanReadableFlux(solar_flux));
     render_space();
 
     // atmosphere panel
