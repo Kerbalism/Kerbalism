@@ -172,6 +172,7 @@ public static class Lib
   public static string HumanReadableRadiationRate(double rad)
   {
     if (rad <= double.Epsilon) return "none";
+    else if (rad <= 0.0000002777) return "nominal";
     return BuildString((rad * 3600.0).ToString("F3"), " rad/h");
   }
 
@@ -743,6 +744,22 @@ public static class Lib
       ((uint)min).ToString("D2"),
       "]"
     );
+  }
+
+
+  // return selected body in tracking-view/map-view
+  // if a vessel is selected, return its main body
+  public static CelestialBody SelectedBody()
+  {
+    var target = PlanetariumCamera.fetch.target;
+    return
+        target == null
+      ? null
+      : target.celestialBody != null
+      ? target.celestialBody
+      : target.vessel != null
+      ? target.vessel.mainBody
+      : null;
   }
 
 

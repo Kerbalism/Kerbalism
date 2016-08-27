@@ -344,11 +344,11 @@ public static class Radiation
   }
 
 
-  // render the fields of the active body
+  // render the fields of the interesting body
   public static void render()
   {
-    // get target body
-    CelestialBody body = target_body();
+    // get interesting body
+    CelestialBody body = interesting_body();
 
     // maintain visualization modes
     if (body == null)
@@ -554,6 +554,66 @@ public static class Radiation
   }
 
 
+  // return the surface radiation for the body specified
+  public static double ComputeSurface(CelestialBody b, double gamma_transparency)
+  {
+    // store stuff
+    Space gsm;
+    Vector3 p;
+    float D;
+
+    // transform to local space once
+    Vector3d position = ScaledSpace.LocalToScaledSpace(b.position);
+
+    // accumulate radiation
+    double radiation = 0.0;
+    CelestialBody body = b;
+    while(body != null)
+    {
+      RadiationBody rb = Info(body);
+      RadiationModel mf = rb.model;
+      if (mf.has_field())
+      {
+        // generate radii-normalized GSM space
+        gsm = gsm_space(rb.body);
+
+        // move the poing in GSM space
+        p = gsm.transform_in(position);
+
+        // accumulate radiation and determine pause/belt flags
+        if (mf.has_inner)
+        {
+          D = mf.inner_func(p);
+          radiation += Lib.Clamp(D / -0.0666f, 0.0f, 1.0f) * rb.radiation_inner;
+        }
+        if (mf.has_outer)
+        {
+          D = mf.outer_func(p);
+          radiation += Lib.Clamp(D / -0.0333f, 0.0f, 1.0f) * rb.radiation_outer;
+        }
+        if (mf.has_pause)
+        {
+          D = mf.pause_func(p);
+          radiation += Lib.Clamp(D / -0.1332f, 0.0f, 1.0f) * rb.radiation_pause;
+        }
+      }
+
+      // avoid loops in the chain
+      body = (body.referenceBody != null && body.referenceBody.referenceBody == body) ? null : body.referenceBody;
+    }
+
+    // add extern radiation
+    radiation += Settings.ExternRadiation;
+
+    // clamp radiation to positive range
+    // note: we avoid radiation going to zero by using a small positive value
+    radiation = Math.Max(radiation, Nominal);
+
+    // return radiation, scaled by gamma transparency if inside atmosphere
+    return radiation * gamma_transparency;
+  }
+
+
   // return percentage of radiations blocked by shielding
   public static double Shielding(double amount, double capacity)
   {
@@ -622,24 +682,24 @@ public static class Radiation
 
 
   // deduce first interesting body for radiation in the body chain
-  static CelestialBody target_body(CelestialBody body)
+  static CelestialBody interesting_body(CelestialBody body)
   {
-    if (Info(body).model.has_field()) return body;  // main body has field
-    else if (body.referenceBody != null             // it has a ref body
-      && body.referenceBody.referenceBody != body)  // avoid loops in planet setup (eg: OPM)
-      return target_body(body.referenceBody);       // recursively
-    else return null;                               // nothing in chain
+    if (Info(body).model.has_field()) return body;      // main body has field
+    else if (body.referenceBody != null                 // it has a ref body
+      && body.referenceBody.referenceBody != body)      // avoid loops in planet setup (eg: OPM)
+      return interesting_body(body.referenceBody);      // recursively
+    else return null;                                   // nothing in chain
   }
-  public static CelestialBody target_body()
+  static CelestialBody interesting_body()
   {
     var target = PlanetariumCamera.fetch.target;
     return
         target == null
       ? null
       : target.celestialBody != null
-      ? target_body(target.celestialBody)
+      ? interesting_body(target.celestialBody)
       : target.vessel != null
-      ? target_body(target.vessel.mainBody)
+      ? interesting_body(target.vessel.mainBody)
       : null;
   }
 

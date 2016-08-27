@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Xml.Schema;
 using UnityEngine;
 
 
@@ -88,14 +89,6 @@ public sealed class BodyInfo
     value_style.fontSize = 12;
     value_style.alignment = TextAnchor.MiddleRight;
     value_style.fontStyle = FontStyle.Bold;
-
-    // config style
-    config_style = new GUIStyle(HighLogic.Skin.label);
-    config_style.normal.textColor = Color.white;
-    config_style.padding = new RectOffset(0, 0, 0, 0);
-    config_style.alignment = TextAnchor.MiddleLeft;
-    config_style.imagePosition = ImagePosition.ImageLeft;
-    config_style.fontSize = 12;
   }
 
 
@@ -127,21 +120,56 @@ public sealed class BodyInfo
   // draw the window
   void render(int _)
   {
-    CelestialBody body = Radiation.target_body();
-    RadiationBody rb = Radiation.Info(body);
-    RadiationModel mf = rb.model;
+    // shortcut
+    CelestialBody sun = FlightGlobals.Bodies[0];
+
+    // get selected body
+    CelestialBody body = Lib.SelectedBody();
+    if (body == null) return;
+
+    // calculate simulation values
+    double atmo_factor = Sim.AtmosphereFactor(body, 0.7071);
+    double gamma_factor = Sim.GammaTransparency(body, 0.0);
+    double sun_dist = Sim.Apoapsis(Lib.PlanetarySystem(body)) - sun.Radius - body.Radius;
+    Vector3d sun_dir = (sun.position - body.position).normalized;
+    double solar_flux = Sim.SolarFlux(sun_dist) * atmo_factor;
+    double albedo_flux = Sim.AlbedoFlux(body, body.position + sun_dir * body.Radius);
+    double body_flux = Sim.BodyFlux(body, 0.0);
+    double total_flux = solar_flux + albedo_flux + body_flux + Sim.BackgroundFlux();
+    double temperature = body.atmosphere ? body.GetTemperature(0.0) : Sim.BlackBodyTemperature(total_flux);
+
+    // calculate radiation at body surface
+    double radiation = Radiation.ComputeSurface(body, gamma_factor);
 
     // draw pseudo-title
     GUILayout.BeginHorizontal();
-    GUILayout.Label("Radiation Environment", top_style);
+    GUILayout.Label(body.bodyName.ToUpper(), top_style);
     GUILayout.EndHorizontal();
 
-    // draw the content
-    render_title(body.bodyName.ToUpper());
-    render_content("inner belt", mf.has_inner ? Lib.HumanReadableRadiationRate(rb.radiation_inner) : "no", ref Radiation.show_inner);
-    render_content("outer belt", mf.has_outer ? Lib.HumanReadableRadiationRate(rb.radiation_outer) : "no", ref Radiation.show_outer);
-    render_content("magnetopause", mf.has_pause ? Lib.HumanReadableRadiationRate(rb.radiation_pause) : "no", ref Radiation.show_pause);
+    // surface panel
+    render_title("SURFACE");
+    render_content("temperature", Lib.HumanReadableTemp(temperature));
+    render_content("radiation", Lib.HumanReadableRadiationRate(radiation));
+    render_content("solar flux", Lib.HumanReadableFlux(total_flux));
     render_space();
+
+    // atmosphere panel
+    if (body.atmosphere)
+    {
+      render_title("ATMOSPHERE");
+      render_content("breathable", body.atmosphereContainsOxygen ? "yes" : "no");
+      render_content("visible absorption", Lib.HumanReadablePerc(1.0 - Sim.AtmosphereFactor(body, 0.7071)));
+      render_content("gamma absorption", Lib.HumanReadablePerc(1.0 - Sim.GammaTransparency(body, 0.0)));
+      render_space();
+    }
+
+    // rendering panel
+    render_title("RENDERING");
+    render_content("inner belt", ref Radiation.show_inner);
+    render_content("outer belt", ref Radiation.show_outer);
+    render_content("magnetopause", ref Radiation.show_pause);
+    render_space();
+
 
     // draw footer
     GUILayout.BeginHorizontal();
@@ -170,12 +198,12 @@ public sealed class BodyInfo
     GUILayout.EndHorizontal();
   }
 
-  void render_content(string desc, string value, ref bool b)
+  void render_content(string desc, ref bool b)
   {
     GUILayout.BeginHorizontal(row_style);
-    GUILayout.Label(new GUIContent(desc, icon_toggle[b ? 1 : 0]), config_style);
+    GUILayout.Label(desc, label_style);
+    GUILayout.Label(b ? "<color=green>show</color>" : "<color=red>hide</color>", value_style);
     if (Lib.IsClicked()) b = !b;
-    GUILayout.Label(value, value_style);
     GUILayout.EndHorizontal();
   }
 
@@ -194,7 +222,11 @@ public sealed class BodyInfo
 
   float height()
   {
-    return top_height + bot_height + panel_height(3);
+    CelestialBody body = Lib.SelectedBody();
+    return top_height + bot_height
+      + panel_height(3)
+      + (body.atmosphere ? panel_height(3) : 0.0f)
+      + panel_height(3);
   }
 
 
@@ -232,9 +264,6 @@ public sealed class BodyInfo
   const float bot_height = 20.0f;
   const float margin = 10.0f;
 
-  // toggle textures
-  readonly Texture[] icon_toggle = { Lib.GetTexture("toggle-disabled"), Lib.GetTexture("toggle-enabled") };
-
   // styles
   GUIStyle win_style;
   GUIStyle top_style;
@@ -246,7 +275,6 @@ public sealed class BodyInfo
   GUIStyle row_style;
   GUIStyle label_style;
   GUIStyle value_style;
-  GUIStyle config_style;
 
   // store window id
   int win_id;
@@ -258,7 +286,7 @@ public sealed class BodyInfo
   Rect drag_rect;
 
   // open/close the window
-  bool open;
+  bool open = true;
 
   // permit global access
   static BodyInfo instance;
