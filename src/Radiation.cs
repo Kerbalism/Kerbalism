@@ -42,7 +42,7 @@ public sealed class RadiationModel
     outer_compression = Lib.ConfigValue(node, "outer_compression", 1.0f);
     outer_extension = Lib.ConfigValue(node, "outer_extension", 1.0f);
     outer_border_start = Lib.ConfigValue(node, "outer_border_start", 0.1f);
-    outer_border_end = Lib.ConfigValue(node, "outer_border_end", 0.1f);
+    outer_border_end = Lib.ConfigValue(node, "outer_border_end", 1.0f);
     outer_deform = Lib.ConfigValue(node, "outer_deform", 0.0f);
     outer_quality = Lib.ConfigValue(node, "outer_quality", 40.0f);
 
