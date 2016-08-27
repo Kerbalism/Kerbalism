@@ -2,6 +2,7 @@
 
 1.1.1
   - new automation system: vessel computer, console, scripts
+  - improved body info window
   - vessel info show crew specialization
   - lights consume ec in background and are considered in planner
   - support: KerbalAtomics engines radiation patch by TheSaint
