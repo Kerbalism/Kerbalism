@@ -1,5 +1,14 @@
 #CHANGELOG
 
+1.1.2
+  - replaced tutorial notifications with KSPedia entries
+  - food capacity reduced by 50% in 0.625m food container
+  - oxygen capacity reduced by 75% in big radial oxygen container
+  - added a very small radial oxygen container unlocked at survivability
+  - rearrange US goo/matlab in the tech tree for consistency
+  - tweak US supply containers capacity
+  - fix: body info panel will not break when sun is selected
+
 1.1.1
   - new automation system: vessel computer, console, scripts
   - improved body info window
