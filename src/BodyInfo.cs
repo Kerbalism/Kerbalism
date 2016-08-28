@@ -96,6 +96,10 @@ public sealed class BodyInfo
   {
     // only show in mapview
     if (!MapView.MapIsEnabled) return;
+    
+    // only show if there is a selected body and that body is not the sun
+    CelestialBody body = Lib.SelectedBody();
+    if (body == null || body.flightGlobalsIndex == 0) return;
 
     // if open
     if (open)
@@ -124,7 +128,6 @@ public sealed class BodyInfo
 
     // get selected body
     CelestialBody body = Lib.SelectedBody();
-    if (body == null) return;
 
     // calculate simulation values
     double atmo_factor = Sim.AtmosphereFactor(body, 0.7071);
@@ -137,7 +140,7 @@ public sealed class BodyInfo
     double total_flux = solar_flux + albedo_flux + body_flux + Sim.BackgroundFlux();
     double temperature = body.atmosphere ? body.GetTemperature(0.0) : Sim.BlackBodyTemperature(total_flux);
 
-    // calculate night-side temperature    
+    // calculate night-side temperature
     double total_flux_min = Sim.AlbedoFlux(body, body.position - sun_dir * body.Radius) + body_flux + Sim.BackgroundFlux();
     double temperature_min = Sim.BlackBodyTemperature(total_flux_min);
 
