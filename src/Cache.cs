@@ -44,7 +44,7 @@ public class vessel_info
     crew_capacity = Lib.CrewCapacity(v);
 
     // get vessel position once
-    position = v.GetWorldPos3D();
+    position = Lib.VesselPosition(v);
 
     // determine if in sunlight, calculate sun direction and distance
     sunlight = Sim.RaytraceBody(v, position, FlightGlobals.Bodies[0], out sun_dir, out sun_dist) ? 1.0 : 0.0;

@@ -238,10 +238,31 @@ public static class Lib
   }
 
   // return true if landed somewhere
-  public static bool Landed(Vessel vessel)
+  public static bool Landed(Vessel v)
   {
-    if (vessel.loaded) return vessel.Landed || vessel.Splashed;
-    else return vessel.protoVessel.landed || vessel.protoVessel.splashed;
+    if (v.loaded) return v.Landed || v.Splashed;
+    else return v.protoVessel.landed || v.protoVessel.splashed;
+  }
+
+  // return vessel position
+  public static Vector3d VesselPosition(Vessel v)
+  {
+    // if loaded, or landed, or orbit is invalid
+    if (v.loaded || Landed(v) || double.IsNaN(v.orbit.inclination))
+    {
+      return v.GetWorldPos3D();
+    }
+    // in all other cases
+    else
+    {
+      // when orbiting the sun, and switching from flight to space center scene,
+      // for a single tick the position returned is the same as the sun
+      // this in turn lead to bad things (tm) when code expect it to be reliable
+      // (for example, solar panel simulations in background will generate NaN
+      // amounts of EC, leading to NaN vessel mass, leading to universe explosion)
+      // so we resolve the orbit directly, that is reliable in all cases
+      return v.orbit.getPositionAtUT(Planetarium.GetUniversalTime());
+    }
   }
 
   // store the random number generator
