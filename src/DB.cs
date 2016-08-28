@@ -56,18 +56,12 @@ public class body_data
 }
 
 
-// store notifications data
-public class notification_data
+// store landmarks events
+public class landmarks_data
 {
-  public uint   next_death_report   = 0;            // index of next death report notification
-  public uint   next_tutorial       = 0;            // index of next tutorial notification
-  public uint   death_counter       = 0;            // number of death events, including multiple kerbals at once
-  public uint   last_death_counter  = 0;            // previous number of death events, to detect new ones
-  public uint   first_belt_crossing = 0;            // record first time the radiation belt is crossed, to show tutorial notification
-  public uint   first_signal_loss   = 0;            // record first signal loss, to show tutorial notification
-  public uint   first_malfunction   = 0;            // record first malfunction, to show tutorial notification
-  public uint   first_space_harvest = 0;            // record first greenhouse harvest in space
-  public uint   manned_orbit_contract = 0;          // keep track of 30days manned orbit contract completion, to avoid generating it again
+  public uint   belt_crossing       = 0;            // record first belt crossing
+  public uint   manned_orbit        = 0;            // record first 30 days manned orbit
+  public uint   space_harvest       = 0;            // record first space harvest
 }
 
 
@@ -84,11 +78,11 @@ public sealed class DB : ScenarioModule
   // store data per-body
   Dictionary<string, body_data> bodies = new Dictionary<string, body_data>(64);
 
-  // store data for the notifications system
-  notification_data notifications = new notification_data();
+  // store landmark data
+  landmarks_data landmarks = new landmarks_data();
 
   // current savegame version
-  const string current_version = "1.1.1.0";
+  const string current_version = "1.1.2.0";
 
   // allow global access
   static DB instance = null;
@@ -113,7 +107,7 @@ public sealed class DB : ScenarioModule
       kerbals.Clear();
       vessels.Clear();
       bodies.Clear();
-      notifications = new notification_data();
+      landmarks = new landmarks_data();
       return;
     }
 
@@ -206,19 +200,24 @@ public sealed class DB : ScenarioModule
       }
     }
 
-    notifications = new notification_data();
-    if (node.HasNode("notifications"))
+    landmarks = new landmarks_data();
+    if (node.HasNode("landmarks"))
     {
-      ConfigNode n_node = node.GetNode("notifications");
-      notifications.next_death_report     = Lib.ConfigValue(n_node, "next_death_report", 0u);
-      notifications.next_tutorial         = Lib.ConfigValue(n_node, "next_tutorial", 0u);
-      notifications.death_counter         = Lib.ConfigValue(n_node, "death_counter", 0u);
-      notifications.last_death_counter    = Lib.ConfigValue(n_node, "last_death_counter", 0u);
-      notifications.first_belt_crossing   = Lib.ConfigValue(n_node, "first_belt_crossing", 0u);
-      notifications.first_signal_loss     = Lib.ConfigValue(n_node, "first_signal_loss", 0u);
-      notifications.first_malfunction     = Lib.ConfigValue(n_node, "first_malfunction", 0u);
-      notifications.first_space_harvest   = Lib.ConfigValue(n_node, "first_space_harvest", 0u);
-      notifications.manned_orbit_contract = Lib.ConfigValue(n_node, "manned_orbit_contract", 0u);
+      ConfigNode landmarks_node = node.GetNode("landmarks");
+      landmarks.belt_crossing = Lib.ConfigValue(landmarks_node, "belt_crossing", 0u);
+      landmarks.manned_orbit  = Lib.ConfigValue(landmarks_node, "manned_orbit", 0u);
+      landmarks.space_harvest = Lib.ConfigValue(landmarks_node, "space_harvest", 0u);
+    }
+    // import old notifications data into new computer system
+    else if (string.CompareOrdinal(version, "1.1.2.0") < 0)
+    {
+      if (node.HasNode("notifications"))
+      {
+        ConfigNode n_node = node.GetNode("notifications");
+        landmarks.belt_crossing = Lib.ConfigValue(n_node, "first_belt_crossing", 0u);
+        landmarks.manned_orbit  = Lib.ConfigValue(n_node, "manned_orbit_contract", 0u);
+        landmarks.space_harvest = Lib.ConfigValue(n_node, "first_space_harvest", 0u);
+      }
     }
 
     // if an old savegame was imported, log some debug info
@@ -295,16 +294,10 @@ public sealed class DB : ScenarioModule
       body_node.AddValue("msg_storm", bd.msg_storm);
     }
 
-    ConfigNode notifications_node = node.AddNode("notifications");
-    notifications_node.AddValue("next_death_report", notifications.next_death_report.ToString());
-    notifications_node.AddValue("next_tutorial", notifications.next_tutorial.ToString());
-    notifications_node.AddValue("death_counter", notifications.death_counter.ToString());
-    notifications_node.AddValue("last_death_counter", notifications.last_death_counter.ToString());
-    notifications_node.AddValue("first_belt_crossing", notifications.first_belt_crossing.ToString());
-    notifications_node.AddValue("first_signal_loss", notifications.first_signal_loss.ToString());
-    notifications_node.AddValue("first_malfunction", notifications.first_malfunction.ToString());
-    notifications_node.AddValue("first_space_harvest", notifications.first_space_harvest.ToString());
-    notifications_node.AddValue("manned_orbit_contract", notifications.manned_orbit_contract.ToString());
+    ConfigNode landmarks_node = node.AddNode("landmarks");
+    landmarks_node.AddValue("belt_crossing", landmarks.belt_crossing);
+    landmarks_node.AddValue("manned_orbit", landmarks.manned_orbit);
+    landmarks_node.AddValue("space_harvest", landmarks.space_harvest);
   }
 
 
@@ -351,9 +344,9 @@ public sealed class DB : ScenarioModule
   }
 
 
-  public static notification_data NotificationData()
+  public static landmarks_data Landmarks()
   {
-    return instance.notifications;
+    return instance.landmarks;
   }
 
 

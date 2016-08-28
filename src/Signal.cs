@@ -293,7 +293,6 @@ public sealed class Signal
       if (vd.msg_signal < 1 && !link.linked)
       {
         vd.msg_signal = 1;
-        DB.NotificationData().first_signal_loss = 1; //< record first signal loss
         if (vd.cfg_signal == 1 && !vi.blackout) //< do not send message during storms
         {
           Message.Post(Severity.warning, Lib.BuildString("Signal lost with <b>", v.vesselName, "</b>"),

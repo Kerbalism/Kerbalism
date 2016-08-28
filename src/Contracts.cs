@@ -59,7 +59,7 @@ public sealed class KerbalismMannedOrbit : Contract
       meet_requirements =
         (Kerbalism.ec_rule != null || Kerbalism.supply_rules.Count > 0) // some resource-related life support rule is present
         && ProgressTracking.Instance != null && ProgressTracking.Instance.celestialBodyHome.orbit.IsComplete // first orbit completed
-        && DB.Ready() && DB.NotificationData().manned_orbit_contract == 0; // contract never completed
+        && DB.Ready() && DB.Landmarks().manned_orbit== 0; // contract never completed
     }
     return meet_requirements;
   }
@@ -93,7 +93,7 @@ public sealed class KerbalismMannedOrbitCondition : Contracts.ContractParameter
       if (manned && in_orbit && for_30days && DB.Ready())
       {
         base.SetComplete();
-        DB.NotificationData().manned_orbit_contract = 1; //< remember that contract was completed
+        DB.Landmarks().manned_orbit = 1; //< remember that contract was completed
         break;
       }
     }
@@ -149,7 +149,7 @@ public sealed class KerbalismCrossBelt : Contract
       meet_requirements =
         Kerbalism.rad_rule != null // a radiation rule is present
         && ProgressTracking.Instance != null && ProgressTracking.Instance.reachSpace.IsComplete // first suborbit flight completed
-        && DB.Ready() && DB.NotificationData().first_belt_crossing == 0; // belt never crossed before
+        && DB.Ready() && DB.Landmarks().belt_crossing == 0; // belt never crossed before
     }
     return meet_requirements;
   }
@@ -173,7 +173,7 @@ public sealed class KerbalismCrossBeltCondition : Contracts.ContractParameter
 
   protected override void OnUpdate()
   {
-    if (DB.Ready() && DB.NotificationData().first_belt_crossing == 1) base.SetComplete();
+    if (DB.Ready() && DB.Landmarks().belt_crossing == 1) base.SetComplete();
   }
 }
 
@@ -225,7 +225,7 @@ public sealed class KerbalismSpaceHarvest : Contract
       meet_requirements =
         PartLoader.getPartInfoByName("Greenhouse") != null // greenhouse part is present
         && Lib.CountTechs(new []{"scienceTech"}) > 0 // greenhouse unlocked
-        && DB.Ready() && DB.NotificationData().first_space_harvest == 0; // greenhouse never harvested in space before
+        && DB.Ready() && DB.Landmarks().space_harvest == 0; // greenhouse never harvested in space before
     }
     return meet_requirements;
   }
@@ -249,7 +249,7 @@ public sealed class KerbalismSpaceHarvestCondition : Contracts.ContractParameter
 
   protected override void OnUpdate()
   {
-    if (DB.Ready() && DB.NotificationData().first_space_harvest == 1) base.SetComplete();
+    if (DB.Ready() && DB.Landmarks().space_harvest == 1) base.SetComplete();
   }
 }
 

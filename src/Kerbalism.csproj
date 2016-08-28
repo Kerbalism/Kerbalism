@@ -125,7 +125,6 @@
     <Compile Include="Sensor.cs" />
     <Compile Include="Sim.cs" />
     <Compile Include="Message.cs" />
-    <Compile Include="Notifications.cs" />
     <Compile Include="Scrubber.cs" />
     <Compile Include="Settings.cs" />
     <Compile Include="Signal.cs" />

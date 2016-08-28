@@ -863,18 +863,18 @@ public static class Lib
 
     public static float GetFloat(ProtoPartModuleSnapshot m, string name, float def_value = 0.0f)
     {
-      // note: we set NaN values to zero, to cover some weird inter-mod interactions
+      // note: we set NaN and infinity values to zero, to cover some weird inter-mod interactions
       float v;
       string s = m.moduleValues.GetValue(name);
-      return s != null && float.TryParse(s, out v) && !float.IsNaN(v) ? v : def_value;
+      return s != null && float.TryParse(s, out v) && !float.IsNaN(v) && !float.IsInfinity(v) ? v : def_value;
     }
 
     public static double GetDouble(ProtoPartModuleSnapshot m, string name, double def_value = 0.0)
     {
-      // note: we set NaN values to zero, to cover some weird inter-mod interactions
+      // note: we set NaN and infinity values to zero, to cover some weird inter-mod interactions
       double v;
       string s = m.moduleValues.GetValue(name);
-      return s != null && double.TryParse(s, out v) && !double.IsNaN(v) ? v : def_value;
+      return s != null && double.TryParse(s, out v) && !double.IsNaN(v) && !double.IsInfinity(v) ? v : def_value;
     }
 
     public static string GetString(ProtoPartModuleSnapshot m, string name, string def_value = "")

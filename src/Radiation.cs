@@ -661,7 +661,7 @@ public static class Radiation
     if (Kerbalism.rad_rule != null)
     {
       // we only show the warning for manned vessels, or for all vessels the first time its crossed
-      bool must_warn = vi.crew_count > 0 || DB.NotificationData().first_belt_crossing == 0;
+      bool must_warn = vi.crew_count > 0 || DB.Landmarks().belt_crossing == 0;
 
       // show the message
       if (vi.inside_belt && vd.msg_belt < 1 && must_warn)
@@ -677,7 +677,7 @@ public static class Radiation
     }
 
     // record first belt crossing
-    if (vi.inside_belt) DB.NotificationData().first_belt_crossing = 1;
+    if (vi.inside_belt) DB.Landmarks().belt_crossing = 1;
   }
 
 

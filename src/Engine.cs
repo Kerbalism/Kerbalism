@@ -39,7 +39,6 @@ public sealed class Engine : MonoBehaviour
     info            = new Info();
     body_info       = new BodyInfo();
     message         = new Message();
-    notifications   = new Notifications();
     console         = new Console();
     editor          = new Editor();
     Radiation.init();
@@ -201,6 +200,9 @@ public sealed class Engine : MonoBehaviour
     // always render the launcher
     launcher.on_gui();
 
+    // always render the messages
+    message.on_gui();
+
     // do nothing else if DB isn't ready or if we are in the editor
     if (!DB.Ready() || !Lib.SceneIsGame()) return;
 
@@ -210,8 +212,6 @@ public sealed class Engine : MonoBehaviour
     // render subsystems
     info.on_gui();
     body_info.on_gui();
-    message.on_gui();
-    notifications.on_gui();
     console.on_gui();
     editor.on_gui();
   }
@@ -234,7 +234,6 @@ public sealed class Engine : MonoBehaviour
   Info              info;
   BodyInfo          body_info;
   Message           message;
-  Notifications     notifications;
   MapCameraScript   map_camera_script;
   Console           console;
   Editor            editor;

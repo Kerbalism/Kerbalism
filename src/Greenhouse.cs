@@ -108,7 +108,7 @@ public sealed class Greenhouse : PartModule
       reduced_harvest.ToString("F0"), " ", resource_name, "</color>"));
 
     // record first harvest
-    if (!Lib.Landed(vessel) && DB.Ready()) DB.NotificationData().first_space_harvest = 1;
+    if (!Lib.Landed(vessel) && DB.Ready()) DB.Landmarks().space_harvest = 1;
   }
 
   // pseudo-ctor
@@ -187,7 +187,8 @@ public sealed class Greenhouse : PartModule
 
     // when the greenhouse is assembled using KIS, the growth field is set to NaN
     // at that point it remain NaN forever, so we fix it
-    if (double.IsNaN(growth)) growth = 0.0;
+    // also, a report indicated -infinity in growth
+    if (double.IsNaN(growth) || double.IsInfinity(growth)) growth = 0.0;
 
     // if lamp is on
     if (lamps > float.Epsilon)
@@ -243,7 +244,7 @@ public sealed class Greenhouse : PartModule
         harvest_size.ToString("F0"), " ", resource_name, "</color>"));
 
       // record first space harvest
-      if (!vi.landed && DB.Ready()) DB.NotificationData().first_space_harvest = 1;
+      if (!vi.landed && DB.Ready()) DB.Landmarks().space_harvest = 1;
     }
 
     // set rmb ui status
@@ -323,7 +324,7 @@ public sealed class Greenhouse : PartModule
         greenhouse.harvest_size.ToString("F0"), " ", greenhouse.resource_name, "</color>"));
 
       // record first space harvest
-      if (!info.landed && DB.Ready()) DB.NotificationData().first_space_harvest = 1;
+      if (!info.landed && DB.Ready()) DB.Landmarks().space_harvest = 1;
     }
 
     // store data

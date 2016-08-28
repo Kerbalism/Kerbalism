@@ -768,9 +768,6 @@ public sealed class Kerbalism : MonoBehaviour
 
         // flag as dead
         c.rosterStatus = ProtoCrewMember.RosterStatus.Dead;
-
-        // register background death manually for death report notifications
-        Notifications.RegisterDeath();
       }
     }
     // else it must be an eva death
@@ -781,9 +778,6 @@ public sealed class Kerbalism : MonoBehaviour
 
       // rename vessel
       v.vesselName = c.name + "'s body";
-
-      // register eva death manually for death report notifications
-      Notifications.RegisterDeath();
     }
 
     // remove reputation

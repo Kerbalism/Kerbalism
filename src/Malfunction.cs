@@ -201,9 +201,6 @@ public sealed class Malfunction : PartModule
     {
       Message.Post(Severity.warning, PrepareMsg(malfunction_msg, vessel, malfunctions));
     }
-
-    // record first malfunction
-    if (DB.Ready()) DB.NotificationData().first_malfunction = 1;
   }
 
 
@@ -233,9 +230,6 @@ public sealed class Malfunction : PartModule
     {
       Message.Post(Severity.warning, PrepareMsg(malfunction.malfunction_msg, v, malfunctions));
     }
-
-    // record first malfunction
-    if (DB.Ready()) DB.NotificationData().first_malfunction = 1;
   }
 
 
