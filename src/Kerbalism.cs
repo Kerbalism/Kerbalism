@@ -19,6 +19,7 @@ public sealed class Kerbalism : MonoBehaviour
   // mods to detect
   public class DetectedMods
   {
+    public bool ModuleManager;
     public bool SCANsat;
     public bool CLS;
     public bool KIS;
@@ -104,6 +105,7 @@ public sealed class Kerbalism : MonoBehaviour
 
     // parse detected mods
     var mods = Lib.ParseConfig("Kerbalism/Patches/System/DetectedMods");
+    detected_mods.ModuleManager = Lib.ConfigValue(mods, "ModuleManager", false);
     detected_mods.SCANsat = Lib.ConfigValue(mods, "SCANsat", false);
     detected_mods.CLS = Lib.ConfigValue(mods, "CLS", false);
     detected_mods.KIS = Lib.ConfigValue(mods, "KIS", false);
@@ -115,6 +117,7 @@ public sealed class Kerbalism : MonoBehaviour
     detected_mods.RealFuels = Lib.ConfigValue(mods, "RealFuels", false);
     detected_mods.DeepFreeze = Lib.ConfigValue(mods, "DeepFreeze", false);
     Lib.Log("detected:");
+    Lib.Log("- ModuleManager: " + detected_mods.ModuleManager);
     Lib.Log("- SCANsat: " + detected_mods.SCANsat);
     Lib.Log("- CLS: " + detected_mods.CLS);
     Lib.Log("- KIS: " + detected_mods.KIS);
