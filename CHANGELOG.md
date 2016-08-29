@@ -2,11 +2,14 @@
 
 1.1.2
   - replaced tutorial notifications with KSPedia entries
-  - food capacity reduced by 50% in 0.625m food container
-  - oxygen capacity reduced by 75% in big radial oxygen container
   - added a very small radial oxygen container unlocked at survivability
-  - rearrange US goo/matlab in the tech tree for consistency
-  - tweak US supply containers capacity
+  - added RadiationOnly and StressOnly profiles
+  - updated CLS interface dll
+  - balance: food capacity reduced by 50% in 0.625m food container
+  - balance: oxygen capacity reduced by 75% in big radial oxygen container  
+  - balance: rearrange US goo/matlab in the tech tree for consistency
+  - balance: tweak US supply containers capacity  
+  - balance: active shield moved to experimental science, made more powerful  
   - fix: body info panel will not break when sun is selected
 
 1.1.1
