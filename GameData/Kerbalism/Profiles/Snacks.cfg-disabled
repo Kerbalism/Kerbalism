@@ -34,7 +34,7 @@ Rule
 // ============================================================================
 
 
-@PART[Greenhouse]:FINAL
+@PART[Greenhouse]
 {
   @MODULE[Greenhouse]
   {
