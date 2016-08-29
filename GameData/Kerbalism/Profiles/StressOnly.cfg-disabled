@@ -1,0 +1,24 @@
+// Just play with the quality of life mechanic, without anything else
+
+
+Rule
+{
+  name = Stress
+  degeneration = 0.00000086805 // 53 days
+  variance = 0.33 // add per-kerbal variance
+  modifier = qol
+  breakdown = true // trigger breakdown event instead of death
+
+  warning_message = $ON_VESSEL$KERBAL is losing $HIS_HER mind$NEWLINE<i>Concentration is becoming a problem</i>
+  danger_message = $ON_VESSEL$KERBAL is about to breakdown$NEWLINE<i>Starting to hear voices</i>
+  relax_message = $ON_VESSEL$KERBAL is thinking straight now$NEWLINE<i>Let's do it again!</i>
+}
+
+
+!PART[kerbalism-food-*] {}
+!PART[kerbalism-oxygen-*] {}
+!PART[kerbalism-shield-*] {}
+!PART[Greenhouse] {}
+!PART[GeigerCounter] {}
+
+
