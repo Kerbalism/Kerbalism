@@ -104,6 +104,9 @@ public sealed class BodyInfo
     // if open
     if (open)
     {
+      // set automatic height
+      win_rect.height = height();
+
       // clamp the window to the screen, so it can't be dragged outside
       float offset_x = Math.Max(0.0f, -win_rect.xMin) + Math.Min(0.0f, Screen.width - win_rect.xMax);
       float offset_y = Math.Max(0.0f, -win_rect.yMin) + Math.Min(0.0f, Screen.height - win_rect.yMax);
@@ -113,8 +116,7 @@ public sealed class BodyInfo
       win_rect.yMax += offset_y;
 
       // draw the window
-      // note: automatic height
-      win_rect = GUILayout.Window(win_id, win_rect, render, "", win_style, GUILayout.Width(width));
+      win_rect = GUILayout.Window(win_id, win_rect, render, "", win_style);
     }
   }
 
@@ -218,6 +220,22 @@ public sealed class BodyInfo
   void render_space()
   {
     GUILayout.Space(10.0f);
+  }
+
+
+  float panel_height(int entries)
+  {
+    return 16.0f + (float)entries * 16.0f + 18.0f;
+  }
+
+
+  float height()
+  {
+    CelestialBody body = Lib.SelectedBody();
+    return top_height + bot_height
+      + panel_height(3)
+      + (body.atmosphere ? panel_height(3) : 0.0f)
+      + panel_height(3);
   }
 
 

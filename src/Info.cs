@@ -121,6 +121,9 @@ public sealed class Info
         // if vessel is valid
         if (vi.is_valid)
         {
+          // set automatic height
+          win_rect.height = height(v, vi);
+
           // clamp the window to the screen, so it can't be dragged outside
           float offset_x = Math.Max(0.0f, -win_rect.xMin) + Math.Min(0.0f, Screen.width - win_rect.xMax);
           float offset_y = Math.Max(0.0f, -win_rect.yMin) + Math.Min(0.0f, Screen.height - win_rect.yMax);
@@ -130,8 +133,7 @@ public sealed class Info
           win_rect.yMax += offset_y;
 
           // draw the window
-          // note: automatic height
-          win_rect = GUILayout.Window(win_id, win_rect, render, "", win_style, GUILayout.Width(width));
+          win_rect = GUILayout.Window(win_id, win_rect, render, "", win_style);
         }
         // if the vessel is invalid
         else
@@ -379,6 +381,55 @@ public sealed class Info
     render_content("growth", Lib.HumanReadablePerc(greenhouse.growth));
     render_content("harvest", Lib.HumanReadableDuration(greenhouse.growing > double.Epsilon ? (1.0 - greenhouse.growth) / greenhouse.growing : 0.0));
     render_space();
+  }
+
+
+  float panel_height(int entries)
+  {
+    return 16.0f + (float)entries * 16.0f + 18.0f;
+  }
+
+
+  float height(Vessel v, vessel_info vi)
+  {
+    // get degenerative rules
+    List<Rule> degen_rules = Kerbalism.rules.FindAll(k => k.degeneration > 0.0);
+
+    // get crew
+    var crew = v.loaded ? v.GetVesselCrew() : v.protoVessel.GetVesselCrew();
+
+    // store computed height
+    float h = top_height + bot_height;
+
+    // environment panel
+    h += panel_height(3 + (Settings.ShowFlux ? 3 : 0) + (Settings.RelativisticTime ? 1 : 0));
+
+    // supply panel
+    if ((vi.crew_capacity > 0 && Kerbalism.supply_rules.Count > 0) || Kerbalism.ec_rule != null)
+    {
+      h += panel_height((Kerbalism.ec_rule != null ? 1 : 0) + (vi.crew_capacity > 0 ? Kerbalism.supply_rules.Count : 0));
+    }
+
+    // internal space panel
+    if (!v.isEVA && crew.Count > 0)
+    {
+      h += panel_height(3);
+    }
+
+    // crew panel
+    if (degen_rules.Count > 0 && crew.Count > 0)
+    {
+      h += panel_height(degen_rules.Count + 1 + (Kerbalism.detected_mods.CLS ? 1 : 0) + (Kerbalism.detected_mods.DeepFreeze ? 1 : 0));
+    }
+
+    // greenhouse panel
+    if (vi.greenhouses.Count > 0)
+    {
+      h += panel_height(3);
+    }
+
+    // finally, return the height
+    return h;
   }
 
 
