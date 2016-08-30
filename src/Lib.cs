@@ -486,10 +486,6 @@ public static class Lib
     // if db isn't ready, assume a resque mission
     if (!DB.Ready()) return true;
 
-    // avoid re-creating dead eva kerbals in the db
-    // note: no extra cost if vessel is not eva
-    //if (EVA.IsDead(v)) return true; TODO cleanup
-
     // if at least one of the crew is flagged as resque, consider it a resque mission
     var crew_members = v.loaded ? v.GetVesselCrew() : v.protoVessel.GetVesselCrew();
     foreach(var c in crew_members)
@@ -781,6 +777,17 @@ public static class Lib
       : target.vessel != null
       ? target.vessel.mainBody
       : null;
+  }
+  
+  
+  // return true if an assembly with specified name is loaded
+  public static bool HasAssembly(string name)
+  {
+    foreach(var a in AssemblyLoader.loadedAssemblies)
+    {
+      if (a.name == name) return true;
+    }
+    return false;
   }
 
 
