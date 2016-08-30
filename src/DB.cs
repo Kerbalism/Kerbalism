@@ -20,6 +20,8 @@ public class kerbal_data
   public double entertainment       = 1.0;          // entertainment factor of the connected-space or whole-space contaning this kerbal
   public double shielding           = 0.0;          // shielding factor of the connected-space or whole-space contaning this kerbal
   public string space_name          = "";           // a name for the space where the kerbal is, or empty for the whole-vessel space
+  public bool   eva_dead            = false;        // the eva kerbal died, and is now a floating body
+  public bool   has_helmet          = false;        // the eva kerbal has an helmet
   public Dictionary<string, kmon_data> kmon = new Dictionary<string, kmon_data>(32); // rule data
 }
 
@@ -82,7 +84,7 @@ public sealed class DB : ScenarioModule
   landmarks_data landmarks = new landmarks_data();
 
   // current savegame version
-  const string current_version = "1.1.2.0";
+  const string current_version = "1.1.3.0";
 
   // allow global access
   static DB instance = null;
@@ -124,6 +126,8 @@ public sealed class DB : ScenarioModule
         kd.entertainment   = Lib.ConfigValue(kerbal_node, "entertainment", 1.0);
         kd.shielding       = Lib.ConfigValue(kerbal_node, "shielding", 0.0);
         kd.space_name      = Lib.ConfigValue(kerbal_node, "space_name", "");
+        kd.eva_dead        = Lib.ConfigValue(kerbal_node, "eva_dead", false);
+        kd.has_helmet      = Lib.ConfigValue(kerbal_node, "has_helmet", false);
         if (kerbal_node.HasNode("kmon"))
         {
           foreach(var cfg in kerbal_node.GetNode("kmon").GetNodes())
@@ -159,6 +163,7 @@ public sealed class DB : ScenarioModule
         vd.storm_age       = Lib.ConfigValue(vessel_node, "storm_age", 0.0);
         vd.storm_state     = Lib.ConfigValue(vessel_node, "storm_state", 0u);
         vd.group           = Lib.ConfigValue(vessel_node, "group", "NONE");
+
         if (vessel_node.HasNode("vmon"))
         {
           foreach(var cfg in vessel_node.GetNode("vmon").GetNodes())
@@ -241,6 +246,8 @@ public sealed class DB : ScenarioModule
       kerbal_node.AddValue("entertainment", kd.entertainment);
       kerbal_node.AddValue("shielding", kd.shielding);
       kerbal_node.AddValue("space_name", kd.space_name);
+      kerbal_node.AddValue("eva_dead", kd.eva_dead);
+      kerbal_node.AddValue("has_helmet", kd.has_helmet);
       var kmon_node = kerbal_node.AddNode("kmon");
       foreach(var q in kd.kmon)
       {

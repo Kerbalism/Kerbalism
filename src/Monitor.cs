@@ -299,17 +299,17 @@ public sealed class Monitor
   void problem_radiation(vessel_info info, ref List<Texture> icons, ref List<string> tooltips)
   {
     string radiation_str = Lib.BuildString(" (<i>", (info.radiation * 60.0 * 60.0).ToString("F3"), " rad/h)</i>");
-    if (info.radiation > 5.0 / 3600.0)
+    if (info.radiation > 1.0 / 3600.0)
     {
       icons.Add(icon_radiation_danger);
       tooltips.Add(Lib.BuildString("Exposed to extreme radiation", radiation_str));
     }
-    else if (info.radiation > 1.0 / 3600.0)
+    else if (info.radiation > 0.15 / 3600.0)
     {
       icons.Add(icon_radiation_warning);
       tooltips.Add(Lib.BuildString("Exposed to intense radiation", radiation_str));
     }
-    else if (info.radiation > 0.009 / 3600.0)
+    else if (info.radiation > 0.0195 / 3600.0)
     {
       icons.Add(icon_radiation_warning);
       tooltips.Add(Lib.BuildString("Exposed to moderate radiation", radiation_str));

@@ -245,12 +245,6 @@ public sealed class Kerbalism : MonoBehaviour
     GameEvents.OnTechnologyResearched.Add(this.techResearched);
     GameEvents.onGUIEditorToolbarReady.Add(this.addEditorCategory);
 
-    // add modules to EVA vessel part prefab
-    // note: try..catch travesty required to avoid spurious exception, that seem to have no negative effects
-    // note: dummy test for null char required to avoid compiler warning
-    try { PartLoader.getPartInfoByName("kerbalEVA").partPrefab.AddModule("EVA"); } catch(Exception ex) { if (ex.Message.Contains("\0")) {} }
-    try { PartLoader.getPartInfoByName("kerbalEVAfemale").partPrefab.AddModule("EVA"); } catch(Exception ex) { if (ex.Message.Contains("\0")) {} }
-
     // precompute 1 AU
     AU = Lib.PlanetarySystem(FlightGlobals.GetHomeBody()).orbit.semiMajorAxis;
   }
@@ -316,8 +310,8 @@ public sealed class Kerbalism : MonoBehaviour
     // note: done in EVA::FixedUpdate(), but also done here avoid 'popping' of the helmet when going on eva
     EVA.SetHelmet(kerbal, !breathable);
 
-    // remember if the kerbal has an helmet in the EVA module
-    data.to.FindModuleImplementing<EVA>().has_helmet = !breathable;
+    // remember if the kerbal has an helmet
+    EVA.KerbalData(data.to.vessel).has_helmet = !breathable;
 
     // execute script on vessel computer
     if (DB.Ready()) DB.VesselData(data.from.vessel.id).computer.execute("run", "auto/eva_out", string.Empty, data.from.vessel);
@@ -375,28 +369,21 @@ public sealed class Kerbalism : MonoBehaviour
   {
     // note: this is called multiple times when a vessel is recovered
 
-    // find out if this was an EVA kerbal and if it was dead
-    bool is_eva_dead = false;
-    foreach(ProtoPartSnapshot p in vessel.protoPartSnapshots)
+    // for each crew member
+    foreach(ProtoCrewMember c in vessel.GetVesselCrew())
     {
-      foreach(ProtoPartModuleSnapshot m in p.modules)
-      {
-        is_eva_dead |= (m.moduleName == "EVA" && Lib.Proto.GetBool(m, "is_dead"));
-      }
-    }
+      // avoid creating kerbal data in db again,
+      // as this function may be called multiple times
+      if (!DB.Kerbals().ContainsKey(c.name)) continue;
 
-    // set roster status of eva dead kerbals
-    if (is_eva_dead)
-    {
-      vessel.GetVesselCrew()[0].rosterStatus = ProtoCrewMember.RosterStatus.Dead;
-    }
-    // forget kerbal data of recovered kerbals
-    else
-    {
-      foreach(ProtoCrewMember c in vessel.GetVesselCrew())
+      // set roster status of eva dead kerbals
+      if (DB.KerbalData(c.name).eva_dead)
       {
-        DB.ForgetKerbal(c.name);
+        c.rosterStatus = ProtoCrewMember.RosterStatus.Dead;
       }
+
+      // forget kerbal data of recovered kerbals
+      DB.ForgetKerbal(c.name);
     }
 
     // TODO: add science data from recovered vessel
@@ -521,7 +508,7 @@ public sealed class Kerbalism : MonoBehaviour
   void setLocks(Vessel v, vessel_info vi)
   {
     // lock controls for EVA death
-    if (v.isEVA && vi.is_eva_dead)
+    if (v.isEVA && EVA.KerbalData(v).eva_dead)
     {
       InputLockManager.SetControlLock(ControlTypes.EVA_INPUT, "eva_dead_lock");
     }
@@ -568,7 +555,7 @@ public sealed class Kerbalism : MonoBehaviour
     if (detected)
     {
       var reslib = PartResourceLibrary.Instance.resourceDefinitions;
-      var parts = Lib.GetPartsRecursively(v.rootPart); //< what's the reason for this?
+      var parts = Lib.GetPartsRecursively(v.rootPart);
 
       // give the vessel some monoprop
       string monoprop_name = v.isEVA ? "EVA Propellant" : detected_mods.RealFuels ? "Hydrazine" : "MonoPropellant";
@@ -704,29 +691,37 @@ public sealed class Kerbalism : MonoBehaviour
     else ++warp_blending;
     elapsed_s = fixedDeltaTime;
 
-    // if there is an active vessel
-    Vessel v = FlightGlobals.ActiveVessel;
-    if (v != null)
+    // for each vessel
+    foreach(Vessel v in FlightGlobals.Vessels)
     {
+      // skip unloaded vessels
+      if (!v.loaded) continue;
+
       // get info from cache
       vessel_info vi = Cache.VesselInfo(v);
 
-      // set control locks if necessary
-      // note: this will lock control on unmanned debris
-      setLocks(v, vi);
+      // set locks for active vessel
+      if (v.isActiveVessel)
+      {
+        setLocks(v, vi);
+      }
 
-      // skip debris/asteroids/flags/...
-      // skip eva dead kerbals (rationale: getting the kerbal data will create it again, leading to spurious resque mission detection)
-      if (vi.is_vessel && !vi.is_eva_dead)
+      // maintain eva dead animation and helmet state
+      if (v.isEVA)
+      {
+        EVA.update(v);
+      }
+
+      // keep track of resque mission kerbals, and gift resources to their vessels on discovery
+      if (vi.is_vessel)
       {
         // manage resque mission mechanics
         manageResqueMission(v);
       }
 
-      // skip invalid vessels
+      // update connected spaces using CLS, for QoL and Radiation mechanics
       if (vi.is_valid)
       {
-        // update connected spaces using CLS, for QoL and Radiation mechanics
         updateConnectedSpaces(v, vi);
       }
     }
@@ -736,12 +731,12 @@ public sealed class Kerbalism : MonoBehaviour
   // kill a kerbal
   public static void Kill(Vessel v, ProtoCrewMember c)
   {
-    // forget kerbal data
-    DB.ForgetKerbal(c.name);
-
     // if on pod
     if (!v.isEVA)
     {
+      // forget kerbal data
+      DB.ForgetKerbal(c.name);
+
       // if vessel is loaded
       if (v.loaded)
       {
@@ -777,7 +772,7 @@ public sealed class Kerbalism : MonoBehaviour
     else
     {
       // flag as eva death
-      EVA.Kill(v);
+      DB.KerbalData(c.name).eva_dead = true;
 
       // rename vessel
       v.vesselName = c.name + "'s body";

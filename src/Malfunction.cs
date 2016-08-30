@@ -260,7 +260,7 @@ public sealed class Malfunction : PartModule
   {
     // do nothing if something is wrong, or the eva kerbal is dead
     Vessel v = FlightGlobals.ActiveVessel;
-    if (v == null || !v.isEVA || Cache.VesselInfo(v).is_eva_dead) return;
+    if (v == null || !v.isEVA || EVA.KerbalData(v).eva_dead) return;
 
     // if the kerbal isn't an engineer, show a message and do nothing
     if (v.GetVesselCrew()[0].trait != "Engineer")
@@ -290,7 +290,7 @@ public sealed class Malfunction : PartModule
   {
     // do nothing if something is wrong, or the eva kerbal is dead
     Vessel v = FlightGlobals.ActiveVessel;
-    if (v == null || !v.isEVA || Cache.VesselInfo(v).is_eva_dead) return;
+    if (v == null || !v.isEVA || EVA.KerbalData(v).eva_dead) return;
 
     // if the kerbal isn't an engineer, show a message and do nothing
     if (v.GetVesselCrew()[0].trait != "Engineer")

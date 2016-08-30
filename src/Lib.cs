@@ -488,7 +488,7 @@ public static class Lib
 
     // avoid re-creating dead eva kerbals in the db
     // note: no extra cost if vessel is not eva
-    if (EVA.IsDead(v)) return true;
+    //if (EVA.IsDead(v)) return true; TODO cleanup
 
     // if at least one of the crew is flagged as resque, consider it a resque mission
     var crew_members = v.loaded ? v.GetVesselCrew() : v.protoVessel.GetVesselCrew();

@@ -29,9 +29,8 @@ public class vessel_info
     is_resque = Lib.IsResqueMission(v);
     if (is_resque) return;
 
-    // determine if this is an EVA death kerbal
-    is_eva_dead = EVA.IsDead(v);
-    if (is_eva_dead) return;
+    // dead EVA are not valid vessels
+    if (v.isEVA && EVA.KerbalData(v).eva_dead) return;
 
     // shortcut for common tests
     is_valid = true;
@@ -92,8 +91,7 @@ public class vessel_info
   public UInt64   inc;                // unique incremental id for the entry
   public bool     is_vessel;          // true if this is a valid vessel
   public bool     is_resque;          // true if this is a resque mission vessel
-  public bool     is_eva_dead;        // true if this an EVA death
-  public bool     is_valid;           // equivalent to (is_vessel && !is_resque && !is_eva_dead)
+  public bool     is_valid;           // equivalent to (is_vessel && !is_resque && !eva_dead)
   public UInt32   id;                 // generate the id once
   public int      crew_count;         // number of crew on the vessel
   public int      crew_capacity;      // crew capacity of the vessel

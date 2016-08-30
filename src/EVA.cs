@@ -11,43 +11,42 @@ using UnityEngine;
 namespace KERBALISM {
 
 
-public sealed class EVA : PartModule
+public static class EVA
 {
-  [KSPField(isPersistant = true)] public bool has_helmet = true;          // indicate if eva kerbal has an helmet (and oxygen)
-  [KSPField(isPersistant = true)] public bool is_dead = false;            // indicate if eva kerbal is dead
-
-
-  public void FixedUpdate()
+  public static void update(Vessel v)
   {
+    // get kerbal data from db
+    kerbal_data kd = KerbalData(v);
+
     // get KerbalEVA module
-    KerbalEVA kerbal = part.FindModuleImplementing<KerbalEVA>();
+    KerbalEVA kerbal = v.FindPartModulesImplementing<KerbalEVA>()[0];
 
     // show/hide helmet, play nice with KIS
     if (!Kerbalism.detected_mods.KIS)
     {
-      SetHelmet(kerbal, has_helmet);
+      SetHelmet(kerbal, kd.has_helmet);
     }
     // synchronize has_helmet state with KIS (for the headlights)
     else
     {
-      has_helmet = HasHelmet(kerbal);
+      kd.has_helmet = HasHelmet(kerbal);
     }
 
     // get resource handler
-    resource_info ec = ResourceCache.Info(vessel, "ElectricCharge");
+    resource_info ec = ResourceCache.Info(v, "ElectricCharge");
 
     // consume EC for the headlamp
-    if (has_helmet && kerbal.lampOn) ec.Consume(Settings.HeadlightCost * Kerbalism.elapsed_s); //< ignore time dilation
+    if (kd.has_helmet && kerbal.lampOn) ec.Consume(Settings.HeadlightCost * Kerbalism.elapsed_s); //< ignore time dilation
 
     // force the headlamp lights on/off depending on ec amount left and if it has an helmet
     // synchronize helmet flares with headlamp state
     // support case when there is no ec rule (or no profile at all)
-    bool b = has_helmet && kerbal.lampOn && (ec.amount > double.Epsilon || ec.capacity <= double.Epsilon);
+    bool b = kd.has_helmet && kerbal.lampOn && (ec.amount > double.Epsilon || ec.capacity <= double.Epsilon);
     SetHeadlamp(kerbal, b);
     SetFlares(kerbal, b);
 
     // if dead
-    if (is_dead)
+    if (kd.eva_dead)
     {
       // enforce freezed state
       SetFreezed(kerbal);
@@ -61,47 +60,10 @@ public sealed class EVA : PartModule
   }
 
 
-  // return true if a vessel is a dead EVA kerbal
-  public static bool IsDead(Vessel vessel)
+  public static kerbal_data KerbalData(Vessel v)
   {
-    if (!vessel.isEVA) return false;
-    if (vessel.loaded)
-    {
-      var eva = vessel.FindPartModulesImplementing<EVA>();
-      if (eva == null || eva.Count == 0) return false; //< assume alive for resque EVA, that don't have our module
-      return eva[0].is_dead;
-    }
-    foreach(ProtoPartSnapshot part in vessel.protoVessel.protoPartSnapshots)
-    {
-      foreach(ProtoPartModuleSnapshot module in part.modules)
-      {
-        if (module.moduleName == "EVA") return Lib.Proto.GetBool(module, "is_dead");
-      }
-    }
-    return false;
-  }
-
-
-  // set the kerbal as dead
-  public static void Kill(Vessel vessel)
-  {
-    if (!vessel.isEVA) return;
-    if (vessel.loaded)
-    {
-      var eva = vessel.FindPartModulesImplementing<EVA>();
-      if (eva == null || eva.Count == 0) return; //< do nothing for resque EVA, that don't have our module
-      eva[0].is_dead = true;
-    }
-    else
-    {
-      foreach(ProtoPartSnapshot part in vessel.protoVessel.protoPartSnapshots)
-      {
-        foreach(ProtoPartModuleSnapshot module in part.modules)
-        {
-          if (module.moduleName == "EVA") Lib.Proto.Set(module, "is_dead", true);
-        }
-      }
-    }
+    var crew = v.loaded ? v.GetVesselCrew() : v.protoVessel.GetVesselCrew();
+    return DB.KerbalData(crew[0].name);
   }
 
 
