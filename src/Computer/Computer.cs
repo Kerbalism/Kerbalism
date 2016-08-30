@@ -1082,7 +1082,9 @@ public sealed class Computer
       vessel_info wi = Cache.VesselInfo(w);
       if (wi.is_valid && wi.link.linked)
       {
-        files.Add(Lib.BuildString("net/", w.vesselName), new File(new NetworkDevice(w)));
+        // if two vessels have the same name, we only add the first one
+        string filename = Lib.BuildString("net/", w.vesselName);
+        if (!files.ContainsKey(filename)) files.Add(filename, new File(new NetworkDevice(w)));
       }
     }
   }
