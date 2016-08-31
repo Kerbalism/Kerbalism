@@ -89,10 +89,9 @@ public class resource_info
       }
 
       // calculate rate of change per-second
-      // note: do not update rate during and immediately after warp blending
-      // rationale: stock modules do not use our awesome resource system and
-      // are subject to instabilities when time per-step change
-      if (Kerbalism.warp_blending > 50) rate = (new_amount - amount) / elapsed_s;
+      // note: do not update rate during and immediately after warp blending (stock modules have instabilities during warp blending)
+      // note: rate is not updated during the simulation steps where meal is consumed, to avoid counting it twice
+      if (Kerbalism.warp_blending > 50 && !meal_consumed) rate = (new_amount - amount) / elapsed_s;
 
       // update amount
       amount = new_amount;
@@ -123,7 +122,8 @@ public class resource_info
       amount = Lib.Clamp(amount + deferred + ext, 0.0, capacity);
 
       // calculate rate of change per-second
-      rate = Lib.Clamp(deferred + ext, -amount, capacity - amount) / elapsed_s;
+      // note: rate is not updated during the simulation steps where meal is consumed, to avoid counting it twice
+      if (!meal_consumed) rate = Lib.Clamp(deferred + ext, -amount, capacity - amount) / elapsed_s;
 
       // syncronize the amount to the vessel
       foreach(ProtoPartSnapshot pps in v.protoVessel.protoPartSnapshots)
@@ -148,6 +148,9 @@ public class resource_info
 
     // reset deferred consumption/production
     deferred = 0.0;
+
+    // reseal meal consumed flag
+    meal_consumed = false;
   }
 
 
@@ -157,6 +160,7 @@ public class resource_info
   public double capacity;             // storage capacity of resource
   public double level;                // amount vs capacity, or 0 if there is no capacity
   public double rate;                 // rate of change in amount per-second
+  public bool   meal_consumed;        // true if a meal was consumed in the last simulation step
 }
 
 

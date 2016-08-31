@@ -180,6 +180,9 @@ public sealed class Rule
 
           // consume time
           kmon.time_since -= step * r.interval;
+
+          // remember if a meal is consumed in this simulation step
+          res.meal_consumed |= step > 0.99;
         }
 
 

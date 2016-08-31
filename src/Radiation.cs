@@ -290,7 +290,8 @@ public static class Radiation
       if (mf.has_field())
       {
         // some feedback in the log
-        Lib.Log(Lib.BuildString("particle-fitting '", mf.name, "'..."));
+        // note: can't use BuildString here, as it is not thread-safe
+        Lib.Log("particle-fitting '" + mf.name + "'...");
       }
 
       // particle-fitting for the inner radiation belt
@@ -313,7 +314,8 @@ public static class Radiation
     }
 
     // measure time required
-    Lib.Log(Lib.BuildString("particle-fitting completed in ", Lib.Seconds(Lib.Clocks() - time).ToString("F3"), " seconds"));
+    // note: can't use BuildString here, as it is not thread-safe
+    Lib.Log("particle-fitting completed in " + Lib.Seconds(Lib.Clocks() - time).ToString("F3") + " seconds");
   }
 
 
