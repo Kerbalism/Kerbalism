@@ -1,5 +1,12 @@
 #CHANGELOG
 
+1.1.3
+  - do not use an EVA module anymore, to avoid triggering Kerbal duplication bug
+  - rescaled geiger counter part to half size
+  - clarified scrubber tooltip description
+  - fix: exception in computer system when two networked vessels have the same name
+  - fix: correct lifetime estimates during simulation steps when meals are consumed
+
 1.1.2
   - replaced tutorial notifications with KSPedia entries
   - added a very small radial oxygen container unlocked at survivability
