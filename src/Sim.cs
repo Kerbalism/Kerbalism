@@ -424,8 +424,8 @@ public static class Sim
   // --------------------------------------------------------------------------
 
   // return proportion of flux not blocked by atmosphere
-  // note: while intuitively you are thinking to use this to calculate temperature inside an atmosphere,
-  //       understand that atmospheric climate is complex and the game is using float curves to approximate it
+  // - position: sampling point
+  // - sun_dir: normalized vector from sampling point to the sun
   public static double AtmosphereFactor(CelestialBody body, Vector3d position, Vector3d sun_dir)
   {
     // get up vector & altitude
@@ -454,6 +454,7 @@ public static class Sim
   // return proportion of flux not blocked by atmosphere
   // note: this one assume the receiver is on the ground
   // - cos_a: cosine of angle between zenith and sun, in [0..1] range
+  //          to get an average for stats purpose, use 0.7071
   public static double AtmosphereFactor(CelestialBody body, double cos_a)
   {
     double static_pressure = body.GetPressure(0.0);
