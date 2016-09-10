@@ -577,12 +577,10 @@ public static class Lib
     if (ResearchAndDevelopment.Instance == null)
     {
       // this should not happen, throw exception
-      Log("warning: querying tech '" + tech_id + "' while TechTree is not ready");
       throw new Exception("querying tech '" + tech_id + "' while TechTree is not ready");
-      //return false;
     }
 
-    // get the fucking tech
+    // get the tech
     return ResearchAndDevelopment.GetTechnologyState(tech_id) == RDTech.State.Available;
   }
 
