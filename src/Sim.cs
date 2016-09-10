@@ -121,11 +121,10 @@ public static class Sim
   public static double TimeDilation(Vessel v)
   {
     if (!Settings.RelativisticTime) return 1.0;
-
     if (Lib.Landed(v)) return 1.0;
-
     double C = 299792458.0 * Settings.LightSpeedScale;
     double V = v.orbit.orbitalSpeed;
+    if (double.IsNaN(V) || double.IsInfinity(V)) return 1.0;
     return Math.Sqrt(1.0 - V * V / (C * C));
   }
 
@@ -492,14 +491,12 @@ public static class Sim
       double path = Math.Sqrt(Ra * Ra + 2.0 * Ra * Ya + Ya * Ya) - Ra;
       double factor = body.GetSolarPowerFactor(density) * Ya / path;
 
-      // ozone layer
-      if (body.atmosphereContainsOxygen) factor -= 0.42 * (1.0 - Lib.Clamp(altitude / body.atmosphereDepth, 0.0, 1.0));
-
-      // water vapor
-      if (body.ocean) factor -= 0.42 * (1.0 - Lib.Clamp(altitude / body.atmosphereDepth, 0.0, 1.0));
-
-      // totally non-physical
-      return Math.Max(0.0, factor);
+      // poor man atmosphere composition contribution
+      if (body.atmosphereContainsOxygen || body.ocean)
+      {
+        factor = 1.0 - Math.Pow(1.0 - factor, 0.015);
+      }
+      return factor;
     }
     return 1.0;
   }
