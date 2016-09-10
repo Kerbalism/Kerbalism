@@ -1,5 +1,26 @@
 #CHANGELOG
 
+1.1.4
+  - replaced Malfunction with Reliability module
+    - support multiple reliability modules per-part and per-component    
+    - RCS, Greenhouse, GravityRing and ActiveShield can malfunction
+    - Antennas can't malfunction anymore
+    - can specify trait and experience level required for repair
+    - disabled automatically if TestFlight is detected
+  - new module PlannerController: permit to include or exclude part modules
+    from the planner calculations using a toggle in right-click UI in the VAB
+  - entertainment modules can be configured to ignore internal space  
+  - add some Entertainment to Ven Stock Revamp small inflatable hab (YaarPodshipnik)
+  - SurfaceExperimentPackage science tweaks patch (YaarPodshipnik)
+  - telemetry experiment is added coherently to all probes (YaarPodshipnik)
+  - geiger counter science definitions for NewHorizon (BashGordon33)    
+  - entertainment added to Space Station Part Expansion cupolas and habitats
+  - some KIS items provide a small amount of entertainment
+  - fix: solar panel malfunctions were not applied in loaded vessels
+  - fix: malfunction highlights throwing exception in some circumstances
+  - fix: relativistic time dilation when orbit is not properly set
+  - fix: better approximation for atmospheric gamma absorption
+
 1.1.3
   - do not use an EVA module anymore, to avoid triggering Kerbal duplication bug
   - rescaled geiger counter part to half size
