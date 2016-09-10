@@ -12,9 +12,9 @@
 @Kerbalism:FOR[EnableSignal] {}
 
 
-// comment out to disable malfunctions
-// disabled automatically if DangIt is detected
-@Kerbalism:FOR[EnableMalfunction] {}
+// comment out to disable the reliability mechanic
+// disabled automatically if DangIt or TestFlight are detected
+@Kerbalism:FOR[EnableReliability] {}
 
 
 // comment out to remove scrubbers from the game
@@ -59,7 +59,6 @@ Rule
   resource_name = Food
   waste_name = Waste
   waste_ratio = 0.358453746438747
-  waste_buffer = 0.0 // Flush Waste into space by default, unless a greenhouse or waste storage tank is attached.
   hidden_waste = true
   rate = 0.5 // 1 unit per 6-hour day
   interval = 10800.0 // 1 meal every 3-hour, twice per 6-hour day
@@ -87,7 +86,6 @@ Rule
   name = Water
   resource_name = Water
   waste_name = WasteWater
-  waste_buffer = 2.0 // Large enough, but not enormous. Water needs to be reclaimed/filtered to avoid loss.
   hidden_waste = true
   rate = 0.25 // 0.25 liters per drink
   interval = 5400.0 // 4 drinks per day
@@ -131,7 +129,6 @@ Rule
   resource_name = Oxygen
   waste_name = CarbonDioxide
   waste_ratio = 0.75
-  waste_buffer = 5.0
   hidden_waste = true
   rate = 0.00625 // 135 liters of Oxygen consumed per 6-hour day
   degeneration = 0.002083333 // 8 minutes

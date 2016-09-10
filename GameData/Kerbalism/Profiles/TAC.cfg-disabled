@@ -14,9 +14,9 @@
 @Kerbalism:FOR[EnableSignal] {}
 
 
-// comment out to disable malfunctions
-// disabled automatically if DangIt is detected
-@Kerbalism:FOR[EnableMalfunction] {}
+// comment out to disable the reliability mechanic
+// disabled automatically if DangIt or TestFlight are detected
+@Kerbalism:FOR[EnableReliability] {}
 
 
 // comment out to remove scrubbers from the game
