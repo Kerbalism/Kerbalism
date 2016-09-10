@@ -28,10 +28,10 @@ public static class SCANsat
   static Type SCANUtils;
 
 
-  // obtain the SCANUtils class from SCANsat assembly if it is loaded, only called once
+  // obtain the SCANUtils class from SCANsat assembly if present
   static void lazy_init()
   {
-    // search for compatible SCANsat assembly
+    // search for compatible SCANsat assembly, but only once
     if (!initialized)
     {
       foreach(var a in AssemblyLoader.loadedAssemblies)
@@ -127,10 +127,11 @@ public static class SCANsat
   }
 
 
+  // [obsolete: we use PlannerController instead]
   // return true if a SCANsat scanner is deployed in the editors, or is not deployable at all
   // - p: part owning the SCANsat module
   // - m: SCANsat module
-  public static bool isDeployed(Part p, PartModule m)
+  /*public static bool isDeployed(Part p, PartModule m)
   {
     if (m.moduleName == "SCANsat")
     {
@@ -160,7 +161,7 @@ public static class SCANsat
       return deployed;
     }
     return false; //< make the compiler happy
-  }
+  }*/
 
 
   public static double EcConsumption(PartModule m)

@@ -145,7 +145,7 @@ public sealed class Planner
     // quote style
     quote_style = new GUIStyle(HighLogic.Skin.label);
     quote_style.richText = true;
-    quote_style.normal.textColor = Color.white;
+    quote_style.normal.textColor = Color.black;
     quote_style.stretchWidth = true;
     quote_style.stretchHeight = true;
     quote_style.fontSize = 11;
@@ -335,7 +335,7 @@ public sealed class Planner
     reliability_data reliability = new reliability_data();
 
     // get manufacturing quality
-    reliability.quality = Malfunction.DeduceQuality();
+    reliability.quality = Reliability.DeduceQuality();
 
     // count parts that can fail
     uint components = 0;
@@ -348,12 +348,12 @@ public sealed class Planner
       foreach(PartModule m in p.Modules)
       {
         // malfunctions
-        if (m.moduleName == "Malfunction")
+        if (m.moduleName == "Reliability")
         {
-          Malfunction mm = (Malfunction)m;
+          Reliability mm = (Reliability)m;
           ++components;
-          double avg_lifetime = (mm.min_lifetime + mm.max_lifetime) * 0.5 * reliability.quality;
-          reliability.failure_year += year_time / avg_lifetime;
+          double mtbf = mm.mtbf * reliability.quality;
+          reliability.failure_year += year_time / mtbf;
         }
       }
     }
@@ -393,7 +393,7 @@ public sealed class Planner
           Antenna mm = (Antenna)m;
 
           // calculate actual range
-          double range = Signal.Range(mm.scope, mm.penalty, signal.ecc);
+          double range = Signal.Range(mm.scope, signal.ecc);
 
           // maintain 2nd best antenna
           signal.second_best_range = range > signal.range ? signal.range : Math.Max(signal.second_best_range, range);
@@ -460,7 +460,7 @@ public sealed class Planner
       "<align=left />",
       "breathable\t\t<b>", (env.body.atmosphereContainsOxygen ? "yes" : "no"), "</b>\n",
       "pressure\t\t<b>", env.body.atmospherePressureSeaLevel.ToString("F0"), " kPa</b>\n",
-      "visible absorption\t<b>", Lib.HumanReadablePerc(1.0 - env.atmo_factor), "</b>\n",
+      "light absorption\t\t<b>", Lib.HumanReadablePerc(1.0 - env.atmo_factor), "</b>\n",
       "gamma absorption\t<b>", Lib.HumanReadablePerc(1.0 - Sim.GammaTransparency(env.body, 0.0)), "</b>"
     );
     string shadowtime_str = Lib.HumanReadableDuration(env.shadow_period) + " (" + (env.shadow_time * 100.0).ToString("F0") + "%)";
@@ -541,7 +541,7 @@ public sealed class Planner
     render_title("RELIABILITY");
     render_content("malfunctions", Lib.ValueOrNone(reliability.failure_year, "/y"), "average case estimate\nfor the whole vessel");
     render_content("redundancy", reliability.redundancy);
-    render_content("quality", Malfunction.QualityToString(reliability.quality), "manufacturing quality");
+    render_content("quality", Reliability.QualityToString(reliability.quality), "manufacturing quality");
     render_content("engineer", crew.engineer ? "yes" : "no");
     render_space();
   }
@@ -640,9 +640,16 @@ public sealed class Planner
     // detect page layout once
     detect_layout();
 
-    // deduce height
-    return 26.0f                              // header + margin
-         + 100.0f * (float)panels_per_page;   // panels
+    if (EditorLogic.RootPart != null)
+    {
+      // deduce height
+      return 26.0f                              // header + margin
+           + 100.0f * (float)panels_per_page;   // panels
+    }
+    else
+    {
+      return 66.0f; // quote-only
+    }
   }
 
 
@@ -650,6 +657,9 @@ public sealed class Planner
   {
     // detect page layout once
     detect_layout();
+
+    // do nothing if tech tree is not ready
+    if (!Lib.TechReady()) return;
 
     // if there is something in the editor
     if (EditorLogic.RootPart != null)
@@ -744,7 +754,7 @@ public sealed class Planner
       }
 
       // reliability
-      if (Kerbalism.features.malfunction)
+      if (Kerbalism.features.reliability)
       {
         if (panel_index / panels_per_page == page)
         {
@@ -794,7 +804,7 @@ public sealed class Planner
                  + (uint)Kerbalism.supply_rules.FindAll(k => k.degeneration > 0.0).Count
                  + (Kerbalism.qol_rule != null ? 1u : 0)
                  + (Kerbalism.rad_rule != null ? 1u : 0)
-                 + (Kerbalism.features.malfunction ? 1u : 0)
+                 + (Kerbalism.features.reliability ? 1u : 0)
                  + (Kerbalism.features.signal ? 1u : 0);
 
     // calculate number of panels per page and number of pages
@@ -876,15 +886,22 @@ public class resource_simulator
       }
     }
 
-    // remember if we already considered a resource converter module
-    // rationale: we assume only the first module in a converter is active
-    bool first_converter = true;
-
     // process all modules
     foreach(Part p in parts)
     {
+      // get planner controller in the part
+      PlannerController ctrl = p.FindModuleImplementing<PlannerController>();
+
+      // ignore all modules in the part if specified in controller
+      if (ctrl != null && !ctrl.considered) continue;
+
+      // for each module
       foreach(PartModule m in p.Modules)
       {
+        // skip disabled modules
+        // rationale: the Selector disable non-selected modules in this way
+        if (!m.isEnabled) continue;
+
         switch(m.moduleName)
         {
           case "Scrubber":                     process_scrubber(m as Scrubber, env);                                 break;
@@ -896,8 +913,8 @@ public class resource_simulator
           case "ModuleCommand":                process_command(m as ModuleCommand);                                  break;
           case "ModuleDeployableSolarPanel":   process_panel(m as ModuleDeployableSolarPanel, env);                  break;
           case "ModuleGenerator":              process_generator(m as ModuleGenerator, p);                           break;
-          case "ModuleResourceConverter":      process_converter(m as ModuleResourceConverter, ref first_converter); break;
-          case "ModuleKPBSConverter":          process_converter(m as ModuleResourceConverter, ref first_converter); break;
+          case "ModuleResourceConverter":      process_converter(m as ModuleResourceConverter);                      break;
+          case "ModuleKPBSConverter":          process_converter(m as ModuleResourceConverter);                      break;
           case "ModuleResourceHarvester":      process_harvester(m as ModuleResourceHarvester);                      break;
           case "ModuleActiveRadiator":         process_radiator(m as ModuleActiveRadiator);                          break;
           case "ModuleWheelMotor":             process_wheel_motor(m as ModuleWheelMotor);                           break;
@@ -905,8 +922,8 @@ public class resource_simulator
           case "ModuleLight":                  process_light(m as ModuleLight);                                      break;
           case "ModuleColoredLensLight":       process_light(m as ModuleLight);                                      break;
           case "ModuleMultiPointSurfaceLight": process_light(m as ModuleLight);                                      break;
-          case "SCANsat":                      process_scanner(p, m);                                                break;
-          case "ModuleSCANresourceScanner":    process_scanner(p, m);                                                break;
+          case "SCANsat":                      process_scanner(m);                                                   break;
+          case "ModuleSCANresourceScanner":    process_scanner(m);                                                   break;
           case "ModuleCurvedSolarPanel":       process_curved_panel(p, m, env);                                      break;
           case "FissionGenerator":             process_fission_generator(p, m);                                      break;
           case "ModuleRadioisotopeGenerator":  process_radioisotope_generator(p, m);                                 break;
@@ -1113,12 +1130,8 @@ public class resource_simulator
   }
 
 
-  void process_converter(ModuleResourceConverter converter, ref bool first_converter)
+  void process_converter(ModuleResourceConverter converter)
   {
-    // only consider the first converter in a part
-    if (!first_converter) return;
-    first_converter = false;
-
     simulated_recipe recipe = new simulated_recipe(simulated_recipe.converter_priority);
     foreach(ResourceRatio res in converter.inputList)
     {
@@ -1139,38 +1152,29 @@ public class resource_simulator
     {
       recipe.input(res.ResourceName, res.Ratio);
     }
-    recipe.output(harvester.ResourceName, double.MaxValue); //< token value, to make the converters work
+    recipe.output(harvester.ResourceName, harvester.Efficiency);
     recipes.Add(recipe);
   }
 
 
   void process_radiator(ModuleActiveRadiator radiator)
   {
-    if (radiator.IsCooling)
+    foreach(var res in radiator.inputResources)
     {
-      foreach(var res in radiator.inputResources)
-      {
-        resource(res.name).consume(res.rate);
-      }
+      resource(res.name).consume(res.rate);
     }
   }
 
 
   void process_wheel_motor(ModuleWheelMotor motor)
   {
-    if (motor.motorEnabled)
-    {
-      resource(motor.inputResource.name).consume(motor.inputResource.rate);
-    }
+    resource(motor.inputResource.name).consume(motor.inputResource.rate);
   }
 
 
   void process_wheel_steering(ModuleWheelMotorSteering steering)
   {
-    if (steering.motorEnabled)
-    {
-      resource(steering.inputResource.name).consume(steering.inputResource.rate);
-    }
+    resource(steering.inputResource.name).consume(steering.inputResource.rate);
   }
 
 
@@ -1183,13 +1187,9 @@ public class resource_simulator
   }
 
 
-  void process_scanner(Part p, PartModule m)
+  void process_scanner(PartModule m)
   {
-    // consume ec if deployed
-    if (SCANsat.isDeployed(p, m))
-    {
-      resource("ElectricCharge").consume(SCANsat.EcConsumption(m));
-    }
+    resource("ElectricCharge").consume(SCANsat.EcConsumption(m));
   }
 
 

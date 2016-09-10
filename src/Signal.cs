@@ -23,6 +23,7 @@ public class antenna_data
     //}
 
     // get error-correcting code factor
+    // note: this could possibly get called when tech tree is not ready
     double ecc = Signal.ECC();
 
     // get ec available
@@ -36,7 +37,7 @@ public class antenna_data
       foreach(Antenna a in v.FindPartModulesImplementing<Antenna>())
       {
         // calculate real range
-        double real_range = Signal.Range(a.scope, a.penalty, ecc);
+        double real_range = Signal.Range(a.scope, ecc);
 
         // maintain best range
         range = Math.Max(range, real_range);
@@ -66,7 +67,7 @@ public class antenna_data
           if (!a) continue;
 
           // calculate real range
-          double real_range = Signal.Range(a.scope, Malfunction.Penalty(p, 0.7071), ecc);
+          double real_range = Signal.Range(a.scope, ecc);
 
           // maintain best range
           range = Math.Max(range, real_range);
@@ -144,7 +145,7 @@ public sealed class Signal
     // enable global access
     instance = this;
 
-    // determine nearest and furthest planets from home body
+    // determine nearest and furthest planets from home body (approximate)
     CelestialBody sun = FlightGlobals.Bodies[0];
     CelestialBody home = Lib.PlanetarySystem(FlightGlobals.GetHomeBody());
     CelestialBody near = null;
@@ -371,10 +372,10 @@ public sealed class Signal
   }
 
   // return range of an antenna
-  static public double Range(string scope, double penalty, double ecc)
+  static public double Range(string scope, double ecc)
   {
     double range;
-    return instance.range_values.TryGetValue(scope, out range) ? range * penalty * ecc : 0.0;
+    return instance.range_values.TryGetValue(scope, out range) ? range * ecc : 0.0;
   }
 
 
@@ -382,7 +383,7 @@ public sealed class Signal
   static public double ECC()
   {
     double[] value = {0.15, 0.33, 0.66, 1.0};
-    return value[Lib.CountTechs(signal_processing.techs)];
+    return value[Lib.CountTech(signal_processing.techs)];
   }
 
 
@@ -392,8 +393,6 @@ public sealed class Signal
   // permit global access
   static Signal instance;
 }
-
-
 
 
 } // KERBALISM

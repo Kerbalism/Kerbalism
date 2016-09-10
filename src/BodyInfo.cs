@@ -167,7 +167,7 @@ public sealed class BodyInfo
     {
       render_title("ATMOSPHERE");
       render_content("breathable", body.atmosphereContainsOxygen ? "yes" : "no");
-      render_content("visible absorption", Lib.HumanReadablePerc(1.0 - Sim.AtmosphereFactor(body, 0.7071)));
+      render_content("light absorption", Lib.HumanReadablePerc(1.0 - Sim.AtmosphereFactor(body, 0.7071)));
       render_content("gamma absorption", Lib.HumanReadablePerc(1.0 - Sim.GammaTransparency(body, 0.0)));
       render_space();
     }

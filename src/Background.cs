@@ -14,7 +14,6 @@ namespace KERBALISM {
 
 public sealed class Background
 {
-  // called at every simulation step
   public static void update(Vessel v, vessel_info vi, vessel_data vd, vessel_resources resources, double elapsed_s)
   {
     // get most used resource handlers
@@ -41,30 +40,30 @@ public sealed class Background
         // process modules
         switch(m.moduleName)
         {
-          case "Malfunction":                  Malfunction.BackgroundUpdate(v, m, module_prefab as Malfunction, elapsed_s);                break;
-          case "Scrubber":                     Scrubber.BackgroundUpdate(v, m, module_prefab as Scrubber, vi, resources, elapsed_s);       break;
-          case "Recycler":                     Recycler.BackgroundUpdate(v, m, module_prefab as Recycler, resources, elapsed_s);           break;
-          case "Greenhouse":                   Greenhouse.BackgroundUpdate(v, m, module_prefab as Greenhouse, vi, resources, elapsed_s);   break;
-          case "GravityRing":                  GravityRing.BackgroundUpdate(v, m, module_prefab as GravityRing, resources, elapsed_s);     break;
-          case "Emitter":                      Emitter.BackgroundUpdate(v, m, module_prefab as Emitter, ec, elapsed_s);                    break;
-          case "ModuleCommand":                ProcessCommand(v, p, m, module_prefab as ModuleCommand, resources, elapsed_s);              break;
-          case "ModuleDeployableSolarPanel":   ProcessPanel(v, p, m, module_prefab as ModuleDeployableSolarPanel, vi, ec, elapsed_s);      break;
-          case "ModuleGenerator":              ProcessGenerator(v, p, m, module_prefab as ModuleGenerator, resources, elapsed_s);          break;
+          case "Reliability":                  Reliability.BackgroundUpdate(v, m, module_prefab as Reliability, elapsed_s);                 break;
+          case "Scrubber":                     Scrubber.BackgroundUpdate(v, m, module_prefab as Scrubber, vi, resources, elapsed_s);        break;
+          case "Recycler":                     Recycler.BackgroundUpdate(v, m, module_prefab as Recycler, resources, elapsed_s);            break;
+          case "Greenhouse":                   Greenhouse.BackgroundUpdate(v, p, m, module_prefab as Greenhouse, vi, resources, elapsed_s); break;
+          case "GravityRing":                  GravityRing.BackgroundUpdate(v, p, m, module_prefab as GravityRing, resources, elapsed_s);   break;
+          case "Emitter":                      Emitter.BackgroundUpdate(v, p, m, module_prefab as Emitter, ec, elapsed_s);                  break;
+          case "ModuleCommand":                ProcessCommand(v, p, m, module_prefab as ModuleCommand, resources, elapsed_s);               break;
+          case "ModuleDeployableSolarPanel":   ProcessPanel(v, p, m, module_prefab as ModuleDeployableSolarPanel, vi, ec, elapsed_s);       break;
+          case "ModuleGenerator":              ProcessGenerator(v, p, m, module_prefab as ModuleGenerator, resources, elapsed_s);           break;
           case "ModuleResourceConverter":
           case "ModuleKPBSConverter":
-          case "FissionReactor":               ProcessConverter(v, p, m, part_prefab, converter_index++, resources, elapsed_s);            break;
-          case "ModuleResourceHarvester":      ProcessHarvester(v, p, m, module_prefab as ModuleResourceHarvester, resources, elapsed_s);  break;
-          case "ModuleAsteroidDrill":          ProcessAsteroidDrill(v, p, m, module_prefab as ModuleAsteroidDrill, resources, elapsed_s);  break;
-          case "ModuleScienceConverter":       ProcessLab(v, p, m, module_prefab as ModuleScienceConverter, ec, elapsed_s);                break;
+          case "FissionReactor":               ProcessConverter(v, p, m, part_prefab, converter_index++, resources, elapsed_s);             break;
+          case "ModuleResourceHarvester":      ProcessHarvester(v, p, m, module_prefab as ModuleResourceHarvester, resources, elapsed_s);   break;
+          case "ModuleAsteroidDrill":          ProcessAsteroidDrill(v, p, m, module_prefab as ModuleAsteroidDrill, resources, elapsed_s);   break;
+          case "ModuleScienceConverter":       ProcessLab(v, p, m, module_prefab as ModuleScienceConverter, ec, elapsed_s);                 break;
           case "ModuleLight":
           case "ModuleColoredLensLight":
-          case "ModuleMultiPointSurfaceLight": ProcessLight(v, p, m, module_prefab as ModuleLight, ec, elapsed_s);                         break;
+          case "ModuleMultiPointSurfaceLight": ProcessLight(v, p, m, module_prefab as ModuleLight, ec, elapsed_s);                          break;
           case "SCANsat":
-          case "ModuleSCANresourceScanner":    ProcessScanner(v, p, m, module_prefab, part_prefab, vd, ec, elapsed_s);                     break;
-          case "ModuleCurvedSolarPanel":       ProcessCurvedPanel(v, p, m, module_prefab, part_prefab, vi, ec, elapsed_s);                 break;
-          case "FissionGenerator":             ProcessFissionGenerator(v, p, m, module_prefab, ec, elapsed_s);                             break;
-          case "ModuleRadioisotopeGenerator":  ProcessRadioisotopeGenerator(v, p, m, module_prefab, ec, elapsed_s);                        break;
-          case "ModuleCryoTank":               ProcessCryoTank(v, p, m, module_prefab, resources, elapsed_s);                              break;
+          case "ModuleSCANresourceScanner":    ProcessScanner(v, p, m, module_prefab, part_prefab, vd, ec, elapsed_s);                      break;
+          case "ModuleCurvedSolarPanel":       ProcessCurvedPanel(v, p, m, module_prefab, part_prefab, vi, ec, elapsed_s);                  break;
+          case "FissionGenerator":             ProcessFissionGenerator(v, p, m, module_prefab, ec, elapsed_s);                              break;
+          case "ModuleRadioisotopeGenerator":  ProcessRadioisotopeGenerator(v, p, m, module_prefab, ec, elapsed_s);                         break;
+          case "ModuleCryoTank":               ProcessCryoTank(v, p, m, module_prefab, resources, elapsed_s);                               break;
         }
       }
     }
@@ -119,7 +118,7 @@ public sealed class Background
       double output = panel.chargeRate                                      // nominal panel charge rate at 1 AU
                     * norm_solar_flux                                       // normalized flux at panel distance from sun
                     * cosine_factor                                         // cosine factor of panel orientation
-                    * Malfunction.Penalty(p);                               // malfunctioned panel penalty
+                    * Reliability.Penalty(p, "Panel");                      // malfunctioned panel penalty
 
       // produce EC
       ec.Produce(output * elapsed_s);
@@ -136,7 +135,7 @@ public sealed class Background
     if (Lib.Proto.GetBool(m, "generatorIsActive"))
     {
       // get malfunction penalty
-      double penalty = Malfunction.Penalty(p);
+      double penalty = Reliability.Penalty(p, "Generator");
 
       // create and commit recipe
       resource_recipe recipe = new resource_recipe(resource_recipe.converter_priority);
@@ -163,7 +162,6 @@ public sealed class Background
     // note: 'undo' stock behaviour by forcing lastUpdateTime to now (to minimize overlapping calculations from this and stock post-facto simulation)
     // note: support PlanetaryBaseSystem converters
     // note: support NearFuture reactors
-    // note: assume FillAmount is 1 (completely full)
 
     // get converter
     var converter_prefabs = part_prefab.Modules.GetModules<ModuleResourceConverter>();
@@ -186,7 +184,7 @@ public sealed class Background
       if (!full)
       {
         // get malfunction penalty
-        double penalty = Malfunction.Penalty(p);
+        double penalty = Reliability.Penalty(p, "Converter");
 
         // deduce crew bonus
         int exp_level = -1;
@@ -232,7 +230,7 @@ public sealed class Background
       if (resources.Info(v, harvester.ResourceName).level < harvester.FillAmount - double.Epsilon)
       {
         // get malfunction penalty
-        double penalty = Malfunction.Penalty(p);
+        double penalty = Reliability.Penalty(p, "Harvester");
 
         // deduce crew bonus
         int exp_level = -1;
@@ -454,7 +452,6 @@ public sealed class Background
                 * norm_solar_flux                                                          // normalized solar flux at panel distance from sun
                 * Math.Max(Vector3d.Dot(info.sun_dir, (rot * t.forward).normalized), 0.0); // cosine factor of component orientation
       }
-      output *= Malfunction.Penalty(p);                                                    // malfunctioned panel penalty
 
       // produce EC
       ec.Produce(output * elapsed_s);
@@ -497,7 +494,6 @@ public sealed class Background
     resource_info ec = resources.Info(v, "ElectricCharge");
     resource_info fuel = resources.Info(v, fuel_name);
 
-
     // if there is some fuel
     // note: comparing against amount in previous simulation step
     if (fuel.amount > double.Epsilon)
@@ -527,31 +523,6 @@ public sealed class Background
     Lib.Proto.Set(m, "LastUpdateTime", v.missionTime);
   }
 }
-
-
-/* 32bit hash of moduleName [unused]
---------------------------------------------------------------
-  const UInt32 id_ModuleCommand                = 3134432346u;
-  const UInt32 id_ModuleDeployableSolarPanel   = 2507815787u;
-  const UInt32 id_ModuleGenerator              = 1063091850u;
-  const UInt32 id_ModuleResourceConverter      = 2892431223u;
-  const UInt32 id_ModuleKPBSConverter          = 361067095u;
-  const UInt32 id_FissionReactor               = 822103862u;
-  const UInt32 id_ModuleResourceHarvester      = 323451101u;
-  const UInt32 id_ModuleAsteroidDrill          = 3473780657u;
-  const UInt32 id_ModuleScienceConverter       = 3498484783u;
-  const UInt32 id_SCANsat                      = 297618428u;
-  const UInt32 id_ModuleSCANresourceScanner    = 2406003354u;
-  const UInt32 id_ModuleCurvedSolarPanel       = 2130113745u;
-  const UInt32 id_FissionGenerator             = 447456541u;
-  const UInt32 id_ModuleRadioisotopeGenerator  = 195610716u;
-  const UInt32 id_ModuleCryoTank               = 2363543940u;
-  const UInt32 id_Scrubber                     = 1508775713u;
-  const UInt32 id_Recycler                     = 3861547956u;
-  const UInt32 id_Greenhouse                   = 2233558176u;
-  const UInt32 id_GravityRing                  = 1565524331u;
-  const UInt32 id_Malfunction                  = 2152559097u;
-*/
 
 
 } // KERBALISM

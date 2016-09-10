@@ -104,15 +104,13 @@ public sealed class Recycler : PartModule
     // do nothing in the editor
     if (HighLogic.LoadedSceneIsEditor) return;
 
+    // do nothing until tech tree is ready
+    if (!Lib.TechReady()) return;
+
     if (use_efficiency)
     {
       // deduce quality from technological level if necessary
-      // note: done at prelaunch to avoid problems with start()/load() and the tech tree being not consistent
-      if (vessel.situation == Vessel.Situations.PRELAUNCH) efficiency = Scrubber.DeduceEfficiency();
-
-      // if for some reason efficiency wasn't set, default to 50%
-      // note: for example, resque vessels never get to prelaunch
-      if (efficiency <= double.Epsilon) efficiency = 0.5;
+      if (efficiency <= double.Epsilon) efficiency = Scrubber.DeduceEfficiency();
     }
 
     if (is_enabled)

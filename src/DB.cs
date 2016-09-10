@@ -84,7 +84,7 @@ public sealed class DB : ScenarioModule
   landmarks_data landmarks = new landmarks_data();
 
   // current savegame version
-  const string current_version = "1.1.3.0";
+  const string current_version = "1.1.4.0";
 
   // allow global access
   static DB instance = null;
@@ -98,6 +98,9 @@ public sealed class DB : ScenarioModule
 
   public override void OnLoad(ConfigNode node)
   {
+    // reset caches to deal with minor issues on flight revert and scene changes
+    Engine.ResetCache();
+
     // get version of the savegame
     // note: if there isn't a version this is either a new game, or the first public release (that didn't have versioning)
     string version = node.HasValue("version") ? node.GetValue("version") : node.HasNode("kerbals") ? "0.9.9.0" : current_version;
@@ -213,7 +216,7 @@ public sealed class DB : ScenarioModule
       landmarks.manned_orbit  = Lib.ConfigValue(landmarks_node, "manned_orbit", 0u);
       landmarks.space_harvest = Lib.ConfigValue(landmarks_node, "space_harvest", 0u);
     }
-    // import old notifications data into new computer system
+    // import old notifications data into new landmark system
     else if (string.CompareOrdinal(version, "1.1.2.0") < 0)
     {
       if (node.HasNode("notifications"))

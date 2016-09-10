@@ -25,7 +25,6 @@ public sealed class Antenna : ModuleDataTransmitter, IScienceDataTransmitter
 
   // data
   public bool can_transmit;                                 // enable or disable data transmission
-  public double penalty = 1.0;                              // damage penalty applied to range
 
 
   // rmb ui status
@@ -95,8 +94,11 @@ public sealed class Antenna : ModuleDataTransmitter, IScienceDataTransmitter
 
   public void Update()
   {
+    // do nothing if tech tree is not ready
+    if (!Lib.TechReady()) return;
+
     // get range
-    double range = Signal.Range(scope, penalty, Signal.ECC());
+    double range = Signal.Range(scope, Signal.ECC());
 
     // update rmb ui status
     RangeStatus = Lib.HumanReadableRange(range);

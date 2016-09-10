@@ -68,8 +68,8 @@ public class vessel_info
     radiation = Radiation.Compute(v, position, gamma_transparency, sunlight, out blackout, out inside_pause, out inside_belt);
 
     // calculate malfunction stuff
-    max_malfunction = Malfunction.MaxMalfunction(v);
-    avg_quality = Malfunction.AverageQuality(v);
+    max_malfunction = Reliability.MaxMalfunction(v);
+    avg_quality = Reliability.AverageQuality(v);
 
     // calculate signal info
     antenna = new antenna_data(v);
@@ -84,7 +84,6 @@ public class vessel_info
 
     // woot relativity
     time_dilation = Sim.TimeDilation(v);
-
   }
 
 
@@ -121,8 +120,6 @@ public class vessel_info
   public List<Recycler.partial_data> recyclers;       // ..
   public List<Greenhouse.partial_data> greenhouses;   // ..
   public double   time_dilation;      // time dilation effect according to special relativity
-
-
 }
 
 

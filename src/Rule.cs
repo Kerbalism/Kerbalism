@@ -27,7 +27,7 @@ public sealed class Rule
     this.on_pod = Lib.ConfigValue(node, "on_pod", 0.0);
     this.on_eva = Lib.ConfigValue(node, "on_eva", 0.0);
     this.on_resque = Lib.ConfigValue(node, "on_resque", 999.0);
-    this.waste_buffer = Lib.ConfigValue(node, "waste_buffer", 10.0);
+    this.waste_buffer = Lib.ConfigValue(node, "waste_buffer", 1.0);
     this.hidden_waste = Lib.ConfigValue(node, "hidden_waste", false);
     this.massless_waste = Lib.ConfigValue(node, "massless_waste", false);
     this.breakdown = Lib.ConfigValue(node, "breakdown", false);
@@ -111,7 +111,8 @@ public sealed class Rule
         // no messages with no capacity
         if (res.capacity > double.Epsilon)
         {
-          uint variant = crew.Count > 0 ? 0 : 1u; //< manned/probe variant
+          // manned/probe message variant
+          uint variant = crew.Count > 0 ? 0 : 1u;
 
           // manage messages
           if (res.level <= double.Epsilon && vmon.message < 2)
@@ -198,7 +199,7 @@ public sealed class Rule
             // determine amount of resource to consume
             double required = r.rate          // rate per-second or per interval
                             * k               // product of environment modifiers
-                            * step;           // seconds elapsed or by number of steps
+                            * step;           // seconds elapsed or number of steps
 
             // if there is no waste
             if (r.waste_name.Length == 0)

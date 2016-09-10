@@ -80,7 +80,7 @@ public sealed class Monitor
     double low_threshold = 0.15;
     if (Kerbalism.ec_rule != null) low_threshold = Kerbalism.ec_rule.low_threshold;
 
-    if (ec.level <= double.Epsilon) state.image = icon_battery_danger;
+    if (ec.level <= 0.005) state.image = icon_battery_danger;
     else if (ec.level <= low_threshold) state.image = icon_battery_warning;
     return state;
   }
@@ -105,7 +105,7 @@ public sealed class Monitor
             ? ""
             : Lib.BuildString(", deplete in <b>", Lib.HumanReadableDuration(depletion), "</b>");
           tooltips.Add(Lib.BuildString(r.resource_name, ": <b>", Lib.HumanReadablePerc(res.level), "</b>", deplete_str));
-          uint severity = res.level <= double.Epsilon ? 2u : res.level <= r.low_threshold ? 1u : 0;
+          uint severity = res.level <= 0.005 ? 2u : res.level <= r.low_threshold ? 1u : 0;
           max_severity = Math.Max(max_severity, severity);
         }
       }
@@ -140,7 +140,7 @@ public sealed class Monitor
       state.image = icon_malfunction_danger;
       state.tooltip = "Major malfunctions";
     }
-    if (vi.avg_quality > 0.0) state.tooltip += Lib.BuildString("\n<i>Quality: ", Malfunction.QualityToString(vi.avg_quality), "</i>");
+    if (vi.avg_quality > 0.0) state.tooltip += Lib.BuildString("\n<i>Quality: ", Reliability.QualityToString(vi.avg_quality), "</i>");
     return state;
   }
 
@@ -392,7 +392,7 @@ public sealed class Monitor
     GUILayout.Label(new GUIContent(problem_icon, problem_tooltip), icon_style);
     GUILayout.Label(indicator_ec(v), icon_style);
     if (Kerbalism.supply_rules.Count > 0) GUILayout.Label(indicator_supplies(v, vi), icon_style);
-    if (Kerbalism.features.malfunction) GUILayout.Label(indicator_reliability(v, vi), icon_style);
+    if (Kerbalism.features.reliability) GUILayout.Label(indicator_reliability(v, vi), icon_style);
     if (Kerbalism.features.signal) GUILayout.Label(indicator_signal(v, vi), icon_style);
     GUILayout.EndHorizontal();
     if (Lib.IsClicked(1)) Info.Toggle(v);
@@ -447,7 +447,7 @@ public sealed class Monitor
       if (Lib.IsClicked()) vd.cfg_storm = (vd.cfg_storm == 0 ? 1u : 0);
       GUILayout.EndHorizontal();
     }
-    if (Kerbalism.features.malfunction)
+    if (Kerbalism.features.reliability)
     {
       GUILayout.BeginHorizontal(row_style);
       GUILayout.Label(new GUIContent(" RELIABILITY MESSAGES", icon_toggle[vd.cfg_malfunction]), config_style);
@@ -506,7 +506,7 @@ public sealed class Monitor
   public float width()
   {
     return 300.0f
-      - (!Kerbalism.features.malfunction ? 20.0f : 0.0f)
+      - (!Kerbalism.features.reliability ? 20.0f : 0.0f)
       - (!Kerbalism.features.signal ? 20.0f : 0.0f)
       - (Kerbalism.supply_rules.Count == 0 ? 20.0f : 0.0f);
   }
@@ -552,7 +552,7 @@ public sealed class Monitor
       if (Kerbalism.ec_rule != null) ++config_entries;
       if (Kerbalism.supply_rules.Count > 0) ++config_entries;
       if (Kerbalism.features.signal) config_entries += 2u;
-      if (Kerbalism.features.malfunction) config_entries += 2u;
+      if (Kerbalism.features.reliability) config_entries += 2u;
       if (Settings.StormDuration > double.Epsilon) ++config_entries;
       if (filtered()) ++config_entries;
     }

@@ -42,7 +42,7 @@ public sealed class ParticleMesh
       p.y = Lib.FastRandomFloat() * domain_hsize.y + domain_offset.y;
       p.z = Lib.FastRandomFloat() * domain_hsize.z + domain_offset.z;
 
-      // sample signed distance
+      // calculate signed distance
       D = dist_func(p);
 
       // if inside
@@ -63,8 +63,10 @@ public sealed class ParticleMesh
 
   void compile()
   {
+    // max number of particles that can be stored in a unity mesh
     const int max_particles = 64000;
 
+    // create the set of meshes
     meshes = new List<Mesh>(points.Count / max_particles + 1);
     Mesh m;
     List<Vector3> t_points = new List<Vector3>(max_particles);

@@ -65,7 +65,7 @@ public static class QualityOfLife
   // return entertainment on a vessel
   public static double Entertainment(Vessel v)
   {
-    // note: entertainment is only recomputed for active vessel, so this doesn't ever get called for unloaded ones
+    // FIXME: [COMFORT] entertainment is only recomputed for active vessel, so this doesn't ever get called for unloaded ones
 
     // deduce entertainment bonus, multiplying all entertainment factors
     double entertainment = 1.0;
@@ -95,15 +95,20 @@ public static class QualityOfLife
   }
 
 
-  public static double Entertainment(ConnectedLivingSpace.ICLSSpace space)
+  public static double Entertainment(Vessel v, ConnectedLivingSpace.ICLSSpace space)
   {
+    // calculate entertainment for the internal space
+    // note: vessel-wide entertainment parts are considered
     double entertainment = 1.0;
-    foreach(var part in space.Parts)
+    foreach(Entertainment m in v.FindPartModulesImplementing<Entertainment>())
     {
-      foreach(Entertainment m in part.Part.FindModulesImplementing<Entertainment>())
+      if (m.vessel_wide || space.Parts.Find(k => k.Part.flightID == m.part.flightID) != null)
       {
         entertainment *= m.rate;
       }
+    }
+    foreach(var part in space.Parts)
+    {
       foreach(GravityRing m in part.Part.FindModulesImplementing<GravityRing>())
       {
         entertainment *= m.rate;
@@ -116,9 +121,10 @@ public static class QualityOfLife
   // traduce entertainment value to string
   public static string EntertainmentToString(double entertainment)
   {
-    if (entertainment >= 4.5) return "good";
-    else if (entertainment >= 2.5) return "tolerable";
-    else if (entertainment >= 1.25) return "boring";
+    if (entertainment >= 4.0) return "excellent";
+    else if (entertainment >= 3.0) return "good";
+    else if (entertainment >= 2.0) return "tolerable";
+    else if (entertainment > 1.0001) return "boring";
     else return "none";
   }
 }

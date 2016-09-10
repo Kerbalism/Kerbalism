@@ -181,7 +181,7 @@ public sealed class RadiationBody
     // get the radiation environment
     if (!models.TryGetValue(Lib.ConfigValue(node, "radiation_model", ""), out model)) model = RadiationModel.none;
 
-    // get the body, UB if it doesn't exist
+    // get the body
     this.body = body;
   }
 
@@ -194,7 +194,7 @@ public sealed class RadiationBody
   // shortcut to the radiation environment
   public RadiationModel model;
 
-  // shortcut to the body, could be null
+  // shortcut to the body
   public CelestialBody body;
 }
 
@@ -280,7 +280,7 @@ public static class Radiation
       // get radiation data
       RadiationModel mf = pair.Value;
 
-      // skip if type already done
+      // skip if model is already done
       if (done.Contains(mf.name)) continue;
 
       // add to the skip list
@@ -337,7 +337,7 @@ public static class Radiation
     }
     else
     {
-      // galactic rotation
+      // galactic
       gsm.x_axis = new Vector3(1.0f, 0.0f, 0.0f);
       gsm.y_axis = new Vector3(0.0f, 1.0f, 0.0f);
       gsm.z_axis = new Vector3(0.0f, 0.0f, 1.0f);
@@ -556,7 +556,7 @@ public static class Radiation
   }
 
 
-  // return the surface radiation for the body specified
+  // return the surface radiation for the body specified (used by body info panel)
   public static double ComputeSurface(CelestialBody b, double gamma_transparency)
   {
     // store stuff
@@ -656,7 +656,7 @@ public static class Radiation
   }
 
 
-  // show warning message when a vessel crossing a radiation belt
+  // show warning message when a vessel cross a radiation belt
   public static void beltWarnings(Vessel v, vessel_info vi, vessel_data vd)
   {
     // if there is a radiation rule

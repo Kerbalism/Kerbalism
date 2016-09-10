@@ -56,6 +56,13 @@ public sealed class Engine : MonoBehaviour
   }
 
 
+  public static void ResetCache()
+  {
+    instance.cache = new Cache();
+    instance.resource_cache = new ResourceCache();
+  }
+
+
   // called every simulation step
   void FixedUpdate()
   {

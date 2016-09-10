@@ -97,6 +97,21 @@ public sealed class Computer
   }
 
 
+  public void merge(Computer cpu)
+  {
+    foreach(var pair in cpu.files)
+    {
+      // skip device files, and empty files
+      if (pair.Value.device == null && pair.Value.content.Length > 0)
+      {
+        // add the file to this computer, overwrite existing one if necessary
+        if (files.ContainsKey(pair.Key)) files.Remove(pair.Key);
+        files.Add(pair.Key, pair.Value);
+      }
+    }
+  }
+
+
   // call automation scripts and transfer data
   public void update(Vessel environment, double elapsed_s)
   {
@@ -201,7 +216,7 @@ public sealed class Computer
           // science data files are transmitted over time
           else
           {
-            // TODO: send science data file
+            // TODO: [SCIENCE] send science data file
             // remember: subtract amount from file.value until it is zero, then remove the file if reach zero
           }
         }

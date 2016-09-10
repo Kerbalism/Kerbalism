@@ -18,7 +18,7 @@ namespace KERBALISM {
 public static class Lib
 {
   // clamp a value
-  public static double Clamp(double value, double min, double max)
+  public static int Clamp(int value, int min, int max)
   {
     return Math.Max(min, Math.Min(value, max));
   }
@@ -29,10 +29,10 @@ public static class Lib
     return Math.Max(min, Math.Min(value, max));
   }
 
-  // blend between two values
-  public static double Mix(double a, double b, double k)
+  // clamp a value
+  public static double Clamp(double value, double min, double max)
   {
-    return a * (1.0 - k) + b * k;
+    return Math.Max(min, Math.Min(value, max));
   }
 
   // blend between two values
@@ -40,6 +40,14 @@ public static class Lib
   {
     return a * (1.0f - k) + b * k;
   }
+
+  // blend between two values
+  public static double Mix(double a, double b, double k)
+  {
+    return a * (1.0 - k) + b * k;
+  }
+
+
 
   // swap two variables
   public static void Swap<T>(ref T a, ref T b)
@@ -551,13 +559,41 @@ public static class Lib
     #pragma warning restore 618
   }
 
+
+  // return true if the tech tree can be used
+  public static bool TechReady()
+  {
+    return HighLogic.CurrentGame.Mode == Game.Modes.SANDBOX
+        || ResearchAndDevelopment.Instance != null;
+  }
+
+  // return true if the tech has been researched
+  public static bool HasTech(string tech_id)
+  {
+    // if science is disabled, all technologies are considered available
+    if (HighLogic.CurrentGame.Mode == Game.Modes.SANDBOX) return true;
+
+    // if RnD is not initialized
+    if (ResearchAndDevelopment.Instance == null)
+    {
+      // this should not happen, throw exception
+      Log("warning: querying tech '" + tech_id + "' while TechTree is not ready");
+      throw new Exception("querying tech '" + tech_id + "' while TechTree is not ready");
+      //return false;
+    }
+
+    // get the fucking tech
+    return ResearchAndDevelopment.GetTechnologyState(tech_id) == RDTech.State.Available;
+  }
+
   // return number of techs researched among the list specified
-  public static int CountTechs(string[] techs)
+  public static int CountTech(string[] techs)
   {
     int n = 0;
-    foreach(string tech in techs) n += ResearchAndDevelopment.GetTechnologyState(tech) == RDTech.State.Available ? 1 : 0;
+    foreach(string tech_id in techs) n += HasTech(tech_id) ? 1 : 0;
     return n;
   }
+
 
   // write a message to the log
   public static void Log(string msg)
@@ -778,8 +814,8 @@ public static class Lib
       ? target.vessel.mainBody
       : null;
   }
-  
-  
+
+
   // return true if an assembly with specified name is loaded
   public static bool HasAssembly(string name)
   {

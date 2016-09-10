@@ -156,9 +156,10 @@ public sealed class Storm
   // - body: reference body of the planetary system
   static bool body_is_relevant(CelestialBody body)
   {
+    // [disabled]
     // special case: home system is always relevant
     // note: we deal with the case of a planet mod setting homebody as a moon
-    if (body == Lib.PlanetarySystem(FlightGlobals.GetHomeBody())) return true;
+    //if (body == Lib.PlanetarySystem(FlightGlobals.GetHomeBody())) return true;
 
     // for each vessel
     foreach(Vessel v in FlightGlobals.Vessels)

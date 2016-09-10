@@ -184,7 +184,7 @@ public sealed class GravityRing : PartModule
 
 
   // implement gravity ring mechanics for unloaded vessels
-  public static void BackgroundUpdate(Vessel vessel, ProtoPartModuleSnapshot m, GravityRing ring, vessel_resources resources, double elapsed_s)
+  public static void BackgroundUpdate(Vessel vessel, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, GravityRing ring, vessel_resources resources, double elapsed_s)
   {
     // get protomodule data
     float speed = Lib.Proto.GetFloat(m, "speed");
@@ -193,7 +193,7 @@ public sealed class GravityRing : PartModule
     resource_info ec = resources.Info(vessel, "ElectricCharge");
 
     // consume ec
-    ec.Consume(ring.ec_rate * speed * elapsed_s);
+    ec.Consume(ring.ec_rate * speed * elapsed_s * Reliability.Penalty(p, "GravityRing", 2.0));
 
     // reset speed if there isn't enough ec
     // note: comparing against amount in previous simulation step

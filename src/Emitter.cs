@@ -129,7 +129,7 @@ public sealed class Emitter : PartModule
   }
 
 
-  public static void BackgroundUpdate(Vessel vessel, ProtoPartModuleSnapshot m, Emitter emitter, resource_info ec, double elapsed_s)
+  public static void BackgroundUpdate(Vessel vessel, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, Emitter emitter, resource_info ec, double elapsed_s)
   {
     // if there is enough EC
     // note: comparing against amount in previous simulation step
@@ -139,7 +139,7 @@ public sealed class Emitter : PartModule
       double intensity = Lib.Proto.GetDouble(m, "intensity");
 
       // consume EC
-      ec.Consume(emitter.ec_rate * intensity * elapsed_s);
+      ec.Consume(emitter.ec_rate * intensity * elapsed_s * Reliability.Penalty(p, "Emitter", 2.0));
     }
     // else disable it
     else

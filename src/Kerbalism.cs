@@ -30,13 +30,14 @@ public sealed class Kerbalism : MonoBehaviour
     public bool BackgroundProcessing;
     public bool RealFuels;
     public bool DeepFreeze;
+    public bool TestFlight;
   }
 
   // features to enable or disable
   public class Features
   {
     public bool signal;
-    public bool malfunction;
+    public bool reliability;
     public bool scrubber;
     public bool shielding;
   }
@@ -116,6 +117,7 @@ public sealed class Kerbalism : MonoBehaviour
     detected_mods.BackgroundProcessing = Lib.ConfigValue(mods, "BackgroundProcessing", false);
     detected_mods.RealFuels = Lib.ConfigValue(mods, "RealFuels", false);
     detected_mods.DeepFreeze = Lib.ConfigValue(mods, "DeepFreeze", false);
+    detected_mods.TestFlight = Lib.ConfigValue(mods, "TestFlight", false);
     Lib.Log("detected:");
     Lib.Log("- ModuleManager: " + detected_mods.ModuleManager);
     Lib.Log("- SCANsat: " + detected_mods.SCANsat);
@@ -128,16 +130,17 @@ public sealed class Kerbalism : MonoBehaviour
     Lib.Log("- BackgroundProcessing: " + detected_mods.BackgroundProcessing);
     Lib.Log("- RealFuels: " + detected_mods.RealFuels);
     Lib.Log("- DeepFreeze: " + detected_mods.DeepFreeze);
+    Lib.Log("- TestFlight: " + detected_mods.TestFlight);
 
     // determine features
     var f_cfg = Lib.ParseConfig("Kerbalism/Patches/System/Features");
     features.signal = Lib.ConfigValue(f_cfg, "signal", false);
-    features.malfunction = Lib.ConfigValue(f_cfg, "malfunction", false);
+    features.reliability = Lib.ConfigValue(f_cfg, "reliability", false);
     features.scrubber = Lib.ConfigValue(f_cfg, "scrubber", false);
     features.shielding = Lib.ConfigValue(f_cfg, "shielding", false);
     Lib.Log("features:");
     Lib.Log("- signal: " + features.signal);
-    Lib.Log("- malfunction: " + features.malfunction);
+    Lib.Log("- reliability: " + features.reliability);
     Lib.Log("- scrubber: " + features.scrubber);
     Lib.Log("- shielding: " + features.shielding);
 
@@ -347,6 +350,11 @@ public sealed class Kerbalism : MonoBehaviour
       data.to.RequestResource(r.resource_name, -leftover);
     }
 
+    // merge EVA computer files into vessel
+    Computer a = DB.VesselData(data.from.vessel.id).computer;
+    Computer b = DB.VesselData(data.to.vessel.id).computer;
+    b.merge(a);
+
     // forget vessel data
     DB.ForgetVessel(data.from.vessel.id);
 
@@ -386,7 +394,7 @@ public sealed class Kerbalism : MonoBehaviour
       DB.ForgetKerbal(c.name);
     }
 
-    // TODO: add science data from recovered vessel
+    // TODO: [SCIENCE] add science data from recovered vessel
     // beware of double calls to this function
 
     // forget vessel data
@@ -438,10 +446,17 @@ public sealed class Kerbalism : MonoBehaviour
 
   void vesselDock(GameEvents.FromToAction<Part, Part> e)
   {
-    // TODO: merge computer data from vessel A to vessel B on docking
+    // this need to happen when db is in a valid state
+    if (DB.Ready())
+    {
+      // merge computer data from vessel A to vessel B on docking
+      Computer a = DB.VesselData(e.from.vessel.id).computer;
+      Computer b = DB.VesselData(e.to.vessel.id).computer;
+      b.merge(a);
 
-    // forget vessel being docked
-    if (DB.Ready()) DB.ForgetVessel(e.from.vessel.id);
+      // forget vessel being docked
+      DB.ForgetVessel(e.from.vessel.id);
+    }
 
     // purge vessel from resource cache
     ResourceCache.Purge(e.from.vessel.id);
@@ -467,7 +482,7 @@ public sealed class Kerbalism : MonoBehaviour
     {
       Message.Post(Lib.BuildString(title, "We have access to more efficient <b>CO2 scrubbers</b> and <b>recyclers</b> now"), "Our research efforts are paying off, after all");
     }
-    if (features.malfunction && Array.IndexOf(Malfunction.manufacturing_quality.techs, data.host.techID) >= 0)
+    if (features.reliability && Array.IndexOf(Reliability.manufacturing_quality.techs, data.host.techID) >= 0)
     {
       Message.Post(Lib.BuildString(title, "Advances in material science have led to improved <b>manufacturing quality</b>"), "New components will last longer in extreme environments");
     }
@@ -489,7 +504,7 @@ public sealed class Kerbalism : MonoBehaviour
     {
       if (features.scrubber && Scrubber.scrubber_efficiency.techs.IndexOf(techID) >= 0)
         rnd.node_description.text += "\n\n<color=cyan>Improve scrubbers and recyclers efficiency</color>";
-      if (features.malfunction && Malfunction.manufacturing_quality.techs.IndexOf(techID) >= 0)
+      if (features.reliability && Reliability.manufacturing_quality.techs.IndexOf(techID) >= 0)
         rnd.node_description.text += "\n\n<color=cyan>Improve manufacturing quality</color>";
       if (features.signal && Signal.signal_processing.techs.IndexOf(techID) >= 0)
         rnd.node_description.text += "\n\n<color=cyan>Improve signal processing</color>";
@@ -622,7 +637,7 @@ public sealed class Kerbalism : MonoBehaviour
       foreach(var space in cls.Vessel.Spaces)
       {
         double living_space = QualityOfLife.LivingSpace(space);
-        double entertainment = QualityOfLife.Entertainment(space);
+        double entertainment = QualityOfLife.Entertainment(v, space);
         double shielding = Radiation.Shielding(space);
 
         foreach(var c in space.Crew)
@@ -801,7 +816,7 @@ public sealed class Kerbalism : MonoBehaviour
     events.Add(KerbalBreakdown.mumbling); //< do nothing, here so there is always something that can happen
     if (Lib.CrewCount(v) > 1) events.Add(KerbalBreakdown.argument); //< do nothing, add some variation to messages
     if (Lib.HasData(v)) events.Add(KerbalBreakdown.fat_finger);
-    if (Malfunction.CanMalfunction(v)) events.Add(KerbalBreakdown.rage);
+    if (Reliability.CanMalfunction(v)) events.Add(KerbalBreakdown.rage);
     if (supply != null && res.amount > double.Epsilon)
     {
       events.Add(KerbalBreakdown.depressed);
@@ -833,7 +848,7 @@ public sealed class Kerbalism : MonoBehaviour
       case KerbalBreakdown.mumbling: break; // do nothing
       case KerbalBreakdown.argument: break; // do nothing
       case KerbalBreakdown.fat_finger: Lib.RemoveData(v); break;
-      case KerbalBreakdown.rage: Malfunction.CauseMalfunction(v); break;
+      case KerbalBreakdown.rage: Reliability.CauseMalfunction(v); break;
       case KerbalBreakdown.depressed:
       case KerbalBreakdown.wrong_valve: res.Consume(res.amount * res_penalty); break;
     }
@@ -1018,7 +1033,7 @@ public sealed class Kerbalism : MonoBehaviour
   // hook: Malfunctioned()
   public static bool hook_Malfunctioned(Part part)
   {
-    foreach(var m in part.FindModulesImplementing<Malfunction>())
+    foreach(var m in part.FindModulesImplementing<Reliability>())
     {
       if (m.malfunctions > 0) return true;
     }
@@ -1028,7 +1043,7 @@ public sealed class Kerbalism : MonoBehaviour
   // hook: Repair()
   public static void hook_Repair(Part part)
   {
-    foreach(var m in part.FindModulesImplementing<Malfunction>())
+    foreach(var m in part.FindModulesImplementing<Reliability>())
     {
       m.Repair();
     }

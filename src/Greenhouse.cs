@@ -260,7 +260,7 @@ public sealed class Greenhouse : PartModule
   }
 
   // implement greenhouse mechanics for unloaded vessels
-  public static void BackgroundUpdate(Vessel vessel, ProtoPartModuleSnapshot m, Greenhouse greenhouse, vessel_info info, vessel_resources resources, double elapsed_s)
+  public static void BackgroundUpdate(Vessel vessel, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, Greenhouse greenhouse, vessel_info info, vessel_resources resources, double elapsed_s)
   {
     // get protomodule data
     bool door_opened = Lib.Proto.GetBool(m, "door_opened");
@@ -275,7 +275,7 @@ public sealed class Greenhouse : PartModule
       resource_info ec = resources.Info(vessel, "ElectricCharge");
 
       // consume ec
-      ec.Consume(greenhouse.ec_rate * lamps * elapsed_s);
+      ec.Consume(greenhouse.ec_rate * lamps * elapsed_s * Reliability.Penalty(p, "Greenhouse", 2.0));
 
       // shut down the light if there isn't enough ec
       // note: comparing against amount at previous simulation step

@@ -93,7 +93,7 @@ public sealed class Scrubber : PartModule
   {
     return Lib.BuildString
     (
-      Lib.Specifics(Lib.BuildString("Sequester ", waste_name, " from the cabin atmosphere and use solid oxide electrolysis to produce ", resource_name, ".")),
+      Lib.Specifics(Lib.BuildString("Sequester ", waste_name, " from the cabin atmosphere and use solid oxide electrolysis to produce ", resource_name, " out of it.")),
       Lib.Specifics(true, "ElectricCharge", Lib.HumanReadableRate(ec_rate)),
       Lib.Specifics(true, resource_name, Lib.HumanReadableRate(co2_rate * co2_ratio)),
       Lib.Specifics(true, waste_name, Lib.HumanReadableRate(co2_rate))
@@ -107,13 +107,11 @@ public sealed class Scrubber : PartModule
     // do nothing in the editor
     if (HighLogic.LoadedSceneIsEditor) return;
 
-    // deduce quality from technological level if necessary
-    // note: done at prelaunch to avoid problems with start()/load() and the tech tree being not consistent
-    if (vessel.situation == Vessel.Situations.PRELAUNCH) efficiency = DeduceEfficiency();
+    // do nothing until tech tree is ready
+    if (!Lib.TechReady()) return;
 
-    // if for some reason efficiency wasn't set, default to 50%
-    // note: for example, resque vessels never get to prelaunch
-    if (efficiency <= double.Epsilon) efficiency = 0.5;
+    // deduce quality from technological level if necessary
+    if (efficiency <= double.Epsilon) efficiency = DeduceEfficiency();
 
     // get vessel info from the cache
     vessel_info vi = Cache.VesselInfo(vessel);
@@ -187,7 +185,7 @@ public sealed class Scrubber : PartModule
   public static double DeduceEfficiency()
   {
     double[] value = {0.5, 0.6, 0.7, 0.8, 0.9};
-    return value[Lib.CountTechs(scrubber_efficiency.techs)];
+    return value[Lib.CountTech(scrubber_efficiency.techs)];
   }
 
 

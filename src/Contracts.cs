@@ -223,8 +223,8 @@ public sealed class KerbalismSpaceHarvest : Contract
     if (!meet_requirements)
     {
       meet_requirements =
-        PartLoader.getPartInfoByName("Greenhouse") != null // greenhouse part is present
-        && Lib.CountTechs(new []{"scienceTech"}) > 0 // greenhouse unlocked
+        PartLoader.getPartInfoByName("Greenhouse") != null  // greenhouse part is present
+        && Lib.TechReady() && Lib.HasTech("scienceTech")    // greenhouse unlocked
         && DB.Ready() && DB.Landmarks().space_harvest == 0; // greenhouse never harvested in space before
     }
     return meet_requirements;
