@@ -1,19 +1,177 @@
 #CHANGELOG
 
+1.1.5
+  * this is a summary of the changes
+  Rule framework
+    - multiple profiles can cohexist in the same installation, only one is enabled from user settings
+    - Process: vessel-wide resource consumer/producers driven by modifiers
+    - split Supply out of Rule, for additional flexibility
+    - can use resource amount as a modifier
+    - many new modifiers, to leverage the information provided by habitat
+  Features framework
+    - user specified features are set by a flag in settings
+    - other features are detected automatically from the modifiers used in the active profile
+    - inject MM patches during loading screen, before MM is executed
+    - third parties can check for specific features or profiles by using NEEDS[]
+    - parts are enabled/disabled automatically depending on features used
+  Resource cache
+    - new 'exact, order-agnostic' algorithm for consumption/production chains at arbitrary timesteps
+    - consider interval-based outputs in depletion estimates
+  Configure
+    - new module Configure: can select between setups in the VAB or in flight
+    - setups can specify resources and/or modules
+    - setups can include extra cost and mass
+    - setups can be unlocked with technologies
+    - configuration UI, that show info on modules and resources for a setup
+  Habitat
+    - new module Habitat: replace CLS internal spaces
+    - used to calculate internal volume in m^3, and surface in m^2
+    - can be disabled/enabled even in flight to configure the internal space as required
+    - support inflatable habitats
+    - can be pressurized/depressurized
+    - can keep track of level of CO2 in the internal atmosphere
+    - can be added to parts with no crew capacity
+  Greenhouse
+    - improved module: Greenhouse
+    - lamps intensity is determined automatically, and is expressed in W/m^2
+    - can have radiation and pressure thresholds for growth
+    - can require an arbitrary set of input resources
+    - can produce an arbitrary set of by-product resources
+    - growth will degenerate if lighting/radiation/pressure conditions aren't met
+  ISRU
+    - planetary resource definitions based on real data
+    - new module Harvester: for crustal/atmospheric resource extraction, use abundance/pressure thresholds
+  Wet workshops
+    - some stock tanks can now be configured as either fuel tanks or habitats, even in flight
+  QualityOfLife
+    - new module Comfort: replace Entertainment and provide a specific bonus, added to some stock parts
+    - modified module GravityRing: now provide firm-ground bonus
+    - living space is calculated from volume per-capita
+  Radiation
+    - shielding required is now determined by habitat surface, and map to millimeters of Pb
+    - rtg emit a small amount of radiation
+  Planner
+    - single page layout, with panel selection
+    - show consumers/producers of a resource in tooltip
+    - improved/redesigned most panels
+    - redundancy analysis for Reliability panel
+  Reliability
+    - improved subsystem: Reliability
+    - support arbitrary third party modules
+    - components are now disabled when they fail
+    - two types of failures: malfunctions (can be repaired) and critical failures (can't be repaired)
+    - safemode: there is a chance of remote repairs for unmanned vessels
+    - components can be assigned to redundancy groups
+    - an optional redundancy incentive is provided: when a component fail, all others in the same redundancy group delay their next failure
+    - removed 'manufacturing quality'
+    - can select quality per-component in the vab, high quality means higher cost and/or mass but longer MTBF
+  Signal
+    - improved: focus on data transmission rates and differences between low-gain and high-gain antennas
+    - high-gain antennas: can communicate only with DSN
+    - low-gain antennas: can communicate with DSN and with other vessels
+    - low-gain antennas: can be flagged as 'relay' to receive data from other vessels
+    - can choose what level of control to lose without a connection:
+      . 'none' (lose all control),
+      . 'limited' (same as CommNet limited control) and
+      . 'full' (only disable data transmission)
+    - easy parameters for antenna definitions
+    - simple data rate attenuation model
+    - render data transmission particles during data transmission
+    - disable CommNet automatically when enabled
+    - connection status is obtained by CommNet or RemoteTech when signal is disabled
+    - new signal panel in vessel info window, show data rates, destination and file being transmitted
+  Science
+    - new subsystem: Science, improve on data storage, transmission and analysis
+    - transmit data over time, even in background
+    - analyze data over time, even in background
+    - the background data transmission work with Signal, CommNet or RemoteTech.
+    - new module: HardDrive, replace stock data container, can flag files for transmission and lab analysis
+    - new module: Laboratory, can analyze samples and produce transmissible data
+    - work with all science experiment modules, both stock and third-party, by hijacking the science result dialog
+    - data storage: can store multiple results of same experiment type, can transfer to other parts without requiring EVA
+    - data storage: can still be stored on EVA kerbals, and EVA kerbals can take/store data from/to pods
+    - data UI: show files and samples per-vessel, can flag for transmission or analysis, can delete files or samples
+    - properly credit the science over time
+    - do not break science collection contracts
+  Automation
+    - removed the Console and command interpreter
+    - new scripting system: not text-based anymore
+    - new component control and script editing UI
+    - script editor UI highlight parts for ease of use
+  Misc
+    - ported to KSP 1.2.1
+    - consistent part naming scheme
+    - rebalanced mass/cost of all parts
+    - improved part descriptions
+    - do not change stock EC producers/consumers anymore
+    - adapted all support patches, removed the ones not necessary anymore
+    - shaders are loaded from asset bundle
+    - removed workarounds for old SCANsat versions
+    - some Settings added, others removed
+    - action group support for all modules
+    - properly support multiple modules of the same type in the same part
+    - optimized how animations in modules are managed
+    - can optionally use the stock message system instead of our own
+    - can optionally simulate the effect of tracking pivots on solar panels orientability
+    - removed helmet handling for EVA kerbals
+    - doesn't require CRP anymore, but it will still work along it
+    - improved how crew requirements are specified in modules
+    - show limited body info window when Sun is selected, instead of nothing
+    - new contract: analyze sample in space
+    - new contract: cross the heliopause
+    - rebalanced ec consumers/producers
+    - show tooltips in vessel info
+    - use common style for all part info tooltips
+    - AtomicAge engines emit radiation (ThePsion5)
+    - more love for VenStockRevamp patch (YaarPodshipnik)
+  Profile: 'Default'
+    - rewritten from scratch
+    - balanced consumption rates from real data
+    - balanced container capacity from real data
+    - water
+    - co2 poisoning
+    - pressurization: influence quality of life
+    - configurable ECLSS in pods: scrubber, water recycler, pressure control, waste processing
+    - configurable supply containers: can store Food, Water, Waste
+    - configurable pressurized tanks: can store Oxygen, Nitrogen, Hydrogen, Ammonia
+    - greenhouse: require Ammonia and Water, produce Oxygen and WasteWater as by-product, need to be pressurized, has radiation threshold
+    - stock ISRU plants can be configured with one among a set of reality-inspired chemical processes
+    - stock drills can be configured with a specific resource harvester
+    - stock atmo experiment is also used as configurable atmospheric harvester
+    - stock fuel cells act like real fuel cells
+    - new part: Chemical Plant, can execute reality-inspired chemical processes, unlocked early in the tech tree
+  Profile: 'Classic'
+    - this profile mimick the old default profile, without the new stuff
+  Profile: 'None'
+    - choose this if you want to play with third-party life support mods
+  Bugs fixed
+    - fix: nasty problem with interaction between cache and analytical sunlight estimation
+    - fix: radiation body definitions were not loaded in some cases
+    - fix: planner, stock laboratory EC consumption wasn't considered
+    - fix: planner, solar panel flux estimation was considering atmo factor even in space
+    - fix: planner, correctly skip disabled modules
+    - fix: spurious signal loss message when undocking
+    - fix: maintain notes and scripts even after docking/undocking
+    - fix: highlighting of malfunction components in pods
+    - fix: in monitor UI signal icon, show all relays in the chain
+    - fix: bug with killing eva kerbals while iterating the list of crew
+    - fix: exception when loading dead eva kerbals
+    - fix: module index mismatch when loading dead eva kerbals
+
 1.1.4
   - replaced Malfunction with Reliability module
-    - support multiple reliability modules per-part and per-component    
+    - support multiple reliability modules per-part and per-component
     - RCS, Greenhouse, GravityRing and ActiveShield can malfunction
     - Antennas can't malfunction anymore
     - can specify trait and experience level required for repair
     - disabled automatically if TestFlight is detected
   - new module PlannerController: permit to include or exclude part modules
     from the planner calculations using a toggle in right-click UI in the VAB
-  - entertainment modules can be configured to ignore internal space  
+  - entertainment modules can be configured to ignore internal space
   - add some Entertainment to Ven Stock Revamp small inflatable hab (YaarPodshipnik)
   - SurfaceExperimentPackage science tweaks patch (YaarPodshipnik)
   - telemetry experiment is added coherently to all probes (YaarPodshipnik)
-  - geiger counter science definitions for NewHorizon (BashGordon33)    
+  - geiger counter science definitions for NewHorizon (BashGordon33)
   - entertainment added to Space Station Part Expansion cupolas and habitats
   - some KIS items provide a small amount of entertainment
   - fix: solar panel malfunctions were not applied in loaded vessels
@@ -33,11 +191,11 @@
   - added a very small radial oxygen container unlocked at survivability
   - added RadiationOnly and StressOnly profiles
   - updated CLS interface dll
-  - balance: food capacity reduced by 50% in 0.625m food container
-  - balance: oxygen capacity reduced by 75% in big radial oxygen container  
+  - balancl: food capacity reduced by 50% in 0.625m food container
+  - balance: oxygen capacity reduced by 75% in big radial oxygen container
   - balance: rearrange US goo/matlab in the tech tree for consistency
-  - balance: tweak US supply containers capacity  
-  - balance: active shield moved to experimental science, made more powerful  
+  - balance: tweak US supply containers capacity
+  - balance: active shield moved to experimental science, made more powerful
   - fix: body info panel will not break when sun is selected
 
 1.1.1
@@ -47,11 +205,11 @@
   - lights consume ec in background and are considered in planner
   - support: KerbalAtomics engines radiation patch by TheSaint
   - support: NewHorizons radiation definitions patch by BashGordon33
-  - support: SampleReturnCapsule antenna patch  
+  - support: SampleReturnCapsule antenna patch
   - support: SurfaceLights in planner and background simulation
   - balance: reduced Vall/Io surface radiation
   - balance: (realism profile) less co2 capacity in pods
-  - balance: (realism profile) kerbals eat twice per-day  
+  - balance: (realism profile) kerbals eat twice per-day
   - fix: crossing belt contract condition & warnings
   - fix: hiding the GUI will not show any window
   - fix: EVA headlight not working without a profile
@@ -364,5 +522,4 @@
 
 0.9.9.0
   First public release
-
 

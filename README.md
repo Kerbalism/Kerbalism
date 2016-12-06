@@ -8,6 +8,8 @@
                               Hundreds of Kerbals were killed in the making of this mod.
 =======================================================================================================================
 
+NOTE: this readme is obsolete, stand-by for an updated one.
+
 
 #INTRODUCTION
 
@@ -114,8 +116,8 @@
   of the crew as well as how long will the vessel electric charge last in shadow or sunlight, and much more.
   The estimates are relative to a target body and situation, that can be changed. It support pods, solar
   panels, generators, fuel cells, radiators, wheels, drills, ISRU and SCANsat in addition to all mod mechanics.
-  
-  
+
+
 #AUTOMATION
 
   Every vessel has a computer, and a console is provided to execute commands remotely on the vessel. It is
