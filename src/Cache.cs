@@ -1,0 +1,224 @@
+﻿using System;
+using System.Collections.Generic;
+using UnityEngine;
+
+
+namespace KERBALISM {
+
+
+public sealed class vessel_info
+{
+  public vessel_info(Vessel v, uint vessel_id, UInt64 inc)
+  {
+    // NOTE: anything used here can't in turn use cache, unless you know what you are doing
+
+    // associate with an unique incremental id
+    this.inc = inc;
+
+    // determine if this is a valid vessel
+    is_vessel = Lib.IsVessel(v);
+    if (!is_vessel) return;
+
+    // determine if this is a resque mission vessel
+    is_resque = Misc.IsResqueMission(v);
+    if (is_resque) return;
+
+    // dead EVA are not valid vessels
+    if (EVA.IsDead(v)) return;
+
+    // shortcut for common tests
+    is_valid = true;
+
+    // generate id once
+    id = vessel_id;
+
+    // calculate crew info for the vessel
+    crew_count = Lib.CrewCount(v);
+    crew_capacity = Lib.CrewCapacity(v);
+
+    // get vessel position once
+    position = Lib.VesselPosition(v);
+
+    // determine if in sunlight, calculate sun direction and distance
+    sunlight = Sim.RaytraceBody(v, position, FlightGlobals.Bodies[0], out sun_dir, out sun_dist) ? 1.0 : 0.0;
+
+    // at the two highest timewarp speed, the number of sun visibility samples drop to the point that
+    // the quantization error first became noticeable, and then exceed 100%
+    // to solve this, we switch to an analytical estimation of the portion of orbit that was in sunlight
+    if (v.mainBody.flightGlobalsIndex != 0 && TimeWarp.CurrentRateIndex >= 6)
+    {
+      sunlight = 1.0 - Sim.ShadowPeriod(v) / Sim.OrbitalPeriod(v);
+    }
+
+    // calculate environment stuff
+    atmo_factor = Sim.AtmosphereFactor(v.mainBody, position, sun_dir);
+    gamma_transparency = Sim.GammaTransparency(v.mainBody, v.altitude);
+    underwater = Sim.Underwater(v);
+    breathable = Sim.Breathable(v, underwater);
+    landed = Lib.Landed(v);
+
+    // calculate temperature at vessel position
+    temperature = Sim.Temperature(v, position, sunlight, atmo_factor, out solar_flux, out albedo_flux, out body_flux, out total_flux);
+    temp_diff = Sim.TempDiff(temperature, v.mainBody, landed);
+
+    // calculate radiation
+    radiation = Radiation.Compute(v, position, gamma_transparency, sunlight, out blackout, out inside_pause, out inside_belt);
+
+    // calculate malfunction stuff
+    malfunction = Reliability.HasMalfunction(v);
+    critical = Reliability.HasCriticalFailure(v);
+
+    // calculate signal info
+    antenna = new AntennaInfo(v);
+    avoid_inf_recursion.Add(v.id);
+    connection = Signal.connection(v, position, antenna, blackout, avoid_inf_recursion);
+    transmitting = Science.transmitting(v, connection.linked);
+    relaying = Signal.relaying(v, avoid_inf_recursion);
+    avoid_inf_recursion.Remove(v.id);
+
+    // habitat data
+    volume = Habitat.tot_volume(v);
+    surface = Habitat.tot_surface(v);
+    pressure = Habitat.pressure(v);
+    poisoning = Habitat.poisoning(v);
+    shielding = Habitat.shielding(v);
+    living_space = Habitat.living_space(v);
+    comforts = new Comforts(v, landed, crew_count > 1, connection.linked);
+
+    // get some data about greenhouses
+    greenhouses = Greenhouse.Greenhouses(v);
+  }
+
+
+  public UInt64       inc;                  // unique incremental id for the entry
+  public bool         is_vessel;            // true if this is a valid vessel
+  public bool         is_resque;            // true if this is a resque mission vessel
+  public bool         is_valid;             // equivalent to (is_vessel && !is_resque && !eva_dead)
+  public UInt32       id;                   // generate the id once
+  public int          crew_count;           // number of crew on the vessel
+  public int          crew_capacity;        // crew capacity of the vessel
+  public Vector3d     position;             // vessel position
+  public double       sunlight;             // if the vessel is in direct sunlight
+  public Vector3d     sun_dir;              // normalized vector from vessel to sun
+  public double       sun_dist;             // distance from vessel to sun
+  public double       solar_flux;           // solar flux at vessel position
+  public double       albedo_flux;          // solar flux reflected from the nearest body
+  public double       body_flux;            // infrared radiative flux from the nearest body
+  public double       total_flux;           // total flux at vessel position
+  public double       temperature;          // vessel temperature
+  public double       temp_diff;            // difference between external and survival temperature
+  public double       radiation;            // environment radiation at vessel position
+  public bool         inside_pause;         // true if vessel is inside a magnetopause (except the heliosphere)
+  public bool         inside_belt;          // true if vessel is inside a radiation belt
+  public bool         blackout;             // true if the vessel is inside a magnetopause (except the sun) and under storm
+  public double       atmo_factor;          // proportion of flux not blocked by atmosphere
+  public double       gamma_transparency;   // proportion of ionizing radiation not blocked by atmosphere
+  public bool         underwater;           // true if inside ocean
+  public bool         breathable;           // true if inside breathable atmosphere
+  public bool         landed;               // true if on the surface of a body
+  public bool         malfunction;          // true if at least a component has malfunctioned or had a critical failure
+  public bool         critical;             // true if at least a component had a critical failure
+  public AntennaInfo  antenna;              // antenna info
+  public ConnectionInfo connection;         // connection info
+  public string       transmitting;         // name of file being transmitted, or empty
+  public string       relaying;             // name of file being relayed, or empty
+  public double       volume;               // enabled volume in m^3
+  public double       surface;              // enabled surface in m^2
+  public double       pressure;             // normalized pressure
+  public double       poisoning;            // waste atmosphere amount versus total atmosphere amount
+  public double       shielding;            // shielding level
+  public double       living_space;         // living space factor
+  public Comforts     comforts;             // comfort info
+  public List<Greenhouse.data> greenhouses; // some data about greenhouses
+
+  // used to avoid infinite recursion while calculating connection info
+  static HashSet<Guid> avoid_inf_recursion = new HashSet<Guid>();
+}
+
+
+public static class Cache
+{
+  public static void init()
+  {
+    vessels = new Dictionary<uint, vessel_info>();
+    next_inc = 0;
+  }
+
+
+  public static void clear()
+  {
+    vessels.Clear();
+    next_inc = 0;
+  }
+
+
+  public static void update()
+  {
+    // purge the oldest entry from the vessel cache
+    UInt64 oldest_inc = UInt64.MaxValue;
+    UInt32 oldest_id = 0;
+    foreach(KeyValuePair<UInt32, vessel_info> pair in vessels)
+    {
+      if (pair.Value.inc < oldest_inc)
+      {
+        oldest_inc = pair.Value.inc;
+        oldest_id = pair.Key;
+      }
+    }
+    if (oldest_id > 0) vessels.Remove(oldest_id);
+  }
+
+
+  public static vessel_info VesselInfo(Vessel v)
+  {
+    // get vessel id
+    UInt32 id = Lib.VesselID(v);
+
+    // get the info from the cache, if it exist
+    vessel_info info;
+    if (vessels.TryGetValue(id, out info)) return info;
+
+    // compute vessel info
+    info = new vessel_info(v, id, next_inc++);
+
+    // store vessel info in the cache
+    vessels.Add(id, info);
+
+    // return the vessel info
+    return info;
+  }
+
+
+  // return cached information if it exist, else compute new information but doesn't cache it
+  // - this is used to solve the following case:
+  //   . vessel A is directly linked
+  //   . vessel B is indirectly linked through A
+  //   . cache is cleared (after scene change)
+  //   . cache of A is computed
+  //   . in turn, cache of B is computed ignoring A (and stored)
+  //   . until cache of B is re-computed, B will result incorrectly not linked
+  // - that we solve in this way:
+  //   . cache of A is computed
+  //   . in turn, cache of B is computed ignoring A (but not stored)
+  //   . cache of B is then computed correctly
+  public static vessel_info SpeculativeVesselInfo(Vessel v)
+  {
+    // get vessel id
+    UInt32 id = Lib.VesselID(v);
+
+    // get the info from the cache, if it exist
+    // if it doesn't, create and return it without storing it
+    vessel_info info;
+    return vessels.TryGetValue(id, out info) ? info : new vessel_info(v, id, 0);
+  }
+
+
+  // vessel cache
+  static Dictionary<UInt32, vessel_info> vessels;
+
+  // used to generate unique id
+  static UInt64 next_inc;
+}
+
+
+} // KERBALISM
