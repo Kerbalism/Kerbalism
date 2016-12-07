@@ -102,7 +102,11 @@ public sealed class FileManager : Window
     GUILayout.BeginHorizontal(Styles.entry_container);
 
     // render experiment name
-    string exp_label = Lib.Ellipsis(Science.experiment_name(filename), 24).ToUpper();
+    string exp_label = Lib.BuildString
+    (
+      "<b>", Lib.Ellipsis(Science.experiment_name(filename), 20), "</b> ",
+      "<size=10>", Lib.Ellipsis(Science.experiment_situation(filename), 20), "</size>"
+    );
     string exp_tooltip = Science.experiment_fullname(filename);
     double exp_value = Science.experiment_value(filename, file.size);
     if (exp_value > double.Epsilon) exp_tooltip = Lib.BuildString(exp_tooltip, "\n<b>", Lib.HumanReadableScience(exp_value), "</b>");
@@ -139,7 +143,11 @@ public sealed class FileManager : Window
     GUILayout.BeginHorizontal(Styles.entry_container);
 
     // render experiment name
-    string exp_label = Lib.Ellipsis(Science.experiment_name(filename), 24).ToUpper();
+    string exp_label = Lib.BuildString
+    (
+      "<b>", Lib.Ellipsis(Science.experiment_name(filename), 20), "</b> ",
+      "<size=10>", Lib.Ellipsis(Science.experiment_situation(filename), 20), "</size>"
+    );
     string exp_tooltip = Science.experiment_fullname(filename);
     double exp_value = Science.experiment_value(filename, sample.size);
     if (exp_value > double.Epsilon) exp_tooltip = Lib.BuildString(exp_tooltip, "\n<b>", Lib.HumanReadableScience(exp_value), "</b>");
