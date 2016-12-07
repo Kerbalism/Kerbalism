@@ -202,7 +202,7 @@ public sealed class Laboratory : PartModule, ISpecifics
     amount = Math.Min(amount, sample.size);
     bool completed = amount >= sample.size - double.Epsilon;
     drive.delete_sample(filename, amount);
-    drive.record_file(filename, amount);
+    drive.record_file(filename, amount, Science.experiment_size(filename));
 
     // if the analysis is completed
     if (completed)
