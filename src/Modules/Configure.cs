@@ -42,7 +42,7 @@ public sealed class Configure : PartModule, IPartCostModifier, IPartMassModifier
   CrewSpecs            reconfigure_cs;                      // in-flight reconfiguration crew specs
 
   // used to avoid infinite recursion when dealing with symmetry group
-  static List<Configure> avoid_inf_recursion = new List<Configure>();
+  static bool avoid_inf_recursion;
 
 
   public override void OnStart(StartState state)
@@ -224,29 +224,27 @@ public sealed class Configure : PartModule, IPartCostModifier, IPartMassModifier
 
     // in the editor
     if (Lib.IsEditor())
-    {
+    {   
       // for each part in the symmetry group (avoid infinite recursion)
-      avoid_inf_recursion.Add(this);
-      foreach(Part p in part.symmetryCounterparts)
+      if (!avoid_inf_recursion)
       {
-        // get the Configure module
-        Configure c = p.FindModulesImplementing<Configure>().Find(k => k.title == title);
-        if (!avoid_inf_recursion.Contains(c))
+        avoid_inf_recursion = true;
+        foreach(Part p in part.symmetryCounterparts)
         {
+          // get the Configure module
+          Configure c = p.FindModulesImplementing<Configure>().Find(k => k.title == title);
+
           // both modules will share configuration
           c.selected = selected;
-
+  
           // both modules will use the same window
           c.window = window;
-
+  
           // re-configure the other module
           c.configure();
-
-          // refresh the other part ui
-          MonoUtilities.RefreshContextWindows(p);
         }
+        avoid_inf_recursion = false;
       }
-      avoid_inf_recursion.Remove(this);
     }
 
     // refresh this part ui
