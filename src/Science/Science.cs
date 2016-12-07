@@ -126,6 +126,21 @@ public static class Science
     var experiment = ResearchAndDevelopment.GetExperiment(Lib.Tokenize(subject_id, '@')[0]);
     return experiment.experimentTitle;
   }
+  
+  // get experiment situation, without name
+  public static string experiment_situation(string subject_id)
+  {
+    // subject will be null in sandbox, we default to nothing in that case
+    if (HighLogic.CurrentGame.Mode == Game.Modes.SANDBOX) return string.Empty;    
+    string title = ResearchAndDevelopment.GetSubjectByID(subject_id).title;
+    int i = title.IndexOf(" from ", StringComparison.OrdinalIgnoreCase) + 6;
+    if (i < 6)
+    {
+      i = title.IndexOf(" while ", StringComparison.OrdinalIgnoreCase) + 7;
+      if (i < 7) return string.Empty;
+    }      
+    return title.Substring(i);
+  }
 
 
   // get experiment full name, inclusive of situation
@@ -148,6 +163,15 @@ public static class Science
     return ResearchAndDevelopment.GetScienceValue((float)size, subject)
       * HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier;
   }
+  
+  
+  // get max data size an experiment can generate
+  public static double experiment_size(string subject_id)
+  {
+    ScienceExperiment exp = ResearchAndDevelopment.GetExperiment(Lib.Tokenize(subject_id, '@')[0]);
+    return exp.scienceCap * exp.dataScale;
+  }
+  
 
   // [disabled] EXPERIMENTAL
   // return a tagged science subject

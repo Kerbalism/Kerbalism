@@ -75,16 +75,19 @@ public static class Hijacker
       Message.Post("We can't transmit a sample", "Need to be recovered, or analyzed in a lab");
       return;
     }
+    
+    // get the max data size that can be collected about this experiment situation   
+    double max_amount = exp.experiment.scienceCap * exp.experiment.dataScale;
 
     // record data in the drive
     Drive drive = DB.Vessel(exp.vessel).drive;
     if (!is_sample)
     {
-      drive.record_file(data.subjectID, amount);
+      drive.record_file(data.subjectID, amount, max_amount);
     }
     else
     {
-      drive.record_sample(data.subjectID, amount);
+      drive.record_sample(data.subjectID, amount, max_amount);
     }
 
     // flag for sending if specified
@@ -105,9 +108,22 @@ public static class Hijacker
   {
     // dump the data
     page.OnDiscardData(data);
-
-    // close dialog
-    dialog.Dismiss();
+    
+    // close this page
+    dialog.pages.Remove(page);
+    
+    // if there are other pages
+    if (dialog.pages.Count > 0)
+    {
+      // move to next page
+      ExperimentsResultDialog.DisplayResult(dialog.pages[0]);
+    }
+    // if this was the last one
+    else
+    {
+      // close the dialog      
+      dialog.Dismiss();
+    }
 
     // we need to force-close all popups, who knows why
     PopupDialog.ClearPopUps();
