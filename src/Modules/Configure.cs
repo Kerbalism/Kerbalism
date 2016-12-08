@@ -110,6 +110,14 @@ public sealed class Configure : PartModule, IPartCostModifier, IPartMassModifier
       archive.save(0);
       prev_cfg = archive.serialize();
     }
+
+    // special care for users of version 1.1.5pre1
+    if (string.IsNullOrEmpty(prev_cfg))
+    {
+      var archive = new WriteArchive();
+      archive.save(0);
+      prev_cfg = archive.serialize();
+    }
   }
 
 
