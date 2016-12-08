@@ -27,6 +27,7 @@ public sealed class Configure : PartModule, IPartCostModifier, IPartMassModifier
 
   // persistence
   [KSPField(isPersistant = true)] public string cfg;        // selected setups names
+  [KSPField(isPersistant = true)] public string prev_cfg;   // previously selected setups names
 
   // data
   // - selected and prev_selected are public so that the automagical
@@ -60,6 +61,12 @@ public sealed class Configure : PartModule, IPartCostModifier, IPartMassModifier
     selected = new List<string>(count);
     while(count-- > 0) { string s; archive.load(out s); selected.Add(s); }
 
+    // parse previous configuration from string data
+    archive = new ReadArchive(prev_cfg);
+    archive.load(out count);
+    prev_selected = new List<string>(count);
+    while(count-- > 0) { string s; archive.load(out s); prev_selected.Add(s); }
+
     // default title to part name
     if (title.Length == 0) title = Lib.PartName(part);
 
@@ -76,7 +83,7 @@ public sealed class Configure : PartModule, IPartCostModifier, IPartMassModifier
 
   public override void OnLoad(ConfigNode node)
   {
-    // panels data from structured config node is only available at part compilation
+    // setups data from structured config node is only available at part compilation
     // for this reason, we parse it and then re-serialize it as a string
     if (HighLogic.LoadedScene == GameScenes.LOADING)
     {
@@ -97,6 +104,11 @@ public sealed class Configure : PartModule, IPartCostModifier, IPartMassModifier
       archive = new WriteArchive();
       archive.save(0);
       cfg = archive.serialize();
+
+      // serialize empty previous configuration to string data
+      archive = new WriteArchive();
+      archive.save(0);
+      prev_cfg = archive.serialize();
     }
   }
 
@@ -139,7 +151,7 @@ public sealed class Configure : PartModule, IPartCostModifier, IPartMassModifier
       bool active = selected.Contains(setup.name);
 
       // detect if the setup was previously selected
-      bool prev_active = prev_selected != null && prev_selected.Contains(setup.name);
+      bool prev_active = prev_selected.Contains(setup.name);
 
       // for each module specification in the setup
       foreach(ConfigureModule cm in setup.modules)
@@ -206,15 +218,21 @@ public sealed class Configure : PartModule, IPartCostModifier, IPartMassModifier
       }
     }
 
+    // remember previously selected setups
+    prev_selected.Clear();
+    foreach(string s in selected) prev_selected.Add(s);
+
     // save configuration
     WriteArchive archive = new WriteArchive();
     archive.save(selected.Count);
     foreach(string s in selected) archive.save(s);
     cfg = archive.serialize();
 
-    // remember previously selected setups
-    prev_selected = new List<string>(selected.Count);
-    foreach(string s in selected) prev_selected.Add(s);
+    // save previous configuration
+    archive = new WriteArchive();
+    archive.save(prev_selected.Count);
+    foreach(string s in prev_selected) archive.save(s);
+    prev_cfg = archive.serialize();
 
     // create window the first time
     if (window == null)
@@ -224,7 +242,7 @@ public sealed class Configure : PartModule, IPartCostModifier, IPartMassModifier
 
     // in the editor
     if (Lib.IsEditor())
-    {   
+    {
       // for each part in the symmetry group (avoid infinite recursion)
       if (!avoid_inf_recursion)
       {
@@ -236,10 +254,10 @@ public sealed class Configure : PartModule, IPartCostModifier, IPartMassModifier
 
           // both modules will share configuration
           c.selected = selected;
-  
+
           // both modules will use the same window
           c.window = window;
-  
+
           // re-configure the other module
           c.configure();
         }
