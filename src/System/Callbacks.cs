@@ -120,6 +120,10 @@ public sealed class Callbacks
       string filename = p.Key;
       File file = p.Value;
 
+      // de-buffer partially transmitted data
+      file.size += file.buff;
+      file.buff = 0.0;
+
       // get subject
       ScienceSubject subject = ResearchAndDevelopment.GetSubjectByID(filename);
 
