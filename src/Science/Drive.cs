@@ -154,6 +154,7 @@ public sealed class Drive
     foreach(var p in files)
     {
       destination.record_file(p.Key, p.Value.size, Science.experiment_size(p.Key));
+      destination.files[p.Key].buff += p.Value.buff; //< move the buffer along with the size
     }
 
     // copy samples

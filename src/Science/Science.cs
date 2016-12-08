@@ -12,6 +12,9 @@ public static class Science
   // consume EC for transmission, and transmit science data
   public static void update(Vessel v, vessel_info vi, VesselData vd, vessel_resources resources, double elapsed_s)
   {
+    // hard-coded transmission buffer size in Mb
+    const double buffer_capacity = 8.0;
+
     // do nothing if science system is disabled
     if (!Features.Science) return;
 
@@ -44,8 +47,18 @@ public static class Science
       // consume data in the file
       file.size -= transmitted;
 
-      // collect the science data
-      Science.credit(filename, transmitted, true, v.protoVessel);
+      // accumulate in the buffer
+      file.buff += transmitted;
+
+      // if buffer is full, or file was transmitted completely
+      if (file.size <= double.Epsilon || file.buff > buffer_capacity)
+      {
+        // collect the science data
+        Science.credit(filename, file.buff, true, v.protoVessel);
+
+        // reset the buffer
+        file.buff = 0.0;
+      }
 
       // if file was transmitted completely
       if (file.size <= double.Epsilon)
@@ -112,7 +125,8 @@ public static class Science
 
     // fire game event
     // - this could be slow or a no-op, depending on the number of listeners
-    //   i am only aware of active science collection contracts listening to this
+    //   in any case, we are buffering the transmitting data and calling this
+    //   function only once in a while
     GameEvents.OnScienceRecieved.Fire((float)size, subject, pv, false);
 
     // return amount of science credited
