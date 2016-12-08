@@ -28,79 +28,65 @@ public static class Hijacker
 
   static void hijack(ExperimentsResultDialog dialog, ExperimentResultDialogPage page, ScienceData data, bool send)
   {
-    // get the right experiment module
-    // - this support parts with multiple experiment modules, like eva kerbals
-    string experiment_id = Lib.Tokenize(data.subjectID, '@')[0];
-    var exp = FlightGlobals.FindPartByID(data.container)
-              .FindModulesImplementing<ModuleScienceExperiment>()
-              .Find(k => k.experimentID == experiment_id);
-    if (exp == null) throw new Exception("can't find the experiment module during data hijacking");
+    // collect and deduce all data necessary just once
+    MetaData meta = new MetaData(data);
 
     // hijack the dialog
-    if (!exp.rerunnable)
+    if (!meta.is_rerunnable)
     {
       Lib.Popup
       (
         "Warning!",
         "Recording the data will render this module inoperable.\n\nRestoring functionality will require a scientist.",
-        new DialogGUIButton("Record data", () => record(dialog, page, exp, data, send)),
+        new DialogGUIButton("Record data", () => record(dialog, page, meta, data, send)),
         new DialogGUIButton("Discard data", () => dismiss(dialog, page, data))
       );
     }
     else
     {
-      record(dialog, page, exp, data, send);
+      record(dialog, page, meta, data, send);
     }
   }
 
 
-  static void record(ExperimentsResultDialog dialog, ExperimentResultDialogPage page, ModuleScienceExperiment exp, ScienceData data, bool send)
+  static void record(ExperimentsResultDialog dialog, ExperimentResultDialogPage page, MetaData meta, ScienceData data, bool send)
   {
-    // get amount of data
-    double amount = data.dataAmount;
-
-    // determine if the data is a file or a sample
-    bool is_sample = exp.xmitDataScalar <= float.Epsilon;
-
     // if amount is zero, warn the user and do nothing else
-    if (amount <= double.Epsilon)
+    if (data.dataAmount <= double.Epsilon)
     {
       Message.Post("There is no more useful data here");
       return;
     }
 
     // if this is a sample and we are trying to send it, warn the user and do nothing else
-    if (is_sample && send)
+    if (meta.is_sample && send)
     {
       Message.Post("We can't transmit a sample", "Need to be recovered, or analyzed in a lab");
       return;
     }
-    
-    // get the max data size that can be collected about this experiment situation   
-    double max_amount = exp.experiment.scienceCap * exp.experiment.dataScale;
 
     // record data in the drive
-    Drive drive = DB.Vessel(exp.vessel).drive;
-    if (!is_sample)
+    Drive drive = DB.Vessel(meta.vessel).drive;
+    if (!meta.is_sample)
     {
-      drive.record_file(data.subjectID, amount, max_amount);
+      drive.record_file(data.subjectID, data.dataAmount, meta.max_amount);
     }
     else
     {
-      drive.record_sample(data.subjectID, amount, max_amount);
+      drive.record_sample(data.subjectID, data.dataAmount, meta.max_amount);
     }
 
     // flag for sending if specified
-    if (!is_sample && send) drive.send(data.subjectID, true);
+    if (!meta.is_sample && send) drive.send(data.subjectID, true);
 
     // render experiment inoperable if necessary
-    if (!exp.rerunnable) exp.SetInoperable();
+    if (!meta.is_rerunnable) meta.experiment.SetInoperable();
 
     // dismiss the dialog and popups
     dismiss(dialog, page, data);
 
     // inform the user
-    Message.Post(!is_sample ? "Data has been recorded" : "Sample has been acquired");
+    Message.Post(!meta.is_sample ? "Data has been recorded" : "Sample has been acquired");
   }
 
 
@@ -108,10 +94,10 @@ public static class Hijacker
   {
     // dump the data
     page.OnDiscardData(data);
-    
+
     // close this page
     dialog.pages.Remove(page);
-    
+
     // if there are other pages
     if (dialog.pages.Count > 0)
     {
@@ -121,12 +107,60 @@ public static class Hijacker
     // if this was the last one
     else
     {
-      // close the dialog      
+      // close the dialog
       dialog.Dismiss();
     }
 
     // we need to force-close all popups, who knows why
     PopupDialog.ClearPopUps();
+  }
+
+
+  // data about data
+  sealed class MetaData
+  {
+    public MetaData(ScienceData data)
+    {
+      // find the part containing the data
+      part = FlightGlobals.FindPartByID(data.container);
+
+      // get the vessel
+      vessel = part.vessel;
+
+      // extract experiment id
+      experiment_id = Lib.Tokenize(data.subjectID, '@')[0];
+
+      // get the container module storing the data
+      container = Science.experiment_container(part, experiment_id);
+      if (container == null) throw new Exception("can't find the data container during data hijacking");
+
+      // get the stock experiment module storing the data (if that's the case)
+      experiment = container as ModuleScienceExperiment;
+
+      // get the experiment definition
+      expdef = ResearchAndDevelopment.GetExperiment(experiment_id);
+
+      // calculate max data size that can be collected
+      max_amount = expdef.scienceCap * expdef.dataScale;
+
+      // determine if this is a sample (non-transmissible)
+      // - if this is a third-party data container/experiment, we assume it is transmissible
+      is_sample = experiment != null && experiment.xmitDataScalar < 1.0f;
+
+      // determine if the container/experiment can collect the data multiple times
+      // - if this is a third-party data container/experiment, we assume it can collect multiple times
+      is_rerunnable = experiment == null || experiment.rerunnable;
+    }
+
+    public Part part;                               // part storing the data
+    public Vessel vessel;                           // vessel storing the data
+    public string experiment_id;                    // experiment id extracted from subject id
+    public IScienceDataContainer container;         // module containing the data
+    public ModuleScienceExperiment experiment;      // module containing the data, as a stock experiment module
+    public ScienceExperiment expdef;                // experiment definition
+    public double max_amount;                       // max amount of data that can be collected
+    public bool is_sample;                          // true if the data can't be transmitted
+    public bool is_rerunnable;                      // true if the container/experiment can collect data multiple times
   }
 }
 

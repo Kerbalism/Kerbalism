@@ -74,7 +74,7 @@ public sealed class Drive
 
     // increase amount of data stored in the file
     file.size += amount;
-    
+
     // clamp to max data collectible
     file.size = Math.Min(file.size, max_amount);
   }
@@ -92,7 +92,7 @@ public sealed class Drive
 
     // increase amount of data stored in the sample
     sample.size += amount;
-    
+
     // clamp to max data collectible
     sample.size = Math.Min(sample.size, max_amount);
   }
