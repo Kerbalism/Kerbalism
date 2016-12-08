@@ -45,7 +45,8 @@ public sealed class vessel_info
     // at the two highest timewarp speed, the number of sun visibility samples drop to the point that
     // the quantization error first became noticeable, and then exceed 100%
     // to solve this, we switch to an analytical estimation of the portion of orbit that was in sunlight
-    if (v.mainBody.flightGlobalsIndex != 0 && TimeWarp.CurrentRateIndex >= 6)
+    // - we check against timewarp rate, instead of index, to avoid issues during timewarp blending
+    if (v.mainBody.flightGlobalsIndex != 0 && TimeWarp.CurrentRate > 1000.0f)
     {
       sunlight = 1.0 - Sim.ShadowPeriod(v) / Sim.OrbitalPeriod(v);
     }
