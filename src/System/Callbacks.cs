@@ -21,7 +21,7 @@ public sealed class Callbacks
     GameEvents.onVesselWillDestroy.Add(this.vesselDestroyed);
     GameEvents.onVesselWasModified.Add(this.vesselModified);
     GameEvents.onPartCouple.Add(this.vesselDock);
-    GameEvents.onPartDestroyed.Add(this.partDestroyed);
+    GameEvents.onPartDie.Add(this.partDestroyed);
     GameEvents.OnTechnologyResearched.Add(this.techResearched);
     GameEvents.onGUIEditorToolbarReady.Add(this.addEditorCategory);
   }
