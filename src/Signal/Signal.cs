@@ -177,6 +177,9 @@ public static class Signal
 
   public static void render()
   {
+    // do nothing if signal mechanic is disabled
+    if (!Features.Signal) return;
+
     // get home body position
     Vector3 home = ScaledSpace.LocalToScaledSpace(FlightGlobals.GetHomeBody().position);
 
