@@ -9,7 +9,7 @@ namespace KERBALISM {
 public sealed class FileManager : Window
 {
   public FileManager()
-  : base(320u, 80u, 80u, 20u, Styles.win)
+  : base(340u, 80u, 80u, 20u, Styles.win)
   {
     // enable global access
     instance = this;
