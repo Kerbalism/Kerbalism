@@ -12,7 +12,7 @@ namespace KERBALISM {
 public sealed class Reliability : PartModule, ISpecifics, IModuleInfo, IPartCostModifier, IPartMassModifier
 {
   // config
-  [KSPField] public string type;                                      // component name
+  [KSPField(isPersistant = true)] public string type;                 // component name
   [KSPField] public double mtbf   = 21600000.0;                       // mean time between failures, in seconds
   [KSPField] public string repair = string.Empty;                     // repair crew specs
   [KSPField] public string title  = string.Empty;                     // short description of component
@@ -298,9 +298,9 @@ public sealed class Reliability : PartModule, ISpecifics, IModuleInfo, IPartCost
   public static void ProtoBreak(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m)
   {
     // get reliability module prefab
-    Reliability reliability = null;
-    try { reliability = p.partPrefab.Modules[p.modules.IndexOf(m)] as Reliability; } catch {}
-    if (reliability == null) throw new Exception("error while obtaining reliability module prefab");
+    string type = Lib.Proto.GetString(m, "type", string.Empty);
+    Reliability reliability = p.partPrefab.FindModulesImplementing<Reliability>().Find(k => k.type == type);
+    if (reliability == null) return;
 
     // if manned, or if safemode didn't trigger
     if (Cache.VesselInfo(v).crew_capacity > 0 || Lib.RandomDouble() > Settings.SafeModeChance)
@@ -469,9 +469,9 @@ public sealed class Reliability : PartModule, ISpecifics, IModuleInfo, IPartCost
         ProtoPartSnapshot p = v.protoVessel.protoPartSnapshots.Find(k => k.modules.Contains(m));
 
         // find module prefab
-        Reliability reliability = null;
-        try { reliability = p.partPrefab.Modules[p.modules.IndexOf(m)] as Reliability; } catch {}
-        if (reliability == null) throw new Exception("error while obtaining reliability module prefab");
+        string type = Lib.Proto.GetString(m, "type", string.Empty);
+        Reliability reliability = p.partPrefab.FindModulesImplementing<Reliability>().Find(k => k.type == type);
+        if (reliability == null) continue;
 
         // double time to next failure
         if (reliability.redundancy == redundancy)
