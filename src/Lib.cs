@@ -1353,9 +1353,9 @@ public static class Lib
 
 
   // show a modal popup window where the user can choose among two options
-  public static void Popup(string title, string msg, DialogGUIBase one, DialogGUIBase two)
+  public static PopupDialog Popup(string title, string msg, DialogGUIBase one, DialogGUIBase two)
   {
-    PopupDialog.SpawnPopupDialog
+    return PopupDialog.SpawnPopupDialog
     (
       new Vector2(0.5f, 0.5f),
       new Vector2(0.5f, 0.5f),
