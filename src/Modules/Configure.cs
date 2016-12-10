@@ -283,6 +283,9 @@ public sealed class Configure : PartModule, IPartCostModifier, IPartMassModifier
     // refresh this part ui
     MonoUtilities.RefreshContextWindows(part);
 
+    // refresh VAB ui
+    if (Lib.IsEditor()) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+
     // this was configured at least once
     initialized = true;
   }
