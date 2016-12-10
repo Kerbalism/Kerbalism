@@ -167,6 +167,9 @@ public sealed class Reliability : PartModule, ISpecifics, IModuleInfo, IPartCost
         reliability.quality = !reliability.quality;
       }
     }
+
+    // refresh VAB ui
+    GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
   }
 
 
