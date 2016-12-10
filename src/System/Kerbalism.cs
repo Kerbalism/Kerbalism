@@ -275,7 +275,8 @@ public sealed class MapCameraScript : MonoBehaviour
   void OnPostRender()
   {
     // do nothing when not in map view
-    if (!MapView.MapIsEnabled) return;
+    // - avoid weird situation when in some user installation MapIsEnabled is true in the space center
+    if (!MapView.MapIsEnabled || HighLogic.LoadedScene == GameScenes.SPACECENTER) return;
 
     // commit all geometry
     Signal.render();
