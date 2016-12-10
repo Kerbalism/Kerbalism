@@ -9,19 +9,28 @@ namespace KERBALISM {
 
 public static class Hijacker
 {
-  // hijack the science dialog
   public static void update()
   {
     // do nothing if science system is disabled
     if (!Features.Science) return;
 
+    // get the science dialog
     var dialog = ExperimentsResultDialog.Instance;
+
+    // if it is open, hijack it
     if (dialog != null)
     {
       var page = dialog.currentPage;
       page.OnKeepData = (ScienceData data) => hijack(dialog, page, data, false);
       page.OnTransmitData = (ScienceData data) => hijack(dialog, page, data, true);
       page.showTransmitWarning = false; //< mom's spaghetti
+    }
+    // if it is closed
+    else
+    {
+      // if the confirm popup is still open, close it
+      // - this deal with corner cases when something else close the science dialog
+      if (popup != null) popup.Dismiss();
     }
   }
 
@@ -34,7 +43,7 @@ public static class Hijacker
     // hijack the dialog
     if (!meta.is_rerunnable)
     {
-      Lib.Popup
+      popup = Lib.Popup
       (
         "Warning!",
         "Recording the data will render this module inoperable.\n\nRestoring functionality will require a scientist.",
@@ -111,8 +120,12 @@ public static class Hijacker
       dialog.Dismiss();
     }
 
-    // we need to force-close all popups, who knows why
-    PopupDialog.ClearPopUps();
+    // close the confirm popup, if it is open
+    if (popup != null)
+    {
+      popup.Dismiss();
+      popup = null;
+    }
   }
 
 
@@ -162,6 +175,10 @@ public static class Hijacker
     public bool is_sample;                          // true if the data can't be transmitted
     public bool is_rerunnable;                      // true if the container/experiment can collect data multiple times
   }
+
+
+  // popup dialog handler
+  static PopupDialog popup;
 }
 
 
