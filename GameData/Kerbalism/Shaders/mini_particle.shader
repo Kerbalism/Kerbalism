@@ -26,7 +26,7 @@ Shader "Custom/MiniParticle"
       struct v2f
       {
         float size : PSIZE;
-        float4 pos : POSITION;
+        float4 pos : SV_POSITION;
       };
 
       v2f vert(float4 in_pos : POSITION)

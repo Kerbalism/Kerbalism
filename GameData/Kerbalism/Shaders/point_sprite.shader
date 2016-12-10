@@ -37,7 +37,7 @@ Shader "Custom/PointSprite"
         float2 screen_coords : TEXCOORD1;
       };
 
-      v2f vert(float4 in_pos : POSITION, out float4 pos : POSITION)
+      v2f vert(float4 in_pos : POSITION, out float4 pos : SV_POSITION)
       {
         // output clip-space vertex position
         pos = mul(UNITY_MATRIX_MVP, in_pos);
