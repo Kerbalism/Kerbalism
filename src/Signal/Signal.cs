@@ -51,13 +51,10 @@ public static class Signal
       if (avoid_inf_recursion.Contains(w.id)) continue;
 
       // get vessel from the cache
-      // - problem:
-      //   when cache is rebuilt (eg: game load, or scene changes), naively using
-      //   the cache here will lead to wrong paths for a single tick (depending on vessel order)
-      //   the paths are then fixed automatically at the second round of cache updates
-      //   > bad solution: avoid storing wrong paths in the cache, this work but degenerate into O(N^3)
-      //   > good solution: cache potentially wrong paths, but use them in other paths only if there is no alternative
-      vessel_info wi = connections.Count > 0 ? Cache.VesselInfo(w) : Cache.SpeculativeVesselInfo(w);
+      // - when cache is rebuilt (eg: game load), naively using the cache here will
+      //   lead to wrong paths for a single tick (depending on vessel order)
+      //   the paths are then fixed automatically in following cache updates
+      vessel_info wi = Cache.VesselInfo(w);
 
       // skip invalid vessels
       if (!wi.is_valid) continue;
