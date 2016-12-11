@@ -18,7 +18,7 @@ Shader "Custom/FullPointParticle"
       CGPROGRAM
       #pragma vertex vert
       #pragma fragment frag
-      #pragma target 3.0
+      #pragma target 2.5
 
       struct v2f
       {

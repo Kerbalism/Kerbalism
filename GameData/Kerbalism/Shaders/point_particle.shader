@@ -22,7 +22,7 @@ Shader "Custom/PointParticle"
       CGPROGRAM
       #pragma vertex vert
       #pragma fragment frag
-      #pragma target 3.0
+      #pragma target 2.5
 
       fixed4 POINT_COLOR;
       float POINT_SIZE;

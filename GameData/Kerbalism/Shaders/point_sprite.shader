@@ -24,7 +24,7 @@ Shader "Custom/PointSprite"
       CGPROGRAM
       #pragma vertex vert
       #pragma fragment frag
-      #pragma target 3.0
+      #pragma target 2.5
 
       sampler2D POINT_TEXTURE;
       fixed4 POINT_COLOR;

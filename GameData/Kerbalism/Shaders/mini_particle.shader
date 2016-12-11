@@ -20,6 +20,7 @@ Shader "Custom/MiniParticle"
       CGPROGRAM
       #pragma vertex vert
       #pragma fragment frag
+      #pragma target 2.0
 
       fixed4 POINT_COLOR;
 
