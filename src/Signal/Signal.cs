@@ -123,7 +123,7 @@ public static class Signal
       if (avoid_inf_recursion.Contains(w.id)) continue;
 
       // get vessel info from cache
-      vessel_info wi = Cache.SpeculativeVesselInfo(w);
+      vessel_info wi = Cache.VesselInfo(w);
 
       // skip invalid vessels
       if (!wi.is_valid) continue;
