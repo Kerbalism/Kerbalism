@@ -44,9 +44,9 @@ public sealed class Kerbalism : ScenarioModule
       initialized = true;
     }
 
-    // clear caches at every scene change
-    Cache.clear();
-    ResourceCache.clear();
+    // [disabled] clear caches at every scene change
+    //Cache.clear();
+    //ResourceCache.clear();
 
     // deserialize data
     DB.load(node);
