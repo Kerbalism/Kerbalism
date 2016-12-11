@@ -51,10 +51,24 @@ public static class Signal
       if (avoid_inf_recursion.Contains(w.id)) continue;
 
       // get vessel from the cache
-      // - when cache is rebuilt (eg: game load), naively using the cache here will
-      //   lead to wrong paths for a single tick (depending on vessel order)
-      //   the paths are then fixed automatically in following cache updates
-      vessel_info wi = Cache.VesselInfo(w);
+      vessel_info wi;
+      if (!Cache.HasVesselInfo(w, out wi))
+      {
+        // if we already have some kind of connection, wait until next cache update to consider this vessel
+        if (connections.Count > 0) continue;
+        // else calculate everything about the vessel, but don't cache it to avoid the following issue
+        //   . vessel A is directly linked
+        //   . vessel B is indirectly linked through A
+        //   . cache is cleared (after loading a savegame)
+        //   . cache of A is computed
+        //   . in turn, cache of B is computed ignoring A (and stored)
+        //   . until cache of B is re-computed, B will result incorrectly not linked
+        // - that we solve in this way:
+        //   . cache of A is computed
+        //   . in turn, cache of B is computed ignoring A (but not stored)
+        //   . cache of B is then computed correctly
+        else wi = new vessel_info(w, Lib.VesselID(w), 0);
+      }
 
       // skip invalid vessels
       if (!wi.is_valid) continue;
@@ -120,7 +134,9 @@ public static class Signal
       if (avoid_inf_recursion.Contains(w.id)) continue;
 
       // get vessel info from cache
-      vessel_info wi = Cache.VesselInfo(w);
+      // - if vessel is not already in cache, just ignore it
+      vessel_info wi;
+      if (!Cache.HasVesselInfo(w, out wi)) continue;
 
       // skip invalid vessels
       if (!wi.is_valid) continue;

@@ -762,6 +762,12 @@ public static class Lib
     return BitConverter.ToUInt32(v.id.ToByteArray(), 0);
   }
 
+  // return a 32bit id for a vessel
+  public static UInt32 VesselID(ProtoVessel pv)
+  {
+    return BitConverter.ToUInt32(pv.vesselID.ToByteArray(), 0);
+  }
+
   // return the flight id of the root part of a vessel
   public static UInt32 RootID(Vessel v)
   {

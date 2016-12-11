@@ -44,12 +44,19 @@ public sealed class Kerbalism : ScenarioModule
       initialized = true;
     }
 
-    // [disabled] clear caches at every scene change
-    //Cache.clear();
-    //ResourceCache.clear();
-
     // deserialize data
     DB.load(node);
+
+    // detect if this is a different savegame
+    if (DB.uid != savegame_uid)
+    {
+      // clear caches
+      Cache.clear();
+      ResourceCache.clear();
+
+      // remember savegame id
+      savegame_uid = DB.uid;
+    }
 
     // force CommNet off when signal is enabled
     HighLogic.fetch.currentGame.Parameters.Difficulty.EnableCommNet &= !Features.Signal;
@@ -267,6 +274,9 @@ public sealed class Kerbalism : ScenarioModule
 
   // number of steps from last warp blending
   public static uint warp_blending;
+
+  // last savegame unique id
+  public static int savegame_uid;
 }
 
 

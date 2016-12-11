@@ -13,6 +13,9 @@ public static class DB
     // get version (or use current one for new savegames)
     version = Lib.ConfigValue(node, "version", Lib.Version());
 
+    // get unique id (or generate one for new savegames)
+    uid = Lib.ConfigValue(node, "uid", Lib.RandomInt(int.MaxValue));
+
     // if this is an unsupported version, print warning
     if (string.CompareOrdinal(version, "1.1.5.0") < 0)
     {
@@ -67,7 +70,10 @@ public static class DB
   public static void save(ConfigNode node)
   {
     // save version
-    node.AddValue("version", Lib.Version());
+    node.AddValue("version", version);
+
+    // save unique id
+    node.AddValue("uid", uid);
 
     // save kerbals data
     var kerbals_node = node.AddNode("kerbals");
@@ -130,6 +136,7 @@ public static class DB
   public static string from_safe_key(string key) { return key.Replace("___", " "); }
 
   public static string version;                          // savegame version
+  public static int uid;                                 // savegame unique id
   public static Dictionary<string, KerbalData> kerbals;  // store data per-kerbal
   public static Dictionary<uint, VesselData> vessels;    // store data per-vessel, indexed by root part id
   public static Dictionary<string, BodyData> bodies;     // store data per-body

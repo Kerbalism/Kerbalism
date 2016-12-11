@@ -360,6 +360,16 @@ public static class ResourceCache
     entries.Clear();
   }
 
+  public static void purge(Vessel v)
+  {
+    entries.Remove(v.id);
+  }
+
+  public static void purge(ProtoVessel pv)
+  {
+    entries.Remove(pv.vesselID);
+  }
+
   // return resource cache for a vessel
   public static vessel_resources Get(Vessel v)
   {

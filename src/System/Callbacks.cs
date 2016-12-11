@@ -178,12 +178,12 @@ public sealed class Callbacks
   }
 
 
-  void vesselRecovered(ProtoVessel v, bool b)
+  void vesselRecovered(ProtoVessel pv, bool b)
   {
     // note: this is called multiple times when a vessel is recovered
 
     // for each crew member
-    foreach(ProtoCrewMember c in v.GetVesselCrew())
+    foreach(ProtoCrewMember c in pv.GetVesselCrew())
     {
       // avoid creating kerbal data in db again,
       // as this function may be called multiple times
@@ -200,25 +200,33 @@ public sealed class Callbacks
     }
 
     // for each part
-    foreach(ProtoPartSnapshot p in v.protoPartSnapshots)
+    foreach(ProtoPartSnapshot p in pv.protoPartSnapshots)
     {
       // forget all potential vessel data
       DB.vessels.Remove(p.flightID);
     }
+
+    // purge the caches
+    Cache.purge(pv);
+    ResourceCache.purge(pv);
   }
 
 
-  void vesselTerminated(ProtoVessel v)
+  void vesselTerminated(ProtoVessel pv)
   {
     // forget all kerbals data
-    foreach(ProtoCrewMember c in v.GetVesselCrew()) DB.kerbals.Remove(c.name);
+    foreach(ProtoCrewMember c in pv.GetVesselCrew()) DB.kerbals.Remove(c.name);
 
     // for each part
-    foreach(ProtoPartSnapshot p in v.protoPartSnapshots)
+    foreach(ProtoPartSnapshot p in pv.protoPartSnapshots)
     {
       // forget all potential vessel data
       DB.vessels.Remove(p.flightID);
     }
+
+    // purge the caches
+    Cache.purge(pv);
+    ResourceCache.purge(pv);
   }
 
 
@@ -245,6 +253,10 @@ public sealed class Callbacks
       if (!kerbals_alive.Contains(p.Key)) kerbals_dead.Add(p.Key);
     }
     foreach(string n in kerbals_dead) DB.kerbals.Remove(n);
+
+    // purge the caches
+    Cache.purge(v);
+    ResourceCache.purge(v);
   }
 
 

@@ -153,6 +153,18 @@ public static class Cache
   }
 
 
+  public static void purge(Vessel v)
+  {
+    vessels.Remove(Lib.VesselID(v));
+  }
+
+
+  public static void purge(ProtoVessel pv)
+  {
+    vessels.Remove(Lib.VesselID(pv));
+  }
+
+
   public static void update()
   {
     // purge the oldest entry from the vessel cache
@@ -190,27 +202,9 @@ public static class Cache
   }
 
 
-  // return cached information if it exist, else compute new information but doesn't cache it
-  // - this is used to solve the following case:
-  //   . vessel A is directly linked
-  //   . vessel B is indirectly linked through A
-  //   . cache is cleared (after scene change)
-  //   . cache of A is computed
-  //   . in turn, cache of B is computed ignoring A (and stored)
-  //   . until cache of B is re-computed, B will result incorrectly not linked
-  // - that we solve in this way:
-  //   . cache of A is computed
-  //   . in turn, cache of B is computed ignoring A (but not stored)
-  //   . cache of B is then computed correctly
-  public static vessel_info SpeculativeVesselInfo(Vessel v)
+  public static bool HasVesselInfo(Vessel v, out vessel_info vi)
   {
-    // get vessel id
-    UInt32 id = Lib.VesselID(v);
-
-    // get the info from the cache, if it exist
-    // if it doesn't, create and return it without storing it
-    vessel_info info;
-    return vessels.TryGetValue(id, out info) ? info : new vessel_info(v, id, 0);
+    return vessels.TryGetValue(Lib.VesselID(v), out vi);
   }
 
 
