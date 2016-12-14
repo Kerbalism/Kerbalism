@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
-using KSP.UI.Screens;
 
 
 namespace KERBALISM {
@@ -9,6 +8,12 @@ namespace KERBALISM {
 
 public static class Science
 {
+  // pseudo-ctor
+  public static void init()
+  {
+    experiments = new Dictionary<string, ExperimentInfo>();
+  }
+
   // consume EC for transmission, and transmit science data
   public static void update(Vessel v, vessel_info vi, VesselData vd, vessel_resources resources, double elapsed_s)
   {
@@ -69,7 +74,7 @@ public static class Science
         // inform the user
         Message.Post
         (
-          Lib.BuildString("<color=cyan><b>DATA RECEIVED</b></color>\nTransmission of <b>", Science.experiment_name(filename), "</b> completed"),
+          Lib.BuildString("<color=cyan><b>DATA RECEIVED</b></color>\nTransmission of <b>", Science.experiment(filename).name, "</b> completed"),
           Lib.TextVariant("Our researchers will jump on it right now", "The checksum is correct, data must be valid")
         );
       }
@@ -102,24 +107,27 @@ public static class Science
   }
 
 
+  // credit science for the experiment subject specified
   public static double credit(string subject_id, double size, bool transmitted, ProtoVessel pv)
   {
-    // there is no science in sandbox mode
-    if (HighLogic.CurrentGame.Mode == Game.Modes.SANDBOX) return 0.0;
+    // get info on the experiment
+    ExperimentInfo exp = Science.experiment(subject_id);
 
-    // get subject
-    ScienceSubject subject = ResearchAndDevelopment.GetSubjectByID(subject_id);
+    // if there is no subject, we can't possibly credit the science
+    // - we are probably in sandbox mode
+    // - or the subject id is malformed, and the data is not triggered
+    if (exp.subject == null) return 0.0;
 
     // get science value
     // - the stock system 'degrade' science value after each credit, we don't
-    float R = ResearchAndDevelopment.GetReferenceDataValue((float)size, subject);
-    float S = subject.science;
-    float C = subject.scienceCap;
+    float R = ResearchAndDevelopment.GetReferenceDataValue((float)size, exp.subject);
+    float S = exp.subject.science;
+    float C = exp.subject.scienceCap;
     float value = Mathf.Max(Mathf.Min(S + Mathf.Min(R, C), C) - S, 0.0f);
 
     // credit the science
-    subject.science += value;
-    subject.scientificValue = ResearchAndDevelopment.GetSubjectValue(subject.science, subject);
+    exp.subject.science += value;
+    exp.subject.scientificValue = ResearchAndDevelopment.GetSubjectValue(exp.subject.science, exp.subject);
     value *= HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier;
     ResearchAndDevelopment.Instance.AddScience(value, transmitted ? TransactionReasons.ScienceTransmission : TransactionReasons.VesselRecovery);
 
@@ -127,80 +135,30 @@ public static class Science
     // - this could be slow or a no-op, depending on the number of listeners
     //   in any case, we are buffering the transmitting data and calling this
     //   function only once in a while
-    GameEvents.OnScienceRecieved.Fire((float)size, subject, pv, false);
+    GameEvents.OnScienceRecieved.Fire((float)size, exp.subject, pv, false);
 
     // return amount of science credited
     return value;
   }
 
 
-  // get experiment name, without situation
-  public static string experiment_name(string subject_id)
+  public static ExperimentInfo experiment(string subject_id)
   {
-    var experiment = ResearchAndDevelopment.GetExperiment(Lib.Tokenize(subject_id, '@')[0]);
-    return experiment.experimentTitle;
-  }
-
-  // get experiment situation, without name
-  public static string experiment_situation(string subject_id)
-  {
-    // subject will be null in sandbox, we default to nothing in that case
-    if (HighLogic.CurrentGame.Mode == Game.Modes.SANDBOX) return string.Empty;
-    string title = ResearchAndDevelopment.GetSubjectByID(subject_id).title;
-    int i = title.IndexOf(" from ", StringComparison.OrdinalIgnoreCase) + 6;
-    if (i < 6)
+    ExperimentInfo info;
+    if (!experiments.TryGetValue(subject_id, out info))
     {
-      i = title.IndexOf(" while ", StringComparison.OrdinalIgnoreCase) + 7;
-      if (i < 7) return string.Empty;
+      info = new ExperimentInfo(subject_id);
+      experiments.Add(subject_id, info);
     }
-    return title.Substring(i);
+    return info;
   }
 
 
-  // get experiment full name, inclusive of situation
-  public static string experiment_fullname(string subject_id)
-  {
-    // subject will be null in sandbox, we default to short name in that case
-    return HighLogic.CurrentGame.Mode == Game.Modes.SANDBOX
-      ? experiment_name(subject_id)
-      : ResearchAndDevelopment.GetSubjectByID(subject_id).title;
-  }
+  // experiment info cache
+  static Dictionary<string, ExperimentInfo> experiments;
+}
 
 
-  // get science points an experiment is worth
-  public static double experiment_value(string subject_id, double size)
-  {
-    // there is no science in sandbox mode
-    if (HighLogic.CurrentGame.Mode == Game.Modes.SANDBOX) return 0.0;
-
-    ScienceSubject subject = ResearchAndDevelopment.GetSubjectByID(subject_id);
-    return ResearchAndDevelopment.GetScienceValue((float)size, subject)
-      * HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier;
-  }
-
-
-  // get max data size an experiment can generate
-  public static double experiment_size(string subject_id)
-  {
-    ScienceExperiment exp = ResearchAndDevelopment.GetExperiment(Lib.Tokenize(subject_id, '@')[0]);
-    return exp.scienceCap * exp.dataScale;
-  }
-
-
-  // return the container of a particular experiment
-  public static IScienceDataContainer experiment_container(Part p, string experiment_id)
-  {
-    // first try to get a stock experiment module with the right experiment id
-    // - this support parts with multiple experiment modules, like eva kerbal
-    foreach(ModuleScienceExperiment exp in p.FindModulesImplementing<ModuleScienceExperiment>())
-    {
-      if (exp.experimentID == experiment_id) return exp;
-    }
-
-    // if none was found, default to the first module implementing the science data container interface
-    // - this support third-party modules that implement IScienceDataContainer, but don't derive from ModuleScienceExperiment
-    return p.FindModuleImplementing<IScienceDataContainer>();
-  }
 
 
   // [disabled] EXPERIMENTAL
@@ -255,7 +213,7 @@ public static class Science
     }
   }
   static Dictionary<string, KSP.UI.UIListItem> items = new Dictionary<string, KSP.UI.UIListItem>();*/
-}
+
 
 
 } // KERBALISM

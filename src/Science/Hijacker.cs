@@ -38,7 +38,7 @@ public static class Hijacker
   static void hijack(ExperimentsResultDialog dialog, ExperimentResultDialogPage page, ScienceData data, bool send)
   {
     // collect and deduce all data necessary just once
-    MetaData meta = new MetaData(data);
+    MetaData meta = new MetaData(data, page.host);
 
     // hijack the dialog
     if (!meta.is_rerunnable)
@@ -78,11 +78,11 @@ public static class Hijacker
     Drive drive = DB.Vessel(meta.vessel).drive;
     if (!meta.is_sample)
     {
-      drive.record_file(data.subjectID, data.dataAmount, meta.max_amount);
+      drive.record_file(data.subjectID, data.dataAmount);
     }
     else
     {
-      drive.record_sample(data.subjectID, data.dataAmount, meta.max_amount);
+      drive.record_sample(data.subjectID, data.dataAmount);
     }
 
     // flag for sending if specified
@@ -132,29 +132,20 @@ public static class Hijacker
   // data about data
   sealed class MetaData
   {
-    public MetaData(ScienceData data)
+    public MetaData(ScienceData data, Part host)
     {
       // find the part containing the data
-      part = FlightGlobals.FindPartByID(data.container);
+      part = host;
 
       // get the vessel
       vessel = part.vessel;
 
-      // extract experiment id
-      experiment_id = Lib.Tokenize(data.subjectID, '@')[0];
-
       // get the container module storing the data
-      container = Science.experiment_container(part, experiment_id);
+      container = Science.experiment(data.subjectID).container(part);
       if (container == null) throw new Exception("can't find the data container during data hijacking");
 
       // get the stock experiment module storing the data (if that's the case)
       experiment = container as ModuleScienceExperiment;
-
-      // get the experiment definition
-      expdef = ResearchAndDevelopment.GetExperiment(experiment_id);
-
-      // calculate max data size that can be collected
-      max_amount = expdef.scienceCap * expdef.dataScale;
 
       // determine if this is a sample (non-transmissible)
       // - if this is a third-party data container/experiment, we assume it is transmissible
@@ -167,11 +158,8 @@ public static class Hijacker
 
     public Part part;                               // part storing the data
     public Vessel vessel;                           // vessel storing the data
-    public string experiment_id;                    // experiment id extracted from subject id
     public IScienceDataContainer container;         // module containing the data
     public ModuleScienceExperiment experiment;      // module containing the data, as a stock experiment module
-    public ScienceExperiment expdef;                // experiment definition
-    public double max_amount;                       // max amount of data that can be collected
     public bool is_sample;                          // true if the data can't be transmitted
     public bool is_rerunnable;                      // true if the container/experiment can collect data multiple times
   }

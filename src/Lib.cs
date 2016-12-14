@@ -172,8 +172,13 @@ public static class Lib
   // stop time warping
   public static void StopWarp()
   {
-    if (TimeWarp.CurrentRateIndex > 4) TimeWarp.SetRate(4, true);
-    if (TimeWarp.CurrentRateIndex > 0) TimeWarp.SetRate(0, false);
+    // [experimental]
+    // it seem there is no more 'orbit messing' from instantaneously stopping timewarp
+    TimeWarp.fetch.CancelAutoWarp();
+    TimeWarp.SetRate(0, true, false);
+    // the old way
+    //if (TimeWarp.CurrentRateIndex > 4) TimeWarp.SetRate(4, true);
+    //if (TimeWarp.CurrentRateIndex > 0) TimeWarp.SetRate(0, false);
   }
 
   // disable time warping above a specified level
@@ -675,28 +680,35 @@ public static class Lib
     else return v.protoVessel.landed || v.protoVessel.splashed;
   }
 
+
   // return vessel position
   public static Vector3d VesselPosition(Vessel v)
   {
-    // we work around two similar issues:
-    //
-    // #1 with a vessel loaded and in orbit around the sun, switch to space center scene:
-    //    for a single tick Vessel.GetWorldPos3D() return sun position
-    //
-    // #2 with a vessel unloaded and in orbit around some body, switch from space center to flight scene:
-    //    in tick (1) Vessel.GetWorldPos3D() return body position, in tick (2-6) body position moves as
-    //    it should but Vessel.GetWorldPos3D() keep returning the same wrong value as before, and finally
-    //    in tick (7) Vessel.GetWorldPos3D() start returning the right position
-    //
-    // What. The. Fuck.
+    // the issue
+    //   - GetWorldPos3D() return mainBody position for a few ticks after scene changes
+    //   - we can detect that, and fall back to evaluating position from the orbit
+    //   - orbit is not valid if the vessel is landed, and for a tick on prelauch/staging/decoupling
+    //   - evaluating position from latitude/longitude work in all cases, but is probably the slowest method
 
-    bool landed = v.loaded
-      ? (v.Landed || v.Splashed)
-      : (v.protoVessel.landed || v.protoVessel.splashed);
+    // get vessel position
+    Vector3d pos = v.GetWorldPos3D();
 
-    return landed || double.IsNaN(v.orbit.inclination)
-      ? v.GetWorldPos3D()
-      : v.orbit.getPositionAtUT(Planetarium.GetUniversalTime());
+    // during scene changes, it will return mainBody position
+    if (Vector3d.SqrMagnitude(pos - v.mainBody.position) < 1.0)
+    {
+      // try to get it from orbit
+      pos = v.orbit.getPositionAtUT(Planetarium.GetUniversalTime());
+
+      // if the orbit is invalid (landed, or 1 tick after prelauch/staging/decoupling)
+      if (double.IsNaN(pos.x))
+      {
+        // get it from lat/long (work even if it isn't landed)
+        pos = v.mainBody.GetWorldSurfacePosition(v.latitude, v.longitude, v.altitude);
+      }
+    }
+
+    // victory
+    return pos;
   }
 
 
@@ -747,10 +759,10 @@ public static class Lib
     // the alternative is to scan the vessel for ModuleCommand, but that is slower, and resque vessels have no module command
     if (v.vesselType == VesselType.Debris || v.vesselType == VesselType.Flag || v.vesselType == VesselType.SpaceObject || v.vesselType == VesselType.Unknown) return false;
 
-    // when going to eva (and possibly other occasions), for a single update the vessel is not properly set
+    // [disabled] when going to eva (and possibly other occasions), for a single update the vessel is not properly set
     // this can be detected by vessel.distanceToSun being 0 (an impossibility otherwise)
     // in this case, just wait a tick for the data being set by the game engine
-    if (v.loaded && v.distanceToSun <= double.Epsilon) return false;
+    //if (v.loaded && v.distanceToSun <= double.Epsilon) return false;
 
     // the vessel is valid
     return true;
@@ -817,6 +829,7 @@ public static class Lib
     double c = bb.extents.z;
     return 2.0 * (a * b + a * c + b * c) * 0.95493;
   }
+
 
   // return true if a part is manned, even in the editor
   public static bool IsManned(Part p)
@@ -1250,7 +1263,10 @@ public static class Lib
   {
     if (shaders == null)
     {
-      shaders = new WWW("file://" + KSPUtil.ApplicationRootPath + "GameData/Kerbalism/Shaders/_").assetBundle;
+      string platform = "windows";
+      if (Application.platform == RuntimePlatform.LinuxPlayer) platform = "linux";
+      else if (Application.platform == RuntimePlatform.OSXPlayer) platform = "osx";
+      shaders = new WWW("file://" + KSPUtil.ApplicationRootPath + "GameData/Kerbalism/Shaders/_" + platform).assetBundle;
     }
     return new Material(shaders.LoadAsset(name + ".shader") as Shader);
   }

@@ -81,13 +81,13 @@ public sealed class resource_info
             // stock RequestResource() is iterating on all parts and all resources probably,
             // so we do both amount/capacity detection and resource synchronization at the same time
             // this also give coherency among flow rules between loaded and unloaded vessels
-            if (Math.Abs(deferred) > 0.000001)
+            if (Math.Abs(deferred) > 0.0000001)
             {
               double amount_diff = Lib.Clamp(r.amount + deferred, 0.0, r.maxAmount) - r.amount;
               r.amount += amount_diff;
               deferred -= amount_diff;
             }
-            if (r.amount < 0.000001) r.amount = 0.0;
+            if (r.amount < 0.0000001) r.amount = 0.0;
           }
         }
       }
@@ -120,7 +120,7 @@ public sealed class resource_info
             double new_amount = Lib.Clamp(res.amount + deferred, 0.0, res.maxAmount);
             deferred -= new_amount - res.amount;
             res.amount = new_amount;
-            if (Math.Abs(deferred) < 0.000001) break;
+            if (Math.Abs(deferred) < 0.0000001) break;
           }
         }
       }
@@ -159,7 +159,7 @@ public sealed class resource_info
     double delta = rate + meal_rate;
 
     // return depletion
-    return amount <= double.Epsilon ? 0.0 : delta >= -0.000001 ? double.NaN : amount / -delta;
+    return amount <= double.Epsilon ? 0.0 : delta >= -0.0000001 ? double.NaN : amount / -delta;
   }
 
 

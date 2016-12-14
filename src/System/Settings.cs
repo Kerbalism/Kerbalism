@@ -67,10 +67,10 @@ public static class Settings
     ControlRate                 = Lib.ConfigValue(cfg, "ControlRate",                 0.000001); // 1 bps
 
     // reliability
-    QualityScale                = Lib.ConfigValue(cfg, "QualityScale",                5.0);
-    CriticalChance              = Lib.ConfigValue(cfg, "CriticalChance",              0.1);
+    QualityScale                = Lib.ConfigValue(cfg, "QualityScale",                4.0);
+    CriticalChance              = Lib.ConfigValue(cfg, "CriticalChance",              0.25);
     SafeModeChance              = Lib.ConfigValue(cfg, "SafeModeChance",              0.5);
-    IncentiveRedundancy         = Lib.ConfigValue(cfg, "IncentiveRedundancy",         true);
+    IncentiveRedundancy         = Lib.ConfigValue(cfg, "IncentiveRedundancy",         false);
 
     // misc
     TrackingPivot               = Lib.ConfigValue(cfg, "TrackingPivot",               true);

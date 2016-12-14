@@ -12,6 +12,10 @@ public sealed class vessel_info
   {
     // NOTE: anything used here can't in turn use cache, unless you know what you are doing
 
+    // NOTE: you can't cache vessel position
+    // at any point in time all vessel/body positions are relative to a different frame of reference
+    // so comparing the current position of a vessel, with the cached one of another make no sense
+
     // associate with an unique incremental id
     this.inc = inc;
 
@@ -36,8 +40,14 @@ public sealed class vessel_info
     crew_count = Lib.CrewCount(v);
     crew_capacity = Lib.CrewCapacity(v);
 
-    // get vessel position once
-    position = Lib.VesselPosition(v);
+    // get vessel position
+    Vector3d position = Lib.VesselPosition(v);
+
+    // this should never happen again
+    if (Vector3d.Distance(position, v.mainBody.position) < 1.0)
+    {
+      throw new Exception("Shit hit the fan for vessel " + v.vesselName);
+    }
 
     // determine if in sunlight, calculate sun direction and distance
     sunlight = Sim.RaytraceBody(v, position, FlightGlobals.Bodies[0], out sun_dir, out sun_dist) ? 1.0 : 0.0;
@@ -98,7 +108,6 @@ public sealed class vessel_info
   public UInt32       id;                   // generate the id once
   public int          crew_count;           // number of crew on the vessel
   public int          crew_capacity;        // crew capacity of the vessel
-  public Vector3d     position;             // vessel position
   public double       sunlight;             // if the vessel is in direct sunlight
   public Vector3d     sun_dir;              // normalized vector from vessel to sun
   public double       sun_dist;             // distance from vessel to sun

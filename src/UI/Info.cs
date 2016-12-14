@@ -70,7 +70,7 @@ public sealed class Info : Window
     render_environment(v, vi);
     render_supplies(v, vi, resources);
     render_signal(v, vi);
-    render_habitat(v, vi, resources);
+    render_habitat(v, vi);
     render_crew(crew);
     render_greenhouse(vi);
   }
@@ -118,7 +118,7 @@ public sealed class Info : Window
       if (supplies == 0) Panel.section("SUPPLIES");
 
       // rate tooltip
-      string rate_tooltip = Math.Abs(res.rate) >= 0.000001 ? Lib.BuildString
+      string rate_tooltip = Math.Abs(res.rate) >= 0.0000001 ? Lib.BuildString
       (
         res.rate > 0.0 ? "<color=#00ff00><b>" : "<color=#ff0000><b>",
         Lib.HumanReadableRate(Math.Abs(res.rate)),
@@ -156,31 +156,39 @@ public sealed class Info : Window
       default: target_str = "none"; break;
     }
 
-    // transmitted name
-    string transmission_str = vi.connection.linked ? "telemetry" : "nothing";
-    if (vi.relaying.Length > 0) transmission_str = Science.experiment_name(vi.relaying);
-    else if (vi.transmitting.Length > 0) transmission_str = Science.experiment_name(vi.transmitting);
+    // transmitted label, content and tooltip
+    string comms_label = vi.relaying.Length == 0 ? "transmitting" : "relaying";
+    string comms_str = vi.connection.linked ? "telemetry" : "nothing";
+    string comms_tooltip = string.Empty;
+    if (vi.relaying.Length > 0)
+    {
+      ExperimentInfo exp = Science.experiment(vi.relaying);
+      comms_str = exp.name;
+      comms_tooltip = exp.fullname;
+    }
+    else if (vi.transmitting.Length > 0)
+    {
+      ExperimentInfo exp = Science.experiment(vi.transmitting);
+      comms_str = exp.name;
+      comms_tooltip = exp.fullname;
+    }
 
     // render panel
     Panel.section("SIGNAL");
     Panel.content("connected", vi.connection.linked ? "yes" : "no");
     Panel.content("data rate", Lib.HumanReadableDataRate(vi.connection.rate));
     Panel.content("target", target_str);
-    Panel.content(vi.relaying.Length == 0 ? "transmitting" : "relaying", transmission_str);
+    Panel.content(comms_label, comms_str, comms_tooltip);
     Panel.space();
   }
 
-  void render_habitat(Vessel v, vessel_info vi, vessel_resources resources)
+  void render_habitat(Vessel v, vessel_info vi)
   {
     // if habitat feature is disabled, do not show the panel
     if (!Features.Habitat) return;
 
     // if vessel is unmanned, do not show the panel
     if (vi.crew_count == 0) return;
-
-    // get pseudo-resources info
-    resource_info atmo_res = resources.Info(v, "Atmosphere");
-    resource_info waste_res = resources.Info(v, "WasteAtmosphere");
 
     // determine some content, with colors
     string pressure_str = Lib.Color(Lib.HumanReadablePressure(vi.pressure * Sim.PressureAtSeaLevel()), vi.pressure < Settings.PressureThreshold, "yellow");

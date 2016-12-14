@@ -8,6 +8,11 @@ namespace KERBALISM {
 
 public sealed class FileManager : Window
 {
+  // max number of files/samples shown
+  const int max_files = 16;
+  const int max_samples = 8;
+
+
   public FileManager()
   : base(340u, 80u, 80u, 20u, Styles.win)
   {
@@ -73,23 +78,41 @@ public sealed class FileManager : Window
     if (Panel.title(v.vesselName)) Close();
 
     // draw data section
+    int i=0;
     Panel.section("DATA");
     foreach(var p in drive.files)
     {
-      string filename = p.Key;
-      File file = p.Value;
-      render_file(filename, file, drive);
+      if (i++ < max_files)
+      {
+        string filename = p.Key;
+        File file = p.Value;
+        render_file(filename, file, drive);
+      }
+      else
+      {
+        Panel.content(Lib.BuildString("<i>", (drive.files.Count - max_files).ToString(), " other files</i>"), string.Empty);
+        break;
+      }
     }
     if (drive.files.Count == 0) Panel.content("<i>no files</i>", string.Empty);
     Panel.space();
 
     // draw samples section
+    i=0;
     Panel.section("SAMPLES");
     foreach(var p in drive.samples)
     {
-      string filename = p.Key;
-      Sample sample = p.Value;
-      render_sample(filename, sample, drive);
+      if (i++ < max_samples)
+      {
+        string filename = p.Key;
+        Sample sample = p.Value;
+        render_sample(filename, sample, drive);
+      }
+      else
+      {
+        Panel.content(Lib.BuildString("<i>", (drive.files.Count - max_samples).ToString(), " other samples</i>"), string.Empty);
+        break;
+      }
     }
     if (drive.samples.Count == 0) Panel.content("<i>no samples</i>", string.Empty);
     Panel.space();
@@ -98,23 +121,23 @@ public sealed class FileManager : Window
 
   void render_file(string filename, File file, Drive drive)
   {
+    // get experiment info
+    ExperimentInfo exp = Science.experiment(filename);
+
     // start row container
     GUILayout.BeginHorizontal(Styles.entry_container);
 
     // render experiment name
-    string exp_name = Science.experiment_name(filename);
-    string exp_fullname = Science.experiment_fullname(filename);
-    string exp_situation = exp_fullname.Substring(exp_name.Length).Replace("while ", string.Empty).Replace("from ", string.Empty);
     string exp_label = Lib.BuildString
     (
       "<b>",
-      Lib.Ellipsis(exp_name, 16),
+      Lib.Ellipsis(exp.name, 16),
       "</b> <size=10>",
-      Lib.Ellipsis(exp_situation, 24),
+      Lib.Ellipsis(exp.situation, 24),
       "</size>"
     );
-    string exp_tooltip = exp_fullname;
-    double exp_value = Science.experiment_value(filename, file.size);
+    string exp_tooltip = exp.fullname;
+    double exp_value = exp.value(file.size);
     if (exp_value > double.Epsilon) exp_tooltip = Lib.BuildString(exp_tooltip, "\n<b>", Lib.HumanReadableScience(exp_value), "</b>");
     GUILayout.Label(new GUIContent(exp_label, exp_tooltip), Styles.entry_label);
 
@@ -132,7 +155,7 @@ public sealed class FileManager : Window
       Lib.Popup
       (
         "Warning!",
-        Lib.BuildString("Do you really want to delete ", Science.experiment_fullname(filename), "?"),
+        Lib.BuildString("Do you really want to delete ", exp.fullname, "?"),
         new DialogGUIButton("Delete it", () => drive.files.Remove(filename)),
         new DialogGUIButton("Keep it", () => {})
       );
@@ -145,23 +168,23 @@ public sealed class FileManager : Window
 
   void render_sample(string filename, Sample sample, Drive drive)
   {
+    // get experiment info
+    ExperimentInfo exp = Science.experiment(filename);
+
     // start row contianer
     GUILayout.BeginHorizontal(Styles.entry_container);
 
     // render experiment name
-    string exp_name = Science.experiment_name(filename);
-    string exp_fullname = Science.experiment_fullname(filename);
-    string exp_situation = exp_fullname.Substring(exp_name.Length).Replace("while ", string.Empty).Replace("from ", string.Empty);
     string exp_label = Lib.BuildString
     (
       "<b>",
-      Lib.Ellipsis(exp_name, 16),
+      Lib.Ellipsis(exp.name, 16),
       "</b> <size=10>",
-      Lib.Ellipsis(exp_situation, 24),
+      Lib.Ellipsis(exp.situation, 24),
       "</size>"
     );
-    string exp_tooltip = exp_fullname;
-    double exp_value = Science.experiment_value(filename, sample.size);
+    string exp_tooltip = exp.fullname;
+    double exp_value = exp.value(sample.size);
     if (exp_value > double.Epsilon) exp_tooltip = Lib.BuildString(exp_tooltip, "\n<b>", Lib.HumanReadableScience(exp_value), "</b>");
     GUILayout.Label(new GUIContent(exp_label, exp_tooltip), Styles.entry_label);
 
@@ -179,7 +202,7 @@ public sealed class FileManager : Window
       Lib.Popup
       (
         "Warning!",
-        Lib.BuildString("Do you really want to dump ", Science.experiment_fullname(filename), "?"),
+        Lib.BuildString("Do you really want to dump ", exp.fullname, "?"),
         new DialogGUIButton("Dump it", () => drive.samples.Remove(filename)),
         new DialogGUIButton("Keep it", () => {})
       );
@@ -203,10 +226,10 @@ public sealed class FileManager : Window
     float h = 20.0f;
 
     // files
-    h += Panel.height(Math.Max(drive.files.Count, 1));
+    h += Panel.height(Lib.Clamp(drive.files.Count, 1, max_files + 1));
 
     // samples
-    h += Panel.height(Math.Max(drive.samples.Count, 1));
+    h += Panel.height(Lib.Clamp(drive.samples.Count, 1, max_samples + 1));
 
     // finally, return the height
     return h;

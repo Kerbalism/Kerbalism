@@ -73,7 +73,7 @@ public sealed class Laboratory : PartModule, ISpecifics
             analyze(vessel, sample_filename, analysis_rate * Kerbalism.elapsed_s);
 
             // update status
-            status = Science.experiment_name(sample_filename);
+            status = Science.experiment(sample_filename).name;
           }
           // if there was no ec
           else
@@ -202,7 +202,7 @@ public sealed class Laboratory : PartModule, ISpecifics
     amount = Math.Min(amount, sample.size);
     bool completed = amount >= sample.size - double.Epsilon;
     drive.delete_sample(filename, amount);
-    drive.record_file(filename, amount, Science.experiment_size(filename));
+    drive.record_file(filename, amount);
 
     // if the analysis is completed
     if (completed)
@@ -210,7 +210,7 @@ public sealed class Laboratory : PartModule, ISpecifics
       // inform the user
       Message.Post
       (
-        Lib.BuildString("<color=cyan><b>ANALYSIS COMPLETED</b></color>\nOur laboratory on <b>", v.vesselName, "</b> analyzed <b>", Science.experiment_name(filename), "</b>"),
+        Lib.BuildString("<color=cyan><b>ANALYSIS COMPLETED</b></color>\nOur laboratory on <b>", v.vesselName, "</b> analyzed <b>", Science.experiment(filename).name, "</b>"),
         "The results can be transmitted now"
       );
 

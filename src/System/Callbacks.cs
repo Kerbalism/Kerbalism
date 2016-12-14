@@ -26,7 +26,6 @@ public sealed class Callbacks
     GameEvents.onGUIEditorToolbarReady.Add(this.addEditorCategory);
   }
 
-
   void toEVA(GameEvents.FromToAction<Part, Part> data)
   {
     // get total crew in the origin vessel
@@ -105,7 +104,7 @@ public sealed class Callbacks
     // this function accumulate science stored in drives on recovery,
     // and visualize the data in the recovery dialog window
 
-    // zero fucks given if science system is disabled, or in sandbox mode
+    // do nothing if science system is disabled, or in sandbox mode
     if (!Features.Science || HighLogic.CurrentGame.Mode == Game.Modes.SANDBOX) return;
 
     // get the drive data from DB
@@ -281,35 +280,40 @@ public sealed class Callbacks
   }
 
 
-  void vesselModified(Vessel v)
+  void vesselModified(Vessel vessel_a)
   {
     // do nothing in the editor
     if (Lib.IsEditor()) return;
 
-    // first, we scan all known vessels and get the set of drives indexed by preferred location
-    Dictionary<uint, uint> drives = new Dictionary<uint, uint>();
-    foreach(var p in DB.vessels)
-    {
-      uint root_id = p.Key;
-      VesselData vd = p.Value;
+    // bah
+    if (string.IsNullOrEmpty(vessel_a.vesselName)) return;
 
-      if (vd.drive.location != 0)
-      {
-        drives.Add(vd.drive.location, root_id);
-      }
-    }
+    // get drive from first vessel
+    // - there is a possibility this will create it
+    // - we avoid adding a db entry for invalid vessels
+    Drive drive_a = Cache.VesselInfo(vessel_a).is_valid ? DB.Vessel(vessel_a).drive : new Drive();
 
-    // then we scan all parts of the vessel and see if one of them is the preferred location of a drive
-    foreach(Part p in v.parts)
+    // for each loaded vessel
+    foreach(Vessel vessel_b in FlightGlobals.VesselsLoaded)
     {
-      // if that's the case
-      if (drives.ContainsKey(p.flightID))
+      // do not check against itself
+      if (vessel_a.id == vessel_b.id) continue;
+
+      // get drive of the other vessel
+      // - there is a possibility this will create it
+      // - we avoid adding a db entry for invalid vessels
+      Drive drive_b = Cache.VesselInfo(vessel_b).is_valid ? DB.Vessel(vessel_b).drive : new Drive();
+
+      // if location of A is now in B, or viceversa
+      // - this support the case when one or both the drives locations are 0
+      if (vessel_a.parts.Find(k => k.flightID == drive_b.location) != null
+       || vessel_b.parts.Find(k => k.flightID == drive_a.location) != null)
       {
-        // use the associated drive for this vessel
-        // - this does the right thing even if the two vessels are the same
-        uint root_id = drives[p.flightID];
-        Lib.Swap(ref DB.Vessel(v).drive, ref DB.vessels[root_id].drive);
-        return;
+        // swap the drives
+        Lib.Swap(ref DB.Vessel(vessel_a).drive, ref DB.Vessel(vessel_b).drive);
+
+        // done, no need to go through the rest of the loaded vessels
+        break;
       }
     }
   }

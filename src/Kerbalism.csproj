@@ -114,6 +114,7 @@
     <Compile Include="Renderer\ParticleMesh.cs" />
     <Compile Include="Renderer\ParticleRenderer.cs" />
     <Compile Include="Science\Drive.cs" />
+    <Compile Include="Science\ExperimentInfo.cs" />
     <Compile Include="Science\File.cs" />
     <Compile Include="Science\Hijacker.cs" />
     <Compile Include="Science\Sample.cs" />

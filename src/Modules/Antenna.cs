@@ -13,7 +13,7 @@ public enum AntennaType
 }
 
 
-public sealed class Antenna : PartModule, ISpecifics, IAnimatedModule, IScienceDataTransmitter
+public sealed class Antenna : PartModule, ISpecifics, IAnimatedModule, IScienceDataTransmitter, IContractObjectiveModule
 {
   // config
   [KSPField] public AntennaType type;      // type of antenna
@@ -37,6 +37,24 @@ public sealed class Antenna : PartModule, ISpecifics, IAnimatedModule, IScienceD
 
     // create data stream, used if science system is disabled
     stream = new DataStream();
+
+    // in flight
+    if (Lib.IsFlight())
+    {
+      // get animator module, if any
+      var anim = part.FindModuleImplementing<ModuleAnimationGroup>();
+      if (anim != null)
+      {
+        // resync extended state from animator
+        // - rationale: extending in editor doesn't set extended to true,
+        //   leading to spurious signal loss for 1 tick on prelaunch
+        extended = anim.isDeployed;
+
+        // allow extending/retracting even when vessel is not controllable
+        anim.Events["DeployModule"].guiActiveUncommand = true;
+        anim.Events["RetractModule"].guiActiveUncommand = true;
+      }
+    }
   }
 
 
@@ -74,8 +92,13 @@ public sealed class Antenna : PartModule, ISpecifics, IAnimatedModule, IScienceD
         // if we are still linked, and there is ec left
         if (CanTransmit() && ec.amount > double.Epsilon)
         {
-          // transmit the data using stock system
-          stream.update(DataRate * Kerbalism.elapsed_s, vessel.protoVessel);
+          // compression factor
+          // - used to avoid making the user wait too much for transmissions that
+          //   don't happen in background, while keeping transmission rates realistic
+          const double compression = 16.0;
+
+          // transmit using the data stream
+          stream.update(DataRate * Kerbalism.elapsed_s * compression, vessel);
 
           // consume ec
           ec.Consume(DataResourceCost * Kerbalism.elapsed_s);
@@ -89,6 +112,27 @@ public sealed class Antenna : PartModule, ISpecifics, IAnimatedModule, IScienceD
           ScreenMessages.PostScreenMessage("Transmission aborted", 5.0f, ScreenMessageStyle.UPPER_LEFT);
         }
       }
+    }
+  }
+
+
+  void Transmit(List<ScienceData> queue)
+  {
+    // this function is here to support two things:
+    // - data transmission when Science is disabled
+    // - 'triggered' science data (irregardless if Science is enabled or not)
+
+    foreach(ScienceData data in queue)
+    {
+      // if Science is enabled, it should hijack everything except triggered data
+      // if that is not the case, we want to know
+      if (Features.Science && !data.triggered)
+      {
+        throw new Exception("Unable to hijack non-triggered data '" + data.title + "'");
+      }
+
+      // add data to the stream
+      stream.append(data);
     }
   }
 
@@ -134,18 +178,21 @@ public sealed class Antenna : PartModule, ISpecifics, IAnimatedModule, IScienceD
 
 
   // data transmitter support
-  // - here so that signal system can be used without science
   public float DataRate { get { vessel_info vi = Cache.VesselInfo(vessel); return vi.is_valid ? (float)vi.connection.rate : 0.0f; } }
   public double DataResourceCost { get { return cost; } }
   public bool CanTransmit() { vessel_info vi = Cache.VesselInfo(vessel); return vi.is_valid && vi.connection.linked; }
   public bool IsBusy() { return false; }
-  public void TransmitData(List<ScienceData> dataQueue) { foreach(ScienceData data in dataQueue) stream.append(data); }
+  public void TransmitData(List<ScienceData> dataQueue) { Transmit(dataQueue); }
 
   // animation group support
   public void EnableModule()      { extended = true; }
   public void DisableModule()     { extended = false; }
   public bool ModuleIsActive()    { return false; }
   public bool IsSituationValid()  { return true; }
+
+  // contract objective support
+  public bool CheckContractObjectiveValidity()  { return true; }
+  public string GetContractObjectiveType()      { return "Antenna"; }
 
 
   // return data rate in kbps
@@ -157,7 +204,6 @@ public sealed class Antenna : PartModule, ISpecifics, IAnimatedModule, IScienceD
 }
 
 
-// this is used to send data over time, when the science system is disabled
 public sealed class DataStream
 {
   public DataStream()
@@ -172,17 +218,37 @@ public sealed class DataStream
     transmitted.Add(0.0);
   }
 
-  // - size: size of data transmitted
-  public void update(double size, ProtoVessel pv)
+  public void update(double size, Vessel v)
   {
     if (queue.Count > 0)
     {
+      // get first data in queue
       ScienceData data = queue[0];
+
+      // transmit some
       transmitted[0] += size;
 
+      // if transmission is completed
       if (transmitted[0] >= data.dataAmount)
       {
-        Science.credit(data.subjectID, data.dataAmount, true, pv);
+        // if triggered, fire the triggered data callback
+        if (data.triggered)
+        {
+          // we can't just integrate triggered data with Science data transmission,
+          // because virtually all the listener callbacks assume the vessel is loaded
+          GameEvents.OnTriggeredDataTransmission.Fire(data, v, false);
+        }
+        // if not triggered, we just submit the data
+        else
+        {
+          ScienceSubject subject = ResearchAndDevelopment.GetSubjectByID(data.subjectID);
+          if (subject != null)
+          {
+            ResearchAndDevelopment.Instance.SubmitScienceData(data.dataAmount, subject, 1.0f, v.protoVessel);
+          }
+        }
+
+        // remove data from queue
         queue.RemoveAt(0);
         transmitted.RemoveAt(0);
       }
@@ -213,7 +279,7 @@ public sealed class DataStream
 
   public string current_file()
   {
-    return queue.Count > 0 ? Science.experiment_name(queue[0].subjectID) : string.Empty;
+    return queue.Count > 0 ? queue[0].title : string.Empty;
   }
 
   public double current_progress()

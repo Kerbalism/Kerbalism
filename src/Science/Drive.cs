@@ -62,7 +62,7 @@ public sealed class Drive
   }
 
   // add science data, creating new file or incrementing existing one
-  public void record_file(string subject_id, double amount, double max_amount)
+  public void record_file(string subject_id, double amount)
   {
     // create new data or get existing one
     File file;
@@ -75,12 +75,12 @@ public sealed class Drive
     // increase amount of data stored in the file
     file.size += amount;
 
-    // clamp to max data collectible
-    file.size = Math.Min(file.size, max_amount);
+    // clamp file size to max amount that can be collected
+    file.size = Math.Min(file.size, Science.experiment(subject_id).max_amount);
   }
 
   // add science sample, creating new sample or incrementing existing one
-  public void record_sample(string subject_id, double amount, double max_amount)
+  public void record_sample(string subject_id, double amount)
   {
     // create new data or get existing one
     Sample sample;
@@ -93,8 +93,8 @@ public sealed class Drive
     // increase amount of data stored in the sample
     sample.size += amount;
 
-    // clamp to max data collectible
-    sample.size = Math.Min(sample.size, max_amount);
+    // clamp file size to max amount that can be collected
+    sample.size = Math.Min(sample.size, Science.experiment(subject_id).max_amount);
   }
 
   // remove science data, deleting the file when it is empty
@@ -153,14 +153,14 @@ public sealed class Drive
     // copy files
     foreach(var p in files)
     {
-      destination.record_file(p.Key, p.Value.size, Science.experiment_size(p.Key));
+      destination.record_file(p.Key, p.Value.size);
       destination.files[p.Key].buff += p.Value.buff; //< move the buffer along with the size
     }
 
     // copy samples
     foreach(var p in samples)
     {
-      destination.record_sample(p.Key, p.Value.size, Science.experiment_size(p.Key));
+      destination.record_sample(p.Key, p.Value.size);
     }
 
     // clear source drive

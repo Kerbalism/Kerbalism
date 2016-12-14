@@ -17,8 +17,8 @@ public sealed class Reliability : PartModule, ISpecifics, IModuleInfo, IPartCost
   [KSPField] public string repair = string.Empty;                     // repair crew specs
   [KSPField] public string title  = string.Empty;                     // short description of component
   [KSPField] public string redundancy = string.Empty;                 // redundancy group
-  [KSPField] public double extra_cost;                                // extra cost for high-quality
-  [KSPField] public double extra_mass;                                // extra mass for high-quality
+  [KSPField] public double extra_cost;                                // extra cost for high-quality, in proportion of part cost
+  [KSPField] public double extra_mass;                                // extra mass for high-quality, in proportion of part mass
 
   // persistence
   [KSPField(isPersistant = true)] public bool broken;                 // true if broken
@@ -375,8 +375,8 @@ public sealed class Reliability : PartModule, ISpecifics, IModuleInfo, IPartCost
     specs.add(string.Empty);
     specs.add("<color=#00ffff>High quality</color>");
     specs.add("MTBF", Lib.HumanReadableDuration(mtbf * Settings.QualityScale));
-    if (extra_cost > double.Epsilon) specs.add("Extra cost", Lib.HumanReadableCost(extra_cost));
-    if (extra_mass > double.Epsilon) specs.add("Extra mass", Lib.HumanReadableMass(extra_mass));
+    if (extra_cost > double.Epsilon) specs.add("Extra cost", Lib.HumanReadableCost(extra_cost * part.partInfo.cost));
+    if (extra_mass > double.Epsilon) specs.add("Extra mass", Lib.HumanReadableMass(extra_mass * part.mass));
     return specs;
   }
 
@@ -388,11 +388,11 @@ public sealed class Reliability : PartModule, ISpecifics, IModuleInfo, IPartCost
 
 
   // module cost support
-  public float GetModuleCost(float defaultCost, ModifierStagingSituation sit) { return quality ? (float)extra_cost : 0.0f; }
+  public float GetModuleCost(float defaultCost, ModifierStagingSituation sit) { return quality ? (float)extra_cost * part.partInfo.cost : 0.0f; }
 
 
   // module mass support
-  public float GetModuleMass(float defaultCost, ModifierStagingSituation sit) { return quality ? (float)extra_mass : 0.0f; }
+  public float GetModuleMass(float defaultCost, ModifierStagingSituation sit) { return quality ? (float)extra_mass * part.mass : 0.0f; }
   public ModifierChangeWhen GetModuleCostChangeWhen() { return ModifierChangeWhen.CONSTANTLY; }
   public ModifierChangeWhen GetModuleMassChangeWhen() { return ModifierChangeWhen.CONSTANTLY; }
 

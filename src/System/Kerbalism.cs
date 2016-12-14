@@ -23,6 +23,7 @@ public sealed class Kerbalism : ScenarioModule
       Cache.init();
       ResourceCache.init();
       Radiation.init();
+      Science.init();
       LineRenderer.init();
       ParticleRenderer.init();
       Highlighter.init();
@@ -276,7 +277,7 @@ public sealed class Kerbalism : ScenarioModule
   public static uint warp_blending;
 
   // last savegame unique id
-  public static int savegame_uid;
+  static int savegame_uid;
 }
 
 
@@ -428,7 +429,7 @@ public static class Misc
   public static void KeyboardInput()
   {
     bool ctrl = Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
-    bool alt  = Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.LeftAlt);
+    bool alt  = Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt);
 
     // mute/unmute messages with keyboard
     // done in update because unity is a mess

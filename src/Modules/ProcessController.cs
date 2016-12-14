@@ -88,11 +88,6 @@ public sealed class ProcessController : PartModule, IModuleInfo, ISpecifics, ICo
     return Specs().info(desc);
   }
 
-  // module info support
-  public string GetModuleTitle() { return title; }
-  public string GetPrimaryField() { return string.Empty; }
-  public Callback<Rect> GetDrawModulePanelCallback() { return null; }
-
   // specifics support
   public Specifics Specs()
   {
@@ -105,6 +100,11 @@ public sealed class ProcessController : PartModule, IModuleInfo, ISpecifics, ICo
     }
     return specs;
   }
+
+  // module info support
+  public string GetModuleTitle() { return title; }
+  public string GetPrimaryField() { return string.Empty; }
+  public Callback<Rect> GetDrawModulePanelCallback() { return null; }
 }
 
 
