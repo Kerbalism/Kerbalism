@@ -7,7 +7,7 @@ using UnityEngine;
 namespace KERBALISM {
 
 
-public sealed class ProcessController : PartModule, IModuleInfo, ISpecifics, IConfigurable
+public sealed class ProcessController : PartModule, IModuleInfo, IAnimatedModule, ISpecifics, IConfigurable
 {
   // config
   [KSPField] public string resource = string.Empty; // pseudo-resource to control
@@ -105,6 +105,13 @@ public sealed class ProcessController : PartModule, IModuleInfo, ISpecifics, ICo
   public string GetModuleTitle() { return title; }
   public string GetPrimaryField() { return string.Empty; }
   public Callback<Rect> GetDrawModulePanelCallback() { return null; }
+
+
+  // animation group support
+  public void EnableModule()      { }
+  public void DisableModule()     { }
+  public bool ModuleIsActive()    { return running; }
+  public bool IsSituationValid()  { return true; }
 }
 
 
