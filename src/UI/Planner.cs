@@ -670,7 +670,7 @@ public sealed class vessel_analyzer
     }
 
     // if the user press ALT, the planner consider the vessel crewed at full capacity
-    if (Input.GetKeyDown(KeyCode.LeftAlt) || Input.GetKeyDown(KeyCode.RightAlt)) crew_count = crew_capacity;
+    if (Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt)) crew_count = crew_capacity;
   }
 
 
