@@ -428,12 +428,8 @@ public static class Misc
 
   public static void KeyboardInput()
   {
-    bool ctrl = Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
-    bool alt  = Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt);
-
     // mute/unmute messages with keyboard
-    // done in update because unity is a mess
-    if (ctrl && Input.GetKeyDown(KeyCode.N))
+    if (Input.GetKeyDown(KeyCode.Pause))
     {
       if (!Message.IsMuted())
       {
@@ -448,7 +444,7 @@ public static class Misc
     }
 
     // toggle body info window with keyboard
-    if (alt && Input.GetKeyDown(KeyCode.N))
+    if (Input.GetKeyDown(KeyCode.B))
     {
       BodyInfo.Toggle();
     }
