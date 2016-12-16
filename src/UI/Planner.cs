@@ -670,7 +670,7 @@ public sealed class vessel_analyzer
     }
 
     // if the user press ALT, the planner consider the vessel crewed at full capacity
-    if (Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt)) crew_count = crew_capacity;
+    if (Input.GetKeyDown(KeyCode.LeftAlt) || Input.GetKeyDown(KeyCode.RightAlt)) crew_count = crew_capacity;
   }
 
 
@@ -1089,9 +1089,8 @@ public class resource_simulator
 
     // determine environment conditions
     bool lighting = natural + artificial >= g.light_tolerance;
-    bool pressure = va.pressurized || g.pressure_tolerance <= double.Epsilon;
+    bool pressure = va.pressurized || env.breathable || g.pressure_tolerance <= double.Epsilon;
     bool radiation = (env.landed ? env.surface_rad : env.magnetopause_rad) * (1.0 - va.shielding) < g.radiation_tolerance;
-    bool environment = lighting && pressure && radiation;
 
     // if all conditions apply
     // note: we are assuming the inputs are satisfied, we can't really do otherwise here
