@@ -11,8 +11,7 @@ public sealed class Greenhouse : PartModule, ISpecifics
   // config
   [KSPField] public string crop_resource;         // name of resource produced by harvests
   [KSPField] public double crop_size;             // amount of resource produced by harvests
-  [KSPField] public double crop_rate;             // positive growth per-second when all conditions apply
-  [KSPField] public double crop_degeneration;     // negative growth per-second when at least one of the conditions doesn't apply
+  [KSPField] public double crop_rate;             // growth per-second when all conditions apply
   [KSPField] public double ec_rate;               // EC/s consumed by the lamp at max capacity, set to 0 to disable the lamp
   [KSPField] public double light_tolerance;       // minimum lighting flux required for growth, in W/m^2
   [KSPField] public double pressure_tolerance;    // minimum pressure required for growth, in sea level atmospheres (optional)
@@ -112,14 +111,11 @@ public sealed class Greenhouse : PartModule, ISpecifics
     // do nothing in the editor
     if (Lib.IsEditor()) return;
 
-    // determine if crop is growing or degenerating
-    bool growing = false;
-
     // if enabled
     if (active)
     {
       // get vessel info from the cache
-      // note: if the vessel is not valid (eg: flagged as debris) then solar flux will be 0 and landed false (but that's okay)
+      // - if the vessel is not valid (eg: flagged as debris) then solar flux will be 0 and landed false (but that's okay)
       vessel_info vi = Cache.VesselInfo(vessel);
 
       // get resource cache
@@ -137,7 +133,7 @@ public sealed class Greenhouse : PartModule, ISpecifics
       if (artificial > double.Epsilon) ec.Consume(ec_rate * (artificial / light_tolerance) * Kerbalism.elapsed_s);
 
       // reset artificial lighting if there is no ec left
-      // note: comparing against amount in previous simulation step
+      // - comparing against amount in previous simulation step
       if (ec.amount <= double.Epsilon) artificial = 0.0;
 
       // execute recipe
@@ -152,7 +148,7 @@ public sealed class Greenhouse : PartModule, ISpecifics
       bool radiation = radiation_tolerance <= double.Epsilon || vi.radiation * (1.0 - vi.shielding) < radiation_tolerance;
 
       // determine input resources conditions
-      // note: comparing against amounts in previous simulation step
+      // - comparing against amounts in previous simulation step
       bool inputs = true;
       string missing_res = string.Empty;
       foreach(ModuleResource input in resHandler.inputResources)
@@ -176,28 +172,19 @@ public sealed class Greenhouse : PartModule, ISpecifics
       : !radiation ? "excessive radiation"
       : string.Empty;
 
-      // determine if growing or degenerating
-      growing = lighting && pressure && radiation && inputs;
-    }
-
-    // if growing
-    if (growing)
-    {
-      // increase growth
-      growth += crop_rate * Kerbalism.elapsed_s;
-
-      // notify the user when crop can be harvested
-      if (growth >= 0.99)
+      // if growing
+      if (lighting && pressure && radiation && inputs)
       {
-        Message.Post(Lib.BuildString("On <color=ffffff>", vessel.vesselName, "</color> the crop is ready to be harvested"));
+        // increase growth
+        growth += crop_rate * Kerbalism.elapsed_s;
+        growth = Math.Min(growth, 1.0);
+
+        // notify the user when crop can be harvested
+        if (growth >= 0.99)
+        {
+          Message.Post(Lib.BuildString("On <color=ffffff>", vessel.vesselName, "</color> the crop is ready to be harvested"));
+        }
       }
-    }
-    // if degenerating
-    else
-    {
-      // degenerate growth
-      growth -= crop_degeneration * Kerbalism.elapsed_s;
-      growth = Math.Max(growth, 0.0);
     }
   }
 
@@ -205,9 +192,6 @@ public sealed class Greenhouse : PartModule, ISpecifics
   public static void BackgroundUpdate(Vessel v, ProtoPartModuleSnapshot m, Greenhouse g,
                                       vessel_info vi, vessel_resources resources, double elapsed_s)
   {
-    // determine if grop is growing or degenerating
-    bool growing = false;
-
     // get protomodule data
     bool active = Lib.Proto.GetBool(m, "active");
     double growth = Lib.Proto.GetDouble(m, "growth");
@@ -265,38 +249,27 @@ public sealed class Greenhouse : PartModule, ISpecifics
       : !radiation ? "excessive radiation"
       : string.Empty;
 
-      // determine if growing or degenerating
-      growing = lighting && pressure && radiation && inputs;
+      // if growing
+      if (lighting && pressure && radiation && inputs)
+      {
+        // increase growth
+        growth += g.crop_rate * elapsed_s;
+        growth = Math.Min(growth, 1.0);
+
+        // notify the user when crop can be harvested
+        if (growth >= 0.99)
+        {
+          Message.Post(Lib.BuildString("On <color=ffffff>", v.vesselName, "</color> the crop is ready to be harvested"));
+        }
+      }
 
       // update protomodule data
       Lib.Proto.Set(m, "natural", natural);
       Lib.Proto.Set(m, "artificial", artificial);
       Lib.Proto.Set(m, "tta", tta);
       Lib.Proto.Set(m, "issue", issue);
+      Lib.Proto.Set(m, "growth", growth);
     }
-
-    // if growing
-    if (growing)
-    {
-      // increase growth
-      growth += g.crop_rate * elapsed_s;
-
-      // notify the user when crop can be harvested
-      if (growth >= 0.99)
-      {
-        Message.Post(Lib.BuildString("On <color=ffffff>", v.vesselName, "</color> the crop is ready to be harvested"));
-      }
-    }
-    // if degenerating
-    else
-    {
-      // degenerate growth
-      growth -= g.crop_degeneration * elapsed_s;
-      growth = Math.Max(growth, 0.0);
-    }
-
-    // update growth in protomodule
-    Lib.Proto.Set(m, "growth", growth);
   }
 
 
