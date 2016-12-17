@@ -15,7 +15,10 @@ public static class Science
     experiments = new Dictionary<string, ExperimentInfo>();
 
     // make the science dialog invisible, just once
-    AssetBase.GetPrefab("ScienceResultsDialog").SetActive(false);
+    if (Features.Science)
+    {
+      AssetBase.GetPrefab("ScienceResultsDialog").SetActive(false);
+    }
   }
 
   // consume EC for transmission, and transmit science data
