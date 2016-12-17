@@ -116,7 +116,8 @@ public sealed class Message
     // ignore the message if muted
     if (instance.muted) return;
 
-    Post(Lib.BuildString(text, "\n<i>", subtext, "</i>"));
+    if (subtext.Length == 0) Post(text);
+    else Post(Lib.BuildString(text, "\n<i>", subtext, "</i>"));
   }
 
 
