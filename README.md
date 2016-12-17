@@ -23,7 +23,7 @@
   - the habitat: living space, comforts, pressure, co2 levels
   - the kerbals: life support, quality of life
   - the components: reliability, automation
-  - the data: communications, data analysis and transmission
+  - the data: communications, analysis and transmission
   - the resources: consumption and production in background
 
 
@@ -34,7 +34,7 @@
   Recommended by Wernher von Kerman.
 
 
-#THE ENVIRONMENT
+#ENVIRONMENT
 
   From the mission designer point of view, the most important aspects of the space environment are temperature
   and ionizing radiation. Both are simulated by Kerbalism. External vessel temperature is determined by the
@@ -44,31 +44,31 @@
   Coronal Mass Ejection events are also simulated, triggering solar storms over planetary systems.
 
 
-#THE VESSEL HABITAT
+#HABITAT
 
   The habitat of vessels is modelled in terms of internal volume and external surface. From these properties,
-  a plethora of others are deduces such as: living space per-capita, pressure, co2 level and shielding required.
+  a plethora of others are deduced such as: living space per-capita, pressure, co2 level and shielding required.
   Habitats can be enabled or disabled, in the editor and in flight: This allow to reconfigure the internal space
   and everything associated with it. Inflatable habitats are driven directly by pressure.
 
 
-#THE KERBALS
+#KERBALS
 
   Kerbals simulation is data-driven: the actual needs are determined by an arbitrary set of rules. These rules can consume
   and produce resources, and are influenced by the environment and habitat simulation. The system is flexible enough to
   implement such things as: climatization, eating, drinking, breathing, co2 poisoning, stress and the effects of radiation.
 
 
-#THE COMPONENTS
+#COMPONENTS
 
   Components don't last forever in the real world. This is modelled in Kerbalism by a simple system that can trigger failures
   on arbitrary modules. Manufacturing quality can be choosen in the VAB, per-component: higher quality mean longer MTBF but
   also extra cost and mass for the component. Components can also be automated using an intuitive scripting system, where
-  scripts are triggered by environmental conditions or manually. You can create a script to turn on all the lights as soon
+  scripts are triggered manually or by environmental conditions. You can create a script to turn on all the lights as soon
   as the Sun is not visible anymore, or retract all solar panels as soon as you enter an atmosphere. Simple but interesting stuff.
 
 
-#THE DATA
+#DATA
 
   Data is collected and stored in the vessel solid state drives, then transmitted back home for that sweet science reward.
   Some of this data can't be transmitted directly, and need to be analyzed in a laboratory to produce transmissible data.
@@ -78,13 +78,13 @@
   Your voyager-style probe will now require a voyager-style antenna, and it will end up having voyager-style transmission rates.
 
 
-#THE RESOURCES
+#RESOURCES
 
   Resource consumers and producers are simulated at all time, even on unloaded vessels. This not only include all Kerbalism
   mechanics that involve resources, but also all stock components as well as the components of some selected third-party mods.
 
 
-#THE DEFAULT PROFILE
+#DEFAULT PROFILE
 
   At its core, Kerbalism is a framework that execute data-driven rules. A standard set of rules is provided, called the
   Default profile. It serve both as an example of what the framework can do, as well as providing a standard experience.
@@ -99,6 +99,7 @@
   - a set of configurable supply containers
   - a greenhouse with interesting mechanics
   - a configurable ISRU system focused on life support, and that include an atmospheric harvester
+  - more realistic fuel cells
 
 
 #SUPPORTED MODS
@@ -124,7 +125,7 @@
       . experiments data size has been tweaked for background data transmission
 
     OPM/RSS/NewHorizons:
-      - custom radiation definitions for these planet packs are provided
+      . custom radiation definitions for these planet packs are provided
 
 
 #CONTRIBUTIONS
