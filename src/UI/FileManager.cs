@@ -137,7 +137,7 @@ public sealed class FileManager : Window
       "</size>"
     );
     string exp_tooltip = exp.fullname;
-    double exp_value = exp.value(file.size);
+    double exp_value = Science.value(filename, file.size);
     if (exp_value > double.Epsilon) exp_tooltip = Lib.BuildString(exp_tooltip, "\n<b>", Lib.HumanReadableScience(exp_value), "</b>");
     GUILayout.Label(new GUIContent(exp_label, exp_tooltip), Styles.entry_label);
 
@@ -184,7 +184,7 @@ public sealed class FileManager : Window
       "</size>"
     );
     string exp_tooltip = exp.fullname;
-    double exp_value = exp.value(sample.size);
+    double exp_value = Science.value(filename, sample.size);
     if (exp_value > double.Epsilon) exp_tooltip = Lib.BuildString(exp_tooltip, "\n<b>", Lib.HumanReadableScience(exp_value), "</b>");
     GUILayout.Label(new GUIContent(exp_label, exp_tooltip), Styles.entry_label);
 
