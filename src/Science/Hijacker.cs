@@ -141,7 +141,7 @@ public static class Hijacker
       vessel = part.vessel;
 
       // get the container module storing the data
-      container = Science.experiment(data.subjectID).container(part);
+      container = Science.container(part, Science.experiment(data.subjectID).id);
       if (container == null) throw new Exception("can't find the data container during data hijacking");
 
       // get the stock experiment module storing the data (if that's the case)

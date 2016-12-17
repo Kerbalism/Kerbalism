@@ -18,14 +18,11 @@ public sealed class ExperimentInfo
     // - available even in sandbox
     expdef = ResearchAndDevelopment.GetExperiment(id);
 
-    // get subject handler
-    // - not available in sandbox
-    subject = ResearchAndDevelopment.GetSubjectByID(subject_id);
-
     // deduce short name for the subject
     name = expdef != null ? expdef.experimentTitle : Lib.UppercaseFirst(id);
 
     // deduce full name for the subject
+    ScienceSubject subject = ResearchAndDevelopment.GetSubjectByID(subject_id);
     fullname = subject != null ? subject.title : name;
 
     // extract situation from full name
@@ -35,31 +32,9 @@ public sealed class ExperimentInfo
     max_amount = expdef != null ? expdef.scienceCap * expdef.dataScale : double.MaxValue;
   }
 
-  public double value(double size)
-  {
-    return subject != null
-      ? ResearchAndDevelopment.GetScienceValue((float)size, subject)
-      * HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier
-      : 0.0;
-  }
-
-  public IScienceDataContainer container(Part p)
-  {
-    // first try to get a stock experiment module with the right experiment id
-    // - this support parts with multiple experiment modules, like eva kerbal
-    foreach(ModuleScienceExperiment exp in p.FindModulesImplementing<ModuleScienceExperiment>())
-    {
-      if (exp.experimentID == id) return exp;
-    }
-
-    // if none was found, default to the first module implementing the science data container interface
-    // - this support third-party modules that implement IScienceDataContainer, but don't derive from ModuleScienceExperiment
-    return p.FindModuleImplementing<IScienceDataContainer>();
-  }
 
   public string id;                 // experiment identifier
   public ScienceExperiment expdef;  // experiment definition
-  public ScienceSubject subject;    // science subject
   public string name;               // short description of the experiment
   public string fullname;           // full description of the experiment
   public string situation;          // description of the situation

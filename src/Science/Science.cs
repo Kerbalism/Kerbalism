@@ -110,38 +110,67 @@ public static class Science
   // credit science for the experiment subject specified
   public static double credit(string subject_id, double size, bool transmitted, ProtoVessel pv)
   {
-    // get info on the experiment
-    ExperimentInfo exp = Science.experiment(subject_id);
-
-    // if there is no subject, we can't possibly credit the science
-    // - we are probably in sandbox mode
-    // - or the subject id is malformed, and the data is not triggered
-    if (exp.subject == null) return 0.0;
+    // get science subject
+    // - if null, we are in sandbox mode
+    ScienceSubject subject = ResearchAndDevelopment.GetSubjectByID(subject_id);
+    if (subject == null) return 0.0;
 
     // get science value
     // - the stock system 'degrade' science value after each credit, we don't
-    float R = ResearchAndDevelopment.GetReferenceDataValue((float)size, exp.subject);
-    float S = exp.subject.science;
-    float C = exp.subject.scienceCap;
-    float value = Mathf.Max(Mathf.Min(S + Mathf.Min(R, C), C) - S, 0.0f);
+    float R = ResearchAndDevelopment.GetReferenceDataValue((float)size, subject);
+    float S = subject.science;
+    float C = subject.scienceCap;
+    float credits = Mathf.Max(Mathf.Min(S + Mathf.Min(R, C), C) - S, 0.0f);
 
     // credit the science
-    exp.subject.science += value;
-    exp.subject.scientificValue = ResearchAndDevelopment.GetSubjectValue(exp.subject.science, exp.subject);
-    value *= HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier;
-    ResearchAndDevelopment.Instance.AddScience(value, transmitted ? TransactionReasons.ScienceTransmission : TransactionReasons.VesselRecovery);
+    subject.science += credits;
+    subject.scientificValue = ResearchAndDevelopment.GetSubjectValue(subject.science, subject);
+    credits *= HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier;
+    ResearchAndDevelopment.Instance.AddScience(credits, transmitted ? TransactionReasons.ScienceTransmission : TransactionReasons.VesselRecovery);
 
     // fire game event
     // - this could be slow or a no-op, depending on the number of listeners
     //   in any case, we are buffering the transmitting data and calling this
     //   function only once in a while
-    GameEvents.OnScienceRecieved.Fire((float)size, exp.subject, pv, false);
+    GameEvents.OnScienceRecieved.Fire((float)size, subject, pv, false);
 
     // return amount of science credited
-    return value;
+    return credits;
   }
 
 
+  // return value of some data about a subject, in science credits
+  public static double value(string subject_id, double size)
+  {
+    // get the subject
+    // - will be null in sandbox
+    ScienceSubject subject = ResearchAndDevelopment.GetSubjectByID(subject_id);
+
+    // return value in science credits
+    return subject != null
+      ? ResearchAndDevelopment.GetScienceValue((float)size, subject)
+      * HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier
+      : 0.0;
+  }
+
+
+  // return module acting as container of an experiment
+  public static IScienceDataContainer container(Part p, string experiment_id)
+  {
+    // first try to get a stock experiment module with the right experiment id
+    // - this support parts with multiple experiment modules, like eva kerbal
+    foreach(ModuleScienceExperiment exp in p.FindModulesImplementing<ModuleScienceExperiment>())
+    {
+      if (exp.experimentID == experiment_id) return exp;
+    }
+
+    // if none was found, default to the first module implementing the science data container interface
+    // - this support third-party modules that implement IScienceDataContainer, but don't derive from ModuleScienceExperiment
+    return p.FindModuleImplementing<IScienceDataContainer>();
+  }
+
+
+  // return info about an experiment
   public static ExperimentInfo experiment(string subject_id)
   {
     ExperimentInfo info;
