@@ -62,9 +62,9 @@
 
 #COMMUNICATIONS
 
-  Uplink and downlink transmission require a connection with DSN, and has a specific data rate that degrade with distance.
-  The signal is obstructed by celestial bodies, and can be relayed by other vessels. Low-Gain and High-Gain antennas are
-  different: the former can be used for short-range inter-vessel communciations, the latter always point at DSN.
+  Controlling a vessel and transmitting data require a direct or indirect connection with DSN, and has a specific data rate
+  that degrade with distance. The signal is obstructed by celestial bodies, but can be relayed by other vessels. Low-Gain
+  and High-Gain antennas are modelled: the former used for short-range inter-vessel communciations, the latter always point at DSN.
   Your voyager-style probe will now require a voyager-style antenna, and it will end up having voyager-style transmission rates.
 
 
@@ -78,21 +78,20 @@
 #RESOURCES
 
   Resource consumers and producers are simulated at all time, even on unloaded vessels. This not only include all Kerbalism
-  mechanics that involve resources, but also all stock components as well as the components of some selected third-party mods.
+  mechanics that involve resources, but also all stock components, and components of some selected third-party mods.
 
 
 #AUTOMATION
 
-  Components can be automated using an intuitive scripting system, where scripts are triggered manually or by environmental
-  conditions. You can create a script to turn on all the lights as soon as the Sun is not visible anymore, or retract all
-  solar panels as soon as you enter an atmosphere. Simple but interesting stuff.
+  Components can be automated using a very simple and intuitive scripting system with a graphical editor. Scripts are
+  triggered manually or by environmental conditions. You can create a script to turn on all the lights as soon as the Sun
+  is not visible anymore, or retract all solar panels as soon as you enter an atmosphere.
 
 
 #PLANNER
 
   A planner GUI is available in the VAB, to help the user design around all the new aspects introduced.
   Resource estimates, habitat informations, redundancy analysis: no matter what, the planner got you covered.
-  Recommended by Wernher von Kerman.
 
 
 #DEFAULT PROFILE
