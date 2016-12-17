@@ -19,12 +19,13 @@
 #SIMULATION
 
   Many aspects are simulated:
-  - the environment: temperature, radiation, space weather
-  - the habitat: living space, comforts, pressure, co2 levels
-  - the kerbals: life support, quality of life
-  - the components: reliability, automation
-  - the data: communications, analysis and transmission
-  - the resources: consumption and production in background
+  - environment: temperature, radiation, space weather
+  - habitat: living space, comforts, pressure, co2 levels
+  - kerbals: life support, quality of life
+  - reliability: malfunctions, critical failures, manufacturing quality
+  - communications: low-gain and high-gain antennas, relaying, transmission rates
+  - data: storage, collection, analysis and transmission
+  - resources: consumption and production in background
 
 
 #ENVIRONMENT
@@ -52,31 +53,41 @@
   implement such things as: climatization, eating, drinking, breathing, co2 poisoning, stress and the effects of radiation.
 
 
-#COMPONENTS
+#RELIABILITY
 
   Components don't last forever in the real world. This is modelled in Kerbalism by a simple system that can trigger failures
   on arbitrary modules. Manufacturing quality can be choosen in the VAB, per-component: higher quality mean longer MTBF but
-  also extra cost and mass for the component. Components can also be automated using an intuitive scripting system, where
-  scripts are triggered manually or by environmental conditions. You can create a script to turn on all the lights as soon
-  as the Sun is not visible anymore, or retract all solar panels as soon as you enter an atmosphere. Simple but interesting stuff.
+  also extra cost and mass for the component.
+
+
+#COMMUNICATIONS
+
+  Uplink and downlink transmission require a connection with DSN, and has a specific data rate that degrade with distance.
+  The signal is obstructed by celestial bodies, and can be relayed by other vessels. Low-Gain and High-Gain antennas are
+  different: the former can be used for short-range inter-vessel communciations, the latter always point at DSN.
+  Your voyager-style probe will now require a voyager-style antenna, and it will end up having voyager-style transmission rates.
 
 
 #DATA
 
   Data is collected and stored in the vessel solid state drives, then transmitted back home for that sweet science reward.
   Some of this data can't be transmitted directly, and need to be analyzed in a laboratory to produce transmissible data.
-  Transmission require a connection with DSN, and has a specific data transmission rate that degrade with distance.
-  The signal is obstructed by celestial bodies, and can be relayed by other vessels. Low-Gain and High-Gain antennas are
-  different: the former can be used for short-range inter-vessel communciations, the latter always point at DSN.
-  Your voyager-style probe will now require a voyager-style antenna, and it will end up having voyager-style transmission rates.
+  Transmission happen over long periods of time, even when the vessels are not loaded.
 
 
 #RESOURCES
 
   Resource consumers and producers are simulated at all time, even on unloaded vessels. This not only include all Kerbalism
   mechanics that involve resources, but also all stock components as well as the components of some selected third-party mods.
-  
-  
+
+
+#AUTOMATION
+
+  Components can be automated using an intuitive scripting system, where scripts are triggered manually or by environmental
+  conditions. You can create a script to turn on all the lights as soon as the Sun is not visible anymore, or retract all
+  solar panels as soon as you enter an atmosphere. Simple but interesting stuff.
+
+
 #PLANNER
 
   A planner GUI is available in the VAB, to help the user design around all the new aspects introduced.
