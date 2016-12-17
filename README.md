@@ -15,17 +15,14 @@
   Anything will happen coherently to loaded and unloaded vessels alike, without exceptions.
   All mechanics can be enabled, disabled and utterly configured.
 
-
-#SIMULATION
-
   Many aspects are simulated:
   - environment: temperature, radiation, space weather
   - habitat: living space, comforts, pressure, co2 levels
-  - kerbals: life support, quality of life
   - reliability: malfunctions, critical failures, manufacturing quality
-  - communications: low and high gain antennas, relaying, rates
-  - data: storage, collection, analysis and transmission
+  - signal: low and high gain antennas, relaying, rate attenuation
+  - science: data storage, collection, analysis and transmission
   - resources: consumption and production in background
+  - kerbals: biological and psychological needs, environmental hazards
 
 
 #ENVIRONMENT
@@ -46,13 +43,6 @@
   and everything associated with it. Inflatable habitats are driven directly by pressure.
 
 
-#KERBALS
-
-  Kerbals simulation is data-driven: the actual needs are determined by an arbitrary set of rules. These rules can consume
-  and produce resources, and are influenced by the environment and habitat simulation. The system is flexible enough to
-  implement such things as: climatization, eating, drinking, breathing, co2 poisoning, stress and the effects of radiation.
-
-
 #RELIABILITY
 
   Components don't last forever in the real world. This is modelled in Kerbalism by a simple system that can trigger failures
@@ -60,7 +50,7 @@
   also extra cost and mass for the component.
 
 
-#COMMUNICATIONS
+#SIGNAL
 
   Controlling a vessel and transmitting data require a direct or indirect connection with DSN, and has a specific data rate
   that degrade with distance. The signal is obstructed by celestial bodies, but can be relayed by other vessels. Low-Gain
@@ -68,7 +58,7 @@
   Your voyager-style probe will now require a voyager-style antenna, and it will end up having voyager-style transmission rates.
 
 
-#DATA
+#SCIENCE
 
   Data is collected and stored in the vessel solid state drives, then transmitted back home for that sweet science reward.
   Some of this data can't be transmitted directly, and need to be analyzed in a laboratory to produce transmissible data.
@@ -88,6 +78,13 @@
   is not visible anymore, or retract all solar panels as soon as you enter an atmosphere.
 
 
+#RULE FRAMEWORK
+
+  Kerbals simulation is data-driven: the actual needs are determined by an arbitrary set of rules. These rules can consume
+  and produce resources, and are influenced by the environment and habitat simulation. The system is flexible enough to
+  implement such things as: climatization, eating, drinking, breathing, co2 poisoning, stress and the effects of radiation.
+
+
 #PLANNER
 
   A planner GUI is available in the VAB, to help the user design around all the new aspects introduced.
@@ -96,8 +93,7 @@
 
 #DEFAULT PROFILE
 
-  At its core, Kerbalism is a framework that execute data-driven rules. A standard set of rules is provided, called the
-  Default profile. It serve both as an example of what the framework can do, as well as providing a standard experience.
+  A standard set of rules is provided, called the Default profile. It serve as an example of what the framework can do.
 
   It implement the following:
   - kerbals need resources to survive: food, water, oxygen
