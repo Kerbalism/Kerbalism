@@ -8,155 +8,109 @@
                               Hundreds of Kerbals were killed in the making of this mod.
 =======================================================================================================================
 
-NOTE: this readme is obsolete, stand-by for an updated one.
-
 
 #INTRODUCTION
 
-  Kerbalism is a mod for Kerbal Space Program that features life support, quality-of-life,
-  malfunctions, signal, radiation, space weather, a decent GUI to monitor existing vessels
-  and to plan new ones, and coherent background simulation.
+  Kerbalism extend Kerbal Space Program by simulating additional aspects of space missions.
+  Anything will happen coherently to loaded and unloaded vessels alike, without exceptions.
+  All mechanics can be enabled, disabled and utterly configured by the user.
 
 
-#CLIMATE CONTROL
+#SIMULATION
 
-  Kerbals can't survive the extreme temperatures of space by themselves. All manned command
-  pods climatize their internal environment at the expense of ElectricCharge. The EC consumption
-  is proportional to external temperature, that is determined by an approximate temperature
-  model that include sun visibility, solar flux, albedo radiation and atmospheric absorption.
-  If there isn't enough EC to maintain the climate inside the survival range, Kerbals die.
-
-
-#FOOD & OXYGEN
-
-  All Kerbals require a constant supply of Food and Oxygen to survive. All manned command
-  pods can store a small amount of both, and a few container parts are included. Kerbals
-  can go without Food for a few days, but will last only a few minutes if deprived of Oxygen.
+  Many aspects are simulated:
+  - the environment: temperature, radiation, space weather
+  - the habitat: living space, comforts, pressure, co2 levels
+  - the kerbals: life support, quality of life
+  - the components: reliability, automation
+  - the data: communications, data analysis and transmission
+  - the resources: consumption and production in background
 
 
-#SCRUBBERS
+#PLANNER
 
-  All manned command pods include an embedded CO2 Scrubber that reclaim some of the Oxygen
-  consumed, at the expense of Electric Charge. The scrubber efficiency depend on the
-  technological level of your space agency at time of launch.
-
-
-#GREENHOUSE
-
-  Greenhouses produce Food in space and on the surface of celestial bodies, even far from the
-  Sun. The growth can be speed up by using Artificial Lighting, at the expense of Electric Charge.
+  A planner GUI is available in the VAB, to help the user design around all the new aspects introduced.
+  Resource estimates, habitat informations, redundancy analysis: no matter what, the planner got you covered.
+  Recommended by Wernher von Kerman.
 
 
-#EVA
+#THE ENVIRONMENT
 
-  Kerbals on EVA take some Electric Charge with them and use it to maintain climate control of the
-  suit, if necessary, and to power the headlight. Also they take some Oxygen, but only when outside
-  a breathable atmosphere. Kerbals can die while on EVA. In this unfortunate case, the poor Kerbal's
-  body will be left floating in space.
-
-
-#QUALITY OF LIFE
-
-  Do not underestimate the consequences of living in extremely close quarters for extremely
-  long time. Kerbals will lose their mind if placed in cramped vessels for a long time, with
-  unexpected consequences. Mitigate the problem by providing ample living space and entertainment,
-  and by rotating the crew regularly. Some stock parts provide entertainment, like the cupola.
+  From the mission designer point of view, the most important aspects of the space environment are temperature
+  and ionizing radiation. Both are simulated by Kerbalism. External vessel temperature is determined by the
+  solar flux, as well as the albedo radiation and radiative cooling of the nearest body. Radiation is simulated
+  using an overlapping hierarchy of radiation zones, modelled and rendered using signed distance fields.
+  Marvel at the complex geometry of Kerbin magnetic fields, and plan your path around the powerful Jool inner belt.
+  Coronal Mass Ejection events are also simulated, triggering solar storms over planetary systems.
 
 
-#MALFUNCTIONS
+#THE VESSEL HABITAT
 
-  Components can malfunction and their specs are reduced. A component never fail completely,
-  but multiple malfunctions can effectively reduce its specs to the point of it being useless.
-  Luckily, Engineers can fix malfunctioned components while on EVA. The manufacturing quality of
-  components can be increased by researching material science technologies.
-
-
-#SIGNALS
-
-  Science data transmission and remote probe control require a link with the home planet.
-  Celestial bodies block the signal, while other vessels can act as relay. Relay must be enabled
-  per-antenna, as relaying has extra Electric Charge requirements, even in background.
-  Antennas have range and wildly different data transmission costs, that scale with distance.
-  Signal processing can be improved by researching signal processing technologies, leading to increased range.
+  The habitat of vessels is modelled in terms of internal volume and external surface. From these properties,
+  a plethora of others are deduces such as: living space per-capita, pressure, co2 level and shielding required.
+  Habitats can be enabled or disabled, in the editor and in flight: This allow to reconfigure the internal space
+  and everything associated with it. Inflatable habitats are driven directly by pressure.
 
 
-#RADIATION
+#THE KERBALS
 
-  Celestial bodies have complex radiation environments, with magnetopauses and radiation belts.
-  Beyond the heliopause, cosmic radiation is ever present in the vast distances of space.
-  Vessels can be shielded in multiple ways.
-
-
-#SPACE WEATHER
-
-  Coronal mass ejections from the Sun can hit planetary systems from time to time, causing magnetic storm
-  inside magnetospheres that disrupt communications, as well as intense radiation over the whole system.
-  Frequency of the storms as well as time to impact depend on distance of the body from the Sun.
+  Kerbals simulation is data-driven: the actual needs are determined by an arbitrary set of rules. These rules can consume
+  and produce resources, and are influenced by the environment and habitat simulation. The system is flexible enough to
+  implement such things as: climatization, eating, drinking, breathing, co2 poisoning, stress and the effects of radiation.
 
 
-#COHERENT BACKGROUND SIMULATION
+#THE COMPONENTS
 
-  All mechanics described are simulated coherently in background. Also command pods, solar panels,
-  generators, fuel cells, drills, ISRU and SCANsat modules produce and consume resources in background.
-  The stock behaviour for fuel cells, drills and ISRU for unloaded vessels has been completely replaced.
-
-
-#VESSEL MONITOR
-
-  A simple gui is available in the space center or in flight. It show the status for vessels and
-  Kerbals, including: battery, food & oxygen levels, scrubber & greenhouse status, signal status,
-  malfunctions, if the vessel is in direct sunlight, kerbal physical and mental health problems, and more.
-  It also allow to enable and disable warning messages, to take notes per-vessel and to assign vessels
-  to groups and filter them. Just click on it.
+  Components don't last forever in the real world. This is modelled in Kerbalism by a simple system that can trigger failures
+  on arbitrary modules. Manufacturing quality can be choosen in the VAB, per-component: higher quality mean longer MTBF but
+  also extra cost and mass for the component. Components can also be automated using an intuitive scripting system, where
+  scripts are triggered by environmental conditions or manually. You can create a script to turn on all the lights as soon
+  as the Sun is not visible anymore, or retract all solar panels as soon as you enter an atmosphere. Simple but interesting stuff.
 
 
-#VESSEL PLANNER
+#THE DATA
 
-  A simple gui is available in the editor, to help in designing missions. It show the life expectancy
-  of the crew as well as how long will the vessel electric charge last in shadow or sunlight, and much more.
-  The estimates are relative to a target body and situation, that can be changed. It support pods, solar
-  panels, generators, fuel cells, radiators, wheels, drills, ISRU and SCANsat in addition to all mod mechanics.
-
-
-#AUTOMATION
-
-  Every vessel has a computer, and a console is provided to execute commands remotely on the vessel. It is
-  possible to write simple scripts that are executed automatically when some conditions apply.
+  Data is collected and stored in the vessel solid state drives, then transmitted back home for that sweet science reward.
+  Some of this data can't be transmitted directly, and need to be analyzed in a laboratory to produce transmissible data.
+  Transmission require a connection with DSN, and has a specific data transmission rate that degrade with distance.
+  The signal is obstructed by celestial bodies, and can be relayed by other vessels. Low-Gain and High-Gain antennas are
+  different: the former can be used for short-range inter-vessel communciations, the latter always point at DSN.
+  Your voyager-style probe will now require a voyager-style antenna, and it will end up having voyager-style transmission rates.
 
 
-#SCIENCE TWEAKS
+#THE RESOURCES
 
-  Early experiments have been rearranged in the tech tree. Data is either transmissibile in full or not
-  at all. Experiments provide full science values. Situations have been tweaked, no more ladder dance.
-  Probes can store data and perform a simple telemetry experiment.
+  Resource consumers and producers are simulated at all time, even on unloaded vessels. This not only include all Kerbalism
+  mechanics that involve resources, but also all stock components as well as the components of some selected third-party mods.
 
 
-#CUSTOMIZATION
+#THE DEFAULT PROFILE
 
-  Kerbalism can run arbitrary 'rules' that deal with life support and the environment. These rules are
-  grouped in 'profiles' and you can find some in the profiles/ directory, including the default one.
-  Profiles are also used to enable and disable some of the mechanics. If Kerbalism run without a profile
-  it will degenerate into a background resource simulation with a decent EC monitor/planner ui.
-  The signal mechanic is disabled automatically if you have RemoteTech or AntennaRange installed, and
-  the malfunction mechanic do the same if you have DangIt. Finally, check out the file settings.cfg to
-  tweak the environment simulation parameters.
+  At its core, Kerbalism is a framework that execute data-driven rules. A standard set of rules is provided, called the
+  Default profile. It serve both as an example of what the framework can do, as well as providing a standard experience.
+
+  It implement the following:
+  - kerbals need resources to survive: food, water, oxygen
+  - kerbals lose their mind if confined in cramped space, in unpressurized habitats or without comforts for too long
+  - kerbals will freeze or burn if exposed to temperatures outside the survival range
+  - kerbals will die if exposed to high levels of carbon dioxide
+  - kerbals will die if exposed to extreme radiation
+  - pods can be configured with ECLSS setups: Scrubbers, Pressure Control Systems, Water Recyclers and Waste Processors
+  - a set of configurable supply containers
+  - a greenhouse with interesting mechanics
+  - a configurable ISRU system focused on life support, and that include an atmospheric harvester
 
 
 #SUPPORTED MODS
 
-  Kerbalism interact with the following mods:
-
-    ConnectedLivingSpace:
-      . the environment properties are calculated for each connected internal space,
-        instead of being calculated for the entire vessel
+  Kerbalism provide ad-hoc support for a multitude of third-party mods. Some of the interactions deserve a special mention:
 
     SCANsat:
-      . sensors consume EC in background and are included in the planner EC cost (if deployed)
-      . sensors are shut down in background if there isn't enough EC left
-      . likewise, sensors are re-started in background if the EC comes back
+      . sensors consume EC in background and their cost is evalued by the planner EC
+      . sensors are shut down and restarted in background depending on EC availability
 
     DeepFreeze:
-      . all mechanics are suspended for hibernated Kerbals
+      . all rules are suspended for hibernated Kerbals
       . the vessel info window show frozen Kerbals with a different color
 
     NearFuture:
@@ -166,44 +120,47 @@ NOTE: this readme is obsolete, stand-by for an updated one.
     PlanetaryBaseSystem:
       . the coverters will work in background and are considered by the planner
 
+    OrbitalScience:
+      . experiments data size has been tweaked for background data transmission
+
+    OPM/RSS/NewHorizons:
+      - custom radiation definitions for these planet packs are provided
+
+
+#CONTRIBUTIONS
+
+  Over the time, many have contributed: may it be an asset, a patch, testing or even just brainstorming. Thank you all.
+
+  And special thanks to our Art Department:
+
+    @mehka: contributed that awesome piece of work that is the Gravity Ring
+    @Nazari1382: ramped the art to 11 with the Geiger Counter, and gave us all a valid alternative to starving
+    @tygoo7: single-handedly provided all the supply containers
+
+
 
 #FAQs
 
-  - ***I think I've founded a bug or any other undesired behaviour***
+  - ***I found a bug***
 
-    Try running the game in the same conditions, but without this mod. If the problem is still present then
-    there is high probability this mod wasn't responsible. If that isn't the case, however, please try to
-    reproduce the bug consistently. Then, by all means, post a description of the problem in the thread or
-    raise an issue on github. Copy of the savegame, log file and list of mods installed are appreciated.
-
-
-  - ***I think this mod is too hard/easy, I wish this mod would do something different***
-
-    You can suggest rebalance tweaks and any other modification by posting in the thread.
+    First demonstrate that the bug doesn't exist without Kerbalism installed. Then reproduce the bug consistently.
+    Finally, by all means, inform me about it by raising an issue on github or post on the thread on KSP forums.
+    Include all necessary information in the report.
 
 
-  - ***Is this mod compatible with planet packs and scale changing mods?***
+  - ***I am a part author. How can I add support for Kerbalism?***
 
-    Yes! This mod make no assumptions about the solar system.
-
-
-  - ***How can I support Kerbalism in my parts?***
-
-    You can create Scrubbers, Greenhouses, Entertainment and Antenna parts by simply using the respective modules.
-    An example of the module values can be found in the ModuleManager patches included in the download.
+    You simply add the appropriate modules to your parts. Check the wiki for the module specifications.
 
 
-  - ***How can I support Kerbalism in my mod?***
+  - ***I am a mod author. How can I interact with Kerbalism?***
 
-    Have a look at Hooks.cs source code. Right now there is only support to disable resource consumption for specific
-    Kerbals. Other hooks can be added on request, just leave a comment on the thread or raise an issue on github.
-
+    Have a look at System/API.cs source code on the github. Raise an issue to request more functions there.
 
 
 #REQUIREMENTS
 
   - ModuleManager
-  - CommunityResourcePack
 
 
 #LICENSE
