@@ -23,7 +23,7 @@
   - habitat: living space, comforts, pressure, co2 levels
   - kerbals: life support, quality of life
   - reliability: malfunctions, critical failures, manufacturing quality
-  - communications: low-gain and high-gain antennas, relaying, transmission rates
+  - communications: low and high gain antennas, relaying, rates
   - data: storage, collection, analysis and transmission
   - resources: consumption and production in background
 
