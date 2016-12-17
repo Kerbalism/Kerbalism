@@ -11,7 +11,11 @@ public static class Science
   // pseudo-ctor
   public static void init()
   {
+    // initialize experiment info cache
     experiments = new Dictionary<string, ExperimentInfo>();
+
+    // make the science dialog invisible, just once
+    AssetBase.GetPrefab("ScienceResultsDialog").SetActive(false);
   }
 
   // consume EC for transmission, and transmit science data
