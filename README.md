@@ -13,7 +13,7 @@
 
   Kerbalism extend Kerbal Space Program by simulating additional aspects of space missions.
   Anything will happen coherently to loaded and unloaded vessels alike, without exceptions.
-  All mechanics can be enabled, disabled and utterly configured by the user.
+  All mechanics can be enabled, disabled and utterly configured.
 
 
 #SIMULATION
