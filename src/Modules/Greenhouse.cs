@@ -139,7 +139,7 @@ public sealed class Greenhouse : PartModule, ISpecifics
       // execute recipe
       resource_recipe recipe = new resource_recipe();
       foreach(ModuleResource input in resHandler.inputResources) recipe.Input(input.name, input.rate * Kerbalism.elapsed_s);
-      foreach(ModuleResource output in resHandler.outputResources) recipe.Input(output.name, output.rate * Kerbalism.elapsed_s);
+      foreach(ModuleResource output in resHandler.outputResources) recipe.Output(output.name, output.rate * Kerbalism.elapsed_s);
       resources.Transform(recipe);
 
       // determine environment conditions
@@ -216,7 +216,7 @@ public sealed class Greenhouse : PartModule, ISpecifics
       // execute recipe
       resource_recipe recipe = new resource_recipe();
       foreach(ModuleResource input in g.resHandler.inputResources) recipe.Input(input.name, input.rate * elapsed_s);
-      foreach(ModuleResource output in g.resHandler.outputResources) recipe.Input(output.name, output.rate * elapsed_s);
+      foreach(ModuleResource output in g.resHandler.outputResources) recipe.Output(output.name, output.rate * elapsed_s);
       resources.Transform(recipe);
 
       // determine environment conditions
