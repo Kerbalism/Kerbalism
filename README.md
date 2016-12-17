@@ -27,13 +27,6 @@
   - the resources: consumption and production in background
 
 
-#PLANNER
-
-  A planner GUI is available in the VAB, to help the user design around all the new aspects introduced.
-  Resource estimates, habitat informations, redundancy analysis: no matter what, the planner got you covered.
-  Recommended by Wernher von Kerman.
-
-
 #ENVIRONMENT
 
   From the mission designer point of view, the most important aspects of the space environment are temperature
@@ -82,6 +75,13 @@
 
   Resource consumers and producers are simulated at all time, even on unloaded vessels. This not only include all Kerbalism
   mechanics that involve resources, but also all stock components as well as the components of some selected third-party mods.
+  
+  
+#PLANNER
+
+  A planner GUI is available in the VAB, to help the user design around all the new aspects introduced.
+  Resource estimates, habitat informations, redundancy analysis: no matter what, the planner got you covered.
+  Recommended by Wernher von Kerman.
 
 
 #DEFAULT PROFILE
