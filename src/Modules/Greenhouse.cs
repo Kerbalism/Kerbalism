@@ -6,7 +6,7 @@ using UnityEngine;
 namespace KERBALISM {
 
 
-public sealed class Greenhouse : PartModule, ISpecifics
+public sealed class Greenhouse : PartModule, ISpecifics, IContractObjectiveModule
 {
   // config
   [KSPField] public string crop_resource;         // name of resource produced by harvests
@@ -370,6 +370,11 @@ public sealed class Greenhouse : PartModule, ISpecifics
     }
     return specs;
   }
+
+
+  // contract objective support
+  public bool CheckContractObjectiveValidity()  { return true; }
+  public string GetContractObjectiveType()      { return "Greenhouse"; }
 
 
   // return data about all greenhouses in a vessel

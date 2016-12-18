@@ -6,7 +6,7 @@ using UnityEngine;
 namespace KERBALISM {
 
 
-public sealed class Harvester : PartModule, IAnimatedModule, IModuleInfo, ISpecifics
+public sealed class Harvester : PartModule, IAnimatedModule, IModuleInfo, ISpecifics, IContractObjectiveModule
 {
   // config
   [KSPField] public string title = string.Empty;            // name to show on ui
@@ -196,6 +196,10 @@ public sealed class Harvester : PartModule, IAnimatedModule, IModuleInfo, ISpeci
   public string GetModuleTitle()  { return title; }
   public string GetPrimaryField() { return string.Empty; }
   public Callback<Rect> GetDrawModulePanelCallback() { return null; }
+
+  // contract objective support
+  public bool CheckContractObjectiveValidity()  { return true; }
+  public string GetContractObjectiveType()      { return "Harvester"; }
 }
 
 

@@ -6,7 +6,7 @@ using UnityEngine;
 namespace KERBALISM {
 
 
-public sealed class Laboratory : PartModule, ISpecifics
+public sealed class Laboratory : PartModule, ISpecifics, IContractObjectiveModule
 {
   // config
   [KSPField] public double ec_rate;                     // ec consumed per-second
@@ -162,6 +162,11 @@ public sealed class Laboratory : PartModule, ISpecifics
     specs.add("Analysis rate", Lib.HumanReadableDataRate(analysis_rate));
     return specs;
   }
+
+
+  // contract objective support
+  public bool CheckContractObjectiveValidity()  { return true; }
+  public string GetContractObjectiveType()      { return "Laboratory"; }
 
 
   // get sample to analyze, return null if there isn't a sample
