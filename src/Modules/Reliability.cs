@@ -35,6 +35,7 @@ public sealed class Reliability : PartModule, ISpecifics, IModuleInfo, IPartCost
   CrewSpecs repair_cs;                                                // crew specs
 
 
+
   public override void OnStart(StartState state)
   {
     // do nothing in the editors and when compiling parts
@@ -376,7 +377,7 @@ public sealed class Reliability : PartModule, ISpecifics, IModuleInfo, IPartCost
     specs.add("<color=#00ffff>High quality</color>");
     specs.add("MTBF", Lib.HumanReadableDuration(mtbf * Settings.QualityScale));
     if (extra_cost > double.Epsilon) specs.add("Extra cost", Lib.HumanReadableCost(extra_cost * part.partInfo.cost));
-    if (extra_mass > double.Epsilon) specs.add("Extra mass", Lib.HumanReadableMass(extra_mass * part.mass));
+    if (extra_mass > double.Epsilon) specs.add("Extra mass", Lib.HumanReadableMass(extra_mass * part.partInfo.partPrefab.mass));
     return specs;
   }
 
@@ -392,7 +393,7 @@ public sealed class Reliability : PartModule, ISpecifics, IModuleInfo, IPartCost
 
 
   // module mass support
-  public float GetModuleMass(float defaultCost, ModifierStagingSituation sit) { return quality ? (float)extra_mass * part.mass : 0.0f; }
+  public float GetModuleMass(float defaultCost, ModifierStagingSituation sit) { return quality ? (float)extra_mass * part.partInfo.partPrefab.mass : 0.0f; }
   public ModifierChangeWhen GetModuleCostChangeWhen() { return ModifierChangeWhen.CONSTANTLY; }
   public ModifierChangeWhen GetModuleMassChangeWhen() { return ModifierChangeWhen.CONSTANTLY; }
 
