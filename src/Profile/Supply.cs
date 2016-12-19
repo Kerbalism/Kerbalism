@@ -131,7 +131,7 @@ public sealed class Supply
 
 
 
-  public string resource;                           // name of resource consumed
+  public string resource;                           // name of resource
   public double on_pod;                             // how much resource to add to manned parts, per-kerbal
   public double on_eva;                             // how much resource to take on eva, if any
   public double on_resque;                          // how much resource to gift to resque missions

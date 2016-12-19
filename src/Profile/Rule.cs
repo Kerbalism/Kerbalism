@@ -16,6 +16,7 @@ public sealed class Rule
     rate = Lib.ConfigValue(node, "rate", 0.0);
     ratio = Lib.ConfigValue(node, "ratio", 0.0);
     degeneration = Lib.ConfigValue(node, "degeneration", 0.0);
+    variance = Lib.ConfigValue(node, "variance", 0.0);
     modifiers = Lib.Tokenize(Lib.ConfigValue(node, "modifier", string.Empty), ',');
     breakdown = Lib.ConfigValue(node, "breakdown", false);
     warning_threshold = Lib.ConfigValue(node, "warning_threshold", 0.33);
