@@ -63,13 +63,7 @@
   Data is collected and stored in the vessel solid state drives, then transmitted back home for that sweet science reward.
   Some of this data can't be transmitted directly, and need to be analyzed in a laboratory to produce transmissible data.
   Transmission happen over long periods of time, even when the vessels are not loaded.
-
-
-#RESOURCES
-
-  Resource consumers and producers are simulated at all time, even on unloaded vessels. This not only include all Kerbalism
-  mechanics that involve resources, but also all stock components, and components of some selected third-party mods.
-
+  
 
 #AUTOMATION
 
@@ -78,12 +72,18 @@
   is not visible anymore, or retract all solar panels as soon as you enter an atmosphere.
 
 
+#BACKGROUND SIMULATION
+
+  Resource consumers and producers are simulated at all time, even on unloaded vessels. This not only include all Kerbalism
+  mechanics that involve resources, but also all stock components, and components of some selected third-party mods.
+
+
 #RULE FRAMEWORK
 
   Kerbals simulation is data-driven: the actual needs are determined by an arbitrary set of rules. These rules can consume
   and produce resources, and are influenced by the environment and habitat simulation. The system is flexible enough to
   implement such things as: climatization, eating, drinking, breathing, co2 poisoning, stress and the effects of radiation.
-
+  
 
 #PLANNER
 
