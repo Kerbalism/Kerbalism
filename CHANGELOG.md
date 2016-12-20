@@ -1,29 +1,28 @@
 #CHANGELOG
 
 1.1.5
-  * this is a summary of the changes
-  Rule framework
+  - Rule framework
     - multiple profiles can cohexist in the same installation, only one is enabled from user settings
     - Process: vessel-wide resource consumer/producers driven by modifiers
     - split Supply out of Rule, for additional flexibility
     - can use resource amount as a modifier
     - many new modifiers, to leverage the information provided by habitat
-  Features framework
+  - Features framework
     - user specified features are set by a flag in settings
     - other features are detected automatically from the modifiers used in the active profile
     - inject MM patches during loading screen, before MM is executed
     - third parties can check for specific features or profiles by using NEEDS[]
     - parts are enabled/disabled automatically depending on features used
-  Resource cache
+  - Resource cache
     - new 'exact, order-agnostic' algorithm for consumption/production chains at arbitrary timesteps
     - consider interval-based outputs in depletion estimates
-  Configure
+  - Configure
     - new module Configure: can select between setups in the VAB or in flight
     - setups can specify resources and/or modules
     - setups can include extra cost and mass
     - setups can be unlocked with technologies
     - configuration UI, that show info on modules and resources for a setup
-  Habitat
+  - Habitat
     - new module Habitat: replace CLS internal spaces
     - used to calculate internal volume in m^3, and surface in m^2
     - can be disabled/enabled even in flight to configure the internal space as required
@@ -31,31 +30,31 @@
     - can be pressurized/depressurized
     - can keep track of level of CO2 in the internal atmosphere
     - can be added to parts with no crew capacity
-  Greenhouse
+  - Greenhouse
     - improved module: Greenhouse
     - lamps intensity is determined automatically, and is expressed in W/m^2
     - can have radiation and pressure thresholds for growth
     - can require an arbitrary set of input resources
     - can produce an arbitrary set of by-product resources
     - growth will degenerate if lighting/radiation/pressure conditions aren't met
-  ISRU
+  - ISRU
     - planetary resource definitions based on real data
     - new module Harvester: for crustal/atmospheric resource extraction, use abundance/pressure thresholds
-  Wet workshops
+  - Wet workshops
     - some stock tanks can now be configured as either fuel tanks or habitats, even in flight
-  QualityOfLife
+  - QualityOfLife
     - new module Comfort: replace Entertainment and provide a specific bonus, added to some stock parts
     - modified module GravityRing: now provide firm-ground bonus
     - living space is calculated from volume per-capita
-  Radiation
+  - Radiation
     - shielding required is now determined by habitat surface, and map to millimeters of Pb
     - rtg emit a small amount of radiation
-  Planner
+  - Planner
     - single page layout, with panel selection
     - show consumers/producers of a resource in tooltip
     - improved/redesigned most panels
     - redundancy analysis for Reliability panel
-  Reliability
+  - Reliability
     - improved subsystem: Reliability
     - support arbitrary third party modules
     - components are now disabled when they fail
@@ -65,7 +64,7 @@
     - an optional redundancy incentive is provided: when a component fail, all others in the same redundancy group delay their next failure
     - removed 'manufacturing quality'
     - can select quality per-component in the vab, high quality means higher cost and/or mass but longer MTBF
-  Signal
+  - Signal
     - improved: focus on data transmission rates and differences between low-gain and high-gain antennas
     - high-gain antennas: can communicate only with DSN
     - low-gain antennas: can communicate with DSN and with other vessels
@@ -80,7 +79,7 @@
     - disable CommNet automatically when enabled
     - connection status is obtained by CommNet or RemoteTech when signal is disabled
     - new signal panel in vessel info window, show data rates, destination and file being transmitted
-  Science
+  - Science
     - new subsystem: Science, improve on data storage, transmission and analysis
     - transmit data over time, even in background
     - analyze data over time, even in background
@@ -93,12 +92,12 @@
     - data UI: show files and samples per-vessel, can flag for transmission or analysis, can delete files or samples
     - properly credit the science over time
     - do not break science collection contracts
-  Automation
+  - Automation
     - removed the Console and command interpreter
     - new scripting system: not text-based anymore
     - new component control and script editing UI
     - script editor UI highlight parts for ease of use
-  Misc
+  - Misc
     - ported to KSP 1.2.1
     - consistent part naming scheme
     - rebalanced mass/cost of all parts
@@ -124,7 +123,7 @@
     - use common style for all part info tooltips
     - AtomicAge engines emit radiation (ThePsion5)
     - more love for VenStockRevamp patch (YaarPodshipnik)
-  Profile: 'Default'
+  - Profile: 'Default'
     - rewritten from scratch
     - balanced consumption rates from real data
     - balanced container capacity from real data
@@ -140,11 +139,11 @@
     - stock atmo experiment is also used as configurable atmospheric harvester
     - stock fuel cells act like real fuel cells
     - new part: Chemical Plant, can execute reality-inspired chemical processes, unlocked early in the tech tree
-  Profile: 'Classic'
+  - Profile: 'Classic'
     - this profile mimick the old default profile, without the new stuff
-  Profile: 'None'
+  - Profile: 'None'
     - choose this if you want to play with third-party life support mods
-  Bugs fixed
+  - Bugs fixed
     - fix: nasty problem with interaction between cache and analytical sunlight estimation
     - fix: radiation body definitions were not loaded in some cases
     - fix: planner, stock laboratory EC consumption wasn't considered
