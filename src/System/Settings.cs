@@ -78,9 +78,8 @@ public static class Settings
     DeathReputation             = Lib.ConfigValue(cfg, "DeathReputation",             100.0f);
     BreakdownReputation         = Lib.ConfigValue(cfg, "BreakdownReputation",         10.0f);
     StockMessages               = Lib.ConfigValue(cfg, "StockMessages",               false);
-    MessageLength               = Lib.ConfigValue(cfg, "MessageLength",               6.66f);
+    MessageLength               = Lib.ConfigValue(cfg, "MessageLength",               4.0f);
     LowQualityRendering         = Lib.ConfigValue(cfg, "LowQualityRendering",         false);
-    ShowBodyInfo                = Lib.ConfigValue(cfg, "ShowBodyInfo",                true);
   }
 
 
@@ -144,7 +143,6 @@ public static class Settings
   public static bool   StockMessages;                     // use the stock messages instead of our own message box
   public static float  MessageLength;                     // duration of messages on screen in seconds
   public static bool   LowQualityRendering;               // use less particles to render the magnetic fields
-  public static bool   ShowBodyInfo;                      // show the body info panel at start, can still be toggled with ALT+N
 }
 
 
