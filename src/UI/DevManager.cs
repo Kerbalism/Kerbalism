@@ -5,24 +5,24 @@ using UnityEngine.EventSystems;
 
 
 namespace KERBALISM {
-  
-  
+
+
 public static class DevManager
-{   
+{
   public static void devman(this Panel p, Vessel v)
   {
     // if vessel doesn't exist anymore
     if (FlightGlobals.FindVessel(v.id) == null) return;
-    
+
     // get info from the cache
     vessel_info vi = Cache.VesselInfo(v);
-    
+
     // if not a valid vessel
     if (!vi.is_valid) return;
-    
+
     // get devices
     Dictionary<uint,Device> devices = Computer.boot(v);
-    
+
     // direct control
     if (script_index == 0)
     {
@@ -72,7 +72,7 @@ public static class DevManager
 
         // render device entry
         Device dev = pair.Value;
-        p.content 
+        p.content
         (
           dev.name(),
           state == -1 ? "<color=#999999>don't care</color>" : state == 0 ? "<color=red>off</color>" : "<color=cyan>on</color>",
@@ -96,8 +96,8 @@ public static class DevManager
     {
       p.content("<i>no devices</i>");
     }
-  }  
-  
+  }
+
   // return short description of a script, or the time-out message
   static string description()
   {
@@ -109,10 +109,10 @@ public static class DevManager
       case ScriptType.space:        return "<i>Called on reaching space</i>";
       case ScriptType.sunlight:     return "<i>Called when sun became visible</i>";
       case ScriptType.shadow:       return "<i>Called when sun became occluded</i>";
-      case ScriptType.power_high:   return "<i>Called when EC level goes above 15%</i>";
-      case ScriptType.power_low:    return "<i>Called when EC level goes below 15%</i>";
+      case ScriptType.power_high:   return "<i>Called when EC level goes above 80%</i>";
+      case ScriptType.power_low:    return "<i>Called when EC level goes below 20%</i>";
       case ScriptType.rad_high:     return "<i>Called when radiation exceed 0.05 rad/h</i>";
-      case ScriptType.rad_low:      return "<i>Called when radiation goes below 0.05 rad/h</i>";
+      case ScriptType.rad_low:      return "<i>Called when radiation goes below 0.02 rad/h</i>";
       case ScriptType.linked:       return "<i>Called when signal is regained</i>";
       case ScriptType.unlinked:     return "<i>Called when signal is lost</i>";
       case ScriptType.eva_out:      return "<i>Called when going out on EVA</i>";
@@ -125,7 +125,7 @@ public static class DevManager
     }
     return string.Empty;
   }
-  
+
   // mode/script index
   static int script_index;
 }
