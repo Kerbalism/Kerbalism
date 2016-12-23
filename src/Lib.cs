@@ -1355,18 +1355,6 @@ public static class Lib
     return text;
   }
 
-  // return an ascii progressbar, from a simpler era
-  // - len: length in characters
-  // - value: value to represent
-  // - yellow/red: thresholds for color
-  // - max: max value representable
-  // - force_color: use specified color instead of computing it
-  public static string ProgressBar(uint len, double value, double yellow, double red, double max, string force_color="")
-  {
-    string color = force_color.Length > 0 ? force_color : value >= red - double.Epsilon ? "red" : value >= yellow ? "yellow" : "gray";
-    return BuildString("<color=", color, ">", new string('=', Math.Max((int)((double)len * value / max + 0.5), 1)), "</color>");
-  }
-
   // used to make rmb ui status toggles look all the same
   public static string StatusToggle(string title, string status)
   {
