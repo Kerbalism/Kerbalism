@@ -5,82 +5,42 @@ using UnityEngine.EventSystems;
 
 
 namespace KERBALISM {
-
-
-public sealed class DevManager : Window
-{
-  public DevManager()
-  : base(260u, 80u, 80u, 20u, Styles.win)
+  
+  
+public static class DevManager
+{   
+  public static void devman(this Panel p, Vessel v)
   {
-    // enable global access
-    instance = this;
-  }
-
-  public override bool prepare()
-  {
-    // if there is a vessel id specified
-    if (vessel_id != Guid.Empty)
-    {
-      // try to get the vessel
-      Vessel v = FlightGlobals.Vessels.Find(k => k.id == vessel_id);
-
-      // if the vessel doesn't exist, forget it
-      if (v == null)
-      {
-        vessel_id = Guid.Empty;
-      }
-      // if the vessel is not valid, forget it
-      else if (!Cache.VesselInfo(v).is_valid)
-      {
-        vessel_id = Guid.Empty;
-      }
-      // if the vessel is valid
-      else
-      {
-        // simulate the vessel computer not responding
-        resource_info ec = ResourceCache.Info(v, "ElectricCharge");
-        vessel_info vi = Cache.VesselInfo(v);
-        timed_out = ec.amount <= double.Epsilon || (vi.crew_count == 0 && !vi.connection.linked);
-
-        // get list of devices
-        devices = !timed_out ? Computer.boot(v) : new Dictionary<uint, Device>();
-      }
-    }
-
-    // if there is no vessel selected, don't draw anything
-    return vessel_id != Guid.Empty;
-  }
-
-
-  // draw the window
-  public override void render()
-  {
-    // get vessel
-    // - the id and the vessel are valid at this point
-    Vessel v = FlightGlobals.Vessels.Find(k => k.id == vessel_id);
-
-    // draw pseudo-title
-    if (Panel.title(v.vesselName)) Close();
-
+    // if vessel doesn't exist anymore
+    if (FlightGlobals.FindVessel(v.id) == null) return;
+    
+    // get info from the cache
+    vessel_info vi = Cache.VesselInfo(v);
+    
+    // if not a valid vessel
+    if (!vi.is_valid) return;
+    
+    // get devices
+    Dictionary<uint,Device> devices = Computer.boot(v);
+    
     // direct control
     if (script_index == 0)
     {
       // draw section title and desc
-      Panel.section("DEVICES", ref script_index, (int)ScriptType.last);
-      Panel.description(description());
+      p.section
+      (
+        "DEVICES",
+        description(),
+        () => p.prev(ref script_index, (int)ScriptType.last),
+        () => p.next(ref script_index, (int)ScriptType.last)
+      );
 
       // for each device
-      foreach(var p in devices)
+      foreach(var pair in devices)
       {
         // render device entry
-        Device dev = p.Value;
-        Panel.content(dev.name(), dev.info(), dev.toggle);
-
-        // highlight part
-        if (Lib.IsHover())
-        {
-          Highlighter.set(dev.part(), Color.cyan);
-        }
+        Device dev = pair.Value;
+        p.content(dev.name(), dev.info(), string.Empty, dev.toggle, () => Highlighter.set(dev.part(), Color.cyan));
       }
     }
     // script editor
@@ -91,26 +51,32 @@ public sealed class DevManager : Window
       string script_name = script_type.ToString().Replace('_', ' ').ToUpper();
       Script script = DB.Vessel(v).computer.get(script_type);
 
-        // draw section title and desc
-      Panel.section(script_name, ref script_index, (int)ScriptType.last);
-      Panel.description(description());
+      // draw section title and desc
+      p.section
+      (
+        script_name,
+        description(),
+        () => p.prev(ref script_index, (int)ScriptType.last),
+        () => p.next(ref script_index, (int)ScriptType.last)
+      );
 
       // for each device
-      foreach(var p in devices)
+      foreach(var pair in devices)
       {
         // determine tribool state
-        int state = !script.states.ContainsKey(p.Key)
+        int state = !script.states.ContainsKey(pair.Key)
           ? -1
-          : !script.states[p.Key]
+          : !script.states[pair.Key]
           ? 0
           : 1;
 
         // render device entry
-        Device dev = p.Value;
-        Panel.content
+        Device dev = pair.Value;
+        p.content 
         (
           dev.name(),
           state == -1 ? "<color=#999999>don't care</color>" : state == 0 ? "<color=red>off</color>" : "<color=cyan>on</color>",
+          string.Empty,
           () =>
           {
             switch(state)
@@ -119,54 +85,22 @@ public sealed class DevManager : Window
               case  0: script.set(dev, null);  break;
               case  1: script.set(dev, false); break;
             }
-          }
+          },
+          () => Highlighter.set(dev.part(), Color.cyan)
         );
-
-        // highlight part
-        if (Lib.IsHover())
-        {
-          Highlighter.set(dev.part(), Color.cyan);
-        }
       }
     }
 
     // no devices case
-    if (devices.Count == 0 && !timed_out)
+    if (devices.Count == 0)
     {
-      Panel.content("<i>no devices</i>", string.Empty);
+      p.content("<i>no devices</i>");
     }
-
-    // draw spacing
-    Panel.space();
-  }
-
-  public override float height()
-  {
-    // get vessel
-    // - the id and the vessel are valid at this point, checked in on_gui()
-    Vessel v = FlightGlobals.Vessels.Find(k => k.id == vessel_id);
-
-    // store computed height
-    float h = 20.0f;
-
-    // if it is responding
-    if (!timed_out)
-    {
-      // devices
-      h += Panel.height(Math.Max(devices.Count, 1));
-    }
-
-    // desc
-    h += Panel.description_height(description());
-
-    // finally, return the height
-    return h;
-  }
-
+  }  
+  
   // return short description of a script, or the time-out message
-  public string description()
+  static string description()
   {
-    if (timed_out)                  return "<i>Connection timed out</i>";
     if (script_index == 0)          return "<i>Control vessel components directly</i>";
     switch((ScriptType)script_index)
     {
@@ -191,49 +125,9 @@ public sealed class DevManager : Window
     }
     return string.Empty;
   }
-
-  // show the window
-  public static void Open(Vessel v)
-  {
-    // setting vessel id show the window
-    instance.vessel_id = v.id;
-  }
-
-  // close the window
-  public static void Close()
-  {
-    // resetting vessel id hide the window
-    instance.vessel_id = Guid.Empty;
-  }
-
-  // toggle the window
-  public static void Toggle(Vessel v)
-  {
-    // if vessel is different, show it
-    // if vessel is the same, hide it
-    instance.vessel_id = (instance.vessel_id == v.id ? Guid.Empty : v.id);
-  }
-
-  // return true if the window is open
-  public static bool IsOpen()
-  {
-    return instance.vessel_id != Guid.Empty;
-  }
-
-  // selected vessel, if any
-  Guid vessel_id;
-
+  
   // mode/script index
-  int script_index;
-
-  // set of devices
-  Dictionary<uint, Device> devices;
-
-  // true if there is no ec on the vessel, or if it unmanned and without a link
-  bool timed_out;
-
-  // permit global access
-  static DevManager instance;
+  static int script_index;
 }
 
 

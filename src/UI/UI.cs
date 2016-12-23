@@ -10,15 +10,16 @@ public static class UI
 {
   public static void init()
   {
-    launcher   = new Launcher();
-    info       = new Info();
-    body_info  = new BodyInfo();
-    message    = new Message();
-    notepad    = new Notepad();
-    fileman    = new FileManager();
-    devman     = new DevManager();
+    message  = new Message();
+    launcher = new Launcher();
+    window   = new Window(260u, 80u, 80u);
   }
 
+  public static void update()
+  {
+    launcher.update();
+    window.update();
+  }
 
   public static void on_gui()
   {
@@ -28,36 +29,24 @@ public static class UI
     // note: we are ignoring user preference on mouse wheel
     GameSettings.AXIS_MOUSEWHEEL.primary.scale = 1.0f;
 
-    // always render the launcher
-    launcher.on_gui();
-
-    // always render the messages
+    // render the messages
     message.on_gui();
 
-    // outside the editor
-    if (!Lib.IsEditor())
-    {
-      // do nothing if GUI should be hidden
-      if (!launcher.must_hide_ui)
-      {
-        // render subsystems
-        info.on_gui();
-        body_info.on_gui();
-        notepad.on_gui();
-        fileman.on_gui();
-        devman.on_gui();
-      }
-    }
+    // render the launcher
+    launcher.on_gui();
+
+    // render the window
+    window.on_gui();
   }
 
+  public static void open(float width, string title, Action<Panel> refresh)
+  {
+    window.open(width, title, refresh);
+  }
 
-  static Launcher     launcher;
-  static Info         info;
-  static BodyInfo     body_info;
-  static Message      message;
-  static Notepad      notepad;
-  static FileManager  fileman;
-  static DevManager   devman;
+  static Message  message;
+  static Launcher launcher;
+  static Window   window;
 }
 
 

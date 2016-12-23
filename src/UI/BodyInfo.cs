@@ -6,43 +6,19 @@ using UnityEngine;
 namespace KERBALISM {
 
 
-public sealed class BodyInfo : Window
+public static class BodyInfo
 {
-  // ctor
-  public BodyInfo()
-  : base(260u, 245u, 41u, 20u, Styles.win)
-  {
-    // enable global access
-    instance = this;
-
-    // show/hide at start based on user setting
-    open = Settings.ShowBodyInfo;
-  }
-
-  // called every frame
-  public override bool prepare()
+  public static void body_info(this Panel p)
   {
     // only show in mapview
-    if (!MapView.MapIsEnabled) return false;
+    if (!MapView.MapIsEnabled) return;
 
     // only show if there is a selected body and that body is not the sun
     CelestialBody body = Lib.SelectedBody();
-    if (body == null || (body.flightGlobalsIndex == 0 && !Features.Radiation)) return false;
+    if (body == null || (body.flightGlobalsIndex == 0 && !Features.Radiation)) return;
 
-    return open;
-  }
-
-  // draw the window
-  public override void render()
-  {
     // shortcut
     CelestialBody sun = FlightGlobals.Bodies[0];
-
-    // get selected body
-    CelestialBody body = Lib.SelectedBody();
-
-    // draw pseudo-title
-    if (Panel.title(body.bodyName.ToUpper())) Close();
 
     // for all bodies except the sun
     if (body != sun)
@@ -69,72 +45,30 @@ public sealed class BodyInfo : Window
       string temperature_str = body.atmosphere
         ? Lib.HumanReadableTemp(temperature)
         : Lib.BuildString(Lib.HumanReadableTemp(temperature_min), " / ", Lib.HumanReadableTemp(temperature));
-      Panel.section("SURFACE");
-      Panel.content("temperature", temperature_str);
-      Panel.content("solar flux", Lib.HumanReadableFlux(solar_flux));
-      if (Features.Radiation) Panel.content("radiation", Lib.HumanReadableRadiation(radiation));
-      Panel.space();
+      p.section("SURFACE");
+      p.content("temperature", temperature_str);
+      p.content("solar flux", Lib.HumanReadableFlux(solar_flux));
+      if (Features.Radiation) p.content("radiation", Lib.HumanReadableRadiation(radiation));
 
       // atmosphere panel
       if (body.atmosphere)
       {
-        Panel.section("ATMOSPHERE");
-        Panel.content("breathable", body == FlightGlobals.GetHomeBody() && body.atmosphereContainsOxygen ? "yes" : "no");
-        Panel.content("light absorption", Lib.HumanReadablePerc(1.0 - Sim.AtmosphereFactor(body, 0.7071)));
-        if (Features.Radiation) Panel.content("gamma absorption", Lib.HumanReadablePerc(1.0 - Sim.GammaTransparency(body, 0.0)));
-        Panel.space();
+        p.section("ATMOSPHERE");
+        p.content("breathable", body == FlightGlobals.GetHomeBody() && body.atmosphereContainsOxygen ? "yes" : "no");
+        p.content("light absorption", Lib.HumanReadablePerc(1.0 - Sim.AtmosphereFactor(body, 0.7071)));
+        if (Features.Radiation) p.content("gamma absorption", Lib.HumanReadablePerc(1.0 - Sim.GammaTransparency(body, 0.0)));
       }
     }
 
     // rendering panel
     if (Features.Radiation)
     {
-      Panel.section("RENDERING");
-      Panel.content("inner belt",   Radiation.show_inner ? "<color=green>show</color>" : "<color=red>hide</color>", ref Radiation.show_inner);
-      Panel.content("outer belt",   Radiation.show_outer ? "<color=green>show</color>" : "<color=red>hide</color>", ref Radiation.show_outer);
-      Panel.content("magnetopause", Radiation.show_pause ? "<color=green>show</color>" : "<color=red>hide</color>", ref Radiation.show_pause);
-      Panel.space();
+      p.section("RENDERING");
+      p.content("inner belt",   Radiation.show_inner ? "<color=green>show</color>" : "<color=red>hide</color>", string.Empty, () => p.toggle(ref Radiation.show_inner));
+      p.content("outer belt",   Radiation.show_outer ? "<color=green>show</color>" : "<color=red>hide</color>", string.Empty, () => p.toggle(ref Radiation.show_outer));
+      p.content("magnetopause", Radiation.show_pause ? "<color=green>show</color>" : "<color=red>hide</color>", string.Empty, () => p.toggle(ref Radiation.show_pause));
     }
   }
-
-  public override float height()
-  {
-    CelestialBody body = Lib.SelectedBody();
-    return 20.0f
-      + (body.flightGlobalsIndex != 0 ? Panel.height(2 + (Features.Radiation ? 1 : 0)) : 0.0f)
-      + (body.flightGlobalsIndex != 0 && body.atmosphere ? Panel.height(2 + (Features.Radiation ? 1 : 0)) : 0.0f)
-      + (Features.Radiation ? Panel.height(3) : 0.0f);
-  }
-
-  // show the window
-  public static void Open()
-  {
-    instance.open = true;
-  }
-
-  // close the window
-  public static void Close()
-  {
-    instance.open = false;
-  }
-
-  // toggle the window
-  public static void Toggle()
-  {
-    instance.open = !instance.open;
-  }
-
-  // return true if the window is open
-  public static bool IsOpen()
-  {
-    return instance.open;
-  }
-
-  // open/close the window
-  bool open = true;
-
-  // permit global access
-  static BodyInfo instance;
 }
 
 

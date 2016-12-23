@@ -64,10 +64,130 @@ public sealed class Planner
     panel_environment = new List<string>();
     if (Features.Pressure || Features.Poisoning) panel_environment.Add("habitat");
     panel_environment.Add("environment");
+
+    // panel ui
+    panel = new Panel();
   }
 
 
-  void render_environment()
+  public void update()
+  {
+    // clear the panel
+    panel.clear();
+
+    // if there is something in the editor
+    if (EditorLogic.RootPart != null)
+    {
+      // get body, situation and altitude multiplier
+      CelestialBody body = FlightGlobals.Bodies[body_index];
+      string situation = situations[situation_index];
+      double altitude_mult = altitude_mults[situation_index];
+
+      // get parts recursively
+      List<Part> parts = Lib.GetPartsRecursively(EditorLogic.RootPart);
+
+      // analyze
+      env.analyze(body, altitude_mult, sunlight);
+      sim.analyze(parts, env, va);
+      va.analyze(parts, sim, env);
+
+      // ec panel
+      render_ec(panel);
+
+      // resource panel
+      if (panel_resource.Count > 0)
+      {
+        render_resource(panel, panel_resource[resource_index]);
+      }
+
+      // special panel
+      if (panel_special.Count > 0)
+      {
+        switch(panel_special[special_index])
+        {
+          case "qol":         render_stress(panel);      break;
+          case "radiation":   render_radiation(panel);   break;
+          case "reliability": render_reliability(panel); break;
+          case "signal":      render_signal(panel);      break;
+        }
+      }
+
+      // environment panel
+      switch(panel_environment[environment_index])
+      {
+        case "habitat":       render_habitat(panel);     break;
+        case "environment":   render_environment(panel); break;
+      }
+    }
+  }
+
+
+  public void render()
+  {
+    // if there is something in the editor
+    if (EditorLogic.RootPart != null)
+    {
+      // get body, situation and altitude multiplier
+      CelestialBody body = FlightGlobals.Bodies[body_index];
+      string situation = situations[situation_index];
+      double altitude_mult = altitude_mults[situation_index];
+
+      // start header
+      GUILayout.BeginHorizontal(Styles.title_container);
+
+      // body selector
+      GUILayout.Label(new GUIContent(body.name, "Target body"), leftmenu_style);
+      if (Lib.IsClicked()) { body_index = (body_index + 1) % FlightGlobals.Bodies.Count; if (body_index == 0) ++body_index; }
+      else if (Lib.IsClicked(1)) { body_index = (body_index - 1) % FlightGlobals.Bodies.Count; if (body_index == 0) body_index = FlightGlobals.Bodies.Count - 1; }
+
+      // sunlight selector
+      GUILayout.Label(new GUIContent(sunlight ? Icons.sun_white : Icons.sun_black, "In sunlight/shadow"), icon_style);
+      if (Lib.IsClicked()) sunlight = !sunlight;
+
+      // situation selector
+      GUILayout.Label(new GUIContent(situation, "Target situation"), rightmenu_style);
+      if (Lib.IsClicked()) { situation_index = (situation_index + 1) % situations.Length; }
+      else if (Lib.IsClicked(1)) { situation_index = (situation_index == 0 ? situations.Length : situation_index) - 1; }
+
+      // end header
+      GUILayout.EndHorizontal();
+
+      // render panel
+      panel.render();
+    }
+    // if there is nothing in the editor
+    else
+    {
+      // render quote
+      GUILayout.FlexibleSpace();
+      GUILayout.BeginHorizontal();
+      GUILayout.Label("<i>In preparing for space, I have always found that\nplans are useless but planning is indispensable.\nWernher von Kerman</i>", quote_style);
+      GUILayout.EndHorizontal();
+      GUILayout.Space(10.0f);
+    }
+  }
+
+
+  public float width()
+  {
+    return 260.0f;
+  }
+
+
+  public float height()
+  {
+    if (EditorLogic.RootPart != null)
+    {
+      return 30.0f + panel.height(); // header + ui content
+    }
+    else
+    {
+      return 66.0f; // quote-only
+    }
+  }
+
+
+  void render_environment(Panel p)
   {
     string flux_tooltip = Lib.BuildString
     (
@@ -88,16 +208,15 @@ public sealed class Planner
     );
     string shadowtime_str = Lib.HumanReadableDuration(env.shadow_period) + " (" + (env.shadow_time * 100.0).ToString("F0") + "%)";
 
-    Panel.section("ENVIRONMENT", ref environment_index, panel_environment.Count);
-    Panel.content("temperature", Lib.HumanReadableTemp(env.temperature), env.body.atmosphere && env.landed ? "atmospheric" : flux_tooltip);
-    Panel.content("difference", Lib.HumanReadableTemp(env.temp_diff), "difference between external and survival temperature");
-    Panel.content("atmosphere", env.body.atmosphere ? "yes" : "no", atmosphere_tooltip);
-    Panel.content("shadow time", shadowtime_str, "the time in shadow\nduring the orbit");
-    Panel.space();
+    p.section("ENVIRONMENT", string.Empty, () => p.prev(ref environment_index, panel_environment.Count), () => p.next(ref environment_index, panel_environment.Count));
+    p.content("temperature", Lib.HumanReadableTemp(env.temperature), env.body.atmosphere && env.landed ? "atmospheric" : flux_tooltip);
+    p.content("difference", Lib.HumanReadableTemp(env.temp_diff), "difference between external and survival temperature");
+    p.content("atmosphere", env.body.atmosphere ? "yes" : "no", atmosphere_tooltip);
+    p.content("shadow time", shadowtime_str, "the time in shadow\nduring the orbit");
   }
 
 
-  void render_ec()
+  void render_ec(Panel p)
   {
     // get simulated resource
     simulated_resource res = sim.resource("ElectricCharge");
@@ -106,16 +225,15 @@ public sealed class Planner
     string tooltip = res.tooltip();
 
     // render the panel section
-    Panel.section("ELECTRIC CHARGE");
-    Panel.content("storage", Lib.HumanReadableAmount(res.storage), tooltip);
-    Panel.content("consumed", Lib.HumanReadableRate(res.consumed), tooltip);
-    Panel.content("produced", Lib.HumanReadableRate(res.produced), tooltip);
-    Panel.content("duration", Lib.HumanReadableDuration(res.lifetime()));
-    Panel.space();
+    p.section("ELECTRIC CHARGE");
+    p.content("storage", Lib.HumanReadableAmount(res.storage), tooltip);
+    p.content("consumed", Lib.HumanReadableRate(res.consumed), tooltip);
+    p.content("produced", Lib.HumanReadableRate(res.produced), tooltip);
+    p.content("duration", Lib.HumanReadableDuration(res.lifetime()));
   }
 
 
-  void render_resource(string res_name)
+  void render_resource(Panel p, string res_name)
   {
     // get simulated resource
     simulated_resource res = sim.resource(res_name);
@@ -124,16 +242,15 @@ public sealed class Planner
     string tooltip = res.tooltip();
 
     // render the panel section
-    Panel.section(Lib.SpacesOnCaps(res_name).ToUpper(), ref resource_index, panel_resource.Count);
-    Panel.content("storage", Lib.HumanReadableAmount(res.storage), tooltip);
-    Panel.content("consumed", Lib.HumanReadableRate(res.consumed), tooltip);
-    Panel.content("produced", Lib.HumanReadableRate(res.produced), tooltip);
-    Panel.content("duration", Lib.HumanReadableDuration(res.lifetime()));
-    Panel.space();
+    p.section(Lib.SpacesOnCaps(res_name).ToUpper(), string.Empty, () => p.prev(ref resource_index, panel_resource.Count), () => p.next(ref resource_index, panel_resource.Count));
+    p.content("storage", Lib.HumanReadableAmount(res.storage), tooltip);
+    p.content("consumed", Lib.HumanReadableRate(res.consumed), tooltip);
+    p.content("produced", Lib.HumanReadableRate(res.produced), tooltip);
+    p.content("duration", Lib.HumanReadableDuration(res.lifetime()));
   }
 
 
-  void render_stress()
+  void render_stress(Panel p)
   {
     // get first living space rule
     // - guaranteed to exist, as this panel is not rendered without Feature.LivingSpace (that's detected by living space modifier)
@@ -141,7 +258,7 @@ public sealed class Planner
     Rule rule = Profile.rules.Find(k => k.modifiers.Contains("living_space"));
 
     // render title
-    Panel.section("STRESS", ref special_index, panel_special.Count);
+    p.section("STRESS", string.Empty, () => p.prev(ref special_index, panel_special.Count), () => p.next(ref special_index, panel_special.Count));
 
     // render living space data
     // generate details tooltips
@@ -150,25 +267,16 @@ public sealed class Planner
       "volume per-capita: <b>", Lib.HumanReadableVolume(va.volume / (double)Math.Max(va.crew_count, 1)), "</b>\n",
       "ideal living space: <b>", Lib.HumanReadableVolume(Settings.IdealLivingSpace), "</b>"
     );
-    Panel.content("living space", Habitat.living_space_to_string(va.living_space), living_space_tooltip);
+    p.content("living space", Habitat.living_space_to_string(va.living_space), living_space_tooltip);
 
     // render comfort data
     if (rule.modifiers.Contains("comfort"))
     {
-      /*string comfort_tooltip = Lib.BuildString
-      (
-        "firm-ground: <b><color=", va.comforts.Contains("firm-ground") ? "<color=#00ff00>yes</color>" : "<color=#ff0000>no</color>", "</b>\n",
-        "exercise: <b><color=", va.comforts.Contains("exercise") ? "<color=#00ff00>yes</color>" : "<color=#ff0000>no</color>", "</b>\n",
-        "not-alone: <b><color=", va.comforts.Contains("not-alone") ? "<color=#00ff00>yes</color>" : "<color=#ff0000>no</color>", "</b>\n",
-        "call-home: <b><color=", va.comforts.Contains("call-home") ? "<color=#00ff00>yes</color>" : "<color=#ff0000>no</color>", "</b>\n",
-        "panorama: <b><color=", va.comforts.Contains("panorama") ? "<color=#00ff00>yes</color>" : "<color=#ff0000>no</color>", "</b>"
-      );*/
-      //Panel.content("comfort", Comfort.factor_to_string(va.comfort), comfort_tooltip);
-      Panel.content("comfort", va.comforts.summary(), va.comforts.tooltip());
+      p.content("comfort", va.comforts.summary(), va.comforts.tooltip());
     }
     else
     {
-      Panel.content("comfort", "n/a");
+      p.content("comfort", "n/a");
     }
 
     // render pressure data
@@ -177,23 +285,20 @@ public sealed class Planner
       string pressure_tooltip = va.pressurized
         ? "Free roaming in a pressurized environment is\nvastly superior to living in a suit."
         : "Being forced inside a suit all the time greatly\nreduce the crew quality of life.\nThe worst part is the diaper.";
-      Panel.content("pressurized", va.pressurized ? "yes" : "no", pressure_tooltip);
+      p.content("pressurized", va.pressurized ? "yes" : "no", pressure_tooltip);
     }
     else
     {
-      Panel.content("pressurized", "n/a");
+      p.content("pressurized", "n/a");
     }
 
     // render life estimate
     double mod = Modifiers.evaluate(env, va, sim, rule.modifiers);
-    Panel.content("duration", Lib.HumanReadableDuration(rule.fatal_threshold / (rule.degeneration * mod)));
-
-    // render spacing
-    Panel.space();
+    p.content("duration", Lib.HumanReadableDuration(rule.fatal_threshold / (rule.degeneration * mod)));
   }
 
 
-  void render_radiation()
+  void render_radiation(Panel p)
   {
     // get first radiation rule
     // - guaranteed to exist, as this panel is not rendered without Feature.Radiation (that's detected by radiation modifier)
@@ -242,26 +347,25 @@ public sealed class Planner
     );
 
     // render the panel
-    Panel.section("RADIATION", ref special_index, panel_special.Count);
-    Panel.content("surface", Lib.HumanReadableRadiation(env.surface_rad + va.emitted), tooltip);
-    Panel.content("orbit", Lib.HumanReadableRadiation(env.magnetopause_rad), tooltip);
-    if (va.emitted >= 0.0) Panel.content("emission", Lib.HumanReadableRadiation(va.emitted), tooltip);
-    else Panel.content("active shielding", Lib.HumanReadableRadiation(-va.emitted), tooltip);
-    Panel.content("shielding", rule.modifiers.Contains("shielding") ? Habitat.shielding_to_string(va.shielding) : "n/a", tooltip);
-    Panel.space();
+    p.section("RADIATION", string.Empty, () => p.prev(ref special_index, panel_special.Count), () => p.next(ref special_index, panel_special.Count));
+    p.content("surface", Lib.HumanReadableRadiation(env.surface_rad + va.emitted), tooltip);
+    p.content("orbit", Lib.HumanReadableRadiation(env.magnetopause_rad), tooltip);
+    if (va.emitted >= 0.0) p.content("emission", Lib.HumanReadableRadiation(va.emitted), tooltip);
+    else p.content("active shielding", Lib.HumanReadableRadiation(-va.emitted), tooltip);
+    p.content("shielding", rule.modifiers.Contains("shielding") ? Habitat.shielding_to_string(va.shielding) : "n/a", tooltip);
   }
 
 
-  void render_reliability()
+  void render_reliability(Panel p)
   {
     // evaluate redundancy metric
     // - 0: no redundancy
     // - 0.5: all groups have 2 elements
     // - 1.0: all groups have 3 or more elements
     double redundancy_metric = 0.0;
-    foreach(var p in va.redundancy)
+    foreach(var pair in va.redundancy)
     {
-      switch(p.Value)
+      switch(pair.Value)
       {
         case 1:  break;
         case 2:  redundancy_metric += 0.5 / (double)va.redundancy.Count; break;
@@ -281,19 +385,19 @@ public sealed class Planner
     if (va.redundancy.Count > 0)
     {
       StringBuilder sb = new StringBuilder();
-      foreach(var p in va.redundancy)
+      foreach(var pair in va.redundancy)
       {
         if (sb.Length > 0) sb.Append("\n");
         sb.Append("<b>");
-        switch(p.Value)
+        switch(pair.Value)
         {
           case 1: sb.Append("<color=red>"); break;
           case 2: sb.Append("<color=yellow>"); break;
           default: sb.Append("<color=green>"); break;
         }
-        sb.Append(p.Value.ToString());
+        sb.Append(pair.Value.ToString());
         sb.Append("</color></b>\t");
-        sb.Append(p.Key);
+        sb.Append(pair.Key);
       }
       redundancy_tooltip = Lib.BuildString("<align=left />", sb.ToString());
     }
@@ -313,16 +417,15 @@ public sealed class Planner
     }
 
     // render panel
-    Panel.section("RELIABILITY", ref special_index, panel_special.Count);
-    Panel.content("malfunctions", Lib.HumanReadableAmount(va.failure_year, "/y"), "average case estimate\nfor the whole vessel");
-    Panel.content("high quality", Lib.HumanReadablePerc(va.high_quality), "percentage of high quality components");
-    Panel.content("redundancy", redundancy_str, redundancy_tooltip);
-    Panel.content("repair", repair_str, repair_tooltip);
-    Panel.space();
+    p.section("RELIABILITY", string.Empty, () => p.prev(ref special_index, panel_special.Count), () => p.next(ref special_index, panel_special.Count));
+    p.content("malfunctions", Lib.HumanReadableAmount(va.failure_year, "/y"), "average case estimate\nfor the whole vessel");
+    p.content("high quality", Lib.HumanReadablePerc(va.high_quality), "percentage of high quality components");
+    p.content("redundancy", redundancy_str, redundancy_tooltip);
+    p.content("repair", repair_str, repair_tooltip);
   }
 
 
-  void render_signal()
+  void render_signal(Panel p)
   {
     // range tooltip
     string range_tooltip = "";
@@ -384,16 +487,15 @@ public sealed class Planner
       ) : string.Empty;
 
     // render the panel
-    Panel.section("SIGNAL", ref special_index, panel_special.Count);
-    Panel.content("range", Lib.HumanReadableRange(va.direct_dist), range_tooltip);
-    Panel.content("rate", Lib.HumanReadableDataRate(va.direct_rate), rate_tooltip);
-    Panel.content("cost", va.direct_cost > double.Epsilon ? Lib.BuildString(va.direct_cost.ToString("F2"), " EC/s") : "none", cost_tooltip);
-    Panel.content("inter-vessel", va.indirect_dist > double.Epsilon ? "yes" : "no", indirect_tooltip);
-    Panel.space();
+    p.section("SIGNAL", string.Empty, () => p.prev(ref special_index, panel_special.Count), () => p.next(ref special_index, panel_special.Count));
+    p.content("range", Lib.HumanReadableRange(va.direct_dist), range_tooltip);
+    p.content("rate", Lib.HumanReadableDataRate(va.direct_rate), rate_tooltip);
+    p.content("cost", va.direct_cost > double.Epsilon ? Lib.BuildString(va.direct_cost.ToString("F2"), " EC/s") : "none", cost_tooltip);
+    p.content("inter-vessel", va.indirect_dist > double.Epsilon ? "yes" : "no", indirect_tooltip);
   }
 
 
-  void render_habitat()
+  void render_habitat(Panel p)
   {
     simulated_resource atmo_res = sim.resource("Atmosphere");
     simulated_resource waste_res = sim.resource("WasteAtmosphere");
@@ -424,124 +526,17 @@ public sealed class Planner
       ? "<color=#ffff00>inadequate</color>"
       : "good";                                                 //< sufficient pressure control
 
-    Panel.section("HABITAT", ref environment_index, panel_environment.Count);
-    Panel.content("volume", Lib.HumanReadableVolume(va.volume), "volume of enabled habitats");
-    Panel.content("surface", Lib.HumanReadableSurface(va.surface), "surface of enabled habitats");
-    Panel.content("scrubbing", waste_status, waste_tooltip);
-    Panel.content("pressurization", atmo_status, atmo_tooltip);
-    Panel.space();
+    p.section("HABITAT", string.Empty, () => p.prev(ref environment_index, panel_environment.Count), () => p.next(ref environment_index, panel_environment.Count));
+    p.content("volume", Lib.HumanReadableVolume(va.volume), "volume of enabled habitats");
+    p.content("surface", Lib.HumanReadableSurface(va.surface), "surface of enabled habitats");
+    p.content("scrubbing", waste_status, waste_tooltip);
+    p.content("pressurization", atmo_status, atmo_tooltip);
   }
 
-
-  public float width()
-  {
-    return 260.0f;
-  }
-
-
-  public float height()
-  {
-    if (EditorLogic.RootPart != null)
-    {
-      // calculate panels count
-      uint panels_count = 2u
-        + (panel_resource.Count > 0 ? 1u : 0u)
-        + (panel_special.Count > 0 ? 1u : 0u);
-
-      return 30.0f + Panel.height(4) * (float)panels_count;
-    }
-    else
-    {
-      return 66.0f; // quote-only
-    }
-  }
-
-
-  public void render()
-  {
-    // if there is something in the editor
-    if (EditorLogic.RootPart != null)
-    {
-      // get body, situation and altitude multiplier
-      CelestialBody body = FlightGlobals.Bodies[body_index];
-      string situation = situations[situation_index];
-      double altitude_mult = altitude_mults[situation_index];
-
-      // get parts recursively
-      List<Part> parts = Lib.GetPartsRecursively(EditorLogic.RootPart);
-
-      // analyze
-      env.analyze(body, altitude_mult, sunlight);
-      sim.analyze(parts, env, va);
-      va.analyze(parts, sim, env);
-
-      // start header
-      GUILayout.BeginHorizontal(Styles.title_container);
-
-      // body selector
-      GUILayout.Label(new GUIContent(body.name, "Target body"), leftmenu_style);
-      if (Lib.IsClicked()) { body_index = (body_index + 1) % FlightGlobals.Bodies.Count; if (body_index == 0) ++body_index; }
-      else if (Lib.IsClicked(1)) { body_index = (body_index - 1) % FlightGlobals.Bodies.Count; if (body_index == 0) body_index = FlightGlobals.Bodies.Count - 1; }
-
-      // sunlight selector
-      GUILayout.Label(new GUIContent(icon_sunlight[sunlight ? 1 : 0], "In sunlight/shadow"), icon_style);
-      if (Lib.IsClicked()) sunlight = !sunlight;
-
-      // situation selector
-      GUILayout.Label(new GUIContent(situation, "Target situation"), rightmenu_style);
-      if (Lib.IsClicked()) { situation_index = (situation_index + 1) % situations.Length; }
-      else if (Lib.IsClicked(1)) { situation_index = (situation_index == 0 ? situations.Length : situation_index) - 1; }
-
-      // end header
-      GUILayout.EndHorizontal();
-
-
-      // ec panel
-      render_ec();
-
-      // resource panel
-      if (panel_resource.Count > 0)
-      {
-        render_resource(panel_resource[resource_index]);
-      }
-
-      // special panel
-      if (panel_special.Count > 0)
-      {
-        switch(panel_special[special_index])
-        {
-          case "qol":         render_stress();      break;
-          case "radiation":   render_radiation();   break;
-          case "reliability": render_reliability(); break;
-          case "signal":      render_signal();      break;
-        }
-      }
-
-      // environment panel
-      switch(panel_environment[environment_index])
-      {
-        case "habitat":       render_habitat();     break;
-        case "environment":   render_environment(); break;
-      }
-    }
-    // if there is nothing in the editor
-    else
-    {
-      // render quote
-      GUILayout.FlexibleSpace();
-      GUILayout.BeginHorizontal();
-      GUILayout.Label("<i>In preparing for space, I have always found that\nplans are useless but planning is indispensable.\nWernher von Kerman</i>", quote_style);
-      GUILayout.EndHorizontal();
-      GUILayout.Space(10.0f);
-    }
-  }
 
   // store situations and altitude multipliers
   string[] situations = { "Landed", "Low Orbit", "Orbit", "High Orbit" };
   double[] altitude_mults = { 0.0, 0.33, 1.0, 3.0 };
-
-  // sunlight selector textures
-  Texture[] icon_sunlight = { Lib.GetTexture("sun-black"), Lib.GetTexture("sun-white") };
 
   // styles
   GUIStyle leftmenu_style;
@@ -568,6 +563,9 @@ public sealed class Planner
   int resource_index;
   int special_index;
   int environment_index;
+
+  // panel ui
+  Panel panel;
 }
 
 

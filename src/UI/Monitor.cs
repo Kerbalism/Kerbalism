@@ -6,38 +6,20 @@ using UnityEngine;
 namespace KERBALISM {
 
 
+public enum MonitorPage
+{
+  telemetry,
+  data,
+  scripts,
+  config
+}
+
+
 public sealed class Monitor
 {
   // ctor
   public Monitor()
   {
-    // style for vessel row
-    row_style = new GUIStyle();
-    row_style.stretchWidth = true;
-    row_style.fixedHeight = 16.0f; //< required for icon vertical alignment
-
-    // style for vessel name
-    name_style = new GUIStyle(HighLogic.Skin.label);
-    name_style.richText = true;
-    name_style.normal.textColor = Color.white;
-    name_style.fixedWidth = 140.0f;
-    name_style.stretchHeight = true;
-    name_style.fontSize = 12;
-    name_style.alignment = TextAnchor.MiddleLeft;
-
-    // style for body name
-    body_style = new GUIStyle(HighLogic.Skin.label);
-    body_style.richText = true;
-    body_style.normal.textColor = new Color(0.75f, 0.75f, 0.75f, 1.0f);
-    body_style.fixedWidth = 36.0f;
-    body_style.stretchHeight = true;
-    body_style.fontSize = 8;
-    body_style.alignment = TextAnchor.MiddleRight;
-
-    // icon style
-    icon_style = new GUIStyle();
-    icon_style.alignment = TextAnchor.MiddleRight;
-
     // filter style
     filter_style = new GUIStyle(HighLogic.Skin.label);
     filter_style.normal.textColor = new Color(0.66f, 0.66f, 0.66f, 1.0f);
@@ -60,126 +42,220 @@ public sealed class Monitor
     group_style.imagePosition = ImagePosition.TextOnly;
     group_style.stretchWidth = true;
     group_style.fixedHeight = 11.0f;
-    group_style.normal.textColor = Color.cyan;
+    group_style.normal.textColor = Color.yellow;
+
+    // initialize panel
+    panel = new Panel();
   }
 
 
-  GUIContent indicator_ec(Vessel v)
+  public void update()
   {
-    resource_info ec = ResourceCache.Info(v, "ElectricCharge");
+    // reset panel
+    panel.clear();
 
-    GUIContent state = new GUIContent();
-    state.tooltip = ec.capacity > 0.0 ? "EC: " + Lib.HumanReadablePerc(ec.level) : "";
-    state.image = icon_battery_nominal;
+    // get vessel
+    Vessel sv = configured_id == Guid.Empty ? null : FlightGlobals.FindVessel(configured_id);
 
-    Supply supply = Profile.supplies.Find(k => k.resource == "ElectricCharge");
-    double low_threshold = supply != null ? supply.low_threshold : 0.15;
-
-    if (ec.level <= 0.005) state.image = icon_battery_danger;
-    else if (ec.level <= low_threshold) state.image = icon_battery_warning;
-    return state;
-  }
-
-
-  GUIContent indicator_supplies(Vessel v, vessel_info vi)
-  {
-    GUIContent state = new GUIContent();
-    List<string> tooltips = new List<string>();
-    uint max_severity = 0;
-    if (vi.crew_count > 0)
+    // if nothing is selected (or it doesn't exist anymore)
+    if (sv == null)
     {
-      var supplies = Profile.supplies.FindAll(k => k.resource != "ElectricCharge");
-      foreach(Supply supply in supplies)
-      {
-        resource_info res = ResourceCache.Info(v, supply.resource);
-        if (res.capacity > double.Epsilon)
-        {
-          double depletion = res.Depletion(vi.crew_count);
-          string deplete_str = depletion <= double.Epsilon
-            ? ", depleted"
-            : double.IsNaN(depletion)
-            ? ""
-            : Lib.BuildString(", deplete in <b>", Lib.HumanReadableDuration(depletion), "</b>");
-          tooltips.Add(Lib.BuildString(supply.resource, ": <b>", Lib.HumanReadablePerc(res.level), "</b>", deplete_str));
+      // forget the vessel, if it doesn't exist anymore
+      configured_id = Guid.Empty;
 
-          uint severity = res.level <= 0.005 ? 2u : res.level <= supply.low_threshold ? 1u : 0;
-          max_severity = Math.Max(max_severity, severity);
-        }
+      // filter flag is updated on render_vessel
+      show_filter = false;
+
+      // used to detect when no vessels are in list
+      bool setup = false;
+
+      // draw active vessel if any
+      if (FlightGlobals.ActiveVessel != null)
+      {
+        setup |= render_vessel(panel, FlightGlobals.ActiveVessel);
+      }
+
+      // for each vessel
+      foreach(Vessel v in FlightGlobals.Vessels)
+      {
+        // skip active vessel
+        if (v == FlightGlobals.ActiveVessel) continue;
+
+        // draw the vessel
+        setup |= render_vessel(panel, v);
+      }
+
+      // empty vessel case
+      if (!setup)
+      {
+        panel.title("<i>no vessels</i>");
       }
     }
-    switch(max_severity)
-    {
-      case 0: state.image = icon_supplies_nominal; break;
-      case 1: state.image = icon_supplies_warning; break;
-      case 2: state.image = icon_supplies_danger;  break;
-    }
-    state.tooltip = string.Join("\n", tooltips.ToArray());
-    return state;
-  }
-
-
-  GUIContent indicator_reliability(Vessel v, vessel_info vi)
-  {
-    GUIContent state = new GUIContent();
-    if (!vi.malfunction)
-    {
-      state.image = icon_malfunction_nominal;
-      state.tooltip = string.Empty;
-    }
-    else if (!vi.critical)
-    {
-      state.image = icon_malfunction_warning;
-      state.tooltip = "Malfunctions";
-    }
+    // if a vessel is selected
     else
     {
-      state.image = icon_malfunction_danger;
-      state.tooltip = "Critical failures";
+      // header act as title
+      render_vessel(panel, sv);
+
+      // update page content
+      switch(page)
+      {
+        case MonitorPage.telemetry: panel.telemetry(sv); break;
+        case MonitorPage.data: panel.fileman(sv); break;
+        case MonitorPage.scripts: panel.devman(sv); break;
+        case MonitorPage.config: panel.config(sv); break;
+      }
     }
-    return state;
   }
 
 
-  GUIContent indicator_signal(Vessel v, vessel_info vi)
+  public void render()
   {
-    GUIContent state = new GUIContent();
-    ConnectionInfo conn = vi.connection;
-    switch(conn.status)
+    // reset last clicked vessel
+    last_clicked_id = Guid.Empty;
+
+    // forget edited vessel if it doesn't exist anymore
+    Vessel v = FlightGlobals.Vessels.Find(k => k.id == configured_id);
+    if (v == null) configured_id = Guid.Empty;
+
+    // start scrolling view
+    scroll_pos = GUILayout.BeginScrollView(scroll_pos, HighLogic.Skin.horizontalScrollbar, HighLogic.Skin.verticalScrollbar);
+
+    panel.render();
+
+    // end scroll view
+    GUILayout.EndScrollView();
+
+    // if a vessel is selected
+    if (configured_id != Guid.Empty)
     {
-      case LinkStatus.direct_link:
-        state.image = icon_signal_direct;
-        state.tooltip = "Direct link";
-        break;
-
-      case LinkStatus.indirect_link:
-        state.image = icon_signal_relay;
-        if (conn.path.Count == 1)
-        {
-          state.tooltip = Lib.BuildString("Signal relayed by <b>", conn.path[conn.path.Count - 1].vesselName, "</b>");
-        }
-        else
-        {
-          state.tooltip = "Signal relayed by:";
-          for(int i=conn.path.Count-1; i>=0; --i) state.tooltip += Lib.BuildString("\n<b>", conn.path[i].vesselName, "</b>");
-        }
-        break;
-
-      case LinkStatus.blackout:
-        state.image = icon_signal_none;
-        state.tooltip = "Blackout";
-        break;
-
-      case LinkStatus.no_link:
-        state.image = icon_signal_none;
-        state.tooltip = "No signal";
-        break;
-
-      case LinkStatus.no_antenna:
-        state.image = icon_signal_none;
-        state.tooltip = "No antenna";
-        break;
+      render_menu(v);
     }
-    return state;
+    // if at least one vessel is assigned to a group, render the filter
+    else if (show_filter)
+    {
+      render_filter();
+    }
+
+    // if user clicked on a vessel
+    if (last_clicked_id != Guid.Empty)
+    {
+      // if user clicked on configured vessel hide config, if user clicked on another vessel show its config
+      configured_id = (last_clicked_id == configured_id ? Guid.Empty : last_clicked_id);
+    }
+  }
+
+  public float width()
+  {
+    return 320.0f;
+  }
+
+  public float height()
+  {
+    // top spacing
+    float h = 10.0f;
+
+    // panel height
+    h += panel.height();
+
+    // one is selected, or filter is required
+    if (configured_id != Guid.Empty || show_filter)
+    {
+      h += 26.0f;
+    }
+
+    // clamp to screen height
+    return Math.Min(h, Screen.height * 0.75f);
+  }
+
+  bool render_vessel(Panel p, Vessel v)
+  {
+    // get vessel info
+    vessel_info vi = Cache.VesselInfo(v);
+
+    // skip invalid vessels
+    if (!vi.is_valid) return false;
+
+    // get data from db
+    VesselData vd = DB.Vessel(v);
+
+    // determine if filter must be shown
+    show_filter |= vd.group.Length > 0 && vd.group != "NONE";
+
+    // skip filtered vessels
+    if (filtered() && vd.group != filter) return false;
+
+    // get resource handler
+    vessel_resources resources = ResourceCache.Get(v);
+
+    // get vessel crew
+    List<ProtoCrewMember> crew = Lib.CrewList(v);
+
+    // get vessel name
+    string vessel_name = v.isEVA ? crew[0].name : v.vesselName;
+
+    // get body name
+    string body_name = v.mainBody.name.ToUpper();
+
+    // render entry
+    p.title
+    (
+      Lib.BuildString("<b>", Lib.Ellipsis(vessel_name, 24), "</b> <size=8><color=#cccccc>", Lib.Ellipsis(body_name, 8), "</color></size>"),
+      string.Empty,
+      () => { last_clicked_id = v.id; }
+    );
+
+    // problem indicator
+    indicator_problems(p, v, vi, crew);
+
+    // battery indicator
+    indicator_ec(p, v);
+
+    // supply indicator
+    if (Features.Supplies) indicator_supplies(p, v, vi);
+
+    // reliability indicator
+    if (Features.Reliability) indicator_reliability(p, v, vi);
+
+    // signal indicator
+    if (Features.Signal) indicator_signal(p, v, vi);
+
+    // done
+    return true;
+  }
+
+
+  void render_menu(Vessel v)
+  {
+    // render menu
+    VesselData vd = DB.Vessel(v);
+    GUILayout.BeginHorizontal(Styles.entry_container);
+    GUILayout.Label(new GUIContent(page == MonitorPage.telemetry ? " <color=#00ffff>INFO</color> " : " INFO ", Icons.small_info, "Telemetry readings"), config_style);
+    if (Lib.IsClicked()) page = MonitorPage.telemetry;
+    else if (Lib.IsClicked(1)) UI.open(260.0f, v.vesselName, (p) => p.telemetry(v));
+    GUILayout.Label(new GUIContent(page == MonitorPage.data ? " <color=#00ffff>DATA</color> " : " DATA " , Icons.small_folder, "Stored files and samples"), config_style);
+    if (Lib.IsClicked()) page = MonitorPage.data;
+    else if (Lib.IsClicked(1)) UI.open(320.0f, v.vesselName, (p) => p.fileman(v));
+    GUILayout.Label(new GUIContent(page == MonitorPage.scripts ? " <color=#00ffff>AUTO</color> " : " AUTO ", Icons.small_console, "Control and automate components"), config_style);
+    if (Lib.IsClicked()) page = MonitorPage.scripts;
+    else if (Lib.IsClicked(1)) UI.open(260.0f, v.vesselName, (p) => p.devman(v));
+    GUILayout.Label(new GUIContent(page == MonitorPage.config ? " <color=#00ffff>CFG</color> " : " CFG ", Icons.small_config, "Configure the vessel"), config_style);
+    if (Lib.IsClicked()) page = MonitorPage.config;
+    else if (Lib.IsClicked(1)) UI.open(260.0f, v.vesselName, (p) => p.config(v));
+    GUILayout.Label(new GUIContent(" GROUP ", Icons.small_search, "Organize in groups"), config_style);
+    vd.group = Lib.TextFieldPlaceholder("Kerbalism_group", vd.group, "NONE", group_style).ToUpper();
+    GUILayout.EndHorizontal();
+    GUILayout.Space(10.0f);
+  }
+
+
+  void render_filter()
+  {
+    // show the group filter
+    GUILayout.BeginHorizontal(Styles.entry_container);
+    filter = Lib.TextFieldPlaceholder("Kerbalism_filter", filter, filter_placeholder, filter_style).ToUpper();
+    GUILayout.EndHorizontal();
+    GUILayout.Space(10.0f);
   }
 
 
@@ -187,11 +263,10 @@ public sealed class Monitor
   {
     if (info.sunlight <= double.Epsilon)
     {
-      icons.Add(icon_sun_shadow);
+      icons.Add(Icons.sun_black);
       tooltips.Add("In shadow");
     }
   }
-
 
   void problem_greenhouses(Vessel v, List<Greenhouse.data> greenhouses, ref List<Texture> icons, ref List<string> tooltips)
   {
@@ -201,12 +276,11 @@ public sealed class Monitor
     {
       if (greenhouse.issue.Length > 0)
       {
-        if (!icons.Contains(icon_greenhouse_warning)) icons.Add(icon_greenhouse_warning);
+        if (!icons.Contains(Icons.plant_yellow)) icons.Add(Icons.plant_yellow);
         tooltips.Add(Lib.BuildString("Greenhouse: <b>", greenhouse.issue, "</b>"));
       }
     }
   }
-
 
   void problem_kerbals(List<ProtoCrewMember> crew, ref List<Texture> icons, ref List<string> tooltips)
   {
@@ -238,90 +312,63 @@ public sealed class Monitor
       }
 
     }
-    if (health_severity == 1) icons.Add(icon_health_warning);
-    else if (health_severity == 2) icons.Add(icon_health_danger);
-    if (stress_severity == 1) icons.Add(icon_stress_warning);
-    else if (stress_severity == 2) icons.Add(icon_stress_danger);
+    if (health_severity == 1) icons.Add(Icons.health_yellow);
+    else if (health_severity == 2) icons.Add(Icons.health_red);
+    if (stress_severity == 1) icons.Add(Icons.brain_yellow);
+    else if (stress_severity == 2) icons.Add(Icons.brain_red);
   }
-
 
   void problem_radiation(vessel_info info, ref List<Texture> icons, ref List<string> tooltips)
   {
     string radiation_str = Lib.BuildString(" (<i>", (info.radiation * 60.0 * 60.0).ToString("F3"), " rad/h)</i>");
     if (info.radiation > 1.0 / 3600.0)
     {
-      icons.Add(icon_radiation_danger);
+      icons.Add(Icons.radiation_red);
       tooltips.Add(Lib.BuildString("Exposed to extreme radiation", radiation_str));
     }
     else if (info.radiation > 0.15 / 3600.0)
     {
-      icons.Add(icon_radiation_warning);
+      icons.Add(Icons.radiation_yellow);
       tooltips.Add(Lib.BuildString("Exposed to intense radiation", radiation_str));
     }
     else if (info.radiation > 0.0195 / 3600.0)
     {
-      icons.Add(icon_radiation_warning);
+      icons.Add(Icons.radiation_yellow);
       tooltips.Add(Lib.BuildString("Exposed to moderate radiation", radiation_str));
     }
   }
 
-
   void problem_poisoning(vessel_info info, ref List<Texture> icons, ref List<string> tooltips)
   {
     string poisoning_str = Lib.BuildString("CO2 level in internal atmosphere: <b>", Lib.HumanReadablePerc(info.poisoning), "</b>");
-    if (info.poisoning >= 0.075)
+    if (info.poisoning >= 0.05)
     {
-      icons.Add(icon_poisoning_danger);
+      icons.Add(Icons.recycle_red);
       tooltips.Add(poisoning_str);
     }
     else if (info.poisoning > 0.025)
     {
-      icons.Add(icon_poisoning_warning);
+      icons.Add(Icons.recycle_yellow);
       tooltips.Add(poisoning_str);
     }
   }
-
 
   void problem_storm(Vessel v, ref List<Texture> icons, ref List<string> tooltips)
   {
     if (Storm.Incoming(v))
     {
-      icons.Add(icon_storm_warning);
+      icons.Add(Icons.storm_yellow);
       tooltips.Add(Lib.BuildString("Coronal mass ejection incoming <i>(", Lib.HumanReadableDuration(Storm.TimeBeforeCME(v)), ")</i>"));
     }
     if (Storm.InProgress(v))
     {
-      icons.Add(icon_storm_danger);
+      icons.Add(Icons.storm_red);
       tooltips.Add(Lib.BuildString("Solar storm in progress <i>(", Lib.HumanReadableDuration(Storm.TimeLeftCME(v)), ")</i>"));
     }
   }
 
-
-  // draw a vessel in the monitor
-  // - return: 1 if vessel wasn't skipped
-  uint render_vessel(Vessel v)
+  void indicator_problems(Panel p, Vessel v, vessel_info vi, List<ProtoCrewMember> crew)
   {
-    // get vessel info from cache
-    vessel_info vi = Cache.VesselInfo(v);
-
-    // skip invalid vessels
-    if (!vi.is_valid) return 0;
-
-    // get vessel data from the db
-    VesselData vd = DB.Vessel(v);
-
-    // skip filtered vessels
-    if (filtered() && vd.group != filter) return 0;
-
-    // get vessel crew
-    List<ProtoCrewMember> crew = Lib.CrewList(v);
-
-    // get vessel name
-    string vessel_name = v.isEVA ? crew[0].name : v.vesselName;
-
-    // get body name
-    string body_name = v.mainBody.name.ToUpper();
-
     // store problems icons & tooltips
     List<Texture> problem_icons = new List<Texture>();
     List<string> problem_tooltips = new List<string>();
@@ -336,258 +383,169 @@ public sealed class Monitor
 
     // choose problem icon
     const UInt64 problem_icon_time = 3;
-    Texture problem_icon = icon_empty;
+    Texture problem_icon = Icons.empty;
     if (problem_icons.Count > 0)
     {
       UInt64 problem_index = ((UInt64)Time.realtimeSinceStartup / problem_icon_time) % (UInt64)(problem_icons.Count);
       problem_icon = problem_icons[(int)problem_index];
     }
 
-    // generate problem tooltips
-    string problem_tooltip = String.Join("\n", problem_tooltips.ToArray());
-
-    // render vessel name & icons
-    GUILayout.BeginHorizontal(row_style);
-    GUILayout.Label(new GUIContent(Lib.BuildString("<b>", Lib.Ellipsis(vessel_name, 24), "</b>"), vessel_name.Length > 24 ? vessel_name : ""), name_style);
-    GUILayout.Label(new GUIContent(Lib.Ellipsis(body_name, 8), body_name.Length > 8 ? body_name : ""), body_style);
-    GUILayout.Label(new GUIContent(problem_icon, problem_tooltip), icon_style);
-    GUILayout.Label(indicator_ec(v), icon_style);
-    if (Features.Supplies) GUILayout.Label(indicator_supplies(v, vi), icon_style);
-    if (Features.Reliability) GUILayout.Label(indicator_reliability(v, vi), icon_style);
-    if (Features.Signal) GUILayout.Label(indicator_signal(v, vi), icon_style);
-    GUILayout.EndHorizontal();
-    if (Lib.IsClicked(1)) Info.Toggle(v);
-    if (Features.Science && Lib.IsClicked(2)) FileManager.Toggle(v);
-
-    // remember last vessel clicked
-    if (Lib.IsClicked()) last_clicked_id = v.id;
-
-    // render vessel config
-    if (configured_id == v.id) render_config(v);
-
-    // spacing between vessels
-    GUILayout.Space(10.0f);
-
-    // signal that the vessel wasn't skipped for whatever reason
-    return 1;
+    // generate problem icon
+    p.icon(problem_icon, String.Join("\n", problem_tooltips.ToArray()));
   }
 
-
-  // draw vessel config
-  void render_config(Vessel v)
+  void indicator_ec(Panel p, Vessel v)
   {
-    // get vessel data
-    VesselData vd = DB.Vessel(v);
+    Texture image;
+    string tooltip;
 
-    // draw the config
-    GUILayout.BeginHorizontal(row_style);
-    GUILayout.Label(new GUIContent(" EC MESSAGES", icon_toggle[vd.cfg_ec ? 1 : 0]), config_style);
-    if (Lib.IsClicked()) vd.cfg_ec = !vd.cfg_ec;
-    GUILayout.EndHorizontal();
-    if (Features.Supplies)
-    {
-      GUILayout.BeginHorizontal(row_style);
-      GUILayout.Label(new GUIContent(" SUPPLY MESSAGES", icon_toggle[vd.cfg_supply ? 1 : 0]), config_style);
-      if (Lib.IsClicked()) vd.cfg_supply = !vd.cfg_supply;
-      GUILayout.EndHorizontal();
-    }
-    if (Features.Signal)
-    {
-      GUILayout.BeginHorizontal(row_style);
-      GUILayout.Label(new GUIContent(" SIGNAL MESSAGES", icon_toggle[vd.cfg_signal ? 1 : 0]), config_style);
-      if (Lib.IsClicked()) vd.cfg_signal = !vd.cfg_signal;
-      GUILayout.EndHorizontal();
-    }
-    if (Features.SpaceWeather)
-    {
-      GUILayout.BeginHorizontal(row_style);
-      GUILayout.Label(new GUIContent(" STORM MESSAGES", icon_toggle[vd.cfg_storm ? 1 : 0]), config_style);
-      if (Lib.IsClicked()) vd.cfg_storm = !vd.cfg_storm;
-      GUILayout.EndHorizontal();
-    }
-    if (Features.Reliability)
-    {
-      GUILayout.BeginHorizontal(row_style);
-      GUILayout.Label(new GUIContent(" RELIABILITY MESSAGES", icon_toggle[vd.cfg_malfunction ? 1 : 0]), config_style);
-      if (Lib.IsClicked()) vd.cfg_malfunction = !vd.cfg_malfunction;
-      GUILayout.EndHorizontal();
-      GUILayout.BeginHorizontal(row_style);
-      GUILayout.Label(new GUIContent(" HIGHLIGHT MALFUNCTIONS", icon_toggle[vd.cfg_highlights ? 1 : 0]), config_style);
-      if (Lib.IsClicked()) vd.cfg_highlights = !vd.cfg_highlights;
-      GUILayout.EndHorizontal();
-    }
-    if (Features.Signal)
-    {
-      GUILayout.BeginHorizontal(row_style);
-      GUILayout.Label(new GUIContent(" SHOW LINK", icon_toggle[vd.cfg_showlink ? 1 : 0]), config_style);
-      if (Lib.IsClicked()) vd.cfg_showlink = !vd.cfg_showlink;
-      GUILayout.EndHorizontal();
-    }
-    if (!filtered())
-    {
-      GUILayout.BeginHorizontal(row_style);
-      GUILayout.Label(new GUIContent(" GROUP: ", icon_group, "Organize in groups"), config_style);
-      vd.group = Lib.TextFieldPlaceholder("Kerbalism_group", vd.group, "NONE", group_style).ToUpper();
-      GUILayout.EndHorizontal();
-    }
+    resource_info ec = ResourceCache.Info(v, "ElectricCharge");
 
-    GUILayout.BeginHorizontal(row_style);
-    GUILayout.Label(new GUIContent(" NOTES", icon_notes, "Take notes in a text editor"), config_style);
-    if (Lib.IsClicked()) Notepad.Toggle(v);
-    GUILayout.EndHorizontal();
+    tooltip = ec.capacity > 0.0 ? "EC: " + Lib.HumanReadablePerc(ec.level) : "";
+    image = Icons.battery_white;
 
-    if (Features.Automation && !v.isEVA)
-    {
-      GUILayout.BeginHorizontal(row_style);
-      GUILayout.Label(new GUIContent(" SCRIPTS", icon_console, "Control devices and edit scripts"), config_style);
-      if (Lib.IsClicked()) DevManager.Toggle(v);
-      GUILayout.EndHorizontal();
-    }
+    Supply supply = Profile.supplies.Find(k => k.resource == "ElectricCharge");
+    double low_threshold = supply != null ? supply.low_threshold : 0.15;
 
-    if (Features.Science)
-    {
-      GUILayout.BeginHorizontal(row_style);
-      GUILayout.Label(new GUIContent(" DATA", icon_folder, "Manage data transmission and analysis"), config_style);
-      if (Lib.IsClicked()) FileManager.Toggle(v);
-      GUILayout.EndHorizontal();
-    }
+    if (ec.level <= 0.005) image = Icons.battery_red;
+    else if (ec.level <= low_threshold) image = Icons.battery_yellow;
 
-    GUILayout.BeginHorizontal(row_style);
-    GUILayout.Label(new GUIContent(" DETAILS", icon_info, "Visualize detailed information"), config_style);
-    if (Lib.IsClicked()) Info.Toggle(v);
-    GUILayout.EndHorizontal();
+
+    p.icon(image, tooltip);
   }
 
 
-  void render_filter()
+  void indicator_supplies(Panel p, Vessel v, vessel_info vi)
   {
-    // show the group filter
-    GUILayout.BeginHorizontal(row_style);
-    filter = Lib.TextFieldPlaceholder("Kerbalism_filter", filter, filter_placeholder, filter_style).ToUpper();
-    GUILayout.EndHorizontal();
-    GUILayout.Space(10.0f);
+    List<string> tooltips = new List<string>();
+    uint max_severity = 0;
+    if (vi.crew_count > 0)
+    {
+      var supplies = Profile.supplies.FindAll(k => k.resource != "ElectricCharge");
+      foreach(Supply supply in supplies)
+      {
+        resource_info res = ResourceCache.Info(v, supply.resource);
+        if (res.capacity > double.Epsilon)
+        {
+          double depletion = res.Depletion(vi.crew_count);
+          string deplete_str = depletion <= double.Epsilon
+            ? ", depleted"
+            : double.IsNaN(depletion)
+            ? ""
+            : Lib.BuildString(", deplete in <b>", Lib.HumanReadableDuration(depletion), "</b>");
+          tooltips.Add(Lib.BuildString(supply.resource, ": <b>", Lib.HumanReadablePerc(res.level), "</b>", deplete_str));
 
-    // if the filter is focused, forget config id
-    if (GUI.GetNameOfFocusedControl() == "Kerbalism_filter") configured_id = Guid.Empty;
+          uint severity = res.level <= 0.005 ? 2u : res.level <= supply.low_threshold ? 1u : 0;
+          max_severity = Math.Max(max_severity, severity);
+        }
+      }
+    }
+
+    Texture image = Icons.box_white;
+    switch(max_severity)
+    {
+      case 0: image = Icons.box_white; break;
+      case 1: image = Icons.box_yellow; break;
+      case 2: image = Icons.box_red;  break;
+    }
+    string tooltip = string.Join("\n", tooltips.ToArray());
+
+    p.icon(image, tooltip);
   }
 
 
-  public float width()
+  void indicator_reliability(Panel p, Vessel v, vessel_info vi)
   {
-    return 320.0f
-      - (!Features.Reliability ? 20.0f : 0.0f)
-      - (!Features.Signal ? 20.0f : 0.0f)
-      - (!Features.Supplies ? 20.0f : 0.0f);
+    Texture image;
+    string tooltip;
+    if (!vi.malfunction)
+    {
+      image = Icons.wrench_white;
+      tooltip = string.Empty;
+    }
+    else if (!vi.critical)
+    {
+      image = Icons.wrench_yellow;
+      tooltip = "Malfunctions";
+    }
+    else
+    {
+      image = Icons.wrench_red;
+      tooltip = "Critical failures";
+    }
+
+    p.icon(image, tooltip);
   }
 
 
-  public float height()
+  void indicator_signal(Panel p, Vessel v, vessel_info vi)
   {
-    // note: this function is abused to determine if the filter must be shown
+    ConnectionInfo conn = vi.connection;
 
-    // forget edited vessel if it doesn't exist anymore
-    if (FlightGlobals.Vessels.Find(k => k.id == configured_id) == null) configured_id = Guid.Empty;
-
-    // guess vessel count
-    uint count = 0;
-    show_filter = false;
-    foreach(Vessel v in FlightGlobals.Vessels)
+    // target name
+    string target_str = string.Empty;
+    switch(vi.connection.status)
     {
-      // get info from the cache
-      vessel_info vi = Cache.VesselInfo(v);
-
-      // skip invalid vessels
-      if (!vi.is_valid) continue;
-
-      // get vessel data
-      VesselData vd = DB.Vessel(v);
-
-      // determine if filter must be shown
-      show_filter |= vd.group.Length > 0 && vd.group != "NONE";
-
-      // if the panel is filtered, skip filtered vessels
-      if (filtered() && vd.group != filter) continue;
-
-      // the vessel will be rendered
-      ++count;
+      case LinkStatus.direct_link: target_str = "DSN"; break;
+      case LinkStatus.indirect_link: target_str = vi.connection.path[vi.connection.path.Count - 1].vesselName; break;
+      default: target_str = "none"; break;
     }
 
-    // deal with no vessels case
-    count = Math.Max(1u, count);
-
-    // calculate height
-    float vessels_height = 10.0f + (float)count * (16.0f + 10.0f);
-    uint config_entries = 0;
-    if (configured_id != Guid.Empty)
+    // transmitted label, content and tooltip
+    string comms_label = vi.relaying.Length == 0 ? "transmitting" : "relaying";
+    string comms_str = vi.connection.linked ? "telemetry" : "nothing";
+    string comms_tooltip = string.Empty;
+    if (vi.relaying.Length > 0)
     {
-      config_entries = 4u; // group, notes, info, ec messages
-      if (Features.Supplies) ++config_entries;   // supply messages
-      if (Features.Signal) config_entries += 2u;    // signal messages, show signals
-      if (Features.Reliability) config_entries += 2u; // reliability messages, highlight malfunctions
-      if (Features.SpaceWeather) ++config_entries; // storm messages
-      if (Features.Automation && !FlightGlobals.Vessels.Find(k => k.id == configured_id).isEVA) ++config_entries; // console
-      if (Features.Science) ++config_entries; // data
-      if (filtered()) ++config_entries;
+      ExperimentInfo exp = Science.experiment(vi.relaying);
+      comms_str = exp.name;
+      comms_tooltip = exp.fullname;
     }
-    float config_height = (float)config_entries * 16.0f;
-    float filter_height = show_filter ? 16.0f + 10.0f : 0.0f;
-    return Math.Min(vessels_height + config_height + filter_height, Screen.height * 0.5f);
+    else if (vi.transmitting.Length > 0)
+    {
+      ExperimentInfo exp = Science.experiment(vi.transmitting);
+      comms_str = exp.name;
+      comms_tooltip = exp.fullname;
+    }
+
+    string tooltip = Lib.BuildString
+    (
+      "<align=left />",
+      "connected\t<b>", vi.connection.linked ? "yes" : "no", "</b>\n",
+      "rate\t\t<b>", Lib.HumanReadableDataRate(vi.connection.rate), "</b>\n",
+      "target\t\t<b>", target_str, "</b>\n",
+      comms_label, "\t<b>", comms_str, "</b>"
+    );
+
+    Texture image = Icons.signal_red;
+    switch(conn.status)
+    {
+      case LinkStatus.direct_link:
+        image = vi.connection.rate > 0.005 ? Icons.signal_white : Icons.signal_yellow;
+        break;
+
+      case LinkStatus.indirect_link:
+        image = vi.connection.rate > 0.005 ? Icons.signal_white : Icons.signal_yellow;
+        tooltip += "\n\n<color=yellow>Signal relayed</color>";
+        break;
+
+      case LinkStatus.no_link:
+        image = Icons.signal_red;
+        break;
+
+      case LinkStatus.no_antenna:
+        image = Icons.signal_red;
+        tooltip += "\n\n<color=red>No antenna</color>";
+        break;
+
+      case LinkStatus.blackout:
+        image = Icons.signal_red;
+        tooltip += "\n\n<color=red>Blackout</color>";
+        break;
+    }
+
+    p.icon(image, tooltip);
   }
-
-
-  public void render()
-  {
-    // reset last clicked vessel
-    last_clicked_id = Guid.Empty;
-
-    // forget edited vessel if it doesn't exist anymore
-    if (FlightGlobals.Vessels.Find(k => k.id == configured_id) == null) configured_id = Guid.Empty;
-
-    // store number of vessels rendered
-    uint vessels_rendered = 0;
-
-    // start scrolling view
-    scroll_pos = GUILayout.BeginScrollView(scroll_pos, HighLogic.Skin.horizontalScrollbar, HighLogic.Skin.verticalScrollbar);
-
-    // draw active vessel if any
-    if (FlightGlobals.ActiveVessel != null)
-    {
-      vessels_rendered += render_vessel(FlightGlobals.ActiveVessel);
-    }
-
-    // for each vessel
-    foreach(Vessel v in FlightGlobals.Vessels)
-    {
-      // skip active vessel
-      if (v == FlightGlobals.ActiveVessel) continue;
-
-      // draw the vessel
-      vessels_rendered += render_vessel(v);
-    }
-
-    // if user clicked on a vessel
-    if (last_clicked_id != Guid.Empty)
-    {
-      // if user clicked on configured vessel hide config, if user clicked on another vessel show its config
-      configured_id = (last_clicked_id == configured_id ? Guid.Empty : last_clicked_id);
-    }
-
-    // end scroll view
-    GUILayout.EndScrollView();
-
-    // no-vessels case
-    if (vessels_rendered == 0)
-    {
-      GUILayout.BeginHorizontal(row_style);
-      GUILayout.Label("<i>No vessels</i>", name_style);
-      GUILayout.EndHorizontal();
-      GUILayout.Space(10.0f);
-    }
-
-    // if at least one vessel is assigned to a group, render the filter
-    if (show_filter) render_filter();
-  }
-
 
   // return true if the list of vessels is filtered
   bool filtered()
@@ -615,48 +573,14 @@ public sealed class Monitor
   Vector2 scroll_pos;
 
   // styles
-  GUIStyle row_style;               // all monitor rows
-  GUIStyle name_style;              // vessel name
-  GUIStyle body_style;              // vessel body
-  GUIStyle icon_style;              // vessel icon
   GUIStyle filter_style;            // vessel filter
   GUIStyle config_style;            // config entry label
   GUIStyle group_style;             // config group textfield
 
-  // icons
-  readonly Texture icon_battery_danger      = Lib.GetTexture("battery-red");
-  readonly Texture icon_battery_warning     = Lib.GetTexture("battery-yellow");
-  readonly Texture icon_battery_nominal     = Lib.GetTexture("battery-white");
-  readonly Texture icon_supplies_danger     = Lib.GetTexture("box-red");
-  readonly Texture icon_supplies_warning    = Lib.GetTexture("box-yellow");
-  readonly Texture icon_supplies_nominal    = Lib.GetTexture("box-white");
-  readonly Texture icon_malfunction_danger  = Lib.GetTexture("wrench-red");
-  readonly Texture icon_malfunction_warning = Lib.GetTexture("wrench-yellow");
-  readonly Texture icon_malfunction_nominal = Lib.GetTexture("wrench-white");
-  readonly Texture icon_sun_shadow          = Lib.GetTexture("sun-black");
-  readonly Texture icon_signal_none         = Lib.GetTexture("signal-red");
-  readonly Texture icon_signal_relay        = Lib.GetTexture("signal-yellow");
-  readonly Texture icon_signal_direct       = Lib.GetTexture("signal-white");
-  readonly Texture icon_poisoning_danger    = Lib.GetTexture("recycle-red");
-  readonly Texture icon_poisoning_warning   = Lib.GetTexture("recycle-yellow");
-  readonly Texture icon_greenhouse_warning  = Lib.GetTexture("plant-yellow");
-  readonly Texture icon_health_danger       = Lib.GetTexture("health-red");
-  readonly Texture icon_health_warning      = Lib.GetTexture("health-yellow");
-  readonly Texture icon_stress_danger       = Lib.GetTexture("brain-red");
-  readonly Texture icon_stress_warning      = Lib.GetTexture("brain-yellow");
-  readonly Texture icon_storm_danger        = Lib.GetTexture("storm-red");
-  readonly Texture icon_storm_warning       = Lib.GetTexture("storm-yellow");
-  readonly Texture icon_radiation_danger    = Lib.GetTexture("radiation-red");
-  readonly Texture icon_radiation_warning   = Lib.GetTexture("radiation-yellow");
-  readonly Texture icon_radiation_nominal   = Lib.GetTexture("radiation-white");
-  readonly Texture icon_empty               = Lib.GetTexture("empty");
-  readonly Texture icon_console             = Lib.GetTexture("console");
-  readonly Texture icon_folder              = Lib.GetTexture("folder");
-  readonly Texture icon_group               = Lib.GetTexture("search");
-  readonly Texture icon_info                = Lib.GetTexture("info");
-  readonly Texture icon_notes               = Lib.GetTexture("notes");
-  readonly Texture[] icon_toggle            ={Lib.GetTexture("toggle-disabled"),
-                                              Lib.GetTexture("toggle-enabled")};
+  // monitor page
+  MonitorPage page = MonitorPage.telemetry;
+  Panel panel;
+
 }
 
 

@@ -9,64 +9,52 @@ namespace KERBALISM {
 
 public sealed class Launcher
 {
-  // ctor
   public Launcher()
   {
-    // add toolbar-related callbacks
-    GameEvents.onGUIApplicationLauncherReady.Add(this.init);
+    // initialize
+    planner = new Planner();
+    monitor = new Monitor();
+    tooltip = new Tooltip();
 
-    // window style
-    Color white = new Color(1.0f, 1.0f, 1.0f, 1.0f);
-    window_style = new GUIStyle(HighLogic.Skin.window);
-    window_style.normal.textColor = white;
-    window_style.focused.textColor = white;
-    window_style.richText = true;
-    window_style.stretchWidth = true;
-    window_style.stretchHeight = true;
-    window_style.padding.top = 0;
-    window_style.padding.bottom = 0;
+    GameEvents.onGUIApplicationLauncherReady.Add(create);
   }
 
-
-  // called after applauncher is created
-  public void init()
+  public void create()
   {
     // do nothing if button already created
-    if (ui_initialized) return;
+    if (!ui_initialized)
+    {
+      ui_initialized = true;
 
-    // create the button
-    // note: for some weird reasons, the callbacks can be called BEFORE this function return
-    launcher_btn = ApplicationLauncher.Instance.AddApplication(null, null, null, null, null, null, launcher_icon);
-    ui_initialized = true;
+      // create the button
+      // note: for some weird reasons, the callbacks can be called BEFORE this function return
+      launcher_btn = ApplicationLauncher.Instance.AddApplication(null, null, null, null, null, null, Icons.applauncher);
 
-    // enable the launcher button for some scenes
-    launcher_btn.VisibleInScenes =
-        ApplicationLauncher.AppScenes.SPACECENTER
-      | ApplicationLauncher.AppScenes.FLIGHT
-      | ApplicationLauncher.AppScenes.MAPVIEW
-      | ApplicationLauncher.AppScenes.TRACKSTATION
-      | ApplicationLauncher.AppScenes.VAB
-      | ApplicationLauncher.AppScenes.SPH;
+      // enable the launcher button for some scenes
+      launcher_btn.VisibleInScenes =
+          ApplicationLauncher.AppScenes.SPACECENTER
+        | ApplicationLauncher.AppScenes.FLIGHT
+        | ApplicationLauncher.AppScenes.MAPVIEW
+        | ApplicationLauncher.AppScenes.TRACKSTATION
+        | ApplicationLauncher.AppScenes.VAB
+        | ApplicationLauncher.AppScenes.SPH;
+    }
+  }
 
-    // toggle off launcher button & hide window after scene changes
-    GameEvents.onGameSceneSwitchRequested.Add((_) => hide());
+  public void update()
+  {
+    // do nothing if GUI has not been initialized
+    if (!ui_initialized) return;
 
-    // hide on launch screen spawn to avoid window visible during vessel load
-    GameEvents.onGUILaunchScreenSpawn.Add((_) => hide());
-
-    // hide and remember state on 'minor scenes' spawn
-    GameEvents.onGUIAdministrationFacilitySpawn.Add(hide_and_remember);
-    GameEvents.onGUIAstronautComplexSpawn.Add(hide_and_remember);
-    GameEvents.onGUIMissionControlSpawn.Add(hide_and_remember);
-    GameEvents.onGUIRnDComplexSpawn.Add(hide_and_remember);
-    GameEvents.onHideUI.Add(hide_and_remember);
-
-    // restore previous window state on 'minor scenes' despawn
-    GameEvents.onGUIAdministrationFacilityDespawn.Add(show_again);
-    GameEvents.onGUIAstronautComplexDespawn.Add(show_again);
-    GameEvents.onGUIMissionControlDespawn.Add(show_again);
-    GameEvents.onGUIRnDComplexDespawn.Add(show_again);
-    GameEvents.onShowUI.Add(show_again);
+    // update planner/monitor content
+    if (Lib.IsEditor())
+    {
+      planner.update();
+    }
+    else
+    {
+      monitor.update();
+    }
   }
 
 
@@ -116,8 +104,7 @@ public sealed class Launcher
       win_rect = new Rect(left, top, width, height);
 
       // begin window area
-      // note: we don't use GUILayout.Window, because it is evil
-      GUILayout.BeginArea(win_rect, window_style);
+      GUILayout.BeginArea(win_rect, Styles.win);
 
       // a bit of spacing between title and content
       GUILayout.Space(10.0f);
@@ -146,61 +133,23 @@ public sealed class Launcher
   }
 
 
-  // hide the window
-  public void hide()
-  {
-    launcher_btn.toggleButton.Value = false;
-  }
-
-
-  // hide the window and remember last state
-  public void hide_and_remember()
-  {
-    last_show_window = launcher_btn.toggleButton.Value;
-    launcher_btn.toggleButton.Value = false;
-
-    must_hide_ui = true;
-  }
-
-
-  // show the window if was visible at time of last call to hide_and_remember()
-  public void show_again()
-  {
-    launcher_btn.toggleButton.Value = last_show_window;
-
-    must_hide_ui = false;
-  }
-
-
   // initialized flag
   bool ui_initialized;
 
   // store reference to applauncher button
   ApplicationLauncherButton launcher_btn;
 
-  // applauncher button icons
-  readonly Texture launcher_icon = Lib.GetTexture("applauncher");
-
-  // used to remember previous visibility state in some scene changes
-  bool last_show_window;
-
-  // styles
-  GUIStyle window_style;
-
   // window geometry
   Rect win_rect;
 
   // the vessel planner
-  Planner planner = new Planner();
+  Planner planner;
 
   // the vessel monitor
-  Monitor monitor = new Monitor();
+  Monitor monitor;
 
   // tooltip utility
-  Tooltip tooltip = new Tooltip();
-
-  // used by engine to hide other windows when appropriate
-  public bool must_hide_ui;
+  Tooltip tooltip;
 }
 
 
