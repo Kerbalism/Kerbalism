@@ -12,7 +12,6 @@ public sealed class Callbacks
 {
   public Callbacks()
   {
-    // set callbacks
     GameEvents.onCrewOnEva.Add(this.toEVA);
     GameEvents.onCrewBoardVessel.Add(this.fromEVA);
     GameEvents.onVesselRecoveryProcessing.Add(this.vesselRecoveryProcessing);
@@ -24,6 +23,27 @@ public sealed class Callbacks
     GameEvents.onPartDie.Add(this.partDestroyed);
     GameEvents.OnTechnologyResearched.Add(this.techResearched);
     GameEvents.onGUIEditorToolbarReady.Add(this.addEditorCategory);
+
+    GameEvents.onGUIAdministrationFacilitySpawn.Add(() => visible = false);
+    GameEvents.onGUIAdministrationFacilityDespawn.Add(() => visible = true);
+
+    GameEvents.onGUIAstronautComplexSpawn.Add(() => visible = false);
+    GameEvents.onGUIAstronautComplexDespawn.Add(() => visible = true);
+
+    GameEvents.onGUIMissionControlSpawn.Add(() => visible = false);
+    GameEvents.onGUIMissionControlDespawn.Add(() => visible = true);
+
+    GameEvents.onGUIRnDComplexSpawn.Add(() => visible = false);
+    GameEvents.onGUIRnDComplexDespawn.Add(() => visible = true);
+
+    GameEvents.onHideUI.Add(() => visible = false);
+    GameEvents.onShowUI.Add(() => visible = true);
+
+    GameEvents.onGUILaunchScreenSpawn.Add((_) => visible = false);
+    GameEvents.onGUILaunchScreenDespawn.Add(() => visible = true);
+
+    GameEvents.onGameSceneSwitchRequested.Add((_) => visible = false);
+    GameEvents.onGUIApplicationLauncherReady.Add(() => visible = true);
   }
 
   void toEVA(GameEvents.FromToAction<Part, Part> data)
@@ -64,9 +84,6 @@ public sealed class Callbacks
     KerbalEVA kerbal = data.to.FindModuleImplementing<KerbalEVA>();
     EVA.HeadLamps(kerbal, false);
 
-    // if vessel info is open, switch to the eva kerbal
-    if (Info.IsOpen()) Info.Open(data.to.vessel);
-
     // execute script
     DB.Vessel(data.from.vessel).computer.execute(data.from.vessel, ScriptType.eva_out);
   }
@@ -89,9 +106,6 @@ public sealed class Callbacks
 
     // forget vessel data
     DB.vessels.Remove(Lib.RootID(data.from.vessel));
-
-    // if vessel info is open, switch to the vessel
-    if (Info.IsOpen()) Info.Open(data.to.vessel);
 
     // execute script
     DB.Vessel(data.to.vessel).computer.execute(data.to.vessel, ScriptType.eva_in);
@@ -330,7 +344,7 @@ public sealed class Callbacks
   {
     if (PartLoader.LoadedPartsList.Find(k => k.tags.IndexOf("_kerbalism", StringComparison.Ordinal) >= 0) != null)
     {
-      var icon = new RUI.Icons.Selectable.Icon("Kerbalism", Lib.GetTexture("category_normal"), Lib.GetTexture("category_selected"));
+      var icon = new RUI.Icons.Selectable.Icon("Kerbalism", Icons.category_normal, Icons.category_selected);
       PartCategorizer.Category category = PartCategorizer.Instance.filters.Find(k => k.button.categoryName == "Filter by Function");
       PartCategorizer.AddCustomSubcategoryFilter(category, "", icon, k => k.tags.IndexOf("_kerbalism", StringComparison.Ordinal) >= 0);
     }
@@ -368,6 +382,8 @@ public sealed class Callbacks
       }
     }
   }
+
+  public bool visible;
 }
 
 

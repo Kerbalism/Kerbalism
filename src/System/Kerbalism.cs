@@ -241,12 +241,15 @@ public sealed class Kerbalism : ScenarioModule
 
     // set part highlight colors
     Highlighter.update();
+
+    // prepare gui content
+    if (callbacks.visible) UI.update();
   }
 
 
   void OnGUI()
   {
-    UI.on_gui();
+    if (callbacks.visible) UI.on_gui();
   }
 
 
@@ -444,9 +447,9 @@ public static class Misc
     }
 
     // toggle body info window with keyboard
-    if (Input.GetKeyDown(KeyCode.B))
+    if (MapView.MapIsEnabled && Input.GetKeyDown(KeyCode.B))
     {
-      BodyInfo.Toggle();
+      UI.open(260.0f, "BODY", (Panel p) => p.body_info());
     }
 
     // call action scripts
@@ -480,7 +483,6 @@ public static class Misc
     // not a resque mission
     return false;
   }
-
 
   // kill a kerbal
   // note: you can't kill a kerbal while iterating over vessel crew list, do it outside the loop
