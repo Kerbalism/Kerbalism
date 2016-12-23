@@ -29,16 +29,22 @@ public static class Telemetry
     var crew = Lib.CrewList(v);
 
     // draw the content
-    render_environment(p, v, vi);
-    render_habitat(p, v, vi);
-    render_supplies(p, v, vi, resources);
     render_crew(p, crew);
     render_greenhouse(p, vi);
+    render_supplies(p, v, vi, resources);
+    render_habitat(p, v, vi);
+    render_environment(p, v, vi);
+
+    // collapse eva kerbal sections into one
+    if (v.isEVA) p.collapse("EVA SUIT");
   }
 
 
   static void render_environment(Panel p, Vessel v, vessel_info vi)
   {
+    // don't show env panel in eva kerbals
+    if (v.isEVA) return;
+
     // determine atmosphere
     string atmo_desc = "none";
     if (vi.underwater) atmo_desc = "ocean";
@@ -79,17 +85,15 @@ public static class Telemetry
     if (!v.isEVA)
     {
       p.section("HABITAT");
+      if (Features.Pressure) p.content("pressure", pressure_str);
+      if (Features.Poisoning) p.content("co2 level", poisoning_str);
       if (Features.Shielding) p.content("shielding", Habitat.shielding_to_string(vi.shielding));
       if (Features.LivingSpace) p.content("living space", Habitat.living_space_to_string(vi.living_space));
       if (Features.Comfort) p.content("comfort", vi.comforts.summary(), vi.comforts.tooltip());
-      if (Features.Pressure) p.content("pressure", pressure_str);
-      if (Features.Poisoning) p.content("co2 level", poisoning_str);
     }
     else
     {
-      p.section("EVA SUIT");
-      if (Features.Shielding) p.content("shielding", Habitat.shielding_to_string(vi.shielding));
-      if (Features.LivingSpace) p.content("living space", "eva suit");
+      p.section("HABITAT");
       if (Features.Poisoning) p.content("co2 level", poisoning_str);
     }
   }
@@ -135,7 +139,7 @@ public static class Telemetry
     if (crew.Count == 0 || Profile.rules.Count == 0) return;
 
     // panel section
-    p.section("CREW");
+    p.section("VITALS");
 
     // for each crew
     foreach(ProtoCrewMember kerbal in crew)
@@ -147,7 +151,7 @@ public static class Telemetry
       UInt32 health_severity = 0;
       UInt32 stress_severity = 0;
 
-      // for each rule
+      // generate tooltip
       List<string> tooltips = new List<string>();
       foreach(Rule r in Profile.rules)
       {
@@ -169,11 +173,13 @@ public static class Telemetry
           else stress_severity = Math.Max(stress_severity, 1);
         }
       }
-
       string tooltip = Lib.BuildString("<align=left />", String.Join("\n", tooltips.ToArray()));
 
+      // generate kerbal name
+      string name = kerbal.name.ToLower().Replace(" kerman", string.Empty);
+
       // render selectable title
-      p.content(Lib.Ellipsis(kerbal.name.ToUpper(), 20), kd.disabled ? "<color=#00ffff>HYBERNATED</color>" : string.Empty, tooltip);
+      p.content(Lib.Ellipsis(name, 20), kd.disabled ? "<color=#00ffff>HYBERNATED</color>" : string.Empty);
       p.icon(health_severity == 0 ? Icons.health_white : health_severity == 1 ? Icons.health_yellow : Icons.health_red, tooltip);
       p.icon(stress_severity == 0 ? Icons.brain_white : stress_severity == 1 ? Icons.brain_yellow : Icons.brain_red, tooltip);
     }

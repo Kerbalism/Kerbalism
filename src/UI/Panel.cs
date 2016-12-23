@@ -188,6 +188,18 @@ public sealed class Panel
     sections.AddRange(p.sections);
   }
 
+  // TODO new
+  // collapse all sections into one
+  public void collapse(string title)
+  {
+    if (sections.Count > 0)
+    {
+      sections[0].title = title;
+      for(int i=1; i<sections.Count; ++i) sections[0].entries.AddRange(sections[i].entries);
+    }
+    while(sections.Count > 1) sections.RemoveAt(sections.Count - 1);
+  }
+
   // return true if panel has no sections or titles
   public bool empty()
   {
