@@ -105,27 +105,31 @@ public sealed class Computer
 
     // get current states
     bool sunlight = vi.sunlight > double.Epsilon;
-    bool power = ec.level >= 0.15; //< 15%
-    bool radiation = vi.radiation >= 0.00001388; //< 0.05 rad/h
+    bool power_low = ec.level < 0.2;
+    bool power_high = ec.level > 0.8;
+    bool radiation_low = vi.radiation < 0.000005552; //< 0.02 rad/h
+    bool radiation_high = vi.radiation > 0.00001388; //< 0.05 rad/h
     bool signal = vi.connection.linked;
 
     // get current situation
-    string situation = string.Empty;
+    bool landed = false;
+    bool atmo = false;
+    bool space = false;
     switch(v.situation)
     {
       case Vessel.Situations.LANDED:
       case Vessel.Situations.SPLASHED:
-        situation = "landed";
+        landed = true;
         break;
 
       case Vessel.Situations.FLYING:
-        situation = "atmo";
+        atmo = true;
         break;
 
       case Vessel.Situations.SUB_ORBITAL:
       case Vessel.Situations.ORBITING:
       case Vessel.Situations.ESCAPING:
-        situation = "space";
+        space = true;
         break;
     }
 
@@ -141,18 +145,18 @@ public sealed class Computer
       switch(type)
       {
         case ScriptType.landed:
-          if (situation == "landed" && script.prev != "landed" && script.prev.Length > 0) to_exec.Add(script);
-          script.prev = situation;
+          if (landed && script.prev == "0") to_exec.Add(script);
+          script.prev = landed ? "1" : "0";
           break;
 
         case ScriptType.atmo:
-          if (situation == "atmo" && script.prev != "atmo" && script.prev.Length > 0) to_exec.Add(script);
-          script.prev = situation;
+          if (atmo && script.prev == "0") to_exec.Add(script);
+          script.prev = atmo ? "1" : "0";
           break;
 
         case ScriptType.space:
-          if (situation == "space" && script.prev != "space" && script.prev.Length > 0) to_exec.Add(script);
-          script.prev = situation;
+          if (space && script.prev == "0") to_exec.Add(script);
+          script.prev = space ? "1" : "0";
           break;
 
         case ScriptType.sunlight:
@@ -161,28 +165,28 @@ public sealed class Computer
           break;
 
         case ScriptType.shadow:
-          if (!sunlight && script.prev == "1") to_exec.Add(script);
-          script.prev = sunlight ? "1" : "0";
+          if (!sunlight && script.prev == "0") to_exec.Add(script);
+          script.prev = !sunlight ? "1" : "0";
           break;
 
         case ScriptType.power_high:
-          if (power && script.prev == "0") to_exec.Add(script);
-          script.prev = power ? "1" : "0";
+          if (power_high && script.prev == "0") to_exec.Add(script);
+          script.prev = power_high ? "1" : "0";
           break;
 
         case ScriptType.power_low:
-          if (!power && script.prev == "1") to_exec.Add(script);
-          script.prev = power ? "1" : "0";
+          if (power_low && script.prev == "0") to_exec.Add(script);
+          script.prev = power_low ? "1" : "0";
           break;
 
         case ScriptType.rad_low:
-          if (!radiation && script.prev == "1") to_exec.Add(script);
-          script.prev = radiation ? "1" : "0";
+          if (radiation_low && script.prev == "0") to_exec.Add(script);
+          script.prev = radiation_low ? "1" : "0";
           break;
 
         case ScriptType.rad_high:
-          if (radiation && script.prev == "0") to_exec.Add(script);
-          script.prev = radiation ? "1" : "0";
+          if (radiation_high && script.prev == "0") to_exec.Add(script);
+          script.prev = radiation_high ? "1" : "0";
           break;
 
         case ScriptType.linked:
@@ -191,8 +195,8 @@ public sealed class Computer
           break;
 
         case ScriptType.unlinked:
-          if (!signal && script.prev == "1") to_exec.Add(script);
-          script.prev = signal ? "1" : "0";
+          if (!signal && script.prev == "0") to_exec.Add(script);
+          script.prev = !signal ? "1" : "0";
           break;
       }
     }
