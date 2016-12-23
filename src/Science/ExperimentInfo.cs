@@ -23,7 +23,7 @@ public sealed class ExperimentInfo
 
     // deduce full name for the subject
     ScienceSubject subject = ResearchAndDevelopment.GetSubjectByID(subject_id);
-    fullname = subject != null ? subject.title : name;
+    fullname = subject != null ? subject.title : name; //< NOTE: need to extract fullname from subject_id, when subject is custom
 
     // extract situation from full name
     situation = fullname.Replace(name, string.Empty).Replace(" from", string.Empty).Replace(" while", string.Empty);

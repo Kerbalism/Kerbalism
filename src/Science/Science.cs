@@ -198,7 +198,7 @@ public static class Science
 
 
   // [disabled] EXPERIMENTAL
-  // return a tagged science subject
+  // create a tagged science subject in the stock science system
   /*public static ScienceSubject TaggedSubject(string experiment, string tag, string title, CelestialBody body)
   {
     var exp = ResearchAndDevelopment.GetExperiment(experiment);
@@ -217,7 +217,7 @@ public static class Science
 
 
   // [disabled] EXPERIMENTAL
-  // add filters for a set of tag-based situations
+  // add filters to the RnD Archives UI for a set of tag-based situations
   // note: call it every frame
   /*public static void FilterResearchArchive(string[] situations)
   {
