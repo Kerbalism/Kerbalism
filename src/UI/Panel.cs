@@ -13,6 +13,7 @@ public sealed class Panel
   {
     sections = new List<Section>();
     titles = new List<Title>();
+    callbacks = new List<Action>();
   }
 
   public void clear()
@@ -79,11 +80,11 @@ public sealed class Panel
     {
       GUILayout.BeginHorizontal(Styles.entry_container);
       GUILayout.Label(new GUIContent(t.label, t.tooltip), Styles.entry_label);
-      if (t.click != null && Lib.IsClicked()) t.click();
+      if (t.click != null && Lib.IsClicked()) callbacks.Add(t.click);
       foreach(Icon i in t.icons)
       {
         GUILayout.Label(new GUIContent(i.texture, i.tooltip), Styles.right_icon);
-        if (i.click != null && Lib.IsClicked()) i.click();
+        if (i.click != null && Lib.IsClicked()) callbacks.Add(i.click);
       }
       GUILayout.EndHorizontal();
       GUILayout.Space(10.0f);
@@ -97,13 +98,13 @@ public sealed class Panel
       if (p.left != null)
       {
         GUILayout.Label(Icons.left_arrow, Styles.left_icon);
-        if (Lib.IsClicked()) p.left();
+        if (Lib.IsClicked()) callbacks.Add(p.left);
       }
       GUILayout.Label(p.title, Styles.section_text);
       if (p.right != null)
       {
         GUILayout.Label(Icons.right_arrow, Styles.right_icon);
-        if (Lib.IsClicked()) p.right();
+        if (Lib.IsClicked()) callbacks.Add(p.right);
       }
       GUILayout.EndHorizontal();
 
@@ -120,20 +121,27 @@ public sealed class Panel
       {
         GUILayout.BeginHorizontal(Styles.entry_container);
         GUILayout.Label(new GUIContent(e.label, e.tooltip), Styles.entry_label);
-        if (e.hover != null && Lib.IsHover()) e.hover();
+        if (e.hover != null && Lib.IsHover()) callbacks.Add(e.hover);
         GUILayout.Label(new GUIContent(e.value, e.tooltip), Styles.entry_value);
-        if (e.click != null && Lib.IsClicked()) e.click();
-        if (e.hover != null && Lib.IsHover()) e.hover();
+        if (e.click != null && Lib.IsClicked()) callbacks.Add(e.click);
+        if (e.hover != null && Lib.IsHover()) callbacks.Add(e.hover);
         foreach(Icon i in e.icons)
         {
           GUILayout.Label(new GUIContent(i.texture, i.tooltip), Styles.right_icon);
-          if (i.click != null && Lib.IsClicked()) i.click();
+          if (i.click != null && Lib.IsClicked()) callbacks.Add(i.click);
         }
         GUILayout.EndHorizontal();
       }
 
       // spacing
       GUILayout.Space(10.0f);
+    }
+
+    // call callbacks
+    if (Event.current.type == EventType.Repaint)
+    {
+      foreach(Action func in callbacks) func();
+      callbacks.Clear();
     }
   }
 
@@ -222,6 +230,7 @@ public sealed class Panel
 
   List<Title>   titles;    // fat entries to show before the first section
   List<Section> sections;  // set of sections
+  List<Action>  callbacks; // functions to call on input events
 }
 
 

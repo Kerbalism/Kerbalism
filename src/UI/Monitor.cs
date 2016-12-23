@@ -55,13 +55,13 @@ public sealed class Monitor
     panel.clear();
 
     // get vessel
-    Vessel sv = configured_id == Guid.Empty ? null : FlightGlobals.FindVessel(configured_id);
+    selected_v = selected_id == Guid.Empty ? null : FlightGlobals.FindVessel(selected_id);
 
-    // if nothing is selected (or it doesn't exist anymore)
-    if (sv == null)
+    // if nothing is selected
+    if (selected_v == null)
     {
       // forget the vessel, if it doesn't exist anymore
-      configured_id = Guid.Empty;
+      selected_id = Guid.Empty;
 
       // filter flag is updated on render_vessel
       show_filter = false;
@@ -95,15 +95,15 @@ public sealed class Monitor
     else
     {
       // header act as title
-      render_vessel(panel, sv);
+      render_vessel(panel, selected_v);
 
       // update page content
       switch(page)
       {
-        case MonitorPage.telemetry: panel.telemetry(sv); break;
-        case MonitorPage.data: panel.fileman(sv); break;
-        case MonitorPage.scripts: panel.devman(sv); break;
-        case MonitorPage.config: panel.config(sv); break;
+        case MonitorPage.telemetry: panel.telemetry(selected_v); break;
+        case MonitorPage.data: panel.fileman(selected_v); break;
+        case MonitorPage.scripts: panel.devman(selected_v); break;
+        case MonitorPage.config: panel.config(selected_v); break;
       }
     }
   }
@@ -111,37 +111,31 @@ public sealed class Monitor
 
   public void render()
   {
-    // reset last clicked vessel
-    last_clicked_id = Guid.Empty;
-
-    // forget edited vessel if it doesn't exist anymore
-    Vessel v = FlightGlobals.Vessels.Find(k => k.id == configured_id);
-    if (v == null) configured_id = Guid.Empty;
-
     // start scrolling view
     scroll_pos = GUILayout.BeginScrollView(scroll_pos, HighLogic.Skin.horizontalScrollbar, HighLogic.Skin.verticalScrollbar);
 
+    // render panel content
     panel.render();
 
     // end scroll view
     GUILayout.EndScrollView();
 
-    // if a vessel is selected
-    if (configured_id != Guid.Empty)
+    // if a vessel is selected, and exist
+    if (selected_v != null)
     {
-      render_menu(v);
+      render_menu(selected_v);
     }
-    // if at least one vessel is assigned to a group, render the filter
+    // if at least one vessel is assigned to a group
     else if (show_filter)
     {
       render_filter();
     }
 
-    // if user clicked on a vessel
-    if (last_clicked_id != Guid.Empty)
+    // right click goes back to list view
+    if (Event.current.type == EventType.MouseDown
+     && Event.current.button == 1)
     {
-      // if user clicked on configured vessel hide config, if user clicked on another vessel show its config
-      configured_id = (last_clicked_id == configured_id ? Guid.Empty : last_clicked_id);
+      selected_id = Guid.Empty;
     }
   }
 
@@ -159,7 +153,7 @@ public sealed class Monitor
     h += panel.height();
 
     // one is selected, or filter is required
-    if (configured_id != Guid.Empty || show_filter)
+    if (selected_id != Guid.Empty || show_filter)
     {
       h += 26.0f;
     }
@@ -202,7 +196,7 @@ public sealed class Monitor
     (
       Lib.BuildString("<b>", Lib.Ellipsis(vessel_name, 24), "</b> <size=8><color=#cccccc>", Lib.Ellipsis(body_name, 8), "</color></size>"),
       string.Empty,
-      () => { last_clicked_id = v.id; }
+      () => { selected_id = v.id; }
     );
 
     // problem indicator
@@ -227,7 +221,6 @@ public sealed class Monitor
 
   void render_menu(Vessel v)
   {
-    // render menu
     VesselData vd = DB.Vessel(v);
     GUILayout.BeginHorizontal(Styles.entry_container);
     GUILayout.Label(new GUIContent(page == MonitorPage.telemetry ? " <color=#00ffff>INFO</color> " : " INFO ", Icons.small_info, "Telemetry readings"), config_style);
@@ -553,18 +546,17 @@ public sealed class Monitor
     return filter.Length > 0 && filter != filter_placeholder;
   }
 
+  // id of selected vessel
+  Guid selected_id;
 
-  // store last vessel clicked in the monitor ui, if any
-  Guid last_clicked_id;
-
-  // store vessel whose configs are being edited, if any
-  Guid configured_id;
+  // selected vessel
+  Vessel selected_v;
 
   // group filter placeholder
   const string filter_placeholder = "FILTER BY GROUP";
 
   // store group filter, if any
-  string filter = "";
+  string filter = string.Empty;
 
   // determine if filter is shown
   bool show_filter;
@@ -580,7 +572,6 @@ public sealed class Monitor
   // monitor page
   MonitorPage page = MonitorPage.telemetry;
   Panel panel;
-
 }
 
 
