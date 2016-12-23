@@ -1,5 +1,10 @@
 #CHANGELOG
 
+1.1.6
+  - improved the ui
+  - JX2Antenna support patch by YaarPodshipnik
+  - ContractConfigurator support patch by Gotmachine
+
 1.1.5
   - Rule framework
     - multiple profiles can cohexist in the same installation, only one is enabled from user settings
