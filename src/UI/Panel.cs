@@ -188,7 +188,6 @@ public sealed class Panel
     sections.AddRange(p.sections);
   }
 
-  // TODO new
   // collapse all sections into one
   public void collapse(string title)
   {
