@@ -85,7 +85,7 @@ public sealed class Computer
 
       // show message to the user
       // - unless the script is empty (can happen when being edited)
-      if (script.states.Count > 0)
+      if (script.states.Count > 0 && DB.Vessel(v).cfg_script)
       {
         Message.Post(Lib.BuildString("Script called on vessel <b>", v.vesselName, "</b>"));
       }
@@ -211,7 +211,10 @@ public sealed class Computer
       }
 
       // show message to the user
-      Message.Post(Lib.BuildString("Script called on vessel <b>", v.vesselName, "</b>"));
+      if (DB.Vessel(v).cfg_script)
+      {
+        Message.Post(Lib.BuildString("Script called on vessel <b>", v.vesselName, "</b>"));
+      }
     }
   }
 

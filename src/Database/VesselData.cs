@@ -17,6 +17,7 @@ public class VesselData
     cfg_signal      = true;
     cfg_malfunction = true;
     cfg_storm       = true;
+    cfg_script      = true;
     cfg_highlights  = true;
     cfg_showlink    = true;
     storm_time      = 0.0;
@@ -39,6 +40,7 @@ public class VesselData
     cfg_signal      = Lib.ConfigValue(node, "cfg_signal", true);
     cfg_malfunction = Lib.ConfigValue(node, "cfg_malfunction", true);
     cfg_storm       = Lib.ConfigValue(node, "cfg_storm", true);
+    cfg_script      = Lib.ConfigValue(node, "cfg_script", true);
     cfg_highlights  = Lib.ConfigValue(node, "cfg_highlights", true);
     cfg_showlink    = Lib.ConfigValue(node, "cfg_showlink", true);
     storm_time      = Lib.ConfigValue(node, "storm_time", 0.0);
@@ -71,6 +73,7 @@ public class VesselData
     node.AddValue("cfg_signal", cfg_signal);
     node.AddValue("cfg_malfunction", cfg_malfunction);
     node.AddValue("cfg_storm", cfg_storm);
+    node.AddValue("cfg_script", cfg_script);
     node.AddValue("cfg_highlights", cfg_highlights);
     node.AddValue("cfg_showlink", cfg_showlink);
     node.AddValue("storm_time", storm_time);
@@ -109,6 +112,7 @@ public class VesselData
   public bool     cfg_signal;       // enable/disable message: link status
   public bool     cfg_malfunction;  // enable/disable message: malfunctions
   public bool     cfg_storm;        // enable/disable message: storms
+  public bool     cfg_script;       // enable/disable message: scripts
   public bool     cfg_highlights;   // show/hide malfunction highlights
   public bool     cfg_showlink;     // show/hide link line
   public double   storm_time;       // time of next storm (interplanetary CME)

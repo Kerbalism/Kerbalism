@@ -36,11 +36,11 @@ public sealed class Configure : PartModule, IPartCostModifier, IPartMassModifier
   List<ConfigureSetup> unlocked;                            // unlocked setups
   public List<string>  selected;                            // selected setups names
   public List<string>  prev_selected;                       // previously selected setups names
-  ConfigureWindow      window;                              // the configuration/details window
   double               extra_cost;                          // extra cost for selected setups, including resources
   double               extra_mass;                          // extra mass for selected setups, excluding resources
   bool                 initialized;                         // keep track of first configuration
   CrewSpecs            reconfigure_cs;                      // in-flight reconfiguration crew specs
+  Dictionary<int, int>  changes;      // store 'deferred' changes to avoid problems with unity gui
 
   // used to avoid infinite recursion when dealing with symmetry group
   static bool avoid_inf_recursion;
@@ -78,6 +78,9 @@ public sealed class Configure : PartModule, IPartCostModifier, IPartMassModifier
 
     // only show toggle in flight if this is reconfigurable
     Events["ToggleWindow"].active = Lib.IsEditor() || reconfigure_cs;
+
+    // store configuration changes
+    changes = new Dictionary<int, int>();
   }
 
 
@@ -249,12 +252,6 @@ public sealed class Configure : PartModule, IPartCostModifier, IPartMassModifier
     foreach(string s in prev_selected) archive.save(s);
     prev_cfg = archive.serialize();
 
-    // create window the first time
-    if (window == null)
-    {
-      window = new ConfigureWindow(title, selected, unlocked, reconfigure_cs, configure);
-    }
-
     // in the editor
     if (Lib.IsEditor())
     {
@@ -269,9 +266,6 @@ public sealed class Configure : PartModule, IPartCostModifier, IPartMassModifier
 
           // both modules will share configuration
           c.selected = selected;
-
-          // both modules will use the same window
-          c.window = window;
 
           // re-configure the other module
           c.configure();
@@ -290,7 +284,6 @@ public sealed class Configure : PartModule, IPartCostModifier, IPartMassModifier
     initialized = true;
   }
 
-
   void OnGUI()
   {
     // if never configured
@@ -302,8 +295,20 @@ public sealed class Configure : PartModule, IPartCostModifier, IPartMassModifier
       configure();
     }
 
-    // render the window, if it's opened
-    window.on_gui();
+    // if this is the last gui event
+    if (Event.current.type == EventType.Repaint)
+    {
+      // apply changes
+      foreach(var p in changes)
+      {
+        // change setup
+        selected[p.Key] = unlocked[p.Value].name;
+
+        // reconfigure
+        configure();
+      }
+      changes.Clear();
+    }
   }
 
 
@@ -324,19 +329,15 @@ public sealed class Configure : PartModule, IPartCostModifier, IPartMassModifier
         return;
       }
 
-      // if we are opening in flight
-      if (!window.is_open())
+      // warn the user about potential resource loss
+      if (resource_loss())
       {
-        // warn the user about potential resource loss
-        if (resource_loss())
-        {
-          Message.Post(Severity.warning, "Reconfiguring will dump resources in excess of capacity.");
-        }
+        Message.Post(Severity.warning, "Reconfiguring will dump resources in excess of capacity.");
       }
     }
 
-    // open/close the window
-    window.toggle();
+    // open the window
+    UI.open(260.0f, Lib.BuildString("Configure ", title), (p) => window_body(p, vessel));
   }
 
 
@@ -447,6 +448,66 @@ public sealed class Configure : PartModule, IPartCostModifier, IPartMassModifier
     return null;
   }
 
+  // to be called as window refresh function
+  void window_body(Panel p, Vessel v)
+  {
+    // outside the editor
+    if (!Lib.IsEditor())
+    {
+      // if vessel doesn't exist anymore, leave the panel empty
+      v = FlightGlobals.FindVessel(v.id);
+      if (v == null) return;
+
+      // if vessel is not loaded anymore, leave the panel empty
+      if (!v.loaded) return;
+    }
+
+    // for each selected setup
+    for(int selected_i = 0; selected_i < selected.Count; ++selected_i)
+    {
+      // find index in unlocked setups
+      for(int setup_i = 0; setup_i < unlocked.Count; ++setup_i)
+      {
+        if (unlocked[setup_i].name == selected[selected_i])
+        {
+          // commit panel
+          render_panel(p, unlocked[setup_i], selected_i, setup_i);
+        }
+      }
+    }
+  }
+
+  void render_panel(Panel p, ConfigureSetup setup, int selected_i, int setup_i)
+  {
+    // render section title
+    // only allow reconfiguration if there are more setups than slots
+    if (unlocked.Count <= selected.Count)
+    {
+      p.section(setup.name);
+    }
+    else
+    {
+      string desc = setup.desc.Length > 0 ? Lib.BuildString("<i>", setup.desc, "</i>") : string.Empty;
+      p.section(setup.name, desc, () => change_setup(-1, selected_i, ref setup_i), () => change_setup(1, selected_i, ref setup_i));
+    }
+
+    // render other content
+    foreach(var det in setup.details)
+    {
+      p.content(det.label, det.value);
+    }
+  }
+
+  // utility, used as callback in panel select
+  void change_setup(int change, int selected_i, ref int setup_i)
+  {
+    do
+    {
+      setup_i = (setup_i + change + unlocked.Count) % unlocked.Count;
+    }
+    while(selected.Contains(unlocked[setup_i].name));
+    changes.Add(selected_i, setup_i);
+  }
 
   // access setups
   public List<ConfigureSetup> Setups()
@@ -693,134 +754,6 @@ public sealed class ConfigureResource
   public string name;
   public string amount;
   public string maxAmount;
-}
-
-
-public sealed class ConfigureWindow : Window
-{
-  public ConfigureWindow(string title, List<string> selected, List<ConfigureSetup> unlocked, bool in_flight, Action configure)
-  : base(260u, 300u, 150u, 20u, Styles.win)
-  {
-    this.title = title;
-    this.selected = selected;
-    this.unlocked = unlocked;
-    this.in_flight = in_flight;
-    this.configure = configure;
-    this.changes = new Dictionary<int, int>();
-  }
-
-  public override bool prepare()
-  {
-    return opened;
-  }
-
-  public override void render()
-  {
-    if (Panel.title(title)) opened = false;
-
-    // for each selected setup
-    for(int selected_i = 0; selected_i < selected.Count; ++selected_i)
-    {
-      // find index in unlocked setups
-      for(int setup_i = 0; setup_i < unlocked.Count; ++setup_i)
-      {
-        if (unlocked[setup_i].name == selected[selected_i])
-        {
-          // commit panel
-          render_panel(unlocked[setup_i], selected_i, setup_i);
-        }
-      }
-    }
-
-    // if this is the last gui event
-    if (Event.current.type == EventType.Repaint)
-    {
-      // apply changes
-      foreach(var p in changes)
-      {
-        // change setup
-        selected[p.Key] = unlocked[p.Value].name;
-
-        // reconfigure
-        configure();
-      }
-      changes.Clear();
-    }
-  }
-
-  void render_panel(ConfigureSetup setup, int selected_i, int setup_i)
-  {
-    // render section title
-    // only allow reconfiguration if there are more setups than slots
-    if (unlocked.Count <= selected.Count)
-    {
-      Panel.section(setup.name);
-    }
-    else
-    {
-      int change = 0;
-      Panel.section(setup.name, ref change);
-      if (change != 0)
-      {
-        do
-        {
-          setup_i = (setup_i + unlocked.Count + change) % unlocked.Count;
-        }
-        while(selected.Contains(unlocked[setup_i].name));
-
-        changes.Add(selected_i, setup_i);
-      }
-    }
-
-    // render description if any
-    if (setup.desc.Length > 0) Panel.description(Lib.BuildString("<i>", setup.desc, "</i>"));
-
-    // render other content
-    foreach(var det in setup.details)
-    {
-      Panel.content(det.label, det.value);
-    }
-
-    // render spacing
-    Panel.space();
-  }
-
-  public override float height()
-  {
-    float h = 20.0f;
-    for(int selected_i = 0; selected_i < selected.Count; ++selected_i)
-    {
-      // find index in unlocked setups
-      for(int setup_i = 0; setup_i < unlocked.Count; ++setup_i)
-      {
-        var setup = unlocked[setup_i];
-        if (setup.name == selected[selected_i])
-        {
-          h += Panel.height(setup.details.Count);
-          if (setup.desc.Length > 0) h += Panel.description_height(setup.desc);
-        }
-      }
-    }
-    return h;
-  }
-
-  public void toggle()
-  {
-    opened = !opened;
-  }
-
-  public bool is_open()
-  {
-    return opened;
-  }
-
-  string                title;        // window title
-  List<ConfigureSetup>  unlocked;     // unlocked setups
-  List<string>          selected;     // selected setups names
-  bool                  in_flight;    // true if reconfiguration is allowed in flight
-  Action                configure;    // function called when setup change
-  bool                  opened;       // used to open/close window
-  Dictionary<int, int>  changes;      // store 'deferred' changes to avoid problems with unity gui
 }
 
 
