@@ -1,5 +1,12 @@
 #CHANGELOG
 
+1.1.7
+  - HardDrive module implement IScienceDataContainer
+  - monitor auto-switch vessel
+  - window get scroll bars if necessary
+  - fix: prevent camera scroll is working again
+  - fix: show monitor panels depending on features enabled
+
 1.1.6
   - improved the ui
   - JX2Antenna support patch by YaarPodshipnik
