@@ -10,6 +10,7 @@ public static class UI
 {
   public static void init()
   {
+    // create subsystems
     message  = new Message();
     launcher = new Launcher();
     window   = new Window(260u, 80u, 80u);
@@ -17,25 +18,22 @@ public static class UI
 
   public static void update()
   {
+    // update subsystems
     launcher.update();
     window.update();
+
+    // re-enable camera mouse scrolling, as some of the on_gui functions can
+    // disable it on mouse-hover, but can't re-enable it again consistently
+    // (eg: you mouse-hover and then close the window with the cursor still inside it)
+    // - we are ignoring user preference on mouse wheel
+    GameSettings.AXIS_MOUSEWHEEL.primary.scale = 1.0f;
   }
 
   public static void on_gui()
   {
-    // re-enable camera mouse scrolling, as some of the following functions can
-    // disable it on mouse-hover, but can't re-enable it again consistently
-    // (eg: you mouse-hover and then close the window with the cursor still inside it)
-    // note: we are ignoring user preference on mouse wheel
-    GameSettings.AXIS_MOUSEWHEEL.primary.scale = 1.0f;
-
-    // render the messages
+    // render subsystems
     message.on_gui();
-
-    // render the launcher
     launcher.on_gui();
-
-    // render the window
     window.on_gui();
   }
 

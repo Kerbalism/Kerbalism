@@ -59,8 +59,9 @@ public sealed class Window
       else
       {
         // adapt window size to panel
-        win_rect.width = panel.width();
-        win_rect.height = 20.0f + panel.height();
+        // - clamp to screen height
+        win_rect.width = Math.Min(panel.width(), Screen.width * 0.75f);
+        win_rect.height = Math.Min(20.0f + panel.height(), Screen.height * 0.75f);
 
         // clamp the window to the screen, so it can't be dragged outside
         float offset_x = Math.Max(0.0f, -win_rect.xMin) + Math.Min(0.0f, Screen.width - win_rect.xMax);
@@ -80,6 +81,12 @@ public sealed class Window
 
     // draw the window
     win_rect = GUILayout.Window(win_id, win_rect, draw_window, "", Styles.win);
+
+    // disable camera mouse scrolling on mouse over
+    if (win_rect.Contains(Event.current.mousePosition))
+    {
+      GameSettings.AXIS_MOUSEWHEEL.primary.scale = 0.0f;
+    }
   }
 
   void draw_window(int _)
@@ -93,8 +100,14 @@ public sealed class Window
     GUILayout.EndHorizontal();
     if (b) { close(); return; }
 
-    // render the window content
+    // start scrolling view
+    scroll_pos = GUILayout.BeginScrollView(scroll_pos, HighLogic.Skin.horizontalScrollbar, HighLogic.Skin.verticalScrollbar);
+
+    // render panel content
     panel.render();
+
+    // end scroll view
+    GUILayout.EndScrollView();
 
     // draw tooltip
     tooltip.draw(win_rect);
@@ -123,6 +136,9 @@ public sealed class Window
 
   // store dragbox geometry
   Rect drag_rect;
+
+  // used by scroll window mechanics
+  Vector2 scroll_pos;
 
   // tooltip utility
   Tooltip tooltip;

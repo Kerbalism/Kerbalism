@@ -118,17 +118,17 @@ public sealed class Launcher
 
       // draw tooltip
       tooltip.draw(new Rect(0.0f, 0.0f, Screen.width, Screen.height));
-
-      // disable camera mouse scrolling on mouse over
-      if (win_rect.Contains(Event.current.mousePosition))
-      {
-        GameSettings.AXIS_MOUSEWHEEL.primary.scale = 0.0f;
-      }
     }
     else
     {
       // set zero area win_rect
       win_rect.width = 0;
+    }
+
+    // disable camera mouse scrolling on mouse over
+    if (win_rect.Contains(Event.current.mousePosition))
+    {
+      GameSettings.AXIS_MOUSEWHEEL.primary.scale = 0.0f;
     }
   }
 
