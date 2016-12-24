@@ -337,7 +337,7 @@ public sealed class Configure : PartModule, IPartCostModifier, IPartMassModifier
     }
 
     // open the window
-    UI.open(260.0f, Lib.BuildString("Configure ", title), (p) => window_body(p, vessel));
+    UI.open((p) => window_body(p));
   }
 
 
@@ -449,17 +449,13 @@ public sealed class Configure : PartModule, IPartCostModifier, IPartMassModifier
   }
 
   // to be called as window refresh function
-  void window_body(Panel p, Vessel v)
+  void window_body(Panel p)
   {
     // outside the editor
     if (!Lib.IsEditor())
     {
-      // if vessel doesn't exist anymore, leave the panel empty
-      v = FlightGlobals.FindVessel(v.id);
-      if (v == null) return;
-
-      // if vessel is not loaded anymore, leave the panel empty
-      if (!v.loaded) return;
+      // if part doesn't exist anymore
+      if (FlightGlobals.FindPartByID(part.flightID) == null) return;
     }
 
     // for each selected setup
@@ -475,6 +471,9 @@ public sealed class Configure : PartModule, IPartCostModifier, IPartMassModifier
         }
       }
     }
+
+    // set metadata
+    p.title(Lib.BuildString("Configure <color=#cccccc>", title, "</color>"));
   }
 
   void render_panel(Panel p, ConfigureSetup setup, int selected_i, int setup_i)

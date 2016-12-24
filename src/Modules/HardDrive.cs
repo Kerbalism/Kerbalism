@@ -58,7 +58,7 @@ public sealed class HardDrive : PartModule
   [KSPEvent(guiActive = true, guiName = "_", active = true)]
   public void ToggleUI()
   {
-    UI.open(340.0f, vessel.vesselName, (Panel p) => p.fileman(vessel));
+    UI.open((Panel p) => p.fileman(vessel));
   }
 
 
