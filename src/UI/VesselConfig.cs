@@ -76,6 +76,9 @@ public static class VesselConfig
       p.content("script", string.Empty, tooltip);
       p.icon(vd.cfg_script ? Icons.toggle_green : Icons.toggle_red, tooltip, () => p.toggle(ref vd.cfg_script));
     }
+
+    // set metadata
+    p.title(Lib.BuildString(Lib.Ellipsis(v.vesselName, 20), " <color=#cccccc>VESSEL CONFIG</color>"));
   }
 }
 

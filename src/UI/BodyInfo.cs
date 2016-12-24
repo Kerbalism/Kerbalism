@@ -68,6 +68,9 @@ public static class BodyInfo
       p.content("outer belt",   Radiation.show_outer ? "<color=green>show</color>" : "<color=red>hide</color>", string.Empty, () => p.toggle(ref Radiation.show_outer));
       p.content("magnetopause", Radiation.show_pause ? "<color=green>show</color>" : "<color=red>hide</color>", string.Empty, () => p.toggle(ref Radiation.show_pause));
     }
+
+    // set metadata
+    p.title(Lib.BuildString(Lib.Ellipsis(body.bodyName, 24), " <color=#cccccc>BODY INFO</color>"));
   }
 }
 

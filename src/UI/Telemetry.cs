@@ -37,6 +37,9 @@ public static class Telemetry
 
     // collapse eva kerbal sections into one
     if (v.isEVA) p.collapse("EVA SUIT");
+
+    // set metadata
+    p.title(Lib.BuildString(Lib.Ellipsis(v.vesselName, 20), " <color=#cccccc>TELEMETRY</color>"));
   }
 
 

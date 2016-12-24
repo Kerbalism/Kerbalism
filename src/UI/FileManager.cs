@@ -62,6 +62,10 @@ public static class FileManager
       }
     }
     if (drive.samples.Count == 0) p.content("<i>no samples</i>", string.Empty);
+
+    // set metadata
+    p.title(Lib.BuildString(Lib.Ellipsis(v.vesselName, 20), " <color=#cccccc>FILE MANAGER</color>"));
+    p.width(320.0f);
   }
 
   static void render_file(Panel p, string filename, File file, Drive drive)

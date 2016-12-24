@@ -11,25 +11,29 @@ public sealed class Panel
 {
   public Panel()
   {
+    headers = new List<Header>();
     sections = new List<Section>();
-    titles = new List<Title>();
     callbacks = new List<Action>();
+    win_title = string.Empty;
+    min_width = 260.0f;
   }
 
   public void clear()
   {
+    headers.Clear();
     sections.Clear();
-    titles.Clear();
+    win_title = string.Empty;
+    min_width = 260.0f;
   }
 
-  public void title(string label, string tooltip="", Action click=null)
+  public void header(string label, string tooltip="", Action click=null)
   {
-    Title t = new Title();
-    t.label = label;
-    t.tooltip = tooltip;
-    t.click = click;
-    t.icons = new List<Icon>();
-    titles.Add(t);
+    Header h = new Header();
+    h.label = label;
+    h.tooltip = tooltip;
+    h.click = click;
+    h.icons = new List<Icon>();
+    headers.Add(h);
   }
 
   public void section(string title, string desc="", Action left=null, Action right=null)
@@ -66,22 +70,23 @@ public sealed class Panel
       Section p = sections[sections.Count - 1];
       p.entries[p.entries.Count - 1].icons.Add(i);
     }
-    else if (titles.Count > 0)
+    else if (headers.Count > 0)
     {
-      Title t = titles[titles.Count - 1];
-      t.icons.Add(i);
+      Header h = headers[headers.Count - 1];
+      h.icons.Add(i);
     }
   }
 
+
   public void render()
   {
-    // titles
-    foreach(Title t in titles)
+    // headers
+    foreach(Header h in headers)
     {
       GUILayout.BeginHorizontal(Styles.entry_container);
-      GUILayout.Label(new GUIContent(t.label, t.tooltip), Styles.entry_label);
-      if (t.click != null && Lib.IsClicked()) callbacks.Add(t.click);
-      foreach(Icon i in t.icons)
+      GUILayout.Label(new GUIContent(h.label, h.tooltip), Styles.entry_label);
+      if (h.click != null && Lib.IsClicked()) callbacks.Add(h.click);
+      foreach(Icon i in h.icons)
       {
         GUILayout.Label(new GUIContent(i.texture, i.tooltip), Styles.right_icon);
         if (i.click != null && Lib.IsClicked()) callbacks.Add(i.click);
@@ -149,7 +154,7 @@ public sealed class Panel
   {
     float h = 0.0f;
 
-    h += (float)titles.Count * 26.0f;
+    h += (float)headers.Count * 26.0f;
 
     foreach(Section p in sections)
     {
@@ -184,7 +189,7 @@ public sealed class Panel
   // merge another panel with this one
   public void add(Panel p)
   {
-    titles.AddRange(p.titles);
+    headers.AddRange(p.headers);
     sections.AddRange(p.sections);
   }
 
@@ -202,7 +207,33 @@ public sealed class Panel
   // return true if panel has no sections or titles
   public bool empty()
   {
-    return sections.Count == 0 && titles.Count == 0;
+    return sections.Count == 0 && headers.Count == 0;
+  }
+
+  // set title metadata
+  public void title(string s)
+  {
+    win_title = s;
+  }
+
+  // set width metadata
+  // - width never shrink
+  public void width(float w)
+  {
+    min_width = Math.Max(w, min_width);
+  }
+
+  // get medata
+  public string title() { return win_title; }
+  public float  width() { return min_width; }
+
+
+  sealed class Header
+  {
+    public string label;
+    public string tooltip;
+    public Action click;
+    public List<Icon> icons;
   }
 
   sealed class Section
@@ -231,17 +262,11 @@ public sealed class Panel
     public Action click;
   }
 
-  sealed class Title
-  {
-    public string label;
-    public string tooltip;
-    public Action click;
-    public List<Icon> icons;
-  }
-
-  List<Title>   titles;    // fat entries to show before the first section
-  List<Section> sections;  // set of sections
-  List<Action>  callbacks; // functions to call on input events
+  List<Header>  headers;    // fat entries to show before the first section
+  List<Section> sections;   // set of sections
+  List<Action>  callbacks;  // functions to call on input events
+  string        win_title;  // metadata stored in panel
+  float         min_width;  // metadata stored in panel
 }
 
 

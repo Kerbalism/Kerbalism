@@ -39,9 +39,9 @@ public static class UI
     window.on_gui();
   }
 
-  public static void open(float width, string title, Action<Panel> refresh)
+  public static void open(Action<Panel> refresh)
   {
-    window.open(width, title, refresh);
+    window.open(refresh);
   }
 
   static Message  message;

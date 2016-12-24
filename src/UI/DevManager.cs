@@ -96,6 +96,9 @@ public static class DevManager
     {
       p.content("<i>no devices</i>");
     }
+
+    // set metadata
+    p.title(Lib.BuildString(Lib.Ellipsis(v.vesselName, 24), " <color=#cccccc>DEV MANAGER</color>"));
   }
 
   // return short description of a script, or the time-out message

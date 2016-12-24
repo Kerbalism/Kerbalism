@@ -25,7 +25,7 @@ public static class Styles
 
     // window title text
     title_text = new GUIStyle();
-    title_text.fontSize = 12;
+    title_text.fontSize = 10;
     title_text.fixedHeight = 16.0f;
     title_text.fontStyle = FontStyle.Bold;
     title_text.alignment = TextAnchor.MiddleCenter;

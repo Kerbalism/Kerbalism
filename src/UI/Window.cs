@@ -12,10 +12,8 @@ public sealed class Window
 {
   // - width: window width in pixel
   // - left: initial window horizontal position
-  // - right: initial window vertical position
-  // - drag_height: height of the drag area on top of the window
-  // - style: gui style to use for the window
-  public Window(uint width, uint left, uint top)//, GUIStyle style)
+  // - top: initial window vertical position
+  public Window(uint width, uint left, uint top)
   {
     // generate unique id
     win_id = Lib.RandomInt(int.MaxValue);
@@ -28,18 +26,10 @@ public sealed class Window
 
     // initialize tooltip utility
     tooltip = new Tooltip();
-
-    // initial title
-    title = string.Empty;
   }
 
-  public void open(float width, string title, Action<Panel> refresh)
+  public void open(Action<Panel> refresh)
   {
-    win_rect.width = width;
-    drag_rect.width = width;
-
-    this.title = title;
-
     this.refresh = refresh;
   }
 
@@ -53,10 +43,33 @@ public sealed class Window
   {
     if (refresh != null)
     {
+      // initialize or clear panel
       if (panel == null) panel = new Panel();
       else panel.clear();
+
+      // refresh panel content
       refresh(panel);
-      if (panel.empty()) close();
+
+      // if panel is empty, close the window
+      if (panel.empty())
+      {
+        close();
+      }
+      // if panel is not empty
+      else
+      {
+        // adapt window size to panel
+        win_rect.width = panel.width();
+        win_rect.height = 20.0f + panel.height();
+
+        // clamp the window to the screen, so it can't be dragged outside
+        float offset_x = Math.Max(0.0f, -win_rect.xMin) + Math.Min(0.0f, Screen.width - win_rect.xMax);
+        float offset_y = Math.Max(0.0f, -win_rect.yMin) + Math.Min(0.0f, Screen.height - win_rect.yMax);
+        win_rect.xMin += offset_x;
+        win_rect.xMax += offset_x;
+        win_rect.yMin += offset_y;
+        win_rect.yMax += offset_y;
+      }
     }
   }
 
@@ -64,17 +77,6 @@ public sealed class Window
   {
     // window is considered closed if panel is null
     if (panel == null) return;
-
-    // set automatic height
-    win_rect.height = 20.0f + panel.height();
-
-    // clamp the window to the screen, so it can't be dragged outside
-    float offset_x = Math.Max(0.0f, -win_rect.xMin) + Math.Min(0.0f, Screen.width - win_rect.xMax);
-    float offset_y = Math.Max(0.0f, -win_rect.yMin) + Math.Min(0.0f, Screen.height - win_rect.yMax);
-    win_rect.xMin += offset_x;
-    win_rect.xMax += offset_x;
-    win_rect.yMin += offset_y;
-    win_rect.yMax += offset_y;
 
     // draw the window
     win_rect = GUILayout.Window(win_id, win_rect, draw_window, "", Styles.win);
@@ -85,7 +87,7 @@ public sealed class Window
     // render window title
     GUILayout.BeginHorizontal(Styles.title_container);
     GUILayout.Label(Icons.empty, Styles.left_icon);
-    GUILayout.Label(title, Styles.title_text);
+    GUILayout.Label(panel.title().ToUpper(), Styles.title_text);
     GUILayout.Label(Icons.close, Styles.right_icon);
     bool b = Lib.IsClicked();
     GUILayout.EndHorizontal();
@@ -96,6 +98,13 @@ public sealed class Window
 
     // draw tooltip
     tooltip.draw(win_rect);
+
+    // right click close the window
+    if (Event.current.type == EventType.MouseDown
+     && Event.current.button == 1)
+    {
+      close();
+    }
 
     // enable dragging
     GUI.DragWindow(drag_rect);
@@ -123,9 +132,6 @@ public sealed class Window
 
   // refresh function
   Action<Panel> refresh;
-
-  // window title
-  string title;
 }
 
 

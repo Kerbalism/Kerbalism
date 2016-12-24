@@ -88,7 +88,7 @@ public sealed class Monitor
       // empty vessel case
       if (!setup)
       {
-        panel.title("<i>no vessels</i>");
+        panel.header("<i>no vessels</i>");
       }
     }
     // if a vessel is selected
@@ -141,7 +141,7 @@ public sealed class Monitor
 
   public float width()
   {
-    return 320.0f;
+    return Math.Max(320.0f, panel.width());
   }
 
   public float height()
@@ -192,11 +192,11 @@ public sealed class Monitor
     string body_name = v.mainBody.name.ToUpper();
 
     // render entry
-    p.title
+    p.header
     (
-      Lib.BuildString("<b>", Lib.Ellipsis(vessel_name, 24), "</b> <size=8><color=#cccccc>", Lib.Ellipsis(body_name, 8), "</color></size>"),
+      Lib.BuildString("<b>", Lib.Ellipsis(vessel_name, 20), "</b> <size=9><color=#cccccc>", Lib.Ellipsis(body_name, 8), "</color></size>"),
       string.Empty,
-      () => { selected_id = v.id; }
+      () => { selected_id = selected_id != v.id ? v.id : Guid.Empty; }
     );
 
     // problem indicator
@@ -221,20 +221,21 @@ public sealed class Monitor
 
   void render_menu(Vessel v)
   {
+    const string tooltip = "\n<i>(middle-click to popout in a window)</i>";
     VesselData vd = DB.Vessel(v);
     GUILayout.BeginHorizontal(Styles.entry_container);
-    GUILayout.Label(new GUIContent(page == MonitorPage.telemetry ? " <color=#00ffff>INFO</color> " : " INFO ", Icons.small_info, "Telemetry readings"), config_style);
+    GUILayout.Label(new GUIContent(page == MonitorPage.telemetry ? " <color=#00ffff>INFO</color> " : " INFO ", Icons.small_info, "Telemetry readings" + tooltip), config_style);
     if (Lib.IsClicked()) page = MonitorPage.telemetry;
-    else if (Lib.IsClicked(1)) UI.open(260.0f, v.vesselName, (p) => p.telemetry(v));
-    GUILayout.Label(new GUIContent(page == MonitorPage.data ? " <color=#00ffff>DATA</color> " : " DATA " , Icons.small_folder, "Stored files and samples"), config_style);
+    else if (Lib.IsClicked(2)) UI.open((p) => p.telemetry(v));
+    GUILayout.Label(new GUIContent(page == MonitorPage.data ? " <color=#00ffff>DATA</color> " : " DATA " , Icons.small_folder, "Stored files and samples" + tooltip), config_style);
     if (Lib.IsClicked()) page = MonitorPage.data;
-    else if (Lib.IsClicked(1)) UI.open(320.0f, v.vesselName, (p) => p.fileman(v));
-    GUILayout.Label(new GUIContent(page == MonitorPage.scripts ? " <color=#00ffff>AUTO</color> " : " AUTO ", Icons.small_console, "Control and automate components"), config_style);
+    else if (Lib.IsClicked(2)) UI.open((p) => p.fileman(v));
+    GUILayout.Label(new GUIContent(page == MonitorPage.scripts ? " <color=#00ffff>AUTO</color> " : " AUTO ", Icons.small_console, "Control and automate components" + tooltip), config_style);
     if (Lib.IsClicked()) page = MonitorPage.scripts;
-    else if (Lib.IsClicked(1)) UI.open(260.0f, v.vesselName, (p) => p.devman(v));
-    GUILayout.Label(new GUIContent(page == MonitorPage.config ? " <color=#00ffff>CFG</color> " : " CFG ", Icons.small_config, "Configure the vessel"), config_style);
+    else if (Lib.IsClicked(2)) UI.open((p) => p.devman(v));
+    GUILayout.Label(new GUIContent(page == MonitorPage.config ? " <color=#00ffff>CFG</color> " : " CFG ", Icons.small_config, "Configure the vessel" + tooltip), config_style);
     if (Lib.IsClicked()) page = MonitorPage.config;
-    else if (Lib.IsClicked(1)) UI.open(260.0f, v.vesselName, (p) => p.config(v));
+    else if (Lib.IsClicked(2)) UI.open((p) => p.config(v));
     GUILayout.Label(new GUIContent(" GROUP ", Icons.small_search, "Organize in groups"), config_style);
     vd.group = Lib.TextFieldPlaceholder("Kerbalism_group", vd.group, "NONE", group_style).ToUpper();
     GUILayout.EndHorizontal();
