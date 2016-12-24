@@ -24,7 +24,6 @@ public class VesselData
     storm_age       = 0.0;
     storm_state     = 0;
     group           = "NONE";
-    notes           = string.Empty;
     computer        = new Computer();
     drive           = new Drive();
     supplies        = new Dictionary<string, SupplyData>();
@@ -47,7 +46,6 @@ public class VesselData
     storm_age       = Lib.ConfigValue(node, "storm_age", 0.0);
     storm_state     = Lib.ConfigValue(node, "storm_state", 0u);
     group           = Lib.ConfigValue(node, "group", "NONE");
-    notes           = Lib.ConfigValue(node, "notes", string.Empty).Replace("$NEWLINE", "\n").Replace("$COMMENT", "//");
     computer        = node.HasNode("computer") ? new Computer(node.GetNode("computer")) : new Computer();
     drive           = node.HasNode("drive") ? new Drive(node.GetNode("drive")) : new Drive();
 
@@ -80,7 +78,6 @@ public class VesselData
     node.AddValue("storm_age", storm_age);
     node.AddValue("storm_state", storm_state);
     node.AddValue("group", group);
-    node.AddValue("notes", notes.Replace("\n", "$NEWLINE").Replace("//", "$COMMENT"));
     computer.save(node.AddNode("computer"));
     drive.save(node.AddNode("drive"));
 
@@ -119,9 +116,8 @@ public class VesselData
   public double   storm_age;        // time since last storm (interplanetary CME)
   public uint     storm_state;      // 0: none, 1: inbound, 2: inprogress (interplanetary CME)
   public string   group;            // vessel group
-  public string   notes;            // user notes
   public Computer computer;         // store scripts
-  public Drive   drive;             // store science data
+  public Drive    drive;            // store science data
   public Dictionary<string, SupplyData> supplies; // supplies data
   public List<uint> scansat_id;     // used to remember scansat sensors that were disabled
 }
