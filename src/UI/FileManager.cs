@@ -79,10 +79,14 @@ public static class FileManager
       "<b>",
       Lib.Ellipsis(exp.name, 16),
       "</b> <size=10>",
-      Lib.Ellipsis(exp.situation, 16),
+      Lib.Ellipsis(exp.situation, 18),
       "</size>"
     );
-    string exp_tooltip = exp.fullname;
+    string exp_tooltip = Lib.BuildString
+    (
+      exp.name, "\n",
+      "<color=#aaaaaa>", exp.situation, "</color>"
+    );
     double exp_value = Science.value(filename, file.size);
     if (exp_value > double.Epsilon) exp_tooltip = Lib.BuildString(exp_tooltip, "\n<b>", Lib.HumanReadableScience(exp_value), "</b>");
 
@@ -109,10 +113,14 @@ public static class FileManager
       "<b>",
       Lib.Ellipsis(exp.name, 16),
       "</b> <size=10>",
-      Lib.Ellipsis(exp.situation, 16),
+      Lib.Ellipsis(exp.situation, 18),
       "</size>"
     );
-    string exp_tooltip = exp.fullname;
+    string exp_tooltip = Lib.BuildString
+    (
+      exp.name, "\n",
+      "<color=#aaaaaa>", exp.situation, "</color>"
+    );
     double exp_value = Science.value(filename, sample.size);
     if (exp_value > double.Epsilon) exp_tooltip = Lib.BuildString(exp_tooltip, "\n<b>", Lib.HumanReadableScience(exp_value), "</b>");
 
