@@ -449,7 +449,7 @@ public static class Misc
     // toggle body info window with keyboard
     if (MapView.MapIsEnabled && Input.GetKeyDown(KeyCode.B))
     {
-      UI.open(260.0f, "BODY", (Panel p) => p.body_info());
+      UI.open((Panel p) => p.body_info());
     }
 
     // call action scripts
