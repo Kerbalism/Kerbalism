@@ -114,12 +114,12 @@ public sealed class HardDrive : PartModule, IScienceDataContainer
     foreach(var pair in drive.files)
     {
       File file = pair.Value;
-      data.Add(new ScienceData((float)file.size, 1.0f, 1.0f, pair.Key, "TODO: experiment fullname"));
+      data.Add(new ScienceData((float)file.size, 1.0f, 1.0f, pair.Key, Science.experiment(pair.Key).fullname));
     }
     foreach(var pair in drive.samples)
     {
       Sample sample = pair.Value;
-      data.Add(new ScienceData((float)sample.size, 0.0f, 0.0f, pair.Key, "TODO: experiment fullname"));
+      data.Add(new ScienceData((float)sample.size, 0.0f, 0.0f, pair.Key, Science.experiment(pair.Key).fullname));
     }
     return data.ToArray();
   }
@@ -186,7 +186,7 @@ public sealed class HardDrive : PartModule, IScienceDataContainer
 
   public bool IsRerunnable()
   {
-    // bob's spaghetti
+    // don't care
     return false;
   }
 }
