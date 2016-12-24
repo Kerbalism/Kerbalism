@@ -21,12 +21,12 @@ public sealed class ExperimentInfo
     // deduce short name for the subject
     name = expdef != null ? expdef.experimentTitle : Lib.UppercaseFirst(id);
 
-    // deduce full name for the subject
-    ScienceSubject subject = ResearchAndDevelopment.GetSubjectByID(subject_id);
-    fullname = subject != null ? subject.title : name; //< NOTE: need to extract fullname from subject_id, when subject is custom
+    // deduce situation for the subject
+    situation = subject_id.Length < i + 2 ? "Unknown" : Lib.SpacesOnCaps(subject_id.Substring(i + 1));
+    situation = situation.Replace("Srf ", string.Empty).Replace("In ", string.Empty);
 
-    // extract situation from full name
-    situation = fullname.Replace(name, string.Empty).Replace(" from", string.Empty).Replace(" while", string.Empty);
+    // provide a full name
+    fullname = Lib.BuildString(name, " (", situation, ")");
 
     // deduce max data amount
     max_amount = expdef != null ? expdef.scienceCap * expdef.dataScale : double.MaxValue;
