@@ -46,6 +46,9 @@ public sealed class Monitor
 
     // initialize panel
     panel = new Panel();
+
+    // auto-switch selected vessel on scene changes
+    GameEvents.onVesselChange.Add((Vessel v) => { if (selected_id != Guid.Empty) selected_id = v.id; });
   }
 
 
