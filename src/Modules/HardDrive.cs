@@ -7,7 +7,7 @@ using UnityEngine;
 namespace KERBALISM {
 
 
-public sealed class HardDrive : PartModule
+public sealed class HardDrive : PartModule, IScienceDataContainer
 {
   public void Update()
   {
@@ -97,6 +97,97 @@ public sealed class HardDrive : PartModule
   public override string GetInfo()
   {
     return "Solid-state hard drive";
+  }
+
+
+  // science container implementation
+  public ScienceData[] GetData()
+  {
+    // get drive
+    Drive drive = DB.Vessel(vessel).drive;
+
+    // if not the preferred drive
+    if (drive.location != part.flightID) return new ScienceData[0];
+
+    // generate and return stock science data
+    List<ScienceData> data = new List<ScienceData>();
+    foreach(var pair in drive.files)
+    {
+      File file = pair.Value;
+      data.Add(new ScienceData((float)file.size, 1.0f, 1.0f, pair.Key, "TODO: experiment fullname"));
+    }
+    foreach(var pair in drive.samples)
+    {
+      Sample sample = pair.Value;
+      data.Add(new ScienceData((float)sample.size, 0.0f, 0.0f, pair.Key, "TODO: experiment fullname"));
+    }
+    return data.ToArray();
+  }
+
+  public void ReturnData(ScienceData data)
+  {
+    // get drive
+    Drive drive = DB.Vessel(vessel).drive;
+
+    // if not the preferred drive
+    if (drive.location != part.flightID) return;
+
+    // store the data
+    if (data.baseTransmitValue > float.Epsilon || data.transmitBonus > double.Epsilon)
+    {
+      drive.record_file(data.subjectID, data.dataAmount);
+    }
+    else
+    {
+      drive.record_sample(data.subjectID, data.dataAmount);
+    }
+  }
+
+  public void DumpData(ScienceData data)
+  {
+    // get drive
+    Drive drive = DB.Vessel(vessel).drive;
+
+    // if not the preferred drive
+    if (drive.location != part.flightID) return;
+
+    // remove the data
+    if (data.baseTransmitValue > float.Epsilon || data.transmitBonus > double.Epsilon)
+    {
+      drive.delete_file(data.subjectID, data.dataAmount);
+    }
+    else
+    {
+      drive.delete_sample(data.subjectID, data.dataAmount);
+    }
+  }
+
+  public void ReviewData()
+  {
+    UI.open((p) => p.fileman(vessel));
+  }
+
+  public void ReviewDataItem(ScienceData data)
+  {
+    ReviewData();
+  }
+
+  public int GetScienceCount()
+  {
+    // get drive
+    Drive drive = DB.Vessel(vessel).drive;
+
+    // if not the preferred drive
+    if (drive.location != part.flightID) return 0;
+
+    // return number of entries
+    return drive.files.Count + drive.samples.Count;
+  }
+
+  public bool IsRerunnable()
+  {
+    // bob's spaghetti
+    return false;
   }
 }
 
