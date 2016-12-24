@@ -227,12 +227,18 @@ public sealed class Monitor
     GUILayout.Label(new GUIContent(page == MonitorPage.telemetry ? " <color=#00ffff>INFO</color> " : " INFO ", Icons.small_info, "Telemetry readings" + tooltip), config_style);
     if (Lib.IsClicked()) page = MonitorPage.telemetry;
     else if (Lib.IsClicked(2)) UI.open((p) => p.telemetry(v));
-    GUILayout.Label(new GUIContent(page == MonitorPage.data ? " <color=#00ffff>DATA</color> " : " DATA " , Icons.small_folder, "Stored files and samples" + tooltip), config_style);
-    if (Lib.IsClicked()) page = MonitorPage.data;
-    else if (Lib.IsClicked(2)) UI.open((p) => p.fileman(v));
-    GUILayout.Label(new GUIContent(page == MonitorPage.scripts ? " <color=#00ffff>AUTO</color> " : " AUTO ", Icons.small_console, "Control and automate components" + tooltip), config_style);
-    if (Lib.IsClicked()) page = MonitorPage.scripts;
-    else if (Lib.IsClicked(2)) UI.open((p) => p.devman(v));
+    if (Features.Science)
+    {
+      GUILayout.Label(new GUIContent(page == MonitorPage.data ? " <color=#00ffff>DATA</color> " : " DATA " , Icons.small_folder, "Stored files and samples" + tooltip), config_style);
+      if (Lib.IsClicked()) page = MonitorPage.data;
+      else if (Lib.IsClicked(2)) UI.open((p) => p.fileman(v));
+    }
+    if (Features.Automation)
+    {
+      GUILayout.Label(new GUIContent(page == MonitorPage.scripts ? " <color=#00ffff>AUTO</color> " : " AUTO ", Icons.small_console, "Control and automate components" + tooltip), config_style);
+      if (Lib.IsClicked()) page = MonitorPage.scripts;
+      else if (Lib.IsClicked(2)) UI.open((p) => p.devman(v));
+    }
     GUILayout.Label(new GUIContent(page == MonitorPage.config ? " <color=#00ffff>CFG</color> " : " CFG ", Icons.small_config, "Configure the vessel" + tooltip), config_style);
     if (Lib.IsClicked()) page = MonitorPage.config;
     else if (Lib.IsClicked(2)) UI.open((p) => p.config(v));
