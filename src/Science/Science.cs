@@ -17,7 +17,15 @@ public static class Science
     // make the science dialog invisible, just once
     if (Features.Science)
     {
-      AssetBase.GetPrefab("ScienceResultsDialog").SetActive(false);
+      GameObject prefab = AssetBase.GetPrefab("ScienceResultsDialog");
+      if (Settings.ScienceDialog)
+      {
+        prefab.gameObject.AddOrGetComponent<Hijacker>();
+      }
+      else
+      {
+        prefab.gameObject.AddOrGetComponent<MiniHijacker>();
+      }
     }
   }
 
@@ -212,6 +220,7 @@ public static class Science
     subject.id = Lib.BuildString(exp.id, "@", body.name, tag);
     subject.title = title;
     subject.scienceCap = exp.scienceCap; //< note: no body/situation multiplier
+    subject.subjectValue = body.scienceValues.InSpaceHighDataValue //< note: use same multiplier as space high
     return subject;
   }*/
 
