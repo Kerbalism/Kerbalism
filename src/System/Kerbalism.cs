@@ -221,9 +221,6 @@ public sealed class Kerbalism : ScenarioModule
     Storm.update(sd.body, sd.time);
     sd.time = 0.0;
     storm_index = (storm_index + 1) % storm_bodies.Count;
-
-    // hijack science report dialog
-    Hijacker.update();
   }
 
 

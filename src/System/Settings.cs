@@ -66,6 +66,9 @@ public static class Settings
     ExtendedAntenna             = Lib.ConfigValue(cfg, "ExtendedAntenna",             true);
     ControlRate                 = Lib.ConfigValue(cfg, "ControlRate",                 0.000001); // 1 bps
 
+    // science
+    ScienceDialog               = Lib.ConfigValue(cfg, "ScienceDialog",               true);
+
     // reliability
     QualityScale                = Lib.ConfigValue(cfg, "QualityScale",                4.0);
     CriticalChance              = Lib.ConfigValue(cfg, "CriticalChance",              0.25);
@@ -128,6 +131,9 @@ public static class Settings
   public static UnlinkedCtrl UnlinkedControl;             // available control for unlinked vessels: 'none', 'limited' or 'full'
   public static bool   ExtendedAntenna;                   // antenna only work if extended
   public static double ControlRate;                       // data rate required for control, in Mb/s
+
+  // science
+  public static bool   ScienceDialog;                     // keep showing the stock science dialog
 
   // reliability
   public static double QualityScale;                      // scale applied to MTBF for high-quality components
