@@ -174,14 +174,17 @@ public sealed class HardDrive : PartModule, IScienceDataContainer
 
   public int GetScienceCount()
   {
-    // get drive
-    Drive drive = DB.Vessel(vessel).drive;
+    // We are forced to return zero, or else EVA kerbals re-entering a pod
+    // will complain about being unable to store the data (but they shouldn't)
+    return 0;
+
+    /*Drive drive = DB.Vessel(vessel).drive;
 
     // if not the preferred drive
     if (drive.location != part.flightID) return 0;
 
     // return number of entries
-    return drive.files.Count + drive.samples.Count;
+    return drive.files.Count + drive.samples.Count;*/
   }
 
   public bool IsRerunnable()
