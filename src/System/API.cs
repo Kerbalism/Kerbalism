@@ -59,7 +59,7 @@ public static class API
   }
 
 
-  // --- ENVIRONMENT INFO -----------------------------------------------------
+  // --- ENVIRONMENT ----------------------------------------------------------
 
   // return true if the vessel specified is in sunlight
   public static bool InSunlight(Vessel v)
@@ -72,6 +72,9 @@ public static class API
   {
     return Cache.VesselInfo(v).breathable;
   }
+
+
+  // --- RADIATION ------------------------------------------------------------
 
   // return amount of environment radiation at the position of the specified vessel
   public static double Radiation(Vessel v)
@@ -95,6 +98,9 @@ public static class API
     return Cache.VesselInfo(v).inside_belt;
   }
 
+
+  // --- SPACE WEATHER --------------------------------------------------------
+
   // return true if a solar storm is incoming at the vessel position
   public static bool StormIncoming(Vessel v)
   {
@@ -117,7 +123,7 @@ public static class API
   }
 
 
-  // --- VESSEL INFO ----------------------------------------------------------
+  // --- SIGNAL ---------------------------------------------------------------
 
   // return the link status for the vessel specified
   // - 0: not linked
@@ -136,6 +142,9 @@ public static class API
     }
   }
 
+
+  // --- RELIABILITY ----------------------------------------------------------
+
   // return true if at least a component has malfunctioned, or had a critical failure
   public static bool Malfunction(Vessel v)
   {
@@ -149,6 +158,21 @@ public static class API
     if (!Features.Reliability) return false;
     return Cache.VesselInfo(v).critical;
   }
+
+  // return true if the part specified has a malfunction or critical failure
+  public static bool Broken(Part part)
+  {
+    return part.FindModulesImplementing<Reliability>().FindAll(k => k.isEnabled && k.broken) != null;
+  }
+
+  // repair a specified part
+  public static void Repair(Part part)
+  {
+    part.FindModulesImplementing<Reliability>().FindAll(k => k.isEnabled && k.broken).ForEach(k => k.Repair());
+  }
+
+
+  // --- HABITAT --------------------------------------------------------------
 
   // return volume of internal habitat in m^3
   public static double Volume(Vessel v)
@@ -197,18 +221,56 @@ public static class API
   }
 
 
-  // --- MALFUNCTION PART UTILITIES -------------------------------------------
+  // --- SCIENCE --------------------------------------------------------------
 
-  // return true if the part specified has a malfunction or critical failure
-  public static bool Broken(Part part)
+  // return size of a file in a vessel drive
+  public static double FileSize(Vessel v, string subject_id)
   {
-    return part.FindModulesImplementing<Reliability>().FindAll(k => k.isEnabled && k.broken) != null;
+    if (!Cache.VesselInfo(v).is_valid) return 0.0;
+    Drive drive = DB.Vessel(v).drive;
+    File file;
+    return drive.files.TryGetValue(subject_id, out file) ? file.size : 0.0;
   }
 
-  // repair a specified part
-  public static void Repair(Part part)
+  // return size of a sample in a vessel drive
+  public static double SampleSize(Vessel v, string subject_id)
   {
-    part.FindModulesImplementing<Reliability>().FindAll(k => k.isEnabled && k.broken).ForEach(k => k.Repair());
+    if (!Cache.VesselInfo(v).is_valid) return 0.0;
+    Drive drive = DB.Vessel(v).drive;
+    Sample sample;
+    return drive.samples.TryGetValue(subject_id, out sample) ? sample.size : 0.0;
+  }
+
+  // store a file on a vessel
+  public static void StoreFile(Vessel v, string subject_id, double amount)
+  {
+    if (!Cache.VesselInfo(v).is_valid) return;
+    Drive drive = DB.Vessel(v).drive;
+    drive.record_file(subject_id, amount);
+  }
+
+  // store a sample on a vessel
+  public static void StoreSample(Vessel v, string subject_id, double amount)
+  {
+    if (!Cache.VesselInfo(v).is_valid) return;
+    Drive drive = DB.Vessel(v).drive;
+    drive.record_sample(subject_id, amount);
+  }
+
+  // remove a file from a vessel
+  public static void RemoveFile(Vessel v, string subject_id, double amount)
+  {
+    if (!Cache.VesselInfo(v).is_valid) return;
+    Drive drive = DB.Vessel(v).drive;
+    drive.delete_file(subject_id, amount);
+  }
+
+  // remove a sample from a vessel
+  public static void RemoveSample(Vessel v, string subject_id, double amount)
+  {
+    if (!Cache.VesselInfo(v).is_valid) return;
+    Drive drive = DB.Vessel(v).drive;
+    drive.delete_sample(subject_id, amount);
   }
 }
 
