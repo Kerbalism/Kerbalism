@@ -19,7 +19,6 @@ public static class Features
     // force-disable some features based on mods detected
     Reliability &= !Lib.HasAssembly("TestFlight");
     Signal &= !Lib.HasAssembly("RemoteTech");
-    Science &= !Lib.HasAssembly("ScienceRelay");
 
     // detect all modifiers in use by current profile
     HashSet<string> modifiers = new HashSet<string>();
