@@ -337,7 +337,7 @@ public sealed class Configure : PartModule, IPartCostModifier, IPartMassModifier
     }
 
     // open the window
-    UI.open((p) => window_body(p));
+    UI.open(window_body);
   }
 
 
@@ -456,6 +456,12 @@ public sealed class Configure : PartModule, IPartCostModifier, IPartMassModifier
     {
       // if part doesn't exist anymore
       if (FlightGlobals.FindPartByID(part.flightID) == null) return;
+    }
+    // inside the editor
+    else
+    {
+      // if the part doesn't exist anymore (eg: removed, user hit undo)
+      if (GetInstanceID() == 0) return;
     }
 
     // for each selected setup
