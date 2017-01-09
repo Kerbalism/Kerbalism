@@ -182,7 +182,7 @@ public sealed class Greenhouse : PartModule, ISpecifics, IContractObjectiveModul
         // notify the user when crop can be harvested
         if (growth >= 0.99)
         {
-          Message.Post(Lib.BuildString("On <color=ffffff>", vessel.vesselName, "</color> the crop is ready to be harvested"));
+          Message.Post(Lib.BuildString("On <b>", vessel.vesselName, "</b> the crop is ready to be harvested"));
         }
       }
     }
@@ -259,7 +259,7 @@ public sealed class Greenhouse : PartModule, ISpecifics, IContractObjectiveModul
         // notify the user when crop can be harvested
         if (growth >= 0.99)
         {
-          Message.Post(Lib.BuildString("On <color=ffffff>", v.vesselName, "</color> the crop is ready to be harvested"));
+          Message.Post(Lib.BuildString("On <b>", v.vesselName, "</b> the crop is ready to be harvested"));
         }
       }
 

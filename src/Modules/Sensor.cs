@@ -1,81 +1,33 @@
 ﻿using System;
 using System.Collections.Generic;
+using Experience;
 using UnityEngine;
 
 
 namespace KERBALISM {
 
 
-public sealed class Sensor : PartModule, ISpecifics, IModuleInfo
+// Add a specific environment reading to a part ui, and to the telemetry panel.
+public sealed class Sensor : PartModule, ISpecifics
 {
   // config
-  [KSPField] public string type;  // type of sensor
-  [KSPField] public string pin;   // pin animation
+  [KSPField(isPersistant=true)] public string type;   // type of telemetry provided
+  [KSPField] public string pin = string.Empty;        // pin animation
 
-  // show the readings on RMB ui
+  // status
   [KSPField(guiActive = true, guiName = "_")] public string Status;
 
-  // float curve used to map reading to pin animation
-  FloatCurve fc;
-
-  // animation
+  // animations
   Animator pin_anim;
 
 
   public override void OnStart(StartState state)
   {
-    // update ui
-    switch(type)
-    {
-      case "temperature": Fields["Status"].guiName = "Temperature"; break;
-      case "radiation":   Fields["Status"].guiName = "Radiation";   break;
-      case "solar_flux":  Fields["Status"].guiName = "Solar flux";  break;
-      case "albedo_flux": Fields["Status"].guiName = "Albedo flux"; break;
-      case "body_flux":   Fields["Status"].guiName = "Body flux";   break;
-    }
-
-    // if a pin animation is used, generate float curve
-    if (pin.Length > 0)
-    {
-      switch(type)
-      {
-        case "temperature":
-          fc = new FloatCurve();
-          fc.Add(0.0f, 0.0f);
-          fc.Add(273.15f, 0.33f);
-          fc.Add(500.0f, 0.66f);
-          fc.Add(2500.0f, 1.0f);
-          break;
-
-        case "radiation":
-          fc = new FloatCurve();
-          fc.Add(0.0f, 0.0f);
-          fc.Add(0.005f, 0.33f);
-          fc.Add(1.0f, 0.66f);
-          fc.Add(11.0f, 1.0f);
-          break;
-
-        case "solar_flux":
-          fc = new FloatCurve();
-          fc.Add(0.0f, 0.0f);
-          fc.Add(2000.0f, 1.0f);
-          break;
-
-        case "albedo_flux":
-          fc = new FloatCurve();
-          fc.Add(0.0f, 0.0f);
-          fc.Add(1000.0f, 1.0f);
-          break;
-
-        case "body_flux":
-          fc.Add(0.0f, 0.0f);
-          fc.Add(500.0f, 1.0f);
-          break;
-      }
-    }
-
     // create animator
     pin_anim = new Animator(part, pin);
+
+    // setup ui
+    Fields["Status"].guiName = Lib.UppercaseFirst(type);
   }
 
 
@@ -90,32 +42,14 @@ public sealed class Sensor : PartModule, ISpecifics, IModuleInfo
       // do nothing if vessel is invalid
       if (!vi.is_valid) return;
 
-      // update ui
-      switch(type)
-      {
-        case "temperature": Status = Lib.HumanReadableTemp(vi.temperature); break;
-        case "radiation":   Status = vi.radiation > double.Epsilon ? Lib.HumanReadableRadiation(vi.radiation) : "nominal"; break;
-        case "solar_flux":  Status = Lib.HumanReadableFlux(vi.solar_flux);  break;
-        case "albedo_flux": Status = Lib.HumanReadableFlux(vi.albedo_flux); break;
-        case "body_flux":   Status = Lib.HumanReadableFlux(vi.body_flux);   break;
-      }
+      // update status
+      Status = telemetry_content(vessel, vi, type);
 
       // if there is a pin animation
       if (pin.Length > 0)
       {
-        // get reading
-        double reading = 0.0f;;
-        switch(type)
-        {
-          case "temperature": reading = vi.temperature;         break;
-          case "radiation":   reading = vi.radiation * 3600.0;  break;
-          case "solar_flux":  reading = vi.solar_flux;          break;
-          case "albedo_flux": reading = vi.albedo_flux;         break;
-          case "body_flux":   reading = vi.body_flux;           break;
-        }
-
-        // still-play animation
-        pin_anim.still(Lib.Clamp(fc.Evaluate((float)reading), 0.0f, 1.0f));
+        // still-play pin animation
+        pin_anim.still(telemetry_pin(vessel, vi, type));
       }
     }
   }
@@ -124,23 +58,100 @@ public sealed class Sensor : PartModule, ISpecifics, IModuleInfo
   // part tooltip
   public override string GetInfo()
   {
-    return Specs().info(Lib.BuildString("Measure <b>", type.Replace('_', ' '), "</b>"));
+    return Specs().info("Add telemetry readings to the part ui, and to the telemetry panel");
   }
 
 
   // specifics support
   public Specifics Specs()
   {
-    return new Specifics();
+    var specs = new Specifics();
+    specs.add("Type", type);
+    return specs;
   }
 
 
-  // module info support
-  public string GetModuleTitle() { return Lib.BuildString(Lib.UppercaseFirst(type.Replace('_', ' ')), " sensor"); }
-  public string GetPrimaryField() { return string.Empty; }
-  public Callback<Rect> GetDrawModulePanelCallback() { return null; }
+  // get readings value in [0,1] range, for pin animation
+  public static double telemetry_pin(Vessel v, vessel_info vi, string type)
+  {
+    switch(type)
+    {
+      case "temperature":   return Math.Min(vi.temperature / 11000.0, 1.0);
+      case "radiation":     return Math.Min(vi.radiation * 3600.0 / 11.0, 1.0);
+      case "pressure":      return Math.Min(v.mainBody.GetPressure(v.altitude) / Sim.PressureAtSeaLevel() / 11.0, 1.0);
+      case "gravioli":      return Math.Min(vi.gravioli, 1.0);
+    }
+    return 0.0;
+  }
+
+  // get readings value
+  public static double telemetry_value(Vessel v, vessel_info vi, string type)
+  {
+    switch(type)
+    {
+      case "temperature":   return vi.temperature;
+      case "radiation":     return vi.radiation;
+      case "pressure":      return v.mainBody.GetPressure(v.altitude);;
+      case "gravioli":      return vi.gravioli;
+    }
+    return 0.0;
+  }
+
+  // get readings short text info
+  public static string telemetry_content(Vessel v, vessel_info vi, string type)
+  {
+    switch(type)
+    {
+      case "temperature":   return Lib.HumanReadableTemp(vi.temperature);
+      case "radiation":     return Lib.HumanReadableRadiation(vi.radiation);
+      case "pressure":      return Lib.HumanReadablePressure(v.mainBody.GetPressure(v.altitude));
+      case "gravioli":      return vi.gravioli < 0.33 ? "nothing here" : vi.gravioli < 0.66 ? "almost one" : "WOW!";
+    }
+    return string.Empty;
+  }
+
+  // get readings tooltip
+  public static string telemetry_tooltip(Vessel v, vessel_info vi, string type)
+  {
+    switch(type)
+    {
+      case "temperature":
+        return Lib.BuildString
+        (
+          "<align=left />",
+          "solar flux\t<b>", Lib.HumanReadableFlux(vi.solar_flux), "</b>\n",
+          "albedo flux\t<b>", Lib.HumanReadableFlux(vi.albedo_flux), "</b>\n",
+          "body flux\t<b>", Lib.HumanReadableFlux(vi.body_flux), "</b>"
+        );
+
+      case "radiation":
+        return string.Empty;
+
+      case "pressure":
+        return vi.underwater
+          ? "inside <b>ocean</b>"
+          : vi.atmo_factor < 1.0
+          ? Lib.BuildString("inside <b>atmosphere</b> (", vi.breathable ? "breathable" : "not breathable", ")")
+          : Sim.InsideThermosphere(v)
+          ? "inside <b>thermosphere</b>"
+          : Sim.InsideExosphere(v)
+          ? "inside <b>exosphere</b>"
+          : string.Empty;
+
+      case "gravioli":
+        return Lib.BuildString
+        (
+          "Gravioli detection events per-year: <b>", vi.gravioli.ToString("F2"), "</b>\n\n",
+          "<i>The elusive negative gravioli particle\nseem to be much harder to detect\n",
+          "than expected. On the other\nside there seems to be plenty\nof useless positive graviolis around.</i>"
+        );
+    }
+    return string.Empty;
+  }
 }
 
 
 } // KERBALISM
+
+
 

@@ -1,9 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reflection;
 using UnityEngine;
 
 
 namespace KERBALISM {
+
+
+
 
 
 public static class Science
@@ -147,7 +151,7 @@ public static class Science
     // - this could be slow or a no-op, depending on the number of listeners
     //   in any case, we are buffering the transmitting data and calling this
     //   function only once in a while
-    GameEvents.OnScienceRecieved.Fire((float)size, subject, pv, false);
+    GameEvents.OnScienceRecieved.Fire(credits, subject, pv, false);
 
     // return amount of science credited
     return credits;
@@ -196,6 +200,230 @@ public static class Science
     }
     return info;
   }
+
+
+  // create a new subject entry in the RnD
+  // - experiment: experiment_id
+  // - situation: an arbitrary situation, can insert biome at the end
+  // - body: celestial body involved
+  // - biome: biome involved, or empty
+  // - multiplier: science multiplier for the body/situation
+  public static string generate_subject(string experiment, CelestialBody body, string sit, string biome, float multiplier)
+  {
+    // generate subject id
+    string subject_id = Lib.BuildString(experiment, "@", body.name, sit + biome);
+
+    // in sandbox, do nothing else
+    if (ResearchAndDevelopment.Instance == null) return subject_id;
+
+    // if the subject id was never added to RnD
+    if (ResearchAndDevelopment.GetSubjectByID(subject_id) == null)
+    {
+      // get experiment
+      // - assuming it is valid here
+      var exp = ResearchAndDevelopment.GetExperiment(experiment);
+
+      // get subjects container using reflection
+      // - we tried just changing the subject.id instead, and
+      //   it worked but the new id was obviously used only after
+      //   putting RnD through a serialization->deserialization cycle
+      var subjects = Lib.PrivateField<Dictionary<string, ScienceSubject>>
+      (
+        typeof(ResearchAndDevelopment),
+        ResearchAndDevelopment.Instance,
+        "scienceSubjects"
+      );
+
+      // create new subject
+      ScienceSubject subject = new ScienceSubject
+      (
+        subject_id,
+        Lib.BuildString(exp.experimentTitle, " (", Lib.SpacesOnCaps(sit + biome), ")"),
+        exp.dataScale,
+        multiplier,
+        exp.scienceCap
+      );
+
+      // add it to RnD
+      subjects.Add(subject_id, subject);
+    }
+    return subject_id;
+  }
+
+
+  // return vessel situation valid for specified experiment
+  public static string situation(Vessel v, string situations)
+  {
+    // shortcuts
+    CelestialBody body = v.mainBody;
+    vessel_info vi = Cache.VesselInfo(v);
+
+    List<string> list = Lib.Tokenize(situations, ',');
+    foreach(string sit in list)
+    {
+      bool b = false;
+      switch(sit)
+      {
+        case "Surface":         b = Lib.Landed(v);                                                                          break;
+        case "Atmosphere":      b = body.atmosphere && v.altitude < body.atmosphereDepth;                                   break;
+        case "Ocean":           b = body.ocean && v.altitude < 0.0;                                                         break;
+        case "Space":           b = body.flightGlobalsIndex != 0 && !Lib.Landed(v) && v.altitude > body.atmosphereDepth;    break;
+        case "AbsoluteZero":    b = vi.temperature < 30.0;                                                                  break;
+        case "InnerBelt":       b = vi.inner_belt;                                                                          break;
+        case "OuterBelt":       b = vi.outer_belt;                                                                          break;
+        case "Magnetosphere":   b = vi.magnetosphere;                                                                       break;
+        case "Thermosphere":    b = vi.thermosphere;                                                                        break;
+        case "Exosphere":       b = vi.exosphere;                                                                           break;
+        case "InterPlanetary":  b = body.flightGlobalsIndex == 0 && !vi.interstellar;                                       break;
+        case "InterStellar":    b = body.flightGlobalsIndex == 0 && vi.interstellar;                                        break;
+      }
+      if (b) return sit;
+    }
+
+    return string.Empty;
+  }
+
+
+  public static string biome(Vessel v, string sit)
+  {
+    switch(sit)
+    {
+      case "Surface":
+      case "Atmosphere":
+      case "Ocean":
+        return ScienceUtil.GetExperimentBiome(v.mainBody, v.latitude, v.longitude);
+
+      default:
+        return string.Empty;
+    }
+  }
+
+
+
+  public static float multiplier(Vessel v, string sit)
+  {
+    var values = v.mainBody.scienceValues;
+    float space = (values.InSpaceLowDataValue + values.InSpaceHighDataValue) * 0.5f;
+    switch(sit)
+    {
+      case "Surface":         return (values.LandedDataValue + values.SplashedDataValue) * 0.5f;
+      case "Atmosphere":      return (values.FlyingLowDataValue + values.FlyingHighDataValue) * 0.5f;
+      case "Ocean":           return values.SplashedDataValue * 2.0f;
+      case "Space":           return space;
+      case "AbsoluteZero":    return space * 2.5f;
+      case "InnerBelt":       return space * 1.5f;
+      case "OuterBelt":       return space * 2.0f;
+      case "Magnetosphere":   return space;
+      case "Thermosphere":    return space * 0.75f;
+      case "Exosphere":       return space * 0.75f;
+      case "InterPlanetary":  return space;
+      case "InterStellar":    return space * 5.0f;
+    }
+    return 0.0f;
+  }
+  /*
+  static class Situations
+  {
+    public static bool Surface(Vessel v)
+    {
+      return Lib.Landed(v);
+    }
+
+    public static bool Atmosphere(Vessel v)
+    {
+      return v.mainBody.atmosphere && v.altitude < v.mainBody.atmosphereDepth;
+    }
+
+    public static bool Ocean(Vessel v)
+    {
+      return v.mainBody.ocean && v.altitude < 0.0;
+    }
+
+    public static bool Space(Vessel v)
+    {
+      return v.mainBody.flightGlobalsIndex != 0 && !Lib.Landed(v) && !Atmosphere(v);
+    }
+
+    public static bool AbsoluteZero(Vessel v)
+    {
+      return Cache.VesselInfo(v).temperature < 30.0;
+    }
+
+    public static bool InnerBelt(Vessel v)
+    {
+      return Features.Radiation && Cache.VesselInfo(v).inner_belt;
+    }
+
+    public static bool OuterBelt(Vessel v)
+    {
+      return Features.Radiation && Cache.VesselInfo(v).outer_belt;
+    }
+
+    public static bool Magnetosphere(Vessel v)
+    {
+      return Features.Radiation && Cache.VesselInfo(v).magnetopause;
+    }
+
+    public static bool Thermosphere(Vessel v)
+    {
+      return Cache.VesselInfo(v).thermosphere;
+    }
+
+    public static bool Exosphere(Vessel v)
+    {
+      return Cache.VesselInfo(v).exosphere;
+    }
+
+    public static bool InterPlanetary(Vessel v)
+    {
+      return v.mainBody.flightGlobalsIndex == 0 && !Cache.VesselInfo(v).interstellar;
+    }
+
+    public static bool InterStellar(Vessel v)
+    {
+      return v.mainBody.flightGlobalsIndex == 0 && Cache.VesselInfo(v).interstellar;
+    }
+  }*/
+
+
+
+
+    /*ExperimentSituations sit = ScienceUtil.GetExperimentSituation(v);
+    ScienceExperiment exp = ResearchAndDevelopment.GetExperiment(experiment);
+
+    if (exp != null)
+    {
+      if ((exp.situationMask & (uint)sit) > 0)
+      {
+        if ((exp.biomeMask & (uint)sit) > 0)
+        {
+          return Lib.BuildString(sit.ToString(), ScienceUtil.GetExperimentBiome(v.mainBody, v.latitude, v.longitude));
+        }
+        else
+        {
+          return sit.ToString();
+        }
+      }
+    }
+    // alternative
+    switch(v.situation)
+    {
+      case Vessel.Situations.LANDED:
+      case Vessel.Situations.SPLASHED:
+      case Vessel.Situations.PRELAUNCH:
+        return "Surface" + ScienceUtil.GetExperimentBiome(v.mainBody, v.latitude, v.longitude);
+
+      case Vessel.Situations.FLYING:
+        return "Atmosphere";
+
+      case Vessel.Situations.ORBITING:
+      case Vessel.Situations.SUB_ORBITAL:
+      case Vessel.Situations.ESCAPING:
+        return "Space";
+
+      default:
+        return "Unknown";
+    }*/
 
 
   // experiment info cache

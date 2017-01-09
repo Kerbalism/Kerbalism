@@ -25,7 +25,7 @@ public static class SCANsat
   // - v: vessel that own the module
   // - m: protomodule of a SCANsat or a resource scanner
   // - p: prefab of the part owning the module
-  public static bool stopScanner(Vessel v, ProtoPartModuleSnapshot m, Part part_prefab, PartModule scanner)
+  public static bool stopScanner(Vessel v, ProtoPartModuleSnapshot m, Part part_prefab)
   {
     return SCANUtils != null && (bool)UnregisterSensor.Invoke(null, new Object[]{v, m, part_prefab});
   }
@@ -34,7 +34,7 @@ public static class SCANsat
   // - v: vessel that own the module
   // - m: protomodule of a SCANsat or a resource scanner
   // - p: prefab of the part owning the module
-  public static bool resumeScanner(Vessel v, ProtoPartModuleSnapshot m, Part part_prefab, PartModule scanner)
+  public static bool resumeScanner(Vessel v, ProtoPartModuleSnapshot m, Part part_prefab)
   {
     return SCANUtils != null && (bool)RegisterSensor.Invoke(null, new Object[]{v, m, part_prefab});
   }

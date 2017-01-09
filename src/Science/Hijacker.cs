@@ -197,10 +197,9 @@ public sealed class MetaData
 
     // get the container module storing the data
     container = Science.container(part, Science.experiment(data.subjectID).id);
-    if (container == null) throw new Exception("can't find the data container during data hijacking");
 
     // get the stock experiment module storing the data (if that's the case)
-    experiment = container as ModuleScienceExperiment;
+    experiment = container != null ? container as ModuleScienceExperiment : null;
 
     // determine if this is a sample (non-transmissible)
     // - if this is a third-party data container/experiment, we assume it is transmissible

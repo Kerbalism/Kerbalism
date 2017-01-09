@@ -13,6 +13,7 @@ public static class Background
   enum module_type
   {
     Reliability = 0,
+    Experiment,
     Greenhouse,
     GravityRing,
     Emitter,
@@ -39,6 +40,7 @@ public static class Background
     switch(module_name)
     {
       case "Reliability":                  return module_type.Reliability;
+      case "Experiment":                   return module_type.Experiment;
       case "Greenhouse":                   return module_type.Greenhouse;
       case "GravityRing":                  return module_type.GravityRing;
       case "Emitter":                      return module_type.Emitter;
@@ -108,6 +110,7 @@ public static class Background
         switch(type)
         {
           case module_type.Reliability:           Reliability.BackgroundUpdate(v, p, m, module_prefab as Reliability);                        break;
+          case module_type.Experiment:            Experiment.BackgroundUpdate(v, m, module_prefab as Experiment, ec ,elapsed_s);              break;
           case module_type.Greenhouse:            Greenhouse.BackgroundUpdate(v, m, module_prefab as Greenhouse, vi, resources, elapsed_s);   break;
           case module_type.GravityRing:           GravityRing.BackgroundUpdate(v, p, m, module_prefab as GravityRing, ec, elapsed_s);         break;
           case module_type.Emitter:               Emitter.BackgroundUpdate(v, p, m, module_prefab as Emitter, ec, elapsed_s);                 break;
@@ -445,11 +448,11 @@ public static class Background
       ec.Consume(power * elapsed_s);
 
       // if there isn't ec
-      // note: comparing against amount in previous simulation step
+      // - comparing against amount in previous simulation step
       if (ec.amount <= double.Epsilon)
       {
         // unregister scanner
-        SCANsat.stopScanner(v, m, part_prefab, scanner);
+        SCANsat.stopScanner(v, m, part_prefab);
         is_scanning = false;
 
         // remember disabled scanner
@@ -467,7 +470,7 @@ public static class Background
       if (ec.level > 0.25) //< re-enable at 25% EC
       {
         // re-enable the scanner
-        SCANsat.resumeScanner(v, m, part_prefab, scanner);
+        SCANsat.resumeScanner(v, m, part_prefab);
         is_scanning = true;
 
         // give the user some feedback

@@ -85,17 +85,24 @@ public static class API
   }
 
   // return true if the vessel is inside the magnetopause of some body (except the sun)
-  public static bool InsideMagnetosphere(Vessel v)
+  public static bool Magnetosphere(Vessel v)
   {
     if (!Features.Radiation) return false;
-    return Cache.VesselInfo(v).inside_pause;
+    return Cache.VesselInfo(v).magnetosphere;
   }
 
   // return true if the vessel is inside the radiation belt of some body
-  public static bool InsideBelt(Vessel v)
+  public static bool InnerBelt(Vessel v)
   {
     if (!Features.Radiation) return false;
-    return Cache.VesselInfo(v).inside_belt;
+    return Cache.VesselInfo(v).inner_belt;
+  }
+
+  // return true if the vessel is inside the radiation belt of some body
+  public static bool OuterBelt(Vessel v)
+  {
+    if (!Features.Radiation) return false;
+    return Cache.VesselInfo(v).outer_belt;
   }
 
 

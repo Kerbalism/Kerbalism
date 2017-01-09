@@ -55,7 +55,7 @@ public sealed class Harvester : PartModule, IAnimatedModule, IModuleInfo, ISpeci
         {
           case 0: valid = vessel.Landed && GroundContact(); break;
           case 1: valid = body.ocean && (vessel.Splashed || vessel.altitude < 0.0); break;
-          case 2: valid = body.atmosphere; break;
+          case 2: valid = body.atmosphere && vessel.altitude < body.atmosphereDepth; break;
           case 3: valid = vessel.altitude > body.atmosphereDepth || !body.atmosphere; break;
         }
       }
@@ -146,8 +146,6 @@ public sealed class Harvester : PartModule, IAnimatedModule, IModuleInfo, ISpeci
 
     // we have ground contact if the drill altitude is less than terrain height
     return terrain_height + margin > drill_altitude;
-
-
   }
 
 

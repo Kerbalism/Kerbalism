@@ -77,7 +77,7 @@ public sealed class Callbacks
     string prop_name = Lib.EvaPropellantName();
     if (Lib.Amount(data.to, prop_name) <= double.Epsilon && !Lib.Landed(data.from.vessel))
     {
-      Message.Post(Severity.danger, Lib.BuildString("There isn't any <b>", prop_name, "</b> in the EVA suit", "Don't let the ladder go!"));
+      Message.Post(Severity.danger, Lib.BuildString("There isn't any <b>", prop_name, "</b> in the EVA suit"), "Don't let the ladder go!");
     }
 
     // turn off headlamp light, to avoid stock bug that show them for a split second when going on eva

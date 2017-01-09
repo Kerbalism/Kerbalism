@@ -951,6 +951,7 @@ public class resource_simulator
           case "Harvester":                    process_harvester(m as Harvester);                       break;
           case "Laboratory":                   process_laboratory(m as Laboratory);                     break;
           case "Antenna":                      process_antenna(m as Antenna);                           break;
+          case "Experiment":                   process_experiment(m as Experiment);                     break;
           case "ModuleCommand":                process_command(m as ModuleCommand);                     break;
           case "ModuleDeployableSolarPanel":   process_panel(m as ModuleDeployableSolarPanel, env);     break;
           case "ModuleGenerator":              process_generator(m as ModuleGenerator, p);              break;
@@ -1140,6 +1141,15 @@ public class resource_simulator
   void process_antenna(Antenna antenna)
   {
     resource("ElectricCharge").consume(antenna.cost, "transmission");
+  }
+  
+  
+  void process_experiment(Experiment exp)
+  {
+    if (exp.recording)
+    {
+      resource("ElectricCharge").consume(exp.ec_rate, exp.transmissible ? "sensor" : "experiment");
+    }
   }
 
 

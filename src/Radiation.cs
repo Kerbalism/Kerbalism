@@ -485,17 +485,23 @@ public static class Radiation
 
 
   // return the total environent radiation at position specified
-  public static double Compute(Vessel v, Vector3d position, double gamma_transparency, double sunlight, out bool blackout, out bool inside_pause, out bool inside_belt)
+  public static double Compute(Vessel v, Vector3d position, double gamma_transparency, double sunlight, out bool blackout,
+                               out bool magnetosphere, out bool inner_belt, out bool outer_belt, out bool interstellar)
   {
+    // prepare out parameters
+    blackout = false;
+    magnetosphere = false;
+    inner_belt = false;
+    outer_belt = false;
+    interstellar = false;
+
+    // no-op when Radiation is disabled
+    if (!Features.Radiation) return 0.0;
+
     // store stuff
     Space gsm;
     Vector3 p;
     float D;
-
-    // prepare out parameters
-    blackout = false;
-    inside_pause = false;
-    inside_belt = false;
 
     // transform to local space once
     position = ScaledSpace.LocalToScaledSpace(position);
@@ -520,19 +526,20 @@ public static class Radiation
         {
           D = mf.inner_func(p);
           radiation += Lib.Clamp(D / -0.0666f, 0.0f, 1.0f) * rb.radiation_inner;
-          inside_belt |= D < 0.0f;
+          inner_belt |= D < 0.0f;
         }
         if (mf.has_outer)
         {
           D = mf.outer_func(p);
           radiation += Lib.Clamp(D / -0.0333f, 0.0f, 1.0f) * rb.radiation_outer;
-          inside_belt |= D < 0.0f;
+          outer_belt |= D < 0.0f;
         }
         if (mf.has_pause)
         {
           D = mf.pause_func(p);
           radiation += Lib.Clamp(D / -0.1332f, 0.0f, 1.0f) * rb.radiation_pause;
-          inside_pause |= D < 0.0f && rb.body.flightGlobalsIndex != 0; //< ignore heliopause
+          magnetosphere |= D < 0.0f && rb.body.flightGlobalsIndex != 0; //< ignore heliopause
+          interstellar |= D > 0.0f && rb.body.flightGlobalsIndex == 0; //< outside heliopause
         }
       }
 
@@ -551,7 +558,7 @@ public static class Radiation
     {
       // inside a magnetopause (except heliosphere), blackout the signal
       // outside, add storm radiations modulated by sun visibility
-      if (inside_pause) blackout = true;
+      if (magnetosphere) blackout = true;
       else radiation += Settings.StormRadiation * sunlight;
     }
 
@@ -632,24 +639,27 @@ public static class Radiation
       // we only show the warning for manned vessels, or for all vessels the first time its crossed
       bool must_warn = vi.crew_count > 0 || !DB.landmarks.belt_crossing;
 
+      // are we inside a belt
+      bool inside_belt = vi.inner_belt || vi.outer_belt;
+
       // show the message
-      if (vi.inside_belt && !vd.msg_belt && must_warn)
+      if (inside_belt && !vd.msg_belt && must_warn)
       {
         Message.Post(Lib.BuildString("<b>", v.vesselName, "</b> is crossing <i>", v.mainBody.bodyName, " radiation belt</i>"), "Exposed to extreme radiation");
         vd.msg_belt = true;
       }
-      else if (!vi.inside_belt && vd.msg_belt)
+      else if (!inside_belt && vd.msg_belt)
       {
         // no message after crossing the belt
         vd.msg_belt = false;
       }
+
+      // record first belt crossing
+      if (inside_belt) DB.landmarks.belt_crossing = true;
+
+      // record first heliopause crossing
+      if (vi.interstellar) DB.landmarks.heliopause_crossing = true;
     }
-
-    // record first belt crossing
-    if (vi.inside_belt) DB.landmarks.belt_crossing = true;
-
-    // record first heliopause crossing
-    if (v.mainBody.flightGlobalsIndex == 0 && !vi.inside_pause) DB.landmarks.heliopause_crossing = true;
   }
 
 

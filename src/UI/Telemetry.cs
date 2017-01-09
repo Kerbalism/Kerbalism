@@ -47,29 +47,31 @@ public static class Telemetry
   {
     // don't show env panel in eva kerbals
     if (v.isEVA) return;
-
-    // determine atmosphere
-    string atmo_desc = "none";
-    if (vi.underwater) atmo_desc = "ocean";
-    else if (vi.atmo_factor < 1.0) //< inside an atmosphere
+    
+    // get all sensor readings     
+    HashSet<string> readings = new HashSet<string>();
+    if (v.loaded)
     {
-      atmo_desc = vi.breathable ? "breathable" : "not breathable";
+      foreach(var s in Lib.FindModules<Sensor>(v))
+      {
+        readings.Add(s.type);
+      }
     }
-
-    // flux tooltip
-    string flux_tooltip = Lib.BuildString
-    (
-      "<align=left />",
-      "solar flux\t<b>", Lib.HumanReadableFlux(vi.solar_flux), "</b>\n",
-      "albedo flux\t<b>", Lib.HumanReadableFlux(vi.albedo_flux), "</b>\n",
-      "body flux\t<b>", Lib.HumanReadableFlux(vi.body_flux), "</b>"
-    );
-
-    // render panel
-    p.section("ENVIRONMENT");
-    p.content("temperature", Lib.HumanReadableTemp(vi.temperature), flux_tooltip);
-    if (Features.Radiation) p.content("radiation", Lib.HumanReadableRadiation(vi.radiation));
-    p.content("atmosphere", atmo_desc);
+    else
+    {
+      foreach(ProtoPartModuleSnapshot m in Lib.FindModules(v.protoVessel, "Sensor"))
+      {
+        readings.Add(Lib.Proto.GetString(m, "type"));
+      }
+    }
+    readings.Remove(string.Empty);
+      
+    p.section("ENVIRONMENT");      
+    foreach(string type in readings)
+    {
+      p.content(type, Sensor.telemetry_content(v, vi, type), Sensor.telemetry_tooltip(v, vi, type));
+    }
+    if (readings.Count == 0) p.content("<i>no sensors installed</i>");
   }
 
   static void render_habitat(Panel p, Vessel v, vessel_info vi)

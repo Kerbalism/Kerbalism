@@ -246,9 +246,9 @@ public static class Lib
   }
 
   // return true half the time
-  public static bool AlternateTime(uint seconds)
+  public static int Alternate(int seconds, int elements)
   {
-    return (((UInt64)Time.realtimeSinceStartup / seconds) % 2ul) == 1;
+    return ((int)Time.realtimeSinceStartup / seconds) % elements;
   }
 
 
@@ -260,7 +260,8 @@ public static class Lib
   // note: this function break hard when external API change, by design
   public static T ReflectionValue<T>(PartModule m, string value_name)
   {
-    return (T)m.GetType().GetField(value_name).GetValue(m);
+    BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+    return (T)m.GetType().GetField(value_name, flags).GetValue(m);
   }
 
   // set a value from a module using reflection
@@ -269,7 +270,16 @@ public static class Lib
   // note: this function break hard when external API change, by design
   public static void ReflectionValue<T>(PartModule m, string value_name, T value)
   {
-    m.GetType().GetField(value_name).SetValue(m, value);
+    BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+    m.GetType().GetField(value_name, flags).SetValue(m, value);
+  }
+
+  // get access to a private field
+  public static T PrivateField<T>(Type type, object instance, string field_name) where T : class
+  {
+    BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static;
+    FieldInfo field = type.GetField(field_name, flags);
+    return field.GetValue(instance) as T;
   }
 
 

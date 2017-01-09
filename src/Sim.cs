@@ -516,6 +516,34 @@ public static class Sim
     // however this function can be called to generate part tooltips, and at that point the bodies are not ready
     return 101.0;
   }
+  
+  
+  // return true if vessel is inside the thermosphere
+  public static bool InsideThermosphere(Vessel v)
+  {
+    var body = v.mainBody;
+    return body.atmosphere && v.altitude > body.atmosphereDepth && v.altitude <= body.atmosphereDepth * 5.0;
+  }
+  
+  
+  // return true if vessel is inside the exosphere
+  public static bool InsideExosphere(Vessel v)
+  {
+    var body = v.mainBody;
+    return body.atmosphere && v.altitude > body.atmosphereDepth * 5.0 && v.altitude <= body.atmosphereDepth * 25.0;
+  }
+  
+  
+  // --------------------------------------------------------------------------
+  // GRAVIOLI
+  // --------------------------------------------------------------------------
+  
+  public static double Graviolis(Vessel v)
+  {
+    double dist = Vector3d.Distance(v.GetWorldPos3D(), FlightGlobals.Bodies[0].position);
+    double au = dist / FlightGlobals.GetHomeBody().orbit.semiMajorAxis;
+    return 1.0 - Math.Min(au, 1.0); // 0 at 1AU -> 1 at sun position 
+  }
 }
 
 

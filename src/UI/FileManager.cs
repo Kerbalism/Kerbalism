@@ -26,40 +26,22 @@ public static class FileManager
     Drive drive = DB.Vessel(v).drive;
 
     // draw data section
-    int i=0;
     p.section("DATA");
     foreach(var pair in drive.files)
     {
-      if (i++ < max_files)
-      {
-        string filename = pair.Key;
-        File file = pair.Value;
-        render_file(p, filename, file, drive);
-      }
-      else
-      {
-        p.content(Lib.BuildString("<i>", (drive.files.Count - max_files).ToString(), " other files</i>"), string.Empty);
-        break;
-      }
+      string filename = pair.Key;
+      File file = pair.Value;
+      render_file(p, filename, file, drive);
     }
     if (drive.files.Count == 0) p.content("<i>no files</i>", string.Empty);
 
     // draw samples section
-    i=0;
     p.section("SAMPLES");
     foreach(var pair in drive.samples)
     {
-      if (i++ < max_samples)
-      {
-        string filename = pair.Key;
-        Sample sample = pair.Value;
-        render_sample(p, filename, sample, drive);
-      }
-      else
-      {
-        p.content(Lib.BuildString("<i>", (drive.files.Count - max_samples).ToString(), " other samples</i>"), string.Empty);
-        break;
-      }
+      string filename = pair.Key;
+      Sample sample = pair.Value;
+      render_sample(p, filename, sample, drive);
     }
     if (drive.samples.Count == 0) p.content("<i>no samples</i>", string.Empty);
 
@@ -77,9 +59,9 @@ public static class FileManager
     string exp_label = Lib.BuildString
     (
       "<b>",
-      Lib.Ellipsis(exp.name, 16),
+      Lib.Ellipsis(exp.name, 24),
       "</b> <size=10>",
-      Lib.Ellipsis(exp.situation, 18),
+      Lib.Ellipsis(exp.situation, 32u - (uint)Math.Min(24, exp.name.Length)),
       "</size>"
     );
     string exp_tooltip = Lib.BuildString
@@ -111,9 +93,9 @@ public static class FileManager
     string exp_label = Lib.BuildString
     (
       "<b>",
-      Lib.Ellipsis(exp.name, 16),
+      Lib.Ellipsis(exp.name, 24),
       "</b> <size=10>",
-      Lib.Ellipsis(exp.situation, 18),
+      Lib.Ellipsis(exp.situation, 32u - (uint)Math.Min(24, exp.name.Length)),
       "</size>"
     );
     string exp_tooltip = Lib.BuildString
@@ -134,10 +116,6 @@ public static class FileManager
        new DialogGUIButton("Keep it", () => {})
     ));
   }
-
-  // max number of files/samples shown
-  const int max_files = 16;
-  const int max_samples = 8;
 }
 
 

@@ -61,25 +61,29 @@ public sealed class vessel_info
       sunlight = 1.0 - Sim.ShadowPeriod(v) / Sim.OrbitalPeriod(v);
     }
 
-    // calculate environment stuff
+    // environment stuff
     atmo_factor = Sim.AtmosphereFactor(v.mainBody, position, sun_dir);
     gamma_transparency = Sim.GammaTransparency(v.mainBody, v.altitude);
     underwater = Sim.Underwater(v);
     breathable = Sim.Breathable(v, underwater);
     landed = Lib.Landed(v);
 
-    // calculate temperature at vessel position
+    // temperature at vessel position
     temperature = Sim.Temperature(v, position, sunlight, atmo_factor, out solar_flux, out albedo_flux, out body_flux, out total_flux);
     temp_diff = Sim.TempDiff(temperature, v.mainBody, landed);
 
-    // calculate radiation
-    radiation = Radiation.Compute(v, position, gamma_transparency, sunlight, out blackout, out inside_pause, out inside_belt);
+    // radiation
+    radiation = Radiation.Compute(v, position, gamma_transparency, sunlight, out blackout, out magnetosphere, out inner_belt, out outer_belt, out interstellar);
+    
+    // extended atmosphere
+    thermosphere = Sim.InsideThermosphere(v);
+    exosphere = Sim.InsideExosphere(v);
 
-    // calculate malfunction stuff
+    // malfunction stuff
     malfunction = Reliability.HasMalfunction(v);
     critical = Reliability.HasCriticalFailure(v);
 
-    // calculate signal info
+    // signal info
     antenna = new AntennaInfo(v);
     avoid_inf_recursion.Add(v.id);
     connection = Signal.connection(v, position, antenna, blackout, avoid_inf_recursion);
@@ -96,8 +100,11 @@ public sealed class vessel_info
     living_space = Habitat.living_space(v);
     comforts = new Comforts(v, landed, crew_count > 1, connection.linked);
 
-    // get some data about greenhouses
+    // data about greenhouses
     greenhouses = Greenhouse.Greenhouses(v);
+    
+    // other stuff
+    gravioli = Sim.Graviolis(v);
   }
 
 
@@ -118,9 +125,13 @@ public sealed class vessel_info
   public double       temperature;          // vessel temperature
   public double       temp_diff;            // difference between external and survival temperature
   public double       radiation;            // environment radiation at vessel position
-  public bool         inside_pause;         // true if vessel is inside a magnetopause (except the heliosphere)
-  public bool         inside_belt;          // true if vessel is inside a radiation belt
+  public bool         magnetosphere;        // true if vessel is inside a magnetopause (except the heliosphere)
+  public bool         inner_belt;           // true if vessel is inside a radiation belt
+  public bool         outer_belt;           // true if vessel is inside a radiation belt
+  public bool         interstellar;         // true if vessel is outside sun magnetopause
   public bool         blackout;             // true if the vessel is inside a magnetopause (except the sun) and under storm
+  public bool         thermosphere;         // true if vessel is inside thermosphere
+  public bool         exosphere;            // true if vessel is inside exosphere
   public double       atmo_factor;          // proportion of flux not blocked by atmosphere
   public double       gamma_transparency;   // proportion of ionizing radiation not blocked by atmosphere
   public bool         underwater;           // true if inside ocean
@@ -140,6 +151,7 @@ public sealed class vessel_info
   public double       living_space;         // living space factor
   public Comforts     comforts;             // comfort info
   public List<Greenhouse.data> greenhouses; // some data about greenhouses
+  public double       gravioli;             // gravitation gauge particles detected (joke)
 
   // used to avoid infinite recursion while calculating connection info
   static HashSet<Guid> avoid_inf_recursion = new HashSet<Guid>();

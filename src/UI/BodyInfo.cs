@@ -69,6 +69,10 @@ public static class BodyInfo
       p.content("magnetopause", Radiation.show_pause ? "<color=green>show</color>" : "<color=red>hide</color>", string.Empty, () => p.toggle(ref Radiation.show_pause));
     }
 
+    // explain the user how to toggle the BodyInfo window
+    p.content(string.Empty);
+    p.content("<i>Press <b>B</b> to open this window again</i>");
+
     // set metadata
     p.title(Lib.BuildString(Lib.Ellipsis(body.bodyName, 24), " <color=#cccccc>BODY INFO</color>"));
   }

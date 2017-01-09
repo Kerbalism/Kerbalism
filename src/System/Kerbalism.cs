@@ -240,13 +240,13 @@ public sealed class Kerbalism : ScenarioModule
     Highlighter.update();
 
     // prepare gui content
-    if (callbacks.visible) UI.update();
+    UI.update(callbacks.visible);
   }
 
 
   void OnGUI()
   {
-    if (callbacks.visible) UI.on_gui();
+    UI.on_gui(callbacks.visible);
   }
 
 
@@ -446,7 +446,7 @@ public static class Misc
     // toggle body info window with keyboard
     if (MapView.MapIsEnabled && Input.GetKeyDown(KeyCode.B))
     {
-      UI.open((Panel p) => p.body_info());
+      UI.open(BodyInfo.body_info);
     }
 
     // call action scripts

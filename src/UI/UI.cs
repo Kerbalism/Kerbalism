@@ -16,11 +16,23 @@ public static class UI
     window   = new Window(260u, 80u, 80u);
   }
 
-  public static void update()
+  public static void update(bool show_window)
   {
-    // update subsystems
-    launcher.update();
-    window.update();
+    // if gui should be shown
+    if (show_window)
+    {
+      // as a special case, the first time the user enter
+      // map-view/tracking-station we open the body info window
+      if (MapView.MapIsEnabled && !first_time_mapview)
+      {
+        open(BodyInfo.body_info);
+        first_time_mapview = true;
+      }
+
+      // update subsystems
+      launcher.update();
+      window.update();
+    }
 
     // re-enable camera mouse scrolling, as some of the on_gui functions can
     // disable it on mouse-hover, but can't re-enable it again consistently
@@ -29,12 +41,15 @@ public static class UI
     GameSettings.AXIS_MOUSEWHEEL.primary.scale = 1.0f;
   }
 
-  public static void on_gui()
+  public static void on_gui(bool show_window)
   {
     // render subsystems
     message.on_gui();
-    launcher.on_gui();
-    window.on_gui();
+    if (show_window)
+    {
+      launcher.on_gui();
+      window.on_gui();
+    }
   }
 
   public static void open(Action<Panel> refresh)
@@ -45,6 +60,7 @@ public static class UI
   static Message  message;
   static Launcher launcher;
   static Window   window;
+  static bool     first_time_mapview;
 }
 
 
