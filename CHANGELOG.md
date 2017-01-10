@@ -1,5 +1,23 @@
 #CHANGELOG
 
+1.1.8
+  - the science dialog is back (but can be hidden with settings)
+  - stop disabling Science if ScienceRelay is detected
+  - new API functions to deal with science data
+  - better support for SSPX by Yaar Podshipnik
+  - telemetry env readings are provided by sensor parts
+  - kerbin magnetotail now extend just beyond mun orbit
+  - SCANsat support in automation
+  - show BodyInfo window automatically the first time user enter map view or tracking station
+  - tweak antenna distances on supported planet packs
+  - fix: popup message about data when entering from EVA
+  - fix: configure window is closed when related part is deleted in editor
+  - fix: minor fixes in Science.cfg
+  - fix: heliopause crossing contract
+  - fix: pass credits instead of data size when firing OnScienceReceived event
+  - fix: do not throw exception during data hijacking if science container is not present
+  - new Experiment modulem with custom situation support (WIP, currently disabled)
+
 1.1.7
   - HardDrive module implement IScienceDataContainer
   - monitor auto-switch vessel
