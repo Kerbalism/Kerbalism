@@ -117,7 +117,7 @@ public static class Sim
   // - dir: ray direction
   // - dist: ray length
   // - body: obstacle
-  public static bool Raytrace(Vector3d p, Vector3d dir, double dist, CelestialBody body)
+  public static bool Raytrace(Vector3d p, Vector3d dir, double dist, CelestialBody body, double radius)
   {
     // ray from origin to body center
     Vector3d diff = body.position - p;
@@ -127,7 +127,7 @@ public static class Sim
 
     // the ray doesn't hit body if its minimal analytical distance along the ray is less than its radius
     // simplified from 'p + dir * k - body.position'
-    return k < 0.0 || k > dist || (dir * k - diff).magnitude > body.Radius ;
+    return k < 0.0 || k > dist || (dir * k - diff).magnitude > radius;
   }
 
 
@@ -150,8 +150,8 @@ public static class Sim
     dist -= body.Radius;
 
     // raytrace
-    return (body == mainbody || Raytrace(vessel_pos, dir, dist, mainbody))
-        && (body == refbody || refbody == null || Raytrace(vessel_pos, dir, dist, refbody));
+    return (body == mainbody || Raytrace(vessel_pos, dir, dist, mainbody, Math.Min(mainbody.Radius, vessel.altitude)))
+        && (body == refbody || refbody == null || Raytrace(vessel_pos, dir, dist, refbody, refbody.Radius));
   }
 
 
@@ -175,10 +175,10 @@ public static class Sim
     dir /= dist;
 
     // raytrace
-    return Raytrace(pos_a, dir, dist, mainbody_a)
-        && Raytrace(pos_a, dir, dist, mainbody_b)
-        && (refbody_a == null || Raytrace(pos_a, dir, dist, refbody_a))
-        && (refbody_b == null || Raytrace(pos_b, dir, dist, refbody_b));
+    return Raytrace(pos_a, dir, dist, mainbody_a, Math.Min(mainbody_a.Radius, a.altitude))
+        && Raytrace(pos_a, dir, dist, mainbody_b, Math.Min(mainbody_b.Radius, b.altitude))
+        && (refbody_a == null || Raytrace(pos_a, dir, dist, refbody_a, refbody_a.Radius))
+        && (refbody_b == null || Raytrace(pos_a, dir, dist, refbody_b, refbody_b.Radius));
   }
 
 
@@ -516,33 +516,33 @@ public static class Sim
     // however this function can be called to generate part tooltips, and at that point the bodies are not ready
     return 101.0;
   }
-  
-  
+
+
   // return true if vessel is inside the thermosphere
   public static bool InsideThermosphere(Vessel v)
   {
     var body = v.mainBody;
     return body.atmosphere && v.altitude > body.atmosphereDepth && v.altitude <= body.atmosphereDepth * 5.0;
   }
-  
-  
+
+
   // return true if vessel is inside the exosphere
   public static bool InsideExosphere(Vessel v)
   {
     var body = v.mainBody;
     return body.atmosphere && v.altitude > body.atmosphereDepth * 5.0 && v.altitude <= body.atmosphereDepth * 25.0;
   }
-  
-  
+
+
   // --------------------------------------------------------------------------
   // GRAVIOLI
   // --------------------------------------------------------------------------
-  
+
   public static double Graviolis(Vessel v)
   {
     double dist = Vector3d.Distance(v.GetWorldPos3D(), FlightGlobals.Bodies[0].position);
     double au = dist / FlightGlobals.GetHomeBody().orbit.semiMajorAxis;
-    return 1.0 - Math.Min(au, 1.0); // 0 at 1AU -> 1 at sun position 
+    return 1.0 - Math.Min(au, 1.0); // 0 at 1AU -> 1 at sun position
   }
 }
 
