@@ -117,7 +117,7 @@ public static class Sim
   // - dir: ray direction
   // - dist: ray length
   // - body: obstacle
-  public static bool Raytrace(Vector3d p, Vector3d dir, double dist, CelestialBody body, double radius)
+  public static bool Raytrace(Vector3d p, Vector3d dir, double dist, CelestialBody body)
   {
     // ray from origin to body center
     Vector3d diff = body.position - p;
@@ -127,7 +127,7 @@ public static class Sim
 
     // the ray doesn't hit body if its minimal analytical distance along the ray is less than its radius
     // simplified from 'p + dir * k - body.position'
-    return k < 0.0 || k > dist || (dir * k - diff).magnitude > radius;
+    return k < 0.0 || k > dist || (dir * k - diff).magnitude > body.Radius;
   }
 
 
@@ -150,8 +150,8 @@ public static class Sim
     dist -= body.Radius;
 
     // raytrace
-    return (body == mainbody || Raytrace(vessel_pos, dir, dist, mainbody, Math.Min(mainbody.Radius, vessel.altitude)))
-        && (body == refbody || refbody == null || Raytrace(vessel_pos, dir, dist, refbody, refbody.Radius));
+    return (body == mainbody || Raytrace(vessel_pos, dir, dist, mainbody))
+        && (body == refbody || refbody == null || Raytrace(vessel_pos, dir, dist, refbody));
   }
 
 
@@ -175,10 +175,10 @@ public static class Sim
     dir /= dist;
 
     // raytrace
-    return Raytrace(pos_a, dir, dist, mainbody_a, Math.Min(mainbody_a.Radius, a.altitude))
-        && Raytrace(pos_a, dir, dist, mainbody_b, Math.Min(mainbody_b.Radius, b.altitude))
-        && (refbody_a == null || Raytrace(pos_a, dir, dist, refbody_a, refbody_a.Radius))
-        && (refbody_b == null || Raytrace(pos_a, dir, dist, refbody_b, refbody_b.Radius));
+    return Raytrace(pos_a, dir, dist, mainbody_a)
+        && Raytrace(pos_a, dir, dist, mainbody_b)
+        && (refbody_a == null || Raytrace(pos_a, dir, dist, refbody_a))
+        && (refbody_b == null || Raytrace(pos_a, dir, dist, refbody_b));
   }
 
 
