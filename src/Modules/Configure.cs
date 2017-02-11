@@ -484,7 +484,12 @@ public sealed class Configure : PartModule, IPartCostModifier, IPartMassModifier
 
   void render_panel(Panel p, ConfigureSetup setup, int selected_i, int setup_i)
   {
-    // render section title
+    // generate details, just once
+    // note: details were once elegantly serialized among all the other setup data,
+    //       see comment inside generate_details() to understand why this was necessary instead
+    setup.generate_details(this);
+
+    // render panel title
     // only allow reconfiguration if there are more setups than slots
     if (unlocked.Count <= selected.Count)
     {
@@ -496,7 +501,7 @@ public sealed class Configure : PartModule, IPartCostModifier, IPartMassModifier
       p.section(setup.name, desc, () => change_setup(-1, selected_i, ref setup_i), () => change_setup(1, selected_i, ref setup_i));
     }
 
-    // render other content
+    // render details
     foreach(var det in setup.details)
     {
       p.content(det.label, det.value);
@@ -560,6 +565,57 @@ public sealed class ConfigureSetup
     {
       resources.Add(new ConfigureResource(res_node));
     }
+  }
+
+  public ConfigureSetup(ReadArchive archive)
+  {
+    // load basic data
+    archive.load(out name);
+    archive.load(out desc);
+    archive.load(out tech);
+    archive.load(out cost);
+    archive.load(out mass);
+
+    // load modules
+    int count;
+    archive.load(out count);
+    modules = new List<ConfigureModule>(count);
+    while(count-- > 0) modules.Add(new ConfigureModule(archive));
+
+    // load resources
+    archive.load(out count);
+    resources = new List<ConfigureResource>(count);
+    while(count-- > 0) resources.Add(new ConfigureResource(archive));
+  }
+
+  public void save(WriteArchive archive)
+  {
+    // save basic data
+    archive.save(name);
+    archive.save(desc);
+    archive.save(tech);
+    archive.save(cost);
+    archive.save(mass);
+
+    // save modules
+    archive.save(modules.Count);
+    foreach(ConfigureModule m in modules) m.save(archive);
+
+    // save resources
+    archive.save(resources.Count);
+    foreach(ConfigureResource r in resources) r.save(archive);
+  }
+
+  public void generate_details(Configure cfg)
+  {
+    // If a setup component is defined after the Configure module in the ConfigNode,
+    // then it is not present in the part during Configure::OnLoad (at precompilation time)
+    // so, find_module() will fail in that situation, resulting in no component details
+    // being added to the Configure window. Therefore we are forced to generate the details
+    // at first use every time the module is loaded, instead of generating them only once.
+
+    // already generated
+    if (details != null) return;
 
     // generate module details
     details = new List<Detail>();
@@ -613,64 +669,6 @@ public sealed class ConfigureSetup
       details.Add(new Detail("<b><color=#00ffff>Extra</color></b>"));
       if (mass > double.Epsilon) details.Add(new Detail("mass", Lib.HumanReadableMass(mass)));
       if (cost > double.Epsilon) details.Add(new Detail("cost", Lib.HumanReadableCost(cost)));
-    }
-  }
-
-  public ConfigureSetup(ReadArchive archive)
-  {
-    // load basic data
-    archive.load(out name);
-    archive.load(out desc);
-    archive.load(out tech);
-    archive.load(out cost);
-    archive.load(out mass);
-
-    // load modules
-    int count;
-    archive.load(out count);
-    modules = new List<ConfigureModule>(count);
-    while(count-- > 0) modules.Add(new ConfigureModule(archive));
-
-    // load resources
-    archive.load(out count);
-    resources = new List<ConfigureResource>(count);
-    while(count-- > 0) resources.Add(new ConfigureResource(archive));
-
-    // load details
-    archive.load(out count);
-    details = new List<Detail>(count);
-    while(count-- > 0)
-    {
-      Detail det = new Detail();
-      archive.load(out det.label);
-      archive.load(out det.value);
-      details.Add(det);
-    }
-  }
-
-  public void save(WriteArchive archive)
-  {
-    // save basic data
-    archive.save(name);
-    archive.save(desc);
-    archive.save(tech);
-    archive.save(cost);
-    archive.save(mass);
-
-    // save modules
-    archive.save(modules.Count);
-    foreach(ConfigureModule m in modules) m.save(archive);
-
-    // save resources
-    archive.save(resources.Count);
-    foreach(ConfigureResource r in resources) r.save(archive);
-
-    // save details
-    archive.save(details.Count);
-    foreach(Detail det in details)
-    {
-      archive.save(det.label);
-      archive.save(det.value);
     }
   }
 
