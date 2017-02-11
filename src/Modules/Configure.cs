@@ -397,9 +397,14 @@ public sealed class Configure : PartModule, IPartCostModifier, IPartMassModifier
       string tech_id = pair.Key;
       List<string> setup_names = pair.Value;
 
+      // get tech title
+      // note: non-stock technologies will return empty titles, so we use tech-id directly in that case
+      string tech_title = ResearchAndDevelopment.GetTechnologyTitle(tech_id).ToLower();
+      tech_title = !string.IsNullOrEmpty(tech_title) ? tech_title : tech_id;
+
       // add tech name
       specs.add(string.Empty);
-      specs.add(Lib.BuildString("<color=#00ffff>", ResearchAndDevelopment.GetTechnologyTitle(tech_id).ToLower(), ":</color>"));
+      specs.add(Lib.BuildString("<color=#00ffff>", tech_title, ":</color>"));
 
       // add setup names
       foreach(string setup_name in setup_names)
