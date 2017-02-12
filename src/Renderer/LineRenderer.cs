@@ -13,7 +13,7 @@ public static class LineRenderer
   public static void init()
   {
     // load shader
-    mat = Lib.GetShader("aa_line");
+    mat = Lib.GetShader("AntiAliasedLine");
   }
 
 

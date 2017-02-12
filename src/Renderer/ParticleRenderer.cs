@@ -13,7 +13,7 @@ public static class ParticleRenderer
   public static void init()
   {
     // load shader
-    mat = Lib.GetShader("full_point_particle");
+    mat = Lib.GetShader("FullPointParticle");
 
     // create mesh
     mesh = new Mesh();
