@@ -10,7 +10,7 @@ public class KerbalData
 {
   public KerbalData()
   {
-    resque     = true;
+    rescue     = true;
     disabled   = false;
     eva_dead   = false;
     rules      = new Dictionary<string, RuleData>();
@@ -18,7 +18,7 @@ public class KerbalData
 
   public KerbalData(ConfigNode node)
   {
-    resque     = Lib.ConfigValue(node, "resque", true);
+    rescue     = Lib.ConfigValue(node, "rescue", Lib.ConfigValue(node, "resque", true)); //< support pre 1.1.9 typo
     disabled   = Lib.ConfigValue(node, "disabled", false);
     eva_dead   = Lib.ConfigValue(node, "eva_dead", false);
     rules      = new Dictionary<string, RuleData>();
@@ -31,7 +31,7 @@ public class KerbalData
 
   public void save(ConfigNode node)
   {
-    node.AddValue("resque", resque);
+    node.AddValue("rescue", rescue);
     node.AddValue("disabled", disabled);
     node.AddValue("eva_dead", eva_dead);
     var rules_node = node.AddNode("rules");
@@ -51,7 +51,7 @@ public class KerbalData
     return rules[name];
   }
 
-  public bool resque;         // used to deal with resque mission kerbals
+  public bool rescue;         // used to deal with rescue mission kerbals
   public bool disabled;       // a generic flag to disable resource consumption, for use by other mods
   public bool eva_dead;       // the eva kerbal died, and is now a floating body
   public Dictionary<string, RuleData> rules; // rules data

@@ -158,11 +158,11 @@ public static class Profile
   }
 
 
-  public static void SetupResque(Vessel v)
+  public static void SetupRescue(Vessel v)
   {
     foreach(Supply supply in supplies)
     {
-      supply.SetupResque(v);
+      supply.SetupRescue(v);
     }
   }
 

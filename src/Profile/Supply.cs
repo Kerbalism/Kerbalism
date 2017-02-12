@@ -12,7 +12,7 @@ public sealed class Supply
     resource = Lib.ConfigValue(node, "resource", string.Empty);
     on_pod = Lib.ConfigValue(node, "on_pod", 0.0);
     on_eva = Lib.ConfigValue(node, "on_eva", 0.0);
-    on_resque = Lib.ConfigValue(node, "on_resque", 0.0);
+    on_rescue = Lib.ConfigValue(node, "on_rescue", Lib.ConfigValue(node, "on_resque", 0.0)); //< old typo, pre 1.1.9
     empty = Lib.ConfigValue(node, "empty", false);
 
     low_threshold = Lib.ConfigValue(node, "low_threshold", 0.15);
@@ -110,10 +110,10 @@ public sealed class Supply
   }
 
 
-  public void SetupResque(Vessel v)
+  public void SetupRescue(Vessel v)
   {
     // do nothing if no resource on resque
-    if (on_resque <= double.Epsilon) return;
+    if (on_rescue <= double.Epsilon) return;
 
     // if the vessel has no capacity
     if (ResourceCache.Info(v, resource).capacity <= double.Epsilon)
@@ -122,11 +122,11 @@ public sealed class Supply
       Part p = v.parts.Find(k => k.CrewCapacity > 0 || k.FindModuleImplementing<KerbalEVA>() != null);
 
       // add capacity
-      Lib.AddResource(p, resource, 0.0, on_resque);
+      Lib.AddResource(p, resource, 0.0, on_rescue);
     }
 
     // add resource to the vessel
-    ResourceCache.Produce(v, resource, on_resque);
+    ResourceCache.Produce(v, resource, on_rescue);
   }
 
 
@@ -134,7 +134,7 @@ public sealed class Supply
   public string resource;                           // name of resource
   public double on_pod;                             // how much resource to add to manned parts, per-kerbal
   public double on_eva;                             // how much resource to take on eva, if any
-  public double on_resque;                          // how much resource to gift to resque missions
+  public double on_rescue;                          // how much resource to gift to rescue missions
   public bool   empty;                              // set initial amount to zero
 
   public double low_threshold;                      // threshold of resource level used to show low messages and yellow status color
@@ -142,9 +142,6 @@ public sealed class Supply
   public string empty_message;                      // .
   public string refill_message;                     // .
 }
-
-
-
 
 
 } // KERBALISM

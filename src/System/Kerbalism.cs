@@ -345,17 +345,17 @@ public static class Misc
       KerbalData kd = DB.Kerbal(c.name);
 
       // flag the kerbal as not resque at prelaunch
-      if (v.situation == Vessel.Situations.PRELAUNCH) kd.resque = false;
+      if (v.situation == Vessel.Situations.PRELAUNCH) kd.rescue = false;
 
       // if the kerbal belong to a resque mission
-      if (kd.resque)
+      if (kd.rescue)
       {
         // remember it
         detected = true;
 
         // flag the kerbal as non-resque
         // note: enable life support mechanics for the kerbal
-        kd.resque = false;
+        kd.rescue = false;
 
         // show a message
         Message.Post(Lib.BuildString("We found <b>", c.name, "</b>"), Lib.BuildString((c.gender == ProtoCrewMember.Gender.Male ? "He" : "She"), "'s still alive!"));
@@ -385,7 +385,7 @@ public static class Misc
       ResourceCache.Produce(v, monoprop_name, monoprop_amount);
 
       // give the vessel some supplies
-      Profile.SetupResque(v);
+      Profile.SetupRescue(v);
     }
   }
 
@@ -468,16 +468,16 @@ public static class Misc
 
 
   // return true if the vessel is a resque mission
-  public static bool IsResqueMission(Vessel v)
+  public static bool IsRescueMission(Vessel v)
   {
     // if at least one of the crew is flagged as resque, consider it a resque mission
     foreach(var c in Lib.CrewList(v))
     {
-      if (DB.Kerbal(c.name).resque) return true;
+      if (DB.Kerbal(c.name).rescue) return true;
     }
 
 
-    // not a resque mission
+    // not a rescue mission
     return false;
   }
 
