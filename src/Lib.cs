@@ -1268,18 +1268,38 @@ public static class Lib
   }
 
   // get a material with the shader specified
-  static AssetBundle shaders;
+  static Dictionary<string, Material> shaders;
   public static Material GetShader(string name)
   {
     if (shaders == null)
     {
+      shaders = new Dictionary<string, Material>();
       string platform = "windows";
       if (Application.platform == RuntimePlatform.LinuxPlayer) platform = "linux";
       else if (Application.platform == RuntimePlatform.OSXPlayer) platform = "osx";
-      shaders = new WWW("file://" + KSPUtil.ApplicationRootPath + "GameData/Kerbalism/Shaders/_" + platform).assetBundle;
+      using(WWW bundle = new WWW("file://" + KSPUtil.ApplicationRootPath + "GameData/Kerbalism/Shaders/_" + platform))
+      {
+        if (bundle.error != null)
+        {
+          throw new Exception("shaders bundle not found");
+        }
+        foreach(Shader shader in bundle.assetBundle.LoadAllAssets<Shader>())
+        {
+          shaders.Add(shader.name.Replace("Custom/", string.Empty), new Material(shader));
+        }
+        bundle.assetBundle.Unload(false);
+        bundle.Dispose();
+      }
     }
-    return new Material(shaders.LoadAsset(name + ".shader") as Shader);
+
+    Material mat;
+    if (!shaders.TryGetValue(name, out mat))
+    {
+      throw new Exception("shader " + name + " not found");
+    }
+    return mat;
   }
+
 
 
   // --- CONFIG ---------------------------------------------------------------

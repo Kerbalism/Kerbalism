@@ -438,7 +438,7 @@ public static class Radiation
         if (!Settings.LowQualityRendering)
         {
           // load shader
-          mat = Lib.GetShader("mini_particle");
+          mat = Lib.GetShader("MiniParticle");
 
           // configure shader
           mat.SetColor("POINT_COLOR", new Color(0.33f, 0.33f, 0.33f, 0.1f));
@@ -446,7 +446,7 @@ public static class Radiation
         else
         {
           // load shader
-          mat = Lib.GetShader("point_particle");
+          mat = Lib.GetShader("PointParticle");
 
           // configure shader
           mat.SetColor("POINT_COLOR", new Color(0.33f, 0.33f, 0.33f, 0.1f));
