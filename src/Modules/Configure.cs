@@ -199,17 +199,14 @@ public sealed class Configure : PartModule, IPartCostModifier, IPartMassModifier
         double amount = Lib.Parse.ToDouble(cr.amount);
         double capacity = Lib.Parse.ToDouble(cr.maxAmount);
 
-        // (de)install resource, but only if the following apply
-        // - in the editor
-        // - in flight, reconfigurable and not first time it is configured
-        if (Lib.IsEditor() || (reconfigure_cs && initialized))
+        // (de)install resource
+        if ((prev_active != (active && capacity > 0.0)) || (reconfigure_cs && initialized))
         {
           // if previously selected
           if (prev_active)
           {
             // remove the resources
-            // - in flight, do not remove amount
-            Lib.RemoveResource(part, cr.name, Lib.IsFlight() ? 0.0 : amount, capacity);
+            Lib.RemoveResource(part, cr.name, amount, capacity);
           }
 
           // if selected
