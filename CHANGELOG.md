@@ -4,6 +4,14 @@
   - SoundingRockets support patch by ValynEritai
   - BluedogDesignBureau support patch by ValynEritai & Maxzhao1999
   - OrbitalScience sigint antenna support patch by alaxandir
+  - fuel cell consume only on-demand
+  - increased amount of resources on_rescue
+  - waste processor can be toggled on/off
+  - rebalanced ECLSS modules, capacity now proportional to crew capacity
+  - rebalanced climatization: less EC cost, longer degeneration time
+  - greenhouse has integrated pressure control
+  - fix: amount of configurable resources is reset after vessel load in editor
+  - fix: wrong capacity in ISRU setups
   - fix: missing setup details in Configure window when module is defined after (#57)
   - fix: missing name of non-stock tech in Configure module part tooltip (#58)
   - fix: asset bundle loading cause problems in HullCam/KronalVesselViewer (#66)
