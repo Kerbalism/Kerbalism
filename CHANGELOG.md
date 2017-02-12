@@ -1,5 +1,14 @@
 #CHANGELOG
 
+1.1.9
+  - SoundingRockets support patch by ValynEritai
+  - BluedogDesignBureau support patch by ValynEritai & Maxzhao1999
+  - OrbitalScience sigint antenna support patch by alaxandir
+  - fix: missing setup details in Configure window when module is defined after (#57)
+  - fix: missing name of non-stock tech in Configure module part tooltip (#58)
+  - fix: asset bundle loading cause problems in HullCam/KronalVesselViewer (#66)
+  - fix: ContractConfigurator packs not working with Laboratory/Antenna module (#68)  
+
 1.1.8
   - the science dialog is back (but can be hidden with settings)
   - stop disabling Science if ScienceRelay is detected
