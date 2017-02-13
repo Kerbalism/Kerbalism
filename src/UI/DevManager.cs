@@ -20,6 +20,12 @@ public static class DevManager
     // if not a valid vessel
     if (!vi.is_valid) return;
 
+    // set metadata
+    p.title(Lib.BuildString(Lib.Ellipsis(v.vesselName, 24), " <color=#cccccc>DEV MANAGER</color>"));
+
+    // time-out simulation
+    if (p.timeout(vi)) return;
+
     // get devices
     Dictionary<uint,Device> devices = Computer.boot(v);
 
@@ -96,9 +102,6 @@ public static class DevManager
     {
       p.content("<i>no devices</i>");
     }
-
-    // set metadata
-    p.title(Lib.BuildString(Lib.Ellipsis(v.vesselName, 24), " <color=#cccccc>DEV MANAGER</color>"));
   }
 
   // return short description of a script, or the time-out message

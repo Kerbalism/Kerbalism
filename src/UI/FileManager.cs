@@ -22,6 +22,13 @@ public static class FileManager
     // if not a valid vessel, leave the panel empty
     if (!vi.is_valid) return;
 
+    // set metadata
+    p.title(Lib.BuildString(Lib.Ellipsis(v.vesselName, 20), " <color=#cccccc>FILE MANAGER</color>"));
+    p.width(320.0f);
+
+    // time-out simulation
+    if (p.timeout(vi)) return;
+
     // get vessel drive
     Drive drive = DB.Vessel(v).drive;
 
@@ -44,10 +51,6 @@ public static class FileManager
       render_sample(p, filename, sample, drive);
     }
     if (drive.samples.Count == 0) p.content("<i>no samples</i>", string.Empty);
-
-    // set metadata
-    p.title(Lib.BuildString(Lib.Ellipsis(v.vesselName, 20), " <color=#cccccc>FILE MANAGER</color>"));
-    p.width(320.0f);
   }
 
   static void render_file(Panel p, string filename, File file, Drive drive)

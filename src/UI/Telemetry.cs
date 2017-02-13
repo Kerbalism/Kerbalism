@@ -19,6 +19,12 @@ public static class Telemetry
     // if not a valid vessel
     if (!vi.is_valid) return;
 
+    // set metadata
+    p.title(Lib.BuildString(Lib.Ellipsis(v.vesselName, 20), " <color=#cccccc>TELEMETRY</color>"));
+
+    // time-out simulation
+    if (p.timeout(vi)) return;
+
     // get vessel data
     VesselData vd = DB.Vessel(v);
 
@@ -37,9 +43,6 @@ public static class Telemetry
 
     // collapse eva kerbal sections into one
     if (v.isEVA) p.collapse("EVA SUIT");
-
-    // set metadata
-    p.title(Lib.BuildString(Lib.Ellipsis(v.vesselName, 20), " <color=#cccccc>TELEMETRY</color>"));
   }
 
 
@@ -47,8 +50,8 @@ public static class Telemetry
   {
     // don't show env panel in eva kerbals
     if (v.isEVA) return;
-    
-    // get all sensor readings     
+
+    // get all sensor readings
     HashSet<string> readings = new HashSet<string>();
     if (v.loaded)
     {
@@ -65,8 +68,8 @@ public static class Telemetry
       }
     }
     readings.Remove(string.Empty);
-      
-    p.section("ENVIRONMENT");      
+
+    p.section("ENVIRONMENT");
     foreach(string type in readings)
     {
       p.content(type, Sensor.telemetry_content(v, vi, type), Sensor.telemetry_tooltip(v, vi, type));

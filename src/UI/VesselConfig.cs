@@ -19,6 +19,12 @@ public static class VesselConfig
     // if not a valid vessel, leave the panel empty
     if (!vi.is_valid) return;
 
+    // set metadata
+    p.title(Lib.BuildString(Lib.Ellipsis(v.vesselName, 20), " <color=#cccccc>VESSEL CONFIG</color>"));
+
+    // time-out simulation
+    if (p.timeout(vi)) return;
+
     // get data from db
     VesselData vd = DB.Vessel(v);
 
@@ -76,9 +82,6 @@ public static class VesselConfig
       p.content("script", string.Empty, tooltip);
       p.icon(vd.cfg_script ? Icons.toggle_green : Icons.toggle_red, tooltip, () => p.toggle(ref vd.cfg_script));
     }
-
-    // set metadata
-    p.title(Lib.BuildString(Lib.Ellipsis(v.vesselName, 20), " <color=#cccccc>VESSEL CONFIG</color>"));
   }
 }
 
