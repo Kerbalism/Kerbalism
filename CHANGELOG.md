@@ -4,13 +4,15 @@
   - SoundingRockets support patch by ValynEritai
   - BluedogDesignBureau support patch by ValynEritai & Maxzhao1999
   - OrbitalScience sigint antenna support patch by alaxandir
-  - fuel cell consume only on-demand
   - increased amount of resources on_rescue
   - waste processor can be toggled on/off
   - rebalanced ECLSS modules, capacity now proportional to crew capacity
   - rebalanced climatization: less EC cost, longer degeneration time
   - greenhouse has integrated pressure control
   - monitor panels require a connection on unmanned vessels
+  - only remove stock conversions from ISRU, don't touch third-party ones
+  - there is now an Extra/ folder containing patches not enabled by default
+  - ad-hoc habitat volume/surfaces for all stock parts and a ton of other ones, by schrema
   - fix: amount of configurable resources is reset after vessel load in editor
   - fix: wrong capacity in ISRU setups
   - fix: wrong savegame version saved
