@@ -21,9 +21,11 @@ public static class Lib
   }
 
   // return version as a string
+  static string _version;
   public static string Version()
   {
-    return Assembly.GetExecutingAssembly().GetName().Version.ToString();
+    if (_version == null) _version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+    return _version;
   }
 
   // return true if an assembly with specified name is loaded

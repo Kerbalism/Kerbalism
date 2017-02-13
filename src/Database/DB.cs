@@ -70,7 +70,7 @@ public static class DB
   public static void save(ConfigNode node)
   {
     // save version
-    node.AddValue("version", version);
+    node.AddValue("version", Lib.Version());
 
     // save unique id
     node.AddValue("uid", uid);
