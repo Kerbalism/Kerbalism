@@ -60,10 +60,11 @@ public sealed class Monitor
     // get vessel
     selected_v = selected_id == Guid.Empty ? null : FlightGlobals.FindVessel(selected_id);
 
-    // if nothing is selected
-    if (selected_v == null)
+    // if nothing is selected, or if the selected vessel doesn't exist
+    // anymore, or if it has become invalid for whatever reason
+    if (selected_v == null || !Cache.VesselInfo(selected_v).is_valid)
     {
-      // forget the vessel, if it doesn't exist anymore
+      // forget the selected vessel, if any
       selected_id = Guid.Empty;
 
       // filter flag is updated on render_vessel
