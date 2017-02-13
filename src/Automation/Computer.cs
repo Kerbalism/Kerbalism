@@ -263,7 +263,11 @@ public sealed class Computer
         }
 
         // add the device
-        devices.Add(dev.id(), dev);
+        // - multiple same-type components in the same part will have the same id, and are ignored
+        if (!devices.ContainsKey(dev.id()))
+        {
+          devices.Add(dev.id(), dev);
+        }
       }
     }
     // unloaded vessel
@@ -322,7 +326,11 @@ public sealed class Computer
           }
 
           // add the device
-          devices.Add(dev.id(), dev);
+          // - multiple same-type components in the same part will have the same id, and are ignored
+          if (!devices.ContainsKey(dev.id()))
+          {
+            devices.Add(dev.id(), dev);
+          }
         }
       }
     }
