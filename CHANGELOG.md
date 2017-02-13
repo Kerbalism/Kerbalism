@@ -10,10 +10,14 @@
   - rebalanced ECLSS modules, capacity now proportional to crew capacity
   - rebalanced climatization: less EC cost, longer degeneration time
   - greenhouse has integrated pressure control
+  - monitor panels require a connection on unmanned vessels
   - fix: amount of configurable resources is reset after vessel load in editor
   - fix: wrong capacity in ISRU setups
+  - fix: wrong savegame version saved
   - fix: missing setup details in Configure window when module is defined after (#57)
   - fix: missing name of non-stock tech in Configure module part tooltip (#58)
+  - fix: monitor don't forget selected vessel when flagged as debris after selection (#60)
+  - fix: automation panel throw exception on duplicate id (#65)
   - fix: asset bundle loading cause problems in HullCam/KronalVesselViewer (#66)
   - fix: ContractConfigurator packs not working with Laboratory/Antenna module (#68)  
 
