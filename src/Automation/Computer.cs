@@ -99,11 +99,8 @@ public sealed class Computer
     // do nothing if automation is disabled
     if (!Features.Automation) return;
 
-    // do nothing if there is no EC left on the vessel
-    resource_info ec = resources.Info(v, "ElectricCharge");
-    if (ec.amount <= double.Epsilon) return;
-
     // get current states
+    resource_info ec = resources.Info(v, "ElectricCharge");
     bool sunlight = vi.sunlight > double.Epsilon;
     bool power_low = ec.level < 0.2;
     bool power_high = ec.level > 0.8;
