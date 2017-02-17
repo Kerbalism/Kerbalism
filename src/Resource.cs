@@ -111,19 +111,32 @@ public sealed class resource_info
       if (!meal_happened) rate = Lib.Clamp(deferred, -amount, capacity - amount) / elapsed_s;
 
       // syncronize the amount to the vessel
+      double new_amount = 0.0;
+      capacity = 0.0;
       foreach(ProtoPartSnapshot pps in v.protoVessel.protoPartSnapshots)
       {
         foreach(ProtoPartResourceSnapshot res in pps.resources)
         {
           if (res.resourceName == resource_name && res.flowState)
           {
-            double new_amount = Lib.Clamp(res.amount + deferred, 0.0, res.maxAmount);
-            deferred -= new_amount - res.amount;
-            res.amount = new_amount;
-            if (Math.Abs(deferred) < 0.0000001) break;
+            // get amount/capacity
+            new_amount += res.amount;
+            capacity += res.maxAmount;
+
+            // apply deferred
+            if (Math.Abs(deferred) > 0.0000001)
+            {
+              double amount_diff = Lib.Clamp(res.amount + deferred, 0.0, res.maxAmount) - res.amount;
+              res.amount += amount_diff;
+              deferred -= amount_diff;
+            }
+            if (res.amount < 0.0000001) res.amount = 0.0;
           }
         }
       }
+
+      // update amount
+      amount = new_amount;
     }
 
     // recalculate level
