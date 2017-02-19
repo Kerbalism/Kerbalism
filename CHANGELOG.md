@@ -1,5 +1,15 @@
 #CHANGELOG
 
+1.2.0
+  - process: it is possible to specify the set of output resources that can be dumped overboard
+  - background/planner simulation of stock converter module support DumpExcess flag
+  - fuel cell, water recycler and waste processor adapt consumption to required production
+  - reduced atmosphere leak rate by 80%
+  - allow scripts to be executed even without electric charge
+  - fix: do not allow stock science lab modules around when Science is enabled
+  - fix: toggling processes on unloaded vessels using automation doesn't really toggle it (#71)
+
+
 1.1.9
   - SoundingRockets support patch by ValynEritai
   - BluedogDesignBureau support patch by ValynEritai & Maxzhao1999
@@ -21,7 +31,7 @@
   - fix: monitor don't forget selected vessel when flagged as debris after selection (#60)
   - fix: automation panel throw exception on duplicate id (#65)
   - fix: asset bundle loading cause problems in HullCam/KronalVesselViewer (#66)
-  - fix: ContractConfigurator packs not working with Laboratory/Antenna module (#68)  
+  - fix: ContractConfigurator packs not working with Laboratory/Antenna module (#68)
 
 1.1.8
   - the science dialog is back (but can be hidden with settings)
