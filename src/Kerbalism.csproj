@@ -134,6 +134,7 @@
     <Compile Include="UI\FileManager.cs" />
     <Compile Include="UI\Icons.cs" />
     <Compile Include="UI\Panel.cs" />
+    <Compile Include="UI\TimedOut.cs" />
     <Compile Include="UI\Window.cs" />
     <Compile Include="UI\Launcher.cs" />
     <Compile Include="UI\Message.cs" />
@@ -164,6 +165,7 @@
     <Compile Include="Utility\Animator.cs" />
     <Compile Include="Utility\Archive.cs" />
     <Compile Include="Utility\CrewSpecs.cs" />
+    <Compile Include="Utility\DumpSpec.cs" />
     <Compile Include="Utility\Highlighter.cs" />
     <Compile Include="Utility\Profiler.cs" />
     <Compile Include="Utility\Space.cs" />

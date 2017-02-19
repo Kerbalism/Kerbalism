@@ -190,22 +190,23 @@ public sealed class resource_recipe
 {
   public struct entry
   {
-    public entry(string name, double quantity)
+    public entry(string name, double quantity, bool dump=true)
     {
       this.name = name;
       this.quantity = quantity;
       this.inv_quantity = 1.0 / quantity;
+      this.dump = dump;
     }
     public string name;
     public double quantity;
     public double inv_quantity;
+    public bool   dump;
   }
 
-  public resource_recipe(bool dump = false)
+  public resource_recipe()
   {
     this.inputs = new List<entry>();
     this.outputs = new List<entry>();
-    this.dump = dump;
     this.left = 1.0;
   }
 
@@ -219,11 +220,11 @@ public sealed class resource_recipe
   }
 
   // add an output to the recipe
-  public void Output(string resource_name, double quantity)
+  public void Output(string resource_name, double quantity, bool dump)
   {
     if (quantity > double.Epsilon) //< avoid division by zero
     {
-      outputs.Add(new entry(resource_name, quantity));
+      outputs.Add(new entry(resource_name, quantity, dump));
     }
   }
 
@@ -244,16 +245,18 @@ public sealed class resource_recipe
     }
 
     // determine worst output ratio
-    // note: pure output recipes can just overflow
-    // note: recipes that dump overboard can just overflow
+    // - pure output recipes can just overflow
     double worst_output = left;
-    if (inputs.Count > 0 && !dump)
+    if (inputs.Count > 0)
     {
       for(int i=0; i<outputs.Count; ++i)
       {
         entry e = outputs[i];
-        resource_info res = resources.Info(v, e.name);
-        worst_output = Lib.Clamp((res.capacity - (res.amount + res.deferred)) * e.inv_quantity, 0.0, worst_output);
+        if (!e.dump) // ignore outputs that can dump overboard
+        {
+          resource_info res = resources.Info(v, e.name);
+          worst_output = Lib.Clamp((res.capacity - (res.amount + res.deferred)) * e.inv_quantity, 0.0, worst_output);
+        }
       }
     }
 
@@ -284,10 +287,8 @@ public sealed class resource_recipe
 
   public List<entry>  inputs;   // set of input resources
   public List<entry>  outputs;  // set of output resources
-  public bool         dump;     // dump excess output if true
   public double       left;     // what proportion of the recipe is left to execute
 }
-
 
 
 // the resource cache of a vessel

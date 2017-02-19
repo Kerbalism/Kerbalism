@@ -207,7 +207,7 @@ public static class Background
       }
       foreach(ModuleResource or in generator.resHandler.outputResources)
       {
-        recipe.Output(or.name, or.rate * elapsed_s);
+        recipe.Output(or.name, or.rate * elapsed_s, true);
       }
       resources.Transform(recipe);
     }
@@ -221,9 +221,6 @@ public static class Background
     // note: using hard-coded crew bonus values from the wiki because the module data make zero sense (DERP ALERT)
     // note: non-mandatory resources 'dynamically scale the ratios', that is exactly what mandatory resources do too (DERP ALERT)
     // note: 'undo' stock behaviour by forcing lastUpdateTime to now (to minimize overlapping calculations from this and stock post-facto simulation)
-    // note: support PlanetaryBaseSystem converters
-    // note: support NearFuture reactors
-    // note: assume dump overboard is false for all outputs
 
     // if active
     if (Lib.Proto.GetBool(m, "IsActivated"))
@@ -262,7 +259,7 @@ public static class Background
         }
         foreach(var or in converter.outputList)
         {
-          recipe.Output(or.ResourceName, or.Ratio * exp_bonus * elapsed_s);
+          recipe.Output(or.ResourceName, or.Ratio * exp_bonus * elapsed_s, or.DumpExcess);
         }
         resources.Transform(recipe);
       }
@@ -324,7 +321,7 @@ public static class Background
           {
             recipe.Input(ir.ResourceName, ir.Ratio * elapsed_s);
           }
-          recipe.Output(harvester.ResourceName, abundance * harvester.Efficiency * exp_bonus * elapsed_s);
+          recipe.Output(harvester.ResourceName, abundance * harvester.Efficiency * exp_bonus * elapsed_s, true);
           resources.Transform(recipe);
         }
       }
@@ -388,7 +385,7 @@ public static class Background
           // transform EC into mined resource
           resource_recipe recipe = new resource_recipe();
           recipe.Input("ElectricCharge", asteroid_drill.PowerConsumption * elapsed_s);
-          recipe.Output(res_name, res_amount);
+          recipe.Output(res_name, res_amount, true);
           resources.Transform(recipe);
 
           // if there was ec

@@ -551,7 +551,7 @@ public static class Lib
   // pretty-print pressure (value is in kPa)
   public static string HumanReadablePressure(double v)
   {
-    return Lib.BuildString(v.ToString("F0"), " kPa");
+    return Lib.BuildString(v.ToString("F1"), " kPa");
   }
 
   // pretty-print volume (value is in m^3)
