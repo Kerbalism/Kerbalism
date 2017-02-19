@@ -1032,10 +1032,10 @@ public class resource_simulator
     }
     else if (rate > double.Epsilon)
     {
-      // note: rules always dump excess overboard (because it is waste)
-      simulated_recipe recipe = new simulated_recipe(r.name, true);
+      // - rules always dump excess overboard (because it is waste)
+      simulated_recipe recipe = new simulated_recipe(r.name);
       recipe.input(r.input, rate * k);
-      recipe.output(r.output, rate * k * r.ratio);
+      recipe.output(r.output, rate * k * r.ratio, true);
       recipes.Add(recipe);
     }
   }
@@ -1047,14 +1047,14 @@ public class resource_simulator
     double k = Modifiers.evaluate(env, va, this, p.modifiers);
 
     // prepare recipe
-    simulated_recipe recipe = new simulated_recipe(p.name, p.dump);
+    simulated_recipe recipe = new simulated_recipe(p.name);
     foreach(var input in p.inputs)
     {
       recipe.input(input.Key, input.Value * k);
     }
     foreach(var output in p.outputs)
     {
-      recipe.output(output.Key, output.Value * k);
+      recipe.output(output.Key, output.Value * k, p.dump.check(output.Key));
     }
     recipes.Add(recipe);
   }
@@ -1081,9 +1081,9 @@ public class resource_simulator
     }
 
     // execute recipe
-    simulated_recipe recipe = new simulated_recipe("greenhouse", true);
+    simulated_recipe recipe = new simulated_recipe("greenhouse");
     foreach(ModuleResource input in g.resHandler.inputResources) recipe.input(input.name, input.rate);
-    foreach(ModuleResource output in g.resHandler.outputResources) recipe.output(output.name, output.rate);
+    foreach(ModuleResource output in g.resHandler.outputResources) recipe.output(output.name, output.rate, true);
     recipes.Add(recipe);
 
     // determine environment conditions
@@ -1120,9 +1120,9 @@ public class resource_simulator
   {
     if (harvester.running)
     {
-      simulated_recipe recipe = new simulated_recipe("harvester", true);
+      simulated_recipe recipe = new simulated_recipe("harvester");
       if (harvester.ec_rate > double.Epsilon) recipe.input("ElectricCharge", harvester.ec_rate);
-      recipe.output(harvester.resource, harvester.rate);
+      recipe.output(harvester.resource, harvester.rate, true);
       recipes.Add(recipe);
     }
   }
@@ -1142,8 +1142,8 @@ public class resource_simulator
   {
     resource("ElectricCharge").consume(antenna.cost, "transmission");
   }
-  
-  
+
+
   void process_experiment(Experiment exp)
   {
     if (exp.recording)
@@ -1181,7 +1181,7 @@ public class resource_simulator
      }
      foreach(ModuleResource res in generator.resHandler.outputResources)
      {
-       recipe.output(res.name, res.rate);
+       recipe.output(res.name, res.rate, true);
      }
      recipes.Add(recipe);
   }
@@ -1196,7 +1196,7 @@ public class resource_simulator
     }
     foreach(ResourceRatio res in converter.outputList)
     {
-      recipe.output(res.ResourceName, res.Ratio);
+      recipe.output(res.ResourceName, res.Ratio, res.DumpExcess);
     }
     recipes.Add(recipe);
   }
@@ -1209,7 +1209,7 @@ public class resource_simulator
     {
       recipe.input(res.ResourceName, res.Ratio);
     }
-    recipe.output(harvester.ResourceName, harvester.Efficiency);
+    recipe.output(harvester.ResourceName, harvester.Efficiency, true);
     recipes.Add(recipe);
   }
 
@@ -1409,12 +1409,11 @@ public sealed class simulated_resource
 
 public sealed class simulated_recipe
 {
-  public simulated_recipe(string name, bool dump = false)
+  public simulated_recipe(string name)
   {
     this.name = name;
     this.inputs = new List<resource_recipe.entry>();
     this.outputs = new List<resource_recipe.entry>();
-    this.dump = dump;
     this.left = 1.0;
   }
 
@@ -1428,11 +1427,11 @@ public sealed class simulated_recipe
   }
 
   // add an output to the recipe
-  public void output(string resource_name, double quantity)
+  public void output(string resource_name, double quantity, bool dump)
   {
     if (quantity > double.Epsilon) //< avoid division by zero
     {
-      outputs.Add(new resource_recipe.entry(resource_name, quantity));
+      outputs.Add(new resource_recipe.entry(resource_name, quantity, dump));
     }
   }
 
@@ -1453,13 +1452,16 @@ public sealed class simulated_recipe
 
     // determine worst output ratio
     double worst_output = left;
-    if (inputs.Count > 0 && !dump) //< ignore if dumping overboard
+    if (inputs.Count > 0)
     {
       for(int i=0; i<outputs.Count; ++i)
       {
         var e = outputs[i];
-        simulated_resource res = sim.resource(e.name);
-        worst_output = Lib.Clamp((res.capacity - res.amount) * e.inv_quantity, 0.0, worst_output);
+        if (!e.dump) // ignore outputs that can dump overboard
+        {
+          simulated_resource res = sim.resource(e.name);
+          worst_output = Lib.Clamp((res.capacity - res.amount) * e.inv_quantity, 0.0, worst_output);
+        }
       }
     }
 
@@ -1493,7 +1495,6 @@ public sealed class simulated_recipe
   public string name;                         // name used for consumer/producer tooltip
   public List<resource_recipe.entry> inputs;  // set of input resources
   public List<resource_recipe.entry> outputs; // set of output resources
-  public bool dump;                           // dump excess output if true
   public double left;                         // what proportion of the recipe is left to execute
 }
 

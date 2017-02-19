@@ -85,24 +85,15 @@ public static class Telemetry
     // if vessel is unmanned, do not show the panel
     if (vi.crew_count == 0) return;
 
-    // determine some content, with colors
-    string pressure_str = Lib.Color(Lib.HumanReadablePressure(vi.pressure * Sim.PressureAtSeaLevel()), vi.pressure < Settings.PressureThreshold, "yellow");
-    string poisoning_str = Lib.Color(Lib.HumanReadablePerc(vi.poisoning, "F2"), vi.poisoning > Settings.PoisoningThreshold * 0.5, "yellow");
-
     // render panel, add some content based on enabled features
+    p.section("HABITAT");
+    if (Features.Poisoning) p.content("co2 level", Lib.Color(Lib.HumanReadablePerc(vi.poisoning, "F2"), vi.poisoning > Settings.PoisoningThreshold, "yellow"));
     if (!v.isEVA)
     {
-      p.section("HABITAT");
-      if (Features.Pressure) p.content("pressure", pressure_str);
-      if (Features.Poisoning) p.content("co2 level", poisoning_str);
+      if (Features.Pressure) p.content("pressure", Lib.HumanReadablePressure(vi.pressure * Sim.PressureAtSeaLevel()));
       if (Features.Shielding) p.content("shielding", Habitat.shielding_to_string(vi.shielding));
       if (Features.LivingSpace) p.content("living space", Habitat.living_space_to_string(vi.living_space));
       if (Features.Comfort) p.content("comfort", vi.comforts.summary(), vi.comforts.tooltip());
-    }
-    else
-    {
-      p.section("HABITAT");
-      if (Features.Poisoning) p.content("co2 level", poisoning_str);
     }
   }
 

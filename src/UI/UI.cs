@@ -13,7 +13,7 @@ public static class UI
     // create subsystems
     message  = new Message();
     launcher = new Launcher();
-    window   = new Window(260u, 80u, 80u);
+    window   = new Window(260u, 280u, 100u);
   }
 
   public static void update(bool show_window)
