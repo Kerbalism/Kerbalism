@@ -1175,52 +1175,85 @@ public static class Lib
   // return true if there is experiment data on the vessel
   public static bool HasData(Vessel v)
   {
-    // if vessel is loaded
-    if (v.loaded)
+    // stock science system
+    if (!Features.Science)
     {
-      // iterate over all science containers/experiments and return true if there is data
-      return Lib.HasModule<IScienceDataContainer>(v, k => k.GetData().Length > 0);
+      // if vessel is loaded
+      if (v.loaded)
+      {
+        // iterate over all science containers/experiments and return true if there is data
+        return Lib.HasModule<IScienceDataContainer>(v, k => k.GetData().Length > 0);
+      }
+      // if not loaded
+      else
+      {
+        // iterate over all science containers/experiments proto modules and return true if there is data
+        return Lib.HasModule(v.protoVessel, "ModuleScienceContainer", k => k.moduleValues.GetNodes("ScienceData").Length > 0)
+            || Lib.HasModule(v.protoVessel, "ModuleScienceExperiment", k => k.moduleValues.GetNodes("ScienceData").Length > 0);
+      }
     }
-    // if not loaded
+    // our own science system
     else
     {
-      // iterate over all science containers/experiments proto modules and return true if there is data
-      return Lib.HasModule(v.protoVessel, "ModuleScienceContainer", k => k.moduleValues.GetNodes("ScienceData").Length > 0)
-          || Lib.HasModule(v.protoVessel, "ModuleScienceExperiment", k => k.moduleValues.GetNodes("ScienceData").Length > 0);
+      return DB.Vessel(v).drive.files.Count > 0;
     }
   }
 
   // remove one experiment at random from the vessel
   public static void RemoveData(Vessel v)
   {
-    // if vessel is loaded
-    if (v.loaded)
+    // stock science system
+    if (!Features.Science)
     {
-      // get all science containers/experiments with data
-      List<IScienceDataContainer> modules = Lib.FindModules<IScienceDataContainer>(v).FindAll(k => k.GetData().Length > 0);
-
-      // remove a data sample at random
-      if (modules.Count > 0)
+      // if vessel is loaded
+      if (v.loaded)
       {
-        IScienceDataContainer container = modules[Lib.RandomInt(modules.Count)];
-        ScienceData[] data = container.GetData();
-        container.DumpData(data[Lib.RandomInt(data.Length)]);
+        // get all science containers/experiments with data
+        List<IScienceDataContainer> modules = Lib.FindModules<IScienceDataContainer>(v).FindAll(k => k.GetData().Length > 0);
+
+        // remove a data sample at random
+        if (modules.Count > 0)
+        {
+          IScienceDataContainer container = modules[Lib.RandomInt(modules.Count)];
+          ScienceData[] data = container.GetData();
+          container.DumpData(data[Lib.RandomInt(data.Length)]);
+        }
+      }
+      // if not loaded
+      else
+      {
+        // get all science containers/experiments with data
+        var modules = new List<ProtoPartModuleSnapshot>();
+        modules.AddRange(Lib.FindModules(v.protoVessel, "ModuleScienceContainer").FindAll(k => k.moduleValues.GetNodes("ScienceData").Length > 0));
+        modules.AddRange(Lib.FindModules(v.protoVessel, "ModuleScienceExperiment").FindAll(k => k.moduleValues.GetNodes("ScienceData").Length > 0));
+
+        // remove a data sample at random
+        if (modules.Count > 0)
+        {
+          ProtoPartModuleSnapshot container = modules[Lib.RandomInt(modules.Count)];
+          ConfigNode[] data = container.moduleValues.GetNodes("ScienceData");
+          container.moduleValues.RemoveNode(data[Lib.RandomInt(data.Length)]);
+        }
       }
     }
-    // if not loaded
+    // our own science system
     else
     {
-      // get all science containers/experiments with data
-      var modules = new List<ProtoPartModuleSnapshot>();
-      modules.AddRange(Lib.FindModules(v.protoVessel, "ModuleScienceContainer").FindAll(k => k.moduleValues.GetNodes("ScienceData").Length > 0));
-      modules.AddRange(Lib.FindModules(v.protoVessel, "ModuleScienceExperiment").FindAll(k => k.moduleValues.GetNodes("ScienceData").Length > 0));
-
-      // remove a data sample at random
-      if (modules.Count > 0)
+      // select a file at random and remove it
+      Drive drive = DB.Vessel(v).drive;
+      if (drive.files.Count > 0) //< it should always be the case
       {
-        ProtoPartModuleSnapshot container = modules[Lib.RandomInt(modules.Count)];
-        ConfigNode[] data = container.moduleValues.GetNodes("ScienceData");
-        container.moduleValues.RemoveNode(data[Lib.RandomInt(data.Length)]);
+        string filename = string.Empty;
+        int i = Lib.RandomInt(drive.files.Count);
+        foreach(var pair in drive.files)
+        {
+          if (i-- == 0)
+          {
+            filename = pair.Key;
+            break;
+          }
+        }
+        drive.files.Remove(filename);
       }
     }
   }
