@@ -99,9 +99,9 @@ public sealed class Harvester : PartModule, IAnimatedModule, IModuleInfo, ISpeci
 
     if (deployed && running && !starved)
     {
-      resource_recipe recipe = new resource_recipe(true);
+      resource_recipe recipe = new resource_recipe();
       recipe.Input("ElectricCharge", ec_rate * Kerbalism.elapsed_s);
-      recipe.Output(resource, rate * Kerbalism.elapsed_s);
+      recipe.Output(resource, rate * Kerbalism.elapsed_s, true);
       ResourceCache.Transform(vessel, recipe);
     }
   }
@@ -111,9 +111,9 @@ public sealed class Harvester : PartModule, IAnimatedModule, IModuleInfo, ISpeci
   {
     if (Lib.Proto.GetBool(m, "deployed") && Lib.Proto.GetBool(m, "running") && !Lib.Proto.GetBool(m, "starved"))
     {
-      resource_recipe recipe = new resource_recipe(true);
+      resource_recipe recipe = new resource_recipe();
       recipe.Input("ElectricCharge", harvester.ec_rate * elapsed_s);
-      recipe.Output(harvester.resource, harvester.rate * elapsed_s);
+      recipe.Output(harvester.resource, harvester.rate * elapsed_s, true);
       ResourceCache.Transform(v, recipe);
     }
   }
