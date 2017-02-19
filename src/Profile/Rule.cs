@@ -121,10 +121,10 @@ public sealed class Rule
           else
           {
             // transform input into output resource
-            // note: rules always dump excess overboard (because it is waste)
-            resource_recipe recipe = new resource_recipe(true);
+            // - rules always dump excess overboard (because it is waste)
+            resource_recipe recipe = new resource_recipe();
             recipe.Input(input, required);
-            recipe.Output(output, required * ratio);
+            recipe.Output(output, required * ratio, true);
             resources.Transform(recipe);
           }
         }
