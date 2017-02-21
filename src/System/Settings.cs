@@ -64,7 +64,6 @@ public static class Settings
     // signal
     UnlinkedControl             = Lib.ConfigEnum (cfg, "UnlinkedControl",             UnlinkedCtrl.none);
     ExtendedAntenna             = Lib.ConfigValue(cfg, "ExtendedAntenna",             true);
-    ControlRate                 = Lib.ConfigValue(cfg, "ControlRate",                 0.000001); // 1 bps
 
     // science
     ScienceDialog               = Lib.ConfigValue(cfg, "ScienceDialog",               true);
@@ -130,7 +129,6 @@ public static class Settings
   // signal
   public static UnlinkedCtrl UnlinkedControl;             // available control for unlinked vessels: 'none', 'limited' or 'full'
   public static bool   ExtendedAntenna;                   // antenna only work if extended
-  public static double ControlRate;                       // data rate required for control, in Mb/s
 
   // science
   public static bool   ScienceDialog;                     // keep showing the stock science dialog
