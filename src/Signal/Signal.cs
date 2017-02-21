@@ -35,7 +35,7 @@ public static class Signal
     rate = antenna.direct_rate(dist);
 
     // if directly linked
-    if (visible && rate > Settings.ControlRate)
+    if (visible && rate > 0.0)
     {
       ConnectionInfo conn = new ConnectionInfo(LinkStatus.direct_link, rate, antenna.direct_cost);
       connections.Add(conn);
@@ -87,7 +87,7 @@ public static class Signal
       // if indirectly linked
       // - relays with no EC have zero relay_range
       // - avoid relay loops
-      if (visible && rate > Settings.ControlRate && !wi.connection.path.Contains(v))
+      if (visible && rate > 0.0 && !wi.connection.path.Contains(v))
       {
         // create indirect link data
         ConnectionInfo conn = new ConnectionInfo(wi.connection);
