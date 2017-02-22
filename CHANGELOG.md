@@ -6,9 +6,11 @@
   - fuel cell, water recycler and waste processor adapt consumption to required production
   - reduced atmosphere leak rate by 80%
   - allow scripts to be executed even without electric charge
+  - added HardDrive to labs
+  - removed ControlRate setting
+  - fat-finger breakdown event support new Science system (#53)
   - fix: do not allow stock science lab modules around when Science is enabled
   - fix: toggling processes on unloaded vessels using automation doesn't really toggle it (#71)
-
 
 1.1.9
   - SoundingRockets support patch by ValynEritai
