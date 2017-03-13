@@ -54,9 +54,10 @@ public sealed class Planner
     Profile.supplies.FindAll(k => k.resource != "ElectricCharge").ForEach(k => panel_resource.Add(k.resource));
 
     // special panels
+    // - stress & radiation panels require that a rule using the living_space/radiation modifier exist (current limitation)
     panel_special = new List<string>();
-    if (Features.LivingSpace) panel_special.Add("qol");
-    if (Features.Radiation) panel_special.Add("radiation");
+    if (Features.LivingSpace && Profile.rules.Find(k => k.modifiers.Contains("living_space")) != null) panel_special.Add("qol");
+    if (Features.Radiation && Profile.rules.Find(k => k.modifiers.Contains("radiation")) != null) panel_special.Add("radiation");
     if (Features.Reliability) panel_special.Add("reliability");
     if (Features.Signal) panel_special.Add("signal");
 
@@ -88,8 +89,8 @@ public sealed class Planner
 
       // analyze
       env.analyze(body, altitude_mult, sunlight);
-      sim.analyze(parts, env, va);
       va.analyze(parts, sim, env);
+      sim.analyze(parts, env, va);
 
       // ec panel
       render_ec(panel);
@@ -253,7 +254,7 @@ public sealed class Planner
   void render_stress(Panel p)
   {
     // get first living space rule
-    // - guaranteed to exist, as this panel is not rendered without Feature.LivingSpace (that's detected by living space modifier)
+    // - guaranteed to exist, as this panel is not rendered if it doesn't
     // - even without crew, it is safe to evaluate the modifiers that use it
     Rule rule = Profile.rules.Find(k => k.modifiers.Contains("living_space"));
 
@@ -301,7 +302,7 @@ public sealed class Planner
   void render_radiation(Panel p)
   {
     // get first radiation rule
-    // - guaranteed to exist, as this panel is not rendered without Feature.Radiation (that's detected by radiation modifier)
+    // - guaranteed to exist, as this panel is not rendered if it doesn't
     // - even without crew, it is safe to evaluate the modifiers that use it
     Rule rule = Profile.rules.Find(k => k.modifiers.Contains("radiation"));
 
@@ -639,6 +640,13 @@ public sealed class vessel_analyzer
 {
   public void analyze(List<Part> parts, resource_simulator sim, environment_analyzer env)
   {
+    // note: vessel analysis require resource analysis, but at the same time resource analysis
+    // require vessel analysis, so we are using resource analysis from previous frame (that's okay)
+    // in the past, it was the other way around - however that triggered a corner case when va.comforts
+    // was null (because the vessel analysis was still never done) and some specific rule/process
+    // in resource analysis triggered an exception, leading to the vessel analysis never happening
+    // inverting their order avoided this corner-case
+
     analyze_crew(parts);
     analyze_habitat(sim);
     analyze_radiation(parts, sim);
@@ -897,9 +905,6 @@ public class resource_simulator
 {
   public void analyze(List<Part> parts, environment_analyzer env, vessel_analyzer va)
   {
-    // note: resource analysis require vessel analysis, but at the same time vessel analysis
-    // require resource analysis, so we are using vessel analysis from previous frame (that's okay)
-
     // clear previous resource state
     resources.Clear();
 
