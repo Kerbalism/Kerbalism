@@ -493,19 +493,25 @@ public static class Sim
   }
 
 
-  // return true if inside a breathable atmosphere
+  // return true if a vessel is inside a breathable atmosphere
   public static bool Breathable(Vessel v, bool underwater)
   {
-    // atmosphere is breathable if:
-    // - vessel body is the home body
-    // - the body has an atmosphere, and it contain oxygen
-    // - the pressure is above 25kPA
-    // - the vessel is not underwater
+    // a vessel is inside a breathable atmosphere if:
+    // - it is inside an atmosphere
+    // - the atmospheric pressure is above 25kPA
+    // - the body atmosphere is flagged as containing oxygen
+    // - it isn't underwater
     CelestialBody body = v.mainBody;
-    return body == FlightGlobals.GetHomeBody()
-        && body.atmosphereContainsOxygen
+    return body.atmosphereContainsOxygen
         && body.GetPressure(v.altitude) > 25.0
         && !underwater;
+  }
+
+  // return true if a celestial body atmosphere is breathable at surface conditions
+  public static bool Breathable(CelestialBody body)
+  {
+    return body.atmosphereContainsOxygen
+        && body.atmospherePressureSeaLevel > 25.0;
   }
 
 

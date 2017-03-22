@@ -54,7 +54,7 @@ public static class BodyInfo
       if (body.atmosphere)
       {
         p.section("ATMOSPHERE");
-        p.content("breathable", body == FlightGlobals.GetHomeBody() && body.atmosphereContainsOxygen ? "yes" : "no");
+        p.content("breathable", Sim.Breathable(body) ? "yes" : "no");
         p.content("light absorption", Lib.HumanReadablePerc(1.0 - Sim.AtmosphereFactor(body, 0.7071)));
         if (Features.Radiation) p.content("gamma absorption", Lib.HumanReadablePerc(1.0 - Sim.GammaTransparency(body, 0.0)));
       }
