@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -667,6 +667,15 @@ public sealed class vessel_analyzer
     crew_scientist = crew.Find(k => k.trait == "Scientist") != null;
     crew_pilot = crew.Find(k => k.trait == "Pilot") != null;
 
+    engineer_maxlevel = 0;
+    foreach (ProtoCrewMember pcm in crew)
+    {
+      if (pcm.trait == "Engineer" && pcm.experienceLevel > engineer_maxlevel)
+      {
+        engineer_maxlevel = (uint)pcm.experienceLevel;
+      }
+    }
+
     // scan the parts
     crew_capacity = 0;
     foreach(Part p in parts)
@@ -865,6 +874,7 @@ public sealed class vessel_analyzer
   public bool   crew_engineer;                          // true if an engineer is among the crew
   public bool   crew_scientist;                         // true if a scientist is among the crew
   public bool   crew_pilot;                             // true if a pilot is among the crew
+  public uint   engineer_maxlevel;                      // experience level of the best engineer among the crew
 
   // habitat
   public double volume;                                 // total volume in m^3
@@ -960,9 +970,9 @@ public class resource_simulator
           case "ModuleCommand":                process_command(m as ModuleCommand);                     break;
           case "ModuleDeployableSolarPanel":   process_panel(m as ModuleDeployableSolarPanel, env);     break;
           case "ModuleGenerator":              process_generator(m as ModuleGenerator, p);              break;
-          case "ModuleResourceConverter":      process_converter(m as ModuleResourceConverter);         break;
-          case "ModuleKPBSConverter":          process_converter(m as ModuleResourceConverter);         break;
-          case "ModuleResourceHarvester":      process_harvester(m as ModuleResourceHarvester);         break;
+          case "ModuleResourceConverter":      process_converter(m as ModuleResourceConverter, va);     break;
+          case "ModuleKPBSConverter":          process_converter(m as ModuleResourceConverter, va);     break;
+          case "ModuleResourceHarvester":      process_harvester(m as ModuleResourceHarvester, va);     break;
           case "ModuleScienceConverter":       process_stocklab(m as ModuleScienceConverter);           break;
           case "ModuleActiveRadiator":         process_radiator(m as ModuleActiveRadiator);             break;
           case "ModuleWheelMotor":             process_wheel_motor(m as ModuleWheelMotor);              break;
@@ -1192,24 +1202,54 @@ public class resource_simulator
   }
 
 
-  void process_converter(ModuleResourceConverter converter)
+  void process_converter(ModuleResourceConverter converter, vessel_analyzer va)
   {
-    simulated_recipe recipe = new simulated_recipe("converter");
+    string tooltip = converter.part.partInfo.title;
+    float engineerBonus = 1.0f;
+    if (converter.UseSpecialistBonus)
+    {
+      if (va.crew_engineer)
+      {
+        engineerBonus = converter.EfficiencyBonus * (converter.SpecialistBonusBase + (converter.SpecialistEfficiencyFactor * (va.engineer_maxlevel + 1)));
+        tooltip = tooltip + " (engineer efficiency : " + engineerBonus.ToString("p1") + ")";
+      }
+      else
+      {
+        engineerBonus = converter.EfficiencyBonus * converter.SpecialistBonusBase;
+        tooltip = tooltip + " (no engineer : " + engineerBonus.ToString("p1") + " efficiency)";
+      }
+    } 
+    simulated_recipe recipe = new simulated_recipe(tooltip);
     foreach(ResourceRatio res in converter.inputList)
     {
-      recipe.input(res.ResourceName, res.Ratio);
+      recipe.input(res.ResourceName, res.Ratio * engineerBonus);
     }
     foreach(ResourceRatio res in converter.outputList)
     {
-      recipe.output(res.ResourceName, res.Ratio, res.DumpExcess);
+      recipe.output(res.ResourceName, res.Ratio * engineerBonus, res.DumpExcess);
     }
     recipes.Add(recipe);
   }
 
 
-  void process_harvester(ModuleResourceHarvester harvester)
+  void process_harvester(ModuleResourceHarvester harvester, vessel_analyzer va)
   {
-    simulated_recipe recipe = new simulated_recipe("harvester");
+    string tooltip = harvester.part.partInfo.title;
+    float engineerBonus = 1.0f;
+    if (harvester.UseSpecialistBonus)
+      {
+      if (va.crew_engineer)
+      {
+        engineerBonus = harvester.EfficiencyBonus * (harvester.SpecialistBonusBase + (harvester.SpecialistEfficiencyFactor * (va.engineer_maxlevel + 1)));
+        tooltip = tooltip + " (engineer efficiency : " + engineerBonus.ToString("p1") + ")";
+      }
+      else
+      {
+        engineerBonus = harvester.EfficiencyBonus * harvester.SpecialistBonusBase;
+        tooltip = tooltip + " (no engineer : " + engineerBonus.ToString("p1") + " efficiency)";
+      }
+    }
+    simulated_recipe recipe = new simulated_recipe(tooltip);
     foreach(ResourceRatio res in harvester.inputList)
     {
       recipe.input(res.ResourceName, res.Ratio);
