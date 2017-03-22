@@ -1,5 +1,17 @@
 #CHANGELOG
 
+1.2.1 (in progress)
+  - new ECLSS component: Waste Compressor, compress Waste into Shielding
+  - new ECLSS component: Monoprop Fuel Cell, burn Monoprop and has Water+Nitrogen by-products
+  - atmosphere is breathable on all bodies containing oxygen, when pressure is above 25 kPA
+  - proper experience bonus calculation in stock converters and harvesters (@Gotmachine)
+  - MOLE solar panels support in planner and background simulation  (@Gotmachine)
+  - support patches for SXT & HGR, improved patches for VSR & HabTech, and more (@Eberkain)
+  - support patch for OrbitalTug (@PiezPiedPie)
+  - fix: missing configure setup descriptions in some cases  
+  - fix: exception in main loop when space weather is disabled (#78)
+  - fix: exception in planner analysis when comfort modifier is used in a process (#79)  
+
 1.2.0
   - process: it is possible to specify the set of output resources that can be dumped overboard
   - background/planner simulation of stock converter module support DumpExcess flag
