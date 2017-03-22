@@ -202,7 +202,7 @@ public sealed class Planner
     string atmosphere_tooltip = Lib.BuildString
     (
       "<align=left />",
-      "breathable\t\t<b>", env.breathable ? "yes" : "no", "</b>\n",
+      "breathable\t\t<b>", Sim.Breathable(env.body) ? "yes" : "no", "</b>\n",
       "pressure\t\t<b>", Lib.HumanReadablePressure(env.body.atmospherePressureSeaLevel), "</b>\n",
       "light absorption\t\t<b>", Lib.HumanReadablePerc(1.0 - env.atmo_factor), "</b>\n",
       "gamma absorption\t<b>", Lib.HumanReadablePerc(1.0 - Sim.GammaTransparency(env.body, 0.0)), "</b>"
@@ -581,7 +581,7 @@ public sealed class environment_analyzer
     this.body = body;
     altitude = body.Radius * altitude_mult;
     landed = altitude <= double.Epsilon;
-    breathable = Sim.Breathable(body);
+    breathable = Sim.Breathable(body) && landed;
     atmo_factor = Sim.AtmosphereFactor(body, 0.7071);
     sun_dist = Sim.Apoapsis(Lib.PlanetarySystem(body)) - sun.Radius - body.Radius;
     Vector3d sun_dir = (sun.position - body.position).normalized;
