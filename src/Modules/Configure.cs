@@ -491,15 +491,17 @@ public sealed class Configure : PartModule, IPartCostModifier, IPartMassModifier
     //       see comment inside generate_details() to understand why this was necessary instead
     setup.generate_details(this);
 
+    // prepare description string
+    string desc = setup.desc.Length > 0 ? Lib.BuildString("<i>", setup.desc, "</i>") : string.Empty;
+
     // render panel title
     // only allow reconfiguration if there are more setups than slots
     if (unlocked.Count <= selected.Count)
     {
-      p.section(setup.name);
+      p.section(setup.name, desc);
     }
     else
     {
-      string desc = setup.desc.Length > 0 ? Lib.BuildString("<i>", setup.desc, "</i>") : string.Empty;
       p.section(setup.name, desc, () => change_setup(-1, selected_i, ref setup_i), () => change_setup(1, selected_i, ref setup_i));
     }
 
