@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -667,12 +667,16 @@ public sealed class vessel_analyzer
     crew_scientist = crew.Find(k => k.trait == "Scientist") != null;
     crew_pilot = crew.Find(k => k.trait == "Pilot") != null;
 
-    engineer_maxlevel = 0;
-    foreach (ProtoCrewMember pcm in crew)
+    crew_engineer_maxlevel = 0;
+    crew_scientist_maxlevel = 0;
+    crew_pilot_maxlevel = 0;
+    foreach (ProtoCrewMember c in crew)
     {
-      if (pcm.trait == "Engineer" && pcm.experienceLevel > engineer_maxlevel)
+      switch(c.trait)
       {
-        engineer_maxlevel = (uint)pcm.experienceLevel;
+        case "Engineer":  crew_engineer_maxlevel = Math.Max(crew_engineer_maxlevel, (uint)c.experienceLevel); break;
+        case "Scientist": crew_scientist_maxlevel = Math.Max(crew_scientist_maxlevel, (uint)c.experienceLevel); break;
+        case "Pilot":     crew_pilot_maxlevel = Math.Max(crew_pilot_maxlevel, (uint)c.experienceLevel); break;
       }
     }
 
@@ -874,7 +878,9 @@ public sealed class vessel_analyzer
   public bool   crew_engineer;                          // true if an engineer is among the crew
   public bool   crew_scientist;                         // true if a scientist is among the crew
   public bool   crew_pilot;                             // true if a pilot is among the crew
-  public uint   engineer_maxlevel;                      // experience level of the best engineer among the crew
+  public uint   crew_engineer_maxlevel;                 // experience level of top enginner on board
+  public uint   crew_scientist_maxlevel;                // experience level of top scientist on board
+  public uint   crew_pilot_maxlevel;                    // experience level of top pilot on board
 
   // habitat
   public double volume;                                 // total volume in m^3
@@ -1204,29 +1210,24 @@ public class resource_simulator
 
   void process_converter(ModuleResourceConverter converter, vessel_analyzer va)
   {
-    string tooltip = converter.part.partInfo.title;
-    float engineerBonus = 1.0f;
-    if (converter.UseSpecialistBonus)
-    {
-      if (va.crew_engineer)
-      {
-        engineerBonus = converter.EfficiencyBonus * (converter.SpecialistBonusBase + (converter.SpecialistEfficiencyFactor * (va.engineer_maxlevel + 1)));
-        tooltip = tooltip + " (engineer efficiency : " + engineerBonus.ToString("p1") + ")";
-      }
-      else
-      {
-        engineerBonus = converter.EfficiencyBonus * converter.SpecialistBonusBase;
-        tooltip = tooltip + " (no engineer : " + engineerBonus.ToString("p1") + " efficiency)";
-      }
-    } 
-    simulated_recipe recipe = new simulated_recipe(tooltip);
+    // deduce crew bonus
+    float crew_bonus = converter.UseSpecialistBonus
+      ? converter.EfficiencyBonus * (converter.SpecialistBonusBase + (converter.SpecialistEfficiencyFactor * (va.crew_engineer_maxlevel + 1)))
+      : 1.0f;
+
+    // use part name as recipe name
+    // - include crew bonus in the recipe name
+    string recipe_name = Lib.BuildString(converter.part.partInfo.title, " (efficiency: ", Lib.HumanReadablePerc(crew_bonus), ")");
+
+    // generate recipe
+    simulated_recipe recipe = new simulated_recipe(recipe_name);
     foreach(ResourceRatio res in converter.inputList)
     {
-      recipe.input(res.ResourceName, res.Ratio * engineerBonus);
+      recipe.input(res.ResourceName, res.Ratio * crew_bonus);
     }
     foreach(ResourceRatio res in converter.outputList)
     {
-      recipe.output(res.ResourceName, res.Ratio * engineerBonus, res.DumpExcess);
+      recipe.output(res.ResourceName, res.Ratio * crew_bonus, res.DumpExcess);
     }
     recipes.Add(recipe);
   }
@@ -1234,27 +1235,22 @@ public class resource_simulator
 
   void process_harvester(ModuleResourceHarvester harvester, vessel_analyzer va)
   {
-    string tooltip = harvester.part.partInfo.title;
-    float engineerBonus = 1.0f;
-    if (harvester.UseSpecialistBonus)
-      {
-      if (va.crew_engineer)
-      {
-        engineerBonus = harvester.EfficiencyBonus * (harvester.SpecialistBonusBase + (harvester.SpecialistEfficiencyFactor * (va.engineer_maxlevel + 1)));
-        tooltip = tooltip + " (engineer efficiency : " + engineerBonus.ToString("p1") + ")";
-      }
-      else
-      {
-        engineerBonus = harvester.EfficiencyBonus * harvester.SpecialistBonusBase;
-        tooltip = tooltip + " (no engineer : " + engineerBonus.ToString("p1") + " efficiency)";
-      }
-    }
-    simulated_recipe recipe = new simulated_recipe(tooltip);
+    // deduce crew bonus
+    float crew_bonus = harvester.UseSpecialistBonus
+      ? harvester.EfficiencyBonus * (harvester.SpecialistBonusBase + (harvester.SpecialistEfficiencyFactor * (va.crew_engineer_maxlevel + 1)))
+      : 1.0f;
+
+    // use part name as recipe name
+    // - include crew bonus in the recipe name
+    string recipe_name = Lib.BuildString(harvester.part.partInfo.title, " (efficiency: ", Lib.HumanReadablePerc(crew_bonus), ")");
+
+    // generate recipe
+    simulated_recipe recipe = new simulated_recipe(recipe_name);
     foreach(ResourceRatio res in harvester.inputList)
     {
       recipe.input(res.ResourceName, res.Ratio);
     }
-    recipe.output(harvester.ResourceName, harvester.Efficiency, true);
+    recipe.output(harvester.ResourceName, harvester.Efficiency * crew_bonus, true);
     recipes.Add(recipe);
   }
 
