@@ -276,7 +276,6 @@ public static class Background
     // note: ignore stock temperature mechanic of harvesters
     // note: ignore autoshutdown
     // note: ignore depletion (stock seem to do the same)
-    // note: using hard-coded crew bonus values from the wiki because the module data make zero sense (DERP ALERT)
     // note: 'undo' stock behaviour by forcing lastUpdateTime to now (to minimize overlapping calculations from this and stock post-facto simulation)
 
     // if active
@@ -340,7 +339,6 @@ public static class Background
     // note: untested
     // note: ignore stock temperature mechanic of asteroid drills
     // note: ignore autoshutdown
-    // note: using hard-coded crew bonus values from the wiki because the module data make zero sense (DERP ALERT)
     // note: 'undo' stock behaviour by forcing lastUpdateTime to now (to minimize overlapping calculations from this and stock post-facto simulation)
 
     // if active
@@ -380,7 +378,9 @@ public static class Background
               }
             }
           }
-          double exp_bonus = exp_level < 0 ? 1.0 : 5.0 + (double)exp_level * 4.0;
+          double exp_bonus = exp_level < 0
+          ? asteroid_drill.EfficiencyBonus * asteroid_drill.SpecialistBonusBase
+          : asteroid_drill.EfficiencyBonus * (asteroid_drill.SpecialistBonusBase + (asteroid_drill.SpecialistEfficiencyFactor * (exp_level + 1)));
 
           // determine resource extracted
           double res_amount = abundance * asteroid_drill.Efficiency * exp_bonus * elapsed_s;
