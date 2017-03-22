@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
 using Experience;
@@ -248,7 +248,9 @@ public static class Background
             }
           }
         }
-        double exp_bonus = exp_level < 0 ? converter.EfficiencyBonus * converter.SpecialistBonusBase : converter.EfficiencyBonus * (converter.SpecialistBonusBase + (converter.SpecialistEfficiencyFactor * (exp_level + 1)));
+        double exp_bonus = exp_level < 0
+          ? converter.EfficiencyBonus * converter.SpecialistBonusBase
+          : converter.EfficiencyBonus * (converter.SpecialistBonusBase + (converter.SpecialistEfficiencyFactor * (exp_level + 1)));
 
         // create and commit recipe
         resource_recipe recipe = new resource_recipe();
@@ -274,6 +276,7 @@ public static class Background
     // note: ignore stock temperature mechanic of harvesters
     // note: ignore autoshutdown
     // note: ignore depletion (stock seem to do the same)
+    // note: using hard-coded crew bonus values from the wiki because the module data make zero sense (DERP ALERT)
     // note: 'undo' stock behaviour by forcing lastUpdateTime to now (to minimize overlapping calculations from this and stock post-facto simulation)
 
     // if active
@@ -295,7 +298,9 @@ public static class Background
             }
           }
         }
-          double exp_bonus = exp_level < 0 ? harvester.EfficiencyBonus * harvester.SpecialistBonusBase : harvester.EfficiencyBonus * (harvester.SpecialistBonusBase + (harvester.SpecialistEfficiencyFactor * (exp_level + 1)));
+        double exp_bonus = exp_level < 0
+          ? harvester.EfficiencyBonus * harvester.SpecialistBonusBase
+          : harvester.EfficiencyBonus * (harvester.SpecialistBonusBase + (harvester.SpecialistEfficiencyFactor * (exp_level + 1)));
 
         // detect amount of ore in the ground
         AbundanceRequest request = new AbundanceRequest
