@@ -12,7 +12,6 @@ public static class TimedOut
   {
     if (!vi.connection.linked && vi.crew_count == 0)
     {
-      p.header(string.Empty);
       p.header(msg[((int)Time.realtimeSinceStartup) % msg.Length]);
       return true;
     }
@@ -25,14 +24,16 @@ public static class TimedOut
     "<i>Connection in progress.</i>",
     "<i>Connection in progress..</i>",
     "<i>Connection in progress...</i>",
-    "<b><color=#ff0000>[ERROR]</color></b><i> Connection timed-out</i>",
-    "<b><color=#ff0000>[ERROR]</color></b><i> Connection timed-out</i>",
-    "<b><color=#ff0000>[ERROR]</color></b><i> Connection timed-out</i>",
-    "",
+    "<i>Connection in progress....</i>",
+    "<i>Connection in progress.....</i>",
+    "<b><color=#ff3333><i>Connection timed-out</i></color></b>",
+    "<b><color=#ff3333><i>Connection timed-out</i></color></b>",
+    "<b><color=#ff3333><i>Connection timed-out</i></color></b>",
+    "<b><color=#ff3333><i>Connection timed-out</i></color></b>",
+    "<b><color=#ff3333><i>Connection timed-out</i></color></b>",
     "<i>New tentative in 3s</i>",
     "<i>New tentative in 2s</i>",
-    "<i>New tentative in 1s</i>",
-    ""
+    "<i>New tentative in 1s</i>"
   };
 }
 
