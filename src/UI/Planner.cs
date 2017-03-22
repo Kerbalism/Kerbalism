@@ -1210,24 +1210,24 @@ public class resource_simulator
 
   void process_converter(ModuleResourceConverter converter, vessel_analyzer va)
   {
-    // deduce crew bonus
-    float crew_bonus = converter.UseSpecialistBonus
+    // calculate experience bonus
+    float exp_bonus = converter.UseSpecialistBonus
       ? converter.EfficiencyBonus * (converter.SpecialistBonusBase + (converter.SpecialistEfficiencyFactor * (va.crew_engineer_maxlevel + 1)))
       : 1.0f;
 
     // use part name as recipe name
     // - include crew bonus in the recipe name
-    string recipe_name = Lib.BuildString(converter.part.partInfo.title, " (efficiency: ", Lib.HumanReadablePerc(crew_bonus), ")");
+    string recipe_name = Lib.BuildString(converter.part.partInfo.title, " (efficiency: ", Lib.HumanReadablePerc(exp_bonus), ")");
 
     // generate recipe
     simulated_recipe recipe = new simulated_recipe(recipe_name);
     foreach(ResourceRatio res in converter.inputList)
     {
-      recipe.input(res.ResourceName, res.Ratio * crew_bonus);
+      recipe.input(res.ResourceName, res.Ratio * exp_bonus);
     }
     foreach(ResourceRatio res in converter.outputList)
     {
-      recipe.output(res.ResourceName, res.Ratio * crew_bonus, res.DumpExcess);
+      recipe.output(res.ResourceName, res.Ratio * exp_bonus, res.DumpExcess);
     }
     recipes.Add(recipe);
   }
@@ -1235,14 +1235,14 @@ public class resource_simulator
 
   void process_harvester(ModuleResourceHarvester harvester, vessel_analyzer va)
   {
-    // deduce crew bonus
-    float crew_bonus = harvester.UseSpecialistBonus
+    // calculate experience bonus
+    float exp_bonus = harvester.UseSpecialistBonus
       ? harvester.EfficiencyBonus * (harvester.SpecialistBonusBase + (harvester.SpecialistEfficiencyFactor * (va.crew_engineer_maxlevel + 1)))
       : 1.0f;
 
     // use part name as recipe name
     // - include crew bonus in the recipe name
-    string recipe_name = Lib.BuildString(harvester.part.partInfo.title, " (efficiency: ", Lib.HumanReadablePerc(crew_bonus), ")");
+    string recipe_name = Lib.BuildString(harvester.part.partInfo.title, " (efficiency: ", Lib.HumanReadablePerc(exp_bonus), ")");
 
     // generate recipe
     simulated_recipe recipe = new simulated_recipe(recipe_name);
@@ -1250,7 +1250,7 @@ public class resource_simulator
     {
       recipe.input(res.ResourceName, res.Ratio);
     }
-    recipe.output(harvester.ResourceName, harvester.Efficiency * crew_bonus, true);
+    recipe.output(harvester.ResourceName, harvester.Efficiency * exp_bonus, true);
     recipes.Add(recipe);
   }
 
