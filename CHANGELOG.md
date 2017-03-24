@@ -7,10 +7,12 @@
   - proper experience bonus calculation in stock converters and harvesters (@Gotmachine)
   - MOLE solar panels support in planner and background simulation  (@Gotmachine)
   - support patches for SXT & HGR, improved patches for VSR & HabTech, and more (@Eberkain)
-  - support patch for OrbitalTug (@PiezPiedPie)
-  - fix: missing configure setup descriptions in some cases  
+  - support patch for OrbitalTug (@PiezPiedPie)    
+  - fix: cache stop updating after planting flag (#50, #52, #75)
   - fix: exception in main loop when space weather is disabled (#78)
   - fix: exception in planner analysis when comfort modifier is used in a process (#79)  
+  - fix: greenhouse harvest ready message spam
+  - fix: missing configure setup descriptions in some cases  
 
 1.2.0
   - process: it is possible to specify the set of output resources that can be dumped overboard
