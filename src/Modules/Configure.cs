@@ -40,7 +40,7 @@ public sealed class Configure : PartModule, IPartCostModifier, IPartMassModifier
   double               extra_mass;                          // extra mass for selected setups, excluding resources
   bool                 initialized;                         // keep track of first configuration
   CrewSpecs            reconfigure_cs;                      // in-flight reconfiguration crew specs
-  Dictionary<int, int>  changes;      // store 'deferred' changes to avoid problems with unity gui
+  Dictionary<int, int> changes;                             // store 'deferred' changes to avoid problems with unity gui
 
   // used to avoid infinite recursion when dealing with symmetry group
   static bool avoid_inf_recursion;
