@@ -1,5 +1,8 @@
 ### CHANGELOG
 
+1.2.2
+  - fix: remove stock antenna from probe cores
+
 1.2.1
   - new ECLSS component: Waste Compressor, compress Waste into Shielding
   - new ECLSS component: Monoprop Fuel Cell, burn Monoprop and has Water+Nitrogen by-products
