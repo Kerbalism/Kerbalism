@@ -1,6 +1,6 @@
-#CHANGELOG
+### CHANGELOG
 
-1.2.1 (in progress)
+1.2.1
   - new ECLSS component: Waste Compressor, compress Waste into Shielding
   - new ECLSS component: Monoprop Fuel Cell, burn Monoprop and has Water+Nitrogen by-products
   - atmosphere is breathable on all bodies containing oxygen, when pressure is above 25 kPA
