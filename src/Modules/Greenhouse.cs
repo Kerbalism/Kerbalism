@@ -85,9 +85,9 @@ public sealed class Greenhouse : PartModule, ISpecifics, IContractObjectiveModul
       // update ui
       string status = issue.Length > 0 ? Lib.BuildString("<color=yellow>", issue, "</color>") : growth > 0.99 ? "ready to harvest" : "growing";
       Events["Toggle"].guiName = Lib.StatusToggle("Greenhouse", active ? status : "disabled");
-      Fields["status_natural"].guiActive = active;
-      Fields["status_artificial"].guiActive = active;
-      Fields["status_tta"].guiActive = active;
+      Fields["status_natural"].guiActive = active && growth < 0.99;
+      Fields["status_artificial"].guiActive = active && growth < 0.99;
+      Fields["status_tta"].guiActive = active && growth < 0.99;
       status_natural = Lib.HumanReadableFlux(natural);
       status_artificial = Lib.HumanReadableFlux(artificial);
       status_tta = Lib.HumanReadableDuration(tta);
@@ -111,8 +111,8 @@ public sealed class Greenhouse : PartModule, ISpecifics, IContractObjectiveModul
     // do nothing in the editor
     if (Lib.IsEditor()) return;
 
-    // if enabled
-    if (active)
+    // if enabled and not ready for harvest
+    if (active && growth < 0.99)
     {
       // get vessel info from the cache
       // - if the vessel is not valid (eg: flagged as debris) then solar flux will be 0 and landed false (but that's okay)
@@ -161,17 +161,6 @@ public sealed class Greenhouse : PartModule, ISpecifics, IContractObjectiveModul
         }
       }
 
-      // update time-to-harvest
-      tta = (1.0 - growth) / crop_rate;
-
-      // update issues
-      issue =
-        !inputs    ? Lib.BuildString("missing ", missing_res)
-      : !lighting  ? "insufficient lighting"
-      : !pressure  ? "insufficient pressure"
-      : !radiation ? "excessive radiation"
-      : string.Empty;
-
       // if growing
       if (lighting && pressure && radiation && inputs)
       {
@@ -183,8 +172,20 @@ public sealed class Greenhouse : PartModule, ISpecifics, IContractObjectiveModul
         if (growth >= 0.99)
         {
           Message.Post(Lib.BuildString("On <b>", vessel.vesselName, "</b> the crop is ready to be harvested"));
+          growth = 1.0;
         }
       }
+
+      // update time-to-harvest
+      tta = (1.0 - growth) / crop_rate;
+
+      // update issues
+      issue =
+        !inputs    ? Lib.BuildString("missing ", missing_res)
+      : !lighting  ? "insufficient lighting"
+      : !pressure  ? "insufficient pressure"
+      : !radiation ? "excessive radiation"
+      : string.Empty;
     }
   }
 
@@ -196,8 +197,8 @@ public sealed class Greenhouse : PartModule, ISpecifics, IContractObjectiveModul
     bool active = Lib.Proto.GetBool(m, "active");
     double growth = Lib.Proto.GetDouble(m, "growth");
 
-    // if enabled
-    if (active)
+    // if enabled and not ready for harvest
+    if (active && growth < 0.99)
     {
       // get resource handler
       resource_info ec = resources.Info(v, "ElectricCharge");
@@ -238,17 +239,6 @@ public sealed class Greenhouse : PartModule, ISpecifics, IContractObjectiveModul
         }
       }
 
-      // update time-to-harvest
-      double tta = (1.0 - growth) / g.crop_rate;
-
-      // update issues
-      string issue =
-        !inputs    ? Lib.BuildString("missing ", missing_res)
-      : !lighting  ? "insufficient lighting"
-      : !pressure  ? "insufficient pressure"
-      : !radiation ? "excessive radiation"
-      : string.Empty;
-
       // if growing
       if (lighting && pressure && radiation && inputs)
       {
@@ -260,8 +250,20 @@ public sealed class Greenhouse : PartModule, ISpecifics, IContractObjectiveModul
         if (growth >= 0.99)
         {
           Message.Post(Lib.BuildString("On <b>", v.vesselName, "</b> the crop is ready to be harvested"));
+          growth = 1.0;
         }
       }
+
+      // update time-to-harvest
+      double tta = (1.0 - growth) / g.crop_rate;
+
+      // update issues
+      string issue =
+        !inputs    ? Lib.BuildString("missing ", missing_res)
+      : !lighting  ? "insufficient lighting"
+      : !pressure  ? "insufficient pressure"
+      : !radiation ? "excessive radiation"
+      : string.Empty;
 
       // update protomodule data
       Lib.Proto.Set(m, "natural", natural);
