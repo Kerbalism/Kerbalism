@@ -425,7 +425,6 @@ public static class ResourceCache
     Get(v).Transform(recipe);
   }
 
-
   // resource cache
   static Dictionary<Guid, vessel_resources> entries;
 }
