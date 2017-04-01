@@ -161,7 +161,7 @@ public sealed class Panel
       h += 18.0f + (float)p.entries.Count * 16.0f + 16.0f;
       if (p.desc.Length > 0)
       {
-        h += Styles.entry_label.CalcHeight(new GUIContent(p.desc), min_width);
+        h += Styles.desc.CalcHeight(new GUIContent(p.desc), min_width - 20.0f);
       }
     }
 
