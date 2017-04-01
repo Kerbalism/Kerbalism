@@ -1,5 +1,18 @@
 ### CHANGELOG
 
+1.2.3
+  - resource cache production/consumption simulate ALL_VESSEL_BALANCED
+  - added Waste Incinerator process to ISRU chemical plants
+  - moved Waste Compressor process from manned pods to ISRU chemical plants
+  - EVA kerbals now have a non-regenerative scrubber, with fixed duration
+  - increased amount of EC and Oxygen on EVA kerbals
+  - improved description of configure setups
+  - scale low-gain and high-gain antenna distances differently in supported planet packs  
+  - lowered xmit scalar threshold used to deduce if data is file or sample  
+  - safemode malfunctions don't stop timewarp anymore
+  - support patch for RLA Stockalike Continued (@YaarPodshipnik)
+  - NearFuture PB-AS-NUK emit radiation (@YaarPodshipnik)
+
 1.2.2
   - fix: remove stock antenna from probe cores
 
@@ -10,12 +23,12 @@
   - proper experience bonus calculation in stock converters and harvesters (@Gotmachine)
   - MOLE solar panels support in planner and background simulation  (@Gotmachine)
   - support patches for SXT & HGR, improved patches for VSR & HabTech, and more (@Eberkain)
-  - support patch for OrbitalTug (@PiezPiedPie)    
+  - support patch for OrbitalTug (@PiezPiedPie)
   - fix: cache stop updating after planting flag (#50, #52, #75)
   - fix: exception in main loop when space weather is disabled (#78)
-  - fix: exception in planner analysis when comfort modifier is used in a process (#79)  
+  - fix: exception in planner analysis when comfort modifier is used in a process (#79)
   - fix: greenhouse harvest ready message spam
-  - fix: missing configure setup descriptions in some cases  
+  - fix: missing configure setup descriptions in some cases
 
 1.2.0
   - process: it is possible to specify the set of output resources that can be dumped overboard
