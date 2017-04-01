@@ -81,7 +81,8 @@ public static class Styles
     desc.margin.top = 0;
     desc.margin.bottom = 0;
     desc.padding.top = 0;
-    desc.padding.bottom = 0;
+    desc.padding.bottom = 10;
+    desc.fontStyle = FontStyle.Italic;
 
     // left icon
     left_icon = new GUIStyle();

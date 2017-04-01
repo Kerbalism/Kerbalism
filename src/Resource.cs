@@ -62,90 +62,108 @@ public sealed class resource_info
   // synchronize amount from cache to vessel
   public void Sync(Vessel v, double elapsed_s)
   {
-    // for loaded vessels
+    // remember amount currently known, to calculate rate later on
+    double old_amount = amount;
+
+    // iterate over all enabled resource containers and detect amount/capacity again
+    // - this detect production/consumption from stock and third-party mods
+    //   that by-pass the resource cache, and flow state changes
+    amount = 0.0;
+    capacity = 0.0;
     if (v.loaded)
     {
-      // for each part resource
-      double new_amount = 0.0;
-      capacity = 0.0;
       foreach(Part p in v.Parts)
       {
         foreach(PartResource r in p.Resources)
         {
           if (r.flowState && r.resourceName == resource_name)
           {
-            // get amount/capacity
-            new_amount += r.amount;
+            amount += r.amount;
             capacity += r.maxAmount;
-
-            // stock RequestResource() is iterating on all parts and all resources probably,
-            // so we do both amount/capacity detection and resource synchronization at the same time
-            // this also give coherency among flow rules between loaded and unloaded vessels
-            if (Math.Abs(deferred) > 0.0000001)
-            {
-              double amount_diff = Lib.Clamp(r.amount + deferred, 0.0, r.maxAmount) - r.amount;
-              r.amount += amount_diff;
-              deferred -= amount_diff;
-            }
-            if (r.amount < 0.0000001) r.amount = 0.0;
           }
         }
       }
-
-      // calculate rate of change per-second
-      // note: do not update rate during and immediately after warp blending (stock modules have instabilities during warp blending)
-      // note: rate is not updated during the simulation steps where meal is consumed, to avoid counting it twice
-      if (Kerbalism.warp_blending > 50 && !meal_happened) rate = (new_amount - amount) / elapsed_s;
-
-      // update amount
-      amount = new_amount;
     }
-    // for unloaded vessels
     else
     {
-      // apply all deferred requests
-      amount = Lib.Clamp(amount + deferred , 0.0, capacity);
-
-      // calculate rate of change per-second
-      // note: rate is not updated during the simulation steps where meal is consumed, to avoid counting it twice
-      if (!meal_happened) rate = Lib.Clamp(deferred, -amount, capacity - amount) / elapsed_s;
-
-      // syncronize the amount to the vessel
-      double new_amount = 0.0;
-      capacity = 0.0;
-      foreach(ProtoPartSnapshot pps in v.protoVessel.protoPartSnapshots)
+      foreach(ProtoPartSnapshot p in v.protoVessel.protoPartSnapshots)
       {
-        foreach(ProtoPartResourceSnapshot res in pps.resources)
+        foreach(ProtoPartResourceSnapshot r in p.resources)
         {
-          if (res.resourceName == resource_name && res.flowState)
+          if (r.flowState && r.resourceName == resource_name)
           {
-            // get amount/capacity
-            new_amount += res.amount;
-            capacity += res.maxAmount;
-
-            // apply deferred
-            if (Math.Abs(deferred) > 0.0000001)
-            {
-              double amount_diff = Lib.Clamp(res.amount + deferred, 0.0, res.maxAmount) - res.amount;
-              res.amount += amount_diff;
-              deferred -= amount_diff;
-            }
-            if (res.amount < 0.0000001) res.amount = 0.0;
+            amount += r.amount;
+            capacity += r.maxAmount;
           }
         }
       }
-
-      // update amount
-      amount = new_amount;
     }
+
+    // apply deferred consumption/production, simulating ALL_VESSEL_BALANCED
+    // - iterating again is faster than using a temporary list of valid PartResources
+    // - avoid very small values in deferred consumption/production
+    // - avoid division by zero in evaluating the balancing coefficient, that also avoid
+    //   any computation if consuming from an empty vessel or producing in a full vessel
+    if(Math.Abs(deferred) > 0.0000001 && ((deferred < 0.0 && amount > double.Epsilon) || (deferred > 0.0 && (capacity - amount > double.Epsilon))))
+    {
+      if (v.loaded)
+      {
+        foreach(Part p in v.parts)
+        {
+          foreach(PartResource r in p.Resources)
+          {
+            if (r.flowState && r.resourceName == resource_name)
+            {
+              // calculate consumption/production coefficient for the part
+              double k = deferred < 0.0
+                ? r.amount / amount
+                : (r.maxAmount - r.amount) / (capacity - amount);
+
+              // apply deferred consumption/production
+              r.amount += deferred * k;
+
+              // set very small amounts to zero
+              if (r.amount < 0.0000001) r.amount = 0.0;
+            }
+          }
+        }
+      }
+      else
+      {
+        foreach(ProtoPartSnapshot p in v.protoVessel.protoPartSnapshots)
+        {
+          foreach(ProtoPartResourceSnapshot r in p.resources)
+          {
+            if (r.flowState && r.resourceName == resource_name)
+            {
+              // calculate consumption/production coefficient for the part
+              double k = deferred < 0.0
+                ? r.amount / amount
+                : (r.maxAmount - r.amount) / (capacity - amount);
+
+              // apply deferred consumption/production
+              r.amount += deferred * k;
+
+              // set very small amounts to zero
+              if (r.amount < 0.0000001) r.amount = 0.0;
+            }
+          }
+        }
+      }
+    }
+
+    // calculate rate of change per-second
+    // - don't update rate during and immediately after warp blending (stock modules have instabilities during warp blending)
+    // - don't update rate during the simulation steps where meal is consumed, to avoid counting it twice
+    if (Kerbalism.warp_blending > 50 && !meal_happened) rate = (amount - old_amount) / elapsed_s;
 
     // recalculate level
     level = capacity > double.Epsilon ? amount / capacity : 0.0;
 
-    // reset deferred consumption/production
+    // reset deferred production/consumption
     deferred = 0.0;
 
-    // reseal meal flag
+    // reset meal flag
     meal_happened = false;
   }
 
@@ -424,7 +442,6 @@ public static class ResourceCache
   {
     Get(v).Transform(recipe);
   }
-
 
   // resource cache
   static Dictionary<Guid, vessel_resources> entries;

@@ -205,14 +205,14 @@ public static class Telemetry
         : "growing";
 
       // tooltip with summary
-      string tooltip = Lib.BuildString
+      string tooltip = greenhouse.growth < 0.99 ? Lib.BuildString
       (
         "<align=left />",
         "time to harvest\t<b>", Lib.HumanReadableDuration(greenhouse.tta), "</b>\n",
         "growth\t\t<b>", Lib.HumanReadablePerc(greenhouse.growth), "</b>\n",
         "natural lighting\t<b>", Lib.HumanReadableFlux(greenhouse.natural), "</b>\n",
         "artificial lighting\t<b>", Lib.HumanReadableFlux(greenhouse.artificial), "</b>"
-      );
+      ) : string.Empty;
 
       // render it
       p.content(Lib.BuildString("crop #", (i + 1).ToString()), state, tooltip);

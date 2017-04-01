@@ -189,17 +189,20 @@ public static class Cache
   public static void update()
   {
     // purge the oldest entry from the vessel cache
-    UInt64 oldest_inc = UInt64.MaxValue;
-    UInt32 oldest_id = 0;
-    foreach(KeyValuePair<UInt32, vessel_info> pair in vessels)
+    if (vessels.Count > 0)
     {
-      if (pair.Value.inc < oldest_inc)
+      UInt64 oldest_inc = UInt64.MaxValue;
+      UInt32 oldest_id = 0;
+      foreach(KeyValuePair<UInt32, vessel_info> pair in vessels)
       {
-        oldest_inc = pair.Value.inc;
-        oldest_id = pair.Key;
+        if (pair.Value.inc < oldest_inc)
+        {
+          oldest_inc = pair.Value.inc;
+          oldest_id = pair.Key;
+        }
       }
+      vessels.Remove(oldest_id);
     }
-    if (oldest_id > 0) vessels.Remove(oldest_id);
   }
 
 

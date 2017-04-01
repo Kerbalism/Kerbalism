@@ -6,10 +6,10 @@
                             |_|\_\______|_|  \_\____/_/    \_\______|_____|_____/|_|  |_|
 
                               Hundreds of Kerbals were killed in the making of this mod.
-=======================================================================================================================
 
 
-#INTRODUCTION
+
+### INTRODUCTION
 
   Kerbalism extend Kerbal Space Program by simulating additional aspects of space missions.
   Anything will happen coherently to loaded and unloaded vessels alike, without exceptions.
@@ -25,7 +25,7 @@
   - kerbals: biological and psychological needs, environmental hazards
 
 
-#ENVIRONMENT
+### ENVIRONMENT
 
   From the mission designer point of view, the most important aspects of the space environment are temperature
   and ionizing radiation. Both are simulated by Kerbalism. External vessel temperature is determined by the
@@ -35,7 +35,7 @@
   Coronal Mass Ejection events are also simulated, triggering solar storms over planetary systems.
 
 
-#HABITAT
+### HABITAT
 
   The habitat of vessels is modelled in terms of internal volume and external surface. From these properties,
   a plethora of others are deduced such as: living space per-capita, pressure, co2 level and shielding required.
@@ -43,14 +43,14 @@
   and everything associated with it. Inflatable habitats are driven directly by pressure.
 
 
-#RELIABILITY
+### RELIABILITY
 
   Components don't last forever in the real world. This is modelled in Kerbalism by a simple system that can trigger failures
   on arbitrary modules. Manufacturing quality can be choosen in the VAB, per-component: higher quality mean longer MTBF but
   also extra cost and mass for the component.
 
 
-#SIGNAL
+### SIGNAL
 
   Controlling a vessel and transmitting data require a direct or indirect connection with DSN, and has a specific data rate
   that degrade with distance. The signal is obstructed by celestial bodies, but can be relayed by other vessels. Low-Gain
@@ -58,40 +58,40 @@
   Your voyager-style probe will now require a voyager-style antenna, and it will end up having voyager-style transmission rates.
 
 
-#SCIENCE
+### SCIENCE
 
   Data is collected and stored in the vessel solid state drives, then transmitted back home for that sweet science reward.
   Some of this data can't be transmitted directly, and need to be analyzed in a laboratory to produce transmissible data.
   Transmission happen over long periods of time, even when the vessels are not loaded.
   
 
-#AUTOMATION
+### AUTOMATION
 
   Components can be automated using a very simple and intuitive scripting system with a graphical editor. Scripts are
   triggered manually or by environmental conditions. You can create a script to turn on all the lights as soon as the Sun
   is not visible anymore, or retract all solar panels as soon as you enter an atmosphere.
 
 
-#BACKGROUND SIMULATION
+### BACKGROUND SIMULATION
 
   Resource consumers and producers are simulated at all time, even on unloaded vessels. This not only include all Kerbalism
   mechanics that involve resources, but also all stock components, and components of some selected third-party mods.
 
 
-#RULE FRAMEWORK
+### RULE FRAMEWORK
 
   Kerbals simulation is data-driven: the actual needs are determined by an arbitrary set of rules. These rules can consume
   and produce resources, and are influenced by the environment and habitat simulation. The system is flexible enough to
   implement such things as: climatization, eating, drinking, breathing, co2 poisoning, stress and the effects of radiation.
   
 
-#PLANNER
+### PLANNER
 
   A planner GUI is available in the VAB, to help the user design around all the new aspects introduced.
   Resource estimates, habitat informations, redundancy analysis: no matter what, the planner got you covered.
 
 
-#DEFAULT PROFILE
+### DEFAULT PROFILE
 
   A standard set of rules is provided, called the Default profile. It serve as an example of what the framework can do.
 
@@ -108,7 +108,7 @@
   - more realistic fuel cells
 
 
-#SUPPORTED MODS
+### SUPPORTED MODS
 
   Kerbalism provide ad-hoc support for a multitude of third-party mods. Some of the interactions deserve a special mention:
 
@@ -134,7 +134,7 @@
       . custom radiation definitions for these planet packs are provided
 
 
-#CONTRIBUTIONS
+### CONTRIBUTIONS
 
   Over the time, many have contributed: may it be an asset, a patch, testing or even just brainstorming. Thank you all.
 
@@ -146,7 +146,7 @@
 
 
 
-#FAQs
+### FAQs
 
   - ***I found a bug***
 
@@ -165,12 +165,12 @@
     Have a look at System/API.cs source code on the github. Raise an issue to request more functions there.
 
 
-#REQUIREMENTS
+### REQUIREMENTS
 
   - ModuleManager
 
 
-#LICENSE
+### LICENSE
 
   This mod is released under the Unlicense.
 

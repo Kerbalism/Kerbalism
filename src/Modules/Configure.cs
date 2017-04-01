@@ -40,7 +40,7 @@ public sealed class Configure : PartModule, IPartCostModifier, IPartMassModifier
   double               extra_mass;                          // extra mass for selected setups, excluding resources
   bool                 initialized;                         // keep track of first configuration
   CrewSpecs            reconfigure_cs;                      // in-flight reconfiguration crew specs
-  Dictionary<int, int>  changes;      // store 'deferred' changes to avoid problems with unity gui
+  Dictionary<int, int> changes;                             // store 'deferred' changes to avoid problems with unity gui
 
   // used to avoid infinite recursion when dealing with symmetry group
   static bool avoid_inf_recursion;
@@ -495,12 +495,11 @@ public sealed class Configure : PartModule, IPartCostModifier, IPartMassModifier
     // only allow reconfiguration if there are more setups than slots
     if (unlocked.Count <= selected.Count)
     {
-      p.section(setup.name);
+      p.section(setup.name, setup.desc);
     }
     else
     {
-      string desc = setup.desc.Length > 0 ? Lib.BuildString("<i>", setup.desc, "</i>") : string.Empty;
-      p.section(setup.name, desc, () => change_setup(-1, selected_i, ref setup_i), () => change_setup(1, selected_i, ref setup_i));
+      p.section(setup.name, setup.desc, () => change_setup(-1, selected_i, ref setup_i), () => change_setup(1, selected_i, ref setup_i));
     }
 
     // render details

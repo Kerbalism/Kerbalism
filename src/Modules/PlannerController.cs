@@ -25,9 +25,11 @@ public sealed class PlannerController : PartModule
 
   void Update()
   {
-    const string yes = "<b><color=#00ff00>simulate</color></b>";
-    const string no = "<b><color=#ffff00>ignore</color></b>";
-    Events["Toggle"].guiName = Lib.StatusToggle("Resource analysis", considered ? yes : no);
+    Events["Toggle"].guiName = Lib.StatusToggle
+    (
+      "Simulate in planner",
+      considered ? "<b><color=#00ff00>yes</color></b>" : "<b><color=#ffff00>no</color></b>"
+    );
   }
 
   [KSPEvent(guiActive = false, guiActiveEditor = true, guiName = "_", active = true)]

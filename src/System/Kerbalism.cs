@@ -216,11 +216,14 @@ public sealed class Kerbalism : ScenarioModule
     }
 
     // update storm data for one body per-step
-    storm_bodies.ForEach(k => k.time += elapsed_s);
-    storm_data sd = storm_bodies[storm_index];
-    Storm.update(sd.body, sd.time);
-    sd.time = 0.0;
-    storm_index = (storm_index + 1) % storm_bodies.Count;
+    if (storm_bodies.Count > 0)
+    {
+      storm_bodies.ForEach(k => k.time += elapsed_s);
+      storm_data sd = storm_bodies[storm_index];
+      Storm.update(sd.body, sd.time);
+      sd.time = 0.0;
+      storm_index = (storm_index + 1) % storm_bodies.Count;
+    }
   }
 
 

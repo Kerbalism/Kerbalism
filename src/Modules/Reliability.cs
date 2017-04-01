@@ -541,7 +541,6 @@ public sealed class Reliability : PartModule, ISpecifics, IModuleInfo, IPartCost
   {
     Message.Post
     (
-      Severity.warning,
       Lib.BuildString("There has been a problem with <b>", title, "</b> on <b>", v.vesselName, "</b>"),
       "We were able to fix it remotely, this time"
     );
