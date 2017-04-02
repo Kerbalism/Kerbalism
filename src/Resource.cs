@@ -83,6 +83,15 @@ public sealed class resource_info
           }
         }
       }
+
+      // TODO test
+      // commenting out this 'hard-coded cheap ass fake simulation of loaded solar panels (for a single 1.64EC/s at 1 AU)
+      // when the sun visibility is evaluated analytically over the orbit' fix the CO2 issue, demonstrating that the
+      // only way to resolve these co2/climate insta-death is to reimplement the stock solar panel module (see #95)
+      //if (resource_name == "ElectricCharge" && Cache.VesselInfo(v).sunlight > 0.0 && Cache.VesselInfo(v).sunlight < 1.0)
+      //{
+      //  deferred = 1.64 * Cache.VesselInfo(v).sunlight;
+      //}
     }
     else
     {
@@ -99,12 +108,15 @@ public sealed class resource_info
       }
     }
 
+    // clamp consumption/production to vessel amount/capacity
+    deferred = Lib.Clamp(deferred, -amount, capacity - amount);
+
     // apply deferred consumption/production, simulating ALL_VESSEL_BALANCED
     // - iterating again is faster than using a temporary list of valid PartResources
     // - avoid very small values in deferred consumption/production
-    // - avoid division by zero in evaluating the balancing coefficient, that also avoid
-    //   any computation if consuming from an empty vessel or producing in a full vessel
-    if(Math.Abs(deferred) > 0.0000001 && ((deferred < 0.0 && amount > double.Epsilon) || (deferred > 0.0 && (capacity - amount > double.Epsilon))))
+    //   - if deferred is negative, then amount is guaranteed to be greater than zero
+    //   - if deferred is positive, then capacity - amount is guaranteed to be greater than zero
+    if(Math.Abs(deferred) > 0.00000001)
     {
       if (v.loaded)
       {
@@ -123,7 +135,7 @@ public sealed class resource_info
               r.amount += deferred * k;
 
               // set very small amounts to zero
-              if (r.amount < 0.0000001) r.amount = 0.0;
+              if (r.amount < 0.00000001) r.amount = 0.0;
             }
           }
         }
@@ -145,7 +157,7 @@ public sealed class resource_info
               r.amount += deferred * k;
 
               // set very small amounts to zero
-              if (r.amount < 0.0000001) r.amount = 0.0;
+              if (r.amount < 0.00000001) r.amount = 0.0;
             }
           }
         }
@@ -190,7 +202,7 @@ public sealed class resource_info
     double delta = rate + meal_rate;
 
     // return depletion
-    return amount <= double.Epsilon ? 0.0 : delta >= -0.0000001 ? double.NaN : amount / -delta;
+    return amount <= double.Epsilon ? 0.0 : delta >= -0.00000001 ? double.NaN : amount / -delta;
   }
 
 
