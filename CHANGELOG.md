@@ -1,5 +1,9 @@
 ### CHANGELOG
 
+1.2.4  
+  - SMURFF compatibility patch (@eberkain)
+  - fix: resource amount not clamped to capacity
+
 1.2.3
   - resource cache production/consumption simulate ALL_VESSEL_BALANCED
   - added Waste Incinerator process to ISRU chemical plants
