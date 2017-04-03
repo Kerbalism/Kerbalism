@@ -59,6 +59,100 @@ public sealed class resource_info
     deferred -= quantity;
   }
 
+
+  // FIXME this is how we did this before ALL_VESSEL_BALANCED, keep around for reference
+  // synchronize amount from cache to vessel
+  public void SyncOld(Vessel v, double elapsed_s)
+  {
+    // for loaded vessels
+    if (v.loaded)
+    {
+      // for each part resource
+      double new_amount = 0.0;
+      capacity = 0.0;
+      foreach(Part p in v.Parts)
+      {
+        foreach(PartResource r in p.Resources)
+        {
+          if (r.flowState && r.resourceName == resource_name)
+          {
+            // get amount/capacity
+            new_amount += r.amount;
+            capacity += r.maxAmount;
+
+            // stock RequestResource() is iterating on all parts and all resources probably,
+            // so we do both amount/capacity detection and resource synchronization at the same time
+            // this also give coherency among flow rules between loaded and unloaded vessels
+            if (Math.Abs(deferred) > 0.0000001)
+            {
+              double amount_diff = Lib.Clamp(r.amount + deferred, 0.0, r.maxAmount) - r.amount;
+              r.amount += amount_diff;
+              deferred -= amount_diff;
+            }
+            if (r.amount < 0.0000001) r.amount = 0.0;
+          }
+        }
+      }
+
+      // calculate rate of change per-second
+      // note: do not update rate during and immediately after warp blending (stock modules have instabilities during warp blending)
+      // note: rate is not updated during the simulation steps where meal is consumed, to avoid counting it twice
+      if (Kerbalism.warp_blending > 50 && !meal_happened) rate = (new_amount - amount) / elapsed_s;
+
+      // update amount
+      amount = new_amount;
+    }
+    // for unloaded vessels
+    else
+    {
+      // apply all deferred requests
+      amount = Lib.Clamp(amount + deferred , 0.0, capacity);
+
+      // calculate rate of change per-second
+      // note: rate is not updated during the simulation steps where meal is consumed, to avoid counting it twice
+      if (!meal_happened) rate = Lib.Clamp(deferred, -amount, capacity - amount) / elapsed_s;
+
+      // syncronize the amount to the vessel
+      double new_amount = 0.0;
+      capacity = 0.0;
+      foreach(ProtoPartSnapshot pps in v.protoVessel.protoPartSnapshots)
+      {
+        foreach(ProtoPartResourceSnapshot res in pps.resources)
+        {
+          if (res.resourceName == resource_name && res.flowState)
+          {
+            // get amount/capacity
+            new_amount += res.amount;
+            capacity += res.maxAmount;
+
+            // apply deferred
+            if (Math.Abs(deferred) > 0.0000001)
+            {
+              double amount_diff = Lib.Clamp(res.amount + deferred, 0.0, res.maxAmount) - res.amount;
+              res.amount += amount_diff;
+              deferred -= amount_diff;
+            }
+            if (res.amount < 0.0000001) res.amount = 0.0;
+          }
+        }
+      }
+
+      // update amount
+      amount = new_amount;
+    }
+
+    // recalculate level
+    level = capacity > double.Epsilon ? amount / capacity : 0.0;
+
+    // reset deferred consumption/production
+    deferred = 0.0;
+
+    // reseal meal flag
+    meal_happened = false;
+  }
+
+
+  // FIXME there seem to be some issues with deferred/rate calculations
   // synchronize amount from cache to vessel
   public void Sync(Vessel v, double elapsed_s)
   {
@@ -83,15 +177,6 @@ public sealed class resource_info
           }
         }
       }
-
-      // TODO test
-      // commenting out this 'hard-coded cheap ass fake simulation of loaded solar panels (for a single 1.64EC/s at 1 AU)
-      // when the sun visibility is evaluated analytically over the orbit' fix the CO2 issue, demonstrating that the
-      // only way to resolve these co2/climate insta-death is to reimplement the stock solar panel module (see #95)
-      //if (resource_name == "ElectricCharge" && Cache.VesselInfo(v).sunlight > 0.0 && Cache.VesselInfo(v).sunlight < 1.0)
-      //{
-      //  deferred = 1.64 * Cache.VesselInfo(v).sunlight;
-      //}
     }
     else
     {
