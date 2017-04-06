@@ -10,8 +10,11 @@ public static class VesselConfig
 {
   public static void config(this Panel p, Vessel v)
   {
+    // avoid corner-case when this is called in a lambda after scene changes
+    v = FlightGlobals.FindVessel(v.id);
+
     // if vessel doesn't exist anymore, leave the panel empty
-    if (FlightGlobals.FindVessel(v.id) == null) return;
+    if (v == null) return;
 
     // get info from the cache
     vessel_info vi = Cache.VesselInfo(v);

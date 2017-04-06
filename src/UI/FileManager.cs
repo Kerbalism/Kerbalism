@@ -10,7 +10,7 @@ public static class FileManager
 {
   public static void fileman(this Panel p, Vessel v)
   {
-    // get vessel
+    // avoid corner-case when this is called in a lambda after scene changes
     v = FlightGlobals.FindVessel(v.id);
 
     // if vessel doesn't exist anymore, leave the panel empty

@@ -11,13 +11,16 @@ public static class DevManager
 {
   public static void devman(this Panel p, Vessel v)
   {
-    // if vessel doesn't exist anymore
-    if (FlightGlobals.FindVessel(v.id) == null) return;
+    // avoid corner-case when this is called in a lambda after scene changes
+    v = FlightGlobals.FindVessel(v.id);
+
+    // if vessel doesn't exist anymore, leave the panel empty
+    if (v == null) return;
 
     // get info from the cache
     vessel_info vi = Cache.VesselInfo(v);
 
-    // if not a valid vessel
+    // if not a valid vessel, leave the panel empty
     if (!vi.is_valid) return;
 
     // set metadata
