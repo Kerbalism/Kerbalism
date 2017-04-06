@@ -1,7 +1,8 @@
 ### CHANGELOG
 
-1.2.4  
+1.2.4
   - SMURFF compatibility patch (@eberkain)
+  - Laboratory module satisfy stock contracts
   - fix: resource amount not clamped to capacity
   - fix: script editor window UB after scene changes
 
@@ -12,8 +13,8 @@
   - EVA kerbals now have a non-regenerative scrubber, with fixed duration
   - increased amount of EC and Oxygen on EVA kerbals
   - improved description of configure setups
-  - scale low-gain and high-gain antenna distances differently in supported planet packs  
-  - lowered xmit scalar threshold used to deduce if data is file or sample  
+  - scale low-gain and high-gain antenna distances differently in supported planet packs
+  - lowered xmit scalar threshold used to deduce if data is file or sample
   - safemode malfunctions don't stop timewarp anymore
   - support patch for RLA Stockalike Continued (@YaarPodshipnik)
   - NearFuture PB-AS-NUK emit radiation (@YaarPodshipnik)
