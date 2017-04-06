@@ -3,6 +3,7 @@
 1.2.4  
   - SMURFF compatibility patch (@eberkain)
   - fix: resource amount not clamped to capacity
+  - fix: script editor window UB after scene changes
 
 1.2.3
   - resource cache production/consumption simulate ALL_VESSEL_BALANCED
