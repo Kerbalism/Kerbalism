@@ -13,7 +13,7 @@ public sealed class ProcessController : PartModule, IModuleInfo, IAnimatedModule
   [KSPField] public string resource = string.Empty; // pseudo-resource to control
   [KSPField] public string title = string.Empty;    // name to show on ui
   [KSPField] public string desc = string.Empty;     // description to show on tooltip
-  [KSPField] public double capacity = 1.0;          // description to show on tooltip
+  [KSPField] public double capacity = 1.0;          // amount of associated pseudo-resource TODO changed comment
   [KSPField] public bool   toggle = true;           // show the enable/disable toggle
 
   // persistence/config
@@ -95,8 +95,17 @@ public sealed class ProcessController : PartModule, IModuleInfo, IAnimatedModule
     Process process = Profile.processes.Find(k => k.modifiers.Contains(resource));
     if (process != null)
     {
-      foreach(var pair in process.inputs) specs.add(pair.Key, Lib.BuildString("<color=#ff0000>", Lib.HumanReadableRate(pair.Value * capacity), "</color>"));
-      foreach(var pair in process.outputs) specs.add(pair.Key, Lib.BuildString("<color=#00ff00>", Lib.HumanReadableRate(pair.Value * capacity), "</color>"));
+      foreach(var pair in process.inputs)
+      {
+        if (!process.modifiers.Contains(pair.Key))
+          specs.add(pair.Key, Lib.BuildString("<color=#ff0000>", Lib.HumanReadableRate(pair.Value * capacity), "</color>"));
+        else
+          specs.add("Half-life", Lib.HumanReadableDuration(0.5 / pair.Value));
+      }
+      foreach(var pair in process.outputs)
+      {
+        specs.add(pair.Key, Lib.BuildString("<color=#00ff00>", Lib.HumanReadableRate(pair.Value * capacity), "</color>"));
+      }
     }
     return specs;
   }
