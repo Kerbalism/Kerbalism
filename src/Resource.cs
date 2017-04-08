@@ -119,7 +119,7 @@ public sealed class resource_info
     // apply deferred consumption/production, simulating ALL_VESSEL_BALANCED
     // - iterating again is faster than using a temporary list of valid PartResources
     // - avoid very small values in deferred consumption/production
-    if(Math.Abs(deferred) > 0.0000001)
+    if(Math.Abs(deferred) > 1e-10)
     {
       if (v.loaded)
       {
@@ -216,7 +216,7 @@ public sealed class resource_info
     double delta = rate + meal_rate;
 
     // return depletion
-    return amount <= double.Epsilon ? 0.0 : delta >= -0.0000001 ? double.NaN : amount / -delta;
+    return amount <= double.Epsilon ? 0.0 : delta >= -1e-10 ? double.NaN : amount / -delta;
   }
 
 
