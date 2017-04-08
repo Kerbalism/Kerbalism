@@ -1,5 +1,10 @@
 ### CHANGELOG
 
+1.2.5  
+  - fix: Solar panel sun visibility sampling error at max timewarp for loaded vessels (#95)
+  - fix: Impossible to guarantee coherency in resource simulation of loaded vessels (#96)
+  - RTG decay over time
+
 1.2.4
   - SMURFF compatibility patch (@eberkain)
   - Laboratory module satisfy stock contracts
