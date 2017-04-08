@@ -116,7 +116,7 @@ public static class Telemetry
       if (supplies == 0) p.section("SUPPLIES");
 
       // rate tooltip
-      string rate_tooltip = Math.Abs(res.rate) >= 0.0000001 ? Lib.BuildString
+      string rate_tooltip = Math.Abs(res.rate) >= 1e-10 ? Lib.BuildString
       (
         res.rate > 0.0 ? "<color=#00ff00><b>" : "<color=#ff0000><b>",
         Lib.HumanReadableRate(Math.Abs(res.rate)),
