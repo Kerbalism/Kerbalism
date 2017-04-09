@@ -141,7 +141,7 @@ public static class Settings
   public static bool   IncentiveRedundancy;               // if true, each malfunction will increase the MTBF of components in the same redundancy group
 
   // misc
-  public static bool   EnforceCoherency;                  // detect issues at high timewarp in external modules
+  public static bool   EnforceCoherency;                  // detect and avoid issues at high timewarp in external modules
   public static bool   TrackingPivot;                     // simulate tracking solar panel around the pivot
   public static double HeadLampsCost;                     // EC/s cost if eva headlamps are on
   public static float  DeathReputation;                   // reputation to remove in case of death
