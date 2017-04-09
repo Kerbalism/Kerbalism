@@ -151,14 +151,14 @@
   - ***At high timewarp, resource rates seem wrong and/or kerbals die unexpectedly***
   
     The resource simulation used is coherent irregardless of timewarp speed and resource capacity.
-    That remain the case as long as your resource producers/consumers have been written by me,
-    or in any case hacked by me. Therefore, the moment you start using producers/consumers not included
-    in the following list, you are on your own. Here are the things guaranteed to work at arbitrarily
-    high timewarp speed and arbitrarily low resource capacity:
+    That remain the case as long as your resource producers/consumers have been written or otherwise hacked by me.
+    Therefore, the moment you start using producers/consumers not included in the following list, you are on your own.
+    Here are the things guaranteed to work at arbitrarily high timewarp speed and arbitrarily low resource capacity:
     
-    - the modules provided by this mod
-    - the third-party modules emulated in unloaded vessels
-    - the stock solar panel
+    - modules provided by this mod
+    - third-party modules emulated in unloaded vessels
+    - stock solar panel
+    - rules and processes
     
     
   - ***I think to have found a bug, and I have 100 mods installed***
