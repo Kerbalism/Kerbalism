@@ -13,7 +13,7 @@ public sealed class ProcessController : PartModule, IModuleInfo, IAnimatedModule
   [KSPField] public string resource = string.Empty; // pseudo-resource to control
   [KSPField] public string title = string.Empty;    // name to show on ui
   [KSPField] public string desc = string.Empty;     // description to show on tooltip
-  [KSPField] public double capacity = 1.0;          // amount of associated pseudo-resource TODO changed comment
+  [KSPField] public double capacity = 1.0;          // amount of associated pseudo-resource
   [KSPField] public bool   toggle = true;           // show the enable/disable toggle
 
   // persistence/config
