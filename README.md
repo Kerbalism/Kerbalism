@@ -148,21 +148,38 @@
 
 ### FAQs
 
-  - ***I found a bug***
+  - ***At high timewarp, resource rates seem wrong and/or kerbals die unexpectedly***
+  
+    The resource simulation used is coherent irregardless of timewarp speed and resource capacity.
+    That remain the case as long as your resource producers/consumers have been written by me,
+    or in any case hacked by me. Therefore, the moment you start using producers/consumers not included
+    in the following list, you are on your own. Here are the things guaranteed to work at arbitrarily
+    high timewarp speed and arbitrarily low resource capacity:
+    
+    - the modules provided by this mod
+    - the third-party modules emulated in unloaded vessels
+    - the stock solar panel
+    
+    
+  - ***I think to have found a bug, and I have 100 mods installed***
+  
+    Go away.
+    
 
-    First demonstrate that the bug doesn't exist without Kerbalism installed. Then reproduce the bug consistently.
-    Finally, by all means, inform me about it by raising an issue on github or post on the thread on KSP forums.
-    Include all necessary information in the report.
+  - ***I think to have found a bug, and I have just a few mods installed***
+
+    Try to reproduce the bug consistently, then provide me with a savegame that demonstrate the issue.
+    Include log files, screenshots, and reproduction steps. Post the report here, or raise an issue on github.
 
 
-  - ***I am a part author. How can I add support for Kerbalism?***
+  - ***I want to add support for this to my parts***
 
-    You simply add the appropriate modules to your parts. Check the wiki for the module specifications.
+    Add the appropriate modules to your parts. Check the wiki on github for the module specifications.
 
 
-  - ***I am a mod author. How can I interact with Kerbalism?***
+  - ***I want to interact with this mod in code***
 
-    Have a look at System/API.cs source code on the github. Raise an issue to request more functions there.
+    Have a look at System/API.cs source code on github. Raise an issue to request more functions.
 
 
 ### REQUIREMENTS
@@ -173,4 +190,3 @@
 ### LICENSE
 
   This mod is released under the Unlicense.
-
