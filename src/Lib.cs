@@ -172,15 +172,10 @@ public static class Lib
   }
 
   // stop time warping
-  public static void StopWarp()
+  public static void StopWarp(int rate=0)
   {
-    // [experimental]
-    // it seem there is no more 'orbit messing' from instantaneously stopping timewarp
     TimeWarp.fetch.CancelAutoWarp();
-    TimeWarp.SetRate(0, true, false);
-    // the old way
-    //if (TimeWarp.CurrentRateIndex > 4) TimeWarp.SetRate(4, true);
-    //if (TimeWarp.CurrentRateIndex > 0) TimeWarp.SetRate(0, false);
+    TimeWarp.SetRate(rate, true, false);
   }
 
   // disable time warping above a specified level
@@ -767,8 +762,9 @@ public static class Lib
     if (v.state == Vessel.State.DEAD) return false;
 
     // if the vessel is a debris, a flag or an asteroid, ignore it
-    // note: the user can change vessel type, in that case he is actually disabling this mod for the vessel
-    // the alternative is to scan the vessel for ModuleCommand, but that is slower, and rescue vessels have no module command
+    // - the user can change vessel type, in that case he is actually disabling this mod for the vessel
+    //   the alternative is to scan the vessel for ModuleCommand, but that is slower, and rescue vessels have no module command
+    // - flags have type set to 'station' for a single update, can still be detected as they have vesselID == 0
     if (v.vesselType == VesselType.Debris || v.vesselType == VesselType.Flag || v.vesselType == VesselType.SpaceObject || v.vesselType == VesselType.Unknown) return false;
 
     // [disabled] when going to eva (and possibly other occasions), for a single update the vessel is not properly set

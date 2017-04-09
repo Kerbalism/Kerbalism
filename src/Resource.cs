@@ -73,9 +73,27 @@ public sealed class resource_info
     // - calculate resource level
     // - reset deferred
 
+    // # NOTE
+    // It is impossible to guarantee coherency in resource simulation of loaded vessels,
+    // if consumers/producers external to the resource cache exist in the vessel (#96).
+    // Such is the case for example on loaded vessels with stock solar panels.
+    // The effect is that the whole resource simulation become dependent on timestep again.
+    // From the user point-of-view, there are two cases:
+    // - (A) the timestep-dependent error is smaller than capacity
+    // - (B) the timestep-dependent error is bigger than capacity
+    // In case [A], there are no consequences except a slightly wrong computed level and rate.
+    // In case [B], the simulation became incoherent and from that point anything can happen,
+    // like for example insta-death by co2 poisoning or climatization.
+    // To avoid the consequences of [B]:
+    // - we hacked the stock solar panel to use the resource cache
+    // - we detect incoherency on loaded vessels, and forbid the two highest warp speeds
+
 
     // remember amount currently known, to calculate rate later on
     double old_amount = amount;
+
+    // remember capacity currently known, to detect flow state changes
+    double old_capacity = capacity;
 
     // iterate over all enabled resource containers and detect amount/capacity again
     // - this detect production/consumption from stock and third-party mods
@@ -110,6 +128,28 @@ public sealed class resource_info
         }
       }
     }
+
+    // if incoherent producers are detected, do not allow high timewarp speed
+    // - ignore incoherent consumers (no negative consequences for player)
+    // - ignore flow state changes (avoid issue with process controllers)
+    // - unloaded vessels can't be incoherent, we are in full control there
+    // - can be disabled in settings
+    if (Settings.EnforceCoherency && v.loaded && TimeWarp.CurrentRateIndex >= 6 && amount - old_amount > 1e-10 && capacity - old_capacity < 1e-10)
+    {
+      Message.Post
+      (
+        Severity.warning,
+        Lib.BuildString
+        (
+          !v.isActiveVessel ? Lib.BuildString("On <b>", v.vesselName, "</b>\na ") : "A ",
+          "producer of <b>", resource_name, "</b> has\n",
+          "incoherent behaviour at high warp speed.\n",
+          "<i>Unload the vessel before warping</i>"
+        )
+      );
+      Lib.StopWarp(5);
+    }
+
 
     // clamp consumption/production to vessel amount/capacity
     // - if deferred is negative, then amount is guaranteed to be greater than zero
@@ -161,22 +201,8 @@ public sealed class resource_info
       }
     }
 
-    // NOTE
-    // It is impossible to guarantee coherency in resource simulation of loaded vessels,
-    // if consumers/producers external to the resource cache exist in the vessel (#96).
-    // Such is the case for example on loaded vessels with solar panels.
-    // The effect is that the whole resource simulation become dependent on timestep again.
-    // From the user point-of-view, there are two cases:
-    // - (A) the timestep-dependent error is smaller than capacity
-    // - (B) the timestep-dependent error is bigger than capacity
-    // In case [A], there are no consequences except a slightly wrong computed level and rate.
-    // In case [B], the simulation became incoherent and from that point anything can happen,
-    // like for example insta-death by co2 poisoning or climatization.
-    // If we don't update amount below, [A] consequences are hidden from the user. [B] consequences
-    // obviously remain in any case, awaiting a solution to #96.
-
-    // [disabled]
-    // amount += deferred;
+    // update amount, to get correct rate and levels at all times
+    amount += deferred;
 
     // calculate rate of change per-second
     // - don't update rate during and immediately after warp blending (stock modules have instabilities during warp blending)
