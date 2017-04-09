@@ -2,9 +2,9 @@
 
 1.2.5    
   - detect and avoid issues at high timewarp in external modules
-  - hack stock solar panel module to use resource cache
-  - corrected all chemical reactions, some were very wrong
+  - hack stock solar panels and RTGs to use resource cache
   - RTGs decay over time, with an half-life of 28.8 kerbin-years  
+  - corrected all chemical reactions, some were very wrong  
   - fix: Solar panel sun visibility sampling error at max timewarp for loaded vessels (#95)
   - fix: Impossible to guarantee coherency in resource simulation of loaded vessels (#96)  
 
