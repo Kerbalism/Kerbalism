@@ -111,6 +111,7 @@
     <Compile Include="Modules\Sensor.cs" />
     <Compile Include="Modules\Experiment.cs" />
     <Compile Include="Modules\Reliability.cs" />
+    <Compile Include="Modules\WarpFixer.cs" />
     <Compile Include="Profile\Modifiers.cs" />
     <Compile Include="Profile\Process.cs" />
     <Compile Include="Renderer\LineRenderer.cs" />
