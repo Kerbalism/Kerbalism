@@ -10,7 +10,6 @@ public static class SCANsat
   {
     foreach(var a in AssemblyLoader.loadedAssemblies)
     {
-      var version = a.assembly.GetName().Version;
       if (a.name == "SCANsat")
       {
         SCANUtils = a.assembly.GetType("SCANsat.SCANUtil");
