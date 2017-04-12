@@ -10,7 +10,6 @@ public static class RemoteTech
   {
     foreach(var a in AssemblyLoader.loadedAssemblies)
     {
-      var version = a.assembly.GetName().Version;
       if (a.name == "RemoteTech")
       {
         API = a.assembly.GetType("RemoteTech.API.API");
