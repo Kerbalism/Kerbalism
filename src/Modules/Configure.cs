@@ -56,7 +56,7 @@ public sealed class Configure : PartModule, IPartCostModifier, IPartMassModifier
     while(count-- > 0) setups.Add(new ConfigureSetup(archive));
 
     // parse configuration from string data
-    // - we avoid corner case when cfg is not set up at part compilation time (for whatever reason)
+    // - we avoid corner case when cfg was never set up (because craft was never in VAB)
     selected = new List<string>();
     if (!string.IsNullOrEmpty(cfg))
     {
@@ -66,7 +66,7 @@ public sealed class Configure : PartModule, IPartCostModifier, IPartMassModifier
     }
 
     // parse previous configuration from string data
-    // - we avoid corner case when prev_cfg is not set up at part compilation time (for whatever reason)
+    // - we avoid corner case when prev_cfg was never set up (because craft was never in VAB)
     prev_selected = new List<string>();
     if (!string.IsNullOrEmpty(prev_cfg))
     {
@@ -148,7 +148,7 @@ public sealed class Configure : PartModule, IPartCostModifier, IPartMassModifier
     // make sure configuration include all available slots
     // this also create default configuration
     // - we don it only in the editor
-    // - as a special case, we do it in flight if cfg wasn't set up at part compilation time (for whatever reason)
+    // - we avoid corner case when cfg was never set up (because craft was never in VAB)
     if (Lib.IsEditor() || selected.Count == 0)
     {
       while(selected.Count < Math.Min(slots, (uint)unlocked.Count))
