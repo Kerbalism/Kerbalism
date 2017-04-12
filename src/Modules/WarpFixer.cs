@@ -15,6 +15,9 @@ public sealed class WarpFixer : PartModule
 {
   public override void OnStart(StartState state)
   {
+    // do nothing in the editor
+    if (state == StartState.Editor) return;
+
     // get panel if any
     panel = part.FindModuleImplementing<ModuleDeployableSolarPanel>();
     if (panel != null)
