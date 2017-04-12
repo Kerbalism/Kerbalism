@@ -54,7 +54,6 @@ public sealed class Configure : PartModule, IPartCostModifier, IPartMassModifier
     archive.load(out count);
     setups = new List<ConfigureSetup>(count);
     while(count-- > 0) setups.Add(new ConfigureSetup(archive));
-    Lib.Log("FOUND SETUPS: " + setups.Count);//TODO
 
     // parse configuration from string data
     // - we avoid corner case when cfg is not set up at part compilation time (for whatever reason)
