@@ -74,6 +74,8 @@ For building and/or debugging Kerbalism with Visual Studio or Unity Editor you w
     Radiation.render();
     Profiler.EndSample();
     ```
+    **Note:** There is a simple 'frame-based' profiler included in the Kerbalism code base [here](https://github.com/ShotgunNinja/Kerbalism/blob/master/src/Utility/Profiler.cs), that is appropriate for performance measurements.
+    
   - For Monodevelop debugging you need the .mdb files and will have to attach to the KSP dev install debug executable, to do this start Monodevelop and then start your KSP dev install debug executable, now use Monodevelop's **Run Menu->Attach to Process** option to open the process attach window. *Unity Debugger* should be selected in the lower left selection box, now you can select KSP's process called *"WindowsPlayer"* and click OK to attach to it. Monodevelop should now switch into debugging mode.
 
 **The Kerbalism.zip packager.**
