@@ -111,7 +111,7 @@ public sealed class vessel_info
   public UInt64       inc;                  // unique incremental id for the entry
   public bool         is_vessel;            // true if this is a valid vessel
   public bool         is_rescue;            // true if this is a rescue mission vessel
-  public bool         is_valid;             // equivalent to (is_vessel && !is_resque && !eva_dead)
+  public bool         is_valid;             // equivalent to (is_vessel && !is_rescue && !eva_dead)
   public UInt32       id;                   // generate the id once
   public int          crew_count;           // number of crew on the vessel
   public int          crew_capacity;        // crew capacity of the vessel
