@@ -67,7 +67,7 @@ public sealed class Rule
       // get kerbal data
       KerbalData kd = DB.Kerbal(c.name);
 
-      // skip resque kerbals
+      // skip rescue kerbals
       if (kd.rescue) continue;
 
       // skip disabled kerbals

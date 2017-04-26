@@ -114,11 +114,11 @@ public sealed class Kerbalism : ScenarioModule
         EVA.update(v);
       }
 
-      // keep track of resque mission kerbals, and gift resources to their vessels on discovery
+      // keep track of rescue mission kerbals, and gift resources to their vessels on discovery
       if (v.loaded && vi.is_vessel)
       {
-        // manage resque mission mechanics
-        Misc.manageResqueMission(v);
+        // manage rescue mission mechanics
+        Misc.manageRescueMission(v);
       }
 
       // do nothing else for invalid vessels
@@ -336,27 +336,27 @@ public static class Misc
   }
 
 
-  public static void manageResqueMission(Vessel v)
+  public static void manageRescueMission(Vessel v)
   {
-    // true if we detected this was a resque mission vessel
+    // true if we detected this was a rescue mission vessel
     bool detected = false;
 
-    // deal with resque missions
+    // deal with rescue missions
     foreach(ProtoCrewMember c in Lib.CrewList(v))
     {
       // get kerbal data
       KerbalData kd = DB.Kerbal(c.name);
 
-      // flag the kerbal as not resque at prelaunch
+      // flag the kerbal as not rescue at prelaunch
       if (v.situation == Vessel.Situations.PRELAUNCH) kd.rescue = false;
 
-      // if the kerbal belong to a resque mission
+      // if the kerbal belong to a rescue mission
       if (kd.rescue)
       {
         // remember it
         detected = true;
 
-        // flag the kerbal as non-resque
+        // flag the kerbal as non-rescue
         // note: enable life support mechanics for the kerbal
         kd.rescue = false;
 
@@ -470,10 +470,10 @@ public static class Misc
   }
 
 
-  // return true if the vessel is a resque mission
+  // return true if the vessel is a rescue mission
   public static bool IsRescueMission(Vessel v)
   {
-    // if at least one of the crew is flagged as resque, consider it a resque mission
+    // if at least one of the crew is flagged as rescue, consider it a rescue mission
     foreach(var c in Lib.CrewList(v))
     {
       if (DB.Kerbal(c.name).rescue) return true;

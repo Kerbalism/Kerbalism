@@ -112,7 +112,7 @@ public sealed class Supply
 
   public void SetupRescue(Vessel v)
   {
-    // do nothing if no resource on resque
+    // do nothing if no resource on rescue
     if (on_rescue <= double.Epsilon) return;
 
     // if the vessel has no capacity
