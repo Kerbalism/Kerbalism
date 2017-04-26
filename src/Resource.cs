@@ -302,7 +302,7 @@ public sealed class resource_recipe
   public bool Execute(Vessel v, vessel_resources resources)
   {
     // determine worst input ratio
-    // note: pure input recipes can just underflow
+    // - pure input recipes can just underflow
     double worst_input = left;
     if (outputs.Count > 0)
     {
