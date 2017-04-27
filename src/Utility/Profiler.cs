@@ -1,4 +1,4 @@
-﻿#if false
+﻿#if KERBALISM_PROFILER
 
 using System;
 using System.Collections.Generic;
@@ -67,9 +67,6 @@ public sealed class Profiler : MonoBehaviour
     // enable global access
     instance = this;
 
-    // keep it alive
-    DontDestroyOnLoad(this);
-
     // generate unique id, hopefully
     win_id = Lib.RandomInt(int.MaxValue);
 
@@ -81,22 +78,31 @@ public sealed class Profiler : MonoBehaviour
 
     // setup styles
     win_style = new GUIStyle(HighLogic.Skin.window);
+    top_style = new GUIStyle();
+    name_style = new GUIStyle();
+    value_style = new GUIStyle();
+  }
+
+  //  Awake is called only once when the script instance is being loaded. Used in place of the constructor for initialization.
+  public void Awake()
+  {
+    // keep it alive
+    DontDestroyOnLoad(this);
+
+    // setup styles
     win_style.padding.top = 0;
     win_style.padding.bottom = 0;
-    top_style = new GUIStyle();
     top_style.fixedHeight = top_height;
     top_style.fontStyle = FontStyle.Bold;
     top_style.alignment = TextAnchor.MiddleCenter;
-    name_style = new GUIStyle();
     name_style.fontSize = 10;
     name_style.fixedWidth = 150.0f;
     name_style.stretchWidth = false;
-    value_style = new GUIStyle(name_style);
+    value_style.fontSize = 10;
     value_style.fixedWidth = 75.0f;
+    value_style.stretchWidth = false;
     value_style.alignment = TextAnchor.MiddleRight;
-
   }
-
 
   // called every frame
   public void OnGUI()
