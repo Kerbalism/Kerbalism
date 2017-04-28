@@ -1,5 +1,13 @@
 ### CHANGELOG
 
+1.2.6
+  - improved Bluedog support patch (@ModZero)
+  - SSTU support patch (@Maxzhao1999)
+  - reduced monoprop fuel cell rates, adapt to required EC  
+  - fix: planner not considering solar panels after last update
+  - fix: exception in Configure module for crafts that never entered VAB  
+  - fix: duplicate extend/retract in some supported antennas
+  
 1.2.5    
   - detect and avoid issues at high timewarp in external modules
   - hack stock solar panels and RTGs to use resource cache
