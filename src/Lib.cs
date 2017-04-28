@@ -104,7 +104,8 @@ public static class Lib
   }
 
   // return random float in [-1,+1] range
-  // note: it is less random than the c# RNG, but is way faster
+  // - it is less random than the c# RNG, but is way faster
+  // - the seed is meant to overflow! (turn off arithmetic overflow/underflow exceptions)
   static int fast_float_seed = 1;
   public static float FastRandomFloat()
   {

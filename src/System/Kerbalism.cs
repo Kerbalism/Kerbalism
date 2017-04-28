@@ -617,4 +617,3 @@ public static class Misc
 
 
 } // KERBALISM
-
