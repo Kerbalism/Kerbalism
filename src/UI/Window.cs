@@ -125,6 +125,22 @@ public sealed class Window
     return win_rect.Contains(pos);
   }
 
+  public void position(uint x, uint y)
+  {
+    win_rect.Set((float)x, (float)y, win_rect.width, win_rect.height);
+  }
+
+  public uint left()
+  {
+    return (uint)win_rect.xMin;
+  }
+
+  public uint top()
+  {
+    return (uint)win_rect.yMin;
+  }
+
+
   // store window id
   int win_id;
 
@@ -149,6 +165,3 @@ public sealed class Window
 
 
 } // KERBALISM
-
-
-

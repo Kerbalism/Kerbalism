@@ -62,6 +62,16 @@ public static class DB
       landmarks = new LandmarkData();
     }
 
+    // load ui data
+    if (node.HasNode("ui"))
+    {
+      ui = new UIData(node.GetNode("ui"));
+    }
+    else
+    {
+      ui = new UIData();
+    }
+
     // if an old savegame was imported, log some debug info
     if (version != Lib.Version()) Lib.Log("savegame converted from version " + version);
   }
@@ -98,6 +108,9 @@ public static class DB
 
     // save landmark data
     landmarks.save(node.AddNode("landmarks"));
+
+    // save ui data
+    ui.save(node.AddNode("ui"));
   }
 
 
@@ -141,6 +154,7 @@ public static class DB
   public static Dictionary<uint, VesselData> vessels;    // store data per-vessel, indexed by root part id
   public static Dictionary<string, BodyData> bodies;     // store data per-body
   public static LandmarkData landmarks;                  // store landmark data
+  public static UIData ui;                               // store ui data
 }
 
 

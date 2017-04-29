@@ -13,6 +13,9 @@ public sealed class Kerbalism : ScenarioModule
 {
   public override void OnLoad(ConfigNode node)
   {
+    // deserialize data
+    DB.load(node);
+
     // initialize everything just once
     if (!initialized)
     {
@@ -45,15 +48,15 @@ public sealed class Kerbalism : ScenarioModule
       initialized = true;
     }
 
-    // deserialize data
-    DB.load(node);
-
     // detect if this is a different savegame
     if (DB.uid != savegame_uid)
     {
       // clear caches
       Cache.clear();
       ResourceCache.clear();
+
+      // sync main window pos from db
+      UI.sync();
 
       // remember savegame id
       savegame_uid = DB.uid;

@@ -13,7 +13,12 @@ public static class UI
     // create subsystems
     message  = new Message();
     launcher = new Launcher();
-    window   = new Window(260u, 280u, 100u);
+    window   = new Window(260u, DB.ui.win_left, DB.ui.win_top);
+  }
+
+  public static void sync()
+  {
+    window.position(DB.ui.win_left, DB.ui.win_top);
   }
 
   public static void update(bool show_window)
@@ -23,15 +28,19 @@ public static class UI
     {
       // as a special case, the first time the user enter
       // map-view/tracking-station we open the body info window
-      if (MapView.MapIsEnabled && !first_time_mapview)
+      if (MapView.MapIsEnabled && !DB.ui.map_viewed)
       {
         open(BodyInfo.body_info);
-        first_time_mapview = true;
+        DB.ui.map_viewed = true;
       }
 
       // update subsystems
       launcher.update();
       window.update();
+
+      // remember main window position
+      DB.ui.win_left = window.left();
+      DB.ui.win_top = window.top();
     }
 
     // re-enable camera mouse scrolling, as some of the on_gui functions can
@@ -60,7 +69,6 @@ public static class UI
   static Message  message;
   static Launcher launcher;
   static Window   window;
-  static bool     first_time_mapview;
 }
 
 
