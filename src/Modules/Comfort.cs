@@ -32,12 +32,12 @@ public sealed class Comfort : PartModule, ISpecifics
 
 public sealed class Comforts
 {
-  public Comforts(Vessel v, bool firm_ground, bool not_alone, bool call_home)
+  public Comforts(Vessel v, bool env_firm_ground, bool env_not_alone, bool env_call_home)
   {
     // environment factors
-    this.firm_ground = firm_ground;
-    this.not_alone = not_alone;
-    this.call_home = call_home;
+    firm_ground = env_firm_ground;
+    not_alone = env_not_alone;
+    call_home = env_call_home;
 
     // if loaded
     if (v.loaded)
@@ -47,18 +47,18 @@ public sealed class Comforts
       {
         switch(c.bonus)
         {
-          case "firm-ground": this.firm_ground = true; break;
-          case "not-alone":   this.not_alone = true;   break;
-          case "call-home":   this.call_home = true;   break;
-          case "exercise":    this.exercise = true;    break;
-          case "panorama":    this.panorama = true;    break;
+          case "firm-ground": firm_ground = true; break;
+          case "not-alone":   not_alone = true;   break;
+          case "call-home":   call_home = true;   break;
+          case "exercise":    exercise = true;    break;
+          case "panorama":    panorama = true;    break;
         }
       }
 
       // scan parts for gravity ring
       if (ResourceCache.Info(v, "ElectricCharge").amount >= 0.01)
       {
-        this.firm_ground |= Lib.HasModule<GravityRing>(v, k => k.deployed);
+        firm_ground |= Lib.HasModule<GravityRing>(v, k => k.deployed);
       }
     }
     // if not loaded
@@ -69,18 +69,18 @@ public sealed class Comforts
       {
         switch(Lib.Proto.GetString(m, "bonus"))
         {
-          case "firm-ground": this.firm_ground = true; break;
-          case "not-alone":   this.not_alone = true;   break;
-          case "call-home":   this.call_home = true;   break;
-          case "exercise":    this.exercise = true;    break;
-          case "panorama":    this.panorama = true;    break;
+          case "firm-ground": firm_ground = true; break;
+          case "not-alone":   not_alone = true;   break;
+          case "call-home":   call_home = true;   break;
+          case "exercise":    exercise = true;    break;
+          case "panorama":    panorama = true;    break;
         }
       }
 
       // scan parts for gravity ring
       if (ResourceCache.Info(v, "ElectricCharge").amount >= 0.01)
       {
-        this.firm_ground |= Lib.HasModule(v.protoVessel, "GravityRing", k => Lib.Proto.GetBool(k, "deployed"));
+        firm_ground |= Lib.HasModule(v.protoVessel, "GravityRing", k => Lib.Proto.GetBool(k, "deployed"));
       }
     }
 
@@ -95,12 +95,12 @@ public sealed class Comforts
   }
 
 
-  public Comforts(List<Part> parts, bool firm_ground, bool not_alone, bool call_home)
+  public Comforts(List<Part> parts, bool env_firm_ground, bool env_not_alone, bool env_call_home)
   {
     // environment factors
-    this.firm_ground = firm_ground;
-    this.not_alone = not_alone;
-    this.call_home = call_home;
+    firm_ground = env_firm_ground;
+    not_alone = env_not_alone;
+    call_home = env_call_home;
 
     // for each parts
     foreach(Part p in parts)
@@ -117,11 +117,11 @@ public sealed class Comforts
           Comfort c = m as Comfort;
           switch(c.bonus)
           {
-            case "firm-ground": this.firm_ground = true; break;
-            case "not-alone":   this.not_alone = true;   break;
-            case "call-home":   this.call_home = true;   break;
-            case "exercise":    this.exercise = true;    break;
-            case "panorama":    this.panorama = true;    break;
+            case "firm-ground": firm_ground = true; break;
+            case "not-alone":   not_alone = true;   break;
+            case "call-home":   call_home = true;   break;
+            case "exercise":    exercise = true;    break;
+            case "panorama":    panorama = true;    break;
           }
         }
         // gravity ring
@@ -129,7 +129,7 @@ public sealed class Comforts
         else if (m.moduleName == "GravityRing")
         {
           GravityRing ring = m as GravityRing;
-          this.firm_ground |= ring.deployed;
+          firm_ground |= ring.deployed;
         }
       }
     }
@@ -157,7 +157,8 @@ public sealed class Comforts
       "exercise\t\t", exercise ? yes : no, "\n",
       "not alone\t", not_alone ? yes : no, "\n",
       "call home\t", call_home ? yes : no, "\n",
-      "panorama\t", panorama ? yes : no
+      "panorama\t", panorama ? yes : no, "\n",
+      "<i>factor</i>\t\t", Lib.HumanReadablePerc(factor)
     );
   }
 
