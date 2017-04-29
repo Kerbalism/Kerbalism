@@ -165,22 +165,20 @@ public sealed class Habitat : PartModule, ISpecifics, IConfigurable
     if (Lib.IsFlight())
     {
       // shortcuts
-      resource_info vessel_atmo = ResourceCache.Info(vessel, "Atmosphere");
-      resource_info vessel_waste = ResourceCache.Info(vessel, "WasteAtmosphere");
-      PartResource hab_atmo = part.Resources["Atmosphere"];
-      PartResource hab_waste = part.Resources["WasteAtmosphere"];
+      PartResource atmo = part.Resources["Atmosphere"];
+      PartResource waste = part.Resources["WasteAtmosphere"];
 
       // venting succeeded if the amount reached zero
-      if (hab_atmo.amount <= double.Epsilon && hab_waste.amount <= double.Epsilon) return State.disabled;
+      if (atmo.amount <= double.Epsilon && waste.amount <= double.Epsilon) return State.disabled;
 
       // how much to vent
       double rate = volume * equalize_speed * Kerbalism.elapsed_s;
-      double atmo_k = hab_atmo.amount / (hab_atmo.amount + hab_waste.amount);
-      double waste_k = hab_waste.amount / (hab_atmo.amount + hab_waste.amount);
+      double atmo_k = atmo.amount / (atmo.amount + waste.amount);
+      double waste_k = waste.amount / (atmo.amount + waste.amount);
 
       // consume from the part, clamp amount to what's available
-      hab_atmo.amount = Math.Max(hab_atmo.amount - rate * atmo_k, 0.0);
-      hab_waste.amount = Math.Max(hab_waste.amount - rate * waste_k, 0.0);
+      atmo.amount = Math.Max(atmo.amount - rate * atmo_k, 0.0);
+      waste.amount = Math.Max(waste.amount - rate * waste_k, 0.0);
 
       // venting still in progress
       return State.venting;
