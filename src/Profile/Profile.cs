@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 
@@ -8,6 +8,105 @@ namespace KERBALISM
 
 	public static class Profile
 	{
+
+		// node parsing
+		private static void nodeparse(ConfigNode profile_node)
+		{
+			// parse all rules
+			foreach (ConfigNode rule_node in profile_node.GetNodes("Rule"))
+			{
+				try
+				{
+					// parse rule
+					Rule rule = new Rule(rule_node);
+
+					// ignore duplicates
+					if (rules.Find(k => k.name == rule.name) == null)
+					{
+						// add the rule
+						rules.Add(rule);
+					}
+				}
+				catch (Exception e)
+				{
+					Lib.Log(Lib.BuildString("warning: failed to load rule (reason: ", e.Message, ")"));
+				}
+			}
+
+			// parse all supplies
+			foreach (ConfigNode supply_node in profile_node.GetNodes("Supply"))
+			{
+				try
+				{
+					// parse supply
+					Supply supply = new Supply(supply_node);
+
+					// ignore duplicates
+					if (supplies.Find(k => k.resource == supply.resource) == null)
+					{
+						// add the supply
+						supplies.Add(supply);
+					}
+				}
+				catch (Exception e)
+				{
+					Lib.Log(Lib.BuildString("warning: failed to load supply (reason: ", e.Message, ")"));
+				}
+			}
+
+			// parse all processes
+			foreach (ConfigNode process_node in profile_node.GetNodes("Process"))
+			{
+				try
+				{
+					// parse process
+					Process process = new Process(process_node);
+
+					// ignore duplicates
+					if (processes.Find(k => k.name == process.name) == null)
+					{
+						// add the process
+						processes.Add(process);
+					}
+				}
+				catch (Exception e)
+				{
+					Lib.Log(Lib.BuildString("warning: failed to load process (reason: ", e.Message, ")"));
+				}
+			}
+		}
+
+		// Support config file parsing
+		private static void parseSupport()
+		{
+			// for each profile
+			foreach (ConfigNode profile_node in Lib.ParseConfigs("Profile"))
+			{
+				// get the name
+				string name = Lib.ConfigValue(profile_node, "name", string.Empty);
+
+				// if this is a Kerbalism Support profile
+				if (name == "KerbalismSupport")
+				{
+					// get the mod name and directory
+					string modname = Lib.ConfigValue(profile_node, "modname", string.Empty);
+					string moddir = Lib.ConfigValue(profile_node, "moddir", string.Empty);
+
+					// if the mods directory exists
+					if (Lib.GameDirectoryExist(moddir))
+					{
+						// log profile and mod name
+						Lib.Log(Lib.BuildString("importing Kerbalism Support profile for mod: ", modname));
+
+						// parse nodes
+						nodeparse(profile_node);
+
+						// done a Support profile now on to the next
+					}
+				}
+			}
+		}
+
 		public static void parse()
 		{
 			// initialize data
@@ -30,68 +129,11 @@ namespace KERBALISM
 						// log profile name
 						Lib.Log(Lib.BuildString("using profile: ", Settings.Profile));
 
-						// parse all rules
-						foreach (ConfigNode rule_node in profile_node.GetNodes("Rule"))
-						{
-							try
-							{
-								// parse rule
-								Rule rule = new Rule(rule_node);
+						// parse nodes
+						nodeparse(profile_node);
 
-								// ignore duplicates
-								if (rules.Find(k => k.name == rule.name) == null)
-								{
-									// add the rule
-									rules.Add(rule);
-								}
-							}
-							catch (Exception e)
-							{
-								Lib.Log(Lib.BuildString("warning: failed to load rule (reason: ", e.Message, ")"));
-							}
-						}
-
-						// parse all supplies
-						foreach (ConfigNode supply_node in profile_node.GetNodes("Supply"))
-						{
-							try
-							{
-								// parse supply
-								Supply supply = new Supply(supply_node);
-
-								// ignore duplicates
-								if (supplies.Find(k => k.resource == supply.resource) == null)
-								{
-									// add the supply
-									supplies.Add(supply);
-								}
-							}
-							catch (Exception e)
-							{
-								Lib.Log(Lib.BuildString("warning: failed to load supply (reason: ", e.Message, ")"));
-							}
-						}
-
-						// parse all processes
-						foreach (ConfigNode process_node in profile_node.GetNodes("Process"))
-						{
-							try
-							{
-								// parse process
-								Process process = new Process(process_node);
-
-								// ignore duplicates
-								if (processes.Find(k => k.name == process.name) == null)
-								{
-									// add the process
-									processes.Add(process);
-								}
-							}
-							catch (Exception e)
-							{
-								Lib.Log(Lib.BuildString("warning: failed to load process (reason: ", e.Message, ")"));
-							}
-						}
+						// Add support configs
+						parseSupport();
 
 						// log info
 						Lib.Log("supplies:");
@@ -175,4 +217,3 @@ namespace KERBALISM
 
 
 } // KERBALISM
-

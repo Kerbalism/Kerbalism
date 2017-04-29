@@ -56,6 +56,27 @@ namespace KERBALISM
 			a = tmp;
 		}
 
+		// find a directory in the GameData directory
+		public static bool GameDirectoryExist(string findpath)
+		{
+			try
+			{
+				string gamedir = Path.Combine(Path.GetFullPath(KSPUtil.ApplicationRootPath), "GameData/" + findpath);
+				findpath = Path.GetFileName(gamedir);
+				gamedir = Path.GetDirectoryName(gamedir);
+				string[] paths = System.IO.Directory.GetDirectories(gamedir, findpath, SearchOption.AllDirectories);
+				if (paths.Length > 0)
+					return true;
+				else
+					return false;
+			}
+			catch (Exception e)
+			{
+				Log("error while looking for directory '" + findpath + "' in 'GameData' directory. (" + e.Message + ")");
+				return false;
+			}
+		}
+
 
 		// --- MATH -----------------------------------------------------------------
 
@@ -1600,4 +1621,3 @@ namespace KERBALISM
 
 
 } // KERBALISM
-
