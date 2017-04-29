@@ -350,9 +350,7 @@ public static class Sim
     // if inside atmosphere
     if (body.atmosphere && v.altitude < body.atmosphereDepth)
     {
-      // TODO cleanup
-      // calculate atmospheric temperature
-      //double atmo_temp = v.loaded ? v.rootPart.skinTemperature : body.GetTemperature(v.altitude);
+      // get atmospheric temperature
       double atmo_temp = body.GetTemperature(v.altitude);
 
       // mix between our temperature and the stock atmospheric model
