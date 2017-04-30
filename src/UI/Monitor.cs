@@ -207,7 +207,7 @@ public sealed class Monitor
     indicator_problems(p, v, vi, crew);
 
     // battery indicator
-    indicator_ec(p, v);
+    indicator_ec(p, v, vi);
 
     // supply indicator
     if (Features.Supplies) indicator_supplies(p, v, vi);
@@ -398,22 +398,28 @@ public sealed class Monitor
     p.icon(problem_icon, String.Join("\n", problem_tooltips.ToArray()));
   }
 
-  void indicator_ec(Panel p, Vessel v)
+  void indicator_ec(Panel p, Vessel v, vessel_info vi)
   {
-    Texture image;
-    string tooltip;
-
     resource_info ec = ResourceCache.Info(v, "ElectricCharge");
-
-    tooltip = ec.capacity > 0.0 ? "EC: " + Lib.HumanReadablePerc(ec.level) : "";
-    image = Icons.battery_white;
-
     Supply supply = Profile.supplies.Find(k => k.resource == "ElectricCharge");
     double low_threshold = supply != null ? supply.low_threshold : 0.15;
+    double depletion = ec.Depletion(vi.crew_count);
 
-    if (ec.level <= 0.005) image = Icons.battery_red;
-    else if (ec.level <= low_threshold) image = Icons.battery_yellow;
+    string tooltip = Lib.BuildString
+    (
+      "<align=left /><b>name\t  level\tduration</b>\n",
+      ec.level <= 0.005 ? "<color=#ff0000>" : ec.level <= low_threshold ? "<color=#ffff00>" : "<color=#cccccc>",
+      "EC\t  ",
+      Lib.HumanReadablePerc(ec.level), "\t",
+      depletion <= double.Epsilon ? "depleted" : Lib.HumanReadableDuration(depletion),
+      "</color>"
+    );
 
+    Texture image = ec.level <= 0.005
+      ? Icons.battery_red
+      : ec.level <= low_threshold
+      ? Icons.battery_yellow
+      : Icons.battery_white;
 
     p.icon(image, tooltip);
   }
@@ -425,19 +431,26 @@ public sealed class Monitor
     uint max_severity = 0;
     if (vi.crew_count > 0)
     {
-      var supplies = Profile.supplies.FindAll(k => k.resource != "ElectricCharge");
-      foreach(Supply supply in supplies)
+      foreach(Supply supply in Profile.supplies.FindAll(k => k.resource != "ElectricCharge"))
       {
         resource_info res = ResourceCache.Info(v, supply.resource);
+        double depletion = res.Depletion(vi.crew_count);
+
         if (res.capacity > double.Epsilon)
         {
-          double depletion = res.Depletion(vi.crew_count);
-          string deplete_str = depletion <= double.Epsilon
-            ? ", depleted"
-            : double.IsNaN(depletion)
-            ? ""
-            : Lib.BuildString(", deplete in <b>", Lib.HumanReadableDuration(depletion), "</b>");
-          tooltips.Add(Lib.BuildString(supply.resource, ": <b>", Lib.HumanReadablePerc(res.level), "</b>", deplete_str));
+          if (tooltips.Count == 0)
+          {
+            tooltips.Add("<align=left /><b>name\t  level\tduration</b>");
+          }
+
+          tooltips.Add(Lib.BuildString
+          (
+            res.level <= 0.005 ? "<color=#ff0000>" : res.level <= supply.low_threshold ? "<color=#ffff00>" : "<color=#cccccc>",
+            supply.resource, "\t  ",
+            Lib.HumanReadablePerc(res.level), "\t",
+            depletion <= double.Epsilon ? "depleted" : Lib.HumanReadableDuration(depletion),
+            "</color>"
+          ));
 
           uint severity = res.level <= 0.005 ? 2u : res.level <= supply.low_threshold ? 1u : 0;
           max_severity = Math.Max(max_severity, severity);
@@ -445,16 +458,13 @@ public sealed class Monitor
       }
     }
 
-    Texture image = Icons.box_white;
-    switch(max_severity)
-    {
-      case 0: image = Icons.box_white; break;
-      case 1: image = Icons.box_yellow; break;
-      case 2: image = Icons.box_red;  break;
-    }
-    string tooltip = string.Join("\n", tooltips.ToArray());
+    Texture image = max_severity == 2
+      ? Icons.box_red
+      : max_severity == 1
+      ? Icons.box_yellow
+      : Icons.box_white;
 
-    p.icon(image, tooltip);
+    p.icon(image, string.Join("\n", tooltips.ToArray()));
   }
 
 
