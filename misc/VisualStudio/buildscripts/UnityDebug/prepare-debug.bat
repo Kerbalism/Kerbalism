@@ -5,15 +5,11 @@ rem see https://github.com/ShotgunNinja/Kerbalism/tree/master/misc/VisualStudio/
 @echo off
 
 rem get parameters that are passed by visual studio post build event
-SET outDllPath=%1
+SET TargetName=%1
 
 rem make sure the initial working directory is the one containing the current script
 SET scriptPath=%~dp0
-SET initialWD=%CD%
 
 echo Generating Unity Monodevelop Debug file...
-echo Kerbalism.dll -^> %outDllPath%Kerbalism.dll.mdb
-cd "%outDllPath%"
-"%scriptPath%\pdb2mdb.exe" Kerbalism.dll
-
-cd "%initialWD%"
+echo %TargetName%.dll -^> %TargetName%.dll.mdb
+"%scriptPath%\pdb2mdb.exe" %TargetName%.dll

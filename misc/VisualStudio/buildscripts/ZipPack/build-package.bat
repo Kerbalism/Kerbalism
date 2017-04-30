@@ -5,35 +5,37 @@ rem see https://github.com/ShotgunNinja/Kerbalism/tree/master/misc/VisualStudio/
 @echo off
 
 rem get parameters that are passed by visual studio post build event
-SET outDllPath=%1
+SET TargetName=%1
+SET Dllversion=%2
 
 rem make sure the initial working directory is the one containing the current script
 SET scriptPath=%~dp0
+SET rootPath=%scriptPath%..\..\..\..\
 SET initialWD=%CD%
 
-echo Generating Kerbalism Release Package...
-cd "%scriptPath%..\..\..\..\"
-xcopy /y "%outDllPath%Kerbalism.dll" GameData\Kerbalism\Kerbalism.dll*
+echo Generating %TargetName% Release Package...
+cd "%rootPath%"
+xcopy /y "%initialWD%\%TargetName%.dll" GameData\%TargetName%\%TargetName%.dll*
 
 IF EXIST package\ rd /s /q package
 mkdir package
 cd package
 mkdir GameData
 cd GameData
-mkdir Kerbalism
-cd Kerbalism
+mkdir "%TargetName%"
+cd "%TargetName%"
 
-xcopy /y /e ..\..\..\GameData\Kerbalism\* .
+xcopy /y /e "..\..\..\GameData\%TargetName%\*" .
 xcopy /y ..\..\..\CHANGELOG.md .
 xcopy /y ..\..\..\License .
 xcopy /y ..\..\..\README.md .
 
 echo.
-echo Compressing Kerbalism Release Package...
-IF EXIST ..\..\..\Kerbalism.zip del ..\..\..\Kerbalism.zip
-"%scriptPath%7za.exe" a ..\..\..\Kerbalism.zip ..\..\GameData
+echo Compressing %TargetName% Release Package...
+IF EXIST "%rootPath%%TargetName%*.zip" del "%rootPath%%TargetName%*.zip"
+"%scriptPath%7za.exe" a "..\..\..\%TargetName%%Dllversion%.zip" ..\..\GameData
 
-cd ..\..\..\
+cd "%rootPath%"
 rd /s /q package
 
 cd "%initialWD%"

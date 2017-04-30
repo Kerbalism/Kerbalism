@@ -25,19 +25,19 @@
     <BaseAddress>4194304</BaseAddress>
     <RegisterForComInterop>False</RegisterForComInterop>
     <GenerateSerializationAssemblies>Off</GenerateSerializationAssemblies>
-    <FileAlignment>4096</FileAlignment>
+    <FileAlignment>512</FileAlignment>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <OutputPath>C:\Games\KSP\GameData\Kerbalism\</OutputPath>
     <DebugSymbols>True</DebugSymbols>
     <DebugType>Full</DebugType>
-    <Optimize>True</Optimize>
-    <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
-    <DefineConstants>DEBUG;TRACE;DEVELOPMENT;ENABLE_PROFILER</DefineConstants>
+    <Optimize>False</Optimize>
+    <CheckForOverflowUnderflow>False</CheckForOverflowUnderflow>
+    <DefineConstants>DEBUG;TRACE;DEVELOPMENT;ENABLE_PROFILER;KERBALISM_PROFILER</DefineConstants>
     <StartAction>Project</StartAction>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
-    <OutputPath>bin\Release\</OutputPath>
+    <OutputPath>..\..\..\..\..\KSP_Dev\GameData\Kerbalism\</OutputPath>
     <DebugSymbols>False</DebugSymbols>
     <DebugType>None</DebugType>
     <Optimize>True</Optimize>
@@ -54,8 +54,9 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
     <OutputPath>..\..\..\..\..\KSP_Dev\GameData\Kerbalism\</OutputPath>
-    <ErrorReport>none</ErrorReport>
+    <ErrorReport>prompt</ErrorReport>
     <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
+    <DefineConstants>TRACE;DEBUG;DEVELOPMENT;ENABLE_PROFILER;KERBALISM_PROFILER</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Assembly-CSharp">
@@ -120,6 +121,7 @@
     <Compile Include="Database\LandmarkData.cs" />
     <Compile Include="Database\RuleData.cs" />
     <Compile Include="Database\SupplyData.cs" />
+    <Compile Include="Database\UIData.cs" />
     <Compile Include="Database\VesselData.cs" />
     <Compile Include="External\RemoteTech.cs" />
     <Compile Include="External\SCANsat.cs" />
@@ -196,8 +198,20 @@
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+<Target Name="PostBuildMacros">
+  <GetAssemblyIdentity AssemblyFiles="$(TargetPath)">
+    <Output TaskParameter="Assemblies" ItemName="Targets" />
+  </GetAssemblyIdentity>
+  <ItemGroup>
+    <VersionNumber Include="@(Targets->'%(Version)')"/>
+  </ItemGroup>
+</Target>
   <PropertyGroup>
-    <PostBuildEvent>if $(ConfigurationName)==Debug (call "$(ProjectDir)..\misc\VisualStudio\buildscripts\UnityDebug\prepare-debug.bat" "$(OutDir)")
-if $(ConfigurationName)==Release (call "$(ProjectDir)..\misc\VisualStudio\buildscripts\ZipPack\build-package.bat" "$(OutDir)")</PostBuildEvent>
+  <PostBuildEventDependsOn>
+    $(PostBuildEventDependsOn);
+    PostBuildMacros;
+  </PostBuildEventDependsOn>    
+    <PostBuildEvent>if $(ConfigurationName)==Debug (call "$(ProjectDir)..\misc\VisualStudio\buildscripts\UnityDebug\prepare-debug.bat" $(TargetName))
+if $(ConfigurationName)==Release (call "$(ProjectDir)..\misc\VisualStudio\buildscripts\ZipPack\build-package.bat" $(TargetName) -@(VersionNumber))</PostBuildEvent>
   </PropertyGroup>
 </Project>

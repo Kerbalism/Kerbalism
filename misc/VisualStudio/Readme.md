@@ -9,7 +9,7 @@ A set of instructions and files to help set up Kerbalism for:
 #
 ### SETUP
 For building and/or debugging Kerbalism with Visual Studio or Unity Editor you will need to download and install the exact version of Unity Editor that was used to build the version of KSP you are working with.
-  - The Unity Editor for **KSP v1.2.2** is **Unity v5.4.0.p4** and can be downloaded here: [UnitySetup64-5.4.0p4.exe](http://beta.unity3d.com/download/b15b5ae035b7/Windows64EditorInstaller/UnitySetup64-5.4.0p4.exe)
+  - The Unity Editor for **KSP v1.3.0** is **Unity v5.4.0.p4** and can be downloaded here: [UnitySetup64-5.4.0p4.exe](http://beta.unity3d.com/download/b15b5ae035b7/Windows64EditorInstaller/UnitySetup64-5.4.0p4.exe)
   
   If you want to debug with Visual Studio then you will need the **UnityVS Extension** which you can download and install by using the **Tools->Extensions and Updates** window in Visual Studio.
   
@@ -30,8 +30,8 @@ For building and/or debugging Kerbalism with Visual Studio or Unity Editor you w
   - Open the copied *"src\Kerbalism.sln"* file with Visual Studio and then open the **Properties** page and goto the **Build Events** tab.
   - Enter the code below into the **Post-build event command line** box.
   ```
-  if $(ConfigurationName)==Debug (call "$(ProjectDir)..\misc\VisualStudio\buildscripts\UnityDebug\prepare-debug.bat" "$(OutDir)")
-  if $(ConfigurationName)==Release (call "$(ProjectDir)..\misc\VisualStudio\buildscripts\ZipPack\build-package.bat" "$(OutDir)")
+  if $(ConfigurationName)==Debug (call "$(ProjectDir)..\misc\VisualStudio\buildscripts\UnityDebug\prepare-debug.bat" $(TargetName))
+  if $(ConfigurationName)==Release (call "$(ProjectDir)..\misc\VisualStudio\buildscripts\ZipPack\build-package.bat" $(TargetName) -v@(VersionNumber))
   ```
   - Change to the **Reference Paths** tab and add a path to your KSP dev install *"\KSP_x64_Data\Managed"* folder.
   - Goto **Debug Menu->Options** and clear the **Enable Edit and Continue** checkbox.
