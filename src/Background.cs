@@ -564,6 +564,9 @@ public static class Background
     // note: comparing against amount in previous simulation step
     if (fuel.amount > double.Epsilon)
     {
+      // get capacity in the part
+      double capacity = p.resources.Find(k => k.resourceName == fuel_name).maxAmount;
+
       // if cooling is enabled and there was enough ec
       // note: comparing against amount in previous simulation step
       if (Lib.Proto.GetBool(m, "CoolingEnabled") && ec.amount > double.Epsilon)
@@ -572,7 +575,7 @@ public static class Background
         double cooling_cost = Lib.ReflectionValue<float>(simple_boiloff, "CoolingCost");
 
         // consume ec
-        ec.Consume(cooling_cost * fuel.capacity * 0.001 * elapsed_s);
+        ec.Consume(cooling_cost * capacity * 0.001 * elapsed_s);
       }
       // if there wasn't ec, or if cooling is disabled
       else
@@ -581,7 +584,7 @@ public static class Background
         double boiloff_rate = Lib.ReflectionValue<float>(simple_boiloff, "BoiloffRate") * 0.00000277777;
 
         // let it boil off
-        fuel.Consume(fuel.capacity * (1.0 - Math.Pow(1.0 - boiloff_rate, elapsed_s)));
+        fuel.Consume(capacity * (1.0 - Math.Pow(1.0 - boiloff_rate, elapsed_s)));
       }
     }
 
