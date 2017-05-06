@@ -243,6 +243,15 @@ public sealed class Habitat : PartModule, ISpecifics, IConfigurable
         state = venting();
         break;
     }
+
+    // instant pressurization and scrubbing inside breathable atmosphere
+    if (!Lib.IsEditor() && Cache.VesselInfo(vessel).breathable && inflate.Length == 0)
+    {
+      var atmo = part.Resources["Atmosphere"];
+      var waste = part.Resources["WasteAtmosphere"];
+      if (Features.Pressure) atmo.amount = atmo.maxAmount;
+      if (Features.Poisoning) waste.amount = 0.0;
+    }
   }
 
 
