@@ -38,12 +38,7 @@ public sealed class Reliability : PartModule, ISpecifics, IModuleInfo, IPartCost
   public override void OnStart(StartState state)
   {
     // don't break tutorial scenarios
-    if (Lib.IsScenario())
-    {
-      enabled = false;
-      isEnabled = false;
-      return;
-    }
+    if (Lib.DisableScenario(this)) return;
 
     // do nothing in the editors and when compiling parts
     if (!Lib.IsFlight()) return;
