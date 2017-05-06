@@ -638,6 +638,25 @@ public static class Lib
     return FlightDriver.Pause || Planetarium.Pause;
   }
 
+  // return true if a tutorial scenario is active
+  public static bool IsScenario()
+  {
+    return HighLogic.CurrentGame.Mode == Game.Modes.SCENARIO
+        || HighLogic.CurrentGame.Mode == Game.Modes.SCENARIO_NON_RESUMABLE;
+  }
+
+  // disable the module and return true if a tutorial scenario is active
+  public static bool DisableScenario(PartModule m)
+  {
+    if (IsScenario())
+    {
+      m.enabled = false;
+      m.isEnabled = false;
+      return true;
+    }
+    return false;
+  }
+
 
   // --- BODY -----------------------------------------------------------------
 
