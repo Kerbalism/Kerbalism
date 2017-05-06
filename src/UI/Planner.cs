@@ -648,7 +648,7 @@ public sealed class vessel_analyzer
     // inverting their order avoided this corner-case
 
     analyze_crew(parts);
-    analyze_habitat(sim);
+    analyze_habitat(sim, env);
     analyze_radiation(parts, sim);
     analyze_reliability(parts);
     analyze_signal(parts, env);
@@ -693,7 +693,7 @@ public sealed class vessel_analyzer
   }
 
 
-  void analyze_habitat(resource_simulator sim)
+  void analyze_habitat(resource_simulator sim, environment_analyzer env)
   {
     // calculate total volume
     volume = sim.resource("Atmosphere").capacity;
@@ -702,10 +702,10 @@ public sealed class vessel_analyzer
     surface = sim.resource("Shielding").capacity;
 
     // determine if the vessel has pressure control capabilities
-    pressurized = sim.resource("Atmosphere").produced > 0.0;
+    pressurized = sim.resource("Atmosphere").produced > 0.0 || env.breathable;
 
     // determine if the vessel has scrubbing capabilities
-    scrubbed = sim.resource("WasteAtmosphere").consumed > 0.0;
+    scrubbed = sim.resource("WasteAtmosphere").consumed > 0.0 || env.breathable;
   }
 
 
@@ -1109,7 +1109,7 @@ public class resource_simulator
 
     // determine environment conditions
     bool lighting = natural + artificial >= g.light_tolerance;
-    bool pressure = va.pressurized || env.breathable || g.pressure_tolerance <= double.Epsilon;
+    bool pressure = va.pressurized || g.pressure_tolerance <= double.Epsilon;
     bool radiation = (env.landed ? env.surface_rad : env.magnetopause_rad) * (1.0 - va.shielding) < g.radiation_tolerance;
 
     // if all conditions apply
