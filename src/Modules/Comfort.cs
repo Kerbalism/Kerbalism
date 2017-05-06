@@ -15,6 +15,13 @@ public sealed class Comfort : PartModule, ISpecifics
   [KSPField] public string desc = string.Empty;                       // short description shown in part tooltip
 
 
+  public override void OnStart(StartState state)
+  {
+    // don't break tutorial scenarios
+    if (Lib.DisableScenario(this)) return;
+  }
+
+
   public override string GetInfo()
   {
     return Specs().info(desc);

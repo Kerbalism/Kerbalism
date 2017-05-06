@@ -31,6 +31,9 @@ public sealed class Harvester : PartModule, IAnimatedModule, IModuleInfo, ISpeci
 
   public override void OnStart(StartState state)
   {
+    // don't break tutorial scenarios
+    if (Lib.DisableScenario(this)) return;
+
     // assume deployed if there is no animator
     deployed |= part.FindModuleImplementing<ModuleAnimationGroup>() == null;
   }

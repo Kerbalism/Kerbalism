@@ -35,9 +35,16 @@ public sealed class Reliability : PartModule, ISpecifics, IModuleInfo, IPartCost
   CrewSpecs repair_cs;                                                // crew specs
 
 
-
   public override void OnStart(StartState state)
   {
+    // don't break tutorial scenarios
+    if (Lib.IsScenario())
+    {
+      enabled = false;
+      isEnabled = false;
+      return;
+    }
+
     // do nothing in the editors and when compiling parts
     if (!Lib.IsFlight()) return;
 

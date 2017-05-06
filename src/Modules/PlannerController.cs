@@ -17,6 +17,9 @@ public sealed class PlannerController : PartModule
 
   public override void OnStart(StartState state)
   {
+    // don't break tutorial scenarios
+    if (Lib.DisableScenario(this)) return;
+
     if (Lib.IsEditor())
     {
       Events["Toggle"].active = toggle;

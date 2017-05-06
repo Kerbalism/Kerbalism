@@ -25,6 +25,9 @@ public sealed class GravityRing : PartModule, ISpecifics
   // pseudo-ctor
   public override void OnStart(StartState state)
   {
+    // don't break tutorial scenarios
+    if (Lib.DisableScenario(this)) return;
+
     // get animations
     deploy_anim = new Animator(part, deploy);
     rotate_anim = new Animator(part, rotate);

@@ -32,6 +32,9 @@ public sealed class Antenna : PartModule, ISpecifics, IAnimatedModule, IScienceD
 
   public override void OnStart(StartState state)
   {
+    // don't break tutorial scenarios
+    if (Lib.DisableScenario(this)) return;
+
     // assume extended if there is no animator
     extended |= part.FindModuleImplementing<ModuleAnimationGroup>() == null;
 

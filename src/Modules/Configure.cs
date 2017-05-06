@@ -48,6 +48,9 @@ public sealed class Configure : PartModule, IPartCostModifier, IPartMassModifier
 
   public override void OnStart(StartState state)
   {
+    // don't break tutorial scenarios
+    if (Lib.DisableScenario(this)) return;
+
     // parse all setups from string data
     var archive = new ReadArchive(data);
     int count;

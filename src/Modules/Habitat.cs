@@ -27,6 +27,9 @@ public sealed class Habitat : PartModule, ISpecifics, IConfigurable
   // pseudo-ctor
   public override void OnStart(StartState state)
   {
+    // don't break tutorial scenarios
+    if (Lib.DisableScenario(this)) return;
+
     // calculate habitat internal volume
     if (volume <= double.Epsilon) volume = Lib.PartVolume(part);
 

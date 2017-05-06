@@ -23,6 +23,9 @@ public sealed class Sensor : PartModule, ISpecifics
 
   public override void OnStart(StartState state)
   {
+    // don't break tutorial scenarios
+    if (Lib.DisableScenario(this)) return;
+
     // create animator
     pin_anim = new Animator(part, pin);
 

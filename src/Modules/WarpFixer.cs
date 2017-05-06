@@ -15,6 +15,9 @@ public sealed class WarpFixer : PartModule
 {
   public override void OnStart(StartState state)
   {
+    // don't break tutorial scenarios
+    if (Lib.DisableScenario(this)) return;
+
     // do nothing in the editor
     if (state == StartState.Editor) return;
 

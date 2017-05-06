@@ -9,6 +9,12 @@ namespace KERBALISM {
 
 public sealed class HardDrive : PartModule, IScienceDataContainer
 {
+  public override void OnStart(StartState state)
+  {
+    // don't break tutorial scenarios
+    if (Lib.DisableScenario(this)) return;
+  }
+
   public void Update()
   {
     if (Lib.IsFlight())

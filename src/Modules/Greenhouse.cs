@@ -43,6 +43,9 @@ public sealed class Greenhouse : PartModule, ISpecifics, IContractObjectiveModul
 
   public override void OnStart(StartState state)
   {
+    // don't break tutorial scenarios
+    if (Lib.DisableScenario(this)) return;
+
     // create animators
     shutters_anim = new Animator(part, shutters);
     plants_anim = new Animator(part, plants);

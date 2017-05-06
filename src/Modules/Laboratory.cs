@@ -23,6 +23,9 @@ public sealed class Laboratory : PartModule, ISpecifics, IContractObjectiveModul
 
   public override void OnStart(StartState state)
   {
+    // don't break tutorial scenarios
+    if (Lib.DisableScenario(this)) return;
+
     // do nothing in the editors and when compiling parts
     if (!Lib.IsFlight()) return;
 

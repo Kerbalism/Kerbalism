@@ -35,6 +35,9 @@ public sealed class Experiment : PartModule, ISpecifics
 
   public override void OnStart(StartState state)
   {
+    // don't break tutorial scenarios
+    if (Lib.DisableScenario(this)) return;
+
     // create animator
     deploy_anim = new Animator(part, deploy);
 

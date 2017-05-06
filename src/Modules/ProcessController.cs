@@ -24,6 +24,9 @@ public sealed class ProcessController : PartModule, IModuleInfo, IAnimatedModule
 
   public void Start()
   {
+    // don't break tutorial scenarios
+    if (Lib.DisableScenario(this)) return;
+
     // configure on start
     Configure(true);
 
