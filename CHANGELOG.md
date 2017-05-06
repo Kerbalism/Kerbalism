@@ -1,5 +1,15 @@
 ### CHANGELOG
 
+1.2.7
+  - remember window position (@PiezPiedPie)
+  - depressurizing habitats also vent WasteAtmosphere
+  - improved ec and supply icon tooltips in monitor
+  - fix: too generous gift package for resque missions
+  - fix: comfort from parts not overriding environment factors
+  - fix: disable modules on tutorial scenarios
+  - fix: wrong pressurized state inside breathable atmosphere
+  - fix: excessive cryotank background consumption
+
 1.2.6
   - improved Bluedog support patch (@ModZero)
   - SSTU support patch (@Maxzhao1999)
