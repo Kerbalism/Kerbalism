@@ -162,7 +162,7 @@ public static class Signal
     // - do not send messages for vessels without an antenna
     // - do not send messages during/after solar storms
     // - do not send messages for EVA kerbals
-    if (conn.status != LinkStatus.no_antenna && !v.isEVA)
+    if (conn.status != LinkStatus.no_antenna && !v.isEVA && v.situation != Vessel.Situations.PRELAUNCH)
     {
       if (!vd.msg_signal && !conn.linked)
       {
