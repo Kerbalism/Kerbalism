@@ -28,11 +28,11 @@ public sealed class HarvesterDevice : Device
   {
     return animator != null && !harvester.deployed
       ? "not deployed"
-      : harvester.starved
-      ? "no resource"
-      : harvester.running
+      : !harvester.running
+      ? "<color=red>stopped</color>"
+      : harvester.issue.Length == 0
       ? "<color=cyan>running</color>"
-      : "<color=red>stopped</color>";
+      : Lib.BuildString("<color=yellow>", harvester.issue, "</color>");
   }
 
   public override void ctrl(bool value)
@@ -75,13 +75,17 @@ public sealed class ProtoHarvesterDevice : Device
 
   public override string info()
   {
-    return animator != null && !Lib.Proto.GetBool(harvester, "deployed")
+    bool deployed = Lib.Proto.GetBool(harvester, "deployed");
+    bool running = Lib.Proto.GetBool(harvester, "running");
+    string issue = Lib.Proto.GetString(harvester, "issue");
+
+    return animator != null && !deployed
       ? "not deployed"
-      : Lib.Proto.GetBool(harvester, "starved")
-      ? "no resource"
-      : Lib.Proto.GetBool(harvester, "running")
+      : !running
+      ? "<color=red>stopped</color>"
+      : issue.Length == 0
       ? "<color=cyan>running</color>"
-      : "<color=red>stopped</color>";
+      : Lib.BuildString("<color=yellow>", issue, "</color>");
   }
 
   public override void ctrl(bool value)
@@ -105,8 +109,3 @@ public sealed class ProtoHarvesterDevice : Device
 
 
 } // KERBALISM
-
-
-
-
-
