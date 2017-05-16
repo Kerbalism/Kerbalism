@@ -163,13 +163,13 @@ public sealed class Harvester : PartModule, IAnimatedModule, IModuleInfo, ISpeci
     }
 
     // check against pressure
-    if (type == 2 && body.GetPressure(vessel.altitude) <= min_pressure)
+    if (type == 2 && body.GetPressure(vessel.altitude) < min_pressure)
     {
       return "pressure below threshold";
     }
 
     // check against abundance
-    if (abundance <= min_abundance)
+    if (abundance < min_abundance)
     {
       return "abundance below threshold";
     }
