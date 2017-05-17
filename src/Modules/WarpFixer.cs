@@ -29,8 +29,12 @@ public sealed class WarpFixer : PartModule
       rate = panel.resHandler.outputResources[0].rate;
 
       // reset rate
+      // - This break mods that evaluate solar panel output for a reason or another (eg: AmpYear, BonVoyage).
+      //   We fix that by exploiting the fact that resHandler was introduced in KSP recently, and most of
+      //   these mods weren't updated to reflect the changes or are not aware of them, and are still reading
+      //   chargeRate. However the stock solar panel ignore chargeRate value during FixedUpdate.
+      //   So we only reset resHandler rate.
       panel.resHandler.outputResources[0].rate = 0.0f;
-      panel.chargeRate = 0.0f;
 
       // hide ui
       panel.Fields["status"].guiActive = false;
@@ -127,7 +131,4 @@ public sealed class WarpFixer : PartModule
 
 
 } // KERBALISM
-
-
-
 
