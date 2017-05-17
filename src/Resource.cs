@@ -134,7 +134,8 @@ public sealed class resource_info
     // - ignore flow state changes (avoid issue with process controllers)
     // - unloaded vessels can't be incoherent, we are in full control there
     // - can be disabled in settings
-    if (Settings.EnforceCoherency && v.loaded && TimeWarp.CurrentRateIndex >= 6 && amount - old_amount > 1e-10 && capacity - old_capacity < 1e-10)
+    // - avoid false detection due to precision errors in stock amounts
+    if (Settings.EnforceCoherency && v.loaded && TimeWarp.CurrentRateIndex >= 6 && amount - old_amount > 1e-05 && capacity - old_capacity < 1e-05)
     {
       Message.Post
       (
