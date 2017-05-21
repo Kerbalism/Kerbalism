@@ -55,14 +55,6 @@ editor and in flight, to reconfigure the internal space and everything associate
 Inflatable habitats are driven directly by the part pressure.
 
 
-### RELIABILITY
-
-Components don't last forever in the real world. This is modelled by a simple system that can trigger failures on
-arbitrary modules. Manufacturing quality can be choosen in the editor, per-component, and improve the MTBF but also
-require extra cost and mass. The crew can inspect and repair malfunctioned components. Redundancy become a key aspect
-of the design phase.
-
-
 ### BIOLOGICAL NEEDS
 
 Your crew need a constant intake of Food, Water and Oxygen. Failure to provide for these needs will result in
@@ -110,6 +102,14 @@ and at the same time challenging system to keep your crew alive. The stock ISRU 
 replaced with an equivalent one that is easier to plan against, as it is now vital for long-term manned missions. The
 means to harvest from atmospheres is also present, given the importance of atmospheric resources in this regard. A
 planetary resource distribution that mimick the real solar sytem complete the package.
+
+
+### RELIABILITY
+
+Components don't last forever in the real world. This is modelled by a simple system that can trigger failures on
+arbitrary modules. Manufacturing quality can be choosen in the editor, per-component, and improve the MTBF but also
+require extra cost and mass. The crew can inspect and repair malfunctioned components. Redundancy become a key aspect
+of the design phase.
 
 
 ### SIGNAL
