@@ -11,182 +11,213 @@
 
 ### INTRODUCTION
 
-  Kerbalism extend Kerbal Space Program by simulating additional aspects of space missions.
-  Anything will happen coherently to loaded and unloaded vessels alike, without exceptions.
-  All mechanics can be enabled, disabled and utterly configured.
+Go beyond the routine of orbital mechanics and experience the full set of engineering challanges that space has to
+offer. This mod extend KSP by simulating the crew, the components, the resources and the environment in a more
+complex way. All mechanics can be configured to some degree, or even disabled if you don't like some of them. A big
+part of the mod is fully data-driven, so that you can create your own customized gameplay with only a text editor
+and a minimal amount of espresso. Or simply use the set of rules already included, or the ones shared by other users.
+What follow is a summary description of the capabilities of the mod, and for a more detailed documentation the user
+is invited to read the wiki.
 
-  Many aspects are simulated:
-  - environment: temperature, radiation, space weather
-  - habitat: living space, comforts, pressure, co2 levels
-  - reliability: malfunctions, critical failures, manufacturing quality
-  - signal: low and high gain antennas, relaying, rate attenuation
-  - science: data storage, collection, analysis and transmission
-  - resources: consumption and production in background
-  - kerbals: biological and psychological needs, environmental hazards
+
+### ARCHITECTURE
+
+Contrary to popular belief, the observable universe is not a sphere of 3km radius centered around the active vessel.
+All mechanics are simulated for loaded and unloaded vessels alike, without exception. Acceptable performance was
+obtained by a mix of smart approximations and common sense. The computational complexity is by and large independent
+from the number of vessels.
+
+
+### RESOURCES
+
+This isn't your classic post-facto resource simulation. Consumption and production work for all vessels, all the time,
+and is coherent irregardless of warp speed or storage capacity. Complex chains of transformations just work. Enjoy
+designing missions without the luxury of stopping the flow of time. No suspension of disbelief required.
 
 
 ### ENVIRONMENT
 
-  From the mission designer point of view, the most important aspects of the space environment are temperature
-  and ionizing radiation. Both are simulated by Kerbalism. External vessel temperature is determined by the
-  solar flux, as well as the albedo radiation and radiative cooling of the nearest body. Radiation is simulated
-  using an overlapping hierarchy of radiation zones, modelled and rendered using signed distance fields.
-  Marvel at the complex geometry of Kerbin magnetic fields, and plan your path around the powerful Jool inner belt.
-  Coronal Mass Ejection events are also simulated, triggering solar storms over planetary systems.
+The environment of space is modelled in a simple yet effective way. Temperature is calculated using the direct solar
+flux, the indirect solar flux bouncing off from celestial bodies, and the radiative infrared cooling of their surfaces.
+The simulation of the latter is especially interesting, and contrary to popular models it is able to reproduce
+satisfatory results for both atmospheric and atmosphere-less worlds. Radiation is implemented using an overlapping
+hierarchy of 3d zones, modelled and rendered using signed distance fields. These are used to simulate inner and outer
+belts, magnetospheres and even the heliopause. Solar weather is represented by Coronal Mass Ejection events, that
+happen sporadically, increase radiation and cause communication blackouts.
 
 
 ### HABITAT
 
-  The habitat of vessels is modelled in terms of internal volume and external surface. From these properties,
-  a plethora of others are deduced such as: living space per-capita, pressure, co2 level and shielding required.
-  Habitats can be enabled or disabled, in the editor and in flight: This allow to reconfigure the internal space
-  and everything associated with it. Inflatable habitats are driven directly by pressure.
+The habitat of vessels is modelled in terms of internal volume, external surface, and a set of dedicated pseudo
+resources. These elements are then used to calculate such things as: living space per-capita, the pressure and co2
+level of the internal atmosphere, and radiation shielding. Individual habitats can be enabled or disabled, in the
+editor and in flight, to reconfigure the internal space and everything associated with it during the mission.
+Inflatable habitats are driven directly by the part pressure.
 
 
 ### RELIABILITY
 
-  Components don't last forever in the real world. This is modelled in Kerbalism by a simple system that can trigger failures
-  on arbitrary modules. Manufacturing quality can be choosen in the VAB, per-component: higher quality mean longer MTBF but
-  also extra cost and mass for the component.
+Components don't last forever in the real world. This is modelled by a simple system that can trigger failures on
+arbitrary modules. Manufacturing quality can be choosen in the editor, per-component, and improve the MTBF but also
+require extra cost and mass. The crew can inspect and repair malfunctioned components. Redundancy become a key aspect
+of the design phase.
+
+
+### BIOLOGICAL NEEDS
+
+Your crew need a constant intake of Food, Water and Oxygen. Failure to provide for these needs will result in
+uncerimonious death. Configurable supply containers are provided.
+
+
+### PSYCHOLOGICAL NEEDS
+
+The era of tin can interplanetary travel is over. Your crew need some living space, however minimal. Failure to provide
+enough living space will result in unforeseen events in the vessel, the kind that happen when operators lose
+concentration. While not fatal directly, they often lead to fatal consequences later on. Some basic comforts can be
+provided to delay the inevitable mental breakdown. Nothing fancy, just things like windows to look out, antennas to
+call back home, or gravity rings to generate artificial gravity. Finally, recent research point out that living in a
+pressurized environment is vastly superior to living in a suit. So bring some Nitrogen to compensate for leaks and keep
+the internal atmosphere at an acceptable pressure.
+
+
+### ENVIRONMENT HAZARDS
+
+Your crew evolved in particular conditions of temperature, and at a very low level of radiation. You should reproduce
+these conditions whenever your crew go, no matter the external temperature or radiation at that point. Or else death
+ensue. The vessel habitat can be climatized at the expense of ElectricCharge. Environment radiation can be shielded by
+applying material layers to the hull, with obvious longevity-mass tradeoff.
+
+
+### ECLSS
+
+A set of ECLSS components is available for installation in any pod. The scrubber for example, that must be used to keep
+the level of CO2 in the internal atmosphere below a threshold. Or the pressure control system, that can be used to
+maintain a comfortable atmospheric pressure inside the vessel. In general, if you ever heard of some kind of apparatus
+used by space agencies to keep the crew alive, you will find it in this mod.
+
+
+### GREENHOUSE
+
+No life-support-like mod would be complete without a greenhouse of some kind. The one included in this mod has a
+relatively complete set of input resources and by-products, in addition to some more unique characteristics like a lamp
+that adapt consumption to natural lighting, emergency harvesting, pressure requirements and radiation tolerance.
+
+
+### ISRU
+
+The stock ISRU converters can host a set of reality-inspired chemical processes. The emerging chains provide a flexible
+and at the same time challenging system to keep your crew alive. The stock ISRU harvesters functionality has been
+replaced with an equivalent one that is easier to plan against, as it is now vital for long-term manned missions. The
+means to harvest from atmospheres is also present, given the importance of atmospheric resources in this regard. A
+planetary resource distribution that mimick the real solar sytem complete the package.
 
 
 ### SIGNAL
 
-  Controlling a vessel and transmitting data require a direct or indirect connection with DSN, and has a specific data rate
-  that degrade with distance. The signal is obstructed by celestial bodies, but can be relayed by other vessels. Low-Gain
-  and High-Gain antennas are modelled: the former used for short-range inter-vessel communciations, the latter always point at DSN.
-  Your voyager-style probe will now require a voyager-style antenna, and it will end up having voyager-style transmission rates.
+An alternative to the stock CommNet system is provided. Theres is a difference between low-gain and high-gain antennas:
+the former used for short-range inter-vessel communications, the latter always implicitly pointing at DSN. Transmission
+rates are realistic, and scale with distance to the point that it may take a long time to transmit data from the outer
+solar system. Data transmission happen transparently in loaded and unloaded vessels, as usual. The resulting
+communication system is simple and intuitive, yet it also result in more realistic vessel and mission designs. Tiny
+hypnotic science-blue spheres travel the link lines to represent data transmission.
 
 
 ### SCIENCE
 
-  Data is collected and stored in the vessel solid state drives, then transmitted back home for that sweet science reward.
-  Some of this data can't be transmitted directly, and need to be analyzed in a laboratory to produce transmissible data.
-  Transmission happen over long periods of time, even when the vessels are not loaded.
-  
+Data is collected and stored in the vessel solid state drives, instead of the stock science containers. Moving data
+around the vessel doesn't require extra vehicular activities. Some data can be transmitted back directly, while other
+data need to be analyzed in a lab first. Analyzing take a long time, happen transparently to loaded and unloaded
+vessels alike, and can't be cheated to create science out of thin air. An interesting method is used to bridge
+existing stock and third-party experiments to the new science system, that work for most experiments without requiring
+ad-hoc support.
+
 
 ### AUTOMATION
 
-  Components can be automated using a very simple and intuitive scripting system with a graphical editor. Scripts are
-  triggered manually or by environmental conditions. You can create a script to turn on all the lights as soon as the Sun
-  is not visible anymore, or retract all solar panels as soon as you enter an atmosphere.
+Components can be automated using a very simple and intuitive scripting system, with a graphical editor. Scripts are
+triggered manually or by environmental conditions. You can create a script to turn on all the lights as soon as the Sun
+is not visible anymore, or retract all solar panels as soon as you enter an atmosphere.
 
 
-### BACKGROUND SIMULATION
+### USER INTERFACE
 
-  Resource consumers and producers are simulated at all time, even on unloaded vessels. This not only include all Kerbalism
-  mechanics that involve resources, but also all stock components, and components of some selected third-party mods.
-
-
-### RULE FRAMEWORK
-
-  Kerbals simulation is data-driven: the actual needs are determined by an arbitrary set of rules. These rules can consume
-  and produce resources, and are influenced by the environment and habitat simulation. The system is flexible enough to
-  implement such things as: climatization, eating, drinking, breathing, co2 poisoning, stress and the effects of radiation.
-  
-
-### PLANNER
-
-  A planner GUI is available in the VAB, to help the user design around all the new aspects introduced.
-  Resource estimates, habitat informations, redundancy analysis: no matter what, the planner got you covered.
+The UI provided by this mod took more than 5 minutes to write. A planner UI is available in the editor, to help the
+user design around all the new mechanics introduced. The planner analysis include resource estimates, habitat
+informations, redundancy analysis, connectivity simulation, multi-environment radiation details and more. To monitor
+the status of vessels, the monitor UI is also provided. This look like a simple list of vessels at first, but just
+click on it to discover an ingenuous little organizer that allow to watch vessel telemetry, control components, create
+scripts, manage your science data including transmission and analysis, and configure the alerts per-vessel.
 
 
-### DEFAULT PROFILE
+### MODULES EMULATION
 
-  A standard set of rules is provided, called the Default profile. It serve as an example of what the framework can do.
-
-  It implement the following:
-  - kerbals need resources to survive: food, water, oxygen
-  - kerbals lose their mind if confined in cramped space, in unpressurized habitats or without comforts for too long
-  - kerbals will freeze or burn if exposed to temperatures outside the survival range
-  - kerbals will die if exposed to high levels of carbon dioxide
-  - kerbals will die if exposed to extreme radiation
-  - pods can be configured with ECLSS setups: Scrubbers, Pressure Control Systems, Water Recyclers and Waste Processors
-  - a set of configurable supply containers
-  - a greenhouse with interesting mechanics
-  - a configurable ISRU system focused on life support, and that include an atmospheric harvester
-  - more realistic fuel cells
+Most stock modules and some third-party ones are emulated for what concerns the mechanics introduced by the mod. The
+level of support depend on the specific module, and may include: simulation of resource consumption and production in
+unloaded vessels, fixing of timewarp issues in loaded vessels, the ability to disable the module after malfunctions,
+and the means to start and stop the module in an automation script.
 
 
 ### SUPPORTED MODS
 
-  Kerbalism provide ad-hoc support for a multitude of third-party mods. Some of the interactions deserve a special mention:
+Most mods work together with this one, others don't. Such is life. For a non-exaustive list of supported mods have a
+look inside the Support folder. Some of the interactions deserve a special mention:
 
-    SCANsat:
-      . sensors consume EC in background and their cost is evalued by the planner EC
-      . sensors are shut down and restarted in background depending on EC availability
+SCANsat:
+- sensors consume EC in background and their cost is evalued by the planner EC
+- sensors are shut down and restarted in background depending on EC availability
 
-    DeepFreeze:
-      . all rules are suspended for hibernated Kerbals
-      . the vessel info window show frozen Kerbals with a different color
+DeepFreeze:
+- all rules are suspended for hibernated Kerbals
+- the vessel info window show frozen Kerbals with a different color
 
-    NearFuture:
-      . curved solar panels, reactors, fission and radioisotope generators
-        produce EC in background and are considered by the planner
+NearFuture:
+- curved solar panels, reactors, fission generators and RTGs produce EC in background and are considered by the planner
 
-    PlanetaryBaseSystem:
-      . the coverters will work in background and are considered by the planner
+PlanetaryBaseSystem:
+- the coverters will work in background and are considered by the planner
 
-    OrbitalScience:
-      . experiments data size has been tweaked for background data transmission
+OrbitalScience:
+- experiments data size has been tweaked for background data transmission
 
-    OPM/RSS/NewHorizons:
-      . custom radiation definitions for these planet packs are provided
+OPM/RSS/NewHorizons:
+- custom radiation definitions for these planet packs are provided
 
 
 ### CONTRIBUTIONS
 
-  Over the time, many have contributed: may it be an asset, a patch, testing or even just brainstorming. Thank you all.
+This project wouldn't have been possible without the contributions of an awesome community of people, too many to
+mention individually. Thanks guys.
 
-  And special thanks to our Art Department:
+And special thanks to the artists that provided all the part:
 
-    @mehka: contributed that awesome piece of work that is the Gravity Ring
-    @Nazari1382: ramped the art to 11 with the Geiger Counter, and gave us all a valid alternative to starving
-    @tygoo7: single-handedly provided all the supply containers
-
+- mehka: gravity ring
+- Nazari1382: geiger counter, small supply container
+- tygoo7: medium and big supply containers, radial pressurized container
+- zzz: greenhouse, active shield
 
 
 ### FAQs
 
-  - ***At high timewarp, resource rates seem wrong and/or kerbals die unexpectedly***
-  
-    The resource simulation used is coherent irregardless of timewarp speed and resource capacity.
-    That remain the case as long as your resource producers/consumers have been written or otherwise hacked by me.
-    Therefore, the moment you start using producers/consumers not included in the following list, you are on your own.
-    Here are the things guaranteed to work at arbitrarily high timewarp speed and arbitrarily low resource capacity:
-    
-    - modules provided by this mod
-    - third-party modules emulated in unloaded vessels
-    - stock solar panel
-    - rules and processes
-    
-    
-  - ***I think to have found a bug, and I have 100 mods installed***
-  
-    Go away.
-    
+**I think to have found a bug, and I have just a few mods installed**
 
-  - ***I think to have found a bug, and I have just a few mods installed***
+Try to reproduce it consistently, then provide me with a savegame that demonstrate the issue. Include log files,
+screenshots, and reproduction steps. Post the report here, or raise an issue on github.
 
-    Try to reproduce the bug consistently, then provide me with a savegame that demonstrate the issue.
-    Include log files, screenshots, and reproduction steps. Post the report here, or raise an issue on github.
+**I want to add support for this to my parts**
 
+Add the appropriate modules to your parts. Check the wiki on github for the module specifications.
 
-  - ***I want to add support for this to my parts***
+**I want to interact with this mod in code**
 
-    Add the appropriate modules to your parts. Check the wiki on github for the module specifications.
-
-
-  - ***I want to interact with this mod in code***
-
-    Have a look at System/API.cs source code on github. Raise an issue to request more functions.
+Have a look at System/API.cs source code on github. Raise an issue to request more functions.
 
 
 ### REQUIREMENTS
 
-  - ModuleManager
+- KSP 1.2.2
+- ModuleManager 2.7.5+
 
 
 ### LICENSE
 
-  This mod is released under the Unlicense.
+This mod is released under the Unlicense.
