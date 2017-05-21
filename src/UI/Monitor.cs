@@ -407,9 +407,9 @@ public sealed class Monitor
 
     string tooltip = Lib.BuildString
     (
-      "<align=left /><b>name\t  level\tduration</b>\n",
+      "<align=left /><b>name\tlevel\tduration</b>\n",
       ec.level <= 0.005 ? "<color=#ff0000>" : ec.level <= low_threshold ? "<color=#ffff00>" : "<color=#cccccc>",
-      "EC\t  ",
+      "EC\t",
       Lib.HumanReadablePerc(ec.level), "\t",
       depletion <= double.Epsilon ? "depleted" : Lib.HumanReadableDuration(depletion),
       "</color>"
@@ -440,13 +440,14 @@ public sealed class Monitor
         {
           if (tooltips.Count == 0)
           {
-            tooltips.Add("<align=left /><b>name\t  level\tduration</b>");
+            tooltips.Add("<align=left /><b>name\t\tlevel\tduration</b>");
           }
 
           tooltips.Add(Lib.BuildString
           (
             res.level <= 0.005 ? "<color=#ff0000>" : res.level <= supply.low_threshold ? "<color=#ffff00>" : "<color=#cccccc>",
-            supply.resource, "\t  ",
+            supply.resource,
+            supply.resource != "Ammonia" ? "\t\t" : "\t", //< hack: make ammonia fit damn it
             Lib.HumanReadablePerc(res.level), "\t",
             depletion <= double.Epsilon ? "depleted" : Lib.HumanReadableDuration(depletion),
             "</color>"
