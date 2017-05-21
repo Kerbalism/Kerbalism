@@ -1,5 +1,18 @@
 ### CHANGELOG
 
+1.2.8
+  - rebalanced atmosphere leak rate from ISS data
+  - new process in chemical plant: SCO (selective catalytic oxidation of NH3 to N2)
+  - radiation fields can now be oriented using a specific reference body
+  - lowered abundance thresholds of ore and co2 harvesters
+  - scale part icon of pressurized radial containers
+  - custom order of part icons in our category
+  - Coatl Aerospace support patch (@dieDoktor)
+  - fix: properly detect if drill head intersect ground
+  - fix: no more signal warnings on prelaunch
+  - fix: false detection of incoherent oxygen production
+  - fix: try to not break AmpYear/BonVoyage solar panel output detection
+
 1.2.7
   - remember window position (@PiezPiedPie)
   - depressurizing habitats also vent WasteAtmosphere
@@ -13,18 +26,18 @@
 1.2.6
   - improved Bluedog support patch (@ModZero)
   - SSTU support patch (@Maxzhao1999)
-  - reduced monoprop fuel cell rates, adapt to required EC  
+  - reduced monoprop fuel cell rates, adapt to required EC
   - fix: planner not considering solar panels after last update
-  - fix: exception in Configure module for crafts that never entered VAB  
+  - fix: exception in Configure module for crafts that never entered VAB
   - fix: duplicate extend/retract in some supported antennas
-  
-1.2.5    
+
+1.2.5
   - detect and avoid issues at high timewarp in external modules
   - hack stock solar panels and RTGs to use resource cache
-  - RTGs decay over time, with an half-life of 28.8 kerbin-years  
-  - corrected all chemical reactions, some were very wrong  
+  - RTGs decay over time, with an half-life of 28.8 kerbin-years
+  - corrected all chemical reactions, some were very wrong
   - fix: solar panel sun visibility sampling error at max timewarp for loaded vessels (#95)
-  - fix: impossible to guarantee coherency in resource simulation of loaded vessels (#96)  
+  - fix: impossible to guarantee coherency in resource simulation of loaded vessels (#96)
 
 1.2.4
   - SMURFF compatibility patch (@eberkain)
