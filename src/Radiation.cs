@@ -163,6 +163,7 @@ public sealed class RadiationBody
   {
     this.model = RadiationModel.none;
     this.body = body;
+    this.reference = 0;
   }
 
   // ctor: deserialize
@@ -172,6 +173,7 @@ public sealed class RadiationBody
     radiation_inner = Lib.ConfigValue(node, "radiation_inner", 0.0) / 3600.0;
     radiation_outer = Lib.ConfigValue(node, "radiation_outer", 0.0) / 3600.0;
     radiation_pause = Lib.ConfigValue(node, "radiation_pause", 0.0) / 3600.0;
+    reference = Lib.ConfigValue(node, "reference", 0);
 
     // get the radiation environment
     if (!models.TryGetValue(Lib.ConfigValue(node, "radiation_model", ""), out model)) model = RadiationModel.none;
@@ -185,6 +187,7 @@ public sealed class RadiationBody
   public double radiation_inner;    // rad/s inside inner belt
   public double radiation_outer;    // rad/s inside outer belt
   public double radiation_pause;    // rad/s inside magnetopause
+  public int    reference;          // index of the body that determine x-axis of the gsm-space
 
   // shortcut to the radiation environment
   public RadiationModel model;
@@ -327,18 +330,21 @@ public static class Radiation
   }
 
 
-  // generate GSM-space coordinate
-  // note: we use the rotation axis as initial guess for magnetic axis
-  // note: we don't let the basis became not orthonormal when the sun plane change
-  // (the deformation was confusing)
-  public static Space gsm_space(CelestialBody body)
+  // generate gsm-space frame of reference
+  // - origin is at body position
+  // - the x-axis point to reference body
+  // - the rotation axis is used as y-axis initial guess
+  // - the space is then orthonormalized
+  // - if the reference body is the same as the body,
+  //   the galactic rotation vector is used as x-axis instead
+  public static Space gsm_space(CelestialBody body, CelestialBody reference)
   {
     Space gsm;
     gsm.origin = ScaledSpace.LocalToScaledSpace(body.position);
     gsm.scale = ScaledSpace.InverseScaleFactor * (float)body.Radius;
-    if (body.flightGlobalsIndex > 0)
+    if (body != reference)
     {
-      gsm.x_axis = ((Vector3)ScaledSpace.LocalToScaledSpace(FlightGlobals.Bodies[0].position) - gsm.origin).normalized;
+      gsm.x_axis = ((Vector3)ScaledSpace.LocalToScaledSpace(reference.position) - gsm.origin).normalized;
       gsm.y_axis = (Vector3)body.RotationAxis; //< initial guess
       gsm.z_axis = Vector3.Cross(gsm.x_axis, gsm.y_axis).normalized;
       gsm.y_axis = Vector3.Cross(gsm.z_axis, gsm.x_axis).normalized; //< orthonormalize
@@ -455,7 +461,8 @@ public static class Radiation
       }
 
       // generate radii-normalized GMS space
-      Space gsm = gsm_space(body);
+      RadiationBody rb = Info(body);
+      Space gsm = gsm_space(rb.body, FlightGlobals.Bodies[rb.reference]);
 
       // [debug] show axis
       //LineRenderer.commit(gsm.origin, gsm.origin + gsm.x_axis * gsm.scale * 5.0f, Color.red);
@@ -516,7 +523,7 @@ public static class Radiation
       if (mf.has_field())
       {
         // generate radii-normalized GSM space
-        gsm = gsm_space(rb.body);
+        gsm = gsm_space(rb.body, FlightGlobals.Bodies[rb.reference]);
 
         // move the poing in GSM space
         p = gsm.transform_in(position);
@@ -592,7 +599,7 @@ public static class Radiation
       if (mf.has_field())
       {
         // generate radii-normalized GSM space
-        gsm = gsm_space(rb.body);
+        gsm = gsm_space(rb.body, FlightGlobals.Bodies[rb.reference]);
 
         // move the poing in GSM space
         p = gsm.transform_in(position);
