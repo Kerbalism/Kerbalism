@@ -118,8 +118,8 @@ An alternative to the stock CommNet system is provided. Theres is a difference b
 the former used for short-range inter-vessel communications, the latter always implicitly pointing at DSN. Transmission
 rates are realistic, and scale with distance to the point that it may take a long time to transmit data from the outer
 solar system. Data transmission happen transparently in loaded and unloaded vessels, as usual. The resulting
-communication system is simple and intuitive, yet it also result in more realistic vessel and mission designs. Tiny
-hypnotic science-blue spheres travel the link lines to represent data transmission.
+communication system is simple, yet it also results in more realistic vessel and mission designs. Tiny hypnotic
+science-blue spheres travel the link lines to represent data transmission.
 
 
 ### SCIENCE
@@ -134,9 +134,9 @@ ad-hoc support.
 
 ### AUTOMATION
 
-Components can be automated using a very simple and intuitive scripting system, with a graphical editor. Scripts are
-triggered manually or by environmental conditions. You can create a script to turn on all the lights as soon as the Sun
-is not visible anymore, or retract all solar panels as soon as you enter an atmosphere.
+Components can be automated using a minimalist scripting system, with a graphical editor. Scripts are triggered
+manually or by environmental conditions. You can create a script to turn on all the lights as soon as the Sun is not
+visible anymore, or retract all solar panels as soon as you enter an atmosphere.
 
 
 ### USER INTERFACE
