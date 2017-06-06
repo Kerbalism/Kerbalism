@@ -1,5 +1,9 @@
 ### CHANGELOG
 
+1.2.9
+  - ported to KSP 1.3.0.1804
+  - improved SSTU support patch (@Maxzhao1999)
+
 1.2.8
   - rebalanced atmosphere leak rate from ISS data
   - new process in chemical plant: SCO (selective catalytic oxidation of NH3 to N2)
