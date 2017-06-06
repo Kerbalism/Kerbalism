@@ -345,8 +345,8 @@ public sealed class Callbacks
     if (PartLoader.LoadedPartsList.Find(k => k.tags.IndexOf("_kerbalism", StringComparison.Ordinal) >= 0) != null)
     {
       var icon = new RUI.Icons.Selectable.Icon("Kerbalism", Icons.category_normal, Icons.category_selected);
-      PartCategorizer.Category category = PartCategorizer.Instance.filters.Find(k => k.button.categoryName == "Filter by Function");
-      PartCategorizer.AddCustomSubcategoryFilter(category, "Kerbalism", icon, k => k.tags.IndexOf("_kerbalism", StringComparison.Ordinal) >= 0);
+      PartCategorizer.Category category = PartCategorizer.Instance.filters.Find(k => k.button.categoryName == "Filter by function");
+      PartCategorizer.AddCustomSubcategoryFilter(category, "Kerbalism", "Kerbalism", icon, k => k.tags.IndexOf("_kerbalism", StringComparison.Ordinal) >= 0);
     }
   }
 

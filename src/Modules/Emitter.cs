@@ -108,7 +108,6 @@ public sealed class Emitter : PartModule, ISpecifics
     return Specs().info(desc);
   }
 
-
   // specifics support
   public Specifics Specs()
   {

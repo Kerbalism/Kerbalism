@@ -571,7 +571,7 @@ public static class Lib
   // pretty-print cost
   public static string HumanReadableCost(double v)
   {
-    return Lib.BuildString(v.ToString("F0"), " √");
+    return Lib.BuildString(v.ToString("F0"), " $");
   }
 
   // format a value, or return 'none'
@@ -1447,7 +1447,7 @@ public static class Lib
     (
       new Vector2(0.5f, 0.5f),
       new Vector2(0.5f, 0.5f),
-      new MultiOptionDialog(msg, title, HighLogic.UISkin, one, two),
+      new MultiOptionDialog(title, msg, title, HighLogic.UISkin, one, two),
       false,
       HighLogic.UISkin,
       true,

@@ -70,7 +70,8 @@ public sealed class PatchInjector : MonoBehaviour
     List<LoadingSystem> loaders = LoadingScreen.Instance.loaders;
     GameObject go = new GameObject("Kerbalism");
     Loader loader = go.AddComponent<Loader>();
-    loaders.Insert(1, loader);
+    int index = loaders.FindIndex(k => k is GameDatabase);
+    loaders.Insert(index + 1, loader);
   }
 }
 
