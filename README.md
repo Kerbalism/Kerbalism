@@ -214,8 +214,8 @@ Have a look at System/API.cs source code on github. Raise an issue to request mo
 
 ### REQUIREMENTS
 
-- KSP 1.2.2
-- ModuleManager 2.7.5+
+- KSP 1.3.0
+- ModuleManager 2.8.0+
 
 
 ### LICENSE
