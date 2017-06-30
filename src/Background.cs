@@ -33,7 +33,7 @@ public static class Background
     RadioisotopeGenerator,
     CryoTank,
     Unknown,
-	FNGenerator
+    FNGenerator
   }
 
   static module_type ModuleType(string module_name)
@@ -65,8 +65,8 @@ public static class Background
       case "FissionGenerator":             return module_type.FissionGenerator;
       case "ModuleRadioisotopeGenerator":  return module_type.RadioisotopeGenerator;
       case "ModuleCryoTank":               return module_type.CryoTank;
-	    case "FNGenerator":				           return module_type.FNGenerator;
-	}
+      case "FNGenerator":		   return module_type.FNGenerator;
+    }
     return module_type.Unknown;
   }
 
@@ -131,8 +131,8 @@ public static class Background
           case module_type.FissionGenerator:      ProcessFissionGenerator(v, p, m, module_prefab, ec, elapsed_s);                             break;
           case module_type.RadioisotopeGenerator: ProcessRadioisotopeGenerator(v, p, m, module_prefab, ec, elapsed_s);                        break;
           case module_type.CryoTank:              ProcessCryoTank(v, p, m, module_prefab, resources, elapsed_s);                              break;
-		      case module_type.FNGenerator:			      ProcessFNGenerator(v, p, m, module_prefab, ec, elapsed_s);								                  break;
-		    }
+	  case module_type.FNGenerator:		  ProcessFNGenerator(v, p, m, module_prefab, ec, elapsed_s);				      break;
+	}
       }
     }
   }
