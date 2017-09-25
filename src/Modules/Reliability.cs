@@ -451,6 +451,24 @@ public sealed class Reliability : PartModule, ISpecifics, IModuleInfo, IPartCost
           }
         }
         break;
+      case "ModuleEnginesRF":
+        if (b)
+        {
+          foreach (PartModule m in modules)
+          {
+            (m as ModuleEnginesRF).Shutdown();
+          }
+        }
+        break;
+      case "ModuleScienceExperiment":
+        if (b)
+        {
+          foreach (PartModule m in modules)
+          {
+            (m as ModuleScienceExperiment).SetInoperable();
+          }
+        }
+        break;
     }
   }
 
