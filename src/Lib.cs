@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
@@ -273,11 +273,11 @@ public static class Lib
   }
 
   // get access to a private field
-  public static T PrivateField<T>(Type type, object instance, string field_name) where T : class
+  public static T PrivateField<T>(Type type, object instance, string field_name)
   {
     BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static;
     FieldInfo field = type.GetField(field_name, flags);
-    return field.GetValue(instance) as T;
+	return (T)field.GetValue(instance);
   }
 
 
