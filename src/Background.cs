@@ -1,8 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using Experience;
 using UnityEngine;
+using System.Collections;
 
 
 namespace KERBALISM {
@@ -553,41 +554,43 @@ public static class Background
     // note: cryotank module already does a post-facto simulation of background boiling, and we could use that for the boiling
     // however, it also does simulate the ec consumption that way, so we have to disable the post-facto simulation
 
-    // get fuel name
-    string fuel_name = Lib.ReflectionValue<string>(simple_boiloff, "FuelName");
+		IList fuels = Lib.PrivateField<IList>(simple_boiloff.GetType(), simple_boiloff, "fuels");
+		foreach(object cryoFuel in fuels) {
+			string fuel_name = Lib.PrivateField<string> (cryoFuel.GetType (), cryoFuel, "fuelName");
+			float boiloff_rate_percent = Lib.PrivateField<float> (cryoFuel.GetType (), cryoFuel, "boiloffRate");
+			// get resource handlers
+			resource_info ec = resources.Info(v, "ElectricCharge");
+			resource_info fuel = resources.Info(v, fuel_name);
 
-    // get resource handlers
-    resource_info ec = resources.Info(v, "ElectricCharge");
-    resource_info fuel = resources.Info(v, fuel_name);
+			// if there is some fuel
+			// note: comparing against amount in previous simulation step
+			if (fuel.amount > double.Epsilon)
+			{
+				// get capacity in the part
+				double capacity = p.resources.Find(k => k.resourceName == fuel_name).maxAmount;
 
-    // if there is some fuel
-    // note: comparing against amount in previous simulation step
-    if (fuel.amount > double.Epsilon)
-    {
-      // get capacity in the part
-      double capacity = p.resources.Find(k => k.resourceName == fuel_name).maxAmount;
+				// if cooling is enabled and there was enough ec
+				// note: comparing against amount in previous simulation step
+				if (Lib.Proto.GetBool(m, "CoolingEnabled") && ec.amount > double.Epsilon)
+				{
+					// get cooling ec cost per 1000 units of fuel, per-second
+					double cooling_cost = Lib.ReflectionValue<float>(simple_boiloff, "CoolingCost");
 
-      // if cooling is enabled and there was enough ec
-      // note: comparing against amount in previous simulation step
-      if (Lib.Proto.GetBool(m, "CoolingEnabled") && ec.amount > double.Epsilon)
-      {
-        // get cooling ec cost per 1000 units of fuel, per-second
-        double cooling_cost = Lib.ReflectionValue<float>(simple_boiloff, "CoolingCost");
+					// consume ec
+					ec.Consume(cooling_cost * capacity * 0.001 * elapsed_s);
+				}
+				// if there wasn't ec, or if cooling is disabled
+				else
+				{
+					// get boiloff rate in proportion to fuel amount, per-second
+					double boiloff_rate = boiloff_rate_percent * 0.00000277777;
 
-        // consume ec
-        ec.Consume(cooling_cost * capacity * 0.001 * elapsed_s);
-      }
-      // if there wasn't ec, or if cooling is disabled
-      else
-      {
-        // get boiloff rate in proportion to fuel amount, per-second
-        double boiloff_rate = Lib.ReflectionValue<float>(simple_boiloff, "BoiloffRate") * 0.00000277777;
-
-        // let it boil off
-        fuel.Consume(capacity * (1.0 - Math.Pow(1.0 - boiloff_rate, elapsed_s)));
-      }
-    }
-
+					// let it boil off
+					fuel.Consume(capacity * (1.0 - Math.Pow(1.0 - boiloff_rate, elapsed_s)));
+				}
+			}
+		}
+				
     // disable post-facto simulation
     Lib.Proto.Set(m, "LastUpdateTime", v.missionTime);
   }
