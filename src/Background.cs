@@ -33,7 +33,8 @@ public static class Background
     FissionGenerator,
     RadioisotopeGenerator,
     CryoTank,
-    Unknown
+    Unknown,
+    FNGenerator
   }
 
   static module_type ModuleType(string module_name)
@@ -65,6 +66,7 @@ public static class Background
       case "FissionGenerator":             return module_type.FissionGenerator;
       case "ModuleRadioisotopeGenerator":  return module_type.RadioisotopeGenerator;
       case "ModuleCryoTank":               return module_type.CryoTank;
+      case "FNGenerator":		   return module_type.FNGenerator;
     }
     return module_type.Unknown;
   }
@@ -130,11 +132,25 @@ public static class Background
           case module_type.FissionGenerator:      ProcessFissionGenerator(v, p, m, module_prefab, ec, elapsed_s);                             break;
           case module_type.RadioisotopeGenerator: ProcessRadioisotopeGenerator(v, p, m, module_prefab, ec, elapsed_s);                        break;
           case module_type.CryoTank:              ProcessCryoTank(v, p, m, module_prefab, resources, elapsed_s);                              break;
-        }
+	  case module_type.FNGenerator:		  ProcessFNGenerator(v, p, m, module_prefab, ec, elapsed_s);				      break;
+	}
       }
     }
   }
 
+  static void ProcessFNGenerator(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule fission_generator, resource_info ec, double elapsed_s)
+  {
+    string maxPowerStr = Lib.Proto.GetString(m, "MaxPowerStr");
+    double maxPower = 0;
+    if (maxPowerStr.Contains("GW"))
+      maxPower = double.Parse(maxPowerStr.Replace(" GW", "")) * 1000000;
+    else if (maxPowerStr.Contains("MW"))
+      maxPower = double.Parse(maxPowerStr.Replace(" MW", "")) * 1000;
+    else
+      maxPower = double.Parse(maxPowerStr.Replace(" KW", ""));
+
+    ec.Produce(maxPower * elapsed_s);
+  }
 
   static void ProcessCommand(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleCommand command, vessel_resources resources, double elapsed_s)
   {
