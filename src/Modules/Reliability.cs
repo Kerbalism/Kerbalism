@@ -1,9 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Configuration;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.UI;
+using RealFuels;
 
 
 namespace KERBALISM {
@@ -448,6 +449,24 @@ public sealed class Reliability : PartModule, ISpecifics, IModuleInfo, IPartCost
           foreach(PartModule m in modules)
           {
             (m as ModuleEngines).Shutdown();
+          }
+        }
+        break;
+      case "ModuleEnginesRF":
+        if (b)
+        {
+          foreach (PartModule m in modules)
+          {
+            (m as ModuleEnginesRF).Shutdown();
+          }
+        }
+        break;
+      case "ModuleScienceExperiment":
+        if (b)
+        {
+          foreach (PartModule m in modules)
+          {
+            (m as ModuleScienceExperiment).SetInoperable();
           }
         }
         break;
