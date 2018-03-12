@@ -70,6 +70,9 @@
     <Reference Include="KSPAssets">
       <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Kerbal Space Program\KSP_x64_Data\Managed\KSPAssets.dll</HintPath>
     </Reference>
+    <Reference Include="RemoteTech">
+      <HintPath>..\..\RemoteTech.dll</HintPath>
+    </Reference>
     <Reference Include="System">
       <Private>False</Private>
     </Reference>
