@@ -1,6 +1,0 @@
-D:\Kerbalism\src\obj\Debug\Kerbalism.csprojResolveAssemblyReference.cache
-D:\Kerbalism\src\obj\Debug\Kerbalism.csproj.CoreCompileInputs.cache
-D:\KSP_Dev\GameData\Kerbalism\Kerbalism.dll
-D:\KSP_Dev\GameData\Kerbalism\Kerbalism.pdb
-D:\Kerbalism\src\obj\Debug\Kerbalism.dll
-D:\Kerbalism\src\obj\Debug\Kerbalism.pdb

@@ -1,3 +1,0 @@
-D:\KSP_Dev\GameData\Kerbalism\Kerbalism.dll
-D:\Kerbalism\src\obj\Release\Kerbalism.csproj.CoreCompileInputs.cache
-D:\Kerbalism\src\obj\Release\Kerbalism.dll
