@@ -4,7 +4,7 @@ using System.Configuration;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.UI;
-using RealFuels;
+//using RealFuels;
 
 
 namespace KERBALISM {
@@ -452,7 +452,7 @@ public sealed class Reliability : PartModule, ISpecifics, IModuleInfo, IPartCost
           }
         }
         break;
-      case "ModuleEnginesRF":
+      /*case "ModuleEnginesRF":
         if (b)
         {
           foreach (PartModule m in modules)
@@ -460,7 +460,7 @@ public sealed class Reliability : PartModule, ISpecifics, IModuleInfo, IPartCost
             (m as ModuleEnginesRF).Shutdown();
           }
         }
-        break;
+        break;*/
       case "ModuleScienceExperiment":
         if (b)
         {
