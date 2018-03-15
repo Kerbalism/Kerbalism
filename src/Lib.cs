@@ -1326,22 +1326,16 @@ namespace KERBALISM
 				string platform = "windows";
 				if (Application.platform == RuntimePlatform.LinuxPlayer) platform = "linux";
 				else if (Application.platform == RuntimePlatform.OSXPlayer) platform = "osx";
-				using (WWW bundle = new WWW("file://" + KSPUtil.ApplicationRootPath + "GameData/Kerbalism/Shaders/_" + platform))
+				using (WWW www = new WWW("file://" + KSPUtil.ApplicationRootPath + "GameData/Kerbalism/Shaders/_" + platform))
 				{
-					if (bundle.error != null)
+					AssetBundle bundle = www.assetBundle;
+					Shader[] pre_shaders = bundle.LoadAllAssets<Shader>();
+					foreach (Shader shader in pre_shaders)
 					{
-						throw new Exception("shaders bundle not found");
+						shaders.Add(shader.name.Replace("Custom/", string.Empty), new Material(shader));
 					}
-					foreach (Shader shader in bundle.assetBundle.LoadAllAssets<Shader>())
-					{
-						string shadername = shader.name.Replace("Custom/", string.Empty);
-						if (!shaders.ContainsKey(shadername) && shadername != "")
-						{
-							shaders.Add(shadername, new Material(shader));
-						}
-					}
-					bundle.assetBundle.Unload(false);
-					bundle.Dispose();
+					bundle.Unload(false);
+					www.Dispose();
 				}
 			}
 
