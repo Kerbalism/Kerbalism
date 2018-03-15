@@ -203,16 +203,6 @@
     <Compile Include="Utility\Space.cs" />
     <Compile Include="Utility\Specifics.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="Shaders\aa_line.shader" />
-    <None Include="Shaders\full_point_particle.shader" />
-    <None Include="Shaders\mini_particle.shader" />
-    <None Include="Shaders\point_particle.shader" />
-    <None Include="Shaders\point_sprite.shader" />
-    <None Include="Shaders\_linux" />
-    <None Include="Shaders\_osx" />
-    <None Include="Shaders\_windows" />
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="PostBuildMacros">
     <GetAssemblyIdentity AssemblyFiles="$(TargetPath)">
