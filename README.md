@@ -201,7 +201,7 @@ And special thanks to the artists that provided all the part:
 **I think to have found a bug, and I have just a few mods installed**
 
 Try to reproduce it consistently, then provide me with a savegame that demonstrate the issue. Include log files,
-screenshots, and reproduction steps. Post the report here, or raise an issue on github.
+screenshots, and reproduction steps. Post the report here, or raise an issue on the gitlab.
 
 **I want to add support for this to my parts**
 
@@ -209,15 +209,18 @@ Add the appropriate modules to your parts. Check the wiki on github for the modu
 
 **I want to interact with this mod in code**
 
-Have a look at System/API.cs source code on github. Raise an issue to request more functions.
+Have a look at System/API.cs source code on gitlab. Raise an issue to request more functions.
 
 
 ### REQUIREMENTS
 
-- KSP 1.3.0
-- ModuleManager 2.8.0+
+- KSP 1.4.1
+- ModuleManager 3.0.0+
 
 
 ### LICENSE
 
 This mod is released under the Unlicense.
+
+
+This mod includes version checking using [MiniAVC](http://forum.kerbalspaceprogram.com/threads/79745). If you opt-in, it will use the internet to check whether there is a new version available. Data is only read from the internet and no personal information is sent. For a more comprehensive version checking experience, please download the [KSP-AVC Plugin](http://forum.kerbalspaceprogram.com/threads/79745)
