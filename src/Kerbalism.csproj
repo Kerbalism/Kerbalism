@@ -65,7 +65,7 @@
   <ItemGroup>
     <Reference Include="Assembly-CSharp">
       <HintPath Condition="Exists('C:\Program Files (x86)\Steam\steamapps\common\Kerbal Space Program\KSP_x64_Data\Managed\Assembly-CSharp.dll')">C:\Program Files (x86)\Steam\steamapps\common\Kerbal Space Program\KSP_x64_Data\Managed\Assembly-CSharp.dll</HintPath>
-      <HintPath  Condition="Exists('.\Assembly-CSharp.dll')">.\Assembly-CSharp.dll</HintPath>
+      <HintPath Condition="Exists('.\Assembly-CSharp.dll')">.\Assembly-CSharp.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Assembly-CSharp-firstpass">
@@ -73,9 +73,11 @@
       <HintPath Condition="Exists('.\Assembly-CSharp-firstpass.dll')">.\Assembly-CSharp-firstpass.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="KSPAssets">
-      <HintPath Condition="Exists('C:\Program Files (x86)\Steam\steamapps\common\Kerbal Space Program\KSP_x64_Data\Managed\KSPAssets.dll')">C:\Program Files (x86)\Steam\steamapps\common\Kerbal Space Program\KSP_x64_Data\Managed\KSPAssets.dll</HintPath>
-      <HintPath Condition="Exists('.\KSPAssets.dll')">.\KSPAssets.dll</HintPath>
+    <Reference Include="Assembly-UnityScript">
+      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Kerbal Space Program\KSP_x64_Data\Managed\Assembly-UnityScript.dll</HintPath>
+    </Reference>
+    <Reference Include="Assembly-UnityScript-firstpass">
+      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Kerbal Space Program\KSP_x64_Data\Managed\Assembly-UnityScript-firstpass.dll</HintPath>
     </Reference>
     <Reference Include="System">
       <Private>False</Private>
@@ -117,7 +119,6 @@
     <Compile Include="Automation\Devices\Emitter.cs" />
     <Compile Include="Automation\Devices\Generator.cs" />
     <Compile Include="Automation\Devices\Greenhouse.cs" />
-    <Compile Include="Automation\Devices\Harvester.cs" />
     <Compile Include="Automation\Devices\Light.cs" />
     <Compile Include="Automation\Devices\Panel.cs" />
     <Compile Include="Automation\Devices\Process.cs" />
@@ -141,7 +142,6 @@
     <Compile Include="Modules\Emitter.cs" />
     <Compile Include="Modules\Greenhouse.cs" />
     <Compile Include="Modules\HardDrive.cs" />
-    <Compile Include="Modules\Harvester.cs" />
     <Compile Include="Modules\Laboratory.cs" />
     <Compile Include="Modules\ProcessController.cs" />
     <Compile Include="Modules\Sensor.cs" />
