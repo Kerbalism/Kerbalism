@@ -249,6 +249,7 @@ namespace KERBALISM
 
 				// commit the line
 				LineRenderer.commit(a, b, color);
+				//Lib.Log("COMMITING LINE: " + color.r.ToString() + "," + color.b.ToString() + "," + color.g.ToString() + "," + color.a.ToString());
 
 				// if transmitting or relaying science data
 				if (vi.transmitting.Length > 0 || vi.relaying.Length > 0)
@@ -273,6 +274,7 @@ namespace KERBALISM
 					{
 						// commit particle
 						ParticleRenderer.commit(a + dir * ((float)i + k), 8.0f, clr);
+						//Lib.Log("COMMITING PARTICLE: " + clr.r.ToString() + "," + clr.b.ToString() + "," + clr.g.ToString() + "," + clr.a);
 					}
 				}
 			}

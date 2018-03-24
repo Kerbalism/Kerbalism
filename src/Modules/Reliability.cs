@@ -453,15 +453,15 @@ namespace KERBALISM
 						}
 					}
 					break;
-				/*case "ModuleEnginesRF":
-				  if (b)
-				  {
-					foreach (PartModule m in modules)
+				case "ModuleEnginesRF":
+					if (b)
 					{
-					  (m as ModuleEnginesRF).Shutdown();
+						foreach (PartModule m in modules)
+						{
+							Lib.ReflectionCall(m, "Shutdown");
+						}
 					}
-				  }
-				  break;*/
+					break;
 				case "ModuleScienceExperiment":
 					if (b)
 					{
