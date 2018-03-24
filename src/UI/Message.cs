@@ -3,180 +3,203 @@ using System.Collections.Generic;
 using UnityEngine;
 
 
-namespace KERBALISM {
-
-
-public enum Severity
+namespace KERBALISM
 {
-  relax,    // something went back to nominal
-  warning,  // the user should start being worried about something
-  danger,   // the user should start panicking about something
-  fatality, // somebody died
-  breakdown // somebody is breaking down
-}
 
 
-public sealed class Message
-{
-  // represent an entry in the message list
-  sealed class Entry
-  {
-    public string msg;
-    public float first_seen;
-  }
+	public enum Severity
+	{
+		relax,    // something went back to nominal
+		warning,  // the user should start being worried about something
+		danger,   // the user should start panicking about something
+		fatality, // somebody died
+		breakdown // somebody is breaking down
+	}
 
 
-  // ctor
-  public Message()
-  {
-    // enable global access
-    instance = this;
+	public sealed class Message
+	{
+		// represent an entry in the message list
+		sealed class Entry
+		{
+			public string msg;
+			public float first_seen;
+		}
 
-    // setup style
-    style = new GUIStyle();
-    style.normal.background = Lib.GetTexture("black-background");
-    style.normal.textColor = new Color(0.66f, 0.66f, 0.66f, 1.0f);
-    style.richText = true;
-    style.stretchWidth = true;
-    style.stretchHeight = true;
-    style.fixedWidth = 0;
-    style.fixedHeight = 0;
-    style.fontSize = 12;
-    style.alignment = TextAnchor.MiddleCenter;
-    style.border = new RectOffset(0, 0, 0, 0);
-    style.padding = new RectOffset(2, 2, 2, 2);
-  }
+		public sealed class MessageObject
+		{
+			public string title;
+			public string msg;
+		}
+
+		public static List<MessageObject> all_logs;
 
 
-  // called every frame
-  public void on_gui()
-  {
-    // if queue is empty, do nothing
-    if (entries.Count == 0) return;
+		// ctor
+		public Message()
+		{
+			// enable global access
+			instance = this;
 
-    // get current time
-    float time = Time.realtimeSinceStartup;
+			// setup style
+			style = new GUIStyle();
+			style.normal.background = Lib.GetTexture("black-background");
+			style.normal.textColor = new Color(0.66f, 0.66f, 0.66f, 1.0f);
+			style.richText = true;
+			style.stretchWidth = true;
+			style.stretchHeight = true;
+			style.fixedWidth = 0;
+			style.fixedHeight = 0;
+			style.fontSize = 12;
+			style.alignment = TextAnchor.MiddleCenter;
+			style.border = new RectOffset(0, 0, 0, 0);
+			style.padding = new RectOffset(2, 2, 2, 2);
 
-    // get first entry in the queue
-    Entry e = entries.Peek();
-
-    // if never visualized, remember first time shown
-    if (e.first_seen <= float.Epsilon) e.first_seen = time;
-
-    // if visualized for too long, remove from the queue and skip this update
-    if (e.first_seen + Settings.MessageLength < time) { entries.Dequeue(); return; }
-
-    // calculate content size
-    GUIContent content = new GUIContent(e.msg);
-    Vector2 size = style.CalcSize(content);
-    size = style.CalcScreenSize(size);
-    size.x += style.padding.left + style.padding.right;
-    size.y += style.padding.bottom + style.padding.top;
-
-    // calculate position
-    Rect rect = new Rect((Screen.width - size.x) * 0.5f, (Screen.height - size.y - offset), size.x, size.y);
-
-    // render the message
-    var prev_style = GUI.skin.label;
-    GUI.skin.label = style;
-    GUI.Label(rect, e.msg);
-    GUI.skin.label = prev_style;
-  }
+			if (all_logs == null)
+			{
+				all_logs = new List<MessageObject>();
+			}
+		}
 
 
-  // add a plain message
-  public static void Post(string msg)
-  {
-    // ignore the message if muted
-    if (instance.muted) return;
+		// called every frame
+		public void on_gui()
+		{
+			// if queue is empty, do nothing
+			if (entries.Count == 0) return;
 
-    // if the user want to use the stock message system, just post it there
-    if (Settings.StockMessages)
-    {
-      ScreenMessages.PostScreenMessage(msg, Settings.MessageLength, ScreenMessageStyle.UPPER_CENTER);
-      return;
-    }
+			// get current time
+			float time = Time.realtimeSinceStartup;
 
-    // avoid adding the same message if already present in the queue
-    foreach(Entry e in instance.entries) { if (e.msg == msg) return; }
+			// get first entry in the queue
+			Entry e = entries.Peek();
 
-    // compile entry
-    Entry entry = new Entry();
-    entry.msg = msg;
-    entry.first_seen = 0;
+			// if never visualized, remember first time shown
+			if (e.first_seen <= float.Epsilon) e.first_seen = time;
 
-    // add entry
-    instance.entries.Enqueue(entry);
-  }
+			// if visualized for too long, remove from the queue and skip this update
+			if (e.first_seen + Settings.MessageLength < time) { entries.Dequeue(); return; }
 
+			// calculate content size
+			GUIContent content = new GUIContent(e.msg);
+			Vector2 size = style.CalcSize(content);
+			size = style.CalcScreenSize(size);
+			size.x += style.padding.left + style.padding.right;
+			size.y += style.padding.bottom + style.padding.top;
 
-  // add a message
-  public static void Post(string text, string subtext)
-  {
-    // ignore the message if muted
-    if (instance.muted) return;
+			// calculate position
+			Rect rect = new Rect((Screen.width - size.x) * 0.5f, (Screen.height - size.y - offset), size.x, size.y);
 
-    if (subtext.Length == 0) Post(text);
-    else Post(Lib.BuildString(text, "\n<i>", subtext, "</i>"));
-  }
-
-
-  // add a message
-  public static void Post(Severity severity, string text, string subtext="")
-  {
-    // ignore the message if muted
-    if (instance.muted) return;
-
-    string title = "";
-    switch(severity)
-    {
-      case Severity.relax:      title = "<color=#00BB00><b>RELAX</b></color>\n"; break;
-      case Severity.warning:    title = "<color=#BBBB00><b>WARNING</b></color>\n"; Lib.StopWarp(); break;
-      case Severity.danger:     title = "<color=#BB0000><b>DANGER</b></color>\n"; Lib.StopWarp(); break;
-      case Severity.fatality:   title = "<color=#BB0000><b>FATALITY</b></color>\n"; Lib.StopWarp(); break;
-      case Severity.breakdown:  title = "<color=#BB0000><b>BREAKDOWN</b></color>\n"; Lib.StopWarp(); break;
-    }
-    if (subtext.Length == 0) Post(Lib.BuildString(title, text));
-    else Post(Lib.BuildString(title, text, "\n<i>", subtext, "</i>"));
-  }
+			// render the message
+			var prev_style = GUI.skin.label;
+			GUI.skin.label = style;
+			GUI.Label(rect, e.msg);
+			GUI.skin.label = prev_style;
+		}
 
 
-  // disable rendering of messages
-  public static void Mute()
-  {
-    instance.muted = true;
-  }
+		// add a plain message
+		public static void Post(string msg)
+		{
+			// ignore the message if muted
+			if (instance.muted) return;
+
+			// if the user want to use the stock message system, just post it there
+			if (Settings.StockMessages)
+			{
+				ScreenMessages.PostScreenMessage(msg, Settings.MessageLength, ScreenMessageStyle.UPPER_CENTER);
+				return;
+			}
+
+			// avoid adding the same message if already present in the queue
+			foreach (Entry e in instance.entries) { if (e.msg == msg) return; }
+
+			// compile entry
+			Entry entry = new Entry();
+			entry.msg = msg;
+			entry.first_seen = 0;
+
+			// add entry
+			instance.entries.Enqueue(entry);
+		}
 
 
-  // re-enable rendering of messages
-  public static void Unmute()
-  {
-    instance.muted = false;
-  }
+		// add a message
+		public static void Post(string text, string subtext)
+		{
+			// ignore the message if muted
+			if (instance.muted) return;
+
+			if (subtext.Length == 0) Post(text);
+			else Post(Lib.BuildString(text, "\n<i>", subtext, "</i>"));
+			all_logs.Add(new MessageObject
+			{
+				msg = Lib.BuildString(text, "\n<i>", subtext, "</i>"),
+			});
+		}
 
 
-  // return true if user channel is muted
-  public static bool IsMuted()
-  {
-    return instance.muted;
-  }
+		// add a message
+		public static void Post(Severity severity, string text, string subtext = "")
+		{
+			// ignore the message if muted
+			if (instance.muted) return;
+
+			string title = "";
+			switch (severity)
+			{
+				case Severity.relax: title = "<color=#00BB00><b>RELAX</b></color>\n"; break;
+				case Severity.warning: title = "<color=#BBBB00><b>WARNING</b></color>\n"; Lib.StopWarp(); break;
+				case Severity.danger: title = "<color=#BB0000><b>DANGER</b></color>\n"; Lib.StopWarp(); break;
+				case Severity.fatality: title = "<color=#BB0000><b>FATALITY</b></color>\n"; Lib.StopWarp(); break;
+				case Severity.breakdown: title = "<color=#BB0000><b>BREAKDOWN</b></color>\n"; Lib.StopWarp(); break;
+			}
+			if (subtext.Length == 0) Post(Lib.BuildString(title, text));
+			else Post(Lib.BuildString(title, text, "\n<i>", subtext, "</i>"));
+			all_logs.Add(new MessageObject
+			{
+				title = title,
+				msg = Lib.BuildString(text, "\n<i>", subtext, "</i>"),
+			});
+		}
 
 
-  // constants
-  const float offset = 266.0f;
+		// disable rendering of messages
+		public static void Mute()
+		{
+			instance.muted = true;
+		}
 
-  // store entries
-  Queue<Entry> entries = new Queue<Entry>();
 
-  // disable message rendering
-  bool muted;
+		// re-enable rendering of messages
+		public static void Unmute()
+		{
+			instance.muted = false;
+		}
 
-  // styles
-  GUIStyle style;
 
-  // permit global access
-  static Message instance;
-}
+		// return true if user channel is muted
+		public static bool IsMuted()
+		{
+			return instance.muted;
+		}
+
+
+		// constants
+		const float offset = 266.0f;
+
+		// store entries
+		Queue<Entry> entries = new Queue<Entry>();
+
+		// disable message rendering
+		bool muted;
+
+		// styles
+		GUIStyle style;
+
+		// permit global access
+		static Message instance;
+	}
 
 
 } // KERBALISM

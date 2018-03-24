@@ -170,6 +170,7 @@
     <Compile Include="UI\DevManager.cs" />
     <Compile Include="UI\FileManager.cs" />
     <Compile Include="UI\Icons.cs" />
+    <Compile Include="UI\NotificationLog.cs" />
     <Compile Include="UI\Panel.cs" />
     <Compile Include="UI\TimedOut.cs" />
     <Compile Include="UI\Window.cs" />
