@@ -9,6 +9,21 @@ namespace KERBALISM
 
 	public static class Signal
 	{
+		public static List<DSNStation> dsn_nodes;
+		public static DSNStation default_dsn;
+		public static Vector3d default_dsn_loc
+		{
+			get
+			{
+				return (!double.IsNaN(default_dsn.longitude) && !double.IsNaN(default_dsn.latitude) && !double.IsNaN(default_dsn.height)) ? FlightGlobals.GetHomeBody().GetWorldSurfacePosition(default_dsn.latitude, default_dsn.longitude, default_dsn.height) : FlightGlobals.GetHomeBody().GetWorldSurfacePosition(-0.131331503391266, -74.594841003418, 100);
+			}
+		}
+
+		public static Vector3d GetDSNLoc(DSNStation dsn)
+		{
+			return (!double.IsNaN(dsn.longitude) && !double.IsNaN(dsn.latitude) && !double.IsNaN(dsn.height)) ? FlightGlobals.GetHomeBody().GetWorldSurfacePosition(dsn.latitude, dsn.longitude, dsn.height) : FlightGlobals.GetHomeBody().GetWorldSurfacePosition(-0.131331503391266, -74.594841003418, 100);
+		}
+
 		public static ConnectionInfo connection(Vessel v, Vector3d position, AntennaInfo antenna, bool blackout, HashSet<Guid> avoid_inf_recursion)
 		{
 			// if signal mechanic is disabled, use RemoteTech/CommNet/S4
@@ -24,13 +39,20 @@ namespace KERBALISM
 			Vector3d dir;
 			double dist;
 			bool visible;
+			DSNStation target_dsn = default_dsn;
 
 			// store other data
 			double rate;
 			List<ConnectionInfo> connections = new List<ConnectionInfo>();
 
 			// raytrace home body
-			visible = Sim.RaytraceBody(v, position, FlightGlobals.GetHomeBody(), out dir, out dist);
+			if (Signal.GetTarget(v) != null)
+			{
+				target_dsn = Signal.GetTarget(v);
+			}
+
+			visible = Sim.RaytracePos(v, position, GetDSNLoc(target_dsn), out dir, out dist);
+
 
 			// get rate
 			rate = antenna.direct_rate(dist);
@@ -39,6 +61,7 @@ namespace KERBALISM
 			if (visible && rate > 0.0)
 			{
 				ConnectionInfo conn = new ConnectionInfo(LinkStatus.direct_link, rate, antenna.direct_cost);
+				conn.dsn = target_dsn;
 				connections.Add(conn);
 			}
 
@@ -201,8 +224,6 @@ namespace KERBALISM
 			// do nothing if signal mechanic is disabled
 			if (!Features.Signal) return;
 
-			// get home body position
-			Vector3 home = ScaledSpace.LocalToScaledSpace(FlightGlobals.GetHomeBody().position);
 
 			// for each vessel
 			foreach (Vessel v in FlightGlobals.Vessels)
@@ -234,7 +255,8 @@ namespace KERBALISM
 				Color color;
 				if (conn.status == LinkStatus.direct_link)
 				{
-					b = home;
+					b = ScaledSpace.LocalToScaledSpace(GetDSNLoc(conn.dsn));
+					//Lib.Log("Target DSN is " + conn.dsn.name);
 					color = Color.green;
 				}
 				else //< indirect link
@@ -307,8 +329,35 @@ namespace KERBALISM
 				return new ConnectionInfo(LinkStatus.direct_link, ext_rate, ext_cost);
 			}
 		}
+
+
+		public static DSNStation GetTarget(Vessel v)
+		{
+			Vector3d dir;
+			double dist;
+			if (Sim.RaytracePos(v, v.GetWorldPos3D(), Signal.default_dsn_loc, out dir, out dist))
+			{
+				return Signal.default_dsn;
+			}
+			foreach (DSNStation dsn in Signal.dsn_nodes)
+			{
+				if (Sim.RaytracePos(v, v.GetWorldPos3D(), Signal.GetDSNLoc(dsn), out dir, out dist))
+				{
+					return dsn;
+				}
+			}
+			return null;
+		}
 	}
 
+	public sealed class DSNStation
+	{
+		public double longitude;
+		public double latitude;
+		public double height;
+		public string name;
+		public double range;
+	}
 
 } // KERBALISM
 
