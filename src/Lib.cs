@@ -1533,6 +1533,41 @@ namespace KERBALISM
 				double v;
 				return s != null && double.TryParse(s, out v) ? v : def_value;
 			}
+
+			private static bool TryParseColor(string s, out UnityEngine.Color c)
+			{
+				string[] split = s.Replace(" ", String.Empty).Split(',');
+				if (split.Length < 3)
+				{
+					c = new UnityEngine.Color(0, 0, 0);
+					return false;
+				}
+				if (split.Length == 4)
+				{
+					c = new UnityEngine.Color(ToFloat(split[0], 0f), ToFloat(split[1], 0f), ToFloat(split[2], 0f), ToFloat(split[3], 1f));
+					return true;
+				}
+				c = new UnityEngine.Color(ToFloat(split[0], 0f), ToFloat(split[1], 0f), ToFloat(split[2], 0f));
+				return true;
+			}
+
+			public static UnityEngine.Color ToColor(string s, UnityEngine.Color def_value)
+			{
+				UnityEngine.Color v;
+				return s != null && TryParseColor(s, out v) ? v : def_value;
+			}
+		}
+
+		/// <summary>
+		/// Checks whether the location is behind the body
+		/// Original code by regex from https://github.com/NathanKell/RealSolarSystem/blob/master/Source/KSCSwitcher.cs
+		/// </summary>
+		public static bool IsOccluded(Vector3d loc, CelestialBody body)
+		{
+			Vector3d camPos = ScaledSpace.ScaledToLocalSpace(PlanetariumCamera.Camera.transform.position);
+
+			if (Vector3d.Angle(camPos - loc, body.position - loc) > 90) { return false; }
+			return true;
 		}
 	}
 

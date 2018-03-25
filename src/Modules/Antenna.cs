@@ -71,6 +71,7 @@ namespace KERBALISM
 				Events["ToggleRelay"].active = type == AntennaType.low_gain && (extended || !Settings.ExtendedAntenna) && !vessel.isEVA;
 				Events["ToggleRelay"].guiName = Lib.StatusToggle("Relay", relay ? "yes" : "no");
 
+
 				// show transmission messages
 				if (stream.transmitting())
 				{

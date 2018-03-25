@@ -19,6 +19,9 @@ namespace KERBALISM
 			}
 		}
 
+		public static Texture2D texMark;
+
+
 		public static Vector3d GetDSNLoc(DSNStation dsn)
 		{
 			return (!double.IsNaN(dsn.longitude) && !double.IsNaN(dsn.latitude) && !double.IsNaN(dsn.height)) ? FlightGlobals.GetHomeBody().GetWorldSurfacePosition(dsn.latitude, dsn.longitude, dsn.height) : FlightGlobals.GetHomeBody().GetWorldSurfacePosition(-0.131331503391266, -74.594841003418, 100);
@@ -46,9 +49,9 @@ namespace KERBALISM
 			List<ConnectionInfo> connections = new List<ConnectionInfo>();
 
 			// raytrace home body
-			if (Signal.GetTarget(v) != null)
+			if (GetTarget(v) != null)
 			{
-				target_dsn = Signal.GetTarget(v);
+				target_dsn = GetTarget(v);
 			}
 
 			visible = Sim.RaytracePos(v, position, GetDSNLoc(target_dsn), out dir, out dist);
@@ -348,6 +351,26 @@ namespace KERBALISM
 			}
 			return null;
 		}
+
+		public static void on_gui()
+		{
+			if (Event.current.type == EventType.Repaint && MapView.MapIsEnabled)
+			{
+				foreach (DSNStation dsn in Signal.dsn_nodes)
+				{
+					Vector3d dsn_loc = GetDSNLoc(dsn);
+					var worldPos = ScaledSpace.LocalToScaledSpace(dsn_loc);
+					if (MapView.MapCamera.transform.InverseTransformPoint(worldPos).z < 0f) continue;
+					if (Lib.IsOccluded(dsn_loc, FlightGlobals.GetHomeBody())) continue;
+					Vector3 pos = PlanetariumCamera.Camera.WorldToScreenPoint(worldPos);
+					var screenRect = new Rect((pos.x - 8), (Screen.height - pos.y) - 8, 16, 16);
+					Color pushColor = GUI.color;
+					GUI.color = dsn.color;
+					GUI.DrawTexture(screenRect, texMark, ScaleMode.ScaleToFit, true);
+					GUI.color = pushColor;
+				}
+			}
+		}
 	}
 
 	public sealed class DSNStation
@@ -357,6 +380,7 @@ namespace KERBALISM
 		public double height;
 		public string name;
 		public double range;
+		public Color color;
 	}
 
 } // KERBALISM

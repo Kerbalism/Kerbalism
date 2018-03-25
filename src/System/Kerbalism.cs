@@ -33,6 +33,11 @@ namespace KERBALISM
 				Highlighter.init();
 				UI.init();
 
+				if (Signal.texMark == null)
+				{
+					Signal.texMark = Lib.GetTexture("mark");
+				}
+
 				// prepare storm data
 				foreach (CelestialBody body in FlightGlobals.Bodies)
 				{
@@ -256,6 +261,8 @@ namespace KERBALISM
 		void OnGUI()
 		{
 			UI.on_gui(callbacks.visible);
+
+			Signal.on_gui();
 		}
 
 

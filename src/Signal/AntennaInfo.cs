@@ -140,7 +140,6 @@ namespace KERBALISM
 		List<double> rate;
 		List<double> dist;
 		List<bool> relay;
-		DSNStation target_dsn;
 
 		public bool no_antenna;
 		public bool is_relay;
