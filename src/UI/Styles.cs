@@ -121,6 +121,17 @@ namespace KERBALISM
 			tooltip_container = new GUIStyle();
 			tooltip_container.stretchWidth = true;
 			tooltip_container.stretchHeight = true;
+
+			smallStationHead = new GUIStyle(HighLogic.Skin.label)
+			{
+				fontSize = 12
+			};
+
+			smallStationText = new GUIStyle(HighLogic.Skin.label)
+			{
+				fontSize = 10,
+				normal = { textColor = Color.white }
+			};
 		}
 
 
@@ -140,6 +151,8 @@ namespace KERBALISM
 		public static GUIStyle right_icon;                // an icon on the right
 		public static GUIStyle tooltip;                   // tooltip label
 		public static GUIStyle tooltip_container;         // tooltip label container
+		public static GUIStyle smallStationHead;
+		public static GUIStyle smallStationText;
 	}
 
 

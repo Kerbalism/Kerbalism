@@ -65,6 +65,7 @@ namespace KERBALISM
 			// signal
 			UnlinkedControl = Lib.ConfigEnum(cfg, "UnlinkedControl", UnlinkedCtrl.none);
 			ExtendedAntenna = Lib.ConfigValue(cfg, "ExtendedAntenna", true);
+			HideGroundStationsDist = Lib.ConfigValue(cfg, "HideGroundStationsDist", 30000000);
 
 			// science
 			ScienceDialog = Lib.ConfigValue(cfg, "ScienceDialog", true);
@@ -131,6 +132,7 @@ namespace KERBALISM
 		// signal
 		public static UnlinkedCtrl UnlinkedControl;             // available control for unlinked vessels: 'none', 'limited' or 'full'
 		public static bool ExtendedAntenna;                   // antenna only work if extended
+		public static float HideGroundStationsDist;
 
 		// science
 		public static bool ScienceDialog;                     // keep showing the stock science dialog

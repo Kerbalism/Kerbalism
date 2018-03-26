@@ -338,20 +338,23 @@ namespace KERBALISM
 		{
 			Vector3d dir;
 			double dist;
-			if (Sim.RaytracePos(v, v.GetWorldPos3D(), Signal.default_dsn_loc, out dir, out dist))
+			if (Sim.RaytracePos(v, v.GetWorldPos3D(), default_dsn_loc, out dir, out dist))
 			{
-				return Signal.default_dsn;
+				return default_dsn;
 			}
-			foreach (DSNStation dsn in Signal.dsn_nodes)
+			foreach (DSNStation dsn in dsn_nodes)
 			{
-				if (Sim.RaytracePos(v, v.GetWorldPos3D(), Signal.GetDSNLoc(dsn), out dir, out dist))
+				if (dsn == null || Double.IsNaN(dsn.range)) continue;
+				if (Sim.RaytracePos(v, v.GetWorldPos3D(), GetDSNLoc(dsn), out dir, out dist))
 				{
+					if (Vector3d.Distance(v.GetWorldPos3D(), GetDSNLoc(dsn)) > dsn.range) continue;
 					return dsn;
 				}
 			}
 			return null;
 		}
 
+		//this is from remotetech https://github.com/RemoteTechnologiesGroup/RemoteTech/blob/develop/src/RemoteTech/NetworkRenderer.cs
 		public static void on_gui()
 		{
 			if (Event.current.type == EventType.Repaint && MapView.MapIsEnabled)
@@ -361,6 +364,7 @@ namespace KERBALISM
 					if (dsn == null) continue;
 					Vector3d dsn_loc = GetDSNLoc(dsn);
 					if (dsn_loc == null) continue;
+					if (Vector3.Distance(ScaledSpace.ScaledToLocalSpace(PlanetariumCamera.Camera.transform.position), dsn_loc) >= Settings.HideGroundStationsDist) continue;
 					var worldPos = ScaledSpace.LocalToScaledSpace(dsn_loc);
 					if (MapView.MapCamera.transform.InverseTransformPoint(worldPos).z < 0f) continue;
 					if (Lib.IsOccluded(dsn_loc, FlightGlobals.GetHomeBody())) continue;
@@ -370,9 +374,36 @@ namespace KERBALISM
 					GUI.color = dsn.color;
 					GUI.DrawTexture(screenRect, texMark, ScaleMode.ScaleToFit, true);
 					GUI.color = pushColor;
+					if (screenRect.Contains(new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y)))
+					{
+						Rect headline = screenRect;
+						Vector2 nameDim = Styles.smallStationHead.CalcSize(new GUIContent(dsn.name));
+
+						headline.x -= nameDim.x + 10;
+						headline.y -= 3;
+						headline.width = nameDim.x;
+						headline.height = 14;
+						// draw headline of the station
+						GUI.Label(headline, dsn.name, Styles.smallStationHead);
+
+						Rect antennas = screenRect;
+						string stuff = "Omni: " + Lib.FormatSI(dsn.range, "m");
+						GUIContent content = new GUIContent(stuff);
+
+						Vector2 antennaDim = Styles.smallStationText.CalcSize(content);
+						float maxHeight = Styles.smallStationText.CalcHeight(content, antennaDim.x);
+
+						antennas.y += headline.height - 3;
+						antennas.x -= antennaDim.x + 10;
+						antennas.width = antennaDim.x;
+						antennas.height = maxHeight;
+
+						// draw antenna infos of the station
+						GUI.Label(antennas, stuff, Styles.smallStationText);
+					}
 				}
 			}
-		}
+		} //end crappy remotetech copy/paste
 	}
 
 	public sealed class DSNStation
