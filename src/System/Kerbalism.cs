@@ -35,7 +35,7 @@ namespace KERBALISM
 
 				if (Signal.texMark == null)
 				{
-					Signal.texMark = Lib.GetTexture("mark");
+					Signal.texMark = Lib.GetTexture("radar");
 				}
 
 				// prepare storm data
