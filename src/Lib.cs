@@ -1337,7 +1337,9 @@ namespace KERBALISM
 					Shader[] pre_shaders = bundle.LoadAllAssets<Shader>();
 					foreach (Shader shader in pre_shaders)
 					{
-						shaders.Add(shader.name.Replace("Custom/", string.Empty), new Material(shader));
+						var key = shader.name.Replace("Custom/", string.Empty);
+						if (shaders.ContainsKey(key)) shaders.Remove(key);
+						shaders.Add(key, new Material(shader));
 					}
 					bundle.Unload(false);
 					www.Dispose();
