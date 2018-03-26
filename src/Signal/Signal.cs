@@ -292,7 +292,7 @@ namespace KERBALISM
 					// particle color
 					// - fade to avoid overlapping
 					Color clr = Color.cyan;
-					clr.a = Mathf.Min(Lib.Clamp(1.0f - 0.01f * PlanetariumCamera.fetch.Distance / dir.magnitude, 0.0f, 1.0f) * 2.0f, 1.0f);
+					//clr.a = Mathf.Min(Lib.Clamp(1.0f - 0.01f * PlanetariumCamera.fetch.Distance / dir.magnitude, 0.0f, 1.0f) * 2.0f, 1.0f);
 
 					// for each particle
 					for (int i = 0; i < particle_count; ++i)
@@ -356,9 +356,11 @@ namespace KERBALISM
 		{
 			if (Event.current.type == EventType.Repaint && MapView.MapIsEnabled)
 			{
-				foreach (DSNStation dsn in Signal.dsn_nodes)
+				foreach (DSNStation dsn in dsn_nodes)
 				{
+					if (dsn == null) continue;
 					Vector3d dsn_loc = GetDSNLoc(dsn);
+					if (dsn_loc == null) continue;
 					var worldPos = ScaledSpace.LocalToScaledSpace(dsn_loc);
 					if (MapView.MapCamera.transform.InverseTransformPoint(worldPos).z < 0f) continue;
 					if (Lib.IsOccluded(dsn_loc, FlightGlobals.GetHomeBody())) continue;

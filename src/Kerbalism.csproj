@@ -108,6 +108,7 @@
     <Compile Include="Automation\Computer.cs" />
     <Compile Include="Automation\Device.cs" />
     <Compile Include="Automation\Devices\Antenna.cs" />
+    <Compile Include="Automation\Devices\Harvester.cs" />
     <Compile Include="Automation\Devices\Laboratory.cs" />
     <Compile Include="Automation\Devices\Experiment.cs" />
     <Compile Include="Automation\Devices\Scanner.cs" />
@@ -139,6 +140,7 @@
     <Compile Include="External\RemoteTech.cs" />
     <Compile Include="External\SCANsat.cs" />
     <Compile Include="Modules\Antenna.cs" />
+    <Compile Include="Modules\Harvester.cs" />
     <Compile Include="Modules\Emitter.cs" />
     <Compile Include="Modules\Greenhouse.cs" />
     <Compile Include="Modules\HardDrive.cs" />
