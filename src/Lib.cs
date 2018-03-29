@@ -644,11 +644,13 @@ namespace KERBALISM
 			return FlightDriver.Pause || Planetarium.Pause;
 		}
 
-		// return true if a tutorial scenario is active
+		// return true if a tutorial scenario or making history mission is active
 		public static bool IsScenario()
 		{
 			return HighLogic.CurrentGame.Mode == Game.Modes.SCENARIO
-				|| HighLogic.CurrentGame.Mode == Game.Modes.SCENARIO_NON_RESUMABLE;
+				|| HighLogic.CurrentGame.Mode == Game.Modes.SCENARIO_NON_RESUMABLE
+				|| HighLogic.CurrentGame.Mode == Game.Modes.MISSION_BUILDER
+				|| HighLogic.CurrentGame.Mode == Game.Modes.MISSION;
 		}
 
 		// disable the module and return true if a tutorial scenario is active

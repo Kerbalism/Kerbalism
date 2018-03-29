@@ -338,9 +338,12 @@ namespace KERBALISM
 		{
 			Vector3d dir;
 			double dist;
-			if (Sim.RaytracePos(v, v.GetWorldPos3D(), default_dsn_loc, out dir, out dist))
+			if (default_dsn_loc != null && default_dsn != null)
 			{
-				return default_dsn;
+				if (Sim.RaytracePos(v, v.GetWorldPos3D(), default_dsn_loc, out dir, out dist))
+				{
+					return default_dsn;
+				}
 			}
 			foreach (DSNStation dsn in dsn_nodes)
 			{

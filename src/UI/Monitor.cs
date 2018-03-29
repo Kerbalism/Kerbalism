@@ -514,7 +514,7 @@ namespace KERBALISM
 			string target_str = string.Empty;
 			switch (vi.connection.status)
 			{
-				case LinkStatus.direct_link: target_str = "DSN"; break;
+				case LinkStatus.direct_link: target_str = (conn.dsn != null ? conn.dsn.name : "DSN"); break;
 				case LinkStatus.indirect_link: target_str = vi.connection.path[vi.connection.path.Count - 1].vesselName; break;
 				default: target_str = "none"; break;
 			}
