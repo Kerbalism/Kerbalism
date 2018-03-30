@@ -201,10 +201,11 @@ namespace KERBALISM
 
 
 		// return data rate in kbps
-		public static double calculate_rate(double d, double dist, double rate)
+		public static double calculate_rate(double cutoff_distance, double distance, double rate)
 		{
-			double k = Math.Min(1.0, (d / dist));
+			double k = Math.Max(1.0 - cutoff_distance / distance, 0.0);
 			return k * k * rate;
+
 		}
 	}
 
