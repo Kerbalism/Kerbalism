@@ -105,6 +105,7 @@ namespace KERBALISM
 			{
 				if (type[i] == AntennaType.low_gain)
 				{
+					//Lib.Log("indirect_rate: r/" + relay_antenna.type[i].ToString());
 					r += Antenna.calculate_rate(d, dist[i], rate[i]);
 				}
 			}
@@ -115,9 +116,10 @@ namespace KERBALISM
 				if (relay_antenna.type[i] == AntennaType.low_gain && relay_antenna.relay[i])
 				{
 					indirect_r += Antenna.calculate_rate(d, relay_antenna.dist[i], relay_antenna.rate[i]);
+					//Lib.Log("indirect_rate: ir/" + relay_antenna.type[i].ToString());
 				}
 			}
-
+			//Lib.Log("indirect_rate: r=" + r.ToString() + ", indirect_r = " + indirect_r.ToString());
 			return Math.Min(r, indirect_r);
 		}
 
