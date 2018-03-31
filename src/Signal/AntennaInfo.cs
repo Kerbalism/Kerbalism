@@ -98,28 +98,33 @@ namespace KERBALISM
 			return r;
 		}
 
-		public double indirect_rate(double cutoff_distance, AntennaInfo relay_antenna)
+		public double indirect_rate(double d, AntennaInfo relay_antenna)
 		{
 			double r = 0.0;
+
+			// Antennas in Relay vessel
+			double distComb = 0.0, rateComb = 0.0;
+
 			for (int i = 0; i < type.Count; ++i)
 			{
-				if (type[i] == AntennaType.low_gain)
-				{
-					//Lib.Log("indirect_rate: r/" + relay_antenna.type[i].ToString());
-					r += Antenna.calculate_rate(cutoff_distance, dist[i], rate[i]);
-				}
+				distComb += dist[i];
+				rateComb += rate[i];
 			}
 
+			// Range & Rate combined
+			r += Antenna.calculate_rate(d, distComb, rateComb);
+
 			double indirect_r = 0.0;
+			distComb = 0.0;
+			rateComb = 0.0;
+
 			for (int i = 0; i < relay_antenna.type.Count; ++i)
 			{
-				if (relay_antenna.type[i] == AntennaType.low_gain && relay_antenna.relay[i])
-				{
-					indirect_r += Antenna.calculate_rate(cutoff_distance, relay_antenna.dist[i], relay_antenna.rate[i]);
-					//Lib.Log("indirect_rate: ir/" + relay_antenna.type[i].ToString());
-				}
+				distComb += relay_antenna.dist[i];
+				rateComb += relay_antenna.rate[i];
 			}
-			//Lib.Log("indirect_rate: r=" + r.ToString() + ", indirect_r = " + indirect_r.ToString());
+
+			indirect_r += Antenna.calculate_rate(d, distComb, rateComb);
 			return Math.Min(r, indirect_r);
 		}
 

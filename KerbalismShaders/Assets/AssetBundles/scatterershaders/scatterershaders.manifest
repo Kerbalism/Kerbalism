@@ -1,7 +1,0 @@
-ManifestFileVersion: 0
-CRC: 116919865
-AssetBundleManifest:
-  AssetBundleInfos:
-    Info_0:
-      Name: kerbalism_shaders
-      Dependencies: {}

@@ -12,103 +12,45 @@
  *************************************************************************/
 
 using System;
+using System.Collections;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
 
-namespace Developer.AssetBundleBuilder
+namespace Kerbalism.AssetBundleBuilder
 {
-	public class AssetBundleBuilder : EditorWindow
+	public class AssetBundleBuilder : MonoBehaviour
 	{
-		#region Field and Property
-		private static AssetBundleBuilder instance;
-		private const float ButtonWidth = 80;
-
-		private string path = "Assets";
-		private BuildTarget platform = BuildTarget.Android;
-
-		private const string PathKey = "AssetBundleBuildPath";
-		private const string PlatformKey = "AssetBundleTargetPlatform";
-		#endregion
-
-		#region Private Method
-		[MenuItem("Tool/Asset Bundle Builder &B")]
-		private static void ShowEditor()
+		[MenuItem("Kerbalism/Build Kerbalism Assets")]
+		static void BuildAssets()
 		{
-			instance = GetWindow<AssetBundleBuilder>("Asset Bundle");
-			instance.Show();
-		}
+			var opts = BuildAssetBundleOptions.DeterministicAssetBundle | BuildAssetBundleOptions.ForceRebuildAssetBundle;
+			// Put the bundles in a folder called "ABs" within the Assets folder.
+			string[] target_names = { "windows", "osx", "linux" };
+			BuildTarget[] targets = { BuildTarget.StandaloneWindows, BuildTarget.StandaloneOSXUniversal, BuildTarget.StandaloneLinux };
 
-		private void OnEnable()
-		{
-			GetEditorPreferences();
-		}
-
-		private void OnGUI()
-		{
-			EditorGUILayout.BeginVertical("Window");
-
-			EditorGUILayout.BeginHorizontal();
-			path = EditorGUILayout.TextField("Path", path);
-			if (GUILayout.Button("Browse", GUILayout.Width(ButtonWidth)))
-				SelectBuildPath();
-			EditorGUILayout.EndHorizontal();
-
-			platform = (BuildTarget)EditorGUILayout.EnumPopup("Platform", platform);
-
-			EditorGUILayout.BeginHorizontal();
-			EditorGUILayout.Space();
-			if (GUILayout.Button("Build", GUILayout.Width(ButtonWidth)))
-				BuildAssetBundles();
-			EditorGUILayout.EndHorizontal();
-
-			EditorGUILayout.EndVertical();
-		}
-
-		private void SelectBuildPath()
-		{
-			var selectPath = EditorUtility.OpenFolderPanel("Select Build Path", "Assets", string.Empty);
-			if (selectPath == string.Empty)
-				return;
-
-			try { path = selectPath.Substring(selectPath.IndexOf("Assets")); }
-			catch { path = selectPath; }
-		}
-
-		private void BuildAssetBundles()
-		{
-			if (Directory.Exists(path))
+			for (int i = 0; i < target_names.Length; i++)
 			{
-				try
+				string target = target_names[i];
+				string source_path = "Assets/AssetBundles/kshaders";
+				string target_path = "Assets/AssetBundles/kshaders_" + target;
+				if (Directory.Exists(target_path))
 				{
-					var opts = BuildAssetBundleOptions.DeterministicAssetBundle
-						| BuildAssetBundleOptions.ForceRebuildAssetBundle;
-					BuildPipeline.BuildAssetBundles(path, opts, platform);
+					Directory.Delete(target_path, true);
 				}
-				catch (Exception e)
+				Directory.CreateDirectory(target_path);
+				if (File.Exists("Assets/AssetBundles/_" + target))
 				{
-					ShowNotification(new GUIContent(e.Message));
-					return;
+					File.Delete("Assets/AssetBundles/_" + target);
 				}
-
-				AssetDatabase.Refresh();
-				SetEditorPreferences();
+				foreach (string newPath in Directory.GetFiles(source_path, "*.*", SearchOption.AllDirectories))
+				{
+					File.Copy(newPath, newPath.Replace(source_path, target_path), true);
+				}
+				BuildPipeline.BuildAssetBundles(target_path, opts, targets[i]);
+				File.Copy(target_path + "/kerbalism_shaders", "Assets/AssetBundles/_" + target);
+				Directory.Delete(target_path, true);
 			}
-			else
-				ShowNotification(new GUIContent("The output path does not exist."));
 		}
-
-		private void SetEditorPreferences()
-		{
-			EditorPrefs.SetString(PathKey, path);
-			EditorPrefs.SetInt(PlatformKey, (int)platform);
-		}
-
-		private void GetEditorPreferences()
-		{
-			path = EditorPrefs.GetString(PathKey, path);
-			platform = (BuildTarget)EditorPrefs.GetInt(PlatformKey, (int)platform);
-		}
-		#endregion
 	}
 }
