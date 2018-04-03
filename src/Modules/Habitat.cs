@@ -234,7 +234,7 @@ public sealed class Habitat : PartModule, ISpecifics, IConfigurable
         break;
 
       case State.equalizing:
-        set_flow(false);
+        set_flow(true);
         state = equalize();
         break;
 
