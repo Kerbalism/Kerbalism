@@ -231,12 +231,12 @@
       <VersionNumber Include="@(Targets->'%(Version)')" />
     </ItemGroup>
   </Target>
-  <PropertyGroup>
+  <PropertyGroup Condition="'$(BuildingInsideVisualStudio)' != 'false' Or '$(BuildingInsideVisualStudio)' == 'true'">
     <PostBuildEventDependsOn>
     $(PostBuildEventDependsOn);
     PostBuildMacros;
   </PostBuildEventDependsOn>
-    <PostBuildEvent>if $(ConfigurationName)==Debug (call "$(ProjectDir)..\buildscripts\UnityDebug\prepare-debug.bat" $(TargetName))
+    <PostBuildEvent>
 
 
 if $(ConfigurationName)==Release (call "$(ProjectDir)..\buildscripts\ZipPack\build-package.bat" $(TargetName) @(VersionNumber) $(SolutionDir))
