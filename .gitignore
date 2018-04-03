@@ -360,3 +360,8 @@ sysinfo.txt
 *.unitypackage
 
 Kerbalism-*.zip
+
+# KSP DLLs
+KSPAssets.dll
+Assembly-*.dll
+UnityEngine*.dll
