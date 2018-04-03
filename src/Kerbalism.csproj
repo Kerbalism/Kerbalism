@@ -243,7 +243,7 @@
     $(PostBuildEventDependsOn);
     PostBuildMacros;
   </PostBuildEventDependsOn>
-    <PostBuildEvent>
+    <PostBuildEvent Condition="'$(OS)' == 'Windows_NT'">
 
 
 if $(ConfigurationName)==Release (call "$(ProjectDir)..\buildscripts\ZipPack\build-package.bat" $(TargetName) @(VersionNumber) $(SolutionDir))
