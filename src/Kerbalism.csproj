@@ -221,6 +221,13 @@
     <Analyzer Condition="Exists('C:\Program Files %28x86%29\Steam\steamapps\common\Kerbal Space Program\KSP_x64_Data\Managed\UnityEngine.Networking.dll')" Include="C:\Program Files %28x86%29\Steam\steamapps\common\Kerbal Space Program\KSP_x64_Data\Managed\UnityEngine.Networking.dll" />
     <Analyzer Condition="Exists('C:\Program Files %28x86%29\Steam\steamapps\common\Kerbal Space Program\KSP_x64_Data\Managed\UnityEngine.UI.dll')" Include="C:\Program Files %28x86%29\Steam\steamapps\common\Kerbal Space Program\KSP_x64_Data\Managed\UnityEngine.UI.dll" />
     <Analyzer Condition="Exists('C:\Program Files %28x86%29\Steam\steamapps\common\Kerbal Space Program\KSP_x64_Data\Managed\UnityScript.Lang.dll')" Include="C:\Program Files %28x86%29\Steam\steamapps\common\Kerbal Space Program\KSP_x64_Data\Managed\UnityScript.Lang.dll" />
+	<Analyzer Condition="Exists('.\Assembly-CSharp-firstpass.dll')" Include=".\Assembly-CSharp-firstpass.dll" />
+	<Analyzer Condition="Exists('.\Assembly-CSharp.dll')" Include=".\Assembly-CSharp.dll" />
+	<Analyzer Condition="Exists('.\Assembly-UnityScript.dll')" Include=".\Assembly-UnityScript.dll" />
+	<Analyzer Condition="Exists('.\UnityEngine.dll')" Include=".\UnityEngine.dll" />
+	<Analyzer Condition="Exists('.\UnityEngine.Networking.dll')" Include=".\UnityEngine.Networking.dll" />
+	<Analyzer Condition="Exists('.\UnityEngine.UI.dll')" Include=".\UnityEngine.UI.dll" />
+	<Analyzer Condition="Exists('.\UnityScript.Lang.dll')" Include=".\UnityScript.Lang.dll" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="PostBuildMacros">
@@ -231,7 +238,7 @@
       <VersionNumber Include="@(Targets->'%(Version)')" />
     </ItemGroup>
   </Target>
-  <PropertyGroup Condition="'$(BuildingInsideVisualStudio)' != 'false' Or '$(BuildingInsideVisualStudio)' == 'true'">
+  <PropertyGroup>
     <PostBuildEventDependsOn>
     $(PostBuildEventDependsOn);
     PostBuildMacros;
