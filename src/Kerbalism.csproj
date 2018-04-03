@@ -214,13 +214,13 @@
     <Compile Include="Utility\Specifics.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Analyzer Include="C:\Program Files %28x86%29\Steam\steamapps\common\Kerbal Space Program\KSP_x64_Data\Managed\Assembly-CSharp-firstpass.dll" />
-    <Analyzer Include="C:\Program Files %28x86%29\Steam\steamapps\common\Kerbal Space Program\KSP_x64_Data\Managed\Assembly-CSharp.dll" />
-    <Analyzer Include="C:\Program Files %28x86%29\Steam\steamapps\common\Kerbal Space Program\KSP_x64_Data\Managed\Assembly-UnityScript.dll" />
-    <Analyzer Include="C:\Program Files %28x86%29\Steam\steamapps\common\Kerbal Space Program\KSP_x64_Data\Managed\UnityEngine.dll" />
-    <Analyzer Include="C:\Program Files %28x86%29\Steam\steamapps\common\Kerbal Space Program\KSP_x64_Data\Managed\UnityEngine.Networking.dll" />
-    <Analyzer Include="C:\Program Files %28x86%29\Steam\steamapps\common\Kerbal Space Program\KSP_x64_Data\Managed\UnityEngine.UI.dll" />
-    <Analyzer Include="C:\Program Files %28x86%29\Steam\steamapps\common\Kerbal Space Program\KSP_x64_Data\Managed\UnityScript.Lang.dll" />
+    <Analyzer Condition="Exists('C:\Program Files %28x86%29\Steam\steamapps\common\Kerbal Space Program\KSP_x64_Data\Managed\Assembly-CSharp-firstpass.dll')" Include="C:\Program Files %28x86%29\Steam\steamapps\common\Kerbal Space Program\KSP_x64_Data\Managed\Assembly-CSharp-firstpass.dll" />
+    <Analyzer Condition="Exists('C:\Program Files %28x86%29\Steam\steamapps\common\Kerbal Space Program\KSP_x64_Data\Managed\Assembly-CSharp.dll')" Include="C:\Program Files %28x86%29\Steam\steamapps\common\Kerbal Space Program\KSP_x64_Data\Managed\Assembly-CSharp.dll" />
+    <Analyzer Condition="Exists('C:\Program Files %28x86%29\Steam\steamapps\common\Kerbal Space Program\KSP_x64_Data\Managed\Assembly-UnityScript.dll')" Include="C:\Program Files %28x86%29\Steam\steamapps\common\Kerbal Space Program\KSP_x64_Data\Managed\Assembly-UnityScript.dll" />
+    <Analyzer Condition="Exists('C:\Program Files %28x86%29\Steam\steamapps\common\Kerbal Space Program\KSP_x64_Data\Managed\UnityEngine.dll')" Include="C:\Program Files %28x86%29\Steam\steamapps\common\Kerbal Space Program\KSP_x64_Data\Managed\UnityEngine.dll" />
+    <Analyzer Condition="Exists('C:\Program Files %28x86%29\Steam\steamapps\common\Kerbal Space Program\KSP_x64_Data\Managed\UnityEngine.Networking.dll')" Include="C:\Program Files %28x86%29\Steam\steamapps\common\Kerbal Space Program\KSP_x64_Data\Managed\UnityEngine.Networking.dll" />
+    <Analyzer Condition="Exists('C:\Program Files %28x86%29\Steam\steamapps\common\Kerbal Space Program\KSP_x64_Data\Managed\UnityEngine.UI.dll')" Include="C:\Program Files %28x86%29\Steam\steamapps\common\Kerbal Space Program\KSP_x64_Data\Managed\UnityEngine.UI.dll" />
+    <Analyzer Condition="Exists('C:\Program Files %28x86%29\Steam\steamapps\common\Kerbal Space Program\KSP_x64_Data\Managed\UnityScript.Lang.dll')" Include="C:\Program Files %28x86%29\Steam\steamapps\common\Kerbal Space Program\KSP_x64_Data\Managed\UnityScript.Lang.dll" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="PostBuildMacros">
