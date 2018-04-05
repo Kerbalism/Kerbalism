@@ -27,6 +27,10 @@ namespace KERBALISM
 			// user-defined features
 			Reliability = Lib.ConfigValue(cfg, "Reliability", false);
 			Signal = Lib.ConfigValue(cfg, "Signal", false);
+			if (Signal == true)
+			{
+				Lib.Log("Signal is enabled. This will likely be removed or re-worked in future version, so be warned.");
+			}
 			Science = Lib.ConfigValue(cfg, "Science", false);
 			SpaceWeather = Lib.ConfigValue(cfg, "SpaceWeather", false);
 			Automation = Lib.ConfigValue(cfg, "Automation", false);
