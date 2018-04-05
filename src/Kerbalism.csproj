@@ -212,7 +212,6 @@
     <Compile Include="Utility\Profiler.cs" />
     <Compile Include="Utility\Space.cs" />
     <Compile Include="Utility\Specifics.cs" />
-    <Compile Include="..\GameData\Kerbalism\Kerbalism.version" />
   </ItemGroup>
   <ItemGroup>
     <Analyzer Condition="Exists('C:\Program Files %28x86%29\Steam\steamapps\common\Kerbal Space Program\KSP_x64_Data\Managed\Assembly-CSharp-firstpass.dll')" Include="C:\Program Files %28x86%29\Steam\steamapps\common\Kerbal Space Program\KSP_x64_Data\Managed\Assembly-CSharp-firstpass.dll" />
@@ -229,6 +228,9 @@
     <Analyzer Condition="Exists('.\UnityEngine.Networking.dll')" Include=".\UnityEngine.Networking.dll" />
     <Analyzer Condition="Exists('.\UnityEngine.UI.dll')" Include=".\UnityEngine.UI.dll" />
     <Analyzer Condition="Exists('.\UnityScript.Lang.dll')" Include=".\UnityScript.Lang.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\GameData\Kerbalism\Kerbalism.version" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="PostBuildMacros">
