@@ -223,7 +223,7 @@ namespace KERBALISM
 			if (Features.Reliability) indicator_reliability(p, v, vi);
 
 			// signal indicator
-			if (Features.Signal) indicator_signal(p, v, vi);
+			if (Features.Signal || RemoteTech.Enabled()) indicator_signal(p, v, vi);
 
 			// done
 			return true;
@@ -508,6 +508,29 @@ namespace KERBALISM
 
 		void indicator_signal(Panel p, Vessel v, vessel_info vi)
 		{
+			if (RemoteTech.Enabled())
+			{
+				double signal_delay = RemoteTech.GetShortestSignalDelay(v.id);
+				bool connected = RemoteTech.Connected(v.id);
+				string signal_str = "";
+				if (signal_delay < Double.Epsilon)
+				{
+					signal_str = "none";
+				}
+				else
+				{
+					signal_str = KSPUtil.dateTimeFormatter.PrintTimeStampCompact(signal_delay, false, false);
+				}
+				string tooltip_rt = Lib.BuildString(
+			  "<align=left />",
+			  "connected\t<b>", connected ? "yes" : "no", "</b>\n",
+			  "delay\t\t<b>", connected ? signal_str : "no connection", "</b>"
+				);
+				Texture image_rt = Icons.signal_red;
+				if (connected) image_rt = Icons.signal_white;
+				p.icon(image_rt, tooltip_rt);
+				return;
+			}
 			ConnectionInfo conn = vi.connection;
 
 			// target name
