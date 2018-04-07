@@ -508,10 +508,10 @@ namespace KERBALISM
 
 		void indicator_signal(Panel p, Vessel v, vessel_info vi)
 		{
+			ConnectionInfo conn = vi.connection;
 			if (RemoteTech.Enabled())
 			{
 				double signal_delay = RemoteTech.GetShortestSignalDelay(v.id);
-				bool connected = RemoteTech.Connected(v.id);
 				string signal_str = "";
 				if (signal_delay < Double.Epsilon)
 				{
@@ -522,16 +522,22 @@ namespace KERBALISM
 					signal_str = KSPUtil.dateTimeFormatter.PrintTimeStampCompact(signal_delay, false, false);
 				}
 				string tooltip_rt = Lib.BuildString(
-			  "<align=left />",
-			  "connected\t<b>", connected ? "yes" : "no", "</b>\n",
-			  "delay\t\t<b>", connected ? signal_str : "no connection", "</b>"
+				  "<align=left />",
+				  "connected\t<b>", vi.connection.linked ? "yes" : "no", "</b>\n",
+				  "delay\t\t<b>", vi.connection.linked ? signal_str : "no connection", "</b>",
+				  "rate\t\t<b>", Lib.HumanReadableDataRate(vi.connection.rate), "</b>\n"
 				);
 				Texture image_rt = Icons.signal_red;
-				if (connected) image_rt = Icons.signal_white;
+
+				if (vi.connection.linked) image_rt = Icons.signal_white;
+				/*if (vi.blackout)
+				{
+					image_rt = Icons.signal_red;
+					tooltip_rt += "\n\n<color=red>Blackout</color>";
+				}*/
 				p.icon(image_rt, tooltip_rt);
 				return;
 			}
-			ConnectionInfo conn = vi.connection;
 
 			// target name
 			string target_str = string.Empty;
