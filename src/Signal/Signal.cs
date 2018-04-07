@@ -360,6 +360,7 @@ namespace KERBALISM
 		//this is from remotetech https://github.com/RemoteTechnologiesGroup/RemoteTech/blob/develop/src/RemoteTech/NetworkRenderer.cs
 		public static void on_gui()
 		{
+			if (!Features.Signal) return;
 			if (Event.current.type == EventType.Repaint && MapView.MapIsEnabled)
 			{
 				foreach (DSNStation dsn in dsn_nodes)
