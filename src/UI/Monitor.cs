@@ -511,7 +511,6 @@ namespace KERBALISM
 			ConnectionInfo conn = vi.connection;
 			if (RemoteTech.Enabled())
 			{
-				bool RT_connected = RemoteTech.Connected(v.id);
 				double signal_delay = RemoteTech.GetShortestSignalDelay(v.id);
 				string signal_str = "";
 				if (signal_delay < Double.Epsilon)
@@ -524,13 +523,13 @@ namespace KERBALISM
 				}
 				string tooltip_rt = Lib.BuildString(
 				  "<align=left />",
-				  "connected\t<b>", RT_connected ? "yes" : "no", "</b>\n",
-				  "delay\t\t<b>", RT_connected ? signal_str : "no connection", "</b>\n",
-				  "rate\t\t<b>", Lib.HumanReadableDataRate(vi.connection.rate), "</b>\n"
+				  "connected\t<b>", conn.linked ? "yes" : "no", "</b>\n",
+				  "delay\t\t<b>", conn.linked ? signal_str : "no connection", "</b>\n",
+				  "rate\t\t<b>", Lib.HumanReadableDataRate(vi.connection.rate), "</b>"
 				);
 				Texture image_rt = Icons.signal_red;
-
-				if (RT_connected) image_rt = Icons.signal_white;
+				if (RemoteTech.Connected(v.id)) image_rt = Icons.signal_white;
+				if (RemoteTech.Connected(v.id) && !RemoteTech.ConnectedToKSC(v.id)) image_rt = Icons.signal_yellow;
 				/*if (vi.blackout)
 				{
 					image_rt = Icons.signal_red;

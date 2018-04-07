@@ -315,9 +315,18 @@ namespace KERBALISM
 			// if RemoteTech is present and enabled
 			if (RemoteTech.Enabled())
 			{
-				return RemoteTech.Connected(v.id)
-				  ? new ConnectionInfo(LinkStatus.direct_link, ext_rate, ext_cost)
-				  : new ConnectionInfo(LinkStatus.no_link);
+				if (RemoteTech.Connected(v.id) && !RemoteTech.ConnectedToKSC(v.id))
+				{
+					return new ConnectionInfo(LinkStatus.indirect_link, ext_rate, ext_cost);
+				}
+				else if (RemoteTech.Connected(v.id) && RemoteTech.ConnectedToKSC(v.id))
+				{
+					return new ConnectionInfo(LinkStatus.direct_link, ext_rate, ext_cost);
+				}
+				else
+				{
+					return new ConnectionInfo(LinkStatus.no_link);
+				}
 			}
 			// if CommNet is enabled
 			else if (HighLogic.fetch.currentGame.Parameters.Difficulty.EnableCommNet)
