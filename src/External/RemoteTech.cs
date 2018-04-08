@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Reflection;
 
-
 namespace KERBALISM
 {
-
-
 	public static class RemoteTech
 	{
 		static RemoteTech()
@@ -61,27 +58,17 @@ namespace KERBALISM
 		{
 			if (!Enabled()) return;
 
-			if (vi.blackout)
-			{
-				SetCommsBlackout(v.id, true, "kerbalism_cme");
-			}
-			else
-			{
-				SetCommsBlackout(v.id, false, "kerbalism_cme");
-			}
-
+			SetCommsBlackout(v.id, vi.blackout, "kerbalism_cme");
 		}
 
 		// reflection type of SCANUtils static class in SCANsat assembly, if present
 		static Type API;
-		static System.Reflection.MethodInfo IsEnabled;
-		static System.Reflection.MethodInfo IsConnected;
-		static System.Reflection.MethodInfo IsConnectedKSC;
-		static System.Reflection.MethodInfo ShortestSignalDelay;
-		static System.Reflection.MethodInfo SetRadioBlackout;
-		static System.Reflection.MethodInfo GetRadioBlackout;
+		static MethodInfo IsEnabled;
+		static MethodInfo IsConnected;
+		static MethodInfo IsConnectedKSC;
+		static MethodInfo ShortestSignalDelay;
+		static MethodInfo SetRadioBlackout;
+		static MethodInfo GetRadioBlackout;
 	}
-
-
 } // KERBALISM
 
