@@ -31,6 +31,7 @@ namespace KERBALISM
 			{
 				Lib.Log("Signal is enabled. This will likely be removed or re-worked in future version, so be warned.");
 			}
+			Deploy = Lib.ConfigValue(cfg, "Deploy", false);
 			Science = Lib.ConfigValue(cfg, "Science", false);
 			SpaceWeather = Lib.ConfigValue(cfg, "SpaceWeather", false);
 			Automation = Lib.ConfigValue(cfg, "Automation", false);
@@ -96,11 +97,12 @@ namespace KERBALISM
 		public static string Profile;                           // name of profile to use, if any
 
 		// user-defined features
-		public static bool Reliability;                       // component malfunctions and critical failures
-		public static bool Signal;                            // communications using low-gain and high-gain antennas
-		public static bool Science;                           // science data storage, transmission and analysis
-		public static bool SpaceWeather;                      // coronal mass ejections
-		public static bool Automation;                        // control vessel components using scripts
+		public static bool Reliability;                         // component malfunctions and critical failures
+		public static bool Signal;                              // communications using low-gain and high-gain antennas
+		public static bool Deploy;                              // add ecCost to keep Antenna working, add ecCost to Extend\Retract parts
+		public static bool Science;                             // science data storage, transmission and analysis
+		public static bool SpaceWeather;                        // coronal mass ejections
+		public static bool Automation;                          // control vessel components using scripts
 
 		// temperature
 		public static double SurvivalTemperature;               // ideal living temperature
@@ -135,27 +137,27 @@ namespace KERBALISM
 
 		// signal
 		public static UnlinkedCtrl UnlinkedControl;             // available control for unlinked vessels: 'none', 'limited' or 'full'
-		public static bool ExtendedAntenna;                   // antenna only work if extended
+		public static bool ExtendedAntenna;                     // antenna only work if extended
 		public static float HideGroundStationsDist;
 
 		// science
-		public static bool ScienceDialog;                     // keep showing the stock science dialog
+		public static bool ScienceDialog;                       // keep showing the stock science dialog
 
 		// reliability
 		public static double QualityScale;                      // scale applied to MTBF for high-quality components
 		public static double CriticalChance;                    // proportion of malfunctions that lead to critical failures
 		public static double SafeModeChance;                    // proportion of malfunctions fixed remotely for unmanned vessels
-		public static bool IncentiveRedundancy;               // if true, each malfunction will increase the MTBF of components in the same redundancy group
+		public static bool IncentiveRedundancy;                 // if true, each malfunction will increase the MTBF of components in the same redundancy group
 
 		// misc
-		public static bool EnforceCoherency;                  // detect and avoid issues at high timewarp in external modules
-		public static bool TrackingPivot;                     // simulate tracking solar panel around the pivot
+		public static bool EnforceCoherency;                    // detect and avoid issues at high timewarp in external modules
+		public static bool TrackingPivot;                       // simulate tracking solar panel around the pivot
 		public static double HeadLampsCost;                     // EC/s cost if eva headlamps are on
-		public static float DeathReputation;                   // reputation to remove in case of death
-		public static float BreakdownReputation;               // reputation to remove in case of breakdown
-		public static bool StockMessages;                     // use the stock messages instead of our own message box
-		public static float MessageLength;                     // duration of messages on screen in seconds
-		public static bool LowQualityRendering;               // use less particles to render the magnetic fields
+		public static float DeathReputation;                    // reputation to remove in case of death
+		public static float BreakdownReputation;                // reputation to remove in case of breakdown
+		public static bool StockMessages;                       // use the stock messages instead of our own message box
+		public static float MessageLength;                      // duration of messages on screen in seconds
+		public static bool LowQualityRendering;                 // use less particles to render the magnetic fields
 	}
 
 

@@ -141,6 +141,9 @@
     <Compile Include="Database\SupplyData.cs" />
     <Compile Include="Database\UIData.cs" />
     <Compile Include="Database\VesselData.cs" />
+    <Compile Include="Deploy\Deploy.cs" />
+    <Compile Include="Deploy\DeviceEC.cs" />
+    <Compile Include="Deploy\Device\LandingGear.cs" />
     <Compile Include="External\RemoteTech.cs" />
     <Compile Include="External\SCANsat.cs" />
     <Compile Include="Modules\Antenna.cs" />
