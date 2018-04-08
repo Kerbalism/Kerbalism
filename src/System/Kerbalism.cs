@@ -153,6 +153,9 @@ namespace KERBALISM
 					// show signal warnings
 					Signal.update(v, vi, vd, elapsed_s);
 
+					//handle RemoteTech stuff
+					RemoteTech.update(v, vi, vd, elapsed_s);
+
 					// consume ec for transmission, and transmit science data
 					Science.update(v, vi, vd, resources, elapsed_s);
 
@@ -206,6 +209,9 @@ namespace KERBALISM
 
 				// show signal warnings
 				Signal.update(last_v, last_vi, last_vd, last_time);
+
+				//handle RemoteTech stuff
+				RemoteTech.update(last_v, last_vi, last_vd, last_time);
 
 				// consume ec for transmission, and transmit science
 				Science.update(last_v, last_vi, last_vd, last_resources, last_time);

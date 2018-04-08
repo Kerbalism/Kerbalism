@@ -530,11 +530,11 @@ namespace KERBALISM
 				Texture image_rt = Icons.signal_red;
 				if (RemoteTech.Connected(v.id)) image_rt = Icons.signal_white;
 				if (RemoteTech.Connected(v.id) && !RemoteTech.ConnectedToKSC(v.id)) image_rt = Icons.signal_yellow;
-				/*if (vi.blackout)
+				if (vi.blackout || RemoteTech.GetCommsBlackout(v.id))
 				{
 					image_rt = Icons.signal_red;
-					tooltip_rt += "\n\n<color=red>Blackout</color>";
-				}*/
+					tooltip_rt += "\n\n<color=red><i>Blackout</i></color>";
+				}
 				p.icon(image_rt, tooltip_rt);
 				return;
 			}
@@ -597,7 +597,7 @@ namespace KERBALISM
 
 				case LinkStatus.blackout:
 					image = Icons.signal_red;
-					tooltip += "\n\n<color=red>Blackout</color>";
+					tooltip += "\n\n<color=red><i>Blackout</i></color>";
 					break;
 			}
 
