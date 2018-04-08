@@ -85,11 +85,9 @@ namespace KERBALISM
 			critical = Reliability.HasCriticalFailure(v);
 
 			// signal info
-			antenna = new AntennaInfo(v);
 			avoid_inf_recursion.Add(v.id);
-			connection = Signal.connection(v, position, antenna, blackout, avoid_inf_recursion);
+			connection = Communications.connection(v);
 			transmitting = Science.transmitting(v, connection.linked);
-			relaying = Signal.relaying(v, avoid_inf_recursion);
 			avoid_inf_recursion.Remove(v.id);
 
 			// habitat data
@@ -140,7 +138,6 @@ namespace KERBALISM
 		public bool landed;               // true if on the surface of a body
 		public bool malfunction;          // true if at least a component has malfunctioned or had a critical failure
 		public bool critical;             // true if at least a component had a critical failure
-		public AntennaInfo antenna;              // antenna info
 		public ConnectionInfo connection;         // connection info
 		public string transmitting;         // name of file being transmitted, or empty
 		public string relaying;             // name of file being relayed, or empty

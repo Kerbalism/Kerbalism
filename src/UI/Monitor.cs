@@ -223,7 +223,7 @@ namespace KERBALISM
 			if (Features.Reliability) indicator_reliability(p, v, vi);
 
 			// signal indicator
-			if (Features.Signal || RemoteTech.Enabled()) indicator_signal(p, v, vi);
+			if (RemoteTech.Enabled() || HighLogic.fetch.currentGame.Parameters.Difficulty.EnableCommNet) indicator_signal(p, v, vi);
 
 			// done
 			return true;
@@ -543,7 +543,7 @@ namespace KERBALISM
 			string target_str = string.Empty;
 			switch (vi.connection.status)
 			{
-				case LinkStatus.direct_link: target_str = (conn.dsn != null ? conn.dsn.name : "DSN"); break;
+				case LinkStatus.direct_link: target_str = ("DSN"); break;
 				case LinkStatus.indirect_link: target_str = vi.connection.path[vi.connection.path.Count - 1].vesselName; break;
 				default: target_str = "none"; break;
 			}

@@ -12,14 +12,12 @@ namespace KERBALISM
 		{
 			// set user-specified features
 			Reliability = Settings.Reliability;
-			Signal = Settings.Signal;
 			Science = Settings.Science;
 			SpaceWeather = Settings.SpaceWeather;
 			Automation = Settings.Automation;
 
 			// force-disable some features based on mods detected
 			Reliability &= !Lib.HasAssembly("TestFlight");
-			Signal &= !Lib.HasAssembly("RemoteTech");
 
 			// detect all modifiers in use by current profile
 			HashSet<string> modifiers = new HashSet<string>();

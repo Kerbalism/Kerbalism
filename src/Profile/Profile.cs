@@ -51,35 +51,6 @@ namespace KERBALISM
 							}
 						}
 
-						ConfigNode signal_node = profile_node.GetNode("Signal");
-						if (signal_node != null)
-						{
-							Signal.dsn_nodes = new List<DSNStation>();
-							foreach (ConfigNode dsn_node in signal_node.GetNodes("Station"))
-							{
-
-								DSNStation init_dsn = new DSNStation
-								{
-									longitude = Lib.Parse.ToDouble(dsn_node.GetValue("Longitude") ?? String.Empty),
-									latitude = Lib.Parse.ToDouble(dsn_node.GetValue("Latitude") ?? String.Empty),
-									height = Lib.Parse.ToDouble(dsn_node.GetValue("Height") ?? String.Empty),
-									range = Lib.Parse.ToDouble(dsn_node.GetValue("Range") ?? String.Empty),
-									name = dsn_node.GetValue("Name" ?? String.Empty) ?? "Generic DSN Station",
-									color = Lib.Parse.ToColor(dsn_node.GetValue("Color" ?? String.Empty), new UnityEngine.Color())
-								};
-								Signal.dsn_nodes.Add(init_dsn);
-								Lib.Log("Initialized DSN Station: " + (dsn_node.GetValue("Name") ?? "Generic DSN Station"));
-								if (Lib.Parse.ToBool(dsn_node.GetValue("Default") ?? String.Empty, false))
-								{
-									Signal.default_dsn = init_dsn;
-									Lib.Log((dsn_node.GetValue("Name") ?? "Generic DSN Station") + " Is Default!");
-								}
-							}
-						}
-
-
-
-
 						// parse all supplies
 						foreach (ConfigNode supply_node in profile_node.GetNodes("Supply"))
 						{

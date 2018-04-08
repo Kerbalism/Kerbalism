@@ -33,11 +33,6 @@ namespace KERBALISM
 				Highlighter.init();
 				UI.init();
 
-				if (Signal.texMark == null)
-				{
-					Signal.texMark = Lib.GetTexture("radar");
-				}
-
 				// prepare storm data
 				foreach (CelestialBody body in FlightGlobals.Bodies)
 				{
@@ -150,11 +145,10 @@ namespace KERBALISM
 					// update storm data
 					Storm.update(v, vi, vd, elapsed_s);
 
-					// show signal warnings
-					Signal.update(v, vi, vd, elapsed_s);
-
 					//handle RemoteTech stuff
 					RemoteTech.update(v, vi, vd, elapsed_s);
+
+					Communications.update(v, vi, vd, elapsed_s);
 
 					// consume ec for transmission, and transmit science data
 					Science.update(v, vi, vd, resources, elapsed_s);
@@ -207,11 +201,10 @@ namespace KERBALISM
 				// update storm data
 				Storm.update(last_v, last_vi, last_vd, last_time);
 
-				// show signal warnings
-				Signal.update(last_v, last_vi, last_vd, last_time);
-
 				//handle RemoteTech stuff
 				RemoteTech.update(last_v, last_vi, last_vd, last_time);
+
+				Communications.update(last_v, last_vi, last_vd, last_time);
 
 				// consume ec for transmission, and transmit science
 				Science.update(last_v, last_vi, last_vd, last_resources, last_time);
@@ -267,8 +260,6 @@ namespace KERBALISM
 		void OnGUI()
 		{
 			UI.on_gui(callbacks.visible);
-
-			Signal.on_gui();
 		}
 
 
@@ -312,7 +303,6 @@ namespace KERBALISM
 			if (!MapView.MapIsEnabled || HighLogic.LoadedScene == GameScenes.SPACECENTER) return;
 
 			// commit all geometry
-			Signal.render();
 			Radiation.render();
 
 			// render all committed geometry

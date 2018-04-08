@@ -20,13 +20,14 @@ namespace KERBALISM
 
 	public sealed class ConnectionInfo
 	{
-		public ConnectionInfo(LinkStatus status, double rate = 0.0, double cost = 0.0)
+		public ConnectionInfo(LinkStatus status, double rate = 0.0, double cost = 0.0, string target_name = "DSN")
 		{
 			this.linked = status == LinkStatus.direct_link || status == LinkStatus.indirect_link;
 			this.status = status;
 			this.rate = rate;
 			this.cost = cost;
 			this.path = new List<Vessel>();
+			this.target_name = target_name;
 		}
 
 		public ConnectionInfo(ConnectionInfo other)
@@ -36,6 +37,7 @@ namespace KERBALISM
 			this.rate = other.rate;
 			this.cost = other.cost;
 			this.path = new List<Vessel>();
+			this.target_name = other.target_name;
 			foreach (Vessel v in other.path) this.path.Add(v);
 		}
 
@@ -43,8 +45,8 @@ namespace KERBALISM
 		public LinkStatus status;       // the link status
 		public double rate;         // data rate in Mb/s
 		public double cost;         // EC/s consumed for transmission
-		public List<Vessel> path;         // set of vessels relaying the data
-		public DSNStation dsn; // target if direct link
+		public List<Vessel> path;         // set of vessels relaying the data		
+		public string target_name;
 	}
 
 

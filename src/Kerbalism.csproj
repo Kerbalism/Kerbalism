@@ -163,9 +163,8 @@
     <Compile Include="Science\Hijacker.cs" />
     <Compile Include="Science\Sample.cs" />
     <Compile Include="Science\Science.cs" />
-    <Compile Include="Signal\AntennaInfo.cs" />
-    <Compile Include="Signal\ConnectionInfo.cs" />
-    <Compile Include="Signal\Signal.cs" />
+    <Compile Include="Comms\ConnectionInfo.cs" />
+    <Compile Include="Comms\Communications.cs" />
     <Compile Include="System\API.cs" />
     <Compile Include="System\Callbacks.cs" />
     <Compile Include="System\Loader.cs" />
