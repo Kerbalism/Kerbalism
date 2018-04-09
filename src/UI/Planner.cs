@@ -60,7 +60,6 @@ namespace KERBALISM
 			if (Features.LivingSpace && Profile.rules.Find(k => k.modifiers.Contains("living_space")) != null) panel_special.Add("qol");
 			if (Features.Radiation && Profile.rules.Find(k => k.modifiers.Contains("radiation")) != null) panel_special.Add("radiation");
 			if (Features.Reliability) panel_special.Add("reliability");
-			if (Features.Signal) panel_special.Add("signal");
 
 			// environment panels
 			panel_environment = new List<string>();
@@ -869,7 +868,7 @@ namespace KERBALISM
 			living_space = Lib.Clamp((volume / (double)Math.Max(crew_count, 1u)) / Settings.IdealLivingSpace, 0.1, 1.0);
 
 			// calculate comfort factor
-			comforts = new Comforts(parts, env.landed, crew_count > 1, direct_rate > 0.0 || !Features.Signal);
+			comforts = new Comforts(parts, env.landed, crew_count > 1, direct_rate > 0.0);
 		}
 
 

@@ -65,9 +65,6 @@ namespace KERBALISM
 				// remember savegame id
 				savegame_uid = DB.uid;
 			}
-
-			// force CommNet off when signal is enabled
-			HighLogic.fetch.currentGame.Parameters.Difficulty.EnableCommNet &= !Features.Signal;
 		}
 
 

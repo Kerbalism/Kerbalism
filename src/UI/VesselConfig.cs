@@ -34,15 +34,9 @@ namespace KERBALISM
 
 			// toggle rendering
 			string tooltip;
-			if (Features.Signal || Features.Reliability)
+			if (Features.Reliability)
 			{
 				p.section("RENDERING");
-			}
-			if (Features.Signal)
-			{
-				tooltip = "Render the connection line\nin mapview and tracking station";
-				p.content("show links", string.Empty, tooltip);
-				p.icon(vd.cfg_showlink ? Icons.toggle_green : Icons.toggle_red, tooltip, () => p.toggle(ref vd.cfg_showlink));
 			}
 			if (Features.Reliability)
 			{
@@ -62,7 +56,7 @@ namespace KERBALISM
 				p.content("supply", string.Empty, tooltip);
 				p.icon(vd.cfg_supply ? Icons.toggle_green : Icons.toggle_red, tooltip, () => p.toggle(ref vd.cfg_supply));
 			}
-			if (Features.Signal)
+			if (RemoteTech.Enabled() || HighLogic.fetch.currentGame.Parameters.Difficulty.EnableCommNet)
 			{
 				tooltip = "Receive a message when signal is lost or obtained";
 				p.content("signal", string.Empty, tooltip);

@@ -126,30 +126,9 @@ namespace KERBALISM
 		// return true if the vessel is subject to a signal blackout
 		public static bool Blackout(Vessel v)
 		{
-			if (!Features.Signal && !RemoteTech.Enabled()) return false;
+			if (!RemoteTech.Enabled()) return false;
 			return Cache.VesselInfo(v).blackout;
 		}
-
-
-		// --- SIGNAL ---------------------------------------------------------------
-
-		// return the link status for the vessel specified
-		// - 0: not linked
-		// - 1: relayed by another vessel
-		// - 2: directly linked
-		public static uint Link(Vessel v)
-		{
-			if (!Features.Signal) return 2;
-			vessel_info vi = Cache.VesselInfo(v);
-			if (!vi.is_valid) return 0;
-			switch (vi.connection.status)
-			{
-				case LinkStatus.direct_link: return 2u;
-				case LinkStatus.indirect_link: return 1u;
-				default: return 0; // no_antenna, no_link, blackout
-			}
-		}
-
 
 		// --- RELIABILITY ----------------------------------------------------------
 

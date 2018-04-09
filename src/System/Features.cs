@@ -53,7 +53,6 @@ namespace KERBALISM
 			// log features
 			Lib.Log("features:");
 			Lib.Log("- Reliability: " + Reliability);
-			Lib.Log("- Signal: " + Signal);
 			Lib.Log("- Science: " + Science);
 			Lib.Log("- SpaceWeather: " + SpaceWeather);
 			Lib.Log("- Automation: " + Automation);
@@ -69,7 +68,6 @@ namespace KERBALISM
 
 		// user-specified features
 		public static bool Reliability;
-		public static bool Signal;
 		public static bool Science;
 		public static bool SpaceWeather;
 		public static bool Automation;
