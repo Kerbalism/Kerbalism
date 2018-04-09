@@ -21,6 +21,15 @@ namespace KERBALISM
 			MonoBehaviour.print("[Kerbalism] " + msg);
 		}
 
+		public static void Debug(string message, params object[] param)
+		{
+#if DEBUG
+			StackTrace stackTrace = new StackTrace();
+			UnityEngine.Debug.Log(string.Format("{0} -> debug: {1}.{2} - {3}", "[Kerbalism] ", stackTrace.GetFrame(1).GetMethod().ReflectedType.Name, stackTrace.GetFrame(1).GetMethod().Name,
+																					string.Format(message, param)));
+#endif
+		}
+
 		// return version as a string
 		static string _version;
 		public static string Version()

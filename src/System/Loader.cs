@@ -35,6 +35,7 @@ namespace KERBALISM
 			if (Features.Automation) inject(root, "Feature", "Automation");
 			if (Features.Science) inject(root, "Feature", "Science");
 			if (Features.Radiation) inject(root, "Feature", "Radiation");
+			if (Features.Deploy) inject(root, "Feature", "Deploy");
 			if (Features.Shielding) inject(root, "Feature", "Shielding");
 			if (Features.LivingSpace) inject(root, "Feature", "LivingSpace");
 			if (Features.Comfort) inject(root, "Feature", "Comfort");
@@ -74,7 +75,6 @@ namespace KERBALISM
 			loaders.Insert(index + 1, loader);
 		}
 	}
-
 
 } // KERBALISM
 

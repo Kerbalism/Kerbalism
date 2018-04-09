@@ -12,6 +12,7 @@ namespace KERBALISM
 		{
 			// set user-specified features
 			Reliability = Settings.Reliability;
+			Deploy = Settings.Deploy;
 			Science = Settings.Science;
 			SpaceWeather = Settings.SpaceWeather;
 			Automation = Settings.Automation;
@@ -53,6 +54,7 @@ namespace KERBALISM
 			// log features
 			Lib.Log("features:");
 			Lib.Log("- Reliability: " + Reliability);
+			Lib.Log("- Deploy: " + Deploy);
 			Lib.Log("- Science: " + Science);
 			Lib.Log("- SpaceWeather: " + SpaceWeather);
 			Lib.Log("- Automation: " + Automation);
@@ -68,6 +70,7 @@ namespace KERBALISM
 
 		// user-specified features
 		public static bool Reliability;
+		public static bool Deploy;
 		public static bool Science;
 		public static bool SpaceWeather;
 		public static bool Automation;
