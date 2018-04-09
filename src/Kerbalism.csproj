@@ -217,6 +217,7 @@
     <Compile Include="Utility\Profiler.cs" />
     <Compile Include="Utility\Space.cs" />
     <Compile Include="Utility\Specifics.cs" />
+    <Compile Include="Utility\Transformator.cs" />
   </ItemGroup>
   <ItemGroup>
     <Analyzer Condition="Exists('C:\Program Files %28x86%29\Steam\steamapps\common\Kerbal Space Program\KSP_x64_Data\Managed\Assembly-CSharp-firstpass.dll')" Include="C:\Program Files %28x86%29\Steam\steamapps\common\Kerbal Space Program\KSP_x64_Data\Managed\Assembly-CSharp-firstpass.dll" />
