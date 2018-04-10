@@ -109,7 +109,6 @@ namespace KERBALISM
 						case "qol": render_stress(panel); break;
 						case "radiation": render_radiation(panel); break;
 						case "reliability": render_reliability(panel); break;
-						case "signal": render_signal(panel); break;
 					}
 				}
 
@@ -425,77 +424,6 @@ namespace KERBALISM
 			p.content("repair", repair_str, repair_tooltip);
 		}
 
-
-		void render_signal(Panel p)
-		{
-			// range tooltip
-			string range_tooltip = "";
-			if (va.direct_dist > double.Epsilon)
-			{
-				if (va.direct_dist < va.home_dist_min) range_tooltip = "<color=#ff0000>out of range</color>";
-				else if (va.direct_dist < va.home_dist_max) range_tooltip = "<color=#ffff00>partially out of range</color>";
-				else range_tooltip = "<color=#00ff00>in range</color>";
-				if (va.home_dist_max > double.Epsilon) //< if not landed at home
-				{
-					if (Math.Abs(va.home_dist_min - va.home_dist_max) <= double.Epsilon)
-					{
-						range_tooltip += Lib.BuildString("\ntarget distance: <b>", Lib.HumanReadableRange(va.home_dist_min), "</b>");
-					}
-					else
-					{
-						range_tooltip += Lib.BuildString
-						(
-						  "\ntarget distance (min): <b>", Lib.HumanReadableRange(va.home_dist_min), "</b>",
-						  "\ntarget distance (max): <b>", Lib.HumanReadableRange(va.home_dist_max), "</b>"
-						);
-					}
-				}
-			}
-			else if (va.crew_capacity == 0)
-			{
-				range_tooltip = "<color=#ff0000>no antenna on unmanned vessel</color>";
-			}
-
-			// data rate tooltip
-			string rate_tooltip = va.direct_rate > double.Epsilon
-			  ? Lib.BuildString
-			  (
-				"<align=left />",
-				"<i>data transmission rate at target distance</i>\n\n",
-				"<b>data size</b>\t<b>transmission time</b>",
-				"\n250Mb\t\t", Lib.HumanReadableDuration(250.0 / va.direct_rate),
-				"\n500Mb\t\t", Lib.HumanReadableDuration(500.0 / va.direct_rate),
-				"\n1Gb\t\t", Lib.HumanReadableDuration(1000.0 / va.direct_rate),
-				"\n2Gb\t\t", Lib.HumanReadableDuration(2000.0 / va.direct_rate),
-				"\n4Gb\t\t", Lib.HumanReadableDuration(4000.0 / va.direct_rate),
-				"\n8Gb\t\t", Lib.HumanReadableDuration(8000.0 / va.direct_rate)
-			  ) : string.Empty;
-
-			// transmission cost tooltip
-			string cost_tooltip = va.direct_cost > double.Epsilon
-			  ? "the <b>ElectricCharge</b> per-second consumed\nfor data transmission directly to <b>DSN</b>"
-			  : string.Empty;
-
-			// indirect tooltip
-			string indirect_tooltip = va.indirect_dist > double.Epsilon
-			  ? Lib.BuildString
-			  (
-				"<align=left />",
-				"<i>inter-vessel communication capabilities</i>\n\n",
-				"range (max)\t<b>", Lib.HumanReadableRange(va.indirect_dist), "</b>\n",
-				"rate (best)\t<b>", Lib.HumanReadableDataRate(va.indirect_rate), "</b>\n",
-				"cost\t\t<b>", va.indirect_cost.ToString("F2"), " EC/s", "</b>"
-			  ) : string.Empty;
-
-			// render the panel
-			p.section("SIGNAL", string.Empty, () => p.prev(ref special_index, panel_special.Count), () => p.next(ref special_index, panel_special.Count));
-			p.content("range", Lib.HumanReadableRange(va.direct_dist), range_tooltip);
-			p.content("rate", Lib.HumanReadableDataRate(va.direct_rate), rate_tooltip);
-			p.content("cost", va.direct_cost > double.Epsilon ? Lib.BuildString(va.direct_cost.ToString("F2"), " EC/s") : "none", cost_tooltip);
-			p.content("inter-vessel", va.indirect_dist > double.Epsilon ? "yes" : "no", indirect_tooltip);
-		}
-
-
 		void render_habitat(Panel p)
 		{
 			simulated_resource atmo_res = sim.resource("Atmosphere");
@@ -651,8 +579,8 @@ namespace KERBALISM
 			analyze_habitat(sim, env);
 			analyze_radiation(parts, sim);
 			analyze_reliability(parts);
-			analyze_signal(parts, env);
 			analyze_qol(parts, sim, env);
+			analyze_comms(parts);
 		}
 
 
@@ -708,6 +636,29 @@ namespace KERBALISM
 			scrubbed = sim.resource("WasteAtmosphere").consumed > 0.0 || env.breathable;
 		}
 
+		void analyze_comms(List<Part> parts)
+		{
+			has_comms = false;
+			foreach (Part p in parts)
+			{
+
+				foreach (PartModule m in p.Modules)
+				{
+					// skip disabled modules
+					if (!m.isEnabled) continue;
+
+					if (m.moduleName == "ModuleDataTransmitter") has_comms = true;
+					if (m.moduleName == "ModuleRTAntenna") //to ensure that short-range omnis that are built in don't count 
+					{
+						float omni_range = Lib.ReflectionValue<float>(m, "Mode1OmniRange");
+						float dish_range = Lib.ReflectionValue<float>(m, "Mode1DishRange");
+						Lib.Log("omni: " + omni_range.ToString());
+						Lib.Log("dish: " + dish_range.ToString());
+						if (omni_range >= 25000 || dish_range >= 25000) has_comms = true;//min 25 km range
+					}
+				}
+			}
+		}
 
 		void analyze_radiation(List<Part> parts, resource_simulator sim)
 		{
@@ -796,79 +747,13 @@ namespace KERBALISM
 		}
 
 
-		void analyze_signal(List<Part> parts, environment_analyzer env)
-		{
-			// approximate min/max distance between home and target body
-			CelestialBody home = FlightGlobals.GetHomeBody();
-			home_dist_min = 0.0;
-			home_dist_max = 0.0;
-			if (env.body == home)
-			{
-				home_dist_min = env.altitude;
-				home_dist_max = env.altitude;
-			}
-			else if (env.body.referenceBody == home)
-			{
-				home_dist_min = Sim.Periapsis(env.body);
-				home_dist_max = Sim.Apoapsis(env.body);
-			}
-			else
-			{
-				double home_p = Sim.Periapsis(Lib.PlanetarySystem(home));
-				double home_a = Sim.Apoapsis(Lib.PlanetarySystem(home));
-				double body_p = Sim.Periapsis(Lib.PlanetarySystem(env.body));
-				double body_a = Sim.Apoapsis(Lib.PlanetarySystem(env.body));
-				home_dist_min = Math.Min(Math.Abs(home_a - body_p), Math.Abs(home_p - body_a));
-				home_dist_max = home_a + body_a;
-			}
-
-			// scan the parts
-			direct_dist = 0.0;
-			direct_rate = 0.0;
-			direct_cost = 0.0;
-			indirect_dist = 0.0;
-			indirect_rate = 0.0;
-			indirect_cost = 0.0;
-			foreach (Part p in parts)
-			{
-				// for each module
-				foreach (PartModule m in p.Modules)
-				{
-					// skip disabled modules
-					if (!m.isEnabled) continue;
-
-					// antenna
-					// - we consider them even if not extended, for ease of use
-					//   and because of module animator behaviour in editor
-					if (m.moduleName == "Antenna")
-					{
-						Antenna antenna = m as Antenna;
-
-						// calculate direct range/rate/cost
-						direct_dist = Math.Max(direct_dist, antenna.dist);
-						direct_rate += Antenna.calculate_rate(home_dist_min, antenna.dist, antenna.rate);
-						direct_cost += antenna.cost;
-
-						// calculate indirect range/rate/cost
-						if (antenna.type == AntennaType.low_gain)
-						{
-							indirect_dist = Math.Max(indirect_dist, antenna.dist);
-							indirect_rate += antenna.rate; //< best case
-							indirect_cost += antenna.cost;
-						}
-					}
-				}
-			}
-		}
-
-
 		void analyze_qol(List<Part> parts, resource_simulator sim, environment_analyzer env)
 		{
 			// calculate living space factor
 			living_space = Lib.Clamp((volume / (double)Math.Max(crew_count, 1u)) / Settings.IdealLivingSpace, 0.1, 1.0);
 
 			// calculate comfort factor
-			comforts = new Comforts(parts, env.landed, crew_count > 1, direct_rate > 0.0);
+			comforts = new Comforts(parts, env.landed, crew_count > 1, has_comms);
 		}
 
 
@@ -902,15 +787,7 @@ namespace KERBALISM
 		public double failure_year;                           // estimated failures per-year, averaged per-component
 		public Dictionary<string, int> redundancy;            // number of components per redundancy group
 
-		// signal-related
-		public double direct_dist;                            // max comm range to DSN
-		public double direct_rate;                            // data transmission rate to DSN from target destination
-		public double direct_cost;                            // ec required for transmission to DSN
-		public double indirect_dist;                          // max comm range to other vessels
-		public double indirect_rate;                          // best-case data transmission rate to other vessels
-		public double indirect_cost;                          // ec required for transmission to other vessels
-		public double home_dist_min;                          // best-case distance from target to home body
-		public double home_dist_max;                          // worst-case distance from target to home body
+		public bool has_comms;
 	}
 
 
@@ -970,7 +847,6 @@ namespace KERBALISM
 						case "GravityRing": process_ring(m as GravityRing); break;
 						case "Emitter": process_emitter(m as Emitter); break;
 						case "Laboratory": process_laboratory(m as Laboratory); break;
-						case "Antenna": process_antenna(m as Antenna); break;
 						case "Experiment": process_experiment(m as Experiment); break;
 						case "ModuleCommand": process_command(m as ModuleCommand); break;
 						case "ModuleDeployableSolarPanel": process_panel(m as ModuleDeployableSolarPanel, env); break;
@@ -1143,12 +1019,6 @@ namespace KERBALISM
 			{
 				resource("ElectricCharge").consume(lab.ec_rate, "laboratory");
 			}
-		}
-
-
-		void process_antenna(Antenna antenna)
-		{
-			resource("ElectricCharge").consume(antenna.cost, "transmission");
 		}
 
 

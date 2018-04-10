@@ -49,6 +49,7 @@ namespace KERBALISM
 
 			// get connection info
 			ConnectionInfo conn = vi.connection;
+			if (conn == null || String.IsNullOrEmpty(vi.transmitting)) return;
 
 			// consume ec if data is transmitted or relayed
 			if (vi.transmitting.Length > 0 || vi.relaying.Length > 0)

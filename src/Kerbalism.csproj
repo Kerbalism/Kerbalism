@@ -111,7 +111,6 @@
   <ItemGroup>
     <Compile Include="Automation\Computer.cs" />
     <Compile Include="Automation\Device.cs" />
-    <Compile Include="Automation\Devices\Antenna.cs" />
     <Compile Include="Automation\Devices\Harvester.cs" />
     <Compile Include="Automation\Devices\Laboratory.cs" />
     <Compile Include="Automation\Devices\Experiment.cs" />
@@ -141,12 +140,11 @@
     <Compile Include="Database\SupplyData.cs" />
     <Compile Include="Database\UIData.cs" />
     <Compile Include="Database\VesselData.cs" />
-    <Compile Include="Deploy\Deploy.cs" />
-    <Compile Include="Deploy\DeviceEC.cs" />
-    <Compile Include="Deploy\Device\LandingGear.cs" />
+    <Compile Include="Modules\Deploy.cs" />
+    <Compile Include="DeviceEC.cs" />
+    <Compile Include="Automation\Devices\LandingGear.cs" />
     <Compile Include="External\RemoteTech.cs" />
     <Compile Include="External\SCANsat.cs" />
-    <Compile Include="Modules\Antenna.cs" />
     <Compile Include="Modules\Harvester.cs" />
     <Compile Include="Modules\Emitter.cs" />
     <Compile Include="Modules\Greenhouse.cs" />

@@ -243,7 +243,6 @@ namespace KERBALISM
 						case "GravityRing": dev = new RingDevice(m as GravityRing); break;
 						case "Emitter": dev = new EmitterDevice(m as Emitter); break;
 						case "Laboratory": dev = new LaboratoryDevice(m as Laboratory); break;
-						case "Antenna": dev = new AntennaDevice(m as Antenna); break;
 						case "Experiment": dev = new ExperimentDevice(m as Experiment); break;
 						case "ModuleDeployableSolarPanel": dev = new PanelDevice(m as ModuleDeployableSolarPanel); break;
 						case "ModuleGenerator": dev = new GeneratorDevice(m as ModuleGenerator); break;
@@ -305,7 +304,6 @@ namespace KERBALISM
 							case "GravityRing": dev = new ProtoRingDevice(m, p.flightID); break;
 							case "Emitter": dev = new ProtoEmitterDevice(m, p.flightID); break;
 							case "Laboratory": dev = new ProtoLaboratoryDevice(m, p.flightID); break;
-							case "Antenna": dev = new ProtoAntennaDevice(m, p.flightID); break;
 							case "Experiment": dev = new ProtoExperimentDevice(m, module_prefab as Experiment, p.flightID); break;
 							case "ModuleDeployableSolarPanel": dev = new ProtoPanelDevice(m, module_prefab as ModuleDeployableSolarPanel, p.flightID); break;
 							case "ModuleGenerator": dev = new ProtoGeneratorDevice(m, module_prefab as ModuleGenerator, p.flightID); break;

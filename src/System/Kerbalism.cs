@@ -327,18 +327,6 @@ namespace KERBALISM
 			{
 				InputLockManager.SetControlLock(ControlTypes.EVA_INPUT, "eva_dead_lock");
 			}
-
-			// lock controls for probes without signal. Do not do this for remotetech, let remotetech handle it itself.
-			if (vi.is_valid && !vi.connection.linked && vi.crew_count == 0 && Settings.UnlinkedControl != UnlinkedCtrl.full && !RemoteTech.Enabled())
-			{
-				// choose no controls, or only full/zero throttle and staging
-				ControlTypes ctrl = Settings.UnlinkedControl == UnlinkedCtrl.none
-				  ? ControlTypes.ALL_SHIP_CONTROLS
-				  : ControlTypes.PARTIAL_SHIP_CONTROLS;
-
-				InputLockManager.SetControlLock(ctrl, "no_signal_lock");
-				FlightInputHandler.state.mainThrottle = 0.0f;
-			}
 		}
 
 

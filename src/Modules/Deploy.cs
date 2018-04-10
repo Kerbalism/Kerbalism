@@ -49,7 +49,7 @@ namespace KERBALISM
 #if DEBUG
 			// setup UI
 			Fields["actualCost"].guiActive = true;
-			Fields["broken"].guiActive = true;
+			Fields["isBroken"].guiActive = true;
 #endif
 		}
 
