@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using KSP.Localization;
 
 
 namespace KERBALISM
@@ -28,9 +29,9 @@ namespace KERBALISM
 		public override string info()
 		{
 			return !exp.recording
-			  ? "<color=red>stopped</color>"
+			  ? "<color=red>" + Localizer.Format("#KERBALISM_Generic_disabled") + " </color>"
 			  : exp.issue.Length == 0
-			  ? "<color=cyan>recording</color>"
+			  ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_recording") + "</color>"
 			  : Lib.BuildString("<color=yellow>", exp.issue, "</color>");
 		}
 
@@ -74,9 +75,9 @@ namespace KERBALISM
 			bool recording = Lib.Proto.GetBool(exp, "recording");
 			string issue = Lib.Proto.GetString(exp, "issue");
 			return !recording
-			  ? "<color=red>stopped</color>"
+			  ? "<color=red>" + Localizer.Format("#KERBALISM_Generic_stopped") + " </color>"
 			  : issue.Length == 0
-			  ? "<color=cyan>recording</color>"
+			  ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_recording") + "</color>"
 			  : Lib.BuildString("<color=yellow>", issue, "</color>");
 		}
 

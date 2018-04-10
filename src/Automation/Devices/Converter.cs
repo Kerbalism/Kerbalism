@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using KSP.Localization;
 
 
 namespace KERBALISM
@@ -26,7 +27,7 @@ namespace KERBALISM
 
 		public override string info()
 		{
-			return converter.AlwaysActive ? "always on" : converter.IsActivated ? "<color=cyan>on</color>" : "<color=red>off</color>";
+			return converter.AlwaysActive ? Localizer.Format("#KERBALISM_Generic_alwaysOn") : converter.IsActivated ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_on") + "</color>" : "<color=red>" + Localizer.Format("#KERBALISM_Generic_off") + "</color>";
 		}
 
 		public override void ctrl(bool value)
@@ -68,7 +69,7 @@ namespace KERBALISM
 		{
 			if (prefab.AlwaysActive) return "always on";
 			bool is_on = Lib.Proto.GetBool(converter, "IsActivated");
-			return is_on ? "<color=cyan>on</color>" : "<color=red>off</color>";
+			return is_on ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_on") + "</color>" : "<color=red>" + Localizer.Format("#KERBALISM_Generic_off") + "</color>";
 		}
 
 		public override void ctrl(bool value)

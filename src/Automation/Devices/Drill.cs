@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using KSP.Localization;
 
 
 namespace KERBALISM
@@ -26,8 +27,8 @@ namespace KERBALISM
 
 		public override string info()
 		{
-			if (drill.AlwaysActive) return "always on";
-			return drill.IsActivated ? "<color=cyan>on</color>" : "<color=red>off</color>";
+			if (drill.AlwaysActive) return Localizer.Format("#KERBALISM_Generic_alwaysOn");
+			return drill.IsActivated ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_on") + "</color>" : "<color=red>" + Localizer.Format("#KERBALISM_Generic_off") + "</color>";
 		}
 
 		public override void ctrl(bool value)
@@ -67,9 +68,9 @@ namespace KERBALISM
 
 		public override string info()
 		{
-			if (prefab.AlwaysActive) return "always on";
+			if (prefab.AlwaysActive) Localizer.Format("#KERBALISM_Generic_alwaysOn");
 			bool is_on = Lib.Proto.GetBool(drill, "IsActivated");
-			return is_on ? "<color=cyan>on</color>" : "<color=red>off</color>";
+			return is_on ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_on") + "</color>" : "<color=red>" + Localizer.Format("#KERBALISM_Generic_off") + "</color>";
 		}
 
 		public override void ctrl(bool value)

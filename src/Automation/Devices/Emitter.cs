@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using KSP.Localization;
 
 
 namespace KERBALISM
@@ -26,7 +27,7 @@ namespace KERBALISM
 
 		public override string info()
 		{
-			return emitter.running ? "<color=cyan>active</color>" : "<color=red>disabled</color>";
+			return emitter.running ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_on") + " </color>" : "<color=red>" + Localizer.Format("#KERBALISM_Generic_disabled") + "</color>";
 		}
 
 		public override void ctrl(bool value)
