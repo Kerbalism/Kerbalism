@@ -193,7 +193,7 @@ namespace KERBALISM
 		}
 
 		// action groups
-		[KSPAction("Start/Stop Harvester")] public void Action(KSPActionParam param) { Toggle(); }
+		[KSPAction("#KERBALISM_Harvester_Action")] public void Action(KSPActionParam param) { Toggle(); }
 
 
 		// part tooltip

@@ -148,7 +148,7 @@ namespace KERBALISM
 
 
 		// action groups
-		[KSPAction("Enable/Disable Lab")] public void Action(KSPActionParam param) { Toggle(); }
+		[KSPAction("#KERBALISM_Laboratory_Action")] public void Action(KSPActionParam param) { Toggle(); }
 
 
 		public override string GetInfo()

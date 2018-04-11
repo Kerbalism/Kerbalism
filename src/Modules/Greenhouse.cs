@@ -30,9 +30,9 @@ namespace KERBALISM
 		[KSPField(isPersistant = true)] public string issue;              // first detected issue, or empty if there is none
 
 		// rmb ui status
-		[KSPField(guiActive = true, guiName = "Natural lighting")] public string status_natural;        // natural lighting
-		[KSPField(guiActive = true, guiName = "Artificial lighting")] public string status_artificial;  // artificial lighting
-		[KSPField(guiActive = true, guiName = "Time to harvest")] public string status_tta;             // time to harvest
+		[KSPField(guiActive = true, guiName = "#KERBALISM_Greenhouse_status_natural")] public string status_natural;        // natural lighting
+		[KSPField(guiActive = true, guiName = "#KERBALISM_Greenhouse_status_artificial")] public string status_artificial;  // artificial lighting
+		[KSPField(guiActive = true, guiName = "#KERBALISM_Greenhouse_status_tta")] public string status_tta;             // time to harvest
 
 		// animations
 		Animator shutters_anim;
@@ -292,7 +292,7 @@ namespace KERBALISM
 
 
 		// harvest
-		[KSPEvent(guiActive = true, guiActiveUnfocused = true, guiName = "Harvest", active = false)]
+		[KSPEvent(guiActive = true, guiActiveUnfocused = true, guiName = "#KERBALISM_Greenhouse_Harvest", active = false)]
 		public void Harvest()
 		{
 			// disable for dead eva kerbals
@@ -315,7 +315,7 @@ namespace KERBALISM
 
 
 		// emergency harvest
-		[KSPEvent(guiActive = true, guiActiveUnfocused = true, guiName = "Emergency Harvest", active = false)]
+		[KSPEvent(guiActive = true, guiActiveUnfocused = true, guiName = "#KERBALISM_Greenhouse_EmergencyHarvest", active = false)]
 		public void EmergencyHarvest()
 		{
 			// disable for dead eva kerbals
@@ -341,7 +341,7 @@ namespace KERBALISM
 
 
 		// action groups
-		[KSPAction("Enable/Disable Greenhouse")] public void Action(KSPActionParam param) { Toggle(); }
+		[KSPAction("#KERBALISM_Greenhouse_Action")] public void Action(KSPActionParam param) { Toggle(); }
 
 
 		// part tooltip

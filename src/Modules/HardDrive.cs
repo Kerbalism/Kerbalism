@@ -69,14 +69,14 @@ namespace KERBALISM
 		}
 
 
-		[KSPEvent(guiActive = true, guiName = "Transfer data here", active = false)]
+		[KSPEvent(guiActive = true, guiName = "#KERBALISM_HardDrive_TransferData", active = false)]
 		public void TransferData()
 		{
 			DB.Vessel(vessel).drive.location = part.flightID;
 		}
 
 
-		[KSPEvent(guiActive = false, guiActiveUnfocused = true, guiActiveUncommand = true, guiName = "Take data", active = true)]
+		[KSPEvent(guiActive = false, guiActiveUnfocused = true, guiActiveUncommand = true, guiName = "#KERBALISM_HardDrive_TakeData", active = true)]
 		public void TakeData()
 		{
 			// disable for dead eva kerbals
@@ -88,7 +88,7 @@ namespace KERBALISM
 		}
 
 
-		[KSPEvent(guiActive = false, guiActiveUnfocused = true, guiActiveUncommand = true, guiName = "Store data", active = true)]
+		[KSPEvent(guiActive = false, guiActiveUnfocused = true, guiActiveUncommand = true, guiName = "#KERBALISM_HardDrive_TransferData", active = true)]
 		public void StoreData()
 		{
 			// disable for dead eva kerbals

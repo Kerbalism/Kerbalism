@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Net.Sockets;
 using UnityEngine;
-
+using KSP.Localization;
 
 namespace KERBALISM
 {
@@ -44,7 +44,7 @@ namespace KERBALISM
 		public void Update()
 		{
 			// update RMB ui
-			Events["Toggle"].guiName = deployed ? "Retract" : "Deploy";
+			Events["Toggle"].guiName = deployed ? Localizer.Format("#KERBALISM_Generic_RETRACT") : Localizer.Format("#KERBALISM_Generic_DEPLOY");
 
 			// if it is deploying, wait until the animation is over
 			if (deployed && !deploy_anim.playing() && !rotate_anim.playing())
@@ -102,7 +102,7 @@ namespace KERBALISM
 		}
 
 
-		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "Deploy", active = true)]
+		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "#KERBALISM_GravityRing_Toggle", active = true)]
 		public void Toggle()
 		{
 			// switch deployed state
@@ -118,12 +118,12 @@ namespace KERBALISM
 			deploy_anim.play(!deployed, false);
 
 			// update ui
-			Events["Toggle"].guiName = deployed ? "Retract" : "Deploy";
+			Events["Toggle"].guiName = deployed ? Localizer.Format("#KERBALISM_Generic_RETRACT") : Localizer.Format("#KERBALISM_Generic_DEPLOY");
 		}
 
 
 		// action groups
-		[KSPAction("Deploy/Retract Ring")] public void Action(KSPActionParam param) { Toggle(); }
+		[KSPAction("#KERBALISM_GravityRing_Action")] public void Action(KSPActionParam param) { Toggle(); }
 
 
 		// part tooltip

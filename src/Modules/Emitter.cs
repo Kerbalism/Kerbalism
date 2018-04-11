@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
-
+using KSP.Localization;
 
 namespace KERBALISM
 {
@@ -50,7 +50,7 @@ namespace KERBALISM
 		{
 			// update ui
 			Status = running ? Lib.HumanReadableRadiation(Math.Abs(radiation)) : "none";
-			Events["Toggle"].guiName = Lib.StatusToggle("Active shield", running ? "active" : "disabled");
+			Events["Toggle"].guiName = Lib.StatusToggle(Localizer.Format("#kerbalism-activeshield_Part_title").Replace("Shield", "shield"), running ? Localizer.Format("#KERBALISM_Generic_ACTIVE") : Localizer.Format("#KERBALISM_Generic_DISABLED")); //i'm lazy lol
 		}
 
 
@@ -95,7 +95,7 @@ namespace KERBALISM
 
 
 		// action groups
-		[KSPAction("Toggle Active Shield")] public void Action(KSPActionParam param) { Toggle(); }
+		[KSPAction("#KERBALISM_Emitter_Action")] public void Action(KSPActionParam param) { Toggle(); }
 
 
 
@@ -103,8 +103,8 @@ namespace KERBALISM
 		public override string GetInfo()
 		{
 			string desc = radiation > double.Epsilon
-			  ? "Emit ionizing radiation"
-			  : "Reduce incoming radiation";
+			  ? Localizer.Format("#KERBALISM_Emitter_EmitIonizing")
+			  : Localizer.Format("#KERBALISM_Emitter_ReduceIncoming");
 
 			return Specs().info(desc);
 		}
@@ -113,7 +113,7 @@ namespace KERBALISM
 		public Specifics Specs()
 		{
 			Specifics specs = new Specifics();
-			specs.add(radiation >= 0.0 ? "Radiation emitted" : "Active shielding", Lib.HumanReadableRadiation(Math.Abs(radiation)));
+			specs.add(radiation >= 0.0 ? Localizer.Format("#KERBALISM_Emitter_Emitted") : Localizer.Format("#KERBALISM_Emitter_ActiveShielding"), Lib.HumanReadableRadiation(Math.Abs(radiation)));
 			if (ec_rate > double.Epsilon) specs.add("EC/s", Lib.HumanReadableRate(ec_rate));
 			return specs;
 		}

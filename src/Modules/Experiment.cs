@@ -178,7 +178,7 @@ namespace KERBALISM
 
 
 		// action groups
-		[KSPAction("Start/Stop Experiment")] public void Action(KSPActionParam param) { Toggle(); }
+		[KSPAction("#KERBALISM_Experiment_Action")] public void Action(KSPActionParam param) { Toggle(); }
 
 
 		// part tooltip

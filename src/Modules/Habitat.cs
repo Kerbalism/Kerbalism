@@ -19,8 +19,8 @@ namespace KERBALISM
 		[KSPField(isPersistant = true)] public State state = State.enabled;
 
 		// rmb ui status strings
-		[KSPField(guiActive = false, guiActiveEditor = true, guiName = "Volume")] public string Volume;
-		[KSPField(guiActive = false, guiActiveEditor = true, guiName = "Surface")] public string Surface;
+		[KSPField(guiActive = false, guiActiveEditor = true, guiName = "#KERBALISM_Habitat_Surface")] public string Volume;
+		[KSPField(guiActive = false, guiActiveEditor = true, guiName = "#KERBALISM_Habitat_Volume")] public string Surface;
 
 		// animations
 		Animator inflate_anim;
@@ -278,7 +278,7 @@ namespace KERBALISM
 
 
 		// action groups
-		[KSPAction("Enable/Disable Habitat")] public void Action(KSPActionParam param) { Toggle(); }
+		[KSPAction("#KERBALISM_Habitat_Action")] public void Action(KSPActionParam param) { Toggle(); }
 
 
 		// part tooltip
