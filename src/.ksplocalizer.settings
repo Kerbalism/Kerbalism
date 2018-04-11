@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LocalizerProjectSettings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <TagAutoLocPortion>#Kerbalism</TagAutoLocPortion>
+  <TagProjectPortion>OTHER</TagProjectPortion>
+  <IDType>ProjectBased</IDType>
+  <NextProjectID>1000018</NextProjectID>
+  <BaseCfgFile>refactor.cfg</BaseCfgFile>
+  <LanguageCodes>en-us,ru</LanguageCodes>
+  <UseMultiCfgFiles>true</UseMultiCfgFiles>
+  <UseMultiAndBaseCfgFiles>false</UseMultiAndBaseCfgFiles>
+  <MultiCfgFile>GameData/Kerbalism/Localization/{LANGCODE}.cfg</MultiCfgFile>
+  <AddLanguageCodePrefixToMultiFiles>true</AddLanguageCodePrefixToMultiFiles>
+  <Templates>
+    <LocalizerTemplateSettings>
+      <name>abc</name>
+      <UseMultiCfgFiles>true</UseMultiCfgFiles>
+      <UseMultiAndBaseCfgFiles>false</UseMultiAndBaseCfgFiles>
+      <AddLanguageCodePrefixToMultiFiles>true</AddLanguageCodePrefixToMultiFiles>
+      <BaseCfgFile>refactor.cfg</BaseCfgFile>
+      <MultiCfgFile>GameData/Kerbalism/Localization/{LANGCODE}.cfg</MultiCfgFile>
+      <LanguageCodes>en-us,ru</LanguageCodes>
+    </LocalizerTemplateSettings>
+  </Templates>
+</LocalizerProjectSettings>

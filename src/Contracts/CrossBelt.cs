@@ -1,5 +1,6 @@
 ﻿using System;
 using Contracts;
+using KSP.Localization;
 
 
 namespace KERBALISM.CONTRACTS
@@ -32,19 +33,17 @@ namespace KERBALISM.CONTRACTS
 
 		protected override string GetTitle()
 		{
-			return "Cross the radiation belt";
+			return Localizer.Format("#KERBALISM_Contracts_radTitle");
 		}
 
 		protected override string GetDescription()
 		{
-			return "A brilliant scientist predicted two belts of super-charged particles surrounding the planet. "
-				 + "Now we need to confirm their existance and find out how deadly they really are.";
+			return Localizer.Format("#KERBALISM_Contracts_radDesc");
 		}
 
 		protected override string MessageCompleted()
 		{
-			return "The mission confirmed the presence of two radiation belts around the planet. "
-				 + "Early data suggest extreme levels of radiation.";
+			return Localizer.Format("#KERBALISM_Contracts_radComplete");
 		}
 
 		public override bool MeetRequirements()
@@ -75,7 +74,7 @@ namespace KERBALISM.CONTRACTS
 
 		protected override string GetTitle()
 		{
-			return "Cross the radiation belt";
+			return Localizer.Format("#KERBALISM_Contracts_radTitle");
 		}
 
 		protected override void OnUpdate()

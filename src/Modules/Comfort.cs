@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using KSP.Localization;
 
 
 namespace KERBALISM
@@ -156,17 +157,17 @@ namespace KERBALISM
 
 		public string tooltip()
 		{
-			const string yes = "<b><color=#00ff00>yes</color></b>";
-			const string no = "<b><color=#ff0000>no</color></b>";
+			string yes = Lib.BuildString("<b><color=#00ff00>", Localizer.Format("#KERBALISM_Generic_YES"), " </color></b>");
+			string no = Lib.BuildString("<b><color=#ff0000>", Localizer.Format("#KERBALISM_Generic_NO"), " </color></b>");
 			return Lib.BuildString
 			(
 			  "<align=left />",
-			  "firm ground\t", firm_ground ? yes : no, "\n",
-			  "exercise\t\t", exercise ? yes : no, "\n",
-			  "not alone\t", not_alone ? yes : no, "\n",
-			  "call home\t", call_home ? yes : no, "\n",
-			  "panorama\t", panorama ? yes : no, "\n",
-			  "<i>factor</i>\t\t", Lib.HumanReadablePerc(factor)
+			  Localizer.Format("#KERBALISM_Comfort_firmground"), "\t", firm_ground ? yes : no, "\n",
+			  Localizer.Format("#KERBALISM_Comfort_exercise"), "\t\t", exercise ? yes : no, "\n",
+			  Localizer.Format("#KERBALISM_Comfort_notalone"), "\t", not_alone ? yes : no, "\n",
+			  Localizer.Format("#KERBALISM_Comfort_callhome"), "\t", call_home ? yes : no, "\n",
+			  Localizer.Format("#KERBALISM_Comfort_panorama"), "\t", panorama ? yes : no, "\n",
+			  "<i>", Localizer.Format("#KERBALISM_Comfort_factor"), "</i>\t\t", Lib.HumanReadablePerc(factor)
 			);
 		}
 

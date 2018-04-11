@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
-
+using KSP.Localization;
 
 namespace KERBALISM
 {
@@ -38,7 +38,7 @@ namespace KERBALISM
 								case UnlinkedCtrl.limited: subtext = "Limited control available"; break;
 							}
 						}
-						Message.Post(Severity.warning, Lib.BuildString("Signal lost with <b>", v.vesselName, "</b>"), subtext);
+						Message.Post(Severity.warning, Lib.BuildString(Localizer.Format("#KERBALISM_UI_signallost"), " < b>", v.vesselName, "</b>"), subtext);
 					}
 				}
 				else if (vd.msg_signal && conn.linked)
@@ -47,8 +47,8 @@ namespace KERBALISM
 					if (vd.cfg_signal && !Storm.JustEnded(v, elapsed_s))
 					{
 						var path = conn.path;
-						Message.Post(Severity.relax, Lib.BuildString("<b>", v.vesselName, "</b> signal is back"),
-						  path.Count == 0 ? "We got a direct link with the space center" : Lib.BuildString("Relayed by <b>", path[path.Count - 1].vesselName, "</b>"));
+						Message.Post(Severity.relax, Lib.BuildString("<b>", v.vesselName, "</b> ", Localizer.Format("#KERBALISM_UI_signalback")),
+						  path.Count == 0 ? Localizer.Format("#KERBALISM_UI_directlink") : Lib.BuildString(Localizer.Format("#KERBALISM_UI_relayby"), " <b>", path[path.Count - 1].vesselName, "</b>"));
 					}
 				}
 			}

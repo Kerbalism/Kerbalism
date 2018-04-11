@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using KSP.Localization;
 
 
 namespace KERBALISM
@@ -26,7 +27,7 @@ namespace KERBALISM
 
 		public override string info()
 		{
-			return greenhouse.active ? "<color=cyan>enabled</color>" : "<color=red>disabled</color>";
+			return greenhouse.active ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_ENABLED") + "</color>" : "<color=red>" + Localizer.Format("#KERBALISM_Generic_DISABLED") + "</color>";
 		}
 
 		public override void ctrl(bool value)
@@ -64,7 +65,7 @@ namespace KERBALISM
 		public override string info()
 		{
 			bool active = Lib.Proto.GetBool(greenhouse, "active");
-			return active ? "<color=cyan>enabled</color>" : "<color=red>disabled</color>";
+			return active ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_ENABLED") + "</color>" : "<color=red>" + Localizer.Format("#KERBALISM_Generic_DISABLED") + "</color>";
 		}
 
 		public override void ctrl(bool value)

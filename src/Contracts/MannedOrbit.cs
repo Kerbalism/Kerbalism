@@ -1,5 +1,6 @@
 ﻿using System;
 using Contracts;
+using KSP.Localization;
 
 
 namespace KERBALISM.CONTRACTS
@@ -32,19 +33,17 @@ namespace KERBALISM.CONTRACTS
 
 		protected override string GetTitle()
 		{
-			return "Put a Kerbal in orbit for 30 days";
+			return Localizer.Format("#KERBALISM_Contracts_orbitTitle");
 		}
 
 		protected override string GetDescription()
 		{
-			return "Obtaining an orbit was easier than we expected. "
-				 + "Now it is time to keep a Kerbal alive in orbit for 30 days.";
+			return Localizer.Format("#KERBALISM_Contracts_orbitDesc");
 		}
 
 		protected override string MessageCompleted()
 		{
-			return "The mission was a success, albeit the Kerbal is a bit bored. "
-				 + "We have plenty of data about long-term permanence in space";
+			return Localizer.Format("#KERBALISM_Contracts_orbitComplete");
 		}
 
 		public override bool MeetRequirements()
@@ -75,7 +74,7 @@ namespace KERBALISM.CONTRACTS
 
 		protected override string GetTitle()
 		{
-			return "Put a Kerbal in orbit for 30 days";
+			return Localizer.Format("#KERBALISM_Contracts_orbitTitle");
 		}
 
 		protected override void OnUpdate()

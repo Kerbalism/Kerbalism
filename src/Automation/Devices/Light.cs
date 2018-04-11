@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using KSP.Localization;
 
 
 namespace KERBALISM
@@ -26,7 +27,7 @@ namespace KERBALISM
 
 		public override string info()
 		{
-			return light.isOn ? "<color=cyan>on</color>" : "<color=red>off</color>";
+			return light.isOn ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_ON") + "</color>" : "<color=red>" + Localizer.Format("#KERBALISM_Generic_OFF") + "</color>";
 		}
 
 		public override void ctrl(bool value)
@@ -65,7 +66,7 @@ namespace KERBALISM
 		public override string info()
 		{
 			bool is_on = Lib.Proto.GetBool(light, "isOn");
-			return is_on ? "<color=cyan>on</color>" : "<color=red>off</color>";
+			return is_on ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_ON") + "</color>" : "<color=red>" + Localizer.Format("#KERBALISM_Generic_OFF") + "</color>";
 		}
 
 		public override void ctrl(bool value)

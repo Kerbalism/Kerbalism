@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using KSP.Localization;
 
 
 namespace KERBALISM
@@ -27,8 +28,8 @@ namespace KERBALISM
 		public override string info()
 		{
 			return process_ctrl.running
-			  ? "<color=cyan>running</color>"
-			  : "<color=red>stopped</color>";
+			  ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_RUNNING") + "</color>"
+			  : "<color=red>" + Localizer.Format("#KERBALISM_Generic_STOPPED") + "</color>";
 		}
 
 		public override void ctrl(bool value)
@@ -68,8 +69,8 @@ namespace KERBALISM
 		public override string info()
 		{
 			return Lib.Proto.GetBool(process_ctrl, "running")
-			  ? "<color=cyan>running</color>"
-			  : "<color=red>stopped</color>";
+			  ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_RUNNING") + "</color>"
+			  : "<color=red>" + Localizer.Format("#KERBALISM_Generic_STOPPED") + "</color>";
 		}
 
 		public override void ctrl(bool value)

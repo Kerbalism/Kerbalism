@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
-
+using KSP.Localization;
 
 namespace KERBALISM
 {
@@ -29,11 +29,11 @@ namespace KERBALISM
 			if (!panel.isTracking) return "fixed";
 			switch (panel.deployState)
 			{
-				case ModuleDeployablePart.DeployState.EXTENDED: return "<color=cyan>extended</color>";
-				case ModuleDeployablePart.DeployState.RETRACTED: return "<color=red>retracted</color>";
-				case ModuleDeployablePart.DeployState.BROKEN: return "<color=red>broken</color>";
-				case ModuleDeployablePart.DeployState.EXTENDING: return "extending";
-				case ModuleDeployablePart.DeployState.RETRACTING: return "retracting";
+				case ModuleDeployablePart.DeployState.EXTENDED: return "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_EXTENDED") + " </color>";
+				case ModuleDeployablePart.DeployState.RETRACTED: return "<color=red>" + Localizer.Format("#KERBALISM_Generic_RETRACTED") + "</color>";
+				case ModuleDeployablePart.DeployState.BROKEN: return "<color=red>" + Localizer.Format("#KERBALISM_Generic_BROKEN") + "</color>";
+				case ModuleDeployablePart.DeployState.EXTENDING: return Localizer.Format("#KERBALISM_Generic_EXTENDING");
+				case ModuleDeployablePart.DeployState.RETRACTING: return Localizer.Format("#KERBALISM_Generic_RETRACTING");
 			}
 			return "unknown";
 		}
@@ -81,9 +81,9 @@ namespace KERBALISM
 			string state = Lib.Proto.GetString(panel, "deployState");
 			switch (state)
 			{
-				case "EXTENDED": return "<color=cyan>extended</color>";
-				case "RETRACTED": return "<color=red>retracted</color>";
-				case "BROKEN": return "<color=red>broken</color>";
+				case "EXTENDED": return "<color=cyan>" + Localizer.Format("KERBALISM_Generic_EXTENDED") + "</color>";
+				case "RETRACTED": return "<color=red>" + Localizer.Format("KERBALISM_Generic_RETRACTED") + "</color>";
+				case "BROKEN": return "<color=red>" + Localizer.Format("KERBALISM_Generic_BROKEN") + "</color>";
 			}
 			return "unknown";
 		}

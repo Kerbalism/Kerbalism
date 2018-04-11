@@ -29,9 +29,9 @@ namespace KERBALISM
 		public override string info()
 		{
 			return !exp.recording
-			  ? "<color=red>" + Localizer.Format("#KERBALISM_Generic_disabled") + " </color>"
+			  ? "<color=red>" + Localizer.Format("#KERBALISM_Generic_DISABLED") + " </color>"
 			  : exp.issue.Length == 0
-			  ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_recording") + "</color>"
+			  ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_RECORDING") + "</color>"
 			  : Lib.BuildString("<color=yellow>", exp.issue, "</color>");
 		}
 
@@ -75,9 +75,9 @@ namespace KERBALISM
 			bool recording = Lib.Proto.GetBool(exp, "recording");
 			string issue = Lib.Proto.GetString(exp, "issue");
 			return !recording
-			  ? "<color=red>" + Localizer.Format("#KERBALISM_Generic_stopped") + " </color>"
+			  ? "<color=red>" + Localizer.Format("#KERBALISM_Generic_STOPPED") + " </color>"
 			  : issue.Length == 0
-			  ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_recording") + "</color>"
+			  ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_RECORDING") + "</color>"
 			  : Lib.BuildString("<color=yellow>", issue, "</color>");
 		}
 

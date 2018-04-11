@@ -1,4 +1,5 @@
 ﻿using ModuleWheels;
+using KSP.Localization;
 
 namespace KERBALISM
 {
@@ -14,7 +15,7 @@ namespace KERBALISM
 		{
 			get
 			{
-				if (landingGear.stateString == "Deploying..." || landingGear.stateString == "Retracting...")
+				if (landingGear.stateString == Localizer.Format("#autoLOC_6002270") || landingGear.stateString == Localizer.Format("#autoLOC_234856"))
 				{
 					actualCost = extra_Deploy;
 					return true;

@@ -1,5 +1,6 @@
 ﻿using System;
 using Contracts;
+using KSP.Localization;
 
 
 namespace KERBALISM.CONTRACTS
@@ -32,19 +33,17 @@ namespace KERBALISM.CONTRACTS
 
 		protected override string GetTitle()
 		{
-			return "Analyze samples in space";
+			return Localizer.Format("#KERBALISM_Contracts_sampleTitle");
 		}
 
 		protected override string GetDescription()
 		{
-			return "The Laboratory can analyze samples in space, in theory. "
-				 + "We should check if this actually work by and analyzing some samples in space.";
+			return Localizer.Format("#KERBALISM_Contracts_sampleDesc");
 		}
 
 		protected override string MessageCompleted()
 		{
-			return "Our Laboratory analysis was good, perhaps even better than the "
-				 + "ones done usually by our scientists at mission control. But don't tell'em.";
+			return Localizer.Format("#KERBALISM_Contracts_sampleComplete");
 		}
 
 		public override bool MeetRequirements()
@@ -76,7 +75,7 @@ namespace KERBALISM.CONTRACTS
 
 		protected override string GetTitle()
 		{
-			return "Analyze samples in space";
+			return Localizer.Format("#KERBALISM_Contracts_sampleTitle");
 		}
 
 		protected override void OnUpdate()

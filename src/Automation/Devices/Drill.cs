@@ -27,8 +27,8 @@ namespace KERBALISM
 
 		public override string info()
 		{
-			if (drill.AlwaysActive) return Localizer.Format("#KERBALISM_Generic_alwaysOn");
-			return drill.IsActivated ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_on") + "</color>" : "<color=red>" + Localizer.Format("#KERBALISM_Generic_off") + "</color>";
+			if (drill.AlwaysActive) return Localizer.Format("#KERBALISM_Generic_ALWAYSON");
+			return drill.IsActivated ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_ON") + "</color>" : "<color=red>" + Localizer.Format("#KERBALISM_Generic_OFF") + "</color>";
 		}
 
 		public override void ctrl(bool value)
@@ -68,9 +68,9 @@ namespace KERBALISM
 
 		public override string info()
 		{
-			if (prefab.AlwaysActive) Localizer.Format("#KERBALISM_Generic_alwaysOn");
+			if (prefab.AlwaysActive) Localizer.Format("#KERBALISM_Generic_ALWAYSON");
 			bool is_on = Lib.Proto.GetBool(drill, "IsActivated");
-			return is_on ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_on") + "</color>" : "<color=red>" + Localizer.Format("#KERBALISM_Generic_off") + "</color>";
+			return is_on ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_ON") + "</color>" : "<color=red>" + Localizer.Format("#KERBALISM_Generic_OFF") + "</color>";
 		}
 
 		public override void ctrl(bool value)

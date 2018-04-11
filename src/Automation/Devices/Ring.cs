@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using KSP.Localization;
 
 
 namespace KERBALISM
@@ -26,7 +27,7 @@ namespace KERBALISM
 
 		public override string info()
 		{
-			return ring.deployed ? "<color=cyan>deployed</color>" : "<color=red>retracted</color>";
+			return ring.deployed ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_DEPLOYED") + "</color>" : "<color=red>" + Localizer.Format("KERBALISM_Generic_RETRACTED") + "</color>";
 		}
 
 		public override void ctrl(bool value)
@@ -67,7 +68,7 @@ namespace KERBALISM
 		public override string info()
 		{
 			bool deployed = Lib.Proto.GetBool(ring, "deployed");
-			return deployed ? "<color=cyan>deployed</color>" : "<color=red>retracted</color>";
+			return deployed ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_DEPLOYED") + "</color>" : "<color=red>" + Localizer.Format("KERBALISM_Generic_RETRACTED") + "</color>";
 		}
 
 		public override void ctrl(bool value)

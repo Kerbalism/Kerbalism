@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Contracts;
-
+using KSP.Localization;
 
 namespace KERBALISM.CONTRACTS
 {
@@ -33,17 +33,17 @@ namespace KERBALISM.CONTRACTS
 
 		protected override string GetTitle()
 		{
-			return "Cross the heliopause";
+			return Localizer.Format("#KERBALISM_Contracts_heliopauseTitle");
 		}
 
 		protected override string GetDescription()
 		{
-			return "What is out there, beyond the heliopause? The truth is, we don't know. That's where you come in.";
+			return Localizer.Format("#KERBALISM_Contracts_heliopauseDesc");
 		}
 
 		protected override string MessageCompleted()
 		{
-			return "We went so far the mind doesn't comprehend it. Beyond the heliopause there are the wonders of interstellar space, and more radiation.";
+			return Localizer.Format("#KERBALISM_Contracts_heliopauseComplete");
 		}
 
 		public override bool MeetRequirements()
@@ -81,7 +81,7 @@ namespace KERBALISM.CONTRACTS
 
 		protected override string GetTitle()
 		{
-			return "Cross the heliopause";
+			return Localizer.Format("#KERBALISM_Contracts_heliopauseTitle");
 		}
 
 		protected override void OnUpdate()

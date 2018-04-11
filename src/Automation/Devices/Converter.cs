@@ -27,7 +27,7 @@ namespace KERBALISM
 
 		public override string info()
 		{
-			return converter.AlwaysActive ? Localizer.Format("#KERBALISM_Generic_alwaysOn") : converter.IsActivated ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_on") + "</color>" : "<color=red>" + Localizer.Format("#KERBALISM_Generic_off") + "</color>";
+			return converter.AlwaysActive ? Localizer.Format("#KERBALISM_Generic_ALWAYSON") : converter.IsActivated ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_ON") + "</color>" : "<color=red>" + Localizer.Format("#KERBALISM_Generic_OFF") + "</color>";
 		}
 
 		public override void ctrl(bool value)
@@ -67,9 +67,9 @@ namespace KERBALISM
 
 		public override string info()
 		{
-			if (prefab.AlwaysActive) return "always on";
+			if (prefab.AlwaysActive) return Localizer.Format("#KERBALISM_Generic_ALWAYSON");
 			bool is_on = Lib.Proto.GetBool(converter, "IsActivated");
-			return is_on ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_on") + "</color>" : "<color=red>" + Localizer.Format("#KERBALISM_Generic_off") + "</color>";
+			return is_on ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_ON") + "</color>" : "<color=red>" + Localizer.Format("#KERBALISM_Generic_OFF") + "</color>";
 		}
 
 		public override void ctrl(bool value)

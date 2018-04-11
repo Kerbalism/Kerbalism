@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
-
+using KSP.Localization;
 
 namespace KERBALISM
 {
@@ -30,9 +30,9 @@ namespace KERBALISM
 			return animator != null && !harvester.deployed
 			  ? "not deployed"
 			  : !harvester.running
-			  ? "<color=red>stopped</color>"
+			  ? "<color=red>" + Localizer.Format("#KERBALISM_Generic_STOPPED") + "</color>"
 			  : harvester.issue.Length == 0
-			  ? "<color=cyan>running</color>"
+			  ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_RUNNING") + "</color>"
 			  : Lib.BuildString("<color=yellow>", harvester.issue, "</color>");
 		}
 
@@ -83,9 +83,9 @@ namespace KERBALISM
 			return animator != null && !deployed
 			  ? "not deployed"
 			  : !running
-			  ? "<color=red>stopped</color>"
+			  ? "<color=red>" + Localizer.Format("#KERBALISM_Generic_STOPPED") + "</color>"
 			  : issue.Length == 0
-			  ? "<color=cyan>running</color>"
+			  ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_RUNNING") + "</color>"
 			  : Lib.BuildString("<color=yellow>", issue, "</color>");
 		}
 

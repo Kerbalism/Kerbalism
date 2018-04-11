@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
+using KSP.Localization;
 
 
 namespace KERBALISM
@@ -328,14 +329,14 @@ namespace KERBALISM
 				// check trait
 				if (!reconfigure_cs.check(v))
 				{
-					Message.Post("Can't reconfigure the component", reconfigure_cs.warning());
+					Message.Post(Localizer.Format("#KERBALISM_Configure_noconfigure"), reconfigure_cs.warning());
 					return;
 				}
 
 				// warn the user about potential resource loss
 				if (resource_loss())
 				{
-					Message.Post(Severity.warning, "Reconfiguring will dump resources in excess of capacity.");
+					Message.Post(Severity.warning, Localizer.Format("#KERBALISM_Configure_dumpexcess"));
 				}
 			}
 

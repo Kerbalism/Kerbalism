@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using KSP.Localization;
 
 
 namespace KERBALISM
@@ -27,8 +28,8 @@ namespace KERBALISM
 		public override string info()
 		{
 			return Lib.ReflectionValue<bool>(scanner, "scanning")
-			  ? "<color=cyan>enabled</color>"
-			  : "<color=red>disabled</color>";
+			  ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_ENABLED") + "</color>"
+			  : "<color=red>" + Localizer.Format("#KERBALISM_Generic_DISABLED") + "</color>";
 		}
 
 		public override void ctrl(bool value)
@@ -70,8 +71,8 @@ namespace KERBALISM
 		public override string info()
 		{
 			return Lib.Proto.GetBool(scanner, "scanning")
-			  ? "<color=cyan>enabled</color>"
-			  : "<color=red>disabled</color>";
+			  ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_ENABLED") + "</color>"
+			  : "<color=red>" + Localizer.Format("#KERBALISM_Generic_DISABLED") + "</color>";
 		}
 
 		public override void ctrl(bool value)

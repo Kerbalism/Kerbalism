@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Contracts;
-
+using KSP.Localization;
 
 namespace KERBALISM.CONTRACTS
 {
@@ -33,18 +33,17 @@ namespace KERBALISM.CONTRACTS
 
 		protected override string GetTitle()
 		{
-			return "Harvest food in space";
+			return Localizer.Format("#KERBALISM_Contracts_foodTitle");
 		}
 
 		protected override string GetDescription()
 		{
-			return "Now that we got the technology to grow food in space, "
-				 + "we should probably test it. Harvest food from a greenhouse in space.";
+			return Localizer.Format("#KERBALISM_Contracts_foodDesc");
 		}
 
 		protected override string MessageCompleted()
 		{
-			return "We harvested food in space, and our scientists says it is actually delicious.";
+			return Localizer.Format("#KERBALISM_Contracts_foodComplete");
 		}
 
 		public override bool MeetRequirements()
@@ -76,7 +75,7 @@ namespace KERBALISM.CONTRACTS
 
 		protected override string GetTitle()
 		{
-			return "Harvest food in space";
+			return Localizer.Format("#KERBALISM_Contracts_foodTitle");
 		}
 
 		protected override void OnUpdate()

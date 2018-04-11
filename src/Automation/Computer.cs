@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
-
+using KSP.Localization;
 
 namespace KERBALISM
 {
@@ -88,7 +88,7 @@ namespace KERBALISM
 				// - unless the script is empty (can happen when being edited)
 				if (script.states.Count > 0 && DB.Vessel(v).cfg_script)
 				{
-					Message.Post(Lib.BuildString("Script called on vessel <b>", v.vesselName, "</b>"));
+					Message.Post(Lib.BuildString(Localizer.Format("#KERBALISM_UI_scriptvessel"), " <b>", v.vesselName, "</b>"));
 				}
 			}
 		}
