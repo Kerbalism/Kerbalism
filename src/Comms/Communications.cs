@@ -70,7 +70,7 @@ namespace KERBALISM
 				{
 					return new ConnectionInfo(LinkStatus.indirect_link, ext_rate, ext_cost);
 				}
-				else if (RemoteTech.Connected(v.id) && RemoteTech.ConnectedToKSC(v.id))
+				else if (RemoteTech.ConnectedToKSC(v.id))
 				{
 					return new ConnectionInfo(LinkStatus.direct_link, ext_rate, ext_cost);
 				}

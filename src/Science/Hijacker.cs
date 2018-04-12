@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using KSP.UI.Screens.Flight.Dialogs;
-
+using KSP.Localization;
 
 namespace KERBALISM
 {
@@ -61,7 +61,7 @@ namespace KERBALISM
 				Message.Post
 				(
 				  Lib.BuildString("<b>", Science.experiment(data.subjectID).fullname, "</b> recorded"),
-				  !meta.is_rerunnable ? "The experiment is now inoperable, resetting will require a <b>Scientist</b>" : string.Empty
+				  !meta.is_rerunnable ? Localizer.Format("#KERBALISM_Science_inoperable") : string.Empty
 				);
 			}
 
@@ -160,7 +160,7 @@ namespace KERBALISM
 			Message.Post
 			(
 			  Lib.BuildString("<b>", Science.experiment(data.subjectID).fullname, "</b> recorded"),
-			  !meta.is_rerunnable ? "The experiment is now inoperable, resetting will require a <b>Scientist</b>" : string.Empty
+			  !meta.is_rerunnable ? Localizer.Format("#KERBALISM_Science_inoperable") : string.Empty
 			);
 		}
 

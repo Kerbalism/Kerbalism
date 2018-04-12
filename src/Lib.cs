@@ -295,6 +295,11 @@ namespace KERBALISM
 			m.GetType().GetMethod(call_name).Invoke(m, null);
 		}
 
+		public static T ReflectionCall<T>(PartModule m, string call_name)
+		{
+			return (T)(m.GetType().GetMethod(call_name).Invoke(m, null));
+		}
+
 
 		// --- STRING ---------------------------------------------------------------
 

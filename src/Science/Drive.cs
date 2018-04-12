@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
-
+using KSP.Localization;
 
 namespace KERBALISM
 {
@@ -205,8 +205,8 @@ namespace KERBALISM
 				// inform the user
 				Message.Post
 				(
-				  Lib.BuildString(Lib.HumanReadableDataSize(amount), " of data transfered"),
-				  Lib.BuildString("from <b>", src.vesselName, "</b> to <b>", dst.vesselName, "</b>")
+				  Lib.BuildString(Lib.HumanReadableDataSize(amount), " ", Localizer.Format("#KERBALISM_Science_ofdatatransfer")),
+				  Lib.BuildString(Localizer.Format("#KERBALISM_Generic_FROM"), " <b>", src.vesselName, "</b> ", Localizer.Format("#KERBALISM_Generic_TO"), " <b>", dst.vesselName, "</b>")
 				);
 			}
 		}
