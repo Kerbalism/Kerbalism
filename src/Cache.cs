@@ -88,7 +88,8 @@ namespace KERBALISM
 			avoid_inf_recursion.Add(v.id);
 			connection = Communications.connection(v);
 			transmitting = Science.transmitting(v, connection.linked);
-			avoid_inf_recursion.Remove(v.id);
+            relaying = "";
+            avoid_inf_recursion.Remove(v.id);
 
 			// habitat data
 			volume = Habitat.tot_volume(v);
