@@ -868,6 +868,7 @@ namespace KERBALISM
 						case "ModuleRadioisotopeGenerator": process_radioisotope_generator(p, m); break;
 						case "ModuleCryoTank": process_cryotank(p, m); break;
 						case "ModuleRTAntenna": process_rtantenna(p, m); break;
+						case "ModuleDataTransmitter": process_datatransmitter(m as ModuleDataTransmitter); break;
 					}
 				}
 			}
@@ -1213,6 +1214,11 @@ namespace KERBALISM
 		{
 			float ec_cost = Lib.ReflectionValue<float>(m, "EnergyCost");
 			resource("ElectricCharge").consume(ec_cost, "communications");
+		}
+
+		void process_datatransmitter(ModuleDataTransmitter mdt)
+		{
+			resource("ElectricCharge").consume(mdt.packetResourceCost, "communications (transmitting)");
 		}
 
 		Dictionary<string, simulated_resource> resources = new Dictionary<string, simulated_resource>();
