@@ -34,11 +34,11 @@ namespace KERBALISM
 						{
 							switch (Settings.UnlinkedControl)
 							{
-								case UnlinkedCtrl.none: subtext = "Remote control disabled"; break;
-								case UnlinkedCtrl.limited: subtext = "Limited control available"; break;
+								case UnlinkedCtrl.none: subtext = Localizer.Format("#KERBALISM_UI_noctrl"); break;
+								case UnlinkedCtrl.limited: subtext = Localizer.Format("#KERBALISM_UI_limitedcontrol"); break;
 							}
 						}
-						Message.Post(Severity.warning, Lib.BuildString(Localizer.Format("#KERBALISM_UI_signallost"), " < b>", v.vesselName, "</b>"), subtext);
+						Message.Post(Severity.warning, Lib.BuildString(Localizer.Format("#KERBALISM_UI_signallost"), " <b>", v.vesselName, "</b>"), subtext);
 					}
 				}
 				else if (vd.msg_signal && conn.linked)
