@@ -867,6 +867,7 @@ namespace KERBALISM
 						case "FissionGenerator": process_fission_generator(p, m); break;
 						case "ModuleRadioisotopeGenerator": process_radioisotope_generator(p, m); break;
 						case "ModuleCryoTank": process_cryotank(p, m); break;
+						case "ModuleRTAntenna": process_rtantenna(p, m); break;
 					}
 				}
 			}
@@ -1208,6 +1209,11 @@ namespace KERBALISM
 			resource("ElectricCharge").consume(cooling_cost * Lib.Capacity(p, fuel_name) * 0.001, "cryotank");
 		}
 
+		void process_rtantenna(Part p, PartModule m)
+		{
+			float ec_cost = Lib.ReflectionValue<float>(m, "EnergyCost");
+			resource("ElectricCharge").consume(ec_cost, "communications");
+		}
 
 		Dictionary<string, simulated_resource> resources = new Dictionary<string, simulated_resource>();
 		List<simulated_recipe> recipes = new List<simulated_recipe>();
