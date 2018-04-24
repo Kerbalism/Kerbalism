@@ -429,24 +429,27 @@ namespace KERBALISM
 				// scale part icons of the radial container variants
 				switch (p.name)
 				{
-					case "kerbalism-container-radial-small": p.iconPrefab.transform.GetChild(0).localScale *= 0.66f; p.iconScale *= 0.66f; break;
-					case "kerbalism-container-radial-medium": p.iconPrefab.transform.GetChild(0).localScale *= 1.00f; p.iconScale *= 1.00f; break;
-					case "kerbalism-container-radial-big": p.iconPrefab.transform.GetChild(0).localScale *= 1.33f; p.iconScale *= 1.33f; break;
-				}
+                    case "kerbalism-container-radial-small": p.iconPrefab.transform.GetChild(0).localScale *= 0.60f; p.iconScale *= 0.60f; break;
+                    case "kerbalism-container-radial-medium": p.iconPrefab.transform.GetChild(0).localScale *= 0.85f; p.iconScale *= 0.85f; break;
+                    case "kerbalism-container-radial-big": p.iconPrefab.transform.GetChild(0).localScale *= 1.10f; p.iconScale *= 1.10f; break;
+                    case "kerbalism-container-radial-huge": p.iconPrefab.transform.GetChild(0).localScale *= 1.33f; p.iconScale *= 1.33f; break;
+                    case "kerbalism-container-inline-375": p.iconPrefab.transform.GetChild(0).localScale *= 1.33f; p.iconScale *= 1.33f; break;				}
 
 				// force a non-lexical order in the editor
 				switch (p.name)
 				{
-					case "kerbalism-container-inline-0625": p.title = Lib.BuildString("<size=1><color=#00000000>0</color></size>", p.title); break;
-					case "kerbalism-container-inline-125": p.title = Lib.BuildString("<size=1><color=#00000000>1</color></size>", p.title); break;
-					case "kerbalism-container-inline-250": p.title = Lib.BuildString("<size=1><color=#00000000>2</color></size>", p.title); break;
-					case "kerbalism-container-radial-small": p.title = Lib.BuildString("<size=1><color=#00000000>3</color></size>", p.title); break;
-					case "kerbalism-container-radial-medium": p.title = Lib.BuildString("<size=1><color=#00000000>4</color></size>", p.title); break;
-					case "kerbalism-container-radial-big": p.title = Lib.BuildString("<size=1><color=#00000000>5</color></size>", p.title); break;
-					case "kerbalism-greenhouse": p.title = Lib.BuildString("<size=1><color=#00000000>6</color></size>", p.title); break;
-					case "kerbalism-gravityring": p.title = Lib.BuildString("<size=1><color=#00000000>7</color></size>", p.title); break;
-					case "kerbalism-activeshield": p.title = Lib.BuildString("<size=1><color=#00000000>8</color></size>", p.title); break;
-					case "kerbalism-chemicalplant": p.title = Lib.BuildString("<size=1><color=#00000000>9</color></size>", p.title); break;
+					case "kerbalism-container-inline-0625": p.title = Lib.BuildString("<size=1><color=#00000000>00</color></size>", p.title); break;
+					case "kerbalism-container-inline-125": p.title = Lib.BuildString("<size=1><color=#00000000>01</color></size>", p.title); break;
+					case "kerbalism-container-inline-250": p.title = Lib.BuildString("<size=1><color=#00000000>02</color></size>", p.title); break;
+                    case "kerbalism-container-inline-375": p.title = Lib.BuildString("<size=1><color=#00000000>03</color></size>", p.title); break;
+                    case "kerbalism-container-radial-small": p.title = Lib.BuildString("<size=1><color=#00000000>04</color></size>", p.title); break;
+					case "kerbalism-container-radial-medium": p.title = Lib.BuildString("<size=1><color=#00000000>05</color></size>", p.title); break;
+					case "kerbalism-container-radial-big": p.title = Lib.BuildString("<size=1><color=#00000000>06</color></size>", p.title); break;
+                    case "kerbalism-container-radial-huge": p.title = Lib.BuildString("<size=1><color=#00000000>07</color></size>", p.title); break;
+                    case "kerbalism-greenhouse": p.title = Lib.BuildString("<size=1><color=#00000000>08</color></size>", p.title); break;
+					case "kerbalism-gravityring": p.title = Lib.BuildString("<size=1><color=#00000000>09</color></size>", p.title); break;
+					case "kerbalism-activeshield": p.title = Lib.BuildString("<size=1><color=#00000000>10</color></size>", p.title); break;
+					case "kerbalism-chemicalplant": p.title = Lib.BuildString("<size=1><color=#00000000>11</color></size>", p.title); break;
 				}
 			}
 		}
