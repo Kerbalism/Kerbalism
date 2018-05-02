@@ -70,5 +70,10 @@ namespace KERBALISM
 		{
 			return CurrentSpinRate > 0.0f;
 		}
+
+		public bool IsStopping()
+		{
+			return rotationRateGoal == 0.0f;
+		}
 	}
 }

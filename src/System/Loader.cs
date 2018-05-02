@@ -31,11 +31,11 @@ namespace KERBALISM
 			// inject MM patches on-the-fly, so that profile/features can be queried with NEEDS[]
 			inject(root, "Profile", Lib.UppercaseFirst(Settings.Profile));
 			if (Features.Reliability) inject(root, "Feature", "Reliability");
+			if (Features.Deploy) inject(root, "Feature", "Deploy");
 			if (Features.SpaceWeather) inject(root, "Feature", "SpaceWeather");
 			if (Features.Automation) inject(root, "Feature", "Automation");
 			if (Features.Science) inject(root, "Feature", "Science");
 			if (Features.Radiation) inject(root, "Feature", "Radiation");
-			if (Features.Deploy) inject(root, "Feature", "Deploy");
 			if (Features.Shielding) inject(root, "Feature", "Shielding");
 			if (Features.LivingSpace) inject(root, "Feature", "LivingSpace");
 			if (Features.Comfort) inject(root, "Feature", "Comfort");
@@ -77,4 +77,3 @@ namespace KERBALISM
 	}
 
 } // KERBALISM
-

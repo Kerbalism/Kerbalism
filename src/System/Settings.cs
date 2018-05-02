@@ -92,11 +92,11 @@ namespace KERBALISM
 		public static string Profile;                           // name of profile to use, if any
 
 		// user-defined features
-		public static bool Reliability;                       // component malfunctions and critical failures
-		public static bool Deploy;
-		public static bool Science;                           // science data storage, transmission and analysis
-		public static bool SpaceWeather;                      // coronal mass ejections
-		public static bool Automation;                        // control vessel components using scripts
+		public static bool Reliability;                         // component malfunctions and critical failures
+		public static bool Deploy;                              // add EC cost to keep module working/animation, add EC cost to Extend\Retract
+		public static bool Science;                             // science data storage, transmission and analysis
+		public static bool SpaceWeather;                        // coronal mass ejections
+		public static bool Automation;                          // control vessel components using scripts
 
 		// temperature
 		public static double SurvivalTemperature;               // ideal living temperature

@@ -1,11 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using UnityEngine;
+using KSP.Localization;
 
 
 namespace KERBALISM
 {
-
 
 	public sealed class Habitat : PartModule, ISpecifics, IConfigurable
 	{
@@ -13,10 +11,11 @@ namespace KERBALISM
 		[KSPField] public double volume = 0.0;            // habitable volume in m^3, deduced from bounding box if not specified
 		[KSPField] public double surface = 0.0;           // external surface in m^2, deduced from bounding box if not specified
 		[KSPField] public string inflate = string.Empty;  // inflate animation, if any
-		[KSPField] public bool toggle = true;           // show the enable/disable toggle
+		[KSPField] public bool   toggle = true;           // show the enable/disable toggle
 
 		// persistence
 		[KSPField(isPersistant = true)] public State state = State.enabled;
+		[KSPField(isPersistant = true)] private double perctDeployed = 0;
 
 		// rmb ui status strings
 		[KSPField(guiActive = false, guiActiveEditor = true, guiName = "#KERBALISM_Habitat_Surface")] public string Volume;
@@ -25,11 +24,24 @@ namespace KERBALISM
 		// animations
 		Animator inflate_anim;
 
+		[KSPField] public bool animBackwards;            // invert animation (case state is deployed but it is showing the part retracted)
+
+		private bool hasCLS;
+		private GravityRing gravityRing;
+		private bool hasGravityRing;                     // Alpha test to create a habitat with GravityRing
+
 		// pseudo-ctor
 		public override void OnStart(StartState state)
 		{
 			// don't break tutorial scenarios
 			if (Lib.DisableScenario(this)) return;
+
+			// check if has Connected Living Space mod
+			hasCLS = Lib.HasAssembly("ConnectedLivingSpace");
+
+			// if part has Gravity Ring, find it.
+			gravityRing = part.FindModuleImplementing<GravityRing>();
+			hasGravityRing = gravityRing != null;
 
 			// calculate habitat internal volume
 			if (volume <= double.Epsilon) volume = Lib.PartVolume(part);
@@ -47,6 +59,14 @@ namespace KERBALISM
 
 			// create animators
 			inflate_anim = new Animator(part, inflate);
+
+			perctDeployed = Lib.Level(part, "Atmosphere", true);
+
+			if (perctDeployed == 1)
+			{
+				RefreshDialog();
+				SetPassable(true);
+			}
 
 			// configure on start
 			Configure(true);
@@ -85,7 +105,6 @@ namespace KERBALISM
 			}
 		}
 
-
 		void set_flow(bool b)
 		{
 			Lib.SetResourceFlow(part, "Atmosphere", b);
@@ -93,58 +112,74 @@ namespace KERBALISM
 			Lib.SetResourceFlow(part, "Shielding", b);
 		}
 
-
 		State equalize()
 		{
 			// in flight
 			if (Lib.IsFlight())
 			{
-				// shortcuts
-				resource_info vessel_atmo = ResourceCache.Info(vessel, "Atmosphere");
+				double atmosphereAmount = 0;
+				double atmosphereMaxAmount = 0;
+				double partsHabVolume = 0;
+
+				// Get all habs non-inflatable in the vessel
+				foreach (Habitat partHabitat in vessel.FindPartModulesImplementing<Habitat>())
+				{
+					if (partHabitat.inflate.Length == 0)
+					{
+						PartResource t = partHabitat.part.Resources["Atmosphere"];
+						// If has the atmosphere resource
+						if (t != null)
+						{
+							atmosphereAmount += t.amount;
+							atmosphereMaxAmount += t.maxAmount;
+							partsHabVolume += partHabitat.volume;
+						}
+					}
+				}
+
+				// case if it has only one hab part and it is inflate
+				// sample: proto + inflate habitat
+				if (atmosphereMaxAmount == 0) return State.equalizing;
+
 				PartResource hab_atmo = part.Resources["Atmosphere"];
 
-				// get level of atmosphere in vessel and part
-				double vessel_level = vessel_atmo.level;
-				double hab_level = Lib.Level(part, "Atmosphere", true);
-
-				// equalization succeeded if the levels are the same
-				// note: this behave correctly in the case the hab is the only enabled one or not
-				if (Math.Abs(vessel_level - hab_level) < 0.01) return State.enabled;
-
-				// in case vessel pressure is dropping during equalization, it mean that pressure
-				// control is not enough so we just enable the hab while not fully equalized
-				if (vessel_atmo.rate < 0.0)
+				// equalization succeeded if the level is 100%
+				if (perctDeployed == 1)
 				{
+					SetPassable(true);
+					RefreshDialog();
+					if (hasGravityRing)
+					{
+						if (gravityRing.animBackwards) gravityRing.deployed = false;
+						else gravityRing.deployed = true;
+					}
 					return State.enabled;
 				}
 
 				// determine equalization speed
 				// we deal with the case where a big hab is sucking all atmosphere from the rest of the vessel
-				double amount = Math.Min(Cache.VesselInfo(vessel).volume, volume) * equalize_speed * Kerbalism.elapsed_s;
+				double amount = Math.Min(partsHabVolume, volume) * equalize_speed * Kerbalism.elapsed_s;
 
-				// vessel pressure is higher
-				if (vessel_level > hab_level)
+				// the others habs pressure are higher or can consume until 50% of the no inflate module
+				// 50% is temporary solution for do inflate faster
+				if ((atmosphereAmount / atmosphereMaxAmount) > perctDeployed)
 				{
-					// clamp amount to what's available in the vessel and what can fit in the part
-					amount = Math.Min(amount, vessel_atmo.amount);
+					// clamp amount to what's available in the hab and what can fit in the part
+					amount = Math.Min(amount, atmosphereAmount);
 					amount = Math.Min(amount, hab_atmo.maxAmount - hab_atmo.amount);
 
-					// consume from all enabled habs in the vessel
-					vessel_atmo.Consume(amount);
+					// consume from all enabled habs in the vessel that are not Inflate
+					foreach (Habitat partHabitat in vessel.FindPartModulesImplementing<Habitat>())
+					{
+						if (partHabitat.inflate.Length == 0)
+						{
+							PartResource t = partHabitat.part.Resources["Atmosphere"];
+							t.amount -= (amount * (t.amount / atmosphereAmount));
+						}
+					}
 
 					// produce in the part
 					hab_atmo.amount += amount;
-				}
-				// vessel pressure is lower
-				else
-				{
-					// consume from the part, clamp amount to what's available in the part
-					amount = Math.Min(amount, hab_atmo.amount);
-					hab_atmo.amount -= amount;
-
-					// produce in all enabled habs in the vessel
-					// (attempt recovery, but dump overboard if there is no capacity left)
-					vessel_atmo.Produce(amount);
 				}
 
 				// equalization still in progress
@@ -158,27 +193,61 @@ namespace KERBALISM
 				hab_atmo.amount = hab_atmo.maxAmount;
 
 				// return new state
+				SetPassable(true);
+				RefreshDialog();
 				return State.enabled;
 			}
 		}
-
 
 		State venting()
 		{
 			// in flight
 			if (Lib.IsFlight())
 			{
+				double atmosphereAmount = 0;
+				double atmosphereMaxAmount = 0;
+				// Get all habs no inflate in the vessel
+				foreach (Habitat partHabitat in vessel.FindPartModulesImplementing<Habitat>())
+				{
+					if (partHabitat.state == State.enabled || partHabitat.state == State.equalizing)
+					{
+						PartResource t = partHabitat.part.Resources["Atmosphere"];
+						// If has the atmosphere resource
+						if (t != null)
+						{
+							atmosphereAmount += t.amount;
+							atmosphereMaxAmount += t.maxAmount;
+						}
+					}
+				}
+
 				// shortcuts
 				PartResource atmo = part.Resources["Atmosphere"];
 				PartResource waste = part.Resources["WasteAtmosphere"];
 
+				// get level of atmosphere in part
+				double hab_level = Lib.Level(part, "Atmosphere", true);
+
 				// venting succeeded if the amount reached zero
-				if (atmo.amount <= double.Epsilon && waste.amount <= double.Epsilon) return State.disabled;
+				if (atmo.amount <= double.Epsilon && waste.amount <= double.Epsilon)
+				{
+					return State.disabled;
+				}
 
 				// how much to vent
 				double rate = volume * equalize_speed * Kerbalism.elapsed_s;
 				double atmo_k = atmo.amount / (atmo.amount + waste.amount);
 				double waste_k = waste.amount / (atmo.amount + waste.amount);
+
+				// produce from all enabled habs in the vessel
+				foreach (Habitat partHabitat in vessel.FindPartModulesImplementing<Habitat>())
+				{
+					if (partHabitat.state == State.enabled || partHabitat.state == State.equalizing)
+					{
+						PartResource t = partHabitat.part.Resources["Atmosphere"];
+						t.amount += (Math.Max(atmo.amount - rate * atmo_k, 0.0) * (t.amount / atmosphereAmount));
+					}
+				}
 
 				// consume from the part, clamp amount to what's available
 				atmo.amount = Math.Max(atmo.amount - rate * atmo_k, 0.0);
@@ -199,29 +268,26 @@ namespace KERBALISM
 			}
 		}
 
-
 		public void Update()
 		{
 			// update ui
 			string status_str = string.Empty;
 			switch (state)
 			{
-				case State.enabled: status_str = "enabled"; break;
-				case State.disabled: status_str = "disabled"; break;
-				case State.equalizing: status_str = inflate.Length == 0 ? "equalizing..." : "inflating..."; break;
-				case State.venting: status_str = inflate.Length == 0 ? "venting..." : "deflating..."; break;
+				case State.enabled:    status_str = Localizer.Format("#KERBALISM_Generic_ENABLED"); break;
+				case State.disabled:   status_str = Localizer.Format("#KERBALISM_Generic_DISABLED"); break;
+				case State.equalizing: status_str = inflate.Length == 0 ? Localizer.Format("#KERBALISM_Habitat_equalizing") : Localizer.Format("#KERBALISM_Habitat_inflating"); break;
+				case State.venting:    status_str = inflate.Length == 0 ? Localizer.Format("#KERBALISM_Habitat_venting") : Localizer.Format("#KERBALISM_Habitat_deflating"); break;
 			}
 			Events["Toggle"].guiName = Lib.StatusToggle("Habitat", status_str);
-
-			// if there is an inflate animation, set still animation from pressure
-			inflate_anim.still(Lib.Level(part, "Atmosphere", true));
 		}
-
 
 		public void FixedUpdate()
 		{
 			// if part is manned (even in the editor), force enabled
 			if (Lib.IsManned(part) && state != State.enabled) state = State.equalizing;
+
+			perctDeployed = Lib.Level(part, "Atmosphere", true);
 
 			// state machine
 			switch (state)
@@ -241,9 +307,25 @@ namespace KERBALISM
 
 				case State.venting:
 					set_flow(false);
-					state = venting();
+					// Just do Venting when has no gravityRing or when the gravity ring is not spinning.
+					if(hasGravityRing)
+					{
+						if(gravityRing.rotateIsTransform)
+						{
+							if (!gravityRing.rotate_transf.IsRotating()) state = venting();
+						}
+						else
+						{
+							if (!gravityRing.rotate_anim.playing()) state = venting();
+						}
+					}
+					else state = venting();
 					break;
 			}
+
+			// if there is an inflate animation, set still animation from pressure
+			if (animBackwards) inflate_anim.still(Math.Abs(Lib.Level(part, "Atmosphere", true)-1));
+			else inflate_anim.still(Lib.Level(part, "Atmosphere", true));
 
 			// instant pressurization and scrubbing inside breathable atmosphere
 			if (!Lib.IsEditor() && Cache.VesselInfo(vessel).breathable && inflate.Length == 0)
@@ -254,7 +336,6 @@ namespace KERBALISM
 				if (Features.Poisoning) waste.amount = 0.0;
 			}
 		}
-
 
 		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true)]
 		public void Toggle()
@@ -269,24 +350,32 @@ namespace KERBALISM
 			// state switching
 			switch (state)
 			{
-				case State.enabled: state = State.venting; break;
-				case State.disabled: state = State.equalizing; break;
-				case State.equalizing: state = State.venting; break;
-				case State.venting: state = State.equalizing; break;
+				case State.enabled:    state = State.venting;    break;
+				case State.disabled:   state = State.equalizing; break;
+				case State.equalizing: state = State.venting;    break;
+				case State.venting:    state = State.equalizing; break;
+			}
+
+			if (state == State.venting)
+			{
+				SetPassable(false);
+				RefreshDialog();
+				if (hasGravityRing)
+				{
+					if (gravityRing.animBackwards) gravityRing.deployed = true;
+					else gravityRing.deployed = false;
+				}
 			}
 		}
 
-
 		// action groups
 		[KSPAction("#KERBALISM_Habitat_Action")] public void Action(KSPActionParam param) { Toggle(); }
-
 
 		// part tooltip
 		public override string GetInfo()
 		{
 			return Specs().info();
 		}
-
 
 		// specifics support
 		public Specifics Specs()
@@ -297,7 +386,6 @@ namespace KERBALISM
 			if (inflate.Length > 0) specs.add("Inflatable", "yes");
 			return specs;
 		}
-
 
 		// return habitat volume in a vessel in m^3
 		public static double tot_volume(Vessel v)
@@ -357,6 +445,44 @@ namespace KERBALISM
 			else return "cramped";
 		}
 
+		// enable/disable dialog "Transfer crew" on UI
+		void RefreshDialog()
+		{
+			if (HighLogic.LoadedSceneIsEditor)
+			{
+				GameEvents.onEditorPartEvent.Fire(ConstructionEventType.PartTweaked, part);
+				GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+			}
+			else if (HighLogic.LoadedSceneIsFlight)
+			{
+				GameEvents.onVesselWasModified.Fire(this.vessel);
+			}
+
+			Lib.Debug("Refreshing Dialog");
+
+			part.CheckTransferDialog();
+			MonoUtilities.RefreshContextWindows(part);
+		}
+
+		void SetPassable(bool isPassable)
+		{
+			if (hasCLS)
+			{
+				// for each module
+				foreach (PartModule m in part.Modules)
+				{
+					if (m.moduleName == "ModuleConnectedLivingSpace")
+					{
+						Lib.ReflectionValue(m, "passable", isPassable);
+						Lib.Debug("Part '{0}', CLS has been {1}", part.partInfo.title, isPassable ? "enabled" : "disabled");
+					}
+				}
+			}
+
+			Lib.Debug("CrewCapacity: '{0}'", part.CrewCapacity);
+			Lib.Debug("CrewTransferAvailable: '{0}'", isPassable);
+			part.crewTransferAvailable = isPassable;
+		}
 
 		// habitat state
 		public enum State
@@ -371,8 +497,4 @@ namespace KERBALISM
 		const double equalize_speed = 0.1; // equalization/venting speed per-second, in proportion to volume
 	}
 
-
-
 } // KERBALISM
-
-
