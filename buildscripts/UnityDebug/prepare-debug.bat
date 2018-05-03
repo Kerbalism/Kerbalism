@@ -1,6 +1,6 @@
 rem Generate the MDB file needed by UnityVS and Monodevelop for debugging
 rem For information on how to setup your debugging environment.
-rem see https://github.com/ShotgunNinja/Kerbalism/tree/master/misc/VisualStudio/Readme.md
+rem see https://github.com/MoreRobustThanYou/Kerbalism/tree/master/CONTRIBUTING.md
 
 @echo off
 
