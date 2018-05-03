@@ -359,7 +359,8 @@ sysinfo.txt
 *.apk
 *.unitypackage
 
-Kerbalism-*.zip
+Kerbalism*.zip
+Kerbalism.dll
 
 # KSP DLLs
 KSPAssets.dll
