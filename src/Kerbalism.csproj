@@ -29,7 +29,7 @@
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
-    <OutputPath>$(KSPDEVDIR)\GameData\Kerbalism\</OutputPath>
+    <OutputPath Condition="Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">$(KSPDEVDIR)\GameData\Kerbalism\</OutputPath>
     <DebugSymbols>True</DebugSymbols>
     <DebugType>Full</DebugType>
     <Optimize>False</Optimize>
@@ -38,7 +38,7 @@
     <StartAction>Project</StartAction>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
-    <OutputPath>$(KSPDEVDIR)\GameData\Kerbalism\</OutputPath>
+    <OutputPath Condition="Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">$(KSPDEVDIR)\GameData\Kerbalism\</OutputPath>
     <DebugSymbols>False</DebugSymbols>
     <DebugType>None</DebugType>
     <Optimize>True</Optimize>
@@ -49,7 +49,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
-    <OutputPath>$(KSPDEVDIR)\GameData\Kerbalism\</OutputPath>
+    <OutputPath Condition="Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">$(KSPDEVDIR)\GameData\Kerbalism\</OutputPath>
     <WarningLevel>4</WarningLevel>
     <DefineConstants>
     </DefineConstants>
@@ -58,7 +58,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
-    <OutputPath>$(KSPDEVDIR)\GameData\Kerbalism\</OutputPath>
+    <OutputPath Condition="Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">$(KSPDEVDIR)\GameData\Kerbalism\</OutputPath>
     <ErrorReport>prompt</ErrorReport>
     <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
     <DefineConstants>TRACE;DEBUG;DEVELOPMENT;ENABLE_PROFILER;KERBALISM_PROFILER</DefineConstants>
