@@ -32,7 +32,7 @@ namespace KERBALISM
 			CurvedPanel,
 			FissionGenerator,
 			RadioisotopeGenerator,
-			CryoTank,
+			//CryoTank,
 			Unknown,
 			FNGenerator
 		}
@@ -64,7 +64,7 @@ namespace KERBALISM
 				case "ModuleCurvedSolarPanel": return module_type.CurvedPanel;
 				case "FissionGenerator": return module_type.FissionGenerator;
 				case "ModuleRadioisotopeGenerator": return module_type.RadioisotopeGenerator;
-				case "ModuleCryoTank": return module_type.CryoTank;
+				//case "ModuleCryoTank": return module_type.CryoTank;
 				case "FNGenerator": return module_type.FNGenerator;
 			}
 			return module_type.Unknown;
@@ -129,7 +129,7 @@ namespace KERBALISM
 						case module_type.CurvedPanel: ProcessCurvedPanel(v, p, m, module_prefab, part_prefab, vi, ec, elapsed_s); break;
 						case module_type.FissionGenerator: ProcessFissionGenerator(v, p, m, module_prefab, ec, elapsed_s); break;
 						case module_type.RadioisotopeGenerator: ProcessRadioisotopeGenerator(v, p, m, module_prefab, ec, elapsed_s); break;
-						case module_type.CryoTank: ProcessCryoTank(v, p, m, module_prefab, resources, elapsed_s); break;
+						//case module_type.CryoTank: ProcessCryoTank(v, p, m, module_prefab, resources, elapsed_s); break;
 						case module_type.FNGenerator: ProcessFNGenerator(v, p, m, module_prefab, ec, elapsed_s); break;
 					}
 				}
@@ -563,7 +563,7 @@ namespace KERBALISM
 		}
 
 
-		static void ProcessCryoTank(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule simple_boiloff, vessel_resources resources, double elapsed_s)
+		/*static void ProcessCryoTank(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule simple_boiloff, vessel_resources resources, double elapsed_s)
 		{
 			// note: cryotank module already does a post-facto simulation of background boiling, and we could use that for the boiling
 			// however, it also does simulate the ec consumption that way, so we have to disable the post-facto simulation
@@ -670,7 +670,7 @@ namespace KERBALISM
 				// disable post-facto simulation
 				Lib.Proto.Set(m, "LastUpdateTime", v.missionTime);
 			}
-		}
+		}*/
 	}
 
 
