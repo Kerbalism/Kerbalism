@@ -65,7 +65,7 @@
     <OutputPath Condition="!Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">obj\Kerbalism\</OutputPath>
     <ErrorReport>prompt</ErrorReport>
     <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
-    <DefineConstants>TRACE;DEBUG;DEVELOPMENT;ENABLE_PROFILER;KERBALISM_PROFILER</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;DEVELOPMENT;ENABLE_PROFILER;DEBUG_PROFILER</DefineConstants>
     <DebugType>full</DebugType>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>

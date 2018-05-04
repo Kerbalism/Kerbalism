@@ -1,238 +1,293 @@
-﻿#if KERBALISM_PROFILER
-
+﻿#if DEBUG_PROFILER
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using KSP.Localization;
 using UnityEngine;
-
+#endif
 
 namespace KERBALISM
 {
+#if !DEBUG_PROFILER
+    /// <summary> Simple profiler for measuring the execution time of code placed between the Start and Stop methods. </summary>
+    public sealed class Profiler
+    {
+#endif
+#if DEBUG_PROFILER
+    /// <summary> Simple profiler for measuring the execution time of code placed between the Start and Stop methods. </summary>
+    [KSPAddon(KSPAddon.Startup.EveryScene, false)]
+    public sealed class Profiler: MonoBehaviour
+    {
+        // constants
+        private const float width = 500.0f;
+        private const float height = 500.0f;
+
+        private const float value_width = 65.0f;
+
+        // visible flag
+        private static bool visible = false;
+        private static bool show_zero = true;
+
+        // popup window
+        private static MultiOptionDialog multi_dialog;
+        private static PopupDialog popup_dialog;
+        private static DialogGUIVerticalLayout dialog_items;
+
+        // an entry in the profiler
+        private class Entry
+        {
+            public double start;        // used to measure call time
+            public long calls;          // number of calls in current simulation step
+            public double time;         // time in current simulation step
+            public long prev_calls;     // number of calls in previous simulation step
+            public double prev_time;    // time in previous simulation step
+            public long tot_calls;      // number of calls in total used for avg calculation
+            public double tot_time;     // total time used for avg calculation
+
+            public string last_txt = "";        // last call time display string
+            public string avg_txt = "";         // average call time display string
+            public string calls_txt = "";       // number of calls display string
+            public string avg_calls_txt = "";   // number of average calls display string
+        }
+
+        // store all entries
+        private Dictionary<string, Entry> entries = new Dictionary<string, Entry>();
+
+        // display update timer
+        private static double update_timer = Lib.Clocks();
+        private static double timeout = Stopwatch.Frequency / update_fps;
+        private const double update_fps = 5.0;      // Frames per second the entry value display will update.
+        private static long tot_frames = 0;         // total physics frames used for avg calculation
+        private static string tot_frames_txt = "";  // total physics frames display string
 
 
-	[KSPAddon(KSPAddon.Startup.MainMenu, true)]
-	public sealed class Profiler : MonoBehaviour
-	{
-		// constants
-		const float width = 400.0f;
-		const float height = 500.0f;
-		const float top_height = 20.0f;
-		const float bot_height = 20.0f;
-		const float margin = 10.0f;
-		const float spacing = 10.0f;
+        // permit global access
+        public static Profiler Fetch { get; private set; } = null;
 
-		// permit global access
-		private static Profiler instance = null;
+        //  constructor
+        public Profiler()
+        {
+            // enable global access
+            Fetch = this;
 
-		// styles
-		GUIStyle win_style;
-		GUIStyle top_style;
-		GUIStyle name_style;
-		GUIStyle value_style;
+            // create window
+            dialog_items = new DialogGUIVerticalLayout();
+            multi_dialog = new MultiOptionDialog(
+               "TrajectoriesProfilerWindow",
+               "",
+               GetTitle(),
+               HighLogic.UISkin,
+               new Rect(0.5f, 0.5f, width, height),
+               new DialogGUIBase[]
+               {
+                   new DialogGUIVerticalLayout(false, false, 0, new RectOffset(), TextAnchor.UpperCenter,
+                       // create average reset and show zero calls buttons
+                       new DialogGUIHorizontalLayout(false, false,
+                           new DialogGUIButton(Localizer.Format("#autoLOC_900305"),
+                               OnButtonClick_Reset, () => true, 75, 25, false),
+                           new DialogGUIToggle(() => { return show_zero; },"Show zero calls", OnButtonClick_ShowZero),
+                           new DialogGUILabel(() => { return tot_frames_txt; }, value_width + 50f)),
+                       // create header line
+                       new DialogGUIHorizontalLayout(
+                           new DialogGUILabel("<b>   NAME</b>", true),
+                           new DialogGUILabel("<b>LAST</b>", value_width),
+                           new DialogGUILabel("<b>AVG</b>", value_width),
+                           new DialogGUILabel("<b>CALLS</b>", value_width - 15f),
+                           new DialogGUILabel("<b>AVG</b>", value_width - 10f))),
+                   // create scrollbox for entry data
+                   new DialogGUIScrollList(new Vector2(), false, true, dialog_items)
+               });
+        }
 
-		// store window id
-		int win_id;
+        // Awake is called only once when the script instance is being loaded. Used in place of the constructor for initialization.
+        private void Awake()
+        {
+            // create popup dialog
+            popup_dialog = PopupDialog.SpawnPopupDialog(multi_dialog, false, HighLogic.UISkin, false, "");
+            if (popup_dialog != null)
+                popup_dialog.gameObject.SetActive(false);
+        }
 
-		// store window geometry
-		Rect win_rect;
+        private void Update()
+        {
+            if ((Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)) &&
+                     Input.GetKeyUp(KeyCode.P) && popup_dialog != null)
+            {
+                visible = !visible;
+                popup_dialog.gameObject.SetActive(visible);
+            }
 
-		// store dragbox geometry
-		Rect drag_rect;
+            // skip updates for a smoother display
+            if (((Lib.Clocks() - update_timer) > timeout) && visible)
+            {
+                update_timer = Lib.Clocks();
+                Calculate();
+            }
+        }
 
-		// used by scroll window mechanics
-		Vector2 scroll_pos;
+        private static void Calculate()
+        {
+            foreach (KeyValuePair<string, Entry> p in Fetch.entries)
+            {
+                Entry e = p.Value;
 
-		// visible flag
-		bool visible;
+                if (e.prev_calls > 0L)
+                {
+                    e.last_txt = Lib.Microseconds((ulong)(e.prev_time / e.prev_calls)).ToString("F2") + "ms";
+                    e.calls_txt = e.prev_calls.ToString();
+                }
+                else if (show_zero)
+                {
+                    e.last_txt = "ms";
+                    e.calls_txt = "0";
+                }
 
-		// an entry in the profiler
-		class entry
-		{
-			public UInt64 start;        // used to measure call time
-			public UInt64 calls;        // number of calls in current simulation step
-			public UInt64 time;         // time in current simulation step
-			public UInt64 prev_calls;   // number of calls in previous simulation step
-			public UInt64 prev_time;    // time in previous simulation step
-			public UInt64 tot_calls;    // number of calls in total
-			public UInt64 tot_time;     // total time
+                e.avg_txt = (e.tot_calls > 0L ? Lib.Microseconds((ulong)(e.tot_time / e.tot_calls)).ToString("F2") : "") + "ms";
+                e.avg_calls_txt = tot_frames > 0L ? ((float)e.tot_calls / (float)tot_frames).ToString("F3") : "0";
+            }
 
-		}
+            tot_frames_txt = tot_frames.ToString() + " Frames";
+        }
 
-		// store all entries
-		Dictionary<string, entry> entries = new Dictionary<string, entry>();
+        private void FixedUpdate()
+        {
+            foreach (KeyValuePair<string, Entry> p in Fetch.entries)
+            {
+                Entry e = p.Value;
 
+                e.prev_calls = e.calls;
+                e.prev_time = e.time;
+                e.tot_calls += e.calls;
+                e.tot_time += e.time;
+                e.calls = 0L;
+                e.time = 0.0;
+            }
 
-		// ctor
-		Profiler()
-		{
-			// enable global access
-			instance = this;
+            ++tot_frames;
+        }
 
-			// generate unique id, hopefully
-			win_id = Lib.RandomInt(int.MaxValue);
+        private void OnDestroy()
+        {
+            Fetch = null;
+            if (popup_dialog != null)
+            {
+                popup_dialog.Dismiss();
+                popup_dialog = null;
+            }
+        }
 
-			// setup window geometry
-			win_rect = new Rect((Screen.width - width) * 0.5f, (Screen.height - height) * 0.5f, width, height);
+        private static string GetTitle()
+        {
+            switch (Localizer.CurrentLanguage)
+            {
+                case "es-es":
+                    return "Kerbalism Profiler";
+                case "ru":
+                    return "Провайдер Kerbalism";
+                case "zh-cn":
+                    return "Kerbalism 分析器";
+                case "ja":
+                    return "Kerbalism プロファイラ";
+                case "de-de":
+                    return "Kerbalism Profiler";
+                case "fr-fr":
+                    return "Kerbalism Profiler";
+                case "it-it":
+                    return "Kerbalism Profiler";
+                case "pt-br":
+                    return "Kerbalism perfil";
+                default:
+                    return "Kerbalism Profiler";
+            }
+        }
 
-			// setup dragbox geometry
-			drag_rect = new Rect(0.0f, 0.0f, width, top_height);
+        private static void OnButtonClick_Reset()
+        {
+            foreach (KeyValuePair<string, Entry> e in Fetch.entries)
+            {
+                e.Value.tot_calls = 0L;
+                e.Value.tot_time = 0.0;
+            }
 
-			// setup styles
-			win_style = new GUIStyle(HighLogic.Skin.window);
-			top_style = new GUIStyle();
-			name_style = new GUIStyle();
-			value_style = new GUIStyle();
-		}
+            tot_frames = 0L;
+        }
 
-		//  Awake is called only once when the script instance is being loaded. Used in place of the constructor for initialization.
-		public void Awake()
-		{
-			// keep it alive
-			DontDestroyOnLoad(this);
+        private static void OnButtonClick_ShowZero(bool inState)
+        {
+            show_zero = inState;
+        }
 
-			// setup styles
-			win_style.padding.top = 0;
-			win_style.padding.bottom = 0;
-			top_style.fixedHeight = top_height;
-			top_style.fontStyle = FontStyle.Bold;
-			top_style.alignment = TextAnchor.MiddleCenter;
-			name_style.fontSize = 10;
-			name_style.fixedWidth = 150.0f;
-			name_style.stretchWidth = false;
-			value_style.fontSize = 10;
-			value_style.fixedWidth = 75.0f;
-			value_style.stretchWidth = false;
-			value_style.alignment = TextAnchor.MiddleRight;
-		}
+        private void AddDialogItem(string e_name)
+        {
+            // add item
+            dialog_items.AddChild(
+                new DialogGUIHorizontalLayout(
+                    new DialogGUILabel("  " + e_name, true),
+                    new DialogGUILabel(() => { return entries[e_name].last_txt; }, value_width),
+                    new DialogGUILabel(() => { return entries[e_name].avg_txt; }, value_width),
+                    new DialogGUILabel(() => { return entries[e_name].calls_txt; }, value_width - 15f),
+                    new DialogGUILabel(() => { return entries[e_name].avg_calls_txt; }, value_width - 10f)));
 
-		// called every frame
-		public void OnGUI()
-		{
-			if (Lib.IsGame() && visible)
-			{
-				// clamp the window to the screen, so it can't be dragged outside
-				float offset_x = Math.Max(0.0f, -win_rect.xMin) + Math.Min(0.0f, Screen.width - win_rect.xMax);
-				float offset_y = Math.Max(0.0f, -win_rect.yMin) + Math.Min(0.0f, Screen.height - win_rect.yMax);
-				win_rect.xMin += offset_x;
-				win_rect.xMax += offset_x;
-				win_rect.yMin += offset_y;
-				win_rect.yMax += offset_y;
+            // required to force the Gui creation
+            Stack<Transform> stack = new Stack<Transform>();
+            stack.Push(dialog_items.uiItem.gameObject.transform);
+            dialog_items.children[dialog_items.children.Count - 1].Create(ref stack, HighLogic.UISkin);
+        }
+#endif
 
-				// draw the window
-				win_rect = GUILayout.Window(win_id, win_rect, render, "", win_style);
-			}
-		}
+        [System.Diagnostics.Conditional("DEBUG_PROFILER")]
+        /// <summary> Start a profiler entry. </summary>
+        public static void Start(string e_name)
+        {
+#if DEBUG_PROFILER
+            if (Fetch == null)
+                return;
 
+            if (!Fetch.entries.ContainsKey(e_name))
+            {
+                Fetch.entries.Add(e_name, new Entry());
+                Fetch.AddDialogItem(e_name);
+            }
 
-		// draw the window
-		void render(int id)
-		{
-			// draw pseudo-title
-			GUILayout.BeginHorizontal();
-			GUILayout.Label("Profiler", top_style);
-			GUILayout.EndHorizontal();
+            Fetch.entries[e_name].start = Lib.Clocks();
+#endif
+        }
 
-			// draw top spacing
-			GUILayout.Space(spacing);
+        [System.Diagnostics.Conditional("DEBUG_PROFILER")]
+        /// <summary> Stop a profiler entry. </summary>
+        public static void Stop(string e_name)
+        {
+#if DEBUG_PROFILER
+            if (Fetch == null)
+                return;
 
-			// draw entries
-			scroll_pos = GUILayout.BeginScrollView(scroll_pos, HighLogic.Skin.horizontalScrollbar, HighLogic.Skin.verticalScrollbar);
-			GUILayout.BeginHorizontal();
-			GUILayout.Label("<b>NAME</b>", name_style);
-			GUILayout.Label("<b>LAST</b>", value_style);
-			GUILayout.Label("<b>AVG</b>", value_style);
-			GUILayout.Label("<b>CALLS</b>", value_style);
-			GUILayout.EndHorizontal();
-			foreach (var pair in entries)
-			{
-				string e_name = pair.Key;
-				entry e = pair.Value;
-				GUILayout.BeginHorizontal();
-				GUILayout.Label(e_name, name_style);
-				GUILayout.Label(e.prev_calls > 0 ? Lib.Microseconds(e.prev_time / e.prev_calls).ToString("F2") : "", value_style);
-				GUILayout.Label(e.tot_calls > 0 ? Lib.Microseconds(e.tot_time / e.tot_calls).ToString("F2") : "", value_style);
-				GUILayout.Label(e.prev_calls.ToString(), value_style);
-				GUILayout.EndHorizontal();
-			}
-			GUILayout.EndScrollView();
+            Entry e = Fetch.entries[e_name];
 
-			// draw bottom spacing
-			GUILayout.Space(spacing);
+            ++e.calls;
+            e.time += Lib.Clocks() - e.start;
+#endif
+        }
 
-			// enable dragging
-			GUI.DragWindow(drag_rect);
-		}
+#if DEBUG_PROFILER
 
+        /// <summary> Profile a function scope. </summary>
+        public class ProfileScope : IDisposable
+        {
+            public ProfileScope(string name)
+            {
+                this.name = name;
+                Profiler.Start(name);
+            }
 
-		public void Update()
-		{
-			if ((Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)) && Input.GetKeyUp(KeyCode.P))
-			{
-				visible = !visible;
-			}
-		}
+            public void Dispose()
+            {
+                Profiler.Stop(name);
+            }
 
-
-		public void FixedUpdate()
-		{
-			foreach (var p in entries)
-			{
-				entry e = p.Value;
-				e.prev_calls = e.calls;
-				e.prev_time = e.time;
-				e.tot_calls += e.calls;
-				e.tot_time += e.time;
-				e.calls = 0;
-				e.time = 0;
-			}
-		}
-
-
-		// start an entry
-		public static void Start(string e_name)
-		{
-			if (instance == null) return;
-
-			if (!instance.entries.ContainsKey(e_name)) instance.entries.Add(e_name, new entry());
-
-			entry e = instance.entries[e_name];
-			e.start = Lib.Clocks();
-		}
-
-
-		// stop an entry
-		public static void Stop(string e_name)
-		{
-			if (instance == null) return;
-
-			entry e = instance.entries[e_name];
-
-			++e.calls;
-			e.time += Lib.Clocks() - e.start;
-		}
-	}
-
-
-	// profile a function scope
-	public class ProfileScope : IDisposable
-	{
-		public ProfileScope(string name)
-		{
-			this.name = name;
-			Profiler.Start(name);
-		}
-
-		public void Dispose()
-		{
-			Profiler.Stop(name);
-		}
-
-
-		private string name;
-	}
-
-
-} // KERBALISM
-
+            private string name;
+        }
 
 #endif
+    }
+
+} // KERBALISM
