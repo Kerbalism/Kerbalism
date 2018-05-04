@@ -21,7 +21,7 @@ Table of Contents
       1. [Learn to accept a No](#learn-to-accept-a-no)
    1. [How to Contribute](#how-to-contribute)
       1. [Where to Start](#where-to-start)
-      1. [Using Git and GitLab](#using-git-and-gitlab)
+      1. [Using Git and GitHub](#using-git-and-github)
          1. [Workflow for the Kerbalism mod](#workflow-for-the-kerbalism-mod)
          1. [How to submit pull requests](#how-to-submit-pull-requests)
       1. [Code Style](#code-style)
@@ -53,9 +53,9 @@ Bug reports are a very valuable contribution to the development of this mod - bu
 "Kerbalism doesn't work" is not a good bug report, because it sure works well for me. If it doesn't work for you, it is your responsibility to make clear which conditions lead to stuff going wrong.
 Good bug reports are effort and require time - but putting in that effort helps immensely to not waste developer time and get the bug fixed quickly.
 
-All bugs should be reported on GitLab, under this URL: https://gitlab.com/N70/Kerbalism/issues
+All bugs should be reported on GitHub, under this URL: https://github.com/MoreRobustThanYou/Kerbalism/issues
 
-You are free to mention any issues on the forum thread, but in the end, all issues must be registered on GitLab. This is because we use GitLab as a workflow management tool and the issues list as a checklist, and all the information and discussions for one specific issue are in one place as opposed to getting buried under posts in the forums.
+You are free to mention any issues on the forum thread, but in the end, all issues must be registered on GitHub. This is because we use GitHub as a workflow management tool and the issues list as a checklist, and all the information and discussions for one specific issue are in one place as opposed to getting buried under posts in the forums.
 
 *All* bug reports *must* contain the following information:
 
@@ -127,7 +127,7 @@ What would be best, of course, is to implement the feature yourself and submit a
 ## Gather feedback from the community
 
 When you are requesting a feature, even when it is for "personal use", it can still be good to bring in the community.
-Suggest the feature on the Forums, ask for Feedback from other users, create an issue on GitLab. Be responsive, and accept feedback and suggestions to make your suggestion even better ;)
+Suggest the feature on the Forums, ask for Feedback from other users, create an issue on GitHub. Be responsive, and accept feedback and suggestions to make your suggestion even better ;)
 
 
 ### Make sure that the feature is wanted
@@ -182,7 +182,7 @@ If you disagree with this assessment, the best way to convince us otherwise is t
 
 ## Where to suggest a feature
 
-Please suggest features by posting both in the [Forum thread](https://forum.kerbalspaceprogram.com/index.php?/topic/172400-131142-kerbalism-v1413) (so that users can also participate in the discussion) and create a GitLab issue on [our tracker](https://gitlab.com/N70/Kerbalism/issues).
+Please suggest features by posting both in the [Forum thread](https://forum.kerbalspaceprogram.com/index.php?/topic/172400-131142-kerbalism-v1413) (so that users can also participate in the discussion) and create a GitHub issue on [our tracker](https://github.com/MoreRobustThanYou/Kerbalism/issues).
 
 Make sure to explain the purpose of this feature, the advantages and the potential [impact](#consider-the-impact) on the mod.
 
@@ -226,15 +226,15 @@ Especially before writing new features, communication is paramount! Please visit
 [forum thread](https://forum.kerbalspaceprogram.com/index.php?/topic/172400-131142-kerbalism-v1413/), let other people know what you are working on,
 ask for Feedback, talk about the mod. This is crucial to avoid merge conflicts, duplicated or unnecessary work.
 
-## Using Git and GitLab
+## Using Git and GitHub
 
 Git is a distributed version control system used by a myriad of projects, including big players like the Linux Kernel, Android or even Windows!
 While Git in its simplest form is "only" a version control system, it also enables collaboration in a way that no other version control system ever could.
 
-To aid with this collaboration GitLab was created. GitLab is first and foremost a hoster for Git repositories. But it also includes tools for bug tracking,
+To aid with this collaboration GitHub was created. GitHub is first and foremost a hoster for Git repositories. But it also includes tools for bug tracking,
 documentation, and even some light project management.
 
-If you want to contribute to the Kerbalism Mod, it is highly recommended to familiarize yourself with Git and GitLab. Luckily, there are many good guides out there.
+If you want to contribute to the Kerbalism Mod, it is highly recommended to familiarize yourself with Git and GitHub. Luckily, there are many good guides out there.
 
 If you want to get into the depths of Git, this (online) book is recommended:
 
@@ -288,7 +288,7 @@ To ensure smooth sailing with pull requests, please follow these guidelines:
   - Please follow the [code style guidelines](#code-style)
   - Please submit readable, high-quality code! 
 
-Once you followed the guidelines above, please submit your pull request to the **[main repository](https://gitlab.com/N70/Kerbalism/merge_requests)**.
+Once you followed the guidelines above, please submit your pull request to the **[main repository](https://github.com/MoreRobustThanYou/Kerbalism/pulls)**.
 Please select "allow edits from maintainers" so that the maintainer can help you with your pull request.
 
 Adding commits after you submitted the pull request is not forbidden - after all, if you gotta change something, you gotta change something.
@@ -468,7 +468,7 @@ For more information see the KSP Forum thread [KSP Plugin debugging and profilin
 
 ##### Internal Profiler
 
-In addition, there is a simple "frame-based" profiler included in the KSP Kerbalism code base [here](https://gitlab.com/N70/Kerbalism/blob/master/src/Utility/Profiler.cs), that is appropriate for performance measurements.
+In addition, there is a simple "frame-based" profiler included in the KSP Kerbalism code base [here](https://github.com/MoreRobustThanYou/Kerbalism/blob/master/src/Utility/Profiler.cs), that is appropriate for performance measurements.
 
 In the code, wrap the code you want in pairs of `Kerbalism.Profiler.Start("MyLabel")` and `Kerbalism.Profiler.Stop("MyLabel")`.
 
@@ -504,11 +504,11 @@ If you want to distribute your own version for testing, please do so by making i
   - Clean out the `GameData` folder of your KSP install, only the ´Squad` folder should remain.
   - Extract the `Kerbalism-<version>.zip` that was created during the Release build into your GameData folder
   - Launch KSP in the non-Developer mode and verify the functionality. Check the `output_log.txt` for errors.
-  - Create a Tag with Git, push all commits and the tag to GitLab.
-  - On GitLab, draft a new release selecting the newly created tag
-  - Upload the `Kerbalism-<version>.zip` file to GitLab, paste the changelog there
+  - Create a Tag with Git, push all commits and the tag to GitHub.
+  - On GitHub, draft a new release selecting the newly created tag
+  - Upload the `Kerbalism-<version>.zip` file to GitHub, paste the changelog there
   - On SpaceDock, draft a new release and upload the `Kerbalism-<version>.zip`.
-  - On the KSP forums, create a new post with the changelog and links to both GitLab and SpaceDock.
+  - On the KSP forums, create a new post with the changelog and links to both GitHub and SpaceDock.
   - On http://ksp-avc.cybutek.net, update the version and compatibility numbers according to the AVC version file
 
 ### Versioning
