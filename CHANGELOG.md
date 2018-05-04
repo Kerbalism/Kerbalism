@@ -1,5 +1,53 @@
-### CHANGELOG
+## v1.5.2 for KSP 1.4.3
+ - 2018-05-xx
 
+### Changes since the last release
+
+ * There is now a help file on GitHub for those wishing to report bugs or contribute to Kerbalism.
+   see [CONTRIBUTING.md](https://github.com/MoreRobustThanYou/Kerbalism/blob/master/CONTRIBUTING.md)
+ 
+### For Developers
+
+ * Profile importing is now available to modders who wish to import their own procceses, rules, supplies etc (thanks to PiezPiedPy)
+   see Issue #2 on GitHub for more information [Here](https://github.com/MoreRobustThanYou/Kerbalism/issues/2)
+
+
+1.5.1
+  - SSPX support
+  - Adds a version of the Water Electrolysis process that doesn't dump excess Oxygen
+  - Added huge 3.5m containers
+  - German/Russian Localization (thank you Riggers and player101!)
+  - Probably some other stuff I forgot
+
+1.5.0
+  - Removed Signal completely
+  - CME blackouts are now supported by RemoteTech, but only in 1.8.10.3 or above
+  - Added @HaullyGames Deploy system. Some things, such as landing legs, will take EC to extend/retract
+  - Fixed some Science nullrefs
+
+1.4.4
+  - Fixed DSN stations showing with RemoteTech/CommNet
+  - Fixed Kerbalism overriding RemoteTech locks
+
+1.4.3
+  - RemoteTech antennas now show in the Ship Monitor
+   
+1.4.2
+  - Updated B9Switch config
+
+1.4.1.4
+  - Fixed SSPX config
+  - Signal is now OFF by default
+
+1.4.1.3
+  - Improve SSPX support
+
+1.4.1.2
+  - Implement player101's science fix.
+  
+1.4.1.1
+  - Actually fix relay strength this time
+   
 1.2.9
   - ported to KSP 1.3.0.1804
   - improved SSTU support patch (@Maxzhao1999)
