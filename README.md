@@ -201,16 +201,18 @@ And special thanks to the artists that provided all the part:
 **I think to have found a bug, and I have just a few mods installed**
 
 Try to reproduce it consistently, then provide me with a savegame that demonstrate the issue. Include log files,
-screenshots, and reproduction steps. Post the report here, or raise an issue on the gitlab.
+screenshots, and reproduction steps. Post the report here, or raise an issue on [GitHub](https://github.com/MoreRobustThanYou/Kerbalism/issues).
 
 **I want to add support for this to my parts**
 
-Add the appropriate modules to your parts. Check the wiki on github for the module specifications.
+Add the appropriate modules to your parts. Check the wiki on GitHub for the module specifications.
 
 **I want to interact with this mod in code**
 
-Have a look at System/API.cs source code on gitlab. Raise an issue to request more functions.
+Have a look at System/API.cs source code on GitHub. Raise an issue to request more functions.
 
+ * There is a help file on GitHub for those wishing to report bugs or contribute to Kerbalism.
+   see [CONTRIBUTING.md](https://github.com/MoreRobustThanYou/Kerbalism/blob/master/CONTRIBUTING.md)
 
 ### REQUIREMENTS
 
