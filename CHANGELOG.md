@@ -10,6 +10,8 @@
 
  * Profile importing is now available to modders who wish to import their own procceses, rules, supplies etc (thanks to PiezPiedPy)
    see Issue #2 on GitHub for more information [Here](https://github.com/MoreRobustThanYou/Kerbalism/issues/2)
+ * Updated Profiler GUI to use the Canvas system. Added Reset averages & Show zero calls buttons,
+   a Framerate limiter, avg calls and frame counter (thanks go to PiezPiedPy)
 
 
 1.5.1
