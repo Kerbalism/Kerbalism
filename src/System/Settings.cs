@@ -85,7 +85,7 @@ namespace KERBALISM
 			StockMessages = Lib.ConfigValue(cfg, "StockMessages", false);
 			MessageLength = Lib.ConfigValue(cfg, "MessageLength", 4.0f);
 			LowQualityRendering = Lib.ConfigValue(cfg, "LowQualityRendering", false);
-			UIScale = Lib.ConfigValue(cfg, "UIScale", 1.0);
+			UIScale = Lib.ConfigValue(cfg, "UIScale", 1.0f);
 		}
 
 
