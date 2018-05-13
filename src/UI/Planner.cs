@@ -170,7 +170,7 @@ namespace KERBALISM
 
 		public float width()
 		{
-			return 260.0f;
+			return Styles.ScaleFloat(260.0f);
 		}
 
 
