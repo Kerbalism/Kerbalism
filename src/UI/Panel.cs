@@ -31,7 +31,7 @@ namespace KERBALISM
 		{
 			Header h = new Header();
 			h.label = label;
-			h.tooltip = Styles.ScaleString(tooltip); // for simplicity sake, force all tooltips to be readable
+			h.tooltip = tooltip;
 			h.click = click;
 			h.icons = new List<Icon>();
 			headers.Add(h);
@@ -53,7 +53,7 @@ namespace KERBALISM
 			Entry e = new Entry();
 			e.label = label;
 			e.value = value;
-			e.tooltip = Styles.ScaleString(tooltip); // for simplicity sake, force all tooltips to be readable
+			e.tooltip = tooltip;
 			e.click = click;
 			e.hover = hover;
 			e.icons = new List<Icon>();
@@ -64,7 +64,7 @@ namespace KERBALISM
 		{
 			Icon i = new Icon();
 			i.texture = texture;
-			i.tooltip = Styles.ScaleString(tooltip); // for simplicity sake, force all tooltips to be readable
+			i.tooltip = tooltip;
 			i.click = click;
 			if (sections.Count > 0)
 			{
