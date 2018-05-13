@@ -3,6 +3,7 @@
 
 ### Changes since the last release
 
+ * Humidity Control and a new Life Support Unit part (curtesy of PiezPiedPy)
  * There is now a help file on GitHub for those wishing to report bugs or contribute to Kerbalism.
    see [CONTRIBUTING.md](https://github.com/MoreRobustThanYou/Kerbalism/blob/master/CONTRIBUTING.md)
  
