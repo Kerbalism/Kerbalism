@@ -140,7 +140,7 @@ namespace KERBALISM
 				}
 
 				// spacing
-				GUILayout.Space(10.0f);
+				GUILayout.Space(Styles.ScaleFloat(10.0f));
 			}
 
 			// call callbacks
