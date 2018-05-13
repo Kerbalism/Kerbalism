@@ -16,7 +16,7 @@ namespace KERBALISM
 			sections = new List<Section>();
 			callbacks = new List<Action>();
 			win_title = string.Empty;
-			min_width = 260.0f;
+			min_width = Styles.ScaleFloat(260.0f);
 		}
 
 		public void clear()
@@ -24,7 +24,7 @@ namespace KERBALISM
 			headers.Clear();
 			sections.Clear();
 			win_title = string.Empty;
-			min_width = 260.0f;
+			min_width = Styles.ScaleFloat(260.0f);
 		}
 
 		public void header(string label, string tooltip = "", Action click = null)
@@ -93,7 +93,7 @@ namespace KERBALISM
 					if (i.click != null && Lib.IsClicked()) callbacks.Add(i.click);
 				}
 				GUILayout.EndHorizontal();
-				GUILayout.Space(10.0f);
+				GUILayout.Space(Styles.ScaleFloat(10.0f));
 			}
 
 			// sections
@@ -140,7 +140,7 @@ namespace KERBALISM
 				}
 
 				// spacing
-				GUILayout.Space(10.0f);
+				GUILayout.Space(Styles.ScaleFloat(10.0f));
 			}
 
 			// call callbacks
@@ -155,14 +155,14 @@ namespace KERBALISM
 		{
 			float h = 0.0f;
 
-			h += (float)headers.Count * 26.0f;
+			h += Styles.ScaleFloat((float)headers.Count * 26.0f);
 
 			foreach (Section p in sections)
 			{
-				h += 18.0f + (float)p.entries.Count * 16.0f + 16.0f;
+				h += Styles.ScaleFloat(18.0f + (float)p.entries.Count * 16.0f + 16.0f);
 				if (p.desc.Length > 0)
 				{
-					h += Styles.desc.CalcHeight(new GUIContent(p.desc), min_width - 20.0f);
+					h += Styles.desc.CalcHeight(new GUIContent(p.desc), min_width - Styles.ScaleFloat(20.0f));
 				}
 			}
 

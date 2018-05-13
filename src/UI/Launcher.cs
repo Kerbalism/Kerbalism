@@ -70,11 +70,11 @@ namespace KERBALISM
 			{
 				// hard-coded offsets
 				// note: there is a bug in stock that only set appscale properly in non-flight-mode after you go in flight-mode at least once
-				float at_top_offset_x = 40.0f * GameSettings.UI_SCALE_APPS;
-				float at_top_offset_y = 0.0f * GameSettings.UI_SCALE_APPS;
-				float at_bottom_offset_x = 0.0f * GameSettings.UI_SCALE_APPS;
-				float at_bottom_offset_y = 40.0f * GameSettings.UI_SCALE_APPS;
-				float at_bottom_editor_offset_x = 66.0f * GameSettings.UI_SCALE_APPS;
+				float at_top_offset_x = 40.0f * GameSettings.UI_SCALE * GameSettings.UI_SCALE_APPS;
+				float at_top_offset_y = 0.0f * GameSettings.UI_SCALE * GameSettings.UI_SCALE_APPS;
+				float at_bottom_offset_x = 0.0f * GameSettings.UI_SCALE * GameSettings.UI_SCALE_APPS;
+				float at_bottom_offset_y = 40.0f * GameSettings.UI_SCALE * GameSettings.UI_SCALE_APPS;
+				float at_bottom_editor_offset_x = 66.0f * GameSettings.UI_SCALE * GameSettings.UI_SCALE_APPS;
 
 				// get screen size
 				float screen_width = (float)Screen.width;
