@@ -9,6 +9,8 @@
  * Scale down food production to realistic levels, and make it dependent on CO2 (madman2003)
  ** Every kerbal now requires 2x Kerbalism greenhouse, or 3x 2.5m SSPX greenhouses, or 6x 3.5m SSPX greenhouses for permanent food production
  ** SSPX greenhouses include a habitat area, leaving very little space for food production
+ * Water recyling is more realistic, recovering only 85% of Water (this is better than what ISS achieves in real life)
+ ** Ammonia and CO2 are recovered from Water, rather than producing Waste. This is to avoid (future) conflicts between the mineral content of urine and feces
  * Kerbalism CO2 tanks are now full by default in order to supply Greenhouses with CO2 (madman2003)
  * Fix display of Habitat volume and space in tooltip, they used to be swapped (madman2003)
  * Minor fixes to SSPX config file (madman2003)
