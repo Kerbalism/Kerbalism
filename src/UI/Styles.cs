@@ -136,12 +136,12 @@ namespace KERBALISM
 
 		public static int ScaleInteger(int val)
 		{
-			return (int) (val * Settings.UIScale);
+			return (int) (val * Settings.UIScale * GameSettings.UI_SCALE * GameSettings.UI_SCALE_APPS);
 		}
 
 		public static float ScaleFloat(float val)
 		{
-			return val * Settings.UIScale;
+			return val * Settings.UIScale * GameSettings.UI_SCALE * GameSettings.UI_SCALE_APPS;
 		}
 
 		public static Texture2D GetUIScaledTexture(string name)
