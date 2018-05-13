@@ -648,7 +648,7 @@ namespace KERBALISM
 					if (!m.isEnabled) continue;
 
 					if (m.moduleName == "ModuleDataTransmitter") has_comms = true;
-					if (m.moduleName == "ModuleRTAntenna") //to ensure that short-range omnis that are built in don't count 
+					if (m.moduleName == "ModuleRTAntenna") //to ensure that short-range omnis that are built in don't count
 					{
 						float omni_range = Lib.ReflectionValue<float>(m, "Mode1OmniRange");
 						float dish_range = Lib.ReflectionValue<float>(m, "Mode1DishRange");
@@ -813,7 +813,7 @@ namespace KERBALISM
 			// process all rules
 			foreach (Rule r in Profile.rules)
 			{
-				if (r.input.Length > 0 && r.rate > 0.0)
+				if ((r.input.Length > 0 || (r.output_only && r.output.Length > 0)) && r.rate > 0.0)
 				{
 					process_rule(r, env, va);
 				}
@@ -929,13 +929,22 @@ namespace KERBALISM
 				resource(r.input).consume(rate * k, r.name);
 			}
 			else if (rate > double.Epsilon)
-			{
-				// - rules always dump excess overboard (because it is waste)
-				simulated_recipe recipe = new simulated_recipe(r.name);
-				recipe.input(r.input, rate * k);
-				recipe.output(r.output, rate * k * r.ratio, true);
-				recipes.Add(recipe);
-			}
+            {
+                // simulate recipe if output_only is false
+                if (!r.output_only)
+                {
+                    // - rules always dump excess overboard (because it is waste)
+                    simulated_recipe recipe = new simulated_recipe(r.name);
+                    recipe.input(r.input, rate * k);
+                    recipe.output(r.output, rate * k * r.ratio, true);
+                    recipes.Add(recipe);
+                }
+                // only simulate output
+                else
+                {
+                    resource(r.output).produce(rate * k, r.name);
+                }
+            }
 		}
 
 

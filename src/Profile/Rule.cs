@@ -16,11 +16,13 @@ namespace KERBALISM
 			interval = Lib.ConfigValue(node, "interval", 0.0);
 			rate = Lib.ConfigValue(node, "rate", 0.0);
 			ratio = Lib.ConfigValue(node, "ratio", 0.0);
-			degeneration = Lib.ConfigValue(node, "degeneration", 0.0);
-			variance = Lib.ConfigValue(node, "variance", 0.0);
+            input_threshold = Lib.ConfigValue(node, "input_threshold", 0.0);
+            degeneration = Lib.ConfigValue(node, "degeneration", 0.0);
+            variance = Lib.ConfigValue(node, "variance", 0.0);
 			modifiers = Lib.Tokenize(Lib.ConfigValue(node, "modifier", string.Empty), ',');
 			breakdown = Lib.ConfigValue(node, "breakdown", false);
-			warning_threshold = Lib.ConfigValue(node, "warning_threshold", 0.33);
+            output_only = Lib.ConfigValue(node, "output_only", false);
+            warning_threshold = Lib.ConfigValue(node, "warning_threshold", 0.33);
 			danger_threshold = Lib.ConfigValue(node, "danger_threshold", 0.66);
 			fatal_threshold = Lib.ConfigValue(node, "fatal_threshold", 1.0);
 			warning_message = Lib.ConfigValue(node, "warning_message", string.Empty);
@@ -28,8 +30,8 @@ namespace KERBALISM
 			fatal_message = Lib.ConfigValue(node, "fatal_message", string.Empty);
 			relax_message = Lib.ConfigValue(node, "relax_message", string.Empty);
 
-			// check that name is specified
-			if (name.Length == 0) throw new Exception("skipping unnamed rule");
+            // check that name is specified
+            if (name.Length == 0) throw new Exception("skipping unnamed rule");
 
 			// check that degeneration is not zero
 			if (degeneration <= double.Epsilon) throw new Exception("skipping zero degeneration rule");
@@ -45,7 +47,9 @@ namespace KERBALISM
 				var output_density = Lib.GetDefinition(output).density;
 				ratio = Math.Min(input_density, output_density) > double.Epsilon ? input_density / output_density : 1.0;
 			}
-		}
+
+            trigger = false;
+        }
 
 
 		public void Execute(Vessel v, vessel_info vi, vessel_resources resources, double elapsed_s)
@@ -118,22 +122,39 @@ namespace KERBALISM
 							// simply consume (that is faster)
 							res.Consume(required);
 						}
-						// if there is an output
-						else
+                        // if there is an output and output_only is false
+                        else if (!output_only)
 						{
 							// transform input into output resource
 							// - rules always dump excess overboard (because it is waste)
 							resource_recipe recipe = new resource_recipe();
 							recipe.Input(input, required);
-							recipe.Output(output, required * ratio, true);
+                            recipe.Output(output, required * ratio, true);
 							resources.Transform(recipe);
 						}
-					}
+                        // if output_only then do not consume input resource
+                        else
+                        {
+                            // simply produce (that is faster)
+                            resources.Produce(v, output, required);
+                        }
+                    }
 
-					// degenerate:
-					// - if the environment modifier is not telling to reset (by being zero)
-					// - if this rule is resource-less, or if there was not enough resource in the vessel
-					if (k > 0.0 && (input.Length == 0 || res.amount <= double.Epsilon))
+                    // degenerate:
+                    // - if the environment modifier is not telling to reset (by being zero)
+                    // - if the input threshold is reached if used
+                    // - if this rule is resource-less, or if there was not enough resource in the vessel
+                    if (input_threshold >= double.Epsilon)
+                    {
+                        if (res.amount >= double.Epsilon && res.capacity >= double.Epsilon)
+                            trigger = res.amount / res.capacity >= input_threshold;
+                        else
+                            trigger = false;
+                    }
+                    else
+                        trigger = input.Length == 0 || res.amount <= double.Epsilon;
+
+                    if (k > 0.0 && trigger)
 					{
 						rd.problem += degeneration           // degeneration rate per-second or per-interval
 								   * k                       // product of environment modifiers
@@ -216,18 +237,22 @@ namespace KERBALISM
 		public double interval;           // if 0 the rule is executed per-second, else it is executed every 'interval' seconds
 		public double rate;               // amount of input resource to consume at each execution
 		public double ratio;              // ratio of output resource in relation to input consumed
-		public double degeneration;       // amount to add to the property at each execution (when we must degenerate)
-		public double variance;           // variance for property rate, unique per-kerbal and in range [1.0-variance, 1.0+variance]
+        public double input_threshold;    // when input resource reaches this percentage of its capacity trigger degeneration [range 0 to 1]
+        public double degeneration;       // amount to add to the degeneration at each execution (when we must degenerate)
+        public double variance;           // variance for degeneration rate, unique per-kerbal and in range [1.0-variance, 1.0+variance]
 		public List<string> modifiers;    // if specified, rates are influenced by the product of all environment modifiers
-		public bool breakdown;          // if true, trigger a breakdown instead of killing the kerbal
-		public double warning_threshold;  // threshold of degeneration used to show warning messages and yellow status color
+		public bool breakdown;            // if true, trigger a breakdown instead of killing the kerbal
+        public bool output_only;          // if true and input resource exists only monitor the input resource, do not consume it
+        public double warning_threshold;  // threshold of degeneration used to show warning messages and yellow status color
 		public double danger_threshold;   // threshold of degeneration used to show danger messages and red status color
 		public double fatal_threshold;    // threshold of degeneration used to show fatal messages and kill/breakdown the kerbal
 		public string warning_message;    // messages shown on threshold crossings
 		public string danger_message;     // .
 		public string fatal_message;      // .
 		public string relax_message;      // .
-	}
+
+        private bool trigger;             // internal use
+    }
 
 
 
