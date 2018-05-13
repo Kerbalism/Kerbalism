@@ -144,6 +144,11 @@ namespace KERBALISM
 			return val * Settings.UIScale * GameSettings.UI_SCALE * GameSettings.UI_SCALE_APPS;
 		}
 
+		public static string ScaleString(string val)
+		{
+			return Lib.BuildString("<size=", Styles.ScaleInt(9), ">,", val, "</size>");
+		}
+
 		public static Texture2D GetUIScaledTexture(string name)
 		{
 			Texture2D unscaled = Lib.GetTexture(name);
