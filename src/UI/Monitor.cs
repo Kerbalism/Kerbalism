@@ -205,7 +205,7 @@ namespace KERBALISM
 			// render entry
 			p.header
 			(
-			  Lib.BuildString("<b>", Lib.Ellipsis(vessel_name, 20), "</b> <size=", Styles.ScaleInt(9), "><color=#cccccc>", Lib.Ellipsis(body_name, 8), "</color></size>"),
+			  Lib.BuildString("<b>", Lib.Ellipsis(vessel_name, 20), "</b> <size=", Styles.ScaleInteger(9), "><color=#cccccc>", Lib.Ellipsis(body_name, 8), "</color></size>"),
 			  string.Empty,
 			  () => { selected_id = selected_id != v.id ? v.id : Guid.Empty; }
 			);
