@@ -151,13 +151,13 @@ namespace KERBALISM
 			// Scale the texture to the desired size
 			// TODO: Use high-resolution textures as starting point
 			unscaled.filterMode = FilterMode.Bilinear;
-			newWidth = ScaleInteger(unscaled.width);
-			newHeight = ScaleInteger(unscaled.height);
+			int newWidth = ScaleInteger(unscaled.width);
+			int newHeight = ScaleInteger(unscaled.height);
 			RenderTexture renderTexture = RenderTexture.GetTemporary(newWidth, newHeight);
 			renderTexture.filterMode = FilterMode.Bilinear;
 			RenderTexture.active = renderTexture;
-			Graphics.Blit(source, renderTexture);
-			scaled = new Texture2D(newWidth, newHeight);
+			Graphics.Blit(unscaled, renderTexture);
+			Texture2D scaled = new Texture2D(newWidth, newHeight);
 			scaled.ReadPixels(new Rect(0, 0, newWidth, newHeight), 0,0);
 			scaled.Apply();
 			RenderTexture.active = null;
