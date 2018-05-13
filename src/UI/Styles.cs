@@ -111,7 +111,7 @@ namespace KERBALISM
 			tooltip.normal.textColor = Color.white;
 			tooltip.stretchWidth = true;
 			tooltip.stretchHeight = true;
-			tooltip.fontSize = ScaleInteger(10);
+			tooltip.fontSize = ScaleInteger(12);
 			tooltip.border = new RectOffset(0, 0, 0, 0);
 			tooltip.padding = new RectOffset(ScaleInteger(6), ScaleInteger(6), ScaleInteger(3), ScaleInteger(3));
 			tooltip.margin = new RectOffset(0, 0, 0, 0);
