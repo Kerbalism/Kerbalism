@@ -929,22 +929,22 @@ namespace KERBALISM
 				resource(r.input).consume(rate * k, r.name);
 			}
 			else if (rate > double.Epsilon)
-            {
-                // simulate recipe if output_only is false
-                if (!r.output_only)
-                {
-                    // - rules always dump excess overboard (because it is waste)
-                    simulated_recipe recipe = new simulated_recipe(r.name);
-                    recipe.input(r.input, rate * k);
-                    recipe.output(r.output, rate * k * r.ratio, true);
-                    recipes.Add(recipe);
-                }
-                // only simulate output
-                else
-                {
-                    resource(r.output).produce(rate * k, r.name);
-                }
-            }
+			{
+				// simulate recipe if output_only is false
+				if (!r.output_only)
+				{
+					// - rules always dump excess overboard (because it is waste)
+					simulated_recipe recipe = new simulated_recipe(r.name);
+					recipe.input(r.input, rate * k);
+					recipe.output(r.output, rate * k * r.ratio, true);
+					recipes.Add(recipe);
+				}
+				// only simulate output
+				else
+				{
+					resource(r.output).produce(rate * k, r.name);
+				}
+			}
 		}
 
 
