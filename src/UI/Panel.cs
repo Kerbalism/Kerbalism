@@ -31,7 +31,7 @@ namespace KERBALISM
 		{
 			Header h = new Header();
 			h.label = label;
-			h.tooltip = Style.ScaleString(tooltip); // for simplicity sake, force all tooltips to be readable
+			h.tooltip = Styles.ScaleString(tooltip); // for simplicity sake, force all tooltips to be readable
 			h.click = click;
 			h.icons = new List<Icon>();
 			headers.Add(h);

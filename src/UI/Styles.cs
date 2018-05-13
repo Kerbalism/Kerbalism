@@ -146,7 +146,7 @@ namespace KERBALISM
 
 		public static string ScaleString(string val)
 		{
-			return Lib.BuildString("<size=", Styles.ScaleInteger(9), ">,", val, "</size>");
+			return Lib.BuildString("<size=", (string) Styles.ScaleInteger(9), ">,", val, "</size>");
 		}
 
 		public static Texture2D GetUIScaledTexture(string name)
