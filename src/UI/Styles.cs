@@ -134,12 +134,12 @@ namespace KERBALISM
 			};
 		}
 
-		public static ScaleInteger(int val)
+		public static int ScaleInteger(int val)
 		{
 			return (int) (val * Settings.UIScale);
 		}
 
-		public static ScaleFloat(float val)
+		public static float ScaleFloat(float val)
 		{
 			return val * Settings.UIScale;
 		}
