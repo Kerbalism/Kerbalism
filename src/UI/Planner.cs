@@ -18,9 +18,9 @@ namespace KERBALISM
 			leftmenu_style = new GUIStyle(HighLogic.Skin.label);
 			leftmenu_style.richText = true;
 			leftmenu_style.normal.textColor = new Color(0.0f, 0.0f, 0.0f, 1.0f);
-			leftmenu_style.fixedWidth = 80.0f;
+			leftmenu_style.fixedWidth = Styles.ScaleFloat(80.0f);
 			leftmenu_style.stretchHeight = true;
-			leftmenu_style.fontSize = 10;
+			leftmenu_style.fontSize = Styles.ScaleInteger(10);
 			leftmenu_style.alignment = TextAnchor.MiddleLeft;
 
 			// right menu style
@@ -33,7 +33,7 @@ namespace KERBALISM
 			quote_style.normal.textColor = Color.black;
 			quote_style.stretchWidth = true;
 			quote_style.stretchHeight = true;
-			quote_style.fontSize = 11;
+			quote_style.fontSize = Styles.ScaleInteger(11);
 			quote_style.alignment = TextAnchor.LowerCenter;
 
 			// center icon style
@@ -163,7 +163,7 @@ namespace KERBALISM
 				GUILayout.BeginHorizontal();
 				GUILayout.Label("<i>In preparing for space, I have always found that\nplans are useless but planning is indispensable.\nWernher von Kerman</i>", quote_style);
 				GUILayout.EndHorizontal();
-				GUILayout.Space(10.0f);
+				GUILayout.Space(Styles.ScaleFloat(10.0f));
 			}
 		}
 
