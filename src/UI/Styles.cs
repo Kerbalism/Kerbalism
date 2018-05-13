@@ -144,6 +144,28 @@ namespace KERBALISM
 			return val * Settings.UIScale;
 		}
 
+		public static Texture2D GetUIScaledTexture(string name)
+		{
+			Texture2D unscaled = Lib.GetTexture(name);
+
+			// Scale the texture to the desired size
+			// TODO: Use high-resolution textures as starting point
+			unscaled.filterMode = FilterMode.Bilinear;
+			newWidth = ScaleInteger(unscaled.width);
+			newHeight = ScaleInteger(unscaled.height)
+			RenderTexture renderTexture = RenderTexture.GetTemporary(newWidth, newHeight);
+			renderTexture.filterMode = FilterMode.Bilinear;
+			RenderTexture.active = renderTexture;
+			Graphics.Blit(source, renderTexture);
+			scaled = new Texture2D(newWidth, newHeight);
+			scaled.ReadPixels(new Rect(0, 0, newWidth, newHeight), 0,0);
+			scaled.Apply();
+			RenderTexture.active = null;
+			// necessary because there is no garbage collection for render textures
+			RenderTexture.ReleaseTemporary(renderTexture);
+			return scaled;
+		}
+
 		// styles
 		public static GUIStyle win;                       // window
 		public static GUIStyle title_container;           // window title container
