@@ -20,7 +20,7 @@ namespace KERBALISM
 			// window title container
 			title_container = new GUIStyle();
 			title_container.stretchWidth = true;
-			title_container.fixedHeight = ScaleFloat(16.0f)
+			title_container.fixedHeight = ScaleFloat(16.0f);
 			title_container.margin.bottom = ScaleInteger(2);
 			title_container.margin.top = ScaleInteger(2);
 
