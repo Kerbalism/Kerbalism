@@ -18,7 +18,7 @@ namespace KERBALISM
 			leftmenu_style = new GUIStyle(HighLogic.Skin.label);
 			leftmenu_style.richText = true;
 			leftmenu_style.normal.textColor = new Color(0.0f, 0.0f, 0.0f, 1.0f);
-			leftmenu_style.fixedWidth = Styles.ScaleFloat(80.0f); // Fixed to avoid that the sun icon moves around for different planet name lengths
+			leftmenu_style.fixedWidth = Styles.ScaleWidthFloat(80.0f); // Fixed to avoid that the sun icon moves around for different planet name lengths
 			leftmenu_style.stretchHeight = true;
 			leftmenu_style.fontSize = Styles.ScaleInteger(10);
 			leftmenu_style.alignment = TextAnchor.MiddleLeft;
@@ -170,7 +170,7 @@ namespace KERBALISM
 
 		public float width()
 		{
-			return Styles.ScaleFloat(260.0f);
+			return Styles.ScaleWidthFloat(260.0f);
 		}
 
 

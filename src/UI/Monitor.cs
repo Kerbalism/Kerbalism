@@ -150,9 +150,9 @@ namespace KERBALISM
 		{
 			if (page == MonitorPage.log)
 			{
-				return Math.Max(Styles.ScaleFloat(465.0f), panel.width());
+				return Math.Max(Styles.ScaleWidthFloat(465.0f), panel.width());
 			}
-			return Math.Max(Styles.ScaleFloat(355.0f), panel.width());
+			return Math.Max(Styles.ScaleWidthFloat(355.0f), panel.width());
 		}
 
 		public float height()

@@ -162,7 +162,7 @@ namespace KERBALISM
 				h += Styles.ScaleFloat(18.0f + (float)p.entries.Count * 16.0f + 16.0f);
 				if (p.desc.Length > 0)
 				{
-					h += Styles.desc.CalcHeight(new GUIContent(p.desc), min_width - Styles.ScaleFloat(20.0f));
+					h += Styles.desc.CalcHeight(new GUIContent(p.desc), min_width - Styles.ScaleWidthFloat(20.0f));
 				}
 			}
 

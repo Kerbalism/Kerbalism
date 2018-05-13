@@ -25,7 +25,7 @@ namespace KERBALISM
 
 			// set metadata
 			p.title(Lib.BuildString(Lib.Ellipsis(v.vesselName, 20), " <color=#cccccc>FILE MANAGER</color>"));
-			p.width(Styles.ScaleFloat(320.0f));
+			p.width(Styles.ScaleWidthFloat(320.0f));
 
 			// time-out simulation
 			if (p.timeout(vi)) return;
