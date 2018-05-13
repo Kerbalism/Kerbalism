@@ -178,11 +178,11 @@ namespace KERBALISM
 		{
 			if (EditorLogic.RootPart != null)
 			{
-				return 30.0f + panel.height(); // header + ui content
+				return Styles.ScaleFloat(30.0f) + panel.height(); // header + ui content
 			}
 			else
 			{
-				return 66.0f; // quote-only
+				return Styles.ScaleFloat(66.0f); // quote-only
 			}
 		}
 
