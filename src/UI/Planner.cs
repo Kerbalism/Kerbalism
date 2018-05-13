@@ -18,7 +18,6 @@ namespace KERBALISM
 			leftmenu_style = new GUIStyle(HighLogic.Skin.label);
 			leftmenu_style.richText = true;
 			leftmenu_style.normal.textColor = new Color(0.0f, 0.0f, 0.0f, 1.0f);
-			leftmenu_style.fixedWidth = Styles.ScaleFloat(80.0f);
 			leftmenu_style.stretchHeight = true;
 			leftmenu_style.fontSize = Styles.ScaleInteger(10);
 			leftmenu_style.alignment = TextAnchor.MiddleLeft;
