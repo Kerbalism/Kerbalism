@@ -161,13 +161,12 @@ namespace KERBALISM
 			string no = Lib.BuildString("<b><color=#ff0000>", Localizer.Format("#KERBALISM_Generic_NO"), " </color></b>");
 			return Lib.BuildString
 			(
-			  "<align=left />",
-			  Localizer.Format("#KERBALISM_Comfort_firmground"), "\t", firm_ground ? yes : no, "\n",
-			  Localizer.Format("#KERBALISM_Comfort_exercise"), "\t\t", exercise ? yes : no, "\n",
-			  Localizer.Format("#KERBALISM_Comfort_notalone"), "\t", not_alone ? yes : no, "\n",
-			  Localizer.Format("#KERBALISM_Comfort_callhome"), "\t", call_home ? yes : no, "\n",
-			  Localizer.Format("#KERBALISM_Comfort_panorama"), "\t", panorama ? yes : no, "\n",
-			  "<i>", Localizer.Format("#KERBALISM_Comfort_factor"), "</i>\t\t", Lib.HumanReadablePerc(factor)
+			  "<align=left>", Localizer.Format("#KERBALISM_Comfort_firmground"), "</align><align=right>", firm_ground ? yes : no, "</align>\n",
+			  "<align=left>", Localizer.Format("#KERBALISM_Comfort_exercise"), "</align><align=right>", exercise ? yes : no, "</align>\n",
+			  "<align=left>", Localizer.Format("#KERBALISM_Comfort_notalone"), "</align><align=right>", not_alone ? yes : no, "</align>\n",
+			  "<align=left>", Localizer.Format("#KERBALISM_Comfort_callhome"), "</align><align=right>", call_home ? yes : no, "</align>\n",
+			  "<align=left>", Localizer.Format("#KERBALISM_Comfort_panorama"), "</align><align=right>", panorama ? yes : no, "</align>\n",
+			  "<align=left><i>", Localizer.Format("#KERBALISM_Comfort_factor"), "</i></align><align=right>", Lib.HumanReadablePerc(factor), "</align>"
 			);
 		}
 
