@@ -3,6 +3,14 @@
 
 ### Changes since the last release
 
+ * Scale down food production to realistic levels, and make it dependent on CO2 (madman2003)
+ ** Every kerbal now requires 2x Kerbalism greenhouse, or 3x 2.5m SSPX greenhouses, or 6x 3.5m SSPX greenhouses for permanent food production
+ ** SSPX greenhouses include a habitat area, leaving very little space for food production
+ * Kerbalism CO2 tanks are now full by default in order to supply Greenhouses with CO2 (madman2003)
+ * Fix display of Habitat volume and space in tooltip, they used to be swapped (madman2003)
+ * Minor fixes to SSPX config file (madman2003)
+ * Add Electrolysis with H2 priority and Sabatier with H2O priority (madman2003)
+ * Give Greenhouses the basic resources needed to run (madman2003)
  * There is now a help file on GitHub for those wishing to report bugs or contribute to Kerbalism.
    see [CONTRIBUTING.md](https://github.com/MoreRobustThanYou/Kerbalism/blob/master/CONTRIBUTING.md)
  

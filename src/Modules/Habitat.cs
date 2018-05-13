@@ -18,8 +18,8 @@ namespace KERBALISM
 		[KSPField(isPersistant = true)] private double perctDeployed = 0;
 
 		// rmb ui status strings
-		[KSPField(guiActive = false, guiActiveEditor = true, guiName = "#KERBALISM_Habitat_Surface")] public string Volume;
-		[KSPField(guiActive = false, guiActiveEditor = true, guiName = "#KERBALISM_Habitat_Volume")] public string Surface;
+		[KSPField(guiActive = false, guiActiveEditor = true, guiName = "#KERBALISM_Habitat_Volume")] public string Volume;
+		[KSPField(guiActive = false, guiActiveEditor = true, guiName = "#KERBALISM_Habitat_Surface")] public string Surface;
 
 		// animations
 		Animator inflate_anim;
