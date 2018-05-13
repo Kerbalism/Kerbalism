@@ -152,7 +152,7 @@ namespace KERBALISM
 			// TODO: Use high-resolution textures as starting point
 			unscaled.filterMode = FilterMode.Bilinear;
 			newWidth = ScaleInteger(unscaled.width);
-			newHeight = ScaleInteger(unscaled.height)
+			newHeight = ScaleInteger(unscaled.height);
 			RenderTexture renderTexture = RenderTexture.GetTemporary(newWidth, newHeight);
 			renderTexture.filterMode = FilterMode.Bilinear;
 			RenderTexture.active = renderTexture;
