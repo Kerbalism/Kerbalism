@@ -26,9 +26,9 @@ namespace KERBALISM
 			filter_style = new GUIStyle(HighLogic.Skin.label);
 			filter_style.normal.textColor = new Color(0.66f, 0.66f, 0.66f, 1.0f);
 			filter_style.stretchWidth = true;
-			filter_style.fontSize = 12;
+			filter_style.fontSize = Styles.ScaleInteger(12);
 			filter_style.alignment = TextAnchor.MiddleCenter;
-			filter_style.fixedHeight = 16.0f;
+			filter_style.fixedHeight = Styles.ScaleFloat(16.0f);
 			filter_style.border = new RectOffset(0, 0, 0, 0);
 
 			// vessel config style
@@ -37,13 +37,13 @@ namespace KERBALISM
 			config_style.padding = new RectOffset(0, 0, 0, 0);
 			config_style.alignment = TextAnchor.MiddleLeft;
 			config_style.imagePosition = ImagePosition.ImageLeft;
-			config_style.fontSize = 9;
+			config_style.fontSize = Styles.ScaleInteger(9);
 
 			// group texfield style
 			group_style = new GUIStyle(config_style);
 			group_style.imagePosition = ImagePosition.TextOnly;
 			group_style.stretchWidth = true;
-			group_style.fixedHeight = 11.0f;
+			group_style.fixedHeight = Styles.ScaleFloat(11.0f);
 			group_style.normal.textColor = Color.yellow;
 
 			// initialize panel
@@ -150,15 +150,15 @@ namespace KERBALISM
 		{
 			if (page == MonitorPage.log)
 			{
-				return Math.Max(465.0f, panel.width());
+				return Math.Max(Styles.ScaleFloat(465.0f), panel.width());
 			}
-			return Math.Max(355.0f, panel.width());
+			return Math.Max(Styles.ScaleFloat(355.0f), panel.width());
 		}
 
 		public float height()
 		{
 			// top spacing
-			float h = 10.0f;
+			float h = Styles.ScaleFloat(10.0f);
 
 			// panel height
 			h += panel.height();
@@ -166,7 +166,7 @@ namespace KERBALISM
 			// one is selected, or filter is required
 			if (selected_id != Guid.Empty || show_filter)
 			{
-				h += 26.0f;
+				h += Styles.ScaleFloat(26.0f);
 			}
 
 			// clamp to screen height
@@ -205,7 +205,7 @@ namespace KERBALISM
 			// render entry
 			p.header
 			(
-			  Lib.BuildString("<b>", Lib.Ellipsis(vessel_name, 20), "</b> <size=9><color=#cccccc>", Lib.Ellipsis(body_name, 8), "</color></size>"),
+			  Lib.BuildString("<b>", Lib.Ellipsis(vessel_name, 20), "</b> <size=", Styles.ScaleInteger(9).ToString(), "><color=#cccccc>", Lib.Ellipsis(body_name, 8), "</color></size>"),
 			  string.Empty,
 			  () => { selected_id = selected_id != v.id ? v.id : Guid.Empty; }
 			);
