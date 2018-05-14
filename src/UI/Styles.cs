@@ -12,36 +12,36 @@ namespace KERBALISM
 		{
 			// window container
 			win = new GUIStyle(HighLogic.Skin.window);
-			win.padding.left = 6;
-			win.padding.right = 6;
+			win.padding.left = ScaleInteger(6);
+			win.padding.right = ScaleInteger(6);
 			win.padding.top = 0;
 			win.padding.bottom = 0;
 
 			// window title container
 			title_container = new GUIStyle();
 			title_container.stretchWidth = true;
-			title_container.fixedHeight = 16.0f;
-			title_container.margin.bottom = 2;
-			title_container.margin.top = 2;
+			title_container.fixedHeight = ScaleFloat(16.0f);
+			title_container.margin.bottom = ScaleInteger(2);
+			title_container.margin.top = ScaleInteger(2);
 
 			// window title text
 			title_text = new GUIStyle();
-			title_text.fontSize = 10;
-			title_text.fixedHeight = 16.0f;
+			title_text.fontSize = ScaleInteger(10);
+			title_text.fixedHeight = ScaleFloat(16.0f);
 			title_text.fontStyle = FontStyle.Bold;
 			title_text.alignment = TextAnchor.MiddleCenter;
 
 			// subsection title container
 			section_container = new GUIStyle();
 			section_container.stretchWidth = true;
-			section_container.fixedHeight = 16.0f;
+			section_container.fixedHeight = ScaleFloat(16.0f);
 			section_container.normal.background = Lib.GetTexture("black-background");
-			section_container.margin.bottom = 4;
-			section_container.margin.top = 4;
+			section_container.margin.bottom = ScaleInteger(4);
+			section_container.margin.top = ScaleInteger(4);
 
 			// subsection title text
 			section_text = new GUIStyle(HighLogic.Skin.label);
-			section_text.fontSize = 12;
+			section_text.fontSize = ScaleInteger(12);
 			section_text.alignment = TextAnchor.MiddleCenter;
 			section_text.normal.textColor = Color.white;
 			section_text.stretchWidth = true;
@@ -50,7 +50,7 @@ namespace KERBALISM
 			// entry row container
 			entry_container = new GUIStyle();
 			entry_container.stretchWidth = true;
-			entry_container.fixedHeight = 16.0f;
+			entry_container.fixedHeight = ScaleFloat(16.0f);
 
 			// entry label text
 			entry_label = new GUIStyle(HighLogic.Skin.label);
@@ -58,7 +58,7 @@ namespace KERBALISM
 			entry_label.normal.textColor = Color.white;
 			entry_label.stretchWidth = true;
 			entry_label.stretchHeight = true;
-			entry_label.fontSize = 12;
+			entry_label.fontSize = ScaleInteger(12);
 			entry_label.alignment = TextAnchor.MiddleLeft;
 
 			entry_label_nowrap = new GUIStyle(HighLogic.Skin.label);
@@ -66,7 +66,7 @@ namespace KERBALISM
 			entry_label_nowrap.normal.textColor = Color.white;
 			entry_label_nowrap.stretchWidth = true;
 			entry_label_nowrap.stretchHeight = true;
-			entry_label_nowrap.fontSize = 12;
+			entry_label_nowrap.fontSize = ScaleInteger(12);
 			entry_label_nowrap.alignment = TextAnchor.MiddleLeft;
 			entry_label_nowrap.wordWrap = false;
 
@@ -76,7 +76,7 @@ namespace KERBALISM
 			entry_value.normal.textColor = Color.white;
 			entry_value.stretchWidth = true;
 			entry_value.stretchHeight = true;
-			entry_value.fontSize = 12;
+			entry_value.fontSize = ScaleInteger(12);
 			entry_value.alignment = TextAnchor.MiddleRight;
 			entry_value.fontStyle = FontStyle.Bold;
 
@@ -91,19 +91,19 @@ namespace KERBALISM
 			desc.margin.top = 0;
 			desc.margin.bottom = 0;
 			desc.padding.top = 0;
-			desc.padding.bottom = 10;
+			desc.padding.bottom = ScaleInteger(10);
 			desc.fontStyle = FontStyle.Italic;
 
 			// left icon
 			left_icon = new GUIStyle();
 			left_icon.alignment = TextAnchor.MiddleLeft;
-			left_icon.fixedWidth = 16.0f;
+			left_icon.fixedWidth = ScaleFloat(16.0f);
 
 			// right icon
 			right_icon = new GUIStyle();
 			right_icon.alignment = TextAnchor.MiddleRight;
-			right_icon.fixedWidth = 16.0f;
-			right_icon.margin.left = 8;
+			right_icon.fixedWidth = ScaleFloat(16.0f);
+			right_icon.margin.left = ScaleInteger(8);
 
 			// tooltip label style
 			tooltip = new GUIStyle(HighLogic.Skin.label);
@@ -111,9 +111,9 @@ namespace KERBALISM
 			tooltip.normal.textColor = Color.white;
 			tooltip.stretchWidth = true;
 			tooltip.stretchHeight = true;
-			tooltip.fontSize = 12;
+			tooltip.fontSize = ScaleInteger(12);
 			tooltip.border = new RectOffset(0, 0, 0, 0);
-			tooltip.padding = new RectOffset(6, 6, 3, 3);
+			tooltip.padding = new RectOffset(ScaleInteger(6), ScaleInteger(6), ScaleInteger(3), ScaleInteger(3));
 			tooltip.margin = new RectOffset(0, 0, 0, 0);
 			tooltip.alignment = TextAnchor.MiddleCenter;
 
@@ -124,16 +124,55 @@ namespace KERBALISM
 
 			smallStationHead = new GUIStyle(HighLogic.Skin.label)
 			{
-				fontSize = 12
+				fontSize = ScaleInteger(12)
 			};
 
 			smallStationText = new GUIStyle(HighLogic.Skin.label)
 			{
-				fontSize = 10,
+				fontSize = ScaleInteger(12),
 				normal = { textColor = Color.white }
 			};
 		}
 
+		public static int ScaleInteger(int val)
+		{
+			return (int) (val * Settings.UIScale * GameSettings.UI_SCALE * GameSettings.UI_SCALE_APPS);
+		}
+
+		public static float ScaleFloat(float val)
+		{
+			return val * Settings.UIScale * GameSettings.UI_SCALE * GameSettings.UI_SCALE_APPS;
+		}
+
+		// Increasing font size does not affect width as much as height. To avoid excessively wide UIs we scale differently.
+		// Scaling by 80% is simply an emperical factor that is intended to leave the default UI width of 100% scaling intact,
+		// while having a sensible width at high scale value (e.g. 170%).
+		public static float ScaleWidthFloat(float val)
+		{
+			return val * (1.0f + (Settings.UIScale * GameSettings.UI_SCALE * GameSettings.UI_SCALE_APPS - 1.0f) * 0.8f);
+		}
+
+		public static Texture2D GetUIScaledTexture(string name)
+		{
+			Texture2D unscaled = Lib.GetTexture(name);
+
+			// Scale the texture to the desired size
+			// TODO: Use high-resolution textures as starting point
+			unscaled.filterMode = FilterMode.Bilinear;
+			int newWidth = ScaleInteger(unscaled.width);
+			int newHeight = ScaleInteger(unscaled.height);
+			RenderTexture renderTexture = RenderTexture.GetTemporary(newWidth, newHeight);
+			renderTexture.filterMode = FilterMode.Bilinear;
+			RenderTexture.active = renderTexture;
+			Graphics.Blit(unscaled, renderTexture);
+			Texture2D scaled = new Texture2D(newWidth, newHeight);
+			scaled.ReadPixels(new Rect(0, 0, newWidth, newHeight), 0,0);
+			scaled.Apply();
+			RenderTexture.active = null;
+			// necessary because there is no garbage collection for render textures
+			RenderTexture.ReleaseTemporary(renderTexture);
+			return scaled;
+		}
 
 		// styles
 		public static GUIStyle win;                       // window
