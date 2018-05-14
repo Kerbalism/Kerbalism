@@ -3,6 +3,7 @@
 
 ### Changes since the last release
 
+ * Humidity Control and a new Life Support Unit part (curtesy of PiezPiedPy)
  * Scale down food production to realistic levels, and make it dependent on CO2 (madman2003)
  ** Every kerbal now requires 2x Kerbalism greenhouse, or 3x 2.5m SSPX greenhouses, or 6x 3.5m SSPX greenhouses for permanent food production
  ** SSPX greenhouses include a habitat area, leaving very little space for food production
