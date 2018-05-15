@@ -148,11 +148,11 @@ namespace KERBALISM
 
 		public float width()
 		{
-			if (page == MonitorPage.log)
+			if ((page == MonitorPage.data || page == MonitorPage.log || selected_id == Guid.Empty) && !Lib.IsFlight())
 			{
-				return Math.Max(Styles.ScaleWidthFloat(465.0f), panel.width());
+				return Styles.ScaleWidthFloat(465.0f);
 			}
-			return Math.Max(Styles.ScaleWidthFloat(355.0f), panel.width());
+			return Styles.ScaleWidthFloat(355.0f);
 		}
 
 		public float height()
