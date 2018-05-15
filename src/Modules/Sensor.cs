@@ -122,10 +122,10 @@ namespace KERBALISM
 				case "temperature":
 					return Lib.BuildString
 					(
-					  "<align=left />",
-					  "solar flux\t<b>", Lib.HumanReadableFlux(vi.solar_flux), "</b>\n",
-					  "albedo flux\t<b>", Lib.HumanReadableFlux(vi.albedo_flux), "</b>\n",
-					  "body flux\t<b>", Lib.HumanReadableFlux(vi.body_flux), "</b>"
+						"<align=left />",
+						String.Format("{0,-14}\t<b>{1}</b>\n", "solar flux", Lib.HumanReadableFlux(vi.solar_flux)),
+						String.Format("{0,-14}\t<b>{1}</b>\n", "albedo flux", Lib.HumanReadableFlux(vi.albedo_flux)),
+						String.Format("{0,-14}\t<b>{1}</b>", "body flux", Lib.HumanReadableFlux(vi.body_flux))
 					);
 
 				case "radiation":
@@ -145,9 +145,9 @@ namespace KERBALISM
 				case "gravioli":
 					return Lib.BuildString
 					(
-					  "Gravioli detection events per-year: <b>", vi.gravioli.ToString("F2"), "</b>\n\n",
-					  "<i>The elusive negative gravioli particle\nseem to be much harder to detect\n",
-					  "than expected. On the other\nside there seems to be plenty\nof useless positive graviolis around.</i>"
+						"Gravioli detection events per-year: <b>", vi.gravioli.ToString("F2"), "</b>\n\n",
+						"<i>The elusive negative gravioli particle\nseems to be much harder to detect\n",
+						"than expected. On the other\nhand there seems to be plenty\nof useless positive graviolis around.</i>"
 					);
 			}
 			return string.Empty;
