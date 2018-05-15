@@ -107,7 +107,7 @@ namespace KERBALISM
 				switch (page)
 				{
 					case MonitorPage.telemetry: panel.telemetry(selected_v); break;
-					case MonitorPage.data: panel.fileman(selected_v); break;
+					case MonitorPage.data: panel.fileman(selected_v, true); break;
 					case MonitorPage.scripts: panel.devman(selected_v); break;
 					case MonitorPage.config: panel.config(selected_v); break;
 					case MonitorPage.log: panel.logman(selected_v); break;
@@ -205,7 +205,10 @@ namespace KERBALISM
 			// render entry
 			p.header
 			(
-			  Lib.BuildString("<b>", Lib.Ellipsis(vessel_name, 20), "</b> <size=", Styles.ScaleInteger(9).ToString(), "><color=#cccccc>", Lib.Ellipsis(body_name, 8), "</color></size>"),
+			  Lib.BuildString("<b>",
+			  Lib.Ellipsis(vessel_name, Styles.ScaleStringLength(((page == MonitorPage.data || page == MonitorPage.log || selected_id == Guid.Empty) && !Lib.IsFlight()) ? 50 : 30)),
+			  "</b> <size=", Styles.ScaleInteger(9).ToString(),
+			  "><color=#cccccc>", Lib.Ellipsis(body_name, Styles.ScaleStringLength(8)), "</color></size>"),
 			  string.Empty,
 			  () => { selected_id = selected_id != v.id ? v.id : Guid.Empty; }
 			);

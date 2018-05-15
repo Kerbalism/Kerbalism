@@ -24,7 +24,7 @@ namespace KERBALISM
 			if (!vi.is_valid) return;
 
 			// set metadata
-			p.title(Lib.BuildString(Lib.Ellipsis(v.vesselName, 20), " <color=#cccccc>TELEMETRY</color>"));
+			p.title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(20)), " <color=#cccccc>TELEMETRY</color>"));
 
 			// time-out simulation
 			if (p.timeout(vi)) return;
@@ -182,7 +182,7 @@ namespace KERBALISM
 				string name = kerbal.name.ToLower().Replace(" kerman", string.Empty);
 
 				// render selectable title
-				p.content(Lib.Ellipsis(name, 20), kd.disabled ? "<color=#00ffff>HYBERNATED</color>" : string.Empty);
+				p.content(Lib.Ellipsis(name, Styles.ScaleStringLength(20)), kd.disabled ? "<color=#00ffff>HYBERNATED</color>" : string.Empty);
 				p.icon(health_severity == 0 ? Icons.health_white : health_severity == 1 ? Icons.health_yellow : Icons.health_red, tooltip);
 				p.icon(stress_severity == 0 ? Icons.brain_white : stress_severity == 1 ? Icons.brain_yellow : Icons.brain_red, tooltip);
 			}

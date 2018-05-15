@@ -24,7 +24,7 @@ namespace KERBALISM
 			if (!vi.is_valid) return;
 
 			// set metadata
-			p.title(Lib.BuildString(Lib.Ellipsis(v.vesselName, 20), " <color=#cccccc>VESSEL CONFIG</color>"));
+			p.title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(20)), " <color=#cccccc>VESSEL CONFIG</color>"));
 
 			// time-out simulation
 			if (p.timeout(vi)) return;

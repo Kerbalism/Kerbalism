@@ -75,7 +75,7 @@ namespace KERBALISM
 			p.content("<i>Press <b>B</b> to open this window again</i>");
 
 			// set metadata
-			p.title(Lib.BuildString(Lib.Ellipsis(body.bodyName, 24), " <color=#cccccc>BODY INFO</color>"));
+			p.title(Lib.BuildString(Lib.Ellipsis(body.bodyName, Styles.ScaleStringLength(24)), " <color=#cccccc>BODY INFO</color>"));
 		}
 	}
 

@@ -150,6 +150,11 @@ namespace KERBALISM
 			return val * (1.0f + (Settings.UIPanelWidthScale * GameSettings.UI_SCALE * GameSettings.UI_SCALE_APPS - 1.0f));
 		}
 
+		public static uint ScaleStringLength(int val)
+		{
+			return (uint)ScaleWidthFloat(val / Settings.UIScale * GameSettings.UI_SCALE * GameSettings.UI_SCALE_APPS);
+		}
+
 		public static Texture2D GetUIScaledTexture(string name)
 		{
 			Texture2D unscaled = Lib.GetTexture(name);
