@@ -50,10 +50,10 @@ namespace KERBALISM
 			style.stretchHeight = true;
 			style.fixedWidth = 0;
 			style.fixedHeight = 0;
-			style.fontSize = 12;
+			style.fontSize = Styles.ScaleInteger(12);
 			style.alignment = TextAnchor.MiddleCenter;
 			style.border = new RectOffset(0, 0, 0, 0);
-			style.padding = new RectOffset(2, 2, 2, 2);
+			style.padding = new RectOffset(Styles.ScaleInteger(2), Styles.ScaleInteger(2), Styles.ScaleInteger(2), Styles.ScaleInteger(2));
 
 			if (all_logs == null)
 			{
@@ -185,8 +185,7 @@ namespace KERBALISM
 		}
 
 
-		// constants
-		const float offset = 266.0f;
+		float offset = Styles.ScaleFloat(266.0f);
 
 		// store entries
 		Queue<Entry> entries = new Queue<Entry>();
