@@ -147,7 +147,7 @@ namespace KERBALISM
 		// Increasing font size does not affect width as much as height. To avoid excessively wide UIs we scale with UIPanelWidthSScale rather than	UIScale
 		public static float ScaleWidthFloat(float val)
 		{
-			return val * (1.0f + (Settings.UIPanelWidthScale * GameSettings.UI_SCALE * GameSettings.UI_SCALE_APPS - 1.0f));
+			return val * Settings.UIPanelWidthScale * GameSettings.UI_SCALE * GameSettings.UI_SCALE_APPS;
 		}
 
 		public static uint ScaleStringLength(int val)

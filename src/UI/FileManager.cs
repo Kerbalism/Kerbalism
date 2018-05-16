@@ -10,7 +10,10 @@ namespace KERBALISM
 	public static class FileManager
 	{
 
-		public static void fileman(this Panel p, Vessel v, bool in_monitor = false)
+		/// <summary>
+		/// If short_strings parameter is true then the strings used for display of the data will be shorter when inflight.
+		/// </summary>
+		public static void fileman(this Panel p, Vessel v, bool short_strings = false)
 		{
 			// avoid corner-case when this is called in a lambda after scene changes
 			v = FlightGlobals.FindVessel(v.id);
@@ -55,7 +58,7 @@ namespace KERBALISM
 			if (drive.samples.Count == 0) p.content("<i>no samples</i>", string.Empty);
 		}
 
-		static void render_file(Panel p, string filename, File file, Drive drive, bool in_monitor)
+		static void render_file(Panel p, string filename, File file, Drive drive, bool short_strings)
 		{
 			// get experiment info
 			ExperimentInfo exp = Science.experiment(filename);
@@ -64,9 +67,9 @@ namespace KERBALISM
 			string exp_label = Lib.BuildString
 			(
 			  "<b>",
-			  Lib.Ellipsis(exp.name, Styles.ScaleStringLength(in_monitor ? 24 : 40)),
+			  Lib.Ellipsis(exp.name, Styles.ScaleStringLength(short_strings ? 24 : 40)),
 			  "</b> <size=", Styles.ScaleInteger(10).ToString(), ">",
-			  Lib.Ellipsis(exp.situation, Styles.ScaleStringLength((in_monitor ? 37 : 70) - Math.Min((in_monitor ? 24 : 40), exp.name.Length))),
+			  Lib.Ellipsis(exp.situation, Styles.ScaleStringLength((short_strings ? 37 : 70) - Math.Min((short_strings ? 24 : 40), exp.name.Length))),
 			  "</size>"
 			);
 			string exp_tooltip = Lib.BuildString
@@ -89,7 +92,7 @@ namespace KERBALISM
 		}
 
 
-		static void render_sample(Panel p, string filename, Sample sample, Drive drive, bool in_monitor)
+		static void render_sample(Panel p, string filename, Sample sample, Drive drive, bool short_strings)
 		{
 			// get experiment info
 			ExperimentInfo exp = Science.experiment(filename);
@@ -98,9 +101,9 @@ namespace KERBALISM
 			string exp_label = Lib.BuildString
 			(
 			  "<b>",
-			  Lib.Ellipsis(exp.name, Styles.ScaleStringLength(in_monitor ? 24 : 40)),
+			  Lib.Ellipsis(exp.name, Styles.ScaleStringLength(short_strings ? 24 : 40)),
 			  "</b> <size=", Styles.ScaleInteger(10).ToString(), ">",
-			  Lib.Ellipsis(exp.situation, Styles.ScaleStringLength((in_monitor ? 37 : 70) - Math.Min((in_monitor ? 24 : 40), exp.name.Length))),
+			  Lib.Ellipsis(exp.situation, Styles.ScaleStringLength((short_strings ? 37 : 70) - Math.Min((short_strings ? 24 : 40), exp.name.Length))),
 			  "</size>"
 			);
 			string exp_tooltip = Lib.BuildString

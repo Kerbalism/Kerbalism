@@ -107,7 +107,7 @@ namespace KERBALISM
 				switch (page)
 				{
 					case MonitorPage.telemetry: panel.telemetry(selected_v); break;
-					case MonitorPage.data: panel.fileman(selected_v, true); break;
+					case MonitorPage.data: panel.fileman(selected_v, true); break;  // Using short_strings parameter to stop overlapping when inflight.
 					case MonitorPage.scripts: panel.devman(selected_v); break;
 					case MonitorPage.config: panel.config(selected_v); break;
 					case MonitorPage.log: panel.logman(selected_v); break;
