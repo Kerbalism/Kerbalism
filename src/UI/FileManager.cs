@@ -43,7 +43,7 @@ namespace KERBALISM
 			{
 				string filename = pair.Key;
 				File file = pair.Value;
-				render_file(p, filename, file, drive, in_monitor && Lib.IsFlight());
+				render_file(p, filename, file, drive, short_strings && Lib.IsFlight());
 			}
 			if (drive.files.Count == 0) p.content("<i>no files</i>", string.Empty);
 
@@ -53,7 +53,7 @@ namespace KERBALISM
 			{
 				string filename = pair.Key;
 				Sample sample = pair.Value;
-				render_sample(p, filename, sample, drive, in_monitor && Lib.IsFlight());
+				render_sample(p, filename, sample, drive, short_strings && Lib.IsFlight());
 			}
 			if (drive.samples.Count == 0) p.content("<i>no samples</i>", string.Empty);
 		}
