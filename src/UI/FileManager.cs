@@ -67,9 +67,9 @@ namespace KERBALISM
 			string exp_label = Lib.BuildString
 			(
 			  "<b>",
-			  Lib.Ellipsis(exp.name, Styles.ScaleStringLength(short_strings ? 24 : 40)),
+			  Lib.Ellipsis(exp.name, Styles.ScaleStringLength(short_strings ? 24 : 38)),
 			  "</b> <size=", Styles.ScaleInteger(10).ToString(), ">",
-			  Lib.Ellipsis(exp.situation, Styles.ScaleStringLength((short_strings ? 37 : 70) - Math.Min((short_strings ? 24 : 40), exp.name.Length))),
+			  Lib.Ellipsis(exp.situation, Styles.ScaleStringLength((short_strings ? 32 : 62) - Lib.Ellipsis(exp.name, Styles.ScaleStringLength(short_strings ? 24 : 38)).Length)),
 			  "</size>"
 			);
 			string exp_tooltip = Lib.BuildString
@@ -101,9 +101,9 @@ namespace KERBALISM
 			string exp_label = Lib.BuildString
 			(
 			  "<b>",
-			  Lib.Ellipsis(exp.name, Styles.ScaleStringLength(short_strings ? 24 : 40)),
+			  Lib.Ellipsis(exp.name, Styles.ScaleStringLength(short_strings ? 24 : 38)),
 			  "</b> <size=", Styles.ScaleInteger(10).ToString(), ">",
-			  Lib.Ellipsis(exp.situation, Styles.ScaleStringLength((short_strings ? 37 : 70) - Math.Min((short_strings ? 24 : 40), exp.name.Length))),
+			  Lib.Ellipsis(exp.situation, Styles.ScaleStringLength((short_strings ? 32 : 62) - Lib.Ellipsis(exp.name, Styles.ScaleStringLength(short_strings ? 24 : 38)).Length)),
 			  "</size>"
 			);
 			string exp_tooltip = Lib.BuildString

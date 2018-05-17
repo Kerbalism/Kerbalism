@@ -265,7 +265,7 @@ namespace KERBALISM
 			GUILayout.Label(new GUIContent(" GROUP ", Icons.small_search, "Organize in groups"), config_style);
 			vd.group = Lib.TextFieldPlaceholder("Kerbalism_group", vd.group, "NONE", group_style).ToUpper();
 			GUILayout.EndHorizontal();
-			GUILayout.Space(10.0f);
+			GUILayout.Space(Styles.ScaleFloat(10.0f));
 		}
 
 
@@ -275,7 +275,7 @@ namespace KERBALISM
 			GUILayout.BeginHorizontal(Styles.entry_container);
 			filter = Lib.TextFieldPlaceholder("Kerbalism_filter", filter, filter_placeholder, filter_style).ToUpper();
 			GUILayout.EndHorizontal();
-			GUILayout.Space(10.0f);
+			GUILayout.Space(Styles.ScaleFloat(10.0f));
 		}
 
 

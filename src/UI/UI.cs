@@ -14,7 +14,7 @@ namespace KERBALISM
 			// create subsystems
 			message = new Message();
 			launcher = new Launcher();
-			window = new Window(260u, DB.ui.win_left, DB.ui.win_top);
+			window = new Window((uint)Styles.ScaleWidthFloat(280), DB.ui.win_left, DB.ui.win_top);
 		}
 
 		public static void sync()

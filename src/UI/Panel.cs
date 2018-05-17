@@ -16,7 +16,7 @@ namespace KERBALISM
 			sections = new List<Section>();
 			callbacks = new List<Action>();
 			win_title = string.Empty;
-			min_width = Styles.ScaleFloat(280.0f);
+			min_width = Styles.ScaleWidthFloat(280.0f);
 		}
 
 		public void clear()
@@ -24,7 +24,7 @@ namespace KERBALISM
 			headers.Clear();
 			sections.Clear();
 			win_title = string.Empty;
-			min_width = Styles.ScaleFloat(280.0f);
+			min_width = Styles.ScaleWidthFloat(280.0f);
 		}
 
 		public void header(string label, string tooltip = "", Action click = null)

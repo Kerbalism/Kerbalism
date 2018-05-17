@@ -152,7 +152,7 @@ namespace KERBALISM
 
 		public static uint ScaleStringLength(int val)
 		{
-			return (uint)ScaleWidthFloat(val / Settings.UIScale * GameSettings.UI_SCALE * GameSettings.UI_SCALE_APPS);
+			return (uint)ScaleWidthFloat(val / (Settings.UIScale * Settings.UIScale * GameSettings.UI_SCALE * GameSettings.UI_SCALE_APPS));
 		}
 
 		public static Texture2D GetUIScaledTexture(string name)
