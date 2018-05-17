@@ -488,7 +488,8 @@ namespace KERBALISM
 			}
 
 			// set metadata
-			p.title(Lib.BuildString("Configure <color=#cccccc>", title, "</color>"));
+			p.title(Lib.BuildString("Configure <color=#cccccc>", Lib.Ellipsis(title, Styles.ScaleStringLength(40)), "</color>"));
+			p.width(Styles.ScaleWidthFloat(300.0f));
 		}
 
 		void render_panel(Panel p, ConfigureSetup setup, int selected_i, int setup_i)
@@ -502,11 +503,11 @@ namespace KERBALISM
 			// only allow reconfiguration if there are more setups than slots
 			if (unlocked.Count <= selected.Count)
 			{
-				p.section(setup.name, setup.desc);
+				p.section(Lib.Ellipsis(setup.name, Styles.ScaleStringLength(70)), setup.desc);
 			}
 			else
 			{
-				p.section(setup.name, setup.desc, () => change_setup(-1, selected_i, ref setup_i), () => change_setup(1, selected_i, ref setup_i));
+				p.section(Lib.Ellipsis(setup.name, Styles.ScaleStringLength(70)), setup.desc, () => change_setup(-1, selected_i, ref setup_i), () => change_setup(1, selected_i, ref setup_i));
 			}
 
 			// render details
