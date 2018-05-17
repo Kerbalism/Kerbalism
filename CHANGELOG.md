@@ -5,7 +5,7 @@
 
  * A first attempt at scaling Kerbalism UI to follow KSP UI scaling
  ** By default using the scaling configured for KSP, with an additional scale factor in Settings.cfg if needed to overrule the default
- ** Some tooltips, such as the comfort and radiation will not show perfectly aligned text, but the content is there and the font readable
+ * Clicking the middle mouse button on the popout menu will now close the popout window if it is already open.
  * Humidity Control and a new Life Support Unit part (curtesy of PiezPiedPy)
  * Scale down food production to realistic levels, and make it dependent on CO2 (madman2003)
  ** Every kerbal now requires 2x Kerbalism greenhouse, or 3x 2.5m SSPX greenhouses, or 6x 3.5m SSPX greenhouses for permanent food production
