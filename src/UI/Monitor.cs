@@ -235,33 +235,63 @@ namespace KERBALISM
 
 		void render_menu(Vessel v)
 		{
-			const string tooltip = "\n<i>(middle-click to popout in a window)</i>";
+			const string tooltip = "\n<i>(middle-click to popout in a window, middle-click again to close popout)</i>";
 			VesselData vd = DB.Vessel(v);
 			GUILayout.BeginHorizontal(Styles.entry_container);
 			GUILayout.Label(new GUIContent(page == MonitorPage.telemetry ? " <color=#00ffff>INFO</color> " : " INFO ", Icons.small_info, "Telemetry readings" + tooltip), config_style);
 			if (Lib.IsClicked()) page = MonitorPage.telemetry;
-			else if (Lib.IsClicked(2)) UI.open((p) => p.telemetry(v));
+			else if (Lib.IsClicked(2))
+			{
+				if (UI.window.PanelType == Panel.PanelType.telemetry)
+					UI.window.close();
+				else
+					UI.open((p) => p.telemetry(v));
+			}
 			if (Features.Science)
 			{
 				GUILayout.Label(new GUIContent(page == MonitorPage.data ? " <color=#00ffff>DATA</color> " : " DATA ", Icons.small_folder, "Stored files and samples" + tooltip), config_style);
 				if (Lib.IsClicked()) page = MonitorPage.data;
-				else if (Lib.IsClicked(2)) UI.open((p) => p.fileman(v));
+				else if (Lib.IsClicked(2))
+				{
+					if (UI.window.PanelType == Panel.PanelType.data)
+						UI.window.close();
+					else
+						UI.open((p) => p.fileman(v));
+				}
 			}
 			if (Features.Automation)
 			{
 				GUILayout.Label(new GUIContent(page == MonitorPage.scripts ? " <color=#00ffff>AUTO</color> " : " AUTO ", Icons.small_console, "Control and automate components" + tooltip), config_style);
 				if (Lib.IsClicked()) page = MonitorPage.scripts;
-				else if (Lib.IsClicked(2)) UI.open((p) => p.devman(v));
+				else if (Lib.IsClicked(2))
+				{
+					if (UI.window.PanelType == Panel.PanelType.scripts)
+						UI.window.close();
+					else
+						UI.open((p) => p.devman(v));
+				}
 			}
 			if (Settings.StockMessages != true)
 			{
 				GUILayout.Label(new GUIContent(page == MonitorPage.log ? " <color=#00ffff>LOG</color> " : " LOG ", Icons.small_notes, "See previous notifications" + tooltip), config_style);
 				if (Lib.IsClicked()) page = MonitorPage.log;
-				else if (Lib.IsClicked(2)) UI.open((p) => p.logman(v));
+				else if (Lib.IsClicked(2))
+				{
+					if (UI.window.PanelType == Panel.PanelType.log)
+						UI.window.close();
+					else
+						UI.open((p) => p.logman(v));
+				}
 			}
 			GUILayout.Label(new GUIContent(page == MonitorPage.config ? " <color=#00ffff>CFG</color> " : " CFG ", Icons.small_config, "Configure the vessel" + tooltip), config_style);
 			if (Lib.IsClicked()) page = MonitorPage.config;
-			else if (Lib.IsClicked(2)) UI.open((p) => p.config(v));
+			else if (Lib.IsClicked(2))
+			{
+				if (UI.window.PanelType == Panel.PanelType.config)
+					UI.window.close();
+				else
+					UI.open((p) => p.config(v));
+			}
 			GUILayout.Label(new GUIContent(" GROUP ", Icons.small_search, "Organize in groups"), config_style);
 			vd.group = Lib.TextFieldPlaceholder("Kerbalism_group", vd.group, "NONE", group_style).ToUpper();
 			GUILayout.EndHorizontal();

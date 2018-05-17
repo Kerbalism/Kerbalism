@@ -69,7 +69,7 @@ namespace KERBALISM
 
 		static Message message;
 		static Launcher launcher;
-		static Window window;
+		public static Window window;
 	}
 
 

@@ -26,6 +26,7 @@ namespace KERBALISM
 			// set metadata
 			p.title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(20)), " <color=#cccccc>TELEMETRY</color>"));
 			p.width(Styles.ScaleWidthFloat(355.0f));
+			p.paneltype = Panel.PanelType.telemetry;
 
 			// time-out simulation
 			if (p.timeout(vi)) return;

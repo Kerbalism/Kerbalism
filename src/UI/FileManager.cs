@@ -30,8 +30,9 @@ namespace KERBALISM
 			// set metadata
 			p.title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(40)), " <color=#cccccc>FILE MANAGER</color>"));
 			p.width(Styles.ScaleWidthFloat(465.0f));
+			p.paneltype = Panel.PanelType.data;
 
-			// time-out simulation
+ 			// time-out simulation
 			if (p.timeout(vi)) return;
 
 			// get vessel drive

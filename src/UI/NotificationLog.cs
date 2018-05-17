@@ -11,6 +11,8 @@ namespace KERBALISM
 		{
 			p.title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(40)), " <color=#cccccc>ALL LOGS</color>"));
 			p.width(Styles.ScaleWidthFloat(465.0f));
+			p.paneltype = Panel.PanelType.log;
+
 			p.section("LOGS");
 			if (Message.all_logs == null || Message.all_logs.Count == 0)
 			{

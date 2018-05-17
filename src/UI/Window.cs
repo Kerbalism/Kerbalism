@@ -141,6 +141,16 @@ namespace KERBALISM
 			return (uint)win_rect.yMin;
 		}
 
+		public Panel.PanelType PanelType
+		{
+			get
+			{
+				if (panel == null)
+					return Panel.PanelType.unknown;
+				else
+					return panel.paneltype;
+			}
+		}
 
 		// store window id
 		int win_id;
