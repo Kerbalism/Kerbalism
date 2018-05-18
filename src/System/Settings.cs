@@ -85,7 +85,9 @@ namespace KERBALISM
 			StockMessages = Lib.ConfigValue(cfg, "StockMessages", false);
 			MessageLength = Lib.ConfigValue(cfg, "MessageLength", 4.0f);
 			LowQualityRendering = Lib.ConfigValue(cfg, "LowQualityRendering", false);
-		}
+			UIScale = Lib.ConfigValue(cfg, "UIScale", 1.0f);
+			UIPanelWidthScale = Lib.ConfigValue(cfg, "UIPanelWidthScale", 1.0f);
+        }
 
 
 		// profile used
@@ -152,6 +154,8 @@ namespace KERBALISM
 		public static bool StockMessages;                     // use the stock messages instead of our own message box
 		public static float MessageLength;                     // duration of messages on screen in seconds
 		public static bool LowQualityRendering;               // use less particles to render the magnetic fields
+		public static float UIScale;                          // scale UI elements by this factor, relative to KSP scaling settings, useful for high PPI screens
+		public static float UIPanelWidthScale;                // scale UI Panel Width by this factor, relative to KSP scaling settings, useful for high PPI screens
 	}
 
 

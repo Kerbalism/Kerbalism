@@ -9,7 +9,11 @@ namespace KERBALISM
 
 	public static class FileManager
 	{
-		public static void fileman(this Panel p, Vessel v)
+
+		/// <summary>
+		/// If short_strings parameter is true then the strings used for display of the data will be shorter when inflight.
+		/// </summary>
+		public static void fileman(this Panel p, Vessel v, bool short_strings = false)
 		{
 			// avoid corner-case when this is called in a lambda after scene changes
 			v = FlightGlobals.FindVessel(v.id);
@@ -24,10 +28,11 @@ namespace KERBALISM
 			if (!vi.is_valid) return;
 
 			// set metadata
-			p.title(Lib.BuildString(Lib.Ellipsis(v.vesselName, 20), " <color=#cccccc>FILE MANAGER</color>"));
-			p.width(320.0f);
+			p.title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(40)), " <color=#cccccc>FILE MANAGER</color>"));
+			p.width(Styles.ScaleWidthFloat(465.0f));
+			p.paneltype = Panel.PanelType.data;
 
-			// time-out simulation
+ 			// time-out simulation
 			if (p.timeout(vi)) return;
 
 			// get vessel drive
@@ -39,7 +44,7 @@ namespace KERBALISM
 			{
 				string filename = pair.Key;
 				File file = pair.Value;
-				render_file(p, filename, file, drive);
+				render_file(p, filename, file, drive, short_strings && Lib.IsFlight());
 			}
 			if (drive.files.Count == 0) p.content("<i>no files</i>", string.Empty);
 
@@ -49,12 +54,12 @@ namespace KERBALISM
 			{
 				string filename = pair.Key;
 				Sample sample = pair.Value;
-				render_sample(p, filename, sample, drive);
+				render_sample(p, filename, sample, drive, short_strings && Lib.IsFlight());
 			}
 			if (drive.samples.Count == 0) p.content("<i>no samples</i>", string.Empty);
 		}
 
-		static void render_file(Panel p, string filename, File file, Drive drive)
+		static void render_file(Panel p, string filename, File file, Drive drive, bool short_strings)
 		{
 			// get experiment info
 			ExperimentInfo exp = Science.experiment(filename);
@@ -63,9 +68,9 @@ namespace KERBALISM
 			string exp_label = Lib.BuildString
 			(
 			  "<b>",
-			  Lib.Ellipsis(exp.name, 24),
-			  "</b> <size=10>",
-			  Lib.Ellipsis(exp.situation, 32u - (uint)Math.Min(24, exp.name.Length)),
+			  Lib.Ellipsis(exp.name, Styles.ScaleStringLength(short_strings ? 24 : 38)),
+			  "</b> <size=", Styles.ScaleInteger(10).ToString(), ">",
+			  Lib.Ellipsis(exp.situation, Styles.ScaleStringLength((short_strings ? 32 : 62) - Lib.Ellipsis(exp.name, Styles.ScaleStringLength(short_strings ? 24 : 38)).Length)),
 			  "</size>"
 			);
 			string exp_tooltip = Lib.BuildString
@@ -88,7 +93,7 @@ namespace KERBALISM
 		}
 
 
-		static void render_sample(Panel p, string filename, Sample sample, Drive drive)
+		static void render_sample(Panel p, string filename, Sample sample, Drive drive, bool short_strings)
 		{
 			// get experiment info
 			ExperimentInfo exp = Science.experiment(filename);
@@ -97,9 +102,9 @@ namespace KERBALISM
 			string exp_label = Lib.BuildString
 			(
 			  "<b>",
-			  Lib.Ellipsis(exp.name, 24),
-			  "</b> <size=10>",
-			  Lib.Ellipsis(exp.situation, 32u - (uint)Math.Min(24, exp.name.Length)),
+			  Lib.Ellipsis(exp.name, Styles.ScaleStringLength(short_strings ? 24 : 38)),
+			  "</b> <size=", Styles.ScaleInteger(10).ToString(), ">",
+			  Lib.Ellipsis(exp.situation, Styles.ScaleStringLength((short_strings ? 32 : 62) - Lib.Ellipsis(exp.name, Styles.ScaleStringLength(short_strings ? 24 : 38)).Length)),
 			  "</size>"
 			);
 			string exp_tooltip = Lib.BuildString

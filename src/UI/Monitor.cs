@@ -26,9 +26,9 @@ namespace KERBALISM
 			filter_style = new GUIStyle(HighLogic.Skin.label);
 			filter_style.normal.textColor = new Color(0.66f, 0.66f, 0.66f, 1.0f);
 			filter_style.stretchWidth = true;
-			filter_style.fontSize = 12;
+			filter_style.fontSize = Styles.ScaleInteger(12);
 			filter_style.alignment = TextAnchor.MiddleCenter;
-			filter_style.fixedHeight = 16.0f;
+			filter_style.fixedHeight = Styles.ScaleFloat(16.0f);
 			filter_style.border = new RectOffset(0, 0, 0, 0);
 
 			// vessel config style
@@ -37,13 +37,13 @@ namespace KERBALISM
 			config_style.padding = new RectOffset(0, 0, 0, 0);
 			config_style.alignment = TextAnchor.MiddleLeft;
 			config_style.imagePosition = ImagePosition.ImageLeft;
-			config_style.fontSize = 9;
+			config_style.fontSize = Styles.ScaleInteger(9);
 
 			// group texfield style
 			group_style = new GUIStyle(config_style);
 			group_style.imagePosition = ImagePosition.TextOnly;
 			group_style.stretchWidth = true;
-			group_style.fixedHeight = 11.0f;
+			group_style.fixedHeight = Styles.ScaleFloat(11.0f);
 			group_style.normal.textColor = Color.yellow;
 
 			// initialize panel
@@ -107,7 +107,7 @@ namespace KERBALISM
 				switch (page)
 				{
 					case MonitorPage.telemetry: panel.telemetry(selected_v); break;
-					case MonitorPage.data: panel.fileman(selected_v); break;
+					case MonitorPage.data: panel.fileman(selected_v, true); break;  // Using short_strings parameter to stop overlapping when inflight.
 					case MonitorPage.scripts: panel.devman(selected_v); break;
 					case MonitorPage.config: panel.config(selected_v); break;
 					case MonitorPage.log: panel.logman(selected_v); break;
@@ -148,17 +148,17 @@ namespace KERBALISM
 
 		public float width()
 		{
-			if (page == MonitorPage.log)
+			if ((page == MonitorPage.data || page == MonitorPage.log || selected_id == Guid.Empty) && !Lib.IsFlight())
 			{
-				return Math.Max(465.0f, panel.width());
+				return Styles.ScaleWidthFloat(465.0f);
 			}
-			return Math.Max(355.0f, panel.width());
+			return Styles.ScaleWidthFloat(355.0f);
 		}
 
 		public float height()
 		{
 			// top spacing
-			float h = 10.0f;
+			float h = Styles.ScaleFloat(10.0f);
 
 			// panel height
 			h += panel.height();
@@ -166,7 +166,7 @@ namespace KERBALISM
 			// one is selected, or filter is required
 			if (selected_id != Guid.Empty || show_filter)
 			{
-				h += 26.0f;
+				h += Styles.ScaleFloat(26.0f);
 			}
 
 			// clamp to screen height
@@ -205,7 +205,10 @@ namespace KERBALISM
 			// render entry
 			p.header
 			(
-			  Lib.BuildString("<b>", Lib.Ellipsis(vessel_name, 20), "</b> <size=9><color=#cccccc>", Lib.Ellipsis(body_name, 8), "</color></size>"),
+			  Lib.BuildString("<b>",
+			  Lib.Ellipsis(vessel_name, Styles.ScaleStringLength(((page == MonitorPage.data || page == MonitorPage.log || selected_id == Guid.Empty) && !Lib.IsFlight()) ? 50 : 30)),
+			  "</b> <size=", Styles.ScaleInteger(9).ToString(),
+			  "><color=#cccccc>", Lib.Ellipsis(body_name, Styles.ScaleStringLength(8)), "</color></size>"),
 			  string.Empty,
 			  () => { selected_id = selected_id != v.id ? v.id : Guid.Empty; }
 			);
@@ -232,37 +235,67 @@ namespace KERBALISM
 
 		void render_menu(Vessel v)
 		{
-			const string tooltip = "\n<i>(middle-click to popout in a window)</i>";
+			const string tooltip = "\n<i>(middle-click to popout in a window, middle-click again to close popout)</i>";
 			VesselData vd = DB.Vessel(v);
 			GUILayout.BeginHorizontal(Styles.entry_container);
 			GUILayout.Label(new GUIContent(page == MonitorPage.telemetry ? " <color=#00ffff>INFO</color> " : " INFO ", Icons.small_info, "Telemetry readings" + tooltip), config_style);
 			if (Lib.IsClicked()) page = MonitorPage.telemetry;
-			else if (Lib.IsClicked(2)) UI.open((p) => p.telemetry(v));
+			else if (Lib.IsClicked(2))
+			{
+				if (UI.window.PanelType == Panel.PanelType.telemetry)
+					UI.window.close();
+				else
+					UI.open((p) => p.telemetry(v));
+			}
 			if (Features.Science)
 			{
 				GUILayout.Label(new GUIContent(page == MonitorPage.data ? " <color=#00ffff>DATA</color> " : " DATA ", Icons.small_folder, "Stored files and samples" + tooltip), config_style);
 				if (Lib.IsClicked()) page = MonitorPage.data;
-				else if (Lib.IsClicked(2)) UI.open((p) => p.fileman(v));
+				else if (Lib.IsClicked(2))
+				{
+					if (UI.window.PanelType == Panel.PanelType.data)
+						UI.window.close();
+					else
+						UI.open((p) => p.fileman(v));
+				}
 			}
 			if (Features.Automation)
 			{
 				GUILayout.Label(new GUIContent(page == MonitorPage.scripts ? " <color=#00ffff>AUTO</color> " : " AUTO ", Icons.small_console, "Control and automate components" + tooltip), config_style);
 				if (Lib.IsClicked()) page = MonitorPage.scripts;
-				else if (Lib.IsClicked(2)) UI.open((p) => p.devman(v));
+				else if (Lib.IsClicked(2))
+				{
+					if (UI.window.PanelType == Panel.PanelType.scripts)
+						UI.window.close();
+					else
+						UI.open((p) => p.devman(v));
+				}
 			}
 			if (Settings.StockMessages != true)
 			{
 				GUILayout.Label(new GUIContent(page == MonitorPage.log ? " <color=#00ffff>LOG</color> " : " LOG ", Icons.small_notes, "See previous notifications" + tooltip), config_style);
 				if (Lib.IsClicked()) page = MonitorPage.log;
-				else if (Lib.IsClicked(2)) UI.open((p) => p.logman(v));
+				else if (Lib.IsClicked(2))
+				{
+					if (UI.window.PanelType == Panel.PanelType.log)
+						UI.window.close();
+					else
+						UI.open((p) => p.logman(v));
+				}
 			}
 			GUILayout.Label(new GUIContent(page == MonitorPage.config ? " <color=#00ffff>CFG</color> " : " CFG ", Icons.small_config, "Configure the vessel" + tooltip), config_style);
 			if (Lib.IsClicked()) page = MonitorPage.config;
-			else if (Lib.IsClicked(2)) UI.open((p) => p.config(v));
+			else if (Lib.IsClicked(2))
+			{
+				if (UI.window.PanelType == Panel.PanelType.config)
+					UI.window.close();
+				else
+					UI.open((p) => p.config(v));
+			}
 			GUILayout.Label(new GUIContent(" GROUP ", Icons.small_search, "Organize in groups"), config_style);
 			vd.group = Lib.TextFieldPlaceholder("Kerbalism_group", vd.group, "NONE", group_style).ToUpper();
 			GUILayout.EndHorizontal();
-			GUILayout.Space(10.0f);
+			GUILayout.Space(Styles.ScaleFloat(10.0f));
 		}
 
 
@@ -272,7 +305,7 @@ namespace KERBALISM
 			GUILayout.BeginHorizontal(Styles.entry_container);
 			filter = Lib.TextFieldPlaceholder("Kerbalism_filter", filter, filter_placeholder, filter_style).ToUpper();
 			GUILayout.EndHorizontal();
-			GUILayout.Space(10.0f);
+			GUILayout.Space(Styles.ScaleFloat(10.0f));
 		}
 
 

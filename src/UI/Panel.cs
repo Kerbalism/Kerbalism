@@ -10,13 +10,24 @@ namespace KERBALISM
 	// store and render a simple structured ui
 	public sealed class Panel
 	{
+		public enum PanelType
+		{
+			unknown,
+			telemetry,
+			data,
+			scripts,
+			config,
+			log
+		}
+
 		public Panel()
 		{
 			headers = new List<Header>();
 			sections = new List<Section>();
 			callbacks = new List<Action>();
 			win_title = string.Empty;
-			min_width = 260.0f;
+			min_width = Styles.ScaleWidthFloat(280.0f);
+			paneltype = PanelType.unknown;
 		}
 
 		public void clear()
@@ -24,7 +35,8 @@ namespace KERBALISM
 			headers.Clear();
 			sections.Clear();
 			win_title = string.Empty;
-			min_width = 260.0f;
+			min_width = Styles.ScaleWidthFloat(280.0f);
+			paneltype = PanelType.unknown;
 		}
 
 		public void header(string label, string tooltip = "", Action click = null)
@@ -93,7 +105,7 @@ namespace KERBALISM
 					if (i.click != null && Lib.IsClicked()) callbacks.Add(i.click);
 				}
 				GUILayout.EndHorizontal();
-				GUILayout.Space(10.0f);
+				GUILayout.Space(Styles.ScaleFloat(10.0f));
 			}
 
 			// sections
@@ -140,7 +152,7 @@ namespace KERBALISM
 				}
 
 				// spacing
-				GUILayout.Space(10.0f);
+				GUILayout.Space(Styles.ScaleFloat(10.0f));
 			}
 
 			// call callbacks
@@ -155,14 +167,14 @@ namespace KERBALISM
 		{
 			float h = 0.0f;
 
-			h += (float)headers.Count * 26.0f;
+			h += Styles.ScaleFloat((float)headers.Count * 26.0f);
 
 			foreach (Section p in sections)
 			{
-				h += 18.0f + (float)p.entries.Count * 16.0f + 16.0f;
+				h += Styles.ScaleFloat(18.0f + (float)p.entries.Count * 16.0f + 16.0f);
 				if (p.desc.Length > 0)
 				{
-					h += Styles.desc.CalcHeight(new GUIContent(p.desc), min_width - 20.0f);
+					h += Styles.desc.CalcHeight(new GUIContent(p.desc), min_width - Styles.ScaleWidthFloat(20.0f));
 				}
 			}
 
@@ -268,6 +280,7 @@ namespace KERBALISM
 		List<Action> callbacks;  // functions to call on input events
 		string win_title;  // metadata stored in panel
 		float min_width;  // metadata stored in panel
+		public PanelType paneltype;
 	}
 
 
