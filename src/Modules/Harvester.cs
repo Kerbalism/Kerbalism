@@ -86,10 +86,14 @@ namespace KERBALISM
 		{
 			if (Lib.Proto.GetBool(m, "deployed") && Lib.Proto.GetBool(m, "running") && Lib.Proto.GetString(m, "issue").Length == 0)
 			{
-				resource_recipe recipe = new resource_recipe();
-				recipe.Input("ElectricCharge", harvester.ec_rate * elapsed_s);
-				recipe.Output(harvester.resource, harvester.rate * elapsed_s, true);
-				ResourceCache.Transform(v, recipe);
+				double abundance = SampleAbundance(v, harvester);
+				if (abundance > Lib.Proto.GetDouble(m, "min_abundance"))
+				{
+					resource_recipe recipe = new resource_recipe();
+					recipe.Input("ElectricCharge", harvester.ec_rate * elapsed_s);
+					recipe.Output(harvester.resource, harvester.rate * abundance * elapsed_s, true);
+					ResourceCache.Transform(v, recipe);
+				}
 			}
 		}
 
