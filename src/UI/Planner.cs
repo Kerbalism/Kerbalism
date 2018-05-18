@@ -170,7 +170,7 @@ namespace KERBALISM
 
 		public float width()
 		{
-			return Styles.ScaleWidthFloat(260.0f);
+			return Styles.ScaleWidthFloat(280.0f);
 		}
 
 
@@ -191,20 +191,21 @@ namespace KERBALISM
 		{
 			string flux_tooltip = Lib.BuildString
 			(
-			  "<align=left /><b>source\t\tflux\t\ttemp</b>\n",
-			  "solar\t\t", env.solar_flux > 0.0 ? Lib.HumanReadableFlux(env.solar_flux) : "none\t", "\t", Lib.HumanReadableTemp(Sim.BlackBodyTemperature(env.solar_flux)), "\n",
-			  "albedo\t\t", env.albedo_flux > 0.0 ? Lib.HumanReadableFlux(env.albedo_flux) : "none\t", "\t", Lib.HumanReadableTemp(Sim.BlackBodyTemperature(env.albedo_flux)), "\n",
-			  "body\t\t", env.body_flux > 0.0 ? Lib.HumanReadableFlux(env.body_flux) : "none\t", "\t", Lib.HumanReadableTemp(Sim.BlackBodyTemperature(env.body_flux)), "\n",
-			  "background\t", Lib.HumanReadableFlux(Sim.BackgroundFlux()), "\t", Lib.HumanReadableTemp(Sim.BlackBodyTemperature(Sim.BackgroundFlux())), "\n",
-			  "total\t\t", Lib.HumanReadableFlux(env.total_flux), "\t", Lib.HumanReadableTemp(Sim.BlackBodyTemperature(env.total_flux))
+				"<align=left />" +
+				String.Format("<b>{0,-14}\t{1,-15}\t{2}</b>\n", "Source", "Flux", "Temp"),
+				String.Format("{0,-14}\t{1,-15}\t{2}\n", "solar", env.solar_flux > 0.0 ? Lib.HumanReadableFlux(env.solar_flux) : "none", Lib.HumanReadableTemp(Sim.BlackBodyTemperature(env.solar_flux))),
+				String.Format("{0,-14}\t{1,-15}\t{2}\n", "albedo", env.albedo_flux > 0.0 ? Lib.HumanReadableFlux(env.albedo_flux) : "none", Lib.HumanReadableTemp(Sim.BlackBodyTemperature(env.albedo_flux))),
+				String.Format("{0,-14}\t{1,-15}\t{2}\n", "body", env.body_flux > 0.0 ? Lib.HumanReadableFlux(env.body_flux) : "none", Lib.HumanReadableTemp(Sim.BlackBodyTemperature(env.body_flux))),
+				String.Format("{0,-14}\t{1,-15}\t{2}\n", "background", Lib.HumanReadableFlux(Sim.BackgroundFlux()), Lib.HumanReadableTemp(Sim.BlackBodyTemperature(Sim.BackgroundFlux()))),
+				String.Format("{0,-14}\t\t{1,-15}\t{2}", "total", Lib.HumanReadableFlux(env.total_flux), Lib.HumanReadableTemp(Sim.BlackBodyTemperature(env.total_flux)))
 			);
 			string atmosphere_tooltip = Lib.BuildString
 			(
-			  "<align=left />",
-			  "breathable\t\t<b>", Sim.Breathable(env.body) ? "yes" : "no", "</b>\n",
-			  "pressure\t\t<b>", Lib.HumanReadablePressure(env.body.atmospherePressureSeaLevel), "</b>\n",
-			  "light absorption\t\t<b>", Lib.HumanReadablePerc(1.0 - env.atmo_factor), "</b>\n",
-			  "gamma absorption\t<b>", Lib.HumanReadablePerc(1.0 - Sim.GammaTransparency(env.body, 0.0)), "</b>"
+				"<align=left />",
+				String.Format("{0,-14}\t<b>{1}</b>\n", "breathable", Sim.Breathable(env.body) ? "yes" : "no"),
+				String.Format("{0,-14}\t<b>{1}</b>\n", "pressure", Lib.HumanReadablePressure(env.body.atmospherePressureSeaLevel)),
+				String.Format("{0,-14}\t<b>{1}</b>\n", "light absorption", Lib.HumanReadablePerc(1.0 - env.atmo_factor)),
+				String.Format("{0,-14}\t<b>{1}</b>", "gamma absorption", Lib.HumanReadablePerc(1.0 - Sim.GammaTransparency(env.body, 0.0)))
 			);
 			string shadowtime_str = Lib.HumanReadableDuration(env.shadow_period) + " (" + (env.shadow_time * 100.0).ToString("F0") + "%)";
 
@@ -264,8 +265,8 @@ namespace KERBALISM
 			// generate details tooltips
 			string living_space_tooltip = Lib.BuildString
 			(
-			  "volume per-capita: <b>", Lib.HumanReadableVolume(va.volume / (double)Math.Max(va.crew_count, 1)), "</b>\n",
-			  "ideal living space: <b>", Lib.HumanReadableVolume(Settings.IdealLivingSpace), "</b>"
+				"volume per-capita:<b>\t", Lib.HumanReadableVolume(va.volume / (double)Math.Max(va.crew_count, 1)), "</b>\n",
+				"ideal living space:<b>\t", Lib.HumanReadableVolume(Settings.IdealLivingSpace), "</b>"
 			);
 			p.content("living space", Habitat.living_space_to_string(va.living_space), living_space_tooltip);
 
@@ -284,7 +285,7 @@ namespace KERBALISM
 			{
 				string pressure_tooltip = va.pressurized
 				  ? "Free roaming in a pressurized environment is\nvastly superior to living in a suit."
-				  : "Being forced inside a suit all the time greatly\nreduce the crew quality of life.\nThe worst part is the diaper.";
+				  : "Being forced inside a suit all the time greatly\nreduces the crews quality of life.\nThe worst part is the diaper.";
 				p.content("pressurized", va.pressurized ? "yes" : "no", pressure_tooltip);
 			}
 			else
@@ -336,14 +337,14 @@ namespace KERBALISM
 			var mf = Radiation.Info(env.body).model;
 			string tooltip = Lib.BuildString
 			(
-			  "<align=left />",
-			  "surface\t\t<b>", Lib.HumanReadableDuration(estimates[0]), "</b>\n",
-			  mf.has_pause ? Lib.BuildString("magnetopause\t<b>", Lib.HumanReadableDuration(estimates[1]), "</b>\n") : "",
-			  mf.has_inner ? Lib.BuildString("inner belt\t<b>", Lib.HumanReadableDuration(estimates[2]), "</b>\n") : "",
-			  mf.has_outer ? Lib.BuildString("outer belt\t<b>", Lib.HumanReadableDuration(estimates[3]), "</b>\n") : "",
-			  "interplanetary\t<b>", Lib.HumanReadableDuration(estimates[4]), "</b>\n",
-			  "interstellar\t<b>", Lib.HumanReadableDuration(estimates[5]), "</b>\n",
-			  "storm\t\t<b>", Lib.HumanReadableDuration(estimates[6]), "</b>"
+				"<align=left />",
+				String.Format("{0,-20}\t<b>{1}</b>\n", "surface", Lib.HumanReadableDuration(estimates[0])),
+				mf.has_pause ? String.Format("{0,-20}\t<b>{1}</b>\n", "magnetopause", Lib.HumanReadableDuration(estimates[1])) : "",
+				mf.has_inner ? String.Format("{0,-20}\t<b>{1}</b>\n", "inner belt", Lib.HumanReadableDuration(estimates[2])) : "",
+				mf.has_outer ? String.Format("{0,-20}\t<b>{1}</b>\n", "outer belt", Lib.HumanReadableDuration(estimates[3])) : "",
+				String.Format("{0,-20}\t<b>{1}</b>\n", "interplanetary", Lib.HumanReadableDuration(estimates[4])),
+				String.Format("{0,-20}\t<b>{1}</b>\n", "interstellar", Lib.HumanReadableDuration(estimates[5])),
+				String.Format("{0,-20}\t<b>{1}</b>", "storm", Lib.HumanReadableDuration(estimates[6]))
 			);
 
 			// render the panel

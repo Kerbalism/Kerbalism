@@ -10,13 +10,24 @@ namespace KERBALISM
 	// store and render a simple structured ui
 	public sealed class Panel
 	{
+		public enum PanelType
+		{
+			unknown,
+			telemetry,
+			data,
+			scripts,
+			config,
+			log
+		}
+
 		public Panel()
 		{
 			headers = new List<Header>();
 			sections = new List<Section>();
 			callbacks = new List<Action>();
 			win_title = string.Empty;
-			min_width = Styles.ScaleFloat(260.0f);
+			min_width = Styles.ScaleWidthFloat(280.0f);
+			paneltype = PanelType.unknown;
 		}
 
 		public void clear()
@@ -24,7 +35,8 @@ namespace KERBALISM
 			headers.Clear();
 			sections.Clear();
 			win_title = string.Empty;
-			min_width = Styles.ScaleFloat(260.0f);
+			min_width = Styles.ScaleWidthFloat(280.0f);
+			paneltype = PanelType.unknown;
 		}
 
 		public void header(string label, string tooltip = "", Action click = null)
@@ -268,6 +280,7 @@ namespace KERBALISM
 		List<Action> callbacks;  // functions to call on input events
 		string win_title;  // metadata stored in panel
 		float min_width;  // metadata stored in panel
+		public PanelType paneltype;
 	}
 
 

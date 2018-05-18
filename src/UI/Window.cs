@@ -23,7 +23,7 @@ namespace KERBALISM
 			win_rect = new Rect((float)left, (float)top, (float)width, 0.0f);
 
 			// setup dragbox geometry
-			drag_rect = new Rect(0.0f, 0.0f, width, 20.0f);
+			drag_rect = new Rect(0.0f, 0.0f, (float)width, Styles.ScaleFloat(20.0f));
 
 			// initialize tooltip utility
 			tooltip = new Tooltip();
@@ -66,8 +66,8 @@ namespace KERBALISM
 
 			// adapt window size to panel
 			// - clamp to screen height
-			win_rect.width = Math.Min(panel.width(), Screen.width * 0.75f);
-			win_rect.height = Math.Min(20.0f + panel.height(), Screen.height * 0.75f);
+			win_rect.width = Math.Min(panel.width(), Screen.width * 0.8f);
+			win_rect.height = Math.Min(Styles.ScaleFloat(20.0f) + panel.height(), Screen.height * 0.8f);
 
 			// clamp the window to the screen, so it can't be dragged outside
 			float offset_x = Math.Max(0.0f, -win_rect.xMin) + Math.Min(0.0f, Screen.width - win_rect.xMax);
@@ -141,6 +141,16 @@ namespace KERBALISM
 			return (uint)win_rect.yMin;
 		}
 
+		public Panel.PanelType PanelType
+		{
+			get
+			{
+				if (panel == null)
+					return Panel.PanelType.unknown;
+				else
+					return panel.paneltype;
+			}
+		}
 
 		// store window id
 		int win_id;

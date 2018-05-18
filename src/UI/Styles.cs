@@ -144,12 +144,15 @@ namespace KERBALISM
 			return val * Settings.UIScale * GameSettings.UI_SCALE * GameSettings.UI_SCALE_APPS;
 		}
 
-		// Increasing font size does not affect width as much as height. To avoid excessively wide UIs we scale differently.
-		// Scaling by 80% is simply an emperical factor that is intended to leave the default UI width of 100% scaling intact,
-		// while having a sensible width at high scale value (e.g. 170%).
+		// Increasing font size does not affect width as much as height. To avoid excessively wide UIs we scale with UIPanelWidthSScale rather than	UIScale
 		public static float ScaleWidthFloat(float val)
 		{
-			return val * (1.0f + (Settings.UIScale * GameSettings.UI_SCALE * GameSettings.UI_SCALE_APPS - 1.0f) * 0.8f);
+			return val * Settings.UIPanelWidthScale * GameSettings.UI_SCALE * GameSettings.UI_SCALE_APPS;
+		}
+
+		public static uint ScaleStringLength(int val)
+		{
+			return (uint)ScaleWidthFloat(val / (Settings.UIScale * Settings.UIScale * GameSettings.UI_SCALE * GameSettings.UI_SCALE_APPS));
 		}
 
 		public static Texture2D GetUIScaledTexture(string name)
