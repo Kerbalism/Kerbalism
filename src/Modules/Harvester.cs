@@ -11,7 +11,7 @@ namespace KERBALISM
 	{
 		// config
 		[KSPField] public string title = string.Empty;            // name to show on ui
-		[KSPField] public int type = 0;                        // type of resource
+		[KSPField] public int type = 0;                           // type of resource
 		[KSPField] public string resource = string.Empty;         // resource to extract
 		[KSPField] public double min_abundance = 0.0;             // minimal abundance required, in percentual
 		[KSPField] public double min_pressure = 0.0;              // minimal pressure required, in kPA
@@ -60,7 +60,7 @@ namespace KERBALISM
 			if (Lib.IsFlight() && ResourceMap.Instance != null)
 			{
 				// sample abundance
-				double abundance = SampleAbundance();
+				double abundance = SampleAbundance(vessel, this);
 
 				// determine if resource can be extracted
 				issue = DetectIssue(abundance);
@@ -82,22 +82,7 @@ namespace KERBALISM
 			}
 		}
 
-
-		public void FixedUpdate()
-		{
-			if (Lib.IsEditor()) return;
-
-			if (deployed && running && issue.Length == 0)
-			{
-				resource_recipe recipe = new resource_recipe();
-				recipe.Input("ElectricCharge", ec_rate * Kerbalism.elapsed_s);
-				recipe.Output(resource, rate * Kerbalism.elapsed_s, true);
-				ResourceCache.Transform(vessel, recipe);
-			}
-		}
-
-
-		public static void BackgroundUpdate(Vessel v, ProtoPartModuleSnapshot m, Harvester harvester, double elapsed_s)
+		private static void ResourceUpdate(Vessel v, ProtoPartModuleSnapshot m, Harvester harvester, double elapsed_s)
 		{
 			if (Lib.Proto.GetBool(m, "deployed") && Lib.Proto.GetBool(m, "running") && Lib.Proto.GetString(m, "issue").Length == 0)
 			{
@@ -108,6 +93,19 @@ namespace KERBALISM
 			}
 		}
 
+		public void FixedUpdate()
+		{
+			if (Lib.IsEditor()) return;
+
+			ResourceUpdate(vessel, snapshot, this, Kerbalism.elapsed_s);
+		}
+
+
+		public static void BackgroundUpdate(Vessel v, ProtoPartModuleSnapshot m, Harvester harvester, double elapsed_s)
+		{
+			ResourceUpdate(v, m, harvester, elapsed_s);
+		}
+
 
 		[KSPEvent(guiActive = false, guiActiveEditor = true, guiName = "_", active = true)]
 		public void Toggle()
@@ -116,17 +114,17 @@ namespace KERBALISM
 		}
 
 		// return resource abundance at vessel position
-		double SampleAbundance()
+		private static double SampleAbundance(Vessel v, Harvester harvester)
 		{
 			// get abundance
 			AbundanceRequest request = new AbundanceRequest
 			{
-				ResourceType = (HarvestTypes)type,
-				ResourceName = resource,
-				BodyId = vessel.mainBody.flightGlobalsIndex,
-				Latitude = vessel.latitude,
-				Longitude = vessel.longitude,
-				Altitude = vessel.altitude,
+				ResourceType = (HarvestTypes)harvester.type,
+				ResourceName = harvester.resource,
+				BodyId = v.mainBody.flightGlobalsIndex,
+				Latitude = v.latitude,
+				Longitude = v.longitude,
+				Altitude = v.altitude,
 				CheckForLock = false
 			};
 			return ResourceMap.Instance.GetAbundance(request);
