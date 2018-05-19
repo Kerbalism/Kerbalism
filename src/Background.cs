@@ -18,6 +18,7 @@ namespace KERBALISM
 			Experiment,
 			Greenhouse,
 			GravityRing,
+			Harvester,
 			Emitter,
 			Laboratory,
 			Command,
@@ -45,6 +46,7 @@ namespace KERBALISM
 				case "Experiment": return module_type.Experiment;
 				case "Greenhouse": return module_type.Greenhouse;
 				case "GravityRing": return module_type.GravityRing;
+				case "Harvester": return module_type.Harvester;
 				case "Emitter": return module_type.Emitter;
 				case "Laboratory": return module_type.Laboratory;
 				case "ModuleCommand": return module_type.Command;
@@ -53,6 +55,8 @@ namespace KERBALISM
 				case "ModuleResourceConverter":
 				case "ModuleKPBSConverter":
 				case "FissionReactor": return module_type.Converter;
+				// Kerbalism default profile uses the Harvester module (both for air and ground harvesting)
+				// Other profiles use the stock ModuleResourceHarvester (only for ground harvesting)
 				case "ModuleResourceHarvester": return module_type.Drill;
 				case "ModuleAsteroidDrill": return module_type.AsteroidDrill;
 				case "ModuleScienceConverter": return module_type.StockLab;
@@ -116,13 +120,14 @@ namespace KERBALISM
 						case module_type.Greenhouse: Greenhouse.BackgroundUpdate(v, m, module_prefab as Greenhouse, vi, resources, elapsed_s); break;
 						case module_type.GravityRing: GravityRing.BackgroundUpdate(v, p, m, module_prefab as GravityRing, ec, elapsed_s); break;
 						case module_type.Emitter: Emitter.BackgroundUpdate(v, p, m, module_prefab as Emitter, ec, elapsed_s); break;
+						case module_type.Harvester: Harvester.BackgroundUpdate(v, m, module_prefab as Harvester, elapsed_s); break; // Kerbalism ground and air harvester module
 						case module_type.Laboratory: Laboratory.BackgroundUpdate(v, p, m, module_prefab as Laboratory, ec, elapsed_s); break;
 						case module_type.Command: ProcessCommand(v, p, m, module_prefab as ModuleCommand, resources, elapsed_s); break;
 						case module_type.Panel: ProcessPanel(v, p, m, module_prefab as ModuleDeployableSolarPanel, vi, ec, elapsed_s); break;
 						case module_type.Generator: ProcessGenerator(v, p, m, module_prefab as ModuleGenerator, resources, elapsed_s); break;
 						case module_type.Converter: ProcessConverter(v, p, m, module_prefab as ModuleResourceConverter, resources, elapsed_s); break;
-						case module_type.Drill: ProcessHarvester(v, p, m, module_prefab as ModuleResourceHarvester, resources, elapsed_s); break;
-						case module_type.AsteroidDrill: ProcessAsteroidDrill(v, p, m, module_prefab as ModuleAsteroidDrill, resources, elapsed_s); break;
+						case module_type.Drill: ProcessDrill(v, p, m, module_prefab as ModuleResourceHarvester, resources, elapsed_s); break; // Stock ground harvester module
+						case module_type.AsteroidDrill: ProcessAsteroidDrill(v, p, m, module_prefab as ModuleAsteroidDrill, resources, elapsed_s); break; // Stock asteriod harvester module
 						case module_type.StockLab: ProcessStockLab(v, p, m, module_prefab as ModuleScienceConverter, ec, elapsed_s); break;
 						case module_type.Light: ProcessLight(v, p, m, module_prefab as ModuleLight, ec, elapsed_s); break;
 						case module_type.Scanner: ProcessScanner(v, p, m, module_prefab, part_prefab, vd, ec, elapsed_s); break;
@@ -286,7 +291,7 @@ namespace KERBALISM
 		}
 
 
-		static void ProcessHarvester(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleResourceHarvester harvester, vessel_resources resources, double elapsed_s)
+		static void ProcessDrill(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleResourceHarvester harvester, vessel_resources resources, double elapsed_s)
 		{
 			// note: ignore stock temperature mechanic of harvesters
 			// note: ignore autoshutdown
