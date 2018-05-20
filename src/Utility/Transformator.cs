@@ -53,22 +53,14 @@ namespace KERBALISM
 
 		public void DoSpin()
 		{
-			if (rotationRateGoal > float.Epsilon)
-			{
-				CurrentSpinRate = Mathf.MoveTowards(CurrentSpinRate, rotationRateGoal * SpinRate, TimeWarp.fixedDeltaTime * spinAccel);
-			}
-			else
-			{
-				CurrentSpinRate = Mathf.MoveTowards(CurrentSpinRate, rotationRateGoal * SpinRate, TimeWarp.fixedDeltaTime * spinAccel);
-			}
-
+			CurrentSpinRate = Mathf.MoveTowards(CurrentSpinRate, rotationRateGoal * SpinRate, TimeWarp.fixedDeltaTime * spinAccel);
 			float spin = Mathf.Clamp(TimeWarp.fixedDeltaTime * CurrentSpinRate, -10.0f, 10.0f);
 			transf.Rotate(Vector3.forward * spin);
 		}
 
 		public bool IsRotating()
 		{
-			return CurrentSpinRate > float.Epsilon;
+			return CurrentSpinRate > (float.Epsilon * SpinRate);
 		}
 
 		public bool IsStopping()
