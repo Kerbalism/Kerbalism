@@ -53,7 +53,7 @@ namespace KERBALISM
 
 		public void DoSpin()
 		{
-			if (rotationRateGoal == 0.0f)
+			if (rotationRateGoal > float.Epsilon)
 			{
 				CurrentSpinRate = Mathf.MoveTowards(CurrentSpinRate, rotationRateGoal * SpinRate, TimeWarp.fixedDeltaTime * spinAccel);
 			}
@@ -68,12 +68,12 @@ namespace KERBALISM
 
 		public bool IsRotating()
 		{
-			return CurrentSpinRate > 0.0f;
+			return CurrentSpinRate > float.Epsilon;
 		}
 
 		public bool IsStopping()
 		{
-			return rotationRateGoal == 0.0f;
+			return rotationRateGoal <= float.Epsilon;
 		}
 	}
 }
