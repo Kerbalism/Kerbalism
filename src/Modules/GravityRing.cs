@@ -19,7 +19,7 @@ namespace KERBALISM
 		[KSPField] public float SpinRate = 20.0f;                          // Speed of the centrifuge rotation in deg/s
 		[KSPField] public float SpinAccelerationRate = 1.0f;               // Rate at which the SpinRate accelerates (deg/s/s)
 
-		private bool waitRotation;
+		private bool waitRotation = false;
 
 		// animations
 		public Animator deploy_anim;
