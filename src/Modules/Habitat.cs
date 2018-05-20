@@ -319,6 +319,10 @@ namespace KERBALISM
 			switch (state)
 			{
 				case State.enabled:
+					if (hasGravityRing)
+					{
+						gravityRing.habitatPresssurized = true;
+					}
 					set_flow(true);
 					break;
 
@@ -334,8 +338,9 @@ namespace KERBALISM
 				case State.venting:
 					set_flow(false);
 					// Just do Venting when has no gravityRing or when the gravity ring is not spinning.
-					if(hasGravityRing)
+					if (hasGravityRing)
 					{
+						gravityRing.habitatPresssurized = false;
 						if(gravityRing.rotateIsTransform)
 						{
 							if (!gravityRing.rotate_transf.IsRotating()) state = venting();
@@ -388,6 +393,7 @@ namespace KERBALISM
 				RefreshDialog();
 				if (hasGravityRing)
 				{
+					gravityRing.isHabitat = true;
 					gravityRing.deployed = false;
 				}
 			}
@@ -395,6 +401,7 @@ namespace KERBALISM
 			{
 				if (hasGravityRing)
 				{
+					gravityRing.isHabitat = true;
 					gravityRing.deployed = true;
 				}
 			}

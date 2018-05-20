@@ -20,6 +20,8 @@ namespace KERBALISM
 		[KSPField] public float SpinAccelerationRate = 1.0f;               // Rate at which the SpinRate accelerates (deg/s/s)
 
 		private bool waitRotation = false;
+		public bool isHabitat = false;
+		public bool habitatPresssurized = false;
 
 		// animations
 		public Animator deploy_anim;
@@ -55,6 +57,11 @@ namespace KERBALISM
 			Events["Toggle"].active = deploy.Length > 0;
 		}
 
+		bool ShouldStartRotation()
+		{
+			return (isHabitat && habitatPresssurized) || (!isHabitat && !deploy_anim.playing());
+		}
+
 		public void Update()
 		{
 			// update RMB ui
@@ -79,7 +86,7 @@ namespace KERBALISM
 					else rotate_anim.pause();
 				}
 				// if there is enough ec instead and is not deploying
-				else if (!deploy_anim.playing())
+				else if (ShouldStartRotation())
 				{
 					// resume rotate animation
 					// - safe to resume multiple times
