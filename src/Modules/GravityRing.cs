@@ -22,7 +22,7 @@ namespace KERBALISM
 		private bool waitRotation;
 
 		// animations
-		Animator deploy_anim;
+		public Animator deploy_anim;
 		public Animator rotate_anim;
 
 		// Add compatibility
@@ -68,7 +68,7 @@ namespace KERBALISM
 			if (Lib.IsEditor()) return;
 
 			// if deployed
-			if (deployed || (animBackwards && !deployed))
+			if (deployed)
 			{
 				// if there is no ec
 				if (ResourceCache.Info(vessel, "ElectricCharge").amount < 0.01)

@@ -58,7 +58,15 @@ namespace KERBALISM
 			Actions["Action"].active = toggle;
 
 			// create animators
-			inflate_anim = new Animator(part, inflate);
+			if (hasGravityRing)
+			{
+				inflate = gravityRing.deploy;
+				animBackwards = gravityRing.animBackwards;
+			}
+			else
+			{
+				inflate_anim = new Animator(part, inflate);
+			}
 
 			perctDeployed = Lib.Level(part, "Atmosphere", true);
 
@@ -70,6 +78,15 @@ namespace KERBALISM
 
 			// configure on start
 			Configure(true);
+		}
+
+		Animator GetInflateAnim()
+		{
+			if (hasGravityRing)
+			{
+				return gravityRing.deploy_anim;
+			}
+			return inflate_anim;
 		}
 
 		public void Configure(bool enable)
@@ -148,11 +165,6 @@ namespace KERBALISM
 				{
 					SetPassable(true);
 					RefreshDialog();
-					if (hasGravityRing)
-					{
-						if (gravityRing.animBackwards) gravityRing.deployed = false;
-						else gravityRing.deployed = true;
-					}
 					return State.enabled;
 				}
 
@@ -324,8 +336,8 @@ namespace KERBALISM
 			}
 
 			// if there is an inflate animation, set still animation from pressure
-			if (animBackwards) inflate_anim.still(Math.Abs(Lib.Level(part, "Atmosphere", true)-1));
-			else inflate_anim.still(Lib.Level(part, "Atmosphere", true));
+			if (animBackwards) GetInflateAnim().still(Math.Abs(Lib.Level(part, "Atmosphere", true)-1));
+			else GetInflateAnim().still(Lib.Level(part, "Atmosphere", true));
 
 			// instant pressurization and scrubbing inside breathable atmosphere
 			if (!Lib.IsEditor() && Cache.VesselInfo(vessel).breathable && inflate.Length == 0)
@@ -362,8 +374,14 @@ namespace KERBALISM
 				RefreshDialog();
 				if (hasGravityRing)
 				{
-					if (gravityRing.animBackwards) gravityRing.deployed = true;
-					else gravityRing.deployed = false;
+					gravityRing.deployed = false;
+				}
+			}
+			else
+			{
+				if (hasGravityRing)
+				{
+					gravityRing.deployed = true;
 				}
 			}
 		}
