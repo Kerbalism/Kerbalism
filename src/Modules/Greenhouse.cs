@@ -50,14 +50,14 @@ namespace KERBALISM
 			if (Lib.DisableScenario(this)) return;
 
 			// create animators
-			shutters_anim = new Animator(part, shutters);
-			plants_anim = new Animator(part, plants);
+			if (shutters.Length > 0) shutters_anim = new Animator(part, shutters);
+			if (plants.Length > 0) plants_anim = new Animator(part, plants);
 
 			// still-play shutters animation
-			shutters_anim.still((active ^ animBackwards) ? 1.0 : 0.0);
+			if (shutters_anim != null) shutters_anim.still((active ^ animBackwards) ? 1.0 : 0.0);
 
 			// still-play plants animation
-			plants_anim.still(growth);
+			if (plants_anim != null) plants_anim.still(growth);
 
 			// cache lamps renderer
 			if (lamps.Length > 0)
@@ -86,7 +86,7 @@ namespace KERBALISM
 			if (Lib.IsFlight())
 			{
 				// still-play plants animation
-				plants_anim.still(growth);
+				if (plants_anim != null) plants_anim.still(growth);
 
 				// update ui
 				string status = issue.Length > 0 ? Lib.BuildString("<color=yellow>", issue, "</color>") : growth > 0.99 ? "ready to harvest" : "growing";
@@ -110,7 +110,6 @@ namespace KERBALISM
 				Events["Toggle"].guiName = Lib.StatusToggle("Greenhouse", active ? "enabled" : "disabled");
 			}
 		}
-
 
 		public void FixedUpdate()
 		{
@@ -291,7 +290,7 @@ namespace KERBALISM
 			active = !active;
 
 			// play animation
-			shutters_anim.play(deactivating ^ animBackwards, false);
+			if (shutters_anim != null) shutters_anim.play(deactivating ^ animBackwards, false);
 		}
 
 
