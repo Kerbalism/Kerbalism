@@ -45,15 +45,6 @@ namespace KERBALISM
 			deploy_anim.still(deployed ? 1.0f : 0.0f);
 			deploy_anim.stop();
 
-			if (rotateIsTransform) rotate_transf.Play();
-			else rotate_anim.play(false, true);
-
-			if (!deployed)
-			{
-				if (rotateIsTransform) rotate_transf.Stop();
-				else rotate_anim.pause();
-			}
-
 			Update();
 		}
 
@@ -107,7 +98,7 @@ namespace KERBALISM
 					// resume rotate animation
 					// - safe to resume multiple times
 					if (rotateIsTransform) rotate_transf.Play();
-					else rotate_anim.resume(false);
+					else rotate_anim.play(false, true);
 				}
 			}
 			// stop loop animation if exist and we are retracting
