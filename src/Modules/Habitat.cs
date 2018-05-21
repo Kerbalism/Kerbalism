@@ -324,6 +324,8 @@ namespace KERBALISM
 
 			perctDeployed = Lib.Level(part, "Atmosphere", true);
 
+			State prev_state = state;
+
 			// state machine
 			switch (state)
 			{
@@ -352,9 +354,12 @@ namespace KERBALISM
 					break;
 			}
 
-			// if there is an inflate animation, set still animation from pressure
-			if (get_inflate_anim_backwards()) get_inflate_anim().still(Math.Abs(Lib.Level(part, "Atmosphere", true)-1));
-			else get_inflate_anim().still(Lib.Level(part, "Atmosphere", true));
+			// Changing this animation when we expect rotation will not work because
+			// Unity disables other animations when playing the inflation animation.
+			if (prev_state != State.enabled)
+			{
+				set_inflation();
+			}
 
 			// instant pressurization and scrubbing inside breathable atmosphere
 			if (!Lib.IsEditor() && Cache.VesselInfo(vessel).breathable)
@@ -367,6 +372,13 @@ namespace KERBALISM
 				}
 				if (Features.Poisoning) waste.amount = 0.0;
 			}
+		}
+
+		private void set_inflation()
+		{
+			// if there is an inflate animation, set still animation from pressure
+			if (get_inflate_anim_backwards()) get_inflate_anim().still(Math.Abs(Lib.Level(part, "Atmosphere", true)-1));
+			else get_inflate_anim().still(Lib.Level(part, "Atmosphere", true));
 		}
 
 		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true)]
