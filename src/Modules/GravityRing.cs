@@ -57,9 +57,25 @@ namespace KERBALISM
 			Update();
 		}
 
-		bool ShouldStartRotation()
+		bool should_start_rotation()
 		{
 			return (isHabitat && deployed) || (!isHabitat && !deploy_anim.playing());
+		}
+
+		bool is_consuming_energy()
+		{
+			if (deploy_anim.playing())
+			{
+				return true;
+			}
+			if (rotateIsTransform)
+			{
+				return rotate_transf.IsRotating() && !rotate_transf.IsStopping();
+			}
+			else
+			{
+				return rotate_anim.playing();
+			}
 		}
 
 		public void Update()
@@ -82,15 +98,15 @@ namespace KERBALISM
 				{
 					// pause rotate animation
 					// - safe to pause multiple times
-					if (rotateIsTransform && rotate_transf.IsRotating() && !rotate_transf.IsStopping()) rotate_transf.Stop();
+					if (rotateIsTransform) rotate_transf.Stop();
 					else rotate_anim.pause();
 				}
 				// if there is enough ec instead and is not deploying
-				else if (ShouldStartRotation())
+				else if (should_start_rotation())
 				{
 					// resume rotate animation
 					// - safe to resume multiple times
-					if (rotateIsTransform && (!rotate_transf.IsRotating() || rotate_transf.IsStopping())) rotate_transf.Play();
+					if (rotateIsTransform) rotate_transf.Play();
 					else rotate_anim.resume(false);
 				}
 			}
@@ -98,7 +114,7 @@ namespace KERBALISM
 			else
 			{
 				// Call transform.stop() if it is rotating and the Stop method wasn't called.
-				if (rotateIsTransform && rotate_transf.IsRotating() && !rotate_transf.IsStopping()) rotate_transf.Stop();
+				if (rotateIsTransform) rotate_transf.Stop();
 				else rotate_anim.stop();
 			}
 
@@ -121,7 +137,7 @@ namespace KERBALISM
 			}
 
 			// if has any animation playing, consume energy.
-			if (deploy_anim.playing() || (rotate_transf.IsRotating() && !rotate_transf.IsStopping()) || rotate_anim.playing())
+			if (is_consuming_energy())
 			{
 				// get resource handler
 				resource_info ec = ResourceCache.Info(vessel, "ElectricCharge");
