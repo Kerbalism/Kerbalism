@@ -107,7 +107,7 @@ namespace KERBALISM
 			if (hasGravityRing)
 			{
 				gravityRing.isHabitat = true;
-				gravityRing.habitatPresssurized = pressurized;
+				gravityRing.deployed = pressurized;
 			}
 		}
 

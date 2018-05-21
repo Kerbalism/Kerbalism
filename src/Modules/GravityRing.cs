@@ -21,7 +21,6 @@ namespace KERBALISM
 
 		private bool waitRotation = false;
 		public bool isHabitat = false;
-		public bool habitatPresssurized = false;
 
 		// animations
 		public Animator deploy_anim;
@@ -60,7 +59,7 @@ namespace KERBALISM
 
 		bool ShouldStartRotation()
 		{
-			return (isHabitat && habitatPresssurized) || (!isHabitat && !deploy_anim.playing());
+			return (isHabitat && deployed) || (!isHabitat && !deploy_anim.playing());
 		}
 
 		public void Update()
