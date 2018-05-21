@@ -130,10 +130,10 @@ namespace KERBALISM
 					Lib.AddResource(part, "Shielding", 0.0, surface);
 
 					// inflatable habitats can't be shielded (but still need the capacity)
-					part.Resources["Shielding"].isTweakable = inflate.Length == 0;
+					part.Resources["Shielding"].isTweakable = get_inflate_string().Length == 0;
 
 					// if shielding feature is disabled, just hide it
-					part.Resources["Shielding"].isVisible = Features.Shielding;
+					part.Resources["Shielding"].isVisible = Features.Shielding && part.Resources["Shielding"].isTweakable;
 				}
 			}
 			else
