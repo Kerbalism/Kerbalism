@@ -359,11 +359,14 @@ namespace KERBALISM
 			else GetInflateAnim().still(Lib.Level(part, "Atmosphere", true));
 
 			// instant pressurization and scrubbing inside breathable atmosphere
-			if (!Lib.IsEditor() && Cache.VesselInfo(vessel).breathable && inflate.Length == 0)
+			if (!Lib.IsEditor() && Cache.VesselInfo(vessel).breathable)
 			{
 				var atmo = part.Resources["Atmosphere"];
 				var waste = part.Resources["WasteAtmosphere"];
-				if (Features.Pressure) atmo.amount = atmo.maxAmount;
+				if (GetInflateString().Length == 0) // not inflatable
+				{
+					if (Features.Pressure) atmo.amount = atmo.maxAmount;
+				}
 				if (Features.Poisoning) waste.amount = 0.0;
 			}
 		}
