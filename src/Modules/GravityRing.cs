@@ -38,19 +38,21 @@ namespace KERBALISM
 
 			// get animations
 			deploy_anim = new Animator(part, deploy);
-			rotate_anim = new Animator(part, rotate);
 
-			// if is using Transform
-			rotate_transf = new Transformator(part, rotate, SpinRate, SpinAccelerationRate);
+			if (rotateIsTransform) rotate_transf = new Transformator(part, rotate, SpinRate, SpinAccelerationRate);
+			else rotate_anim = new Animator(part, rotate);
 
 			// set animation state / invert animation
 			deploy_anim.still(deployed ? 1.0f : 0.0f);
 			deploy_anim.stop();
 
-			if (deployed)
+			if (rotateIsTransform) rotate_transf.Play();
+			else rotate_anim.play(false, true);
+
+			if (!deployed)
 			{
-				rotate_transf.Play();
-				rotate_anim.play(false, true);
+				if (rotateIsTransform) rotate_transf.Stop();
+				else rotate_anim.pause();
 			}
 
 			// show the deploy toggle if it is deployable
