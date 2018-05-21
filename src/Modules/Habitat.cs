@@ -348,6 +348,21 @@ namespace KERBALISM
 
 			perctDeployed = Lib.Level(part, "Atmosphere", true);
 
+			// instant pressurization and scrubbing inside breathable atmosphere
+			if (!Lib.IsEditor() && Cache.VesselInfo(vessel).breathable)
+			{
+				var atmo = part.Resources["Atmosphere"];
+				var waste = part.Resources["WasteAtmosphere"];
+				if (get_inflate_string().Length == 0) // not inflatable
+				{
+					if ((state == State.equalizing) || (state == State.enabled))
+					{
+						if (Features.Pressure) atmo.amount = atmo.maxAmount;
+					}
+				}
+				if (Features.Poisoning) waste.amount = 0.0;
+			}
+
 			// state machine
 			switch (state)
 			{
@@ -370,18 +385,6 @@ namespace KERBALISM
 					if (hasGravityRing && !gravityRing.is_rotating()) state = venting();
 					else if (!hasGravityRing) state = venting();
 					break;
-			}
-
-			// instant pressurization and scrubbing inside breathable atmosphere
-			if (!Lib.IsEditor() && Cache.VesselInfo(vessel).breathable)
-			{
-				var atmo = part.Resources["Atmosphere"];
-				var waste = part.Resources["WasteAtmosphere"];
-				if (get_inflate_string().Length == 0) // not inflatable
-				{
-					if (Features.Pressure) atmo.amount = atmo.maxAmount;
-				}
-				if (Features.Poisoning) waste.amount = 0.0;
 			}
 		}
 
