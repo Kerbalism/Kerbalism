@@ -347,18 +347,8 @@ namespace KERBALISM
 					set_flow(false);
 					set_pressurized(false);
 					// Just do Venting when has no gravityRing or when the gravity ring is not spinning.
-					if (hasGravityRing)
-					{
-						if(gravityRing.rotateIsTransform)
-						{
-							if (!gravityRing.rotate_transf.IsRotating()) state = venting();
-						}
-						else
-						{
-							if (!gravityRing.rotate_anim.playing()) state = venting();
-						}
-					}
-					else state = venting();
+					if (hasGravityRing && !gravityRing.is_rotating()) state = venting();
+					else if (!hasGravityRing) state = venting();
 					break;
 			}
 

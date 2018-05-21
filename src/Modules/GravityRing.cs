@@ -14,8 +14,8 @@ namespace KERBALISM
 		[KSPField(isPersistant = true)] public bool deployed;              // true if deployed
 
 		// Add compatibility and revert animation
-		[KSPField] public bool  animBackwards;                             // If animation is playing in backward, this can help to fix
-		[KSPField] public bool  rotateIsTransform;                         // Rotation is not an animation, but a Transform
+		[KSPField] public bool  animBackwards = false;                     // If animation is playing in backward, this can help to fix
+		[KSPField] public bool  rotateIsTransform = false;                 // Rotation is not an animation, but a Transform
 		[KSPField] public float SpinRate = 20.0f;                          // Speed of the centrifuge rotation in deg/s
 		[KSPField] public float SpinAccelerationRate = 1.0f;               // Rate at which the SpinRate accelerates (deg/s/s)
 
@@ -24,7 +24,7 @@ namespace KERBALISM
 
 		// animations
 		public Animator deploy_anim;
-		public Animator rotate_anim;
+		private Animator rotate_anim;
 
 		// Add compatibility
 		public Transformator rotate_transf;
@@ -46,6 +46,32 @@ namespace KERBALISM
 			deploy_anim.stop();
 
 			Update();
+		}
+
+		public bool is_rotating()
+		{
+			if (rotateIsTransform)
+			{
+				return rotate_transf.IsRotating() && !rotate_transf.IsStopping();
+			}
+			else
+			{
+				return rotate_anim.playing();
+			}
+		}
+
+		private void set_rotation(bool rotate)
+		{
+			if (rotate)
+			{
+				if (rotateIsTransform) rotate_transf.Play();
+				else rotate_anim.play(false, true);
+			}
+			else
+			{
+				if (rotateIsTransform) rotate_transf.Stop();
+				else rotate_anim.stop();
+			}
 		}
 
 		bool should_start_rotation()
@@ -89,24 +115,21 @@ namespace KERBALISM
 				{
 					// pause rotate animation
 					// - safe to pause multiple times
-					if (rotateIsTransform) rotate_transf.Stop();
-					else rotate_anim.pause();
+					set_rotation(false);
 				}
 				// if there is enough ec instead and is not deploying
 				else if (should_start_rotation())
 				{
 					// resume rotate animation
 					// - safe to resume multiple times
-					if (rotateIsTransform) rotate_transf.Play();
-					else rotate_anim.play(false, true);
+					set_rotation(true);
 				}
 			}
 			// stop loop animation if exist and we are retracting
 			else
 			{
 				// Call transform.stop() if it is rotating and the Stop method wasn't called.
-				if (rotateIsTransform) rotate_transf.Stop();
-				else rotate_anim.stop();
+				set_rotation(false);
 			}
 
 			// When is not rotating
