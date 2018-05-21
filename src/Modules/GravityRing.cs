@@ -55,9 +55,7 @@ namespace KERBALISM
 				else rotate_anim.pause();
 			}
 
-			// show the deploy toggle if it is deployable
-			// unless there is also a habitat in which case it will control the gravity ring
-			Events["Toggle"].active = (deploy.Length > 0) && (part.FindModuleImplementing<Habitat>() == null);
+			Update();
 		}
 
 		bool ShouldStartRotation()
@@ -69,7 +67,7 @@ namespace KERBALISM
 		{
 			// update RMB ui
 			Events["Toggle"].guiName = deployed ? Localizer.Format("#KERBALISM_Generic_RETRACT") : Localizer.Format("#KERBALISM_Generic_DEPLOY");
-			Events["Toggle"].active = deploy.Length > 0 && !deploy_anim.playing() && !waitRotation && ResourceCache.Info(vessel, "ElectricCharge").amount > ec_rate;
+			Events["Toggle"].active = (deploy.Length > 0) && (part.FindModuleImplementing<Habitat>() == null) && !deploy_anim.playing() && !waitRotation && ResourceCache.Info(vessel, "ElectricCharge").amount > ec_rate;
 		}
 
 		public void FixedUpdate()
