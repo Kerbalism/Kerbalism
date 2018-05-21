@@ -321,6 +321,7 @@ namespace KERBALISM
 				case State.enabled:
 					if (hasGravityRing)
 					{
+						gravityRing.isHabitat = true;
 						gravityRing.habitatPresssurized = true;
 					}
 					set_flow(true);
@@ -340,6 +341,7 @@ namespace KERBALISM
 					// Just do Venting when has no gravityRing or when the gravity ring is not spinning.
 					if (hasGravityRing)
 					{
+						gravityRing.isHabitat = true;
 						gravityRing.habitatPresssurized = false;
 						if(gravityRing.rotateIsTransform)
 						{
