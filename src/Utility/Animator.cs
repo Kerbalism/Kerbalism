@@ -28,6 +28,7 @@ namespace KERBALISM
 			}
 		}
 
+		// Note: This function resets animation to the beginning
 		public void play(bool reverse, bool loop)
 		{
 			if (anim != null)
