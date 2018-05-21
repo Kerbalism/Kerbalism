@@ -21,6 +21,8 @@ namespace KERBALISM
 		[KSPField] public string shutters;              // animation to manipulate shutters
 		[KSPField] public string plants;                // animation to represent plant growth graphically
 
+		[KSPField] public bool animBackwards = false;   // If animation is playing in backward, this can help to fix
+
 		// persistence
 		[KSPField(isPersistant = true)] public bool active;             // on/off flag
 		[KSPField(isPersistant = true)] public double growth;             // current growth level
@@ -52,7 +54,7 @@ namespace KERBALISM
 			plants_anim = new Animator(part, plants);
 
 			// still-play shutters animation
-			shutters_anim.still(active ? 1.0 : 0.0);
+			shutters_anim.still((active ^ animBackwards) ? 1.0 : 0.0);
 
 			// still-play plants animation
 			plants_anim.still(growth);
@@ -283,11 +285,13 @@ namespace KERBALISM
 		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_")]
 		public void Toggle()
 		{
+			bool deactivating = active;
+
 			// switch status
 			active = !active;
 
 			// play animation
-			shutters_anim.play(!active, false);
+			shutters_anim.play(deactivating ^ animBackwards, false);
 		}
 
 
