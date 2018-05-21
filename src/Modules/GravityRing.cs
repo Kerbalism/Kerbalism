@@ -104,12 +104,6 @@ namespace KERBALISM
 			// update RMB ui
 			Events["Toggle"].guiName = deployed ? Localizer.Format("#KERBALISM_Generic_RETRACT") : Localizer.Format("#KERBALISM_Generic_DEPLOY");
 			Events["Toggle"].active = (deploy.Length > 0) && (part.FindModuleImplementing<Habitat>() == null) && !deploy_anim.playing() && !waitRotation && ResourceCache.Info(vessel, "ElectricCharge").amount > ec_rate;
-		}
-
-		public void FixedUpdate()
-		{
-			// do nothing in the editor
-			if (Lib.IsEditor()) return;
 
 			// if deployed
 			if (deployed)
@@ -154,6 +148,14 @@ namespace KERBALISM
 				}
 			}
 
+			if (rotateIsTransform && rotate_transf != null) rotate_transf.DoSpin();
+		}
+
+		public void FixedUpdate()
+		{
+			// do nothing in the editor
+			if (Lib.IsEditor()) return;
+
 			// if has any animation playing, consume energy.
 			if (is_consuming_energy())
 			{
@@ -163,8 +165,6 @@ namespace KERBALISM
 				// consume ec
 				ec.Consume(ec_rate * Kerbalism.elapsed_s);
 			}
-
-			if (rotateIsTransform && rotate_transf != null) rotate_transf.DoSpin();
 		}
 
 		public static void BackgroundUpdate(Vessel vessel, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, GravityRing ring, resource_info ec, double elapsed_s)

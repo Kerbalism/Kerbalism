@@ -31,6 +31,8 @@ namespace KERBALISM
 		private GravityRing gravityRing;
 		private bool hasGravityRing;                     // Alpha test to create a habitat with GravityRing
 
+		State prev_state;                                // State during previous GPU frame update
+
 		// pseudo-ctor
 		public override void OnStart(StartState state)
 		{
@@ -310,12 +312,33 @@ namespace KERBALISM
 			string status_str = string.Empty;
 			switch (state)
 			{
-				case State.enabled:    status_str = Localizer.Format("#KERBALISM_Generic_ENABLED"); break;
-				case State.disabled:   status_str = Localizer.Format("#KERBALISM_Generic_DISABLED"); break;
-				case State.equalizing: status_str = get_inflate_string().Length == 0 ? Localizer.Format("#KERBALISM_Habitat_equalizing") : Localizer.Format("#KERBALISM_Habitat_inflating"); break;
-				case State.venting:    status_str = get_inflate_string().Length == 0 ? Localizer.Format("#KERBALISM_Habitat_venting") : Localizer.Format("#KERBALISM_Habitat_deflating"); break;
+				case State.enabled:
+					status_str = Localizer.Format("#KERBALISM_Generic_ENABLED");
+					set_pressurized(true);
+					break;
+				case State.disabled:
+					status_str = Localizer.Format("#KERBALISM_Generic_DISABLED");
+					set_pressurized(false);
+					break;
+				case State.equalizing:
+					status_str = get_inflate_string().Length == 0 ? Localizer.Format("#KERBALISM_Habitat_equalizing") : Localizer.Format("#KERBALISM_Habitat_inflating");
+					set_pressurized(false);
+					break;
+				case State.venting:
+					status_str = get_inflate_string().Length == 0 ? Localizer.Format("#KERBALISM_Habitat_venting") : Localizer.Format("#KERBALISM_Habitat_deflating");
+					set_pressurized(false);
+					break;
 			}
 			Events["Toggle"].guiName = Lib.StatusToggle("Habitat", status_str);
+
+			// Changing this animation when we expect rotation will not work because
+			// Unity disables other animations when playing the inflation animation.
+			if (prev_state != State.enabled)
+			{
+				set_inflation();
+			}
+			prev_state = state;
+
 		}
 
 		public void FixedUpdate()
@@ -325,41 +348,28 @@ namespace KERBALISM
 
 			perctDeployed = Lib.Level(part, "Atmosphere", true);
 
-			State prev_state = state;
-
 			// state machine
 			switch (state)
 			{
 				case State.enabled:
-					set_pressurized(true);
 					set_flow(true);
 					break;
 
 				case State.disabled:
-					set_pressurized(false);
 					set_flow(false);
 					break;
 
 				case State.equalizing:
-					set_pressurized(false);
 					set_flow(true);
 					state = equalize();
 					break;
 
 				case State.venting:
 					set_flow(false);
-					set_pressurized(false);
 					// Just do Venting when has no gravityRing or when the gravity ring is not spinning.
 					if (hasGravityRing && !gravityRing.is_rotating()) state = venting();
 					else if (!hasGravityRing) state = venting();
 					break;
-			}
-
-			// Changing this animation when we expect rotation will not work because
-			// Unity disables other animations when playing the inflation animation.
-			if (prev_state != State.enabled)
-			{
-				set_inflation();
 			}
 
 			// instant pressurization and scrubbing inside breathable atmosphere
