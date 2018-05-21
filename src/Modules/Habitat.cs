@@ -8,10 +8,11 @@ namespace KERBALISM
 	public sealed class Habitat : PartModule, ISpecifics, IConfigurable
 	{
 		// config
-		[KSPField] public double volume = 0.0;            // habitable volume in m^3, deduced from bounding box if not specified
-		[KSPField] public double surface = 0.0;           // external surface in m^2, deduced from bounding box if not specified
-		[KSPField] public string inflate = string.Empty;  // inflate animation, if any
-		[KSPField] public bool   toggle = true;           // show the enable/disable toggle
+		[KSPField] public double volume = 0.0;                      // habitable volume in m^3, deduced from bounding box if not specified
+		[KSPField] public double surface = 0.0;                     // external surface in m^2, deduced from bounding box if not specified
+		[KSPField] public string inflate = string.Empty;            // inflate animation, if any
+		[KSPField] public bool   inflatableUsingRigidWalls = false; // can shielding be applied to inflatable structure?
+		[KSPField] public bool   toggle = true;                     // show the enable/disable toggle
 
 		// persistence
 		[KSPField(isPersistant = true)] public State state = State.enabled;
@@ -130,7 +131,7 @@ namespace KERBALISM
 					Lib.AddResource(part, "Shielding", 0.0, surface);
 
 					// inflatable habitats can't be shielded (but still need the capacity)
-					part.Resources["Shielding"].isTweakable = (get_inflate_string().Length == 0);
+					part.Resources["Shielding"].isTweakable = (get_inflate_string().Length == 0) || inflatableUsingRigidWalls;
 
 					// if shielding feature is disabled, just hide it
 					part.Resources["Shielding"].isVisible = Features.Shielding && part.Resources["Shielding"].isTweakable;
