@@ -3,6 +3,8 @@
 
 ### Changes since the last release
 
+ * Fix greenhouse animation for SSPX (madman2003)
+ * Allow gravity rings that use solid walls to be shielded (madman2003)
  * Fix harvesters background simulation, as well as scaling the produced resources by abundance (madman2003)
  * Fix SSPX inflatable habitats and centrifuges to have crew capacity and somewhat realistic habitat volumes/areas (madman2003)
  * Add nitrogen storage to SSPX modules containing a pressurization module (madman2003)
