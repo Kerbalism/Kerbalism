@@ -65,12 +65,16 @@ namespace KERBALISM
 			if (rotate)
 			{
 				if (rotateIsTransform) rotate_transf.Play();
-				else rotate_anim.play(false, true);
+				else
+				{
+					rotate_anim.resume(false);
+					if (!rotate_anim.playing()) rotate_anim.play(false, true);
+				}
 			}
 			else
 			{
 				if (rotateIsTransform) rotate_transf.Stop();
-				else rotate_anim.stop();
+				else rotate_anim.pause();
 			}
 		}
 
