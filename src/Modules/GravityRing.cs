@@ -56,7 +56,8 @@ namespace KERBALISM
 			}
 
 			// show the deploy toggle if it is deployable
-			Events["Toggle"].active = deploy.Length > 0;
+			// unless there is also a habitat in which case it will control the gravity ring
+			Events["Toggle"].active = (deploy.Length > 0) && (part.FindModuleImplementing<Habitat>() == null);
 		}
 
 		bool ShouldStartRotation()
