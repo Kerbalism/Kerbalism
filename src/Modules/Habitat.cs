@@ -8,10 +8,11 @@ namespace KERBALISM
 	public sealed class Habitat : PartModule, ISpecifics, IConfigurable
 	{
 		// config
-		[KSPField] public double volume = 0.0;            // habitable volume in m^3, deduced from bounding box if not specified
-		[KSPField] public double surface = 0.0;           // external surface in m^2, deduced from bounding box if not specified
-		[KSPField] public string inflate = string.Empty;  // inflate animation, if any
-		[KSPField] public bool   toggle = true;           // show the enable/disable toggle
+		[KSPField] public double volume = 0.0;                      // habitable volume in m^3, deduced from bounding box if not specified
+		[KSPField] public double surface = 0.0;                     // external surface in m^2, deduced from bounding box if not specified
+		[KSPField] public string inflate = string.Empty;            // inflate animation, if any
+		[KSPField] public bool   inflatableUsingRigidWalls = false; // can shielding be applied to inflatable structure?
+		[KSPField] public bool   toggle = true;                     // show the enable/disable toggle
 
 		// persistence
 		[KSPField(isPersistant = true)] public State state = State.enabled;
@@ -29,6 +30,8 @@ namespace KERBALISM
 		private bool hasCLS;
 		private GravityRing gravityRing;
 		private bool hasGravityRing;                     // Alpha test to create a habitat with GravityRing
+
+		State prev_state;                                // State during previous GPU frame update
 
 		// pseudo-ctor
 		public override void OnStart(StartState state)
@@ -58,7 +61,10 @@ namespace KERBALISM
 			Actions["Action"].active = toggle;
 
 			// create animators
-			inflate_anim = new Animator(part, inflate);
+			if (!hasGravityRing)
+			{
+				inflate_anim = new Animator(part, inflate);
+			}
 
 			perctDeployed = Lib.Level(part, "Atmosphere", true);
 
@@ -70,6 +76,42 @@ namespace KERBALISM
 
 			// configure on start
 			Configure(true);
+		}
+
+		public string get_inflate_string()
+		{
+			if (hasGravityRing)
+			{
+				return gravityRing.deploy;
+			}
+			return inflate;
+		}
+
+		bool get_inflate_anim_backwards()
+		{
+			if (hasGravityRing)
+			{
+				return gravityRing.animBackwards;
+			}
+			return animBackwards;
+		}
+
+		Animator get_inflate_anim()
+		{
+			if (hasGravityRing)
+			{
+				return gravityRing.deploy_anim;
+			}
+			return inflate_anim;
+		}
+
+		void set_pressurized(bool pressurized)
+		{
+			if (hasGravityRing)
+			{
+				gravityRing.isHabitat = true;
+				gravityRing.deployed = pressurized;
+			}
 		}
 
 		public void Configure(bool enable)
@@ -91,10 +133,10 @@ namespace KERBALISM
 					Lib.AddResource(part, "Shielding", 0.0, surface);
 
 					// inflatable habitats can't be shielded (but still need the capacity)
-					part.Resources["Shielding"].isTweakable = inflate.Length == 0;
+					part.Resources["Shielding"].isTweakable = (get_inflate_string().Length == 0) || inflatableUsingRigidWalls;
 
 					// if shielding feature is disabled, just hide it
-					part.Resources["Shielding"].isVisible = Features.Shielding;
+					part.Resources["Shielding"].isVisible = Features.Shielding && part.Resources["Shielding"].isTweakable;
 				}
 			}
 			else
@@ -109,7 +151,7 @@ namespace KERBALISM
 		{
 			Lib.SetResourceFlow(part, "Atmosphere", b);
 			Lib.SetResourceFlow(part, "WasteAtmosphere", b);
-			Lib.SetResourceFlow(part, "Shielding", b);
+			if (get_inflate_string().Length == 0) Lib.SetResourceFlow(part, "Shielding", b);
 		}
 
 		State equalize()
@@ -124,7 +166,7 @@ namespace KERBALISM
 				// Get all habs non-inflatable in the vessel
 				foreach (Habitat partHabitat in vessel.FindPartModulesImplementing<Habitat>())
 				{
-					if (partHabitat.inflate.Length == 0)
+					if (partHabitat.get_inflate_string().Length == 0)
 					{
 						PartResource t = partHabitat.part.Resources["Atmosphere"];
 						// If has the atmosphere resource
@@ -148,11 +190,6 @@ namespace KERBALISM
 				{
 					SetPassable(true);
 					RefreshDialog();
-					if (hasGravityRing)
-					{
-						if (gravityRing.animBackwards) gravityRing.deployed = false;
-						else gravityRing.deployed = true;
-					}
 					return State.enabled;
 				}
 
@@ -171,7 +208,7 @@ namespace KERBALISM
 					// consume from all enabled habs in the vessel that are not Inflate
 					foreach (Habitat partHabitat in vessel.FindPartModulesImplementing<Habitat>())
 					{
-						if (partHabitat.inflate.Length == 0)
+						if (partHabitat.get_inflate_string().Length == 0)
 						{
 							PartResource t = partHabitat.part.Resources["Atmosphere"];
 							t.amount -= (amount * (t.amount / atmosphereAmount));
@@ -246,6 +283,7 @@ namespace KERBALISM
 					{
 						PartResource t = partHabitat.part.Resources["Atmosphere"];
 						t.amount += (Math.Max(atmo.amount - rate * atmo_k, 0.0) * (t.amount / atmosphereAmount));
+						t.amount = Math.Min(t.amount, t.maxAmount); // we can't overpressurize other sections
 					}
 				}
 
@@ -274,12 +312,33 @@ namespace KERBALISM
 			string status_str = string.Empty;
 			switch (state)
 			{
-				case State.enabled:    status_str = Localizer.Format("#KERBALISM_Generic_ENABLED"); break;
-				case State.disabled:   status_str = Localizer.Format("#KERBALISM_Generic_DISABLED"); break;
-				case State.equalizing: status_str = inflate.Length == 0 ? Localizer.Format("#KERBALISM_Habitat_equalizing") : Localizer.Format("#KERBALISM_Habitat_inflating"); break;
-				case State.venting:    status_str = inflate.Length == 0 ? Localizer.Format("#KERBALISM_Habitat_venting") : Localizer.Format("#KERBALISM_Habitat_deflating"); break;
+				case State.enabled:
+					status_str = Localizer.Format("#KERBALISM_Generic_ENABLED");
+					set_pressurized(true);
+					break;
+				case State.disabled:
+					status_str = Localizer.Format("#KERBALISM_Generic_DISABLED");
+					set_pressurized(false);
+					break;
+				case State.equalizing:
+					status_str = get_inflate_string().Length == 0 ? Localizer.Format("#KERBALISM_Habitat_equalizing") : Localizer.Format("#KERBALISM_Habitat_inflating");
+					set_pressurized(false);
+					break;
+				case State.venting:
+					status_str = get_inflate_string().Length == 0 ? Localizer.Format("#KERBALISM_Habitat_venting") : Localizer.Format("#KERBALISM_Habitat_deflating");
+					set_pressurized(false);
+					break;
 			}
 			Events["Toggle"].guiName = Lib.StatusToggle("Habitat", status_str);
+
+			// Changing this animation when we expect rotation will not work because
+			// Unity disables other animations when playing the inflation animation.
+			if (prev_state != State.enabled)
+			{
+				set_inflation();
+			}
+			prev_state = state;
+
 		}
 
 		public void FixedUpdate()
@@ -288,6 +347,21 @@ namespace KERBALISM
 			if (Lib.IsManned(part) && state != State.enabled) state = State.equalizing;
 
 			perctDeployed = Lib.Level(part, "Atmosphere", true);
+
+			// instant pressurization and scrubbing inside breathable atmosphere
+			if (!Lib.IsEditor() && Cache.VesselInfo(vessel).breathable)
+			{
+				var atmo = part.Resources["Atmosphere"];
+				var waste = part.Resources["WasteAtmosphere"];
+				if (get_inflate_string().Length == 0) // not inflatable
+				{
+					if ((state == State.equalizing) || (state == State.enabled))
+					{
+						if (Features.Pressure) atmo.amount = atmo.maxAmount;
+					}
+				}
+				if (Features.Poisoning) waste.amount = 0.0;
+			}
 
 			// state machine
 			switch (state)
@@ -308,33 +382,17 @@ namespace KERBALISM
 				case State.venting:
 					set_flow(false);
 					// Just do Venting when has no gravityRing or when the gravity ring is not spinning.
-					if(hasGravityRing)
-					{
-						if(gravityRing.rotateIsTransform)
-						{
-							if (!gravityRing.rotate_transf.IsRotating()) state = venting();
-						}
-						else
-						{
-							if (!gravityRing.rotate_anim.playing()) state = venting();
-						}
-					}
-					else state = venting();
+					if (hasGravityRing && !gravityRing.is_rotating()) state = venting();
+					else if (!hasGravityRing) state = venting();
 					break;
 			}
+		}
 
+		private void set_inflation()
+		{
 			// if there is an inflate animation, set still animation from pressure
-			if (animBackwards) inflate_anim.still(Math.Abs(Lib.Level(part, "Atmosphere", true)-1));
-			else inflate_anim.still(Lib.Level(part, "Atmosphere", true));
-
-			// instant pressurization and scrubbing inside breathable atmosphere
-			if (!Lib.IsEditor() && Cache.VesselInfo(vessel).breathable && inflate.Length == 0)
-			{
-				var atmo = part.Resources["Atmosphere"];
-				var waste = part.Resources["WasteAtmosphere"];
-				if (Features.Pressure) atmo.amount = atmo.maxAmount;
-				if (Features.Poisoning) waste.amount = 0.0;
-			}
+			if (get_inflate_anim_backwards()) get_inflate_anim().still(Math.Abs(Lib.Level(part, "Atmosphere", true)-1));
+			else get_inflate_anim().still(Lib.Level(part, "Atmosphere", true));
 		}
 
 		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true)]
@@ -360,11 +418,6 @@ namespace KERBALISM
 			{
 				SetPassable(false);
 				RefreshDialog();
-				if (hasGravityRing)
-				{
-					if (gravityRing.animBackwards) gravityRing.deployed = true;
-					else gravityRing.deployed = false;
-				}
 			}
 		}
 

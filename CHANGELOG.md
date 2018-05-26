@@ -3,6 +3,12 @@
 
 ### Changes since the last release
 
+ * Fix greenhouse animation for SSPX (madman2003)
+ * Allow gravity rings that use solid walls to be shielded (madman2003)
+ * Fix harvesters background simulation, as well as scaling the produced resources by abundance (madman2003)
+ * Fix SSPX inflatable habitats and centrifuges to have crew capacity and somewhat realistic habitat volumes/areas (madman2003)
+ * Add nitrogen storage to SSPX modules containing a pressurization module (madman2003)
+ * Add habitat to Kerbalism gravity ring (madman2003)
  * A first attempt at scaling Kerbalism UI to follow KSP UI scaling
  ** By default using the scaling configured for KSP, with an additional scale factor in Settings.cfg if needed to overrule the default
  * Clicking the middle mouse button on the popout menu will now close the popout window if it is already open.
