@@ -16,6 +16,7 @@ namespace KERBALISM
 		[KSPField] public double min_abundance = 0.0;             // minimal abundance required, in percentual
 		[KSPField] public double min_pressure = 0.0;              // minimal pressure required, in kPA
 		[KSPField] public double rate = 0.0;                      // rate of resource to extract at 100% abundance
+		[KSPField] public double abundance_rate = 0.1;            // abundance level at which rate is specified (10% by default)
 		[KSPField] public double ec_rate = 0.0;                   // rate of ec consumption per-second, irregardless of abundance
 		[KSPField] public string drill = string.Empty;            // the drill head transform
 		[KSPField] public double length = 5.0;                    // tolerable distance between drill head and the ground (length of the extendible part)
@@ -91,7 +92,7 @@ namespace KERBALISM
 				{
 					resource_recipe recipe = new resource_recipe();
 					recipe.Input("ElectricCharge", harvester.ec_rate * elapsed_s);
-					recipe.Output(harvester.resource, harvester.rate * abundance * elapsed_s, true);
+					recipe.Output(harvester.resource, harvester.rate * (abundance/harvester.abundance_rate) * elapsed_s, true);
 					ResourceCache.Transform(v, recipe);
 				}
 			}
