@@ -3,6 +3,9 @@
 
 ### Changes since the last release
 
+ * Harvesters can now extract Nitrogen from the surface (JadeOfMom)
+ * Filters can now extract Ammonia from the atmosphere (JadeOfMom)
+ * New parts MiniPump and RadialPump to extract Water, Nitrogen and Ammonia from oceans (thanks to JadeOfMom for the Harvesters and PiezPiedPy for the parts) 
  * Harvesters are now spec'ed at 10% abundance by default (madman2003)
  ** The percentage is specified in the UI when selecting the process the havester will run
  ** The percentage can be overruled for individual parts
