@@ -3,6 +3,12 @@
 
 ### Changes since the last release
 
+ * Harvesters are now spec'ed at 10% abundance by default (madman2003)
+ ** The percentage is specified in the UI when selecting the process the havester will run
+ ** The percentage can be overruled for individual parts
+ * Harvesting rate scales linearly with abundance (madman2003)
+ * Water harvesting has been buffed by a factor 6 (at the reference 10% abundance) compared to release 1.5.1 (madman2003)
+ * Restored antenna simulation button (PiezPiedPy)
  * Fix greenhouse animation for SSPX (madman2003)
  * Allow gravity rings that use solid walls to be shielded (madman2003)
  * Fix harvesters background simulation, as well as scaling the produced resources by abundance (madman2003)
