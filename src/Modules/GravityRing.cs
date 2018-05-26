@@ -14,16 +14,17 @@ namespace KERBALISM
 		[KSPField(isPersistant = true)] public bool deployed;              // true if deployed
 
 		// Add compatibility and revert animation
-		[KSPField] public bool  animBackwards;                             // If animation is playing in backward, this can help to fix
-		[KSPField] public bool  rotateIsTransform;                         // Rotation is not an animation, but a Transform
+		[KSPField] public bool  animBackwards = false;                     // If animation is playing in backward, this can help to fix
+		[KSPField] public bool  rotateIsTransform = false;                 // Rotation is not an animation, but a Transform
 		[KSPField] public float SpinRate = 20.0f;                          // Speed of the centrifuge rotation in deg/s
 		[KSPField] public float SpinAccelerationRate = 1.0f;               // Rate at which the SpinRate accelerates (deg/s/s)
 
-		private bool waitRotation;
+		private bool waitRotation = false;
+		public bool isHabitat = false;
 
 		// animations
-		Animator deploy_anim;
-		public Animator rotate_anim;
+		public Animator deploy_anim;
+		private Animator rotate_anim;
 
 		// Add compatibility
 		public Transformator rotate_transf;
@@ -36,63 +37,97 @@ namespace KERBALISM
 
 			// get animations
 			deploy_anim = new Animator(part, deploy);
-			rotate_anim = new Animator(part, rotate);
 
-			// if is using Transform
-			rotate_transf = new Transformator(part, rotate, SpinRate, SpinAccelerationRate);
+			if (rotateIsTransform) rotate_transf = new Transformator(part, rotate, SpinRate, SpinAccelerationRate);
+			else rotate_anim = new Animator(part, rotate);
 
 			// set animation state / invert animation
 			deploy_anim.still(deployed ? 1.0f : 0.0f);
 			deploy_anim.stop();
 
-			if (deployed)
-			{
-				rotate_transf.Play();
-				rotate_anim.play(false, true);
-			}
+			Update();
+		}
 
-			// show the deploy toggle if it is deployable
-			Events["Toggle"].active = deploy.Length > 0;
+		public bool is_rotating()
+		{
+			if (rotateIsTransform)
+			{
+				return rotate_transf.IsRotating() && !rotate_transf.IsStopping();
+			}
+			else
+			{
+				return rotate_anim.playing();
+			}
+		}
+
+		private void set_rotation(bool rotate)
+		{
+			if (rotate)
+			{
+				if (rotateIsTransform) rotate_transf.Play();
+				else
+				{
+					rotate_anim.resume(false);
+					if (!rotate_anim.playing()) rotate_anim.play(false, true);
+				}
+			}
+			else
+			{
+				if (rotateIsTransform) rotate_transf.Stop();
+				else rotate_anim.pause();
+			}
+		}
+
+		bool should_start_rotation()
+		{
+			return (isHabitat && deployed) || (!isHabitat && !deploy_anim.playing());
+		}
+
+		bool is_consuming_energy()
+		{
+			if (deploy_anim.playing())
+			{
+				return true;
+			}
+			if (rotateIsTransform)
+			{
+				return rotate_transf.IsRotating() && !rotate_transf.IsStopping();
+			}
+			else
+			{
+				return rotate_anim.playing();
+			}
 		}
 
 		public void Update()
 		{
 			// update RMB ui
 			Events["Toggle"].guiName = deployed ? Localizer.Format("#KERBALISM_Generic_RETRACT") : Localizer.Format("#KERBALISM_Generic_DEPLOY");
-			Events["Toggle"].active = deploy.Length > 0 && !deploy_anim.playing() && !waitRotation && ResourceCache.Info(vessel, "ElectricCharge").amount > ec_rate;
-		}
-
-		public void FixedUpdate()
-		{
-			// do nothing in the editor
-			if (Lib.IsEditor()) return;
+			Events["Toggle"].active = (deploy.Length > 0) && (part.FindModuleImplementing<Habitat>() == null) && !deploy_anim.playing() && !waitRotation && ResourceCache.Info(vessel, "ElectricCharge").amount > ec_rate;
 
 			// if deployed
-			if (deployed || (animBackwards && !deployed))
+			if (deployed)
 			{
 				// if there is no ec
 				if (ResourceCache.Info(vessel, "ElectricCharge").amount < 0.01)
 				{
 					// pause rotate animation
 					// - safe to pause multiple times
-					if (rotateIsTransform && rotate_transf.IsRotating() && !rotate_transf.IsStopping()) rotate_transf.Stop();
-					else rotate_anim.pause();
+					set_rotation(false);
 				}
 				// if there is enough ec instead and is not deploying
-				else if (!deploy_anim.playing())
+				else if (should_start_rotation())
 				{
 					// resume rotate animation
 					// - safe to resume multiple times
-					if (rotateIsTransform && (!rotate_transf.IsRotating() || rotate_transf.IsStopping())) rotate_transf.Play();
-					else rotate_anim.resume(false);
+					set_rotation(true);
 				}
 			}
 			// stop loop animation if exist and we are retracting
 			else
 			{
 				// Call transform.stop() if it is rotating and the Stop method wasn't called.
-				if (rotateIsTransform && rotate_transf.IsRotating() && !rotate_transf.IsStopping()) rotate_transf.Stop();
-				else rotate_anim.stop();
+				set_rotation(false);
 			}
 
 			// When is not rotating
@@ -113,8 +148,16 @@ namespace KERBALISM
 				}
 			}
 
+			if (rotateIsTransform && rotate_transf != null) rotate_transf.DoSpin();
+		}
+
+		public void FixedUpdate()
+		{
+			// do nothing in the editor
+			if (Lib.IsEditor()) return;
+
 			// if has any animation playing, consume energy.
-			if (deploy_anim.playing() || (rotate_transf.IsRotating() && !rotate_transf.IsStopping()) || rotate_anim.playing())
+			if (is_consuming_energy())
 			{
 				// get resource handler
 				resource_info ec = ResourceCache.Info(vessel, "ElectricCharge");
@@ -122,8 +165,6 @@ namespace KERBALISM
 				// consume ec
 				ec.Consume(ec_rate * Kerbalism.elapsed_s);
 			}
-
-			if (rotateIsTransform && rotate_transf != null) rotate_transf.DoSpin();
 		}
 
 		public static void BackgroundUpdate(Vessel vessel, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, GravityRing ring, resource_info ec, double elapsed_s)

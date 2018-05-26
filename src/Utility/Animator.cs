@@ -28,6 +28,7 @@ namespace KERBALISM
 			}
 		}
 
+		// Note: This function resets animation to the beginning
 		public void play(bool reverse, bool loop)
 		{
 			if (anim != null)
@@ -82,7 +83,7 @@ namespace KERBALISM
 		{
 			if (anim != null)
 			{
-				return anim.IsPlaying(name);
+				return (anim[name].speed > float.Epsilon) && anim.IsPlaying(name);
 			}
 			return false;
 		}
