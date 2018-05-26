@@ -226,6 +226,7 @@ namespace KERBALISM
 			if (min_abundance > double.Epsilon) specs.add("min abundance", Lib.HumanReadablePerc(min_abundance, "F2"));
 			if (type == 2 && min_pressure > double.Epsilon) specs.add("min pressure", Lib.HumanReadablePressure(min_pressure));
 			specs.add("extraction rate", Lib.HumanReadableRate(rate));
+			specs.add("at abundance", Lib.HumanReadablePerc(abundance_rate, "F2"));
 			if (ec_rate > double.Epsilon) specs.add("ec consumption", Lib.HumanReadableRate(ec_rate));
 			return specs;
 		}
