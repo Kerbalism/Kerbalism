@@ -83,18 +83,15 @@ namespace KERBALISM
 			}
 		}
 
-		private static void ResourceUpdate(Vessel v, ProtoPartModuleSnapshot m, Harvester harvester, double elapsed_s)
+		private static void ResourceUpdate(Vessel v, Harvester harvester, double min_abundance, double elapsed_s)
 		{
-			if (Lib.Proto.GetBool(m, "deployed") && Lib.Proto.GetBool(m, "running") && Lib.Proto.GetString(m, "issue").Length == 0)
+			double abundance = SampleAbundance(v, harvester);
+			if (abundance > min_abundance)
 			{
-				double abundance = SampleAbundance(v, harvester);
-				if (abundance > Lib.Proto.GetDouble(m, "min_abundance"))
-				{
-					resource_recipe recipe = new resource_recipe();
-					recipe.Input("ElectricCharge", harvester.ec_rate * elapsed_s);
-					recipe.Output(harvester.resource, harvester.rate * (abundance/harvester.abundance_rate) * elapsed_s, false);
-					ResourceCache.Transform(v, recipe);
-				}
+				resource_recipe recipe = new resource_recipe();
+				recipe.Input("ElectricCharge", harvester.ec_rate * elapsed_s);
+				recipe.Output(harvester.resource, harvester.rate * (abundance/harvester.abundance_rate) * elapsed_s, false);
+				ResourceCache.Transform(v, recipe);
 			}
 		}
 
@@ -102,13 +99,19 @@ namespace KERBALISM
 		{
 			if (Lib.IsEditor()) return;
 
-			ResourceUpdate(vessel, snapshot, this, Kerbalism.elapsed_s);
+			if (deployed && running && (issue.Length == 0))
+			{
+				ResourceUpdate(vessel, this, min_abundance, Kerbalism.elapsed_s);
+			}
 		}
 
 
 		public static void BackgroundUpdate(Vessel v, ProtoPartModuleSnapshot m, Harvester harvester, double elapsed_s)
 		{
-			ResourceUpdate(v, m, harvester, elapsed_s);
+			if (Lib.Proto.GetBool(m, "deployed") && Lib.Proto.GetBool(m, "running") && Lib.Proto.GetString(m, "issue").Length == 0)
+			{
+				ResourceUpdate(v, harvester, Lib.Proto.GetDouble(m, "min_abundance"), elapsed_s);
+			}
 		}
 
 
