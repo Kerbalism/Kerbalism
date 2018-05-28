@@ -1,3 +1,13 @@
+## v1.6.1 for KSP 1.4.3
+ - 2018-xx-xx
+
+### Changes since the last release
+
+  *  Fix ContractConfigurator bug (PiezPiedPy)
+
+### For Developers
+
+
 ## v1.6.0 for KSP 1.4.3
  - 2018-05-26
 
