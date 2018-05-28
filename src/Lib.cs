@@ -21,13 +21,12 @@ namespace KERBALISM
 			MonoBehaviour.print("[Kerbalism] " + msg);
 		}
 
+		[Conditional("DEBUG")]
 		public static void Debug(string message, params object[] param)
 		{
-#if DEBUG
 			StackTrace stackTrace = new StackTrace();
-			UnityEngine.Debug.Log(string.Format("{0} -> debug: {1}.{2} - {3}", "[Kerbalism] ", stackTrace.GetFrame(1).GetMethod().ReflectedType.Name, stackTrace.GetFrame(1).GetMethod().Name,
-																					string.Format(message, param)));
-#endif
+			UnityEngine.Debug.Log(string.Format("{0} -> debug: {1}.{2} - {3}", "[Kerbalism] ", stackTrace.GetFrame(1).GetMethod().ReflectedType.Name,
+				stackTrace.GetFrame(1).GetMethod().Name, string.Format(message, param)));
 		}
 
 		// return version as a string
@@ -1032,7 +1031,7 @@ namespace KERBALISM
 		}
 
 		// used by ModulePrefab function, to support multiple modules of the same type in a part
-		public sealed class module_prefab_data
+		public sealed class Module_prefab_data
 		{
 			public int index;                         // index of current module of this type
 			public List<PartModule> prefabs;          // set of module prefabs of this type
@@ -1041,13 +1040,13 @@ namespace KERBALISM
 		// get module prefab
 		//  This function is used to solve the problem of obtaining a specific module prefab,
 		//  and support the case where there are multiple modules of the same type in the part.
-		public static PartModule ModulePrefab(List<PartModule> module_prefabs, string module_name, Dictionary<string, module_prefab_data> PD)
+		public static PartModule ModulePrefab(List<PartModule> module_prefabs, string module_name, Dictionary<string, Module_prefab_data> PD)
 		{
 			// get data related to this module type, or create it
-			module_prefab_data data;
+			Module_prefab_data data;
 			if (!PD.TryGetValue(module_name, out data))
 			{
-				data = new module_prefab_data();
+				data = new Module_prefab_data();
 				data.prefabs = module_prefabs.FindAll(k => k.moduleName == module_name);
 				PD.Add(module_name, data);
 			}

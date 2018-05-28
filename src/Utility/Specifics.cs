@@ -20,7 +20,7 @@ namespace KERBALISM
 			entries = new List<Entry>();
 		}
 
-		public void add(string label, string value = "")
+		public void Add(string label, string value = "")
 		{
 			Entry e = new Entry();
 			e.label = label;
@@ -28,7 +28,7 @@ namespace KERBALISM
 			entries.Add(e);
 		}
 
-		public string info(string desc = "")
+		public string Info(string desc = "")
 		{
 			StringBuilder sb = new StringBuilder();
 			if (desc.Length > 0)

@@ -89,7 +89,7 @@ namespace KERBALISM
 		// part tooltip
 		public override string GetInfo()
 		{
-			return Specs().info(desc);
+			return Specs().Info(desc);
 		}
 
 
@@ -103,13 +103,13 @@ namespace KERBALISM
 				foreach (var pair in process.inputs)
 				{
 					if (!process.modifiers.Contains(pair.Key))
-						specs.add(pair.Key, Lib.BuildString("<color=#ff0000>", Lib.HumanReadableRate(pair.Value * capacity), "</color>"));
+						specs.Add(pair.Key, Lib.BuildString("<color=#ff0000>", Lib.HumanReadableRate(pair.Value * capacity), "</color>"));
 					else
-						specs.add("Half-life", Lib.HumanReadableDuration(0.5 / pair.Value));
+						specs.Add("Half-life", Lib.HumanReadableDuration(0.5 / pair.Value));
 				}
 				foreach (var pair in process.outputs)
 				{
-					specs.add(pair.Key, Lib.BuildString("<color=#00ff00>", Lib.HumanReadableRate(pair.Value * capacity), "</color>"));
+					specs.Add(pair.Key, Lib.BuildString("<color=#00ff00>", Lib.HumanReadableRate(pair.Value * capacity), "</color>"));
 				}
 			}
 			return specs;

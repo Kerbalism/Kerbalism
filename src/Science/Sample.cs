@@ -19,7 +19,7 @@ namespace KERBALISM
 			analyze = Lib.ConfigValue(node, "analyze", false);
 		}
 
-		public void save(ConfigNode node)
+		public void Save(ConfigNode node)
 		{
 			node.AddValue("size", size);
 			node.AddValue("analyze", analyze);

@@ -78,7 +78,7 @@ namespace KERBALISM
 			Configure(true);
 		}
 
-		public string get_inflate_string()
+		public string Get_inflate_string()
 		{
 			if (hasGravityRing)
 			{
@@ -87,7 +87,7 @@ namespace KERBALISM
 			return inflate;
 		}
 
-		bool get_inflate_anim_backwards()
+		bool Get_inflate_anim_backwards()
 		{
 			if (hasGravityRing)
 			{
@@ -96,7 +96,7 @@ namespace KERBALISM
 			return animBackwards;
 		}
 
-		Animator get_inflate_anim()
+		Animator Get_inflate_anim()
 		{
 			if (hasGravityRing)
 			{
@@ -105,7 +105,7 @@ namespace KERBALISM
 			return inflate_anim;
 		}
 
-		void set_pressurized(bool pressurized)
+		void Set_pressurized(bool pressurized)
 		{
 			if (hasGravityRing)
 			{
@@ -133,7 +133,7 @@ namespace KERBALISM
 					Lib.AddResource(part, "Shielding", 0.0, surface);
 
 					// inflatable habitats can't be shielded (but still need the capacity)
-					part.Resources["Shielding"].isTweakable = (get_inflate_string().Length == 0) || inflatableUsingRigidWalls;
+					part.Resources["Shielding"].isTweakable = (Get_inflate_string().Length == 0) || inflatableUsingRigidWalls;
 
 					// if shielding feature is disabled, just hide it
 					part.Resources["Shielding"].isVisible = Features.Shielding && part.Resources["Shielding"].isTweakable;
@@ -147,14 +147,14 @@ namespace KERBALISM
 			}
 		}
 
-		void set_flow(bool b)
+		void Set_flow(bool b)
 		{
 			Lib.SetResourceFlow(part, "Atmosphere", b);
 			Lib.SetResourceFlow(part, "WasteAtmosphere", b);
-			if (get_inflate_string().Length == 0) Lib.SetResourceFlow(part, "Shielding", b);
+			if (Get_inflate_string().Length == 0) Lib.SetResourceFlow(part, "Shielding", b);
 		}
 
-		State equalize()
+		State Equalize()
 		{
 			// in flight
 			if (Lib.IsFlight())
@@ -166,7 +166,7 @@ namespace KERBALISM
 				// Get all habs non-inflatable in the vessel
 				foreach (Habitat partHabitat in vessel.FindPartModulesImplementing<Habitat>())
 				{
-					if (partHabitat.get_inflate_string().Length == 0)
+					if (partHabitat.Get_inflate_string().Length == 0)
 					{
 						PartResource t = partHabitat.part.Resources["Atmosphere"];
 						// If has the atmosphere resource
@@ -208,7 +208,7 @@ namespace KERBALISM
 					// consume from all enabled habs in the vessel that are not Inflate
 					foreach (Habitat partHabitat in vessel.FindPartModulesImplementing<Habitat>())
 					{
-						if (partHabitat.get_inflate_string().Length == 0)
+						if (partHabitat.Get_inflate_string().Length == 0)
 						{
 							PartResource t = partHabitat.part.Resources["Atmosphere"];
 							t.amount -= (amount * (t.amount / atmosphereAmount));
@@ -236,7 +236,7 @@ namespace KERBALISM
 			}
 		}
 
-		State venting()
+		State Venting()
 		{
 			// in flight
 			if (Lib.IsFlight())
@@ -314,19 +314,19 @@ namespace KERBALISM
 			{
 				case State.enabled:
 					status_str = Localizer.Format("#KERBALISM_Generic_ENABLED");
-					set_pressurized(true);
+					Set_pressurized(true);
 					break;
 				case State.disabled:
 					status_str = Localizer.Format("#KERBALISM_Generic_DISABLED");
-					set_pressurized(false);
+					Set_pressurized(false);
 					break;
 				case State.equalizing:
-					status_str = get_inflate_string().Length == 0 ? Localizer.Format("#KERBALISM_Habitat_equalizing") : Localizer.Format("#KERBALISM_Habitat_inflating");
-					set_pressurized(false);
+					status_str = Get_inflate_string().Length == 0 ? Localizer.Format("#KERBALISM_Habitat_equalizing") : Localizer.Format("#KERBALISM_Habitat_inflating");
+					Set_pressurized(false);
 					break;
 				case State.venting:
-					status_str = get_inflate_string().Length == 0 ? Localizer.Format("#KERBALISM_Habitat_venting") : Localizer.Format("#KERBALISM_Habitat_deflating");
-					set_pressurized(false);
+					status_str = Get_inflate_string().Length == 0 ? Localizer.Format("#KERBALISM_Habitat_venting") : Localizer.Format("#KERBALISM_Habitat_deflating");
+					Set_pressurized(false);
 					break;
 			}
 			Events["Toggle"].guiName = Lib.StatusToggle("Habitat", status_str);
@@ -335,7 +335,7 @@ namespace KERBALISM
 			// Unity disables other animations when playing the inflation animation.
 			if (prev_state != State.enabled)
 			{
-				set_inflation();
+				Set_inflation();
 			}
 			prev_state = state;
 
@@ -353,7 +353,7 @@ namespace KERBALISM
 			{
 				var atmo = part.Resources["Atmosphere"];
 				var waste = part.Resources["WasteAtmosphere"];
-				if (get_inflate_string().Length == 0) // not inflatable
+				if (Get_inflate_string().Length == 0) // not inflatable
 				{
 					if ((state == State.equalizing) || (state == State.enabled))
 					{
@@ -367,32 +367,32 @@ namespace KERBALISM
 			switch (state)
 			{
 				case State.enabled:
-					set_flow(true);
+					Set_flow(true);
 					break;
 
 				case State.disabled:
-					set_flow(false);
+					Set_flow(false);
 					break;
 
 				case State.equalizing:
-					set_flow(true);
-					state = equalize();
+					Set_flow(true);
+					state = Equalize();
 					break;
 
 				case State.venting:
-					set_flow(false);
+					Set_flow(false);
 					// Just do Venting when has no gravityRing or when the gravity ring is not spinning.
-					if (hasGravityRing && !gravityRing.is_rotating()) state = venting();
-					else if (!hasGravityRing) state = venting();
+					if (hasGravityRing && !gravityRing.Is_rotating()) state = Venting();
+					else if (!hasGravityRing) state = Venting();
 					break;
 			}
 		}
 
-		private void set_inflation()
+		private void Set_inflation()
 		{
 			// if there is an inflate animation, set still animation from pressure
-			if (get_inflate_anim_backwards()) get_inflate_anim().still(Math.Abs(Lib.Level(part, "Atmosphere", true)-1));
-			else get_inflate_anim().still(Lib.Level(part, "Atmosphere", true));
+			if (Get_inflate_anim_backwards()) Get_inflate_anim().Still(Math.Abs(Lib.Level(part, "Atmosphere", true)-1));
+			else Get_inflate_anim().Still(Lib.Level(part, "Atmosphere", true));
 		}
 
 		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true)]
@@ -427,69 +427,69 @@ namespace KERBALISM
 		// part tooltip
 		public override string GetInfo()
 		{
-			return Specs().info();
+			return Specs().Info();
 		}
 
 		// specifics support
 		public Specifics Specs()
 		{
 			Specifics specs = new Specifics();
-			specs.add("volume", Lib.HumanReadableVolume(volume > double.Epsilon ? volume : Lib.PartVolume(part)));
-			specs.add("surface", Lib.HumanReadableSurface(surface > double.Epsilon ? surface : Lib.PartSurface(part)));
-			if (inflate.Length > 0) specs.add("Inflatable", "yes");
+			specs.Add("volume", Lib.HumanReadableVolume(volume > double.Epsilon ? volume : Lib.PartVolume(part)));
+			specs.Add("surface", Lib.HumanReadableSurface(surface > double.Epsilon ? surface : Lib.PartSurface(part)));
+			if (inflate.Length > 0) specs.Add("Inflatable", "yes");
 			return specs;
 		}
 
 		// return habitat volume in a vessel in m^3
-		public static double tot_volume(Vessel v)
+		public static double Tot_volume(Vessel v)
 		{
 			// we use capacity: this mean that partially pressurized parts will still count,
 			return ResourceCache.Info(v, "Atmosphere").capacity;
 		}
 
 		// return habitat surface in a vessel in m^2
-		public static double tot_surface(Vessel v)
+		public static double Tot_surface(Vessel v)
 		{
 			// we use capacity: this mean that partially pressurized parts will still count,
 			return ResourceCache.Info(v, "Shielding").capacity;
 		}
 
 		// return normalized pressure in a vessel
-		public static double pressure(Vessel v)
+		public static double Pressure(Vessel v)
 		{
 			// the pressure is simply the atmosphere level
 			return ResourceCache.Info(v, "Atmosphere").level;
 		}
 
 		// return waste level in a vessel atmosphere
-		public static double poisoning(Vessel v)
+		public static double Poisoning(Vessel v)
 		{
 			// the proportion of co2 in the atmosphere is simply the level of WasteAtmo
 			return ResourceCache.Info(v, "WasteAtmosphere").level;
 		}
 
 		// return shielding factor in a vessel
-		public static double shielding(Vessel v)
+		public static double Shielding(Vessel v)
 		{
 			// the shielding factor is simply the level of shielding, scaled by the 'shielding efficiency' setting
 			return ResourceCache.Info(v, "Shielding").level * Settings.ShieldingEfficiency;
 		}
 
 		// return living space factor in a vessel
-		public static double living_space(Vessel v)
+		public static double Living_space(Vessel v)
 		{
 			// living space is the volume per-capita normalized against an 'ideal living space' and clamped in an acceptable range
-			return Lib.Clamp((tot_volume(v) / Lib.CrewCount(v)) / Settings.IdealLivingSpace, 0.1, 1.0);
+			return Lib.Clamp((Tot_volume(v) / Lib.CrewCount(v)) / Settings.IdealLivingSpace, 0.1, 1.0);
 		}
 
 		// return a verbose description of shielding capability
-		public static string shielding_to_string(double v)
+		public static string Shielding_to_string(double v)
 		{
 			return v <= double.Epsilon ? "none" : Lib.BuildString((20.0 * v / Settings.ShieldingEfficiency).ToString("F2"), " mm Pb");
 		}
 
 		// traduce living space value to string
-		public static string living_space_to_string(double v)
+		public static string Living_space_to_string(double v)
 		{
 			if (v >= 0.99) return "ideal";
 			else if (v >= 0.75) return "good";

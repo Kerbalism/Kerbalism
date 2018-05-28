@@ -54,10 +54,10 @@ namespace KERBALISM
 			if (plants.Length > 0) plants_anim = new Animator(part, plants);
 
 			// still-play shutters animation
-			if (shutters_anim != null) shutters_anim.still((active ^ animBackwards) ? 1.0 : 0.0);
+			if (shutters_anim != null) shutters_anim.Still((active ^ animBackwards) ? 1.0 : 0.0);
 
 			// still-play plants animation
-			if (plants_anim != null) plants_anim.still(growth);
+			if (plants_anim != null) plants_anim.Still(growth);
 
 			// cache lamps renderer
 			if (lamps.Length > 0)
@@ -86,7 +86,7 @@ namespace KERBALISM
 			if (Lib.IsFlight())
 			{
 				// still-play plants animation
-				if (plants_anim != null) plants_anim.still(growth);
+				if (plants_anim != null) plants_anim.Still(growth);
 
 				// update ui
 				string status = issue.Length > 0 ? Lib.BuildString("<color=yellow>", issue, "</color>") : growth > 0.99 ? "ready to harvest" : "growing";
@@ -121,11 +121,11 @@ namespace KERBALISM
 			{
 				// get vessel info from the cache
 				// - if the vessel is not valid (eg: flagged as debris) then solar flux will be 0 and landed false (but that's okay)
-				vessel_info vi = Cache.VesselInfo(vessel);
+				Vessel_info vi = Cache.VesselInfo(vessel);
 
 				// get resource cache
-				vessel_resources resources = ResourceCache.Get(vessel);
-				resource_info ec = resources.Info(vessel, "ElectricCharge");
+				Vessel_resources resources = ResourceCache.Get(vessel);
+				Resource_info ec = resources.Info(vessel, "ElectricCharge");
 
 				// deal with corner cases when greenhouse is assembled using KIS
 				if (double.IsNaN(growth) || double.IsInfinity(growth)) growth = 0.0;
@@ -142,7 +142,7 @@ namespace KERBALISM
 				if (ec.amount <= double.Epsilon) artificial = 0.0;
 
 				// execute recipe
-				resource_recipe recipe = new resource_recipe();
+				Resource_recipe recipe = new Resource_recipe();
 				foreach (ModuleResource input in resHandler.inputResources) recipe.Input(input.name, input.rate * Kerbalism.elapsed_s);
 				foreach (ModuleResource output in resHandler.outputResources) recipe.Output(output.name, output.rate * Kerbalism.elapsed_s, true);
 				resources.Transform(recipe);
@@ -196,7 +196,7 @@ namespace KERBALISM
 
 
 		public static void BackgroundUpdate(Vessel v, ProtoPartModuleSnapshot m, Greenhouse g,
-											vessel_info vi, vessel_resources resources, double elapsed_s)
+											Vessel_info vi, Vessel_resources resources, double elapsed_s)
 		{
 			// get protomodule data
 			bool active = Lib.Proto.GetBool(m, "active");
@@ -206,7 +206,7 @@ namespace KERBALISM
 			if (active && growth < 0.99)
 			{
 				// get resource handler
-				resource_info ec = resources.Info(v, "ElectricCharge");
+				Resource_info ec = resources.Info(v, "ElectricCharge");
 
 				// calculate natural and artificial lighting
 				double natural = vi.solar_flux;
@@ -220,7 +220,7 @@ namespace KERBALISM
 				if (ec.amount <= double.Epsilon) artificial = 0.0;
 
 				// execute recipe
-				resource_recipe recipe = new resource_recipe();
+				Resource_recipe recipe = new Resource_recipe();
 				foreach (ModuleResource input in g.resHandler.inputResources) recipe.Input(input.name, input.rate * elapsed_s);
 				foreach (ModuleResource output in g.resHandler.outputResources) recipe.Output(output.name, output.rate * elapsed_s, true);
 				resources.Transform(recipe);
@@ -290,7 +290,7 @@ namespace KERBALISM
 			active = !active;
 
 			// play animation
-			if (shutters_anim != null) shutters_anim.play(deactivating ^ animBackwards, false);
+			if (shutters_anim != null) shutters_anim.Play(deactivating ^ animBackwards, false);
 		}
 
 
@@ -350,7 +350,7 @@ namespace KERBALISM
 		// part tooltip
 		public override string GetInfo()
 		{
-			return Specs().info("Grow crop in space and on the surface of celestial bodies, even far from the sun.");
+			return Specs().Info("Grow crop in space and on the surface of celestial bodies, even far from the sun.");
 		}
 
 
@@ -359,23 +359,23 @@ namespace KERBALISM
 		{
 			Specifics specs = new Specifics();
 
-			specs.add("Havest size", Lib.HumanReadableAmount(crop_size, " " + crop_resource));
-			specs.add("Harvest time", Lib.HumanReadableDuration(1.0 / crop_rate));
-			specs.add("Lighting tolerance", Lib.HumanReadableFlux(light_tolerance));
-			if (pressure_tolerance > double.Epsilon) specs.add("Pressure tolerance", Lib.HumanReadablePressure(Sim.PressureAtSeaLevel() * pressure_tolerance));
-			if (radiation_tolerance > double.Epsilon) specs.add("Radiation tolerance", Lib.HumanReadableRadiation(radiation_tolerance));
-			specs.add("Lamps EC rate", Lib.HumanReadableRate(ec_rate));
-			specs.add(string.Empty);
-			specs.add("<color=#00ffff>Required resources</color>");
+			specs.Add("Havest size", Lib.HumanReadableAmount(crop_size, " " + crop_resource));
+			specs.Add("Harvest time", Lib.HumanReadableDuration(1.0 / crop_rate));
+			specs.Add("Lighting tolerance", Lib.HumanReadableFlux(light_tolerance));
+			if (pressure_tolerance > double.Epsilon) specs.Add("Pressure tolerance", Lib.HumanReadablePressure(Sim.PressureAtSeaLevel() * pressure_tolerance));
+			if (radiation_tolerance > double.Epsilon) specs.Add("Radiation tolerance", Lib.HumanReadableRadiation(radiation_tolerance));
+			specs.Add("Lamps EC rate", Lib.HumanReadableRate(ec_rate));
+			specs.Add(string.Empty);
+			specs.Add("<color=#00ffff>Required resources</color>");
 			foreach (ModuleResource input in resHandler.inputResources)
 			{
-				specs.add(input.name, Lib.BuildString("<color=#ff0000>", Lib.HumanReadableRate(input.rate), "</color>"));
+				specs.Add(input.name, Lib.BuildString("<color=#ff0000>", Lib.HumanReadableRate(input.rate), "</color>"));
 			}
-			specs.add(string.Empty);
-			specs.add("<color=#00ffff>By-products</color>");
+			specs.Add(string.Empty);
+			specs.Add("<color=#00ffff>By-products</color>");
 			foreach (ModuleResource output in resHandler.outputResources)
 			{
-				specs.add(output.name, Lib.BuildString("<color=#00ff00>", Lib.HumanReadableRate(output.rate), "</color>"));
+				specs.Add(output.name, Lib.BuildString("<color=#00ff00>", Lib.HumanReadableRate(output.rate), "</color>"));
 			}
 			return specs;
 		}
@@ -387,7 +387,7 @@ namespace KERBALISM
 
 
 		// return data about all greenhouses in a vessel
-		public sealed class data
+		public sealed class Data
 		{
 			public double growth;           // growth progress
 			public double natural;          // natural lighting
@@ -395,16 +395,16 @@ namespace KERBALISM
 			public double tta;              // time to harvest
 			public string issue;            // first issue detected, or empty
 		}
-		public static List<data> Greenhouses(Vessel v)
+		public static List<Data> Greenhouses(Vessel v)
 		{
-			List<data> ret = new List<data>();
+			List<Data> ret = new List<Data>();
 			if (v.loaded)
 			{
 				foreach (Greenhouse greenhouse in Lib.FindModules<Greenhouse>(v))
 				{
 					if (greenhouse.active)
 					{
-						data gd = new data();
+						Data gd = new Data();
 						gd.growth = greenhouse.growth;
 						gd.natural = greenhouse.natural;
 						gd.artificial = greenhouse.artificial;
@@ -420,7 +420,7 @@ namespace KERBALISM
 				{
 					if (Lib.Proto.GetBool(m, "active"))
 					{
-						data gd = new data();
+						Data gd = new Data();
 						gd.growth = Lib.Proto.GetDouble(m, "growth");
 						gd.natural = Lib.Proto.GetDouble(m, "natural");
 						gd.artificial = Lib.Proto.GetDouble(m, "artificial");

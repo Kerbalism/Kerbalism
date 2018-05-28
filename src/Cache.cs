@@ -7,9 +7,9 @@ namespace KERBALISM
 {
 
 
-	public sealed class vessel_info
+	public sealed class Vessel_info
 	{
-		public vessel_info(Vessel v, uint vessel_id, UInt64 inc)
+		public Vessel_info(Vessel v, uint vessel_id, UInt64 inc)
 		{
 			// NOTE: anything used here can't in turn use cache, unless you know what you are doing
 
@@ -22,14 +22,17 @@ namespace KERBALISM
 
 			// determine if this is a valid vessel
 			is_vessel = Lib.IsVessel(v);
-			if (!is_vessel) return;
+			if (!is_vessel)
+				return;
 
 			// determine if this is a rescue mission vessel
 			is_rescue = Misc.IsRescueMission(v);
-			if (is_rescue) return;
+			if (is_rescue)
+				return;
 
 			// dead EVA are not valid vessels
-			if (EVA.IsDead(v)) return;
+			if (EVA.IsDead(v))
+				return;
 
 			// shortcut for common tests
 			is_valid = true;
@@ -86,18 +89,18 @@ namespace KERBALISM
 
 			// signal info
 			avoid_inf_recursion.Add(v.id);
-			connection = Communications.connection(v);
-			transmitting = Science.transmitting(v, connection.linked);
-            relaying = "";
-            avoid_inf_recursion.Remove(v.id);
+			connection = Communications.Connection(v);
+			transmitting = Science.Transmitting(v, connection.linked);
+			relaying = "";
+			avoid_inf_recursion.Remove(v.id);
 
 			// habitat data
-			volume = Habitat.tot_volume(v);
-			surface = Habitat.tot_surface(v);
-			pressure = Habitat.pressure(v);
-			poisoning = Habitat.poisoning(v);
-			shielding = Habitat.shielding(v);
-			living_space = Habitat.living_space(v);
+			volume = Habitat.Tot_volume(v);
+			surface = Habitat.Tot_surface(v);
+			pressure = Habitat.Pressure(v);
+			poisoning = Habitat.Poisoning(v);
+			shielding = Habitat.Shielding(v);
+			living_space = Habitat.Living_space(v);
 			comforts = new Comforts(v, landed, crew_count > 1, connection.linked);
 
 			// data about greenhouses
@@ -149,7 +152,7 @@ namespace KERBALISM
 		public double shielding;            // shielding level
 		public double living_space;         // living space factor
 		public Comforts comforts;             // comfort info
-		public List<Greenhouse.data> greenhouses; // some data about greenhouses
+		public List<Greenhouse.Data> greenhouses; // some data about greenhouses
 		public double gravioli;             // gravitation gauge particles detected (joke)
 
 		// used to avoid infinite recursion while calculating connection info
@@ -159,40 +162,40 @@ namespace KERBALISM
 
 	public static class Cache
 	{
-		public static void init()
+		public static void Init()
 		{
-			vessels = new Dictionary<uint, vessel_info>();
+			vessels = new Dictionary<uint, Vessel_info>();
 			next_inc = 0;
 		}
 
 
-		public static void clear()
+		public static void Clear()
 		{
 			vessels.Clear();
 			next_inc = 0;
 		}
 
 
-		public static void purge(Vessel v)
+		public static void Purge(Vessel v)
 		{
 			vessels.Remove(Lib.VesselID(v));
 		}
 
 
-		public static void purge(ProtoVessel pv)
+		public static void Purge(ProtoVessel pv)
 		{
 			vessels.Remove(Lib.VesselID(pv));
 		}
 
 
-		public static void update()
+		public static void Update()
 		{
 			// purge the oldest entry from the vessel cache
 			if (vessels.Count > 0)
 			{
 				UInt64 oldest_inc = UInt64.MaxValue;
 				UInt32 oldest_id = 0;
-				foreach (KeyValuePair<UInt32, vessel_info> pair in vessels)
+				foreach (KeyValuePair<UInt32, Vessel_info> pair in vessels)
 				{
 					if (pair.Value.inc < oldest_inc)
 					{
@@ -205,17 +208,18 @@ namespace KERBALISM
 		}
 
 
-		public static vessel_info VesselInfo(Vessel v)
+		public static Vessel_info VesselInfo(Vessel v)
 		{
 			// get vessel id
 			UInt32 id = Lib.VesselID(v);
 
 			// get the info from the cache, if it exist
-			vessel_info info;
-			if (vessels.TryGetValue(id, out info)) return info;
+			Vessel_info info;
+			if (vessels.TryGetValue(id, out info))
+				return info;
 
 			// compute vessel info
-			info = new vessel_info(v, id, next_inc++);
+			info = new Vessel_info(v, id, next_inc++);
 
 			// store vessel info in the cache
 			vessels.Add(id, info);
@@ -225,14 +229,14 @@ namespace KERBALISM
 		}
 
 
-		public static bool HasVesselInfo(Vessel v, out vessel_info vi)
+		public static bool HasVesselInfo(Vessel v, out Vessel_info vi)
 		{
 			return vessels.TryGetValue(Lib.VesselID(v), out vi);
 		}
 
 
 		// vessel cache
-		static Dictionary<UInt32, vessel_info> vessels;
+		static Dictionary<UInt32, Vessel_info> vessels;
 
 		// used to generate unique id
 		static UInt64 next_inc;

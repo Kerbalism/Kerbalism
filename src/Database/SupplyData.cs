@@ -19,7 +19,7 @@ namespace KERBALISM
 			message = Lib.ConfigValue(node, "message", 0u);
 		}
 
-		public void save(ConfigNode node)
+		public void Save(ConfigNode node)
 		{
 			node.AddValue("message", message);
 		}

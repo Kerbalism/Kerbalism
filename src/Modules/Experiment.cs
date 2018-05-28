@@ -43,7 +43,7 @@ namespace KERBALISM
 			deploy_anim = new Animator(part, deploy);
 
 			// set initial animation state
-			deploy_anim.still(recording ? 1.0 : 0.0);
+			deploy_anim.Still(recording ? 1.0 : 0.0);
 
 			// parse crew specs
 			operator_cs = new CrewSpecs(crew);
@@ -59,13 +59,13 @@ namespace KERBALISM
 			if (Lib.IsFlight())
 			{
 				// get info from cache
-				vessel_info vi = Cache.VesselInfo(vessel);
+				Vessel_info vi = Cache.VesselInfo(vessel);
 
 				// do nothing if vessel is invalid
 				if (!vi.is_valid) return;
 
 				// update ui
-				bool has_operator = operator_cs.check(vessel);
+				bool has_operator = operator_cs.Check(vessel);
 				Events["Toggle"].guiName = Lib.StatusToggle(exp_name, !recording ? "stopped" : issue.Length == 0 ? "recording" : Lib.BuildString("<color=#ffff00>", issue, "</color>"));
 			}
 			// in the editor
@@ -85,7 +85,7 @@ namespace KERBALISM
 			if (!Cache.VesselInfo(vessel).is_valid) return;
 
 			// get ec handler
-			resource_info ec = ResourceCache.Info(vessel, "ElectricCharge");
+			Resource_info ec = ResourceCache.Info(vessel, "ElectricCharge");
 
 			// if experiment is active
 			if (recording)
@@ -93,8 +93,8 @@ namespace KERBALISM
 				// detect conditions
 				// - comparing against amount in previous step
 				bool has_ec = ec.amount > double.Epsilon;
-				bool has_operator = operator_cs.check(vessel);
-				string sit = Science.situation(vessel, situations);
+				bool has_operator = operator_cs.Check(vessel);
+				string sit = Science.Situation(vessel, situations);
 
 				// deduce issues
 				issue = string.Empty;
@@ -106,16 +106,16 @@ namespace KERBALISM
 				if (issue.Length == 0)
 				{
 					// generate subject id
-					string subject_id = Science.generate_subject(experiment, vessel.mainBody, sit, Science.biome(vessel, sit), Science.multiplier(vessel, sit));
+					string subject_id = Science.Generate_subject(experiment, vessel.mainBody, sit, Science.Biome(vessel, sit), Science.Multiplier(vessel, sit));
 
 					// record in drive
 					if (transmissible)
 					{
-						DB.Vessel(vessel).drive.record_file(subject_id, data_rate * Kerbalism.elapsed_s);
+						DB.Vessel(vessel).drive.Record_file(subject_id, data_rate * Kerbalism.elapsed_s);
 					}
 					else
 					{
-						DB.Vessel(vessel).drive.record_sample(subject_id, data_rate * Kerbalism.elapsed_s);
+						DB.Vessel(vessel).drive.Record_sample(subject_id, data_rate * Kerbalism.elapsed_s);
 					}
 
 					// consume ec
@@ -125,7 +125,7 @@ namespace KERBALISM
 		}
 
 
-		public static void BackgroundUpdate(Vessel v, ProtoPartModuleSnapshot m, Experiment exp, resource_info ec, double elapsed_s)
+		public static void BackgroundUpdate(Vessel v, ProtoPartModuleSnapshot m, Experiment exp, Resource_info ec, double elapsed_s)
 		{
 			// if experiment is active
 			if (Lib.Proto.GetBool(m, "recording"))
@@ -133,8 +133,8 @@ namespace KERBALISM
 				// detect conditions
 				// - comparing against amount in previous step
 				bool has_ec = ec.amount > double.Epsilon;
-				bool has_operator = new CrewSpecs(exp.crew).check(v);
-				string sit = Science.situation(v, exp.situations);
+				bool has_operator = new CrewSpecs(exp.crew).Check(v);
+				string sit = Science.Situation(v, exp.situations);
 
 				// deduce issues
 				string issue = string.Empty;
@@ -147,16 +147,16 @@ namespace KERBALISM
 				if (issue.Length == 0)
 				{
 					// generate subject id
-					string subject_id = Science.generate_subject(exp.experiment, v.mainBody, sit, Science.biome(v, sit), Science.multiplier(v, sit));
+					string subject_id = Science.Generate_subject(exp.experiment, v.mainBody, sit, Science.Biome(v, sit), Science.Multiplier(v, sit));
 
 					// record in drive
 					if (exp.transmissible)
 					{
-						DB.Vessel(v).drive.record_file(subject_id, exp.data_rate * elapsed_s);
+						DB.Vessel(v).drive.Record_file(subject_id, exp.data_rate * elapsed_s);
 					}
 					else
 					{
-						DB.Vessel(v).drive.record_sample(subject_id, exp.data_rate * elapsed_s);
+						DB.Vessel(v).drive.Record_sample(subject_id, exp.data_rate * elapsed_s);
 					}
 
 					// consume ec
@@ -173,7 +173,7 @@ namespace KERBALISM
 			recording = !recording;
 
 			// play deploy animation if exist
-			deploy_anim.play(!recording, false);
+			deploy_anim.Play(!recording, false);
 		}
 
 
@@ -184,7 +184,7 @@ namespace KERBALISM
 		// part tooltip
 		public override string GetInfo()
 		{
-			return Specs().info();
+			return Specs().Info();
 		}
 
 
@@ -192,14 +192,14 @@ namespace KERBALISM
 		public Specifics Specs()
 		{
 			var specs = new Specifics();
-			specs.add("Name", ResearchAndDevelopment.GetExperiment(experiment).experimentTitle);
-			specs.add("Data rate", Lib.HumanReadableDataRate(data_rate));
-			specs.add("EC required", Lib.HumanReadableRate(ec_rate));
-			if (crew.Length > 0) specs.add("Operator", new CrewSpecs(crew).info());
-			specs.add(string.Empty);
-			specs.add("<color=#00ffff>Situations:</color>", string.Empty);
+			specs.Add("Name", ResearchAndDevelopment.GetExperiment(experiment).experimentTitle);
+			specs.Add("Data rate", Lib.HumanReadableDataRate(data_rate));
+			specs.Add("EC required", Lib.HumanReadableRate(ec_rate));
+			if (crew.Length > 0) specs.Add("Operator", new CrewSpecs(crew).Info());
+			specs.Add(string.Empty);
+			specs.Add("<color=#00ffff>Situations:</color>", string.Empty);
 			var tokens = Lib.Tokenize(situations, ',');
-			foreach (string s in tokens) specs.add(Lib.BuildString("• <b>", s, "</b>"));
+			foreach (string s in tokens) specs.Add(Lib.BuildString("• <b>", s, "</b>"));
 			return specs;
 		}
 	}

@@ -25,7 +25,7 @@ namespace KERBALISM
 			msg_storm = Lib.ConfigValue(node, "msg_storm", 0u);
 		}
 
-		public void save(ConfigNode node)
+		public void Save(ConfigNode node)
 		{
 			node.AddValue("storm_time", storm_time);
 			node.AddValue("storm_age", storm_age);

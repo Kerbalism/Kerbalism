@@ -81,7 +81,7 @@ namespace KERBALISM
 		public static double Radiation(Vessel v)
 		{
 			if (!Features.Radiation) return 0.0;
-			vessel_info vi = Cache.VesselInfo(v);
+			Vessel_info vi = Cache.VesselInfo(v);
 			return vi.radiation;
 		}
 
@@ -233,7 +233,7 @@ namespace KERBALISM
 		{
 			if (!Cache.VesselInfo(v).is_valid) return;
 			Drive drive = DB.Vessel(v).drive;
-			drive.record_file(subject_id, amount);
+			drive.Record_file(subject_id, amount);
 		}
 
 		// store a sample on a vessel
@@ -241,7 +241,7 @@ namespace KERBALISM
 		{
 			if (!Cache.VesselInfo(v).is_valid) return;
 			Drive drive = DB.Vessel(v).drive;
-			drive.record_sample(subject_id, amount);
+			drive.Record_sample(subject_id, amount);
 		}
 
 		// remove a file from a vessel
@@ -249,7 +249,7 @@ namespace KERBALISM
 		{
 			if (!Cache.VesselInfo(v).is_valid) return;
 			Drive drive = DB.Vessel(v).drive;
-			drive.delete_file(subject_id, amount);
+			drive.Delete_file(subject_id, amount);
 		}
 
 		// remove a sample from a vessel
@@ -257,7 +257,7 @@ namespace KERBALISM
 		{
 			if (!Cache.VesselInfo(v).is_valid) return;
 			Drive drive = DB.Vessel(v).drive;
-			drive.delete_sample(subject_id, amount);
+			drive.Delete_sample(subject_id, amount);
 		}
 	}
 

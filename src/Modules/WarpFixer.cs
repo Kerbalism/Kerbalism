@@ -53,10 +53,10 @@ namespace KERBALISM
 			if (panel == null) return;
 
 			// get resource handler
-			resource_info ec = ResourceCache.Info(vessel, "ElectricCharge");
+			Resource_info ec = ResourceCache.Info(vessel, "ElectricCharge");
 
 			// get vessel data from cache
-			vessel_info info = Cache.VesselInfo(vessel);
+			Vessel_info info = Cache.VesselInfo(vessel);
 
 			// do nothing if vessel is invalid
 			if (!info.is_valid) return;

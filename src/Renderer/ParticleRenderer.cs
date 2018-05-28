@@ -11,7 +11,7 @@ namespace KERBALISM
 	public static class ParticleRenderer
 	{
 		// pseudo-ctor
-		public static void init()
+		public static void Init()
 		{
 			// load shader
 			mat = Lib.GetShader("FullPointParticle");
@@ -24,7 +24,7 @@ namespace KERBALISM
 
 		// commit a particle to the renderer
 		// note: this function may trigger actual rendering
-		public static void commit(Vector3 p, float size, Color32 color)
+		public static void Commit(Vector3 p, float size, Color32 color)
 		{
 			points[point_index].Set(p.x, p.y, p.z);
 			sizes[point_index].Set(size, 0.0f);
@@ -55,7 +55,7 @@ namespace KERBALISM
 
 		// render all particles
 		// note: this only render all particles not already rendered during commit
-		public static void render()
+		public static void Render()
 		{
 			if (point_index > 0)
 			{

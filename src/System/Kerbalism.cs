@@ -10,12 +10,12 @@ namespace KERBALISM
 
 
 	[KSPScenario(ScenarioCreationOptions.AddToAllGames, new[] { GameScenes.SPACECENTER, GameScenes.TRACKSTATION, GameScenes.FLIGHT, GameScenes.EDITOR })]
-	public sealed class Kerbalism : ScenarioModule
+	public sealed class Kerbalism: ScenarioModule
 	{
 		public override void OnLoad(ConfigNode node)
 		{
 			// deserialize data
-			DB.load(node);
+			DB.Load(node);
 
 			// initialize everything just once
 			if (!initialized)
@@ -24,20 +24,21 @@ namespace KERBALISM
 				Profile.SetupPods();
 
 				// initialize subsystems
-				Cache.init();
-				ResourceCache.init();
-				Radiation.init();
-				Science.init();
-				LineRenderer.init();
-				ParticleRenderer.init();
-				Highlighter.init();
-				UI.init();
+				Cache.Init();
+				ResourceCache.Init();
+				Radiation.Init();
+				Science.Init();
+				LineRenderer.Init();
+				ParticleRenderer.Init();
+				Highlighter.Init();
+				UI.Init();
 
 				// prepare storm data
 				foreach (CelestialBody body in FlightGlobals.Bodies)
 				{
-					if (Storm.skip_body(body)) continue;
-					storm_data sd = new storm_data();
+					if (Storm.Skip_body(body))
+						continue;
+					Storm_data sd = new Storm_data();
 					sd.body = body;
 					storm_bodies.Add(sd);
 				}
@@ -56,11 +57,11 @@ namespace KERBALISM
 			if (DB.uid != savegame_uid)
 			{
 				// clear caches
-				Cache.clear();
-				ResourceCache.clear();
+				Cache.Clear();
+				ResourceCache.Clear();
 
 				// sync main window pos from db
-				UI.sync();
+				UI.Sync();
 
 				// remember savegame id
 				savegame_uid = DB.uid;
@@ -71,84 +72,88 @@ namespace KERBALISM
 		public override void OnSave(ConfigNode node)
 		{
 			// serialize data
-			DB.save(node);
+			DB.Save(node);
 		}
 
 		void FixedUpdate()
 		{
 			// remove control locks in any case
-			Misc.clearLocks();
+			Misc.ClearLocks();
 
 			// do nothing if paused
-			if (Lib.IsPaused()) return;
+			if (Lib.IsPaused())
+				return;
 
 			// maintain elapsed_s, converting to double only once
 			// and detect warp blending
 			double fixedDeltaTime = TimeWarp.fixedDeltaTime;
-			if (Math.Abs(fixedDeltaTime - elapsed_s) > double.Epsilon) warp_blending = 0;
-			else ++warp_blending;
+			if (Math.Abs(fixedDeltaTime - elapsed_s) > double.Epsilon)
+				warp_blending = 0;
+			else
+				++warp_blending;
 			elapsed_s = fixedDeltaTime;
 
 			// evict oldest entry from vessel cache
-			Cache.update();
+			Cache.Update();
 
 			// store info for oldest unloaded vessel
 			double last_time = 0.0;
 			Vessel last_v = null;
-			vessel_info last_vi = null;
+			Vessel_info last_vi = null;
 			VesselData last_vd = null;
-			vessel_resources last_resources = null;
+			Vessel_resources last_resources = null;
 
 			// for each vessel
 			foreach (Vessel v in FlightGlobals.Vessels)
 			{
 				// get vessel info from the cache
-				vessel_info vi = Cache.VesselInfo(v);
+				Vessel_info vi = Cache.VesselInfo(v);
 
 				// set locks for active vessel
 				if (v.isActiveVessel)
 				{
-					Misc.setLocks(v, vi);
+					Misc.SetLocks(v, vi);
 				}
 
 				// maintain eva dead animation and helmet state
 				if (v.loaded && v.isEVA)
 				{
-					EVA.update(v);
+					EVA.Update(v);
 				}
 
 				// keep track of rescue mission kerbals, and gift resources to their vessels on discovery
 				if (v.loaded && vi.is_vessel)
 				{
 					// manage rescue mission mechanics
-					Misc.manageRescueMission(v);
+					Misc.ManageRescueMission(v);
 				}
 
 				// do nothing else for invalid vessels
-				if (!vi.is_valid) continue;
+				if (!vi.is_valid)
+					continue;
 
 				// get vessel data from db
 				VesselData vd = DB.Vessel(v);
 
 				// get resource cache
-				vessel_resources resources = ResourceCache.Get(v);
+				Vessel_resources resources = ResourceCache.Get(v);
 
 				// if loaded
 				if (v.loaded)
 				{
 					// show belt warnings
-					Radiation.beltWarnings(v, vi, vd);
+					Radiation.BeltWarnings(v, vi, vd);
 
 					// update storm data
-					Storm.update(v, vi, vd, elapsed_s);
+					Storm.Update(v, vi, vd, elapsed_s);
 
 					//handle RemoteTech stuff
-					RemoteTech.update(v, vi, vd, elapsed_s);
+					RemoteTech.Update(v, vi, vd, elapsed_s);
 
-					Communications.update(v, vi, vd, elapsed_s);
+					Communications.Update(v, vi, vd, elapsed_s);
 
 					// consume ec for transmission, and transmit science data
-					Science.update(v, vi, vd, resources, elapsed_s);
+					Science.Update(v, vi, vd, resources, elapsed_s);
 
 					// apply rules
 					Profile.Execute(v, vi, vd, resources, elapsed_s);
@@ -157,7 +162,7 @@ namespace KERBALISM
 					resources.Sync(v, elapsed_s);
 
 					// call automation scripts
-					vd.computer.automate(v, vi, resources);
+					vd.computer.Automate(v, vi, resources);
 
 					// remove from unloaded data container
 					unloaded.Remove(vi.id);
@@ -166,10 +171,10 @@ namespace KERBALISM
 				else
 				{
 					// get unloaded data, or create an empty one
-					unloaded_data ud;
+					Unloaded_data ud;
 					if (!unloaded.TryGetValue(vi.id, out ud))
 					{
-						ud = new unloaded_data();
+						ud = new Unloaded_data();
 						unloaded.Add(vi.id, ud);
 					}
 
@@ -193,30 +198,30 @@ namespace KERBALISM
 			if (last_v != null)
 			{
 				// show belt warnings
-				Radiation.beltWarnings(last_v, last_vi, last_vd);
+				Radiation.BeltWarnings(last_v, last_vi, last_vd);
 
 				// update storm data
-				Storm.update(last_v, last_vi, last_vd, last_time);
+				Storm.Update(last_v, last_vi, last_vd, last_time);
 
 				//handle RemoteTech stuff
-				RemoteTech.update(last_v, last_vi, last_vd, last_time);
+				RemoteTech.Update(last_v, last_vi, last_vd, last_time);
 
-				Communications.update(last_v, last_vi, last_vd, last_time);
+				Communications.Update(last_v, last_vi, last_vd, last_time);
 
 				// consume ec for transmission, and transmit science
-				Science.update(last_v, last_vi, last_vd, last_resources, last_time);
+				Science.Update(last_v, last_vi, last_vd, last_resources, last_time);
 
 				// apply rules
 				Profile.Execute(last_v, last_vi, last_vd, last_resources, last_time);
 
 				// simulate modules in background
-				Background.update(last_v, last_vi, last_vd, last_resources, last_time);
+				Background.Update(last_v, last_vi, last_vd, last_resources, last_time);
 
 				// apply deferred requests
 				last_resources.Sync(last_v, last_time);
 
 				// call automation scripts
-				last_vd.computer.automate(last_v, last_vi, last_resources);
+				last_vd.computer.Automate(last_v, last_vi, last_resources);
 
 				// remove from unloaded data container
 				unloaded.Remove(last_vi.id);
@@ -226,8 +231,8 @@ namespace KERBALISM
 			if (storm_bodies.Count > 0)
 			{
 				storm_bodies.ForEach(k => k.time += elapsed_s);
-				storm_data sd = storm_bodies[storm_index];
-				Storm.update(sd.body, sd.time);
+				Storm_data sd = storm_bodies[storm_index];
+				Storm.Update(sd.body, sd.time);
 				sd.time = 0.0;
 				storm_index = (storm_index + 1) % storm_bodies.Count;
 			}
@@ -244,19 +249,19 @@ namespace KERBALISM
 			Misc.KeyboardInput();
 
 			// add description to techs
-			Misc.techDescriptions();
+			Misc.TechDescriptions();
 
 			// set part highlight colors
-			Highlighter.update();
+			Highlighter.Update();
 
 			// prepare gui content
-			UI.update(callbacks.visible);
+			UI.Update(callbacks.visible);
 		}
 
 
 		void OnGUI()
 		{
-			UI.on_gui(callbacks.visible);
+			UI.On_gui(callbacks.visible);
 		}
 
 
@@ -268,13 +273,13 @@ namespace KERBALISM
 
 		// store time until last update for unloaded vessels
 		// note: not using reference_wrapper<T> to increase readability
-		sealed class unloaded_data { public double time; }; //< reference wrapper
-		static Dictionary<UInt32, unloaded_data> unloaded = new Dictionary<uint, unloaded_data>();
+		sealed class Unloaded_data { public double time; }; //< reference wrapper
+		static Dictionary<UInt32, Unloaded_data> unloaded = new Dictionary<uint, Unloaded_data>();
 
 		// used to update storm data on one body per step
 		static int storm_index;
-		class storm_data { public double time; public CelestialBody body; };
-		static List<storm_data> storm_bodies = new List<storm_data>();
+		class Storm_data { public double time; public CelestialBody body; };
+		static List<Storm_data> storm_bodies = new List<Storm_data>();
 
 		// used to initialize everything just once
 		static bool initialized;
@@ -291,20 +296,21 @@ namespace KERBALISM
 	}
 
 
-	public sealed class MapCameraScript : MonoBehaviour
+	public sealed class MapCameraScript: MonoBehaviour
 	{
 		void OnPostRender()
 		{
 			// do nothing when not in map view
 			// - avoid weird situation when in some user installation MapIsEnabled is true in the space center
-			if (!MapView.MapIsEnabled || HighLogic.LoadedScene == GameScenes.SPACECENTER) return;
+			if (!MapView.MapIsEnabled || HighLogic.LoadedScene == GameScenes.SPACECENTER)
+				return;
 
 			// commit all geometry
-			Radiation.render();
+			Radiation.Render();
 
 			// render all committed geometry
-			LineRenderer.render();
-			ParticleRenderer.render();
+			LineRenderer.Render();
+			ParticleRenderer.Render();
 		}
 	}
 
@@ -312,7 +318,7 @@ namespace KERBALISM
 	// misc functions
 	public static class Misc
 	{
-		public static void clearLocks()
+		public static void ClearLocks()
 		{
 			// remove control locks
 			InputLockManager.RemoveControlLock("eva_dead_lock");
@@ -320,7 +326,7 @@ namespace KERBALISM
 		}
 
 
-		public static void setLocks(Vessel v, vessel_info vi)
+		public static void SetLocks(Vessel v, Vessel_info vi)
 		{
 			// lock controls for EVA death
 			if (EVA.IsDead(v))
@@ -330,7 +336,7 @@ namespace KERBALISM
 		}
 
 
-		public static void manageRescueMission(Vessel v)
+		public static void ManageRescueMission(Vessel v)
 		{
 			// true if we detected this was a rescue mission vessel
 			bool detected = false;
@@ -342,7 +348,8 @@ namespace KERBALISM
 				KerbalData kd = DB.Kerbal(c.name);
 
 				// flag the kerbal as not rescue at prelaunch
-				if (v.situation == Vessel.Situations.PRELAUNCH) kd.rescue = false;
+				if (v.situation == Vessel.Situations.PRELAUNCH)
+					kd.rescue = false;
 
 				// if the kerbal belong to a rescue mission
 				if (kd.rescue)
@@ -387,12 +394,14 @@ namespace KERBALISM
 		}
 
 
-		public static void techDescriptions()
+		public static void TechDescriptions()
 		{
 			var rnd = RDController.Instance;
-			if (rnd == null) return;
+			if (rnd == null)
+				return;
 			var selected = RDController.Instance.node_selected;
-			if (selected == null) return;
+			if (selected == null)
+				return;
 			var techID = selected.tech.techID;
 			if (rnd.node_description.text.IndexOf("<i></i>\n", StringComparison.Ordinal) == -1) //< check for state in the string
 			{
@@ -429,27 +438,67 @@ namespace KERBALISM
 				// scale part icons of the radial container variants
 				switch (p.name)
 				{
-                    case "kerbalism-container-radial-small": p.iconPrefab.transform.GetChild(0).localScale *= 0.60f; p.iconScale *= 0.60f; break;
-                    case "kerbalism-container-radial-medium": p.iconPrefab.transform.GetChild(0).localScale *= 0.85f; p.iconScale *= 0.85f; break;
-                    case "kerbalism-container-radial-big": p.iconPrefab.transform.GetChild(0).localScale *= 1.10f; p.iconScale *= 1.10f; break;
-                    case "kerbalism-container-radial-huge": p.iconPrefab.transform.GetChild(0).localScale *= 1.33f; p.iconScale *= 1.33f; break;
-                    case "kerbalism-container-inline-375": p.iconPrefab.transform.GetChild(0).localScale *= 1.33f; p.iconScale *= 1.33f; break;				}
+					case "kerbalism-container-radial-small":
+						p.iconPrefab.transform.GetChild(0).localScale *= 0.60f;
+						p.iconScale *= 0.60f;
+						break;
+					case "kerbalism-container-radial-medium":
+						p.iconPrefab.transform.GetChild(0).localScale *= 0.85f;
+						p.iconScale *= 0.85f;
+						break;
+					case "kerbalism-container-radial-big":
+						p.iconPrefab.transform.GetChild(0).localScale *= 1.10f;
+						p.iconScale *= 1.10f;
+						break;
+					case "kerbalism-container-radial-huge":
+						p.iconPrefab.transform.GetChild(0).localScale *= 1.33f;
+						p.iconScale *= 1.33f;
+						break;
+					case "kerbalism-container-inline-375":
+						p.iconPrefab.transform.GetChild(0).localScale *= 1.33f;
+						p.iconScale *= 1.33f;
+						break;
+				}
 
 				// force a non-lexical order in the editor
 				switch (p.name)
 				{
-					case "kerbalism-container-inline-0625": p.title = Lib.BuildString("<size=1><color=#00000000>00</color></size>", p.title); break;
-					case "kerbalism-container-inline-125": p.title = Lib.BuildString("<size=1><color=#00000000>01</color></size>", p.title); break;
-					case "kerbalism-container-inline-250": p.title = Lib.BuildString("<size=1><color=#00000000>02</color></size>", p.title); break;
-                    case "kerbalism-container-inline-375": p.title = Lib.BuildString("<size=1><color=#00000000>03</color></size>", p.title); break;
-                    case "kerbalism-container-radial-small": p.title = Lib.BuildString("<size=1><color=#00000000>04</color></size>", p.title); break;
-					case "kerbalism-container-radial-medium": p.title = Lib.BuildString("<size=1><color=#00000000>05</color></size>", p.title); break;
-					case "kerbalism-container-radial-big": p.title = Lib.BuildString("<size=1><color=#00000000>06</color></size>", p.title); break;
-                    case "kerbalism-container-radial-huge": p.title = Lib.BuildString("<size=1><color=#00000000>07</color></size>", p.title); break;
-                    case "kerbalism-greenhouse": p.title = Lib.BuildString("<size=1><color=#00000000>08</color></size>", p.title); break;
-					case "kerbalism-gravityring": p.title = Lib.BuildString("<size=1><color=#00000000>09</color></size>", p.title); break;
-					case "kerbalism-activeshield": p.title = Lib.BuildString("<size=1><color=#00000000>10</color></size>", p.title); break;
-					case "kerbalism-chemicalplant": p.title = Lib.BuildString("<size=1><color=#00000000>11</color></size>", p.title); break;
+					case "kerbalism-container-inline-0625":
+						p.title = Lib.BuildString("<size=1><color=#00000000>00</color></size>", p.title);
+						break;
+					case "kerbalism-container-inline-125":
+						p.title = Lib.BuildString("<size=1><color=#00000000>01</color></size>", p.title);
+						break;
+					case "kerbalism-container-inline-250":
+						p.title = Lib.BuildString("<size=1><color=#00000000>02</color></size>", p.title);
+						break;
+					case "kerbalism-container-inline-375":
+						p.title = Lib.BuildString("<size=1><color=#00000000>03</color></size>", p.title);
+						break;
+					case "kerbalism-container-radial-small":
+						p.title = Lib.BuildString("<size=1><color=#00000000>04</color></size>", p.title);
+						break;
+					case "kerbalism-container-radial-medium":
+						p.title = Lib.BuildString("<size=1><color=#00000000>05</color></size>", p.title);
+						break;
+					case "kerbalism-container-radial-big":
+						p.title = Lib.BuildString("<size=1><color=#00000000>06</color></size>", p.title);
+						break;
+					case "kerbalism-container-radial-huge":
+						p.title = Lib.BuildString("<size=1><color=#00000000>07</color></size>", p.title);
+						break;
+					case "kerbalism-greenhouse":
+						p.title = Lib.BuildString("<size=1><color=#00000000>08</color></size>", p.title);
+						break;
+					case "kerbalism-gravityring":
+						p.title = Lib.BuildString("<size=1><color=#00000000>09</color></size>", p.title);
+						break;
+					case "kerbalism-activeshield":
+						p.title = Lib.BuildString("<size=1><color=#00000000>10</color></size>", p.title);
+						break;
+					case "kerbalism-chemicalplant":
+						p.title = Lib.BuildString("<size=1><color=#00000000>11</color></size>", p.title);
+						break;
 				}
 			}
 		}
@@ -475,7 +524,7 @@ namespace KERBALISM
 			// toggle body info window with keyboard
 			if (MapView.MapIsEnabled && Input.GetKeyDown(KeyCode.B))
 			{
-				UI.open(BodyInfo.body_info);
+				UI.Open(BodyInfo.Body_info);
 			}
 
 			// call action scripts
@@ -487,11 +536,16 @@ namespace KERBALISM
 				Computer computer = DB.Vessel(v).computer;
 
 				// call scripts with 1-5 key
-				if (Input.GetKeyDown(KeyCode.Alpha1) || Input.GetKeyDown(KeyCode.Keypad1)) { computer.execute(v, ScriptType.action1); }
-				if (Input.GetKeyDown(KeyCode.Alpha2) || Input.GetKeyDown(KeyCode.Keypad2)) { computer.execute(v, ScriptType.action2); }
-				if (Input.GetKeyDown(KeyCode.Alpha3) || Input.GetKeyDown(KeyCode.Keypad3)) { computer.execute(v, ScriptType.action3); }
-				if (Input.GetKeyDown(KeyCode.Alpha4) || Input.GetKeyDown(KeyCode.Keypad4)) { computer.execute(v, ScriptType.action4); }
-				if (Input.GetKeyDown(KeyCode.Alpha5) || Input.GetKeyDown(KeyCode.Keypad5)) { computer.execute(v, ScriptType.action5); }
+				if (Input.GetKeyDown(KeyCode.Alpha1) || Input.GetKeyDown(KeyCode.Keypad1))
+				{ computer.Execute(v, ScriptType.action1); }
+				if (Input.GetKeyDown(KeyCode.Alpha2) || Input.GetKeyDown(KeyCode.Keypad2))
+				{ computer.Execute(v, ScriptType.action2); }
+				if (Input.GetKeyDown(KeyCode.Alpha3) || Input.GetKeyDown(KeyCode.Keypad3))
+				{ computer.Execute(v, ScriptType.action3); }
+				if (Input.GetKeyDown(KeyCode.Alpha4) || Input.GetKeyDown(KeyCode.Keypad4))
+				{ computer.Execute(v, ScriptType.action4); }
+				if (Input.GetKeyDown(KeyCode.Alpha5) || Input.GetKeyDown(KeyCode.Keypad5))
+				{ computer.Execute(v, ScriptType.action5); }
 			}
 		}
 
@@ -502,7 +556,8 @@ namespace KERBALISM
 			// if at least one of the crew is flagged as rescue, consider it a rescue mission
 			foreach (var c in Lib.CrewList(v))
 			{
-				if (DB.Kerbal(c.name).rescue) return true;
+				if (DB.Kerbal(c.name).rescue)
+					return true;
 			}
 
 
@@ -527,7 +582,8 @@ namespace KERBALISM
 					Part part = null;
 					foreach (Part p in v.parts)
 					{
-						if (p.protoModuleCrew.Find(k => k.name == c.name) != null) { part = p; break; }
+						if (p.protoModuleCrew.Find(k => k.name == c.name) != null)
+						{ part = p; break; }
 					}
 
 					// remove kerbal from part
@@ -546,7 +602,8 @@ namespace KERBALISM
 					ProtoPartSnapshot part = null;
 					foreach (ProtoPartSnapshot p in v.protoVessel.protoPartSnapshots)
 					{
-						if (p.HasCrew(c.name)) { part = p; break; }
+						if (p.HasCrew(c.name))
+						{ part = p; break; }
 					}
 
 					// remove from part
@@ -584,7 +641,7 @@ namespace KERBALISM
 			const double res_penalty = 0.1;        // proportion of food lost on 'depressed' and 'wrong_valve'
 
 			// get a supply resource at random
-			resource_info res = null;
+			Resource_info res = null;
 			if (Profile.supplies.Count > 0)
 			{
 				Supply supply = Profile.supplies[Lib.RandomInt(Profile.supplies.Count)];
@@ -594,9 +651,12 @@ namespace KERBALISM
 			// compile list of events with condition satisfied
 			List<KerbalBreakdown> events = new List<KerbalBreakdown>();
 			events.Add(KerbalBreakdown.mumbling); //< do nothing, here so there is always something that can happen
-			if (Lib.HasData(v)) events.Add(KerbalBreakdown.fat_finger);
-			if (Reliability.CanMalfunction(v)) events.Add(KerbalBreakdown.rage);
-			if (res != null && res.amount > double.Epsilon) events.Add(KerbalBreakdown.wrong_valve);
+			if (Lib.HasData(v))
+				events.Add(KerbalBreakdown.fat_finger);
+			if (Reliability.CanMalfunction(v))
+				events.Add(KerbalBreakdown.rage);
+			if (res != null && res.amount > double.Epsilon)
+				events.Add(KerbalBreakdown.wrong_valve);
 
 			// choose a breakdown event
 			KerbalBreakdown breakdown = events[Lib.RandomInt(events.Count)];
@@ -606,10 +666,22 @@ namespace KERBALISM
 			string subtext = "";
 			switch (breakdown)
 			{
-				case KerbalBreakdown.mumbling: text = "$ON_VESSEL$KERBAL has been in space for too long"; subtext = "Mumbling incoherently"; break;
-				case KerbalBreakdown.fat_finger: text = "$ON_VESSEL$KERBAL is pressing buttons at random on the control panel"; subtext = "Science data has been lost"; break;
-				case KerbalBreakdown.rage: text = "$ON_VESSEL$KERBAL is possessed by a blind rage"; subtext = "A component has been damaged"; break;
-				case KerbalBreakdown.wrong_valve: text = "$ON_VESSEL$KERBAL opened the wrong valve"; subtext = res.resource_name + " has been lost"; break;
+				case KerbalBreakdown.mumbling:
+					text = "$ON_VESSEL$KERBAL has been in space for too long";
+					subtext = "Mumbling incoherently";
+					break;
+				case KerbalBreakdown.fat_finger:
+					text = "$ON_VESSEL$KERBAL is pressing buttons at random on the control panel";
+					subtext = "Science data has been lost";
+					break;
+				case KerbalBreakdown.rage:
+					text = "$ON_VESSEL$KERBAL is possessed by a blind rage";
+					subtext = "A component has been damaged";
+					break;
+				case KerbalBreakdown.wrong_valve:
+					text = "$ON_VESSEL$KERBAL opened the wrong valve";
+					subtext = res.resource_name + " has been lost";
+					break;
 			}
 
 			// post message first so this one is shown before malfunction message
@@ -618,10 +690,17 @@ namespace KERBALISM
 			// trigger the event
 			switch (breakdown)
 			{
-				case KerbalBreakdown.mumbling: break; // do nothing
-				case KerbalBreakdown.fat_finger: Lib.RemoveData(v); break;
-				case KerbalBreakdown.rage: Reliability.CauseMalfunction(v); break;
-				case KerbalBreakdown.wrong_valve: res.Consume(res.amount * res_penalty); break;
+				case KerbalBreakdown.mumbling:
+					break; // do nothing
+				case KerbalBreakdown.fat_finger:
+					Lib.RemoveData(v);
+					break;
+				case KerbalBreakdown.rage:
+					Reliability.CauseMalfunction(v);
+					break;
+				case KerbalBreakdown.wrong_valve:
+					res.Consume(res.amount * res_penalty);
+					break;
 			}
 
 			// remove reputation

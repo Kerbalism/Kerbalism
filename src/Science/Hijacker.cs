@@ -41,11 +41,11 @@ namespace KERBALISM
 				Drive drive = DB.Vessel(meta.vessel).drive;
 				if (!meta.is_sample)
 				{
-					drive.record_file(data.subjectID, data.dataAmount);
+					drive.Record_file(data.subjectID, data.dataAmount);
 				}
 				else
 				{
-					drive.record_sample(data.subjectID, data.dataAmount);
+					drive.Record_sample(data.subjectID, data.dataAmount);
 				}
 
 				// render experiment inoperable if necessary
@@ -60,7 +60,7 @@ namespace KERBALISM
 				// inform the user
 				Message.Post
 				(
-				  Lib.BuildString("<b>", Science.experiment(data.subjectID).fullname, "</b> recorded"),
+				  Lib.BuildString("<b>", Science.Experiment(data.subjectID).fullname, "</b> recorded"),
 				  !meta.is_rerunnable ? Localizer.Format("#KERBALISM_Science_inoperable") : string.Empty
 				);
 			}
@@ -89,12 +89,12 @@ namespace KERBALISM
 		void Update()
 		{
 			var page = dialog.currentPage;
-			page.OnKeepData = (ScienceData data) => hijack(data, false);
-			page.OnTransmitData = (ScienceData data) => hijack(data, true);
+			page.OnKeepData = (ScienceData data) => Hijack(data, false);
+			page.OnTransmitData = (ScienceData data) => Hijack(data, true);
 			page.showTransmitWarning = false; //< mom's spaghetti
 		}
 
-		void hijack(ScienceData data, bool send)
+		void Hijack(ScienceData data, bool send)
 		{
 			// shortcut
 			ExperimentResultDialogPage page = dialog.currentPage;
@@ -109,18 +109,18 @@ namespace KERBALISM
 				(
 				  "Warning!",
 				  "Recording the data will render this module inoperable.\n\nRestoring functionality will require a scientist.",
-				  new DialogGUIButton("Record data", () => record(meta, data, send)),
-				  new DialogGUIButton("Discard data", () => dismiss(data))
+				  new DialogGUIButton("Record data", () => Record(meta, data, send)),
+				  new DialogGUIButton("Discard data", () => Dismiss(data))
 				);
 			}
 			else
 			{
-				record(meta, data, send);
+				Record(meta, data, send);
 			}
 		}
 
 
-		void record(MetaData meta, ScienceData data, bool send)
+		void Record(MetaData meta, ScienceData data, bool send)
 		{
 			// if amount is zero, warn the user and do nothing else
 			if (data.dataAmount <= double.Epsilon)
@@ -140,32 +140,32 @@ namespace KERBALISM
 			Drive drive = DB.Vessel(meta.vessel).drive;
 			if (!meta.is_sample)
 			{
-				drive.record_file(data.subjectID, data.dataAmount);
+				drive.Record_file(data.subjectID, data.dataAmount);
 			}
 			else
 			{
-				drive.record_sample(data.subjectID, data.dataAmount);
+				drive.Record_sample(data.subjectID, data.dataAmount);
 			}
 
 			// flag for sending if specified
-			if (!meta.is_sample && send) drive.send(data.subjectID, true);
+			if (!meta.is_sample && send) drive.Send(data.subjectID, true);
 
 			// render experiment inoperable if necessary
 			if (!meta.is_rerunnable) meta.experiment.SetInoperable();
 
 			// dismiss the dialog and popups
-			dismiss(data);
+			Dismiss(data);
 
 			// inform the user
 			Message.Post
 			(
-			  Lib.BuildString("<b>", Science.experiment(data.subjectID).fullname, "</b> recorded"),
+			  Lib.BuildString("<b>", Science.Experiment(data.subjectID).fullname, "</b> recorded"),
 			  !meta.is_rerunnable ? Localizer.Format("#KERBALISM_Science_inoperable") : string.Empty
 			);
 		}
 
 
-		void dismiss(ScienceData data)
+		void Dismiss(ScienceData data)
 		{
 			// shortcut
 			ExperimentResultDialogPage page = dialog.currentPage;
@@ -197,7 +197,7 @@ namespace KERBALISM
 			vessel = part.vessel;
 
 			// get the container module storing the data
-			container = Science.container(part, Science.experiment(data.subjectID).id);
+			container = Science.Container(part, Science.Experiment(data.subjectID).id);
 
 			// get the stock experiment module storing the data (if that's the case)
 			experiment = container != null ? container as ModuleScienceExperiment : null;

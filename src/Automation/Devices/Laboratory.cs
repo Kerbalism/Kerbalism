@@ -15,29 +15,29 @@ namespace KERBALISM
 			this.lab = lab;
 		}
 
-		public override string name()
+		public override string Name()
 		{
 			return "laboratory";
 		}
 
-		public override uint part()
+		public override uint Part()
 		{
 			return lab.part.flightID;
 		}
 
-		public override string info()
+		public override string Info()
 		{
 			return lab.running ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_ACTIVE") + "</color>" : "<color=red>" + Localizer.Format("#KERBALISM_Generic_DISABLED") + "</color>";
 		}
 
-		public override void ctrl(bool value)
+		public override void Ctrl(bool value)
 		{
 			if (lab.running != value) lab.Toggle();
 		}
 
-		public override void toggle()
+		public override void Toggle()
 		{
-			ctrl(!lab.running);
+			Ctrl(!lab.running);
 		}
 
 		Laboratory lab;
@@ -52,29 +52,29 @@ namespace KERBALISM
 			this.part_id = part_id;
 		}
 
-		public override string name()
+		public override string Name()
 		{
 			return "laboratory";
 		}
 
-		public override uint part()
+		public override uint Part()
 		{
 			return part_id;
 		}
 
-		public override string info()
+		public override string Info()
 		{
 			return Lib.Proto.GetBool(lab, "running") ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_ACTIVE") + "</color>" : "<color=red>" + Localizer.Format("#KERBALISM_Generic_DISABLED") + "</color>";
 		}
 
-		public override void ctrl(bool value)
+		public override void Ctrl(bool value)
 		{
 			Lib.Proto.Set(lab, "running", value);
 		}
 
-		public override void toggle()
+		public override void Toggle()
 		{
-			ctrl(!Lib.Proto.GetBool(lab, "running"));
+			Ctrl(!Lib.Proto.GetBool(lab, "running"));
 		}
 
 		ProtoPartModuleSnapshot lab;

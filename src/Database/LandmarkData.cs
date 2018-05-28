@@ -22,7 +22,7 @@ namespace KERBALISM
 			heliopause_crossing = Lib.ConfigValue(node, "heliopause_crossing", false);
 		}
 
-		public void save(ConfigNode node)
+		public void Save(ConfigNode node)
 		{
 			node.AddValue("belt_crossing", belt_crossing);
 			node.AddValue("manned_orbit", manned_orbit);

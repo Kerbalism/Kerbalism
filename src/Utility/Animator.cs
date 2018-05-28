@@ -29,7 +29,7 @@ namespace KERBALISM
 		}
 
 		// Note: This function resets animation to the beginning
-		public void play(bool reverse, bool loop)
+		public void Play(bool reverse, bool loop)
 		{
 			if (anim != null)
 			{
@@ -41,7 +41,7 @@ namespace KERBALISM
 		}
 
 
-		public void stop()
+		public void Stop()
 		{
 			if (anim != null)
 			{
@@ -50,7 +50,7 @@ namespace KERBALISM
 		}
 
 
-		public void pause()
+		public void Pause()
 		{
 			if (anim != null)
 			{
@@ -59,7 +59,7 @@ namespace KERBALISM
 		}
 
 
-		public void resume(bool reverse)
+		public void Resume(bool reverse)
 		{
 			if (anim != null)
 			{
@@ -68,7 +68,7 @@ namespace KERBALISM
 		}
 
 
-		public void still(double t)
+		public void Still(double t)
 		{
 			if (anim != null)
 			{
@@ -79,7 +79,7 @@ namespace KERBALISM
 		}
 
 
-		public bool playing()
+		public bool Playing()
 		{
 			if (anim != null)
 			{

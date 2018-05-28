@@ -21,7 +21,7 @@ namespace KERBALISM
 			send = Lib.ConfigValue(node, "send", false);
 		}
 
-		public void save(ConfigNode node)
+		public void Save(ConfigNode node)
 		{
 			node.AddValue("size", size);
 			node.AddValue("buff", buff);

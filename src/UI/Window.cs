@@ -29,45 +29,45 @@ namespace KERBALISM
 			tooltip = new Tooltip();
 		}
 
-		public void open(Action<Panel> refresh)
+		public void Open(Action<Panel> refresh)
 		{
 			this.refresh = refresh;
 		}
 
-		public void close()
+		public void Close()
 		{
 			refresh = null;
 			panel = null;
 		}
 
-		public void update()
+		public void Update()
 		{
 			if (refresh != null)
 			{
 				// initialize or clear panel
 				if (panel == null) panel = new Panel();
-				else panel.clear();
+				else panel.Clear();
 
 				// refresh panel content
 				refresh(panel);
 
 				// if panel is empty, close the window
-				if (panel.empty())
+				if (panel.Empty())
 				{
-					close();
+					Close();
 				}
 			}
 		}
 
-		public void on_gui()
+		public void On_gui()
 		{
 			// window is considered closed if panel is null
 			if (panel == null) return;
 
 			// adapt window size to panel
 			// - clamp to screen height
-			win_rect.width = Math.Min(panel.width(), Screen.width * 0.8f);
-			win_rect.height = Math.Min(Styles.ScaleFloat(20.0f) + panel.height(), Screen.height * 0.8f);
+			win_rect.width = Math.Min(panel.Width(), Screen.width * 0.8f);
+			win_rect.height = Math.Min(Styles.ScaleFloat(20.0f) + panel.Height(), Screen.height * 0.8f);
 
 			// clamp the window to the screen, so it can't be dragged outside
 			float offset_x = Math.Max(0.0f, -win_rect.xMin) + Math.Min(0.0f, Screen.width - win_rect.xMax);
@@ -78,7 +78,7 @@ namespace KERBALISM
 			win_rect.yMax += offset_y;
 
 			// draw the window
-			win_rect = GUILayout.Window(win_id, win_rect, draw_window, "", Styles.win);
+			win_rect = GUILayout.Window(win_id, win_rect, Draw_window, "", Styles.win);
 
 			// disable camera mouse scrolling on mouse over
 			if (win_rect.Contains(Event.current.mousePosition))
@@ -87,56 +87,56 @@ namespace KERBALISM
 			}
 		}
 
-		void draw_window(int _)
+		void Draw_window(int _)
 		{
 			// render window title
 			GUILayout.BeginHorizontal(Styles.title_container);
 			GUILayout.Label(Icons.empty, Styles.left_icon);
-			GUILayout.Label(panel.title().ToUpper(), Styles.title_text);
+			GUILayout.Label(panel.Title().ToUpper(), Styles.title_text);
 			GUILayout.Label(Icons.close, Styles.right_icon);
 			bool b = Lib.IsClicked();
 			GUILayout.EndHorizontal();
-			if (b) { close(); return; }
+			if (b) { Close(); return; }
 
 			// start scrolling view
 			scroll_pos = GUILayout.BeginScrollView(scroll_pos, HighLogic.Skin.horizontalScrollbar, HighLogic.Skin.verticalScrollbar);
 
 			// render panel content
-			panel.render();
+			panel.Render();
 
 			// end scroll view
 			GUILayout.EndScrollView();
 
 			// draw tooltip
-			tooltip.draw(win_rect);
+			tooltip.Draw(win_rect);
 
 			// right click close the window
 			if (Event.current.type == EventType.MouseDown
 			 && Event.current.button == 1)
 			{
-				close();
+				Close();
 			}
 
 			// enable dragging
 			GUI.DragWindow(drag_rect);
 		}
 
-		public bool contains(Vector2 pos)
+		public bool Contains(Vector2 pos)
 		{
 			return win_rect.Contains(pos);
 		}
 
-		public void position(uint x, uint y)
+		public void Position(uint x, uint y)
 		{
 			win_rect.Set((float)x, (float)y, win_rect.width, win_rect.height);
 		}
 
-		public uint left()
+		public uint Left()
 		{
 			return (uint)win_rect.xMin;
 		}
 
-		public uint top()
+		public uint Top()
 		{
 			return (uint)win_rect.yMin;
 		}

@@ -9,7 +9,7 @@ namespace KERBALISM
 
 	public static class DB
 	{
-		public static void load(ConfigNode node)
+		public static void Load(ConfigNode node)
 		{
 			// get version (or use current one for new savegames)
 			version = Lib.ConfigValue(node, "version", Lib.Version());
@@ -29,7 +29,7 @@ namespace KERBALISM
 			{
 				foreach (var kerbal_node in node.GetNode("kerbals").GetNodes())
 				{
-					kerbals.Add(from_safe_key(kerbal_node.name), new KerbalData(kerbal_node));
+					kerbals.Add(From_safe_key(kerbal_node.name), new KerbalData(kerbal_node));
 				}
 			}
 
@@ -49,7 +49,7 @@ namespace KERBALISM
 			{
 				foreach (var body_node in node.GetNode("bodies").GetNodes())
 				{
-					bodies.Add(from_safe_key(body_node.name), new BodyData(body_node));
+					bodies.Add(From_safe_key(body_node.name), new BodyData(body_node));
 				}
 			}
 
@@ -78,7 +78,7 @@ namespace KERBALISM
 		}
 
 
-		public static void save(ConfigNode node)
+		public static void Save(ConfigNode node)
 		{
 			// save version
 			node.AddValue("version", Lib.Version());
@@ -90,28 +90,28 @@ namespace KERBALISM
 			var kerbals_node = node.AddNode("kerbals");
 			foreach (var p in kerbals)
 			{
-				p.Value.save(kerbals_node.AddNode(to_safe_key(p.Key)));
+				p.Value.Save(kerbals_node.AddNode(To_safe_key(p.Key)));
 			}
 
 			// save vessels data
 			var vessels_node = node.AddNode("vessels");
 			foreach (var p in vessels)
 			{
-				p.Value.save(vessels_node.AddNode(p.Key.ToString()));
+				p.Value.Save(vessels_node.AddNode(p.Key.ToString()));
 			}
 
 			// save bodies data
 			var bodies_node = node.AddNode("bodies");
 			foreach (var p in bodies)
 			{
-				p.Value.save(bodies_node.AddNode(to_safe_key(p.Key)));
+				p.Value.Save(bodies_node.AddNode(To_safe_key(p.Key)));
 			}
 
 			// save landmark data
-			landmarks.save(node.AddNode("landmarks"));
+			landmarks.Save(node.AddNode("landmarks"));
 
 			// save ui data
-			ui.save(node.AddNode("ui"));
+			ui.Save(node.AddNode("ui"));
 		}
 
 
@@ -146,8 +146,8 @@ namespace KERBALISM
 		}
 
 
-		public static string to_safe_key(string key) { return key.Replace(" ", "___"); }
-		public static string from_safe_key(string key) { return key.Replace("___", " "); }
+		public static string To_safe_key(string key) { return key.Replace(" ", "___"); }
+		public static string From_safe_key(string key) { return key.Replace("___", " "); }
 
 		public static string version;                          // savegame version
 		public static int uid;                                 // savegame unique id

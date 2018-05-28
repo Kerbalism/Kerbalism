@@ -30,7 +30,7 @@ namespace KERBALISM
 			paneltype = PanelType.unknown;
 		}
 
-		public void clear()
+		public void Clear()
 		{
 			headers.Clear();
 			sections.Clear();
@@ -39,7 +39,7 @@ namespace KERBALISM
 			paneltype = PanelType.unknown;
 		}
 
-		public void header(string label, string tooltip = "", Action click = null)
+		public void AddHeader(string label, string tooltip = "", Action click = null)
 		{
 			Header h = new Header();
 			h.label = label;
@@ -49,7 +49,7 @@ namespace KERBALISM
 			headers.Add(h);
 		}
 
-		public void section(string title, string desc = "", Action left = null, Action right = null)
+		public void AddSection(string title, string desc = "", Action left = null, Action right = null)
 		{
 			Section p = new Section();
 			p.title = title;
@@ -60,7 +60,7 @@ namespace KERBALISM
 			sections.Add(p);
 		}
 
-		public void content(string label, string value = "", string tooltip = "", Action click = null, Action hover = null)
+		public void AddContent(string label, string value = "", string tooltip = "", Action click = null, Action hover = null)
 		{
 			Entry e = new Entry();
 			e.label = label;
@@ -72,7 +72,7 @@ namespace KERBALISM
 			if (sections.Count > 0) sections[sections.Count - 1].entries.Add(e);
 		}
 
-		public void icon(Texture texture, string tooltip = "", Action click = null)
+		public void AddIcon(Texture texture, string tooltip = "", Action click = null)
 		{
 			Icon i = new Icon();
 			i.texture = texture;
@@ -91,7 +91,7 @@ namespace KERBALISM
 		}
 
 
-		public void render()
+		public void Render()
 		{
 			// headers
 			foreach (Header h in headers)
@@ -163,7 +163,7 @@ namespace KERBALISM
 			}
 		}
 
-		public float height()
+		public float Height()
 		{
 			float h = 0.0f;
 
@@ -182,32 +182,32 @@ namespace KERBALISM
 		}
 
 		// utility: decrement an index, warping around 0
-		public void prev(ref int index, int count)
+		public void Prev(ref int index, int count)
 		{
 			index = (index == 0 ? count : index) - 1;
 		}
 
 		// utility: increment an index, warping around a max
-		public void next(ref int index, int count)
+		public void Next(ref int index, int count)
 		{
 			index = (index + 1) % count;
 		}
 
 		// utility: toggle a flag
-		public void toggle(ref bool b)
+		public void Toggle(ref bool b)
 		{
 			b = !b;
 		}
 
 		// merge another panel with this one
-		public void add(Panel p)
+		public void Add(Panel p)
 		{
 			headers.AddRange(p.headers);
 			sections.AddRange(p.sections);
 		}
 
 		// collapse all sections into one
-		public void collapse(string title)
+		public void Collapse(string title)
 		{
 			if (sections.Count > 0)
 			{
@@ -218,27 +218,27 @@ namespace KERBALISM
 		}
 
 		// return true if panel has no sections or titles
-		public bool empty()
+		public bool Empty()
 		{
 			return sections.Count == 0 && headers.Count == 0;
 		}
 
 		// set title metadata
-		public void title(string s)
+		public void Title(string s)
 		{
 			win_title = s;
 		}
 
 		// set width metadata
 		// - width never shrink
-		public void width(float w)
+		public void Width(float w)
 		{
 			min_width = Math.Max(w, min_width);
 		}
 
 		// get medata
-		public string title() { return win_title; }
-		public float width() { return min_width; }
+		public string Title() { return win_title; }
+		public float Width() { return min_width; }
 
 
 		sealed class Header

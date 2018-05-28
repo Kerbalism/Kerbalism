@@ -13,17 +13,17 @@ namespace KERBALISM
 	{
 		public Callbacks()
 		{
-			GameEvents.onCrewOnEva.Add(this.toEVA);
-			GameEvents.onCrewBoardVessel.Add(this.fromEVA);
-			GameEvents.onVesselRecoveryProcessing.Add(this.vesselRecoveryProcessing);
-			GameEvents.onVesselRecovered.Add(this.vesselRecovered);
-			GameEvents.onVesselTerminated.Add(this.vesselTerminated);
-			GameEvents.onVesselWillDestroy.Add(this.vesselDestroyed);
-			GameEvents.onVesselWasModified.Add(this.vesselModified);
-			GameEvents.onPartCouple.Add(this.vesselDock);
-			GameEvents.onPartDie.Add(this.partDestroyed);
-			GameEvents.OnTechnologyResearched.Add(this.techResearched);
-			GameEvents.onGUIEditorToolbarReady.Add(this.addEditorCategory);
+			GameEvents.onCrewOnEva.Add(this.ToEVA);
+			GameEvents.onCrewBoardVessel.Add(this.FromEVA);
+			GameEvents.onVesselRecoveryProcessing.Add(this.VesselRecoveryProcessing);
+			GameEvents.onVesselRecovered.Add(this.VesselRecovered);
+			GameEvents.onVesselTerminated.Add(this.VesselTerminated);
+			GameEvents.onVesselWillDestroy.Add(this.VesselDestroyed);
+			GameEvents.onVesselWasModified.Add(this.VesselModified);
+			GameEvents.onPartCouple.Add(this.VesselDock);
+			GameEvents.onPartDie.Add(this.PartDestroyed);
+			GameEvents.OnTechnologyResearched.Add(this.TechResearched);
+			GameEvents.onGUIEditorToolbarReady.Add(this.AddEditorCategory);
 
 			GameEvents.onGUIAdministrationFacilitySpawn.Add(() => visible = false);
 			GameEvents.onGUIAdministrationFacilityDespawn.Add(() => visible = true);
@@ -47,13 +47,13 @@ namespace KERBALISM
 			GameEvents.onGUIApplicationLauncherReady.Add(() => visible = true);
 		}
 
-		void toEVA(GameEvents.FromToAction<Part, Part> data)
+		void ToEVA(GameEvents.FromToAction<Part, Part> data)
 		{
 			// get total crew in the origin vessel
 			double tot_crew = (double)Lib.CrewCount(data.from.vessel) + 1.0;
 
 			// get vessel resources handler
-			vessel_resources resources = ResourceCache.Get(data.from.vessel);
+			Vessel_resources resources = ResourceCache.Get(data.from.vessel);
 
 			// setup supply resources capacity in the eva kerbal
 			Profile.SetupEva(data.to);
@@ -86,11 +86,11 @@ namespace KERBALISM
 			EVA.HeadLamps(kerbal, false);
 
 			// execute script
-			DB.Vessel(data.from.vessel).computer.execute(data.from.vessel, ScriptType.eva_out);
+			DB.Vessel(data.from.vessel).computer.Execute(data.from.vessel, ScriptType.eva_out);
 		}
 
 
-		void fromEVA(GameEvents.FromToAction<Part, Part> data)
+		void FromEVA(GameEvents.FromToAction<Part, Part> data)
 		{
 			// for each resource in the eva kerbal
 			for (int i = 0; i < data.from.Resources.Count; ++i)
@@ -103,17 +103,17 @@ namespace KERBALISM
 			}
 
 			// merge drives data
-			Drive.transfer(data.from.vessel, data.to.vessel);
+			Drive.Transfer(data.from.vessel, data.to.vessel);
 
 			// forget vessel data
 			DB.vessels.Remove(Lib.RootID(data.from.vessel));
 
 			// execute script
-			DB.Vessel(data.to.vessel).computer.execute(data.to.vessel, ScriptType.eva_in);
+			DB.Vessel(data.to.vessel).computer.Execute(data.to.vessel, ScriptType.eva_in);
 		}
 
 
-		void vesselRecoveryProcessing(ProtoVessel v, MissionRecoveryDialog dialog, float score)
+		void VesselRecoveryProcessing(ProtoVessel v, MissionRecoveryDialog dialog, float score)
 		{
 			// note:
 			// this function accumulate science stored in drives on recovery,
@@ -142,7 +142,7 @@ namespace KERBALISM
 				ScienceSubject subject = ResearchAndDevelopment.GetSubjectByID(filename);
 
 				// credit science
-				double credits = Science.credit(filename, file.size, false, v);
+				double credits = Science.Credit(filename, file.size, false, v);
 
 				// create science widged
 				ScienceSubjectWidget widged = ScienceSubjectWidget.Create
@@ -172,7 +172,7 @@ namespace KERBALISM
 				ScienceSubject subject = ResearchAndDevelopment.GetSubjectByID(filename);
 
 				// credit science
-				double credits = Science.credit(filename, sample.size, false, v);
+				double credits = Science.Credit(filename, sample.size, false, v);
 
 				// create science widged
 				ScienceSubjectWidget widged = ScienceSubjectWidget.Create
@@ -192,7 +192,7 @@ namespace KERBALISM
 		}
 
 
-		void vesselRecovered(ProtoVessel pv, bool b)
+		void VesselRecovered(ProtoVessel pv, bool b)
 		{
 			// note: this is called multiple times when a vessel is recovered
 
@@ -221,12 +221,12 @@ namespace KERBALISM
 			}
 
 			// purge the caches
-			Cache.purge(pv);
-			ResourceCache.purge(pv);
+			Cache.Purge(pv);
+			ResourceCache.Purge(pv);
 		}
 
 
-		void vesselTerminated(ProtoVessel pv)
+		void VesselTerminated(ProtoVessel pv)
 		{
 			// forget all kerbals data
 			foreach (ProtoCrewMember c in pv.GetVesselCrew()) DB.kerbals.Remove(c.name);
@@ -239,12 +239,12 @@ namespace KERBALISM
 			}
 
 			// purge the caches
-			Cache.purge(pv);
-			ResourceCache.purge(pv);
+			Cache.Purge(pv);
+			ResourceCache.Purge(pv);
 		}
 
 
-		void vesselDestroyed(Vessel v)
+		void VesselDestroyed(Vessel v)
 		{
 			// for each part
 			foreach (Part p in v.parts)
@@ -269,12 +269,12 @@ namespace KERBALISM
 			foreach (string n in kerbals_dead) DB.kerbals.Remove(n);
 
 			// purge the caches
-			Cache.purge(v);
-			ResourceCache.purge(v);
+			Cache.Purge(v);
+			ResourceCache.Purge(v);
 		}
 
 
-		void vesselDock(GameEvents.FromToAction<Part, Part> e)
+		void VesselDock(GameEvents.FromToAction<Part, Part> e)
 		{
 			// note:
 			//  we do not forget vessel data here, it just became inactive
@@ -291,11 +291,11 @@ namespace KERBALISM
 			vd.scansat_id.Clear();
 
 			// merge drives data
-			Drive.transfer(e.from.vessel, e.to.vessel);
+			Drive.Transfer(e.from.vessel, e.to.vessel);
 		}
 
 
-		void vesselModified(Vessel vessel_a)
+		void VesselModified(Vessel vessel_a)
 		{
 			// do nothing in the editor
 			if (Lib.IsEditor()) return;
@@ -334,14 +334,14 @@ namespace KERBALISM
 		}
 
 
-		void partDestroyed(Part p)
+		void PartDestroyed(Part p)
 		{
 			// forget all potential vessel data
 			DB.vessels.Remove(p.flightID);
 		}
 
 
-		void addEditorCategory()
+		void AddEditorCategory()
 		{
 			if (PartLoader.LoadedPartsList.Find(k => k.tags.IndexOf("_kerbalism", StringComparison.Ordinal) >= 0) != null)
 			{
@@ -352,7 +352,7 @@ namespace KERBALISM
 		}
 
 
-		void techResearched(GameEvents.HostTargetAction<RDTech, RDTech.OperationResult> data)
+		void TechResearched(GameEvents.HostTargetAction<RDTech, RDTech.OperationResult> data)
 		{
 			if (data.target != RDTech.OperationResult.Successful) return;
 

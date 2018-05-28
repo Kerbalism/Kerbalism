@@ -14,17 +14,17 @@ namespace KERBALISM
 			tooltip = string.Empty;
 		}
 
-		public void draw(Rect screen_rect)
+		public void Draw(Rect screen_rect)
 		{
 			// draw tooltip, if there is one specified
-			if (tooltip.Length > 0) render_tooltip(screen_rect);
+			if (tooltip.Length > 0) Render_tooltip(screen_rect);
 
 			// get tooltip
 			// - need to be after the drawing, to play nice with unity layout engine
-			get_tooltip();
+			Get_tooltip();
 		}
 
-		void get_tooltip()
+		void Get_tooltip()
 		{
 			// get current tooltip
 			if (Event.current.type == EventType.Repaint)
@@ -50,7 +50,7 @@ namespace KERBALISM
 		}
 
 
-		void render_tooltip(Rect screen_rect)
+		void Render_tooltip(Rect screen_rect)
 		{
 			// get mouse pos
 			Vector2 mouse_pos = Mouse.screenPos;

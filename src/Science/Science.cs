@@ -8,13 +8,10 @@ namespace KERBALISM
 {
 
 
-
-
-
 	public static class Science
 	{
 		// pseudo-ctor
-		public static void init()
+		public static void Init()
 		{
 			// initialize experiment info cache
 			experiments = new Dictionary<string, ExperimentInfo>();
@@ -35,7 +32,7 @@ namespace KERBALISM
 		}
 
 		// consume EC for transmission, and transmit science data
-		public static void update(Vessel v, vessel_info vi, VesselData vd, vessel_resources resources, double elapsed_s)
+		public static void Update(Vessel v, Vessel_info vi, VesselData vd, Vessel_resources resources, double elapsed_s)
 		{
 			// hard-coded transmission buffer size in Mb
 			const double buffer_capacity = 8.0;
@@ -80,7 +77,7 @@ namespace KERBALISM
 				if (file.size <= double.Epsilon || file.buff > buffer_capacity)
 				{
 					// collect the science data
-					Science.credit(filename, file.buff, true, v.protoVessel);
+					Science.Credit(filename, file.buff, true, v.protoVessel);
 
 					// reset the buffer
 					file.buff = 0.0;
@@ -95,7 +92,7 @@ namespace KERBALISM
 					// inform the user
 					Message.Post
 					(
-					  Lib.BuildString("<color=cyan><b>DATA RECEIVED</b></color>\nTransmission of <b>", Science.experiment(filename).name, "</b> completed"),
+					  Lib.BuildString("<color=cyan><b>DATA RECEIVED</b></color>\nTransmission of <b>", Science.Experiment(filename).name, "</b> completed"),
 					  Lib.TextVariant("Our researchers will jump on it right now", "The checksum is correct, data must be valid")
 					);
 				}
@@ -103,7 +100,7 @@ namespace KERBALISM
 		}
 
 		// return name of file being transmitted from vessel specified
-		public static string transmitting(Vessel v, bool linked)
+		public static string Transmitting(Vessel v, bool linked)
 		{
 			// never transmitting if science system is disabled
 			if (!Features.Science) return string.Empty;
@@ -129,7 +126,7 @@ namespace KERBALISM
 
 
 		// credit science for the experiment subject specified
-		public static double credit(string subject_id, double size, bool transmitted, ProtoVessel pv)
+		public static double Credit(string subject_id, double size, bool transmitted, ProtoVessel pv)
 		{
 			// get science subject
 			// - if null, we are in sandbox mode
@@ -161,7 +158,7 @@ namespace KERBALISM
 
 
 		// return value of some data about a subject, in science credits
-		public static double value(string subject_id, double size)
+		public static double Value(string subject_id, double size)
 		{
 			// get the subject
 			// - will be null in sandbox
@@ -176,7 +173,7 @@ namespace KERBALISM
 
 
 		// return module acting as container of an experiment
-		public static IScienceDataContainer container(Part p, string experiment_id)
+		public static IScienceDataContainer Container(Part p, string experiment_id)
 		{
 			// first try to get a stock experiment module with the right experiment id
 			// - this support parts with multiple experiment modules, like eva kerbal
@@ -192,7 +189,7 @@ namespace KERBALISM
 
 
 		// return info about an experiment
-		public static ExperimentInfo experiment(string subject_id)
+		public static ExperimentInfo Experiment(string subject_id)
 		{
 			ExperimentInfo info;
 			if (!experiments.TryGetValue(subject_id, out info))
@@ -210,7 +207,7 @@ namespace KERBALISM
 		// - body: celestial body involved
 		// - biome: biome involved, or empty
 		// - multiplier: science multiplier for the body/situation
-		public static string generate_subject(string experiment, CelestialBody body, string sit, string biome, float multiplier)
+		public static string Generate_subject(string experiment, CelestialBody body, string sit, string biome, float multiplier)
 		{
 			// generate subject id
 			string subject_id = Lib.BuildString(experiment, "@", body.name, sit + biome);
@@ -254,11 +251,11 @@ namespace KERBALISM
 
 
 		// return vessel situation valid for specified experiment
-		public static string situation(Vessel v, string situations)
+		public static string Situation(Vessel v, string situations)
 		{
 			// shortcuts
 			CelestialBody body = v.mainBody;
-			vessel_info vi = Cache.VesselInfo(v);
+			Vessel_info vi = Cache.VesselInfo(v);
 
 			List<string> list = Lib.Tokenize(situations, ',');
 			foreach (string sit in list)
@@ -286,7 +283,7 @@ namespace KERBALISM
 		}
 
 
-		public static string biome(Vessel v, string sit)
+		public static string Biome(Vessel v, string sit)
 		{
 			switch (sit)
 			{
@@ -302,7 +299,7 @@ namespace KERBALISM
 
 
 
-		public static float multiplier(Vessel v, string sit)
+		public static float Multiplier(Vessel v, string sit)
 		{
 			var values = v.mainBody.scienceValues;
 			float space = (values.InSpaceLowDataValue + values.InSpaceHighDataValue) * 0.5f;

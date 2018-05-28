@@ -8,7 +8,7 @@ namespace KERBALISM
 
 	public static class Features
 	{
-		public static void detect()
+		public static void Detect()
 		{
 			// set user-specified features
 			Reliability = Settings.Reliability;

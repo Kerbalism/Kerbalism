@@ -15,31 +15,31 @@ namespace KERBALISM
 			this.generator = generator;
 		}
 
-		public override string name()
+		public override string Name()
 		{
 			return "generator";
 		}
 
-		public override uint part()
+		public override uint Part()
 		{
 			return generator.part.flightID;
 		}
 
-		public override string info()
+		public override string Info()
 		{
 			return generator.isAlwaysActive ? Localizer.Format("#KERBALISM_Generic_ALWAYSON") : generator.generatorIsActive ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_ON") + "</color>" : "<color=red>" + Localizer.Format("#KERBALISM_Generic_OFF") + "</color>";
 		}
 
-		public override void ctrl(bool value)
+		public override void Ctrl(bool value)
 		{
 			if (generator.isAlwaysActive) return;
 			if (value) generator.Activate();
 			else generator.Shutdown();
 		}
 
-		public override void toggle()
+		public override void Toggle()
 		{
-			ctrl(!generator.generatorIsActive);
+			Ctrl(!generator.generatorIsActive);
 		}
 
 		ModuleGenerator generator;
@@ -55,32 +55,32 @@ namespace KERBALISM
 			this.part_id = part_id;
 		}
 
-		public override string name()
+		public override string Name()
 		{
 			return "generator";
 		}
 
-		public override uint part()
+		public override uint Part()
 		{
 			return part_id;
 		}
 
-		public override string info()
+		public override string Info()
 		{
 			if (prefab.isAlwaysActive) return Localizer.Format("#KERBALISM_Generic_ALWAYSON");
 			bool is_on = Lib.Proto.GetBool(generator, "generatorIsActive");
 			return is_on ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_ON") + "</color>" : "<color=red>" + Localizer.Format("#KERBALISM_Generic_OFF") + "</color>";
 		}
 
-		public override void ctrl(bool value)
+		public override void Ctrl(bool value)
 		{
 			if (prefab.isAlwaysActive) return;
 			Lib.Proto.Set(generator, "generatorIsActive", value);
 		}
 
-		public override void toggle()
+		public override void Toggle()
 		{
-			ctrl(!Lib.Proto.GetBool(generator, "generatorIsActive"));
+			Ctrl(!Lib.Proto.GetBool(generator, "generatorIsActive"));
 		}
 
 		ProtoPartModuleSnapshot generator;

@@ -42,13 +42,13 @@ namespace KERBALISM
 			else rotate_anim = new Animator(part, rotate);
 
 			// set animation state / invert animation
-			deploy_anim.still(deployed ? 1.0f : 0.0f);
-			deploy_anim.stop();
+			deploy_anim.Still(deployed ? 1.0f : 0.0f);
+			deploy_anim.Stop();
 
 			Update();
 		}
 
-		public bool is_rotating()
+		public bool Is_rotating()
 		{
 			if (rotateIsTransform)
 			{
@@ -56,36 +56,36 @@ namespace KERBALISM
 			}
 			else
 			{
-				return rotate_anim.playing();
+				return rotate_anim.Playing();
 			}
 		}
 
-		private void set_rotation(bool rotate)
+		private void Set_rotation(bool rotate)
 		{
 			if (rotate)
 			{
 				if (rotateIsTransform) rotate_transf.Play();
 				else
 				{
-					rotate_anim.resume(false);
-					if (!rotate_anim.playing()) rotate_anim.play(false, true);
+					rotate_anim.Resume(false);
+					if (!rotate_anim.Playing()) rotate_anim.Play(false, true);
 				}
 			}
 			else
 			{
 				if (rotateIsTransform) rotate_transf.Stop();
-				else rotate_anim.pause();
+				else rotate_anim.Pause();
 			}
 		}
 
-		bool should_start_rotation()
+		bool Should_start_rotation()
 		{
-			return (isHabitat && deployed) || (!isHabitat && !deploy_anim.playing());
+			return (isHabitat && deployed) || (!isHabitat && !deploy_anim.Playing());
 		}
 
-		bool is_consuming_energy()
+		bool Is_consuming_energy()
 		{
-			if (deploy_anim.playing())
+			if (deploy_anim.Playing())
 			{
 				return true;
 			}
@@ -95,7 +95,7 @@ namespace KERBALISM
 			}
 			else
 			{
-				return rotate_anim.playing();
+				return rotate_anim.Playing();
 			}
 		}
 
@@ -103,7 +103,7 @@ namespace KERBALISM
 		{
 			// update RMB ui
 			Events["Toggle"].guiName = deployed ? Localizer.Format("#KERBALISM_Generic_RETRACT") : Localizer.Format("#KERBALISM_Generic_DEPLOY");
-			Events["Toggle"].active = (deploy.Length > 0) && (part.FindModuleImplementing<Habitat>() == null) && !deploy_anim.playing() && !waitRotation && ResourceCache.Info(vessel, "ElectricCharge").amount > ec_rate;
+			Events["Toggle"].active = (deploy.Length > 0) && (part.FindModuleImplementing<Habitat>() == null) && !deploy_anim.Playing() && !waitRotation && ResourceCache.Info(vessel, "ElectricCharge").amount > ec_rate;
 
 			// if deployed
 			if (deployed)
@@ -113,21 +113,21 @@ namespace KERBALISM
 				{
 					// pause rotate animation
 					// - safe to pause multiple times
-					set_rotation(false);
+					Set_rotation(false);
 				}
 				// if there is enough ec instead and is not deploying
-				else if (should_start_rotation())
+				else if (Should_start_rotation())
 				{
 					// resume rotate animation
 					// - safe to resume multiple times
-					set_rotation(true);
+					Set_rotation(true);
 				}
 			}
 			// stop loop animation if exist and we are retracting
 			else
 			{
 				// Call transform.stop() if it is rotating and the Stop method wasn't called.
-				set_rotation(false);
+				Set_rotation(false);
 			}
 
 			// When is not rotating
@@ -136,14 +136,14 @@ namespace KERBALISM
 				if (rotateIsTransform && !rotate_transf.IsRotating())
 				{
 					// start retract animation in the correct direction, when is not rotating
-					if (animBackwards) deploy_anim.play(deployed, false);
-					else deploy_anim.play(!deployed, false);
+					if (animBackwards) deploy_anim.Play(deployed, false);
+					else deploy_anim.Play(!deployed, false);
 					waitRotation = false;
 				}
-				else if (!rotateIsTransform && !rotate_anim.playing())
+				else if (!rotateIsTransform && !rotate_anim.Playing())
 				{
-					if (animBackwards) deploy_anim.play(deployed, false);
-					else deploy_anim.play(!deployed, false);
+					if (animBackwards) deploy_anim.Play(deployed, false);
+					else deploy_anim.Play(!deployed, false);
 					waitRotation = false;
 				}
 			}
@@ -157,17 +157,17 @@ namespace KERBALISM
 			if (Lib.IsEditor()) return;
 
 			// if has any animation playing, consume energy.
-			if (is_consuming_energy())
+			if (Is_consuming_energy())
 			{
 				// get resource handler
-				resource_info ec = ResourceCache.Info(vessel, "ElectricCharge");
+				Resource_info ec = ResourceCache.Info(vessel, "ElectricCharge");
 
 				// consume ec
 				ec.Consume(ec_rate * Kerbalism.elapsed_s);
 			}
 		}
 
-		public static void BackgroundUpdate(Vessel vessel, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, GravityRing ring, resource_info ec, double elapsed_s)
+		public static void BackgroundUpdate(Vessel vessel, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, GravityRing ring, Resource_info ec, double elapsed_s)
 		{
 			// if the module is either non-deployable or deployed
 			if (ring.deploy.Length == 0 || Lib.Proto.GetBool(m, "deployed"))
@@ -184,21 +184,21 @@ namespace KERBALISM
 			deployed ^= true;
 
 			if (rotateIsTransform) waitRotation = rotate_transf.IsRotating();
-			else waitRotation = rotate_anim.playing();
+			else waitRotation = rotate_anim.Playing();
 
 			if (!waitRotation)
 			{
 				// stop loop animation if exist and we are retracting
 				if (rotateIsTransform && !rotate_transf.IsRotating())
 				{
-					if (animBackwards) deploy_anim.play(deployed, false);
-					else deploy_anim.play(!deployed, false);
+					if (animBackwards) deploy_anim.Play(deployed, false);
+					else deploy_anim.Play(!deployed, false);
 					waitRotation = false;
 				}
-				else if (!rotateIsTransform && !rotate_anim.playing())
+				else if (!rotateIsTransform && !rotate_anim.Playing())
 				{
-					if (animBackwards) deploy_anim.play(deployed, false);
-					else deploy_anim.play(!deployed, false);
+					if (animBackwards) deploy_anim.Play(deployed, false);
+					else deploy_anim.Play(!deployed, false);
 				}
 			}
 		}
@@ -209,16 +209,16 @@ namespace KERBALISM
 		// part tooltip
 		public override string GetInfo()
 		{
-			return Specs().info();
+			return Specs().Info();
 		}
 
 		// specifics support
 		public Specifics Specs()
 		{
 			Specifics specs = new Specifics();
-			specs.add("bonus", "firm-ground");
-			specs.add("EC/s", Lib.HumanReadableRate(ec_rate));
-			specs.add("deployable", deploy.Length > 0 ? "yes" : "no");
+			specs.Add("bonus", "firm-ground");
+			specs.Add("EC/s", Lib.HumanReadableRate(ec_rate));
+			specs.Add("deployable", deploy.Length > 0 ? "yes" : "no");
 			return specs;
 		}
 	}

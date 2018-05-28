@@ -52,19 +52,19 @@ namespace KERBALISM
 		}
 
 
-		public void Execute(Vessel v, vessel_info vi, vessel_resources resources, double elapsed_s)
+		public void Execute(Vessel v, Vessel_info vi, Vessel_resources resources, double elapsed_s)
 		{
 			// store list of crew to kill
 			List<ProtoCrewMember> deferred_kills = new List<ProtoCrewMember>();
 
 			// get input resource handler
-			resource_info res = input.Length > 0 ? resources.Info(v, input) : null;
+			Resource_info res = input.Length > 0 ? resources.Info(v, input) : null;
 
 			// determine message variant
 			uint variant = vi.temperature < Settings.SurvivalTemperature ? 0 : 1u;
 
 			// get product of all environment modifiers
-			double k = Modifiers.evaluate(v, vi, resources, modifiers);
+			double k = Modifiers.Evaluate(v, vi, resources, modifiers);
 
 			// for each crew
 			foreach (ProtoCrewMember c in Lib.CrewList(v))
@@ -127,7 +127,7 @@ namespace KERBALISM
 						{
 							// transform input into output resource
 							// - rules always dump excess overboard (because it is waste)
-							resource_recipe recipe = new resource_recipe();
+							Resource_recipe recipe = new Resource_recipe();
 							recipe.Input(input, required);
 							recipe.Output(output, required * ratio, true);
 							resources.Transform(recipe);

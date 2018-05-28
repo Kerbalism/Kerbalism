@@ -53,7 +53,7 @@ namespace KERBALISM
 			supplies = new Dictionary<string, SupplyData>();
 			foreach (var supply_node in node.GetNode("supplies").GetNodes())
 			{
-				supplies.Add(DB.from_safe_key(supply_node.name), new SupplyData(supply_node));
+				supplies.Add(DB.From_safe_key(supply_node.name), new SupplyData(supply_node));
 			}
 
 			scansat_id = new List<uint>();
@@ -63,7 +63,7 @@ namespace KERBALISM
 			}
 		}
 
-		public void save(ConfigNode node)
+		public void Save(ConfigNode node)
 		{
 			node.AddValue("msg_signal", msg_signal);
 			node.AddValue("msg_belt", msg_belt);
@@ -79,13 +79,13 @@ namespace KERBALISM
 			node.AddValue("storm_age", storm_age);
 			node.AddValue("storm_state", storm_state);
 			node.AddValue("group", group);
-			computer.save(node.AddNode("computer"));
-			drive.save(node.AddNode("drive"));
+			computer.Save(node.AddNode("computer"));
+			drive.Save(node.AddNode("drive"));
 
 			var supplies_node = node.AddNode("supplies");
 			foreach (var p in supplies)
 			{
-				p.Value.save(supplies_node.AddNode(DB.to_safe_key(p.Key)));
+				p.Value.Save(supplies_node.AddNode(DB.To_safe_key(p.Key)));
 			}
 
 			foreach (uint id in scansat_id)

@@ -24,7 +24,7 @@ namespace KERBALISM
 			{
 				foreach (var file_node in node.GetNode("files").GetNodes())
 				{
-					files.Add(DB.from_safe_key(file_node.name), new File(file_node));
+					files.Add(DB.From_safe_key(file_node.name), new File(file_node));
 				}
 			}
 
@@ -34,7 +34,7 @@ namespace KERBALISM
 			{
 				foreach (var sample_node in node.GetNode("samples").GetNodes())
 				{
-					samples.Add(DB.from_safe_key(sample_node.name), new Sample(sample_node));
+					samples.Add(DB.From_safe_key(sample_node.name), new Sample(sample_node));
 				}
 			}
 
@@ -42,20 +42,20 @@ namespace KERBALISM
 			location = Lib.ConfigValue(node, "location", 0u);
 		}
 
-		public void save(ConfigNode node)
+		public void Save(ConfigNode node)
 		{
 			// save science files
 			var files_node = node.AddNode("files");
 			foreach (var p in files)
 			{
-				p.Value.save(files_node.AddNode(DB.to_safe_key(p.Key)));
+				p.Value.Save(files_node.AddNode(DB.To_safe_key(p.Key)));
 			}
 
 			// save science samples
 			var samples_node = node.AddNode("samples");
 			foreach (var p in samples)
 			{
-				p.Value.save(samples_node.AddNode(DB.to_safe_key(p.Key)));
+				p.Value.Save(samples_node.AddNode(DB.To_safe_key(p.Key)));
 			}
 
 			// save preferred location
@@ -63,7 +63,7 @@ namespace KERBALISM
 		}
 
 		// add science data, creating new file or incrementing existing one
-		public void record_file(string subject_id, double amount)
+		public void Record_file(string subject_id, double amount)
 		{
 			// create new data or get existing one
 			File file;
@@ -77,11 +77,11 @@ namespace KERBALISM
 			file.size += amount;
 
 			// clamp file size to max amount that can be collected
-			file.size = Math.Min(file.size, Science.experiment(subject_id).max_amount);
+			file.size = Math.Min(file.size, Science.Experiment(subject_id).max_amount);
 		}
 
 		// add science sample, creating new sample or incrementing existing one
-		public void record_sample(string subject_id, double amount)
+		public void Record_sample(string subject_id, double amount)
 		{
 			// create new data or get existing one
 			Sample sample;
@@ -95,11 +95,11 @@ namespace KERBALISM
 			sample.size += amount;
 
 			// clamp file size to max amount that can be collected
-			sample.size = Math.Min(sample.size, Science.experiment(subject_id).max_amount);
+			sample.size = Math.Min(sample.size, Science.Experiment(subject_id).max_amount);
 		}
 
 		// remove science data, deleting the file when it is empty
-		public void delete_file(string subject_id, double amount)
+		public void Delete_file(string subject_id, double amount)
 		{
 			// get data
 			File file;
@@ -114,7 +114,7 @@ namespace KERBALISM
 		}
 
 		// remove science sample, deleting the sample when it is empty
-		public void delete_sample(string subject_id, double amount)
+		public void Delete_sample(string subject_id, double amount)
 		{
 			// get data
 			Sample sample;
@@ -129,7 +129,7 @@ namespace KERBALISM
 		}
 
 		// set send flag for a file
-		public void send(string subject_id, bool b)
+		public void Send(string subject_id, bool b)
 		{
 			File file;
 			if (files.TryGetValue(subject_id, out file))
@@ -139,7 +139,7 @@ namespace KERBALISM
 		}
 
 		// set analyze flag for a sample
-		public void analyze(string subject_id, bool b)
+		public void Analyze(string subject_id, bool b)
 		{
 			Sample sample;
 			if (samples.TryGetValue(subject_id, out sample))
@@ -149,19 +149,19 @@ namespace KERBALISM
 		}
 
 		// move all data to another drive
-		public void move(Drive destination)
+		public void Move(Drive destination)
 		{
 			// copy files
 			foreach (var p in files)
 			{
-				destination.record_file(p.Key, p.Value.size);
+				destination.Record_file(p.Key, p.Value.size);
 				destination.files[p.Key].buff += p.Value.buff; //< move the buffer along with the size
 			}
 
 			// copy samples
 			foreach (var p in samples)
 			{
-				destination.record_sample(p.Key, p.Value.size);
+				destination.Record_sample(p.Key, p.Value.size);
 			}
 
 			// clear source drive
@@ -171,7 +171,7 @@ namespace KERBALISM
 
 
 		// return size of data stored in Mb (including samples)
-		public double size()
+		public double Size()
 		{
 			double amount = 0.0;
 			foreach (var p in files)
@@ -187,20 +187,20 @@ namespace KERBALISM
 
 
 		// transfer data between two vessels
-		public static void transfer(Vessel src, Vessel dst)
+		public static void Transfer(Vessel src, Vessel dst)
 		{
 			// get drives
 			Drive a = DB.Vessel(src).drive;
 			Drive b = DB.Vessel(dst).drive;
 
 			// get size of data being transfered
-			double amount = a.size();
+			double amount = a.Size();
 
 			// if there is data
 			if (amount > double.Epsilon)
 			{
 				// transfer the data
-				a.move(b);
+				a.Move(b);
 
 				// inform the user
 				Message.Post
