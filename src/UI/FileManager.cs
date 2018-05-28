@@ -13,7 +13,7 @@ namespace KERBALISM
 		/// <summary>
 		/// If short_strings parameter is true then the strings used for display of the data will be shorter when inflight.
 		/// </summary>
-		public static void fileman(this Panel p, Vessel v, bool short_strings = false)
+		public static void Fileman(this Panel p, Vessel v, bool short_strings = false)
 		{
 			// avoid corner-case when this is called in a lambda after scene changes
 			v = FlightGlobals.FindVessel(v.id);
@@ -22,47 +22,47 @@ namespace KERBALISM
 			if (v == null) return;
 
 			// get info from the cache
-			vessel_info vi = Cache.VesselInfo(v);
+			Vessel_info vi = Cache.VesselInfo(v);
 
 			// if not a valid vessel, leave the panel empty
 			if (!vi.is_valid) return;
 
 			// set metadata
-			p.title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(40)), " <color=#cccccc>FILE MANAGER</color>"));
-			p.width(Styles.ScaleWidthFloat(465.0f));
+			p.Title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(40)), " <color=#cccccc>FILE MANAGER</color>"));
+			p.Width(Styles.ScaleWidthFloat(465.0f));
 			p.paneltype = Panel.PanelType.data;
 
  			// time-out simulation
-			if (p.timeout(vi)) return;
+			if (p.Timeout(vi)) return;
 
 			// get vessel drive
 			Drive drive = DB.Vessel(v).drive;
 
 			// draw data section
-			p.section("DATA");
+			p.AddSection("DATA");
 			foreach (var pair in drive.files)
 			{
 				string filename = pair.Key;
 				File file = pair.Value;
-				render_file(p, filename, file, drive, short_strings && Lib.IsFlight());
+				Render_file(p, filename, file, drive, short_strings && Lib.IsFlight());
 			}
-			if (drive.files.Count == 0) p.content("<i>no files</i>", string.Empty);
+			if (drive.files.Count == 0) p.AddContent("<i>no files</i>", string.Empty);
 
 			// draw samples section
-			p.section("SAMPLES");
+			p.AddSection("SAMPLES");
 			foreach (var pair in drive.samples)
 			{
 				string filename = pair.Key;
 				Sample sample = pair.Value;
-				render_sample(p, filename, sample, drive, short_strings && Lib.IsFlight());
+				Render_sample(p, filename, sample, drive, short_strings && Lib.IsFlight());
 			}
-			if (drive.samples.Count == 0) p.content("<i>no samples</i>", string.Empty);
+			if (drive.samples.Count == 0) p.AddContent("<i>no samples</i>", string.Empty);
 		}
 
-		static void render_file(Panel p, string filename, File file, Drive drive, bool short_strings)
+		static void Render_file(Panel p, string filename, File file, Drive drive, bool short_strings)
 		{
 			// get experiment info
-			ExperimentInfo exp = Science.experiment(filename);
+			ExperimentInfo exp = Science.Experiment(filename);
 
 			// render experiment name
 			string exp_label = Lib.BuildString
@@ -78,12 +78,12 @@ namespace KERBALISM
 			  exp.name, "\n",
 			  "<color=#aaaaaa>", exp.situation, "</color>"
 			);
-			double exp_value = Science.value(filename, file.size);
+			double exp_value = Science.Value(filename, file.size);
 			if (exp_value > double.Epsilon) exp_tooltip = Lib.BuildString(exp_tooltip, "\n<b>", Lib.HumanReadableScience(exp_value), "</b>");
 
-			p.content(exp_label, Lib.HumanReadableDataSize(file.size), exp_tooltip);
-			p.icon(file.send ? Icons.send_cyan : Icons.send_black, "Flag the file for transmission to <b>DSN</b>", () => { file.send = !file.send; });
-			p.icon(Icons.toggle_red, "Delete the file", () => Lib.Popup
+			p.AddContent(exp_label, Lib.HumanReadableDataSize(file.size), exp_tooltip);
+			p.AddIcon(file.send ? Icons.send_cyan : Icons.send_black, "Flag the file for transmission to <b>DSN</b>", () => { file.send = !file.send; });
+			p.AddIcon(Icons.toggle_red, "Delete the file", () => Lib.Popup
 			(
 			  "Warning!",
 			  Lib.BuildString("Do you really want to delete ", exp.fullname, "?"),
@@ -93,10 +93,10 @@ namespace KERBALISM
 		}
 
 
-		static void render_sample(Panel p, string filename, Sample sample, Drive drive, bool short_strings)
+		static void Render_sample(Panel p, string filename, Sample sample, Drive drive, bool short_strings)
 		{
 			// get experiment info
-			ExperimentInfo exp = Science.experiment(filename);
+			ExperimentInfo exp = Science.Experiment(filename);
 
 			// render experiment name
 			string exp_label = Lib.BuildString
@@ -112,12 +112,12 @@ namespace KERBALISM
 			  exp.name, "\n",
 			  "<color=#aaaaaa>", exp.situation, "</color>"
 			);
-			double exp_value = Science.value(filename, sample.size);
+			double exp_value = Science.Value(filename, sample.size);
 			if (exp_value > double.Epsilon) exp_tooltip = Lib.BuildString(exp_tooltip, "\n<b>", Lib.HumanReadableScience(exp_value), "</b>");
 
-			p.content(exp_label, Lib.HumanReadableDataSize(sample.size), exp_tooltip);
-			p.icon(sample.analyze ? Icons.lab_cyan : Icons.lab_black, "Flag the file for analysis in a <b>laboratory</b>", () => { sample.analyze = !sample.analyze; });
-			p.icon(Icons.toggle_red, "Dump the sample", () => Lib.Popup
+			p.AddContent(exp_label, Lib.HumanReadableDataSize(sample.size), exp_tooltip);
+			p.AddIcon(sample.analyze ? Icons.lab_cyan : Icons.lab_black, "Flag the file for analysis in a <b>laboratory</b>", () => { sample.analyze = !sample.analyze; });
+			p.AddIcon(Icons.toggle_red, "Dump the sample", () => Lib.Popup
 			(
 			  "Warning!",
 			   Lib.BuildString("Do you really want to dump ", exp.fullname, "?"),

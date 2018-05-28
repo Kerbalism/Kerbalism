@@ -54,10 +54,10 @@ namespace KERBALISM
 		}
 
 
-		public void update()
+		public void Update()
 		{
 			// reset panel
-			panel.clear();
+			panel.Clear();
 
 			// get vessel
 			selected_v = selected_id == Guid.Empty ? null : FlightGlobals.FindVessel(selected_id);
@@ -78,7 +78,7 @@ namespace KERBALISM
 				// draw active vessel if any
 				if (FlightGlobals.ActiveVessel != null)
 				{
-					setup |= render_vessel(panel, FlightGlobals.ActiveVessel);
+					setup |= Render_vessel(panel, FlightGlobals.ActiveVessel);
 				}
 
 				// for each vessel
@@ -88,41 +88,41 @@ namespace KERBALISM
 					if (v == FlightGlobals.ActiveVessel) continue;
 
 					// draw the vessel
-					setup |= render_vessel(panel, v);
+					setup |= Render_vessel(panel, v);
 				}
 
 				// empty vessel case
 				if (!setup)
 				{
-					panel.header("<i>no vessels</i>");
+					panel.AddHeader("<i>no vessels</i>");
 				}
 			}
 			// if a vessel is selected
 			else
 			{
 				// header act as title
-				render_vessel(panel, selected_v);
+				Render_vessel(panel, selected_v);
 
 				// update page content
 				switch (page)
 				{
-					case MonitorPage.telemetry: panel.telemetry(selected_v); break;
-					case MonitorPage.data: panel.fileman(selected_v, true); break;  // Using short_strings parameter to stop overlapping when inflight.
-					case MonitorPage.scripts: panel.devman(selected_v); break;
-					case MonitorPage.config: panel.config(selected_v); break;
-					case MonitorPage.log: panel.logman(selected_v); break;
+					case MonitorPage.telemetry: panel.TelemetryPanel(selected_v); break;
+					case MonitorPage.data: panel.Fileman(selected_v, true); break;  // Using short_strings parameter to stop overlapping when inflight.
+					case MonitorPage.scripts: panel.Devman(selected_v); break;
+					case MonitorPage.config: panel.Config(selected_v); break;
+					case MonitorPage.log: panel.Logman(selected_v); break;
 				}
 			}
 		}
 
 
-		public void render()
+		public void Render()
 		{
 			// start scrolling view
 			scroll_pos = GUILayout.BeginScrollView(scroll_pos, HighLogic.Skin.horizontalScrollbar, HighLogic.Skin.verticalScrollbar);
 
 			// render panel content
-			panel.render();
+			panel.Render();
 
 			// end scroll view
 			GUILayout.EndScrollView();
@@ -130,12 +130,12 @@ namespace KERBALISM
 			// if a vessel is selected, and exist
 			if (selected_v != null)
 			{
-				render_menu(selected_v);
+				Render_menu(selected_v);
 			}
 			// if at least one vessel is assigned to a group
 			else if (show_filter)
 			{
-				render_filter();
+				Render_filter();
 			}
 
 			// right click goes back to list view
@@ -146,7 +146,7 @@ namespace KERBALISM
 			}
 		}
 
-		public float width()
+		public float Width()
 		{
 			if ((page == MonitorPage.data || page == MonitorPage.log || selected_id == Guid.Empty) && !Lib.IsFlight())
 			{
@@ -155,13 +155,13 @@ namespace KERBALISM
 			return Styles.ScaleWidthFloat(355.0f);
 		}
 
-		public float height()
+		public float Height()
 		{
 			// top spacing
 			float h = Styles.ScaleFloat(10.0f);
 
 			// panel height
-			h += panel.height();
+			h += panel.Height();
 
 			// one is selected, or filter is required
 			if (selected_id != Guid.Empty || show_filter)
@@ -173,10 +173,10 @@ namespace KERBALISM
 			return Math.Min(h, Screen.height * 0.75f);
 		}
 
-		bool render_vessel(Panel p, Vessel v)
+		bool Render_vessel(Panel p, Vessel v)
 		{
 			// get vessel info
-			vessel_info vi = Cache.VesselInfo(v);
+			Vessel_info vi = Cache.VesselInfo(v);
 
 			// skip invalid vessels
 			if (!vi.is_valid) return false;
@@ -188,10 +188,10 @@ namespace KERBALISM
 			show_filter |= vd.group.Length > 0 && vd.group != "NONE";
 
 			// skip filtered vessels
-			if (filtered() && vd.group != filter) return false;
+			if (Filtered() && vd.group != filter) return false;
 
 			// get resource handler
-			vessel_resources resources = ResourceCache.Get(v);
+			Vessel_resources resources = ResourceCache.Get(v);
 
 			// get vessel crew
 			List<ProtoCrewMember> crew = Lib.CrewList(v);
@@ -203,7 +203,7 @@ namespace KERBALISM
 			string body_name = v.mainBody.name.ToUpper();
 
 			// render entry
-			p.header
+			p.AddHeader
 			(
 			  Lib.BuildString("<b>",
 			  Lib.Ellipsis(vessel_name, Styles.ScaleStringLength(((page == MonitorPage.data || page == MonitorPage.log || selected_id == Guid.Empty) && !Lib.IsFlight()) ? 50 : 30)),
@@ -214,26 +214,26 @@ namespace KERBALISM
 			);
 
 			// problem indicator
-			indicator_problems(p, v, vi, crew);
+			Indicator_problems(p, v, vi, crew);
 
 			// battery indicator
-			indicator_ec(p, v, vi);
+			Indicator_ec(p, v, vi);
 
 			// supply indicator
-			if (Features.Supplies) indicator_supplies(p, v, vi);
+			if (Features.Supplies) Indicator_supplies(p, v, vi);
 
 			// reliability indicator
-			if (Features.Reliability) indicator_reliability(p, v, vi);
+			if (Features.Reliability) Indicator_reliability(p, v, vi);
 
 			// signal indicator
-			if (RemoteTech.Enabled() || HighLogic.fetch.currentGame.Parameters.Difficulty.EnableCommNet) indicator_signal(p, v, vi);
+			if (RemoteTech.Enabled() || HighLogic.fetch.currentGame.Parameters.Difficulty.EnableCommNet) Indicator_signal(p, v, vi);
 
 			// done
 			return true;
 		}
 
 
-		void render_menu(Vessel v)
+		void Render_menu(Vessel v)
 		{
 			const string tooltip = "\n<i>(middle-click to popout in a window, middle-click again to close popout)</i>";
 			VesselData vd = DB.Vessel(v);
@@ -243,9 +243,9 @@ namespace KERBALISM
 			else if (Lib.IsClicked(2))
 			{
 				if (UI.window.PanelType == Panel.PanelType.telemetry)
-					UI.window.close();
+					UI.window.Close();
 				else
-					UI.open((p) => p.telemetry(v));
+					UI.Open((p) => p.TelemetryPanel(v));
 			}
 			if (Features.Science)
 			{
@@ -254,9 +254,9 @@ namespace KERBALISM
 				else if (Lib.IsClicked(2))
 				{
 					if (UI.window.PanelType == Panel.PanelType.data)
-						UI.window.close();
+						UI.window.Close();
 					else
-						UI.open((p) => p.fileman(v));
+						UI.Open((p) => p.Fileman(v));
 				}
 			}
 			if (Features.Automation)
@@ -266,9 +266,9 @@ namespace KERBALISM
 				else if (Lib.IsClicked(2))
 				{
 					if (UI.window.PanelType == Panel.PanelType.scripts)
-						UI.window.close();
+						UI.window.Close();
 					else
-						UI.open((p) => p.devman(v));
+						UI.Open((p) => p.Devman(v));
 				}
 			}
 			if (Settings.StockMessages != true)
@@ -278,9 +278,9 @@ namespace KERBALISM
 				else if (Lib.IsClicked(2))
 				{
 					if (UI.window.PanelType == Panel.PanelType.log)
-						UI.window.close();
+						UI.window.Close();
 					else
-						UI.open((p) => p.logman(v));
+						UI.Open((p) => p.Logman(v));
 				}
 			}
 			GUILayout.Label(new GUIContent(page == MonitorPage.config ? " <color=#00ffff>CFG</color> " : " CFG ", Icons.small_config, "Configure the vessel" + tooltip), config_style);
@@ -288,9 +288,9 @@ namespace KERBALISM
 			else if (Lib.IsClicked(2))
 			{
 				if (UI.window.PanelType == Panel.PanelType.config)
-					UI.window.close();
+					UI.window.Close();
 				else
-					UI.open((p) => p.config(v));
+					UI.Open((p) => p.Config(v));
 			}
 			GUILayout.Label(new GUIContent(" GROUP ", Icons.small_search, "Organize in groups"), config_style);
 			vd.group = Lib.TextFieldPlaceholder("Kerbalism_group", vd.group, "NONE", group_style).ToUpper();
@@ -299,7 +299,7 @@ namespace KERBALISM
 		}
 
 
-		void render_filter()
+		void Render_filter()
 		{
 			// show the group filter
 			GUILayout.BeginHorizontal(Styles.entry_container);
@@ -309,7 +309,7 @@ namespace KERBALISM
 		}
 
 
-		void problem_sunlight(vessel_info info, ref List<Texture> icons, ref List<string> tooltips)
+		void Problem_sunlight(Vessel_info info, ref List<Texture> icons, ref List<string> tooltips)
 		{
 			if (info.sunlight <= double.Epsilon)
 			{
@@ -318,11 +318,11 @@ namespace KERBALISM
 			}
 		}
 
-		void problem_greenhouses(Vessel v, List<Greenhouse.data> greenhouses, ref List<Texture> icons, ref List<string> tooltips)
+		void Problem_greenhouses(Vessel v, List<Greenhouse.Data> greenhouses, ref List<Texture> icons, ref List<string> tooltips)
 		{
 			if (greenhouses.Count == 0) return;
 
-			foreach (Greenhouse.data greenhouse in greenhouses)
+			foreach (Greenhouse.Data greenhouse in greenhouses)
 			{
 				if (greenhouse.issue.Length > 0)
 				{
@@ -332,7 +332,7 @@ namespace KERBALISM
 			}
 		}
 
-		void problem_kerbals(List<ProtoCrewMember> crew, ref List<Texture> icons, ref List<string> tooltips)
+		void Problem_kerbals(List<ProtoCrewMember> crew, ref List<Texture> icons, ref List<string> tooltips)
 		{
 			UInt32 health_severity = 0;
 			UInt32 stress_severity = 0;
@@ -368,7 +368,7 @@ namespace KERBALISM
 			else if (stress_severity == 2) icons.Add(Icons.brain_red);
 		}
 
-		void problem_radiation(vessel_info info, ref List<Texture> icons, ref List<string> tooltips)
+		void Problem_radiation(Vessel_info info, ref List<Texture> icons, ref List<string> tooltips)
 		{
 			string radiation_str = Lib.BuildString(" (<i>", (info.radiation * 60.0 * 60.0).ToString("F3"), " rad/h)</i>");
 			if (info.radiation > 1.0 / 3600.0)
@@ -388,7 +388,7 @@ namespace KERBALISM
 			}
 		}
 
-		void problem_poisoning(vessel_info info, ref List<Texture> icons, ref List<string> tooltips)
+		void Problem_poisoning(Vessel_info info, ref List<Texture> icons, ref List<string> tooltips)
 		{
 			string poisoning_str = Lib.BuildString("CO2 level in internal atmosphere: <b>", Lib.HumanReadablePerc(info.poisoning), "</b>");
 			if (info.poisoning >= 0.05)
@@ -403,7 +403,7 @@ namespace KERBALISM
 			}
 		}
 
-		void problem_storm(Vessel v, ref List<Texture> icons, ref List<string> tooltips)
+		void Problem_storm(Vessel v, ref List<Texture> icons, ref List<string> tooltips)
 		{
 			if (Storm.Incoming(v))
 			{
@@ -417,19 +417,19 @@ namespace KERBALISM
 			}
 		}
 
-		void indicator_problems(Panel p, Vessel v, vessel_info vi, List<ProtoCrewMember> crew)
+		void Indicator_problems(Panel p, Vessel v, Vessel_info vi, List<ProtoCrewMember> crew)
 		{
 			// store problems icons & tooltips
 			List<Texture> problem_icons = new List<Texture>();
 			List<string> problem_tooltips = new List<string>();
 
 			// detect problems
-			problem_sunlight(vi, ref problem_icons, ref problem_tooltips);
-			if (Features.SpaceWeather) problem_storm(v, ref problem_icons, ref problem_tooltips);
-			if (crew.Count > 0 && Profile.rules.Count > 0) problem_kerbals(crew, ref problem_icons, ref problem_tooltips);
-			if (crew.Count > 0 && Features.Radiation) problem_radiation(vi, ref problem_icons, ref problem_tooltips);
-			problem_greenhouses(v, vi.greenhouses, ref problem_icons, ref problem_tooltips);
-			if (Features.Poisoning) problem_poisoning(vi, ref problem_icons, ref problem_tooltips);
+			Problem_sunlight(vi, ref problem_icons, ref problem_tooltips);
+			if (Features.SpaceWeather) Problem_storm(v, ref problem_icons, ref problem_tooltips);
+			if (crew.Count > 0 && Profile.rules.Count > 0) Problem_kerbals(crew, ref problem_icons, ref problem_tooltips);
+			if (crew.Count > 0 && Features.Radiation) Problem_radiation(vi, ref problem_icons, ref problem_tooltips);
+			Problem_greenhouses(v, vi.greenhouses, ref problem_icons, ref problem_tooltips);
+			if (Features.Poisoning) Problem_poisoning(vi, ref problem_icons, ref problem_tooltips);
 
 			// choose problem icon
 			const UInt64 problem_icon_time = 3;
@@ -441,12 +441,12 @@ namespace KERBALISM
 			}
 
 			// generate problem icon
-			p.icon(problem_icon, String.Join("\n", problem_tooltips.ToArray()));
+			p.AddIcon(problem_icon, String.Join("\n", problem_tooltips.ToArray()));
 		}
 
-		void indicator_ec(Panel p, Vessel v, vessel_info vi)
+		void Indicator_ec(Panel p, Vessel v, Vessel_info vi)
 		{
-			resource_info ec = ResourceCache.Info(v, "ElectricCharge");
+			Resource_info ec = ResourceCache.Info(v, "ElectricCharge");
 			Supply supply = Profile.supplies.Find(k => k.resource == "ElectricCharge");
 			double low_threshold = supply != null ? supply.low_threshold : 0.15;
 			double depletion = ec.Depletion(vi.crew_count);
@@ -467,11 +467,11 @@ namespace KERBALISM
 			  ? Icons.battery_yellow
 			  : Icons.battery_white;
 
-			p.icon(image, tooltip);
+			p.AddIcon(image, tooltip);
 		}
 
 
-		void indicator_supplies(Panel p, Vessel v, vessel_info vi)
+		void Indicator_supplies(Panel p, Vessel v, Vessel_info vi)
 		{
 			List<string> tooltips = new List<string>();
 			uint max_severity = 0;
@@ -479,7 +479,7 @@ namespace KERBALISM
 			{
 				foreach (Supply supply in Profile.supplies.FindAll(k => k.resource != "ElectricCharge"))
 				{
-					resource_info res = ResourceCache.Info(v, supply.resource);
+					Resource_info res = ResourceCache.Info(v, supply.resource);
 					double depletion = res.Depletion(vi.crew_count);
 
 					if (res.capacity > double.Epsilon)
@@ -511,11 +511,11 @@ namespace KERBALISM
 			  ? Icons.box_yellow
 			  : Icons.box_white;
 
-			p.icon(image, string.Join("\n", tooltips.ToArray()));
+			p.AddIcon(image, string.Join("\n", tooltips.ToArray()));
 		}
 
 
-		void indicator_reliability(Panel p, Vessel v, vessel_info vi)
+		void Indicator_reliability(Panel p, Vessel v, Vessel_info vi)
 		{
 			Texture image;
 			string tooltip;
@@ -535,11 +535,11 @@ namespace KERBALISM
 				tooltip = "Critical failures";
 			}
 
-			p.icon(image, tooltip);
+			p.AddIcon(image, tooltip);
 		}
 
 
-		void indicator_signal(Panel p, Vessel v, vessel_info vi)
+		void Indicator_signal(Panel p, Vessel v, Vessel_info vi)
 		{
 			ConnectionInfo conn = vi.connection;
 			if (RemoteTech.Enabled())
@@ -568,7 +568,7 @@ namespace KERBALISM
 					image_rt = Icons.signal_red;
 					tooltip_rt += "\n\n<color=red><i>Blackout</i></color>";
 				}
-				p.icon(image_rt, tooltip_rt);
+				p.AddIcon(image_rt, tooltip_rt);
 				return;
 			}
 
@@ -587,13 +587,13 @@ namespace KERBALISM
 			string comms_tooltip = string.Empty;
 			if (vi.relaying.Length > 0)
 			{
-				ExperimentInfo exp = Science.experiment(vi.relaying);
+				ExperimentInfo exp = Science.Experiment(vi.relaying);
 				comms_str = exp.name;
 				comms_tooltip = exp.fullname;
 			}
 			else if (vi.transmitting.Length > 0)
 			{
-				ExperimentInfo exp = Science.experiment(vi.transmitting);
+				ExperimentInfo exp = Science.Experiment(vi.transmitting);
 				comms_str = exp.name;
 				comms_tooltip = exp.fullname;
 			}
@@ -634,11 +634,11 @@ namespace KERBALISM
 					break;
 			}
 
-			p.icon(image, tooltip);
+			p.AddIcon(image, tooltip);
 		}
 
 		// return true if the list of vessels is filtered
-		bool filtered()
+		bool Filtered()
 		{
 			return filter.Length > 0 && filter != filter_placeholder;
 		}

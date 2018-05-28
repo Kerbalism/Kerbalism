@@ -50,20 +50,20 @@ namespace KERBALISM
 		}
 
 
-		public void save(ConfigNode node)
+		public void Save(ConfigNode node)
 		{
 			// save scripts
 			var scripts_node = node.AddNode("scripts");
 			foreach (var p in scripts)
 			{
 				if (p.Value.states.Count == 0) continue; //< empty-script optimization
-				p.Value.save(scripts_node.AddNode(((uint)p.Key).ToString()));
+				p.Value.Save(scripts_node.AddNode(((uint)p.Key).ToString()));
 			}
 		}
 
 
 		// get a script
-		public Script get(ScriptType type)
+		public Script Get(ScriptType type)
 		{
 			if (!scripts.ContainsKey(type)) scripts.Add(type, new Script());
 			return scripts[type];
@@ -71,10 +71,10 @@ namespace KERBALISM
 
 
 		// execute a script
-		public void execute(Vessel v, ScriptType type)
+		public void Execute(Vessel v, ScriptType type)
 		{
 			// do nothing if there is no EC left on the vessel
-			resource_info ec = ResourceCache.Info(v, "ElectricCharge");
+			Resource_info ec = ResourceCache.Info(v, "ElectricCharge");
 			if (ec.amount <= double.Epsilon) return;
 
 			// get the script
@@ -82,7 +82,7 @@ namespace KERBALISM
 			if (scripts.TryGetValue(type, out script))
 			{
 				// execute the script
-				script.execute(boot(v));
+				script.Execute(Boot(v));
 
 				// show message to the user
 				// - unless the script is empty (can happen when being edited)
@@ -95,13 +95,13 @@ namespace KERBALISM
 
 
 		// call scripts automatically when conditions are met
-		public void automate(Vessel v, vessel_info vi, vessel_resources resources)
+		public void Automate(Vessel v, Vessel_info vi, Vessel_resources resources)
 		{
 			// do nothing if automation is disabled
 			if (!Features.Automation) return;
 
 			// get current states
-			resource_info ec = resources.Info(v, "ElectricCharge");
+			Resource_info ec = resources.Info(v, "ElectricCharge");
 			bool sunlight = vi.sunlight > double.Epsilon;
 			bool power_low = ec.level < 0.2;
 			bool power_high = ec.level > 0.8;
@@ -204,12 +204,12 @@ namespace KERBALISM
 			{
 				// get list of devices
 				// - we avoid creating it when there are no scripts to be executed, making its overall cost trivial
-				var devices = boot(v);
+				var devices = Boot(v);
 
 				// execute all scripts
 				foreach (Script script in to_exec)
 				{
-					script.execute(devices);
+					script.Execute(devices);
 				}
 
 				// show message to the user
@@ -223,7 +223,7 @@ namespace KERBALISM
 
 		// return set of devices on a vessel
 		// - the list is only valid for a single simulation step
-		public static Dictionary<uint, Device> boot(Vessel v)
+		public static Dictionary<uint, Device> Boot(Vessel v)
 		{
 			// store all devices
 			var devices = new Dictionary<uint, Device>();
@@ -260,9 +260,9 @@ namespace KERBALISM
 
 					// add the device
 					// - multiple same-type components in the same part will have the same id, and are ignored
-					if (!devices.ContainsKey(dev.id()))
+					if (!devices.ContainsKey(dev.Id()))
 					{
-						devices.Add(dev.id(), dev);
+						devices.Add(dev.Id(), dev);
 					}
 				}
 			}
@@ -270,7 +270,7 @@ namespace KERBALISM
 			else
 			{
 				// store data required to support multiple modules of same type in a part
-				var PD = new Dictionary<string, Lib.module_prefab_data>();
+				var PD = new Dictionary<string, Lib.Module_prefab_data>();
 
 				// for each part
 				foreach (ProtoPartSnapshot p in v.protoVessel.protoPartSnapshots)
@@ -321,9 +321,9 @@ namespace KERBALISM
 
 						// add the device
 						// - multiple same-type components in the same part will have the same id, and are ignored
-						if (!devices.ContainsKey(dev.id()))
+						if (!devices.ContainsKey(dev.Id()))
 						{
-							devices.Add(dev.id(), dev);
+							devices.Add(dev.Id(), dev);
 						}
 					}
 				}

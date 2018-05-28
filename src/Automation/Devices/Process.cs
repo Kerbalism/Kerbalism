@@ -15,32 +15,32 @@ namespace KERBALISM
 			this.process_ctrl = process_ctrl;
 		}
 
-		public override string name()
+		public override string Name()
 		{
 			return process_ctrl.title.ToLower();
 		}
 
-		public override uint part()
+		public override uint Part()
 		{
 			return process_ctrl.part.flightID;
 		}
 
-		public override string info()
+		public override string Info()
 		{
 			return process_ctrl.running
 			  ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_RUNNING") + "</color>"
 			  : "<color=red>" + Localizer.Format("#KERBALISM_Generic_STOPPED") + "</color>";
 		}
 
-		public override void ctrl(bool value)
+		public override void Ctrl(bool value)
 		{
 			if (!process_ctrl.toggle) return;
 			process_ctrl.running = value;
 		}
 
-		public override void toggle()
+		public override void Toggle()
 		{
-			ctrl(!process_ctrl.running);
+			Ctrl(!process_ctrl.running);
 		}
 
 		ProcessController process_ctrl;
@@ -56,24 +56,24 @@ namespace KERBALISM
 			this.part_id = part_id;
 		}
 
-		public override string name()
+		public override string Name()
 		{
 			return prefab.title.ToLower();
 		}
 
-		public override uint part()
+		public override uint Part()
 		{
 			return part_id;
 		}
 
-		public override string info()
+		public override string Info()
 		{
 			return Lib.Proto.GetBool(process_ctrl, "running")
 			  ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_RUNNING") + "</color>"
 			  : "<color=red>" + Localizer.Format("#KERBALISM_Generic_STOPPED") + "</color>";
 		}
 
-		public override void ctrl(bool value)
+		public override void Ctrl(bool value)
 		{
 			if (!prefab.toggle) return;
 			Lib.Proto.Set(process_ctrl, "running", value);
@@ -81,9 +81,9 @@ namespace KERBALISM
 			part_prefab.resources.Find(k => k.resourceName == prefab.resource).flowState = value;
 		}
 
-		public override void toggle()
+		public override void Toggle()
 		{
-			ctrl(!Lib.Proto.GetBool(process_ctrl, "running"));
+			Ctrl(!Lib.Proto.GetBool(process_ctrl, "running"));
 		}
 
 		ProtoPartModuleSnapshot process_ctrl;

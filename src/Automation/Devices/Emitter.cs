@@ -15,29 +15,29 @@ namespace KERBALISM
 			this.emitter = emitter;
 		}
 
-		public override string name()
+		public override string Name()
 		{
 			return "emitter";
 		}
 
-		public override uint part()
+		public override uint Part()
 		{
 			return emitter.part.flightID;
 		}
 
-		public override string info()
+		public override string Info()
 		{
 			return emitter.running ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_ON") + " </color>" : "<color=red>" + Localizer.Format("#KERBALISM_Generic_DISABLED") + "</color>";
 		}
 
-		public override void ctrl(bool value)
+		public override void Ctrl(bool value)
 		{
 			if (emitter.running != value) emitter.Toggle();
 		}
 
-		public override void toggle()
+		public override void Toggle()
 		{
-			ctrl(!emitter.running);
+			Ctrl(!emitter.running);
 		}
 
 		Emitter emitter;
@@ -52,29 +52,29 @@ namespace KERBALISM
 			this.part_id = part_id;
 		}
 
-		public override string name()
+		public override string Name()
 		{
 			return "emitter";
 		}
 
-		public override uint part()
+		public override uint Part()
 		{
 			return part_id;
 		}
 
-		public override string info()
+		public override string Info()
 		{
 			return Lib.Proto.GetBool(emitter, "running") ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_ACTIVE") + "</color>" : "<color=red>" + Localizer.Format("#KERBALISM_Generic_DISABLED") + "</color>";
 		}
 
-		public override void ctrl(bool value)
+		public override void Ctrl(bool value)
 		{
 			Lib.Proto.Set(emitter, "running", value);
 		}
 
-		public override void toggle()
+		public override void Toggle()
 		{
-			ctrl(!Lib.Proto.GetBool(emitter, "running"));
+			Ctrl(!Lib.Proto.GetBool(emitter, "running"));
 		}
 
 		ProtoPartModuleSnapshot emitter;

@@ -10,7 +10,7 @@ namespace KERBALISM
 	{
 
 		// node parsing
-		private static void nodeparse(ConfigNode profile_node)
+		private static void Nodeparse(ConfigNode profile_node)
 		{
 			// parse all rules
 			foreach (ConfigNode rule_node in profile_node.GetNodes("Rule"))
@@ -77,7 +77,7 @@ namespace KERBALISM
 		}
 
 		// Support config file parsing
-		private static void parseSupport()
+		private static void ParseSupport()
 		{
 			// for each profile
 			foreach (ConfigNode profile_node in Lib.ParseConfigs("Profile"))
@@ -99,7 +99,7 @@ namespace KERBALISM
 						Lib.Log(Lib.BuildString("importing Kerbalism Support profile for mod: ", modname));
 
 						// parse nodes
-						nodeparse(profile_node);
+						Nodeparse(profile_node);
 
 						// done a Support profile now on to the next
 					}
@@ -107,7 +107,7 @@ namespace KERBALISM
 			}
 		}
 
-		public static void parse()
+		public static void Parse()
 		{
 			// initialize data
 			rules = new List<Rule>();
@@ -130,10 +130,10 @@ namespace KERBALISM
 						Lib.Log(Lib.BuildString("using profile: ", Settings.Profile));
 
 						// parse nodes
-						nodeparse(profile_node);
+						Nodeparse(profile_node);
 
 						// Add support configs
-						parseSupport();
+						ParseSupport();
 
 						// log info
 						Lib.Log("supplies:");
@@ -157,7 +157,7 @@ namespace KERBALISM
 		}
 
 
-		public static void Execute(Vessel v, vessel_info vi, VesselData vd, vessel_resources resources, double elapsed_s)
+		public static void Execute(Vessel v, Vessel_info vi, VesselData vd, Vessel_resources resources, double elapsed_s)
 		{
 			// execute all supplies
 			foreach (Supply supply in supplies)

@@ -63,7 +63,7 @@ namespace KERBALISM
 
 
 		// called every frame
-		public void on_gui()
+		public void On_gui()
 		{
 			// if queue is empty, do nothing
 			if (entries.Count == 0) return;

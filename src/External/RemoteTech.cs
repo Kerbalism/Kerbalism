@@ -54,7 +54,7 @@ namespace KERBALISM
 			return API != null && GetRadioBlackout != null && (bool)GetRadioBlackout.Invoke(null, new Object[] { id });
 		}
 
-		public static void update(Vessel v, vessel_info vi, VesselData vd, double elapsed_s)
+		public static void Update(Vessel v, Vessel_info vi, VesselData vd, double elapsed_s)
 		{
 			if (!Enabled()) return;
 

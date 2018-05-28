@@ -17,7 +17,7 @@ namespace KERBALISM
 
 	public static class Settings
 	{
-		public static void parse()
+		public static void Parse()
 		{
 			var cfg = Lib.ParseConfig("Kerbalism/Kerbalism");
 

@@ -9,7 +9,7 @@ namespace KERBALISM
 
 	public static class Modifiers
 	{
-		public static double evaluate(Vessel v, vessel_info vi, vessel_resources resources, List<string> modifiers)
+		public static double Evaluate(Vessel v, Vessel_info vi, Vessel_resources resources, List<string> modifiers)
 		{
 			double k = 1.0;
 			foreach (string mod in modifiers)
@@ -69,7 +69,7 @@ namespace KERBALISM
 		}
 
 
-		public static double evaluate(environment_analyzer env, vessel_analyzer va, resource_simulator sim, List<string> modifiers)
+		public static double Evaluate(Environment_analyzer env, Vessel_analyzer va, Resource_simulator sim, List<string> modifiers)
 		{
 			double k = 1.0;
 			foreach (string mod in modifiers)
@@ -121,7 +121,7 @@ namespace KERBALISM
 						break;
 
 					default:
-						k *= sim.resource(mod).amount;
+						k *= sim.Resource(mod).amount;
 						break;
 				}
 			}

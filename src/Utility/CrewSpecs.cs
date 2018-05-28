@@ -35,36 +35,36 @@ namespace KERBALISM
 		}
 
 		// return true if the crew of active vessel satisfy the specs
-		public bool check()
+		public bool Check()
 		{
 			Vessel v = FlightGlobals.ActiveVessel;
-			return v != null && check(v);
+			return v != null && Check(v);
 		}
 
 		// return true if the crew of specified vessel satisfy the specs
-		public bool check(Vessel v)
+		public bool Check(Vessel v)
 		{
-			return check(Lib.CrewList(v));
+			return Check(Lib.CrewList(v));
 		}
 
 		// return true if the specified crew satisfy the specs
-		public bool check(List<ProtoCrewMember> crew)
+		public bool Check(List<ProtoCrewMember> crew)
 		{
 			for (int i = 0; i < crew.Count; ++i)
 			{
-				if (check(crew[i])) return true;
+				if (Check(crew[i])) return true;
 			}
 			return false;
 		}
 
 		// return true if the specified crew member satisfy the specs
-		public bool check(ProtoCrewMember c)
+		public bool Check(ProtoCrewMember c)
 		{
 			return trait.Length == 0 || (c.trait == trait && c.experienceLevel >= level);
 		}
 
 		// generate a string for use in warning messages
-		public string warning()
+		public string Warning()
 		{
 			return Lib.BuildString
 			(
@@ -77,7 +77,7 @@ namespace KERBALISM
 		}
 
 		// generate a string for use in part tooltip
-		public string info()
+		public string Info()
 		{
 			if (!enabled) return "no";
 			else if (trait.Length == 0) return "anyone";

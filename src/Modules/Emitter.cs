@@ -42,7 +42,7 @@ namespace KERBALISM
 			active_anim = new Animator(part, active);
 
 			// set animation initial state
-			active_anim.still(running ? 0.0 : 1.0);
+			active_anim.Still(running ? 0.0 : 1.0);
 		}
 
 
@@ -64,7 +64,7 @@ namespace KERBALISM
 			if (running && ec_rate > double.Epsilon)
 			{
 				// get resource cache
-				resource_info ec = ResourceCache.Info(vessel, "ElectricCharge");
+				Resource_info ec = ResourceCache.Info(vessel, "ElectricCharge");
 
 				// consume EC
 				ec.Consume(ec_rate * Kerbalism.elapsed_s);
@@ -72,7 +72,7 @@ namespace KERBALISM
 		}
 
 
-		public static void BackgroundUpdate(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, Emitter emitter, resource_info ec, double elapsed_s)
+		public static void BackgroundUpdate(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, Emitter emitter, Resource_info ec, double elapsed_s)
 		{
 			// if enabled, and EC is required
 			if (Lib.Proto.GetBool(m, "running") && emitter.ec_rate > double.Epsilon)
@@ -90,7 +90,7 @@ namespace KERBALISM
 			running = !running;
 
 			// play animation
-			active_anim.play(running, false);
+			active_anim.Play(running, false);
 		}
 
 
@@ -106,15 +106,15 @@ namespace KERBALISM
 			  ? Localizer.Format("#KERBALISM_Emitter_EmitIonizing")
 			  : Localizer.Format("#KERBALISM_Emitter_ReduceIncoming");
 
-			return Specs().info(desc);
+			return Specs().Info(desc);
 		}
 
 		// specifics support
 		public Specifics Specs()
 		{
 			Specifics specs = new Specifics();
-			specs.add(radiation >= 0.0 ? Localizer.Format("#KERBALISM_Emitter_Emitted") : Localizer.Format("#KERBALISM_Emitter_ActiveShielding"), Lib.HumanReadableRadiation(Math.Abs(radiation)));
-			if (ec_rate > double.Epsilon) specs.add("EC/s", Lib.HumanReadableRate(ec_rate));
+			specs.Add(radiation >= 0.0 ? Localizer.Format("#KERBALISM_Emitter_Emitted") : Localizer.Format("#KERBALISM_Emitter_ActiveShielding"), Lib.HumanReadableRadiation(Math.Abs(radiation)));
+			if (ec_rate > double.Epsilon) specs.Add("EC/s", Lib.HumanReadableRate(ec_rate));
 			return specs;
 		}
 
@@ -123,7 +123,7 @@ namespace KERBALISM
 		public static double Total(Vessel v)
 		{
 			// get resource cache
-			resource_info ec = ResourceCache.Info(v, "ElectricCharge");
+			Resource_info ec = ResourceCache.Info(v, "ElectricCharge");
 
 			double tot = 0.0;
 			if (v.loaded)

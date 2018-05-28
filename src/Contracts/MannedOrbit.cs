@@ -81,7 +81,7 @@ namespace KERBALISM.CONTRACTS
 		{
 			foreach (Vessel v in FlightGlobals.Vessels)
 			{
-				vessel_info vi = Cache.VesselInfo(v);
+				Vessel_info vi = Cache.VesselInfo(v);
 				if (!vi.is_valid) continue;
 				bool manned = vi.crew_count > 0;
 				bool in_orbit = Sim.Apoapsis(v) > v.mainBody.atmosphereDepth && Sim.Periapsis(v) > v.mainBody.atmosphereDepth;

@@ -9,7 +9,7 @@ namespace KERBALISM
 
 	public static class BodyInfo
 	{
-		public static void body_info(this Panel p)
+		public static void Body_info(this Panel p)
 		{
 			// only show in mapview
 			if (!MapView.MapIsEnabled) return;
@@ -46,36 +46,36 @@ namespace KERBALISM
 				string temperature_str = body.atmosphere
 				  ? Lib.HumanReadableTemp(temperature)
 				  : Lib.BuildString(Lib.HumanReadableTemp(temperature_min), " / ", Lib.HumanReadableTemp(temperature));
-				p.section("SURFACE");
-				p.content("temperature", temperature_str);
-				p.content("solar flux", Lib.HumanReadableFlux(solar_flux));
-				if (Features.Radiation) p.content("radiation", Lib.HumanReadableRadiation(radiation));
+				p.AddSection("SURFACE");
+				p.AddContent("temperature", temperature_str);
+				p.AddContent("solar flux", Lib.HumanReadableFlux(solar_flux));
+				if (Features.Radiation) p.AddContent("radiation", Lib.HumanReadableRadiation(radiation));
 
 				// atmosphere panel
 				if (body.atmosphere)
 				{
-					p.section("ATMOSPHERE");
-					p.content("breathable", Sim.Breathable(body) ? "yes" : "no");
-					p.content("light absorption", Lib.HumanReadablePerc(1.0 - Sim.AtmosphereFactor(body, 0.7071)));
-					if (Features.Radiation) p.content("gamma absorption", Lib.HumanReadablePerc(1.0 - Sim.GammaTransparency(body, 0.0)));
+					p.AddSection("ATMOSPHERE");
+					p.AddContent("breathable", Sim.Breathable(body) ? "yes" : "no");
+					p.AddContent("light absorption", Lib.HumanReadablePerc(1.0 - Sim.AtmosphereFactor(body, 0.7071)));
+					if (Features.Radiation) p.AddContent("gamma absorption", Lib.HumanReadablePerc(1.0 - Sim.GammaTransparency(body, 0.0)));
 				}
 			}
 
 			// rendering panel
 			if (Features.Radiation)
 			{
-				p.section("RENDERING");
-				p.content("inner belt", Radiation.show_inner ? "<color=green>show</color>" : "<color=red>hide</color>", string.Empty, () => p.toggle(ref Radiation.show_inner));
-				p.content("outer belt", Radiation.show_outer ? "<color=green>show</color>" : "<color=red>hide</color>", string.Empty, () => p.toggle(ref Radiation.show_outer));
-				p.content("magnetopause", Radiation.show_pause ? "<color=green>show</color>" : "<color=red>hide</color>", string.Empty, () => p.toggle(ref Radiation.show_pause));
+				p.AddSection("RENDERING");
+				p.AddContent("inner belt", Radiation.show_inner ? "<color=green>show</color>" : "<color=red>hide</color>", string.Empty, () => p.Toggle(ref Radiation.show_inner));
+				p.AddContent("outer belt", Radiation.show_outer ? "<color=green>show</color>" : "<color=red>hide</color>", string.Empty, () => p.Toggle(ref Radiation.show_outer));
+				p.AddContent("magnetopause", Radiation.show_pause ? "<color=green>show</color>" : "<color=red>hide</color>", string.Empty, () => p.Toggle(ref Radiation.show_pause));
 			}
 
 			// explain the user how to toggle the BodyInfo window
-			p.content(string.Empty);
-			p.content("<i>Press <b>B</b> to open this window again</i>");
+			p.AddContent(string.Empty);
+			p.AddContent("<i>Press <b>B</b> to open this window again</i>");
 
 			// set metadata
-			p.title(Lib.BuildString(Lib.Ellipsis(body.bodyName, Styles.ScaleStringLength(24)), " <color=#cccccc>BODY INFO</color>"));
+			p.Title(Lib.BuildString(Lib.Ellipsis(body.bodyName, Styles.ScaleStringLength(24)), " <color=#cccccc>BODY INFO</color>"));
 		}
 	}
 

@@ -9,7 +9,7 @@ namespace KERBALISM
 
 	public static class UI
 	{
-		public static void init()
+		public static void Init()
 		{
 			// create subsystems
 			message = new Message();
@@ -17,12 +17,12 @@ namespace KERBALISM
 			window = new Window((uint)Styles.ScaleWidthFloat(280), DB.ui.win_left, DB.ui.win_top);
 		}
 
-		public static void sync()
+		public static void Sync()
 		{
-			window.position(DB.ui.win_left, DB.ui.win_top);
+			window.Position(DB.ui.win_left, DB.ui.win_top);
 		}
 
-		public static void update(bool show_window)
+		public static void Update(bool show_window)
 		{
 			// if gui should be shown
 			if (show_window)
@@ -31,17 +31,17 @@ namespace KERBALISM
 				// map-view/tracking-station we open the body info window
 				if (MapView.MapIsEnabled && !DB.ui.map_viewed)
 				{
-					open(BodyInfo.body_info);
+					Open(BodyInfo.Body_info);
 					DB.ui.map_viewed = true;
 				}
 
 				// update subsystems
-				launcher.update();
-				window.update();
+				launcher.Update();
+				window.Update();
 
 				// remember main window position
-				DB.ui.win_left = window.left();
-				DB.ui.win_top = window.top();
+				DB.ui.win_left = window.Left();
+				DB.ui.win_top = window.Top();
 			}
 
 			// re-enable camera mouse scrolling, as some of the on_gui functions can
@@ -51,20 +51,20 @@ namespace KERBALISM
 			GameSettings.AXIS_MOUSEWHEEL.primary.scale = 1.0f;
 		}
 
-		public static void on_gui(bool show_window)
+		public static void On_gui(bool show_window)
 		{
 			// render subsystems
-			message.on_gui();
+			message.On_gui();
 			if (show_window)
 			{
-				launcher.on_gui();
-				window.on_gui();
+				launcher.On_gui();
+				window.On_gui();
 			}
 		}
 
-		public static void open(Action<Panel> refresh)
+		public static void Open(Action<Panel> refresh)
 		{
-			window.open(refresh);
+			window.Open(refresh);
 		}
 
 		static Message message;

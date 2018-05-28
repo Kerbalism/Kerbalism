@@ -15,29 +15,29 @@ namespace KERBALISM
 			this.greenhouse = greenhouse;
 		}
 
-		public override string name()
+		public override string Name()
 		{
 			return "greenhouse";
 		}
 
-		public override uint part()
+		public override uint Part()
 		{
 			return greenhouse.part.flightID;
 		}
 
-		public override string info()
+		public override string Info()
 		{
 			return greenhouse.active ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_ENABLED") + "</color>" : "<color=red>" + Localizer.Format("#KERBALISM_Generic_DISABLED") + "</color>";
 		}
 
-		public override void ctrl(bool value)
+		public override void Ctrl(bool value)
 		{
 			if (greenhouse.active != value) greenhouse.Toggle();
 		}
 
-		public override void toggle()
+		public override void Toggle()
 		{
-			ctrl(!greenhouse.active);
+			Ctrl(!greenhouse.active);
 		}
 
 		Greenhouse greenhouse;
@@ -52,30 +52,30 @@ namespace KERBALISM
 			this.part_id = part_id;
 		}
 
-		public override string name()
+		public override string Name()
 		{
 			return "greenhouse";
 		}
 
-		public override uint part()
+		public override uint Part()
 		{
 			return part_id;
 		}
 
-		public override string info()
+		public override string Info()
 		{
 			bool active = Lib.Proto.GetBool(greenhouse, "active");
 			return active ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_ENABLED") + "</color>" : "<color=red>" + Localizer.Format("#KERBALISM_Generic_DISABLED") + "</color>";
 		}
 
-		public override void ctrl(bool value)
+		public override void Ctrl(bool value)
 		{
 			Lib.Proto.Set(greenhouse, "active", value);
 		}
 
-		public override void toggle()
+		public override void Toggle()
 		{
-			ctrl(!Lib.Proto.GetBool(greenhouse, "active"));
+			Ctrl(!Lib.Proto.GetBool(greenhouse, "active"));
 		}
 
 		ProtoPartModuleSnapshot greenhouse;

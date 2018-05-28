@@ -15,31 +15,31 @@ namespace KERBALISM
 			this.converter = converter;
 		}
 
-		public override string name()
+		public override string Name()
 		{
 			return "converter";
 		}
 
-		public override uint part()
+		public override uint Part()
 		{
 			return converter.part.flightID;
 		}
 
-		public override string info()
+		public override string Info()
 		{
 			return converter.AlwaysActive ? Localizer.Format("#KERBALISM_Generic_ALWAYSON") : converter.IsActivated ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_ON") + "</color>" : "<color=red>" + Localizer.Format("#KERBALISM_Generic_OFF") + "</color>";
 		}
 
-		public override void ctrl(bool value)
+		public override void Ctrl(bool value)
 		{
 			if (converter.AlwaysActive) return;
 			if (value) converter.StartResourceConverter();
 			else converter.StopResourceConverter();
 		}
 
-		public override void toggle()
+		public override void Toggle()
 		{
-			ctrl(!converter.IsActivated);
+			Ctrl(!converter.IsActivated);
 		}
 
 		ModuleResourceConverter converter;
@@ -55,32 +55,32 @@ namespace KERBALISM
 			this.part_id = part_id;
 		}
 
-		public override string name()
+		public override string Name()
 		{
 			return "converter";
 		}
 
-		public override uint part()
+		public override uint Part()
 		{
 			return part_id;
 		}
 
-		public override string info()
+		public override string Info()
 		{
 			if (prefab.AlwaysActive) return Localizer.Format("#KERBALISM_Generic_ALWAYSON");
 			bool is_on = Lib.Proto.GetBool(converter, "IsActivated");
 			return is_on ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_ON") + "</color>" : "<color=red>" + Localizer.Format("#KERBALISM_Generic_OFF") + "</color>";
 		}
 
-		public override void ctrl(bool value)
+		public override void Ctrl(bool value)
 		{
 			if (prefab.AlwaysActive) return;
 			Lib.Proto.Set(converter, "IsActivated", value);
 		}
 
-		public override void toggle()
+		public override void Toggle()
 		{
-			ctrl(!Lib.Proto.GetBool(converter, "IsActivated"));
+			Ctrl(!Lib.Proto.GetBool(converter, "IsActivated"));
 		}
 
 		ProtoPartModuleSnapshot converter;

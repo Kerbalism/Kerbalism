@@ -9,7 +9,7 @@ namespace KERBALISM
 
 	public static class Telemetry
 	{
-		public static void telemetry(this Panel p, Vessel v)
+		public static void TelemetryPanel(this Panel p, Vessel v)
 		{
 			// avoid corner-case when this is called in a lambda after scene changes
 			v = FlightGlobals.FindVessel(v.id);
@@ -18,41 +18,41 @@ namespace KERBALISM
 			if (v == null) return;
 
 			// get info from the cache
-			vessel_info vi = Cache.VesselInfo(v);
+			Vessel_info vi = Cache.VesselInfo(v);
 
 			// if not a valid vessel, leave the panel empty
 			if (!vi.is_valid) return;
 
 			// set metadata
-			p.title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(20)), " <color=#cccccc>TELEMETRY</color>"));
-			p.width(Styles.ScaleWidthFloat(355.0f));
+			p.Title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(20)), " <color=#cccccc>TELEMETRY</color>"));
+			p.Width(Styles.ScaleWidthFloat(355.0f));
 			p.paneltype = Panel.PanelType.telemetry;
 
 			// time-out simulation
-			if (p.timeout(vi)) return;
+			if (p.Timeout(vi)) return;
 
 			// get vessel data
 			VesselData vd = DB.Vessel(v);
 
 			// get resources
-			vessel_resources resources = ResourceCache.Get(v);
+			Vessel_resources resources = ResourceCache.Get(v);
 
 			// get crew
 			var crew = Lib.CrewList(v);
 
 			// draw the content
-			render_crew(p, crew);
-			render_greenhouse(p, vi);
-			render_supplies(p, v, vi, resources);
-			render_habitat(p, v, vi);
-			render_environment(p, v, vi);
+			Render_crew(p, crew);
+			Render_greenhouse(p, vi);
+			Render_supplies(p, v, vi, resources);
+			Render_habitat(p, v, vi);
+			Render_environment(p, v, vi);
 
 			// collapse eva kerbal sections into one
-			if (v.isEVA) p.collapse("EVA SUIT");
+			if (v.isEVA) p.Collapse("EVA SUIT");
 		}
 
 
-		static void render_environment(Panel p, Vessel v, vessel_info vi)
+		static void Render_environment(Panel p, Vessel v, Vessel_info vi)
 		{
 			// don't show env panel in eva kerbals
 			if (v.isEVA) return;
@@ -75,15 +75,15 @@ namespace KERBALISM
 			}
 			readings.Remove(string.Empty);
 
-			p.section("ENVIRONMENT");
+			p.AddSection("ENVIRONMENT");
 			foreach (string type in readings)
 			{
-				p.content(type, Sensor.telemetry_content(v, vi, type), Sensor.telemetry_tooltip(v, vi, type));
+				p.AddContent(type, Sensor.Telemetry_content(v, vi, type), Sensor.Telemetry_tooltip(v, vi, type));
 			}
-			if (readings.Count == 0) p.content("<i>no sensors installed</i>");
+			if (readings.Count == 0) p.AddContent("<i>no sensors installed</i>");
 		}
 
-		static void render_habitat(Panel p, Vessel v, vessel_info vi)
+		static void Render_habitat(Panel p, Vessel v, Vessel_info vi)
 		{
 			// if habitat feature is disabled, do not show the panel
 			if (!Features.Habitat) return;
@@ -92,31 +92,31 @@ namespace KERBALISM
 			if (vi.crew_count == 0) return;
 
 			// render panel, add some content based on enabled features
-			p.section("HABITAT");
-			if (Features.Poisoning) p.content("co2 level", Lib.Color(Lib.HumanReadablePerc(vi.poisoning, "F2"), vi.poisoning > Settings.PoisoningThreshold, "yellow"));
+			p.AddSection("HABITAT");
+			if (Features.Poisoning) p.AddContent("co2 level", Lib.Color(Lib.HumanReadablePerc(vi.poisoning, "F2"), vi.poisoning > Settings.PoisoningThreshold, "yellow"));
 			if (!v.isEVA)
 			{
-				if (Features.Pressure) p.content("pressure", Lib.HumanReadablePressure(vi.pressure * Sim.PressureAtSeaLevel()));
-				if (Features.Shielding) p.content("shielding", Habitat.shielding_to_string(vi.shielding));
-				if (Features.LivingSpace) p.content("living space", Habitat.living_space_to_string(vi.living_space));
-				if (Features.Comfort) p.content("comfort", vi.comforts.summary(), vi.comforts.tooltip());
+				if (Features.Pressure) p.AddContent("pressure", Lib.HumanReadablePressure(vi.pressure * Sim.PressureAtSeaLevel()));
+				if (Features.Shielding) p.AddContent("shielding", Habitat.Shielding_to_string(vi.shielding));
+				if (Features.LivingSpace) p.AddContent("living space", Habitat.Living_space_to_string(vi.living_space));
+				if (Features.Comfort) p.AddContent("comfort", vi.comforts.Summary(), vi.comforts.Tooltip());
 			}
 		}
 
-		static void render_supplies(Panel p, Vessel v, vessel_info vi, vessel_resources resources)
+		static void Render_supplies(Panel p, Vessel v, Vessel_info vi, Vessel_resources resources)
 		{
 			// for each supply
 			int supplies = 0;
 			foreach (Supply supply in Profile.supplies)
 			{
 				// get resource info
-				resource_info res = resources.Info(v, supply.resource);
+				Resource_info res = resources.Info(v, supply.resource);
 
 				// only show estimate if the resource is present
 				if (res.amount <= double.Epsilon) continue;
 
 				// render panel title, if not done already
-				if (supplies == 0) p.section("SUPPLIES");
+				if (supplies == 0) p.AddSection("SUPPLIES");
 
 				// rate tooltip
 				string rate_tooltip = Math.Abs(res.rate) >= 1e-10 ? Lib.BuildString
@@ -132,19 +132,19 @@ namespace KERBALISM
 				  : Lib.SpacesOnCaps(supply.resource).ToLower();
 
 				// finally, render resource supply
-				p.content(label, Lib.HumanReadableDuration(res.Depletion(vi.crew_count)), rate_tooltip);
+				p.AddContent(label, Lib.HumanReadableDuration(res.Depletion(vi.crew_count)), rate_tooltip);
 				++supplies;
 			}
 		}
 
 
-		static void render_crew(Panel p, List<ProtoCrewMember> crew)
+		static void Render_crew(Panel p, List<ProtoCrewMember> crew)
 		{
 			// do nothing if there isn't a crew, or if there are no rules
 			if (crew.Count == 0 || Profile.rules.Count == 0) return;
 
 			// panel section
-			p.section("VITALS");
+			p.AddSection("VITALS");
 
 			// for each crew
 			foreach (ProtoCrewMember kerbal in crew)
@@ -184,19 +184,19 @@ namespace KERBALISM
 				string name = kerbal.name.ToLower().Replace(" kerman", string.Empty);
 
 				// render selectable title
-				p.content(Lib.Ellipsis(name, Styles.ScaleStringLength(30)), kd.disabled ? "<color=#00ffff>HYBERNATED</color>" : string.Empty);
-				p.icon(health_severity == 0 ? Icons.health_white : health_severity == 1 ? Icons.health_yellow : Icons.health_red, tooltip);
-				p.icon(stress_severity == 0 ? Icons.brain_white : stress_severity == 1 ? Icons.brain_yellow : Icons.brain_red, tooltip);
+				p.AddContent(Lib.Ellipsis(name, Styles.ScaleStringLength(30)), kd.disabled ? "<color=#00ffff>HYBERNATED</color>" : string.Empty);
+				p.AddIcon(health_severity == 0 ? Icons.health_white : health_severity == 1 ? Icons.health_yellow : Icons.health_red, tooltip);
+				p.AddIcon(stress_severity == 0 ? Icons.brain_white : stress_severity == 1 ? Icons.brain_yellow : Icons.brain_red, tooltip);
 			}
 		}
 
-		static void render_greenhouse(Panel p, vessel_info vi)
+		static void Render_greenhouse(Panel p, Vessel_info vi)
 		{
 			// do nothing without greenhouses
 			if (vi.greenhouses.Count == 0) return;
 
 			// panel section
-			p.section("GREENHOUSE");
+			p.AddSection("GREENHOUSE");
 
 			// for each greenhouse
 			for (int i = 0; i < vi.greenhouses.Count; ++i)
@@ -221,10 +221,10 @@ namespace KERBALISM
 				) : string.Empty;
 
 				// render it
-				p.content(Lib.BuildString("crop #", (i + 1).ToString()), state, tooltip);
+				p.AddContent(Lib.BuildString("crop #", (i + 1).ToString()), state, tooltip);
 
 				// issues too, why not
-				p.icon(greenhouse.issue.Length == 0 ? Icons.plant_white : Icons.plant_yellow, tooltip);
+				p.AddIcon(greenhouse.issue.Length == 0 ? Icons.plant_white : Icons.plant_yellow, tooltip);
 			}
 		}
 	}

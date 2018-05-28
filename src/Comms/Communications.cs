@@ -9,11 +9,11 @@ namespace KERBALISM
 
 	public static class Communications
 	{
-
-		public static void update(Vessel v, vessel_info vi, VesselData vd, double elapsed_s)
+		public static void Update(Vessel v, Vessel_info vi, VesselData vd, double elapsed_s)
 		{
 			// do nothing if signal mechanic is disabled
-			if (!HighLogic.fetch.currentGame.Parameters.Difficulty.EnableCommNet && !RemoteTech.Enabled()) return;
+			if (!HighLogic.fetch.currentGame.Parameters.Difficulty.EnableCommNet && !RemoteTech.Enabled())
+				return;
 
 			// get connection info
 			ConnectionInfo conn = vi.connection;
@@ -24,6 +24,7 @@ namespace KERBALISM
 			// - do not send messages for EVA kerbals
 			if (conn.status != LinkStatus.no_antenna && !v.isEVA && v.situation != Vessel.Situations.PRELAUNCH)
 			{
+				//Debug.Log(String.Format("Comms:update: vessel {0} , msg {1} , linked {2}", v.name , vd.msg_signal, conn.linked));
 				if (!vd.msg_signal && !conn.linked)
 				{
 					vd.msg_signal = true;
@@ -34,8 +35,12 @@ namespace KERBALISM
 						{
 							switch (Settings.UnlinkedControl)
 							{
-								case UnlinkedCtrl.none: subtext = Localizer.Format("#KERBALISM_UI_noctrl"); break;
-								case UnlinkedCtrl.limited: subtext = Localizer.Format("#KERBALISM_UI_limitedcontrol"); break;
+								case UnlinkedCtrl.none:
+									subtext = Localizer.Format("#KERBALISM_UI_noctrl");
+									break;
+								case UnlinkedCtrl.limited:
+									subtext = Localizer.Format("#KERBALISM_UI_limitedcontrol");
+									break;
 							}
 						}
 						Message.Post(Severity.warning, Lib.BuildString(Localizer.Format("#KERBALISM_UI_signallost"), " <b>", v.vesselName, "</b>"), subtext);
@@ -54,10 +59,7 @@ namespace KERBALISM
 			}
 		}
 
-
-
-
-		public static ConnectionInfo connection(Vessel v)
+		public static ConnectionInfo Connection(Vessel v)
 		{
 			// hard-coded transmission rate and cost
 			const double ext_rate = 0.064;

@@ -15,17 +15,17 @@ namespace KERBALISM
 			this.animator = harvester.part.FindModuleImplementing<ModuleAnimationGroup>();
 		}
 
-		public override string name()
+		public override string Name()
 		{
 			return Lib.BuildString(harvester.resource, " harvester").ToLower();
 		}
 
-		public override uint part()
+		public override uint Part()
 		{
 			return harvester.part.flightID;
 		}
 
-		public override string info()
+		public override string Info()
 		{
 			return animator != null && !harvester.deployed
 			  ? "not deployed"
@@ -36,7 +36,7 @@ namespace KERBALISM
 			  : Lib.BuildString("<color=yellow>", harvester.issue, "</color>");
 		}
 
-		public override void ctrl(bool value)
+		public override void Ctrl(bool value)
 		{
 			if (harvester.deployed)
 			{
@@ -44,9 +44,9 @@ namespace KERBALISM
 			}
 		}
 
-		public override void toggle()
+		public override void Toggle()
 		{
-			ctrl(!harvester.running);
+			Ctrl(!harvester.running);
 		}
 
 		Harvester harvester;
@@ -64,17 +64,17 @@ namespace KERBALISM
 			this.part_id = part_id;
 		}
 
-		public override string name()
+		public override string Name()
 		{
 			return Lib.BuildString(prefab.resource, " harvester").ToLower();
 		}
 
-		public override uint part()
+		public override uint Part()
 		{
 			return part_id;
 		}
 
-		public override string info()
+		public override string Info()
 		{
 			bool deployed = Lib.Proto.GetBool(harvester, "deployed");
 			bool running = Lib.Proto.GetBool(harvester, "running");
@@ -89,7 +89,7 @@ namespace KERBALISM
 			  : Lib.BuildString("<color=yellow>", issue, "</color>");
 		}
 
-		public override void ctrl(bool value)
+		public override void Ctrl(bool value)
 		{
 			if (Lib.Proto.GetBool(harvester, "deployed"))
 			{
@@ -97,9 +97,9 @@ namespace KERBALISM
 			}
 		}
 
-		public override void toggle()
+		public override void Toggle()
 		{
-			ctrl(!Lib.Proto.GetBool(harvester, "running"));
+			Ctrl(!Lib.Proto.GetBool(harvester, "running"));
 		}
 
 		ProtoPartModuleSnapshot harvester;

@@ -41,19 +41,19 @@ namespace KERBALISM
 			if (Lib.IsFlight())
 			{
 				// get info from cache
-				vessel_info vi = Cache.VesselInfo(vessel);
+				Vessel_info vi = Cache.VesselInfo(vessel);
 
 				// do nothing if vessel is invalid
 				if (!vi.is_valid) return;
 
 				// update status
-				Status = telemetry_content(vessel, vi, type);
+				Status = Telemetry_content(vessel, vi, type);
 
 				// if there is a pin animation
 				if (pin.Length > 0)
 				{
 					// still-play pin animation
-					pin_anim.still(telemetry_pin(vessel, vi, type));
+					pin_anim.Still(Telemetry_pin(vessel, vi, type));
 				}
 			}
 		}
@@ -62,7 +62,7 @@ namespace KERBALISM
 		// part tooltip
 		public override string GetInfo()
 		{
-			return Specs().info("Add telemetry readings to the part ui, and to the telemetry panel");
+			return Specs().Info("Add telemetry readings to the part ui, and to the telemetry panel");
 		}
 
 
@@ -70,13 +70,13 @@ namespace KERBALISM
 		public Specifics Specs()
 		{
 			var specs = new Specifics();
-			specs.add("Type", type);
+			specs.Add("Type", type);
 			return specs;
 		}
 
 
 		// get readings value in [0,1] range, for pin animation
-		public static double telemetry_pin(Vessel v, vessel_info vi, string type)
+		public static double Telemetry_pin(Vessel v, Vessel_info vi, string type)
 		{
 			switch (type)
 			{
@@ -89,7 +89,7 @@ namespace KERBALISM
 		}
 
 		// get readings value
-		public static double telemetry_value(Vessel v, vessel_info vi, string type)
+		public static double Telemetry_value(Vessel v, Vessel_info vi, string type)
 		{
 			switch (type)
 			{
@@ -102,7 +102,7 @@ namespace KERBALISM
 		}
 
 		// get readings short text info
-		public static string telemetry_content(Vessel v, vessel_info vi, string type)
+		public static string Telemetry_content(Vessel v, Vessel_info vi, string type)
 		{
 			switch (type)
 			{
@@ -115,7 +115,7 @@ namespace KERBALISM
 		}
 
 		// get readings tooltip
-		public static string telemetry_tooltip(Vessel v, vessel_info vi, string type)
+		public static string Telemetry_tooltip(Vessel v, Vessel_info vi, string type)
 		{
 			switch (type)
 			{

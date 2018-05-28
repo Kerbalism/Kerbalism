@@ -26,14 +26,14 @@ namespace KERBALISM
 
 		public override string GetInfo()
 		{
-			return Specs().info(desc);
+			return Specs().Info(desc);
 		}
 
 		// specifics support
 		public Specifics Specs()
 		{
 			Specifics specs = new Specifics();
-			specs.add("bonus", bonus);
+			specs.Add("bonus", bonus);
 			return specs;
 		}
 	}
@@ -155,7 +155,7 @@ namespace KERBALISM
 
 
 
-		public string tooltip()
+		public string Tooltip()
 		{
 			string yes = Lib.BuildString("<b><color=#00ff00>", Localizer.Format("#KERBALISM_Generic_YES"), " </color></b>");
 			string no = Lib.BuildString("<b><color=#ff0000>", Localizer.Format("#KERBALISM_Generic_NO"), " </color></b>");
@@ -171,7 +171,7 @@ namespace KERBALISM
 			);
 		}
 
-		public string summary()
+		public string Summary()
 		{
 			if (factor >= 0.99) return "ideal";
 			else if (factor >= 0.66) return "good";

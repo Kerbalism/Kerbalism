@@ -27,7 +27,7 @@ namespace KERBALISM
 			prev = Lib.ConfigValue(node, "prev", string.Empty);
 		}
 
-		public void save(ConfigNode node)
+		public void Save(ConfigNode node)
 		{
 			foreach (var p in states)
 			{
@@ -36,23 +36,23 @@ namespace KERBALISM
 			node.AddValue("prev", prev);
 		}
 
-		public void set(Device dev, bool? state)
+		public void Set(Device dev, bool? state)
 		{
-			states.Remove(dev.id());
+			states.Remove(dev.Id());
 			if (state != null)
 			{
-				states.Add(dev.id(), state == true);
+				states.Add(dev.Id(), state == true);
 			}
 		}
 
-		public void execute(Dictionary<uint, Device> devices)
+		public void Execute(Dictionary<uint, Device> devices)
 		{
 			Device dev;
 			foreach (var p in states)
 			{
 				if (devices.TryGetValue(p.Key, out dev))
 				{
-					dev.ctrl(p.Value);
+					dev.Ctrl(p.Value);
 				}
 			}
 		}

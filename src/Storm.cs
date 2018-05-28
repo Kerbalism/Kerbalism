@@ -10,7 +10,7 @@ namespace KERBALISM
 
 	public static class Storm
 	{
-		public static void update(CelestialBody body, double elapsed_s)
+		public static void Update(CelestialBody body, double elapsed_s)
 		{
 			// do nothing if storms are disabled
 			if (!Features.SpaceWeather) return;
@@ -32,7 +32,7 @@ namespace KERBALISM
 			}
 
 			// accumulate age
-			bd.storm_age += elapsed_s * storm_frequency(body.orbit.semiMajorAxis);
+			bd.storm_age += elapsed_s * Storm_frequency(body.orbit.semiMajorAxis);
 
 			// if storm is over
 			if (bd.storm_age > bd.storm_time)
@@ -47,7 +47,7 @@ namespace KERBALISM
 				bd.storm_state = 2;
 			}
 			// if storm is incoming
-			else if (bd.storm_age > bd.storm_time - Settings.StormDuration - time_to_impact(body.orbit.semiMajorAxis))
+			else if (bd.storm_age > bd.storm_time - Settings.StormDuration - Time_to_impact(body.orbit.semiMajorAxis))
 			{
 				bd.storm_state = 1;
 			}
@@ -56,7 +56,7 @@ namespace KERBALISM
 			// note: separed from state management to support the case when the user enter the SOI of a body under storm or about to be hit
 			if (bd.msg_storm < 2 && bd.storm_state == 2)
 			{
-				if (body_is_relevant(body))
+				if (Body_is_relevant(body))
 				{
 					Message.Post(Severity.danger, Lib.BuildString("The coronal mass ejection hit <b>", body.name, "</b> system"),
 					  Lib.BuildString("Storm duration: ", Lib.HumanReadableDuration(TimeLeftCME(bd.storm_time, bd.storm_age))));
@@ -65,7 +65,7 @@ namespace KERBALISM
 			}
 			else if (bd.msg_storm < 1 && bd.storm_state == 1)
 			{
-				if (body_is_relevant(body))
+				if (Body_is_relevant(body))
 				{
 					Message.Post(Severity.warning, Lib.BuildString("Our observatories report a coronal mass ejection directed toward <b>", body.name, "</b> system"),
 					  Lib.BuildString("Time to impact: ", Lib.HumanReadableDuration(TimeBeforeCME(bd.storm_time, bd.storm_age))));
@@ -74,7 +74,7 @@ namespace KERBALISM
 			}
 			else if (bd.msg_storm > 1 && bd.storm_state == 0)
 			{
-				if (body_is_relevant(body))
+				if (Body_is_relevant(body))
 				{
 					Message.Post(Severity.relax, Lib.BuildString("The solar storm at <b>", body.name, "</b> system is over"));
 				}
@@ -83,7 +83,7 @@ namespace KERBALISM
 		}
 
 
-		public static void update(Vessel v, vessel_info vi, VesselData vd, double elapsed_s)
+		public static void Update(Vessel v, Vessel_info vi, VesselData vd, double elapsed_s)
 		{
 			// do nothing if storms are disabled
 			if (!Features.SpaceWeather) return;
@@ -101,7 +101,7 @@ namespace KERBALISM
 			}
 
 			// accumulate age
-			vd.storm_age += elapsed_s * storm_frequency(vi.sun_dist);
+			vd.storm_age += elapsed_s * Storm_frequency(vi.sun_dist);
 
 			// if storm is over
 			if (vd.storm_age > vd.storm_time && vd.storm_state == 2)
@@ -123,7 +123,7 @@ namespace KERBALISM
 				Lib.BuildString("Storm duration: ", Lib.HumanReadableDuration(TimeLeftCME(vd.storm_time, vd.storm_age))));
 			}
 			// if storm is incoming
-			else if (vd.storm_age > vd.storm_time - Settings.StormDuration - time_to_impact(vi.sun_dist) && vd.storm_state == 0)
+			else if (vd.storm_age > vd.storm_time - Settings.StormDuration - Time_to_impact(vi.sun_dist) && vd.storm_state == 0)
 			{
 				vd.storm_state = 1;
 
@@ -135,7 +135,7 @@ namespace KERBALISM
 
 
 		// return storm frequency factor by distance from sun
-		static double storm_frequency(double dist)
+		static double Storm_frequency(double dist)
 		{
 			double AU = Lib.PlanetarySystem(FlightGlobals.GetHomeBody()).orbit.semiMajorAxis;
 			return AU / dist;
@@ -143,7 +143,7 @@ namespace KERBALISM
 
 
 		// return time to impact from CME event, in seconds
-		static double time_to_impact(double dist)
+		static double Time_to_impact(double dist)
 		{
 			return dist / Settings.StormEjectionSpeed;
 		}
@@ -151,7 +151,7 @@ namespace KERBALISM
 
 		// return true if body is relevant to the player
 		// - body: reference body of the planetary system
-		static bool body_is_relevant(CelestialBody body)
+		static bool Body_is_relevant(CelestialBody body)
 		{
 			// [disabled]
 			// special case: home system is always relevant
@@ -165,7 +165,7 @@ namespace KERBALISM
 				if (Lib.PlanetarySystem(v.mainBody) == body)
 				{
 					// get info from the cache
-					vessel_info vi = Cache.VesselInfo(v);
+					Vessel_info vi = Cache.VesselInfo(v);
 
 					// skip invalid vessels
 					if (!vi.is_valid) continue;
@@ -182,7 +182,7 @@ namespace KERBALISM
 
 
 		// used by the engine to update one body per-step
-		public static bool skip_body(CelestialBody body)
+		public static bool Skip_body(CelestialBody body)
 		{
 			// skip all bodies if storms are disabled
 			if (!Features.SpaceWeather) return true;

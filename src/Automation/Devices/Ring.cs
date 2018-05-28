@@ -15,22 +15,22 @@ namespace KERBALISM
 			this.ring = ring;
 		}
 
-		public override string name()
+		public override string Name()
 		{
 			return "gravity ring";
 		}
 
-		public override uint part()
+		public override uint Part()
 		{
 			return ring.part.flightID;
 		}
 
-		public override string info()
+		public override string Info()
 		{
 			return ring.deployed ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_DEPLOYED") + "</color>" : "<color=red>" + Localizer.Format("KERBALISM_Generic_RETRACTED") + "</color>";
 		}
 
-		public override void ctrl(bool value)
+		public override void Ctrl(bool value)
 		{
 			if (ring.deployed != value)
 			{
@@ -38,9 +38,9 @@ namespace KERBALISM
 			}
 		}
 
-		public override void toggle()
+		public override void Toggle()
 		{
-			ctrl(!ring.deployed);
+			Ctrl(!ring.deployed);
 		}
 
 		GravityRing ring;
@@ -55,30 +55,30 @@ namespace KERBALISM
 			this.part_id = part_id;
 		}
 
-		public override string name()
+		public override string Name()
 		{
 			return "gravity ring";
 		}
 
-		public override uint part()
+		public override uint Part()
 		{
 			return part_id;
 		}
 
-		public override string info()
+		public override string Info()
 		{
 			bool deployed = Lib.Proto.GetBool(ring, "deployed");
 			return deployed ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_DEPLOYED") + "</color>" : "<color=red>" + Localizer.Format("KERBALISM_Generic_RETRACTED") + "</color>";
 		}
 
-		public override void ctrl(bool value)
+		public override void Ctrl(bool value)
 		{
 			Lib.Proto.Set(ring, "deployed", value);
 		}
 
-		public override void toggle()
+		public override void Toggle()
 		{
-			ctrl(!Lib.Proto.GetBool(ring, "deployed"));
+			Ctrl(!Lib.Proto.GetBool(ring, "deployed"));
 		}
 
 		ProtoPartModuleSnapshot ring;

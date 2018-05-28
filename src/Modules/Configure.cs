@@ -56,7 +56,7 @@ namespace KERBALISM
 			// parse all setups from string data
 			var archive = new ReadArchive(data);
 			int count;
-			archive.load(out count);
+			archive.Load(out count);
 			setups = new List<ConfigureSetup>(count);
 			while (count-- > 0) setups.Add(new ConfigureSetup(archive));
 
@@ -66,8 +66,8 @@ namespace KERBALISM
 			if (!string.IsNullOrEmpty(cfg))
 			{
 				archive = new ReadArchive(cfg);
-				archive.load(out count);
-				while (count-- > 0) { string s; archive.load(out s); selected.Add(s); }
+				archive.Load(out count);
+				while (count-- > 0) { string s; archive.Load(out s); selected.Add(s); }
 			}
 
 			// parse previous configuration from string data
@@ -76,8 +76,8 @@ namespace KERBALISM
 			if (!string.IsNullOrEmpty(prev_cfg))
 			{
 				archive = new ReadArchive(prev_cfg);
-				archive.load(out count);
-				while (count-- > 0) { string s; archive.load(out s); prev_selected.Add(s); }
+				archive.Load(out count);
+				while (count-- > 0) { string s; archive.Load(out s); prev_selected.Add(s); }
 			}
 
 			// default title to part name
@@ -112,24 +112,24 @@ namespace KERBALISM
 
 				// serialize the setups to string data
 				var archive = new WriteArchive();
-				archive.save(setups.Count);
-				foreach (var setup in setups) setup.save(archive);
-				data = archive.serialize();
+				archive.Save(setups.Count);
+				foreach (var setup in setups) setup.Save(archive);
+				data = archive.Serialize();
 
 				// serialize empty configuration to string data
 				archive = new WriteArchive();
-				archive.save(0);
-				cfg = archive.serialize();
+				archive.Save(0);
+				cfg = archive.Serialize();
 
 				// serialize empty previous configuration to string data
 				archive = new WriteArchive();
-				archive.save(0);
-				prev_cfg = archive.serialize();
+				archive.Save(0);
+				prev_cfg = archive.Serialize();
 			}
 		}
 
 
-		public void configure()
+		public void DoConfigure()
 		{
 			// shortcut to resource library
 			var reslib = PartResourceLibrary.Instance.resourceDefinitions;
@@ -175,7 +175,7 @@ namespace KERBALISM
 				foreach (ConfigureModule cm in setup.modules)
 				{
 					// try to find the module
-					PartModule m = find_module(cm);
+					PartModule m = Find_module(cm);
 
 					// if the module exist
 					if (m != null)
@@ -246,15 +246,15 @@ namespace KERBALISM
 
 			// save configuration
 			WriteArchive archive = new WriteArchive();
-			archive.save(selected.Count);
-			foreach (string s in selected) archive.save(s);
-			cfg = archive.serialize();
+			archive.Save(selected.Count);
+			foreach (string s in selected) archive.Save(s);
+			cfg = archive.Serialize();
 
 			// save previous configuration
 			archive = new WriteArchive();
-			archive.save(prev_selected.Count);
-			foreach (string s in prev_selected) archive.save(s);
-			prev_cfg = archive.serialize();
+			archive.Save(prev_selected.Count);
+			foreach (string s in prev_selected) archive.Save(s);
+			prev_cfg = archive.Serialize();
 
 			// in the editor
 			if (Lib.IsEditor())
@@ -272,7 +272,7 @@ namespace KERBALISM
 						c.selected = selected;
 
 						// re-configure the other module
-						c.configure();
+						c.DoConfigure();
 					}
 					avoid_inf_recursion = false;
 				}
@@ -296,7 +296,7 @@ namespace KERBALISM
 				// configure the first time
 				// note: done here, instead of OnStart, so that we are guaranteed to configure()
 				// after the eventual configure(true) that some modules may call in their OnStart
-				configure();
+				DoConfigure();
 			}
 
 			// if this is the last gui event
@@ -309,7 +309,7 @@ namespace KERBALISM
 					selected[p.Key] = unlocked[p.Value].name;
 
 					// reconfigure
-					configure();
+					DoConfigure();
 				}
 				changes.Clear();
 			}
@@ -327,25 +327,25 @@ namespace KERBALISM
 				if (v == null || EVA.IsDead(v)) return;
 
 				// check trait
-				if (!reconfigure_cs.check(v))
+				if (!reconfigure_cs.Check(v))
 				{
-					Message.Post(Localizer.Format("#KERBALISM_Configure_noconfigure"), reconfigure_cs.warning());
+					Message.Post(Localizer.Format("#KERBALISM_Configure_noconfigure"), reconfigure_cs.Warning());
 					return;
 				}
 
 				// warn the user about potential resource loss
-				if (resource_loss())
+				if (Resource_loss())
 				{
 					Message.Post(Severity.warning, Localizer.Format("#KERBALISM_Configure_dumpexcess"));
 				}
 			}
 
 			// open the window
-			UI.open(window_body);
+			UI.Open(Window_body);
 		}
 
 
-		bool resource_loss()
+		bool Resource_loss()
 		{
 			// detect if any of the setup deal with resources
 			// - we are ignoring resources that configured modules may generate on-the-fly
@@ -366,7 +366,7 @@ namespace KERBALISM
 		// part tooltip
 		public override string GetInfo()
 		{
-			return Specs().info();
+			return Specs().Info();
 		}
 
 
@@ -374,10 +374,10 @@ namespace KERBALISM
 		public Specifics Specs()
 		{
 			Specifics specs = new Specifics();
-			specs.add("slots", slots.ToString());
-			specs.add("reconfigure", new CrewSpecs(reconfigure).info());
-			specs.add(string.Empty);
-			specs.add("setups:");
+			specs.Add("slots", slots.ToString());
+			specs.Add("reconfigure", new CrewSpecs(reconfigure).Info());
+			specs.Add(string.Empty);
+			specs.Add("setups:");
 
 			// organize setups by tech required, and add the ones without tech
 			Dictionary<string, List<string>> org = new Dictionary<string, List<string>>();
@@ -390,7 +390,7 @@ namespace KERBALISM
 				}
 				else
 				{
-					specs.add(Lib.BuildString("• <b>", setup.name, "</b>"));
+					specs.Add(Lib.BuildString("• <b>", setup.name, "</b>"));
 				}
 			}
 
@@ -407,13 +407,13 @@ namespace KERBALISM
 				tech_title = !string.IsNullOrEmpty(tech_title) ? tech_title : tech_id;
 
 				// add tech name
-				specs.add(string.Empty);
-				specs.add(Lib.BuildString("<color=#00ffff>", tech_title, ":</color>"));
+				specs.Add(string.Empty);
+				specs.Add(Lib.BuildString("<color=#00ffff>", tech_title, ":</color>"));
 
 				// add setup names
 				foreach (string setup_name in setup_names)
 				{
-					specs.add(Lib.BuildString("• <b>", setup_name, "</b>"));
+					specs.Add(Lib.BuildString("• <b>", setup_name, "</b>"));
 				}
 			}
 
@@ -421,7 +421,7 @@ namespace KERBALISM
 		}
 
 
-		public PartModule find_module(ConfigureModule cm)
+		public PartModule Find_module(ConfigureModule cm)
 		{
 			// for each module in the part
 			int index = 0;
@@ -458,7 +458,7 @@ namespace KERBALISM
 		}
 
 		// to be called as window refresh function
-		void window_body(Panel p)
+		void Window_body(Panel p)
 		{
 			// outside the editor
 			if (!Lib.IsEditor())
@@ -482,43 +482,43 @@ namespace KERBALISM
 					if (unlocked[setup_i].name == selected[selected_i])
 					{
 						// commit panel
-						render_panel(p, unlocked[setup_i], selected_i, setup_i);
+						Render_panel(p, unlocked[setup_i], selected_i, setup_i);
 					}
 				}
 			}
 
 			// set metadata
-			p.title(Lib.BuildString("Configure <color=#cccccc>", Lib.Ellipsis(title, Styles.ScaleStringLength(40)), "</color>"));
-			p.width(Styles.ScaleWidthFloat(300.0f));
+			p.Title(Lib.BuildString("Configure <color=#cccccc>", Lib.Ellipsis(title, Styles.ScaleStringLength(40)), "</color>"));
+			p.Width(Styles.ScaleWidthFloat(300.0f));
 		}
 
-		void render_panel(Panel p, ConfigureSetup setup, int selected_i, int setup_i)
+		void Render_panel(Panel p, ConfigureSetup setup, int selected_i, int setup_i)
 		{
 			// generate details, just once
 			// note: details were once elegantly serialized among all the other setup data,
 			//       see comment inside generate_details() to understand why this was necessary instead
-			setup.generate_details(this);
+			setup.Generate_details(this);
 
 			// render panel title
 			// only allow reconfiguration if there are more setups than slots
 			if (unlocked.Count <= selected.Count)
 			{
-				p.section(Lib.Ellipsis(setup.name, Styles.ScaleStringLength(70)), setup.desc);
+				p.AddSection(Lib.Ellipsis(setup.name, Styles.ScaleStringLength(70)), setup.desc);
 			}
 			else
 			{
-				p.section(Lib.Ellipsis(setup.name, Styles.ScaleStringLength(70)), setup.desc, () => change_setup(-1, selected_i, ref setup_i), () => change_setup(1, selected_i, ref setup_i));
+				p.AddSection(Lib.Ellipsis(setup.name, Styles.ScaleStringLength(70)), setup.desc, () => Change_setup(-1, selected_i, ref setup_i), () => Change_setup(1, selected_i, ref setup_i));
 			}
 
 			// render details
 			foreach (var det in setup.details)
 			{
-				p.content(det.label, det.value);
+				p.AddContent(det.label, det.value);
 			}
 		}
 
 		// utility, used as callback in panel select
-		void change_setup(int change, int selected_i, ref int setup_i)
+		void Change_setup(int change, int selected_i, ref int setup_i)
 		{
 			do
 			{
@@ -579,43 +579,43 @@ namespace KERBALISM
 		public ConfigureSetup(ReadArchive archive)
 		{
 			// load basic data
-			archive.load(out name);
-			archive.load(out desc);
-			archive.load(out tech);
-			archive.load(out cost);
-			archive.load(out mass);
+			archive.Load(out name);
+			archive.Load(out desc);
+			archive.Load(out tech);
+			archive.Load(out cost);
+			archive.Load(out mass);
 
 			// load modules
 			int count;
-			archive.load(out count);
+			archive.Load(out count);
 			modules = new List<ConfigureModule>(count);
 			while (count-- > 0) modules.Add(new ConfigureModule(archive));
 
 			// load resources
-			archive.load(out count);
+			archive.Load(out count);
 			resources = new List<ConfigureResource>(count);
 			while (count-- > 0) resources.Add(new ConfigureResource(archive));
 		}
 
-		public void save(WriteArchive archive)
+		public void Save(WriteArchive archive)
 		{
 			// save basic data
-			archive.save(name);
-			archive.save(desc);
-			archive.save(tech);
-			archive.save(cost);
-			archive.save(mass);
+			archive.Save(name);
+			archive.Save(desc);
+			archive.Save(tech);
+			archive.Save(cost);
+			archive.Save(mass);
 
 			// save modules
-			archive.save(modules.Count);
-			foreach (ConfigureModule m in modules) m.save(archive);
+			archive.Save(modules.Count);
+			foreach (ConfigureModule m in modules) m.Save(archive);
 
 			// save resources
-			archive.save(resources.Count);
-			foreach (ConfigureResource r in resources) r.save(archive);
+			archive.Save(resources.Count);
+			foreach (ConfigureResource r in resources) r.Save(archive);
 		}
 
-		public void generate_details(Configure cfg)
+		public void Generate_details(Configure cfg)
 		{
 			// If a setup component is defined after the Configure module in the ConfigNode,
 			// then it is not present in the part during Configure::OnLoad (at precompilation time)
@@ -631,7 +631,7 @@ namespace KERBALISM
 			foreach (ConfigureModule cm in modules)
 			{
 				// find module, skip if it doesn't exist
-				PartModule m = cfg.find_module(cm);
+				PartModule m = cfg.Find_module(cm);
 				if (m == null) continue;
 
 				// get title
@@ -719,18 +719,18 @@ namespace KERBALISM
 
 		public ConfigureModule(ReadArchive archive)
 		{
-			archive.load(out type);
-			archive.load(out id_field);
-			archive.load(out id_value);
-			archive.load(out id_index);
+			archive.Load(out type);
+			archive.Load(out id_field);
+			archive.Load(out id_value);
+			archive.Load(out id_index);
 		}
 
-		public void save(WriteArchive archive)
+		public void Save(WriteArchive archive)
 		{
-			archive.save(type);
-			archive.save(id_field);
-			archive.save(id_value);
-			archive.save(id_index);
+			archive.Save(type);
+			archive.Save(id_field);
+			archive.Save(id_value);
+			archive.Save(id_index);
 		}
 
 		public string type;
@@ -751,16 +751,16 @@ namespace KERBALISM
 
 		public ConfigureResource(ReadArchive archive)
 		{
-			archive.load(out name);
-			archive.load(out amount);
-			archive.load(out maxAmount);
+			archive.Load(out name);
+			archive.Load(out amount);
+			archive.Load(out maxAmount);
 		}
 
-		public void save(WriteArchive archive)
+		public void Save(WriteArchive archive)
 		{
-			archive.save(name);
-			archive.save(amount);
-			archive.save(maxAmount);
+			archive.Save(name);
+			archive.Save(amount);
+			archive.Save(maxAmount);
 		}
 
 		public string name;

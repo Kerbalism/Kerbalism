@@ -9,7 +9,7 @@ namespace KERBALISM
 
 	public static class DevManager
 	{
-		public static void devman(this Panel p, Vessel v)
+		public static void Devman(this Panel p, Vessel v)
 		{
 			// avoid corner-case when this is called in a lambda after scene changes
 			v = FlightGlobals.FindVessel(v.id);
@@ -18,32 +18,32 @@ namespace KERBALISM
 			if (v == null) return;
 
 			// get info from the cache
-			vessel_info vi = Cache.VesselInfo(v);
+			Vessel_info vi = Cache.VesselInfo(v);
 
 			// if not a valid vessel, leave the panel empty
 			if (!vi.is_valid) return;
 
 			// set metadata
-			p.title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(20)), " <color=#cccccc>" + Localizer.Format("#KERBALISM_UI_devman") + "</color>"));
-			p.width(Styles.ScaleWidthFloat(355.0f));
+			p.Title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(20)), " <color=#cccccc>" + Localizer.Format("#KERBALISM_UI_devman") + "</color>"));
+			p.Width(Styles.ScaleWidthFloat(355.0f));
 			p.paneltype = Panel.PanelType.scripts;
 
 			// time-out simulation
-			if (p.timeout(vi)) return;
+			if (p.Timeout(vi)) return;
 
 			// get devices
-			Dictionary<uint, Device> devices = Computer.boot(v);
+			Dictionary<uint, Device> devices = Computer.Boot(v);
 
 			// direct control
 			if (script_index == 0)
 			{
 				// draw section title and desc
-				p.section
+				p.AddSection
 				(
 				  Localizer.Format("#KERBALISM_UI_devices"),
-				  description(),
-				  () => p.prev(ref script_index, (int)ScriptType.last),
-				  () => p.next(ref script_index, (int)ScriptType.last)
+				  Description(),
+				  () => p.Prev(ref script_index, (int)ScriptType.last),
+				  () => p.Next(ref script_index, (int)ScriptType.last)
 				);
 
 				// for each device
@@ -51,7 +51,7 @@ namespace KERBALISM
 				{
 					// render device entry
 					Device dev = pair.Value;
-					p.content(dev.name(), dev.info(), string.Empty, dev.toggle, () => Highlighter.set(dev.part(), Color.cyan));
+					p.AddContent(dev.Name(), dev.Info(), string.Empty, dev.Toggle, () => Highlighter.Set(dev.Part(), Color.cyan));
 				}
 			}
 			// script editor
@@ -60,15 +60,15 @@ namespace KERBALISM
 				// get script
 				ScriptType script_type = (ScriptType)script_index;
 				string script_name = script_type.ToString().Replace('_', ' ').ToUpper();
-				Script script = DB.Vessel(v).computer.get(script_type);
+				Script script = DB.Vessel(v).computer.Get(script_type);
 
 				// draw section title and desc
-				p.section
+				p.AddSection
 				(
 				  script_name,
-				  description(),
-				  () => p.prev(ref script_index, (int)ScriptType.last),
-				  () => p.next(ref script_index, (int)ScriptType.last)
+				  Description(),
+				  () => p.Prev(ref script_index, (int)ScriptType.last),
+				  () => p.Next(ref script_index, (int)ScriptType.last)
 				);
 
 				// for each device
@@ -83,21 +83,21 @@ namespace KERBALISM
 
 					// render device entry
 					Device dev = pair.Value;
-					p.content
+					p.AddContent
 					(
-					  dev.name(),
+					  dev.Name(),
 					  state == -1 ? "<color=#999999>" + Localizer.Format("#KERBALISM_UI_dontcare") + " </color>" : state == 0 ? "<color=red>" + Localizer.Format("#KERBALISM_Generic_OFF") + "</color>" : "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_ON") + "</color>",
 					  string.Empty,
 					  () =>
 					  {
 						  switch (state)
 						  {
-							  case -1: script.set(dev, true); break;
-							  case 0: script.set(dev, null); break;
-							  case 1: script.set(dev, false); break;
+							  case -1: script.Set(dev, true); break;
+							  case 0: script.Set(dev, null); break;
+							  case 1: script.Set(dev, false); break;
 						  }
 					  },
-					  () => Highlighter.set(dev.part(), Color.cyan)
+					  () => Highlighter.Set(dev.Part(), Color.cyan)
 					);
 				}
 			}
@@ -105,12 +105,12 @@ namespace KERBALISM
 			// no devices case
 			if (devices.Count == 0)
 			{
-				p.content("<i>no devices</i>");
+				p.AddContent("<i>no devices</i>");
 			}
 		}
 
 		// return short description of a script, or the time-out message
-		static string description()
+		static string Description()
 		{
 			if (script_index == 0) return "<i>Control vessel components directly</i>";
 			switch ((ScriptType)script_index)

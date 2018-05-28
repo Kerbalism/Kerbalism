@@ -9,7 +9,7 @@ namespace KERBALISM
 
 	public static class Highlighter
 	{
-		public static void init()
+		public static void Init()
 		{
 			// initialize data
 			parts = new Dictionary<uint, Color>();
@@ -17,7 +17,7 @@ namespace KERBALISM
 		}
 
 
-		public static void update()
+		public static void Update()
 		{
 			// for each part from previous frame
 			foreach (var prev_p in prev_parts)
@@ -72,7 +72,7 @@ namespace KERBALISM
 		}
 
 
-		public static void set(uint flight_id, Color clr)
+		public static void Set(uint flight_id, Color clr)
 		{
 			if (parts.ContainsKey(flight_id))
 			{

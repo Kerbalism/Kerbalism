@@ -21,7 +21,7 @@ namespace KERBALISM
 			map_viewed = Lib.ConfigValue(node, "map_viewed", false);
 		}
 
-		public void save(ConfigNode node)
+		public void Save(ConfigNode node)
 		{
 			node.AddValue("win_left", win_left);
 			node.AddValue("win_top", win_top);

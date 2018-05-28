@@ -7,9 +7,9 @@ namespace KERBALISM
 
 
 	// store info about a resource in a vessel
-	public sealed class resource_info
+	public sealed class Resource_info
 	{
-		public resource_info(Vessel v, string res_name)
+		public Resource_info(Vessel v, string res_name)
 		{
 			// remember resource name
 			resource_name = res_name;
@@ -258,11 +258,11 @@ namespace KERBALISM
 	}
 
 
-	public sealed class resource_recipe
+	public sealed class Resource_recipe
 	{
-		public struct entry
+		public struct Entry
 		{
-			public entry(string name, double quantity, bool dump = true)
+			public Entry(string name, double quantity, bool dump = true)
 			{
 				this.name = name;
 				this.quantity = quantity;
@@ -275,10 +275,10 @@ namespace KERBALISM
 			public bool dump;
 		}
 
-		public resource_recipe()
+		public Resource_recipe()
 		{
-			this.inputs = new List<entry>();
-			this.outputs = new List<entry>();
+			this.inputs = new List<Entry>();
+			this.outputs = new List<Entry>();
 			this.left = 1.0;
 		}
 
@@ -287,7 +287,7 @@ namespace KERBALISM
 		{
 			if (quantity > double.Epsilon) //< avoid division by zero
 			{
-				inputs.Add(new entry(resource_name, quantity));
+				inputs.Add(new Entry(resource_name, quantity));
 			}
 		}
 
@@ -296,12 +296,12 @@ namespace KERBALISM
 		{
 			if (quantity > double.Epsilon) //< avoid division by zero
 			{
-				outputs.Add(new entry(resource_name, quantity, dump));
+				outputs.Add(new Entry(resource_name, quantity, dump));
 			}
 		}
 
 		// execute the recipe
-		public bool Execute(Vessel v, vessel_resources resources)
+		public bool Execute(Vessel v, Vessel_resources resources)
 		{
 			// determine worst input ratio
 			// - pure input recipes can just underflow
@@ -310,8 +310,8 @@ namespace KERBALISM
 			{
 				for (int i = 0; i < inputs.Count; ++i)
 				{
-					entry e = inputs[i];
-					resource_info res = resources.Info(v, e.name);
+					Entry e = inputs[i];
+					Resource_info res = resources.Info(v, e.name);
 					worst_input = Lib.Clamp((res.amount + res.deferred) * e.inv_quantity, 0.0, worst_input);
 				}
 			}
@@ -323,10 +323,10 @@ namespace KERBALISM
 			{
 				for (int i = 0; i < outputs.Count; ++i)
 				{
-					entry e = outputs[i];
+					Entry e = outputs[i];
 					if (!e.dump) // ignore outputs that can dump overboard
 					{
-						resource_info res = resources.Info(v, e.name);
+						Resource_info res = resources.Info(v, e.name);
 						worst_output = Lib.Clamp((res.capacity - (res.amount + res.deferred)) * e.inv_quantity, 0.0, worst_output);
 					}
 				}
@@ -338,14 +338,14 @@ namespace KERBALISM
 			// consume inputs
 			for (int i = 0; i < inputs.Count; ++i)
 			{
-				entry e = inputs[i];
+				Entry e = inputs[i];
 				resources.Consume(v, e.name, e.quantity * worst_io);
 			}
 
 			// produce outputs
 			for (int i = 0; i < outputs.Count; ++i)
 			{
-				entry e = outputs[i];
+				Entry e = outputs[i];
 				resources.Produce(v, e.name, e.quantity * worst_io);
 			}
 
@@ -357,24 +357,24 @@ namespace KERBALISM
 		}
 
 
-		public List<entry> inputs;   // set of input resources
-		public List<entry> outputs;  // set of output resources
+		public List<Entry> inputs;   // set of input resources
+		public List<Entry> outputs;  // set of output resources
 		public double left;     // what proportion of the recipe is left to execute
 	}
 
 
 	// the resource cache of a vessel
-	public sealed class vessel_resources
+	public sealed class Vessel_resources
 	{
 		// return a resource handler
-		public resource_info Info(Vessel v, string resource_name)
+		public Resource_info Info(Vessel v, string resource_name)
 		{
 			// try to get existing entry if any
-			resource_info res;
+			Resource_info res;
 			if (resources.TryGetValue(resource_name, out res)) return res;
 
 			// create new entry
-			res = new resource_info(v, resource_name);
+			res = new Resource_info(v, resource_name);
 
 			// remember new entry
 			resources.Add(resource_name, res);
@@ -393,7 +393,7 @@ namespace KERBALISM
 				executing = false;
 				for (int i = 0; i < recipes.Count; ++i)
 				{
-					resource_recipe recipe = recipes[i];
+					Resource_recipe recipe = recipes[i];
 					if (recipe.left > double.Epsilon)
 					{
 						executing |= recipe.Execute(v, this);
@@ -422,49 +422,49 @@ namespace KERBALISM
 		}
 
 		// record deferred execution of a recipe
-		public void Transform(resource_recipe recipe)
+		public void Transform(Resource_recipe recipe)
 		{
 			recipes.Add(recipe);
 		}
 
 
-		public Dictionary<string, resource_info> resources = new Dictionary<string, resource_info>(32);
-		public List<resource_recipe> recipes = new List<resource_recipe>(4);
+		public Dictionary<string, Resource_info> resources = new Dictionary<string, Resource_info>(32);
+		public List<Resource_recipe> recipes = new List<Resource_recipe>(4);
 	}
 
 
 	// manage per-vessel resource caches
 	public static class ResourceCache
 	{
-		public static void init()
+		public static void Init()
 		{
-			entries = new Dictionary<Guid, vessel_resources>();
+			entries = new Dictionary<Guid, Vessel_resources>();
 		}
 
-		public static void clear()
+		public static void Clear()
 		{
 			entries.Clear();
 		}
 
-		public static void purge(Vessel v)
+		public static void Purge(Vessel v)
 		{
 			entries.Remove(v.id);
 		}
 
-		public static void purge(ProtoVessel pv)
+		public static void Purge(ProtoVessel pv)
 		{
 			entries.Remove(pv.vesselID);
 		}
 
 		// return resource cache for a vessel
-		public static vessel_resources Get(Vessel v)
+		public static Vessel_resources Get(Vessel v)
 		{
 			// try to get existing entry if any
-			vessel_resources entry;
+			Vessel_resources entry;
 			if (entries.TryGetValue(v.id, out entry)) return entry;
 
 			// create new entry
-			entry = new vessel_resources();
+			entry = new Vessel_resources();
 
 			// remember new entry
 			entries.Add(v.id, entry);
@@ -474,7 +474,7 @@ namespace KERBALISM
 		}
 
 		// return a resource handler (shortcut)
-		public static resource_info Info(Vessel v, string resource_name)
+		public static Resource_info Info(Vessel v, string resource_name)
 		{
 			return Get(v).Info(v, resource_name);
 		}
@@ -492,13 +492,13 @@ namespace KERBALISM
 		}
 
 		// register deferred execution of a recipe (shortcut)
-		public static void Transform(Vessel v, resource_recipe recipe)
+		public static void Transform(Vessel v, Resource_recipe recipe)
 		{
 			Get(v).Transform(recipe);
 		}
 
 		// resource cache
-		static Dictionary<Guid, vessel_resources> entries;
+		static Dictionary<Guid, Vessel_resources> entries;
 	}
 
 

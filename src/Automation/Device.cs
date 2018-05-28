@@ -8,23 +8,23 @@ namespace KERBALISM
 	public abstract class Device
 	{
 		// return device name
-		public abstract string name();
+		public abstract string Name();
 
 		// return part id
-		public abstract uint part();
+		public abstract uint Part();
 
 		// return short device status string
-		public abstract string info();
+		public abstract string Info();
 
 		// control the device using a value
-		public abstract void ctrl(bool value);
+		public abstract void Ctrl(bool value);
 
 		// toggle the device state
-		public abstract void toggle();
+		public abstract void Toggle();
 
 		// generate unique id for the module
 		// - multiple same-type components in the same part will have the same id
-		public uint id() { return part() + (uint)name().GetHashCode(); }
+		public uint Id() { return Part() + (uint)Name().GetHashCode(); }
 	}
 
 

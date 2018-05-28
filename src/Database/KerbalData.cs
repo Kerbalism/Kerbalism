@@ -26,11 +26,11 @@ namespace KERBALISM
 
 			foreach (var rule_node in node.GetNode("rules").GetNodes())
 			{
-				rules.Add(DB.from_safe_key(rule_node.name), new RuleData(rule_node));
+				rules.Add(DB.From_safe_key(rule_node.name), new RuleData(rule_node));
 			}
 		}
 
-		public void save(ConfigNode node)
+		public void Save(ConfigNode node)
 		{
 			node.AddValue("rescue", rescue);
 			node.AddValue("disabled", disabled);
@@ -39,7 +39,7 @@ namespace KERBALISM
 
 			foreach (var p in rules)
 			{
-				p.Value.save(rules_node.AddNode(DB.to_safe_key(p.Key)));
+				p.Value.Save(rules_node.AddNode(DB.To_safe_key(p.Key)));
 			}
 		}
 

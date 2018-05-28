@@ -62,7 +62,7 @@ namespace KERBALISM
 		}
 
 
-		void compile()
+		void Compile()
 		{
 			// max number of particles that can be stored in a unity mesh
 			const int max_particles = 64000;
@@ -91,11 +91,11 @@ namespace KERBALISM
 
 
 		// render all the meshes
-		public void render(Matrix4x4 m)
+		public void Render(Matrix4x4 m)
 		{
 			if (meshes == null)
 			{
-				compile();
+				Compile();
 			}
 
 			for (var i = 0; i < meshes.Count; ++i)

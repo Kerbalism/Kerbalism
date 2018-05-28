@@ -17,10 +17,10 @@ namespace KERBALISM
 			monitor = new Monitor();
 			tooltip = new Tooltip();
 
-			GameEvents.onGUIApplicationLauncherReady.Add(create);
+			GameEvents.onGUIApplicationLauncherReady.Add(Create);
 		}
 
-		public void create()
+		public void Create()
 		{
 			// do nothing if button already created
 			if (!ui_initialized)
@@ -42,7 +42,7 @@ namespace KERBALISM
 			}
 		}
 
-		public void update()
+		public void Update()
 		{
 			// do nothing if GUI has not been initialized
 			if (!ui_initialized) return;
@@ -50,17 +50,17 @@ namespace KERBALISM
 			// update planner/monitor content
 			if (Lib.IsEditor())
 			{
-				planner.update();
+				planner.Update();
 			}
 			else
 			{
-				monitor.update();
+				monitor.Update();
 			}
 		}
 
 
 		// called every frame
-		public void on_gui()
+		public void On_gui()
 		{
 			// do nothing if GUI has not been initialized
 			if (!ui_initialized) return;
@@ -84,8 +84,8 @@ namespace KERBALISM
 				bool is_at_top = ApplicationLauncher.Instance.IsPositionedAtTop;
 
 				// get window size
-				float width = Lib.IsEditor() ? planner.width() : monitor.width();
-				float height = Lib.IsEditor() ? planner.height() : monitor.height();
+				float width = Lib.IsEditor() ? planner.Width() : monitor.Width();
+				float height = Lib.IsEditor() ? planner.Height() : monitor.Height();
 
 				// calculate window position
 				float left = screen_width - width;
@@ -111,14 +111,14 @@ namespace KERBALISM
 				GUILayout.Space(10.0f);
 
 				// draw planner in the editors, monitor everywhere else
-				if (!Lib.IsEditor()) monitor.render();
-				else planner.render();
+				if (!Lib.IsEditor()) monitor.Render();
+				else planner.Render();
 
 				// end window area
 				GUILayout.EndArea();
 
 				// draw tooltip
-				tooltip.draw(new Rect(0.0f, 0.0f, Screen.width, Screen.height));
+				tooltip.Draw(new Rect(0.0f, 0.0f, Screen.width, Screen.height));
 			}
 			else
 			{

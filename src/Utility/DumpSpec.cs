@@ -31,7 +31,7 @@ namespace KERBALISM
 		}
 
 		// return true if the resource should dump
-		public bool check(string res_name)
+		public bool Check(string res_name)
 		{
 			return any || list.Contains(res_name);
 		}

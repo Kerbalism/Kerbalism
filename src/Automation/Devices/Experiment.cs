@@ -16,17 +16,17 @@ namespace KERBALISM
 			this.exp_name = Lib.SpacesOnCaps(ResearchAndDevelopment.GetExperiment(exp.experiment).experimentTitle).ToLower().Replace("e v a", "eva");
 		}
 
-		public override string name()
+		public override string Name()
 		{
 			return exp_name;
 		}
 
-		public override uint part()
+		public override uint Part()
 		{
 			return exp.part.flightID;
 		}
 
-		public override string info()
+		public override string Info()
 		{
 			return !exp.recording
 			  ? "<color=red>" + Localizer.Format("#KERBALISM_Generic_DISABLED") + " </color>"
@@ -35,14 +35,14 @@ namespace KERBALISM
 			  : Lib.BuildString("<color=yellow>", exp.issue, "</color>");
 		}
 
-		public override void ctrl(bool value)
+		public override void Ctrl(bool value)
 		{
 			if (value != exp.recording) exp.Toggle();
 		}
 
-		public override void toggle()
+		public override void Toggle()
 		{
-			ctrl(!exp.recording);
+			Ctrl(!exp.recording);
 		}
 
 		Experiment exp;
@@ -60,17 +60,17 @@ namespace KERBALISM
 			this.exp_name = Lib.SpacesOnCaps(ResearchAndDevelopment.GetExperiment(prefab.experiment).experimentTitle).ToLower().Replace("e v a", "eva");
 		}
 
-		public override string name()
+		public override string Name()
 		{
 			return exp_name;
 		}
 
-		public override uint part()
+		public override uint Part()
 		{
 			return part_id;
 		}
 
-		public override string info()
+		public override string Info()
 		{
 			bool recording = Lib.Proto.GetBool(exp, "recording");
 			string issue = Lib.Proto.GetString(exp, "issue");
@@ -81,14 +81,14 @@ namespace KERBALISM
 			  : Lib.BuildString("<color=yellow>", issue, "</color>");
 		}
 
-		public override void ctrl(bool value)
+		public override void Ctrl(bool value)
 		{
 			Lib.Proto.Set(exp, "recording", value);
 		}
 
-		public override void toggle()
+		public override void Toggle()
 		{
-			ctrl(!Lib.Proto.GetBool(exp, "recording"));
+			Ctrl(!Lib.Proto.GetBool(exp, "recording"));
 		}
 
 		ProtoPartModuleSnapshot exp;

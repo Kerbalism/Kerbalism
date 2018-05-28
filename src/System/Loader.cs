@@ -10,43 +10,43 @@ namespace KERBALISM
 
 	public sealed class Loader : LoadingSystem
 	{
-		public static void init()
+		public static void Init()
 		{
 			// log version
 			Lib.Log("version " + Lib.Version());
 
 			// parse settings
-			Settings.parse();
+			Settings.Parse();
 
 			// parse profile
-			Profile.parse();
+			Profile.Parse();
 
 			// detect features
-			Features.detect();
+			Features.Detect();
 
 			// get configs from DB
 			UrlDir.UrlFile root = null;
 			foreach (UrlDir.UrlConfig url in GameDatabase.Instance.root.AllConfigs) { root = url.parent; break; }
 
 			// inject MM patches on-the-fly, so that profile/features can be queried with NEEDS[]
-			inject(root, "Profile", Lib.UppercaseFirst(Settings.Profile));
-			if (Features.Reliability) inject(root, "Feature", "Reliability");
-			if (Features.Deploy) inject(root, "Feature", "Deploy");
-			if (Features.SpaceWeather) inject(root, "Feature", "SpaceWeather");
-			if (Features.Automation) inject(root, "Feature", "Automation");
-			if (Features.Science) inject(root, "Feature", "Science");
-			if (Features.Radiation) inject(root, "Feature", "Radiation");
-			if (Features.Shielding) inject(root, "Feature", "Shielding");
-			if (Features.LivingSpace) inject(root, "Feature", "LivingSpace");
-			if (Features.Comfort) inject(root, "Feature", "Comfort");
-			if (Features.Poisoning) inject(root, "Feature", "Poisoning");
-			if (Features.Pressure) inject(root, "Feature", "Pressure");
-			if (Features.Habitat) inject(root, "Feature", "Habitat");
-			if (Features.Supplies) inject(root, "Feature", "Supplies");
+			Inject(root, "Profile", Lib.UppercaseFirst(Settings.Profile));
+			if (Features.Reliability) Inject(root, "Feature", "Reliability");
+			if (Features.Deploy) Inject(root, "Feature", "Deploy");
+			if (Features.SpaceWeather) Inject(root, "Feature", "SpaceWeather");
+			if (Features.Automation) Inject(root, "Feature", "Automation");
+			if (Features.Science) Inject(root, "Feature", "Science");
+			if (Features.Radiation) Inject(root, "Feature", "Radiation");
+			if (Features.Shielding) Inject(root, "Feature", "Shielding");
+			if (Features.LivingSpace) Inject(root, "Feature", "LivingSpace");
+			if (Features.Comfort) Inject(root, "Feature", "Comfort");
+			if (Features.Poisoning) Inject(root, "Feature", "Poisoning");
+			if (Features.Pressure) Inject(root, "Feature", "Pressure");
+			if (Features.Habitat) Inject(root, "Feature", "Habitat");
+			if (Features.Supplies) Inject(root, "Feature", "Supplies");
 		}
 
 		// inject an MM patch on-the-fly, so that NEEDS[TypeId] can be used in MM patches
-		static void inject(UrlDir.UrlFile root, string type, string id)
+		static void Inject(UrlDir.UrlFile root, string type, string id)
 		{
 			root.configs.Add(new UrlDir.UrlConfig(root, new ConfigNode(Lib.BuildString("@Kerbalism:FOR[", type, id, "]"))));
 		}
@@ -55,7 +55,7 @@ namespace KERBALISM
 		public override bool IsReady() { return true; }
 		public override string ProgressTitle() { return "Kerbalism"; }
 		public override float ProgressFraction() { return 0f; }
-		public override void StartLoad() { init(); }
+		public override void StartLoad() { Init(); }
 	}
 
 

@@ -11,7 +11,7 @@ namespace KERBALISM
 	public static class LineRenderer
 	{
 		// pseudo-ctor
-		public static void init()
+		public static void Init()
 		{
 			// load shader
 			mat = Lib.GetShader("AntiAliasedLine");
@@ -19,10 +19,10 @@ namespace KERBALISM
 
 
 		// commit a line
-		public static void commit(Vector3 a, Vector3 b, Color color)
+		public static void Commit(Vector3 a, Vector3 b, Color color)
 		{
 			// create a new line
-			line_data line = new line_data();
+			Line_data line = new Line_data();
 			line.a = a;
 			line.b = b;
 			line.color = color;
@@ -33,7 +33,7 @@ namespace KERBALISM
 
 
 		// render all committed lines
-		public static void render()
+		public static void Render()
 		{
 			// half width of line, in pixels
 			const float half_width = 2.0f;
@@ -67,7 +67,7 @@ namespace KERBALISM
 			float k = half_width * 2.0f * Mathf.Tan(cam.fieldOfView * 0.5f * Mathf.Deg2Rad) / Screen.height;
 
 			// for each line we got
-			foreach (line_data line in lines)
+			foreach (Line_data line in lines)
 			{
 				// shortcuts
 				a = line.a;
@@ -124,7 +124,7 @@ namespace KERBALISM
 
 
 		// store a committed line
-		public class line_data
+		public class Line_data
 		{
 			public Vector3 a;       // starting point
 			public Vector3 b;       // ending point
@@ -132,7 +132,7 @@ namespace KERBALISM
 		};
 
 		// set of committed lines
-		static List<line_data> lines = new List<line_data>(32);
+		static List<Line_data> lines = new List<Line_data>(32);
 
 		// materials used for rendering
 		static Material mat;

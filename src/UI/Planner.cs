@@ -46,9 +46,9 @@ namespace KERBALISM
 			sunlight = true;
 
 			// analyzers
-			sim = new resource_simulator();
-			env = new environment_analyzer();
-			va = new vessel_analyzer();
+			sim = new Resource_simulator();
+			env = new Environment_analyzer();
+			va = new Vessel_analyzer();
 
 			// resource panels
 			panel_resource = new List<string>();
@@ -71,10 +71,10 @@ namespace KERBALISM
 		}
 
 
-		public void update()
+		public void Update()
 		{
 			// clear the panel
-			panel.clear();
+			panel.Clear();
 
 			// if there is something in the editor
 			if (EditorLogic.RootPart != null)
@@ -88,17 +88,17 @@ namespace KERBALISM
 				List<Part> parts = Lib.GetPartsRecursively(EditorLogic.RootPart);
 
 				// analyze
-				env.analyze(body, altitude_mult, sunlight);
-				va.analyze(parts, sim, env);
-				sim.analyze(parts, env, va);
+				env.Analyze(body, altitude_mult, sunlight);
+				va.Analyze(parts, sim, env);
+				sim.Analyze(parts, env, va);
 
 				// ec panel
-				render_ec(panel);
+				Render_ec(panel);
 
 				// resource panel
 				if (panel_resource.Count > 0)
 				{
-					render_resource(panel, panel_resource[resource_index]);
+					Render_resource(panel, panel_resource[resource_index]);
 				}
 
 				// special panel
@@ -106,23 +106,23 @@ namespace KERBALISM
 				{
 					switch (panel_special[special_index])
 					{
-						case "qol": render_stress(panel); break;
-						case "radiation": render_radiation(panel); break;
-						case "reliability": render_reliability(panel); break;
+						case "qol": Render_stress(panel); break;
+						case "radiation": Render_radiation(panel); break;
+						case "reliability": Render_reliability(panel); break;
 					}
 				}
 
 				// environment panel
 				switch (panel_environment[environment_index])
 				{
-					case "habitat": render_habitat(panel); break;
-					case "environment": render_environment(panel); break;
+					case "habitat": Render_habitat(panel); break;
+					case "environment": Render_environment(panel); break;
 				}
 			}
 		}
 
 
-		public void render()
+		public void Render()
 		{
 			// if there is something in the editor
 			if (EditorLogic.RootPart != null)
@@ -153,7 +153,7 @@ namespace KERBALISM
 				GUILayout.EndHorizontal();
 
 				// render panel
-				panel.render();
+				panel.Render();
 			}
 			// if there is nothing in the editor
 			else
@@ -168,17 +168,17 @@ namespace KERBALISM
 		}
 
 
-		public float width()
+		public float Width()
 		{
 			return Styles.ScaleWidthFloat(280.0f);
 		}
 
 
-		public float height()
+		public float Height()
 		{
 			if (EditorLogic.RootPart != null)
 			{
-				return Styles.ScaleFloat(30.0f) + panel.height(); // header + ui content
+				return Styles.ScaleFloat(30.0f) + panel.Height(); // header + ui content
 			}
 			else
 			{
@@ -187,7 +187,7 @@ namespace KERBALISM
 		}
 
 
-		void render_environment(Panel p)
+		void Render_environment(Panel p)
 		{
 			string flux_tooltip = Lib.BuildString
 			(
@@ -209,49 +209,49 @@ namespace KERBALISM
 			);
 			string shadowtime_str = Lib.HumanReadableDuration(env.shadow_period) + " (" + (env.shadow_time * 100.0).ToString("F0") + "%)";
 
-			p.section("ENVIRONMENT", string.Empty, () => p.prev(ref environment_index, panel_environment.Count), () => p.next(ref environment_index, panel_environment.Count));
-			p.content("temperature", Lib.HumanReadableTemp(env.temperature), env.body.atmosphere && env.landed ? "atmospheric" : flux_tooltip);
-			p.content("difference", Lib.HumanReadableTemp(env.temp_diff), "difference between external and survival temperature");
-			p.content("atmosphere", env.body.atmosphere ? "yes" : "no", atmosphere_tooltip);
-			p.content("shadow time", shadowtime_str, "the time in shadow\nduring the orbit");
+			p.AddSection("ENVIRONMENT", string.Empty, () => p.Prev(ref environment_index, panel_environment.Count), () => p.Next(ref environment_index, panel_environment.Count));
+			p.AddContent("temperature", Lib.HumanReadableTemp(env.temperature), env.body.atmosphere && env.landed ? "atmospheric" : flux_tooltip);
+			p.AddContent("difference", Lib.HumanReadableTemp(env.temp_diff), "difference between external and survival temperature");
+			p.AddContent("atmosphere", env.body.atmosphere ? "yes" : "no", atmosphere_tooltip);
+			p.AddContent("shadow time", shadowtime_str, "the time in shadow\nduring the orbit");
 		}
 
 
-		void render_ec(Panel p)
+		void Render_ec(Panel p)
 		{
 			// get simulated resource
-			simulated_resource res = sim.resource("ElectricCharge");
+			Simulated_resource res = sim.Resource("ElectricCharge");
 
 			// create tooltip
-			string tooltip = res.tooltip();
+			string tooltip = res.Tooltip();
 
 			// render the panel section
-			p.section("ELECTRIC CHARGE");
-			p.content("storage", Lib.HumanReadableAmount(res.storage), tooltip);
-			p.content("consumed", Lib.HumanReadableRate(res.consumed), tooltip);
-			p.content("produced", Lib.HumanReadableRate(res.produced), tooltip);
-			p.content("duration", Lib.HumanReadableDuration(res.lifetime()));
+			p.AddSection("ELECTRIC CHARGE");
+			p.AddContent("storage", Lib.HumanReadableAmount(res.storage), tooltip);
+			p.AddContent("consumed", Lib.HumanReadableRate(res.consumed), tooltip);
+			p.AddContent("produced", Lib.HumanReadableRate(res.produced), tooltip);
+			p.AddContent("duration", Lib.HumanReadableDuration(res.Lifetime()));
 		}
 
 
-		void render_resource(Panel p, string res_name)
+		void Render_resource(Panel p, string res_name)
 		{
 			// get simulated resource
-			simulated_resource res = sim.resource(res_name);
+			Simulated_resource res = sim.Resource(res_name);
 
 			// create tooltip
-			string tooltip = res.tooltip();
+			string tooltip = res.Tooltip();
 
 			// render the panel section
-			p.section(Lib.SpacesOnCaps(res_name).ToUpper(), string.Empty, () => p.prev(ref resource_index, panel_resource.Count), () => p.next(ref resource_index, panel_resource.Count));
-			p.content("storage", Lib.HumanReadableAmount(res.storage), tooltip);
-			p.content("consumed", Lib.HumanReadableRate(res.consumed), tooltip);
-			p.content("produced", Lib.HumanReadableRate(res.produced), tooltip);
-			p.content("duration", Lib.HumanReadableDuration(res.lifetime()));
+			p.AddSection(Lib.SpacesOnCaps(res_name).ToUpper(), string.Empty, () => p.Prev(ref resource_index, panel_resource.Count), () => p.Next(ref resource_index, panel_resource.Count));
+			p.AddContent("storage", Lib.HumanReadableAmount(res.storage), tooltip);
+			p.AddContent("consumed", Lib.HumanReadableRate(res.consumed), tooltip);
+			p.AddContent("produced", Lib.HumanReadableRate(res.produced), tooltip);
+			p.AddContent("duration", Lib.HumanReadableDuration(res.Lifetime()));
 		}
 
 
-		void render_stress(Panel p)
+		void Render_stress(Panel p)
 		{
 			// get first living space rule
 			// - guaranteed to exist, as this panel is not rendered if it doesn't
@@ -259,7 +259,7 @@ namespace KERBALISM
 			Rule rule = Profile.rules.Find(k => k.modifiers.Contains("living_space"));
 
 			// render title
-			p.section("STRESS", string.Empty, () => p.prev(ref special_index, panel_special.Count), () => p.next(ref special_index, panel_special.Count));
+			p.AddSection("STRESS", string.Empty, () => p.Prev(ref special_index, panel_special.Count), () => p.Next(ref special_index, panel_special.Count));
 
 			// render living space data
 			// generate details tooltips
@@ -268,16 +268,16 @@ namespace KERBALISM
 				"volume per-capita:<b>\t", Lib.HumanReadableVolume(va.volume / (double)Math.Max(va.crew_count, 1)), "</b>\n",
 				"ideal living space:<b>\t", Lib.HumanReadableVolume(Settings.IdealLivingSpace), "</b>"
 			);
-			p.content("living space", Habitat.living_space_to_string(va.living_space), living_space_tooltip);
+			p.AddContent("living space", Habitat.Living_space_to_string(va.living_space), living_space_tooltip);
 
 			// render comfort data
 			if (rule.modifiers.Contains("comfort"))
 			{
-				p.content("comfort", va.comforts.summary(), va.comforts.tooltip());
+				p.AddContent("comfort", va.comforts.Summary(), va.comforts.Tooltip());
 			}
 			else
 			{
-				p.content("comfort", "n/a");
+				p.AddContent("comfort", "n/a");
 			}
 
 			// render pressure data
@@ -286,20 +286,20 @@ namespace KERBALISM
 				string pressure_tooltip = va.pressurized
 				  ? "Free roaming in a pressurized environment is\nvastly superior to living in a suit."
 				  : "Being forced inside a suit all the time greatly\nreduces the crews quality of life.\nThe worst part is the diaper.";
-				p.content("pressurized", va.pressurized ? "yes" : "no", pressure_tooltip);
+				p.AddContent("pressurized", va.pressurized ? "yes" : "no", pressure_tooltip);
 			}
 			else
 			{
-				p.content("pressurized", "n/a");
+				p.AddContent("pressurized", "n/a");
 			}
 
 			// render life estimate
-			double mod = Modifiers.evaluate(env, va, sim, rule.modifiers);
-			p.content("duration", Lib.HumanReadableDuration(rule.fatal_threshold / (rule.degeneration * mod)));
+			double mod = Modifiers.Evaluate(env, va, sim, rule.modifiers);
+			p.AddContent("duration", Lib.HumanReadableDuration(rule.fatal_threshold / (rule.degeneration * mod)));
 		}
 
 
-		void render_radiation(Panel p)
+		void Render_radiation(Panel p)
 		{
 			// get first radiation rule
 			// - guaranteed to exist, as this panel is not rendered if it doesn't
@@ -324,7 +324,7 @@ namespace KERBALISM
 			// evaluate modifiers (except radiation)
 			List<string> modifiers_except_radiation = new List<string>();
 			foreach (string s in rule.modifiers) { if (s != "radiation") modifiers_except_radiation.Add(s); }
-			double mod = Modifiers.evaluate(env, va, sim, modifiers_except_radiation);
+			double mod = Modifiers.Evaluate(env, va, sim, modifiers_except_radiation);
 
 			// calculate life expectancy at various radiation levels
 			var estimates = new double[7];
@@ -348,16 +348,16 @@ namespace KERBALISM
 			);
 
 			// render the panel
-			p.section("RADIATION", string.Empty, () => p.prev(ref special_index, panel_special.Count), () => p.next(ref special_index, panel_special.Count));
-			p.content("surface", Lib.HumanReadableRadiation(env.surface_rad + va.emitted), tooltip);
-			p.content("orbit", Lib.HumanReadableRadiation(env.magnetopause_rad), tooltip);
-			if (va.emitted >= 0.0) p.content("emission", Lib.HumanReadableRadiation(va.emitted), tooltip);
-			else p.content("active shielding", Lib.HumanReadableRadiation(-va.emitted), tooltip);
-			p.content("shielding", rule.modifiers.Contains("shielding") ? Habitat.shielding_to_string(va.shielding) : "n/a", tooltip);
+			p.AddSection("RADIATION", string.Empty, () => p.Prev(ref special_index, panel_special.Count), () => p.Next(ref special_index, panel_special.Count));
+			p.AddContent("surface", Lib.HumanReadableRadiation(env.surface_rad + va.emitted), tooltip);
+			p.AddContent("orbit", Lib.HumanReadableRadiation(env.magnetopause_rad), tooltip);
+			if (va.emitted >= 0.0) p.AddContent("emission", Lib.HumanReadableRadiation(va.emitted), tooltip);
+			else p.AddContent("active shielding", Lib.HumanReadableRadiation(-va.emitted), tooltip);
+			p.AddContent("shielding", rule.modifiers.Contains("shielding") ? Habitat.Shielding_to_string(va.shielding) : "n/a", tooltip);
 		}
 
 
-		void render_reliability(Panel p)
+		void Render_reliability(Panel p)
 		{
 			// evaluate redundancy metric
 			// - 0: no redundancy
@@ -418,21 +418,21 @@ namespace KERBALISM
 			}
 
 			// render panel
-			p.section("RELIABILITY", string.Empty, () => p.prev(ref special_index, panel_special.Count), () => p.next(ref special_index, panel_special.Count));
-			p.content("malfunctions", Lib.HumanReadableAmount(va.failure_year, "/y"), "average case estimate\nfor the whole vessel");
-			p.content("high quality", Lib.HumanReadablePerc(va.high_quality), "percentage of high quality components");
-			p.content("redundancy", redundancy_str, redundancy_tooltip);
-			p.content("repair", repair_str, repair_tooltip);
+			p.AddSection("RELIABILITY", string.Empty, () => p.Prev(ref special_index, panel_special.Count), () => p.Next(ref special_index, panel_special.Count));
+			p.AddContent("malfunctions", Lib.HumanReadableAmount(va.failure_year, "/y"), "average case estimate\nfor the whole vessel");
+			p.AddContent("high quality", Lib.HumanReadablePerc(va.high_quality), "percentage of high quality components");
+			p.AddContent("redundancy", redundancy_str, redundancy_tooltip);
+			p.AddContent("repair", repair_str, repair_tooltip);
 		}
 
-		void render_habitat(Panel p)
+		void Render_habitat(Panel p)
 		{
-			simulated_resource atmo_res = sim.resource("Atmosphere");
-			simulated_resource waste_res = sim.resource("WasteAtmosphere");
+			Simulated_resource atmo_res = sim.Resource("Atmosphere");
+			Simulated_resource waste_res = sim.Resource("WasteAtmosphere");
 
 			// generate tooltips
-			string atmo_tooltip = atmo_res.tooltip();
-			string waste_tooltip = waste_res.tooltip(true);
+			string atmo_tooltip = atmo_res.Tooltip();
+			string waste_tooltip = waste_res.Tooltip(true);
 
 			// generate status string for scrubbing
 			string waste_status = !Features.Poisoning                   //< feature disabled
@@ -456,11 +456,11 @@ namespace KERBALISM
 			  ? "<color=#ffff00>inadequate</color>"
 			  : "good";                                                 //< sufficient pressure control
 
-			p.section("HABITAT", string.Empty, () => p.prev(ref environment_index, panel_environment.Count), () => p.next(ref environment_index, panel_environment.Count));
-			p.content("volume", Lib.HumanReadableVolume(va.volume), "volume of enabled habitats");
-			p.content("surface", Lib.HumanReadableSurface(va.surface), "surface of enabled habitats");
-			p.content("scrubbing", waste_status, waste_tooltip);
-			p.content("pressurization", atmo_status, atmo_tooltip);
+			p.AddSection("HABITAT", string.Empty, () => p.Prev(ref environment_index, panel_environment.Count), () => p.Next(ref environment_index, panel_environment.Count));
+			p.AddContent("volume", Lib.HumanReadableVolume(va.volume), "volume of enabled habitats");
+			p.AddContent("surface", Lib.HumanReadableSurface(va.surface), "surface of enabled habitats");
+			p.AddContent("scrubbing", waste_status, waste_tooltip);
+			p.AddContent("pressurization", atmo_status, atmo_tooltip);
 		}
 
 
@@ -475,9 +475,9 @@ namespace KERBALISM
 		GUIStyle icon_style;
 
 		// analyzers
-		resource_simulator sim = new resource_simulator();
-		environment_analyzer env = new environment_analyzer();
-		vessel_analyzer va = new vessel_analyzer();
+		Resource_simulator sim = new Resource_simulator();
+		Environment_analyzer env = new Environment_analyzer();
+		Vessel_analyzer va = new Vessel_analyzer();
 
 		// panel arrays
 		List<string> panel_resource;
@@ -500,9 +500,9 @@ namespace KERBALISM
 
 
 	// analyze the environment
-	public sealed class environment_analyzer
+	public sealed class Environment_analyzer
 	{
-		public void analyze(CelestialBody body, double altitude_mult, bool sunlight)
+		public void Analyze(CelestialBody body, double altitude_mult, bool sunlight)
 		{
 			// shortcuts
 			CelestialBody sun = FlightGlobals.Bodies[0];
@@ -565,9 +565,9 @@ namespace KERBALISM
 
 
 	// analyze the vessel (excluding resource-related stuff)
-	public sealed class vessel_analyzer
+	public sealed class Vessel_analyzer
 	{
-		public void analyze(List<Part> parts, resource_simulator sim, environment_analyzer env)
+		public void Analyze(List<Part> parts, Resource_simulator sim, Environment_analyzer env)
 		{
 			// note: vessel analysis require resource analysis, but at the same time resource analysis
 			// require vessel analysis, so we are using resource analysis from previous frame (that's okay)
@@ -576,16 +576,16 @@ namespace KERBALISM
 			// in resource analysis triggered an exception, leading to the vessel analysis never happening
 			// inverting their order avoided this corner-case
 
-			analyze_crew(parts);
-			analyze_habitat(sim, env);
-			analyze_radiation(parts, sim);
-			analyze_reliability(parts);
-			analyze_qol(parts, sim, env);
-			analyze_comms(parts);
+			Analyze_crew(parts);
+			Analyze_habitat(sim, env);
+			Analyze_radiation(parts, sim);
+			Analyze_reliability(parts);
+			Analyze_qol(parts, sim, env);
+			Analyze_comms(parts);
 		}
 
 
-		void analyze_crew(List<Part> parts)
+		void Analyze_crew(List<Part> parts)
 		{
 			// get number of kerbals assigned to the vessel in the editor
 			// note: crew manifest is not reset after root part is deleted
@@ -622,22 +622,22 @@ namespace KERBALISM
 		}
 
 
-		void analyze_habitat(resource_simulator sim, environment_analyzer env)
+		void Analyze_habitat(Resource_simulator sim, Environment_analyzer env)
 		{
 			// calculate total volume
-			volume = sim.resource("Atmosphere").capacity;
+			volume = sim.Resource("Atmosphere").capacity;
 
 			// calculate total surface
-			surface = sim.resource("Shielding").capacity;
+			surface = sim.Resource("Shielding").capacity;
 
 			// determine if the vessel has pressure control capabilities
-			pressurized = sim.resource("Atmosphere").produced > 0.0 || env.breathable;
+			pressurized = sim.Resource("Atmosphere").produced > 0.0 || env.breathable;
 
 			// determine if the vessel has scrubbing capabilities
-			scrubbed = sim.resource("WasteAtmosphere").consumed > 0.0 || env.breathable;
+			scrubbed = sim.Resource("WasteAtmosphere").consumed > 0.0 || env.breathable;
 		}
 
-		void analyze_comms(List<Part> parts)
+		void Analyze_comms(List<Part> parts)
 		{
 			has_comms = false;
 			foreach (Part p in parts)
@@ -661,7 +661,7 @@ namespace KERBALISM
 			}
 		}
 
-		void analyze_radiation(List<Part> parts, resource_simulator sim)
+		void Analyze_radiation(List<Part> parts, Resource_simulator sim)
 		{
 			// scan the parts
 			emitted = 0.0;
@@ -684,13 +684,13 @@ namespace KERBALISM
 			}
 
 			// calculate shielding factor
-			double amount = sim.resource("Shielding").amount;
-			double capacity = sim.resource("Shielding").capacity;
+			double amount = sim.Resource("Shielding").amount;
+			double capacity = sim.Resource("Shielding").capacity;
 			shielding = (capacity > double.Epsilon ? amount / capacity : 1.0) * Settings.ShieldingEfficiency;
 		}
 
 
-		void analyze_reliability(List<Part> parts)
+		void Analyze_reliability(List<Part> parts)
 		{
 			// reset data
 			high_quality = 0.0;
@@ -748,7 +748,7 @@ namespace KERBALISM
 		}
 
 
-		void analyze_qol(List<Part> parts, resource_simulator sim, environment_analyzer env)
+		void Analyze_qol(List<Part> parts, Resource_simulator sim, Environment_analyzer env)
 		{
 			// calculate living space factor
 			living_space = Lib.Clamp((volume / (double)Math.Max(crew_count, 1u)) / Settings.IdealLivingSpace, 0.1, 1.0);
@@ -795,9 +795,9 @@ namespace KERBALISM
 
 
 	// simulate resource consumption & production
-	public class resource_simulator
+	public class Resource_simulator
 	{
-		public void analyze(List<Part> parts, environment_analyzer env, vessel_analyzer va)
+		public void Analyze(List<Part> parts, Environment_analyzer env, Vessel_analyzer va)
 		{
 			// clear previous resource state
 			resources.Clear();
@@ -807,7 +807,7 @@ namespace KERBALISM
 			{
 				for (int i = 0; i < p.Resources.Count; ++i)
 				{
-					process_part(p, p.Resources[i].resourceName);
+					Process_part(p, p.Resources[i].resourceName);
 				}
 			}
 
@@ -816,14 +816,14 @@ namespace KERBALISM
 			{
 				if ((r.input.Length > 0 || (r.output_only && r.output.Length > 0)) && r.rate > 0.0)
 				{
-					process_rule(r, env, va);
+					Process_rule(r, env, va);
 				}
 			}
 
 			// process all processes
 			foreach (Process p in Profile.processes)
 			{
-				process_process(p, env, va);
+				Process_process(p, env, va);
 			}
 
 			// process all modules
@@ -844,32 +844,32 @@ namespace KERBALISM
 
 					switch (m.moduleName)
 					{
-						case "Greenhouse": process_greenhouse(m as Greenhouse, env, va); break;
-						case "GravityRing": process_ring(m as GravityRing); break;
-						case "Emitter": process_emitter(m as Emitter); break;
-						case "Laboratory": process_laboratory(m as Laboratory); break;
-						case "Experiment": process_experiment(m as Experiment); break;
-						case "ModuleCommand": process_command(m as ModuleCommand); break;
-						case "ModuleDeployableSolarPanel": process_panel(m as ModuleDeployableSolarPanel, env); break;
-						case "ModuleGenerator": process_generator(m as ModuleGenerator, p); break;
-						case "ModuleResourceConverter": process_converter(m as ModuleResourceConverter, va); break;
-						case "ModuleKPBSConverter": process_converter(m as ModuleResourceConverter, va); break;
-						case "ModuleResourceHarvester": process_harvester(m as ModuleResourceHarvester, va); break;
-						case "ModuleScienceConverter": process_stocklab(m as ModuleScienceConverter); break;
-						case "ModuleActiveRadiator": process_radiator(m as ModuleActiveRadiator); break;
-						case "ModuleWheelMotor": process_wheel_motor(m as ModuleWheelMotor); break;
-						case "ModuleWheelMotorSteering": process_wheel_steering(m as ModuleWheelMotorSteering); break;
-						case "ModuleLight": process_light(m as ModuleLight); break;
-						case "ModuleColoredLensLight": process_light(m as ModuleLight); break;
-						case "ModuleMultiPointSurfaceLight": process_light(m as ModuleLight); break;
-						case "SCANsat": process_scanner(m); break;
-						case "ModuleSCANresourceScanner": process_scanner(m); break;
-						case "ModuleCurvedSolarPanel": process_curved_panel(p, m, env); break;
-						case "FissionGenerator": process_fission_generator(p, m); break;
-						case "ModuleRadioisotopeGenerator": process_radioisotope_generator(p, m); break;
-						case "ModuleCryoTank": process_cryotank(p, m); break;
-						case "ModuleRTAntenna": process_rtantenna(p, m); break;
-						case "ModuleDataTransmitter": process_datatransmitter(m as ModuleDataTransmitter); break;
+						case "Greenhouse": Process_greenhouse(m as Greenhouse, env, va); break;
+						case "GravityRing": Process_ring(m as GravityRing); break;
+						case "Emitter": Process_emitter(m as Emitter); break;
+						case "Laboratory": Process_laboratory(m as Laboratory); break;
+						case "Experiment": Process_experiment(m as Experiment); break;
+						case "ModuleCommand": Process_command(m as ModuleCommand); break;
+						case "ModuleDeployableSolarPanel": Process_panel(m as ModuleDeployableSolarPanel, env); break;
+						case "ModuleGenerator": Process_generator(m as ModuleGenerator, p); break;
+						case "ModuleResourceConverter": Process_converter(m as ModuleResourceConverter, va); break;
+						case "ModuleKPBSConverter": Process_converter(m as ModuleResourceConverter, va); break;
+						case "ModuleResourceHarvester": Process_harvester(m as ModuleResourceHarvester, va); break;
+						case "ModuleScienceConverter": Process_stocklab(m as ModuleScienceConverter); break;
+						case "ModuleActiveRadiator": Process_radiator(m as ModuleActiveRadiator); break;
+						case "ModuleWheelMotor": Process_wheel_motor(m as ModuleWheelMotor); break;
+						case "ModuleWheelMotorSteering": Process_wheel_steering(m as ModuleWheelMotorSteering); break;
+						case "ModuleLight": Process_light(m as ModuleLight); break;
+						case "ModuleColoredLensLight": Process_light(m as ModuleLight); break;
+						case "ModuleMultiPointSurfaceLight": Process_light(m as ModuleLight); break;
+						case "SCANsat": Process_scanner(m); break;
+						case "ModuleSCANresourceScanner": Process_scanner(m); break;
+						case "ModuleCurvedSolarPanel": Process_curved_panel(p, m, env); break;
+						case "FissionGenerator": Process_fission_generator(p, m); break;
+						case "ModuleRadioisotopeGenerator": Process_radioisotope_generator(p, m); break;
+						case "ModuleCryoTank": Process_cryotank(p, m); break;
+						case "ModuleRTAntenna": Process_rtantenna(p, m); break;
+						case "ModuleDataTransmitter": Process_datatransmitter(m as ModuleDataTransmitter); break;
 					}
 				}
 			}
@@ -881,53 +881,53 @@ namespace KERBALISM
 				executing = false;
 				for (int i = 0; i < recipes.Count; ++i)
 				{
-					simulated_recipe recipe = recipes[i];
+					Simulated_recipe recipe = recipes[i];
 					if (recipe.left > double.Epsilon)
 					{
-						executing |= recipe.execute(this);
+						executing |= recipe.Execute(this);
 					}
 				}
 			}
 			recipes.Clear();
 
 			// clamp all resources
-			foreach (var pair in resources) pair.Value.clamp();
+			foreach (var pair in resources) pair.Value.Clamp();
 		}
 
 
-		public simulated_resource resource(string name)
+		public Simulated_resource Resource(string name)
 		{
-			simulated_resource res;
+			Simulated_resource res;
 			if (!resources.TryGetValue(name, out res))
 			{
-				res = new simulated_resource();
+				res = new Simulated_resource();
 				resources.Add(name, res);
 			}
 			return res;
 		}
 
 
-		void process_part(Part p, string res_name)
+		void Process_part(Part p, string res_name)
 		{
-			simulated_resource res = resource(res_name);
+			Simulated_resource res = Resource(res_name);
 			res.storage += Lib.Amount(p, res_name);
 			res.amount += Lib.Amount(p, res_name);
 			res.capacity += Lib.Capacity(p, res_name);
 		}
 
 
-		void process_rule(Rule r, environment_analyzer env, vessel_analyzer va)
+		void Process_rule(Rule r, Environment_analyzer env, Vessel_analyzer va)
 		{
 			// deduce rate per-second
 			double rate = (double)va.crew_count * (r.interval > 0.0 ? r.rate / r.interval : r.rate);
 
 			// evaluate modifiers
-			double k = Modifiers.evaluate(env, va, this, r.modifiers);
+			double k = Modifiers.Evaluate(env, va, this, r.modifiers);
 
 			// prepare recipe
 			if (r.output.Length == 0)
 			{
-				resource(r.input).consume(rate * k, r.name);
+				Resource(r.input).Consume(rate * k, r.name);
 			}
 			else if (rate > double.Epsilon)
 			{
@@ -935,47 +935,47 @@ namespace KERBALISM
 				if (!r.output_only)
 				{
 					// - rules always dump excess overboard (because it is waste)
-					simulated_recipe recipe = new simulated_recipe(r.name);
-					recipe.input(r.input, rate * k);
-					recipe.output(r.output, rate * k * r.ratio, true);
+					Simulated_recipe recipe = new Simulated_recipe(r.name);
+					recipe.Input(r.input, rate * k);
+					recipe.Output(r.output, rate * k * r.ratio, true);
 					recipes.Add(recipe);
 				}
 				// only simulate output
 				else
 				{
-					resource(r.output).produce(rate * k, r.name);
+					Resource(r.output).Produce(rate * k, r.name);
 				}
 			}
 		}
 
 
-		void process_process(Process p, environment_analyzer env, vessel_analyzer va)
+		void Process_process(Process p, Environment_analyzer env, Vessel_analyzer va)
 		{
 			// evaluate modifiers
-			double k = Modifiers.evaluate(env, va, this, p.modifiers);
+			double k = Modifiers.Evaluate(env, va, this, p.modifiers);
 
 			// prepare recipe
-			simulated_recipe recipe = new simulated_recipe(p.name);
+			Simulated_recipe recipe = new Simulated_recipe(p.name);
 			foreach (var input in p.inputs)
 			{
-				recipe.input(input.Key, input.Value * k);
+				recipe.Input(input.Key, input.Value * k);
 			}
 			foreach (var output in p.outputs)
 			{
-				recipe.output(output.Key, output.Value * k, p.dump.check(output.Key));
+				recipe.Output(output.Key, output.Value * k, p.dump.Check(output.Key));
 			}
 			recipes.Add(recipe);
 		}
 
 
-		void process_greenhouse(Greenhouse g, environment_analyzer env, vessel_analyzer va)
+		void Process_greenhouse(Greenhouse g, Environment_analyzer env, Vessel_analyzer va)
 		{
 			// skip disabled greenhouses
 			if (!g.active) return;
 
 			// shortcut to resources
-			simulated_resource ec = resource("ElectricCharge");
-			simulated_resource res = resource(g.crop_resource);
+			Simulated_resource ec = Resource("ElectricCharge");
+			Simulated_resource res = Resource(g.crop_resource);
 
 			// calculate natural and artificial lighting
 			double natural = env.solar_flux;
@@ -985,13 +985,13 @@ namespace KERBALISM
 			if (artificial > 0.0)
 			{
 				// consume ec for the lamps
-				ec.consume(g.ec_rate * (artificial / g.light_tolerance), "greenhouse");
+				ec.Consume(g.ec_rate * (artificial / g.light_tolerance), "greenhouse");
 			}
 
 			// execute recipe
-			simulated_recipe recipe = new simulated_recipe("greenhouse");
-			foreach (ModuleResource input in g.resHandler.inputResources) recipe.input(input.name, input.rate);
-			foreach (ModuleResource output in g.resHandler.outputResources) recipe.output(output.name, output.rate, true);
+			Simulated_recipe recipe = new Simulated_recipe("greenhouse");
+			foreach (ModuleResource input in g.resHandler.inputResources) recipe.Input(input.name, input.rate);
+			foreach (ModuleResource output in g.resHandler.outputResources) recipe.Output(output.name, output.rate, true);
 			recipes.Add(recipe);
 
 			// determine environment conditions
@@ -1004,7 +1004,7 @@ namespace KERBALISM
 			if (lighting && pressure && radiation)
 			{
 				// produce food
-				res.produce(g.crop_size * g.crop_rate, "greenhouse");
+				res.Produce(g.crop_size * g.crop_rate, "greenhouse");
 
 				// add harvest info
 				res.harvests.Add(Lib.BuildString(g.crop_size.ToString("F0"), " in ", Lib.HumanReadableDuration(1.0 / g.crop_rate)));
@@ -1012,72 +1012,72 @@ namespace KERBALISM
 		}
 
 
-		void process_ring(GravityRing ring)
+		void Process_ring(GravityRing ring)
 		{
-			if (ring.deployed) resource("ElectricCharge").consume(ring.ec_rate, "gravity ring");
+			if (ring.deployed) Resource("ElectricCharge").Consume(ring.ec_rate, "gravity ring");
 		}
 
 
-		void process_emitter(Emitter emitter)
+		void Process_emitter(Emitter emitter)
 		{
-			if (emitter.running) resource("ElectricCharge").consume(emitter.ec_rate, "emitter");
+			if (emitter.running) Resource("ElectricCharge").Consume(emitter.ec_rate, "emitter");
 		}
 
 
-		void process_laboratory(Laboratory lab)
+		void Process_laboratory(Laboratory lab)
 		{
 			// note: we are not checking if there is a scientist in the part
 			if (lab.running)
 			{
-				resource("ElectricCharge").consume(lab.ec_rate, "laboratory");
+				Resource("ElectricCharge").Consume(lab.ec_rate, "laboratory");
 			}
 		}
 
 
-		void process_experiment(Experiment exp)
+		void Process_experiment(Experiment exp)
 		{
 			if (exp.recording)
 			{
-				resource("ElectricCharge").consume(exp.ec_rate, exp.transmissible ? "sensor" : "experiment");
+				Resource("ElectricCharge").Consume(exp.ec_rate, exp.transmissible ? "sensor" : "experiment");
 			}
 		}
 
 
-		void process_command(ModuleCommand command)
+		void Process_command(ModuleCommand command)
 		{
 			foreach (ModuleResource res in command.resHandler.inputResources)
 			{
-				resource(res.name).consume(res.rate, "command");
+				Resource(res.name).Consume(res.rate, "command");
 			}
 		}
 
 
-		void process_panel(ModuleDeployableSolarPanel panel, environment_analyzer env)
+		void Process_panel(ModuleDeployableSolarPanel panel, Environment_analyzer env)
 		{
 			double generated = panel.resHandler.outputResources[0].rate * env.solar_flux / Sim.SolarFluxAtHome();
-			resource("ElectricCharge").produce(generated, "solar panel");
+			Resource("ElectricCharge").Produce(generated, "solar panel");
 		}
 
 
-		void process_generator(ModuleGenerator generator, Part p)
+		void Process_generator(ModuleGenerator generator, Part p)
 		{
 			// skip launch clamps, that include a generator
 			if (Lib.PartName(p) == "launchClamp1") return;
 
-			simulated_recipe recipe = new simulated_recipe("generator");
+			Simulated_recipe recipe = new Simulated_recipe("generator");
 			foreach (ModuleResource res in generator.resHandler.inputResources)
 			{
-				recipe.input(res.name, res.rate);
+				recipe.Input(res.name, res.rate);
 			}
 			foreach (ModuleResource res in generator.resHandler.outputResources)
 			{
-				recipe.output(res.name, res.rate, true);
+				recipe.Output(res.name, res.rate, true);
 			}
 			recipes.Add(recipe);
 		}
 
 
-		void process_converter(ModuleResourceConverter converter, vessel_analyzer va)
+		void Process_converter(ModuleResourceConverter converter, Vessel_analyzer va)
 		{
 			// calculate experience bonus
 			float exp_bonus = converter.UseSpecialistBonus
@@ -1089,20 +1089,20 @@ namespace KERBALISM
 			string recipe_name = Lib.BuildString(converter.part.partInfo.title, " (efficiency: ", Lib.HumanReadablePerc(exp_bonus), ")");
 
 			// generate recipe
-			simulated_recipe recipe = new simulated_recipe(recipe_name);
+			Simulated_recipe recipe = new Simulated_recipe(recipe_name);
 			foreach (ResourceRatio res in converter.inputList)
 			{
-				recipe.input(res.ResourceName, res.Ratio * exp_bonus);
+				recipe.Input(res.ResourceName, res.Ratio * exp_bonus);
 			}
 			foreach (ResourceRatio res in converter.outputList)
 			{
-				recipe.output(res.ResourceName, res.Ratio * exp_bonus, res.DumpExcess);
+				recipe.Output(res.ResourceName, res.Ratio * exp_bonus, res.DumpExcess);
 			}
 			recipes.Add(recipe);
 		}
 
 
-		void process_harvester(ModuleResourceHarvester harvester, vessel_analyzer va)
+		void Process_harvester(ModuleResourceHarvester harvester, Vessel_analyzer va)
 		{
 			// calculate experience bonus
 			float exp_bonus = harvester.UseSpecialistBonus
@@ -1114,68 +1114,68 @@ namespace KERBALISM
 			string recipe_name = Lib.BuildString(harvester.part.partInfo.title, " (efficiency: ", Lib.HumanReadablePerc(exp_bonus), ")");
 
 			// generate recipe
-			simulated_recipe recipe = new simulated_recipe(recipe_name);
+			Simulated_recipe recipe = new Simulated_recipe(recipe_name);
 			foreach (ResourceRatio res in harvester.inputList)
 			{
-				recipe.input(res.ResourceName, res.Ratio);
+				recipe.Input(res.ResourceName, res.Ratio);
 			}
-			recipe.output(harvester.ResourceName, harvester.Efficiency * exp_bonus, true);
+			recipe.Output(harvester.ResourceName, harvester.Efficiency * exp_bonus, true);
 			recipes.Add(recipe);
 		}
 
 
-		void process_stocklab(ModuleScienceConverter lab)
+		void Process_stocklab(ModuleScienceConverter lab)
 		{
-			resource("ElectricCharge").consume(lab.powerRequirement, "lab");
+			Resource("ElectricCharge").Consume(lab.powerRequirement, "lab");
 		}
 
 
-		void process_radiator(ModuleActiveRadiator radiator)
+		void Process_radiator(ModuleActiveRadiator radiator)
 		{
 			// note: IsCooling is not valid in the editor, for deployable radiators,
 			// we will have to check if the related deploy module is deployed
 			// we use PlannerController instead
 			foreach (var res in radiator.resHandler.inputResources)
 			{
-				resource(res.name).consume(res.rate, "radiator");
+				Resource(res.name).Consume(res.rate, "radiator");
 			}
 		}
 
 
-		void process_wheel_motor(ModuleWheelMotor motor)
+		void Process_wheel_motor(ModuleWheelMotor motor)
 		{
 			foreach (var res in motor.resHandler.inputResources)
 			{
-				resource(res.name).consume(res.rate, "wheel");
+				Resource(res.name).Consume(res.rate, "wheel");
 			}
 		}
 
 
-		void process_wheel_steering(ModuleWheelMotorSteering steering)
+		void Process_wheel_steering(ModuleWheelMotorSteering steering)
 		{
 			foreach (var res in steering.resHandler.inputResources)
 			{
-				resource(res.name).consume(res.rate, "wheel");
+				Resource(res.name).Consume(res.rate, "wheel");
 			}
 		}
 
 
-		void process_light(ModuleLight light)
+		void Process_light(ModuleLight light)
 		{
 			if (light.useResources && light.isOn)
 			{
-				resource("ElectricCharge").consume(light.resourceAmount, "light");
+				Resource("ElectricCharge").Consume(light.resourceAmount, "light");
 			}
 		}
 
 
-		void process_scanner(PartModule m)
+		void Process_scanner(PartModule m)
 		{
-			resource("ElectricCharge").consume(SCANsat.EcConsumption(m), "SCANsat");
+			Resource("ElectricCharge").Consume(SCANsat.EcConsumption(m), "SCANsat");
 		}
 
 
-		void process_curved_panel(Part p, PartModule m, environment_analyzer env)
+		void Process_curved_panel(Part p, PartModule m, Environment_analyzer env)
 		{
 			// note: assume half the components are in sunlight, and average inclination is half
 
@@ -1187,11 +1187,11 @@ namespace KERBALISM
 
 			// approximate output
 			// 0.7071: average clamped cosine
-			resource("ElectricCharge").produce(tot_rate * 0.7071 * env.solar_flux / Sim.SolarFluxAtHome(), "curved panel");
+			Resource("ElectricCharge").Produce(tot_rate * 0.7071 * env.solar_flux / Sim.SolarFluxAtHome(), "curved panel");
 		}
 
 
-		void process_fission_generator(Part p, PartModule m)
+		void Process_fission_generator(Part p, PartModule m)
 		{
 			double max_rate = Lib.ReflectionValue<float>(m, "PowerGeneration");
 
@@ -1199,88 +1199,88 @@ namespace KERBALISM
 			var reactor = p.FindModuleImplementing<ModuleResourceConverter>();
 			double tweakable = reactor == null ? 1.0 : Lib.ReflectionValue<float>(reactor, "CurrentPowerPercent") * 0.01f;
 
-			resource("ElectricCharge").produce(max_rate * tweakable, "fission generator");
+			Resource("ElectricCharge").Produce(max_rate * tweakable, "fission generator");
 		}
 
 
-		void process_radioisotope_generator(Part p, PartModule m)
+		void Process_radioisotope_generator(Part p, PartModule m)
 		{
 			double max_rate = Lib.ReflectionValue<float>(m, "BasePower");
 
-			resource("ElectricCharge").produce(max_rate, "radioisotope generator");
+			Resource("ElectricCharge").Produce(max_rate, "radioisotope generator");
 		}
 
 
-		void process_cryotank(Part p, PartModule m)
+		void Process_cryotank(Part p, PartModule m)
 		{
 			// note: assume cooling is active
 			double cooling_cost = Lib.ReflectionValue<float>(m, "CoolingCost");
 			string fuel_name = Lib.ReflectionValue<string>(m, "FuelName");
 
-			resource("ElectricCharge").consume(cooling_cost * Lib.Capacity(p, fuel_name) * 0.001, "cryotank");
+			Resource("ElectricCharge").Consume(cooling_cost * Lib.Capacity(p, fuel_name) * 0.001, "cryotank");
 		}
 
-		void process_rtantenna(Part p, PartModule m)
+		void Process_rtantenna(Part p, PartModule m)
 		{
 			float ec_cost = Lib.ReflectionValue<float>(m, "EnergyCost");
-			resource("ElectricCharge").consume(ec_cost, "communications");
+			Resource("ElectricCharge").Consume(ec_cost, "communications");
 		}
 
-		void process_datatransmitter(ModuleDataTransmitter mdt)
+		void Process_datatransmitter(ModuleDataTransmitter mdt)
 		{
-			resource("ElectricCharge").consume(mdt.packetResourceCost, "communications (transmitting)");
+			Resource("ElectricCharge").Consume(mdt.packetResourceCost, "communications (transmitting)");
 		}
 
-		Dictionary<string, simulated_resource> resources = new Dictionary<string, simulated_resource>();
-		List<simulated_recipe> recipes = new List<simulated_recipe>();
+		Dictionary<string, Simulated_resource> resources = new Dictionary<string, Simulated_resource>();
+		List<Simulated_recipe> recipes = new List<Simulated_recipe>();
 	}
 
 
-	public sealed class simulated_resource
+	public sealed class Simulated_resource
 	{
-		public simulated_resource()
+		public Simulated_resource()
 		{
-			consumers = new Dictionary<string, wrapper>();
-			producers = new Dictionary<string, wrapper>();
+			consumers = new Dictionary<string, Wrapper>();
+			producers = new Dictionary<string, Wrapper>();
 			harvests = new List<string>();
 		}
 
-		public void consume(double quantity, string name)
+		public void Consume(double quantity, string name)
 		{
 			if (quantity >= double.Epsilon)
 			{
 				amount -= quantity;
 				consumed += quantity;
 
-				if (!consumers.ContainsKey(name)) consumers.Add(name, new wrapper());
+				if (!consumers.ContainsKey(name)) consumers.Add(name, new Wrapper());
 				consumers[name].value += quantity;
 			}
 		}
 
-		public void produce(double quantity, string name)
+		public void Produce(double quantity, string name)
 		{
 			if (quantity >= double.Epsilon)
 			{
 				amount += quantity;
 				produced += quantity;
 
-				if (!producers.ContainsKey(name)) producers.Add(name, new wrapper());
+				if (!producers.ContainsKey(name)) producers.Add(name, new Wrapper());
 				producers[name].value += quantity;
 			}
 		}
 
-		public void clamp()
+		public void Clamp()
 		{
 			amount = Lib.Clamp(amount, 0.0, capacity);
 		}
 
-		public double lifetime()
+		public double Lifetime()
 		{
 			double rate = produced - consumed;
 			return amount <= double.Epsilon ? 0.0 : rate > -1e-10 ? double.NaN : amount / -rate;
 		}
 
-		public string tooltip(bool invert = false)
+		public string Tooltip(bool invert = false)
 		{
 			var green = !invert ? producers : consumers;
 			var red = !invert ? consumers : producers;
@@ -1321,42 +1321,42 @@ namespace KERBALISM
 		public double produced;                       // total production rate
 		public List<string> harvests;                 // some extra data about harvests
 
-		public class wrapper { public double value; }
-		public Dictionary<string, wrapper> consumers; // consumers metadata
-		public Dictionary<string, wrapper> producers; // producers metadata
+		public class Wrapper { public double value; }
+		public Dictionary<string, Wrapper> consumers; // consumers metadata
+		public Dictionary<string, Wrapper> producers; // producers metadata
 	}
 
 
-	public sealed class simulated_recipe
+	public sealed class Simulated_recipe
 	{
-		public simulated_recipe(string name)
+		public Simulated_recipe(string name)
 		{
 			this.name = name;
-			this.inputs = new List<resource_recipe.entry>();
-			this.outputs = new List<resource_recipe.entry>();
+			this.inputs = new List<Resource_recipe.Entry>();
+			this.outputs = new List<Resource_recipe.Entry>();
 			this.left = 1.0;
 		}
 
 		// add an input to the recipe
-		public void input(string resource_name, double quantity)
+		public void Input(string resource_name, double quantity)
 		{
 			if (quantity > double.Epsilon) //< avoid division by zero
 			{
-				inputs.Add(new resource_recipe.entry(resource_name, quantity));
+				inputs.Add(new Resource_recipe.Entry(resource_name, quantity));
 			}
 		}
 
 		// add an output to the recipe
-		public void output(string resource_name, double quantity, bool dump)
+		public void Output(string resource_name, double quantity, bool dump)
 		{
 			if (quantity > double.Epsilon) //< avoid division by zero
 			{
-				outputs.Add(new resource_recipe.entry(resource_name, quantity, dump));
+				outputs.Add(new Resource_recipe.Entry(resource_name, quantity, dump));
 			}
 		}
 
 		// execute the recipe
-		public bool execute(resource_simulator sim)
+		public bool Execute(Resource_simulator sim)
 		{
 			// determine worst input ratio
 			double worst_input = left;
@@ -1365,7 +1365,7 @@ namespace KERBALISM
 				for (int i = 0; i < inputs.Count; ++i)
 				{
 					var e = inputs[i];
-					simulated_resource res = sim.resource(e.name);
+					Simulated_resource res = sim.Resource(e.name);
 					worst_input = Lib.Clamp(res.amount * e.inv_quantity, 0.0, worst_input);
 				}
 			}
@@ -1379,7 +1379,7 @@ namespace KERBALISM
 					var e = outputs[i];
 					if (!e.dump) // ignore outputs that can dump overboard
 					{
-						simulated_resource res = sim.resource(e.name);
+						Simulated_resource res = sim.Resource(e.name);
 						worst_output = Lib.Clamp((res.capacity - res.amount) * e.inv_quantity, 0.0, worst_output);
 					}
 				}
@@ -1392,16 +1392,16 @@ namespace KERBALISM
 			for (int i = 0; i < inputs.Count; ++i)
 			{
 				var e = inputs[i];
-				simulated_resource res = sim.resource(e.name);
-				res.consume(e.quantity * worst_io, name);
+				Simulated_resource res = sim.Resource(e.name);
+				res.Consume(e.quantity * worst_io, name);
 			}
 
 			// produce outputs
 			for (int i = 0; i < outputs.Count; ++i)
 			{
 				var e = outputs[i];
-				simulated_resource res = sim.resource(e.name);
-				res.produce(e.quantity * worst_io, name);
+				Simulated_resource res = sim.Resource(e.name);
+				res.Produce(e.quantity * worst_io, name);
 			}
 
 			// update amount left to execute
@@ -1413,8 +1413,8 @@ namespace KERBALISM
 
 		// store inputs and outputs
 		public string name;                         // name used for consumer/producer tooltip
-		public List<resource_recipe.entry> inputs;  // set of input resources
-		public List<resource_recipe.entry> outputs; // set of output resources
+		public List<Resource_recipe.Entry> inputs;  // set of input resources
+		public List<Resource_recipe.Entry> outputs; // set of output resources
 		public double left;                         // what proportion of the recipe is left to execute
 	}
 

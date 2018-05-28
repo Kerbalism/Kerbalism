@@ -9,7 +9,7 @@ namespace KERBALISM
 
 	public static class EVA
 	{
-		public static void update(Vessel v)
+		public static void Update(Vessel v)
 		{
 			// do nothing if not an eva kerbal
 			if (!v.isEVA) return;
@@ -18,7 +18,7 @@ namespace KERBALISM
 			KerbalEVA kerbal = Lib.FindModules<KerbalEVA>(v)[0];
 
 			// get resource handler
-			resource_info ec = ResourceCache.Info(v, "ElectricCharge");
+			Resource_info ec = ResourceCache.Info(v, "ElectricCharge");
 
 			// determine if headlamps need ec
 			// - not required if there is no EC capacity in eva kerbal (no ec supply in profile)

@@ -88,7 +88,7 @@ namespace KERBALISM
 			double abundance = SampleAbundance(v, harvester);
 			if (abundance > min_abundance)
 			{
-				resource_recipe recipe = new resource_recipe();
+				Resource_recipe recipe = new Resource_recipe();
 				recipe.Input("ElectricCharge", harvester.ec_rate * elapsed_s);
 				recipe.Output(harvester.resource, harvester.rate * (abundance/harvester.abundance_rate) * elapsed_s, false);
 				ResourceCache.Transform(v, recipe);
@@ -217,20 +217,20 @@ namespace KERBALISM
 			string desc = Lib.BuildString("Extract ", resource, " from ", source);
 
 			// generate tooltip info
-			return Specs().info(desc);
+			return Specs().Info(desc);
 		}
 
 		// specifics support
 		public Specifics Specs()
 		{
 			Specifics specs = new Specifics();
-			specs.add("type", ((HarvestTypes)type).ToString());
-			specs.add("resource", resource);
-			if (min_abundance > double.Epsilon) specs.add("min abundance", Lib.HumanReadablePerc(min_abundance, "F2"));
-			if (type == 2 && min_pressure > double.Epsilon) specs.add("min pressure", Lib.HumanReadablePressure(min_pressure));
-			specs.add("extraction rate", Lib.HumanReadableRate(rate));
-			specs.add("at abundance", Lib.HumanReadablePerc(abundance_rate, "F2"));
-			if (ec_rate > double.Epsilon) specs.add("ec consumption", Lib.HumanReadableRate(ec_rate));
+			specs.Add("type", ((HarvestTypes)type).ToString());
+			specs.Add("resource", resource);
+			if (min_abundance > double.Epsilon) specs.Add("min abundance", Lib.HumanReadablePerc(min_abundance, "F2"));
+			if (type == 2 && min_pressure > double.Epsilon) specs.Add("min pressure", Lib.HumanReadablePressure(min_pressure));
+			specs.Add("extraction rate", Lib.HumanReadableRate(rate));
+			specs.Add("at abundance", Lib.HumanReadablePerc(abundance_rate, "F2"));
+			if (ec_rate > double.Epsilon) specs.Add("ec consumption", Lib.HumanReadableRate(ec_rate));
 			return specs;
 		}
 

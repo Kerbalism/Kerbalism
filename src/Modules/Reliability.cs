@@ -67,7 +67,7 @@ namespace KERBALISM
 			}
 
 			// type-specific hacks
-			if (broken) apply(true);
+			if (broken) Apply(true);
 		}
 
 
@@ -98,7 +98,7 @@ namespace KERBALISM
 				Events["Repair"].active = repair_cs && broken && !critical;
 
 				// set highlight
-				highlight(part);
+				Highlight(part);
 			}
 			else
 			{
@@ -207,7 +207,7 @@ namespace KERBALISM
 			if (v == null || EVA.IsDead(v)) return;
 
 			// check trait
-			if (!repair_cs.check(v))
+			if (!repair_cs.Check(v))
 			{
 				Message.Post
 				(
@@ -217,7 +217,7 @@ namespace KERBALISM
 					"I will not even know where to start",
 					"I'm afraid I can't do that"
 				  ),
-				  repair_cs.warning()
+				  repair_cs.Warning()
 				);
 				return;
 			}
@@ -239,10 +239,10 @@ namespace KERBALISM
 			// we need to reconfigure the module here, because if all modules of a type
 			// share the broken state, and these modules are part of a configure setup,
 			// then repairing will enable all of them, messing up with the configuration
-			part.FindModulesImplementing<Configure>().ForEach(k => k.configure());
+			part.FindModulesImplementing<Configure>().ForEach(k => k.DoConfigure());
 
 			// type-specific hacks
-			apply(false);
+			Apply(false);
 
 			// notify user
 			Message.Post
@@ -279,10 +279,10 @@ namespace KERBALISM
 				}
 
 				// type-specific hacks
-				apply(true);
+				Apply(true);
 
 				// notify user
-				broken_msg(vessel, title, critical);
+				Broken_msg(vessel, title, critical);
 			}
 			// safemode
 			else
@@ -292,13 +292,13 @@ namespace KERBALISM
 				next = 0.0;
 
 				// notify user
-				safemode_msg(vessel, title);
+				Safemode_msg(vessel, title);
 			}
 
 			// in any case, incentive redundancy
 			if (Settings.IncentiveRedundancy)
 			{
-				incentive_redundancy(vessel, redundancy);
+				Incentive_redundancy(vessel, redundancy);
 			}
 		}
 
@@ -340,7 +340,7 @@ namespace KERBALISM
 				}
 
 				// show message
-				broken_msg(v, reliability.title, critical);
+				Broken_msg(v, reliability.title, critical);
 			}
 			// safe mode
 			else
@@ -350,13 +350,13 @@ namespace KERBALISM
 				Lib.Proto.Set(m, "next", 0.0);
 
 				// notify user
-				safemode_msg(v, reliability.title);
+				Safemode_msg(v, reliability.title);
 			}
 
 			// in any case, incentive redundancy
 			if (Settings.IncentiveRedundancy)
 			{
-				incentive_redundancy(v, reliability.redundancy);
+				Incentive_redundancy(v, reliability.redundancy);
 			}
 		}
 
@@ -364,7 +364,7 @@ namespace KERBALISM
 		// part tooltip
 		public override string GetInfo()
 		{
-			return Specs().info();
+			return Specs().Info();
 		}
 
 
@@ -372,16 +372,16 @@ namespace KERBALISM
 		public Specifics Specs()
 		{
 			Specifics specs = new Specifics();
-			if (redundancy.Length > 0) specs.add("Redundancy", redundancy);
-			specs.add("Repair", new CrewSpecs(repair).info());
-			specs.add(string.Empty);
-			specs.add("<color=#00ffff>Standard quality</color>");
-			specs.add("MTBF", Lib.HumanReadableDuration(mtbf));
-			specs.add(string.Empty);
-			specs.add("<color=#00ffff>High quality</color>");
-			specs.add("MTBF", Lib.HumanReadableDuration(mtbf * Settings.QualityScale));
-			if (extra_cost > double.Epsilon) specs.add("Extra cost", Lib.HumanReadableCost(extra_cost * part.partInfo.cost));
-			if (extra_mass > double.Epsilon) specs.add("Extra mass", Lib.HumanReadableMass(extra_mass * part.partInfo.partPrefab.mass));
+			if (redundancy.Length > 0) specs.Add("Redundancy", redundancy);
+			specs.Add("Repair", new CrewSpecs(repair).Info());
+			specs.Add(string.Empty);
+			specs.Add("<color=#00ffff>Standard quality</color>");
+			specs.Add("MTBF", Lib.HumanReadableDuration(mtbf));
+			specs.Add(string.Empty);
+			specs.Add("<color=#00ffff>High quality</color>");
+			specs.Add("MTBF", Lib.HumanReadableDuration(mtbf * Settings.QualityScale));
+			if (extra_cost > double.Epsilon) specs.Add("Extra cost", Lib.HumanReadableCost(extra_cost * part.partInfo.cost));
+			if (extra_mass > double.Epsilon) specs.Add("Extra mass", Lib.HumanReadableMass(extra_mass * part.partInfo.partPrefab.mass));
 			return specs;
 		}
 
@@ -403,7 +403,7 @@ namespace KERBALISM
 
 
 		// apply type-specific hacks to enable/disable the module
-		void apply(bool b)
+		void Apply(bool b)
 		{
 			switch (type)
 			{
@@ -433,7 +433,7 @@ namespace KERBALISM
 							ModuleLight light = m as ModuleLight;
 							if (light.animationName.Length > 0)
 							{
-								new Animator(part, light.animationName).still(0.0f);
+								new Animator(part, light.animationName).Still(0.0f);
 							}
 							else
 							{
@@ -475,7 +475,7 @@ namespace KERBALISM
 		}
 
 
-		static void incentive_redundancy(Vessel v, string redundancy)
+		static void Incentive_redundancy(Vessel v, string redundancy)
 		{
 			if (v.loaded)
 			{
@@ -512,7 +512,7 @@ namespace KERBALISM
 
 
 		// set highlighting
-		static void highlight(Part p)
+		static void Highlight(Part p)
 		{
 			if (DB.Vessel(p.vessel).cfg_highlights)
 			{
@@ -527,13 +527,13 @@ namespace KERBALISM
 
 				if (broken)
 				{
-					Highlighter.set(p.flightID, !critical ? Color.yellow : Color.red);
+					Highlighter.Set(p.flightID, !critical ? Color.yellow : Color.red);
 				}
 			}
 		}
 
 
-		static void broken_msg(Vessel v, string title, bool critical)
+		static void Broken_msg(Vessel v, string title, bool critical)
 		{
 			if (DB.Vessel(v).cfg_malfunction)
 			{
@@ -559,7 +559,7 @@ namespace KERBALISM
 		}
 
 
-		static void safemode_msg(Vessel v, string title)
+		static void Safemode_msg(Vessel v, string title)
 		{
 			Message.Post
 			(

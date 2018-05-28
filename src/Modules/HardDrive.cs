@@ -29,7 +29,7 @@ namespace KERBALISM
 				if (drive.location == part.flightID)
 				{
 					// get data size
-					double size = drive.size();
+					double size = drive.Size();
 
 					// show DATA UI button, with size info
 					Events["ToggleUI"].guiName = Lib.StatusToggle("Data", size > double.Epsilon ? Lib.HumanReadableDataSize(size) : "empty");
@@ -40,7 +40,7 @@ namespace KERBALISM
 
 					// show StoreData eva action button, if active vessel is an eva kerbal and there is something to store from it
 					Vessel v = FlightGlobals.ActiveVessel;
-					Events["StoreData"].active = v != null && v.isEVA && !EVA.IsDead(v) && DB.Vessel(v).drive.size() > double.Epsilon;
+					Events["StoreData"].active = v != null && v.isEVA && !EVA.IsDead(v) && DB.Vessel(v).drive.Size() > double.Epsilon;
 
 					// hide TransferLocation button
 					Events["TransferData"].active = false;
@@ -65,7 +65,7 @@ namespace KERBALISM
 		[KSPEvent(guiActive = true, guiName = "_", active = true)]
 		public void ToggleUI()
 		{
-			UI.open((Panel p) => p.fileman(vessel));
+			UI.Open((Panel p) => p.Fileman(vessel));
 		}
 
 
@@ -84,7 +84,7 @@ namespace KERBALISM
 			if (v == null || EVA.IsDead(v)) return;
 
 			// transfer data
-			Drive.transfer(vessel, v);
+			Drive.Transfer(vessel, v);
 		}
 
 
@@ -96,7 +96,7 @@ namespace KERBALISM
 			if (v == null || EVA.IsDead(v)) return;
 
 			// transfer data
-			Drive.transfer(v, vessel);
+			Drive.Transfer(v, vessel);
 		}
 
 
@@ -121,12 +121,12 @@ namespace KERBALISM
 			foreach (var pair in drive.files)
 			{
 				File file = pair.Value;
-				data.Add(new ScienceData((float)file.size, 1.0f, 1.0f, pair.Key, Science.experiment(pair.Key).fullname));
+				data.Add(new ScienceData((float)file.size, 1.0f, 1.0f, pair.Key, Science.Experiment(pair.Key).fullname));
 			}
 			foreach (var pair in drive.samples)
 			{
 				Sample sample = pair.Value;
-				data.Add(new ScienceData((float)sample.size, 0.0f, 0.0f, pair.Key, Science.experiment(pair.Key).fullname));
+				data.Add(new ScienceData((float)sample.size, 0.0f, 0.0f, pair.Key, Science.Experiment(pair.Key).fullname));
 			}
 			return data.ToArray();
 		}
@@ -142,11 +142,11 @@ namespace KERBALISM
 			// store the data
 			if (data.baseTransmitValue > float.Epsilon || data.transmitBonus > double.Epsilon)
 			{
-				drive.record_file(data.subjectID, data.dataAmount);
+				drive.Record_file(data.subjectID, data.dataAmount);
 			}
 			else
 			{
-				drive.record_sample(data.subjectID, data.dataAmount);
+				drive.Record_sample(data.subjectID, data.dataAmount);
 			}
 		}
 
@@ -161,17 +161,17 @@ namespace KERBALISM
 			// remove the data
 			if (data.baseTransmitValue > float.Epsilon || data.transmitBonus > double.Epsilon)
 			{
-				drive.delete_file(data.subjectID, data.dataAmount);
+				drive.Delete_file(data.subjectID, data.dataAmount);
 			}
 			else
 			{
-				drive.delete_sample(data.subjectID, data.dataAmount);
+				drive.Delete_sample(data.subjectID, data.dataAmount);
 			}
 		}
 
 		public void ReviewData()
 		{
-			UI.open((p) => p.fileman(vessel));
+			UI.Open((p) => p.Fileman(vessel));
 		}
 
 		public void ReviewDataItem(ScienceData data)

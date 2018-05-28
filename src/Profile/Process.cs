@@ -59,23 +59,23 @@ namespace KERBALISM
 		}
 
 
-		public void Execute(Vessel v, vessel_info vi, vessel_resources resources, double elapsed_s)
+		public void Execute(Vessel v, Vessel_info vi, Vessel_resources resources, double elapsed_s)
 		{
 			// evaluate modifiers
-			double k = Modifiers.evaluate(v, vi, resources, modifiers);
+			double k = Modifiers.Evaluate(v, vi, resources, modifiers);
 
 			// only execute processes if necessary
 			if (k > double.Epsilon)
 			{
 				// prepare recipe
-				resource_recipe recipe = new resource_recipe();
+				Resource_recipe recipe = new Resource_recipe();
 				foreach (var p in inputs)
 				{
 					recipe.Input(p.Key, p.Value * k * elapsed_s);
 				}
 				foreach (var p in outputs)
 				{
-					recipe.Output(p.Key, p.Value * k * elapsed_s, dump.check(p.Key));
+					recipe.Output(p.Key, p.Value * k * elapsed_s, dump.Check(p.Key));
 				}
 				resources.Transform(recipe);
 			}

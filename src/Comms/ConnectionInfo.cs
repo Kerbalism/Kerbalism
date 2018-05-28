@@ -38,14 +38,15 @@ namespace KERBALISM
 			this.cost = other.cost;
 			this.path = new List<Vessel>();
 			this.target_name = other.target_name;
-			foreach (Vessel v in other.path) this.path.Add(v);
+			foreach (Vessel v in other.path)
+				this.path.Add(v);
 		}
 
-		public bool linked;       // true if there is a connection back to DSN
-		public LinkStatus status;       // the link status
+		public bool linked;         // true if there is a connection back to DSN
+		public LinkStatus status;   // the link status
 		public double rate;         // data rate in Mb/s
 		public double cost;         // EC/s consumed for transmission
-		public List<Vessel> path;         // set of vessels relaying the data		
+		public List<Vessel> path;   // set of vessels relaying the data
 		public string target_name;
 	}
 

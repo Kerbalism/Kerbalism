@@ -14,17 +14,17 @@ namespace KERBALISM
 			this.panel = panel;
 		}
 
-		public override string name()
+		public override string Name()
 		{
 			return "solar panel";
 		}
 
-		public override uint part()
+		public override uint Part()
 		{
 			return panel.part.flightID;
 		}
 
-		public override string info()
+		public override string Info()
 		{
 			if (!panel.isTracking) return "fixed";
 			switch (panel.deployState)
@@ -38,7 +38,7 @@ namespace KERBALISM
 			return "unknown";
 		}
 
-		public override void ctrl(bool value)
+		public override void Ctrl(bool value)
 		{
 			if (!panel.isTracking) return;
 			if (!value && !panel.retractable) return;
@@ -47,9 +47,9 @@ namespace KERBALISM
 			else panel.Retract();
 		}
 
-		public override void toggle()
+		public override void Toggle()
 		{
-			ctrl(panel.deployState != ModuleDeployablePart.DeployState.EXTENDED);
+			Ctrl(panel.deployState != ModuleDeployablePart.DeployState.EXTENDED);
 		}
 
 		ModuleDeployableSolarPanel panel;
@@ -65,17 +65,17 @@ namespace KERBALISM
 			this.part_id = part_id;
 		}
 
-		public override string name()
+		public override string Name()
 		{
 			return "solar panel";
 		}
 
-		public override uint part()
+		public override uint Part()
 		{
 			return part_id;
 		}
 
-		public override string info()
+		public override string Info()
 		{
 			if (!prefab.isTracking) return "fixed";
 			string state = Lib.Proto.GetString(panel, "deployState");
@@ -88,7 +88,7 @@ namespace KERBALISM
 			return "unknown";
 		}
 
-		public override void ctrl(bool value)
+		public override void Ctrl(bool value)
 		{
 			if (!prefab.isTracking) return;
 			if (!value && !prefab.retractable) return;
@@ -96,9 +96,9 @@ namespace KERBALISM
 			Lib.Proto.Set(panel, "deployState", value ? "EXTENDED" : "RETRACTED");
 		}
 
-		public override void toggle()
+		public override void Toggle()
 		{
-			ctrl(Lib.Proto.GetString(panel, "deployState") != "EXTENDED");
+			Ctrl(Lib.Proto.GetString(panel, "deployState") != "EXTENDED");
 		}
 
 		ProtoPartModuleSnapshot panel;

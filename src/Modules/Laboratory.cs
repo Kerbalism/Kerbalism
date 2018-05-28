@@ -57,16 +57,16 @@ namespace KERBALISM
 			if (running)
 			{
 				// if a researcher is not required, or the researcher is present
-				if (!researcher_cs || researcher_cs.check(part.protoModuleCrew))
+				if (!researcher_cs || researcher_cs.Check(part.protoModuleCrew))
 				{
 					// get next sample to analyze
-					string sample_filename = next_sample(vessel);
+					string sample_filename = Next_sample(vessel);
 
 					// if there is a sample to analyze
 					if (sample_filename.Length > 0)
 					{
 						// consume EC
-						resource_info ec = ResourceCache.Info(vessel, "ElectricCharge");
+						Resource_info ec = ResourceCache.Info(vessel, "ElectricCharge");
 						ec.Consume(ec_rate * Kerbalism.elapsed_s);
 
 						// if there was ec
@@ -74,10 +74,10 @@ namespace KERBALISM
 						if (ec.amount > double.Epsilon)
 						{
 							// analyze the sample
-							analyze(vessel, sample_filename, analysis_rate * Kerbalism.elapsed_s);
+							Analyze(vessel, sample_filename, analysis_rate * Kerbalism.elapsed_s);
 
 							// update status
-							status = Science.experiment(sample_filename).name;
+							status = Science.Experiment(sample_filename).name;
 						}
 						// if there was no ec
 						else
@@ -97,7 +97,7 @@ namespace KERBALISM
 				else
 				{
 					// update status
-					status = Lib.BuildString("<color=yellow>", researcher_cs.warning(), "</color>");
+					status = Lib.BuildString("<color=yellow>", researcher_cs.Warning(), "</color>");
 				}
 			}
 			// if disabled
@@ -109,17 +109,17 @@ namespace KERBALISM
 		}
 
 
-		public static void BackgroundUpdate(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, Laboratory lab, resource_info ec, double elapsed_s)
+		public static void BackgroundUpdate(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, Laboratory lab, Resource_info ec, double elapsed_s)
 		{
 			// if enabled
 			if (Lib.Proto.GetBool(m, "running"))
 			{
 				// if a researcher is not required, or the researcher is present
 				CrewSpecs researcher_cs = new CrewSpecs(lab.researcher);
-				if (!researcher_cs || researcher_cs.check(p.protoModuleCrew))
+				if (!researcher_cs || researcher_cs.Check(p.protoModuleCrew))
 				{
 					// get sample to analyze
-					string sample_filename = next_sample(v);
+					string sample_filename = Next_sample(v);
 
 					// if there is a sample to analyze
 					if (sample_filename.Length > 0)
@@ -132,7 +132,7 @@ namespace KERBALISM
 						if (ec.amount > double.Epsilon)
 						{
 							// analyze the sample
-							analyze(v, sample_filename, lab.analysis_rate * elapsed_s);
+							Analyze(v, sample_filename, lab.analysis_rate * elapsed_s);
 						}
 					}
 				}
@@ -153,7 +153,7 @@ namespace KERBALISM
 
 		public override string GetInfo()
 		{
-			return Specs().info("Analyze samples to produce transmissible data");
+			return Specs().Info("Analyze samples to produce transmissible data");
 		}
 
 
@@ -161,9 +161,9 @@ namespace KERBALISM
 		public Specifics Specs()
 		{
 			Specifics specs = new Specifics();
-			specs.add("Researcher", new CrewSpecs(researcher).info());
-			specs.add("EC rate", Lib.HumanReadableRate(ec_rate));
-			specs.add("Analysis rate", Lib.HumanReadableDataRate(analysis_rate));
+			specs.Add("Researcher", new CrewSpecs(researcher).Info());
+			specs.Add("EC rate", Lib.HumanReadableRate(ec_rate));
+			specs.Add("Analysis rate", Lib.HumanReadableDataRate(analysis_rate));
 			return specs;
 		}
 
@@ -174,7 +174,7 @@ namespace KERBALISM
 
 
 		// get sample to analyze, return null if there isn't a sample
-		static string next_sample(Vessel v)
+		static string Next_sample(Vessel v)
 		{
 			// get vessel drive
 			Drive drive = DB.Vessel(v).drive;
@@ -199,7 +199,7 @@ namespace KERBALISM
 		}
 
 		// analyze a sample
-		static void analyze(Vessel v, string filename, double amount)
+		static void Analyze(Vessel v, string filename, double amount)
 		{
 			// get vessel drive
 			Drive drive = DB.Vessel(v).drive;
@@ -210,8 +210,8 @@ namespace KERBALISM
 			// analyze, and produce data
 			amount = Math.Min(amount, sample.size);
 			bool completed = amount >= sample.size - double.Epsilon;
-			drive.delete_sample(filename, amount);
-			drive.record_file(filename, amount);
+			drive.Delete_sample(filename, amount);
+			drive.Record_file(filename, amount);
 
 			// if the analysis is completed
 			if (completed)
@@ -219,7 +219,7 @@ namespace KERBALISM
 				// inform the user
 				Message.Post
 				(
-				  Lib.BuildString("<color=cyan><b>ANALYSIS COMPLETED</b></color>\nOur laboratory on <b>", v.vesselName, "</b> analyzed <b>", Science.experiment(filename).name, "</b>"),
+				  Lib.BuildString("<color=cyan><b>ANALYSIS COMPLETED</b></color>\nOur laboratory on <b>", v.vesselName, "</b> analyzed <b>", Science.Experiment(filename).name, "</b>"),
 				  "The results can be transmitted now"
 				);
 
