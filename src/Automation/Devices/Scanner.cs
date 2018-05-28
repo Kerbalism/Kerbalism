@@ -87,10 +87,10 @@ namespace KERBALISM
 			Ctrl(!Lib.Proto.GetBool(scanner, "scanning"));
 		}
 
-		ProtoPartModuleSnapshot scanner;
-		Part part_prefab;
-		Vessel vessel;
-		uint part_id;
+		private readonly ProtoPartModuleSnapshot scanner;
+		private readonly Part part_prefab;
+		private readonly Vessel vessel;
+		private readonly uint part_id;
 	}
 
 

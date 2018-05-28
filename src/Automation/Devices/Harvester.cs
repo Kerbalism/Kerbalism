@@ -49,8 +49,8 @@ namespace KERBALISM
 			Ctrl(!harvester.running);
 		}
 
-		Harvester harvester;
-		ModuleAnimationGroup animator;
+		private Harvester harvester;
+		private readonly ModuleAnimationGroup animator;
 	}
 
 
@@ -102,10 +102,10 @@ namespace KERBALISM
 			Ctrl(!Lib.Proto.GetBool(harvester, "running"));
 		}
 
-		ProtoPartModuleSnapshot harvester;
-		ProtoPartModuleSnapshot animator;
-		Harvester prefab;
-		uint part_id;
+		private readonly ProtoPartModuleSnapshot harvester;
+		private readonly ProtoPartModuleSnapshot animator;
+		private Harvester prefab;
+		private readonly uint part_id;
 	}
 
 

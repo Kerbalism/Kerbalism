@@ -55,7 +55,7 @@ namespace KERBALISM
 
         // display update timer
         private static double update_timer = Lib.Clocks();
-        private static double timeout = Stopwatch.Frequency / update_fps;
+        private readonly static double timeout = Stopwatch.Frequency / update_fps;
         private const double update_fps = 5.0;      // Frames per second the entry value display will update.
         private static long tot_frames = 0;         // total physics frames used for avg calculation
         private static string tot_frames_txt = "";  // total physics frames display string
@@ -284,7 +284,7 @@ namespace KERBALISM
                 Profiler.Stop(name);
             }
 
-            private string name;
+            private readonly string name;
         }
 
 #endif

@@ -36,8 +36,8 @@ namespace KERBALISM
 			return any || list.Contains(res_name);
 		}
 
-		bool any;
-		List<string> list;
+		private readonly bool any;
+		private List<string> list;
 	}
 
 

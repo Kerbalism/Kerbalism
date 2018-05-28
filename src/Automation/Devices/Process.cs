@@ -86,9 +86,9 @@ namespace KERBALISM
 			Ctrl(!Lib.Proto.GetBool(process_ctrl, "running"));
 		}
 
-		ProtoPartModuleSnapshot process_ctrl;
-		ProcessController prefab;
-		uint part_id;
+		private readonly ProtoPartModuleSnapshot process_ctrl;
+		private ProcessController prefab;
+		private readonly uint part_id;
 	}
 
 

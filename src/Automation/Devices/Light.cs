@@ -79,8 +79,8 @@ namespace KERBALISM
 			Ctrl(!Lib.Proto.GetBool(light, "isOn"));
 		}
 
-		ProtoPartModuleSnapshot light;
-		uint part_id;
+		private readonly ProtoPartModuleSnapshot light;
+		private readonly uint part_id;
 	}
 
 

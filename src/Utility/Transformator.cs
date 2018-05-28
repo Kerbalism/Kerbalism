@@ -4,17 +4,17 @@ namespace KERBALISM
 {
 	public sealed class Transformator
 	{
-		Part part;
-		Transform transf;
-		string name;
+		private readonly Part part;
+		private Transform transf;
+		private readonly string name;
 
-		Quaternion baseAngles;
+		private Quaternion baseAngles;
 
-		float rotationRateGoal = 0f;
-		float CurrentSpinRate = 0f;
+		private float rotationRateGoal = 0f;
+		private float CurrentSpinRate = 0f;
 
-		float SpinRate = 0f;
-		float spinAccel = 0f;
+		private readonly float SpinRate = 0f;
+		private readonly float spinAccel = 0f;
 
 		public Transformator(Part p, string transf_name, float SpinRate, float spinAccel)
 		{

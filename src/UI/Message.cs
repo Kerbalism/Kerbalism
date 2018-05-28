@@ -185,19 +185,19 @@ namespace KERBALISM
 		}
 
 
-		float offset = Styles.ScaleFloat(266.0f);
+		private readonly float offset = Styles.ScaleFloat(266.0f);
 
 		// store entries
-		Queue<Entry> entries = new Queue<Entry>();
+		private Queue<Entry> entries = new Queue<Entry>();
 
 		// disable message rendering
-		bool muted;
+		private bool muted;
 
 		// styles
-		GUIStyle style;
+		private GUIStyle style;
 
 		// permit global access
-		static Message instance;
+		private static Message instance;
 	}
 
 

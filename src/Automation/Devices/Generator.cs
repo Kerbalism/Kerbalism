@@ -83,9 +83,9 @@ namespace KERBALISM
 			Ctrl(!Lib.Proto.GetBool(generator, "generatorIsActive"));
 		}
 
-		ProtoPartModuleSnapshot generator;
-		ModuleGenerator prefab;
-		uint part_id;
+		private readonly ProtoPartModuleSnapshot generator;
+		private ModuleGenerator prefab;
+		private readonly uint part_id;
 	}
 
 

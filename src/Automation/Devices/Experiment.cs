@@ -45,8 +45,8 @@ namespace KERBALISM
 			Ctrl(!exp.recording);
 		}
 
-		Experiment exp;
-		string exp_name;
+		private Experiment exp;
+		private readonly string exp_name;
 	}
 
 
@@ -91,10 +91,10 @@ namespace KERBALISM
 			Ctrl(!Lib.Proto.GetBool(exp, "recording"));
 		}
 
-		ProtoPartModuleSnapshot exp;
-		Experiment prefab;
-		uint part_id;
-		string exp_name;
+		private readonly ProtoPartModuleSnapshot exp;
+		private readonly Experiment prefab;
+		private readonly uint part_id;
+		private readonly string exp_name;
 	}
 
 

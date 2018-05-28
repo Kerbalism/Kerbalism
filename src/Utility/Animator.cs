@@ -9,8 +9,8 @@ namespace KERBALISM
 
 	public sealed class Animator
 	{
-		Animation anim;
-		string name;
+		private Animation anim;
+		private readonly string name;
 
 		public Animator(Part p, string anim_name)
 		{

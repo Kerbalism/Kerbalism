@@ -77,8 +77,8 @@ namespace KERBALISM
 			Ctrl(!Lib.Proto.GetBool(lab, "running"));
 		}
 
-		ProtoPartModuleSnapshot lab;
-		uint part_id;
+		private readonly ProtoPartModuleSnapshot lab;
+		private readonly uint part_id;
 	}
 
 

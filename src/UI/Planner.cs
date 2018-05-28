@@ -465,37 +465,37 @@ namespace KERBALISM
 
 
 		// store situations and altitude multipliers
-		string[] situations = { "Landed", "Low Orbit", "Orbit", "High Orbit" };
-		double[] altitude_mults = { 0.0, 0.33, 1.0, 3.0 };
+		private string[] situations = { "Landed", "Low Orbit", "Orbit", "High Orbit" };
+		private readonly double[] altitude_mults = { 0.0, 0.33, 1.0, 3.0 };
 
 		// styles
-		GUIStyle leftmenu_style;
-		GUIStyle rightmenu_style;
-		GUIStyle quote_style;
-		GUIStyle icon_style;
+		private GUIStyle leftmenu_style;
+		private GUIStyle rightmenu_style;
+		private GUIStyle quote_style;
+		private GUIStyle icon_style;
 
 		// analyzers
-		Resource_simulator sim = new Resource_simulator();
-		Environment_analyzer env = new Environment_analyzer();
-		Vessel_analyzer va = new Vessel_analyzer();
+		private Resource_simulator sim = new Resource_simulator();
+		private Environment_analyzer env = new Environment_analyzer();
+		private Vessel_analyzer va = new Vessel_analyzer();
 
 		// panel arrays
-		List<string> panel_resource;
-		List<string> panel_special;
-		List<string> panel_environment;
+		private List<string> panel_resource;
+		private List<string> panel_special;
+		private List<string> panel_environment;
 
 		// body/situation/sunlight indexes
-		int body_index;
-		int situation_index;
-		bool sunlight;
+		private int body_index;
+		private int situation_index;
+		private bool sunlight;
 
 		// panel indexes
-		int resource_index;
-		int special_index;
-		int environment_index;
+		private int resource_index;
+		private int special_index;
+		private int environment_index;
 
 		// panel ui
-		Panel panel;
+		private Panel panel;
 	}
 
 
