@@ -115,9 +115,11 @@ namespace KERBALISM
 			foreach (Entry e in instance.entries) { if (e.msg == msg) return; }
 
 			// compile entry
-			Entry entry = new Entry();
-			entry.msg = msg;
-			entry.first_seen = 0;
+			Entry entry = new Entry
+			{
+				msg = msg,
+				first_seen = 0
+			};
 
 			// add entry
 			instance.entries.Enqueue(entry);

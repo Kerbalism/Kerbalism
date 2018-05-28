@@ -1046,8 +1046,10 @@ namespace KERBALISM
 			Module_prefab_data data;
 			if (!PD.TryGetValue(module_name, out data))
 			{
-				data = new Module_prefab_data();
-				data.prefabs = module_prefabs.FindAll(k => k.moduleName == module_name);
+				data = new Module_prefab_data
+				{
+					prefabs = module_prefabs.FindAll(k => k.moduleName == module_name)
+				};
 				PD.Add(module_name, data);
 			}
 

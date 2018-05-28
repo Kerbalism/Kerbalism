@@ -113,9 +113,11 @@ namespace KERBALISM
 				KFSMState freezed = new KFSMState("freezed");
 
 				// create freeze event
-				KFSMEvent eva_freeze = new KFSMEvent("EVAfreeze");
-				eva_freeze.GoToStateOnEvent = freezed;
-				eva_freeze.updateMode = KFSMUpdateMode.MANUAL_TRIGGER;
+				KFSMEvent eva_freeze = new KFSMEvent("EVAfreeze")
+				{
+					GoToStateOnEvent = freezed,
+					updateMode = KFSMUpdateMode.MANUAL_TRIGGER
+				};
 				kerbal.fsm.AddEvent(eva_freeze, kerbal.fsm.CurrentState);
 
 				// trigger freeze event

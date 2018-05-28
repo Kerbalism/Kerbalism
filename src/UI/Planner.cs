@@ -15,8 +15,10 @@ namespace KERBALISM
 		public Planner()
 		{
 			// left menu style
-			leftmenu_style = new GUIStyle(HighLogic.Skin.label);
-			leftmenu_style.richText = true;
+			leftmenu_style = new GUIStyle(HighLogic.Skin.label)
+			{
+				richText = true
+			};
 			leftmenu_style.normal.textColor = new Color(0.0f, 0.0f, 0.0f, 1.0f);
 			leftmenu_style.fixedWidth = Styles.ScaleWidthFloat(80.0f); // Fixed to avoid that the sun icon moves around for different planet name lengths
 			leftmenu_style.stretchHeight = true;
@@ -24,12 +26,16 @@ namespace KERBALISM
 			leftmenu_style.alignment = TextAnchor.MiddleLeft;
 
 			// right menu style
-			rightmenu_style = new GUIStyle(leftmenu_style);
-			rightmenu_style.alignment = TextAnchor.MiddleRight;
+			rightmenu_style = new GUIStyle(leftmenu_style)
+			{
+				alignment = TextAnchor.MiddleRight
+			};
 
 			// quote style
-			quote_style = new GUIStyle(HighLogic.Skin.label);
-			quote_style.richText = true;
+			quote_style = new GUIStyle(HighLogic.Skin.label)
+			{
+				richText = true
+			};
 			quote_style.normal.textColor = Color.black;
 			quote_style.stretchWidth = true;
 			quote_style.stretchHeight = true;
@@ -37,8 +43,10 @@ namespace KERBALISM
 			quote_style.alignment = TextAnchor.LowerCenter;
 
 			// center icon style
-			icon_style = new GUIStyle();
-			icon_style.alignment = TextAnchor.MiddleCenter;
+			icon_style = new GUIStyle
+			{
+				alignment = TextAnchor.MiddleCenter
+			};
 
 			// set default body index & situation
 			body_index = FlightGlobals.GetHomeBodyIndex();

@@ -40,10 +40,12 @@ namespace KERBALISM
 			config_style.fontSize = Styles.ScaleInteger(9);
 
 			// group texfield style
-			group_style = new GUIStyle(config_style);
-			group_style.imagePosition = ImagePosition.TextOnly;
-			group_style.stretchWidth = true;
-			group_style.fixedHeight = Styles.ScaleFloat(11.0f);
+			group_style = new GUIStyle(config_style)
+			{
+				imagePosition = ImagePosition.TextOnly,
+				stretchWidth = true,
+				fixedHeight = Styles.ScaleFloat(11.0f)
+			};
 			group_style.normal.textColor = Color.yellow;
 
 			// initialize panel

@@ -261,9 +261,11 @@ namespace KERBALISM
 			foreach (string s in to_remove) models.Remove(s);
 
 			// start particle-fitting thread
-			preprocess_thread = new Thread(Preprocess);
-			preprocess_thread.Name = "particle-fitting";
-			preprocess_thread.IsBackground = true;
+			preprocess_thread = new Thread(Preprocess)
+			{
+				Name = "particle-fitting",
+				IsBackground = true
+			};
 			preprocess_thread.Start();
 		}
 

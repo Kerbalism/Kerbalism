@@ -38,8 +38,10 @@ namespace KERBALISM
 				{
 					if (Storm.Skip_body(body))
 						continue;
-					Storm_data sd = new Storm_data();
-					sd.body = body;
+					Storm_data sd = new Storm_data
+					{
+						body = body
+					};
 					storm_bodies.Add(sd);
 				}
 
