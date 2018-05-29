@@ -3,6 +3,7 @@
 
 ### Changes since the last release
 
+  *  TechTree locations for Humidity controller and External ECLSS moved for a better Career balance (PiezPiedPy)
   *  Fix ContractConfigurator bug (PiezPiedPy)
 
 ### For Developers
