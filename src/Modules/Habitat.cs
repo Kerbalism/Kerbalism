@@ -548,6 +548,8 @@ namespace KERBALISM
 
 		// constants
 		const double equalize_speed = 0.1; // equalization/venting speed per-second, in proportion to volume
+
+		public override string GetModuleDisplayName() { return "Habitat"; }
 	}
 
 } // KERBALISM

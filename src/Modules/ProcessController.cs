@@ -38,7 +38,7 @@ namespace KERBALISM
 			Events["Toggle"].active = toggle;
 			Actions["Action"].active = toggle;
 
-			// deal with non-toggable processes
+			// deal with non-togglable processes
 			if (!toggle) running = true;
 		}
 
@@ -116,7 +116,8 @@ namespace KERBALISM
 		}
 
 		// module info support
-		public string GetModuleTitle() { return title; }
+		public string GetModuleTitle() { return Lib.BuildString("<size=1><color=#00000000>01</color></size>", title); }  // Display after config widget
+		public override string GetModuleDisplayName() { return Lib.BuildString("<size=1><color=#00000000>01</color></size>", title); }  // Display after config widget
 		public string GetPrimaryField() { return string.Empty; }
 		public Callback<Rect> GetDrawModulePanelCallback() { return null; }
 

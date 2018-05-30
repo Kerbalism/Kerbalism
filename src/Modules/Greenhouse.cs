@@ -7,7 +7,7 @@ namespace KERBALISM
 {
 
 
-	public sealed class Greenhouse : PartModule, ISpecifics, IContractObjectiveModule
+	public sealed class Greenhouse : PartModule, IModuleInfo, ISpecifics, IContractObjectiveModule
 	{
 		// config
 		[KSPField] public string crop_resource;         // name of resource produced by harvests
@@ -309,7 +309,7 @@ namespace KERBALISM
 			growth = 0.0;
 
 			// show message
-			Message.Post(Lib.BuildString("On <color=ffffff>", vessel.vesselName, "</color> an harved produced <color=ffffff>",
+			Message.Post(Lib.BuildString("On <color=ffffff>", vessel.vesselName, "</color> harvest produced <color=ffffff>",
 			  crop_size.ToString("F0"), " ", crop_resource, "</color>"));
 
 			// record first harvest
@@ -335,7 +335,7 @@ namespace KERBALISM
 			growth = 0.0;
 
 			// show message
-			Message.Post(Lib.BuildString("On <color=ffffff>", vessel.vesselName, "</color> an emergency harved produced <color=ffffff>",
+			Message.Post(Lib.BuildString("On <color=ffffff>", vessel.vesselName, "</color> emergency harvest produced <color=ffffff>",
 			  reduced_harvest.ToString("F0"), " ", crop_resource, "</color>"));
 
 			// record first harvest
@@ -359,7 +359,7 @@ namespace KERBALISM
 		{
 			Specifics specs = new Specifics();
 
-			specs.Add("Havest size", Lib.HumanReadableAmount(crop_size, " " + crop_resource));
+			specs.Add("Harvest size", Lib.HumanReadableAmount(crop_size, " " + crop_resource));
 			specs.Add("Harvest time", Lib.HumanReadableDuration(1.0 / crop_rate));
 			specs.Add("Lighting tolerance", Lib.HumanReadableFlux(light_tolerance));
 			if (pressure_tolerance > double.Epsilon) specs.Add("Pressure tolerance", Lib.HumanReadablePressure(Sim.PressureAtSeaLevel() * pressure_tolerance));
@@ -436,6 +436,12 @@ namespace KERBALISM
 			}
 			return ret;
 		}
+
+		// module info support
+		public string GetModuleTitle() { return "<size=1><color=#00000000>00</color></size>Greenhouse"; } // attempt to display at the top
+		public override string GetModuleDisplayName() { return "<size=1><color=#00000000>00</color></size>Greenhouse"; } // Attempt to display at top of tooltip
+		public string GetPrimaryField() { return String.Empty; }
+		public Callback<Rect> GetDrawModulePanelCallback() { return null; }
 	}
 
 

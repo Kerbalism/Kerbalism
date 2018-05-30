@@ -388,6 +388,7 @@ namespace KERBALISM
 
 		// module info support
 		public string GetModuleTitle() { return Lib.BuildString(title, " Reliability"); }
+		public override string GetModuleDisplayName() { return Lib.BuildString(title, " Reliability"); }
 		public string GetPrimaryField() { return string.Empty; }
 		public Callback<Rect> GetDrawModulePanelCallback() { return null; }
 

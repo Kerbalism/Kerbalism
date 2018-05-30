@@ -242,6 +242,7 @@ namespace KERBALISM
 
 		// module info support
 		public string GetModuleTitle() { return title; }
+		public override string GetModuleDisplayName() { return title; }
 		public string GetPrimaryField() { return string.Empty; }
 		public Callback<Rect> GetDrawModulePanelCallback() { return null; }
 

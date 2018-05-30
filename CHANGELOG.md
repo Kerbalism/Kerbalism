@@ -3,8 +3,10 @@
 
 ### Changes since the last release
 
-  *  TechTree locations for Humidity controller and External ECLSS moved for a better Career balance (PiezPiedPy)
-  *  Fix ContractConfigurator bug (PiezPiedPy)
+ * Added an upgrade part to the TechTree that adds a slot to the Manned pods, ECLSS module and Chemical plants (PiezPiedPy)
+ * Chemical plant capacity fixed, it was nurfed by accident in a previous release (PiezPiedPy)
+ * TechTree locations for Humidity controller and External ECLSS moved for a better Career balance (PiezPiedPy)
+ * Fix ContractConfigurator bug (PiezPiedPy)
 
 ### For Developers
 
@@ -17,8 +19,8 @@
  * Harvesters can now extract Nitrogen from the surface (JadeOfMom)
  * Filters can now extract Ammonia from the atmosphere (JadeOfMom)
  * New parts MiniPump and RadialPump to extract Water, Nitrogen and Ammonia from oceans (thanks to JadeOfMom for the Harvesters and PiezPiedPy for the parts) 
- * Harvesters are now spec'ed at 10% abundance by default (madman2003)
- ** The percentage is specified in the UI when selecting the process the havester will run
+ * Harvesters are now spec'd at 10% abundance by default (madman2003)
+ ** The percentage is specified in the UI when selecting the process the harvester will run
  ** The percentage can be overruled for individual parts
  * Harvesting rate scales linearly with abundance (madman2003)
  * Water harvesting has been buffed by a factor 6 (at the reference 10% abundance) compared to release 1.5.1 (madman2003)
@@ -32,11 +34,11 @@
  * A first attempt at scaling Kerbalism UI to follow KSP UI scaling
  ** By default using the scaling configured for KSP, with an additional scale factor in Settings.cfg if needed to overrule the default
  * Clicking the middle mouse button on the popout menu will now close the popout window if it is already open.
- * Humidity Control and a new Life Support Unit part (curtesy of PiezPiedPy)
+ * Humidity Control and a new Life Support Unit part (courtesy of PiezPiedPy)
  * Scale down food production to realistic levels, and make it dependent on CO2 (madman2003)
  ** Every kerbal now requires 2x Kerbalism greenhouse, or 3x 2.5m SSPX greenhouses, or 6x 3.5m SSPX greenhouses for permanent food production
  ** SSPX greenhouses include a habitat area, leaving very little space for food production
- * Water recyling is more realistic, recovering only 85% of Water (this is better than what ISS achieves in real life)
+ * Water recycling is more realistic, recovering only 85% of Water (this is better than what ISS achieves in real life)
  ** Ammonia and CO2 are recovered from Water, rather than producing Waste. This is to avoid (future) conflicts between the mineral content of urine and feces
  * Kerbalism CO2 tanks are now full by default in order to supply Greenhouses with CO2 (madman2003)
  * Fix display of Habitat volume and space in tooltip, they used to be swapped (madman2003)
@@ -48,7 +50,7 @@
  
 ### For Developers
 
- * Profile importing is now available to modders who wish to import their own procceses, rules, supplies etc (thanks to PiezPiedPy)
+ * Profile importing is now available to modders who wish to import their own processes, rules, supplies etc (thanks to PiezPiedPy)
    see Issue #2 on GitHub for more information [Here](https://github.com/MoreRobustThanYou/Kerbalism/issues/2)
  * Updated Profiler GUI to use the Canvas system. Added Reset averages & Show zero calls buttons,
    a Framerate limiter, avg calls and frame counter (thanks go to PiezPiedPy)
@@ -111,7 +113,7 @@
   - remember window position (@PiezPiedPie)
   - depressurizing habitats also vent WasteAtmosphere
   - improved ec and supply icon tooltips in monitor
-  - fix: too generous gift package for resque missions
+  - fix: too generous gift package for rescue missions
   - fix: comfort from parts not overriding environment factors
   - fix: disable modules on tutorial scenarios
   - fix: wrong pressurized state inside breathable atmosphere
