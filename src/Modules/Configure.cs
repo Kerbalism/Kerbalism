@@ -32,7 +32,7 @@ namespace KERBALISM
 		[KSPField(isPersistant = true)] public string prev_cfg;   // previously selected setups names
 
 		// data
-		// - selected and prev_selected are public so that the automagical
+		// - selected and prev_selected are public so that the auto-magical
 		//   part copy/symmetry serialization can see them
 		List<ConfigureSetup> setups;                              // all setups
 		List<ConfigureSetup> unlocked;                            // unlocked setups
@@ -541,7 +541,8 @@ namespace KERBALISM
 		public ModifierChangeWhen GetModuleMassChangeWhen() { return ModifierChangeWhen.CONSTANTLY; }
 
 		// module info support
-		public string GetModuleTitle() { return Lib.BuildString("# Configurable ", title); } //< make sure it is at the top
+		public string GetModuleTitle() { return Lib.BuildString("<size=1><color=#00000000>00</color></size>Configurable ", title); } // attempt to display at the top
+		public override string GetModuleDisplayName() { return Lib.BuildString("<size=1><color=#00000000>00</color></size>Configurable ", title); } // attempt to display at the top
 		public string GetPrimaryField() { return Lib.BuildString("Configurable ", title); }
 		public Callback<Rect> GetDrawModulePanelCallback() { return null; }
 	}

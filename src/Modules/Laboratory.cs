@@ -7,7 +7,7 @@ namespace KERBALISM
 {
 
 
-	public sealed class Laboratory : PartModule, ISpecifics, IContractObjectiveModule
+	public sealed class Laboratory : PartModule, IModuleInfo, ISpecifics, IContractObjectiveModule
 	{
 		// config
 		[KSPField] public double ec_rate;                     // ec consumed per-second
@@ -227,6 +227,12 @@ namespace KERBALISM
 				if (!Lib.Landed(v)) DB.landmarks.space_analysis = true;
 			}
 		}
+
+		// module info support
+		public string GetModuleTitle() { return "<size=1><color=#00000000>00</color></size>Laboratory"; } // attempt to display at the top
+		public override string GetModuleDisplayName() { return "<size=1><color=#00000000>00</color></size>Laboratory"; } // Attempt to display at top of tooltip
+		public string GetPrimaryField() { return String.Empty; }
+		public Callback<Rect> GetDrawModulePanelCallback() { return null; }
 	}
 
 

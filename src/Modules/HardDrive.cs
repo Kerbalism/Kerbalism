@@ -199,6 +199,8 @@ namespace KERBALISM
 			// don't care
 			return false;
 		}
+
+		public override string GetModuleDisplayName() { return "Hard Drive"; }
 	}
 
 

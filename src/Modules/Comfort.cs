@@ -36,6 +36,8 @@ namespace KERBALISM
 			specs.Add("bonus", bonus);
 			return specs;
 		}
+
+		public override string GetModuleDisplayName() { return "Comfort"; }
 	}
 
 
