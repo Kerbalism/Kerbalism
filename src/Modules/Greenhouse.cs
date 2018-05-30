@@ -404,12 +404,14 @@ namespace KERBALISM
 				{
 					if (greenhouse.active)
 					{
-						Data gd = new Data();
-						gd.growth = greenhouse.growth;
-						gd.natural = greenhouse.natural;
-						gd.artificial = greenhouse.artificial;
-						gd.tta = greenhouse.tta;
-						gd.issue = greenhouse.issue;
+						Data gd = new Data
+						{
+							growth = greenhouse.growth,
+							natural = greenhouse.natural,
+							artificial = greenhouse.artificial,
+							tta = greenhouse.tta,
+							issue = greenhouse.issue
+						};
 						ret.Add(gd);
 					}
 				}
@@ -420,12 +422,14 @@ namespace KERBALISM
 				{
 					if (Lib.Proto.GetBool(m, "active"))
 					{
-						Data gd = new Data();
-						gd.growth = Lib.Proto.GetDouble(m, "growth");
-						gd.natural = Lib.Proto.GetDouble(m, "natural");
-						gd.artificial = Lib.Proto.GetDouble(m, "artificial");
-						gd.tta = Lib.Proto.GetDouble(m, "tta");
-						gd.issue = Lib.Proto.GetString(m, "issue");
+						Data gd = new Data
+						{
+							growth = Lib.Proto.GetDouble(m, "growth"),
+							natural = Lib.Proto.GetDouble(m, "natural"),
+							artificial = Lib.Proto.GetDouble(m, "artificial"),
+							tta = Lib.Proto.GetDouble(m, "tta"),
+							issue = Lib.Proto.GetString(m, "issue")
+						};
 						ret.Add(gd);
 					}
 				}

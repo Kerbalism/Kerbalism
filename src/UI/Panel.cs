@@ -41,43 +41,51 @@ namespace KERBALISM
 
 		public void AddHeader(string label, string tooltip = "", Action click = null)
 		{
-			Header h = new Header();
-			h.label = label;
-			h.tooltip = tooltip;
-			h.click = click;
-			h.icons = new List<Icon>();
+			Header h = new Header
+			{
+				label = label,
+				tooltip = tooltip,
+				click = click,
+				icons = new List<Icon>()
+			};
 			headers.Add(h);
 		}
 
 		public void AddSection(string title, string desc = "", Action left = null, Action right = null)
 		{
-			Section p = new Section();
-			p.title = title;
-			p.desc = desc;
-			p.left = left;
-			p.right = right;
-			p.entries = new List<Entry>();
+			Section p = new Section
+			{
+				title = title,
+				desc = desc,
+				left = left,
+				right = right,
+				entries = new List<Entry>()
+			};
 			sections.Add(p);
 		}
 
 		public void AddContent(string label, string value = "", string tooltip = "", Action click = null, Action hover = null)
 		{
-			Entry e = new Entry();
-			e.label = label;
-			e.value = value;
-			e.tooltip = tooltip;
-			e.click = click;
-			e.hover = hover;
-			e.icons = new List<Icon>();
+			Entry e = new Entry
+			{
+				label = label,
+				value = value,
+				tooltip = tooltip,
+				click = click,
+				hover = hover,
+				icons = new List<Icon>()
+			};
 			if (sections.Count > 0) sections[sections.Count - 1].entries.Add(e);
 		}
 
 		public void AddIcon(Texture texture, string tooltip = "", Action click = null)
 		{
-			Icon i = new Icon();
-			i.texture = texture;
-			i.tooltip = tooltip;
-			i.click = click;
+			Icon i = new Icon
+			{
+				texture = texture,
+				tooltip = tooltip,
+				click = click
+			};
 			if (sections.Count > 0)
 			{
 				Section p = sections[sections.Count - 1];

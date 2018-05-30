@@ -78,8 +78,8 @@ namespace KERBALISM
 			Ctrl(!Lib.Proto.GetBool(greenhouse, "active"));
 		}
 
-		ProtoPartModuleSnapshot greenhouse;
-		uint part_id;
+		private readonly ProtoPartModuleSnapshot greenhouse;
+		private readonly uint part_id;
 	}
 
 

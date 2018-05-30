@@ -716,13 +716,7 @@ namespace KERBALISM
 		{
 			var target = PlanetariumCamera.fetch.target;
 			return
-				target == null
-			  ? null
-			  : target.celestialBody != null
-			  ? target.celestialBody
-			  : target.vessel != null
-			  ? target.vessel.mainBody
-			  : null;
+				target == null ? null : target.celestialBody ?? target.vessel?.mainBody;
 		}
 
 		// return terrain height at point specified
@@ -861,8 +855,10 @@ namespace KERBALISM
 		// get list of parts recursively, useful from the editors
 		public static List<Part> GetPartsRecursively(Part root)
 		{
-			List<Part> ret = new List<Part>();
-			ret.Add(root);
+			List<Part> ret = new List<Part>
+			{
+				root
+			};
 			foreach (Part p in root.children)
 			{
 				ret.AddRange(GetPartsRecursively(p));
@@ -927,11 +923,8 @@ namespace KERBALISM
 					PartModule m = p.Modules[j];
 					if (m.isEnabled)
 					{
-						T t = m as T;
-						if (t != null)
-						{
+						if (m is T t)
 							ret.Add(t);
-						}
 					}
 				}
 			}
@@ -970,11 +963,8 @@ namespace KERBALISM
 					PartModule m = p.Modules[j];
 					if (m.isEnabled)
 					{
-						T t = m as T;
-						if (t != null && filter(t))
-						{
+						if (m is T t && filter(t))
 							return true;
-						}
 					}
 				}
 			}
@@ -1046,8 +1036,10 @@ namespace KERBALISM
 			Module_prefab_data data;
 			if (!PD.TryGetValue(module_name, out data))
 			{
-				data = new Module_prefab_data();
-				data.prefabs = module_prefabs.FindAll(k => k.moduleName == module_name);
+				data = new Module_prefab_data
+				{
+					prefabs = module_prefabs.FindAll(k => k.moduleName == module_name)
+				};
 				PD.Add(module_name, data);
 			}
 
@@ -1535,7 +1527,7 @@ namespace KERBALISM
 			public static string GetString(ProtoPartModuleSnapshot m, string name, string def_value = "")
 			{
 				string s = m.moduleValues.GetValue(name);
-				return s != null ? s : def_value;
+				return s ?? def_value;
 			}
 
 			// set a value in a proto module

@@ -181,11 +181,8 @@ namespace KERBALISM
 					if (m != null)
 					{
 						// call configure/deconfigure functions on module if available
-						IConfigurable configurable_module = m as IConfigurable;
-						if (configurable_module != null)
-						{
+						if (m is IConfigurable configurable_module)
 							configurable_module.Configure(active);
-						}
 
 						// enable/disable the module
 						m.isEnabled = active;
@@ -635,13 +632,12 @@ namespace KERBALISM
 				if (m == null) continue;
 
 				// get title
-				IModuleInfo module_info = m as IModuleInfo;
-				string title = module_info != null ? module_info.GetModuleTitle() : cm.type;
+				string title = m is IModuleInfo module_info ? module_info.GetModuleTitle() : cm.type;
 				if (title.Length == 0) continue;
 
 				// get specs, skip if not implemented by module
-				ISpecifics specifics = m as ISpecifics;
-				if (specifics == null) continue;
+				if (!(m is ISpecifics specifics))
+					continue;
 				Specifics specs = specifics.Specs();
 				if (specs.entries.Count == 0) continue;
 

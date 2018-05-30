@@ -15,8 +15,10 @@ namespace KERBALISM
 		public Planner()
 		{
 			// left menu style
-			leftmenu_style = new GUIStyle(HighLogic.Skin.label);
-			leftmenu_style.richText = true;
+			leftmenu_style = new GUIStyle(HighLogic.Skin.label)
+			{
+				richText = true
+			};
 			leftmenu_style.normal.textColor = new Color(0.0f, 0.0f, 0.0f, 1.0f);
 			leftmenu_style.fixedWidth = Styles.ScaleWidthFloat(80.0f); // Fixed to avoid that the sun icon moves around for different planet name lengths
 			leftmenu_style.stretchHeight = true;
@@ -24,12 +26,16 @@ namespace KERBALISM
 			leftmenu_style.alignment = TextAnchor.MiddleLeft;
 
 			// right menu style
-			rightmenu_style = new GUIStyle(leftmenu_style);
-			rightmenu_style.alignment = TextAnchor.MiddleRight;
+			rightmenu_style = new GUIStyle(leftmenu_style)
+			{
+				alignment = TextAnchor.MiddleRight
+			};
 
 			// quote style
-			quote_style = new GUIStyle(HighLogic.Skin.label);
-			quote_style.richText = true;
+			quote_style = new GUIStyle(HighLogic.Skin.label)
+			{
+				richText = true
+			};
 			quote_style.normal.textColor = Color.black;
 			quote_style.stretchWidth = true;
 			quote_style.stretchHeight = true;
@@ -37,8 +43,10 @@ namespace KERBALISM
 			quote_style.alignment = TextAnchor.LowerCenter;
 
 			// center icon style
-			icon_style = new GUIStyle();
-			icon_style.alignment = TextAnchor.MiddleCenter;
+			icon_style = new GUIStyle
+			{
+				alignment = TextAnchor.MiddleCenter
+			};
 
 			// set default body index & situation
 			body_index = FlightGlobals.GetHomeBodyIndex();
@@ -465,37 +473,37 @@ namespace KERBALISM
 
 
 		// store situations and altitude multipliers
-		string[] situations = { "Landed", "Low Orbit", "Orbit", "High Orbit" };
-		double[] altitude_mults = { 0.0, 0.33, 1.0, 3.0 };
+		private string[] situations = { "Landed", "Low Orbit", "Orbit", "High Orbit" };
+		private readonly double[] altitude_mults = { 0.0, 0.33, 1.0, 3.0 };
 
 		// styles
-		GUIStyle leftmenu_style;
-		GUIStyle rightmenu_style;
-		GUIStyle quote_style;
-		GUIStyle icon_style;
+		private GUIStyle leftmenu_style;
+		private readonly GUIStyle rightmenu_style;
+		private GUIStyle quote_style;
+		private readonly GUIStyle icon_style;
 
 		// analyzers
-		Resource_simulator sim = new Resource_simulator();
-		Environment_analyzer env = new Environment_analyzer();
-		Vessel_analyzer va = new Vessel_analyzer();
+		private Resource_simulator sim = new Resource_simulator();
+		private Environment_analyzer env = new Environment_analyzer();
+		private Vessel_analyzer va = new Vessel_analyzer();
 
 		// panel arrays
-		List<string> panel_resource;
-		List<string> panel_special;
-		List<string> panel_environment;
+		private List<string> panel_resource;
+		private List<string> panel_special;
+		private List<string> panel_environment;
 
 		// body/situation/sunlight indexes
-		int body_index;
-		int situation_index;
-		bool sunlight;
+		private int body_index;
+		private int situation_index;
+		private bool sunlight;
 
 		// panel indexes
-		int resource_index;
-		int special_index;
-		int environment_index;
+		private int resource_index;
+		private int special_index;
+		private int environment_index;
 
 		// panel ui
-		Panel panel;
+		private Panel panel;
 	}
 
 

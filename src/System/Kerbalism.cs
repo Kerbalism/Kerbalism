@@ -38,8 +38,10 @@ namespace KERBALISM
 				{
 					if (Storm.Skip_body(body))
 						continue;
-					Storm_data sd = new Storm_data();
-					sd.body = body;
+					Storm_data sd = new Storm_data
+					{
+						body = body
+					};
 					storm_bodies.Add(sd);
 				}
 
@@ -649,8 +651,10 @@ namespace KERBALISM
 			}
 
 			// compile list of events with condition satisfied
-			List<KerbalBreakdown> events = new List<KerbalBreakdown>();
-			events.Add(KerbalBreakdown.mumbling); //< do nothing, here so there is always something that can happen
+			List<KerbalBreakdown> events = new List<KerbalBreakdown>
+			{
+				KerbalBreakdown.mumbling //< do nothing, here so there is always something that can happen
+			};
 			if (Lib.HasData(v))
 				events.Add(KerbalBreakdown.fat_finger);
 			if (Reliability.CanMalfunction(v))

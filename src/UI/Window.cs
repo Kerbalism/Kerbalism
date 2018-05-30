@@ -153,25 +153,25 @@ namespace KERBALISM
 		}
 
 		// store window id
-		int win_id;
+		private readonly int win_id;
 
 		// store window geometry
-		Rect win_rect;
+		private Rect win_rect;
 
 		// store dragbox geometry
-		Rect drag_rect;
+		private Rect drag_rect;
 
 		// used by scroll window mechanics
-		Vector2 scroll_pos;
+		private Vector2 scroll_pos;
 
 		// tooltip utility
-		Tooltip tooltip;
+		private Tooltip tooltip;
 
 		// panel
-		Panel panel;
+		private Panel panel;
 
 		// refresh function
-		Action<Panel> refresh;
+		private Action<Panel> refresh;
 	}
 
 

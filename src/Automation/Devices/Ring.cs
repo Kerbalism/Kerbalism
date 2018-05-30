@@ -81,8 +81,8 @@ namespace KERBALISM
 			Ctrl(!Lib.Proto.GetBool(ring, "deployed"));
 		}
 
-		ProtoPartModuleSnapshot ring;
-		uint part_id;
+		private readonly ProtoPartModuleSnapshot ring;
+		private readonly uint part_id;
 	}
 
 

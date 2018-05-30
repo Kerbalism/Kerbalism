@@ -79,14 +79,14 @@ namespace KERBALISM
 
 
 
-		const int max_particles = 64000;                           // max particles per-mesh
-		static Vector3[] points = new Vector3[max_particles];      // mesh data: position
-		static Vector2[] sizes = new Vector2[max_particles];       // mesh data: size in pixels
-		static Color32[] colors = new Color32[max_particles];      // mesh data: 32bit color
-		static List<int> indices = new List<int>(max_particles);   // mesh data: indices
-		static Mesh mesh;                                          // mesh used as set of VBA
-		static Material mat;                                       // material used
-		static int point_index;                                    // index of next point in the arrays
+		private const int max_particles = 64000;                                    // max particles per-mesh
+		private readonly static Vector3[] points = new Vector3[max_particles];      // mesh data: position
+		private readonly static Vector2[] sizes = new Vector2[max_particles];       // mesh data: size in pixels
+		private readonly static Color32[] colors = new Color32[max_particles];      // mesh data: 32bit color
+		private static List<int> indices = new List<int>(max_particles);            // mesh data: indices
+		private static Mesh mesh;                                                   // mesh used as set of VBA
+		private static Material mat;                                                // material used
+		private static int point_index;                                             // index of next point in the arrays
 	}
 
 

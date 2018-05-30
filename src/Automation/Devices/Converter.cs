@@ -83,9 +83,9 @@ namespace KERBALISM
 			Ctrl(!Lib.Proto.GetBool(converter, "IsActivated"));
 		}
 
-		ProtoPartModuleSnapshot converter;
-		ModuleResourceConverter prefab;
-		uint part_id;
+		private readonly ProtoPartModuleSnapshot converter;
+		private ModuleResourceConverter prefab;
+		private readonly uint part_id;
 	}
 
 

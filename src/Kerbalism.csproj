@@ -58,6 +58,8 @@
     </DefineConstants>
     <DebugType>none</DebugType>
     <Prefer32Bit>false</Prefer32Bit>
+    <NoWarn>IDE0018</NoWarn>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
@@ -68,6 +70,8 @@
     <DefineConstants>TRACE;DEBUG;DEVELOPMENT;ENABLE_PROFILER;DEBUG_PROFILER</DefineConstants>
     <DebugType>full</DebugType>
     <Prefer32Bit>false</Prefer32Bit>
+    <NoWarn>IDE0018</NoWarn>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Assembly-CSharp">
@@ -231,6 +235,13 @@
     <Analyzer Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\UnityEngine.Networking.dll')" Include="$(KSPDEVDIR)\KSP_x64_Data\Managed\UnityEngine.Networking.dll" />
     <Analyzer Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\UnityEngine.UI.dll')" Include="$(KSPDEVDIR)\KSP_x64_Data\Managed\UnityEngine.UI.dll" />
     <Analyzer Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\UnityScript.Lang.dll')" Include="$(KSPDEVDIR)\KSP_x64_Data\Managed\UnityScript.Lang.dll" />
+    <Analyzer Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\Boo.Lang.dll')" Include="$(KSPDEVDIR)\KSP_x64_Data\Managed\Boo.Lang.dll" />
+    <Analyzer Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\KSPTrackIR.dll')" Include="$(KSPDEVDIR)\KSP_x64_Data\Managed\KSPTrackIR.dll" />
+    <Analyzer Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\KSPAssets.dll')" Include="$(KSPDEVDIR)\KSP_x64_Data\Managed\KSPAssets.dll" />
+    <Analyzer Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\Mono.Cecil.dll')" Include="$(KSPDEVDIR)\KSP_x64_Data\Managed\Mono.Cecil.dll" />
+    <Analyzer Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\Ionic.Zip.dll')" Include="$(KSPDEVDIR)\KSP_x64_Data\Managed\Ionic.Zip.dll" />
+    <Analyzer Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\TDx.TDxInput.dll')" Include="$(KSPDEVDIR)\KSP_x64_Data\Managed\TDx.TDxInput.dll" />
+    <Analyzer Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\RedShellSDK.dll')" Include="$(KSPDEVDIR)\KSP_x64_Data\Managed\RedShellSDK.dll" />
     <Analyzer Condition="Exists('.\Assembly-CSharp-firstpass.dll')" Include=".\Assembly-CSharp-firstpass.dll" />
     <Analyzer Condition="Exists('.\Assembly-CSharp.dll')" Include=".\Assembly-CSharp.dll" />
     <Analyzer Condition="Exists('.\Assembly-UnityScript.dll')" Include=".\Assembly-UnityScript.dll" />

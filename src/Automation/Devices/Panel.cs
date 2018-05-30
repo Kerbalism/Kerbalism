@@ -101,9 +101,9 @@ namespace KERBALISM
 			Ctrl(Lib.Proto.GetString(panel, "deployState") != "EXTENDED");
 		}
 
-		ProtoPartModuleSnapshot panel;
-		ModuleDeployableSolarPanel prefab;
-		uint part_id;
+		private readonly ProtoPartModuleSnapshot panel;
+		private ModuleDeployableSolarPanel prefab;
+		private readonly uint part_id;
 	}
 
 

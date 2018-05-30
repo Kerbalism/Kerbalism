@@ -22,9 +22,11 @@ namespace KERBALISM
 
 		public void Add(string label, string value = "")
 		{
-			Entry e = new Entry();
-			e.label = label;
-			e.value = value;
+			Entry e = new Entry
+			{
+				label = label,
+				value = value
+			};
 			entries.Add(e);
 		}
 

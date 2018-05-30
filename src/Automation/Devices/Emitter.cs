@@ -77,8 +77,8 @@ namespace KERBALISM
 			Ctrl(!Lib.Proto.GetBool(emitter, "running"));
 		}
 
-		ProtoPartModuleSnapshot emitter;
-		uint part_id;
+		private readonly ProtoPartModuleSnapshot emitter;
+		private readonly uint part_id;
 	}
 
 

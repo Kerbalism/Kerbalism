@@ -115,9 +115,11 @@ namespace KERBALISM
 			foreach (Entry e in instance.entries) { if (e.msg == msg) return; }
 
 			// compile entry
-			Entry entry = new Entry();
-			entry.msg = msg;
-			entry.first_seen = 0;
+			Entry entry = new Entry
+			{
+				msg = msg,
+				first_seen = 0
+			};
 
 			// add entry
 			instance.entries.Enqueue(entry);
@@ -185,19 +187,19 @@ namespace KERBALISM
 		}
 
 
-		float offset = Styles.ScaleFloat(266.0f);
+		private readonly float offset = Styles.ScaleFloat(266.0f);
 
 		// store entries
-		Queue<Entry> entries = new Queue<Entry>();
+		private Queue<Entry> entries = new Queue<Entry>();
 
 		// disable message rendering
-		bool muted;
+		private bool muted;
 
 		// styles
-		GUIStyle style;
+		private GUIStyle style;
 
 		// permit global access
-		static Message instance;
+		private static Message instance;
 	}
 
 

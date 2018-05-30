@@ -84,9 +84,9 @@ namespace KERBALISM
 			Ctrl(!Lib.Proto.GetBool(drill, "IsActivated"));
 		}
 
-		ProtoPartModuleSnapshot drill;
-		ModuleResourceHarvester prefab;
-		uint part_id;
+		private readonly ProtoPartModuleSnapshot drill;
+		private ModuleResourceHarvester prefab;
+		private readonly uint part_id;
 	}
 
 

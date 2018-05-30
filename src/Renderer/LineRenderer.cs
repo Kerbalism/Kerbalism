@@ -22,10 +22,12 @@ namespace KERBALISM
 		public static void Commit(Vector3 a, Vector3 b, Color color)
 		{
 			// create a new line
-			Line_data line = new Line_data();
-			line.a = a;
-			line.b = b;
-			line.color = color;
+			Line_data line = new Line_data
+			{
+				a = a,
+				b = b,
+				color = color
+			};
 
 			// commit it
 			lines.Add(line);
