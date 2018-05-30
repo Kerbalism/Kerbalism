@@ -271,7 +271,7 @@ namespace KERBALISM
 #if DEBUG_PROFILER
 
         /// <summary> Profile a function scope. </summary>
-        public class ProfileScope : IDisposable
+        public sealed class ProfileScope : IDisposable
         {
             public ProfileScope(string name)
             {

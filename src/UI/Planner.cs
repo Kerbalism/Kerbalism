@@ -478,9 +478,9 @@ namespace KERBALISM
 
 		// styles
 		private GUIStyle leftmenu_style;
-		private GUIStyle rightmenu_style;
+		private readonly GUIStyle rightmenu_style;
 		private GUIStyle quote_style;
-		private GUIStyle icon_style;
+		private readonly GUIStyle icon_style;
 
 		// analyzers
 		private Resource_simulator sim = new Resource_simulator();

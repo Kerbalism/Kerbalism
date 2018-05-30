@@ -59,6 +59,7 @@
     <DebugType>none</DebugType>
     <Prefer32Bit>false</Prefer32Bit>
     <NoWarn>IDE0018</NoWarn>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
@@ -70,6 +71,7 @@
     <DebugType>full</DebugType>
     <Prefer32Bit>false</Prefer32Bit>
     <NoWarn>IDE0018</NoWarn>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Assembly-CSharp">
