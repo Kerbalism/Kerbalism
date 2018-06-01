@@ -3,6 +3,7 @@
 
 ### Changes since the last release
 
+ * Module Manager cache bug fixed (PiezPiedPy)
  * Added an upgrade part to the TechTree that adds a slot to the Manned pods, ECLSS module and Chemical plants (PiezPiedPy)
  * Chemical plant capacity fixed, it was nurfed by accident in a previous release (PiezPiedPy)
  * TechTree locations for Humidity controller and External ECLSS moved for a better Career balance (PiezPiedPy)
