@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using CommNet;
 using UnityEngine;
 using KSP.UI.Screens;
 
@@ -12,6 +11,22 @@ namespace KERBALISM
 	[KSPScenario(ScenarioCreationOptions.AddToAllGames, new[] { GameScenes.SPACECENTER, GameScenes.TRACKSTATION, GameScenes.FLIGHT, GameScenes.EDITOR })]
 	public sealed class Kerbalism: ScenarioModule
 	{
+		// permit global access
+		public static Kerbalism Fetch { get; private set; } = null;
+
+		//  constructor
+		public Kerbalism()
+		{
+			// enable global access
+			Fetch = this;
+			Communications.NetworkInitialized = false;
+		}
+
+		private void OnDestroy()
+		{
+			Fetch = null;
+		}
+
 		public override void OnLoad(ConfigNode node)
 		{
 			// deserialize data
@@ -69,7 +84,6 @@ namespace KERBALISM
 				savegame_uid = DB.uid;
 			}
 		}
-
 
 		public override void OnSave(ConfigNode node)
 		{
@@ -240,7 +254,6 @@ namespace KERBALISM
 			}
 		}
 
-
 		void Update()
 		{
 			// attach map renderer to planetarium camera once
@@ -260,12 +273,10 @@ namespace KERBALISM
 			UI.Update(callbacks.visible);
 		}
 
-
 		void OnGUI()
 		{
 			UI.On_gui(callbacks.visible);
 		}
-
 
 		// used to setup KSP callbacks
 		static Callbacks callbacks;
@@ -297,7 +308,6 @@ namespace KERBALISM
 		static int savegame_uid;
 	}
 
-
 	public sealed class MapCameraScript: MonoBehaviour
 	{
 		void OnPostRender()
@@ -316,7 +326,6 @@ namespace KERBALISM
 		}
 	}
 
-
 	// misc functions
 	public static class Misc
 	{
@@ -327,7 +336,6 @@ namespace KERBALISM
 			InputLockManager.RemoveControlLock("no_signal_lock");
 		}
 
-
 		public static void SetLocks(Vessel v, Vessel_info vi)
 		{
 			// lock controls for EVA death
@@ -336,7 +344,6 @@ namespace KERBALISM
 				InputLockManager.SetControlLock(ControlTypes.EVA_INPUT, "eva_dead_lock");
 			}
 		}
-
 
 		public static void ManageRescueMission(Vessel v)
 		{
@@ -394,7 +401,6 @@ namespace KERBALISM
 				Profile.SetupRescue(v);
 			}
 		}
-
 
 		public static void TechDescriptions()
 		{
@@ -505,7 +511,6 @@ namespace KERBALISM
 			}
 		}
 
-
 		public static void KeyboardInput()
 		{
 			// mute/unmute messages with keyboard
@@ -550,7 +555,6 @@ namespace KERBALISM
 				{ computer.Execute(v, ScriptType.action5); }
 			}
 		}
-
 
 		// return true if the vessel is a rescue mission
 		public static bool IsRescueMission(Vessel v)
@@ -634,7 +638,6 @@ namespace KERBALISM
 				Reputation.Instance.AddReputation(-Settings.DeathReputation, TransactionReasons.Any);
 			}
 		}
-
 
 		// trigger a random breakdown event
 		public static void Breakdown(Vessel v, ProtoCrewMember c)

@@ -9,26 +9,32 @@ namespace KERBALISM
 
 	public static class Communications
 	{
+		// hard-coded transmission rate and cost
+		private const double ext_rate = 0.064;
+		private const double ext_cost = 0.1;
+
+		public static bool NetworkInitialized = false;
+		private static ConnectionInfo vessel_connection = null;
+
 		public static void Update(Vessel v, Vessel_info vi, VesselData vd, double elapsed_s)
 		{
-			// do nothing if signal mechanic is disabled
-			if (!HighLogic.fetch.currentGame.Parameters.Difficulty.EnableCommNet && !RemoteTech.Enabled())
+			// do nothing if signal mechanic is disabled or CommNet is not ready
+			if ((!HighLogic.fetch.currentGame.Parameters.Difficulty.EnableCommNet && !RemoteTech.Enabled()) || !NetworkInitialized)
 				return;
 
 			// get connection info
-			ConnectionInfo conn = vi.connection;
+			vessel_connection = vi.connection;
 
 			// maintain and send messages
 			// - do not send messages for vessels without an antenna
 			// - do not send messages during/after solar storms
 			// - do not send messages for EVA kerbals
-			if (conn.status != LinkStatus.no_antenna && !v.isEVA && v.situation != Vessel.Situations.PRELAUNCH)
+			if (vessel_connection.status != LinkStatus.no_antenna && !v.isEVA && v.situation != Vessel.Situations.PRELAUNCH)
 			{
-				//Debug.Log(String.Format("Comms:update: vessel {0} , msg {1} , linked {2}", v.name , vd.msg_signal, conn.linked));
-				if (!vd.msg_signal && !conn.linked)
+				if (!vd.msg_signal && !vessel_connection.linked)
 				{
 					vd.msg_signal = true;
-					if (vd.cfg_signal && conn.status != LinkStatus.blackout)
+					if (vd.cfg_signal && vessel_connection.status != LinkStatus.blackout)
 					{
 						string subtext = "Data transmission disabled";
 						if (vi.crew_count == 0)
@@ -46,12 +52,12 @@ namespace KERBALISM
 						Message.Post(Severity.warning, Lib.BuildString(Localizer.Format("#KERBALISM_UI_signallost"), " <b>", v.vesselName, "</b>"), subtext);
 					}
 				}
-				else if (vd.msg_signal && conn.linked)
+				else if (vd.msg_signal && vessel_connection.linked)
 				{
 					vd.msg_signal = false;
 					if (vd.cfg_signal && !Storm.JustEnded(v, elapsed_s))
 					{
-						var path = conn.path;
+						var path = vessel_connection.path;
 						Message.Post(Severity.relax, Lib.BuildString("<b>", v.vesselName, "</b> ", Localizer.Format("#KERBALISM_UI_signalback")),
 						  path.Count == 0 ? Localizer.Format("#KERBALISM_UI_directlink") : Lib.BuildString(Localizer.Format("#KERBALISM_UI_relayby"), " <b>", path[path.Count - 1].vesselName, "</b>"));
 					}
@@ -61,10 +67,6 @@ namespace KERBALISM
 
 		public static ConnectionInfo Connection(Vessel v)
 		{
-			// hard-coded transmission rate and cost
-			const double ext_rate = 0.064;
-			const double ext_cost = 0.1;
-
 			// if RemoteTech is present and enabled
 			if (RemoteTech.Enabled())
 			{
@@ -81,8 +83,8 @@ namespace KERBALISM
 					return new ConnectionInfo(LinkStatus.no_link);
 				}
 			}
-			// if CommNet is enabled
-			else if (HighLogic.fetch.currentGame.Parameters.Difficulty.EnableCommNet)
+			// if CommNet is enabled and ready
+			else if (HighLogic.fetch.currentGame.Parameters.Difficulty.EnableCommNet && NetworkInitialized)
 			{
 				return v.connection != null && v.connection.IsConnected
 				  ? new ConnectionInfo(LinkStatus.direct_link, ext_rate * v.connection.SignalStrength, ext_cost)

@@ -3,6 +3,8 @@
 
 ### Changes since the last release
 
+ * Signal lost/found during GameScene changes and SaveGame load, annoying bug fixed (PiezPiedPy)
+ * Support for Connected Living Spaces fixed (PiezPiedPy) also thanks go to Gordon-Dry ;)
  * Module Manager cache bug fixed (PiezPiedPy)
  * Added an upgrade part to the TechTree that adds a slot to the Manned pods, ECLSS module and Chemical plants (PiezPiedPy)
  * Chemical plant capacity fixed, it was nurfed by accident in a previous release (PiezPiedPy)
