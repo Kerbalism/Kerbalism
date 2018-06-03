@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using KSP.UI.Screens;
@@ -45,6 +46,14 @@ namespace KERBALISM
 
 			GameEvents.onGameSceneSwitchRequested.Add((_) => visible = false);
 			GameEvents.onGUIApplicationLauncherReady.Add(() => visible = true);
+
+			GameEvents.CommNet.OnNetworkInitialized.Add(() => Kerbalism.Fetch.StartCoroutine(NetworkInitialized()));
+		}
+
+		public IEnumerator NetworkInitialized()
+		{
+			yield return new WaitForSeconds(1);
+			Communications.NetworkInitialized = true;
 		}
 
 		void ToEVA(GameEvents.FromToAction<Part, Part> data)
