@@ -3,6 +3,8 @@
 
 ### Changes since the last release
 
+ * Kerbalism Communotron 8 transmitter is back (PiezPiedPy)
+ * Transmitters have reliability added and tweaked EC costs, also removed simulate button for internal transmitters (PiezPiedPy)
  * Signal lost/found during GameScene changes and SaveGame load, annoying bug fixed (PiezPiedPy)
  * Support for Connected Living Spaces fixed (PiezPiedPy) also thanks go to Gordon-Dry ;)
  * Module Manager cache bug fixed (PiezPiedPy)
