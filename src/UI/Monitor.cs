@@ -558,9 +558,9 @@ namespace KERBALISM
 				}
 				string tooltip_rt = Lib.BuildString(
 				  "<align=left />",
-				  "connected\t<b>", conn.linked ? "yes" : "no", "</b>\n",
-				  "delay\t\t<b>", conn.linked ? signal_str : "no connection", "</b>\n",
-				  "rate\t\t<b>", Lib.HumanReadableDataRate(vi.connection.rate), "</b>"
+				  String.Format("{0,-14}\t<b>{1}</b>\n", "connected", conn.linked ? "yes" : "no"),
+				  String.Format("{0,-14}\t<b>{1}</b>\n", "delay", conn.linked ? signal_str : "no connection"),
+				  String.Format("{0,-14}\t\t<b>{1}</b>", "rate", Lib.HumanReadableDataRate(vi.connection.rate))
 				);
 				Texture image_rt = Icons.signal_red;
 				if (RemoteTech.Connected(v.id)) image_rt = Icons.signal_white;
@@ -584,16 +584,9 @@ namespace KERBALISM
 			}
 
 			// transmitted label, content and tooltip
-			string comms_label = vi.relaying.Length == 0 ? "transmitting" : "relaying";
 			string comms_str = vi.connection.linked ? "telemetry" : "nothing";
 			string comms_tooltip = string.Empty;
-			if (vi.relaying.Length > 0)
-			{
-				ExperimentInfo exp = Science.Experiment(vi.relaying);
-				comms_str = exp.name;
-				comms_tooltip = exp.fullname;
-			}
-			else if (vi.transmitting.Length > 0)
+			if (vi.transmitting.Length > 0)
 			{
 				ExperimentInfo exp = Science.Experiment(vi.transmitting);
 				comms_str = exp.name;
@@ -603,10 +596,10 @@ namespace KERBALISM
 			string tooltip = Lib.BuildString
 			(
 			  "<align=left />",
-			  "connected\t<b>", vi.connection.linked ? "yes" : "no", "</b>\n",
-			  "rate\t\t<b>", Lib.HumanReadableDataRate(vi.connection.rate), "</b>\n",
-			  "target\t\t<b>", target_str, "</b>\n",
-			  comms_label, "\t<b>", comms_str, "</b>"
+			  String.Format("{0,-14}\t<b>{1}</b>\n", "connected", vi.connection.linked ? "yes" : "no"),
+			  String.Format("{0,-14}\t\t<b>{1}</b>\n", "rate", Lib.HumanReadableDataRate(vi.connection.rate)),
+			  String.Format("{0,-14}\t<b>{1}</b>\n", "target", target_str),
+			  String.Format("{0,-14}\t<b>{1}</b>", "transmitting", comms_str)
 			);
 
 			Texture image = Icons.signal_red;
