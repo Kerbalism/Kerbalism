@@ -9,9 +9,10 @@ namespace KERBALISM
 
 	public static class Communications
 	{
-		// hard-coded transmission rate and cost
-		private const double ext_rate = 0.064;
-		private const double ext_cost = 0.1;
+		// default transmission rate, strength and cost
+		private const double ext_rate = 0.064;        // 64 KB/s
+		private const double ext_strength = 1.0;      // 100 %
+		private const double ext_cost = 0.05;         // 50 W/s
 
 		public static bool NetworkInitialized = false;
 		private static ConnectionInfo vessel_connection = null;
@@ -72,11 +73,11 @@ namespace KERBALISM
 			{
 				if (RemoteTech.Connected(v.id) && !RemoteTech.ConnectedToKSC(v.id))
 				{
-					return new ConnectionInfo(LinkStatus.indirect_link, ext_rate, ext_cost);
+					return new ConnectionInfo(LinkStatus.indirect_link, ext_rate, ext_strength, ext_cost);
 				}
 				else if (RemoteTech.ConnectedToKSC(v.id))
 				{
-					return new ConnectionInfo(LinkStatus.direct_link, ext_rate, ext_cost);
+					return new ConnectionInfo(LinkStatus.direct_link, ext_rate, ext_strength, ext_cost);
 				}
 				else
 				{
@@ -87,13 +88,13 @@ namespace KERBALISM
 			else if (HighLogic.fetch.currentGame.Parameters.Difficulty.EnableCommNet && NetworkInitialized)
 			{
 				return v.connection != null && v.connection.IsConnected
-				  ? new ConnectionInfo(LinkStatus.direct_link, ext_rate * v.connection.SignalStrength, ext_cost)
+				  ? new ConnectionInfo(LinkStatus.direct_link, ext_rate * v.connection.SignalStrength, v.connection.SignalStrength, ext_cost)
 				  : new ConnectionInfo(LinkStatus.no_link);
 			}
 			// the simple stupid signal system
 			else
 			{
-				return new ConnectionInfo(LinkStatus.direct_link, ext_rate, ext_cost);
+				return new ConnectionInfo(LinkStatus.direct_link, ext_rate, ext_strength, ext_cost);
 			}
 		}
 	}

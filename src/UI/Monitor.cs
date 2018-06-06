@@ -585,12 +585,10 @@ namespace KERBALISM
 
 			// transmitted label, content and tooltip
 			string comms_str = vi.connection.linked ? "telemetry" : "nothing";
-			string comms_tooltip = string.Empty;
 			if (vi.transmitting.Length > 0)
 			{
 				ExperimentInfo exp = Science.Experiment(vi.transmitting);
 				comms_str = exp.name;
-				comms_tooltip = exp.fullname;
 			}
 
 			string tooltip = Lib.BuildString
@@ -598,6 +596,7 @@ namespace KERBALISM
 			  "<align=left />",
 			  String.Format("{0,-14}\t<b>{1}</b>\n", "connected", vi.connection.linked ? "yes" : "no"),
 			  String.Format("{0,-14}\t\t<b>{1}</b>\n", "rate", Lib.HumanReadableDataRate(vi.connection.rate)),
+			  String.Format("{0,-14}\t<b>{1:0.00}%</b>\n", "strength", vi.connection.strength * 100),
 			  String.Format("{0,-14}\t<b>{1}</b>\n", "target", target_str),
 			  String.Format("{0,-14}\t<b>{1}</b>", "transmitting", comms_str)
 			);
