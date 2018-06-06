@@ -575,13 +575,9 @@ namespace KERBALISM
 			}
 
 			// target name
-			string target_str = string.Empty;
-			switch (vi.connection.status)
-			{
-				case LinkStatus.direct_link: target_str = ("DSN"); break;
-				case LinkStatus.indirect_link: target_str = vi.connection.path[vi.connection.path.Count - 1].vesselName; break;
-				default: target_str = "none"; break;
-			}
+			string target_str = vi.connection.target_name;
+			if (vi.connection.status == LinkStatus.no_antenna || vi.connection.status == LinkStatus.no_link)
+				target_str = "none";
 
 			// transmitted label, content and tooltip
 			string comms_str = vi.connection.linked ? "telemetry" : "nothing";

@@ -10,7 +10,7 @@ namespace KERBALISM
 	public static class Communications
 	{
 		// default transmission rate, strength and cost
-		private const double ext_rate = 0.064;        // 64 KB/s
+		private const double ext_rate = 0.0625;       // 64 KB/s
 		private const double ext_strength = 1.0;      // 100 %
 		private const double ext_cost = 0.05;         // 50 W/s
 
@@ -84,18 +84,21 @@ namespace KERBALISM
 					return new ConnectionInfo(LinkStatus.no_link);
 				}
 			}
+
 			// if CommNet is enabled and ready
 			else if (HighLogic.fetch.currentGame.Parameters.Difficulty.EnableCommNet && NetworkInitialized)
 			{
-				return v.connection != null && v.connection.IsConnected
-				  ? new ConnectionInfo(LinkStatus.direct_link, ext_rate * v.connection.SignalStrength, v.connection.SignalStrength, ext_cost)
-				  : new ConnectionInfo(LinkStatus.no_link);
+				// find first hop target
+				if (v.connection != null && v.connection.IsConnected)
+				{
+					return new ConnectionInfo(LinkStatus.direct_link, ext_rate * v.connection.SignalStrength, v.connection.SignalStrength, ext_cost,
+						Lib.Ellipsis(Localizer.Format(v.connection.ControlPath.First.end.displayName).Replace("Kerbin", "DSN"), 20));
+				}
+				return new ConnectionInfo(LinkStatus.no_link);
 			}
 			// the simple stupid signal system
 			else
-			{
 				return new ConnectionInfo(LinkStatus.direct_link, ext_rate, ext_strength, ext_cost);
-			}
 		}
 	}
 

@@ -10,6 +10,10 @@ namespace KERBALISM
 
 	public static class Science
 	{
+		// hard-coded transmission buffer size in Mb
+		private const double buffer_capacity = 8.0;
+		private static string exp_filename = "";
+
 		// pseudo-ctor
 		public static void Init()
 		{
@@ -34,9 +38,6 @@ namespace KERBALISM
 		// consume EC for transmission, and transmit science data
 		public static void Update(Vessel v, Vessel_info vi, VesselData vd, Vessel_resources resources, double elapsed_s)
 		{
-			// hard-coded transmission buffer size in Mb
-			const double buffer_capacity = 8.0;
-
 			// do nothing if science system is disabled
 			if (!Features.Science) return;
 
@@ -55,14 +56,14 @@ namespace KERBALISM
 			}
 
 			// get filename of data being downloaded
-			string filename = vi.transmitting;
+			exp_filename = vi.transmitting;
 
 			// if some data is being downloaded
 			// - avoid cornercase at scene changes
-			if (filename.Length > 0 && vd.drive.files.ContainsKey(filename))
+			if (exp_filename.Length > 0 && vd.drive.files.ContainsKey(exp_filename))
 			{
 				// get file
-				File file = vd.drive.files[filename];
+				File file = vd.drive.files[exp_filename];
 
 				// determine how much data is transmitted
 				double transmitted = Math.Min(file.size, conn.rate * elapsed_s);
@@ -77,7 +78,7 @@ namespace KERBALISM
 				if (file.size <= double.Epsilon || file.buff > buffer_capacity)
 				{
 					// collect the science data
-					Science.Credit(filename, file.buff, true, v.protoVessel);
+					Credit(exp_filename, file.buff, true, v.protoVessel);
 
 					// reset the buffer
 					file.buff = 0.0;
@@ -87,12 +88,12 @@ namespace KERBALISM
 				if (file.size <= double.Epsilon)
 				{
 					// remove the file
-					vd.drive.files.Remove(filename);
+					vd.drive.files.Remove(exp_filename);
 
 					// inform the user
 					Message.Post
 					(
-					  Lib.BuildString("<color=cyan><b>DATA RECEIVED</b></color>\nTransmission of <b>", Science.Experiment(filename).name, "</b> completed"),
+					  Lib.BuildString("<color=cyan><b>DATA RECEIVED</b></color>\nTransmission of <b>", Experiment(exp_filename).name, "</b> completed"),
 					  Lib.TextVariant("Our researchers will jump on it right now", "The checksum is correct, data must be valid")
 					);
 				}
