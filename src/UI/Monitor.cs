@@ -596,7 +596,7 @@ namespace KERBALISM
 			  "<align=left />",
 			  String.Format("{0,-14}\t<b>{1}</b>\n", "connected", vi.connection.linked ? "yes" : "no"),
 			  String.Format("{0,-14}\t\t<b>{1}</b>\n", "rate", Lib.HumanReadableDataRate(vi.connection.rate)),
-			  String.Format("{0,-14}\t<b>{1:0.00}%</b>\n", "strength", vi.connection.strength * 100),
+			  String.Format("{0,-14}\t<b>{1}</b>\n", "strength", Lib.HumanReadablePerc(vi.connection.strength, "F2")),
 			  String.Format("{0,-14}\t<b>{1}</b>\n", "target", target_str),
 			  String.Format("{0,-14}\t<b>{1}</b>", "transmitting", comms_str)
 			);

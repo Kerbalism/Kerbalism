@@ -491,7 +491,7 @@ namespace KERBALISM
 
 		// pretty-print a resource rate
 		// - rate: rate per second, must be positive
-		public static string HumanReadableRate(double rate, string precision = "F2")
+		public static string HumanReadableRate(double rate, string precision = "F3")
 		{
 			if (rate <= double.Epsilon) return "none";
 			if (rate >= 0.01) return BuildString(rate.ToString(precision), "/s");
@@ -584,7 +584,7 @@ namespace KERBALISM
 			return BuildString((rad * 3600.0).ToString("F3"), " rad/h");
 		}
 
-		// pretty-print percentual
+		// pretty-print percentage
 		public static string HumanReadablePerc(double v, string format = "F0")
 		{
 			return BuildString((v * 100.0).ToString(format), "%");
@@ -630,16 +630,16 @@ namespace KERBALISM
 		// - size: data size in Mb
 		public static string HumanReadableDataSize(double size)
 		{
-			size *= 1000000.0; //< to bit
-			if (size <= 1.0) return "none";
-			if (size < 1000.0) return BuildString(size.ToString("F0"), " b");
-			size /= 1000.0;
-			if (size < 1000.0) return BuildString(size.ToString("F2"), " Kb");
-			size /= 1000.0;
-			if (size < 1000.0) return BuildString(size.ToString("F2"), " Mb");
-			size /= 1000.0;
-			if (size < 1000.0) return BuildString(size.ToString("F2"), " Gb");
-			size /= 1000.0;
+			size *= 1048576.0; //< to bytes
+			if (size < 1.0) return "none";
+			if (size < 1024.0) return BuildString(size.ToString("F0"), " b");
+			size /= 1024.0;
+			if (size < 1024.0) return BuildString(size.ToString("F2"), " Kb");
+			size /= 1024.0;
+			if (size < 1024.0) return BuildString(size.ToString("F2"), " Mb");
+			size /= 1024.0;
+			if (size < 1024.0) return BuildString(size.ToString("F2"), " Gb");
+			size /= 1024.0;
 			return BuildString(size.ToString("F2"), " Tb");
 		}
 

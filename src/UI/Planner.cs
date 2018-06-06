@@ -1236,7 +1236,15 @@ namespace KERBALISM
 
 		void Process_datatransmitter(ModuleDataTransmitter mdt)
 		{
-			Resource("ElectricCharge").Consume(mdt.packetResourceCost, "communications (transmitting)");
+			switch (mdt.antennaType)
+			{
+				case AntennaType.INTERNAL:
+					Resource("ElectricCharge").Consume((mdt.packetResourceCost * mdt.DataRate) / mdt.packetSize, "communications (control)");
+					break;
+				default:
+					Resource("ElectricCharge").Consume((mdt.packetResourceCost * mdt.DataRate) / mdt.packetSize, "communications (transmitting)");
+					break;
+			}
 		}
 
 		Dictionary<string, Simulated_resource> resources = new Dictionary<string, Simulated_resource>();
