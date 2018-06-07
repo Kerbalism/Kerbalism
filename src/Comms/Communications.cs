@@ -23,29 +23,35 @@ namespace KERBALISM
 				return;
 
 			// maintain and send messages
-			// - do not send messages for vessels without an antenna
 			// - do not send messages during/after solar storms
 			// - do not send messages for EVA kerbals
-			if (vi.connection.status != LinkStatus.no_antenna && !v.isEVA && v.situation != Vessel.Situations.PRELAUNCH)
+			if (!v.isEVA && v.situation != Vessel.Situations.PRELAUNCH)
 			{
 				if (!vd.msg_signal && !vi.connection.linked)
 				{
 					vd.msg_signal = true;
-					if (vd.cfg_signal && vi.connection.status != LinkStatus.blackout)
+					if (vd.cfg_signal)
 					{
 						string subtext = "Data transmission disabled";
-						if (vi.crew_count == 0)
+
+						if (vi.connection.status != LinkStatus.blackout)
 						{
-							switch (Settings.UnlinkedControl)
+							if (vi.crew_count == 0)
 							{
-								case UnlinkedCtrl.none:
-									subtext = Localizer.Format("#KERBALISM_UI_noctrl");
-									break;
-								case UnlinkedCtrl.limited:
-									subtext = Localizer.Format("#KERBALISM_UI_limitedcontrol");
-									break;
+								switch (Settings.UnlinkedControl)
+								{
+									case UnlinkedCtrl.none:
+										subtext = Localizer.Format("#KERBALISM_UI_noctrl");
+										break;
+									case UnlinkedCtrl.limited:
+										subtext = Localizer.Format("#KERBALISM_UI_limitedcontrol");
+										break;
+								}
 							}
 						}
+						else
+							subtext = "Plasma blackout";
+
 						Message.Post(Severity.warning, Lib.BuildString(Localizer.Format("#KERBALISM_UI_signallost"), " <b>", v.vesselName, "</b>"), subtext);
 					}
 				}
@@ -79,13 +85,16 @@ namespace KERBALISM
 			{
 				if (v.connection != null)
 				{
-					// find first hop target
+					// are we connected to DSN
 					if (v.connection.IsConnected)
 					{
 						return new ConnectionInfo(v.connection.ControlPath.First.hopType == HopType.Home ? LinkStatus.direct_link : LinkStatus.indirect_link,
 							ext_rate * v.connection.SignalStrength, v.connection.SignalStrength, ext_cost,
 							Lib.Ellipsis(Localizer.Format(v.connection.ControlPath.First.end.displayName).Replace("Kerbin", "DSN"), 20));
 					}
+					// is loss of connection due to plasma blackout
+					//else if (v.connection.InPlasma)  // calling InPlasma causes a StackOverflow :(
+						//return new ConnectionInfo(LinkStatus.blackout);
 				}
 				return new ConnectionInfo();
 			}

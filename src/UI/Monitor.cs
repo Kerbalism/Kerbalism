@@ -576,7 +576,7 @@ namespace KERBALISM
 
 			// target name
 			string target_str = conn.target_name;
-			if (conn.status == LinkStatus.no_antenna || conn.status == LinkStatus.no_link)
+			if (conn.status == LinkStatus.blackout || conn.status == LinkStatus.no_link)
 				target_str = "none";
 
 			// transmitted label, content and tooltip
@@ -613,14 +613,9 @@ namespace KERBALISM
 					image = Icons.signal_red;
 					break;
 
-				case LinkStatus.no_antenna:
-					image = Icons.signal_red;
-					tooltip += "\n<color=red>No antenna</color>";
-					break;
-
 				case LinkStatus.blackout:
 					image = Icons.signal_red;
-					tooltip += "\n<color=red><i>Blackout</i></color>";
+					tooltip += "\n<color=red><i>Plasma blackout</i></color>";
 					break;
 			}
 

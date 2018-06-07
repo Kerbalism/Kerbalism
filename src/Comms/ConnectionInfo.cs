@@ -13,7 +13,6 @@ namespace KERBALISM
 		direct_link,
 		indirect_link,
 		no_link,
-		no_antenna,
 		blackout
 	};
 
