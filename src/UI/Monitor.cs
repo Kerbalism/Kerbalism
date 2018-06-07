@@ -575,12 +575,12 @@ namespace KERBALISM
 			}
 
 			// target name
-			string target_str = vi.connection.target_name;
-			if (vi.connection.status == LinkStatus.no_antenna || vi.connection.status == LinkStatus.no_link)
+			string target_str = conn.target_name;
+			if (conn.status == LinkStatus.no_antenna || conn.status == LinkStatus.no_link)
 				target_str = "none";
 
 			// transmitted label, content and tooltip
-			string comms_str = vi.connection.linked ? "telemetry" : "nothing";
+			string comms_str = conn.linked ? "telemetry" : "nothing";
 			if (vi.transmitting.Length > 0)
 			{
 				ExperimentInfo exp = Science.Experiment(vi.transmitting);
@@ -590,9 +590,9 @@ namespace KERBALISM
 			string tooltip = Lib.BuildString
 			(
 			  "<align=left />",
-			  String.Format("{0,-14}\t<b>{1}</b>\n", "connected", vi.connection.linked ? "yes" : "no"),
-			  String.Format("{0,-14}\t\t<b>{1}</b>\n", "rate", Lib.HumanReadableDataRate(vi.connection.rate)),
-			  String.Format("{0,-14}\t<b>{1}</b>\n", "strength", Lib.HumanReadablePerc(vi.connection.strength, "F2")),
+			  String.Format("{0,-14}\t<b>{1}</b>\n", "DSN connected", conn.linked ? "<color=green>yes</color>" : "<color=red><i>no</i></color>"),
+			  String.Format("{0,-14}\t\t<b>{1}</b>\n", "rate", Lib.HumanReadableDataRate(conn.rate)),
+			  String.Format("{0,-14}\t<b>{1}</b>\n", "strength", Lib.HumanReadablePerc(conn.strength, "F2")),
 			  String.Format("{0,-14}\t<b>{1}</b>\n", "target", target_str),
 			  String.Format("{0,-14}\t<b>{1}</b>", "transmitting", comms_str)
 			);
@@ -601,12 +601,12 @@ namespace KERBALISM
 			switch (conn.status)
 			{
 				case LinkStatus.direct_link:
-					image = vi.connection.rate > 0.005 ? Icons.signal_white : Icons.signal_yellow;
+					image = conn.rate > 0.0048828125 ? Icons.signal_white : Icons.signal_yellow; // 5Kb
 					break;
 
 				case LinkStatus.indirect_link:
-					image = vi.connection.rate > 0.005 ? Icons.signal_white : Icons.signal_yellow;
-					tooltip += "\n\n<color=yellow>Signal relayed</color>";
+					image = conn.rate > 0.0048828125 ? Icons.signal_white : Icons.signal_yellow; // 5Kb
+					tooltip += "\n<color=yellow>Signal relayed</color>";
 					break;
 
 				case LinkStatus.no_link:
@@ -615,12 +615,12 @@ namespace KERBALISM
 
 				case LinkStatus.no_antenna:
 					image = Icons.signal_red;
-					tooltip += "\n\n<color=red>No antenna</color>";
+					tooltip += "\n<color=red>No antenna</color>";
 					break;
 
 				case LinkStatus.blackout:
 					image = Icons.signal_red;
-					tooltip += "\n\n<color=red><i>Blackout</i></color>";
+					tooltip += "\n<color=red><i>Blackout</i></color>";
 					break;
 			}
 
