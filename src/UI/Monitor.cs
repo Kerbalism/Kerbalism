@@ -591,7 +591,7 @@ namespace KERBALISM
 			(
 			  "<align=left />",
 			  String.Format("{0,-14}\t<b>{1}</b>\n", "DSN connected", conn.linked ? "<color=green>yes</color>" : "<color=red><i>no</i></color>"),
-			  String.Format("{0,-14}\t\t<b>{1}</b>\n", "rate", Lib.HumanReadableDataRate(conn.rate)),
+			  String.Format("{0,-14}\t<b>{1}</b>\n", "science rate", Lib.HumanReadableDataRate(conn.rate)),
 			  String.Format("{0,-14}\t<b>{1}</b>\n", "strength", Lib.HumanReadablePerc(conn.strength, "F2")),
 			  String.Format("{0,-14}\t<b>{1}</b>\n", "target", target_str),
 			  String.Format("{0,-14}\t<b>{1}</b>", "transmitting", comms_str)

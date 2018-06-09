@@ -53,15 +53,15 @@ namespace KERBALISM
 							ModuleDeployableAntenna animation = t.part.FindModuleImplementing<ModuleDeployableAntenna>();
 							if (animation != null)
 							{
-								// only include data rate if transmitter is extended and combinable
-								if (animation.status == "Extended" && t.antennaCombinable)
+								// only include data rate if transmitter is extended
+								if (animation.status == "Extended")
 								{
 									rate += t.DataRate;
 									science_cost += t.DataResourceCost * t.DataRate;
 								}
 							}
-							// no animation so only include data rate if transmitter is combinable
-							else if (t.antennaCombinable)
+							// no animation
+							else
 							{
 								rate += t.DataRate;
 								science_cost += t.DataResourceCost * t.DataRate;
@@ -94,16 +94,16 @@ namespace KERBALISM
 								ProtoPartModuleSnapshot m = p.FindModule("ModuleDeployableAntenna");
 								if (m != null)
 								{
-									// only include data rate if transmitter is extended and combinable
+									// only include data rate if transmitter is extended
 									string deployState = Lib.Proto.GetString(m, "deployState");
-									if (deployState == "EXTENDED" && t.antennaCombinable)
+									if (deployState == "EXTENDED")
 									{
 										rate += t.DataRate;
 										science_cost += t.DataResourceCost * t.DataRate;
 									}
 								}
-								// no animation so only include data rate if transmitter is combinable
-								else if (t.antennaCombinable)
+								// no animation
+								else
 								{
 									rate += t.DataRate;
 									science_cost += t.DataResourceCost * t.DataRate;
