@@ -89,7 +89,7 @@ namespace KERBALISM
 
 			// communications info
 			connection = Communications.Connection(v);
-			transmitting = Science.Transmitting(v, connection.linked);
+			transmitting = Science.Transmitting(v, connection.linked && connection.rate > double.Epsilon);
 
 			// habitat data
 			volume = Habitat.Tot_volume(v);
@@ -98,7 +98,7 @@ namespace KERBALISM
 			poisoning = Habitat.Poisoning(v);
 			shielding = Habitat.Shielding(v);
 			living_space = Habitat.Living_space(v);
-			comforts = new Comforts(v, landed, crew_count > 1, connection.linked);
+			comforts = new Comforts(v, landed, crew_count > 1, connection.linked && connection.rate > double.Epsilon);
 
 			// data about greenhouses
 			greenhouses = Greenhouse.Greenhouses(v);

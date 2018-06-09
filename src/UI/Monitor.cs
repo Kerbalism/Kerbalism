@@ -601,11 +601,11 @@ namespace KERBALISM
 			switch (conn.status)
 			{
 				case LinkStatus.direct_link:
-					image = conn.rate > 0.0048828125 ? Icons.signal_white : Icons.signal_yellow; // 5Kb
+					image = conn.strength > 0.05 ? Icons.signal_white : Icons.signal_yellow; // 5%
 					break;
 
 				case LinkStatus.indirect_link:
-					image = conn.rate > 0.0048828125 ? Icons.signal_white : Icons.signal_yellow; // 5Kb
+					image = conn.strength > 0.05 ? Icons.signal_white : Icons.signal_yellow; // 5%
 					tooltip += "\n<color=yellow>Signal relayed</color>";
 					break;
 

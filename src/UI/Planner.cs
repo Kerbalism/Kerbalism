@@ -1239,10 +1239,10 @@ namespace KERBALISM
 			switch (mdt.antennaType)
 			{
 				case AntennaType.INTERNAL:
-					Resource("ElectricCharge").Consume((mdt.packetResourceCost * mdt.DataRate) / mdt.packetSize, "communications (control)");
+					Resource("ElectricCharge").Consume(mdt.DataResourceCost * mdt.DataRate, "communications (control)");
 					break;
 				default:
-					Resource("ElectricCharge").Consume((mdt.packetResourceCost * mdt.DataRate) / mdt.packetSize, "communications (transmitting)");
+					Resource("ElectricCharge").Consume(mdt.DataResourceCost * mdt.DataRate, "communications (transmitting)");
 					break;
 			}
 		}
