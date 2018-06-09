@@ -33,6 +33,28 @@ namespace KERBALISM
 
 		public ConnectionInfo(Vessel v)
 		{
+			// return no connection if there is no ec left
+			if (ResourceCache.Info(v, "ElectricCharge").amount <= double.Epsilon)
+			{
+				// hysteresis delay
+				if ((DB.Vessel(v).hyspos_signal >= 5.0))
+				{
+					DB.Vessel(v).hyspos_signal = 5.0;
+					DB.Vessel(v).hysneg_signal = 0.0;
+					return;
+				}
+				DB.Vessel(v).hyspos_signal += 0.1;
+			}
+			else
+			{
+				// hysteresis delay
+				DB.Vessel(v).hysneg_signal += 0.1;
+				if (!(DB.Vessel(v).hysneg_signal >= 5.0))
+					return;
+				DB.Vessel(v).hysneg_signal = 5.0;
+				DB.Vessel(v).hyspos_signal = 0.0;
+			}
+
 			List<ModuleDataTransmitter> transmitters;
 
 			// if vessel is loaded
