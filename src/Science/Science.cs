@@ -52,7 +52,7 @@ namespace KERBALISM
 			// consume ec if data is transmitted
 			if (vi.transmitting.Length > 0)
 			{
-				resources.Consume(v, "ElectricCharge", conn.cost * elapsed_s);
+				resources.Consume(v, "ElectricCharge", conn.science_cost * elapsed_s);
 			}
 
 			// get filename of data being downloaded

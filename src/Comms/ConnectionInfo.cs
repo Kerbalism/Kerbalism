@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using KSP.Localization;
 
 
 namespace KERBALISM
 {
 
 
-	// link state
-	public enum LinkStatus
+	public enum LinkStatus    // link state
 	{
 		direct_link,
 		indirect_link,
@@ -16,37 +16,121 @@ namespace KERBALISM
 		blackout
 	};
 
-
 	public sealed class ConnectionInfo
 	{
-		public ConnectionInfo(LinkStatus status = LinkStatus.no_link, double rate = 0.0, double strength = 0.0, double cost = 0.0, string target_name = "")
+		public ConnectionInfo() { }
+
+		public ConnectionInfo(LinkStatus status, double rate, double strength, double cost, string target_name)
 		{
 			this.linked = status == LinkStatus.direct_link || status == LinkStatus.indirect_link;
 			this.status = status;
 			this.rate = rate;
 			this.strength = strength;
-			this.cost = cost;
+			this.science_cost = cost;
 			this.target_name = target_name;
 		}
 
-		public ConnectionInfo(ConnectionInfo other)
+		public ConnectionInfo(Vessel v)
 		{
-			this.linked = other.linked;
-			this.status = other.status;
-			this.rate = other.rate;
-			this.strength = other.strength;
-			this.cost = other.cost;
-			this.target_name = other.target_name;
+			List<ModuleDataTransmitter> transmitters;
+
+			// if vessel is loaded
+			if (v.loaded)
+			{
+				// find transmitters
+				transmitters = v.FindPartModulesImplementing<ModuleDataTransmitter>();
+
+				if (transmitters != null)
+				{
+					foreach (ModuleDataTransmitter t in transmitters)
+					{
+						if (t.antennaType == AntennaType.INTERNAL) // do not include internal data rate
+							internal_cost += t.DataResourceCost * t.DataRate;
+						else
+						{
+							rate += t.DataRate;
+							science_cost += t.DataResourceCost * t.DataRate;
+						}
+					}
+				}
+			}
+
+			// if vessel is not loaded
+			else
+			{
+				// find proto transmitters
+				foreach (ProtoPartSnapshot p in v.protoVessel.protoPartSnapshots)
+				{
+					// get part prefab (required for module properties)
+					Part part_prefab = PartLoader.getPartInfoByName(p.partName).partPrefab;
+
+					transmitters = part_prefab.FindModulesImplementing<ModuleDataTransmitter>();
+
+					if (transmitters != null)
+					{
+						foreach (ModuleDataTransmitter t in transmitters)
+						{
+							if (t.antennaType == AntennaType.INTERNAL) // do not include internal data rate
+								internal_cost += t.DataResourceCost * t.DataRate;
+							else
+							{
+								rate += t.DataRate;
+								science_cost += t.DataResourceCost * t.DataRate;
+							}
+						}
+					}
+				}
+			}
+
+			// if CommNet is enabled
+			if (HighLogic.fetch.currentGame.Parameters.Difficulty.EnableCommNet)
+			{
+				// are we connected to DSN
+				if (v.connection != null)
+				{
+					if (v.connection.IsConnected)
+					{
+						linked = true;
+						status = v.connection.ControlPath.First.hopType == CommNet.HopType.Home ? LinkStatus.direct_link : LinkStatus.indirect_link;
+						strength = v.connection.SignalStrength;
+						rate = rate * strength;
+						target_name = Lib.Ellipsis(Localizer.Format(v.connection.ControlPath.First.end.displayName).Replace("Kerbin", "DSN"), 20);
+						return;
+					}
+
+					// is loss of connection due to plasma blackout
+					/*else if (v.connection.InPlasma)  // calling InPlasma causes a StackOverflow :(
+					{
+						status = LinkStatus.blackout;
+						rate = 0.0;
+						internal_cost = 0.0;
+						science_cost = 0.0;
+						return;
+					}*/
+				}
+
+				// no connection
+				rate = 0.0;
+				internal_cost = 0.0;
+				science_cost = 0.0;
+				return;
+			}
+
+			// the simple stupid always connected signal system
+			linked = true;
+			status = LinkStatus.direct_link;
+			strength = 1;    // 100 %
+			target_name = "DSN: KSC";
 		}
 
-		public bool linked;         // true if there is a connection back to DSN
-		public LinkStatus status;   // the link status
-		public double rate;         // data rate in Mb/s
-		public double strength;     // signal strength
-		public double cost;         // EC/s consumed for transmission
-		public string target_name;
+		public bool linked = false;                       // true if there is a connection back to DSN
+		public LinkStatus status = LinkStatus.no_link;    // the link status
+		public double rate = 0.0;                         // science data rate, internal transmitters can not transmit science data only telemetry data
+		public double internal_cost = 0.0;                // control and telemetry ec cost
+		public double science_cost = 0.0;                 // science ec cost
+		public double strength = 0.0;                     // signal strength
+		public string target_name = "";                   // receiving node name
 	}
 
 
 } // KERBALISM
-

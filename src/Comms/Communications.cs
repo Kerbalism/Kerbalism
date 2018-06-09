@@ -79,28 +79,7 @@ namespace KERBALISM
 					return new ConnectionInfo(LinkStatus.direct_link, ext_rate, ext_strength, ext_cost, "DSN: KSC");
 				return new ConnectionInfo();
 			}
-
-			// if CommNet is enabled
-			else if (HighLogic.fetch.currentGame.Parameters.Difficulty.EnableCommNet)
-			{
-				if (v.connection != null)
-				{
-					// are we connected to DSN
-					if (v.connection.IsConnected)
-					{
-						return new ConnectionInfo(v.connection.ControlPath.First.hopType == HopType.Home ? LinkStatus.direct_link : LinkStatus.indirect_link,
-							ext_rate * v.connection.SignalStrength, v.connection.SignalStrength, ext_cost,
-							Lib.Ellipsis(Localizer.Format(v.connection.ControlPath.First.end.displayName).Replace("Kerbin", "DSN"), 20));
-					}
-					// is loss of connection due to plasma blackout
-					//else if (v.connection.InPlasma)  // calling InPlasma causes a StackOverflow :(
-						//return new ConnectionInfo(LinkStatus.blackout);
-				}
-				return new ConnectionInfo();
-			}
-
-			// the simple stupid always connected signal system
-			return new ConnectionInfo(LinkStatus.direct_link, ext_rate, ext_strength, ext_cost, "DSN: KSC");
+			return new ConnectionInfo(v);
 		}
 	}
 
