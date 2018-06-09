@@ -20,13 +20,14 @@ namespace KERBALISM
 	{
 		public ConnectionInfo() { }
 
-		public ConnectionInfo(LinkStatus status, double rate, double strength, double cost, string target_name)
+		public ConnectionInfo(LinkStatus status, double rate, double strength, double internal_cost, double science_cost, string target_name)
 		{
 			this.linked = status == LinkStatus.direct_link || status == LinkStatus.indirect_link;
 			this.status = status;
 			this.rate = rate;
 			this.strength = strength;
-			this.science_cost = cost;
+			this.internal_cost = internal_cost;
+			this.science_cost = science_cost;
 			this.target_name = target_name;
 		}
 
