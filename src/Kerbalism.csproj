@@ -94,6 +94,10 @@
       <HintPath Condition="Exists('.\Assembly-UnityScript-firstpass.dll')">.\Assembly-UnityScript-firstpass.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="ClickThroughBlocker">
+      <HintPath Condition="Exists('$(KSPDEVDIR)\GameData\000_ClickThroughBlocker\Plugins\ClickThroughBlocker.dll')">$(KSPDEVDIR)\GameData\000_ClickThroughBlocker\Plugins\ClickThroughBlocker.dll</HintPath>
+	  <HintPath Condition="Exists('.\ClickThroughBlocker.dll')">=.\ClickThroughBlocker.dll</HintPath>
+    </Reference>
     <Reference Include="System">
       <Private>False</Private>
     </Reference>
@@ -242,6 +246,7 @@
     <Analyzer Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\Ionic.Zip.dll')" Include="$(KSPDEVDIR)\KSP_x64_Data\Managed\Ionic.Zip.dll" />
     <Analyzer Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\TDx.TDxInput.dll')" Include="$(KSPDEVDIR)\KSP_x64_Data\Managed\TDx.TDxInput.dll" />
     <Analyzer Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\RedShellSDK.dll')" Include="$(KSPDEVDIR)\KSP_x64_Data\Managed\RedShellSDK.dll" />
+    <Analyzer Condition="Exists('$(KSPDEVDIR)\GameData\000_ClickThroughBlocker\Plugins\ClickThroughBlocker.dll')" Include="$(KSPDEVDIR)\GameData\000_ClickThroughBlocker\Plugins\ClickThroughBlocker.dll" />
     <Analyzer Condition="Exists('.\Assembly-CSharp-firstpass.dll')" Include=".\Assembly-CSharp-firstpass.dll" />
     <Analyzer Condition="Exists('.\Assembly-CSharp.dll')" Include=".\Assembly-CSharp.dll" />
     <Analyzer Condition="Exists('.\Assembly-UnityScript.dll')" Include=".\Assembly-UnityScript.dll" />
@@ -249,6 +254,7 @@
     <Analyzer Condition="Exists('.\UnityEngine.Networking.dll')" Include=".\UnityEngine.Networking.dll" />
     <Analyzer Condition="Exists('.\UnityEngine.UI.dll')" Include=".\UnityEngine.UI.dll" />
     <Analyzer Condition="Exists('.\UnityScript.Lang.dll')" Include=".\UnityScript.Lang.dll" />
+    <Analyzer Condition="Exists('.\ClickThroughBlocker.dll')" Include=".\ClickThroughBlocker.dll" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\GameData\Kerbalism\Kerbalism.version" />
