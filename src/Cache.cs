@@ -96,6 +96,7 @@ namespace KERBALISM
 			surface = Habitat.Tot_surface(v);
 			pressure = Habitat.Pressure(v);
 			poisoning = Habitat.Poisoning(v);
+			humidity = Habitat.Humidity(v);
 			shielding = Habitat.Shielding(v);
 			living_space = Habitat.Living_space(v);
 			comforts = new Comforts(v, landed, crew_count > 1, connection.linked && connection.rate > double.Epsilon);
@@ -145,6 +146,7 @@ namespace KERBALISM
 		public double surface;              // enabled surface in m^2
 		public double pressure;             // normalized pressure
 		public double poisoning;            // waste atmosphere amount versus total atmosphere amount
+		public double humidity;             // moist atmosphere amount
 		public double shielding;            // shielding level
 		public double living_space;         // living space factor
 		public Comforts comforts;           // comfort info
