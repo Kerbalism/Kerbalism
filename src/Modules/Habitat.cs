@@ -128,7 +128,7 @@ namespace KERBALISM
 					// - disabled habitats start with zero atmosphere
 					Lib.AddResource(part, "Atmosphere", (state == State.enabled && Features.Pressure) ? volume : 0.0, volume);
 					Lib.AddResource(part, "WasteAtmosphere", 0.0, volume);
-					Lib.AddResource(part, "MoistAtmosphere", 0.0, volume);
+					Lib.AddResource(part, "MoistAtmosphere", 0.0, volume * 0.4); // 1 Kerbal = 0.05/day(5% @ 1m3) note. (base humidity is already at 0.6 = 60%)
 
 					// add external surface shielding
 					Lib.AddResource(part, "Shielding", 0.0, surface);
@@ -144,7 +144,7 @@ namespace KERBALISM
 			{
 				Lib.RemoveResource(part, "Atmosphere", 0.0, volume);
 				Lib.RemoveResource(part, "WasteAtmosphere", 0.0, volume);
-				Lib.RemoveResource(part, "MoistAtmosphere", 0.0, volume);
+				Lib.RemoveResource(part, "MoistAtmosphere", 0.0, volume * 0.4); // 1 Kerbal = 0.05/day(5% @ 1m3) note. (base humidity is already at 0.6 = 60%)
 				Lib.RemoveResource(part, "Shielding", 0.0, surface);
 			}
 		}
@@ -270,7 +270,7 @@ namespace KERBALISM
 				double hab_level = Lib.Level(part, "Atmosphere", true);
 
 				// venting succeeded if the amount reached zero
-				if (atmo.amount <= double.Epsilon && waste.amount <= double.Epsilon)
+				if (atmo.amount <= double.Epsilon && waste.amount <= double.Epsilon && moist.amount <= double.Epsilon)
 				{
 					return State.disabled;
 				}
@@ -480,8 +480,8 @@ namespace KERBALISM
 		// return moisture level in a vessel atmosphere
 		public static double Humidity(Vessel v)
 		{
-			// the proportion of moisture in the atmosphere is simply the level of MoistAtmo
-			return ResourceCache.Info(v, "MoistAtmosphere").level;
+			// the proportion of moisture in the atmosphere is simply the level of MoistAtmo + (0.6, base humidity of 60%)
+			return ResourceCache.Info(v, "MoistAtmosphere").level + 0.6;
 		}
 
 		// return shielding factor in a vessel
