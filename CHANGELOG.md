@@ -3,6 +3,19 @@
 
 ### Changes since the last release
 
+ * Overhaul to transmitter use, planning and monitoring, data rates, signal strength, ec cost and targets now work. Internal  
+     transmitters are separate from external transmitters and will only transmit telemetry and command control, they are also  
+     shown separately in the planner and are constantly powered unless you run out of ec, with the added benefit of loosing  
+     contact with DSN and subsequent control.  
+     External transmitters will lose contact when retracted, break, or if you run out of ec rendering long distance comms, call  
+     home and your ability to transmit science to zero. External transmitters will also stop using ec when retracted.  
+     EVA suits now contain a small internal transmitter for transmitting telemetry and controlling remote probes and rovers etc.  
+     All transmitters have had their ec usage changed to more realistic values and are also combinable. There is a minor drawback  
+     though, when changing scenes with the [ESC]Pause menu you may notice the target readout pointing to the wrong vessel and  
+     some signals that where previously dis-connected wrongly connecting back online, simply changing scene from for example  
+     the Space Center to Tracking Station will solve all errors in the network. *Thanks to (PiezPiedPy) for the transmitter overhaul.* 
+
+ * Nitrogen added to pods on rescue, Humidity controller now detects breathable atmospheres (PiezPiedPy)
  * Kerbalism Communotron 8 transmitter is back (PiezPiedPy)
  * Transmitters have reliability added and tweaked EC costs, also removed simulate button for internal transmitters (PiezPiedPy)
  * Signal lost/found during GameScene changes and SaveGame load, annoying bug fixed (PiezPiedPy)

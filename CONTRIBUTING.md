@@ -364,7 +364,7 @@ To do that, you follow these steps:
     Copy the file `player_win.exe` into your KSP dev main directory
   - Delete or rename `KSP_x64.exe` in your KSP dev main directory
   - Rename the `player_win.exe` to `KSP_x64.exe`
-  - Download the [PlayerConnectionConfigFile](https://www.sarbian.com/sarbian/PlayerConnectionConfigFile) file and put it into your KSP dev `KSP_x64_Data` folder.
+  - Copy the `PlayerConnectionConfigFile` file from `buildscripts\UnityDebug` and put it into your KSP dev `KSP_x64_Data` folder.
 
 This will turn your KSP install into a Development version only. If you want to use this install as a release (non-Development) test install as well, then instead of deleting or renaming `KSP_x64.exe`, you can do the following:
 

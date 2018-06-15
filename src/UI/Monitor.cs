@@ -558,9 +558,9 @@ namespace KERBALISM
 				}
 				string tooltip_rt = Lib.BuildString(
 				  "<align=left />",
-				  "connected\t<b>", conn.linked ? "yes" : "no", "</b>\n",
-				  "delay\t\t<b>", conn.linked ? signal_str : "no connection", "</b>\n",
-				  "rate\t\t<b>", Lib.HumanReadableDataRate(vi.connection.rate), "</b>"
+				  String.Format("{0,-14}\t<b>{1}</b>\n", "connected", conn.linked ? "yes" : "no"),
+				  String.Format("{0,-14}\t<b>{1}</b>\n", "delay", conn.linked ? signal_str : "no connection"),
+				  String.Format("{0,-14}\t\t<b>{1}</b>", "rate", Lib.HumanReadableDataRate(vi.connection.rate))
 				);
 				Texture image_rt = Icons.signal_red;
 				if (RemoteTech.Connected(v.id)) image_rt = Icons.signal_white;
@@ -575,64 +575,47 @@ namespace KERBALISM
 			}
 
 			// target name
-			string target_str = string.Empty;
-			switch (vi.connection.status)
-			{
-				case LinkStatus.direct_link: target_str = ("DSN"); break;
-				case LinkStatus.indirect_link: target_str = vi.connection.path[vi.connection.path.Count - 1].vesselName; break;
-				default: target_str = "none"; break;
-			}
+			string target_str = conn.target_name;
+			if (conn.status == LinkStatus.blackout || conn.status == LinkStatus.no_link)
+				target_str = "none";
 
 			// transmitted label, content and tooltip
-			string comms_label = vi.relaying.Length == 0 ? "transmitting" : "relaying";
-			string comms_str = vi.connection.linked ? "telemetry" : "nothing";
-			string comms_tooltip = string.Empty;
-			if (vi.relaying.Length > 0)
-			{
-				ExperimentInfo exp = Science.Experiment(vi.relaying);
-				comms_str = exp.name;
-				comms_tooltip = exp.fullname;
-			}
-			else if (vi.transmitting.Length > 0)
+			string comms_str = conn.linked ? "telemetry" : "nothing";
+			if (vi.transmitting.Length > 0)
 			{
 				ExperimentInfo exp = Science.Experiment(vi.transmitting);
 				comms_str = exp.name;
-				comms_tooltip = exp.fullname;
 			}
 
 			string tooltip = Lib.BuildString
 			(
 			  "<align=left />",
-			  "connected\t<b>", vi.connection.linked ? "yes" : "no", "</b>\n",
-			  "rate\t\t<b>", Lib.HumanReadableDataRate(vi.connection.rate), "</b>\n",
-			  "target\t\t<b>", target_str, "</b>\n",
-			  comms_label, "\t<b>", comms_str, "</b>"
+			  String.Format("{0,-14}\t<b>{1}</b>\n", "DSN connected", conn.linked ? "<color=green>yes</color>" : "<color=red><i>no</i></color>"),
+			  String.Format("{0,-14}\t<b>{1}</b>\n", "science rate", Lib.HumanReadableDataRate(conn.rate)),
+			  String.Format("{0,-14}\t<b>{1}</b>\n", "strength", Lib.HumanReadablePerc(conn.strength, "F2")),
+			  String.Format("{0,-14}\t<b>{1}</b>\n", "target", target_str),
+			  String.Format("{0,-14}\t<b>{1}</b>", "transmitting", comms_str)
 			);
 
 			Texture image = Icons.signal_red;
 			switch (conn.status)
 			{
 				case LinkStatus.direct_link:
-					image = vi.connection.rate > 0.005 ? Icons.signal_white : Icons.signal_yellow;
+					image = conn.strength > 0.05 ? Icons.signal_white : Icons.signal_yellow; // 5%
 					break;
 
 				case LinkStatus.indirect_link:
-					image = vi.connection.rate > 0.005 ? Icons.signal_white : Icons.signal_yellow;
-					tooltip += "\n\n<color=yellow>Signal relayed</color>";
+					image = conn.strength > 0.05 ? Icons.signal_white : Icons.signal_yellow; // 5%
+					tooltip += "\n<color=yellow>Signal relayed</color>";
 					break;
 
 				case LinkStatus.no_link:
 					image = Icons.signal_red;
 					break;
 
-				case LinkStatus.no_antenna:
-					image = Icons.signal_red;
-					tooltip += "\n\n<color=red>No antenna</color>";
-					break;
-
 				case LinkStatus.blackout:
 					image = Icons.signal_red;
-					tooltip += "\n\n<color=red><i>Blackout</i></color>";
+					tooltip += "\n<color=red><i>Plasma blackout</i></color>";
 					break;
 			}
 

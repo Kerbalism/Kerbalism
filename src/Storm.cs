@@ -112,6 +112,8 @@ namespace KERBALISM
 
 				// send message
 				Message.Post(Severity.relax, Lib.BuildString("The solar storm around <b>", v.vesselName, "</b> is over"));
+
+				vd.msg_signal = false; // used to avoid sending 'signal is back' messages en-masse after the storm is over
 			}
 			// if storm is in progress
 			else if (vd.storm_age > vd.storm_time - Settings.StormDuration && vd.storm_state == 1)
