@@ -169,7 +169,7 @@ namespace KERBALISM
 				// render quote
 				GUILayout.FlexibleSpace();
 				GUILayout.BeginHorizontal();
-				GUILayout.Label("<i>In preparing for space, I have always found that\nplans are useless but planning is indispensable.\nWernher von Kerman</i>", quote_style);
+				GUILayout.Label("<i>In preparing for space, I have always found that\nplans are useless but planning is indispensable.\nWernher Von Kerman</i>", quote_style);
 				GUILayout.EndHorizontal();
 				GUILayout.Space(Styles.ScaleFloat(10.0f));
 			}
@@ -674,7 +674,7 @@ namespace KERBALISM
 					if (!m.isEnabled) continue;
 
 					if (m.moduleName == "ModuleDataTransmitter") has_comms = true;
-					if (m.moduleName == "ModuleRTAntenna") //to ensure that short-range omnis that are built in don't count
+					if (m.moduleName == "ModuleRTAntenna") //to ensure that short-range omni's that are built in don't count
 					{
 						float omni_range = Lib.ReflectionValue<float>(m, "Mode1OmniRange");
 						float dish_range = Lib.ReflectionValue<float>(m, "Mode1DishRange");
@@ -789,7 +789,7 @@ namespace KERBALISM
 		public bool crew_engineer;                          // true if an engineer is among the crew
 		public bool crew_scientist;                         // true if a scientist is among the crew
 		public bool crew_pilot;                             // true if a pilot is among the crew
-		public uint crew_engineer_maxlevel;                 // experience level of top enginner on board
+		public uint crew_engineer_maxlevel;                 // experience level of top engineer on board
 		public uint crew_scientist_maxlevel;                // experience level of top scientist on board
 		public uint crew_pilot_maxlevel;                    // experience level of top pilot on board
 
@@ -810,7 +810,7 @@ namespace KERBALISM
 
 		// reliability-related
 		public uint components;                             // number of components that can fail
-		public double high_quality;                         // percentual of high quality components
+		public double high_quality;                         // percentage of high quality components
 		public double failure_year;                         // estimated failures per-year, averaged per-component
 		public Dictionary<string, int> redundancy;          // number of components per redundancy group
 
