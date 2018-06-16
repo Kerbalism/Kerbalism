@@ -3,17 +3,22 @@
 
 ### Changes since the last release
 
- * Overhaul to transmitter use, planning and monitoring, data rates, signal strength, ec cost and targets now work. Internal  
+ * Moved Humidity into Habitation (PiezPiedPy)
+ * Pressure and CO2 Poisoning rates are back to normal (PiezPiedPy)
+ * GravityRing NRE's in VAB/SPH bug fixed (PiezPiedPy)
+ * Click through prevention added (some things can still be clicked through the windows, due to using KSP's old style Gui) (PiezPiedPy)
+ * Overhaul to transmitter use, planning and monitoring, data rates, signal strength, EC cost and targets now work. Internal  
      transmitters are separate from external transmitters and will only transmit telemetry and command control, they are also  
-     shown separately in the planner and are constantly powered unless you run out of ec, with the added benefit of loosing  
+     shown separately in the planner and are constantly powered unless you run out of EC, with the added benefit of loosing  
      contact with DSN and subsequent control.  
-     External transmitters will lose contact when retracted, break, or if you run out of ec rendering long distance comms, call  
-     home and your ability to transmit science to zero. External transmitters will also stop using ec when retracted.  
+     External transmitters will lose contact when retracted, break, or if you run out of EC rendering long distance comms, call  
+     home and your ability to transmit science to zero. External transmitters will also stop using EC when retracted.  
      EVA suits now contain a small internal transmitter for transmitting telemetry and controlling remote probes and rovers etc.  
-     All transmitters have had their ec usage changed to more realistic values and are also combinable. There is a minor drawback  
+     All transmitters have had their EC usage changed to more realistic values and are also combinable. There is a minor drawback  
      though, when changing scenes with the [ESC]Pause menu you may notice the target readout pointing to the wrong vessel and  
      some signals that where previously dis-connected wrongly connecting back online, simply changing scene from for example  
-     the Space Center to Tracking Station will solve all errors in the network. *Thanks to (PiezPiedPy) for the transmitter overhaul.* 
+     the Space Center to Tracking Station will solve all errors in the network.  
+	 *Thanks to (PiezPiedPy) for the transmitter overhaul.* 
 
  * Nitrogen added to pods on rescue, Humidity controller now detects breathable atmospheres (PiezPiedPy)
  * Kerbalism Communotron 8 transmitter is back (PiezPiedPy)
