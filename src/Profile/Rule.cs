@@ -114,8 +114,8 @@ namespace KERBALISM
 					{
 						// determine amount of resource to consume
 						double required = rate        // consumption rate
-									* k               // product of environment modifiers
-									* step;           // seconds elapsed or number of steps
+										* k           // product of environment modifiers
+										* step;       // seconds elapsed or number of steps
 
 						// if there is no output
 						if (output.Length == 0)

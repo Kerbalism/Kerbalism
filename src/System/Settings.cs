@@ -52,8 +52,8 @@ namespace KERBALISM
 			PoisoningThreshold = Lib.ConfigValue(cfg, "PoisoningThreshold", 0.02);
 
 			// humidity
-			HumidityFactor = Lib.ConfigValue(cfg, "HumidityFactor", 0.0);
-			HumidityThreshold = Lib.ConfigValue(cfg, "HumidityThreshold", 0.02);
+			HumidityFactor = Lib.ConfigValue(cfg, "HumidityFactor", 1.0);
+			HumidityThreshold = Lib.ConfigValue(cfg, "HumidityThreshold", 0.95);
 
 			// radiation
 			ShieldingEfficiency = Lib.ConfigValue(cfg, "ShieldingEfficiency", 0.9);
