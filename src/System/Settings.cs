@@ -51,6 +51,10 @@ namespace KERBALISM
 			PoisoningFactor = Lib.ConfigValue(cfg, "PoisoningFactor", 0.0);
 			PoisoningThreshold = Lib.ConfigValue(cfg, "PoisoningThreshold", 0.02);
 
+			// humidity
+			HumidityFactor = Lib.ConfigValue(cfg, "HumidityFactor", 1.0);
+			HumidityThreshold = Lib.ConfigValue(cfg, "HumidityThreshold", 0.95);
+
 			// radiation
 			ShieldingEfficiency = Lib.ConfigValue(cfg, "ShieldingEfficiency", 0.9);
 			StormRadiation = Lib.ConfigValue(cfg, "StormRadiation", 5.0) / 3600.0;  // 5.0 rad/h
@@ -119,6 +123,10 @@ namespace KERBALISM
 		// poisoning
 		public static double PoisoningFactor;                   // poisoning modifier value for vessels below threshold
 		public static double PoisoningThreshold;                // level of waste atmosphere resource that determine co2 poisoning status
+
+		// humidity
+		public static double HumidityFactor;                    // moisture modifier value for vessels below the threshold
+		public static double HumidityThreshold;                 // level of moist atmosphere resource that determine high humidity status
 
 		// radiation
 		public static double ShieldingEfficiency;               // proportion of radiation blocked by shielding (at max amount)

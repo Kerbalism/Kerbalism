@@ -105,50 +105,54 @@ namespace KERBALISM
 			Events["Toggle"].guiName = deployed ? Localizer.Format("#KERBALISM_Generic_RETRACT") : Localizer.Format("#KERBALISM_Generic_DEPLOY");
 			Events["Toggle"].active = (deploy.Length > 0) && (part.FindModuleImplementing<Habitat>() == null) && !deploy_anim.Playing() && !waitRotation && ResourceCache.Info(vessel, "ElectricCharge").amount > ec_rate;
 
-			// if deployed
-			if (deployed)
+			// in flight
+			if (Lib.IsFlight())
 			{
-				// if there is no ec
-				if (ResourceCache.Info(vessel, "ElectricCharge").amount < 0.01)
+				// if deployed
+				if (deployed)
 				{
-					// pause rotate animation
-					// - safe to pause multiple times
+					// if there is no ec
+					if (ResourceCache.Info(vessel, "ElectricCharge").amount < 0.01)
+					{
+						// pause rotate animation
+						// - safe to pause multiple times
+						Set_rotation(false);
+					}
+					// if there is enough ec instead and is not deploying
+					else if (Should_start_rotation())
+					{
+						// resume rotate animation
+						// - safe to resume multiple times
+						Set_rotation(true);
+					}
+				}
+				// stop loop animation if exist and we are retracting
+				else
+				{
+					// Call transform.stop() if it is rotating and the Stop method wasn't called.
 					Set_rotation(false);
 				}
-				// if there is enough ec instead and is not deploying
-				else if (Should_start_rotation())
-				{
-					// resume rotate animation
-					// - safe to resume multiple times
-					Set_rotation(true);
-				}
-			}
-			// stop loop animation if exist and we are retracting
-			else
-			{
-				// Call transform.stop() if it is rotating and the Stop method wasn't called.
-				Set_rotation(false);
-			}
 
-			// When is not rotating
-			if (waitRotation)
-			{
-				if (rotateIsTransform && !rotate_transf.IsRotating())
+				// When is not rotating
+				if (waitRotation)
 				{
-					// start retract animation in the correct direction, when is not rotating
-					if (animBackwards) deploy_anim.Play(deployed, false);
-					else deploy_anim.Play(!deployed, false);
-					waitRotation = false;
+					if (rotateIsTransform && !rotate_transf.IsRotating())
+					{
+						// start retract animation in the correct direction, when is not rotating
+						if (animBackwards) deploy_anim.Play(deployed, false);
+						else deploy_anim.Play(!deployed, false);
+						waitRotation = false;
+					}
+					else if (!rotateIsTransform && !rotate_anim.Playing())
+					{
+						if (animBackwards) deploy_anim.Play(deployed, false);
+						else deploy_anim.Play(!deployed, false);
+						waitRotation = false;
+					}
 				}
-				else if (!rotateIsTransform && !rotate_anim.Playing())
-				{
-					if (animBackwards) deploy_anim.Play(deployed, false);
-					else deploy_anim.Play(!deployed, false);
-					waitRotation = false;
-				}
-			}
 
-			if (rotateIsTransform && rotate_transf != null) rotate_transf.DoSpin();
+				if (rotateIsTransform && rotate_transf != null) rotate_transf.DoSpin();
+			}
 		}
 
 		public void FixedUpdate()

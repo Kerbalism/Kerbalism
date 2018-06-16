@@ -71,7 +71,7 @@ namespace KERBALISM
 
 			// environment panels
 			panel_environment = new List<string>();
-			if (Features.Pressure || Features.Poisoning) panel_environment.Add("habitat");
+			if (Features.Pressure || Features.Poisoning || Features.Humidity) panel_environment.Add("habitat");
 			panel_environment.Add("environment");
 
 			// panel ui
@@ -437,10 +437,12 @@ namespace KERBALISM
 		{
 			Simulated_resource atmo_res = sim.Resource("Atmosphere");
 			Simulated_resource waste_res = sim.Resource("WasteAtmosphere");
+			Simulated_resource moist_res = sim.Resource("MoistAtmosphere");
 
 			// generate tooltips
 			string atmo_tooltip = atmo_res.Tooltip();
 			string waste_tooltip = waste_res.Tooltip(true);
+			string moist_tooltip = moist_res.Tooltip(true);
 
 			// generate status string for scrubbing
 			string waste_status = !Features.Poisoning                   //< feature disabled
@@ -453,13 +455,24 @@ namespace KERBALISM
 			  ? "<color=#ffff00>inadequate</color>"
 			  : "good";                                                 //< sufficient scrubbing
 
+			// generate status string for humidity
+			string moist_status = !Features.Humidity                    //< feature disabled
+			  ? "n/a"
+			  : moist_res.produced <= double.Epsilon                    //< unnecessary
+			  ? "not required"
+			  : moist_res.consumed <= double.Epsilon                    //< no humidity control
+			  ? "<color=#ffff00>none</color>"
+			  : moist_res.produced > moist_res.consumed * 1.001         //< insufficient humidity control
+			  ? "<color=#ffff00>inadequate</color>"
+			  : "good";                                                 //< sufficient humidity control
+
 			// generate status string for pressurization
 			string atmo_status = !Features.Pressure                     //< feature disabled
 			  ? "n/a"
 			  : atmo_res.consumed <= double.Epsilon                     //< unnecessary
 			  ? "not required"
 			  : atmo_res.produced <= double.Epsilon                     //< no pressure control
-			  ? "none"
+			  ? "<color=#ffff00>none</color>"
 			  : atmo_res.consumed > atmo_res.produced * 1.001           //< insufficient pressure control
 			  ? "<color=#ffff00>inadequate</color>"
 			  : "good";                                                 //< sufficient pressure control
@@ -468,6 +481,7 @@ namespace KERBALISM
 			p.AddContent("volume", Lib.HumanReadableVolume(va.volume), "volume of enabled habitats");
 			p.AddContent("surface", Lib.HumanReadableSurface(va.surface), "surface of enabled habitats");
 			p.AddContent("scrubbing", waste_status, waste_tooltip);
+			p.AddContent("humidity", moist_status, moist_tooltip);
 			p.AddContent("pressurization", atmo_status, atmo_tooltip);
 		}
 
@@ -643,6 +657,9 @@ namespace KERBALISM
 
 			// determine if the vessel has scrubbing capabilities
 			scrubbed = sim.Resource("WasteAtmosphere").consumed > 0.0 || env.breathable;
+
+			// determine if the vessel has humidity control capabilities
+			humid = sim.Resource("MoistAtmosphere").consumed > 0.0 || env.breathable;
 		}
 
 		void Analyze_comms(List<Part> parts)
@@ -777,24 +794,25 @@ namespace KERBALISM
 		public uint crew_pilot_maxlevel;                    // experience level of top pilot on board
 
 		// habitat
-		public double volume;                                 // total volume in m^3
-		public double surface;                                // total surface in m^2
+		public double volume;                               // total volume in m^3
+		public double surface;                              // total surface in m^2
 		public bool pressurized;                            // true if the vessel has pressure control capabilities
 		public bool scrubbed;                               // true if the vessel has co2 scrubbing capabilities
+		public bool humid;                                  // true if the vessel has co2 scrubbing capabilities
 
 		// radiation related
-		public double emitted;                                // amount of radiation emitted by components
-		public double shielding;                              // shielding factor
+		public double emitted;                              // amount of radiation emitted by components
+		public double shielding;                            // shielding factor
 
 		// quality-of-life related
-		public double living_space;                           // living space factor
-		public Comforts comforts;                             // comfort info
+		public double living_space;                         // living space factor
+		public Comforts comforts;                           // comfort info
 
 		// reliability-related
 		public uint components;                             // number of components that can fail
-		public double high_quality;                           // percentual of high quality components
-		public double failure_year;                           // estimated failures per-year, averaged per-component
-		public Dictionary<string, int> redundancy;            // number of components per redundancy group
+		public double high_quality;                         // percentual of high quality components
+		public double failure_year;                         // estimated failures per-year, averaged per-component
+		public Dictionary<string, int> redundancy;          // number of components per redundancy group
 
 		public bool has_comms;
 	}
@@ -822,7 +840,7 @@ namespace KERBALISM
 			// process all rules
 			foreach (Rule r in Profile.rules)
 			{
-				if ((r.input.Length > 0 || (r.output_only && r.output.Length > 0)) && r.rate > 0.0)
+				if ((r.input.Length > 0 || (r.monitor && r.output.Length > 0)) && r.rate > 0.0)
 				{
 					Process_rule(r, env, va);
 				}
@@ -940,7 +958,7 @@ namespace KERBALISM
 			else if (rate > double.Epsilon)
 			{
 				// simulate recipe if output_only is false
-				if (!r.output_only)
+				if (!r.monitor)
 				{
 					// - rules always dump excess overboard (because it is waste)
 					Simulated_recipe recipe = new Simulated_recipe(r.name);

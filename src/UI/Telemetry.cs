@@ -96,6 +96,7 @@ namespace KERBALISM
 			if (Features.Poisoning) p.AddContent("co2 level", Lib.Color(Lib.HumanReadablePerc(vi.poisoning, "F2"), vi.poisoning > Settings.PoisoningThreshold, "yellow"));
 			if (!v.isEVA)
 			{
+				if (Features.Humidity) p.AddContent("humidity", Lib.Color(Lib.HumanReadablePerc(vi.humidity, "F2"), vi.humidity > Settings.HumidityThreshold, "yellow"));
 				if (Features.Pressure) p.AddContent("pressure", Lib.HumanReadablePressure(vi.pressure * Sim.PressureAtSeaLevel()));
 				if (Features.Shielding) p.AddContent("shielding", Habitat.Shielding_to_string(vi.shielding));
 				if (Features.LivingSpace) p.AddContent("living space", Habitat.Living_space_to_string(vi.living_space));

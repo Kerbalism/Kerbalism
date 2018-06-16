@@ -189,6 +189,14 @@ namespace KERBALISM
 			return Cache.VesselInfo(v).poisoning;
 		}
 
+		// return level of co2 of internal habitat
+		public static double Humidity(Vessel v)
+		{
+			if (!Features.Humidity)
+				return 0.0;
+			return Cache.VesselInfo(v).humidity;
+		}
+
 		// return proportion of radiation blocked by shielding
 		public static double Shielding(Vessel v)
 		{

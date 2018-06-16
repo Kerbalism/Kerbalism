@@ -56,6 +56,10 @@ namespace KERBALISM
 						k *= vi.poisoning > Settings.PoisoningThreshold ? 1.0 : Settings.PoisoningFactor;
 						break;
 
+					case "humidity":
+						k *= vi.humidity > Settings.HumidityThreshold ? 1.0 : Settings.HumidityFactor;
+						break;
+
 					case "per_capita":
 						k /= (double)Math.Max(vi.crew_count, 1);
 						break;
@@ -114,6 +118,10 @@ namespace KERBALISM
 
 					case "poisoning":
 						k *= !va.scrubbed ? 1.0 : Settings.PoisoningFactor;
+						break;
+
+					case "humidity":
+						k *= !va.humid ? 1.0 : Settings.HumidityFactor;
 						break;
 
 					case "per_capita":

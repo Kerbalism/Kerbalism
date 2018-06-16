@@ -38,6 +38,7 @@ namespace KERBALISM
 			Comfort = modifiers.Contains("comfort");
 			Poisoning = modifiers.Contains("poisoning");
 			Pressure = modifiers.Contains("pressure");
+			Humidity = modifiers.Contains("humidity");
 
 			// habitat is enabled if any of the values it provides are in use
 			Habitat =
@@ -45,6 +46,7 @@ namespace KERBALISM
 			  || LivingSpace
 			  || Poisoning
 			  || Pressure
+			  || Humidity
 			  || modifiers.Contains("volume")
 			  || modifiers.Contains("surface");
 
@@ -64,6 +66,7 @@ namespace KERBALISM
 			Lib.Log("- Comfort: " + Comfort);
 			Lib.Log("- Poisoning: " + Poisoning);
 			Lib.Log("- Pressure: " + Pressure);
+			Lib.Log("- Humidity: " + Humidity);
 			Lib.Log("- Habitat: " + Habitat);
 			Lib.Log("- Supplies: " + Supplies);
 		}
@@ -82,6 +85,7 @@ namespace KERBALISM
 		public static bool Comfort;
 		public static bool Poisoning;
 		public static bool Pressure;
+		public static bool Humidity;
 
 		// features detected in other ways
 		public static bool Habitat;

@@ -11,6 +11,11 @@ namespace KERBALISM
 	// a window containing a panel
 	public sealed class Window
 	{
+		// click through locks
+		private bool clickThroughLocked = false;
+		private const ControlTypes WindowLockTypes = ControlTypes.MANNODE_ADDEDIT | ControlTypes.MANNODE_DELETE | ControlTypes.MAP_UI |
+			ControlTypes.TARGETING | ControlTypes.VESSEL_SWITCHING | ControlTypes.TWEAKABLES | ControlTypes.EDITOR_UI | ControlTypes.EDITOR_SOFT_LOCK;
+
 		// - width: window width in pixel
 		// - left: initial window horizontal position
 		// - top: initial window vertical position
@@ -36,6 +41,10 @@ namespace KERBALISM
 
 		public void Close()
 		{
+			// clear input locks
+			InputLockManager.RemoveControlLock("KerbalismWindowLock");
+			InputLockManager.RemoveControlLock("KerbalismMainGUILock");
+
 			refresh = null;
 			panel = null;
 		}
@@ -80,10 +89,25 @@ namespace KERBALISM
 			// draw the window
 			win_rect = GUILayout.Window(win_id, win_rect, Draw_window, "", Styles.win);
 
+			// get mouse over state
+			bool mouse_over = win_rect.Contains(Event.current.mousePosition);
+
 			// disable camera mouse scrolling on mouse over
-			if (win_rect.Contains(Event.current.mousePosition))
+			if (mouse_over)
 			{
 				GameSettings.AXIS_MOUSEWHEEL.primary.scale = 0.0f;
+			}
+
+			// Disable Click through
+			if (mouse_over && !clickThroughLocked)
+			{
+				InputLockManager.SetControlLock(WindowLockTypes, "KerbalismWindowLock");
+				clickThroughLocked = true;
+			}
+			if (!mouse_over && clickThroughLocked)
+			{
+				InputLockManager.RemoveControlLock("KerbalismWindowLock");
+				clickThroughLocked = false;
 			}
 		}
 

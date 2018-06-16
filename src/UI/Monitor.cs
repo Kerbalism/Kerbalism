@@ -393,15 +393,30 @@ namespace KERBALISM
 		void Problem_poisoning(Vessel_info info, ref List<Texture> icons, ref List<string> tooltips)
 		{
 			string poisoning_str = Lib.BuildString("CO2 level in internal atmosphere: <b>", Lib.HumanReadablePerc(info.poisoning), "</b>");
-			if (info.poisoning >= 0.05)
+			if (info.poisoning >= Settings.PoisoningThreshold)
 			{
 				icons.Add(Icons.recycle_red);
 				tooltips.Add(poisoning_str);
 			}
-			else if (info.poisoning > 0.025)
+			else if (info.poisoning > Settings.PoisoningThreshold / 1.25)
 			{
 				icons.Add(Icons.recycle_yellow);
 				tooltips.Add(poisoning_str);
+			}
+		}
+
+		void Problem_humidity(Vessel_info info, ref List<Texture> icons, ref List<string> tooltips)
+		{
+			string humidity_str = Lib.BuildString("Humidity level in internal atmosphere: <b>", Lib.HumanReadablePerc(info.humidity), "</b>");
+			if (info.humidity >= Settings.HumidityThreshold)
+			{
+				icons.Add(Icons.recycle_red);
+				tooltips.Add(humidity_str);
+			}
+			else if (info.humidity > Settings.HumidityThreshold / 1.25)
+			{
+				icons.Add(Icons.recycle_yellow);
+				tooltips.Add(humidity_str);
 			}
 		}
 
@@ -432,6 +447,7 @@ namespace KERBALISM
 			if (crew.Count > 0 && Features.Radiation) Problem_radiation(vi, ref problem_icons, ref problem_tooltips);
 			Problem_greenhouses(v, vi.greenhouses, ref problem_icons, ref problem_tooltips);
 			if (Features.Poisoning) Problem_poisoning(vi, ref problem_icons, ref problem_tooltips);
+			if (Features.Humidity) Problem_humidity(vi, ref problem_icons, ref problem_tooltips);
 
 			// choose problem icon
 			const UInt64 problem_icon_time = 3;

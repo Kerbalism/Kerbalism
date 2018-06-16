@@ -21,7 +21,8 @@ namespace KERBALISM
 			variance = Lib.ConfigValue(node, "variance", 0.0);
 			modifiers = Lib.Tokenize(Lib.ConfigValue(node, "modifier", string.Empty), ',');
 			breakdown = Lib.ConfigValue(node, "breakdown", false);
-			output_only = Lib.ConfigValue(node, "output_only", false);
+			monitor = Lib.ConfigValue(node, "monitor", false);
+			monitor_offset = Lib.ConfigValue(node, "monitor_offset", 0.0);
 			warning_threshold = Lib.ConfigValue(node, "warning_threshold", 0.33);
 			danger_threshold = Lib.ConfigValue(node, "danger_threshold", 0.66);
 			fatal_threshold = Lib.ConfigValue(node, "fatal_threshold", 1.0);
@@ -112,9 +113,9 @@ namespace KERBALISM
 					if (res != null && rate > double.Epsilon)
 					{
 						// determine amount of resource to consume
-						double required = rate            // consumption rate
-										* k               // product of environment modifiers
-										* step;           // seconds elapsed or number of steps
+						double required = rate        // consumption rate
+										* k           // product of environment modifiers
+										* step;       // seconds elapsed or number of steps
 
 						// if there is no output
 						if (output.Length == 0)
@@ -122,8 +123,8 @@ namespace KERBALISM
 							// simply consume (that is faster)
 							res.Consume(required);
 						}
-						// if there is an output and output_only is false
-						else if (!output_only)
+						// if there is an output and monitor is false
+						else if (!monitor)
 						{
 							// transform input into output resource
 							// - rules always dump excess overboard (because it is waste)
@@ -132,11 +133,11 @@ namespace KERBALISM
 							recipe.Output(output, required * ratio, true);
 							resources.Transform(recipe);
 						}
-						// if output_only then do not consume input resource
-						else
+						// if monitor then do not consume input resource and only produce output if resource percentage + monitor_offset is < 100%
+						else if ((res.amount / res.capacity) + monitor_offset < 1.0)
 						{
 							// simply produce (that is faster)
-							resources.Produce(v, output, required);
+							resources.Produce(v, output, required * ratio);
 						}
 					}
 
@@ -147,7 +148,7 @@ namespace KERBALISM
 					if (input_threshold >= double.Epsilon)
 					{
 						if (res.amount >= double.Epsilon && res.capacity >= double.Epsilon)
-							trigger = res.amount / res.capacity >= input_threshold;
+							trigger = (res.amount / res.capacity) + monitor_offset >= input_threshold;
 						else
 							trigger = false;
 					}
@@ -242,7 +243,8 @@ namespace KERBALISM
 		public double variance;           // variance for degeneration rate, unique per-kerbal and in range [1.0-variance, 1.0+variance]
 		public List<string> modifiers;    // if specified, rates are influenced by the product of all environment modifiers
 		public bool breakdown;            // if true, trigger a breakdown instead of killing the kerbal
-		public bool output_only;          // if true and input resource exists only monitor the input resource, do not consume it
+		public bool monitor;              // if true and input resource exists only monitor the input resource, do not consume it
+		public double monitor_offset;     // add this percentage to input resource to stop output and alter trigger [range 0 to 1]
 		public double warning_threshold;  // threshold of degeneration used to show warning messages and yellow status color
 		public double danger_threshold;   // threshold of degeneration used to show danger messages and red status color
 		public double fatal_threshold;    // threshold of degeneration used to show fatal messages and kill/breakdown the kerbal

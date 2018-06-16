@@ -10,6 +10,11 @@ namespace KERBALISM
 
 	public sealed class Launcher
 	{
+		// click through locks
+		private bool clickThroughLocked = false;
+		private const ControlTypes MainGUILockTypes = ControlTypes.MANNODE_ADDEDIT | ControlTypes.MANNODE_DELETE | ControlTypes.MAP_UI |
+			ControlTypes.TARGETING | ControlTypes.VESSEL_SWITCHING | ControlTypes.TWEAKABLES | ControlTypes.EDITOR_UI | ControlTypes.EDITOR_SOFT_LOCK;
+
 		public Launcher()
 		{
 			// initialize
@@ -63,7 +68,8 @@ namespace KERBALISM
 		public void On_gui()
 		{
 			// do nothing if GUI has not been initialized
-			if (!ui_initialized) return;
+			if (!ui_initialized)
+				return;
 
 			// render the window
 			if (launcher_btn.toggleButton.Value || launcher_btn.IsHovering || (win_rect.width > 0 && win_rect.Contains(Mouse.screenPos)))
@@ -126,10 +132,25 @@ namespace KERBALISM
 				win_rect.width = 0;
 			}
 
+			// get mouse over state
+			bool mouse_over = win_rect.Contains(Event.current.mousePosition);
+
 			// disable camera mouse scrolling on mouse over
-			if (win_rect.Contains(Event.current.mousePosition))
+			if (mouse_over)
 			{
 				GameSettings.AXIS_MOUSEWHEEL.primary.scale = 0.0f;
+			}
+
+			// Disable Click through
+			if (mouse_over && !clickThroughLocked)
+			{
+				InputLockManager.SetControlLock(MainGUILockTypes, "KerbalismMainGUILock");
+				clickThroughLocked = true;
+			}
+			if (!mouse_over && clickThroughLocked)
+			{
+				InputLockManager.RemoveControlLock("KerbalismMainGUILock");
+				clickThroughLocked = false;
 			}
 		}
 
