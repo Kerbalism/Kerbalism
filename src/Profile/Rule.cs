@@ -184,7 +184,7 @@ namespace KERBALISM
 						// move back between warning and danger level
 						rd.problem = (warning_threshold + danger_threshold) * 0.5;
 
-						// make sure next danger messagen is shown
+						// make sure next danger message is shown
 						rd.message = 1;
 					}
 					else
