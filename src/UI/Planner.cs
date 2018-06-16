@@ -472,7 +472,7 @@ namespace KERBALISM
 			  : atmo_res.consumed <= double.Epsilon                     //< unnecessary
 			  ? "not required"
 			  : atmo_res.produced <= double.Epsilon                     //< no pressure control
-			  ? "none"
+			  ? "<color=#ffff00>none</color>"
 			  : atmo_res.consumed > atmo_res.produced * 1.001           //< insufficient pressure control
 			  ? "<color=#ffff00>inadequate</color>"
 			  : "good";                                                 //< sufficient pressure control
@@ -840,7 +840,7 @@ namespace KERBALISM
 			// process all rules
 			foreach (Rule r in Profile.rules)
 			{
-				if ((r.input.Length > 0 || (r.output_only && r.output.Length > 0)) && r.rate > 0.0)
+				if ((r.input.Length > 0 || (r.monitor && r.output.Length > 0)) && r.rate > 0.0)
 				{
 					Process_rule(r, env, va);
 				}
@@ -958,7 +958,7 @@ namespace KERBALISM
 			else if (rate > double.Epsilon)
 			{
 				// simulate recipe if output_only is false
-				if (!r.output_only)
+				if (!r.monitor)
 				{
 					// - rules always dump excess overboard (because it is waste)
 					Simulated_recipe recipe = new Simulated_recipe(r.name);
