@@ -169,7 +169,7 @@ namespace KERBALISM
 				// render quote
 				GUILayout.FlexibleSpace();
 				GUILayout.BeginHorizontal();
-				GUILayout.Label("<i>In preparing for space, I have always found that\nplans are useless but planning is indispensable.\nWernher Von Kerman</i>", quote_style);
+				GUILayout.Label("<i>In preparing for space, I have always found that\nplans are useless but planning is indispensable.\nWernher von Kerman</i>", quote_style);
 				GUILayout.EndHorizontal();
 				GUILayout.Space(Styles.ScaleFloat(10.0f));
 			}
