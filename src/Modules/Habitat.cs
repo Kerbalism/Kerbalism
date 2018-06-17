@@ -144,7 +144,7 @@ namespace KERBALISM
 			{
 				Lib.RemoveResource(part, "Atmosphere", 0.0, volume);
 				Lib.RemoveResource(part, "WasteAtmosphere", 0.0, volume);
-				Lib.RemoveResource(part, "MoistAtmosphere", 0.0, volume * 0.4); // 1 Kerbal = 0.05/day(5% @ 1m3) note. (base humidity is already at 0.6 = 60%)
+				Lib.RemoveResource(part, "MoistAtmosphere", 0.0, volume); // 1 Kerbal = 0.05/day(5% @ 1m3) note. (base humidity is already at 0.6 = 60%)
 				Lib.RemoveResource(part, "Shielding", 0.0, surface);
 			}
 		}
