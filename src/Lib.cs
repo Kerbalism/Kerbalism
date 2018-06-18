@@ -316,6 +316,14 @@ namespace KERBALISM
 			return (T)field.GetValue(instance);
 		}
 
+		// get access to a private field
+		public static T PrivateField<T>(object instance, string field_name)
+		{
+			BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static;
+			FieldInfo field = instance.GetType().GetField(field_name, flags);
+			return (T)field.GetValue(instance);
+		}
+
 		public static void ReflectionCall(PartModule m, string call_name)
 		{
 			m.GetType().GetMethod(call_name).Invoke(m, null);
