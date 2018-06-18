@@ -153,14 +153,14 @@ namespace KERBALISM
 					}
 
 					// is loss of connection due to plasma blackout
-					/*else if (v.connection.InPlasma)  // calling InPlasma causes a StackOverflow :(
+					else if (Lib.PrivateField<bool>(v.connection, "inPlasma"))  // calling InPlasma causes a StackOverflow :(
 					{
 						status = LinkStatus.blackout;
 						rate = 0.0;
 						internal_cost = 0.0;
 						science_cost = 0.0;
 						return;
-					}*/
+					}
 				}
 
 				// no connection

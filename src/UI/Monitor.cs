@@ -39,7 +39,7 @@ namespace KERBALISM
 			config_style.imagePosition = ImagePosition.ImageLeft;
 			config_style.fontSize = Styles.ScaleInteger(9);
 
-			// group texfield style
+			// group text field style
 			group_style = new GUIStyle(config_style)
 			{
 				imagePosition = ImagePosition.TextOnly,
@@ -502,18 +502,12 @@ namespace KERBALISM
 
 					if (res.capacity > double.Epsilon)
 					{
-						if (tooltips.Count == 0)
-						{
-							tooltips.Add("<align=left /><b>name\t\tlevel\tduration</b>");
-						}
-
+						if (tooltips.Count == 0) tooltips.Add(String.Format("<align=left /><b>{0,-18}\tlevel\tduration</b>", "name"));
 						tooltips.Add(Lib.BuildString
 						(
 						  res.level <= 0.005 ? "<color=#ff0000>" : res.level <= supply.low_threshold ? "<color=#ffff00>" : "<color=#cccccc>",
-						  supply.resource,
-						  supply.resource != "Ammonia" ? "\t\t" : "\t", //< hack: make ammonia fit damn it
-						  Lib.HumanReadablePerc(res.level), "\t",
-						  depletion <= double.Epsilon ? "depleted" : Lib.HumanReadableDuration(depletion),
+						  String.Format("{0,-18}\t{1}\t{2}", supply.resource, Lib.HumanReadablePerc(res.level),
+						  depletion <= double.Epsilon ? "depleted" : Lib.HumanReadableDuration(depletion)),
 						  "</color>"
 						));
 

@@ -320,14 +320,14 @@ namespace KERBALISM
 			// calculate various radiation levels
 			var levels = new[]
 			{
-	  Math.Max(Radiation.Nominal, (env.surface_rad + va.emitted)),        // surface
-      Math.Max(Radiation.Nominal, (env.magnetopause_rad + va.emitted)),   // inside magnetopause
-      Math.Max(Radiation.Nominal, (env.inner_rad + va.emitted)),          // inside inner belt
-      Math.Max(Radiation.Nominal, (env.outer_rad + va.emitted)),          // inside outer belt
-      Math.Max(Radiation.Nominal, (env.heliopause_rad + va.emitted)),     // interplanetary
-      Math.Max(Radiation.Nominal, (env.extern_rad + va.emitted)),         // interstellar
-      Math.Max(Radiation.Nominal, (env.storm_rad + va.emitted))           // storm
-    };
+				Math.Max(Radiation.Nominal, (env.surface_rad + va.emitted)),        // surface
+				Math.Max(Radiation.Nominal, (env.magnetopause_rad + va.emitted)),   // inside magnetopause
+				Math.Max(Radiation.Nominal, (env.inner_rad + va.emitted)),          // inside inner belt
+				Math.Max(Radiation.Nominal, (env.outer_rad + va.emitted)),          // inside outer belt
+				Math.Max(Radiation.Nominal, (env.heliopause_rad + va.emitted)),     // interplanetary
+				Math.Max(Radiation.Nominal, (env.extern_rad + va.emitted)),         // interstellar
+				Math.Max(Radiation.Nominal, (env.storm_rad + va.emitted))           // storm
+			};
 
 			// evaluate modifiers (except radiation)
 			List<string> modifiers_except_radiation = new List<string>();
@@ -647,7 +647,7 @@ namespace KERBALISM
 		void Analyze_habitat(Resource_simulator sim, Environment_analyzer env)
 		{
 			// calculate total volume
-			volume = sim.Resource("Atmosphere").capacity;
+			volume = sim.Resource("Atmosphere").capacity / 1e3;
 
 			// calculate total surface
 			surface = sim.Resource("Shielding").capacity;
@@ -673,14 +673,25 @@ namespace KERBALISM
 					// skip disabled modules
 					if (!m.isEnabled) continue;
 
-					if (m.moduleName == "ModuleDataTransmitter") has_comms = true;
-					if (m.moduleName == "ModuleRTAntenna") //to ensure that short-range omni's that are built in don't count
+					// RemoteTech enabled
+					if (RemoteTech.Enabled() && m.moduleName == "ModuleRTAntenna") //to ensure that short-range omni's that are built in don't count
 					{
 						float omni_range = Lib.ReflectionValue<float>(m, "Mode1OmniRange");
 						float dish_range = Lib.ReflectionValue<float>(m, "Mode1DishRange");
 						Lib.Log("omni: " + omni_range.ToString());
 						Lib.Log("dish: " + dish_range.ToString());
 						if (omni_range >= 25000 || dish_range >= 25000) has_comms = true;//min 25 km range
+					}
+					else if (m.moduleName == "ModuleDataTransmitter")
+					{
+						// CommNet enabled and external transmitter
+						if (HighLogic.fetch.currentGame.Parameters.Difficulty.EnableCommNet)
+						{
+							if (Lib.ReflectionValue<AntennaType>(m, "antennaType") != AntennaType.INTERNAL) has_comms = true;
+						}
+						// the simple stupid always connected signal system
+						else
+							has_comms = true;
 					}
 				}
 			}

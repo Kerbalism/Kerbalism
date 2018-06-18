@@ -126,14 +126,14 @@ namespace KERBALISM
 				{
 					// add internal atmosphere resources
 					// - disabled habitats start with zero atmosphere
-					Lib.AddResource(part, "Atmosphere", (state == State.enabled && Features.Pressure) ? volume : 0.0, volume);
-					Lib.AddResource(part, "WasteAtmosphere", 0.0, volume);
-					Lib.AddResource(part, "MoistAtmosphere", 0.0, volume); // 1 Kerbal = 0.05/day(5% @ 1m3) note. (base humidity is already at 0.6 = 60%)
+					Lib.AddResource(part, "Atmosphere", (state == State.enabled && Features.Pressure) ? volume * 1e3 : 0.0, volume * 1e3);
+					Lib.AddResource(part, "WasteAtmosphere", 0.0, volume * 1e3);
+					Lib.AddResource(part, "MoistAtmosphere", 0.0, volume * 1e3);
 
 					// add external surface shielding
 					Lib.AddResource(part, "Shielding", 0.0, surface);
 
-					// inflatable habitats can't be shielded (but still need the capacity)
+					// inflatable habitats can't be shielded (but still need the capacity) unless they have rigid walls
 					part.Resources["Shielding"].isTweakable = (Get_inflate_string().Length == 0) || inflatableUsingRigidWalls;
 
 					// if shielding feature is disabled, just hide it
@@ -142,9 +142,9 @@ namespace KERBALISM
 			}
 			else
 			{
-				Lib.RemoveResource(part, "Atmosphere", 0.0, volume);
-				Lib.RemoveResource(part, "WasteAtmosphere", 0.0, volume);
-				Lib.RemoveResource(part, "MoistAtmosphere", 0.0, volume); // 1 Kerbal = 0.05/day(5% @ 1m3) note. (base humidity is already at 0.6 = 60%)
+				Lib.RemoveResource(part, "Atmosphere", 0.0, volume * 1e3);
+				Lib.RemoveResource(part, "WasteAtmosphere", 0.0, volume * 1e3);
+				Lib.RemoveResource(part, "MoistAtmosphere", 0.0, volume * 1e3);
 				Lib.RemoveResource(part, "Shielding", 0.0, surface);
 			}
 		}
@@ -154,7 +154,7 @@ namespace KERBALISM
 			Lib.SetResourceFlow(part, "Atmosphere", b);
 			Lib.SetResourceFlow(part, "WasteAtmosphere", b);
 			Lib.SetResourceFlow(part, "MoistAtmosphere", b);
-			if (Get_inflate_string().Length == 0) Lib.SetResourceFlow(part, "Shielding", b);
+			Lib.SetResourceFlow(part, "Shielding", b);
 		}
 
 		State Equalize()
@@ -198,7 +198,7 @@ namespace KERBALISM
 
 				// determine equalization speed
 				// we deal with the case where a big hab is sucking all atmosphere from the rest of the vessel
-				double amount = Math.Min(partsHabVolume, volume) * equalize_speed * Kerbalism.elapsed_s;
+				double amount = Math.Min(partsHabVolume * 1e3, volume * 1e3) * (equalize_speed * 2) * Kerbalism.elapsed_s;
 
 				// the others habs pressure are higher or can consume until 50% of the no inflate module
 				// 50% is temporary solution for do inflate faster
@@ -272,14 +272,16 @@ namespace KERBALISM
 				// venting succeeded if the amount reached zero
 				if (atmo.amount <= double.Epsilon && waste.amount <= double.Epsilon && moist.amount <= double.Epsilon)
 				{
+					SetPassable(false);
+					RefreshDialog();
 					return State.disabled;
 				}
 
 				// how much to vent
-				double rate = volume * equalize_speed * Kerbalism.elapsed_s;
-				double atmo_k = atmo.amount / (atmo.amount + waste.amount);
-				double waste_k = waste.amount / (atmo.amount + waste.amount);
-				double moist_k = moist.amount / (atmo.amount + waste.amount);
+				double rate = volume * 1e3 * equalize_speed * Kerbalism.elapsed_s;
+				double atmo_k = atmo.amount / (atmo.amount + waste.amount + moist.amount);
+				double waste_k = waste.amount / (atmo.amount + waste.amount + moist.amount);
+				double moist_k = moist.amount / (atmo.amount + waste.amount + moist.amount);
 
 				// produce from all enabled habs in the vessel
 				foreach (Habitat partHabitat in vessel.FindPartModulesImplementing<Habitat>())
@@ -288,7 +290,7 @@ namespace KERBALISM
 					{
 						PartResource t = partHabitat.part.Resources["Atmosphere"];
 						t.amount += (Math.Max(atmo.amount - rate * atmo_k, 0.0) * (t.amount / atmosphereAmount));
-						t.amount = Math.Min(t.amount, t.maxAmount); // we can't overpressurize other sections
+						t.amount = Math.Min(t.amount, t.maxAmount); // we can't over pressurize other sections
 					}
 				}
 
@@ -309,6 +311,8 @@ namespace KERBALISM
 				part.Resources["MoistAtmosphere"].amount = 0.0;
 
 				// return new state
+				SetPassable(false);
+				RefreshDialog();
 				return State.disabled;
 			}
 		}
@@ -453,7 +457,7 @@ namespace KERBALISM
 		public static double Tot_volume(Vessel v)
 		{
 			// we use capacity: this mean that partially pressurized parts will still count,
-			return ResourceCache.Info(v, "Atmosphere").capacity;
+			return ResourceCache.Info(v, "Atmosphere").capacity / 1e3;
 		}
 
 		// return habitat surface in a vessel in m^2
