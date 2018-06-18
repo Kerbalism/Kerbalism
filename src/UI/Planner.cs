@@ -647,7 +647,7 @@ namespace KERBALISM
 		void Analyze_habitat(Resource_simulator sim, Environment_analyzer env)
 		{
 			// calculate total volume
-			volume = sim.Resource("Atmosphere").capacity;
+			volume = sim.Resource("Atmosphere").capacity / 1e3;
 
 			// calculate total surface
 			surface = sim.Resource("Shielding").capacity;
