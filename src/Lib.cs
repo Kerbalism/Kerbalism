@@ -288,13 +288,14 @@ namespace KERBALISM
 
 		// --- REFLECTION -----------------------------------------------------------
 
+		private static readonly BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static;
+
 		// return a value from a module using reflection
 		// note: useful when the module is from another assembly, unknown at build time
 		// note: useful when the value isn't persistent
 		// note: this function break hard when external API change, by design
 		public static T ReflectionValue<T>(PartModule m, string value_name)
 		{
-			BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 			return (T)m.GetType().GetField(value_name, flags).GetValue(m);
 		}
 
@@ -304,24 +305,13 @@ namespace KERBALISM
 		// note: this function break hard when external API change, by design
 		public static void ReflectionValue<T>(PartModule m, string value_name, T value)
 		{
-			BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 			m.GetType().GetField(value_name, flags).SetValue(m, value);
 		}
 
 		// get access to a private field
-		public static T PrivateField<T>(Type type, object instance, string field_name)
+		public static T ReflectionValue<T>(object instance, string field_name)
 		{
-			BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static;
-			FieldInfo field = type.GetField(field_name, flags);
-			return (T)field.GetValue(instance);
-		}
-
-		// get access to a private field
-		public static T PrivateField<T>(object instance, string field_name)
-		{
-			BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static;
-			FieldInfo field = instance.GetType().GetField(field_name, flags);
-			return (T)field.GetValue(instance);
+			return (T)instance.GetType().GetField(field_name, flags).GetValue(instance);
 		}
 
 		public static void ReflectionCall(PartModule m, string call_name)
