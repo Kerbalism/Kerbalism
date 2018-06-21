@@ -761,7 +761,7 @@ namespace KERBALISM
 			// the issue
 			//   - GetWorldPos3D() return mainBody position for a few ticks after scene changes
 			//   - we can detect that, and fall back to evaluating position from the orbit
-			//   - orbit is not valid if the vessel is landed, and for a tick on prelauch/staging/decoupling
+			//   - orbit is not valid if the vessel is landed, and for a tick on prelaunch/staging/decoupling
 			//   - evaluating position from latitude/longitude work in all cases, but is probably the slowest method
 
 			// get vessel position
@@ -773,7 +773,7 @@ namespace KERBALISM
 				// try to get it from orbit
 				pos = v.orbit.getPositionAtUT(Planetarium.GetUniversalTime());
 
-				// if the orbit is invalid (landed, or 1 tick after prelauch/staging/decoupling)
+				// if the orbit is invalid (landed, or 1 tick after prelaunch/staging/decoupling)
 				if (double.IsNaN(pos.x))
 				{
 					// get it from lat/long (work even if it isn't landed)
@@ -888,7 +888,7 @@ namespace KERBALISM
 
 		// return the volume of a part, in m^3
 		// note: this can only be called when part has not been rotated
-		//       we could use the partPrefab bb, but then it isn't available in GetInfo()
+		//       we could use the partPrefab bounding box, but then it isn't available in GetInfo()
 		public static double PartVolume(Part p)
 		{
 			Bounds bb = p.GetPartRendererBound();
@@ -897,7 +897,7 @@ namespace KERBALISM
 
 		// return the surface of a part, in m^2
 		// note: this can only be called when part has not been rotated
-		//       we could use the partPrefab bb, but then it isn't available in GetInfo()
+		//       we could use the partPrefab bounding box, but then it isn't available in GetInfo()
 		public static double PartSurface(Part p)
 		{
 			Bounds bb = p.GetPartRendererBound();
@@ -945,7 +945,7 @@ namespace KERBALISM
 			return ret;
 		}
 
-		// return all protomodules with a specified name in a vessel
+		// return all proto modules with a specified name in a vessel
 		// note: disabled modules are not returned
 		public static List<ProtoPartModuleSnapshot> FindModules(ProtoVessel v, string module_name)
 		{
@@ -965,7 +965,7 @@ namespace KERBALISM
 			return ret;
 		}
 
-		// return true if a module implementing a specific type and satisfing the predicate specified exist in a vessel
+		// return true if a module implementing a specific type and satisfying the predicate specified exist in a vessel
 		// note: disabled modules are ignored
 		public static bool HasModule<T>(Vessel v, Predicate<T> filter) where T : class
 		{
@@ -985,7 +985,7 @@ namespace KERBALISM
 			return false;
 		}
 
-		// return true if a proto module with the specified name and satisfing the predicate specified exist in a vessel
+		// return true if a proto module with the specified name and satisfying the predicate specified exist in a vessel
 		// note: disabled modules are not returned
 		public static bool HasModule(ProtoVessel v, string module_name, Predicate<ProtoPartModuleSnapshot> filter)
 		{
@@ -1220,7 +1220,7 @@ namespace KERBALISM
 		}
 
 
-		// return capacify of propellant in eva
+		// return capacity of propellant in eva
 		public static double EvaPropellantCapacity()
 		{
 			// first, get the kerbal eva part prefab
@@ -1457,11 +1457,11 @@ namespace KERBALISM
 			return GUILayoutUtility.GetLastRect().Contains(Event.current.mousePosition);
 		}
 
-		// render a textfield with placeholder
-		// - id: an unique name for the textfield
-		// - text: the previous textfield content
+		// render a text field with placeholder
+		// - id: an unique name for the text field
+		// - text: the previous text field content
 		// - placeholder: the text to show if the content is empty
-		// - style: GUIStyle to use for the textfield
+		// - style: GUIStyle to use for the text field
 		public static string TextFieldPlaceholder(string id, string text, string placeholder, GUIStyle style)
 		{
 			GUI.SetNextControlName(id);
