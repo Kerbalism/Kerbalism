@@ -1,6 +1,6 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using ModuleWheels;
 using UnityEngine;
@@ -1250,12 +1250,30 @@ namespace KERBALISM
 
 		void Process_cryotank(Part p, PartModule m)
 		{
-			// note: assume cooling is active
-			double cooling_cost = Lib.ReflectionValue<float>(m, "CoolingCost");
-			string fuel_name = Lib.ReflectionValue<string>(m, "FuelName");
+			// do nothing if cooling is disabled
+			if (!Lib.ReflectionValue<bool>(m, "CoolingEnabled")) return;
 
-			Resource("ElectricCharge").Consume(cooling_cost * Lib.Capacity(p, fuel_name) * 0.001, "cryotank");
+			// get list of fuels, do nothing if no fuels
+			IList fuels = Lib.ReflectionValue<IList>(m, "fuels");
+			if (fuels == null) return;
+
+			// get cooling cost
+			double cooling_cost = Lib.ReflectionValue<float>(m, "CoolingCost");
+
+			string fuel_name = "";
+			double total_cost = 0.0;
+
+			// calculate EC cost of cooling
+			foreach (var fuel in fuels)
+			{
+				fuel_name = Lib.ReflectionValue<string>(fuel, "fuelName");
+				total_cost += cooling_cost * Lib.Amount(p, fuel_name) * 0.001;
+			}
+
+			// apply EC consumption
+			Resource("ElectricCharge").Consume(total_cost, "cryotank");
 		}
+
 
 		void Process_rtantenna(Part p, PartModule m)
 		{
