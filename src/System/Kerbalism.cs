@@ -48,15 +48,6 @@ namespace KERBALISM
 				Highlighter.Init();
 				UI.Init();
 
-				foreach (var a in AssemblyLoader.loadedAssemblies)
-				{
-					if (a.name == "SimpleBoiloff")
-					{
-						Lib.Log("WARNING: KERBALISM AND CRYOTANKS ARE INSTALLED TOGETHER! PLEASE DO NOT REPORT NEW BUGS THAT OCCUR AS A RESULT OF CRYOTANKS!");
-						break;
-					}
-				}
-
 				// prepare storm data
 				foreach (CelestialBody body in FlightGlobals.Bodies)
 				{
