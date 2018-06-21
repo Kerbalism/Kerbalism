@@ -227,9 +227,8 @@ namespace KERBALISM
 				// - we tried just changing the subject.id instead, and
 				//   it worked but the new id was obviously used only after
 				//   putting RnD through a serialization->deserialization cycle
-				var subjects = Lib.PrivateField<Dictionary<string, ScienceSubject>>
+				var subjects = Lib.ReflectionValue<Dictionary<string, ScienceSubject>>
 				(
-				  typeof(ResearchAndDevelopment),
 				  ResearchAndDevelopment.Instance,
 				  "scienceSubjects"
 				);

@@ -1,3 +1,16 @@
+## v1.7.1 for KSP 1.4.4
+ - 2018-xx-xx
+
+### Changes since the last release
+
+ * Fuel Cells are now configurable with H2+O2 and Monoprop+O2 processes (PiezPiedPy)
+ * Added LH2+O2 processes to the Fuel Cells for USI and CryoTanks Support (PiezPiedPy)
+ * Added Hydrogen Liquefaction and Liquid Hydrogen Evaporator processes to USI and CryoTanks Support (PiezPiedPy)
+ * Fixed CryoTanks NRE in Planner and added LH2 to radial tanks for CryoTanks Support (PiezPiedPy)
+ 
+### For Developers
+
+
 ## v1.7.0 for KSP 1.4.3
  - 2018-06-18
 
