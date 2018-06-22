@@ -3,6 +3,7 @@
 
 ### Changes since the last release
 
+ * Fixed EVA Scrubber, ooops was broken by changes to Habitation (PiezPiedPy)
  * Fuel Cells are now configurable with H2+O2 and Monoprop+O2 processes (PiezPiedPy)
  * Added LH2+O2 processes to the Fuel Cells for USI and CryoTanks Support (PiezPiedPy)
  * Added Hydrogen Liquefaction and Liquid Hydrogen Evaporator processes to USI and CryoTanks Support (PiezPiedPy)
