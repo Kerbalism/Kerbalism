@@ -3,13 +3,13 @@
 
 ### Changes since the last release
 
+ * Reliability: mass and cost difference between standard and high quality is now relative to the part type (Gordon Dry)
  * Allow vessel config when there is no vessel signal (PiezPiedPy)
  * Fixed EVA Scrubber, ooops was broken by changes to Habitation (PiezPiedPy)
  * Fuel Cells are now configurable with H2+O2 and Monoprop+O2 processes (PiezPiedPy)
  * Added LH2+O2 processes to the Fuel Cells for USI and CryoTanks Support (PiezPiedPy)
  * Added Hydrogen Liquefaction and Liquid Hydrogen Evaporator processes to USI and CryoTanks Support (PiezPiedPy)
  * Fixed CryoTanks NRE in Planner and added LH2 to radial tanks for CryoTanks Support (PiezPiedPy)
- * Reliability: mass and cost difference between standard and high quality is now relative to the part type (Gordon Dry)
  
 ### For Developers
 
