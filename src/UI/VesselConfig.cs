@@ -28,9 +28,6 @@ namespace KERBALISM
 			p.Width(Styles.ScaleWidthFloat(355.0f));
 			p.paneltype = Panel.PanelType.config;
 
-			// time-out simulation
-			if (p.Timeout(vi)) return;
-
 			// get data from db
 			VesselData vd = DB.Vessel(v);
 
