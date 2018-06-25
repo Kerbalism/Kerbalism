@@ -14,7 +14,7 @@ namespace KERBALISM
 	// all those modules that add resources dynamically (like Process or Habitat).
 	public interface IConfigurable
 	{
-		// (de)configure the module
+		// configure the module
 		void Configure(bool enable);
 	}
 
@@ -203,7 +203,7 @@ namespace KERBALISM
 					double amount = Lib.Parse.ToDouble(cr.amount);
 					double capacity = Lib.Parse.ToDouble(cr.maxAmount);
 
-					// (de)install resource
+					// add/remove resource
 					if ((prev_active != (active && capacity > 0.0)) || (reconfigure_cs && initialized))
 					{
 						// if previously selected
@@ -543,7 +543,7 @@ namespace KERBALISM
 		// module info support
 		public string GetModuleTitle() { return Lib.BuildString("<size=1><color=#00000000>00</color></size>Configurable ", title); } // attempt to display at the top
 		public override string GetModuleDisplayName() { return Lib.BuildString("<size=1><color=#00000000>00</color></size>Configurable ", title); } // attempt to display at the top
-		public string GetPrimaryField() { return Lib.BuildString("Configurable ", title); }
+		public string GetPrimaryField() { return Lib.BuildString("<size=1><color=#00000000>00</color></size>Configurable ", title); } // attempt to display at the top
 		public Callback<Rect> GetDrawModulePanelCallback() { return null; }
 	}
 
