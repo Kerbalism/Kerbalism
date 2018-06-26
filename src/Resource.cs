@@ -262,14 +262,16 @@ namespace KERBALISM
 	{
 		public struct Entry
 		{
-			public Entry(string name, double quantity, bool dump = true)
+			public Entry(string name, double quantity, bool dump = true, string combined = null)
 			{
 				this.name = name;
+				this.combined = combined;
 				this.quantity = quantity;
 				this.inv_quantity = 1.0 / quantity;
 				this.dump = dump;
 			}
 			public string name;
+			public string combined;    // if entry is the primary to be combined, then the secondary resource is named here. secondary entry has its combined set to "" not null
 			public double quantity;
 			public double inv_quantity;
 			public bool dump;
@@ -282,12 +284,25 @@ namespace KERBALISM
 			this.left = 1.0;
 		}
 
-		// add an input to the recipe
+		/// <summary>
+		/// add an input to the recipe
+		/// </summary>
 		public void Input(string resource_name, double quantity)
 		{
 			if (quantity > double.Epsilon) //< avoid division by zero
 			{
 				inputs.Add(new Entry(resource_name, quantity));
+			}
+		}
+
+		/// <summary>
+		/// add a combined input to the recipe
+		/// </summary>
+		public void Input(string resource_name, double quantity, string combined)
+		{
+			if (quantity > double.Epsilon) //< avoid division by zero
+			{
+				inputs.Add(new Entry(resource_name, quantity, true, combined));
 			}
 		}
 
@@ -312,7 +327,20 @@ namespace KERBALISM
 				{
 					Entry e = inputs[i];
 					Resource_info res = resources.Info(v, e.name);
-					worst_input = Lib.Clamp((res.amount + res.deferred) * e.inv_quantity, 0.0, worst_input);
+					// handle combined inputs
+					if (e.combined != null)
+					{
+						// is combined resource the primary
+						if (e.combined != "")
+						{
+							Entry sec_e = inputs.Find(x => x.name.Contains(e.combined));
+							Resource_info sec = resources.Info(v, sec_e.name);
+							double pri_worst = Lib.Clamp((res.amount + res.deferred) * e.inv_quantity, 0.0, worst_input);
+							if (pri_worst > 0.0) worst_input = pri_worst;
+							else worst_input = Lib.Clamp((sec.amount + sec.deferred) * sec_e.inv_quantity, 0.0, worst_input);
+						}
+					}
+					else worst_input = Lib.Clamp((res.amount + res.deferred) * e.inv_quantity, 0.0, worst_input);
 				}
 			}
 
@@ -339,7 +367,28 @@ namespace KERBALISM
 			for (int i = 0; i < inputs.Count; ++i)
 			{
 				Entry e = inputs[i];
-				resources.Consume(v, e.name, e.quantity * worst_io);
+				// handle combined inputs
+				if (e.combined != null)
+				{
+					// is combined resource the primary
+					if (e.combined != "")
+					{
+						Entry sec_e = inputs.Find(x => x.name.Contains(e.combined));
+						Resource_info sec = resources.Info(v, sec_e.name);
+						Resource_info res = resources.Info(v, e.name);
+						double need = (e.quantity * worst_io) + (sec_e.quantity * worst_io);
+						// do we have enough primary to satisfy needs, if so don't consume secondary
+						if (res.amount + res.deferred >= need) resources.Consume(v, e.name, need);
+						// consume primary if any available and secondary
+						else
+						{
+							need -= res.amount + res.deferred;
+							resources.Consume(v, e.name, res.amount + res.deferred);
+							resources.Consume(v, sec_e.name, need);
+						}
+					}
+				}
+				else resources.Consume(v, e.name, e.quantity * worst_io);
 			}
 
 			// produce outputs
