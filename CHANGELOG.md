@@ -3,7 +3,7 @@
 
 ### Changes since the last release
 
- * Reliability: mtbf depends mass; lighter parts last longer - max. 20y, heavier parts last shorter - min. 4y
+ * Reliability: mtbf depends mass; lighter parts last longer - max. 20 years, heavier parts last shorter - min. 4 years.
      Built in reliability modules don't take the whole part's mass into account, but their respective extra_mass (Gordon Dry)
  * Reliability: mass and cost difference between standard and high quality is now relative to the part type (Gordon Dry)
  * Allow vessel config when there is no vessel signal (PiezPiedPy)
