@@ -1027,8 +1027,22 @@ namespace KERBALISM
 
 			// execute recipe
 			Simulated_recipe recipe = new Simulated_recipe("greenhouse");
-			foreach (ModuleResource input in g.resHandler.inputResources) recipe.Input(input.name, input.rate);
-			foreach (ModuleResource output in g.resHandler.outputResources) recipe.Output(output.name, output.rate, true);
+			foreach (ModuleResource input in g.resHandler.inputResources)
+			{
+				// WasteAtmosphere is primary combined input
+				if (g.WACO2 && input.name == "WasteAtmosphere") recipe.Input(input.name, env.breathable ? 0.0 : input.rate, "CarbonDioxide");
+				// CarbonDioxide is secondary combined input
+				else if (g.WACO2 && input.name == "CarbonDioxide") recipe.Input(input.name, env.breathable ? 0.0 : input.rate, "");
+				// if atmosphere is breathable disable WasteAtmosphere / CO2
+				else if (!g.WACO2 && (input.name == "CarbonDioxide" || input.name == "WasteAtmosphere")) recipe.Input(input.name, env.breathable ? 0.0 : input.rate, "");
+				else recipe.Input(input.name, input.rate);
+			}
+			foreach (ModuleResource output in g.resHandler.outputResources)
+			{
+				// if atmosphere is breathable disable Oxygen
+				if (output.name == "Oxygen") recipe.Output(output.name, env.breathable ? 0.0 : output.rate, true);
+				else recipe.Output(output.name, output.rate, true);
+			}
 			recipes.Add(recipe);
 
 			// determine environment conditions
@@ -1400,12 +1414,25 @@ namespace KERBALISM
 			this.left = 1.0;
 		}
 
-		// add an input to the recipe
+		/// <summary>
+		/// add an input to the recipe
+		/// </summary>
 		public void Input(string resource_name, double quantity)
 		{
 			if (quantity > double.Epsilon) //< avoid division by zero
 			{
 				inputs.Add(new Resource_recipe.Entry(resource_name, quantity));
+			}
+		}
+
+		/// <summary>
+		/// add a combined input to the recipe
+		/// </summary>
+		public void Input(string resource_name, double quantity, string combined)
+		{
+			if (quantity > double.Epsilon) //< avoid division by zero
+			{
+				inputs.Add(new Resource_recipe.Entry(resource_name, quantity, true, combined));
 			}
 		}
 
@@ -1427,9 +1454,22 @@ namespace KERBALISM
 			{
 				for (int i = 0; i < inputs.Count; ++i)
 				{
-					var e = inputs[i];
+					Resource_recipe.Entry e = inputs[i];
 					Simulated_resource res = sim.Resource(e.name);
-					worst_input = Lib.Clamp(res.amount * e.inv_quantity, 0.0, worst_input);
+					// handle combined inputs
+					if (e.combined != null)
+					{
+						// is combined resource the primary
+						if (e.combined != "")
+						{
+							Resource_recipe.Entry sec_e = inputs.Find(x => x.name.Contains(e.combined));
+							Simulated_resource sec = sim.Resource(sec_e.name);
+							double pri_worst = Lib.Clamp(res.amount * e.inv_quantity, 0.0, worst_input);
+							if (pri_worst > 0.0) worst_input = pri_worst;
+							else worst_input = Lib.Clamp(sec.amount * sec_e.inv_quantity, 0.0, worst_input);
+						}
+					}
+					else worst_input = Lib.Clamp(res.amount * e.inv_quantity, 0.0, worst_input);
 				}
 			}
 
@@ -1439,7 +1479,7 @@ namespace KERBALISM
 			{
 				for (int i = 0; i < outputs.Count; ++i)
 				{
-					var e = outputs[i];
+					Resource_recipe.Entry e = outputs[i];
 					if (!e.dump) // ignore outputs that can dump overboard
 					{
 						Simulated_resource res = sim.Resource(e.name);
@@ -1454,15 +1494,35 @@ namespace KERBALISM
 			// consume inputs
 			for (int i = 0; i < inputs.Count; ++i)
 			{
-				var e = inputs[i];
+				Resource_recipe.Entry e = inputs[i];
 				Simulated_resource res = sim.Resource(e.name);
-				res.Consume(e.quantity * worst_io, name);
+				// handle combined inputs
+				if (e.combined != null)
+				{
+					// is combined resource the primary
+					if (e.combined != "")
+					{
+						Resource_recipe.Entry sec_e = inputs.Find(x => x.name.Contains(e.combined));
+						Simulated_resource sec = sim.Resource(sec_e.name);
+						double need = (e.quantity * worst_io) + (sec_e.quantity * worst_io);
+						// do we have enough primary to satisfy needs, if so don't consume secondary
+						if (res.amount >= need) res.Consume(need, name);
+						// consume primary if any available and secondary
+						else
+						{
+							need -= res.amount;
+							res.Consume(res.amount, name);
+							sec.Consume(need, name);
+						}
+					}
+				}
+				else res.Consume(e.quantity * worst_io, name);
 			}
 
 			// produce outputs
 			for (int i = 0; i < outputs.Count; ++i)
 			{
-				var e = outputs[i];
+				Resource_recipe.Entry e = outputs[i];
 				Simulated_resource res = sim.Resource(e.name);
 				res.Produce(e.quantity * worst_io, name);
 			}
