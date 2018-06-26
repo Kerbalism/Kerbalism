@@ -24,7 +24,7 @@ namespace KERBALISM
 		[KSPField] public bool animBackwards = false;   // If animation is playing in backward, this can help to fix
 
 		// persistence
-		[KSPField(isPersistant = true)] public bool active;             // on/off flag
+		[KSPField(isPersistant = true)] public bool active;               // on/off flag
 		[KSPField(isPersistant = true)] public double growth;             // current growth level
 		[KSPField(isPersistant = true)] public double natural;            // natural lighting flux
 		[KSPField(isPersistant = true)] public double artificial;         // artificial lighting flux
@@ -34,7 +34,7 @@ namespace KERBALISM
 		// rmb ui status
 		[KSPField(guiActive = true, guiName = "#KERBALISM_Greenhouse_status_natural")] public string status_natural;        // natural lighting
 		[KSPField(guiActive = true, guiName = "#KERBALISM_Greenhouse_status_artificial")] public string status_artificial;  // artificial lighting
-		[KSPField(guiActive = true, guiName = "#KERBALISM_Greenhouse_status_tta")] public string status_tta;             // time to harvest
+		[KSPField(guiActive = true, guiName = "#KERBALISM_Greenhouse_status_tta")] public string status_tta;                // time to harvest
 
 		// animations
 		Animator shutters_anim;
@@ -350,7 +350,7 @@ namespace KERBALISM
 		// part tooltip
 		public override string GetInfo()
 		{
-			return Specs().Info("Grow crop in space and on the surface of celestial bodies, even far from the sun.");
+			return Specs().Info("Grow crops in space and on the surface of celestial bodies, even far from the sun.");
 		}
 
 
@@ -367,9 +367,23 @@ namespace KERBALISM
 			specs.Add("Lamps EC rate", Lib.HumanReadableRate(ec_rate));
 			specs.Add(string.Empty);
 			specs.Add("<color=#00ffff>Required resources</color>");
+
+			int WACO2 = 0;
+			double WACO2_rate = 0.0;
 			foreach (ModuleResource input in resHandler.inputResources)
 			{
-				specs.Add(input.name, Lib.BuildString("<color=#ff0000>", Lib.HumanReadableRate(input.rate), "</color>"));
+				// combine WasteAtmosphere and CO2
+				if ((input.name == "WasteAtmosphere" || input.name == "CarbonDioxide") && WACO2 <= 2)
+				{
+					WACO2 += 1;
+					WACO2_rate += input.rate;
+					if (WACO2 == 2)
+					{
+						specs.Add("CarbonDioxide", Lib.BuildString("<color=#ff0000>", Lib.HumanReadableRate(WACO2_rate), "</color>"));
+						specs.Add("Crops can also use the CO2 in the atmosphere without a scrubber.");
+					}
+				}
+				else specs.Add(input.name, Lib.BuildString("<color=#ff0000>", Lib.HumanReadableRate(input.rate), "</color>"));
 			}
 			specs.Add(string.Empty);
 			specs.Add("<color=#00ffff>By-products</color>");
