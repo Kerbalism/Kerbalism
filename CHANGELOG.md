@@ -7,6 +7,7 @@
      lighter parts last longer - max. ~16 years (~64 years in high quality),
      heavier parts last shorter - min. ~4 years (~16 years in high quality).
      Built in reliability modules don't take the whole part's mass into account, but their respective extra_mass (Gordon Dry)
+ * Greenhouses now act like a scrubber and also will not use CO2 or produce O2 when in a breathable atmosphere (PiezPiedPy)
  * Reliability: mass and cost difference between standard and high quality is now relative to the part type (Gordon Dry)
  * Allow vessel config when there is no vessel signal (PiezPiedPy)
  * Fixed EVA Scrubber, ooops was broken by changes to Habitation (PiezPiedPy)
