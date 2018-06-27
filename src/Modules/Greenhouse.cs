@@ -24,7 +24,7 @@ namespace KERBALISM
 		[KSPField] public bool animBackwards = false;   // If animation is playing in backward, this can help to fix
 
 		// persistence
-		[KSPField(isPersistant = true)] public bool active;             // on/off flag
+		[KSPField(isPersistant = true)] public bool active;               // on/off flag
 		[KSPField(isPersistant = true)] public double growth;             // current growth level
 		[KSPField(isPersistant = true)] public double natural;            // natural lighting flux
 		[KSPField(isPersistant = true)] public double artificial;         // artificial lighting flux
@@ -34,7 +34,7 @@ namespace KERBALISM
 		// rmb ui status
 		[KSPField(guiActive = true, guiName = "#KERBALISM_Greenhouse_status_natural")] public string status_natural;        // natural lighting
 		[KSPField(guiActive = true, guiName = "#KERBALISM_Greenhouse_status_artificial")] public string status_artificial;  // artificial lighting
-		[KSPField(guiActive = true, guiName = "#KERBALISM_Greenhouse_status_tta")] public string status_tta;             // time to harvest
+		[KSPField(guiActive = true, guiName = "#KERBALISM_Greenhouse_status_tta")] public string status_tta;                // time to harvest
 
 		// animations
 		Animator shutters_anim;
@@ -42,6 +42,7 @@ namespace KERBALISM
 
 		// other data
 		Renderer lamps_rdr;
+		public bool WACO2 = false;        // true if we have combined WasteAtmosphere and CarbonDioxide
 
 
 		public override void OnStart(StartState state)
@@ -143,8 +144,22 @@ namespace KERBALISM
 
 				// execute recipe
 				Resource_recipe recipe = new Resource_recipe();
-				foreach (ModuleResource input in resHandler.inputResources) recipe.Input(input.name, input.rate * Kerbalism.elapsed_s);
-				foreach (ModuleResource output in resHandler.outputResources) recipe.Output(output.name, output.rate * Kerbalism.elapsed_s, true);
+				foreach (ModuleResource input in resHandler.inputResources)
+				{
+					// WasteAtmosphere is primary combined input
+					if (WACO2 && input.name == "WasteAtmosphere") recipe.Input(input.name, vi.breathable ? 0.0 : input.rate * Kerbalism.elapsed_s, "CarbonDioxide");
+					// CarbonDioxide is secondary combined input
+					else if (WACO2 && input.name == "CarbonDioxide") recipe.Input(input.name, vi.breathable ? 0.0 : input.rate * Kerbalism.elapsed_s, "");
+					// if atmosphere is breathable disable WasteAtmosphere / CO2
+					else if (!WACO2 && (input.name == "CarbonDioxide" || input.name == "WasteAtmosphere")) recipe.Input(input.name, vi.breathable ? 0.0 : input.rate, "");
+					else recipe.Input(input.name, input.rate * Kerbalism.elapsed_s);
+				}
+				foreach (ModuleResource output in resHandler.outputResources)
+				{
+					// if atmosphere is breathable disable Oxygen
+					if (output.name == "Oxygen") recipe.Output(output.name, vi.breathable ? 0.0 : output.rate * Kerbalism.elapsed_s, true);
+					else recipe.Output(output.name, output.rate * Kerbalism.elapsed_s, true);
+				}
 				resources.Transform(recipe);
 
 				// determine environment conditions
@@ -156,8 +171,25 @@ namespace KERBALISM
 				// - comparing against amounts in previous simulation step
 				bool inputs = true;
 				string missing_res = string.Empty;
+				bool dis_WACO2 = false;
 				foreach (ModuleResource input in resHandler.inputResources)
 				{
+					// combine WasteAtmosphere and CO2 if both exist
+					if (input.name == "WasteAtmosphere" || input.name == "CarbonDioxide")
+					{
+						if (dis_WACO2 || Cache.VesselInfo(vessel).breathable) continue;    // skip if already checked or atmosphere is breathable
+						if (WACO2)
+						{
+							if (resources.Info(vessel, "WasteAtmosphere").amount <= double.Epsilon && resources.Info(vessel, "CarbonDioxide").amount <= double.Epsilon)
+							{
+								inputs = false;
+								missing_res = "CarbonDioxide";
+								break;
+							}
+							dis_WACO2 = true;
+							continue;
+						}
+					}
 					if (resources.Info(vessel, input.name).amount <= double.Epsilon)
 					{
 						inputs = false;
@@ -221,8 +253,23 @@ namespace KERBALISM
 
 				// execute recipe
 				Resource_recipe recipe = new Resource_recipe();
-				foreach (ModuleResource input in g.resHandler.inputResources) recipe.Input(input.name, input.rate * elapsed_s);
-				foreach (ModuleResource output in g.resHandler.outputResources) recipe.Output(output.name, output.rate * elapsed_s, true);
+				foreach (ModuleResource input in g.resHandler.inputResources) //recipe.Input(input.name, input.rate * elapsed_s);
+				{
+					// WasteAtmosphere is primary combined input
+					if (g.WACO2 && input.name == "WasteAtmosphere") recipe.Input(input.name, vi.breathable ? 0.0 : input.rate * elapsed_s, "CarbonDioxide");
+					// CarbonDioxide is secondary combined input
+					else if (g.WACO2 && input.name == "CarbonDioxide") recipe.Input(input.name, vi.breathable ? 0.0 : input.rate * elapsed_s, "");
+					// if atmosphere is breathable disable WasteAtmosphere / CO2
+					else if (!g.WACO2 && (input.name == "CarbonDioxide" || input.name == "WasteAtmosphere")) recipe.Input(input.name, vi.breathable ? 0.0 : input.rate, "");
+					else
+						recipe.Input(input.name, input.rate * elapsed_s);
+				}
+				foreach (ModuleResource output in g.resHandler.outputResources)
+				{
+					// if atmosphere is breathable disable Oxygen
+					if (output.name == "Oxygen") recipe.Output(output.name, vi.breathable ? 0.0 : output.rate * elapsed_s, true);
+					else recipe.Output(output.name, output.rate * elapsed_s, true);
+				}
 				resources.Transform(recipe);
 
 				// determine environment conditions
@@ -234,8 +281,25 @@ namespace KERBALISM
 				// note: comparing against amounts in previous simulation step
 				bool inputs = true;
 				string missing_res = string.Empty;
+				bool dis_WACO2 = false;
 				foreach (ModuleResource input in g.resHandler.inputResources)
 				{
+					// combine WasteAtmosphere and CO2 if both exist
+					if (input.name == "WasteAtmosphere" || input.name == "CarbonDioxide")
+					{
+						if (dis_WACO2 || vi.breathable) continue;    // skip if already checked or atmosphere is breathable
+						if (g.WACO2)
+						{
+							if (resources.Info(v, "WasteAtmosphere").amount <= double.Epsilon && resources.Info(v, "CarbonDioxide").amount <= double.Epsilon)
+							{
+								inputs = false;
+								missing_res = "CarbonDioxide";
+								break;
+							}
+							dis_WACO2 = true;
+							continue;
+						}
+					}
 					if (resources.Info(v, input.name).amount <= double.Epsilon)
 					{
 						inputs = false;
@@ -350,7 +414,7 @@ namespace KERBALISM
 		// part tooltip
 		public override string GetInfo()
 		{
-			return Specs().Info("Grow crop in space and on the surface of celestial bodies, even far from the sun.");
+			return Specs().Info("Grow crops in space and on the surface of celestial bodies, even far from the sun.");
 		}
 
 
@@ -367,9 +431,25 @@ namespace KERBALISM
 			specs.Add("Lamps EC rate", Lib.HumanReadableRate(ec_rate));
 			specs.Add(string.Empty);
 			specs.Add("<color=#00ffff>Required resources</color>");
+
+			// do we have combined WasteAtmosphere and CO2
+			Set_WACO2();
+			bool dis_WACO2 = false;
 			foreach (ModuleResource input in resHandler.inputResources)
 			{
-				specs.Add(input.name, Lib.BuildString("<color=#ff0000>", Lib.HumanReadableRate(input.rate), "</color>"));
+				// combine WasteAtmosphere and CO2 if both exist
+				if (WACO2 && (input.name == "WasteAtmosphere" || input.name == "CarbonDioxide"))
+				{
+					if (dis_WACO2) continue;
+					ModuleResource sec;
+					if (input.name == "WasteAtmosphere") sec = resHandler.inputResources.Find(x => x.name.Contains("CarbonDioxide"));
+					else sec = resHandler.inputResources.Find(x => x.name.Contains("WasteAtmosphere"));
+					specs.Add("CarbonDioxide", Lib.BuildString("<color=#ff0000>", Lib.HumanReadableRate(input.rate + sec.rate), "</color>"));
+					specs.Add("Crops can also use the CO2 in the atmosphere without a scrubber.");
+					dis_WACO2 = true;
+				}
+				else
+					specs.Add(input.name, Lib.BuildString("<color=#ff0000>", Lib.HumanReadableRate(input.rate), "</color>"));
 			}
 			specs.Add(string.Empty);
 			specs.Add("<color=#00ffff>By-products</color>");
@@ -380,6 +460,36 @@ namespace KERBALISM
 			return specs;
 		}
 
+		/// <summary>
+		/// checks if we have WasteAtmosphere and CarbonDioxide inputs and sets the WACO2 flag accordingly
+		/// </summary>
+		private void Set_WACO2()
+		{
+			WACO2 = false;
+			foreach (ModuleResource input in resHandler.inputResources)
+			{
+				// we have combined WasteAtmosphere and CO2 if both exist
+				if (input.name == "WasteAtmosphere" || input.name == "CarbonDioxide")
+				{
+					ModuleResource sec;
+					if (input.name == "WasteAtmosphere")
+					{
+						sec = resHandler.inputResources.Find(x => x.name.Contains("CarbonDioxide"));
+						// no CO2, we only have WasteAtmosphere
+						if (sec == null) return;
+					}
+					else
+					{
+						sec = resHandler.inputResources.Find(x => x.name.Contains("WasteAtmosphere"));
+						// no WasteAtmosphere, we only have CO2
+						if (sec == null) return;
+					}
+					// we have both WasteAtmosphere and CO2
+					WACO2 = true;
+					return;
+				}
+			}
+		}
 
 		// contract objective support
 		public bool CheckContractObjectiveValidity() { return true; }
