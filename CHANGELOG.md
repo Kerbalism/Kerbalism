@@ -3,6 +3,8 @@
 
 ### Changes since the last release
 
+ * Increase all crewable parts' EC because ECLSS uses EC constantly, you wanna survive in the Apollo LM, right? (Gordon Dry)
+ * Quick'n'dirty fix for GPOSpeedFuelPump to avoid shielding to be pumpable by default (Gordon Dry)
  * Reliability: mtbf depends mass;
      lighter parts last longer - max. ~16 years (~64 years in high quality),
      heavier parts last shorter - min. ~4 years (~16 years in high quality).
