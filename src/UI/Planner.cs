@@ -907,6 +907,10 @@ namespace KERBALISM
 						case "ModuleCryoTank": Process_cryotank(p, m); break;
 						case "ModuleRTAntenna": Process_rtantenna(p, m); break;
 						case "ModuleDataTransmitter": Process_datatransmitter(m as ModuleDataTransmitter); break;
+						case "ModuleEngines": Process_engines(m as ModuleEngines); break;
+						case "ModuleEnginesFX": Process_enginesfx(m as ModuleEnginesFX); break;
+						case "ModuleRCS": Process_rcs(m as ModuleRCS); break;
+						case "ModuleRCSFX": Process_rcsfx(m as ModuleRCSFX); break;
 					}
 				}
 			}
@@ -1305,6 +1309,88 @@ namespace KERBALISM
 				default:
 					Resource("ElectricCharge").Consume(mdt.DataResourceCost * mdt.DataRate, "communications (transmitting)");
 					break;
+			}
+		}
+
+		void Process_engines(ModuleEngines me)
+		{
+			// calculate thrust fuel flow
+			double thrust_flow = me.maxFuelFlow * 1e3 * me.thrustPercentage;
+
+			// search fuel types
+			foreach (Propellant fuel in me.propellants)
+			{
+				switch (fuel.name)
+				{
+					case "ElectricCharge":  // mainly used for Ion Engines
+						Resource("ElectricCharge").Consume(thrust_flow * fuel.ratio, "engines");
+						//var x = fuel.currentRequirement;
+						break;
+					case "LqdHydrogen":     // added for cryotanks and any other supported mod that uses Liquid Hydrogen
+						Resource("LqdHydrogen").Consume(thrust_flow * fuel.ratio, "engines");
+						break;
+				}
+			}
+		}
+
+		void Process_enginesfx(ModuleEnginesFX mefx)
+		{
+			// calculate thrust fuel flow
+			double thrust_flow = mefx.maxFuelFlow * 1e3 * mefx.thrustPercentage;
+
+			// search fuel types
+			foreach (Propellant fuel in mefx.propellants)
+			{
+				switch (fuel.name)
+				{
+					case "ElectricCharge":  // mainly used for Ion Engines
+						Resource("ElectricCharge").Consume(thrust_flow * fuel.ratio, "engines");
+						break;
+					case "LqdHydrogen":     // added for cryotanks and any other supported mod that uses Liquid Hydrogen
+						Resource("LqdHydrogen").Consume(thrust_flow * fuel.ratio, "engines");
+						break;
+				}
+			}
+		}
+
+		void Process_rcs(ModuleRCS mr)
+		{
+			// calculate thrust fuel flow
+			double thrust_flow = mr.maxFuelFlow * 1e3 * mr.thrustPercentage * mr.thrusterPower;
+
+			// search fuel types
+			foreach (Propellant fuel in mr.propellants)
+			{
+				switch (fuel.name)
+				{
+					case "ElectricCharge":  // mainly used for Ion RCS
+						Resource("ElectricCharge").Consume(thrust_flow * fuel.ratio, "rcs");
+						//var x = fuel.currentRequirement;
+						break;
+					case "LqdHydrogen":     // added for cryotanks and any other supported mod that uses Liquid Hydrogen
+						Resource("LqdHydrogen").Consume(thrust_flow * fuel.ratio, "rcs");
+						break;
+				}
+			}
+		}
+
+		void Process_rcsfx(ModuleRCSFX mrfx)
+		{
+			// calculate thrust fuel flow
+			double thrust_flow = mrfx.maxFuelFlow * 1e3 * mrfx.thrustPercentage * mrfx.thrusterPower;
+
+			// search fuel types
+			foreach (Propellant fuel in mrfx.propellants)
+			{
+				switch (fuel.name)
+				{
+					case "ElectricCharge":  // mainly used for Ion RCS
+						Resource("ElectricCharge").Consume(thrust_flow * fuel.ratio, "rcs");
+						break;
+					case "LqdHydrogen":     // added for cryotanks and any other supported mod that uses Liquid Hydrogen
+						Resource("LqdHydrogen").Consume(thrust_flow * fuel.ratio, "rcs");
+						break;
+				}
 			}
 		}
 

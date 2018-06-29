@@ -3,6 +3,8 @@
 
 ### Changes since the last release
 
+ * Added Xenon Gas to the Radial Pressurized Tanks (PiezPiedPy)
+ * Added Engines and RCS that use EC and/or LH2 when supported by a mod such as USI to the Planner (PiezPiedPy)
  * Added part specific tags (Gordon Dry)
  * A simple support patch for RealBattery - no final solution (Gordon Dry)
  * Recalculated pressure control EC consumption to be more realistic (PiezPiedPy)
