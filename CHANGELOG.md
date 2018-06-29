@@ -3,6 +3,7 @@
 
 ### Changes since the last release
 
+ * A simple support patch for RealBattery - no final solution (Gordon Dry)
  * Recalculated pressure control EC consumption to be more realistic (PiezPiedPy)
  * Increase all crewable parts' EC because ECLSS uses EC constantly, you wanna survive in the Apollo LM, right? (Gordon Dry, PiezPiedPy)
  * Quick'n'dirty fix for GPOSpeedFuelPump to avoid shielding to be pumpable by default (Gordon Dry)
