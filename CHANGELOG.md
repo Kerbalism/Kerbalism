@@ -3,6 +3,8 @@
 
 ### Changes since the last release
 
+ * Added Xenon Gas to the Radial Pressurized Tanks (PiezPiedPy)
+ * Added Engines and RCS that use EC and/or LH2 when supported by a mod such as USI to the Planner (PiezPiedPy)
  * Reliability: mtbf depends mass;
      lighter parts last longer - max. ~16 years (~64 years in high quality),
      heavier parts last shorter - min. ~4 years (~16 years in high quality).
