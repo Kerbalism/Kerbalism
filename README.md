@@ -58,7 +58,8 @@ Inflatable habitats are driven directly by the part pressure.
 ### BIOLOGICAL NEEDS
 
 Your crew need a constant intake of Food, Water and Oxygen. Failure to provide for these needs will result in
-unceremonious death. Configurable supply containers are provided.
+unceremonious death. Configurable supply containers are provided. The amount of food only updates twice a day,
+which is when Kerbals eat a meal.
 
 
 ### PSYCHOLOGICAL NEEDS
