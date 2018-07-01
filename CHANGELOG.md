@@ -3,6 +3,7 @@
 
 ### Changes since the last release
 
+ * The Chemical Plant and External Life Support have had a repaint (PiezPiedPy)
  * Added Xenon Gas to the Radial Pressurized Tanks (PiezPiedPy)
  * Added Engines and RCS that use EC and/or LH2 when supported by a mod such as USI to the Planner (PiezPiedPy)
  * Added part specific tags (Gordon Dry)
