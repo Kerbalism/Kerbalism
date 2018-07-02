@@ -20,4 +20,3 @@ after_success:
   # TODO: Artifact uploading
 notifications:
   email: false
->>>>>>> upstream/master
