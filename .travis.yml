@@ -19,3 +19,4 @@ after_success:
   - /bin/cp -rf $TRAVIS_BUILD_DIR/src/obj/Release/Kerbalism.dll $TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism.dll
   # TODO: Artifact uploading
 notifications:
+  email: false
