@@ -1,0 +1,29 @@
+From 23b7262c32e45dcca7eed8e7be50185bdfe473c5 Mon Sep 17 00:00:00 2001
+From: steamport <steamport@protonmail.com>
+Date: Mon, 2 Jul 2018 12:11:02 -0400
+Subject: [PATCH] Remove Mission Builder for KSP 1.3.x
+
+---
+ src/Lib.cs | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
+
+diff --git a/src/Lib.cs b/src/Lib.cs
+index 87cf069..0c9c4d3 100644
+--- a/src/Lib.cs
++++ b/src/Lib.cs
+@@ -685,10 +685,8 @@ namespace KERBALISM
+ 		// return true if a tutorial scenario or making history mission is active
+ 		public static bool IsScenario()
+ 		{
+-			return HighLogic.CurrentGame.Mode == Game.Modes.SCENARIO
+-				|| HighLogic.CurrentGame.Mode == Game.Modes.SCENARIO_NON_RESUMABLE
+-				|| HighLogic.CurrentGame.Mode == Game.Modes.MISSION_BUILDER
+-				|| HighLogic.CurrentGame.Mode == Game.Modes.MISSION;
++            return HighLogic.CurrentGame.Mode == Game.Modes.SCENARIO
++                || HighLogic.CurrentGame.Mode == Game.Modes.SCENARIO_NON_RESUMABLE;
+ 		}
+ 
+ 		// disable the module and return true if a tutorial scenario is active
+-- 
+2.18.0.windows.1
+
