@@ -1,5 +1,5 @@
-## v1.7.1 for KSP 1.4.4
- - 2018-xx-xx
+## v1.7.1 for KSP 1.4.4 and 1.3.1
+ - 2018-07-02
 
 ### Changes since the last release
 
