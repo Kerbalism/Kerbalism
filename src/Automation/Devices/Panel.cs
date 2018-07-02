@@ -81,9 +81,9 @@ namespace KERBALISM
 			string state = Lib.Proto.GetString(panel, "deployState");
 			switch (state)
 			{
-				case "EXTENDED": return "<color=cyan>" + Localizer.Format("KERBALISM_Generic_EXTENDED") + "</color>";
-				case "RETRACTED": return "<color=red>" + Localizer.Format("KERBALISM_Generic_RETRACTED") + "</color>";
-				case "BROKEN": return "<color=red>" + Localizer.Format("KERBALISM_Generic_BROKEN") + "</color>";
+				case "EXTENDED": return "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_EXTENDED") + "</color>";
+				case "RETRACTED": return "<color=red>" + Localizer.Format("#KERBALISM_Generic_RETRACTED") + "</color>";
+				case "BROKEN": return "<color=red>" + Localizer.Format("#KERBALISM_Generic_BROKEN") + "</color>";
 			}
 			return "unknown";
 		}
