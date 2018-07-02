@@ -27,7 +27,7 @@ namespace KERBALISM
 
 		public override string Info()
 		{
-			return ring.deployed ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_DEPLOYED") + "</color>" : "<color=red>" + Localizer.Format("KERBALISM_Generic_RETRACTED") + "</color>";
+			return ring.deployed ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_DEPLOYED") + "</color>" : "<color=red>" + Localizer.Format("#KERBALISM_Generic_RETRACTED") + "</color>";
 		}
 
 		public override void Ctrl(bool value)
@@ -68,7 +68,7 @@ namespace KERBALISM
 		public override string Info()
 		{
 			bool deployed = Lib.Proto.GetBool(ring, "deployed");
-			return deployed ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_DEPLOYED") + "</color>" : "<color=red>" + Localizer.Format("KERBALISM_Generic_RETRACTED") + "</color>";
+			return deployed ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_DEPLOYED") + "</color>" : "<color=red>" + Localizer.Format("#KERBALISM_Generic_RETRACTED") + "</color>";
 		}
 
 		public override void Ctrl(bool value)
