@@ -1324,7 +1324,6 @@ namespace KERBALISM
 				{
 					case "ElectricCharge":  // mainly used for Ion Engines
 						Resource("ElectricCharge").Consume(thrust_flow * fuel.ratio, "engines");
-						//var x = fuel.currentRequirement;
 						break;
 					case "LqdHydrogen":     // added for cryotanks and any other supported mod that uses Liquid Hydrogen
 						Resource("LqdHydrogen").Consume(thrust_flow * fuel.ratio, "engines");
@@ -1365,7 +1364,6 @@ namespace KERBALISM
 				{
 					case "ElectricCharge":  // mainly used for Ion RCS
 						Resource("ElectricCharge").Consume(thrust_flow * fuel.ratio, "rcs");
-						//var x = fuel.currentRequirement;
 						break;
 					case "LqdHydrogen":     // added for cryotanks and any other supported mod that uses Liquid Hydrogen
 						Resource("LqdHydrogen").Consume(thrust_flow * fuel.ratio, "rcs");
