@@ -11,6 +11,7 @@ namespace KERBALISM
 	{
 		// config
 		[KSPField] public bool toggle = true;                       // true to show the toggle button in editor
+		[KSPField] public string title = string.Empty;              // name to show on the button
 
 		// persistence
 		[KSPField(isPersistant = true)] public bool considered;     // true to consider the part modules in planner
@@ -31,7 +32,7 @@ namespace KERBALISM
 		{
 			Events["Toggle"].guiName = Lib.StatusToggle
 			(
-			  "Simulate in planner",
+			  String.Format("Simulate {0} in planner", title),
 			  considered ? "<b><color=#00ff00>yes</color></b>" : "<b><color=#ffff00>no</color></b>"
 			);
 		}
