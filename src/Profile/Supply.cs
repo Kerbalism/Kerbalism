@@ -1,4 +1,5 @@
-﻿using System;
+﻿using KSP.Localization;
+using System;
 using System.Collections.Generic;
 
 
@@ -20,6 +21,10 @@ namespace KERBALISM
 			low_message = Lib.ConfigValue(node, "low_message", string.Empty);
 			empty_message = Lib.ConfigValue(node, "empty_message", string.Empty);
 			refill_message = Lib.ConfigValue(node, "refill_message", string.Empty);
+
+			if (low_message.Length > 0 && low_message[0] == '#') low_message = Localizer.Format(low_message);
+			if (empty_message.Length > 0 && empty_message[0] == '#') empty_message = Localizer.Format(empty_message);
+			if (refill_message.Length > 0 && refill_message[0] == '#') refill_message = Localizer.Format(refill_message);
 
 			// check that resource is specified
 			if (resource.Length == 0) throw new Exception("skipping resource-less supply");
