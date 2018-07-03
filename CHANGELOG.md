@@ -3,6 +3,17 @@
 
 ### Changes since the last release
 
+### For Developers
+
+
+
+## v1.7.1.1 for KSP 1.4.4 and 1.3.1
+ - 2018-07-03
+
+### Changes since the last release
+
+ * Localization translations added (Sir Mortimer [GRUMP])
+ * MM errors fixed (Gordon Dry)
 
 ### For Developers
 
