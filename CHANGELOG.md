@@ -6,6 +6,8 @@
 
 ### For Developers
 
+ * Added a title parameter to the PlannerController that shows in the buttons text (PiezPiedPy)
+
 
 ## v1.7.1 for KSP 1.4.4 and 1.3.1
  - 2018-07-02
