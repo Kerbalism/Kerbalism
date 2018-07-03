@@ -3,6 +3,8 @@
 
 ### Changes since the last release
 
+ * Support for AirlineKuisine (PiezPiedPy)
+
 ### For Developers
 
 
