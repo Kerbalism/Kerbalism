@@ -42,6 +42,7 @@ Table of Contents
             1. [Profiling](#profiling)
                1. [Unity Profiler](#unity-profiler)
                1. [Internal Profiler](#internal-profiler)
+      1. [Development on MacOS](#development-on-macos)
       1. [Building Releases](#building-releases)
          1. [Release Checklist](#release-checklist)
          1. [Versioning](#versioning)
