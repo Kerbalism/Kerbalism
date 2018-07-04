@@ -103,7 +103,7 @@ namespace KERBALISM
 				foreach (var pair in process.inputs)
 				{
 					if (!process.modifiers.Contains(pair.Key))
-						specs.Add(pair.Key, Lib.BuildString("<color=#ff0000>", Lib.HumanReadableRate(pair.Value * capacity), "</color>"));
+						specs.Add(pair.Key, Lib.BuildString("<color=#ffaa00>", Lib.HumanReadableRate(pair.Value * capacity), "</color>"));
 					else
 						specs.Add("Half-life", Lib.HumanReadableDuration(0.5 / pair.Value));
 				}

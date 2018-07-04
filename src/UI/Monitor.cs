@@ -568,7 +568,7 @@ namespace KERBALISM
 				}
 				string tooltip_rt = Lib.BuildString(
 				  "<align=left />",
-				  String.Format("{0,-14}\t<b>{1}</b>\n", "connected", conn.linked ? "yes" : "no"),
+				  String.Format("{0,-14}\t<b>{1}</b>\n", "connected", conn.linked ? "<color=green>yes</color>" : "<color=#ffaa00><i>no</i></color>"),
 				  String.Format("{0,-14}\t<b>{1}</b>\n", "delay", conn.linked ? signal_str : "no connection"),
 				  String.Format("{0,-14}\t\t<b>{1}</b>", "rate", Lib.HumanReadableDataRate(vi.connection.rate))
 				);
@@ -600,7 +600,7 @@ namespace KERBALISM
 			string tooltip = Lib.BuildString
 			(
 			  "<align=left />",
-			  String.Format("{0,-14}\t<b>{1}</b>\n", "DSN connected", conn.linked ? "<color=green>yes</color>" : "<color=red><i>no</i></color>"),
+			  String.Format("{0,-14}\t<b>{1}</b>\n", "DSN connected", conn.linked ? "<color=green>yes</color>" : "<color=#ffaa00><i>no</i></color>"),
 			  String.Format("{0,-14}\t<b>{1}</b>\n", "science rate", Lib.HumanReadableDataRate(conn.rate)),
 			  String.Format("{0,-14}\t<b>{1}</b>\n", "strength", Lib.HumanReadablePerc(conn.strength, "F2")),
 			  String.Format("{0,-14}\t<b>{1}</b>\n", "target", target_str),

@@ -160,7 +160,7 @@ namespace KERBALISM
 		public string Tooltip()
 		{
 			string yes = Lib.BuildString("<b><color=#00ff00>", Localizer.Format("#KERBALISM_Generic_YES"), " </color></b>");
-			string no = Lib.BuildString("<b><color=#ff0000>", Localizer.Format("#KERBALISM_Generic_NO"), " </color></b>");
+			string no = Lib.BuildString("<b><color=#ffaa00>", Localizer.Format("#KERBALISM_Generic_NO"), " </color></b>");
 			return Lib.BuildString
 			(
 				"<align=left />",
