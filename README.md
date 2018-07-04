@@ -164,6 +164,10 @@ SCANsat:
 - sensors consume EC in background and their cost is evaluated by the planner EC
 - sensors are shut down and restarted in background depending on EC availability
 
+RemoteTech:
+- antenna cost is evaluated by the planner EC
+- failures will disable the antenna
+
 DeepFreeze:
 - all rules are suspended for hibernated Kerbals
 - the vessel info window show frozen Kerbals with a different color
