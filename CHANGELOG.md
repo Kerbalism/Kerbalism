@@ -3,6 +3,7 @@
 
 ### Changes since the last release
 
+ * Fixed antennas bug having no science data rate in languages other than English (PiezPiedPy)
  * Support for AirlineKuisine (PiezPiedPy)
 
 ### For Developers
