@@ -1,5 +1,4 @@
-﻿using KSP.Localization;
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 
@@ -32,10 +31,10 @@ namespace KERBALISM
 			fatal_message = Lib.ConfigValue(node, "fatal_message", string.Empty);
 			relax_message = Lib.ConfigValue(node, "relax_message", string.Empty);
 
- 			if (warning_message.Length > 0 && warning_message[0] == '#') warning_message = Localizer.Format(warning_message);
-                        if (danger_message.Length > 0 && danger_message[0] == '#') danger_message = Localizer.Format(danger_message);
-                        if (fatal_message.Length > 0 && fatal_message[0] == '#') fatal_message = Localizer.Format(fatal_message);
-                        if (relax_message.Length > 0 && relax_message[0] == '#') relax_message = Localizer.Format(relax_message);
+			if (warning_message.Length > 0 && warning_message[0] == '#') Lib.Log("Broken translation: " + warning_message);
+			if (danger_message.Length > 0 && danger_message[0] == '#') Lib.Log("Broken translation: " + danger_message);
+			if (fatal_message.Length > 0 && fatal_message[0] == '#') Lib.Log("Broken translation: " + fatal_message);
+			if (relax_message.Length > 0 && relax_message[0] == '#') Lib.Log("Broken translation: " + relax_message);
 
             // check that name is specified
             if (name.Length == 0) throw new Exception("skipping unnamed rule");
