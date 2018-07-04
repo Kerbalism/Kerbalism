@@ -76,7 +76,7 @@ namespace KERBALISM
 							if (animation != null)
 							{
 								// only include data rate if transmitter is extended
-								if (animation.status == "Extended")
+								if (animation.deployState == ModuleDeployablePart.DeployState.EXTENDED)
 								{
 									rate += t.DataRate;
 									science_cost += t.DataResourceCost * t.DataRate;
