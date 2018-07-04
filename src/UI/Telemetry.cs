@@ -122,7 +122,7 @@ namespace KERBALISM
 				// rate tooltip
 				string rate_tooltip = Math.Abs(res.rate) >= 1e-10 ? Lib.BuildString
 				(
-				  res.rate > 0.0 ? "<color=#00ff00><b>" : "<color=#ff0000><b>",
+				  res.rate > 0.0 ? "<color=#00ff00><b>" : "<color=#ffaa00><b>",
 				  Lib.HumanReadableRate(Math.Abs(res.rate)),
 				  "</b></color>"
 				) : string.Empty;
