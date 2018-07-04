@@ -3,6 +3,22 @@
 
 ### Changes since the last release
 
+ * RemoteTech antennas can now break due to reliability failures (Sir Mortimer [GRUMP])
+ * Fixed antennas bug having no science data rate in languages other than English (PiezPiedPy)
+ * Support for AirlineKuisine (PiezPiedPy)
+
+### For Developers
+
+ * Support for development on mac now included, also with help in the CONTRIBUTING.md file (Sir Mortimer [GRUMP])
+
+
+## v1.7.1.1 for KSP 1.4.4 and 1.3.1
+ - 2018-07-03
+
+### Changes since the last release
+
+ * Localization translations added (Sir Mortimer [GRUMP])
+ * MM errors fixed (Gordon Dry)
 
 ### For Developers
 
