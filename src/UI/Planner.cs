@@ -1458,7 +1458,7 @@ namespace KERBALISM
 			foreach (var pair in red)
 			{
 				if (sb.Length > 0) sb.Append("\n");
-				sb.Append("<b><color=#ff0000>");
+				sb.Append("<b><color=#ffaa00>");
 				sb.Append(Lib.HumanReadableRate(pair.Value.value));
 				sb.Append("</color></b>\t");
 				sb.Append(pair.Key);

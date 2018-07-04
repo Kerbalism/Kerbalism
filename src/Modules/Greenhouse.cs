@@ -444,12 +444,12 @@ namespace KERBALISM
 					ModuleResource sec;
 					if (input.name == "WasteAtmosphere") sec = resHandler.inputResources.Find(x => x.name.Contains("CarbonDioxide"));
 					else sec = resHandler.inputResources.Find(x => x.name.Contains("WasteAtmosphere"));
-					specs.Add("CarbonDioxide", Lib.BuildString("<color=#ff0000>", Lib.HumanReadableRate(input.rate + sec.rate), "</color>"));
+					specs.Add("CarbonDioxide", Lib.BuildString("<color=#ffaa00>", Lib.HumanReadableRate(input.rate + sec.rate), "</color>"));
 					specs.Add("Crops can also use the CO2 in the atmosphere without a scrubber.");
 					dis_WACO2 = true;
 				}
 				else
-					specs.Add(input.name, Lib.BuildString("<color=#ff0000>", Lib.HumanReadableRate(input.rate), "</color>"));
+					specs.Add(input.name, Lib.BuildString("<color=#ffaa00>", Lib.HumanReadableRate(input.rate), "</color>"));
 			}
 			specs.Add(string.Empty);
 			specs.Add("<color=#00ffff>By-products</color>");
