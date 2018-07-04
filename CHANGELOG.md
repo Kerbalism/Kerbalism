@@ -3,6 +3,8 @@
 
 ### Changes since the last release
 
+ * Rebalanced H2+O2 and LH2+O2 fuel cells to output more realistic EC levels (PiezPiedPy)
+ * Some tooltip colors changed from a nasty hard to see red to a nice gold (PiezPiedPy)
  * RemoteTech antennas can now break due to reliability failures (Sir Mortimer [GRUMP])
  * Fixed antennas bug having no science data rate in languages other than English (PiezPiedPy)
  * Support for AirlineKuisine (PiezPiedPy)
