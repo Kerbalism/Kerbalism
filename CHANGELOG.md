@@ -3,6 +3,7 @@
 
 ### Changes since the last release
 
+ * Rebalanced Sabatier and Anthraquinone processes to output LiquidFuel and Oxidizer at Stock ratio of 9:11 (PiezPiedPy) 
  * Rebalanced H2+O2 and LH2+O2 fuel cells to output more realistic EC levels (PiezPiedPy)
  * Some tooltip colors changed from a nasty hard to see red to a nice gold (PiezPiedPy)
  * RemoteTech antennas can now break due to reliability failures (Sir Mortimer [GRUMP])
