@@ -1170,6 +1170,22 @@ namespace KERBALISM
 			res.amount = Math.Min(res.amount, capacity);
 		}
 
+		// note: the resource must exist
+		public static void SetResource(Part p, string res_name, double amount, double capacity)
+		{
+			// if the resource is not in the part, log a warning and do nothing
+			if (!p.Resources.Contains(res_name))
+			{
+				Lib.Log(Lib.BuildString("error while setting capacity for ", res_name, ": the resource is not in the part"));
+				return;
+			}
+
+			// set capacity and clamp amount
+			var res = p.Resources[res_name];
+			res.maxAmount = capacity;
+			res.amount = Math.Min(amount, capacity);
+		}
+
 
 		// set flow of a resource in the specified part
 		// do nothing if the resource don't exist in the part

@@ -480,7 +480,6 @@ namespace KERBALISM
 				{
 					if (m.moduleName == "ModuleRTAntenna" || m.moduleName == "ModuleRTAntennaPassive")
 					{
-						Lib.Log("RemoteTech: Setting IsRTBroken to " + b + " for " + m.moduleName);
 						Lib.ReflectionValue(m, "IsRTBroken", b);
 					}
 				}

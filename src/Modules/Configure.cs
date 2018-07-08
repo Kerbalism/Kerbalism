@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using UnityEngine;
 using KSP.Localization;
 
@@ -9,22 +8,24 @@ namespace KERBALISM
 {
 
 
-	// Modules can implement this interface in case they need to do something
-	// when enabled/disabled by Configure. This is the case, for example, for
-	// all those modules that add resources dynamically (like Process or Habitat).
+	/// <summary>
+	/// Modules can implement this interface in case they need to do something
+	/// when enabled/disabled by Configure. This is the case, for example, for
+	/// all those modules that add resources dynamically (like Process or Habitat).
+	/// </summary>
 	public interface IConfigurable
 	{
 		// configure the module
-		void Configure(bool enable);
+		void Configure(bool enable, int multiple = 1);
 	}
 
 
 	public sealed class Configure : PartModule, IPartCostModifier, IPartMassModifier, IModuleInfo, ISpecifics
 	{
 		// config
-		[KSPField] public string title = string.Empty;     // short description
-		[KSPField] public string data = string.Empty;     // store setups as serialized data
-		[KSPField] public uint slots = 1;                // how many setups can be selected
+		[KSPField] public string title = string.Empty;           // short description
+		[KSPField] public string data = string.Empty;            // store setups as serialized data
+		[KSPField] public uint slots = 1;                        // how many setups can be selected
 		[KSPField] public string reconfigure = string.Empty;     // true if it can be reconfigured in flight
 
 		// persistence
@@ -36,12 +37,12 @@ namespace KERBALISM
 		//   part copy/symmetry serialization can see them
 		List<ConfigureSetup> setups;                              // all setups
 		List<ConfigureSetup> unlocked;                            // unlocked setups
-		public List<string> selected;                            // selected setups names
-		public List<string> prev_selected;                       // previously selected setups names
-		double extra_cost;                          // extra cost for selected setups, including resources
-		double extra_mass;                          // extra mass for selected setups, excluding resources
-		bool initialized;                         // keep track of first configuration
-		CrewSpecs reconfigure_cs;                      // in-flight reconfiguration crew specs
+		public List<string> selected;                             // selected setups names
+		public List<string> prev_selected;                        // previously selected setups names
+		double extra_cost;                                        // extra cost for selected setups, including resources
+		double extra_mass;                                        // extra mass for selected setups, excluding resources
+		bool initialized;                                         // keep track of first configuration
+		CrewSpecs reconfigure_cs;                                 // in-flight reconfiguration crew specs
 		Dictionary<int, int> changes;                             // store 'deferred' changes to avoid problems with unity gui
 
 		// used to avoid infinite recursion when dealing with symmetry group
@@ -152,7 +153,7 @@ namespace KERBALISM
 
 			// make sure configuration include all available slots
 			// this also create default configuration
-			// - we don it only in the editor
+			// - we do it only in the editor
 			// - we avoid corner case when cfg was never set up (because craft was never in VAB)
 			if (Lib.IsEditor() || selected.Count == 0)
 			{
@@ -165,11 +166,17 @@ namespace KERBALISM
 			// for each setup
 			foreach (ConfigureSetup setup in setups)
 			{
+				// detect if the setup is selected in multiple slots
+				int count = (selected.FindAll(x => x == setup.name)).Count;
+
 				// detect if the setup is selected
-				bool active = selected.Contains(setup.name);
+				bool active = count > 0;
+
+				// detect if the setup was previously selected in multiple slots
+				int prev_count = (prev_selected.FindAll(x => x == setup.name)).Count;
 
 				// detect if the setup was previously selected
-				bool prev_active = prev_selected.Contains(setup.name);
+				bool prev_active = prev_count > 0;
 
 				// for each module specification in the setup
 				foreach (ConfigureModule cm in setup.modules)
@@ -182,7 +189,7 @@ namespace KERBALISM
 					{
 						// call configure/deconfigure functions on module if available
 						if (m is IConfigurable configurable_module)
-							configurable_module.Configure(active);
+							configurable_module.Configure(active, count);
 
 						// enable/disable the module
 						m.isEnabled = active;
@@ -204,13 +211,14 @@ namespace KERBALISM
 					double capacity = Lib.Parse.ToDouble(cr.maxAmount);
 
 					// add/remove resource
-					if ((prev_active != (active && capacity > 0.0)) || (reconfigure_cs && initialized))
+					if ((prev_active != (active && capacity > 0.0)) || (reconfigure_cs && initialized) || (count != prev_count))
 					{
 						// if previously selected
 						if (prev_active)
 						{
 							// remove the resources
-							Lib.RemoveResource(part, cr.name, amount, capacity);
+							prev_count = prev_count == 0 ? 1 : prev_count;
+							Lib.RemoveResource(part, cr.name, amount * prev_count, capacity * prev_count);
 						}
 
 						// if selected
@@ -218,22 +226,19 @@ namespace KERBALISM
 						{
 							// add the resources
 							// - in flight, do not add amount
-							Lib.AddResource(part, cr.name, Lib.IsFlight() ? 0.0 : amount, capacity);
+							Lib.AddResource(part, cr.name, Lib.IsFlight() ? 0.0 : amount * count, capacity * count);
 						}
 					}
 
 					// add resource cost
-					if (active)
-					{
-						extra_cost += amount * unit_cost;
-					}
+					if (active) extra_cost += amount * unit_cost * count;
 				}
 
 				// add setup extra cost and mass
 				if (active)
 				{
-					extra_cost += setup.cost;
-					extra_mass += setup.mass;
+					extra_cost += setup.cost * count;
+					extra_mass += setup.mass * count;
 				}
 			}
 
@@ -517,11 +522,9 @@ namespace KERBALISM
 		// utility, used as callback in panel select
 		void Change_setup(int change, int selected_i, ref int setup_i)
 		{
-			do
-			{
-				setup_i = (setup_i + change + unlocked.Count) % unlocked.Count;
-			}
-			while (selected.Contains(unlocked[setup_i].name));
+			if (setup_i + change == unlocked.Count) setup_i = 0;
+			else if (setup_i + change < 0) setup_i = unlocked.Count - 1;
+			else setup_i += change;
 			changes.Add(selected_i, setup_i);
 		}
 
