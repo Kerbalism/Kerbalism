@@ -15,7 +15,7 @@ namespace KERBALISM
 		[KSPField] public string title = string.Empty;    // name to show on ui
 		[KSPField] public string desc = string.Empty;     // description to show on tooltip
 		[KSPField] public double capacity = 1.0;          // amount of associated pseudo-resource
-		[KSPField] public bool toggle = true;           // show the enable/disable toggle
+		[KSPField] public bool toggle = true;             // show the enable/disable toggle
 
 		// persistence/config
 		// note: the running state doesn't need to be serialized, as it can be deduced from resource flow

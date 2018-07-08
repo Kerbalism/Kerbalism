@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using UnityEngine;
 using KSP.Localization;
 
@@ -9,9 +8,11 @@ namespace KERBALISM
 {
 
 
-	// Modules can implement this interface in case they need to do something
-	// when enabled/disabled by Configure. This is the case, for example, for
-	// all those modules that add resources dynamically (like Process or Habitat).
+	/// <summary>
+	/// Modules can implement this interface in case they need to do something
+	/// when enabled/disabled by Configure. This is the case, for example, for
+	/// all those modules that add resources dynamically (like Process or Habitat).
+	/// </summary>
 	public interface IConfigurable
 	{
 		// configure the module
@@ -22,9 +23,9 @@ namespace KERBALISM
 	public sealed class Configure : PartModule, IPartCostModifier, IPartMassModifier, IModuleInfo, ISpecifics
 	{
 		// config
-		[KSPField] public string title = string.Empty;     // short description
-		[KSPField] public string data = string.Empty;     // store setups as serialized data
-		[KSPField] public uint slots = 1;                // how many setups can be selected
+		[KSPField] public string title = string.Empty;           // short description
+		[KSPField] public string data = string.Empty;            // store setups as serialized data
+		[KSPField] public uint slots = 1;                        // how many setups can be selected
 		[KSPField] public string reconfigure = string.Empty;     // true if it can be reconfigured in flight
 
 		// persistence
@@ -36,12 +37,12 @@ namespace KERBALISM
 		//   part copy/symmetry serialization can see them
 		List<ConfigureSetup> setups;                              // all setups
 		List<ConfigureSetup> unlocked;                            // unlocked setups
-		public List<string> selected;                            // selected setups names
-		public List<string> prev_selected;                       // previously selected setups names
-		double extra_cost;                          // extra cost for selected setups, including resources
-		double extra_mass;                          // extra mass for selected setups, excluding resources
-		bool initialized;                         // keep track of first configuration
-		CrewSpecs reconfigure_cs;                      // in-flight reconfiguration crew specs
+		public List<string> selected;                             // selected setups names
+		public List<string> prev_selected;                        // previously selected setups names
+		double extra_cost;                                        // extra cost for selected setups, including resources
+		double extra_mass;                                        // extra mass for selected setups, excluding resources
+		bool initialized;                                         // keep track of first configuration
+		CrewSpecs reconfigure_cs;                                 // in-flight reconfiguration crew specs
 		Dictionary<int, int> changes;                             // store 'deferred' changes to avoid problems with unity gui
 
 		// used to avoid infinite recursion when dealing with symmetry group
@@ -152,7 +153,7 @@ namespace KERBALISM
 
 			// make sure configuration include all available slots
 			// this also create default configuration
-			// - we don it only in the editor
+			// - we do it only in the editor
 			// - we avoid corner case when cfg was never set up (because craft was never in VAB)
 			if (Lib.IsEditor() || selected.Count == 0)
 			{
