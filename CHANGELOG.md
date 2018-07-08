@@ -3,6 +3,7 @@
 
 ### Changes since the last release
 
+ * Fixed a commented out bracket in another patch that hindered the Bluedog_DB geiger counter to be a sensor (Gordon Dry)
  * Configurable parts can now contain the same process in multiple slots (PiezPiedPy)
  * Fixed MRE not running when shielding is full or does not exist on a vessel (PiezPiedPy)
  * MRE process now outputs a small amount of CO2 (PiezPiedPy)
