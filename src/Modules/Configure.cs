@@ -172,8 +172,11 @@ namespace KERBALISM
 				// detect if the setup is selected
 				bool active = count > 0;
 
+				// detect if the setup was previously selected in multiple slots
+				int prev_count = (prev_selected.FindAll(x => x == setup.name)).Count;
+
 				// detect if the setup was previously selected
-				bool prev_active = prev_selected.Contains(setup.name);
+				bool prev_active = prev_count > 0;
 
 				// for each module specification in the setup
 				foreach (ConfigureModule cm in setup.modules)
@@ -208,13 +211,14 @@ namespace KERBALISM
 					double capacity = Lib.Parse.ToDouble(cr.maxAmount);
 
 					// add/remove resource
-					if ((prev_active != (active && capacity > 0.0)) || (reconfigure_cs && initialized))
+					if ((prev_active != (active && capacity > 0.0)) || (reconfigure_cs && initialized) || (count != prev_count))
 					{
 						// if previously selected
 						if (prev_active)
 						{
 							// remove the resources
-							Lib.RemoveResource(part, cr.name, amount, capacity);
+							prev_count = prev_count == 0 ? 1 : prev_count;
+							Lib.RemoveResource(part, cr.name, amount * prev_count, capacity * prev_count);
 						}
 
 						// if selected
@@ -222,15 +226,12 @@ namespace KERBALISM
 						{
 							// add the resources
 							// - in flight, do not add amount
-							Lib.AddResource(part, cr.name, Lib.IsFlight() ? 0.0 : amount, capacity);
+							Lib.AddResource(part, cr.name, Lib.IsFlight() ? 0.0 : amount * count, capacity * count);
 						}
 					}
 
 					// add resource cost
-					if (active)
-					{
-						extra_cost += amount * unit_cost;
-					}
+					if (active) extra_cost += amount * unit_cost * count;
 				}
 
 				// add setup extra cost and mass
