@@ -3,6 +3,7 @@
 
 ### Changes since the last release
 
+ * Changed the Small Supply Container to be really 0.625m in diameter, not 0.5m (Gordon Dry)
  * Added radiation belts to ExtraSolar planets and moons - science definition texts still missing (Gordon Dry)
  * Fixed a commented out bracket in another patch that hindered the Bluedog_DB geiger counter to be a sensor (Gordon Dry)
  * Configurable parts can now contain the same process in multiple slots (PiezPiedPy)
