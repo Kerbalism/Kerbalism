@@ -3,6 +3,7 @@
 
 ### Changes since the last release
 
+ * Added radiation belts to ExtraSolar planets and moons - science definition texts still missing (Gordon Dry)
  * Configurable parts can now contain the same process in multiple slots (PiezPiedPy)
  * Fixed MRE not running when shielding is full or does not exist on a vessel (PiezPiedPy)
  * MRE process now outputs a small amount of CO2 (PiezPiedPy)
