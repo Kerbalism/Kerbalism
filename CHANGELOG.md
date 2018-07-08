@@ -3,6 +3,10 @@
 
 ### Changes since the last release
 
+ * Configurable parts can now contain the same process in multiple slots (PiezPiedPy)
+ * Fixed MRE not running when shielding is full or does not exist on a vessel (PiezPiedPy)
+ * MRE process now outputs a small amount of CO2 (PiezPiedPy)
+ * GeigerCounter science experiment fixes for OPM and NewHorizons. Also SEP support fixes (Gordon Dry)
  * Rebalanced Sabatier and Anthraquinone processes to output LiquidFuel and Oxidizer at Stock ratio of 9:11 (PiezPiedPy) 
  * Rebalanced H2+O2 and LH2+O2 fuel cells to output more realistic EC levels (PiezPiedPy)
  * Some tooltip colors changed from a nasty hard to see red to a nice gold (PiezPiedPy)
