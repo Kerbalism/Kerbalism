@@ -236,8 +236,8 @@ namespace KERBALISM
 				// add setup extra cost and mass
 				if (active)
 				{
-					extra_cost += setup.cost;
-					extra_mass += setup.mass;
+					extra_cost += setup.cost * count;
+					extra_mass += setup.mass * count;
 				}
 			}
 
