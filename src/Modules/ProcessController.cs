@@ -22,6 +22,9 @@ namespace KERBALISM
 		// but we find useful to set running to true in the cfg node for some processes, and not others
 		[KSPField(isPersistant = true)] public bool running;
 
+		// amount of times to multiply capacity, used so configure can have the same process in more than one slot
+		[KSPField(isPersistant = true)] public int multiple = 1;
+
 
 		public void Start()
 		{
@@ -29,7 +32,7 @@ namespace KERBALISM
 			if (Lib.DisableScenario(this)) return;
 
 			// configure on start
-			Configure(true);
+			Configure(true, multiple);
 
 			// set action group ui
 			Actions["Action"].guiName = Lib.BuildString("Start/Stop ", title);
@@ -42,8 +45,11 @@ namespace KERBALISM
 			if (!toggle) running = true;
 		}
 
-		public void Configure(bool enable)
+		public void Configure(bool enable, int multiple = 1)
 		{
+			// make sure multiple is not zero
+			multiple = multiple == 0 ? 1 : multiple;
+
 			if (enable)
 			{
 				// if never set
@@ -53,12 +59,28 @@ namespace KERBALISM
 				{
 					// add the resource
 					// - always add the specified amount, even in flight
-					Lib.AddResource(part, resource, capacity, capacity);
+					Lib.AddResource(part, resource, capacity * multiple, capacity * multiple);
 				}
+				// has multiple changed
+				else if (this.multiple != multiple)
+				{
+					// multiple has increased
+					if (this.multiple < multiple)
+					{
+						Lib.AddResource(part, resource, capacity * (multiple - this.multiple), capacity * (multiple - this.multiple));
+					}
+					// multiple has decreased
+					else
+					{
+						Lib.RemoveResource(part, resource, 0.0, capacity * (this.multiple - multiple));
+					}
+				}
+				this.multiple = multiple;
 			}
 			else
 			{
-				Lib.RemoveResource(part, resource, 0.0, capacity);
+				Lib.RemoveResource(part, resource, 0.0, capacity * this.multiple);
+				this.multiple = 1;
 			}
 		}
 

@@ -16,7 +16,7 @@ namespace KERBALISM
 	public interface IConfigurable
 	{
 		// configure the module
-		void Configure(bool enable);
+		void Configure(bool enable, int multiple = 1);
 	}
 
 
@@ -166,8 +166,11 @@ namespace KERBALISM
 			// for each setup
 			foreach (ConfigureSetup setup in setups)
 			{
+				// detect if the setup is selected in multiple slots
+				int count = (selected.FindAll(x => x == setup.name)).Count;
+
 				// detect if the setup is selected
-				bool active = selected.Contains(setup.name);
+				bool active = count > 0;
 
 				// detect if the setup was previously selected
 				bool prev_active = prev_selected.Contains(setup.name);
@@ -183,7 +186,7 @@ namespace KERBALISM
 					{
 						// call configure/deconfigure functions on module if available
 						if (m is IConfigurable configurable_module)
-							configurable_module.Configure(active);
+							configurable_module.Configure(active, count);
 
 						// enable/disable the module
 						m.isEnabled = active;
@@ -518,11 +521,9 @@ namespace KERBALISM
 		// utility, used as callback in panel select
 		void Change_setup(int change, int selected_i, ref int setup_i)
 		{
-			do
-			{
-				setup_i = (setup_i + change + unlocked.Count) % unlocked.Count;
-			}
-			while (selected.Contains(unlocked[setup_i].name));
+			if (setup_i + change == unlocked.Count) setup_i = 0;
+			else if (setup_i + change < 0) setup_i = unlocked.Count - 1;
+			else setup_i += change;
 			changes.Add(selected_i, setup_i);
 		}
 
