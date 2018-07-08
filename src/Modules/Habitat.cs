@@ -114,7 +114,7 @@ namespace KERBALISM
 			}
 		}
 
-		public void Configure(bool enable)
+		public void Configure(bool enable, int multiple = 1)
 		{
 			if (enable)
 			{
