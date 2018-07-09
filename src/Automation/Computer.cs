@@ -257,8 +257,7 @@ namespace KERBALISM
 						case "ModuleSCANresourceScanner": dev = new ScannerDevice(m); break;
 						case "ModuleRTAntenna": dev = new RemoteTechAntennaDevice(m); break;
 						case "ModuleRTAntennaPassive": dev = new RemoteTechAntennaDevice(m); break;
-						default:
-							continue;
+						default: continue;
 					}
 
 					// add the device
@@ -319,6 +318,8 @@ namespace KERBALISM
 							case "ModuleMultiPointSurfaceLight": dev = new ProtoLightDevice(m, p.flightID); break;
 							case "SCANsat": dev = new ProtoScannerDevice(m, part_prefab, v, p.flightID); break;
 							case "ModuleSCANresourceScanner": dev = new ProtoScannerDevice(m, part_prefab, v, p.flightID); break;
+							case "ModuleRTAntenna": dev = new ProtoRemoteTechAntennaDevice(m, module_prefab, v, p.flightID); break;
+							case "ModuleRTAntennaPassive": dev = new ProtoRemoteTechAntennaDevice(m, module_prefab, v, p.flightID); break;
 							default: continue;
 						}
 

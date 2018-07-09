@@ -16,7 +16,7 @@ namespace KERBALISM
 
 		public override string Name()
 		{
-			return antenna.GUIName;
+			return "antenna";
 		}
 
 		public override uint Part()
@@ -44,13 +44,12 @@ namespace KERBALISM
 		PartModule antenna;
 	}
 
-
 	public sealed class ProtoRemoteTechAntennaDevice : Device
 	{
-		public ProtoRemoteTechAntennaDevice(ProtoPartModuleSnapshot antenna, Part part_prefab, Vessel v, uint part_id)
+		public ProtoRemoteTechAntennaDevice(ProtoPartModuleSnapshot antenna, PartModule module_prefab, Vessel v, uint part_id)
 		{
 			this.antenna = antenna;
-			this.part_prefab = part_prefab;
+			this.module_prefab = module_prefab;
 			this.vessel = v;
 			this.part_id = part_id;
 		}
@@ -83,11 +82,10 @@ namespace KERBALISM
 		}
 
 		private readonly ProtoPartModuleSnapshot antenna;
-		private readonly Part part_prefab;
+		private readonly PartModule module_prefab;
 		private readonly Vessel vessel;
 		private readonly uint part_id;
 	}
-
 
 } // KERBALISM
 
