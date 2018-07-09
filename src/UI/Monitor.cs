@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
-
+using System.Linq;
 
 namespace KERBALISM
 {
@@ -175,6 +175,17 @@ namespace KERBALISM
 			return Math.Min(h, Screen.height * 0.75f);
 		}
 
+		bool Filter_match(String vesselGroup) {
+			List<String> filterTags = filter.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()).ToList();
+			List<String> vesselTags = vesselGroup.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()).ToList();
+			foreach(String tag in filterTags) {
+				if(!vesselTags.Contains(tag)) {
+					return false;
+				}
+			}
+			return true;
+		}
+
 		bool Render_vessel(Panel p, Vessel v)
 		{
 			// get vessel info
@@ -190,7 +201,7 @@ namespace KERBALISM
 			show_filter |= vd.group.Length > 0 && vd.group != "NONE";
 
 			// skip filtered vessels
-			if (Filtered() && vd.group != filter) return false;
+			if (Filtered() && !Filter_match(vd.group)) return false;
 
 			// get resource handler
 			Vessel_resources resources = ResourceCache.Get(v);
