@@ -125,6 +125,7 @@
     <Compile Include="Automation\Devices\Harvester.cs" />
     <Compile Include="Automation\Devices\Laboratory.cs" />
     <Compile Include="Automation\Devices\Experiment.cs" />
+    <Compile Include="Automation\Devices\RemoteTechAntenna.cs" />
     <Compile Include="Automation\Devices\Scanner.cs" />
     <Compile Include="Automation\Script.cs" />
     <Compile Include="Background.cs" />
