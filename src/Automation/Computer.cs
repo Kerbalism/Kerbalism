@@ -255,7 +255,10 @@ namespace KERBALISM
 						case "ModuleMultiPointSurfaceLight": dev = new LightDevice(m as ModuleLight); break;
 						case "SCANsat": dev = new ScannerDevice(m); break;
 						case "ModuleSCANresourceScanner": dev = new ScannerDevice(m); break;
-						default: continue;
+						case "ModuleRTAntenna": dev = new RemoteTechAntennaDevice(m); break;
+						case "ModuleRTAntennaPassive": dev = new RemoteTechAntennaDevice(m); break;
+						default:
+							continue;
 					}
 
 					// add the device
