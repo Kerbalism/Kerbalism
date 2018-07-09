@@ -3,6 +3,8 @@
 
 ### Changes since the last release
 
+ * RemoteTech antennas can now be controlled in vessel Automation (Sir Mortimer)
+ * Vessel group filter can now search for vessel names that contain multiple words (Sir Mortimer) 
  * Changed the Small Supply Container to be really 0.625m in diameter, not 0.5m (Gordon Dry)
  * Added radiation belts to ExtraSolar planets and moons - science definition texts still missing (Gordon Dry)
  * Fixed a commented out bracket in another patch that hindered the Bluedog_DB geiger counter to be a sensor (Gordon Dry)
