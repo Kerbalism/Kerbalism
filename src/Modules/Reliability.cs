@@ -478,9 +478,9 @@ namespace KERBALISM
 			{
 				foreach (PartModule m in part.FindModulesImplementing<PartModule>())
 				{
-					if (m.moduleName == "ModuleRTAntenna" || m.moduleName == "ModuleRTAntennaPassive")
+					if(RemoteTech.IsAntenna(m))
 					{
-						Lib.ReflectionValue(m, "IsRTBroken", b);
+						RemoteTech.SetBroken(m, b);
 					}
 				}
 			}

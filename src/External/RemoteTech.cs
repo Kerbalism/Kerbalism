@@ -44,10 +44,11 @@ namespace KERBALISM
 			return (API != null ? (double)ShortestSignalDelay.Invoke(null, new Object[] { id }) : 0);
 		}
 
-		public static void SetCommsBlackout(Guid id, bool flag, string origin)
+		public static Object SetCommsBlackout(Guid id, bool flag, string origin)
 		{
 			if (API != null && SetRadioBlackout != null)
-				SetRadioBlackout.Invoke(null, new Object[] { id, flag, origin });
+				return SetRadioBlackout.Invoke(null, new Object[] { id, flag, origin });
+			return null;
 		}
 
 		public static bool GetCommsBlackout(Guid id)
@@ -60,10 +61,30 @@ namespace KERBALISM
 			if (!Enabled())
 				return;
 
-			SetCommsBlackout(v.id, vi.blackout, "kerbalism_cme");
+			bool blackout = vi.blackout || !vi.powered;
+			SetCommsBlackout(v.id, blackout, "kerbalism");
 		}
 
-		// reflection type of SCANUtils static class in SCANsat assembly, if present
+		public static bool IsActive(ProtoPartModuleSnapshot antenna)
+		{
+			return Lib.Proto.GetBool(antenna, "IsRTActive");
+		}
+
+		public static void SetBroken(PartModule antenna, bool broken)
+		{
+			Lib.ReflectionValue(antenna, "IsRTBroken", broken);
+		}
+
+		public static bool IsAntenna(PartModule m)
+		{
+			// we test for moduleName, but could use the boolean IsRTAntenna here
+			return IsAntenna(m.moduleName);
+		}
+
+		public static bool IsAntenna(String moduleName) {
+			return moduleName == "ModuleRTAntenna" || moduleName == "ModuleRTAntennaPassive";
+		}
+
 		static Type API;
 		static MethodInfo IsEnabled;
 		static MethodInfo IsConnected;
