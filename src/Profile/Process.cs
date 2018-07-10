@@ -55,7 +55,7 @@ namespace KERBALISM
 			}
 
 			// parse dump specs
-			dump = new DumpSpecs(Lib.ConfigValue(node, "dump", "false"));
+			dump = new DumpSpecs(Lib.ConfigValue(node, "dump", "false"), Lib.ConfigValue(node, "dump_valve", "false"));
 		}
 
 

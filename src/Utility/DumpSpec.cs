@@ -6,38 +6,116 @@ namespace KERBALISM
 {
 
 
+	/// <summary>
+	/// Contains a list of resources that can be dumped overboard
+	/// </summary>
 	public sealed class DumpSpecs
 	{
-		public DumpSpecs(string value)
+		/// <summary>
+		/// Configures the always dump resources and the dump valves, dump valves are only used if always_dump is empty or contains "false"
+		/// </summary>
+		public DumpSpecs(string always_dump, string dump_valves)
 		{
-			// if empty or false: don't dump anything
-			if (value.Length == 0 || value.ToLower() == "false")
+			// if always_dump is empty or false: configure dump valves if any requested
+			if (always_dump.Length == 0 || always_dump.ToLower() == "false")
 			{
 				any = false;
 				list = new List<string>();
+
+				// if dump_valves is empty or false then don't do anything
+				if (dump_valves.Length == 0 || dump_valves.ToLower() == "false")
+				{
+					AnyValves = false;
+					valves = new List<string>();
+					valves.Insert(0, "None");
+				}
+				// create list of dump valves
+				else
+				{
+					AnyValves = true;
+					valves = Lib.Tokenize(dump_valves, ',');
+					valves.Insert(0, "None");
+					for (int i = 0; i < valves.Count; i++)
+						valves[i] = valves[i].Replace("&", ", ");
+				}
 			}
 			// if true: dump everything
-			else if (value.ToLower() == "true")
+			else if (always_dump.ToLower() == "true")
 			{
 				any = true;
 				list = new List<string>();
+				AnyValves = false;
+				valves = new List<string>();
+				valves.Insert(0, "None");
 			}
-			// all other cases: dump only specified resources
+			// all other cases: dump only specified resources in always_dump
 			else
 			{
 				any = false;
-				list = Lib.Tokenize(value, ',');
+				list = Lib.Tokenize(always_dump, ',');
+				AnyValves = false;
+				valves = new List<string>();
+				valves.Insert(0, "None");
 			}
 		}
 
-		// return true if the resource should dump
+		/// <summary>
+		/// returns true if any dump valves exist for the process
+		/// </summary>
+		public bool AnyValves { get; private set; } = false;
+
+		/// <summary>
+		/// activates or returns the current dump valve index
+		/// </summary>
+		public int ValveIndex
+		{
+			get { return AnyValves ? valve_i : 0; }
+			set
+			{
+				valve_i = (!AnyValves || value >= valves.Count - 1 || value < 0) ? 0 : value;
+				DeployValve();
+			}
+		}
+
+		/// <summary>
+		/// activates the next dump valve and returns its index
+		/// </summary>
+		public int NextValve
+		{
+			get
+			{
+				valve_i = valve_i >= valves.Count - 1 ? 0 : valve_i + 1;
+				DeployValve();
+				return valve_i;
+			}
+			private set	{ }
+		}
+
+		/// <summary>
+		/// deploys the current dump valve to the dump list
+		/// </summary>
+		private void DeployValve()
+		{
+			if (!AnyValves || valve_i <= 0)	list.Clear();
+			else list = Lib.Tokenize(valves[valve_i], ',');
+		}
+
+		/// <summary>
+		/// returns true if the specified resource should be dumped
+		/// </summary>
 		public bool Check(string res_name)
 		{
 			return any || list.Contains(res_name);
 		}
 
-		private readonly bool any;
-		private List<string> list;
+		private readonly bool any = false;          // true if any resources should be dumped
+		private List<string> list;                  // list of resources to dump overboard
+		private int valve_i = 0;					// index of currently active dump valve;
+
+		/// <summary>
+		/// list of dump valves the user can choose from
+		/// </summary>
+		public readonly List<string> valves;
 	}
 
 
