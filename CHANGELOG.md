@@ -3,6 +3,10 @@
 
 ### Changes since the last release
 
+ * Overhaul of all Chemical Plant and ISRU processes, also new priority processes added (PiezPiedPy)
+ * SOE process now converts wasted Carbon into Shielding, Haber process now needs EC (PiezPiedPy)
+ * Hydrazine process now outputs Oxygen and requires EC and A New Nitro injected Hydrazine process added (PiezPiedPy) 
+ * RemoteTech EC for unloaded vessels is now calculated for the monitor panel (Sir Mortimer)
  * RemoteTech antennas can now be controlled in vessel Automation (Sir Mortimer)
  * Vessel group filter can now search for vessel names that contain multiple words (Sir Mortimer) 
  * Changed the Small Supply Container to be really 0.625m in diameter, not 0.5m (Gordon Dry)
