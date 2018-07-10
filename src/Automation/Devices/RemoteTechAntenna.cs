@@ -16,7 +16,7 @@ namespace KERBALISM
 
 		public override string Name()
 		{
-			return "RT antenna";
+			return "antenna";
 		}
 
 		public override uint Part()
@@ -56,7 +56,7 @@ namespace KERBALISM
 
 		public override string Name()
 		{
-			return "RT antenna";
+			return "antenna";
 		}
 
 		public override uint Part()
