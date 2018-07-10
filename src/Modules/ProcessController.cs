@@ -25,6 +25,10 @@ namespace KERBALISM
 		// amount of times to multiply capacity, used so configure can have the same process in more than one slot
 		[KSPField(isPersistant = true)] public int multiple = 1;
 
+		// index of currently active dump valve
+		[KSPField(isPersistant = true)] public int valve_i = 0;
+
+		private DumpSpecs dump_specs;
 
 		public void Start()
 		{
@@ -33,6 +37,16 @@ namespace KERBALISM
 
 			// configure on start
 			Configure(true, multiple);
+
+			// get dump specs for associated process
+			dump_specs = Profile.processes.Find(x => x.modifiers.Contains(resource)).dump;
+
+			// set dump valve ui button
+			Events["DumpValve"].active = dump_specs.AnyValves;
+
+			// set active dump valve
+			dump_specs.ValveIndex = valve_i;
+			valve_i = dump_specs.ValveIndex;
 
 			// set action group ui
 			Actions["Action"].guiName = Lib.BuildString("Start/Stop ", title);
@@ -93,6 +107,7 @@ namespace KERBALISM
 
 			// update rmb ui
 			Events["Toggle"].guiName = Lib.StatusToggle(title, running ? "running" : "stopped");
+			Events["DumpValve"].guiName = Lib.StatusToggle("Dump", dump_specs.valves[valve_i]);
 		}
 
 
@@ -103,6 +118,8 @@ namespace KERBALISM
 			running = !running;
 		}
 
+		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "Dump", active = true)]
+		public void DumpValve() { valve_i = dump_specs.NextValve; }
 
 		// action groups
 		[KSPAction("_")] public void Action(KSPActionParam param) { Toggle(); }
