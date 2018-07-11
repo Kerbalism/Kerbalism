@@ -3,6 +3,7 @@
 
 ### Changes since the last release
 
+ * Scaled the ISRU's capacity to be more representative of their size (PiezPiedPy)
  * All priority type processes have been removed and replaced with a Dump button that configures the resource type(s)
  * to dump overboard, the Dump button is also usable InFlight allowing for changes of strategies on the go (PiezPiedPy)
  * Overhaul of all Chemical Plant and ISRU processes using CRP densities and molar masses (PiezPiedPy)
