@@ -36,7 +36,7 @@ namespace KERBALISM
 			//CryoTank,
 			Unknown,
 			FNGenerator,
-			RTAntenna
+			RemoteTech
 		}
 
 		static Module_type ModuleType(string module_name)
@@ -71,8 +71,10 @@ namespace KERBALISM
 				case "ModuleRadioisotopeGenerator": return Module_type.RadioisotopeGenerator;
 				//case "ModuleCryoTank": return module_type.CryoTank;
 				case "FNGenerator": return Module_type.FNGenerator;
-				case "ModuleRTAntenna": return Module_type.RTAntenna;
-				case "ModuleRTAntennaPassive": return Module_type.RTAntenna;
+			}
+			if(RemoteTech.IsAntenna(module_name))
+			{
+				return Module_type.RemoteTech;
 			}
 			return Module_type.Unknown;
 		}
@@ -139,7 +141,7 @@ namespace KERBALISM
 						case Module_type.RadioisotopeGenerator: ProcessRadioisotopeGenerator(v, p, m, module_prefab, ec, elapsed_s); break;
 						//case module_type.CryoTank: ProcessCryoTank(v, p, m, module_prefab, resources, elapsed_s); break;
 						case Module_type.FNGenerator: ProcessFNGenerator(v, p, m, module_prefab, ec, elapsed_s); break;
-						case Module_type.RTAntenna: ProcessRTAntenna(v, p, m, module_prefab, part_prefab, vd, ec, elapsed_s); break;
+						case Module_type.RemoteTech: ProcessRTModule(v, p, m, module_prefab, part_prefab, vd, ec, elapsed_s); break;
 					}
 				}
 			}
@@ -453,20 +455,17 @@ namespace KERBALISM
 			}
 		}
 
-		static void ProcessRTAntenna(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule antenna, Part part_prefab, VesselData vd, Resource_info ec, double elapsed_s)
+		static void ProcessRTModule(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule module, Part part_prefab, VesselData vd, Resource_info ec, double elapsed_s)
 		{
-			// disregard if not active
-			if (!Lib.Proto.GetBool(m, "IsRTActive"))
+			// only active antennas consume power
+			if (RemoteTech.IsActive(m))
 			{
-				return;
-			}
-
-			float consumption = Lib.Proto.GetFloat(m, "EnergyCost");
-			foreach (ModuleResource resource in antenna.resHandler.inputResources)
-			{
-				if (resource.name == "ElectricCharge" && resource.rate > double.Epsilon)
+				foreach (ModuleResource resource in module.resHandler.inputResources)
 				{
-					ec.Consume(resource.rate * elapsed_s);
+					if (resource.name == "ElectricCharge" && resource.rate > double.Epsilon)
+					{
+						ec.Consume(resource.rate * elapsed_s);
+					}
 				}
 			}
 		}

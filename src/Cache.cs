@@ -106,6 +106,7 @@ namespace KERBALISM
 
 			// other stuff
 			gravioli = Sim.Graviolis(v);
+			powered = ResourceCache.Info(v, "ElectricCharge").amount > double.Epsilon;
 		}
 
 
@@ -152,6 +153,7 @@ namespace KERBALISM
 		public Comforts comforts;           // comfort info
 		public List<Greenhouse.Data> greenhouses; // some data about greenhouses
 		public double gravioli;             // gravitation gauge particles detected (joke)
+		public bool powered;				// true if vessel is powered
 	}
 
 
