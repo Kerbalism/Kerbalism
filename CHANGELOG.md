@@ -6,8 +6,10 @@
  * Overhaul of all Chemical Plant and ISRU processes, also new priority processes added (PiezPiedPy)
  * SOE process now converts wasted Carbon into Shielding, Haber process now needs EC (PiezPiedPy)
  * Hydrazine process now outputs Oxygen and requires EC and A New Nitro injected Hydrazine process added (PiezPiedPy) 
- * RemoteTech EC for unloaded vessels is now calculated for the monitor panel (Sir Mortimer)
- * RemoteTech antennas can now be controlled in vessel Automation (Sir Mortimer)
+ * RemoteTech: Antennas will need power even if vessel is unloaded (Sir Mortimer)
+ * RemoteTech: Vessels without power will no longer relay signals to other vessels (Sir Mortimer)
+ * RemoteTech: Antennas can now be enabled/disabled in Automation (Sir Mortimer)
+ * RemoteTech: Antennas can break down due to reliability failures (Sir Mortimer)
  * Vessel group filter can now search for vessel names that contain multiple words (Sir Mortimer) 
  * Changed the Small Supply Container to be really 0.625m in diameter, not 0.5m (Gordon Dry)
  * Added radiation belts to ExtraSolar planets and moons - science definition texts still missing (Gordon Dry)
@@ -19,13 +21,12 @@
  * Rebalanced Sabatier and Anthraquinone processes to output LiquidFuel and Oxidizer at Stock ratio of 9:11 (PiezPiedPy) 
  * Rebalanced H2+O2 and LH2+O2 fuel cells to output more realistic EC levels (PiezPiedPy)
  * Some tooltip colors changed from a nasty hard to see red to a nice gold (PiezPiedPy)
- * RemoteTech antennas can now break due to reliability failures (Sir Mortimer [GRUMP])
  * Fixed antennas bug having no science data rate in languages other than English (PiezPiedPy)
  * Support for AirlineKuisine (PiezPiedPy)
 
 ### For Developers
 
- * Support for development on mac now included, also with help in the CONTRIBUTING.md file (Sir Mortimer [GRUMP])
+ * Support for development on mac now included, also with help in the CONTRIBUTING.md file (Sir Mortimer)
 
 
 ## v1.7.1.1 for KSP 1.4.4 and 1.3.1
