@@ -1,3 +1,5 @@
+# FEATURE FREEZE! Only documentation and bugfixes will be accepted.
+
 Are you here because you want to:
 
  * Report a Bug? [Click here.](#how-to-report-bugs)
