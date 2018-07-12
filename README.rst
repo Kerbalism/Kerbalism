@@ -1,3 +1,4 @@
+|Kerbalism|
 Welcome to Kerbalism
 ====================
 Hundreds of Kerbals were killed in the making of this mod.
@@ -240,7 +241,7 @@ There is a help file on GitHub for those wishing to report bugs or contribute to
 REQUIREMENTS
 ------------
 
-- KSP 1.3.1 and 1.4.x
+- KSP 1.3.1 or 1.4.x
 - ModuleManager 3.0.0+
 
 
@@ -258,6 +259,8 @@ This mod is released under the `Unlicense <LICENSE>`_.
 
 .. _MiniAVC: https://ksp.cybutek.net/miniavc/Documents/README.htm
 .. _KSP-AVC Plugin: https://forum.kerbalspaceprogram.com/index.php?/topic/72169-13-12-ksp-avc-add-on-version-checker-plugin-1162-miniavc-ksp-avc-online-2016-10-13/
+
+.. |Kerbalism| image:: misc/img/banner.png
 
 .. |docs| image:: https://readthedocs.org/projects/kerbalism/badge/?version=latest
     :alt: Documentation Status
