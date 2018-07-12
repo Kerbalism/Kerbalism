@@ -10,6 +10,12 @@ Documentation Table of Contents
 
     Home <index>
     Table of Contents <self>
-	Downloads and Links <downloads_links>
-	Supported Mods <support>
-	About <about>
+    Introduction <intro>
+    Environment <environment>
+    Habitat <habitat>
+    Reliability <reliability>
+    Signal <signal>
+    Science <science>
+    Downloads and Links <downloads_links>
+    Supported Mods <support>
+    About <about>
