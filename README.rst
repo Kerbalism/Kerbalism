@@ -1,12 +1,7 @@
-                             _  ________ _____  ____          _      _____  _____ __  __
-                            | |/ /  ____|  __ \|  _ \   /\   | |    |_   _|/ ____|  \/  |
-                            | ' /| |__  | |__) | |_) | /  \  | |      | | | (___ | \  / |
-                            |  < |  __| |  _  /|  _ < / /\ \ | |      | |  \___ \| |\/| |
-                            | . \| |____| | \ \| |_) / ____ \| |____ _| |_ ____) | |  | |
-                            |_|\_\______|_|  \_\____/_/    \_\______|_____|_____/|_|  |_|
-
-                              Hundreds of Kerbals were killed in the making of this mod.
-
+Welcome to Kerbalism
+====================
+Hundreds of Kerbals were killed in the making of this mod.
+----------------------------------------------------------
 
 |docs|
 
@@ -179,28 +174,28 @@ SUPPORTED MODS
 Most mods work together with this one, others don't. Such is life. For a non-exhaustive list of supported mods have a
 look inside the Support folder. Some of the interactions deserve a special mention:
 
-SCANsat:
-- sensors consume EC in background and their cost is evaluated by the planner EC
+**SCANsat:**
+- sensors consume EC in the background and their EC cost is evaluated by the planner
 - sensors are shut down and restarted in background depending on EC availability
 
-RemoteTech:
-- antenna cost is evaluated by the planner EC
+**RemoteTech:**
+- antenna EC cost is evaluated by the planner
 - failures will disable the antenna
 
-DeepFreeze:
+**DeepFreeze:**
 - all rules are suspended for hibernated Kerbals
-- the vessel info window show frozen Kerbals with a different color
+- the vessel info window shows frozen Kerbals with a different color
 
-NearFuture:
-- curved solar panels, reactors, fission generators and RTGs produce EC in background and are considered by the planner
+**NearFuture:**
+- curved solar panels, reactors, fission generators and RTGs produce EC in background and are evaluated by the planner
 
-PlanetaryBaseSystem:
-- the converters will work in the background and are considered by the planner
+**PlanetaryBaseSystem:**
+- the converters will work in the background and are evaluated by the planner
 
-OrbitalScience:
+**OrbitalScience:**
 - experiments data size has been tweaked for background data transmission
 
-OPM/RSS/NewHorizons:
+**OPM/RSS/NewHorizons:**
 - custom radiation definitions for these planet packs are provided
 
 
@@ -212,31 +207,30 @@ mention individually. Thanks guys.
 
 And special thanks to the artists that provided all the parts:
 
-- mehka: gravity ring
+- mehka: Gravity ring
 - Nazari1382: Geiger counter, small supply container
-- tygoo7: medium and big supply containers, radial pressurized container
-- zzz: greenhouse, active shield
+- tygoo7: Medium and big supply containers, radial pressurized container
+- zzz: Greenhouse, active shield
 
 
 FAQs
 ----
 
+There is a help file on GitHub for those wishing to report bugs or contribute to Kerbalism, see `CONTRIBUTING.md <CONTRIBUTING.md>`_
+
 **I think I have found a bug, and I have just a few mods installed**
 
-Try to reproduce it consistently, then provide me with a save game that demonstrates the issue. Include log files,
-screen shots, and reproduction steps. Post the report on the `KSP forums <https://forum.kerbalspaceprogram.com/index.php?/topic/172400-131144-kerbalism-v171/>`_, or raise an issue on `GitHub <https://github.com/steamp0rt/Kerbalism/issues>`_.
+- Try to reproduce it consistently, then provide us with reproduction steps that demonstrates the issue. You may be asked to supply log files,
+screen shots and maybe a save game. Post the report on the `Kerbalism KSP forums thread`_, or raise an issue on `GitHub Kerbalism Issues`_.
 
-**I want to add support for this to my parts**
+**I want to add support for Kerbalism to my parts**
 
-Add the appropriate modules to your parts. Check the wiki on GitHub for the module specifications.
+- Add the appropriate modules to your parts. Check the `Kerbalism documentation`_ for the module specifications.
 
-**I want to interact with this mod in code**
+**I want to interact with Kerbalism in my code**
 
-Have a look at System/API.cs source code on GitHub. Raise an issue to request more functions.
+- Have a look at the `System/API.cs <src/System/API.cs>`_ source code on GitHub. Raise an issue to request more functions.
 
- * There is a help file on GitHub for those wishing to report bugs or contribute to Kerbalism.
-   see `CONTRIBUTING.md <CONTRIBUTING.md>`_
-   
 REQUIREMENTS
 ------------
 
@@ -244,7 +238,7 @@ REQUIREMENTS
 - ModuleManager 3.0.0+
 
 
-This mod includes version checking using `MiniAVC <http://forum.kerbalspaceprogram.com/threads/79745>`_. If you opt-in, it will use the Internet to check whether there is a new version available. Data is only read from the Internet and no personal information is sent. For a more comprehensive version checking experience, please download the `KSP-AVC Plugin <http://forum.kerbalspaceprogram.com/threads/79745>`_
+This mod includes version checking using MiniAVC_. If you opt-in, it will use the Internet to check whether there is a new version available. Data is only read from the Internet and no personal information is sent. For a more comprehensive version checking experience, please download the `KSP-AVC Plugin`_.
 
 
 LICENSE
@@ -252,7 +246,14 @@ LICENSE
 
 This mod is released under the `Unlicense <LICENSE>`_.
 
-.. |docs| https://readthedocs.org/projects/kerbalism/badge/?version=latest
+.. _Kerbalism KSP forums thread: https://forum.kerbalspaceprogram.com/index.php?/topic/172400-131144-kerbalism-v171/
+.. _GitHub Kerbalism Issues: https://github.com/steamp0rt/Kerbalism/issues
+.. _Kerbalism documentation: https://kerbalism.readthedocs.io/en/latest/
+
+.. _MiniAVC: https://ksp.cybutek.net/miniavc/Documents/README.htm
+.. _KSP-AVC Plugin: https://forum.kerbalspaceprogram.com/index.php?/topic/72169-13-12-ksp-avc-add-on-version-checker-plugin-1162-miniavc-ksp-avc-online-2016-10-13/
+
+.. |docs| image:: https://readthedocs.org/projects/kerbalism/badge/?version=latest
     :alt: Documentation Status
     :scale: 100%
     :target: https://kerbalism.readthedocs.io/en/latest/?badge=latest
