@@ -14,6 +14,7 @@ Documentation Table of Contents
     Environment <environment>
     Habitat <habitat>
     Reliability <reliability>
+    Signal <signal>
     Downloads and Links <downloads_links>
     Supported Mods <support>
     About <about>
