@@ -10,7 +10,8 @@ Documentation Table of Contents
 
     Home <index>
     Table of Contents <self>
-	Introduction <intro>
-	Downloads and Links <downloads_links>
-	Supported Mods <support>
-	About <about>
+    Introduction <intro>
+    Environment <environment>
+    Downloads and Links <downloads_links>
+    Supported Mods <support>
+    About <about>
