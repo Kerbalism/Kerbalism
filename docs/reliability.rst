@@ -40,7 +40,7 @@ The system can trigger failures on arbitrary modules in a part, using the Reliab
 +-----------------------------+-----------+-----------+----------+------------------+------------+------------+
 | COMPONENT                   | MTBF std  | MTBF high | REPAIR   | REDUNDANCY       | EXTRA COST | EXTRA MASS |
 +=============================+===========+===========+==========+==================+============+============+
-| Solar Panel (standalone)    | 4 years   | 16 years  | Anyone   | Power Generation | 2.5        | 1.0        |
+| Solar Panel (standalone)    | 4 years   | 16 years  | Anyone   | Power Generation  | 2.5        | 1.0        |
 +-----------------------------+-----------+-----------+----------+------------------+------------+------------+
 | Solar Panel (small pod)     | 4 years*  | 64 years* | Anyone   | Power Generation | 0.25       | 0.1        |
 +-----------------------------+-----------+-----------+----------+------------------+------------+------------+
