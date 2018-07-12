@@ -30,7 +30,6 @@ cd "%TargetName%"
 xcopy /y /e "..\..\..\GameData\%TargetName%\*" .
 xcopy /y ..\..\..\CHANGELOG.md .
 xcopy /y ..\..\..\License .
-xcopy /y ..\..\..\README.md .
 
 echo.
 echo Compressing %TargetName% for %KSPversion% Release Package...
