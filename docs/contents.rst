@@ -12,6 +12,7 @@ Documentation Table of Contents
     Table of Contents <self>
     Introduction <intro>
     Environment <environment>
+    Habitat <habitat>
     Downloads and Links <downloads_links>
     Supported Mods <support>
     About <about>
