@@ -373,4 +373,4 @@ UnityEngine*.dll
 desktop.ini
 
 # Read the docs local builds
-docs/_*
+docs/_[Bb]uild

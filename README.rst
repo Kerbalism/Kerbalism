@@ -243,6 +243,7 @@ REQUIREMENTS
 ------------
 
 - KSP 1.3.1 or 1.4.x
+- Community Resource Pack (CRP)
 - ModuleManager 3.0.0+
 
 
