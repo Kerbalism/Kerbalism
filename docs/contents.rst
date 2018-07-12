@@ -13,6 +13,7 @@ Documentation Table of Contents
     Introduction <intro>
     Environment <environment>
     Habitat <habitat>
+    Reliability <reliability>
     Downloads and Links <downloads_links>
     Supported Mods <support>
     About <about>
