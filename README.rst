@@ -16,13 +16,13 @@ All mechanics can be configured to some degree, or even disabled if you don't li
 mod is fully data-driven, so that you can create your own customized game play with only a text editor and a
 minimal amount of espresso. Or simply use the set of rules already included, or the ones shared by other users.
 What follows is a summary description of the capabilities of the mod, and for a more detailed documentation the user
-is invited to read the wiki.
+is invited to read the `Kerbalism documentation`_.
 
 
 ARCHITECTURE
 ------------
 
-Contrary to popular belief, the observable universe is not a sphere of 3km radius centered around the active vessel.
+Contrary to popular belief, the observable universe is not a sphere of a 3km radius centered around the active vessel.
 All mechanics are simulated for loaded and unloaded vessels alike, without exception. Acceptable performance was
 obtained by a mix of smart approximations and common sense. The computational complexity is by and large independent
 from the number of vessels.
@@ -43,7 +43,7 @@ The environment of space is modeled in a simple yet effective way. Temperature i
 flux, the indirect solar flux bouncing off from celestial bodies, and the radiative infrared cooling of their surfaces.
 The simulation of the latter is especially interesting, and contrary to popular models it is able to reproduce
 satisfactory results for both atmospheric and atmospheric-less worlds. Radiation is implemented using an overlapping
-hierarchy of 3d zones, modeled and rendered using signed distance fields. These are used to simulate inner and outer
+hierarchy of 3D zones, modeled and rendered using signed distance fields. These are used to simulate inner and outer
 belts, magnetosphere and even the heliopause. Solar weather is represented by Coronal Mass Ejection events, that
 happen sporadically, increase radiation and cause communication blackouts.
 
@@ -62,8 +62,7 @@ BIOLOGICAL NEEDS
 ----------------
 
 Your crew need a constant intake of Food, Water and Oxygen. Failure to provide for these needs will result in
-unceremonious death. Configurable supply containers are provided. The amount of food only updates twice a day,
-which is when Kerbals eat a meal.
+unceremonious death. Configurable supply containers are provided.
 
 
 PSYCHOLOGICAL NEEDS
@@ -78,8 +77,8 @@ pressurized environment is vastly superior to living in a suit. So bring some Ni
 the internal atmosphere at an acceptable pressure.
 
 
-ENVIRONMENT HAZARDS
--------------------
+ENVIRONMENTAL HAZARDS
+---------------------
 
 Your crew evolved in particular conditions of temperature, and at a very low level of radiation. You should reproduce
 these conditions wherever your crew go, no matter the external temperature or radiation at that point. Or else death
@@ -119,7 +118,7 @@ RELIABILITY
 
 Components don't last forever in the real world. This is modeled by a simple system that can trigger failures on
 arbitrary modules. Manufacturing quality can be chosen in the editor, per-component, and improve the MTBF but also
-require extra cost and mass. The crew can inspect and repair malfunctioned components. Redundancy becomes a key aspect
+requires extra cost and mass. The crew can inspect and repair malfunctioned components. Redundancy now becomes a key aspect
 of the design phase.
 
 
@@ -127,7 +126,7 @@ SIGNAL
 ------
 
 Transmission rates are realistic, and scale with distance to the point that it may take a long time to transmit data from
-the outer solar system. Data transmission happens transparently in loaded and unloaded vessels, as usual. The resulting
+the outer solar system. Data transmission happens transparently in loaded and unloaded vessels. The resulting
 communication system is simple, yet it also results in more realistic vessel and mission designs.
 
 
@@ -138,7 +137,7 @@ Data is collected and stored in the vessel solid state drives, instead of the st
 around the vessel doesn't require extra vehicular activities. Some data can be transmitted back directly, while other
 data needs to be analyzed in a lab first. Analyzing takes a long time, happens transparently to loaded and unloaded
 vessels alike, and can't be cheated to create science out of thin air. An interesting method is used to bridge
-existing stock and third-party experiments to the new science system, that work for most experiments without requiring
+existing stock and third-party experiments to the new science system, that works for most experiments without requiring
 ad-hoc support.
 
 
@@ -147,7 +146,7 @@ AUTOMATION
 
 Components can be automated using a minimalist scripting system, with a graphical editor. Scripts are triggered
 manually or by environmental conditions. You can create a script to turn on all the lights as soon as the Sun is not
-visible anymore, or retract all solar panels as soon as you enter an atmosphere.
+visible anymore, or retract all solar panels as soon as you enter an atmosphere etc.
 
 
 USER INTERFACE
@@ -165,16 +164,16 @@ MODULES EMULATION
 -----------------
 
 Most stock modules and some third-party ones are emulated for what concerns the mechanics introduced by the mod. The
-level of support depend on the specific module, and may include: simulation of resource consumption and production in
+level of support depends on the specific module, and may include: simulation of resource consumption and production in
 unloaded vessels, fixing of timewarp issues in loaded vessels, the ability to disable the module after malfunctions,
-and the means to start and stop the module in an automation script.
+and also the means to start and stop the module in an automation script.
 
 
 SUPPORTED MODS
 --------------
 
-Most mods work together with this one, others don't. Such is life. For a non-exhaustive list of supported mods have a
-look inside the Support folder. Some of the interactions deserve a special mention:
+Most mods work together with Kerbalism, others don't. Such is life. For a complete list of supported mods have a
+look inside the `Support folder`_. Some of the interactions deserve a special mention though:
 
 **SCANsat:**
 
@@ -255,6 +254,7 @@ LICENSE
 
 This mod is released under the `Unlicense <LICENSE>`_.
 
+.. _Support folder: https://github.com/steamp0rt/Kerbalism/tree/master/GameData/Kerbalism/Support
 .. _Kerbalism KSP forums thread: https://forum.kerbalspaceprogram.com/index.php?/topic/172400-131144-kerbalism-v171/
 .. _GitHub Kerbalism Issues: https://github.com/steamp0rt/Kerbalism/issues
 .. _Kerbalism documentation: https://kerbalism.readthedocs.io/en/latest/

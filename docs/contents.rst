@@ -10,11 +10,6 @@ Documentation Table of Contents
 
     Home <index>
     Table of Contents <self>
+	Downloads and Links <downloads_links>
 	Supported Mods <support>
 	About <about>
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`search`

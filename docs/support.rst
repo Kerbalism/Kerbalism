@@ -3,8 +3,8 @@
 Supported Mods
 ==============
 
-Most mods work together with Kerbalism, others don't. Such is life. For a non-exhaustive list of supported mods have a
-look inside the Support folder. Some of the interactions deserve a special mention though:
+Most mods work together with Kerbalism, others don't. Such is life. For a complete list of supported mods have a
+look inside the `Support folder`_. Some of the interactions deserve a special mention though:
 
 SCANsat
 -------
@@ -43,3 +43,5 @@ OPM/RSS/NewHorizons
 -------------------
 
 - custom radiation definitions for these planet packs are provided
+
+.. _Support folder: https://github.com/steamp0rt/Kerbalism/tree/master/GameData/Kerbalism/Support
