@@ -175,27 +175,34 @@ Most mods work together with this one, others don't. Such is life. For a non-exh
 look inside the Support folder. Some of the interactions deserve a special mention:
 
 **SCANsat:**
+
 - sensors consume EC in the background and their EC cost is evaluated by the planner
 - sensors are shut down and restarted in background depending on EC availability
 
 **RemoteTech:**
+
 - antenna EC cost is evaluated by the planner
 - failures will disable the antenna
 
 **DeepFreeze:**
+
 - all rules are suspended for hibernated Kerbals
 - the vessel info window shows frozen Kerbals with a different color
 
 **NearFuture:**
+
 - curved solar panels, reactors, fission generators and RTGs produce EC in background and are evaluated by the planner
 
 **PlanetaryBaseSystem:**
+
 - the converters will work in the background and are evaluated by the planner
 
 **OrbitalScience:**
+
 - experiments data size has been tweaked for background data transmission
 
 **OPM/RSS/NewHorizons:**
+
 - custom radiation definitions for these planet packs are provided
 
 
@@ -220,8 +227,7 @@ There is a help file on GitHub for those wishing to report bugs or contribute to
 
 **I think I have found a bug, and I have just a few mods installed**
 
-- Try to reproduce it consistently, then provide us with reproduction steps that demonstrates the issue. You may be asked to supply log files,
-screen shots and maybe a save game. Post the report on the `Kerbalism KSP forums thread`_, or raise an issue on `GitHub Kerbalism Issues`_.
+- Try to reproduce it consistently, then provide us with reproduction steps that demonstrates the issue. You may be asked to supply log files, screen shots and maybe a save game. Post the report on the `Kerbalism KSP forums thread`_, or raise an issue on `GitHub Kerbalism Issues`_.
 
 **I want to add support for Kerbalism to my parts**
 
