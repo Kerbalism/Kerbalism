@@ -54,8 +54,8 @@ HABITAT
 -------
 
 The habitats of vessels are modeled in terms of internal volume, external surface, and a set of dedicated pseudo
-resources. These elements are then used to calculate such things as: living space per-capita, the pressure and co2
-level of the internal atmosphere, and radiation shielding. Individual habitats can be enabled or disabled, in the
+resources. These elements are then used to calculate such things as: living space per-capita, the pressure, CO2 and humidity
+levels of the internal atmosphere, and radiation shielding. Individual habitats can be enabled or disabled, in the
 editor and in flight, to reconfigure the internal space and everything associated with it during the mission.
 Inflatable habitats are driven directly by the part pressure.
 
