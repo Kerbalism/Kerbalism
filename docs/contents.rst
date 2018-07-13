@@ -21,6 +21,7 @@ Documentation Table of Contents
     Automation <automation>
     Background Simulation <background_sim>
     Settings <settings>
+    Modding Kerbalism <modders>
     Downloads and Links <downloads_links>
     Supported Mods <support>
     About <about>
