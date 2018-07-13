@@ -133,7 +133,7 @@ This panel allows you to visualize files stored in the vessels hard drive, flag 
 
 Device manager
 --------------
-This panel will show the control status of all components in a vessel, it is also used as the editor for the automation scripts.
+This panel will show the control status of all components in a vessel, it is also used as the editor for the `automation <automation.html>`_ scripts.
 
 .. image:: ../misc/img/gui/dev-manager.png
 

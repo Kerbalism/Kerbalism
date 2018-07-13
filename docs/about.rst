@@ -26,7 +26,7 @@ There is a help file on GitHub for those wishing to report bugs or contribute to
 
 **I want to add support for Kerbalism to my parts**
 
-- Add the appropriate modules to your parts. Check the `Kerbalism documentation`_ for the module specifications.
+- Add the appropriate modules to your parts. Check the `Kerbalism modules`_ documentation for the module specifications.
 
 **I want to interact with Kerbalism in my code**
 
@@ -57,7 +57,7 @@ This mod is released under the Unlicense_. For more information, please refer to
 .. _CONTRIBUTING.md: https://github.com/steamp0rt/Kerbalism/tree/master/CONTRIBUTING.md
 .. _Kerbalism KSP forums thread: https://forum.kerbalspaceprogram.com/index.php?/topic/172400-131144-kerbalism-v171/
 .. _GitHub Kerbalism Issues: https://github.com/steamp0rt/Kerbalism/issues
-.. _Kerbalism documentation: https://kerbalism.readthedocs.io/en/latest/
+.. _Kerbalism modules: modders/modules.html
 .. _System/API.cs: https://github.com/steamp0rt/Kerbalism/tree/master/src/System/API.cs
 .. _Unlicense: https://github.com/steamp0rt/Kerbalism/tree/master/LICENSE
 
