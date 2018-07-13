@@ -106,10 +106,16 @@ The system can trigger failures on arbitrary modules in a part, using the Reliab
 +-----------------------------+-----------+-----------+----------+------------------+------------+------------+
 
 The above MTBF values are estimated average values and mostly are similar for standalone parts.
+
 For modules which are embedded into bigger parts, like for example built in reaction wheels into crewed pods, the MTBF values can vary much more.
+
 The MTBF depends the mass of the part, or in case of an embedded module, a defined fraction of the part's mass.
+
 Also the fact if a part has a crew capacity is taken into account.
+
 To avoid weird numbers, the lowest possible MTBF is 4 years and the highest possible MTBF is 64 years.
+
 As a rule of thumb we can say that heavier parts have a shorter MTBF as lighter parts.
+
 
 *this is valid for each the "Radiator motor" and the "Radiator panel"
