@@ -20,6 +20,7 @@ Documentation Table of Contents
     Parts <parts>
     Automation <automation>
     Background Simulation <background_sim>
+    Settings <settings>
     Downloads and Links <downloads_links>
     Supported Mods <support>
     About <about>
