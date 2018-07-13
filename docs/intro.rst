@@ -1,6 +1,6 @@
 .. _intro:
 
-|Kerbalism|
+.. image:: ../misc/img/banner.png
 
 Introduction
 ============
@@ -45,8 +45,8 @@ These are the mechanics that are simulated
 
 ----------
 
-Resources
----------
+`Resources <resources.html>`_
+-----------------------------
 
 - consumption and production in background
 
@@ -56,6 +56,3 @@ Kerbals
 -------
 
 - biological and psychological needs, environmental hazards
-
-
-.. |Kerbalism| image:: ../misc/img/banner.png

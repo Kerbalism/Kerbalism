@@ -16,6 +16,7 @@ Documentation Table of Contents
     Reliability <reliability>
     Signal <signal>
     Science <science>
+    Resources <resources>
     GUI <gui>
     Parts <parts>
     Automation <automation>
