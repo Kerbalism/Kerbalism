@@ -257,7 +257,7 @@ This mod includes version checking using MiniAVC_. If you opt-in, it will use th
 
 LICENSE
 -------
-This mod is released under the `Unlicense <LICENSE>`_.
+This mod is released under the `Unlicense <LICENSE>`_. For more information, please refer to `unlicense.org <http://unlicense.org>`_
 
 .. _Support folder: https://github.com/steamp0rt/Kerbalism/tree/master/GameData/Kerbalism/Support
 .. _Kerbalism KSP forums thread: https://forum.kerbalspaceprogram.com/index.php?/topic/172400-131144-kerbalism-v171/

@@ -18,6 +18,7 @@ Documentation Table of Contents
     Science <science>
     GUI <gui>
     Parts <parts>
+    Automation <automation>
     Downloads and Links <downloads_links>
     Supported Mods <support>
     About <about>
