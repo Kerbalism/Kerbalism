@@ -81,11 +81,11 @@ An environment radiation sensor.
 
 ECLSS Unit
 ----------
-.. image:: ../misc/img/parts/chemical-plant.png
+.. image:: ../misc/img/parts/eclss.png
    :height: 140
    :align: right
 
-A very small External Life Support System.
+An External Life Support System.
 
 
 |
