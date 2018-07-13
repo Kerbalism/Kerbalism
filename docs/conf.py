@@ -24,7 +24,7 @@ source_parsers = {
 # -- Project information -----------------------------------------------------
 
 project = u'Kerbalism'
-copyright = u'2018, N70 PiezPiedPy Gordon-Dry'
+copyright = u'2018 Kerbalism'
 author = u'N70 PiezPiedPy Gordon-Dry'
 
 # The short X.Y version
