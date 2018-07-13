@@ -17,6 +17,7 @@ Documentation Table of Contents
     Signal <signal>
     Science <science>
     GUI <gui>
+    Parts <parts>
     Downloads and Links <downloads_links>
     Supported Mods <support>
     About <about>
