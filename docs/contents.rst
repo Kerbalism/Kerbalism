@@ -16,6 +16,7 @@ Documentation Table of Contents
     Reliability <reliability>
     Signal <signal>
     Science <science>
+    GUI <gui>
     Downloads and Links <downloads_links>
     Supported Mods <support>
     About <about>
