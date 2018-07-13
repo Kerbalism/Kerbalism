@@ -19,6 +19,7 @@ Documentation Table of Contents
     GUI <gui>
     Parts <parts>
     Automation <automation>
+    Background Simulation <background_sim>
     Downloads and Links <downloads_links>
     Supported Mods <support>
     About <about>
