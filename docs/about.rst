@@ -14,9 +14,10 @@ REQUIREMENTS
 
 This mod includes version checking using MiniAVC_. If you opt-in, it will use the Internet to check whether there is a new version available. Data is only read from the Internet and no personal information is sent. For a more comprehensive version checking experience, please download the `KSP-AVC Plugin`_.
 
+----------
+
 FAQs
 ----
-
 There is a help file on GitHub for those wishing to report bugs or contribute to Kerbalism, see CONTRIBUTING.md_.
 
 **I think I have found a bug, and I have just a few mods installed**
@@ -31,9 +32,10 @@ There is a help file on GitHub for those wishing to report bugs or contribute to
 
 - Have a look at the `System/API.cs`_ source code on GitHub. Raise an issue to request more functions.
 
+----------
+
 CONTRIBUTORS
 ------------
-
 This project wouldn't have been possible without the contributions of an awesome community of people, too many to
 mention individually. Thanks guys.
 
@@ -44,9 +46,10 @@ Also a special thanks goes out to the artists that provided all the parts:
 - tygoo7: Medium and big supply containers, radial pressurized container
 - zzz: Greenhouse, active shield
 
+----------
+
 LICENSE
 -------
-
 This mod is released under the Unlicense_. For more information, please refer to `unlicense.org <http://unlicense.org>`_
 
 .. _MiniAVC: https://ksp.cybutek.net/miniavc/Documents/README.htm

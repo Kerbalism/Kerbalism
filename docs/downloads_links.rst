@@ -12,12 +12,25 @@ Latest release
 
 - Also A zip from the GitHub repository is not the same as a release zip from SpaceDock but it is not much different, just make sure not to copy the entire contents into your GameData folder. Basically download the zip from GitHub and only copy the content that is in the GameData folder. 
 
+----------
+
+Requirements
+------------
+
+- KSP 1.3.1 or 1.4.x
+- Community Resource Pack (CRP)
+- ModuleManager 3.0.0+
+
+----------
+
 Change Log
 ----------
 
 - A Change Log is available in your **GameData/Kerbalism** folder that contains the latest changes of the version you have installed.
 
 - You can view the latest changes that have been developed but not released, on GitHub here CHANGELOG.md_
+
+----------
 
 Online Community
 ----------------

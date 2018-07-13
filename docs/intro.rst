@@ -15,30 +15,42 @@ These are the mechanics that are simulated
 
 - temperature, radiation, space weather
 
+----------
+
 `Habitat <habitat.html>`_
 -------------------------
 
 - living space, comforts, pressure, CO2 levels, humidity
+
+----------
 
 `Reliability <reliability.html>`_
 ---------------------------------
 
 - malfunctions, critical failures, manufacturing quality
 
+----------
+
 `Signal <signal.html>`_
 -----------------------
 
 - telemetry, relaying, signal strength, data rate attenuation
+
+----------
 
 `Science <science.html>`_
 -------------------------
 
 - data storage, collection, analysis and transmission
 
+----------
+
 Resources
 ---------
 
 - consumption and production in background
+
+----------
 
 Kerbals
 -------

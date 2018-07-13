@@ -5,7 +5,6 @@ Graphics User Interface (GUI)
 
 Planner
 -------
-
 A planner is provided in the editors to help design around the mechanics introduced in Kerbalism.
 
 The calculations are done relative to a target body and situation, whether a star is visible or occluded and considering the number of crew currently assigned to the vessel (keep ALT pressed to consider the whole vessel crew capacity instead).
@@ -16,9 +15,10 @@ Hover the mouse over an entry to show related tooltips with explanations and add
 
 .. image:: ../misc/img/gui/planner.png
 
+----------
+
 Monitor
 -------
-
 The *vessel monitor* is available in the space center, the tracking station and in flight. It shows the state of your vessels and the Kerbals inside them.
 
 .. image:: ../misc/img/gui/monitor.png
@@ -113,30 +113,34 @@ The last bottom menu button in *vessel details* allows you to see and change the
 | |signal-red|       | No signal / Blackout           |
 +--------------------+--------------------------------+
 
+----------
+
 Telemetry
 ---------
-
 This panel shows readings from the vessel, including crew vitals, resource supply levels, habitat and environmental information. 
 
 .. image:: ../misc/img/gui/telemetry.png
 
+----------
+
 File manager
 ------------
-
 This panel allows you to visualize files stored in the vessels hard drive, flag them for transmission or analysis, or delete them. Hovering over a file will display a tooltip with additional information.
 
 .. image:: ../misc/img/gui/file-manager.png
 
+----------
+
 Device manager
 --------------
-
 This panel will show the control status of all components in a vessel, it is also used as the editor for the automation scripts.
 
 .. image:: ../misc/img/gui/dev-manager.png
 
+----------
+
 Body info
 ---------
-
 When in the tracking station or map view, press **B** to open the *body info window*. Here some information is shown about the body atmosphere and radiation environment, also the rendering of the radiation fields can be controlled here.
 
 .. image:: ../misc/img/gui/body-info.png
