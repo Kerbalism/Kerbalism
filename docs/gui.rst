@@ -139,6 +139,14 @@ This panel will show the control status of all components in a vessel, it is als
 
 ----------
 
+Configuration manager
+---------------------
+This panel allows you to set what messages will be shown for the vessel.
+
+.. image:: ../misc/img/gui/config-man.png
+
+----------
+
 Body info
 ---------
 When in the tracking station or map view, press **B** to open the *body info window*. Here some information is shown about the body atmosphere and radiation environment, also the rendering of the radiation fields can be controlled here.
