@@ -105,6 +105,8 @@ The system can trigger failures on arbitrary modules in a part, using the Reliab
 | Atmospheric Harvester       | 8 years   | 32 years  | Engineer |                  | 1.0        | 0.5        |
 +-----------------------------+-----------+-----------+----------+------------------+------------+------------+
 
+*this is valid for each the "Radiator motor" and the "Radiator panel"
+
 The above MTBF values are estimated average values and mostly are similar for standalone parts.
 For modules which are embedded into bigger parts, like for example built in reaction wheels into crewed pods, the MTBF values can vary much more.
 The MTBF depends of the mass of the part, or in case of an embedded module, a defined fraction of the part's mass.
@@ -112,4 +114,5 @@ Also the fact if a part has a crew capacity is taken into account.
 To avoid weird numbers, the lowest possible MTBF is 4 years and the highest possible MTBF is 64 years.
 As a rule of thumb we can say that heavier parts have a shorter MTBF as lighter parts.
 
-*this is valid for each the "Radiator motor" and the "Radiator panel"
+The EXTRA COST and EXTRA MASS values define a multiplier of the part's original values.
+So 0.1 means +10% and 2.5 means +250%.
