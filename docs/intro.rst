@@ -52,7 +52,7 @@ These are the mechanics that are simulated
 
 ----------
 
-Kerbals
--------
+`Kerbals <kerbals.html>`_
+-------------------------
 
 - biological and psychological needs, environmental hazards

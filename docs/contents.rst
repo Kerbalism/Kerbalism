@@ -17,6 +17,7 @@ Documentation Table of Contents
     Signal <signal>
     Science <science>
     Resources <resources>
+    Kerbals <kerbals>
     GUI <gui>
     Parts <parts>
     Automation <automation>
