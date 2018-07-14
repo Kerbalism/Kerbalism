@@ -1,4 +1,4 @@
-.. _rules:
+.. _resources:
 
 Resources
 =========
@@ -7,12 +7,12 @@ Containers
 ----------
 The containers are configurable in the VAB. The inline supply containers can store.
 
-- Food and Water
-- Food only
-- Water only
-- Waste and WasteWater
-- Waste only
-- WasteWater only
+- Food and Water *(Supplies)*
+- Food
+- Water
+- Waste and WasteWater *(Sewage)*
+- Waste
+- WasteWater
 
 The radial pressurized containers can store.
 

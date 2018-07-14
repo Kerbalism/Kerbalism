@@ -9,7 +9,7 @@ Containers
    :height: 140
    :align: right
 
-A set of supply resource containers.
+A set of supply `resource <resources.html#containers>`_ containers.
 
 |
 |
@@ -24,7 +24,7 @@ Greenhouse
    :height: 140
    :align: right
 
-A greenhouse.
+A `greenhouse <kerbals.html#greenhouse>`_.
 
 |
 |
@@ -85,7 +85,7 @@ ECLSS Unit
    :height: 140
    :align: right
 
-An External Life Support System.
+An External Life Support System (`ECLSS <kerbals.html#lss>`_).
 
 
 |
@@ -101,7 +101,7 @@ Chemical Plant
    :height: 140
    :align: right
 
-A very small ISRU plant.
+A very small `ISRU <resources.html#isru>`_ plant.
 
 |
 |
