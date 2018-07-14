@@ -26,6 +26,22 @@ These fields are rendered in map view or the tracking station. They can be toggl
 
 .. image:: ../misc/img/rdr/radiation-fields-0.png
 
+.. image:: ../misc/img/rdr/radiation-fields-1.png
+   :height: 276
+   :align: left
+
+.. image:: ../misc/img/rdr/radiation-fields-2.png
+   :height: 276
+   :align: right
+
+.. image:: ../misc/img/rdr/radiation-fields-3.png
+   :height: 244
+   :align: left
+
+.. image:: ../misc/img/rdr/radiation-fields-4.png
+   :height: 244
+   :align: right
+
 Radiation Models can be modified, see the `Modding Kerbalism's Radiation Models <modders/radiation.html>`_ section for more details.
 
 ----------

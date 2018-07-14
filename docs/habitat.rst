@@ -66,7 +66,7 @@ If a habitat is inflatable, its inflate/deflate animation will be driven by the 
 
 Comforts
 --------
-Comforts are provided by some vessel conditions, or by parts implementing the *Comfort* module.
+Comforts are provided by some vessel conditions, and parts implementing the `Comfort <modders/modules.html#comfort>`_ module.
 
 +-------------+---------------------------------------------------------------+---------------+
 | COMFORT     | CONDITION                                                     | PART          |
