@@ -145,7 +145,7 @@ namespace KERBALISM
 				  (
 					!v.isActiveVessel ? Lib.BuildString("On <b>", v.vesselName, "</b>\na ") : "A ",
 					"producer of <b>", resource_name, "</b> has\n",
-					"incoherent behaviour at high warp speed.\n",
+					"incoherent behavior at high warp speed.\n",
 					"<i>Unload the vessel before warping</i>"
 				  )
 				);

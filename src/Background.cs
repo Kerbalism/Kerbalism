@@ -33,7 +33,7 @@ namespace KERBALISM
 			CurvedPanel,
 			FissionGenerator,
 			RadioisotopeGenerator,
-			//CryoTank,
+			CryoTank,
 			Unknown,
 			FNGenerator,
 			RemoteTech
@@ -69,12 +69,10 @@ namespace KERBALISM
 				case "ModuleCurvedSolarPanel": return Module_type.CurvedPanel;
 				case "FissionGenerator": return Module_type.FissionGenerator;
 				case "ModuleRadioisotopeGenerator": return Module_type.RadioisotopeGenerator;
-				//case "ModuleCryoTank": return module_type.CryoTank;
+				case "ModuleCryoTank": return Module_type.CryoTank;
 				case "FNGenerator": return Module_type.FNGenerator;
-			}
-			if(RemoteTech.IsAntenna(module_name))
-			{
-				return Module_type.RemoteTech;
+				case "ModuleRTAntenna":
+				case "ModuleRTAntennaPassive": return Module_type.RemoteTech;
 			}
 			return Module_type.Unknown;
 		}
@@ -132,14 +130,14 @@ namespace KERBALISM
 						case Module_type.Generator: ProcessGenerator(v, p, m, module_prefab as ModuleGenerator, resources, elapsed_s); break;
 						case Module_type.Converter: ProcessConverter(v, p, m, module_prefab as ModuleResourceConverter, resources, elapsed_s); break;
 						case Module_type.Drill: ProcessDrill(v, p, m, module_prefab as ModuleResourceHarvester, resources, elapsed_s); break; // Stock ground harvester module
-						case Module_type.AsteroidDrill: ProcessAsteroidDrill(v, p, m, module_prefab as ModuleAsteroidDrill, resources, elapsed_s); break; // Stock asteriod harvester module
+						case Module_type.AsteroidDrill: ProcessAsteroidDrill(v, p, m, module_prefab as ModuleAsteroidDrill, resources, elapsed_s); break; // Stock asteroid harvester module
 						case Module_type.StockLab: ProcessStockLab(v, p, m, module_prefab as ModuleScienceConverter, ec, elapsed_s); break;
 						case Module_type.Light: ProcessLight(v, p, m, module_prefab as ModuleLight, ec, elapsed_s); break;
 						case Module_type.Scanner: ProcessScanner(v, p, m, module_prefab, part_prefab, vd, ec, elapsed_s); break;
 						case Module_type.CurvedPanel: ProcessCurvedPanel(v, p, m, module_prefab, part_prefab, vi, ec, elapsed_s); break;
 						case Module_type.FissionGenerator: ProcessFissionGenerator(v, p, m, module_prefab, ec, elapsed_s); break;
 						case Module_type.RadioisotopeGenerator: ProcessRadioisotopeGenerator(v, p, m, module_prefab, ec, elapsed_s); break;
-						//case module_type.CryoTank: ProcessCryoTank(v, p, m, module_prefab, resources, elapsed_s); break;
+						case Module_type.CryoTank: ProcessCryoTank(v, p, m, module_prefab, resources, elapsed_s); break;
 						case Module_type.FNGenerator: ProcessFNGenerator(v, p, m, module_prefab, ec, elapsed_s); break;
 						case Module_type.RemoteTech: ProcessRTModule(v, p, m, module_prefab, part_prefab, vd, ec, elapsed_s); break;
 					}
@@ -180,7 +178,7 @@ namespace KERBALISM
 
 		static void ProcessPanel(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleDeployableSolarPanel panel, Vessel_info info, Resource_info ec, double elapsed_s)
 		{
-			// note: we ignore temperature curve, and make sure it is not relavant in the MM patch
+			// note: we ignore temperature curve, and make sure it is not relevant in the MM patch
 			// note: we ignore power curve, that is used by no panel as far as I know
 			// note: cylindrical and spherical panels are not supported
 			// note: we assume the tracking target is SUN
@@ -188,7 +186,7 @@ namespace KERBALISM
 			// if in sunlight and extended
 			if (info.sunlight > double.Epsilon && m.moduleValues.GetValue("deployState") == "EXTENDED")
 			{
-				// get panel normal/pivot dir in world space
+				// get panel normal/pivot direction in world space
 				Transform tr = panel.part.FindModelComponent<Transform>(panel.pivotName);
 				Vector3d dir = panel.isTracking ? tr.up : tr.forward;
 				dir = (v.transform.rotation * p.rotation * dir).normalized;
@@ -243,9 +241,9 @@ namespace KERBALISM
 		static void ProcessConverter(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleResourceConverter converter, Vessel_resources resources, double elapsed_s)
 		{
 			// note: ignore stock temperature mechanic of converters
-			// note: ignore autoshutdown
+			// note: ignore auto shutdown
 			// note: non-mandatory resources 'dynamically scale the ratios', that is exactly what mandatory resources do too (DERP ALERT)
-			// note: 'undo' stock behaviour by forcing lastUpdateTime to now (to minimize overlapping calculations from this and stock post-facto simulation)
+			// note: 'undo' stock behavior by forcing lastUpdateTime to now (to minimize overlapping calculations from this and stock post-facto simulation)
 
 			// if active
 			if (Lib.Proto.GetBool(m, "IsActivated"))
@@ -291,7 +289,7 @@ namespace KERBALISM
 					resources.Transform(recipe);
 				}
 
-				// undo stock behaviour by forcing last_update_time to now
+				// undo stock behavior by forcing last_update_time to now
 				Lib.Proto.Set(m, "lastUpdateTime", Planetarium.GetUniversalTime());
 			}
 		}
@@ -300,9 +298,9 @@ namespace KERBALISM
 		static void ProcessDrill(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleResourceHarvester harvester, Vessel_resources resources, double elapsed_s)
 		{
 			// note: ignore stock temperature mechanic of harvesters
-			// note: ignore autoshutdown
+			// note: ignore auto shutdown
 			// note: ignore depletion (stock seem to do the same)
-			// note: 'undo' stock behaviour by forcing lastUpdateTime to now (to minimize overlapping calculations from this and stock post-facto simulation)
+			// note: 'undo' stock behavior by forcing lastUpdateTime to now (to minimize overlapping calculations from this and stock post-facto simulation)
 
 			// if active
 			if (Lib.Proto.GetBool(m, "IsActivated"))
@@ -354,7 +352,7 @@ namespace KERBALISM
 					}
 				}
 
-				// undo stock behaviour by forcing last_update_time to now
+				// undo stock behavior by forcing last_update_time to now
 				Lib.Proto.Set(m, "lastUpdateTime", Planetarium.GetUniversalTime());
 			}
 		}
@@ -364,8 +362,8 @@ namespace KERBALISM
 		{
 			// note: untested
 			// note: ignore stock temperature mechanic of asteroid drills
-			// note: ignore autoshutdown
-			// note: 'undo' stock behaviour by forcing lastUpdateTime to now (to minimize overlapping calculations from this and stock post-facto simulation)
+			// note: ignore auto shutdown
+			// note: 'undo' stock behavior by forcing lastUpdateTime to now (to minimize overlapping calculations from this and stock post-facto simulation)
 
 			// if active
 			if (Lib.Proto.GetBool(m, "IsActivated"))
@@ -427,7 +425,7 @@ namespace KERBALISM
 					}
 				}
 
-				// undo stock behaviour by forcing last_update_time to now
+				// undo stock behavior by forcing last_update_time to now
 				Lib.Proto.Set(m, "lastUpdateTime", Planetarium.GetUniversalTime());
 			}
 		}
@@ -588,114 +586,73 @@ namespace KERBALISM
 		}
 
 
-		/*static void ProcessCryoTank(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule simple_boiloff, vessel_resources resources, double elapsed_s)
+		static void ProcessCryoTank(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule cryotank, Vessel_resources resources, double elapsed_s)
 		{
-			// note: cryotank module already does a post-facto simulation of background boiling, and we could use that for the boiling
-			// however, it also does simulate the ec consumption that way, so we have to disable the post-facto simulation
+			// Note. Currently background simulation of Cryotanks has an irregularity in that boiloff of a fuel type in a tank removes resources from all tanks
+			// but at least some simulation is better than none ;)
 
-			// As far as I know, Simple_boiloff consumes fuel and EC only if the fuel is on the Fuel List (previously added in Game Load)
-			// The test that I did, I was able to enable to "Enable Cooling" only when fuel was into List<BoiloffFuel> fuels
+			// get list of fuels, do nothing if no fuels
+			IList fuels = Lib.ReflectionValue<IList>(cryotank, "fuels");
+			if (fuels == null) return;
 
-			// get fuel name: FuelName in Simple_Boiloff is always NULL, this Get doesn't make sense, but I will leave here.
-			string fuel_name = Lib.ReflectionValue<string>(simple_boiloff, "FuelName");
+			// get EC resource
+			Resource_info ec = resources.Info(v, "ElectricCharge");
 
-			// get resource handlers
-			resource_info ec = resources.Info(v, "ElectricCharge");
+			// is cooling available, note: comparing against amount in previous simulation step
+			bool available = (Lib.Proto.GetBool(m, "CoolingEnabled") && ec.amount > double.Epsilon);
 
-			// if fuel_name is null as expected, this would cause error
-			if (string.IsNullOrEmpty(fuel_name))
+			// get cooling cost
+			double cooling_cost = Lib.ReflectionValue<float>(cryotank, "CoolingCost");
+
+			string fuel_name = "";
+			double amount = 0.0;
+			double total_cost = 0.0;
+			double boiloff_rate = 0.0;
+
+			foreach (var item in fuels)
 			{
-				// Take name from fuel list inside part
-				System.Collections.IList fuelList = Lib.ReflectionValue<System.Collections.IList>(simple_boiloff, "fuels");
+				fuel_name = Lib.ReflectionValue<string>(item, "fuelName");
+				// if fuel_name is null, don't do anything
+				if (fuel_name == null)
+					continue;
 
-				foreach (var item in fuelList)
-				{
-					fuel_name = (string)item.GetType().GetField("fuelName").GetValue(item);
-					// if fuel_name still null, do anything
-					if (fuel_name == null) continue;
-
-					resource_info fuel = resources.Info(v, fuel_name);
-
-					// if there is some fuel
-					// note: comparing against amount in previous simulation step
-					if (fuel.amount > double.Epsilon)
-					{
-						// Try find resource "fuel_name" into PartResources
-						ProtoPartResourceSnapshot protoPartResource = p.resources.Find(k => k.resourceName == fuel_name);
-
-						// If part doesn't have the fuel, do anything.
-						if (protoPartResource == null) continue;
-
-						// get capacity in the part
-						double capacity = protoPartResource.maxAmount;
-
-						// if cooling is enabled and there was enough ec
-						// note: comparing against amount in previous simulation step
-						if (Lib.Proto.GetBool(m, "CoolingEnabled") && ec.amount > double.Epsilon)
-						{
-							// get cooling ec cost per 1000 units of fuel, per-second
-							double cooling_cost = Lib.ReflectionValue<float>(simple_boiloff, "CoolingCost");
-
-							// consume ec
-							ec.Consume(cooling_cost * capacity * 0.001 * elapsed_s);
-						}
-						// if there wasn't ec, or if cooling is disabled
-						else
-						{
-							// get boiloff rate in proportion to fuel amount, per-second
-							double boiloff_rate = Lib.ReflectionValue<float>(simple_boiloff, "BoiloffRate") * 0.00000277777;
-
-							// let it boil off
-							fuel.Consume(capacity * (1.0 - Math.Pow(1.0 - boiloff_rate, elapsed_s)));
-						}
-					}
-
-					// disable post-facto simulation
-					Lib.Proto.Set(m, "LastUpdateTime", v.missionTime);
-				}
-			}
-			else
-			{
-				resource_info fuel = resources.Info(v, fuel_name);
+				//get fuel resource
+				Resource_info fuel = resources.Info(v, fuel_name);
 
 				// if there is some fuel
 				// note: comparing against amount in previous simulation step
 				if (fuel.amount > double.Epsilon)
 				{
-					// Try find resource "fuel_name" into PartResources
-					ProtoPartResourceSnapshot protoPartResource = p.resources.Find(k => k.resourceName == fuel_name);
+					// Try to find resource "fuel_name" in PartResources
+					ProtoPartResourceSnapshot proto_fuel = p.resources.Find(k => k.resourceName == fuel_name);
 
-					// If part doesn't have the fuel, do anything.
-					if (protoPartResource == null) return;
+					// If part doesn't have the fuel, don't do anything.
+					if (proto_fuel == null) continue;
 
-					// get capacity in the part
-					double capacity = protoPartResource.maxAmount;
+					// get amount in the part
+					amount = proto_fuel.amount;
 
-					// if cooling is enabled and there was enough ec
-					// note: comparing against amount in previous simulation step
-					if (Lib.Proto.GetBool(m, "CoolingEnabled") && ec.amount > double.Epsilon)
+					// if cooling is enabled and there is enough EC
+					if (available)
 					{
-						// get cooling ec cost per 1000 units of fuel, per-second
-						double cooling_cost = Lib.ReflectionValue<float>(simple_boiloff, "CoolingCost");
-
-						// consume ec
-						ec.Consume(cooling_cost * capacity * 0.001 * elapsed_s);
+						// calculate ec consumption
+						total_cost += cooling_cost * amount * 0.001;
 					}
-					// if there wasn't ec, or if cooling is disabled
+					// if cooling is disabled or there wasn't any EC
 					else
 					{
-						// get boiloff rate in proportion to fuel amount, per-second
-						double boiloff_rate = Lib.ReflectionValue<float>(simple_boiloff, "BoiloffRate") * 0.00000277777;
+						// get boiloff rate per-second
+						boiloff_rate = Lib.ReflectionValue<float>(item, "boiloffRate") / 360000.0f;
 
 						// let it boil off
-						fuel.Consume(capacity * (1.0 - Math.Pow(1.0 - boiloff_rate, elapsed_s)));
+						fuel.Consume(amount * (1.0 - Math.Pow(1.0 - boiloff_rate, elapsed_s)));
 					}
 				}
-
-				// disable post-facto simulation
-				Lib.Proto.Set(m, "LastUpdateTime", v.missionTime);
 			}
-		}*/
+
+			// apply EC consumption
+			ec.Consume(total_cost * elapsed_s);
+		}
 	}
 
 
