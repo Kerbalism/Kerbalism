@@ -1268,8 +1268,8 @@ namespace KERBALISM
 
 		void Process_cryotank(Part p, PartModule m)
 		{
-			// do nothing if cooling is disabled
-			if (!Lib.ReflectionValue<bool>(m, "CoolingEnabled")) return;
+			// is cooling available
+			bool available = Lib.ReflectionValue<bool>(m, "CoolingEnabled");
 
 			// get list of fuels, do nothing if no fuels
 			IList fuels = Lib.ReflectionValue<IList>(m, "fuels");
@@ -1279,13 +1279,39 @@ namespace KERBALISM
 			double cooling_cost = Lib.ReflectionValue<float>(m, "CoolingCost");
 
 			string fuel_name = "";
+			double amount = 0.0;
 			double total_cost = 0.0;
+			double boiloff_rate = 0.0;
 
 			// calculate EC cost of cooling
 			foreach (var fuel in fuels)
 			{
 				fuel_name = Lib.ReflectionValue<string>(fuel, "fuelName");
-				total_cost += cooling_cost * Lib.Amount(p, fuel_name) * 0.001;
+				// if fuel_name is null, don't do anything
+				if (fuel_name == null) continue;
+
+				// get amount in the part
+				amount = Lib.Amount(p, fuel_name);
+
+				// if there is some fuel
+				if (amount > double.Epsilon)
+				{
+					// if cooling is enabled
+					if (available)
+					{
+						// calculate ec consumption
+						total_cost += cooling_cost * amount * 0.001;
+					}
+					// if cooling is disabled
+					else
+					{
+						// get boiloff rate per-second
+						boiloff_rate = Lib.ReflectionValue<float>(fuel, "boiloffRate") / 360000.0f;
+
+						// let it boil off
+						Resource(fuel_name).Consume(amount * boiloff_rate, "cryotank");
+					}
+				}
 			}
 
 			// apply EC consumption
