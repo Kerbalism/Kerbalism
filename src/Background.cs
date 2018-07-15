@@ -71,10 +71,8 @@ namespace KERBALISM
 				case "ModuleRadioisotopeGenerator": return Module_type.RadioisotopeGenerator;
 				//case "ModuleCryoTank": return module_type.CryoTank;
 				case "FNGenerator": return Module_type.FNGenerator;
-			}
-			if(RemoteTech.IsAntenna(module_name))
-			{
-				return Module_type.RemoteTech;
+				case "ModuleRTAntenna":
+				case "ModuleRTAntennaPassive": return Module_type.RemoteTech;
 			}
 			return Module_type.Unknown;
 		}
