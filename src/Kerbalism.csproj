@@ -253,7 +253,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\GameData\Kerbalism\Kerbalism.version" />
-    <None Include="..\GameData\Kerbalism\Localization\en_us.cfg" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="PostBuildMacros">
