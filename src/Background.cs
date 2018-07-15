@@ -130,14 +130,14 @@ namespace KERBALISM
 						case Module_type.Generator: ProcessGenerator(v, p, m, module_prefab as ModuleGenerator, resources, elapsed_s); break;
 						case Module_type.Converter: ProcessConverter(v, p, m, module_prefab as ModuleResourceConverter, resources, elapsed_s); break;
 						case Module_type.Drill: ProcessDrill(v, p, m, module_prefab as ModuleResourceHarvester, resources, elapsed_s); break; // Stock ground harvester module
-						case Module_type.AsteroidDrill: ProcessAsteroidDrill(v, p, m, module_prefab as ModuleAsteroidDrill, resources, elapsed_s); break; // Stock asteriod harvester module
+						case Module_type.AsteroidDrill: ProcessAsteroidDrill(v, p, m, module_prefab as ModuleAsteroidDrill, resources, elapsed_s); break; // Stock asteroid harvester module
 						case Module_type.StockLab: ProcessStockLab(v, p, m, module_prefab as ModuleScienceConverter, ec, elapsed_s); break;
 						case Module_type.Light: ProcessLight(v, p, m, module_prefab as ModuleLight, ec, elapsed_s); break;
 						case Module_type.Scanner: ProcessScanner(v, p, m, module_prefab, part_prefab, vd, ec, elapsed_s); break;
 						case Module_type.CurvedPanel: ProcessCurvedPanel(v, p, m, module_prefab, part_prefab, vi, ec, elapsed_s); break;
 						case Module_type.FissionGenerator: ProcessFissionGenerator(v, p, m, module_prefab, ec, elapsed_s); break;
 						case Module_type.RadioisotopeGenerator: ProcessRadioisotopeGenerator(v, p, m, module_prefab, ec, elapsed_s); break;
-						//case module_type.CryoTank: ProcessCryoTank(v, p, m, module_prefab, resources, elapsed_s); break;
+						case Module_type.CryoTank: ProcessCryoTank(v, p, m, module_prefab, resources, elapsed_s); break;
 						case Module_type.FNGenerator: ProcessFNGenerator(v, p, m, module_prefab, ec, elapsed_s); break;
 						case Module_type.RemoteTech: ProcessRTModule(v, p, m, module_prefab, part_prefab, vd, ec, elapsed_s); break;
 					}
@@ -178,7 +178,7 @@ namespace KERBALISM
 
 		static void ProcessPanel(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleDeployableSolarPanel panel, Vessel_info info, Resource_info ec, double elapsed_s)
 		{
-			// note: we ignore temperature curve, and make sure it is not relavant in the MM patch
+			// note: we ignore temperature curve, and make sure it is not relevant in the MM patch
 			// note: we ignore power curve, that is used by no panel as far as I know
 			// note: cylindrical and spherical panels are not supported
 			// note: we assume the tracking target is SUN
@@ -186,7 +186,7 @@ namespace KERBALISM
 			// if in sunlight and extended
 			if (info.sunlight > double.Epsilon && m.moduleValues.GetValue("deployState") == "EXTENDED")
 			{
-				// get panel normal/pivot dir in world space
+				// get panel normal/pivot direction in world space
 				Transform tr = panel.part.FindModelComponent<Transform>(panel.pivotName);
 				Vector3d dir = panel.isTracking ? tr.up : tr.forward;
 				dir = (v.transform.rotation * p.rotation * dir).normalized;
@@ -241,9 +241,9 @@ namespace KERBALISM
 		static void ProcessConverter(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleResourceConverter converter, Vessel_resources resources, double elapsed_s)
 		{
 			// note: ignore stock temperature mechanic of converters
-			// note: ignore autoshutdown
+			// note: ignore auto shutdown
 			// note: non-mandatory resources 'dynamically scale the ratios', that is exactly what mandatory resources do too (DERP ALERT)
-			// note: 'undo' stock behaviour by forcing lastUpdateTime to now (to minimize overlapping calculations from this and stock post-facto simulation)
+			// note: 'undo' stock behavior by forcing lastUpdateTime to now (to minimize overlapping calculations from this and stock post-facto simulation)
 
 			// if active
 			if (Lib.Proto.GetBool(m, "IsActivated"))
@@ -289,7 +289,7 @@ namespace KERBALISM
 					resources.Transform(recipe);
 				}
 
-				// undo stock behaviour by forcing last_update_time to now
+				// undo stock behavior by forcing last_update_time to now
 				Lib.Proto.Set(m, "lastUpdateTime", Planetarium.GetUniversalTime());
 			}
 		}
@@ -298,9 +298,9 @@ namespace KERBALISM
 		static void ProcessDrill(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleResourceHarvester harvester, Vessel_resources resources, double elapsed_s)
 		{
 			// note: ignore stock temperature mechanic of harvesters
-			// note: ignore autoshutdown
+			// note: ignore auto shutdown
 			// note: ignore depletion (stock seem to do the same)
-			// note: 'undo' stock behaviour by forcing lastUpdateTime to now (to minimize overlapping calculations from this and stock post-facto simulation)
+			// note: 'undo' stock behavior by forcing lastUpdateTime to now (to minimize overlapping calculations from this and stock post-facto simulation)
 
 			// if active
 			if (Lib.Proto.GetBool(m, "IsActivated"))
@@ -352,7 +352,7 @@ namespace KERBALISM
 					}
 				}
 
-				// undo stock behaviour by forcing last_update_time to now
+				// undo stock behavior by forcing last_update_time to now
 				Lib.Proto.Set(m, "lastUpdateTime", Planetarium.GetUniversalTime());
 			}
 		}
@@ -362,8 +362,8 @@ namespace KERBALISM
 		{
 			// note: untested
 			// note: ignore stock temperature mechanic of asteroid drills
-			// note: ignore autoshutdown
-			// note: 'undo' stock behaviour by forcing lastUpdateTime to now (to minimize overlapping calculations from this and stock post-facto simulation)
+			// note: ignore auto shutdown
+			// note: 'undo' stock behavior by forcing lastUpdateTime to now (to minimize overlapping calculations from this and stock post-facto simulation)
 
 			// if active
 			if (Lib.Proto.GetBool(m, "IsActivated"))
@@ -425,7 +425,7 @@ namespace KERBALISM
 					}
 				}
 
-				// undo stock behaviour by forcing last_update_time to now
+				// undo stock behavior by forcing last_update_time to now
 				Lib.Proto.Set(m, "lastUpdateTime", Planetarium.GetUniversalTime());
 			}
 		}
