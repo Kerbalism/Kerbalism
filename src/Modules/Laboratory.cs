@@ -7,12 +7,13 @@ namespace KERBALISM
 {
 
 
-	public sealed class Laboratory : PartModule, IModuleInfo, ISpecifics, IContractObjectiveModule
+	public sealed class Laboratory: PartModule, IModuleInfo, ISpecifics, IContractObjectiveModule
 	{
 		// config
 		[KSPField] public double ec_rate;                     // ec consumed per-second
 		[KSPField] public double analysis_rate;               // analysis speed in Mb/s
 		[KSPField] public string researcher = string.Empty;   // required crew for analysis
+		[KSPField] public bool cleaner = true;                // can clean experiments
 
 		// persistence
 		[KSPField(isPersistant = true)] public bool running;  // true if the lab is active
@@ -40,11 +41,12 @@ namespace KERBALISM
 			if (Lib.IsFlight())
 			{
 				Events["Toggle"].guiName = Lib.StatusToggle("Lab", status);
+
+				// if a cleaner and either a researcher is not required, or the researcher is present
+				if (cleaner && (!researcher_cs || researcher_cs.Check(part.protoModuleCrew))) Events["CleanExperiments"].active = true;
+				else Events["CleanExperiments"].active = false;
 			}
-			else
-			{
-				Events["Toggle"].guiName = Lib.StatusToggle("Lab", running ? "enabled" : "disabled");
-			}
+			else Events["Toggle"].guiName = Lib.StatusToggle("Lab", running ? "enabled" : "disabled");
 		}
 
 
@@ -146,6 +148,24 @@ namespace KERBALISM
 			running = !running;
 		}
 
+		[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "Clean Experiments", active = true)]
+		public void CleanExperiments()
+		{
+			List<ModuleScienceExperiment> modules = vessel.FindPartModulesImplementing<ModuleScienceExperiment>();
+			bool message = false;
+			foreach (ModuleScienceExperiment m in modules)
+			{
+				if (m.resettable && m.Inoperable)
+				{
+					m.ResetExperiment();
+					message = true;
+				}
+			}
+			// inform the user
+			if (message) Message.Post("Vessel experiments have been cleaned.");
+		}
+
+
 
 		// action groups
 		[KSPAction("#KERBALISM_Laboratory_Action")] public void Action(KSPActionParam param) { Toggle(); }
@@ -162,6 +182,7 @@ namespace KERBALISM
 		{
 			Specifics specs = new Specifics();
 			specs.Add("Researcher", new CrewSpecs(researcher).Info());
+			if (cleaner) specs.Add("Can clean experiments");
 			specs.Add("EC rate", Lib.HumanReadableRate(ec_rate));
 			specs.Add("Analysis rate", Lib.HumanReadableDataRate(analysis_rate));
 			return specs;
