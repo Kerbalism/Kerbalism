@@ -317,14 +317,22 @@ This section will guide you through setting up your development environment so t
 
 #### Unity
 For building and/or debugging KSP Kerbalism with Visual Studio or Unity Editor you will need to download and install the exact version of Unity Editor that was used to build the version of KSP you are working with.
-You can find out which Unity version your current KSP install is using by looking at the first line of `C:\Users\YOURUSERNAME\AppData\LocalLow\Squad\Kerbal Space Program/output_log.txt`. It should read something like this:
+For KSP1.4.x You can find out which Unity version your current KSP install is using by looking at the first line of `C:\Users\YOURUSERNAME\AppData\LocalLow\Squad\Kerbal Space Program/output_log.txt`. It should read something like this:
 
     Initialize engine version: 2017.1.3p1 (02d73f71d3bd)
 
 In this case, the Unity version for your KSP version is 2017.1.3p1.
 
+And for KSP1.3.1 you can find out which Unity version your current KSP install is using by looking at the first line of `KSP_Data/output_log.txt` (or `KSP_x64_Data/output_log.txt`). It should read something like this:
+
+    Initialize engine version: 5.4.0p4 (b15b5ae035b7)
+
+In this case, the Unity version for your KSP version is 5.4.0p4.
+
+
 The Unity Editor for **KSP v1.4.x** is **Unity v2017.1.3p1** and can be downloaded here: [UnityDownloadAssistant-2017.1.3p1.exe](https://beta.unity3d.com/download/02d73f71d3bd/UnityDownloadAssistant-2017.1.3p1.exe )
 
+The Unity Editor for **KSP v1.3.1** is **Unity v5.4.0.p4** and can be downloaded here: [UnityDownloadAssistant-5.4.0p4.exe](https://beta.unity3d.com/download/b15b5ae035b7/UnityDownloadAssistant-5.4.0p4.exe )
 #### Visual Studio
 
 It is recommended to use **Visual Studio 2017**. Any version should work (including the free *Community* version).
@@ -379,11 +387,12 @@ Now you can choose between the Development version (launch `KSP_x64_Dbg.exe`) an
 
 #### System Environment Variables
 
-To make your life a little easier, the Kerbalism Visual Studio Project respects an environment variable called `KSPDEVDIR`.
-If you set its value to the path of your KSP development install, the reference and debugging paths inside the project should be set automatically.
+To make your life a little easier, the Kerbalism Visual Studio Project respects two environment variables called `KSPDEVDIR` and `KSPBACKPORTDIR`
+If you set their values to the paths of the relevant versions of your KSP development installs, the reference and debugging paths inside the project should be set automatically. Obviously `KSPDEVDIR` should point to your KSP1.4.x install and `KSPBACKPORTDIR` to your KSP1.3.1 install. 
 If it is not set, your reference paths and the Debugging paths have to be set manually.
+Please note that you don't need to use both installs if you plan on making private builds but if you plan on making pull requests then it will be appreciated if you make sure your code works for both versions. You can also use the compiler directive `KSP13` in the source to switch relevant code specific to a KSP version.
 
-To set the variable, follow the instructions in this link, before starting a Visual Studio instance:
+To set the variables, follow the instructions in this link, before starting a Visual Studio instance:
 
 https://superuser.com/a/949577
 
@@ -399,7 +408,9 @@ If you set your `KSPDEVDIR` variable as mentioned [above](#system-environment-va
   - Change to the **Reference Paths** tab and select the `\KSP_x64_Data\Managed` subdirectory of your KSP dev install
   - Click "Add" to actually add the selected path
  
-To be able to quicklaunch KSP using F5 (or Ctrl-F5), you have to set which external program should start. This should already be set if you set your `KSPDEVDIR` environment variable. If not,
+ Also when switching between the 1.4.x and 1.3.1 configurations you will have to manually change the references directory to point to the correct versions due to the limitation of VS not having the ability to switch reference directories via the configuration menu. (Thanks MS >.<) 
+
+ To be able to quicklaunch KSP using F5 (or Ctrl-F5), you have to set which external program should start. This should already be set if you set your `KSPDEVDIR` and/or `KSPBACKPORTDIR` environment variables. If not,
   
  - Double-Click the "Properties" page in the Solution Explorer in Visual Studio
  - Change to the **Debug** tab, select "Start External Program" and select the KSP executable that you want to start.
@@ -408,7 +419,9 @@ To be able to quicklaunch KSP using F5 (or Ctrl-F5), you have to set which exter
 #### Building
 
 If your reference paths are set up correctly, then building the project should be as simple as Clicking Build -> Build Solution.
-If `KSPDEVDIR` is set, then the output path will be the `\GameData\Kerbalism\` subdirectory of your KSP install. If not, you have to configure the output path yourself in Properties -> Build -> Output Path.
+If `KSPDEVDIR` and/or `KSPBACKPORTDIR` is set, then the output path will be the `\GameData\Kerbalism\` subdirectory of your KSP install. If not, you have to configure the output path yourself in Properties -> Build -> Output Path.
+
+You can use the configuration menu to switch between `Debug` and `Release` for KSP1.4.x and also `Debug 1.3` and `Release 1.3` for KSP1.3.1 , note you will have to manually set the references directory as mentioned [above](#development-and-debugging) when switching between KSP versions.
 
 When you are building in Debug mode, one additional file with the ending `.mdb` is created. This file is required for unity debugging.
 
@@ -495,8 +508,6 @@ To get a working development environment on mac, things are a little different. 
 - Within Visual Studio, open the 'Kerbalism.sln' project. You should be able to create a release build now.
 
 I didn't try to run KSP in a debugger yet. If you know how to do this, please update this guide. It might work with using the Launcher.app in your KSP folder (which is already used to build Kerbalism), so maybe you won't even have to download Unity.
-
-
 
 
 ## Building Releases
