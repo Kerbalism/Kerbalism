@@ -3,10 +3,10 @@
 
 ### Changes since the last release
 
- * Added support for ConfigurableContainers, they now have 5 additional tank configs:
-   Kerbalism supply (Food, Water) - Kerbalism breath (Oxygen, Nitrogen)
-   Kerbalism waste (Waste, WasteWater) - Kerbalism GH (CarbonDioxide, Ammonia, Water)
-   Kerbalism fuelcell (Hydrogen, Oxygen)  (Gordon Dry)
+ * Added support for ConfigurableContainers, they now have 6 additional tank configs:
+   KerbalismSupplies (Food, Water) - KerbalismBreathing (Oxygen, Nitrogen)
+   KerbalismWaste (Waste, WasteWater) - KerbalismGreenhouse (CarbonDioxide, Ammonia, Water)
+   KerbalismFuelcellH2 (Oxygen, Hydrogen) - KerbalismFuelcellMP (Oxygen, MonoPropellant)  (Gordon Dry)
  * Science labs can now reset experiments (PiezPiedPy)
  * CryoTanks are now simulated in the background also fuel boiloff is simulated in the planner (PiezPiedPy)
  * Reverted the Quick'n'dirty fix for GPOSpeedFuelPump because that one is fixed now with v1.8.14 (Gordon Dry)
