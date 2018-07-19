@@ -7,6 +7,7 @@
    KerbalismSupplies (Food, Water) - KerbalismBreathing (Oxygen, Nitrogen)
    KerbalismWaste (Waste, WasteWater) - KerbalismGreenhouse (CarbonDioxide, Ammonia, Water)
    KerbalismFuelcellH2 (Oxygen, Hydrogen) - KerbalismFuelcellMP (Oxygen, MonoPropellant)  (Gordon Dry)
+ * Containers have had their volume and mass calculated with a calculator (PiezPiedPy) 
  * Science labs can now reset experiments (PiezPiedPy)
  * CryoTanks are now simulated in the background also fuel boiloff is simulated in the planner (PiezPiedPy)
  * Reverted the Quick'n'dirty fix for GPOSpeedFuelPump because that one is fixed now with v1.8.14 (Gordon Dry)
