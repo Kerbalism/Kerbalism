@@ -4,6 +4,10 @@
 ### Changes since the last release
 
  * Chemical Plant and ECLSS parts are now surface attachable, ECLSS part capacity increased to support 3 crew (PiezPiedPy) 
+ * Added support for ConfigurableContainers, they now have 6 additional tank configs:
+   KerbalismSupplies (Food, Water) - KerbalismBreathing (Oxygen, Nitrogen)
+   KerbalismWaste (Waste, WasteWater) - KerbalismGreenhouse (CarbonDioxide, Ammonia, Water)
+   KerbalismFuelcellH2 (Oxygen, Hydrogen) - KerbalismFuelcellMP (Oxygen, MonoPropellant)  (Gordon Dry)
  * Containers have had their volume and mass calculated with a calculator (PiezPiedPy) 
  * Science labs can now reset experiments (PiezPiedPy)
  * CryoTanks are now simulated in the background also fuel boiloff is simulated in the planner (PiezPiedPy)
