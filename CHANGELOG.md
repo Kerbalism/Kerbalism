@@ -3,6 +3,7 @@
 
 ### Changes since the last release
 
+ * Chemical Plant and ECLSS parts are now surface attachable, ECLSS part capacity increased to support 3 crew (PiezPiedPy) 
  * Containers have had their volume and mass calculated with a calculator (PiezPiedPy) 
  * Science labs can now reset experiments (PiezPiedPy)
  * CryoTanks are now simulated in the background also fuel boiloff is simulated in the planner (PiezPiedPy)
