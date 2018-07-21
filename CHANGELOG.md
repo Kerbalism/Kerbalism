@@ -3,6 +3,7 @@
 
 ### Changes since the last release
 
+ * Improved RemoteTech support (planner, reliability, signal, antenna EC consumption)  (Gordon Dry)
  * Chemical Plant and ECLSS parts are now surface attachable, ECLSS part capacity increased to support 3 crew (PiezPiedPy) 
  * Added support for ConfigurableContainers, they now have 6 additional tank configs:
    KerbalismSupplies (Food, Water) - KerbalismBreathing (Oxygen, Nitrogen)
