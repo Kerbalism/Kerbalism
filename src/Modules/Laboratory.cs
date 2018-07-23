@@ -1,32 +1,60 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using KSP.Localization;
 
 
 namespace KERBALISM
 {
 
-
 	public sealed class Laboratory: PartModule, IModuleInfo, ISpecifics, IContractObjectiveModule
 	{
 		// config
-		[KSPField] public double ec_rate;                     // ec consumed per-second
-		[KSPField] public double analysis_rate;               // analysis speed in Mb/s
-		[KSPField] public string researcher = string.Empty;   // required crew for analysis
-		[KSPField] public bool cleaner = true;                // can clean experiments
+		[KSPField] public double ec_rate;						// ec consumed per-second
+		[KSPField] public double analysis_rate;					// analysis speed in Mb/s
+		[KSPField] public string researcher = string.Empty;		// required crew for analysis
+		[KSPField] public bool cleaner = true;					// can clean experiments
 
 		// persistence
-		[KSPField(isPersistant = true)] public bool running;  // true if the lab is active
+		[KSPField(isPersistant = true)] public bool running;	// true if the lab is active
+
+		// status enum
+		private enum Status
+		{
+			DISABLED = 0,
+			NO_EC,
+			NO_SAMPLE,
+			NO_RESEARCHER,
+			RUNNING
+		}
 
 		// other data
-		CrewSpecs researcher_cs;                              // crew specs for the researcher
-		string status = string.Empty;                         // string to show next to the ui button
+		private CrewSpecs researcher_cs;                            // crew specs for the researcher
+		private static CrewSpecs background_researcher_cs;          // crew specs for the researcher in background simulation
+		private string current_sample = null;                       // sample currently being analyzed
+		private static string background_sample = null;             // sample currently being analyzed in background simulation
+		private Status status = Status.DISABLED;                    // laboratory status
+		private string status_txt = string.Empty;                   // status string to show next to the ui button
+		private Resource_info ec = null;							// resource info for EC
 
+		// localized strings
+		private static readonly string localized_title = Lib.BuildString("<size=1><color=#00000000>00</color></size>", Localizer.Format("#KERBALISM_Laboratory_Title"));
+		private static readonly string localized_toggle = Localizer.Format("#KERBALISM_Laboratory_Toggle");
+		private static readonly string localized_enabled = Localizer.Format("#KERBALISM_Generic_ENABLED");
+		private static readonly string localized_disabled = Localizer.Format("#KERBALISM_Generic_DISABLED");
+		private static readonly string localized_noEC = Lib.Color("yellow", Localizer.Format("#KERBALISM_Laboratory_NoEC"));
+		private static readonly string localized_noSample = Localizer.Format("#KERBALISM_Laboratory_NoSample");
+		private static readonly string localized_cleaned = Localizer.Format("#KERBALISM_Laboratory_Cleaned");
+		private static readonly string localized_results = Localizer.Format("#KERBALISM_Laboratory_Results");
 
 		public override void OnStart(StartState state)
 		{
 			// don't break tutorial scenarios
 			if (Lib.DisableScenario(this)) return;
+
+			// set UI text
+			Actions["Action"].guiName = Localizer.Format("#KERBALISM_Laboratory_Action");
+			Events["CleanExperiments"].guiName = Localizer.Format("#KERBALISM_Laboratory_Clean");
 
 			// do nothing in the editors and when compiling parts
 			if (!Lib.IsFlight()) return;
@@ -35,20 +63,20 @@ namespace KERBALISM
 			researcher_cs = new CrewSpecs(researcher);
 		}
 
-
 		public void Update()
 		{
 			if (Lib.IsFlight())
 			{
-				Events["Toggle"].guiName = Lib.StatusToggle("Lab", status);
+				// get status text
+				SetStatusText();
+				Events["Toggle"].guiName = Lib.StatusToggle(localized_toggle, status_txt);
 
 				// if a cleaner and either a researcher is not required, or the researcher is present
 				if (cleaner && (!researcher_cs || researcher_cs.Check(part.protoModuleCrew))) Events["CleanExperiments"].active = true;
 				else Events["CleanExperiments"].active = false;
 			}
-			else Events["Toggle"].guiName = Lib.StatusToggle("Lab", running ? "enabled" : "disabled");
+			else Events["Toggle"].guiName = Lib.StatusToggle(localized_toggle, running ? localized_enabled : localized_disabled);
 		}
-
 
 		public void FixedUpdate()
 		{
@@ -62,13 +90,13 @@ namespace KERBALISM
 				if (!researcher_cs || researcher_cs.Check(part.protoModuleCrew))
 				{
 					// get next sample to analyze
-					string sample_filename = Next_sample(vessel);
+					current_sample = NextSample(vessel);
 
 					// if there is a sample to analyze
-					if (sample_filename.Length > 0)
+					if (current_sample != null)
 					{
 						// consume EC
-						Resource_info ec = ResourceCache.Info(vessel, "ElectricCharge");
+						ec = ResourceCache.Info(vessel, "ElectricCharge");
 						ec.Consume(ec_rate * Kerbalism.elapsed_s);
 
 						// if there was ec
@@ -76,40 +104,21 @@ namespace KERBALISM
 						if (ec.amount > double.Epsilon)
 						{
 							// analyze the sample
-							Analyze(vessel, sample_filename, analysis_rate * Kerbalism.elapsed_s);
-
-							// update status
-							status = Science.Experiment(sample_filename).name;
+							Analyze(vessel, current_sample, analysis_rate * Kerbalism.elapsed_s);
+							status = Status.RUNNING;
 						}
 						// if there was no ec
-						else
-						{
-							// update status
-							status = "<color=yellow>no electric charge</color>";
-						}
+						else status = Status.NO_EC;
 					}
 					// if there is no sample to analyze
-					else
-					{
-						// update status
-						status = "no samples to analyze";
-					}
+					else status = Status.NO_SAMPLE;
 				}
 				// if a researcher is required, but missing
-				else
-				{
-					// update status
-					status = Lib.BuildString("<color=yellow>", researcher_cs.Warning(), "</color>");
-				}
+				else status = Status.NO_RESEARCHER;
 			}
 			// if disabled
-			else
-			{
-				// update status
-				status = "disabled";
-			}
+			else status = Status.DISABLED;
 		}
-
 
 		public static void BackgroundUpdate(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, Laboratory lab, Resource_info ec, double elapsed_s)
 		{
@@ -117,14 +126,14 @@ namespace KERBALISM
 			if (Lib.Proto.GetBool(m, "running"))
 			{
 				// if a researcher is not required, or the researcher is present
-				CrewSpecs researcher_cs = new CrewSpecs(lab.researcher);
-				if (!researcher_cs || researcher_cs.Check(p.protoModuleCrew))
+				background_researcher_cs = new CrewSpecs(lab.researcher);
+				if (!background_researcher_cs || background_researcher_cs.Check(p.protoModuleCrew))
 				{
 					// get sample to analyze
-					string sample_filename = Next_sample(v);
+					background_sample = NextSample(v);
 
 					// if there is a sample to analyze
-					if (sample_filename.Length > 0)
+					if (background_sample != null)
 					{
 						// consume EC
 						ec.Consume(lab.ec_rate * elapsed_s);
@@ -134,21 +143,17 @@ namespace KERBALISM
 						if (ec.amount > double.Epsilon)
 						{
 							// analyze the sample
-							Analyze(v, sample_filename, lab.analysis_rate * elapsed_s);
+							Analyze(v, background_sample, lab.analysis_rate * elapsed_s);
 						}
 					}
 				}
 			}
 		}
 
+		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "Toggle", active = true)]
+		public void Toggle() { running = !running; }
 
-		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true)]
-		public void Toggle()
-		{
-			running = !running;
-		}
-
-		[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "Clean Experiments", active = true)]
+		[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "Clean", active = true)]
 		public void CleanExperiments()
 		{
 			List<ModuleScienceExperiment> modules = vessel.FindPartModulesImplementing<ModuleScienceExperiment>();
@@ -162,65 +167,49 @@ namespace KERBALISM
 				}
 			}
 			// inform the user
-			if (message) Message.Post("Vessel experiments have been cleaned.");
+			if (message) Message.Post(localized_cleaned);
 		}
 
-
-
 		// action groups
-		[KSPAction("#KERBALISM_Laboratory_Action")] public void Action(KSPActionParam param) { Toggle(); }
-
+		[KSPAction("Action")] public void Action(KSPActionParam param) { Toggle(); }
 
 		public override string GetInfo()
 		{
-			return Specs().Info("Analyze samples to produce transmissible data");
+			return Specs().Info(Localizer.Format("#KERBALISM_Laboratory_Specs"));
 		}
-
 
 		// specifics support
 		public Specifics Specs()
 		{
 			Specifics specs = new Specifics();
-			specs.Add("Researcher", new CrewSpecs(researcher).Info());
-			if (cleaner) specs.Add("Can clean experiments");
-			specs.Add("EC rate", Lib.HumanReadableRate(ec_rate));
-			specs.Add("Analysis rate", Lib.HumanReadableDataRate(analysis_rate));
+			specs.Add(Localizer.Format("#KERBALISM_Laboratory_Researcher"), new CrewSpecs(researcher).Info());
+			if (cleaner) specs.Add(Localizer.Format("#KERBALISM_Laboratory_CanClean"));
+			specs.Add(Localizer.Format("#KERBALISM_Laboratory_ECrate"), Lib.HumanReadableRate(ec_rate));
+			specs.Add(Localizer.Format("#KERBALISM_Laboratory_rate"), Lib.HumanReadableDataRate(analysis_rate));
 			return specs;
 		}
 
-
 		// contract objective support
 		public bool CheckContractObjectiveValidity() { return true; }
+
 		public string GetContractObjectiveType() { return "Laboratory"; }
 
-
-		// get sample to analyze, return null if there isn't a sample
-		static string Next_sample(Vessel v)
+		// get next sample to analyze, return null if there isn't a sample
+		private static string NextSample(Vessel v)
 		{
-			// get vessel drive
-			Drive drive = DB.Vessel(v).drive;
-
 			// for each sample
-			foreach (var pair in drive.samples)
+			foreach (KeyValuePair<string, Sample> sample in DB.Vessel(v).drive.samples)
 			{
-				// shortcuts
-				string filename = pair.Key;
-				Sample sample = pair.Value;
-
 				// if flagged for analysis
-				if (sample.analyze)
-				{
-					// we found it
-					return filename;
-				}
+				if (sample.Value.analyze) return sample.Key;
 			}
 
 			// there was no sample to analyze
-			return string.Empty;
+			return null;
 		}
 
 		// analyze a sample
-		static void Analyze(Vessel v, string filename, double amount)
+		private static void Analyze(Vessel v, string filename, double amount)
 		{
 			// get vessel drive
 			Drive drive = DB.Vessel(v).drive;
@@ -238,20 +227,39 @@ namespace KERBALISM
 			if (completed)
 			{
 				// inform the user
-				Message.Post
-				(
-				  Lib.BuildString("<color=cyan><b>ANALYSIS COMPLETED</b></color>\nOur laboratory on <b>", v.vesselName, "</b> analyzed <b>", Science.Experiment(filename).name, "</b>"),
-				  "The results can be transmitted now"
-				);
+				Message.Post(Lib.BuildString(Lib.Color("cyan", Localizer.Format("#KERBALISM_Laboratory_Analysis"), true), "\n",
+					Localizer.Format("#KERBALISM_Laboratory_Analyzed", Lib.Bold(v.vesselName), Lib.Bold(Science.Experiment(filename).name))), localized_results);
 
 				// record landmark event
 				if (!Lib.Landed(v)) DB.landmarks.space_analysis = true;
 			}
 		}
 
+		private void SetStatusText()
+		{
+			switch (status)
+			{
+				case Status.DISABLED:
+					status_txt = localized_disabled;
+					break;
+				case Status.NO_EC:
+					status_txt = localized_noEC;
+					break;
+				case Status.NO_RESEARCHER:
+					status_txt = Lib.Color("yellow", researcher_cs.Warning());
+					break;
+				case Status.NO_SAMPLE:
+					status_txt = localized_noSample;
+					break;
+				case Status.RUNNING:
+					status_txt = Lib.Color("green", Science.Experiment(current_sample).name);
+					break;
+			}
+		}
+
 		// module info support
-		public string GetModuleTitle() { return "<size=1><color=#00000000>00</color></size>Laboratory"; } // attempt to display at the top
-		public override string GetModuleDisplayName() { return "<size=1><color=#00000000>00</color></size>Laboratory"; } // Attempt to display at top of tooltip
+		public string GetModuleTitle() { return localized_title; } // attempt to display at the top
+		public override string GetModuleDisplayName() { return localized_title; } // Attempt to display at top of tooltip
 		public string GetPrimaryField() { return String.Empty; }
 		public Callback<Rect> GetDrawModulePanelCallback() { return null; }
 	}

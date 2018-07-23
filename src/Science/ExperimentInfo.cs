@@ -1,14 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using KSP.Localization;
 
 
 namespace KERBALISM
 {
 
-
+	/// <summary>
+	/// Stores information about an experiment
+	/// </summary>
 	public sealed class ExperimentInfo
 	{
+		/// <summary>
+		/// Creates information for an experiment with the specified identifier
+		/// </summary>
 		public ExperimentInfo(string subject_id)
 		{
 			// get experiment id out of subject id
@@ -23,7 +29,7 @@ namespace KERBALISM
 			name = expdef != null ? expdef.experimentTitle : Lib.UppercaseFirst(id);
 
 			// deduce situation for the subject
-			situation = subject_id.Length < i + 2 ? "Unknown" : Lib.SpacesOnCaps(subject_id.Substring(i + 1));
+			situation = subject_id.Length < i + 2 ? Localizer.Format("#KERBALISM_ExperimentInfo_Unknown") : Lib.SpacesOnCaps(subject_id.Substring(i + 1));
 			situation = situation.Replace("Srf ", string.Empty).Replace("In ", string.Empty);
 
 			// provide a full name
@@ -34,12 +40,35 @@ namespace KERBALISM
 		}
 
 
-		public string id;                 // experiment identifier
-		public ScienceExperiment expdef;  // experiment definition
-		public string name;               // short description of the experiment
-		public string fullname;           // full description of the experiment
-		public string situation;          // description of the situation
-		public double max_amount;         // max data amount for the experiment
+		/// <summary>
+		/// experiment identifier
+		/// </summary>
+		public string id;
+
+		/// <summary>
+		/// experiment definition
+		/// </summary>
+		public ScienceExperiment expdef;
+
+		/// <summary>
+		/// short description of the experiment
+		/// </summary>
+		public string name;
+
+		/// <summary>
+		/// full description of the experiment
+		/// </summary>
+		public string fullname;
+
+		/// <summary>
+		/// description of the situation
+		/// </summary>
+		public string situation;
+
+		/// <summary>
+		/// max data amount for the experiment
+		/// </summary>
+		public double max_amount;
 	}
 
 
