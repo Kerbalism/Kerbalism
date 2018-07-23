@@ -380,6 +380,20 @@ namespace KERBALISM
 		}
 
 
+		// return string with specified color and bold if stated
+		public static string Color(string color, string s, bool bold = false)
+		{
+			return !bold ? ("<color=" + color + ">" + s + "</color>") : ("<color=" + color + "><b>" + s + "</b></color>");
+		}
+
+
+		// return string in bold
+		public static string Bold(string s)
+		{
+			return ("<b>" + s + "</b>");
+		}
+
+
 		// add spaces on caps
 		public static string SpacesOnCaps(string s)
 		{
