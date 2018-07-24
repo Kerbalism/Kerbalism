@@ -278,7 +278,9 @@
     <Analyzer Condition="Exists('.\UnityScript.Lang.dll')" Include=".\UnityScript.Lang.dll" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\GameData\Kerbalism\Kerbalism.version" />
+    <None Include="..\GameData\Kerbalism\Kerbalism.version">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="PostBuildMacros">
