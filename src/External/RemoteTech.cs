@@ -58,14 +58,14 @@ namespace KERBALISM
 			return API != null && GetRadioBlackout != null && (bool)GetRadioBlackout.Invoke(null, new Object[] { id });
 		}
 
-        public static Object SetPowered(Guid id, bool flag, string origin)
+        public static Object SetPoweredDown(Guid id, bool flag, string origin)
         {
             if (API != null && SetPowerDown != null)
                 return SetPowerDown.Invoke(null, new Object[] { id, flag, origin });
             return SetCommsBlackout(id, flag, origin);  // Workaround for earlier versions of RT
         }
 
-        public static bool IsPowered(Guid id)
+        public static bool IsPoweredDown(Guid id)
         {
             return API != null && GetPowerDown != null && (bool)GetPowerDown.Invoke(null, new Object[] { id });
         }
@@ -76,7 +76,7 @@ namespace KERBALISM
 				return;
 
 			SetCommsBlackout(v.id, vi.blackout, "kerbalism");
-            SetPowered(v.id, vi.powered, "kerbalism");
+            SetPoweredDown(v.id, !vi.powered, "kerbalism");
         }
 
         public static bool IsActive(ProtoPartModuleSnapshot antenna)
