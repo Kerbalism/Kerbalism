@@ -673,15 +673,8 @@ namespace KERBALISM
 					// skip disabled modules
 					if (!m.isEnabled) continue;
 
-					// RemoteTech enabled
-					if (RemoteTech.Enabled() && m.moduleName == "ModuleRTAntenna") //to ensure that short-range omni's that are built in don't count
-					{
-						float omni_range = Lib.ReflectionValue<float>(m, "Mode1OmniRange");
-						float dish_range = Lib.ReflectionValue<float>(m, "Mode1DishRange");
-						Lib.Log("omni: " + omni_range.ToString());
-						Lib.Log("dish: " + dish_range.ToString());
-						if (omni_range >= 25000 || dish_range >= 25000) has_comms = true;//min 25 km range
-					}
+					// RemoteTech enabled, passive's don't count
+					if (m.moduleName == "ModuleRTAntenna") has_comms = true;
 					else if (m.moduleName == "ModuleDataTransmitter")
 					{
 						// CommNet enabled and external transmitter
@@ -690,8 +683,7 @@ namespace KERBALISM
 							if (Lib.ReflectionValue<AntennaType>(m, "antennaType") != AntennaType.INTERNAL) has_comms = true;
 						}
 						// the simple stupid always connected signal system
-						else
-							has_comms = true;
+						else has_comms = true;
 					}
 				}
 			}
@@ -905,7 +897,8 @@ namespace KERBALISM
 						case "FissionGenerator": Process_fission_generator(p, m); break;
 						case "ModuleRadioisotopeGenerator": Process_radioisotope_generator(p, m); break;
 						case "ModuleCryoTank": Process_cryotank(p, m); break;
-						case "ModuleRTAntenna": Process_rtantenna(p, m); break;
+						case "ModuleRTAntennaPassive":
+						case "ModuleRTAntenna": Process_rtantenna(m); break;
 						case "ModuleDataTransmitter": Process_datatransmitter(m as ModuleDataTransmitter); break;
 						case "ModuleEngines": Process_engines(m as ModuleEngines); break;
 						case "ModuleEnginesFX": Process_enginesfx(m as ModuleEnginesFX); break;
@@ -1319,10 +1312,17 @@ namespace KERBALISM
 		}
 
 
-		void Process_rtantenna(Part p, PartModule m)
+		void Process_rtantenna(PartModule m)
 		{
-			float ec_cost = Lib.ReflectionValue<float>(m, "EnergyCost");
-			Resource("ElectricCharge").Consume(ec_cost, "communications");
+			switch (m.moduleName)
+			{
+				case "ModuleRTAntennaPassive":
+					Resource("ElectricCharge").Consume(0.0005, "communications (control)");   // 3km range needs approx 0.5 Watt
+					break;
+				case "ModuleRTAntenna":
+					Resource("ElectricCharge").Consume(Lib.ReflectionValue<float>(m, "EnergyCost"), "communications (transmitting)");
+					break;
+			}
 		}
 
 		void Process_datatransmitter(ModuleDataTransmitter mdt)
