@@ -5,7 +5,12 @@
 
  * Kerbalism documents are now available here: https://kerbalism.readthedocs.io Note they are still a Work in Progress
 
- * Improved RemoteTech support (planner, reliability, signal, antenna EC consumption)  (Gordon Dry)
+ * RemoteTech support now integrates correctly with the planner and signal system (PiezPiedPy)
+ * Improved RemoteTech support (simulate in planner buttons, reliability, antenna EC consumption) (Gordon Dry & PiezPiedPy)
+ * RemoteTech antennas will need power even if vessel is unloaded (Sir Mortimer)
+ * RemoteTech antennas fitted to Vessels without power will no longer relay signals to other vessels (Sir Mortimer)
+ * RemoteTech antennas can now be enabled/disabled in Automation (Sir Mortimer)
+ * RemoteTech antennas can now break down due to reliability failures (Sir Mortimer)
  * Chemical Plant and ECLSS parts are now surface attachable, ECLSS part capacity increased to support 3 crew (PiezPiedPy) 
  * Added support for ConfigurableContainers, they now have 6 additional tank config's as defined below:
    KerbalismSupplies (Food, Water) - KerbalismBreathing (Oxygen, Nitrogen)
@@ -22,10 +27,6 @@
  * Overhaul of all Chemical Plant and ISRU processes using CRP densities and molar masses (PiezPiedPy)
  * SOE process now converts wasted Carbon into Shielding, Haber process now needs EC (PiezPiedPy)
  * Hydrazine process now outputs Oxygen and requires EC and A New Nitrogen injected Hydrazine process added (PiezPiedPy) 
- * RemoteTech: Antennas will need power even if vessel is unloaded (Sir Mortimer)
- * RemoteTech: Vessels without power will no longer relay signals to other vessels (Sir Mortimer)
- * RemoteTech: Antennas can now be enabled/disabled in Automation (Sir Mortimer)
- * RemoteTech: Antennas can break down due to reliability failures (Sir Mortimer)
  * Vessel group filter can now search for vessel names that contain multiple words (Sir Mortimer) 
  * Changed the Small Supply Container to be 0.625m in diameter instead of 0.5m (Gordon Dry)
  * Added radiation belts to ExtraSolar planets and moons - science definition texts still missing (Gordon Dry)
