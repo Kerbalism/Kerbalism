@@ -18,9 +18,9 @@ namespace KERBALISM
 					ShortestSignalDelay = API.GetMethod("GetShortestSignalDelay");
 					SetRadioBlackout = API.GetMethod("SetRadioBlackoutGuid");
 					GetRadioBlackout = API.GetMethod("GetRadioBlackoutGuid");
-                    SetPowerDown = API.GetMethod("SetPowerDownGuid");
-                    GetPowerDown = API.GetMethod("GetPowerDownGuid");
-                    break;
+					SetPowerDown = API.GetMethod("SetPowerDownGuid");
+					GetPowerDown = API.GetMethod("GetPowerDownGuid");
+					break;
 				}
 			}
 		}
@@ -35,6 +35,7 @@ namespace KERBALISM
 		{
 			return API != null && (bool)IsConnectedKSC.Invoke(null, new Object[] { id });
 		}
+
 		// return true if the vessel is connected according to RemoteTech
 		public static bool Connected(Guid id)
 		{
@@ -58,28 +59,28 @@ namespace KERBALISM
 			return API != null && GetRadioBlackout != null && (bool)GetRadioBlackout.Invoke(null, new Object[] { id });
 		}
 
-        public static Object SetPoweredDown(Guid id, bool flag, string origin)
-        {
-            if (API != null && SetPowerDown != null)
-                return SetPowerDown.Invoke(null, new Object[] { id, flag, origin });
-            return SetCommsBlackout(id, flag, origin);  // Workaround for earlier versions of RT
-        }
+		public static Object SetPoweredDown(Guid id, bool flag, string origin)
+		{
+			if (API != null && SetPowerDown != null)
+				return SetPowerDown.Invoke(null, new Object[] { id, flag, origin });
+			return SetCommsBlackout(id, flag, origin);  // Workaround for earlier versions of RT
+		}
 
-        public static bool IsPoweredDown(Guid id)
-        {
-            return API != null && GetPowerDown != null && (bool)GetPowerDown.Invoke(null, new Object[] { id });
-        }
+		public static bool IsPoweredDown(Guid id)
+		{
+			return API != null && GetPowerDown != null && (bool)GetPowerDown.Invoke(null, new Object[] { id });
+		}
 
-        public static void Update(Vessel v, Vessel_info vi, VesselData vd, double elapsed_s)
+		public static void Update(Vessel v, Vessel_info vi, VesselData vd, double elapsed_s)
 		{
 			if (!Enabled())
 				return;
 
 			SetCommsBlackout(v.id, vi.blackout, "kerbalism");
-            SetPoweredDown(v.id, !vi.powered, "kerbalism");
-        }
+			SetPoweredDown(v.id, !vi.powered, "kerbalism");
+		}
 
-        public static bool IsActive(ProtoPartModuleSnapshot antenna)
+		public static bool IsActive(ProtoPartModuleSnapshot antenna)
 		{
 			return Lib.Proto.GetBool(antenna, "IsRTActive");
 		}
@@ -95,7 +96,8 @@ namespace KERBALISM
 			return IsAntenna(m.moduleName);
 		}
 
-		public static bool IsAntenna(String moduleName) {
+		public static bool IsAntenna(String moduleName)
+		{
 			return moduleName == "ModuleRTAntenna" || moduleName == "ModuleRTAntennaPassive";
 		}
 
@@ -106,8 +108,10 @@ namespace KERBALISM
 		static MethodInfo ShortestSignalDelay;
 		static MethodInfo SetRadioBlackout;
 		static MethodInfo GetRadioBlackout;
-        static MethodInfo SetPowerDown;
-        static MethodInfo GetPowerDown;
-    }
+		static MethodInfo SetPowerDown;
+		static MethodInfo GetPowerDown;
+	}
+
+
 } // KERBALISM
 
