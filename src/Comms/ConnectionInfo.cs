@@ -192,7 +192,5 @@ namespace KERBALISM
 		}
 	}
 
-	}
-
 
 } // KERBALISM
