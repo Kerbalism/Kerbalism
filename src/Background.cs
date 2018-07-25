@@ -36,7 +36,6 @@ namespace KERBALISM
 			CryoTank,
 			Unknown,
 			FNGenerator,
-			RemoteTech
 		}
 
 		static Module_type ModuleType(string module_name)
@@ -71,7 +70,6 @@ namespace KERBALISM
 				case "ModuleRadioisotopeGenerator": return Module_type.RadioisotopeGenerator;
 				case "ModuleCryoTank": return Module_type.CryoTank;
 				case "FNGenerator": return Module_type.FNGenerator;
-				case "ModuleRTAntenna": return Module_type.RemoteTech;
 			}
 			return Module_type.Unknown;
 		}
@@ -450,12 +448,6 @@ namespace KERBALISM
 			{
 				ec.Consume(light.resourceAmount * elapsed_s);
 			}
-		}
-
-		static void ProcessRTModule(ProtoPartModuleSnapshot m, PartModule antenna, Resource_info ec, double elapsed_s)
-		{
-			// only active antennas consume power
-			if (RemoteTech.IsActive(m)) ec.Consume(Lib.ReflectionValue<float>(antenna, "EnergyCost") * elapsed_s);
 		}
 
 		static void ProcessScanner(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule scanner, Part part_prefab, VesselData vd, Resource_info ec, double elapsed_s)
