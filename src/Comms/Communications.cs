@@ -37,25 +37,32 @@ namespace KERBALISM
 					vd.msg_signal = true;
 					if (vd.cfg_signal)
 					{
-						string subtext = "Data transmission disabled";
+						string subtext = Localizer.Format("#KERBALISM_UI_transmissiondisabled");
 
-						if (vi.connection.status != LinkStatus.blackout)
+						switch (vi.connection.status)
 						{
-							if (vi.crew_count == 0)
-							{
-								switch (Settings.UnlinkedControl)
+
+							case LinkStatus.plasma:
+								subtext = Localizer.Format("#KERBALISM_UI_Plasmablackout");
+								break;
+							case LinkStatus.storm:
+								subtext = Localizer.Format("#KERBALISM_UI_Stormblackout");
+								break;
+							default:
+								if (vi.crew_count == 0)
 								{
-									case UnlinkedCtrl.none:
-										subtext = Localizer.Format("#KERBALISM_UI_noctrl");
-										break;
-									case UnlinkedCtrl.limited:
-										subtext = Localizer.Format("#KERBALISM_UI_limitedcontrol");
-										break;
+									switch (Settings.UnlinkedControl)
+									{
+										case UnlinkedCtrl.none:
+											subtext = Localizer.Format("#KERBALISM_UI_noctrl");
+											break;
+										case UnlinkedCtrl.limited:
+											subtext = Localizer.Format("#KERBALISM_UI_limitedcontrol");
+											break;
+									}
 								}
-							}
+								break;
 						}
-						else
-							subtext = "Plasma blackout";
 
 						Message.Post(Severity.warning, Lib.BuildString(Localizer.Format("#KERBALISM_UI_signallost"), " <b>", v.vesselName, "</b>"), subtext);
 					}

@@ -11,9 +11,10 @@ namespace KERBALISM
 	public enum LinkStatus    // link state
 	{
 		direct_link,
-		indirect_link,
+		indirect_link,	// relayed signal
 		no_link,
-		blackout
+		plasma,			// plasma blackout on reentry
+		storm			// cme storm blackout
 	};
 
 	public sealed class ConnectionInfo
@@ -155,7 +156,7 @@ namespace KERBALISM
 					// is loss of connection due to plasma blackout
 					else if (Lib.ReflectionValue<bool>(v.connection, "inPlasma"))  // calling InPlasma causes a StackOverflow :(
 					{
-						status = LinkStatus.blackout;
+						status = LinkStatus.plasma;
 						rate = 0.0;
 						internal_cost = 0.0;
 						science_cost = 0.0;
@@ -182,7 +183,7 @@ namespace KERBALISM
 		public double rate = 0.0;                         // science data rate, internal transmitters can not transmit science data only telemetry data
 		public double internal_cost = 0.0;                // control and telemetry ec cost
 		public double science_cost = 0.0;                 // science ec cost
-		public double strength = 0.0;                     // signal strength
+		public double strength = 0.0;                     // signal strength, or when using RemoteTech signal delay
 		public string target_name = "";                   // receiving node name
 	}
 
