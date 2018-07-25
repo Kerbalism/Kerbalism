@@ -45,7 +45,7 @@ namespace KERBALISM
 
 		// constructor
 		/// <summary> Creates a <see cref="ConnectionInfo"/> object for the specified vessel from it's antenna modules</summary>
-		public ConnectionInfo(Vessel v)
+		public ConnectionInfo(Vessel v, bool storm)
 		{
 			// return no connection if there is no ec left
 			if (ResourceCache.Info(v, "ElectricCharge").amount <= double.Epsilon)

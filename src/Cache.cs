@@ -88,7 +88,7 @@ namespace KERBALISM
 			critical = Reliability.HasCriticalFailure(v);
 
 			// communications info
-			connection = new ConnectionInfo(v);
+			connection = new ConnectionInfo(v, blackout);
 			transmitting = Science.Transmitting(v, connection.linked && connection.rate > double.Epsilon);
 
 			// habitat data
