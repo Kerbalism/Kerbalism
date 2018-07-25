@@ -9,13 +9,7 @@ namespace KERBALISM
 
 	public static class Communications
 	{
-		// default transmission rate, strength and cost
-		private const double rate = 0.0625;            // 64 KB/s
-		private const double strength = 1.0;           // 100 %
-		private const double internal_cost = 0.012;    // 12 W/s
-		private const double science_cost = 0.05;      // 50 W/s
-
-		public static bool NetworkInitialized = false;
+		public static bool NetworkInitialized = false;	// True if CommNet is initialized
 
 		public static void Update(Vessel v, Vessel_info vi, VesselData vd, Vessel_resources resources, double elapsed_s)
 		{
@@ -78,20 +72,6 @@ namespace KERBALISM
 					}
 				}
 			}
-		}
-
-		public static ConnectionInfo Connection(Vessel v)
-		{
-			// if RemoteTech is present and enabled
-			if (RemoteTech.Enabled())
-			{
-				if (RemoteTech.Connected(v.id) && !RemoteTech.ConnectedToKSC(v.id))
-					return new ConnectionInfo(LinkStatus.indirect_link, rate, strength, internal_cost, science_cost, "DSN");
-				else if (RemoteTech.ConnectedToKSC(v.id))
-					return new ConnectionInfo(LinkStatus.direct_link, rate, strength, internal_cost, science_cost, "DSN: KSC");
-				return new ConnectionInfo();
-			}
-			return new ConnectionInfo(v);
 		}
 	}
 
