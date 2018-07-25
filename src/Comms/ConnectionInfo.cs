@@ -7,8 +7,8 @@ using KSP.Localization;
 namespace KERBALISM
 {
 
-
-	public enum LinkStatus    // link state
+	/// <summary> signal connection link status </summary>
+	public enum LinkStatus
 	{
 		direct_link,
 		indirect_link,	// relayed signal
@@ -17,21 +17,34 @@ namespace KERBALISM
 		storm			// cme storm blackout
 	};
 
+
+	/// <summary> Stores a single vessels communication info</summary>
 	public sealed class ConnectionInfo
 	{
-		public ConnectionInfo() { }
+		/// <summary> true if there is a connection back to DSN </summary>
+		public bool linked = false;
 
-		public ConnectionInfo(LinkStatus status, double rate, double strength, double internal_cost, double science_cost, string target_name)
-		{
-			this.linked = status == LinkStatus.direct_link || status == LinkStatus.indirect_link;
-			this.status = status;
-			this.rate = rate;
-			this.strength = strength;
-			this.internal_cost = internal_cost;
-			this.science_cost = science_cost;
-			this.target_name = target_name;
-		}
+		/// <summary> status of the connection </summary>
+		public LinkStatus status = LinkStatus.no_link;
 
+		/// <summary> science data rate. note that internal transmitters can not transmit science data only telemetry data </summary>
+		public double rate = 0.0;
+
+		/// <summary> control and telemetry ec cost </summary>
+		public double internal_cost = 0.0;
+
+		/// <summary> science ec cost </summary>
+		public double science_cost = 0.0;
+
+		/// <summary> signal strength, or when using RemoteTech signal delay </summary>
+		public double strength = 0.0;
+
+		/// <summary> receiving node name </summary>
+		public string target_name = "";
+
+
+		// constructor
+		/// <summary> Creates a <see cref="ConnectionInfo"/> object for the specified vessel from it's antenna modules</summary>
 		public ConnectionInfo(Vessel v)
 		{
 			// return no connection if there is no ec left
@@ -177,14 +190,8 @@ namespace KERBALISM
 			strength = 1;    // 100 %
 			target_name = "DSN: KSC";
 		}
+	}
 
-		public bool linked = false;                       // true if there is a connection back to DSN
-		public LinkStatus status = LinkStatus.no_link;    // the link status
-		public double rate = 0.0;                         // science data rate, internal transmitters can not transmit science data only telemetry data
-		public double internal_cost = 0.0;                // control and telemetry ec cost
-		public double science_cost = 0.0;                 // science ec cost
-		public double strength = 0.0;                     // signal strength, or when using RemoteTech signal delay
-		public string target_name = "";                   // receiving node name
 	}
 
 
