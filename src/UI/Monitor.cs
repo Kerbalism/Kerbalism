@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using UnityEngine;
 using System.Linq;
+using UnityEngine;
+using KSP.Localization;
 
 namespace KERBALISM
 {
@@ -565,78 +566,57 @@ namespace KERBALISM
 		void Indicator_signal(Panel p, Vessel v, Vessel_info vi)
 		{
 			ConnectionInfo conn = vi.connection;
-			if (RemoteTech.Enabled())
-			{
-				double signal_delay = RemoteTech.GetShortestSignalDelay(v.id);
-				string signal_str = "";
-				if (signal_delay < Double.Epsilon)
-				{
-					signal_str = "none";
-				}
-				else
-				{
-					signal_str = KSPUtil.dateTimeFormatter.PrintTimeStampCompact(signal_delay, false, false);
-				}
-				string tooltip_rt = Lib.BuildString(
-				  "<align=left />",
-				  String.Format("{0,-14}\t<b>{1}</b>\n", "connected", conn.linked ? "<color=green>yes</color>" : "<color=#ffaa00><i>no</i></color>"),
-				  String.Format("{0,-14}\t<b>{1}</b>\n", "delay", conn.linked ? signal_str : "no connection"),
-				  String.Format("{0,-14}\t\t<b>{1}</b>", "rate", Lib.HumanReadableDataRate(vi.connection.rate))
-				);
-				Texture image_rt = Icons.signal_red;
-				if (RemoteTech.Connected(v.id)) image_rt = Icons.signal_white;
-				if (RemoteTech.Connected(v.id) && !RemoteTech.ConnectedToKSC(v.id)) image_rt = Icons.signal_yellow;
-				if (vi.blackout || RemoteTech.GetCommsBlackout(v.id))
-				{
-					image_rt = Icons.signal_red;
-					tooltip_rt += "\n\n<color=red><i>Blackout</i></color>";
-				}
-				p.AddIcon(image_rt, tooltip_rt);
-				return;
-			}
+			bool remotetech = RemoteTech.Enabled();
+
+			// signal strength or when using RemoteTech signal delay
+			string signal_str = remotetech ?
+				!conn.linked ? "----" : conn.strength > Double.Epsilon ? KSPUtil.dateTimeFormatter.PrintTimeStampCompact(conn.strength) : Localizer.Format("#KERBALISM_Generic_NONE") :
+				Lib.HumanReadablePerc(conn.strength, "F2");
 
 			// target name
-			string target_str = conn.target_name;
-			if (conn.status == LinkStatus.blackout || conn.status == LinkStatus.no_link)
-				target_str = "none";
+			string target_str = conn.linked ? conn.target_name : Localizer.Format("#KERBALISM_Generic_NONE");
 
-			// transmitted label, content and tooltip
-			string comms_str = conn.linked ? "telemetry" : "nothing";
+			// transmitting info
+			string comms_str = conn.linked ? Localizer.Format("#KERBALISM_UI_telemetry") : Localizer.Format("#KERBALISM_Generic_NOTHING");
 			if (vi.transmitting.Length > 0)
 			{
 				ExperimentInfo exp = Science.Experiment(vi.transmitting);
 				comms_str = exp.name;
 			}
 
+			// create tooltip
 			string tooltip = Lib.BuildString
 			(
 			  "<align=left />",
-			  String.Format("{0,-14}\t<b>{1}</b>\n", "DSN connected", conn.linked ? "<color=green>yes</color>" : "<color=#ffaa00><i>no</i></color>"),
-			  String.Format("{0,-14}\t<b>{1}</b>\n", "science rate", Lib.HumanReadableDataRate(conn.rate)),
-			  String.Format("{0,-14}\t<b>{1}</b>\n", "strength", Lib.HumanReadablePerc(conn.strength, "F2")),
-			  String.Format("{0,-14}\t<b>{1}</b>\n", "target", target_str),
-			  String.Format("{0,-14}\t<b>{1}</b>", "transmitting", comms_str)
+			  String.Format("{0,-14}\t<b>{1}</b>\n", Localizer.Format("#KERBALISM_UI_DSNconnected"), conn.linked ?
+					Lib.Color("green", Localizer.Format("#KERBALISM_Generic_YES")) : Lib.Color("#ffaa00", Lib.Italic(Localizer.Format("#KERBALISM_Generic_NO")))),
+			  String.Format("{0,-14}\t<b>{1}</b>\n", Localizer.Format("#KERBALISM_UI_sciencerate"), Lib.HumanReadableDataRate(conn.rate)),
+			  String.Format("{0,-14}\t<b>{1}</b>\n", remotetech ? Localizer.Format("#KERBALISM_UI_delay") : Localizer.Format("#KERBALISM_UI_strength"), signal_str),
+			  String.Format("{0,-14}\t<b>{1}</b>\n", Localizer.Format("#KERBALISM_UI_target"), target_str),
+			  String.Format("{0,-14}\t<b>{1}</b>", Localizer.Format("#KERBALISM_UI_transmitting"), comms_str)
 			);
 
+			// create icon status
 			Texture image = Icons.signal_red;
 			switch (conn.status)
 			{
 				case LinkStatus.direct_link:
-					image = conn.strength > 0.05 ? Icons.signal_white : Icons.signal_yellow; // 5%
+					image = remotetech ? conn.strength > 15.0 ? Icons.signal_white : Icons.signal_yellow :      // 15 seconds for RemoteTech signal delay
+						conn.strength > 0.05 ? Icons.signal_white : Icons.signal_yellow;                        // or 5% signal strength
 					break;
 
 				case LinkStatus.indirect_link:
-					image = conn.strength > 0.05 ? Icons.signal_white : Icons.signal_yellow; // 5%
-					tooltip += "\n<color=yellow>Signal relayed</color>";
+					image = remotetech ? conn.strength > 0.05 ? Icons.signal_white : Icons.signal_yellow :      // 15 seconds for RemoteTech signal delay
+						conn.strength > 0.05 ? Icons.signal_white : Icons.signal_yellow;                        // or 5% signal strength
+					tooltip += Lib.Color("yellow", "\n" + Localizer.Format("#KERBALISM_UI_Signalrelayed"));
 					break;
 
-				case LinkStatus.no_link:
-					image = Icons.signal_red;
+				case LinkStatus.plasma:
+					tooltip += Lib.Color("red", Lib.Italic("\n" + Localizer.Format("#KERBALISM_UI_Plasmablackout")));
 					break;
 
-				case LinkStatus.blackout:
-					image = Icons.signal_red;
-					tooltip += "\n<color=red><i>Plasma blackout</i></color>";
+				case LinkStatus.storm:
+					tooltip += Lib.Color("red", Lib.Italic("\n" + Localizer.Format("#KERBALISM_UI_Stormblackout")));
 					break;
 			}
 
