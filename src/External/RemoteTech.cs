@@ -71,15 +71,6 @@ namespace KERBALISM
 			return API != null && GetPowerDown != null && (bool)GetPowerDown.Invoke(null, new Object[] { id });
 		}
 
-		public static void Update(Vessel v, Vessel_info vi, VesselData vd, double elapsed_s)
-		{
-			if (!Enabled())
-				return;
-
-			SetCommsBlackout(v.id, vi.blackout, "kerbalism");
-			SetPoweredDown(v.id, !vi.powered, "kerbalism");
-		}
-
 		public static bool IsActive(ProtoPartModuleSnapshot antenna)
 		{
 			return Lib.Proto.GetBool(antenna, "IsRTActive");
