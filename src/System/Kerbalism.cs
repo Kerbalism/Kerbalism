@@ -157,6 +157,9 @@ namespace KERBALISM
 				// if loaded
 				if (v.loaded)
 				{
+					// get most used resource
+					Resource_info ec = resources.Info(v, "ElectricCharge");
+
 					// show belt warnings
 					Radiation.BeltWarnings(v, vi, vd);
 
@@ -210,6 +213,9 @@ namespace KERBALISM
 			// if the oldest unloaded vessel was selected
 			if (last_v != null)
 			{
+				// get most used resource
+				Resource_info last_ec = last_resources.Info(last_v, "ElectricCharge");
+
 				// show belt warnings
 				Radiation.BeltWarnings(last_v, last_vi, last_vd);
 
