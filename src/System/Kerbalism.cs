@@ -166,7 +166,7 @@ namespace KERBALISM
 					// update storm data
 					Storm.Update(v, vi, vd, elapsed_s);
 
-					Communications.Update(v, vi, vd, resources, elapsed_s);
+					Communications.Update(v, vi, vd, resources, ec, elapsed_s);
 
 					// consume ec for transmission, and transmit science data
 					Science.Update(v, vi, vd, resources, elapsed_s);
@@ -222,7 +222,7 @@ namespace KERBALISM
 				// update storm data
 				Storm.Update(last_v, last_vi, last_vd, last_time);
 
-				Communications.Update(last_v, last_vi, last_vd, last_resources, last_time);
+				Communications.Update(last_v, last_vi, last_vd, last_resources, last_ec, last_time);
 
 				// consume ec for transmission, and transmit science
 				Science.Update(last_v, last_vi, last_vd, last_resources, last_time);
