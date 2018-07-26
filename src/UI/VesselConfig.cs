@@ -55,7 +55,7 @@ namespace KERBALISM
 				p.AddContent("supply", string.Empty, tooltip);
 				p.AddIcon(vd.cfg_supply ? Icons.toggle_green : Icons.toggle_red, tooltip, () => p.Toggle(ref vd.cfg_supply));
 			}
-			if (RemoteTech.Enabled() || HighLogic.fetch.currentGame.Parameters.Difficulty.EnableCommNet)
+			if (RemoteTech.Enabled || HighLogic.fetch.currentGame.Parameters.Difficulty.EnableCommNet)
 			{
 				tooltip = "Receive a message when signal is lost or obtained";
 				p.AddContent("signal", string.Empty, tooltip);

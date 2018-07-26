@@ -126,7 +126,7 @@ namespace KERBALISM
 		// return true if the vessel is subject to a signal blackout
 		public static bool Blackout(Vessel v)
 		{
-			if (!RemoteTech.Enabled()) return false;
+			if (!RemoteTech.Enabled) return false;
 			return Cache.VesselInfo(v).blackout;
 		}
 

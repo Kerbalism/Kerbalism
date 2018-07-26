@@ -26,9 +26,9 @@ namespace KERBALISM
 		}
 
 		// return true if RemoteTech is enabled for the current game
-		public static bool Enabled()
+		public static bool Enabled
 		{
-			return API != null && (bool)IsEnabled.Invoke(null, new Object[] { });
+			get { return API != null && (bool)IsEnabled.Invoke(null, new Object[] { }); }
 		}
 
 		public static bool ConnectedToKSC(Guid id)

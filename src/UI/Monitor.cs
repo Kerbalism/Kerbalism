@@ -240,7 +240,7 @@ namespace KERBALISM
 			if (Features.Reliability) Indicator_reliability(p, v, vi);
 
 			// signal indicator
-			if (RemoteTech.Enabled() || HighLogic.fetch.currentGame.Parameters.Difficulty.EnableCommNet) Indicator_signal(p, v, vi);
+			if (RemoteTech.Enabled || HighLogic.fetch.currentGame.Parameters.Difficulty.EnableCommNet) Indicator_signal(p, v, vi);
 
 			// done
 			return true;
@@ -566,7 +566,7 @@ namespace KERBALISM
 		void Indicator_signal(Panel p, Vessel v, Vessel_info vi)
 		{
 			ConnectionInfo conn = vi.connection;
-			bool remotetech = RemoteTech.Enabled();
+			bool remotetech = RemoteTech.Enabled;
 
 			// signal strength or when using RemoteTech signal delay
 			string signal_str = remotetech ?
