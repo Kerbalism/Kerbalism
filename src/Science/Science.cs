@@ -49,12 +49,6 @@ namespace KERBALISM
 			ConnectionInfo conn = vi.connection;
 			if (conn == null || String.IsNullOrEmpty(vi.transmitting)) return;
 
-			// consume ec if data is transmitted
-			if (vi.transmitting.Length > 0)
-			{
-				resources.Consume(v, "ElectricCharge", conn.science_cost * elapsed_s);
-			}
-
 			// get filename of data being downloaded
 			exp_filename = vi.transmitting;
 
