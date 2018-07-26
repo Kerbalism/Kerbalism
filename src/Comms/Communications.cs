@@ -11,13 +11,16 @@ namespace KERBALISM
 	{
 		public static bool NetworkInitialized = false;	// True if CommNet is initialized
 
-		public static void Update(Vessel v, Vessel_info vi, VesselData vd, Vessel_resources resources, Resource_info ec, double elapsed_s)
+		public static void Update(Vessel v, Vessel_info vi, VesselData vd, Resource_info ec, double elapsed_s)
 		{
 			// consume ec for internal transmitters (control and telemetry)
 			ec.Consume(vi.connection.internal_cost * elapsed_s);
 
+			// consume ec for external transmitters (don't consume for RemoteTech when loaded)
+			if (!(RemoteTech.Enabled && v.loaded)) ec.Consume(vi.connection.external_cost * elapsed_s);
+
 			// do nothing if signal mechanic is disabled or CommNet is not ready
-			if (!(HighLogic.fetch.currentGame.Parameters.Difficulty.EnableCommNet && NetworkInitialized) && !RemoteTech.Enabled())
+			if (!(HighLogic.fetch.currentGame.Parameters.Difficulty.EnableCommNet && NetworkInitialized) && !RemoteTech.Enabled)
 				return;
 
 			// maintain and send messages
