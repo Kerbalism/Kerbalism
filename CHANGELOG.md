@@ -1,4 +1,4 @@
-## v1.8.0 for KSP 1.4.4 and 1.3.1
+## v1.8.0 for KSP 1.4.5 and 1.3.1
  - 2018-xx-xx
 
 ### Changes since the last release
