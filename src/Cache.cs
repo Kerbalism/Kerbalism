@@ -53,6 +53,9 @@ namespace KERBALISM
 				throw new Exception("Shit hit the fan for vessel " + v.vesselName);
 			}
 
+			// determine if there is enough EC for a powered state
+			powered = ResourceCache.Info(v, "ElectricCharge").amount > double.Epsilon;
+
 			// determine if in sunlight, calculate sun direction and distance
 			sunlight = Sim.RaytraceBody(v, position, FlightGlobals.Bodies[0], out sun_dir, out sun_dist) ? 1.0 : 0.0;
 
@@ -88,7 +91,7 @@ namespace KERBALISM
 			critical = Reliability.HasCriticalFailure(v);
 
 			// communications info
-			connection = new ConnectionInfo(v, blackout);
+			connection = new ConnectionInfo(v, powered, blackout);
 			transmitting = Science.Transmitting(v, connection.linked && connection.rate > double.Epsilon);
 
 			// habitat data
@@ -106,7 +109,6 @@ namespace KERBALISM
 
 			// other stuff
 			gravioli = Sim.Graviolis(v);
-			powered = ResourceCache.Info(v, "ElectricCharge").amount > double.Epsilon;
 		}
 
 
