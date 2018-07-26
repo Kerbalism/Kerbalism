@@ -136,7 +136,6 @@ namespace KERBALISM
 						case Module_type.RadioisotopeGenerator: ProcessRadioisotopeGenerator(v, p, m, module_prefab, ec, elapsed_s); break;
 						case Module_type.CryoTank: ProcessCryoTank(v, p, m, module_prefab, resources, ec, elapsed_s); break;
 						case Module_type.FNGenerator: ProcessFNGenerator(v, p, m, module_prefab, ec, elapsed_s); break;
-						case Module_type.RemoteTech: ProcessRTModule(m, module_prefab, ec, elapsed_s); break;
 					}
 				}
 			}
