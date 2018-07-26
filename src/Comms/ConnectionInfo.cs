@@ -47,6 +47,13 @@ namespace KERBALISM
 		/// <summary> Creates a <see cref="ConnectionInfo"/> object for the specified vessel from it's antenna modules</summary>
 		public ConnectionInfo(Vessel v, bool powered, bool storm)
 		{
+			// set RemoteTech powered and storm state
+			if (RemoteTech.Enabled)
+			{
+				RemoteTech.SetPoweredDown(v.id, !powered, "kerbalism");
+				RemoteTech.SetCommsBlackout(v.id, storm, "kerbalism");
+			}
+
 			// return no connection if there is no ec left
 			if (!powered)
 			{
