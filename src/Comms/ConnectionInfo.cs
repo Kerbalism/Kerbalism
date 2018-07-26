@@ -30,11 +30,11 @@ namespace KERBALISM
 		/// <summary> science data rate. note that internal transmitters can not transmit science data only telemetry data </summary>
 		public double rate = 0.0;
 
-		/// <summary> control and telemetry ec cost </summary>
+		/// <summary> internal transmitter ec cost (control and telemetry) </summary>
 		public double internal_cost = 0.0;
 
-		/// <summary> science ec cost </summary>
-		public double science_cost = 0.0;
+		/// <summary> external transmitter ec cost </summary>
+		public double external_cost = 0.0;
 
 		/// <summary> signal strength, or when using RemoteTech signal delay </summary>
 		public double strength = 0.0;
@@ -93,14 +93,14 @@ namespace KERBALISM
 								if (animation.deployState == ModuleDeployablePart.DeployState.EXTENDED)
 								{
 									rate += t.DataRate;
-									science_cost += t.DataResourceCost * t.DataRate;
+									external_cost += t.DataResourceCost * t.DataRate;
 								}
 							}
 							// no animation
 							else
 							{
 								rate += t.DataRate;
-								science_cost += t.DataResourceCost * t.DataRate;
+								external_cost += t.DataResourceCost * t.DataRate;
 							}
 						}
 					}
@@ -135,14 +135,14 @@ namespace KERBALISM
 									if (deployState == "EXTENDED")
 									{
 										rate += t.DataRate;
-										science_cost += t.DataResourceCost * t.DataRate;
+										external_cost += t.DataResourceCost * t.DataRate;
 									}
 								}
 								// no animation
 								else
 								{
 									rate += t.DataRate;
-									science_cost += t.DataResourceCost * t.DataRate;
+									external_cost += t.DataResourceCost * t.DataRate;
 								}
 							}
 						}
@@ -172,7 +172,7 @@ namespace KERBALISM
 						status = LinkStatus.plasma;
 						rate = 0.0;
 						internal_cost = 0.0;
-						science_cost = 0.0;
+						external_cost = 0.0;
 						return;
 					}
 				}
@@ -180,7 +180,7 @@ namespace KERBALISM
 				// no connection
 				rate = 0.0;
 				internal_cost = 0.0;
-				science_cost = 0.0;
+				external_cost = 0.0;
 				return;
 			}
 
