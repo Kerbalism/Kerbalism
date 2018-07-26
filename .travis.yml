@@ -2,14 +2,14 @@ language: csharp
 matrix:
   include:
     - env:
-      - KSPVER="1.4.4"
+      - KSPVER="1.4.5"
       - EXTRAS=""
     - env:
       - KSPVER="1.3.1"
       - EXTRA="/p:DefineConstants=KSP13"
 before_install:
   - sudo apt-get update -qq
-  - sudo apt-get install -qq p7zip-full bash
+  - sudo apt-get install -qq p7zip-full bash openssh-client
 before_script:
   - echo "Downloading DLLs for KSP $KSPVER."
   - wget https://img.spaceball.cf/KSP-$KSPVER.7z
@@ -20,6 +20,12 @@ script:
   - msbuild $EXTRA Kerbalism.sln /t:Build /p:Configuration=Release
 after_success:
   - /bin/cp -rf $TRAVIS_BUILD_DIR/src/obj/Release/Kerbalism.dll $TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism.dll
-  # TODO: Artifact uploading
+  - 7za a "$TRAVIS_BUILD_DIR/Kerbalism-$KSPVER-BUILD$TRAVIS_BUILD_NUMBER.zip" "$TRAVIS_BUILD_DIR/GameData"
+  - 7za a "$TRAVIS_BUILD_DIR/Kerbalism-$KSPVER-BUILD$TRAVIS_BUILD_NUMBER.zip" "$TRAVIS_BUILD_DIR/LICENSE"
+  - 7za a "$TRAVIS_BUILD_DIR/Kerbalism-$KSPVER-BUILD$TRAVIS_BUILD_NUMBER.zip" "$TRAVIS_BUILD_DIR/CHANGELOG.md"
+  - echo "${SFTP_KEY}" | base64 --decode >/tmp/sftp_key
+  - chmod 400 /tmp/sftp_key
+  - ssh-keyscan -H ${SFTP_TARGET} >> ~/.ssh/known_hosts
+  - scp -i /tmp/sftp_key "$TRAVIS_BUILD_DIR/Kerbalism-$KSPVER-BUILD$TRAVIS_BUILD_NUMBER.zip" "${SFTP_USER}@${SFTP_TARGET}:/var/www/builds/Kerbalism-$KSPVER-BUILD$TRAVIS_BUILD_NUMBER.zip"
 notifications:
   email: false
