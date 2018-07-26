@@ -9,23 +9,25 @@ matrix:
       - EXTRA="/p:DefineConstants=KSP13"
 before_install:
   - sudo apt-get update -qq
-  - sudo apt-get install -qq p7zip-full bash openssh-client
+  - sudo apt-get install -qq p7zip-full bash openssh-client jq
 before_script:
   - echo "Downloading DLLs for KSP $KSPVER."
   - wget https://img.spaceball.cf/KSP-$KSPVER.7z
   - 7za x KSP-$KSPVER.7z -o$TRAVIS_BUILD_DIR -p$ZIP_PASSWORD
   - 7za x KSP-$KSPVER.7z -o$TRAVIS_BUILD_DIR/src -p$ZIP_PASSWORD
 script:
-  - cd $TRAVIS_BUILD_DIR
+  - cd "$TRAVIS_BUILD_DIR"
+  - bash "$TRAVIS_BUILD_DIR/buildscripts/Travis/avc_to_assembly.sh"
   - msbuild $EXTRA Kerbalism.sln /t:Build /p:Configuration=Release
 after_success:
+  - export MOD_VERSION=$(cat $TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism.version | jq '.VERSION.MAJOR').$(cat $TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism.version | jq '.VERSION.MINOR').$(cat $TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism.version | jq '.VERSION.PATCH')
   - /bin/cp -rf $TRAVIS_BUILD_DIR/src/obj/Release/Kerbalism.dll $TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism.dll
-  - 7za a "$TRAVIS_BUILD_DIR/Kerbalism-$KSPVER-BUILD$TRAVIS_BUILD_NUMBER.zip" "$TRAVIS_BUILD_DIR/GameData"
-  - 7za a "$TRAVIS_BUILD_DIR/Kerbalism-$KSPVER-BUILD$TRAVIS_BUILD_NUMBER.zip" "$TRAVIS_BUILD_DIR/LICENSE"
-  - 7za a "$TRAVIS_BUILD_DIR/Kerbalism-$KSPVER-BUILD$TRAVIS_BUILD_NUMBER.zip" "$TRAVIS_BUILD_DIR/CHANGELOG.md"
+  - 7za a "$TRAVIS_BUILD_DIR/Kerbalism-$MOD_VERSION-$KSPVER-BUILD$TRAVIS_BUILD_NUMBER.zip" "$TRAVIS_BUILD_DIR/GameData"
+  - 7za a "$TRAVIS_BUILD_DIR/Kerbalism-$MOD_VERSION-$KSPVER-BUILD$TRAVIS_BUILD_NUMBER.zip" "$TRAVIS_BUILD_DIR/LICENSE"
+  - 7za a "$TRAVIS_BUILD_DIR/Kerbalism-$MOD_VERSION-$KSPVER-BUILD$TRAVIS_BUILD_NUMBER.zip" "$TRAVIS_BUILD_DIR/CHANGELOG.md"
   - echo "${SFTP_KEY}" | base64 --decode >/tmp/sftp_key
   - chmod 400 /tmp/sftp_key
   - ssh-keyscan -H ${SFTP_TARGET} >> ~/.ssh/known_hosts
-  - scp -i /tmp/sftp_key "$TRAVIS_BUILD_DIR/Kerbalism-$KSPVER-BUILD$TRAVIS_BUILD_NUMBER.zip" "${SFTP_USER}@${SFTP_TARGET}:/var/www/builds/Kerbalism-$KSPVER-BUILD$TRAVIS_BUILD_NUMBER.zip"
+  - scp -i /tmp/sftp_key "$TRAVIS_BUILD_DIR/Kerbalism-$MOD_VERSION-$KSPVER-BUILD$TRAVIS_BUILD_NUMBER.zip" "${SFTP_USER}@${SFTP_TARGET}:/var/www/builds/Kerbalism-$MOD_VERSION-$KSPVER-BUILD$TRAVIS_BUILD_NUMBER.zip"
 notifications:
   email: false

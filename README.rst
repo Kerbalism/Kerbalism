@@ -1,4 +1,4 @@
-|Kerbalism|
+|Kerbalism| [![Build Status](https://img.shields.io/travis-ci/steamp0rt/Kerbalism.svg?style=flat-square&branch=master)](https://travis-ci.org/steamp0rt/Kerbalism)
 
 Welcome to Kerbalism
 ====================
