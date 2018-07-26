@@ -1320,7 +1320,7 @@ namespace KERBALISM
 					Resource("ElectricCharge").Consume(0.0005, "communications (control)");   // 3km range needs approx 0.5 Watt
 					break;
 				case "ModuleRTAntenna":
-					Resource("ElectricCharge").Consume(Lib.ReflectionValue<float>(m, "EnergyCost"), "communications (transmitting)");
+					Resource("ElectricCharge").Consume(m.resHandler.inputResources.Find(r => r.name == "ElectricCharge").rate, "communications (transmitting)");
 					break;
 			}
 		}
