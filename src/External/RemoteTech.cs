@@ -71,11 +71,6 @@ namespace KERBALISM
 			return API != null && GetPowerDown != null && (bool)GetPowerDown.Invoke(null, new Object[] { id });
 		}
 
-		public static bool IsActive(ProtoPartModuleSnapshot antenna)
-		{
-			return Lib.Proto.GetBool(antenna, "IsRTActive");
-		}
-
 		public static void SetBroken(PartModule antenna, bool broken)
 		{
 			Lib.ReflectionValue(antenna, "IsRTBroken", broken);
@@ -84,12 +79,7 @@ namespace KERBALISM
 		public static bool IsAntenna(PartModule m)
 		{
 			// we test for moduleName, but could use the boolean IsRTAntenna here
-			return IsAntenna(m.moduleName);
-		}
-
-		public static bool IsAntenna(String moduleName)
-		{
-			return moduleName == "ModuleRTAntenna" || moduleName == "ModuleRTAntennaPassive";
+			return (m.moduleName == "ModuleRTAntenna" || m.moduleName == "ModuleRTAntennaPassive");
 		}
 
 		static Type API;
