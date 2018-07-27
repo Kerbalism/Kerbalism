@@ -5,7 +5,7 @@ Welcome to Kerbalism
 Hundreds of Kerbals were killed in the making of this mod.
 ----------------------------------------------------------
 
-|docs|
+|docs| |build|
 
 INTRODUCTION
 ------------
@@ -269,7 +269,12 @@ This mod is released under the `Unlicense <LICENSE>`_. For more information, ple
 
 .. |Kerbalism| image:: misc/img/banner.png
 
-.. |docs| image:: https://readthedocs.org/projects/kerbalism/badge/?version=latest
+.. |docs| image:: https://readthedocs.org/projects/kerbalism/badge/?version=latest&style=flat-square
     :alt: Documentation Status
     :scale: 100%
     :target: https://kerbalism.readthedocs.io/en/latest/?badge=latest
+
+.. |build| image:: https://img.shields.io/travis-ci/steamp0rt/Kerbalism.svg?style=flat-square&branch=master)](https://travis-ci.org/steamp0rt/Kerbalism
+    :alt: Build Status
+    :scale: 100%
+    :target: https://travis-ci\.com/steamp0rt/Kerbalism
