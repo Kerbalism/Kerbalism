@@ -268,9 +268,9 @@ namespace KERBALISM
 				// are we connected
 				if (RemoteTech.Connected(v.id))
 				{
-					linked = true;
-					status = RemoteTech.ConnectedToKSC(v.id) ? LinkStatus.direct_link : LinkStatus.indirect_link;
-					strength = RemoteTech.GetShortestSignalDelay(v.id);
+					linked = RemoteTech.ConnectedToKSC(v.id);
+					status = RemoteTech.TargetsKSC(v.id) ? LinkStatus.direct_link : LinkStatus.indirect_link;
+					strength = RemoteTech.GetSignalDelay(v.id);
 					target_name = status == LinkStatus.direct_link ? "DSN: KSC" : "DSN";
 					return;
 				}

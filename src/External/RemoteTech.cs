@@ -16,7 +16,8 @@ namespace KERBALISM
 					EnabledInSPC = API.GetMethod("EnableInSPC");
 					IsConnected = API.GetMethod("HasAnyConnection");
 					IsConnectedKSC = API.GetMethod("HasConnectionToKSC");
-					ShortestSignalDelay = API.GetMethod("GetShortestSignalDelay");
+					IsTargetKSC = API.GetMethod("HasGroundStationTarget");
+					SignalDelay = API.GetMethod("GetSignalDelayToKSC");
 					SetRadioBlackout = API.GetMethod("SetRadioBlackoutGuid");
 					GetRadioBlackout = API.GetMethod("GetRadioBlackoutGuid");
 					SetPowerDown = API.GetMethod("SetPowerDownGuid");
@@ -43,15 +44,20 @@ namespace KERBALISM
 			return API != null && (bool)IsConnectedKSC.Invoke(null, new Object[] { id });
 		}
 
+		public static bool TargetsKSC(Guid id)
+		{
+			return API != null && (bool)IsTargetKSC.Invoke(null, new Object[] { id });
+		}
+
 		// return true if the vessel is connected according to RemoteTech
 		public static bool Connected(Guid id)
 		{
 			return API != null && (bool)IsConnected.Invoke(null, new Object[] { id });
 		}
 
-		public static double GetShortestSignalDelay(Guid id)
+		public static double GetSignalDelay(Guid id)
 		{
-			return (API != null ? (double)ShortestSignalDelay.Invoke(null, new Object[] { id }) : 0);
+			return (API != null ? (double)SignalDelay.Invoke(null, new Object[] { id }) : 0);
 		}
 
 		public static Object SetCommsBlackout(Guid id, bool flag, string origin)
@@ -94,7 +100,8 @@ namespace KERBALISM
 		static MethodInfo EnabledInSPC;
 		static MethodInfo IsConnected;
 		static MethodInfo IsConnectedKSC;
-		static MethodInfo ShortestSignalDelay;
+		static MethodInfo IsTargetKSC;
+		static MethodInfo SignalDelay;
 		static MethodInfo SetRadioBlackout;
 		static MethodInfo GetRadioBlackout;
 		static MethodInfo SetPowerDown;
