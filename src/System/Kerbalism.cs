@@ -8,6 +8,22 @@ namespace KERBALISM
 {
 
 
+	/// <summary> Main class, instantiated during Main menu scene.</summary>
+	[KSPAddon(KSPAddon.Startup.MainMenu, false)]
+	public class KerbalismMain: MonoBehaviour
+	{
+		public void Start()
+		{
+			RemoteTech.EnableInSPC();		// allow RemoteTech Core to run in the Space Center
+
+			// Set the loaded trigger to false, this we will load a new
+			// settings after selecting a save game. This is necessary
+			// for switching between saves without shutting down the KSP
+			// instance.
+			//Settings.Instance.SettingsLoaded = false;
+		}
+	}
+
 	[KSPScenario(ScenarioCreationOptions.AddToAllGames, new[] { GameScenes.SPACECENTER, GameScenes.TRACKSTATION, GameScenes.FLIGHT, GameScenes.EDITOR })]
 	public sealed class Kerbalism: ScenarioModule
 	{
