@@ -91,7 +91,7 @@ namespace KERBALISM
 					{
 						foreach (ModuleDataTransmitter t in transmitters)
 						{
-							if (t.antennaType == AntennaType.INTERNAL) // do not include internal data rate
+							if (t.antennaType == AntennaType.INTERNAL) // do not include internal data rate, ec cost only
 								internal_cost += t.DataResourceCost * t.DataRate;
 							else
 							{
@@ -99,7 +99,7 @@ namespace KERBALISM
 								ModuleDeployableAntenna animation = t.part.FindModuleImplementing<ModuleDeployableAntenna>();
 								if (animation != null)
 								{
-									// only include data rate if transmitter is extended
+									// only include data rate and ec cost if transmitter is extended
 									if (animation.deployState == ModuleDeployablePart.DeployState.EXTENDED)
 									{
 										rate += t.DataRate;
@@ -132,7 +132,7 @@ namespace KERBALISM
 						{
 							foreach (ModuleDataTransmitter t in transmitters)
 							{
-								if (t.antennaType == AntennaType.INTERNAL) // do not include internal data rate
+								if (t.antennaType == AntennaType.INTERNAL) // do not include internal data rate, ec cost only
 									internal_cost += t.DataResourceCost * t.DataRate;
 								else
 								{
@@ -140,7 +140,7 @@ namespace KERBALISM
 									ProtoPartModuleSnapshot m = p.FindModule("ModuleDeployableAntenna");
 									if (m != null)
 									{
-										// only include data rate if transmitter is extended
+										// only include data rate and ec cost if transmitter is extended
 										string deployState = Lib.Proto.GetString(m, "deployState");
 										if (deployState == "EXTENDED")
 										{
@@ -199,11 +199,97 @@ namespace KERBALISM
 				status = LinkStatus.direct_link;
 				strength = 1;    // 100 %
 				target_name = "DSN: KSC";
+				return;
 			}
 
 			// RemoteTech signal system
 			else
 			{
+				// if vessel is loaded
+				if (v.loaded)
+				{
+					// find transmitters
+					foreach (Part p in v.parts)
+					{
+						foreach (PartModule m in p.Modules)
+						{
+							// calculate internal (passive) transmitter ec usage @ 0.5W each
+							if (m.moduleName == "ModuleRTAntennaPassive")
+								internal_cost += 0.0005;
+
+							// calculate external transmitters
+							else if (m.moduleName == "ModuleRTAntenna")
+							{
+								// only include data rate and ec cost if transmitter is active
+								if (Lib.ReflectionValue<bool>(m, "IsRTActive"))
+								{
+									rate += (Lib.ReflectionValue<float>(m, "RTPacketSize") / Lib.ReflectionValue<float>(m, "RTPacketInterval"));
+									external_cost += m.resHandler.inputResources.Find(r => r.name == "ElectricCharge").rate;
+								}
+							}
+						}
+					}
+				}
+
+				// if vessel is not loaded
+				else
+				{
+					// find proto transmitters
+					foreach (ProtoPartSnapshot p in v.protoVessel.protoPartSnapshots)
+					{
+						// get part prefab (required for module properties)
+						Part part_prefab = PartLoader.getPartInfoByName(p.partName).partPrefab;
+						int index = 0;		// module index
+
+						foreach (ProtoPartModuleSnapshot m in p.modules)
+						{
+							// calculate internal (passive) transmitter ec usage @ 0.5W each
+							if (m.moduleName == "ModuleRTAntennaPassive")
+								internal_cost += 0.0005;
+
+							// calculate external transmitters
+							else if (m.moduleName == "ModuleRTAntenna")
+							{
+								// only include data rate and ec cost if transmitter is active skip if index is out of range
+								if (Lib.Proto.GetBool(m, "IsRTActive") && index < part_prefab.Modules.Count)
+								{
+									// get module prefab
+									PartModule pm = part_prefab.Modules.GetModule(index);
+
+									rate += (Lib.ReflectionValue<float>(pm, "RTPacketSize") / Lib.ReflectionValue<float>(pm, "RTPacketInterval"));
+									external_cost += pm.resHandler.inputResources.Find(r => r.name == "ElectricCharge").rate;
+								}
+							}
+							index++;
+						}
+ 					}
+				}
+
+				// are we connected
+				if (RemoteTech.Connected(v.id))
+				{
+					linked = true;
+					status = RemoteTech.ConnectedToKSC(v.id) ? LinkStatus.direct_link : LinkStatus.indirect_link;
+					strength = RemoteTech.GetShortestSignalDelay(v.id);
+					target_name = status == LinkStatus.direct_link ? "DSN: KSC" : "DSN";
+					return;
+				}
+
+				// is loss of connection due to a blackout
+				else if (RemoteTech.GetCommsBlackout(v.id))
+				{
+					status = storm ? LinkStatus.storm : LinkStatus.plasma;
+					rate = 0.0;
+					internal_cost = 0.0;
+					external_cost = 0.0;
+					return;
+				}
+
+				// no connection
+				rate = 0.0;
+				internal_cost = 0.0;
+				external_cost = 0.0;
+				return;
 			}
 		}
 	}
