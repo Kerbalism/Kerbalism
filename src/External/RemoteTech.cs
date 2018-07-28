@@ -13,6 +13,7 @@ namespace KERBALISM
 				{
 					API = a.assembly.GetType("RemoteTech.API.API");
 					IsEnabled = API.GetMethod("IsRemoteTechEnabled");
+					EnabledInSPC = API.GetMethod("EnableInSPC");
 					IsConnected = API.GetMethod("HasAnyConnection");
 					IsConnectedKSC = API.GetMethod("HasConnectionToKSC");
 					ShortestSignalDelay = API.GetMethod("GetShortestSignalDelay");
@@ -29,6 +30,12 @@ namespace KERBALISM
 		public static bool Enabled
 		{
 			get { return API != null && (bool)IsEnabled.Invoke(null, new Object[] { }); }
+		}
+
+		public static void EnableInSPC()
+		{
+			if (API != null && EnabledInSPC != null)
+				EnabledInSPC.Invoke(null, new Object[] { true });
 		}
 
 		public static bool ConnectedToKSC(Guid id)
@@ -84,6 +91,7 @@ namespace KERBALISM
 
 		static Type API;
 		static MethodInfo IsEnabled;
+		static MethodInfo EnabledInSPC;
 		static MethodInfo IsConnected;
 		static MethodInfo IsConnectedKSC;
 		static MethodInfo ShortestSignalDelay;
