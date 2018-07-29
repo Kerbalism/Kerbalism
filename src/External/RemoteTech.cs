@@ -20,6 +20,7 @@ namespace KERBALISM
 					IsConnected = API.GetMethod("HasAnyConnection");
 					IsConnectedKSC = API.GetMethod("HasConnectionToKSC");
 					IsTargetKSC = API.GetMethod("HasGroundStationTarget");
+					NameTargetKSC = API.GetMethod("GetNameGroundStationTarget");
 					SignalDelay = API.GetMethod("GetSignalDelayToKSC");
 					SetRadioBlackout = API.GetMethod("SetRadioBlackoutGuid");
 					GetRadioBlackout = API.GetMethod("GetRadioBlackoutGuid");
@@ -55,7 +56,14 @@ namespace KERBALISM
 			return API != null && (bool)IsTargetKSC.Invoke(null, new Object[] { id });
 		}
 
-		// return true if the vessel is connected according to RemoteTech
+		/// <summary> Returns the name of the ground station directly targeted with the shortest link if any found by the vessel</summary>
+		public static string NameTargetsKSC(Guid id)
+		{
+			if (API != null && NameTargetKSC != null)
+				return (string)NameTargetKSC.Invoke(null, new Object[] { id });
+			return null;
+		}
+
 		/// <summary> Returns true if the vessel has any connection</summary>
 		public static bool Connected(Guid id)
 		{
@@ -114,6 +122,7 @@ namespace KERBALISM
 		private static MethodInfo IsConnected;
 		private static MethodInfo IsConnectedKSC;
 		private static MethodInfo IsTargetKSC;
+		private static MethodInfo NameTargetKSC;
 		private static MethodInfo SignalDelay;
 		private static MethodInfo SetRadioBlackout;
 		private static MethodInfo GetRadioBlackout;
