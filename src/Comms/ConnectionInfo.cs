@@ -50,8 +50,8 @@ namespace KERBALISM
 			// set RemoteTech powered and storm state
 			if (RemoteTech.Enabled)
 			{
-				RemoteTech.SetPoweredDown(v.id, !powered, "kerbalism");
-				RemoteTech.SetCommsBlackout(v.id, storm, "kerbalism");
+				RemoteTech.SetPoweredDown(v.id, !powered);
+				RemoteTech.SetCommsBlackout(v.id, storm);
 			}
 
 			// return no connection if there is no ec left
@@ -265,13 +265,13 @@ namespace KERBALISM
  					}
 				}
 
-				// are we connected
+				// are we connected		   
 				if (RemoteTech.Connected(v.id))
 				{
 					linked = RemoteTech.ConnectedToKSC(v.id);
 					status = RemoteTech.TargetsKSC(v.id) ? LinkStatus.direct_link : LinkStatus.indirect_link;
 					strength = RemoteTech.GetSignalDelay(v.id);
-					target_name = status == LinkStatus.direct_link ? "DSN: KSC" : "DSN";
+					target_name = status == LinkStatus.direct_link ? Lib.Ellipsis("DSN: " + (RemoteTech.NameTargetsKSC(v.id) ?? "") , 20): "DSN";
 					return;
 				}
 
