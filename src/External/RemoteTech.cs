@@ -21,6 +21,7 @@ namespace KERBALISM
 					IsConnectedKSC = API.GetMethod("HasConnectionToKSC");
 					IsTargetKSC = API.GetMethod("HasGroundStationTarget");
 					NameTargetKSC = API.GetMethod("GetNameGroundStationTarget");
+					NameFirstHopKSC = API.GetMethod("GetFirstHopNameToKSC");
 					SignalDelay = API.GetMethod("GetSignalDelayToKSC");
 					SetRadioBlackout = API.GetMethod("SetRadioBlackoutGuid");
 					GetRadioBlackout = API.GetMethod("GetRadioBlackoutGuid");
@@ -61,6 +62,14 @@ namespace KERBALISM
 		{
 			if (API != null && NameTargetKSC != null)
 				return (string)NameTargetKSC.Invoke(null, new Object[] { id });
+			return null;
+		}
+
+		/// <summary> Returns the name of the first hop vessel with the shortest link to KSC by the vessel</summary>
+		public static string NameFirstHopToKSC(Guid id)
+		{
+			if (API != null && NameFirstHopKSC != null)
+				return (string)NameFirstHopKSC.Invoke(null, new Object[] { id });
 			return null;
 		}
 
@@ -123,6 +132,7 @@ namespace KERBALISM
 		private static MethodInfo IsConnectedKSC;
 		private static MethodInfo IsTargetKSC;
 		private static MethodInfo NameTargetKSC;
+		private static MethodInfo NameFirstHopKSC;
 		private static MethodInfo SignalDelay;
 		private static MethodInfo SetRadioBlackout;
 		private static MethodInfo GetRadioBlackout;
