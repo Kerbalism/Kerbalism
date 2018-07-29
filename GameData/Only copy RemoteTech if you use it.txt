@@ -1,0 +1,5 @@
+Only copy the RemoteTech folder if you use the RemoteTech mod.
+
+It contains the RemoteTech.dll that has been updated with new functionality required by Kerbalism.
+
+Not using this dll when using RemoteTech will stop Kerbalism's background processing of RemoteTech and Science from working at the Space Center and will also stop the Signal tooltip from being displayed on the monitor panel while at the Space Center.
