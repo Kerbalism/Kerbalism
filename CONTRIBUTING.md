@@ -408,8 +408,6 @@ If you set your `KSPDEVDIR` variable as mentioned [above](#system-environment-va
   - Change to the **Reference Paths** tab and select the `\KSP_x64_Data\Managed` subdirectory of your KSP dev install
   - Click "Add" to actually add the selected path
  
- Also when switching between the 1.4.x and 1.3.1 configurations you will have to manually change the references directory to point to the correct versions due to the limitation of VS not having the ability to switch reference directories via the configuration menu. (Thanks MS >.<) 
-
  To be able to quicklaunch KSP using F5 (or Ctrl-F5), you have to set which external program should start. This should already be set if you set your `KSPDEVDIR` and/or `KSPBACKPORTDIR` environment variables. If not,
   
  - Double-Click the "Properties" page in the Solution Explorer in Visual Studio
@@ -421,7 +419,7 @@ If you set your `KSPDEVDIR` variable as mentioned [above](#system-environment-va
 If your reference paths are set up correctly, then building the project should be as simple as Clicking Build -> Build Solution.
 If `KSPDEVDIR` and/or `KSPBACKPORTDIR` is set, then the output path will be the `\GameData\Kerbalism\` subdirectory of your KSP install. If not, you have to configure the output path yourself in Properties -> Build -> Output Path.
 
-You can use the configuration menu to switch between `Debug` and `Release` for KSP1.4.x and also `Debug 1.3` and `Release 1.3` for KSP1.3.1 , note you will have to manually set the references directory as mentioned [above](#development-and-debugging) when switching between KSP versions.
+You can use the configuration menu to switch between `Debug` and `Release` for KSP1.4.x and also `Debug 1.3` and `Release 1.3` for KSP1.3.1
 
 When you are building in Debug mode, one additional file with the ending `.mdb` is created. This file is required for unity debugging.
 
