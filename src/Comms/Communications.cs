@@ -19,9 +19,8 @@ namespace KERBALISM
 			// consume ec for external transmitters (don't consume for RemoteTech when loaded)
 			if (!(RemoteTech.Enabled && v.loaded)) ec.Consume(vi.connection.external_cost * elapsed_s);
 
-			// do nothing if signal mechanic is disabled or CommNet is not ready
-			if (!(HighLogic.fetch.currentGame.Parameters.Difficulty.EnableCommNet && NetworkInitialized) && !RemoteTech.Enabled)
-				return;
+			// do nothing if network is not ready
+			if (!NetworkInitialized) return;
 
 			// maintain and send messages
 			// - do not send messages during/after solar storms

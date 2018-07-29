@@ -36,6 +36,7 @@ namespace KERBALISM
 			// enable global access
 			Fetch = this;
 			Communications.NetworkInitialized = false;
+			RemoteTech.NetworkInitialized = false;
 		}
 
 		private void OnDestroy()
@@ -272,6 +273,12 @@ namespace KERBALISM
 
 		void Update()
 		{
+			if (!RemoteTech.NetworkInitialized)
+			{
+				RemoteTech.NetworkInitialized = true;
+				if (RemoteTech.Enabled) StartCoroutine(callbacks.NetworkInitialized());
+			}
+
 			// attach map renderer to planetarium camera once
 			if (MapView.MapIsEnabled && map_camera_script == null)
 				map_camera_script = PlanetariumCamera.Camera.gameObject.AddComponent<MapCameraScript>();

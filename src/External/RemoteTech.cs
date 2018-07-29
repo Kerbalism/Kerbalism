@@ -125,6 +125,8 @@ namespace KERBALISM
 			return (m.moduleName == "ModuleRTAntenna" || m.moduleName == "ModuleRTAntennaPassive");
 		}
 
+		public static bool NetworkInitialized = false;
+
 		private static Type API;
 		private static MethodInfo IsEnabled;
 		private static MethodInfo EnabledInSPC;
