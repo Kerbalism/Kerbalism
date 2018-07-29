@@ -265,13 +265,14 @@ namespace KERBALISM
  					}
 				}
 
-				// are we connected		   
+				// are we connected
 				if (RemoteTech.Connected(v.id))
 				{
 					linked = RemoteTech.ConnectedToKSC(v.id);
 					status = RemoteTech.TargetsKSC(v.id) ? LinkStatus.direct_link : LinkStatus.indirect_link;
 					strength = RemoteTech.GetSignalDelay(v.id);
-					target_name = status == LinkStatus.direct_link ? Lib.Ellipsis("DSN: " + (RemoteTech.NameTargetsKSC(v.id) ?? "") , 20): "DSN";
+					target_name = status == LinkStatus.direct_link ? Lib.Ellipsis("DSN: " + (RemoteTech.NameTargetsKSC(v.id) ?? "") , 20):
+						Lib.Ellipsis(RemoteTech.NameFirstHopToKSC(v.id) ?? "", 20);
 					return;
 				}
 
