@@ -1,13 +1,13 @@
 .. _index:
 
-|Kerbalism| |build|
+|Kerbalism|
 
 Welcome to Kerbalism
 ====================
 Hundreds of Kerbals were killed in the making of this mod.
 ----------------------------------------------------------
 
-|docs|
+|docs| |build|
 
 INTRODUCTION
 ------------
