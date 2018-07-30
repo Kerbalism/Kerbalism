@@ -21,7 +21,7 @@ script:
   - msbuild $EXTRA Kerbalism.sln /t:Build /p:Configuration=Release
 after_success:
   - export MOD_VERSION=$(cat $TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism.version | jq '.VERSION.MAJOR').$(cat $TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism.version | jq '.VERSION.MINOR').$(cat $TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism.version | jq '.VERSION.PATCH')
-  - bash "$TRAVIS_BUILD_DIR/buildscripts/Travis/avc_version.sh $KSPVER $TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism.version"
+  - bash "$TRAVIS_BUILD_DIR/buildscripts/Travis/avc_version.sh" $KSPVER "$TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism.version"
   - export KSP_VERSION=$(echo $KSPVER | grep -Po '(1\.\d)')
   - /bin/cp -rf $TRAVIS_BUILD_DIR/src/obj/Release/Kerbalism.dll $TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism.dll
   - rm -rf "$TRAVIS_BUILD_DIR/GameData/Kerbalism/Shaders"
