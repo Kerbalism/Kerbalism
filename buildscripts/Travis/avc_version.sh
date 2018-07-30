@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # KSP AVC .version file editor [PiezPiedPy]
 
 echo Setting $2 for KSP$1
