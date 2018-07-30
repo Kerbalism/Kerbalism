@@ -1392,7 +1392,9 @@ namespace KERBALISM
 		// get a texture
 		public static Texture2D GetTexture(string name)
 		{
-			return GameDatabase.Instance.GetTexture("Kerbalism/Textures/" + name, false);
+			Texture2D texture = new Texture2D(36, 36);
+			texture.LoadImage(System.IO.File.ReadAllBytes(Icons.TexturePath + name + ".png"));
+			return texture;
 		}
 
 		// get a material with the shader specified
