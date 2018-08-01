@@ -1,33 +1,36 @@
-## v1.7.2 for KSP 1.4.4 and 1.3.1
+## v1.8.0 for KSP 1.4.5 and 1.3.1
  - 2018-xx-xx
 
 ### Changes since the last release
 
- * Improved RemoteTech support (planner, reliability, signal, antenna EC consumption)  (Gordon Dry)
+ * Kerbalism documents are now available here: https://kerbalism.readthedocs.io Note they are still a Work in Progress
+
+ * Fixed the icons sometimes not displaying bug (PiezPiedPy) 
+ * Improved RemoteTech support (simulate in planner buttons, reliability, antenna EC consumption) (Gordon Dry & PiezPiedPy)
+ * RemoteTech antennas will need power even if vessel is unloaded (Sir Mortimer)
+ * RemoteTech antennas fitted to Vessels without power will no longer relay signals to other vessels (Sir Mortimer)
+ * RemoteTech antennas can now be enabled/disabled in Automation (Sir Mortimer)
+ * RemoteTech antennas can now break down due to reliability failures (Sir Mortimer)
  * Chemical Plant and ECLSS parts are now surface attachable, ECLSS part capacity increased to support 3 crew (PiezPiedPy) 
- * Added support for ConfigurableContainers, they now have 6 additional tank configs:
+ * Added support for ConfigurableContainers, they now have 6 additional tank config's as defined below:
    KerbalismSupplies (Food, Water) - KerbalismBreathing (Oxygen, Nitrogen)
    KerbalismWaste (Waste, WasteWater) - KerbalismGreenhouse (CarbonDioxide, Ammonia, Water)
    KerbalismFuelcellH2 (Oxygen, Hydrogen) - KerbalismFuelcellMP (Oxygen, MonoPropellant)  (Gordon Dry)
  * Containers have had their volume and mass calculated with a calculator (PiezPiedPy) 
  * Science labs can now reset experiments (PiezPiedPy)
- * CryoTanks are now simulated in the background also fuel boiloff is simulated in the planner (PiezPiedPy)
- * Reverted the Quick'n'dirty fix for GPOSpeedFuelPump because that one is fixed now with v1.8.14 (Gordon Dry)
+ * CryoTanks are now simulated in the background, also fuel boiloff is simulated in the planner (PiezPiedPy)
+ * Reverted the Quick'n'dirty fix for GPOSpeedFuelPump because it has been fixed with v1.8.14 (Gordon Dry)
  * Added a fix to make sure there is a module Reliability for parachutes, also for RealChute/RealChuteFAR (Gordon Dry)
  * Scaled the ISRU's capacity to be more representative of their size (PiezPiedPy)
- * All priority type processes have been removed and replaced with a Dump button that configures the resource type(s)
- * to dump overboard, the Dump button is also usable InFlight allowing for changes of strategies on the go (PiezPiedPy)
+ * All priority type processes have been removed and replaced with a Dump button that configures the dumped resource type(s)
+   to dump overboard, the Dump button is also usable InFlight allowing for changes of strategies on the go (PiezPiedPy)
  * Overhaul of all Chemical Plant and ISRU processes using CRP densities and molar masses (PiezPiedPy)
  * SOE process now converts wasted Carbon into Shielding, Haber process now needs EC (PiezPiedPy)
- * Hydrazine process now outputs Oxygen and requires EC and A New Nitro injected Hydrazine process added (PiezPiedPy) 
- * RemoteTech: Antennas will need power even if vessel is unloaded (Sir Mortimer)
- * RemoteTech: Vessels without power will no longer relay signals to other vessels (Sir Mortimer)
- * RemoteTech: Antennas can now be enabled/disabled in Automation (Sir Mortimer)
- * RemoteTech: Antennas can break down due to reliability failures (Sir Mortimer)
+ * Hydrazine process now outputs Oxygen and requires EC and A New Nitrogen injected Hydrazine process added (PiezPiedPy) 
  * Vessel group filter can now search for vessel names that contain multiple words (Sir Mortimer) 
- * Changed the Small Supply Container to be really 0.625m in diameter, not 0.5m (Gordon Dry)
+ * Changed the Small Supply Container to be 0.625m in diameter instead of 0.5m (Gordon Dry)
  * Added radiation belts to ExtraSolar planets and moons - science definition texts still missing (Gordon Dry)
- * Fixed a commented out bracket in another patch that hindered the Bluedog_DB geiger counter to be a sensor (Gordon Dry)
+ * Fixed a commented out bracket in another patch that hindered the Bluedog_DB Geiger counter from being a sensor (Gordon Dry)
  * Configurable parts can now contain the same process in multiple slots (PiezPiedPy)
  * Fixed MRE not running when shielding is full or does not exist on a vessel (PiezPiedPy)
  * MRE process now outputs a small amount of CO2 (PiezPiedPy)
