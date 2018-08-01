@@ -137,7 +137,7 @@ namespace KERBALISM
 						case Module_type.CurvedPanel: ProcessCurvedPanel(v, p, m, module_prefab, part_prefab, vi, ec, elapsed_s); break;
 						case Module_type.FissionGenerator: ProcessFissionGenerator(v, p, m, module_prefab, ec, elapsed_s); break;
 						case Module_type.RadioisotopeGenerator: ProcessRadioisotopeGenerator(v, p, m, module_prefab, ec, elapsed_s); break;
-						case Module_type.CryoTank: ProcessCryoTank(v, p, m, module_prefab, resources, elapsed_s); break;
+						case Module_type.CryoTank: ProcessCryoTank(v, p, m, module_prefab, resources, ec, elapsed_s); break;
 						case Module_type.FNGenerator: ProcessFNGenerator(v, p, m, module_prefab, ec, elapsed_s); break;
 						case Module_type.RemoteTech: ProcessRTModule(v, p, m, module_prefab, part_prefab, vd, ec, elapsed_s); break;
 					}
@@ -586,7 +586,7 @@ namespace KERBALISM
 		}
 
 
-		static void ProcessCryoTank(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule cryotank, Vessel_resources resources, double elapsed_s)
+		static void ProcessCryoTank(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule cryotank, Vessel_resources resources, Resource_info ec, double elapsed_s)
 		{
 			// Note. Currently background simulation of Cryotanks has an irregularity in that boiloff of a fuel type in a tank removes resources from all tanks
 			// but at least some simulation is better than none ;)
@@ -594,9 +594,6 @@ namespace KERBALISM
 			// get list of fuels, do nothing if no fuels
 			IList fuels = Lib.ReflectionValue<IList>(cryotank, "fuels");
 			if (fuels == null) return;
-
-			// get EC resource
-			Resource_info ec = resources.Info(v, "ElectricCharge");
 
 			// is cooling available, note: comparing against amount in previous simulation step
 			bool available = (Lib.Proto.GetBool(m, "CoolingEnabled") && ec.amount > double.Epsilon);

@@ -78,7 +78,7 @@ namespace KERBALISM
 			if (sections.Count > 0) sections[sections.Count - 1].entries.Add(e);
 		}
 
-		public void AddIcon(Texture texture, string tooltip = "", Action click = null)
+		public void AddIcon(Texture2D texture, string tooltip = "", Action click = null)
 		{
 			Icon i = new Icon
 			{
@@ -278,7 +278,7 @@ namespace KERBALISM
 
 		sealed class Icon
 		{
-			public Texture texture;
+			public Texture2D texture;
 			public string tooltip;
 			public Action click;
 		}

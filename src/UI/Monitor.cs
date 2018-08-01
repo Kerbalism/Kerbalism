@@ -322,7 +322,7 @@ namespace KERBALISM
 		}
 
 
-		void Problem_sunlight(Vessel_info info, ref List<Texture> icons, ref List<string> tooltips)
+		void Problem_sunlight(Vessel_info info, ref List<Texture2D> icons, ref List<string> tooltips)
 		{
 			if (info.sunlight <= double.Epsilon)
 			{
@@ -331,7 +331,7 @@ namespace KERBALISM
 			}
 		}
 
-		void Problem_greenhouses(Vessel v, List<Greenhouse.Data> greenhouses, ref List<Texture> icons, ref List<string> tooltips)
+		void Problem_greenhouses(Vessel v, List<Greenhouse.Data> greenhouses, ref List<Texture2D> icons, ref List<string> tooltips)
 		{
 			if (greenhouses.Count == 0) return;
 
@@ -345,7 +345,7 @@ namespace KERBALISM
 			}
 		}
 
-		void Problem_kerbals(List<ProtoCrewMember> crew, ref List<Texture> icons, ref List<string> tooltips)
+		void Problem_kerbals(List<ProtoCrewMember> crew, ref List<Texture2D> icons, ref List<string> tooltips)
 		{
 			UInt32 health_severity = 0;
 			UInt32 stress_severity = 0;
@@ -381,7 +381,7 @@ namespace KERBALISM
 			else if (stress_severity == 2) icons.Add(Icons.brain_red);
 		}
 
-		void Problem_radiation(Vessel_info info, ref List<Texture> icons, ref List<string> tooltips)
+		void Problem_radiation(Vessel_info info, ref List<Texture2D> icons, ref List<string> tooltips)
 		{
 			string radiation_str = Lib.BuildString(" (<i>", (info.radiation * 60.0 * 60.0).ToString("F3"), " rad/h)</i>");
 			if (info.radiation > 1.0 / 3600.0)
@@ -401,7 +401,7 @@ namespace KERBALISM
 			}
 		}
 
-		void Problem_poisoning(Vessel_info info, ref List<Texture> icons, ref List<string> tooltips)
+		void Problem_poisoning(Vessel_info info, ref List<Texture2D> icons, ref List<string> tooltips)
 		{
 			string poisoning_str = Lib.BuildString("CO2 level in internal atmosphere: <b>", Lib.HumanReadablePerc(info.poisoning), "</b>");
 			if (info.poisoning >= Settings.PoisoningThreshold)
@@ -416,7 +416,7 @@ namespace KERBALISM
 			}
 		}
 
-		void Problem_humidity(Vessel_info info, ref List<Texture> icons, ref List<string> tooltips)
+		void Problem_humidity(Vessel_info info, ref List<Texture2D> icons, ref List<string> tooltips)
 		{
 			string humidity_str = Lib.BuildString("Humidity level in internal atmosphere: <b>", Lib.HumanReadablePerc(info.humidity), "</b>");
 			if (info.humidity >= Settings.HumidityThreshold)
@@ -431,7 +431,7 @@ namespace KERBALISM
 			}
 		}
 
-		void Problem_storm(Vessel v, ref List<Texture> icons, ref List<string> tooltips)
+		void Problem_storm(Vessel v, ref List<Texture2D> icons, ref List<string> tooltips)
 		{
 			if (Storm.Incoming(v))
 			{
@@ -448,7 +448,7 @@ namespace KERBALISM
 		void Indicator_problems(Panel p, Vessel v, Vessel_info vi, List<ProtoCrewMember> crew)
 		{
 			// store problems icons & tooltips
-			List<Texture> problem_icons = new List<Texture>();
+			List<Texture2D> problem_icons = new List<Texture2D>();
 			List<string> problem_tooltips = new List<string>();
 
 			// detect problems
@@ -462,7 +462,7 @@ namespace KERBALISM
 
 			// choose problem icon
 			const UInt64 problem_icon_time = 3;
-			Texture problem_icon = Icons.empty;
+			Texture2D problem_icon = Icons.empty;
 			if (problem_icons.Count > 0)
 			{
 				UInt64 problem_index = ((UInt64)Time.realtimeSinceStartup / problem_icon_time) % (UInt64)(problem_icons.Count);
@@ -490,7 +490,7 @@ namespace KERBALISM
 			  "</color>"
 			);
 
-			Texture image = ec.level <= 0.005
+			Texture2D image = ec.level <= 0.005
 			  ? Icons.battery_red
 			  : ec.level <= low_threshold
 			  ? Icons.battery_yellow
@@ -528,7 +528,7 @@ namespace KERBALISM
 				}
 			}
 
-			Texture image = max_severity == 2
+			Texture2D image = max_severity == 2
 			  ? Icons.box_red
 			  : max_severity == 1
 			  ? Icons.box_yellow
@@ -540,7 +540,7 @@ namespace KERBALISM
 
 		void Indicator_reliability(Panel p, Vessel v, Vessel_info vi)
 		{
-			Texture image;
+			Texture2D image;
 			string tooltip;
 			if (!vi.malfunction)
 			{
@@ -583,7 +583,7 @@ namespace KERBALISM
 				  String.Format("{0,-14}\t<b>{1}</b>\n", "delay", conn.linked ? signal_str : "no connection"),
 				  String.Format("{0,-14}\t\t<b>{1}</b>", "rate", Lib.HumanReadableDataRate(vi.connection.rate))
 				);
-				Texture image_rt = Icons.signal_red;
+				Texture2D image_rt = Icons.signal_red;
 				if (RemoteTech.Connected(v.id)) image_rt = Icons.signal_white;
 				if (RemoteTech.Connected(v.id) && !RemoteTech.ConnectedToKSC(v.id)) image_rt = Icons.signal_yellow;
 				if (vi.blackout || RemoteTech.GetCommsBlackout(v.id))
@@ -618,7 +618,7 @@ namespace KERBALISM
 			  String.Format("{0,-14}\t<b>{1}</b>", "transmitting", comms_str)
 			);
 
-			Texture image = Icons.signal_red;
+			Texture2D image = Icons.signal_red;
 			switch (conn.status)
 			{
 				case LinkStatus.direct_link:
