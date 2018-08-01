@@ -601,12 +601,12 @@ namespace KERBALISM
 			switch (conn.status)
 			{
 				case LinkStatus.direct_link:
-					image = remotetech ? conn.strength > 15.0 ? Icons.signal_white : Icons.signal_yellow :      // 15 seconds for RemoteTech signal delay
+					image = remotetech ? conn.strength < 15.0 ? Icons.signal_white : Icons.signal_yellow :      // 15 seconds for RemoteTech signal delay
 						conn.strength > 0.05 ? Icons.signal_white : Icons.signal_yellow;                        // or 5% signal strength
 					break;
 
 				case LinkStatus.indirect_link:
-					image = remotetech ? conn.strength > 0.05 ? Icons.signal_white : Icons.signal_yellow :      // 15 seconds for RemoteTech signal delay
+					image = remotetech ? conn.strength < 15.0 ? Icons.signal_white : Icons.signal_yellow :      // 15 seconds for RemoteTech signal delay
 						conn.strength > 0.05 ? Icons.signal_white : Icons.signal_yellow;                        // or 5% signal strength
 					tooltip += Lib.Color("yellow", "\n" + Localizer.Format("#KERBALISM_UI_Signalrelayed"));
 					break;
