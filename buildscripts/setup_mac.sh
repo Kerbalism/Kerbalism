@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# This script will setup your KSP installation folder to work with the Kerbalism visual studio project.
+# This script will setup your KSP installation folder to work with the visual studio project.
 
 # Modify this variable to point to the installation directory of the KSP folder you want to use
 # for development. This is the default location if you used the installer.

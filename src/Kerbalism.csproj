@@ -122,6 +122,16 @@
         <HintPath Condition="Exists('.\Assembly-UnityScript-firstpass.dll')">.\Assembly-UnityScript-firstpass.dll</HintPath>
         <Private>False</Private>
       </Reference>
+      <Reference Include="UnityEngine">
+        <HintPath Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\UnityEngine.dll')">$(KSPDEVDIR)\KSP_x64_Data\Managed\UnityEngine.dll</HintPath>
+        <HintPath Condition="Exists('.\UnityEngine.dll')">.\UnityEngine.dll</HintPath>
+        <Private>False</Private>
+      </Reference>
+      <Reference Include="UnityEngine.UI">
+        <HintPath Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\UnityEngine.UI.dll')">$(KSPDEVDIR)\KSP_x64_Data\Managed\UnityEngine.UI.dll</HintPath>
+        <HintPath Condition="Exists('.\UnityEngine.UI.dll')">.\UnityEngine.UI.dll</HintPath>
+        <Private>False</Private>
+      </Reference>
     </ItemGroup>
     </When>  
     <Otherwise>  
@@ -146,6 +156,16 @@
         <HintPath Condition="Exists('.\Assembly-UnityScript-firstpass.dll')">.\Assembly-UnityScript-firstpass.dll</HintPath>
         <Private>False</Private>
       </Reference>
+      <Reference Include="UnityEngine">
+        <HintPath Condition="Exists('$(KSPBACKPORTDIR)\KSP_x64_Data\Managed\UnityEngine.dll')">$(KSPBACKPORTDIR)\KSP_x64_Data\Managed\UnityEngine.dll</HintPath>
+        <HintPath Condition="Exists('.\UnityEngine.dll')">.\UnityEngine.dll</HintPath>
+        <Private>False</Private>
+      </Reference>
+      <Reference Include="UnityEngine.UI">
+        <HintPath Condition="Exists('$(KSPBACKPORTDIR)\KSP_x64_Data\Managed\UnityEngine.UI.dll')">$(KSPBACKPORTDIR)\KSP_x64_Data\Managed\UnityEngine.UI.dll</HintPath>
+        <HintPath Condition="Exists('.\UnityEngine.UI.dll')">.\UnityEngine.UI.dll</HintPath>
+        <Private>False</Private>
+      </Reference>
     </ItemGroup>
     </Otherwise>  
   </Choose>
@@ -162,16 +182,6 @@
     </Reference>
     <Reference Include="System.Xml.Linq">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="UnityEngine">
-      <HintPath Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\UnityEngine.dll')">$(KSPDEVDIR)\KSP_x64_Data\Managed\UnityEngine.dll</HintPath>
-      <HintPath Condition="Exists('.\UnityEngine.dll')">.\UnityEngine.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="UnityEngine.UI">
-      <HintPath Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\UnityEngine.UI.dll')">$(KSPDEVDIR)\KSP_x64_Data\Managed\UnityEngine.UI.dll</HintPath>
-      <HintPath Condition="Exists('.\UnityEngine.UI.dll')">.\UnityEngine.UI.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
@@ -326,10 +336,6 @@
     $(PostBuildEventDependsOn);
     PostBuildMacros;
   </PostBuildEventDependsOn>
-    <PostBuildEvent Condition="'$(OS)' == 'Windows_NT'">if $(ConfigurationName)==Debug (call "$(ProjectDir)..\buildscripts\UnityDebug\prepare-debug.bat" $(TargetName))
-if $(ConfigurationName)==Release (call "$(ProjectDir)..\buildscripts\ZipPack\build-package.bat" $(TargetName) -v@(VersionNumber) KSP1.4.5)</PostBuildEvent>
-  </PropertyGroup>
-  <PropertyGroup>
     <PostBuildEvent Condition="'$(OS)' == 'Windows_NT'">if "$(ConfigurationName)"=="Debug" (call "$(ProjectDir)..\buildscripts\UnityDebug\prepare-debug.bat" $(TargetName))
 if "$(ConfigurationName)"=="Release" (call "$(ProjectDir)..\buildscripts\ZipPack\build-package.bat" $(TargetName) -v@(VersionNumber) KSP1.4.5)
 if "$(ConfigurationName)"=="Debug 1.3" (call "$(ProjectDir)..\buildscripts\UnityDebug\prepare-debug.bat" $(TargetName))
