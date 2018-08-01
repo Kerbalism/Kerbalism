@@ -7,7 +7,7 @@ Welcome to Kerbalism
 Hundreds of Kerbals were killed in the making of this mod.
 ----------------------------------------------------------
 
-|docs|
+|docs| |build|
 
 INTRODUCTION
 ------------
@@ -175,3 +175,8 @@ and also the means to start and stop the module in an automation script.
     :alt: Documentation Status
     :scale: 100%
     :target: https://kerbalism.readthedocs.io/en/latest/?badge=latest
+
+.. |build| image:: https://img.shields.io/travis-ci/com/steamp0rt/Kerbalism.svg?style=flat-square&branch=master)](https://travis-ci.org/steamp0rt/Kerbalism
+    :alt: Build Status
+    :scale: 100%
+    :target: https://travis-ci\.com/steamp0rt/Kerbalism
