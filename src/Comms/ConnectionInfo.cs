@@ -256,8 +256,18 @@ namespace KERBALISM
 									// get module prefab
 									PartModule pm = part_prefab.Modules.GetModule(index);
 
-									rate += (Lib.ReflectionValue<float>(pm, "RTPacketSize") / Lib.ReflectionValue<float>(pm, "RTPacketInterval"));
-									external_cost += pm.resHandler.inputResources.Find(r => r.name == "ElectricCharge").rate;
+									if (pm != null)
+									{
+										rate += (Lib.ReflectionValue<float>(pm, "RTPacketSize") / Lib.ReflectionValue<float>(pm, "RTPacketInterval"));
+										external_cost += pm.resHandler.inputResources.Find(r => r.name == "ElectricCharge").rate;
+									}
+									else
+									{
+										Lib.DebugLog(String.Format("ConnectionInfo: Could not find PartModule ModuleRTAntenna for part {0} on unloaded vessel {1}, using default values as a workaround",
+											p.partName,v.vesselName));
+										rate += 6.6666;             // 6.67 Mb/s
+										external_cost += 0.025;     // 25 W/s
+									}
 								}
 							}
 							index++;
