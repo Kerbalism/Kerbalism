@@ -29,7 +29,11 @@ namespace KERBALISM
 					GetPowerDown = API.GetMethod("GetPowerDownGuid");
 
 					// check version is above 1.8.12, warn users if they are using an old version of RemoteTech
+#if !KSP13
 					if (!((a.versionMajor >= 1) && (a.versionMinor >= 8) && (a.versionRevision >= 13)))
+#else
+					if (!((a.versionMajor >= 1) && (a.versionMinor >= 8)))
+#endif
 					{
 						Lib.Log("**WARNING** RemoteTech version is below v1.8.13 - Kerbalism's signal system will not operate correctly with the version" +
 							" of RemoteTech currently installed." + Environment.NewLine + "Please update your installation of RemoteTech to the latest version.");
