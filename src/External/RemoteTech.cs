@@ -3,8 +3,11 @@ using System.Reflection;
 
 namespace KERBALISM
 {
+
+	/// <summary> Contains methods for RemoteTech's API</summary>
 	public static class RemoteTech
 	{
+		// constructor
 		static RemoteTech()
 		{
 			foreach (var a in AssemblyLoader.loadedAssemblies)
@@ -13,85 +16,139 @@ namespace KERBALISM
 				{
 					API = a.assembly.GetType("RemoteTech.API.API");
 					IsEnabled = API.GetMethod("IsRemoteTechEnabled");
+					EnabledInSPC = API.GetMethod("EnableInSPC");
 					IsConnected = API.GetMethod("HasAnyConnection");
 					IsConnectedKSC = API.GetMethod("HasConnectionToKSC");
-					ShortestSignalDelay = API.GetMethod("GetShortestSignalDelay");
+					IsTargetKSC = API.GetMethod("HasDirectGroundStation");
+					NameTargetKSC = API.GetMethod("GetClosestDirectGroundStation");
+					NameFirstHopKSC = API.GetMethod("GetFirstHopToKSC");
+					SignalDelay = API.GetMethod("GetSignalDelayToKSC");
 					SetRadioBlackout = API.GetMethod("SetRadioBlackoutGuid");
 					GetRadioBlackout = API.GetMethod("GetRadioBlackoutGuid");
+					SetPowerDown = API.GetMethod("SetPowerDownGuid");
+					GetPowerDown = API.GetMethod("GetPowerDownGuid");
+
+					// check version is above 1.8.12, warn users if they are using an old version of RemoteTech
+					if (!((a.versionMajor >= 1) && (a.versionMinor >= 8) && (a.versionRevision >= 13)))
+					{
+						Lib.Log("**WARNING** RemoteTech version is below v1.8.13 - Kerbalism's signal system will not operate correctly with the version" +
+							" of RemoteTech currently installed." + Environment.NewLine + "Please update your installation of RemoteTech to the latest version.");
+					}
 					break;
 				}
 			}
 		}
 
-		// return true if RemoteTech is enabled for the current game
-		public static bool Enabled()
+		/// <summary> Returns true if RemoteTech is enabled for the current game</summary>
+		public static bool Enabled
 		{
-			return API != null && (bool)IsEnabled.Invoke(null, new Object[] { });
+			get { return API != null && (bool)IsEnabled.Invoke(null, new Object[] { }); }
 		}
 
+		/// <summary> Enables RTCore in the Space Center scene</summary>
+		public static void EnableInSPC()
+		{
+			if (API != null && EnabledInSPC != null)
+				EnabledInSPC.Invoke(null, new Object[] { true });
+		}
+
+		/// <summary> Returns true if the vessel has a connection back to KSC</summary>
 		public static bool ConnectedToKSC(Guid id)
 		{
 			return API != null && (bool)IsConnectedKSC.Invoke(null, new Object[] { id });
 		}
-		// return true if the vessel is connected according to RemoteTech
+
+		/// <summary> Returns true if the vessel directly targets KSC</summary>
+		public static bool TargetsKSC(Guid id)
+		{
+			return API != null && (bool)IsTargetKSC.Invoke(null, new Object[] { id });
+		}
+
+		/// <summary> Returns the name of the ground station directly targeted with the shortest link if any found by the vessel</summary>
+		public static string NameTargetsKSC(Guid id)
+		{
+			if (API != null && NameTargetKSC != null)
+				return (string)NameTargetKSC.Invoke(null, new Object[] { id });
+			return null;
+		}
+
+		/// <summary> Returns the name of the first hop vessel with the shortest link to KSC by the vessel</summary>
+		public static string NameFirstHopToKSC(Guid id)
+		{
+			if (API != null && NameFirstHopKSC != null)
+				return (string)NameFirstHopKSC.Invoke(null, new Object[] { id });
+			return null;
+		}
+
+		/// <summary> Returns true if the vessel has any connection</summary>
 		public static bool Connected(Guid id)
 		{
 			return API != null && (bool)IsConnected.Invoke(null, new Object[] { id });
 		}
 
-		public static double GetShortestSignalDelay(Guid id)
+		/// <summary> Returns the signal delay of the shortest route to the KSC if any found</summary>
+		public static double GetSignalDelay(Guid id)
 		{
-			return (API != null ? (double)ShortestSignalDelay.Invoke(null, new Object[] { id }) : 0);
+			return (API != null ? (double)SignalDelay.Invoke(null, new Object[] { id }) : 0);
 		}
 
-		public static Object SetCommsBlackout(Guid id, bool flag, string origin)
+		/// <summary> Sets the comms Blackout state for the vessel</summary>
+		public static void SetCommsBlackout(Guid id, bool flag)
 		{
 			if (API != null && SetRadioBlackout != null)
-				return SetRadioBlackout.Invoke(null, new Object[] { id, flag, origin });
-			return null;
+				SetRadioBlackout.Invoke(null, new Object[] { id, flag, "Kerbalism" });
 		}
 
+		/// <summary> Gets the comms Blackout state of the vessel</summary>
 		public static bool GetCommsBlackout(Guid id)
 		{
 			return API != null && GetRadioBlackout != null && (bool)GetRadioBlackout.Invoke(null, new Object[] { id });
 		}
 
-		public static void Update(Vessel v, Vessel_info vi, VesselData vd, double elapsed_s)
+		/// <summary> Sets the Powered down state for the vessel</summary>
+		public static void SetPoweredDown(Guid id, bool flag)
 		{
-			if (!Enabled())
-				return;
-
-			bool blackout = vi.blackout || !vi.powered;
-			SetCommsBlackout(v.id, blackout, "kerbalism");
+			if (API != null && SetPowerDown != null)
+				SetPowerDown.Invoke(null, new Object[] { id, flag, "Kerbalism" });
+			else SetCommsBlackout(id, flag);  // Workaround for earlier versions of RT
 		}
 
-		public static bool IsActive(ProtoPartModuleSnapshot antenna)
+		/// <summary> Gets the Powered down state of the vessel</summary>
+		public static bool IsPoweredDown(Guid id)
 		{
-			return Lib.Proto.GetBool(antenna, "IsRTActive");
+			return API != null && GetPowerDown != null && (bool)GetPowerDown.Invoke(null, new Object[] { id });
 		}
 
+		/// <summary> Sets the Broken state for the vessel</summary>
 		public static void SetBroken(PartModule antenna, bool broken)
 		{
 			Lib.ReflectionValue(antenna, "IsRTBroken", broken);
 		}
 
+		/// <summary> Returns true if the PartModule is a RemoteTech Antenna</summary>
 		public static bool IsAntenna(PartModule m)
 		{
 			// we test for moduleName, but could use the boolean IsRTAntenna here
-			return IsAntenna(m.moduleName);
+			return (m.moduleName == "ModuleRTAntenna" || m.moduleName == "ModuleRTAntennaPassive");
 		}
 
-		public static bool IsAntenna(String moduleName) {
-			return moduleName == "ModuleRTAntenna" || moduleName == "ModuleRTAntennaPassive";
-		}
+		public static bool NetworkInitialized = false;
 
-		static Type API;
-		static MethodInfo IsEnabled;
-		static MethodInfo IsConnected;
-		static MethodInfo IsConnectedKSC;
-		static MethodInfo ShortestSignalDelay;
-		static MethodInfo SetRadioBlackout;
-		static MethodInfo GetRadioBlackout;
+		private static Type API;
+		private static MethodInfo IsEnabled;
+		private static MethodInfo EnabledInSPC;
+		private static MethodInfo IsConnected;
+		private static MethodInfo IsConnectedKSC;
+		private static MethodInfo IsTargetKSC;
+		private static MethodInfo NameTargetKSC;
+		private static MethodInfo NameFirstHopKSC;
+		private static MethodInfo SignalDelay;
+		private static MethodInfo SetRadioBlackout;
+		private static MethodInfo GetRadioBlackout;
+		private static MethodInfo SetPowerDown;
+		private static MethodInfo GetPowerDown;
 	}
+
+
 } // KERBALISM
 

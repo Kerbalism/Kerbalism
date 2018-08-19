@@ -8,6 +8,22 @@ namespace KERBALISM
 {
 
 
+	/// <summary> Main class, instantiated during Main menu scene.</summary>
+	[KSPAddon(KSPAddon.Startup.MainMenu, false)]
+	public class KerbalismMain: MonoBehaviour
+	{
+		public void Start()
+		{
+			RemoteTech.EnableInSPC();		// allow RemoteTech Core to run in the Space Center
+
+			// Set the loaded trigger to false, this we will load a new
+			// settings after selecting a save game. This is necessary
+			// for switching between saves without shutting down the KSP
+			// instance.
+			//Settings.Instance.SettingsLoaded = false;
+		}
+	}
+
 	[KSPScenario(ScenarioCreationOptions.AddToAllGames, new[] { GameScenes.SPACECENTER, GameScenes.TRACKSTATION, GameScenes.FLIGHT, GameScenes.EDITOR })]
 	public sealed class Kerbalism: ScenarioModule
 	{
@@ -20,6 +36,7 @@ namespace KERBALISM
 			// enable global access
 			Fetch = this;
 			Communications.NetworkInitialized = false;
+			RemoteTech.NetworkInitialized = false;
 		}
 
 		private void OnDestroy()
@@ -157,16 +174,16 @@ namespace KERBALISM
 				// if loaded
 				if (v.loaded)
 				{
+					// get most used resource
+					Resource_info ec = resources.Info(v, "ElectricCharge");
+
 					// show belt warnings
 					Radiation.BeltWarnings(v, vi, vd);
 
 					// update storm data
 					Storm.Update(v, vi, vd, elapsed_s);
 
-					//handle RemoteTech stuff
-					RemoteTech.Update(v, vi, vd, elapsed_s);
-
-					Communications.Update(v, vi, vd, resources, elapsed_s);
+					Communications.Update(v, vi, vd, ec, elapsed_s);
 
 					// consume ec for transmission, and transmit science data
 					Science.Update(v, vi, vd, resources, elapsed_s);
@@ -213,16 +230,16 @@ namespace KERBALISM
 			// if the oldest unloaded vessel was selected
 			if (last_v != null)
 			{
+				// get most used resource
+				Resource_info last_ec = last_resources.Info(last_v, "ElectricCharge");
+
 				// show belt warnings
 				Radiation.BeltWarnings(last_v, last_vi, last_vd);
 
 				// update storm data
 				Storm.Update(last_v, last_vi, last_vd, last_time);
 
-				//handle RemoteTech stuff
-				RemoteTech.Update(last_v, last_vi, last_vd, last_time);
-
-				Communications.Update(last_v, last_vi, last_vd, last_resources, last_time);
+				Communications.Update(last_v, last_vi, last_vd, last_ec, last_time);
 
 				// consume ec for transmission, and transmit science
 				Science.Update(last_v, last_vi, last_vd, last_resources, last_time);
@@ -256,6 +273,12 @@ namespace KERBALISM
 
 		void Update()
 		{
+			if (!RemoteTech.NetworkInitialized)
+			{
+				RemoteTech.NetworkInitialized = true;
+				if (RemoteTech.Enabled) StartCoroutine(callbacks.NetworkInitialized());
+			}
+
 			// attach map renderer to planetarium camera once
 			if (MapView.MapIsEnabled && map_camera_script == null)
 				map_camera_script = PlanetariumCamera.Camera.gameObject.AddComponent<MapCameraScript>();

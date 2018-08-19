@@ -9,23 +9,18 @@ namespace KERBALISM
 
 	public static class Communications
 	{
-		// default transmission rate, strength and cost
-		private const double rate = 0.0625;            // 64 KB/s
-		private const double strength = 1.0;           // 100 %
-		private const double internal_cost = 0.012;    // 12 W/s
-		private const double science_cost = 0.05;      // 50 W/s
+		public static bool NetworkInitialized = false;	// True if CommNet is initialized
 
-		public static bool NetworkInitialized = false;
-
-		public static void Update(Vessel v, Vessel_info vi, VesselData vd, Vessel_resources resources, double elapsed_s)
+		public static void Update(Vessel v, Vessel_info vi, VesselData vd, Resource_info ec, double elapsed_s)
 		{
 			// consume ec for internal transmitters (control and telemetry)
-			Resource_info ec = resources.Info(v, "ElectricCharge");
 			ec.Consume(vi.connection.internal_cost * elapsed_s);
 
-			// do nothing if signal mechanic is disabled or CommNet is not ready
-			if (!(HighLogic.fetch.currentGame.Parameters.Difficulty.EnableCommNet && NetworkInitialized) && !RemoteTech.Enabled())
-				return;
+			// consume ec for external transmitters (don't consume for RemoteTech when loaded)
+			if (!(RemoteTech.Enabled && v.loaded)) ec.Consume(vi.connection.external_cost * elapsed_s);
+
+			// do nothing if network is not ready
+			if (!NetworkInitialized) return;
 
 			// maintain and send messages
 			// - do not send messages during/after solar storms
@@ -37,25 +32,32 @@ namespace KERBALISM
 					vd.msg_signal = true;
 					if (vd.cfg_signal)
 					{
-						string subtext = "Data transmission disabled";
+						string subtext = Localizer.Format("#KERBALISM_UI_transmissiondisabled");
 
-						if (vi.connection.status != LinkStatus.blackout)
+						switch (vi.connection.status)
 						{
-							if (vi.crew_count == 0)
-							{
-								switch (Settings.UnlinkedControl)
+
+							case LinkStatus.plasma:
+								subtext = Localizer.Format("#KERBALISM_UI_Plasmablackout");
+								break;
+							case LinkStatus.storm:
+								subtext = Localizer.Format("#KERBALISM_UI_Stormblackout");
+								break;
+							default:
+								if (vi.crew_count == 0)
 								{
-									case UnlinkedCtrl.none:
-										subtext = Localizer.Format("#KERBALISM_UI_noctrl");
-										break;
-									case UnlinkedCtrl.limited:
-										subtext = Localizer.Format("#KERBALISM_UI_limitedcontrol");
-										break;
+									switch (Settings.UnlinkedControl)
+									{
+										case UnlinkedCtrl.none:
+											subtext = Localizer.Format("#KERBALISM_UI_noctrl");
+											break;
+										case UnlinkedCtrl.limited:
+											subtext = Localizer.Format("#KERBALISM_UI_limitedcontrol");
+											break;
+									}
 								}
-							}
+								break;
 						}
-						else
-							subtext = "Plasma blackout";
 
 						Message.Post(Severity.warning, Lib.BuildString(Localizer.Format("#KERBALISM_UI_signallost"), " <b>", v.vesselName, "</b>"), subtext);
 					}
@@ -71,20 +73,6 @@ namespace KERBALISM
 					}
 				}
 			}
-		}
-
-		public static ConnectionInfo Connection(Vessel v)
-		{
-			// if RemoteTech is present and enabled
-			if (RemoteTech.Enabled())
-			{
-				if (RemoteTech.Connected(v.id) && !RemoteTech.ConnectedToKSC(v.id))
-					return new ConnectionInfo(LinkStatus.indirect_link, rate, strength, internal_cost, science_cost, "DSN");
-				else if (RemoteTech.ConnectedToKSC(v.id))
-					return new ConnectionInfo(LinkStatus.direct_link, rate, strength, internal_cost, science_cost, "DSN: KSC");
-				return new ConnectionInfo();
-			}
-			return new ConnectionInfo(v);
 		}
 	}
 

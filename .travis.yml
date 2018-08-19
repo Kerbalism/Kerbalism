@@ -24,6 +24,7 @@ after_success:
   - bash "$TRAVIS_BUILD_DIR/buildscripts/Travis/avc_version.sh" $KSPVER "$TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism.version"
   - export KSP_VERSION=$(echo $KSPVER | grep -Po '(1\.\d)')
   - /bin/cp -rf $TRAVIS_BUILD_DIR/src/obj/Release/Kerbalism.dll $TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism.dll
+  - echo "Injecting Shaders for KSP $KSPVER."
   - rm -rf "$TRAVIS_BUILD_DIR/GameData/Kerbalism/Shaders"
   - /bin/cp -rf "$TRAVIS_BUILD_DIR/buildscripts/Shaders/$KSP_VERSION" "$TRAVIS_BUILD_DIR/GameData/Kerbalism/Shaders"
   - 7za a "$TRAVIS_BUILD_DIR/Kerbalism-$MOD_VERSION-$KSPVER-BUILD$TRAVIS_BUILD_NUMBER.zip" "$TRAVIS_BUILD_DIR/GameData"

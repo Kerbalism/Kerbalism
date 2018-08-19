@@ -474,7 +474,7 @@ namespace KERBALISM
 					break;
 			}
 
-			if (RemoteTech.Enabled())
+			if (RemoteTech.Enabled)
 			{
 				foreach (PartModule m in part.FindModulesImplementing<PartModule>())
 				{

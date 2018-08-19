@@ -132,7 +132,7 @@ namespace KERBALISM
 			// if this is a sample and we are trying to send it, warn the user and do nothing else
 			if (meta.is_sample && send)
 			{
-				Message.Post("We can't transmit a sample", "Need to be recovered, or analyzed in a lab");
+				Message.Post("We can't transmit a sample", "It needs to be recovered, or analyzed in a lab");
 				return;
 			}
 

@@ -36,7 +36,6 @@ namespace KERBALISM
 			CryoTank,
 			Unknown,
 			FNGenerator,
-			RemoteTech
 		}
 
 		static Module_type ModuleType(string module_name)
@@ -71,8 +70,6 @@ namespace KERBALISM
 				case "ModuleRadioisotopeGenerator": return Module_type.RadioisotopeGenerator;
 				case "ModuleCryoTank": return Module_type.CryoTank;
 				case "FNGenerator": return Module_type.FNGenerator;
-				case "ModuleRTAntenna":
-				case "ModuleRTAntennaPassive": return Module_type.RemoteTech;
 			}
 			return Module_type.Unknown;
 		}
@@ -139,7 +136,6 @@ namespace KERBALISM
 						case Module_type.RadioisotopeGenerator: ProcessRadioisotopeGenerator(v, p, m, module_prefab, ec, elapsed_s); break;
 						case Module_type.CryoTank: ProcessCryoTank(v, p, m, module_prefab, resources, ec, elapsed_s); break;
 						case Module_type.FNGenerator: ProcessFNGenerator(v, p, m, module_prefab, ec, elapsed_s); break;
-						case Module_type.RemoteTech: ProcessRTModule(v, p, m, module_prefab, part_prefab, vd, ec, elapsed_s); break;
 					}
 				}
 			}
@@ -450,21 +446,6 @@ namespace KERBALISM
 			if (light.useResources && Lib.Proto.GetBool(m, "isOn"))
 			{
 				ec.Consume(light.resourceAmount * elapsed_s);
-			}
-		}
-
-		static void ProcessRTModule(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule module, Part part_prefab, VesselData vd, Resource_info ec, double elapsed_s)
-		{
-			// only active antennas consume power
-			if (RemoteTech.IsActive(m))
-			{
-				foreach (ModuleResource resource in module.resHandler.inputResources)
-				{
-					if (resource.name == "ElectricCharge" && resource.rate > double.Epsilon)
-					{
-						ec.Consume(resource.rate * elapsed_s);
-					}
-				}
 			}
 		}
 

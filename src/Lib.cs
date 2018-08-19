@@ -394,6 +394,13 @@ namespace KERBALISM
 		}
 
 
+		// return string in italic
+		public static string Italic(string s)
+		{
+			return ("<i>" + s + "</i>");
+		}
+
+
 		// add spaces on caps
 		public static string SpacesOnCaps(string s)
 		{
