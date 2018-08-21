@@ -5,6 +5,12 @@ VisualStudioVersion = 15.0.27130.2036
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kerbalism", "src\Kerbalism.csproj", "{7CF587A9-6E49-46E8-AB3F-87B80A6276DA}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{6AEED929-B0AF-4EB1-82A0-84B98C5BA185}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+		GameData\Kerbalism\Kerbalism.version = GameData\Kerbalism\Kerbalism.version
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug 1.3|Any CPU = Debug 1.3|Any CPU
