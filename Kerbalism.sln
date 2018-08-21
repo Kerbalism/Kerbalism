@@ -8,6 +8,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{6AEED929-B0AF-4EB1-82A0-84B98C5BA185}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
+		.travis.yml = .travis.yml
+		CHANGELOG.md = CHANGELOG.md
 		GameData\Kerbalism\Kerbalism.version = GameData\Kerbalism\Kerbalism.version
 	EndProjectSection
 EndProject
