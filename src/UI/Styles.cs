@@ -1,5 +1,4 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
 
 
 namespace KERBALISM
@@ -125,7 +124,9 @@ namespace KERBALISM
 			right_icon = new GUIStyle
 			{
 				alignment = TextAnchor.MiddleRight,
-				fixedWidth = ScaleFloat(16.0f)
+				fixedWidth = ScaleFloat(16.0f),
+				stretchWidth = true,
+				stretchHeight = true
 			};
 			right_icon.margin.left = ScaleInteger(8);
 
@@ -162,7 +163,7 @@ namespace KERBALISM
 
 		public static int ScaleInteger(int val)
 		{
-			return (int) (val * Settings.UIScale * GameSettings.UI_SCALE * GameSettings.UI_SCALE_APPS);
+			return (int)(val * Settings.UIScale * GameSettings.UI_SCALE * GameSettings.UI_SCALE_APPS);
 		}
 
 		public static float ScaleFloat(float val)
@@ -183,24 +184,11 @@ namespace KERBALISM
 
 		public static Texture2D GetUIScaledTexture(string name)
 		{
-			Texture2D unscaled = Lib.GetTexture(name);
+			Texture2D texture = Lib.GetTexture(name);
 
-			// Scale the texture to the desired size
-			// TODO: Use high-resolution textures as starting point
-			unscaled.filterMode = FilterMode.Bilinear;
-			int newWidth = ScaleInteger(unscaled.width);
-			int newHeight = ScaleInteger(unscaled.height);
-			RenderTexture renderTexture = RenderTexture.GetTemporary(newWidth, newHeight);
-			renderTexture.filterMode = FilterMode.Bilinear;
-			RenderTexture.active = renderTexture;
-			Graphics.Blit(unscaled, renderTexture);
-			Texture2D scaled = new Texture2D(newWidth, newHeight);
-			scaled.ReadPixels(new Rect(0, 0, newWidth, newHeight), 0,0);
-			scaled.Apply();
-			RenderTexture.active = null;
-			// necessary because there is no garbage collection for render textures
-			RenderTexture.ReleaseTemporary(renderTexture);
-			return scaled;
+			Lib.ScaleTexture(texture, ScaleInteger(texture.width), ScaleInteger(texture.height));
+
+			return texture;
 		}
 
 		// styles
