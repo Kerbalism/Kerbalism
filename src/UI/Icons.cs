@@ -3,72 +3,143 @@
 namespace KERBALISM
 {
 
-	public static class Icons
+	///<summary> Kerbalism's Icons </summary>
+	internal static class Icons
 	{
-		public static readonly string TexturePath = KSPUtil.ApplicationRootPath + "GameData/Kerbalism/Textures/";
+		///<summary> Path to Kerbalism's textures </summary>
+		internal static string TexturePath;
 
-		public static Texture2D empty             = Styles.GetUIScaledTexture("empty");                      // an empty icon to maintain alignment
-		public static Texture2D close             = Styles.GetUIScaledTexture("close");                      // black close icon
-		public static Texture2D left_arrow        = Styles.GetUIScaledTexture("left-arrow");                 // white left arrow
-		public static Texture2D right_arrow       = Styles.GetUIScaledTexture("right-arrow");                // white right arrow
-		public static Texture2D toggle_green      = Styles.GetUIScaledTexture("toggle-green");               // green check mark
-		public static Texture2D toggle_red        = Styles.GetUIScaledTexture("toggle-red");                 // red check mark
+		internal static Texture2D empty;
+		internal static Texture2D close;
+		internal static Texture2D left_arrow;
+		internal static Texture2D right_arrow;
+		internal static Texture2D toggle_green;
+		internal static Texture2D toggle_red;
 
-		public static Texture2D send_black        = Styles.GetUIScaledTexture("send-black");                 // used by file man
-		public static Texture2D send_cyan         = Styles.GetUIScaledTexture("send-cyan");                  // .
-		public static Texture2D lab_black         = Styles.GetUIScaledTexture("lab-black");                  // .
-		public static Texture2D lab_cyan          = Styles.GetUIScaledTexture("lab-cyan");                   // .
+		internal static Texture2D send_black;
+		internal static Texture2D send_cyan;
+		internal static Texture2D lab_black;
+		internal static Texture2D lab_cyan;
 
-		public static Texture2D applauncher       = Styles.GetUIScaledTexture("applauncher");
+		internal static Texture2D applauncher;
 
-		public static Texture2D small_info        = Styles.GetUIScaledTexture("small-info");
-		public static Texture2D small_folder      = Styles.GetUIScaledTexture("small-folder");
-		public static Texture2D small_console     = Styles.GetUIScaledTexture("small-console");
-		public static Texture2D small_config      = Styles.GetUIScaledTexture("small-config");
-		public static Texture2D small_search      = Styles.GetUIScaledTexture("small-search");
-		public static Texture2D small_notes       = Styles.GetUIScaledTexture("small-notes");
+		internal static Texture2D small_info;
+		internal static Texture2D small_folder;
+		internal static Texture2D small_console;
+		internal static Texture2D small_config;
+		internal static Texture2D small_search;
+		internal static Texture2D small_notes;
 
-		public static Texture2D category_normal   = Styles.GetUIScaledTexture("category-normal");
-		public static Texture2D category_selected = Styles.GetUIScaledTexture("category-selected");
+		internal static Texture2D category_normal;
+		internal static Texture2D category_selected;
 
-		public static Texture2D sun_black         = Styles.GetUIScaledTexture("sun-black");
-		public static Texture2D sun_white         = Styles.GetUIScaledTexture("sun-white");
+		internal static Texture2D sun_black;
+		internal static Texture2D sun_white;
 
-		public static Texture2D battery_white     = Styles.GetUIScaledTexture("battery-white");
-		public static Texture2D battery_yellow    = Styles.GetUIScaledTexture("battery-yellow");
-		public static Texture2D battery_red       = Styles.GetUIScaledTexture("battery-red");
+		internal static Texture2D battery_white;
+		internal static Texture2D battery_yellow;
+		internal static Texture2D battery_red;
 
-		public static Texture2D box_white         = Styles.GetUIScaledTexture("box-white");
-		public static Texture2D box_yellow        = Styles.GetUIScaledTexture("box-yellow");
-		public static Texture2D box_red           = Styles.GetUIScaledTexture("box-red");
+		internal static Texture2D box_white;
+		internal static Texture2D box_yellow;
+		internal static Texture2D box_red;
 
-		public static Texture2D wrench_white      = Styles.GetUIScaledTexture("wrench-white");
-		public static Texture2D wrench_yellow     = Styles.GetUIScaledTexture("wrench-yellow");
-		public static Texture2D wrench_red        = Styles.GetUIScaledTexture("wrench-red");
+		internal static Texture2D wrench_white;
+		internal static Texture2D wrench_yellow;
+		internal static Texture2D wrench_red;
 
-		public static Texture2D signal_white      = Styles.GetUIScaledTexture("signal-white");
-		public static Texture2D signal_yellow     = Styles.GetUIScaledTexture("signal-yellow");
-		public static Texture2D signal_red        = Styles.GetUIScaledTexture("signal-red");
+		internal static Texture2D signal_white;
+		internal static Texture2D signal_yellow;
+		internal static Texture2D signal_red;
 
-		public static Texture2D recycle_yellow    = Styles.GetUIScaledTexture("recycle-yellow");
-		public static Texture2D recycle_red       = Styles.GetUIScaledTexture("recycle-red");
+		internal static Texture2D recycle_yellow;
+		internal static Texture2D recycle_red;
 
-		public static Texture2D radiation_yellow  = Styles.GetUIScaledTexture("radiation-yellow");
-		public static Texture2D radiation_red     = Styles.GetUIScaledTexture("radiation-red");
+		internal static Texture2D radiation_yellow;
+		internal static Texture2D radiation_red;
 
-		public static Texture2D health_white      = Styles.GetUIScaledTexture("health-white");
-		public static Texture2D health_yellow     = Styles.GetUIScaledTexture("health-yellow");
-		public static Texture2D health_red        = Styles.GetUIScaledTexture("health-red");
+		internal static Texture2D health_white;
+		internal static Texture2D health_yellow;
+		internal static Texture2D health_red;
 
-		public static Texture2D brain_white       = Styles.GetUIScaledTexture("brain-white");
-		public static Texture2D brain_yellow      = Styles.GetUIScaledTexture("brain-yellow");
-		public static Texture2D brain_red         = Styles.GetUIScaledTexture("brain-red");
+		internal static Texture2D brain_white;
+		internal static Texture2D brain_yellow;
+		internal static Texture2D brain_red;
 
-		public static Texture2D storm_yellow      = Styles.GetUIScaledTexture("storm-yellow");
-		public static Texture2D storm_red         = Styles.GetUIScaledTexture("storm-red");
+		internal static Texture2D storm_yellow;
+		internal static Texture2D storm_red;
 
-		public static Texture2D plant_white       = Styles.GetUIScaledTexture("plant-white");
-		public static Texture2D plant_yellow      = Styles.GetUIScaledTexture("plant-yellow");
+		internal static Texture2D plant_white;
+		internal static Texture2D plant_yellow;
+
+		///<summary> Initializes the icons </summary>
+		internal static void Initialize()
+		{
+			TexturePath = KSPUtil.ApplicationRootPath + "GameData/Kerbalism/Textures/";
+
+			empty = Styles.GetUIScaledTexture("empty");                      // an empty icon to maintain alignment
+			close = Styles.GetUIScaledTexture("close");                      // black close icon
+			left_arrow = Styles.GetUIScaledTexture("left-arrow");            // white left arrow
+			right_arrow = Styles.GetUIScaledTexture("right-arrow");          // white right arrow
+			toggle_green = Styles.GetUIScaledTexture("toggle-green");        // green check mark
+			toggle_red = Styles.GetUIScaledTexture("toggle-red");            // red check mark
+
+			send_black = Styles.GetUIScaledTexture("send-black");            // used by file man
+			send_cyan = Styles.GetUIScaledTexture("send-cyan");
+			lab_black = Styles.GetUIScaledTexture("lab-black");
+			lab_cyan = Styles.GetUIScaledTexture("lab-cyan");
+
+			applauncher = Lib.GetTexture("applauncher", 32, 32);
+
+			small_info = Styles.GetUIScaledTexture("small-info");
+			small_folder = Styles.GetUIScaledTexture("small-folder");
+			small_console = Styles.GetUIScaledTexture("small-console");
+			small_config = Styles.GetUIScaledTexture("small-config");
+			small_search = Styles.GetUIScaledTexture("small-search");
+			small_notes = Styles.GetUIScaledTexture("small-notes");
+
+			category_normal = Styles.GetUIScaledTexture("category-normal");
+			category_selected = Styles.GetUIScaledTexture("category-selected");
+
+			sun_black = Styles.GetUIScaledTexture("sun-black");
+			sun_white = Styles.GetUIScaledTexture("sun-white");
+
+			battery_white = Styles.GetUIScaledTexture("battery-white");
+			battery_yellow = Styles.GetUIScaledTexture("battery-yellow");
+			battery_red = Styles.GetUIScaledTexture("battery-red");
+
+			box_white = Styles.GetUIScaledTexture("box-white");
+			box_yellow = Styles.GetUIScaledTexture("box-yellow");
+			box_red = Styles.GetUIScaledTexture("box-red");
+
+			wrench_white = Styles.GetUIScaledTexture("wrench-white");
+			wrench_yellow = Styles.GetUIScaledTexture("wrench-yellow");
+			wrench_red = Styles.GetUIScaledTexture("wrench-red");
+
+			signal_white = Styles.GetUIScaledTexture("signal-white");
+			signal_yellow = Styles.GetUIScaledTexture("signal-yellow");
+			signal_red = Styles.GetUIScaledTexture("signal-red");
+
+			recycle_yellow = Styles.GetUIScaledTexture("recycle-yellow");
+			recycle_red = Styles.GetUIScaledTexture("recycle-red");
+
+			radiation_yellow = Styles.GetUIScaledTexture("radiation-yellow");
+			radiation_red = Styles.GetUIScaledTexture("radiation-red");
+
+			health_white = Styles.GetUIScaledTexture("health-white");
+			health_yellow = Styles.GetUIScaledTexture("health-yellow");
+			health_red = Styles.GetUIScaledTexture("health-red");
+
+			brain_white = Styles.GetUIScaledTexture("brain-white");
+			brain_yellow = Styles.GetUIScaledTexture("brain-yellow");
+			brain_red = Styles.GetUIScaledTexture("brain-red");
+
+			storm_yellow = Styles.GetUIScaledTexture("storm-yellow");
+			storm_red = Styles.GetUIScaledTexture("storm-red");
+
+			plant_white = Styles.GetUIScaledTexture("plant-white");
+			plant_yellow = Styles.GetUIScaledTexture("plant-yellow");
+		}
 	}
 
 } // KERBALISM

@@ -5,7 +5,7 @@
 
  * Kerbalism documents are now available here: https://kerbalism.readthedocs.io Note they are still a Work in Progress
 
- * Fixed the icons sometimes not displaying bug (PiezPiedPy) 
+ * Fixed the icons sometimes not displaying bug and icon scaling bug (PiezPiedPy) 
  * RemoteTech support now integrates correctly with the planner and signal system (PiezPiedPy)
  * Improved RemoteTech support (simulate in planner buttons, reliability, antenna EC consumption) (Gordon Dry & PiezPiedPy)
  * RemoteTech antennas will need power even if vessel is unloaded (Sir Mortimer)

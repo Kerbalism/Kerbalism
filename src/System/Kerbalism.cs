@@ -14,6 +14,7 @@ namespace KERBALISM
 	{
 		public void Start()
 		{
+			Icons.Initialize();				// set up the icon textures
 			RemoteTech.EnableInSPC();		// allow RemoteTech Core to run in the Space Center
 
 			// Set the loaded trigger to false, this we will load a new
