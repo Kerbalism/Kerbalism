@@ -51,7 +51,7 @@ namespace KERBALISM
 			headers.Add(h);
 		}
 
-		public void AddSection(string title, string desc = "", Action left = null, Action right = null)
+		public void AddSection(string title, string desc = "", Action left = null, Action right = null, Boolean sort = false)
 		{
 			Section p = new Section
 			{
@@ -59,6 +59,8 @@ namespace KERBALISM
 				desc = desc,
 				left = left,
 				right = right,
+				sort = sort,
+				needsSort = false,
 				entries = new List<Entry>()
 			};
 			sections.Add(p);
@@ -75,7 +77,11 @@ namespace KERBALISM
 				hover = hover,
 				icons = new List<Icon>()
 			};
-			if (sections.Count > 0) sections[sections.Count - 1].entries.Add(e);
+			if (sections.Count > 0) {
+				Section section = sections[sections.Count - 1];
+				section.entries.Add(e);
+				section.needsSort = section.sort;
+			}
 		}
 
 		public void AddIcon(Texture2D texture, string tooltip = "", Action click = null)
@@ -143,6 +149,10 @@ namespace KERBALISM
 				}
 
 				// entries
+				if(p.needsSort) {
+					p.needsSort = false;
+					p.entries.Sort((a, b) => string.Compare(a.label, b.label, StringComparison.Ordinal));
+				}
 				foreach (Entry e in p.entries)
 				{
 					GUILayout.BeginHorizontal(Styles.entry_container);
@@ -263,6 +273,8 @@ namespace KERBALISM
 			public string desc;
 			public Action left;
 			public Action right;
+			public Boolean sort;
+			public Boolean needsSort;
 			public List<Entry> entries;
 		}
 

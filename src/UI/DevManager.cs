@@ -43,7 +43,8 @@ namespace KERBALISM
 				  Localizer.Format("#KERBALISM_UI_devices"),
 				  Description(),
 				  () => p.Prev(ref script_index, (int)ScriptType.last),
-				  () => p.Next(ref script_index, (int)ScriptType.last)
+				  () => p.Next(ref script_index, (int)ScriptType.last),
+					 true
 				);
 
 				// for each device
@@ -68,7 +69,8 @@ namespace KERBALISM
 				  script_name,
 				  Description(),
 				  () => p.Prev(ref script_index, (int)ScriptType.last),
-				  () => p.Next(ref script_index, (int)ScriptType.last)
+				  () => p.Next(ref script_index, (int)ScriptType.last),
+					 true
 				);
 
 				// for each device
