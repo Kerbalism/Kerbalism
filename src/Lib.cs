@@ -1382,23 +1382,57 @@ namespace KERBALISM
 
 		// --- ASSETS ---------------------------------------------------------------
 
-		// return path of directory containing the DLL
+		///<summary> Returns the path of the directory containing the DLL </summary>
 		public static string Directory()
 		{
 			string dll_path = Assembly.GetExecutingAssembly().Location;
 			return dll_path.Substring(0, dll_path.LastIndexOf(Path.DirectorySeparatorChar));
 		}
 
-		// get a texture
-		public static Texture2D GetTexture(string name)
+		///<summary> Loads a .png texture from the folder defined in <see cref="Icons.TexturePath"/> </summary>
+		public static Texture2D GetTexture(string name, int width = 16, int height = 16)
 		{
-			Texture2D texture = new Texture2D(36, 36);
+			Texture2D texture = new Texture2D(width, height, TextureFormat.ARGB32, false);
 			texture.LoadImage(System.IO.File.ReadAllBytes(Icons.TexturePath + name + ".png"));
 			return texture;
 		}
 
-		// get a material with the shader specified
-		static Dictionary<string, Material> shaders;
+		///<summary> Returns a scaled copy of the source texture </summary>
+		public static Texture2D ScaledTexture(Texture2D src, int width, int height, FilterMode mode = FilterMode.Trilinear)
+		{
+			ScaleWithGPU(src, width, height, mode);
+
+			Texture2D texture = new Texture2D(width, height, TextureFormat.ARGB32, false);
+			texture.Resize(width, height);
+			texture.ReadPixels(new Rect(0, 0, width, height), 0, 0, true);
+			return texture;
+		}
+
+		///<summary> Scales the texture data of the source texture </summary>
+		public static void ScaleTexture(Texture2D texture, int width, int height, FilterMode mode = FilterMode.Trilinear)
+		{
+			ScaleWithGPU(texture, width, height, mode);
+
+			texture.Resize(width, height);
+			texture.ReadPixels(new Rect(0, 0, width, height), 0, 0, true);
+			texture.Apply(true);
+		}
+
+		///<summary>Renders the source texture into the RTT - used by the scaling methods ScaledTexture() and ScaleTexture() </summary>
+		private static void ScaleWithGPU(Texture2D src, int width, int height, FilterMode fmode)
+		{
+			src.filterMode = fmode;
+			src.Apply(true);
+
+			RenderTexture rtt = new RenderTexture(width, height, 32);
+			Graphics.SetRenderTarget(rtt);
+			GL.LoadPixelMatrix(0, 1, 1, 0);
+			GL.Clear(true, true, new Color(0, 0, 0, 0));
+			Graphics.DrawTexture(new Rect(0, 0, 1, 1), src);
+		}
+
+		public static Dictionary<string, Material> shaders;
+		///<summary> Returns a material from the specified shader </summary>
 		public static Material GetShader(string name)
 		{
 			if (shaders == null)
@@ -1413,8 +1447,9 @@ namespace KERBALISM
 					Shader[] pre_shaders = bundle.LoadAllAssets<Shader>();
 					foreach (Shader shader in pre_shaders)
 					{
-						var key = shader.name.Replace("Custom/", string.Empty);
-						if (shaders.ContainsKey(key)) shaders.Remove(key);
+						string key = shader.name.Replace("Custom/", string.Empty);
+						if (shaders.ContainsKey(key))
+							shaders.Remove(key);
 						shaders.Add(key, new Material(shader));
 					}
 					bundle.Unload(false);
