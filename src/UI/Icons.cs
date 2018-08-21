@@ -89,7 +89,7 @@ namespace KERBALISM
 			lab_black = Styles.GetUIScaledTexture("lab-black");
 			lab_cyan = Styles.GetUIScaledTexture("lab-cyan");
 
-			applauncher = Styles.GetUIScaledTexture("applauncher");
+			applauncher = Lib.GetTexture("applauncher", 32, 32);
 
 			small_info = Styles.GetUIScaledTexture("small-info");
 			small_folder = Styles.GetUIScaledTexture("small-folder");
