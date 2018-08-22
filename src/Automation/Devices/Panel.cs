@@ -38,6 +38,10 @@ namespace KERBALISM
 			return "unknown";
 		}
 
+		public override Boolean IsVisible() {
+			return panel.isTracking;
+		}
+
 		public override void Ctrl(bool value)
 		{
 			if (!panel.isTracking) return;
@@ -86,6 +90,11 @@ namespace KERBALISM
 				case "BROKEN": return "<color=red>" + Localizer.Format("#KERBALISM_Generic_BROKEN") + "</color>";
 			}
 			return "unknown";
+		}
+
+		public override Boolean IsVisible()
+		{
+			return prefab.isTracking;
 		}
 
 		public override void Ctrl(bool value)
