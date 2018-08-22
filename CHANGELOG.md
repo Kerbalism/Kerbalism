@@ -1,5 +1,12 @@
-## v1.8.0 for KSP 1.4.5 and 1.3.1
- - 2018-xx-xx
+## v1.8.1 for KSP 1.4.x and 1.3.1
+ - 2018-xx-x
+
+### Changes since the last release
+
+------------------------------------------------------------------------------------------------------
+
+## v1.8.0 for KSP 1.4.x and 1.3.1
+ - 2018-08-21
 
 ### Changes since the last release
 
@@ -46,6 +53,7 @@
 
  * Support for development on mac now included, also with help in the CONTRIBUTING.md file (Sir Mortimer)
 
+------------------------------------------------------------------------------------------------------
 
 ## v1.7.1.1 for KSP 1.4.4 and 1.3.1
  - 2018-07-03
@@ -59,6 +67,7 @@
 
  * Added a title parameter to the PlannerController that shows in the buttons text (PiezPiedPy)
 
+------------------------------------------------------------------------------------------------------
 
 ## v1.7.1 for KSP 1.4.4 and 1.3.1
  - 2018-07-02
@@ -88,6 +97,7 @@
  
 ### For Developers
 
+------------------------------------------------------------------------------------------------------
 
 ## v1.7.0 for KSP 1.4.3
  - 2018-06-18
@@ -124,6 +134,7 @@
 
 ### For Developers
 
+------------------------------------------------------------------------------------------------------
 
 ## v1.6.0 for KSP 1.4.3
  - 2018-05-26
@@ -169,6 +180,7 @@
  * Updated Profiler GUI to use the Canvas system. Added Reset averages & Show zero calls buttons,
    a Framerate limiter, avg calls and frame counter (thanks go to PiezPiedPy)
 
+------------------------------------------------------------------------------------------------------
 
 1.5.1
   - SSPX support
