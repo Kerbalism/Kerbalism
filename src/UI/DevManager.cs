@@ -33,6 +33,7 @@ namespace KERBALISM
 
 			// get devices
 			Dictionary<uint, Device> devices = Computer.Boot(v);
+			int deviceCount = 0;
 
 			// direct control
 			if (script_index == 0)
@@ -52,7 +53,9 @@ namespace KERBALISM
 				{
 					// render device entry
 					Device dev = pair.Value;
+					if (!dev.IsVisible()) continue;
 					p.AddContent(dev.Name(), dev.Info(), string.Empty, dev.Toggle, () => Highlighter.Set(dev.Part(), Color.cyan));
+					deviceCount++;
 				}
 			}
 			// script editor
@@ -76,6 +79,9 @@ namespace KERBALISM
 				// for each device
 				foreach (var pair in devices)
 				{
+					Device dev = pair.Value;
+					if (!dev.IsVisible()) continue;
+
 					// determine tribool state
 					int state = !script.states.ContainsKey(pair.Key)
 					  ? -1
@@ -84,7 +90,6 @@ namespace KERBALISM
 					  : 1;
 
 					// render device entry
-					Device dev = pair.Value;
 					p.AddContent
 					(
 					  dev.Name(),
@@ -101,11 +106,12 @@ namespace KERBALISM
 					  },
 					  () => Highlighter.Set(dev.Part(), Color.cyan)
 					);
+					deviceCount++;
 				}
 			}
 
 			// no devices case
-			if (devices.Count == 0)
+			if (deviceCount == 0)
 			{
 				p.AddContent("<i>no devices</i>");
 			}
