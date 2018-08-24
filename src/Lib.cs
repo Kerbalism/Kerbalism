@@ -299,6 +299,14 @@ namespace KERBALISM
 			return (T)m.GetType().GetField(value_name, flags).GetValue(m);
 		}
 
+		public static T? SafeReflectionValue<T>(PartModule m, string value_name) where T : struct
+		{
+			FieldInfo fi = m.GetType().GetField(value_name, flags);
+			if (fi == null)
+				return null;
+			return (T)fi.GetValue(m);
+		}
+
 		// set a value from a module using reflection
 		// note: useful when the module is from another assembly, unknown at build time
 		// note: useful when the value isn't persistent
