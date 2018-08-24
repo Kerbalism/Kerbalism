@@ -239,7 +239,7 @@ namespace KERBALISM
 					{
 						// get part prefab (required for module properties)
 						Part part_prefab = PartLoader.getPartInfoByName(p.partName).partPrefab;
-						int index = 0;		// module index
+						int index = 0;      // module index
 
 						foreach (ProtoPartModuleSnapshot m in p.modules)
 						{
@@ -258,13 +258,25 @@ namespace KERBALISM
 
 									if (pm != null)
 									{
-										rate += (Lib.ReflectionValue<float>(pm, "RTPacketSize") / Lib.ReflectionValue<float>(pm, "RTPacketInterval"));
-										external_cost += pm.resHandler.inputResources.Find(r => r.name == "ElectricCharge").rate;
+										float? packet_size = Lib.SafeReflectionValue<float>(pm, "RTPacketSize");
+										// workaround for old savegames
+										if (packet_size == null)
+										{
+											Lib.DebugLog(String.Format("ConnectionInfo: Old SaveGame PartModule ModuleRTAntenna for part {0} on unloaded vessel {1}, using default values as a workaround",
+												p.partName, v.vesselName));
+											rate += 6.6666;             // 6.67 Mb/s
+											external_cost += 0.025;     // 25 W/s
+										}
+										else
+										{
+											rate += ((float)packet_size / Lib.ReflectionValue<float>(pm, "RTPacketInterval"));
+											external_cost += pm.resHandler.inputResources.Find(r => r.name == "ElectricCharge").rate;
+										}
 									}
 									else
 									{
 										Lib.DebugLog(String.Format("ConnectionInfo: Could not find PartModule ModuleRTAntenna for part {0} on unloaded vessel {1}, using default values as a workaround",
-											p.partName,v.vesselName));
+											p.partName, v.vesselName));
 										rate += 6.6666;             // 6.67 Mb/s
 										external_cost += 0.025;     // 25 W/s
 									}
