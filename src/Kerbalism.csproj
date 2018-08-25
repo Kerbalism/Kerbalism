@@ -325,14 +325,6 @@
 if "$(ConfigurationName)"=="Release" (call "$(ProjectDir)..\buildscripts\ZipPack\build-package.bat" $(TargetName) -v@(VersionNumber) KSP1.4.5)
 if "$(ConfigurationName)"=="Debug 1.3" (call "$(ProjectDir)..\buildscripts\UnityDebug\prepare-debug.bat" $(TargetName))
 if "$(ConfigurationName)"=="Release 1.3" (call "$(ProjectDir)..\buildscripts\ZipPack\build-package.bat" $(TargetName) -v@(VersionNumber) KSP1.3.1)
-xcopy /E /D /Y "$(ProjectDir)..\GameData\Kerbalism\Localization" "$(TargetDir)..\Localization\"
-</PostBuildEvent>
-  </PropertyGroup>
-  <PropertyGroup>
-    <PostBuildEvent>if "$(ConfigurationName)"=="Debug" (call "$(ProjectDir)..\buildscripts\UnityDebug\prepare-debug.bat" $(TargetName))
-if "$(ConfigurationName)"=="Release" (call "$(ProjectDir)..\buildscripts\ZipPack\build-package.bat" $(TargetName) -v@(VersionNumber) KSP1.4.5)
-if "$(ConfigurationName)"=="Debug 1.3" (call "$(ProjectDir)..\buildscripts\UnityDebug\prepare-debug.bat" $(TargetName))
-if "$(ConfigurationName)"=="Release 1.3" (call "$(ProjectDir)..\buildscripts\ZipPack\build-package.bat" $(TargetName) -v@(VersionNumber) KSP1.3.1)
 xcopy /E /D /Y "$(ProjectDir)..\GameData\Kerbalism\Localization" "$(TargetDir)\Localization\"
 </PostBuildEvent>
   </PropertyGroup>
