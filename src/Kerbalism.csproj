@@ -328,6 +328,14 @@ if "$(ConfigurationName)"=="Release 1.3" (call "$(ProjectDir)..\buildscripts\Zip
 xcopy /E /D /Y "$(ProjectDir)..\GameData\Kerbalism\Localization" "$(TargetDir)..\Localization\"
 </PostBuildEvent>
   </PropertyGroup>
+  <PropertyGroup>
+    <PostBuildEvent>if "$(ConfigurationName)"=="Debug" (call "$(ProjectDir)..\buildscripts\UnityDebug\prepare-debug.bat" $(TargetName))
+if "$(ConfigurationName)"=="Release" (call "$(ProjectDir)..\buildscripts\ZipPack\build-package.bat" $(TargetName) -v@(VersionNumber) KSP1.4.5)
+if "$(ConfigurationName)"=="Debug 1.3" (call "$(ProjectDir)..\buildscripts\UnityDebug\prepare-debug.bat" $(TargetName))
+if "$(ConfigurationName)"=="Release 1.3" (call "$(ProjectDir)..\buildscripts\ZipPack\build-package.bat" $(TargetName) -v@(VersionNumber) KSP1.3.1)
+xcopy /E /D /Y "$(ProjectDir)..\GameData\Kerbalism\Localization" "$(TargetDir)\Localization\"
+</PostBuildEvent>
+  </PropertyGroup>
   <ProjectExtensions>
     <VisualStudio>
       <UserProperties __JSONSchema="https://gist.githubusercontent.com/janbrohl/c614d2b4a2aee805d93428a2cbc44df5/raw/fdfc6366cd9b1b4f512d2d25778d1ebf209358d6/ksp-avc.schema.json" />
