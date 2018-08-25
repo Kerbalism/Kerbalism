@@ -333,6 +333,7 @@ In this case, the Unity version for your KSP version is 5.4.0p4.
 The Unity Editor for **KSP v1.4.x** is **Unity v2017.1.3p1** and can be downloaded here: [UnityDownloadAssistant-2017.1.3p1.exe](https://beta.unity3d.com/download/02d73f71d3bd/UnityDownloadAssistant-2017.1.3p1.exe )
 
 The Unity Editor for **KSP v1.3.1** is **Unity v5.4.0.p4** and can be downloaded here: [UnityDownloadAssistant-5.4.0p4.exe](https://beta.unity3d.com/download/b15b5ae035b7/UnityDownloadAssistant-5.4.0p4.exe )
+
 #### Visual Studio
 
 It is recommended to use **Visual Studio 2017**. Any version should work (including the free *Community* version).
@@ -430,7 +431,7 @@ It is recommended to debug KSP in a window rather than fullscreen, so turn off f
 To save startup time, seconds of our life and the environment, it is recommended to set the Graphics options way down. For that, go to KSP Main Menu -> Settings -> Graphics and set:
 
   - Render Quality: Fastest
-  - Texture Quality: Eigth Res
+  - Texture Quality: Eighth Res
   - Aerodynamic FX Quality: Minimal
   - Anti-Aliasing: Disabled
   - V-Sync: Don't sync

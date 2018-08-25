@@ -21,32 +21,21 @@
     <DelaySign>False</DelaySign>
     <TargetFrameworkProfile />
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Platform)' == 'AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <BaseAddress>4194304</BaseAddress>
-    <RegisterForComInterop>False</RegisterForComInterop>
-    <GenerateSerializationAssemblies>Off</GenerateSerializationAssemblies>
-    <FileAlignment>512</FileAlignment>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
+    <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
     <OutputPath Condition="Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">$(KSPDEVDIR)\GameData\Kerbalism\</OutputPath>
     <OutputPath Condition="!Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">obj\Kerbalism\</OutputPath>
-    <DebugSymbols>True</DebugSymbols>
-    <DebugType>Full</DebugType>
-    <Optimize>False</Optimize>
-    <CheckForOverflowUnderflow>False</CheckForOverflowUnderflow>
-    <DefineConstants>DEBUG;TRACE;DEVELOPMENT;ENABLE_PROFILER;KERBALISM_PROFILER</DefineConstants>
-    <StartAction>Project</StartAction>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
-    <OutputPath Condition="Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">$(KSPDEVDIR)\GameData\Kerbalism\</OutputPath>
-    <OutputPath Condition="!Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">obj\Kerbalism\</OutputPath>
-    <DebugSymbols>False</DebugSymbols>
-    <DebugType>None</DebugType>
-    <Optimize>True</Optimize>
-    <CheckForOverflowUnderflow>False</CheckForOverflowUnderflow>
-    <BaseIntermediateOutputPath>obj\</BaseIntermediateOutputPath>
-    <StartAction>Project</StartAction>
+    <ErrorReport>prompt</ErrorReport>
+    <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
+    <DefineConstants>TRACE;DEBUG;DEVELOPMENT;ENABLE_PROFILER;DEBUG_PROFILER</DefineConstants>
+    <DebugType>full</DebugType>
+    <Prefer32Bit>false</Prefer32Bit>
+    <StartAction>Program</StartAction>
+    <StartProgram>$(KSPDEVDIR)\KSP_x64_Dbg.exe</StartProgram>
+    <StartWorkingDirectory>$(KSPDEVDIR)</StartWorkingDirectory>
+    <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
+    <NoWarn>IDE0018</NoWarn>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
@@ -58,18 +47,10 @@
     </DefineConstants>
     <DebugType>none</DebugType>
     <Prefer32Bit>false</Prefer32Bit>
-    <NoWarn>IDE0018</NoWarn>
-    <LangVersion>latest</LangVersion>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
-    <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
-    <OutputPath Condition="Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">$(KSPDEVDIR)\GameData\Kerbalism\</OutputPath>
-    <OutputPath Condition="!Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">obj\Kerbalism\</OutputPath>
-    <ErrorReport>prompt</ErrorReport>
-    <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
-    <DefineConstants>TRACE;DEBUG;DEVELOPMENT;ENABLE_PROFILER;DEBUG_PROFILER</DefineConstants>
-    <DebugType>full</DebugType>
-    <Prefer32Bit>false</Prefer32Bit>
+    <StartAction>Program</StartAction>
+    <StartProgram>$(KSPDEVDIR)\KSP_x64.exe</StartProgram>
+    <StartWorkingDirectory>$(KSPDEVDIR)</StartWorkingDirectory>
+    <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
     <NoWarn>IDE0018</NoWarn>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
@@ -86,6 +67,10 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
     <WarningLevel>3</WarningLevel>
+    <StartAction>Program</StartAction>
+    <StartProgram>$(KSPBACKPORTDIR)\KSP_x64_Dbg.exe</StartProgram>
+    <StartWorkingDirectory>$(KSPBACKPORTDIR)</StartWorkingDirectory>
+    <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release 1.3|AnyCPU'">
     <OutputPath Condition="Exists('$(KSPBACKPORTDIR)\GameData\Kerbalism\')">$(KSPBACKPORTDIR)\GameData\Kerbalism\</OutputPath>
@@ -98,6 +83,10 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <DefineConstants>KSP13</DefineConstants>
     <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
+    <StartAction>Program</StartAction>
+    <StartProgram>$(KSPBACKPORTDIR)\KSP_x64.exe</StartProgram>
+    <StartWorkingDirectory>$(KSPBACKPORTDIR)</StartWorkingDirectory>
+    <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
   </PropertyGroup>
   <Choose>
     <When Condition="'$(Configuration)'=='Release' Or '$(Configuration)'=='Debug'">
@@ -335,7 +324,9 @@
     <PostBuildEvent Condition="'$(OS)' == 'Windows_NT'">if "$(ConfigurationName)"=="Debug" (call "$(ProjectDir)..\buildscripts\UnityDebug\prepare-debug.bat" $(TargetName))
 if "$(ConfigurationName)"=="Release" (call "$(ProjectDir)..\buildscripts\ZipPack\build-package.bat" $(TargetName) -v@(VersionNumber) KSP1.4.5)
 if "$(ConfigurationName)"=="Debug 1.3" (call "$(ProjectDir)..\buildscripts\UnityDebug\prepare-debug.bat" $(TargetName))
-if "$(ConfigurationName)"=="Release 1.3" (call "$(ProjectDir)..\buildscripts\ZipPack\build-package.bat" $(TargetName) -v@(VersionNumber) KSP1.3.1)</PostBuildEvent>
+if "$(ConfigurationName)"=="Release 1.3" (call "$(ProjectDir)..\buildscripts\ZipPack\build-package.bat" $(TargetName) -v@(VersionNumber) KSP1.3.1)
+xcopy /E /D /Y "$(ProjectDir)..\GameData\Kerbalism\Localization" "$(TargetDir)\Localization\"
+</PostBuildEvent>
   </PropertyGroup>
   <ProjectExtensions>
     <VisualStudio>
