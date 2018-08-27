@@ -11,6 +11,7 @@ Documentation Table of Contents
     Home <index>
     Table of Contents <self>
     Introduction <intro>
+    Tutorial <tutorial>
     Environment <environment>
     Habitat <habitat>
     Reliability <reliability>

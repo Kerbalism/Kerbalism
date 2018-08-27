@@ -10,9 +10,9 @@ Before you go...
 
 Let's assume you've just started a new career game and are about to do your first missions to Mun. You didn't expand your VAB or launch pad, so you're limited to vessels with a maximum of 30 parts and 18 tons. A crewed mission to Mun isn't trivial under these circumstances, and with Kerbalism it's going to be a new challenge, even if you've done many missions to Mun in earlier games.
 
-In order to survive with Kerbalism, Kerbals need enough food, water and oxygen for the duration of the entire mission. Command pods contain enough of these to last for 5 days, which is just enough for a Mun flyby. Anything beyond that will require additional supplies, so stick to a Mun flyby - and a Mun flyby only. Do not orbit Mun. Do not land on Mun. And don't even think about Minmus, not yet. Any deviation from that will get your crew killed for a number of reasons, starvation just being one of them.
+In order to survive with Kerbalism, Kerbals need enough food, water and oxygen for the duration of the entire mission. Command pods contain enough of these to last for 5 days, which is just enough for a quick trip to Mun, like a flyby or a touch and go landing. Anything beyond that will require additional supplies, so stick to Mun - and Mun only. Do not stay for more than a few hours. And don't even think about Minmus, not yet. Any deviation from that will get your crew killed for a number of reasons, starvation just being one of them.
 
-The most important resource on any crewed vessel is electricity. Without it, your crew will suffocate, freeze or burn to death, whichever kills them first. Not having food for your ship won't be your number one problem when climatization fails and you burn up in the sun. So, let's take care of that first.
+The most important resource on any crewed vessel, after oxygen, is electricity. Without electricity, your crew will suffocate, freeze or burn to death, whichever kills them first. Not having any food left won't be your number one problem when climatization fails and you're about to burn up in the sun. So, let's take care of that first.
 
 Minimum requirements
 --------------------
@@ -24,16 +24,16 @@ If at all possible, don't rely on solar panels only, bring a fuel cell. As a gen
 Ship construction
 -----------------
 
-If you're going with fuel cells (recommended), attach a H2+O2 (Hydrogen+Oxygen) fuel cell generator to your ship. Also attach a small pressurized tank that contains Hydrogen, and if you can an extra tank for Oxygen. The fuel cell will consume Oxygen while it runs, which might become a problem for your Kerbals if you don't have enough of it. Having solar panels can reduce the consumption of H2 and O2.
+If you're going with fuel cells (recommended), attach a H2+O2 (Hydrogen+Oxygen) fuel cell generator to your ship. Also attach a small pressurized tank that contains Hydrogen (by default, pressurized tanks contain oxygen, so make sure to configure it in the VAB), and if you can an extra tank for Oxygen. The fuel cell will consume hydrogen and oxygen while it runs, which might leave your kerbals with no O2 left to breahte. Solar panels will reduce the consumption of H2 and O2.
 
-While a H2+O2 fuel cell is running, it will also produce some water. Make sure you have a bit of storage capacity for that excess water, otherwise the fuel cell will not run. The easiest way to do that is to reduce the amount of water in your command pod just a little, to make sure the cell can kick in early in the mission. Storing excess water won't be a problem later in your mission as the crew will drink most of it.
+While a H2+O2 fuel cell is running, it also produces some water. Make sure you have storage capacity for that excess water, otherwise the fuel cell will not run. The easiest way to do that is to reduce the amount of water in your command pod just a little, to make sure the cell can kick in early in the mission if needed. Storing the excess water won't be a problem later in your mission as the crew will drink most of it.
 
-Other than that, you can build your vessel just like you did without Kerbalism. However, do not add any shielding to your command pod. You won't need it as you're not going to be in space for very long, and a fully shielded pod is so heavy that it comes with all sorts of issues when landing. For instance, it won't float on water.
+Other than that, you can build your vessel just like you did without Kerbalism. However, do not add any shielding to your command pod. You won't need it for Mun as the trip there is very short, and a fully shielded pod has its own issues. For instance, it won't float on water.
 
 Launch window
 -------------
 
-If you don't have a fuel cell, don't launch unless you're certain that Mun will not pass through Kerbins shadow while you're up there. At the beginning of a new game, Mun is just about to pass behind Kerbin - so wait a couple of days before you launch. Otherwise you will die in the shadow.
+If you don't have a fuel cell, don't launch unless you're certain that Mun will not pass through Kerbins shadow while you're up there. At the beginning of a new game, Mun is just about to pass behind Kerbin - so wait a couple of days before you launch. Otherwise your crew will freeze in the shadow.
 
 Just before launch
 ------------------
@@ -43,8 +43,8 @@ If you have a fuel cell, you probably don't want it to be running all the time. 
 What's next?
 ------------
 
-Launch! Fingers crossed, you'll make it back from a Mun flyby before you run out of oxygen, food, water, electricity or hydrogen.
+Launch! Fingers crossed, you'll make it back from Mun before you run out of oxygen, food, water, electricity or hydrogen.
 
-You will probably notice that humidity in your command pod rises. Remember all the water your crew is drinking? It's dripping from your instrument panels now. Not an ideal situation, but for a short trip not a reason of concern. However, for longer missions you will need extra ECLSS units with humidity controllers.
+Notice how humidity in your command pod rises throughout your trip. Remember all the water your crew is drinking? It's dripping from your instrument panels now. Not an ideal situation, but for a short trip not a reason of concern. However, for longer missions you will need extra ECLSS units with humidity controllers.
 
-Your next steps will be a Mun orbit and a mun landing. And then a trip to Minmus - but make sure you bring enough snacks for 20 days.
+Your next steps will be towards Minmus, which takes considerably longer. Make sure to bring provisions for about 20 days, and bring a humidity controller this time. You will need it.
