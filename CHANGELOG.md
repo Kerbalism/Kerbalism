@@ -3,6 +3,7 @@
 
 ### Changes since the last release
 
+* A dump valve has been added to the Fuel Cells (PiezPiedPy)
 * Reliability added to the active shield and slightly increased its effectiveness (PiezPiedPy)
 * Vessels that where missing on the monitor due to old SaveGames with RemoteTech antennas fitted, bug fixed (PiezPiedPy)
 * Stock antennas can now be controlled by automation (Yaar Podshipnik)
