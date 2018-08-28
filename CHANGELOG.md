@@ -3,6 +3,15 @@
 
 ### Changes since the last release
 
+* Reliability added to the active shield and slightly increased its effectiveness (PiezPiedPy)
+* Vessels that where missing on the monitor due to old SaveGames with RemoteTech antennas fitted, bug fixed (PiezPiedPy)
+* Stock antennas can now be controlled by automation (Yaar Podshipnik)
+* Devices shown in the device manager are now sorted (Sir Mortimer)
+
+### Known Issues
+
+* KerboKatz FrameLimiter mod is known to make the Icons disappear
+
 ------------------------------------------------------------------------------------------------------
 
 ## v1.8.0 for KSP 1.4.x and 1.3.1
