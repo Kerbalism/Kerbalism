@@ -7,6 +7,7 @@
 * Vessels that where missing on the monitor due to old SaveGames with RemoteTech antennas fitted, bug fixed (PiezPiedPy)
 * Stock antennas can now be controlled by automation (Yaar Podshipnik)
 * Devices shown in the device manager are now sorted (Sir Mortimer)
+* Fixed the EC issue when accelerating to extremely fast time warp while a ship is in shadow (Sir Mortimer)
 
 ### Known Issues
 
