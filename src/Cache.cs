@@ -59,21 +59,17 @@ namespace KERBALISM
 			// determine if in sunlight, calculate sun direction and distance
 			sunlight = Sim.RaytraceBody(v, position, FlightGlobals.Bodies[0], out sun_dir, out sun_dist) ? 1.0 : 0.0;
 
-			// at the two highest timewarp speed, the number of sun visibility samples drop to the point that
-			// the quantization error first became noticeable, and then exceed 100%
-			// to solve this, we switch to an analytical estimation of the portion of orbit that was in sunlight
-			// - we check against timewarp rate, instead of index, to avoid issues during timewarp blending
-			if (v.mainBody.flightGlobalsIndex != 0 && TimeWarp.CurrentRate > 1000.0f)
-			{
-				sunlight = 1.0 - Sim.ShadowPeriod(v) / Sim.OrbitalPeriod(v);
-			}
-
 			// environment stuff
 			atmo_factor = Sim.AtmosphereFactor(v.mainBody, position, sun_dir);
 			gamma_transparency = Sim.GammaTransparency(v.mainBody, v.altitude);
 			underwater = Sim.Underwater(v);
 			breathable = Sim.Breathable(v, underwater);
 			landed = Lib.Landed(v);
+
+			if (v.mainBody.flightGlobalsIndex != 0 && TimeWarp.CurrentRate > 1000.0f)
+			{
+				highspeedWarp(v);
+			}
 
 			// temperature at vessel position
 			temperature = Sim.Temperature(v, position, sunlight, atmo_factor, out solar_flux, out albedo_flux, out body_flux, out total_flux);
@@ -111,6 +107,21 @@ namespace KERBALISM
 			gravioli = Sim.Graviolis(v);
 		}
 
+		// at the two highest timewarp speed, the number of sun visibility samples drop to the point that
+		// the quantization error first became noticeable, and then exceed 100%
+		// to solve this, we switch to an analytical estimation of the portion of orbit that was in sunlight
+		// - we check against timewarp rate, instead of index, to avoid issues during timewarp blending
+		public void highspeedWarp(Vessel v)
+		{
+			// don't re-calculate this on every tick. So, if sunlight is not 1.0 or 0.0, do nothing here
+			if (sunlight > 0.0001 && sunlight < 0.9999)
+			{ 
+				return;
+			}
+
+			sunlight = 1.0 - Sim.ShadowPeriod(v) / Sim.OrbitalPeriod(v);
+			solar_flux = Sim.SolarFlux(Sim.SunDistance(Lib.VesselPosition(v))) * atmo_factor;
+		}
 
 		public UInt64 inc;                  // unique incremental id for the entry
 		public bool is_vessel;              // true if this is a valid vessel
@@ -155,7 +166,7 @@ namespace KERBALISM
 		public Comforts comforts;           // comfort info
 		public List<Greenhouse.Data> greenhouses; // some data about greenhouses
 		public double gravioli;             // gravitation gauge particles detected (joke)
-		public bool powered;				// true if vessel is powered
+		public bool powered;                // true if vessel is powered
 	}
 
 
