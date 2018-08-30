@@ -26,7 +26,7 @@ Ship construction
 
 If you're going with fuel cells (recommended), attach a H2+O2 (Hydrogen+Oxygen) fuel cell generator to your ship. Also attach a small pressurized tank that contains Hydrogen (by default, pressurized tanks contain oxygen, so make sure to configure it in the VAB), and if you can an extra tank for Oxygen. The fuel cell will consume hydrogen and oxygen while it runs, which might leave your kerbals with no O2 left to breahte. Solar panels will reduce the consumption of H2 and O2.
 
-While a H2+O2 fuel cell is running, it also produces some water. Make sure you have storage capacity for that excess water, otherwise the fuel cell will not run. The easiest way to do that is to reduce the amount of water in your command pod just a little, to make sure the cell can kick in early in the mission if needed. Storing the excess water won't be a problem later in your mission as the crew will drink most of it.
+While a H2+O2 fuel cell is running, it also produces some water. Kerbalism won't run any process if the output of that process cannot be stored or dumped, so set your fuel cell to dump the water that cannot be stored. You can do that in flight, so don't panic if you forgot to do that in the VAB. Excess water won't be a problem later since your crew will be drinking it.
 
 Other than that, you can build your vessel just like you did without Kerbalism. However, do not add any shielding to your command pod. You won't need it for Mun as the trip there is very short, and a fully shielded pod has its own issues. For instance, it won't float on water.
 
