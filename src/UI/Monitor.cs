@@ -72,9 +72,6 @@ namespace KERBALISM
 				// forget the selected vessel, if any
 				selected_id = Guid.Empty;
 
-				// filter flag is updated on render_vessel
-				show_filter = false;
-
 				// used to detect when no vessels are in list
 				bool setup = false;
 
@@ -134,10 +131,7 @@ namespace KERBALISM
 			if (selected_v != null)
 			{
 				Render_menu(selected_v);
-			}
-			// if at least one vessel is assigned to a group
-			else if (show_filter)
-			{
+			} else {
 				Render_filter();
 			}
 
@@ -161,30 +155,27 @@ namespace KERBALISM
 		public float Height()
 		{
 			// top spacing
-			float h = Styles.ScaleFloat(10.0f);
+			float h = Styles.ScaleFloat(36.0f);
 
 			// panel height
 			h += panel.Height();
-
-			// one is selected, or filter is required
-			if (selected_id != Guid.Empty || show_filter)
-			{
-				h += Styles.ScaleFloat(26.0f);
-			}
 
 			// clamp to screen height
 			return Math.Min(h, Screen.height * 0.75f);
 		}
 
 		bool Filter_match(String vesselGroup) {
-			List<String> filterTags = filter.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()).ToList();
-			List<String> vesselTags = vesselGroup.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()).ToList();
+			List<String> filterTags = filter.ToLower().Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()).ToList();
+			List<String> vesselTags = vesselGroup.ToLower().Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()).ToList();
 			foreach(String tag in filterTags) {
-				if(!vesselTags.Contains(tag)) {
-					return false;
+				foreach(String vesselTag in vesselTags) {
+					if(vesselTag.StartsWith(tag, StringComparison.CurrentCulture))
+					{
+						return true;
+					}
 				}
 			}
-			return true;
+			return false;
 		}
 
 		bool Render_vessel(Panel p, Vessel v)
@@ -198,15 +189,6 @@ namespace KERBALISM
 			// get data from db
 			VesselData vd = DB.Vessel(v);
 
-			// determine if filter must be shown
-			show_filter |= vd.group.Length > 0 && vd.group != "NONE";
-
-			// skip filtered vessels
-			if (Filtered() && !Filter_match(vd.group)) return false;
-
-			// get resource handler
-			Vessel_resources resources = ResourceCache.Get(v);
-
 			// get vessel crew
 			List<ProtoCrewMember> crew = Lib.CrewList(v);
 
@@ -215,6 +197,12 @@ namespace KERBALISM
 
 			// get body name
 			string body_name = v.mainBody.name.ToUpper();
+
+			// skip filtered vessels
+			if (Filtered() && !Filter_match(vd.group + " " + body_name + " " + vessel_name)) return false;
+
+			// get resource handler
+			Vessel_resources resources = ResourceCache.Get(v);
 
 			// render entry
 			p.AddHeader
@@ -635,14 +623,11 @@ namespace KERBALISM
 		// selected vessel
 		Vessel selected_v;
 
-		// group filter placeholder
-		const string filter_placeholder = "FILTER BY GROUP";
+		// filter placeholder
+		const string filter_placeholder = "SEARCH...";
 
-		// store group filter, if any
+		// store filter, if any
 		string filter = string.Empty;
-
-		// determine if filter is shown
-		bool show_filter;
 
 		// used by scroll window mechanics
 		Vector2 scroll_pos;
