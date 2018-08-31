@@ -82,6 +82,13 @@ namespace KERBALISM
 			// store data required to support multiple modules of same type in a part
 			var PD = new Dictionary<string, Lib.Module_prefab_data>();
 
+			// This is basically handled in cache. However, when accelerating time warp while
+			// the vessel is in shadow, the cache logic doesn't kick in soon enough. So we double-check here
+			if (TimeWarp.CurrentRate > 1000.0f || elapsed_s > 150)  // we're time warping fast...
+			{
+				vi.highspeedWarp(v);
+			}
+
 			// for each part
 			foreach (ProtoPartSnapshot p in v.protoVessel.protoPartSnapshots)
 			{

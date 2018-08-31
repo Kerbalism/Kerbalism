@@ -95,7 +95,7 @@ Crustal, Oceanic and Atmospheric harvesters can be configured to extract one amo
 
 Fuel cells
 ----------
-Fuel cells can be configured to use a number of resources to produce *ElectricCharge*.
+Fuel cells can be configured to use a number of resources to produce *ElectricCharge*. They operate under the same conditions as the chemical processes on the ISRU's
 
 +-------------+---------------------------+--------------------+
 | CELL TYPE   | INPUT RESOURCE            | EXTRA OUTPUT       |
