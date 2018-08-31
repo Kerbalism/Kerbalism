@@ -67,11 +67,13 @@ Each pod or the External LSS Unit (ECLSS) can be configured with Life Support Sy
 
 Greenhouse
 ----------
+The Greenhouse is based on design targets from the `Prototype Lunar Greenhouse <https://www.ag.arizona.edu/lunargreenhouse/Documents/2012-07-20_01_Giacomelli.pdf>`_ which is designed primarily to support the oxygen needs of one person rather than food needs. Thus one Greenhouse supports one kerbal with 100% of his/her O2 needs and half of its food needs per crop, a full crop can be harvested every 200 days, or you can use the emergency harvest function to harvest whatever amount of food has grown earlier.
+
 The greenhouse growth is configured to.
 
 - consume *Water* and *Ammonia*.
-- consume *CO2* from the atmosphere and/or pressurized tanks.
+- consume *CO2* from waste atmosphere and/or pressurized tanks.
 - consume *ElectricCharge* for the artificial lighting lamps, when their use is required.
 - require an internal pressure of at least 10kPA.
 - require radiation levels not in excess of 0.03 rad/h.
-- produce *Oxygen* as a by-product.
+- produce *Oxygen* and *Food*.
