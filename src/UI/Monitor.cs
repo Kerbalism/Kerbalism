@@ -28,7 +28,7 @@ namespace KERBALISM
 			filter_style.normal.textColor = new Color(0.66f, 0.66f, 0.66f, 1.0f);
 			filter_style.stretchWidth = true;
 			filter_style.fontSize = Styles.ScaleInteger(12);
-			filter_style.alignment = TextAnchor.MiddleCenter;
+			filter_style.alignment = TextAnchor.MiddleLeft;
 			filter_style.fixedHeight = Styles.ScaleFloat(16.0f);
 			filter_style.border = new RectOffset(0, 0, 0, 0);
 
@@ -164,7 +164,11 @@ namespace KERBALISM
 			return Math.Min(h, Screen.height * 0.75f);
 		}
 
-		bool Filter_match(String vesselGroup) {
+		bool Filter_match(VesselType vesselType, String vesselGroup)
+		{
+			if(filter_types.Contains(vesselType)) return false;
+			if(filter.Length <= 0 || filter == filter_placeholder) return true;
+
 			List<String> filterTags = filter.ToLower().Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()).ToList();
 			List<String> vesselTags = vesselGroup.ToLower().Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()).ToList();
 			foreach(String tag in filterTags) {
@@ -199,12 +203,13 @@ namespace KERBALISM
 			string body_name = v.mainBody.name.ToUpper();
 
 			// skip filtered vessels
-			if (Filtered() && !Filter_match(vd.group + " " + body_name + " " + vessel_name)) return false;
+			if (!Filter_match(v.vesselType, vd.group + " " + body_name + " " + vessel_name)) return false;
 
 			// get resource handler
 			Vessel_resources resources = ResourceCache.Get(v);
 
 			// render entry
+			p.AddIcon(getVesselTypeIcon(v.vesselType));
 			p.AddHeader
 			(
 			  Lib.BuildString("<b>",
@@ -233,7 +238,6 @@ namespace KERBALISM
 			// done
 			return true;
 		}
-
 
 		void Render_menu(Vessel v)
 		{
@@ -300,16 +304,55 @@ namespace KERBALISM
 			GUILayout.Space(Styles.ScaleFloat(10.0f));
 		}
 
-
 		void Render_filter()
 		{
 			// show the group filter
 			GUILayout.BeginHorizontal(Styles.entry_container);
+
+			Render_TypeFilterButon(VesselType.Probe);
+			Render_TypeFilterButon(VesselType.Rover);
+			Render_TypeFilterButon(VesselType.Lander);
+			Render_TypeFilterButon(VesselType.Ship);
+			Render_TypeFilterButon(VesselType.Station);
+			Render_TypeFilterButon(VesselType.Base);
+			Render_TypeFilterButon(VesselType.Plane);
+			Render_TypeFilterButon(VesselType.Relay);
+			Render_TypeFilterButon(VesselType.EVA);
+
 			filter = Lib.TextFieldPlaceholder("Kerbalism_filter", filter, filter_placeholder, filter_style).ToUpper();
 			GUILayout.EndHorizontal();
 			GUILayout.Space(Styles.ScaleFloat(10.0f));
 		}
 
+		void Render_TypeFilterButon(VesselType type) {
+			Boolean isFiltered = filter_types.Contains(type);
+			GUILayout.Label(new GUIContent(" ", getVesselTypeIcon(type, isFiltered), type.displayDescription()), config_style);
+			if (Lib.IsClicked()) {
+				if(isFiltered) filter_types.Remove(type);
+				else filter_types.Add(type);
+			}
+		}
+
+		Texture2D getVesselTypeIcon(VesselType type, Boolean disabled = false)
+		{
+			// TODO use proper ship type icons here. There should be a way to fetch those from
+			// KSP, but I don't know how or where to get them
+			switch(type) {
+				// this is what it will look like once someone has found the correct icons...
+				// case VesselType.Base: return disabled ? Icons.base_grey : Icons.base_white;
+
+				case VesselType.Base: return disabled ? Icons.battery_yellow : Icons.battery_white;
+				case VesselType.EVA: return disabled ? Icons.box_yellow : Icons.box_white;
+				case VesselType.Lander: return disabled ? Icons.brain_yellow : Icons.brain_white;
+				case VesselType.Plane: return disabled ? Icons.health_yellow : Icons.health_white;
+				case VesselType.Probe: return disabled ? Icons.recycle_yellow : Icons.recycle_red;
+				case VesselType.Relay: return disabled ? Icons.radiation_yellow : Icons.radiation_red;
+				case VesselType.Rover: return disabled ? Icons.signal_yellow : Icons.signal_white;
+				case VesselType.Ship: return disabled ? Icons.wrench_yellow : Icons.wrench_white;
+				case VesselType.Station: return disabled ? Icons.toggle_red : Icons.toggle_green;
+				default: return Icons.toggle_red; // this really schouldn't happen.
+			}
+		}
 
 		void Problem_sunlight(Vessel_info info, ref List<Texture2D> icons, ref List<string> tooltips)
 		{
@@ -611,12 +654,6 @@ namespace KERBALISM
 			p.AddIcon(image, tooltip);
 		}
 
-		// return true if the list of vessels is filtered
-		bool Filtered()
-		{
-			return filter.Length > 0 && filter != filter_placeholder;
-		}
-
 		// id of selected vessel
 		Guid selected_id;
 
@@ -626,8 +663,9 @@ namespace KERBALISM
 		// filter placeholder
 		const string filter_placeholder = "SEARCH...";
 
-		// store filter, if any
+		// current filter values
 		string filter = string.Empty;
+		List<VesselType> filter_types = new List<VesselType>();
 
 		// used by scroll window mechanics
 		Vector2 scroll_pos;
