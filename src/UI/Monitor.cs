@@ -209,7 +209,7 @@ namespace KERBALISM
 			Vessel_resources resources = ResourceCache.Get(v);
 
 			// render entry
-			p.AddIcon(getVesselTypeIcon(v.vesselType));
+			p.AddIcon(GetVesselTypeIcon(v.vesselType));
 			p.AddHeader
 			(
 			  Lib.BuildString("<b>",
@@ -326,14 +326,14 @@ namespace KERBALISM
 
 		void Render_TypeFilterButon(VesselType type) {
 			Boolean isFiltered = filter_types.Contains(type);
-			GUILayout.Label(new GUIContent(" ", getVesselTypeIcon(type, isFiltered), type.displayDescription()), config_style);
+			GUILayout.Label(new GUIContent(" ", GetVesselTypeIcon(type, isFiltered), type.displayDescription()), config_style);
 			if (Lib.IsClicked()) {
 				if(isFiltered) filter_types.Remove(type);
 				else filter_types.Add(type);
 			}
 		}
 
-		Texture2D getVesselTypeIcon(VesselType type, Boolean disabled = false)
+		Texture2D GetVesselTypeIcon(VesselType type, Boolean disabled = false)
 		{
 			// TODO use proper ship type icons here. There should be a way to fetch those from
 			// KSP, but I don't know how or where to get them
