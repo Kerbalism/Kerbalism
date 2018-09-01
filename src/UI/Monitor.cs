@@ -28,7 +28,7 @@ namespace KERBALISM
 			filter_style.normal.textColor = new Color(0.66f, 0.66f, 0.66f, 1.0f);
 			filter_style.stretchWidth = true;
 			filter_style.fontSize = Styles.ScaleInteger(12);
-			filter_style.alignment = TextAnchor.MiddleCenter;
+			filter_style.alignment = TextAnchor.MiddleLeft;
 			filter_style.fixedHeight = Styles.ScaleFloat(16.0f);
 			filter_style.border = new RectOffset(0, 0, 0, 0);
 
@@ -71,9 +71,6 @@ namespace KERBALISM
 			{
 				// forget the selected vessel, if any
 				selected_id = Guid.Empty;
-
-				// filter flag is updated on render_vessel
-				show_filter = false;
 
 				// used to detect when no vessels are in list
 				bool setup = false;
@@ -134,10 +131,7 @@ namespace KERBALISM
 			if (selected_v != null)
 			{
 				Render_menu(selected_v);
-			}
-			// if at least one vessel is assigned to a group
-			else if (show_filter)
-			{
+			} else {
 				Render_filter();
 			}
 
@@ -161,30 +155,31 @@ namespace KERBALISM
 		public float Height()
 		{
 			// top spacing
-			float h = Styles.ScaleFloat(10.0f);
+			float h = Styles.ScaleFloat(36.0f);
 
 			// panel height
 			h += panel.Height();
-
-			// one is selected, or filter is required
-			if (selected_id != Guid.Empty || show_filter)
-			{
-				h += Styles.ScaleFloat(26.0f);
-			}
 
 			// clamp to screen height
 			return Math.Min(h, Screen.height * 0.75f);
 		}
 
-		bool Filter_match(String vesselGroup) {
-			List<String> filterTags = filter.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()).ToList();
-			List<String> vesselTags = vesselGroup.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()).ToList();
+		bool Filter_match(VesselType vesselType, String vesselGroup)
+		{
+			if(filter_types.Contains(vesselType)) return false;
+			if(filter.Length <= 0 || filter == filter_placeholder) return true;
+
+			List<String> filterTags = filter.ToLower().Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()).ToList();
+			List<String> vesselTags = vesselGroup.ToLower().Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()).ToList();
 			foreach(String tag in filterTags) {
-				if(!vesselTags.Contains(tag)) {
-					return false;
+				foreach(String vesselTag in vesselTags) {
+					if(vesselTag.StartsWith(tag, StringComparison.CurrentCulture))
+					{
+						return true;
+					}
 				}
 			}
-			return true;
+			return false;
 		}
 
 		bool Render_vessel(Panel p, Vessel v)
@@ -198,15 +193,6 @@ namespace KERBALISM
 			// get data from db
 			VesselData vd = DB.Vessel(v);
 
-			// determine if filter must be shown
-			show_filter |= vd.group.Length > 0 && vd.group != "NONE";
-
-			// skip filtered vessels
-			if (Filtered() && !Filter_match(vd.group)) return false;
-
-			// get resource handler
-			Vessel_resources resources = ResourceCache.Get(v);
-
 			// get vessel crew
 			List<ProtoCrewMember> crew = Lib.CrewList(v);
 
@@ -216,7 +202,14 @@ namespace KERBALISM
 			// get body name
 			string body_name = v.mainBody.name.ToUpper();
 
+			// skip filtered vessels
+			if (!Filter_match(v.vesselType, vd.group + " " + body_name + " " + vessel_name)) return false;
+
+			// get resource handler
+			Vessel_resources resources = ResourceCache.Get(v);
+
 			// render entry
+			p.AddIcon(getVesselTypeIcon(v.vesselType));
 			p.AddHeader
 			(
 			  Lib.BuildString("<b>",
@@ -245,7 +238,6 @@ namespace KERBALISM
 			// done
 			return true;
 		}
-
 
 		void Render_menu(Vessel v)
 		{
@@ -312,16 +304,55 @@ namespace KERBALISM
 			GUILayout.Space(Styles.ScaleFloat(10.0f));
 		}
 
-
 		void Render_filter()
 		{
 			// show the group filter
 			GUILayout.BeginHorizontal(Styles.entry_container);
+
+			Render_TypeFilterButon(VesselType.Probe);
+			Render_TypeFilterButon(VesselType.Rover);
+			Render_TypeFilterButon(VesselType.Lander);
+			Render_TypeFilterButon(VesselType.Ship);
+			Render_TypeFilterButon(VesselType.Station);
+			Render_TypeFilterButon(VesselType.Base);
+			Render_TypeFilterButon(VesselType.Plane);
+			Render_TypeFilterButon(VesselType.Relay);
+			Render_TypeFilterButon(VesselType.EVA);
+
 			filter = Lib.TextFieldPlaceholder("Kerbalism_filter", filter, filter_placeholder, filter_style).ToUpper();
 			GUILayout.EndHorizontal();
 			GUILayout.Space(Styles.ScaleFloat(10.0f));
 		}
 
+		void Render_TypeFilterButon(VesselType type) {
+			Boolean isFiltered = filter_types.Contains(type);
+			GUILayout.Label(new GUIContent(" ", getVesselTypeIcon(type, isFiltered), type.displayDescription()), config_style);
+			if (Lib.IsClicked()) {
+				if(isFiltered) filter_types.Remove(type);
+				else filter_types.Add(type);
+			}
+		}
+
+		Texture2D getVesselTypeIcon(VesselType type, Boolean disabled = false)
+		{
+			// TODO use proper ship type icons here. There should be a way to fetch those from
+			// KSP, but I don't know how or where to get them
+			switch(type) {
+				// this is what it will look like once someone has found the correct icons...
+				// case VesselType.Base: return disabled ? Icons.base_grey : Icons.base_white;
+
+				case VesselType.Base: return disabled ? Icons.battery_yellow : Icons.battery_white;
+				case VesselType.EVA: return disabled ? Icons.box_yellow : Icons.box_white;
+				case VesselType.Lander: return disabled ? Icons.brain_yellow : Icons.brain_white;
+				case VesselType.Plane: return disabled ? Icons.health_yellow : Icons.health_white;
+				case VesselType.Probe: return disabled ? Icons.recycle_yellow : Icons.recycle_red;
+				case VesselType.Relay: return disabled ? Icons.radiation_yellow : Icons.radiation_red;
+				case VesselType.Rover: return disabled ? Icons.signal_yellow : Icons.signal_white;
+				case VesselType.Ship: return disabled ? Icons.wrench_yellow : Icons.wrench_white;
+				case VesselType.Station: return disabled ? Icons.toggle_red : Icons.toggle_green;
+				default: return Icons.toggle_red; // this really schouldn't happen.
+			}
+		}
 
 		void Problem_sunlight(Vessel_info info, ref List<Texture2D> icons, ref List<string> tooltips)
 		{
@@ -623,26 +654,18 @@ namespace KERBALISM
 			p.AddIcon(image, tooltip);
 		}
 
-		// return true if the list of vessels is filtered
-		bool Filtered()
-		{
-			return filter.Length > 0 && filter != filter_placeholder;
-		}
-
 		// id of selected vessel
 		Guid selected_id;
 
 		// selected vessel
 		Vessel selected_v;
 
-		// group filter placeholder
-		const string filter_placeholder = "FILTER BY GROUP";
+		// filter placeholder
+		const string filter_placeholder = "SEARCH...";
 
-		// store group filter, if any
+		// current filter values
 		string filter = string.Empty;
-
-		// determine if filter is shown
-		bool show_filter;
+		List<VesselType> filter_types = new List<VesselType>();
 
 		// used by scroll window mechanics
 		Vector2 scroll_pos;
