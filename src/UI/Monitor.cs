@@ -331,23 +331,18 @@ namespace KERBALISM
 
 		Texture2D GetVesselTypeIcon(VesselType type, bool disabled = false)
 		{
-			// TODO use proper ship type icons here. There should be a way to fetch those from
-			// KSP, but I don't know how or where to get them
-			switch(type)
+			switch (type)
 			{
-				// this is what it will look like once someone has found the correct icons...
-				// case VesselType.Base: return disabled ? Icons.base_grey : Icons.base_white;
-
-				case VesselType.Base: return disabled ? Icons.battery_yellow : Icons.battery_white;
-				case VesselType.EVA: return disabled ? Icons.box_yellow : Icons.box_white;
-				case VesselType.Lander: return disabled ? Icons.brain_yellow : Icons.brain_white;
-				case VesselType.Plane: return disabled ? Icons.health_yellow : Icons.health_white;
-				case VesselType.Probe: return disabled ? Icons.recycle_yellow : Icons.recycle_red;
-				case VesselType.Relay: return disabled ? Icons.radiation_yellow : Icons.radiation_red;
-				case VesselType.Rover: return disabled ? Icons.signal_yellow : Icons.signal_white;
-				case VesselType.Ship: return disabled ? Icons.wrench_yellow : Icons.wrench_white;
-				case VesselType.Station: return disabled ? Icons.toggle_red : Icons.toggle_green;
-				default: return Icons.toggle_red; // this really shouldn't happen.
+				case VesselType.Base: return disabled ? Icons.base_black : Icons.base_white;
+				case VesselType.EVA: return disabled ? Icons.eva_black : Icons.eva_white;
+				case VesselType.Lander: return disabled ? Icons.lander_black : Icons.lander_white;
+				case VesselType.Plane: return disabled ? Icons.plane_black : Icons.plane_white;
+				case VesselType.Probe: return disabled ? Icons.probe_black : Icons.probe_white;
+				case VesselType.Relay: return disabled ? Icons.relay_black : Icons.relay_white;
+				case VesselType.Rover: return disabled ? Icons.rover_black : Icons.rover_white;
+				case VesselType.Ship: return disabled ? Icons.ship_black : Icons.ship_white;
+				case VesselType.Station: return disabled ? Icons.station_black : Icons.station_white;
+				default: return Icons.empty; // this really shouldn't happen.
 			}
 		}
 
