@@ -117,7 +117,9 @@ namespace KERBALISM
 			left_icon = new GUIStyle
 			{
 				alignment = TextAnchor.MiddleLeft,
-				fixedWidth = ScaleFloat(16.0f)
+				fixedWidth = ScaleFloat(16.0f),
+				stretchWidth = true,
+				stretchHeight = true
 			};
 
 			// right icon
@@ -182,11 +184,11 @@ namespace KERBALISM
 			return (uint)ScaleWidthFloat(val / (Settings.UIScale * Settings.UIScale * GameSettings.UI_SCALE * GameSettings.UI_SCALE_APPS));
 		}
 
-		public static Texture2D GetUIScaledTexture(string name)
+		public static Texture2D GetUIScaledTexture(string name, int width = 16, int height =16, float prescalar = 1.0f)
 		{
-			Texture2D texture = Lib.GetTexture(name);
+			Texture2D texture = Lib.GetTexture(name, width, height);
 
-			Lib.ScaleTexture(texture, ScaleInteger(texture.width), ScaleInteger(texture.height));
+			Lib.ScaleTexture(texture, ScaleInteger((int)(texture.width / prescalar)), ScaleInteger((int)(texture.height / prescalar)));
 
 			return texture;
 		}
