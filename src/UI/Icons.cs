@@ -72,6 +72,33 @@ namespace KERBALISM
 		internal static Texture2D plant_white;
 		internal static Texture2D plant_yellow;
 
+		internal static Texture2D station_black;
+		internal static Texture2D station_white;
+
+		internal static Texture2D base_black;
+		internal static Texture2D base_white;
+
+		internal static Texture2D ship_black;
+		internal static Texture2D ship_white;
+
+		internal static Texture2D probe_black;
+		internal static Texture2D probe_white;
+
+		internal static Texture2D relay_black;
+		internal static Texture2D relay_white;
+
+		internal static Texture2D rover_black;
+		internal static Texture2D rover_white;
+
+		internal static Texture2D lander_black;
+		internal static Texture2D lander_white;
+
+		internal static Texture2D eva_black;
+		internal static Texture2D eva_white;
+
+		internal static Texture2D plane_black;
+		internal static Texture2D plane_white;
+
 		///<summary> Initializes the icons </summary>
 		internal static void Initialize()
 		{
@@ -139,7 +166,34 @@ namespace KERBALISM
 
 			plant_white = Styles.GetUIScaledTexture("plant-white");
 			plant_yellow = Styles.GetUIScaledTexture("plant-yellow");
-		}
+
+			station_black = Styles.GetUIScaledTexture("vessels/station-black", 80, 80, 4);
+			station_white = Styles.GetUIScaledTexture("vessels/station-white", 80, 80, 4);
+
+			base_black = Styles.GetUIScaledTexture("vessels/base-black", 80, 80, 4);
+			base_white = Styles.GetUIScaledTexture("vessels/base-white", 80, 80, 4);
+
+			ship_black = Styles.GetUIScaledTexture("vessels/ship-black", 80, 80, 4);
+			ship_white = Styles.GetUIScaledTexture("vessels/ship-white", 80, 80, 4);
+
+			probe_black = Styles.GetUIScaledTexture("vessels/probe-black", 80, 80, 4);
+			probe_white = Styles.GetUIScaledTexture("vessels/probe-white", 80, 80, 4);
+
+			relay_black = Styles.GetUIScaledTexture("vessels/relay-black", 40, 40, 1.75f);
+			relay_white = Styles.GetUIScaledTexture("vessels/relay-white", 40, 40, 1.75f);
+
+			rover_black = Styles.GetUIScaledTexture("vessels/rover-black", 80, 80, 4);
+			rover_white = Styles.GetUIScaledTexture("vessels/rover-white", 80, 80, 4);
+
+			lander_black = Styles.GetUIScaledTexture("vessels/lander-black", 80, 80, 4);
+			lander_white = Styles.GetUIScaledTexture("vessels/lander-white", 80, 80, 4);
+
+			eva_black = Styles.GetUIScaledTexture("vessels/eva-black", 80, 80, 4);
+			eva_white = Styles.GetUIScaledTexture("vessels/eva-white", 80, 80, 4);
+
+			plane_black = Styles.GetUIScaledTexture("vessels/plane-black", 40, 40, 2.25f);
+			plane_white = Styles.GetUIScaledTexture("vessels/plane-white", 40, 40, 2.25f);
 	}
+}
 
 } // KERBALISM
