@@ -101,7 +101,7 @@ namespace KERBALISM
 			else
 			{
 				// header act as title
-				Render_vessel(panel, selected_v);
+				Render_vessel(panel, selected_v, true);
 
 				// update page content
 				switch (page)
@@ -177,7 +177,7 @@ namespace KERBALISM
 			return false;
 		}
 
-		bool Render_vessel(Panel p, Vessel v)
+		bool Render_vessel(Panel p, Vessel v, bool selected = false)
 		{
 			// get vessel info
 			Vessel_info vi = Cache.VesselInfo(v);
@@ -201,16 +201,18 @@ namespace KERBALISM
 			if (!Filter_match(v.vesselType, vd.group + " " + body_name + " " + vessel_name)) return false;
 
 			// render entry
-			p.AddIcon(GetVesselTypeIcon(v.vesselType));
 			p.AddHeader
 			(
 			  Lib.BuildString("<b>",
-			  Lib.Ellipsis(vessel_name, Styles.ScaleStringLength(((page == MonitorPage.data || page == MonitorPage.log || selected_id == Guid.Empty) && !Lib.IsFlight()) ? 50 : 30)),
-			  "</b> <size=", Styles.ScaleInteger(9).ToString(),
-			  "><color=#cccccc>", Lib.Ellipsis(body_name, Styles.ScaleStringLength(8)), "</color></size>"),
+			  Lib.Ellipsis(vessel_name, Styles.ScaleStringLength(((page == MonitorPage.data || page == MonitorPage.log || selected_id == Guid.Empty) && !Lib.IsFlight()) ? 45 : 25)),
+			  "</b> <size=", Styles.ScaleInteger(9).ToString(),">", Lib.Color("#cccccc", Lib.Ellipsis(body_name, Styles.ScaleStringLength(8))), "</size>"),
 			  string.Empty,
 			  () => { selected_id = selected_id != v.id ? v.id : Guid.Empty; }
 			);
+
+			// vessel type icon
+			if (!selected)
+			p.SetIcon(GetVesselTypeIcon(v.vesselType), v.vesselType.displayDescription(), () => { selected_id = selected_id != v.id ? v.id : Guid.Empty; });
 
 			// problem indicator
 			Indicator_problems(p, v, vi, crew);
@@ -327,7 +329,7 @@ namespace KERBALISM
 			}
 		}
 
-		Texture2D GetVesselTypeIcon(VesselType type, Boolean disabled = false)
+		Texture2D GetVesselTypeIcon(VesselType type, bool disabled = false)
 		{
 			// TODO use proper ship type icons here. There should be a way to fetch those from
 			// KSP, but I don't know how or where to get them
