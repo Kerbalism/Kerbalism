@@ -46,9 +46,26 @@ namespace KERBALISM
 				label = label,
 				tooltip = tooltip,
 				click = click,
-				icons = new List<Icon>()
+				icons = new List<Icon>(),
+				icon = null
 			};
 			headers.Add(h);
+		}
+
+		///<summary> Sets the last added header's leading icon </summary>
+		public void SetIcon(Texture2D texture, string tooltip = "", Action click = null)
+		{
+			Icon i = new Icon
+			{
+				texture = texture,
+				tooltip = tooltip,
+				click = click
+			};
+			if (headers.Count > 0)
+			{
+				Header h = headers[headers.Count - 1];
+				h.icon = i;
+			}
 		}
 
 		public void AddSection(string title, string desc = "", Action left = null, Action right = null, Boolean sort = false)
@@ -84,6 +101,7 @@ namespace KERBALISM
 			}
 		}
 
+		///<summary> Adds an icon to the last added header </summary>
 		public void AddIcon(Texture2D texture, string tooltip = "", Action click = null)
 		{
 			Icon i = new Icon
@@ -111,6 +129,12 @@ namespace KERBALISM
 			foreach (Header h in headers)
 			{
 				GUILayout.BeginHorizontal(Styles.entry_container);
+				if (h.icon != null)
+				{
+					GUILayout.Label(new GUIContent(h.icon.texture, h.icon.tooltip), Styles.left_icon);
+					if (h.icon.click != null && Lib.IsClicked())
+						callbacks.Add(h.icon.click);
+				}
 				GUILayout.Label(new GUIContent(h.label, h.tooltip), Styles.entry_label_nowrap);
 				if (h.click != null && Lib.IsClicked()) callbacks.Add(h.click);
 				foreach (Icon i in h.icons)
@@ -265,6 +289,7 @@ namespace KERBALISM
 			public string tooltip;
 			public Action click;
 			public List<Icon> icons;
+			public Icon icon;
 		}
 
 		sealed class Section

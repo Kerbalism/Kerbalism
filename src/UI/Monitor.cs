@@ -28,7 +28,7 @@ namespace KERBALISM
 			filter_style.normal.textColor = new Color(0.66f, 0.66f, 0.66f, 1.0f);
 			filter_style.stretchWidth = true;
 			filter_style.fontSize = Styles.ScaleInteger(12);
-			filter_style.alignment = TextAnchor.MiddleCenter;
+			filter_style.alignment = TextAnchor.MiddleLeft;
 			filter_style.fixedHeight = Styles.ScaleFloat(16.0f);
 			filter_style.border = new RectOffset(0, 0, 0, 0);
 
@@ -72,9 +72,6 @@ namespace KERBALISM
 				// forget the selected vessel, if any
 				selected_id = Guid.Empty;
 
-				// filter flag is updated on render_vessel
-				show_filter = false;
-
 				// used to detect when no vessels are in list
 				bool setup = false;
 
@@ -104,7 +101,7 @@ namespace KERBALISM
 			else
 			{
 				// header act as title
-				Render_vessel(panel, selected_v);
+				Render_vessel(panel, selected_v, true);
 
 				// update page content
 				switch (page)
@@ -131,15 +128,8 @@ namespace KERBALISM
 			GUILayout.EndScrollView();
 
 			// if a vessel is selected, and exist
-			if (selected_v != null)
-			{
-				Render_menu(selected_v);
-			}
-			// if at least one vessel is assigned to a group
-			else if (show_filter)
-			{
-				Render_filter();
-			}
+			if (selected_v != null) Render_menu(selected_v);
+			else Render_filter();
 
 			// right click goes back to list view
 			if (Event.current.type == EventType.MouseDown
@@ -152,42 +142,42 @@ namespace KERBALISM
 		public float Width()
 		{
 			if ((page == MonitorPage.data || page == MonitorPage.log || selected_id == Guid.Empty) && !Lib.IsFlight())
-			{
 				return Styles.ScaleWidthFloat(465.0f);
-			}
 			return Styles.ScaleWidthFloat(355.0f);
 		}
 
 		public float Height()
 		{
 			// top spacing
-			float h = Styles.ScaleFloat(10.0f);
+			float h = Styles.ScaleFloat(36.0f);
 
 			// panel height
 			h += panel.Height();
-
-			// one is selected, or filter is required
-			if (selected_id != Guid.Empty || show_filter)
-			{
-				h += Styles.ScaleFloat(26.0f);
-			}
 
 			// clamp to screen height
 			return Math.Min(h, Screen.height * 0.75f);
 		}
 
-		bool Filter_match(String vesselGroup) {
-			List<String> filterTags = filter.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()).ToList();
-			List<String> vesselTags = vesselGroup.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()).ToList();
-			foreach(String tag in filterTags) {
-				if(!vesselTags.Contains(tag)) {
-					return false;
+		bool Filter_match(VesselType vesselType, string vesselGroup)
+		{
+			if(filter_types.Contains(vesselType)) return false;
+			if(filter.Length <= 0 || filter == filter_placeholder) return true;
+
+			List<string> filterTags = filter.ToLower().Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()).ToList();
+			List<string> vesselTags = vesselGroup.ToLower().Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()).ToList();
+
+			foreach (string tag in filterTags)
+			{
+				foreach(string vesselTag in vesselTags)
+				{
+					if(vesselTag.StartsWith(tag, StringComparison.CurrentCulture))
+						return true;
 				}
 			}
-			return true;
+			return false;
 		}
 
-		bool Render_vessel(Panel p, Vessel v)
+		bool Render_vessel(Panel p, Vessel v, bool selected = false)
 		{
 			// get vessel info
 			Vessel_info vi = Cache.VesselInfo(v);
@@ -198,15 +188,6 @@ namespace KERBALISM
 			// get data from db
 			VesselData vd = DB.Vessel(v);
 
-			// determine if filter must be shown
-			show_filter |= vd.group.Length > 0 && vd.group != "NONE";
-
-			// skip filtered vessels
-			if (Filtered() && !Filter_match(vd.group)) return false;
-
-			// get resource handler
-			Vessel_resources resources = ResourceCache.Get(v);
-
 			// get vessel crew
 			List<ProtoCrewMember> crew = Lib.CrewList(v);
 
@@ -216,16 +197,22 @@ namespace KERBALISM
 			// get body name
 			string body_name = v.mainBody.name.ToUpper();
 
+			// skip filtered vessels
+			if (!Filter_match(v.vesselType, vd.group + " " + body_name + " " + vessel_name)) return false;
+
 			// render entry
 			p.AddHeader
 			(
 			  Lib.BuildString("<b>",
-			  Lib.Ellipsis(vessel_name, Styles.ScaleStringLength(((page == MonitorPage.data || page == MonitorPage.log || selected_id == Guid.Empty) && !Lib.IsFlight()) ? 50 : 30)),
-			  "</b> <size=", Styles.ScaleInteger(9).ToString(),
-			  "><color=#cccccc>", Lib.Ellipsis(body_name, Styles.ScaleStringLength(8)), "</color></size>"),
+			  Lib.Ellipsis(vessel_name, Styles.ScaleStringLength(((page == MonitorPage.data || page == MonitorPage.log || selected_id == Guid.Empty) && !Lib.IsFlight()) ? 45 : 25)),
+			  "</b> <size=", Styles.ScaleInteger(9).ToString(),">", Lib.Color("#cccccc", Lib.Ellipsis(body_name, Styles.ScaleStringLength(8))), "</size>"),
 			  string.Empty,
 			  () => { selected_id = selected_id != v.id ? v.id : Guid.Empty; }
 			);
+
+			// vessel type icon
+			if (!selected)
+			p.SetIcon(GetVesselTypeIcon(v.vesselType), v.vesselType.displayDescription(), () => { selected_id = selected_id != v.id ? v.id : Guid.Empty; });
 
 			// problem indicator
 			Indicator_problems(p, v, vi, crew);
@@ -245,7 +232,6 @@ namespace KERBALISM
 			// done
 			return true;
 		}
-
 
 		void Render_menu(Vessel v)
 		{
@@ -312,16 +298,53 @@ namespace KERBALISM
 			GUILayout.Space(Styles.ScaleFloat(10.0f));
 		}
 
-
 		void Render_filter()
 		{
 			// show the group filter
 			GUILayout.BeginHorizontal(Styles.entry_container);
+
+			Render_TypeFilterButon(VesselType.Probe);
+			Render_TypeFilterButon(VesselType.Rover);
+			Render_TypeFilterButon(VesselType.Lander);
+			Render_TypeFilterButon(VesselType.Ship);
+			Render_TypeFilterButon(VesselType.Station);
+			Render_TypeFilterButon(VesselType.Base);
+			Render_TypeFilterButon(VesselType.Plane);
+			Render_TypeFilterButon(VesselType.Relay);
+			Render_TypeFilterButon(VesselType.EVA);
+
 			filter = Lib.TextFieldPlaceholder("Kerbalism_filter", filter, filter_placeholder, filter_style).ToUpper();
 			GUILayout.EndHorizontal();
 			GUILayout.Space(Styles.ScaleFloat(10.0f));
 		}
 
+		void Render_TypeFilterButon(VesselType type)
+		{
+			bool isFiltered = filter_types.Contains(type);
+			GUILayout.Label(new GUIContent(" ", GetVesselTypeIcon(type, isFiltered), type.displayDescription()), config_style);
+			if (Lib.IsClicked())
+			{
+				if(isFiltered) filter_types.Remove(type);
+				else filter_types.Add(type);
+			}
+		}
+
+		Texture2D GetVesselTypeIcon(VesselType type, bool disabled = false)
+		{
+			switch (type)
+			{
+				case VesselType.Base: return disabled ? Icons.base_black : Icons.base_white;
+				case VesselType.EVA: return disabled ? Icons.eva_black : Icons.eva_white;
+				case VesselType.Lander: return disabled ? Icons.lander_black : Icons.lander_white;
+				case VesselType.Plane: return disabled ? Icons.plane_black : Icons.plane_white;
+				case VesselType.Probe: return disabled ? Icons.probe_black : Icons.probe_white;
+				case VesselType.Relay: return disabled ? Icons.relay_black : Icons.relay_white;
+				case VesselType.Rover: return disabled ? Icons.rover_black : Icons.rover_white;
+				case VesselType.Ship: return disabled ? Icons.ship_black : Icons.ship_white;
+				case VesselType.Station: return disabled ? Icons.station_black : Icons.station_white;
+				default: return Icons.empty; // this really shouldn't happen.
+			}
+		}
 
 		void Problem_sunlight(Vessel_info info, ref List<Texture2D> icons, ref List<string> tooltips)
 		{
@@ -623,26 +646,18 @@ namespace KERBALISM
 			p.AddIcon(image, tooltip);
 		}
 
-		// return true if the list of vessels is filtered
-		bool Filtered()
-		{
-			return filter.Length > 0 && filter != filter_placeholder;
-		}
-
 		// id of selected vessel
 		Guid selected_id;
 
 		// selected vessel
 		Vessel selected_v;
 
-		// group filter placeholder
-		const string filter_placeholder = "FILTER BY GROUP";
+		// filter placeholder
+		const string filter_placeholder = "SEARCH...";
 
-		// store group filter, if any
+		// current filter values
 		string filter = string.Empty;
-
-		// determine if filter is shown
-		bool show_filter;
+		List<VesselType> filter_types = new List<VesselType>();
 
 		// used by scroll window mechanics
 		Vector2 scroll_pos;
