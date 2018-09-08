@@ -3,6 +3,7 @@
 
 ### Changes since the last release
 
+* Kerbal rates for Breathing, Eating etc where based on a Humans use, they have been recalculated based on a Kerbal using 1/4 of a Humans use (PiezPiedPy)
 * A dump valve has been added to the Fuel Cells (PiezPiedPy)
 * Reliability added to the active shield and slightly increased its effectiveness (PiezPiedPy)
 * Vessels that where missing on the monitor due to old SaveGames with RemoteTech antennas fitted, bug fixed (PiezPiedPy)
