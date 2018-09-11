@@ -13,6 +13,7 @@
 * Improved vessel search in monitor: you can search for the name of the central body and the vessel name (Sir Mortimer)
 * Added vessel type icons and filter buttons to include/exclude them in the list (Sir Mortimer, PiezPiedPy)
 * SSPX PDT-6 'Star' Utility Module balanced: shield strength, costs, tech level requirement and reliability (Sir Mortimer)
+* If present, use Community Category Kit for Kerbalism parts (Sir Mortimer)
 
 ### Known Issues
 
