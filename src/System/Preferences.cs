@@ -9,6 +9,9 @@ namespace KERBALISM
 		[GameParameters.CustomParameterUI("Stock Science Dialog", toolTip = "Keep showing the stock science dialog")]
 		public bool scienceDialog = true;
 
+		[GameParameters.CustomParameterUI("Transmit Science Immediately", toolTip = "Automatically transmit science if possible")]
+		public bool transmitScience = true;
+
 		[GameParameters.CustomParameterUI("Highlight Malfunctions", toolTip = "Highlight faild parts in flight")]
 		public bool highlights = true;
 
@@ -252,7 +255,7 @@ namespace KERBALISM
 		[GameParameters.CustomIntParameterUI("Max Days Between Storms", minValue = 1, maxValue = 2000, toolTip = "Maximum days between storms over a system")]
 		public int stormMaxDays = 500;
 
-		[GameParameters.CustomIntParameterUI("Storm Duration", minValue = 1, maxValue = 200, toolTip = "Average duration of a storm in hours")]
+		[GameParameters.CustomIntParameterUI("Storm Duration Hours", minValue = 1, maxValue = 200, toolTip = "Average duration of a storm in hours")]
 		public int stormDurationHours = 6;
 
 		[GameParameters.CustomFloatParameterUI("Storm Ejection Speed", asPercentage = true, minValue = 0.01f, maxValue = 1, displayFormat = "F2", toolTip = "CME speed as percentage of C")]
@@ -261,10 +264,10 @@ namespace KERBALISM
 		[GameParameters.CustomFloatParameterUI("Shielding Efficiency", asPercentage = true, minValue = 0.01f, maxValue = 1, displayFormat = "F2", toolTip = "Proportion of radiation blocked by shielding (at max amount)")]
 		public float shieldingEfficiency = 0.9f;
 
-		[GameParameters.CustomFloatParameterUI("Storm Radiation", minValue = 0.01f, maxValue = 15, displayFormat = "F2", toolTip = "Radiation during a solar storm")]
+		[GameParameters.CustomFloatParameterUI("Storm Radiation rad/h", minValue = 0.01f, maxValue = 15, displayFormat = "F2", toolTip = "Radiation during a solar storm")]
 		public float stormRadiation = 5;
 
-		[GameParameters.CustomFloatParameterUI("Extern Radiation", minValue = 0.01f, maxValue = 15, displayFormat = "F2", toolTip = "Radiation outside the heliopause")]
+		[GameParameters.CustomFloatParameterUI("External Radiation rad/h", minValue = 0.01f, maxValue = 15, displayFormat = "F2", toolTip = "Radiation outside the heliopause")]
 		public float externRadiation = 0.04f;
 
 		public double StormMinTime { get { return stormMinDays * Lib.HoursInDay() * 3600.0; } }

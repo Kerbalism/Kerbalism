@@ -11,14 +11,14 @@ namespace KERBALISM
 		{
 			size = amount;
 			buff = 0.0;
-			send = false;
+			send = PreferencesBasic.Instance.transmitScience;
 		}
 
 		public File(ConfigNode node)
 		{
 			size = Lib.ConfigValue(node, "size", 0.0);
 			buff = Lib.ConfigValue(node, "buff", 0.0);
-			send = Lib.ConfigValue(node, "send", false);
+			send = Lib.ConfigValue(node, "send", PreferencesBasic.Instance.transmitScience);
 		}
 
 		public void Save(ConfigNode node)
