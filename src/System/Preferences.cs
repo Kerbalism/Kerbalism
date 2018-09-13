@@ -15,10 +15,10 @@ namespace KERBALISM
 		[GameParameters.CustomParameterUI("Highlight Malfunctions", toolTip = "Highlight faild parts in flight")]
 		public bool highlights = true;
 
-		[GameParameters.CustomIntParameterUI("Breakdown Penalty", minValue = 0, maxValue = 300, toolTip = "Reputation removed when a Kerbal looses his marbles in space")]
+		[GameParameters.CustomIntParameterUI("Breakdown Reputation Penalty", minValue = 0, maxValue = 300, toolTip = "Reputation removed when a Kerbal looses his marbles in space")]
 		public int breakdownPenalty = 10;
 
-		[GameParameters.CustomIntParameterUI("Death Penalty", minValue = 0, maxValue = 300, toolTip = "Reputation removed when a Kerbal dies")]
+		[GameParameters.CustomIntParameterUI("Death Reputation Penalty", minValue = 0, maxValue = 300, toolTip = "Reputation removed when a Kerbal dies")]
 		public int deathPenalty = 100;
 
 		[GameParameters.CustomParameterUI("Incentive Redundancy", toolTip = "Each malfunction will increase the MTBF\nof components in the same redundancy group")]
