@@ -258,7 +258,7 @@ namespace KERBALISM
 		[GameParameters.CustomFloatParameterUI("Storm Ejection Speed", asPercentage = true, minValue = 0.01f, maxValue = 1, displayFormat = "F2", toolTip = "CME speed as percentage of C")]
 		public float stormEjectionSpeedC = 0.33f;
 
-		[GameParameters.CustomFloatParameterUI("Shielding Efficiency", asPercentage = true, minValue = 0.01f, maxValue = 1, displayFormat = "FF", toolTip = "Proportion of radiation blocked by shielding (at max amount)")]
+		[GameParameters.CustomFloatParameterUI("Shielding Efficiency", asPercentage = true, minValue = 0.01f, maxValue = 1, displayFormat = "F2", toolTip = "Proportion of radiation blocked by shielding (at max amount)")]
 		public float shieldingEfficiency = 0.9f;
 
 		[GameParameters.CustomFloatParameterUI("Storm Radiation", minValue = 0.01f, maxValue = 15, displayFormat = "F2", toolTip = "Radiation during a solar storm")]
