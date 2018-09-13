@@ -31,18 +31,6 @@ namespace KERBALISM
 			SpaceWeather = Lib.ConfigValue(cfg, "SpaceWeather", false);
 			Automation = Lib.ConfigValue(cfg, "Automation", false);
 
-			// temperature
-			SurvivalTemperature = Lib.ConfigValue(cfg, "SurvivalTemperature", 295.0);
-			SurvivalRange = Lib.ConfigValue(cfg, "SurvivalRange", 5.0);
-
-			// quality-of-life
-			IdealLivingSpace = Lib.ConfigValue(cfg, "IdealLivingSpace", 40.0);
-			ComfortFirmGround = Lib.ConfigValue(cfg, "ComfortFirmGround", 0.4);
-			ComfortExercise = Lib.ConfigValue(cfg, "ComfortExercise", 0.2);
-			ComfortNotAlone = Lib.ConfigValue(cfg, "ComfortNotAlone", 0.1);
-			ComfortCallHome = Lib.ConfigValue(cfg, "ComfortCallHome", 0.1);
-			ComfortPanorama = Lib.ConfigValue(cfg, "ComfortPanorama", 0.1);
-
 			// pressure
 			PressureFactor = Lib.ConfigValue(cfg, "PressureFactor", 10.0);
 			PressureThreshold = Lib.ConfigValue(cfg, "PressureThreshold", 0.9);
@@ -55,27 +43,11 @@ namespace KERBALISM
 			HumidityFactor = Lib.ConfigValue(cfg, "HumidityFactor", 1.0);
 			HumidityThreshold = Lib.ConfigValue(cfg, "HumidityThreshold", 0.95);
 
-			// radiation
-			ShieldingEfficiency = Lib.ConfigValue(cfg, "ShieldingEfficiency", 0.9);
-			StormRadiation = Lib.ConfigValue(cfg, "StormRadiation", 5.0) / 3600.0;  // 5.0 rad/h
-			ExternRadiation = Lib.ConfigValue(cfg, "ExternRadiation", 0.04) / 3600.0; // 0.04 rad/h
-
-			// storm
-			StormMinTime = Lib.ConfigValue(cfg, "StormMinTime", 2160000.0); // 100 days
-			StormMaxTime = Lib.ConfigValue(cfg, "StormMaxTime", 8640000.0); // 400 days
-			StormDuration = Lib.ConfigValue(cfg, "StormDuration", 21600.0);   // 1 day
-			StormEjectionSpeed = Lib.ConfigValue(cfg, "StormEjectionSpeed", 1000000.0); // 0.33% c
-
 			// signal
 			UnlinkedControl = Lib.ConfigEnum(cfg, "UnlinkedControl", UnlinkedCtrl.none);
-			ExtendedAntenna = Lib.ConfigValue(cfg, "ExtendedAntenna", true);
-			HideGroundStationsDist = Lib.ConfigValue(cfg, "HideGroundStationsDist", 30000000);
 
 			// reliability
 			QualityScale = Lib.ConfigValue(cfg, "QualityScale", 4.0);
-			CriticalChance = Lib.ConfigValue(cfg, "CriticalChance", 0.25);
-			SafeModeChance = Lib.ConfigValue(cfg, "SafeModeChance", 0.5);
-			IncentiveRedundancy = Lib.ConfigValue(cfg, "IncentiveRedundancy", false);
 
 			// misc
 			EnforceCoherency = Lib.ConfigValue(cfg, "EnforceCoherency", true);
@@ -97,18 +69,6 @@ namespace KERBALISM
 		public static bool SpaceWeather;                        // coronal mass ejections
 		public static bool Automation;                          // control vessel components using scripts
 
-		// temperature
-		public static double SurvivalTemperature;               // ideal living temperature
-		public static double SurvivalRange;                     // sweet spot around survival temperature
-
-		// quality-of-life
-		public static double IdealLivingSpace;                  // ideal living space per-capita in m^3
-		public static double ComfortFirmGround;                 // firm-ground comfort factor
-		public static double ComfortExercise;                   // exercise comfort factor
-		public static double ComfortNotAlone;                   // not-alone comfort factor
-		public static double ComfortCallHome;                   // call-home comfort factor
-		public static double ComfortPanorama;                   // panorama comfort factor
-
 		// pressure
 		public static double PressureFactor;                    // pressurized modifier value for vessels below the threshold
 		public static double PressureThreshold;                 // level of atmosphere resource that determine pressurized status
@@ -121,27 +81,11 @@ namespace KERBALISM
 		public static double HumidityFactor;                    // moisture modifier value for vessels below the threshold
 		public static double HumidityThreshold;                 // level of moist atmosphere resource that determine high humidity status
 
-		// radiation
-		public static double ShieldingEfficiency;               // proportion of radiation blocked by shielding (at max amount)
-		public static double StormRadiation;                    // radiation during a solar storm
-		public static double ExternRadiation;                   // radiation outside the heliopause
-
-		// storm
-		public static double StormMinTime;                      // minimum interval between storms over a system
-		public static double StormMaxTime;                      // maximum interval between storms over a system
-		public static double StormDuration;                     // how long a storm last once it hit
-		public static double StormEjectionSpeed;                // cme speed in m/s
-
 		// signal
 		public static UnlinkedCtrl UnlinkedControl;             // available control for unlinked vessels: 'none', 'limited' or 'full'
-		public static bool ExtendedAntenna;                   // antenna only work if extended
-		public static float HideGroundStationsDist;
 
 		// reliability
 		public static double QualityScale;                      // scale applied to MTBF for high-quality components
-		public static double CriticalChance;                    // proportion of malfunctions that lead to critical failures
-		public static double SafeModeChance;                    // proportion of malfunctions fixed remotely for unmanned vessels
-		public static bool IncentiveRedundancy;               // if true, each malfunction will increase the MTBF of components in the same redundancy group
 
 		// misc
 		public static bool EnforceCoherency;                  // detect and avoid issues at high timewarp in external modules

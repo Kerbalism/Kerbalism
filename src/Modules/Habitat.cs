@@ -492,20 +492,20 @@ namespace KERBALISM
 		public static double Shielding(Vessel v)
 		{
 			// the shielding factor is simply the level of shielding, scaled by the 'shielding efficiency' setting
-			return ResourceCache.Info(v, "Shielding").level * Settings.ShieldingEfficiency;
+			return ResourceCache.Info(v, "Shielding").level * PreferencesStorm.Instance.shieldingEfficiency;
 		}
 
 		// return living space factor in a vessel
 		public static double Living_space(Vessel v)
 		{
 			// living space is the volume per-capita normalized against an 'ideal living space' and clamped in an acceptable range
-			return Lib.Clamp((Tot_volume(v) / Lib.CrewCount(v)) / Settings.IdealLivingSpace, 0.1, 1.0);
+			return Lib.Clamp((Tot_volume(v) / Lib.CrewCount(v)) / PreferencesComfort.Instance.livingSpace, 0.1, 1.0);
 		}
 
 		// return a verbose description of shielding capability
 		public static string Shielding_to_string(double v)
 		{
-			return v <= double.Epsilon ? "none" : Lib.BuildString((20.0 * v / Settings.ShieldingEfficiency).ToString("F2"), " mm Pb");
+			return v <= double.Epsilon ? "none" : Lib.BuildString((20.0 * v / PreferencesStorm.Instance.shieldingEfficiency).ToString("F2"), " mm Pb");
 		}
 
 		// traduce living space value to string

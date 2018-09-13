@@ -78,7 +78,7 @@ namespace KERBALISM
 			if (e.first_seen <= float.Epsilon) e.first_seen = time;
 
 			// if visualized for too long, remove from the queue and skip this update
-			if (e.first_seen + PreferencesBasic.Instance.messageLength < time) { entries.Dequeue(); return; }
+			if (e.first_seen + PreferencesMessages.Instance.messageLength < time) { entries.Dequeue(); return; }
 
 			// calculate content size
 			GUIContent content = new GUIContent(e.msg);
@@ -105,9 +105,9 @@ namespace KERBALISM
 			if (instance.muted) return;
 
 			// if the user want to use the stock message system, just post it there
-			if (PreferencesBasic.Instance.stockMessages)
+			if (PreferencesMessages.Instance.stockMessages)
 			{
-				ScreenMessages.PostScreenMessage(msg, PreferencesBasic.Instance.messageLength, ScreenMessageStyle.UPPER_CENTER);
+				ScreenMessages.PostScreenMessage(msg, PreferencesMessages.Instance.messageLength, ScreenMessageStyle.UPPER_CENTER);
 				return;
 			}
 

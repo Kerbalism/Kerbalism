@@ -97,11 +97,11 @@ namespace KERBALISM
 
 			// calculate factor
 			factor = 0.1;
-			if (firm_ground) factor += Settings.ComfortFirmGround;
-			if (not_alone) factor += Settings.ComfortNotAlone;
-			if (call_home) factor += Settings.ComfortCallHome;
-			if (exercise) factor += Settings.ComfortExercise;
-			if (panorama) factor += Settings.ComfortPanorama;
+			if (firm_ground) factor += PreferencesComfort.Instance.firmGround;
+			if (not_alone) factor += PreferencesComfort.Instance.notAlone;
+			if (call_home) factor += PreferencesComfort.Instance.callHome;
+			if (exercise) factor += PreferencesComfort.Instance.exercise;
+			if (panorama) factor += PreferencesComfort.Instance.panorama;
 			factor = Lib.Clamp(factor, 0.1, 1.0);
 		}
 
@@ -147,11 +147,11 @@ namespace KERBALISM
 
 			// calculate factor
 			factor = 0.1;
-			if (firm_ground) factor += Settings.ComfortFirmGround;
-			if (not_alone) factor += Settings.ComfortNotAlone;
-			if (call_home) factor += Settings.ComfortCallHome;
-			if (exercise) factor += Settings.ComfortExercise;
-			if (panorama) factor += Settings.ComfortPanorama;
+			if (firm_ground) factor += PreferencesComfort.Instance.firmGround;
+			if (not_alone) factor += PreferencesComfort.Instance.notAlone;
+			if (call_home) factor += PreferencesComfort.Instance.callHome;
+			if (exercise) factor += PreferencesComfort.Instance.exercise;
+			if (panorama) factor += PreferencesComfort.Instance.panorama;
 			factor = Lib.Clamp(factor, 0.1, 1.0);
 		}
 

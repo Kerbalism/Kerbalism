@@ -415,7 +415,7 @@ namespace KERBALISM
 		public static double TempDiff(double k, CelestialBody body, bool landed)
 		{
 			if (body.flightGlobalsIndex == FlightGlobals.GetHomeBodyIndex() && landed) return 0.0;
-			return Math.Max(Math.Abs(k - Settings.SurvivalTemperature) - Settings.SurvivalRange, 0.0);
+			return Math.Max(Math.Abs(k - PreferencesLifeSupport.Instance.survivalTemperature) - PreferencesLifeSupport.Instance.survivalRange, 0.0);
 		}
 
 

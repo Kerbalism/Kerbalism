@@ -19,7 +19,7 @@ namespace KERBALISM
 			cfg_malfunction = PreferencesMessages.Instance.malfunction;
 			cfg_storm = PreferencesMessages.Instance.storm;
 			cfg_script = PreferencesMessages.Instance.script;
-			cfg_highlights = PreferencesMessages.Instance.highlights;
+			cfg_highlights = PreferencesBasic.Instance.highlights;
 			cfg_showlink = true;
 			hyspos_signal = 0.0;
 			hysneg_signal = 5.0;
@@ -43,7 +43,7 @@ namespace KERBALISM
 			cfg_malfunction = Lib.ConfigValue(node, "cfg_malfunction", PreferencesMessages.Instance.malfunction);
 			cfg_storm = Lib.ConfigValue(node, "cfg_storm", PreferencesMessages.Instance.storm);
 			cfg_script = Lib.ConfigValue(node, "cfg_script", PreferencesMessages.Instance.script);
-			cfg_highlights = Lib.ConfigValue(node, "cfg_highlights", PreferencesMessages.Instance.highlights);
+			cfg_highlights = Lib.ConfigValue(node, "cfg_highlights", PreferencesBasic.Instance.highlights);
 			cfg_showlink = Lib.ConfigValue(node, "cfg_showlink", true);
 			hyspos_signal = Lib.ConfigValue(node, "hyspos_signal", 0.0);
 			hysneg_signal = Lib.ConfigValue(node, "hysneg_signal", 0.0);
