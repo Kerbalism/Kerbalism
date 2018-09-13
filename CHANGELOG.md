@@ -3,6 +3,7 @@
 
 ### Changes since the last release
 
+* Kerbal LS rates have been recalculated based on 1/16 of a Humans consumption due to their size and day length (PiezPiedPy)
 * A dump valve has been added to the Fuel Cells (PiezPiedPy)
 * Reliability added to the active shield and slightly increased its effectiveness (PiezPiedPy)
 * Vessels that where missing on the monitor due to old SaveGames with RemoteTech antennas fitted, bug fixed (PiezPiedPy)
