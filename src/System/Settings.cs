@@ -71,9 +71,6 @@ namespace KERBALISM
 			ExtendedAntenna = Lib.ConfigValue(cfg, "ExtendedAntenna", true);
 			HideGroundStationsDist = Lib.ConfigValue(cfg, "HideGroundStationsDist", 30000000);
 
-			// science
-			ScienceDialog = Lib.ConfigValue(cfg, "ScienceDialog", true);
-
 			// reliability
 			QualityScale = Lib.ConfigValue(cfg, "QualityScale", 4.0);
 			CriticalChance = Lib.ConfigValue(cfg, "CriticalChance", 0.25);
@@ -84,10 +81,6 @@ namespace KERBALISM
 			EnforceCoherency = Lib.ConfigValue(cfg, "EnforceCoherency", true);
 			TrackingPivot = Lib.ConfigValue(cfg, "TrackingPivot", true);
 			HeadLampsCost = Lib.ConfigValue(cfg, "HeadLampsCost", 0.002);
-			DeathReputation = Lib.ConfigValue(cfg, "DeathReputation", 100.0f);
-			BreakdownReputation = Lib.ConfigValue(cfg, "BreakdownReputation", 10.0f);
-			StockMessages = Lib.ConfigValue(cfg, "StockMessages", false);
-			MessageLength = Lib.ConfigValue(cfg, "MessageLength", 4.0f);
 			LowQualityRendering = Lib.ConfigValue(cfg, "LowQualityRendering", false);
 			UIScale = Lib.ConfigValue(cfg, "UIScale", 1.0f);
 			UIPanelWidthScale = Lib.ConfigValue(cfg, "UIPanelWidthScale", 1.0f);
@@ -144,9 +137,6 @@ namespace KERBALISM
 		public static bool ExtendedAntenna;                   // antenna only work if extended
 		public static float HideGroundStationsDist;
 
-		// science
-		public static bool ScienceDialog;                     // keep showing the stock science dialog
-
 		// reliability
 		public static double QualityScale;                      // scale applied to MTBF for high-quality components
 		public static double CriticalChance;                    // proportion of malfunctions that lead to critical failures
@@ -157,10 +147,6 @@ namespace KERBALISM
 		public static bool EnforceCoherency;                  // detect and avoid issues at high timewarp in external modules
 		public static bool TrackingPivot;                     // simulate tracking solar panel around the pivot
 		public static double HeadLampsCost;                     // EC/s cost if eva headlamps are on
-		public static float DeathReputation;                   // reputation to remove in case of death
-		public static float BreakdownReputation;               // reputation to remove in case of breakdown
-		public static bool StockMessages;                     // use the stock messages instead of our own message box
-		public static float MessageLength;                     // duration of messages on screen in seconds
 		public static bool LowQualityRendering;               // use less particles to render the magnetic fields
 		public static float UIScale;                          // scale UI elements by this factor, relative to KSP scaling settings, useful for high PPI screens
 		public static float UIPanelWidthScale;                // scale UI Panel Width by this factor, relative to KSP scaling settings, useful for high PPI screens

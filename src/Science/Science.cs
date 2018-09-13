@@ -24,7 +24,7 @@ namespace KERBALISM
 			if (Features.Science)
 			{
 				GameObject prefab = AssetBase.GetPrefab("ScienceResultsDialog");
-				if (Settings.ScienceDialog)
+				if (PreferencesBasic.Instance.scienceDialog)
 				{
 					prefab.gameObject.AddOrGetComponent<Hijacker>();
 				}

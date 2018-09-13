@@ -271,7 +271,7 @@ namespace KERBALISM
 						UI.Open((p) => p.Devman(v));
 				}
 			}
-			if (Settings.StockMessages != true)
+			if (PreferencesBasic.Instance.stockMessages != true)
 			{
 				GUILayout.Label(new GUIContent(page == MonitorPage.log ? " <color=#00ffff>LOG</color> " : " LOG ", Icons.small_notes, "See previous notifications" + tooltip), config_style);
 				if (Lib.IsClicked()) page = MonitorPage.log;

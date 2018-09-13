@@ -18,7 +18,6 @@
     <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
     <WarningLevel>4</WarningLevel>
     <SignAssembly>False</SignAssembly>
-    <DelaySign>False</DelaySign>
     <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
@@ -163,14 +162,12 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="System.Core">
-      <RequiredTargetFramework>3.5</RequiredTargetFramework>
       <Private>False</Private>
     </Reference>
     <Reference Include="System.Xml">
       <Private>False</Private>
     </Reference>
     <Reference Include="System.Xml.Linq">
-      <RequiredTargetFramework>3.5</RequiredTargetFramework>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
@@ -283,6 +280,7 @@
     <Compile Include="Utility\Space.cs" />
     <Compile Include="Utility\Specifics.cs" />
     <Compile Include="Utility\Transformator.cs" />
+    <Compile Include="Modules\Preferences.cs" />
   </ItemGroup>
   <ItemGroup>
     <Analyzer Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-CSharp-firstpass.dll')" Include="$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-CSharp-firstpass.dll" />
@@ -313,7 +311,7 @@
       <Output TaskParameter="Assemblies" ItemName="Targets" />
     </GetAssemblyIdentity>
     <ItemGroup>
-      <VersionNumber Include="@(Targets->'%(Version)')" />
+      <VersionNumber Include="@(Targets-&gt;'%(Version)')" />
     </ItemGroup>
   </Target>
   <PropertyGroup>

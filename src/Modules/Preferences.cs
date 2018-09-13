@@ -4,8 +4,15 @@ using KSP.IO;
 
 namespace KERBALISM
 {
-	public class PreferencesFeatures : GameParameters.CustomParameterNode
+	public class PreferencesBasic : GameParameters.CustomParameterNode
 	{
+		/*
+		 * Can't dynamically change these settings due to the way Kerbalism initializes on load,
+		 * they have to be known when KSP starts up because Kerbalism provides FeatureXXX for
+		 * ModuleManager based on that configuration.
+		 * Maybe put those into a separate GUI element that warns the player to restart KSP after changing them.
+		 * 
+		 
 		[GameParameters.CustomParameterUI("Enable Reliability", toolTip = "Component malfunctions and critical failures")]
 		public bool enableReliability = true;
 
@@ -20,7 +27,7 @@ namespace KERBALISM
 
 		[GameParameters.CustomParameterUI("Automation", toolTip = "Control vessel components using an on-board computer")]
 		public bool enableAutomation = true;
-
+		*/
 
 		[GameParameters.CustomParameterUI("Stock Science Dialog", toolTip = "Keep showing the stock science dialog")]
 		public bool scienceDialog = true;
@@ -31,10 +38,10 @@ namespace KERBALISM
 		[GameParameters.CustomIntParameterUI("Message Duration", minValue = 0, maxValue = 30, toolTip = "Duration of messages on screen in seconds")]
 		public int messageLength = 4;
 
-		[GameParameters.CustomIntParameterUI("Breakdown Penalty", minValue = 0, maxValue = 300, toolTip = "Reputation to remove in case of breakdown")]
+		[GameParameters.CustomIntParameterUI("Breakdown Penalty", minValue = 0, maxValue = 300, toolTip = "Reputation removed when a Kerbal looses his marbles in space")]
 		public int breakdownPenalty = 10;
 
-		[GameParameters.CustomIntParameterUI("Death Penalty", minValue = 0, maxValue = 300, toolTip = "Reputation to remove in case of a death")]
+		[GameParameters.CustomIntParameterUI("Death Penalty", minValue = 0, maxValue = 300, toolTip = "Reputation removed when a Kerbal dies")]
 		public int deathPenalty = 100;
 
 		public override GameParameters.GameMode GameMode { get { return GameParameters.GameMode.ANY; } }
@@ -48,6 +55,28 @@ namespace KERBALISM
 		public override int SectionOrder { get { return 0; } }
 
 		public override string Title { get { return "Basic Options"; } }
+
+
+		private static PreferencesBasic instance;
+
+		public static PreferencesBasic Instance
+		{
+			get
+			{
+				if (instance == null)
+				{
+					if (HighLogic.CurrentGame != null)
+					{ instance = HighLogic.CurrentGame.Parameters.CustomParams<PreferencesBasic>(); }
+				}
+				return instance;
+			}
+		}
+
+		public override void OnLoad(ConfigNode node)
+		{
+			base.OnLoad(node);
+			instance = null;
+		}
 	}
 
 	public class PreferencesComfort : GameParameters.CustomParameterNode
@@ -87,6 +116,27 @@ namespace KERBALISM
 		public override int SectionOrder { get { return 1; } }
 
 		public override string Title { get { return "Comfort"; } }
+
+		private static PreferencesComfort instance;
+
+		public static PreferencesComfort Instance
+		{
+			get
+			{
+				if (instance == null)
+				{
+					if (HighLogic.CurrentGame != null)
+					{ instance = HighLogic.CurrentGame.Parameters.CustomParams<PreferencesComfort>(); }
+				}
+				return instance;
+			}
+		}
+
+		public override void OnLoad(ConfigNode node)
+		{
+			base.OnLoad(node);
+			instance = null;
+		}
 	}
 
 	public class PreferencesMessages : GameParameters.CustomParameterNode
@@ -94,20 +144,23 @@ namespace KERBALISM
 		[GameParameters.CustomParameterUI("Electrical Charge", toolTip = "Show a message when EC level is low")]
 		public bool ec = true;
 
-		[GameParameters.CustomParameterUI("Resources Low", toolTip = "Show a message when supply resources level is low")]
-		public bool resources = true;
+		[GameParameters.CustomParameterUI("Supplies", toolTip = "Show a message when supply resources level is low")]
+		public bool supply = true;
 
 		[GameParameters.CustomParameterUI("Signal", toolTip = "Show a message when signal is lost or obtained")]
 		public bool signal = true;
 
 		[GameParameters.CustomParameterUI("Failures", toolTip = "Show a message when a components fail")]
-		public bool failures = true;
+		public bool malfunction = true;
 
 		[GameParameters.CustomParameterUI("Space Weather", toolTip = "Show a message for CME events")]
-		public bool cme = true;
+		public bool storm = true;
 
 		[GameParameters.CustomParameterUI("Scripts", toolTip = "Show a message when scripts are executed")]
-		public bool scripts = true;
+		public bool script = true;
+
+		[GameParameters.CustomParameterUI("Show Malfunctions", toolTip = "Highlight faild parts in flight")]
+		public bool highlights = true;
 
 		public override GameParameters.GameMode GameMode { get { return GameParameters.GameMode.ANY; } }
 
@@ -120,5 +173,26 @@ namespace KERBALISM
 		public override int SectionOrder { get { return 2; } }
 
 		public override string Title { get { return "Notification Presets"; } }
+
+		private static PreferencesMessages instance;
+
+		public static PreferencesMessages Instance
+		{
+			get
+			{
+				if (instance == null)
+				{
+					if (HighLogic.CurrentGame != null)
+					{ instance = HighLogic.CurrentGame.Parameters.CustomParams<PreferencesMessages>(); }
+				}
+				return instance;
+			}
+		}
+
+		public override void OnLoad(ConfigNode node)
+		{
+			base.OnLoad(node);
+			instance = null;
+		}
 	}
 }
