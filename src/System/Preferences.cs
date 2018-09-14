@@ -264,10 +264,10 @@ namespace KERBALISM
 		[GameParameters.CustomFloatParameterUI("Shielding Efficiency", asPercentage = true, minValue = 0.01f, maxValue = 1, displayFormat = "F2", toolTip = "Proportion of radiation blocked by shielding (at max amount)")]
 		public float shieldingEfficiency = 0.9f;
 
-		[GameParameters.CustomFloatParameterUI("Storm Radiation rad/h", minValue = 0.01f, maxValue = 15, displayFormat = "F2", toolTip = "Radiation during a solar storm")]
+		[GameParameters.CustomFloatParameterUI("Storm Radiation rad/h", minValue = 1, maxValue = 15, displayFormat = "F2", toolTip = "Radiation during a solar storm")]
 		public float stormRadiation = 5;
 
-		[GameParameters.CustomFloatParameterUI("External Radiation rad/h", minValue = 0.01f, maxValue = 15, displayFormat = "F2", toolTip = "Radiation outside the heliopause")]
+		[GameParameters.CustomFloatParameterUI("External Radiation rad/h", minValue = 0.01f, maxValue = 2, displayFormat = "F2", toolTip = "Radiation outside the heliopause")]
 		public float externRadiation = 0.04f;
 
 		public double StormMinTime { get { return stormMinDays * Lib.HoursInDay() * 3600.0; } }
