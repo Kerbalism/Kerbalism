@@ -3,6 +3,7 @@
 
 ### Changes since the last release
 
+* Kerbal LS rates have been recalculated based on 1/16 of a Humans consumption due to their size and day length (PiezPiedPy)
 * A dump valve has been added to the Fuel Cells (PiezPiedPy)
 * Reliability added to the active shield and slightly increased its effectiveness (PiezPiedPy)
 * Vessels that where missing on the monitor due to old SaveGames with RemoteTech antennas fitted, bug fixed (PiezPiedPy)
@@ -12,6 +13,7 @@
 * Improved vessel search in monitor: you can search for the name of the central body and the vessel name (Sir Mortimer)
 * Added vessel type icons and filter buttons to include/exclude them in the list (Sir Mortimer, PiezPiedPy)
 * SSPX PDT-6 'Star' Utility Module balanced: shield strength, costs, tech level requirement and reliability (Sir Mortimer)
+* If present, use Community Category Kit for Kerbalism parts (Sir Mortimer)
 
 ### Known Issues
 
