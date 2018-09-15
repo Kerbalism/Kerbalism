@@ -1,4 +1,4 @@
-## v1.8.1 for KSP 1.4.x and 1.3.1
+## v1.9.0 for KSP 1.4.x and 1.3.1
  - 2018-xx-x
 
 ### Changes since the last release
@@ -6,14 +6,15 @@
 * Kerbal LS rates have been recalculated based on 1/16 of a Humans consumption due to their size and day length (PiezPiedPy)
 * A dump valve has been added to the Fuel Cells (PiezPiedPy)
 * Reliability added to the active shield and slightly increased its effectiveness (PiezPiedPy)
-* Vessels that where missing on the monitor due to old SaveGames with RemoteTech antennas fitted, bug fixed (PiezPiedPy)
+* Vessels with RemoteTech antennas fitted that where missing on the monitor due to old SaveGames, bug fixed (PiezPiedPy)
 * Stock antennas can now be controlled by automation (Yaar Podshipnik)
 * Devices shown in the device manager are now sorted (Sir Mortimer)
-* Fixed the EC issue when accelerating to extremely fast time warp while a ship is in shadow (Sir Mortimer)
+* Fixed the EC issue when accelerating to extremely fast time warp while a vessel is in shadow (Sir Mortimer)
 * Improved vessel search in monitor: you can search for the name of the central body and the vessel name (Sir Mortimer)
-* Added vessel type icons and filter buttons to include/exclude them in the list (Sir Mortimer, PiezPiedPy)
+* Added vessel type icons and filter buttons to include/exclude vessels in the monitor list (Sir Mortimer, PiezPiedPy)
 * SSPX PDT-6 'Star' Utility Module balanced: shield strength, costs, tech level requirement and reliability (Sir Mortimer)
-* If present, use Community Category Kit for Kerbalism parts (Sir Mortimer)
+* SSPX greenhouses have been rebalanced and missing exercise equipment for some SSPX parts added (Dr.Jet)
+* If Community Category Kit is installed then Kerbalism will place its parts into CCK respective categories (Sir Mortimer)
 
 ### Known Issues
 
