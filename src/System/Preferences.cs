@@ -6,8 +6,10 @@ namespace KERBALISM
 {
 	public class PreferencesBasic : GameParameters.CustomParameterNode
 	{
+/* I really want this in the gui... but have to look at how this can be done in Science.cs
 		[GameParameters.CustomParameterUI("Stock Science Dialog", toolTip = "Keep showing the stock science dialog")]
 		public bool scienceDialog = true;
+*/
 
 		[GameParameters.CustomParameterUI("Transmit Science Immediately", toolTip = "Automatically transmit science if possible")]
 		public bool transmitScience = true;

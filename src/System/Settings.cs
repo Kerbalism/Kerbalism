@@ -46,6 +46,9 @@ namespace KERBALISM
 			// signal
 			UnlinkedControl = Lib.ConfigEnum(cfg, "UnlinkedControl", UnlinkedCtrl.none);
 
+			// science
+			ScienceDialog = Lib.ConfigValue(cfg, "ScienceDialog", true);
+
 			// reliability
 			QualityScale = Lib.ConfigValue(cfg, "QualityScale", 4.0);
 
@@ -83,6 +86,9 @@ namespace KERBALISM
 
 		// signal
 		public static UnlinkedCtrl UnlinkedControl;             // available control for unlinked vessels: 'none', 'limited' or 'full'
+
+		// science
+		public static bool ScienceDialog;                     // keep showing the stock science dialog
 
 		// reliability
 		public static double QualityScale;                      // scale applied to MTBF for high-quality components
