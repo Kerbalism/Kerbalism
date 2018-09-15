@@ -1,5 +1,12 @@
+## v1.9.1 for KSP 1.4.x and 1.3.1
+ - 2018-xx-xx
+
+### Changes since the last release
+
+------------------------------------------------------------------------------------------------------
+
 ## v1.9.0 for KSP 1.4.x and 1.3.1
- - 2018-xx-x
+ - 2018-15-9
 
 ### Changes since the last release
 
