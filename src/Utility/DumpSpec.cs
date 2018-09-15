@@ -68,7 +68,7 @@ namespace KERBALISM
 			get { return AnyValves ? valve_i : 0; }
 			set
 			{
-				valve_i = (!AnyValves || value >= valves.Count - 1 || value < 0) ? 0 : value;
+				valve_i = (!AnyValves || value > valves.Count - 1 || value < 0) ? 0 : value;
 				DeployValve();
 			}
 		}
@@ -78,7 +78,7 @@ namespace KERBALISM
 		{
 			get
 			{
-				valve_i = valve_i >= valves.Count - 1 ? 0 : valve_i + 1;
+				valve_i = valve_i >= valves.Count - 1 ? 0 : ++valve_i;
 				DeployValve();
 				return valve_i;
 			}
