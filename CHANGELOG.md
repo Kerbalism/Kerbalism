@@ -13,8 +13,10 @@
 * Improved vessel search in monitor: you can search for the name of the central body and the vessel name (Sir Mortimer)
 * Added vessel type icons and filter buttons to include/exclude vessels in the monitor list (Sir Mortimer, PiezPiedPy)
 * SSPX PDT-6 'Star' Utility Module balanced: shield strength, costs, tech level requirement and reliability (Sir Mortimer)
+* If present, use Community Category Kit for Kerbalism parts (Sir Mortimer)
 * SSPX greenhouses have been rebalanced and missing exercise equipment for some SSPX parts added (Dr.Jet)
 * If Community Category Kit is installed then Kerbalism will place its parts into CCK respective categories (Sir Mortimer)
+* Game preferences now includes Kerbalism settings that previously were in Settings.cfg (Sir Mortimer)
 
 ### Known Issues
 

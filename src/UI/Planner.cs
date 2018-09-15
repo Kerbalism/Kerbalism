@@ -274,7 +274,7 @@ namespace KERBALISM
 			string living_space_tooltip = Lib.BuildString
 			(
 				"volume per-capita:<b>\t", Lib.HumanReadableVolume(va.volume / (double)Math.Max(va.crew_count, 1)), "</b>\n",
-				"ideal living space:<b>\t", Lib.HumanReadableVolume(Settings.IdealLivingSpace), "</b>"
+				"ideal living space:<b>\t", Lib.HumanReadableVolume(PreferencesComfort.Instance.livingSpace), "</b>"
 			);
 			p.AddContent("living space", Habitat.Living_space_to_string(va.living_space), living_space_tooltip);
 
@@ -549,13 +549,13 @@ namespace KERBALISM
 			var rb = Radiation.Info(body);
 			var sun_rb = Radiation.Info(sun);
 			gamma_transparency = Sim.GammaTransparency(body, 0.0);
-			extern_rad = Settings.ExternRadiation;
+			extern_rad = PreferencesStorm.Instance.ExternRadiation;
 			heliopause_rad = extern_rad + sun_rb.radiation_pause;
 			magnetopause_rad = heliopause_rad + rb.radiation_pause;
 			inner_rad = magnetopause_rad + rb.radiation_inner;
 			outer_rad = magnetopause_rad + rb.radiation_outer;
 			surface_rad = magnetopause_rad * gamma_transparency;
-			storm_rad = heliopause_rad + Settings.StormRadiation * (solar_flux > double.Epsilon ? 1.0 : 0.0);
+			storm_rad = heliopause_rad + PreferencesStorm.Instance.StormRadiation * (solar_flux > double.Epsilon ? 1.0 : 0.0);
 		}
 
 
@@ -714,7 +714,7 @@ namespace KERBALISM
 			// calculate shielding factor
 			double amount = sim.Resource("Shielding").amount;
 			double capacity = sim.Resource("Shielding").capacity;
-			shielding = (capacity > double.Epsilon ? amount / capacity : 1.0) * Settings.ShieldingEfficiency;
+			shielding = (capacity > double.Epsilon ? amount / capacity : 1.0) * PreferencesStorm.Instance.shieldingEfficiency;
 		}
 
 
@@ -779,7 +779,7 @@ namespace KERBALISM
 		void Analyze_qol(List<Part> parts, Resource_simulator sim, Environment_analyzer env)
 		{
 			// calculate living space factor
-			living_space = Lib.Clamp((volume / (double)Math.Max(crew_count, 1u)) / Settings.IdealLivingSpace, 0.1, 1.0);
+			living_space = Lib.Clamp((volume / (double)Math.Max(crew_count, 1u)) / PreferencesComfort.Instance.livingSpace, 0.1, 1.0);
 
 			// calculate comfort factor
 			comforts = new Comforts(parts, env.landed, crew_count > 1, has_comms);

@@ -263,13 +263,13 @@ namespace KERBALISM
 		public void Break()
 		{
 			// if manned, or if safemode didn't trigger
-			if (Cache.VesselInfo(vessel).crew_capacity > 0 || Lib.RandomDouble() > Settings.SafeModeChance)
+			if (Cache.VesselInfo(vessel).crew_capacity > 0 || Lib.RandomDouble() > PreferencesBasic.Instance.safeModeChance)
 			{
 				// flag as broken
 				broken = true;
 
 				// determine if this is a critical failure
-				critical = Lib.RandomDouble() < Settings.CriticalChance;
+				critical = Lib.RandomDouble() < PreferencesBasic.Instance.criticalChance;
 
 				// disable module
 				foreach (PartModule m in modules)
@@ -296,7 +296,7 @@ namespace KERBALISM
 			}
 
 			// in any case, incentive redundancy
-			if (Settings.IncentiveRedundancy)
+			if (PreferencesBasic.Instance.incentiveRedundancy)
 			{
 				Incentive_redundancy(vessel, redundancy);
 			}
@@ -311,13 +311,13 @@ namespace KERBALISM
 			if (reliability == null) return;
 
 			// if manned, or if safemode didn't trigger
-			if (Cache.VesselInfo(v).crew_capacity > 0 || Lib.RandomDouble() > Settings.SafeModeChance)
+			if (Cache.VesselInfo(v).crew_capacity > 0 || Lib.RandomDouble() > PreferencesBasic.Instance.safeModeChance)
 			{
 				// flag as broken
 				Lib.Proto.Set(m, "broken", true);
 
 				// determine if this is a critical failure
-				bool critical = Lib.RandomDouble() < Settings.CriticalChance;
+				bool critical = Lib.RandomDouble() < PreferencesBasic.Instance.criticalChance;
 				Lib.Proto.Set(m, "critical", critical);
 
 				// for each associated module
@@ -354,7 +354,7 @@ namespace KERBALISM
 			}
 
 			// in any case, incentive redundancy
-			if (Settings.IncentiveRedundancy)
+			if (PreferencesBasic.Instance.incentiveRedundancy)
 			{
 				Incentive_redundancy(v, reliability.redundancy);
 			}

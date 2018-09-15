@@ -558,7 +558,7 @@ namespace KERBALISM
 			}
 
 			// add extern radiation
-			radiation += Settings.ExternRadiation;
+			radiation += PreferencesStorm.Instance.ExternRadiation;
 
 			// add emitter radiation
 			radiation += Emitter.Total(v);
@@ -569,7 +569,7 @@ namespace KERBALISM
 				// inside a magnetopause (except heliosphere), blackout the signal
 				// outside, add storm radiations modulated by sun visibility
 				if (magnetosphere) blackout = true;
-				else radiation += Settings.StormRadiation * sunlight;
+				else radiation += PreferencesStorm.Instance.StormRadiation * sunlight;
 			}
 
 			// clamp radiation to positive range
@@ -630,7 +630,7 @@ namespace KERBALISM
 			}
 
 			// add extern radiation
-			radiation += Settings.ExternRadiation;
+			radiation += PreferencesStorm.Instance.ExternRadiation;
 
 			// clamp radiation to positive range
 			// note: we avoid radiation going to zero by using a small positive value

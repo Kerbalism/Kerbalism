@@ -28,7 +28,7 @@ namespace KERBALISM
 			// generate storm time if necessary
 			if (bd.storm_time <= double.Epsilon)
 			{
-				bd.storm_time = Settings.StormMinTime + (Settings.StormMaxTime - Settings.StormMinTime) * Lib.RandomDouble();
+				bd.storm_time = PreferencesStorm.Instance.StormMinTime + (PreferencesStorm.Instance.StormMaxTime - PreferencesStorm.Instance.StormMinTime) * Lib.RandomDouble();
 			}
 
 			// accumulate age
@@ -42,12 +42,12 @@ namespace KERBALISM
 				bd.storm_state = 0;
 			}
 			// if storm is in progress
-			else if (bd.storm_age > bd.storm_time - Settings.StormDuration)
+			else if (bd.storm_age > bd.storm_time - PreferencesStorm.Instance.StormDuration)
 			{
 				bd.storm_state = 2;
 			}
 			// if storm is incoming
-			else if (bd.storm_age > bd.storm_time - Settings.StormDuration - Time_to_impact(body.orbit.semiMajorAxis))
+			else if (bd.storm_age > bd.storm_time - PreferencesStorm.Instance.StormDuration - Time_to_impact(body.orbit.semiMajorAxis))
 			{
 				bd.storm_state = 1;
 			}
@@ -97,7 +97,7 @@ namespace KERBALISM
 			// generate storm time if necessary
 			if (vd.storm_time <= double.Epsilon)
 			{
-				vd.storm_time = Settings.StormMinTime + (Settings.StormMaxTime - Settings.StormMinTime) * Lib.RandomDouble();
+				vd.storm_time = PreferencesStorm.Instance.StormMinTime + (PreferencesStorm.Instance.StormMaxTime - PreferencesStorm.Instance.StormMinTime) * Lib.RandomDouble();
 			}
 
 			// accumulate age
@@ -116,7 +116,7 @@ namespace KERBALISM
 				vd.msg_signal = false; // used to avoid sending 'signal is back' messages en-masse after the storm is over
 			}
 			// if storm is in progress
-			else if (vd.storm_age > vd.storm_time - Settings.StormDuration && vd.storm_state == 1)
+			else if (vd.storm_age > vd.storm_time - PreferencesStorm.Instance.StormDuration && vd.storm_state == 1)
 			{
 				vd.storm_state = 2;
 
@@ -125,7 +125,7 @@ namespace KERBALISM
 				Lib.BuildString("Storm duration: ", Lib.HumanReadableDuration(TimeLeftCME(vd.storm_time, vd.storm_age))));
 			}
 			// if storm is incoming
-			else if (vd.storm_age > vd.storm_time - Settings.StormDuration - Time_to_impact(vi.sun_dist) && vd.storm_state == 0)
+			else if (vd.storm_age > vd.storm_time - PreferencesStorm.Instance.StormDuration - Time_to_impact(vi.sun_dist) && vd.storm_state == 0)
 			{
 				vd.storm_state = 1;
 
@@ -147,7 +147,7 @@ namespace KERBALISM
 		// return time to impact from CME event, in seconds
 		static double Time_to_impact(double dist)
 		{
-			return dist / Settings.StormEjectionSpeed;
+			return dist / PreferencesStorm.Instance.StormEjectionSpeed;
 		}
 
 
@@ -254,7 +254,7 @@ namespace KERBALISM
 		// return time left until CME impact
 		static double TimeBeforeCME(double storm_time, double storm_age)
 		{
-			return Math.Max(0.0, storm_time - storm_age - Settings.StormDuration);
+			return Math.Max(0.0, storm_time - storm_age - PreferencesStorm.Instance.StormDuration);
 		}
 
 

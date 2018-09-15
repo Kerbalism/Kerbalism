@@ -13,13 +13,13 @@ namespace KERBALISM
 		{
 			msg_signal = false;
 			msg_belt = false;
-			cfg_ec = true;
-			cfg_supply = true;
-			cfg_signal = true;
-			cfg_malfunction = true;
-			cfg_storm = true;
-			cfg_script = true;
-			cfg_highlights = true;
+			cfg_ec = PreferencesMessages.Instance.ec;
+			cfg_supply = PreferencesMessages.Instance.supply;
+			cfg_signal = PreferencesMessages.Instance.signal;
+			cfg_malfunction = PreferencesMessages.Instance.malfunction;
+			cfg_storm = PreferencesMessages.Instance.storm;
+			cfg_script = PreferencesMessages.Instance.script;
+			cfg_highlights = PreferencesBasic.Instance.highlights;
 			cfg_showlink = true;
 			hyspos_signal = 0.0;
 			hysneg_signal = 5.0;
@@ -37,13 +37,13 @@ namespace KERBALISM
 		{
 			msg_signal = Lib.ConfigValue(node, "msg_signal", false);
 			msg_belt = Lib.ConfigValue(node, "msg_belt", false);
-			cfg_ec = Lib.ConfigValue(node, "cfg_ec", true);
-			cfg_supply = Lib.ConfigValue(node, "cfg_supply", true);
-			cfg_signal = Lib.ConfigValue(node, "cfg_signal", true);
-			cfg_malfunction = Lib.ConfigValue(node, "cfg_malfunction", true);
-			cfg_storm = Lib.ConfigValue(node, "cfg_storm", true);
-			cfg_script = Lib.ConfigValue(node, "cfg_script", true);
-			cfg_highlights = Lib.ConfigValue(node, "cfg_highlights", true);
+			cfg_ec = Lib.ConfigValue(node, "cfg_ec", PreferencesMessages.Instance.ec);
+			cfg_supply = Lib.ConfigValue(node, "cfg_supply", PreferencesMessages.Instance.supply);
+			cfg_signal = Lib.ConfigValue(node, "cfg_signal", PreferencesMessages.Instance.signal);
+			cfg_malfunction = Lib.ConfigValue(node, "cfg_malfunction", PreferencesMessages.Instance.malfunction);
+			cfg_storm = Lib.ConfigValue(node, "cfg_storm", PreferencesMessages.Instance.storm);
+			cfg_script = Lib.ConfigValue(node, "cfg_script", PreferencesMessages.Instance.script);
+			cfg_highlights = Lib.ConfigValue(node, "cfg_highlights", PreferencesBasic.Instance.highlights);
 			cfg_showlink = Lib.ConfigValue(node, "cfg_showlink", true);
 			hyspos_signal = Lib.ConfigValue(node, "hyspos_signal", 0.0);
 			hysneg_signal = Lib.ConfigValue(node, "hysneg_signal", 0.0);
