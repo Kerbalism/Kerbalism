@@ -3,6 +3,8 @@
 
 ### Changes since the last release
 
+* Dump valve not saving its state on vessel change, bug fixed (PiezPiedPy)
+
 ------------------------------------------------------------------------------------------------------
 
 ## v1.9.0 for KSP 1.4.x and 1.3.1
