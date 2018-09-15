@@ -9,7 +9,8 @@ namespace KERBALISM
 
 	public static class Communications
 	{
-		public static bool NetworkInitialized = false;	// True if CommNet is initialized
+		/// <summary> True if CommNet is initialized </summary>
+		public static bool NetworkInitialized = false;
 
 		public static void Update(Vessel v, Vessel_info vi, VesselData vd, Resource_info ec, double elapsed_s)
 		{

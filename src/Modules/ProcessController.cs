@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 
@@ -8,7 +6,7 @@ namespace KERBALISM
 {
 
 
-	public sealed class ProcessController : PartModule, IModuleInfo, IAnimatedModule, ISpecifics, IConfigurable
+	public sealed class ProcessController: PartModule, IModuleInfo, IAnimatedModule, ISpecifics, IConfigurable
 	{
 		// config
 		[KSPField] public string resource = string.Empty; // pseudo-resource to control
@@ -33,7 +31,8 @@ namespace KERBALISM
 		public void Start()
 		{
 			// don't break tutorial scenarios
-			if (Lib.DisableScenario(this)) return;
+			if (Lib.DisableScenario(this))
+				return;
 
 			// configure on start
 			Configure(true, multiple);
@@ -56,7 +55,8 @@ namespace KERBALISM
 			Actions["Action"].active = toggle;
 
 			// deal with non-togglable processes
-			if (!toggle) running = true;
+			if (!toggle)
+				running = true;
 		}
 
 		public void Configure(bool enable, int multiple = 1)
@@ -139,14 +139,14 @@ namespace KERBALISM
 			Process process = Profile.processes.Find(k => k.modifiers.Contains(resource));
 			if (process != null)
 			{
-				foreach (var pair in process.inputs)
+				foreach (KeyValuePair<string, double> pair in process.inputs)
 				{
 					if (!process.modifiers.Contains(pair.Key))
 						specs.Add(pair.Key, Lib.BuildString("<color=#ffaa00>", Lib.HumanReadableRate(pair.Value * capacity), "</color>"));
 					else
 						specs.Add("Half-life", Lib.HumanReadableDuration(0.5 / pair.Value));
 				}
-				foreach (var pair in process.outputs)
+				foreach (KeyValuePair<string, double> pair in process.outputs)
 				{
 					specs.Add(pair.Key, Lib.BuildString("<color=#00ff00>", Lib.HumanReadableRate(pair.Value * capacity), "</color>"));
 				}
