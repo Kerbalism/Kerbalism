@@ -5,6 +5,7 @@
 
 * Dump valve not saving its state on vessel change, bug fixed (PiezPiedPy)
 * A laboratory with high level crew members on board will work faster (Sir Mortimer)
+* Harvesters will work better with engineers on board. (Sir Mortimer)
 
 ------------------------------------------------------------------------------------------------------
 

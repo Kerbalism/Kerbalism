@@ -88,6 +88,10 @@ namespace KERBALISM
 			double abundance = SampleAbundance(v, harvester);
 			if (abundance > min_abundance)
 			{
+				double rate = harvester.rate;
+				int bonus = engineer_cs.Bonus(v);
+				rate += rate * (bonus * 0.1);
+
 				Resource_recipe recipe = new Resource_recipe();
 				recipe.Input("ElectricCharge", harvester.ec_rate * elapsed_s);
 				recipe.Output(harvester.resource, harvester.rate * (abundance/harvester.abundance_rate) * elapsed_s, false);
@@ -249,6 +253,8 @@ namespace KERBALISM
 		// contract objective support
 		public bool CheckContractObjectiveValidity() { return true; }
 		public string GetContractObjectiveType() { return "Harvester"; }
+
+		private static CrewSpecs engineer_cs = new CrewSpecs("Engineer@1");
 	}
 
 
