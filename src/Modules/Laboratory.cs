@@ -92,6 +92,12 @@ namespace KERBALISM
 					// get next sample to analyze
 					current_sample = NextSample(vessel);
 
+					double rate = analysis_rate;
+					if(researcher_cs) {
+						int bonus = researcher_cs.Bonus(part.protoModuleCrew);
+						rate += rate * (bonus * 0.1);
+					}
+
 					// if there is a sample to analyze
 					if (current_sample != null)
 					{
@@ -104,7 +110,7 @@ namespace KERBALISM
 						if (ec.amount > double.Epsilon)
 						{
 							// analyze the sample
-							Analyze(vessel, current_sample, analysis_rate * Kerbalism.elapsed_s);
+							Analyze(vessel, current_sample, rate * Kerbalism.elapsed_s);
 							status = Status.RUNNING;
 						}
 						// if there was no ec
@@ -129,6 +135,12 @@ namespace KERBALISM
 				background_researcher_cs = new CrewSpecs(lab.researcher);
 				if (!background_researcher_cs || background_researcher_cs.Check(p.protoModuleCrew))
 				{
+					double rate = lab.analysis_rate;
+					if(background_researcher_cs) {
+						int bonus = background_researcher_cs.Bonus(p.protoModuleCrew);
+						rate += rate * (bonus * 0.1);
+					}
+					    
 					// get sample to analyze
 					background_sample = NextSample(v);
 
@@ -143,7 +155,7 @@ namespace KERBALISM
 						if (ec.amount > double.Epsilon)
 						{
 							// analyze the sample
-							Analyze(v, background_sample, lab.analysis_rate * elapsed_s);
+							Analyze(v, background_sample, rate * elapsed_s);
 						}
 					}
 				}

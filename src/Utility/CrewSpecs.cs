@@ -63,6 +63,31 @@ namespace KERBALISM
 			return trait.Length == 0 || (c.trait == trait && c.experienceLevel >= level);
 		}
 
+		// return sum of al bonuses for crew on vessel
+		public int Bonus(Vessel v)
+		{
+			return Bonus(Lib.CrewList(v));
+		}
+
+		// return sum of al bonuses for crew
+		public int Bonus(List<ProtoCrewMember> crew)
+		{
+			int result = 0;
+			for (int i = 0; i < crew.Count; ++i)
+			{
+				int bonus = Bonus(crew[i]);
+				if (bonus > 0) result += bonus;
+			}
+			return result;
+		}
+
+		// return how much above the required level a crew member is
+		public int Bonus(ProtoCrewMember c)
+		{
+			if (trait.Length == 0 || c.trait != trait) return 0;
+			return (int)(c.experienceLevel - level);
+		}
+
 		// generate a string for use in warning messages
 		public string Warning()
 		{
