@@ -20,7 +20,7 @@ namespace KERBALISM
 		[GameParameters.CustomParameterUI("Stress Breakdowns", toolTip = "Kerbals can make mistakes when they're under stress")]
 		public bool stressBreakdowns = true;
 
-		[GameParameters.CustomFloatParameterUI("Stress Breakdown Rate", asPercentage = true, minValue = 0, maxValue = 1, displayFormat = "F2", toolTip = "Probability of a mistake happening\nonce per week when under stress")]
+		[GameParameters.CustomFloatParameterUI("Stress Breakdown Probability", asPercentage = true, minValue = 0, maxValue = 1, displayFormat = "F2", toolTip = "Probability of one stress induced mistake per week")]
 		public float stressBreakdownWeeklyRate = 0.25f;
 
 		[GameParameters.CustomIntParameterUI("Breakdown Reputation Penalty", minValue = 0, maxValue = 300, toolTip = "Reputation removed when a Kerbal looses his marbles in space")]
