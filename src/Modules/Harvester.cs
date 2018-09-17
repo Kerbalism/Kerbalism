@@ -90,7 +90,7 @@ namespace KERBALISM
 			{
 				double rate = harvester.rate;
 				int bonus = engineer_cs.Bonus(v);
-				rate += rate * (bonus * 0.1);
+				rate += rate * (bonus * 0.2);
 
 				Resource_recipe recipe = new Resource_recipe();
 				recipe.Input("ElectricCharge", harvester.ec_rate * elapsed_s);
@@ -254,7 +254,7 @@ namespace KERBALISM
 		public bool CheckContractObjectiveValidity() { return true; }
 		public string GetContractObjectiveType() { return "Harvester"; }
 
-		private static CrewSpecs engineer_cs = new CrewSpecs("Engineer@1");
+		private static CrewSpecs engineer_cs = new CrewSpecs("Engineer@0");
 	}
 
 
