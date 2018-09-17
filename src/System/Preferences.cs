@@ -18,7 +18,7 @@ namespace KERBALISM
 		public bool highlights = true;
 
 		[GameParameters.CustomParameterUI("Stress Breakdowns", toolTip = "Kerbals can make mistakes when they're under stress")]
-		public bool stressBreakdowns = true;
+		public bool stressBreakdowns = false;
 
 		[GameParameters.CustomFloatParameterUI("Stress Breakdown Probability", asPercentage = true, minValue = 0, maxValue = 1, displayFormat = "F2", toolTip = "Probability of one stress induced mistake per week")]
 		public float stressBreakdownWeeklyRate = 0.25f;
