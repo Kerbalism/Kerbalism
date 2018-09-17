@@ -19,6 +19,7 @@ namespace KERBALISM
 			input_threshold = Lib.ConfigValue(node, "input_threshold", 0.0);
 			degeneration = Lib.ConfigValue(node, "degeneration", 0.0);
 			variance = Lib.ConfigValue(node, "variance", 0.0);
+			individuality = Lib.ConfigValue(node, "individuality", 0.0);
 			modifiers = Lib.Tokenize(Lib.ConfigValue(node, "modifier", string.Empty), ',');
 			breakdown = Lib.ConfigValue(node, "breakdown", false);
 			monitor = Lib.ConfigValue(node, "monitor", false);
@@ -114,11 +115,13 @@ namespace KERBALISM
 				// if continuous, or if one or more intervals elapsed
 				if (step > double.Epsilon)
 				{
+					double r = rate * Variance(name, c, individuality);  // kerbal-specific variance
+
 					// if there is a resource specified
-					if (res != null && rate > double.Epsilon)
+					if (res != null && r > double.Epsilon)
 					{
 						// determine amount of resource to consume
-						double required = rate        // consumption rate
+						double required = r           // consumption rate
 										* k           // product of environment modifiers
 										* step;       // seconds elapsed or number of steps
 
@@ -165,7 +168,7 @@ namespace KERBALISM
 						rd.problem += degeneration           // degeneration rate per-second or per-interval
 								   * k                       // product of environment modifiers
 								   * step                    // seconds elapsed or by number of steps
-								   * Variance(c, variance);  // kerbal-specific variance
+								   * Variance(name, c, variance); // kerbal-specific variance
 					}
 					// else slowly recover
 					else
@@ -224,10 +227,12 @@ namespace KERBALISM
 
 
 		// return per-kerbal variance, in the range [1-variance,1+variance]
-		static double Variance(ProtoCrewMember c, double variance)
+		static double Variance(String name, ProtoCrewMember c, double variance)
 		{
 			// get a value in [0..1] range associated with a kerbal
-			double k = (double)Lib.Hash32(c.name.Replace(" Kerman", "")) / (double)UInt32.MaxValue;
+			// we want this to be pseudo-random, so don't just add/multiply the two values, that would be too predictable
+			// also add the process name. a kerbal that eats a lot shouldn't necessarily drink a lot, too
+			double k = (double)Lib.Hash32(name + c.courage.ToString() + c.stupidity.ToString()) / (double)UInt32.MaxValue;
 
 			// move in [-1..+1] range
 			k = k * 2.0 - 1.0;
@@ -245,7 +250,8 @@ namespace KERBALISM
 		public double ratio;              // ratio of output resource in relation to input consumed
 		public double input_threshold;    // when input resource reaches this percentage of its capacity trigger degeneration [range 0 to 1]
 		public double degeneration;       // amount to add to the degeneration at each execution (when we must degenerate)
-		public double variance;           // variance for degeneration rate, unique per-kerbal and in range [1.0-variance, 1.0+variance]
+		public double variance;           // variance for degeneration rate, unique per-kerbal and in range [1.0-x, 1.0+x]
+		public double individuality;      // variance for process rate, unique per-kerbal and in range [1.0-x, 1.0+x]
 		public List<string> modifiers;    // if specified, rates are influenced by the product of all environment modifiers
 		public bool breakdown;            // if true, trigger a breakdown instead of killing the kerbal
 		public bool monitor;              // if true and input resource exists only monitor the input resource, do not consume it
