@@ -178,6 +178,32 @@ namespace KERBALISM
 					}
 				}
 
+				bool do_breakdown = false;
+
+				if(breakdown && PreferencesBasic.Instance.stressBreakdowns) {
+					// stress level
+					double breakdown_probability = rd.problem / warning_threshold;
+					breakdown_probability = Lib.Clamp(breakdown_probability, 0.0, 1.0);
+
+					// use the stupidity of a kerbal.
+					// however, nobody is perfect - not even a kerbal with a stupidity of 0.
+					breakdown_probability *= c.stupidity * 0.6 + 0.4;
+
+					// apply the weekly error rate
+					breakdown_probability *= PreferencesBasic.Instance.stressBreakdownWeeklyRate;
+
+					// now we have the probability for one failure per week, based on the
+					// individual stupidity and stress level of the kerbal.
+
+					breakdown_probability = (breakdown_probability * elapsed_s) / (7 * Lib.HoursInDay() * 3600);
+					if (breakdown_probability > Lib.RandomDouble()) {
+						do_breakdown = true;
+
+						// we're stressed out and just made a major mistake, this further increases the stress level...
+						rd.problem += warning_threshold * 0.05; // add 5% of the warning treshold to current stress level
+ 					}
+				}
+
 				// kill kerbal if necessary
 				if (rd.problem >= fatal_threshold)
 				{
@@ -186,8 +212,7 @@ namespace KERBALISM
 
 					if (breakdown)
 					{
-						// trigger breakdown event
-						Misc.Breakdown(v, c);
+						do_breakdown = true;
 
 						// move back between warning and danger level
 						rd.problem = (warning_threshold + danger_threshold) * 0.5;
@@ -215,6 +240,11 @@ namespace KERBALISM
 				{
 					if (relax_message.Length > 0) Message.Post(Severity.relax, Lib.ExpandMsg(relax_message, v, c, variant));
 					rd.message = 0;
+				}
+
+				if(do_breakdown) {
+					// trigger breakdown event
+					Misc.Breakdown(v, c);
 				}
 			}
 

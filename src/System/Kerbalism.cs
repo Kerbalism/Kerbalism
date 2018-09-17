@@ -742,7 +742,7 @@ namespace KERBALISM
 		}
 
 		// breakdown events
-		enum KerbalBreakdown
+		public enum KerbalBreakdown
 		{
 			mumbling,         // do nothing (in case all conditions fail)
 			fat_finger,       // data has been canceled
