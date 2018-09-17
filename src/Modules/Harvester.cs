@@ -90,6 +90,7 @@ namespace KERBALISM
 			{
 				double rate = harvester.rate;
 				int bonus = engineer_cs.Bonus(v);
+				bonus = Math.Max(bonus, 7); // don't overdo it.
 				rate += rate * (bonus * 0.2);
 
 				Resource_recipe recipe = new Resource_recipe();

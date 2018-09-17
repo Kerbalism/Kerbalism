@@ -95,6 +95,7 @@ namespace KERBALISM
 					double rate = analysis_rate;
 					if(researcher_cs) {
 						int bonus = researcher_cs.Bonus(part.protoModuleCrew);
+						bonus = Math.Max(bonus, 7); // don't overdo it.
 						rate += rate * (bonus * 0.1);
 					}
 
@@ -138,6 +139,7 @@ namespace KERBALISM
 					double rate = lab.analysis_rate;
 					if(background_researcher_cs) {
 						int bonus = background_researcher_cs.Bonus(p.protoModuleCrew);
+						bonus = Math.Max(bonus, 7); // don't overdo it.
 						rate += rate * (bonus * 0.1);
 					}
 					    
