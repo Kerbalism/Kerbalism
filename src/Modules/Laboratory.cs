@@ -95,8 +95,9 @@ namespace KERBALISM
 					double rate = analysis_rate;
 					if(researcher_cs) {
 						int bonus = researcher_cs.Bonus(part.protoModuleCrew);
-						bonus = Math.Max(bonus, 7); // don't overdo it.
-						rate += rate * (bonus * 0.1);
+						double crew_gain = 1 + bonus * Settings.LaboratoryCrewLevelBonus;
+						crew_gain = Lib.Clamp(crew_gain, 1, Settings.MaxLaborartoryBonus);
+						rate *= crew_gain;
 					}
 
 					// if there is a sample to analyze
@@ -139,8 +140,9 @@ namespace KERBALISM
 					double rate = lab.analysis_rate;
 					if(background_researcher_cs) {
 						int bonus = background_researcher_cs.Bonus(p.protoModuleCrew);
-						bonus = Math.Max(bonus, 7); // don't overdo it.
-						rate += rate * (bonus * 0.1);
+						double crew_gain = 1 + bonus * Settings.LaboratoryCrewLevelBonus;
+						crew_gain = Lib.Clamp(crew_gain, 1, Settings.MaxLaborartoryBonus);
+						rate *= crew_gain;
 					}
 					    
 					// get sample to analyze
