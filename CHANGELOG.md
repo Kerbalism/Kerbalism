@@ -5,6 +5,8 @@
 
 * Dump valve not saving its state on vessel change, bug fixed (PiezPiedPy)
 * Fixed SSPX IVA rotation (HaullyGames)
+* Kerbals consume slightly different amounts of food, water and oxygen, and react differently to
+  stress and radiation. When under stress they can make mistakes, some do better than others. (Sir Mortimer)
 * A laboratory with high level crew members on board will work faster (Sir Mortimer)
 * Harvesters will work better with engineers on board. (Sir Mortimer)
 

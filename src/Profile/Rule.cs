@@ -19,6 +19,7 @@ namespace KERBALISM
 			input_threshold = Lib.ConfigValue(node, "input_threshold", 0.0);
 			degeneration = Lib.ConfigValue(node, "degeneration", 0.0);
 			variance = Lib.ConfigValue(node, "variance", 0.0);
+			individuality = Lib.ConfigValue(node, "individuality", 0.0);
 			modifiers = Lib.Tokenize(Lib.ConfigValue(node, "modifier", string.Empty), ',');
 			breakdown = Lib.ConfigValue(node, "breakdown", false);
 			monitor = Lib.ConfigValue(node, "monitor", false);
@@ -114,11 +115,13 @@ namespace KERBALISM
 				// if continuous, or if one or more intervals elapsed
 				if (step > double.Epsilon)
 				{
+					double r = rate * Variance(name, c, individuality);  // kerbal-specific variance
+
 					// if there is a resource specified
-					if (res != null && rate > double.Epsilon)
+					if (res != null && r > double.Epsilon)
 					{
 						// determine amount of resource to consume
-						double required = rate        // consumption rate
+						double required = r           // consumption rate
 										* k           // product of environment modifiers
 										* step;       // seconds elapsed or number of steps
 
@@ -165,7 +168,7 @@ namespace KERBALISM
 						rd.problem += degeneration           // degeneration rate per-second or per-interval
 								   * k                       // product of environment modifiers
 								   * step                    // seconds elapsed or by number of steps
-								   * Variance(c, variance);  // kerbal-specific variance
+								   * Variance(name, c, variance); // kerbal-specific variance
 					}
 					// else slowly recover
 					else
@@ -173,6 +176,32 @@ namespace KERBALISM
 						rd.problem *= 1.0 / (1.0 + Math.Max(interval, 1.0) * step * 0.002);
 						rd.problem = Math.Max(rd.problem, 0.0);
 					}
+				}
+
+				bool do_breakdown = false;
+
+				if(breakdown && PreferencesBasic.Instance.stressBreakdowns) {
+					// stress level
+					double breakdown_probability = rd.problem / warning_threshold;
+					breakdown_probability = Lib.Clamp(breakdown_probability, 0.0, 1.0);
+
+					// use the stupidity of a kerbal.
+					// however, nobody is perfect - not even a kerbal with a stupidity of 0.
+					breakdown_probability *= c.stupidity * 0.6 + 0.4;
+
+					// apply the weekly error rate
+					breakdown_probability *= PreferencesBasic.Instance.stressBreakdownWeeklyRate;
+
+					// now we have the probability for one failure per week, based on the
+					// individual stupidity and stress level of the kerbal.
+
+					breakdown_probability = (breakdown_probability * elapsed_s) / (7 * Lib.HoursInDay() * 3600);
+					if (breakdown_probability > Lib.RandomDouble()) {
+						do_breakdown = true;
+
+						// we're stressed out and just made a major mistake, this further increases the stress level...
+						rd.problem += warning_threshold * 0.05; // add 5% of the warning treshold to current stress level
+ 					}
 				}
 
 				// kill kerbal if necessary
@@ -183,8 +212,7 @@ namespace KERBALISM
 
 					if (breakdown)
 					{
-						// trigger breakdown event
-						Misc.Breakdown(v, c);
+						do_breakdown = true;
 
 						// move back between warning and danger level
 						rd.problem = (warning_threshold + danger_threshold) * 0.5;
@@ -213,6 +241,11 @@ namespace KERBALISM
 					if (relax_message.Length > 0) Message.Post(Severity.relax, Lib.ExpandMsg(relax_message, v, c, variant));
 					rd.message = 0;
 				}
+
+				if(do_breakdown) {
+					// trigger breakdown event
+					Misc.Breakdown(v, c);
+				}
 			}
 
 			// execute the deferred kills
@@ -224,10 +257,12 @@ namespace KERBALISM
 
 
 		// return per-kerbal variance, in the range [1-variance,1+variance]
-		static double Variance(ProtoCrewMember c, double variance)
+		static double Variance(String name, ProtoCrewMember c, double variance)
 		{
 			// get a value in [0..1] range associated with a kerbal
-			double k = (double)Lib.Hash32(c.name.Replace(" Kerman", "")) / (double)UInt32.MaxValue;
+			// we want this to be pseudo-random, so don't just add/multiply the two values, that would be too predictable
+			// also add the process name. a kerbal that eats a lot shouldn't necessarily drink a lot, too
+			double k = (double)Lib.Hash32(name + c.courage.ToString() + c.stupidity.ToString()) / (double)UInt32.MaxValue;
 
 			// move in [-1..+1] range
 			k = k * 2.0 - 1.0;
@@ -245,7 +280,8 @@ namespace KERBALISM
 		public double ratio;              // ratio of output resource in relation to input consumed
 		public double input_threshold;    // when input resource reaches this percentage of its capacity trigger degeneration [range 0 to 1]
 		public double degeneration;       // amount to add to the degeneration at each execution (when we must degenerate)
-		public double variance;           // variance for degeneration rate, unique per-kerbal and in range [1.0-variance, 1.0+variance]
+		public double variance;           // variance for degeneration rate, unique per-kerbal and in range [1.0-x, 1.0+x]
+		public double individuality;      // variance for process rate, unique per-kerbal and in range [1.0-x, 1.0+x]
 		public List<string> modifiers;    // if specified, rates are influenced by the product of all environment modifiers
 		public bool breakdown;            // if true, trigger a breakdown instead of killing the kerbal
 		public bool monitor;              // if true and input resource exists only monitor the input resource, do not consume it
