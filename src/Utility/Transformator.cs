@@ -56,6 +56,8 @@ namespace KERBALISM
 			CurrentSpinRate = Mathf.MoveTowards(CurrentSpinRate, rotationRateGoal * SpinRate, TimeWarp.fixedDeltaTime * spinAccel);
 			float spin = Mathf.Clamp(TimeWarp.fixedDeltaTime * CurrentSpinRate, -10.0f, 10.0f);
 			transf.Rotate(Vector3.forward * spin);
+			// Rotate IVA
+			if(part.internalModel != null) part.internalModel.transform.Rotate(Vector3.forward * (spin * -1));
 		}
 
 		public bool IsRotating()

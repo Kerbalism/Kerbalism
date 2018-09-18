@@ -4,8 +4,10 @@
 ### Changes since the last release
 
 * Dump valve not saving its state on vessel change, bug fixed (PiezPiedPy)
+* Fixed SSPX IVA rotation (HaullyGames)
 * Kerbals consume slightly different amounts of food, water and oxygen, and react differently to
   stress and radiation. When under stress they can make mistakes, some do better than others. (Sir Mortimer)
+
 ------------------------------------------------------------------------------------------------------
 
 ## v1.9.0 for KSP 1.4.x and 1.3.1
