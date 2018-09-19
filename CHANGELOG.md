@@ -7,6 +7,8 @@
 * Fixed SSPX IVA rotation (HaullyGames)
 * Kerbals consume slightly different amounts of food, water and oxygen, and react differently to
   stress and radiation. When under stress they can make mistakes, some do better than others. (Sir Mortimer)
+* A laboratory with high level crew members in it will work faster (Sir Mortimer)
+* Harvesters will work better with an engineer on board. (Sir Mortimer)
 
 ------------------------------------------------------------------------------------------------------
 

@@ -52,6 +52,12 @@ namespace KERBALISM
 			// reliability
 			QualityScale = Lib.ConfigValue(cfg, "QualityScale", 4.0);
 
+			// crew level
+			LaboratoryCrewLevelBonus = Lib.ConfigValue(cfg, "LaboratoryCrewLevelBonus", 0.2);
+			MaxLaborartoryBonus = Lib.ConfigValue(cfg, "MaxLaborartoryBonus", 2.0);
+			HarvesterCrewLevelBonus = Lib.ConfigValue(cfg, "HarvesterCrewLevelBonus", 0.1);
+			MaxHarvesterBonus = Lib.ConfigValue(cfg, "MaxHarvesterBonus", 2.0);
+
 			// misc
 			EnforceCoherency = Lib.ConfigValue(cfg, "EnforceCoherency", true);
 			TrackingPivot = Lib.ConfigValue(cfg, "TrackingPivot", true);
@@ -88,14 +94,21 @@ namespace KERBALISM
 		public static UnlinkedCtrl UnlinkedControl;             // available control for unlinked vessels: 'none', 'limited' or 'full'
 
 		// science
-		public static bool ScienceDialog;                     // keep showing the stock science dialog
+		public static bool ScienceDialog;                       // keep showing the stock science dialog
 
 		// reliability
 		public static double QualityScale;                      // scale applied to MTBF for high-quality components
 
+
+		// crew level
+		public static double LaboratoryCrewLevelBonus;          // factor for laboratory rate speed gain per crew level above minimum
+		public static double MaxLaborartoryBonus;               // max bonus to be gained by having skilled crew on a laboratory
+		public static double HarvesterCrewLevelBonus;           // factor for harvester speed gain per engineer level above minimum
+		public static double MaxHarvesterBonus;                 // max bonus to be gained by having skilled engineers on a mining rig
+
 		// misc
-		public static bool EnforceCoherency;                  // detect and avoid issues at high timewarp in external modules
-		public static bool TrackingPivot;                     // simulate tracking solar panel around the pivot
+		public static bool EnforceCoherency;                    // detect and avoid issues at high timewarp in external modules
+		public static bool TrackingPivot;                       // simulate tracking solar panel around the pivot
 		public static double HeadLampsCost;                     // EC/s cost if eva headlamps are on
 		public static bool LowQualityRendering;               // use less particles to render the magnetic fields
 		public static float UIScale;                          // scale UI elements by this factor, relative to KSP scaling settings, useful for high PPI screens

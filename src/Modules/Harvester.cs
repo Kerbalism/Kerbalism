@@ -88,6 +88,15 @@ namespace KERBALISM
 			double abundance = SampleAbundance(v, harvester);
 			if (abundance > min_abundance)
 			{
+				double rate = harvester.rate;
+
+				// Bonus(..., -2): a level 0 engineer will alreaday add 2 bonus points jsut because he's there,
+				// regardless of level. efficiency will raise further with higher levels.
+				int bonus = engineer_cs.Bonus(v, -2);
+				double crew_gain = 1 + bonus * Settings.HarvesterCrewLevelBonus;
+				crew_gain = Lib.Clamp(crew_gain, 1, Settings.MaxHarvesterBonus);
+				rate *= crew_gain;
+
 				Resource_recipe recipe = new Resource_recipe();
 				recipe.Input("ElectricCharge", harvester.ec_rate * elapsed_s);
 				recipe.Output(harvester.resource, harvester.rate * (abundance/harvester.abundance_rate) * elapsed_s, false);
@@ -249,6 +258,8 @@ namespace KERBALISM
 		// contract objective support
 		public bool CheckContractObjectiveValidity() { return true; }
 		public string GetContractObjectiveType() { return "Harvester"; }
+
+		private static CrewSpecs engineer_cs = new CrewSpecs("Engineer@0");
 	}
 
 
