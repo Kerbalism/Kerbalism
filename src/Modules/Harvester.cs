@@ -89,7 +89,10 @@ namespace KERBALISM
 			if (abundance > min_abundance)
 			{
 				double rate = harvester.rate;
-				int bonus = engineer_cs.Bonus(v);
+
+				// Bonus(..., -2): a level 0 engineer will alreaday add 2 bonus points jsut because he's there,
+				// regardless of level. efficiency will raise further with higher levels.
+				int bonus = engineer_cs.Bonus(v, -2);
 				double crew_gain = 1 + bonus * Settings.HarvesterCrewLevelBonus;
 				crew_gain = Lib.Clamp(crew_gain, 1, Settings.MaxHarvesterBonus);
 				rate *= crew_gain;

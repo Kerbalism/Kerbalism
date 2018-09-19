@@ -64,28 +64,31 @@ namespace KERBALISM
 		}
 
 		// return sum of al bonuses for crew on vessel
-		public int Bonus(Vessel v)
+		public int Bonus(Vessel v, int requiredLevel = Int16.MinValue)
 		{
-			return Bonus(Lib.CrewList(v));
+			return Bonus(Lib.CrewList(v), requiredLevel);
 		}
 
 		// return sum of al bonuses for crew
-		public int Bonus(List<ProtoCrewMember> crew)
+		public int Bonus(List<ProtoCrewMember> crew, int requiredLevel = Int16.MinValue)
 		{
 			int result = 0;
 			for (int i = 0; i < crew.Count; ++i)
 			{
-				int bonus = Bonus(crew[i]);
+				int bonus = Bonus(crew[i], requiredLevel);
 				if (bonus > 0) result += bonus;
 			}
 			return result;
 		}
 
 		// return how much above the required level a crew member is
-		public int Bonus(ProtoCrewMember c)
+		public int Bonus(ProtoCrewMember c, int requiredLevel = Int16.MinValue)
 		{
+			if(requiredLevel == Int16.MinValue) {
+				requiredLevel = (int)level;
+			}
 			if (trait.Length == 0 || c.trait != trait) return 0;
-			return (int)(c.experienceLevel - level);
+			return (int)(c.experienceLevel - requiredLevel);
 		}
 
 		// generate a string for use in warning messages
