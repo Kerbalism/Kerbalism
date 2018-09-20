@@ -1401,7 +1401,7 @@ namespace KERBALISM
 		public static Texture2D GetTexture(string name, int width = 16, int height = 16)
 		{
 			Texture2D texture = new Texture2D(width, height, TextureFormat.ARGB32, false);
-			texture.LoadImage(System.IO.File.ReadAllBytes(Icons.TexturePath + name + ".png"));
+			ImageConversion.LoadImage(texture, System.IO.File.ReadAllBytes(Icons.TexturePath + name + ".png"));
 			return texture;
 		}
 
