@@ -15,6 +15,7 @@
 * Fixed another icons sometimes not displaying bug (PiezPiedPy) 
 * SSPX 2.5m Greenhouse now producing food at the expected rate. (theJesuit)
 * Fixed issue with CommNet not updating for unloaded vessels (leomike, HaullyGames)
+* Radiation status no longer resets when recovering a Kerbal on Kerbin, or thawing from DeepFreeze. (Sir Mortimer)
 
 
 ------------------------------------------------------------------------------------------------------
