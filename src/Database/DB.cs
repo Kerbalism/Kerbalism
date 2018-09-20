@@ -145,13 +145,40 @@ namespace KERBALISM
 			return bodies[name];
 		}
 
+		public static Boolean ContainsKerbal(string name)
+		{
+			return kerbals.ContainsKey(name);
+		}
+
+		/// <summary>
+		/// Remove a Kerbal and his lifetime data from the database
+		/// </summary>
+		public static void KillKerbal(string name)
+		{
+			kerbals.Remove(name);
+		}
+
+		/// <summary>
+		/// Resets all process data of a kerbal, except lifetime data
+		/// </summary>
+		public static void RecoverKerbal(string name)
+		{
+			if(ContainsKerbal(name))
+			{
+				Kerbal(name).Recover();
+			}
+		}
+
+		public static Dictionary<string, KerbalData> Kerbals() {
+			return kerbals;
+		}
 
 		public static string To_safe_key(string key) { return key.Replace(" ", "___"); }
 		public static string From_safe_key(string key) { return key.Replace("___", " "); }
 
 		public static string version;                          // savegame version
 		public static int uid;                                 // savegame unique id
-		public static Dictionary<string, KerbalData> kerbals;  // store data per-kerbal
+		private static Dictionary<string, KerbalData> kerbals; // store data per-kerbal
 		public static Dictionary<uint, VesselData> vessels;    // store data per-vessel, indexed by root part id
 		public static Dictionary<string, BodyData> bodies;     // store data per-body
 		public static LandmarkData landmarks;                  // store landmark data

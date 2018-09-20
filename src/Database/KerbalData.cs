@@ -43,6 +43,17 @@ namespace KERBALISM
 			}
 		}
 
+		/// <summary>
+		/// Reset all process values
+		/// </summary>
+		public void Recover()
+		{
+			foreach (var p in rules)
+			{
+				p.Value.Reset();
+			}
+		}
+
 		public RuleData Rule(string name)
 		{
 			if (!rules.ContainsKey(name))
