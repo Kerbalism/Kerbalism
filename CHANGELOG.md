@@ -16,6 +16,7 @@
 * SSPX 2.5m Greenhouse now producing food at the expected rate. (theJesuit)
 * Fixed issue with CommNet not updating for unloaded vessels (leomike, HaullyGames)
 
+
 ------------------------------------------------------------------------------------------------------
 
 ## v1.9.0 for KSP 1.4.x and 1.3.1
