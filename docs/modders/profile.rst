@@ -71,6 +71,8 @@ A rule describes a mechanic that increments an accumulator per-kerbal based on t
 +-------------------+------------------------------------------------------------------------------------------------------------------------------------+---------+
 | breakdown         | trigger a unplanned event in the vessel, instead of killing the kerbal                                                             | false   |
 +-------------------+------------------------------------------------------------------------------------------------------------------------------------+---------+
+| lifetime          | value will not be reset when recovering the kerbal on kerbin. used for things that cannot be cured, like radiation.                | false   |
++-------------------+------------------------------------------------------------------------------------------------------------------------------------+---------+
 | warning_threshold | threshold of degeneration used to show warning messages and yellow status color                                                    | 0.33    |
 +-------------------+------------------------------------------------------------------------------------------------------------------------------------+---------+
 | danger_threshold  | threshold of degeneration used to show danger messages and red status color                                                        | 0.66    |
