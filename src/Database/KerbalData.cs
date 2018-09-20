@@ -48,10 +48,16 @@ namespace KERBALISM
 		/// </summary>
 		public void Recover()
 		{
+			// just retain the lifetime values to keep the save file small
+			Dictionary<string, RuleData> cleaned = new Dictionary<string, RuleData>();
 			foreach (var p in rules)
 			{
-				p.Value.Reset();
+				if(p.Value.lifetime) {
+					p.Value.Reset();
+					cleaned.Add(p.Key, p.Value);
+				}
 			}
+			rules = cleaned;
 		}
 
 		public RuleData Rule(string name)
