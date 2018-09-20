@@ -10,6 +10,7 @@
 * A laboratory with high level crew members in it will work faster (Sir Mortimer)
 * Harvesters will work better with an engineer on board. (Sir Mortimer)
 * Fixed another icons sometimes not displaying bug (PiezPiedPy) 
+* Radiation status no longer resets when recovering a Kerbal on Kerbin, or thawing from DeepFreeze. (Sir Mortimer)
 
 
 ------------------------------------------------------------------------------------------------------
