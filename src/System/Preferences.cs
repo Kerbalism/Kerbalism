@@ -18,7 +18,7 @@ namespace KERBALISM
 		public bool highlights = true;
 
 		[GameParameters.CustomParameterUI("Lifetime Radiation", toolTip = "Do not reset radiation values for kerbals recovered on kerbin")]
-		public bool lifetime = true;
+		public bool lifetime = false;
 
 		[GameParameters.CustomParameterUI("Stress Breakdowns", toolTip = "Kerbals can make mistakes when they're under stress")]
 		public bool stressBreakdowns = false;
