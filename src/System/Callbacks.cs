@@ -211,7 +211,7 @@ namespace KERBALISM
 			{
 				// avoid creating kerbal data in db again,
 				// as this function may be called multiple times
-				if (!DB.kerbals.ContainsKey(c.name)) continue;
+				if (!DB.ContainsKerbal(c.name)) continue;
 
 				// set roster status of eva dead kerbals
 				if (DB.Kerbal(c.name).eva_dead)
@@ -220,7 +220,7 @@ namespace KERBALISM
 				}
 
 				// forget kerbal data of recovered kerbals
-				DB.kerbals.Remove(c.name);
+				DB.RecoverKerbal(c.name);
 			}
 
 			// for each part
@@ -239,7 +239,7 @@ namespace KERBALISM
 		void VesselTerminated(ProtoVessel pv)
 		{
 			// forget all kerbals data
-			foreach (ProtoCrewMember c in pv.GetVesselCrew()) DB.kerbals.Remove(c.name);
+			foreach (ProtoCrewMember c in pv.GetVesselCrew()) DB.KillKerbal(c.name);
 
 			// for each part
 			foreach (ProtoPartSnapshot p in pv.protoPartSnapshots)
@@ -272,11 +272,11 @@ namespace KERBALISM
 			{
 				foreach (ProtoCrewMember c in Lib.CrewList(ov)) kerbals_alive.Add(c.name);
 			}
-			foreach (var p in DB.kerbals)
+			foreach (var p in DB.Kerbals())
 			{
 				if (!kerbals_alive.Contains(p.Key)) kerbals_dead.Add(p.Key);
 			}
-			foreach (string n in kerbals_dead) DB.kerbals.Remove(n);
+			foreach (string n in kerbals_dead) DB.KillKerbal(n);
 
 			// purge the caches
 			Cache.Purge(v);

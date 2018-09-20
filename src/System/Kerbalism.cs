@@ -603,7 +603,7 @@ namespace KERBALISM
 			if (!v.isEVA)
 			{
 				// forget kerbal data
-				DB.kerbals.Remove(c.name);
+				DB.KillKerbal(c.name);
 
 				// if vessel is loaded
 				if (v.loaded)

@@ -23,6 +23,7 @@ namespace KERBALISM
 			modifiers = Lib.Tokenize(Lib.ConfigValue(node, "modifier", string.Empty), ',');
 			breakdown = Lib.ConfigValue(node, "breakdown", false);
 			monitor = Lib.ConfigValue(node, "monitor", false);
+			lifetime = Lib.ConfigValue(node, "lifetime", false);
 			monitor_offset = Lib.ConfigValue(node, "monitor_offset", 0.0);
 			warning_threshold = Lib.ConfigValue(node, "warning_threshold", 0.33);
 			danger_threshold = Lib.ConfigValue(node, "danger_threshold", 0.66);
@@ -73,6 +74,8 @@ namespace KERBALISM
 			// get product of all environment modifiers
 			double k = Modifiers.Evaluate(v, vi, resources, modifiers);
 
+			bool lifetime_enabled = PreferencesBasic.Instance.lifetime;
+
 			// for each crew
 			foreach (ProtoCrewMember c in Lib.CrewList(v))
 			{
@@ -87,6 +90,7 @@ namespace KERBALISM
 
 				// get kerbal property data from db
 				RuleData rd = kd.Rule(name);
+				rd.lifetime = lifetime_enabled && lifetime;
 
 				// if continuous
 				double step;
@@ -293,6 +297,7 @@ namespace KERBALISM
 		public string danger_message;     // .
 		public string fatal_message;      // .
 		public string relax_message;      // .
+		public bool lifetime;             // does this value accumulate over the lifetime of a kerbal
 
 		private bool trigger;             // internal use
 	}
