@@ -2,10 +2,10 @@
 
 # This script will setup your KSP installation folder to work with the visual studio project.
 
-# Modify this variable to point to the installation directory of the KSP folder you want to use
-# for development. This is the default location if you used the installer.
+# Modify these to point to the installation directories of the KSP and Unity.
+# These are the default locations if you used the installer.
 MY_KSP_DIR=/Applications/KSP_osx
-
+UNITY_DIR=/Applications/Unity
 
 CURRENT_DIR=`pwd`
 
@@ -17,8 +17,10 @@ rm -rf KSP_x64_Data
 mkdir -p KSP_x64_Data/Managed
 cd KSP_x64_Data/Managed
 
-ln -s ../../Launcher.app/Contents/Resources/Data/Managed/UnityEngine.dll .
-ln -s ../../Launcher.app/Contents/Resources/Data/Managed/UnityEngine.UI.dll .
+ln -s $UNITY_DIR/Unity.app/... (check this on the other machine)
+
+#ln -s ../../Launcher.app/Contents/Resources/Data/Managed/UnityEngine.dll .
+#ln -s ../../Launcher.app/Contents/Resources/Data/Managed/UnityEngine.UI.dll .
 ln -s ../../KSP.app/Contents/Resources/Data/Managed/* . 2>/dev/null
 
 cd $CURRENT_DIR
