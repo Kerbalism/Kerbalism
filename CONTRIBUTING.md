@@ -502,8 +502,10 @@ You can enable/disable the display of any calls not called in the last frame wit
 To get a working development environment on mac, things are a little different. This little guide will help you get going if you want to develop Kerbalism on MacOS. Follow these steps:
 
 - Download and install Visual Studio, the community edition is free of charge. Bear in mind that it will also require you to have XCode installed - so you could easily end up downloading about 2 GB.
-- Assuming you want to use your default KSP installation for development (on MacOS it is in `/Applications/KSP_osx`), execute the script `setup_mac.sh` from the `buildscripts` folder in this repository. This will set up the environment variable `KSPDEVDIR` and create a few symbolic links in your KSP installation folder that will make it compatible with the Visual Studio Project.
-- Start visual studio from the console: `open /Applications/Visual\ Studio.app`. By starting it from the console you will have the environment variable `KSPDEVDIR` set for the time it runs, Visual Studio depends on this variable to find a couple of libraries in your KSP folder. If you have a better way to set that variable when you start Visual Studio from your launchpad, please adapt this guide.
+- Download and install Unity.
+- If you did not install Unity to the default location, or do not want to use your default KSP installation (the one in /Applications/KSP_osx) for development, edit buildscripts/setup_mac.sh accordingly.
+- Execute the script `setup_mac.sh` from the `buildscripts` folder in this repository. This will set up the environment variable `KSPDEVDIR` and create a few symbolic links in your KSP installation folder that will make it compatible with the Visual Studio Project.
+- Start visual studio from the console: `open /Applications/Visual\ Studio.app`. By starting it from the console you will have the environment variable `KSPDEVDIR` set for the time it runs, Visual Studio depends on this variable to find a couple of libraries in your KSP folder. If you have a better way to set that variable when you start Visual Studio from the launchpad, please adapt this guide.
 - Within Visual Studio, open the 'Kerbalism.sln' project. You should be able to create a release build now.
 
 I didn't try to run KSP in a debugger yet. If you know how to do this, please update this guide. It might work with using the Launcher.app in your KSP folder (which is already used to build Kerbalism), so maybe you won't even have to download Unity.
