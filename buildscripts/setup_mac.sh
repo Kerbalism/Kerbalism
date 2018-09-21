@@ -17,10 +17,7 @@ rm -rf KSP_x64_Data
 mkdir -p KSP_x64_Data/Managed
 cd KSP_x64_Data/Managed
 
-ln -s $UNITY_DIR/Unity.app/... (check this on the other machine)
-
-#ln -s ../../Launcher.app/Contents/Resources/Data/Managed/UnityEngine.dll .
-#ln -s ../../Launcher.app/Contents/Resources/Data/Managed/UnityEngine.UI.dll .
+ln -s $UNITY_DIR/Unity.app/Contents/Managed/* .
 ln -s ../../KSP.app/Contents/Resources/Data/Managed/* . 2>/dev/null
 
 cd $CURRENT_DIR
