@@ -10,8 +10,8 @@
 * A laboratory with high level crew members in it will work faster (Sir Mortimer)
 * Harvesters will work better with an engineer on board. (Sir Mortimer)
 * Fixed another icons sometimes not displaying bug (PiezPiedPy) 
+* SSPX 2.5m Greenhouse now producing food at the expected rate. (theJesuit)
 * Fixed issue with CommNet not updating for unloaded vessels (leomike, HaullyGames)
-
 
 ------------------------------------------------------------------------------------------------------
 
