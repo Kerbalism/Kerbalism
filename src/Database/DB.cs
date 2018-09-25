@@ -88,8 +88,10 @@ namespace KERBALISM
 
 			// save kerbals data
 			var kerbals_node = node.AddNode("kerbals");
+			Lib.Log("### kerbal count: " + kerbals.Count);
 			foreach (var p in kerbals)
 			{
+				Lib.Log("### saving kerbal " + p.Key);
 				p.Value.Save(kerbals_node.AddNode(To_safe_key(p.Key)));
 			}
 

@@ -133,9 +133,12 @@ namespace KERBALISM
 										* k           // product of environment modifiers
 										* step;       // seconds elapsed or number of steps
 
+						if (name == "radiation") Lib.Log("### radiation " + c.name + " req " + required + " (sickbay factor " + rd.rate + ")");
+
 						// if there is no output
 						if (output.Length == 0)
 						{
+							if (name == "radiation") Lib.Log("### radiation res consume " + required);
 							// simply consume (that is faster)
 							res.Consume(required);
 						}
