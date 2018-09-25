@@ -1221,8 +1221,9 @@ namespace KERBALISM
 		}
 
 
-		// set flow of a resource in the specified part
-		// do nothing if the resource don't exist in the part
+		/// <summary>
+		/// set flow of a resource in the specified part. does nothing if the resource don't exist in the part.
+		/// </summary>
 		public static void SetResourceFlow(Part p, string res_name, bool enable)
 		{
 			// if the resource is not in the part, do nothing
