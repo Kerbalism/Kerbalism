@@ -238,7 +238,9 @@ namespace KERBALISM
 				{
 					switch (m.moduleName)
 					{
-						case "ProcessController": dev = new ProcessDevice(m as ProcessController); break;
+						case "ProcessController":
+						case "Sickbay":
+							dev = new ProcessDevice(m as ProcessController); break;
 						case "Greenhouse": dev = new GreenhouseDevice(m as Greenhouse); break;
 						case "GravityRing": dev = new RingDevice(m as GravityRing); break;
 						case "Emitter": dev = new EmitterDevice(m as Emitter); break;
@@ -302,7 +304,9 @@ namespace KERBALISM
 						// depending on module name
 						switch (m.moduleName)
 						{
-							case "ProcessController": dev = new ProtoProcessDevice(m, module_prefab as ProcessController, p.flightID); break;
+							case "ProcessController":
+							case "Sickbay":
+								dev = new ProtoProcessDevice(m, module_prefab as ProcessController, p.flightID); break;
 							case "Greenhouse": dev = new ProtoGreenhouseDevice(m, p.flightID); break;
 							case "GravityRing": dev = new ProtoRingDevice(m, p.flightID); break;
 							case "Emitter": dev = new ProtoEmitterDevice(m, p.flightID); break;

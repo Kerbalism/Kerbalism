@@ -92,6 +92,10 @@ namespace KERBALISM
 				RuleData rd = kd.Rule(name);
 				rd.lifetime = lifetime_enabled && lifetime;
 
+				double process_rate = rate;
+				if (Math.Abs(rd.rate) > Double.Epsilon)
+					process_rate = rd.rate;
+
 				// if continuous
 				double step;
 				if (interval <= double.Epsilon)
@@ -119,7 +123,7 @@ namespace KERBALISM
 				// if continuous, or if one or more intervals elapsed
 				if (step > double.Epsilon)
 				{
-					double r = rate * Variance(name, c, individuality);  // kerbal-specific variance
+					double r = process_rate * Variance(name, c, individuality);  // kerbal-specific variance
 
 					// if there is a resource specified
 					if (res != null && r > double.Epsilon)
@@ -263,6 +267,9 @@ namespace KERBALISM
 		// return per-kerbal variance, in the range [1-variance,1+variance]
 		static double Variance(String name, ProtoCrewMember c, double variance)
 		{
+			if (variance < Double.Epsilon)
+				return 1;
+
 			// get a value in [0..1] range associated with a kerbal
 			// we want this to be pseudo-random, so don't just add/multiply the two values, that would be too predictable
 			// also add the process name. a kerbal that eats a lot shouldn't necessarily drink a lot, too
