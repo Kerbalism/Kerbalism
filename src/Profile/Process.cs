@@ -71,10 +71,12 @@ namespace KERBALISM
 				Resource_recipe recipe = new Resource_recipe();
 				foreach (var p in inputs)
 				{
+					if (name.StartsWith("_Sick", StringComparison.Ordinal)) Lib.Log("### " + name + " in " + p.Key + " @ " + p.Value * k * elapsed_s);
 					recipe.Input(p.Key, p.Value * k * elapsed_s);
 				}
 				foreach (var p in outputs)
 				{
+					if (name.StartsWith("_Sick", StringComparison.Ordinal)) Lib.Log("### " + name + " out " + p.Key + " @ " + p.Value * k * elapsed_s);
 					recipe.Output(p.Key, p.Value * k * elapsed_s, dump.Check(p.Key));
 				}
 				resources.Transform(recipe);
