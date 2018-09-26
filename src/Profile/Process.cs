@@ -21,15 +21,15 @@ namespace KERBALISM
 			{
 				// get parameters
 				List<string> tok = Lib.Tokenize(input, '@');
-				if (tok.Count != 2) throw new Exception("malformed input on process");
+				if (tok.Count != 2) throw new Exception("malformed input on process " + name);
 				string input_res = tok[0];
 				double input_rate = Lib.Parse.ToDouble(tok[1]);
 
 				// check that resource is specified
-				if (input_res.Length == 0) throw new Exception("skipping resource-less process");
+				if (input_res.Length == 0) throw new Exception("skipping resource-less process " + name);
 
 				// check that resource exist
-				if (Lib.GetDefinition(input_res) == null) throw new Exception("resource " + input_res + " doesn't exist");
+				if (Lib.GetDefinition(input_res) == null) throw new Exception("resource " + input_res + " doesn't exist for process " + name);
 
 				// record input
 				inputs[input_res] = input_rate;
@@ -40,15 +40,15 @@ namespace KERBALISM
 			{
 				// get parameters
 				List<string> tok = Lib.Tokenize(output, '@');
-				if (tok.Count != 2) throw new Exception("malformed output on process");
+				if (tok.Count != 2) throw new Exception("malformed output on process " + name);
 				string output_res = tok[0];
 				double output_rate = Lib.Parse.ToDouble(tok[1]);
 
 				// check that resource is specified
-				if (output_res.Length == 0) throw new Exception("skipping resource-less process");
+				if (output_res.Length == 0) throw new Exception("skipping resource-less process " + name);
 
 				// check that resource exist
-				if (Lib.GetDefinition(output_res) == null) throw new Exception("resource " + output_res + " doesn't exist");
+				if (Lib.GetDefinition(output_res) == null) throw new Exception("resource " + output_res + " doesn't exist for process " + name);
 
 				// record output
 				outputs[output_res] = output_rate;
@@ -71,12 +71,10 @@ namespace KERBALISM
 				Resource_recipe recipe = new Resource_recipe();
 				foreach (var p in inputs)
 				{
-					if (name.StartsWith("_Sick", StringComparison.Ordinal)) Lib.Log("### " + name + " in " + p.Key + " @ " + p.Value * k * elapsed_s);
 					recipe.Input(p.Key, p.Value * k * elapsed_s);
 				}
 				foreach (var p in outputs)
 				{
-					if (name.StartsWith("_Sick", StringComparison.Ordinal)) Lib.Log("### " + name + " out " + p.Key + " @ " + p.Value * k * elapsed_s);
 					recipe.Output(p.Key, p.Value * k * elapsed_s, dump.Check(p.Key));
 				}
 				resources.Transform(recipe);

@@ -152,9 +152,8 @@ namespace KERBALISM
 				return;
 			
 			patientList.Remove(patientName);
-			Lib.Log("### sickbay removing " + patientName);
 			KerbalData kd = DB.Kerbal(patientName);
-			kd.Rule(rule).rate = 0;
+			kd.Rule(rule).offset = 0;
 			patients = string.Join(",", patientList.ToArray());
 		}
 
@@ -164,9 +163,8 @@ namespace KERBALISM
 				return;
 
 			patientList.Add(patientName);
-			Lib.Log("### sickbay adding " + patientName);
 			KerbalData kd = DB.Kerbal(patientName);
-			kd.Rule(rule).rate = -rate;
+			kd.Rule(rule).offset = -rate;
 			patients = string.Join(",", patientList.ToArray());
 		}
 
@@ -202,6 +200,9 @@ namespace KERBALISM
 			{
 				foreach (ProtoCrewMember crew in part.protoModuleCrew)
 				{
+					if (IsPatient(crew.name))
+						continue;
+
 					BaseEvent e = Events["Toggle" + i++];
 					e.active = true;
 					e.guiName = Lib.BuildString(title, ": cure ", crew.name);

@@ -1127,6 +1127,7 @@ namespace KERBALISM
 		// create the resource if it doesn't exist already
 		public static void AddResource(Part p, string res_name, double amount, double capacity)
 		{
+			Lib.Log("### adding resource " + res_name + " to " + p.name + " amount " + amount + " capacity " + capacity);
 			// if the resource is already in the part
 			if (p.Resources.Contains(res_name))
 			{
@@ -1232,6 +1233,8 @@ namespace KERBALISM
 				// set flow state
 				var res = p.Resources[res_name];
 				res.flowState = enable;
+			} else {
+				Lib.Log("### resource " + res_name + " not in part " + p.name);
 			}
 		}
 
