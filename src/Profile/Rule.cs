@@ -92,10 +92,6 @@ namespace KERBALISM
 				RuleData rd = kd.Rule(name);
 				rd.lifetime = lifetime_enabled && lifetime;
 
-				double process_rate = rate;
-				if (Math.Abs(rd.rate) > Double.Epsilon)
-					process_rate = rd.rate;
-
 				// if continuous
 				double step;
 				if (interval <= double.Epsilon)
@@ -123,7 +119,7 @@ namespace KERBALISM
 				// if continuous, or if one or more intervals elapsed
 				if (step > double.Epsilon)
 				{
-					double r = process_rate * Variance(name, c, individuality);  // kerbal-specific variance
+					double r = rate * Variance(name, c, individuality);  // kerbal-specific variance
 
 					// if there is a resource specified
 					if (res != null && r > double.Epsilon)
@@ -133,12 +129,9 @@ namespace KERBALISM
 										* k           // product of environment modifiers
 										* step;       // seconds elapsed or number of steps
 
-						if (name == "radiation") Lib.Log("### radiation " + c.name + " req " + required + " (sickbay factor " + rd.rate + ")");
-
 						// if there is no output
 						if (output.Length == 0)
 						{
-							if (name == "radiation") Lib.Log("### radiation res consume " + required);
 							// simply consume (that is faster)
 							res.Consume(required);
 						}
@@ -173,7 +166,7 @@ namespace KERBALISM
 					}
 					else
 						trigger = input.Length == 0 || res.amount <= double.Epsilon;
-
+						
 					if (k > 0.0 && trigger)
 					{
 						rd.problem += degeneration           // degeneration rate per-second or per-interval
@@ -185,8 +178,10 @@ namespace KERBALISM
 					else
 					{
 						rd.problem *= 1.0 / (1.0 + Math.Max(interval, 1.0) * step * 0.002);
-						rd.problem = Math.Max(rd.problem, 0.0);
 					}
+
+					rd.problem += rd.offset * step;
+					rd.problem = Math.Max(rd.problem, 0.0);
 				}
 
 				bool do_breakdown = false;
