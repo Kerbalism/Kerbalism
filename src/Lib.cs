@@ -1234,7 +1234,7 @@ namespace KERBALISM
 				var res = p.Resources[res_name];
 				res.flowState = enable;
 			} else {
-				Lib.Log("### resource " + res_name + " not in part " + p.name);
+				Lib.Log("Resource " + res_name + " not in part " + p.name);
 			}
 		}
 

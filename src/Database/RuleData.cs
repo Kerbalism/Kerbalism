@@ -15,7 +15,6 @@ namespace KERBALISM
 			message = 0;
 			time_since = 0.0;
 			lifetime = false;
-			offset = 0.0;
 		}
 
 		public RuleData(ConfigNode node)
@@ -24,7 +23,6 @@ namespace KERBALISM
 			message = Lib.ConfigValue(node, "message", 0u);
 			time_since = Lib.ConfigValue(node, "time_since", 0.0);
 			lifetime = Lib.ConfigValue(node, "lifetime", false);
-			offset = Lib.ConfigValue(node, "offset", 0.0);
 		}
 
 		public void Save(ConfigNode node)
@@ -33,8 +31,6 @@ namespace KERBALISM
 			node.AddValue("message", message);
 			node.AddValue("time_since", time_since);
 			node.AddValue("lifetime", lifetime);
-			if(Math.Abs(offset) > Double.Epsilon)
-				node.AddValue("offset", offset);
 		}
 
 		/// <summary>
@@ -51,7 +47,6 @@ namespace KERBALISM
 		public uint message;        // used to avoid sending messages multiple times
 		public double time_since;   // time since last execution, if interval > 0
 		public bool lifetime;       // is this a life time value or not
-		public double offset;		// process rate override (set in Sickbay)
 	}
 
 
