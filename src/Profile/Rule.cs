@@ -179,9 +179,6 @@ namespace KERBALISM
 					{
 						rd.problem *= 1.0 / (1.0 + Math.Max(interval, 1.0) * step * 0.002);
 					}
-
-					rd.problem += rd.offset * step;
-					rd.problem = Math.Max(rd.problem, 0.0);
 				}
 
 				bool do_breakdown = false;

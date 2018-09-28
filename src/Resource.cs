@@ -281,6 +281,7 @@ namespace KERBALISM
 		{
 			this.inputs = new List<Entry>();
 			this.outputs = new List<Entry>();
+			this.cures = new List<Entry>();
 			this.left = 1.0;
 		}
 
@@ -312,6 +313,15 @@ namespace KERBALISM
 			if (quantity > double.Epsilon) //< avoid division by zero
 			{
 				outputs.Add(new Entry(resource_name, quantity, dump));
+			}
+		}
+
+		// add a cure to the recipe
+		public void Cure(string cure, double quantity, string resource_name)
+		{
+			if (quantity > double.Epsilon) //< avoid division by zero
+			{
+				cures.Add(new Entry(cure, quantity, true, resource_name));
 			}
 		}
 
@@ -398,6 +408,25 @@ namespace KERBALISM
 				resources.Produce(v, e.name, e.quantity * worst_io);
 			}
 
+			// produce cures
+			for (int i = 0; i < cures.Count; ++i)
+			{
+				Entry entry = cures[i];
+				List<RuleData> curingRules = new List<RuleData>();
+				foreach(ProtoCrewMember crew in v.GetVesselCrew()) {
+					KerbalData kd = DB.Kerbal(crew.name);
+					if(kd.sickbay.IndexOf(entry.combined + ",", StringComparison.Ordinal) >= 0) {
+						curingRules.Add(kd.Rule(entry.name));
+					}
+				}
+
+				foreach(RuleData rd in curingRules)
+				{
+					rd.problem -= entry.quantity * worst_io / curingRules.Count;
+					rd.problem = Math.Max(rd.problem, 0);
+				}
+			}
+
 			// update amount left to execute
 			left -= worst_io;
 
@@ -408,6 +437,7 @@ namespace KERBALISM
 
 		public List<Entry> inputs;   // set of input resources
 		public List<Entry> outputs;  // set of output resources
+		public List<Entry> cures;    // set of cures
 		public double left;     // what proportion of the recipe is left to execute
 	}
 

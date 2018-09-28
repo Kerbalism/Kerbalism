@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
-
+using System;
 
 namespace KERBALISM
 {
@@ -13,7 +13,6 @@ namespace KERBALISM
 		// config
 		[KSPField] public string resource = string.Empty; // pseudo-resource to control
 		[KSPField] public double capacity = 1.0;          // amount of associated pseudo-resource
-		[KSPField] public string rule = string.Empty;     // which rule to affect
 		[KSPField] public double rate = 0.0;              // healing rate
 		[KSPField] public string title = string.Empty;    // name to show on ui
 		[KSPField] public string desc = string.Empty;     // description to show on tooltip
@@ -107,6 +106,9 @@ namespace KERBALISM
 
 		public void Update()
 		{
+			if (!Lib.IsFlight())
+				return;
+
 			// remove all patients that are not in this part
 			List<string> removeList = new List<string>();
 			foreach (string patientName in patientList)
@@ -146,14 +148,19 @@ namespace KERBALISM
 				RemovePatient(patientName);
 		}
 
-		private void RemovePatient(string patientName)
+		internal void RemovePatient(string patientName)
 		{
 			if (!patientList.Contains(patientName))
 				return;
 			
 			patientList.Remove(patientName);
 			KerbalData kd = DB.Kerbal(patientName);
-			kd.Rule(rule).offset = 0;
+			string key = resource + ",";
+			int p = kd.sickbay.IndexOf(key, 0, StringComparison.Ordinal);
+			if (p >= 0)
+			{
+				kd.sickbay = kd.sickbay.Remove(p, key.Length);
+			}
 			patients = string.Join(",", patientList.ToArray());
 		}
 
@@ -164,7 +171,7 @@ namespace KERBALISM
 
 			patientList.Add(patientName);
 			KerbalData kd = DB.Kerbal(patientName);
-			kd.Rule(rule).offset = -rate;
+			kd.sickbay += resource + ",";
 			patients = string.Join(",", patientList.ToArray());
 		}
 
@@ -176,9 +183,7 @@ namespace KERBALISM
 		private void UpdateActions()
 		{
 			if (!Lib.IsFlight())
-			{
 				return;
-			}
 
 			int i;
 			for (i = 1; i < MAX_SLOTS; i++)

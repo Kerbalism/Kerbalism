@@ -14,6 +14,7 @@ namespace KERBALISM
 			rescue = true;
 			disabled = false;
 			eva_dead = false;
+			sickbay = String.Empty;
 			rules = new Dictionary<string, RuleData>();
 		}
 
@@ -22,6 +23,7 @@ namespace KERBALISM
 			rescue = Lib.ConfigValue(node, "rescue", Lib.ConfigValue(node, "resque", true)); //< support pre 1.1.9 typo
 			disabled = Lib.ConfigValue(node, "disabled", false);
 			eva_dead = Lib.ConfigValue(node, "eva_dead", false);
+			sickbay = Lib.ConfigValue(node, "sickbay", String.Empty);
 			rules = new Dictionary<string, RuleData>();
 
 			foreach (var rule_node in node.GetNode("rules").GetNodes())
@@ -36,8 +38,10 @@ namespace KERBALISM
 			node.AddValue("rescue", rescue);
 			node.AddValue("disabled", disabled);
 			node.AddValue("eva_dead", eva_dead);
+			if (sickbay.Length > 0)
+				node.AddValue("sickbay", sickbay);
+			
 			var rules_node = node.AddNode("rules");
-
 			foreach (var p in rules)
 			{
 				p.Value.Save(rules_node.AddNode(DB.To_safe_key(p.Key)));
@@ -73,6 +77,7 @@ namespace KERBALISM
 		public bool rescue;         // used to deal with rescue mission kerbals
 		public bool disabled;       // a generic flag to disable resource consumption, for use by other mods
 		public bool eva_dead;       // the eva kerbal died, and is now a floating body
+		public string sickbay;		// comma-separated list of sickbay resources active for this kerbal
 		public Dictionary<string, RuleData> rules; // rules data
 	}
 
