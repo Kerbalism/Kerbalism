@@ -282,6 +282,7 @@
     <Compile Include="Utility\Transformator.cs" />
     <Compile Include="System\Preferences.cs" />
     <Compile Include="Modules\Sickbay.cs" />
+    <Compile Include="Automation\Devices\Sickbay.cs" />
   </ItemGroup>
   <ItemGroup>
     <Analyzer Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-CSharp-firstpass.dll')" Include="$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-CSharp-firstpass.dll" />
