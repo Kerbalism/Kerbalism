@@ -21,31 +21,27 @@ namespace KERBALISM
 		[KSPField(isPersistant = true)] public string patients = "";
 		private List<string> patientList = new List<string>();
 
-		[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "heal", active = false)]
-		public void Toggle1()
+		[KSPField(isPersistant = true)] public bool running;
+
+		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true)]
+		public void Toggle()
 		{
-			Toggle(1);
+			// switch status
+			running = !running;
 		}
-		[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "heal", active = false)]
-		public void Toggle2()
-		{
-			Toggle(2);
-		}
-		[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "heal", active = false)]
-		public void Toggle3()
-		{
-			Toggle(3);
-		}
-		[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "heal", active = false)]
-		public void Toggle4()
-		{
-			Toggle(4);
-		}
-		[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "heal", active = false)]
-		public void Toggle5()
-		{
-			Toggle(5);
-		}
+
+		[KSPAction("_")] public void Action(KSPActionParam param) { Toggle(); }
+
+		[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "cure", active = false)]
+		public void Toggle1() { Toggle(1); }
+		[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "cure", active = false)]
+		public void Toggle2() { Toggle(2); }
+		[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "cure", active = false)]
+		public void Toggle3() { Toggle(3); }
+		[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "cure", active = false)]
+		public void Toggle4() { Toggle(4); }
+		[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "cure", active = false)]
+		public void Toggle5() { Toggle(5); }
 
 
 		public void Start()
@@ -56,6 +52,8 @@ namespace KERBALISM
 
 			if (slots > MAX_SLOTS)
 				slots = MAX_SLOTS;
+
+			Actions["Action"].guiName = Lib.BuildString("Start/Stop ", title);
 
 			foreach (string s in patients.Split(','))
 			{
@@ -106,9 +104,6 @@ namespace KERBALISM
 
 		public void Update()
 		{
-			if (!Lib.IsFlight())
-				return;
-
 			// remove all patients that are not in this part
 			List<string> removeList = new List<string>();
 			foreach (string patientName in patientList)
@@ -138,7 +133,7 @@ namespace KERBALISM
 			}
 			RemovePatients(removeList);
 
-			Lib.SetResourceFlow(part, resource, patientList.Count > 0);
+			Lib.SetResourceFlow(part, resource, patientList.Count > 0 && running);
 			UpdateActions();
 		}
 
