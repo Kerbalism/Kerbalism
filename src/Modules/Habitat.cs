@@ -180,7 +180,7 @@ namespace KERBALISM
 			Lib.SetResourceFlow(part, "Shielding", b);
 		}
 
-		State Depressurize()
+		State Depressurizing()
 		{
 			// in flight
 			if (Lib.IsFlight())
@@ -252,7 +252,15 @@ namespace KERBALISM
 			switch (state)
 			{
 				case State.enabled:
-					status_str = Localizer.Format("#KERBALISM_Generic_ENABLED");
+					if (Math.Truncate(Math.Abs((perctDeployed + ResourceBalance.precision) - 1.0) * 100000) / 100000 > ResourceBalance.precision)
+					{
+						// No inflatable can be enabled been pressurizing
+						status_str = Localizer.Format("#KERBALISM_Habitat_pressurizing");
+					}
+					else
+					{
+						status_str = Localizer.Format("#KERBALISM_Generic_ENABLED");
+					}
 					Set_pressurized(true);
 					break;
 				case State.disabled:
@@ -265,7 +273,7 @@ namespace KERBALISM
 					Set_pressurized(false);
 					break;
 				case State.depressurizing:
-					status_str = Get_inflate_string().Length == 0 ? Localizer.Format("#KERBALISM_Habitat_venting") : Localizer.Format("#KERBALISM_Habitat_deflating");
+					status_str = Get_inflate_string().Length == 0 ? Localizer.Format("#KERBALISM_Habitat_depressurizing") : Localizer.Format("#KERBALISM_Habitat_deflating");
 					status_str += string.Format("{0:p2}", perctDeployed);
 					Set_pressurized(false);
 					break;
@@ -339,8 +347,8 @@ namespace KERBALISM
 
 				case State.depressurizing:
 					// Just do Venting when has no gravityRing or when the gravity ring is not spinning.
-					if (hasGravityRing && !gravityRing.Is_rotating()) state = Depressurize();
-					else if (!hasGravityRing) state = Depressurize();
+					if (hasGravityRing && !gravityRing.Is_rotating()) state = Depressurizing();
+					else if (!hasGravityRing) state = Depressurizing();
 					break;
 			}
 		}
@@ -529,6 +537,7 @@ namespace KERBALISM
 			if (dat.to == part)
 			{
 				// Need be equalized
+				// Enable flow for be pressurized
 				Set_flow(true);
 				needEqualize = true;
 			}
