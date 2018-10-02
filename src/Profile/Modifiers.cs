@@ -16,6 +16,14 @@ namespace KERBALISM
 			{
 				switch (mod)
 				{
+					case "zerog":
+						k *= vi.zerog ? 1.0 : 0.0;
+						break;
+
+					case "landed":
+						k *= vi.landed ? 1.0 : 0.0;
+						break;
+
 					case "breathable":
 						k *= vi.breathable ? 0.0 : 1.0;
 						break;
@@ -80,6 +88,14 @@ namespace KERBALISM
 			{
 				switch (mod)
 				{
+					case "zerog":
+						k *= env.zerog ? 1.0 : 0.0;
+						break;
+
+					case "landed":
+						k *= env.landed ? 1.0 : 0.0;
+						break;
+
 					case "breathable":
 						k *= env.breathable ? 0.0 : 1.0;
 						break;

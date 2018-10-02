@@ -141,6 +141,10 @@ Rule and Process rates can be influenced by the environment, habitat conditions 
 +-----------------+--------------------------------------------------------------------------------------------------------------+
 | per_capita      | the inverse of number of crew members, the effect on rates is a division by number of crew members           |
 +-----------------+--------------------------------------------------------------------------------------------------------------+
+| zerog           | 1 if the ship is above the atmosphere of a body, 0 if in atmospheric flight or landed                        |
++-----------------+--------------------------------------------------------------------------------------------------------------+
+| landed          | 1 if the ship is on the ground or in water, 0 otherwise                                                      |
++-----------------+--------------------------------------------------------------------------------------------------------------+
 | *resource name* | the level of resource specified                                                                              |
 +-----------------+--------------------------------------------------------------------------------------------------------------+
 

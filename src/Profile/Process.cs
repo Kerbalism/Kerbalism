@@ -95,6 +95,9 @@ namespace KERBALISM
 				}
 				foreach (var p in cures)
 				{
+					// TODO this assumes that the cure modifies always put the resource first
+					// works: modifier = _SickbayRDU,zerog works
+					// fails: modifier = zerog,_SickbayRDU
 					recipe.Cure(p.Key, p.Value * k * elapsed_s, modifiers[0]);
 				}
 				resources.Transform(recipe);

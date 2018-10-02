@@ -157,6 +157,8 @@ namespace KERBALISM
 				kd.sickbay = kd.sickbay.Remove(p, key.Length);
 			}
 			patients = string.Join(",", patientList.ToArray());
+			if (running)
+				running = patientList.Count > 0;
 		}
 
 		private void AddPatient(string patientName)
@@ -177,6 +179,8 @@ namespace KERBALISM
 
 		private void UpdateActions()
 		{
+			Events["Toggle"].guiName = Lib.StatusToggle(title, running ? "running" : "stopped");
+
 			if (!Lib.IsFlight())
 				return;
 
