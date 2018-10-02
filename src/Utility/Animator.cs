@@ -1,12 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using UnityEngine;
-
+﻿using UnityEngine;
 
 namespace KERBALISM
 {
-
-
 	public sealed class Animator
 	{
 		private Animation anim;
@@ -40,7 +35,6 @@ namespace KERBALISM
 			}
 		}
 
-
 		public void Stop()
 		{
 			if (anim != null)
@@ -48,7 +42,6 @@ namespace KERBALISM
 				anim.Stop();
 			}
 		}
-
 
 		public void Pause()
 		{
@@ -58,7 +51,6 @@ namespace KERBALISM
 			}
 		}
 
-
 		public void Resume(bool reverse)
 		{
 			if (anim != null)
@@ -66,7 +58,6 @@ namespace KERBALISM
 				anim[name].speed = !reverse ? 1.0f : -1.0f;
 			}
 		}
-
 
 		public void Still(double t)
 		{
@@ -78,7 +69,6 @@ namespace KERBALISM
 			}
 		}
 
-
 		public bool Playing()
 		{
 			if (anim != null)
@@ -88,7 +78,4 @@ namespace KERBALISM
 			return false;
 		}
 	}
-
-
-} // KERBALISM
-
+}
