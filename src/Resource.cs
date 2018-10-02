@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 
-
 namespace KERBALISM
 {
-
-
 	// store info about a resource in a vessel
 	public sealed class Resource_info
 	{
@@ -26,6 +23,10 @@ namespace KERBALISM
 							amount += r.amount;
 							capacity += r.maxAmount;
 						}
+#if DEBUG
+						// Force view all resource in Debug Mode
+						r.isVisible = true;
+#endif
 					}
 				}
 			}
@@ -60,7 +61,6 @@ namespace KERBALISM
 			deferred -= quantity;
 		}
 
-
 		// synchronize amount from cache to vessel
 		public void Sync(Vessel v, double elapsed_s)
 		{
@@ -88,7 +88,6 @@ namespace KERBALISM
 			// To avoid the consequences of [B]:
 			// - we hacked the stock solar panel to use the resource cache
 			// - we detect incoherency on loaded vessels, and forbid the two highest warp speeds
-
 
 			// remember amount currently known, to calculate rate later on
 			double old_amount = amount;
@@ -151,7 +150,6 @@ namespace KERBALISM
 				);
 				Lib.StopWarp(5);
 			}
-
 
 			// clamp consumption/production to vessel amount/capacity
 			// - if deferred is negative, then amount is guaranteed to be greater than zero
@@ -221,7 +219,6 @@ namespace KERBALISM
 			meal_happened = false;
 		}
 
-
 		// estimate time until depletion
 		public double Depletion(int crew_count)
 		{
@@ -247,16 +244,14 @@ namespace KERBALISM
 			return amount <= double.Epsilon ? 0.0 : delta >= -1e-10 ? double.NaN : amount / -delta;
 		}
 
-
 		public string resource_name;        // associated resource name
 		public double deferred;             // accumulate deferred requests
 		public double amount;               // amount of resource
 		public double capacity;             // storage capacity of resource
 		public double level;                // amount vs capacity, or 0 if there is no capacity
 		public double rate;                 // rate of change in amount per-second
-		public bool meal_happened;        // true if a meal-like consumption/production was processed in the last simulation step
+		public bool meal_happened;          // true if a meal-like consumption/production was processed in the last simulation step
 	}
-
 
 	public sealed class Resource_recipe
 	{
@@ -284,9 +279,7 @@ namespace KERBALISM
 			this.left = 1.0;
 		}
 
-		/// <summary>
-		/// add an input to the recipe
-		/// </summary>
+		// add an input to the recipe
 		public void Input(string resource_name, double quantity)
 		{
 			if (quantity > double.Epsilon) //< avoid division by zero
@@ -295,9 +288,7 @@ namespace KERBALISM
 			}
 		}
 
-		/// <summary>
-		/// add a combined input to the recipe
-		/// </summary>
+		// add a combined input to the recipe
 		public void Input(string resource_name, double quantity, string combined)
 		{
 			if (quantity > double.Epsilon) //< avoid division by zero
@@ -405,12 +396,10 @@ namespace KERBALISM
 			return worst_io > double.Epsilon;
 		}
 
-
 		public List<Entry> inputs;   // set of input resources
 		public List<Entry> outputs;  // set of output resources
 		public double left;     // what proportion of the recipe is left to execute
 	}
-
 
 	// the resource cache of a vessel
 	public sealed class Vessel_resources
@@ -457,7 +446,6 @@ namespace KERBALISM
 			foreach (var pair in resources) pair.Value.Sync(v, elapsed_s);
 		}
 
-
 		// record deferred production of a resource (shortcut)
 		public void Produce(Vessel v, string resource_name, double quantity)
 		{
@@ -476,11 +464,9 @@ namespace KERBALISM
 			recipes.Add(recipe);
 		}
 
-
 		public Dictionary<string, Resource_info> resources = new Dictionary<string, Resource_info>(32);
 		public List<Resource_recipe> recipes = new List<Resource_recipe>(4);
 	}
-
 
 	// manage per-vessel resource caches
 	public static class ResourceCache
@@ -549,7 +535,4 @@ namespace KERBALISM
 		// resource cache
 		static Dictionary<Guid, Vessel_resources> entries;
 	}
-
-
-} // KERBALISM
-
+}
