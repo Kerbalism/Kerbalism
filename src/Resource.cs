@@ -279,7 +279,9 @@ namespace KERBALISM
 			this.left = 1.0;
 		}
 
-		// add an input to the recipe
+		/// <summary>
+		/// add an input to the recipe
+		/// </summary>
 		public void Input(string resource_name, double quantity)
 		{
 			if (quantity > double.Epsilon) //< avoid division by zero
@@ -288,7 +290,9 @@ namespace KERBALISM
 			}
 		}
 
-		// add a combined input to the recipe
+		/// <summary>
+		/// add a combined input to the recipe
+		/// /// </summary>
 		public void Input(string resource_name, double quantity, string combined)
 		{
 			if (quantity > double.Epsilon) //< avoid division by zero
@@ -550,7 +554,7 @@ namespace KERBALISM
 			double[] totalAmount = new double[resourceName.Length];
 			double[] maxAmount = new double[resourceName.Length];
 
-			// Total resource in Enableded parts (No crew)
+			// Total resource in Enabled parts (No crew)
 			double[] totalE = new double[resourceName.Length];
 			double[] maxE = new double[resourceName.Length];
 
