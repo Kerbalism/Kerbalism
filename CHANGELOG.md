@@ -11,6 +11,8 @@
 * Harvesters will work better with an engineer on board. (Sir Mortimer)
 * Fixed another icons sometimes not displaying bug (PiezPiedPy) 
 * SSPX 2.5m Greenhouse now producing food at the expected rate. (theJesuit)
+* ResourceBalance run the pressurizing\depressurizing (old "equalize\venting"), it gives priority to habitats with crew(HaullyGames)
+
 
 ------------------------------------------------------------------------------------------------------
 
