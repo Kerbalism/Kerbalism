@@ -12,7 +12,8 @@
 * Fixed another icons sometimes not displaying bug (PiezPiedPy) 
 * SSPX 2.5m Greenhouse now producing food at the expected rate. (theJesuit)
 * ResourceBalance run the pressurizing\depressurizing (old "equalize\venting"), it gives priority to habitats with crew(HaullyGames)
-
+* Habitats equalize/venting function changed to pressurizing/depressurizing, crewed habitats have priority while multiple habitats are pressurizing.
+* New AirPump process added to control pressure in breathable environment.
 
 ------------------------------------------------------------------------------------------------------
 
