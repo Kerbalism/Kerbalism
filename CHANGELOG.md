@@ -58,7 +58,7 @@
  * RemoteTech antennas can now be enabled/disabled in Automation (Sir Mortimer)
  * RemoteTech antennas can now break down due to reliability failures (Sir Mortimer)
  * Chemical Plant and ECLSS parts are now surface attachable, ECLSS part capacity increased to support 3 crew (PiezPiedPy) 
- * Added support for ConfigurableContainers, they now have 6 additional tank config's as defined below:
+ * Added support for ConfigurableContainers, they now have 6 additional tank configs as defined below:
    KerbalismSupplies (Food, Water) - KerbalismBreathing (Oxygen, Nitrogen)
    KerbalismWaste (Waste, WasteWater) - KerbalismGreenhouse (CarbonDioxide, Ammonia, Water)
    KerbalismFuelcellH2 (Oxygen, Hydrogen) - KerbalismFuelcellMP (Oxygen, MonoPropellant)  (Gordon Dry)
