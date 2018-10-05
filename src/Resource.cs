@@ -23,7 +23,7 @@ namespace KERBALISM
 							amount += r.amount;
 							capacity += r.maxAmount;
 						}
-#if DEBUG
+#if DEBUG_RESOURCES
 						// Force view all resource in Debug Mode
 						r.isVisible = true;
 #endif
