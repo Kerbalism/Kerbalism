@@ -3,6 +3,9 @@
 
 ### Changes since the last release
 
+* Also "normal" launch clamps' generators are not simulated in planner by default
+* Quick fix to crewable launch towers like the FASA Launch Tower:
+  disable the habitat by default and disable simulating the generator in planner by default
 * Dump valve not saving its state on vessel change, bug fixed (PiezPiedPy)
 * Fixed SSPX IVA rotation (HaullyGames)
 * Kerbals consume slightly different amounts of food, water and oxygen, and react differently to
