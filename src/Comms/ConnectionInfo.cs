@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using KSP.Localization;
+using CommNet;
 
 
 namespace KERBALISM
@@ -163,6 +164,12 @@ namespace KERBALISM
 				// if CommNet is enabled
 				if (HighLogic.fetch.currentGame.Parameters.Difficulty.EnableCommNet)
 				{
+					// unloaded vessels are only recalculated on scene change by default
+					if (!v.loaded)
+					{
+						((KCommNetVessel) v.connection).forceUpdateUnloaded();
+					}
+					
 					// are we connected to DSN
 					if (v.connection != null)
 					{
@@ -314,6 +321,16 @@ namespace KERBALISM
 				external_cost = 0.0;
 				return;
 			}
+		}
+	}
+
+
+	public class KCommNetVessel : CommNetVessel
+	{
+		/// <summary> Force a network update on an unloaded vessel </summary>
+		public void forceUpdateUnloaded()
+		{
+			this.unloadedDoOnce = true;
 		}
 	}
 
