@@ -19,6 +19,7 @@
 * New AirPump process added to control pressure in breathable environment.(HaullyGames)
 * Fixed missing N2 when mod is added in an existing game.
 * Fixed issue with CommNet not updating for unloaded vessels (leomike, HaullyGames)
+* Added bandwidth preferences in Game Settings(HaullyGames)
 
 ------------------------------------------------------------------------------------------------------
 
