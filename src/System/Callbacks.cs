@@ -276,7 +276,11 @@ namespace KERBALISM
 			{
 				if (!kerbals_alive.Contains(p.Key)) kerbals_dead.Add(p.Key);
 			}
-			foreach (string n in kerbals_dead) DB.KillKerbal(n);
+			foreach (string n in kerbals_dead) 
+			{
+				Lib.Log("### vessel destroyed, killing kerbal " + n);
+				DB.KillKerbal(n);
+			}
 
 			// purge the caches
 			Cache.Purge(v);

@@ -24,6 +24,7 @@ namespace KERBALISM
 			}
 
 			// load kerbals data
+			Lib.Log("### reloading kerbals from save game");
 			kerbals = new Dictionary<string, KerbalData>();
 			if (node.HasNode("kerbals"))
 			{
@@ -155,6 +156,7 @@ namespace KERBALISM
 		/// </summary>
 		public static void KillKerbal(string name)
 		{
+			Lib.Log("### Killing kerbal " + name);
 			kerbals.Remove(name);
 		}
 
@@ -163,8 +165,10 @@ namespace KERBALISM
 		/// </summary>
 		public static void RecoverKerbal(string name)
 		{
+			Lib.Log("### trying to recover kerbal... " + name);
 			if(ContainsKerbal(name))
 			{
+				Lib.Log("### kerbal found, recovering " + name);
 				Kerbal(name).Recover();
 			}
 		}
