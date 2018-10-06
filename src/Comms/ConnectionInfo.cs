@@ -15,6 +15,7 @@ namespace KERBALISM
 		storm			// cme storm blackout
 	};
 
+
 	/// <summary> Stores a single vessels communication info</summary>
 	public sealed class ConnectionInfo
 	{
@@ -38,6 +39,7 @@ namespace KERBALISM
 
 		/// <summary> receiving node name </summary>
 		public string target_name = "";
+
 
 		// constructor
 		/// <summary> Creates a <see cref="ConnectionInfo"/> object for the specified vessel from it's antenna modules</summary>
