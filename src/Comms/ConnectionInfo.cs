@@ -164,15 +164,15 @@ namespace KERBALISM
 				// if CommNet is enabled
 				if (HighLogic.fetch.currentGame.Parameters.Difficulty.EnableCommNet)
 				{
-					// unloaded vessels are only recalculated on scene change by default
-					if (!v.loaded)
-					{
-						((KCommNetVessel) v.connection).forceUpdateUnloaded();
-					}
-					
-					// are we connected to DSN
 					if (v.connection != null)
 					{
+						// unloaded vessels are only recalculated on scene change by default
+						if (!v.loaded)
+						{
+							((KCommNetVessel)v.connection).forceUpdateUnloaded();
+						}
+
+						// are we connected to DSN
 						if (v.connection.IsConnected)
 						{
 							linked = true;
