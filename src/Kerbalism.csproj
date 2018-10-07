@@ -128,36 +128,45 @@
           <HintPath Condition="Exists('$(KSPBACKPORTDIR)\KSP_x64_Data\Managed\Assembly-CSharp.dll')">$(KSPBACKPORTDIR)\KSP_x64_Data\Managed\Assembly-CSharp.dll</HintPath>
           <HintPath Condition="Exists('.\Assembly-CSharp.dll')">.\Assembly-CSharp.dll</HintPath>
           <Private>False</Private>
+          <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Kerbal Space Program\KSP_x64_Data\Managed\Assembly-CSharp.dll</HintPath>
         </Reference>
         <Reference Include="Assembly-CSharp-firstpass">
           <HintPath Condition="Exists('$(KSPBACKPORTDIR)\KSP_x64_Data\Managed\Assembly-CSharp-firstpass.dll')">$(KSPBACKPORTDIR)\KSP_x64_Data\Managed\Assembly-CSharp-firstpass.dll</HintPath>
           <HintPath Condition="Exists('.\Assembly-CSharp-firstpass.dll')">.\Assembly-CSharp-firstpass.dll</HintPath>
           <Private>False</Private>
+          <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Kerbal Space Program\KSP_x64_Data\Managed\Assembly-CSharp-firstpass.dll</HintPath>
         </Reference>
         <Reference Include="Assembly-UnityScript">
           <HintPath Condition="Exists('$(KSPBACKPORTDIR)\KSP_x64_Data\Managed\Assembly-UnityScript.dll')">$(KSPBACKPORTDIR)\KSP_x64_Data\Managed\Assembly-UnityScript.dll</HintPath>
           <HintPath Condition="Exists('.\Assembly-UnityScript.dll')">.\Assembly-UnityScript.dll</HintPath>
           <Private>False</Private>
+          <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Kerbal Space Program\KSP_x64_Data\Managed\Assembly-UnityScript.dll</HintPath>
         </Reference>
         <Reference Include="Assembly-UnityScript-firstpass">
           <HintPath Condition="Exists('$(KSPBACKPORTDIR)\KSP_x64_Data\Managed\Assembly-UnityScript-firstpass.dll')">$(KSPBACKPORTDIR)\KSP_x64_Data\Managed\Assembly-UnityScript-firstpass.dll</HintPath>
           <HintPath Condition="Exists('.\Assembly-UnityScript-firstpass.dll')">.\Assembly-UnityScript-firstpass.dll</HintPath>
           <Private>False</Private>
+          <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Kerbal Space Program\KSP_x64_Data\Managed\Assembly-UnityScript-firstpass.dll</HintPath>
         </Reference>
         <Reference Include="UnityEngine">
           <HintPath Condition="Exists('$(KSPBACKPORTDIR)\KSP_x64_Data\Managed\UnityEngine.dll')">$(KSPBACKPORTDIR)\KSP_x64_Data\Managed\UnityEngine.dll</HintPath>
           <HintPath Condition="Exists('.\UnityEngine.dll')">.\UnityEngine.dll</HintPath>
           <Private>False</Private>
+          <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Kerbal Space Program\KSP_x64_Data\Managed\UnityEngine.dll</HintPath>
         </Reference>
         <Reference Include="UnityEngine.UI">
           <HintPath Condition="Exists('$(KSPBACKPORTDIR)\KSP_x64_Data\Managed\UnityEngine.UI.dll')">$(KSPBACKPORTDIR)\KSP_x64_Data\Managed\UnityEngine.UI.dll</HintPath>
           <HintPath Condition="Exists('.\UnityEngine.UI.dll')">.\UnityEngine.UI.dll</HintPath>
           <Private>False</Private>
+          <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Kerbal Space Program\KSP_x64_Data\Managed\UnityEngine.UI.dll</HintPath>
         </Reference>
       </ItemGroup>
     </Otherwise>
   </Choose>
   <ItemGroup>
+    <Reference Include="KSPAssets">
+      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Kerbal Space Program\KSP_x64_Data\Managed\KSPAssets.dll</HintPath>
+    </Reference>
     <Reference Include="System">
       <Private>False</Private>
     </Reference>
@@ -311,7 +320,7 @@
       <Output TaskParameter="Assemblies" ItemName="Targets" />
     </GetAssemblyIdentity>
     <ItemGroup>
-      <VersionNumber Include="@(Targets-&gt;'%(Version)')" />
+      <VersionNumber Include="@(Targets->'%(Version)')" />
     </ItemGroup>
   </Target>
   <PropertyGroup>
