@@ -34,11 +34,6 @@ xcopy /y /e "..\..\..\GameData\%TargetName%\*" .
 xcopy /y ..\..\..\CHANGELOG.md .
 xcopy /y ..\..\..\License .
 
-IF EXIST Shaders\ rd /s /q Shaders
-mkdir Shaders
-cd Shaders
-xcopy /y /e "..\..\..\..\buildscripts\Shaders\%Shaders%\*" .
-
 echo.
 echo Compressing %TargetName% for %KSPversion% Release Package...
 IF EXIST "%rootPath%%TargetName%*_For_%KSPversion%.zip" del "%rootPath%%TargetName%*_For_%KSPversion%.zip"
