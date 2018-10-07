@@ -17,9 +17,10 @@
 * ResourceBalance run the pressurizing\depressurizing (old "equalize\venting"), it gives priority to habitats with crew(HaullyGames)
 * Habitats equalize/venting function changed to pressurizing/depressurizing, crewed habitats have priority while multiple habitats are pressurizing.(HaullyGames)
 * New AirPump process added to control pressure in breathable environment.(HaullyGames)
-* Fixed missing N2 when mod is added in an existing game.
+* Fixed missing N2 when mod is added in an existing game.(HaullyGames)
 * Fixed issue with CommNet not updating for unloaded vessels (leomike, HaullyGames)
 * Added bandwidth preferences in Game Settings(HaullyGames)
+* Added 'GoTo' button in Penal, the vesselType button allowed to change to other vessel.(HaullyGames)
 
 ------------------------------------------------------------------------------------------------------
 
