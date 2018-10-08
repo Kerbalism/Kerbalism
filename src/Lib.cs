@@ -1230,7 +1230,6 @@ namespace KERBALISM
 			res.amount = Math.Min( amount, capacity );
 		}
 
-
 		/// <summary>
 		/// set flow of a resource in the specified part. does nothing if the resource don't exist in the part.
 		/// </summary>
