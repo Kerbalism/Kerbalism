@@ -34,7 +34,6 @@ namespace KERBALISM
 
 		public void Save(ConfigNode node)
 		{
-			if (node == null) Lib.Log("### NODE IS NULL");
 			node.AddValue("rescue", rescue);
 			node.AddValue("disabled", disabled);
 			node.AddValue("eva_dead", eva_dead);

@@ -1136,7 +1136,6 @@ namespace KERBALISM
 		// create the resource if it doesn't exist already
 		public static void AddResource( Part p, string res_name, double amount, double capacity )
 		{
-			Lib.Log("### adding resource " + res_name + " to " + p.name + " amount " + amount + " capacity " + capacity);
 			// if the resource is already in the part
 			if (p.Resources.Contains( res_name ))
 			{

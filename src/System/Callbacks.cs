@@ -219,7 +219,7 @@ namespace KERBALISM
 					c.rosterStatus = ProtoCrewMember.RosterStatus.Dead;
 				}
 
-				// forget kerbal data of recovered kerbals
+				// reset kerbal data of recovered kerbals
 				DB.RecoverKerbal(c.name);
 			}
 
@@ -239,7 +239,7 @@ namespace KERBALISM
 		void VesselTerminated(ProtoVessel pv)
 		{
 			// forget all kerbals data
-			foreach (ProtoCrewMember c in pv.GetVesselCrew()) DB.KillKerbal(c.name);
+			foreach (ProtoCrewMember c in pv.GetVesselCrew()) DB.KillKerbal(c.name, true);
 
 			// for each part
 			foreach (ProtoPartSnapshot p in pv.protoPartSnapshots)
@@ -278,8 +278,8 @@ namespace KERBALISM
 			}
 			foreach (string n in kerbals_dead) 
 			{
-				Lib.Log("### vessel destroyed, killing kerbal " + n);
-				DB.KillKerbal(n);
+				// we don't know if the kerbal really is dead, or if it is just not currently assigned to a mission
+				DB.KillKerbal(n, false);
 			}
 
 			// purge the caches

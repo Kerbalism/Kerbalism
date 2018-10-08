@@ -24,7 +24,6 @@ namespace KERBALISM
 			}
 
 			// load kerbals data
-			Lib.Log("### reloading kerbals from save game");
 			kerbals = new Dictionary<string, KerbalData>();
 			if (node.HasNode("kerbals"))
 			{
@@ -154,10 +153,15 @@ namespace KERBALISM
 		/// <summary>
 		/// Remove a Kerbal and his lifetime data from the database
 		/// </summary>
-		public static void KillKerbal(string name)
+		public static void KillKerbal(String name, bool reallyDead)
 		{
-			Lib.Log("### Killing kerbal " + name);
-			kerbals.Remove(name);
+			if(reallyDead) {
+				kerbals.Remove(name);
+			} else {
+				// called when a vessel is destroyed. don't remove the kerbal just yet,
+				// check with the roster if the kerbal is dead or not
+				Kerbal(name).Recover();
+			}
 		}
 
 		/// <summary>
@@ -165,11 +169,14 @@ namespace KERBALISM
 		/// </summary>
 		public static void RecoverKerbal(string name)
 		{
-			Lib.Log("### trying to recover kerbal... " + name);
 			if(ContainsKerbal(name))
 			{
-				Lib.Log("### kerbal found, recovering " + name);
-				Kerbal(name).Recover();
+				if(Kerbal(name).eva_dead)
+				{
+					kerbals.Remove(name);
+				} else {
+					Kerbal(name).Recover();
+				}
 			}
 		}
 
