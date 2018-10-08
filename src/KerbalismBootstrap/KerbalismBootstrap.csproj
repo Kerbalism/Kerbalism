@@ -59,7 +59,7 @@
     </Reference>
     <Reference Include="UnityEngine">
       <HintPath Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\UnityEngine.dll')">$(KSPDEVDIR)\KSP_x64_Data\Managed\UnityEngine.dll</HintPath>
-      <HintPath Condition="Exists('.\UnityEngine.dll')">..\src\UnityEngine.dll</HintPath>
+      <HintPath Condition="Exists('.\UnityEngine.dll')">.\UnityEngine.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
