@@ -16,8 +16,8 @@ before_install:
 before_script:
   - echo "Downloading DLLs for KSP $KSPVER."
   - wget https://img.spaceball.cf/KSP-$KSPVER.7z
-  - 7za x KSP-$KSPVER.7z -o$TRAVIS_BUILD_DIR -p$ZIP_PASSWORD
-  - 7za x KSP-$KSPVER.7z -o$TRAVIS_BUILD_DIR/src -p$ZIP_PASSWORD
+  - 7za x KSP-$KSPVER.7z -o$TRAVIS_BUILD_DIR/src/Kerbalism -p$ZIP_PASSWORD
+  - 7za x KSP-$KSPVER.7z -o$TRAVIS_BUILD_DIR/src/KerbalismBootstrap -p$ZIP_PASSWORD
 script:
   - cd "$TRAVIS_BUILD_DIR"
   - bash "$TRAVIS_BUILD_DIR/buildscripts/Travis/avc_to_assembly.sh"
@@ -26,7 +26,7 @@ after_success:
   - export MOD_VERSION=$(cat $TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism.version | jq '.VERSION.MAJOR').$(cat $TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism.version | jq '.VERSION.MINOR').$(cat $TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism.version | jq '.VERSION.PATCH')
   - bash "$TRAVIS_BUILD_DIR/buildscripts/Travis/avc_version.sh" $KSPVER "$TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism.version"
   - export KSP_VERSION=$(echo $KSPVER | grep -Po '(1\.\d)')
-  - /bin/cp -rf $TRAVIS_BUILD_DIR/src/obj/Release/Kerbalism.dll $TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism.dll
+  - /bin/cp -rf $TRAVIS_BUILD_DIR/src/Kerbalism/obj/Release/Kerbalism.dll $TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism.dll
   - 7za a "$TRAVIS_BUILD_DIR/Kerbalism-$MOD_VERSION-$KSPVER-BUILD$TRAVIS_BUILD_NUMBER.zip" "$TRAVIS_BUILD_DIR/GameData"
   - 7za a "$TRAVIS_BUILD_DIR/Kerbalism-$MOD_VERSION-$KSPVER-BUILD$TRAVIS_BUILD_NUMBER.zip" "$TRAVIS_BUILD_DIR/LICENSE"
   - 7za a "$TRAVIS_BUILD_DIR/Kerbalism-$MOD_VERSION-$KSPVER-BUILD$TRAVIS_BUILD_NUMBER.zip" "$TRAVIS_BUILD_DIR/CHANGELOG.md"
