@@ -16,7 +16,7 @@ namespace KerbalismBootstrap
 
 		public void Start()
 		{
-			if (Util.FindKerbalism() != null)
+			if (Util.IsDllLoaded || (Util.FindKerbalismBin() != null))
 				print( "[KerbalismBootstrap] WARNING: KERBALISM HAS ALREADY LOADED BEFORE US!" );
 
 			string our_bin = Path.Combine( AssemblyDirectory( Assembly.GetExecutingAssembly() ), Util.BinName + ".bin" );
@@ -27,8 +27,15 @@ namespace KerbalismBootstrap
 				print( "[KerbalismBootstrap] Found Kerbalism bin file at '" + our_bin + "'" );
 				if (File.Exists( possible_dll ))
 				{
-					File.Delete( possible_dll );
-					print( "[KerbalismBootstrap] Deleted non-bin DLL at '" + possible_dll + "'" );
+					try
+					{
+						File.Delete(possible_dll);
+						print("[KerbalismBootstrap] Deleted non-bin DLL at '" + possible_dll + "'");
+					}
+					catch
+					{
+						print("[KerbalismBootstrap] Could not delete non-bin DLL at '" + possible_dll + "'");
+					}
 				}
 			}
 			else
@@ -37,11 +44,16 @@ namespace KerbalismBootstrap
 				return;
 			}
 
-			AssemblyLoader.LoadPlugin( new FileInfo( our_bin ), our_bin, null );
-			AssemblyLoader.LoadedAssembly loadedAssembly = Util.FindKerbalism();
+			if (Util.IsDllLoaded)
+			{
+				print("[KerbalismBootstrap] Kerbalism non-bin DLL already loaded! Ditching!");
+				return;
+			}
+
+			AssemblyLoader.LoadPlugin(new FileInfo(our_bin), our_bin, null);
+			AssemblyLoader.LoadedAssembly loadedAssembly = Util.FindKerbalismBin();
 			if (loadedAssembly == null)
 			{
-
 				print( "[KerbalismBootstrap] Kerbalism failed to load! Ditching!" );
 				return;
 			}
