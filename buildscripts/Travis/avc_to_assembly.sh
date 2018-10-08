@@ -5,3 +5,5 @@ PATCH=$(cat $TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism.version | jq '.VERSIO
 export MOD_VERSION=$MAJOR.$MINOR.$PATCH
 echo "Mod version: $MOD_VERSION"
 sed -i -E 's/Assembly(\w*)Version\("[0-9\*\.]+"\)/Assembly\1Version("'"$MOD_VERSION"'")/' $TRAVIS_BUILD_DIR/src/Properties/AssemblyInfo.cs
+
+
