@@ -1,4 +1,8 @@
 language: csharp
+env:
+  global:
+    - env:
+      - ZIP_PASSWORD="gQn337XZBEFxzFuVwzKgc27ehZo7XLz485hh3erqF9"
 matrix:
   include:
     - env:
