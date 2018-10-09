@@ -16,13 +16,13 @@ before_install:
   - sudo apt-get install -qq p7zip-full bash openssh-client jq
 before_script:
   - echo "Downloading Reference DLLs for KSP $PRIMARY_KSPVER"
-  - md $TRAVIS_BUILD_DIR/src/$PRIMARY_BIN
+  - mkdir -p $TRAVIS_BUILD_DIR/src/$PRIMARY_BIN
   - wget https://img.spaceball.cf/KSP-$PRIMARY_KSPVER.7z
-  - 7za x KSP-$PRIMARY_KSPVER.7z -o$TRAVIS_BUILD_DIR/$PRIMARY_BIN -p$ZIP_PASSWORD
+  - 7za x KSP-$PRIMARY_KSPVER.7z -o$TRAVIS_BUILD_DIR/src/$PRIMARY_BIN -p$ZIP_PASSWORD
   - echo "Downloading Reference DLLs for KSP $SECONDARY_KSPVER"
-  - md $TRAVIS_BUILD_DIR/src/$SECONDARY_BIN
+  - mkdir -p $TRAVIS_BUILD_DIR/src/$SECONDARY_BIN
   - wget https://img.spaceball.cf/KSP-$SECONDARY_KSPVER.7z
-  - 7za x KSP-$SECONDARY_KSPVER.7z -o$TRAVIS_BUILD_DIR/$SECONDARY_BIN -p$ZIP_PASSWORD
+  - 7za x KSP-$SECONDARY_KSPVER.7z -o$TRAVIS_BUILD_DIR/src/$SECONDARY_BIN -p$ZIP_PASSWORD
 script:
   - cd "$TRAVIS_BUILD_DIR"
   - bash "$TRAVIS_BUILD_DIR/buildscripts/Travis/avc_to_assembly.sh"
