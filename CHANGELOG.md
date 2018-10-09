@@ -1,4 +1,4 @@
-## v1.9.1 for KSP 1.4.x and 1.3.1
+## v2.0.0 for KSP 1.4.x and 1.3.1
  - 2018-xx-xx
 
 ### Changes since the last release
@@ -21,6 +21,7 @@
 * Fixed issue with CommNet not updating for unloaded vessels (leomike, HaullyGames)
 * Added bandwidth preferences in Game Settings(HaullyGames)
 * Added 'GoTo' button in Penal, the vesselType button allowed to change to other vessel.(HaullyGames)
+* Fixed Orbital Science experiments size (Sir Mortimer)
 
 ------------------------------------------------------------------------------------------------------
 

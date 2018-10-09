@@ -23,7 +23,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
     <OutputPath Condition="Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">$(KSPDEVDIR)\GameData\Kerbalism\</OutputPath>
-    <OutputPath Condition="!Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">obj\Kerbalism\</OutputPath>
+    <OutputPath Condition="!Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">..\14\obj\Kerbalism\</OutputPath>
     <ErrorReport>prompt</ErrorReport>
     <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
     <DefineConstants>TRACE;DEBUG;DEVELOPMENT;ENABLE_PROFILER;DEBUG_PROFILER;DEBUG_RESOURCES</DefineConstants>
@@ -40,7 +40,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
     <OutputPath Condition="Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">$(KSPDEVDIR)\GameData\Kerbalism\</OutputPath>
-    <OutputPath Condition="!Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">obj\Kerbalism\</OutputPath>
+    <OutputPath Condition="!Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">..\14\obj\Kerbalism\</OutputPath>
     <WarningLevel>4</WarningLevel>
     <DefineConstants>
     </DefineConstants>
@@ -56,7 +56,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug 1.3|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
     <OutputPath Condition="Exists('$(KSPBACKPORTDIR)\GameData\Kerbalism\')">$(KSPBACKPORTDIR)\GameData\Kerbalism\</OutputPath>
-    <OutputPath Condition="!Exists('$(KSPBACKPORTDIR)\GameData\Kerbalism\')">obj\Kerbalism\</OutputPath>
+    <OutputPath Condition="!Exists('$(KSPBACKPORTDIR)\GameData\Kerbalism\')">..\13\obj\Kerbalism\</OutputPath>
     <DefineConstants>TRACE;DEBUG;KSP13;DEVELOPMENT;ENABLE_PROFILER;DEBUG_PROFILER</DefineConstants>
     <NoWarn>IDE0018</NoWarn>
     <DebugType>full</DebugType>
@@ -73,7 +73,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release 1.3|AnyCPU'">
     <OutputPath Condition="Exists('$(KSPBACKPORTDIR)\GameData\Kerbalism\')">$(KSPBACKPORTDIR)\GameData\Kerbalism\</OutputPath>
-    <OutputPath Condition="!Exists('$(KSPBACKPORTDIR)\GameData\Kerbalism\')">obj\Kerbalism\</OutputPath>
+    <OutputPath Condition="!Exists('$(KSPBACKPORTDIR)\GameData\Kerbalism\')">..\13\obj\Kerbalism\</OutputPath>
     <Optimize>true</Optimize>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <NoWarn>IDE0018</NoWarn>
@@ -92,32 +92,32 @@
       <ItemGroup>
         <Reference Include="Assembly-CSharp">
           <HintPath Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-CSharp.dll')">$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-CSharp.dll</HintPath>
-          <HintPath Condition="Exists('.\Assembly-CSharp.dll')">.\Assembly-CSharp.dll</HintPath>
+          <HintPath Condition="Exists('..\14\Assembly-CSharp.dll')">..\14\Assembly-CSharp.dll</HintPath>
           <Private>False</Private>
         </Reference>
         <Reference Include="Assembly-CSharp-firstpass">
           <HintPath Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-CSharp-firstpass.dll')">$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-CSharp-firstpass.dll</HintPath>
-          <HintPath Condition="Exists('.\Assembly-CSharp-firstpass.dll')">.\Assembly-CSharp-firstpass.dll</HintPath>
+          <HintPath Condition="Exists('..\14\Assembly-CSharp-firstpass.dll')">..\14\Assembly-CSharp-firstpass.dll</HintPath>
           <Private>False</Private>
         </Reference>
         <Reference Include="Assembly-UnityScript">
           <HintPath Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-UnityScript.dll')">$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-UnityScript.dll</HintPath>
-          <HintPath Condition="Exists('.\Assembly-UnityScript.dll')">.\Assembly-UnityScript.dll</HintPath>
+          <HintPath Condition="Exists('..\14\Assembly-UnityScript.dll')">..\14\Assembly-UnityScript.dll</HintPath>
           <Private>False</Private>
         </Reference>
         <Reference Include="Assembly-UnityScript-firstpass">
           <HintPath Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-UnityScript-firstpass.dll')">$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-UnityScript-firstpass.dll</HintPath>
-          <HintPath Condition="Exists('.\Assembly-UnityScript-firstpass.dll')">.\Assembly-UnityScript-firstpass.dll</HintPath>
+          <HintPath Condition="Exists('..\14\Assembly-UnityScript-firstpass.dll')">..\14\Assembly-UnityScript-firstpass.dll</HintPath>
           <Private>False</Private>
         </Reference>
         <Reference Include="UnityEngine">
           <HintPath Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\UnityEngine.dll')">$(KSPDEVDIR)\KSP_x64_Data\Managed\UnityEngine.dll</HintPath>
-          <HintPath Condition="Exists('.\UnityEngine.dll')">.\UnityEngine.dll</HintPath>
+          <HintPath Condition="Exists('..\14\UnityEngine.dll')">..\14\UnityEngine.dll</HintPath>
           <Private>False</Private>
         </Reference>
         <Reference Include="UnityEngine.UI">
           <HintPath Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\UnityEngine.UI.dll')">$(KSPDEVDIR)\KSP_x64_Data\Managed\UnityEngine.UI.dll</HintPath>
-          <HintPath Condition="Exists('.\UnityEngine.UI.dll')">.\UnityEngine.UI.dll</HintPath>
+          <HintPath Condition="Exists('..\14\UnityEngine.UI.dll')">..\14\UnityEngine.UI.dll</HintPath>
           <Private>False</Private>
         </Reference>
       </ItemGroup>
@@ -126,32 +126,32 @@
       <ItemGroup>
         <Reference Include="Assembly-CSharp">
           <HintPath Condition="Exists('$(KSPBACKPORTDIR)\KSP_x64_Data\Managed\Assembly-CSharp.dll')">$(KSPBACKPORTDIR)\KSP_x64_Data\Managed\Assembly-CSharp.dll</HintPath>
-          <HintPath Condition="Exists('.\Assembly-CSharp.dll')">.\Assembly-CSharp.dll</HintPath>
+          <HintPath Condition="Exists('..\13\Assembly-CSharp.dll')">..\13\Assembly-CSharp.dll</HintPath>
           <Private>False</Private>
         </Reference>
         <Reference Include="Assembly-CSharp-firstpass">
           <HintPath Condition="Exists('$(KSPBACKPORTDIR)\KSP_x64_Data\Managed\Assembly-CSharp-firstpass.dll')">$(KSPBACKPORTDIR)\KSP_x64_Data\Managed\Assembly-CSharp-firstpass.dll</HintPath>
-          <HintPath Condition="Exists('.\Assembly-CSharp-firstpass.dll')">.\Assembly-CSharp-firstpass.dll</HintPath>
+          <HintPath Condition="Exists('..\13\Assembly-CSharp-firstpass.dll')">..\13\Assembly-CSharp-firstpass.dll</HintPath>
           <Private>False</Private>
         </Reference>
         <Reference Include="Assembly-UnityScript">
           <HintPath Condition="Exists('$(KSPBACKPORTDIR)\KSP_x64_Data\Managed\Assembly-UnityScript.dll')">$(KSPBACKPORTDIR)\KSP_x64_Data\Managed\Assembly-UnityScript.dll</HintPath>
-          <HintPath Condition="Exists('.\Assembly-UnityScript.dll')">.\Assembly-UnityScript.dll</HintPath>
+          <HintPath Condition="Exists('..\13\Assembly-UnityScript.dll')">..\13\Assembly-UnityScript.dll</HintPath>
           <Private>False</Private>
         </Reference>
         <Reference Include="Assembly-UnityScript-firstpass">
           <HintPath Condition="Exists('$(KSPBACKPORTDIR)\KSP_x64_Data\Managed\Assembly-UnityScript-firstpass.dll')">$(KSPBACKPORTDIR)\KSP_x64_Data\Managed\Assembly-UnityScript-firstpass.dll</HintPath>
-          <HintPath Condition="Exists('.\Assembly-UnityScript-firstpass.dll')">.\Assembly-UnityScript-firstpass.dll</HintPath>
+          <HintPath Condition="Exists('..\13\Assembly-UnityScript-firstpass.dll')">..\13\Assembly-UnityScript-firstpass.dll</HintPath>
           <Private>False</Private>
         </Reference>
         <Reference Include="UnityEngine">
           <HintPath Condition="Exists('$(KSPBACKPORTDIR)\KSP_x64_Data\Managed\UnityEngine.dll')">$(KSPBACKPORTDIR)\KSP_x64_Data\Managed\UnityEngine.dll</HintPath>
-          <HintPath Condition="Exists('.\UnityEngine.dll')">.\UnityEngine.dll</HintPath>
+          <HintPath Condition="Exists('..\13\UnityEngine.dll')">..\13\UnityEngine.dll</HintPath>
           <Private>False</Private>
         </Reference>
         <Reference Include="UnityEngine.UI">
           <HintPath Condition="Exists('$(KSPBACKPORTDIR)\KSP_x64_Data\Managed\UnityEngine.UI.dll')">$(KSPBACKPORTDIR)\KSP_x64_Data\Managed\UnityEngine.UI.dll</HintPath>
-          <HintPath Condition="Exists('.\UnityEngine.UI.dll')">.\UnityEngine.UI.dll</HintPath>
+          <HintPath Condition="Exists('..\13\UnityEngine.UI.dll')">..\13\UnityEngine.UI.dll</HintPath>
           <Private>False</Private>
         </Reference>
       </ItemGroup>
@@ -312,7 +312,7 @@
       <Output TaskParameter="Assemblies" ItemName="Targets" />
     </GetAssemblyIdentity>
     <ItemGroup>
-      <VersionNumber Include="@(Targets-&gt;'%(Version)')" />
+      <VersionNumber Include="@(Targets->'%(Version)')" />
     </ItemGroup>
   </Target>
   <PropertyGroup>
@@ -320,11 +320,12 @@
     $(PostBuildEventDependsOn);
     PostBuildMacros;
   </PostBuildEventDependsOn>
-    <PostBuildEvent Condition="'$(OS)' == 'Windows_NT'">if "$(ConfigurationName)"=="Debug" (call "$(ProjectDir)..\buildscripts\UnityDebug\prepare-debug.bat" $(TargetName))
-if "$(ConfigurationName)"=="Release" (call "$(ProjectDir)..\buildscripts\ZipPack\build-package.bat" $(TargetName) -v@(VersionNumber) KSP1.4.5)
-if "$(ConfigurationName)"=="Debug 1.3" (call "$(ProjectDir)..\buildscripts\UnityDebug\prepare-debug.bat" $(TargetName))
-if "$(ConfigurationName)"=="Release 1.3" (call "$(ProjectDir)..\buildscripts\ZipPack\build-package.bat" $(TargetName) -v@(VersionNumber) KSP1.3.1)
-xcopy /E /D /Y "$(ProjectDir)..\GameData\Kerbalism\Localization" "$(TargetDir)\Localization\"
+    <PostBuildEvent Condition="'$(OS)' == 'Windows_NT'">if "$(ConfigurationName)"=="Debug" (call "$(ProjectDir)..\..\buildscripts\UnityDebug\prepare-debug.bat" $(TargetName) 14)
+if "$(ConfigurationName)"=="Release" (call "$(ProjectDir)..\..\buildscripts\ZipPack\build-package.bat" $(TargetName) -v@(VersionNumber) 14)
+if "$(ConfigurationName)"=="Debug 1.3" (call "$(ProjectDir)..\..\buildscripts\UnityDebug\prepare-debug.bat" $(TargetName) 13)
+if "$(ConfigurationName)"=="Release 1.3" (call "$(ProjectDir)..\..\buildscripts\ZipPack\build-package.bat" $(TargetName) -v@(VersionNumber) 13)
+echo Copying local repository Localization files to $(TargetDir)Localization
+xcopy /E /D /Y "$(ProjectDir)..\..\GameData\Kerbalism\Localization" "$(TargetDir)\Localization\"
 </PostBuildEvent>
   </PropertyGroup>
   <ProjectExtensions>
