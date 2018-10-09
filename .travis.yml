@@ -31,7 +31,7 @@ script:
 after_success:
   - export MOD_VERSION=$(cat $TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism.version | jq '.VERSION.MAJOR').$(cat $TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism.version | jq '.VERSION.MINOR').$(cat $TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism.version | jq '.VERSION.PATCH')
   - bash "$TRAVIS_BUILD_DIR/buildscripts/Travis/avc_version.sh" $PRIMARY_KSPVER "$TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism.version"
-  - /bin/cp -rf $TRAVIS_BUILD_DIR/src/$PRIMARY_BIN/obj/Kerbalism/KerbalismBootStrap.dll $TRAVIS_BUILD_DIR/GameData/Kerbalism/KerbalismBootStrap.dll
+  - /bin/cp -rf $TRAVIS_BUILD_DIR/src/$PRIMARY_BIN/obj/Kerbalism/KerbalismBootstrap.dll $TRAVIS_BUILD_DIR/GameData/Kerbalism/KerbalismBootstrap.dll
   - /bin/cp -rf $TRAVIS_BUILD_DIR/src/$PRIMARY_BIN/obj/Kerbalism/Kerbalism.dll $TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism$PRIMARY_BIN.bin
   - /bin/cp -rf $TRAVIS_BUILD_DIR/src/$SECONDARY_BIN/obj/Kerbalism/Kerbalism.dll $TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism$SECONDARY_BIN.bin
   - 7za a "$TRAVIS_BUILD_DIR/Kerbalism-$MOD_VERSION-BUILD$TRAVIS_BUILD_NUMBER.zip" "$TRAVIS_BUILD_DIR/GameData"
