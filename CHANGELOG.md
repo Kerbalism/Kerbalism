@@ -17,7 +17,7 @@
 * Radiation status no longer resets when recovering a Kerbal on Kerbin, or thawing from DeepFreeze. (Sir Mortimer)
 * Fixed issue with CommNet not updating for unloaded vessels (leomike, HaullyGames)
 * Radiation status no longer resets when recovering a Kerbal on Kerbin, or thawing from DeepFreeze. (Sir Mortimer)
-
+* Fixed Orbital Science experiments size (Sir Mortimer)
 
 ------------------------------------------------------------------------------------------------------
 
