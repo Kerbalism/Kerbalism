@@ -11,7 +11,9 @@ SET KSPversion=%2
 rem make sure the initial working directory is the one containing the current script
 SET scriptPath=%~dp0
 
-echo Generating Unity Monodevelop Debug file...
+echo Generating Unity Monodevelop Debug files...
+echo %TargetName%Bootstrap.dll -^> %TargetName%Bootstrap.dll.mdb
+"%scriptPath%\pdb2mdb.exe" %TargetName%Bootstrap.dll
 echo %TargetName%.dll -^> %TargetName%.dll.mdb
 "%scriptPath%\pdb2mdb.exe" %TargetName%.dll
 echo %TargetName%.dll.mdb -^> %TargetName%%KSPversion%.bin.mdb

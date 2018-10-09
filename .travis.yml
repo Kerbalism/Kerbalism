@@ -5,34 +5,41 @@ env:
 matrix:
   include:
     - env:
-      - KSPVER="1.4.5"
-      - EXTRAS=""
-    - env:
-      - KSPVER="1.3.1"
-      - EXTRA="/p:DefineConstants=KSP13"
+      - PRIMARY_KSPVER="1.4.5"
+      - PRIMARY_BIN="14"
+      - PRIMARY_DEFS=""
+      - SECONDARY_KSPVER="1.3.1"
+      - SECONDARY_BIN="13"
+      - SECONDARY_DEFS="/p:DefineConstants=KSP13"
 before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -qq p7zip-full bash openssh-client jq
 before_script:
-  - echo "Downloading DLLs for KSP $KSPVER."
-  - wget https://img.spaceball.cf/KSP-$KSPVER.7z
-  - 7za x KSP-$KSPVER.7z -o$TRAVIS_BUILD_DIR/src/Kerbalism -p$ZIP_PASSWORD
-  - 7za x KSP-$KSPVER.7z -o$TRAVIS_BUILD_DIR/src/KerbalismBootstrap -p$ZIP_PASSWORD
+  - echo "Downloading Reference DLLs for KSP $PRIMARY_KSPVER"
+  - mkdir -p $TRAVIS_BUILD_DIR/src/$PRIMARY_BIN
+  - wget https://img.spaceball.cf/KSP-$PRIMARY_KSPVER.7z
+  - 7za x KSP-$PRIMARY_KSPVER.7z -o$TRAVIS_BUILD_DIR/src/$PRIMARY_BIN -p$ZIP_PASSWORD
+  - echo "Downloading Reference DLLs for KSP $SECONDARY_KSPVER"
+  - mkdir -p $TRAVIS_BUILD_DIR/src/$SECONDARY_BIN
+  - wget https://img.spaceball.cf/KSP-$SECONDARY_KSPVER.7z
+  - 7za x KSP-$SECONDARY_KSPVER.7z -o$TRAVIS_BUILD_DIR/src/$SECONDARY_BIN -p$ZIP_PASSWORD
 script:
   - cd "$TRAVIS_BUILD_DIR"
   - bash "$TRAVIS_BUILD_DIR/buildscripts/Travis/avc_to_assembly.sh"
-  - msbuild $EXTRA Kerbalism.sln /t:Build /p:Configuration=Release
+  - msbuild $SECONDARY_DEFS Kerbalism.sln /t:Build /p:Configuration="Release 1.3"
+  - msbuild $PRIMARY_DEFS Kerbalism.sln /t:Build /p:Configuration="Release"
 after_success:
   - export MOD_VERSION=$(cat $TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism.version | jq '.VERSION.MAJOR').$(cat $TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism.version | jq '.VERSION.MINOR').$(cat $TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism.version | jq '.VERSION.PATCH')
-  - bash "$TRAVIS_BUILD_DIR/buildscripts/Travis/avc_version.sh" $KSPVER "$TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism.version"
-  - export KSP_VERSION=$(echo $KSPVER | grep -Po '(1\.\d)')
-  - /bin/cp -rf $TRAVIS_BUILD_DIR/src/Kerbalism/obj/Release/Kerbalism.dll $TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism.dll
-  - 7za a "$TRAVIS_BUILD_DIR/Kerbalism-$MOD_VERSION-$KSPVER-BUILD$TRAVIS_BUILD_NUMBER.zip" "$TRAVIS_BUILD_DIR/GameData"
-  - 7za a "$TRAVIS_BUILD_DIR/Kerbalism-$MOD_VERSION-$KSPVER-BUILD$TRAVIS_BUILD_NUMBER.zip" "$TRAVIS_BUILD_DIR/LICENSE"
-  - 7za a "$TRAVIS_BUILD_DIR/Kerbalism-$MOD_VERSION-$KSPVER-BUILD$TRAVIS_BUILD_NUMBER.zip" "$TRAVIS_BUILD_DIR/CHANGELOG.md"
+  - bash "$TRAVIS_BUILD_DIR/buildscripts/Travis/avc_version.sh" $PRIMARY_KSPVER "$TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism.version"
+  - /bin/cp -rf $TRAVIS_BUILD_DIR/src/$PRIMARY_BIN/obj/Kerbalism/KerbalismBootstrap.dll $TRAVIS_BUILD_DIR/GameData/Kerbalism/KerbalismBootstrap.dll
+  - /bin/cp -rf $TRAVIS_BUILD_DIR/src/$PRIMARY_BIN/obj/Kerbalism/Kerbalism.dll $TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism$PRIMARY_BIN.bin
+  - /bin/cp -rf $TRAVIS_BUILD_DIR/src/$SECONDARY_BIN/obj/Kerbalism/Kerbalism.dll $TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism$SECONDARY_BIN.bin
+  - 7za a "$TRAVIS_BUILD_DIR/Kerbalism-$MOD_VERSION-BUILD$TRAVIS_BUILD_NUMBER.zip" "$TRAVIS_BUILD_DIR/GameData"
+  - 7za a "$TRAVIS_BUILD_DIR/Kerbalism-$MOD_VERSION-BUILD$TRAVIS_BUILD_NUMBER.zip" "$TRAVIS_BUILD_DIR/LICENSE"
+  - 7za a "$TRAVIS_BUILD_DIR/Kerbalism-$MOD_VERSION-BUILD$TRAVIS_BUILD_NUMBER.zip" "$TRAVIS_BUILD_DIR/CHANGELOG.md"
   - echo "${SFTP_KEY}" | base64 --decode >/tmp/sftp_key
   - chmod 400 /tmp/sftp_key
   - ssh-keyscan -H ${SFTP_TARGET} >> ~/.ssh/known_hosts
-  - scp -i /tmp/sftp_key "$TRAVIS_BUILD_DIR/Kerbalism-$MOD_VERSION-$KSPVER-BUILD$TRAVIS_BUILD_NUMBER.zip" "${SFTP_USER}@${SFTP_TARGET}:/var/www/builds/Kerbalism-$MOD_VERSION-$KSPVER-BUILD$TRAVIS_BUILD_NUMBER.zip"
+  - scp -i /tmp/sftp_key "$TRAVIS_BUILD_DIR/Kerbalism-$MOD_VERSION-BUILD$TRAVIS_BUILD_NUMBER.zip" "${SFTP_USER}@${SFTP_TARGET}:/var/www/builds/Kerbalism-$MOD_VERSION-BUILD$TRAVIS_BUILD_NUMBER.zip"
 notifications:
   email: false

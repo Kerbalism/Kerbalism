@@ -13,12 +13,34 @@
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
   </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug 1.3|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath Condition="Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">$(KSPBACKPORTDIR)\GameData\Kerbalism\</OutputPath>
+    <OutputPath Condition="!Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">..\14\obj\Kerbalism\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release 1.3|AnyCPU' ">
+    <DebugType>none</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath Condition="Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">$(KSPBACKPORTDIR)\GameData\Kerbalism\</OutputPath>
+    <OutputPath Condition="!Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">..\14\obj\Kerbalism\</OutputPath>
+    <DefineConstants>
+    </DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath Condition="Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">$(KSPDEVDIR)\GameData\Kerbalism\</OutputPath>
-    <OutputPath Condition="!Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">obj\Kerbalism\</OutputPath>
+    <OutputPath Condition="!Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">..\14\obj\Kerbalism\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -27,7 +49,7 @@
     <DebugType>none</DebugType>
     <Optimize>true</Optimize>
     <OutputPath Condition="Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">$(KSPDEVDIR)\GameData\Kerbalism\</OutputPath>
-    <OutputPath Condition="!Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">obj\Kerbalism\</OutputPath>
+    <OutputPath Condition="!Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">..\14\obj\Kerbalism\</OutputPath>
     <DefineConstants>
     </DefineConstants>
     <ErrorReport>prompt</ErrorReport>
@@ -38,18 +60,18 @@
   <ItemGroup>
     <Reference Include="Assembly-CSharp">
       <HintPath Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-CSharp.dll')">$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-CSharp.dll</HintPath>
-      <HintPath Condition="Exists('.\Assembly-CSharp.dll')">.\Assembly-CSharp.dll</HintPath>
+      <HintPath Condition="Exists('..\14\Assembly-CSharp.dll')">..\14\Assembly-CSharp.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Assembly-CSharp-firstpass">
       <HintPath Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-CSharp-firstpass.dll')">$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-CSharp-firstpass.dll</HintPath>
-      <HintPath Condition="Exists('.\Assembly-CSharp-firstpass.dll')">.\Assembly-CSharp-firstpass.dll</HintPath>
+      <HintPath Condition="Exists('..\14\Assembly-CSharp-firstpass.dll')">..\14\Assembly-CSharp-firstpass.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="UnityEngine">
       <HintPath Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\UnityEngine.dll')">$(KSPDEVDIR)\KSP_x64_Data\Managed\UnityEngine.dll</HintPath>
-      <HintPath Condition="Exists('.\UnityEngine.dll')">.\UnityEngine.dll</HintPath>
+      <HintPath Condition="Exists('..\14\UnityEngine.dll')">..\14\UnityEngine.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>

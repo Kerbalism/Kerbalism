@@ -4,6 +4,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 15.0.27130.2036
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kerbalism", "src\Kerbalism\Kerbalism.csproj", "{7CF587A9-6E49-46E8-AB3F-87B80A6276DA}"
+	ProjectSection(ProjectDependencies) = postProject
+		{D07330FA-DEA1-4190-963D-31F4C81E8C82} = {D07330FA-DEA1-4190-963D-31F4C81E8C82}
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{6AEED929-B0AF-4EB1-82A0-84B98C5BA185}"
 	ProjectSection(SolutionItems) = preProject
@@ -13,7 +16,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		GameData\Kerbalism\Kerbalism.version = GameData\Kerbalism\Kerbalism.version
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KerbalismBootstrap", "src\KerbalismBootstrap\KerbalismBootstrap.csproj", "{738C9CD1-EC0C-4837-ACD0-5E17D416A6BB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KerbalismBootstrap", "src\KerbalismBootstrap\KerbalismBootstrap.csproj", "{D07330FA-DEA1-4190-963D-31F4C81E8C82}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -31,14 +34,14 @@ Global
 		{7CF587A9-6E49-46E8-AB3F-87B80A6276DA}.Release 1.3|Any CPU.Build.0 = Release 1.3|Any CPU
 		{7CF587A9-6E49-46E8-AB3F-87B80A6276DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7CF587A9-6E49-46E8-AB3F-87B80A6276DA}.Release|Any CPU.Build.0 = Release|Any CPU
-		{738C9CD1-EC0C-4837-ACD0-5E17D416A6BB}.Debug 1.3|Any CPU.ActiveCfg = Debug|Any CPU
-		{738C9CD1-EC0C-4837-ACD0-5E17D416A6BB}.Debug 1.3|Any CPU.Build.0 = Debug|Any CPU
-		{738C9CD1-EC0C-4837-ACD0-5E17D416A6BB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{738C9CD1-EC0C-4837-ACD0-5E17D416A6BB}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{738C9CD1-EC0C-4837-ACD0-5E17D416A6BB}.Release 1.3|Any CPU.ActiveCfg = Release|Any CPU
-		{738C9CD1-EC0C-4837-ACD0-5E17D416A6BB}.Release 1.3|Any CPU.Build.0 = Release|Any CPU
-		{738C9CD1-EC0C-4837-ACD0-5E17D416A6BB}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{738C9CD1-EC0C-4837-ACD0-5E17D416A6BB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D07330FA-DEA1-4190-963D-31F4C81E8C82}.Debug 1.3|Any CPU.ActiveCfg = Debug 1.3|Any CPU
+		{D07330FA-DEA1-4190-963D-31F4C81E8C82}.Debug 1.3|Any CPU.Build.0 = Debug 1.3|Any CPU
+		{D07330FA-DEA1-4190-963D-31F4C81E8C82}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D07330FA-DEA1-4190-963D-31F4C81E8C82}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D07330FA-DEA1-4190-963D-31F4C81E8C82}.Release 1.3|Any CPU.ActiveCfg = Release 1.3|Any CPU
+		{D07330FA-DEA1-4190-963D-31F4C81E8C82}.Release 1.3|Any CPU.Build.0 = Release 1.3|Any CPU
+		{D07330FA-DEA1-4190-963D-31F4C81E8C82}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D07330FA-DEA1-4190-963D-31F4C81E8C82}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
