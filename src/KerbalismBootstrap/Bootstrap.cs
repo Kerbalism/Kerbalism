@@ -3,6 +3,7 @@
 */
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -29,12 +30,12 @@ namespace KerbalismBootstrap
 				{
 					try
 					{
-						File.Delete(possible_dll);
-						print("[KerbalismBootstrap] Deleted non-bin DLL at '" + possible_dll + "'");
+						File.Delete( possible_dll );
+						print( "[KerbalismBootstrap] Deleted non-bin DLL at '" + possible_dll + "'" );
 					}
 					catch
 					{
-						print("[KerbalismBootstrap] Could not delete non-bin DLL at '" + possible_dll + "'");
+						print( "[KerbalismBootstrap] Could not delete non-bin DLL at '" + possible_dll + "'" );
 					}
 				}
 			}
@@ -46,11 +47,11 @@ namespace KerbalismBootstrap
 
 			if (Util.IsDllLoaded)
 			{
-				print("[KerbalismBootstrap] Kerbalism non-bin DLL already loaded! Ditching!");
+				print( "[KerbalismBootstrap] Kerbalism non-bin DLL already loaded! Ditching!" );
 				return;
 			}
 
-			AssemblyLoader.LoadPlugin(new FileInfo(our_bin), our_bin, null);
+			AssemblyLoader.LoadPlugin( new FileInfo( our_bin ), our_bin, null );
 			AssemblyLoader.LoadedAssembly loadedAssembly = Util.FindKerbalismBin();
 			if (loadedAssembly == null)
 			{
@@ -71,7 +72,12 @@ namespace KerbalismBootstrap
 					if (loadedType.IsAssignableFrom( type ))
 					{
 						loadedAssembly.types.Add( loadedType, type );
-						loadedAssembly.typesDictionary.Add( loadedType, type );
+						Dictionary<Type, Dictionary<String, Type>> temp = (Dictionary<Type, Dictionary<String, Type>>) typeof( Dictionary<Type, Dictionary<String, Type>> ).GetProperty( "typesDictionary" ).GetValue( loadedAssembly, null );
+						if (temp != null)
+						{
+							Util.AddToLoadedTypesDict( ref temp, loadedType, type );
+						}
+
 					}
 				}
 

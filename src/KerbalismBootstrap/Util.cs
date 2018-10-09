@@ -1,4 +1,7 @@
-﻿namespace KerbalismBootstrap
+﻿using System;
+using System.Collections.Generic;
+
+namespace KerbalismBootstrap
 {
 	public static class Util
 	{
@@ -27,6 +30,16 @@
 			{
 				return "Kerbalism" + Versioning.version_major.ToString() + Versioning.version_minor.ToString();
 			}
+		}
+
+		// This is just so we have 1.3 compat!
+		public static void AddToLoadedTypesDict( ref Dictionary<Type, Dictionary<String, Type>> dict, Type loadedType, Type type )
+		{
+			if (!dict.ContainsKey( loadedType ))
+			{
+				dict[loadedType] = new Dictionary<string, Type>();
+			}
+			dict[loadedType][type.Name] = type;
 		}
 	}
 }
