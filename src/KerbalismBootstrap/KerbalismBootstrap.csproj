@@ -17,8 +17,8 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath Condition="Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">$(KSPBACKPORTDIR)\GameData\Kerbalism\</OutputPath>
-    <OutputPath Condition="!Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">..\14\obj\Kerbalism\</OutputPath>
+    <OutputPath Condition="Exists('$(KSPBACKPORTDIR)\GameData\Kerbalism\')">$(KSPBACKPORTDIR)\GameData\Kerbalism\</OutputPath>
+    <OutputPath Condition="!Exists('$(KSPBACKPORTDIR)\GameData\Kerbalism\')">..\14\obj\Kerbalism\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -26,8 +26,8 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release 1.3|AnyCPU' ">
     <DebugType>none</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath Condition="Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">$(KSPBACKPORTDIR)\GameData\Kerbalism\</OutputPath>
-    <OutputPath Condition="!Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">..\14\obj\Kerbalism\</OutputPath>
+    <OutputPath Condition="Exists('$(KSPBACKPORTDIR)\GameData\Kerbalism\')">$(KSPBACKPORTDIR)\GameData\Kerbalism\</OutputPath>
+    <OutputPath Condition="!Exists('$(KSPBACKPORTDIR)\GameData\Kerbalism\')">..\14\obj\Kerbalism\</OutputPath>
     <DefineConstants>
     </DefineConstants>
     <ErrorReport>prompt</ErrorReport>
