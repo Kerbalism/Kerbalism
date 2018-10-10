@@ -235,7 +235,7 @@
     <Compile Include="Comms\Communications.cs" />
     <Compile Include="System\API.cs" />
     <Compile Include="System\Callbacks.cs" />
-    <Compile Include="System\GotoVessel.cs" />
+    <Compile Include="Utility\GotoVessel.cs" />
     <Compile Include="System\Loader.cs" />
     <Compile Include="System\Settings.cs" />
     <Compile Include="UI\BodyInfo.cs" />
