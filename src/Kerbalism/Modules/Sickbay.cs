@@ -237,20 +237,30 @@ namespace KERBALISM
 		// part tooltip
 		public override string GetInfo()
 		{
+			if (slots == 0) return string.Empty;
 			return Specs().Info(desc);
 		}
 
 		// specifics support
 		public Specifics Specs()
 		{
+			if (slots == 0) return null;
 			Specifics specs = new Specifics();
 			specs.Add("Capacity", slots + " Kerbals");
 			return specs;
 		}
 
 		// module info support
-		public string GetModuleTitle() { return Lib.BuildString("<size=1><color=#00000000>01</color></size>", title); }  // Display after config widget
-		public override string GetModuleDisplayName() { return Lib.BuildString("<size=1><color=#00000000>01</color></size>", title); }  // Display after config widget
+		public string GetModuleTitle()
+		{ 
+			if (slots == 0) return String.Empty;
+			return Lib.BuildString("<size=1><color=#00000000>01</color></size>", title); 
+		}
+
+		public override string GetModuleDisplayName() { if(slots == 0) return String.Empty;
+			return Lib.BuildString("<size=1><color=#00000000>01</color></size>", title); 
+		}
+
 		public string GetPrimaryField() { return string.Empty; }
 		public Callback<Rect> GetDrawModulePanelCallback() { return null; }
 	}
