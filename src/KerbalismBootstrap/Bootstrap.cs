@@ -72,7 +72,7 @@ namespace KerbalismBootstrap
 					if (loadedType.IsAssignableFrom( type ))
 					{
 						loadedAssembly.types.Add( loadedType, type );
-						PropertyInfo temp = typeof( Dictionary<Type, Dictionary<String, Type>> ).GetProperty( "typesDictionary" );
+						PropertyInfo temp = typeof( AssemblyLoader.LoadedAssembly ).GetProperty( "typesDictionary" );
 						if (temp != null)
 						{
 							Dictionary<Type, Dictionary<String, Type>> dict = (Dictionary<Type, Dictionary<String, Type>>) temp.GetValue( loadedAssembly, null );

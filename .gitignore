@@ -358,7 +358,6 @@ sysinfo.txt
 *.unitypackage
 
 Kerbalism*.zip
-Kerbalism.dll
 
 # KSP DLLs
 KSPAssets.dll

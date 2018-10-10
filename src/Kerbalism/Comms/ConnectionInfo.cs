@@ -163,11 +163,9 @@ namespace KERBALISM
 				{
 					if (v.connection != null)
 					{
-						// unloaded vessels are only recalculated on scene change by default
+						// force CommNet update of unloaded vessels
 						if (!v.loaded)
-						{
-							((KCommNetVessel)v.connection).forceUpdateUnloaded();
-						}
+							Lib.ReflectionValue(v.connection, "unloadedDoOnce", true);
 
 						// are we connected to DSN
 						if (v.connection.IsConnected)
@@ -319,13 +317,4 @@ namespace KERBALISM
 		}
 	}
 
-
-	public class KCommNetVessel : CommNetVessel
-	{
-		/// <summary> Force a network update on an unloaded vessel </summary>
-		public void forceUpdateUnloaded()
-		{
-			this.unloadedDoOnce = true;
-		}
-	}
 } // KERBALISM
