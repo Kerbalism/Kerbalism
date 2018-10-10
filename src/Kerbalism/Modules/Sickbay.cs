@@ -27,7 +27,7 @@ namespace KERBALISM
 		public void Toggle()
 		{
 			// switch status
-			running = !running;
+			running = !running && slots > 0;
 		}
 
 		[KSPAction("_")] public void Action(KSPActionParam param) { Toggle(); }
@@ -158,7 +158,7 @@ namespace KERBALISM
 			}
 			patients = string.Join(",", patientList.ToArray());
 			if (running)
-				running = patientList.Count > 0;
+				running = patientList.Count > 0 && slots > 0;
 		}
 
 		private void AddPatient(string patientName)
@@ -179,6 +179,7 @@ namespace KERBALISM
 
 		private void UpdateActions()
 		{
+			Events["Toggle"].active = slots > 0;
 			Events["Toggle"].guiName = Lib.StatusToggle(title, running ? "running" : "stopped");
 
 			if (!Lib.IsFlight())
