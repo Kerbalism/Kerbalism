@@ -325,7 +325,13 @@ namespace KERBALISM
 			m.GetType().GetField( value_name, flags ).SetValue( m, value );
 		}
 
-		// get access to a private field
+		///<summary> Sets the value of a private field via reflection </summary>
+		public static void ReflectionValue<T>(object instance, string value_name, T value)
+		{
+			instance.GetType().GetField(value_name, flags).SetValue(instance, value);
+		}
+
+		///<summary> Returns the value of a private field via reflection </summary>
 		public static T ReflectionValue<T>( object instance, string field_name )
 		{
 			return (T) instance.GetType().GetField( field_name, flags ).GetValue( instance );
