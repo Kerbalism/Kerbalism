@@ -21,6 +21,8 @@
 * Fixed issue with CommNet not updating for unloaded vessels (leomike, HaullyGames)
 * Added bandwidth preferences in Game Settings(HaullyGames)
 * Added 'GoTo' button in Penal, the vesselType button allowed to change to other vessel.(HaullyGames)
+* Fixed consume and Automatic for antennas with GenericAnimation(HaullyGames)
+* Automatic has devices ordered by name(HaullGames)
 
 ------------------------------------------------------------------------------------------------------
 
