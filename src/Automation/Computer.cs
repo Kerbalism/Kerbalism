@@ -1,6 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using System.Collections.Generic;
+using System.Linq;
 using KSP.Localization;
 
 namespace KERBALISM
@@ -337,7 +336,8 @@ namespace KERBALISM
 				}
 			}
 
-			// return all devices found
+			devices = devices.OrderBy(k => k.Value.Name()).ToDictionary(pair => pair.Key, pair => pair.Value);
+			// return all devices found in order by name
 			return devices;
 		}
 
