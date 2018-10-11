@@ -174,6 +174,7 @@
   <ItemGroup>
     <Compile Include="Automation\Computer.cs" />
     <Compile Include="Automation\Device.cs" />
+    <Compile Include="Automation\Devices\Antennas.cs" />
     <Compile Include="Automation\Devices\DeployableAntenna.cs" />
     <Compile Include="Automation\Devices\Harvester.cs" />
     <Compile Include="Automation\Devices\Laboratory.cs" />
