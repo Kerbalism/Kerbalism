@@ -1,12 +1,9 @@
-﻿using System;
+﻿using System.Linq;
 using System.Collections.Generic;
-using UnityEngine;
 using KSP.Localization;
 
 namespace KERBALISM
 {
-
-
 	public enum ScriptType
 	{
 		landed = 1,       // called on landing
@@ -30,14 +27,12 @@ namespace KERBALISM
 		last = 19
 	}
 
-
 	public sealed class Computer
 	{
 		public Computer()
 		{
 			scripts = new Dictionary<ScriptType, Script>();
 		}
-
 
 		public Computer(ConfigNode node)
 		{
@@ -48,7 +43,6 @@ namespace KERBALISM
 				scripts.Add((ScriptType)Lib.Parse.ToUInt(script_node.name), new Script(script_node));
 			}
 		}
-
 
 		public void Save(ConfigNode node)
 		{
@@ -61,14 +55,12 @@ namespace KERBALISM
 			}
 		}
 
-
 		// get a script
 		public Script Get(ScriptType type)
 		{
 			if (!scripts.ContainsKey(type)) scripts.Add(type, new Script());
 			return scripts[type];
 		}
-
 
 		// execute a script
 		public void Execute(Vessel v, ScriptType type)
@@ -92,7 +84,6 @@ namespace KERBALISM
 				}
 			}
 		}
-
 
 		// call scripts automatically when conditions are met
 		public void Automate(Vessel v, Vessel_info vi, Vessel_resources resources)
@@ -220,7 +211,6 @@ namespace KERBALISM
 			}
 		}
 
-
 		// return set of devices on a vessel
 		// - the list is only valid for a single simulation step
 		public static Dictionary<uint, Device> Boot(Vessel v)
@@ -335,14 +325,11 @@ namespace KERBALISM
 				}
 			}
 
-			// return all devices found
+			devices = devices.OrderBy(k => k.Value.Name()).ToDictionary(pair => pair.Key, pair => pair.Value);
+			//return all found devices sorted by name
 			return devices;
 		}
 
-
 		Dictionary<ScriptType, Script> scripts;
 	}
-
-
 } // KERBALISM
-
