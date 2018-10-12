@@ -95,10 +95,20 @@ namespace KERBALISM
 							{
 								// do we have an animation
 								ModuleDeployableAntenna animation = t.part.FindModuleImplementing<ModuleDeployableAntenna>();
+								ModuleAnimateGeneric animationGeneric = t.part.FindModuleImplementing<ModuleAnimateGeneric>();
 								if (animation != null)
 								{
 									// only include data rate and ec cost if transmitter is extended
 									if (animation.deployState == ModuleDeployablePart.DeployState.EXTENDED)
+									{
+										rate += t.DataRate * PreferencesBasic.Instance.transmitFactor;
+										external_cost += t.DataResourceCost * t.DataRate;
+									}
+								}
+								else if (animationGeneric != null)
+								{
+									// only include data rate and ec cost if transmitter is extended
+									if (animationGeneric.animSpeed > 0)
 									{
 										rate += t.DataRate * PreferencesBasic.Instance.transmitFactor;
 										external_cost += t.DataResourceCost * t.DataRate;
@@ -135,12 +145,13 @@ namespace KERBALISM
 								else
 								{
 									// do we have an animation
-									ProtoPartModuleSnapshot m = p.FindModule("ModuleDeployableAntenna");
+									ProtoPartModuleSnapshot m = p.FindModule("ModuleDeployableAntenna") ?? p.FindModule("ModuleAnimateGeneric");
 									if (m != null)
 									{
 										// only include data rate and ec cost if transmitter is extended
 										string deployState = Lib.Proto.GetString(m, "deployState");
-										if (deployState == "EXTENDED")
+										float animSpeed = Lib.Proto.GetFloat(m, "animSpeed");
+										if (deployState == "EXTENDED" || animSpeed > 0)
 										{
 											rate += t.DataRate * PreferencesBasic.Instance.transmitFactor;
 											external_cost += t.DataResourceCost * t.DataRate;
