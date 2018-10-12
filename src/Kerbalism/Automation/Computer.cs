@@ -255,9 +255,9 @@ namespace KERBALISM
 						case "ModuleMultiPointSurfaceLight": dev = new LightDevice(m as ModuleLight);                         break;
 						case "SCANsat":                      dev = new ScannerDevice(m);                                      break;
 						case "ModuleSCANresourceScanner":    dev = new ScannerDevice(m);                                      break;
-						case "ModuleRTAntenna":              dev = new RemoteTechAntennaDevice(m);                            break;
-						case "ModuleRTAntennaPassive":       dev = new RemoteTechAntennaDevice(m);                            break;
-						case "ModuleDeployableAntenna":      dev = new DeployableAntennaDevice(m as ModuleDeployableAntenna); break;
+						case "ModuleRTAntenna":              dev = new Antenna(m, m.moduleName);                              break;
+						case "ModuleRTAntennaPassive":       dev = new Antenna(m, "ModuleRTAntenna");                         break;
+						case "ModuleDataTransmitter":        dev = new Antenna(m, m.moduleName);                              break;
 						default: continue;
 					}
 
@@ -319,9 +319,9 @@ namespace KERBALISM
 							case "ModuleMultiPointSurfaceLight": dev = new ProtoLightDevice(m, p.flightID);                                                       break;
 							case "SCANsat":                      dev = new ProtoScannerDevice(m, part_prefab, v, p.flightID);                                     break;
 							case "ModuleSCANresourceScanner":    dev = new ProtoScannerDevice(m, part_prefab, v, p.flightID);                                     break;
-							case "ModuleRTAntenna":              dev = new ProtoRemoteTechAntennaDevice(m, module_prefab, v, p.flightID);                         break;
-							case "ModuleRTAntennaPassive":       dev = new ProtoRemoteTechAntennaDevice(m, module_prefab, v, p.flightID);                         break;
-							case "ModuleDeployableAntenna":      dev = new ProtoDeployableAntennaDevice(m, module_prefab as ModuleDeployableAntenna, p.flightID); break;
+							case "ModuleRTAntenna":              dev = new ProtoPartAntenna(m, p, v, m.moduleName, p.flightID);                                   break;
+							case "ModuleRTAntennaPassive":       dev = new ProtoPartAntenna(m, p, v, "ModuleRTAntenna", p.flightID);                              break;
+							case "ModuleDataTransmitter":        dev = new ProtoPartAntenna(m, p, v, m.moduleName, p.flightID);                                   break;
 							default: continue;
 						}
 
