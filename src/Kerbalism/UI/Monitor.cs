@@ -6,8 +6,6 @@ using KSP.Localization;
 
 namespace KERBALISM
 {
-
-
 	public enum MonitorPage
 	{
 		telemetry,
@@ -16,7 +14,6 @@ namespace KERBALISM
 		config,
 		log
 	}
-
 
 	public sealed class Monitor
 	{
@@ -55,7 +52,6 @@ namespace KERBALISM
 			// auto-switch selected vessel on scene changes
 			GameEvents.onVesselChange.Add((Vessel v) => { if (selected_id != Guid.Empty) selected_id = v.id; });
 		}
-
 
 		public void Update()
 		{
@@ -114,7 +110,6 @@ namespace KERBALISM
 				}
 			}
 		}
-
 
 		public void Render()
 		{
@@ -205,7 +200,7 @@ namespace KERBALISM
 			(
 			  Lib.BuildString("<b>",
 			  Lib.Ellipsis(vessel_name, Styles.ScaleStringLength(((page == MonitorPage.data || page == MonitorPage.log || selected_id == Guid.Empty) && !Lib.IsFlight()) ? 45 : 25)),
-			  "</b> <size=", Styles.ScaleInteger(9).ToString(),">", Lib.Color("#cccccc", Lib.Ellipsis(body_name, Styles.ScaleStringLength(8))), "</size>"),
+			  "</b> <size=", Styles.ScaleInteger(9).ToString(), ">", Lib.Color("#cccccc", Lib.Ellipsis(body_name, Styles.ScaleStringLength(8))), "</size>"),
 			  string.Empty,
 			  () => { selected_id = selected_id != v.id ? v.id : Guid.Empty; }
 			);
@@ -213,6 +208,21 @@ namespace KERBALISM
 			// vessel type icon
 			if (!selected)
 			p.SetIcon(GetVesselTypeIcon(v.vesselType), v.vesselType.displayDescription(), () => { selected_id = selected_id != v.id ? v.id : Guid.Empty; });
+			else
+			{
+				if (FlightGlobals.ActiveVessel != v)
+				{
+					p.SetIcon(GetVesselTypeIcon(v.vesselType), "Go to vessel!", () => Lib.Popup
+					("Warning!",
+						Lib.BuildString("Do you really want go to ", vessel_name, " vessel?"),
+						new DialogGUIButton("Go", () => { GotoVessel.JumpToVessel(v); }),
+						new DialogGUIButton("Stay", () => { })));
+				}
+				else
+				{
+					p.SetIcon(GetVesselTypeIcon(v.vesselType), v.vesselType.displayDescription(), () => { });
+				}
+			}
 
 			// problem indicator
 			Indicator_problems(p, v, vi, crew);
@@ -331,16 +341,16 @@ namespace KERBALISM
 
 		Texture2D GetVesselTypeIcon(VesselType type, bool disabled = false)
 		{
-			switch (type)
+			switch(type)
 			{
-				case VesselType.Base: return disabled ? Icons.base_black : Icons.base_white;
-				case VesselType.EVA: return disabled ? Icons.eva_black : Icons.eva_white;
-				case VesselType.Lander: return disabled ? Icons.lander_black : Icons.lander_white;
-				case VesselType.Plane: return disabled ? Icons.plane_black : Icons.plane_white;
-				case VesselType.Probe: return disabled ? Icons.probe_black : Icons.probe_white;
-				case VesselType.Relay: return disabled ? Icons.relay_black : Icons.relay_white;
-				case VesselType.Rover: return disabled ? Icons.rover_black : Icons.rover_white;
-				case VesselType.Ship: return disabled ? Icons.ship_black : Icons.ship_white;
+				case VesselType.Base:    return disabled ? Icons.base_black :    Icons.base_white;
+				case VesselType.EVA:     return disabled ? Icons.eva_black :     Icons.eva_white;
+				case VesselType.Lander:  return disabled ? Icons.lander_black :  Icons.lander_white;
+				case VesselType.Plane:   return disabled ? Icons.plane_black :   Icons.plane_white;
+				case VesselType.Probe:   return disabled ? Icons.probe_black :   Icons.probe_white;
+				case VesselType.Relay:   return disabled ? Icons.relay_black :   Icons.relay_white;
+				case VesselType.Rover:   return disabled ? Icons.rover_black :   Icons.rover_white;
+				case VesselType.Ship:    return disabled ? Icons.ship_black :    Icons.ship_white;
 				case VesselType.Station: return disabled ? Icons.station_black : Icons.station_white;
 				default: return Icons.empty; // this really shouldn't happen.
 			}
@@ -523,7 +533,6 @@ namespace KERBALISM
 			p.AddIcon(image, tooltip);
 		}
 
-
 		void Indicator_supplies(Panel p, Vessel v, Vessel_info vi)
 		{
 			List<string> tooltips = new List<string>();
@@ -561,7 +570,6 @@ namespace KERBALISM
 			p.AddIcon(image, string.Join("\n", tooltips.ToArray()));
 		}
 
-
 		void Indicator_reliability(Panel p, Vessel v, Vessel_info vi)
 		{
 			Texture2D image;
@@ -584,7 +592,6 @@ namespace KERBALISM
 
 			p.AddIcon(image, tooltip);
 		}
-
 
 		void Indicator_signal(Panel p, Vessel v, Vessel_info vi)
 		{
@@ -671,6 +678,4 @@ namespace KERBALISM
 		MonitorPage page = MonitorPage.telemetry;
 		Panel panel;
 	}
-
-
 } // KERBALISM
