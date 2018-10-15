@@ -229,7 +229,7 @@ namespace KERBALISM
 					switch (m.moduleName)
 					{
 						case "ProcessController":            dev = new ProcessDevice(m as ProcessController);                 break;
-						case "Sickbay": dev = new SickbayDevice(m as Sickbay); break;
+						case "Sickbay":                      dev = new SickbayDevice(m as Sickbay);                           break;
 						case "Greenhouse":                   dev = new GreenhouseDevice(m as Greenhouse);                     break;
 						case "GravityRing":                  dev = new RingDevice(m as GravityRing);                          break;
 						case "Emitter":                      dev = new EmitterDevice(m as Emitter);                           break;
@@ -246,9 +246,9 @@ namespace KERBALISM
 						case "ModuleMultiPointSurfaceLight": dev = new LightDevice(m as ModuleLight);                         break;
 						case "SCANsat":                      dev = new ScannerDevice(m);                                      break;
 						case "ModuleSCANresourceScanner":    dev = new ScannerDevice(m);                                      break;
-						case "ModuleRTAntenna":              dev = new Antenna(m, m.moduleName);                              break;
-						case "ModuleRTAntennaPassive":       dev = new Antenna(m, "ModuleRTAntenna");                         break;
+						case "ModuleRTAntenna":
 						case "ModuleDataTransmitter":        dev = new Antenna(m, m.moduleName);                              break;
+						case "ModuleRTAntennaPassive":       dev = new Antenna(m, "ModuleRTAntenna"); break;
 						default: continue;
 					}
 
@@ -294,7 +294,7 @@ namespace KERBALISM
 						switch (m.moduleName)
 						{
 							case "ProcessController":            dev = new ProtoProcessDevice(m, module_prefab as ProcessController, p.flightID);                 break;
-							case "Sickbay": dev = new ProtoSickbayDevice(m, module_prefab as Sickbay, p.flightID); break;
+							case "Sickbay":                      dev = new ProtoSickbayDevice(m, module_prefab as Sickbay, p.flightID);                           break;
 							case "Greenhouse":                   dev = new ProtoGreenhouseDevice(m, p.flightID);                                                  break;
 							case "GravityRing":                  dev = new ProtoRingDevice(m, p.flightID);                                                        break;
 							case "Emitter":                      dev = new ProtoEmitterDevice(m, p.flightID);                                                     break;
@@ -311,9 +311,9 @@ namespace KERBALISM
 							case "ModuleMultiPointSurfaceLight": dev = new ProtoLightDevice(m, p.flightID);                                                       break;
 							case "SCANsat":                      dev = new ProtoScannerDevice(m, part_prefab, v, p.flightID);                                     break;
 							case "ModuleSCANresourceScanner":    dev = new ProtoScannerDevice(m, part_prefab, v, p.flightID);                                     break;
-							case "ModuleRTAntenna":              dev = new ProtoPartAntenna(m, p, v, m.moduleName, p.flightID);                                   break;
-							case "ModuleRTAntennaPassive":       dev = new ProtoPartAntenna(m, p, v, "ModuleRTAntenna", p.flightID);                              break;
+							case "ModuleRTAntenna":
 							case "ModuleDataTransmitter":        dev = new ProtoPartAntenna(m, p, v, m.moduleName, p.flightID);                                   break;
+							case "ModuleRTAntennaPassive":       dev = new ProtoPartAntenna(m, p, v, "ModuleRTAntenna", p.flightID); break;
 							default: continue;
 						}
 
