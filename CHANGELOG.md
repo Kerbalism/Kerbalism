@@ -24,6 +24,7 @@
 * Fixed Orbital Science experiments size (Sir Mortimer)
 * Fixed antenna consumption and Automation controller to antennas with GenericAnimation. (HaullyGames)
 * Automation has devices sorted by name. (HaullyGames)
+* KSP 1.5.0
 
 ------------------------------------------------------------------------------------------------------
 
