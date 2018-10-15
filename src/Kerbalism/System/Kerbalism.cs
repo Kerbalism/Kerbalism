@@ -186,6 +186,9 @@ namespace KERBALISM
 
 					Communications.Update(v, vi, vd, ec, elapsed_s);
 
+					// Habitat equalization
+					ResourceBalance.Equalizer(v);
+
 					// consume ec for transmission, and transmit science data
 					Science.Update(v, vi, vd, resources, elapsed_s);
 

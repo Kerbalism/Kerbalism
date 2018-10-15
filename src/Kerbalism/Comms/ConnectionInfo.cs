@@ -1,13 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using UnityEngine;
 using KSP.Localization;
 using CommNet;
 
-
 namespace KERBALISM
 {
-
 	/// <summary> signal connection link status </summary>
 	public enum LinkStatus
 	{
@@ -98,19 +95,29 @@ namespace KERBALISM
 							{
 								// do we have an animation
 								ModuleDeployableAntenna animation = t.part.FindModuleImplementing<ModuleDeployableAntenna>();
+								ModuleAnimateGeneric animationGeneric = t.part.FindModuleImplementing<ModuleAnimateGeneric>();
 								if (animation != null)
 								{
 									// only include data rate and ec cost if transmitter is extended
 									if (animation.deployState == ModuleDeployablePart.DeployState.EXTENDED)
 									{
-										rate += t.DataRate;
+										rate += t.DataRate * PreferencesBasic.Instance.transmitFactor;
+										external_cost += t.DataResourceCost * t.DataRate;
+									}
+								}
+								else if (animationGeneric != null)
+								{
+									// only include data rate and ec cost if transmitter is extended
+									if (animationGeneric.animSpeed > 0)
+									{
+										rate += t.DataRate * PreferencesBasic.Instance.transmitFactor;
 										external_cost += t.DataResourceCost * t.DataRate;
 									}
 								}
 								// no animation
 								else
 								{
-									rate += t.DataRate;
+									rate += t.DataRate * PreferencesBasic.Instance.transmitFactor;
 									external_cost += t.DataResourceCost * t.DataRate;
 								}
 							}
@@ -138,21 +145,22 @@ namespace KERBALISM
 								else
 								{
 									// do we have an animation
-									ProtoPartModuleSnapshot m = p.FindModule("ModuleDeployableAntenna");
+									ProtoPartModuleSnapshot m = p.FindModule("ModuleDeployableAntenna") ?? p.FindModule("ModuleAnimateGeneric");
 									if (m != null)
 									{
 										// only include data rate and ec cost if transmitter is extended
 										string deployState = Lib.Proto.GetString(m, "deployState");
-										if (deployState == "EXTENDED")
+										float animSpeed = Lib.Proto.GetFloat(m, "animSpeed");
+										if (deployState == "EXTENDED" || animSpeed > 0)
 										{
-											rate += t.DataRate;
+											rate += t.DataRate * PreferencesBasic.Instance.transmitFactor;
 											external_cost += t.DataResourceCost * t.DataRate;
 										}
 									}
 									// no animation
 									else
 									{
-										rate += t.DataRate;
+										rate += t.DataRate * PreferencesBasic.Instance.transmitFactor;
 										external_cost += t.DataResourceCost * t.DataRate;
 									}
 								}
@@ -176,7 +184,7 @@ namespace KERBALISM
 							linked = true;
 							status = v.connection.ControlPath.First.hopType == CommNet.HopType.Home ? LinkStatus.direct_link : LinkStatus.indirect_link;
 							strength = v.connection.SignalStrength;
-							rate = rate * strength;
+							rate = rate * strength * PreferencesBasic.Instance.transmitFactor;
 							target_name = Lib.Ellipsis(Localizer.Format(v.connection.ControlPath.First.end.displayName).Replace("Kerbin", "DSN"), 20);
 							return;
 						}
@@ -228,7 +236,7 @@ namespace KERBALISM
 								// only include data rate and ec cost if transmitter is active
 								if (Lib.ReflectionValue<bool>(m, "IsRTActive"))
 								{
-									rate += (Lib.ReflectionValue<float>(m, "RTPacketSize") / Lib.ReflectionValue<float>(m, "RTPacketInterval"));
+									rate += (Lib.ReflectionValue<float>(m, "RTPacketSize") / Lib.ReflectionValue<float>(m, "RTPacketInterval")) * PreferencesBasic.Instance.transmitFactor;
 									external_cost += m.resHandler.inputResources.Find(r => r.name == "ElectricCharge").rate;
 								}
 							}
@@ -267,23 +275,21 @@ namespace KERBALISM
 										// workaround for old savegames
 										if (packet_size == null)
 										{
-											Lib.DebugLog(String.Format("ConnectionInfo: Old SaveGame PartModule ModuleRTAntenna for part {0} on unloaded vessel {1}, using default values as a workaround",
-												p.partName, v.vesselName));
-											rate += 6.6666;             // 6.67 Mb/s
-											external_cost += 0.025;     // 25 W/s
+											Lib.Debug("Old SaveGame PartModule ModuleRTAntenna for part {0} on unloaded vessel {1}, using default values as a workaround", p.partName, v.vesselName);
+											rate += 6.6666 * PreferencesBasic.Instance.transmitFactor;  // 6.67 Mb/s in 100% factor
+											external_cost += 0.025;                                     // 25 W/s
 										}
 										else
 										{
-											rate += ((float)packet_size / Lib.ReflectionValue<float>(pm, "RTPacketInterval"));
+											rate += ((float)packet_size / Lib.ReflectionValue<float>(pm, "RTPacketInterval")) * PreferencesBasic.Instance.transmitFactor;
 											external_cost += pm.resHandler.inputResources.Find(r => r.name == "ElectricCharge").rate;
 										}
 									}
 									else
 									{
-										Lib.DebugLog(String.Format("ConnectionInfo: Could not find PartModule ModuleRTAntenna for part {0} on unloaded vessel {1}, using default values as a workaround",
-											p.partName, v.vesselName));
-										rate += 6.6666;             // 6.67 Mb/s
-										external_cost += 0.025;     // 25 W/s
+										Lib.Debug("Could not find PartModule ModuleRTAntenna for part {0} on unloaded vessel {1}, using default values as a workaround", p.partName, v.vesselName);
+										rate += 6.6666 * PreferencesBasic.Instance.transmitFactor;  // 6.67 Mb/s in 100% factor
+										external_cost += 0.025;                                     // 25 W/s
 									}
 								}
 							}

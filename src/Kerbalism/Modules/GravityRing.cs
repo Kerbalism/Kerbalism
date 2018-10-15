@@ -2,7 +2,6 @@
 
 namespace KERBALISM
 {
-
 	public sealed class GravityRing : PartModule, ISpecifics
 	{
 		// config
@@ -64,17 +63,30 @@ namespace KERBALISM
 		{
 			if (rotate)
 			{
-				if (rotateIsTransform) rotate_transf.Play();
+				if (rotateIsTransform)
+				{
+					// Call Play() only if necessary
+					if (!rotate_transf.IsRotating()) rotate_transf.Play();
+				}
 				else
 				{
 					rotate_anim.Resume(false);
+					// Call Play() only if necessary
 					if (!rotate_anim.Playing()) rotate_anim.Play(false, true);
 				}
 			}
 			else
 			{
-				if (rotateIsTransform) rotate_transf.Stop();
-				else rotate_anim.Pause();
+				if (rotateIsTransform)
+				{
+					// Call Stop only if necessary
+					if (!rotate_transf.IsStopping()) rotate_transf.Stop();
+				}
+				else
+				{
+					// Call Stop only if necessary
+					if (rotate_anim.Playing()) rotate_anim.Pause();
+				}
 			}
 		}
 
@@ -226,5 +238,4 @@ namespace KERBALISM
 			return specs;
 		}
 	}
-
-} // KERBALISM
+}
