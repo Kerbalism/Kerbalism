@@ -24,6 +24,7 @@
 * Fixed Orbital Science experiments size (Sir Mortimer)
 * Fixed antenna consumption and Automation controller to antennas with GenericAnimation. (HaullyGames)
 * Automation has devices sorted by name. (HaullyGames)
+* Updated docs for the recent 1/16 buff (Sir Mortimer)
 
 ------------------------------------------------------------------------------------------------------
 
