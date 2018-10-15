@@ -7,17 +7,24 @@
 * Quick fix to crewable launch towers like the FASA Launch Tower:
   disable the habitat by default and disable simulating the generator in planner by default (Gordon Dry)
 * Dump valve not saving its state on vessel change, bug fixed (PiezPiedPy)
-* Fixed SSPX IVA rotation (HaullyGames)
+* Fixed SSPX IVA rotation. (HaullyGames)
 * Kerbals consume slightly different amounts of food, water and oxygen, and react differently to
   stress and radiation. When under stress they can make mistakes, some do better than others. (Sir Mortimer)
 * A laboratory with high level crew members in it will work faster (Sir Mortimer)
 * Harvesters will work better with an engineer on board. (Sir Mortimer)
 * Fixed another icons sometimes not displaying bug (PiezPiedPy) 
 * SSPX 2.5m Greenhouse now producing food at the expected rate. (theJesuit)
-* Radiation status no longer resets when recovering a Kerbal on Kerbin, or thawing from DeepFreeze. (Sir Mortimer)
+* ResourceBalance run the pressurizing\depressurizing (old "equalize\venting"), it gives priority to habitats with crew. (HaullyGames)
+* Habitats equalize/venting function changed to pressurizing/depressurizing, crewed habitats have priority while multiple habitats are pressurizing. (HaullyGames)
+* New AirPump process added to control pressure in breathable environment. (HaullyGames)
+* Fixed missing N2 when mod is added in an existing game. (HaullyGames)
 * Fixed issue with CommNet not updating for unloaded vessels (leomike, HaullyGames)
-* Radiation status no longer resets when recovering a Kerbal on Kerbin, or thawing from DeepFreeze. (Sir Mortimer)
+* Added bandwidth preferences in Game Settings. (HaullyGames)
+* Added 'GoTo' button in Penal, the vesselType button allowed to change to other vessel. (HaullyGames)
 * Fixed Orbital Science experiments size (Sir Mortimer)
+* Fixed antenna consumption and Automation controller to antennas with GenericAnimation. (HaullyGames)
+* Automation has devices sorted by name. (HaullyGames)
+* Radiation status no longer resets when recovering a Kerbal on Kerbin, or thawing from DeepFreeze. (Sir Mortimer)
 
 ------------------------------------------------------------------------------------------------------
 

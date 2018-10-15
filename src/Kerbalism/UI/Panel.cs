@@ -2,11 +2,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-
 namespace KERBALISM
 {
-
-
 	// store and render a simple structured ui
 	public sealed class Panel
 	{
@@ -121,7 +118,6 @@ namespace KERBALISM
 				h.icons.Add(i);
 			}
 		}
-
 
 		public void Render()
 		{
@@ -282,7 +278,6 @@ namespace KERBALISM
 		public string Title() { return win_title; }
 		public float Width() { return min_width; }
 
-
 		sealed class Header
 		{
 			public string label;
@@ -321,13 +316,10 @@ namespace KERBALISM
 		}
 
 		List<Header> headers;    // fat entries to show before the first section
-		List<Section> sections;   // set of sections
+		List<Section> sections;  // set of sections
 		List<Action> callbacks;  // functions to call on input events
-		string win_title;  // metadata stored in panel
-		float min_width;  // metadata stored in panel
+		string win_title;        // metadata stored in panel
+		float min_width;         // metadata stored in panel
 		public PanelType paneltype;
 	}
-
-
 } // KERBALISM
-

@@ -1,27 +1,24 @@
-﻿using System;
+﻿using System.Linq;
 using System.Collections.Generic;
-using UnityEngine;
 using KSP.Localization;
 
 namespace KERBALISM
 {
-
-
 	public enum ScriptType
 	{
-		landed = 1,      // called on landing
-		atmo = 2,      // called on entering atmosphere
-		space = 3,      // called on reaching space
-		sunlight = 4,      // called when sun rise
-		shadow = 5,      // called when sun set
-		power_high = 6,      // called when ec level goes above 15%
-		power_low = 7,      // called when ec level goes below 15%
+		landed = 1,       // called on landing
+		atmo = 2,         // called on entering atmosphere
+		space = 3,        // called on reaching space
+		sunlight = 4,     // called when sun rise
+		shadow = 5,       // called when sun set
+		power_high = 6,   // called when ec level goes above 15%
+		power_low = 7,    // called when ec level goes below 15%
 		rad_low = 8,      // called when radiation goes below 0.05 rad/h
-		rad_high = 9,      // called when radiation goes above 0.05 rad/h
+		rad_high = 9,     // called when radiation goes above 0.05 rad/h
 		linked = 10,      // called when signal is regained
-		unlinked = 11,     // called when signal is lost
+		unlinked = 11,    // called when signal is lost
 		eva_out = 12,     // called when going out on eva
-		eva_in = 13,     // called when coming back from eva
+		eva_in = 13,      // called when coming back from eva
 		action1 = 14,     // called when pressing 1
 		action2 = 15,     // called when pressing 2
 		action3 = 16,     // called when pressing 3
@@ -30,14 +27,12 @@ namespace KERBALISM
 		last = 19
 	}
 
-
 	public sealed class Computer
 	{
 		public Computer()
 		{
 			scripts = new Dictionary<ScriptType, Script>();
 		}
-
 
 		public Computer(ConfigNode node)
 		{
@@ -48,7 +43,6 @@ namespace KERBALISM
 				scripts.Add((ScriptType)Lib.Parse.ToUInt(script_node.name), new Script(script_node));
 			}
 		}
-
 
 		public void Save(ConfigNode node)
 		{
@@ -61,14 +55,12 @@ namespace KERBALISM
 			}
 		}
 
-
 		// get a script
 		public Script Get(ScriptType type)
 		{
 			if (!scripts.ContainsKey(type)) scripts.Add(type, new Script());
 			return scripts[type];
 		}
-
 
 		// execute a script
 		public void Execute(Vessel v, ScriptType type)
@@ -92,7 +84,6 @@ namespace KERBALISM
 				}
 			}
 		}
-
 
 		// call scripts automatically when conditions are met
 		public void Automate(Vessel v, Vessel_info vi, Vessel_resources resources)
@@ -220,7 +211,6 @@ namespace KERBALISM
 			}
 		}
 
-
 		// return set of devices on a vessel
 		// - the list is only valid for a single simulation step
 		public static Dictionary<uint, Device> Boot(Vessel v)
@@ -238,27 +228,27 @@ namespace KERBALISM
 				{
 					switch (m.moduleName)
 					{
-						case "ProcessController": dev = new ProcessDevice(m as ProcessController); break;
+						case "ProcessController":            dev = new ProcessDevice(m as ProcessController);                 break;
 						case "Sickbay": dev = new SickbayDevice(m as Sickbay); break;
-						case "Greenhouse": dev = new GreenhouseDevice(m as Greenhouse); break;
-						case "GravityRing": dev = new RingDevice(m as GravityRing); break;
-						case "Emitter": dev = new EmitterDevice(m as Emitter); break;
-						case "Laboratory": dev = new LaboratoryDevice(m as Laboratory); break;
-						case "Experiment": dev = new ExperimentDevice(m as Experiment); break;
-						case "ModuleDeployableSolarPanel": dev = new PanelDevice(m as ModuleDeployableSolarPanel); break;
-						case "ModuleGenerator": dev = new GeneratorDevice(m as ModuleGenerator); break;
-						case "ModuleResourceConverter": dev = new ConverterDevice(m as ModuleResourceConverter); break;
-						case "ModuleKPBSConverter": dev = new ConverterDevice(m as ModuleResourceConverter); break;
-						case "FissionReactor": dev = new ConverterDevice(m as ModuleResourceConverter); break;
-						case "ModuleResourceHarvester": dev = new DrillDevice(m as ModuleResourceHarvester); break;
-						case "ModuleLight": dev = new LightDevice(m as ModuleLight); break;
-						case "ModuleColoredLensLight": dev = new LightDevice(m as ModuleLight); break;
-						case "ModuleMultiPointSurfaceLight": dev = new LightDevice(m as ModuleLight); break;
-						case "SCANsat": dev = new ScannerDevice(m); break;
-						case "ModuleSCANresourceScanner": dev = new ScannerDevice(m); break;
-						case "ModuleRTAntenna": dev = new RemoteTechAntennaDevice(m); break;
-						case "ModuleRTAntennaPassive": dev = new RemoteTechAntennaDevice(m); break;
-						case "ModuleDeployableAntenna": dev = new DeployableAntennaDevice(m as ModuleDeployableAntenna); break;
+						case "Greenhouse":                   dev = new GreenhouseDevice(m as Greenhouse);                     break;
+						case "GravityRing":                  dev = new RingDevice(m as GravityRing);                          break;
+						case "Emitter":                      dev = new EmitterDevice(m as Emitter);                           break;
+						case "Laboratory":                   dev = new LaboratoryDevice(m as Laboratory);                     break;
+						case "Experiment":                   dev = new ExperimentDevice(m as Experiment);                     break;
+						case "ModuleDeployableSolarPanel":   dev = new PanelDevice(m as ModuleDeployableSolarPanel);          break;
+						case "ModuleGenerator":              dev = new GeneratorDevice(m as ModuleGenerator);                 break;
+						case "ModuleResourceConverter":      dev = new ConverterDevice(m as ModuleResourceConverter);         break;
+						case "ModuleKPBSConverter":          dev = new ConverterDevice(m as ModuleResourceConverter);         break;
+						case "FissionReactor":               dev = new ConverterDevice(m as ModuleResourceConverter);         break;
+						case "ModuleResourceHarvester":      dev = new DrillDevice(m as ModuleResourceHarvester);             break;
+						case "ModuleLight":                  dev = new LightDevice(m as ModuleLight);                         break;
+						case "ModuleColoredLensLight":       dev = new LightDevice(m as ModuleLight);                         break;
+						case "ModuleMultiPointSurfaceLight": dev = new LightDevice(m as ModuleLight);                         break;
+						case "SCANsat":                      dev = new ScannerDevice(m);                                      break;
+						case "ModuleSCANresourceScanner":    dev = new ScannerDevice(m);                                      break;
+						case "ModuleRTAntenna":              dev = new Antenna(m, m.moduleName);                              break;
+						case "ModuleRTAntennaPassive":       dev = new Antenna(m, "ModuleRTAntenna");                         break;
+						case "ModuleDataTransmitter":        dev = new Antenna(m, m.moduleName);                              break;
 						default: continue;
 					}
 
@@ -303,27 +293,27 @@ namespace KERBALISM
 						// depending on module name
 						switch (m.moduleName)
 						{
-							case "ProcessController": dev = new ProtoProcessDevice(m, module_prefab as ProcessController, p.flightID); break;
+							case "ProcessController":            dev = new ProtoProcessDevice(m, module_prefab as ProcessController, p.flightID);                 break;
 							case "Sickbay": dev = new ProtoSickbayDevice(m, module_prefab as Sickbay, p.flightID); break;
-							case "Greenhouse": dev = new ProtoGreenhouseDevice(m, p.flightID); break;
-							case "GravityRing": dev = new ProtoRingDevice(m, p.flightID); break;
-							case "Emitter": dev = new ProtoEmitterDevice(m, p.flightID); break;
-							case "Laboratory": dev = new ProtoLaboratoryDevice(m, p.flightID); break;
-							case "Experiment": dev = new ProtoExperimentDevice(m, module_prefab as Experiment, p.flightID); break;
-							case "ModuleDeployableSolarPanel": dev = new ProtoPanelDevice(m, module_prefab as ModuleDeployableSolarPanel, p.flightID); break;
-							case "ModuleGenerator": dev = new ProtoGeneratorDevice(m, module_prefab as ModuleGenerator, p.flightID); break;
-							case "ModuleResourceConverter": dev = new ProtoConverterDevice(m, module_prefab as ModuleResourceConverter, p.flightID); break;
-							case "ModuleKPBSConverter": dev = new ProtoConverterDevice(m, module_prefab as ModuleResourceConverter, p.flightID); break;
-							case "FissionReactor": dev = new ProtoConverterDevice(m, module_prefab as ModuleResourceConverter, p.flightID); break;
-							case "ModuleResourceHarvester": dev = new ProtoDrillDevice(m, module_prefab as ModuleResourceHarvester, p.flightID); break;
-							case "ModuleLight": dev = new ProtoLightDevice(m, p.flightID); break;
-							case "ModuleColoredLensLight": dev = new ProtoLightDevice(m, p.flightID); break;
-							case "ModuleMultiPointSurfaceLight": dev = new ProtoLightDevice(m, p.flightID); break;
-							case "SCANsat": dev = new ProtoScannerDevice(m, part_prefab, v, p.flightID); break;
-							case "ModuleSCANresourceScanner": dev = new ProtoScannerDevice(m, part_prefab, v, p.flightID); break;
-							case "ModuleRTAntenna": dev = new ProtoRemoteTechAntennaDevice(m, module_prefab, v, p.flightID); break;
-							case "ModuleRTAntennaPassive": dev = new ProtoRemoteTechAntennaDevice(m, module_prefab, v, p.flightID); break;
-							case "ModuleDeployableAntenna": dev = new ProtoDeployableAntennaDevice(m, module_prefab as ModuleDeployableAntenna, p.flightID); break;
+							case "Greenhouse":                   dev = new ProtoGreenhouseDevice(m, p.flightID);                                                  break;
+							case "GravityRing":                  dev = new ProtoRingDevice(m, p.flightID);                                                        break;
+							case "Emitter":                      dev = new ProtoEmitterDevice(m, p.flightID);                                                     break;
+							case "Laboratory":                   dev = new ProtoLaboratoryDevice(m, p.flightID);                                                  break;
+							case "Experiment":                   dev = new ProtoExperimentDevice(m, module_prefab as Experiment, p.flightID);                     break;
+							case "ModuleDeployableSolarPanel":   dev = new ProtoPanelDevice(m, module_prefab as ModuleDeployableSolarPanel, p.flightID);          break;
+							case "ModuleGenerator":              dev = new ProtoGeneratorDevice(m, module_prefab as ModuleGenerator, p.flightID);                 break;
+							case "ModuleResourceConverter":      dev = new ProtoConverterDevice(m, module_prefab as ModuleResourceConverter, p.flightID);         break;
+							case "ModuleKPBSConverter":          dev = new ProtoConverterDevice(m, module_prefab as ModuleResourceConverter, p.flightID);         break;
+							case "FissionReactor":               dev = new ProtoConverterDevice(m, module_prefab as ModuleResourceConverter, p.flightID);         break;
+							case "ModuleResourceHarvester":      dev = new ProtoDrillDevice(m, module_prefab as ModuleResourceHarvester, p.flightID);             break;
+							case "ModuleLight":                  dev = new ProtoLightDevice(m, p.flightID);                                                       break;
+							case "ModuleColoredLensLight":       dev = new ProtoLightDevice(m, p.flightID);                                                       break;
+							case "ModuleMultiPointSurfaceLight": dev = new ProtoLightDevice(m, p.flightID);                                                       break;
+							case "SCANsat":                      dev = new ProtoScannerDevice(m, part_prefab, v, p.flightID);                                     break;
+							case "ModuleSCANresourceScanner":    dev = new ProtoScannerDevice(m, part_prefab, v, p.flightID);                                     break;
+							case "ModuleRTAntenna":              dev = new ProtoPartAntenna(m, p, v, m.moduleName, p.flightID);                                   break;
+							case "ModuleRTAntennaPassive":       dev = new ProtoPartAntenna(m, p, v, "ModuleRTAntenna", p.flightID);                              break;
+							case "ModuleDataTransmitter":        dev = new ProtoPartAntenna(m, p, v, m.moduleName, p.flightID);                                   break;
 							default: continue;
 						}
 
@@ -337,14 +327,11 @@ namespace KERBALISM
 				}
 			}
 
-			// return all devices found
+			devices = devices.OrderBy(k => k.Value.Name()).ToDictionary(pair => pair.Key, pair => pair.Value);
+			//return all found devices sorted by name
 			return devices;
 		}
 
-
 		Dictionary<ScriptType, Script> scripts;
 	}
-
-
 } // KERBALISM
-
