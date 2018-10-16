@@ -5,8 +5,9 @@ env:
 matrix:
   include:
     - env:
-      - PRIMARY_KSPVER="1.4.5"
-      - PRIMARY_BIN="14"
+      - PRIMARY_KSPVER="1.5.0"
+      - PRIMARY_BIN="15"
+      - MIDDLE_BIN="14"
       - PRIMARY_DEFS=""
       - SECONDARY_KSPVER="1.3.1"
       - SECONDARY_BIN="13"
@@ -32,6 +33,7 @@ after_success:
   - export MOD_VERSION=$(cat $TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism.version | jq '.VERSION.MAJOR').$(cat $TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism.version | jq '.VERSION.MINOR').$(cat $TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism.version | jq '.VERSION.PATCH')
   - bash "$TRAVIS_BUILD_DIR/buildscripts/Travis/avc_version.sh" $PRIMARY_KSPVER "$TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism.version"
   - /bin/cp -rf $TRAVIS_BUILD_DIR/src/$PRIMARY_BIN/obj/Kerbalism/KerbalismBootstrap.dll $TRAVIS_BUILD_DIR/GameData/Kerbalism/KerbalismBootstrap.dll
+  - /bin/cp -rf $TRAVIS_BUILD_DIR/src/$PRIMARY_BIN/obj/Kerbalism/Kerbalism.dll $TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism$MIDDLE_BIN.bin
   - /bin/cp -rf $TRAVIS_BUILD_DIR/src/$PRIMARY_BIN/obj/Kerbalism/Kerbalism.dll $TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism$PRIMARY_BIN.bin
   - /bin/cp -rf $TRAVIS_BUILD_DIR/src/$SECONDARY_BIN/obj/Kerbalism/Kerbalism.dll $TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism$SECONDARY_BIN.bin
   - 7za a "$TRAVIS_BUILD_DIR/Kerbalism-$MOD_VERSION-BUILD$TRAVIS_BUILD_NUMBER.zip" "$TRAVIS_BUILD_DIR/GameData"
@@ -39,7 +41,7 @@ after_success:
   - 7za a "$TRAVIS_BUILD_DIR/Kerbalism-$MOD_VERSION-BUILD$TRAVIS_BUILD_NUMBER.zip" "$TRAVIS_BUILD_DIR/CHANGELOG.md"
   - echo "${SFTP_KEY}" | base64 --decode >/tmp/sftp_key
   - chmod 400 /tmp/sftp_key
-  - ssh-keyscan -H ${SFTP_TARGET} >> ~/.ssh/known_hosts
-  - scp -i /tmp/sftp_key "$TRAVIS_BUILD_DIR/Kerbalism-$MOD_VERSION-BUILD$TRAVIS_BUILD_NUMBER.zip" "${SFTP_USER}@${SFTP_TARGET}:/var/www/builds/Kerbalism-$MOD_VERSION-BUILD$TRAVIS_BUILD_NUMBER.zip"
+  - ssh-keyscan -p ${SFTP_PORT} -H ${SFTP_TARGET} >> ~/.ssh/known_hosts
+  - scp -i /tmp/sftp_key -P ${SFTP_PORT} "$TRAVIS_BUILD_DIR/Kerbalism-$MOD_VERSION-BUILD$TRAVIS_BUILD_NUMBER.zip" "${SFTP_USER}@${SFTP_TARGET}:/var/www/builds/Kerbalism-$MOD_VERSION-BUILD$TRAVIS_BUILD_NUMBER.zip"
 notifications:
   email: false

@@ -10,12 +10,14 @@ Kerbals need a constant supply of basic resources, Food, Water and Oxygen otherw
 +-----------+---------+-----------------+-------------------+---------------+
 | RULE      | CONSUME | PRODUCE         | MASS PER-DAY (Kg) | UNITS PER-DAY |
 +===========+=========+=================+===================+===============+
-| Eating    | Food    | Waste           | 1.77              | 6.29          |
+| Eating    | Food    | Waste           | 0.07375           | 0.27          |
 +-----------+---------+-----------------+-------------------+---------------+
-| Drinking  | Water   | WasteWater      | 2.42              | 2.42          |
+| Drinking  | Water   | WasteWater      | 0.14              | 0.14          |
 +-----------+---------+-----------------+-------------------+---------------+
-| Breathing | Oxygen  | WasteAtmosphere | 0.84              | 595           |
+| Breathing | Oxygen  | WasteAtmosphere | 0.05287           | 37.5          |
 +-----------+---------+-----------------+-------------------+---------------+
+
+Individual consumption may vary.
 
 ---------
 

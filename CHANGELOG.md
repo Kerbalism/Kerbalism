@@ -1,4 +1,4 @@
-## v2.0.0 for KSP 1.4.x and 1.3.1
+## v2.0.0 for KSP 1.5.0 , 1.4.x and 1.3.1
  - 2018-xx-xx
 
 ### Changes since the last release
@@ -24,7 +24,8 @@
 * Fixed Orbital Science experiments size (Sir Mortimer)
 * Fixed antenna consumption and Automation controller to antennas with GenericAnimation. (HaullyGames)
 * Automation has devices sorted by name. (HaullyGames)
-* Radiation status no longer resets when recovering a Kerbal on Kerbin, or thawing from DeepFreeze. (Sir Mortimer)
+* Updated docs for the recent 1/16 buff (Sir Mortimer)
+* Support for KSP 1.5.0
 
 ------------------------------------------------------------------------------------------------------
 
