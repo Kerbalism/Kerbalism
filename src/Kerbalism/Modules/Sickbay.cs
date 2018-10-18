@@ -17,6 +17,7 @@ namespace KERBALISM
 		[KSPField] public string title = string.Empty;    // name to show on ui
 		[KSPField] public string desc = string.Empty;     // description to show on tooltip
 		[KSPField] public int slots = 1;                  // how many kerbals can be healed at once
+		[KSPField] public bool cureEverybody = false;     // cure everyone in the part, ignore slots
 
 		[KSPField(isPersistant = true)] public string patients = "";
 		private List<string> patientList = new List<string>();
@@ -27,7 +28,16 @@ namespace KERBALISM
 		public void Toggle()
 		{
 			// switch status
-			running = !running && slots > 0;
+			running = !running && (slots > 0 || cureEverybody);
+
+			if(cureEverybody)
+			{
+				foreach (ProtoCrewMember c in part.protoModuleCrew)
+				{
+					if (running) AddPatient(c.name);
+					else RemovePatient(c.name);
+				}
+			}
 		}
 
 		[KSPAction("_")] public void Action(KSPActionParam param) { Toggle(); }
@@ -61,12 +71,12 @@ namespace KERBALISM
 			}
 
 			// configure on start
-			Configure(true, slots);
+			Configure(true, slots, cureEverybody);
 
 			UpdateActions();
 		}
 
-		public void Configure(bool enable, int slots)
+		public void Configure(bool enable, int slots, bool cureEverybody)
 		{
 			if (enable)
 			{
@@ -80,8 +90,10 @@ namespace KERBALISM
 					Lib.AddResource(part, resource, capacity, capacity);
 				}
 				// has slots changed
-				else if (this.slots != slots)
+				else if (this.slots != slots || this.cureEverybody != cureEverybody)
 				{
+					if (slots == 0 && cureEverybody) slots = 1;
+
 					// slots has increased
 					if (this.slots < slots)
 					{
@@ -121,18 +133,22 @@ namespace KERBALISM
 					removeList.Add(patientName);
 			}
 
-			// make sure we don't heal more patients than we have slots
-			int remainingSlots = slots;
-			foreach (ProtoCrewMember crew in part.protoModuleCrew)
+			if (!cureEverybody)
 			{
-				if (remainingSlots <= 0)
-					removeList.Add(crew.name);
+				// make sure we don't heal more patients than we have slots
+				int remainingSlots = slots;
+				foreach (ProtoCrewMember crew in part.protoModuleCrew)
+				{
+					if (remainingSlots <= 0)
+						removeList.Add(crew.name);
 
-				if (patientList.Contains(crew.name))
-					remainingSlots--;
+					if (patientList.Contains(crew.name))
+						remainingSlots--;
+				}
 			}
 			RemovePatients(removeList);
 
+			if (cureEverybody && patientList.Count > 0) running = true;
 			Lib.SetResourceFlow(part, resource, patientList.Count > 0 && running);
 			UpdateActions();
 		}
@@ -158,7 +174,7 @@ namespace KERBALISM
 			}
 			patients = string.Join(",", patientList.ToArray());
 			if (running)
-				running = patientList.Count > 0 && slots > 0;
+				running = patientList.Count > 0 && (slots > 0 || cureEverybody);
 		}
 
 		private void AddPatient(string patientName)
@@ -170,6 +186,7 @@ namespace KERBALISM
 			KerbalData kd = DB.Kerbal(patientName);
 			kd.sickbay += resource + ",";
 			patients = string.Join(",", patientList.ToArray());
+			running = true;
 		}
 
 		private bool IsPatient(string patientName)
@@ -179,7 +196,7 @@ namespace KERBALISM
 
 		private void UpdateActions()
 		{
-			Events["Toggle"].active = slots > 0;
+			Events["Toggle"].active = slots > 0 || cureEverybody;
 			Events["Toggle"].guiName = Lib.StatusToggle(title, running ? "running" : "stopped");
 
 			if (!Lib.IsFlight())
@@ -189,30 +206,33 @@ namespace KERBALISM
 			for (i = 1; i < MAX_SLOTS; i++)
 				Events["Toggle" + i].active = false;
 
-			i = 1;
-			int slotsAvailable = slots;
-			foreach (string patientName in patientList)
+			if (!cureEverybody)
 			{
-				BaseEvent e = Events["Toggle" + i++];
-				e.active = true;
-				e.guiName = Lib.BuildString(title, ": dismiss ", patientName);
-				slotsAvailable--;
-				if (slotsAvailable == 0)
-					break;
-			}
-
-			if (slotsAvailable > 0)
-			{
-				foreach (ProtoCrewMember crew in part.protoModuleCrew)
+				i = 1;
+				int slotsAvailable = slots;
+				foreach (string patientName in patientList)
 				{
-					if (IsPatient(crew.name))
-						continue;
-
 					BaseEvent e = Events["Toggle" + i++];
 					e.active = true;
-					e.guiName = Lib.BuildString(title, ": cure ", crew.name);
-					if (i > MAX_SLOTS)
+					e.guiName = Lib.BuildString(title, ": dismiss ", patientName);
+					slotsAvailable--;
+					if (slotsAvailable == 0)
 						break;
+				}
+
+				if (slotsAvailable > 0)
+				{
+					foreach (ProtoCrewMember crew in part.protoModuleCrew)
+					{
+						if (IsPatient(crew.name))
+							continue;
+
+						BaseEvent e = Events["Toggle" + i++];
+						e.active = true;
+						e.guiName = Lib.BuildString(title, ": cure ", crew.name);
+						if (i > MAX_SLOTS)
+							break;
+					}
 				}
 			}
 		}
@@ -237,27 +257,30 @@ namespace KERBALISM
 		// part tooltip
 		public override string GetInfo()
 		{
-			if (slots == 0) return string.Empty;
+			if (slots == 0 && !cureEverybody) return string.Empty;
 			return Specs().Info(desc);
 		}
 
 		// specifics support
 		public Specifics Specs()
 		{
-			if (slots == 0) return null;
+			if (slots == 0 && !cureEverybody) return null;
 			Specifics specs = new Specifics();
-			specs.Add("Capacity", slots + " Kerbals");
+			if(cureEverybody) specs.Add("Cures", "All kerbals in part");
+			else if(slots > 0) specs.Add("Capacity", slots + " Kerbals");
 			return specs;
 		}
 
 		// module info support
 		public string GetModuleTitle()
 		{ 
-			if (slots == 0) return String.Empty;
+			if (slots == 0 && !cureEverybody) return String.Empty;
 			return Lib.BuildString("<size=1><color=#00000000>01</color></size>", title); 
 		}
 
-		public override string GetModuleDisplayName() { if(slots == 0) return String.Empty;
+		public override string GetModuleDisplayName()
+		{
+			if(slots == 0 && !cureEverybody) return String.Empty;
 			return Lib.BuildString("<size=1><color=#00000000>01</color></size>", title); 
 		}
 
