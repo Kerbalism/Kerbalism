@@ -193,12 +193,12 @@ namespace KERBALISM
 					breakdown_probability *= c.stupidity * 0.6 + 0.4;
 
 					// apply the weekly error rate
-					breakdown_probability *= PreferencesBasic.Instance.stressBreakdownWeeklyRate;
+					breakdown_probability *= PreferencesBasic.Instance.stressBreakdownRate;
 
 					// now we have the probability for one failure per week, based on the
 					// individual stupidity and stress level of the kerbal.
 
-					breakdown_probability = (breakdown_probability * elapsed_s) / (7 * Lib.HoursInDay() * 3600);
+					breakdown_probability = (breakdown_probability * elapsed_s) / (Lib.DaysInYear() * Lib.HoursInDay() * 3600);
 					if (breakdown_probability > Lib.RandomDouble()) {
 						do_breakdown = true;
 
