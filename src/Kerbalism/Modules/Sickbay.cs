@@ -28,8 +28,12 @@ namespace KERBALISM
 		public void Toggle()
 		{
 			// switch status
-			running = !running && (slots > 0 || cureEverybody);
-
+			running = !running;
+			if (slots == 0 && !cureEverybody)
+			{
+				// can't run when not enabled
+				running = false;
+			}
 			if(cureEverybody)
 			{
 				foreach (ProtoCrewMember c in part.protoModuleCrew)
@@ -148,7 +152,6 @@ namespace KERBALISM
 			}
 			RemovePatients(removeList);
 
-			if (cureEverybody && patientList.Count > 0) running = true;
 			Lib.SetResourceFlow(part, resource, patientList.Count > 0 && running);
 			UpdateActions();
 		}
@@ -163,7 +166,7 @@ namespace KERBALISM
 		{
 			if (!patientList.Contains(patientName))
 				return;
-			
+
 			patientList.Remove(patientName);
 			KerbalData kd = DB.Kerbal(patientName);
 			string key = resource + ",";
