@@ -23,6 +23,7 @@ namespace KERBALISM
 			modifiers = Lib.Tokenize(Lib.ConfigValue(node, "modifier", string.Empty), ',');
 			breakdown = Lib.ConfigValue(node, "breakdown", false);
 			monitor = Lib.ConfigValue(node, "monitor", false);
+			lifetime = Lib.ConfigValue(node, "lifetime", false);
 			monitor_offset = Lib.ConfigValue(node, "monitor_offset", 0.0);
 			warning_threshold = Lib.ConfigValue(node, "warning_threshold", 0.33);
 			danger_threshold = Lib.ConfigValue(node, "danger_threshold", 0.66);
@@ -73,6 +74,8 @@ namespace KERBALISM
 			// get product of all environment modifiers
 			double k = Modifiers.Evaluate(v, vi, resources, modifiers);
 
+			bool lifetime_enabled = PreferencesBasic.Instance.lifetime;
+
 			// for each crew
 			foreach (ProtoCrewMember c in Lib.CrewList(v))
 			{
@@ -87,6 +90,7 @@ namespace KERBALISM
 
 				// get kerbal property data from db
 				RuleData rd = kd.Rule(name);
+				rd.lifetime = lifetime_enabled && lifetime;
 
 				// if continuous
 				double step;
@@ -162,7 +166,7 @@ namespace KERBALISM
 					}
 					else
 						trigger = input.Length == 0 || res.amount <= double.Epsilon;
-
+						
 					if (k > 0.0 && trigger)
 					{
 						rd.problem += degeneration           // degeneration rate per-second or per-interval
@@ -174,7 +178,6 @@ namespace KERBALISM
 					else
 					{
 						rd.problem *= 1.0 / (1.0 + Math.Max(interval, 1.0) * step * 0.002);
-						rd.problem = Math.Max(rd.problem, 0.0);
 					}
 				}
 
@@ -190,12 +193,12 @@ namespace KERBALISM
 					breakdown_probability *= c.stupidity * 0.6 + 0.4;
 
 					// apply the weekly error rate
-					breakdown_probability *= PreferencesBasic.Instance.stressBreakdownWeeklyRate;
+					breakdown_probability *= PreferencesBasic.Instance.stressBreakdownRate;
 
 					// now we have the probability for one failure per week, based on the
 					// individual stupidity and stress level of the kerbal.
 
-					breakdown_probability = (breakdown_probability * elapsed_s) / (7 * Lib.HoursInDay() * 3600);
+					breakdown_probability = (breakdown_probability * elapsed_s) / (Lib.DaysInYear() * Lib.HoursInDay() * 3600);
 					if (breakdown_probability > Lib.RandomDouble()) {
 						do_breakdown = true;
 
@@ -259,6 +262,9 @@ namespace KERBALISM
 		// return per-kerbal variance, in the range [1-variance,1+variance]
 		static double Variance(String name, ProtoCrewMember c, double variance)
 		{
+			if (variance < Double.Epsilon)
+				return 1;
+
 			// get a value in [0..1] range associated with a kerbal
 			// we want this to be pseudo-random, so don't just add/multiply the two values, that would be too predictable
 			// also add the process name. a kerbal that eats a lot shouldn't necessarily drink a lot, too
@@ -293,6 +299,7 @@ namespace KERBALISM
 		public string danger_message;     // .
 		public string fatal_message;      // .
 		public string relax_message;      // .
+		public bool lifetime;             // does this value accumulate over the lifetime of a kerbal
 
 		private bool trigger;             // internal use
 	}

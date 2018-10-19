@@ -24,7 +24,7 @@ namespace KERBALISM
 		{
 			if (!Cache.VesselInfo(v).is_valid) return;
 			if (!DB.vessels.ContainsKey(Lib.RootID(v))) return;
-			if (!DB.kerbals.ContainsKey(c.name)) return;
+			if (!DB.ContainsKerbal(c.name)) return;
 			Misc.Kill(v, c);
 		}
 
@@ -33,21 +33,21 @@ namespace KERBALISM
 		{
 			if (!Cache.VesselInfo(v).is_valid) return;
 			if (!DB.vessels.ContainsKey(Lib.RootID(v))) return;
-			if (!DB.kerbals.ContainsKey(c.name)) return;
+			if (!DB.ContainsKerbal(c.name)) return;
 			Misc.Breakdown(v, c);
 		}
 
 		// disable or re-enable all rules for the specified kerbal
 		public static void DisableKerbal(string k_name, bool disabled)
 		{
-			if (!DB.kerbals.ContainsKey(k_name)) return;
+			if (!DB.ContainsKerbal(k_name)) return;
 			DB.Kerbal(k_name).disabled = disabled;
 		}
 
 		// inject instant radiation dose to the specified kerbal (can use negative amounts)
 		public static void InjectRadiation(string k_name, double amount)
 		{
-			if (!DB.kerbals.ContainsKey(k_name)) return;
+			if (!DB.ContainsKerbal(k_name)) return;
 			KerbalData kd = DB.Kerbal(k_name);
 			foreach (Rule rule in Profile.rules)
 			{

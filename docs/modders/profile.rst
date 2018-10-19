@@ -71,6 +71,8 @@ A rule describes a mechanic that increments an accumulator per-kerbal based on t
 +-------------------+------------------------------------------------------------------------------------------------------------------------------------+---------+
 | breakdown         | trigger a unplanned event in the vessel, instead of killing the kerbal                                                             | false   |
 +-------------------+------------------------------------------------------------------------------------------------------------------------------------+---------+
+| lifetime          | value will not be reset when recovering the kerbal on kerbin. used for things that cannot be cured, like radiation.                | false   |
++-------------------+------------------------------------------------------------------------------------------------------------------------------------+---------+
 | warning_threshold | threshold of degeneration used to show warning messages and yellow status color                                                    | 0.33    |
 +-------------------+------------------------------------------------------------------------------------------------------------------------------------+---------+
 | danger_threshold  | threshold of degeneration used to show danger messages and red status color                                                        | 0.66    |
@@ -138,6 +140,10 @@ Rule and Process rates can be influenced by the environment, habitat conditions 
 | humidity        | the *humidity_factor*, or 1.0 if *MoistAtmosphere* level is above threshold (both specified in settings)     |
 +-----------------+--------------------------------------------------------------------------------------------------------------+
 | per_capita      | the inverse of number of crew members, the effect on rates is a division by number of crew members           |
++-----------------+--------------------------------------------------------------------------------------------------------------+
+| zerog           | 1 if the ship is above the atmosphere of a body, 0 if in atmospheric flight or landed                        |
++-----------------+--------------------------------------------------------------------------------------------------------------+
+| landed          | 1 if the ship is on the ground or in water, 0 otherwise                                                      |
 +-----------------+--------------------------------------------------------------------------------------------------------------+
 | *resource name* | the level of resource specified                                                                              |
 +-----------------+--------------------------------------------------------------------------------------------------------------+

@@ -605,9 +605,6 @@ namespace KERBALISM
 			// if on pod
 			if (!v.isEVA)
 			{
-				// forget kerbal data
-				DB.kerbals.Remove(c.name);
-
 				// if vessel is loaded
 				if (v.loaded)
 				{
@@ -648,6 +645,9 @@ namespace KERBALISM
 					// flag as dead
 					c.rosterStatus = ProtoCrewMember.RosterStatus.Dead;
 				}
+
+				// forget kerbal data
+				DB.KillKerbal(c.name, true);
 			}
 			// else it must be an eva death
 			else

@@ -545,6 +545,7 @@ namespace KERBALISM
 			orbital_period = Sim.OrbitalPeriod(body, altitude);
 			shadow_period = Sim.ShadowPeriod(body, altitude);
 			shadow_time = shadow_period / orbital_period;
+			zerog = !landed && (!body.atmosphere || body.atmosphereDepth < altitude);
 
 			var rb = Radiation.Info(body);
 			var sun_rb = Radiation.Info(sun);
@@ -563,6 +564,7 @@ namespace KERBALISM
 		public double altitude;                               // target altitude
 		public bool landed;                                   // true if landed
 		public bool breathable;                               // true if inside breathable atmosphere
+		public bool zerog;									  // true if the vessel is experiencing zero g
 		public double atmo_factor;                            // proportion of sun flux not absorbed by the atmosphere
 		public double sun_dist;                               // distance from the sun
 		public double solar_flux;                             // flux received from the sun (consider atmospheric absorption)
