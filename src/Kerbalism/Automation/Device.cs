@@ -26,7 +26,7 @@ namespace KERBALISM
 		// - multiple same-type components in the same part will have the same id
 		public uint Id() { return Part() + (uint)Name().GetHashCode(); }
 
-		public virtual Boolean IsVisible() { return true; }
+		public virtual bool IsVisible() { return true; }
 	}
 
 
