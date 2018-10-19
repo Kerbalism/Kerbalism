@@ -26,6 +26,7 @@
 * Automation has devices sorted by name. (HaullyGames)
 * Updated docs for the recent 1/16 buff (Sir Mortimer)
 * Support for KSP 1.5.0
+* Don't show fixed antennas in device manager (Sir Mortimer)
 
 ------------------------------------------------------------------------------------------------------
 

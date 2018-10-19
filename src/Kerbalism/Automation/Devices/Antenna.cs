@@ -92,6 +92,17 @@ namespace KERBALISM
 			}
 		}
 
+		public override bool IsVisible()
+		{
+			switch (ModuleName)
+			{
+				case "ModuleDataTransmitter":
+					return false;
+				default:
+					return true;
+			}
+		}
+
 		private readonly PartModule antenna;
 		private readonly ModuleAnimateGeneric specialCase;
 		private readonly ModuleDeployableAntenna animDefault;
@@ -166,6 +177,17 @@ namespace KERBALISM
 						: "<color=red>" + Localizer.Format("#KERBALISM_Generic_INACTIVE") + "</color>";
 			}
 			return "unknown";
+		}
+
+		public override bool IsVisible()
+		{
+			switch (ModuleName)
+			{
+				case "ModuleDataTransmitter":
+					return false;
+				default:
+					return true;
+			}
 		}
 
 		public override void Ctrl(bool value)

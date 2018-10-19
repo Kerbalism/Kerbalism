@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using UnityEngine;
-using KSP.Localization;
+﻿using KSP.Localization;
 
 namespace KERBALISM
 {
-
 
 	public sealed class PanelDevice : Device
 	{
@@ -38,7 +34,7 @@ namespace KERBALISM
 			return "unknown";
 		}
 
-		public override Boolean IsVisible() {
+		public override bool IsVisible() {
 			return panel.isTracking;
 		}
 
@@ -92,7 +88,7 @@ namespace KERBALISM
 			return "unknown";
 		}
 
-		public override Boolean IsVisible()
+		public override bool IsVisible()
 		{
 			return prefab.isTracking;
 		}
