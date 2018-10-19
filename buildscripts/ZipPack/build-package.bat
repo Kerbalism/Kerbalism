@@ -19,7 +19,8 @@ cd "%rootPath%"
 IF EXIST "%initialWD%\%TargetName%Bootstrap.dll" xcopy /y "%initialWD%\%TargetName%Bootstrap.dll" "GameData\%TargetName%\*" > nul
 echo %TargetName%.dll -^> %TargetName%%KSPversion%.bin
 move /y "%initialWD%\%TargetName%.dll" "%initialWD%\%TargetName%%KSPversion%.bin" > nul
-xcopy /y "%initialWD%\%TargetName%*.bin" GameData\%TargetName%\* > nul
+IF %KSPversion% GTR 13 xcopy /y "%initialWD%\%TargetName%%KSPversion%.bin" "%initialWD%\%TargetName%14.bin" > nul
+xcopy /y "%initialWD%\%TargetName%*.bin" "GameData\%TargetName%\*" > nul
 
 echo Generating %TargetName% Release Package...
 IF EXIST package\ rd /s /q package
