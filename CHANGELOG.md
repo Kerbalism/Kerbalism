@@ -1,7 +1,9 @@
-## v2.0.0 for KSP 1.5.0 , 1.4.x and 1.3.1
+## v2.0.0 for KSP 1.5.x , 1.4.x and 1.3.1
  - 2018-xx-xx
 
 ### Changes since the last release
+
+* Support for KSP 1.5.x
 
 * Also "normal" launch clamps' generators are not simulated in planner by default (Gordon Dry)
 * Quick fix to crewable launch towers like the FASA Launch Tower:

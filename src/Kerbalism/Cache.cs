@@ -65,6 +65,7 @@ namespace KERBALISM
 			underwater = Sim.Underwater(v);
 			breathable = Sim.Breathable(v, underwater);
 			landed = Lib.Landed(v);
+			zerog = !landed && (!v.mainBody.atmosphere || v.mainBody.atmosphereDepth < v.altitude);
 
 			if (v.mainBody.flightGlobalsIndex != 0 && TimeWarp.CurrentRate > 1000.0f)
 			{
@@ -152,6 +153,7 @@ namespace KERBALISM
 		public bool underwater;             // true if inside ocean
 		public bool breathable;             // true if inside breathable atmosphere
 		public bool landed;                 // true if on the surface of a body
+		public bool zerog;					// true if in zero g
 		public bool malfunction;            // true if at least a component has malfunctioned or had a critical failure
 		public bool critical;               // true if at least a component had a critical failure
 		public ConnectionInfo connection;   // connection info

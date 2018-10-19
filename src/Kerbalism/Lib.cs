@@ -1235,10 +1235,10 @@ namespace KERBALISM
 			res.amount = Math.Min( amount, capacity );
 		}
 
-
-		// set flow of a resource in the specified part
-		// do nothing if the resource don't exist in the part
-		public static void SetResourceFlow( Part p, string res_name, bool enable )
+		/// <summary>
+		/// set flow of a resource in the specified part. does nothing if the resource don't exist in the part.
+		/// </summary>
+		public static void SetResourceFlow(Part p, string res_name, bool enable)
 		{
 			// if the resource is not in the part, do nothing
 			if (p.Resources.Contains( res_name ))
@@ -1246,6 +1246,8 @@ namespace KERBALISM
 				// set flow state
 				var res = p.Resources[res_name];
 				res.flowState = enable;
+			} else {
+				Lib.Log("Resource " + res_name + " not in part " + p.name);
 			}
 		}
 
