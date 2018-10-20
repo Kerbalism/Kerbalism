@@ -16,15 +16,11 @@ namespace KERBALISM
 		// --- UTILS ----------------------------------------------------------------
 
 		// write a message to the log
-		public static void Log( string msg )
+		public static void Log(string msg, params object[] param)
 		{
-			MonoBehaviour.print( "[Kerbalism] " + msg );
-		}
-
-		[Conditional( "DEBUG" )]
-		public static void DebugLog( string msg )
-		{
-			UnityEngine.Debug.Log( "[Kerbalism] " + msg );
+			StackTrace stackTrace = new StackTrace();
+			UnityEngine.Debug.Log(string.Format("{0} -> verbose: {1}.{2} - {3}", "[Kerbalism] ", stackTrace.GetFrame(1).GetMethod().ReflectedType.Name,
+				stackTrace.GetFrame(1).GetMethod().Name, string.Format(msg, param)));
 		}
 
 		[Conditional( "DEBUG" )]
