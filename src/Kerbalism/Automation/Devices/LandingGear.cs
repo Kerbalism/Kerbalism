@@ -26,7 +26,7 @@ namespace KERBALISM
 
 		public override void GUI_Update(bool hasEnergy)
 		{
-			Lib.Debug("Buttons is '{0}' for '{1}' landingGear", (hasEnergy == true ? "ON" : "OFF"), landingGear.part.partInfo.title);
+			Lib.DebugLog("Buttons is '{0}' for '{1}' landingGear", (hasEnergy == true ? "ON" : "OFF"), landingGear.part.partInfo.title);
 			landingGear.Events["EventToggle"].active = hasEnergy;
 		}
 
