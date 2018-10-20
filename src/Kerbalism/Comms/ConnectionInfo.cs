@@ -275,7 +275,7 @@ namespace KERBALISM
 										// workaround for old savegames
 										if (packet_size == null)
 										{
-											Lib.Debug("Old SaveGame PartModule ModuleRTAntenna for part {0} on unloaded vessel {1}, using default values as a workaround", p.partName, v.vesselName);
+											Lib.DebugLog("Old SaveGame PartModule ModuleRTAntenna for part {0} on unloaded vessel {1}, using default values as a workaround", p.partName, v.vesselName);
 											rate += 6.6666 * PreferencesBasic.Instance.transmitFactor;  // 6.67 Mb/s in 100% factor
 											external_cost += 0.025;                                     // 25 W/s
 										}
@@ -287,7 +287,7 @@ namespace KERBALISM
 									}
 									else
 									{
-										Lib.Debug("Could not find PartModule ModuleRTAntenna for part {0} on unloaded vessel {1}, using default values as a workaround", p.partName, v.vesselName);
+										Lib.DebugLog("Could not find PartModule ModuleRTAntenna for part {0} on unloaded vessel {1}, using default values as a workaround", p.partName, v.vesselName);
 										rate += 6.6666 * PreferencesBasic.Instance.transmitFactor;  // 6.67 Mb/s in 100% factor
 										external_cost += 0.025;                                     // 25 W/s
 									}
