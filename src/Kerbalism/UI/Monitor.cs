@@ -212,11 +212,23 @@ namespace KERBALISM
 			{
 				if (FlightGlobals.ActiveVessel != v)
 				{
-					p.SetIcon(GetVesselTypeIcon(v.vesselType), "Go to vessel!", () => Lib.Popup
-					("Warning!",
-						Lib.BuildString("Do you really want go to ", vessel_name, " vessel?"),
-						new DialogGUIButton("Go", () => { GotoVessel.JumpToVessel(v); }),
-						new DialogGUIButton("Stay", () => { })));
+					if (Lib.IsFlight())
+					{
+						p.SetIcon(GetVesselTypeIcon(v.vesselType), "Go to vessel!", () => Lib.Popup
+						("Warning!",
+							Lib.BuildString("Do you really want go to ", vessel_name, " vessel?"),
+							new DialogGUIButton("Go", () => { GotoVessel.JumpToVessel(v); }),
+							new DialogGUIButton("Target", () => { GotoVessel.SetVesselAsTarget(v); }),
+							new DialogGUIButton("Stay", () => { })));
+					}
+					else
+					{
+						p.SetIcon(GetVesselTypeIcon(v.vesselType), "Go to vessel!", () => Lib.Popup
+						("Warning!",
+							Lib.BuildString("Do you really want go to ", vessel_name, " vessel?"),
+							new DialogGUIButton("Go", () => { GotoVessel.JumpToVessel(v); }),
+							new DialogGUIButton("Stay", () => { })));
+					}
 				}
 				else
 				{

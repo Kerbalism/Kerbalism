@@ -16,15 +16,11 @@ namespace KERBALISM
 		// --- UTILS ----------------------------------------------------------------
 
 		// write a message to the log
-		public static void Log( string msg )
+		public static void Log(string msg, params object[] param)
 		{
-			MonoBehaviour.print( "[Kerbalism] " + msg );
-		}
-
-		[Conditional( "DEBUG" )]
-		public static void DebugLog( string msg )
-		{
-			UnityEngine.Debug.Log( "[Kerbalism] " + msg );
+			StackTrace stackTrace = new StackTrace();
+			UnityEngine.Debug.Log(string.Format("{0} -> verbose: {1}.{2} - {3}", "[Kerbalism] ", stackTrace.GetFrame(1).GetMethod().ReflectedType.Name,
+				stackTrace.GetFrame(1).GetMethod().Name, string.Format(msg, param)));
 		}
 
 		[Conditional( "DEBUG" )]
@@ -1587,17 +1583,17 @@ namespace KERBALISM
 
 
 		// show a modal popup window where the user can choose among two options
-		public static PopupDialog Popup( string title, string msg, DialogGUIBase one, DialogGUIBase two )
+		public static PopupDialog Popup( string title, string msg, params DialogGUIBase[] buttons)
 		{
 			return PopupDialog.SpawnPopupDialog
 			(
-			  new Vector2( 0.5f, 0.5f ),
-			  new Vector2( 0.5f, 0.5f ),
-			  new MultiOptionDialog( title, msg, title, HighLogic.UISkin, one, two ),
-			  false,
-			  HighLogic.UISkin,
-			  true,
-			  string.Empty
+				new Vector2( 0.5f, 0.5f ),
+				new Vector2( 0.5f, 0.5f ),
+				new MultiOptionDialog( title, msg, title, HighLogic.UISkin, buttons),
+				false,
+				HighLogic.UISkin,
+				true,
+				string.Empty
 			);
 		}
 
