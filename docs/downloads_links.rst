@@ -6,18 +6,22 @@ Downloads and Links
 Latest release
 --------------
 
-- You can find the latest release of Kerbalism on SpaceDock_
+- The Kerbalism release zip from v2.0.0 onwards will work for all the stated versions of KSP, basically one zip for all versions, no longer are there separate zips needed for a specific version of KSP.
 
-- If you like taking risks you can find the latest build and source code on `GitHub <https://github.com/steamp0rt/Kerbalism>`_. **Warning** There may be unfinished features and more bugs than you originally had using a GitHub build, use it at your own risk and check the CHANGELOG.md_ file for the latest changes.
+- You can find the latest release of Kerbalism on SpaceDock_ or `GitHub Releases <https://github.com/steamp0rt/Kerbalism/releases>`_
 
-- Also A zip from the GitHub repository is not the same as a release zip from SpaceDock but it is not much different, just make sure not to copy the entire contents into your GameData folder. Basically download the zip from GitHub and only copy the content that is in the GameData folder. 
+- If you like taking risks you can try the the latest Travis CI development build at https://builds.spaceball.cf
+- Source code can be found on `GitHub <https://github.com/steamp0rt/Kerbalism>`_
+- **Warning** There may be unfinished features and more bugs than you originally had using a Development build, use it at your own risk and check the CHANGELOG.md_ file for the latest changes.
+
+- Also A source zip from the GitHub repository is not the same as a release zip from SpaceDock, GitHub Releases or the Travis CI Development build but it is not much different, just make sure not to copy the entire contents into your GameData folder. Basically download the source zip from GitHub and only copy the content that is in the GameData folder. **Note** using the source GameData folder is no different than using the Travis CI Development build. 
 
 ----------
 
 Requirements
 ------------
 
-- KSP 1.3.1 or 1.4.x
+- KSP 1.3.1 , 1.4.x or 1.5.x
 - Community Resource Pack (CRP)
 - ModuleManager 3.0.0+
 
