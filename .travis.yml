@@ -5,7 +5,7 @@ env:
 matrix:
   include:
     - env:
-      - PRIMARY_KSPVER="1.5.0"
+      - PRIMARY_KSPVER="1.5.1"
       - PRIMARY_BIN="15"
       - MIDDLE_BIN="14"
       - PRIMARY_DEFS=""
