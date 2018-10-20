@@ -8,9 +8,11 @@ Kerbalism was originally created by ShotgunNinja. It is now under active develop
 REQUIREMENTS
 ------------
 
-- KSP 1.3.1 or 1.4.x
+- KSP 1.3.1 , 1.4.x or 1.5.x
 - Community Resource Pack (CRP)
 - ModuleManager 3.0.0+
+
+The Kerbalism release zip from v2.0.0 onwards will work for all the stated versions of KSP, basically one zip for all versions, no longer are there separate zips needed for a specific version of KSP.
 
 This mod includes version checking using MiniAVC_. If you opt-in, it will use the Internet to check whether there is a new version available. Data is only read from the Internet and no personal information is sent. For a more comprehensive version checking experience, please download the `KSP-AVC Plugin`_.
 
