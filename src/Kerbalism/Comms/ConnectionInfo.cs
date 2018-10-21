@@ -25,6 +25,9 @@ namespace KERBALISM
 		/// <summary> status of the connection </summary>
 		public LinkStatus status = LinkStatus.no_link;
 
+		/// <summary> Controller Path </summary>
+		public Guid[] controlPath;
+
 		/// <summary> science data rate. note that internal transmitters can not transmit science data only telemetry data </summary>
 		public double rate = 0.0;
 
@@ -39,7 +42,6 @@ namespace KERBALISM
 
 		/// <summary> receiving node name </summary>
 		public string target_name = "";
-
 
 		// constructor
 		/// <summary> Creates a <see cref="ConnectionInfo"/> object for the specified vessel from it's antenna modules</summary>
@@ -56,7 +58,7 @@ namespace KERBALISM
 			if (!powered)
 			{
 				// hysteresis delay
-				if ((DB.Vessel(v).hyspos_signal >= 5.0))
+				if (DB.Vessel(v).hyspos_signal >= 5.0)
 				{
 					DB.Vessel(v).hyspos_signal = 5.0;
 					DB.Vessel(v).hysneg_signal = 0.0;
@@ -101,7 +103,7 @@ namespace KERBALISM
 									// only include data rate and ec cost if transmitter is extended
 									if (animation.deployState == ModuleDeployablePart.DeployState.EXTENDED)
 									{
-										rate += t.DataRate * PreferencesBasic.Instance.transmitFactor;
+										rate += t.DataRate;
 										external_cost += t.DataResourceCost * t.DataRate;
 									}
 								}
@@ -110,14 +112,14 @@ namespace KERBALISM
 									// only include data rate and ec cost if transmitter is extended
 									if (animationGeneric.animSpeed > 0)
 									{
-										rate += t.DataRate * PreferencesBasic.Instance.transmitFactor;
+										rate += t.DataRate;
 										external_cost += t.DataResourceCost * t.DataRate;
 									}
 								}
 								// no animation
 								else
 								{
-									rate += t.DataRate * PreferencesBasic.Instance.transmitFactor;
+									rate += t.DataRate;
 									external_cost += t.DataResourceCost * t.DataRate;
 								}
 							}
@@ -153,14 +155,14 @@ namespace KERBALISM
 										float animSpeed = Lib.Proto.GetFloat(m, "animSpeed");
 										if (deployState == "EXTENDED" || animSpeed > 0)
 										{
-											rate += t.DataRate * PreferencesBasic.Instance.transmitFactor;
+											rate += t.DataRate;
 											external_cost += t.DataResourceCost * t.DataRate;
 										}
 									}
 									// no animation
 									else
 									{
-										rate += t.DataRate * PreferencesBasic.Instance.transmitFactor;
+										rate += t.DataRate;
 										external_cost += t.DataResourceCost * t.DataRate;
 									}
 								}
@@ -184,11 +186,15 @@ namespace KERBALISM
 							linked = true;
 							status = v.connection.ControlPath.First.hopType == CommNet.HopType.Home ? LinkStatus.direct_link : LinkStatus.indirect_link;
 							strength = v.connection.SignalStrength;
-							rate = rate * strength * PreferencesBasic.Instance.transmitFactor;
+							if (status != LinkStatus.direct_link)
+							{
+								Vessel firstHop = Lib.CommNodeToVessel(v.Connection.ControlPath.First.end);
+								// Get rate from the firstHop, each Hop will do the same logic, then we will have the min rate for whole path
+								rate = Math.Min(Cache.VesselInfo(FlightGlobals.FindVessel(firstHop.id)).connection.rate, rate);
+							}
+							rate *= strength * PreferencesBasic.Instance.transmitFactor;
 							target_name = Lib.Ellipsis(Localizer.Format(v.connection.ControlPath.First.end.displayName).Replace("Kerbin", "DSN"), 20);
-							return;
 						}
-
 						// is loss of connection due to plasma blackout
 						else if (Lib.ReflectionValue<bool>(v.connection, "inPlasma"))  // calling InPlasma causes a StackOverflow :(
 						{
@@ -196,22 +202,24 @@ namespace KERBALISM
 							rate = 0.0;
 							internal_cost = 0.0;
 							external_cost = 0.0;
-							return;
 						}
 					}
-
-					// no connection
-					rate = 0.0;
-					internal_cost = 0.0;
-					external_cost = 0.0;
-					return;
+					else
+					{
+						// no connection
+						rate = 0.0;
+						internal_cost = 0.0;
+						external_cost = 0.0;
+					}
 				}
-
 				// the simple stupid always connected signal system
-				linked = true;
-				status = LinkStatus.direct_link;
-				strength = 1;    // 100 %
-				target_name = "DSN: KSC";
+				else
+				{
+					linked = true;
+					status = LinkStatus.direct_link;
+					strength = 1;    // 100 %
+					target_name = "DSN: KSC";
+				}
 				return;
 			}
 
@@ -236,7 +244,7 @@ namespace KERBALISM
 								// only include data rate and ec cost if transmitter is active
 								if (Lib.ReflectionValue<bool>(m, "IsRTActive"))
 								{
-									rate += (Lib.ReflectionValue<float>(m, "RTPacketSize") / Lib.ReflectionValue<float>(m, "RTPacketInterval")) * PreferencesBasic.Instance.transmitFactor;
+									rate += (Lib.ReflectionValue<float>(m, "RTPacketSize") / Lib.ReflectionValue<float>(m, "RTPacketInterval"));
 									external_cost += m.resHandler.inputResources.Find(r => r.name == "ElectricCharge").rate;
 								}
 							}
@@ -276,20 +284,20 @@ namespace KERBALISM
 										if (packet_size == null)
 										{
 											Lib.DebugLog("Old SaveGame PartModule ModuleRTAntenna for part {0} on unloaded vessel {1}, using default values as a workaround", p.partName, v.vesselName);
-											rate += 6.6666 * PreferencesBasic.Instance.transmitFactor;  // 6.67 Mb/s in 100% factor
-											external_cost += 0.025;                                     // 25 W/s
+											rate += 6.6666;          // 6.67 Mb/s in 100% factor
+											external_cost += 0.025;  // 25 W/s
 										}
 										else
 										{
-											rate += ((float)packet_size / Lib.ReflectionValue<float>(pm, "RTPacketInterval")) * PreferencesBasic.Instance.transmitFactor;
+											rate += ((float)packet_size / Lib.ReflectionValue<float>(pm, "RTPacketInterval"));
 											external_cost += pm.resHandler.inputResources.Find(r => r.name == "ElectricCharge").rate;
 										}
 									}
 									else
 									{
 										Lib.DebugLog("Could not find PartModule ModuleRTAntenna for part {0} on unloaded vessel {1}, using default values as a workaround", p.partName, v.vesselName);
-										rate += 6.6666 * PreferencesBasic.Instance.transmitFactor;  // 6.67 Mb/s in 100% factor
-										external_cost += 0.025;                                     // 25 W/s
+										rate += 6.6666;          // 6.67 Mb/s in 100% factor
+										external_cost += 0.025;  // 25 W/s
 									}
 								}
 							}
@@ -306,6 +314,17 @@ namespace KERBALISM
 					strength = RemoteTech.GetSignalDelay(v.id);
 					target_name = status == LinkStatus.direct_link ? Lib.Ellipsis("DSN: " + (RemoteTech.NameTargetsKSC(v.id) ?? "") , 20):
 						Lib.Ellipsis(RemoteTech.NameFirstHopToKSC(v.id) ?? "", 20);
+
+					if (linked) controlPath = RemoteTech.GetCommsControlPath(v.id);
+
+					// Get the smaller rate of the path
+					if (controlPath != null)
+					{
+						// Get rate from the firstHop, each Hop will do the same logic, then we will have the min rate for whole path
+						if (controlPath.Length > 0)
+							rate = Math.Min(Cache.VesselInfo(FlightGlobals.FindVessel(controlPath[0])).connection.rate, rate);
+					}
+					rate *= PreferencesBasic.Instance.transmitFactor;
 					return;
 				}
 
