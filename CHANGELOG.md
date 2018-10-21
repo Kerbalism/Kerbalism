@@ -3,8 +3,10 @@
 
 ### Changes since the last release
 
-* Added "Set as Target" in Monitor (HaullyGames)
+* Added "Set as Target" in Monitor. (HaullyGames)
 * Connection: connection rate is minimum rate in ControlPath. (HaullyGames)
+* Connection: CommNet consumption was reduced in 84% by Kerbalism, it was too high when compared to RT. (HaullyGames)
+
 ------------------------------------------------------------------------------------------------------
 
 ## v2.0.0 for KSP 1.5.x , 1.4.x and 1.3.1
