@@ -3,7 +3,9 @@
 
 ### Changes since the last release
 
-* Added "Set as Target" in Monitor (HaullyGames)
+* Added "Set as Target" in Monitor. (HaullyGames)
+* File Manager shows remaining transmission time when hovering over file. (HaullyGames)
+
 ------------------------------------------------------------------------------------------------------
 
 ## v2.0.0 for KSP 1.5.x , 1.4.x and 1.3.1
