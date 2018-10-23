@@ -473,7 +473,7 @@ namespace KERBALISM
 		// enable/disable dialog "Transfer crew" on UI
 		public void RefreshDialog()
 		{
-			Lib.Debug("Refreshing Dialog");
+			Lib.DebugLog("Refreshing Dialog");
 			if (HighLogic.LoadedSceneIsEditor)
 			{
 				GameEvents.onEditorPartEvent.Fire(ConstructionEventType.PartTweaked, part);
@@ -498,14 +498,14 @@ namespace KERBALISM
 				{
 					if (m.moduleName == "ModuleConnectedLivingSpace")
 					{
-						Lib.Debug("Part '{0}', CLS has been {1}", part.partInfo.title, isPassable ? "enabled" : "disabled");
+						Lib.DebugLog("Part '{0}', CLS has been {1}", part.partInfo.title, isPassable ? "enabled" : "disabled");
 						Lib.ReflectionValue(m, "passable", isPassable);
 					}
 				}
 			}
 
-			Lib.Debug("CrewCapacity: '{0}'", part.CrewCapacity);
-			Lib.Debug("CrewTransferAvailable: '{0}'", isPassable);
+			Lib.DebugLog("CrewCapacity: '{0}'", part.CrewCapacity);
+			Lib.DebugLog("CrewTransferAvailable: '{0}'", isPassable);
 			part.crewTransferAvailable = isPassable;
 		}
 
@@ -518,12 +518,12 @@ namespace KERBALISM
 				{
 					if (ative)
 					{
-						Lib.Debug("Part '{0}', Spawning IVA.", part.partInfo.title);
+						Lib.DebugLog("Part '{0}', Spawning IVA.", part.partInfo.title);
 						part.SpawnIVA();
 					}
 					else
 					{
-						Lib.Debug("Part '{0}', Destroying IVA.", part.partInfo.title);
+						Lib.DebugLog("Part '{0}', Destroying IVA.", part.partInfo.title);
 						part.DespawnIVA();
 					}
 					RefreshDialog();

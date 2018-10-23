@@ -53,7 +53,7 @@ namespace KERBALISM
 		public IEnumerator NetworkInitialized()
 		{
 			yield return new WaitForSeconds(2);
-			Lib.Debug("NetworkInitialized");
+			Lib.DebugLog("NetworkInitialized");
 			Communications.NetworkInitialized = true;
 		}
 
