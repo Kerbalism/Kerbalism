@@ -5,6 +5,7 @@
 
 * Added "Set as Target" in Monitor. (HaullyGames)
 * File Manager shows remaining transmission time when hovering over file. (HaullyGames)
+* Panel - Define the hover area to be the same size of font size. (HaullyGames)
 
 ------------------------------------------------------------------------------------------------------
 
