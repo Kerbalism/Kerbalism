@@ -86,11 +86,12 @@ namespace KERBALISM
 					if (v.connection.IsConnected)
 					{
 						ec = antennaInfo.ec;
-						rate = antennaInfo.rate;
+						rate = antennaInfo.rate * PreferencesBasic.Instance.transmitFactor;
 
 						linked = true;
 						status = v.connection.ControlPath.First.hopType == CommNet.HopType.Home ? LinkStatus.direct_link : LinkStatus.indirect_link;
 						strength = v.connection.SignalStrength;
+						rate *= strength;
 						target_name = Lib.Ellipsis(Localizer.Format(v.connection.ControlPath.First.end.displayName).Replace("Kerbin", "DSN"), 20);
 
 						if (status != LinkStatus.direct_link)
@@ -99,7 +100,6 @@ namespace KERBALISM
 							// Get rate from the firstHop, each Hop will do the same logic, then we will have the min rate for whole path
 							rate = Math.Min(Cache.VesselInfo(FlightGlobals.FindVessel(firstHop.id)).connection.rate, rate);
 						}
-						rate *= strength * PreferencesBasic.Instance.transmitFactor;
 					}
 					// is loss of connection due to plasma blackout
 					else if (Lib.ReflectionValue<bool>(v.connection, "inPlasma"))  // calling InPlasma causes a StackOverflow :(
@@ -118,8 +118,9 @@ namespace KERBALISM
 				// are we connected
 				if (RemoteTech.Connected(v.id))
 				{
-					rate = antennaInfo.rate;
 					ec = antennaInfo.ec;
+					rate = antennaInfo.rate * PreferencesBasic.Instance.transmitFactor;
+
 					linked = RemoteTech.ConnectedToKSC(v.id);
 					status = RemoteTech.TargetsKSC(v.id) ? LinkStatus.direct_link : LinkStatus.indirect_link;
 					target_name = status == LinkStatus.direct_link ? Lib.Ellipsis("DSN: " + (RemoteTech.NameTargetsKSC(v.id) ?? ""), 20) :
@@ -127,27 +128,25 @@ namespace KERBALISM
 
 					if (linked) controlPath = RemoteTech.GetCommsControlPath(v.id);
 
-					strength = 1.0;
-
-					// Get the smaller rate of the path
+					// Get the lowest rate in ControlPath
 					if (controlPath != null)
 					{
-						// Get rate from the firstHop, each Hop will do the same logic, then we will have the min rate for whole path
+						// Get rate from the firstHop, each Hop will do the same logic, then we will have the lowest rate for the path
 						if (controlPath.Length > 0)
 						{
 							double dist = RemoteTech.GetCommsDistance(v.id, controlPath[0]);
-							strength -= dist / Math.Max(RemoteTech.GetCommsMaxDistance(v.id, controlPath[0]), 1);
+							strength = 1 - (dist / Math.Max(RemoteTech.GetCommsMaxDistance(v.id, controlPath[0]), 1));
 
-							// If using relay, get the minimun rate
+							// If using relay, get the lowest rate
 							if (status != LinkStatus.direct_link)
 							{
 								Vessel target = FlightGlobals.FindVessel(controlPath[0]);
-								rate = Math.Min(Cache.VesselInfo(target).connection.rate, rate);
+								strength *= Cache.VesselInfo(target).connection.strength;
+								rate = Math.Min(Cache.VesselInfo(target).connection.rate, rate * strength);
 							}
+							else rate *= strength;
 						}
 					}
-
-					rate *= strength * PreferencesBasic.Instance.transmitFactor;
 				}
 				// is loss of connection due to a blackout
 				else if (RemoteTech.GetCommsBlackout(v.id))
