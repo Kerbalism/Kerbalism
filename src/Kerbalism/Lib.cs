@@ -5,7 +5,7 @@ using System.IO;
 using System.Reflection;
 using System.Text;
 using UnityEngine;
-
+using CommNet;
 
 namespace KERBALISM
 {
@@ -898,6 +898,34 @@ namespace KERBALISM
 			  : v.protoVessel.protoPartSnapshots[v.protoVessel.rootIndex].flightID;
 		}
 
+		public static Vessel CommNodeToVessel(CommNode node)
+		{
+			// Is is home return null
+			if (node.isHome) return null;
+
+			foreach (Vessel w in FlightGlobals.Vessels)
+			{
+				if (!IsVessel(w)) continue;
+
+				if (AreSame(node, w.connection.Comm))
+				{
+					return w;
+				}
+			}
+
+			Log("The node " + node.name + " is not valid.");
+			return null;
+		}
+
+		public static bool AreSame(CommNode a, CommNode b)
+		{
+			if (a == null || b == null)
+			{
+				return false;
+			}
+
+			return a.precisePosition == b.precisePosition;
+		}
 
 		// --- PART -----------------------------------------------------------------
 

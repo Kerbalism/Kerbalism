@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using UnityEngine;
-using KSP.Localization;
+﻿using KSP.Localization;
 
 namespace KERBALISM
 {
@@ -14,11 +11,8 @@ namespace KERBALISM
 
 		public static void Update(Vessel v, Vessel_info vi, VesselData vd, Resource_info ec, double elapsed_s)
 		{
-			// consume ec for internal transmitters (control and telemetry)
-			ec.Consume(vi.connection.internal_cost * elapsed_s);
-
-			// consume ec for external transmitters (don't consume for RemoteTech when loaded)
-			if (!(RemoteTech.Enabled && v.loaded)) ec.Consume(vi.connection.external_cost * elapsed_s);
+			// consume ec for transmitters
+			ec.Consume(vi.connection.ec * elapsed_s);
 
 			// do nothing if network is not ready
 			if (!NetworkInitialized) return;

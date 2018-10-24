@@ -193,6 +193,8 @@
     <Compile Include="Automation\Devices\Panel.cs" />
     <Compile Include="Automation\Devices\Process.cs" />
     <Compile Include="Automation\Devices\Ring.cs" />
+    <Compile Include="Comms\AntennaInfoCommNet.cs" />
+    <Compile Include="Comms\AntennaInfoRT.cs" />
     <Compile Include="Contracts\CrossBelt.cs" />
     <Compile Include="Contracts\CrossHeliopause.cs" />
     <Compile Include="Contracts\MannedOrbit.cs" />
