@@ -611,7 +611,7 @@ namespace KERBALISM
 			bool remotetech = RemoteTech.Enabled;
 
 			// signal strength
-			string signal_str = Lib.HumanReadablePerc(conn.strength, "F2");
+			string signal_str = conn.strength > Double.Epsilon ? Lib.HumanReadablePerc(conn.strength, "F2") : Lib.Color("#ffaa00", Lib.Italic(Localizer.Format("#KERBALISM_Generic_NO")));
 
 			// target name
 			string target_str = conn.linked ? conn.target_name : Localizer.Format("#KERBALISM_Generic_NONE");
