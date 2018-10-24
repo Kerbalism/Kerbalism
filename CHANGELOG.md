@@ -8,6 +8,7 @@
 * Connection: CommNet consumption was reduced in 84% by Kerbalism, it was too high when compared to RT. (HaullyGames)
 * File Manager shows remaining transmission time when hovering over file. (HaullyGames)
 * Panel - Define the hover area to be the same size of font size. (HaullyGames)
+* RemoteTech - Added signal strength based in Dist/maxDist. (HaullyGames)
 
 ------------------------------------------------------------------------------------------------------
 

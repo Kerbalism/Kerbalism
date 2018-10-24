@@ -610,10 +610,8 @@ namespace KERBALISM
 			ConnectionInfo conn = vi.connection;
 			bool remotetech = RemoteTech.Enabled;
 
-			// signal strength or when using RemoteTech signal delay
-			string signal_str = remotetech ?
-				!conn.linked ? "----" : conn.strength > Double.Epsilon ? KSPUtil.dateTimeFormatter.PrintTimeStampCompact(conn.strength) : Localizer.Format("#KERBALISM_Generic_NONE") :
-				Lib.HumanReadablePerc(conn.strength, "F2");
+			// signal strength
+			string signal_str = Lib.HumanReadablePerc(conn.strength, "F2");
 
 			// target name
 			string target_str = conn.linked ? conn.target_name : Localizer.Format("#KERBALISM_Generic_NONE");
@@ -633,7 +631,7 @@ namespace KERBALISM
 			  String.Format("{0,-14}\t<b>{1}</b>\n", Localizer.Format("#KERBALISM_UI_DSNconnected"), conn.linked ?
 					Lib.Color("green", Localizer.Format("#KERBALISM_Generic_YES")) : Lib.Color("#ffaa00", Lib.Italic(Localizer.Format("#KERBALISM_Generic_NO")))),
 			  String.Format("{0,-14}\t<b>{1}</b>\n", Localizer.Format("#KERBALISM_UI_sciencerate"), Lib.HumanReadableDataRate(conn.rate)),
-			  String.Format("{0,-14}\t<b>{1}</b>\n", remotetech ? Localizer.Format("#KERBALISM_UI_delay") : Localizer.Format("#KERBALISM_UI_strength"), signal_str),
+			  String.Format("{0,-14}\t<b>{1}</b>\n", Localizer.Format("#KERBALISM_UI_strength"), signal_str),
 			  String.Format("{0,-14}\t<b>{1}</b>\n", Localizer.Format("#KERBALISM_UI_target"), target_str),
 			  String.Format("{0,-14}\t<b>{1}</b>", Localizer.Format("#KERBALISM_UI_transmitting"), comms_str)
 			);
