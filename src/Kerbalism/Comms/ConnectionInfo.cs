@@ -85,7 +85,7 @@ namespace KERBALISM
 					// are we connected to DSN
 					if (v.connection.IsConnected)
 					{
-						ec = antennaInfo.ec * 0.16; // Consume 16% of the stock ec. Workaround for drain consumption with CommNet, ec consumption turns similar of RT
+						ec = antennaInfo.ec;
 						rate = antennaInfo.rate;
 
 						linked = true;
