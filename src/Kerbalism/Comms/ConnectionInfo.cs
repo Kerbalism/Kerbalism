@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using KSP.Localization;
-using CommNet;
 
 namespace KERBALISM
 {
@@ -25,21 +23,20 @@ namespace KERBALISM
 		/// <summary> status of the connection </summary>
 		public LinkStatus status = LinkStatus.no_link;
 
+		/// <summary> Controller Path </summary>
+		public Guid[] controlPath;
+
 		/// <summary> science data rate. note that internal transmitters can not transmit science data only telemetry data </summary>
 		public double rate = 0.0;
 
-		/// <summary> internal transmitter ec cost (control and telemetry) </summary>
-		public double internal_cost = 0.0;
-
-		/// <summary> external transmitter ec cost </summary>
-		public double external_cost = 0.0;
+		/// <summary> transmitter ec cost</summary>
+		public double ec = 0.0;
 
 		/// <summary> signal strength, or when using RemoteTech signal delay </summary>
 		public double strength = 0.0;
 
 		/// <summary> receiving node name </summary>
 		public string target_name = "";
-
 
 		// constructor
 		/// <summary> Creates a <see cref="ConnectionInfo"/> object for the specified vessel from it's antenna modules</summary>
@@ -56,7 +53,7 @@ namespace KERBALISM
 			if (!powered)
 			{
 				// hysteresis delay
-				if ((DB.Vessel(v).hyspos_signal >= 5.0))
+				if (DB.Vessel(v).hyspos_signal >= 5.0)
 				{
 					DB.Vessel(v).hyspos_signal = 5.0;
 					DB.Vessel(v).hysneg_signal = 0.0;
@@ -68,264 +65,98 @@ namespace KERBALISM
 			{
 				// hysteresis delay
 				DB.Vessel(v).hysneg_signal += 0.1;
-				if (!(DB.Vessel(v).hysneg_signal >= 5.0))
+				if (DB.Vessel(v).hysneg_signal < 5.0)
 					return;
 				DB.Vessel(v).hysneg_signal = 5.0;
 				DB.Vessel(v).hyspos_signal = 0.0;
 			}
 
-			// CommNet or simple signal system
-			if (!RemoteTech.Enabled)
+			// if CommNet is enabled
+			if (HighLogic.fetch.currentGame.Parameters.Difficulty.EnableCommNet)
 			{
-				List<ModuleDataTransmitter> transmitters;
+				AntennaInfoCommNet antennaInfo = new AntennaInfoCommNet(v);
 
-				// if vessel is loaded
-				if (v.loaded)
+				if (v.connection != null)
 				{
-					// find transmitters
-					transmitters = v.FindPartModulesImplementing<ModuleDataTransmitter>();
+					// force CommNet update of unloaded vessels
+					if (!v.loaded)
+						Lib.ReflectionValue(v.connection, "unloadedDoOnce", true);
 
-					if (transmitters != null)
+					// are we connected to DSN
+					if (v.connection.IsConnected)
 					{
-						foreach (ModuleDataTransmitter t in transmitters)
+						ec = antennaInfo.ec * 0.16; // Consume 16% of the stock ec. Workaround for drain consumption with CommNet, ec consumption turns similar of RT
+						rate = antennaInfo.rate;
+
+						linked = true;
+						status = v.connection.ControlPath.First.hopType == CommNet.HopType.Home ? LinkStatus.direct_link : LinkStatus.indirect_link;
+						strength = v.connection.SignalStrength;
+						if (status != LinkStatus.direct_link)
 						{
-							if (t.antennaType == AntennaType.INTERNAL) // do not include internal data rate, ec cost only
-								internal_cost += t.DataResourceCost * t.DataRate;
-							else
-							{
-								// do we have an animation
-								ModuleDeployableAntenna animation = t.part.FindModuleImplementing<ModuleDeployableAntenna>();
-								ModuleAnimateGeneric animationGeneric = t.part.FindModuleImplementing<ModuleAnimateGeneric>();
-								if (animation != null)
-								{
-									// only include data rate and ec cost if transmitter is extended
-									if (animation.deployState == ModuleDeployablePart.DeployState.EXTENDED)
-									{
-										rate += t.DataRate * PreferencesBasic.Instance.transmitFactor;
-										external_cost += t.DataResourceCost * t.DataRate;
-									}
-								}
-								else if (animationGeneric != null)
-								{
-									// only include data rate and ec cost if transmitter is extended
-									if (animationGeneric.animSpeed > 0)
-									{
-										rate += t.DataRate * PreferencesBasic.Instance.transmitFactor;
-										external_cost += t.DataResourceCost * t.DataRate;
-									}
-								}
-								// no animation
-								else
-								{
-									rate += t.DataRate * PreferencesBasic.Instance.transmitFactor;
-									external_cost += t.DataResourceCost * t.DataRate;
-								}
-							}
+							Vessel firstHop = Lib.CommNodeToVessel(v.Connection.ControlPath.First.end);
+							// Get rate from the firstHop, each Hop will do the same logic, then we will have the min rate for whole path
+							rate = Math.Min(Cache.VesselInfo(FlightGlobals.FindVessel(firstHop.id)).connection.rate, rate);
 						}
+						rate *= strength * PreferencesBasic.Instance.transmitFactor;
+						target_name = Lib.Ellipsis(Localizer.Format(v.connection.ControlPath.First.end.displayName).Replace("Kerbin", "DSN"), 20);
+					}
+					// is loss of connection due to plasma blackout
+					else if (Lib.ReflectionValue<bool>(v.connection, "inPlasma"))  // calling InPlasma causes a StackOverflow :(
+					{
+						status = LinkStatus.plasma;
 					}
 				}
-
-				// if vessel is not loaded
-				else
-				{
-					// find proto transmitters
-					foreach (ProtoPartSnapshot p in v.protoVessel.protoPartSnapshots)
-					{
-						// get part prefab (required for module properties)
-						Part part_prefab = PartLoader.getPartInfoByName(p.partName).partPrefab;
-
-						transmitters = part_prefab.FindModulesImplementing<ModuleDataTransmitter>();
-
-						if (transmitters != null)
-						{
-							foreach (ModuleDataTransmitter t in transmitters)
-							{
-								if (t.antennaType == AntennaType.INTERNAL) // do not include internal data rate, ec cost only
-									internal_cost += t.DataResourceCost * t.DataRate;
-								else
-								{
-									// do we have an animation
-									ProtoPartModuleSnapshot m = p.FindModule("ModuleDeployableAntenna") ?? p.FindModule("ModuleAnimateGeneric");
-									if (m != null)
-									{
-										// only include data rate and ec cost if transmitter is extended
-										string deployState = Lib.Proto.GetString(m, "deployState");
-										float animSpeed = Lib.Proto.GetFloat(m, "animSpeed");
-										if (deployState == "EXTENDED" || animSpeed > 0)
-										{
-											rate += t.DataRate * PreferencesBasic.Instance.transmitFactor;
-											external_cost += t.DataResourceCost * t.DataRate;
-										}
-									}
-									// no animation
-									else
-									{
-										rate += t.DataRate * PreferencesBasic.Instance.transmitFactor;
-										external_cost += t.DataResourceCost * t.DataRate;
-									}
-								}
-							}
-						}
-					}
-				}
-
-				// if CommNet is enabled
-				if (HighLogic.fetch.currentGame.Parameters.Difficulty.EnableCommNet)
-				{
-					if (v.connection != null)
-					{
-						// force CommNet update of unloaded vessels
-						if (!v.loaded)
-							Lib.ReflectionValue(v.connection, "unloadedDoOnce", true);
-
-						// are we connected to DSN
-						if (v.connection.IsConnected)
-						{
-							linked = true;
-							status = v.connection.ControlPath.First.hopType == CommNet.HopType.Home ? LinkStatus.direct_link : LinkStatus.indirect_link;
-							strength = v.connection.SignalStrength;
-							rate = rate * strength * PreferencesBasic.Instance.transmitFactor;
-							target_name = Lib.Ellipsis(Localizer.Format(v.connection.ControlPath.First.end.displayName).Replace("Kerbin", "DSN"), 20);
-							return;
-						}
-
-						// is loss of connection due to plasma blackout
-						else if (Lib.ReflectionValue<bool>(v.connection, "inPlasma"))  // calling InPlasma causes a StackOverflow :(
-						{
-							status = LinkStatus.plasma;
-							rate = 0.0;
-							internal_cost = 0.0;
-							external_cost = 0.0;
-							return;
-						}
-					}
-
-					// no connection
-					rate = 0.0;
-					internal_cost = 0.0;
-					external_cost = 0.0;
-					return;
-				}
-
-				// the simple stupid always connected signal system
-				linked = true;
-				status = LinkStatus.direct_link;
-				strength = 1;    // 100 %
-				target_name = "DSN: KSC";
+				// if nothing has changed, no connection
 				return;
 			}
-
 			// RemoteTech signal system
-			else
+			else if (RemoteTech.Enabled)
 			{
-				// if vessel is loaded
-				if (v.loaded)
-				{
-					// find transmitters
-					foreach (Part p in v.parts)
-					{
-						foreach (PartModule m in p.Modules)
-						{
-							// calculate internal (passive) transmitter ec usage @ 0.5W each
-							if (m.moduleName == "ModuleRTAntennaPassive")
-								internal_cost += 0.0005;
-
-							// calculate external transmitters
-							else if (m.moduleName == "ModuleRTAntenna")
-							{
-								// only include data rate and ec cost if transmitter is active
-								if (Lib.ReflectionValue<bool>(m, "IsRTActive"))
-								{
-									rate += (Lib.ReflectionValue<float>(m, "RTPacketSize") / Lib.ReflectionValue<float>(m, "RTPacketInterval")) * PreferencesBasic.Instance.transmitFactor;
-									external_cost += m.resHandler.inputResources.Find(r => r.name == "ElectricCharge").rate;
-								}
-							}
-						}
-					}
-				}
-
-				// if vessel is not loaded
-				else
-				{
-					// find proto transmitters
-					foreach (ProtoPartSnapshot p in v.protoVessel.protoPartSnapshots)
-					{
-						// get part prefab (required for module properties)
-						Part part_prefab = PartLoader.getPartInfoByName(p.partName).partPrefab;
-						int index = 0;      // module index
-
-						foreach (ProtoPartModuleSnapshot m in p.modules)
-						{
-							// calculate internal (passive) transmitter ec usage @ 0.5W each
-							if (m.moduleName == "ModuleRTAntennaPassive")
-								internal_cost += 0.0005;
-
-							// calculate external transmitters
-							else if (m.moduleName == "ModuleRTAntenna")
-							{
-								// only include data rate and ec cost if transmitter is active skip if index is out of range
-								if (Lib.Proto.GetBool(m, "IsRTActive") && index < part_prefab.Modules.Count)
-								{
-									// get module prefab
-									PartModule pm = part_prefab.Modules.GetModule(index);
-
-									if (pm != null)
-									{
-										float? packet_size = Lib.SafeReflectionValue<float>(pm, "RTPacketSize");
-										// workaround for old savegames
-										if (packet_size == null)
-										{
-											Lib.DebugLog("Old SaveGame PartModule ModuleRTAntenna for part {0} on unloaded vessel {1}, using default values as a workaround", p.partName, v.vesselName);
-											rate += 6.6666 * PreferencesBasic.Instance.transmitFactor;  // 6.67 Mb/s in 100% factor
-											external_cost += 0.025;                                     // 25 W/s
-										}
-										else
-										{
-											rate += ((float)packet_size / Lib.ReflectionValue<float>(pm, "RTPacketInterval")) * PreferencesBasic.Instance.transmitFactor;
-											external_cost += pm.resHandler.inputResources.Find(r => r.name == "ElectricCharge").rate;
-										}
-									}
-									else
-									{
-										Lib.DebugLog("Could not find PartModule ModuleRTAntenna for part {0} on unloaded vessel {1}, using default values as a workaround", p.partName, v.vesselName);
-										rate += 6.6666 * PreferencesBasic.Instance.transmitFactor;  // 6.67 Mb/s in 100% factor
-										external_cost += 0.025;                                     // 25 W/s
-									}
-								}
-							}
-							index++;
-						}
- 					}
-				}
+				AntennaInfoRT antennaInfo = new AntennaInfoRT(v);
 
 				// are we connected
 				if (RemoteTech.Connected(v.id))
 				{
+					rate = antennaInfo.rate;
+					ec = antennaInfo.ec;
+
 					linked = RemoteTech.ConnectedToKSC(v.id);
 					status = RemoteTech.TargetsKSC(v.id) ? LinkStatus.direct_link : LinkStatus.indirect_link;
 					strength = RemoteTech.GetSignalDelay(v.id);
-					target_name = status == LinkStatus.direct_link ? Lib.Ellipsis("DSN: " + (RemoteTech.NameTargetsKSC(v.id) ?? "") , 20):
+					target_name = status == LinkStatus.direct_link ? Lib.Ellipsis("DSN: " + (RemoteTech.NameTargetsKSC(v.id) ?? ""), 20) :
 						Lib.Ellipsis(RemoteTech.NameFirstHopToKSC(v.id) ?? "", 20);
-					return;
-				}
 
+					if (linked) controlPath = RemoteTech.GetCommsControlPath(v.id);
+
+					// Get the smaller rate of the path
+					if (controlPath != null)
+					{
+						// Get rate from the firstHop, each Hop will do the same logic, then we will have the min rate for whole path
+						if (controlPath.Length > 0)
+							rate = Math.Min(Cache.VesselInfo(FlightGlobals.FindVessel(controlPath[0])).connection.rate, rate);
+					}
+					rate *= PreferencesBasic.Instance.transmitFactor;
+				}
 				// is loss of connection due to a blackout
 				else if (RemoteTech.GetCommsBlackout(v.id))
 				{
 					status = storm ? LinkStatus.storm : LinkStatus.plasma;
-					rate = 0.0;
-					internal_cost = 0.0;
-					external_cost = 0.0;
-					return;
 				}
-
-				// no connection
-				rate = 0.0;
-				internal_cost = 0.0;
-				external_cost = 0.0;
+				// if nothing has changed, no connection
 				return;
+			}
+			// the simple stupid always connected signal system
+			else
+			{
+				AntennaInfoCommNet antennaInfo = new AntennaInfoCommNet(v);
+				ec = antennaInfo.ec * 0.16; // Consume 16% of the stock ec. Workaround for drain consumption with CommNet, ec consumption turns similar of RT
+				rate = antennaInfo.rate * PreferencesBasic.Instance.transmitFactor;
+
+				linked = true;
+				status = LinkStatus.direct_link;
+				strength = 1;    // 100 %
+				target_name = "DSN: KSC";
 			}
 		}
 	}
-
 } // KERBALISM

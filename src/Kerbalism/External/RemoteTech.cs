@@ -27,6 +27,7 @@ namespace KERBALISM
 					GetRadioBlackout = API.GetMethod("GetRadioBlackoutGuid");
 					SetPowerDown = API.GetMethod("SetPowerDownGuid");
 					GetPowerDown = API.GetMethod("GetPowerDownGuid");
+					GetControlPath = API.GetMethod("GetControlPath");
 
 					// check version is above 1.8.12, warn users if they are using an old version of RemoteTech
 #if !KSP13
@@ -136,6 +137,14 @@ namespace KERBALISM
 			return (m.moduleName == "ModuleRTAntenna" || m.moduleName == "ModuleRTAntennaPassive");
 		}
 
+		/// <summary> Returns an array of all vessel ids in the control path </summary>
+		/// <param name="id">Vessel id to be searched</param>
+		/// <returns></returns>
+		public static Guid[] GetCommsControlPath(Guid id)
+		{
+			return API != null && GetControlPath != null ? (Guid[])GetControlPath.Invoke(null, new Object[] { id }) : new Guid[0];
+		}
+
 		public static bool NetworkInitialized = false;
 
 		private static Type API;
@@ -151,6 +160,7 @@ namespace KERBALISM
 		private static MethodInfo GetRadioBlackout;
 		private static MethodInfo SetPowerDown;
 		private static MethodInfo GetPowerDown;
+		private static MethodInfo GetControlPath;
 	}
 
 
