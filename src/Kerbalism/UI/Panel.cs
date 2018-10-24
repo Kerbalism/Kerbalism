@@ -176,9 +176,9 @@ namespace KERBALISM
 				foreach (Entry e in p.entries)
 				{
 					GUILayout.BeginHorizontal(Styles.entry_container);
-					GUILayout.Label(new GUIContent(e.label, e.tooltip), Styles.entry_label);
+					GUILayout.Label(new GUIContent(e.label, e.tooltip), Styles.entry_label, GUILayout.Height(Styles.entry_label.fontSize));
 					if (e.hover != null && Lib.IsHover()) callbacks.Add(e.hover);
-					GUILayout.Label(new GUIContent(e.value, e.tooltip), Styles.entry_value);
+					GUILayout.Label(new GUIContent(e.value, e.tooltip), Styles.entry_value, GUILayout.Height(Styles.entry_value.fontSize));
 					if (e.click != null && Lib.IsClicked()) callbacks.Add(e.click);
 					if (e.hover != null && Lib.IsHover()) callbacks.Add(e.hover);
 					foreach (Icon i in e.icons)

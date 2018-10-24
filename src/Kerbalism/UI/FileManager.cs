@@ -44,7 +44,7 @@ namespace KERBALISM
 			{
 				string filename = pair.Key;
 				File file = pair.Value;
-				Render_file(p, filename, file, drive, short_strings && Lib.IsFlight());
+				Render_file(p, filename, file, drive, short_strings && Lib.IsFlight(), Cache.VesselInfo(v).connection.rate);
 			}
 			if (drive.files.Count == 0) p.AddContent("<i>no files</i>", string.Empty);
 
@@ -59,7 +59,7 @@ namespace KERBALISM
 			if (drive.samples.Count == 0) p.AddContent("<i>no samples</i>", string.Empty);
 		}
 
-		static void Render_file(Panel p, string filename, File file, Drive drive, bool short_strings)
+		static void Render_file(Panel p, string filename, File file, Drive drive, bool short_strings, double rate)
 		{
 			// get experiment info
 			ExperimentInfo exp = Science.Experiment(filename);
@@ -81,7 +81,9 @@ namespace KERBALISM
 			double exp_value = Science.Value(filename, file.size);
 			if (exp_value > double.Epsilon) exp_tooltip = Lib.BuildString(exp_tooltip, "\n<b>", Lib.HumanReadableScience(exp_value), "</b>");
 
-			p.AddContent(exp_label, Lib.HumanReadableDataSize(file.size), exp_tooltip);
+			if (rate > 0) p.AddContent(exp_label, Lib.HumanReadableDataSize(file.size), "<i>" + Lib.HumanReadableDuration(file.size / rate) + "</i>");
+			else p.AddContent(exp_label, Lib.HumanReadableDataSize(file.size), exp_tooltip);
+
 			p.AddIcon(file.send ? Icons.send_cyan : Icons.send_black, "Flag the file for transmission to <b>DSN</b>", () => { file.send = !file.send; });
 			p.AddIcon(Icons.toggle_red, "Delete the file", () => Lib.Popup
 			(

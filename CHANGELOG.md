@@ -6,6 +6,8 @@
 * Added "Set as Target" in Monitor. (HaullyGames)
 * Connection: connection rate is minimum rate in ControlPath. (HaullyGames)
 * Connection: CommNet consumption was reduced in 84% by Kerbalism, it was too high when compared to RT. (HaullyGames)
+* File Manager shows remaining transmission time when hovering over file. (HaullyGames)
+* Panel - Define the hover area to be the same size of font size. (HaullyGames)
 
 ------------------------------------------------------------------------------------------------------
 
