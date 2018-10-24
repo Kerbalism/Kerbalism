@@ -127,6 +127,8 @@ namespace KERBALISM
 
 					if (linked) controlPath = RemoteTech.GetCommsControlPath(v.id);
 
+					strength = 1.0;
+
 					// Get the smaller rate of the path
 					if (controlPath != null)
 					{
@@ -134,7 +136,7 @@ namespace KERBALISM
 						if (controlPath.Length > 0)
 						{
 							double dist = RemoteTech.GetCommsDistance(v.id, controlPath[0]);
-							strength = 1 - (dist / Math.Max(RemoteTech.GetCommsMaxDistance(v.id, controlPath[0]), 1));
+							strength -= dist / Math.Max(RemoteTech.GetCommsMaxDistance(v.id, controlPath[0]), 1);
 
 							// If using relay, get the minimun rate
 							if (status != LinkStatus.direct_link)
