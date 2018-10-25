@@ -3,7 +3,7 @@
 
 ### Changes since the last release
 
-* Kerbals on EVA got a radio to transmit science data. Antenna range limited to 500m. (Gordon Dry)
+* Kerbals on EVA got a radio to transmit science data. Antenna range limited to 35km. (Gordon Dry)
 * Added "Set as Target" in Monitor. (HaullyGames)
 * Connection: connection rate is minimum rate in ControlPath. (HaullyGames)
 * Connection: CommNet consumption was reduced in 84% by Kerbalism, it was too high when compared to RT. (HaullyGames)
