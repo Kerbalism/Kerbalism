@@ -205,7 +205,7 @@ namespace KERBALISM
 		{
 			float h = 0.0f;
 
-			h += Styles.ScaleFloat((float)headers.Count * 26.0f);
+			h += Styles.ScaleFloat((float)headers.Count * 27.0f);
 
 			foreach (Section p in sections)
 			{
