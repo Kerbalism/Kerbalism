@@ -114,7 +114,7 @@ namespace KERBALISM
 				GUILayout.BeginArea(win_rect, Styles.win);
 
 				// a bit of spacing between title and content
-				GUILayout.Space(10.0f);
+				GUILayout.Space(Styles.ScaleFloat(10.0f));
 
 				// draw planner in the editors, monitor everywhere else
 				if (!Lib.IsEditor()) monitor.Render();
