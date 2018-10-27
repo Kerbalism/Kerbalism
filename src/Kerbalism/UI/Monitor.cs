@@ -608,7 +608,6 @@ namespace KERBALISM
 		void Indicator_signal(Panel p, Vessel v, Vessel_info vi)
 		{
 			ConnectionInfo conn = vi.connection;
-			bool remotetech = RemoteTech.Enabled;
 
 			// signal strength
 			string signal_str = conn.strength > Double.Epsilon ? Lib.HumanReadablePerc(conn.strength, "F2") : Lib.Color("#ffaa00", Lib.Italic(Localizer.Format("#KERBALISM_Generic_NO")));
@@ -641,13 +640,11 @@ namespace KERBALISM
 			switch (conn.status)
 			{
 				case LinkStatus.direct_link:
-					image = remotetech ? conn.strength < 15.0 ? Icons.signal_white : Icons.signal_yellow :      // 15 seconds for RemoteTech signal delay
-						conn.strength > 0.05 ? Icons.signal_white : Icons.signal_yellow;                        // or 5% signal strength
+					image = conn.strength > 0.05 ? Icons.signal_white : Icons.iconSwitch(Icons.signal_yellow, image);   // or 5% signal strength
 					break;
 
 				case LinkStatus.indirect_link:
-					image = remotetech ? conn.strength < 15.0 ? Icons.signal_white : Icons.signal_yellow :      // 15 seconds for RemoteTech signal delay
-						conn.strength > 0.05 ? Icons.signal_white : Icons.signal_yellow;                        // or 5% signal strength
+					image = conn.strength > 0.05 ? Icons.signal_white : Icons.iconSwitch(Icons.signal_yellow, image);   // or 5% signal strength
 					tooltip += Lib.Color("yellow", "\n" + Localizer.Format("#KERBALISM_UI_Signalrelayed"));
 					break;
 

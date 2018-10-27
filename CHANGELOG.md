@@ -3,6 +3,7 @@
 
 ### Changes since the last release
 
+* The connection signal icon alternates between yellow and red when signal strengh is below 5%. (HaullyGames)
 * Added "Set as Target" in Monitor. (HaullyGames)
 * Connection: connection rate is minimum rate in ControlPath. (HaullyGames)
 * Connection: CommNet consumption was reduced in 84% by Kerbalism, it was too high when compared to RT. (HaullyGames)
