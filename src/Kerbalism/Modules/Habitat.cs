@@ -87,11 +87,19 @@ namespace KERBALISM
 				UpdateIVA(Math.Truncate(Math.Abs((perctDeployed + ResourceBalance.precision) - 1.0) * 100000) / 100000 <= ResourceBalance.precision);
 			}
 
-			// For fix IVA when crewTransfered occur, add event to define flag for FixedUpdate
-			GameEvents.onCrewTransferred.Add(new EventData<GameEvents.HostedFromToAction<ProtoCrewMember, Part>>.OnEvent(UpdateCrew));
+			if (Lib.IsFlight())
+			{
+				// For fix IVA when crewTransfered occur, add event to define flag for FixedUpdate
+				GameEvents.onCrewTransferred.Add(new EventData<GameEvents.HostedFromToAction<ProtoCrewMember, Part>>.OnEvent(UpdateCrew));
+			}
 
 			// configure on start
 			Configure(true);
+		}
+
+		public void Dispose()
+		{
+			GameEvents.onCrewTransferred.Remove(UpdateCrew);
 		}
 
 		string Get_inflate_string()
