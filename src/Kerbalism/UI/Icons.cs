@@ -99,6 +99,10 @@ namespace KERBALISM
 		internal static Texture2D plane_black;
 		internal static Texture2D plane_white;
 
+		// timer controller
+		internal static float nextFlashing = Time.time;
+		internal static bool lastIcon = false;
+
 		///<summary> Initializes the icons </summary>
 		internal static void Initialize()
 		{
@@ -116,7 +120,7 @@ namespace KERBALISM
 			lab_black = Styles.GetUIScaledTexture("lab-black");
 			lab_cyan = Styles.GetUIScaledTexture("lab-cyan");
 
-			applauncher = Lib.GetTexture("applauncher", 32, 32);
+			applauncher = Styles.GetUIScaledTexture("applauncher", 38, 38);
 
 			small_info = Styles.GetUIScaledTexture("small-info");
 			small_folder = Styles.GetUIScaledTexture("small-folder");
@@ -194,6 +198,21 @@ namespace KERBALISM
 			plane_black = Styles.GetUIScaledTexture("vessels/plane-black", 40, 40, 2.25f);
 			plane_white = Styles.GetUIScaledTexture("vessels/plane-white", 40, 40, 2.25f);
 	}
-}
 
+		/// <summary>Switch icons based on time </summary>
+		/// <param name="icon1">First Texture2D</param>
+		/// <param name="icon2">Second Texture2D</param>
+		/// <param name="interval">interval in sec</param>
+		/// <returns></returns>
+		internal static Texture2D iconSwitch(Texture2D icon1, Texture2D icon2, float interval = 0.3f)
+		{
+			if (Time.time > nextFlashing)
+			{
+				nextFlashing += interval;
+				lastIcon ^= true;
+			}
+			if (lastIcon) return icon1;
+			else return icon2;
+		}
+	}
 } // KERBALISM
