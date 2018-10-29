@@ -10,6 +10,7 @@
 * File Manager shows remaining transmission time when hovering over file. (HaullyGames)
 * Panel - Define the hover area to be the same size of font size. (HaullyGames)
 * RemoteTech - Added signal strength based on Dist/maxDist. (HaullyGames)
+* Increased SCANSat experiment sizes. A planetary map shouldn't be smaller than a temperature reading. (Sir Mortimer)
 
 ------------------------------------------------------------------------------------------------------
 
