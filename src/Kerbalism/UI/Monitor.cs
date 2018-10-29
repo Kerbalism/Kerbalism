@@ -608,12 +608,9 @@ namespace KERBALISM
 		void Indicator_signal(Panel p, Vessel v, Vessel_info vi)
 		{
 			ConnectionInfo conn = vi.connection;
-			bool remotetech = RemoteTech.Enabled;
 
-			// signal strength or when using RemoteTech signal delay
-			string signal_str = remotetech ?
-				!conn.linked ? "----" : conn.strength > Double.Epsilon ? KSPUtil.dateTimeFormatter.PrintTimeStampCompact(conn.strength) : Localizer.Format("#KERBALISM_Generic_NONE") :
-				Lib.HumanReadablePerc(conn.strength, "F2");
+			// signal strength
+			string signal_str = conn.strength > Double.Epsilon ? Lib.HumanReadablePerc(conn.strength, "F2") : Lib.Color("#ffaa00", Lib.Italic(Localizer.Format("#KERBALISM_Generic_NO")));
 
 			// target name
 			string target_str = conn.linked ? conn.target_name : Localizer.Format("#KERBALISM_Generic_NONE");
@@ -633,7 +630,7 @@ namespace KERBALISM
 			  String.Format("{0,-14}\t<b>{1}</b>\n", Localizer.Format("#KERBALISM_UI_DSNconnected"), conn.linked ?
 					Lib.Color("green", Localizer.Format("#KERBALISM_Generic_YES")) : Lib.Color("#ffaa00", Lib.Italic(Localizer.Format("#KERBALISM_Generic_NO")))),
 			  String.Format("{0,-14}\t<b>{1}</b>\n", Localizer.Format("#KERBALISM_UI_sciencerate"), Lib.HumanReadableDataRate(conn.rate)),
-			  String.Format("{0,-14}\t<b>{1}</b>\n", remotetech ? Localizer.Format("#KERBALISM_UI_delay") : Localizer.Format("#KERBALISM_UI_strength"), signal_str),
+			  String.Format("{0,-14}\t<b>{1}</b>\n", Localizer.Format("#KERBALISM_UI_strength"), signal_str),
 			  String.Format("{0,-14}\t<b>{1}</b>\n", Localizer.Format("#KERBALISM_UI_target"), target_str),
 			  String.Format("{0,-14}\t<b>{1}</b>", Localizer.Format("#KERBALISM_UI_transmitting"), comms_str)
 			);
@@ -643,13 +640,11 @@ namespace KERBALISM
 			switch (conn.status)
 			{
 				case LinkStatus.direct_link:
-					image = remotetech ? conn.strength < 15.0 ? Icons.signal_white : Icons.signal_yellow :      // 15 seconds for RemoteTech signal delay
-						conn.strength > 0.05 ? Icons.signal_white : Icons.signal_yellow;                        // or 5% signal strength
+					image = conn.strength > 0.05 ? Icons.signal_white : Icons.iconSwitch(Icons.signal_yellow, image);   // or 5% signal strength
 					break;
 
 				case LinkStatus.indirect_link:
-					image = remotetech ? conn.strength < 15.0 ? Icons.signal_white : Icons.signal_yellow :      // 15 seconds for RemoteTech signal delay
-						conn.strength > 0.05 ? Icons.signal_white : Icons.signal_yellow;                        // or 5% signal strength
+					image = conn.strength > 0.05 ? Icons.signal_white : Icons.iconSwitch(Icons.signal_yellow, image);   // or 5% signal strength
 					tooltip += Lib.Color("yellow", "\n" + Localizer.Format("#KERBALISM_UI_Signalrelayed"));
 					break;
 

@@ -4,11 +4,13 @@
 ### Changes since the last release
 
 * Added missing xmitDataScalar to Support/OrbitalScience.cfg and also added UniversalStorage2 compatibility. (Gordon Dry)
+* The connection signal icon alternates between yellow and red when signal strengh is below 5%. (HaullyGames)
 * Added "Set as Target" in Monitor. (HaullyGames)
 * Connection: connection rate is minimum rate in ControlPath. (HaullyGames)
 * Connection: CommNet consumption was reduced in 84% by Kerbalism, it was too high when compared to RT. (HaullyGames)
 * File Manager shows remaining transmission time when hovering over file. (HaullyGames)
 * Panel - Define the hover area to be the same size of font size. (HaullyGames)
+* RemoteTech - Added signal strength based on Dist/maxDist. (HaullyGames)
 * Increased SCANSat experiment sizes. A planetary map shouldn't be smaller than a temperature reading. (Sir Mortimer)
 
 ------------------------------------------------------------------------------------------------------
