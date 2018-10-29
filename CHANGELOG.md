@@ -9,6 +9,7 @@
 * File Manager shows remaining transmission time when hovering over file. (HaullyGames)
 * Panel - Define the hover area to be the same size of font size. (HaullyGames)
 * Increased SCANSat experiment sizes. A planetary map shouldn't be smaller than a temperature reading. (Sir Mortimer)
+* Sickbay modules (RDU, TV) shouldn't be visible when the part is not enabled (Sir Mortimer)
 
 ------------------------------------------------------------------------------------------------------
 
