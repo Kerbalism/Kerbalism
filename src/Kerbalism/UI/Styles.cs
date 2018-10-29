@@ -1,36 +1,41 @@
 ﻿using UnityEngine;
 
-
 namespace KERBALISM
 {
-
-
 	public static class Styles
 	{
 		static Styles()
 		{
 			// window container
-			win = new GUIStyle(HighLogic.Skin.window);
-			win.padding.left = ScaleInteger(6);
-			win.padding.right = ScaleInteger(6);
-			win.padding.top = 0;
-			win.padding.bottom = 0;
+			win = new GUIStyle(HighLogic.Skin.window)
+			{
+				padding =
+				{
+					left = ScaleInteger(6),
+					right = ScaleInteger(6),
+					top = 0,
+					bottom = 0
+				}
+			};
 
 			// window title container
 			title_container = new GUIStyle
 			{
 				stretchWidth = true,
-				fixedHeight = ScaleFloat(16.0f)
+				fixedHeight = ScaleFloat(16.0f),
+				margin =
+				{
+					bottom = ScaleInteger(2),
+					top = ScaleInteger(2)
+				}
 			};
-			title_container.margin.bottom = ScaleInteger(2);
-			title_container.margin.top = ScaleInteger(2);
 
 			// window title text
 			title_text = new GUIStyle
 			{
+				fontStyle = FontStyle.Bold,
 				fontSize = ScaleInteger(10),
 				fixedHeight = ScaleFloat(16.0f),
-				fontStyle = FontStyle.Bold,
 				alignment = TextAnchor.MiddleCenter
 			};
 
@@ -38,21 +43,24 @@ namespace KERBALISM
 			section_container = new GUIStyle
 			{
 				stretchWidth = true,
-				fixedHeight = ScaleFloat(16.0f)
+				fixedHeight = ScaleFloat(16.0f),
+				normal = { background = Lib.GetTexture("black-background") },
+				margin =
+				{
+					bottom = ScaleInteger(4),
+					top = ScaleInteger(4)
+				}
 			};
-			section_container.normal.background = Lib.GetTexture("black-background");
-			section_container.margin.bottom = ScaleInteger(4);
-			section_container.margin.top = ScaleInteger(4);
 
 			// subsection title text
 			section_text = new GUIStyle(HighLogic.Skin.label)
 			{
+				stretchWidth = true,
+				stretchHeight = true,
 				fontSize = ScaleInteger(12),
-				alignment = TextAnchor.MiddleCenter
+				alignment = TextAnchor.MiddleCenter,
+				normal = { textColor = Color.white }
 			};
-			section_text.normal.textColor = Color.white;
-			section_text.stretchWidth = true;
-			section_text.stretchHeight = true;
 
 			// entry row container
 			entry_container = new GUIStyle
@@ -64,36 +72,36 @@ namespace KERBALISM
 			// entry label text
 			entry_label = new GUIStyle(HighLogic.Skin.label)
 			{
-				richText = true
+				richText = true,
+				stretchWidth = true,
+				stretchHeight = true,
+				fontSize = ScaleInteger(12),
+				alignment = TextAnchor.MiddleLeft,
+				normal = { textColor = Color.white }
 			};
-			entry_label.normal.textColor = Color.white;
-			entry_label.stretchWidth = true;
-			entry_label.stretchHeight = true;
-			entry_label.fontSize = ScaleInteger(12);
-			entry_label.alignment = TextAnchor.MiddleLeft;
 
 			entry_label_nowrap = new GUIStyle(HighLogic.Skin.label)
 			{
-				richText = true
+				richText = true,
+				wordWrap = false,
+				stretchWidth = true,
+				stretchHeight = true,
+				fontSize = ScaleInteger(12),
+				alignment = TextAnchor.MiddleLeft,
+				normal = { textColor = Color.white }
 			};
-			entry_label_nowrap.normal.textColor = Color.white;
-			entry_label_nowrap.stretchWidth = true;
-			entry_label_nowrap.stretchHeight = true;
-			entry_label_nowrap.fontSize = ScaleInteger(12);
-			entry_label_nowrap.alignment = TextAnchor.MiddleLeft;
-			entry_label_nowrap.wordWrap = false;
 
 			// entry value text
 			entry_value = new GUIStyle(HighLogic.Skin.label)
 			{
-				richText = true
+				richText = true,
+				stretchWidth = true,
+				stretchHeight = true,
+				fontStyle = FontStyle.Bold,
+				fontSize = ScaleInteger(12),
+				alignment = TextAnchor.MiddleRight,
+				normal = { textColor = Color.white }
 			};
-			entry_value.normal.textColor = Color.white;
-			entry_value.stretchWidth = true;
-			entry_value.stretchHeight = true;
-			entry_value.fontSize = ScaleInteger(12);
-			entry_value.alignment = TextAnchor.MiddleRight;
-			entry_value.fontStyle = FontStyle.Bold;
 
 			// desc row container
 			desc_container = new GUIStyle
@@ -105,44 +113,55 @@ namespace KERBALISM
 			// entry multi-line description
 			desc = new GUIStyle(entry_label)
 			{
-				alignment = TextAnchor.UpperLeft
+				fontStyle = FontStyle.Italic,
+				alignment = TextAnchor.UpperLeft,
+				margin =
+				{
+					top = 0,
+					bottom = 0
+				},
+				padding =
+				{
+					top = 0,
+					bottom = ScaleInteger(10)
+				}
 			};
-			desc.margin.top = 0;
-			desc.margin.bottom = 0;
-			desc.padding.top = 0;
-			desc.padding.bottom = ScaleInteger(10);
-			desc.fontStyle = FontStyle.Italic;
 
 			// left icon
 			left_icon = new GUIStyle
 			{
-				alignment = TextAnchor.MiddleLeft,
-				fixedWidth = ScaleFloat(16.0f),
 				stretchWidth = true,
-				stretchHeight = true
+				stretchHeight = true,
+				fixedWidth = ScaleFloat(16.0f),
+				alignment = TextAnchor.MiddleLeft
 			};
 
 			// right icon
 			right_icon = new GUIStyle
 			{
-				alignment = TextAnchor.MiddleRight,
-				fixedWidth = ScaleFloat(16.0f),
 				stretchWidth = true,
-				stretchHeight = true
+				stretchHeight = true,
+				margin = { left = ScaleInteger(8) },
+				fixedWidth = ScaleFloat(16.0f),
+				alignment = TextAnchor.MiddleRight
 			};
-			right_icon.margin.left = ScaleInteger(8);
 
 			// tooltip label style
-			tooltip = new GUIStyle(HighLogic.Skin.label);
-			tooltip.normal.background = Lib.GetTexture("black-background");
-			tooltip.normal.textColor = Color.white;
-			tooltip.stretchWidth = true;
-			tooltip.stretchHeight = true;
-			tooltip.fontSize = ScaleInteger(12);
-			tooltip.border = new RectOffset(0, 0, 0, 0);
-			tooltip.padding = new RectOffset(ScaleInteger(6), ScaleInteger(6), ScaleInteger(3), ScaleInteger(3));
-			tooltip.margin = new RectOffset(0, 0, 0, 0);
-			tooltip.alignment = TextAnchor.MiddleCenter;
+			tooltip = new GUIStyle(HighLogic.Skin.label)
+			{
+				stretchWidth = true,
+				stretchHeight = true,
+				fontSize = ScaleInteger(12),
+				alignment = TextAnchor.MiddleCenter,
+				border = new RectOffset(0, 0, 0, 0),
+				normal =
+				{
+					textColor = Color.white,
+					background = Lib.GetTexture("black-background")
+				},
+				margin = new RectOffset(0, 0, 0, 0),
+				padding = new RectOffset(ScaleInteger(6), ScaleInteger(6), ScaleInteger(3), ScaleInteger(3))
+			};
 
 			// tooltip container style
 			tooltip_container = new GUIStyle
@@ -212,7 +231,4 @@ namespace KERBALISM
 		public static GUIStyle smallStationHead;
 		public static GUIStyle smallStationText;
 	}
-
-
 } // KERBALISM
-
