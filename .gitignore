@@ -371,3 +371,6 @@ desktop.ini
 
 # Read the docs local builds
 docs/_[Bb]uild
+
+# SciTE editor config files
+SciTE*.properties
