@@ -936,7 +936,7 @@ namespace KERBALISM
 			Simulated_resource res;
 			if (!resources.TryGetValue(name, out res))
 			{
-				res = new Simulated_resource();
+				res = new Simulated_resource(name);
 				resources.Add(name, res);
 			}
 			return res;
@@ -946,9 +946,7 @@ namespace KERBALISM
 		void Process_part(Part p, string res_name)
 		{
 			Simulated_resource res = Resource(res_name);
-			res.storage += Lib.Amount(p, res_name);
-			res.amount += Lib.Amount(p, res_name);
-			res.capacity += Lib.Capacity(p, res_name);
+			res.AddPartResources(p);
 		}
 
 
@@ -1427,11 +1425,19 @@ namespace KERBALISM
 
 	public sealed class Simulated_resource
 	{
-		public Simulated_resource()
+		public Simulated_resource(string name)
 		{
 			consumers = new Dictionary<string, Wrapper>();
 			producers = new Dictionary<string, Wrapper>();
 			harvests = new List<string>();
+			resource_name = name;
+		}
+
+		public void AddPartResources(Part p)
+		{
+			storage += Lib.Amount(p, resource_name);
+			amount += Lib.Amount(p, resource_name);
+			capacity += Lib.Capacity(p, resource_name);
 		}
 
 		public void Consume(double quantity, string name)
@@ -1503,16 +1509,84 @@ namespace KERBALISM
 			return Lib.BuildString("<align=left />", sb.ToString());
 		}
 
-		public double storage;                        // amount stored (at the start of simulation)
-		public double capacity;                       // storage capacity
-		public double amount;                         // amount stored (during simulation)
-		public double consumed;                       // total consumption rate
-		public double produced;                       // total production rate
-		public List<string> harvests;                 // some extra data about harvests
+		// Enforce that modification happens through official accessor functions
+		// Many external classes need to read these values, and they want convenient access
+		// However direct modification of these members from outside would make the coupling far too high
+		public string resource_name
+		{
+			get {
+				return _resource_name;
+			}
+			private set {
+				_resource_name = value;
+			}
+		}
+		public double storage
+		{
+			get {
+				return _storage;
+			}
+			private set {
+				_storage = value;
+			}
+		}
+		public double capacity
+		{
+			get {
+				return _capacity;
+			}
+			private set {
+				_capacity = value;
+			}
+		}
+		public double amount
+		{
+			get {
+				return _amount;
+			}
+			private set {
+				_amount = value;
+			}
+		}
+		public double consumed
+		{
+			get {
+				return _consumed;
+			}
+			private set {
+				_consumed = value;
+			}
+		}
+		public double produced
+		{
+			get {
+				return _produced;
+			}
+			private set {
+				_produced = value;
+			}
+		}
+		public List<string> harvests
+		{
+			get {
+				return _harvests;
+			}
+			private set {
+				_harvests = value;
+			}
+		}
 
-		public class Wrapper { public double value; }
-		public Dictionary<string, Wrapper> consumers; // consumers metadata
-		public Dictionary<string, Wrapper> producers; // producers metadata
+		private string _resource_name;                 // associated resource name
+		private double _storage;                       // amount stored (at the start of simulation)
+		private double _capacity;                      // storage capacity
+		private double _amount;                        // amount stored (during simulation)
+		private double _consumed;                      // total consumption rate
+		private double _produced;                      // total production rate
+		private List<string> _harvests;                // some extra data about harvests
+
+		private class Wrapper { public double value; }
+		private Dictionary<string, Wrapper> consumers; // consumers metadata
+		private Dictionary<string, Wrapper> producers; // producers metadata
 	}
 
 

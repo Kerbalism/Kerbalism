@@ -244,13 +244,86 @@ namespace KERBALISM
 			return amount <= double.Epsilon ? 0.0 : delta >= -1e-10 ? double.NaN : amount / -delta;
 		}
 
-		public string resource_name;        // associated resource name
-		public double deferred;             // accumulate deferred requests
-		public double amount;               // amount of resource
-		public double capacity;             // storage capacity of resource
-		public double level;                // amount vs capacity, or 0 if there is no capacity
-		public double rate;                 // rate of change in amount per-second
-		public bool meal_happened;          // true if a meal-like consumption/production was processed in the last simulation step
+		// Inform that meal has happened in this simulation step (which potentially covers many physics ticks)
+		public void SetMealHappened()
+		{
+			meal_happened = true;
+		}
+
+		// Enforce that modification happens through official accessor functions
+		// Many external classes need to read these values, and they want convenient access
+		// However direct modification of these members from outside would make the coupling far too high
+		public string resource_name
+		{
+			get {
+				return _resource_name;
+			}
+			private set {
+				_resource_name = value;
+			}
+		}
+		public double deferred
+		{
+			get {
+				return _deferred;
+			}
+			private set {
+				_deferred = value;
+			}
+		}
+		public double amount
+		{
+			get {
+				return _amount;
+			}
+			private set {
+				_amount = value;
+			}
+		}
+		public double capacity
+		{
+			get {
+				return _capacity;
+			}
+			private set {
+				_capacity = value;
+			}
+		}
+		public double level
+		{
+			get {
+				return _level;
+			}
+			private set {
+				_level = value;
+			}
+		}
+		public double rate
+		{
+			get {
+				return _rate;
+			}
+			private set {
+				_rate = value;
+			}
+		}
+		public bool meal_happened
+		{
+			get {
+				return _meal_happened;
+			}
+			private set {
+				_meal_happened = value;
+			}
+		}
+
+		private string _resource_name;      // associated resource name
+		private double _deferred;           // accumulate deferred requests
+		private double _amount;             // amount of resource
+		private double _capacity;           // storage capacity of resource
+		private double _level;              // amount vs capacity, or 0 if there is no capacity
+		private double _rate;               // rate of change in amount per-second
+		private bool _meal_happened;        // true if a meal-like consumption/production was processed in the last simulation step
 	}
 
 	public sealed class Resource_recipe
