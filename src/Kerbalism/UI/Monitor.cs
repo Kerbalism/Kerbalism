@@ -657,7 +657,7 @@ namespace KERBALISM
 					break;
 			}
 
-			p.AddIcon(image, tooltip);
+			p.AddIcon(image, tooltip, () => UI.Open((p2) => p2.ConnMan(v)));
 		}
 
 		// id of selected vessel
