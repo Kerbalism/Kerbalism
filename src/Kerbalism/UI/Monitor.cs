@@ -610,7 +610,7 @@ namespace KERBALISM
 			ConnectionInfo conn = vi.connection;
 
 			// signal strength
-			string signal_str = conn.strength > Double.Epsilon ? Lib.HumanReadablePerc(conn.strength, "F2") : Lib.Color("#ffaa00", Lib.Italic(Localizer.Format("#KERBALISM_Generic_NO")));
+			string signal_str = conn.strength > Double.Epsilon ? Lib.HumanReadablePerc(Math.Ceiling(conn.strength * 10000) / 10000, "F2") : Lib.Color("#ffaa00", Lib.Italic(Localizer.Format("#KERBALISM_Generic_NO")));
 
 			// target name
 			string target_str = conn.linked ? conn.target_name : Localizer.Format("#KERBALISM_Generic_NONE");
