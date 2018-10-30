@@ -7,7 +7,6 @@
 * Converted all remaining png and mbm textures to dds (Gordon Dry)
 * The connection signal icon alternates between yellow and red when signal strengh is below 5%. (HaullyGames)
 * Connection: connection rate is minimum rate in ControlPath. (HaullyGames)
-* Connection: CommNet consumption was reduced in 84% by Kerbalism, it was too high when compared to RT. (HaullyGames)
 * Kerbals on EVA got a radio to transmit science data. Antenna range limited to 35km. (Gordon Dry)
 * Converted all remaining png and mbm textures to dds (Gordon Dry)
 * File Manager shows remaining transmission time when hovering over file. (HaullyGames)
