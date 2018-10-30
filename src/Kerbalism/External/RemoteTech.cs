@@ -30,6 +30,7 @@ namespace KERBALISM
 					GetControlPath = API.GetMethod("GetControlPath");
 					GetDistance = API.GetMethod("GetRangeDistance");
 					GetMaxDistance = API.GetMethod("GetMaxRangeDistance");
+					GetSatName = API.GetMethod("GetName");
 
 					// check version is above 1.9, warn users if they are using an old version of RemoteTech
 					if (!((a.versionMajor >= 1) && (a.versionMinor >= 9)))
@@ -158,6 +159,13 @@ namespace KERBALISM
 			return API != null && GetMaxDistance != null ? (double)GetMaxDistance.Invoke(null, new Object[] { sat_A, sat_B }) : 0.0;
 		}
 
+		/// <summary> Returns satellite name</summary>
+		/// <param name="sat_A">Satellite Source</param>
+		public static string GetSatelliteName(Guid sat)
+		{
+			return API != null && GetSatName != null ? (string)GetSatName.Invoke(null, new Object[] { sat }) : string.Empty;
+		}
+
 		public static bool NetworkInitialized = false;
 
 		private static Type API;
@@ -176,6 +184,7 @@ namespace KERBALISM
 		private static MethodInfo GetControlPath;
 		private static MethodInfo GetDistance;
 		private static MethodInfo GetMaxDistance;
+		private static MethodInfo GetSatName;
 	}
 
 
