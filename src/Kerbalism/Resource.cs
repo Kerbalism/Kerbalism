@@ -117,20 +117,34 @@ namespace KERBALISM
 			_capacity[location] = 0.0;
 		}
 
-		public Resource_location GetResourceLocation(Part p)
+		public Resource_location GetResourceLocation(Part p, PartResourceDefinition r)
 		{
-			Resource_location location = new Resource_location_impl(p);
-			// per part resources
-			if (!_deferred.ContainsKey(location)) InitDicts(location);
-			return location;
+			if (r.resourceFlowMode == ResourceFlowMode.NO_FLOW)
+			{
+				Resource_location location = new Resource_location_impl(p);
+				// per part resources
+				if (!_deferred.ContainsKey(location)) InitDicts(location);
+				return location;
+			}
+			else
+			{
+				return vessel_wide_location;
+			}
 		}
 
-		public Resource_location GetResourceLocation(ProtoPartSnapshot p)
+		public Resource_location GetResourceLocation(ProtoPartSnapshot p, PartResourceDefinition r)
 		{
-			Resource_location location = new Resource_location_impl(p);
-			// per part resources
-			if (!_deferred.ContainsKey(location)) InitDicts(location);
-			return location;
+			if (r.resourceFlowMode == ResourceFlowMode.NO_FLOW)
+			{
+				Resource_location location = new Resource_location_impl(p);
+				// per part resources
+				if (!_deferred.ContainsKey(location)) InitDicts(location);
+				return location;
+			}
+			else
+			{
+				return vessel_wide_location;
+			}
 		}
 
 		// record a deferred production
