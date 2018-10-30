@@ -3,6 +3,7 @@
 
 ### Changes since the last release
 
+* Converted all remaining png and mbm textures to dds (Gordon Dry)
 * The connection signal icon alternates between yellow and red when signal strengh is below 5%. (HaullyGames)
 * Added "Set as Target" in Monitor. (HaullyGames)
 * Connection: connection rate is minimum rate in ControlPath. (HaullyGames)
