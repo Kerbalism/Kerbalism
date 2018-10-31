@@ -4,26 +4,26 @@ using System.Linq;
 
 namespace KERBALISM
 {
+	// this class serves as a convient way of accessing resource levels
+	// in exactly the same way as Resource_info (i.e. more readable than getter funtions)
+	// without most of the code being aware if this is vessel wide
+	// or part specific resources
+	public abstract class Resource_info_view
+	{
+		protected Resource_info_view() {}
+		public abstract double deferred { get; }
+		public abstract double amount { get; }
+		public abstract double capacity { get; }
+
+		// record a deferred production
+		public abstract void Produce(double quantity);
+		// record a deferred consumption
+		public abstract void Consume(double quantity);
+	}
+
 	// store info about a resource in a vessel
 	public sealed class Resource_info
 	{
-		// this class serves as a convient way of accessing resource levels
-		// in exactly the same way as Resource_info (i.e. more readable than getter funtions)
-		// without most of the code being aware if this is vessel wide
-		// or part specific resources
-		public abstract class Resource_info_view
-		{
-			protected Resource_info_view() {}
-			public abstract double deferred { get; }
-			public abstract double amount { get; }
-			public abstract double capacity { get; }
-
-			// record a deferred production
-			public abstract void Produce(double quantity);
-			// record a deferred consumption
-			public abstract void Consume(double quantity);
-		}
-
 		public Resource_info(Vessel v, string res_name)
 		{
 			// remember resource name
@@ -124,10 +124,11 @@ namespace KERBALISM
 		// see comments of Resource_info_view
 		private class Resource_info_view_impl : Resource_info_view
 		{
+			// null parts go to vessel-wide and are intended for kerbal (e.g. eating) related rules
 			public Resource_info_view_impl(Part p, string resource_name, Resource_info i)
 			{
 				info = i;
-				if (new PartResourceDefinition(resource_name).resourceFlowMode == ResourceFlowMode.NO_FLOW)
+				if (p != null && new PartResourceDefinition(resource_name).resourceFlowMode == ResourceFlowMode.NO_FLOW)
 				{
 					location = new Resource_location(p);
 					if (!info._deferred.ContainsKey(location)) info.InitDicts(location);
@@ -135,13 +136,12 @@ namespace KERBALISM
 				else
 				{
 					location = info.vessel_wide_location;
-					if (!info._deferred.ContainsKey(location)) info.InitDicts(location);
 				}
 			}
 			public Resource_info_view_impl(ProtoPartSnapshot p, string resource_name, Resource_info i)
 			{
 				info = i;
-				if (new PartResourceDefinition(resource_name).resourceFlowMode == ResourceFlowMode.NO_FLOW)
+				if (p != null && new PartResourceDefinition(resource_name).resourceFlowMode == ResourceFlowMode.NO_FLOW)
 				{
 					location = new Resource_location(p);
 				}
@@ -185,12 +185,12 @@ namespace KERBALISM
 			_capacity[location] = 0.0;
 		}
 
-		public Resource_info_view GetResourceInfoView(Part p, string resource_name)
+		public Resource_info_view GetResourceInfoView(Part p)
 		{
 			return new Resource_info_view_impl(p, resource_name, this);
 		}
 
-		public Resource_info_view GetResourceInfoView(ProtoPartSnapshot p, string resource_name)
+		public Resource_info_view GetResourceInfoView(ProtoPartSnapshot p)
 		{
 			return new Resource_info_view_impl(p, resource_name, this);
 		}
@@ -542,12 +542,34 @@ namespace KERBALISM
 			public bool dump;
 		}
 
-		public Resource_recipe()
+		public Resource_recipe(Part p)
 		{
 			this.inputs = new List<Entry>();
 			this.outputs = new List<Entry>();
 			this.cures = new List<Entry>();
 			this.left = 1.0;
+			this.loaded_part = p;
+		}
+
+		public Resource_recipe(ProtoPartSnapshot p)
+		{
+			this.inputs = new List<Entry>();
+			this.outputs = new List<Entry>();
+			this.cures = new List<Entry>();
+			this.left = 1.0;
+			this.unloaded_part = p;
+		}
+
+		private Resource_info_view GetResourceInfoView(Vessel v, Vessel_resources resources, string resource_name)
+		{
+			if (loaded_part)
+			{
+				return resources.Info(v, resource_name).GetResourceInfoView(loaded_part);
+			}
+			else // note unloaded _part can also be null
+			{
+				return resources.Info(v, resource_name).GetResourceInfoView(unloaded_part);
+			}
 		}
 
 		/// <summary>
@@ -601,7 +623,7 @@ namespace KERBALISM
 				for (int i = 0; i < inputs.Count; ++i)
 				{
 					Entry e = inputs[i];
-					Resource_info res = resources.Info(v, e.name);
+					Resource_info_view res = GetResourceInfoView(v, resources, e.name);
 					// handle combined inputs
 					if (e.combined != null)
 					{
@@ -609,7 +631,7 @@ namespace KERBALISM
 						if (e.combined != "")
 						{
 							Entry sec_e = inputs.Find(x => x.name.Contains(e.combined));
-							Resource_info sec = resources.Info(v, sec_e.name);
+							Resource_info_view sec = GetResourceInfoView(v, resources, sec_e.name);
 							double pri_worst = Lib.Clamp((res.amount + res.deferred) * e.inv_quantity, 0.0, worst_input);
 							if (pri_worst > 0.0) worst_input = pri_worst;
 							else worst_input = Lib.Clamp((sec.amount + sec.deferred) * sec_e.inv_quantity, 0.0, worst_input);
@@ -629,7 +651,7 @@ namespace KERBALISM
 					Entry e = outputs[i];
 					if (!e.dump) // ignore outputs that can dump overboard
 					{
-						Resource_info res = resources.Info(v, e.name);
+						Resource_info_view res = GetResourceInfoView(v, resources, e.name);
 						worst_output = Lib.Clamp((res.capacity - (res.amount + res.deferred)) * e.inv_quantity, 0.0, worst_output);
 					}
 				}
@@ -649,8 +671,8 @@ namespace KERBALISM
 					if (e.combined != "")
 					{
 						Entry sec_e = inputs.Find(x => x.name.Contains(e.combined));
-						Resource_info sec = resources.Info(v, sec_e.name);
-						Resource_info res = resources.Info(v, e.name);
+						Resource_info_view sec = GetResourceInfoView(v, resources, sec_e.name);
+						Resource_info_view res = GetResourceInfoView(v, resources, e.name);
 						double need = (e.quantity * worst_io) + (sec_e.quantity * worst_io);
 						// do we have enough primary to satisfy needs, if so don't consume secondary
 						if (res.amount + res.deferred >= need) resources.Consume(v, e.name, need);
@@ -703,6 +725,9 @@ namespace KERBALISM
 		public List<Entry> outputs;  // set of output resources
 		public List<Entry> cures;    // set of cures
 		public double left;     // what proportion of the recipe is left to execute
+
+		private Part loaded_part = null; // one of these is null
+		private ProtoPartSnapshot unloaded_part = null;
 	}
 
 	// the resource cache of a vessel

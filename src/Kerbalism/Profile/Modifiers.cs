@@ -9,7 +9,7 @@ namespace KERBALISM
 
 	public static class Modifiers
 	{
-		public static double Evaluate(Vessel v, Vessel_info vi, Vessel_resources resources, List<string> modifiers)
+		public static double Evaluate(Vessel v, Vessel_info vi, Vessel_resources resources, List<string> modifiers, Part p = null, ProtoPartSnapshot pp = null)
 		{
 			double k = 1.0;
 			foreach (string mod in modifiers)
@@ -73,7 +73,9 @@ namespace KERBALISM
 						break;
 
 					default:
-						k *= resources.Info(v, mod).amount;
+						if (p != null) 			k *= resources.Info(v, mod).GetResourceInfoView(p).amount;  // loaded part
+						else if (pp != null)	k *= resources.Info(v, mod).GetResourceInfoView(pp).amount; // unloaded part
+						else					k *= resources.Info(v, mod).amount;                         // vessel-wide
 						break;
 				}
 			}
