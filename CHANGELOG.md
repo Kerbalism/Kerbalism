@@ -3,6 +3,11 @@
 
 ### Changes since the last release
 
+* Added sickbay RDU to three additional parts (with 1 slot each):
+  Bluedog_DB - MOL Orbital Habitation SegmentS
+  StationPartsExpansionRedux - PTD-5 'Sunrise' Habitation Module
+  NearFutureSpacecraft - PPD-24 Itinerant Service Container (Gordon Dry)
+* Sickbay TV is only available in crewable parts (crew >3) without a laboratory now. (Gordon Dry)
 * Added missing xmitDataScalar to Support/OrbitalScience.cfg and also added UniversalStorage2 compatibility. (Gordon Dry)
 * Converted all remaining png and mbm textures to dds (Gordon Dry)
 * The connection signal icon alternates between yellow and red when signal strengh is below 5%. (HaullyGames)
