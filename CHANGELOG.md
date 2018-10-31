@@ -3,7 +3,6 @@
 
 ### Changes since the last release
 
-* Sickbay RDU uses 3.5 EC/s instead of 35 EC/s - no more Apollo 1 fire. (Gordon Dry)
 * Added sickbay RDU to three additional parts (with 1 slot each):
   Bluedog_DB - MOL Orbital Habitation SegmentS
   StationPartsExpansionRedux - PTD-5 'Sunrise' Habitation Module
