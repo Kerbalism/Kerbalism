@@ -124,10 +124,10 @@ namespace KERBALISM
 		// see comments of Resource_info_view
 		private class Resource_info_view_impl : Resource_info_view
 		{
-			public Resource_info_view_impl(Part p, PartResourceDefinition r, Resource_info i)
+			public Resource_info_view_impl(Part p, string resource_name, Resource_info i)
 			{
 				info = i;
-				if (r.resourceFlowMode == ResourceFlowMode.NO_FLOW)
+				if (new PartResourceDefinition(resource_name).resourceFlowMode == ResourceFlowMode.NO_FLOW)
 				{
 					location = new Resource_location(p);
 					if (!info._deferred.ContainsKey(location)) info.InitDicts(location);
@@ -138,10 +138,10 @@ namespace KERBALISM
 					if (!info._deferred.ContainsKey(location)) info.InitDicts(location);
 				}
 			}
-			public Resource_info_view_impl(ProtoPartSnapshot p, PartResourceDefinition r, Resource_info i)
+			public Resource_info_view_impl(ProtoPartSnapshot p, string resource_name, Resource_info i)
 			{
 				info = i;
-				if (r.resourceFlowMode == ResourceFlowMode.NO_FLOW)
+				if (new PartResourceDefinition(resource_name).resourceFlowMode == ResourceFlowMode.NO_FLOW)
 				{
 					location = new Resource_location(p);
 				}
@@ -185,14 +185,14 @@ namespace KERBALISM
 			_capacity[location] = 0.0;
 		}
 
-		public Resource_info_view GetResourceInfoView(Part p, PartResourceDefinition r)
+		public Resource_info_view GetResourceInfoView(Part p, string resource_name)
 		{
-			return new Resource_info_view_impl(p, r, this);
+			return new Resource_info_view_impl(p, resource_name, this);
 		}
 
-		public Resource_info_view GetResourceInfoView(ProtoPartSnapshot p, PartResourceDefinition r)
+		public Resource_info_view GetResourceInfoView(ProtoPartSnapshot p, string resource_name)
 		{
-			return new Resource_info_view_impl(p, r, this);
+			return new Resource_info_view_impl(p, resource_name, this);
 		}
 
 		// record a deferred production
