@@ -29,6 +29,14 @@ namespace KERBALISM
 			// remember resource name
 			resource_name = res_name;
 
+			_deferred = new Dictionary<Resource_location, double>();
+			_amount = new Dictionary<Resource_location, double>();
+			_capacity = new Dictionary<Resource_location, double>();
+
+			vessel_wide_location = new Resource_location();
+			_cached_part_views = new Dictionary<Part, Resource_info_view>();
+			_cached_proto_part_views = new Dictionary<ProtoPartSnapshot, Resource_info_view>();
+
 			// vessel-wide resources
 			InitDicts(new Resource_location());
 
@@ -207,7 +215,7 @@ namespace KERBALISM
 		// record a deferred production
 		public void Produce(double quantity)
 		{
-			_deferred[vessel_wide_location] += quantity;
+			Produce(vessel_wide_location, quantity);
 		}
 		private void Produce(Resource_location location, double quantity)
 		{
@@ -217,7 +225,7 @@ namespace KERBALISM
 		// record a deferred consumption
 		public void Consume(double quantity)
 		{
-			_deferred[vessel_wide_location] -= quantity;
+			Consume(vessel_wide_location, quantity);
 		}
 		private void Consume(Resource_location location, double quantity)
 		{
@@ -525,13 +533,13 @@ namespace KERBALISM
 		private double _level;         // amount vs capacity, or 0 if there is no capacity
 		private bool _meal_happened;   // true if a meal-like consumption/production was processed in the last simulation step
 
-		private IDictionary<Resource_location, double> _deferred = new Dictionary<Resource_location, double>(); // accumulate deferred requests
-		private IDictionary<Resource_location, double> _amount = new Dictionary<Resource_location, double>();   // amount of resource
-		private IDictionary<Resource_location, double> _capacity = new Dictionary<Resource_location, double>(); // storage capacity of resource
+		private IDictionary<Resource_location, double> _deferred; // accumulate deferred requests
+		private IDictionary<Resource_location, double> _amount;   // amount of resource
+		private IDictionary<Resource_location, double> _capacity; // storage capacity of resource
 
-		private Resource_location vessel_wide_location = new Resource_location(); // to avoid constructing this object many times
-		private IDictionary<Part, Resource_info_view> _cached_part_views = new Dictionary<Part, Resource_info_view>();
-		private IDictionary<ProtoPartSnapshot, Resource_info_view> _cached_proto_part_views = new Dictionary<ProtoPartSnapshot, Resource_info_view>();
+		private Resource_location vessel_wide_location; // to avoid constructing this object many times
+		private IDictionary<Part, Resource_info_view> _cached_part_views;
+		private IDictionary<ProtoPartSnapshot, Resource_info_view> _cached_proto_part_views;
 	}
 
 	public sealed class Resource_recipe
