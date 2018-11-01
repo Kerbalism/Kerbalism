@@ -1000,8 +1000,8 @@ namespace KERBALISM
 		public void Process_rule(List<Part> parts, Rule r, Environment_analyzer env, Vessel_analyzer va)
 		{
 			bool restricted = false;
-			if (!r.monitor && new PartResourceDefinition(r.input).resourceFlowMode == ResourceFlowMode.NO_FLOW) restricted = true;
-			if (new PartResourceDefinition(r.output).resourceFlowMode == ResourceFlowMode.NO_FLOW) restricted = true;
+			if (!r.monitor && PartResourceLibrary.GetDefaultFlowMode(r.input) == ResourceFlowMode.NO_FLOW) restricted = true;
+			if (PartResourceLibrary.GetDefaultFlowMode(r.output) == ResourceFlowMode.NO_FLOW) restricted = true;
 
 			if (restricted) Process_rule_per_part(parts, r, env, va);
 			else Process_rule_vessel_wide(r, env, va);
@@ -1044,11 +1044,11 @@ namespace KERBALISM
 			bool restricted = false;
 			foreach (var input in pr.inputs)
 			{
-				if (new PartResourceDefinition(input.Key).resourceFlowMode == ResourceFlowMode.NO_FLOW) restricted = true;
+				if (PartResourceLibrary.GetDefaultFlowMode(input.Key) == ResourceFlowMode.NO_FLOW) restricted = true;
 			}
 			foreach (var output in pr.outputs)
 			{
-				if (new PartResourceDefinition(output.Key).resourceFlowMode == ResourceFlowMode.NO_FLOW) restricted = true;
+				if (PartResourceLibrary.GetDefaultFlowMode(output.Key) == ResourceFlowMode.NO_FLOW) restricted = true;
 			}
 			if (restricted) Process_process_per_part(parts, pr, env, va);
 			else Process_process_vessel_wide(pr, env, va);
@@ -1503,7 +1503,9 @@ namespace KERBALISM
 			_amount   = new Dictionary<Resource_location, double>();
 
 			vessel_wide_location = new Resource_location();
+			InitDicts(vessel_wide_location);
 			_cached_part_views = new Dictionary<Part, Simulated_resource_view>();
+			_vessel_wide_view = new Simulated_resource_view_impl(null, resource_name, this);
 
 			resource_name = name;
 		}
@@ -1520,6 +1522,21 @@ namespace KERBALISM
 			}
 			public Resource_location() {}
 
+			public override bool Equals(object obj)
+			{
+				if (obj == null || obj.GetType() != GetType())
+				{
+					return false;
+				}
+				return (((Resource_location) obj).persistent_identifier == persistent_identifier) &&
+					   (((Resource_location) obj).vessel_wide == vessel_wide);
+			}
+
+			public override int GetHashCode()
+			{
+				return (int) persistent_identifier;
+			}
+
 			public bool IsVesselWide() { return vessel_wide; }
 			public uint GetPersistentPartId() { return persistent_identifier; }
 
@@ -1532,9 +1549,10 @@ namespace KERBALISM
 			public Simulated_resource_view_impl(Part p, string resource_name, Simulated_resource i)
 			{
 				info = i;
-				if (p != null && new PartResourceDefinition(resource_name).resourceFlowMode == ResourceFlowMode.NO_FLOW)
+				if (p != null && PartResourceLibrary.GetDefaultFlowMode(resource_name) == ResourceFlowMode.NO_FLOW)
 				{
 					location = new Resource_location(p);
+					if (!info._capacity.ContainsKey(location)) info.InitDicts(location);
 				}
 				else
 				{
@@ -1576,8 +1594,20 @@ namespace KERBALISM
 			private Resource_location location;
 		}
 
+		// usually invoked if a per-part non-flowing resource appears
+		private void InitDicts(Resource_location location)
+		{
+			_storage[location] = 0.0;
+			_amount[location] = 0.0;
+			_capacity[location] = 0.0;
+		}
+
 		public Simulated_resource_view GetSimulatedResourceView(Part p)
 		{
+			if (p == null)
+			{
+				return _vessel_wide_view;
+			}
 			if (!_cached_part_views.ContainsKey(p))
 			{
 				_cached_part_views[p] = new Simulated_resource_view_impl(p, resource_name, this);
@@ -1751,6 +1781,7 @@ namespace KERBALISM
 		private IDictionary<string, Wrapper> producers; // producers metadata
 		private Resource_location vessel_wide_location;
 		private IDictionary<Part, Simulated_resource_view> _cached_part_views;
+		private Simulated_resource_view _vessel_wide_view;
 	}
 
 

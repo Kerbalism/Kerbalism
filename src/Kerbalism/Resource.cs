@@ -36,9 +36,10 @@ namespace KERBALISM
 			vessel_wide_location = new Resource_location();
 			_cached_part_views = new Dictionary<Part, Resource_info_view>();
 			_cached_proto_part_views = new Dictionary<ProtoPartSnapshot, Resource_info_view>();
+			_vessel_wide_view = new Resource_info_view_impl((Part) null, resource_name, this);
 
 			// vessel-wide resources
-			InitDicts(new Resource_location());
+			InitDicts(vessel_wide_location);
 
 			// get amount & capacity
 			if (v.loaded)
@@ -122,6 +123,21 @@ namespace KERBALISM
 			}
 			public Resource_location() {}
 
+			public override bool Equals(object obj)
+			{
+				if (obj == null || obj.GetType() != GetType())
+				{
+					return false;
+				}
+				return (((Resource_location) obj).persistent_identifier == persistent_identifier) &&
+					   (((Resource_location) obj).vessel_wide == vessel_wide);
+			}
+
+			public override int GetHashCode()
+			{
+				return (int) persistent_identifier;
+			}
+
 			public bool IsVesselWide() { return vessel_wide; }
 			public uint GetPersistentPartId() { return persistent_identifier; }
 
@@ -137,7 +153,7 @@ namespace KERBALISM
 			public Resource_info_view_impl(Part p, string resource_name, Resource_info i)
 			{
 				info = i;
-				if (p != null && new PartResourceDefinition(resource_name).resourceFlowMode == ResourceFlowMode.NO_FLOW)
+				if (p != null && PartResourceLibrary.GetDefaultFlowMode(resource_name) == ResourceFlowMode.NO_FLOW)
 				{
 					location = new Resource_location(p);
 					if (!info._deferred.ContainsKey(location)) info.InitDicts(location);
@@ -150,9 +166,10 @@ namespace KERBALISM
 			public Resource_info_view_impl(ProtoPartSnapshot p, string resource_name, Resource_info i)
 			{
 				info = i;
-				if (p != null && new PartResourceDefinition(resource_name).resourceFlowMode == ResourceFlowMode.NO_FLOW)
+				if (p != null && PartResourceLibrary.GetDefaultFlowMode(resource_name) == ResourceFlowMode.NO_FLOW)
 				{
 					location = new Resource_location(p);
+					if (!info._deferred.ContainsKey(location)) info.InitDicts(location);
 				}
 				else
 				{
@@ -196,6 +213,10 @@ namespace KERBALISM
 
 		public Resource_info_view GetResourceInfoView(Part p)
 		{
+			if (p == null)
+			{
+				return _vessel_wide_view;
+			}
 			if (!_cached_part_views.ContainsKey(p))
 			{
 				_cached_part_views[p] = new Resource_info_view_impl(p, resource_name, this);
@@ -205,6 +226,10 @@ namespace KERBALISM
 
 		public Resource_info_view GetResourceInfoView(ProtoPartSnapshot p)
 		{
+			if (p == null)
+			{
+				return _vessel_wide_view;
+			}
 			if (!_cached_proto_part_views.ContainsKey(p))
 			{
 				_cached_proto_part_views[p] = new Resource_info_view_impl(p, resource_name, this);
@@ -289,24 +314,43 @@ namespace KERBALISM
 				{
 					foreach (PartResource r in p.Resources)
 					{
-						if (r.flowState && r.resourceName == resource_name)
+						if (r.resourceName == resource_name)
 						{
-							_amount[vessel_wide_location] += r.amount;
-							_capacity[vessel_wide_location] += r.maxAmount;
-
-							// sync back part specific non-flowing resources
-							Resource_location location = new Resource_location(p);
-							if (_amount.ContainsKey(location))
+							// a resource is either tracked vessel wide, or per part, but not both
+							// the sum should always be realistic
+							if (r.info.resourceFlowMode == ResourceFlowMode.NO_FLOW)
 							{
-								// see notes with the vessel_wide_location equivalent
+								// per part resources
+								Resource_location location = new Resource_location(p);
+								if (!_amount.ContainsKey(location)) InitDicts(location);
+								Lib.Log("Amount before " + resource_name + " " + _amount[location]);
+
+								// per part resources do not need to flow
 								_amount[location] = r.amount;
 								_capacity[location] = r.maxAmount;
 
-								// actual sync-ing back
-								r.amount = Lib.Clamp(r.amount + _deferred[location], 0, r.maxAmount);
-								_amount[location] = r.amount;
-								_deferred[location] = 0.0;
+								// clamp consumption/production to vessel amount/capacity
+								// - if deferred is negative, then amount is guaranteed to be greater than zero
+								// - if deferred is positive, then capacity - amount is guaranteed to be greater than zero
+								_deferred[location] = Lib.Clamp(_deferred[location], -_amount[location], _capacity[location] - _amount[location]);
+
+								// avoid very small values in deferred consumption/production
+								if (Math.Abs(_deferred[location]) > 1e-10)
+								{
+									// sync back part specific non-flowing resources
+									r.amount = Lib.Clamp(r.amount + _deferred[location], 0, r.maxAmount);
+									_amount[location] = r.amount;
+									_deferred[location] = 0.0;
+								}
+								Lib.Log("Amount after " + resource_name + " " + _amount[location]);
 							}
+							else if (r.flowState)
+							{
+								_amount[vessel_wide_location] += r.amount;
+								_capacity[vessel_wide_location] += r.maxAmount;
+							}
+
+
 						}
 					}
 				}
@@ -317,23 +361,38 @@ namespace KERBALISM
 				{
 					foreach (ProtoPartResourceSnapshot r in p.resources)
 					{
-						if (r.flowState && r.resourceName == resource_name)
+						if (r.resourceName == resource_name)
 						{
-							_amount[vessel_wide_location] += r.amount;
-							_capacity[vessel_wide_location] += r.maxAmount;
-
-							// sync back part specific non-flowing resources
-							Resource_location location = new Resource_location(p);
-							if (_amount.ContainsKey(location))
+							// a resource is either tracked vessel wide, or per part, but not both
+							// the sum should always be realistic
+							if (r.definition.resourceFlowMode == ResourceFlowMode.NO_FLOW)
 							{
-								// see notes with the vessel_wide_location equivalent
+								// per part resources
+								Resource_location location = new Resource_location(p);
+								if (!_amount.ContainsKey(location)) InitDicts(location);
+
+								// per part resources do not need to flow
 								_amount[location] = r.amount;
 								_capacity[location] = r.maxAmount;
 
-								// actual sync-ing back
-								r.amount = Lib.Clamp(r.amount + _deferred[location], 0, r.maxAmount);
-								_amount[location] = r.amount;
-								_deferred[location] = 0.0;
+								// clamp consumption/production to vessel amount/capacity
+								// - if deferred is negative, then amount is guaranteed to be greater than zero
+								// - if deferred is positive, then capacity - amount is guaranteed to be greater than zero
+								_deferred[location] = Lib.Clamp(_deferred[location], -_amount[location], _capacity[location] - _amount[location]);
+
+								// avoid very small values in deferred consumption/production
+								if (Math.Abs(_deferred[location]) > 1e-10)
+								{
+									// sync back part specific non-flowing resources
+									r.amount = Lib.Clamp(r.amount + _deferred[location], 0, r.maxAmount);
+									_amount[location] = r.amount;
+									_deferred[location] = 0.0;
+								}
+							}
+							else if (r.flowState)
+							{
+								_amount[vessel_wide_location] += r.amount;
+								_capacity[vessel_wide_location] += r.maxAmount;
 							}
 						}
 					}
@@ -366,12 +425,12 @@ namespace KERBALISM
 			// clamp consumption/production to vessel amount/capacity
 			// - if deferred is negative, then amount is guaranteed to be greater than zero
 			// - if deferred is positive, then capacity - amount is guaranteed to be greater than zero
-			_deferred[vessel_wide_location] = Lib.Clamp(deferred, -amount, capacity - amount);
+			_deferred[vessel_wide_location] = Lib.Clamp(_deferred[vessel_wide_location], -_amount[vessel_wide_location], _capacity[vessel_wide_location] - _amount[vessel_wide_location]);
 
 			// apply deferred consumption/production, simulating ALL_VESSEL_BALANCED
 			// - iterating again is faster than using a temporary list of valid PartResources
 			// - avoid very small values in deferred consumption/production
-			if (Math.Abs(deferred) > 1e-10)
+			if (Math.Abs(_deferred[vessel_wide_location]) > 1e-10)
 			{
 				if (v.loaded)
 				{
@@ -540,6 +599,7 @@ namespace KERBALISM
 		private Resource_location vessel_wide_location; // to avoid constructing this object many times
 		private IDictionary<Part, Resource_info_view> _cached_part_views;
 		private IDictionary<ProtoPartSnapshot, Resource_info_view> _cached_proto_part_views;
+		private Resource_info_view _vessel_wide_view;
 	}
 
 	public sealed class Resource_recipe

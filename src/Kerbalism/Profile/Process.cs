@@ -35,7 +35,7 @@ namespace KERBALISM
 				// record input
 				inputs[input_res] = input_rate;
 
-				if (new PartResourceDefinition(input_res).resourceFlowMode == ResourceFlowMode.NO_FLOW) restricted = true;
+				if (PartResourceLibrary.GetDefaultFlowMode(input_res) == ResourceFlowMode.NO_FLOW) restricted = true;
 			}
 
 			outputs = new Dictionary<string, double>();
@@ -56,7 +56,7 @@ namespace KERBALISM
 				// record output
 				outputs[output_res] = output_rate;
 
-				if (new PartResourceDefinition(output_res).resourceFlowMode == ResourceFlowMode.NO_FLOW) restricted = true;
+				if (PartResourceLibrary.GetDefaultFlowMode(output_res) == ResourceFlowMode.NO_FLOW) restricted = true;
 			}
 
 			cures = new Dictionary<string, double>();
@@ -74,7 +74,7 @@ namespace KERBALISM
 				// record cure
 				cures[cure] = cure_rate;
 
-				if (new PartResourceDefinition(cure).resourceFlowMode == ResourceFlowMode.NO_FLOW) restricted = true;
+				if (PartResourceLibrary.GetDefaultFlowMode(cure) == ResourceFlowMode.NO_FLOW) restricted = true;
 			}
 
 			// parse dump specs
