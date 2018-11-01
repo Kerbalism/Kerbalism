@@ -1,4 +1,5 @@
 ﻿using System;
+using CommNet;
 using KSP.Localization;
 
 namespace KERBALISM
@@ -32,17 +33,17 @@ namespace KERBALISM
 
 			// draw ControlPath section
 			p.AddSection("CONTROL PATH");
-			if (Cache.VesselInfo(v).connection.linked)
+			if (vi.connection.linked)
 			{
 				if (RemoteTech.Enabled)
 				{
-					if (Cache.VesselInfo(v).connection.controlPath != null)
+					if (vi.connection.controlPath != null)
 					{
 						Guid i = v.id;
-						foreach (Guid id in Cache.VesselInfo(v).connection.controlPath)
+						foreach (Guid id in vi.connection.controlPath)
 						{
 							p.AddContent(
-								Lib.Ellipsis(RemoteTech.GetSatelliteName(i) +" \\ " + RemoteTech.GetSatelliteName(id), 35),
+								Lib.Ellipsis(RemoteTech.GetSatelliteName(i) + " \\ " + RemoteTech.GetSatelliteName(id), 35),
 								Lib.HumanReadablePerc(Math.Ceiling((1 - (RemoteTech.GetCommsDistance(i, id) / RemoteTech.GetCommsMaxDistance(i, id))) * 10000) / 10000, "F2"),
 								"\nDistance: " + Lib.HumanReadableRange(RemoteTech.GetCommsDistance(i, id)) +
 								"\nMax Distance: " + Lib.HumanReadableRange(RemoteTech.GetCommsMaxDistance(i, id)));
@@ -52,8 +53,20 @@ namespace KERBALISM
 				}
 				if (HighLogic.fetch.currentGame.Parameters.Difficulty.EnableCommNet)
 				{
-					p.AddContent(Lib.Ellipsis(Localizer.Format(v.connection.ControlPath.First.end.displayName).Replace("Kerbin", "DSN"), 20));
-					//if (v.Connection.ControlPath.First.end.isHome);
+					foreach (CommLink link in v.connection.ControlPath)
+					{
+						double antennaPower = link.end.isHome ? link.start.antennaTransmit.power + link.start.antennaRelay.power : link.start.antennaTransmit.power;
+						double signalStrength = 1 - ((link.start.position - link.end.position).magnitude / Math.Sqrt(antennaPower * link.end.antennaRelay.power));
+
+						signalStrength = (3 - (2 * signalStrength)) * Math.Pow(signalStrength, 2);
+
+						p.AddContent(
+							Lib.Ellipsis(Localizer.Format(link.end.name).Replace("Kerbin", "DSN"), 35),
+							Lib.HumanReadablePerc(Math.Ceiling(signalStrength * 10000) / 10000, "F2"),
+							"\nDistance: " + Lib.HumanReadableRange((link.start.position - link.end.position).magnitude) +
+							"\nMax Distance: " + Lib.HumanReadableRange(Math.Sqrt((link.start.antennaTransmit.power + link.start.antennaRelay.power) * link.end.antennaRelay.power))
+							);
+					}
 				}
 			}
 			else p.AddContent("<i>no connection</i>", string.Empty);
