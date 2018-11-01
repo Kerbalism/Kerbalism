@@ -83,7 +83,7 @@ namespace KERBALISM
 		}
 
 
-		public static double Evaluate(Environment_analyzer env, Vessel_analyzer va, Resource_simulator sim, List<string> modifiers)
+		public static double Evaluate(Environment_analyzer env, Vessel_analyzer va, Resource_simulator sim, List<string> modifiers, Part p = null)
 		{
 			double k = 1.0;
 			foreach (string mod in modifiers)
@@ -147,7 +147,8 @@ namespace KERBALISM
 						break;
 
 					default:
-						k *= sim.Resource(mod).amount;
+						if (p != null)			k *= sim.Resource(mod).GetSimulatedResourceView(p).amount; // loaded part
+						else					k *= sim.Resource(mod).amount;                             // vessel-wide
 						break;
 				}
 			}
