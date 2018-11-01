@@ -117,6 +117,7 @@ namespace KERBALISM
 			public bool IsVesselWide() { return vessel_wide; }
 			public uint GetPersistentPartId() { return persistent_identifier; }
 
+
 			private bool vessel_wide = true;
 			private uint persistent_identifier = 0;
 		}
@@ -187,12 +188,20 @@ namespace KERBALISM
 
 		public Resource_info_view GetResourceInfoView(Part p)
 		{
-			return new Resource_info_view_impl(p, resource_name, this);
+			if (!_cached_part_views.ContainsKey(p))
+			{
+				_cached_part_views[p] = new Resource_info_view_impl(p, resource_name, this);
+			}
+			return _cached_part_views[p];
 		}
 
 		public Resource_info_view GetResourceInfoView(ProtoPartSnapshot p)
 		{
-			return new Resource_info_view_impl(p, resource_name, this);
+			if (!_cached_proto_part_views.ContainsKey(p))
+			{
+				_cached_proto_part_views[p] = new Resource_info_view_impl(p, resource_name, this);
+			}
+			return _cached_proto_part_views[p];
 		}
 
 		// record a deferred production
@@ -521,6 +530,8 @@ namespace KERBALISM
 		private IDictionary<Resource_location, double> _capacity = new Dictionary<Resource_location, double>(); // storage capacity of resource
 
 		private Resource_location vessel_wide_location = new Resource_location(); // to avoid constructing this object many times
+		private IDictionary<Part, Resource_info_view> _cached_part_views = new Dictionary<Part, Resource_info_view>();
+		private IDictionary<ProtoPartSnapshot, Resource_info_view> _cached_proto_part_views = new Dictionary<ProtoPartSnapshot, Resource_info_view>();
 	}
 
 	public sealed class Resource_recipe
