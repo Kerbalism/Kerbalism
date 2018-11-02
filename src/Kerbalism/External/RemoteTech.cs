@@ -30,6 +30,7 @@ namespace KERBALISM
 					GetControlPath = API.GetMethod("GetControlPath");
 					GetDistance = API.GetMethod("GetRangeDistance");
 					GetMaxDistance = API.GetMethod("GetMaxRangeDistance");
+					GetSatName = API.GetMethod("GetName");
 
 					// check version is above 1.9, warn users if they are using an old version of RemoteTech
 					if (!((a.versionMajor >= 1) && (a.versionMinor >= 9)))
@@ -136,26 +137,33 @@ namespace KERBALISM
 		}
 
 		/// <summary> Returns an array of all vessel ids in the control path </summary>
-		/// <param name="id">Vessel id to be searched</param>
+		/// <param name="id"> Satellite id to be searched</param>
 		public static Guid[] GetCommsControlPath(Guid id)
 		{
 			return API != null && GetControlPath != null ? (Guid[])GetControlPath.Invoke(null, new Object[] { id }) : new Guid[0];
 		}
 
 		/// <summary> Returns distance between 2 satellites</summary>
-		/// <param name="sat_A">Satellite Source</param>
-		/// <param name="sat_B">Satellite Target</param>
-		public static double GetCommsDistance(Guid sat_A, Guid sat_B)
+		/// <param name="id_A">Satellite Source id</param>
+		/// <param name="id_B">Satellite Target id</param>
+		public static double GetCommsDistance(Guid id_A, Guid id_B)
 		{
-			return API != null && GetDistance != null ? (double)GetDistance.Invoke(null, new Object[] { sat_A, sat_B }) : 0.0;
+			return API != null && GetDistance != null ? (double)GetDistance.Invoke(null, new Object[] { id_A, id_B }) : 0.0;
 		}
 
 		/// <summary> Returns max distance between 2 satellites</summary>
-		/// <param name="sat_A">Satellite Source</param>
-		/// <param name="sat_B">Satellite Target</param>
-		public static double GetCommsMaxDistance(Guid sat_A, Guid sat_B)
+		/// <param name="id_A">Satellite Source id</param>
+		/// <param name="id_B">Satellite Target id</param>
+		public static double GetCommsMaxDistance(Guid id_A, Guid id_B)
 		{
-			return API != null && GetMaxDistance != null ? (double)GetMaxDistance.Invoke(null, new Object[] { sat_A, sat_B }) : 0.0;
+			return API != null && GetMaxDistance != null ? (double)GetMaxDistance.Invoke(null, new Object[] { id_A, id_B }) : 0.0;
+		}
+
+		/// <summary> Returns satellite name</summary>
+		/// <param name="id">Satellite id</param>
+		public static string GetSatelliteName(Guid id)
+		{
+			return API != null && GetSatName != null ? (string)GetSatName.Invoke(null, new Object[] { id }) : string.Empty;
 		}
 
 		public static bool NetworkInitialized = false;
@@ -176,6 +184,7 @@ namespace KERBALISM
 		private static MethodInfo GetControlPath;
 		private static MethodInfo GetDistance;
 		private static MethodInfo GetMaxDistance;
+		private static MethodInfo GetSatName;
 	}
 
 

@@ -24,6 +24,12 @@ namespace KERBALISM
 				{
 					foreach (ModuleDataTransmitter t in transmitters)
 					{
+						// Disable all stock buttons
+						t.Events["TransmitIncompleteToggle"].active = false;
+						t.Events["StartTransmission"].active = false;
+						t.Events["StopTransmission"].active = false;
+						t.Actions["StartTransmissionAction"].active = false;
+
 						if (t.antennaType == AntennaType.INTERNAL) // do not include internal data rate, ec cost only
 							ec += t.DataResourceCost * t.DataRate;
 						else
