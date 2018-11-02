@@ -12,6 +12,7 @@
 * RemoteTech - Added signal strength based on Dist/maxDist. (HaullyGames)
 * Increased SCANSat experiment sizes. A planetary map shouldn't be smaller than a temperature reading. (Sir Mortimer)
 * Connection Manager Panel, click in signal Icon to open the Connection Panel. (HaullyGames)
+* CommNet: disable stock transmission buttons and transmission action group. (HaullyGames)
 
 ------------------------------------------------------------------------------------------------------
 
