@@ -1604,15 +1604,18 @@ namespace KERBALISM
 
 		public Simulated_resource_view GetSimulatedResourceView(Part p)
 		{
-			if (p == null)
+			if (p != null && PartResourceLibrary.GetDefaultFlowMode(resource_name) == ResourceFlowMode.NO_FLOW)
+			{
+				if (!_cached_part_views.ContainsKey(p))
+				{
+					_cached_part_views[p] = new Simulated_resource_view_impl(p, resource_name, this);
+				}
+				return _cached_part_views[p];
+			}
+			else
 			{
 				return _vessel_wide_view;
 			}
-			if (!_cached_part_views.ContainsKey(p))
-			{
-				_cached_part_views[p] = new Simulated_resource_view_impl(p, resource_name, this);
-			}
-			return _cached_part_views[p];
 		}
 
 		public void AddPartResources(Part p)
