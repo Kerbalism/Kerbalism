@@ -238,7 +238,7 @@ There is a help file on GitHub for those wishing to report bugs or contribute to
 
 **I want to interact with Kerbalism in my code**
 
-- Have a look at the `System/API.cs <src/System/API.cs>`_ source code on GitHub. Raise an issue to request more functions.
+- Have a look at the `System/API.cs <src/Kerbalism/System/API.cs>`_ source code on GitHub. Raise an issue to request more functions.
 
 ----------
 
