@@ -14,7 +14,8 @@ namespace KERBALISM
 			data,
 			scripts,
 			config,
-			log
+			log,
+			connection
 		}
 
 		public Panel()
