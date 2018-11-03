@@ -98,7 +98,9 @@ namespace KERBALISM
 			}
 			else
 			{
-				Lib.RemoveResource(part, resource, capacity * this.multiple, 0.0);
+				// avoid complaints about pseudo resource not being part of part
+				if (!part.Resources.Contains(resource)) Lib.AddResource(part, resource, 0.0, capacity * this.multiple);
+				else Lib.RemoveResource(part, resource, capacity * this.multiple, 0.0);
 			}
 		}
 
