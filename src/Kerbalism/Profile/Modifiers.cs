@@ -74,7 +74,7 @@ namespace KERBALISM
 
 					default:
 						// If a psuedo resource is flowable, per part processing would result in every part producing the entire capacity of the vessel
-						if (PartResourceLibrary.GetDefaultFlowMode(mod) != ResourceFlowMode.NO_FLOW) throw new Exception($"psuedo-resource {mod} must be NO_FLOW");
+						if (!Lib.GetResourceImpossibleToFlow(mod)) throw new Exception("psuedo-resource " + mod + " must be NO_FLOW");
 						if (p != null) 			k *= resources.Info(v, mod).GetResourceInfoView(p).amount;  // loaded part
 						else if (pp != null)	k *= resources.Info(v, mod).GetResourceInfoView(pp).amount; // unloaded part
 						else					k *= resources.Info(v, mod).amount;                         // vessel-wide
@@ -150,7 +150,7 @@ namespace KERBALISM
 
 					default:
 						// If a psuedo resource is flowable, per part processing would result in every part producing the entire capacity of the vessel
-						if (PartResourceLibrary.GetDefaultFlowMode(mod) != ResourceFlowMode.NO_FLOW) throw new Exception("psuedo-resource " + mod + "must be NO_FLOW");
+						if (!Lib.GetResourceImpossibleToFlow(mod)) throw new Exception("psuedo-resource " + mod + "must be NO_FLOW");
 						if (p != null)			k *= sim.Resource(mod).GetSimulatedResourceView(p).amount; // loaded part
 						else					k *= sim.Resource(mod).amount;                             // vessel-wide
 						break;

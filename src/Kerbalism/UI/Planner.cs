@@ -1000,8 +1000,9 @@ namespace KERBALISM
 		public void Process_rule(List<Part> parts, Rule r, Environment_analyzer env, Vessel_analyzer va)
 		{
 			bool restricted = false;
-			if (!r.monitor && PartResourceLibrary.GetDefaultFlowMode(r.input) == ResourceFlowMode.NO_FLOW) restricted = true;
-			if (PartResourceLibrary.GetDefaultFlowMode(r.output) == ResourceFlowMode.NO_FLOW) restricted = true;
+			// input/output of a rule may be empty string
+			if (!r.monitor && Lib.GetResourceImpossibleToFlow(r.input, true)) restricted = true;
+			if (Lib.GetResourceImpossibleToFlow(r.output, true)) restricted = true;
 
 			if (restricted) Process_rule_per_part(parts, r, env, va);
 			else Process_rule_vessel_wide(r, env, va);
@@ -1044,11 +1045,11 @@ namespace KERBALISM
 			bool restricted = false;
 			foreach (var input in pr.inputs)
 			{
-				if (PartResourceLibrary.GetDefaultFlowMode(input.Key) == ResourceFlowMode.NO_FLOW) restricted = true;
+				if (Lib.GetResourceImpossibleToFlow(input.Key)) restricted = true;
 			}
 			foreach (var output in pr.outputs)
 			{
-				if (PartResourceLibrary.GetDefaultFlowMode(output.Key) == ResourceFlowMode.NO_FLOW) restricted = true;
+				if (Lib.GetResourceImpossibleToFlow(output.Key)) restricted = true;
 			}
 			if (restricted) Process_process_per_part(parts, pr, env, va);
 			else Process_process_vessel_wide(pr, env, va);
@@ -1549,7 +1550,7 @@ namespace KERBALISM
 			public Simulated_resource_view_impl(Part p, string resource_name, Simulated_resource i)
 			{
 				info = i;
-				if (p != null && PartResourceLibrary.GetDefaultFlowMode(resource_name) == ResourceFlowMode.NO_FLOW)
+				if (p != null && Lib.GetResourceImpossibleToFlow(resource_name))
 				{
 					location = new Resource_location(p);
 					if (!info._capacity.ContainsKey(location)) info.InitDicts(location);
@@ -1604,7 +1605,7 @@ namespace KERBALISM
 
 		public Simulated_resource_view GetSimulatedResourceView(Part p)
 		{
-			if (p != null && PartResourceLibrary.GetDefaultFlowMode(resource_name) == ResourceFlowMode.NO_FLOW)
+			if (p != null && Lib.GetResourceImpossibleToFlow(resource_name))
 			{
 				if (!_cached_part_views.ContainsKey(p))
 				{

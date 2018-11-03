@@ -153,7 +153,7 @@ namespace KERBALISM
 			public Resource_info_view_impl(Part p, string resource_name, Resource_info i)
 			{
 				info = i;
-				if (p != null && PartResourceLibrary.GetDefaultFlowMode(resource_name) == ResourceFlowMode.NO_FLOW)
+				if (p != null && Lib.GetResourceImpossibleToFlow(resource_name))
 				{
 					location = new Resource_location(p);
 					if (!info._deferred.ContainsKey(location)) info.InitDicts(location);
@@ -166,7 +166,7 @@ namespace KERBALISM
 			public Resource_info_view_impl(ProtoPartSnapshot p, string resource_name, Resource_info i)
 			{
 				info = i;
-				if (p != null && PartResourceLibrary.GetDefaultFlowMode(resource_name) == ResourceFlowMode.NO_FLOW)
+				if (p != null && Lib.GetResourceImpossibleToFlow(resource_name))
 				{
 					location = new Resource_location(p);
 					if (!info._deferred.ContainsKey(location)) info.InitDicts(location);
@@ -347,8 +347,6 @@ namespace KERBALISM
 								_amount[vessel_wide_location] += r.amount;
 								_capacity[vessel_wide_location] += r.maxAmount;
 							}
-
-
 						}
 					}
 				}
