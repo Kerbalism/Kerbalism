@@ -16,6 +16,10 @@
 * Increased SCANSat experiment sizes. A planetary map shouldn't be smaller than a temperature reading. (Sir Mortimer)
 * Connection Manager Panel, click in signal Icon to open the Connection Panel. (HaullyGames)
 * CommNet: disable stock transmission buttons and transmission action group. (HaullyGames)
+* Add support for per-part resource simulation which is ONLY used for resources that are NO_FLOW, such as EnrichedUranium. (madman2003)
+* NearFutureSolar: Add reliability for curved solar panels. (madman2003)
+* NearFutureElectrical: Support Reactors and Reprocessor. (madman2003)
+* Repair support for "dump" option in processes, was broken after introducing "dump_valve". (madman2003)
 
 ------------------------------------------------------------------------------------------------------
 
