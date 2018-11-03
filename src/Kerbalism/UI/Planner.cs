@@ -1924,7 +1924,7 @@ namespace KERBALISM
 		public List<Resource_recipe.Entry> inputs;  // set of input resources
 		public List<Resource_recipe.Entry> outputs; // set of output resources
 		public double left;                         // what proportion of the recipe is left to execute
-		private Part loaded_part = null;            // part this recipe runs on
+		private Part loaded_part = null;            // part this recipe runs on, may be null for vessel wide recipe
 	}
 
 
