@@ -34,9 +34,6 @@ namespace KERBALISM
 			if (Lib.DisableScenario(this))
 				return;
 
-			// configure on start
-			Configure(true, multiple);
-
 			// get dump specs for associated process
 			dump_specs = Profile.processes.Find(x => x.modifiers.Contains(resource)).dump;
 
@@ -57,6 +54,9 @@ namespace KERBALISM
 			// deal with non-togglable processes
 			if (!toggle)
 				running = true;
+
+			// configure on start
+			Configure(running, multiple);
 		}
 
 		public void Configure(bool enable, int multiple = 1)
@@ -89,12 +89,16 @@ namespace KERBALISM
 						Lib.RemoveResource(part, resource, 0.0, capacity * (this.multiple - multiple));
 					}
 				}
+				else
+				{
+					// increase amount to match capacity
+					Lib.AddResource(part, resource, capacity * multiple - Lib.Amount(part, resource, true), 0);
+				}
 				this.multiple = multiple;
 			}
 			else
 			{
-				Lib.RemoveResource(part, resource, 0.0, capacity * this.multiple);
-				this.multiple = 1;
+				Lib.RemoveResource(part, resource, capacity * this.multiple, 0.0);
 			}
 		}
 
@@ -116,6 +120,7 @@ namespace KERBALISM
 		{
 			// switch status
 			running = !running;
+			Configure(running, multiple);
 		}
 
 		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "Dump", active = true)]
