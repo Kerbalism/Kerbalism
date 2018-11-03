@@ -341,7 +341,6 @@ namespace KERBALISM
 									_amount[location] = r.amount;
 									_deferred[location] = 0.0;
 								}
-								Lib.Log("Amount after " + resource_name + " " + _amount[location]);
 							}
 							else if (r.flowState)
 							{
