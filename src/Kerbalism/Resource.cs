@@ -323,7 +323,6 @@ namespace KERBALISM
 								// per part resources
 								Resource_location location = new Resource_location(p);
 								if (!_amount.ContainsKey(location)) InitDicts(location);
-								Lib.Log("Amount before " + resource_name + " " + _amount[location]);
 
 								// per part resources do not need to flow
 								_amount[location] = r.amount;
@@ -743,6 +742,7 @@ namespace KERBALISM
 			for (int i = 0; i < inputs.Count; ++i)
 			{
 				Entry e = inputs[i];
+				Resource_info_view res = GetResourceInfoView(v, resources, e.name);
 				// handle combined inputs
 				if (e.combined != null)
 				{
@@ -751,7 +751,6 @@ namespace KERBALISM
 					{
 						Entry sec_e = inputs.Find(x => x.name.Contains(e.combined));
 						Resource_info_view sec = GetResourceInfoView(v, resources, sec_e.name);
-						Resource_info_view res = GetResourceInfoView(v, resources, e.name);
 						double need = (e.quantity * worst_io) + (sec_e.quantity * worst_io);
 						// do we have enough primary to satisfy needs, if so don't consume secondary
 						if (res.amount + res.deferred >= need) resources.Consume(v, e.name, need);
@@ -759,19 +758,20 @@ namespace KERBALISM
 						else
 						{
 							need -= res.amount + res.deferred;
-							resources.Consume(v, e.name, res.amount + res.deferred);
-							resources.Consume(v, sec_e.name, need);
+							res.Consume(res.amount + res.deferred);
+							sec.Consume(need);
 						}
 					}
 				}
-				else resources.Consume(v, e.name, e.quantity * worst_io);
+				else res.Consume(e.quantity * worst_io);
 			}
 
 			// produce outputs
 			for (int i = 0; i < outputs.Count; ++i)
 			{
 				Entry e = outputs[i];
-				resources.Produce(v, e.name, e.quantity * worst_io);
+				Resource_info_view res = GetResourceInfoView(v, resources, e.name);
+				res.Produce(e.quantity * worst_io);
 			}
 
 			// produce cures
