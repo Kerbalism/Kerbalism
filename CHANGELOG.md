@@ -16,6 +16,9 @@
 * Increased SCANSat experiment sizes. A planetary map shouldn't be smaller than a temperature reading. (Sir Mortimer)
 * Connection Manager Panel, click in signal Icon to open the Connection Panel. (HaullyGames)
 * CommNet: disable stock transmission buttons and transmission action group. (HaullyGames)
+* Add support for per-part resource simulation which is ONLY used for resources that are NO_FLOW, such as EnrichedUranium. (madman2003)
+* Fix support for dump options that don't use valves. (madman2003)
+* Make the planner outputs less quirky by running the simulator several cycles to reach steady state. (madman2003)
 
 ------------------------------------------------------------------------------------------------------
 
