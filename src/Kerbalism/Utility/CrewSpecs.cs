@@ -11,14 +11,14 @@ namespace KERBALISM
 		public CrewSpecs(string value)
 		{
 			// if empty or false: not enabled
-			if (value.Length == 0 || value.ToLower() == "false")
+			if (value.Length == 0 || string.Equals(value, "false", StringComparison.OrdinalIgnoreCase))
 			{
 				trait = string.Empty;
 				level = 0;
 				enabled = false;
 			}
 			// if true: enabled, any trait
-			else if (value.ToLower() == "true")
+			else if (string.Equals(value, "true", StringComparison.OrdinalIgnoreCase))
 			{
 				trait = string.Empty;
 				level = 0;

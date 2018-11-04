@@ -24,15 +24,15 @@ namespace KERBALISM
 			}
 		}
 
-		public override void GUI_Update(bool hasEnergy)
+		public override void GUI_Update(bool isEnabled)
 		{
-			Lib.DebugLog("Buttons is '{0}' for '{1}' landingGear", (hasEnergy == true ? "ON" : "OFF"), landingGear.part.partInfo.title);
-			landingGear.Events["EventToggle"].active = hasEnergy;
+			Lib.DebugLog("Buttons is '{0}' for '{1}' landingGear", (isEnabled == true ? "ON" : "OFF"), landingGear.part.partInfo.title);
+			landingGear.Events["EventToggle"].active = isEnabled;
 		}
 
-		public override void FixModule(bool hasEnergy)
+		public override void FixModule(bool isEnabled)
 		{
-			ToggleActions(landingGear, hasEnergy);
+			ToggleActions(landingGear, isEnabled);
 		}
 
 		ModuleWheelDeployment landingGear;

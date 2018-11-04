@@ -3,6 +3,7 @@
 
 ### Changes since the last release
 
+* Added support for Kerbalow KA-330 Inflatable Space Hotel. (Gordon Dry)
 * Added missing xmitDataScalar to Support/OrbitalScience.cfg and also added UniversalStorage2 compatibility. (Gordon Dry)
 * Converted all remaining png and mbm textures to dds (Gordon Dry)
 * The connection signal icon alternates between yellow and red when signal strengh is below 5%. (HaullyGames)
