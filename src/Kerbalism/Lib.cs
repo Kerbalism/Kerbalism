@@ -1260,7 +1260,7 @@ namespace KERBALISM
 		}
 
 		/// <summary>
-		/// set flow of a resource in the specified part. does nothing if the resource don't exist in the part.
+		/// set flow of a resource in the specified part. does nothing if the resource don't exist in the part
 		/// </summary>
 		public static void SetResourceFlow(Part p, string res_name, bool enable)
 		{
@@ -1286,8 +1286,8 @@ namespace KERBALISM
 			return reslib.Contains( name ) ? reslib[name] : null;
 		}
 
-		/// <summary>Determine if a resource is never able to flow, thus requiring special treatment.</summary>
-		public static bool GetResourceImpossibleToFlow(string name, bool check_empty = false)
+		/// <summary>Determine if a resource is never able to flow, thus requiring special treatment</summary>
+		public static bool IsResourceImpossibleToFlow(string name, bool check_empty = false)
 		{
 			// by convention: vessel wide available, so we don't do per part processing unnecessarily
 			if (check_empty && string.IsNullOrEmpty(name)) return false;

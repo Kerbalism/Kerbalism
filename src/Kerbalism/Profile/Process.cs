@@ -35,7 +35,7 @@ namespace KERBALISM
 				// record input
 				inputs[input_res] = input_rate;
 
-				if (Lib.GetResourceImpossibleToFlow(input_res)) restricted = true;
+				if (Lib.IsResourceImpossibleToFlow(input_res)) restricted = true;
 			}
 
 			outputs = new Dictionary<string, double>();
@@ -56,7 +56,7 @@ namespace KERBALISM
 				// record output
 				outputs[output_res] = output_rate;
 
-				if (Lib.GetResourceImpossibleToFlow(output_res)) restricted = true;
+				if (Lib.IsResourceImpossibleToFlow(output_res)) restricted = true;
 			}
 
 			cures = new Dictionary<string, double>();
@@ -74,7 +74,7 @@ namespace KERBALISM
 				// record cure
 				cures[cure] = cure_rate;
 
-				if (Lib.GetResourceImpossibleToFlow(cure)) restricted = true;
+				if (Lib.IsResourceImpossibleToFlow(cure)) restricted = true;
 			}
 
 			// parse dump specs

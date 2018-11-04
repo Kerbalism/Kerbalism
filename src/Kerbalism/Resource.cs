@@ -176,7 +176,7 @@ namespace KERBALISM
 			public Resource_info_view_impl(Part p, string resource_name, Resource_info i)
 			{
 				info = i;
-				if (p != null && Lib.GetResourceImpossibleToFlow(resource_name))
+				if (p != null && Lib.IsResourceImpossibleToFlow(resource_name))
 				{
 					location = new Resource_location(p);
 					if (!info._deferred.ContainsKey(location)) info.InitDicts(location);
@@ -189,7 +189,7 @@ namespace KERBALISM
 			public Resource_info_view_impl(ProtoPartSnapshot p, string resource_name, Resource_info i)
 			{
 				info = i;
-				if (p != null && Lib.GetResourceImpossibleToFlow(resource_name))
+				if (p != null && Lib.IsResourceImpossibleToFlow(resource_name))
 				{
 					location = new Resource_location(p);
 					if (!info._deferred.ContainsKey(location)) info.InitDicts(location);
