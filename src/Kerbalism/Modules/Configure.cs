@@ -539,7 +539,7 @@ namespace KERBALISM
 		public float GetModuleCost(float defaultCost, ModifierStagingSituation sit) { return (float)extra_cost; }
 
 		// module mass support
-		public float GetModuleMass(float defaultCost, ModifierStagingSituation sit) { return (float)extra_mass; }
+		public float GetModuleMass(float defaultMass, ModifierStagingSituation sit) { return (float)extra_mass; }
 		public ModifierChangeWhen GetModuleCostChangeWhen() { return ModifierChangeWhen.CONSTANTLY; }
 		public ModifierChangeWhen GetModuleMassChangeWhen() { return ModifierChangeWhen.CONSTANTLY; }
 
