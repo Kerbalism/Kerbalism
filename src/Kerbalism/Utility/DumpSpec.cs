@@ -69,7 +69,7 @@ namespace KERBALISM
 			set
 			{
 				valve_i = (!AnyValves || value > valves.Count - 1 || value < 0) ? 0 : value;
-				DeployValve();
+				if (AnyValves) DeployValve();
 			}
 		}
 
@@ -79,7 +79,7 @@ namespace KERBALISM
 			get
 			{
 				valve_i = valve_i >= valves.Count - 1 ? 0 : ++valve_i;
-				DeployValve();
+				if (AnyValves) DeployValve();
 				return valve_i;
 			}
 			private set { }

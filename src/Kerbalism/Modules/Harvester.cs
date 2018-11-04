@@ -97,7 +97,7 @@ namespace KERBALISM
 				crew_gain = Lib.Clamp(crew_gain, 1, Settings.MaxHarvesterBonus);
 				rate *= crew_gain;
 
-				Resource_recipe recipe = new Resource_recipe();
+				Resource_recipe recipe = new Resource_recipe(harvester.part);
 				recipe.Input("ElectricCharge", harvester.ec_rate * elapsed_s);
 				recipe.Output(harvester.resource, harvester.rate * (abundance/harvester.abundance_rate) * elapsed_s, false);
 				ResourceCache.Transform(v, recipe);
