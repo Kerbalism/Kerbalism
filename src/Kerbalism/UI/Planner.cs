@@ -831,6 +831,26 @@ namespace KERBALISM
 	{
 		public void Analyze(List<Part> parts, Environment_analyzer env, Vessel_analyzer va)
 		{
+			// reach steady state, so all initial resources like WasteAtmosphere are produced
+			// it is assumed that one cycle is needed to produce things that don't need inputs
+			// another cycle is needed for processes to pick that up
+			// another cycle may be needed for results of those processes to be picked up
+			// two additional cycles are for having some margin
+			for (int i = 0; i < 5; i++)
+			{
+				RunSimulator(parts, env, va);
+			}
+
+			// Do the actual run people will see from the simulator UI
+			foreach (Simulated_resource r in resources.Values)
+			{
+				r.ResetSimulatorDisplayValues();
+			}
+			RunSimulator(parts, env, va);
+		}
+
+		private void RunSimulator(List<Part> parts, Environment_analyzer env, Vessel_analyzer va)
+		{
 			// clear previous resource state
 			resources.Clear();
 
@@ -1495,9 +1515,7 @@ namespace KERBALISM
 	{
 		public Simulated_resource(string name)
 		{
-			consumers = new Dictionary<string, Wrapper>();
-			producers = new Dictionary<string, Wrapper>();
-			harvests = new List<string>();
+			ResetSimulatorDisplayValues();
 
 			_storage  = new Dictionary<Resource_location, double>();
 			_capacity = new Dictionary<Resource_location, double>();
@@ -1509,6 +1527,17 @@ namespace KERBALISM
 			_vessel_wide_view = new Simulated_resource_view_impl(null, resource_name, this);
 
 			resource_name = name;
+		}
+
+		// call this after the simulator has reached steady state
+		// after this the real simulator run intended to display values for the user can be done
+		public void ResetSimulatorDisplayValues()
+		{
+			consumers = new Dictionary<string, Wrapper>();
+			producers = new Dictionary<string, Wrapper>();
+			harvests = new List<string>();
+			consumed = 0.0;
+			produced = 0.0;
 		}
 
 		// Design is similar to Resource_info
