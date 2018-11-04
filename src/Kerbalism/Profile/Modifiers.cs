@@ -9,7 +9,7 @@ namespace KERBALISM
 
 	public static class Modifiers
 	{
-		public static double Evaluate(Vessel v, Vessel_info vi, Vessel_resources resources, List<string> modifiers)
+		public static double Evaluate(Vessel v, Vessel_info vi, Vessel_resources resources, List<string> modifiers, Part p = null, ProtoPartSnapshot pp = null)
 		{
 			double k = 1.0;
 			foreach (string mod in modifiers)
@@ -73,7 +73,11 @@ namespace KERBALISM
 						break;
 
 					default:
-						k *= resources.Info(v, mod).amount;
+						// If a psuedo resource is flowable, per part processing would result in every part producing the entire capacity of the vessel
+						if (!Lib.IsResourceImpossibleToFlow(mod)) throw new Exception("psuedo-resource " + mod + " must be NO_FLOW");
+						if (p != null) 			k *= resources.Info(v, mod).GetResourceInfoView(p).amount;  // loaded part
+						else if (pp != null)	k *= resources.Info(v, mod).GetResourceInfoView(pp).amount; // unloaded part
+						else					k *= resources.Info(v, mod).amount;                         // vessel-wide
 						break;
 				}
 			}
@@ -81,7 +85,7 @@ namespace KERBALISM
 		}
 
 
-		public static double Evaluate(Environment_analyzer env, Vessel_analyzer va, Resource_simulator sim, List<string> modifiers)
+		public static double Evaluate(Environment_analyzer env, Vessel_analyzer va, Resource_simulator sim, List<string> modifiers, Part p = null)
 		{
 			double k = 1.0;
 			foreach (string mod in modifiers)
@@ -145,7 +149,10 @@ namespace KERBALISM
 						break;
 
 					default:
-						k *= sim.Resource(mod).amount;
+						// If a psuedo resource is flowable, per part processing would result in every part producing the entire capacity of the vessel
+						if (!Lib.IsResourceImpossibleToFlow(mod)) throw new Exception("psuedo-resource " + mod + "must be NO_FLOW");
+						if (p != null)			k *= sim.Resource(mod).GetSimulatedResourceView(p).amount; // loaded part
+						else					k *= sim.Resource(mod).amount;                             // vessel-wide
 						break;
 				}
 			}

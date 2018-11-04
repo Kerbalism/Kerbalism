@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using ModuleWheels;
 using UnityEngine;
@@ -9,7 +10,10 @@ using UnityEngine;
 namespace KERBALISM
 {
 
-
+	/// <summary>
+	/// class that is used to predict resource production/consumption while in the vehicle assumbly building
+	/// information on life support, radiation, comfort and other relevant factors is also given
+	/// </summary>
 	public sealed class Planner
 	{
 		public Planner()
@@ -78,7 +82,7 @@ namespace KERBALISM
 			panel = new Panel();
 		}
 
-
+		/// <summary>Run simulators and visualize results in planner UI panel</summary>
 		public void Update()
 		{
 			// clear the panel
@@ -130,6 +134,7 @@ namespace KERBALISM
 		}
 
 
+		/// <summary>Render planner UI panel</summary>
 		public void Render()
 		{
 			// if there is something in the editor
@@ -175,13 +180,13 @@ namespace KERBALISM
 			}
 		}
 
-
+		/// <summary>planner panel UI width</summary>
 		public float Width()
 		{
 			return Styles.ScaleWidthFloat(280.0f);
 		}
 
-
+		/// <summary>planner panel UI height</summary>
 		public float Height()
 		{
 			if (EditorLogic.RootPart != null)
@@ -194,7 +199,7 @@ namespace KERBALISM
 			}
 		}
 
-
+		/// <summary>render environment subpanel, including tooltips</summary>
 		void Render_environment(Panel p)
 		{
 			string flux_tooltip = Lib.BuildString
@@ -225,6 +230,7 @@ namespace KERBALISM
 		}
 
 
+		/// <summary>render electric charge subpanel, including tooltips</summary>
 		void Render_ec(Panel p)
 		{
 			// get simulated resource
@@ -241,7 +247,12 @@ namespace KERBALISM
 			p.AddContent("duration", Lib.HumanReadableDuration(res.Lifetime()));
 		}
 
-
+		/// <summary>render supply resource subpanel, including tooltips</summary>
+		/// <remarks>
+		/// does not include eletric charge
+		/// does not special resources like waste atmosphere
+		/// restricted to resources that are configured explicitly in the profile as supplies
+		/// </remarks>
 		void Render_resource(Panel p, string res_name)
 		{
 			// get simulated resource
@@ -258,7 +269,7 @@ namespace KERBALISM
 			p.AddContent("duration", Lib.HumanReadableDuration(res.Lifetime()));
 		}
 
-
+		/// <summary>render stress subpanel, including tooltips</summary>
 		void Render_stress(Panel p)
 		{
 			// get first living space rule
@@ -306,7 +317,7 @@ namespace KERBALISM
 			p.AddContent("duration", Lib.HumanReadableDuration(rule.fatal_threshold / (rule.degeneration * mod)));
 		}
 
-
+		/// <summary>render radiation subpanel, including tooltips</summary>
 		void Render_radiation(Panel p)
 		{
 			// get first radiation rule
@@ -364,7 +375,7 @@ namespace KERBALISM
 			p.AddContent("shielding", rule.modifiers.Contains("shielding") ? Habitat.Shielding_to_string(va.shielding) : "n/a", tooltip);
 		}
 
-
+		/// <summary>render reliablity subpanel, including tooltips</summary>
 		void Render_reliability(Panel p)
 		{
 			// evaluate redundancy metric
@@ -433,6 +444,7 @@ namespace KERBALISM
 			p.AddContent("repair", repair_str, repair_tooltip);
 		}
 
+		/// <summary>render habitat subpanel, including tooltips</summary>
 		void Render_habitat(Panel p)
 		{
 			Simulated_resource atmo_res = sim.Resource("Atmosphere");
@@ -521,7 +533,7 @@ namespace KERBALISM
 	}
 
 
-	// analyze the environment
+	/// <summary>simulator for the environment the vessel is present in according to planner settings</summary>
 	public sealed class Environment_analyzer
 	{
 		public void Analyze(CelestialBody body, double altitude_mult, bool sunlight)
@@ -587,8 +599,7 @@ namespace KERBALISM
 		public double storm_rad;                              // environment radiation during a solar storm, inside the heliopause
 	}
 
-
-	// analyze the vessel (excluding resource-related stuff)
+	/// <summary>simulator for all vessel aspects, but excluding resource simulation</summary>
 	public sealed class Vessel_analyzer
 	{
 		public void Analyze(List<Part> parts, Resource_simulator sim, Environment_analyzer env)
@@ -822,13 +833,35 @@ namespace KERBALISM
 		public bool has_comms;
 	}
 
-
-
-
-	// simulate resource consumption & production
+	/// <summary>simulator for resources contained, produced and consumed within the vessel</summary>
 	public class Resource_simulator
 	{
+		/// <summary>
+		/// run simulator to get statistics a fraction of a second after the vessel would spawn
+		/// in the configured environment (celestial body, orbit height and presence of sunlight)
+		/// </summary>
 		public void Analyze(List<Part> parts, Environment_analyzer env, Vessel_analyzer va)
+		{
+			// reach steady state, so all initial resources like WasteAtmosphere are produced
+			// it is assumed that one cycle is needed to produce things that don't need inputs
+			// another cycle is needed for processes to pick that up
+			// another cycle may be needed for results of those processes to be picked up
+			// two additional cycles are for having some margin
+			for (int i = 0; i < 5; i++)
+			{
+				RunSimulator(parts, env, va);
+			}
+
+			// Do the actual run people will see from the simulator UI
+			foreach (Simulated_resource r in resources.Values)
+			{
+				r.ResetSimulatorDisplayValues();
+			}
+			RunSimulator(parts, env, va);
+		}
+
+		/// <summary>run a single timestemp of the simulator</simulator>
+		private void RunSimulator(List<Part> parts, Environment_analyzer env, Vessel_analyzer va)
 		{
 			// clear previous resource state
 			resources.Clear();
@@ -847,14 +880,14 @@ namespace KERBALISM
 			{
 				if ((r.input.Length > 0 || (r.monitor && r.output.Length > 0)) && r.rate > 0.0)
 				{
-					Process_rule(r, env, va);
+					Process_rule(parts, r, env, va);
 				}
 			}
 
 			// process all processes
 			foreach (Process p in Profile.processes)
 			{
-				Process_process(p, env, va);
+				Process_process(parts, p, env, va);
 			}
 
 			// process all modules
@@ -930,35 +963,30 @@ namespace KERBALISM
 			foreach (var pair in resources) pair.Value.Clamp();
 		}
 
-
+		/// <summary>obtain information on resource metrics for any resource contained within simulated vessel</simulator>
 		public Simulated_resource Resource(string name)
 		{
 			Simulated_resource res;
 			if (!resources.TryGetValue(name, out res))
 			{
-				res = new Simulated_resource();
+				res = new Simulated_resource(name);
 				resources.Add(name, res);
 			}
 			return res;
 		}
 
-
+		/// <summary>transfer per-part resources to the simulator</simulator>
 		void Process_part(Part p, string res_name)
 		{
-			Simulated_resource res = Resource(res_name);
-			res.storage += Lib.Amount(p, res_name);
-			res.amount += Lib.Amount(p, res_name);
-			res.capacity += Lib.Capacity(p, res_name);
+			Simulated_resource_view res = Resource(res_name).GetSimulatedResourceView(p);
+			res.AddPartResources(p);
 		}
 
-
-		void Process_rule(Rule r, Environment_analyzer env, Vessel_analyzer va)
+		/// <summary>process a rule and add/remove the resources from the simulator</simulator>
+		private void Process_rule_inner_body(double k, Part p, Rule r, Environment_analyzer env, Vessel_analyzer va)
 		{
 			// deduce rate per-second
 			double rate = (double)va.crew_count * (r.interval > 0.0 ? r.rate / r.interval : r.rate);
-
-			// evaluate modifiers
-			double k = Modifiers.Evaluate(env, va, this, r.modifiers);
 
 			// prepare recipe
 			if (r.output.Length == 0)
@@ -971,7 +999,7 @@ namespace KERBALISM
 				if (!r.monitor)
 				{
 					// - rules always dump excess overboard (because it is waste)
-					Simulated_recipe recipe = new Simulated_recipe(r.name);
+					Simulated_recipe recipe = new Simulated_recipe(p, r.name);
 					recipe.Input(r.input, rate * k);
 					recipe.Output(r.output, rate * k * r.ratio, true);
 					recipes.Add(recipe);
@@ -984,25 +1012,91 @@ namespace KERBALISM
 			}
 		}
 
-
-		void Process_process(Process p, Environment_analyzer env, Vessel_analyzer va)
+		/// <summary>process a rule for resources that can flow through the entire vessel</simulator>
+		private void Process_rule_vessel_wide(Rule r, Environment_analyzer env, Vessel_analyzer va)
 		{
 			// evaluate modifiers
-			double k = Modifiers.Evaluate(env, va, this, p.modifiers);
+			double k = Modifiers.Evaluate(env, va, this, r.modifiers);
+			Process_rule_inner_body(k, null, r, env, va);
+		}
 
+		/// <summary>process a rule for a case where at least one resource cannot flow through the entire vessel</summary>
+		private void Process_rule_per_part(List<Part> parts, Rule r, Environment_analyzer env, Vessel_analyzer va)
+		{
+			foreach (Part p in parts)
+			{
+				// evaluate modifiers
+				double k = Modifiers.Evaluate(env, va, this, r.modifiers, p);
+				Process_rule_inner_body(k, p, r, env, va);
+			}
+		}
+
+		/// <summary>determine if the resources involved are restricted to a part, and then process a rule</summary>
+		public void Process_rule(List<Part> parts, Rule r, Environment_analyzer env, Vessel_analyzer va)
+		{
+			bool restricted = false;
+			// input/output of a rule may be empty string
+			if (!r.monitor && Lib.IsResourceImpossibleToFlow(r.input, true)) restricted = true;
+			if (Lib.IsResourceImpossibleToFlow(r.output, true)) restricted = true;
+
+			if (restricted) Process_rule_per_part(parts, r, env, va);
+			else Process_rule_vessel_wide(r, env, va);
+		}
+
+		/// <summary>process the process and add/remove the resources from the simulator</summary>
+		private void Process_process_inner_body(double k, Part p, Process pr, Environment_analyzer env, Vessel_analyzer va)
+		{
 			// prepare recipe
-			Simulated_recipe recipe = new Simulated_recipe(p.name);
-			foreach (var input in p.inputs)
+			Simulated_recipe recipe = new Simulated_recipe(p, pr.name);
+			foreach (var input in pr.inputs)
 			{
 				recipe.Input(input.Key, input.Value * k);
 			}
-			foreach (var output in p.outputs)
+			foreach (var output in pr.outputs)
 			{
-				recipe.Output(output.Key, output.Value * k, p.dump.Check(output.Key));
+				recipe.Output(output.Key, output.Value * k, pr.dump.Check(output.Key));
 			}
 			recipes.Add(recipe);
 		}
 
+		/// <summary>process the process and add/remove the resources from the simulator for the entire vessel at once</summary>
+		private void Process_process_vessel_wide(Process pr, Environment_analyzer env, Vessel_analyzer va)
+		{
+			// evaluate modifiers
+			double k = Modifiers.Evaluate(env, va, this, pr.modifiers);
+			Process_process_inner_body(k, null, pr, env, va);
+		}
+
+		/// <summary>process the process and add/remove the resources from the simulator on a per part basis</summary>
+		private void Process_process_per_part(List<Part> parts, Process pr, Environment_analyzer env, Vessel_analyzer va)
+		{
+			foreach (Part p in parts)
+			{
+				// evaluate modifiers
+				double k = Modifiers.Evaluate(env, va, this, pr.modifiers, p);
+				Process_process_inner_body(k, p, pr, env, va);
+			}
+		}
+
+		/// <summary>
+		/// determine if the resources involved are restricted to a part, and then process
+		/// the process and add/remove the resources from the simulator
+		/// </summary>
+		/// <remarks>while rules are usually input or output only, processes transform input to output</remarks>
+		public void Process_process(List<Part> parts, Process pr, Environment_analyzer env, Vessel_analyzer va)
+		{
+			bool restricted = false;
+			foreach (var input in pr.inputs)
+			{
+				if (Lib.IsResourceImpossibleToFlow(input.Key)) restricted = true;
+			}
+			foreach (var output in pr.outputs)
+			{
+				if (Lib.IsResourceImpossibleToFlow(output.Key)) restricted = true;
+			}
+			if (restricted) Process_process_per_part(parts, pr, env, va);
+			else Process_process_vessel_wide(pr, env, va);
+		}
 
 		void Process_greenhouse(Greenhouse g, Environment_analyzer env, Vessel_analyzer va)
 		{
@@ -1025,7 +1119,7 @@ namespace KERBALISM
 			}
 
 			// execute recipe
-			Simulated_recipe recipe = new Simulated_recipe("greenhouse");
+			Simulated_recipe recipe = new Simulated_recipe(g.part, "greenhouse");
 			foreach (ModuleResource input in g.resHandler.inputResources)
 			{
 				// WasteAtmosphere is primary combined input
@@ -1114,7 +1208,7 @@ namespace KERBALISM
 			// skip launch clamps, that include a generator
 			if (Lib.PartName(p) == "launchClamp1") return;
 
-			Simulated_recipe recipe = new Simulated_recipe("generator");
+			Simulated_recipe recipe = new Simulated_recipe(p, "generator");
 			foreach (ModuleResource res in generator.resHandler.inputResources)
 			{
 				recipe.Input(res.name, res.rate);
@@ -1139,7 +1233,7 @@ namespace KERBALISM
 			string recipe_name = Lib.BuildString(converter.part.partInfo.title, " (efficiency: ", Lib.HumanReadablePerc(exp_bonus), ")");
 
 			// generate recipe
-			Simulated_recipe recipe = new Simulated_recipe(recipe_name);
+			Simulated_recipe recipe = new Simulated_recipe(converter.part, recipe_name);
 			foreach (ResourceRatio res in converter.inputList)
 			{
 				recipe.Input(res.ResourceName, res.Ratio * exp_bonus);
@@ -1164,7 +1258,7 @@ namespace KERBALISM
 			string recipe_name = Lib.BuildString(harvester.part.partInfo.title, " (efficiency: ", Lib.HumanReadablePerc(exp_bonus), ")");
 
 			// generate recipe
-			Simulated_recipe recipe = new Simulated_recipe(recipe_name);
+			Simulated_recipe recipe = new Simulated_recipe(harvester.part, recipe_name);
 			foreach (ResourceRatio res in harvester.inputList)
 			{
 				recipe.Input(res.ResourceName, res.Ratio);
@@ -1424,21 +1518,206 @@ namespace KERBALISM
 		List<Simulated_recipe> recipes = new List<Simulated_recipe>();
 	}
 
+	/// <summary> offers a view on a single resource in the simulator</summary>
+	/// <remarks>
+	/// hides the difference between vessel wide resources that can flow through the entire vessel
+	/// and resources that are restricted to a single part
+	/// <remarks>
+	public abstract class Simulated_resource_view
+	{
+		protected Simulated_resource_view() {}
 
+		public abstract double amount { get; }
+		public abstract double capacity { get; }
+		public abstract double storage { get; }
+
+		public abstract void AddPartResources(Part p);
+		public abstract void Produce(double quantity, string name);
+		public abstract void Consume(double quantity, string name);
+		public abstract void Clamp();
+	}
+
+	/// <summary>contains all the data for a single resource within the (vessel) simulator</summary>
 	public sealed class Simulated_resource
 	{
-		public Simulated_resource()
+		public Simulated_resource(string name)
+		{
+			ResetSimulatorDisplayValues();
+
+			_storage  = new Dictionary<Resource_location, double>();
+			_capacity = new Dictionary<Resource_location, double>();
+			_amount   = new Dictionary<Resource_location, double>();
+
+			vessel_wide_location = new Resource_location();
+			InitDicts(vessel_wide_location);
+			_cached_part_views = new Dictionary<Part, Simulated_resource_view>();
+			_vessel_wide_view = new Simulated_resource_view_impl(null, resource_name, this);
+
+			resource_name = name;
+		}
+
+		/// <summary>reset the values that are displayed to the user in the planner UI</summary>
+		/// <remarks>
+		/// use this after several simulator steps to do the final calculations under steady state
+		/// where resources that are initially empty at vessel start have been created, otherwise
+		/// user sees data only relevant for first simulation step (typically 1/50 seconds)
+		/// </remarks>
+		public void ResetSimulatorDisplayValues()
 		{
 			consumers = new Dictionary<string, Wrapper>();
 			producers = new Dictionary<string, Wrapper>();
 			harvests = new List<string>();
+			consumed = 0.0;
+			produced = 0.0;
 		}
 
+		/// <summary>
+		/// Identifier to identify the part or vessel where resources are stored
+		/// </summary>
+		/// <remarks>
+		/// KSP 1.3 does not support the neccesary persistent identifier for per part resources
+		/// KSP 1.3 always defaults to vessel wide
+		/// design is shared with Resource_location in Resource.cs module
+		/// </remarks>
+		private class Resource_location
+		{
+			public Resource_location(Part p)
+			{
+#if !KSP13
+				vessel_wide = false;
+				persistent_identifier = p.persistentId;
+#endif
+			}
+			public Resource_location() {}
+
+			/// <summary>Equals method in order to ensure object behaves like a value object</summary>
+			public override bool Equals(object obj)
+			{
+				if (obj == null || obj.GetType() != GetType())
+				{
+					return false;
+				}
+				return (((Resource_location) obj).persistent_identifier == persistent_identifier) &&
+					   (((Resource_location) obj).vessel_wide == vessel_wide);
+			}
+
+			/// <summary>GetHashCode method in order to ensure object behaves like a value object</summary>
+			public override int GetHashCode()
+			{
+				return (int) persistent_identifier;
+			}
+
+			public bool IsVesselWide() { return vessel_wide; }
+			public uint GetPersistentPartId() { return persistent_identifier; }
+
+			private bool vessel_wide = true;
+			private uint persistent_identifier = 0;
+		}
+
+		/// <summary>implementation of Simulated_resource_view</summary>
+		/// <remarks>only construced by Simulated_resource class to hide the dependencies between the two</remarks>
+		private class Simulated_resource_view_impl : Simulated_resource_view
+		{
+			public Simulated_resource_view_impl(Part p, string resource_name, Simulated_resource i)
+			{
+				info = i;
+				if (p != null && Lib.IsResourceImpossibleToFlow(resource_name))
+				{
+					location = new Resource_location(p);
+					if (!info._capacity.ContainsKey(location)) info.InitDicts(location);
+				}
+				else
+				{
+					location = info.vessel_wide_location;
+				}
+			}
+
+			public override void AddPartResources(Part p)
+			{
+				info.AddPartResources(location, p);
+			}
+			public override void Produce(double quantity, string name)
+			{
+				info.Produce(location, quantity, name);
+			}
+			public override void Consume(double quantity, string name)
+			{
+				info.Consume(location, quantity, name);
+			}
+			public override void Clamp()
+			{
+				info.Clamp(location);
+			}
+
+			public override double amount
+			{
+				get => info._amount[location];
+			}
+			public override double capacity
+			{
+				get => info._capacity[location];
+			}
+			public override double storage
+			{
+				get => info._storage[location];
+			}
+
+			private Simulated_resource info;
+			private Resource_location location;
+		}
+
+		/// <summary>initialize resource amounts for new resource location</summary>
+		/// <remarks>typically for a part that has not yet used this resource</remarks>
+		private void InitDicts(Resource_location location)
+		{
+			_storage[location] = 0.0;
+			_amount[location] = 0.0;
+			_capacity[location] = 0.0;
+		}
+
+		/// <summary>obtain a view on this resource for a given loaded part</summary>
+		/// <remarks>passing a null part forces it vessel wide view</remarks>
+		public Simulated_resource_view GetSimulatedResourceView(Part p)
+		{
+			if (p != null && Lib.IsResourceImpossibleToFlow(resource_name))
+			{
+				if (!_cached_part_views.ContainsKey(p))
+				{
+					_cached_part_views[p] = new Simulated_resource_view_impl(p, resource_name, this);
+				}
+				return _cached_part_views[p];
+			}
+			else
+			{
+				return _vessel_wide_view;
+			}
+		}
+
+		/// <summary>add resource information contained within part to vessel wide simulator</summary>
+		public void AddPartResources(Part p)
+		{
+			AddPartResources(vessel_wide_location, p);
+		}
+		/// <summary>add resource information within part to per-part simulator</summary>
+		private void AddPartResources(Resource_location location, Part p)
+		{
+			_storage[location] += Lib.Amount(p, resource_name);
+			_amount[location] += Lib.Amount(p, resource_name);
+			_capacity[location] += Lib.Capacity(p, resource_name);
+		}
+
+		/// <summary>consume resource from the vessel wide bookkeeping</summary>
 		public void Consume(double quantity, string name)
+		{
+			Consume(vessel_wide_location, quantity, name);
+		}
+		/// <summary>consume resource from the per-part bookkeeping</summary>
+		/// <remarks>also works for vessel wide location</remarks>
+		private void Consume(Resource_location location, double quantity, string name)
 		{
 			if (quantity >= double.Epsilon)
 			{
-				amount -= quantity;
+				_amount[location] -= quantity;
 				consumed += quantity;
 
 				if (!consumers.ContainsKey(name)) consumers.Add(name, new Wrapper());
@@ -1446,11 +1725,18 @@ namespace KERBALISM
 			}
 		}
 
+		/// <summary>produce resource for the vessel wide bookkeeping</summary>
 		public void Produce(double quantity, string name)
+		{
+			Produce(vessel_wide_location, quantity, name);
+		}
+		/// <summary>produce resource for the per-part bookkeeping</summary>
+		/// <remarks>also works for vessel wide location</remarks>
+		private void Produce(Resource_location location, double quantity, string name)
 		{
 			if (quantity >= double.Epsilon)
 			{
-				amount += quantity;
+				_amount[location] += quantity;
 				produced += quantity;
 
 				if (!producers.ContainsKey(name)) producers.Add(name, new Wrapper());
@@ -1458,17 +1744,25 @@ namespace KERBALISM
 			}
 		}
 
+		/// <summary>clamp resource amount to capacity for the vessel wide bookkeeping</summary>
 		public void Clamp()
 		{
-			amount = Lib.Clamp(amount, 0.0, capacity);
+			Clamp(vessel_wide_location);
+		}
+		/// <summary>clamp resource amount to capacity for the per-part bookkeeping</summary>
+		private void Clamp(Resource_location location)
+		{
+			_amount[location] = Lib.Clamp(_amount[location], 0.0, _capacity[location]);
 		}
 
+		/// <summary>determine how long a resource will last at simulated consumption/production levels</summary>
 		public double Lifetime()
 		{
 			double rate = produced - consumed;
 			return amount <= double.Epsilon ? 0.0 : rate > -1e-10 ? double.NaN : amount / -rate;
 		}
 
+		/// <summary>generate resource tooltip multi-line string</summary>
 		public string Tooltip(bool invert = false)
 		{
 			var green = !invert ? producers : consumers;
@@ -1503,27 +1797,97 @@ namespace KERBALISM
 			return Lib.BuildString("<align=left />", sb.ToString());
 		}
 
-		public double storage;                        // amount stored (at the start of simulation)
-		public double capacity;                       // storage capacity
-		public double amount;                         // amount stored (during simulation)
-		public double consumed;                       // total consumption rate
-		public double produced;                       // total production rate
-		public List<string> harvests;                 // some extra data about harvests
+		// Enforce that modification happens through official accessor functions
+		// Many external classes need to read these values, and they want convenient access
+		// However direct modification of these members from outside would make the coupling far too high
+		public string resource_name
+		{
+			get {
+				return _resource_name;
+			}
+			private set {
+				_resource_name = value;
+			}
+		}
+		public List<string> harvests
+		{
+			get {
+				return _harvests;
+			}
+			private set {
+				_harvests = value;
+			}
+		}
+		public double consumed
+		{
+			get {
+				return _consumed;
+			}
+			private set {
+				_consumed = value;
+			}
+		}
+		public double produced
+		{
+			get {
+				return _produced;
+			}
+			private set {
+				_produced = value;
+			}
+		}
 
-		public class Wrapper { public double value; }
-		public Dictionary<string, Wrapper> consumers; // consumers metadata
-		public Dictionary<string, Wrapper> producers; // producers metadata
+		// only getters, use official interface for setting that support resource location
+		public double storage
+		{
+			get {
+				return _storage.Values.Sum();
+			}
+		}
+		public double capacity
+		{
+			get {
+				return _capacity.Values.Sum();
+			}
+		}
+		public double amount
+		{
+			get {
+				return _amount.Values.Sum();
+			}
+		}
+
+		private string _resource_name;  // associated resource name
+		private List<string> _harvests; // some extra data about harvests
+		private double _consumed;       // total consumption rate
+		private double _produced;       // total production rate
+
+		private IDictionary<Resource_location, double> _storage;  // amount stored (at the start of simulation)
+		private IDictionary<Resource_location, double> _capacity; // storage capacity
+		private IDictionary<Resource_location, double> _amount;   // amount stored (during simulation)
+
+		private class Wrapper { public double value; }
+		private IDictionary<string, Wrapper> consumers; // consumers metadata
+		private IDictionary<string, Wrapper> producers; // producers metadata
+		private Resource_location vessel_wide_location;
+		private IDictionary<Part, Simulated_resource_view> _cached_part_views;
+		private Simulated_resource_view _vessel_wide_view;
 	}
 
 
+	/// <summary>destription of how to convert inputs to outputs</summary>
+	/// <remarks>
+	/// this class is also responsible for executing the recipe, such that it is actualized in the Simulated_resource
+	/// </remarks>
 	public sealed class Simulated_recipe
 	{
-		public Simulated_recipe(string name)
+		public Simulated_recipe(Part p, string name)
 		{
 			this.name = name;
 			this.inputs = new List<Resource_recipe.Entry>();
 			this.outputs = new List<Resource_recipe.Entry>();
 			this.left = 1.0;
+			this.loaded_part = p;
 		}
 
 		/// <summary>
@@ -1567,7 +1931,7 @@ namespace KERBALISM
 				for (int i = 0; i < inputs.Count; ++i)
 				{
 					Resource_recipe.Entry e = inputs[i];
-					Simulated_resource res = sim.Resource(e.name);
+					Simulated_resource_view res = sim.Resource(e.name).GetSimulatedResourceView(loaded_part);
 					// handle combined inputs
 					if (e.combined != null)
 					{
@@ -1575,7 +1939,7 @@ namespace KERBALISM
 						if (e.combined != "")
 						{
 							Resource_recipe.Entry sec_e = inputs.Find(x => x.name.Contains(e.combined));
-							Simulated_resource sec = sim.Resource(sec_e.name);
+							Simulated_resource_view sec = sim.Resource(sec_e.name).GetSimulatedResourceView(loaded_part);
 							double pri_worst = Lib.Clamp(res.amount * e.inv_quantity, 0.0, worst_input);
 							if (pri_worst > 0.0) worst_input = pri_worst;
 							else worst_input = Lib.Clamp(sec.amount * sec_e.inv_quantity, 0.0, worst_input);
@@ -1594,7 +1958,7 @@ namespace KERBALISM
 					Resource_recipe.Entry e = outputs[i];
 					if (!e.dump) // ignore outputs that can dump overboard
 					{
-						Simulated_resource res = sim.Resource(e.name);
+						Simulated_resource_view res = sim.Resource(e.name).GetSimulatedResourceView(loaded_part);
 						worst_output = Lib.Clamp((res.capacity - res.amount) * e.inv_quantity, 0.0, worst_output);
 					}
 				}
@@ -1615,7 +1979,7 @@ namespace KERBALISM
 					if (e.combined != "")
 					{
 						Resource_recipe.Entry sec_e = inputs.Find(x => x.name.Contains(e.combined));
-						Simulated_resource sec = sim.Resource(sec_e.name);
+						Simulated_resource_view sec = sim.Resource(sec_e.name).GetSimulatedResourceView(loaded_part);
 						double need = (e.quantity * worst_io) + (sec_e.quantity * worst_io);
 						// do we have enough primary to satisfy needs, if so don't consume secondary
 						if (res.amount >= need) res.Consume(need, name);
@@ -1635,7 +1999,7 @@ namespace KERBALISM
 			for (int i = 0; i < outputs.Count; ++i)
 			{
 				Resource_recipe.Entry e = outputs[i];
-				Simulated_resource res = sim.Resource(e.name);
+				Simulated_resource_view res = sim.Resource(e.name).GetSimulatedResourceView(loaded_part);
 				res.Produce(e.quantity * worst_io, name);
 			}
 
@@ -1651,6 +2015,7 @@ namespace KERBALISM
 		public List<Resource_recipe.Entry> inputs;  // set of input resources
 		public List<Resource_recipe.Entry> outputs; // set of output resources
 		public double left;                         // what proportion of the recipe is left to execute
+		private Part loaded_part = null;            // part this recipe runs on, may be null for vessel wide recipe
 	}
 
 
