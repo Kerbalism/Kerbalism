@@ -1286,7 +1286,7 @@ namespace KERBALISM
 			return reslib.Contains( name ) ? reslib[name] : null;
 		}
 
-		// return if a resource is never able to flow, thus requiring special treatment
+		/// <summary>Determine if a resource is never able to flow, thus requiring special treatment.</summary>
 		public static bool GetResourceImpossibleToFlow(string name, bool check_empty = false)
 		{
 			// by convention: vessel wide available, so we don't do per part processing unnecessarily

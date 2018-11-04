@@ -4,10 +4,14 @@ using System.Linq;
 
 namespace KERBALISM
 {
-	// this class serves as a convient way of accessing resource levels
-	// in exactly the same way as Resource_info (i.e. more readable than getter funtions)
-	// without most of the code being aware if this is vessel wide
-	// or part specific resources
+	/// <summary>
+	/// this class gives a view on resources, either per part or vessel wide
+	/// the caller can use this in much the same way as Resource_info class
+	/// </summary>
+	/// <remarks>
+	/// typically the resource simulator works on the sum of all resources in the vessel
+	/// sometimes resources cannot flow between parts, and this class hides the difference between the two cases
+	/// </remarks>
 	public abstract class Resource_info_view
 	{
 		protected Resource_info_view() {}
@@ -15,13 +19,22 @@ namespace KERBALISM
 		public abstract double amount { get; }
 		public abstract double capacity { get; }
 
-		// record a deferred production
+		/// <summary>record a deferred production</summary>
 		public abstract void Produce(double quantity);
-		// record a deferred consumption
+		/// <summary>record a deferred consumption</summary>
 		public abstract void Consume(double quantity);
 	}
 
-	// store info about a resource in a vessel
+	/// <summary>
+	/// Class that contains:
+	/// * For a single vessel
+	/// * For a single resource
+	/// all the information the simulator needs
+	/// </summary>
+	/// <remarks>
+	/// It also contains all needed functionality to synchronize resource information between the
+	/// kerbalism simulator and the kerbal space per part information
+	/// </remarks>
 	public sealed class Resource_info
 	{
 		public Resource_info(Vessel v, string res_name)
@@ -101,20 +114,25 @@ namespace KERBALISM
 			level = capacity > double.Epsilon ? amount / capacity : 0.0;
 		}
 
-		// Identifier for either:
-		// Vessel-wide resources
-		// Per-part resources
-		// Used to identify loaded and unloaded parts in the same way
+		/// <summary>
+		/// Identifier to identify the part or vessel where resources are stored
+		/// Both loaded and unloaded parts/vessels are supported
+		/// </summary>
+		/// <remarks>
+		/// KSP 1.3 does not support the neccesary persistent identifier for per part resources
+		/// KSP 1.3 always defaults to vessel wide
+		/// design is shared with Resource_location in UI/Planner.cs module
+		/// </remarks>
 		private class Resource_location
 		{
-			public Resource_location(Part p)
+			public Resource_location(Part p) // loaded part
 			{
-#if !KSP13 // for KSP13 everything will go into vessel wide storage due to lack of persistentId
+#if !KSP13
 				vessel_wide = false;
 				persistent_identifier = p.persistentId;
 #endif
 			}
-			public Resource_location(ProtoPartSnapshot p)
+			public Resource_location(ProtoPartSnapshot p) // unloaded part
 			{
 #if !KSP13
 				vessel_wide = false;
@@ -123,6 +141,7 @@ namespace KERBALISM
 			}
 			public Resource_location() {}
 
+			/// <summary>Equals method in order to ensure object behaves like a value object</summary>
 			public override bool Equals(object obj)
 			{
 				if (obj == null || obj.GetType() != GetType())
@@ -133,23 +152,27 @@ namespace KERBALISM
 					   (((Resource_location) obj).vessel_wide == vessel_wide);
 			}
 
+			/// <summary>GetHashCode method in order to ensure object behaves like a value object</summary>
 			public override int GetHashCode()
 			{
 				return (int) persistent_identifier;
 			}
 
+			/// <summary>Is this resource stored vessel wide</summary>
 			public bool IsVesselWide() { return vessel_wide; }
+			/// <summary>Persistent identifier to determine which part resource is stored in</summary>
+			/// <remarks>only valid if not vessel wide</remarks>
 			public uint GetPersistentPartId() { return persistent_identifier; }
-
 
 			private bool vessel_wide = true;
 			private uint persistent_identifier = 0;
 		}
 
-		// see comments of Resource_info_view
+		/// <summary>Implementation of Resource_info_view</summary>
+		/// <remarks>Only constructed by Resource_info class to hide the dependencies between the two classes</remarks>
 		private class Resource_info_view_impl : Resource_info_view
 		{
-			// null parts go to vessel-wide and are intended for kerbal (e.g. eating) related rules
+			/// <remarks>null parts go to vessel-wide and are intended for kerbal (e.g. eating) related rules</remarks>
 			public Resource_info_view_impl(Part p, string resource_name, Resource_info i)
 			{
 				info = i;
@@ -203,7 +226,8 @@ namespace KERBALISM
 			}
 		}
 
-		// usually invoked if a per-part non-flowing resource appears
+		/// <summary>Initialize resource amounts for new resource location</summary>
+		/// <remarks>Typically for a part that has not yet used this resource</remarks>
 		private void InitDicts(Resource_location location)
 		{
 			_deferred[location] = 0.0;
@@ -211,6 +235,8 @@ namespace KERBALISM
 			_capacity[location] = 0.0;
 		}
 
+		/// <summary>Obtain a view on this resource for a given loaded part</summary>
+		/// <remarks>Passing a null part forces it vessel wide view</remarks>
 		public Resource_info_view GetResourceInfoView(Part p)
 		{
 			if (p == null)
@@ -224,6 +250,8 @@ namespace KERBALISM
 			return _cached_part_views[p];
 		}
 
+		/// <summary>Obtain a view on this resource for a given unloaded part</summary>
+		/// <remarks>Passing a null part forces it vessel wide view</remarks>
 		public Resource_info_view GetResourceInfoView(ProtoPartSnapshot p)
 		{
 			if (p == null)
@@ -237,27 +265,35 @@ namespace KERBALISM
 			return _cached_proto_part_views[p];
 		}
 
-		// record a deferred production
+		/// <summary>record a deferred production for the vessel wide bookkeeping</summary>
 		public void Produce(double quantity)
 		{
 			Produce(vessel_wide_location, quantity);
 		}
+		/// <summary>record a deferred production for the per part bookkeeping</summary>
+		/// <remarks>also works for vessel wide location</remarks>
 		private void Produce(Resource_location location, double quantity)
 		{
 			_deferred[location] += quantity;
 		}
 
-		// record a deferred consumption
+		/// <summary>record a deferred consumption for the vessel wide bookkeeping</summary>
 		public void Consume(double quantity)
 		{
 			Consume(vessel_wide_location, quantity);
 		}
+		/// <summary>record a deferred production for the per part bookkeeping</summary>
+		/// <remarks>also works for vessel wide location</remarks>
 		private void Consume(Resource_location location, double quantity)
 		{
 			_deferred[location] -= quantity;
 		}
 
-		// synchronize amount from cache to vessel
+		/// <summary>synchronize resources from from cache to vessel</summary>
+		/// <remarks>
+		/// this function will also sync from vessel to cache so you can always use the
+		/// Resource_info interface to get information about resources
+		/// </remarks>
 		public void Sync(Vessel v, double elapsed_s)
 		{
 			// # OVERVIEW
@@ -488,7 +524,7 @@ namespace KERBALISM
 			meal_happened = false;
 		}
 
-		// estimate time until depletion
+		/// <summary>estimate time until depletion</summary>
 		public double Depletion(int crew_count)
 		{
 			// calculate all interval-normalized rates from related rules
@@ -513,7 +549,8 @@ namespace KERBALISM
 			return amount <= double.Epsilon ? 0.0 : delta >= -1e-10 ? double.NaN : amount / -delta;
 		}
 
-		// Inform that meal has happened in this simulation step (which potentially covers many physics ticks)
+		/// <summary>Inform that meal has happened in this simulation step</summary>
+		/// <remarks>A simulation step can cover many physics ticks, especially for unloaded vessels</remarks>
 		public void SetMealHappened()
 		{
 			meal_happened = true;
@@ -598,6 +635,10 @@ namespace KERBALISM
 		private Resource_info_view _vessel_wide_view;
 	}
 
+	/// <summary>destription of how to convert inputs to outputs</summary>
+	/// <remarks>
+	/// this class is also responsible for executing the recipe, such that it is actualized in the Resource_info
+	/// </remarks>
 	public sealed class Resource_recipe
 	{
 		public struct Entry
@@ -806,7 +847,14 @@ namespace KERBALISM
 		private ProtoPartSnapshot unloaded_part = null;
 	}
 
-	// the resource cache of a vessel
+	/// <summary>
+	/// contains all resource recipes that are pending or being executed on this vessel
+	/// it also contains the information for all resources contained within this vessel
+	/// </summary>
+	/// <remarks>
+	/// processes use psuedo-resources as a multiplier for their recipes, these
+	/// pseudo resources are also contained within
+	/// </remarks>
 	public sealed class Vessel_resources
 	{
 		// return a resource handler
@@ -873,7 +921,7 @@ namespace KERBALISM
 		public List<Resource_recipe> recipes = new List<Resource_recipe>(4);
 	}
 
-	// manage per-vessel resource caches
+	/// <summary>cache for the resources of all vessels</summary>
 	public static class ResourceCache
 	{
 		public static void Init()
