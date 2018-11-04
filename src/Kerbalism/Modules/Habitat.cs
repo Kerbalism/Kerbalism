@@ -90,14 +90,14 @@ namespace KERBALISM
 			if (Lib.IsFlight())
 			{
 				// For fix IVA when crewTransfered occur, add event to define flag for FixedUpdate
-				GameEvents.onCrewTransferred.Add(new EventData<GameEvents.HostedFromToAction<ProtoCrewMember, Part>>.OnEvent(UpdateCrew));
+				GameEvents.onCrewTransferred.Add(UpdateCrew);
 			}
 
 			// configure on start
 			Configure(true);
 		}
 
-		public void Dispose()
+		public void OnDestroy()
 		{
 			GameEvents.onCrewTransferred.Remove(UpdateCrew);
 		}
