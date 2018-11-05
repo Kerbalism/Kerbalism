@@ -1275,6 +1275,29 @@ namespace KERBALISM
 			}
 		}
 
+		/// <summary>enable or disable process</summary>
+		/// <remarks>
+		/// set the psuedo resource amount that controls processes
+		/// an amount of 0.0 disables the process, any non-zero value is a multiplier for
+		/// </remarks>
+		public static void SetProcessEnabledDisabled(Part p, string res_name, bool enable, double process_capacity)
+		{
+			if (!p.Resources.Contains(res_name))
+			{
+				Lib.AddResource(p, res_name, 0.0, process_capacity);
+			}
+
+			if (enable)
+			{
+				SetResource(p, res_name, process_capacity, process_capacity);
+			}
+			else
+			{
+				// Never remove the resource capacity, otherwise checks against
+				// the pseudo resource might fail
+				SetResource(p, res_name, 0.0, process_capacity);
+			}
+		}
 
 		// return the definition of a resource, or null if it doesn't exist
 		public static PartResourceDefinition GetDefinition( string name )
