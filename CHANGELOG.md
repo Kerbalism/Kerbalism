@@ -7,7 +7,9 @@
   Bluedog_DB - MOL Orbital Habitation SegmentS
   StationPartsExpansionRedux - PTD-5 'Sunrise' Habitation Module
   NearFutureSpacecraft - PPD-24 Itinerant Service Container (Gordon Dry)
-* Sickbay TV is only available in crewable parts (crew >3) without a laboratory now and it uses 1.2 EC/s instead of 12 EC/s. (Gordon Dry)
+* Sickbay TV is only available in crewable parts (crew >3) without a laboratory now and
+  it uses 0.25 EC/s instead of 12 EC/s. It's 10x less effective now.
+  Sickbay RDU now uses 3.5 EC/s instead of 35 EC/s but also works 10x slower (cures 0.01 rad/h now). (Gordon Dry)
 * Added support for Kerbalow KA-330 Inflatable Space Hotel. (Gordon Dry)
 * Added missing xmitDataScalar to Support/OrbitalScience.cfg and also added UniversalStorage2 compatibility. (Gordon Dry)
 * Converted all remaining png and mbm textures to dds (Gordon Dry)
