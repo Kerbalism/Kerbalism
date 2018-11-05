@@ -66,6 +66,12 @@ namespace KERBALISM
 			Lib.SetProcessEnabledDisabled(part, resource, enable, multiple);
 		}
 
+		/// <description>call this when process controller breaks down or is repaired</description>
+		public void ReliablityEvent(bool breakdown)
+		{
+			if (breakdown) Configure(false, multiple);
+			else Configure(running, multiple);
+		}
 
 		public void Update()
 		{

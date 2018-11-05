@@ -413,7 +413,7 @@ namespace KERBALISM
 					{
 						foreach (PartModule m in modules)
 						{
-							Lib.SetResourceFlow(part, (m as ProcessController).resource, false);
+							(m as ProcessController).ReliablityEvent(b);
 						}
 					}
 					break;
