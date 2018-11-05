@@ -20,6 +20,8 @@
 * Add support for per-part resource simulation which is ONLY used for resources that are NO_FLOW, such as EnrichedUranium. (madman2003)
 * Fix support for dump options that don't use valves. (madman2003)
 * Make the planner outputs less quirky by running the simulator several cycles to reach steady state. (madman2003)
+* NearFutureSolar: Add reliability for curved solar panels. (madman2003)
+* NearFutureElectrical: Support Reactors and Reprocessor. (madman2003)
 
 ------------------------------------------------------------------------------------------------------
 
