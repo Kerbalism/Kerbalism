@@ -112,8 +112,8 @@ namespace KERBALISM
 					rd.time_since -= step * interval;
 
 					// remember if a meal is consumed/produced in this simulation step
-					res.meal_happened |= step > 0.99;
-					if (output.Length > 0) ResourceCache.Info(v, output).meal_happened |= step > 0.99;
+					if (step > 0.99) res.SetMealHappened();
+					if (output.Length > 0 && step > 0.99) ResourceCache.Info(v, output).SetMealHappened();
 				}
 
 				// if continuous, or if one or more intervals elapsed
@@ -140,7 +140,7 @@ namespace KERBALISM
 						{
 							// transform input into output resource
 							// - rules always dump excess overboard (because it is waste)
-							Resource_recipe recipe = new Resource_recipe();
+							Resource_recipe recipe = new Resource_recipe((Part) null); // kerbals are not associated with a part
 							recipe.Input(input, required);
 							recipe.Output(output, required * ratio, true);
 							resources.Transform(recipe);

@@ -231,7 +231,9 @@ namespace KERBALISM
 			}
 
 
-			// if the oldest unloaded vessel was selected
+			// at most one vessel gets background processing per physics tick
+			// if there is a vessel that is not the currently loaded vessel, then
+			// we will update the vessel whose most recent background update is the oldest
 			if (last_v != null)
 			{
 				// get most used resource

@@ -3,13 +3,23 @@
 
 ### Changes since the last release
 
-* Added "Set as Target" in Monitor. (HaullyGames)
+* Added support for Kerbalow KA-330 Inflatable Space Hotel. (Gordon Dry)
+* Added missing xmitDataScalar to Support/OrbitalScience.cfg and also added UniversalStorage2 compatibility. (Gordon Dry)
+* Converted all remaining png and mbm textures to dds (Gordon Dry)
+* The connection signal icon alternates between yellow and red when signal strengh is below 5%. (HaullyGames)
 * Connection: connection rate is minimum rate in ControlPath. (HaullyGames)
-* Connection: CommNet consumption was reduced in 84% by Kerbalism, it was too high when compared to RT. (HaullyGames)
+* Kerbals on EVA got a radio to transmit science data. Antenna range limited to 35km. (Gordon Dry)
+* Converted all remaining png and mbm textures to dds (Gordon Dry)
 * File Manager shows remaining transmission time when hovering over file. (HaullyGames)
+* RemoteTech - Added signal strength based on Dist/maxDist. (HaullyGames)
+* Added "Set as Target" in Monitor. (HaullyGames)
 * Panel - Define the hover area to be the same size of font size. (HaullyGames)
 * Increased SCANSat experiment sizes. A planetary map shouldn't be smaller than a temperature reading. (Sir Mortimer)
-* Sickbay modules (RDU, TV) shouldn't be visible when the part is not enabled (Sir Mortimer)
+* Connection Manager Panel, click in signal Icon to open the Connection Panel. (HaullyGames)
+* CommNet: disable stock transmission buttons and transmission action group. (HaullyGames)
+* Add support for per-part resource simulation which is ONLY used for resources that are NO_FLOW, such as EnrichedUranium. (madman2003)
+* Fix support for dump options that don't use valves. (madman2003)
+* Make the planner outputs less quirky by running the simulator several cycles to reach steady state. (madman2003)
 
 ------------------------------------------------------------------------------------------------------
 

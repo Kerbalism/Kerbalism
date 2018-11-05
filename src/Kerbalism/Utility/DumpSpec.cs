@@ -15,13 +15,13 @@ namespace KERBALISM
 		public DumpSpecs(string always_dump, string dump_valves)
 		{
 			// if always_dump is empty or false: configure dump valves if any requested
-			if (always_dump.Length == 0 || always_dump.ToLower() == "false")
+			if (always_dump.Length == 0 || string.Equals(always_dump, "false", System.StringComparison.OrdinalIgnoreCase))
 			{
 				any = false;
 				list = new List<string>();
 
 				// if dump_valves is empty or false then don't do anything
-				if (dump_valves.Length == 0 || dump_valves.ToLower() == "false")
+				if (dump_valves.Length == 0 || string.Equals(dump_valves, "false", System.StringComparison.OrdinalIgnoreCase))
 				{
 					AnyValves = false;
 					valves = new List<string>();
@@ -38,7 +38,7 @@ namespace KERBALISM
 				}
 			}
 			// if true: dump everything
-			else if (always_dump.ToLower() == "true")
+			else if (string.Equals(always_dump, "true", System.StringComparison.OrdinalIgnoreCase))
 			{
 				any = true;
 				list = new List<string>();
@@ -69,7 +69,7 @@ namespace KERBALISM
 			set
 			{
 				valve_i = (!AnyValves || value > valves.Count - 1 || value < 0) ? 0 : value;
-				DeployValve();
+				if (AnyValves) DeployValve();
 			}
 		}
 
@@ -79,7 +79,7 @@ namespace KERBALISM
 			get
 			{
 				valve_i = valve_i >= valves.Count - 1 ? 0 : ++valve_i;
-				DeployValve();
+				if (AnyValves) DeployValve();
 				return valve_i;
 			}
 			private set { }
