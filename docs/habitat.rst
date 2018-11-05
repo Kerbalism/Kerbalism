@@ -60,7 +60,9 @@ When a habitat transitions from the enabled to the disabled state or vise versa,
 Inflatable habitats
 -------------------
 
-If a habitat is inflatable, its inflate/deflate animation will be driven by the actual pressure of the part. Note that pressurizing a large habitat with a small `pressure controller <kerbals.html#lss>`_ can take a long time. For example the mk1 pods pressure control will take approx 3 days to inflate the Gravity Ring. So remember to add enough `pressure controllers <kerbals.html#lss>`_ for the job. You wouldn't want to blow up a bouncy castle with your mouth :/
+If a habitat is inflatable, its inflate/deflate animation will be driven by the actual pressure of the part. Note that pressurizing a large habitat with a small `pressure controller <kerbals.html#lss>`_ can take a long time. For example the mk1 pods pressure control will take approx 12 days (3 Earth days) to inflate the Gravity Ring. So remember to add enough `pressure controllers <kerbals.html#lss>`_ for the job. And by the way, you also should bring enough nitrogen. You wouldn't want to blow up a bouncy castle with your mouth :/
+
+To inflate an inflatable habitat on a celestial body surface with breathable atmosphere the "Air pump" should be used. Every crewable habitat got an air pump, including the non-inflatable ones. The more air pumps are enabled, the faster the inflation proceeds. Inflating the Gravity Ring with the air pump of the mk1 pod will take approx 3.5 hours. (Of course you will not bring the gravity ring to a planet's surface, or will you? This was just a comparision...)
 
 ----------
 
