@@ -58,6 +58,7 @@
 
 								if (pm != null)
 								{
+									ec += pm.resHandler.inputResources.Find(r => r.name == "ElectricCharge").rate;
 									float? packet_size = Lib.SafeReflectionValue<float>(pm, "RTPacketSize");
 									// workaround for old savegames
 									if (packet_size == null)
@@ -74,6 +75,7 @@
 								{
 									Lib.DebugLog("Could not find PartModule ModuleRTAntenna for part {0} on unloaded vessel {1}, using default values as a workaround", p.partName, v.vesselName);
 									rate += 6.6666;          // 6.67 Mb/s in 100% factor
+									ec += 0.025;             // 25 W/s
 								}
 							}
 						}
