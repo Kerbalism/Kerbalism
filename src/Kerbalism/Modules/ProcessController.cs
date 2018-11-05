@@ -63,54 +63,18 @@ namespace KERBALISM
 		{
 			// make sure multiple is not zero
 			multiple = multiple == 0 ? 1 : multiple;
-
-			if (enable)
-			{
-				// if never set
-				// - this is the case in the editor, the first time, or in flight
-				//   in the case the module was added post-launch, or EVA kerbals
-				if (!part.Resources.Contains(resource))
-				{
-					// add the resource
-					// - always add the specified amount, even in flight
-					Lib.AddResource(part, resource, capacity * multiple, capacity * multiple);
-				}
-				// has multiple changed
-				else if (this.multiple != multiple)
-				{
-					// multiple has increased
-					if (this.multiple < multiple)
-					{
-						Lib.AddResource(part, resource, capacity * (multiple - this.multiple), capacity * (multiple - this.multiple));
-					}
-					// multiple has decreased
-					else
-					{
-						Lib.RemoveResource(part, resource, 0.0, capacity * (this.multiple - multiple));
-					}
-				}
-				else
-				{
-					// increase amount to match capacity
-					Lib.AddResource(part, resource, capacity * multiple - Lib.Amount(part, resource, true), 0);
-				}
-				this.multiple = multiple;
-			}
-			else
-			{
-				// avoid complaints about pseudo resource not being part of part
-				if (!part.Resources.Contains(resource)) Lib.AddResource(part, resource, 0.0, capacity * this.multiple);
-				else Lib.RemoveResource(part, resource, capacity * this.multiple, 0.0);
-			}
+			Lib.SetProcessEnabledDisabled(part, resource, enable, multiple);
 		}
 
+		/// <description>call this when process controller breaks down or is repaired</description>
+		public void ReliablityEvent(bool breakdown)
+		{
+			if (breakdown) Configure(false, multiple);
+			else Configure(running, multiple);
+		}
 
 		public void Update()
 		{
-			// update flow mode of resource
-			// note: this has to be done constantly to prevent the user from changing it
-			Lib.SetResourceFlow(part, resource, running);
-
 			// update rmb ui
 			Events["Toggle"].guiName = Lib.StatusToggle(title, running ? "running" : "stopped");
 			Events["DumpValve"].guiName = Lib.StatusToggle("Dump", dump_specs.valves[valve_i]);

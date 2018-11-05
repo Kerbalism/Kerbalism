@@ -82,40 +82,8 @@ namespace KERBALISM
 
 		public void Configure(bool enable, int slots, bool cureEverybody)
 		{
-			if (enable)
-			{
-				// if never set
-				// - this is the case in the editor, the first time, or in flight
-				//   in the case the module was added post-launch, or EVA kerbals
-				if (!part.Resources.Contains(resource))
-				{
-					// add the resource
-					// - always add the specified amount, even in flight
-					Lib.AddResource(part, resource, capacity, capacity);
-				}
-				// has slots changed
-				else if (this.slots != slots || this.cureEverybody != cureEverybody)
-				{
-					if (slots == 0 && cureEverybody) slots = 1;
-
-					// slots has increased
-					if (this.slots < slots)
-					{
-						Lib.AddResource(part, resource, capacity * (slots - this.slots), capacity * (slots - this.slots));
-					}
-					// slots has decreased
-					else
-					{
-						Lib.RemoveResource(part, resource, 0.0, capacity * (this.slots - slots));
-					}
-				}
-				this.slots = slots;
-			}
-			else
-			{
-				Lib.RemoveResource(part, resource, 0.0, capacity * this.slots);
-				this.slots = 1;
-			}
+			if (cureEverybody) Lib.SetProcessEnabledDisabled(part, resource, enable, capacity);
+			else Lib.SetProcessEnabledDisabled(part, resource, enable, capacity * slots);
 		}
 
 		public void Update()
@@ -152,7 +120,7 @@ namespace KERBALISM
 			}
 			RemovePatients(removeList);
 
-			Lib.SetResourceFlow(part, resource, patientList.Count > 0 && running);
+			Configure(running, slots, cureEverybody);
 			UpdateActions();
 		}
 
