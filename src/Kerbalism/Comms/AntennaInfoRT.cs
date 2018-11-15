@@ -58,17 +58,22 @@
 
 								if (pm != null)
 								{
-									ec += pm.resHandler.inputResources.Find(r => r.name == "ElectricCharge").rate;
+									ModuleResource mResource = pm.resHandler.inputResources.Find(r => r.name == "ElectricCharge");
 									float? packet_size = Lib.SafeReflectionValue<float>(pm, "RTPacketSize");
+									float? packet_Interval = Lib.ReflectionValue<float>(pm, "RTPacketInterval");
+
 									// workaround for old savegames
-									if (packet_size == null)
+									if (mResource == null || packet_size == null || packet_Interval == null)
 									{
 										Lib.DebugLog("Old SaveGame PartModule ModuleRTAntenna for part {0} on unloaded vessel {1}, using default values as a workaround", p.partName, v.vesselName);
+										Lib.DebugLog("ElectricCharge isNull: {0}, RTPacketSize isNull: {1}, RTPacketInterval isNull: {2}", mResource == null, packet_size == null, packet_Interval == null);
 										rate += 6.6666;          // 6.67 Mb/s in 100% factor
+										ec += 0.025;             // 25 W/s
 									}
 									else
 									{
-										rate += ((float)packet_size / Lib.ReflectionValue<float>(pm, "RTPacketInterval"));
+										rate += (float)packet_size / (float)packet_Interval;
+										ec += mResource.rate;
 									}
 								}
 								else
