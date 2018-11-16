@@ -41,8 +41,6 @@
 				{
 					// get part prefab (required for module properties)
 					Part part_prefab = PartLoader.getPartInfoByName(p.partName).partPrefab;
-					int index = 0;      // module index
-
 					foreach (ProtoPartModuleSnapshot m in p.modules)
 					{
 						// calculate internal (passive) transmitter ec usage @ 0.5W each
@@ -50,33 +48,36 @@
 						// calculate external transmitters
 						else if (m.moduleName == "ModuleRTAntenna")
 						{
-							// only include data rate and ec cost if transmitter is active skip if index is out of range
-							if (Lib.Proto.GetBool(m, "IsRTActive") && index < part_prefab.Modules.Count)
+							// only include data rate and ec cost if transmitter is active
+							if (Lib.Proto.GetBool(m, "IsRTActive"))
 							{
-								// get module prefab
-								PartModule pm = part_prefab.Modules.GetModule(index);
-
-								if (pm != null)
+								bool mFound = false;
+								// get all modules in prefab
+								foreach (PartModule pm in part_prefab.Modules)
 								{
-									ModuleResource mResource = pm.resHandler.inputResources.Find(r => r.name == "ElectricCharge");
-									float? packet_size = Lib.SafeReflectionValue<float>(pm, "RTPacketSize");
-									float? packet_Interval = Lib.ReflectionValue<float>(pm, "RTPacketInterval");
+									if (pm.moduleName == m.moduleName)
+									{
+										mFound = true;
+										ModuleResource mResource = pm.resHandler.inputResources.Find(r => r.name == "ElectricCharge");
+										float? packet_size = Lib.SafeReflectionValue<float>(pm, "RTPacketSize");
+										float? packet_Interval = Lib.SafeReflectionValue<float>(pm, "RTPacketInterval");
 
-									// workaround for old savegames
-									if (mResource == null || packet_size == null || packet_Interval == null)
-									{
-										Lib.DebugLog("Old SaveGame PartModule ModuleRTAntenna for part {0} on unloaded vessel {1}, using default values as a workaround", p.partName, v.vesselName);
-										Lib.DebugLog("ElectricCharge isNull: {0}, RTPacketSize isNull: {1}, RTPacketInterval isNull: {2}", mResource == null, packet_size == null, packet_Interval == null);
-										rate += 6.6666;          // 6.67 Mb/s in 100% factor
-										ec += 0.025;             // 25 W/s
-									}
-									else
-									{
-										rate += (float)packet_size / (float)packet_Interval;
-										ec += mResource.rate;
+										// workaround for old savegames
+										if (mResource == null || packet_size == null || packet_Interval == null)
+										{
+											Lib.DebugLog("Old SaveGame PartModule ModuleRTAntenna for part '{0}' on unloaded vessel '{1}', using default values as a workaround", p.partName, v.vesselName);
+											Lib.DebugLog("ElectricCharge isNull: '{0}', RTPacketSize isNull: '{1}', RTPacketInterval isNull: '{2}'", mResource == null, packet_size == null, packet_Interval == null);
+											rate += 6.6666;          // 6.67 Mb/s in 100% factor
+											ec += 0.025;             // 25 W/s
+										}
+										else
+										{
+											rate += (float)packet_size / (float)packet_Interval;
+											ec += mResource.rate;
+										}
 									}
 								}
-								else
+								if (!mFound)
 								{
 									Lib.DebugLog("Could not find PartModule ModuleRTAntenna for part {0} on unloaded vessel {1}, using default values as a workaround", p.partName, v.vesselName);
 									rate += 6.6666;          // 6.67 Mb/s in 100% factor
@@ -84,7 +85,6 @@
 								}
 							}
 						}
-						index++;
 					}
 				}
 			}
