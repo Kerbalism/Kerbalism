@@ -24,12 +24,12 @@ namespace KERBALISM
 						k *= vi.landed ? 1.0 : 0.0;
 						break;
 
-					case "artificial_atmosphere":
-						k *= vi.breathable ? 0.0 : 1.0;
+					case "breathable":
+						k *= vi.breathable ? 1.0 : 0.0;
 						break;
 
-					case "natural_atmosphere":
-						k *= vi.breathable ? 1.0 : 0.0;
+					case "non_breathable":
+						k *= vi.breathable ? 0.0 : 1.0;
 						break;
 
 					case "temperature":
@@ -104,12 +104,12 @@ namespace KERBALISM
 						k *= env.landed ? 1.0 : 0.0;
 						break;
 
-					case "artificial_atmosphere":
-						k *= env.breathable ? 0.0 : 1.0;
+					case "breathable":
+						k *= env.breathable ? 1.0 : 0.0;
 						break;
 
-					case "natural_atmosphere":
-						k *= env.breathable ? 1.0 : 0.0;
+					case "non_breathable":
+						k *= env.breathable ? 0.0 : 1.0;
 						break;
 
 					case "temperature":
