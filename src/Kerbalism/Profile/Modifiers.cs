@@ -28,6 +28,10 @@ namespace KERBALISM
 						k *= vi.breathable ? 0.0 : 1.0;
 						break;
 
+					case "natural_atmosphere":
+						k *= vi.breathable ? 1.0 : 0.0;
+						break;
+
 					case "temperature":
 						k *= vi.temp_diff;
 						break;
