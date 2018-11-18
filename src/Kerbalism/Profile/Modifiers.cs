@@ -24,7 +24,7 @@ namespace KERBALISM
 						k *= vi.landed ? 1.0 : 0.0;
 						break;
 
-					case "breathable":
+					case "artificial_atmosphere":
 						k *= vi.breathable ? 0.0 : 1.0;
 						break;
 
