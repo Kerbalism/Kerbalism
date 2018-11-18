@@ -104,8 +104,12 @@ namespace KERBALISM
 						k *= env.landed ? 1.0 : 0.0;
 						break;
 
-					case "breathable":
+					case "artificial_atmosphere":
 						k *= env.breathable ? 0.0 : 1.0;
+						break;
+
+					case "natural_atmosphere":
+						k *= env.breathable ? 1.0 : 0.0;
 						break;
 
 					case "temperature":
