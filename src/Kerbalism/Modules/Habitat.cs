@@ -241,12 +241,9 @@ namespace KERBALISM
 			// in the editors
 			else
 			{
-				// set amount to max capacity
-				foreach (string resource in ResourceBalance.resourceName)
-				{
-					if (part.Resources.Contains(resource))
-						part.Resources[resource].amount = part.Resources[resource].maxAmount;
-				}
+				// The other resources in ResourceBalance are waste resources
+				if (part.Resources.Contains("Atmosphere"))
+					part.Resources["Atmosphere"].amount = part.Resources["Atmosphere"].maxAmount;
 
 				// return new state
 				return State.enabled;

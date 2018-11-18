@@ -25,6 +25,10 @@ namespace KERBALISM
 						break;
 
 					case "breathable":
+						k *= vi.breathable ? 1.0 : 0.0;
+						break;
+
+					case "non_breathable":
 						k *= vi.breathable ? 0.0 : 1.0;
 						break;
 
@@ -101,6 +105,10 @@ namespace KERBALISM
 						break;
 
 					case "breathable":
+						k *= env.breathable ? 1.0 : 0.0;
+						break;
+
+					case "non_breathable":
 						k *= env.breathable ? 0.0 : 1.0;
 						break;
 

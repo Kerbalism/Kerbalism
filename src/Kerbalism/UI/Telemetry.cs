@@ -114,7 +114,7 @@ namespace KERBALISM
 				Resource_info res = resources.Info(v, supply.resource);
 
 				// only show estimate if the resource is present
-				if (res.amount <= double.Epsilon) continue;
+				if (res.amount <= 1e-10) continue;
 
 				// render panel title, if not done already
 				if (supplies == 0) p.AddSection("SUPPLIES");
