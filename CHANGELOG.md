@@ -30,6 +30,9 @@
 * Make the planner outputs less quirky by running the simulator several cycles to reach steady state. (madman2003)
 * NearFutureSolar: Add reliability for curved solar panels. (madman2003)
 * NearFutureElectrical: Support Reactors and Reprocessor. (madman2003)
+* Don't show resources in telemetry that have practically zero value, avoid flickering telemetry. (madman2003)
+* Don't fill habitat with CO2 rich atmosphere when enabling habitat in VAB. (madman2003)
+* Air pump should only work on planets with naturally breathable atmosphere. (madman2003)
 
 ------------------------------------------------------------------------------------------------------
 
