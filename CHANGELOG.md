@@ -3,6 +3,7 @@
 
 ### Changes since the last release
 
+* Make CCK play nice with FilterExtensions. (Gordon Dry)
 * Added sickbay RDU to four additional parts (with 1 slot each):
   - Bluedog_DB - MOL Orbital Habitation SegmentS
   - StationPartsExpansionRedux - PTD-5 'Sunrise' Habitation Module
