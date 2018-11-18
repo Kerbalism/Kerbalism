@@ -546,7 +546,7 @@ namespace KERBALISM
 			double delta = rate + meal_rate;
 
 			// return depletion
-			return amount <= double.Epsilon ? 0.0 : delta >= -1e-10 ? double.NaN : amount / -delta;
+			return amount <= 1e-10 ? 0.0 : delta >= -1e-10 ? double.NaN : amount / -delta;
 		}
 
 		/// <summary>Inform that meal has happened in this simulation step</summary>
