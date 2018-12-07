@@ -3,6 +3,7 @@
 
 ### Changes since the last release
 
+* xmitDataScalar = 1 for Bluedog DB early probes. (Gordon Dry)
 * Add support patch for the USI-NF compatibility patch. (Gordon Dry)
 * Make CCK play nice with FilterExtensions. (Gordon Dry)
 * Added sickbay RDU to four additional parts (with 1 slot each):
