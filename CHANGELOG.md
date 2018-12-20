@@ -20,7 +20,6 @@
 * The connection signal icon alternates between yellow and red when signal strengh is below 5%. (HaullyGames)
 * Connection: connection rate is minimum rate in ControlPath. (HaullyGames)
 * Kerbals on EVA got a radio to transmit science data. Antenna range limited to 35km. (Gordon Dry)
-* Converted all remaining png and mbm textures to dds (Gordon Dry)
 * File Manager shows remaining transmission time when hovering over file. (HaullyGames)
 * RemoteTech - Added signal strength based on Dist/maxDist. (HaullyGames)
 * Added "Set as Target" in Monitor. (HaullyGames)
