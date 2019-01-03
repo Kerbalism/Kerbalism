@@ -23,7 +23,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
     <OutputPath Condition="Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">$(KSPDEVDIR)\GameData\Kerbalism\</OutputPath>
-    <OutputPath Condition="!Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">..\15\obj\Kerbalism\</OutputPath>
+    <OutputPath Condition="!Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">..\16\obj\Kerbalism\</OutputPath>
     <ErrorReport>prompt</ErrorReport>
     <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
     <DefineConstants>TRACE;DEBUG;DEVELOPMENT;ENABLE_PROFILER;DEBUG_PROFILER;DEBUG_RESOURCES</DefineConstants>
@@ -40,7 +40,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
     <OutputPath Condition="Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">$(KSPDEVDIR)\GameData\Kerbalism\</OutputPath>
-    <OutputPath Condition="!Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">..\15\obj\Kerbalism\</OutputPath>
+    <OutputPath Condition="!Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">..\16\obj\Kerbalism\</OutputPath>
     <WarningLevel>4</WarningLevel>
     <DefineConstants>
     </DefineConstants>
@@ -92,32 +92,32 @@
       <ItemGroup>
         <Reference Include="Assembly-CSharp">
           <HintPath Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-CSharp.dll')">$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-CSharp.dll</HintPath>
-          <HintPath Condition="Exists('..\15\Assembly-CSharp.dll')">..\15\Assembly-CSharp.dll</HintPath>
+          <HintPath Condition="Exists('..\16\Assembly-CSharp.dll')">..\16\Assembly-CSharp.dll</HintPath>
           <Private>False</Private>
         </Reference>
         <Reference Include="Assembly-CSharp-firstpass">
           <HintPath Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-CSharp-firstpass.dll')">$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-CSharp-firstpass.dll</HintPath>
-          <HintPath Condition="Exists('..\15\Assembly-CSharp-firstpass.dll')">..\15\Assembly-CSharp-firstpass.dll</HintPath>
+          <HintPath Condition="Exists('..\16\Assembly-CSharp-firstpass.dll')">..\16\Assembly-CSharp-firstpass.dll</HintPath>
           <Private>False</Private>
         </Reference>
         <Reference Include="Assembly-UnityScript">
           <HintPath Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-UnityScript.dll')">$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-UnityScript.dll</HintPath>
-          <HintPath Condition="Exists('..\15\Assembly-UnityScript.dll')">..\15\Assembly-UnityScript.dll</HintPath>
+          <HintPath Condition="Exists('..\16\Assembly-UnityScript.dll')">..\16\Assembly-UnityScript.dll</HintPath>
           <Private>False</Private>
         </Reference>
         <Reference Include="Assembly-UnityScript-firstpass">
           <HintPath Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-UnityScript-firstpass.dll')">$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-UnityScript-firstpass.dll</HintPath>
-          <HintPath Condition="Exists('..\15\Assembly-UnityScript-firstpass.dll')">..\15\Assembly-UnityScript-firstpass.dll</HintPath>
+          <HintPath Condition="Exists('..\16\Assembly-UnityScript-firstpass.dll')">..\16\Assembly-UnityScript-firstpass.dll</HintPath>
           <Private>False</Private>
         </Reference>
         <Reference Include="UnityEngine">
           <HintPath Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\UnityEngine.dll')">$(KSPDEVDIR)\KSP_x64_Data\Managed\UnityEngine.dll</HintPath>
-          <HintPath Condition="Exists('..\15\UnityEngine.dll')">..\15\UnityEngine.dll</HintPath>
+          <HintPath Condition="Exists('..\16\UnityEngine.dll')">..\16\UnityEngine.dll</HintPath>
           <Private>False</Private>
         </Reference>
         <Reference Include="UnityEngine.UI">
           <HintPath Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\UnityEngine.UI.dll')">$(KSPDEVDIR)\KSP_x64_Data\Managed\UnityEngine.UI.dll</HintPath>
-          <HintPath Condition="Exists('..\15\UnityEngine.UI.dll')">..\15\UnityEngine.UI.dll</HintPath>
+          <HintPath Condition="Exists('..\16\UnityEngine.UI.dll')">..\16\UnityEngine.UI.dll</HintPath>
           <Private>False</Private>
         </Reference>
       </ItemGroup>
@@ -324,8 +324,8 @@
     $(PostBuildEventDependsOn);
     PostBuildMacros;
   </PostBuildEventDependsOn>
-    <PostBuildEvent Condition="'$(OS)' == 'Windows_NT'">if "$(ConfigurationName)"=="Debug" (call "$(ProjectDir)..\..\buildscripts\UnityDebug\prepare-debug.bat" $(TargetName) 15)
-if "$(ConfigurationName)"=="Release" (call "$(ProjectDir)..\..\buildscripts\ZipPack\build-package.bat" $(TargetName) -v@(VersionNumber) 15)
+    <PostBuildEvent Condition="'$(OS)' == 'Windows_NT'">if "$(ConfigurationName)"=="Debug" (call "$(ProjectDir)..\..\buildscripts\UnityDebug\prepare-debug.bat" $(TargetName) 16)
+if "$(ConfigurationName)"=="Release" (call "$(ProjectDir)..\..\buildscripts\ZipPack\build-package.bat" $(TargetName) -v@(VersionNumber) 16)
 if "$(ConfigurationName)"=="Debug 1.3" (call "$(ProjectDir)..\..\buildscripts\UnityDebug\prepare-debug.bat" $(TargetName) 13)
 if "$(ConfigurationName)"=="Release 1.3" (call "$(ProjectDir)..\..\buildscripts\ZipPack\build-package.bat" $(TargetName) -v@(VersionNumber) 13)
 echo Copying local repository Localization files to $(TargetDir)Localization

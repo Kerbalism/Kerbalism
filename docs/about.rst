@@ -8,7 +8,7 @@ Kerbalism was originally created by ShotgunNinja. It is now under active develop
 REQUIREMENTS
 ------------
 
-- KSP 1.3.1 , 1.4.x or 1.5.x
+- Any KSP version from 1.3.1 to 1.6.x
 - Community Resource Pack (CRP)
 - ModuleManager 3.0.0+
 

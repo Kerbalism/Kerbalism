@@ -73,8 +73,6 @@ namespace KERBALISM
 
 				// record cure
 				cures[cure] = cure_rate;
-
-				if (Lib.IsResourceImpossibleToFlow(cure)) restricted = true;
 			}
 
 			// parse dump specs

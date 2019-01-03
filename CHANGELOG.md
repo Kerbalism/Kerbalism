@@ -1,3 +1,24 @@
+## v2.2.0 for all versions of KSP from 1.3.1 to 1.6.x
+
+ - 2019-xx-xx
+
+### Changes since the last release
+
+* Fix Kerbalism parts search filters and missing tab in the VAB/SPH (PiezPiedPy)
+* Fix processes not calculating capacities correctly (PiezPiedPy)
+* Processes default to a switched on state when added in the VAB/SPH (PiezPiedPy) 
+
+------------------------------------------------------------------------------------------------------
+
+## v2.1.1 for KSP 1.6.x, 1.5.x , 1.4.x and 1.3.1
+ - 2018-12-22
+
+### Changes since the last release
+
+* Updated for KSP 1.6.x
+
+------------------------------------------------------------------------------------------------------
+
 ## v2.1.0 for KSP 1.5.x , 1.4.x and 1.3.1
  - 2018-12-18
 
@@ -17,7 +38,7 @@
 * Added support for Kerbalow KA-330 Inflatable Space Hotel. (Gordon Dry)
 * Added missing xmitDataScalar to Support/OrbitalScience.cfg and also added UniversalStorage2 compatibility. (Gordon Dry)
 * Converted all remaining png and mbm textures to dds (Gordon Dry)
-* The connection signal icon alternates between yellow and red when signal strengh is below 5%. (HaullyGames)
+* The connection signal icon alternates between yellow and red when signal strength is below 5%. (HaullyGames)
 * Connection: connection rate is minimum rate in ControlPath. (HaullyGames)
 * Kerbals on EVA got a radio to transmit science data. Antenna range limited to 35km. (Gordon Dry)
 * File Manager shows remaining transmission time when hovering over file. (HaullyGames)
