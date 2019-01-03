@@ -189,7 +189,7 @@ namespace KERBALISM
 					// Habitat equalization
 					ResourceBalance.Equalizer(v);
 
-					// consume ec for transmission, and transmit science data
+					// transmit science data
 					Science.Update(v, vi, vd, resources, elapsed_s);
 
 					// apply rules
@@ -247,7 +247,7 @@ namespace KERBALISM
 
 				Communications.Update(last_v, last_vi, last_vd, last_ec, last_time);
 
-				// consume ec for transmission, and transmit science
+				// transmit science	data
 				Science.Update(last_v, last_vi, last_vd, last_resources, last_time);
 
 				// apply rules

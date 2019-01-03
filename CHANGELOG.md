@@ -5,6 +5,8 @@
 ### Changes since the last release
 
 * Fix Kerbalism parts search filters and missing tab in the VAB/SPH (PiezPiedPy)
+* Fix processes not calculating capacities correctly (PiezPiedPy)
+* Processes default to a switched on state when added in the VAB/SPH (PiezPiedPy) 
 
 ------------------------------------------------------------------------------------------------------
 
