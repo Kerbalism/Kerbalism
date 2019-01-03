@@ -4,7 +4,7 @@
 
 ### Changes since the last release
 
-*
+* Fix Kerbalism parts search filters and missing tab in the VAB/SPH (PiezPiedPy)
 
 ------------------------------------------------------------------------------------------------------
 
