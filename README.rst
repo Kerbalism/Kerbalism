@@ -245,7 +245,7 @@ There is a help file on GitHub for those wishing to report bugs or contribute to
 REQUIREMENTS
 ------------
 
-- KSP 1.3.1 or 1.4.x
+- Any KSP version from 1.3.1 to 1.6.x
 - Community Resource Pack (CRP)
 - ModuleManager 3.0.0+
 
