@@ -5,31 +5,14 @@ env:
 matrix:
   include:
     - env:
-      - PRIMARY_KSPVER="1.6.0"
-      - PRIMARY_BIN="16"
-      - PRIMARY_BIN_CPY1="15"
-      - PRIMARY_BIN_CPY0="14"
-      - PRIMARY_DEFS=""
-      - SECONDARY_KSPVER="1.3.1"
-      - SECONDARY_BIN="13"
-      - SECONDARY_DEFS="/p:DefineConstants=KSP13"
+      - KSPVERS="1.6.0 1.5.1 1.4.5 1.3.1"
+      - KSPBINS="16 15 14 13"
 before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -qq p7zip-full bash openssh-client jq
-before_script:
-  - echo "Downloading Reference DLLs for KSP $PRIMARY_KSPVER"
-  - mkdir -p $TRAVIS_BUILD_DIR/src/$PRIMARY_BIN
-  - wget https://img.steamport.xyz/KSP-$PRIMARY_KSPVER.7z
-  - 7za x KSP-$PRIMARY_KSPVER.7z -o$TRAVIS_BUILD_DIR/src/$PRIMARY_BIN -p$ZIP_PASSWORD
-  - echo "Downloading Reference DLLs for KSP $SECONDARY_KSPVER"
-  - mkdir -p $TRAVIS_BUILD_DIR/src/$SECONDARY_BIN
-  - wget https://img.steamport.xyz/KSP-$SECONDARY_KSPVER.7z
-  - 7za x KSP-$SECONDARY_KSPVER.7z -o$TRAVIS_BUILD_DIR/src/$SECONDARY_BIN -p$ZIP_PASSWORD
 script:
   - cd "$TRAVIS_BUILD_DIR"
-  - bash "$TRAVIS_BUILD_DIR/buildscripts/Travis/avc_to_assembly.sh"
-  - msbuild $SECONDARY_DEFS Kerbalism.sln /t:Build /p:Configuration="Release 1.3"
-  - msbuild $PRIMARY_DEFS Kerbalism.sln /t:Build /p:Configuration="Release"
+  - bash "$TRAVIS_BUILD_DIR/buildscripts/Travis/build.sh"
 after_success:
   - export MOD_VERSION=$(cat $TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism.version | jq '.VERSION.MAJOR').$(cat $TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism.version | jq '.VERSION.MINOR').$(cat $TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism.version | jq '.VERSION.PATCH')
   - bash "$TRAVIS_BUILD_DIR/buildscripts/Travis/avc_version.sh" $PRIMARY_KSPVER "$TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism.version"

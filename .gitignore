@@ -374,3 +374,7 @@ docs/_[Bb]uild
 
 # SciTE editor config files
 SciTE*.properties
+
+# Kerbalism build system
+src/DLLs
+KSP-*.7z

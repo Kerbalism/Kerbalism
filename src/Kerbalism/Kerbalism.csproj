@@ -23,7 +23,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
     <OutputPath Condition="Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">$(KSPDEVDIR)\GameData\Kerbalism\</OutputPath>
-    <OutputPath Condition="!Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">..\16\obj\Kerbalism\</OutputPath>
+    <OutputPath Condition="!Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">obj\Kerbalism\</OutputPath>
     <ErrorReport>prompt</ErrorReport>
     <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
     <DefineConstants>TRACE;DEBUG;DEVELOPMENT;ENABLE_PROFILER;DEBUG_PROFILER;DEBUG_RESOURCES</DefineConstants>
@@ -40,7 +40,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
     <OutputPath Condition="Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">$(KSPDEVDIR)\GameData\Kerbalism\</OutputPath>
-    <OutputPath Condition="!Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">..\16\obj\Kerbalism\</OutputPath>
+    <OutputPath Condition="!Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">obj\Kerbalism\</OutputPath>
     <WarningLevel>4</WarningLevel>
     <DefineConstants>
     </DefineConstants>
@@ -92,32 +92,32 @@
       <ItemGroup>
         <Reference Include="Assembly-CSharp">
           <HintPath Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-CSharp.dll')">$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-CSharp.dll</HintPath>
-          <HintPath Condition="Exists('..\16\Assembly-CSharp.dll')">..\16\Assembly-CSharp.dll</HintPath>
+          <HintPath Condition="Exists('..\DLLs\Assembly-CSharp.dll')">..\DLLs\Assembly-CSharp.dll</HintPath>
           <Private>False</Private>
         </Reference>
         <Reference Include="Assembly-CSharp-firstpass">
           <HintPath Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-CSharp-firstpass.dll')">$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-CSharp-firstpass.dll</HintPath>
-          <HintPath Condition="Exists('..\16\Assembly-CSharp-firstpass.dll')">..\16\Assembly-CSharp-firstpass.dll</HintPath>
+          <HintPath Condition="Exists('..\DLLs\Assembly-CSharp-firstpass.dll')">..\DLLs\Assembly-CSharp-firstpass.dll</HintPath>
           <Private>False</Private>
         </Reference>
         <Reference Include="Assembly-UnityScript">
           <HintPath Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-UnityScript.dll')">$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-UnityScript.dll</HintPath>
-          <HintPath Condition="Exists('..\16\Assembly-UnityScript.dll')">..\16\Assembly-UnityScript.dll</HintPath>
+          <HintPath Condition="Exists('..\DLLs\Assembly-UnityScript.dll')">..\DLLs\Assembly-UnityScript.dll</HintPath>
           <Private>False</Private>
         </Reference>
         <Reference Include="Assembly-UnityScript-firstpass">
           <HintPath Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-UnityScript-firstpass.dll')">$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-UnityScript-firstpass.dll</HintPath>
-          <HintPath Condition="Exists('..\16\Assembly-UnityScript-firstpass.dll')">..\16\Assembly-UnityScript-firstpass.dll</HintPath>
+          <HintPath Condition="Exists('..\DLLs\Assembly-UnityScript-firstpass.dll')">..\DLLs\Assembly-UnityScript-firstpass.dll</HintPath>
           <Private>False</Private>
         </Reference>
         <Reference Include="UnityEngine">
           <HintPath Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\UnityEngine.dll')">$(KSPDEVDIR)\KSP_x64_Data\Managed\UnityEngine.dll</HintPath>
-          <HintPath Condition="Exists('..\16\UnityEngine.dll')">..\16\UnityEngine.dll</HintPath>
+          <HintPath Condition="Exists('..\DLLs\UnityEngine.dll')">..\DLLs\UnityEngine.dll</HintPath>
           <Private>False</Private>
         </Reference>
         <Reference Include="UnityEngine.UI">
           <HintPath Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\UnityEngine.UI.dll')">$(KSPDEVDIR)\KSP_x64_Data\Managed\UnityEngine.UI.dll</HintPath>
-          <HintPath Condition="Exists('..\16\UnityEngine.UI.dll')">..\16\UnityEngine.UI.dll</HintPath>
+          <HintPath Condition="Exists('..\DLLs\UnityEngine.UI.dll')">..\DLLs\UnityEngine.UI.dll</HintPath>
           <Private>False</Private>
         </Reference>
       </ItemGroup>

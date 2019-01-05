@@ -18,7 +18,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath Condition="Exists('$(KSPBACKPORTDIR)\GameData\Kerbalism\')">$(KSPBACKPORTDIR)\GameData\Kerbalism\</OutputPath>
-    <OutputPath Condition="!Exists('$(KSPBACKPORTDIR)\GameData\Kerbalism\')">..\16\obj\Kerbalism\</OutputPath>
+    <OutputPath Condition="!Exists('$(KSPBACKPORTDIR)\GameData\Kerbalism\')">..\DLLs\obj\Kerbalism\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -27,7 +27,7 @@
     <DebugType>none</DebugType>
     <Optimize>true</Optimize>
     <OutputPath Condition="Exists('$(KSPBACKPORTDIR)\GameData\Kerbalism\')">$(KSPBACKPORTDIR)\GameData\Kerbalism\</OutputPath>
-    <OutputPath Condition="!Exists('$(KSPBACKPORTDIR)\GameData\Kerbalism\')">..\16\obj\Kerbalism\</OutputPath>
+    <OutputPath Condition="!Exists('$(KSPBACKPORTDIR)\GameData\Kerbalism\')">..\DLLs\obj\Kerbalism\</OutputPath>
     <DefineConstants>
     </DefineConstants>
     <ErrorReport>prompt</ErrorReport>
@@ -40,7 +40,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath Condition="Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">$(KSPDEVDIR)\GameData\Kerbalism\</OutputPath>
-    <OutputPath Condition="!Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">..\16\obj\Kerbalism\</OutputPath>
+    <OutputPath Condition="!Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">..\DLLs\obj\Kerbalism\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -49,7 +49,7 @@
     <DebugType>none</DebugType>
     <Optimize>true</Optimize>
     <OutputPath Condition="Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">$(KSPDEVDIR)\GameData\Kerbalism\</OutputPath>
-    <OutputPath Condition="!Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">..\16\obj\Kerbalism\</OutputPath>
+    <OutputPath Condition="!Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">..\DLLs\obj\Kerbalism\</OutputPath>
     <DefineConstants>
     </DefineConstants>
     <ErrorReport>prompt</ErrorReport>
@@ -60,18 +60,18 @@
   <ItemGroup>
     <Reference Include="Assembly-CSharp">
       <HintPath Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-CSharp.dll')">$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-CSharp.dll</HintPath>
-      <HintPath Condition="Exists('..\16\Assembly-CSharp.dll')">..\16\Assembly-CSharp.dll</HintPath>
+      <HintPath Condition="Exists('..\DLLs\Assembly-CSharp.dll')">..\DLLs\Assembly-CSharp.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Assembly-CSharp-firstpass">
       <HintPath Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-CSharp-firstpass.dll')">$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-CSharp-firstpass.dll</HintPath>
-      <HintPath Condition="Exists('..\16\Assembly-CSharp-firstpass.dll')">..\16\Assembly-CSharp-firstpass.dll</HintPath>
+      <HintPath Condition="Exists('..\DLLs\Assembly-CSharp-firstpass.dll')">..\DLLs\Assembly-CSharp-firstpass.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="UnityEngine">
       <HintPath Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\UnityEngine.dll')">$(KSPDEVDIR)\KSP_x64_Data\Managed\UnityEngine.dll</HintPath>
-      <HintPath Condition="Exists('..\16\UnityEngine.dll')">..\16\UnityEngine.dll</HintPath>
+      <HintPath Condition="Exists('..\DLLs\UnityEngine.dll')">..\DLLs\UnityEngine.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
