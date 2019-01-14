@@ -1,9 +1,7 @@
 using System;
-using System.Collections.Generic;
-using System.Reflection;
-using Experience;
-using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
 
 
 namespace KERBALISM
@@ -36,6 +34,7 @@ namespace KERBALISM
 			CryoTank,
 			Unknown,
 			FNGenerator,
+			NonRechargeBattery
 		}
 
 		static Module_type ModuleType(string module_name)
@@ -70,6 +69,7 @@ namespace KERBALISM
 				case "ModuleRadioisotopeGenerator": return Module_type.RadioisotopeGenerator;
 				case "ModuleCryoTank": return Module_type.CryoTank;
 				case "FNGenerator": return Module_type.FNGenerator;
+				case "ModuleNonRechargeBattery": return Module_type.NonRechargeBattery;
 			}
 			return Module_type.Unknown;
 		}
@@ -143,6 +143,7 @@ namespace KERBALISM
 						case Module_type.RadioisotopeGenerator: ProcessRadioisotopeGenerator(v, p, m, module_prefab, ec, elapsed_s); break;
 						case Module_type.CryoTank: ProcessCryoTank(v, p, m, module_prefab, resources, ec, elapsed_s); break;
 						case Module_type.FNGenerator: ProcessFNGenerator(v, p, m, module_prefab, ec, elapsed_s); break;
+						case Module_type.NonRechargeBattery: ProcessNonRechargeBattery(v, p, m, module_prefab, ec, elapsed_s); break;
 					}
 				}
 			}
@@ -530,7 +531,7 @@ namespace KERBALISM
 				double norm_solar_flux = info.solar_flux / Sim.SolarFluxAtHome();
 
 				// calculate rate per component
-				double rate = (double)tot_rate / (double)components.Length;
+				double rate = tot_rate / (double)components.Length;
 
 				// calculate world-space part rotation quaternion
 				// note: a possible optimization here is to cache the transform lookup (unity was coded by monkeys)
@@ -637,6 +638,13 @@ namespace KERBALISM
 
 			// apply EC consumption
 			ec.Consume(total_cost * elapsed_s);
+		}
+
+		static void ProcessNonRechargeBattery(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule fission_generator, Resource_info ec, double elapsed_s)
+		{
+			ProtoPartResourceSnapshot proto_ec = p.resources.Find(k => k.resourceName == "ElectricCharge");
+			proto_ec.maxAmount = proto_ec.amount;
+			ec.Sync(v, elapsed_s);
 		}
 	}
 
