@@ -22,6 +22,6 @@ after_success:
   - echo "${SFTP_KEY}" | base64 --decode >/tmp/sftp_key
   - chmod 400 /tmp/sftp_key
   - ssh-keyscan -p ${SFTP_PORT} -H ${SFTP_TARGET} >> ~/.ssh/known_hosts
-  - scp -i /tmp/sftp_key -P ${SFTP_PORT} "$TRAVIS_BUILD_DIR/Kerbalism-$MOD_VERSION-BUILD$TRAVIS_BUILD_NUMBER.zip" "${SFTP_USER}@${SFTP_TARGET}:/var/www/builds/Kerbalism-$MOD_VERSION-BUILD$TRAVIS_BUILD_NUMBER.zip"
+  - scp -i /tmp/sftp_key -P ${SFTP_PORT} "$TRAVIS_BUILD_DIR/Kerbalism-$MOD_VERSION-BUILD$TRAVIS_BUILD_NUMBER.zip" "${SFTP_USER}@${SFTP_TARGET}:${SFTP_DIR}/Kerbalism-$MOD_VERSION-BUILD$TRAVIS_BUILD_NUMBER.zip"
 notifications:
   email: false
