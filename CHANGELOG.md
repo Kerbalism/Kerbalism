@@ -8,6 +8,7 @@
 * Fix processes not calculating capacities correctly (PiezPiedPy)
 * Processes default to a switched on state when added in the VAB/SPH (PiezPiedPy) 
 * Made the PartUpgrade for module slots require ProfileDefault (theJesuit)
+* Took away some of the Partupgrade as I upgraded my MM fu. (theJesuit)
 
 ------------------------------------------------------------------------------------------------------
 
