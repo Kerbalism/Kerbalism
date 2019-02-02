@@ -22,9 +22,13 @@ namespace KERBALISM
 		}
 	}
 
-	public sealed class Loader : LoadingSystem
+	// the name is choosen so that the awake meathod is called after ModuleManager one
+	// this is necessary because MM inject its aloader at index 1, so we need to inject
+	// our own after it, at index 1 (so that ita run just before MM)
+	[KSPAddon(KSPAddon.Startup.Instantly, false)]
+	public sealed class Loader : MonoBehaviour
 	{
-		public static void Init()
+		public void Start()
 		{
 			// log version
 			Lib.Log("version " + Lib.Version());
@@ -72,29 +76,6 @@ namespace KERBALISM
 			{
 				root.configs.Add(new UrlDir.UrlConfig(root, new ConfigNode(Lib.BuildString("@Kerbalism:FOR[", type, id, "]"))));
 			}
-		}
-
-
-		public override bool IsReady() { return true; }
-		public override string ProgressTitle() { return "Kerbalism"; }
-		public override float ProgressFraction() { return 0f; }
-		public override void StartLoad() { Init(); }
-	}
-
-	// the name is choosen so that the awake meathod is called after ModuleManager one
-	// this is necessary because MM inject its aloader at index 1, so we need to inject
-	// our own after it, at index 1 (so that ita run just before MM)
-	[KSPAddon(KSPAddon.Startup.Instantly, false)]
-	public sealed class PatchInjector : MonoBehaviour
-	{
-		public void Awake()
-		{
-			// inject loader
-			List<LoadingSystem> loaders = LoadingScreen.Instance.loaders;
-			GameObject go = new GameObject("Kerbalism");
-			Loader loader = go.AddComponent<Loader>();
-			int index = loaders.FindIndex(k => k is GameDatabase);
-			loaders.Insert(index + 1, loader);
 		}
 	}
 
