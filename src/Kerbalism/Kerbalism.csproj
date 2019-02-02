@@ -210,6 +210,7 @@
     <Compile Include="DeviceEC.cs" />
     <Compile Include="Automation\Devices\LandingGear.cs" />
     <Compile Include="External\RemoteTech.cs" />
+    <Compile Include="External\ModuleManager.cs" />
     <Compile Include="External\SCANsat.cs" />
     <Compile Include="Modules\Harvester.cs" />
     <Compile Include="Modules\Emitter.cs" />

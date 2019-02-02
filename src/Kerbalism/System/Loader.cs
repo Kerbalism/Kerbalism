@@ -7,6 +7,20 @@ using KSP.UI.Screens;
 namespace KERBALISM
 {
 
+	public static class MM40Injector
+	{
+		private static List<string> injectors = new List<string>();
+
+		public static void AddInjector(string type, string id)
+		{
+			injectors.Add(type + id);
+		}
+
+		public static IEnumerable<string> ModuleManagerAddToModList()
+		{
+			return injectors;
+		}
+	}
 
 	public sealed class Loader : LoadingSystem
 	{
@@ -49,7 +63,15 @@ namespace KERBALISM
 		// inject an MM patch on-the-fly, so that NEEDS[TypeId] can be used in MM patches
 		static void Inject(UrlDir.UrlFile root, string type, string id)
 		{
-			root.configs.Add(new UrlDir.UrlConfig(root, new ConfigNode(Lib.BuildString("@Kerbalism:FOR[", type, id, "]"))));
+			Lib.Log(Lib.BuildString("Injecting ", type, id));
+			if (ModuleManager.MM_major >= 4)
+			{
+				MM40Injector.AddInjector(type, id);
+			}
+			else
+			{
+				root.configs.Add(new UrlDir.UrlConfig(root, new ConfigNode(Lib.BuildString("@Kerbalism:FOR[", type, id, "]"))));
+			}
 		}
 
 
@@ -59,10 +81,9 @@ namespace KERBALISM
 		public override void StartLoad() { Init(); }
 	}
 
-
-	// the name is choosen so that the awake method is called after ModuleManager one
-	// this is necessary because MM inject its loader at index 1, so we need to inject
-	// our own after it, at index 1 (so that it run just before MM)
+	// the name is choosen so that the awake meathod is called after ModuleManager one
+	// this is necessary because MM inject its aloader at index 1, so we need to inject
+	// our own after it, at index 1 (so that ita run just before MM)
 	[KSPAddon(KSPAddon.Startup.Instantly, false)]
 	public sealed class PatchInjector : MonoBehaviour
 	{
