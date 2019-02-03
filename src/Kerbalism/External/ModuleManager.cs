@@ -16,10 +16,11 @@ namespace KERBALISM
 			{
 				if (a.name == "ModuleManager")
 				{
-					MM_major = a.versionMajor;
-					MM_minor = a.versionMinor;
+					Version v = a.assembly.GetName().Version;
+					MM_major = v.Major;
+					MM_minor = v.Minor;
 #if !KSP13
-					MM_rev = a.versionRevision;
+					MM_rev = v.Revision;
 #endif
 					break;
 				}
