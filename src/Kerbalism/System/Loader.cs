@@ -28,17 +28,19 @@ namespace KERBALISM
 	[KSPAddon(KSPAddon.Startup.Instantly, false)]
 	public sealed class Loader : MonoBehaviour
 	{
+
 		public void Start()
 		{
 			// log version
 			Lib.Log("version " + Lib.Version());
 
+			Lib.Log("Forcing KSP to load resources...");
+			PartResourceLibrary.Instance.LoadDefinitions();
+
 			// parse settings
 			Settings.Parse();
-
 			// parse profile
 			Profile.Parse();
-
 			// detect features
 			Features.Detect();
 

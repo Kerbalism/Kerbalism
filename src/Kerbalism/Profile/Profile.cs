@@ -122,7 +122,6 @@ namespace KERBALISM
 				{
 					// get the name
 					string name = Lib.ConfigValue(profile_node, "name", string.Empty);
-
 					// if this is the one chosen in settings
 					if (name == Settings.Profile)
 					{
@@ -150,7 +149,6 @@ namespace KERBALISM
 						return;
 					}
 				}
-
 				// if we reach this point, the profile was not found
 				Lib.Log(Lib.BuildString("warning: profile '", Settings.Profile, "' was not found"));
 			}
