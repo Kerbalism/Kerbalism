@@ -18,7 +18,7 @@ namespace KERBALISM
 		// persistence/config
 		// note: the running state doesn't need to be serialized, as it can be deduced from resource flow
 		// but we find useful to set running to true in the cfg node for some processes, and not others
-		[KSPField(isPersistant = true)] public bool running = true;		// processes default to on
+		[KSPField(isPersistant = true)] public bool running;
 
 		// amount of times to multiply capacity, used so configure can have the same process in more than one slot
 		[KSPField(isPersistant = true)] public int multiple = 1;
