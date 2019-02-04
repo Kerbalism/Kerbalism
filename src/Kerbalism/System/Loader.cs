@@ -22,9 +22,9 @@ namespace KERBALISM
 		}
 	}
 
-	// the name is choosen so that the awake meathod is called after ModuleManager one
-	// this is necessary because MM inject its aloader at index 1, so we need to inject
-	// our own after it, at index 1 (so that ita run just before MM)
+	// the name is chosen so that the awake method is called after ModuleManager,
+	// this is necessary because MM injects its loader at index 1, so we need to inject
+	// our own after it, at index 1 (so that it runs just before MM)
 	[KSPAddon(KSPAddon.Startup.Instantly, false)]
 	public sealed class Loader : MonoBehaviour
 	{
