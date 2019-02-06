@@ -1,3 +1,13 @@
+## v2.2.0 for all versions of KSP from 1.3.1 to 1.6.x
+
+ - 2019-xx-xx
+
+### Changes since the last release
+
+*
+
+------------------------------------------------------------------------------------------------------
+
 ## v2.1.2 for all versions of KSP from 1.3.1 to 1.6.x
 
  - 2019-02-04
@@ -90,7 +100,6 @@
 * Fixed antenna consumption and Automation controller to antennas with GenericAnimation. (HaullyGames)
 * Automation has devices sorted by name. (HaullyGames)
 * Updated docs for the recent 1/16 buff (Sir Mortimer)
-* Support for KSP 1.5.0
 * Don't show fixed antennas in device manager (Sir Mortimer)
 
 ------------------------------------------------------------------------------------------------------

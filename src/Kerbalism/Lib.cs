@@ -1129,7 +1129,7 @@ namespace KERBALISM
 
 		// --- RESOURCE -------------------------------------------------------------
 
-		// return amount of a resource in a part
+		/// <summary> Returns the amount of a resource in a part </summary>
 		public static double Amount( Part part, string resource_name, bool ignore_flow = false )
 		{
 			foreach (PartResource res in part.Resources)
@@ -1139,7 +1139,7 @@ namespace KERBALISM
 			return 0.0;
 		}
 
-		// return capacity of a resource in a part
+		/// <summary> Returns the capacity of a resource in a part </summary>
 		public static double Capacity( Part part, string resource_name, bool ignore_flow = false )
 		{
 			foreach (PartResource res in part.Resources)
@@ -1149,7 +1149,7 @@ namespace KERBALISM
 			return 0.0;
 		}
 
-		// return level of a resource in a part
+		/// <summary> Returns the level of a resource in a part </summary>
 		public static double Level( Part part, string resource_name, bool ignore_flow = false )
 		{
 			foreach (PartResource res in part.Resources)
@@ -1162,8 +1162,8 @@ namespace KERBALISM
 			return 0.0;
 		}
 
-		// add resource amount and capacity to a part
-		// create the resource if it doesn't exist already
+		/// <summary> Adds the specified resource amount and capacity to a part,
+		/// the resource is created if it doesn't already exist </summary>
 		public static void AddResource( Part p, string res_name, double amount, double capacity )
 		{
 			// if the resource is already in the part
@@ -1201,8 +1201,8 @@ namespace KERBALISM
 			}
 		}
 
-		// remove amount and capacity of a resource from a part
-		// remove the resource completely if capacity goes to zero
+		/// <summary> Removes the specified resource amount and capacity from a part,
+		/// the resource is removed completely if the capacity reaches zero </summary>
 		public static void RemoveResource( Part p, string res_name, double amount, double capacity )
 		{
 			// if the resource is not already in the part, do nothing
@@ -1259,9 +1259,7 @@ namespace KERBALISM
 			res.amount = Math.Min( amount, capacity );
 		}
 
-		/// <summary>
-		/// set flow of a resource in the specified part. does nothing if the resource don't exist in the part
-		/// </summary>
+		/// <summary> Set flow of a resource in the specified part. Does nothing if the resource does not exist in the part </summary>
 		public static void SetResourceFlow(Part p, string res_name, bool enable)
 		{
 			// if the resource is not in the part, do nothing
@@ -1275,11 +1273,10 @@ namespace KERBALISM
 			}
 		}
 
-		/// <summary>enable or disable process</summary>
-		/// <remarks>
-		/// set the psuedo resource amount that controls processes
-		/// an amount of 0.0 disables the process, any non-zero value is a multiplier for
-		/// </remarks>
+		/// <summary> Set the enabled/disabled state of a process
+		/// <para> Use the process_capacity parameter to set the pseudo resource amount for the process,
+		/// an amount of 0.0 disables the process, any non-zero value is a multiplier of the process.
+		/// </para> </summary>
 		public static void SetProcessEnabledDisabled(Part p, string res_name, bool enable, double process_capacity)
 		{
 			if (!p.Resources.Contains(res_name))
@@ -1299,7 +1296,7 @@ namespace KERBALISM
 			}
 		}
 
-		// return the definition of a resource, or null if it doesn't exist
+		/// <summary> Returns the definition of a resource, or null if it doesn't exist </summary>
 		public static PartResourceDefinition GetDefinition( string name )
 		{
 			// shortcut to the resource library
@@ -1309,7 +1306,7 @@ namespace KERBALISM
 			return reslib.Contains( name ) ? reslib[name] : null;
 		}
 
-		/// <summary>Determine if a resource is never able to flow, thus requiring special treatment</summary>
+		/// <summary> Determine if a resource is never able to flow, thus requiring special treatment </summary>
 		public static bool IsResourceImpossibleToFlow(string name, bool check_empty = false)
 		{
 			// by convention: vessel wide available, so we don't do per part processing unnecessarily
@@ -1318,7 +1315,7 @@ namespace KERBALISM
 			return PartResourceLibrary.GetDefaultFlowMode(name) == ResourceFlowMode.NO_FLOW;
 		}
 
-		// return name of propellant use in eva
+		/// <summary> Returns name of propellant used on eva </summary>
 		public static string EvaPropellantName()
 		{
 			// first, get the kerbal eva part prefab
@@ -1332,7 +1329,7 @@ namespace KERBALISM
 		}
 
 
-		// return capacity of propellant in eva
+		/// <summary> Returns capacity of propellant on eva </summary>
 		public static double EvaPropellantCapacity()
 		{
 			// first, get the kerbal eva part prefab

@@ -245,9 +245,9 @@ There is a help file on GitHub for those wishing to report bugs or contribute to
 REQUIREMENTS
 ------------
 
-- KSP 1.3.1 or 1.4.x
+- Any KSP version from 1.3.1 to 1.6.x
 - Community Resource Pack (CRP)
-- ModuleManager 3.0.0+
+- ModuleManager 4.0.2+
 
 
 This mod includes version checking using MiniAVC_. If you opt-in, it will use the Internet to check whether there is a new version available. Data is only read from the Internet and no personal information is sent. For a more comprehensive version checking experience, please download the `KSP-AVC Plugin`_.
@@ -274,7 +274,7 @@ This mod is released under the `Unlicense <LICENSE>`_. For more information, ple
     :scale: 100%
     :target: https://kerbalism.readthedocs.io/en/latest/?badge=latest
 
-.. |build| image:: https://img.shields.io/travis-ci/com/steamp0rt/Kerbalism.svg?style=flat-square&branch=master)](https://travis-ci.org/steamp0rt/Kerbalism
+.. |build| image:: https://travis-ci.com/steamp0rt/Kerbalism.svg?style=flat-square&branch=master
     :alt: Build Status
     :scale: 100%
     :target: https://travis-ci\.com/steamp0rt/Kerbalism

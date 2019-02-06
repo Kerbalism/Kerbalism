@@ -10,7 +10,7 @@ REQUIREMENTS
 
 - Any KSP version from 1.3.1 to 1.6.x
 - Community Resource Pack (CRP)
-- ModuleManager 3.0.0+
+- ModuleManager 4.0.2+
 
 The Kerbalism release zip from v2.0.0 onwards will work for all the stated versions of KSP, basically one zip for all versions, no longer are there separate zips needed for a specific version of KSP.
 
