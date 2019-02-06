@@ -247,7 +247,7 @@ REQUIREMENTS
 
 - Any KSP version from 1.3.1 to 1.6.x
 - Community Resource Pack (CRP)
-- ModuleManager 3.0.0+
+- ModuleManager 4.0.2+
 
 
 This mod includes version checking using MiniAVC_. If you opt-in, it will use the Internet to check whether there is a new version available. Data is only read from the Internet and no personal information is sent. For a more comprehensive version checking experience, please download the `KSP-AVC Plugin`_.
