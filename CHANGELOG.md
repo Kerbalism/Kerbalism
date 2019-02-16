@@ -4,7 +4,10 @@
 
 ### Changes since the last release
 
-*
+* Add Reliability to USI Nuclear Reactors (PiezPiedPy)
+* Fix ISRU capacities for CryoTanks and USI (PiezPiedPy)
+* Correct LH2 storage capacities of the Radial container for AirlineKuisine, CryoTanks and USI (PiezPiedPy)
+* Near Future Electrical tweaks: Uranite drilling, storage and ISRU processing added (PiezPiedPy)
 
 ------------------------------------------------------------------------------------------------------
 
