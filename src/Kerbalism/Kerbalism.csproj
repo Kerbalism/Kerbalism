@@ -238,6 +238,12 @@
     <Compile Include="System\API.cs" />
     <Compile Include="System\Callbacks.cs" />
     <Compile Include="UI\ConnManager.cs" />
+    <Compile Include="UI\Planner\EnvironmentAnalyzer.cs" />
+    <Compile Include="UI\Planner\ResourceSimulator.cs" />
+    <Compile Include="UI\Planner\SimulatedRecipe.cs" />
+    <Compile Include="UI\Planner\SimulatedResource.cs" />
+    <Compile Include="UI\Planner\SimulatedResourceView.cs" />
+    <Compile Include="UI\Planner\VesselAnalyzer.cs" />
     <Compile Include="Utility\GotoVessel.cs" />
     <Compile Include="System\Loader.cs" />
     <Compile Include="System\Settings.cs" />
@@ -252,7 +258,7 @@
     <Compile Include="UI\Launcher.cs" />
     <Compile Include="UI\Message.cs" />
     <Compile Include="UI\Monitor.cs" />
-    <Compile Include="UI\Planner.cs" />
+    <Compile Include="UI\Planner\Planner.cs" />
     <Compile Include="UI\Styles.cs" />
     <Compile Include="UI\Telemetry.cs" />
     <Compile Include="UI\Tooltip.cs" />
@@ -311,6 +317,7 @@
     <Analyzer Condition="Exists('.\UnityEngine.UI.dll')" Include=".\UnityEngine.UI.dll" />
     <Analyzer Condition="Exists('.\UnityScript.Lang.dll')" Include=".\UnityScript.Lang.dll" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="PostBuildMacros">
     <GetAssemblyIdentity AssemblyFiles="$(TargetPath)">

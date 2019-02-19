@@ -18,7 +18,7 @@ namespace KERBALISM
 		public Launcher()
 		{
 			// initialize
-			planner = new Planner();
+			planner = new Planner.Planner();
 			monitor = new Monitor();
 			tooltip = new Tooltip();
 
@@ -165,7 +165,7 @@ namespace KERBALISM
 		Rect win_rect;
 
 		// the vessel planner
-		Planner planner;
+		Planner.Planner planner;
 
 		// the vessel monitor
 		Monitor monitor;
