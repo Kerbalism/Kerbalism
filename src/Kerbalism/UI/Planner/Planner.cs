@@ -15,39 +15,8 @@ namespace KERBALISM.Planner
 		///<summary> Initializes the Planner for use </summary>
 		internal static void Initialize()
 		{
-			// left menu style
-			leftmenu_style = new GUIStyle(HighLogic.Skin.label)
-			{
-				richText = true
-			};
-			leftmenu_style.normal.textColor = new Color(0.0f, 0.0f, 0.0f, 1.0f);
-			leftmenu_style.fixedWidth = Styles.ScaleWidthFloat(80.0f); // Fixed to avoid that the sun icon moves around for different planet name lengths
-			leftmenu_style.stretchHeight = true;
-			leftmenu_style.fontSize = Styles.ScaleInteger(10);
-			leftmenu_style.alignment = TextAnchor.MiddleLeft;
-
-			// right menu style
-			rightmenu_style = new GUIStyle(leftmenu_style)
-			{
-				alignment = TextAnchor.MiddleRight
-			};
-
-			// quote style
-			quote_style = new GUIStyle(HighLogic.Skin.label)
-			{
-				richText = true
-			};
-			quote_style.normal.textColor = Color.black;
-			quote_style.stretchWidth = true;
-			quote_style.stretchHeight = true;
-			quote_style.fontSize = Styles.ScaleInteger(11);
-			quote_style.alignment = TextAnchor.LowerCenter;
-
-			// center icon style
-			icon_style = new GUIStyle
-			{
-				alignment = TextAnchor.MiddleCenter
-			};
+			// set the ui styles
+			SetStyles();
 
 			// set default body index & situation
 			body_index = FlightGlobals.GetHomeBodyIndex();
@@ -83,6 +52,43 @@ namespace KERBALISM.Planner
 			panel = new Panel();
 		}
 
+		///<summary> Sets the styles for the panels UI </summary>
+		private static void SetStyles()
+		{
+			// left menu style
+			leftmenu_style = new GUIStyle(HighLogic.Skin.label)
+			{
+				richText = true
+			};
+			leftmenu_style.normal.textColor = new Color(0.0f, 0.0f, 0.0f, 1.0f);
+			leftmenu_style.fixedWidth = Styles.ScaleWidthFloat(80.0f); // Fixed to avoid that the sun icon moves around for different planet name lengths
+			leftmenu_style.stretchHeight = true;
+			leftmenu_style.fontSize = Styles.ScaleInteger(10);
+			leftmenu_style.alignment = TextAnchor.MiddleLeft;
+
+			// right menu style
+			rightmenu_style = new GUIStyle(leftmenu_style)
+			{
+				alignment = TextAnchor.MiddleRight
+			};
+
+			// quote style
+			quote_style = new GUIStyle(HighLogic.Skin.label)
+			{
+				richText = true
+			};
+			quote_style.normal.textColor = Color.black;
+			quote_style.stretchWidth = true;
+			quote_style.stretchHeight = true;
+			quote_style.fontSize = Styles.ScaleInteger(11);
+			quote_style.alignment = TextAnchor.LowerCenter;
+
+			// center icon style
+			icon_style = new GUIStyle
+			{
+				alignment = TextAnchor.MiddleCenter
+			};
+		}
 		#endregion
 
 		#region METHODS
