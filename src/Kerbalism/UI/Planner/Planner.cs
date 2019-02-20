@@ -22,12 +22,11 @@ namespace KERBALISM.Planner
 			body_index = FlightGlobals.GetHomeBodyIndex();
 
 			// resource panels
-			panel_resource = new List<string>();
+			// - add all resources defined in the Profiles Supply configs except EC
 			Profile.supplies.FindAll(k => k.resource != "ElectricCharge").ForEach(k => panel_resource.Add(k.resource));
 
 			// special panels
 			// - stress & radiation panels require that a rule using the living_space/radiation modifier exist (current limitation)
-			panel_special = new List<string>();
 			if (Features.LivingSpace && Profile.rules.Find(k => k.modifiers.Contains("living_space")) != null)
 				panel_special.Add("qol");
 			if (Features.Radiation && Profile.rules.Find(k => k.modifiers.Contains("radiation")) != null)
@@ -36,13 +35,10 @@ namespace KERBALISM.Planner
 				panel_special.Add("reliability");
 
 			// environment panels
-			panel_environment = new List<string>();
 			if (Features.Pressure || Features.Poisoning || Features.Humidity)
 				panel_environment.Add("habitat");
 			panel_environment.Add("environment");
 
-			// panel ui
-			panel = new Panel();
 		}
 
 		///<summary> Sets the styles for the panels UI </summary>
@@ -102,40 +98,38 @@ namespace KERBALISM.Planner
 				vessel_analyzer.Analyze(parts, resource_sim, env_analyzer);
 				resource_sim.Analyze(parts, env_analyzer, vessel_analyzer);
 
-				// ec panel
-				Render_ec(panel);
+				// add ec panel
+				AddSubPanelEC(panel);
 
-				// resource panel
+				// add resource panel
 				if (panel_resource.Count > 0)
-				{
-					Render_resource(panel, panel_resource[resource_index]);
-				}
+					AddSubPanelResource(panel, panel_resource[resource_index]);
 
-				// special panel
+				// add special panel
 				if (panel_special.Count > 0)
 				{
 					switch (panel_special[special_index])
 					{
 						case "qol":
-							Render_stress(panel);
+							AddSubPanelStress(panel);
 							break;
 						case "radiation":
-							Render_radiation(panel);
+							AddSubPanelRadiation(panel);
 							break;
 						case "reliability":
-							Render_reliability(panel);
+							AddSubPanelReliability(panel);
 							break;
 					}
 				}
 
-				// environment panel
+				// add environment panel
 				switch (panel_environment[environment_index])
 				{
 					case "habitat":
-						Render_habitat(panel);
+						AddSubPanelHabitat(panel);
 						break;
 					case "environment":
-						Render_environment(panel);
+						AddSubPanelEnvironment(panel);
 						break;
 				}
 			}
@@ -207,7 +201,7 @@ namespace KERBALISM.Planner
 		}
 
 		/// <summary>render environment sub-panel, including tooltips</summary>
-		private static void Render_environment(Panel p)
+		private static void AddSubPanelEnvironment(Panel p)
 		{
 			string flux_tooltip = Lib.BuildString
 			(
@@ -237,7 +231,7 @@ namespace KERBALISM.Planner
 		}
 
 		/// <summary>render electric charge sub-panel, including tooltips</summary>
-		private static void Render_ec(Panel p)
+		private static void AddSubPanelEC(Panel p)
 		{
 			// get simulated resource
 			SimulatedResource res = resource_sim.Resource("ElectricCharge");
@@ -256,10 +250,10 @@ namespace KERBALISM.Planner
 		/// <summary>render supply resource sub-panel, including tooltips</summary>
 		/// <remarks>
 		/// does not include electric charge
-		/// does not special resources like waste atmosphere
+		/// does not include special resources like waste atmosphere
 		/// restricted to resources that are configured explicitly in the profile as supplies
 		/// </remarks>
-		private static void Render_resource(Panel p, string res_name)
+		private static void AddSubPanelResource(Panel p, string res_name)
 		{
 			// get simulated resource
 			SimulatedResource res = resource_sim.Resource(res_name);
@@ -276,7 +270,7 @@ namespace KERBALISM.Planner
 		}
 
 		/// <summary>render stress sub-panel, including tooltips</summary>
-		private static void Render_stress(Panel p)
+		private static void AddSubPanelStress(Panel p)
 		{
 			// get first living space rule
 			// - guaranteed to exist, as this panel is not rendered if it doesn't
@@ -324,7 +318,7 @@ namespace KERBALISM.Planner
 		}
 
 		/// <summary>render radiation sub-panel, including tooltips</summary>
-		private static void Render_radiation(Panel p)
+		private static void AddSubPanelRadiation(Panel p)
 		{
 			// get first radiation rule
 			// - guaranteed to exist, as this panel is not rendered if it doesn't
@@ -385,7 +379,7 @@ namespace KERBALISM.Planner
 		}
 
 		/// <summary>render reliability sub-panel, including tooltips</summary>
-		private static void Render_reliability(Panel p)
+		private static void AddSubPanelReliability(Panel p)
 		{
 			// evaluate redundancy metric
 			// - 0: no redundancy
@@ -470,7 +464,7 @@ namespace KERBALISM.Planner
 		}
 
 		/// <summary>render habitat sub-panel, including tooltips</summary>
-		private static void Render_habitat(Panel p)
+		private static void AddSubPanelHabitat(Panel p)
 		{
 			SimulatedResource atmo_res = resource_sim.Resource("Atmosphere");
 			SimulatedResource waste_res = resource_sim.Resource("WasteAtmosphere");
@@ -540,13 +534,13 @@ namespace KERBALISM.Planner
 		private static VesselAnalyzer vessel_analyzer = new VesselAnalyzer();
 
 		// panel arrays
-		private static List<string> panel_resource;
-		private static List<string> panel_special;
-		private static List<string> panel_environment;
+		private static List<string> panel_resource = new List<string>();
+		private static List<string> panel_special = new List<string>();
+		private static List<string> panel_environment = new List<string>();
 
 		// body/situation/sunlight indexes
 		private static int body_index;
-		private static int situation_index = 2;		// orbit
+		private static int situation_index = 2;     // orbit
 		private static bool sunlight = true;
 
 		// panel indexes
@@ -555,7 +549,7 @@ namespace KERBALISM.Planner
 		private static int environment_index;
 
 		// panel ui
-		private static Panel panel;
+		private static Panel panel = new Panel();
 		#endregion
 	}
 
