@@ -18,13 +18,8 @@ namespace KERBALISM.Planner
 			// set the ui styles
 			SetStyles();
 
-			// set default body index & situation
+			// set default body index to home
 			body_index = FlightGlobals.GetHomeBodyIndex();
-
-			// analyzers
-			sim = new ResourceSimulator();
-			env = new EnvironmentAnalyzer();
-			va = new VesselAnalyzer();
 
 			// resource panels
 			panel_resource = new List<string>();
