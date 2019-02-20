@@ -81,7 +81,7 @@ namespace KERBALISM.Planner
 		#endregion
 
 		#region METHODS
-		/// <summary>Run simulators and visualize results in the planner UI panel</summary>
+		/// <summary>Run simulators and update the planner UI sub-panels</summary>
 		internal static void Update()
 		{
 			// clear the panel
@@ -200,7 +200,7 @@ namespace KERBALISM.Planner
 			}
 		}
 
-		/// <summary>render environment sub-panel, including tooltips</summary>
+		/// <summary>add environment sub-panel, including tooltips</summary>
 		private static void AddSubPanelEnvironment(Panel p)
 		{
 			string flux_tooltip = Lib.BuildString
@@ -230,7 +230,7 @@ namespace KERBALISM.Planner
 			p.AddContent("shadow time", shadowtime_str, "the time in shadow\nduring the orbit");
 		}
 
-		/// <summary>render electric charge sub-panel, including tooltips</summary>
+		/// <summary>add electric charge sub-panel, including tooltips</summary>
 		private static void AddSubPanelEC(Panel p)
 		{
 			// get simulated resource
@@ -247,7 +247,7 @@ namespace KERBALISM.Planner
 			p.AddContent("duration", Lib.HumanReadableDuration(res.Lifetime()));
 		}
 
-		/// <summary>render supply resource sub-panel, including tooltips</summary>
+		/// <summary>add supply resource sub-panel, including tooltips</summary>
 		/// <remarks>
 		/// does not include electric charge
 		/// does not include special resources like waste atmosphere
@@ -269,7 +269,7 @@ namespace KERBALISM.Planner
 			p.AddContent("duration", Lib.HumanReadableDuration(res.Lifetime()));
 		}
 
-		/// <summary>render stress sub-panel, including tooltips</summary>
+		/// <summary>add stress sub-panel, including tooltips</summary>
 		private static void AddSubPanelStress(Panel p)
 		{
 			// get first living space rule
@@ -317,7 +317,7 @@ namespace KERBALISM.Planner
 			p.AddContent("duration", Lib.HumanReadableDuration(rule.fatal_threshold / (rule.degeneration * mod)));
 		}
 
-		/// <summary>render radiation sub-panel, including tooltips</summary>
+		/// <summary>add radiation sub-panel, including tooltips</summary>
 		private static void AddSubPanelRadiation(Panel p)
 		{
 			// get first radiation rule
@@ -378,7 +378,7 @@ namespace KERBALISM.Planner
 			p.AddContent("shielding", rule.modifiers.Contains("shielding") ? Habitat.Shielding_to_string(vessel_analyzer.shielding) : "n/a", tooltip);
 		}
 
-		/// <summary>render reliability sub-panel, including tooltips</summary>
+		/// <summary>add reliability sub-panel, including tooltips</summary>
 		private static void AddSubPanelReliability(Panel p)
 		{
 			// evaluate redundancy metric
@@ -463,7 +463,7 @@ namespace KERBALISM.Planner
 			p.AddContent("repair", repair_str, repair_tooltip);
 		}
 
-		/// <summary>render habitat sub-panel, including tooltips</summary>
+		/// <summary>add habitat sub-panel, including tooltips</summary>
 		private static void AddSubPanelHabitat(Panel p)
 		{
 			SimulatedResource atmo_res = resource_sim.Resource("Atmosphere");
