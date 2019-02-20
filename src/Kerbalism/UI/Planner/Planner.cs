@@ -20,8 +20,6 @@ namespace KERBALISM.Planner
 
 			// set default body index & situation
 			body_index = FlightGlobals.GetHomeBodyIndex();
-			situation_index = 2;
-			sunlight = true;
 
 			// analyzers
 			sim = new ResourceSimulator();
@@ -101,16 +99,11 @@ namespace KERBALISM.Planner
 			// if there is something in the editor
 			if (EditorLogic.RootPart != null)
 			{
-				// get body, situation and altitude multiplier from the panels user input
-				CelestialBody body = FlightGlobals.Bodies[body_index];
-				string situation = situations[situation_index];
-				double altitude_mult = altitude_mults[situation_index];
-
 				// get parts recursively
 				List<Part> parts = Lib.GetPartsRecursively(EditorLogic.RootPart);
 
-				// analyze
-				env.Analyze(body, altitude_mult, sunlight);
+				// analyze using the settings from the panels user input
+				env.Analyze(FlightGlobals.Bodies[body_index], altitude_mults[situation_index], sunlight);
 				va.Analyze(parts, sim, env);
 				sim.Analyze(parts, env, va);
 
@@ -178,16 +171,11 @@ namespace KERBALISM.Planner
 			// if there is something in the editor
 			if (EditorLogic.RootPart != null)
 			{
-				// get body, situation and altitude multiplier
-				CelestialBody body = FlightGlobals.Bodies[body_index];
-				string situation = situations[situation_index];
-				double altitude_mult = altitude_mults[situation_index];
-
 				// start header
 				GUILayout.BeginHorizontal(Styles.title_container);
 
 				// body selector
-				GUILayout.Label(new GUIContent(body.name, "Target body"), leftmenu_style);
+				GUILayout.Label(new GUIContent(FlightGlobals.Bodies[body_index].name, "Target body"), leftmenu_style);
 				if (Lib.IsClicked())
 				{ body_index = (body_index + 1) % FlightGlobals.Bodies.Count; if (body_index == 0) ++body_index; }
 				else if (Lib.IsClicked(1))
@@ -199,7 +187,7 @@ namespace KERBALISM.Planner
 					sunlight = !sunlight;
 
 				// situation selector
-				GUILayout.Label(new GUIContent(situation, "Target situation"), rightmenu_style);
+				GUILayout.Label(new GUIContent(situations[situation_index], "Target situation"), rightmenu_style);
 				if (Lib.IsClicked())
 				{ situation_index = (situation_index + 1) % situations.Length; }
 				else if (Lib.IsClicked(1))
@@ -542,7 +530,7 @@ namespace KERBALISM.Planner
 
 		#region FIELDS_PROPERTIES
 		// store situations and altitude multipliers
-		private static string[] situations = { "Landed", "Low Orbit", "Orbit", "High Orbit" };
+		private static readonly string[] situations = { "Landed", "Low Orbit", "Orbit", "High Orbit" };
 		private static readonly double[] altitude_mults = { 0.0, 0.33, 1.0, 3.0 };
 
 		// styles
@@ -563,8 +551,8 @@ namespace KERBALISM.Planner
 
 		// body/situation/sunlight indexes
 		private static int body_index;
-		private static int situation_index;
-		private static bool sunlight;
+		private static int situation_index = 2;		// orbit
+		private static bool sunlight = true;
 
 		// panel indexes
 		private static int resource_index;
