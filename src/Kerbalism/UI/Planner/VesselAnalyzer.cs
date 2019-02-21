@@ -5,10 +5,10 @@ using UnityEngine;
 namespace KERBALISM.Planner
 {
 
-	///<summary> Planners simulator for all vessel aspects other than resource simulation </summary>
+	///<summary> Planners simulator for all vessel aspects other than resource simulation. Returns false on error </summary>
 	public sealed class VesselAnalyzer
 	{
-		public void Analyze(List<Part> parts, ResourceSimulator sim, EnvironmentAnalyzer env)
+		public bool Analyze(List<Part> parts, ResourceSimulator sim, EnvironmentAnalyzer env)
 		{
 			// note: vessel analysis require resource analysis, but at the same time resource analysis
 			// require vessel analysis, so we are using resource analysis from previous frame (that's okay)
@@ -17,19 +17,26 @@ namespace KERBALISM.Planner
 			// in resource analysis triggered an exception, leading to the vessel analysis never happening
 			// inverting their order avoided this corner-case
 
-			Analyze_crew(parts);
+			if (!Analyze_crew(parts))
+				return false;
 			Analyze_habitat(sim, env);
 			Analyze_radiation(parts, sim);
 			Analyze_reliability(parts);
 			Analyze_qol(parts, sim, env);
 			Analyze_comms(parts);
+			return true;
 		}
 
-		void Analyze_crew(List<Part> parts)
+		bool Analyze_crew(List<Part> parts)
 		{
 			// get number of kerbals assigned to the vessel in the editor
 			// note: crew manifest is not reset after root part is deleted
 			VesselCrewManifest manifest = KSP.UI.CrewAssignmentDialog.Instance.GetManifest();
+			if (manifest == null)
+			{
+				Lib.DebugLog("crew manifest is null");
+				return false;
+			}
 			List<ProtoCrewMember> crew = manifest.GetAllCrew(false).FindAll(k => k != null);
 			crew_count = (uint)crew.Count;
 			crew_engineer = crew.Find(k => k.trait == "Engineer") != null;
@@ -66,6 +73,8 @@ namespace KERBALISM.Planner
 			// if the user press ALT, the planner consider the vessel crewed at full capacity
 			if (Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt))
 				crew_count = crew_capacity;
+
+			return true;
 		}
 
 		void Analyze_habitat(ResourceSimulator sim, EnvironmentAnalyzer env)
