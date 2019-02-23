@@ -79,10 +79,23 @@ namespace KERBALISM.Planner
 		}
 		#endregion
 
+		#region EVENTS
+		///<summary> Method called when the vessel in the editor has been modified </summary>
+		internal static void EditorShipModifiedEvent(ShipConstruct sc)
+		{
+			Lib.DebugLog("");
+			update_counter = 0;
+		}
+		#endregion
+
 		#region METHODS
 		///<summary> Run simulators and update the planner UI sub-panels </summary>
 		internal static void Update()
 		{
+			// only update when we need to, repeat update a number of times to allow the simulators to catch up
+			if (!(update || (update_counter++ < 3)))
+				return;
+
 			// clear the panel
 			panel.Clear();
 
@@ -94,7 +107,8 @@ namespace KERBALISM.Planner
 
 				// analyze using the settings from the panels user input
 				env_analyzer.Analyze(FlightGlobals.Bodies[body_index], altitude_mults[situation_index], sunlight);
-				vessel_analyzer.Analyze(parts, resource_sim, env_analyzer);
+				if (update = !vessel_analyzer.Analyze(parts, resource_sim, env_analyzer))
+					return;
 				resource_sim.Analyze(parts, env_analyzer, vessel_analyzer);
 
 				// add ec panel
@@ -132,6 +146,7 @@ namespace KERBALISM.Planner
 						break;
 				}
 			}
+			update = false;
 		}
 
 		///<summary> Planner panel UI width </summary>
@@ -165,21 +180,21 @@ namespace KERBALISM.Planner
 				// body selector
 				GUILayout.Label(new GUIContent(FlightGlobals.Bodies[body_index].name, "Target body"), leftmenu_style);
 				if (Lib.IsClicked())
-				{ body_index = (body_index + 1) % FlightGlobals.Bodies.Count; if (body_index == 0) ++body_index; }
+				{ body_index = (body_index + 1) % FlightGlobals.Bodies.Count; if (body_index == 0) ++body_index; update = true; }
 				else if (Lib.IsClicked(1))
-				{ body_index = (body_index - 1) % FlightGlobals.Bodies.Count; if (body_index == 0) body_index = FlightGlobals.Bodies.Count - 1; }
+				{ body_index = (body_index - 1) % FlightGlobals.Bodies.Count; if (body_index == 0) body_index = FlightGlobals.Bodies.Count - 1; update = true; }
 
 				// sunlight selector
 				GUILayout.Label(new GUIContent(sunlight ? Icons.sun_white : Icons.sun_black, "In sunlight/shadow"), icon_style);
 				if (Lib.IsClicked())
-					sunlight = !sunlight;
+				{ sunlight = !sunlight; update = true; }
 
 				// situation selector
 				GUILayout.Label(new GUIContent(situations[situation_index], "Target situation"), rightmenu_style);
 				if (Lib.IsClicked())
-				{ situation_index = (situation_index + 1) % situations.Length; }
+				{ situation_index = (situation_index + 1) % situations.Length; update = true; }
 				else if (Lib.IsClicked(1))
-				{ situation_index = (situation_index == 0 ? situations.Length : situation_index) - 1; }
+				{ situation_index = (situation_index == 0 ? situations.Length : situation_index) - 1; update = true; }
 
 				// end header
 				GUILayout.EndHorizontal();
@@ -222,7 +237,9 @@ namespace KERBALISM.Planner
 			);
 			string shadowtime_str = Lib.HumanReadableDuration(env_analyzer.shadow_period) + " (" + (env_analyzer.shadow_time * 100.0).ToString("F0") + "%)";
 
-			p.AddSection("ENVIRONMENT", string.Empty, () => p.Prev(ref environment_index, panel_environment.Count), () => p.Next(ref environment_index, panel_environment.Count));
+			p.AddSection("ENVIRONMENT", string.Empty,
+				() => { p.Prev(ref environment_index, panel_environment.Count); update = true; },
+				() => { p.Next(ref environment_index, panel_environment.Count); update = true; });
 			p.AddContent("temperature", Lib.HumanReadableTemp(env_analyzer.temperature), env_analyzer.body.atmosphere && env_analyzer.landed ? "atmospheric" : flux_tooltip);
 			p.AddContent("difference", Lib.HumanReadableTemp(env_analyzer.temp_diff), "difference between external and survival temperature");
 			p.AddContent("atmosphere", env_analyzer.body.atmosphere ? "yes" : "no", atmosphere_tooltip);
@@ -261,7 +278,9 @@ namespace KERBALISM.Planner
 			string tooltip = res.Tooltip();
 
 			// render the panel section
-			p.AddSection(Lib.SpacesOnCaps(res_name).ToUpper(), string.Empty, () => p.Prev(ref resource_index, panel_resource.Count), () => p.Next(ref resource_index, panel_resource.Count));
+			p.AddSection(Lib.SpacesOnCaps(res_name).ToUpper(), string.Empty,
+				() => { p.Prev(ref resource_index, panel_resource.Count); update = true; },
+				() => { p.Next(ref resource_index, panel_resource.Count); update = true; });
 			p.AddContent("storage", Lib.HumanReadableAmount(res.storage), tooltip);
 			p.AddContent("consumed", Lib.HumanReadableRate(res.consumed), tooltip);
 			p.AddContent("produced", Lib.HumanReadableRate(res.produced), tooltip);
@@ -277,7 +296,9 @@ namespace KERBALISM.Planner
 			Rule rule = Profile.rules.Find(k => k.modifiers.Contains("living_space"));
 
 			// render title
-			p.AddSection("STRESS", string.Empty, () => p.Prev(ref special_index, panel_special.Count), () => p.Next(ref special_index, panel_special.Count));
+			p.AddSection("STRESS", string.Empty,
+				() => { p.Prev(ref special_index, panel_special.Count); update = true; },
+				() => { p.Next(ref special_index, panel_special.Count); update = true; });
 
 			// render living space data
 			// generate details tooltips
@@ -367,7 +388,9 @@ namespace KERBALISM.Planner
 			);
 
 			// render the panel
-			p.AddSection("RADIATION", string.Empty, () => p.Prev(ref special_index, panel_special.Count), () => p.Next(ref special_index, panel_special.Count));
+			p.AddSection("RADIATION", string.Empty,
+				() => { p.Prev(ref special_index, panel_special.Count); update = true; },
+				() => { p.Next(ref special_index, panel_special.Count); update = true; });
 			p.AddContent("surface", Lib.HumanReadableRadiation(env_analyzer.surface_rad + vessel_analyzer.emitted), tooltip);
 			p.AddContent("orbit", Lib.HumanReadableRadiation(env_analyzer.magnetopause_rad), tooltip);
 			if (vessel_analyzer.emitted >= 0.0)
@@ -455,7 +478,9 @@ namespace KERBALISM.Planner
 			}
 
 			// render panel
-			p.AddSection("RELIABILITY", string.Empty, () => p.Prev(ref special_index, panel_special.Count), () => p.Next(ref special_index, panel_special.Count));
+			p.AddSection("RELIABILITY", string.Empty,
+				() => { p.Prev(ref special_index, panel_special.Count); update = true; },
+				() => { p.Next(ref special_index, panel_special.Count); update = true; });
 			p.AddContent("malfunctions", Lib.HumanReadableAmount(vessel_analyzer.failure_year, "/y"), "average case estimate\nfor the whole vessel");
 			p.AddContent("high quality", Lib.HumanReadablePerc(vessel_analyzer.high_quality), "percentage of high quality components");
 			p.AddContent("redundancy", redundancy_str, redundancy_tooltip);
@@ -507,7 +532,9 @@ namespace KERBALISM.Planner
 			  ? "<color=#ffff00>inadequate</color>"
 			  : "good";                                                 //< sufficient pressure control
 
-			p.AddSection("HABITAT", string.Empty, () => p.Prev(ref environment_index, panel_environment.Count), () => p.Next(ref environment_index, panel_environment.Count));
+			p.AddSection("HABITAT", string.Empty,
+				() => { p.Prev(ref environment_index, panel_environment.Count); update = true; },
+				() => { p.Next(ref environment_index, panel_environment.Count); update = true; });
 			p.AddContent("volume", Lib.HumanReadableVolume(vessel_analyzer.volume), "volume of enabled habitats");
 			p.AddContent("surface", Lib.HumanReadableSurface(vessel_analyzer.surface), "surface of enabled habitats");
 			p.AddContent("scrubbing", waste_status, waste_tooltip);
@@ -549,6 +576,8 @@ namespace KERBALISM.Planner
 
 		// panel ui
 		private static Panel panel = new Panel();
+		private static bool update = false;
+		private static int update_counter = 0;
 		#endregion
 	}
 
