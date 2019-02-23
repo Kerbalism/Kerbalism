@@ -38,7 +38,6 @@ namespace KERBALISM.Planner
 			if (Features.Pressure || Features.Poisoning || Features.Humidity)
 				panel_environment.Add("habitat");
 			panel_environment.Add("environment");
-
 		}
 
 		///<summary> Sets the styles for the panels UI </summary>
@@ -81,7 +80,7 @@ namespace KERBALISM.Planner
 		#endregion
 
 		#region METHODS
-		/// <summary>Run simulators and update the planner UI sub-panels</summary>
+		///<summary> Run simulators and update the planner UI sub-panels </summary>
 		internal static void Update()
 		{
 			// clear the panel
@@ -135,13 +134,13 @@ namespace KERBALISM.Planner
 			}
 		}
 
-		/// <summary>planner panel UI width</summary>
+		///<summary> Planner panel UI width </summary>
 		internal static float Width()
 		{
 			return Styles.ScaleWidthFloat(280.0f);
 		}
 
-		/// <summary>planner panel UI height</summary>
+		///<summary> Planner panel UI height </summary>
 		internal static float Height()
 		{
 			if (EditorLogic.RootPart != null)
@@ -154,7 +153,7 @@ namespace KERBALISM.Planner
 			}
 		}
 
-		/// <summary>Render planner UI panel</summary>
+		///<summary> Render planner UI panel </summary>
 		internal static void Render()
 		{
 			// if there is something in the editor
@@ -200,7 +199,7 @@ namespace KERBALISM.Planner
 			}
 		}
 
-		/// <summary>add environment sub-panel, including tooltips</summary>
+		///<summary> Add environment sub-panel, including tooltips </summary>
 		private static void AddSubPanelEnvironment(Panel p)
 		{
 			string flux_tooltip = Lib.BuildString
@@ -230,7 +229,7 @@ namespace KERBALISM.Planner
 			p.AddContent("shadow time", shadowtime_str, "the time in shadow\nduring the orbit");
 		}
 
-		/// <summary>add electric charge sub-panel, including tooltips</summary>
+		///<summary> Add electric charge sub-panel, including tooltips </summary>
 		private static void AddSubPanelEC(Panel p)
 		{
 			// get simulated resource
@@ -247,12 +246,12 @@ namespace KERBALISM.Planner
 			p.AddContent("duration", Lib.HumanReadableDuration(res.Lifetime()));
 		}
 
-		/// <summary>add supply resource sub-panel, including tooltips</summary>
-		/// <remarks>
+		///<summary> Add supply resource sub-panel, including tooltips </summary>
+		///<remarks>
 		/// does not include electric charge
 		/// does not include special resources like waste atmosphere
 		/// restricted to resources that are configured explicitly in the profile as supplies
-		/// </remarks>
+		///</remarks>
 		private static void AddSubPanelResource(Panel p, string res_name)
 		{
 			// get simulated resource
@@ -269,7 +268,7 @@ namespace KERBALISM.Planner
 			p.AddContent("duration", Lib.HumanReadableDuration(res.Lifetime()));
 		}
 
-		/// <summary>add stress sub-panel, including tooltips</summary>
+		///<summary> Add stress sub-panel, including tooltips </summary>
 		private static void AddSubPanelStress(Panel p)
 		{
 			// get first living space rule
@@ -317,7 +316,7 @@ namespace KERBALISM.Planner
 			p.AddContent("duration", Lib.HumanReadableDuration(rule.fatal_threshold / (rule.degeneration * mod)));
 		}
 
-		/// <summary>add radiation sub-panel, including tooltips</summary>
+		///<summary> Add radiation sub-panel, including tooltips </summary>
 		private static void AddSubPanelRadiation(Panel p)
 		{
 			// get first radiation rule
@@ -378,7 +377,7 @@ namespace KERBALISM.Planner
 			p.AddContent("shielding", rule.modifiers.Contains("shielding") ? Habitat.Shielding_to_string(vessel_analyzer.shielding) : "n/a", tooltip);
 		}
 
-		/// <summary>add reliability sub-panel, including tooltips</summary>
+		///<summary> Add reliability sub-panel, including tooltips </summary>
 		private static void AddSubPanelReliability(Panel p)
 		{
 			// evaluate redundancy metric
@@ -463,7 +462,7 @@ namespace KERBALISM.Planner
 			p.AddContent("repair", repair_str, repair_tooltip);
 		}
 
-		/// <summary>add habitat sub-panel, including tooltips</summary>
+		///<summary> Add habitat sub-panel, including tooltips </summary>
 		private static void AddSubPanelHabitat(Panel p)
 		{
 			SimulatedResource atmo_res = resource_sim.Resource("Atmosphere");
