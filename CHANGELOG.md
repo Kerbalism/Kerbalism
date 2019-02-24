@@ -9,6 +9,7 @@
 * Correct LH2 storage capacities of the Radial container for AirlineKuisine, CryoTanks and USI (PiezPiedPy)
 * Near Future Electrical tweaks: Uranite drilling, storage and ISRU processing added (PiezPiedPy)
 * Textures Unlimited support (HaullyGames)
+* Update habitats for the new V2 and DLC pods (PiezPiedPy)
 
 ------------------------------------------------------------------------------------------------------
 
