@@ -128,6 +128,9 @@ namespace KERBALISM
 		public void Toggle()
 		{
 			running = !running;
+
+			// refresh VAB/SPH ui
+			GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
 		}
 
 		// return resource abundance at vessel position

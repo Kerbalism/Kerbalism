@@ -81,11 +81,7 @@ namespace KERBALISM.Planner
 
 		#region EVENTS
 		///<summary> Method called when the vessel in the editor has been modified </summary>
-		internal static void EditorShipModifiedEvent(ShipConstruct sc)
-		{
-			Lib.DebugLog("");
-			update_counter = 0;
-		}
+		internal static void EditorShipModifiedEvent(ShipConstruct sc) => update_counter = 0;
 		#endregion
 
 		#region METHODS

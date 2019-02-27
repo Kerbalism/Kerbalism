@@ -173,7 +173,7 @@ namespace KERBALISM
 				}
 			}
 
-			// refresh VAB ui
+			// refresh VAB/SPH ui
 			GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
 		}
 

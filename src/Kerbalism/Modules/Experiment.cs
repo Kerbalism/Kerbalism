@@ -174,6 +174,9 @@ namespace KERBALISM
 
 			// play deploy animation if exist
 			deploy_anim.Play(!recording, false);
+
+			// refresh VAB/SPH ui
+			GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
 		}
 
 

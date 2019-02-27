@@ -42,6 +42,9 @@ namespace KERBALISM
 					else RemovePatient(c.name);
 				}
 			}
+
+			// refresh VAB/SPH ui
+			GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
 		}
 
 		[KSPAction("_")] public void Action(KSPActionParam param) { Toggle(); }
@@ -244,15 +247,15 @@ namespace KERBALISM
 
 		// module info support
 		public string GetModuleTitle()
-		{ 
+		{
 			if (slots == 0 && !cureEverybody) return String.Empty;
-			return Lib.BuildString("<size=1><color=#00000000>01</color></size>", title); 
+			return Lib.BuildString("<size=1><color=#00000000>01</color></size>", title);
 		}
 
 		public override string GetModuleDisplayName()
 		{
 			if(slots == 0 && !cureEverybody) return String.Empty;
-			return Lib.BuildString("<size=1><color=#00000000>01</color></size>", title); 
+			return Lib.BuildString("<size=1><color=#00000000>01</color></size>", title);
 		}
 
 		public string GetPrimaryField() { return string.Empty; }

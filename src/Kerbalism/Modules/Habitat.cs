@@ -389,6 +389,9 @@ namespace KERBALISM
 				case State.pressurizing:   Set_flow(false); state = State.depressurizing; break;
 				case State.depressurizing: Set_flow(true);  state = State.pressurizing;   break;
 			}
+
+			// refresh VAB/SPH ui
+			GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
 		}
 
 		// action groups

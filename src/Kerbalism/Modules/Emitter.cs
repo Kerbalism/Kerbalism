@@ -91,6 +91,9 @@ namespace KERBALISM
 
 			// play animation
 			active_anim.Play(running, false);
+
+			// refresh VAB/SPH ui
+			GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
 		}
 
 

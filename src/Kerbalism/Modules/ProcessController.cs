@@ -123,10 +123,19 @@ namespace KERBALISM
 			// switch status
 			running = !running;
 			Lib.SetProcessEnabledDisabled(part, resource, running, capacity * multiple);
+
+			// refresh VAB/SPH ui
+			GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
 		}
 
 		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "Dump", active = true)]
-		public void DumpValve() { valve_i = dump_specs.NextValve; }
+		public void DumpValve()
+		{
+			valve_i = dump_specs.NextValve;
+
+			// refresh VAB/SPH ui
+			GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+		}
 
 		// action groups
 		[KSPAction("_")] public void Action(KSPActionParam param) { Toggle(); }
