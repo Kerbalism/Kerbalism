@@ -92,6 +92,11 @@ namespace KERBALISM.Planner
 		///<summary> Run simulators and update the planner UI sub-panels </summary>
 		internal static void Update()
 		{
+			// get vessel crew manifest
+			VesselCrewManifest manifest = KSP.UI.CrewAssignmentDialog.Instance.GetManifest();
+			if (manifest == null)
+				return;
+
 			// only update when we need to, repeat update a number of times to allow the simulators to catch up
 			if (!(update || (update_counter++ < 3)))
 				return;
@@ -107,8 +112,7 @@ namespace KERBALISM.Planner
 
 				// analyze using the settings from the panels user input
 				env_analyzer.Analyze(FlightGlobals.Bodies[body_index], altitude_mults[situation_index], sunlight);
-				if (update = !vessel_analyzer.Analyze(parts, resource_sim, env_analyzer))
-					return;
+				vessel_analyzer.Analyze(parts, resource_sim, env_analyzer);
 				resource_sim.Analyze(parts, env_analyzer, vessel_analyzer);
 
 				// add ec panel
