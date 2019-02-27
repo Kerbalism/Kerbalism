@@ -97,6 +97,10 @@ namespace KERBALISM.Planner
 			if (manifest == null)
 				return;
 
+			// check for number of crew change
+			if (vessel_analyzer.crew_count != manifest.CrewCount)
+				update = true;
+
 			// only update when we need to, repeat update a number of times to allow the simulators to catch up
 			if (!(update || (update_counter++ < 3)))
 				return;
