@@ -3,7 +3,7 @@ using KSP.Localization;
 
 namespace KERBALISM
 {
-	public sealed class Habitat : PartModule, ISpecifics, IConfigurable
+	public sealed class Habitat: PartModule, ISpecifics
 	{
 		// config
 		[KSPField] public double volume = 0.0;                      // habitable volume in m^3, deduced from bounding box if not specified
@@ -66,6 +66,9 @@ namespace KERBALISM
 				inflate_anim = new Animator(part, inflate);
 			}
 
+			// configure on start
+			Configure();
+
 			perctDeployed = Lib.Level(part, "Atmosphere", true);
 
 			switch (this.state)
@@ -92,9 +95,6 @@ namespace KERBALISM
 				// For fix IVA when crewTransfered occur, add event to define flag for FixedUpdate
 				GameEvents.onCrewTransferred.Add(UpdateCrew);
 			}
-
-			// configure on start
-			Configure(true);
 		}
 
 		public void OnDestroy()
@@ -138,30 +138,28 @@ namespace KERBALISM
 			}
 		}
 
-		public void Configure(bool enable, int multiple = 1)
+		public void Configure()
 		{
-			if (enable)
+			// if never set, this is the case if:
+			// - part is added in the editor
+			// - module is configured first time either in editor or in flight
+			// - module is added to an existing savegame
+			if (!part.Resources.Contains("Atmosphere"))
 			{
-				// if never set, this is the case if:
-				// - part is added in the editor
-				// - module is configured first time either in editor or in flight
-				// - module is added to an existing savegame
-				if (!part.Resources.Contains("Atmosphere"))
-				{
-					// add internal atmosphere resources
-					// - disabled habitats start with zero atmosphere
-					Lib.AddResource(part, "Atmosphere", (state == State.enabled && Features.Pressure) ? volume * 1e3 : 0.0, volume * 1e3);
-					Lib.AddResource(part, "WasteAtmosphere", 0.0, volume * 1e3);
-					Lib.AddResource(part, "MoistAtmosphere", 0.0, volume * 1e3);
+				// add internal atmosphere resources
+				// - disabled habitats start with zero atmosphere
+				Lib.AddResource(part, "Atmosphere", (state == State.enabled && Features.Pressure) ? volume * 1e3 : 0.0, volume * 1e3);
+				Lib.AddResource(part, "WasteAtmosphere", 0.0, volume * 1e3);
+				Lib.AddResource(part, "MoistAtmosphere", 0.0, volume * 1e3);
 
-					// add external surface shielding
-					Lib.AddResource(part, "Shielding", 0.0, surface);
+				// add external surface shielding
+				Lib.AddResource(part, "Shielding", 0.0, surface);
 
-					// inflatable habitats can't be shielded (but still need the capacity) unless they have rigid walls
-					part.Resources["Shielding"].isTweakable = (Get_inflate_string().Length == 0) || inflatableUsingRigidWalls;
+				// inflatable habitats can't be shielded (but still need the capacity) unless they have rigid walls
+				part.Resources["Shielding"].isTweakable = (Get_inflate_string().Length == 0) || inflatableUsingRigidWalls;
 
-					// if shielding feature is disabled, just hide it
-					part.Resources["Shielding"].isVisible = Features.Shielding && part.Resources["Shielding"].isTweakable;
+				// if shielding feature is disabled, just hide it
+				part.Resources["Shielding"].isVisible = Features.Shielding && part.Resources["Shielding"].isTweakable;
 
 					// In the first time playing with Kerbalism, MM will add Nitrogen for existed vessels, but it will be empty
 					// Fixing missing Module by hard code, logic based in Default.cfg
@@ -169,14 +167,6 @@ namespace KERBALISM
 					if (part.partInfo.name == "mk3Cockpit_Shuttle" || part.partInfo.name == "Large_Crewed_Lab") amount *= 3;
 
 					Lib.AddResource(part, "Nitrogen", (state == State.enabled && Features.Pressure) ? amount : 0.0, amount);
-				}
-			}
-			else
-			{
-				Lib.RemoveResource(part, "Atmosphere", 0.0, volume * 1e3);
-				Lib.RemoveResource(part, "WasteAtmosphere", 0.0, volume * 1e3);
-				Lib.RemoveResource(part, "MoistAtmosphere", 0.0, volume * 1e3);
-				Lib.RemoveResource(part, "Shielding", 0.0, surface);
 			}
 		}
 
