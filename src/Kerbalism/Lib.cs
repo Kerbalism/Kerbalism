@@ -1269,8 +1269,31 @@ namespace KERBALISM
 				var res = p.Resources[res_name];
 				res.flowState = enable;
 			} else {
-				Lib.Log("Resource " + res_name + " not in part " + p.name);
+				Lib.DebugLog("Resource " + res_name + " not in part " + p.name);
 			}
+		}
+
+		/// <summary> Fills a resource in the specified part to its capacity </summary>
+		public static void FillResource(Part p, string res_name)
+		{
+			// if the resource is not in the part, do nothing
+			if (p.Resources.Contains(res_name))
+			{
+				PartResource res = p.Resources[res_name];
+				res.amount = res.maxAmount;
+			}
+			else {
+				Lib.DebugLog("Resource " + res_name + " not in part " + p.name); }
+		}
+
+		/// <summary> Sets the amount of a resource in the specified part to zero </summary>
+		public static void EmptyResource(Part p, string res_name)
+		{
+			// if the resource is not in the part, do nothing
+			if (p.Resources.Contains(res_name))
+				p.Resources[res_name].amount = 0.0;
+			else {
+				Lib.DebugLog("Resource " + res_name + " not in part " + p.name); }
 		}
 
 		/// <summary> Set the enabled/disabled state of a process
