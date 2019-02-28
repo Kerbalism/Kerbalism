@@ -79,6 +79,9 @@ namespace KERBALISM.Planner
 			// determine if the vessel has pressure control capabilities
 			pressurized = sim.Resource("Atmosphere").produced > 0.0 || env.breathable;
 
+			// determine number of EVA's using available Nitrogen
+			evas = (uint)(sim.Resource("Nitrogen").amount / (crew_count * 330.0));
+
 			// determine if the vessel has scrubbing capabilities
 			scrubbed = sim.Resource("WasteAtmosphere").consumed > 0.0 || env.breathable;
 
@@ -228,6 +231,7 @@ namespace KERBALISM.Planner
 		public double volume;                               // total volume in m^3
 		public double surface;                              // total surface in m^2
 		public bool pressurized;                            // true if the vessel has pressure control capabilities
+		public uint evas = 0;                               // number of EVA's using available Nitrogen
 		public bool scrubbed;                               // true if the vessel has co2 scrubbing capabilities
 		public bool humid;                                  // true if the vessel has co2 scrubbing capabilities
 
