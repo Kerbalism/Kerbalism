@@ -95,6 +95,7 @@ namespace KERBALISM
 			volume = Habitat.Tot_volume(v);
 			surface = Habitat.Tot_surface(v);
 			pressure = Habitat.Pressure(v);
+			evas = (uint)(ResourceCache.Info(v, "Nitrogen").amount / (crew_count * 330.0));
 			poisoning = Habitat.Poisoning(v);
 			humidity = Habitat.Humidity(v);
 			shielding = Habitat.Shielding(v);
@@ -116,7 +117,7 @@ namespace KERBALISM
 		{
 			// don't re-calculate this on every tick. So, if sunlight is not 1.0 or 0.0, do nothing here
 			if (sunlight > 0.0001 && sunlight < 0.9999)
-			{ 
+			{
 				return;
 			}
 
@@ -161,6 +162,7 @@ namespace KERBALISM
 		public double volume;               // enabled volume in m^3
 		public double surface;              // enabled surface in m^2
 		public double pressure;             // normalized pressure
+		public uint evas;                   // number of EVA's using available Nitrogen
 		public double poisoning;            // waste atmosphere amount versus total atmosphere amount
 		public double humidity;             // moist atmosphere amount
 		public double shielding;            // shielding level

@@ -41,6 +41,9 @@ namespace KERBALISM
 		public void Toggle()
 		{
 			considered = !considered;
+
+			// refresh VAB/SPH ui
+			GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
 		}
 	}
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using KERBALISM.Planner;
 
 
 namespace KERBALISM
@@ -9,6 +10,7 @@ namespace KERBALISM
 
 	public static class Modifiers
 	{
+		///<summary> Modifiers Evaluate method used for the Monitors background and current vessel simulation </summary>
 		public static double Evaluate(Vessel v, Vessel_info vi, Vessel_resources resources, List<string> modifiers, Part p = null, ProtoPartSnapshot pp = null)
 		{
 			double k = 1.0;
@@ -77,8 +79,8 @@ namespace KERBALISM
 						break;
 
 					default:
-						// If a psuedo resource is flowable, per part processing would result in every part producing the entire capacity of the vessel
-						if (!Lib.IsResourceImpossibleToFlow(mod)) throw new Exception("psuedo-resource " + mod + " must be NO_FLOW");
+						// If a pseudo resource is flow-able, per part processing would result in every part producing the entire capacity of the vessel
+						if (!Lib.IsResourceImpossibleToFlow(mod)) throw new Exception("pseudo-resource " + mod + " must be NO_FLOW");
 						if (p != null) 			k *= resources.Info(v, mod).GetResourceInfoView(p).amount;  // loaded part
 						else if (pp != null)	k *= resources.Info(v, mod).GetResourceInfoView(pp).amount; // unloaded part
 						else					k *= resources.Info(v, mod).amount;                         // vessel-wide
@@ -89,7 +91,8 @@ namespace KERBALISM
 		}
 
 
-		public static double Evaluate(Environment_analyzer env, Vessel_analyzer va, Resource_simulator sim, List<string> modifiers, Part p = null)
+		///<summary> Modifiers Evaluate method used for the Planners vessel simulation in the VAB/SPH </summary>
+		public static double Evaluate(EnvironmentAnalyzer env, VesselAnalyzer va, ResourceSimulator sim, List<string> modifiers, Part p = null)
 		{
 			double k = 1.0;
 			foreach (string mod in modifiers)
@@ -157,8 +160,8 @@ namespace KERBALISM
 						break;
 
 					default:
-						// If a psuedo resource is flowable, per part processing would result in every part producing the entire capacity of the vessel
-						if (!Lib.IsResourceImpossibleToFlow(mod)) throw new Exception("psuedo-resource " + mod + "must be NO_FLOW");
+						// If a pseudo resource is flow-able, per part processing would result in every part producing the entire capacity of the vessel
+						if (!Lib.IsResourceImpossibleToFlow(mod)) throw new Exception("pseudo-resource " + mod + "must be NO_FLOW");
 						if (p != null)			k *= sim.Resource(mod).GetSimulatedResourceView(p).amount; // loaded part
 						else					k *= sim.Resource(mod).amount;                             // vessel-wide
 						break;

@@ -101,6 +101,7 @@ namespace KERBALISM
 				if (Features.Shielding) p.AddContent("shielding", Habitat.Shielding_to_string(vi.shielding));
 				if (Features.LivingSpace) p.AddContent("living space", Habitat.Living_space_to_string(vi.living_space));
 				if (Features.Comfort) p.AddContent("comfort", vi.comforts.Summary(), vi.comforts.Tooltip());
+				if (Features.Pressure) p.AddContent("EVA's available", vi.breathable ? "infinite" : Lib.HumanReadableInteger(vi.evas), vi.breathable ? "breathable atmosphere" : "approx (derived from stored N2)");
 			}
 		}
 

@@ -217,6 +217,9 @@ namespace KERBALISM
 					else deploy_anim.Play(!deployed, false);
 				}
 			}
+
+			// refresh VAB/SPH ui
+			GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
 		}
 
 		// action groups

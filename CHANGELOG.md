@@ -11,6 +11,8 @@
 * Textures Unlimited support (HaullyGames)
 * Update habitats for the new V2 and DLC pods (PiezPiedPy)
 * Recalculated habitat atmosphere leakage, was originally calculated for a Human day which is 4x longer (PiezPiedPy)
+* Added an 'EVA's available' indicator to the Planner and Monitor (PiezPiedPy)
+* Optimized Planner: Part 1 - Chill the stuttering in VAB/SPH (PiezPiedPy)
 
 ------------------------------------------------------------------------------------------------------
 

@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 using KSP.UI.Screens;
 using KSP.UI.Screens.SpaceCenter.MissionSummaryDialog;
+using UnityEngine;
 
 
 namespace KERBALISM
@@ -48,6 +48,9 @@ namespace KERBALISM
 			GameEvents.onGUIApplicationLauncherReady.Add(() => visible = true);
 
 			GameEvents.CommNet.OnNetworkInitialized.Add(() => Kerbalism.Fetch.StartCoroutine(NetworkInitialized()));
+
+			// add editor events
+			GameEvents.onEditorShipModified.Add((sc) => Planner.Planner.EditorShipModifiedEvent(sc));
 		}
 
 		public IEnumerator NetworkInitialized()
@@ -60,7 +63,7 @@ namespace KERBALISM
 		void ToEVA(GameEvents.FromToAction<Part, Part> data)
 		{
 			// get total crew in the origin vessel
-			double tot_crew = (double)Lib.CrewCount(data.from.vessel) + 1.0;
+			double tot_crew = Lib.CrewCount(data.from.vessel) + 1.0;
 
 			// get vessel resources handler
 			Vessel_resources resources = ResourceCache.Get(data.from.vessel);
@@ -130,15 +133,17 @@ namespace KERBALISM
 			// and visualize the data in the recovery dialog window
 
 			// do nothing if science system is disabled, or in sandbox mode
-			if (!Features.Science || HighLogic.CurrentGame.Mode == Game.Modes.SANDBOX) return;
+			if (!Features.Science || HighLogic.CurrentGame.Mode == Game.Modes.SANDBOX)
+				return;
 
 			// get the drive data from DB
 			uint root_id = v.protoPartSnapshots[v.rootIndex].flightID;
-			if (!DB.vessels.ContainsKey(root_id)) return;
+			if (!DB.vessels.ContainsKey(root_id))
+				return;
 			Drive drive = DB.vessels[root_id].drive;
 
 			// for each file in the drive
-			foreach (var p in drive.files)
+			foreach (KeyValuePair<string, File> p in drive.files)
 			{
 				// shortcuts
 				string filename = p.Key;
@@ -172,7 +177,7 @@ namespace KERBALISM
 
 			// for each sample in the drive
 			// for each file in the drive
-			foreach (var p in drive.samples)
+			foreach (KeyValuePair<string, Sample> p in drive.samples)
 			{
 				// shortcuts
 				string filename = p.Key;
@@ -211,7 +216,8 @@ namespace KERBALISM
 			{
 				// avoid creating kerbal data in db again,
 				// as this function may be called multiple times
-				if (!DB.ContainsKerbal(c.name)) continue;
+				if (!DB.ContainsKerbal(c.name))
+					continue;
 
 				// set roster status of eva dead kerbals
 				if (DB.Kerbal(c.name).eva_dead)
@@ -239,7 +245,8 @@ namespace KERBALISM
 		void VesselTerminated(ProtoVessel pv)
 		{
 			// forget all kerbals data
-			foreach (ProtoCrewMember c in pv.GetVesselCrew()) DB.KillKerbal(c.name, true);
+			foreach (ProtoCrewMember c in pv.GetVesselCrew())
+				DB.KillKerbal(c.name, true);
 
 			// for each part
 			foreach (ProtoPartSnapshot p in pv.protoPartSnapshots)
@@ -270,13 +277,15 @@ namespace KERBALISM
 			HashSet<string> kerbals_dead = new HashSet<string>();
 			foreach (Vessel ov in FlightGlobals.Vessels)
 			{
-				foreach (ProtoCrewMember c in Lib.CrewList(ov)) kerbals_alive.Add(c.name);
+				foreach (ProtoCrewMember c in Lib.CrewList(ov))
+					kerbals_alive.Add(c.name);
 			}
-			foreach (var p in DB.Kerbals())
+			foreach (KeyValuePair<string, KerbalData> p in DB.Kerbals())
 			{
-				if (!kerbals_alive.Contains(p.Key)) kerbals_dead.Add(p.Key);
+				if (!kerbals_alive.Contains(p.Key))
+					kerbals_dead.Add(p.Key);
 			}
-			foreach (string n in kerbals_dead) 
+			foreach (string n in kerbals_dead)
 			{
 				// we don't know if the kerbal really is dead, or if it is just not currently assigned to a mission
 				DB.KillKerbal(n, false);
@@ -312,10 +321,12 @@ namespace KERBALISM
 		void VesselModified(Vessel vessel_a)
 		{
 			// do nothing in the editor
-			if (Lib.IsEditor()) return;
+			if (Lib.IsEditor())
+				return;
 
 			// bah
-			if (string.IsNullOrEmpty(vessel_a.vesselName)) return;
+			if (string.IsNullOrEmpty(vessel_a.vesselName))
+				return;
 
 			// get drive from first vessel
 			// - there is a possibility this will create it
@@ -326,7 +337,8 @@ namespace KERBALISM
 			foreach (Vessel vessel_b in FlightGlobals.VesselsLoaded)
 			{
 				// do not check against itself
-				if (vessel_a.id == vessel_b.id) continue;
+				if (vessel_a.id == vessel_b.id)
+					continue;
 
 				// get drive of the other vessel
 				// - there is a possibility this will create it
@@ -359,7 +371,7 @@ namespace KERBALISM
 		{
 			if (PartLoader.LoadedPartsList.Find(k => k.tags.IndexOf("_kerbalism", StringComparison.Ordinal) >= 0) != null)
 			{
-				var icon = new RUI.Icons.Selectable.Icon("Kerbalism", Icons.category_normal, Icons.category_selected);
+				RUI.Icons.Selectable.Icon icon = new RUI.Icons.Selectable.Icon("Kerbalism", Icons.category_normal, Icons.category_selected);
 				PartCategorizer.Category category = PartCategorizer.Instance.filters.Find(k => string.Equals(k.button.categoryName, "filter by function", StringComparison.OrdinalIgnoreCase));
 				PartCategorizer.AddCustomSubcategoryFilter(category, "Kerbalism", "Kerbalism", icon, k => k.tags.IndexOf("_kerbalism", StringComparison.Ordinal) >= 0);
 			}
@@ -368,7 +380,8 @@ namespace KERBALISM
 
 		void TechResearched(GameEvents.HostTargetAction<RDTech, RDTech.OperationResult> data)
 		{
-			if (data.target != RDTech.OperationResult.Successful) return;
+			if (data.target != RDTech.OperationResult.Successful)
+				return;
 
 			// collect unique configure-related unlocks
 			HashSet<string> labels = new HashSet<string>();

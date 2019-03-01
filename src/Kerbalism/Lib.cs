@@ -527,8 +527,7 @@ namespace KERBALISM
 
 		// --- HUMAN READABLE -------------------------------------------------------
 
-		// pretty-print a resource rate
-		// - rate: rate per second, must be positive
+		///<summary> Pretty-print a resource rate (rate is per second, must be positive) </summary>
 		public static string HumanReadableRate( double rate, string precision = "F3" )
 		{
 			if (rate <= double.Epsilon) return "none";
@@ -542,8 +541,7 @@ namespace KERBALISM
 			return BuildString( (rate * DaysInYear()).ToString( precision ), "/y" );
 		}
 
-		// pretty-print a duration
-		// - duration: duration in seconds, must be positive
+		///<summary> Pretty-print a duration (duration is in seconds, must be positive) </summary>
 		public static string HumanReadableDuration( double duration )
 		{
 			if (duration <= double.Epsilon) return "none";
@@ -576,8 +574,7 @@ namespace KERBALISM
 			return BuildString( duration_y.ToString( "F0" ), "y", (duration_d < 1.0 ? "" : BuildString( " ", duration_d.ToString( "F0" ), "d" )) );
 		}
 
-		// pretty-print a range
-		// - range: range in meters, must be positive
+		///<summary> Pretty-print a range (range is in meters, must be positive) </summary>
 		public static string HumanReadableRange( double range )
 		{
 			if (range <= double.Epsilon) return "none";
@@ -596,25 +593,25 @@ namespace KERBALISM
 			return BuildString( range.ToString( "F1" ), " Em" );
 		}
 
-		// pretty-print temperature
+		///<summary> Pretty-print temperature </summary>
 		public static string HumanReadableTemp( double temp )
 		{
 			return BuildString( temp.ToString( "F1" ), " K" );
 		}
 
-		// pretty-print flux
+		///<summary> Pretty-print flux </summary>
 		public static string HumanReadableFlux( double flux )
 		{
 			return BuildString( flux >= 0.0001 ? flux.ToString( "F1" ) : flux.ToString(), " W/m²" );
 		}
 
-		// pretty-print magnetic strength
+		///<summary> Pretty-print magnetic strength </summary>
 		public static string HumanReadableField( double strength )
 		{
 			return BuildString( strength.ToString( "F1" ), " uT" ); //< micro-tesla
 		}
 
-		// pretty-print radiation rate
+		///<summary> Pretty-print radiation rate </summary>
 		public static string HumanReadableRadiation( double rad )
 		{
 			if (rad <= double.Epsilon) return "none";
@@ -622,50 +619,55 @@ namespace KERBALISM
 			return BuildString( (rad * 3600.0).ToString( "F3" ), " rad/h" );
 		}
 
-		// pretty-print percentage
+		///<summary> Pretty-print percentage </summary>
 		public static string HumanReadablePerc( double v, string format = "F0" )
 		{
 			return BuildString( (v * 100.0).ToString( format ), "%" );
 		}
 
-		// pretty-print pressure (value is in kPa)
+		///<summary> Pretty-print pressure (value is in kPa) </summary>
 		public static string HumanReadablePressure( double v )
 		{
 			return Lib.BuildString( v.ToString( "F1" ), " kPa" );
 		}
 
-		// pretty-print volume (value is in m^3)
+		///<summary> Pretty-print volume (value is in m^3) </summary>
 		public static string HumanReadableVolume( double v )
 		{
 			return Lib.BuildString( v.ToString( "F2" ), " m³" );
 		}
 
-		// pretty-print surface (value is in m^2)
+		///<summary> Pretty-print surface (value is in m^2) </summary>
 		public static string HumanReadableSurface( double v )
 		{
 			return Lib.BuildString( v.ToString( "F2" ), " m²" );
 		}
 
-		// pretty-print mass
+		///<summary> Pretty-print mass </summary>
 		public static string HumanReadableMass( double v )
 		{
 			return Lib.BuildString( v.ToString( "F3" ), " t" );
 		}
 
-		// pretty-print cost
+		///<summary> Pretty-print cost </summary>
 		public static string HumanReadableCost( double v )
 		{
 			return Lib.BuildString( v.ToString( "F0" ), " $" );
 		}
 
-		// format a value, or return 'none'
+		///<summary> Format a value to 2 decimal places, or return 'none' </summary>
 		public static string HumanReadableAmount( double value, string append = "" )
 		{
 			return (Math.Abs( value ) <= double.Epsilon ? "none" : BuildString( value.ToString( "F2" ), append ));
 		}
 
-		// format data size
-		// - size: data size in Mb
+		///<summary> Format an integer value, or return 'none' </summary>
+		public static string HumanReadableInteger(uint value, string append = "")
+		{
+			return (Math.Abs(value) <= 0 ? "none" : BuildString(value.ToString("F0"), append));
+		}
+
+		///<summary> Format data size, the size parameter is in Mb </summary>
 		public static string HumanReadableDataSize( double size )
 		{
 			size *= 1048576.0; //< to bytes
@@ -681,15 +683,14 @@ namespace KERBALISM
 			return BuildString( size.ToString( "F2" ), " Tb" );
 		}
 
-		// format data rate
-		// - rate: data rate in Mb/s
+		///<summary> Format data rate, the rate parameter is in Mb/s </summary>
 		public static string HumanReadableDataRate( double rate )
 		{
 			return rate < 0.000001 ? "none" : Lib.BuildString( HumanReadableDataSize( rate ), "/s" );
 		}
 
 
-		// format science credits
+		///<summary> Format science credits </summary>
 		public static string HumanReadableScience( double value )
 		{
 			return Lib.BuildString( "<color=cyan>", value.ToString( "F1" ), " CREDITS</color>" );

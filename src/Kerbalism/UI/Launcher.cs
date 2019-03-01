@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using KSP.UI.Screens;
 using UnityEngine;
-using KSP.UI.Screens;
 
 
 namespace KERBALISM
 {
-
 
 	public sealed class Launcher
 	{
@@ -18,7 +15,7 @@ namespace KERBALISM
 		public Launcher()
 		{
 			// initialize
-			planner = new Planner();
+			Planner.Planner.Initialize();
 			monitor = new Monitor();
 			tooltip = new Tooltip();
 
@@ -50,12 +47,13 @@ namespace KERBALISM
 		public void Update()
 		{
 			// do nothing if GUI has not been initialized
-			if (!ui_initialized) return;
+			if (!ui_initialized)
+				return;
 
 			// update planner/monitor content
 			if (Lib.IsEditor())
 			{
-				planner.Update();
+				Planner.Planner.Update();
 			}
 			else
 			{
@@ -83,15 +81,15 @@ namespace KERBALISM
 				float at_bottom_editor_offset_x = 66.0f * GameSettings.UI_SCALE * GameSettings.UI_SCALE_APPS;
 
 				// get screen size
-				float screen_width = (float)Screen.width;
-				float screen_height = (float)Screen.height;
+				float screen_width = Screen.width;
+				float screen_height = Screen.height;
 
 				// determine app launcher position;
 				bool is_at_top = ApplicationLauncher.Instance.IsPositionedAtTop;
 
 				// get window size
-				float width = Lib.IsEditor() ? planner.Width() : monitor.Width();
-				float height = Lib.IsEditor() ? planner.Height() : monitor.Height();
+				float width = Lib.IsEditor() ? Planner.Planner.Width() : monitor.Width();
+				float height = Lib.IsEditor() ? Planner.Planner.Height() : monitor.Height();
 
 				// calculate window position
 				float left = screen_width - width;
@@ -117,8 +115,10 @@ namespace KERBALISM
 				GUILayout.Space(Styles.ScaleFloat(10.0f));
 
 				// draw planner in the editors, monitor everywhere else
-				if (!Lib.IsEditor()) monitor.Render();
-				else planner.Render();
+				if (!Lib.IsEditor())
+					monitor.Render();
+				else
+					Planner.Planner.Render();
 
 				// end window area
 				GUILayout.EndArea();
@@ -163,9 +163,6 @@ namespace KERBALISM
 
 		// window geometry
 		Rect win_rect;
-
-		// the vessel planner
-		Planner planner;
 
 		// the vessel monitor
 		Monitor monitor;

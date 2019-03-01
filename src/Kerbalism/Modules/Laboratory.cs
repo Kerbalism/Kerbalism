@@ -144,7 +144,7 @@ namespace KERBALISM
 						crew_gain = Lib.Clamp(crew_gain, 1, Settings.MaxLaborartoryBonus);
 						rate *= crew_gain;
 					}
-					    
+
 					// get sample to analyze
 					background_sample = NextSample(v);
 
@@ -167,7 +167,13 @@ namespace KERBALISM
 		}
 
 		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "Toggle", active = true)]
-		public void Toggle() { running = !running; }
+		public void Toggle()
+		{
+			running = !running;
+
+			// refresh VAB/SPH ui
+			GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+		}
 
 		[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "Clean", active = true)]
 		public void CleanExperiments()
