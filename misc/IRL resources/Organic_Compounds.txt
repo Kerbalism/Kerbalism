@@ -1,0 +1,239 @@
+Material Methane
+Elements						C	H
+ElementCount					1	4
+Density_kg__m3					422.62
+EnthalpyOfFormation_kJ__mol		-74.87
+BondDissociationEnergy_kJ__mol	1656
+GibbsFreeEnergyOfFormation_kJ__mol	-50.8
+BulkModulus_GPa					.9945
+MeltingPoint_K					90.7
+BoilingPoint_K					111.66
+ThermalConductivity_W__m_K		.035
+SpecificHeat_J__kg_K			2225.06
+Viscosity_Pa_s					1.1e-5
+DielectricStrength_MV__m			3.45
+RefractiveIndex					Methane
+Dissociation
+	Products						Monatomic Carbon	Monatomic Hydrogen
+	ProductCounts					1					4
+
+Material Ethane
+Elements						C	H
+ElementCount					2	6
+Density_kg__m3					544.6
+EnthalpyOfFormation_kJ__mol		-84
+BondDissociationEnergy_kJ__mol	2810.8
+GibbsFreeEnergyOfFormation_kJ__mol	-32.9
+BulkModulus_GPa					2.156
+MeltingPoint_K					90.4
+BoilingPoint_K					184.6
+ThermalConductivity_W__m_K		17.9608
+SpecificHeat_J__kg_K			1746
+Viscosity_Pa_s					8.6129e-6
+RefractiveIndex					Methane
+Dissociation
+	Products						Monatomic Carbon	Monatomic Hydrogen
+	ProductCounts					2					6
+
+Material Propane
+Elements						C	H
+ElementCount					3	8
+Density_kg__m3					580
+EnthalpyOfFormation_kJ__mol		-104.5
+GibbsFreeEnergyOfFormation_kJ__mol	-23.4
+BulkModulus_GPa					1.45
+MeltingPoint_K					177
+BoilingPoint_K					341.6
+ThermalConductivity_W__m_K		.017
+SpecificHeat_J__kg_K			3077.28
+Viscosity_Pa_s					294e-6
+RefractiveIndex					Methane
+Dissociation
+	Products						Monatomic Carbon	Monatomic Hydrogen
+	ProductCounts					3					8
+
+Material Butane
+Elements						C	H
+ElementCount					4	10
+Density_kg__m3					604
+EnthalpyOfFormation_kJ__mol		-126.3
+GibbsFreeEnergyOfFormation_kJ__mol	-15.6
+BulkModulus_GPa					1.60
+MeltingPoint_K					133
+BoilingPoint_K					272
+ThermalConductivity_W__m_K		.017
+SpecificHeat_J__kg_K			1694.60
+Viscosity_Pa_s					150e-6
+RefractiveIndex					Methane
+Dissociation
+	Products						Monatomic Carbon	Monatomic Hydrogen
+	ProductCounts					4					10
+
+Material Pentane
+Elements						C	H
+ElementCount					5	12
+Density_kg__m3					626
+EnthalpyOfFormation_kJ__mol		-173.2
+GibbsFreeEnergyOfFormation_kJ__mol	-9.2
+BulkModulus_GPa					1.02
+MeltingPoint_K					142.7
+BoilingPoint_K					309.0
+ThermalConductivity_W__m_K		.136
+SpecificHeat_J__kg_K			2317.26
+Viscosity_Pa_s					240e-6
+RefractiveIndex					Methane
+Dissociation
+	Products						Monatomic Carbon	Monatomic Hydrogen
+	ProductCounts					5					12
+
+Material Decane
+Elements						C	H
+ElementCount					10	22
+Density_kg__m3					730.05
+EnthalpyOfFormation_kJ__mol		-302.1
+GibbsFreeEnergyOfFormation_kJ__mol	17.4
+BulkModulus_GPa					1.056
+MeltingPoint_K					242.7
+BoilingPoint_K					446.9
+ThermalConductivity_W__m_K		.147
+SpecificHeat_J__kg_K			2217.02
+Viscosity_Pa_s					920e-6
+RefractiveIndex					Methane
+Dissociation
+	Products						Monatomic Carbon	Monatomic Hydrogen
+	ProductCounts					10					22
+
+Material Tetrafluoromethane
+Elements						C	F
+ElementCount					1	4
+Density_kg__m3					1603
+EnthalpyOfFormation_kJ__mol		-933.20
+BondDissociationEnergy_kJ__mol	2060
+GibbsFreeEnergyOfFormation_kJ__mol	0
+BulkModulus_GPa					.0146
+MeltingPoint_K					89.5
+BoilingPoint_K					145.3
+SpecificHeat_J__kg_K			660
+ThermalConductivity_W__m_K		.01503
+Viscosity_Pa_s					1.61e-5
+Dissociation
+	Products						Monatomic Carbon	Monatomic Fluorine
+	ProductCounts					1					4
+
+Material Polytetrafluoroethylene
+Elements						C	F
+ElementCount					2	4
+Density_kg__m3					2200
+YieldStrength_MPa				23
+UltimateTensileStrength_MPa		43
+YoungsModulus_GPa				.5
+ShearModulus_GPa				.171
+MeltingPoint_K					600
+SpecificHeat_J__kg_K			1400
+ThermalConductivity_W__m_K		.25
+ThermalExpansion__K				1.35e-4
+Resistivity_Ohm_m				1e16
+DielectricStrength_MV__m		60
+RelativePermittivity			2.1
+RefractiveIndex					Polytetrafluoroethylene
+RoughnessCoefficient			.8
+
+Material Nitromethane
+Elements						C	H	N	O
+ElementCount					1	3	1	2
+Density_kg__m3					1137.1
+EnthalpyOfFormation_kJ__mol		-113
+BondDissociationEnergy_kJ__mol	2854.63
+GibbsFreeEnergyOfFormation_kJ__mol	-14.4
+BulkModulus_GPa					.087
+MeltingPoint_K					244.15
+BoilingPoint_K					376
+ThermalConductivity_W__m_K		.16456
+SpecificHeat_J__kg_K			1736.23
+Viscosity_Pa_s					.000620
+Dissociation
+	Products						Monatomic Carbon	Monatomic Hydrogen	Monatomic Oxygen	Monatomic Nitrogen
+	ProductCounts					1					3					2					1
+
+Material Ethylene Oxide
+Elements						C	H	O
+ElementCount					2	4	1
+Density_kg__m3					882
+EnthalpyOfFormation_kJ__mol		-51.037
+BondDissociationEnergy_kJ__mol	2722.78
+GibbsFreeEnergyOfFormation_kJ__mol	-11.68
+BulkModulus_GPa					1.06
+MeltingPoint_K					161.8
+BoilingPoint_K					283.8
+ThermalConductivity_W__m_K		.20
+SpecificHeat_J__kg_K			1878
+ThermalExpansion__K				.00170
+Viscosity_Pa_s					577
+Dissociation
+	Products						Monatomic Carbon	Monatomic Hydrogen	Monatomic Oxygen
+	ProductCounts					2					4					1
+
+Material Polyethylene
+Elements						C	H
+ElementCount					2	4
+Density_kg__m3					910
+YieldStrength_MPa				26
+UltimateTensileStrength_MPa		37
+YoungsModulus_GPa				.293
+ShearModulus_GPa				.117
+MeltingPoint_K					408
+ThermalConductivity_W__m_K		.4096
+SpecificHeat_J__kg_K			1900
+ThermalExpansion__K				1.08e-4
+DielectricStrength_MV__m		160
+RelativePermittivity			2.30
+Resistivity_Ohm_m				1e15
+RefractiveIndex					Polyethylene
+RoughnessCoefficient			.2
+
+Material UHMWPE
+Elements						C		H
+ElementCount					200000	400000
+Density_kg__m3					930
+UltimateTensileStrength_MPa		48
+YieldStrength_MPa				21
+YoungsModulus_GPa				.8274
+ShearModulus_GPa				.8
+SpecificHeat_J__kg_K			1840
+MeltingPoint_K					425
+ThermalConductivity_W__m_K		4
+ThermalExpansion__K				150e-6
+Resistivity_Ohm_m				1e12
+DielectricStrength_MV__m		90
+RelativePermittivity			2.35
+RefractiveIndex					Polyethylene
+RoughnessCoefficient			.3
+
+Material UHMWPE Fiber
+Elements						C		H
+ElementCount					200000	400000
+IsPorous						true
+IsFibrous						true
+Density_kg__m3					970
+UltimateTensileStrength_MPa		3900
+YieldStrength_MPa				3900
+YoungsModulus_GPa				172
+ShearModulus_GPa				58.9
+SpecificHeat_J__kg_K			1850
+MeltingPoint_K					425
+ThermalConductivity_W__m_K		20
+ThermalExpansion__K				110e-6
+Resistivity_Ohm_m				1e14
+DielectricStrength_MV__m		90
+RelativePermittivity			2.25
+RefractiveIndex					Polyethylene
+RoughnessCoefficient			.8
+
+Material Biaxially Oriented Polypropylene
+Elements				C	H
+ElementCount				3	6
+Density_kg__m3				946
+MeltingPoint_K				403
+Resistivity_Ohm_m			3.86e17
+DielectricStrength_MV__m		700
+RelativePermittivity			2.25

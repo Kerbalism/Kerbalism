@@ -1,0 +1,184 @@
+Material Aramid Fiber
+Elements						C	H	O	N
+ElementCount					14	14	4	2
+Density_kg__m3					1440
+IsPorous						true
+IsFibrous						true
+UltimateTensileStrength_MPa		3757
+YieldStrength_MPa				3757
+YoungsModulus_GPa				112.4
+ShearModulus_GPa				41.3
+SpecificHeat_J__kg_K			1420
+MeltingPoint_K					773
+ThermalConductivity_W__m_K		.04
+ThermalExpansion__K				4e-6
+Resistivity_Ohm_m				5.988e6
+RelativePermittivity			4
+RefractiveIndex					Aramid
+RoughnessCoefficient			.5
+
+Material Ceramic Oxide Fiber
+Elements						Al		Si	O
+ElementCount					1.46	.27	2.73
+Density_kg__m3					3030
+IsPorous						true
+IsFibrous						true
+UltimateTensileStrength_MPa		3100
+YieldStrength_MPa				3100
+YoungsModulus_GPa				380
+ShearModulus_GPa				140
+SpecificHeat_J__kg_K			1130
+MeltingPoint_K					2073
+ThermalConductivity_W__m_K		.120
+ThermalExpansion__K				5.3e-6
+Resistivity_Ohm_m				1e8
+RelativePermittivity			5.8
+RefractiveIndex					Aramid
+RoughnessCoefficient			.9
+
+Material PBO Fiber
+Elements						C	H	O	N
+ElementCount					14	6	2	2
+Density_kg__m3					1540
+IsPorous						true
+IsFibrous						true
+UltimateTensileStrength_MPa		5800
+YieldStrength_MPa				550
+YoungsModulus_GPa				280
+ShearModulus_GPa				107.7
+SpecificHeat_J__kg_K			650
+MeltingPoint_K					823
+ThermalConductivity_W__m_K		1.165
+ThermalExpansion__K				-6.00e-6
+RelativePermittivity			3.0
+RefractiveIndex					Aramid
+RoughnessCoefficient			.7
+
+Material Para-Aramid Fiber
+Elements						C	H	O	N
+ElementCount					34	24	5	3
+Density_kg__m3					1390
+IsPorous						true
+IsFibrous						true
+UltimateTensileStrength_MPa		3400
+YieldStrength_MPa				3400
+YoungsModulus_GPa				73.0
+ShearModulus_GPa				26.6
+SpecificHeat_J__kg_K			1090
+MeltingPoint_K					773
+ThermalConductivity_W__m_K		1.988
+ThermalExpansion__K				-6.0e-6
+RefractiveIndex					Aramid
+RoughnessCoefficient			.4
+
+Material Liquid Crystal Polymer Fiber
+Elements						C	H	O
+ElementCount					20	12	4
+Density_kg__m3					1400
+IsPorous						true
+IsFibrous						true
+UltimateTensileStrength_MPa		3200
+YieldStrength_MPa				3150
+YoungsModulus_GPa				15
+ShearModulus_GPa				5.49
+SpecificHeat_J__kg_K			1100
+MeltingPoint_K					603
+ThermalConductivity_W__m_K		1.5
+ThermalExpansion__K				-4.8e-6
+RelativePermittivity			3.3
+RefractiveIndex					Aramid
+RoughnessCoefficient			.3
+
+Material Nitrile Rubber
+Elements						C	H	N
+ElementCount					7	9	1
+Density_kg__m3					1140
+UltimateTensileStrength_MPa		24.1
+YieldStrength_MPa				2.83
+YoungsModulus_GPa				.0103
+ShearModulus_GPa				.00344
+SpecificHeat_J__kg_K			1350
+MeltingPoint_K					383
+ThermalConductivity_W__m_K		.24
+ThermalExpansion__K				702e-6
+Resistivity_Ohm_m				1e12
+DielectricStrength_MV__m		26.7
+RelativePermittivity			2.4
+RefractiveIndex					Styrene-Acrylonitrile
+RoughnessCoefficient			.9
+
+Material Spider Silk
+Elements						C		H		O		N
+ElementCount					105000	817500	335000	167500
+IsPorous						true
+IsFibrous						true
+IsABiomaterial					true
+Density_kg__m3					1310
+MeltingPoint_K					603
+SpecificHeat_J__kg_K			537.8
+YieldStrength_MPa				1300
+UltimateTensileStrength_MPa		1970
+YoungsModulus_GPa				12.71
+ShearModulus_GPa				5.34
+ThermalConductivity_W__m_K		216
+ThermalExpansion__K				1060e-6
+RefractiveIndex					Aramid
+RoughnessCoefficient			.01
+
+Material S-Glass Composite
+Elements						Si	O
+ElementCount					1	2
+IsPorous						true
+IsFibrous						true
+Density_kg__m3					2485
+MeltingPoint_K					763
+SpecificHeat_J__kg_K			740
+YieldStrength_MPa				4710
+UltimateTensileStrength_MPa		4800
+YoungsModulus_GPa				93
+ShearModulus_GPa				39
+ThermalConductivity_W__m_K		1.35
+ThermalExpansion__K				2.95e-6
+RelativePermittivity				5.34
+DielectricStrength_MV__m		20
+Resistivity_Ohm_m				1e8
+RefractiveIndex					BK7
+RoughnessCoefficient			.5
+
+Material Basalt Fiber Composite
+Elements						O		Si		Al		Ca		Mg		Na		K		Fe
+ElementCount					2.019	.575	.364	.057	.037	.128	.090	.080
+IsPorous						true
+IsFibrous						true
+Density_kg__m3					2750
+MeltingPoint_K					1673
+SpecificHeat_J__kg_K			840
+YieldStrength_MPa				4840
+UltimateTensileStrength_MPa		4840
+YoungsModulus_GPa				89
+ShearModulus_GPa				35.317
+ThermalConductivity_W__m_K		.038
+ThermalExpansion__K				8.0e-6
+RelativePermittivity				2.2
+Resistivity_Ohm_m				1e12
+RefractiveIndex					BK7
+RoughnessCoefficient			.1
+
+Material Boron Filament
+Elements						B
+ElementCount					1
+IsPorous						true
+IsFibrous						true
+Density_kg__m3					2480
+YieldStrength_MPa				4000
+UltimateTensileStrength_MPa		4000
+YoungsModulus_GPa				450
+ShearModulus_GPa				252
+MeltingPoint_K					873
+SpecificHeat_J__kg_K			1025.62
+ThermalConductivity_W__m_K		27.4
+ThermalExpansion__K				8.3e-6
+Resistivity_Ohm_m				1e6
+BandGap_eV						2
+RefractiveIndex					Boron
+RoughnessCoefficient			0.9

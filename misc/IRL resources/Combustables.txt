@@ -1,0 +1,105 @@
+Material Nitrocellulose
+Elements						C	H	N	O
+ElementCount					6	7	3	11
+Density_kg__m3					1490
+EnthalpyOfFormation_kJ__mol		-534.732
+SpecificHeat_J__kg_K			1406.7
+ThermalConductivity_W__m_K		.424
+YoungsModulus_GPa				.029
+ShearModulus_GPa				.010
+
+Material Octogen
+Elements						C	H	N	O
+ElementCount					4	8	8	8
+Density_kg__m3					1910
+EnthalpyOfFormation_kJ__mol		104.77
+MeltingPoint_K					549
+SpecificHeat_J__kg_K			1260
+ThermalConductivity_W__m_K		.379
+YoungsModulus_GPa				15.3
+ShearModulus_GPa				5.795
+RefractiveIndex					Octogen
+RoughnessCoefficient			.9
+
+Material Cyclonite
+Elements						C	H	N	O
+ElementCount					3	6	6	6
+Density_kg__m3					1820
+EnthalpyOfFormation_kJ__mol		66.5
+MeltingPoint_K					478.6
+BoilingPoint_K					507
+SpecificHeat_J__kg_K			1120.56
+ThermalConductivity_W__m_K		.227
+YoungsModulus_GPa				11.99
+ShearModulus_GPa				9.26
+RefractiveIndex					Octogen
+RoughnessCoefficient			.9
+
+Material Nitroglycerin
+Elements						C	H	N	O
+ElementCount					3	5	3	9
+Density_kg__m3					1600
+EnthalpyOfFormation_kJ__mol		-364
+MeltingPoint_K					287
+BoilingPoint_K					323
+SpecificHeat_J__kg_K			1778.6
+ThermalConductivity_W__m_K		.2964
+YoungsModulus_GPa				35
+ShearModulus_GPa				16
+Viscosity_Pa_s					.036
+RefractiveIndex					Octogen
+RoughnessCoefficient			.9
+
+Material Barium Nitrate
+Elements						Ba	N	O
+ElementCount					1	2	6
+Density_kg__m3					3240
+EnthalpyOfFormation_kJ__mol		-988
+GibbsFreeEnergyOfFormation_kJ__mol	-7926
+MeltingPoint_K					865
+SpecificHeat_J__kg_K			579.33
+ThermalConductivity_W__m_K		1.17
+ThermalExpansion__K				13e-6
+RelativePermittivity			5.8
+YoungsModulus_GPa				13
+ShearModulus_GPa				4.9
+
+Material TNT
+Elements						C	H	N	O
+ElementCount					7	5	3	6
+Density_kg__m3					1654
+EnthalpyOfFormation_kJ__mol		-65.5
+MeltingPoint_K					353.50
+BoilingPoint_K					513
+SpecificHeat_J__kg_K			1377
+ThermalConductivity_W__m_K		.219
+YieldStrength_MPa				23.1
+YoungsModulus_GPa				2.551
+ShearModulus_GPa				.8963
+
+Material RP-1
+Elements						C	H
+ElementCount					12	26
+Density_kg__m3					769
+EnthalpyOfFormation_kJ__mol		-462.2
+MeltingPoint_K					283.1
+BoilingPoint_K					560
+SpecificHeat_J__kg_K			1880
+ThermalConductivity_W__m_K		.110
+BulkModulus_GPa					1.034
+Viscosity_Pa_s					1.64e-2
+Dissociation
+	Products						Monatomic Carbon	Monatomic Hydrogen
+	ProductCounts					12		26
+
+Material PETN
+Elements						C	H	N	O
+ElementCount					5	8	4	12
+Density_kg__m3					1770
+EnthalpyOfFormation_kJ__mol		-538.5
+SpecificHeat_J__kg_K			1000
+ThermalConductivity_W__m_K		.143
+MeltingPoint_K					414.4
+YoungsModulus_GPa				12.82
+ShearModulus_GPa				9.37
+RoughnessCoefficient			.9

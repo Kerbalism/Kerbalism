@@ -1,0 +1,122 @@
+Material Strontium Nitrate
+Elements						Sr	N	O
+ElementCount					1	2	6
+Density_kg__m3					2986
+MeltingPoint_K					843
+BoilingPoint_K					918
+
+Material Potassium Chloride
+Elements						K	Cl
+ElementCount					1	1
+Density_kg__m3					1984
+MeltingPoint_K					1040
+BoilingPoint_K					1690
+
+Material Barium Oxide
+Elements						Ba	O
+ElementCount					1	1
+Density_kg__m3					5720
+EnthalpyOfFormation_kJ__mol		-582
+MeltingPoint_K					2196
+BoilingPoint_K					2273
+SpecificHeat_J__kg_K			308.49
+
+Material Sodium Bicarbonate
+Elements						Na	H	C	O
+ElementCount					1	1	1	3
+Density_kg__m3					2200
+EnthalpyOfFormation_kJ__mol		-947.7
+GibbsFreeEnergyOfFormation_kJ__mol	-851.9
+MeltingPoint_K					323
+SpecificHeat_J__kg_K			1042.89
+ThermalConductivity_W__m_K		1.46
+YoungsModulus_GPa				66.9
+ShearModulus_GPa				25.5
+
+Material Sodium Chloride
+Elements						Na	Cl
+ElementCount					1	1
+Density_kg__m3				2165
+MeltingPoint_K				1074
+BoilingPoint_K				1686
+
+Material Copper(I) Chloride
+Elements						Cu	Cl
+ElementCount					1	1
+Density_kg__m3				4145
+MeltingPoint_K				699
+BoilingPoint_K				1760
+
+Material Copper(II) Chloride
+Elements						Cu	Cl
+ElementCount					1	2
+Density_kg__m3				3386
+MeltingPoint_K				771
+BoilingPoint_K				1266
+
+Material Copper Carbonate
+Elements						Cu	C	O
+ElementCount					1	1	3
+Density_kg__m3				4000
+MeltingPoint_K				473
+BoilingPoint_K				563
+
+Material Copper(II) Acetoarsenite
+Elements						Cu	C	H	O	As
+ElementCount					4	4	6	16	6
+Density_kg__m3				1100
+MeltingPoint_K				718
+BoilingPoint_K				718
+
+Material Silica Aerogel
+Elements						Si	O
+ElementCount					1	2
+IsPorous						true
+Density_kg__m3					100
+YieldStrength_MPa				.016
+UltimateTensileStrength_MPa		.016
+YoungsModulus_GPa				.010
+ShearModulus_GPa				.0042
+SpecificHeat_J__kg_K			840
+MeltingPoint_K					773
+ThermalConductivity_W__m_K		.004
+ThermalExpansion__K				3.0e-6
+Resistivity_Ohm_m				1e13
+RelativePermittivity			1.1
+RefractiveIndex					Silica Aerogel
+RoughnessCoefficient			.5
+
+Material Graphite Aerogel
+Elements						C
+ElementCount					1
+IsPorous						true
+Density_kg__m3					8.5
+YieldStrength_MPa				.160
+UltimateTensileStrength_MPa		.160
+YoungsModulus_GPa				.000015
+ShearModulus_GPa				.000008
+SpecificHeat_J__kg_K			1731
+MeltingPoint_K					1573
+ThermalConductivity_W__m_K		.0263
+ThermalExpansion__K				3.0e-6
+Resistivity_Ohm_m				5.0
+RefractiveIndex					Silica Aerogel
+RoughnessCoefficient			.9
+
+Material Nickel Phosphorus Microlattice
+Elements						Ni	P
+ElementCount					.94	.06
+IsPorous						true
+IsNanostructured				true
+Density_kg__m3					43
+YieldStrength_MPa				121
+UltimateTensileStrength_MPa		154
+YoungsModulus_GPa				.009
+ShearModulus_GPa				.0045
+SpecificHeat_J__kg_K			463.67
+MeltingPoint_K					1163
+ThermalConductivity_W__m_K		5.652
+ThermalExpansion__K				1450e-6
+Resistivity_Ohm_m				3e-7
+RefractiveIndex					Nickel
+RoughnessCoefficient			.9

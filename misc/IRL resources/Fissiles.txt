@@ -1,0 +1,277 @@
+Material Depleted Uranium
+Elements						U-238	U-235
+ElementCount					.997	.003
+Density_kg__m3					19100
+YieldStrength_MPa				965
+UltimateTensileStrength_MPa		1724
+YoungsModulus_GPa				170
+ShearModulus_GPa				111
+SpecificHeat_J__kg_K			117
+MeltingPoint_K					1405.3
+BoilingPoint_K					4111
+ThermalConductivity_W__m_K		27.5
+ThermalExpansion__K				13.9e-6
+Resistivity_Ohm_m				.28e-6
+RelativePermeability			1.00040
+RefractiveIndex					Uranium Oxide
+RoughnessCoefficient			.3
+
+Material U-235
+Elements						U-235
+ElementCount					1
+Density_kg__m3					19278
+YieldStrength_MPa				965
+UltimateTensileStrength_MPa		1724
+YoungsModulus_GPa				170
+ShearModulus_GPa				111
+SpecificHeat_J__kg_K			115
+MeltingPoint_K					1405.3
+BoilingPoint_K					4111
+ThermalConductivity_W__m_K		27.5
+ThermalExpansion__K				13.9e-6
+Resistivity_Ohm_m				.28e-6
+RelativePermeability			1.00040
+RefractiveIndex					Uranium Oxide
+RoughnessCoefficient			.6
+
+Material U-233
+Elements						U-233
+ElementCount					1
+Density_kg__m3					19100
+YieldStrength_MPa				965
+UltimateTensileStrength_MPa		1724
+YoungsModulus_GPa				170
+ShearModulus_GPa				111
+SpecificHeat_J__kg_K			115
+MeltingPoint_K					1405.3
+BoilingPoint_K					4111
+ThermalConductivity_W__m_K		27.5
+ThermalExpansion__K				13.9e-6
+Resistivity_Ohm_m				.28e-6
+RelativePermeability			1.00040
+RefractiveIndex					Uranium Oxide
+RoughnessCoefficient			.65
+
+Material Depleted Uranium Dioxide
+Elements						U-238	O
+ElementCount					1		2
+Density_kg__m3					10970
+EnthalpyOfFormation_kJ__mol		-1084
+YieldStrength_MPa				147.1
+UltimateTensileStrength_MPa		176.5
+YoungsModulus_GPa				192.9
+ShearModulus_GPa				74.1
+MeltingPoint_K					3140
+SpecificHeat_J__kg_K			236.58
+ThermalConductivity_W__m_K		4.40
+ThermalExpansion__K				10.2e-6
+EnthalpyOfFormation_kJ__mol		-1084
+BandGap_eV						1.4
+RelativePermittivity			22
+ThermoelectricSensitivity_V__K	750e-6
+RefractiveIndex					Uranium Oxide
+RoughnessCoefficient			.35
+
+Material U-235 Dioxide
+Elements						U-235	O
+ElementCount					1		2
+Density_kg__m3					10970
+YieldStrength_MPa				147.1
+UltimateTensileStrength_MPa		176.5
+YoungsModulus_GPa				192.9
+ShearModulus_GPa				74.1
+MeltingPoint_K					3140
+SpecificHeat_J__kg_K			236.58
+ThermalConductivity_W__m_K		4.40
+ThermalExpansion__K				10.2e-6
+EnthalpyOfFormation_kJ__mol		-1084
+BandGap_eV						1.4
+RelativePermittivity			22
+ThermoelectricSensitivity_V__K	750e-6
+RefractiveIndex					Uranium Oxide
+RoughnessCoefficient			.8
+
+Material U-233 Dioxide
+Elements						U-233	O
+ElementCount					1		2
+Density_kg__m3					10970
+YieldStrength_MPa				147.1
+UltimateTensileStrength_MPa		176.5
+YoungsModulus_GPa				192.9
+ShearModulus_GPa				74.1
+MeltingPoint_K					3140
+SpecificHeat_J__kg_K			236.58
+ThermalConductivity_W__m_K		4.40
+ThermalExpansion__K				10.2e-6
+EnthalpyOfFormation_kJ__mol		-1084
+BandGap_eV						1.4
+RelativePermittivity			22
+ThermoelectricSensitivity_V__K	750e-6
+RefractiveIndex					Uranium Oxide
+RoughnessCoefficient			.8
+
+Material Pu-244
+Elements						Pu-244
+ElementCount					1
+Density_kg__m3					19896
+YieldStrength_MPa				365
+UltimateTensileStrength_MPa		500
+MeltingPoint_K					912.5
+BoilingPoint_K					3505
+ThermalConductivity_W__m_K		6.774
+SpecificHeat_J__kg_K			130
+Resistivity_Ohm_m				1.46e-6
+
+Material Pu-240
+Elements						Pu-240
+ElementCount					1
+Density_kg__m3					19896
+YieldStrength_MPa				365
+UltimateTensileStrength_MPa		500
+MeltingPoint_K					912.5
+BoilingPoint_K					3505
+ThermalConductivity_W__m_K		6.774
+SpecificHeat_J__kg_K			130
+Resistivity_Ohm_m				1.46e-6
+
+Material Pu-239
+Elements						Pu-239
+ElementCount					1
+Density_kg__m3					19816
+YieldStrength_MPa				365
+UltimateTensileStrength_MPa		500
+MeltingPoint_K					912.5
+BoilingPoint_K					3505
+ThermalConductivity_W__m_K		6.774
+SpecificHeat_J__kg_K			130
+Resistivity_Ohm_m				1.46e-6
+
+Material Pu-241
+Elements						Pu-241
+ElementCount					1
+Density_kg__m3					19816
+YieldStrength_MPa				365
+UltimateTensileStrength_MPa		500
+MeltingPoint_K					912.5
+BoilingPoint_K					3505
+ThermalConductivity_W__m_K		6.774
+SpecificHeat_J__kg_K			130
+Resistivity_Ohm_m				1.46e-6
+
+Material Pu-238
+Elements						Pu-238
+ElementCount					1
+Density_kg__m3					19840
+YieldStrength_MPa				365
+UltimateTensileStrength_MPa		500
+MeltingPoint_K					912.5
+BoilingPoint_K					3505
+ThermalConductivity_W__m_K		6.774
+SpecificHeat_J__kg_K			130
+Resistivity_Ohm_m				1.46e-6
+
+Material Pu-240 Dioxide
+Elements						Pu-240	O
+ElementCount					1		2
+Density_kg__m3					11500
+YieldStrength_MPa				365
+UltimateTensileStrength_MPa		500
+YoungsModulus_GPa				145.2
+ShearModulus_GPa				52.7
+MeltingPoint_K					2670
+BoilingPoint_K					3070
+SpecificHeat_J__kg_K			247.7
+
+Material Pu-238 Dioxide
+Elements						Pu-238	O
+ElementCount					1		2
+Density_kg__m3					11500
+YieldStrength_MPa				365
+UltimateTensileStrength_MPa		500
+YoungsModulus_GPa				145.2
+ShearModulus_GPa				52.7
+MeltingPoint_K					2670
+BoilingPoint_K					3070
+SpecificHeat_J__kg_K			247.7
+
+Material Th-232
+Elements						Th-232
+ElementCount					1
+Density_kg__m3					11724
+YoungsModulus_GPa				79
+ShearModulus_GPa				31
+MeltingPoint_K					2023
+BoilingPoint_K					5061
+ThermalExpansion__K				11.0e-6
+ThermalConductivity_W__m_K		54.0
+SpecificHeat_J__kg_K			113.04
+Resistivity_Ohm_m				157e-9
+
+Material Am-243
+Elements						Am-243
+ElementCount					1
+Density_kg__m3					12000
+YieldStrength_MPa				423
+UltimateTensileStrength_MPa		579
+YoungsModulus_GPa				168.4
+ShearModulus_GPa				64.7
+MeltingPoint_K					1449
+SpecificHeat_J__kg_K			660
+ThermalConductivity_W__m_K		10
+Resistivity_Ohm_m				.69e-6
+
+Material Am-241
+Elements						Am-241
+ElementCount					1
+Density_kg__m3					12000
+YieldStrength_MPa				423
+UltimateTensileStrength_MPa		579
+YoungsModulus_GPa				168.4
+ShearModulus_GPa				64.7
+MeltingPoint_K					1449
+SpecificHeat_J__kg_K			660
+ThermalConductivity_W__m_K		10
+Resistivity_Ohm_m				.69e-6
+
+Material Am-242m
+Elements						Am-242m
+ElementCount					1
+Density_kg__m3					12000
+YieldStrength_MPa				423
+UltimateTensileStrength_MPa		579
+YoungsModulus_GPa				168.4
+ShearModulus_GPa				64.7
+MeltingPoint_K					1449
+SpecificHeat_J__kg_K			660
+ThermalConductivity_W__m_K		10
+Resistivity_Ohm_m				.69e-6
+
+Material Np-237
+Elements						Np-237
+ElementCount					1
+Density_kg__m3					20450
+YieldStrength_MPa				1445
+UltimateTensileStrength_MPa		2586
+MeltingPoint_K					912
+BoilingPoint_K					4447
+SpecificHeat_J__kg_K			124.3
+ThermalConductivity_W__m_K		6.3
+Resistivity_Ohm_m				1.22e-6
+RefractiveIndex					Silver
+RoughnessCoefficient			.6
+
+Material Np-237 Dioxide
+Elements						Np-237	O
+ElementCount					1		2
+Density_kg__m3					11100
+YieldStrength_MPa				506
+UltimateTensileStrength_MPa		633
+YoungsModulus_GPa				218
+ShearModulus_GPa				108.9
+MeltingPoint_K					3070
+SpecificHeat_J__kg_K			246
+ThermalConductivity_W__m_K		2.5
+ThermalExpansion__K				8.4e-6
+EnthalpyOfFormation_kJ__mol		-1074
+RefractiveIndex					Green
+RoughnessCoefficient			.8

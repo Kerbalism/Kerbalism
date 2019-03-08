@@ -1,0 +1,70 @@
+Material Monatomic Hydrogen
+Elements						H
+ElementCount					1
+Density_kg__m3					70.85
+EnthalpyOfFormation_kJ__mol		218
+BondDissociationEnergy_kJ__mol	0
+GibbsFreeEnergyOfFormation_kJ__mol	203.3
+ThermalConductivity_W__m_K		1815
+SpecificHeat_J__kg_K			20636.15
+RefractiveIndex					Hydrogen
+
+Material Monatomic Deuterium
+Elements						D
+ElementCount					1
+Density_kg__m3					162.4
+EnthalpyOfFormation_kJ__mol		233.403
+BondDissociationEnergy_kJ__mol	0
+GibbsFreeEnergyOfFormation_kJ__mol	160.788
+SpecificHeat_J__kg_K			10327.18
+RefractiveIndex					Hydrogen
+
+Material Monatomic Carbon
+Elements						C
+ElementCount					1
+Density_kg__m3					2100
+EnthalpyOfFormation_kJ__mol		716.680
+BondDissociationEnergy_kJ__mol	0
+GibbsFreeEnergyOfFormation_kJ__mol	158.102
+SpecificHeat_J__kg_K			1731.79
+RefractiveIndex					Graphite
+
+Material Monatomic Oxygen
+Elements						O
+ElementCount					1
+Density_kg__m3					1141
+EnthalpyOfFormation_kJ__mol		249
+BondDissociationEnergy_kJ__mol	0
+GibbsFreeEnergyOfFormation_kJ__mol	231.7
+SpecificHeat_J__kg_K			1300.05
+RefractiveIndex					Oxygen
+
+Material Monatomic Nitrogen
+Elements						N
+ElementCount					1
+Density_kg__m3					808
+EnthalpyOfFormation_kJ__mol		472.7
+BondDissociationEnergy_kJ__mol	0
+GibbsFreeEnergyOfFormation_kJ__mol	455.5
+SpecificHeat_J__kg_K			1485.00
+RefractiveIndex					Nitrogen
+
+Material Monatomic Fluorine
+Elements						F
+ElementCount					1
+Density_kg__m3					1696
+EnthalpyOfFormation_kJ__mol		79.380
+BondDissociationEnergy_kJ__mol	0
+GibbsFreeEnergyOfFormation_kJ__mol	158.752
+SpecificHeat_J__kg_K			1094.83
+RefractiveIndex					Oxygen
+
+Material Monatomic Chlorine
+Elements				Cl
+ElementCount				1
+Density_kg__m3				3200
+EnthalpyOfFormation_kJ__mol		121.302
+BondDissociationEnergy_kJ__mol		0
+GibbsFreeEnergyOfFormation_kJ__mol	105.306
+SpecificHeat_J__kg_K			616.02
+RefractiveIndex				Oxygen
