@@ -1,0 +1,63 @@
+Material Chlorotetrafluoroethane
+Elements						C	H	Cl	F
+ElementCount					2	1	1	4
+Density_kg__m3					1320
+MeltingPoint_K					174
+BoilingPoint_K					262
+ThermalConductivity_W__m_K		.069
+SpecificHeat_J__kg_K			1130
+Viscosity_Pa_s					.000299
+
+Material Trichlorofluoromethane
+Elements						C	Cl	F
+ElementCount					1	3	1
+Density_kg__m3					1459
+MeltingPoint_K					162
+BoilingPoint_K					297
+ThermalConductivity_W__m_K		.084
+SpecificHeat_J__kg_K			900
+Viscosity_Pa_s					5e-4
+
+Material Alumina Nanofluid
+Elements						H		O		Al
+ElementCount					1.78	1.22	.22
+IsNanostructured				true
+Density_kg__m3					1093
+MeltingPoint_K					273
+BoilingPoint_K					373
+ThermalConductivity_W__m_K		.7351
+SpecificHeat_J__kg_K			4005
+Resistivity_Ohm_m				31.85
+Viscosity_Pa_s					8.94e-4
+RefractiveIndex					Water
+
+Material Ethylene Glycol
+Elements						C	H	O
+ElementCount					2	6	2
+Density_kg__m3					1060
+MeltingPoint_K					237
+BoilingPoint_K					383
+ThermalConductivity_W__m_K		.4229
+SpecificHeat_J__kg_K			3310
+Viscosity_Pa_s					.003
+
+Material Sodium Potassium
+Elements						Na		K
+ElementCount					.324	.676
+Density_kg__m3					866
+MeltingPoint_K					261
+BoilingPoint_K					1158
+ThermalConductivity_W__m_K		23.2
+SpecificHeat_J__kg_K			982
+Viscosity_Pa_s					2.86e-4
+RefractiveIndex					Sodium
+
+Material FLiNaK
+Elements			F	Li	Na	K
+ElementCount			.5	.2325	.0575	.21
+Density_kg__m3			2126
+SpecificHeat_J__kg_K		1882
+MeltingPoint_K			727
+BoilingPoint_K			1843
+ThermalConductivity_W__m_K	0.92
+Viscosity_Pa_s			2.9e-3

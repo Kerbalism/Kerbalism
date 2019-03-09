@@ -1,0 +1,396 @@
+Material Silicon Carbide
+Elements						Si	C
+ElementCount					1	1
+Density_kg__m3					3210
+YieldStrength_MPa				137.9
+UltimateTensileStrength_MPa		137.9
+YoungsModulus_GPa				410.47
+ShearModulus_GPa				179
+SpecificHeat_J__kg_K			1420
+MeltingPoint_K					3003
+ThermalConductivity_W__m_K		350
+ThermalExpansion__K				3.7e-6
+Resistivity_Ohm_m				1e10
+RefractiveIndex					Silicon Carbide
+RoughnessCoefficient			0.4
+
+Material Silicon Nitride
+Elements						Si	N
+ElementCount					3	4
+Density_kg__m3					3200
+YieldStrength_MPa				524
+UltimateTensileStrength_MPa		525
+YoungsModulus_GPa				297
+ShearModulus_GPa				127
+SpecificHeat_J__kg_K			1100
+MeltingPoint_K					2769
+ThermalConductivity_W__m_K		43
+ThermalExpansion__K				3.7e-6
+Resistivity_Ohm_m				1e13
+DielectricStrength_MV__m		20
+RelativePermittivity			10.5
+RefractiveIndex					Silicon Nitride
+RoughnessCoefficient			0.2
+
+Material Silicon Dioxide
+Elements						Si	O
+ElementCount					1	2
+Density_kg__m3					2648
+EnthalpyOfFormation_kJ__mol		-911
+YieldStrength_MPa				110
+UltimateTensileStrength_MPa		155
+YoungsModulus_GPa				74.8
+ShearModulus_GPa				32.3
+SpecificHeat_J__kg_K			730
+MeltingPoint_K					1998
+BoilingPoint_K					2500
+ThermalConductivity_W__m_K		1.5
+ThermalExpansion__K				7.5e-7
+Resistivity_Ohm_m				1e12
+DielectricStrength_MV__m		40
+RelativePermittivity			4.2
+RefractiveIndex					Silicon Dioxide
+RoughnessCoefficient			0.8
+
+Material Titanium Dioxide
+Elements						Ti	O
+ElementCount					1	2
+Density_kg__m3					4230
+EnthalpyOfFormation_kJ__mol		-945
+YieldStrength_MPa				248.2
+UltimateTensileStrength_MPa		367.5
+YoungsModulus_GPa				288
+ShearModulus_GPa				112.5
+SpecificHeat_J__kg_K			697
+MeltingPoint_K					2123
+ThermalConductivity_W__m_K		11.8
+ThermalExpansion__K				11.8e-6
+Resistivity_Ohm_m				1e16
+DielectricStrength_MV__m		12
+RelativePermittivity			85
+LasingDamageThreshold_TW__m2	129
+RefractiveIndex					Titanium Dioxide
+RoughnessCoefficient			.8
+
+Material Titanium Carbide
+Elements						Ti	C
+ElementCount					1	1
+Density_kg__m3					4930
+YieldStrength_MPa				118.6
+UltimateTensileStrength_MPa		258
+YoungsModulus_GPa				451
+ShearModulus_GPa				193
+SpecificHeat_J__kg_K			873
+MeltingPoint_K					3433
+BoilingPoint_K					5093
+ThermalConductivity_W__m_K		330
+ThermalExpansion__K				7.4e-6
+Resistivity_Ohm_m				2.5e-6
+RefractiveIndex					Titanium Carbide
+RoughnessCoefficient			0.3
+
+Material Titanium Nitride
+Elements						Ti	N
+ElementCount					1	1
+Density_kg__m3					5220
+YieldStrength_MPa				100
+UltimateTensileStrength_MPa		200
+YoungsModulus_GPa				251
+ShearModulus_GPa				240
+SpecificHeat_J__kg_K			748.9
+MeltingPoint_K					3200
+ThermalConductivity_W__m_K		19.2
+ThermalExpansion__K				7.4e-6
+Resistivity_Ohm_m				2.5e-7
+RefractiveIndex					Titanium Nitride
+RoughnessCoefficient			0.3
+
+Material Titanium Diboride
+Elements						Ti	B
+ElementCount					1	2
+Density_kg__m3					4520
+YieldStrength_MPa				275
+UltimateTensileStrength_MPa		275
+YoungsModulus_GPa				575
+ShearModulus_GPa				255
+SpecificHeat_J__kg_K			962
+MeltingPoint_K					3500
+ThermalConductivity_W__m_K		120
+ThermalExpansion__K				9.2e-6
+Resistivity_Ohm_m				1e-7
+RefractiveIndex					Titanium Carbide
+RoughnessCoefficient			0.5
+
+Material Tungsten Carbide
+Elements						W	C
+ElementCount					1	1
+Density_kg__m3					15630
+YieldStrength_MPa				530
+UltimateTensileStrength_MPa		530
+YoungsModulus_GPa				686
+ShearModulus_GPa				283
+SpecificHeat_J__kg_K			292
+MeltingPoint_K					3103
+BoilingPoint_K					6270
+ThermalConductivity_W__m_K		84.02
+ThermalExpansion__K				7.1e-6
+Resistivity_Ohm_m				1e-6
+RefractiveIndex					Tungsten
+RoughnessCoefficient			0.6
+
+Material Aluminum Oxide
+Elements						Al	O
+ElementCount					2	3
+Density_kg__m3					3980
+EnthalpyOfFormation_kJ__mol		-1675.7
+YieldStrength_MPa				200
+UltimateTensileStrength_MPa		665
+YoungsModulus_GPa				413
+ShearModulus_GPa				165
+SpecificHeat_J__kg_K			955
+MeltingPoint_K					2369
+BoilingPoint_K					3250
+ThermalConductivity_W__m_K		38.5
+ThermalExpansion__K				10.9e-6
+Resistivity_Ohm_m				1e16
+DielectricStrength_MV__m		43
+RelativePermittivity			11.1
+BandGap_eV						9.9
+RefractiveIndex					Aluminum Oxide
+RoughnessCoefficient			0.7
+
+Material Aluminum Nitride
+Elements						Al	N
+ElementCount					1	1
+Density_kg__m3					3260
+YieldStrength_MPa				390
+UltimateTensileStrength_MPa		390
+YoungsModulus_GPa				330
+ShearModulus_GPa				139
+SpecificHeat_J__kg_K			740
+MeltingPoint_K					2470
+BoilingPoint_K					2790
+ThermalConductivity_W__m_K		285
+ThermalExpansion__K				4.5e-6
+Resistivity_Ohm_m				1e13
+DielectricStrength_MV__m		16.73
+RelativePermittivity			9.3
+BandGap_eV						6.015
+RefractiveIndex					Aluminum Nitride
+RoughnessCoefficient			0.7
+
+Material Aluminum Oxynitride
+Elements						Al	N	O
+ElementCount					1.7	.3	2.1
+Density_kg__m3					3691
+YieldStrength_MPa				414
+UltimateTensileStrength_MPa		414
+YoungsModulus_GPa				334
+ShearModulus_GPa				135
+SpecificHeat_J__kg_K			781
+MeltingPoint_K					2423
+BoilingPoint_K					2690
+ThermalConductivity_W__m_K		12.3
+ThermalExpansion__K				4.7e-6
+Resistivity_Ohm_m				1e12
+DielectricStrength_MV__m		550
+RelativePermittivity			8.56
+BandGap_eV						6.2
+RefractiveIndex					Aluminum Oxynitride
+RoughnessCoefficient			0.5
+
+Material Boron Nitride
+Elements						B	N
+ElementCount					1	1
+Density_kg__m3					2100
+YieldStrength_MPa				41.3
+UltimateTensileStrength_MPa		55
+YoungsModulus_GPa				103
+ShearModulus_GPa				41.3
+SpecificHeat_J__kg_K			793
+MeltingPoint_K					3246
+ThermalExpansion__K				8e-6
+ThermalConductivity_W__m_K		600
+Resistivity_Ohm_m				1e12
+DielectricStrength_MV__m		94.49
+RelativePermittivity			4.6
+BandGap_eV						5.2
+RefractiveIndex					Boron Nitride
+RoughnessCoefficient			0.3
+
+Material Boron Carbide
+Elements						B	C
+ElementCount					4	1
+Density_kg__m3					2520
+YieldStrength_MPa				350
+UltimateTensileStrength_MPa		569
+YoungsModulus_GPa				460
+ShearModulus_GPa				197
+MeltingPoint_K					3036
+BoilingPoint_K					3770
+SpecificHeat_J__kg_K			1288
+ThermalConductivity_W__m_K		42
+ThermalExpansion__K				3.2e-6
+Resistivity_Ohm_m				.0127
+DielectricStrength_MV__m		10
+RelativePermittivity			8
+RefractiveIndex					Boron Carbide
+RoughnessCoefficient			0.3
+
+Material Beryllium Oxide
+Elements						Be	O
+ElementCount					1	1
+Density_kg__m3					3010
+YieldStrength_MPa				50
+UltimateTensileStrength_MPa		140
+YoungsModulus_GPa				345
+ShearModulus_GPa				141
+MeltingPoint_K					2780
+BoilingPoint_K					4170
+SpecificHeat_J__kg_K			1019.59
+ThermalConductivity_W__m_K		330
+ThermalExpansion__K				10e-6
+Resistivity_Ohm_m				10.15
+DielectricStrength_MV__m		12
+RelativePermittivity			6.5
+RefractiveIndex					Beryllium Oxide
+RoughnessCoefficient			0.7
+
+Material Reinforced Carbon-Carbon
+Elements						C	C
+ElementCount					1	1
+IsFibrous						true
+Density_kg__m3					1750
+YieldStrength_MPa				700
+UltimateTensileStrength_MPa		700
+YoungsModulus_GPa				95
+ShearModulus_GPa				36
+MeltingPoint_K					2273
+SpecificHeat_J__kg_K			760
+ThermalConductivity_W__m_K		40
+ThermalExpansion__K				4e-6
+Resistivity_Ohm_m				1.9e-5
+RefractiveIndex					Graphite
+RoughnessCoefficient			0.4
+
+Material Tantalum Carbide
+Elements						Ta	C
+ElementCount					1	1
+EnthalpyOfFormation_kJ__mol		-144.1
+Density_kg__m3					14300
+YieldStrength_MPa				191
+UltimateTensileStrength_MPa		565
+YoungsModulus_GPa				560
+ShearModulus_GPa				225.8
+MeltingPoint_K					4150
+SpecificHeat_J__kg_K			190.246
+ThermalConductivity_W__m_K		21
+ThermalExpansion__K				6.6e-6
+Resistivity_Ohm_m				2.5e-8
+RefractiveIndex					Tantalum
+RoughnessCoefficient			0.5
+
+Material Hafnium Carbide
+Elements						Hf	C
+ElementCount					1	1
+Density_kg__m3					12700
+YieldStrength_MPa				586
+UltimateTensileStrength_MPa		689
+YoungsModulus_GPa				510
+ShearModulus_GPa				216.1
+MeltingPoint_K					4170
+SpecificHeat_J__kg_K			200
+ThermalConductivity_W__m_K		22
+ThermalExpansion__K				6.8e-6
+Resistivity_Ohm_m				4.5e-8
+RefractiveIndex					Hafnium
+RoughnessCoefficient			0.5
+
+Material Tantalum Hafnium Carbide
+Elements						Ta	Hf	C
+ElementCount					4	1	5
+Density_kg__m3					14650
+YieldStrength_MPa				270
+UltimateTensileStrength_MPa		590
+YoungsModulus_GPa				550
+ShearModulus_GPa				223.9
+MeltingPoint_K					4263
+SpecificHeat_J__kg_K			192
+ThermalConductivity_W__m_K		22
+ThermalExpansion__K				6.76e-6
+Resistivity_Ohm_m				2.9e-7
+RefractiveIndex					Tantalum
+RoughnessCoefficient			0.2
+
+Material Hafnia
+Elements						Hf	O
+ElementCount					1	2
+Density_kg__m3					9680
+YieldStrength_MPa				520
+UltimateTensileStrength_MPa		520
+YoungsModulus_GPa				57
+ShearModulus_GPa				92
+MeltingPoint_K					3031
+BoilingPoint_K					5673
+SpecificHeat_J__kg_K			120
+ThermalConductivity_W__m_K		1.1
+ThermalExpansion__K				6e-6
+Resistivity_Ohm_m				1e9
+DielectricStrength_MV__m		1000
+RelativePermittivity			25
+BandGap_eV						5.7
+RefractiveIndex					Hafnia
+RoughnessCoefficient			0.7
+
+Material Zinc Oxide
+Elements						Zn	O
+ElementCount					1	1
+Density_kg__m3					5606
+EnthalpyOfFormation_kJ__mol		-348.0
+YieldStrength_MPa				25
+UltimateTensileStrength_MPa		26
+YoungsModulus_GPa				119
+ShearModulus_GPa				44
+MeltingPoint_K					2248
+BoilingPoint_K					2248
+SpecificHeat_J__kg_K			494.654
+ThermalConductivity_W__m_K		135
+ThermalExpansion__K				4e-6
+Resistivity_Ohm_m				3e3
+BandGap_eV						3.3
+RefractiveIndex					Zinc Oxide
+RoughnessCoefficient			.5
+
+Material Ceramic Matrix Composite
+Elements						C	Si
+ElementCount					1	1
+IsFibrous						true
+Density_kg__m3					2100
+YieldStrength_MPa				100
+UltimateTensileStrength_MPa		310
+YoungsModulus_GPa				95
+ShearModulus_GPa				48
+SpecificHeat_J__kg_K			1200
+MeltingPoint_K					1698
+ThermalConductivity_W__m_K		15
+ThermalExpansion__K				1.3e-6
+Resistivity_Ohm_m				.004
+RefractiveIndex					Silicon Carbide
+RoughnessCoefficient			.5
+
+Material Zirconium Carbide
+Elements						Zr	C
+ElementCount					1	1
+Density_kg__m3					6730
+YieldStrength_MPa				743
+UltimateTensileStrength_MPa		874
+YoungsModulus_GPa				440
+ShearModulus_GPa				200
+SpecificHeat_J__kg_K			368
+MeltingPoint_K					3809
+BoilingPoint_K					5370
+ThermalConductivity_W__m_K		20.5
+ThermalExpansion__K				6.8e-6
+Resistivity_Ohm_m				4.3e-8
+RefractiveIndex					Zirconium
+RoughnessCoefficient			.7

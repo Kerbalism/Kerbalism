@@ -1,0 +1,478 @@
+Material Water
+Elements						H	O
+ElementCount					2	1
+Density_kg__m3					998.2
+EnthalpyOfFormation_kJ__mol		-285.83
+BondDissociationEnergy_kJ__mol	927.01
+GibbsFreeEnergyOfFormation_kJ__mol	-237.14
+BulkModulus_GPa					2.151
+MeltingPoint_K					273
+BoilingPoint_K					373
+ThermalConductivity_W__m_K		.609
+SpecificHeat_J__kg_K			4183.95
+Viscosity_Pa_s					1.0016e-3
+Resistivity_Ohm_m				1.8e5
+DielectricStrength_MV__m		65
+RelativePermittivity			80.1
+RelativePermeability			.999992
+RefractiveIndex					Water
+Dissociation
+	Products						Monatomic Hydrogen	Monatomic Oxygen
+	ProductCounts					2					1
+
+Material Semiheavy Water
+Elements						D	H	O
+ElementCount					1	1	1
+Density_kg__m3					1054
+EnthalpyOfFormation_kJ__mol		-285.8
+BondDissociationEnergy_kJ__mol	931.68
+GibbsFreeEnergyOfFormation_kJ__mol	-243.44
+BulkModulus_GPa					2.155
+MeltingPoint_K					276.96
+BoilingPoint_K					374.57
+ThermalConductivity_W__m_K		.602
+SpecificHeat_J__kg_K			3975
+Viscosity_Pa_s					1.1248e-3
+RelativePermittivity			79.9
+RelativePermeability			.999992
+RefractiveIndex					Water
+Dissociation
+	Products						Monatomic Deuterium		Monatomic Hydrogen	Monatomic Oxygen
+	ProductCounts					1						1					1
+
+Material Heavy Water
+Elements						D	O
+ElementCount					2	1
+Density_kg__m3					1105.6
+EnthalpyOfFormation_kJ__mol		-285.8
+BondDissociationEnergy_kJ__mol	936.34
+GibbsFreeEnergyOfFormation_kJ__mol	-243.44
+BulkModulus_GPa					2.261
+MeltingPoint_K					276.82
+BoilingPoint_K					374.4
+ThermalConductivity_W__m_K		.595
+SpecificHeat_J__kg_K			3767
+Viscosity_Pa_s					1.2467e-3
+RelativePermittivity			79.754
+RelativePermeability			.999992
+RefractiveIndex					Heavy Water
+Dissociation
+	Products						Monatomic Deuterium	Monatomic Oxygen
+	ProductCounts					2					1
+
+Material Nitrogen
+Elements						N
+ElementCount					2
+Density_kg__m3					808
+EnthalpyOfFormation_kJ__mol		0
+BondDissociationEnergy_kJ__mol	945
+GibbsFreeEnergyOfFormation_kJ__mol	0
+BulkModulus_GPa					.08853
+MeltingPoint_K					63.15
+BoilingPoint_K					77.355
+ThermalConductivity_W__m_K		25.83e-3
+SpecificHeat_J__kg_K			2079.24
+Viscosity_Pa_s					.000018
+RelativePermeability			.9999999946
+DielectricStrength_MV__m		3.45
+RefractiveIndex					Nitrogen
+Dissociation
+	Products						Monatomic Nitrogen
+	ProductCounts					2
+
+Material Nitrogen Dioxide
+Elements						N	O
+ElementCount					1	2
+Density_kg__m3					1447.58
+EnthalpyOfFormation_kJ__mol		+34
+BondDissociationEnergy_kJ__mol	937.93
+GibbsFreeEnergyOfFormation_kJ__mol	51.3
+BulkModulus_GPa					.104
+MeltingPoint_K					261.9
+BoilingPoint_K					294.3
+SpecificHeat_J__kg_K			815.2
+ThermalConductivity_W__m_K		12.961e-3
+Viscosity_Pa_s					1.3311e-10
+Dissociation
+	Products						Monatomic Nitrogen	Monatomic Oxygen
+	ProductCounts					1					2
+
+Material Nitric Oxide
+Elements						N	O
+ElementCount					1	1
+Density_kg__m3					1340.2
+EnthalpyOfFormation_kJ__mol		+90.29
+BondDissociationEnergy_kJ__mol	631.62
+GibbsFreeEnergyOfFormation_kJ__mol	87.60
+BulkModulus_GPa					.1495
+MeltingPoint_K					109
+BoilingPoint_K					121
+SpecificHeat_J__kg_K			995.67
+ThermalConductivity_W__m_K		23.7031e-3
+Viscosity_Pa_s					1.7804e-5
+Dissociation
+	Products						Monatomic Nitrogen	Monatomic Oxygen
+	ProductCounts					1					1
+
+Material Nitrous Oxide
+Elements						N	O
+ElementCount					2	1
+Density_kg__m3					1230.458
+EnthalpyOfFormation_kJ__mol		+82.05
+BondDissociationEnergy_kJ__mol	122.726
+GibbsFreeEnergyOfFormation_kJ__mol	103.7
+BulkModulus_GPa					.0851095
+MeltingPoint_K					182.29
+BoilingPoint_K					184.67
+SpecificHeat_J__kg_K			883.829
+ThermalConductivity_W__m_K		1.6464e-4
+Viscosity_Pa_s					1.3631e-5
+Dissociation
+	Products						Monatomic Nitrogen	Monatomic Oxygen
+	ProductCounts					2					1
+
+Material Carbon Monoxide
+Elements						C	O
+ElementCount					1	1
+Density_kg__m3					789
+EnthalpyOfFormation_kJ__mol		-110.5
+BondDissociationEnergy_kJ__mol	1076.38
+GibbsFreeEnergyOfFormation_kJ__mol	-137.16
+BulkModulus_GPa					.08907
+MeltingPoint_K					68.13
+BoilingPoint_K					81.6
+SpecificHeat_J__kg_K			1038.91
+ThermalConductivity_W__m_K		.0232
+Viscosity_Pa_s					.000018
+DielectricStrength_MV__m		3.6
+Dissociation
+	Products						Monatomic Carbon	Monatomic Oxygen
+	ProductCounts					1					1
+
+Material Carbon Dioxide
+Elements						C	O
+ElementCount					1	2
+Density_kg__m3					1178.4
+EnthalpyOfFormation_kJ__mol		-393.5
+BondDissociationEnergy_kJ__mol	1608.58
+GibbsFreeEnergyOfFormation_kJ__mol	-394.39
+BulkModulus_GPa					.104
+MeltingPoint_K					216.6
+BoilingPoint_K					216.6
+SpecificHeat_J__kg_K			843.785
+ThermalConductivity_W__m_K		.0146
+Viscosity_Pa_s					7e-5
+RelativePermeability			.9999999941
+DielectricStrength_MV__m		2.85
+RefractiveIndex					Carbon Dioxide
+Dissociation
+	Products						Monatomic Carbon	Monatomic Oxygen
+	ProductCounts					1					2
+
+Material Oxygen
+Elements						O
+ElementCount					2
+Density_kg__m3					1141
+EnthalpyOfFormation_kJ__mol		0
+BondDissociationEnergy_kJ__mol	497
+GibbsFreeEnergyOfFormation_kJ__mol	0
+BulkModulus_GPa					.1132
+MeltingPoint_K					50.5
+BoilingPoint_K					90
+SpecificHeat_J__kg_K			916
+ThermalConductivity_W__m_K		6.94
+Viscosity_Pa_s					20.18e-6
+RelativePermeability			1.0000019
+DielectricStrength_MV__m		2.55
+RefractiveIndex					Oxygen
+Dissociation
+	Products						Monatomic Oxygen
+	ProductCounts					2
+
+Material Hydrogen
+Elements						H
+ElementCount					2
+Density_kg__m3					70.85
+EnthalpyOfFormation_kJ__mol		0
+BondDissociationEnergy_kJ__mol	435.7799
+GibbsFreeEnergyOfFormation_kJ__mol	0
+BulkModulus_GPa					.1130
+MeltingPoint_K					14.01
+BoilingPoint_K					20.28
+SpecificHeat_J__kg_K			14310
+ThermalConductivity_W__m_K		.1085
+Viscosity_Pa_s					8.76e-6
+RelativePermeability			.9999999751
+DielectricStrength_MV__m		1.95
+RefractiveIndex					Hydrogen
+Dissociation
+	Products						Monatomic Hydrogen
+	ProductCounts					2
+
+Material Hydrogen Deuteride
+Elements						H	D
+ElementCount					1	1
+Density_kg__m3					116.63
+EnthalpyOfFormation_kJ__mol		0
+BondDissociationEnergy_kJ__mol	439.2223
+GibbsFreeEnergyOfFormation_kJ__mol	0
+BulkModulus_GPa					.186
+MeltingPoint_K					14.1
+BoilingPoint_K					22.13
+SpecificHeat_J__kg_K			9755
+ThermalConductivity_W__m_K		.1193
+Viscosity_Pa_s					10.68e-6
+RefractiveIndex					Deuterium
+Dissociation
+	Products						Monatomic Hydrogen	Monatomic Deuterium
+	ProductCounts					1					1
+
+Material Hydrogen Peroxide
+Elements						H	O
+ElementCount					2	2
+Density_kg__m3					1450
+EnthalpyOfFormation_kJ__mol		-187.80
+BondDissociationEnergy_kJ__mol	944.92
+GibbsFreeEnergyOfFormation_kJ__mol	-120.42
+BulkModulus_GPa					1.637
+MeltingPoint_K					272.72
+BoilingPoint_K					423.3
+SpecificHeat_J__kg_K			2619
+ThermalConductivity_W__m_K		.6006
+Viscosity_Pa_s					1.245e-3
+Dissociation
+	Products						Monatomic Hydrogen	Monatomic Oxygen
+	ProductCounts					2					2
+
+Material Fluorine
+Elements						F
+ElementCount					2
+Density_kg__m3					1696
+EnthalpyOfFormation_kJ__mol		0
+BondDissociationEnergy_kJ__mol	158.670
+GibbsFreeEnergyOfFormation_kJ__mol	0
+BulkModulus_GPa					.187
+MeltingPoint_K					53.48
+BoilingPoint_K					85.03
+SpecificHeat_J__kg_K			1631.72
+ThermalConductivity_W__m_K		.02591
+Viscosity_Pa_s					2.1499e-5
+Dissociation
+	Products						Monatomic Fluorine
+	ProductCounts					2
+
+Material Hydrogen Fluoride
+Elements						H	F
+ElementCount					1	1
+Density_kg__m3					959
+EnthalpyOfFormation_kJ__mol		-273.30
+BondDissociationEnergy_kJ__mol	569.680
+GibbsFreeEnergyOfFormation_kJ__mol	-275.4
+MeltingPoint_K					189.6
+BoilingPoint_K					292.6
+SpecificHeat_J__kg_K			1455.56
+ThermalConductivity_W__m_K		.02353
+Viscosity_Pa_s					1.14e-5
+Dissociation
+	Products						Monatomic Hydrogen	Monatomic Fluorine
+	ProductCounts					1					1
+
+Material Nitrogen Trifluoride
+Elements						N	F
+ElementCount					1	3
+Density_kg__m3					1885
+EnthalpyOfFormation_kJ__mol		-109
+BondDissociationEnergy_kJ__mol	849.0
+GibbsFreeEnergyOfFormation_kJ__mol	-84.4
+MeltingPoint_K					66.00
+BoilingPoint_K					144.09
+SpecificHeat_J__kg_K			2158.59
+ThermalConductivity_W__m_K		.016023
+Viscosity_Pa_s					1.8123e-5
+Dissociation
+	Products						Monatomic Nitrogen	Monatomic Fluorine
+	ProductCounts					1					3
+
+Material Tetrafluorohydrazine
+Elements						N	F
+ElementCount					2	4
+Density_kg__m3					1600
+EnthalpyOfFormation_kJ__mol		-8.37
+BondDissociationEnergy_kJ__mol	1282.9
+GibbsFreeEnergyOfFormation_kJ__mol	79.9
+MeltingPoint_K					108.5
+BoilingPoint_K					200
+SpecificHeat_J__kg_K			761.487
+ThermalConductivity_W__m_K		.06
+Dissociation
+	Products						Monatomic Nitrogen	Monatomic Fluorine
+	ProductCounts					2					4
+
+Material Hydrazine
+Elements						N	H
+ElementCount					2	4
+Density_kg__m3					1021
+EnthalpyOfFormation_kJ__mol		50.63
+BondDissociationEnergy_kJ__mol	1088.9
+GibbsFreeEnergyOfFormation_kJ__mol	159.4
+BulkModulus_GPa					4.468
+MeltingPoint_K					274.7
+BoilingPoint_K					386.7
+ThermalConductivity_W__m_K		.32
+SpecificHeat_J__kg_K			3278
+Viscosity_Pa_s					.000876
+Dissociation
+	Products						Monatomic Hydrogen	Monatomic Nitrogen
+	ProductCounts					4					2
+
+Material Ammonia
+Elements						N	H
+ElementCount					1	3
+Density_kg__m3					681.9
+EnthalpyOfFormation_kJ__mol		-46
+BondDissociationEnergy_kJ__mol	1197.38
+GibbsFreeEnergyOfFormation_kJ__mol	-26.57
+BulkModulus_GPa					.132
+MeltingPoint_K					195.42
+BoilingPoint_K					239.81
+ThermalConductivity_W__m_K		.540
+SpecificHeat_J__kg_K			4610
+Viscosity_Pa_s					.000276
+RelativePermeability			.9999999862
+RefractiveIndex					Ammonia
+Dissociation
+	Products						Monatomic Nitrogen	Monatomic Hydrogen
+	ProductCounts					1					3
+
+Material Sulfur Dioxide
+Elements						S	O
+ElementCount					1	2
+Density_kg__m3					2628.8
+EnthalpyOfFormation_kJ__mol		-296.81
+BondDissociationEnergy_kJ__mol	1069
+GibbsFreeEnergyOfFormation_kJ__mol	-300.13
+MeltingPoint_K					201
+BoilingPoint_K					263
+ThermalConductivity_W__m_K		8.4339e-3
+SpecificHeat_J__kg_K			655.57
+Viscosity_Pa_s					1.1796e-5
+Dissociation
+	Products						Monatomic Oxygen	Sulfur
+	ProductCounts					2					1
+
+Material Mercury
+Elements						Hg
+ElementCount					1
+Density_kg__m3					15534
+EnthalpyOfFormation_kJ__mol		61.38
+BondDissociationEnergy_kJ__mol	0
+GibbsFreeEnergyOfFormation_kJ__mol	0
+BulkModulus_GPa					28.5
+MeltingPoint_K					234.3210
+BoilingPoint_K					629.88
+ThermalConductivity_W__m_K		8.3
+ThermalExpansion__K			60.4e-6
+SpecificHeat_J__kg_K			139.50
+Viscosity_Pa_s					.0015
+Resistivity_Ohm_m				961e-9
+RefractiveIndex					Mercury
+
+Material Chlorine
+Elements				Cl
+ElementCount				2
+Density_kg__m3				1470
+EnthalpyOfFormation_kJ__mol		0
+BondDissociationEnergy_kJ__mol		243
+GibbsFreeEnergyOfFormation_kJ__mol	0
+MeltingPoint_K				171.6
+BoilingPoint_K				239.1
+SpecificHeat_J__kg_K			436.2
+ThermalConductivity_W__m_K		8.9e-3
+Viscosity_Pa_s				3.25e-4
+RefractiveIndex				Oxygen
+Dissociation
+	Products			Monatomic Chlorine
+	ProductCounts			2
+
+Material Hydrogen Chloride
+Elements				H	Cl
+ElementCount				1	1
+Density_kg__m3				1490
+EnthalpyOfFormation_kJ__mol		-92.31
+MeltingPoint_K				158.93
+BoilingPoint_K				188.1
+SpecificHeat_J__kg_K			798.1
+ThermalConductivity_W__m_K		8.9e-3
+Viscosity_Pa_s				3.11e-4
+RefractiveIndex				Oxygen
+Dissociation
+	Products			Monatomic Hydrogen	Monatomic Chlorine
+	ProductCounts			1			1
+
+Material Dinitrogen Tetroxide
+Elements				N	O
+ElementCount				2	4
+Density_kg__m3				1443
+EnthalpyOfFormation_kJ__mol		9.16
+BondDissociationEnergy_kJ__mol		1928.44
+GibbsFreeEnergyOfFormation_kJ__mol	97.5
+BulkModulus_GPa				1.362
+MeltingPoint_K				261.9
+BoilingPoint_K				294.84
+SpecificHeat_J__kg_K			1270
+ThermalConductivity_W__m_K		.131
+Viscosity_Pa_s				.000396
+Dissociation
+	Products			Monatomic Nitrogen	Monatomic Oxygen
+	ProductCounts			2			4
+
+Material Nitric Acid
+Elements				H	N	O
+ElementCount				1	1	3
+Density_kg__m3				1512.9
+EnthalpyOfFormation_kJ__mol		-207
+BondDissociationEnergy_kJ__mol		1663.97
+GibbsFreeEnergyOfFormation_kJ__mol	-80.7
+BulkModulus_GPa				3.125
+MeltingPoint_K				231
+BoilingPoint_K				356
+SpecificHeat_J__kg_K			1720
+ThermalConductivity_W__m_K		.29
+Viscosity_Pa_s				.0008
+Dissociation
+	Products			Monatomic Hydrogen	Monatomic Nitrogen	Monatomic Oxygen
+	ProductCounts			1			1			3
+
+Material Monomethylhydrazine
+Elements				C	H	N
+ElementCount				1	6	2
+Density_kg__m3				875
+EnthalpyOfFormation_kJ__mol		54.14
+BondDissociationEnergy_kJ__mol		3308.2
+GibbsFreeEnergyOfFormation_kJ__mol	180
+BulkModulus_GPa				2.091
+MeltingPoint_K				221
+BoilingPoint_K				364
+ThermalConductivity_W__m_K		.246
+SpecificHeat_J__kg_K			2890
+Viscosity_Pa_s				.000775
+Dissociation
+	Products			Monatomic Carbon	Monatomic Hydrogen	Monatomic Nitrogen
+	ProductCounts			1			6			2
+
+Material Unsymmetrical Dimethylhydrazine
+Elements				C	H	N
+ElementCount				2	8	2
+Density_kg__m3				791
+EnthalpyOfFormation_kJ__mol		48.3
+BondDissociationEnergy_kJ__mol		5019.4
+GibbsFreeEnergyOfFormation_kJ__mol	206.4
+BulkModulus_GPa				1.23
+MeltingPoint_K				216
+BoilingPoint_K				337.1
+ThermalConductivity_W__m_K		.157
+SpecificHeat_J__kg_K			2720
+Viscosity_Pa_s				.000492
+Dissociation
+	Products			Monatomic Carbon	Monatomic Hydrogen	Monatomic Nitrogen
+	ProductCounts			2			8			2

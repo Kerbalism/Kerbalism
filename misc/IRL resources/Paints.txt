@@ -1,0 +1,51 @@
+Material Z93
+RoughnessCoefficient			.9
+RefractiveIndex					White
+
+Material Red Z93
+RoughnessCoefficient			.3
+RefractiveIndex					Red
+
+Material Yellow Z93
+RoughnessCoefficient			.3
+RefractiveIndex					Yellow
+
+Material Blue Z93
+RoughnessCoefficient			.3
+RefractiveIndex					Blue
+
+Material Green Z93
+RoughnessCoefficient			.3
+RefractiveIndex					Green
+
+Material Purple Z93
+RoughnessCoefficient			.3
+RefractiveIndex					Purple
+
+Material Orange Z93
+RoughnessCoefficient			.3
+RefractiveIndex					Orange
+
+Material Teal Z93
+RoughnessCoefficient			.3
+RefractiveIndex					Teal
+
+Material Vantablack
+RoughnessCoefficient			.99
+RefractiveIndex					Carbon Nanotube Forest
+
+Material Human
+
+Material Food
+Elements						C
+ElementCount					1
+
+Material Cargo
+Density_kg__m3					736
+
+Material Proton Mass
+
+Material Radioactive Waste
+Elements		Cs		Zr		Mo		Tc		Sr		I		Pm		Sm
+ElementCount	.067896	.062956	.061	.060507	.05718	.028336	.022713	.010888
+Density_kg__m3					19278

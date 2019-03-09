@@ -1,0 +1,126 @@
+Material Strontium-90
+Elements						Sr-90
+ElementCount					1
+Density_kg__m3					2640
+YoungsModulus_GPa				15.7
+ShearModulus_GPa				6.03
+MeltingPoint_K					1050
+BoilingPoint_K					1650
+SpecificHeat_J__kg_K			301.30
+ThermalExpansion__K				22.5e-6
+ThermalConductivity_W__m_K		35.4
+
+Material Strontium-90 Titanate
+Elements						Sr-90	Ti	O
+ElementCount					1		1	3
+Density_kg__m3					5110
+YoungsModulus_GPa				17.41
+ShearModulus_GPa				12.35
+BulkModulus_GPa					174
+MeltingPoint_K					2352
+SpecificHeat_J__kg_K			544
+ThermalExpansion__K				9.4e-6
+ThermalConductivity_W__m_K		12
+RelativePermittivity			310
+BandGap_eV						3.75
+RefractiveIndex					Diamond
+
+Material Polonium-210
+Elements						Po-210
+ElementCount					1
+Density_kg__m3					9398
+MeltingPoint_K					527
+BoilingPoint_K					1235
+SpecificHeat_J__kg_K			126.31
+ThermalExpansion__K				23.5e-6
+ThermalConductivity_W__m_K		20
+Resistivity_Ohm_m				4e-7
+
+Material Curium-242
+Elements						Cm-242
+ElementCount					1
+Density_kg__m3					13511
+MeltingPoint_K					1613
+BoilingPoint_K					3383
+SpecificHeat_J__kg_K			116.94
+ThermalExpansion__K			10.94e-4
+ThermalConductivity_W__m_K		10.0
+Resistivity_Ohm_m				1.25e-6
+
+Material Promethium-147
+Elements						Pm-147
+ElementCount					1
+Density_kg__m3					7260
+YoungsModulus_GPa				46
+ShearModulus_GPa				18
+MeltingPoint_K					1315
+BoilingPoint_K					3273
+SpecificHeat_J__kg_K			180
+ThermalExpansion__K				9.0e-6
+ThermalConductivity_W__m_K		17.9
+Resistivity_Ohm_m				7.5e-7
+
+Material Iridium-192
+Elements						Ir-192
+ElementCount					1
+Density_kg__m3					22560
+YieldStrength_MPa				234
+UltimateTensileStrength_MPa		623
+YoungsModulus_GPa				528
+ShearModulus_GPa				210
+SpecificHeat_J__kg_K			130.58
+MeltingPoint_K					2719
+BoilingPoint_K					4403
+ThermalConductivity_W__m_K		147
+ThermalExpansion__K				6.4e-6
+Resistivity_Ohm_m				47.1e-9
+RefractiveIndex					Iridium
+RoughnessCoefficient			.1
+
+Material Cobalt-60
+Elements				Co-60
+ElementCount				1
+Density_kg__m3				8900
+YieldStrength_MPa			200
+UltimateTensileStrength_MPa		700
+YoungsModulus_GPa			209
+ShearModulus_GPa			75
+SpecificHeat_J__kg_K			420.985
+MeltingPoint_K				1768
+BoilingPoint_K				3200
+ThermalConductivity_W__m_K		100
+ThermalExpansion__K			13.0e-6
+Resistivity_Ohm_m			62.4e-9
+RelativePermeability			250
+TotalMagneticMoment			1.72
+Remanence_T				.5
+RefractiveIndex				Cobalt
+RoughnessCoefficient			0.3
+
+Material Actinium-227
+Elements				Ac-227
+ElementCount				1
+Density_kg__m3				10070
+SpecificHeat_J__kg_K			120
+MeltingPoint_K				1513
+BoilingPoint_K				3473
+ThermalConductivity_W__m_K		12
+ThermalExpansion__K			14.9e-6
+Resistivity_Ohm_m			157e-9
+
+Material Technetium-99
+Elements				Tc-99
+ElementCount				1
+Density_kg__m3				11500
+YieldStrength_MPa			320
+UltimateTensileStrength_MPa		800
+YoungsModulus_GPa			322
+ShearModulus_GPa			123
+SpecificHeat_J__kg_K			210
+MeltingPoint_K				2430
+BoilingPoint_K				4538
+ThermalConductivity_W__m_K		50.6
+ThermalExpansion__K			7.1e-6
+Resistivity_Ohm_m			1.85e-7
+RefractiveIndex				Molybdenum
+RoughnessCoefficient			.6
