@@ -14,6 +14,7 @@
 * Added an 'EVA's available' indicator to the Planner and Monitor (PiezPiedPy)
 * Optimized Planner: Part 1 - Chill the stuttering in VAB/SPH (PiezPiedPy)
 * Reduced Mass of ECLSS and Chemical Processors from 450kg to 40kg (Sir Mortimer)
+* CO2 poisoning warning message will pop up sooner to give you some time to fix the issue (Sir Mortimer)
 
 ------------------------------------------------------------------------------------------------------
 
