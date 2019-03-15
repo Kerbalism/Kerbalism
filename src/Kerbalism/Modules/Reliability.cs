@@ -15,9 +15,9 @@ namespace KERBALISM
 	{
 		// config
 		[KSPField(isPersistant = true)] public string type;                 // component name
-		[KSPField] public double mtbf = 21600000.0;                       // mean time between failures, in seconds
+		[KSPField] public double mtbf = 21600000.0;                         // mean time between failures, in seconds
 		[KSPField] public string repair = string.Empty;                     // repair crew specs
-		[KSPField] public string title = string.Empty;                     // short description of component
+		[KSPField] public string title = string.Empty;                      // short description of component
 		[KSPField] public string redundancy = string.Empty;                 // redundancy group
 		[KSPField] public double extra_cost;                                // extra cost for high-quality, in proportion of part cost
 		[KSPField] public double extra_mass;                                // extra mass for high-quality, in proportion of part mass
@@ -28,6 +28,7 @@ namespace KERBALISM
 		[KSPField(isPersistant = true)] public bool quality;                // true if the component is high-quality
 		[KSPField(isPersistant = true)] public double last;                 // time of last failure
 		[KSPField(isPersistant = true)] public double next;                 // time of next failure
+		[KSPField(isPersistant = true)] public bool needMaintenance = false;// true when component is inspected and about to fail
 
 		// status ui
 		[KSPField(guiActive = false, guiName = "_")] public string Status;  // show component status
@@ -94,8 +95,13 @@ namespace KERBALISM
 					  : "<color=red>Critical failure</color>";
 				}
 				Fields["Status"].guiActive = broken;
-				Events["Inspect"].active = !broken;
-				Events["Repair"].active = repair_cs && broken && !critical;
+				Events["Inspect"].active = !broken && !needMaintenance;
+				Events["Repair"].active = repair_cs && (broken || needMaintenance) && !critical;
+
+				if(needMaintenance) {
+					Events["Repair"].guiName = Lib.BuildString("Service <b>", title, "</b>");
+				}
+
 
 				// set highlight
 				Highlight(part);
@@ -191,10 +197,13 @@ namespace KERBALISM
 
 			// notify user
 			if (time_k < 0.2) Message.Post("It is practically new");
-			else if (time_k < 0.4) Message.Post("It is still in good shape");
-			else if (time_k < 0.6) Message.Post("It will keep working for some more time");
-			else if (time_k < 0.8) Message.Post("It is reaching its operational limits");
-			else Message.Post("It could fail at any moment now");
+			else if (time_k < 0.35) Message.Post("It is in good shape");
+			else {
+				needMaintenance = true;
+				if (time_k < 0.6) Message.Post("It will keep working for some more time");
+				else if (time_k < 0.8) Message.Post("It is reaching its operational limits");
+				else Message.Post("It could fail at any moment now");
+			}
 		}
 
 
@@ -222,40 +231,58 @@ namespace KERBALISM
 				return;
 			}
 
-			// flag as not broken
-			broken = false;
+			needMaintenance = false;
 
 			// reset times
 			last = 0.0;
 			next = 0.0;
 
-			// re-enable module
-			foreach (PartModule m in modules)
+			if (broken)
 			{
-				m.isEnabled = true;
-				m.enabled = true;
+				// flag as not broken
+				broken = false;
+
+				// re-enable module
+				foreach (PartModule m in modules)
+				{
+					m.isEnabled = true;
+					m.enabled = true;
+				}
+
+				// we need to reconfigure the module here, because if all modules of a type
+				// share the broken state, and these modules are part of a configure setup,
+				// then repairing will enable all of them, messing up with the configuration
+				part.FindModulesImplementing<Configure>().ForEach(k => k.DoConfigure());
+
+				// type-specific hacks
+				Apply(false);
+
+				// notify user
+				Message.Post
+				(
+				  Lib.BuildString("<b>", title, "</b> repaired"),
+				  Lib.TextVariant
+				  (
+					"A powerkick did the trick",
+					"Duct tape, is there something it can't fix?",
+					"Fully operational again",
+					"We are back in business"
+				  )
+				);
+			} else {
+				// notify user
+				Message.Post
+				(
+				  Lib.BuildString("<b>", title, "</b> serviced"),
+				  Lib.TextVariant
+				  (
+					"I don't know how this was still working",
+					"Fastened a loose screw there",
+					"Someone forgot a cloth in there",
+					"As good as new"
+				  )
+				);
 			}
-
-			// we need to reconfigure the module here, because if all modules of a type
-			// share the broken state, and these modules are part of a configure setup,
-			// then repairing will enable all of them, messing up with the configuration
-			part.FindModulesImplementing<Configure>().ForEach(k => k.DoConfigure());
-
-			// type-specific hacks
-			Apply(false);
-
-			// notify user
-			Message.Post
-			(
-			  Lib.BuildString("<b>", title, "</b> repaired"),
-			  Lib.TextVariant
-			  (
-				"A powerkick did the trick",
-				"Duct tape, is there something it can't fix?",
-				"Fully operational again",
-				"We are back in business"
-			  )
-			);
 		}
 
 
