@@ -15,6 +15,8 @@
 * Optimized Planner: Part 1 - Chill the stuttering in VAB/SPH (PiezPiedPy)
 * Reduced Mass of ECLSS and Chemical Processors from 450kg to 40kg (Sir Mortimer)
 * CO2 poisoning warning message will pop up sooner to give you some time to fix the issue (Sir Mortimer)
+* Preemptive maintenance: if a component is found not to be in very good condition during inspection,
+  it can be serviced to avoid a failure (Sir Mortimer)
 
 ------------------------------------------------------------------------------------------------------
 
