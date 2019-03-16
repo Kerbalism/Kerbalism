@@ -172,7 +172,7 @@ namespace KERBALISM
 			running = !running;
 
 			// refresh VAB/SPH ui
-			GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+			if (Lib.IsEditor()) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
 		}
 
 		[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "Clean", active = true)]

@@ -27,7 +27,7 @@ namespace KERBALISM
 
 		public override string Info()
 		{
-			return process_ctrl.running
+			return process_ctrl.IsRunning()
 			  ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_RUNNING") + "</color>"
 			  : "<color=red>" + Localizer.Format("#KERBALISM_Generic_STOPPED") + "</color>";
 		}
@@ -35,12 +35,12 @@ namespace KERBALISM
 		public override void Ctrl(bool value)
 		{
 			if (!process_ctrl.toggle) return;
-			process_ctrl.running = value;
+			process_ctrl.SetRunning(value);
 		}
 
 		public override void Toggle()
 		{
-			Ctrl(!process_ctrl.running);
+			Ctrl(!process_ctrl.IsRunning());
 		}
 
 		ProcessController process_ctrl;
@@ -79,6 +79,36 @@ namespace KERBALISM
 			Lib.Proto.Set(process_ctrl, "running", value);
 			ProtoPartSnapshot part_prefab = FlightGlobals.FindProtoPartByID(part_id);
 			part_prefab.resources.Find(k => k.resourceName == prefab.resource).flowState = value;
+
+			/*
+			prefab.resource;
+			prefab.multiple;
+			prefab.capacity;
+
+			Lib.SetProcessEnabledDisabled(part_prefab.resources, resource, running, capacity * multiple);
+
+			part_prefab
+			// vvv--- this is the code run in active parts. effect is not the same as above
+			Lib.SetProcessEnabledDisabled(part, resource, running, capacity * multiple);
+
+
+			if (!p.Resources.Contains(res_name))
+			{
+				Lib.AddResource(p, res_name, 0.0, process_capacity);
+			}
+
+			if (enable)
+			{
+				SetResource(p, res_name, process_capacity, process_capacity);
+			}
+			else
+			{
+				// Never remove the resource capacity, otherwise checks against
+				// the pseudo resource might fail
+				SetResource(p, res_name, 0.0, process_capacity);
+			}
+*/
+
 		}
 
 		public override void Toggle()

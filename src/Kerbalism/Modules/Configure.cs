@@ -226,7 +226,7 @@ namespace KERBALISM
 						{
 							// add the resources
 							// - in flight, do not add amount
-							Lib.AddResource(part, cr.name, Lib.IsFlight() ? 0.0 : amount * count, capacity * count);
+							Lib.AddResource(part.Resources, cr.name, Lib.IsFlight() ? 0.0 : amount * count, capacity * count);
 						}
 					}
 

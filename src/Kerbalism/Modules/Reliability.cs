@@ -180,7 +180,7 @@ namespace KERBALISM
 			}
 
 			// refresh VAB/SPH ui
-			GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+			if (Lib.IsEditor()) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
 		}
 
 

@@ -18,7 +18,7 @@ namespace KERBALISM
 		// persistence/config
 		// note: the running state doesn't need to be serialized, as it can be deduced from resource flow
 		// but we find useful to set running to true in the cfg node for some processes, and not others
-		[KSPField(isPersistant = true)] public bool running;
+		[KSPField(isPersistant = true)] private bool running;
 
 		// amount of times to multiply capacity, used so configure can have the same process in more than one slot
 		[KSPField(isPersistant = true)] public int multiple = 1;
@@ -60,7 +60,7 @@ namespace KERBALISM
 				running = true;
 
 			// set processes enabled state
-			Lib.SetProcessEnabledDisabled(part, resource, broken ? false : running, capacity * multiple);
+			Lib.SetProcessEnabledDisabled(part.Resources, resource, broken ? false : running, capacity * multiple);
 		}
 
 		///<summary> Called by Configure.cs. Configures the controller to settings passed from the configure module,
@@ -79,7 +79,7 @@ namespace KERBALISM
 				{
 					// add the resource
 					// - always add the specified amount, even in flight
-					Lib.AddResource(part, resource, (!broken && running) ? capacity * multiple : 0.0, capacity * multiple);
+					Lib.AddResource(part.Resources, resource, (!broken && running) ? capacity * multiple : 0.0, capacity * multiple);
 				}
 				// has multiple changed
 				else if (this.multiple != multiple)
@@ -87,7 +87,7 @@ namespace KERBALISM
 					// multiple has increased
 					if (this.multiple < multiple)
 					{
-						Lib.AddResource(part, resource, (!broken && running) ? capacity * (multiple - this.multiple) : 0.0, capacity * (multiple - this.multiple));
+						Lib.AddResource(part.Resources, resource, (!broken && running) ? capacity * (multiple - this.multiple) : 0.0, capacity * (multiple - this.multiple));
 					}
 					// multiple has decreased
 					else
@@ -105,7 +105,7 @@ namespace KERBALISM
 		public void ReliablityEvent(bool breakdown)
 		{
 			broken = breakdown;
-			Lib.SetProcessEnabledDisabled(part, resource, broken ? false : running, capacity * multiple);
+			Lib.SetProcessEnabledDisabled(part.Resources, resource, broken ? false : running, capacity * multiple);
 		}
 
 		public void Update()
@@ -118,14 +118,20 @@ namespace KERBALISM
 		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true)]
 		public void Toggle()
 		{
+			SetRunning(!running);
+		}
+
+		public void SetRunning(bool value)
+		{
 			if (broken)
 				return;
+			
 			// switch status
-			running = !running;
-			Lib.SetProcessEnabledDisabled(part, resource, running, capacity * multiple);
+			running = value;
+			Lib.SetProcessEnabledDisabled(part.Resources, resource, running, capacity * multiple);
 
 			// refresh VAB/SPH ui
-			GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+			if (Lib.IsEditor()) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
 		}
 
 		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "Dump", active = true)]
@@ -134,7 +140,7 @@ namespace KERBALISM
 			valve_i = dump_specs.NextValve;
 
 			// refresh VAB/SPH ui
-			GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+			if (Lib.IsEditor()) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
 		}
 
 		// action groups
@@ -147,6 +153,9 @@ namespace KERBALISM
 			return Specs().Info(desc);
 		}
 
+		public bool IsRunning() {
+			return running;
+		}
 
 		// specifics support
 		public Specifics Specs()

@@ -44,7 +44,7 @@ namespace KERBALISM
 			}
 
 			// refresh VAB/SPH ui
-			GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+			if (Lib.IsEditor()) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
 		}
 
 		[KSPAction("_")] public void Action(KSPActionParam param) { Toggle(); }
@@ -85,8 +85,8 @@ namespace KERBALISM
 
 		public void Configure(bool enable, int slots, bool cureEverybody)
 		{
-			if (cureEverybody) Lib.SetProcessEnabledDisabled(part, resource, enable, capacity);
-			else Lib.SetProcessEnabledDisabled(part, resource, enable, capacity * slots);
+			if (cureEverybody) Lib.SetProcessEnabledDisabled(part.Resources, resource, enable, capacity);
+			else Lib.SetProcessEnabledDisabled(part.Resources, resource, enable, capacity * slots);
 		}
 
 		public void Update()
