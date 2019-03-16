@@ -391,7 +391,7 @@ namespace KERBALISM
 			}
 
 			// refresh VAB/SPH ui
-			GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+			if (Lib.IsEditor()) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
 		}
 
 		// action groups
@@ -485,7 +485,7 @@ namespace KERBALISM
 			if (HighLogic.LoadedSceneIsEditor)
 			{
 				GameEvents.onEditorPartEvent.Fire(ConstructionEventType.PartTweaked, part);
-				GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+				if (Lib.IsEditor()) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
 			}
 			else if (HighLogic.LoadedSceneIsFlight)
 			{

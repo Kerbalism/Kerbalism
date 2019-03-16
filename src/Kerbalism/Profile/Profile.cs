@@ -160,6 +160,7 @@ namespace KERBALISM
 			// execute all supplies
 			foreach (Supply supply in supplies)
 			{
+				// this will just show warning messages if resources get low
 				supply.Execute(v, vd, resources);
 			}
 

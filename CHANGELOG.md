@@ -17,6 +17,8 @@
 * CO2 poisoning warning message will pop up sooner to give you some time to fix the issue (Sir Mortimer)
 * Preemptive maintenance: if a component is found not to be in very good condition during inspection,
   it can be serviced to avoid a failure (Sir Mortimer)
+* Fixed emitters (shields) can be used in automation tab again (Sir Mortimer)
+* Processes ECLSS, Fuel Cells, Chemical Plant etc. can be controlled from automation tab again (Sir Mortimer)
 
 ------------------------------------------------------------------------------------------------------
 

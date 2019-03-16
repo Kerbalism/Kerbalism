@@ -357,7 +357,7 @@ namespace KERBALISM
 			if (shutters_anim != null) shutters_anim.Play(deactivating ^ animBackwards, false);
 
 			// refresh VAB/SPH ui
-			GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+			if (Lib.IsEditor()) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
 		}
 
 

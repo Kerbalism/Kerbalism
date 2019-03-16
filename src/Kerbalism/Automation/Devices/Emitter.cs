@@ -32,12 +32,18 @@ namespace KERBALISM
 
 		public override void Ctrl(bool value)
 		{
+			if (!emitter.toggle) return;
 			if (emitter.running != value) emitter.Toggle();
 		}
 
 		public override void Toggle()
 		{
 			Ctrl(!emitter.running);
+		}
+
+		public override bool IsVisible()
+		{
+			return emitter.toggle;
 		}
 
 		Emitter emitter;

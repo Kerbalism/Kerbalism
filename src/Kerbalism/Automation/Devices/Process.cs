@@ -27,7 +27,7 @@ namespace KERBALISM
 
 		public override string Info()
 		{
-			return process_ctrl.running
+			return process_ctrl.IsRunning()
 			  ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_RUNNING") + "</color>"
 			  : "<color=red>" + Localizer.Format("#KERBALISM_Generic_STOPPED") + "</color>";
 		}
@@ -35,12 +35,12 @@ namespace KERBALISM
 		public override void Ctrl(bool value)
 		{
 			if (!process_ctrl.toggle) return;
-			process_ctrl.running = value;
+			process_ctrl.SetRunning(value);
 		}
 
 		public override void Toggle()
 		{
-			Ctrl(!process_ctrl.running);
+			Ctrl(!process_ctrl.IsRunning());
 		}
 
 		ProcessController process_ctrl;
@@ -78,7 +78,10 @@ namespace KERBALISM
 			if (!prefab.toggle) return;
 			Lib.Proto.Set(process_ctrl, "running", value);
 			ProtoPartSnapshot part_prefab = FlightGlobals.FindProtoPartByID(part_id);
-			part_prefab.resources.Find(k => k.resourceName == prefab.resource).flowState = value;
+
+			double capacity = prefab.capacity;
+			var res = part_prefab.resources.Find(k => k.resourceName == prefab.resource);
+			res.amount = value ? capacity : 0.0;
 		}
 
 		public override void Toggle()
