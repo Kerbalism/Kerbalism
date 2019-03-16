@@ -32,12 +32,18 @@ namespace KERBALISM
 
 		public override void Ctrl(bool value)
 		{
+			if (!emitter.toggle) return;
 			if (emitter.running != value) emitter.Toggle();
 		}
 
 		public override void Toggle()
 		{
 			Ctrl(!emitter.running);
+		}
+
+		public override bool IsVisible()
+		{
+			return emitter.toggle;
 		}
 
 		Emitter emitter;
@@ -69,12 +75,18 @@ namespace KERBALISM
 
 		public override void Ctrl(bool value)
 		{
+			if (!Lib.Proto.GetBool(emitter, "toggle")) return;
 			Lib.Proto.Set(emitter, "running", value);
 		}
 
 		public override void Toggle()
 		{
 			Ctrl(!Lib.Proto.GetBool(emitter, "running"));
+		}
+
+		public override bool IsVisible()
+		{
+			return Lib.Proto.GetBool(emitter, "toggle");
 		}
 
 		private readonly ProtoPartModuleSnapshot emitter;

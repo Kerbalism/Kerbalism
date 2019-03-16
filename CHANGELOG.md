@@ -17,6 +17,7 @@
 * CO2 poisoning warning message will pop up sooner to give you some time to fix the issue (Sir Mortimer)
 * Preemptive maintenance: if a component is found not to be in very good condition during inspection,
   it can be serviced to avoid a failure (Sir Mortimer)
+* Fixed emitters (NERVs, nuclear batteries) cannot be controlled in automation and are hidden there (Sir Mortimer)
 
 ------------------------------------------------------------------------------------------------------
 
