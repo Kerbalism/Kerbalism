@@ -60,7 +60,7 @@ namespace KERBALISM
 				running = true;
 
 			// set processes enabled state
-			Lib.SetProcessEnabledDisabled(part.Resources, resource, broken ? false : running, capacity * multiple);
+			Lib.SetProcessEnabledDisabled(part, resource, broken ? false : running, capacity * multiple);
 		}
 
 		///<summary> Called by Configure.cs. Configures the controller to settings passed from the configure module,
@@ -79,7 +79,7 @@ namespace KERBALISM
 				{
 					// add the resource
 					// - always add the specified amount, even in flight
-					Lib.AddResource(part.Resources, resource, (!broken && running) ? capacity * multiple : 0.0, capacity * multiple);
+					Lib.AddResource(part, resource, (!broken && running) ? capacity * multiple : 0.0, capacity * multiple);
 				}
 				// has multiple changed
 				else if (this.multiple != multiple)
@@ -87,7 +87,7 @@ namespace KERBALISM
 					// multiple has increased
 					if (this.multiple < multiple)
 					{
-						Lib.AddResource(part.Resources, resource, (!broken && running) ? capacity * (multiple - this.multiple) : 0.0, capacity * (multiple - this.multiple));
+						Lib.AddResource(part, resource, (!broken && running) ? capacity * (multiple - this.multiple) : 0.0, capacity * (multiple - this.multiple));
 					}
 					// multiple has decreased
 					else
@@ -105,7 +105,7 @@ namespace KERBALISM
 		public void ReliablityEvent(bool breakdown)
 		{
 			broken = breakdown;
-			Lib.SetProcessEnabledDisabled(part.Resources, resource, broken ? false : running, capacity * multiple);
+			Lib.SetProcessEnabledDisabled(part, resource, broken ? false : running, capacity * multiple);
 		}
 
 		public void Update()
@@ -128,7 +128,7 @@ namespace KERBALISM
 			
 			// switch status
 			running = value;
-			Lib.SetProcessEnabledDisabled(part.Resources, resource, running, capacity * multiple);
+			Lib.SetProcessEnabledDisabled(part, resource, running, capacity * multiple);
 
 			// refresh VAB/SPH ui
 			if (Lib.IsEditor()) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);

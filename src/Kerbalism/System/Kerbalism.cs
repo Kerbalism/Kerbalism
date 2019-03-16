@@ -419,7 +419,7 @@ namespace KERBALISM
 					{
 						if (Lib.Capacity(part, monoprop_name) <= double.Epsilon)
 						{
-							Lib.AddResource(part.ResourceList, monoprop_name, 0.0, monoprop_amount);
+							Lib.AddResource(part, monoprop_name, 0.0, monoprop_amount);
 						}
 						break;
 					}

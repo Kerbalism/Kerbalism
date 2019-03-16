@@ -149,12 +149,12 @@ namespace KERBALISM
 			{
 				// add internal atmosphere resources
 				// - disabled habitats start with zero atmosphere
-				Lib.AddResource(part.ResourceList, "Atmosphere", (state == State.enabled && Features.Pressure) ? volume * 1e3 : 0.0, volume * 1e3);
-				Lib.AddResource(part.ResourceList, "WasteAtmosphere", 0.0, volume * 1e3);
-				Lib.AddResource(part.ResourceList, "MoistAtmosphere", 0.0, volume * 1e3);
+				Lib.AddResource(part, "Atmosphere", (state == State.enabled && Features.Pressure) ? volume * 1e3 : 0.0, volume * 1e3);
+				Lib.AddResource(part, "WasteAtmosphere", 0.0, volume * 1e3);
+				Lib.AddResource(part, "MoistAtmosphere", 0.0, volume * 1e3);
 
 				// add external surface shielding
-				Lib.AddResource(part.ResourceList, "Shielding", 0.0, surface);
+				Lib.AddResource(part, "Shielding", 0.0, surface);
 
 				// inflatable habitats can't be shielded (but still need the capacity) unless they have rigid walls
 				part.Resources["Shielding"].isTweakable = (Get_inflate_string().Length == 0) || inflatableUsingRigidWalls;
