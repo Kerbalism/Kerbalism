@@ -78,37 +78,11 @@ namespace KERBALISM
 			if (!prefab.toggle) return;
 			Lib.Proto.Set(process_ctrl, "running", value);
 			ProtoPartSnapshot part_prefab = FlightGlobals.FindProtoPartByID(part_id);
-			part_prefab.resources.Find(k => k.resourceName == prefab.resource).flowState = value;
 
-			/*
-			prefab.resource;
-			prefab.multiple;
-			prefab.capacity;
-
-			Lib.SetProcessEnabledDisabled(part_prefab.resources, resource, running, capacity * multiple);
-
-			part_prefab
-			// vvv--- this is the code run in active parts. effect is not the same as above
-			Lib.SetProcessEnabledDisabled(part, resource, running, capacity * multiple);
-
-
-			if (!p.Resources.Contains(res_name))
-			{
-				Lib.AddResource(p, res_name, 0.0, process_capacity);
-			}
-
-			if (enable)
-			{
-				SetResource(p, res_name, process_capacity, process_capacity);
-			}
-			else
-			{
-				// Never remove the resource capacity, otherwise checks against
-				// the pseudo resource might fail
-				SetResource(p, res_name, 0.0, process_capacity);
-			}
-*/
-
+			// this seems to have no effect any more
+			// part_prefab.resources.Find(k => k.resourceName == prefab.resource).flowState = value;
+			double capacity = prefab.capacity;
+			var res = part_prefab.resources.Find(k => k.resourceName == prefab.resource).amount = value ? capacity : 0.0;
 		}
 
 		public override void Toggle()
