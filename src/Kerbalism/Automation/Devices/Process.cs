@@ -79,10 +79,9 @@ namespace KERBALISM
 			Lib.Proto.Set(process_ctrl, "running", value);
 			ProtoPartSnapshot part_prefab = FlightGlobals.FindProtoPartByID(part_id);
 
-			// this seems to have no effect any more
-			// part_prefab.resources.Find(k => k.resourceName == prefab.resource).flowState = value;
 			double capacity = prefab.capacity;
-			var res = part_prefab.resources.Find(k => k.resourceName == prefab.resource).amount = value ? capacity : 0.0;
+			var res = part_prefab.resources.Find(k => k.resourceName == prefab.resource);
+			res.amount = value ? capacity : 0.0;
 		}
 
 		public override void Toggle()

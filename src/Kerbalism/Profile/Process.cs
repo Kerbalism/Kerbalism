@@ -82,7 +82,7 @@ namespace KERBALISM
 		private void ExecuteRecipe(double k, Vessel_resources resources,  double elapsed_s, Resource_recipe recipe)
 		{
 			// only execute processes if necessary
-			if (k > double.Epsilon)
+			if (Math.Abs(k) > double.Epsilon)
 			{
 				foreach (var p in inputs)
 				{
