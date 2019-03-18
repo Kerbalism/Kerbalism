@@ -71,6 +71,11 @@ namespace KERBALISM
 			// setup supply resources capacity in the eva kerbal
 			Profile.SetupEva(data.to);
 
+			String prop_name = Lib.EvaPropellantName();
+			double prop_quantity = Lib.EvaPropellantCapacity();
+			bool evaHasProp = false;
+			Lib.Log("### EVA: want " + prop_quantity + " of " + prop_name + " for jetpack");
+
 			// for each resource in the kerbal
 			for (int i = 0; i < data.to.Resources.Count; ++i)
 			{
@@ -83,16 +88,32 @@ namespace KERBALISM
 				// remove resource from vessel
 				quantity = data.from.RequestResource(res.resourceName, quantity);
 
+				if (prop_name == res.resourceName)
+				{
+					evaHasProp = quantity > double.Epsilon;
+					prop_quantity = 0; // make sure we don't transfer monoporp twice
+				}
+
+				Lib.Log("### EVA out: removed " + quantity + " " + res.resourceName + " from ship");
+
 				// add resource to eva kerbal
 				data.to.RequestResource(res.resourceName, -quantity);
+			}
+
+			// Handle EVA propellant
+			if(prop_quantity > double.Epsilon)
+			{
+				Lib.Log("### EVA out: removed " + prop_quantity + " " + prop_name + " from ship");
+				prop_quantity = data.from.RequestResource(prop_name, prop_quantity);
+				data.to.RequestResource(prop_name, -prop_quantity);
+				evaHasProp = prop_quantity > double.Epsilon;
 			}
 
 			// Airlock loss
 			resources.Consume(data.from.vessel, "Nitrogen", PreferencesLifeSupport.Instance.evaAtmoLoss);
 
-			// show warning if there isn't monoprop in the eva suit
-			string prop_name = Lib.EvaPropellantName();
-			if (Lib.Amount(data.to, prop_name) <= double.Epsilon && !Lib.Landed(data.from.vessel))
+			// show warning if there is no EVA propellant in the suit
+			if (!evaHasProp && !Lib.Landed(data.from.vessel))
 			{
 				Message.Post(Severity.danger, Lib.BuildString("There isn't any <b>", prop_name, "</b> in the EVA suit"), "Don't let the ladder go!");
 			}
@@ -116,6 +137,8 @@ namespace KERBALISM
 
 				// add leftovers to the vessel
 				data.to.RequestResource(res.resourceName, -res.amount);
+
+				Lib.Log("### EVA in: added " + res.amount + " " + res.resourceName + " to ship");
 			}
 
 			// merge drives data
