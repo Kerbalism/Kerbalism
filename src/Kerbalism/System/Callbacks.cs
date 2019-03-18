@@ -87,6 +87,9 @@ namespace KERBALISM
 				data.to.RequestResource(res.resourceName, -quantity);
 			}
 
+			// Airlock loss
+			resources.Consume(data.from.vessel, "Nitrogen", PreferencesLifeSupport.Instance.evaAtmoLoss);
+
 			// show warning if there isn't monoprop in the eva suit
 			string prop_name = Lib.EvaPropellantName();
 			if (Lib.Amount(data.to, prop_name) <= double.Epsilon && !Lib.Landed(data.from.vessel))
