@@ -20,6 +20,7 @@
 * Fixed emitters (shields) can be used in automation tab again (Sir Mortimer)
 * Processes ECLSS, Fuel Cells, Chemical Plant etc. can be controlled from automation tab again (Sir Mortimer)
 * Added Kerbalism flags (Mzxs)
+* Adjusted N2 leakage (Sir Mortimer)
 
 ------------------------------------------------------------------------------------------------------
 
