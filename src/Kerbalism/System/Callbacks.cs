@@ -87,19 +87,17 @@ namespace KERBALISM
 				{
 					// take all the propellant there is. just imagine: there are 1.3 units left, and 12 occupants
 					// in the ship. you want to send out an engineer to fix the chemical plant that produces monoprop,
-					// and have to get from one end of the station to the other with just 0.1 units of monoprop...
+					// and have to get from one end of the station to the other with just 0.1 units in the tank...
 					// nope.
 					quantity = Math.Min(resources.Info(data.from.vessel, res.resourceName).amount, res.maxAmount);
-					Lib.Log("### Q0 " + quantity);
 				}
 
 				// remove resource from vessel
 				quantity = data.from.RequestResource(res.resourceName, quantity);
-				Lib.Log("### Q1 " + quantity);
 
 				if (prop_name == res.resourceName)
 				{
-					didTransferEvaProp = quantity > double.Epsilon;
+					didTransferEvaProp = quantity > 0.01;
 				}
 
 				// add resource to eva kerbal
@@ -111,9 +109,10 @@ namespace KERBALISM
 			// Handle EVA propellant
 			if(!didTransferEvaProp)
 			{
-				// There is very little or no EVA prop in the ship.
-				// If we give the EVA too little propellant, it will magically
-				// fill its tanks to full, so make sure to give it very little only
+				// There was very little or no EVA prop in the ship.
+				// If we give none to the EVA, KSP will magically top it up to max.
+				// So we just add a nominal amount which we won't take back
+				Lib.Log("### EVA out: adding nominal amount of monoprop");
 				data.to.RequestResource(prop_name, -0.01);
 			}
 
