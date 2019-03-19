@@ -63,6 +63,7 @@ namespace KERBALISM
 						case "call-home": call_home = true; break;
 						case "exercise": exercise = true; break;
 						case "panorama": panorama = true; break;
+						case "plants": plants = true; break;
 					}
 				}
 
@@ -85,6 +86,7 @@ namespace KERBALISM
 						case "call-home": call_home = true; break;
 						case "exercise": exercise = true; break;
 						case "panorama": panorama = true; break;
+						case "plants": plants = true; break;
 					}
 				}
 
@@ -102,6 +104,7 @@ namespace KERBALISM
 			if (call_home) factor += PreferencesComfort.Instance.callHome;
 			if (exercise) factor += PreferencesComfort.Instance.exercise;
 			if (panorama) factor += PreferencesComfort.Instance.panorama;
+			if (plants) factor += PreferencesComfort.Instance.plants;
 			factor = Lib.Clamp(factor, 0.1, 1.0);
 		}
 
@@ -133,6 +136,7 @@ namespace KERBALISM
 							case "call-home": call_home = true; break;
 							case "exercise": exercise = true; break;
 							case "panorama": panorama = true; break;
+							case "plants": plants = true; break;
 						}
 					}
 					// gravity ring
@@ -169,6 +173,7 @@ namespace KERBALISM
 				String.Format("{0,-14}\t{1}\n", Localizer.Format("#KERBALISM_Comfort_notalone"), not_alone ? yes : no),
 				String.Format("{0,-14}\t{1}\n", Localizer.Format("#KERBALISM_Comfort_callhome"), call_home ? yes : no),
 				String.Format("{0,-14}\t{1}\n", Localizer.Format("#KERBALISM_Comfort_panorama"), panorama ? yes : no),
+				String.Format("{0,-14}\t{1}\n", Localizer.Format("#KERBALISM_Comfort_plants"), plants ? yes : no),
 				String.Format("<i>{0,-14}</i>\t{1}", Localizer.Format("#KERBALISM_Comfort_factor"), Lib.HumanReadablePerc(factor))
 			);
 		}
@@ -187,6 +192,7 @@ namespace KERBALISM
 		public bool not_alone;
 		public bool call_home;
 		public bool panorama;
+		public bool plants;
 		public double factor;
 	}
 
