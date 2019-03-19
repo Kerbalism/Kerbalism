@@ -72,7 +72,6 @@ namespace KERBALISM
 			Profile.SetupEva(data.to);
 
 			String prop_name = Lib.EvaPropellantName();
-			bool didTransferEvaProp = false;
 
 			// for each resource in the kerbal
 			for (int i = 0; i < data.to.Resources.Count; ++i)
@@ -80,47 +79,36 @@ namespace KERBALISM
 				// get the resource
 				PartResource res = data.to.Resources[i];
 
-				// determine quantity to take
-				double quantity = Math.Min(resources.Info(data.from.vessel, res.resourceName).amount / tot_crew, res.maxAmount);
-
-				if (prop_name == res.resourceName)
+				// eva prop is handled differently
+				if (res.resourceName == prop_name)
 				{
-					// take all the propellant there is. just imagine: there are 1.3 units left, and 12 occupants
-					// in the ship. you want to send out an engineer to fix the chemical plant that produces monoprop,
-					// and have to get from one end of the station to the other with just 0.1 units in the tank...
-					// nope.
-					quantity = Math.Min(resources.Info(data.from.vessel, res.resourceName).amount, res.maxAmount);
+					continue;
 				}
 
+				double quantity = Math.Min(resources.Info(data.from.vessel, res.resourceName).amount / tot_crew, res.maxAmount);
 				// remove resource from vessel
 				quantity = data.from.RequestResource(res.resourceName, quantity);
 
-				if (prop_name == res.resourceName)
-				{
-					didTransferEvaProp = quantity > 0.01;
-				}
-
 				// add resource to eva kerbal
 				data.to.RequestResource(res.resourceName, -quantity);
-
-				Lib.Log("### EVA out: transferred " + quantity + " units of " + res.resourceName + " (" + didTransferEvaProp + ")");
 			}
 
-			// Handle EVA propellant
-			if(!didTransferEvaProp)
-			{
-				// There was very little or no EVA prop in the ship.
-				// If we give none to the EVA, KSP will magically top it up to max.
-				// So we just add a nominal amount which we won't take back
-				Lib.Log("### EVA out: adding nominal amount of monoprop");
-				data.to.RequestResource(prop_name, -0.01);
-			}
+			// take as much of the propellant as possible. just imagine: there are 1.3 units left, and 12 occupants
+			// in the ship. you want to send out an engineer to fix the chemical plant that produces monoprop,
+			// and have to get from one end of the station to the other with just 0.1 units in the tank...
+			// nope.
+			double evaPropQuantity = data.from.RequestResource(prop_name, Lib.EvaPropellantCapacity());
+
+			// We can't just add the monoprop here, because that doesn't always work. It might be related
+			// to the fact that stock KSP wants to add 5 units of monoprop to new EVAs. Instead of fighting KSP here,
+			// we just let it do it's thing and set our amount later in EVA.cs - which seems to work just fine.
+			Cache.VesselInfo(data.to.vessel).evaPropQuantity = evaPropQuantity;
 
 			// Airlock loss
 			resources.Consume(data.from.vessel, "Nitrogen", PreferencesLifeSupport.Instance.evaAtmoLoss);
 
-			// show warning if there is no EVA propellant in the suit
-			if (!didTransferEvaProp && !Lib.Landed(data.from.vessel))
+			// show warning if there is little or no EVA propellant in the suit
+			if (evaPropQuantity <= 0.05 && !Lib.Landed(data.from.vessel))
 			{
 				Message.Post(Severity.danger,
 					Lib.BuildString("There isn't any <b>", prop_name, "</b> in the EVA suit"), "Don't let the ladder go!");
@@ -144,14 +132,6 @@ namespace KERBALISM
 			{
 				// get the resource
 				PartResource res = data.from.Resources[i];
-
-				// It might look like nitpicking, but if we just added 0.01 EVA prop
-				// so that the EVA suit doesn't magically fill itself,
-				// don't give that to the ship now.
-				// I wouldn't eva 100 times just to get 1 unit of monoprop, but there
-				// are crazy people out there... 
-				if (prop_name == res.resourceName && res.amount <= 0.01)
-					continue;
 
 				// add leftovers to the vessel
 				data.to.RequestResource(res.resourceName, -res.amount);

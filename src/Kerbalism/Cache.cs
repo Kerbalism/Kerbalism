@@ -171,6 +171,7 @@ namespace KERBALISM
 		public List<Greenhouse.Data> greenhouses; // some data about greenhouses
 		public double gravioli;             // gravitation gauge particles detected (joke)
 		public bool powered;                // true if vessel is powered
+		public double evaPropQuantity = -1; // amount of EVA prop to set to this vessel (workaround for KSP behavior)
 	}
 
 
