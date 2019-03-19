@@ -227,6 +227,9 @@ namespace KERBALISM
 		[GameParameters.CustomFloatParameterUI("Panorama Factor", minValue = 0, maxValue = 1, displayFormat = "F2", toolTip = "Comfort factor for having a panorama window")]
 		public float panorama = 0.1f;
 
+		[GameParameters.CustomFloatParameterUI("Plants Factor", minValue = 0, maxValue = 1, displayFormat = "F2", toolTip = "There is some comfort in tending to plants")]
+		public float plants = 0.1f;
+
 		public override GameParameters.GameMode GameMode { get { return GameParameters.GameMode.ANY; } }
 
 		public override bool HasPresets { get { return false; } }
