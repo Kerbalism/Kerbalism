@@ -21,6 +21,8 @@
 * Processes ECLSS, Fuel Cells, Chemical Plant etc. can be controlled from automation tab again (Sir Mortimer)
 * Added Kerbalism flags (Mzxs)
 * Adjusted N2 leakage (Sir Mortimer)
+* When analyzing science in a lab, don't drive people crazy with the "Transmission finished" message
+  for every bit of researched data (Sir Mortimer)
 
 ------------------------------------------------------------------------------------------------------
 
