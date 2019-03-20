@@ -50,9 +50,13 @@ Notice how humidity in your command pod rises throughout your trip. Remember all
 Your next steps will be towards Minmus, which takes considerably longer. Make sure to bring provisions for about 20 days, and bring a humidity controller this time. You will need it.
 
 
-How to regenerate O2 and Water
+How to recycle O2 and Water
 ==============================
 
+.. image:: lss_light.png
+   :align: right
+   :scale: 50%
+   
 You can recycle O2 and water using Kerbalisms life support systems and chemical processors. Follow this guideline to extend your mission durations indefinitely and save literally tons of mass you don't have to bring on your journeys.
 
 1. Add a small tank for waste water.
