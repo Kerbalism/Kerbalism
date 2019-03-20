@@ -879,15 +879,16 @@ namespace KERBALISM
 			return true;
 		}
 
-		public static String VesselID( Vessel v )
+		// return a 32bit id for a vessel
+		public static UInt32 VesselID( Vessel v )
 		{
-			return v.id.ToString();
+			return v.persistentId;
 		}
 
 		// return a 32bit id for a vessel
-		public static String VesselID( ProtoVessel pv )
+		public static UInt32 VesselID( ProtoVessel pv )
 		{
-			return pv.vesselID.ToString();
+			return pv.persistentId;
 		}
 
 		// return the flight id of the root part of a vessel
