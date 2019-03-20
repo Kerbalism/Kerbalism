@@ -130,10 +130,8 @@ namespace KERBALISM
 			// evict oldest entry from vessel cache
 			Cache.Update();
 
-			// vessel cache
+			// vvvv------- This code tests for a theroy that I think leads to #313
 			Dictionary<UInt32, Vessel> vessels = new Dictionary<uint, Vessel>();
-
-			// This code tests for a theroy that I think leads to #313
 			foreach (Vessel v in FlightGlobals.Vessels)
 			{
 				if(vessels.ContainsKey(Lib.VesselID(v)))
@@ -147,18 +145,19 @@ namespace KERBALISM
 					vessels.Add(Lib.VesselID(v), v);
 				}
 			}
+			int vessel_count = 0;
+			int vessel_count_bg = 0;
+			// ^^^^-------- end debug code
 
-			// store info for oldest unloaded vesseldouble last_time = 0.0;
+			// store info for oldest unloaded vessel
+			double last_time = 0.0;
 			Vessel last_v = null;
-			double last_time = 0;
 			Vessel_info last_vi = null;
 			VesselData last_vd = null;
 			Vessel_resources last_resources = null;
 
-			int vessel_count = 0;
-			int vessel_count_bg = 0;
-
 			// for each vessel
+			//foreach (Vessel v in FlightGlobals.Vessels)
 			foreach (Vessel v in vessels.Values)
 			{
 				// get vessel info from the cache
