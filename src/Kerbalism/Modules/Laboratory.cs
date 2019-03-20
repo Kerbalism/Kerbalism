@@ -243,7 +243,7 @@ namespace KERBALISM
 			amount = Math.Min(amount, sample.size);
 			bool completed = amount >= sample.size - double.Epsilon;
 			drive.Delete_sample(filename, amount);
-			drive.Record_file(filename, amount);
+			drive.Record_file(filename, amount, false);
 
 			// if the analysis is completed
 			if (completed)
@@ -251,6 +251,9 @@ namespace KERBALISM
 				// inform the user
 				Message.Post(Lib.BuildString(Lib.Color("cyan", Localizer.Format("#KERBALISM_Laboratory_Analysis"), true), "\n",
 					Localizer.Format("#KERBALISM_Laboratory_Analyzed", Lib.Bold(v.vesselName), Lib.Bold(Science.Experiment(filename).name))), localized_results);
+
+				if(PreferencesBasic.Instance.transmitScience)
+					drive.Transmit_file(filename);
 
 				// record landmark event
 				if (!Lib.Landed(v)) DB.landmarks.space_analysis = true;

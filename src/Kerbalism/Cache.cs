@@ -95,7 +95,7 @@ namespace KERBALISM
 			volume = Habitat.Tot_volume(v);
 			surface = Habitat.Tot_surface(v);
 			pressure = Habitat.Pressure(v);
-			evas = (uint)(ResourceCache.Info(v, "Nitrogen").amount / (crew_count * 330.0));
+			evas = (uint)(Math.Max(0, ResourceCache.Info(v, "Nitrogen").amount - 330) / PreferencesLifeSupport.Instance.evaAtmoLoss);
 			poisoning = Habitat.Poisoning(v);
 			humidity = Habitat.Humidity(v);
 			shielding = Habitat.Shielding(v);
@@ -171,6 +171,7 @@ namespace KERBALISM
 		public List<Greenhouse.Data> greenhouses; // some data about greenhouses
 		public double gravioli;             // gravitation gauge particles detected (joke)
 		public bool powered;                // true if vessel is powered
+		public double evaPropQuantity = -1; // amount of EVA prop to set to this vessel (workaround for KSP behavior)
 	}
 
 

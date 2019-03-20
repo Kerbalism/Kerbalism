@@ -130,6 +130,30 @@ namespace KERBALISM
 			// evict oldest entry from vessel cache
 			Cache.Update();
 
+			// vvvv------- This code tests for a theroy that could cause #313
+			// If KSP itself has the same vessel more than once in the
+			// FlightGlobals.Vessels list, it would cause processes to run too many times.
+			// The other possible cause was a Vessel ID collision in Lib.VesselID(), which
+			// only used 4 bytes of a 16 byte GUID to create an ID from.
+			//
+			// If the BUG TRIGGERED message is never observed in the wild,
+			// it is safe to remove this chunk of code.
+			Dictionary<UInt32, Vessel> vessels = new Dictionary<uint, Vessel>();
+			foreach (Vessel v in FlightGlobals.Vessels)
+			{
+				if(vessels.ContainsKey(Lib.VesselID(v)))
+				{
+					Lib.Log("THIS SHOULD NOT BE HAPPENING: Vessel " + v.name + " already seen in FlightGlobals.Vessels");
+					Message.Post(Lib.BuildString(Lib.Color("red", "BUG TRIGGERED", true), "\n",
+						v.name + " duplicated in FlightGlobals.Vessels. Please report this on GitHub."));
+				}
+				else
+				{
+					vessels.Add(Lib.VesselID(v), v);
+				}
+			}
+			// ^^^^-------- end theory test code
+
 			// store info for oldest unloaded vessel
 			double last_time = 0.0;
 			Vessel last_v = null;
@@ -138,7 +162,8 @@ namespace KERBALISM
 			Vessel_resources last_resources = null;
 
 			// for each vessel
-			foreach (Vessel v in FlightGlobals.Vessels)
+			//foreach (Vessel v in FlightGlobals.Vessels)
+			foreach (Vessel v in vessels.Values)
 			{
 				// get vessel info from the cache
 				Vessel_info vi = Cache.VesselInfo(v);
@@ -229,7 +254,6 @@ namespace KERBALISM
 					}
 				}
 			}
-
 
 			// at most one vessel gets background processing per physics tick
 			// if there is a vessel that is not the currently loaded vessel, then

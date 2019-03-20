@@ -146,6 +146,9 @@ namespace KERBALISM
 		[GameParameters.CustomIntParameterUI("Survival Temperature Range", minValue = 1, maxValue = 20, toolTip = "Sweet spot around survival temperature")]
 		public int survivalRange = 5;
 
+		[GameParameters.CustomIntParameterUI("Amount of atmosphere lost to airlock on EVA", minValue = 1, maxValue = 100, toolTip = "Atmosphere lost in EVA airlock")]
+		public int evaAtmoLoss = 10;
+
 
 		/*
 		// pressure
@@ -226,6 +229,9 @@ namespace KERBALISM
 
 		[GameParameters.CustomFloatParameterUI("Panorama Factor", minValue = 0, maxValue = 1, displayFormat = "F2", toolTip = "Comfort factor for having a panorama window")]
 		public float panorama = 0.1f;
+
+		[GameParameters.CustomFloatParameterUI("Plants Factor", minValue = 0, maxValue = 1, displayFormat = "F2", toolTip = "There is some comfort in tending to plants")]
+		public float plants = 0.1f;
 
 		public override GameParameters.GameMode GameMode { get { return GameParameters.GameMode.ANY; } }
 
