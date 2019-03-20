@@ -21,6 +21,7 @@
 * Processes ECLSS, Fuel Cells, Chemical Plant etc. can be controlled from automation tab again (Sir Mortimer)
 * Added Kerbalism flags (Mzxs)
 * Adjusted N2 leakage (Sir Mortimer)
+* Added LSS system diagrams, and a small guide on how to set up O2 + water recycling (Sir Mortimer)
 
 ------------------------------------------------------------------------------------------------------
 
