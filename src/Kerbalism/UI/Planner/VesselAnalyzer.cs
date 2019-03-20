@@ -80,7 +80,7 @@ namespace KERBALISM.Planner
 			pressurized = sim.Resource("Atmosphere").produced > 0.0 || env.breathable;
 
 			// determine number of EVA's using available Nitrogen
-			evas = (uint)(sim.Resource("Nitrogen").amount / (crew_count * 330.0));
+			evas = (uint)(Math.Max(0, sim.Resource("Nitrogen").amount - 330) / PreferencesLifeSupport.Instance.evaAtmoLoss);
 
 			// determine if the vessel has scrubbing capabilities
 			scrubbed = sim.Resource("WasteAtmosphere").consumed > 0.0 || env.breathable;
