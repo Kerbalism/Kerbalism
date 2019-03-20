@@ -21,6 +21,10 @@
 * Processes ECLSS, Fuel Cells, Chemical Plant etc. can be controlled from automation tab again (Sir Mortimer)
 * Added Kerbalism flags (Mzxs)
 * Adjusted N2 leakage (Sir Mortimer)
+* When analyzing science in a lab, don't drive people crazy with the "Transmission finished" message
+  for every bit of researched data (Sir Mortimer)
+* Going to EVA will now loose a nominal amount of nitrogen to the airlock. The amount can be changed in the settings (Sir Mortimer)
+* Fixed the bug where monoprop appeared out of nowhere when leaving a vessel that had none in it (#288) (Sir Mortimer)
 * Added LSS system diagrams, and a small guide on how to set up O2 + water recycling (Sir Mortimer)
 
 ------------------------------------------------------------------------------------------------------

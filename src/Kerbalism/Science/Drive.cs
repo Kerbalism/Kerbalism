@@ -63,13 +63,14 @@ namespace KERBALISM
 		}
 
 		// add science data, creating new file or incrementing existing one
-		public void Record_file(string subject_id, double amount)
+		public void Record_file(string subject_id, double amount, bool allowImmediateTransmission = true)
 		{
 			// create new data or get existing one
 			File file;
 			if (!files.TryGetValue(subject_id, out file))
 			{
 				file = new File();
+				if (!allowImmediateTransmission) file.send = false;
 				files.Add(subject_id, file);
 			}
 
@@ -78,6 +79,14 @@ namespace KERBALISM
 
 			// clamp file size to max amount that can be collected
 			file.size = Math.Min(file.size, Science.Experiment(subject_id).max_amount);
+		}
+
+		public void Transmit_file(string subject_id)
+		{
+			File file;
+			if (!files.TryGetValue(subject_id, out file))
+				return;
+			file.send = true;
 		}
 
 		// add science sample, creating new sample or incrementing existing one
