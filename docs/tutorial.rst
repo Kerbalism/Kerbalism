@@ -48,3 +48,29 @@ Launch! Fingers crossed, you'll make it back from Mun before you run out of oxyg
 Notice how humidity in your command pod rises throughout your trip. Remember all the water your crew is drinking? It's dripping from your instrument panels now. Not an ideal situation, but for a short trip not a reason of concern. However, for longer missions you will need extra ECLSS units with humidity controllers.
 
 Your next steps will be towards Minmus, which takes considerably longer. Make sure to bring provisions for about 20 days, and bring a humidity controller this time. You will need it.
+
+
+How to recycle O2 and Water
+==============================
+
+You can recycle O2 and water using Kerbalisms life support systems and chemical processors. Follow this guideline to extend your mission durations indefinitely and save literally tons of mass you don't have to bring on your journeys.
+
+1. Add a small tank for waste water.
+2. Have a water recycler in one of your life support units, set it to dump excessive CO2 and Ammonia.
+3. Add a small tank for hydrogen and a small tank for CO2. They can be empty, but I'd fill up the hydrogen.
+4. Have a chemical plant running a Sabatier process. Set that to dump any excessive liquid fuel.
+5. Have a chemical plant running Water Electrolysis.
+
+While this method is highly effective in reducing the mass of your vessel, it also is very risky. You now have 3 components that can break down, and if any one of them cannot be repaired, your crew will use up what little O2 is stored in the tanks and then die. So think about redundancy when using this method!
+
+.. image:: lss_light.png
+   :align: center
+
+You can do more...
+------------------
+
+There are many processes available in Kerbalism, and you can do any number of things with them. This chart will help you navigate the various processes and resources.
+
+.. image:: lss_full.png
+   :align: center
+

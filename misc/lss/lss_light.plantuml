@@ -1,0 +1,50 @@
+@startuml
+hide empty description
+
+title How to <b>Recycle O2 and Water</b>
+
+state Water
+state O2
+state H
+state WasteWater
+state Waste
+state WasteAtmosphere: Excessive CO2 in Atmosphere\n(causes CO2 poisoning)
+
+state Kerbals #lightgreen: Food: 0.27/day\nWater: 0.14/day\nOxygen: 37.5/day 
+Food -> Kerbals
+O2 -> Kerbals
+Water -> Kerbals
+Kerbals -u-> Waste
+Kerbals --> WasteWater
+Kerbals -> WasteAtmosphere
+
+state Scrubber #lightblue
+WasteAtmosphere -> Scrubber
+Scrubber -> CO2
+
+state Electrolysis #lightblue
+Water -> Electrolysis
+Electrolysis -> H
+Electrolysis -> O2
+
+state Sabatier #lightblue
+H -> Sabatier
+CO2 -> Sabatier
+Sabatier -> Water
+Sabatier -> LiquidFuel: *
+
+state WaterRecycler #lightblue
+WasteWater -> WaterRecycler
+WaterRecycler -> Ammonia: *
+WaterRecycler -> Water
+WaterRecycler -> CO2: *
+
+legend right
+  <b>N</b>: Nitrogen
+  <b>O2</b>: Oxygen
+  <b>H</b>: Hydrogen
+  <b>*</b> dump this to space
+endlegend
+
+
+@enduml
