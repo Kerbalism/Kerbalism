@@ -1,0 +1,132 @@
+@startuml
+hide empty description
+
+title <b>Kerbalism Processes</b>
+
+state Water
+state O2
+state H
+state WasteWater
+state Waste
+state WasteAtmosphere: Excessive CO2 in Atmosphere
+
+state Kerbals #lightgreen: Food: 0.27/day\nWater: 0.14/day\nOxygen: 37.5/day 
+Food -> Kerbals
+O2 -> Kerbals
+Water -> Kerbals
+Kerbals -> Waste
+Kerbals -> WasteWater
+Kerbals -> WasteAtmosphere
+
+state Leaks #lightgray: Hull leaks,\nEVA losses
+N -> Leaks
+
+state Scrubber #lightblue
+WasteAtmosphere -> Scrubber
+Scrubber -> CO2
+
+state NonRegenScrubber #lightblue: will stop working when\nfilters are saturated
+WasteAtmosphere -> NonRegenScrubber
+
+state WasteProcessor #lightblue
+Waste -> WasteProcessor
+WasteProcessor -> Ammonia
+
+state WasteCompressor #lightblue
+Waste -> WasteCompressor
+WasteCompressor -> Shielding
+
+state FuelCell #yellow
+H -> FuelCell
+O2 -> FuelCell
+FuelCell -> Water
+
+state MonopropFuelCell #yellow
+Monoprop -> MonopropFuelCell
+O2 -> MonopropFuelCell
+MonopropFuelCell -> N
+MonopropFuelCell -> Water
+
+state Electrolysis #lightblue
+Water -> Electrolysis
+Electrolysis -> H
+Electrolysis -> O2
+
+state Sabatier #lightblue
+H -> Sabatier
+CO2 -> Sabatier
+Sabatier -> Water
+Sabatier -> LiquidFuel
+
+state Haber #lightblue
+N -> Haber
+H -> Haber
+Haber -> Ammonia
+
+state WaterRecycler #lightblue
+WasteWater -> WaterRecycler
+WaterRecycler -> Ammonia
+WaterRecycler -> Water
+WaterRecycler -> CO2
+
+state SOE #lightblue
+CO2 -> SOE
+SOE -r-> Shielding
+SOE -u-> O2
+
+state SCO #lightblue
+Ammonia -> SCO
+O2 -> SCO
+SCO -> N
+SCO -> Water
+
+state MoltenRegolithElectrolysis #lightblue
+Ore -> MoltenRegolithElectrolysis
+MoltenRegolithElectrolysis -> O2
+MoltenRegolithElectrolysis -> CO2
+MoltenRegolithElectrolysis -> Shielding
+
+state Greenhouse #lightblue
+Ammonia -> Greenhouse
+Water -> Greenhouse
+CO2 -> Greenhouse
+WasteAtmosphere -> Greenhouse
+Greenhouse -> O2
+Greenhouse -> Food
+
+state WasteIncinerator #yellow
+Waste -> WasteIncinerator
+O2 -> WasteIncinerator
+WasteIncinerator -> Water
+WasteIncinerator -> CO2
+
+state Anthraquinoe #lightblue
+H -> Anthraquinoe
+O2 -> Anthraquinoe
+Anthraquinoe -> Oxidizer
+
+state Hydrazine #lightblue
+Ammonia -> Hydrazine
+Oxidizer -> Hydrazine
+Hydrazine -> O2
+Hydrazine -> Water
+Hydrazine -> Monoprop
+
+state HydrazineN2 #lightblue
+Ammonia -> HydrazineN2
+Oxidizer -> HydrazineN2
+N -> HydrazineN2
+HydrazineN2 -> O2
+HydrazineN2 -> Monoprop
+
+legend right
+  <b>N</b>: Nitrogen
+  <b>O2</b>: Oxygen
+  <b>H</b>: Hydrogen
+  <b>SOE</b>: Solid Oxide Electrolysis
+  <b>SCO</b>: Selective Catalytic Oxidation
+  <b>Yellow</b> processes produce electricity
+endlegend
+
+
+@enduml
