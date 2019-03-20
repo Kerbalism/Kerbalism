@@ -138,7 +138,7 @@ namespace KERBALISM
 			//
 			// If the BUG TRIGGERED message is never observed in the wild,
 			// it is safe to remove this chunk of code.
-			Dictionary<UInt32, Vessel> vessels = new Dictionary<uint, Vessel>();
+			Dictionary<String, Vessel> vessels = new Dictionary<String, Vessel>();
 			foreach (Vessel v in FlightGlobals.Vessels)
 			{
 				if(vessels.ContainsKey(Lib.VesselID(v)))
@@ -340,7 +340,7 @@ namespace KERBALISM
 		// store time until last update for unloaded vessels
 		// note: not using reference_wrapper<T> to increase readability
 		sealed class Unloaded_data { public double time; }; //< reference wrapper
-		static Dictionary<UInt32, Unloaded_data> unloaded = new Dictionary<uint, Unloaded_data>();
+		static Dictionary<String, Unloaded_data> unloaded = new Dictionary<String, Unloaded_data>();
 
 		// used to update storm data on one body per step
 		static int storm_index;

@@ -9,7 +9,7 @@ namespace KERBALISM
 
 	public sealed class Vessel_info
 	{
-		public Vessel_info(Vessel v, uint vessel_id, UInt64 inc)
+		public Vessel_info(Vessel v, String vessel_id, UInt64 inc)
 		{
 			// NOTE: anything used here can't in turn use cache, unless you know what you are doing
 
@@ -129,7 +129,7 @@ namespace KERBALISM
 		public bool is_vessel;              // true if this is a valid vessel
 		public bool is_rescue;              // true if this is a rescue mission vessel
 		public bool is_valid;               // equivalent to (is_vessel && !is_rescue && !eva_dead)
-		public UInt32 id;                   // generate the id once
+		public String id;                   // generate the id once
 		public int crew_count;              // number of crew on the vessel
 		public int crew_capacity;           // crew capacity of the vessel
 		public double sunlight;             // if the vessel is in direct sunlight
@@ -178,7 +178,7 @@ namespace KERBALISM
 	{
 		public static void Init()
 		{
-			vessels = new Dictionary<uint, Vessel_info>();
+			vessels = new Dictionary<String, Vessel_info>();
 			next_inc = 0;
 		}
 
@@ -208,8 +208,8 @@ namespace KERBALISM
 			if (vessels.Count > 0)
 			{
 				UInt64 oldest_inc = UInt64.MaxValue;
-				UInt32 oldest_id = 0;
-				foreach (KeyValuePair<UInt32, Vessel_info> pair in vessels)
+				String oldest_id = null;
+				foreach (KeyValuePair<String, Vessel_info> pair in vessels)
 				{
 					if (pair.Value.inc < oldest_inc)
 					{
@@ -225,7 +225,7 @@ namespace KERBALISM
 		public static Vessel_info VesselInfo(Vessel v)
 		{
 			// get vessel id
-			UInt32 id = Lib.VesselID(v);
+			String id = Lib.VesselID(v);
 
 			// get the info from the cache, if it exist
 			Vessel_info info;
@@ -250,7 +250,7 @@ namespace KERBALISM
 
 
 		// vessel cache
-		static Dictionary<UInt32, Vessel_info> vessels;
+		static Dictionary<String, Vessel_info> vessels;
 
 		// used to generate unique id
 		static UInt64 next_inc;
