@@ -71,15 +71,21 @@ namespace KERBALISM
 			// setup supply resources capacity in the eva kerbal
 			Profile.SetupEva(data.to);
 
+			String prop_name = Lib.EvaPropellantName();
+
 			// for each resource in the kerbal
 			for (int i = 0; i < data.to.Resources.Count; ++i)
 			{
 				// get the resource
 				PartResource res = data.to.Resources[i];
 
-				// determine quantity to take
-				double quantity = Math.Min(resources.Info(data.from.vessel, res.resourceName).amount / tot_crew, res.maxAmount);
+				// eva prop is handled differently
+				if (res.resourceName == prop_name)
+				{
+					continue;
+				}
 
+				double quantity = Math.Min(resources.Info(data.from.vessel, res.resourceName).amount / tot_crew, res.maxAmount);
 				// remove resource from vessel
 				quantity = data.from.RequestResource(res.resourceName, quantity);
 
@@ -87,11 +93,25 @@ namespace KERBALISM
 				data.to.RequestResource(res.resourceName, -quantity);
 			}
 
-			// show warning if there isn't monoprop in the eva suit
-			string prop_name = Lib.EvaPropellantName();
-			if (Lib.Amount(data.to, prop_name) <= double.Epsilon && !Lib.Landed(data.from.vessel))
+			// take as much of the propellant as possible. just imagine: there are 1.3 units left, and 12 occupants
+			// in the ship. you want to send out an engineer to fix the chemical plant that produces monoprop,
+			// and have to get from one end of the station to the other with just 0.1 units in the tank...
+			// nope.
+			double evaPropQuantity = data.from.RequestResource(prop_name, Lib.EvaPropellantCapacity());
+
+			// We can't just add the monoprop here, because that doesn't always work. It might be related
+			// to the fact that stock KSP wants to add 5 units of monoprop to new EVAs. Instead of fighting KSP here,
+			// we just let it do it's thing and set our amount later in EVA.cs - which seems to work just fine.
+			Cache.VesselInfo(data.to.vessel).evaPropQuantity = evaPropQuantity;
+
+			// Airlock loss
+			resources.Consume(data.from.vessel, "Nitrogen", PreferencesLifeSupport.Instance.evaAtmoLoss);
+
+			// show warning if there is little or no EVA propellant in the suit
+			if (evaPropQuantity <= 0.05 && !Lib.Landed(data.from.vessel))
 			{
-				Message.Post(Severity.danger, Lib.BuildString("There isn't any <b>", prop_name, "</b> in the EVA suit"), "Don't let the ladder go!");
+				Message.Post(Severity.danger,
+					Lib.BuildString("There isn't any <b>", prop_name, "</b> in the EVA suit"), "Don't let the ladder go!");
 			}
 
 			// turn off headlamp light, to avoid stock bug that show them for a split second when going on eva
@@ -105,6 +125,8 @@ namespace KERBALISM
 
 		void FromEVA(GameEvents.FromToAction<Part, Part> data)
 		{
+			String prop_name = Lib.EvaPropellantName();
+
 			// for each resource in the eva kerbal
 			for (int i = 0; i < data.from.Resources.Count; ++i)
 			{

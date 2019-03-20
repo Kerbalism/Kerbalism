@@ -146,6 +146,9 @@ namespace KERBALISM
 		[GameParameters.CustomIntParameterUI("Survival Temperature Range", minValue = 1, maxValue = 20, toolTip = "Sweet spot around survival temperature")]
 		public int survivalRange = 5;
 
+		[GameParameters.CustomIntParameterUI("Amount of atmosphere lost to airlock on EVA", minValue = 1, maxValue = 100, toolTip = "Atmosphere lost in EVA airlock")]
+		public int evaAtmoLoss = 10;
+
 
 		/*
 		// pressure
