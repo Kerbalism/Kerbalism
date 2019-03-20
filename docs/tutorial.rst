@@ -65,3 +65,12 @@ While this method is highly effective in reducing the mass of your vessel, it al
 
 .. image:: lss_light.png
    :align: center
+
+You can do more...
+------------------
+
+There are many processes available in Kerbalism, and you can do any number of things with them. This chart will help you navigate the various processes and resources.
+
+.. image:: lss_full.png
+   :align: center
+
