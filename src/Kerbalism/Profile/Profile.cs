@@ -157,6 +157,7 @@ namespace KERBALISM
 
 		public static void Execute(Vessel v, Vessel_info vi, VesselData vd, Vessel_resources resources, double elapsed_s)
 		{
+			Lib.Log("Executing " + v.name + " " + elapsed_s);
 			// execute all supplies
 			foreach (Supply supply in supplies)
 			{

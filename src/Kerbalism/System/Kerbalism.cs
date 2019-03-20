@@ -130,15 +130,36 @@ namespace KERBALISM
 			// evict oldest entry from vessel cache
 			Cache.Update();
 
-			// store info for oldest unloaded vessel
-			double last_time = 0.0;
+			// vessel cache
+			Dictionary<UInt32, Vessel> vessels = new Dictionary<uint, Vessel>();
+
+			// This code tests for a theroy that I think leads to #313
+			foreach (Vessel v in FlightGlobals.Vessels)
+			{
+				if(vessels.ContainsKey(Lib.VesselID(v)))
+				{
+					Lib.Log("THIS SHOULD NOT BE HAPPENING: Vessel " + v.name + " already seen in FlightGlobals.Vessels");
+					Message.Post(Lib.BuildString(Lib.Color("red", "BUGHUNT TRIGGERED", true), "\n",
+						v.name + " duplicated in FlightGlobals.Vessels"));
+				}
+				else
+				{
+					vessels.Add(Lib.VesselID(v), v);
+				}
+			}
+
+			// store info for oldest unloaded vesseldouble last_time = 0.0;
 			Vessel last_v = null;
+			double last_time = 0;
 			Vessel_info last_vi = null;
 			VesselData last_vd = null;
 			Vessel_resources last_resources = null;
 
+			int vessel_count = 0;
+			int vessel_count_bg = 0;
+
 			// for each vessel
-			foreach (Vessel v in FlightGlobals.Vessels)
+			foreach (Vessel v in vessels.Values)
 			{
 				// get vessel info from the cache
 				Vessel_info vi = Cache.VesselInfo(v);
@@ -194,6 +215,7 @@ namespace KERBALISM
 
 					// apply rules
 					Profile.Execute(v, vi, vd, resources, elapsed_s);
+					vessel_count++;
 
 					// apply deferred requests
 					resources.Sync(v, elapsed_s);
@@ -230,7 +252,6 @@ namespace KERBALISM
 				}
 			}
 
-
 			// at most one vessel gets background processing per physics tick
 			// if there is a vessel that is not the currently loaded vessel, then
 			// we will update the vessel whose most recent background update is the oldest
@@ -252,6 +273,7 @@ namespace KERBALISM
 
 				// apply rules
 				Profile.Execute(last_v, last_vi, last_vd, last_resources, last_time);
+				vessel_count_bg++;
 
 				// simulate modules in background
 				Background.Update(last_v, last_vi, last_vd, last_resources, last_time);
@@ -265,6 +287,9 @@ namespace KERBALISM
 				// remove from unloaded data container
 				unloaded.Remove(last_vi.id);
 			}
+
+			Lib.Log("done with " + vessel_count + "/" + vessel_count_bg + " vessels " + elapsed_s);
+
 
 			// update storm data for one body per-step
 			if (storm_bodies.Count > 0)
