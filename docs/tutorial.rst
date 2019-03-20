@@ -53,10 +53,6 @@ Your next steps will be towards Minmus, which takes considerably longer. Make su
 How to recycle O2 and Water
 ==============================
 
-.. image:: lss_light.png
-   :align: right
-   :scale: 50%
-   
 You can recycle O2 and water using Kerbalisms life support systems and chemical processors. Follow this guideline to extend your mission durations indefinitely and save literally tons of mass you don't have to bring on your journeys.
 
 1. Add a small tank for waste water.
@@ -66,3 +62,6 @@ You can recycle O2 and water using Kerbalisms life support systems and chemical 
 5. Have a chemical plant running Water Electrolysis.
 
 While this method is highly effective in reducing the mass of your vessel, it also is very risky. You now have 3 components that can break down, and if any one of them cannot be repaired, your crew will use up what little O2 is stored in the tanks and then die. So think about redundancy when using this method!
+
+.. image:: lss_light.png
+   :align: center
