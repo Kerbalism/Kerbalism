@@ -879,16 +879,21 @@ namespace KERBALISM
 			return true;
 		}
 
-		// return a 32bit id for a vessel
-		public static UInt32 VesselID( Vessel v )
+		public static UInt64 VesselID( Vessel v )
 		{
-			return v.persistentId;
+			// Lesson learned: v.persistendId is not unique. Far from it, in fact.
+			byte[] b = v.id.ToByteArray();
+			UInt64 result = BitConverter.ToUInt64(b, 0);
+			result ^= BitConverter.ToUInt64(b, 8);
+			return result;
 		}
 
-		// return a 32bit id for a vessel
-		public static UInt32 VesselID( ProtoVessel pv )
+		public static UInt64 VesselID( ProtoVessel pv )
 		{
-			return pv.persistentId;
+			byte[] b = pv.vesselID.ToByteArray();
+			UInt64 result = BitConverter.ToUInt64(b, 0);
+			result ^= BitConverter.ToUInt64(b, 8);
+			return result;
 		}
 
 		// return the flight id of the root part of a vessel
