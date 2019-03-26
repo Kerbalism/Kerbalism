@@ -78,7 +78,7 @@ namespace KERBALISM
 				// update ui
 				Events["Toggle"].guiName = Lib.StatusToggle(exp_name, !recording ? "stopped" : issue.Length == 0 ? "recording" : Lib.BuildString("<color=#ffff00>", issue, "</color>"));
 				Events["Reset"].guiName = Lib.BuildString("Reset <b>", exp_name, "</b>");
-				Events["Reset"].active = reset_cs != null && reset_cs.Check(v);
+				Events["Reset"].active = reset_cs != null && reset_cs.Check(v) && !string.IsNullOrEmpty(last_subject_id);
 			}
 			// in the editor
 			else if (Lib.IsEditor())
@@ -195,27 +195,51 @@ namespace KERBALISM
 		[KSPEvent(guiActiveUnfocused = true, guiName = "_", active = false)]
 		public void Reset()
 		{
+			Reset(true);
+		}
+
+		public bool Reset(bool showMessage)
+		{
 			// disable for dead eva kerbals
 			Vessel v = FlightGlobals.ActiveVessel;
-			if (v == null || EVA.IsDead(v)) return;
+			if (v == null || EVA.IsDead(v))
+				return false;
+
+			if (reset_cs == null)
+				return false;
 
 			// check trait
 			if (!reset_cs.Check(v))
 			{
-				Message.Post
-				(
-				  Lib.TextVariant
-				  (
-					"I'm not qualified for this",
-					"I will not even know where to start",
-					"I'm afraid I can't do that"
-				  ),
-				  reset_cs.Warning()
-				);
-				return;
+				if(showMessage)
+				{
+					Message.Post(
+					  Lib.TextVariant
+					  (
+						"I'm not qualified for this",
+						"I will not even know where to start",
+						"I'm afraid I can't do that"
+					  ),
+					  reset_cs.Warning()
+					);
+				}
+				return false;
 			}
 
 			last_subject_id = string.Empty;
+
+			if(showMessage)
+			{
+				Message.Post(
+				  "Reset Done",
+				  Lib.TextVariant
+				  (
+					"It's good to go again",
+					"Ready for the next bit of science"
+				  )
+				);
+			}
+			return true; 
 		}
 
 		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true)]
