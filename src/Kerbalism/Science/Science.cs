@@ -84,12 +84,13 @@ namespace KERBALISM
 					// remove the file
 					vd.drive.files.Remove(exp_filename);
 
-					// inform the user
-					Message.Post
-					(
-					  Lib.BuildString("<color=cyan><b>DATA RECEIVED</b></color>\nTransmission of <b>", Experiment(exp_filename).name, "</b> completed"),
-					  Lib.TextVariant("Our researchers will jump on it right now", "The checksum is correct, data must be valid")
-					);
+					if (!file.silentTransmission)
+					{
+						// inform the user
+						Message.Post(
+						  Lib.BuildString("<color=cyan><b>DATA RECEIVED</b></color>\nTransmission of <b>", Experiment(exp_filename).name, "</b> completed"),
+						  Lib.TextVariant("Our researchers will jump on it right now", "The checksum is correct, data must be valid"));
+					}
 				}
 			}
 		}

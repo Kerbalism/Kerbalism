@@ -178,9 +178,10 @@ namespace KERBALISM
 		[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "Clean", active = true)]
 		public void CleanExperiments()
 		{
-			List<ModuleScienceExperiment> modules = vessel.FindPartModulesImplementing<ModuleScienceExperiment>();
 			bool message = false;
-			foreach (ModuleScienceExperiment m in modules)
+
+			var stockExperiments = vessel.FindPartModulesImplementing<ModuleScienceExperiment>();
+			foreach (ModuleScienceExperiment m in stockExperiments)
 			{
 				if (m.resettable && m.Inoperable)
 				{
@@ -188,6 +189,14 @@ namespace KERBALISM
 					message = true;
 				}
 			}
+
+			var kerbalismExperiments = vessel.FindPartModulesImplementing<Experiment>();
+			foreach (Experiment m in kerbalismExperiments)
+			{
+				message |= m.Reset(false);
+			}
+
+
 			// inform the user
 			if (message) Message.Post(localized_cleaned);
 		}
