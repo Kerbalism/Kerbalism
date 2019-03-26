@@ -203,10 +203,10 @@ namespace KERBALISM
 		// - body: celestial body involved
 		// - biome: biome involved, or empty
 		// - multiplier: science multiplier for the body/situation
-		public static string Generate_subject(string experiment, CelestialBody body, string sit, string biome, float multiplier)
+		public static string Generate_subject(ScienceExperiment experiment, CelestialBody body, ExperimentSituations sit, string biome)
 		{
 			// generate subject id
-			string subject_id = Lib.BuildString(experiment, "@", body.name, sit + biome);
+			string subject_id = Lib.BuildString(experiment.id, "@", body.name, sit + (experiment.BiomeIsRelevantWhile(sit) ? biome : ""));
 
 			// in sandbox, do nothing else
 			if (ResearchAndDevelopment.Instance == null) return subject_id;
@@ -214,10 +214,6 @@ namespace KERBALISM
 			// if the subject id was never added to RnD
 			if (ResearchAndDevelopment.GetSubjectByID(subject_id) == null)
 			{
-				// get experiment
-				// - assuming it is valid here
-				var exp = ResearchAndDevelopment.GetExperiment(experiment);
-
 				// get subjects container using reflection
 				// - we tried just changing the subject.id instead, and
 				//   it worked but the new id was obviously used only after
@@ -228,14 +224,15 @@ namespace KERBALISM
 				  "scienceSubjects"
 				);
 
+				float multiplier = Multiplier(body, sit);
 				// create new subject
 				ScienceSubject subject = new ScienceSubject
 				(
-				  subject_id,
-				  Lib.BuildString(exp.experimentTitle, " (", Lib.SpacesOnCaps(sit + biome), ")"),
-				  exp.dataScale,
-				  multiplier,
-				  exp.scienceCap
+				  		subject_id,
+						Lib.BuildString(experiment.experimentTitle, " (", Lib.SpacesOnCaps(sit + biome), ")"),
+						experiment.dataScale,
+				  		multiplier,
+						experiment.scienceCap
 				);
 
 				// add it to RnD
@@ -244,7 +241,24 @@ namespace KERBALISM
 			return subject_id;
 		}
 
+		private static float Multiplier(CelestialBody body, ExperimentSituations sit)
+		{
+			var values = body.scienceValues;
+			switch(sit)
+			{
+				case ExperimentSituations.SrfLanded: return values.LandedDataValue;
+				case ExperimentSituations.SrfSplashed: return values.SplashedDataValue;
+				case ExperimentSituations.FlyingLow: return values.FlyingLowDataValue;
+				case ExperimentSituations.FlyingHigh: return values.FlyingHighDataValue;
+				case ExperimentSituations.InSpaceLow: return values.InSpaceLowDataValue;
+				case ExperimentSituations.InSpaceHigh: return values.FlyingHighDataValue;
+			}
 
+			Lib.Log("Science: invalid/unknown situation");
+			return 0;
+		}
+
+		// that might come in handy some day... not used for now.
 		// return vessel situation valid for specified experiment
 		public static string Situation(Vessel v, string situations)
 		{
@@ -278,210 +292,9 @@ namespace KERBALISM
 		}
 
 
-		public static string Biome(Vessel v, string sit)
-		{
-			switch (sit)
-			{
-				case "Surface":
-				case "Atmosphere":
-				case "Ocean":
-					return ScienceUtil.GetExperimentBiome(v.mainBody, v.latitude, v.longitude);
-
-				default:
-					return string.Empty;
-			}
-		}
-
-
-
-		public static float Multiplier(Vessel v, string sit)
-		{
-			var values = v.mainBody.scienceValues;
-			float space = (values.InSpaceLowDataValue + values.InSpaceHighDataValue) * 0.5f;
-			switch (sit)
-			{
-				case "Surface": return (values.LandedDataValue + values.SplashedDataValue) * 0.5f;
-				case "Atmosphere": return (values.FlyingLowDataValue + values.FlyingHighDataValue) * 0.5f;
-				case "Ocean": return values.SplashedDataValue * 2.0f;
-				case "Space": return space;
-				case "AbsoluteZero": return space * 2.5f;
-				case "InnerBelt": return space * 1.5f;
-				case "OuterBelt": return space * 2.0f;
-				case "Magnetosphere": return space;
-				case "Thermosphere": return space * 0.75f;
-				case "Exosphere": return space * 0.75f;
-				case "InterPlanetary": return space;
-				case "InterStellar": return space * 5.0f;
-			}
-			return 0.0f;
-		}
-		/*
-		static class Situations
-		{
-		  public static bool Surface(Vessel v)
-		  {
-			return Lib.Landed(v);
-		  }
-
-		  public static bool Atmosphere(Vessel v)
-		  {
-			return v.mainBody.atmosphere && v.altitude < v.mainBody.atmosphereDepth;
-		  }
-
-		  public static bool Ocean(Vessel v)
-		  {
-			return v.mainBody.ocean && v.altitude < 0.0;
-		  }
-
-		  public static bool Space(Vessel v)
-		  {
-			return v.mainBody.flightGlobalsIndex != 0 && !Lib.Landed(v) && !Atmosphere(v);
-		  }
-
-		  public static bool AbsoluteZero(Vessel v)
-		  {
-			return Cache.VesselInfo(v).temperature < 30.0;
-		  }
-
-		  public static bool InnerBelt(Vessel v)
-		  {
-			return Features.Radiation && Cache.VesselInfo(v).inner_belt;
-		  }
-
-		  public static bool OuterBelt(Vessel v)
-		  {
-			return Features.Radiation && Cache.VesselInfo(v).outer_belt;
-		  }
-
-		  public static bool Magnetosphere(Vessel v)
-		  {
-			return Features.Radiation && Cache.VesselInfo(v).magnetopause;
-		  }
-
-		  public static bool Thermosphere(Vessel v)
-		  {
-			return Cache.VesselInfo(v).thermosphere;
-		  }
-
-		  public static bool Exosphere(Vessel v)
-		  {
-			return Cache.VesselInfo(v).exosphere;
-		  }
-
-		  public static bool InterPlanetary(Vessel v)
-		  {
-			return v.mainBody.flightGlobalsIndex == 0 && !Cache.VesselInfo(v).interstellar;
-		  }
-
-		  public static bool InterStellar(Vessel v)
-		  {
-			return v.mainBody.flightGlobalsIndex == 0 && Cache.VesselInfo(v).interstellar;
-		  }
-		}*/
-
-
-
-
-		/*ExperimentSituations sit = ScienceUtil.GetExperimentSituation(v);
-		ScienceExperiment exp = ResearchAndDevelopment.GetExperiment(experiment);
-
-		if (exp != null)
-		{
-		  if ((exp.situationMask & (uint)sit) > 0)
-		  {
-			if ((exp.biomeMask & (uint)sit) > 0)
-			{
-			  return Lib.BuildString(sit.ToString(), ScienceUtil.GetExperimentBiome(v.mainBody, v.latitude, v.longitude));
-			}
-			else
-			{
-			  return sit.ToString();
-			}
-		  }
-		}
-		// alternative
-		switch(v.situation)
-		{
-		  case Vessel.Situations.LANDED:
-		  case Vessel.Situations.SPLASHED:
-		  case Vessel.Situations.PRELAUNCH:
-			return "Surface" + ScienceUtil.GetExperimentBiome(v.mainBody, v.latitude, v.longitude);
-
-		  case Vessel.Situations.FLYING:
-			return "Atmosphere";
-
-		  case Vessel.Situations.ORBITING:
-		  case Vessel.Situations.SUB_ORBITAL:
-		  case Vessel.Situations.ESCAPING:
-			return "Space";
-
-		  default:
-			return "Unknown";
-		}*/
-
-
 		// experiment info cache
 		static Dictionary<string, ExperimentInfo> experiments;
 	}
-
-
-
-
-	// [disabled] EXPERIMENTAL
-	// create a tagged science subject in the stock science system
-	/*public static ScienceSubject TaggedSubject(string experiment, string tag, string title, CelestialBody body)
-	{
-	  var exp = ResearchAndDevelopment.GetExperiment(experiment);
-	  var subject = ResearchAndDevelopment.GetExperimentSubject
-	  (
-		exp,                            // science experiment definition
-		ExperimentSituations.SrfLanded, // placeholder situation
-		body,                           // celestial body
-		""                              // no biome
-	  );
-	  subject.id = Lib.BuildString(exp.id, "@", body.name, tag);
-	  subject.title = title;
-	  subject.scienceCap = exp.scienceCap; //< note: no body/situation multiplier
-	  subject.subjectValue = body.scienceValues.InSpaceHighDataValue //< note: use same multiplier as space high
-	  return subject;
-	}*/
-
-
-	// [disabled] EXPERIMENTAL
-	// add filters to the RnD Archives UI for a set of tag-based situations
-	// note: call it every frame
-	/*public static void FilterResearchArchive(string[] situations)
-	{
-	  // note: cache the controller, because FindObjectOfType is slow as hell
-	  RDArchivesController ctrl = (UnityEngine.Object.FindObjectOfType(typeof(RDArchivesController)) as RDArchivesController);
-	  if (ctrl != null && ctrl.dropdownListContainer != null && ctrl.dropdownListContainer.lists != null && ctrl.dropdownListContainer.lists.Length >= 3)
-	  {
-		foreach(string situation in situations)
-		{
-		  // try to get the item
-		  KSP.UI.UIListItem item;
-		  items.TryGetValue(situation, out item);
-
-		  // if there is no item, or the list was reset
-		  if (items == null || !ctrl.dropdownListContainer.lists[1].scrollList.Contains(item))
-		  {
-			// get number of matching reports
-			int count = ResearchAndDevelopment.GetSubjects().FindAll(k => k.id.Contains(situation)).Count;
-
-			// if there is no report, do nothing
-			if (count == 0) return;
-
-			// create and add it
-			item = ctrl.dropdownListContainer.lists[1].AddItem(situation, Lib.SpacesOnCaps(situation), count == 1 ? "1 report" : count + " reports");
-			items.Remove(situation);
-			items.Add(situation, item);
-		  }
-		}
-	  }
-	}
-	static Dictionary<string, KSP.UI.UIListItem> items = new Dictionary<string, KSP.UI.UIListItem>();*/
-
-
 
 } // KERBALISM
 
