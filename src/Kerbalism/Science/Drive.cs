@@ -63,7 +63,7 @@ namespace KERBALISM
 		}
 
 		// add science data, creating new file or incrementing existing one
-		public void Record_file(string subject_id, double amount, bool allowImmediateTransmission = true)
+		public void Record_file(string subject_id, double amount, bool allowImmediateTransmission = true, bool silentTransmission = false)
 		{
 			// create new data or get existing one
 			File file;
@@ -71,6 +71,7 @@ namespace KERBALISM
 			{
 				file = new File();
 				if (!allowImmediateTransmission) file.send = false;
+				file.silentTransmission = silentTransmission;
 				files.Add(subject_id, file);
 			}
 
