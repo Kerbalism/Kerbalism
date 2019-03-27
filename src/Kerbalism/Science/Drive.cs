@@ -14,6 +14,8 @@ namespace KERBALISM
 			files = new Dictionary<string, File>();
 			samples = new Dictionary<string, Sample>();
 			location = 0;
+			fileCapacity = 0;
+			sampleCapacity = 0;
 		}
 
 		public Drive(ConfigNode node)
@@ -40,6 +42,11 @@ namespace KERBALISM
 
 			// parse preferred location
 			location = Lib.ConfigValue(node, "location", 0u);
+
+			// parse capacities. be generous with default values for backwards
+			// compatibility (drives had unlimited storage before this)
+			fileCapacity = Lib.ConfigValue(node, "fileCapacity", 3000);
+			sampleCapacity = Lib.ConfigValue(node, "sampleCapacity", 3000);
 		}
 
 		public void Save(ConfigNode node)
@@ -60,11 +67,18 @@ namespace KERBALISM
 
 			// save preferred location
 			node.AddValue("location", location);
+
+			// save capacities
+			node.AddValue("fileCapacity", fileCapacity);
+			node.AddValue("sampleCapacity", sampleCapacity);
 		}
 
 		// add science data, creating new file or incrementing existing one
-		public void Record_file(string subject_id, double amount, bool allowImmediateTransmission = true, bool silentTransmission = false)
+		public bool Record_file(string subject_id, double amount, bool allowImmediateTransmission = true, bool silentTransmission = false)
 		{
+			if (FilesSize() + amount > fileCapacity)
+				return false;
+
 			// create new data or get existing one
 			File file;
 			if (!files.TryGetValue(subject_id, out file))
@@ -80,6 +94,8 @@ namespace KERBALISM
 
 			// clamp file size to max amount that can be collected
 			file.size = Math.Min(file.size, Science.Experiment(subject_id).max_amount);
+
+			return true;
 		}
 
 		public void Transmit_file(string subject_id)
@@ -91,8 +107,11 @@ namespace KERBALISM
 		}
 
 		// add science sample, creating new sample or incrementing existing one
-		public void Record_sample(string subject_id, double amount)
+		public bool Record_sample(string subject_id, double amount)
 		{
+			if (SamplesSize() + amount > sampleCapacity)
+				return false;
+
 			// create new data or get existing one
 			Sample sample;
 			if (!samples.TryGetValue(subject_id, out sample))
@@ -106,6 +125,8 @@ namespace KERBALISM
 
 			// clamp file size to max amount that can be collected
 			sample.size = Math.Min(sample.size, Science.Experiment(subject_id).max_amount);
+
+			return true;
 		}
 
 		// remove science data, deleting the file when it is empty
@@ -159,35 +180,52 @@ namespace KERBALISM
 		}
 
 		// move all data to another drive
-		public void Move(Drive destination)
+		public bool Move(Drive destination)
 		{
+			bool result = true;
+
 			// copy files
+			var filesList = new List<string>();
 			foreach (var p in files)
 			{
-				destination.Record_file(p.Key, p.Value.size);
-				destination.files[p.Key].buff += p.Value.buff; //< move the buffer along with the size
+				if (destination.Record_file(p.Key, p.Value.size))
+				{
+					destination.files[p.Key].buff += p.Value.buff; //< move the buffer along with the size
+					filesList.Add(p.Key);
+				}
+				else
+					result = false;
 			}
 
 			// copy samples
+			var samplesList = new List<string>();
 			foreach (var p in samples)
 			{
-				destination.Record_sample(p.Key, p.Value.size);
+				if (destination.Record_sample(p.Key, p.Value.size))
+					samplesList.Add(p.Key);
+				else
+					result = false;
 			}
 
-			// clear source drive
-			files.Clear();
-			samples.Clear();
+			foreach (var id in filesList) files.Remove(id);
+			foreach (var id in samplesList) samples.Remove(id);
+
+			return result; // true if everything was moved, false otherwise
 		}
 
-
-		// return size of data stored in Mb (including samples)
-		public double Size()
+		public double FilesSize()
 		{
 			double amount = 0.0;
 			foreach (var p in files)
 			{
 				amount += p.Value.size;
 			}
+			return amount;
+		}
+
+		public double SamplesSize()
+		{
+			double amount = 0.0;
 			foreach (var p in samples)
 			{
 				amount += p.Value.size;
@@ -195,6 +233,11 @@ namespace KERBALISM
 			return amount;
 		}
 
+		// return size of data stored in Mb (including samples)
+		public double Size()
+		{
+			return FilesSize() + SamplesSize();
+		}
 
 		// transfer data between two vessels
 		public static void Transfer(Vessel src, Vessel dst)
@@ -210,14 +253,21 @@ namespace KERBALISM
 			if (amount > double.Epsilon)
 			{
 				// transfer the data
-				a.Move(b);
+				bool allCopied = a.Move(b);
 
 				// inform the user
-				Message.Post
-				(
-				  Lib.BuildString(Lib.HumanReadableDataSize(amount), " ", Localizer.Format("#KERBALISM_Science_ofdatatransfer")),
-				  Lib.BuildString(Localizer.Format("#KERBALISM_Generic_FROM"), " <b>", src.vesselName, "</b> ", Localizer.Format("#KERBALISM_Generic_TO"), " <b>", dst.vesselName, "</b>")
-				);
+				if (allCopied)
+					Message.Post
+					(
+						Lib.BuildString(Lib.HumanReadableDataSize(amount), " ", Localizer.Format("#KERBALISM_Science_ofdatatransfer")),
+					 	Lib.BuildString(Localizer.Format("#KERBALISM_Generic_FROM"), " <b>", src.vesselName, "</b> ", Localizer.Format("#KERBALISM_Generic_TO"), " <b>", dst.vesselName, "</b>")
+					);
+				else
+					Message.Post
+					(
+						Lib.Color("red", Lib.BuildString("WARNING: ", Lib.HumanReadableDataSize(a.Size()), " could not be moved"), true),
+						Lib.BuildString(Localizer.Format("#KERBALISM_Generic_FROM"), " <b>", src.vesselName, "</b> ", Localizer.Format("#KERBALISM_Generic_TO"), " <b>", dst.vesselName, "</b>")
+					);
 			}
 		}
 
@@ -225,6 +275,8 @@ namespace KERBALISM
 		public Dictionary<string, File> files;      // science files
 		public Dictionary<string, Sample> samples;  // science samples
 		public uint location;                       // where the data is stored specifically, optional
+		public double fileCapacity;
+		public double sampleCapacity;
 	}
 
 

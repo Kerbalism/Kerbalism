@@ -23,6 +23,7 @@ namespace KERBALISM
 		{
 			DISABLED = 0,
 			NO_EC,
+			NO_STORAGE,
 			NO_SAMPLE,
 			NO_RESEARCHER,
 			RUNNING
@@ -46,6 +47,7 @@ namespace KERBALISM
 		private static readonly string localized_noSample = Localizer.Format("#KERBALISM_Laboratory_NoSample");
 		private static readonly string localized_cleaned = Localizer.Format("#KERBALISM_Laboratory_Cleaned");
 		private static readonly string localized_results = Localizer.Format("#KERBALISM_Laboratory_Results");
+		private static readonly string localized_noStorage = "No storage available";
 
 		public override void OnStart(StartState state)
 		{
@@ -112,8 +114,8 @@ namespace KERBALISM
 						if (ec.amount > double.Epsilon)
 						{
 							// analyze the sample
-							Analyze(vessel, current_sample, rate * Kerbalism.elapsed_s);
-							status = Status.RUNNING;
+							status = Analyze(vessel, current_sample, rate * Kerbalism.elapsed_s);
+							running = status == Status.RUNNING;
 						}
 						// if there was no ec
 						else status = Status.NO_EC;
@@ -159,7 +161,9 @@ namespace KERBALISM
 						if (ec.amount > double.Epsilon)
 						{
 							// analyze the sample
-							Analyze(v, background_sample, rate * elapsed_s);
+							var status = Analyze(v, background_sample, rate * elapsed_s);
+							if (status != Status.RUNNING)
+								Lib.Proto.Set(m, "running", false);
 						}
 					}
 				}
@@ -240,7 +244,7 @@ namespace KERBALISM
 		}
 
 		// analyze a sample
-		private static void Analyze(Vessel v, string filename, double amount)
+		private static Status Analyze(Vessel v, string filename, double amount)
 		{
 			// get vessel drive
 			Drive drive = DB.Vessel(v).drive;
@@ -251,8 +255,18 @@ namespace KERBALISM
 			// analyze, and produce data
 			amount = Math.Min(amount, sample.size);
 			bool completed = amount >= sample.size - double.Epsilon;
-			drive.Delete_sample(filename, amount);
-			drive.Record_file(filename, amount, false);
+			bool recorded = drive.Record_file(filename, amount, false);
+			if(recorded)
+				drive.Delete_sample(filename, amount);
+			else
+			{
+				Message.Post(
+					Lib.Color("red", Lib.BuildString(Localizer.Format("#KERBALISM_Laboratory_Analysis"), " stopped")),
+					"Storage is at capacity"
+				);
+
+				return Status.NO_STORAGE;
+			}
 
 			// if the analysis is completed
 			if (completed)
@@ -267,6 +281,8 @@ namespace KERBALISM
 				// record landmark event
 				if (!Lib.Landed(v)) DB.landmarks.space_analysis = true;
 			}
+
+			return Status.RUNNING;
 		}
 
 		private void SetStatusText()
@@ -278,6 +294,9 @@ namespace KERBALISM
 					break;
 				case Status.NO_EC:
 					status_txt = localized_noEC;
+					break;
+				case Status.NO_STORAGE:
+					status_txt = localized_noStorage;
 					break;
 				case Status.NO_RESEARCHER:
 					status_txt = Lib.Color("yellow", researcher_cs.Warning());

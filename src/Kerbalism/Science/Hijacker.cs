@@ -39,30 +39,40 @@ namespace KERBALISM
 
 				// record data in the drive
 				Drive drive = DB.Vessel(meta.vessel).drive;
+				bool recorded = false;
 				if (!meta.is_sample)
 				{
-					drive.Record_file(data.subjectID, data.dataAmount);
+					recorded = drive.Record_file(data.subjectID, data.dataAmount);
 				}
 				else
 				{
-					drive.Record_sample(data.subjectID, data.dataAmount);
+					recorded = drive.Record_sample(data.subjectID, data.dataAmount);
 				}
 
-				// render experiment inoperable if necessary
-				if (!meta.is_rerunnable)
+				if (recorded)
 				{
-					meta.experiment.SetInoperable();
+					// render experiment inoperable if necessary
+					if (!meta.is_rerunnable)
+					{
+						meta.experiment.SetInoperable();
+					}
+
+					// dump the data
+					page.OnDiscardData(data);
+
+					// inform the user
+					Message.Post(
+						Lib.BuildString("<b>", Science.Experiment(data.subjectID).fullname, "</b> recorded"),
+						!meta.is_rerunnable ? Localizer.Format("#KERBALISM_Science_inoperable") : string.Empty
+					);
 				}
-
-				// dump the data
-				page.OnDiscardData(data);
-
-				// inform the user
-				Message.Post
-				(
-				  Lib.BuildString("<b>", Science.Experiment(data.subjectID).fullname, "</b> recorded"),
-				  !meta.is_rerunnable ? Localizer.Format("#KERBALISM_Science_inoperable") : string.Empty
-				);
+				else
+				{
+					Message.Post(
+						Lib.Color("red", Lib.BuildString(Science.Experiment(data.subjectID).fullname, " can not be stored")),
+						"Storage is at capacity"
+					);
+				}
 			}
 
 			// dismiss the dialog
@@ -137,31 +147,41 @@ namespace KERBALISM
 			}
 
 			// record data in the drive
+			bool recorded = false;
 			Drive drive = DB.Vessel(meta.vessel).drive;
 			if (!meta.is_sample)
 			{
-				drive.Record_file(data.subjectID, data.dataAmount);
+				recorded = drive.Record_file(data.subjectID, data.dataAmount);
 			}
 			else
 			{
-				drive.Record_sample(data.subjectID, data.dataAmount);
+				recorded = drive.Record_sample(data.subjectID, data.dataAmount);
 			}
 
-			// flag for sending if specified
-			if (!meta.is_sample && send) drive.Send(data.subjectID, true);
+			if (recorded)
+			{
+				// flag for sending if specified
+				if (!meta.is_sample && send) drive.Send(data.subjectID, true);
 
-			// render experiment inoperable if necessary
-			if (!meta.is_rerunnable) meta.experiment.SetInoperable();
+				// render experiment inoperable if necessary
+				if (!meta.is_rerunnable) meta.experiment.SetInoperable();
 
-			// dismiss the dialog and popups
-			Dismiss(data);
+				// dismiss the dialog and popups
+				Dismiss(data);
 
-			// inform the user
-			Message.Post
-			(
-			  Lib.BuildString("<b>", Science.Experiment(data.subjectID).fullname, "</b> recorded"),
-			  !meta.is_rerunnable ? Localizer.Format("#KERBALISM_Science_inoperable") : string.Empty
-			);
+				// inform the user
+				Message.Post(
+					Lib.BuildString("<b>", Science.Experiment(data.subjectID).fullname, "</b> recorded"),
+					!meta.is_rerunnable ? Localizer.Format("#KERBALISM_Science_inoperable") : string.Empty
+				);
+			}
+			else
+			{
+				Message.Post(
+					Lib.Color("red", Lib.BuildString(Science.Experiment(data.subjectID).fullname, " can not be stored")),
+					"Storage is at capacity"
+				);
+			}
 		}
 
 

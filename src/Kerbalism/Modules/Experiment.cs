@@ -155,13 +155,20 @@ namespace KERBALISM
 					last_subject_id = subject_id;
 
 					// record in drive
+					bool stored = false;
 					if (transmissible)
-						DB.Vessel(vessel).drive.Record_file(subject_id, data_rate * Kerbalism.elapsed_s, true, true);
+						stored = DB.Vessel(vessel).drive.Record_file(subject_id, data_rate * Kerbalism.elapsed_s, true, true);
 					else
-						DB.Vessel(vessel).drive.Record_sample(subject_id, data_rate * Kerbalism.elapsed_s);
+						stored = DB.Vessel(vessel).drive.Record_sample(subject_id, data_rate * Kerbalism.elapsed_s);
 
 					// consume ec
 					ec.Consume(ec_rate * Kerbalism.elapsed_s);
+
+					if(!stored)
+					{
+						recording = false;
+						issue = "no storage left";
+					}
 				}
 			}
 		}
@@ -218,13 +225,22 @@ namespace KERBALISM
 				Lib.Proto.Set(m, "last_subject_id", subject_id);
 
 				// record in drive
+				bool stored = false;
 				if (experiment.transmissible)
-					DB.Vessel(v).drive.Record_file(subject_id, experiment.data_rate * elapsed_s, true, true);
+					stored = DB.Vessel(v).drive.Record_file(subject_id, experiment.data_rate * elapsed_s, true, true);
 				else
-					DB.Vessel(v).drive.Record_sample(subject_id, experiment.data_rate * elapsed_s);
+					stored = DB.Vessel(v).drive.Record_sample(subject_id, experiment.data_rate * elapsed_s);
 
 				// consume ec
 				ec.Consume(experiment.ec_rate * elapsed_s);
+
+				if (!stored)
+				{
+					issue = "no storage left";
+
+					Lib.Proto.Set(m, "issue", issue);
+					Lib.Proto.Set(m, "recording", false);
+				}
 			}
 		}
 

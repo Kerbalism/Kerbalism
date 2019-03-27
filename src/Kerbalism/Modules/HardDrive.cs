@@ -7,9 +7,11 @@ using UnityEngine;
 namespace KERBALISM
 {
 
-
-	public sealed class HardDrive : PartModule, IScienceDataContainer
+	public sealed class HardDrive : PartModule, IScienceDataContainer, ISpecifics
 	{
+		[KSPField] public double fileCapacity = 100.0;          // drive capacity, in Mib
+		[KSPField] public double sampleCapacity = 100.0;          // drive capacity, in Mib
+
 		public override void OnStart(StartState state)
 		{
 			// don't break tutorial scenarios
@@ -28,6 +30,9 @@ namespace KERBALISM
 				// if this is the location the data is stored
 				if (drive.location == part.flightID)
 				{
+					drive.fileCapacity = fileCapacity;
+					drive.sampleCapacity = sampleCapacity;
+
 					// get data size
 					double size = drive.Size();
 
@@ -131,6 +136,8 @@ namespace KERBALISM
 			return data.ToArray();
 		}
 
+		// TODO do something about limited capacity...
+		// EVAs returning should get a warning if needed
 		public void ReturnData(ScienceData data)
 		{
 			// get drive
@@ -140,13 +147,14 @@ namespace KERBALISM
 			if (drive.location != part.flightID) return;
 
 			// store the data
+			bool result = false;
 			if (data.baseTransmitValue > float.Epsilon || data.transmitBonus > double.Epsilon)
 			{
-				drive.Record_file(data.subjectID, data.dataAmount);
+				result = drive.Record_file(data.subjectID, data.dataAmount);
 			}
 			else
 			{
-				drive.Record_sample(data.subjectID, data.dataAmount);
+				result = drive.Record_sample(data.subjectID, data.dataAmount);
 			}
 		}
 
@@ -201,6 +209,16 @@ namespace KERBALISM
 		}
 
 		public override string GetModuleDisplayName() { return "Hard Drive"; }
+
+		// specifics support
+		public Specifics Specs()
+		{
+			Specifics specs = new Specifics();
+			specs.Add("File storage capacity", Lib.HumanReadableDataSize(fileCapacity));
+			specs.Add("Sample storage capacity", Lib.HumanReadableDataSize(sampleCapacity));
+			return specs;
+		}
+
 	}
 
 
