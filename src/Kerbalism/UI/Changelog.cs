@@ -14,11 +14,11 @@ namespace KERBALISM
 			string cl = Path.Combine(AssemblyDirectory(Assembly.GetExecutingAssembly()), "CHANGELOG.md");
 			string vf = Path.Combine(AssemblyDirectory(Assembly.GetExecutingAssembly()), ".lastversion");
 			string ver = Lib.Version();
-			//bool display_cl = false;
-			//if(!System.IO.File.Exists(vf) || System.IO.File.ReadAllText(vf) != ver)
-			//	display_cl = true;
-			//if (display_cl && System.IO.File.Exists(cl))
-			if (System.IO.File.Exists(cl))
+			bool display_cl = false;
+			if(!System.IO.File.Exists(vf) || System.IO.File.ReadAllText(vf) != ver)
+				display_cl = true;
+			if (display_cl == true && System.IO.File.Exists(cl))
+			//if (System.IO.File.Exists(cl))
 			{
 				System.IO.File.WriteAllText(vf, ver);
 				//PopupDialog PopupDialog.SpawnPopupDialog(Vector2 anchorMin, Vector2 anchorMax,
