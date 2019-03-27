@@ -89,6 +89,81 @@ The part emits radiation. Use a negative radiation value for absorption.
 
 -------
 
+Experiment
+-------
+Hooks experiments into Kerbalisms science system.
+
++---------------+-------------------------------------------------------------+---------+
+| PROPERTY      | DESCRIPTION                                                 | DEFAULT |
++===============+=============================================================+=========+
+| experiment_id | The ID of the experiment (which must be defined elsewhere)  |         |
++---------------+-------------------------------------------------------------+---------+
+| data_rate     | sampling rate in Mb/s                                       | 0.01    |
++---------------+-------------------------------------------------------------+---------+
+| ec_rate       | EC consumption rate per second while recording              | 0.01    |
++---------------+-------------------------------------------------------------+---------+
+| requires      | Additional requirements that must be met for recording.     |         |
+|               | See below.                                                  |         |
++---------------+-------------------------------------------------------------+---------+
+| crew_operate  | Requirements for crew on vessel for recording. If this is   |         |
+|               | not set, the experiment can run on unmanned probes.         |         |
++---------------+-------------------------------------------------------------+---------+
+| crew_reset    | Requirements for crew to reset the experiment. If this is   |         |
+|               | set, the experiment will only record data from within the   |         |
+|               | situation where recording was started, until it is reset    |         |
+|               | (either by a kerbal that has to match the requirement, or   |         |
+|               | by a lab.                                                   |         |
++---------------+-------------------------------------------------------------+---------+
+| crew_prepare  | If set, a kerbal has to prepare the experiment before it    |         |
+|               | can record data. Once prepared, the experiment will only    |         |
+|               | record data while it remains in the situation it was        |         |
+|               | prepared for. The kerbal doing the preparation has to match |         |
+|               | the requiremens                                             |         |
++---------------+-------------------------------------------------------------+---------+
+| anim_deploy   | Name of the part animation to trigger when recording starts |         |
++---------------+-------------------------------------------------------------+---------+
+
+**Crew** specifications (used in crew_operate, crew_reset or crew_prepare as well as in some
+other Kerbalism mods) have to be given according to `true|trait|[trait]@level`
+
+Examples:
+
+- "true": any kerbal will do.
+- "Scientist": you need a Scientist, doesn't matter how experienced. Other traits are "Pilot" and "Engineer". We're not assuming that you'll want to use "Tourist"...
+- If the value is "@3" any Kerbal with 3 or more stars will do
+- If the value is "Scientist@2" you need a Scientist with 2 or more stars.
+- Empty values usually turn the feature off.
+
+**Requirements** of the experiments work as additional filters, and work ON TOP OF what the underlying experiment uses. If you create a Kerbalism Experiment for `seismicScan`it won't work in orbit. The underlying experiment restrictions are checked first, then the additional requirements are checked.
+
+The restrictions are case sensitive and comma-separated, and must ALL be met for recording. `restriction = Shadow,Space,Body:Kerbin` will only record data while in space near Kerbin AND in shadow. `restriction = AltitudeMin:250000,Surface` will never record anything for plainly obvious reasons.
+
+Here is a list of currently supported requirements:
+
+* OrbitMinInclination, OrbitMaxInclination: min./max. inclination of the orbit (f.i. `OrbitMinInclination:30`)
+* OrbitMinEccentricity, OrbitMaxEccentricity: min./max. eccentricity of the orbit (f.i. `OrbitMaxEccentricity:0.1`)
+* TemperatureMin, TemperatureMax: min./max. Temperature in Kelvin
+* AltitudeMin, AltitudeMax: min./max. Altitude in Meters
+* RadiationMin, RadiationMax: min./max. radiation in rad/h
+* Microgravity: not on a surface, not in atmosphere. Thrust provided by Engines is OK tho.
+* Body: body on which the experiment can run. Only one body is possible (f.i. `Body:Eve`)
+* Shadow: vessel must not be exposed to sunlight
+* Surface: vessel must be on a surface
+* Atmosphere: vessel must be within an atmosphere
+* Ocean: vessel must be on a water surface
+* Space: in planetary space, i.e. not around the sun
+* AbsoluteZero: temperature < 30 K
+* InnerBelt: vessel must be in a inner Van Allen Belt
+* OuterBelt: vessel must be in a outer Van Allen Belt
+* MagneticBelt: vessel must be in any Van Allen Belt
+* Magnetosphere: vessel must be inside a magnetosphere
+* Thermosphere: vessel must be inside a thermosphere
+* Exosphere: vessel must be inside an exosphere
+* InterPlanetary: vessel must be in interplanetary space, i.e. in the SOI of the Sun
+* InterStellar: vessel must be outside the sun magnetopause
+
+-------
+
 GravityRing
 -----------
 Used by the *Gravity Ring* part.

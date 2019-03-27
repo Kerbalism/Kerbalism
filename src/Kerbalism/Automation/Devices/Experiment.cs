@@ -13,7 +13,7 @@ namespace KERBALISM
 		public ExperimentDevice(Experiment exp)
 		{
 			this.exp = exp;
-			this.exp_name = Lib.SpacesOnCaps(ResearchAndDevelopment.GetExperiment(exp.experiment).experimentTitle).ToLower().Replace("e v a", "eva");
+			this.exp_name = Lib.SpacesOnCaps(ResearchAndDevelopment.GetExperiment(exp.experiment_id).experimentTitle).ToLower().Replace("e v a", "eva");
 		}
 
 		public override string Name()
@@ -32,7 +32,7 @@ namespace KERBALISM
 			  ? "<color=red>" + Localizer.Format("#KERBALISM_Generic_DISABLED") + " </color>"
 			  : exp.issue.Length == 0
 			  ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_RECORDING") + "</color>"
-			  : Lib.BuildString("<color=yellow>", exp.issue, "</color>");
+			  : Lib.BuildString("<color=yellow>", exp.issue.ToLower(), "</color>");
 		}
 
 		public override void Ctrl(bool value)
@@ -57,7 +57,7 @@ namespace KERBALISM
 			this.exp = exp;
 			this.prefab = prefab;
 			this.part_id = part_id;
-			this.exp_name = Lib.SpacesOnCaps(ResearchAndDevelopment.GetExperiment(prefab.experiment).experimentTitle).ToLower().Replace("e v a", "eva");
+			this.exp_name = Lib.SpacesOnCaps(ResearchAndDevelopment.GetExperiment(prefab.experiment_id).experimentTitle).ToLower().Replace("e v a", "eva");
 		}
 
 		public override string Name()
@@ -78,7 +78,7 @@ namespace KERBALISM
 			  ? "<color=red>" + Localizer.Format("#KERBALISM_Generic_STOPPED") + " </color>"
 			  : issue.Length == 0
 			  ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_RECORDING") + "</color>"
-			  : Lib.BuildString("<color=yellow>", issue, "</color>");
+			  : Lib.BuildString("<color=yellow>", issue.ToLower(), "</color>");
 		}
 
 		public override void Ctrl(bool value)
