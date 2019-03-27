@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Reflection;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace KERBALISM
@@ -12,11 +13,12 @@ namespace KERBALISM
 		{
 			string cl = Path.Combine(AssemblyDirectory(Assembly.GetExecutingAssembly()), "CHANGELOG.md");
 			string vf = Path.Combine(AssemblyDirectory(Assembly.GetExecutingAssembly()), ".lastversion");
-			string ver = Assembly.GetExecutingAssembly().GetName().Version.ToString();
-			bool display_cl = false;
-			if(!System.IO.File.Exists(vf) || System.IO.File.ReadAllText(vf) != ver)
-				display_cl = true;
-			if (display_cl && System.IO.File.Exists(cl))
+			string ver = Lib.Version();
+			//bool display_cl = false;
+			//if(!System.IO.File.Exists(vf) || System.IO.File.ReadAllText(vf) != ver)
+			//	display_cl = true;
+			//if (display_cl && System.IO.File.Exists(cl))
+			if (System.IO.File.Exists(cl))
 			{
 				System.IO.File.WriteAllText(vf, ver);
 				//PopupDialog PopupDialog.SpawnPopupDialog(Vector2 anchorMin, Vector2 anchorMax,
@@ -31,9 +33,9 @@ namespace KERBALISM
 						"",
 						"Kerbalism Changelog",
 						HighLogic.UISkin,
-						new Rect(0.5f, 0.5f, 450f, 500f),
+						new Rect(0.5f, 0.5f, 450f, 550f),
 						new DialogGUIVerticalLayout(
-							new DialogGUITextInput(changelog, true, int.MaxValue, (string s) => { return string.Empty; }, -1),
+							new DialogGUITextInput(changelog, true, changelog.Length, (string s) => { return string.Empty; }, -1),
 							new DialogGUIHorizontalLayout(
 								new DialogGUIButton("Close", () => { }, 140.0f, 30.0f, true)
 							)
