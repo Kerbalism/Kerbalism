@@ -7,10 +7,13 @@ using UnityEngine;
 namespace KERBALISM
 {
 
-	public sealed class HardDrive : PartModule, IScienceDataContainer, ISpecifics
+	public sealed class HardDrive : PartModule, IScienceDataContainer, ISpecifics, IModuleInfo
 	{
-		[KSPField] public double fileCapacity = 100.0;          // drive capacity, in Mib
-		[KSPField] public double sampleCapacity = 100.0;          // drive capacity, in Mib
+		[KSPField] public double fileCapacity = 2000.0;       // drive capacity, in Mib
+		[KSPField] public double sampleCapacity = 2000.0;     // drive capacity, in Mib
+
+		// show abundance level
+		[KSPField(guiActive = false, guiName = "_")] public string Capacity;
 
 		public override void OnStart(StartState state)
 		{
@@ -32,6 +35,11 @@ namespace KERBALISM
 				{
 					drive.fileCapacity = fileCapacity;
 					drive.sampleCapacity = sampleCapacity;
+
+					Fields["Capacity"].guiName = "Storage";
+					Fields["Capacity"].guiActive = true;
+					Capacity = Lib.BuildString("Files: ", Lib.HumanReadableDataSize(drive.FileCapacityAvailable()),
+					                           " Samples: ", Lib.HumanReadableDataSize(drive.SampleCapacityAvailable()));
 
 					// get data size
 					double size = drive.Size();
@@ -208,16 +216,22 @@ namespace KERBALISM
 			return false;
 		}
 
-		public override string GetModuleDisplayName() { return "Hard Drive"; }
+		//public override string GetModuleDisplayName() { return "Hard Drive"; }
 
 		// specifics support
 		public Specifics Specs()
 		{
 			Specifics specs = new Specifics();
-			specs.Add("File storage capacity", Lib.HumanReadableDataSize(fileCapacity));
-			specs.Add("Sample storage capacity", Lib.HumanReadableDataSize(sampleCapacity));
+			specs.Add("File capacity", Lib.HumanReadableDataSize(fileCapacity));
+			specs.Add("Sample capacity", Lib.HumanReadableDataSize(sampleCapacity));
 			return specs;
 		}
+
+		// module info support
+		public string GetModuleTitle() { return "Hard Drive"; }
+		public override string GetModuleDisplayName() { return "Hard Drive"; }
+		public string GetPrimaryField() { return string.Empty; }
+		public Callback<Rect> GetDrawModulePanelCallback() { return null; }
 
 	}
 

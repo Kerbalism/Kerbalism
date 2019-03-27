@@ -262,7 +262,7 @@ namespace KERBALISM
 			{
 				Message.Post(
 					Lib.Color("red", Lib.BuildString(Localizer.Format("#KERBALISM_Laboratory_Analysis"), " stopped")),
-					"Storage is at capacity"
+					"Not enough space on hard drive"
 				);
 
 				return Status.NO_STORAGE;

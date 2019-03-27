@@ -70,7 +70,7 @@ namespace KERBALISM
 				{
 					Message.Post(
 						Lib.Color("red", Lib.BuildString(Science.Experiment(data.subjectID).fullname, " can not be stored")),
-						"Storage is at capacity"
+						"Not enough space on hard drive"
 					);
 				}
 			}
@@ -179,7 +179,7 @@ namespace KERBALISM
 			{
 				Message.Post(
 					Lib.Color("red", Lib.BuildString(Science.Experiment(data.subjectID).fullname, " can not be stored")),
-					"Storage is at capacity"
+					"Not enough space on hard drive"
 				);
 			}
 		}

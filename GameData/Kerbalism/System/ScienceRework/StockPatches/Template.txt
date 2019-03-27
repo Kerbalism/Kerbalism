@@ -1,0 +1,36 @@
+//template provided for patching your own parts.
+
+//this bit adds a preset of experiment bundles depending on what title you assign to the "title=" field.
+//HAS TO RUN BEFORE KERBALISM
+@PART[YOUR PART HERE]:NEEDS[FeatureScience]:BEFORE[Kerbalism]
+{
+	MODULE
+		{
+			name = Configure
+			title = Science Instrument Unit				// valid title strings: 		Science Instrument Unit
+			slots = 0									//								Orbital Sensor Assembly	
+		}												//								Laboratory Experiments
+}
+
+//This bit edits most common differences between parts, such as slots, upgrades, tech required for upgrades.
+//HAS TO RUN AFTER KERBALISM.
+@PART[YOUR PART HERE]:NEEDS[FeatureScience]:AFTER[Kerbalism]
+{
+	//adding or removing experiments from bundles is finnicky. check the Experiments folder for ideas.
+	
+	@MODULE[Configure]:HAS[#title[xxxxxxx]]						// xxxxx=first word from the title above, with a * at the end, such as: Science*
+		{
+			@slots = 											//change default slots as desired.
+			
+			@UPGRADE[XXX-Slots1]								//XXX-replace this with LAB SIU or OSA, respecting the selection above.
+				{
+					@tech = 									//change tech required for the upgrade
+					@slots =									//change total slots after the upgrade 
+				}
+			@UPGRADE[XXX-Slots2]								//same as previous one, with the only difference being LAB has only 1 upgrade
+				{
+					@tech = 									
+					@slots +=									
+				}
+		}
+}

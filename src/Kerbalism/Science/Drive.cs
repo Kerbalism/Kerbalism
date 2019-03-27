@@ -213,6 +213,11 @@ namespace KERBALISM
 			return result; // true if everything was moved, false otherwise
 		}
 
+		public double FileCapacityAvailable()
+		{
+			return fileCapacity - FilesSize();
+		}
+
 		public double FilesSize()
 		{
 			double amount = 0.0;
@@ -221,6 +226,11 @@ namespace KERBALISM
 				amount += p.Value.size;
 			}
 			return amount;
+		}
+
+		public double SampleCapacityAvailable()
+		{
+			return sampleCapacity - SamplesSize();
 		}
 
 		public double SamplesSize()
