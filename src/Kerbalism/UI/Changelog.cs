@@ -11,8 +11,15 @@ namespace KERBALISM
 		public void Start()
 		{
 			string cl = Path.Combine(AssemblyDirectory(Assembly.GetExecutingAssembly()), "CHANGELOG.md");
-			Lib.Log("Checking for changelog at " + cl);
-			if (System.IO.File.Exists(cl))
+			string vf = Path.Combine(AssemblyDirectory(Assembly.GetExecutingAssembly()), ".lastversion");
+			string ver = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+			bool display_cl = false;
+			if(!System.IO.File.Exists(vf))
+				display_cl = true;
+			else if(System.IO.File.ReadAllText(vf) != ver)
+				display_cl = true;
+			System.IO.File.WriteAllText(vf, ver);
+			if (display_cl && System.IO.File.Exists(cl))
 			{
 				//PopupDialog PopupDialog.SpawnPopupDialog(Vector2 anchorMin, Vector2 anchorMax,
 				//string dialogName, string title, string message, string buttonMessage, bool persistAcrossScenes,
