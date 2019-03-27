@@ -10,6 +10,7 @@ do
     echo "Building for $current_kspvr / $current_kspbin"
 	filename="KSP-$current_kspvr.7z"
 	wget "https://img.steamport.xyz/$filename"
+	#cp ~/Downloads/$filename .
 	mkdir "src/DLLs"
 	7za x $filename -osrc/DLLs -pgQn337XZBEFxzFuVwzKgc27ehZo7XLz485hh3erqF9
 	bash "buildscripts/Travis/avc_to_assembly.sh"

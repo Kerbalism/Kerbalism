@@ -248,6 +248,7 @@
     <Compile Include="System\Loader.cs" />
     <Compile Include="System\Settings.cs" />
     <Compile Include="UI\BodyInfo.cs" />
+    <Compile Include="UI\Changelog.cs" />
     <Compile Include="UI\DevManager.cs" />
     <Compile Include="UI\FileManager.cs" />
     <Compile Include="UI\Icons.cs" />

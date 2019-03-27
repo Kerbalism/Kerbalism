@@ -4,7 +4,6 @@
 
 ### Changes since the last release
 
-* Added an in-game changelog viewer (N70)
 * Add Reliability to USI Nuclear Reactors (PiezPiedPy)
 * Fix ISRU capacities for CryoTanks and USI (PiezPiedPy)
 * Correct LH2 storage capacities of the Radial container for AirlineKuisine, CryoTanks and USI (PiezPiedPy)
@@ -1033,3 +1032,4 @@
 
 0.9.9.0
   First public release
+
