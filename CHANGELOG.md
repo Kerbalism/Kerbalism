@@ -28,6 +28,8 @@
 * Monoprop+O2 fuel cell is now available sooner in the tech tree. Basic Science unlocks this process along
   with the fuel cell (Sir Mortimer)
 * Added LSS system diagrams, and a small guide on how to set up O2 + water recycling (Sir Mortimer)
+* Hide Sickbay from automation if it is unavailable (Sir Mortimer)
+* Some Changes to the Kerbalism Experiment part module (Sir Mortimer, Arthur)
 
 ------------------------------------------------------------------------------------------------------
 

@@ -42,6 +42,11 @@ namespace KERBALISM
 			Ctrl(!sickbay_ctrl.running);
 		}
 
+		public override bool IsVisible()
+		{
+			return sickbay_ctrl.slots > 0;
+		}
+
 		Sickbay sickbay_ctrl;
 	}
 
@@ -82,6 +87,11 @@ namespace KERBALISM
 		public override void Toggle()
 		{
 			Ctrl(!Lib.Proto.GetBool(sickbay_ctrl, "running"));
+		}
+
+		public override bool IsVisible()
+		{
+			return Lib.Proto.GetUInt(sickbay_ctrl, "slots", 0) > 0;
 		}
 
 		private readonly ProtoPartModuleSnapshot sickbay_ctrl;
