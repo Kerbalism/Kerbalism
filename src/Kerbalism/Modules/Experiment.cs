@@ -104,9 +104,21 @@ namespace KERBALISM
 					ExperimentStatus = Lib.BuildString("<color=#ffff00>", issue, "</color>");
 				else if (dataSampled > 0)
 				{
-					Fields["ExperimentStatus"].guiName = "Recording";
-					ExperimentStatus = Lib.BuildString(
-							Lib.HumanReadableDataSize(dataSampled), "/", Lib.HumanReadableDataSize(sampleSize), eta);
+					string a = string.Empty;
+					string b = string.Empty;
+
+					if (transmissible)
+					{
+						a = Lib.HumanReadableDataSize(dataSampled);
+						b = Lib.HumanReadableDataSize(sampleSize);
+					}
+					else
+					{
+						a = Lib.HumanReadableSampleSize(dataSampled);
+						b = Lib.HumanReadableSampleSize(sampleSize);
+					}
+
+					ExperimentStatus = Lib.BuildString(a, "/", b, eta);
 				}
 				else
 					ExperimentStatus = Lib.BuildString("ready ",
@@ -149,9 +161,9 @@ namespace KERBALISM
 					double chunkSize = data_rate * Kerbalism.elapsed_s;
 					bool stored = false;
 					if (transmissible)
-						stored = DB.Vessel(vessel).BestDrive().Record_file(subject_id, chunkSize, true, true);
+						stored = DB.Vessel(vessel).BestDrive(chunkSize).Record_file(subject_id, chunkSize, true, true);
 					else
-						stored = DB.Vessel(vessel).BestDrive().Record_sample(subject_id, chunkSize);
+						stored = DB.Vessel(vessel).BestDrive(chunkSize).Record_sample(subject_id, chunkSize);
 
 					if(stored)
 					{
@@ -198,9 +210,9 @@ namespace KERBALISM
 				double chunkSize = experiment.data_rate * elapsed_s;
 				bool stored = false;
 				if (experiment.transmissible)
-					stored = DB.Vessel(v).BestDrive().Record_file(subject_id, chunkSize, true, true);
+					stored = DB.Vessel(v).BestDrive(chunkSize).Record_file(subject_id, chunkSize, true, true);
 				else
-					stored = DB.Vessel(v).BestDrive().Record_sample(subject_id, chunkSize);
+					stored = DB.Vessel(v).BestDrive(chunkSize).Record_sample(subject_id, chunkSize);
 
 				if (stored)
 				{
@@ -380,7 +392,7 @@ namespace KERBALISM
 			}
 			else
 			{
-				specs.Add("Sample size", Lib.HumanReadableSampleSize(Lib.SampleSizeToSlots(expSize)));
+				specs.Add("Sample size", Lib.HumanReadableSampleSize(expSize));
 				specs.Add("Duration", Lib.HumanReadableDuration(expSize / data_rate));
 			}
 

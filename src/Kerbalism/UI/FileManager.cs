@@ -40,7 +40,10 @@ namespace KERBALISM
 				var drive = idDrivePair.Value;
 
 				// draw data section
-				p.AddSection("DATA " + idDrivePair.Key); // TODO print part name here
+				p.AddSection(Lib.BuildString("DATA <size=", Styles.ScaleInteger(10).ToString(), ">", drive.name, " ",
+				                             Lib.HumanReadableDataSize(drive.dataCapacity),
+				                             " (", Lib.HumanReadablePerc(drive.FilesSize() / drive.dataCapacity), ") ",
+				                             "</size>"));
 				foreach (var pair in drive.files)
 				{
 					string filename = pair.Key;
@@ -50,7 +53,10 @@ namespace KERBALISM
 				if (drive.files.Count == 0) p.AddContent("<i>no files</i>", string.Empty);
 
 				// draw samples section
-				p.AddSection("SAMPLES");
+				p.AddSection(Lib.BuildString("SAMPLES <size=", Styles.ScaleInteger(10).ToString(), ">", drive.name, " ",
+				                             Lib.HumanReadableSampleSize(drive.sampleCapacity),
+				                             " (", Lib.HumanReadablePerc(drive.SamplesSize() / drive.sampleCapacity), ") ",
+				                             "</size>"));
 				foreach (var pair in drive.samples)
 				{
 					string filename = pair.Key;
@@ -119,7 +125,7 @@ namespace KERBALISM
 			double exp_value = Science.Value(filename, sample.size);
 			if (exp_value > double.Epsilon) exp_tooltip = Lib.BuildString(exp_tooltip, "\n<b>", Lib.HumanReadableScience(exp_value), "</b>");
 
-			p.AddContent(exp_label, Lib.HumanReadableDataSize(sample.size), exp_tooltip);
+			p.AddContent(exp_label, Lib.HumanReadableSampleSize(sample.size), exp_tooltip);
 			p.AddIcon(sample.analyze ? Icons.lab_cyan : Icons.lab_black, "Flag the file for analysis in a <b>laboratory</b>", () => { sample.analyze = !sample.analyze; });
 			p.AddIcon(Icons.toggle_red, "Dump the sample", () => Lib.Popup
 			(

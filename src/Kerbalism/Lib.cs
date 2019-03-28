@@ -646,7 +646,10 @@ namespace KERBALISM
 		///<summary> Pretty-print mass </summary>
 		public static string HumanReadableMass( double v )
 		{
-			return Lib.BuildString( v.ToString( "F3" ), " t" );
+			if (v <= double.Epsilon) return "none";
+			if(v > 1) return Lib.BuildString(v.ToString("F3"), " t");
+			v *= 1000;
+			return Lib.BuildString(v.ToString("F2"), " kg");
 		}
 
 		///<summary> Pretty-print cost </summary>
@@ -687,6 +690,11 @@ namespace KERBALISM
 		public static string HumanReadableDataRate( double rate )
 		{
 			return rate < 0.000001 ? "none" : Lib.BuildString( HumanReadableDataSize( rate ), "/s" );
+		}
+
+		public static string HumanReadableSampleSize(double size)
+		{
+			return HumanReadableSampleSize(SampleSizeToSlots(size));
 		}
 
 		public static string HumanReadableSampleSize(int slots)
@@ -987,18 +995,33 @@ namespace KERBALISM
 			return 2.0 * (a * b + a * c + b * c) * 0.95493;
 		}
 
-
-		// return true if a part is manned, even in the editor
-		public static bool IsManned( Part p )
+		public static int CrewCount(Part part)
 		{
 			// outside of the editors, it is easy
-			if (!IsEditor()) return p.protoModuleCrew.Count > 0;
+			if (!Lib.IsEditor())
+			{
+				return part.protoModuleCrew.Count;
+			}
 
 			// in the editor we need something more involved
-			Int64 part_id = 4294967296L + p.GetInstanceID();
+			Int64 part_id = 4294967296L + part.GetInstanceID();
 			var manifest = KSP.UI.CrewAssignmentDialog.Instance.GetManifest();
-			var part_manifest = manifest.GetCrewableParts().Find( k => k.PartID == part_id );
-			return part_manifest != null && part_manifest.AnySeatTaken();
+			var part_manifest = manifest.GetCrewableParts().Find(k => k.PartID == part_id);
+			if (part_manifest != null) {
+				int result = 0;
+				foreach (var s in part_manifest.partCrew) {
+					if (!string.IsNullOrEmpty(s)) result++;
+				}
+				return result;
+			}
+
+			return 0;
+		}
+
+		// return true if a part is manned, even in the editor
+		public static bool IsCrewed( Part p )
+		{
+			return CrewCount(p) > 0;
 		}
 
 

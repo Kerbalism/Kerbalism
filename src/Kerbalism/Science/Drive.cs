@@ -8,15 +8,16 @@ namespace KERBALISM
 
 	public sealed class Drive
 	{
-		public Drive(double dataCapacity, int sampleCapacity)
+		public Drive(string name, double dataCapacity, int sampleCapacity)
 		{
+			this.name = name;
 			this.files = new Dictionary<string, File>();
 			this.samples = new Dictionary<string, Sample>();
 			this.dataCapacity = dataCapacity;
 			this.sampleCapacity = sampleCapacity;
 		}
 
-		public Drive(): this (0, 0) { }
+		public Drive(): this ("Rokomax NoSpace", 0, 0) { }
 
 		public Drive(ConfigNode node)
 		{
@@ -40,10 +41,12 @@ namespace KERBALISM
 				}
 			}
 
+			name = Lib.ConfigValue(node, "name", "DRIVE");
+
 			// parse capacities. be generous with default values for backwards
 			// compatibility (drives had unlimited storage before this)
-			dataCapacity = Lib.ConfigValue(node, "fileCapacity", 3000.0);
-			sampleCapacity = Lib.ConfigValue(node, "sampleCapacity", 500);
+			dataCapacity = Lib.ConfigValue(node, "dataCapacity", 100000.0);
+			sampleCapacity = Lib.ConfigValue(node, "sampleCapacity", 1000);
 		}
 
 		public void Save(ConfigNode node)
@@ -62,8 +65,8 @@ namespace KERBALISM
 				p.Value.Save(samples_node.AddNode(DB.To_safe_key(p.Key)));
 			}
 
-			// save capacities
-			node.AddValue("fileCapacity", dataCapacity);
+			node.AddValue("name", name);
+			node.AddValue("dataCapacity", dataCapacity);
 			node.AddValue("sampleCapacity", sampleCapacity);
 		}
 
@@ -318,6 +321,7 @@ namespace KERBALISM
 		public Dictionary<string, Sample> samples;  // science samples
 		public double dataCapacity;
 		public int sampleCapacity;
+		public string name;
 	}
 
 

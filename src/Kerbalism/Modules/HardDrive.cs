@@ -9,8 +9,8 @@ namespace KERBALISM
 
 	public sealed class HardDrive : PartModule, IScienceDataContainer, ISpecifics, IModuleInfo
 	{
-		[KSPField] public double dataCapacity = 2000.0;       // drive capacity, in Mb
-		[KSPField] public int sampleCapacity = 10;            // drive capacity, in slots
+		[KSPField] public double dataCapacity = 100000.0;       // drive capacity, in Mb
+		[KSPField] public double sampleCapacity = 100000.0;          // drive capacity, in Mb
 
 		[KSPField(guiActive = true, guiName = "Capacity")] public string Capacity;
 
@@ -20,17 +20,14 @@ namespace KERBALISM
 		{
 			// don't break tutorial scenarios
 			if (Lib.DisableScenario(this)) return;
-			if (Lib.IsEditor()) return;
 
 			if(drive == null)
 			{
 				if (Lib.IsEditor())
-					drive = new Drive();
+					drive = new Drive(part.name, dataCapacity, Lib.SampleSizeToSlots(sampleCapacity));
 				else
-					drive = DB.Vessel(vessel).DriveForPart(Lib.GetPartId(part));
+					drive = DB.Vessel(vessel).DriveForPart(part, dataCapacity, Lib.SampleSizeToSlots(sampleCapacity));
 			}
-			drive.sampleCapacity = sampleCapacity;
-			drive.dataCapacity = dataCapacity;
 
 			UpdateCapacity();
 		}
@@ -39,13 +36,10 @@ namespace KERBALISM
 		{
 			base.OnLoad(node);
 
-			//if (Lib.IsEditor())
+			if(Lib.IsEditor())
 				drive = new Drive();
-			//else
-			//	drive = DB.Vessel(vessel).DriveForPart(Lib.GetPartId(part));
-
-			drive.sampleCapacity = sampleCapacity;
-			drive.dataCapacity = dataCapacity;
+			else
+				drive = DB.Vessel(vessel).DriveForPart(part, dataCapacity, Lib.SampleSizeToSlots(sampleCapacity));
 
 			UpdateCapacity();
 		}
@@ -75,7 +69,7 @@ namespace KERBALISM
 		private void UpdateCapacity()
 		{
 			double availableDataCapacity = dataCapacity;
-			int availableSlots = sampleCapacity;
+			int availableSlots = Lib.SampleSizeToSlots(sampleCapacity);
 			if (Lib.IsFlight())
 			{
 				availableDataCapacity = drive.FileCapacityAvailable();

@@ -11,6 +11,7 @@ namespace KERBALISM
 	{
 		public VesselData()
 		{
+			Lib.Log("HARDDRIVE new vessel data instance");
 			msg_signal = false;
 			msg_belt = false;
 			cfg_ec = PreferencesMessages.Instance.ec;
@@ -35,6 +36,8 @@ namespace KERBALISM
 
 		public VesselData(ConfigNode node)
 		{
+			Lib.Log("HARDDRIVE loading vessel data instance");
+
 			msg_signal = Lib.ConfigValue(node, "msg_signal", false);
 			msg_belt = Lib.ConfigValue(node, "msg_belt", false);
 			cfg_ec = Lib.ConfigValue(node, "cfg_ec", PreferencesMessages.Instance.ec);
@@ -52,7 +55,7 @@ namespace KERBALISM
 			storm_state = Lib.ConfigValue(node, "storm_state", 0u);
 			group = Lib.ConfigValue(node, "group", "NONE");
 			computer = node.HasNode("computer") ? new Computer(node.GetNode("computer")) : new Computer();
-			drives = LoadDrives(node);
+			drives = LoadDrives(node.GetNode("drives"));
 
 			supplies = new Dictionary<string, SupplyData>();
 			foreach (var supply_node in node.GetNode("supplies").GetNodes())
@@ -120,6 +123,7 @@ namespace KERBALISM
 			Lib.Log("HARDDRIVE saving drives for vessel to node");
 			foreach (var pair in drives)
 			{
+				Lib.Log("HARDDRIVE saving drive to node");
 				var n = node.AddNode("drive");
 				n.AddValue("partId", pair.Key);
 				pair.Value.Save(n);
@@ -135,17 +139,12 @@ namespace KERBALISM
 			return supplies[name];
 		}
 
-		public Drive DriveForPart(uint partId)
+		public Drive DriveForPart(Part part, double dataCapacity, int sampleCapacity)
 		{
+			var partId = Lib.GetPartId(part);
+
 			if(!drives.ContainsKey(partId))
-			{
-				Lib.Log("HARDDRIVE Adding new drive for part id " + partId);
-				drives.Add(partId, new Drive());
-			}
-			else
-			{
-				Lib.Log("HARDDRIVE found existing drive for part id " + partId);
-			}
+				drives.Add(partId, new Drive("#" + (drives.Count + 1), dataCapacity, sampleCapacity));
 			return drives[partId];
 		}
 
@@ -164,7 +163,7 @@ namespace KERBALISM
 			if(result == null)
 			{
 				// vessel has no drive.
-				return new Drive(0, 0);
+				return new Drive("Kerbodyne Zeroit", 0, 0);
 			}
 			return result;
 		}
@@ -184,7 +183,7 @@ namespace KERBALISM
 			if (result == null)
 			{
 				// vessel has no drive.
-				return new Drive(0, 0);
+				return new Drive("Empty Jar", 0, 0);
 			}
 			return result;
 		}

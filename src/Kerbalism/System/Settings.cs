@@ -65,7 +65,7 @@ namespace KERBALISM
 			LowQualityRendering = Lib.ConfigValue(cfg, "LowQualityRendering", false);
 			UIScale = Lib.ConfigValue(cfg, "UIScale", 1.0f);
 			UIPanelWidthScale = Lib.ConfigValue(cfg, "UIPanelWidthScale", 1.0f);
-        }
+		}
 
 
 		// profile used
