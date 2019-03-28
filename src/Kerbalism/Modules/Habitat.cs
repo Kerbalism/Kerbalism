@@ -5,6 +5,8 @@ namespace KERBALISM
 {
 	public sealed class Habitat: PartModule, ISpecifics, IPartMassModifier
 	{
+		private static readonly float KerbalMass = 0.0975f;
+
 		// config
 		[KSPField] public double volume = 0.0;                      // habitable volume in m^3, deduced from bounding box if not specified
 		[KSPField] public double surface = 0.0;                     // external surface in m^2, deduced from bounding box if not specified
@@ -30,6 +32,7 @@ namespace KERBALISM
 		private bool FixIVA = false;           // Used only CrewTransferred event, CrewTrans occur after FixedUpdate, then FixedUpdate needs to know to fix it
 		private bool hasGravityRing;
 		private GravityRing gravityRing;
+		private int crewCount = -1;
 
 		State prev_state;                      // State during previous GPU frame update
 		private bool configured = false;       // true if configure method has been executed
@@ -238,6 +241,8 @@ namespace KERBALISM
 
 		public void Update()
 		{
+			UpdateCrewCount();
+
 			// The first time an existing save game is loaded with Kerbalism installed,
 			// MM will to any existing vessels add Nitrogen with the correct capacities as set in default.cfg but they will have zero amounts,
 			// this is not the case for any newly created vessels in the editor.
@@ -407,9 +412,11 @@ namespace KERBALISM
 		public Specifics Specs()
 		{
 			Specifics specs = new Specifics();
-			specs.Add("volume", Lib.HumanReadableVolume(volume > double.Epsilon ? volume : Lib.PartVolume(part)));
-			specs.Add("surface", Lib.HumanReadableSurface(surface > double.Epsilon ? surface : Lib.PartSurface(part)));
+			specs.Add("Volume", Lib.HumanReadableVolume(volume > double.Epsilon ? volume : Lib.PartVolume(part)));
+			specs.Add("Surface", Lib.HumanReadableSurface(surface > double.Epsilon ? surface : Lib.PartSurface(part)));
 			if (inflate.Length > 0) specs.Add("Inflatable", "yes");
+			specs.Add("Added mass per crew", Lib.HumanReadableMass(KerbalMass));
+
 			return specs;
 		}
 
@@ -518,9 +525,17 @@ namespace KERBALISM
 		}
 
 		// module mass support
-		public float GetModuleMass(float defaultMass, ModifierStagingSituation sit) {
-			return vessel.GetCrewCount() * Settings.CrewMass;
+		public float GetModuleMass(float defaultMass, ModifierStagingSituation sit)
+		{
+			if (crewCount >= 0 && part != null)
+			{
+				float addedMass = crewCount * KerbalMass;
+				//float addedMass = (crewCount - part.CrewCapacity) * KerbalMass;
+				return addedMass;
+			}
+			return 0;
 		}
+
 		public ModifierChangeWhen GetModuleMassChangeWhen() { return ModifierChangeWhen.CONSTANTLY; }
 
 		// Enable/Disable IVA
@@ -542,6 +557,32 @@ namespace KERBALISM
 					}
 					RefreshDialog();
 				}
+			}
+		}
+
+		private void UpdateCrewCount()
+		{
+			// outside of the editors, it is easy
+			if (!Lib.IsEditor())
+			{
+				crewCount = part.protoModuleCrew.Count;
+				return;
+			}
+
+			// in the editor we need something more involved
+			Int64 part_id = 4294967296L + part.GetInstanceID();
+			var manifest = KSP.UI.CrewAssignmentDialog.Instance.GetManifest();
+			var part_manifest = manifest.GetCrewableParts().Find(k => k.PartID == part_id);
+			if (part_manifest != null) {
+				int previousCount = crewCount;
+
+				crewCount = 0;
+				foreach (var s in part_manifest.partCrew) {
+					if (!string.IsNullOrEmpty(s)) crewCount++;
+				}
+
+				if(previousCount != crewCount)
+					GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
 			}
 		}
 

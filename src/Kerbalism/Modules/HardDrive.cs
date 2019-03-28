@@ -39,10 +39,10 @@ namespace KERBALISM
 		{
 			base.OnLoad(node);
 
-			if (Lib.IsEditor())
+			//if (Lib.IsEditor())
 				drive = new Drive();
-			else
-				drive = DB.Vessel(vessel).DriveForPart(Lib.GetPartId(part));
+			//else
+			//	drive = DB.Vessel(vessel).DriveForPart(Lib.GetPartId(part));
 
 			drive.sampleCapacity = sampleCapacity;
 			drive.dataCapacity = dataCapacity;
