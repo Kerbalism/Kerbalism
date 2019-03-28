@@ -102,6 +102,7 @@ namespace KERBALISM
 
 		private Dictionary<uint, Drive> LoadDrives(ConfigNode node)
 		{
+			Lib.Log("HARDDRIVE loading drives for vessel from node");
 			Dictionary<uint, Drive> result = new Dictionary<uint, Drive>();
 			foreach(var n in node.GetNodes("drive"))
 			{
@@ -116,7 +117,8 @@ namespace KERBALISM
 
 		private void SaveDrives(ConfigNode node)
 		{
-			foreach(var pair in drives)
+			Lib.Log("HARDDRIVE saving drives for vessel to node");
+			foreach (var pair in drives)
 			{
 				var n = node.AddNode("drive");
 				n.AddValue("partId", pair.Key);
