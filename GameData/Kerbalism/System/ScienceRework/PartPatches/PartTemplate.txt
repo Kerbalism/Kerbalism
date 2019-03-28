@@ -1,0 +1,37 @@
+//template provided for patching your own parts.
+
+//this bit adds a preset of experiment bundles depending on what title you assign to the "title=" field.
+//HAS TO RUN BEFORE KERBALISM (due to the way these patches are structured)
+@PART[YOUR PART HERE]:NEEDS[FeatureScience]:BEFORE[Kerbalism]
+{
+	MODULE
+		{
+			name = Configure
+			title = Sensor Package						// valid title strings: 		Sensor Package
+														//								Orbital Sensor Array
+														//								Laboratory Experiments
+														//								Surface Sampling Kit
+														//								Atmospheric Analysis Assembly
+		}												
+}
+
+//This bit edits most common differences between parts, such as slots, upgrades, tech required for upgrades.
+//HAS TO RUN AFTER KERBALISM, again due to patch structure
+//this bit is not mandatory, it's just extra if you want to further customize the part.
+@PART[YOUR PART HERE]:NEEDS[FeatureScience]:AFTER[Kerbalism]
+{
+	!MODULE[Experiment]:HAS[#experiment_id[************]] {}	//experiment removal from the selection. ******** is experimentID
+	!SETUP[XXXXXXXX] {}											// XXXXXX is the name of the setup as displayed by kerbalism's UI. BOTH NEED TO BE REMOVED FOR ANY SINGLE EXPERIMENT. dig into config files to find the setup name.
+	
+	
+	@MODULE[Configure]:HAS[#title[xxxxxxx]]						// xxxxx=first word from the title above, with a * at the end, such as: Sensor*
+		{
+			%slots = 											//change default slots as desired.
+			
+			@UPGRADE[XXX-Upgrade1]								//XXX-replace this with one of SEN, ORB, LAB, SRF, ATM respecting the selection above.
+				{									
+					%slots =									//change total slots after the upgrade. 
+				}
+			!UPGRADE[XXX-Upgrade2] {}							//upgrade removal. LAB has a different Upgrade2, so take care when patching lab groups. All groups have 2 upgrades each.											
+		}
+}
