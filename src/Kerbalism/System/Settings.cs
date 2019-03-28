@@ -59,6 +59,7 @@ namespace KERBALISM
 			MaxHarvesterBonus = Lib.ConfigValue(cfg, "MaxHarvesterBonus", 2.0);
 
 			// misc
+			CrewMass = Lib.ConfigValue(cfg, "CrewMass", 100);
 			EnforceCoherency = Lib.ConfigValue(cfg, "EnforceCoherency", true);
 			TrackingPivot = Lib.ConfigValue(cfg, "TrackingPivot", true);
 			HeadLampsCost = Lib.ConfigValue(cfg, "HeadLampsCost", 0.002);
@@ -113,6 +114,7 @@ namespace KERBALISM
 		public static bool LowQualityRendering;               // use less particles to render the magnetic fields
 		public static float UIScale;                          // scale UI elements by this factor, relative to KSP scaling settings, useful for high PPI screens
 		public static float UIPanelWidthScale;                // scale UI Panel Width by this factor, relative to KSP scaling settings, useful for high PPI screens
+		public static float CrewMass;						  // How heavy are the Kerbals?
 	}
 
 

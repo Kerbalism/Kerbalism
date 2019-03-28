@@ -3,7 +3,7 @@ using KSP.Localization;
 
 namespace KERBALISM
 {
-	public sealed class Habitat: PartModule, ISpecifics
+	public sealed class Habitat: PartModule, ISpecifics, IPartMassModifier
 	{
 		// config
 		[KSPField] public double volume = 0.0;                      // habitable volume in m^3, deduced from bounding box if not specified
@@ -516,6 +516,12 @@ namespace KERBALISM
 			Lib.DebugLog("CrewTransferAvailable: '{0}'", isPassable);
 			part.crewTransferAvailable = isPassable;
 		}
+
+		// module mass support
+		public float GetModuleMass(float defaultMass, ModifierStagingSituation sit) {
+			return vessel.GetCrewCount() * Settings.CrewMass;
+		}
+		public ModifierChangeWhen GetModuleMassChangeWhen() { return ModifierChangeWhen.CONSTANTLY; }
 
 		// Enable/Disable IVA
 		void UpdateIVA(bool ative)
