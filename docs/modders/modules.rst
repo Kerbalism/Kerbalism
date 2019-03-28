@@ -102,6 +102,8 @@ Hooks experiments into Kerbalisms science system.
 +---------------+-------------------------------------------------------------+---------+
 | ec_rate       | EC consumption rate per second while recording              | 0.01    |
 +---------------+-------------------------------------------------------------+---------+
+| transmissible | Results can be transmitted. Set to false for samples.       | true    |
++---------------+-------------------------------------------------------------+---------+
 | requires      | Additional requirements that must be met for recording.     |         |
 |               | See below.                                                  |         |
 +---------------+-------------------------------------------------------------+---------+
