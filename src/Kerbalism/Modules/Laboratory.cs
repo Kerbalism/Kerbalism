@@ -122,7 +122,7 @@ namespace KERBALISM
 						if (ec.amount > double.Epsilon)
 						{
 							// analyze the sample
-							status = Analyze(vessel, current_sample, rate * Kerbalism.elapsed_s, Lib.Proto.GetPartId(part.protoPartSnapshot));
+							status = Analyze(vessel, current_sample, rate * Kerbalism.elapsed_s);
 							running = status == Status.RUNNING;
 						}
 						// if there was no ec
@@ -169,7 +169,7 @@ namespace KERBALISM
 						if (ec.amount > double.Epsilon)
 						{
 							// analyze the sample
-							var status = Analyze(v, background_sample, rate * elapsed_s, Lib.Proto.GetPartId(p));
+							var status = Analyze(v, background_sample, rate * elapsed_s);
 							if (status != Status.RUNNING)
 								Lib.Proto.Set(m, "running", false);
 						}
@@ -255,7 +255,7 @@ namespace KERBALISM
 		}
 
 		// analyze a sample
-		private static Status Analyze(Vessel v, string filename, double amount, UInt32 partId)
+		private static Status Analyze(Vessel v, string filename, double amount)
 		{
 			Sample sample = null;
 			foreach (var d in DB.Vessel(v).drives.Values)
@@ -265,7 +265,7 @@ namespace KERBALISM
 				break;
 			}
 
-			var drive = DB.Vessel(v).drives[partId];
+			var drive = DB.Vessel(v).BestDrive(amount);
 
 			bool completed = sample == null;
 			if(sample != null)

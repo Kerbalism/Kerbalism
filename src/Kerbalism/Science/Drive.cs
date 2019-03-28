@@ -239,7 +239,7 @@ namespace KERBALISM
 			return amount;
 		}
 
-		public double SampleCapacityAvailable()
+		public int SampleCapacityAvailable()
 		{
 			return sampleCapacity - SamplesSize();
 		}

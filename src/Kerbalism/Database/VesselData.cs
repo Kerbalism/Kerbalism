@@ -108,6 +108,8 @@ namespace KERBALISM
 				uint partId = Lib.ConfigValue(n, "partId", (uint)0);
 				Drive drive = new Drive(n);
 				result.Add(partId, drive);
+
+				Lib.Log("HARDDRIVE loaded: part id " + partId + " " + drive.Size());
 			}
 			return result;
 		}
@@ -118,7 +120,7 @@ namespace KERBALISM
 			{
 				var n = node.AddNode("drive");
 				n.AddValue("partId", pair.Key);
-				pair.Value.Save(node);
+				pair.Value.Save(n);
 			}
 		}
 
@@ -129,6 +131,20 @@ namespace KERBALISM
 				supplies.Add(name, new SupplyData());
 			}
 			return supplies[name];
+		}
+
+		public Drive DriveForPart(uint partId)
+		{
+			if(!drives.ContainsKey(partId))
+			{
+				Lib.Log("HARDDRIVE Adding new drive for part id " + partId);
+				drives.Add(partId, new Drive());
+			}
+			else
+			{
+				Lib.Log("HARDDRIVE found existing drive for part id " + partId);
+			}
+			return drives[partId];
 		}
 
 		public Drive BestDrive(double minDataCapacity = 0)

@@ -12,8 +12,7 @@ namespace KERBALISM
 		[KSPField] public double dataCapacity = 2000.0;       // drive capacity, in Mb
 		[KSPField] public int sampleCapacity = 10;            // drive capacity, in slots
 
-		// show abundance level
-		[KSPField(guiActive = false, guiName = "_")] public string Capacity;
+		[KSPField(guiActive = true, guiName = "Capacity")] public string Capacity;
 
 		private Drive drive;
 
@@ -21,39 +20,42 @@ namespace KERBALISM
 		{
 			// don't break tutorial scenarios
 			if (Lib.DisableScenario(this)) return;
+			if (Lib.IsEditor()) return;
 
 			if(drive == null)
 			{
-				drive = new Drive();
-				drive.sampleCapacity = sampleCapacity;
-				drive.dataCapacity = dataCapacity;
+				if (Lib.IsEditor())
+					drive = new Drive();
+				else
+					drive = DB.Vessel(vessel).DriveForPart(Lib.GetPartId(part));
 			}
+			drive.sampleCapacity = sampleCapacity;
+			drive.dataCapacity = dataCapacity;
+
+			UpdateCapacity();
 		}
 
 		public override void OnLoad(ConfigNode node)
 		{
 			base.OnLoad(node);
-			drive = new Drive(node.GetNode("drive"));
-		}
 
-		public override void OnSave(ConfigNode node)
-		{
-			base.OnSave(node);
-			drive.Save(node.AddNode("drive"));
+			if (Lib.IsEditor())
+				drive = new Drive();
+			else
+				drive = DB.Vessel(vessel).DriveForPart(Lib.GetPartId(part));
+
+			drive.sampleCapacity = sampleCapacity;
+			drive.dataCapacity = dataCapacity;
+
+			UpdateCapacity();
 		}
 
 		public void Update()
 		{
+			UpdateCapacity();
+
 			if (Lib.IsFlight())
 			{
-				drive.dataCapacity = dataCapacity;
-				drive.sampleCapacity = sampleCapacity;
-
-				Fields["Capacity"].guiName = "Storage";
-				Fields["Capacity"].guiActive = true;
-				Capacity = Lib.BuildString("Data: ", Lib.HumanReadableDataSize(drive.FileCapacityAvailable()),
-				                           " Slots: ", Lib.HumanReadableDataSize(drive.SampleCapacityAvailable()));
-
 				// show DATA UI button, with size info
 				Events["ToggleUI"].guiName = Lib.StatusToggle("Data", drive.Empty() ? "empty" : drive.Size());
 				Events["ToggleUI"].active = true;
@@ -68,6 +70,20 @@ namespace KERBALISM
 				// hide TransferLocation button
 				Events["TransferData"].active = true;
 			}
+		}
+
+		private void UpdateCapacity()
+		{
+			double availableDataCapacity = dataCapacity;
+			int availableSlots = sampleCapacity;
+			if (Lib.IsFlight())
+			{
+				availableDataCapacity = drive.FileCapacityAvailable();
+				availableSlots = drive.SampleCapacityAvailable();
+			}
+
+			Capacity = Lib.BuildString("Data: ", Lib.HumanReadableDataSize(availableDataCapacity),
+									   " Slots: " + availableSlots);
 		}
 
 		public Drive GetDrive()

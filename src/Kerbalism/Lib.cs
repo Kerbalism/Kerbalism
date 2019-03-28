@@ -1700,6 +1700,15 @@ namespace KERBALISM
 			);
 		}
 
+		public static UInt32 GetPartId(Part part)
+		{
+			return part.flightID ^ part.persistentId;
+		}
+
+		public static UInt32 GetPartId(ProtoPartSnapshot part)
+		{
+			return part.flightID ^ part.persistentId;
+		}
 
 		// --- PROTO ----------------------------------------------------------------
 
@@ -1745,12 +1754,6 @@ namespace KERBALISM
 			public static void Set<T>( ProtoPartModuleSnapshot module, string value_name, T value )
 			{
 				module.moduleValues.SetValue( value_name, value.ToString(), true );
-			}
-
-			internal static UInt32 GetPartId(ProtoPartSnapshot p)
-			{
-				return p.flightID;
-				//return Lib.ConfigValue(p.partData, "uid", (UInt32)0);
 			}
 		}
 

@@ -344,7 +344,7 @@ namespace KERBALISM
 
 		void VesselPartCountChanged(Vessel vessel)
 		{
-			Cache.Purge(vessel);
+			//Cache.Purge(vessel);
 			/* This was the old VesselModified callback.
 			 * Maybe it's no longer needed. We'll see.		
 			DB.vessels.Remove(vessel);

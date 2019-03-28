@@ -86,7 +86,7 @@ namespace KERBALISM
 				var eta = data_rate < double.Epsilon || dataSampled >= sampleSize ? " done" : " T-" + Lib.HumanReadableDuration((sampleSize - dataSampled) / data_rate);
 
 				// update ui
-				Events["Toggle"].guiName = Lib.StatusToggle(exp.experimentTitle, !recording ? "stopped" : issue.Length == 0 ? "recording" : Lib.BuildString("<color=#ffff00>", issue, "</color>"));
+				Events["Toggle"].guiName = Lib.StatusToggle(exp.experimentTitle, !recording ? "stopped" : issue.Length == 0 ? "recording" + eta : Lib.BuildString("<color=#ffff00>", issue, "</color>"));
 				Events["Toggle"].active = (prepare_cs == null || didPrepare) && issue.Length == 0;
 
 				Events["Prepare"].guiName = Lib.BuildString("Prepare <b>", exp.experimentTitle, "</b>");
@@ -102,8 +102,12 @@ namespace KERBALISM
 
 				if (issue.Length > 0)
 					ExperimentStatus = Lib.BuildString("<color=#ffff00>", issue, "</color>");
+				else if (dataSampled > 0)
+					ExperimentStatus = Lib.BuildString("recorded ",
+						Lib.HumanReadableDataSize(dataSampled), "/", Lib.HumanReadableDataSize(sampleSize), eta);
 				else
-					ExperimentStatus = Lib.BuildString("recorded ", recordedPercent, eta);
+					ExperimentStatus = Lib.BuildString("ready ",
+						Lib.HumanReadableDataSize(sampleSize), " ", Lib.HumanReadableDuration(sampleSize / data_rate));
 			}
 			// in the editor
 			else if (Lib.IsEditor())
