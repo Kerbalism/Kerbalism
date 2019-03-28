@@ -35,6 +35,18 @@ namespace KERBALISM
 			}
 		}
 
+		private static Drive FindDrive(VesselData vd, string filename)
+		{
+			foreach (var d in vd.drives.Values)
+			{
+				if (d.files.ContainsKey(exp_filename))
+				{
+					return d;
+				}
+			}
+			return null;
+		}
+
 		// consume EC for transmission, and transmit science data
 		public static void Update(Vessel v, Vessel_info vi, VesselData vd, Vessel_resources resources, double elapsed_s)
 		{
@@ -52,12 +64,14 @@ namespace KERBALISM
 			// get filename of data being downloaded
 			exp_filename = vi.transmitting;
 
+			var drive = FindDrive(vd, exp_filename);
+
 			// if some data is being downloaded
 			// - avoid cornercase at scene changes
-			if (exp_filename.Length > 0 && vd.drive.files.ContainsKey(exp_filename))
+			if (exp_filename.Length > 0 && drive != null)
 			{
 				// get file
-				File file = vd.drive.files[exp_filename];
+				File file = drive.files[exp_filename];
 
 				// determine how much data is transmitted
 				double transmitted = Math.Min(file.size, conn.rate * elapsed_s);
@@ -82,9 +96,12 @@ namespace KERBALISM
 				if (file.size <= double.Epsilon)
 				{
 					// remove the file
-					vd.drive.files.Remove(exp_filename);
+					drive.files.Remove(exp_filename);
 
-					if (!file.silentTransmission)
+					// same file on another drive?
+					drive = FindDrive(vd, exp_filename);
+
+					if (!file.silentTransmission && drive == null)
 					{
 						// inform the user
 						Message.Post(
@@ -107,13 +124,13 @@ namespace KERBALISM
 			// not transmitting if there is no ec left
 			if (ResourceCache.Info(v, "ElectricCharge").amount <= double.Epsilon) return string.Empty;
 
-			// get vessel drive
-			Drive drive = DB.Vessel(v).drive;
-
 			// get first file flagged for transmission
-			foreach (var p in drive.files)
+			foreach (var drive in DB.Vessel(v).drives.Values)
 			{
-				if (p.Value.send) return p.Key;
+				foreach (var p in drive.files)
+				{
+					if (p.Value.send) return p.Key;
+				}
 			}
 
 			// no file flagged for transmission

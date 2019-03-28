@@ -35,28 +35,30 @@ namespace KERBALISM
  			// time-out simulation
 			if (p.Timeout(vi)) return;
 
-			// get vessel drive
-			Drive drive = DB.Vessel(v).drive;
-
-			// draw data section
-			p.AddSection("DATA");
-			foreach (var pair in drive.files)
+			foreach (var idDrivePair in DB.Vessel(v).drives)
 			{
-				string filename = pair.Key;
-				File file = pair.Value;
-				Render_file(p, filename, file, drive, short_strings && Lib.IsFlight(), Cache.VesselInfo(v).connection.rate);
-			}
-			if (drive.files.Count == 0) p.AddContent("<i>no files</i>", string.Empty);
+				var drive = idDrivePair.Value;
 
-			// draw samples section
-			p.AddSection("SAMPLES");
-			foreach (var pair in drive.samples)
-			{
-				string filename = pair.Key;
-				Sample sample = pair.Value;
-				Render_sample(p, filename, sample, drive, short_strings && Lib.IsFlight());
+				// draw data section
+				p.AddSection("DATA " + idDrivePair.Key); // TODO print part name here
+				foreach (var pair in drive.files)
+				{
+					string filename = pair.Key;
+					File file = pair.Value;
+					Render_file(p, filename, file, drive, short_strings && Lib.IsFlight(), Cache.VesselInfo(v).connection.rate);
+				}
+				if (drive.files.Count == 0) p.AddContent("<i>no files</i>", string.Empty);
+
+				// draw samples section
+				p.AddSection("SAMPLES");
+				foreach (var pair in drive.samples)
+				{
+					string filename = pair.Key;
+					Sample sample = pair.Value;
+					Render_sample(p, filename, sample, drive, short_strings && Lib.IsFlight());
+				}
+				if (drive.samples.Count == 0) p.AddContent("<i>no samples</i>", string.Empty);
 			}
-			if (drive.samples.Count == 0) p.AddContent("<i>no samples</i>", string.Empty);
 		}
 
 		static void Render_file(Panel p, string filename, File file, Drive drive, bool short_strings, double rate)

@@ -20,7 +20,7 @@ namespace KERBALISM
 			GameEvents.onVesselRecovered.Add(this.VesselRecovered);
 			GameEvents.onVesselTerminated.Add(this.VesselTerminated);
 			GameEvents.onVesselWillDestroy.Add(this.VesselDestroyed);
-			GameEvents.onVesselWasModified.Add(this.VesselModified);
+			GameEvents.onVesselPartCountChanged.Add(this.VesselPartCountChanged);
 			GameEvents.onPartCouple.Add(this.VesselDock);
 			GameEvents.onPartDie.Add(this.PartDestroyed);
 			GameEvents.OnTechnologyResearched.Add(this.TechResearched);
@@ -162,69 +162,71 @@ namespace KERBALISM
 			uint root_id = v.protoPartSnapshots[v.rootIndex].flightID;
 			if (!DB.vessels.ContainsKey(root_id))
 				return;
-			Drive drive = DB.vessels[root_id].drive;
 
-			// for each file in the drive
-			foreach (KeyValuePair<string, File> p in drive.files)
+			foreach (Drive drive in DB.vessels[root_id].drives.Values)
 			{
-				// shortcuts
-				string filename = p.Key;
-				File file = p.Value;
+				// for each file in the drive
+				foreach (KeyValuePair<string, File> p in drive.files)
+				{
+					// shortcuts
+					string filename = p.Key;
+					File file = p.Value;
 
-				// de-buffer partially transmitted data
-				file.size += file.buff;
-				file.buff = 0.0;
+					// de-buffer partially transmitted data
+					file.size += file.buff;
+					file.buff = 0.0;
 
-				// get subject
-				ScienceSubject subject = ResearchAndDevelopment.GetSubjectByID(filename);
+					// get subject
+					ScienceSubject subject = ResearchAndDevelopment.GetSubjectByID(filename);
 
-				// credit science
-				double credits = Science.Credit(filename, file.size, false, v);
+					// credit science
+					double credits = Science.Credit(filename, file.size, false, v);
 
-				// create science widged
-				ScienceSubjectWidget widged = ScienceSubjectWidget.Create
-				(
-				  subject,            // subject
-				  (float)file.size,   // data gathered
-				  (float)credits,     // science points
-				  dialog              // recovery dialog
-				);
+					// create science widged
+					ScienceSubjectWidget widged = ScienceSubjectWidget.Create
+					(
+					  subject,            // subject
+					  (float)file.size,   // data gathered
+					  (float)credits,     // science points
+					  dialog              // recovery dialog
+					);
 
-				// add widget to dialog
-				dialog.AddDataWidget(widged);
+					// add widget to dialog
+					dialog.AddDataWidget(widged);
 
-				// add science credits to total
-				dialog.scienceEarned += (float)credits;
-			}
+					// add science credits to total
+					dialog.scienceEarned += (float)credits;
+				}
 
-			// for each sample in the drive
-			// for each file in the drive
-			foreach (KeyValuePair<string, Sample> p in drive.samples)
-			{
-				// shortcuts
-				string filename = p.Key;
-				Sample sample = p.Value;
+				// for each sample in the drive
+				// for each file in the drive
+				foreach (KeyValuePair<string, Sample> p in drive.samples)
+				{
+					// shortcuts
+					string filename = p.Key;
+					Sample sample = p.Value;
 
-				// get subject
-				ScienceSubject subject = ResearchAndDevelopment.GetSubjectByID(filename);
+					// get subject
+					ScienceSubject subject = ResearchAndDevelopment.GetSubjectByID(filename);
 
-				// credit science
-				double credits = Science.Credit(filename, sample.size, false, v);
+					// credit science
+					double credits = Science.Credit(filename, sample.size, false, v);
 
-				// create science widged
-				ScienceSubjectWidget widged = ScienceSubjectWidget.Create
-				(
-				  subject,            // subject
-				  (float)sample.size, // data gathered
-				  (float)credits,     // science points
-				  dialog              // recovery dialog
-				);
+					// create science widged
+					ScienceSubjectWidget widged = ScienceSubjectWidget.Create
+					(
+					  subject,            // subject
+					  (float)sample.size, // data gathered
+					  (float)credits,     // science points
+					  dialog              // recovery dialog
+					);
 
-				// add widget to dialog
-				dialog.AddDataWidget(widged);
+					// add widget to dialog
+					dialog.AddDataWidget(widged);
 
-				// add science credits to total
-				dialog.scienceEarned += (float)credits;
+					// add science credits to total
+					dialog.scienceEarned += (float)credits;
+				}
 			}
 		}
 
@@ -340,15 +342,23 @@ namespace KERBALISM
 		}
 
 
-		void VesselModified(Vessel vessel_a)
+		void VesselPartCountChanged(Vessel vessel)
 		{
+			Cache.Purge(vessel);
+			/* This was the old VesselModified callback.
+			 * Maybe it's no longer needed. We'll see.		
+			DB.vessels.Remove(vessel);
+
 			// do nothing in the editor
 			if (Lib.IsEditor())
 				return;
 
 			// bah
-			if (string.IsNullOrEmpty(vessel_a.vesselName))
+			if (string.IsNullOrEmpty(vessel.vesselName))
 				return;
+
+			// did we gain or loose a hard drive?
+			vessel
 
 			// get drive from first vessel
 			// - there is a possibility this will create it
@@ -379,6 +389,7 @@ namespace KERBALISM
 					break;
 				}
 			}
+			*/
 		}
 
 

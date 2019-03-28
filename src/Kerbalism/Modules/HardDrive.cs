@@ -9,71 +9,71 @@ namespace KERBALISM
 
 	public sealed class HardDrive : PartModule, IScienceDataContainer, ISpecifics, IModuleInfo
 	{
-		[KSPField] public double fileCapacity = 2000.0;       // drive capacity, in Mib
-		[KSPField] public double sampleCapacity = 2000.0;     // drive capacity, in Mib
+		[KSPField] public double dataCapacity = 2000.0;       // drive capacity, in Mb
+		[KSPField] public int sampleCapacity = 10;            // drive capacity, in slots
 
 		// show abundance level
 		[KSPField(guiActive = false, guiName = "_")] public string Capacity;
+
+		private Drive drive;
 
 		public override void OnStart(StartState state)
 		{
 			// don't break tutorial scenarios
 			if (Lib.DisableScenario(this)) return;
+
+			if(drive == null)
+			{
+				drive = new Drive();
+				drive.sampleCapacity = sampleCapacity;
+				drive.dataCapacity = dataCapacity;
+			}
+		}
+
+		public override void OnLoad(ConfigNode node)
+		{
+			base.OnLoad(node);
+			drive = new Drive(node.GetNode("drive"));
+		}
+
+		public override void OnSave(ConfigNode node)
+		{
+			base.OnSave(node);
+			drive.Save(node.AddNode("drive"));
 		}
 
 		public void Update()
 		{
 			if (Lib.IsFlight())
 			{
-				Drive drive = DB.Vessel(vessel).drive;
+				drive.dataCapacity = dataCapacity;
+				drive.sampleCapacity = sampleCapacity;
 
-				// if no location was ever specified, set it here
-				if (drive.location == 0) drive.location = part.flightID;
+				Fields["Capacity"].guiName = "Storage";
+				Fields["Capacity"].guiActive = true;
+				Capacity = Lib.BuildString("Data: ", Lib.HumanReadableDataSize(drive.FileCapacityAvailable()),
+				                           " Slots: ", Lib.HumanReadableDataSize(drive.SampleCapacityAvailable()));
 
-				// if this is the location the data is stored
-				if (drive.location == part.flightID)
-				{
-					drive.fileCapacity = fileCapacity;
-					drive.sampleCapacity = sampleCapacity;
+				// show DATA UI button, with size info
+				Events["ToggleUI"].guiName = Lib.StatusToggle("Data", drive.Empty() ? "empty" : drive.Size());
+				Events["ToggleUI"].active = true;
 
-					Fields["Capacity"].guiName = "Storage";
-					Fields["Capacity"].guiActive = true;
-					Capacity = Lib.BuildString("Files: ", Lib.HumanReadableDataSize(drive.FileCapacityAvailable()),
-					                           " Samples: ", Lib.HumanReadableDataSize(drive.SampleCapacityAvailable()));
+				// show TakeData eva action button, if there is something to take
+				Events["TakeData"].active = !drive.Empty();
 
-					// get data size
-					double size = drive.Size();
+				// show StoreData eva action button, if active vessel is an eva kerbal and there is something to store from it
+				Vessel v = FlightGlobals.ActiveVessel;
+				Events["StoreData"].active = v != null && v.isEVA && !EVA.IsDead(v) && drive.FilesSize() > double.Epsilon;
 
-					// show DATA UI button, with size info
-					Events["ToggleUI"].guiName = Lib.StatusToggle("Data", size > double.Epsilon ? Lib.HumanReadableDataSize(size) : "empty");
-					Events["ToggleUI"].active = true;
-
-					// show TakeData eva action button, if there is something to take
-					Events["TakeData"].active = size > double.Epsilon;
-
-					// show StoreData eva action button, if active vessel is an eva kerbal and there is something to store from it
-					Vessel v = FlightGlobals.ActiveVessel;
-					Events["StoreData"].active = v != null && v.isEVA && !EVA.IsDead(v) && DB.Vessel(v).drive.Size() > double.Epsilon;
-
-					// hide TransferLocation button
-					Events["TransferData"].active = false;
-				}
-				// if this is not the location the data is stored
-				else
-				{
-					// hide DATA UI button
-					Events["ToggleUI"].active = false;
-
-					// hide EVA actions
-					Events["TakeData"].active = false;
-					Events["StoreData"].active = false;
-
-					// show TransferData button
-					Events["TransferData"].active = true;
-				}
+				// hide TransferLocation button
+				Events["TransferData"].active = true;
 			}
 		}
 
+		public Drive GetDrive()
+		{
+			return drive;
+		}
 
 		[KSPEvent(guiActive = true, guiName = "_", active = true)]
 		public void ToggleUI()
@@ -85,7 +85,12 @@ namespace KERBALISM
 		[KSPEvent(guiActive = true, guiName = "#KERBALISM_HardDrive_TransferData", active = false)]
 		public void TransferData()
 		{
-			DB.Vessel(vessel).drive.location = part.flightID;
+			var hardDrives = vessel.FindPartModulesImplementing<HardDrive>();
+			foreach(var hardDrive in hardDrives)
+			{
+				if (hardDrive == this) continue;
+				hardDrive.drive.Move(drive);
+			}
 		}
 
 
@@ -97,7 +102,7 @@ namespace KERBALISM
 			if (v == null || EVA.IsDead(v)) return;
 
 			// transfer data
-			Drive.Transfer(vessel, v);
+			Drive.Transfer(vessel, v, v.isEVA);
 		}
 
 
@@ -109,7 +114,7 @@ namespace KERBALISM
 			if (v == null || EVA.IsDead(v)) return;
 
 			// transfer data
-			Drive.Transfer(v, vessel);
+			Drive.Transfer(v, vessel, v.isEVA);
 		}
 
 
@@ -123,12 +128,6 @@ namespace KERBALISM
 		// science container implementation
 		public ScienceData[] GetData()
 		{
-			// get drive
-			Drive drive = DB.Vessel(vessel).drive;
-
-			// if not the preferred drive
-			if (drive.location != part.flightID) return new ScienceData[0];
-
 			// generate and return stock science data
 			List<ScienceData> data = new List<ScienceData>();
 			foreach (var pair in drive.files)
@@ -148,12 +147,6 @@ namespace KERBALISM
 		// EVAs returning should get a warning if needed
 		public void ReturnData(ScienceData data)
 		{
-			// get drive
-			Drive drive = DB.Vessel(vessel).drive;
-
-			// if not the preferred drive
-			if (drive.location != part.flightID) return;
-
 			// store the data
 			bool result = false;
 			if (data.baseTransmitValue > float.Epsilon || data.transmitBonus > double.Epsilon)
@@ -168,12 +161,6 @@ namespace KERBALISM
 
 		public void DumpData(ScienceData data)
 		{
-			// get drive
-			Drive drive = DB.Vessel(vessel).drive;
-
-			// if not the preferred drive
-			if (drive.location != part.flightID) return;
-
 			// remove the data
 			if (data.baseTransmitValue > float.Epsilon || data.transmitBonus > double.Epsilon)
 			{
@@ -222,7 +209,7 @@ namespace KERBALISM
 		public Specifics Specs()
 		{
 			Specifics specs = new Specifics();
-			specs.Add("File capacity", Lib.HumanReadableDataSize(fileCapacity));
+			specs.Add("File capacity", Lib.HumanReadableDataSize(dataCapacity));
 			specs.Add("Sample capacity", Lib.HumanReadableDataSize(sampleCapacity));
 			return specs;
 		}

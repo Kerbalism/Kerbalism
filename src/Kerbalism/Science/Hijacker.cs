@@ -37,15 +37,16 @@ namespace KERBALISM
 				// collect and deduce all info necessary
 				MetaData meta = new MetaData(data, page.host);
 
-				// record data in the drive
-				Drive drive = DB.Vessel(meta.vessel).drive;
+				// record data
 				bool recorded = false;
 				if (!meta.is_sample)
 				{
+					Drive drive = DB.Vessel(meta.vessel).BestDrive(data.dataAmount);
 					recorded = drive.Record_file(data.subjectID, data.dataAmount);
 				}
 				else
 				{
+					Drive drive = DB.Vessel(meta.vessel).BestDrive(Lib.SampleSizeToSlots(data.dataAmount));
 					recorded = drive.Record_sample(data.subjectID, data.dataAmount);
 				}
 
@@ -148,20 +149,25 @@ namespace KERBALISM
 
 			// record data in the drive
 			bool recorded = false;
-			Drive drive = DB.Vessel(meta.vessel).drive;
 			if (!meta.is_sample)
 			{
+				Drive drive = DB.Vessel(meta.vessel).BestDrive(data.dataAmount);
 				recorded = drive.Record_file(data.subjectID, data.dataAmount);
 			}
 			else
 			{
+				Drive drive = DB.Vessel(meta.vessel).BestDrive(Lib.SampleSizeToSlots(data.dataAmount));
 				recorded = drive.Record_sample(data.subjectID, data.dataAmount);
 			}
 
 			if (recorded)
 			{
 				// flag for sending if specified
-				if (!meta.is_sample && send) drive.Send(data.subjectID, true);
+				if (!meta.is_sample && send)
+				{
+					foreach(var d in DB.Vessel(meta.vessel).drives.Values)
+						d.Send(data.subjectID, true);
+				}
 
 				// render experiment inoperable if necessary
 				if (!meta.is_rerunnable) meta.experiment.SetInoperable();

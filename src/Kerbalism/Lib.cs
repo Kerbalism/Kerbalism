@@ -689,6 +689,17 @@ namespace KERBALISM
 			return rate < 0.000001 ? "none" : Lib.BuildString( HumanReadableDataSize( rate ), "/s" );
 		}
 
+		public static string HumanReadableSampleSize(int slots)
+		{
+			return Lib.BuildString("" + slots, " slots");
+		}
+
+		public static int SampleSizeToSlots(double size)
+		{
+			int result = (int)(size / 122);
+			if (result * 122 < size) ++result;
+			return result;
+		}
 
 		///<summary> Format science credits </summary>
 		public static string HumanReadableScience( double value )
@@ -1394,7 +1405,9 @@ namespace KERBALISM
 			// our own science system
 			else
 			{
-				return DB.Vessel( v ).drive.files.Count > 0;
+				foreach (var drive in DB.Vessel(v).drives.Values)
+					if (drive.files.Count > 0) return true;
+				return false;
 			}
 		}
 
@@ -1439,20 +1452,23 @@ namespace KERBALISM
 			else
 			{
 				// select a file at random and remove it
-				Drive drive = DB.Vessel( v ).drive;
-				if (drive.files.Count > 0) //< it should always be the case
+				foreach (var drive in DB.Vessel(v).drives.Values)
 				{
-					string filename = string.Empty;
-					int i = Lib.RandomInt( drive.files.Count );
-					foreach (var pair in drive.files)
+					if (drive.files.Count > 0) //< it should always be the case
 					{
-						if (i-- == 0)
+						string filename = string.Empty;
+						int i = Lib.RandomInt(drive.files.Count);
+						foreach (var pair in drive.files)
 						{
-							filename = pair.Key;
-							break;
+							if (i-- == 0)
+							{
+								filename = pair.Key;
+								break;
+							}
 						}
+						drive.files.Remove(filename);
+						break;
 					}
-					drive.files.Remove( filename );
 				}
 			}
 		}
@@ -1551,18 +1567,20 @@ namespace KERBALISM
 				string platform = "windows";
 				if (Application.platform == RuntimePlatform.LinuxPlayer) platform = "linux";
 				else if (Application.platform == RuntimePlatform.OSXPlayer) platform = "osx";
-				using (WWW www = new WWW( "file://" + KSPUtil.ApplicationRootPath + "GameData/Kerbalism/Shaders/" + VersionString + "/" + "_" + platform ))
+#pragma warning disable CS0618 // WWW is obsolete
+				using (WWW www = new WWW("file://" + KSPUtil.ApplicationRootPath + "GameData/Kerbalism/Shaders/" + VersionString + "/" + "_" + platform))
+#pragma warning restore CS0618
 				{
 					AssetBundle bundle = www.assetBundle;
 					Shader[] pre_shaders = bundle.LoadAllAssets<Shader>();
 					foreach (Shader shader in pre_shaders)
 					{
-						string key = shader.name.Replace( "Custom/", string.Empty );
-						if (shaders.ContainsKey( key ))
-							shaders.Remove( key );
-						shaders.Add( key, new Material( shader ) );
+						string key = shader.name.Replace("Custom/", string.Empty);
+						if (shaders.ContainsKey(key))
+							shaders.Remove(key);
+						shaders.Add(key, new Material(shader));
 					}
-					bundle.Unload( false );
+					bundle.Unload(false);
 					www.Dispose();
 				}
 			}
@@ -1727,6 +1745,12 @@ namespace KERBALISM
 			public static void Set<T>( ProtoPartModuleSnapshot module, string value_name, T value )
 			{
 				module.moduleValues.SetValue( value_name, value.ToString(), true );
+			}
+
+			internal static UInt32 GetPartId(ProtoPartSnapshot p)
+			{
+				return p.flightID;
+				//return Lib.ConfigValue(p.partData, "uid", (UInt32)0);
 			}
 		}
 

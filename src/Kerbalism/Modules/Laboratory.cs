@@ -36,7 +36,8 @@ namespace KERBALISM
 		private static string background_sample = null;             // sample currently being analyzed in background simulation
 		private Status status = Status.DISABLED;                    // laboratory status
 		private string status_txt = string.Empty;                   // status string to show next to the ui button
-		private Resource_info ec = null;							// resource info for EC
+		private Resource_info ec = null;                            // resource info for EC
+		private Drive drive = null;                                 // my drive
 
 		// localized strings
 		private static readonly string localized_title = Lib.BuildString("<size=1><color=#00000000>00</color></size>", Localizer.Format("#KERBALISM_Laboratory_Title"));
@@ -63,6 +64,13 @@ namespace KERBALISM
 
 			// parse crew specs
 			researcher_cs = new CrewSpecs(researcher);
+
+			var hardDrive = part.FindModuleImplementing<HardDrive>();
+			if (hardDrive != null) drive = hardDrive.GetDrive();
+			else
+			{
+				drive = DB.Vessel(vessel).BestDrive();
+			}
 		}
 
 		public void Update()
@@ -114,7 +122,7 @@ namespace KERBALISM
 						if (ec.amount > double.Epsilon)
 						{
 							// analyze the sample
-							status = Analyze(vessel, current_sample, rate * Kerbalism.elapsed_s);
+							status = Analyze(vessel, current_sample, rate * Kerbalism.elapsed_s, Lib.Proto.GetPartId(part.protoPartSnapshot));
 							running = status == Status.RUNNING;
 						}
 						// if there was no ec
@@ -161,7 +169,7 @@ namespace KERBALISM
 						if (ec.amount > double.Epsilon)
 						{
 							// analyze the sample
-							var status = Analyze(v, background_sample, rate * elapsed_s);
+							var status = Analyze(v, background_sample, rate * elapsed_s, Lib.Proto.GetPartId(p));
 							if (status != Status.RUNNING)
 								Lib.Proto.Set(m, "running", false);
 						}
@@ -232,11 +240,14 @@ namespace KERBALISM
 		// get next sample to analyze, return null if there isn't a sample
 		private static string NextSample(Vessel v)
 		{
-			// for each sample
-			foreach (KeyValuePair<string, Sample> sample in DB.Vessel(v).drive.samples)
+			foreach(var drive in DB.Vessel(v).drives.Values)
 			{
-				// if flagged for analysis
-				if (sample.Value.analyze) return sample.Key;
+				// for each sample
+				foreach (KeyValuePair<string, Sample> sample in drive.samples)
+				{
+					// if flagged for analysis
+					if (sample.Value.analyze) return sample.Key;
+				}
 			}
 
 			// there was no sample to analyze
@@ -244,28 +255,35 @@ namespace KERBALISM
 		}
 
 		// analyze a sample
-		private static Status Analyze(Vessel v, string filename, double amount)
+		private static Status Analyze(Vessel v, string filename, double amount, UInt32 partId)
 		{
-			// get vessel drive
-			Drive drive = DB.Vessel(v).drive;
-
-			// get sample
-			Sample sample = drive.samples[filename];
-
-			// analyze, and produce data
-			amount = Math.Min(amount, sample.size);
-			bool completed = amount >= sample.size - double.Epsilon;
-			bool recorded = drive.Record_file(filename, amount, false);
-			if(recorded)
-				drive.Delete_sample(filename, amount);
-			else
+			Sample sample = null;
+			foreach (var d in DB.Vessel(v).drives.Values)
 			{
-				Message.Post(
-					Lib.Color("red", Lib.BuildString(Localizer.Format("#KERBALISM_Laboratory_Analysis"), " stopped")),
-					"Not enough space on hard drive"
-				);
+				if (d.samples.ContainsKey(filename))
+					sample = d.samples[filename];
+				break;
+			}
 
-				return Status.NO_STORAGE;
+			var drive = DB.Vessel(v).drives[partId];
+
+			bool completed = sample == null;
+			if(sample != null)
+			{
+				// analyze, and produce dataamount = Math.Min(amount, sample.size);
+				completed = amount >= sample.size - double.Epsilon;
+				bool recorded = drive.Record_file(filename, amount, false);
+				if (recorded)
+					drive.Delete_sample(filename, amount);
+				else
+				{
+					Message.Post(
+						Lib.Color("red", Lib.BuildString(Localizer.Format("#KERBALISM_Laboratory_Analysis"), " stopped")),
+						"Not enough space on hard drive"
+					);
+
+					return Status.NO_STORAGE;
+				}
 			}
 
 			// if the analysis is completed

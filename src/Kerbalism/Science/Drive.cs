@@ -6,17 +6,17 @@ using KSP.Localization;
 namespace KERBALISM
 {
 
-
 	public sealed class Drive
 	{
-		public Drive()
+		public Drive(double dataCapacity, int sampleCapacity)
 		{
-			files = new Dictionary<string, File>();
-			samples = new Dictionary<string, Sample>();
-			location = 0;
-			fileCapacity = 0;
-			sampleCapacity = 0;
+			this.files = new Dictionary<string, File>();
+			this.samples = new Dictionary<string, Sample>();
+			this.dataCapacity = dataCapacity;
+			this.sampleCapacity = sampleCapacity;
 		}
+
+		public Drive(): this (0, 0) { }
 
 		public Drive(ConfigNode node)
 		{
@@ -40,13 +40,10 @@ namespace KERBALISM
 				}
 			}
 
-			// parse preferred location
-			location = Lib.ConfigValue(node, "location", 0u);
-
 			// parse capacities. be generous with default values for backwards
 			// compatibility (drives had unlimited storage before this)
-			fileCapacity = Lib.ConfigValue(node, "fileCapacity", 3000);
-			sampleCapacity = Lib.ConfigValue(node, "sampleCapacity", 3000);
+			dataCapacity = Lib.ConfigValue(node, "fileCapacity", 3000.0);
+			sampleCapacity = Lib.ConfigValue(node, "sampleCapacity", 500);
 		}
 
 		public void Save(ConfigNode node)
@@ -65,18 +62,15 @@ namespace KERBALISM
 				p.Value.Save(samples_node.AddNode(DB.To_safe_key(p.Key)));
 			}
 
-			// save preferred location
-			node.AddValue("location", location);
-
 			// save capacities
-			node.AddValue("fileCapacity", fileCapacity);
+			node.AddValue("fileCapacity", dataCapacity);
 			node.AddValue("sampleCapacity", sampleCapacity);
 		}
 
 		// add science data, creating new file or incrementing existing one
 		public bool Record_file(string subject_id, double amount, bool allowImmediateTransmission = true, bool silentTransmission = false)
 		{
-			if (FilesSize() + amount > fileCapacity)
+			if (FilesSize() + amount > dataCapacity)
 				return false;
 
 			// create new data or get existing one
@@ -109,11 +103,26 @@ namespace KERBALISM
 		// add science sample, creating new sample or incrementing existing one
 		public bool Record_sample(string subject_id, double amount)
 		{
-			if (SamplesSize() + amount > sampleCapacity)
+			int currentSampleSlots = SamplesSize();
+			if(!samples.ContainsKey(subject_id) && currentSampleSlots >= sampleCapacity)
+			{
+				// can't take a new sample if we're already at capacity
 				return false;
+			}
+
+			Sample sample;
+			if (samples.ContainsKey(subject_id))
+			{
+				// test if adding the amount to the sample would exceed our capacity
+				sample = samples[subject_id];
+
+				int existingSampleSlots = Lib.SampleSizeToSlots(sample.size);
+				int newSampleSlots = Lib.SampleSizeToSlots(sample.size + amount);
+				if (currentSampleSlots - existingSampleSlots + newSampleSlots > sampleCapacity)
+					return false;
+			}
 
 			// create new data or get existing one
-			Sample sample;
 			if (!samples.TryGetValue(subject_id, out sample))
 			{
 				sample = new Sample();
@@ -180,7 +189,7 @@ namespace KERBALISM
 		}
 
 		// move all data to another drive
-		public bool Move(Drive destination)
+		public bool Move(Drive destination, bool moveSamples = false)
 		{
 			bool result = true;
 
@@ -196,26 +205,28 @@ namespace KERBALISM
 				else
 					result = false;
 			}
-
-			// copy samples
-			var samplesList = new List<string>();
-			foreach (var p in samples)
-			{
-				if (destination.Record_sample(p.Key, p.Value.size))
-					samplesList.Add(p.Key);
-				else
-					result = false;
-			}
-
 			foreach (var id in filesList) files.Remove(id);
-			foreach (var id in samplesList) samples.Remove(id);
+
+			if(moveSamples)
+			{
+				// copy samples
+				var samplesList = new List<string>();
+				foreach (var p in samples)
+				{
+					if (destination.Record_sample(p.Key, p.Value.size))
+						samplesList.Add(p.Key);
+					else
+						result = false;
+				}
+				foreach (var id in samplesList) samples.Remove(id);
+			}
 
 			return result; // true if everything was moved, false otherwise
 		}
 
 		public double FileCapacityAvailable()
 		{
-			return fileCapacity - FilesSize();
+			return dataCapacity - FilesSize();
 		}
 
 		public double FilesSize()
@@ -233,60 +244,80 @@ namespace KERBALISM
 			return sampleCapacity - SamplesSize();
 		}
 
-		public double SamplesSize()
+		public int SamplesSize()
 		{
-			double amount = 0.0;
+			int amount = 0;
 			foreach (var p in samples)
 			{
-				amount += p.Value.size;
+				amount += Lib.SampleSizeToSlots(p.Value.size);
 			}
 			return amount;
 		}
 
 		// return size of data stored in Mb (including samples)
-		public double Size()
+		public string Size()
 		{
-			return FilesSize() + SamplesSize();
+			return Lib.BuildString("Data: ", Lib.HumanReadableDataSize(FilesSize()), " Samples: ", Lib.HumanReadableSampleSize(SamplesSize()));
+		}
+
+		public bool Empty()
+		{
+			return FilesSize() < double.Epsilon && SamplesSize() == 0;
 		}
 
 		// transfer data between two vessels
-		public static void Transfer(Vessel src, Vessel dst)
+		public static void Transfer(Vessel src, Vessel dst, bool samples = false)
 		{
-			// get drives
-			Drive a = DB.Vessel(src).drive;
-			Drive b = DB.Vessel(dst).drive;
-
-			// get size of data being transfered
-			double amount = a.Size();
-
-			// if there is data
-			if (amount > double.Epsilon)
+			double dataAmount = 0.0;
+			int sampleSlots = 0;
+			foreach (var drive in DB.Vessel(src).drives.Values)
 			{
-				// transfer the data
-				bool allCopied = a.Move(b);
-
-				// inform the user
-				if (allCopied)
-					Message.Post
-					(
-						Lib.BuildString(Lib.HumanReadableDataSize(amount), " ", Localizer.Format("#KERBALISM_Science_ofdatatransfer")),
-					 	Lib.BuildString(Localizer.Format("#KERBALISM_Generic_FROM"), " <b>", src.vesselName, "</b> ", Localizer.Format("#KERBALISM_Generic_TO"), " <b>", dst.vesselName, "</b>")
-					);
-				else
-					Message.Post
-					(
-						Lib.Color("red", Lib.BuildString("WARNING: ", Lib.HumanReadableDataSize(a.Size()), " could not be moved"), true),
-						Lib.BuildString(Localizer.Format("#KERBALISM_Generic_FROM"), " <b>", src.vesselName, "</b> ", Localizer.Format("#KERBALISM_Generic_TO"), " <b>", dst.vesselName, "</b>")
-					);
+				dataAmount += drive.FilesSize();
+				sampleSlots += drive.SamplesSize();
 			}
+
+			if (dataAmount < double.Epsilon && (sampleSlots == 0 || !samples))
+				return;
+
+			// get drives
+			var allSrc = DB.Vessel(src).drives.Values;
+			var allDst = DB.Vessel(dst).drives.Values;
+
+			bool allMoved = true;
+			foreach(var a in allSrc)
+			{
+				bool aMoved = false;
+				foreach(var b in allDst)
+				{
+					if(a.Move(b, samples))
+					{
+						aMoved = true;
+						break;
+					}
+				}
+				allMoved &= aMoved;
+			}
+
+			// inform the user
+			if (allMoved)
+				Message.Post
+				(
+					Lib.BuildString(Lib.HumanReadableDataSize(dataAmount), " ", Localizer.Format("#KERBALISM_Science_ofdatatransfer")),
+				 	Lib.BuildString(Localizer.Format("#KERBALISM_Generic_FROM"), " <b>", src.vesselName, "</b> ", Localizer.Format("#KERBALISM_Generic_TO"), " <b>", dst.vesselName, "</b>")
+				);
+			else
+				Message.Post
+				(
+					Lib.Color("red", Lib.BuildString("WARNING: not all data copied"), true),
+					Lib.BuildString(Localizer.Format("#KERBALISM_Generic_FROM"), " <b>", src.vesselName, "</b> ", Localizer.Format("#KERBALISM_Generic_TO"), " <b>", dst.vesselName, "</b>")
+				);
 		}
 
 
 		public Dictionary<string, File> files;      // science files
 		public Dictionary<string, Sample> samples;  // science samples
-		public uint location;                       // where the data is stored specifically, optional
-		public double fileCapacity;
-		public double sampleCapacity;
+		public double dataCapacity;
+		public int sampleCapacity;
 	}
 
 

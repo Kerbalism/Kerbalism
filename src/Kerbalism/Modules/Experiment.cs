@@ -12,12 +12,12 @@ namespace KERBALISM
 	public sealed class Experiment : PartModule, ISpecifics
 	{
 		// config
-		[KSPField] public string experiment_id;          // id of associated experiment definition
-		[KSPField] public double data_rate;              // sampling rate in Mb/s
-		[KSPField] public double ec_rate;                // EC consumption rate per-second
-		[KSPField] public bool transmissible = true;  // true if data can be transmitted
+		[KSPField] public string experiment_id;               // id of associated experiment definition
+		[KSPField] public double data_rate;                   // sampling rate in Mb/s
+		[KSPField] public double ec_rate;                     // EC consumption rate per-second
+		[KSPField] public bool transmissible = true;          // true if data can be transmitted
 
-		[KSPField] public string requires = string.Empty; // additional requirements that must be met
+		[KSPField] public string requires = string.Empty;     // additional requirements that must be met
 
 		[KSPField] public string crew_operate = string.Empty; // operator crew. if set, crew has to be on vessel while recording
 		[KSPField] public string crew_reset = string.Empty;   // reset crew. if set, experiment will stop recording after situation change
@@ -142,9 +142,9 @@ namespace KERBALISM
 					double chunkSize = data_rate * Kerbalism.elapsed_s;
 					bool stored = false;
 					if (transmissible)
-						stored = DB.Vessel(vessel).drive.Record_file(subject_id, chunkSize, true, true);
+						stored = DB.Vessel(vessel).BestDrive().Record_file(subject_id, chunkSize, true, true);
 					else
-						stored = DB.Vessel(vessel).drive.Record_sample(subject_id, chunkSize);
+						stored = DB.Vessel(vessel).BestDrive().Record_sample(subject_id, chunkSize);
 
 					if(stored)
 					{
@@ -191,9 +191,9 @@ namespace KERBALISM
 				double chunkSize = experiment.data_rate * elapsed_s;
 				bool stored = false;
 				if (experiment.transmissible)
-					stored = DB.Vessel(v).drive.Record_file(subject_id, chunkSize, true, true);
+					stored = DB.Vessel(v).BestDrive().Record_file(subject_id, chunkSize, true, true);
 				else
-					stored = DB.Vessel(v).drive.Record_sample(subject_id, chunkSize);
+					stored = DB.Vessel(v).BestDrive().Record_sample(subject_id, chunkSize);
 
 				if (stored)
 				{
@@ -234,7 +234,7 @@ namespace KERBALISM
 			if (!didPrepare && !string.IsNullOrEmpty(experiment.crew_prepare)) return "not prepared";
 			if (!has_ec) return "missing <b>EC</b>";
 
-			var drive = DB.Vessel(v).drive;
+			var drive = DB.Vessel(v).BestDrive();
 			double available = experiment.transmissible ? drive.FileCapacityAvailable() : drive.SampleCapacityAvailable();
 			if (experiment.data_rate * Kerbalism.elapsed_s > available)
 				return "insufficient storage";
@@ -363,9 +363,20 @@ namespace KERBALISM
 
 			var specs = new Specifics();
 			specs.Add("Name", ResearchAndDevelopment.GetExperiment(experiment_id).experimentTitle);
-			specs.Add("Sample size", Lib.HumanReadableDataSize(exp.scienceCap * exp.dataScale));
-			specs.Add("Data rate", Lib.HumanReadableDataRate(data_rate));
-			specs.Add("Sample duration", Lib.HumanReadableDuration(exp.scienceCap * exp.dataScale / data_rate));
+
+			double expSize = exp.scienceCap * exp.dataScale;
+			if (transmissible)
+			{
+				specs.Add("Data", Lib.HumanReadableDataSize(expSize));
+				specs.Add("Data rate", Lib.HumanReadableDataRate(data_rate));
+				specs.Add("Duration", Lib.HumanReadableDuration(expSize / data_rate));
+			}
+			else
+			{
+				specs.Add("Sample size", Lib.HumanReadableSampleSize(Lib.SampleSizeToSlots(expSize)));
+				specs.Add("Duration", Lib.HumanReadableDuration(expSize / data_rate));
+			}
+
 			specs.Add("EC required", Lib.HumanReadableRate(ec_rate));
 			if (crew_operate.Length > 0) specs.Add("Opration", new CrewSpecs(crew_operate).Info());
 			if (crew_reset.Length > 0) specs.Add("Reset", new CrewSpecs(crew_reset).Info());
