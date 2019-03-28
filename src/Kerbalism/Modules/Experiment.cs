@@ -83,7 +83,7 @@ namespace KERBALISM
 
 				var sampleSize = (exp.scienceCap * exp.dataScale);
 				var recordedPercent = Lib.HumanReadablePerc(dataSampled / sampleSize);
-				var eta = data_rate < double.Epsilon || dataSampled >= sampleSize ? "done" : "T-" + Lib.HumanReadableDuration((sampleSize - dataSampled) / data_rate);
+				var eta = data_rate < double.Epsilon || dataSampled >= sampleSize ? " done" : " T-" + Lib.HumanReadableDuration((sampleSize - dataSampled) / data_rate);
 
 				// update ui
 				Events["Toggle"].guiName = Lib.StatusToggle(exp.experimentTitle, !recording ? "stopped" : issue.Length == 0 ? "recording" : Lib.BuildString("<color=#ffff00>", issue, "</color>"));
@@ -131,11 +131,11 @@ namespace KERBALISM
 			{
 				string subject_id;
 				issue = TestForIssues(vessel, exp, ec, this, didPrepare, last_subject_id, out subject_id);
+				if (last_subject_id != subject_id) dataSampled = 0;
 
 				// if there are no issues
-				if (issue.Length == 0)
+				if (issue.Length == 0 && dataSampled < exp.scienceCap * exp.dataScale)
 				{
-					if (last_subject_id != subject_id) dataSampled = 0;
 					last_subject_id = subject_id;
 
 					// record in drive
@@ -179,11 +179,12 @@ namespace KERBALISM
 			string issue = TestForIssues(v, exp, ec, experiment, didPrepare, last_subject_id, out subject_id);
 			Lib.Proto.Set(m, "issue", issue);
 
+			double dataSampled = Lib.Proto.GetDouble(m, "dataSampled");
+			if (last_subject_id != subject_id) dataSampled = 0;
+
 			// if there are no issues
-			if (issue.Length == 0)
+			if (issue.Length == 0 && dataSampled < exp.scienceCap * exp.dataScale)
 			{
-				double dataSampled = Lib.Proto.GetDouble(m, "dataSampled");
-				if (last_subject_id != subject_id) dataSampled = 0;
 				Lib.Proto.Set(m, "last_subject_id", subject_id);
 
 				// record in drive
