@@ -31,16 +31,18 @@ namespace KERBALISM
 		[KSPField(isPersistant = true)] public string issue = string.Empty;
 		[KSPField(isPersistant = true)] public string last_subject_id = string.Empty;
 		[KSPField(isPersistant = true)] public bool didPrepare = false;
+		[KSPField(isPersistant = true)] public double dataSampled = 0.0;
 
 		// animations
 		Animator deployAnimator;
 
-		// crew specs
 		CrewSpecs operator_cs;
 		CrewSpecs reset_cs;
 		CrewSpecs prepare_cs;
 
 		private ScienceExperiment exp;
+		private String situationIssue = String.Empty;
+		[KSPField(guiActive = false, guiName = "_")] private string ExperimentStatus = string.Empty;
 
 		public override void OnStart(StartState state)
 		{
@@ -61,7 +63,6 @@ namespace KERBALISM
 			if (!string.IsNullOrEmpty(crew_prepare))
 				prepare_cs = new CrewSpecs(crew_prepare);
 
-			// get experiment title
 			exp = ResearchAndDevelopment.GetExperiment(experiment_id);
 		}
 
@@ -80,9 +81,13 @@ namespace KERBALISM
 				// do nothing if vessel is invalid
 				if (!vi.is_valid) return;
 
+				var sampleSize = (exp.scienceCap * exp.dataScale);
+				var recordedPercent = Lib.HumanReadablePerc(dataSampled / sampleSize);
+				var eta = data_rate < double.Epsilon || dataSampled >= sampleSize ? "done" : "T-" + Lib.HumanReadableDuration((sampleSize - dataSampled) / data_rate);
+
 				// update ui
 				Events["Toggle"].guiName = Lib.StatusToggle(exp.experimentTitle, !recording ? "stopped" : issue.Length == 0 ? "recording" : Lib.BuildString("<color=#ffff00>", issue, "</color>"));
-				Events["Toggle"].active = prepare_cs == null || didPrepare;
+				Events["Toggle"].active = (prepare_cs == null || didPrepare) && issue.Length == 0;
 
 				Events["Prepare"].guiName = Lib.BuildString("Prepare <b>", exp.experimentTitle, "</b>");
 				Events["Prepare"].active = !didPrepare && prepare_cs != null && string.IsNullOrEmpty(last_subject_id);
@@ -91,6 +96,14 @@ namespace KERBALISM
 				// we need a reset either if we have recorded data or did a setup
 				bool resetActive = (reset_cs != null || prepare_cs != null) && !string.IsNullOrEmpty(last_subject_id);
 				Events["Reset"].active = resetActive;
+
+				Fields["ExperimentStatus"].guiName = exp.experimentTitle;
+				Fields["ExperimentStatus"].guiActive = true;
+
+				if (issue.Length > 0)
+					ExperimentStatus = Lib.BuildString("<color=#ffff00>", issue, "</color>");
+				else
+					ExperimentStatus = Lib.BuildString("recorded ", recordedPercent, eta);
 			}
 			// in the editor
 			else if (Lib.IsEditor())
@@ -116,58 +129,33 @@ namespace KERBALISM
 			// if experiment is active
 			if (recording)
 			{
-				// detect conditions
-				// - comparing against amount in previous step
-				bool has_ec = ec.amount > double.Epsilon;
-				bool has_operator = operator_cs == null || operator_cs.Check(vessel);
-
-				var sit = ScienceUtil.GetExperimentSituation(vessel);
-
-				// deduce issues
-				issue = string.Empty;
-				if (!exp.IsAvailableWhile(sit, vessel.mainBody)) issue = "invalid situation";
-				else if (!has_operator) issue = "no operator";
-				else if (!didPrepare && prepare_cs != null) issue = "not prepared";
-				else if (!has_ec) issue = "missing <b>EC</b>";
-
-				string subject_id = string.Empty;
-				if (issue.Length == 0)
-				{
-					// generate subject id
-					var biome = ScienceUtil.GetExperimentBiome(vessel.mainBody, vessel.latitude, vessel.longitude);
-					subject_id = Science.Generate_subject(exp, vessel.mainBody, sit, biome);
-
-					bool needsReset = reset_cs != null
-						&& !string.IsNullOrEmpty(last_subject_id) && subject_id != last_subject_id;
-
-					if (needsReset) issue = "reset required";
-				}
-
-				if (issue.Length == 0)
-				{
-					issue = Science.TestRequirements(requires, vessel);
-					if (issue.Length > 0) issue = Science.RequirementText(issue);
-				}
+				string subject_id;
+				issue = TestForIssues(vessel, exp, ec, this, didPrepare, last_subject_id, out subject_id);
 
 				// if there are no issues
 				if (issue.Length == 0)
 				{
+					if (last_subject_id != subject_id) dataSampled = 0;
 					last_subject_id = subject_id;
 
 					// record in drive
+					double chunkSize = data_rate * Kerbalism.elapsed_s;
 					bool stored = false;
 					if (transmissible)
-						stored = DB.Vessel(vessel).drive.Record_file(subject_id, data_rate * Kerbalism.elapsed_s, true, true);
+						stored = DB.Vessel(vessel).drive.Record_file(subject_id, chunkSize, true, true);
 					else
-						stored = DB.Vessel(vessel).drive.Record_sample(subject_id, data_rate * Kerbalism.elapsed_s);
+						stored = DB.Vessel(vessel).drive.Record_sample(subject_id, chunkSize);
 
-					// consume ec
-					ec.Consume(ec_rate * Kerbalism.elapsed_s);
-
-					if(!stored)
+					if(stored)
 					{
-						recording = false;
-						issue = "no storage left";
+						// consume ec
+						ec.Consume(ec_rate * Kerbalism.elapsed_s);
+						dataSampled += chunkSize;
+						dataSampled = Math.Min(dataSampled, exp.scienceCap * exp.dataScale);
+					}
+					else
+					{
+						issue = "insufficient storage";
 					}
 				}
 			}
@@ -182,66 +170,75 @@ namespace KERBALISM
 
 			// detect conditions
 			// - comparing against amount in previous step
-			bool has_ec = ec.amount > double.Epsilon;
-			bool has_operator = string.IsNullOrEmpty(experiment.crew_operate) || new CrewSpecs(experiment.crew_operate).Check(v);
 
-			var sit = ScienceUtil.GetExperimentSituation(v);
 			var exp = ResearchAndDevelopment.GetExperiment(experiment.experiment_id);
-
 			bool didPrepare = Lib.Proto.GetBool(m, "didPrepare", false);
+			string last_subject_id = Lib.Proto.GetString(m, "last_subject_id", "");
 
-			// deduce issues
-			string issue = string.Empty;
-			if (!exp.IsAvailableWhile(sit, v.mainBody)) issue = "invalid situation";
-			else if (!has_operator) issue = "no operator";
-			else if (!didPrepare && !string.IsNullOrEmpty(experiment.crew_prepare)) issue = "not prepared";
-			else if (!has_ec) issue = "missing <b>EC</b>";
-
-			string subject_id = string.Empty;
-			if (issue.Length == 0)
-			{
-				// generate subject id
-				var biome = ScienceUtil.GetExperimentBiome(v.mainBody, v.latitude, v.longitude);
-				subject_id = Science.Generate_subject(exp, v.mainBody, sit, biome);
-
-				var last_subject_id = Lib.Proto.GetString(m, "last_subject_id", "");
-				bool needsReset = !string.IsNullOrEmpty(experiment.crew_reset)
-				                         && !string.IsNullOrEmpty(last_subject_id) && subject_id != last_subject_id;
-
-				if (needsReset) issue = "reset required";
-			}
-
-			if (issue.Length == 0)
-			{
-				issue = Science.TestRequirements(experiment.requires, v);
-				if (issue.Length > 0) issue = Science.RequirementText(issue);
-			}
-
+			string subject_id;
+			string issue = TestForIssues(v, exp, ec, experiment, didPrepare, last_subject_id, out subject_id);
 			Lib.Proto.Set(m, "issue", issue);
 
 			// if there are no issues
 			if (issue.Length == 0)
 			{
+				double dataSampled = Lib.Proto.GetDouble(m, "dataSampled");
+				if (last_subject_id != subject_id) dataSampled = 0;
 				Lib.Proto.Set(m, "last_subject_id", subject_id);
 
 				// record in drive
+				double chunkSize = experiment.data_rate * elapsed_s;
 				bool stored = false;
 				if (experiment.transmissible)
-					stored = DB.Vessel(v).drive.Record_file(subject_id, experiment.data_rate * elapsed_s, true, true);
+					stored = DB.Vessel(v).drive.Record_file(subject_id, chunkSize, true, true);
 				else
-					stored = DB.Vessel(v).drive.Record_sample(subject_id, experiment.data_rate * elapsed_s);
+					stored = DB.Vessel(v).drive.Record_sample(subject_id, chunkSize);
 
-				// consume ec
-				ec.Consume(experiment.ec_rate * elapsed_s);
-
-				if (!stored)
+				if (stored)
 				{
-					issue = "no storage left";
-
+					// consume ec
+					ec.Consume(experiment.ec_rate * elapsed_s);
+					dataSampled += chunkSize;
+					dataSampled = Math.Min(dataSampled, exp.scienceCap * exp.dataScale);
+					Lib.Proto.Set(m, "dataSampled", dataSampled);
+				}
+				else
+				{
+					issue = "insufficient storage";
 					Lib.Proto.Set(m, "issue", issue);
-					Lib.Proto.Set(m, "recording", false);
 				}
 			}
+		}
+
+		private static string TestForIssues(Vessel v, ScienceExperiment exp, Resource_info ec, Experiment experiment, bool didPrepare, string last_subject_id, out string subject_id)
+		{
+			// deduce issues
+			var sit = ScienceUtil.GetExperimentSituation(v);
+			bool has_ec = ec.amount > double.Epsilon;
+			bool has_operator = string.IsNullOrEmpty(experiment.crew_operate) || new CrewSpecs(experiment.crew_operate).Check(v);
+
+			var biome = ScienceUtil.GetExperimentBiome(v.mainBody, v.latitude, v.longitude);
+			subject_id = Science.Generate_subject(exp, v.mainBody, sit, biome);
+
+			bool needsReset = experiment.crew_reset.Length > 0
+				&& !string.IsNullOrEmpty(last_subject_id) && subject_id != last_subject_id;
+
+			if (needsReset) return "reset required";
+
+			string situationIssue = Science.TestRequirements(experiment.requires, v);
+			if (situationIssue.Length > 0) return Science.RequirementText(situationIssue);
+
+			if (!exp.IsAvailableWhile(sit, v.mainBody)) return "invalid situation";
+			if (!has_operator) return "no operator";
+			if (!didPrepare && !string.IsNullOrEmpty(experiment.crew_prepare)) return "not prepared";
+			if (!has_ec) return "missing <b>EC</b>";
+
+			var drive = DB.Vessel(v).drive;
+			double available = experiment.transmissible ? drive.FileCapacityAvailable() : drive.SampleCapacityAvailable();
+			if (experiment.data_rate * Kerbalism.elapsed_s > available)
+				return "insufficient storage";
+
+			return string.Empty;
 		}
 
 		[KSPEvent(guiActiveUnfocused = true, guiName = "_", active = false)]
@@ -361,9 +358,13 @@ namespace KERBALISM
 		// specifics support
 		public Specifics Specs()
 		{
+			if(exp == null) exp = ResearchAndDevelopment.GetExperiment(experiment_id);
+
 			var specs = new Specifics();
 			specs.Add("Name", ResearchAndDevelopment.GetExperiment(experiment_id).experimentTitle);
+			specs.Add("Sample size", Lib.HumanReadableDataSize(exp.scienceCap * exp.dataScale));
 			specs.Add("Data rate", Lib.HumanReadableDataRate(data_rate));
+			specs.Add("Sample duration", Lib.HumanReadableDuration(exp.scienceCap * exp.dataScale / data_rate));
 			specs.Add("EC required", Lib.HumanReadableRate(ec_rate));
 			if (crew_operate.Length > 0) specs.Add("Opration", new CrewSpecs(crew_operate).Info());
 			if (crew_reset.Length > 0) specs.Add("Reset", new CrewSpecs(crew_reset).Info());
