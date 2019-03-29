@@ -122,6 +122,8 @@ namespace KERBALISM
 		[KSPEvent(guiActive = false, guiActiveUnfocused = true, guiActiveUncommand = true, guiName = "#KERBALISM_HardDrive_TakeData", active = true)]
 		public void TakeData()
 		{
+			Lib.Log("### SCI take data called");
+
 			// disable for dead eva kerbals
 			Vessel v = FlightGlobals.ActiveVessel;
 			if (v == null || EVA.IsDead(v)) return;
@@ -134,6 +136,8 @@ namespace KERBALISM
 		[KSPEvent(guiActive = false, guiActiveUnfocused = true, guiActiveUncommand = true, guiName = "#KERBALISM_HardDrive_TransferData", active = true)]
 		public void StoreData()
 		{
+			Lib.Log("### SCI get store called");
+
 			// disable for dead eva kerbals
 			Vessel v = FlightGlobals.ActiveVessel;
 			if (v == null || EVA.IsDead(v)) return;
@@ -146,13 +150,15 @@ namespace KERBALISM
 		// part tooltip
 		public override string GetInfo()
 		{
-			return "Solid-state hard drive";
+			return Specs().Info();
 		}
 
 
 		// science container implementation
 		public ScienceData[] GetData()
 		{
+			Lib.Log("### SCI get data called");
+
 			// generate and return stock science data
 			List<ScienceData> data = new List<ScienceData>();
 			foreach (var pair in drive.files)
@@ -172,6 +178,7 @@ namespace KERBALISM
 		// EVAs returning should get a warning if needed
 		public void ReturnData(ScienceData data)
 		{
+			Lib.Log("### SCI Return data called " + data.subjectID + " " + data.dataAmount);
 			// store the data
 			bool result = false;
 			if (data.baseTransmitValue > float.Epsilon || data.transmitBonus > double.Epsilon)
@@ -190,6 +197,7 @@ namespace KERBALISM
 
 		public void DumpData(ScienceData data)
 		{
+			Lib.Log("### SCI Return data called " + data.subjectID + " " + data.dataAmount);
 			// remove the data
 			if (data.baseTransmitValue > float.Epsilon || data.transmitBonus > double.Epsilon)
 			{

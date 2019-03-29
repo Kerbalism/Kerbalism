@@ -281,6 +281,8 @@ namespace KERBALISM
 		// transfer data between two vessels
 		public static void Transfer(Vessel src, Vessel dst, bool samples = false)
 		{
+			Lib.Log("### SCI drive transfer from " + src.name + " to " + dst.name + " with samples: " + samples);
+
 			double dataAmount = 0.0;
 			int sampleSlots = 0;
 			foreach (var drive in DB.Vessel(src).drives.Values)
