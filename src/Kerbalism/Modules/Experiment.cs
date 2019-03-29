@@ -177,9 +177,7 @@ namespace KERBALISM
 					// record in drive
 					double chunkSize = data_rate * Kerbalism.elapsed_s;
 					var info = Science.Experiment(subject_id);
-					double massDelta = chunkSize / info.max_amount * sample_mass;
-
-					Lib.Log("EXPERIMENT: chunk size " + chunkSize + " max " + info.max_amount + " sample mass " + sample_mass + " mass delta " + massDelta);
+					double massDelta = sample_mass * chunkSize / info.max_amount;
 
 					bool stored = false;
 					if (sample_mass < float.Epsilon)
@@ -239,9 +237,7 @@ namespace KERBALISM
 				// record in drive
 				double chunkSize = experiment.data_rate * elapsed_s;
 				var info = Science.Experiment(subject_id);
-				double massDelta = chunkSize / info.max_amount * experiment.sample_mass;
-
-				Lib.Log("EXPERIMENT: chunk size " + chunkSize + " max " + info.max_amount + " sample mass " + experiment.sample_mass + " mass delta " + massDelta);
+				double massDelta = experiment.sample_mass * chunkSize / info.max_amount;
 
 				bool stored = false;
 				if (experiment.sample_mass < float.Epsilon)
