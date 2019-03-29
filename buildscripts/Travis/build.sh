@@ -1,4 +1,7 @@
 #!/bin/bash
+export KSPVERS=${KSPVERS:-"1.6.1 1.5.1 1.4.5 1.3.1"}
+export KSPBINS=${KSPBINS:-"16 15 14 13"}
+export TRAVIS_BUILD_DIR=${TRAVIS_BUILD_DIR:-$PWD}
 IFS=' ' read -r -a _KSPVERS <<< "$KSPVERS"
 IFS=' ' read -r -a _KSPBINS <<< "$KSPBINS"
 
@@ -7,7 +10,7 @@ do
 	rm -rf "src/DLLs"
 	current_kspvr="${_KSPVERS[$element]}"
 	current_kspbin="${_KSPBINS[$element]}"
-    echo "Building for $current_kspvr / $current_kspbin"
+	echo "Building for $current_kspvr / $current_kspbin"
 	filename="KSP-$current_kspvr.7z"
 	wget "https://img.steamport.xyz/$filename"
 	mkdir "src/DLLs"
