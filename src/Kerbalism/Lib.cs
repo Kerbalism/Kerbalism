@@ -1732,14 +1732,21 @@ namespace KERBALISM
 
 		public static UInt32 GetPartId(Part part)
 		{
+#if KSP13
+            return part.flightID ^ BitConverter.ToUInt32( part.vessel.vesselID, 0 );
+#else
 			return part.flightID ^ part.persistentId;
+#endif
 		}
 
 		public static UInt32 GetPartId(ProtoPartSnapshot part)
 		{
+#if KSP13
+            return part.flightID ^ BitConverter.ToUInt32( part.vessel.vesselID, 0 );
+#else
 			return part.flightID ^ part.persistentId;
+#endif
 		}
-
 		// --- PROTO ----------------------------------------------------------------
 
 		public static class Proto
