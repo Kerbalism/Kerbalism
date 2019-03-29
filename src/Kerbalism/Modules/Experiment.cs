@@ -16,6 +16,7 @@ namespace KERBALISM
 		[KSPField] public double data_rate;                   // sampling rate in Mb/s
 		[KSPField] public double ec_rate;                     // EC consumption rate per-second
 		[KSPField] public bool transmissible = true;          // true if data can be transmitted
+		[KSPField] public bool allow_shrouded = true;         // true if data can be transmitted
 
 		[KSPField] public string requires = string.Empty;     // additional requirements that must be met
 
@@ -32,6 +33,7 @@ namespace KERBALISM
 		[KSPField(isPersistant = true)] public string last_subject_id = string.Empty;
 		[KSPField(isPersistant = true)] public bool didPrepare = false;
 		[KSPField(isPersistant = true)] public double dataSampled = 0.0;
+		[KSPField(isPersistant = true)] public bool shrouded = false;
 
 		// animations
 		Animator deployAnimator;
@@ -145,11 +147,13 @@ namespace KERBALISM
 			// get ec handler
 			Resource_info ec = ResourceCache.Info(vessel, "ElectricCharge");
 
+			shrouded = part.ShieldedFromAirstream;
+
 			// if experiment is active
 			if (recording)
 			{
 				string subject_id;
-				issue = TestForIssues(vessel, exp, ec, this, didPrepare, last_subject_id, out subject_id);
+				issue = TestForIssues(vessel, exp, ec, this, didPrepare, shrouded, last_subject_id, out subject_id);
 				if (last_subject_id != subject_id) dataSampled = 0;
 
 				// if there are no issues
@@ -192,10 +196,11 @@ namespace KERBALISM
 
 			var exp = ResearchAndDevelopment.GetExperiment(experiment.experiment_id);
 			bool didPrepare = Lib.Proto.GetBool(m, "didPrepare", false);
+			bool shrouded = Lib.Proto.GetBool(m, "shrouded", false);
 			string last_subject_id = Lib.Proto.GetString(m, "last_subject_id", "");
 
 			string subject_id;
-			string issue = TestForIssues(v, exp, ec, experiment, didPrepare, last_subject_id, out subject_id);
+			string issue = TestForIssues(v, exp, ec, experiment, didPrepare, shrouded, last_subject_id, out subject_id);
 			Lib.Proto.Set(m, "issue", issue);
 
 			double dataSampled = Lib.Proto.GetDouble(m, "dataSampled");
@@ -230,7 +235,7 @@ namespace KERBALISM
 			}
 		}
 
-		private static string TestForIssues(Vessel v, ScienceExperiment exp, Resource_info ec, Experiment experiment, bool didPrepare, string last_subject_id, out string subject_id)
+		private static string TestForIssues(Vessel v, ScienceExperiment exp, Resource_info ec, Experiment experiment, bool didPrepare, bool isShrouded, string last_subject_id, out string subject_id)
 		{
 			// deduce issues
 			var sit = ScienceUtil.GetExperimentSituation(v);
@@ -247,6 +252,8 @@ namespace KERBALISM
 
 			string situationIssue = Science.TestRequirements(experiment.requires, v);
 			if (situationIssue.Length > 0) return Science.RequirementText(situationIssue);
+
+			if (isShrouded && !experiment.allow_shrouded) return "shrouded";
 
 			if (!exp.IsAvailableWhile(sit, v.mainBody)) return "invalid situation";
 			if (!has_operator) return "no operator";

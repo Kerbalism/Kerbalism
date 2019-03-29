@@ -12,7 +12,7 @@ namespace KERBALISM
 		[KSPField] public double dataCapacity = 100000.0;       // drive capacity, in Mb
 		[KSPField] public double sampleCapacity = 100000.0;          // drive capacity, in Mb
 
-		[KSPField(guiActive = true, guiName = "Capacity")] public string Capacity;
+		[KSPField(guiActive = true, guiName = "Capacity", guiActiveEditor = true)] public string Capacity;
 
 		private Drive drive;
 
@@ -76,8 +76,14 @@ namespace KERBALISM
 				availableSlots = drive.SampleCapacityAvailable();
 			}
 
-			Capacity = Lib.BuildString("Data: ", Lib.HumanReadableDataSize(availableDataCapacity),
-									   " Slots: " + availableSlots);
+			Capacity = string.Empty;
+			if(availableDataCapacity > double.Epsilon)
+				Capacity += "Data: " + Lib.HumanReadableDataSize(availableDataCapacity);
+			if(availableSlots > 0)
+			{
+				if (Capacity.Length > 0) Capacity += " ";
+				Capacity += "Slots: " + availableSlots;
+			}
 		}
 
 		public Drive GetDrive()

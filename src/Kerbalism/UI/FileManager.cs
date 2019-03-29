@@ -39,31 +39,35 @@ namespace KERBALISM
 			{
 				var drive = idDrivePair.Value;
 
-				// draw data section
-				p.AddSection(Lib.BuildString("DATA <size=", Styles.ScaleInteger(10).ToString(), ">", drive.name, " ",
-				                             Lib.HumanReadableDataSize(drive.dataCapacity),
-				                             " (", Lib.HumanReadablePerc(drive.FilesSize() / drive.dataCapacity), ") ",
-				                             "</size>"));
-				foreach (var pair in drive.files)
+				if (drive.dataCapacity > double.Epsilon)
 				{
-					string filename = pair.Key;
-					File file = pair.Value;
-					Render_file(p, filename, file, drive, short_strings && Lib.IsFlight(), Cache.VesselInfo(v).connection.rate);
+					// draw data section
+					p.AddSection("DATA",
+						Lib.BuildString(drive.name, " ", Lib.HumanReadableDataSize(drive.dataCapacity),
+												 " (", Lib.HumanReadablePerc(drive.FilesSize() / drive.dataCapacity), ")"));
+					foreach (var pair in drive.files)
+					{
+						string filename = pair.Key;
+						File file = pair.Value;
+						Render_file(p, filename, file, drive, short_strings && Lib.IsFlight(), Cache.VesselInfo(v).connection.rate);
+					}
+					if (drive.files.Count == 0) p.AddContent("<i>no files</i>", string.Empty);
 				}
-				if (drive.files.Count == 0) p.AddContent("<i>no files</i>", string.Empty);
 
-				// draw samples section
-				p.AddSection(Lib.BuildString("SAMPLES <size=", Styles.ScaleInteger(10).ToString(), ">", drive.name, " ",
-				                             Lib.HumanReadableSampleSize(drive.sampleCapacity),
-				                             " (", Lib.HumanReadablePerc(drive.SamplesSize() / drive.sampleCapacity), ") ",
-				                             "</size>"));
-				foreach (var pair in drive.samples)
+				if (drive.sampleCapacity > 0)
 				{
-					string filename = pair.Key;
-					Sample sample = pair.Value;
-					Render_sample(p, filename, sample, drive, short_strings && Lib.IsFlight());
+					// draw samples section
+					p.AddSection("SAMPLES", Lib.BuildString(drive.name, " ",
+												 Lib.HumanReadableSampleSize(drive.sampleCapacity),
+												 " (", Lib.HumanReadablePerc(drive.SamplesSize() / drive.sampleCapacity), ")"));
+					foreach (var pair in drive.samples)
+					{
+						string filename = pair.Key;
+						Sample sample = pair.Value;
+						Render_sample(p, filename, sample, drive, short_strings && Lib.IsFlight());
+					}
+					if (drive.samples.Count == 0) p.AddContent("<i>no samples</i>", string.Empty);
 				}
-				if (drive.samples.Count == 0) p.AddContent("<i>no samples</i>", string.Empty);
 			}
 		}
 
