@@ -9,8 +9,8 @@ namespace KERBALISM
 
 	public sealed class HardDrive : PartModule, IScienceDataContainer, ISpecifics, IModuleInfo
 	{
-		[KSPField] public double dataCapacity = 100000.0;       // drive capacity, in Mb
-		[KSPField] public double sampleCapacity = 100000.0;          // drive capacity, in Mb
+		[KSPField] public double dataCapacity = 102400.0;       // drive capacity, in Mb
+		[KSPField] public double sampleCapacity = 102400.0;     // drive capacity, in Mb
 
 		[KSPField(guiActive = true, guiName = "Capacity", guiActiveEditor = true)] public string Capacity;
 

@@ -40,11 +40,24 @@
 	MODULE
 		{
 			name = Experiment
-			experiment = 			//<------------- experimentID from stock ScienceDefs.cfg or each individual mod's science defs (don't forget about the :NEEDS[MyMod] at the MODULE level if experiment is from a mod.)
-			transmissible = 		//<------------- true/false, default true.
-			crew = 					//<------------- Scientist@3, Engineer@5, Pilot@1, you get the idea (@3 is level 3 for example). 
-			reset = 				//<------------- same as crew.
+			experiment_id = 			//<------------- experimentID from stock ScienceDefs.cfg or each individual mod's science defs (don't forget about the :NEEDS[MyMod] at the MODULE level if experiment is from a mod.)
 		}
-		//add this module for each experiment. data rates, ec rates and data scale are taken care of through patches in Tweakables folder.
+		//add this module for each experiment. everything else should be taken care of by other patches in this bundle.
 }
 
+//IF YOU WANT CUSTOM VALUES, OTHER THAN WHAT'S PROVIDED (faster sampling rate, less ec/s, whatever else DIFFERENT than default configured values for your experiments), you'll have to add another part:
+
+@PART[whatever part name]:NEEDS[FeatureScience]:FINAL		//Has to be final, a lot of tweaking and balancing is done very late in the patchig process
+{
+	@MODULE[Experiment]:HAS[#experiment_id[id from above]]
+	{
+		%data_rate = 
+		%ec_rate = 
+		%transmissible = 
+		%requires = 						//these are all the possible fields.
+		%crew_operate = 					//more info at https://github.com/SirMortimer/Kerbalism/blob/ebee94eef30bc033e9de0d2f0e2fc629c2b89e76/docs/modders/modules.rst
+		%crew_reset = 						//Courtesy of Sir Mortimer for doing a bunch of work on the Experiment module.
+		%crew_prepare = 
+		%anim_deploy = 
+	}
+}

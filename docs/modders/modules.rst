@@ -8,7 +8,7 @@ Comfort
 The part provides comforts for the crew.
 
 +----------+-----------------------------------------+
-| PROPERTY | DESCRIPTION                             | 
+| PROPERTY | DESCRIPTION                             |
 +==========+=========================================+
 | bonus    | the comfort bonus provided              |
 +----------+-----------------------------------------+
@@ -91,7 +91,7 @@ The part emits radiation. Use a negative radiation value for absorption.
 
 Experiment
 -------
-Hooks experiments into Kerbalisms science system.
+Hooks experiments into the Kerbalism science system.
 
 +---------------+-------------------------------------------------------------+---------+
 | PROPERTY      | DESCRIPTION                                                 | DEFAULT |
@@ -101,6 +101,8 @@ Hooks experiments into Kerbalisms science system.
 | data_rate     | sampling rate in Mb/s                                       | 0.01    |
 +---------------+-------------------------------------------------------------+---------+
 | ec_rate       | EC consumption rate per second while recording              | 0.01    |
++---------------+-------------------------------------------------------------+---------+
+| allow_shrouded| Allow the experiment to run while it's part is shrouded     | true    |
 +---------------+-------------------------------------------------------------+---------+
 | transmissible | Results can be transmitted. Set to false for samples.       | true    |
 +---------------+-------------------------------------------------------------+---------+
@@ -173,11 +175,11 @@ Used by the *Gravity Ring* part.
 +----------+------------------------------------------+
 | PROPERTY | DESCRIPTION                              |
 +==========+==========================================+
-| ec_rate  | EC consumed per-second when deployed     | 
+| ec_rate  | EC consumed per-second when deployed     |
 +----------+------------------------------------------+
-| deploy   | a deploy animation can be specified      | 
+| deploy   | a deploy animation can be specified      |
 +----------+------------------------------------------+
-| rotate   | a rotate loop animation can be specified | 
+| rotate   | a rotate loop animation can be specified |
 +----------+------------------------------------------+
 
 -------
@@ -189,25 +191,25 @@ The part simulates a greenhouse. The crop grows over time, then it is harvested 
 +---------------------+-------------------------------------------------------------------------------------------------+
 | PROPERTY            | DESCRIPTION                                                                                     |
 +=====================+=================================================================================================+
-| crop_resource       | name of resource produced by harvests                                                           | 
+| crop_resource       | name of resource produced by harvests                                                           |
 +---------------------+-------------------------------------------------------------------------------------------------+
-| crop_size           | amount of resource produced by harvests                                                         | 
+| crop_size           | amount of resource produced by harvests                                                         |
 +---------------------+-------------------------------------------------------------------------------------------------+
-| crop_rate           | growth per-second when all conditions apply                                                     | 
+| crop_rate           | growth per-second when all conditions apply                                                     |
 +---------------------+-------------------------------------------------------------------------------------------------+
-| ec_rate             | EC/s consumed by the lamp at max capacity, set to 0 to disable the lamp                         | 
+| ec_rate             | EC/s consumed by the lamp at max capacity, set to 0 to disable the lamp                         |
 +---------------------+-------------------------------------------------------------------------------------------------+
-| light_tolerance     | minimum lighting flux required for growth, in W/m^2                                             | 
+| light_tolerance     | minimum lighting flux required for growth, in W/m^2                                             |
 +---------------------+-------------------------------------------------------------------------------------------------+
-| pressure_tolerance  | minimum pressure required for growth, in sea level atmospheres (optional)                       | 
+| pressure_tolerance  | minimum pressure required for growth, in sea level atmospheres (optional)                       |
 +---------------------+-------------------------------------------------------------------------------------------------+
-| radiation_tolerance | maximum radiation allowed for growth in rad/s, considered after shielding is applied (optional) | 
+| radiation_tolerance | maximum radiation allowed for growth in rad/s, considered after shielding is applied (optional) |
 +---------------------+-------------------------------------------------------------------------------------------------+
-| lamps               | object with emissive texture used to represent intensity graphically                            | 
+| lamps               | object with emissive texture used to represent intensity graphically                            |
 +---------------------+-------------------------------------------------------------------------------------------------+
-| shutters            | animation to manipulate shutters                                                                | 
+| shutters            | animation to manipulate shutters                                                                |
 +---------------------+-------------------------------------------------------------------------------------------------+
-| plants              | animation to represent plant growth graphically                                                 | 
+| plants              | animation to represent plant growth graphically                                                 |
 +---------------------+-------------------------------------------------------------------------------------------------+
 
 Resource requirements and by-products (other than EC for the lamps) are specified using the stock *resHandler* specification
@@ -250,7 +252,15 @@ HardDrive
 ---------
 The part has an interface to access the vessel hard drive, where the science data files are stored.
 
-**It has no properties**.
++----------------+------------------------------------------------------------+---------+
+| PROPERTY       | DESCRIPTION                                                | DEFAULT |
++================+============================================================+=========+
+| dataCapacity   | Storage capacity for transmissible data, in Mb (=Mib)       | 102400 |
++----------------+------------------------------------------------------------+---------+
+| sampleCapacity | Capacity for experiment samples, in Mb (=Mib).             | 102400  |
+|                | Note that Kerbalism will not display sample sizes in Mb,   |         |
+|                | but uses a virtual size unit instead (slots, bags) (TBD)   |         |
++----------------+------------------------------------------------------------+---------+
 
 -------
 
@@ -287,11 +297,11 @@ The part transforms non-transmissible science samples into transmissible science
 +---------------+---------------------------------------------------------+
 | PROPERTY      | DESCRIPTION                                             |
 +===============+=========================================================+
-| ec_rate       | EC consumed per-second                                  | 
+| ec_rate       | EC consumed per-second                                  |
 +---------------+---------------------------------------------------------+
-| analysis_rate | analysis speed in Mb/s                                  | 
+| analysis_rate | analysis speed in Mb/s                                  |
 +---------------+---------------------------------------------------------+
-| researcher    | required crew for analysis, in the format *trait@level* | 
+| researcher    | required crew for analysis, in the format *trait@level* |
 +---------------+---------------------------------------------------------+
 
 -------
@@ -369,9 +379,9 @@ The part has sensor capabilities that adds environmental readings to a parts UI 
 +----------+-----------------------------------------+
 | PROPERTY | DESCRIPTION                             |
 +==========+=========================================+
-| type     | type of sensor                          | 
+| type     | type of sensor                          |
 +----------+-----------------------------------------+
-| pin      | pin animation driven by telemetry value | 
+| pin      | pin animation driven by telemetry value |
 +----------+-----------------------------------------+
 
 The types of sensors available are.
