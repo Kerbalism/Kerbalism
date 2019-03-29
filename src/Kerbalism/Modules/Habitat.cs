@@ -462,7 +462,13 @@ namespace KERBALISM
 		public static double Living_space(Vessel v)
 		{
 			// living space is the volume per-capita normalized against an 'ideal living space' and clamped in an acceptable range
-			return Lib.Clamp((Tot_volume(v) / Lib.CrewCount(v)) / PreferencesComfort.Instance.livingSpace, 0.1, 1.0);
+			return Lib.Clamp(Volume_per_crew(v) / PreferencesComfort.Instance.livingSpace, 0.1, 1.0);
+		}
+
+		public static double Volume_per_crew(Vessel v)
+		{
+			// living space is the volume per-capita normalized against an 'ideal living space' and clamped in an acceptable range
+			return Tot_volume(v) / Math.Max(1, Lib.CrewCount(v));
 		}
 
 		// return a verbose description of shielding capability

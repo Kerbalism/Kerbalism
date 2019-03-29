@@ -98,6 +98,8 @@ Hooks experiments into the Kerbalism science system.
 +===================+=============================================================+=========+
 | experiment_id     | The ID of the experiment (which must be defined elsewhere)  |         |
 +-------------------+-------------------------------------------------------------+---------+
+| experiment_desc   | A nice description of the experiment.                       |         |
++-------------------+-------------------------------------------------------------+---------+
 | data_rate         | sampling rate in Mb/s                                       | 0.01    |
 +-------------------+-------------------------------------------------------------+---------+
 | ec_rate           | EC consumption rate per second while recording              | 0.01    |
@@ -167,6 +169,10 @@ Here is a list of currently supported requirements:
 * Exosphere: vessel must be inside an exosphere
 * InterPlanetary: vessel must be in interplanetary space, i.e. in the SOI of the Sun
 * InterStellar: vessel must be outside the sun magnetopause
+* Greenhosue: there must be one greenhouse on the vessel.
+* CrewMin, CrewMax: min./max. amount of crew on vessel
+* CrewCapacityMin, CrewCapacityMax: min./max. crew capacity
+* VolumePerCrewMin, VolumePerCrewMax: min./max. habitat volume per crew member
 
 -------
 

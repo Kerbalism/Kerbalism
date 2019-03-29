@@ -706,9 +706,14 @@ namespace KERBALISM
 
 		public static int SampleSizeToSlots(double size)
 		{
-			int result = (int)(size / 122);
+			int result = (int)(size / 122); // 122 is just a number...
 			if (result * 122 < size) ++result;
 			return result;
+		}
+
+		public static double SlotsToSampleSize(int slots)
+		{
+			return slots * 122;
 		}
 
 		///<summary> Format science credits </summary>

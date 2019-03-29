@@ -291,20 +291,26 @@ namespace KERBALISM
 				switch (condition)
 				{
 					case "OrbitMinInclination": good = Math.Abs(v.orbit.inclination) >= Double.Parse(value); break;
-					case "OrbitMaxInclination": good = Math.Abs(v.orbit.inclination) < Double.Parse(value); break;
+					case "OrbitMaxInclination": good = Math.Abs(v.orbit.inclination) <= Double.Parse(value); break;
 					case "OrbitMinEccentricity": good = Math.Abs(v.orbit.eccentricity) >= Double.Parse(value); break;
-					case "OrbitMaxEccentricity": good = Math.Abs(v.orbit.eccentricity) < Double.Parse(value); break;
+					case "OrbitMaxEccentricity": good = Math.Abs(v.orbit.eccentricity) <= Double.Parse(value); break;
 
 					case "TemperatureMin": good = vi.temperature >= Double.Parse(value); break;
-					case "TemperatureMax": good = vi.temperature < Double.Parse(value); break;
+					case "TemperatureMax": good = vi.temperature <= Double.Parse(value); break;
 					case "AltitudeMin": good = v.altitude >= Double.Parse(value); break;
-					case "AltitudeMax": good = v.altitude < Double.Parse(value); break;
+					case "AltitudeMax": good = v.altitude <= Double.Parse(value); break;
 					case "RadiationMin": good = vi.radiation >= Double.Parse(value); break;
-					case "RadiationMax": good = vi.radiation < Double.Parse(value); break;
+					case "RadiationMax": good = vi.radiation <= Double.Parse(value); break;
 					case "Microgravity": good = vi.zerog; break;
 					case "Body": good = v.mainBody.name == value; break;
 					case "Shadow": good = vi.sunlight < Double.Epsilon; break;
-
+					case "CrewMin": good = vi.crew_count >= int.Parse(value); break;
+					case "CrewMax": good = vi.crew_count <= int.Parse(value); break;
+					case "CrewCapacityMin": good = vi.crew_capacity >= int.Parse(value); break;
+					case "CrewCapacityMax": good = vi.crew_capacity <= int.Parse(value); break;
+					case "VolumePerCrewMin": good = vi.volume_per_crew >= Double.Parse(value); break;
+					case "VolumePerCrewMax": good = vi.volume_per_crew <= Double.Parse(value); break;
+					case "Greenhouse": good = vi.greenhouses.Count > 0; break;
 					case "Surface": good = Lib.Landed(v); break;
 					case "Atmosphere": good = body.atmosphere && v.altitude < body.atmosphereDepth; break;
 					case "Ocean": good = body.ocean && v.altitude < 0.0; break;
@@ -319,6 +325,7 @@ namespace KERBALISM
 					case "InterPlanetary": good = body.flightGlobalsIndex == 0 && !vi.interstellar; break;
 					case "InterStellar": good = body.flightGlobalsIndex == 0 && vi.interstellar; break;
 				}
+
 				if (!good) return s;
 			}
 
@@ -346,7 +353,13 @@ namespace KERBALISM
 				case "Body": return value;
 				case "TemperatureMin": return Lib.BuildString("Min. temperature ", Lib.HumanReadableTemp(Double.Parse(value)));
 				case "TemperatureMax": return Lib.BuildString("Max. temperature ", Lib.HumanReadableTemp(Double.Parse(value)));
-
+				case "CrewMin": return Lib.BuildString("Min. crew ", value);
+				case "CrewMax": return Lib.BuildString("Max. crew ", value);
+				case "CrewCapacityMin": return Lib.BuildString("Min. crew capacity ", value);
+				case "CrewCapacityMax": return Lib.BuildString("Max. crew capacity ", value);
+				case "VolumePerCrewMin": return Lib.BuildString("Min. vol./crew ", value);
+				case "VolumePerCrewMax": return Lib.BuildString("Max. vol./crew ", value);
+					
 				default:
 					return Lib.SpacesOnCaps(condition);
 			}

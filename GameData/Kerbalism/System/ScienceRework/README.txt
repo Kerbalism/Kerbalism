@@ -53,9 +53,7 @@
 	{
 		%data_rate = 
 		%ec_rate = 
-		%sample_size = 
-		%sample_collecting = 
-		%allow_shrouding = 
+		%transmissible = 
 		%requires = 						//these are all the possible fields.
 		%crew_operate = 					//more info at https://github.com/SirMortimer/Kerbalism/blob/ebee94eef30bc033e9de0d2f0e2fc629c2b89e76/docs/modders/modules.rst
 		%crew_reset = 						//Courtesy of Sir Mortimer for doing a bunch of work on the Experiment module.

@@ -140,42 +140,31 @@ namespace KERBALISM
 			return drives[partId];
 		}
 
-		public Drive BestDrive(double minDataCapacity = 0)
+		public Drive BestDrive(double minDataCapacity = 0, int minSlots = 0)
 		{
 			Drive result = null;
 			foreach(var drive in drives.Values)
 			{
-				if (result == null || result.FileCapacityAvailable() < minDataCapacity) result = drive;
-				else
+				if (result == null)
 				{
-					if (drive.FileCapacityAvailable() >= minDataCapacity && drive.dataCapacity > result.dataCapacity)
-						result = drive;
+					result = drive;
+					continue;
 				}
+
+				if (minDataCapacity > double.Epsilon && drive.FileCapacityAvailable() < minDataCapacity)
+					continue;
+				if (minSlots > 0 && drive.SampleCapacityAvailable() < minSlots)
+					continue;
+
+				if (minDataCapacity > double.Epsilon && drive.FileCapacityAvailable() > result.FileCapacityAvailable())
+					result = drive;
+				if (minSlots > 0 && drive.SampleCapacityAvailable() > result.SampleCapacityAvailable())
+					result = drive;
 			}
 			if(result == null)
 			{
 				// vessel has no drive.
-				return new Drive("Kerbodyne Zeroit", 0, 0);
-			}
-			return result;
-		}
-
-		public Drive BestDrive(int minSlots)
-		{
-			Drive result = null;
-			foreach (var drive in drives.Values)
-			{
-				if (result == null || Lib.SampleSizeToSlots(result.SampleCapacityAvailable()) < minSlots) result = drive;
-				else
-				{
-					if (Lib.SampleSizeToSlots(drive.SampleCapacityAvailable()) >= minSlots && drive.sampleCapacity > result.sampleCapacity)
-						result = drive;
-				}
-			}
-			if (result == null)
-			{
-				// vessel has no drive.
-				return new Drive("Empty Jar", 0, 0);
+				return new Drive("Kerbodyne Zerobit", 0, 0);
 			}
 			return result;
 		}

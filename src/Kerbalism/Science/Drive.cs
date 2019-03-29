@@ -252,9 +252,15 @@ namespace KERBALISM
 			return amount;
 		}
 
-		public int SampleCapacityAvailable()
+		public double SampleCapacityAvailable(string filename = "")
 		{
-			return sampleCapacity - SamplesSize();
+			double result = Lib.SlotsToSampleSize(sampleCapacity - SamplesSize());
+			if(samples.ContainsKey(filename)) {
+				int slotsForMyFile = Lib.SampleSizeToSlots(samples[filename].size);
+				double amountLostToSlotting = Lib.SlotsToSampleSize(slotsForMyFile) - samples[filename].size;
+				result += amountLostToSlotting;
+			}
+			return result;
 		}
 
 		public int SamplesSize()
@@ -270,7 +276,7 @@ namespace KERBALISM
 		// return size of data stored in Mb (including samples)
 		public string Size()
 		{
-			return Lib.BuildString("Data: ", Lib.HumanReadableDataSize(FilesSize()), " Samples: ", Lib.HumanReadableSampleSize(SamplesSize()));
+			return Lib.BuildString(Lib.HumanReadableDataSize(FilesSize()), "  ", Lib.HumanReadableSampleSize(SamplesSize()));
 		}
 
 		public bool Empty()
@@ -281,8 +287,6 @@ namespace KERBALISM
 		// transfer data between two vessels
 		public static void Transfer(Vessel src, Vessel dst, bool samples = false)
 		{
-			Lib.Log("### SCI drive transfer from " + src.name + " to " + dst.name + " with samples: " + samples);
-
 			double dataAmount = 0.0;
 			int sampleSlots = 0;
 			foreach (var drive in DB.Vessel(src).drives.Values)
@@ -317,13 +321,13 @@ namespace KERBALISM
 			if (allMoved)
 				Message.Post
 				(
-					Lib.BuildString(Lib.HumanReadableDataSize(dataAmount), " ", Localizer.Format("#KERBALISM_Science_ofdatatransfer")),
+					Localizer.Format("#KERBALISM_Science_ofdatatransfer"),
 				 	Lib.BuildString(Localizer.Format("#KERBALISM_Generic_FROM"), " <b>", src.vesselName, "</b> ", Localizer.Format("#KERBALISM_Generic_TO"), " <b>", dst.vesselName, "</b>")
 				);
 			else
 				Message.Post
 				(
-					Lib.Color("red", Lib.BuildString("WARNING: not all data copied"), true),
+					Lib.Color("red", Lib.BuildString("WARNING: not evering copied"), true),
 					Lib.BuildString(Localizer.Format("#KERBALISM_Generic_FROM"), " <b>", src.vesselName, "</b> ", Localizer.Format("#KERBALISM_Generic_TO"), " <b>", dst.vesselName, "</b>")
 				);
 		}

@@ -13,6 +13,7 @@ namespace KERBALISM
 	{
 		// config
 		[KSPField] public string experiment_id;               // id of associated experiment definition
+		[KSPField] public string experiment_desc = string.Empty;  // some nice lines of text
 		[KSPField] public double data_rate;                   // sampling rate in Mb/s
 		[KSPField] public double ec_rate;                     // EC consumption rate per-second
 		[KSPField] public float sample_mass = 0f;             // if set to anything but 0, the experiment is a sample.
@@ -36,6 +37,7 @@ namespace KERBALISM
 		[KSPField(isPersistant = true)] public double dataSampled = 0.0;
 		[KSPField(isPersistant = true)] public bool shrouded = false;
 		[KSPField(isPersistant = true)] public double remainingSampleMass = -1;
+		[KSPField(isPersistant = true)] public bool broken = false;
 
 		// animations
 		Animator deployAnimator;
@@ -158,49 +160,59 @@ namespace KERBALISM
 
 			// get ec handler
 			Resource_info ec = ResourceCache.Info(vessel, "ElectricCharge");
-
 			shrouded = part.ShieldedFromAirstream;
+			string subject_id;
+			issue = TestForIssues(vessel, exp, ec, this, broken,
+				remainingSampleMass, didPrepare, shrouded, last_subject_id, out subject_id);
 
-			// if experiment is active
-			if (recording)
+			// if experiment is active and there are no issues
+			if (recording && issue.Length == 0 && dataSampled < exp.scienceCap * exp.dataScale)
 			{
-				string subject_id;
-				issue = TestForIssues(vessel, exp, ec, this, 
-					remainingSampleMass, didPrepare, shrouded, last_subject_id, out subject_id);
 				if (last_subject_id != subject_id) dataSampled = 0;
+				last_subject_id = subject_id;
 
-				// if there are no issues
-				if (issue.Length == 0 && dataSampled < exp.scienceCap * exp.dataScale)
+				// record in drive
+				double elapsed = Kerbalism.elapsed_s;
+
+				double chunkSize = data_rate * elapsed;
+				var info = Science.Experiment(subject_id);
+				double massDelta = sample_mass * chunkSize / info.max_amount;
+
+				bool isSample = sample_mass < float.Epsilon;
+				var drive = isSample
+						   ? DB.Vessel(vessel).BestDrive(chunkSize, 0)
+						   : DB.Vessel(vessel).BestDrive(0, Lib.SampleSizeToSlots(chunkSize));
+
+				// on high time warp this chunk size could be too big, but we could store a sizable amount if we processed less
+				double maxCapacity = isSample ? drive.FileCapacityAvailable() : drive.SampleCapacityAvailable(subject_id);
+				if(maxCapacity < chunkSize) {
+					double factor = maxCapacity / chunkSize;
+					chunkSize *= factor;
+					massDelta *= factor;
+					elapsed *= factor;
+				}
+
+				bool stored = false;
+				if (sample_mass < float.Epsilon)
+					stored = drive.Record_file(subject_id, chunkSize, true, true);
+				else
+					stored = drive.Record_sample(subject_id, chunkSize, massDelta);
+
+				if(stored)
 				{
-					last_subject_id = subject_id;
-
-					// record in drive
-					double chunkSize = data_rate * Kerbalism.elapsed_s;
-					var info = Science.Experiment(subject_id);
-					double massDelta = sample_mass * chunkSize / info.max_amount;
-
-					bool stored = false;
-					if (sample_mass < float.Epsilon)
-						stored = DB.Vessel(vessel).BestDrive(chunkSize).Record_file(subject_id, chunkSize, true, true);
-					else
-						stored = DB.Vessel(vessel).BestDrive(chunkSize).Record_sample(subject_id, chunkSize, massDelta);
-
-					if(stored)
+					// consume ec
+					ec.Consume(ec_rate * elapsed);
+					dataSampled += chunkSize;
+					dataSampled = Math.Min(dataSampled, exp.scienceCap * exp.dataScale);
+					if(!sample_collecting)
 					{
-						// consume ec
-						ec.Consume(ec_rate * Kerbalism.elapsed_s);
-						dataSampled += chunkSize;
-						dataSampled = Math.Min(dataSampled, exp.scienceCap * exp.dataScale);
-						if(!sample_collecting)
-						{
-							remainingSampleMass -= massDelta;
-							remainingSampleMass = Math.Max(remainingSampleMass, 0);
-						}
+						remainingSampleMass -= massDelta;
+						remainingSampleMass = Math.Max(remainingSampleMass, 0);
 					}
-					else
-					{
-						issue = "insufficient storage";
-					}
+				}
+				else
+				{
+					issue = "insufficient storage";
 				}
 			}
 		}
@@ -208,23 +220,21 @@ namespace KERBALISM
 
 		public static void BackgroundUpdate(Vessel v, ProtoPartModuleSnapshot m, Experiment experiment, Resource_info ec, double elapsed_s)
 		{
-			// if experiment is active
-			if (!Lib.Proto.GetBool(m, "recording"))
-				return;
-
-			// detect conditions
-			// - comparing against amount in previous step
-
 			var exp = ResearchAndDevelopment.GetExperiment(experiment.experiment_id);
 			bool didPrepare = Lib.Proto.GetBool(m, "didPrepare", false);
 			bool shrouded = Lib.Proto.GetBool(m, "shrouded", false);
 			string last_subject_id = Lib.Proto.GetString(m, "last_subject_id", "");
 			double remainingSampleMass = Lib.Proto.GetDouble(m, "remainingSampleMass", 0);
+			bool broken = Lib.Proto.GetBool(m, "broken", false);
 
 			string subject_id;
-			string issue = TestForIssues(v, exp, ec, experiment,
+			string issue = TestForIssues(v, exp, ec, experiment, broken,
 				remainingSampleMass, didPrepare, shrouded, last_subject_id, out subject_id);
 			Lib.Proto.Set(m, "issue", issue);
+
+			// if experiment is active
+			if (!Lib.Proto.GetBool(m, "recording"))
+				return;
 
 			double dataSampled = Lib.Proto.GetDouble(m, "dataSampled");
 			if (last_subject_id != subject_id) dataSampled = 0;
@@ -239,11 +249,26 @@ namespace KERBALISM
 				var info = Science.Experiment(subject_id);
 				double massDelta = experiment.sample_mass * chunkSize / info.max_amount;
 
+				bool isSample = experiment.sample_mass < float.Epsilon;
+				var drive = isSample
+						   ? DB.Vessel(v).BestDrive(chunkSize, 0)
+						   : DB.Vessel(v).BestDrive(0, Lib.SampleSizeToSlots(chunkSize));
+
+				// on high time warp this chunk size could be too big, but we could store a sizable amount if we processed less
+				double maxCapacity = isSample ? drive.FileCapacityAvailable() : drive.SampleCapacityAvailable(subject_id);
+				if (maxCapacity < chunkSize)
+				{
+					double factor = maxCapacity / chunkSize;
+					chunkSize *= factor;
+					massDelta *= factor;
+					elapsed_s *= factor;
+				}
+
 				bool stored = false;
 				if (experiment.sample_mass < float.Epsilon)
-					stored = DB.Vessel(v).BestDrive(chunkSize).Record_file(subject_id, chunkSize, true, true);
+					stored = drive.Record_file(subject_id, chunkSize, true, true);
 				else
-					stored = DB.Vessel(v).BestDrive(chunkSize).Record_sample(subject_id, chunkSize, massDelta);
+					stored = drive.Record_sample(subject_id, chunkSize, massDelta);
 
 				if (stored)
 				{
@@ -269,32 +294,49 @@ namespace KERBALISM
 			}
 		}
 
-		private static string TestForIssues(Vessel v, ScienceExperiment exp, Resource_info ec, Experiment experiment, 
+		public void ReliablityEvent(bool breakdown)
+		{
+			broken = breakdown;
+		}
+
+		private static string TestForIssues(Vessel v, ScienceExperiment exp, Resource_info ec, Experiment experiment, bool broken,
 			double remainingSampleMass, bool didPrepare, bool isShrouded, string last_subject_id, out string subject_id)
 		{
-			// deduce issues
 			var sit = ScienceUtil.GetExperimentSituation(v);
-			bool has_ec = ec.amount > double.Epsilon;
-			bool has_operator = string.IsNullOrEmpty(experiment.crew_operate) || new CrewSpecs(experiment.crew_operate).Check(v);
-
 			var biome = ScienceUtil.GetExperimentBiome(v.mainBody, v.latitude, v.longitude);
 			subject_id = Science.Generate_subject(exp, v.mainBody, sit, biome);
 
+			if (broken)
+				return "broken";
+
+			if (isShrouded && !experiment.allow_shrouded)
+				return "shrouded";
+			
 			bool needsReset = experiment.crew_reset.Length > 0
 				&& !string.IsNullOrEmpty(last_subject_id) && subject_id != last_subject_id;
 			if (needsReset) return "reset required";
 
+			if (ec.amount < double.Epsilon && experiment.ec_rate > double.Epsilon)
+				return "missing <b>EC</b>";
+			
+			if (!string.IsNullOrEmpty(experiment.crew_operate))
+			{
+				var cs = new CrewSpecs(experiment.crew_operate);
+				if (!cs.Check(v)) return cs.Warning();
+			}
+
+			if (!experiment.sample_collecting && remainingSampleMass < double.Epsilon && experiment.sample_mass > double.Epsilon)
+				return "depleted";
+
 			string situationIssue = Science.TestRequirements(experiment.requires, v);
-			if (situationIssue.Length > 0) return Science.RequirementText(situationIssue);
+			if (situationIssue.Length > 0)
+				return Science.RequirementText(situationIssue);
+			
+			if (!exp.IsAvailableWhile(sit, v.mainBody))
+				return "invalid situation";
 
-			if (isShrouded && !experiment.allow_shrouded) return "shrouded";
-
-			if (!experiment.sample_collecting && remainingSampleMass < double.Epsilon && experiment.sample_mass > double.Epsilon) return "depleted";
-
-			if (!exp.IsAvailableWhile(sit, v.mainBody)) return "invalid situation";
-			if (!has_operator) return "no operator";
-			if (!didPrepare && !string.IsNullOrEmpty(experiment.crew_prepare)) return "not prepared";
-			if (!has_ec) return "missing <b>EC</b>";
+			if (!didPrepare && !string.IsNullOrEmpty(experiment.crew_prepare))
+				return "not prepared";
 
 			var drive = DB.Vessel(v).BestDrive();
 			double available = experiment.sample_mass < float.Epsilon ? drive.FileCapacityAvailable() : drive.SampleCapacityAvailable();
@@ -424,7 +466,13 @@ namespace KERBALISM
 			if(exp == null) exp = ResearchAndDevelopment.GetExperiment(experiment_id);
 
 			var specs = new Specifics();
-			specs.Add("Name", ResearchAndDevelopment.GetExperiment(experiment_id).experimentTitle);
+			specs.Add(Lib.BuildString("<b>", ResearchAndDevelopment.GetExperiment(experiment_id).experimentTitle, "</b>"));
+
+			if(!string.IsNullOrEmpty(experiment_desc))
+			{
+				specs.Add(Lib.BuildString("<i>", experiment_desc, "</i>"));
+			}
+			specs.Add(string.Empty);
 
 			double expSize = exp.scienceCap * exp.dataScale;
 			if (sample_mass < float.Epsilon)
