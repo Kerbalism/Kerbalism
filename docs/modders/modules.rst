@@ -169,7 +169,7 @@ Here is a list of currently supported requirements:
 * Exosphere: vessel must be inside an exosphere
 * InterPlanetary: vessel must be in interplanetary space, i.e. in the SOI of the Sun
 * InterStellar: vessel must be outside the sun magnetopause
-* Greenhosue: there must be one greenhouse on the vessel.
+* Greenhouse: there must be one greenhouse on the vessel.
 * CrewMin, CrewMax: min./max. amount of crew on vessel
 * CrewCapacityMin, CrewCapacityMax: min./max. crew capacity
 * VolumePerCrewMin, VolumePerCrewMax: min./max. habitat volume per crew member
