@@ -104,7 +104,7 @@ namespace KERBALISM
 		}
 
 		// add science sample, creating new sample or incrementing existing one
-		public bool Record_sample(string subject_id, double amount)
+		public bool Record_sample(string subject_id, double amount, double mass)
 		{
 			int currentSampleSlots = SamplesSize();
 			if(!samples.ContainsKey(subject_id) && currentSampleSlots >= sampleCapacity)
@@ -132,12 +132,22 @@ namespace KERBALISM
 				samples.Add(subject_id, sample);
 			}
 
-			// increase amount of data stored in the sample
-			sample.size += amount;
+			// increase amount of data stored in the sample,
+			// but clamp file size to max amount that can be collected
+			var maxSize = Science.Experiment(subject_id).max_amount;
+			var sizeDelta = maxSize - sample.size;
+			if(sizeDelta >= amount)
+			{
+				sample.size += amount;
+				sample.mass += mass;
+			}
+			else
+			{
+				sample.size += sizeDelta;
 
-			// clamp file size to max amount that can be collected
-			sample.size = Math.Min(sample.size, Science.Experiment(subject_id).max_amount);
-
+				var f = sizeDelta / amount; // how much of the desired amount can we add
+				sample.mass += mass * f; // add the proportional amount of mass
+			}
 			return true;
 		}
 
@@ -216,7 +226,7 @@ namespace KERBALISM
 				var samplesList = new List<string>();
 				foreach (var p in samples)
 				{
-					if (destination.Record_sample(p.Key, p.Value.size))
+					if (destination.Record_sample(p.Key, p.Value.size, p.Value.mass))
 						samplesList.Add(p.Key);
 					else
 						result = false;

@@ -11,7 +11,6 @@ namespace KERBALISM
 	{
 		public VesselData()
 		{
-			Lib.Log("HARDDRIVE new vessel data instance");
 			msg_signal = false;
 			msg_belt = false;
 			cfg_ec = PreferencesMessages.Instance.ec;
@@ -36,8 +35,6 @@ namespace KERBALISM
 
 		public VesselData(ConfigNode node)
 		{
-			Lib.Log("HARDDRIVE loading vessel data instance");
-
 			msg_signal = Lib.ConfigValue(node, "msg_signal", false);
 			msg_belt = Lib.ConfigValue(node, "msg_belt", false);
 			cfg_ec = Lib.ConfigValue(node, "cfg_ec", PreferencesMessages.Instance.ec);
@@ -105,25 +102,20 @@ namespace KERBALISM
 
 		private Dictionary<uint, Drive> LoadDrives(ConfigNode node)
 		{
-			Lib.Log("HARDDRIVE loading drives for vessel from node");
 			Dictionary<uint, Drive> result = new Dictionary<uint, Drive>();
 			foreach(var n in node.GetNodes("drive"))
 			{
 				uint partId = Lib.ConfigValue(n, "partId", (uint)0);
 				Drive drive = new Drive(n);
 				result.Add(partId, drive);
-
-				Lib.Log("HARDDRIVE loaded: part id " + partId + " " + drive.Size());
 			}
 			return result;
 		}
 
 		private void SaveDrives(ConfigNode node)
 		{
-			Lib.Log("HARDDRIVE saving drives for vessel to node");
 			foreach (var pair in drives)
 			{
-				Lib.Log("HARDDRIVE saving drive to node");
 				var n = node.AddNode("drive");
 				n.AddValue("partId", pair.Key);
 				pair.Value.Save(n);

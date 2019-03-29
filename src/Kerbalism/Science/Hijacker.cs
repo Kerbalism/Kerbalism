@@ -47,7 +47,12 @@ namespace KERBALISM
 				else
 				{
 					Drive drive = DB.Vessel(meta.vessel).BestDrive(Lib.SampleSizeToSlots(data.dataAmount));
-					recorded = drive.Record_sample(data.subjectID, data.dataAmount);
+
+					var experimentInfo = Science.Experiment(data.subjectID);
+					var sampleMass = Science.GetSampleMass(data.subjectID);
+					var mass = sampleMass / experimentInfo.max_amount * data.dataAmount;
+
+					recorded = drive.Record_sample(data.subjectID, data.dataAmount, mass);
 				}
 
 				if (recorded)
@@ -157,7 +162,12 @@ namespace KERBALISM
 			else
 			{
 				Drive drive = DB.Vessel(meta.vessel).BestDrive(Lib.SampleSizeToSlots(data.dataAmount));
-				recorded = drive.Record_sample(data.subjectID, data.dataAmount);
+
+				var experimentInfo = Science.Experiment(data.subjectID);
+				var sampleMass = Science.GetSampleMass(data.subjectID);
+				var mass = sampleMass / experimentInfo.max_amount * data.dataAmount;
+
+				recorded = drive.Record_sample(data.subjectID, data.dataAmount, mass);
 			}
 
 			if (recorded)

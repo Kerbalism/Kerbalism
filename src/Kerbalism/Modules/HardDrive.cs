@@ -7,7 +7,7 @@ using UnityEngine;
 namespace KERBALISM
 {
 
-	public sealed class HardDrive : PartModule, IScienceDataContainer, ISpecifics, IModuleInfo
+	public sealed class HardDrive : PartModule, IScienceDataContainer, ISpecifics, IModuleInfo, IPartMassModifier
 	{
 		[KSPField] public double dataCapacity = 102400.0;       // drive capacity, in Mb
 		[KSPField] public double sampleCapacity = 102400.0;     // drive capacity, in Mb
@@ -15,6 +15,7 @@ namespace KERBALISM
 		[KSPField(guiActive = true, guiName = "Capacity", guiActiveEditor = true)] public string Capacity;
 
 		private Drive drive;
+		private double totalSampleMass;
 
 		public override void OnStart(StartState state)
 		{
@@ -68,6 +69,9 @@ namespace KERBALISM
 
 		private void UpdateCapacity()
 		{
+			totalSampleMass = 0;
+			foreach (var sample in drive.samples.Values) totalSampleMass += sample.mass;
+
 			double availableDataCapacity = dataCapacity;
 			int availableSlots = Lib.SampleSizeToSlots(sampleCapacity);
 			if (Lib.IsFlight())
@@ -83,6 +87,11 @@ namespace KERBALISM
 			{
 				if (Capacity.Length > 0) Capacity += " ";
 				Capacity += "Slots: " + availableSlots;
+			}
+
+			if(Lib.IsFlight() && totalSampleMass > double.Epsilon)
+			{
+				Capacity += " " + Lib.HumanReadableMass(totalSampleMass);
 			}
 		}
 
@@ -171,7 +180,11 @@ namespace KERBALISM
 			}
 			else
 			{
-				result = drive.Record_sample(data.subjectID, data.dataAmount);
+				var experimentInfo = Science.Experiment(data.subjectID);
+				var sampleMass = Science.GetSampleMass(data.subjectID);
+				var mass = sampleMass / experimentInfo.max_amount * data.dataAmount;
+
+				result = drive.Record_sample(data.subjectID, data.dataAmount, mass);
 			}
 		}
 
@@ -236,6 +249,9 @@ namespace KERBALISM
 		public string GetPrimaryField() { return string.Empty; }
 		public Callback<Rect> GetDrawModulePanelCallback() { return null; }
 
+		// module mass support
+		public float GetModuleMass(float defaultMass, ModifierStagingSituation sit) { return (float)totalSampleMass; }
+		public ModifierChangeWhen GetModuleMassChangeWhen() { return ModifierChangeWhen.CONSTANTLY; }
 	}
 
 

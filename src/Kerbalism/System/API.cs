@@ -253,10 +253,10 @@ namespace KERBALISM
 		}
 
 		// store a sample on a vessel
-		public static bool StoreSample(Vessel v, string subject_id, double amount)
+		public static bool StoreSample(Vessel v, string subject_id, double amount, double mass = 0)
 		{
 			if (!Cache.VesselInfo(v).is_valid) return false;
-			return DB.Vessel(v).BestDrive(Lib.SampleSizeToSlots(amount)).Record_sample(subject_id, amount);
+			return DB.Vessel(v).BestDrive(Lib.SampleSizeToSlots(amount)).Record_sample(subject_id, amount, mass);
 		}
 
 		// remove a file from a vessel

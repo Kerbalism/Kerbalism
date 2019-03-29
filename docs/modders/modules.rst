@@ -104,7 +104,9 @@ Hooks experiments into the Kerbalism science system.
 +---------------+-------------------------------------------------------------+---------+
 | allow_shrouded| Allow the experiment to run while it's part is shrouded     | true    |
 +---------------+-------------------------------------------------------------+---------+
-| transmissible | Results can be transmitted. Set to false for samples.       | true    |
+| sample_mass   | If anything but 0, this is a sample and cannot be transmitted | 0.0    |
++---------------+-------------------------------------------------------------+---------+
+| sample_collecting | If set to true, the experiment will produce mass. | false    |
 +---------------+-------------------------------------------------------------+---------+
 | requires      | Additional requirements that must be met for recording.     |         |
 |               | See below.                                                  |         |

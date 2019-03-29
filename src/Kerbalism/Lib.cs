@@ -646,10 +646,12 @@ namespace KERBALISM
 		///<summary> Pretty-print mass </summary>
 		public static string HumanReadableMass( double v )
 		{
-			if (v <= double.Epsilon) return "none";
+			if (v <= double.Epsilon) return "0 kg";
 			if(v > 1) return Lib.BuildString(v.ToString("F3"), " t");
 			v *= 1000;
-			return Lib.BuildString(v.ToString("F2"), " kg");
+			if(v > 1) return Lib.BuildString(v.ToString("F2"), " kg");
+			v *= 1000;
+			return Lib.BuildString(v.ToString("F2"), " g");
 		}
 
 		///<summary> Pretty-print cost </summary>

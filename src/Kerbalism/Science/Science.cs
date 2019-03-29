@@ -11,13 +11,11 @@ namespace KERBALISM
 	public static class Science
 	{
 		// hard-coded transmission buffer size in Mb
-		private const double buffer_capacity = 8.0;
-		private static string exp_filename = "";
+		private const double buffer_capacity = 4.0;
 
 		// pseudo-ctor
 		public static void Init()
 		{
-			// initialize experiment info cache
 			experiments = new Dictionary<string, ExperimentInfo>();
 
 			// make the science dialog invisible, just once
@@ -39,7 +37,7 @@ namespace KERBALISM
 		{
 			foreach (var d in vd.drives.Values)
 			{
-				if (d.files.ContainsKey(exp_filename))
+				if (d.files.ContainsKey(filename))
 				{
 					return d;
 				}
@@ -62,7 +60,7 @@ namespace KERBALISM
 			if (conn == null || String.IsNullOrEmpty(vi.transmitting)) return;
 
 			// get filename of data being downloaded
-			exp_filename = vi.transmitting;
+			var exp_filename = vi.transmitting;
 
 			var drive = FindDrive(vd, exp_filename);
 
@@ -354,8 +352,33 @@ namespace KERBALISM
 			}
 		}
 
+		public static void RegisterSampleMass(string experiment_id, double sampleMass)
+		{
+			// get experiment id out of subject id
+			int i = experiment_id.IndexOf('@');
+			var id = i > 0 ? experiment_id.Substring(0, i) : experiment_id;
+
+			if (sampleMasses.ContainsKey(id) && sampleMasses[id] - sampleMass > double.Epsilon)
+			{
+				Lib.Log("Warning: different sample masses for Experiment " + id + " defined.");
+			}
+			sampleMasses.Add(id, sampleMass);
+		}
+
+		public static double GetSampleMass(string experiment_id)
+		{
+			// get experiment id out of subject id
+			int i = experiment_id.IndexOf('@');
+			var id = i > 0 ? experiment_id.Substring(0, i) : experiment_id;
+
+			if (!sampleMasses.ContainsKey(id)) return 0;
+			return sampleMasses[id];
+		}
+
 		// experiment info cache
 		static Dictionary<string, ExperimentInfo> experiments;
+		readonly static Dictionary<string, double> sampleMasses = new Dictionary<string, double>();
+
 	}
 
 } // KERBALISM

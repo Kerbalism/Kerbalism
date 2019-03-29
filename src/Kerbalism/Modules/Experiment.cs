@@ -9,13 +9,14 @@ namespace KERBALISM
 
 
 	// EXPERIMENTAL
-	public sealed class Experiment : PartModule, ISpecifics
+	public sealed class Experiment : PartModule, ISpecifics, IPartMassModifier
 	{
 		// config
 		[KSPField] public string experiment_id;               // id of associated experiment definition
 		[KSPField] public double data_rate;                   // sampling rate in Mb/s
 		[KSPField] public double ec_rate;                     // EC consumption rate per-second
-		[KSPField] public bool transmissible = true;          // true if data can be transmitted
+		[KSPField] public float sample_mass = 0f;             // if set to anything but 0, the experiment is a sample.
+		[KSPField] public bool sample_collecting = false;     // if set to true, the experiment will generate mass out of nothing
 		[KSPField] public bool allow_shrouded = true;         // true if data can be transmitted
 
 		[KSPField] public string requires = string.Empty;     // additional requirements that must be met
@@ -34,6 +35,7 @@ namespace KERBALISM
 		[KSPField(isPersistant = true)] public bool didPrepare = false;
 		[KSPField(isPersistant = true)] public double dataSampled = 0.0;
 		[KSPField(isPersistant = true)] public bool shrouded = false;
+		[KSPField(isPersistant = true)] public double remainingSampleMass = -1;
 
 		// animations
 		Animator deployAnimator;
@@ -46,10 +48,21 @@ namespace KERBALISM
 		private String situationIssue = String.Empty;
 		[KSPField(guiActive = false, guiName = "_")] private string ExperimentStatus = string.Empty;
 
+		public override void OnLoad(ConfigNode node)
+		{
+			// build up science sample mass database
+			if (HighLogic.LoadedScene == GameScenes.LOADING)
+			{
+				Science.RegisterSampleMass(experiment_id, sample_mass);
+			}
+		}
+
 		public override void OnStart(StartState state)
 		{
 			// don't break tutorial scenarios
 			if (Lib.DisableScenario(this)) return;
+
+			if(remainingSampleMass < 0) remainingSampleMass = sample_mass;
 
 			// create animator
 			deployAnimator = new Animator(part, anim_deploy);
@@ -67,7 +80,6 @@ namespace KERBALISM
 
 			exp = ResearchAndDevelopment.GetExperiment(experiment_id);
 		}
-
 
 		public void Update()
 		{
@@ -96,7 +108,7 @@ namespace KERBALISM
 
 				Events["Reset"].guiName = Lib.BuildString("Reset <b>", exp.experimentTitle, "</b>");
 				// we need a reset either if we have recorded data or did a setup
-				bool resetActive = (reset_cs != null || prepare_cs != null) && !string.IsNullOrEmpty(last_subject_id);
+				bool resetActive = sample_mass < float.Epsilon && (reset_cs != null || prepare_cs != null) && !string.IsNullOrEmpty(last_subject_id);
 				Events["Reset"].active = resetActive;
 
 				Fields["ExperimentStatus"].guiName = exp.experimentTitle;
@@ -109,7 +121,7 @@ namespace KERBALISM
 					string a = string.Empty;
 					string b = string.Empty;
 
-					if (transmissible)
+					if (sample_mass < float.Epsilon)
 					{
 						a = Lib.HumanReadableDataSize(dataSampled);
 						b = Lib.HumanReadableDataSize(sampleSize);
@@ -153,7 +165,8 @@ namespace KERBALISM
 			if (recording)
 			{
 				string subject_id;
-				issue = TestForIssues(vessel, exp, ec, this, didPrepare, shrouded, last_subject_id, out subject_id);
+				issue = TestForIssues(vessel, exp, ec, this, 
+					remainingSampleMass, didPrepare, shrouded, last_subject_id, out subject_id);
 				if (last_subject_id != subject_id) dataSampled = 0;
 
 				// if there are no issues
@@ -163,11 +176,16 @@ namespace KERBALISM
 
 					// record in drive
 					double chunkSize = data_rate * Kerbalism.elapsed_s;
+					var info = Science.Experiment(subject_id);
+					double massDelta = chunkSize / info.max_amount * sample_mass;
+
+					Lib.Log("EXPERIMENT: chunk size " + chunkSize + " max " + info.max_amount + " sample mass " + sample_mass + " mass delta " + massDelta);
+
 					bool stored = false;
-					if (transmissible)
+					if (sample_mass < float.Epsilon)
 						stored = DB.Vessel(vessel).BestDrive(chunkSize).Record_file(subject_id, chunkSize, true, true);
 					else
-						stored = DB.Vessel(vessel).BestDrive(chunkSize).Record_sample(subject_id, chunkSize);
+						stored = DB.Vessel(vessel).BestDrive(chunkSize).Record_sample(subject_id, chunkSize, massDelta);
 
 					if(stored)
 					{
@@ -175,6 +193,11 @@ namespace KERBALISM
 						ec.Consume(ec_rate * Kerbalism.elapsed_s);
 						dataSampled += chunkSize;
 						dataSampled = Math.Min(dataSampled, exp.scienceCap * exp.dataScale);
+						if(!sample_collecting)
+						{
+							remainingSampleMass -= massDelta;
+							remainingSampleMass = Math.Max(remainingSampleMass, 0);
+						}
 					}
 					else
 					{
@@ -198,9 +221,11 @@ namespace KERBALISM
 			bool didPrepare = Lib.Proto.GetBool(m, "didPrepare", false);
 			bool shrouded = Lib.Proto.GetBool(m, "shrouded", false);
 			string last_subject_id = Lib.Proto.GetString(m, "last_subject_id", "");
+			double remainingSampleMass = Lib.Proto.GetDouble(m, "remainingSampleMass", 0);
 
 			string subject_id;
-			string issue = TestForIssues(v, exp, ec, experiment, didPrepare, shrouded, last_subject_id, out subject_id);
+			string issue = TestForIssues(v, exp, ec, experiment,
+				remainingSampleMass, didPrepare, shrouded, last_subject_id, out subject_id);
 			Lib.Proto.Set(m, "issue", issue);
 
 			double dataSampled = Lib.Proto.GetDouble(m, "dataSampled");
@@ -213,11 +238,16 @@ namespace KERBALISM
 
 				// record in drive
 				double chunkSize = experiment.data_rate * elapsed_s;
+				var info = Science.Experiment(subject_id);
+				double massDelta = chunkSize / info.max_amount * experiment.sample_mass;
+
+				Lib.Log("EXPERIMENT: chunk size " + chunkSize + " max " + info.max_amount + " sample mass " + experiment.sample_mass + " mass delta " + massDelta);
+
 				bool stored = false;
-				if (experiment.transmissible)
+				if (experiment.sample_mass < float.Epsilon)
 					stored = DB.Vessel(v).BestDrive(chunkSize).Record_file(subject_id, chunkSize, true, true);
 				else
-					stored = DB.Vessel(v).BestDrive(chunkSize).Record_sample(subject_id, chunkSize);
+					stored = DB.Vessel(v).BestDrive(chunkSize).Record_sample(subject_id, chunkSize, massDelta);
 
 				if (stored)
 				{
@@ -225,6 +255,14 @@ namespace KERBALISM
 					ec.Consume(experiment.ec_rate * elapsed_s);
 					dataSampled += chunkSize;
 					dataSampled = Math.Min(dataSampled, exp.scienceCap * exp.dataScale);
+
+					if (!experiment.sample_collecting)
+					{
+						remainingSampleMass -= massDelta;
+						remainingSampleMass = Math.Max(remainingSampleMass, 0);
+						Lib.Proto.Set(m, "remainingSampleMass", remainingSampleMass);
+					}
+
 					Lib.Proto.Set(m, "dataSampled", dataSampled);
 				}
 				else
@@ -235,7 +273,8 @@ namespace KERBALISM
 			}
 		}
 
-		private static string TestForIssues(Vessel v, ScienceExperiment exp, Resource_info ec, Experiment experiment, bool didPrepare, bool isShrouded, string last_subject_id, out string subject_id)
+		private static string TestForIssues(Vessel v, ScienceExperiment exp, Resource_info ec, Experiment experiment, 
+			double remainingSampleMass, bool didPrepare, bool isShrouded, string last_subject_id, out string subject_id)
 		{
 			// deduce issues
 			var sit = ScienceUtil.GetExperimentSituation(v);
@@ -247,7 +286,6 @@ namespace KERBALISM
 
 			bool needsReset = experiment.crew_reset.Length > 0
 				&& !string.IsNullOrEmpty(last_subject_id) && subject_id != last_subject_id;
-
 			if (needsReset) return "reset required";
 
 			string situationIssue = Science.TestRequirements(experiment.requires, v);
@@ -255,13 +293,15 @@ namespace KERBALISM
 
 			if (isShrouded && !experiment.allow_shrouded) return "shrouded";
 
+			if (!experiment.sample_collecting && remainingSampleMass < double.Epsilon && experiment.sample_mass > double.Epsilon) return "depleted";
+
 			if (!exp.IsAvailableWhile(sit, v.mainBody)) return "invalid situation";
 			if (!has_operator) return "no operator";
 			if (!didPrepare && !string.IsNullOrEmpty(experiment.crew_prepare)) return "not prepared";
 			if (!has_ec) return "missing <b>EC</b>";
 
 			var drive = DB.Vessel(v).BestDrive();
-			double available = experiment.transmissible ? drive.FileCapacityAvailable() : drive.SampleCapacityAvailable();
+			double available = experiment.sample_mass < float.Epsilon ? drive.FileCapacityAvailable() : drive.SampleCapacityAvailable();
 			if (experiment.data_rate * Kerbalism.elapsed_s > available)
 				return "insufficient storage";
 
@@ -391,7 +431,7 @@ namespace KERBALISM
 			specs.Add("Name", ResearchAndDevelopment.GetExperiment(experiment_id).experimentTitle);
 
 			double expSize = exp.scienceCap * exp.dataScale;
-			if (transmissible)
+			if (sample_mass < float.Epsilon)
 			{
 				specs.Add("Data", Lib.HumanReadableDataSize(expSize));
 				specs.Add("Data rate", Lib.HumanReadableDataRate(data_rate));
@@ -400,6 +440,7 @@ namespace KERBALISM
 			else
 			{
 				specs.Add("Sample size", Lib.HumanReadableSampleSize(expSize));
+				specs.Add("Sample mass", Lib.HumanReadableMass(sample_mass));
 				specs.Add("Duration", Lib.HumanReadableDuration(expSize / data_rate));
 			}
 
@@ -417,6 +458,10 @@ namespace KERBALISM
 			}
 			return specs;
 		}
+
+		// module mass support
+		public float GetModuleMass(float defaultMass, ModifierStagingSituation sit) { return sample_collecting ? 0 : (float)remainingSampleMass; }
+		public ModifierChangeWhen GetModuleMassChangeWhen() { return ModifierChangeWhen.CONSTANTLY; }
 	}
 
 
