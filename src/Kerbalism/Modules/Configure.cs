@@ -376,10 +376,10 @@ namespace KERBALISM
 		public Specifics Specs()
 		{
 			Specifics specs = new Specifics();
-			specs.Add("slots", slots.ToString());
-			specs.Add("reconfigure", new CrewSpecs(reconfigure).Info());
+			specs.Add("Slots", slots.ToString());
+			specs.Add("Reconfigure", new CrewSpecs(reconfigure).Info());
 			specs.Add(string.Empty);
-			specs.Add("setups:");
+			specs.Add("Setups:");
 
 			// organize setups by tech required, and add the ones without tech
 			Dictionary<string, List<string>> org = new Dictionary<string, List<string>>();
