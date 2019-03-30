@@ -131,12 +131,12 @@ namespace KERBALISM
 			return supplies[name];
 		}
 
-		public Drive DriveForPart(Part part, double dataCapacity, int sampleCapacity)
+		public Drive DriveForPart(String name, Part part, double dataCapacity, int sampleCapacity)
 		{
 			var partId = Lib.GetPartId(part);
 
 			if(!drives.ContainsKey(partId))
-				drives.Add(partId, new Drive(dataCapacity, sampleCapacity));
+				drives.Add(partId, new Drive(name, dataCapacity, sampleCapacity));
 			return drives[partId];
 		}
 
@@ -164,7 +164,7 @@ namespace KERBALISM
 			if(result == null)
 			{
 				// vessel has no drive.
-				return new Drive(0, 0);
+				return new Drive("Broken", 0, 0);
 			}
 			return result;
 		}

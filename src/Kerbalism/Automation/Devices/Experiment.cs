@@ -36,7 +36,7 @@ namespace KERBALISM
 
 			return !experiment.recording
 			  ? "<color=red>" + Localizer.Format("#KERBALISM_Generic_DISABLED") + " </color>"
-			  : experiment.issue.Length == 0 ? "<color=cyan>" + Lib.BuildString(Localizer.Format("#KERBALISM_Generic_RECORDING"), " ", recordedPercent, eta) + "</color>"
+			  : experiment.issue.Length == 0 ? "<color=cyan>" + Lib.BuildString(recordedPercent, eta) + "</color>"
 			  : Lib.BuildString("<color=yellow>", experiment.issue.ToLower(), "</color>");
 		}
 
@@ -90,7 +90,7 @@ namespace KERBALISM
 
 			return !recording
 			  ? "<color=red>" + Localizer.Format("#KERBALISM_Generic_STOPPED") + " </color>"
-			  : issue.Length == 0 ? "<color=cyan>" + Lib.BuildString(Localizer.Format("#KERBALISM_Generic_RECORDING"), " ", recordedPercent, eta) + "</color>"
+			  : issue.Length == 0 ? "<color=cyan>" + Lib.BuildString(recordedPercent, eta) + "</color>"
 			  : Lib.BuildString("<color=yellow>", issue.ToLower(), "</color>");
 		}
 

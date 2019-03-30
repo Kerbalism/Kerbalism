@@ -11,6 +11,7 @@ namespace KERBALISM
 	{
 		[KSPField] public double dataCapacity = 102400.0;       // drive capacity, in Mb
 		[KSPField] public int sampleCapacity = 100;             // drive capacity, in slots
+		[KSPField] public string title = "Kerbodyne ZeroBit";   // drive name to be displayed in file manager
 
 		[KSPField(guiActive = true, guiName = "Capacity", guiActiveEditor = true)] public string Capacity;
 
@@ -25,9 +26,9 @@ namespace KERBALISM
 			if(drive == null)
 			{
 				if (Lib.IsEditor())
-					drive = new Drive(dataCapacity, sampleCapacity);
+					drive = new Drive(title, dataCapacity, sampleCapacity);
 				else
-					drive = DB.Vessel(vessel).DriveForPart(part, dataCapacity, sampleCapacity);
+					drive = DB.Vessel(vessel).DriveForPart(title, part, dataCapacity, sampleCapacity);
 			}
 
 			UpdateCapacity();
@@ -40,7 +41,7 @@ namespace KERBALISM
 			if(Lib.IsEditor())
 				drive = new Drive();
 			else
-				drive = DB.Vessel(vessel).DriveForPart(part, dataCapacity, sampleCapacity);
+				drive = DB.Vessel(vessel).DriveForPart(title, part, dataCapacity, sampleCapacity);
 
 			UpdateCapacity();
 		}
@@ -69,11 +70,6 @@ namespace KERBALISM
 
 		private void UpdateCapacity()
 		{
-			if(drive.name == Drive.default_name)
-			{
-				drive.name = part.partName;
-			}
-
 			totalSampleMass = 0;
 			foreach (var sample in drive.samples.Values) totalSampleMass += sample.mass;
 
@@ -158,6 +154,7 @@ namespace KERBALISM
 		// science container implementation
 		public ScienceData[] GetData()
 		{
+			Lib.Log("SCI GetData called " );
 			// generate and return stock science data
 			List<ScienceData> data = new List<ScienceData>();
 			foreach (var pair in drive.files)
@@ -177,6 +174,8 @@ namespace KERBALISM
 		// EVAs returning should get a warning if needed
 		public void ReturnData(ScienceData data)
 		{
+			Lib.Log("SCI ReturnData called " + data.subjectID);
+
 			// store the data
 			bool result = false;
 			if (data.baseTransmitValue > float.Epsilon || data.transmitBonus > double.Epsilon)
@@ -195,6 +194,7 @@ namespace KERBALISM
 
 		public void DumpData(ScienceData data)
 		{
+			Lib.Log("SCI DumpData called " + data.subjectID);
 			// remove the data
 			if (data.baseTransmitValue > float.Epsilon || data.transmitBonus > double.Epsilon)
 			{

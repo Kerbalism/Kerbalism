@@ -11,7 +11,7 @@ namespace KERBALISM
 	public static class Science
 	{
 		// hard-coded transmission buffer size in Mb
-		private const double buffer_capacity = 4.0;
+		private const double buffer_capacity = 12.0;
 
 		// pseudo-ctor
 		public static void Init()
@@ -137,24 +137,14 @@ namespace KERBALISM
 
 
 		// credit science for the experiment subject specified
-		public static double Credit(string subject_id, double size, bool transmitted, ProtoVessel pv)
+		public static float Credit(string subject_id, double size, bool transmitted, ProtoVessel pv)
 		{
-			// get science subject
-			// - if null, we are in sandbox mode
-			ScienceSubject subject = ResearchAndDevelopment.GetSubjectByID(subject_id);
-			if (subject == null) return 0.0;
-
-			// get science value
-			// - the stock system 'degrade' science value after each credit, we don't
-			float R = ResearchAndDevelopment.GetReferenceDataValue((float)size, subject);
-			float S = subject.science;
-			float C = subject.scienceCap;
-			float credits = Mathf.Max(Mathf.Min(S + Mathf.Min(R, C), C) - S, 0.0f);
+			var credits = Value(subject_id, size);
 
 			// credit the science
-			subject.science += credits;
+			var subject = ResearchAndDevelopment.GetSubjectByID(subject_id);
+			subject.science += credits / HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier;
 			subject.scientificValue = ResearchAndDevelopment.GetSubjectValue(subject.science, subject);
-			credits *= HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier;
 			ResearchAndDevelopment.Instance.AddScience(credits, transmitted ? TransactionReasons.ScienceTransmission : TransactionReasons.VesselRecovery);
 
 			// fire game event
@@ -169,17 +159,23 @@ namespace KERBALISM
 
 
 		// return value of some data about a subject, in science credits
-		public static double Value(string subject_id, double size)
+		public static float Value(string subject_id, double size)
 		{
-			// get the subject
-			// - will be null in sandbox
-			ScienceSubject subject = ResearchAndDevelopment.GetSubjectByID(subject_id);
+			// get science subject
+			// - if null, we are in sandbox mode
+			var subject = ResearchAndDevelopment.GetSubjectByID(subject_id);
+			if (subject == null) return 0.0f;
 
-			// return value in science credits
-			return subject != null
-			  ? ResearchAndDevelopment.GetScienceValue((float)size, subject)
-			  * HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier
-			  : 0.0;
+			// get science value
+			// - the stock system 'degrade' science value after each credit, we don't
+			float R = ResearchAndDevelopment.GetReferenceDataValue((float)size, subject);
+			float S = subject.science;
+			float C = subject.scienceCap;
+			float credits = Mathf.Max(Mathf.Min(S + Mathf.Min(R, C), C) - S, 0.0f);
+
+			credits *= HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier;
+
+			return credits;
 		}
 
 
@@ -240,6 +236,8 @@ namespace KERBALISM
 				);
 
 				float multiplier = Multiplier(body, sit);
+				var cap = multiplier * experiment.baseValue;
+
 				// create new subject
 				ScienceSubject subject = new ScienceSubject
 				(
@@ -247,12 +245,13 @@ namespace KERBALISM
 						Lib.BuildString(experiment.experimentTitle, " (", Lib.SpacesOnCaps(sit + biome), ")"),
 						experiment.dataScale,
 				  		multiplier,
-						experiment.scienceCap
+						cap
 				);
 
 				// add it to RnD
 				subjects.Add(subject_id, subject);
 			}
+
 			return subject_id;
 		}
 

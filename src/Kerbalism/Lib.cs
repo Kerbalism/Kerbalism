@@ -402,6 +402,7 @@ namespace KERBALISM
 		// return string with specified color and bold if stated
 		public static string Color( string color, string s, bool bold = false )
 		{
+			if (string.IsNullOrEmpty(color)) return s;
 			return !bold ? ("<color=" + color + ">" + s + "</color>") : ("<color=" + color + "><b>" + s + "</b></color>");
 		}
 

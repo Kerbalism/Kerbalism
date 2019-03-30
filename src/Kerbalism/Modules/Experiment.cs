@@ -17,6 +17,7 @@ namespace KERBALISM
 		[KSPField] public double data_rate;                   // sampling rate in Mb/s
 		[KSPField] public double ec_rate;                     // EC consumption rate per-second
 		[KSPField] public float sample_mass = 0f;             // if set to anything but 0, the experiment is a sample.
+		[KSPField] public float sample_reservoir = 0f;        // the amount of sampling mass this unit is shipped with
 		[KSPField] public bool sample_collecting = false;     // if set to true, the experiment will generate mass out of nothing
 		[KSPField] public bool allow_shrouded = true;         // true if data can be transmitted
 
@@ -64,7 +65,11 @@ namespace KERBALISM
 			// don't break tutorial scenarios
 			if (Lib.DisableScenario(this)) return;
 
-			if(remainingSampleMass < 0) remainingSampleMass = sample_mass;
+			if(remainingSampleMass < 0) {
+				remainingSampleMass = sample_mass;
+				if (sample_reservoir > float.Epsilon)
+					remainingSampleMass = sample_reservoir;
+			}
 
 			// create animator
 			deployAnimator = new Animator(part, anim_deploy);
@@ -102,7 +107,8 @@ namespace KERBALISM
 				var eta = data_rate < double.Epsilon || dataSampled >= sampleSize ? " done" : " T-" + Lib.HumanReadableDuration((sampleSize - dataSampled) / data_rate);
 
 				// update ui
-				Events["Toggle"].guiName = Lib.StatusToggle(exp.experimentTitle, !recording ? "stopped" : issue.Length == 0 ? Lib.HumanReadablePerc(dataSampled / sampleSize) + "..." : Lib.BuildString("<color=#ffff00>", issue, "</color>"));
+				Events["Toggle"].guiName = Lib.StatusToggle(exp.experimentTitle, !recording ? "stopped" 
+				                                            : Lib.Color(issue.Length > 0 ? "#ffff00":"", Lib.HumanReadablePerc(dataSampled / sampleSize) + "..."));
 				Events["Toggle"].active = (prepare_cs == null || didPrepare);
 
 				Events["Prepare"].guiName = Lib.BuildString("Prepare <b>", exp.experimentTitle, "</b>");
@@ -132,6 +138,9 @@ namespace KERBALISM
 					{
 						a = Lib.SampleSizeToSlots(dataSampled).ToString();
 						b = Lib.HumanReadableSampleSize(sampleSize);
+
+						if (remainingSampleMass > double.Epsilon)
+							b += " " + Lib.HumanReadableMass(remainingSampleMass) + " left";
 					}
 
 					ExperimentStatus = Lib.BuildString(a, "/", b, eta);

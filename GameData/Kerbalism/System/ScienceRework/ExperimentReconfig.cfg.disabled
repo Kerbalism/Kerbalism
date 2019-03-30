@@ -1,0 +1,275 @@
+//replaces all instances of ModuleScienceExperiment, DMModuleScienceAnimateGeneric and DMModuleScienceAnimate (these are the most commonly used ones)with Kerbalism's own.
+//should any other custom fancy experiment modules be found, they'll be added here and nuked.
+//Done this way due to parts with multiple experiments present on them by default. This is the cleanest way to do this that i found.
+
+@PART[*]:HAS[@MODULE[*]]:NEEDS[FeatureScience]:FOR[Kerbalism]
+{
+	@MODULE[*]:HAS[#experimentID[*],#animationName[*]],*						
+		{
+			@name = Experiment
+			%experiment_id = #$experimentID$
+			%anim_deploy = #$animationName$
+			//DMagic uses a combination of stock and cutom fields. these are stock.
+			!availableShielded = dummyvalue
+			!collectActionName = dummyvalue
+			!collectWarningText = dummyvalue
+			!containersDirty = dummyvalue
+			!cooldownTimer = dummyvalue
+			!cooldownToGo = dummyvalue
+			!dataIsCollectable = dummyvalue
+			!deployableSeated = dummyvalue
+			!Deployed = dummyvalue
+			!experimentActionName = dummyvalue
+			!experimentID = dummyvalue
+			!fxModuleIndices = dummyvalue
+			!hasContainer = dummyvalue
+			!hideFxModuleUI = dummyvalue
+			!hideUIwhenUnavailable = dummyvalue
+			!Inoperable = dummyvalue
+			!interactionRange = dummyvalue
+			!rerunnable = dummyvalue
+			!resetActionName = dummyvalue
+			!resettable = dummyvalue
+			!resettableOnEVA = dummyvalue
+			!resourceResetCost = dummyvalue
+			!resourceToReset = dummyvalue
+			!reviewActionName = dummyvalue
+			!transmitWarningText = dummyvalue
+			!usageReqMaskExternal = dummyvalue
+			!usageReqMaskInternal = dummyvalue
+			!usageReqMessage = dummyvalue
+			!useActionGroups = dummyvalue
+			!useCooldown = dummyvalue
+			!useStaging = dummyvalue
+			!xmitDataScalar = dummyvalue
+			!isEnabled = dummyvalue
+			!moduleIsEnabled = dummyvalue
+			!moduleName = dummyvalue
+			!overrideStagingIconIfBlank = dummyvalue
+			!resHandler = dummyvalue
+			!showUpgradesInModuleInfo = dummyvalue
+			!snapshot = dummyvalue
+			!stagingDisableText = dummyvalue
+			!stagingEnabled = dummyvalue
+			!stagingEnableText = dummyvalue
+			!stagingToggleEnabledEditor = dummyvalue
+			!stagingToggleEnabledFlight = dummyvalue
+			!upgrades = dummyvalue
+			!upgradesApplied = dummyvalue
+			!upgradesApply = dummyvalue
+			!upgradesAsk = dummyvalue
+			//these are custom for DM's modules
+			!storageFullMessage = dummyvalue
+			!customFailMessage = dummyvalue
+			!deployingMessage = dummyvalue
+			!planetFailMessage = dummyvalue
+			!IsDeployed = dummyvalue
+			!animationName = dummyvalue
+			!sampleAnim = dummyvalue
+			!animSpeed = dummyvalue
+			!endEventGUIName = dummyvalue
+			!showEndEvent = dummyvalue
+			!startEventGUIName = dummyvalue
+			!showStartEvent = dummyvalue
+			!toggleEventGUIName = dummyvalue
+			!showToggleEvent = dummyvalue
+			!showEditorEvents =dummyvalue
+			!experimentAnimation = dummyvalue
+			!experimentWaitForAnimation = dummyvalue
+			!waitForAnimationTime = dummyvalue
+			!keepDeployedMode = dummyvalue
+			!oneWayAnimation = dummyvalue
+			!resourceExperiment = dummyvalue
+			!resourceExpCost =dummyvalue
+			!asteroidReports = dummyvalue
+			!planetaryMask = dummyvalue
+			!experimentsLimit = dummyvalue
+			!experimentsReturned = dummyvalue
+			!experimentsNumber = dummyvalue
+			!externalDeploy = dummyvalue
+			!resetLevel = dummyvalue
+			!requiredParts = dummyvalue
+			!requiredModules = dummyvalue
+			!requiredPartsMessage = dummyvalue
+			!requiredModulesMessage = dummyvalue
+			!excludeAtmosphere = dummyvalue
+			!excludeAtmosphereMessage = dummyvalue
+			!useSampleTransforms = dummyvalue
+			!sampleTransformName = dummyvalue
+			!useReplacementTransforms = dummyvalue
+			!replacementTransformScale = dummyvalue
+			!replacementTransformName = dummyvalue
+			!dataRemovalAnimation = dummyvalue
+			!dataRemovalAnimationReverse = dummyvalue
+			!dataRemovalAnimationName = dummyvalue
+			!waitForDataRemoval = dummyvalue
+			!allowEVACleanUp = dummyvalue
+			!totalScienceLevel = dummyvalue
+			!bayAnimation = dummyvalue
+			!USScience = dummyvalue
+			!asteroidTypeDependent = dummyvalue
+			!experimentLimit = dummyvalue
+			!loopingAnim = dummyvalue
+		}
+	@MODULE[*]:HAS[#experimentID[*]],*
+		{
+			@name = Experiment
+			%experiment_id = #$experimentID$
+			//DMagic uses a combination of stock and cutom fields. these are stock.
+			!availableShielded = dummyvalue
+			!collectActionName = dummyvalue
+			!collectWarningText = dummyvalue
+			!containersDirty = dummyvalue
+			!cooldownTimer = dummyvalue
+			!cooldownToGo = dummyvalue
+			!dataIsCollectable = dummyvalue
+			!deployableSeated = dummyvalue
+			!Deployed = dummyvalue
+			!experimentActionName = dummyvalue
+			!experimentID = dummyvalue
+			!fxModuleIndices = dummyvalue
+			!hasContainer = dummyvalue
+			!hideFxModuleUI = dummyvalue
+			!hideUIwhenUnavailable = dummyvalue
+			!Inoperable = dummyvalue
+			!interactionRange = dummyvalue
+			!rerunnable = dummyvalue
+			!resetActionName = dummyvalue
+			!resettable = dummyvalue
+			!resettableOnEVA = dummyvalue
+			!resourceResetCost = dummyvalue
+			!resourceToReset = dummyvalue
+			!reviewActionName = dummyvalue
+			!transmitWarningText = dummyvalue
+			!usageReqMaskExternal = dummyvalue
+			!usageReqMaskInternal = dummyvalue
+			!usageReqMessage = dummyvalue
+			!useActionGroups = dummyvalue
+			!useCooldown = dummyvalue
+			!useStaging = dummyvalue
+			!xmitDataScalar = dummyvalue
+			!isEnabled = dummyvalue
+			!moduleIsEnabled = dummyvalue
+			!moduleName = dummyvalue
+			!overrideStagingIconIfBlank = dummyvalue
+			!resHandler = dummyvalue
+			!showUpgradesInModuleInfo = dummyvalue
+			!snapshot = dummyvalue
+			!stagingDisableText = dummyvalue
+			!stagingEnabled = dummyvalue
+			!stagingEnableText = dummyvalue
+			!stagingToggleEnabledEditor = dummyvalue
+			!stagingToggleEnabledFlight = dummyvalue
+			!upgrades = dummyvalue
+			!upgradesApplied = dummyvalue
+			!upgradesApply = dummyvalue
+			!upgradesAsk = dummyvalue
+			//these are custom for DM's modules
+			!storageFullMessage = dummyvalue
+			!customFailMessage = dummyvalue
+			!deployingMessage = dummyvalue
+			!planetFailMessage = dummyvalue
+			!IsDeployed = dummyvalue
+			!animationName = dummyvalue
+			!sampleAnim = dummyvalue
+			!animSpeed = dummyvalue
+			!endEventGUIName = dummyvalue
+			!showEndEvent = dummyvalue
+			!startEventGUIName = dummyvalue
+			!showStartEvent = dummyvalue
+			!toggleEventGUIName = dummyvalue
+			!showToggleEvent = dummyvalue
+			!showEditorEvents =dummyvalue
+			!experimentAnimation = dummyvalue
+			!experimentWaitForAnimation = dummyvalue
+			!waitForAnimationTime = dummyvalue
+			!keepDeployedMode = dummyvalue
+			!oneWayAnimation = dummyvalue
+			!resourceExperiment = dummyvalue
+			!resourceExpCost =dummyvalue
+			!asteroidReports = dummyvalue
+			!planetaryMask = dummyvalue
+			!experimentsLimit = dummyvalue
+			!experimentsReturned = dummyvalue
+			!experimentsNumber = dummyvalue
+			!externalDeploy = dummyvalue
+			!resetLevel = dummyvalue
+			!requiredParts = dummyvalue
+			!requiredModules = dummyvalue
+			!requiredPartsMessage = dummyvalue
+			!requiredModulesMessage = dummyvalue
+			!excludeAtmosphere = dummyvalue
+			!excludeAtmosphereMessage = dummyvalue
+			!useSampleTransforms = dummyvalue
+			!sampleTransformName = dummyvalue
+			!useReplacementTransforms = dummyvalue
+			!replacementTransformScale = dummyvalue
+			!replacementTransformName = dummyvalue
+			!dataRemovalAnimation = dummyvalue
+			!dataRemovalAnimationReverse = dummyvalue
+			!dataRemovalAnimationName = dummyvalue
+			!waitForDataRemoval = dummyvalue
+			!allowEVACleanUp = dummyvalue
+			!totalScienceLevel = dummyvalue
+			!bayAnimation = dummyvalue
+			!USScience = dummyvalue
+			!asteroidTypeDependent = dummyvalue
+			!experimentLimit = dummyvalue
+			!loopingAnim = dummyvalue
+		}
+}
+
+//sets a default data and ec rate, so even unpatched mods are functional. 
+//this should make the behavious stock-alike, with them being performed nearly instantaneous and requiring no ec.
+//this will later be changed through tweakables, if the mod is supported and the appropariate cfg file exists.
+@PART[*]:HAS[@MODULE[Experiment]]:NEEDS[FeatureScience]:FOR[Kerbalism]
+{
+	@MODULE[Experiment],*
+		{
+			%ec_rate = 0
+			%data_rate = 999
+		}
+}
+
+//adds sensors to gravioli/radiation/temperature/pressure to all parts that use the stock experiments and do not already have one.
+@PART[*]:HAS[!MODULE[Sensor],@MODULE[Experiment]:HAS[#experiment_id[geigerCounter]]]:NEEDS[FeatureScience]:FOR[zzzKerbalism]
+{
+	MODULE
+	{
+		name = Sensor
+		type = radiation
+	}
+}
+@PART[*]:HAS[!MODULE[Sensor],@MODULE[Experiment]:HAS[#experiment_id[gravityScan]]]:NEEDS[FeatureScience]:FOR[zzzKerbalism]
+{
+	MODULE
+	{
+		name = Sensor
+		type = gravioli
+	}
+}
+@PART[*]:HAS[!MODULE[Sensor],@MODULE[Experiment]:HAS[#experiment_id[temperatureScan]]]:NEEDS[FeatureScience]:FOR[zzzKerbalism]
+{
+	MODULE
+	{
+		name = Sensor
+		type = temperature
+	}
+}
+@PART[*]:HAS[!MODULE[Sensor],@MODULE[Experiment]:HAS[#experiment_id[sensorBarometer]]]:NEEDS[FeatureScience]:FOR[zzzKerbalism]
+{
+	MODULE
+	{
+		name = Sensor
+		type = pressure
+	}
+}
+//animation fix for goo and matlab, they have their animations defined in a different module
+@PART[GooExperiment,science_module]:NEEDS[FeatureScience]:FOR[Kerbalism]
+{
+	@MODULE[Experiment]
+		{
+			%anim_deploy = Deploy
+		}
+	!MODULE[ModuleAnimateGeneric]	{}
+}
