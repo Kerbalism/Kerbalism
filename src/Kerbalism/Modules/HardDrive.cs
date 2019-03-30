@@ -10,7 +10,7 @@ namespace KERBALISM
 	public sealed class HardDrive : PartModule, IScienceDataContainer, ISpecifics, IModuleInfo, IPartMassModifier
 	{
 		[KSPField] public double dataCapacity = 102400.0;       // drive capacity, in Mb
-		[KSPField] public double sampleCapacity = 102400.0;     // drive capacity, in Mb
+		[KSPField] public int sampleCapacity = 100;             // drive capacity, in slots
 
 		[KSPField(guiActive = true, guiName = "Capacity", guiActiveEditor = true)] public string Capacity;
 
@@ -25,9 +25,9 @@ namespace KERBALISM
 			if(drive == null)
 			{
 				if (Lib.IsEditor())
-					drive = new Drive(part.name, dataCapacity, Lib.SampleSizeToSlots(sampleCapacity));
+					drive = new Drive(dataCapacity, sampleCapacity);
 				else
-					drive = DB.Vessel(vessel).DriveForPart(part, dataCapacity, Lib.SampleSizeToSlots(sampleCapacity));
+					drive = DB.Vessel(vessel).DriveForPart(part, dataCapacity, sampleCapacity);
 			}
 
 			UpdateCapacity();
@@ -40,7 +40,7 @@ namespace KERBALISM
 			if(Lib.IsEditor())
 				drive = new Drive();
 			else
-				drive = DB.Vessel(vessel).DriveForPart(part, dataCapacity, Lib.SampleSizeToSlots(sampleCapacity));
+				drive = DB.Vessel(vessel).DriveForPart(part, dataCapacity, sampleCapacity);
 
 			UpdateCapacity();
 		}
@@ -69,11 +69,16 @@ namespace KERBALISM
 
 		private void UpdateCapacity()
 		{
+			if(drive.name == Drive.default_name)
+			{
+				drive.name = part.partName;
+			}
+
 			totalSampleMass = 0;
 			foreach (var sample in drive.samples.Values) totalSampleMass += sample.mass;
 
 			double availableDataCapacity = dataCapacity;
-			int availableSlots = Lib.SampleSizeToSlots(sampleCapacity);
+			int availableSlots = sampleCapacity;
 			if (Lib.IsFlight())
 			{
 				availableDataCapacity = drive.FileCapacityAvailable();
@@ -239,7 +244,7 @@ namespace KERBALISM
 		{
 			Specifics specs = new Specifics();
 			specs.Add("File capacity", Lib.HumanReadableDataSize(dataCapacity));
-			specs.Add("Sample capacity", Lib.HumanReadableDataSize(sampleCapacity));
+			specs.Add("Sample capacity", Lib.HumanReadableSampleSize(sampleCapacity));
 			return specs;
 		}
 

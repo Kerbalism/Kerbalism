@@ -3,6 +3,16 @@
 Science
 =======
 
+Changes To The Science System
+-------
+
+This is just a list of short notes / keywords for us so that we don't forget what we've done to the science system. It's a LOT.
+
+* Micro biomes are gone. No more rovering around KSC to get free science from the flag pole, R&D, the Launchapd etc. This is due to a technical reason (I have no clue where to get the micro biome info from in the code)
+* Experiments take time to do
+
+
+
 Storage
 -------
 The stock science data container is replaced by a solid state drive. The data stored is organized in files and can be managed using a dedicated UI.

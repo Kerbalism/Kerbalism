@@ -136,7 +136,7 @@ namespace KERBALISM
 			var partId = Lib.GetPartId(part);
 
 			if(!drives.ContainsKey(partId))
-				drives.Add(partId, new Drive("#" + (drives.Count + 1), dataCapacity, sampleCapacity));
+				drives.Add(partId, new Drive(dataCapacity, sampleCapacity));
 			return drives[partId];
 		}
 
@@ -164,7 +164,7 @@ namespace KERBALISM
 			if(result == null)
 			{
 				// vessel has no drive.
-				return new Drive("Kerbodyne Zerobit", 0, 0);
+				return new Drive(0, 0);
 			}
 			return result;
 		}

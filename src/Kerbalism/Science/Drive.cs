@@ -8,16 +8,15 @@ namespace KERBALISM
 
 	public sealed class Drive
 	{
-		public Drive(string name, double dataCapacity, int sampleCapacity)
+		public Drive(double dataCapacity, int sampleCapacity)
 		{
-			this.name = name;
 			this.files = new Dictionary<string, File>();
 			this.samples = new Dictionary<string, Sample>();
 			this.dataCapacity = dataCapacity;
 			this.sampleCapacity = sampleCapacity;
 		}
 
-		public Drive(): this ("Rokomax NoSpace", 0, 0) { }
+		public Drive() : this(0, 0) { }
 
 		public Drive(ConfigNode node)
 		{
@@ -337,7 +336,8 @@ namespace KERBALISM
 		public Dictionary<string, Sample> samples;  // science samples
 		public double dataCapacity;
 		public int sampleCapacity;
-		public string name;
+		public string name = default_name;
+		public static readonly string default_name = "Rokomax NoName";
 	}
 
 
