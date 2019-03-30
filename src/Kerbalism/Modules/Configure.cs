@@ -405,8 +405,17 @@ namespace KERBALISM
 
 				// get tech title
 				// note: non-stock technologies will return empty titles, so we use tech-id directly in that case
-				string tech_title = ResearchAndDevelopment.GetTechnologyTitle(tech_id).ToLower();
+
+				// this works in KSP 1.6
+				string tech_title = Localizer.Format(ResearchAndDevelopment.GetTechnologyTitle(tech_id));
 				tech_title = !string.IsNullOrEmpty(tech_title) ? tech_title : tech_id;
+
+				// this seems to have worked for KSP < 1.6
+				if (tech_title.StartsWith("#", StringComparison.Ordinal))
+					tech_title = Localizer.Format(ResearchAndDevelopment.GetTechnologyTitle(tech_id.ToLower()));
+
+				// safeguard agains having #autoloc_1234 texts in the UI
+				if (tech_title.StartsWith("#", StringComparison.Ordinal)) tech_title = tech_id;
 
 				// add tech name
 				specs.Add(string.Empty);
