@@ -366,6 +366,8 @@ KSPAssets.dll
 Assembly-*.dll
 UnityEngine*.dll
 
+# mcCrap
+.DS_Store
 
 # Windows shortcuts
 *.lnk
