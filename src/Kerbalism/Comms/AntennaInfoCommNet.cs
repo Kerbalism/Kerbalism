@@ -110,14 +110,6 @@ namespace KERBALISM
 					}
 				}
 			}
-
-			if(Settings.Science)
-			{
-				// Rate right now is in Mb/s, which is OP.
-				// Let's assume it is in kb/s instead.
-				// this is a workaround. we probably should have our own data transmitter module.
-				rate /= 1024.0;
-			}
 		}
 	}
 }
