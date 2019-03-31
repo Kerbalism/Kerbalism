@@ -95,9 +95,8 @@ namespace KERBALISM
 			);
 			double exp_value = Science.Value(filename, file.size);
 			if (exp_value > double.Epsilon) exp_tooltip = Lib.BuildString(exp_tooltip, "\n<b>", Lib.HumanReadableScience(exp_value), "</b>");
-
-			if (rate > 0) p.AddContent(exp_label, Lib.HumanReadableDataSize(file.size), "<i>" + Lib.HumanReadableDuration(file.size / rate) + "</i>");
-			else p.AddContent(exp_label, Lib.HumanReadableDataSize(file.size), exp_tooltip);
+			if (rate > 0) exp_tooltip = Lib.BuildString(exp_tooltip, "\n<i>" + Lib.HumanReadableDuration(file.size / rate) + "</i>");
+			p.AddContent(exp_label, Lib.HumanReadableDataSize(file.size), exp_tooltip);
 
 			p.AddIcon(file.send ? Icons.send_cyan : Icons.send_black, "Flag the file for transmission to <b>DSN</b>", () => { file.send = !file.send; });
 			p.AddIcon(Icons.toggle_red, "Delete the file", () => Lib.Popup
@@ -108,7 +107,6 @@ namespace KERBALISM
 			  new DialogGUIButton("Keep it", () => { })
 			));
 		}
-
 
 		static void Render_sample(Panel p, string filename, Sample sample, Drive drive, bool short_strings)
 		{
