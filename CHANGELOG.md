@@ -1,6 +1,6 @@
 ## v2.2.0 for all versions of KSP from 1.3.1 to 1.6.x
 
- - 2019-xx-xx
+ - 2019-03-31
 
 ### Changes since the last release
 
@@ -15,18 +15,15 @@
 * Optimized Planner: Part 1 - Chill the stuttering in VAB/SPH (PiezPiedPy)
 * Reduced Mass of ECLSS and Chemical Processors from 450kg to 40kg (Sir Mortimer)
 * CO2 poisoning warning message will pop up sooner to give you some time to fix the issue (Sir Mortimer)
-* Preemptive maintenance: if a component is found not to be in very good condition during inspection,
-  it can be serviced to avoid a failure (Sir Mortimer)
+* Preemptive maintenance: if a component is found not to be in very good condition during inspection, it can be serviced to avoid a failure (Sir Mortimer)
 * Fixed emitters (shields) can be used in automation tab again (Sir Mortimer)
 * Processes ECLSS, Fuel Cells, Chemical Plant etc. can be controlled from automation tab again (Sir Mortimer)
 * Added Kerbalism flags (Mzxs)
 * Adjusted N2 leakage (Sir Mortimer)
-* When analyzing science in a lab, don't drive people crazy with the "Transmission finished" message
-  for every bit of researched data (Sir Mortimer)
+* When analyzing science in a lab, don't drive people crazy with the "Transmission finished" message for every bit of researched data (Sir Mortimer)
 * Going to EVA will now loose a nominal amount of nitrogen to the airlock. The amount can be changed in the settings (Sir Mortimer)
 * Fixed the bug where monoprop appeared out of nowhere when leaving a vessel that had none in it (#288) (Sir Mortimer)
-* Monoprop+O2 fuel cell is now available sooner in the tech tree. Basic Science unlocks this process along
-  with the fuel cell (Sir Mortimer)
+* Monoprop+O2 fuel cell is now available sooner in the tech tree. Basic Science unlocks this process along with the fuel cell (Sir Mortimer)
 * Added LSS system diagrams, and a small guide on how to set up O2 + water recycling (Sir Mortimer)
 * Hide Sickbay from automation if it is unavailable (Sir Mortimer)
 * New Science system (Sir Mortimer, Arthur)
@@ -65,12 +62,11 @@
 * Add support patch for the USI-NF compatibility patch. (Gordon Dry)
 * Make CCK play nice with FilterExtensions. (Gordon Dry)
 * Added sickbay RDU to four additional parts (with 1 slot each):
-  - Bluedog_DB - MOL Orbital Habitation SegmentS
-  - StationPartsExpansionRedux - PTD-5 'Sunrise' Habitation Module
-  - NearFutureSpacecraft - PPD-24 Itinerant Service Container
-  - Duna Direct's Kerbin Return Vehicle (KRV) (Gordon Dry)
-* Sickbay TV is only available in crewable parts (crew >3) without a laboratory now and it uses 0.25 EC/s
-   instead of 12 EC/s. It's 64x less effective now - and same as effective as 100% comfort. (Gordon Dry)
+* Bluedog_DB - MOL Orbital Habitation SegmentS
+* StationPartsExpansionRedux - PTD-5 'Sunrise' Habitation Module
+* NearFutureSpacecraft - PPD-24 Itinerant Service Container
+* Duna Direct's Kerbin Return Vehicle (KRV) (Gordon Dry)
+* Sickbay TV is only available in crewable parts (crew >3) without a laboratory now and it uses 0.25 EC/s instead of 12 EC/s. It's 64x less effective now - and same as effective as 100% comfort. (Gordon Dry)
 * Sickbay RDU now uses 3.5 EC/s instead of 35 EC/s but also works 5x slower (cures 0.02 rad/h now). (Gordon Dry)
 * Added support for Kerbalow KA-330 Inflatable Space Hotel. (Gordon Dry)
 * Added missing xmitDataScalar to Support/OrbitalScience.cfg and also added UniversalStorage2 compatibility. (Gordon Dry)
@@ -104,12 +100,10 @@
 * Support for KSP 1.5.x
 
 * Also "normal" launch clamps' generators are not simulated in planner by default (Gordon Dry)
-* Quick fix to crewable launch towers like the FASA Launch Tower:
-  disable the habitat by default and disable simulating the generator in planner by default (Gordon Dry)
+* Quick fix to crewable launch towers like the FASA Launch Tower: disable the habitat by default and disable simulating the generator in planner by default (Gordon Dry)
 * Dump valve not saving its state on vessel change, bug fixed (PiezPiedPy)
 * Fixed SSPX IVA rotation. (HaullyGames)
-* Kerbals consume slightly different amounts of food, water and oxygen, and react differently to
-  stress and radiation. When under stress they can make mistakes, some do better than others. (Sir Mortimer)
+* Kerbals consume slightly different amounts of food, water and oxygen, and react differently to stress and radiation. When under stress they can make mistakes, some do better than others. (Sir Mortimer)
 * A laboratory with high level crew members in it will work faster (Sir Mortimer)
 * Harvesters will work better with an engineer on board. (Sir Mortimer)
 * Fixed another icons sometimes not displaying bug (PiezPiedPy)
@@ -170,17 +164,16 @@
  * RemoteTech antennas can now break down due to reliability failures (Sir Mortimer)
  * Chemical Plant and ECLSS parts are now surface attachable, ECLSS part capacity increased to support 3 crew (PiezPiedPy)
  * Added support for ConfigurableContainers, they now have 6 additional tank configs as defined below:
-   KerbalismSupplies (Food, Water) - KerbalismBreathing (Oxygen, Nitrogen)
-   KerbalismWaste (Waste, WasteWater) - KerbalismGreenhouse (CarbonDioxide, Ammonia, Water)
-   KerbalismFuelcellH2 (Oxygen, Hydrogen) - KerbalismFuelcellMP (Oxygen, MonoPropellant)  (Gordon Dry)
+ * KerbalismSupplies (Food, Water) - KerbalismBreathing (Oxygen, Nitrogen)
+ * KerbalismWaste (Waste, WasteWater) - KerbalismGreenhouse (CarbonDioxide, Ammonia, Water)
+ * KerbalismFuelcellH2 (Oxygen, Hydrogen) - KerbalismFuelcellMP (Oxygen, MonoPropellant)  (Gordon Dry)
  * Containers have had their volume and mass calculated with a calculator (PiezPiedPy)
  * Science labs can now reset experiments (PiezPiedPy)
  * CryoTanks are now simulated in the background, also fuel boiloff is simulated in the planner (PiezPiedPy)
  * Reverted the Quick'n'dirty fix for GPOSpeedFuelPump because it has been fixed with v1.8.14 (Gordon Dry)
  * Added a fix to make sure there is a module Reliability for parachutes, also for RealChute/RealChuteFAR (Gordon Dry)
  * Scaled the ISRU's capacity to be more representative of their size (PiezPiedPy)
- * All priority type processes have been removed and replaced with a Dump button that configures the dumped resource type(s)
-   to dump overboard, the Dump button is also usable InFlight allowing for changes of strategies on the go (PiezPiedPy)
+ * All priority type processes have been removed and replaced with a Dump button that configures the dumped resource type(s) to dump overboard, the Dump button is also usable InFlight allowing for changes of strategies on the go (PiezPiedPy)
  * Overhaul of all Chemical Plant and ISRU processes using CRP densities and molar masses (PiezPiedPy)
  * SOE process now converts wasted Carbon into Shielding, Haber process now needs EC (PiezPiedPy)
  * Hydrazine process now outputs Oxygen and requires EC and A New Nitrogen injected Hydrazine process added (PiezPiedPy)
@@ -231,10 +224,7 @@
  * Recalculated pressure control EC consumption to be more realistic (PiezPiedPy)
  * Increase all crewable parts' EC because ECLSS uses EC constantly, you wanna survive in the Apollo LM, right? (Gordon Dry, PiezPiedPy)
  * Quick'n'dirty fix for GPOSpeedFuelPump to avoid shielding to be pumpable by default (Gordon Dry)
- * Reliability: mtbf depends mass;
-     lighter parts last longer - max. ~16 years (~64 years in high quality),
-     heavier parts last shorter - min. ~4 years (~16 years in high quality).
-     Built in reliability modules don't take the whole part's mass into account, but their respective extra_mass (Gordon Dry)
+ * Reliability: mtbf depends mass; lighter parts last longer - max. ~16 years (~64 years in high quality), heavier parts last shorter - min. ~4 years (~16 years in high quality). Built in reliability modules don't take the whole part's mass into account, but their respective extra_mass (Gordon Dry)
  * Greenhouses now act like a scrubber and also will not use CO2 or produce O2 when in a breathable atmosphere (PiezPiedPy)
  * Reliability: mass and cost difference between standard and high quality is now relative to the part type (Gordon Dry)
  * Allow vessel config when there is no vessel signal (PiezPiedPy)
@@ -257,18 +247,7 @@
  * Pressure and CO2 Poisoning rates are back to normal (PiezPiedPy)
  * GravityRing NRE's in VAB/SPH bug fixed (PiezPiedPy)
  * Click through prevention added (some things can still be clicked through the windows, due to using KSP's old style Gui) (PiezPiedPy)
- * Overhaul to transmitter use, planning and monitoring, data rates, signal strength, EC cost and targets now work. Internal  
-     transmitters are separate from external transmitters and will only transmit telemetry and command control, they are also  
-     shown separately in the planner and are constantly powered unless you run out of EC, with the added benefit of loosing  
-     contact with DSN and subsequent control.  
-     External transmitters will lose contact when retracted, break, or if you run out of EC rendering long distance comms, call  
-     home and your ability to transmit science to zero. External transmitters will also stop using EC when retracted.  
-     EVA suits now contain a small internal transmitter for transmitting telemetry and controlling remote probes and rovers etc.  
-     All transmitters have had their EC usage changed to more realistic values and are also combinable. There is a minor drawback  
-     though, when changing scenes with the [ESC]Pause menu you may notice the target readout pointing to the wrong vessel and  
-     some signals that where previously dis-connected wrongly connecting back online, simply changing scene from for example  
-     the Space Center to Tracking Station will solve all errors in the network.  
-	 *Thanks to (PiezPiedPy) for the transmitter overhaul.*
+ * Overhaul to transmitter use, planning and monitoring, data rates, signal strength, EC cost and targets now work. Internal transmitters are separate from external transmitters and will only transmit telemetry and command control, they are also shown separately in the planner and are constantly powered unless you run out of EC, with the added benefit of loosing contact with DSN and subsequent control. External transmitters will lose contact when retracted, break, or if you run out of EC rendering long distance comms, call home and your ability to transmit science to zero. External transmitters will also stop using EC when retracted. EVA suits now contain a small internal transmitter for transmitting telemetry and controlling remote probes and rovers etc. All transmitters have had their EC usage changed to more realistic values and are also combinable. There is a minor drawback though, when changing scenes with the [ESC]Pause menu you may notice the target readout pointing to the wrong vessel and some signals that where previously dis-connected wrongly connecting back online, simply changing scene from for example the Space Center to Tracking Station will solve all errors in the network. *Thanks to (PiezPiedPy) for the transmitter overhaul.*
 
  * Nitrogen added to pods on rescue, Humidity controller now detects breathable atmospheres (PiezPiedPy)
  * Kerbalism Communotron 8 transmitter is back (PiezPiedPy)

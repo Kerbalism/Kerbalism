@@ -1,10 +1,10 @@
 entries:
-  v1.6.0:
+  v1.6.0 for KSP 1.4.3:
     changes:
     - Harvesters can now extract Nitrogen from the surface (JadeOfMom)
     - Filters can now extract Ammonia from the atmosphere (JadeOfMom)
-    - 'New parts MiniPump and RadialPump to extract Water, Nitrogen and Ammonia from
-      oceans (thanks to JadeOfMom for the Harvesters and PiezPiedPy for the parts) '
+    - New parts MiniPump and RadialPump to extract Water, Nitrogen and Ammonia from
+      oceans (thanks to JadeOfMom for the Harvesters and PiezPiedPy for the parts)
     - Harvesters are now spec'd at 10% abundance by default (madman2003)
     - Harvesting rate scales linearly with abundance (madman2003)
     - Water harvesting has been buffed by a factor 6 (at the reference 10% abundance)
@@ -40,15 +40,29 @@ entries:
     - Updated Profiler GUI to use the Canvas system. Added Reset averages & Show zero
       calls buttons,
     date: '2018-05-26'
-  v1.7.0:
+  v1.7.0 for KSP 1.4.3:
     changes:
     - Moved Humidity into Habitation (PiezPiedPy)
     - Pressure and CO2 Poisoning rates are back to normal (PiezPiedPy)
     - GravityRing NRE's in VAB/SPH bug fixed (PiezPiedPy)
     - Click through prevention added (some things can still be clicked through the
       windows, due to using KSP's old style Gui) (PiezPiedPy)
-    - 'Overhaul to transmitter use, planning and monitoring, data rates, signal strength,
-      EC cost and targets now work. Internal  '
+    - Overhaul to transmitter use, planning and monitoring, data rates, signal strength,
+      EC cost and targets now work. Internal transmitters are separate from external
+      transmitters and will only transmit telemetry and command control, they are
+      also shown separately in the planner and are constantly powered unless you run
+      out of EC, with the added benefit of loosing contact with DSN and subsequent
+      control. External transmitters will lose contact when retracted, break, or if
+      you run out of EC rendering long distance comms, call home and your ability
+      to transmit science to zero. External transmitters will also stop using EC when
+      retracted. EVA suits now contain a small internal transmitter for transmitting
+      telemetry and controlling remote probes and rovers etc. All transmitters have
+      had their EC usage changed to more realistic values and are also combinable.
+      There is a minor drawback though, when changing scenes with the [ESC]Pause menu
+      you may notice the target readout pointing to the wrong vessel and some signals
+      that where previously dis-connected wrongly connecting back online, simply changing
+      scene from for example the Space Center to Tracking Station will solve all errors
+      in the network. *Thanks to (PiezPiedPy) for the transmitter overhaul.*
     - Nitrogen added to pods on rescue, Humidity controller now detects breathable
       atmospheres (PiezPiedPy)
     - Kerbalism Communotron 8 transmitter is back (PiezPiedPy)
@@ -67,7 +81,7 @@ entries:
       Career balance (PiezPiedPy)
     - Fix ContractConfigurator bug (PiezPiedPy)
     date: '2018-06-18'
-  v1.7.1:
+  v1.7.1 for KSP 1.4.4 and 1.3.1:
     changes:
     - The Chemical Plant and External Life Support have had a repaint (PiezPiedPy)
     - Added Xenon Gas to the Radial Pressurized Tanks (PiezPiedPy)
@@ -80,7 +94,10 @@ entries:
       survive in the Apollo LM, right? (Gordon Dry, PiezPiedPy)
     - Quick'n'dirty fix for GPOSpeedFuelPump to avoid shielding to be pumpable by
       default (Gordon Dry)
-    - 'Reliability: mtbf depends mass;'
+    - 'Reliability: mtbf depends mass; lighter parts last longer - max. ~16 years
+      (~64 years in high quality), heavier parts last shorter - min. ~4 years (~16
+      years in high quality). Built in reliability modules don''t take the whole part''s
+      mass into account, but their respective extra_mass (Gordon Dry)'
     - Greenhouses now act like a scrubber and also will not use CO2 or produce O2
       when in a breathable atmosphere (PiezPiedPy)
     - 'Reliability: mass and cost difference between standard and high quality is
@@ -94,18 +111,18 @@ entries:
     - Fixed CryoTanks NRE in Planner and added LH2 to radial tanks for CryoTanks Support
       (PiezPiedPy)
     date: '2018-07-02'
-  v1.7.1.1:
+  v1.7.1.1 for KSP 1.4.4 and 1.3.1:
     changes:
     - Localization translations added (Sir Mortimer [GRUMP])
     - MM errors fixed (Gordon Dry)
     - Added a title parameter to the PlannerController that shows in the buttons text
       (PiezPiedPy)
     date: '2018-07-03'
-  v1.8.0:
+  v1.8.0 for KSP 1.4.x and 1.3.1:
     changes:
     - 'Kerbalism documents are now available here: https://kerbalism.readthedocs.io
       Note they are still a Work in Progress'
-    - 'Fixed the icons sometimes not displaying bug and icon scaling bug (PiezPiedPy) '
+    - Fixed the icons sometimes not displaying bug and icon scaling bug (PiezPiedPy)
     - RemoteTech support now integrates correctly with the planner and signal system
       (PiezPiedPy)
     - Improved RemoteTech support (simulate in planner buttons, reliability, antenna
@@ -115,11 +132,16 @@ entries:
       to other vessels (Sir Mortimer)
     - RemoteTech antennas can now be enabled/disabled in Automation (Sir Mortimer)
     - RemoteTech antennas can now break down due to reliability failures (Sir Mortimer)
-    - 'Chemical Plant and ECLSS parts are now surface attachable, ECLSS part capacity
-      increased to support 3 crew (PiezPiedPy) '
+    - Chemical Plant and ECLSS parts are now surface attachable, ECLSS part capacity
+      increased to support 3 crew (PiezPiedPy)
     - 'Added support for ConfigurableContainers, they now have 6 additional tank configs
       as defined below:'
-    - 'Containers have had their volume and mass calculated with a calculator (PiezPiedPy) '
+    - KerbalismSupplies (Food, Water) - KerbalismBreathing (Oxygen, Nitrogen)
+    - KerbalismWaste (Waste, WasteWater) - KerbalismGreenhouse (CarbonDioxide, Ammonia,
+      Water)
+    - KerbalismFuelcellH2 (Oxygen, Hydrogen) - KerbalismFuelcellMP (Oxygen, MonoPropellant)  (Gordon
+      Dry)
+    - Containers have had their volume and mass calculated with a calculator (PiezPiedPy)
     - Science labs can now reset experiments (PiezPiedPy)
     - CryoTanks are now simulated in the background, also fuel boiloff is simulated
       in the planner (PiezPiedPy)
@@ -129,15 +151,16 @@ entries:
       for RealChute/RealChuteFAR (Gordon Dry)
     - Scaled the ISRU's capacity to be more representative of their size (PiezPiedPy)
     - All priority type processes have been removed and replaced with a Dump button
-      that configures the dumped resource type(s)
+      that configures the dumped resource type(s) to dump overboard, the Dump button
+      is also usable InFlight allowing for changes of strategies on the go (PiezPiedPy)
     - Overhaul of all Chemical Plant and ISRU processes using CRP densities and molar
       masses (PiezPiedPy)
     - SOE process now converts wasted Carbon into Shielding, Haber process now needs
       EC (PiezPiedPy)
-    - 'Hydrazine process now outputs Oxygen and requires EC and A New Nitrogen injected
-      Hydrazine process added (PiezPiedPy) '
-    - 'Vessel group filter can now search for vessel names that contain multiple words
-      (Sir Mortimer) '
+    - Hydrazine process now outputs Oxygen and requires EC and A New Nitrogen injected
+      Hydrazine process added (PiezPiedPy)
+    - Vessel group filter can now search for vessel names that contain multiple words
+      (Sir Mortimer)
     - Changed the Small Supply Container to be 0.625m in diameter instead of 0.5m
       (Gordon Dry)
     - Added radiation belts to ExtraSolar planets and moons - science definition texts
@@ -149,8 +172,8 @@ entries:
     - MRE process now outputs a small amount of CO2 (PiezPiedPy)
     - GeigerCounter science experiment fixes for OPM and NewHorizons. Also SEP support
       fixes (Gordon Dry)
-    - 'Rebalanced Sabatier and Anthraquinone processes to output LiquidFuel and Oxidizer
-      at Stock ratio of 9:11 (PiezPiedPy) '
+    - Rebalanced Sabatier and Anthraquinone processes to output LiquidFuel and Oxidizer
+      at Stock ratio of 9:11 (PiezPiedPy)
     - Rebalanced H2+O2 and LH2+O2 fuel cells to output more realistic EC levels (PiezPiedPy)
     - Some tooltip colors changed from a nasty hard to see red to a nice gold (PiezPiedPy)
     - Fixed antennas bug having no science data rate in languages other than English
@@ -159,7 +182,7 @@ entries:
     - Support for development on mac now included, also with help in the CONTRIBUTING.md
       file (Sir Mortimer)
     date: '2018-08-21'
-  v1.9.0:
+  v1.9.0 for KSP 1.4.x and 1.3.1:
     changes:
     - Kerbal LS rates have been recalculated based on 1/16 of a Humans consumption
       due to their size and day length (PiezPiedPy)
@@ -186,19 +209,22 @@ entries:
       (Sir Mortimer)
     - KerboKatz FrameLimiter mod is known to make the Icons disappear
     date: 2018-15-9
-  v2.0.0:
+  v2.0.0 for KSP 1.5.x , 1.4.x and 1.3.1:
     changes:
     - Support for KSP 1.5.x
     - Also "normal" launch clamps' generators are not simulated in planner by default
       (Gordon Dry)
-    - 'Quick fix to crewable launch towers like the FASA Launch Tower:'
+    - 'Quick fix to crewable launch towers like the FASA Launch Tower: disable the
+      habitat by default and disable simulating the generator in planner by default
+      (Gordon Dry)'
     - Dump valve not saving its state on vessel change, bug fixed (PiezPiedPy)
     - Fixed SSPX IVA rotation. (HaullyGames)
     - Kerbals consume slightly different amounts of food, water and oxygen, and react
-      differently to
+      differently to stress and radiation. When under stress they can make mistakes,
+      some do better than others. (Sir Mortimer)
     - A laboratory with high level crew members in it will work faster (Sir Mortimer)
     - Harvesters will work better with an engineer on board. (Sir Mortimer)
-    - 'Fixed another icons sometimes not displaying bug (PiezPiedPy) '
+    - Fixed another icons sometimes not displaying bug (PiezPiedPy)
     - SSPX 2.5m Greenhouse now producing food at the expected rate. (theJesuit)
     - ResourceBalance run the pressurizing\depressurizing (old "equalize\venting"),
       it gives priority to habitats with crew. (HaullyGames)
@@ -217,14 +243,19 @@ entries:
     - Updated docs for the recent 1/16 buff (Sir Mortimer)
     - Don't show fixed antennas in device manager (Sir Mortimer)
     date: '2018-19-10'
-  v2.1.0:
+  v2.1.0 for KSP 1.5.x , 1.4.x and 1.3.1:
     changes:
     - xmitDataScalar = 1 for Bluedog DB early probes. (Gordon Dry)
     - Add support patch for the USI-NF compatibility patch. (Gordon Dry)
     - Make CCK play nice with FilterExtensions. (Gordon Dry)
     - 'Added sickbay RDU to four additional parts (with 1 slot each):'
+    - Bluedog_DB - MOL Orbital Habitation SegmentS
+    - StationPartsExpansionRedux - PTD-5 'Sunrise' Habitation Module
+    - NearFutureSpacecraft - PPD-24 Itinerant Service Container
+    - Duna Direct's Kerbin Return Vehicle (KRV) (Gordon Dry)
     - Sickbay TV is only available in crewable parts (crew >3) without a laboratory
-      now and it uses 0.25 EC/s
+      now and it uses 0.25 EC/s instead of 12 EC/s. It's 64x less effective now -
+      and same as effective as 100% comfort. (Gordon Dry)
     - Sickbay RDU now uses 3.5 EC/s instead of 35 EC/s but also works 5x slower (cures
       0.02 rad/h now). (Gordon Dry)
     - Added support for Kerbalow KA-330 Inflatable Space Hotel. (Gordon Dry)
@@ -258,11 +289,11 @@ entries:
     - Don't fill habitat with CO2 rich atmosphere when enabling habitat in VAB. (madman2003)
     - Air pump should only work on planets with naturally breathable atmosphere. (madman2003)
     date: '2018-12-18'
-  v2.1.1:
+  v2.1.1 for KSP 1.6.x, 1.5.x , 1.4.x and 1.3.1:
     changes:
     - Updated for KSP 1.6.x
     date: '2018-12-22'
-  v2.1.2:
+  v2.1.2 for all versions of KSP from 1.3.1 to 1.6.x:
     changes:
     - Fix Kerbalism parts search filters and missing tab in the VAB/SPH (PiezPiedPy)
     - Fix processes not calculating capacities correctly (PiezPiedPy)
@@ -271,7 +302,7 @@ entries:
     - Fixed compatability with Module Manager 4.x (steamp0rt, with lots of help from
       blowfish)
     date: '2019-02-04'
-  v2.2.0:
+  v2.2.0 for all versions of KSP from 1.3.1 to 1.6.x:
     changes:
     - Add Reliability to USI Nuclear Reactors (PiezPiedPy)
     - Fix ISRU capacities for CryoTanks and USI (PiezPiedPy)
@@ -289,22 +320,22 @@ entries:
     - CO2 poisoning warning message will pop up sooner to give you some time to fix
       the issue (Sir Mortimer)
     - 'Preemptive maintenance: if a component is found not to be in very good condition
-      during inspection,'
+      during inspection, it can be serviced to avoid a failure (Sir Mortimer)'
     - Fixed emitters (shields) can be used in automation tab again (Sir Mortimer)
     - Processes ECLSS, Fuel Cells, Chemical Plant etc. can be controlled from automation
       tab again (Sir Mortimer)
     - Added Kerbalism flags (Mzxs)
     - Adjusted N2 leakage (Sir Mortimer)
     - When analyzing science in a lab, don't drive people crazy with the "Transmission
-      finished" message
+      finished" message for every bit of researched data (Sir Mortimer)
     - Going to EVA will now loose a nominal amount of nitrogen to the airlock. The
       amount can be changed in the settings (Sir Mortimer)
     - Fixed the bug where monoprop appeared out of nowhere when leaving a vessel that
       had none in it (#288) (Sir Mortimer)
     - Monoprop+O2 fuel cell is now available sooner in the tech tree. Basic Science
-      unlocks this process along
+      unlocks this process along with the fuel cell (Sir Mortimer)
     - Added LSS system diagrams, and a small guide on how to set up O2 + water recycling
       (Sir Mortimer)
     - Hide Sickbay from automation if it is unavailable (Sir Mortimer)
-    - Some Changes to the Kerbalism Experiment part module (Sir Mortimer, Arthur)
-    date: 2019-xx-xx
+    - New Science system (Sir Mortimer, Arthur)
+    date: '2019-03-31'
