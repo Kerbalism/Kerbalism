@@ -91,6 +91,7 @@ namespace KERBALISM
 
 			// clamp file size to max amount that can be collected
 			file.size = Math.Min(file.size, Science.Experiment(subject_id).max_amount);
+			file.ts = Planetarium.GetUniversalTime();
 
 			return true;
 		}
@@ -160,6 +161,7 @@ namespace KERBALISM
 			{
 				// decrease amount of data stored in the file
 				file.size -= amount;
+				file.ts = Planetarium.GetUniversalTime();
 
 				// remove file if empty
 				if (file.size <= double.Epsilon) files.Remove(subject_id);

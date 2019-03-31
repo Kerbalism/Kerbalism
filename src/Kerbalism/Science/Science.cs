@@ -122,12 +122,13 @@ namespace KERBALISM
 			// not transmitting if there is no ec left
 			if (ResourceCache.Info(v, "ElectricCharge").amount <= double.Epsilon) return string.Empty;
 
-			// get first file flagged for transmission
+			// get first file flagged for transmission, AND has a ts at least 5 seconds old or is > 0.001Mb in size
 			foreach (var drive in DB.Vessel(v).drives.Values)
 			{
+				double now = Planetarium.GetUniversalTime();
 				foreach (var p in drive.files)
 				{
-					if (p.Value.send) return p.Key;
+					if (p.Value.send && (p.Value.ts + 3 < now || p.Value.size > 0.003)) return p.Key;
 				}
 			}
 

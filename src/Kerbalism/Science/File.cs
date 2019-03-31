@@ -13,6 +13,7 @@ namespace KERBALISM
 			buff = 0.0;
 			send = PreferencesBasic.Instance.transmitScience;
 			silentTransmission = false;
+			ts = Planetarium.GetUniversalTime();
 		}
 
 		public File(ConfigNode node)
@@ -35,6 +36,7 @@ namespace KERBALISM
 		public double buff;   // data transmitted but not credited
 		public bool send;     // send-home flag
 		public bool silentTransmission; // don't show a message when transmitted
+		public double ts; // last change time
 	}
 
 
