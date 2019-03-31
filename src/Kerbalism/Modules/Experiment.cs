@@ -176,11 +176,15 @@ namespace KERBALISM
 			issue = TestForIssues(vessel, exp, ec, this, broken,
 				remainingSampleMass, didPrepare, shrouded, last_subject_id, out subject_id);
 
-			// if experiment is active and there are no issues
-			if (recording && issue.Length == 0 && dataSampled < exp.scienceCap * exp.dataScale)
-			{
-				if (last_subject_id != subject_id) dataSampled = 0;
+			if (last_subject_id != subject_id) dataSampled = 0;
 				last_subject_id = subject_id;
+
+			if (!recording)
+				return;
+			
+			// if experiment is active and there are no issues
+			if (issue.Length == 0 && dataSampled < exp.scienceCap * exp.dataScale)
+			{
 
 				// record in drive
 				double elapsed = Kerbalism.elapsed_s;
@@ -243,12 +247,12 @@ namespace KERBALISM
 				remainingSampleMass, didPrepare, shrouded, last_subject_id, out subject_id);
 			Lib.Proto.Set(m, "issue", issue);
 
+			double dataSampled = Lib.Proto.GetDouble(m, "dataSampled");
+			if (last_subject_id != subject_id) dataSampled = 0;
+
 			// if experiment is active
 			if (!Lib.Proto.GetBool(m, "recording"))
 				return;
-
-			double dataSampled = Lib.Proto.GetDouble(m, "dataSampled");
-			if (last_subject_id != subject_id) dataSampled = 0;
 
 			// if there are no issues
 			if (issue.Length == 0 && dataSampled < exp.scienceCap * exp.dataScale)
@@ -328,7 +332,7 @@ namespace KERBALISM
 			if (needsReset) return "reset required";
 
 			if (ec.amount < double.Epsilon && experiment.ec_rate > double.Epsilon)
-				return "missing <b>EC</b>";
+				return "no <b>Electricity</b>";
 			
 			if (!string.IsNullOrEmpty(experiment.crew_operate))
 			{
