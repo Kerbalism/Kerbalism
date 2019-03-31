@@ -51,10 +51,8 @@ namespace KERBALISM.Planner
 		{
 			public Resource_location(Part p)
 			{
-#if !KSP13
 				vessel_wide = false;
 				persistent_identifier = p.persistentId;
-#endif
 			}
 			public Resource_location() { }
 

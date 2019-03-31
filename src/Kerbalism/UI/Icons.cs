@@ -104,19 +104,11 @@ namespace KERBALISM
 		internal static bool lastIcon = false;
 
 		internal static Texture2D GetTexture(string name) {
-#if KSP13
-			return Lib.GetTexture(name);
-#else
 			return Styles.GetUIScaledTexture(name);
-#endif
 		}
 
 		internal static Texture2D GetTexture(string name, int width = 16, int height = 16, float prescalar = 1.0f) {
-#if KSP13
-			return Lib.GetTexture(name);
-#else
 			return Styles.GetUIScaledTexture(name, width, height, prescalar);
-#endif
 		}
 
 		///<summary> Initializes the icons </summary>

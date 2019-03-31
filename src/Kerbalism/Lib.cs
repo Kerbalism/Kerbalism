@@ -753,15 +753,10 @@ namespace KERBALISM
 		// return true if a tutorial scenario or making history mission is active
 		public static bool IsScenario()
 		{
-#if KSP13
-			return HighLogic.CurrentGame.Mode == Game.Modes.SCENARIO
-				|| HighLogic.CurrentGame.Mode == Game.Modes.SCENARIO_NON_RESUMABLE;
-#else
             return HighLogic.CurrentGame.Mode == Game.Modes.SCENARIO
 				|| HighLogic.CurrentGame.Mode == Game.Modes.SCENARIO_NON_RESUMABLE
 				|| HighLogic.CurrentGame.Mode == Game.Modes.MISSION_BUILDER
 				|| HighLogic.CurrentGame.Mode == Game.Modes.MISSION;
-#endif
 		}
 
 		// disable the module and return true if a tutorial scenario is active
@@ -1546,11 +1541,7 @@ namespace KERBALISM
 		public static Texture2D GetTexture( string name, int width = 16, int height = 16 )
 		{
 			Texture2D texture = new Texture2D( width, height, TextureFormat.ARGB32, false );
-#if KSP13
-			texture.LoadImage( System.IO.File.ReadAllBytes( Icons.TexturePath + name + ".png" ) );
-#else
 			ImageConversion.LoadImage(texture, System.IO.File.ReadAllBytes(Icons.TexturePath + name + ".png"));
-#endif
 			return texture;
 		}
 
@@ -1733,20 +1724,12 @@ namespace KERBALISM
 
 		public static UInt32 GetPartId(Part part)
 		{
-#if KSP13
-            return part.flightID ^ BitConverter.ToUInt32( part.vessel.vesselID, 0 );
-#else
 			return part.flightID ^ part.persistentId;
-#endif
 		}
 
 		public static UInt32 GetPartId(ProtoPartSnapshot part)
 		{
-#if KSP13
-            return part.flightID ^ BitConverter.ToUInt32( part.vessel.vesselID, 0 );
-#else
 			return part.flightID ^ part.persistentId;
-#endif
 		}
 		// --- PROTO ----------------------------------------------------------------
 

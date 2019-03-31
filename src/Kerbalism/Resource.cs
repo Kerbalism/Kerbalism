@@ -127,17 +127,13 @@ namespace KERBALISM
 		{
 			public Resource_location(Part p) // loaded part
 			{
-#if !KSP13
 				vessel_wide = false;
 				persistent_identifier = p.persistentId;
-#endif
 			}
 			public Resource_location(ProtoPartSnapshot p) // unloaded part
 			{
-#if !KSP13
 				vessel_wide = false;
 				persistent_identifier = p.persistentId;
-#endif
 			}
 			public Resource_location() {}
 
@@ -997,7 +993,7 @@ namespace KERBALISM
 		public static void Equalizer(Vessel v)
 		{
 			// get resource level in habitats
-			double[] res_level = new double[resourceName.Length];                   // Don't count Manned or Depressiong habitats 
+			double[] res_level = new double[resourceName.Length];                   // Don't count Manned or Depressiong habitats
 
 			// Total resource in parts not disabled
 			double[] totalAmount = new double[resourceName.Length];
