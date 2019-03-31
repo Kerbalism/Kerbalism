@@ -42,6 +42,11 @@ namespace KERBALISM
 			Ctrl(!generator.generatorIsActive);
 		}
 
+		public override bool IsVisible()
+		{
+			return !generator.isAlwaysActive;
+		}
+
 		ModuleGenerator generator;
 	}
 
@@ -81,6 +86,11 @@ namespace KERBALISM
 		public override void Toggle()
 		{
 			Ctrl(!Lib.Proto.GetBool(generator, "generatorIsActive"));
+		}
+
+		public override bool IsVisible()
+		{
+			return !prefab.isAlwaysActive;
 		}
 
 		private readonly ProtoPartModuleSnapshot generator;

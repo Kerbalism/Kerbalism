@@ -485,9 +485,17 @@ namespace KERBALISM
 				}
 
 				// add unique configure-related unlocks
+				// avoid printing text over the "available parts" section
+				int i = 0;
 				foreach (string label in labels)
 				{
 					rnd.node_description.text += Lib.BuildString("\n• <color=#00ffff>", label, "</color>");
+					i++;
+					if(i >= 5 && labels.Count > i + 1)
+					{
+						rnd.node_description.text += Lib.BuildString("\n• <color=#00ffff>(+", (labels.Count - i).ToString(), " more)</color>");
+						break;
+					}
 				}
 			}
 		}

@@ -12,8 +12,9 @@ namespace KERBALISM
 	{
 		public ExperimentDevice(Experiment exp)
 		{
-			this.exp = exp;
-			this.exp_name = Lib.SpacesOnCaps(ResearchAndDevelopment.GetExperiment(exp.experiment).experimentTitle).ToLower().Replace("e v a", "eva");
+			this.experiment = exp;
+			this.exp_name = (exp.sample_mass < float.Epsilon ? "sensor" : "experiment")
+				+ ": " + Lib.SpacesOnCaps(ResearchAndDevelopment.GetExperiment(exp.experiment_id).experimentTitle).ToLower().Replace("e v a", "eva");
 		}
 
 		public override string Name()
@@ -23,41 +24,46 @@ namespace KERBALISM
 
 		public override uint Part()
 		{
-			return exp.part.flightID;
+			return experiment.part.flightID;
 		}
 
 		public override string Info()
 		{
-			return !exp.recording
+			var exp = ResearchAndDevelopment.GetExperiment(experiment.experiment_id);
+			var sampleSize = (exp.scienceCap * exp.dataScale);
+			var recordedPercent = Lib.HumanReadablePerc(experiment.dataSampled / sampleSize);
+			var eta = experiment.data_rate < double.Epsilon || experiment.dataSampled >= sampleSize ? " done" : " T-" + Lib.HumanReadableDuration((sampleSize - experiment.dataSampled) / experiment.data_rate);
+
+			return !experiment.recording
 			  ? "<color=red>" + Localizer.Format("#KERBALISM_Generic_DISABLED") + " </color>"
-			  : exp.issue.Length == 0
-			  ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_RECORDING") + "</color>"
-			  : Lib.BuildString("<color=yellow>", exp.issue, "</color>");
+			  : experiment.issue.Length == 0 ? "<color=cyan>" + Lib.BuildString(recordedPercent, eta) + "</color>"
+			  : Lib.BuildString("<color=yellow>", experiment.issue.ToLower(), "</color>");
 		}
 
 		public override void Ctrl(bool value)
 		{
-			if (value != exp.recording) exp.Toggle();
+			if (value != experiment.recording) experiment.Toggle();
 		}
 
 		public override void Toggle()
 		{
-			Ctrl(!exp.recording);
+			Ctrl(!experiment.recording);
 		}
 
-		private Experiment exp;
+		private Experiment experiment;
 		private readonly string exp_name;
 	}
 
 
 	public sealed class ProtoExperimentDevice : Device
 	{
-		public ProtoExperimentDevice(ProtoPartModuleSnapshot exp, Experiment prefab, uint part_id)
+		public ProtoExperimentDevice(ProtoPartModuleSnapshot proto, Experiment prefab, uint part_id)
 		{
-			this.exp = exp;
+			this.proto = proto;
 			this.prefab = prefab;
 			this.part_id = part_id;
-			this.exp_name = Lib.SpacesOnCaps(ResearchAndDevelopment.GetExperiment(prefab.experiment).experimentTitle).ToLower().Replace("e v a", "eva");
+			this.exp_name = (prefab.sample_mass < float.Epsilon ? "sensor" : "experiment")
+				+ ": " + Lib.SpacesOnCaps(ResearchAndDevelopment.GetExperiment(prefab.experiment_id).experimentTitle).ToLower().Replace("e v a", "eva");
 		}
 
 		public override string Name()
@@ -72,26 +78,33 @@ namespace KERBALISM
 
 		public override string Info()
 		{
-			bool recording = Lib.Proto.GetBool(exp, "recording");
-			string issue = Lib.Proto.GetString(exp, "issue");
+			bool recording = Lib.Proto.GetBool(proto, "recording");
+			string issue = Lib.Proto.GetString(proto, "issue");
+			double dataSampled = Lib.Proto.GetDouble(proto, "dataSampled");
+			double data_rate = Lib.Proto.GetDouble(proto, "data_rate");
+
+			var exp = ResearchAndDevelopment.GetExperiment(prefab.experiment_id);
+			var sampleSize = (exp.scienceCap * exp.dataScale);
+			var recordedPercent = Lib.HumanReadablePerc(dataSampled / sampleSize);
+			var eta = data_rate < double.Epsilon || dataSampled >= sampleSize ? " done" : " T-" + Lib.HumanReadableDuration((sampleSize - dataSampled) / data_rate);
+
 			return !recording
 			  ? "<color=red>" + Localizer.Format("#KERBALISM_Generic_STOPPED") + " </color>"
-			  : issue.Length == 0
-			  ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_RECORDING") + "</color>"
-			  : Lib.BuildString("<color=yellow>", issue, "</color>");
+			  : issue.Length == 0 ? "<color=cyan>" + Lib.BuildString(recordedPercent, eta) + "</color>"
+			  : Lib.BuildString("<color=yellow>", issue.ToLower(), "</color>");
 		}
 
 		public override void Ctrl(bool value)
 		{
-			Lib.Proto.Set(exp, "recording", value);
+			Lib.Proto.Set(proto, "recording", value);
 		}
 
 		public override void Toggle()
 		{
-			Ctrl(!Lib.Proto.GetBool(exp, "recording"));
+			Ctrl(!Lib.Proto.GetBool(proto, "recording"));
 		}
 
-		private readonly ProtoPartModuleSnapshot exp;
+		private readonly ProtoPartModuleSnapshot proto;
 		private readonly Experiment prefab;
 		private readonly uint part_id;
 		private readonly string exp_name;

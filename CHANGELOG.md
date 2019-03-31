@@ -29,7 +29,7 @@
   with the fuel cell (Sir Mortimer)
 * Added LSS system diagrams, and a small guide on how to set up O2 + water recycling (Sir Mortimer)
 * Hide Sickbay from automation if it is unavailable (Sir Mortimer)
-* Some Changes to the Kerbalism Experiment part module (Sir Mortimer, Arthur)
+* New Science system (Sir Mortimer, Arthur)
 
 ------------------------------------------------------------------------------------------------------
 
@@ -112,7 +112,7 @@
   stress and radiation. When under stress they can make mistakes, some do better than others. (Sir Mortimer)
 * A laboratory with high level crew members in it will work faster (Sir Mortimer)
 * Harvesters will work better with an engineer on board. (Sir Mortimer)
-* Fixed another icons sometimes not displaying bug (PiezPiedPy) 
+* Fixed another icons sometimes not displaying bug (PiezPiedPy)
 * SSPX 2.5m Greenhouse now producing food at the expected rate. (theJesuit)
 * ResourceBalance run the pressurizing\depressurizing (old "equalize\venting"), it gives priority to habitats with crew. (HaullyGames)
 * Habitats equalize/venting function changed to pressurizing/depressurizing, crewed habitats have priority while multiple habitats are pressurizing. (HaullyGames)
@@ -161,19 +161,19 @@
 
  * Kerbalism documents are now available here: https://kerbalism.readthedocs.io Note they are still a Work in Progress
 
- * Fixed the icons sometimes not displaying bug and icon scaling bug (PiezPiedPy) 
+ * Fixed the icons sometimes not displaying bug and icon scaling bug (PiezPiedPy)
  * RemoteTech support now integrates correctly with the planner and signal system (PiezPiedPy)
  * Improved RemoteTech support (simulate in planner buttons, reliability, antenna EC consumption) (Gordon Dry & PiezPiedPy)
  * RemoteTech antennas will need power even if vessel is unloaded (Sir Mortimer)
  * RemoteTech antennas fitted to Vessels without power will no longer relay signals to other vessels (Sir Mortimer)
  * RemoteTech antennas can now be enabled/disabled in Automation (Sir Mortimer)
  * RemoteTech antennas can now break down due to reliability failures (Sir Mortimer)
- * Chemical Plant and ECLSS parts are now surface attachable, ECLSS part capacity increased to support 3 crew (PiezPiedPy) 
+ * Chemical Plant and ECLSS parts are now surface attachable, ECLSS part capacity increased to support 3 crew (PiezPiedPy)
  * Added support for ConfigurableContainers, they now have 6 additional tank configs as defined below:
    KerbalismSupplies (Food, Water) - KerbalismBreathing (Oxygen, Nitrogen)
    KerbalismWaste (Waste, WasteWater) - KerbalismGreenhouse (CarbonDioxide, Ammonia, Water)
    KerbalismFuelcellH2 (Oxygen, Hydrogen) - KerbalismFuelcellMP (Oxygen, MonoPropellant)  (Gordon Dry)
- * Containers have had their volume and mass calculated with a calculator (PiezPiedPy) 
+ * Containers have had their volume and mass calculated with a calculator (PiezPiedPy)
  * Science labs can now reset experiments (PiezPiedPy)
  * CryoTanks are now simulated in the background, also fuel boiloff is simulated in the planner (PiezPiedPy)
  * Reverted the Quick'n'dirty fix for GPOSpeedFuelPump because it has been fixed with v1.8.14 (Gordon Dry)
@@ -183,8 +183,8 @@
    to dump overboard, the Dump button is also usable InFlight allowing for changes of strategies on the go (PiezPiedPy)
  * Overhaul of all Chemical Plant and ISRU processes using CRP densities and molar masses (PiezPiedPy)
  * SOE process now converts wasted Carbon into Shielding, Haber process now needs EC (PiezPiedPy)
- * Hydrazine process now outputs Oxygen and requires EC and A New Nitrogen injected Hydrazine process added (PiezPiedPy) 
- * Vessel group filter can now search for vessel names that contain multiple words (Sir Mortimer) 
+ * Hydrazine process now outputs Oxygen and requires EC and A New Nitrogen injected Hydrazine process added (PiezPiedPy)
+ * Vessel group filter can now search for vessel names that contain multiple words (Sir Mortimer)
  * Changed the Small Supply Container to be 0.625m in diameter instead of 0.5m (Gordon Dry)
  * Added radiation belts to ExtraSolar planets and moons - science definition texts still missing (Gordon Dry)
  * Fixed a commented out bracket in another patch that hindered the Bluedog_DB Geiger counter from being a sensor (Gordon Dry)
@@ -192,7 +192,7 @@
  * Fixed MRE not running when shielding is full or does not exist on a vessel (PiezPiedPy)
  * MRE process now outputs a small amount of CO2 (PiezPiedPy)
  * GeigerCounter science experiment fixes for OPM and NewHorizons. Also SEP support fixes (Gordon Dry)
- * Rebalanced Sabatier and Anthraquinone processes to output LiquidFuel and Oxidizer at Stock ratio of 9:11 (PiezPiedPy) 
+ * Rebalanced Sabatier and Anthraquinone processes to output LiquidFuel and Oxidizer at Stock ratio of 9:11 (PiezPiedPy)
  * Rebalanced H2+O2 and LH2+O2 fuel cells to output more realistic EC levels (PiezPiedPy)
  * Some tooltip colors changed from a nasty hard to see red to a nice gold (PiezPiedPy)
  * Fixed antennas bug having no science data rate in languages other than English (PiezPiedPy)
@@ -243,7 +243,7 @@
  * Added LH2+O2 processes to the Fuel Cells for USI and CryoTanks Support (PiezPiedPy)
  * Added Hydrogen Liquefaction and Liquid Hydrogen Evaporator processes to USI and CryoTanks Support (PiezPiedPy)
  * Fixed CryoTanks NRE in Planner and added LH2 to radial tanks for CryoTanks Support (PiezPiedPy)
- 
+
 ### For Developers
 
 ------------------------------------------------------------------------------------------------------
@@ -268,7 +268,7 @@
      though, when changing scenes with the [ESC]Pause menu you may notice the target readout pointing to the wrong vessel and  
      some signals that where previously dis-connected wrongly connecting back online, simply changing scene from for example  
      the Space Center to Tracking Station will solve all errors in the network.  
-	 *Thanks to (PiezPiedPy) for the transmitter overhaul.* 
+	 *Thanks to (PiezPiedPy) for the transmitter overhaul.*
 
  * Nitrogen added to pods on rescue, Humidity controller now detects breathable atmospheres (PiezPiedPy)
  * Kerbalism Communotron 8 transmitter is back (PiezPiedPy)
@@ -292,7 +292,7 @@
 
  * Harvesters can now extract Nitrogen from the surface (JadeOfMom)
  * Filters can now extract Ammonia from the atmosphere (JadeOfMom)
- * New parts MiniPump and RadialPump to extract Water, Nitrogen and Ammonia from oceans (thanks to JadeOfMom for the Harvesters and PiezPiedPy for the parts) 
+ * New parts MiniPump and RadialPump to extract Water, Nitrogen and Ammonia from oceans (thanks to JadeOfMom for the Harvesters and PiezPiedPy for the parts)
  * Harvesters are now spec'd at 10% abundance by default (madman2003)
  ** The percentage is specified in the UI when selecting the process the harvester will run
  ** The percentage can be overruled for individual parts
@@ -321,7 +321,7 @@
  * Give Greenhouses the basic resources needed to run (madman2003)
  * There is now a help file on GitHub for those wishing to report bugs or contribute to Kerbalism.
    see [CONTRIBUTING.md](https://github.com/MoreRobustThanYou/Kerbalism/blob/master/CONTRIBUTING.md)
- 
+
 ### For Developers
 
  * Profile importing is now available to modders who wish to import their own processes, rules, supplies etc (thanks to PiezPiedPy)
@@ -350,7 +350,7 @@
 
 1.4.3
   - RemoteTech antennas now show in the Ship Monitor
-   
+
 1.4.2
   - Updated B9Switch config
 
@@ -363,10 +363,10 @@
 
 1.4.1.2
   - Implement player101's science fix.
-  
+
 1.4.1.1
   - Actually fix relay strength this time
-   
+
 1.2.9
   - ported to KSP 1.3.0.1804
   - improved SSTU support patch (@Maxzhao1999)
@@ -1032,4 +1032,3 @@
 
 0.9.9.0
   First public release
-

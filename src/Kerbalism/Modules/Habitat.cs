@@ -297,7 +297,7 @@ namespace KERBALISM
 		public void FixedUpdate()
 		{
 			// if part is manned (even in the editor), force enabled
-			if (Lib.IsManned(part) && state != State.enabled)
+			if (Lib.IsCrewed(part) && state != State.enabled)
 			{
 				Set_flow(true);
 				state = State.pressurizing;
@@ -320,7 +320,7 @@ namespace KERBALISM
 				else
 				{
 					// Inflatable modules shows IVA and are passable only in 99.9999% deployed
-					SetPassable(Lib.IsManned(part) || Math.Truncate(Math.Abs((perctDeployed + ResourceBalance.precision) - 1.0) * 100000) / 100000 <= ResourceBalance.precision);
+					SetPassable(Lib.IsCrewed(part) || Math.Truncate(Math.Abs((perctDeployed + ResourceBalance.precision) - 1.0) * 100000) / 100000 <= ResourceBalance.precision);
 					UpdateIVA(Math.Truncate(Math.Abs((perctDeployed + ResourceBalance.precision) - 1.0) * 100000) / 100000 <= ResourceBalance.precision);
 				}
 				FixIVA = false;
@@ -335,7 +335,7 @@ namespace KERBALISM
 					{
 						if (Get_inflate_string().Length != 0)         // it is inflatable
 						{
-							SetPassable(false || Lib.IsManned(part)); // Prevent to not lock a Kerbal into a the part
+							SetPassable(false || Lib.IsCrewed(part)); // Prevent to not lock a Kerbal into a the part
 							UpdateIVA(false);
 						}
 						needEqualize = true;
@@ -369,7 +369,7 @@ namespace KERBALISM
 		public void Toggle()
 		{
 			// if manned, we can't depressurize
-			if (Lib.IsManned(part) && (state == State.enabled || state == State.pressurizing))
+			if (Lib.IsCrewed(part) && (state == State.enabled || state == State.pressurizing))
 			{
 				Message.Post(Lib.BuildString("Can't disable <b>", Lib.PartName(part), " habitat</b> while crew is inside"));
 				return;
@@ -407,9 +407,12 @@ namespace KERBALISM
 		public Specifics Specs()
 		{
 			Specifics specs = new Specifics();
-			specs.Add("volume", Lib.HumanReadableVolume(volume > double.Epsilon ? volume : Lib.PartVolume(part)));
-			specs.Add("surface", Lib.HumanReadableSurface(surface > double.Epsilon ? surface : Lib.PartSurface(part)));
+			specs.Add("Volume", Lib.HumanReadableVolume(volume > double.Epsilon ? volume : Lib.PartVolume(part)));
+			specs.Add("Surface", Lib.HumanReadableSurface(surface > double.Epsilon ? surface : Lib.PartSurface(part)));
 			if (inflate.Length > 0) specs.Add("Inflatable", "yes");
+			if(PhysicsGlobals.KerbalCrewMass > 0)
+				specs.Add("Added mass per crew", Lib.HumanReadableMass(PhysicsGlobals.KerbalCrewMass));
+
 			return specs;
 		}
 
@@ -459,7 +462,13 @@ namespace KERBALISM
 		public static double Living_space(Vessel v)
 		{
 			// living space is the volume per-capita normalized against an 'ideal living space' and clamped in an acceptable range
-			return Lib.Clamp((Tot_volume(v) / Lib.CrewCount(v)) / PreferencesComfort.Instance.livingSpace, 0.1, 1.0);
+			return Lib.Clamp(Volume_per_crew(v) / PreferencesComfort.Instance.livingSpace, 0.1, 1.0);
+		}
+
+		public static double Volume_per_crew(Vessel v)
+		{
+			// living space is the volume per-capita normalized against an 'ideal living space' and clamped in an acceptable range
+			return Tot_volume(v) / Math.Max(1, Lib.CrewCount(v));
 		}
 
 		// return a verbose description of shielding capability
@@ -516,6 +525,8 @@ namespace KERBALISM
 			Lib.DebugLog("CrewTransferAvailable: '{0}'", isPassable);
 			part.crewTransferAvailable = isPassable;
 		}
+
+		public ModifierChangeWhen GetModuleMassChangeWhen() { return ModifierChangeWhen.CONSTANTLY; }
 
 		// Enable/Disable IVA
 		void UpdateIVA(bool ative)

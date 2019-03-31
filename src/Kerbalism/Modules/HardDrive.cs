@@ -7,60 +7,99 @@ using UnityEngine;
 namespace KERBALISM
 {
 
-
-	public sealed class HardDrive : PartModule, IScienceDataContainer
+	public sealed class HardDrive : PartModule, IScienceDataContainer, ISpecifics, IModuleInfo, IPartMassModifier
 	{
+		[KSPField] public double dataCapacity = 102400.0;       // drive capacity, in Mb
+		[KSPField] public int sampleCapacity = 100;             // drive capacity, in slots
+		[KSPField] public string title = "Kerbodyne ZeroBit";   // drive name to be displayed in file manager
+
+		[KSPField(guiActive = true, guiName = "Capacity", guiActiveEditor = true)] public string Capacity;
+
+		private Drive drive;
+		private double totalSampleMass;
+
 		public override void OnStart(StartState state)
 		{
 			// don't break tutorial scenarios
 			if (Lib.DisableScenario(this)) return;
+
+			if(drive == null)
+			{
+				if (Lib.IsEditor())
+					drive = new Drive(title, dataCapacity, sampleCapacity);
+				else
+					drive = DB.Vessel(vessel).DriveForPart(title, part, dataCapacity, sampleCapacity);
+			}
+
+			UpdateCapacity();
+		}
+
+		public override void OnLoad(ConfigNode node)
+		{
+			base.OnLoad(node);
+
+			if(Lib.IsEditor())
+				drive = new Drive();
+			else
+				drive = DB.Vessel(vessel).DriveForPart(title, part, dataCapacity, sampleCapacity);
+
+			UpdateCapacity();
 		}
 
 		public void Update()
 		{
+			UpdateCapacity();
+
 			if (Lib.IsFlight())
 			{
-				Drive drive = DB.Vessel(vessel).drive;
+				// show DATA UI button, with size info
+				Events["ToggleUI"].guiName = Lib.StatusToggle("Data", drive.Empty() ? "empty" : drive.Size());
+				Events["ToggleUI"].active = true;
 
-				// if no location was ever specified, set it here
-				if (drive.location == 0) drive.location = part.flightID;
+				// show TakeData eva action button, if there is something to take
+				Events["TakeData"].active = !drive.Empty();
 
-				// if this is the location the data is stored
-				if (drive.location == part.flightID)
-				{
-					// get data size
-					double size = drive.Size();
+				// show StoreData eva action button, if active vessel is an eva kerbal and there is something to store from it
+				Vessel v = FlightGlobals.ActiveVessel;
+				Events["StoreData"].active = v != null && v.isEVA && !EVA.IsDead(v) && drive.FilesSize() > double.Epsilon;
 
-					// show DATA UI button, with size info
-					Events["ToggleUI"].guiName = Lib.StatusToggle("Data", size > double.Epsilon ? Lib.HumanReadableDataSize(size) : "empty");
-					Events["ToggleUI"].active = true;
-
-					// show TakeData eva action button, if there is something to take
-					Events["TakeData"].active = size > double.Epsilon;
-
-					// show StoreData eva action button, if active vessel is an eva kerbal and there is something to store from it
-					Vessel v = FlightGlobals.ActiveVessel;
-					Events["StoreData"].active = v != null && v.isEVA && !EVA.IsDead(v) && DB.Vessel(v).drive.Size() > double.Epsilon;
-
-					// hide TransferLocation button
-					Events["TransferData"].active = false;
-				}
-				// if this is not the location the data is stored
-				else
-				{
-					// hide DATA UI button
-					Events["ToggleUI"].active = false;
-
-					// hide EVA actions
-					Events["TakeData"].active = false;
-					Events["StoreData"].active = false;
-
-					// show TransferData button
-					Events["TransferData"].active = true;
-				}
+				// hide TransferLocation button
+				Events["TransferData"].active = true;
 			}
 		}
 
+		private void UpdateCapacity()
+		{
+			totalSampleMass = 0;
+			foreach (var sample in drive.samples.Values) totalSampleMass += sample.mass;
+
+			double availableDataCapacity = dataCapacity;
+			int availableSlots = sampleCapacity;
+			if (Lib.IsFlight())
+			{
+				availableDataCapacity = drive.FileCapacityAvailable();
+				availableSlots = Lib.SampleSizeToSlots(drive.SampleCapacityAvailable());
+			}
+
+			Capacity = string.Empty;
+			if(availableDataCapacity > double.Epsilon)
+				Capacity = Lib.HumanReadableDataSize(availableDataCapacity);
+			if(availableSlots > 0)
+			{
+				if (Capacity.Length > 0) Capacity += " ";
+				Capacity += Lib.HumanReadableSampleSize(availableSlots);
+			}
+
+			if(Lib.IsFlight() && totalSampleMass > double.Epsilon)
+			{
+				Capacity += " " + Lib.HumanReadableMass(totalSampleMass);
+			}
+		}
+
+		public Drive GetDrive()
+		{
+			return drive;
+		}
 
 		[KSPEvent(guiActive = true, guiName = "_", active = true)]
 		public void ToggleUI()
@@ -72,7 +111,12 @@ namespace KERBALISM
 		[KSPEvent(guiActive = true, guiName = "#KERBALISM_HardDrive_TransferData", active = false)]
 		public void TransferData()
 		{
-			DB.Vessel(vessel).drive.location = part.flightID;
+			var hardDrives = vessel.FindPartModulesImplementing<HardDrive>();
+			foreach(var hardDrive in hardDrives)
+			{
+				if (hardDrive == this) continue;
+				hardDrive.drive.Move(drive);
+			}
 		}
 
 
@@ -84,7 +128,7 @@ namespace KERBALISM
 			if (v == null || EVA.IsDead(v)) return;
 
 			// transfer data
-			Drive.Transfer(vessel, v);
+			Drive.Transfer(vessel, v, v.isEVA);
 		}
 
 
@@ -96,26 +140,21 @@ namespace KERBALISM
 			if (v == null || EVA.IsDead(v)) return;
 
 			// transfer data
-			Drive.Transfer(v, vessel);
+			Drive.Transfer(v, vessel, v.isEVA);
 		}
 
 
 		// part tooltip
 		public override string GetInfo()
 		{
-			return "Solid-state hard drive";
+			return Specs().Info();
 		}
 
 
 		// science container implementation
 		public ScienceData[] GetData()
 		{
-			// get drive
-			Drive drive = DB.Vessel(vessel).drive;
-
-			// if not the preferred drive
-			if (drive.location != part.flightID) return new ScienceData[0];
-
+			Lib.Log("SCI GetData called " );
 			// generate and return stock science data
 			List<ScienceData> data = new List<ScienceData>();
 			foreach (var pair in drive.files)
@@ -131,33 +170,31 @@ namespace KERBALISM
 			return data.ToArray();
 		}
 
+		// TODO do something about limited capacity...
+		// EVAs returning should get a warning if needed
 		public void ReturnData(ScienceData data)
 		{
-			// get drive
-			Drive drive = DB.Vessel(vessel).drive;
-
-			// if not the preferred drive
-			if (drive.location != part.flightID) return;
+			Lib.Log("SCI ReturnData called " + data.subjectID);
 
 			// store the data
+			bool result = false;
 			if (data.baseTransmitValue > float.Epsilon || data.transmitBonus > double.Epsilon)
 			{
-				drive.Record_file(data.subjectID, data.dataAmount);
+				result = drive.Record_file(data.subjectID, data.dataAmount);
 			}
 			else
 			{
-				drive.Record_sample(data.subjectID, data.dataAmount);
+				var experimentInfo = Science.Experiment(data.subjectID);
+				var sampleMass = Science.GetSampleMass(data.subjectID);
+				var mass = sampleMass / experimentInfo.max_amount * data.dataAmount;
+
+				result = drive.Record_sample(data.subjectID, data.dataAmount, mass);
 			}
 		}
 
 		public void DumpData(ScienceData data)
 		{
-			// get drive
-			Drive drive = DB.Vessel(vessel).drive;
-
-			// if not the preferred drive
-			if (drive.location != part.flightID) return;
-
+			Lib.Log("SCI DumpData called " + data.subjectID);
 			// remove the data
 			if (data.baseTransmitValue > float.Epsilon || data.transmitBonus > double.Epsilon)
 			{
@@ -200,7 +237,26 @@ namespace KERBALISM
 			return false;
 		}
 
+		//public override string GetModuleDisplayName() { return "Hard Drive"; }
+
+		// specifics support
+		public Specifics Specs()
+		{
+			Specifics specs = new Specifics();
+			specs.Add("File capacity", Lib.HumanReadableDataSize(dataCapacity));
+			specs.Add("Sample capacity", Lib.HumanReadableSampleSize(sampleCapacity));
+			return specs;
+		}
+
+		// module info support
+		public string GetModuleTitle() { return "Hard Drive"; }
 		public override string GetModuleDisplayName() { return "Hard Drive"; }
+		public string GetPrimaryField() { return string.Empty; }
+		public Callback<Rect> GetDrawModulePanelCallback() { return null; }
+
+		// module mass support
+		public float GetModuleMass(float defaultMass, ModifierStagingSituation sit) { return (float)totalSampleMass; }
+		public ModifierChangeWhen GetModuleMassChangeWhen() { return ModifierChangeWhen.CONSTANTLY; }
 	}
 
 

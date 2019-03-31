@@ -28,7 +28,7 @@ namespace KERBALISM
 			storm_state = 0;
 			group = "NONE";
 			computer = new Computer();
-			drive = new Drive();
+			drives = new Dictionary<uint, Drive>();
 			supplies = new Dictionary<string, SupplyData>();
 			scansat_id = new List<uint>();
 		}
@@ -52,7 +52,7 @@ namespace KERBALISM
 			storm_state = Lib.ConfigValue(node, "storm_state", 0u);
 			group = Lib.ConfigValue(node, "group", "NONE");
 			computer = node.HasNode("computer") ? new Computer(node.GetNode("computer")) : new Computer();
-			drive = node.HasNode("drive") ? new Drive(node.GetNode("drive")) : new Drive();
+			drives = LoadDrives(node.GetNode("drives"));
 
 			supplies = new Dictionary<string, SupplyData>();
 			foreach (var supply_node in node.GetNode("supplies").GetNodes())
@@ -86,7 +86,7 @@ namespace KERBALISM
 			node.AddValue("storm_state", storm_state);
 			node.AddValue("group", group);
 			computer.Save(node.AddNode("computer"));
-			drive.Save(node.AddNode("drive"));
+			SaveDrives(node.AddNode("drives"));
 
 			var supplies_node = node.AddNode("supplies");
 			foreach (var p in supplies)
@@ -100,6 +100,28 @@ namespace KERBALISM
 			}
 		}
 
+		private Dictionary<uint, Drive> LoadDrives(ConfigNode node)
+		{
+			Dictionary<uint, Drive> result = new Dictionary<uint, Drive>();
+			foreach(var n in node.GetNodes("drive"))
+			{
+				uint partId = Lib.ConfigValue(n, "partId", (uint)0);
+				Drive drive = new Drive(n);
+				result.Add(partId, drive);
+			}
+			return result;
+		}
+
+		private void SaveDrives(ConfigNode node)
+		{
+			foreach (var pair in drives)
+			{
+				var n = node.AddNode("drive");
+				n.AddValue("partId", pair.Key);
+				pair.Value.Save(n);
+			}
+		}
+
 		public SupplyData Supply(string name)
 		{
 			if (!supplies.ContainsKey(name))
@@ -107,6 +129,44 @@ namespace KERBALISM
 				supplies.Add(name, new SupplyData());
 			}
 			return supplies[name];
+		}
+
+		public Drive DriveForPart(String name, Part part, double dataCapacity, int sampleCapacity)
+		{
+			var partId = Lib.GetPartId(part);
+
+			if(!drives.ContainsKey(partId))
+				drives.Add(partId, new Drive(name, dataCapacity, sampleCapacity));
+			return drives[partId];
+		}
+
+		public Drive BestDrive(double minDataCapacity = 0, int minSlots = 0)
+		{
+			Drive result = null;
+			foreach(var drive in drives.Values)
+			{
+				if (result == null)
+				{
+					result = drive;
+					continue;
+				}
+
+				if (minDataCapacity > double.Epsilon && drive.FileCapacityAvailable() < minDataCapacity)
+					continue;
+				if (minSlots > 0 && drive.SampleCapacityAvailable() < minSlots)
+					continue;
+
+				if (minDataCapacity > double.Epsilon && drive.FileCapacityAvailable() > result.FileCapacityAvailable())
+					result = drive;
+				if (minSlots > 0 && drive.SampleCapacityAvailable() > result.SampleCapacityAvailable())
+					result = drive;
+			}
+			if(result == null)
+			{
+				// vessel has no drive.
+				return new Drive("Broken", 0, 0);
+			}
+			return result;
 		}
 
 		public bool msg_signal;       // message flag: link status
@@ -126,7 +186,7 @@ namespace KERBALISM
 		public uint storm_state;      // 0: none, 1: inbound, 2: in progress (interplanetary CME)
 		public string group;          // vessel group
 		public Computer computer;     // store scripts
-		public Drive drive;           // store science data
+		public Dictionary<UInt32, Drive> drives; // store science data
 		public Dictionary<string, SupplyData> supplies; // supplies data
 		public List<uint> scansat_id; // used to remember scansat sensors that were disabled
 	}

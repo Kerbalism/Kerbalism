@@ -100,6 +100,7 @@ namespace KERBALISM
 			humidity = Habitat.Humidity(v);
 			shielding = Habitat.Shielding(v);
 			living_space = Habitat.Living_space(v);
+			volume_per_crew = Habitat.Volume_per_crew(v);
 			comforts = new Comforts(v, landed, crew_count > 1, connection.linked && connection.rate > double.Epsilon);
 
 			// data about greenhouses
@@ -167,6 +168,7 @@ namespace KERBALISM
 		public double humidity;             // moist atmosphere amount
 		public double shielding;            // shielding level
 		public double living_space;         // living space factor
+		public double volume_per_crew;		// Available volume per crew
 		public Comforts comforts;           // comfort info
 		public List<Greenhouse.Data> greenhouses; // some data about greenhouses
 		public double gravioli;             // gravitation gauge particles detected (joke)

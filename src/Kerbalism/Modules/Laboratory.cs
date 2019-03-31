@@ -23,6 +23,7 @@ namespace KERBALISM
 		{
 			DISABLED = 0,
 			NO_EC,
+			NO_STORAGE,
 			NO_SAMPLE,
 			NO_RESEARCHER,
 			RUNNING
@@ -35,7 +36,8 @@ namespace KERBALISM
 		private static string background_sample = null;             // sample currently being analyzed in background simulation
 		private Status status = Status.DISABLED;                    // laboratory status
 		private string status_txt = string.Empty;                   // status string to show next to the ui button
-		private Resource_info ec = null;							// resource info for EC
+		private Resource_info ec = null;                            // resource info for EC
+		private Drive drive = null;                                 // my drive
 
 		// localized strings
 		private static readonly string localized_title = Lib.BuildString("<size=1><color=#00000000>00</color></size>", Localizer.Format("#KERBALISM_Laboratory_Title"));
@@ -46,6 +48,7 @@ namespace KERBALISM
 		private static readonly string localized_noSample = Localizer.Format("#KERBALISM_Laboratory_NoSample");
 		private static readonly string localized_cleaned = Localizer.Format("#KERBALISM_Laboratory_Cleaned");
 		private static readonly string localized_results = Localizer.Format("#KERBALISM_Laboratory_Results");
+		private static readonly string localized_noStorage = "No storage available";
 
 		public override void OnStart(StartState state)
 		{
@@ -61,6 +64,13 @@ namespace KERBALISM
 
 			// parse crew specs
 			researcher_cs = new CrewSpecs(researcher);
+
+			var hardDrive = part.FindModuleImplementing<HardDrive>();
+			if (hardDrive != null) drive = hardDrive.GetDrive();
+			else
+			{
+				drive = DB.Vessel(vessel).BestDrive();
+			}
 		}
 
 		public void Update()
@@ -112,8 +122,8 @@ namespace KERBALISM
 						if (ec.amount > double.Epsilon)
 						{
 							// analyze the sample
-							Analyze(vessel, current_sample, rate * Kerbalism.elapsed_s);
-							status = Status.RUNNING;
+							status = Analyze(vessel, current_sample, rate * Kerbalism.elapsed_s);
+							running = status == Status.RUNNING;
 						}
 						// if there was no ec
 						else status = Status.NO_EC;
@@ -159,7 +169,9 @@ namespace KERBALISM
 						if (ec.amount > double.Epsilon)
 						{
 							// analyze the sample
-							Analyze(v, background_sample, rate * elapsed_s);
+							var status = Analyze(v, background_sample, rate * elapsed_s);
+							if (status != Status.RUNNING)
+								Lib.Proto.Set(m, "running", false);
 						}
 					}
 				}
@@ -228,11 +240,14 @@ namespace KERBALISM
 		// get next sample to analyze, return null if there isn't a sample
 		private static string NextSample(Vessel v)
 		{
-			// for each sample
-			foreach (KeyValuePair<string, Sample> sample in DB.Vessel(v).drive.samples)
+			foreach(var drive in DB.Vessel(v).drives.Values)
 			{
-				// if flagged for analysis
-				if (sample.Value.analyze) return sample.Key;
+				// for each sample
+				foreach (KeyValuePair<string, Sample> sample in drive.samples)
+				{
+					// if flagged for analysis
+					if (sample.Value.analyze) return sample.Key;
+				}
 			}
 
 			// there was no sample to analyze
@@ -240,19 +255,36 @@ namespace KERBALISM
 		}
 
 		// analyze a sample
-		private static void Analyze(Vessel v, string filename, double amount)
+		private static Status Analyze(Vessel v, string filename, double amount)
 		{
-			// get vessel drive
-			Drive drive = DB.Vessel(v).drive;
+			Sample sample = null;
+			foreach (var d in DB.Vessel(v).drives.Values)
+			{
+				if (d.samples.ContainsKey(filename))
+					sample = d.samples[filename];
+				break;
+			}
 
-			// get sample
-			Sample sample = drive.samples[filename];
+			var drive = DB.Vessel(v).BestDrive(amount);
 
-			// analyze, and produce data
-			amount = Math.Min(amount, sample.size);
-			bool completed = amount >= sample.size - double.Epsilon;
-			drive.Delete_sample(filename, amount);
-			drive.Record_file(filename, amount, false);
+			bool completed = sample == null;
+			if(sample != null)
+			{
+				// analyze, and produce dataamount = Math.Min(amount, sample.size);
+				completed = amount >= sample.size - double.Epsilon;
+				bool recorded = drive.Record_file(filename, amount, false);
+				if (recorded)
+					drive.Delete_sample(filename, amount);
+				else
+				{
+					Message.Post(
+						Lib.Color("red", Lib.BuildString(Localizer.Format("#KERBALISM_Laboratory_Analysis"), " stopped")),
+						"Not enough space on hard drive"
+					);
+
+					return Status.NO_STORAGE;
+				}
+			}
 
 			// if the analysis is completed
 			if (completed)
@@ -267,6 +299,8 @@ namespace KERBALISM
 				// record landmark event
 				if (!Lib.Landed(v)) DB.landmarks.space_analysis = true;
 			}
+
+			return Status.RUNNING;
 		}
 
 		private void SetStatusText()
@@ -278,6 +312,9 @@ namespace KERBALISM
 					break;
 				case Status.NO_EC:
 					status_txt = localized_noEC;
+					break;
+				case Status.NO_STORAGE:
+					status_txt = localized_noStorage;
 					break;
 				case Status.NO_RESEARCHER:
 					status_txt = Lib.Color("yellow", researcher_cs.Warning());

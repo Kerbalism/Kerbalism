@@ -35,28 +35,43 @@ namespace KERBALISM
  			// time-out simulation
 			if (p.Timeout(vi)) return;
 
-			// get vessel drive
-			Drive drive = DB.Vessel(v).drive;
-
-			// draw data section
-			p.AddSection("DATA");
-			foreach (var pair in drive.files)
+			foreach (var idDrivePair in DB.Vessel(v).drives)
 			{
-				string filename = pair.Key;
-				File file = pair.Value;
-				Render_file(p, filename, file, drive, short_strings && Lib.IsFlight(), Cache.VesselInfo(v).connection.rate);
-			}
-			if (drive.files.Count == 0) p.AddContent("<i>no files</i>", string.Empty);
+				var drive = idDrivePair.Value;
 
-			// draw samples section
-			p.AddSection("SAMPLES");
-			foreach (var pair in drive.samples)
-			{
-				string filename = pair.Key;
-				Sample sample = pair.Value;
-				Render_sample(p, filename, sample, drive, short_strings && Lib.IsFlight());
+				if (drive.dataCapacity > double.Epsilon)
+				{
+					// draw data section
+					p.AddSection(Lib.BuildString("DATA ", drive.name, " ", Lib.HumanReadableDataSize(drive.dataCapacity),
+												 " (", Lib.HumanReadablePerc(drive.FilesSize() / drive.dataCapacity), ")"));
+					foreach (var pair in drive.files)
+					{
+						string filename = pair.Key;
+						File file = pair.Value;
+						Render_file(p, filename, file, drive, short_strings && Lib.IsFlight(), Cache.VesselInfo(v).connection.rate);
+					}
+					if (drive.files.Count == 0) p.AddContent("<i>no files</i>", string.Empty);
+				}
+
+				if (drive.sampleCapacity > 0)
+				{
+					double mass = 0;
+					foreach (var sample in drive.samples.Values) mass += sample.mass;
+
+					// draw samples section
+					p.AddSection(Lib.BuildString("SAMPLES ", drive.name, " ",
+												 Lib.HumanReadableSampleSize(drive.sampleCapacity),
+												 " (", Lib.HumanReadablePerc(drive.SamplesSize() / drive.sampleCapacity), ") ",
+												 Lib.HumanReadableMass(mass)));
+					foreach (var pair in drive.samples)
+					{
+						string filename = pair.Key;
+						Sample sample = pair.Value;
+						Render_sample(p, filename, sample, drive, short_strings && Lib.IsFlight());
+					}
+					if (drive.samples.Count == 0) p.AddContent("<i>no samples</i>", string.Empty);
+				}
 			}
-			if (drive.samples.Count == 0) p.AddContent("<i>no samples</i>", string.Empty);
 		}
 
 		static void Render_file(Panel p, string filename, File file, Drive drive, bool short_strings, double rate)
@@ -80,9 +95,8 @@ namespace KERBALISM
 			);
 			double exp_value = Science.Value(filename, file.size);
 			if (exp_value > double.Epsilon) exp_tooltip = Lib.BuildString(exp_tooltip, "\n<b>", Lib.HumanReadableScience(exp_value), "</b>");
-
-			if (rate > 0) p.AddContent(exp_label, Lib.HumanReadableDataSize(file.size), "<i>" + Lib.HumanReadableDuration(file.size / rate) + "</i>");
-			else p.AddContent(exp_label, Lib.HumanReadableDataSize(file.size), exp_tooltip);
+			if (rate > 0) exp_tooltip = Lib.BuildString(exp_tooltip, "\n<i>" + Lib.HumanReadableDuration(file.size / rate) + "</i>");
+			p.AddContent(exp_label, Lib.HumanReadableDataSize(file.size), exp_tooltip);
 
 			p.AddIcon(file.send ? Icons.send_cyan : Icons.send_black, "Flag the file for transmission to <b>DSN</b>", () => { file.send = !file.send; });
 			p.AddIcon(Icons.toggle_red, "Delete the file", () => Lib.Popup
@@ -93,7 +107,6 @@ namespace KERBALISM
 			  new DialogGUIButton("Keep it", () => { })
 			));
 		}
-
 
 		static void Render_sample(Panel p, string filename, Sample sample, Drive drive, bool short_strings)
 		{
@@ -116,8 +129,9 @@ namespace KERBALISM
 			);
 			double exp_value = Science.Value(filename, sample.size);
 			if (exp_value > double.Epsilon) exp_tooltip = Lib.BuildString(exp_tooltip, "\n<b>", Lib.HumanReadableScience(exp_value), "</b>");
+			if (sample.mass > Double.Epsilon) exp_tooltip = Lib.BuildString(exp_tooltip, "\n<b>", Lib.HumanReadableMass(sample.mass), "</b>");
 
-			p.AddContent(exp_label, Lib.HumanReadableDataSize(sample.size), exp_tooltip);
+			p.AddContent(exp_label, Lib.HumanReadableSampleSize(sample.size), exp_tooltip);
 			p.AddIcon(sample.analyze ? Icons.lab_cyan : Icons.lab_black, "Flag the file for analysis in a <b>laboratory</b>", () => { sample.analyze = !sample.analyze; });
 			p.AddIcon(Icons.toggle_red, "Dump the sample", () => Lib.Popup
 			(

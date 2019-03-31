@@ -222,50 +222,57 @@ namespace KERBALISM
 		public static double FileSize(Vessel v, string subject_id)
 		{
 			if (!Cache.VesselInfo(v).is_valid) return 0.0;
-			Drive drive = DB.Vessel(v).drive;
-			File file;
-			return drive.files.TryGetValue(subject_id, out file) ? file.size : 0.0;
+
+			foreach(var d in DB.Vessel(v).drives.Values)
+			{
+				if (d.files.ContainsKey(subject_id))
+					return d.files[subject_id].size;
+			}
+
+			return 0.0;
 		}
 
 		// return size of a sample in a vessel drive
 		public static double SampleSize(Vessel v, string subject_id)
 		{
 			if (!Cache.VesselInfo(v).is_valid) return 0.0;
-			Drive drive = DB.Vessel(v).drive;
-			Sample sample;
-			return drive.samples.TryGetValue(subject_id, out sample) ? sample.size : 0.0;
+			foreach (var d in DB.Vessel(v).drives.Values)
+			{
+				if (d.samples.ContainsKey(subject_id))
+					return d.samples[subject_id].size;
+			}
+
+			return 0.0;
 		}
 
 		// store a file on a vessel
-		public static void StoreFile(Vessel v, string subject_id, double amount)
+		public static bool StoreFile(Vessel v, string subject_id, double amount)
 		{
-			if (!Cache.VesselInfo(v).is_valid) return;
-			Drive drive = DB.Vessel(v).drive;
-			drive.Record_file(subject_id, amount);
+			if (!Cache.VesselInfo(v).is_valid) return false;
+			return DB.Vessel(v).BestDrive(amount).Record_file(subject_id, amount);
 		}
 
 		// store a sample on a vessel
-		public static void StoreSample(Vessel v, string subject_id, double amount)
+		public static bool StoreSample(Vessel v, string subject_id, double amount, double mass = 0)
 		{
-			if (!Cache.VesselInfo(v).is_valid) return;
-			Drive drive = DB.Vessel(v).drive;
-			drive.Record_sample(subject_id, amount);
+			if (!Cache.VesselInfo(v).is_valid) return false;
+			return DB.Vessel(v).BestDrive(Lib.SampleSizeToSlots(amount)).Record_sample(subject_id, amount, mass);
 		}
 
 		// remove a file from a vessel
 		public static void RemoveFile(Vessel v, string subject_id, double amount)
 		{
 			if (!Cache.VesselInfo(v).is_valid) return;
-			Drive drive = DB.Vessel(v).drive;
-			drive.Delete_file(subject_id, amount);
+			foreach (var d in DB.Vessel(v).drives.Values)
+				d.Delete_file(subject_id, amount);
 		}
 
 		// remove a sample from a vessel
 		public static void RemoveSample(Vessel v, string subject_id, double amount)
 		{
 			if (!Cache.VesselInfo(v).is_valid) return;
-			Drive drive = DB.Vessel(v).drive;
-			drive.Delete_sample(subject_id, amount);
+			foreach (var d in DB.Vessel(v).drives.Values)
+				d.Delete_sample(subject_id, amount);
 		}
 	}
 

@@ -25,6 +25,7 @@ namespace KERBALISM
 		{
 			size = Lib.ConfigValue(node, "size", 0.0);
 			analyze = Lib.ConfigValue(node, "analyze", false);
+			mass = Lib.ConfigValue(node, "mass", 0.0);
 		}
 
 		/// <summary>
@@ -34,12 +35,15 @@ namespace KERBALISM
 		{
 			node.AddValue("size", size);
 			node.AddValue("analyze", analyze);
+			node.AddValue("mass", mass);
 		}
 
 		/// <summary>
 		/// data size in Mb
 		/// </summary>
 		public double size;
+
+		public double mass;
 
 		/// <summary>
 		///	flagged for analysis in a laboratory

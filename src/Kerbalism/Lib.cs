@@ -402,6 +402,7 @@ namespace KERBALISM
 		// return string with specified color and bold if stated
 		public static string Color( string color, string s, bool bold = false )
 		{
+			if (string.IsNullOrEmpty(color)) return s;
 			return !bold ? ("<color=" + color + ">" + s + "</color>") : ("<color=" + color + "><b>" + s + "</b></color>");
 		}
 
@@ -646,7 +647,12 @@ namespace KERBALISM
 		///<summary> Pretty-print mass </summary>
 		public static string HumanReadableMass( double v )
 		{
-			return Lib.BuildString( v.ToString( "F3" ), " t" );
+			if (v <= double.Epsilon) return "0 kg";
+			if(v > 1) return Lib.BuildString(v.ToString("F3"), " t");
+			v *= 1000;
+			if(v > 1) return Lib.BuildString(v.ToString("F2"), " kg");
+			v *= 1000;
+			return Lib.BuildString(v.ToString("F2"), " g");
 		}
 
 		///<summary> Pretty-print cost </summary>
@@ -689,6 +695,27 @@ namespace KERBALISM
 			return rate < 0.000001 ? "none" : Lib.BuildString( HumanReadableDataSize( rate ), "/s" );
 		}
 
+		public static string HumanReadableSampleSize(double size)
+		{
+			return HumanReadableSampleSize(SampleSizeToSlots(size));
+		}
+
+		public static string HumanReadableSampleSize(int slots)
+		{
+			return Lib.BuildString("" + slots, " slots");
+		}
+
+		public static int SampleSizeToSlots(double size)
+		{
+			int result = (int)(size / 1024);
+			if (result * 1024 < size) ++result;
+			return result;
+		}
+
+		public static double SlotsToSampleSize(int slots)
+		{
+			return slots * 1024;
+		}
 
 		///<summary> Format science credits </summary>
 		public static string HumanReadableScience( double value )
@@ -976,18 +1003,33 @@ namespace KERBALISM
 			return 2.0 * (a * b + a * c + b * c) * 0.95493;
 		}
 
-
-		// return true if a part is manned, even in the editor
-		public static bool IsManned( Part p )
+		public static int CrewCount(Part part)
 		{
 			// outside of the editors, it is easy
-			if (!IsEditor()) return p.protoModuleCrew.Count > 0;
+			if (!Lib.IsEditor())
+			{
+				return part.protoModuleCrew.Count;
+			}
 
 			// in the editor we need something more involved
-			Int64 part_id = 4294967296L + p.GetInstanceID();
+			Int64 part_id = 4294967296L + part.GetInstanceID();
 			var manifest = KSP.UI.CrewAssignmentDialog.Instance.GetManifest();
-			var part_manifest = manifest.GetCrewableParts().Find( k => k.PartID == part_id );
-			return part_manifest != null && part_manifest.AnySeatTaken();
+			var part_manifest = manifest.GetCrewableParts().Find(k => k.PartID == part_id);
+			if (part_manifest != null) {
+				int result = 0;
+				foreach (var s in part_manifest.partCrew) {
+					if (!string.IsNullOrEmpty(s)) result++;
+				}
+				return result;
+			}
+
+			return 0;
+		}
+
+		// return true if a part is manned, even in the editor
+		public static bool IsCrewed( Part p )
+		{
+			return CrewCount(p) > 0;
 		}
 
 
@@ -1394,7 +1436,9 @@ namespace KERBALISM
 			// our own science system
 			else
 			{
-				return DB.Vessel( v ).drive.files.Count > 0;
+				foreach (var drive in DB.Vessel(v).drives.Values)
+					if (drive.files.Count > 0) return true;
+				return false;
 			}
 		}
 
@@ -1439,20 +1483,23 @@ namespace KERBALISM
 			else
 			{
 				// select a file at random and remove it
-				Drive drive = DB.Vessel( v ).drive;
-				if (drive.files.Count > 0) //< it should always be the case
+				foreach (var drive in DB.Vessel(v).drives.Values)
 				{
-					string filename = string.Empty;
-					int i = Lib.RandomInt( drive.files.Count );
-					foreach (var pair in drive.files)
+					if (drive.files.Count > 0) //< it should always be the case
 					{
-						if (i-- == 0)
+						string filename = string.Empty;
+						int i = Lib.RandomInt(drive.files.Count);
+						foreach (var pair in drive.files)
 						{
-							filename = pair.Key;
-							break;
+							if (i-- == 0)
+							{
+								filename = pair.Key;
+								break;
+							}
 						}
+						drive.files.Remove(filename);
+						break;
 					}
-					drive.files.Remove( filename );
 				}
 			}
 		}
@@ -1551,18 +1598,20 @@ namespace KERBALISM
 				string platform = "windows";
 				if (Application.platform == RuntimePlatform.LinuxPlayer) platform = "linux";
 				else if (Application.platform == RuntimePlatform.OSXPlayer) platform = "osx";
-				using (WWW www = new WWW( "file://" + KSPUtil.ApplicationRootPath + "GameData/Kerbalism/Shaders/" + VersionString + "/" + "_" + platform ))
+#pragma warning disable CS0618 // WWW is obsolete
+				using (WWW www = new WWW("file://" + KSPUtil.ApplicationRootPath + "GameData/Kerbalism/Shaders/" + VersionString + "/" + "_" + platform))
+#pragma warning restore CS0618
 				{
 					AssetBundle bundle = www.assetBundle;
 					Shader[] pre_shaders = bundle.LoadAllAssets<Shader>();
 					foreach (Shader shader in pre_shaders)
 					{
-						string key = shader.name.Replace( "Custom/", string.Empty );
-						if (shaders.ContainsKey( key ))
-							shaders.Remove( key );
-						shaders.Add( key, new Material( shader ) );
+						string key = shader.name.Replace("Custom/", string.Empty);
+						if (shaders.ContainsKey(key))
+							shaders.Remove(key);
+						shaders.Add(key, new Material(shader));
 					}
-					bundle.Unload( false );
+					bundle.Unload(false);
 					www.Dispose();
 				}
 			}
@@ -1682,7 +1731,23 @@ namespace KERBALISM
 			);
 		}
 
+		public static UInt32 GetPartId(Part part)
+		{
+#if KSP13
+            return part.flightID ^ BitConverter.ToUInt32( part.vessel.vesselID, 0 );
+#else
+			return part.flightID ^ part.persistentId;
+#endif
+		}
 
+		public static UInt32 GetPartId(ProtoPartSnapshot part)
+		{
+#if KSP13
+            return part.flightID ^ BitConverter.ToUInt32( part.vessel.vesselID, 0 );
+#else
+			return part.flightID ^ part.persistentId;
+#endif
+		}
 		// --- PROTO ----------------------------------------------------------------
 
 		public static class Proto

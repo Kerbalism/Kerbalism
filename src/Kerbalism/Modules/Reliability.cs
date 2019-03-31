@@ -102,7 +102,6 @@ namespace KERBALISM
 					Events["Repair"].guiName = Lib.BuildString("Service <b>", title, "</b>");
 				}
 
-
 				// set highlight
 				Highlight(part);
 			}
@@ -481,6 +480,7 @@ namespace KERBALISM
 						}
 					}
 					break;
+
 				case "ModuleEnginesRF":
 					if (b)
 					{
@@ -490,12 +490,23 @@ namespace KERBALISM
 						}
 					}
 					break;
+
 				case "ModuleScienceExperiment":
 					if (b)
 					{
 						foreach (PartModule m in modules)
 						{
 							(m as ModuleScienceExperiment).SetInoperable();
+						}
+					}
+					break;
+
+				case "Experiment":
+					if (b)
+					{
+						foreach (PartModule m in modules)
+						{
+							(m as Experiment).ReliablityEvent(b);
 						}
 					}
 					break;

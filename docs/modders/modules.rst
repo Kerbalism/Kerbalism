@@ -8,7 +8,7 @@ Comfort
 The part provides comforts for the crew.
 
 +----------+-----------------------------------------+
-| PROPERTY | DESCRIPTION                             | 
+| PROPERTY | DESCRIPTION                             |
 +==========+=========================================+
 | bonus    | the comfort bonus provided              |
 +----------+-----------------------------------------+
@@ -89,6 +89,95 @@ The part emits radiation. Use a negative radiation value for absorption.
 
 -------
 
+Experiment
+-------
+Hooks experiments into the Kerbalism science system.
+
++-------------------+-------------------------------------------------------------+---------------+
+| PROPERTY          | DESCRIPTION                                                 | DEFAULT       |
++===================+=============================================================+===============+
+| experiment_id     | The ID of the experiment (which must be defined elsewhere)  |               |
++-------------------+-------------------------------------------------------------+---------------+
+| experiment_desc   | A nice description of the experiment.                       |               |
++-------------------+-------------------------------------------------------------+---------------+
+| data_rate         | sampling rate in Mb/s                                       | 0.01          |
++-------------------+-------------------------------------------------------------+---------------+
+| ec_rate           | EC consumption rate per second while recording              | 0.01          |
++-------------------+-------------------------------------------------------------+---------------+
+| allow_shrouded    | Allow the experiment to run while it's part is shrouded     | true          |
++-------------------+-------------------------------------------------------------+---------------+
+| sample_mass       | If not 0, this is a sample and cannot be transmitted        | 0.0           |
++-------------------+-------------------------------------------------------------+---------------+
+| sample_reservoir  | Amount of sampling material stored on the part              | = sample_mass |
++-------------------+-------------------------------------------------------------+---------------+
+| sample_collecting | If set to true, the experiment will produce mass.           | false         |
++-------------------+-------------------------------------------------------------+---------------+
+| requires          | Additional requirements that must be met for recording.     |               |
+|                   | See below.                                                  |               |
++-------------------+-------------------------------------------------------------+---------------+
+| crew_operate      | Requirements for crew on vessel for recording. If this is   |               |
+|                   | not set, the experiment can run on unmanned probes.         |               |
++-------------------+-------------------------------------------------------------+---------------+
+| crew_reset        | Requirements for crew to reset the experiment. If this is   |               |
+|                   | set, the experiment will only record data from within the   |               |
+|                   | situation where recording was started, until it is reset    |               |
+|                   | (either by a kerbal that has to match the requirement, or   |               |
+|                   | by a lab.                                                   |               |
++-------------------+-------------------------------------------------------------+---------------+
+| crew_prepare      | If set, a kerbal has to prepare the experiment before it    |               |
+|                   | can record data. Once prepared, the experiment will only    |               |
+|                   | record data while it remains in the situation it was        |               |
+|                   | prepared for. The kerbal doing the preparation has to match |               |
+|                   | the requiremens                                             |               |
++-------------------+-------------------------------------------------------------+---------------+
+| anim_deploy       | Name of the part animation to trigger when recording starts.|               |
++-------------------+-------------------------------------------------------------+---------------+
+
+**Crew** specifications (used in crew_operate, crew_reset or crew_prepare as well as in some
+other Kerbalism mods) have to be given according to `true|trait|[trait]@level`
+
+Examples:
+
+- "true": any kerbal will do.
+- "Scientist": you need a Scientist, doesn't matter how experienced. Other traits are "Pilot" and "Engineer". We're not assuming that you'll want to use "Tourist"...
+- If the value is "@3" any Kerbal with 3 or more stars will do
+- If the value is "Scientist@2" you need a Scientist with 2 or more stars.
+- Empty values usually turn the feature off.
+
+**Requirements** of the experiments work as additional filters, and work ON TOP OF what the underlying experiment uses. If you create a Kerbalism Experiment for `seismicScan`it won't work in orbit. The underlying experiment restrictions are checked first, then the additional requirements are checked.
+
+The restrictions are case sensitive and comma-separated, and must ALL be met for recording. `restriction = Shadow,Space,Body:Kerbin` will only record data while in space near Kerbin AND in shadow. `restriction = AltitudeMin:250000,Surface` will never record anything for plainly obvious reasons.
+
+Here is a list of currently supported requirements:
+
+* OrbitMinInclination, OrbitMaxInclination: min./max. inclination of the orbit (f.i. `OrbitMinInclination:30`)
+* OrbitMinEccentricity, OrbitMaxEccentricity: min./max. eccentricity of the orbit (f.i. `OrbitMaxEccentricity:0.1`)
+* TemperatureMin, TemperatureMax: min./max. Temperature in Kelvin
+* AltitudeMin, AltitudeMax: min./max. Altitude in Meters
+* RadiationMin, RadiationMax: min./max. radiation in rad/h
+* Microgravity: not on a surface, not in atmosphere. Thrust provided by Engines is OK tho.
+* Body: body on which the experiment can run. Only one body is possible (f.i. `Body:Eve`)
+* Shadow: vessel must not be exposed to sunlight
+* Surface: vessel must be on a surface
+* Atmosphere: vessel must be within an atmosphere
+* Ocean: vessel must be submerged
+* Space: in planetary space, i.e. not around the sun
+* AbsoluteZero: temperature < 30 K
+* InnerBelt: vessel must be in a inner Van Allen Belt
+* OuterBelt: vessel must be in a outer Van Allen Belt
+* MagneticBelt: vessel must be in any Van Allen Belt
+* Magnetosphere: vessel must be inside a magnetosphere
+* Thermosphere: vessel must be inside a thermosphere
+* Exosphere: vessel must be inside an exosphere
+* InterPlanetary: vessel must be in interplanetary space, i.e. in the SOI of the Sun
+* InterStellar: vessel must be outside the sun magnetopause
+* Greenhouse: there must be one greenhouse on the vessel.
+* CrewMin, CrewMax: min./max. amount of crew on vessel
+* CrewCapacityMin, CrewCapacityMax: min./max. crew capacity
+* VolumePerCrewMin, VolumePerCrewMax: min./max. habitat volume per crew member
+
+-------
+
 GravityRing
 -----------
 Used by the *Gravity Ring* part.
@@ -96,11 +185,11 @@ Used by the *Gravity Ring* part.
 +----------+------------------------------------------+
 | PROPERTY | DESCRIPTION                              |
 +==========+==========================================+
-| ec_rate  | EC consumed per-second when deployed     | 
+| ec_rate  | EC consumed per-second when deployed     |
 +----------+------------------------------------------+
-| deploy   | a deploy animation can be specified      | 
+| deploy   | a deploy animation can be specified      |
 +----------+------------------------------------------+
-| rotate   | a rotate loop animation can be specified | 
+| rotate   | a rotate loop animation can be specified |
 +----------+------------------------------------------+
 
 -------
@@ -112,25 +201,25 @@ The part simulates a greenhouse. The crop grows over time, then it is harvested 
 +---------------------+-------------------------------------------------------------------------------------------------+
 | PROPERTY            | DESCRIPTION                                                                                     |
 +=====================+=================================================================================================+
-| crop_resource       | name of resource produced by harvests                                                           | 
+| crop_resource       | name of resource produced by harvests                                                           |
 +---------------------+-------------------------------------------------------------------------------------------------+
-| crop_size           | amount of resource produced by harvests                                                         | 
+| crop_size           | amount of resource produced by harvests                                                         |
 +---------------------+-------------------------------------------------------------------------------------------------+
-| crop_rate           | growth per-second when all conditions apply                                                     | 
+| crop_rate           | growth per-second when all conditions apply                                                     |
 +---------------------+-------------------------------------------------------------------------------------------------+
-| ec_rate             | EC/s consumed by the lamp at max capacity, set to 0 to disable the lamp                         | 
+| ec_rate             | EC/s consumed by the lamp at max capacity, set to 0 to disable the lamp                         |
 +---------------------+-------------------------------------------------------------------------------------------------+
-| light_tolerance     | minimum lighting flux required for growth, in W/m^2                                             | 
+| light_tolerance     | minimum lighting flux required for growth, in W/m^2                                             |
 +---------------------+-------------------------------------------------------------------------------------------------+
-| pressure_tolerance  | minimum pressure required for growth, in sea level atmospheres (optional)                       | 
+| pressure_tolerance  | minimum pressure required for growth, in sea level atmospheres (optional)                       |
 +---------------------+-------------------------------------------------------------------------------------------------+
-| radiation_tolerance | maximum radiation allowed for growth in rad/s, considered after shielding is applied (optional) | 
+| radiation_tolerance | maximum radiation allowed for growth in rad/s, considered after shielding is applied (optional) |
 +---------------------+-------------------------------------------------------------------------------------------------+
-| lamps               | object with emissive texture used to represent intensity graphically                            | 
+| lamps               | object with emissive texture used to represent intensity graphically                            |
 +---------------------+-------------------------------------------------------------------------------------------------+
-| shutters            | animation to manipulate shutters                                                                | 
+| shutters            | animation to manipulate shutters                                                                |
 +---------------------+-------------------------------------------------------------------------------------------------+
-| plants              | animation to represent plant growth graphically                                                 | 
+| plants              | animation to represent plant growth graphically                                                 |
 +---------------------+-------------------------------------------------------------------------------------------------+
 
 Resource requirements and by-products (other than EC for the lamps) are specified using the stock *resHandler* specification
@@ -173,7 +262,17 @@ HardDrive
 ---------
 The part has an interface to access the vessel hard drive, where the science data files are stored.
 
-**It has no properties**.
++----------------+------------------------------------------------------------+---------+
+| PROPERTY       | DESCRIPTION                                                | DEFAULT |
++================+============================================================+=========+
+| dataCapacity   | Storage capacity for transmissible data, in Mb (=Mib)      | 102400  |
++----------------+------------------------------------------------------------+---------+
+| sampleCapacity | Capacity for experiment samples, in slots (=Mib).          | 100     |
+|                | Note that Kerbalism will not display sample sizes in Mb,   |         |
+|                | but uses a virtual size unit instead (slots, bags) (TBD)   |         |
++----------------+------------------------------------------------------------+---------+
+| title          | Name displayed in file manager                             |         |
++----------------+------------------------------------------------------------+---------+
 
 -------
 
@@ -210,11 +309,11 @@ The part transforms non-transmissible science samples into transmissible science
 +---------------+---------------------------------------------------------+
 | PROPERTY      | DESCRIPTION                                             |
 +===============+=========================================================+
-| ec_rate       | EC consumed per-second                                  | 
+| ec_rate       | EC consumed per-second                                  |
 +---------------+---------------------------------------------------------+
-| analysis_rate | analysis speed in Mb/s                                  | 
+| analysis_rate | analysis speed in Mb/s                                  |
 +---------------+---------------------------------------------------------+
-| researcher    | required crew for analysis, in the format *trait@level* | 
+| researcher    | required crew for analysis, in the format *trait@level* |
 +---------------+---------------------------------------------------------+
 
 -------
@@ -292,9 +391,9 @@ The part has sensor capabilities that adds environmental readings to a parts UI 
 +----------+-----------------------------------------+
 | PROPERTY | DESCRIPTION                             |
 +==========+=========================================+
-| type     | type of sensor                          | 
+| type     | type of sensor                          |
 +----------+-----------------------------------------+
-| pin      | pin animation driven by telemetry value | 
+| pin      | pin animation driven by telemetry value |
 +----------+-----------------------------------------+
 
 The types of sensors available are.

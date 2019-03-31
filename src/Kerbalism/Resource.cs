@@ -1058,7 +1058,7 @@ namespace KERBALISM
 							PartResource t = partHabitat.part.Resources[resourceName[i]];
 
 							// Manned Amounts
-							if (Lib.IsManned(partHabitat.part))
+							if (Lib.IsCrewed(partHabitat.part))
 							{
 								totalP[i] += t.amount;
 								maxP[i] += t.maxAmount;
@@ -1123,7 +1123,7 @@ namespace KERBALISM
 								//	2 case: has depressurizing habitat
 								//	3 case: dropping everything into the priority habitats
 
-								if ((Math.Abs(res_level[i] - (t.amount / t.maxAmount)) > precision && !Lib.IsManned(partHabitat.part))
+								if ((Math.Abs(res_level[i] - (t.amount / t.maxAmount)) > precision && !Lib.IsCrewed(partHabitat.part))
 									|| ((partHabitat.state == Habitat.State.depressurizing
 									|| mannedisPriority[i]) && t.amount > double.Epsilon))
 								{
@@ -1136,7 +1136,7 @@ namespace KERBALISM
 									double perctToMaxType;
 
 									// Percts per Types
-									if (Lib.IsManned(partHabitat.part))
+									if (Lib.IsCrewed(partHabitat.part))
 									{
 										perctToType = t.amount / totalP[i];
 										perctToMaxType = t.maxAmount / maxP[i];
@@ -1163,11 +1163,11 @@ namespace KERBALISM
 									}
 
 									// perctToMax < perctToAll ? habitat will send resource : otherwise will receive, flowController == 0 means no flow
-									if ((partHabitat.state == Habitat.State.depressurizing || totalAmount[i] - maxP[i] <= 0) && !Lib.IsManned(partHabitat.part))
+									if ((partHabitat.state == Habitat.State.depressurizing || totalAmount[i] - maxP[i] <= 0) && !Lib.IsCrewed(partHabitat.part))
 									{
 										flowController = 0 - perctToType;
 									}
-									else if (mannedisPriority[i] && !Lib.IsManned(partHabitat.part))
+									else if (mannedisPriority[i] && !Lib.IsCrewed(partHabitat.part))
 									{
 										flowController = Math.Min(perctToMaxType - perctToAll, (t.maxAmount - t.amount) / totalAmount[i]);
 									}
@@ -1182,7 +1182,7 @@ namespace KERBALISM
 									{
 										amountAffected = flowController * totalD[i];
 									}
-									else if (!mannedisPriority[i] || !Lib.IsManned(partHabitat.part))
+									else if (!mannedisPriority[i] || !Lib.IsCrewed(partHabitat.part))
 									{
 										amountAffected = flowController * totalE[i];
 									}

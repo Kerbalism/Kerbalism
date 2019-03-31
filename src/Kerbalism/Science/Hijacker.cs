@@ -37,32 +37,48 @@ namespace KERBALISM
 				// collect and deduce all info necessary
 				MetaData meta = new MetaData(data, page.host);
 
-				// record data in the drive
-				Drive drive = DB.Vessel(meta.vessel).drive;
+				// record data
+				bool recorded = false;
 				if (!meta.is_sample)
 				{
-					drive.Record_file(data.subjectID, data.dataAmount);
+					Drive drive = DB.Vessel(meta.vessel).BestDrive(data.dataAmount);
+					recorded = drive.Record_file(data.subjectID, data.dataAmount);
 				}
 				else
 				{
-					drive.Record_sample(data.subjectID, data.dataAmount);
+					Drive drive = DB.Vessel(meta.vessel).BestDrive(Lib.SampleSizeToSlots(data.dataAmount));
+
+					var experimentInfo = Science.Experiment(data.subjectID);
+					var sampleMass = Science.GetSampleMass(data.subjectID);
+					var mass = sampleMass / experimentInfo.max_amount * data.dataAmount;
+
+					recorded = drive.Record_sample(data.subjectID, data.dataAmount, mass);
 				}
 
-				// render experiment inoperable if necessary
-				if (!meta.is_rerunnable)
+				if (recorded)
 				{
-					meta.experiment.SetInoperable();
+					// render experiment inoperable if necessary
+					if (!meta.is_rerunnable)
+					{
+						meta.experiment.SetInoperable();
+					}
+
+					// dump the data
+					page.OnDiscardData(data);
+
+					// inform the user
+					Message.Post(
+						Lib.BuildString("<b>", Science.Experiment(data.subjectID).fullname, "</b> recorded"),
+						!meta.is_rerunnable ? Localizer.Format("#KERBALISM_Science_inoperable") : string.Empty
+					);
 				}
-
-				// dump the data
-				page.OnDiscardData(data);
-
-				// inform the user
-				Message.Post
-				(
-				  Lib.BuildString("<b>", Science.Experiment(data.subjectID).fullname, "</b> recorded"),
-				  !meta.is_rerunnable ? Localizer.Format("#KERBALISM_Science_inoperable") : string.Empty
-				);
+				else
+				{
+					Message.Post(
+						Lib.Color("red", Lib.BuildString(Science.Experiment(data.subjectID).fullname, " can not be stored")),
+						"Not enough space on hard drive"
+					);
+				}
 			}
 
 			// dismiss the dialog
@@ -137,31 +153,51 @@ namespace KERBALISM
 			}
 
 			// record data in the drive
-			Drive drive = DB.Vessel(meta.vessel).drive;
+			bool recorded = false;
 			if (!meta.is_sample)
 			{
-				drive.Record_file(data.subjectID, data.dataAmount);
+				Drive drive = DB.Vessel(meta.vessel).BestDrive(data.dataAmount);
+				recorded = drive.Record_file(data.subjectID, data.dataAmount);
 			}
 			else
 			{
-				drive.Record_sample(data.subjectID, data.dataAmount);
+				Drive drive = DB.Vessel(meta.vessel).BestDrive(Lib.SampleSizeToSlots(data.dataAmount));
+
+				var experimentInfo = Science.Experiment(data.subjectID);
+				var sampleMass = Science.GetSampleMass(data.subjectID);
+				var mass = sampleMass / experimentInfo.max_amount * data.dataAmount;
+
+				recorded = drive.Record_sample(data.subjectID, data.dataAmount, mass);
 			}
 
-			// flag for sending if specified
-			if (!meta.is_sample && send) drive.Send(data.subjectID, true);
+			if (recorded)
+			{
+				// flag for sending if specified
+				if (!meta.is_sample && send)
+				{
+					foreach(var d in DB.Vessel(meta.vessel).drives.Values)
+						d.Send(data.subjectID, true);
+				}
 
-			// render experiment inoperable if necessary
-			if (!meta.is_rerunnable) meta.experiment.SetInoperable();
+				// render experiment inoperable if necessary
+				if (!meta.is_rerunnable) meta.experiment.SetInoperable();
 
-			// dismiss the dialog and popups
-			Dismiss(data);
+				// dismiss the dialog and popups
+				Dismiss(data);
 
-			// inform the user
-			Message.Post
-			(
-			  Lib.BuildString("<b>", Science.Experiment(data.subjectID).fullname, "</b> recorded"),
-			  !meta.is_rerunnable ? Localizer.Format("#KERBALISM_Science_inoperable") : string.Empty
-			);
+				// inform the user
+				Message.Post(
+					Lib.BuildString("<b>", Science.Experiment(data.subjectID).fullname, "</b> recorded"),
+					!meta.is_rerunnable ? Localizer.Format("#KERBALISM_Science_inoperable") : string.Empty
+				);
+			}
+			else
+			{
+				Message.Post(
+					Lib.Color("red", Lib.BuildString(Science.Experiment(data.subjectID).fullname, " can not be stored")),
+					"Not enough space on hard drive"
+				);
+			}
 		}
 
 

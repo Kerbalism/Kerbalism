@@ -11,13 +11,11 @@ namespace KERBALISM
 	public static class Science
 	{
 		// hard-coded transmission buffer size in Mb
-		private const double buffer_capacity = 8.0;
-		private static string exp_filename = "";
+		private const double buffer_capacity = 12.0;
 
 		// pseudo-ctor
 		public static void Init()
 		{
-			// initialize experiment info cache
 			experiments = new Dictionary<string, ExperimentInfo>();
 
 			// make the science dialog invisible, just once
@@ -35,6 +33,18 @@ namespace KERBALISM
 			}
 		}
 
+		private static Drive FindDrive(VesselData vd, string filename)
+		{
+			foreach (var d in vd.drives.Values)
+			{
+				if (d.files.ContainsKey(filename))
+				{
+					return d;
+				}
+			}
+			return null;
+		}
+
 		// consume EC for transmission, and transmit science data
 		public static void Update(Vessel v, Vessel_info vi, VesselData vd, Vessel_resources resources, double elapsed_s)
 		{
@@ -50,14 +60,16 @@ namespace KERBALISM
 			if (conn == null || String.IsNullOrEmpty(vi.transmitting)) return;
 
 			// get filename of data being downloaded
-			exp_filename = vi.transmitting;
+			var exp_filename = vi.transmitting;
+
+			var drive = FindDrive(vd, exp_filename);
 
 			// if some data is being downloaded
 			// - avoid cornercase at scene changes
-			if (exp_filename.Length > 0 && vd.drive.files.ContainsKey(exp_filename))
+			if (exp_filename.Length > 0 && drive != null)
 			{
 				// get file
-				File file = vd.drive.files[exp_filename];
+				File file = drive.files[exp_filename];
 
 				// determine how much data is transmitted
 				double transmitted = Math.Min(file.size, conn.rate * elapsed_s);
@@ -82,9 +94,12 @@ namespace KERBALISM
 				if (file.size <= double.Epsilon)
 				{
 					// remove the file
-					vd.drive.files.Remove(exp_filename);
+					drive.files.Remove(exp_filename);
 
-					if (!file.silentTransmission)
+					// same file on another drive?
+					drive = FindDrive(vd, exp_filename);
+
+					if (!file.silentTransmission && drive == null)
 					{
 						// inform the user
 						Message.Post(
@@ -107,13 +122,14 @@ namespace KERBALISM
 			// not transmitting if there is no ec left
 			if (ResourceCache.Info(v, "ElectricCharge").amount <= double.Epsilon) return string.Empty;
 
-			// get vessel drive
-			Drive drive = DB.Vessel(v).drive;
-
-			// get first file flagged for transmission
-			foreach (var p in drive.files)
+			// get first file flagged for transmission, AND has a ts at least 5 seconds old or is > 0.001Mb in size
+			foreach (var drive in DB.Vessel(v).drives.Values)
 			{
-				if (p.Value.send) return p.Key;
+				double now = Planetarium.GetUniversalTime();
+				foreach (var p in drive.files)
+				{
+					if (p.Value.send && (p.Value.ts + 3 < now || p.Value.size > 0.003)) return p.Key;
+				}
 			}
 
 			// no file flagged for transmission
@@ -122,24 +138,14 @@ namespace KERBALISM
 
 
 		// credit science for the experiment subject specified
-		public static double Credit(string subject_id, double size, bool transmitted, ProtoVessel pv)
+		public static float Credit(string subject_id, double size, bool transmitted, ProtoVessel pv)
 		{
-			// get science subject
-			// - if null, we are in sandbox mode
-			ScienceSubject subject = ResearchAndDevelopment.GetSubjectByID(subject_id);
-			if (subject == null) return 0.0;
-
-			// get science value
-			// - the stock system 'degrade' science value after each credit, we don't
-			float R = ResearchAndDevelopment.GetReferenceDataValue((float)size, subject);
-			float S = subject.science;
-			float C = subject.scienceCap;
-			float credits = Mathf.Max(Mathf.Min(S + Mathf.Min(R, C), C) - S, 0.0f);
+			var credits = Value(subject_id, size);
 
 			// credit the science
-			subject.science += credits;
+			var subject = ResearchAndDevelopment.GetSubjectByID(subject_id);
+			subject.science += credits / HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier;
 			subject.scientificValue = ResearchAndDevelopment.GetSubjectValue(subject.science, subject);
-			credits *= HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier;
 			ResearchAndDevelopment.Instance.AddScience(credits, transmitted ? TransactionReasons.ScienceTransmission : TransactionReasons.VesselRecovery);
 
 			// fire game event
@@ -154,17 +160,23 @@ namespace KERBALISM
 
 
 		// return value of some data about a subject, in science credits
-		public static double Value(string subject_id, double size)
+		public static float Value(string subject_id, double size)
 		{
-			// get the subject
-			// - will be null in sandbox
-			ScienceSubject subject = ResearchAndDevelopment.GetSubjectByID(subject_id);
+			// get science subject
+			// - if null, we are in sandbox mode
+			var subject = ResearchAndDevelopment.GetSubjectByID(subject_id);
+			if (subject == null) return 0.0f;
 
-			// return value in science credits
-			return subject != null
-			  ? ResearchAndDevelopment.GetScienceValue((float)size, subject)
-			  * HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier
-			  : 0.0;
+			// get science value
+			// - the stock system 'degrade' science value after each credit, we don't
+			float R = ResearchAndDevelopment.GetReferenceDataValue((float)size, subject);
+			float S = subject.science;
+			float C = subject.scienceCap;
+			float credits = Mathf.Max(Mathf.Min(S + Mathf.Min(R, C), C) - S, 0.0f);
+
+			credits *= HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier;
+
+			return credits;
 		}
 
 
@@ -225,6 +237,8 @@ namespace KERBALISM
 				);
 
 				float multiplier = Multiplier(body, sit);
+				var cap = multiplier * experiment.baseValue;
+
 				// create new subject
 				ScienceSubject subject = new ScienceSubject
 				(
@@ -232,12 +246,13 @@ namespace KERBALISM
 						Lib.BuildString(experiment.experimentTitle, " (", Lib.SpacesOnCaps(sit + biome), ")"),
 						experiment.dataScale,
 				  		multiplier,
-						experiment.scienceCap
+						cap
 				);
 
 				// add it to RnD
 				subjects.Add(subject_id, subject);
 			}
+
 			return subject_id;
 		}
 
@@ -258,42 +273,125 @@ namespace KERBALISM
 			return 0;
 		}
 
-		// that might come in handy some day... not used for now.
-		// return vessel situation valid for specified experiment
-		public static string Situation(Vessel v, string situations)
+		public static string TestRequirements(string requirements, Vessel v)
 		{
-			// shortcuts
 			CelestialBody body = v.mainBody;
 			Vessel_info vi = Cache.VesselInfo(v);
 
-			List<string> list = Lib.Tokenize(situations, ',');
-			foreach (string sit in list)
+			List<string> list = Lib.Tokenize(requirements, ',');
+			foreach (string s in list)
 			{
-				bool b = false;
-				switch (sit)
+				var parts = Lib.Tokenize(s, ':');
+
+				var condition = parts[0];
+				string value = string.Empty;
+				if(parts.Count > 1) value = parts[1];
+
+				bool good = true;
+				switch (condition)
 				{
-					case "Surface": b = Lib.Landed(v); break;
-					case "Atmosphere": b = body.atmosphere && v.altitude < body.atmosphereDepth; break;
-					case "Ocean": b = body.ocean && v.altitude < 0.0; break;
-					case "Space": b = body.flightGlobalsIndex != 0 && !Lib.Landed(v) && v.altitude > body.atmosphereDepth; break;
-					case "AbsoluteZero": b = vi.temperature < 30.0; break;
-					case "InnerBelt": b = vi.inner_belt; break;
-					case "OuterBelt": b = vi.outer_belt; break;
-					case "Magnetosphere": b = vi.magnetosphere; break;
-					case "Thermosphere": b = vi.thermosphere; break;
-					case "Exosphere": b = vi.exosphere; break;
-					case "InterPlanetary": b = body.flightGlobalsIndex == 0 && !vi.interstellar; break;
-					case "InterStellar": b = body.flightGlobalsIndex == 0 && vi.interstellar; break;
+					case "OrbitMinInclination": good = Math.Abs(v.orbit.inclination) >= Double.Parse(value); break;
+					case "OrbitMaxInclination": good = Math.Abs(v.orbit.inclination) <= Double.Parse(value); break;
+					case "OrbitMinEccentricity": good = Math.Abs(v.orbit.eccentricity) >= Double.Parse(value); break;
+					case "OrbitMaxEccentricity": good = Math.Abs(v.orbit.eccentricity) <= Double.Parse(value); break;
+
+					case "TemperatureMin": good = vi.temperature >= Double.Parse(value); break;
+					case "TemperatureMax": good = vi.temperature <= Double.Parse(value); break;
+					case "AltitudeMin": good = v.altitude >= Double.Parse(value); break;
+					case "AltitudeMax": good = v.altitude <= Double.Parse(value); break;
+					case "RadiationMin": good = vi.radiation >= Double.Parse(value); break;
+					case "RadiationMax": good = vi.radiation <= Double.Parse(value); break;
+					case "Microgravity": good = vi.zerog; break;
+					case "Body": good = v.mainBody.name == value; break;
+					case "Shadow": good = vi.sunlight < Double.Epsilon; break;
+					case "CrewMin": good = vi.crew_count >= int.Parse(value); break;
+					case "CrewMax": good = vi.crew_count <= int.Parse(value); break;
+					case "CrewCapacityMin": good = vi.crew_capacity >= int.Parse(value); break;
+					case "CrewCapacityMax": good = vi.crew_capacity <= int.Parse(value); break;
+					case "VolumePerCrewMin": good = vi.volume_per_crew >= Double.Parse(value); break;
+					case "VolumePerCrewMax": good = vi.volume_per_crew <= Double.Parse(value); break;
+					case "Greenhouse": good = vi.greenhouses.Count > 0; break;
+					case "Surface": good = Lib.Landed(v); break;
+					case "Atmosphere": good = body.atmosphere && v.altitude < body.atmosphereDepth; break;
+					case "Ocean": good = body.ocean && v.altitude < 0.0; break;
+					case "Space": good = body.flightGlobalsIndex != 0 && !Lib.Landed(v) && v.altitude > body.atmosphereDepth; break;
+					case "AbsoluteZero": good = vi.temperature < 30.0; break;
+					case "InnerBelt": good = vi.inner_belt; break;
+					case "OuterBelt": good = vi.outer_belt; break;
+					case "MagneticBelt": good = vi.inner_belt || vi.outer_belt; break;
+					case "Magnetosphere": good = vi.magnetosphere; break;
+					case "Thermosphere": good = vi.thermosphere; break;
+					case "Exosphere": good = vi.exosphere; break;
+					case "InterPlanetary": good = body.flightGlobalsIndex == 0 && !vi.interstellar; break;
+					case "InterStellar": good = body.flightGlobalsIndex == 0 && vi.interstellar; break;
 				}
-				if (b) return sit;
+
+				if (!good) return s;
 			}
 
 			return string.Empty;
 		}
 
+		public static string RequirementText(string requirement)
+		{
+			var parts = Lib.Tokenize(requirement, ':');
+
+			var condition = parts[0];
+			string value = string.Empty;
+			if (parts.Count > 1) value = parts[1];
+						
+			switch (condition)
+			{
+				case "OrbitMinInclination": return Lib.BuildString("Min. inclination ", value);
+				case "OrbitMaxInclination": return Lib.BuildString("Max. inclination ", value);
+				case "OrbitMinEccentricity": return Lib.BuildString("Min. eccentricity ", value);
+				case "OrbitMaxEccentricity": return Lib.BuildString("Max. eccentricity ", value);
+				case "AltitudeMin": return Lib.BuildString("Min. altitude ", Lib.HumanReadableRange(Double.Parse(value)));
+				case "AltitudeMax": return Lib.BuildString("Max. altitude ", Lib.HumanReadableRange(Double.Parse(value)));
+				case "RadiationMin": return Lib.BuildString("Min. radiation ", Lib.HumanReadableRadiation(Double.Parse(value)));
+				case "RadiationMax": return Lib.BuildString("Max. radiation ", Lib.HumanReadableRadiation(Double.Parse(value)));
+				case "Body": return value;
+				case "TemperatureMin": return Lib.BuildString("Min. temperature ", Lib.HumanReadableTemp(Double.Parse(value)));
+				case "TemperatureMax": return Lib.BuildString("Max. temperature ", Lib.HumanReadableTemp(Double.Parse(value)));
+				case "CrewMin": return Lib.BuildString("Min. crew ", value);
+				case "CrewMax": return Lib.BuildString("Max. crew ", value);
+				case "CrewCapacityMin": return Lib.BuildString("Min. crew capacity ", value);
+				case "CrewCapacityMax": return Lib.BuildString("Max. crew capacity ", value);
+				case "VolumePerCrewMin": return Lib.BuildString("Min. vol./crew ", value);
+				case "VolumePerCrewMax": return Lib.BuildString("Max. vol./crew ", value);
+					
+				default:
+					return Lib.SpacesOnCaps(condition);
+			}
+		}
+
+		public static void RegisterSampleMass(string experiment_id, double sampleMass)
+		{
+			// get experiment id out of subject id
+			int i = experiment_id.IndexOf('@');
+			var id = i > 0 ? experiment_id.Substring(0, i) : experiment_id;
+
+			if (sampleMasses.ContainsKey(id) && sampleMasses[id] - sampleMass > double.Epsilon)
+			{
+				Lib.Log("Warning: different sample masses for Experiment " + id + " defined.");
+			}
+			sampleMasses.Add(id, sampleMass);
+		}
+
+		public static double GetSampleMass(string experiment_id)
+		{
+			// get experiment id out of subject id
+			int i = experiment_id.IndexOf('@');
+			var id = i > 0 ? experiment_id.Substring(0, i) : experiment_id;
+
+			if (!sampleMasses.ContainsKey(id)) return 0;
+			return sampleMasses[id];
+		}
 
 		// experiment info cache
 		static Dictionary<string, ExperimentInfo> experiments;
+		readonly static Dictionary<string, double> sampleMasses = new Dictionary<string, double>();
+
 	}
 
 } // KERBALISM
