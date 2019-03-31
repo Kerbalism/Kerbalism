@@ -106,9 +106,11 @@ namespace KERBALISM
 				var recordedPercent = Lib.HumanReadablePerc(dataSampled / sampleSize);
 				var eta = data_rate < double.Epsilon || dataSampled >= sampleSize ? " done" : " T-" + Lib.HumanReadableDuration((sampleSize - dataSampled) / data_rate);
 
+				double scienceValue = string.IsNullOrEmpty(last_subject_id) ? 0 : Science.Value(last_subject_id, sampleSize);
+
 				// update ui
-				Events["Toggle"].guiName = Lib.StatusToggle(exp.experimentTitle, !recording ? "stopped" 
-				                                            : Lib.Color(issue.Length > 0 ? "#ffff00":"", Lib.HumanReadablePerc(dataSampled / sampleSize) + "..."));
+				Events["Toggle"].guiName = Lib.StatusToggle(Lib.Color(scienceValue > double.Epsilon ? "cyan": "", exp.experimentTitle), !recording ? "stopped" 
+				                                            : Lib.Color(issue.Length > 0 ? "#ffff00" : "", Lib.HumanReadablePerc(dataSampled / sampleSize) + "..."));
 				Events["Toggle"].active = (prepare_cs == null || didPrepare);
 
 				Events["Prepare"].guiName = Lib.BuildString("Prepare <b>", exp.experimentTitle, "</b>");
@@ -148,7 +150,10 @@ namespace KERBALISM
 				else
 				{
 					var size = sample_mass < double.Epsilon ? Lib.HumanReadableDataSize(sampleSize) : Lib.HumanReadableSampleSize(sampleSize);
-					ExperimentStatus = Lib.BuildString("ready ", size, " in ", Lib.HumanReadableDuration(sampleSize / data_rate));
+					var status = Lib.BuildString("ready ", size, " in ", Lib.HumanReadableDuration(sampleSize / data_rate));
+					if (scienceValue > double.Epsilon) status += " " + Lib.HumanReadableScience(scienceValue);
+					ExperimentStatus = status;
+					
 				}
 			}
 			// in the editor

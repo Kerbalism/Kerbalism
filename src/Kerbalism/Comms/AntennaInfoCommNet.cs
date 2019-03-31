@@ -30,8 +30,6 @@ namespace KERBALISM
 						t.Events["StopTransmission"].active = false;
 						t.Actions["StartTransmissionAction"].active = false;
 
-						Lib.Log("Data rate: " + t.name + " " + t.DataRate);
-
 						if (t.antennaType == AntennaType.INTERNAL) // do not include internal data rate, ec cost only
 							ec += t.DataResourceCost * t.DataRate;
 						else

@@ -702,7 +702,7 @@ namespace KERBALISM
 
 		public static string HumanReadableSampleSize(int slots)
 		{
-			return Lib.BuildString("" + slots, " slots");
+			return Lib.BuildString(slots.ToString(), " ", slots > 0 ? "bags" : "bag");
 		}
 
 		public static int SampleSizeToSlots(double size)
