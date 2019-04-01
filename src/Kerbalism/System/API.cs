@@ -5,7 +5,7 @@
 
 
 using System;
-
+using System.Collections.Generic;
 
 namespace KERBALISM
 {
@@ -274,6 +274,45 @@ namespace KERBALISM
 			foreach (var d in DB.Vessel(v).drives.Values)
 				d.Delete_sample(subject_id, amount);
 		}
+
+		public static ScienceEvent OnScienceReceived = new ScienceEvent();
+
+		public class ScienceEvent
+		{
+			//This is the list of methods that should be activated when the event fires
+			private List<Action<float, ScienceSubject, ProtoVessel, bool>> listeningMethods = new List<Action<float, ScienceSubject, ProtoVessel, bool>>();
+
+			//This adds an event to the List of listening methods
+			public void Add(Action<float, ScienceSubject, ProtoVessel, bool> method)
+			{
+				//We only add it if it isn't already added. Just in case.
+				if (!listeningMethods.Contains(method))
+				{
+					listeningMethods.Add(method);
+				}
+			}
+
+			//This removes and event from the List
+			public void Remove(Action<float, ScienceSubject, ProtoVessel, bool> method)
+			{
+				//We also only remove it if it's actually in the list.
+				if (listeningMethods.Contains(method))
+				{
+					listeningMethods.Remove(method);
+				}
+			}
+
+			//This fires the event off, activating all the listening methods.
+			public void Fire(float credits, ScienceSubject subject, ProtoVessel pv, bool transmitted)
+			{
+				//Loop through the list of listening methods and Invoke them.
+				foreach (Action<float, ScienceSubject, ProtoVessel, bool> method in listeningMethods)
+				{
+					method.Invoke(credits, subject, pv, transmitted);
+				}
+			}
+		}
+
 	}
 
 

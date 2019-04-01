@@ -154,6 +154,8 @@ namespace KERBALISM
 			//   function only once in a while
 			GameEvents.OnScienceRecieved.Fire(credits, subject, pv, false);
 
+			API.OnScienceReceived.Fire(credits, subject, pv, transmitted);
+
 			// return amount of science credited
 			return credits;
 		}
