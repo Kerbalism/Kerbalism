@@ -29,8 +29,11 @@ namespace KERBALISM
 
 		public override string Info()
 		{
+			if (experiment.recording && experiment.scienceValue < double.Epsilon && PreferencesBasic.Instance.smartScience)
+				return "waiting...";
+
 			var exp = ResearchAndDevelopment.GetExperiment(experiment.experiment_id);
-			var sampleSize = (exp.scienceCap * exp.dataScale);
+			var sampleSize = (exp.baseValue * exp.dataScale);
 			var recordedPercent = Lib.HumanReadablePerc(experiment.dataSampled / sampleSize);
 			var eta = experiment.data_rate < double.Epsilon || experiment.dataSampled >= sampleSize ? " done" : " T-" + Lib.HumanReadableDuration((sampleSize - experiment.dataSampled) / experiment.data_rate);
 
@@ -79,12 +82,17 @@ namespace KERBALISM
 		public override string Info()
 		{
 			bool recording = Lib.Proto.GetBool(proto, "recording");
+			double scienceValue = Lib.Proto.GetDouble(proto, "scienceValue");
+
+			if (recording && scienceValue < double.Epsilon && PreferencesBasic.Instance.smartScience)
+				return "waiting...";
+
 			string issue = Lib.Proto.GetString(proto, "issue");
 			double dataSampled = Lib.Proto.GetDouble(proto, "dataSampled");
 			double data_rate = Lib.Proto.GetDouble(proto, "data_rate");
 
 			var exp = ResearchAndDevelopment.GetExperiment(prefab.experiment_id);
-			var sampleSize = (exp.scienceCap * exp.dataScale);
+			var sampleSize = (exp.baseValue * exp.dataScale);
 			var recordedPercent = Lib.HumanReadablePerc(dataSampled / sampleSize);
 			var eta = data_rate < double.Epsilon || dataSampled >= sampleSize ? " done" : " T-" + Lib.HumanReadableDuration((sampleSize - dataSampled) / data_rate);
 

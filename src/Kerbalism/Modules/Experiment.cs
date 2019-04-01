@@ -39,6 +39,7 @@ namespace KERBALISM
 		[KSPField(isPersistant = true)] public bool shrouded = false;
 		[KSPField(isPersistant = true)] public double remainingSampleMass = -1;
 		[KSPField(isPersistant = true)] public bool broken = false;
+		[KSPField(isPersistant = true)] public double scienceValue = 0;
 
 		// animations
 		Animator deployAnimator;
@@ -102,15 +103,20 @@ namespace KERBALISM
 				// do nothing if vessel is invalid
 				if (!vi.is_valid) return;
 
-				var sampleSize = (exp.scienceCap * exp.dataScale);
+				var sampleSize = (exp.baseValue * exp.dataScale);
 				var recordedPercent = Lib.HumanReadablePerc(dataSampled / sampleSize);
 				var eta = data_rate < double.Epsilon || dataSampled >= sampleSize ? " done" : " T-" + Lib.HumanReadableDuration((sampleSize - dataSampled) / data_rate);
 
-				double scienceValue = string.IsNullOrEmpty(last_subject_id) ? 0 : Science.Value(last_subject_id, sampleSize);
-
 				// update ui
-				Events["Toggle"].guiName = Lib.StatusToggle(Lib.Color(scienceValue > double.Epsilon ? "cyan": "", exp.experimentTitle), !recording ? "stopped" 
-				                                            : Lib.Color(issue.Length > 0 ? "#ffff00" : "", Lib.HumanReadablePerc(dataSampled / sampleSize) + "..."));
+				var title = Lib.Ellipsis(exp.experimentTitle, Styles.ScaleStringLength(24));
+
+				string status = string.Empty;
+				if (recording && scienceValue < double.Epsilon && PreferencesBasic.Instance.smartScience)
+					status = "waiting...";
+				else
+					status = !recording ? "stopped" : Lib.Color((issue.Length > 0 ? "#ffff00" : ""), Lib.HumanReadablePerc(dataSampled / sampleSize) + "...");
+				
+				Events["Toggle"].guiName = Lib.StatusToggle(exp.experimentTitle, status);
 				Events["Toggle"].active = (prepare_cs == null || didPrepare);
 
 				Events["Prepare"].guiName = Lib.BuildString("Prepare <b>", exp.experimentTitle, "</b>");
@@ -150,11 +156,11 @@ namespace KERBALISM
 				else
 				{
 					var size = sample_mass < double.Epsilon ? Lib.HumanReadableDataSize(sampleSize) : Lib.HumanReadableSampleSize(sampleSize);
-					var status = Lib.BuildString("ready ", size, " in ", Lib.HumanReadableDuration(sampleSize / data_rate));
-					if (scienceValue > double.Epsilon) status += " " + Lib.HumanReadableScience(scienceValue);
-					ExperimentStatus = status;
-					
+					ExperimentStatus = Lib.BuildString("ready ", size, " in ", Lib.HumanReadableDuration(sampleSize / data_rate));
+
 				}
+
+				if (scienceValue > 0.1) ExperimentStatus += " •<b>" + scienceValue.ToString("F1") + "</b>";
 			}
 			// in the editor
 			else if (Lib.IsEditor())
@@ -184,17 +190,21 @@ namespace KERBALISM
 			if (last_subject_id != subject_id) dataSampled = 0;
 				last_subject_id = subject_id;
 
+			scienceValue = Science.Value(last_subject_id, exp.baseValue * exp.dataScale);
+
 			if (!recording)
+				return;
+
+			if (PreferencesBasic.Instance.smartScience && scienceValue < double.Epsilon)
 				return;
 			
 			// if experiment is active and there are no issues
-			if (issue.Length == 0 && dataSampled < exp.scienceCap * exp.dataScale)
+			if (issue.Length == 0 && dataSampled < exp.baseValue * exp.dataScale)
 			{
-
 				// record in drive
 				double elapsed = Kerbalism.elapsed_s;
 
-				double chunkSize = data_rate * elapsed;
+				double chunkSize = Math.Min(data_rate * elapsed, exp.baseValue * exp.dataScale);
 				var info = Science.Experiment(subject_id);
 				double massDelta = sample_mass * chunkSize / info.max_amount;
 
@@ -223,7 +233,7 @@ namespace KERBALISM
 					// consume ec
 					ec.Consume(ec_rate * elapsed);
 					dataSampled += chunkSize;
-					dataSampled = Math.Min(dataSampled, exp.scienceCap * exp.dataScale);
+					dataSampled = Math.Min(dataSampled, exp.baseValue * exp.dataScale);
 					if(!sample_collecting)
 					{
 						remainingSampleMass -= massDelta;
@@ -255,17 +265,23 @@ namespace KERBALISM
 			double dataSampled = Lib.Proto.GetDouble(m, "dataSampled");
 			if (last_subject_id != subject_id) dataSampled = 0;
 
+			double scienceValue = Science.Value(last_subject_id, exp.baseValue * exp.dataScale);
+			Lib.Proto.Set(m, "scienceValue", scienceValue);
+
 			// if experiment is active
 			if (!Lib.Proto.GetBool(m, "recording"))
 				return;
 
+			if (PreferencesBasic.Instance.smartScience && scienceValue < double.Epsilon)
+				return;
+
 			// if there are no issues
-			if (issue.Length == 0 && dataSampled < exp.scienceCap * exp.dataScale)
+			if (issue.Length == 0 && dataSampled < exp.baseValue * exp.dataScale)
 			{
 				Lib.Proto.Set(m, "last_subject_id", subject_id);
 
 				// record in drive
-				double chunkSize = experiment.data_rate * elapsed_s;
+				double chunkSize = Math.Min(experiment.data_rate * elapsed_s, exp.baseValue * exp.dataScale);
 				var info = Science.Experiment(subject_id);
 				double massDelta = experiment.sample_mass * chunkSize / info.max_amount;
 
@@ -295,7 +311,7 @@ namespace KERBALISM
 					// consume ec
 					ec.Consume(experiment.ec_rate * elapsed_s);
 					dataSampled += chunkSize;
-					dataSampled = Math.Min(dataSampled, exp.scienceCap * exp.dataScale);
+					dataSampled = Math.Min(dataSampled, exp.baseValue * exp.dataScale);
 
 					if (!experiment.sample_collecting)
 					{
@@ -360,7 +376,7 @@ namespace KERBALISM
 
 			var drive = DB.Vessel(v).BestDrive();
 			double available = experiment.sample_mass < float.Epsilon ? drive.FileCapacityAvailable() : drive.SampleCapacityAvailable();
-			if (experiment.data_rate * Kerbalism.elapsed_s > available)
+			if (Math.Min(experiment.data_rate * Kerbalism.elapsed_s, exp.baseValue * exp.dataScale) > available)
 				return "insufficient storage";
 
 			return string.Empty;
@@ -492,9 +508,10 @@ namespace KERBALISM
 			{
 				specs.Add(Lib.BuildString("<i>", experiment_desc, "</i>"));
 			}
-			specs.Add(string.Empty);
+			
+				specs.Add(string.Empty);
 
-			double expSize = exp.scienceCap * exp.dataScale;
+				double expSize = exp.baseValue * exp.dataScale;
 			if (sample_mass < float.Epsilon)
 			{
 				specs.Add("Data", Lib.HumanReadableDataSize(expSize));

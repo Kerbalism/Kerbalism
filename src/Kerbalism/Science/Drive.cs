@@ -278,7 +278,12 @@ namespace KERBALISM
 		// return size of data stored in Mb (including samples)
 		public string Size()
 		{
-			return Lib.BuildString(Lib.HumanReadableDataSize(FilesSize()), "  ", Lib.HumanReadableSampleSize(SamplesSize()));
+			var f = FilesSize();
+			var s = SamplesSize();
+			var result = f > double.Epsilon ? Lib.HumanReadableDataSize(f) : "";
+			if (result.Length > 0) result += " ";
+			if (s > 0) result += Lib.HumanReadableSampleSize(s);
+			return result;
 		}
 
 		public bool Empty()

@@ -402,7 +402,8 @@ namespace KERBALISM
 		// return string with specified color and bold if stated
 		public static string Color( string color, string s, bool bold = false )
 		{
-			if (string.IsNullOrEmpty(color)) return s;
+			if (string.IsNullOrEmpty(color))
+				return !bold ? s : ("<b>" + s + "</b>");	
 			return !bold ? ("<color=" + color + ">" + s + "</color>") : ("<color=" + color + "><b>" + s + "</b></color>");
 		}
 
@@ -702,7 +703,9 @@ namespace KERBALISM
 
 		public static string HumanReadableSampleSize(int slots)
 		{
-			return Lib.BuildString(slots.ToString(), " ", slots > 0 ? "bags" : "bag");
+			if (slots <= 0) return Lib.BuildString("no ", "bags");
+
+			return Lib.BuildString(slots.ToString(), " ", slots > 1 ? "bags" : "bag");
 		}
 
 		public static int SampleSizeToSlots(double size)
