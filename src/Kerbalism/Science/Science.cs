@@ -326,6 +326,35 @@ namespace KERBALISM
 					case "Exosphere": good = vi.exosphere; break;
 					case "InterPlanetary": good = body.flightGlobalsIndex == 0 && !vi.interstellar; break;
 					case "InterStellar": good = body.flightGlobalsIndex == 0 && vi.interstellar; break;
+
+					case "AstronautComplexLevelMin":
+						good = !ScenarioUpgradeableFacilities.Instance.enabled || ScenarioUpgradeableFacilities.GetFacilityLevel(SpaceCenterFacility.AstronautComplex) >= int.Parse(value);
+						break;
+					case "AstronautComplexLevelMax":
+						good = !ScenarioUpgradeableFacilities.Instance.enabled || ScenarioUpgradeableFacilities.GetFacilityLevel(SpaceCenterFacility.AstronautComplex) <= int.Parse(value);
+						break;
+
+					case "TrackingStationLevelMin":
+						good = !ScenarioUpgradeableFacilities.Instance.enabled || ScenarioUpgradeableFacilities.GetFacilityLevel(SpaceCenterFacility.TrackingStation) >= int.Parse(value);
+						break;
+					case "TrackingStationLevelMax":
+						good = !ScenarioUpgradeableFacilities.Instance.enabled || ScenarioUpgradeableFacilities.GetFacilityLevel(SpaceCenterFacility.TrackingStation) <= int.Parse(value);
+						break;
+
+					case "MissionControlLevelMin":
+						good = !ScenarioUpgradeableFacilities.Instance.enabled || ScenarioUpgradeableFacilities.GetFacilityLevel(SpaceCenterFacility.MissionControl) >= int.Parse(value);
+						break;
+					case "MissionControlLevelMax":
+						good = !ScenarioUpgradeableFacilities.Instance.enabled || ScenarioUpgradeableFacilities.GetFacilityLevel(SpaceCenterFacility.MissionControl) <= int.Parse(value);
+						break;
+
+					case "AdministrationLevelMin":
+						good = !ScenarioUpgradeableFacilities.Instance.enabled || ScenarioUpgradeableFacilities.GetFacilityLevel(SpaceCenterFacility.Administration) >= int.Parse(value);
+						break;
+					case "AdministrationLevelMax":
+						good = !ScenarioUpgradeableFacilities.Instance.enabled || ScenarioUpgradeableFacilities.GetFacilityLevel(SpaceCenterFacility.Administration) <= int.Parse(value);
+						break;
+
 				}
 
 				if (!good) return s;
@@ -362,6 +391,15 @@ namespace KERBALISM
 				case "VolumePerCrewMin": return Lib.BuildString("Min. vol./crew ", value);
 				case "VolumePerCrewMax": return Lib.BuildString("Max. vol./crew ", value);
 					
+				case "MissionControlLevelMin": return Lib.BuildString(ScenarioUpgradeableFacilities.GetFacilityName(SpaceCenterFacility.MissionControl), " level ", value);
+				case "MissionControlLevelMax": return Lib.BuildString(ScenarioUpgradeableFacilities.GetFacilityName(SpaceCenterFacility.MissionControl), " max. level ", value);
+				case "AdministrationLevelMin": return Lib.BuildString(ScenarioUpgradeableFacilities.GetFacilityName(SpaceCenterFacility.Administration), " level ", value);
+				case "AdministrationLevelMax": return Lib.BuildString(ScenarioUpgradeableFacilities.GetFacilityName(SpaceCenterFacility.Administration), " max. level ", value);
+				case "TrackingStationLevelMin": return Lib.BuildString(ScenarioUpgradeableFacilities.GetFacilityName(SpaceCenterFacility.TrackingStation), " level ", value);
+				case "TrackingStationLevelMax": return Lib.BuildString(ScenarioUpgradeableFacilities.GetFacilityName(SpaceCenterFacility.TrackingStation), " max. level ", value);
+				case "AstronautComplexLevelMin": return Lib.BuildString(ScenarioUpgradeableFacilities.GetFacilityName(SpaceCenterFacility.AstronautComplex), " level ", value);
+				case "AstronautComplexLevelMax": return Lib.BuildString(ScenarioUpgradeableFacilities.GetFacilityName(SpaceCenterFacility.AstronautComplex), " max. level ", value);
+
 				default:
 					return Lib.SpacesOnCaps(condition);
 			}

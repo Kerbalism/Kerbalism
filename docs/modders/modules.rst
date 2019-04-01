@@ -175,6 +175,7 @@ Here is a list of currently supported requirements:
 * CrewMin, CrewMax: min./max. amount of crew on vessel
 * CrewCapacityMin, CrewCapacityMax: min./max. crew capacity
 * VolumePerCrewMin, VolumePerCrewMax: min./max. habitat volume per crew member
+* Facility building levels: MissionControlLevelMin, MissionControlLevelMax, AdministrationLevelMin, AdministrationLevelMax, TrackingStationLevelMin, TrackingStationLevelMax, AstronautComplexLevelMin, AstronautComplexLevelMax
 
 -------
 
