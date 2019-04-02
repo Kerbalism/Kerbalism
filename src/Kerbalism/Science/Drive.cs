@@ -49,6 +49,7 @@ namespace KERBALISM
 			dataCapacity = Lib.ConfigValue(node, "dataCapacity", 100000.0);
 			sampleCapacity = Lib.ConfigValue(node, "sampleCapacity", 1000);
 
+			fileSendFlags = new Dictionary<string, bool>();
 			var fileNames = Lib.ConfigValue(node, "sendFileNames", string.Empty);
 			foreach (var fileName in Lib.Tokenize(fileNames, ','))
 			{
