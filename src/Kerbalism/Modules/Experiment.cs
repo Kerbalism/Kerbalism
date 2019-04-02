@@ -40,17 +40,41 @@ namespace KERBALISM
 		[KSPField(isPersistant = true)] public double remainingSampleMass = -1;
 		[KSPField(isPersistant = true)] public bool broken = false;
 		[KSPField(isPersistant = true)] public double scienceValue = 0;
+		[KSPField(isPersistant = true)] public bool forcedRun = false;
 
+		private State state = State.STOPPED;
 		// animations
-		Animator deployAnimator;
+		private Animator deployAnimator;
 
-		CrewSpecs operator_cs;
-		CrewSpecs reset_cs;
-		CrewSpecs prepare_cs;
+		private CrewSpecs operator_cs;
+		private CrewSpecs reset_cs;
+		private CrewSpecs prepare_cs;
 
 		private ScienceExperiment exp;
 		private String situationIssue = String.Empty;
 		[KSPField(guiActive = false, guiName = "_")] private string ExperimentStatus = string.Empty;
+
+		private enum State
+		{
+			STOPPED = 0, WAITING, RUNNING, ISSUE
+		}
+
+		private static State GetState(double scienceValue, string issue, bool recording, bool forcedRun)
+		{
+			bool hasValue = scienceValue >= 0.1;
+			bool smartScience = PreferencesBasic.Instance.smartScience;
+
+			if (issue.Length > 0) return State.ISSUE;
+			if (!recording) return State.STOPPED;
+			if (!hasValue && forcedRun) return State.RUNNING;
+			if (!hasValue && smartScience) return State.WAITING;
+			return State.RUNNING;
+		}
+
+		private State GetState()
+		{
+			return GetState(scienceValue, issue, recording, forcedRun);
+		}
 
 		public override void OnLoad(ConfigNode node)
 		{
@@ -105,18 +129,20 @@ namespace KERBALISM
 
 				var sampleSize = (exp.baseValue * exp.dataScale);
 				var recordedPercent = Lib.HumanReadablePerc(dataSampled / sampleSize);
-				var eta = data_rate < double.Epsilon || dataSampled >= sampleSize ? " done" : " T-" + Lib.HumanReadableDuration((sampleSize - dataSampled) / data_rate);
+				var eta = data_rate < double.Epsilon || dataSampled >= sampleSize ? " done" : " " + Lib.HumanReadableCountdown((sampleSize - dataSampled) / data_rate);
 
 				// update ui
 				var title = Lib.Ellipsis(exp.experimentTitle, Styles.ScaleStringLength(24));
 
-				string status = string.Empty;
-				if (recording && scienceValue < double.Epsilon && PreferencesBasic.Instance.smartScience)
-					status = "waiting...";
-				else
-					status = !recording ? "stopped" : Lib.Color((issue.Length > 0 ? "#ffff00" : ""), Lib.HumanReadablePerc(dataSampled / sampleSize) + "...");
-				
-				Events["Toggle"].guiName = Lib.StatusToggle(exp.experimentTitle, status);
+				string statusString = string.Empty;
+				switch (state) {
+					case State.ISSUE: statusString = Lib.Color("yellow", Lib.HumanReadablePerc(dataSampled / sampleSize) + "..."); break;
+					case State.RUNNING: statusString = Lib.HumanReadablePerc(dataSampled / sampleSize) + "..."; break;
+					case State.WAITING: statusString = "waiting..."; break;
+					case State.STOPPED: statusString = "stopped"; break;
+				}
+
+				Events["Toggle"].guiName = Lib.StatusToggle(exp.experimentTitle, statusString);
 				Events["Toggle"].active = (prepare_cs == null || didPrepare);
 
 				Events["Prepare"].guiName = Lib.BuildString("Prepare <b>", exp.experimentTitle, "</b>");
@@ -124,7 +150,7 @@ namespace KERBALISM
 
 				Events["Reset"].guiName = Lib.BuildString("Reset <b>", exp.experimentTitle, "</b>");
 				// we need a reset either if we have recorded data or did a setup
-				bool resetActive = sample_mass < float.Epsilon && (reset_cs != null || prepare_cs != null) && !string.IsNullOrEmpty(last_subject_id);
+				bool resetActive = sample_mass > float.Epsilon && (reset_cs != null || prepare_cs != null) && !string.IsNullOrEmpty(last_subject_id);
 				Events["Reset"].active = resetActive;
 
 				Fields["ExperimentStatus"].guiName = exp.experimentTitle;
@@ -157,7 +183,6 @@ namespace KERBALISM
 				{
 					var size = sample_mass < double.Epsilon ? Lib.HumanReadableDataSize(sampleSize) : Lib.HumanReadableSampleSize(sampleSize);
 					ExperimentStatus = Lib.BuildString("ready ", size, " in ", Lib.HumanReadableDuration(sampleSize / data_rate));
-
 				}
 
 				if (scienceValue > 0.1) ExperimentStatus += " •<b>" + scienceValue.ToString("F1") + "</b>";
@@ -174,10 +199,8 @@ namespace KERBALISM
 
 		public void FixedUpdate()
 		{
-			// do nothing in the editor
+			// basic sanity checks
 			if (Lib.IsEditor()) return;
-
-			// do nothing if vessel is invalid
 			if (!Cache.VesselInfo(vessel).is_valid) return;
 
 			// get ec handler
@@ -187,66 +210,81 @@ namespace KERBALISM
 			issue = TestForIssues(vessel, exp, ec, this, broken,
 				remainingSampleMass, didPrepare, shrouded, last_subject_id, out subject_id);
 
-			if (last_subject_id != subject_id) dataSampled = 0;
-				last_subject_id = subject_id;
-
-			scienceValue = Science.Value(last_subject_id, exp.baseValue * exp.dataScale);
-
-			if (!recording)
-				return;
-
-			if (PreferencesBasic.Instance.smartScience && scienceValue < double.Epsilon)
-				return;
-			
-			// if experiment is active and there are no issues
-			if (issue.Length == 0 && dataSampled < exp.baseValue * exp.dataScale)
+			if (last_subject_id != subject_id)
 			{
-				// record in drive
-				double elapsed = Kerbalism.elapsed_s;
-
-				double chunkSize = Math.Min(data_rate * elapsed, exp.baseValue * exp.dataScale);
-				var info = Science.Experiment(subject_id);
-				double massDelta = sample_mass * chunkSize / info.max_amount;
-
-				bool isSample = sample_mass < float.Epsilon;
-				var drive = isSample
-						   ? DB.Vessel(vessel).BestDrive(chunkSize, 0)
-						   : DB.Vessel(vessel).BestDrive(0, Lib.SampleSizeToSlots(chunkSize));
-
-				// on high time warp this chunk size could be too big, but we could store a sizable amount if we processed less
-				double maxCapacity = isSample ? drive.FileCapacityAvailable() : drive.SampleCapacityAvailable(subject_id);
-				if(maxCapacity < chunkSize) {
-					double factor = maxCapacity / chunkSize;
-					chunkSize *= factor;
-					massDelta *= factor;
-					elapsed *= factor;
-				}
-
-				bool stored = false;
-				if (sample_mass < float.Epsilon)
-					stored = drive.Record_file(subject_id, chunkSize, true, true);
-				else
-					stored = drive.Record_sample(subject_id, chunkSize, massDelta);
-
-				if(stored)
-				{
-					// consume ec
-					ec.Consume(ec_rate * elapsed);
-					dataSampled += chunkSize;
-					dataSampled = Math.Min(dataSampled, exp.baseValue * exp.dataScale);
-					if(!sample_collecting)
-					{
-						remainingSampleMass -= massDelta;
-						remainingSampleMass = Math.Max(remainingSampleMass, 0);
-					}
-				}
-				else
-				{
-					issue = "insufficient storage";
-				}
+				dataSampled = 0;
+				forcedRun = false;
 			}
+			last_subject_id = subject_id;
+			scienceValue = Science.Value(last_subject_id, exp.baseValue * exp.dataScale);
+			state = GetState();
+
+			if (state != State.RUNNING)
+				return;
+
+			// if experiment is active and there are no issues
+			if (dataSampled >= exp.baseValue * exp.dataScale)
+				return;
+
+			DoRecord(ec, subject_id);
 		}
 
+		private void DoRecord(Resource_info ec, string subject_id)
+		{
+			var stored = DoRecord(vessel, this, ec, subject_id, exp, remainingSampleMass, dataSampled, out dataSampled, out remainingSampleMass);
+			if (!stored) issue = "insufficient storage";
+		}
+
+		private static bool DoRecord(Vessel vessel, Experiment experiment, Resource_info ec,
+		                             string subject_id, ScienceExperiment exp, double remainingSampleMass, double dataSampled,
+		                             out double sampledOut, out double remainingSampleMassOut)
+		{
+			double elapsed = Kerbalism.elapsed_s;
+			double chunkSize = Math.Min(experiment.data_rate * elapsed, exp.baseValue * exp.dataScale);
+			var info = Science.Experiment(subject_id);
+			double massDelta = experiment.sample_mass * chunkSize / info.max_amount;
+
+			bool isSample = experiment.sample_mass < float.Epsilon;
+			var drive = isSample
+					   ? DB.Vessel(vessel).BestDrive(chunkSize, 0)
+					   : DB.Vessel(vessel).BestDrive(0, Lib.SampleSizeToSlots(chunkSize));
+
+			// on high time warp this chunk size could be too big, but we could store a sizable amount if we process less
+			double maxCapacity = isSample ? drive.FileCapacityAvailable() : drive.SampleCapacityAvailable(subject_id);
+			if (maxCapacity < chunkSize)
+			{
+				double factor = maxCapacity / chunkSize;
+				chunkSize *= factor;
+				massDelta *= factor;
+				elapsed *= factor;
+			}
+
+			bool stored = false;
+			if (experiment.sample_mass < float.Epsilon)
+				stored = drive.Record_file(subject_id, chunkSize, true, true);
+			else
+				stored = drive.Record_sample(subject_id, chunkSize, massDelta);
+
+			if (stored)
+			{
+				// consume ec
+				ec.Consume(experiment.ec_rate * elapsed);
+				dataSampled += chunkSize;
+				dataSampled = Math.Min(dataSampled, exp.baseValue * exp.dataScale);
+				sampledOut = dataSampled;
+				if (!experiment.sample_collecting)
+				{
+					remainingSampleMass -= massDelta;
+					remainingSampleMass = Math.Max(remainingSampleMass, 0);
+				}
+				remainingSampleMassOut = remainingSampleMass;
+				return true;
+			}
+
+			sampledOut = dataSampled;
+			remainingSampleMassOut = remainingSampleMass;
+			return false;
+		}
 
 		public static void BackgroundUpdate(Vessel v, ProtoPartModuleSnapshot m, Experiment experiment, Resource_info ec, double elapsed_s)
 		{
@@ -256,78 +294,37 @@ namespace KERBALISM
 			string last_subject_id = Lib.Proto.GetString(m, "last_subject_id", "");
 			double remainingSampleMass = Lib.Proto.GetDouble(m, "remainingSampleMass", 0);
 			bool broken = Lib.Proto.GetBool(m, "broken", false);
-
+			bool forcedRun = Lib.Proto.GetBool(m, "forcedRun", false);
+			bool recording = Lib.Proto.GetBool(m, "recording", false);
+				
 			string subject_id;
 			string issue = TestForIssues(v, exp, ec, experiment, broken,
 				remainingSampleMass, didPrepare, shrouded, last_subject_id, out subject_id);
 			Lib.Proto.Set(m, "issue", issue);
+			Lib.Proto.Set(m, "last_subject_id", subject_id);
 
 			double dataSampled = Lib.Proto.GetDouble(m, "dataSampled");
-			if (last_subject_id != subject_id) dataSampled = 0;
+
+			if (last_subject_id != subject_id)
+			{
+				dataSampled = 0;
+				Lib.Proto.Set(m, "forcedRun", false);
+			}
 
 			double scienceValue = Science.Value(last_subject_id, exp.baseValue * exp.dataScale);
 			Lib.Proto.Set(m, "scienceValue", scienceValue);
 
-			// if experiment is active
-			if (!Lib.Proto.GetBool(m, "recording"))
+			var state = GetState(scienceValue, issue, recording, forcedRun);
+			if (state != State.RUNNING)
+				return;
+			if (dataSampled >= exp.baseValue * exp.dataScale)
 				return;
 
-			if (PreferencesBasic.Instance.smartScience && scienceValue < double.Epsilon)
-				return;
+			var stored = DoRecord(v, experiment, ec, subject_id, exp, remainingSampleMass, dataSampled, out dataSampled, out remainingSampleMass);
+			if (!stored) Lib.Proto.Set(m, "issue", "insufficient storage");
 
-			// if there are no issues
-			if (issue.Length == 0 && dataSampled < exp.baseValue * exp.dataScale)
-			{
-				Lib.Proto.Set(m, "last_subject_id", subject_id);
-
-				// record in drive
-				double chunkSize = Math.Min(experiment.data_rate * elapsed_s, exp.baseValue * exp.dataScale);
-				var info = Science.Experiment(subject_id);
-				double massDelta = experiment.sample_mass * chunkSize / info.max_amount;
-
-				bool isSample = experiment.sample_mass < float.Epsilon;
-				var drive = isSample
-						   ? DB.Vessel(v).BestDrive(chunkSize, 0)
-						   : DB.Vessel(v).BestDrive(0, Lib.SampleSizeToSlots(chunkSize));
-
-				// on high time warp this chunk size could be too big, but we could store a sizable amount if we processed less
-				double maxCapacity = isSample ? drive.FileCapacityAvailable() : drive.SampleCapacityAvailable(subject_id);
-				if (maxCapacity < chunkSize)
-				{
-					double factor = maxCapacity / chunkSize;
-					chunkSize *= factor;
-					massDelta *= factor;
-					elapsed_s *= factor;
-				}
-
-				bool stored = false;
-				if (experiment.sample_mass < float.Epsilon)
-					stored = drive.Record_file(subject_id, chunkSize, true, true);
-				else
-					stored = drive.Record_sample(subject_id, chunkSize, massDelta);
-
-				if (stored)
-				{
-					// consume ec
-					ec.Consume(experiment.ec_rate * elapsed_s);
-					dataSampled += chunkSize;
-					dataSampled = Math.Min(dataSampled, exp.baseValue * exp.dataScale);
-
-					if (!experiment.sample_collecting)
-					{
-						remainingSampleMass -= massDelta;
-						remainingSampleMass = Math.Max(remainingSampleMass, 0);
-						Lib.Proto.Set(m, "remainingSampleMass", remainingSampleMass);
-					}
-
-					Lib.Proto.Set(m, "dataSampled", dataSampled);
-				}
-				else
-				{
-					issue = "insufficient storage";
-					Lib.Proto.Set(m, "issue", issue);
-				}
-			}
+			Lib.Proto.Set(m, "dataSampled", dataSampled);
+			Lib.Proto.Set(m, "remainingSampleMass", remainingSampleMass);
 		}
 
 		public void ReliablityEvent(bool breakdown)
@@ -477,8 +474,21 @@ namespace KERBALISM
 		[KSPEvent(guiActiveUnfocused = true, guiActive = true, guiActiveEditor = true, guiName = "_", active = true)]
 		public void Toggle()
 		{
+			if (state == State.WAITING)
+			{
+				forcedRun = true;
+				recording = true;
+				return;
+			}
+
 			// toggle recording
 			recording = !recording;
+
+			if (!recording)
+			{
+				dataSampled = 0;
+				forcedRun = false;
+			}
 
 			// play deploy animation if exist
 			deployAnimator.Play(!recording, false);
@@ -488,7 +498,18 @@ namespace KERBALISM
 		}
 
 		// action groups
-		[KSPAction("#KERBALISM_Experiment_Action")] public void Action(KSPActionParam param) { Toggle(); }
+		[KSPAction("Start")] public void Start(KSPActionParam param)
+		{
+			switch (GetState()) {
+				case State.STOPPED:
+				case State.WAITING:
+					Toggle();
+					break;
+			}
+		}
+		[KSPAction("Stop")] public void Stop(KSPActionParam param) {
+			if(recording) Toggle();
+		}
 
 		// part tooltip
 		public override string GetInfo()
@@ -544,7 +565,5 @@ namespace KERBALISM
 		public float GetModuleMass(float defaultMass, ModifierStagingSituation sit) { return sample_collecting ? 0 : (float)remainingSampleMass; }
 		public ModifierChangeWhen GetModuleMassChangeWhen() { return ModifierChangeWhen.CONSTANTLY; }
 	}
-
-
 } // KERBALISM
 

@@ -128,7 +128,7 @@ namespace KERBALISM
 				double now = Planetarium.GetUniversalTime();
 				foreach (var p in drive.files)
 				{
-					if (p.Value.send && (p.Value.ts + 3 < now || p.Value.size > 0.003)) return p.Key;
+					if (drive.GetFileSend(p.Key) && (p.Value.ts + 3 < now || p.Value.size > 0.003)) return p.Key;
 				}
 			}
 

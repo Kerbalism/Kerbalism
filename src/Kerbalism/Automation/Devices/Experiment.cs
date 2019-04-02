@@ -35,7 +35,7 @@ namespace KERBALISM
 			var exp = ResearchAndDevelopment.GetExperiment(experiment.experiment_id);
 			var sampleSize = (exp.baseValue * exp.dataScale);
 			var recordedPercent = Lib.HumanReadablePerc(experiment.dataSampled / sampleSize);
-			var eta = experiment.data_rate < double.Epsilon || experiment.dataSampled >= sampleSize ? " done" : " T-" + Lib.HumanReadableDuration((sampleSize - experiment.dataSampled) / experiment.data_rate);
+			var eta = experiment.data_rate < double.Epsilon || experiment.dataSampled >= sampleSize ? " done" : " " + Lib.HumanReadableCountdown((sampleSize - experiment.dataSampled) / experiment.data_rate);
 
 			return !experiment.recording
 			  ? "<color=red>" + Localizer.Format("#KERBALISM_Generic_DISABLED") + " </color>"
@@ -94,7 +94,7 @@ namespace KERBALISM
 			var exp = ResearchAndDevelopment.GetExperiment(prefab.experiment_id);
 			var sampleSize = (exp.baseValue * exp.dataScale);
 			var recordedPercent = Lib.HumanReadablePerc(dataSampled / sampleSize);
-			var eta = data_rate < double.Epsilon || dataSampled >= sampleSize ? " done" : " T-" + Lib.HumanReadableDuration((sampleSize - dataSampled) / data_rate);
+			var eta = data_rate < double.Epsilon || dataSampled >= sampleSize ? " done" : " " + Lib.HumanReadableCountdown((sampleSize - dataSampled) / data_rate);
 
 			return !recording
 			  ? "<color=red>" + Localizer.Format("#KERBALISM_Generic_STOPPED") + " </color>"

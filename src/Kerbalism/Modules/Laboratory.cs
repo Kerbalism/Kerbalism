@@ -294,7 +294,7 @@ namespace KERBALISM
 					Localizer.Format("#KERBALISM_Laboratory_Analyzed", Lib.Bold(v.vesselName), Lib.Bold(Science.Experiment(filename).name))), localized_results);
 
 				if(PreferencesBasic.Instance.transmitScience)
-					drive.Transmit_file(filename);
+					drive.Send(filename, true);
 
 				// record landmark event
 				if (!Lib.Landed(v)) DB.landmarks.space_analysis = true;

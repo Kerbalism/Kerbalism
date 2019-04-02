@@ -576,6 +576,34 @@ namespace KERBALISM
 			return BuildString( duration_y.ToString( "F0" ), "y", (duration_d < 1.0 ? "" : BuildString( " ", duration_d.ToString( "F0" ), "d" )) );
 		}
 
+		public static string HumanReadableCountdown(double d)
+		{
+			if (d <= double.Epsilon) return string.Empty;
+			if (double.IsInfinity(d) || double.IsNaN(d)) return "never";
+
+			double hours_in_day = HoursInDay();
+			double days_in_year = DaysInYear();
+
+			int duration = (int)d;
+			int seconds = duration % 60;
+			duration /= 60;
+			int minutes = duration % 60;
+			duration /= 60;
+			int hours = duration % (int)hours_in_day;
+			duration /= (int)hours_in_day;
+			int days = duration % (int)days_in_year;
+			int years = duration / (int)days_in_year;
+
+			string result = "T-";
+			if (years > 0) result += years + "y ";
+			if (years > 0 || days > 0) result += days + "d ";
+			if (years > 0 || days > 0 || hours > 0) result += hours.ToString("D2") + ":";
+			if (years > 0 || days > 0 || hours > 0 || minutes > 0) result += minutes.ToString("D2") + ":";
+			result += seconds.ToString("D2");
+
+			return result;
+		}
+
 		///<summary> Pretty-print a range (range is in meters, must be positive) </summary>
 		public static string HumanReadableRange( double range )
 		{

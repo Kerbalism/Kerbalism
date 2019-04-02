@@ -98,7 +98,8 @@ namespace KERBALISM
 			if (rate > 0) exp_tooltip = Lib.BuildString(exp_tooltip, "\n<i>" + Lib.HumanReadableDuration(file.size / rate) + "</i>");
 			p.AddContent(exp_label, Lib.HumanReadableDataSize(file.size), exp_tooltip);
 
-			p.AddIcon(file.send ? Icons.send_cyan : Icons.send_black, "Flag the file for transmission to <b>DSN</b>", () => { file.send = !file.send; });
+			bool send = drive.GetFileSend(filename);
+			p.AddIcon(send ? Icons.send_cyan : Icons.send_black, "Flag the file for transmission to <b>DSN</b>", () => { drive.Send(filename, !send); });
 			p.AddIcon(Icons.toggle_red, "Delete the file", () => Lib.Popup
 			(
 			  "Warning!",

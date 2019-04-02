@@ -12,6 +12,7 @@ namespace KERBALISM
 		{
 			this.files = new Dictionary<string, File>();
 			this.samples = new Dictionary<string, Sample>();
+			this.fileSendFlags = new Dictionary<string, bool>();
 			this.dataCapacity = dataCapacity;
 			this.sampleCapacity = sampleCapacity;
 			this.name = name;
@@ -47,6 +48,12 @@ namespace KERBALISM
 			// compatibility (drives had unlimited storage before this)
 			dataCapacity = Lib.ConfigValue(node, "dataCapacity", 100000.0);
 			sampleCapacity = Lib.ConfigValue(node, "sampleCapacity", 1000);
+
+			var fileNames = Lib.ConfigValue(node, "sendFileNames", string.Empty);
+			foreach (var fileName in Lib.Tokenize(fileNames, ','))
+			{
+				Send(fileName, true);
+			}
 		}
 
 		public void Save(ConfigNode node)
@@ -68,6 +75,14 @@ namespace KERBALISM
 			node.AddValue("name", name);
 			node.AddValue("dataCapacity", dataCapacity);
 			node.AddValue("sampleCapacity", sampleCapacity);
+
+			string fileNames = string.Empty;
+			foreach(var fileName in fileSendFlags.Keys)
+			{
+				if (fileNames.Length > 0) fileNames += ",";
+				fileNames += fileName;
+			}
+			node.AddValue("sendFileNames", fileNames);
 		}
 
 		// add science data, creating new file or incrementing existing one
@@ -81,9 +96,10 @@ namespace KERBALISM
 			if (!files.TryGetValue(subject_id, out file))
 			{
 				file = new File();
-				if (!allowImmediateTransmission) file.send = false;
 				file.silentTransmission = silentTransmission;
 				files.Add(subject_id, file);
+
+				if (!allowImmediateTransmission) Send(subject_id, false);
 			}
 
 			// increase amount of data stored in the file
@@ -96,12 +112,16 @@ namespace KERBALISM
 			return true;
 		}
 
-		public void Transmit_file(string subject_id)
+		public void Send(string filename, bool send)
 		{
-			File file;
-			if (!files.TryGetValue(subject_id, out file))
-				return;
-			file.send = true;
+			if (!fileSendFlags.ContainsKey(filename)) fileSendFlags.Add(filename, send);
+			else fileSendFlags[filename] = send;
+		}
+
+		public bool GetFileSend(string filename)
+		{
+			if (!fileSendFlags.ContainsKey(filename)) return PreferencesBasic.Instance.transmitScience;
+			return fileSendFlags[filename];
 		}
 
 		// add science sample, creating new sample or incrementing existing one
@@ -180,16 +200,6 @@ namespace KERBALISM
 
 				// remove sample if empty
 				if (sample.size <= double.Epsilon) samples.Remove(subject_id);
-			}
-		}
-
-		// set send flag for a file
-		public void Send(string subject_id, bool b)
-		{
-			File file;
-			if (files.TryGetValue(subject_id, out file))
-			{
-				file.send = b;
 			}
 		}
 
@@ -342,6 +352,7 @@ namespace KERBALISM
 
 		public Dictionary<string, File> files;      // science files
 		public Dictionary<string, Sample> samples;  // science samples
+		public Dictionary<string, bool> fileSendFlags; // file send flags
 		public double dataCapacity;
 		public int sampleCapacity;
 		public string name = String.Empty;
