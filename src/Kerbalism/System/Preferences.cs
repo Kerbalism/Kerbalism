@@ -14,7 +14,7 @@ namespace KERBALISM
 		[GameParameters.CustomParameterUI("Transmit Science Immediately", toolTip = "Automatically transmit science if possible")]
 		public bool transmitScience = true;
 
-		[GameParameters.CustomParameterUI("Only record valuable science", toolTip = "Record experiment data only if it has not been recorded before")]
+		[GameParameters.CustomParameterUI("Only record valuable science", toolTip = "Record experiment data only if it has at least a nominal value")]
 		public bool smartScience = true;
 
 		[GameParameters.CustomFloatParameterUI("Antenna Speed", asPercentage = true, minValue = 0.01f, maxValue = 2f, displayFormat = "F2", toolTip = "Antenna Bandwidth factor")]

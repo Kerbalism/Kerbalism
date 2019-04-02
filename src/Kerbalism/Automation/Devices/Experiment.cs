@@ -60,13 +60,15 @@ namespace KERBALISM
 
 	public sealed class ProtoExperimentDevice : Device
 	{
-		public ProtoExperimentDevice(ProtoPartModuleSnapshot proto, Experiment prefab, uint part_id)
+		public ProtoExperimentDevice(ProtoPartModuleSnapshot proto, Experiment prefab, uint part_id,
+		                             List<KeyValuePair<Experiment, ProtoPartModuleSnapshot>> allExperiments)
 		{
 			this.proto = proto;
 			this.prefab = prefab;
 			this.part_id = part_id;
-			this.exp_name = (prefab.sample_mass < float.Epsilon ? "sensor" : "experiment")
-				+ ": " + Lib.SpacesOnCaps(ResearchAndDevelopment.GetExperiment(prefab.experiment_id).experimentTitle).ToLower().Replace("e v a", "eva");
+			this.allExperiments = allExperiments;
+			this.title = Lib.SpacesOnCaps(ResearchAndDevelopment.GetExperiment(prefab.experiment_id).experimentTitle).Replace("E V A", "EVA");
+			this.exp_name = (prefab.sample_mass < float.Epsilon ? "sensor" : "experiment") + ": " + title.ToLower();
 		}
 
 		public override string Name()
@@ -104,6 +106,22 @@ namespace KERBALISM
 
 		public override void Ctrl(bool value)
 		{
+			if (value)
+			{
+				// The same experiment must run only once on a vessel
+				foreach (var pair in allExperiments)
+				{
+					var e = pair.Key;
+					var p = pair.Value;
+					if (e.experiment_id != prefab.experiment_id) continue;
+					if (Lib.Proto.GetBool(p, "recording", false))
+					{
+						Experiment.PostMultipleRunsMessage(title);
+						return;
+					}
+				}
+			}
+
 			Lib.Proto.Set(proto, "recording", value);
 		}
 
@@ -116,6 +134,8 @@ namespace KERBALISM
 		private readonly Experiment prefab;
 		private readonly uint part_id;
 		private readonly string exp_name;
+		private readonly string title;
+		private readonly List<KeyValuePair<Experiment, ProtoPartModuleSnapshot>> allExperiments;
 	}
 
 

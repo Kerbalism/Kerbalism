@@ -471,6 +471,20 @@ namespace KERBALISM
 			return true; 
 		}
 
+		private bool IsExperimentRunningOnVessel()
+		{
+			foreach(var e in vessel.FindPartModulesImplementing<Experiment>())
+			{
+				if (e.experiment_id == experiment_id && e.recording) return true;
+			}
+			return false;
+		}
+
+		public static void PostMultipleRunsMessage(string title)
+		{
+			Message.Post(Lib.Color("red", "ALREADY RUNNING", true), "Can't start " + title + " a second time on the same vessel");
+		}
+
 		[KSPEvent(guiActiveUnfocused = true, guiActive = true, guiActiveEditor = true, guiName = "_", active = true)]
 		public void Toggle()
 		{
@@ -481,8 +495,14 @@ namespace KERBALISM
 				return;
 			}
 
-			// toggle recording
-			recording = !recording;
+			// The same experiment must run only once on a vessel
+			if (!recording)
+			{
+				recording = !IsExperimentRunningOnVessel();
+				if(!recording) PostMultipleRunsMessage(exp.experimentTitle);
+			}
+			else
+				recording = false;
 
 			if (!recording)
 			{
