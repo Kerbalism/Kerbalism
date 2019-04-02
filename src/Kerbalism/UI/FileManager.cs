@@ -61,7 +61,7 @@ namespace KERBALISM
 					// draw samples section
 					p.AddSection(Lib.BuildString("SAMPLES ", drive.name, " ",
 												 Lib.HumanReadableSampleSize(drive.sampleCapacity),
-												 " (", Lib.HumanReadablePerc(drive.SamplesSize() / drive.sampleCapacity), ") ",
+					                             " (", Lib.HumanReadablePerc((double)(drive.SamplesSize()) / (double)(drive.sampleCapacity)), ") ",
 												 Lib.HumanReadableMass(mass)));
 					foreach (var pair in drive.samples)
 					{
