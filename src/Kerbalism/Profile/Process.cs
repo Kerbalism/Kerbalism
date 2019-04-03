@@ -12,7 +12,6 @@ namespace KERBALISM
 		{
 			name = Lib.ConfigValue(node, "name", string.Empty);
 			modifiers = Lib.Tokenize(Lib.ConfigValue(node, "modifier", string.Empty), ',');
-			restricted = false;
 
 			// check that name is specified
 			if (name.Length == 0) throw new Exception("skipping unnamed process");
@@ -34,8 +33,6 @@ namespace KERBALISM
 
 				// record input
 				inputs[input_res] = input_rate;
-
-				if (Lib.IsResourceImpossibleToFlow(input_res)) restricted = true;
 			}
 
 			outputs = new Dictionary<string, double>();
@@ -55,8 +52,6 @@ namespace KERBALISM
 
 				// record output
 				outputs[output_res] = output_rate;
-
-				if (Lib.IsResourceImpossibleToFlow(output_res)) restricted = true;
 			}
 
 			cures = new Dictionary<string, double>();
@@ -103,43 +98,15 @@ namespace KERBALISM
 			}
 		}
 
-		private void ExecuteVesselWide(Vessel v, Vessel_info vi, Vessel_resources resources, double elapsed_s)
+		public void Execute(Vessel v, Vessel_info vi, Vessel_resources resources, double elapsed_s)
 		{
 			// evaluate modifiers
 			// if a given PartModule has a larger than 1 capacity for a process, then the multiplication happens here
 			// remember that when a process is enabled the units of process are stored in the PartModule as a pseudo-resource
 			double k = Modifiers.Evaluate(v, vi, resources, modifiers);
 
-			Resource_recipe recipe = new Resource_recipe((Part) null);
+			Resource_recipe recipe = new Resource_recipe((Part)null);
 			ExecuteRecipe(k, resources, elapsed_s, recipe);
-		}
-
-		private void ExecutePerPart(Vessel v, Vessel_info vi, Vessel_resources resources, double elapsed_s)
-		{
-			if (v.loaded)
-			{
-				foreach (Part p in v.Parts)
-				{
-					double k = Modifiers.Evaluate(v, vi, resources, modifiers, p, null);
-					Resource_recipe recipe = new Resource_recipe(p);
-					ExecuteRecipe(k, resources, elapsed_s, recipe);
-				}
-			}
-			else
-			{
-				foreach (ProtoPartSnapshot p in v.protoVessel.protoPartSnapshots)
-				{
-					double k = Modifiers.Evaluate(v, vi, resources, modifiers, null, p);
-					Resource_recipe recipe = new Resource_recipe(p);
-					ExecuteRecipe(k, resources, elapsed_s, recipe);
-				}
-			}
-		}
-
-		public void Execute(Vessel v, Vessel_info vi, Vessel_resources resources, double elapsed_s)
-		{
-			if (restricted) ExecutePerPart(v, vi, resources, elapsed_s);
-			else ExecuteVesselWide(v, vi, resources, elapsed_s);
 		}
 
 		public string name;                           // unique name for the process
@@ -148,10 +115,7 @@ namespace KERBALISM
 		public Dictionary<string, double> outputs;    // output resources and rates
 		public Dictionary<string, double> cures;      // cures and rates
 		public DumpSpecs dump;                        // set of output resources that should dump overboard
-		private bool restricted;                      // does this resource need to be processed in part-aware way?
 	}
-
-
 
 
 
