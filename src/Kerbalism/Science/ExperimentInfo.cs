@@ -36,7 +36,7 @@ namespace KERBALISM
 			fullname = Lib.BuildString(name, " (", situation, ")");
 
 			// deduce max data amount
-			max_amount = expdef != null ? expdef.scienceCap * expdef.dataScale : double.MaxValue;
+			max_amount = expdef != null ? expdef.baseValue * expdef.dataScale : double.MaxValue;
 		}
 
 

@@ -7,8 +7,6 @@ using UnityEngine;
 namespace KERBALISM
 {
 
-
-	// EXPERIMENTAL
 	public sealed class Experiment : PartModule, ISpecifics, IPartMassModifier
 	{
 		// config
@@ -127,7 +125,7 @@ namespace KERBALISM
 				// do nothing if vessel is invalid
 				if (!vi.is_valid) return;
 
-				var sampleSize = (exp.baseValue * exp.dataScale);
+				var sampleSize = exp.baseValue * exp.dataScale;
 				var recordedPercent = Lib.HumanReadablePerc(dataSampled / sampleSize);
 				var eta = data_rate < double.Epsilon || dataSampled >= sampleSize ? " done" : " " + Lib.HumanReadableCountdown((sampleSize - dataSampled) / data_rate);
 
@@ -136,7 +134,7 @@ namespace KERBALISM
 
 				string statusString = string.Empty;
 				switch (state) {
-					case State.ISSUE: statusString = Lib.Color("yellow", Lib.HumanReadablePerc(dataSampled / sampleSize) + "..."); break;
+					case State.ISSUE: statusString = Lib.Color("yellow", issue); break;
 					case State.RUNNING: statusString = Lib.HumanReadablePerc(dataSampled / sampleSize) + "..."; break;
 					case State.WAITING: statusString = "waiting..."; break;
 					case State.STOPPED: statusString = "stopped"; break;
@@ -241,6 +239,7 @@ namespace KERBALISM
 		{
 			double elapsed = Kerbalism.elapsed_s;
 			double chunkSize = Math.Min(experiment.data_rate * elapsed, exp.baseValue * exp.dataScale);
+
 			var info = Science.Experiment(subject_id);
 			double massDelta = experiment.sample_mass * chunkSize / info.max_amount;
 
