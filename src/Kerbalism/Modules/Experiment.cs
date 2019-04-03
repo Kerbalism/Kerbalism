@@ -487,6 +487,14 @@ namespace KERBALISM
 		[KSPEvent(guiActiveUnfocused = true, guiActive = true, guiActiveEditor = true, guiName = "_", active = true)]
 		public void Toggle()
 		{
+			if(Lib.IsEditor())
+			{
+				recording = !recording;
+				deployAnimator.Play(!recording, false);
+				GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+				return;
+			}
+
 			if (state == State.WAITING)
 			{
 				forcedRun = true;
@@ -511,9 +519,6 @@ namespace KERBALISM
 
 			// play deploy animation if exist
 			deployAnimator.Play(!recording, false);
-
-			// refresh VAB/SPH ui
-			if (Lib.IsEditor()) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
 		}
 
 		// action groups

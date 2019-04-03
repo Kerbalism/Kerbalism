@@ -105,7 +105,7 @@ namespace KERBALISM
 			Dictionary<uint, Drive> result = new Dictionary<uint, Drive>();
 			foreach(var n in node.GetNodes("drive"))
 			{
-				uint partId = Lib.ConfigValue(n, "partId", (uint)0);
+				uint partId = Lib.ConfigValue(n, "hdId", (uint)0);
 				Drive drive = new Drive(n);
 				result.Add(partId, drive);
 			}
@@ -117,7 +117,7 @@ namespace KERBALISM
 			foreach (var pair in drives)
 			{
 				var n = node.AddNode("drive");
-				n.AddValue("partId", pair.Key);
+				n.AddValue("hdId", pair.Key);
 				pair.Value.Save(n);
 			}
 		}
@@ -131,13 +131,11 @@ namespace KERBALISM
 			return supplies[name];
 		}
 
-		public Drive DriveForPart(String name, Part part, double dataCapacity, int sampleCapacity)
+		public Drive DriveForPart(String name, uint hdId, double dataCapacity, int sampleCapacity)
 		{
-			var partId = Lib.GetPartId(part);
-
-			if(!drives.ContainsKey(partId))
-				drives.Add(partId, new Drive(name, dataCapacity, sampleCapacity));
-			return drives[partId];
+			if(!drives.ContainsKey(hdId))
+				drives.Add(hdId, new Drive(name, dataCapacity, sampleCapacity));
+			return drives[hdId];
 		}
 
 		public Drive BestDrive(double minDataCapacity = 0, int minSlots = 0)

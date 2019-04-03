@@ -13,6 +13,8 @@ namespace KERBALISM
 		[KSPField] public int sampleCapacity = 100;             // drive capacity, in slots
 		[KSPField] public string title = "Kerbodyne ZeroBit";   // drive name to be displayed in file manager
 
+		[KSPField(isPersistant = true)] public uint hdId = 0;
+
 		[KSPField(guiActive = true, guiName = "Capacity", guiActiveEditor = true)] public string Capacity;
 
 		private Drive drive;
@@ -23,12 +25,14 @@ namespace KERBALISM
 			// don't break tutorial scenarios
 			if (Lib.DisableScenario(this)) return;
 
+			if (hdId == 0) hdId = part.flightID;
+
 			if(drive == null)
 			{
 				if (Lib.IsEditor())
 					drive = new Drive(title, dataCapacity, sampleCapacity);
 				else
-					drive = DB.Vessel(vessel).DriveForPart(title, part, dataCapacity, sampleCapacity);
+					drive = DB.Vessel(vessel).DriveForPart(title, hdId, dataCapacity, sampleCapacity);
 			}
 
 			UpdateCapacity();
@@ -41,8 +45,14 @@ namespace KERBALISM
 			if(Lib.IsEditor())
 				drive = new Drive();
 			else
-				drive = DB.Vessel(vessel).DriveForPart(title, part, dataCapacity, sampleCapacity);
+				drive = DB.Vessel(vessel).DriveForPart(title, hdId, dataCapacity, sampleCapacity);
 
+			UpdateCapacity();
+		}
+
+		public void SetDrive(Drive drive)
+		{
+			this.drive = drive;
 			UpdateCapacity();
 		}
 
