@@ -47,8 +47,6 @@ namespace KERBALISM
 			_capacity = new Dictionary<Resource_location, double>();
 
 			vessel_wide_location = new Resource_location();
-			_cached_part_views = new Dictionary<Part, Resource_info_view>();
-			_cached_proto_part_views = new Dictionary<ProtoPartSnapshot, Resource_info_view>();
 			_vessel_wide_view = new Resource_info_view_impl((Part) null, resource_name, this);
 
 			// vessel-wide resources
@@ -172,28 +170,12 @@ namespace KERBALISM
 			public Resource_info_view_impl(Part p, string resource_name, Resource_info i)
 			{
 				info = i;
-				if (p != null && Lib.IsResourceImpossibleToFlow(resource_name))
-				{
-					location = new Resource_location(p);
-					if (!info._deferred.ContainsKey(location)) info.InitDicts(location);
-				}
-				else
-				{
-					location = info.vessel_wide_location;
-				}
+				location = info.vessel_wide_location;
 			}
 			public Resource_info_view_impl(ProtoPartSnapshot p, string resource_name, Resource_info i)
 			{
 				info = i;
-				if (p != null && Lib.IsResourceImpossibleToFlow(resource_name))
-				{
-					location = new Resource_location(p);
-					if (!info._deferred.ContainsKey(location)) info.InitDicts(location);
-				}
-				else
-				{
-					location = info.vessel_wide_location;
-				}
+				location = info.vessel_wide_location;
 			}
 
 			private Resource_location location;
@@ -231,34 +213,9 @@ namespace KERBALISM
 			_capacity[location] = 0.0;
 		}
 
-		/// <summary>Obtain a view on this resource for a given loaded part</summary>
-		/// <remarks>Passing a null part forces it vessel wide view</remarks>
-		public Resource_info_view GetResourceInfoView(Part p)
+		public Resource_info_view GetResourceInfoView()
 		{
-			if (p == null)
-			{
-				return _vessel_wide_view;
-			}
-			if (!_cached_part_views.ContainsKey(p))
-			{
-				_cached_part_views[p] = new Resource_info_view_impl(p, resource_name, this);
-			}
-			return _cached_part_views[p];
-		}
-
-		/// <summary>Obtain a view on this resource for a given unloaded part</summary>
-		/// <remarks>Passing a null part forces it vessel wide view</remarks>
-		public Resource_info_view GetResourceInfoView(ProtoPartSnapshot p)
-		{
-			if (p == null)
-			{
-				return _vessel_wide_view;
-			}
-			if (!_cached_proto_part_views.ContainsKey(p))
-			{
-				_cached_proto_part_views[p] = new Resource_info_view_impl(p, resource_name, this);
-			}
-			return _cached_proto_part_views[p];
+			return _vessel_wide_view;
 		}
 
 		/// <summary>record a deferred production for the vessel wide bookkeeping</summary>
@@ -626,8 +583,6 @@ namespace KERBALISM
 		private IDictionary<Resource_location, double> _capacity; // storage capacity of resource
 
 		private Resource_location vessel_wide_location; // to avoid constructing this object many times
-		private IDictionary<Part, Resource_info_view> _cached_part_views;
-		private IDictionary<ProtoPartSnapshot, Resource_info_view> _cached_proto_part_views;
 		private Resource_info_view _vessel_wide_view;
 	}
 
@@ -674,14 +629,7 @@ namespace KERBALISM
 
 		private Resource_info_view GetResourceInfoView(Vessel v, Vessel_resources resources, string resource_name)
 		{
-			if (loaded_part)
-			{
-				return resources.Info(v, resource_name).GetResourceInfoView(loaded_part);
-			}
-			else // note unloaded _part can also be null
-			{
-				return resources.Info(v, resource_name).GetResourceInfoView(unloaded_part);
-			}
+			return resources.Info(v, resource_name).GetResourceInfoView();
 		}
 
 		/// <summary>
@@ -1202,7 +1150,7 @@ namespace KERBALISM
 									// consume relative percent of this part
 									t.amount += va;
 
-									if (va == 0) stillNeed = false;
+									if (va < double.Epsilon) stillNeed = false;
 									else stillNeed = true;
 								}
 							}

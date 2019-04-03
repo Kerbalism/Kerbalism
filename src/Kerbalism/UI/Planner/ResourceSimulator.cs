@@ -248,39 +248,12 @@ namespace KERBALISM.Planner
 			}
 		}
 
-		/// <summary>process a rule for resources that can flow through the entire vessel</simulator>
-		private void Process_rule_vessel_wide(Rule r, EnvironmentAnalyzer env, VesselAnalyzer va)
+		/// <summary>determine if the resources involved are restricted to a part, and then process a rule</summary>
+		public void Process_rule(List<Part> parts, Rule r, EnvironmentAnalyzer env, VesselAnalyzer va)
 		{
 			// evaluate modifiers
 			double k = Modifiers.Evaluate(env, va, this, r.modifiers);
 			Process_rule_inner_body(k, null, r, env, va);
-		}
-
-		/// <summary>process a rule for a case where at least one resource cannot flow through the entire vessel</summary>
-		private void Process_rule_per_part(List<Part> parts, Rule r, EnvironmentAnalyzer env, VesselAnalyzer va)
-		{
-			foreach (Part p in parts)
-			{
-				// evaluate modifiers
-				double k = Modifiers.Evaluate(env, va, this, r.modifiers, p);
-				Process_rule_inner_body(k, p, r, env, va);
-			}
-		}
-
-		/// <summary>determine if the resources involved are restricted to a part, and then process a rule</summary>
-		public void Process_rule(List<Part> parts, Rule r, EnvironmentAnalyzer env, VesselAnalyzer va)
-		{
-			bool restricted = false;
-			// input/output of a rule may be empty string
-			if (!r.monitor && Lib.IsResourceImpossibleToFlow(r.input, true))
-				restricted = true;
-			if (Lib.IsResourceImpossibleToFlow(r.output, true))
-				restricted = true;
-
-			if (restricted)
-				Process_rule_per_part(parts, r, env, va);
-			else
-				Process_rule_vessel_wide(r, env, va);
 		}
 
 		/// <summary>process the process and add/remove the resources from the simulator</summary>
@@ -307,17 +280,6 @@ namespace KERBALISM.Planner
 			Process_process_inner_body(k, null, pr, env, va);
 		}
 
-		/// <summary>process the process and add/remove the resources from the simulator on a per part basis</summary>
-		private void Process_process_per_part(List<Part> parts, Process pr, EnvironmentAnalyzer env, VesselAnalyzer va)
-		{
-			foreach (Part p in parts)
-			{
-				// evaluate modifiers
-				double k = Modifiers.Evaluate(env, va, this, pr.modifiers, p);
-				Process_process_inner_body(k, p, pr, env, va);
-			}
-		}
-
 		/// <summary>
 		/// determine if the resources involved are restricted to a part, and then process
 		/// the process and add/remove the resources from the simulator
@@ -325,21 +287,7 @@ namespace KERBALISM.Planner
 		/// <remarks>while rules are usually input or output only, processes transform input to output</remarks>
 		public void Process_process(List<Part> parts, Process pr, EnvironmentAnalyzer env, VesselAnalyzer va)
 		{
-			bool restricted = false;
-			foreach (KeyValuePair<string, double> input in pr.inputs)
-			{
-				if (Lib.IsResourceImpossibleToFlow(input.Key))
-					restricted = true;
-			}
-			foreach (KeyValuePair<string, double> output in pr.outputs)
-			{
-				if (Lib.IsResourceImpossibleToFlow(output.Key))
-					restricted = true;
-			}
-			if (restricted)
-				Process_process_per_part(parts, pr, env, va);
-			else
-				Process_process_vessel_wide(pr, env, va);
+			Process_process_vessel_wide(pr, env, va);
 		}
 
 		void Process_greenhouse(Greenhouse g, EnvironmentAnalyzer env, VesselAnalyzer va)
