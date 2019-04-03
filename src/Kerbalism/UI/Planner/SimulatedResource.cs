@@ -18,7 +18,6 @@ namespace KERBALISM.Planner
 
 			vessel_wide_location = new Resource_location();
 			InitDicts(vessel_wide_location);
-			_cached_part_views = new Dictionary<Part, SimulatedResourceView>();
 			_vessel_wide_view = new Simulated_resource_view_impl(null, resource_name, this);
 
 			resource_name = name;
@@ -87,16 +86,7 @@ namespace KERBALISM.Planner
 			public Simulated_resource_view_impl(Part p, string resource_name, SimulatedResource i)
 			{
 				info = i;
-				if (p != null && Lib.IsResourceImpossibleToFlow(resource_name))
-				{
-					location = new Resource_location(p);
-					if (!info._capacity.ContainsKey(location))
-						info.InitDicts(location);
-				}
-				else
-				{
-					location = info.vessel_wide_location;
-				}
+				location = info.vessel_wide_location;
 			}
 
 			public override void AddPartResources(Part p)
@@ -146,18 +136,7 @@ namespace KERBALISM.Planner
 		/// <remarks>passing a null part forces it vessel wide view</remarks>
 		public SimulatedResourceView GetSimulatedResourceView(Part p)
 		{
-			if (p != null && Lib.IsResourceImpossibleToFlow(resource_name))
-			{
-				if (!_cached_part_views.ContainsKey(p))
-				{
-					_cached_part_views[p] = new Simulated_resource_view_impl(p, resource_name, this);
-				}
-				return _cached_part_views[p];
-			}
-			else
-			{
-				return _vessel_wide_view;
-			}
+			return _vessel_wide_view;
 		}
 
 		/// <summary>add resource information contained within part to vessel wide simulator</summary>
@@ -352,7 +331,6 @@ namespace KERBALISM.Planner
 		private IDictionary<string, Wrapper> consumers; // consumers metadata
 		private IDictionary<string, Wrapper> producers; // producers metadata
 		private Resource_location vessel_wide_location;
-		private IDictionary<Part, SimulatedResourceView> _cached_part_views;
 		private SimulatedResourceView _vessel_wide_view;
 	}
 
