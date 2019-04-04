@@ -48,7 +48,6 @@ namespace KERBALISM
 		private CrewSpecs reset_cs;
 		private CrewSpecs prepare_cs;
 
-		private ScienceExperiment exp;
 		private String situationIssue = String.Empty;
 		[KSPField(guiActive = false, guiName = "_")] private string ExperimentStatus = string.Empty;
 
@@ -107,12 +106,12 @@ namespace KERBALISM
 				reset_cs = new CrewSpecs(crew_reset);
 			if (!string.IsNullOrEmpty(crew_prepare))
 				prepare_cs = new CrewSpecs(crew_prepare);
-
-			exp = ResearchAndDevelopment.GetExperiment(experiment_id);
 		}
 
 		public void Update()
 		{
+			var exp = Science.Experiment(experiment_id);
+
 			// in flight
 			if (Lib.IsFlight())
 			{
@@ -125,12 +124,12 @@ namespace KERBALISM
 				// do nothing if vessel is invalid
 				if (!vi.is_valid) return;
 
-				var sampleSize = exp.baseValue * exp.dataScale;
+				var sampleSize = exp.max_amount;
 				var recordedPercent = Lib.HumanReadablePerc(dataSampled / sampleSize);
 				var eta = data_rate < double.Epsilon || dataSampled >= sampleSize ? " done" : " " + Lib.HumanReadableCountdown((sampleSize - dataSampled) / data_rate);
 
 				// update ui
-				var title = Lib.Ellipsis(exp.experimentTitle, Styles.ScaleStringLength(24));
+				var title = Lib.Ellipsis(exp.name, Styles.ScaleStringLength(24));
 
 				string statusString = string.Empty;
 				switch (state) {
@@ -140,18 +139,18 @@ namespace KERBALISM
 					case State.STOPPED: statusString = "stopped"; break;
 				}
 
-				Events["Toggle"].guiName = Lib.StatusToggle(exp.experimentTitle, statusString);
+				Events["Toggle"].guiName = Lib.StatusToggle(exp.name, statusString);
 				Events["Toggle"].active = (prepare_cs == null || didPrepare);
 
-				Events["Prepare"].guiName = Lib.BuildString("Prepare <b>", exp.experimentTitle, "</b>");
+				Events["Prepare"].guiName = Lib.BuildString("Prepare <b>", exp.name, "</b>");
 				Events["Prepare"].active = !didPrepare && prepare_cs != null && string.IsNullOrEmpty(last_subject_id);
 
-				Events["Reset"].guiName = Lib.BuildString("Reset <b>", exp.experimentTitle, "</b>");
+				Events["Reset"].guiName = Lib.BuildString("Reset <b>", exp.name, "</b>");
 				// we need a reset either if we have recorded data or did a setup
 				bool resetActive = sample_mass > float.Epsilon && (reset_cs != null || prepare_cs != null) && !string.IsNullOrEmpty(last_subject_id);
 				Events["Reset"].active = resetActive;
 
-				Fields["ExperimentStatus"].guiName = exp.experimentTitle;
+				Fields["ExperimentStatus"].guiName = exp.name;
 				Fields["ExperimentStatus"].guiActive = true;
 
 				if (issue.Length > 0)
@@ -189,7 +188,7 @@ namespace KERBALISM
 			else if (Lib.IsEditor())
 			{
 				// update ui
-				Events["Toggle"].guiName = Lib.StatusToggle(exp.experimentTitle, recording ? "recording" : "stopped");
+				Events["Toggle"].guiName = Lib.StatusToggle(exp.name, recording ? "recording" : "stopped");
 				Events["Reset"].active = false;
 				Events["Prepare"].active = false;
 			}
@@ -204,44 +203,47 @@ namespace KERBALISM
 			// get ec handler
 			Resource_info ec = ResourceCache.Info(vessel, "ElectricCharge");
 			shrouded = part.ShieldedFromAirstream;
-			string subject_id;
-			issue = TestForIssues(vessel, exp, ec, this, broken,
-				remainingSampleMass, didPrepare, shrouded, last_subject_id, out subject_id);
+			issue = TestForIssues(vessel, ec, this, broken,
+				remainingSampleMass, didPrepare, shrouded, last_subject_id);
 
+			if (!string.IsNullOrEmpty(issue))
+				return;
+
+			var subject_id = Science.Generate_subject_id(experiment_id, vessel);
 			if (last_subject_id != subject_id)
 			{
 				dataSampled = 0;
 				forcedRun = false;
 			}
 			last_subject_id = subject_id;
-			scienceValue = Science.Value(last_subject_id, exp.baseValue * exp.dataScale);
+			scienceValue = Science.Value(last_subject_id);
 			state = GetState();
 
 			if (state != State.RUNNING)
 				return;
 
-			// if experiment is active and there are no issues
-			if (dataSampled >= exp.baseValue * exp.dataScale)
+			var exp = Science.Experiment(experiment_id);
+			if (dataSampled >= exp.max_amount)
 				return;
 
+			// if experiment is active and there are no issues
 			DoRecord(ec, subject_id);
 		}
 
 		private void DoRecord(Resource_info ec, string subject_id)
 		{
-			var stored = DoRecord(vessel, this, ec, subject_id, exp, remainingSampleMass, dataSampled, out dataSampled, out remainingSampleMass);
+			var stored = DoRecord(this, subject_id, vessel, ec, remainingSampleMass, dataSampled, out dataSampled, out remainingSampleMass);
 			if (!stored) issue = "insufficient storage";
 		}
 
-		private static bool DoRecord(Vessel vessel, Experiment experiment, Resource_info ec,
-		                             string subject_id, ScienceExperiment exp, double remainingSampleMass, double dataSampled,
+		private static bool DoRecord(Experiment experiment, string subject_id, Vessel vessel, Resource_info ec,
+		                             double remainingSampleMass, double dataSampled,
 		                             out double sampledOut, out double remainingSampleMassOut)
 		{
+			var exp = Science.Experiment(subject_id);
 			double elapsed = Kerbalism.elapsed_s;
-			double chunkSize = Math.Min(experiment.data_rate * elapsed, exp.baseValue * exp.dataScale);
-
-			var info = Science.Experiment(subject_id);
-			double massDelta = experiment.sample_mass * chunkSize / info.max_amount;
+			double chunkSize = Math.Min(experiment.data_rate * elapsed, exp.max_amount);
+			double massDelta = experiment.sample_mass * chunkSize / exp.max_amount;
 
 			bool isSample = experiment.sample_mass < float.Epsilon;
 			var drive = isSample
@@ -269,7 +271,7 @@ namespace KERBALISM
 				// consume ec
 				ec.Consume(experiment.ec_rate * elapsed);
 				dataSampled += chunkSize;
-				dataSampled = Math.Min(dataSampled, exp.baseValue * exp.dataScale);
+				dataSampled = Math.Min(dataSampled, exp.max_amount);
 				sampledOut = dataSampled;
 				if (!experiment.sample_collecting)
 				{
@@ -287,7 +289,6 @@ namespace KERBALISM
 
 		public static void BackgroundUpdate(Vessel v, ProtoPartModuleSnapshot m, Experiment experiment, Resource_info ec, double elapsed_s)
 		{
-			var exp = ResearchAndDevelopment.GetExperiment(experiment.experiment_id);
 			bool didPrepare = Lib.Proto.GetBool(m, "didPrepare", false);
 			bool shrouded = Lib.Proto.GetBool(m, "shrouded", false);
 			string last_subject_id = Lib.Proto.GetString(m, "last_subject_id", "");
@@ -295,11 +296,15 @@ namespace KERBALISM
 			bool broken = Lib.Proto.GetBool(m, "broken", false);
 			bool forcedRun = Lib.Proto.GetBool(m, "forcedRun", false);
 			bool recording = Lib.Proto.GetBool(m, "recording", false);
-				
-			string subject_id;
-			string issue = TestForIssues(v, exp, ec, experiment, broken,
-				remainingSampleMass, didPrepare, shrouded, last_subject_id, out subject_id);
+
+			string issue = TestForIssues(v, ec, experiment, broken,
+				remainingSampleMass, didPrepare, shrouded, last_subject_id);
 			Lib.Proto.Set(m, "issue", issue);
+
+			if (!string.IsNullOrEmpty(issue))
+				return;
+
+			var subject_id = Science.Generate_subject_id(experiment.experiment_id, v);
 			Lib.Proto.Set(m, "last_subject_id", subject_id);
 
 			double dataSampled = Lib.Proto.GetDouble(m, "dataSampled");
@@ -310,16 +315,16 @@ namespace KERBALISM
 				Lib.Proto.Set(m, "forcedRun", false);
 			}
 
-			double scienceValue = Science.Value(last_subject_id, exp.baseValue * exp.dataScale);
+			double scienceValue = Science.Value(last_subject_id);
 			Lib.Proto.Set(m, "scienceValue", scienceValue);
 
 			var state = GetState(scienceValue, issue, recording, forcedRun);
 			if (state != State.RUNNING)
 				return;
-			if (dataSampled >= exp.baseValue * exp.dataScale)
+			if (dataSampled >= Science.Experiment(subject_id).max_amount)
 				return;
 
-			var stored = DoRecord(v, experiment, ec, subject_id, exp, remainingSampleMass, dataSampled, out dataSampled, out remainingSampleMass);
+			var stored = DoRecord(experiment, subject_id, v, ec, remainingSampleMass, dataSampled, out dataSampled, out remainingSampleMass);
 			if (!stored) Lib.Proto.Set(m, "issue", "insufficient storage");
 
 			Lib.Proto.Set(m, "dataSampled", dataSampled);
@@ -331,12 +336,10 @@ namespace KERBALISM
 			broken = breakdown;
 		}
 
-		private static string TestForIssues(Vessel v, ScienceExperiment exp, Resource_info ec, Experiment experiment, bool broken,
-			double remainingSampleMass, bool didPrepare, bool isShrouded, string last_subject_id, out string subject_id)
+		private static string TestForIssues(Vessel v, Resource_info ec, Experiment experiment, bool broken,
+			double remainingSampleMass, bool didPrepare, bool isShrouded, string last_subject_id)
 		{
-			var sit = ScienceUtil.GetExperimentSituation(v);
-			var biome = ScienceUtil.GetExperimentBiome(v.mainBody, v.latitude, v.longitude);
-			subject_id = Science.Generate_subject(exp, v.mainBody, sit, biome);
+			var subject_id = Science.Generate_subject_id(experiment.experiment_id, v);
 
 			if (broken)
 				return "broken";
@@ -349,7 +352,7 @@ namespace KERBALISM
 			if (needsReset) return "reset required";
 
 			if (ec.amount < double.Epsilon && experiment.ec_rate > double.Epsilon)
-				return "no <b>Electricity</b>";
+				return "no Electricity";
 			
 			if (!string.IsNullOrEmpty(experiment.crew_operate))
 			{
@@ -360,19 +363,17 @@ namespace KERBALISM
 			if (!experiment.sample_collecting && remainingSampleMass < double.Epsilon && experiment.sample_mass > double.Epsilon)
 				return "depleted";
 
-			string situationIssue = Science.TestRequirements(experiment.requires, v);
-			if (situationIssue.Length > 0)
-				return Science.RequirementText(situationIssue);
-			
-			if (!exp.IsAvailableWhile(sit, v.mainBody))
-				return "invalid situation";
-
 			if (!didPrepare && !string.IsNullOrEmpty(experiment.crew_prepare))
 				return "not prepared";
 
+			string situationIssue = Science.TestRequirements(experiment.experiment_id, experiment.requires, v);
+			if (situationIssue.Length > 0)
+				return Science.RequirementText(situationIssue);
+
 			var drive = DB.Vessel(v).BestDrive();
+			var experimentSize = Science.Experiment(subject_id).max_amount;
 			double available = experiment.sample_mass < float.Epsilon ? drive.FileCapacityAvailable() : drive.SampleCapacityAvailable();
-			if (Math.Min(experiment.data_rate * Kerbalism.elapsed_s, exp.baseValue * exp.dataScale) > available)
+			if (Math.Min(experiment.data_rate * Kerbalism.elapsed_s, experimentSize) > available)
 				return "insufficient storage";
 
 			return string.Empty;
@@ -403,10 +404,6 @@ namespace KERBALISM
 				);
 			}
 
-			// generate subject id
-			var sit = ScienceUtil.GetExperimentSituation(v);
-			var biome = ScienceUtil.GetExperimentBiome(vessel.mainBody, vessel.latitude, vessel.longitude);
-			last_subject_id = Science.Generate_subject(exp, vessel.mainBody, sit, biome);
 			didPrepare = true;
 
 			Message.Post(
@@ -498,7 +495,7 @@ namespace KERBALISM
 			if (!recording)
 			{
 				recording = !IsExperimentRunningOnVessel();
-				if(!recording) PostMultipleRunsMessage(exp.experimentTitle);
+				if(!recording) PostMultipleRunsMessage(Science.Experiment(experiment_id).name);
 			}
 			else
 				recording = false;
@@ -539,19 +536,18 @@ namespace KERBALISM
 		// specifics support
 		public Specifics Specs()
 		{
-			if(exp == null) exp = ResearchAndDevelopment.GetExperiment(experiment_id);
-
 			var specs = new Specifics();
-			specs.Add(Lib.BuildString("<b>", ResearchAndDevelopment.GetExperiment(experiment_id).experimentTitle, "</b>"));
 
+			var exp = Science.Experiment(experiment_id);
+			specs.Add(Lib.BuildString("<b>", exp.name, "</b>"));
 			if(!string.IsNullOrEmpty(experiment_desc))
 			{
 				specs.Add(Lib.BuildString("<i>", experiment_desc, "</i>"));
 			}
 			
-				specs.Add(string.Empty);
+			specs.Add(string.Empty);
 
-				double expSize = exp.baseValue * exp.dataScale;
+			double expSize = exp.max_amount;
 			if (sample_mass < float.Epsilon)
 			{
 				specs.Add("Data", Lib.HumanReadableDataSize(expSize));

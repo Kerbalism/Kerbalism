@@ -67,15 +67,17 @@ namespace KERBALISM
 					page.OnDiscardData(data);
 
 					// inform the user
+					var exp = Science.Experiment(data.subjectID);
 					Message.Post(
-						Lib.BuildString("<b>", Science.Experiment(data.subjectID).fullname, "</b> recorded"),
+						Lib.BuildString("<b>", exp.FullName(data.subjectID), "</b> recorded"),
 						!meta.is_rerunnable ? Localizer.Format("#KERBALISM_Science_inoperable") : string.Empty
 					);
 				}
 				else
 				{
+					var exp = Science.Experiment(data.subjectID);
 					Message.Post(
-						Lib.Color("red", Lib.BuildString(Science.Experiment(data.subjectID).fullname, " can not be stored")),
+						Lib.Color("red", Lib.BuildString(exp.FullName(data.subjectID), " can not be stored")),
 						"Not enough space on hard drive"
 					);
 				}
@@ -185,16 +187,18 @@ namespace KERBALISM
 				// dismiss the dialog and popups
 				Dismiss(data);
 
+				var exp = Science.Experiment(data.subjectID);
 				// inform the user
 				Message.Post(
-					Lib.BuildString("<b>", Science.Experiment(data.subjectID).fullname, "</b> recorded"),
+					Lib.BuildString("<b>", exp.FullName(data.subjectID), "</b> recorded"),
 					!meta.is_rerunnable ? Localizer.Format("#KERBALISM_Science_inoperable") : string.Empty
 				);
 			}
 			else
 			{
+				var exp = Science.Experiment(data.subjectID);
 				Message.Post(
-					Lib.Color("red", Lib.BuildString(Science.Experiment(data.subjectID).fullname, " can not be stored")),
+					Lib.Color("red", Lib.BuildString(exp.FullName(data.subjectID), " can not be stored")),
 					"Not enough space on hard drive"
 				);
 			}

@@ -160,12 +160,14 @@ namespace KERBALISM
 			foreach (var pair in drive.files)
 			{
 				File file = pair.Value;
-				data.Add(new ScienceData((float)file.size, 1.0f, 1.0f, pair.Key, Science.Experiment(pair.Key).fullname));
+				var exp = Science.Experiment(pair.Key);
+				data.Add(new ScienceData((float)file.size, 1.0f, 1.0f, pair.Key, exp.FullName(pair.Key)));
 			}
 			foreach (var pair in drive.samples)
 			{
 				Sample sample = pair.Value;
-				data.Add(new ScienceData((float)sample.size, 0.0f, 0.0f, pair.Key, Science.Experiment(pair.Key).fullname));
+				var exp = Science.Experiment(pair.Key);
+				data.Add(new ScienceData((float)sample.size, 0.0f, 0.0f, pair.Key, exp.FullName(pair.Key)));
 			}
 			return data.ToArray();
 		}
