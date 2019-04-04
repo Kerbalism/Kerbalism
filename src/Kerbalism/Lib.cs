@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Text;
 using UnityEngine;
 using CommNet;
+using KSP.Localization;
 
 namespace KERBALISM
 {
@@ -731,9 +732,9 @@ namespace KERBALISM
 
 		public static string HumanReadableSampleSize(int slots)
 		{
-			if (slots <= 0) return Lib.BuildString("no ", "bags");
+			if (slots <= 0) return Lib.BuildString("no ", Localizer.Format("#KERBALISM_Generic_SLOT"));
 
-			return Lib.BuildString(slots.ToString(), " ", slots > 1 ? "bags" : "bag");
+			return Lib.BuildString(slots.ToString(), " ", slots > 1 ? Localizer.Format("#KERBALISM_Generic_SLOTS") : Localizer.Format("#KERBALISM_Generic_SLOT"));
 		}
 
 		public static int SampleSizeToSlots(double size)
