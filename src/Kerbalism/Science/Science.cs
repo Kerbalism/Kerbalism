@@ -15,8 +15,6 @@ namespace KERBALISM
 		// pseudo-ctor
 		public static void Init()
 		{
-			experiments = new Dictionary<string, ExperimentInfo>();
-
 			// make the science dialog invisible, just once
 			if (Features.Science)
 			{
@@ -206,9 +204,6 @@ namespace KERBALISM
 		// return info about an experiment
 		public static ExperimentInfo Experiment(string subject_id)
 		{
-			if (ResearchAndDevelopment.Instance == null)
-				return null;
-
 			ExperimentInfo info;
 			if (!experiments.TryGetValue(subject_id, out info))
 			{
@@ -457,7 +452,7 @@ namespace KERBALISM
 		}
 
 		// experiment info cache
-		static Dictionary<string, ExperimentInfo> experiments;
+		static readonly Dictionary<string, ExperimentInfo> experiments = new Dictionary<string, ExperimentInfo>();
 		readonly static Dictionary<string, double> sampleMasses = new Dictionary<string, double>();
 
 	}
