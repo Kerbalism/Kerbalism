@@ -265,8 +265,8 @@ namespace KERBALISM
 		public Specifics Specs()
 		{
 			Specifics specs = new Specifics();
-			specs.Add("File capacity", dataCapacity > 0 ? Lib.HumanReadableDataSize(dataCapacity) : "unlimited");
-			specs.Add("Sample capacity", sampleCapacity > 0 ? Lib.HumanReadableSampleSize(sampleCapacity) : "unlimited");
+			specs.Add("File capacity", dataCapacity >= 0 ? Lib.HumanReadableDataSize(dataCapacity) : "unlimited");
+			specs.Add("Sample capacity", sampleCapacity >= 0 ? Lib.HumanReadableSampleSize(sampleCapacity) : "unlimited");
 			return specs;
 		}
 

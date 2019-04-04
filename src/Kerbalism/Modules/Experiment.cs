@@ -245,13 +245,11 @@ namespace KERBALISM
 			double chunkSize = Math.Min(experiment.data_rate * elapsed, exp.max_amount);
 			double massDelta = experiment.sample_mass * chunkSize / exp.max_amount;
 
-			bool isSample = experiment.sample_mass < float.Epsilon;
-			var drive = isSample
-					   ? DB.Vessel(vessel).BestDrive(chunkSize, 0)
-					   : DB.Vessel(vessel).BestDrive(0, Lib.SampleSizeToSlots(chunkSize));
+			bool isFile = experiment.sample_mass < float.Epsilon;
+			var drive = isFile ? DB.Vessel(vessel).FileDrive(chunkSize) : DB.Vessel(vessel).SampleDrive(chunkSize, subject_id);
 
 			// on high time warp this chunk size could be too big, but we could store a sizable amount if we process less
-			double maxCapacity = isSample ? drive.FileCapacityAvailable() : drive.SampleCapacityAvailable(subject_id);
+			double maxCapacity = isFile ? drive.FileCapacityAvailable() : drive.SampleCapacityAvailable(subject_id);
 			if (maxCapacity < chunkSize)
 			{
 				double factor = maxCapacity / chunkSize;
@@ -261,7 +259,7 @@ namespace KERBALISM
 			}
 
 			bool stored = false;
-			if (experiment.sample_mass < float.Epsilon)
+			if (isFile)
 				stored = drive.Record_file(subject_id, chunkSize, true, true);
 			else
 				stored = drive.Record_sample(subject_id, chunkSize, massDelta);
@@ -370,7 +368,8 @@ namespace KERBALISM
 			if (situationIssue.Length > 0)
 				return Science.RequirementText(situationIssue);
 
-			var drive = DB.Vessel(v).BestDrive();
+			var isFile = experiment.sample_mass < double.Epsilon;
+			var drive = isFile ? DB.Vessel(v).FileDrive() : DB.Vessel(v).SampleDrive(0, subject_id);
 			var experimentSize = Science.Experiment(subject_id).max_amount;
 			double available = experiment.sample_mass < float.Epsilon ? drive.FileCapacityAvailable() : drive.SampleCapacityAvailable();
 			if (Math.Min(experiment.data_rate * Kerbalism.elapsed_s, experimentSize) > available)

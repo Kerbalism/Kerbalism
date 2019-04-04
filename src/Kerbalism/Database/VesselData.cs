@@ -138,7 +138,7 @@ namespace KERBALISM
 			return drives[hdId];
 		}
 
-		public Drive BestDrive(double minDataCapacity = 0, int minSlots = 0)
+		public Drive FileDrive(double size = 0)
 		{
 			Drive result = null;
 			foreach(var drive in drives.Values)
@@ -149,17 +149,37 @@ namespace KERBALISM
 					continue;
 				}
 
-				if (minDataCapacity > double.Epsilon && drive.FileCapacityAvailable() < minDataCapacity)
+				if (size > double.Epsilon && drive.FileCapacityAvailable() < size)
 					continue;
-				if (minSlots > 0 && drive.SampleCapacityAvailable() < minSlots)
-					continue;
-
-				if (minDataCapacity > double.Epsilon && drive.FileCapacityAvailable() > result.FileCapacityAvailable())
-					result = drive;
-				if (minSlots > 0 && drive.SampleCapacityAvailable() > result.SampleCapacityAvailable())
+				if (drive.FileCapacityAvailable() > result.FileCapacityAvailable())
 					result = drive;
 			}
 			if(result == null)
+			{
+				// vessel has no drive.
+				return new Drive("Broken", 0, 0);
+			}
+			return result;
+		}
+
+		public Drive SampleDrive(double size = 0, string filename = "")
+		{
+			Drive result = null;
+			foreach (var drive in drives.Values)
+			{
+				if (result == null)
+				{
+					result = drive;
+					continue;
+				}
+
+				double available = drive.SampleCapacityAvailable(filename);
+				if (size > double.Epsilon && available < size)
+					continue;
+				if (available > result.SampleCapacityAvailable(filename))
+					result = drive;
+			}
+			if (result == null)
 			{
 				// vessel has no drive.
 				return new Drive("Broken", 0, 0);

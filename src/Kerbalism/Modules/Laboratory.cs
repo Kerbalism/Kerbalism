@@ -69,7 +69,7 @@ namespace KERBALISM
 			if (hardDrive != null) drive = hardDrive.GetDrive();
 			else
 			{
-				drive = DB.Vessel(vessel).BestDrive();
+				drive = DB.Vessel(vessel).FileDrive();
 			}
 		}
 
@@ -265,7 +265,7 @@ namespace KERBALISM
 				break;
 			}
 
-			var drive = DB.Vessel(v).BestDrive(amount);
+			var drive = DB.Vessel(v).FileDrive(amount);
 
 			bool completed = sample == null;
 			if(sample != null)

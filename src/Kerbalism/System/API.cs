@@ -249,14 +249,14 @@ namespace KERBALISM
 		public static bool StoreFile(Vessel v, string subject_id, double amount)
 		{
 			if (!Cache.VesselInfo(v).is_valid) return false;
-			return DB.Vessel(v).BestDrive(amount).Record_file(subject_id, amount);
+			return DB.Vessel(v).FileDrive(amount).Record_file(subject_id, amount);
 		}
 
 		// store a sample on a vessel
 		public static bool StoreSample(Vessel v, string subject_id, double amount, double mass = 0)
 		{
 			if (!Cache.VesselInfo(v).is_valid) return false;
-			return DB.Vessel(v).BestDrive(Lib.SampleSizeToSlots(amount)).Record_sample(subject_id, amount, mass);
+			return DB.Vessel(v).SampleDrive(amount, subject_id).Record_sample(subject_id, amount, mass);
 		}
 
 		// remove a file from a vessel

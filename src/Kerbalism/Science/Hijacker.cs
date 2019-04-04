@@ -41,12 +41,12 @@ namespace KERBALISM
 				bool recorded = false;
 				if (!meta.is_sample)
 				{
-					Drive drive = DB.Vessel(meta.vessel).BestDrive(data.dataAmount);
+					Drive drive = DB.Vessel(meta.vessel).FileDrive(data.dataAmount);
 					recorded = drive.Record_file(data.subjectID, data.dataAmount);
 				}
 				else
 				{
-					Drive drive = DB.Vessel(meta.vessel).BestDrive(Lib.SampleSizeToSlots(data.dataAmount));
+					Drive drive = DB.Vessel(meta.vessel).SampleDrive(data.dataAmount, data.subjectID);
 
 					var experimentInfo = Science.Experiment(data.subjectID);
 					var sampleMass = Science.GetSampleMass(data.subjectID);
@@ -158,12 +158,12 @@ namespace KERBALISM
 			bool recorded = false;
 			if (!meta.is_sample)
 			{
-				Drive drive = DB.Vessel(meta.vessel).BestDrive(data.dataAmount);
+				Drive drive = DB.Vessel(meta.vessel).FileDrive(data.dataAmount);
 				recorded = drive.Record_file(data.subjectID, data.dataAmount);
 			}
 			else
 			{
-				Drive drive = DB.Vessel(meta.vessel).BestDrive(Lib.SampleSizeToSlots(data.dataAmount));
+				Drive drive = DB.Vessel(meta.vessel).SampleDrive(data.dataAmount, data.subjectID);
 
 				var experimentInfo = Science.Experiment(data.subjectID);
 				var sampleMass = Science.GetSampleMass(data.subjectID);
