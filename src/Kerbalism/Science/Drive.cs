@@ -220,7 +220,7 @@ namespace KERBALISM
 		}
 
 		// move all data to another drive
-		public bool Move(Drive destination, bool moveSamples = false)
+		public bool Move(Drive destination, bool moveSamples = true)
 		{
 			bool result = true;
 
@@ -311,7 +311,7 @@ namespace KERBALISM
 		}
 
 		// transfer data between two vessels
-		public static void Transfer(Vessel src, Vessel dst, bool samples = false)
+		public static void Transfer(Vessel src, Vessel dst, bool samples = true)
 		{
 			double dataAmount = 0.0;
 			int sampleSlots = 0;

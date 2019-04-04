@@ -157,7 +157,7 @@ namespace KERBALISM
 			if (v == null || EVA.IsDead(v)) return;
 
 			// transfer data
-			Drive.Transfer(vessel, v, v.isEVA);
+			Drive.Transfer(vessel, v/*, v.isEVA*/);
 		}
 
 
@@ -169,7 +169,7 @@ namespace KERBALISM
 			if (v == null || EVA.IsDead(v)) return;
 
 			// transfer data
-			Drive.Transfer(v, vessel, v.isEVA);
+			Drive.Transfer(v, vessel/*, v.isEVA*/);
 		}
 
 
