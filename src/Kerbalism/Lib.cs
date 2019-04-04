@@ -936,18 +936,26 @@ namespace KERBALISM
 		public static UInt64 VesselID( Vessel v )
 		{
 			// Lesson learned: v.persistendId is not unique. Far from it, in fact.
-			byte[] b = v.id.ToByteArray();
-			UInt64 result = BitConverter.ToUInt64(b, 0);
-			result ^= BitConverter.ToUInt64(b, 8);
-			return result;
+
+			// neither is this ----vvv (see https://github.com/steamp0rt/Kerbalism/issues/370)
+			//byte[] b = v.id.ToByteArray();
+			//UInt64 result = BitConverter.ToUInt64(b, 0);
+			//result ^= BitConverter.ToUInt64(b, 8);
+			//return result;
+			// --------------------^^^
+
+			// maybe this?
+			return RootID(v);
 		}
 
 		public static UInt64 VesselID( ProtoVessel pv )
 		{
-			byte[] b = pv.vesselID.ToByteArray();
-			UInt64 result = BitConverter.ToUInt64(b, 0);
-			result ^= BitConverter.ToUInt64(b, 8);
-			return result;
+			// nope
+			//byte[] b = pv.vesselID.ToByteArray();
+			//UInt64 result = BitConverter.ToUInt64(b, 0);
+			//result ^= BitConverter.ToUInt64(b, 8);
+			//return result;
+			return pv.protoPartSnapshots[pv.rootIndex].flightID;
 		}
 
 		// return the flight id of the root part of a vessel
