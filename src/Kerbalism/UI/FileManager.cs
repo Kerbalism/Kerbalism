@@ -40,12 +40,9 @@ namespace KERBALISM
 			{
 				var drive = idDrivePair.Value;
 
-				var skipDrive = drive.files.Count == 0 && drives.Count > 1;
-				var driveHasCapacity = drive.dataCapacity > double.Epsilon || drive.dataCapacity < 0;
-
-				if(!skipDrive && driveHasCapacity)
+				// draw data section
+				if (drive.dataCapacity > double.Epsilon || drive.files.Count > 0)
 				{
-					// draw data section
 					var title = "DATA " + drive.name;
 					title += ", " + Lib.HumanReadableDataSize(drive.FilesSize());
 					if (drive.dataCapacity > 0)
@@ -61,10 +58,7 @@ namespace KERBALISM
 					if (drive.files.Count == 0) p.AddContent("<i>no files</i>", string.Empty);
 				}
 
-				skipDrive = drive.samples.Count == 0 && drives.Count > 1;
-				driveHasCapacity = drive.sampleCapacity != 0;
-
-				if (!skipDrive && driveHasCapacity)
+				if (drive.sampleCapacity > 0 || drive.samples.Count > 0)
 				{
 					double mass = 0;
 					foreach (var sample in drive.samples.Values) mass += sample.mass;
