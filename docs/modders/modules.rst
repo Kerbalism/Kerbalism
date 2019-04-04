@@ -274,6 +274,10 @@ The part has an interface to access the vessel hard drive, where the science dat
 +----------------+------------------------------------------------------------+---------+
 | title          | Name displayed in file manager                             |         |
 +----------------+------------------------------------------------------------+---------+
+| experiment_id  | If set, restricts write access to the experiment with that |         |
+|                | id ON THE SAME PART with the given experiment_id.          |         |
++----------------+------------------------------------------------------------+---------+
+
 
 -------
 

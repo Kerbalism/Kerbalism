@@ -43,6 +43,7 @@ namespace KERBALISM
 			}
 
 			name = Lib.ConfigValue(node, "name", "DRIVE");
+			is_private = Lib.ConfigValue(node, "is_private", false);
 
 			// parse capacities. be generous with default values for backwards
 			// compatibility (drives had unlimited storage before this)
@@ -74,6 +75,7 @@ namespace KERBALISM
 			}
 
 			node.AddValue("name", name);
+			node.AddValue("is_private", is_private);
 			node.AddValue("dataCapacity", dataCapacity);
 			node.AddValue("sampleCapacity", sampleCapacity);
 
@@ -363,6 +365,7 @@ namespace KERBALISM
 		public double dataCapacity;
 		public int sampleCapacity;
 		public string name = String.Empty;
+		public bool is_private = false;
 	}
 
 

@@ -143,6 +143,9 @@ namespace KERBALISM
 			Drive result = null;
 			foreach(var drive in drives.Values)
 			{
+				if (drive.is_private)
+					continue;
+				
 				if (result == null)
 				{
 					result = drive;
@@ -167,6 +170,9 @@ namespace KERBALISM
 			Drive result = null;
 			foreach (var drive in drives.Values)
 			{
+				if (drive.is_private)
+					continue;
+
 				if (result == null)
 				{
 					result = drive;

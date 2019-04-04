@@ -12,6 +12,7 @@ namespace KERBALISM
 		[KSPField] public double dataCapacity = -1;             // drive capacity, in Mb. -1 = unlimited
 		[KSPField] public int sampleCapacity = -1;              // drive capacity, in slots. -1 = unlimited
 		[KSPField] public string title = "Kerbodyne ZeroBit";   // drive name to be displayed in file manager
+		[KSPField] public string experiment_id = string.Empty;  // if set, restricts write access to the experiment on the same part, with the given experiment_id.
 
 		[KSPField(isPersistant = true)] public uint hdId = 0;
 
@@ -53,12 +54,14 @@ namespace KERBALISM
 			else
 				drive = DB.Vessel(vessel).DriveForPart(title, hdId, dataCapacity, sampleCapacity);
 
+			drive.is_private = experiment_id.Length > 0;
 			UpdateCapacity();
 		}
 
 		public void SetDrive(Drive drive)
 		{
 			this.drive = drive;
+			drive.is_private = experiment_id.Length > 0;
 			UpdateCapacity();
 		}
 
@@ -80,7 +83,9 @@ namespace KERBALISM
 				Events["StoreData"].active = v != null && v.isEVA && !EVA.IsDead(v) && drive.FilesSize() > double.Epsilon;
 
 				// hide TransferLocation button
-				Events["TransferData"].active = true;
+				var isPrivate = experiment_id.Length > 0;
+				Events["TransferData"].active = !isPrivate;
+				Events["TransferData"].guiActive = !isPrivate;
 			}
 		}
 
@@ -132,7 +137,7 @@ namespace KERBALISM
 		}
 
 
-		[KSPEvent(guiActive = true, guiName = "#KERBALISM_HardDrive_TransferData", active = false)]
+		[KSPEvent(guiName = "#KERBALISM_HardDrive_TransferData", active = false)]
 		public void TransferData()
 		{
 			var hardDrives = vessel.FindPartModulesImplementing<HardDrive>();

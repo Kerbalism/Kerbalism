@@ -39,6 +39,8 @@ namespace KERBALISM
 		[KSPField(isPersistant = true)] public bool broken = false;
 		[KSPField(isPersistant = true)] public double scienceValue = 0;
 		[KSPField(isPersistant = true)] public bool forcedRun = false;
+		[KSPField(isPersistant = true)] public uint privateHdId = 0;
+
 
 		private State state = State.STOPPED;
 		// animations
@@ -106,6 +108,11 @@ namespace KERBALISM
 				reset_cs = new CrewSpecs(crew_reset);
 			if (!string.IsNullOrEmpty(crew_prepare))
 				prepare_cs = new CrewSpecs(crew_prepare);
+
+			foreach(var hd in part.FindModulesImplementing<HardDrive>())
+			{
+				if (hd.experiment_id == experiment_id) privateHdId = part.flightID;
+			}
 		}
 
 		public void Update()
@@ -232,11 +239,11 @@ namespace KERBALISM
 
 		private void DoRecord(Resource_info ec, string subject_id)
 		{
-			var stored = DoRecord(this, subject_id, vessel, ec, remainingSampleMass, dataSampled, out dataSampled, out remainingSampleMass);
+			var stored = DoRecord(this, subject_id, vessel, ec, privateHdId, remainingSampleMass, dataSampled, out dataSampled, out remainingSampleMass);
 			if (!stored) issue = "insufficient storage";
 		}
 
-		private static bool DoRecord(Experiment experiment, string subject_id, Vessel vessel, Resource_info ec,
+		private static bool DoRecord(Experiment experiment, string subject_id, Vessel vessel, Resource_info ec, uint hdId,
 		                             double remainingSampleMass, double dataSampled,
 		                             out double sampledOut, out double remainingSampleMassOut)
 		{
@@ -246,7 +253,10 @@ namespace KERBALISM
 			double massDelta = experiment.sample_mass * chunkSize / exp.max_amount;
 
 			bool isFile = experiment.sample_mass < float.Epsilon;
-			var drive = isFile ? DB.Vessel(vessel).FileDrive(chunkSize) : DB.Vessel(vessel).SampleDrive(chunkSize, subject_id);
+			Drive drive = null;
+			var vd = DB.Vessel(vessel);
+			if (hdId != 0 && vd.drives.ContainsKey(hdId)) drive = vd.drives[hdId];
+			else drive = isFile ? DB.Vessel(vessel).FileDrive(chunkSize) : DB.Vessel(vessel).SampleDrive(chunkSize, subject_id);
 
 			// on high time warp this chunk size could be too big, but we could store a sizable amount if we process less
 			double maxCapacity = isFile ? drive.FileCapacityAvailable() : drive.SampleCapacityAvailable(subject_id);
@@ -322,7 +332,8 @@ namespace KERBALISM
 			if (dataSampled >= Science.Experiment(subject_id).max_amount)
 				return;
 
-			var stored = DoRecord(experiment, subject_id, v, ec, remainingSampleMass, dataSampled, out dataSampled, out remainingSampleMass);
+			uint privateHdId = Lib.Proto.GetUInt(m, "privateHdId", 0);
+			var stored = DoRecord(experiment, subject_id, v, ec, privateHdId, remainingSampleMass, dataSampled, out dataSampled, out remainingSampleMass);
 			if (!stored) Lib.Proto.Set(m, "issue", "insufficient storage");
 
 			Lib.Proto.Set(m, "dataSampled", dataSampled);
