@@ -1744,15 +1744,6 @@ namespace KERBALISM
 			);
 		}
 
-		public static UInt32 GetPartId(Part part)
-		{
-			return part.flightID ^ part.persistentId;
-		}
-
-		public static UInt32 GetPartId(ProtoPartSnapshot part)
-		{
-			return part.flightID ^ part.persistentId;
-		}
 		// --- PROTO ----------------------------------------------------------------
 
 		public static class Proto

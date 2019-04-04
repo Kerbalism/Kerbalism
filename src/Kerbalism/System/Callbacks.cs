@@ -20,8 +20,8 @@ namespace KERBALISM
 			GameEvents.onVesselRecovered.Add(this.VesselRecovered);
 			GameEvents.onVesselTerminated.Add(this.VesselTerminated);
 			GameEvents.onVesselWillDestroy.Add(this.VesselDestroyed);
-			GameEvents.onVesselPartCountChanged.Add(this.VesselPartCountChanged);
 			GameEvents.onPartCouple.Add(this.VesselDock);
+			GameEvents.onVesselPartCountChanged.Add(this.VesselPartCountChanged);
 			GameEvents.onPartDie.Add(this.PartDestroyed);
 			GameEvents.OnTechnologyResearched.Add(this.TechResearched);
 			GameEvents.onGUIEditorToolbarReady.Add(this.AddEditorCategory);
@@ -328,7 +328,8 @@ namespace KERBALISM
 			//  and ready to be implicitly activated again on undocking
 			//  we do however tweak the data of the vessel being docked a bit,
 			//  to avoid states getting out of sync, leading to unintuitive behaviours
-			VesselData vd = DB.Vessel(e.from.vessel);
+			var fromVessel = e.from.vessel;
+			VesselData vd = DB.Vessel(fromVessel);
 			vd.msg_belt = false;
 			vd.msg_signal = false;
 			vd.storm_age = 0.0;
@@ -337,68 +338,74 @@ namespace KERBALISM
 			vd.supplies.Clear();
 			vd.scansat_id.Clear();
 
-			// merge drives data
-			Drive.Transfer(e.from.vessel, e.to.vessel);
 		}
 
-
-		void VesselPartCountChanged(Vessel vessel)
+		void VesselPartCountChanged(Vessel myVessel)
 		{
-			//Cache.Purge(vessel);
-			/* This was the old VesselModified callback.
-			 * Maybe it's no longer needed. We'll see.		
-			DB.vessels.Remove(vessel);
+			if (Lib.IsEditor()) return;
+			if (string.IsNullOrEmpty(myVessel.vesselName)) return;
 
+			MoveDrivesWhereTheyBelong(myVessel);
+		}
+
+		private static void MoveDrivesWhereTheyBelong(Vessel myVessel)
+		{
+			// Let's see if any of the nearby vessels has a drive that should be mine
+
+			var allDrives = new Dictionary<uint, Drive>();
+
+			foreach(var vessel in FlightGlobals.VesselsLoaded)
+			{
+				if (!Cache.VesselInfo(vessel).is_valid) continue;
+
+				var drives = DB.Vessel(vessel).drives;
+				foreach (var pair in drives)
+					allDrives.Add(pair.Key, pair.Value);
+				drives.Clear();
+			}
+
+			var vesselList = new List<Vessel>(FlightGlobals.VesselsLoaded);
+			vesselList.Remove(myVessel);
+			vesselList.Insert(0, myVessel);
+
+			foreach (var vessel in vesselList)
+			{
+				if (!Cache.VesselInfo(vessel).is_valid) continue;
+
+				var drives = DB.Vessel(vessel).drives;
+				foreach(var hardDrive in vessel.FindPartModulesImplementing<HardDrive>())
+				{
+					if (allDrives.ContainsKey(hardDrive.hdId))
+					{
+						hardDrive.SetDrive(allDrives[hardDrive.hdId]);
+						drives.Add(hardDrive.hdId, allDrives[hardDrive.hdId]);
+						allDrives.Remove(hardDrive.hdId);
+					}
+				}
+			}
+		}
+
+		void PartDestroyed(Part p)
+		{
 			// do nothing in the editor
 			if (Lib.IsEditor())
 				return;
 
-			// bah
-			if (string.IsNullOrEmpty(vessel.vesselName))
+			var vi = Cache.VesselInfo(p.vessel);
+			if (!vi.is_valid)
 				return;
 
-			// did we gain or loose a hard drive?
-			vessel
-
-			// get drive from first vessel
-			// - there is a possibility this will create it
-			// - we avoid adding a db entry for invalid vessels
-			Drive drive_a = Cache.VesselInfo(vessel_a).is_valid ? DB.Vessel(vessel_a).drive : new Drive();
-
-			// for each loaded vessel
-			foreach (Vessel vessel_b in FlightGlobals.VesselsLoaded)
+			// did a drive explode?
+			var drives = DB.Vessel(p.vessel).drives;
+			foreach(var hd in p.FindModulesImplementing<HardDrive>())
 			{
-				// do not check against itself
-				if (vessel_a.id == vessel_b.id)
-					continue;
-
-				// get drive of the other vessel
-				// - there is a possibility this will create it
-				// - we avoid adding a db entry for invalid vessels
-				Drive drive_b = Cache.VesselInfo(vessel_b).is_valid ? DB.Vessel(vessel_b).drive : new Drive();
-
-				// if location of A is now in B, or viceversa
-				// - this support the case when one or both the drives locations are 0
-				if (vessel_a.parts.Find(k => k.flightID == drive_b.location) != null
-				 || vessel_b.parts.Find(k => k.flightID == drive_a.location) != null)
-				{
-					// swap the drives
-					Lib.Swap(ref DB.Vessel(vessel_a).drive, ref DB.Vessel(vessel_b).drive);
-
-					// done, no need to go through the rest of the loaded vessels
-					break;
-				}
+				if (drives.ContainsKey(hd.hdId))
+					drives.Remove(hd.hdId);
 			}
-			*/
-		}
 
-
-		void PartDestroyed(Part p)
-		{
-			// forget all potential vessel data
+			// if the part was a root part, that vessel is now gone
 			DB.vessels.Remove(p.flightID);
 		}
-
 
 		void AddEditorCategory()
 		{

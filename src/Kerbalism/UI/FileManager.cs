@@ -35,15 +35,23 @@ namespace KERBALISM
  			// time-out simulation
 			if (p.Timeout(vi)) return;
 
-			foreach (var idDrivePair in DB.Vessel(v).drives)
+			var drives = DB.Vessel(v).drives;
+			foreach (var idDrivePair in drives)
 			{
 				var drive = idDrivePair.Value;
 
-				if (drive.dataCapacity > double.Epsilon)
+				var skipDrive = drive.files.Count == 0 && drives.Count > 1;
+				var driveHasCapacity = drive.dataCapacity > double.Epsilon || drive.dataCapacity < 0;
+
+				if(!skipDrive && driveHasCapacity)
 				{
 					// draw data section
-					p.AddSection(Lib.BuildString("DATA ", drive.name, " ", Lib.HumanReadableDataSize(drive.dataCapacity),
-												 " (", Lib.HumanReadablePerc(drive.FilesSize() / drive.dataCapacity), ")"));
+					var title = "DATA " + drive.name;
+					title += ", " + Lib.HumanReadableDataSize(drive.FilesSize());
+					if (drive.dataCapacity > 0)
+						title += Lib.BuildString(" (", Lib.HumanReadablePerc(drive.FilesSize() / drive.dataCapacity), ")");
+					p.AddSection(title);
+
 					foreach (var pair in drive.files)
 					{
 						string filename = pair.Key;
@@ -53,16 +61,20 @@ namespace KERBALISM
 					if (drive.files.Count == 0) p.AddContent("<i>no files</i>", string.Empty);
 				}
 
-				if (drive.sampleCapacity > 0)
+				skipDrive = drive.samples.Count == 0 && drives.Count > 1;
+				driveHasCapacity = drive.sampleCapacity != 0;
+
+				if (!skipDrive && driveHasCapacity)
 				{
 					double mass = 0;
 					foreach (var sample in drive.samples.Values) mass += sample.mass;
 
-					// draw samples section
-					p.AddSection(Lib.BuildString("SAMPLES ", drive.name, " ",
-												 Lib.HumanReadableSampleSize(drive.sampleCapacity),
-					                             " (", Lib.HumanReadablePerc((double)(drive.SamplesSize()) / (double)(drive.sampleCapacity)), ") ",
-												 Lib.HumanReadableMass(mass)));
+					var title = "SAMPLES " + drive.name;
+					title += ", " + Lib.HumanReadableSampleSize(mass);
+					if (drive.sampleCapacity > 0)
+						title += Lib.BuildString(" (", Lib.HumanReadablePerc((double)(drive.SamplesSize()) / (double)(drive.sampleCapacity)), ") ");
+					p.AddSection(title);
+
 					foreach (var pair in drive.samples)
 					{
 						string filename = pair.Key;
