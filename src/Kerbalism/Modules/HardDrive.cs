@@ -9,8 +9,8 @@ namespace KERBALISM
 
 	public sealed class HardDrive : PartModule, IScienceDataContainer, ISpecifics, IModuleInfo, IPartMassModifier
 	{
-		[KSPField] public double dataCapacity = 102400.0;       // drive capacity, in Mb
-		[KSPField] public int sampleCapacity = 100;             // drive capacity, in slots
+		[KSPField] public double dataCapacity = -1;             // drive capacity, in Mb. -1 = unlimited
+		[KSPField] public int sampleCapacity = -1;              // drive capacity, in slots. -1 = unlimited
 		[KSPField] public string title = "Kerbodyne ZeroBit";   // drive name to be displayed in file manager
 
 		[KSPField(isPersistant = true)] public uint hdId = 0;
@@ -80,11 +80,19 @@ namespace KERBALISM
 
 		private void UpdateCapacity()
 		{
+			if (dataCapacity < 0 || sampleCapacity < 0)
+			{
+				Fields["Capacity"].guiActive = false;
+				Fields["Capacity"].guiActiveEditor = false;
+				return;
+			}
+
 			totalSampleMass = 0;
 			foreach (var sample in drive.samples.Values) totalSampleMass += sample.mass;
 
 			double availableDataCapacity = dataCapacity;
 			int availableSlots = sampleCapacity;
+
 			if (Lib.IsFlight())
 			{
 				availableDataCapacity = drive.FileCapacityAvailable();
@@ -164,7 +172,6 @@ namespace KERBALISM
 		// science container implementation
 		public ScienceData[] GetData()
 		{
-			Lib.Log("SCI GetData called " );
 			// generate and return stock science data
 			List<ScienceData> data = new List<ScienceData>();
 			foreach (var pair in drive.files)
@@ -184,8 +191,6 @@ namespace KERBALISM
 		// EVAs returning should get a warning if needed
 		public void ReturnData(ScienceData data)
 		{
-			Lib.Log("SCI ReturnData called " + data.subjectID);
-
 			// store the data
 			bool result = false;
 			if (data.baseTransmitValue > float.Epsilon || data.transmitBonus > double.Epsilon)
@@ -204,7 +209,6 @@ namespace KERBALISM
 
 		public void DumpData(ScienceData data)
 		{
-			Lib.Log("SCI DumpData called " + data.subjectID);
 			// remove the data
 			if (data.baseTransmitValue > float.Epsilon || data.transmitBonus > double.Epsilon)
 			{
@@ -253,8 +257,8 @@ namespace KERBALISM
 		public Specifics Specs()
 		{
 			Specifics specs = new Specifics();
-			specs.Add("File capacity", Lib.HumanReadableDataSize(dataCapacity));
-			specs.Add("Sample capacity", Lib.HumanReadableSampleSize(sampleCapacity));
+			specs.Add("File capacity", dataCapacity > 0 ? Lib.HumanReadableDataSize(dataCapacity) : "unlimited");
+			specs.Add("Sample capacity", sampleCapacity > 0 ? Lib.HumanReadableSampleSize(sampleCapacity) : "unlimited");
 			return specs;
 		}
 
