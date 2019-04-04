@@ -42,7 +42,13 @@ namespace KERBALISM
 		{
 			base.OnLoad(node);
 
-			if(Lib.IsEditor())
+			if (HighLogic.LoadedScene == GameScenes.LOADING)
+			{
+				drive = new Drive();
+				return;
+			}
+
+			if (Lib.IsEditor())
 				drive = new Drive();
 			else
 				drive = DB.Vessel(vessel).DriveForPart(title, hdId, dataCapacity, sampleCapacity);

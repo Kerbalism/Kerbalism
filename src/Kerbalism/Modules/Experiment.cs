@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Experience;
 using UnityEngine;
-
+using KSP.Localization;
 
 namespace KERBALISM
 {
@@ -542,8 +542,13 @@ namespace KERBALISM
 		public Specifics Specs()
 		{
 			var specs = new Specifics();
-
 			var exp = Science.Experiment(experiment_id);
+			if (exp == null)
+			{
+				specs.Add(Localizer.Format("#KERBALISM_ExperimentInfo_Unknown"));
+				return specs;
+			}
+
 			specs.Add(Lib.BuildString("<b>", exp.name, "</b>"));
 			if(!string.IsNullOrEmpty(experiment_desc))
 			{
@@ -551,7 +556,6 @@ namespace KERBALISM
 			}
 			
 			specs.Add(string.Empty);
-
 			double expSize = exp.max_amount;
 			if (sample_mass < float.Epsilon)
 			{

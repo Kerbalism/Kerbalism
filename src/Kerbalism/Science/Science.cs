@@ -206,6 +206,9 @@ namespace KERBALISM
 		// return info about an experiment
 		public static ExperimentInfo Experiment(string subject_id)
 		{
+			if (ResearchAndDevelopment.Instance == null)
+				return null;
+
 			ExperimentInfo info;
 			if (!experiments.TryGetValue(subject_id, out info))
 			{
@@ -431,11 +434,16 @@ namespace KERBALISM
 			int i = experiment_id.IndexOf('@');
 			var id = i > 0 ? experiment_id.Substring(0, i) : experiment_id;
 
-			if (sampleMasses.ContainsKey(id) && sampleMasses[id] - sampleMass > double.Epsilon)
+			if (sampleMasses.ContainsKey(id))
 			{
-				Lib.Log("Warning: different sample masses for Experiment " + id + " defined.");
+				if (Math.Abs(sampleMasses[id] - sampleMass) > double.Epsilon)
+					Lib.Log("Science Warning: different sample masses for Experiment " + id + " defined.");
 			}
-			sampleMasses.Add(id, sampleMass);
+			else
+			{
+				sampleMasses.Add(id, sampleMass);
+				Lib.Log("Science: registered sample mass for " + id + ": " + sampleMass.ToString("F3"));
+			}
 		}
 
 		public static double GetSampleMass(string experiment_id)
