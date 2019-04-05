@@ -16,17 +16,18 @@ namespace KERBALISM
 	public interface IConfigurable
 	{
 		// configure the module
-		void Configure(bool enable, int multiple = 1);
+		void Configure(bool enable);
 	}
 
 
-	public sealed class Configure : PartModule, IPartCostModifier, IPartMassModifier, IModuleInfo, ISpecifics
+	public sealed class Configure : PartModule, IPartCostModifier, IPartMassModifier, IModuleInfo, ISpecifics, IConfigurable
 	{
 		// config
 		[KSPField] public string title = string.Empty;           // short description
 		[KSPField] public string data = string.Empty;            // store setups as serialized data
 		[KSPField] public uint slots = 1;                        // how many setups can be selected
 		[KSPField] public string reconfigure = string.Empty;     // true if it can be reconfigured in flight
+		[KSPField] public bool symmetric = false;                // true if all setups in the same symmetry group should be the same
 
 		// persistence
 		[KSPField(isPersistant = true)] public string cfg;        // selected setups names
@@ -129,6 +130,12 @@ namespace KERBALISM
 			}
 		}
 
+		void IConfigurable.Configure(bool enable)
+		{
+			enabled = enable;
+			isEnabled = enable;
+			DoConfigure();
+		}
 
 		public void DoConfigure()
 		{
@@ -171,6 +178,7 @@ namespace KERBALISM
 
 				// detect if the setup is selected
 				bool active = count > 0;
+				active &= enabled;
 
 				// detect if the setup was previously selected in multiple slots
 				int prev_count = (prev_selected.FindAll(x => x == setup.name)).Count;
@@ -189,7 +197,7 @@ namespace KERBALISM
 					{
 						// call configure/deconfigure functions on module if available
 						if (m is IConfigurable configurable_module)
-							configurable_module.Configure(active, count);
+							configurable_module.Configure(active);
 
 						// enable/disable the module
 						m.isEnabled = active;
@@ -262,7 +270,7 @@ namespace KERBALISM
 			if (Lib.IsEditor())
 			{
 				// for each part in the symmetry group (avoid infinite recursion)
-				if (!avoid_inf_recursion)
+				if (!avoid_inf_recursion && symmetric)
 				{
 					avoid_inf_recursion = true;
 					foreach (Part p in part.symmetryCounterparts)
@@ -557,6 +565,7 @@ namespace KERBALISM
 		public override string GetModuleDisplayName() { return Lib.BuildString("<size=1><color=#00000000>00</color></size>Configurable ", title); } // attempt to display at the top
 		public string GetPrimaryField() { return Lib.BuildString("<size=1><color=#00000000>00</color></size>Configurable ", title); } // attempt to display at the top
 		public Callback<Rect> GetDrawModulePanelCallback() { return null; }
+
 	}
 
 

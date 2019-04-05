@@ -32,6 +32,8 @@ The part allows for different *setups* of modules and resources that can be sele
 +-------------+--------------------------------------------------------------------------------------------------------+---------+
 | reconfigure | string in the format *trait@level*, specifying that the part can be reconfigured in flight by the crew |         |
 +-------------+--------------------------------------------------------------------------------------------------------+---------+
+| symmetric   | if true enforces same configuration on all parts in the symmetry group (useful for tanks)              | false   |
++-------------+--------------------------------------------------------------------------------------------------------+---------+
 | SETUP       | one or more sub-nodes that describe a setup                                                            |         |
 +-------------+--------------------------------------------------------------------------------------------------------+---------+
 
