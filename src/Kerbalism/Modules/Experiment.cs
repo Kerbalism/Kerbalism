@@ -154,7 +154,7 @@ namespace KERBALISM
 
 				Events["Reset"].guiName = Lib.BuildString("Reset <b>", exp.name, "</b>");
 				// we need a reset either if we have recorded data or did a setup
-				bool resetActive = sample_mass > float.Epsilon && (reset_cs != null || prepare_cs != null) && !string.IsNullOrEmpty(last_subject_id);
+				bool resetActive = (reset_cs != null || prepare_cs != null) && !string.IsNullOrEmpty(last_subject_id);
 				Events["Reset"].active = resetActive;
 
 				Fields["ExperimentStatus"].guiName = exp.name;
