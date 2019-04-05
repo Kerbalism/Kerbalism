@@ -496,7 +496,14 @@ namespace KERBALISM
 		{
 			if(Lib.IsEditor())
 			{
-				recording = !recording;
+				if(!recording)
+				{
+					recording = EditorTracker.Instance.AllowStart(this);
+					if (!recording) PostMultipleRunsMessage(Science.Experiment(experiment_id).name);
+				}
+				else
+					recording = !recording;
+				
 				deployAnimator.Play(!recording, false);
 				GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
 				return;
@@ -599,5 +606,52 @@ namespace KERBALISM
 		public float GetModuleMass(float defaultMass, ModifierStagingSituation sit) { return sample_collecting ? 0 : (float)remainingSampleMass; }
 		public ModifierChangeWhen GetModuleMassChangeWhen() { return ModifierChangeWhen.CONSTANTLY; }
 	}
-} // KERBALISM
 
+	internal class EditorTracker
+	{
+		private static EditorTracker instance;
+		private readonly List<Experiment> experiments = new List<Experiment>();
+
+		static EditorTracker()
+		{
+			if (instance == null)
+				instance = new EditorTracker();
+		}
+
+		private EditorTracker()
+		{
+			if(instance == null) {
+				instance = this;
+				GameEvents.onEditorShipModified.Add(instance.ShipModified);
+			}
+		}
+
+		void ShipModified(ShipConstruct construct)
+		{
+			experiments.Clear();
+			foreach(var part in construct.Parts)
+			{
+				foreach (var experiment in part.FindModulesImplementing<Experiment>())
+					experiments.Add(experiment);
+			}
+		}
+
+		internal bool AllowStart(Experiment experiment)
+		{
+			foreach (var e in experiments)
+				if (e.recording && e.experiment_id == experiment.experiment_id)
+					return false;
+			return true;
+		}
+
+		public static EditorTracker Instance
+		{
+			get
+			{
+				if (instance == null)
+					instance = new EditorTracker();
+				return instance;
+			}
+		}
+	}
+} // KERBALISM
