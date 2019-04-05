@@ -268,11 +268,13 @@ namespace KERBALISM
 		}
 
 		// remove a sample from a vessel
-		public static void RemoveSample(Vessel v, string subject_id, double amount)
+		public static double RemoveSample(Vessel v, string subject_id, double amount)
 		{
-			if (!Cache.VesselInfo(v).is_valid) return;
+			if (!Cache.VesselInfo(v).is_valid) return 0;
+			double massRemoved = 0;
 			foreach (var d in DB.Vessel(v).drives.Values)
-				d.Delete_sample(subject_id, amount);
+				massRemoved += d.Delete_sample(subject_id, amount);
+			return massRemoved;
 		}
 
 		public static ScienceEvent OnScienceReceived = new ScienceEvent();

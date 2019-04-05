@@ -340,6 +340,37 @@ namespace KERBALISM
 			Lib.Proto.Set(m, "remainingSampleMass", remainingSampleMass);
 		}
 
+		internal static double RestoreSampleMass(double restoredAmount, ProtoPartModuleSnapshot m, string id)
+		{
+			var broken = Lib.Proto.GetBool(m, "broken", false);
+			if (broken) return 0;
+
+			var experiment_id = Lib.Proto.GetString(m, "experiment_id", string.Empty);
+			if (experiment_id != id) return 0;
+
+			var sample_collecting = Lib.Proto.GetBool(m, "sample_collecting", false);
+			if (sample_collecting) return 0;
+
+			double remainingSampleMass = Lib.Proto.GetDouble(m, "remainingSampleMass", 0);
+			double sample_reservoir = Lib.Proto.GetDouble(m, "sample_reservoir", 0);
+			if (remainingSampleMass >= sample_reservoir) return 0;
+
+			double delta = Math.Max(restoredAmount, sample_reservoir - remainingSampleMass);
+			remainingSampleMass += delta;
+			Lib.Proto.Set(m, "remainingSampleMass", remainingSampleMass);
+			return delta;
+		}
+
+		internal double RestoreSampleMass(double restoredAmount, string id)
+		{
+			if (broken) return 0;
+			if (sample_collecting || experiment_id != id) return 0;
+			if (remainingSampleMass >= sample_reservoir) return 0;
+			double delta = Math.Max(restoredAmount, sample_reservoir - remainingSampleMass);
+			remainingSampleMass += delta;
+			return delta;
+		}
+
 		public void ReliablityEvent(bool breakdown)
 		{
 			broken = breakdown;
@@ -626,7 +657,7 @@ namespace KERBALISM
 			}
 		}
 
-		void ShipModified(ShipConstruct construct)
+		internal void ShipModified(ShipConstruct construct)
 		{
 			experiments.Clear();
 			foreach(var part in construct.Parts)
@@ -652,7 +683,7 @@ namespace KERBALISM
 			return true;
 		}
 
-		public static EditorTracker Instance
+		internal static EditorTracker Instance
 		{
 			get
 			{

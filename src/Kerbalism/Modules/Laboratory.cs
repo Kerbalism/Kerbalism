@@ -270,11 +270,12 @@ namespace KERBALISM
 			bool completed = sample == null;
 			if(sample != null)
 			{
-				// analyze, and produce dataamount = Math.Min(amount, sample.size);
+				// analyze, and produce data amount = Math.Min(amount, sample.size);
 				completed = amount >= sample.size - double.Epsilon;
 				bool recorded = drive.Record_file(filename, amount, false);
+				double massRemoved = 0;
 				if (recorded)
-					drive.Delete_sample(filename, amount);
+					massRemoved = drive.Delete_sample(filename, amount);
 				else
 				{
 					Message.Post(
@@ -284,6 +285,9 @@ namespace KERBALISM
 
 					return Status.NO_STORAGE;
 				}
+
+				// return sample mass to experiment if needed
+				if(massRemoved > double.Epsilon) RestoreSampleMass(v, filename, massRemoved);
 			}
 
 			// if the analysis is completed
@@ -301,6 +305,29 @@ namespace KERBALISM
 			}
 
 			return Status.RUNNING;
+		}
+
+		private static void RestoreSampleMass(Vessel v, string filename, double restoredAmount)
+		{
+			int i = filename.IndexOf('@');
+			var id = i > 0 ? filename.Substring(0, i) : filename;
+
+			if(v.loaded) // loaded vessel
+			{
+				foreach (var experiment in v.FindPartModulesImplementing<Experiment>())
+				{
+					restoredAmount -= experiment.RestoreSampleMass(restoredAmount, id);
+
+				}
+			}
+			else // unloaded vessel
+			{
+				foreach (ProtoPartModuleSnapshot m in Lib.FindModules(v.protoVessel, "Experiment"))
+				{
+					restoredAmount -= Experiment.RestoreSampleMass(restoredAmount, m, id);
+					if (restoredAmount < double.Epsilon) return;
+				}
+			}
 		}
 
 		private void SetStatusText()

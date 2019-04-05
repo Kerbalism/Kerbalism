@@ -1160,7 +1160,6 @@ namespace KERBALISM
 			return null;
 		}
 
-
 		// return a module from a part by name, or null if it doesn't exist
 		public static T FindModuleAs<T>( Part p, string module_name ) where T : class
 		{
@@ -1208,7 +1207,6 @@ namespace KERBALISM
 			// then we have no chances of finding the module prefab so we return null
 			return data.index < data.prefabs.Count ? data.prefabs[data.index++] : null;
 		}
-
 
 		// --- RESOURCE -------------------------------------------------------------
 

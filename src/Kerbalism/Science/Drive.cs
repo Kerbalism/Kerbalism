@@ -195,18 +195,24 @@ namespace KERBALISM
 		}
 
 		// remove science sample, deleting the sample when it is empty
-		public void Delete_sample(string subject_id, double amount)
+		public double Delete_sample(string subject_id, double amount)
 		{
 			// get data
 			Sample sample;
 			if (samples.TryGetValue(subject_id, out sample))
 			{
 				// decrease amount of data stored in the sample
+				amount = Math.Min(amount, sample.size);
+				double massDelta = sample.mass * amount / sample.size;
 				sample.size -= amount;
+				sample.mass -= massDelta;
 
 				// remove sample if empty
 				if (sample.size <= double.Epsilon) samples.Remove(subject_id);
+
+				return massDelta;
 			}
+			return 0.0;
 		}
 
 		// set analyze flag for a sample
