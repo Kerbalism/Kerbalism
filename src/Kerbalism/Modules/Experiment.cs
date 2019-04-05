@@ -44,7 +44,7 @@ namespace KERBALISM
 
 		private State state = State.STOPPED;
 		// animations
-		private Animator deployAnimator;
+		internal Animator deployAnimator;
 
 		private CrewSpecs operator_cs;
 		private CrewSpecs reset_cs;
@@ -632,7 +632,15 @@ namespace KERBALISM
 			foreach(var part in construct.Parts)
 			{
 				foreach (var experiment in part.FindModulesImplementing<Experiment>())
+				{
+					if (experiment.recording && !AllowStart(experiment))
+					{
+						// An experiment was added in recording state? Cheeky bugger!
+						experiment.recording = false;
+						if(experiment.deployAnimator != null) experiment.deployAnimator.Still(0);
+					}
 					experiments.Add(experiment);
+				}
 			}
 		}
 
