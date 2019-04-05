@@ -176,6 +176,7 @@ Here is a list of currently supported requirements:
 * CrewCapacityMin, CrewCapacityMax: min./max. crew capacity
 * VolumePerCrewMin, VolumePerCrewMax: min./max. habitat volume per crew member
 * Facility building levels: MissionControlLevelMin, MissionControlLevelMax, AdministrationLevelMin, AdministrationLevelMax, TrackingStationLevelMin, TrackingStationLevelMax, AstronautComplexLevelMin, AstronautComplexLevelMax
+* MaxAsteroidDistance: max. distance to the nearest asteroid. For unloaded vessels this only works if the asteroid is set as the target.
 
 -------
 

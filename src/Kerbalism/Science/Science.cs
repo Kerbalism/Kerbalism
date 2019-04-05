@@ -364,6 +364,7 @@ namespace KERBALISM
 						good = !ScenarioUpgradeableFacilities.Instance.enabled || ScenarioUpgradeableFacilities.GetFacilityLevel(SpaceCenterFacility.Administration) <= int.Parse(value);
 						break;
 
+					case "MaxAsteroidDistance": good = AsteroidDistance(v) <= double.Parse(value); break;
 				}
 
 				if (!good) return s;
@@ -381,6 +382,41 @@ namespace KERBALISM
 			return string.Empty;
 		}
 
+		private static double AsteroidDistance(Vessel vessel)
+		{
+			var target = vessel.targetObject;
+			var vesselPosition = Lib.VesselPosition(vessel);
+
+			// while there is a target, only consider the targeted vessel
+			if(!vessel.loaded || target != null)
+			{
+				// asteroid MUST be the target if vessel is unloaded
+				if (target == null) return double.MaxValue;
+
+				var targetVessel = target.GetVessel();
+				if (targetVessel == null) return double.MaxValue;
+
+				if (targetVessel.vesselType != VesselType.SpaceObject) return double.MaxValue;
+
+				// this assumes that all vessels of type space object are asteroids.
+				// should be a safe bet unless Squad introduces alien UFOs.
+				var asteroidPosition = Lib.VesselPosition(targetVessel);
+				return Vector3d.Distance(vesselPosition, asteroidPosition);
+			}
+
+			// there's no target and vessel is not unloaded
+			// look for nearby asteroids
+			double result = double.MaxValue;
+			foreach(Vessel v in FlightGlobals.VesselsLoaded)
+			{
+				if (v.vesselType != VesselType.SpaceObject) continue;
+				var asteroidPosition = Lib.VesselPosition(v);
+				double distance = Vector3d.Distance(vesselPosition, asteroidPosition);
+				if (distance < result) result = distance;
+			}
+			return result;
+		}
+
 		public static string RequirementText(string requirement)
 		{
 			var parts = Lib.Tokenize(requirement, ':');
@@ -391,8 +427,8 @@ namespace KERBALISM
 						
 			switch (condition)
 			{
-				case "OrbitMinInclination": return Lib.BuildString("Min. inclination ", value);
-				case "OrbitMaxInclination": return Lib.BuildString("Max. inclination ", value);
+				case "OrbitMinInclination": return Lib.BuildString("Min. inclination ", value, "°");
+				case "OrbitMaxInclination": return Lib.BuildString("Max. inclination ", value, "°");
 				case "OrbitMinEccentricity": return Lib.BuildString("Min. eccentricity ", value);
 				case "OrbitMaxEccentricity": return Lib.BuildString("Max. eccentricity ", value);
 				case "AltitudeMin": return Lib.BuildString("Min. altitude ", Lib.HumanReadableRange(Double.Parse(value)));
@@ -406,9 +442,9 @@ namespace KERBALISM
 				case "CrewMax": return Lib.BuildString("Max. crew ", value);
 				case "CrewCapacityMin": return Lib.BuildString("Min. crew capacity ", value);
 				case "CrewCapacityMax": return Lib.BuildString("Max. crew capacity ", value);
-				case "VolumePerCrewMin": return Lib.BuildString("Min. vol./crew ", value);
-				case "VolumePerCrewMax": return Lib.BuildString("Max. vol./crew ", value);
-					
+				case "VolumePerCrewMin": return Lib.BuildString("Min. vol./crew ", Lib.HumanReadableVolume(double.Parse(value)));
+				case "VolumePerCrewMax": return Lib.BuildString("Max. vol./crew ", Lib.HumanReadableVolume(double.Parse(value)));
+				case "MaxAsteroidDistance": return Lib.BuildString("Max. asteroid distance ", Lib.HumanReadableRange(double.Parse(value)));
 				case "MissionControlLevelMin": return Lib.BuildString(ScenarioUpgradeableFacilities.GetFacilityName(SpaceCenterFacility.MissionControl), " level ", value);
 				case "MissionControlLevelMax": return Lib.BuildString(ScenarioUpgradeableFacilities.GetFacilityName(SpaceCenterFacility.MissionControl), " max. level ", value);
 				case "AdministrationLevelMin": return Lib.BuildString(ScenarioUpgradeableFacilities.GetFacilityName(SpaceCenterFacility.Administration), " level ", value);
