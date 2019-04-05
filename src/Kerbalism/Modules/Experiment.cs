@@ -61,7 +61,7 @@ namespace KERBALISM
 		private static State GetState(double scienceValue, string issue, bool recording, bool forcedRun)
 		{
 			bool hasValue = scienceValue >= 0.1;
-			bool smartScience = PreferencesBasic.Instance.smartScience;
+			bool smartScience = PreferencesScience.Instance.smartScience;
 
 			if (issue.Length > 0) return State.ISSUE;
 			if (!recording) return State.STOPPED;

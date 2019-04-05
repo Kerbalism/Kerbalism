@@ -65,6 +65,8 @@ namespace KERBALISM
 			LowQualityRendering = Lib.ConfigValue(cfg, "LowQualityRendering", false);
 			UIScale = Lib.ConfigValue(cfg, "UIScale", 1.0f);
 			UIPanelWidthScale = Lib.ConfigValue(cfg, "UIPanelWidthScale", 1.0f);
+
+			PresetAtmoLoss = Lib.ConfigValue(cfg, "PresetAtmoLoss", 50);
 		}
 
 
@@ -113,7 +115,8 @@ namespace KERBALISM
 		public static bool LowQualityRendering;               // use less particles to render the magnetic fields
 		public static float UIScale;                          // scale UI elements by this factor, relative to KSP scaling settings, useful for high PPI screens
 		public static float UIPanelWidthScale;                // scale UI Panel Width by this factor, relative to KSP scaling settings, useful for high PPI screens
-	}
+		public static int PresetAtmoLoss;				      // atmo loss preset
+   	}
 
 
 } // KERBALISM

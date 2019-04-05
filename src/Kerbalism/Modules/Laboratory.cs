@@ -293,7 +293,7 @@ namespace KERBALISM
 				Message.Post(Lib.BuildString(Lib.Color("cyan", Localizer.Format("#KERBALISM_Laboratory_Analysis"), true), "\n",
 					Localizer.Format("#KERBALISM_Laboratory_Analyzed", Lib.Bold(v.vesselName), Lib.Bold(Science.Experiment(filename).name))), localized_results);
 
-				if(PreferencesBasic.Instance.transmitScience)
+				if(PreferencesScience.Instance.transmitScience)
 					drive.Send(filename, true);
 
 				// record landmark event

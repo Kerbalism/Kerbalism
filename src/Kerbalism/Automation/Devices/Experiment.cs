@@ -29,7 +29,7 @@ namespace KERBALISM
 
 		public override string Info()
 		{
-			if (experiment.recording && experiment.scienceValue < double.Epsilon && PreferencesBasic.Instance.smartScience)
+			if (experiment.recording && experiment.scienceValue < double.Epsilon && PreferencesScience.Instance.smartScience)
 				return "waiting...";
 
 			var exp = ResearchAndDevelopment.GetExperiment(experiment.experiment_id);
@@ -86,7 +86,7 @@ namespace KERBALISM
 			bool recording = Lib.Proto.GetBool(proto, "recording");
 			double scienceValue = Lib.Proto.GetDouble(proto, "scienceValue");
 
-			if (recording && scienceValue < double.Epsilon && PreferencesBasic.Instance.smartScience)
+			if (recording && scienceValue < double.Epsilon && PreferencesScience.Instance.smartScience)
 				return "waiting...";
 
 			string issue = Lib.Proto.GetString(proto, "issue");

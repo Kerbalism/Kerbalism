@@ -11,15 +11,6 @@ namespace KERBALISM
 		public bool scienceDialog = true;
 */
 
-		[GameParameters.CustomParameterUI("Transmit Science Immediately", toolTip = "Automatically transmit science if possible")]
-		public bool transmitScience = true;
-
-		[GameParameters.CustomParameterUI("Only record valuable science", toolTip = "Record experiment data only if it has at least a nominal value")]
-		public bool smartScience = true;
-
-		[GameParameters.CustomFloatParameterUI("Antenna Speed", asPercentage = true, minValue = 0.01f, maxValue = 2f, displayFormat = "F2", toolTip = "Antenna Bandwidth factor")]
-		public float transmitFactor = 1f;
-
 		[GameParameters.CustomParameterUI("Highlight Malfunctions", toolTip = "Highlight faild parts in flight")]
 		public bool highlights = true;
 
@@ -81,6 +72,54 @@ namespace KERBALISM
 		}
 	}
 
+	public class PreferencesScience : GameParameters.CustomParameterNode
+	{
+		[GameParameters.CustomParameterUI("Transmit Science Immediately", toolTip = "Automatically transmit science if possible")]
+		public bool transmitScience = true;
+
+		[GameParameters.CustomParameterUI("Only record valuable science", toolTip = "Record experiment data only if it has at least a nominal value")]
+		public bool smartScience = true;
+
+		[GameParameters.CustomFloatParameterUI("Antenna Speed", asPercentage = true, minValue = 0.01f, maxValue = 2f, displayFormat = "F2", toolTip = "Antenna Bandwidth factor")]
+		public float transmitFactor = 1.0f;
+
+		[GameParameters.CustomFloatParameterUI("Allow sample transfers", toolTip = "When off, only EVAs can transfer samples between drives")]
+		public bool sampleTransfer = false;
+
+		public override GameParameters.GameMode GameMode { get { return GameParameters.GameMode.ANY; } }
+
+		public override bool HasPresets { get { return false; } }
+
+		public override string DisplaySection { get { return "Kerbalism"; } }
+
+		public override string Section { get { return "Kerbalism"; } }
+
+		public override int SectionOrder { get { return 1; } }
+
+		public override string Title { get { return "Science"; } }
+
+		private static PreferencesScience instance;
+
+		public static PreferencesScience Instance
+		{
+			get
+			{
+				if (instance == null)
+				{
+					if (HighLogic.CurrentGame != null)
+					{ instance = HighLogic.CurrentGame.Parameters.CustomParams<PreferencesScience>(); }
+				}
+				return instance;
+			}
+		}
+
+		public override void OnLoad(ConfigNode node)
+		{
+			base.OnLoad(node);
+			instance = null;
+		}
+	}
+
 	public class PreferencesMessages : GameParameters.CustomParameterNode
 	{
 		[GameParameters.CustomParameterUI("Electrical Charge", toolTip = "Show a message when EC level is low\n(Preset, can be changed per vessel)")]
@@ -115,7 +154,7 @@ namespace KERBALISM
 
 		public override string Section { get { return "Kerbalism"; } }
 
-		public override int SectionOrder { get { return 1; } }
+		public override int SectionOrder { get { return 2; } }
 
 		public override string Title { get { return "Notifications"; } }
 
@@ -150,7 +189,7 @@ namespace KERBALISM
 		public int survivalRange = 5;
 
 		[GameParameters.CustomIntParameterUI("Amount of atmosphere lost to airlock on EVA", minValue = 1, maxValue = 100, toolTip = "Atmosphere lost in EVA airlock")]
-		public int evaAtmoLoss = 10;
+		public int evaAtmoLoss = Settings.PresetAtmoLoss;
 
 
 		/*

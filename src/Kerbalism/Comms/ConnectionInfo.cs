@@ -86,7 +86,7 @@ namespace KERBALISM
 					if (v.connection.IsConnected)
 					{
 						ec = antennaInfo.ec;
-						rate = antennaInfo.rate * PreferencesBasic.Instance.transmitFactor;
+						rate = antennaInfo.rate * PreferencesScience.Instance.transmitFactor;
 
 						linked = true;
 						status = v.connection.ControlPath.First.hopType == CommNet.HopType.Home ? LinkStatus.direct_link : LinkStatus.indirect_link;
@@ -119,7 +119,7 @@ namespace KERBALISM
 				if (RemoteTech.Connected(v.id))
 				{
 					ec = antennaInfo.ec;
-					rate = antennaInfo.rate * PreferencesBasic.Instance.transmitFactor;
+					rate = antennaInfo.rate * PreferencesScience.Instance.transmitFactor;
 
 					linked = RemoteTech.ConnectedToKSC(v.id);
 					status = RemoteTech.TargetsKSC(v.id) ? LinkStatus.direct_link : LinkStatus.indirect_link;
@@ -161,7 +161,7 @@ namespace KERBALISM
 			{
 				AntennaInfoCommNet antennaInfo = new AntennaInfoCommNet(v);
 				ec = antennaInfo.ec * 0.16; // Consume 16% of the stock ec. Workaround for drain consumption with CommNet, ec consumption turns similar of RT
-				rate = antennaInfo.rate * PreferencesBasic.Instance.transmitFactor;
+				rate = antennaInfo.rate * PreferencesScience.Instance.transmitFactor;
 
 				linked = true;
 				status = LinkStatus.direct_link;

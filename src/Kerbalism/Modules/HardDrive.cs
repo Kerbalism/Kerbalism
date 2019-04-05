@@ -144,7 +144,7 @@ namespace KERBALISM
 			foreach(var hardDrive in hardDrives)
 			{
 				if (hardDrive == this) continue;
-				hardDrive.drive.Move(drive);
+				hardDrive.drive.Move(drive, PreferencesScience.Instance.sampleTransfer);
 			}
 		}
 
@@ -157,7 +157,7 @@ namespace KERBALISM
 			if (v == null || EVA.IsDead(v)) return;
 
 			// transfer data
-			Drive.Transfer(vessel, v/*, v.isEVA*/);
+			Drive.Transfer(vessel, v, v.isEVA || PreferencesScience.Instance.sampleTransfer);
 		}
 
 
@@ -169,7 +169,7 @@ namespace KERBALISM
 			if (v == null || EVA.IsDead(v)) return;
 
 			// transfer data
-			Drive.Transfer(v, vessel/*, v.isEVA*/);
+			Drive.Transfer(v, vessel, v.isEVA || PreferencesScience.Instance.sampleTransfer);
 		}
 
 

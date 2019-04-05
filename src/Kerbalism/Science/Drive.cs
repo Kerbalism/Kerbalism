@@ -123,7 +123,7 @@ namespace KERBALISM
 
 		public bool GetFileSend(string filename)
 		{
-			if (!fileSendFlags.ContainsKey(filename)) return PreferencesBasic.Instance.transmitScience;
+			if (!fileSendFlags.ContainsKey(filename)) return PreferencesScience.Instance.transmitScience;
 			return fileSendFlags[filename];
 		}
 
@@ -220,7 +220,7 @@ namespace KERBALISM
 		}
 
 		// move all data to another drive
-		public bool Move(Drive destination, bool moveSamples = true)
+		public bool Move(Drive destination, bool moveSamples)
 		{
 			bool result = true;
 
@@ -311,7 +311,7 @@ namespace KERBALISM
 		}
 
 		// transfer data between two vessels
-		public static void Transfer(Vessel src, Vessel dst, bool samples = true)
+		public static void Transfer(Vessel src, Vessel dst, bool samples)
 		{
 			double dataAmount = 0.0;
 			int sampleSlots = 0;
