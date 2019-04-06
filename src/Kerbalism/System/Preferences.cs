@@ -6,11 +6,6 @@ namespace KERBALISM
 {
 	public class PreferencesBasic : GameParameters.CustomParameterNode
 	{
-/* I really want this in the gui... but have to look at how this can be done in Science.cs
-		[GameParameters.CustomParameterUI("Stock Science Dialog", toolTip = "Keep showing the stock science dialog")]
-		public bool scienceDialog = true;
-*/
-
 		[GameParameters.CustomParameterUI("Highlight Malfunctions", toolTip = "Highlight faild parts in flight")]
 		public bool highlights = true;
 
@@ -183,40 +178,13 @@ namespace KERBALISM
 	public class PreferencesLifeSupport : GameParameters.CustomParameterNode
 	{
 		[GameParameters.CustomIntParameterUI("Survival Temperature", minValue = 250, maxValue = 330, toolTip = "Ideal living temperature")]
-		public int survivalTemperature = 295;
+		public int survivalTemperature = Settings.LifeSupportSurvivalTemperature;
 
 		[GameParameters.CustomIntParameterUI("Survival Temperature Range", minValue = 1, maxValue = 20, toolTip = "Sweet spot around survival temperature")]
-		public int survivalRange = 5;
+		public int survivalRange = Settings.LifeSupportSurvivalRange;
 
 		[GameParameters.CustomIntParameterUI("Amount of atmosphere lost to airlock on EVA", minValue = 1, maxValue = 100, toolTip = "Atmosphere lost in EVA airlock")]
-		public int evaAtmoLoss = Settings.PresetAtmoLoss;
-
-
-		/*
-		// pressure
-		public static double PressureThreshold;                 // level of atmosphere resource that determine pressurized status
-
-		// poisoning
-		public static double PoisoningFactor;                   // poisoning modifier value for vessels below threshold
-		public static double PoisoningThreshold;                // level of waste atmosphere resource that determine co2 poisoning status
-
-		// humidity
-		public static double HumidityFactor;                    // moisture modifier value for vessels below the threshold
-		public static double HumidityThreshold;                 // level of moist atmosphere resource that determine high humidity status
-
-
-		// pressure
-			PressureFactor = Lib.ConfigValue(cfg, "PressureFactor", 10.0);
-			PressureThreshold = Lib.ConfigValue(cfg, "PressureThreshold", 0.9);
-
-			// poisoning
-			PoisoningFactor = Lib.ConfigValue(cfg, "PoisoningFactor", 0.0);
-			PoisoningThreshold = Lib.ConfigValue(cfg, "PoisoningThreshold", 0.02);
-
-			// humidity
-			HumidityFactor = Lib.ConfigValue(cfg, "HumidityFactor", 1.0);
-			HumidityThreshold = Lib.ConfigValue(cfg, "HumidityThreshold", 0.95);
-		*/
+		public int evaAtmoLoss = Settings.LifeSupportAtmoLoss;
 
 		public override GameParameters.GameMode GameMode { get { return GameParameters.GameMode.ANY; } }
 
@@ -255,25 +223,25 @@ namespace KERBALISM
 	public class PreferencesComfort : GameParameters.CustomParameterNode
 	{
 		[GameParameters.CustomIntParameterUI("Ideal Living Space", minValue = 5, maxValue = 200, toolTip = "Ideal living space per-capita in m^3")]
-		public int livingSpace = 20;
+		public int livingSpace = Settings.ComfortLivingSpace;
 
 		[GameParameters.CustomFloatParameterUI("Firm Ground Factor", minValue = 0, maxValue = 1, displayFormat = "F2", toolTip = "Having something to walk on")]
-		public float firmGround = 0.4f;
+		public float firmGround = Settings.ComfortFirmGround;
 
 		[GameParameters.CustomFloatParameterUI("Exercise Factor", minValue = 0, maxValue = 1, displayFormat = "F2", toolTip = "Having a treadmill")]
-		public float exercise = 0.2f;
+		public float exercise = Settings.ComfortExercise;
 
 		[GameParameters.CustomFloatParameterUI("Social Factor", minValue = 0, maxValue = 1, displayFormat = "F2", toolTip = "Having more than one crew on a vessel")]
-		public float notAlone = 0.1f;
+		public float notAlone = Settings.ComfortNotAlone;
 
 		[GameParameters.CustomFloatParameterUI("Call Home Factor", minValue = 0, maxValue = 1, displayFormat = "F2", toolTip = "Having a way to communicate with Kerbin")]
-		public float callHome = 0.1f;
+		public float callHome = Settings.ComfortCallHome;
 
 		[GameParameters.CustomFloatParameterUI("Panorama Factor", minValue = 0, maxValue = 1, displayFormat = "F2", toolTip = "Comfort factor for having a panorama window")]
-		public float panorama = 0.1f;
+		public float panorama = Settings.ComfortPanorama;
 
 		[GameParameters.CustomFloatParameterUI("Plants Factor", minValue = 0, maxValue = 1, displayFormat = "F2", toolTip = "There is some comfort in tending to plants")]
-		public float plants = 0.1f;
+		public float plants = Settings.ComfortPlants;
 
 		public override GameParameters.GameMode GameMode { get { return GameParameters.GameMode.ANY; } }
 

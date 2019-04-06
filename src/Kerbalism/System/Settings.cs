@@ -66,9 +66,19 @@ namespace KERBALISM
 			UIScale = Lib.ConfigValue(cfg, "UIScale", 1.0f);
 			UIPanelWidthScale = Lib.ConfigValue(cfg, "UIPanelWidthScale", 1.0f);
 
-			PresetAtmoLoss = Lib.ConfigValue(cfg, "PresetAtmoLoss", 50);
-		}
+			// save game settings presets
+			LifeSupportAtmoLoss = Lib.ConfigValue(cfg, "LifeSupportAtmoLoss", 50);
+			LifeSupportSurvivalTemperature = Lib.ConfigValue(cfg, "LifeSupportSurvivalTemperature", 295);
+			LifeSupportSurvivalRange = Lib.ConfigValue(cfg, "LifeSupportSurvivalRange", 5);
 
+			ComfortLivingSpace = Lib.ConfigValue(cfg, "ComfortLivingSpace", 20);
+			ComfortFirmGround = Lib.ConfigValue(cfg, "ComfortFirmGround", 0.4f);
+			ComfortExercise = Lib.ConfigValue(cfg, "ComfortExercise", 0.2f);
+			ComfortNotAlone = Lib.ConfigValue(cfg, "ComfortNotAlone", 0.2f);
+			ComfortCallHome = Lib.ConfigValue(cfg, "ComfortCallHome", 0.1f);
+			ComfortPanorama = Lib.ConfigValue(cfg, "ComfortPanorama", 0.1f);
+			ComfortPlants = Lib.ConfigValue(cfg, "ComfortPlants", 0.1f);
+		}
 
 		// profile used
 		public static string Profile;                           // name of profile to use, if any
@@ -115,8 +125,20 @@ namespace KERBALISM
 		public static bool LowQualityRendering;               // use less particles to render the magnetic fields
 		public static float UIScale;                          // scale UI elements by this factor, relative to KSP scaling settings, useful for high PPI screens
 		public static float UIPanelWidthScale;                // scale UI Panel Width by this factor, relative to KSP scaling settings, useful for high PPI screens
-		public static int PresetAtmoLoss;				      // atmo loss preset
-   	}
+
+		// presets for save game preferences
+
+		public static int LifeSupportAtmoLoss;
+		public static int LifeSupportSurvivalTemperature;
+		public static int LifeSupportSurvivalRange;
+		public static int ComfortLivingSpace;
+		public static float ComfortFirmGround;
+		public static float ComfortExercise;
+		public static float ComfortNotAlone;
+		public static float ComfortCallHome;
+		public static float ComfortPanorama;
+		public static float ComfortPlants;
+	}
 
 
 } // KERBALISM
