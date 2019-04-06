@@ -42,15 +42,11 @@ namespace KERBALISM
 			// remember resource name
 			resource_name = res_name;
 
-			_deferred = new Dictionary<Resource_location, double>();
-			_amount = new Dictionary<Resource_location, double>();
-			_capacity = new Dictionary<Resource_location, double>();
+			_deferred = 0;
+			_amount = 0;
+			_capacity = 0;
 
-			vessel_wide_location = new Resource_location();
 			_vessel_wide_view = new Resource_info_view_impl(resource_name, this);
-
-			// vessel-wide resources
-			InitDicts(vessel_wide_location);
 
 			// get amount & capacity
 			if (v.loaded)
@@ -63,8 +59,8 @@ namespace KERBALISM
 						{
 							if (r.flowState) // has the user chosen to make a flowable resource flow
 							{
-								_amount[vessel_wide_location] += r.amount;
-								_capacity[vessel_wide_location] += r.maxAmount;
+								_amount += r.amount;
+								_capacity += r.maxAmount;
 							}
 						}
 #if DEBUG_RESOURCES
@@ -84,8 +80,8 @@ namespace KERBALISM
 						{
 							if (r.flowState) // has the user chosen to make a flowable resource flow
 							{
-								_amount[vessel_wide_location] += r.amount;
-								_capacity[vessel_wide_location] += r.maxAmount;
+								_amount += r.amount;
+								_capacity += r.maxAmount;
 							}
 						}
 					}
@@ -130,42 +126,31 @@ namespace KERBALISM
 			public Resource_info_view_impl(string resource_name, Resource_info i)
 			{
 				info = i;
-				location = info.vessel_wide_location;
 			}
 
-			private Resource_location location;
 			private Resource_info info;
 
 			public override double deferred
 			{
-				get => info._deferred[location];
+				get => info._deferred;
 			}
 			public override double amount
 			{
-				get => info._amount[location];
+				get => info._amount;
 			}
 			public override double capacity
 			{
-				get => info._capacity[location];
+				get => info._capacity;
 			}
 
 			public override void Produce(double quantity)
 			{
-				info.Produce(location, quantity);
+				info.Produce(quantity);
 			}
 			public override void Consume(double quantity)
 			{
-				info.Consume(location, quantity);
+				info.Consume(quantity);
 			}
-		}
-
-		/// <summary>Initialize resource amounts for new resource location</summary>
-		/// <remarks>Typically for a part that has not yet used this resource</remarks>
-		private void InitDicts(Resource_location location)
-		{
-			_deferred[location] = 0.0;
-			_amount[location] = 0.0;
-			_capacity[location] = 0.0;
 		}
 
 		public Resource_info_view GetResourceInfoView()
@@ -176,25 +161,13 @@ namespace KERBALISM
 		/// <summary>record a deferred production for the vessel wide bookkeeping</summary>
 		public void Produce(double quantity)
 		{
-			Produce(vessel_wide_location, quantity);
-		}
-		/// <summary>record a deferred production for the per part bookkeeping</summary>
-		/// <remarks>also works for vessel wide location</remarks>
-		private void Produce(Resource_location location, double quantity)
-		{
-			_deferred[location] += quantity;
+			_deferred += quantity;
 		}
 
 		/// <summary>record a deferred consumption for the vessel wide bookkeeping</summary>
 		public void Consume(double quantity)
 		{
-			Consume(vessel_wide_location, quantity);
-		}
-		/// <summary>record a deferred production for the per part bookkeeping</summary>
-		/// <remarks>also works for vessel wide location</remarks>
-		private void Consume(Resource_location location, double quantity)
-		{
-			_deferred[location] -= quantity;
+			_deferred -= quantity;
 		}
 
 		/// <summary>synchronize resources from from cache to vessel</summary>
@@ -242,8 +215,8 @@ namespace KERBALISM
 			// iterate over all enabled resource containers and detect amount/capacity again
 			// - this detect production/consumption from stock and third-party mods
 			//   that by-pass the resource cache, and flow state changes in general
-			_amount[vessel_wide_location] = 0.0;
-			_capacity[vessel_wide_location] = 0.0;
+			_amount = 0.0;
+			_capacity = 0.0;
 
 			// PLEASE READ
 			// because only the first loop is garuanteed to run, we sync back non-flowing part
@@ -264,8 +237,8 @@ namespace KERBALISM
 							// the sum should always be realistic
 							if (r.flowState)
 							{
-								_amount[vessel_wide_location] += r.amount;
-								_capacity[vessel_wide_location] += r.maxAmount;
+								_amount += r.amount;
+								_capacity += r.maxAmount;
 							}
 						}
 					}
@@ -283,8 +256,8 @@ namespace KERBALISM
 							// the sum should always be realistic
 							if (r.flowState)
 							{
-								_amount[vessel_wide_location] += r.amount;
-								_capacity[vessel_wide_location] += r.maxAmount;
+								_amount += r.amount;
+								_capacity += r.maxAmount;
 							}
 						}
 					}
@@ -317,12 +290,12 @@ namespace KERBALISM
 			// clamp consumption/production to vessel amount/capacity
 			// - if deferred is negative, then amount is guaranteed to be greater than zero
 			// - if deferred is positive, then capacity - amount is guaranteed to be greater than zero
-			_deferred[vessel_wide_location] = Lib.Clamp(_deferred[vessel_wide_location], -_amount[vessel_wide_location], _capacity[vessel_wide_location] - _amount[vessel_wide_location]);
+			_deferred = Lib.Clamp(_deferred, -_amount, _capacity - _amount);
 
 			// apply deferred consumption/production, simulating ALL_VESSEL_BALANCED
 			// - iterating again is faster than using a temporary list of valid PartResources
 			// - avoid very small values in deferred consumption/production
-			if (Math.Abs(_deferred[vessel_wide_location]) > 1e-10)
+			if (Math.Abs(_deferred) > 1e-10)
 			{
 				if (v.loaded)
 				{
@@ -333,12 +306,12 @@ namespace KERBALISM
 							if (r.flowState && r.resourceName == resource_name)
 							{
 								// calculate consumption/production coefficient for the part
-								double k = _deferred[vessel_wide_location] < 0.0
-								  ? r.amount / _amount[vessel_wide_location]
-								  : (r.maxAmount - r.amount) / (_capacity[vessel_wide_location] - _amount[vessel_wide_location]);
+								double k = _deferred < 0.0
+								  ? r.amount / _amount
+								  : (r.maxAmount - r.amount) / (_capacity - _amount);
 
 								// apply deferred consumption/production
-								r.amount += _deferred[vessel_wide_location] * k;
+								r.amount += _deferred * k;
 							}
 						}
 					}
@@ -352,12 +325,12 @@ namespace KERBALISM
 							if (r.flowState && r.resourceName == resource_name)
 							{
 								// calculate consumption/production coefficient for the part
-								double k = _deferred[vessel_wide_location] < 0.0
-								  ? r.amount / _amount[vessel_wide_location]
-								  : (r.maxAmount - r.amount) / (_capacity[vessel_wide_location] - _amount[vessel_wide_location]);
+								double k = _deferred < 0.0
+								  ? r.amount / _amount
+								  : (r.maxAmount - r.amount) / (_capacity - _amount);
 
 								// apply deferred consumption/production
-								r.amount += _deferred[vessel_wide_location] * k;
+								r.amount += _deferred * k;
 							}
 						}
 					}
@@ -365,7 +338,7 @@ namespace KERBALISM
 			}
 
 			// update amount, to get correct rate and levels at all times
-			_amount[vessel_wide_location] += _deferred[vessel_wide_location];
+			_amount += _deferred;
 
 			// calculate rate of change per-second
 			// - don't update rate during and immediately after warp blending (stock modules have instabilities during warp blending)
@@ -378,7 +351,7 @@ namespace KERBALISM
 			level = capacity > double.Epsilon ? amount / capacity : 0.0;
 
 			// reset deferred production/consumption
-			_deferred[vessel_wide_location] = 0.0;
+			_deferred = 0.0;
 
 			// reset meal flag
 			meal_happened = false;
@@ -464,19 +437,19 @@ namespace KERBALISM
 		public double deferred
 		{
 			get {
-				return _deferred.Values.Sum();
+				return _deferred;
 			}
 		}
 		public double amount
 		{
 			get {
-				return _amount.Values.Sum();
+				return _amount;
 			}
 		}
 		public double capacity
 		{
 			get {
-				return _capacity.Values.Sum();
+				return _capacity;
 			}
 		}
 
@@ -485,11 +458,10 @@ namespace KERBALISM
 		private double _level;         // amount vs capacity, or 0 if there is no capacity
 		private bool _meal_happened;   // true if a meal-like consumption/production was processed in the last simulation step
 
-		private IDictionary<Resource_location, double> _deferred; // accumulate deferred requests
-		private IDictionary<Resource_location, double> _amount;   // amount of resource
-		private IDictionary<Resource_location, double> _capacity; // storage capacity of resource
+		private double _deferred; // accumulate deferred requests
+		private double _amount;   // amount of resource
+		private double _capacity; // storage capacity of resource
 
-		private Resource_location vessel_wide_location; // to avoid constructing this object many times
 		private Resource_info_view _vessel_wide_view;
 	}
 
