@@ -6,17 +6,17 @@ namespace KERBALISM
 {
 	public enum ScriptType
 	{
-		power_low = 7,    // called when ec level goes below 15%
-		power_high = 6,   // called when ec level goes above 15%
-		sunlight = 4,     // called when sun rise
-		shadow = 5,       // called when sun set
-		unlinked = 11,    // called when signal is lost
-		linked = 10,      // called when signal is regained
-		landed = 1,       // called on landing
-		atmo = 2,         // called on entering atmosphere
-		space = 3,        // called on reaching space
-		rad_low = 8,      // called when radiation goes below 0.05 rad/h
-		rad_high = 9,     // called when radiation goes above 0.05 rad/h
+		power_low = 1,    // called when ec level goes below 15%
+		power_high = 2,   // called when ec level goes above 15%
+		sunlight = 3,     // called when sun rise
+		shadow = 4,       // called when sun set
+		unlinked = 5,     // called when signal is lost
+		linked = 6,       // called when signal is regained
+		landed = 7,       // called on landing
+		atmo = 8,         // called on entering atmosphere
+		space = 9,        // called on reaching space
+		rad_low = 10,     // called when radiation goes below 0.05 rad/h
+		rad_high = 11,    // called when radiation goes above 0.05 rad/h
 		eva_out = 12,     // called when going out on eva
 		eva_in = 13,      // called when coming back from eva
 		action1 = 14,     // called when pressing 1
