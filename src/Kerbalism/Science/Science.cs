@@ -432,7 +432,10 @@ namespace KERBALISM
 				case "OrbitMinEccentricity": return Lib.BuildString("Min. eccentricity ", value);
 				case "OrbitMaxEccentricity": return Lib.BuildString("Max. eccentricity ", value);
 				case "AltitudeMin": return Lib.BuildString("Min. altitude ", Lib.HumanReadableRange(Double.Parse(value)));
-				case "AltitudeMax": return Lib.BuildString("Max. altitude ", Lib.HumanReadableRange(Double.Parse(value)));
+				case "AltitudeMax":
+					var v = Double.Parse(value);
+					if (v >= 0) return Lib.BuildString("Max. altitude ", Lib.HumanReadableRange(v));
+					return Lib.BuildString("Min. depth ", Lib.HumanReadableRange(-v));
 				case "RadiationMin": return Lib.BuildString("Min. radiation ", Lib.HumanReadableRadiation(Double.Parse(value)));
 				case "RadiationMax": return Lib.BuildString("Max. radiation ", Lib.HumanReadableRadiation(Double.Parse(value)));
 				case "Body": return value;
