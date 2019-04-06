@@ -933,7 +933,7 @@ namespace KERBALISM
 			return true;
 		}
 
-		public static UInt64 VesselID( Vessel v )
+		public static Guid VesselID( Vessel v )
 		{
 			// Lesson learned: v.persistendId is not unique. Far from it, in fact.
 
@@ -945,17 +945,19 @@ namespace KERBALISM
 			// --------------------^^^
 
 			// maybe this?
-			return RootID(v);
+			// return RootID(v); // <-- nope. not unique.
+			return v.id;
 		}
 
-		public static UInt64 VesselID( ProtoVessel pv )
+		public static Guid VesselID( ProtoVessel pv )
 		{
 			// nope
 			//byte[] b = pv.vesselID.ToByteArray();
 			//UInt64 result = BitConverter.ToUInt64(b, 0);
 			//result ^= BitConverter.ToUInt64(b, 8);
 			//return result;
-			return pv.protoPartSnapshots[pv.rootIndex].flightID;
+			//return pv.protoPartSnapshots[pv.rootIndex].flightID;
+			return pv.vesselID;
 		}
 
 		// return the flight id of the root part of a vessel

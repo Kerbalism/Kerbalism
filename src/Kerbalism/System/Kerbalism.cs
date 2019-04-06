@@ -138,14 +138,14 @@ namespace KERBALISM
 			//
 			// If the BUG TRIGGERED message is never observed in the wild,
 			// it is safe to remove this chunk of code.
-			Dictionary<UInt64, Vessel> vessels = new Dictionary<UInt64, Vessel>();
+			Dictionary<Guid, Vessel> vessels = new Dictionary<Guid, Vessel>();
 			foreach (Vessel v in FlightGlobals.Vessels)
 			{
 				if(vessels.ContainsKey(Lib.VesselID(v)))
 				{
 					Lib.Log("THIS SHOULD NOT BE HAPPENING: Vessel " + v.name + " already seen in FlightGlobals.Vessels");
 					Message.Post(Lib.BuildString(Lib.Color("red", "BUG TRIGGERED", true), "\n",
-						v.name + " duplicated in FlightGlobals.Vessels. Please report this on GitHub."));
+						v.name + " duplicated in FlightGlobals.Vessels. Please report this on Kerbalism GitHub."));
 				}
 				else
 				{
@@ -340,7 +340,7 @@ namespace KERBALISM
 		// store time until last update for unloaded vessels
 		// note: not using reference_wrapper<T> to increase readability
 		sealed class Unloaded_data { public double time; }; //< reference wrapper
-		static Dictionary<UInt64, Unloaded_data> unloaded = new Dictionary<UInt64, Unloaded_data>();
+		static Dictionary<Guid, Unloaded_data> unloaded = new Dictionary<Guid, Unloaded_data>();
 
 		// used to update storm data on one body per step
 		static int storm_index;
