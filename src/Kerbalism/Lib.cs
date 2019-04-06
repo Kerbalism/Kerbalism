@@ -961,7 +961,7 @@ namespace KERBALISM
 		// return the flight id of the root part of a vessel
 		public static UInt32 RootID( Vessel v )
 		{
-			return v.loaded
+			return v.loaded && v.rootPart != null
 			  ? v.rootPart.flightID
 			  : v.protoVessel.protoPartSnapshots[v.protoVessel.rootIndex].flightID;
 		}
