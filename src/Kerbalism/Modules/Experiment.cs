@@ -413,7 +413,7 @@ namespace KERBALISM
 			var isFile = experiment.sample_mass < double.Epsilon;
 			var drive = isFile ? DB.Vessel(v).FileDrive() : DB.Vessel(v).SampleDrive(0, subject_id);
 			var experimentSize = Science.Experiment(subject_id).max_amount;
-			double available = experiment.sample_mass < float.Epsilon ? drive.FileCapacityAvailable() : drive.SampleCapacityAvailable();
+			double available = experiment.sample_mass < float.Epsilon ? drive.FileCapacityAvailable() : drive.SampleCapacityAvailable(subject_id);
 			if (Math.Min(experiment.data_rate * Kerbalism.elapsed_s, experimentSize) > available)
 				return "insufficient storage";
 
