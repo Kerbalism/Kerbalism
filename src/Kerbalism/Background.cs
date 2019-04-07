@@ -160,7 +160,7 @@ namespace KERBALISM
 			else
 				maxPower = double.Parse(maxPowerStr.Replace(" KW", ""));
 
-			ec.Produce(maxPower * elapsed_s);
+			ec.Produce(maxPower * elapsed_s, "fngenerator");
 		}
 
 		static void ProcessCommand(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleCommand command, Vessel_resources resources, double elapsed_s)
@@ -174,7 +174,7 @@ namespace KERBALISM
 				foreach (ModuleResource ir in command.resHandler.inputResources)
 				{
 					// consume the resource
-					resources.Consume(v, ir.name, ir.rate * elapsed_s);
+					resources.Consume(v, ir.name, ir.rate * elapsed_s, "command");
 				}
 			}
 		}
@@ -217,7 +217,7 @@ namespace KERBALISM
 							  * cosine_factor;                                        // cosine factor of panel orientation
 
 				// produce EC
-				ec.Produce(output * elapsed_s);
+				ec.Produce(output * elapsed_s, "panel");
 			}
 		}
 
@@ -228,7 +228,7 @@ namespace KERBALISM
 			if (Lib.Proto.GetBool(m, "generatorIsActive"))
 			{
 				// create and commit recipe
-				Resource_recipe recipe = new Resource_recipe(p);
+				Resource_recipe recipe = new Resource_recipe(p, "generator");
 				foreach (ModuleResource ir in generator.resHandler.inputResources)
 				{
 					recipe.Input(ir.name, ir.rate * elapsed_s);
@@ -281,7 +281,7 @@ namespace KERBALISM
 					  : converter.EfficiencyBonus * (converter.SpecialistBonusBase + (converter.SpecialistEfficiencyFactor * (exp_level + 1)));
 
 					// create and commit recipe
-					Resource_recipe recipe = new Resource_recipe(p);
+					Resource_recipe recipe = new Resource_recipe(p, "converter");
 					foreach (var ir in converter.inputList)
 					{
 						recipe.Input(ir.ResourceName, ir.Ratio * exp_bonus * elapsed_s);
@@ -346,7 +346,7 @@ namespace KERBALISM
 					if (abundance > harvester.HarvestThreshold)
 					{
 						// create and commit recipe
-						Resource_recipe recipe = new Resource_recipe(p);
+						Resource_recipe recipe = new Resource_recipe(p, "drill");
 						foreach (var ir in harvester.inputList)
 						{
 							recipe.Input(ir.ResourceName, ir.Ratio * elapsed_s);
@@ -414,7 +414,7 @@ namespace KERBALISM
 						double res_amount = abundance * asteroid_drill.Efficiency * exp_bonus * elapsed_s;
 
 						// transform EC into mined resource
-						Resource_recipe recipe = new Resource_recipe(p);
+						Resource_recipe recipe = new Resource_recipe(p, "asteroidDrill");
 						recipe.Input("ElectricCharge", asteroid_drill.PowerConsumption * elapsed_s);
 						recipe.Output(res_name, res_amount, true);
 						resources.Transform(recipe);
@@ -444,7 +444,7 @@ namespace KERBALISM
 			if (Lib.Proto.GetBool(m, "IsActivated"))
 			{
 				// consume ec
-				ec.Consume(lab.powerRequirement * elapsed_s);
+				ec.Consume(lab.powerRequirement * elapsed_s, "lab");
 			}
 		}
 
@@ -453,7 +453,7 @@ namespace KERBALISM
 		{
 			if (light.useResources && Lib.Proto.GetBool(m, "isOn"))
 			{
-				ec.Consume(light.resourceAmount * elapsed_s);
+				ec.Consume(light.resourceAmount * elapsed_s, "light");
 			}
 		}
 
@@ -472,7 +472,7 @@ namespace KERBALISM
 			if (is_scanning)
 			{
 				// consume ec
-				ec.Consume(power * elapsed_s);
+				ec.Consume(power * elapsed_s, "scanner");
 
 				// if there isn't ec
 				// - comparing against amount in previous simulation step
@@ -547,7 +547,7 @@ namespace KERBALISM
 				}
 
 				// produce EC
-				ec.Produce(output * elapsed_s);
+				ec.Produce(output * elapsed_s, "curvedpanel");
 			}
 		}
 
@@ -559,7 +559,7 @@ namespace KERBALISM
 			double power = Lib.ReflectionValue<float>(fission_generator, "PowerGeneration");
 			var reactor = p.modules.Find(k => k.moduleName == "FissionReactor");
 			double tweakable = reactor == null ? 1.0 : Lib.ConfigValue(reactor.moduleValues, "CurrentPowerPercent", 100.0) * 0.01;
-			ec.Produce(power * tweakable * elapsed_s);
+			ec.Produce(power * tweakable * elapsed_s, "fissionreactor");
 		}
 
 
@@ -571,7 +571,7 @@ namespace KERBALISM
 			double half_life = Lib.ReflectionValue<float>(radioisotope_generator, "HalfLife");
 			double mission_time = v.missionTime / (3600.0 * Lib.HoursInDay() * Lib.DaysInYear());
 			double remaining = Math.Pow(2.0, (-mission_time) / half_life);
-			ec.Produce(power * remaining * elapsed_s);
+			ec.Produce(power * remaining * elapsed_s, "rtg");
 		}
 
 
@@ -631,13 +631,13 @@ namespace KERBALISM
 						boiloff_rate = Lib.ReflectionValue<float>(item, "boiloffRate") / 360000.0f;
 
 						// let it boil off
-						fuel.Consume(amount * (1.0 - Math.Pow(1.0 - boiloff_rate, elapsed_s)));
+						fuel.Consume(amount * (1.0 - Math.Pow(1.0 - boiloff_rate, elapsed_s)), "boiloff");
 					}
 				}
 			}
 
 			// apply EC consumption
-			ec.Consume(total_cost * elapsed_s);
+			ec.Consume(total_cost * elapsed_s, "cryotank");
 		}
 
 		static void ProcessNonRechargeBattery(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule fission_generator, Resource_info ec, double elapsed_s)

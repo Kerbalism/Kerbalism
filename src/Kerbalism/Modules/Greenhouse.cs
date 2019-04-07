@@ -136,14 +136,14 @@ namespace KERBALISM
 				artificial = Math.Max(light_tolerance - natural, 0.0);
 
 				// consume EC for the lamps, scaled by artificial light intensity
-				if (artificial > double.Epsilon) ec.Consume(ec_rate * (artificial / light_tolerance) * Kerbalism.elapsed_s);
+				if (artificial > double.Epsilon) ec.Consume(ec_rate * (artificial / light_tolerance) * Kerbalism.elapsed_s, "greenhouse");
 
 				// reset artificial lighting if there is no ec left
 				// - comparing against amount in previous simulation step
 				if (ec.amount <= double.Epsilon) artificial = 0.0;
 
 				// execute recipe
-				Resource_recipe recipe = new Resource_recipe(part);
+				Resource_recipe recipe = new Resource_recipe(part, "greenhouse");
 				foreach (ModuleResource input in resHandler.inputResources)
 				{
 					// WasteAtmosphere is primary combined input
@@ -245,14 +245,14 @@ namespace KERBALISM
 				double artificial = Math.Max(g.light_tolerance - natural, 0.0);
 
 				// consume EC for the lamps, scaled by artificial light intensity
-				if (artificial > double.Epsilon) ec.Consume(g.ec_rate * (artificial / g.light_tolerance) * elapsed_s);
+				if (artificial > double.Epsilon) ec.Consume(g.ec_rate * (artificial / g.light_tolerance) * elapsed_s, "experiment");
 
 				// reset artificial lighting if there is no ec left
 				// note: comparing against amount in previous simulation step
 				if (ec.amount <= double.Epsilon) artificial = 0.0;
 
 				// execute recipe
-				Resource_recipe recipe = new Resource_recipe(g.part);
+				Resource_recipe recipe = new Resource_recipe(g.part, "greenhouse");
 				foreach (ModuleResource input in g.resHandler.inputResources) //recipe.Input(input.name, input.rate * elapsed_s);
 				{
 					// WasteAtmosphere is primary combined input
@@ -370,7 +370,7 @@ namespace KERBALISM
 			if (v == null || EVA.IsDead(v)) return;
 
 			// produce reduced quantity of food, proportional to current growth
-			ResourceCache.Produce(vessel, crop_resource, crop_size);
+			ResourceCache.Produce(vessel, crop_resource, crop_size, "greenhouse");
 
 			// reset growth
 			growth = 0.0;
@@ -396,7 +396,7 @@ namespace KERBALISM
 			double reduced_harvest = crop_size * growth * 0.5;
 
 			// produce reduced quantity of food, proportional to current growth
-			ResourceCache.Produce(vessel, crop_resource, reduced_harvest);
+			ResourceCache.Produce(vessel, crop_resource, reduced_harvest, "greenhouse");
 
 			// reset growth
 			growth = 0.0;

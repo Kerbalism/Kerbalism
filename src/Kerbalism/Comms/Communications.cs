@@ -12,7 +12,7 @@ namespace KERBALISM
 		public static void Update(Vessel v, Vessel_info vi, VesselData vd, Resource_info ec, double elapsed_s)
 		{
 			// consume ec for transmitters
-			ec.Consume(vi.connection.ec * elapsed_s);
+			ec.Consume(vi.connection.ec * elapsed_s, "comms");
 
 			// do nothing if network is not ready
 			if (!NetworkInitialized) return;

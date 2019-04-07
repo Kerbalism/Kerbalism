@@ -14,15 +14,15 @@ namespace KERBALISM
 	/// </remarks>
 	public abstract class Resource_info_view
 	{
-		protected Resource_info_view() {}
+		protected Resource_info_view() { }
 		public abstract double deferred { get; }
 		public abstract double amount { get; }
 		public abstract double capacity { get; }
 
 		/// <summary>record a deferred production</summary>
-		public abstract void Produce(double quantity);
+		public abstract void Produce(double quantity, string tag);
 		/// <summary>record a deferred consumption</summary>
-		public abstract void Consume(double quantity);
+		public abstract void Consume(double quantity, string tag);
 	}
 
 	/// <summary>
@@ -45,6 +45,10 @@ namespace KERBALISM
 			_deferred = 0;
 			_amount = 0;
 			_capacity = 0;
+
+#if DEBUG_RESOURCES
+			_protocol = new Dictionary<string, double>();
+#endif
 
 			_vessel_wide_view = new Resource_info_view_impl(resource_name, this);
 
@@ -92,33 +96,6 @@ namespace KERBALISM
 			level = capacity > double.Epsilon ? amount / capacity : 0.0;
 		}
 
-		/// <summary>
-		/// Identifier to identify the part or vessel where resources are stored
-		/// Both loaded and unloaded parts/vessels are supported
-		/// </summary>
-		/// <remarks>
-		/// KSP 1.3 does not support the neccesary persistent identifier for per part resources
-		/// KSP 1.3 always defaults to vessel wide
-		/// design is shared with Resource_location in UI/Planner.cs module
-		/// </remarks>
-		private class Resource_location
-		{
-/*
-			public Resource_location(Part p) // loaded part
-			{
-				vessel_wide = false;
-				persistent_identifier = p.persistentId;
-			}
-			public Resource_location(ProtoPartSnapshot p) // unloaded part
-			{
-				vessel_wide = false;
-				persistent_identifier = p.persistentId;
-			}
-*/
-			public Resource_location() {}
-
-		}
-
 		/// <summary>Implementation of Resource_info_view</summary>
 		/// <remarks>Only constructed by Resource_info class to hide the dependencies between the two classes</remarks>
 		private class Resource_info_view_impl : Resource_info_view
@@ -143,13 +120,13 @@ namespace KERBALISM
 				get => info._capacity;
 			}
 
-			public override void Produce(double quantity)
+			public override void Produce(double quantity, string tag)
 			{
-				info.Produce(quantity);
+				info.Produce(quantity, tag);
 			}
-			public override void Consume(double quantity)
+			public override void Consume(double quantity, string tag)
 			{
-				info.Consume(quantity);
+				info.Consume(quantity, tag);
 			}
 		}
 
@@ -159,15 +136,33 @@ namespace KERBALISM
 		}
 
 		/// <summary>record a deferred production for the vessel wide bookkeeping</summary>
-		public void Produce(double quantity)
+		public void Produce(double quantity, string tag)
 		{
 			_deferred += quantity;
+
+#if DEBUG_RESOURCES
+			var key = resource_name + " produce " + tag;
+			double p = quantity;
+			if (_protocol.ContainsKey(key))
+				_protocol[key] += p;
+			else
+				_protocol.Add(key, p);
+#endif
 		}
 
 		/// <summary>record a deferred consumption for the vessel wide bookkeeping</summary>
-		public void Consume(double quantity)
+		public void Consume(double quantity, string tag)
 		{
 			_deferred -= quantity;
+
+#if DEBUG_RESOURCES
+			var key = resource_name + " consume " + tag;
+			double p = quantity;
+			if (_protocol.ContainsKey(key))
+				_protocol[key] += p;
+			else
+				_protocol.Add(key, p);
+#endif
 		}
 
 		/// <summary>synchronize resources from from cache to vessel</summary>
@@ -353,6 +348,17 @@ namespace KERBALISM
 			// reset deferred production/consumption
 			_deferred = 0.0;
 
+#if DEBUG_RESOURCES
+			if(_protocol.Count > 0)
+			{
+				Lib.Log("RESOURCE BLOCK " + v);
+				foreach (var p in _protocol)
+					Lib.Log(p.Key + " @ " + (p.Value / elapsed_s));
+				Lib.Log("RESOURCE BLOCK END");
+				_protocol.Clear();
+			}
+#endif
+
 			// reset meal flag
 			meal_happened = false;
 		}
@@ -462,6 +468,10 @@ namespace KERBALISM
 		private double _amount;   // amount of resource
 		private double _capacity; // storage capacity of resource
 
+#if DEBUG_RESOURCES
+		private Dictionary<string,  double> _protocol;
+#endif
+
 		private Resource_info_view _vessel_wide_view;
 	}
 
@@ -488,22 +498,24 @@ namespace KERBALISM
 			public bool dump;
 		}
 
-		public Resource_recipe(Part p)
+		public Resource_recipe(Part p, string name)
 		{
 			this.inputs = new List<Entry>();
 			this.outputs = new List<Entry>();
 			this.cures = new List<Entry>();
 			this.left = 1.0;
 			this.loaded_part = p;
+			this.name = name;
 		}
 
-		public Resource_recipe(ProtoPartSnapshot p)
+		public Resource_recipe(ProtoPartSnapshot p, string name)
 		{
 			this.inputs = new List<Entry>();
 			this.outputs = new List<Entry>();
 			this.cures = new List<Entry>();
 			this.left = 1.0;
 			this.unloaded_part = p;
+			this.name = name;
 		}
 
 		private Resource_info_view GetResourceInfoView(Vessel v, Vessel_resources resources, string resource_name)
@@ -623,19 +635,19 @@ namespace KERBALISM
 						Resource_info_view sec = GetResourceInfoView(v, resources, sec_e.name);
 						double need = (e.quantity * worst_io) + (sec_e.quantity * worst_io);
 						// do we have enough primary to satisfy needs, if so don't consume secondary
-						if (res.amount + res.deferred >= need) resources.Consume(v, e.name, need);
+						if (res.amount + res.deferred >= need) resources.Consume(v, e.name, need, name);
 						// consume primary if any available and secondary
 						else
 						{
 							need -= res.amount + res.deferred;
-							res.Consume(res.amount + res.deferred);
-							sec.Consume(need);
+							res.Consume(res.amount + res.deferred, name);
+							sec.Consume(need, name);
 						}
 					}
 				}
 				else 
 				{
-					res.Consume(e.quantity * worst_io);
+					res.Consume(e.quantity * worst_io, name);
 				}
 			}
 
@@ -644,7 +656,7 @@ namespace KERBALISM
 			{
 				Entry e = outputs[i];
 				Resource_info_view res = GetResourceInfoView(v, resources, e.name);
-				res.Produce(e.quantity * worst_io);
+				res.Produce(e.quantity * worst_io, name);
 			}
 
 			// produce cures
@@ -678,6 +690,7 @@ namespace KERBALISM
 		public List<Entry> cures;    // set of cures
 		public double left;     // what proportion of the recipe is left to execute
 
+		private string name;
 		private Part loaded_part = null; // one of these is null
 		private ProtoPartSnapshot unloaded_part = null;
 	}
@@ -735,15 +748,15 @@ namespace KERBALISM
 		}
 
 		// record deferred production of a resource (shortcut)
-		public void Produce(Vessel v, string resource_name, double quantity)
+		public void Produce(Vessel v, string resource_name, double quantity, string tag)
 		{
-			Info(v, resource_name).Produce(quantity);
+			Info(v, resource_name).Produce(quantity, tag);
 		}
 
 		// record deferred consumption of a resource (shortcut)
-		public void Consume(Vessel v, string resource_name, double quantity)
+		public void Consume(Vessel v, string resource_name, double quantity, string tag)
 		{
-			Info(v, resource_name).Consume(quantity);
+			Info(v, resource_name).Consume(quantity, tag);
 		}
 
 		// record deferred execution of a recipe
@@ -803,15 +816,15 @@ namespace KERBALISM
 		}
 
 		// register deferred production of a resource (shortcut)
-		public static void Produce(Vessel v, string resource_name, double quantity)
+		public static void Produce(Vessel v, string resource_name, double quantity, string tag)
 		{
-			Info(v, resource_name).Produce(quantity);
+			Info(v, resource_name).Produce(quantity, tag);
 		}
 
 		// register deferred consumption of a resource (shortcut)
-		public static void Consume(Vessel v, string resource_name, double quantity)
+		public static void Consume(Vessel v, string resource_name, double quantity, string tag)
 		{
-			Info(v, resource_name).Consume(quantity);
+			Info(v, resource_name).Consume(quantity, tag);
 		}
 
 		// register deferred execution of a recipe (shortcut)
@@ -877,11 +890,14 @@ namespace KERBALISM
 				mannedisPriority[i] = false;
 			}
 
+			double max_pressure = 1.0;
 			foreach (Habitat partHabitat in v.FindPartModulesImplementing<Habitat>())
 			{
 				// Skip disabled habitats
 				if (partHabitat.state != Habitat.State.disabled)
 				{
+					max_pressure = Math.Min(max_pressure, partHabitat.max_pressure);
+
 					// Has flag to be Equalized?
 					equalize |= partHabitat.needEqualize;
 
@@ -915,6 +931,8 @@ namespace KERBALISM
 					}
 				}
 			}
+
+			Cache.VesselInfo(v).max_pressure = max_pressure;
 
 			if (!equalize) return;
 

@@ -94,7 +94,7 @@ namespace KERBALISM
 			// habitat data
 			volume = Habitat.Tot_volume(v);
 			surface = Habitat.Tot_surface(v);
-			pressure = Habitat.Pressure(v);
+			pressure = Math.Max(max_pressure, Habitat.Pressure(v));
 			evas = (uint)(Math.Max(0, ResourceCache.Info(v, "Nitrogen").amount - 330) / PreferencesLifeSupport.Instance.evaAtmoLoss);
 			poisoning = Habitat.Poisoning(v);
 			humidity = Habitat.Humidity(v);
@@ -163,6 +163,7 @@ namespace KERBALISM
 		public double volume;               // enabled volume in m^3
 		public double surface;              // enabled surface in m^2
 		public double pressure;             // normalized pressure
+		public double max_pressure = 1.0;   // max. attainable pressure on this vessel
 		public uint evas;                   // number of EVA's using available Nitrogen
 		public double poisoning;            // waste atmosphere amount versus total atmosphere amount
 		public double humidity;             // moist atmosphere amount

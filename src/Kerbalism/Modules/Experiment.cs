@@ -277,7 +277,7 @@ namespace KERBALISM
 			if (stored)
 			{
 				// consume ec
-				ec.Consume(experiment.ec_rate * elapsed);
+				ec.Consume(experiment.ec_rate * elapsed, "experiment");
 				dataSampled += chunkSize;
 				dataSampled = Math.Min(dataSampled, exp.max_amount);
 				sampledOut = dataSampled;

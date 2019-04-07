@@ -18,7 +18,7 @@ namespace KERBALISM.Planner
 			// inverting their order avoided this corner-case
 
 			Analyze_crew(parts);
-			Analyze_habitat(sim, env);
+			Analyze_habitat(parts, sim, env);
 			Analyze_radiation(parts, sim);
 			Analyze_reliability(parts);
 			Analyze_qol(parts, sim, env);
@@ -68,7 +68,7 @@ namespace KERBALISM.Planner
 				crew_count = crew_capacity;
 		}
 
-		void Analyze_habitat(ResourceSimulator sim, EnvironmentAnalyzer env)
+		void Analyze_habitat(List<Part> parts, ResourceSimulator sim, EnvironmentAnalyzer env)
 		{
 			// calculate total volume
 			volume = sim.Resource("Atmosphere").capacity / 1e3;
@@ -87,6 +87,27 @@ namespace KERBALISM.Planner
 
 			// determine if the vessel has humidity control capabilities
 			humid = sim.Resource("MoistAtmosphere").consumed > 0.0 || env.breathable;
+
+			// scan the parts
+			double max_pressure = 1.0;
+			foreach (Part p in parts)
+			{
+				// for each module
+				foreach (PartModule m in p.Modules)
+				{
+					// skip disabled modules
+					if (!m.isEnabled)
+						continue;
+
+					if (m.moduleName == "Habitat")
+					{
+						Habitat h = m as Habitat;
+						max_pressure = Math.Min(max_pressure, h.max_pressure);
+					}
+				}
+			}
+
+			pressurized &= max_pressure >= Settings.PressureThreshold;
 		}
 
 		void Analyze_comms(List<Part> parts)
@@ -214,6 +235,8 @@ namespace KERBALISM.Planner
 
 			// calculate comfort factor
 			comforts = new Comforts(parts, env.landed, crew_count > 1, has_comms);
+
+
 		}
 
 

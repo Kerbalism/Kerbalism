@@ -83,9 +83,18 @@ namespace KERBALISM
 				Events["StoreData"].active = v != null && v.isEVA && !EVA.IsDead(v) && drive.FilesSize() > double.Epsilon;
 
 				// hide TransferLocation button
-				var isPrivate = experiment_id.Length > 0;
-				Events["TransferData"].active = !isPrivate;
-				Events["TransferData"].guiActive = !isPrivate;
+				var transferVisible = experiment_id.Length == 0;
+				if(transferVisible)
+				{
+					int count = 0;
+					foreach (var d in DB.Vessel(vessel).drives.Values){
+						if (!d.is_private) count++;
+						if (count > 1) break;
+					}
+					transferVisible = count > 1;
+				}
+				Events["TransferData"].active = transferVisible;
+				Events["TransferData"].guiActive = transferVisible;
 			}
 		}
 

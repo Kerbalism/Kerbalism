@@ -179,7 +179,7 @@ namespace KERBALISM
 				Resource_info ec = ResourceCache.Info(vessel, "ElectricCharge");
 
 				// consume ec
-				ec.Consume(ec_rate * Kerbalism.elapsed_s);
+				ec.Consume(ec_rate * Kerbalism.elapsed_s, "gravityring");
 			}
 		}
 
@@ -189,7 +189,7 @@ namespace KERBALISM
 			if (ring.deploy.Length == 0 || Lib.Proto.GetBool(m, "deployed"))
 			{
 				// consume ec
-				ec.Consume(ring.ec_rate * elapsed_s);
+				ec.Consume(ring.ec_rate * elapsed_s, "gravityring");
 			}
 		}
 

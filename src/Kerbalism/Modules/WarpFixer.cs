@@ -87,7 +87,7 @@ namespace KERBALISM
 							  * cosine_factor;                    // cosine factor of panel orientation
 
 				// produce EC
-				ec.Produce(output * Kerbalism.elapsed_s);
+				ec.Produce(output * Kerbalism.elapsed_s, "panel");
 
 				// update ui
 				field_visibility = info.sunlight * 100.0;
