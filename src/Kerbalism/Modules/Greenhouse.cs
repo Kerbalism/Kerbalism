@@ -7,7 +7,7 @@ namespace KERBALISM
 {
 
 
-	public sealed class Greenhouse : PartModule, IModuleInfo, ISpecifics, IContractObjectiveModule
+	public sealed class Greenhouse : PartModule, IModuleInfo, ISpecifics, IContractObjectiveModule, IConfigurable
 	{
 		// config
 		[KSPField] public string crop_resource;         // name of resource produced by harvests
@@ -43,6 +43,15 @@ namespace KERBALISM
 		// other data
 		Renderer lamps_rdr;
 		public bool WACO2 = false;        // true if we have combined WasteAtmosphere and CarbonDioxide
+
+
+		public void Configure(bool enable, int multiple) {
+			active = enable;
+			if(!active) {
+				growth = 0;
+				tta = 0;
+			}
+		}
 
 
 		public override void OnStart(StartState state)
@@ -136,14 +145,14 @@ namespace KERBALISM
 				artificial = Math.Max(light_tolerance - natural, 0.0);
 
 				// consume EC for the lamps, scaled by artificial light intensity
-				if (artificial > double.Epsilon) ec.Consume(ec_rate * (artificial / light_tolerance) * Kerbalism.elapsed_s, "greenhouse");
+				if (artificial > double.Epsilon) ec.Consume(ec_rate * (artificial / light_tolerance) * Kerbalism.elapsed_s);
 
 				// reset artificial lighting if there is no ec left
 				// - comparing against amount in previous simulation step
 				if (ec.amount <= double.Epsilon) artificial = 0.0;
 
 				// execute recipe
-				Resource_recipe recipe = new Resource_recipe(part, "greenhouse");
+				Resource_recipe recipe = new Resource_recipe(part);
 				foreach (ModuleResource input in resHandler.inputResources)
 				{
 					// WasteAtmosphere is primary combined input
@@ -245,14 +254,14 @@ namespace KERBALISM
 				double artificial = Math.Max(g.light_tolerance - natural, 0.0);
 
 				// consume EC for the lamps, scaled by artificial light intensity
-				if (artificial > double.Epsilon) ec.Consume(g.ec_rate * (artificial / g.light_tolerance) * elapsed_s, "experiment");
+				if (artificial > double.Epsilon) ec.Consume(g.ec_rate * (artificial / g.light_tolerance) * elapsed_s);
 
 				// reset artificial lighting if there is no ec left
 				// note: comparing against amount in previous simulation step
 				if (ec.amount <= double.Epsilon) artificial = 0.0;
 
 				// execute recipe
-				Resource_recipe recipe = new Resource_recipe(g.part, "greenhouse");
+				Resource_recipe recipe = new Resource_recipe(g.part);
 				foreach (ModuleResource input in g.resHandler.inputResources) //recipe.Input(input.name, input.rate * elapsed_s);
 				{
 					// WasteAtmosphere is primary combined input
@@ -370,7 +379,7 @@ namespace KERBALISM
 			if (v == null || EVA.IsDead(v)) return;
 
 			// produce reduced quantity of food, proportional to current growth
-			ResourceCache.Produce(vessel, crop_resource, crop_size, "greenhouse");
+			ResourceCache.Produce(vessel, crop_resource, crop_size);
 
 			// reset growth
 			growth = 0.0;
@@ -396,7 +405,7 @@ namespace KERBALISM
 			double reduced_harvest = crop_size * growth * 0.5;
 
 			// produce reduced quantity of food, proportional to current growth
-			ResourceCache.Produce(vessel, crop_resource, reduced_harvest, "greenhouse");
+			ResourceCache.Produce(vessel, crop_resource, reduced_harvest);
 
 			// reset growth
 			growth = 0.0;
