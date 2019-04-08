@@ -277,7 +277,7 @@ namespace KERBALISM
 			}
 
 			foreach(var p in resourceDefs)
-				resources.Consume(vessel, p.Key, p.Value * elapsed);
+				resources.Consume(vessel, p.Key, p.Value * elapsed, "experiment");
 
 			bool stored = false;
 			if (isFile)

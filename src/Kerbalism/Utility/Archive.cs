@@ -1,69 +1,27 @@
 ﻿using System;
 using System.Text;
-
+using System.Collections.Generic;
 
 namespace KERBALISM
 {
 
-
-	public class ReadArchive
+	public static class Archive
 	{
-		public ReadArchive(string data)
+		public static string list2str(List<string> list)
 		{
-			this.data = data;
+			string result = "";
+			foreach (var s in list)
+			{
+				if (result.Length > 0) result += ";";
+				result += s.Replace(";", ",");
+			}
+			return result;
 		}
 
-		public void Load(out int integer)
+		public static List<string> string2list(String str)
 		{
-			integer = data[index] - 32;
-			++index;
+			return Lib.Tokenize(str, ';');
 		}
-
-		public void Load(out string text)
-		{
-			int len;
-			Load(out len);
-			text = data.Substring(index, len);
-			index += len;
-		}
-
-		public void Load(out double value)
-		{
-			string s;
-			Load(out s);
-			value = Lib.Parse.ToDouble(s);
-		}
-
-		string data;
-		int index;
-	}
-
-
-	public class WriteArchive
-	{
-		public void Save(int integer)
-		{
-			integer = Lib.Clamp(integer + 32, 32, 255);
-			sb.Append((char)integer);
-		}
-
-		public void Save(string text)
-		{
-			Save(text.Length);
-			sb.Append(text.Substring(0, Math.Min(255 - 32, text.Length)));
-		}
-
-		public void Save(double value)
-		{
-			Save(value.ToString());
-		}
-
-		public string Serialize()
-		{
-			return sb.ToString();
-		}
-
-		StringBuilder sb = new StringBuilder();
 	}
 
 
