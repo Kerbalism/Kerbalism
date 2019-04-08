@@ -30,7 +30,7 @@ namespace KERBALISM
 
 			if(drive == null)
 			{
-				if (Lib.IsEditor())
+				if (!Lib.IsFlight())
 					drive = new Drive(title, dataCapacity, sampleCapacity);
 				else
 					drive = DB.Vessel(vessel).DriveForPart(title, hdId, dataCapacity, sampleCapacity);
@@ -49,7 +49,7 @@ namespace KERBALISM
 				return;
 			}
 
-			if (Lib.IsEditor())
+			if (!Lib.IsFlight())
 				drive = new Drive();
 			else
 				drive = DB.Vessel(vessel).DriveForPart(title, hdId, dataCapacity, sampleCapacity);
