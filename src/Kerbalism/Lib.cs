@@ -1207,66 +1207,83 @@ namespace KERBALISM
 
 		/// <summary> Adds the specified resource amount and capacity to a part,
 		/// the resource is created if it doesn't already exist </summary>
-		public static void AddResource( Part p, string res_name, double amount, double capacity )
+		// poached from https://github.com/blowfishpro/B9PartSwitch/blob/master/B9PartSwitch/Extensions/PartExtensions.cs
+		public static PartResource AddResource(Part part, string res_name, double amount, double capacity)
 		{
-			// if the resource is already in the part
-			if (p.Resources.Contains( res_name ))
+			var reslib = PartResourceLibrary.Instance.resourceDefinitions;
+			// if the resource is not known, log a warning and do nothing
+			if (!reslib.Contains(res_name))
 			{
-				// add amount and capacity
-				var res = p.Resources[res_name];
-				res.amount += amount;
-				res.maxAmount += capacity;
+				Lib.Log(Lib.BuildString("error while adding ", res_name, ": the resource doesn't exist"));
+				return null;
 			}
-			// if the resource is not already in the part
+			var resourceDefinition = reslib[res_name];
+
+			amount = Math.Min(amount, capacity);
+			amount = Math.Max(amount, 0);
+
+			PartResource resource = part.Resources[resourceDefinition.name];
+
+			if (resource == null)
+			{
+				resource = new PartResource(part);
+				resource.SetInfo(resourceDefinition);
+				resource.maxAmount = capacity;
+				resource.amount = amount;
+				resource.flowState = true;
+				resource.isTweakable = resourceDefinition.isTweakable;
+				resource.isVisible = resourceDefinition.isVisible;
+				resource.hideFlow = false;
+				resource.flowMode = PartResource.FlowMode.Both;
+				part.Resources.dict.Add(resourceDefinition.name.GetHashCode(), resource);
+
+				PartResource simulationResource = new PartResource(resource);
+				simulationResource.simulationResource = true;
+				part.SimulationResources?.dict.Add(resourceDefinition.name.GetHashCode(), simulationResource);
+
+				GameEvents.onPartResourceListChange.Fire(part);
+			}
 			else
 			{
-				// shortcut to resource library
-				var reslib = PartResourceLibrary.Instance.resourceDefinitions;
+				resource.maxAmount = capacity;
 
-				// if the resource is not known, log a warning and do nothing
-				if (!reslib.Contains( res_name ))
-				{
-					Lib.Log( Lib.BuildString( "error while adding ", res_name, ": the resource doesn't exist" ) );
-					return;
-				}
+				PartResource simulationResource = part.SimulationResources?[resourceDefinition.name];
+				if (simulationResource != null) simulationResource.maxAmount = capacity;
 
-				// get resource definition
-				var def = reslib[res_name];
-
-				// create the resource
-				ConfigNode res = new ConfigNode( "RESOURCE" );
-				res.AddValue( "name", res_name );
-				res.AddValue( "amount", amount );
-				res.AddValue( "maxAmount", capacity );
-
-				// add it to the part
-				p.Resources.Add( res );
+				resource.amount = amount;
 			}
+
+			return resource;
 		}
 
 		/// <summary> Removes the specified resource amount and capacity from a part,
 		/// the resource is removed completely if the capacity reaches zero </summary>
-		public static void RemoveResource( Part p, string res_name, double amount, double capacity )
+		public static void RemoveResource(Part part, string res_name, double amount, double capacity)
 		{
-			// if the resource is not already in the part, do nothing
-			if (p.Resources.Contains( res_name ))
+			// if the resource is not in the part, do nothing
+			if (!part.Resources.Contains(res_name))
+				return;
+
+			// get the resource
+			var res = part.Resources[res_name];
+
+			// reduce amount and capacity
+			res.amount -= amount;
+			res.maxAmount -= capacity;
+
+			// clamp amount to capacity just in case
+			res.amount = Math.Min(res.amount, res.maxAmount);
+
+			// if the resource is empty
+			if (res.maxAmount <= 0.005) //< deal with precision issues
 			{
-				// get the resource
-				var res = p.Resources[res_name];
+				var reslib = PartResourceLibrary.Instance.resourceDefinitions;
+				var resourceDefinition = reslib[res_name];
 
-				// reduce amount and capacity
-				res.amount -= amount;
-				res.maxAmount -= capacity;
+				part.Resources.dict.Remove(resourceDefinition.name.GetHashCode());
+				part.SimulationResources?.dict.Remove(resourceDefinition.name.GetHashCode());
 
-				// clamp amount to capacity just in case
-				res.amount = Math.Min( res.amount, res.maxAmount );
-
-				// if the resource is empty
-				if (res.maxAmount <= 0.005) //< deal with precision issues
-				{
-					// remove it
-					p.Resources.Remove( res );
-				}
+				GameEvents.onPartResourceListChange.Fire(part);
 			}
 		}
 

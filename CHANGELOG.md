@@ -27,6 +27,7 @@
 * Added LSS system diagrams, and a small guide on how to set up O2 + water recycling (Sir Mortimer)
 * Hide Sickbay from automation if it is unavailable (Sir Mortimer)
 * New Science system (Sir Mortimer, Arthur)
+* Fixed the issue with placing parts in a symmetry group > 2 in the editor (Sir Mortimer)
 
 ------------------------------------------------------------------------------------------------------
 
