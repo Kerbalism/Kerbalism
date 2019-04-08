@@ -331,7 +331,7 @@ namespace KERBALISM
 				FixIVA = false;
 			}
 
-			if(max_pressure < Settings.PressureThreshold)
+			if(max_pressure < Settings.PressureThreshold && Lib.IsFlight())
 			{
 				var vi = Cache.VesselInfo(vessel);
 				vi.max_pressure = Math.Min(vi.max_pressure, max_pressure);
