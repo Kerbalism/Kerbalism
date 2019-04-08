@@ -32,6 +32,6 @@
 				{									
 					%slots =									//change total slots after the upgrade. 
 				}
-			!UPGRADE[XXX-Upgrade2] {}							//upgrade removal. LAB has a different Upgrade2, so take care when patching lab groups. All groups have 2 upgrades each.											
+			!UPGRADE[XXX-Upgrade2] {}							//upgrade removal. Groups have different number of upgrades. Check Groups folder.											
 		}
 }

@@ -2,14 +2,8 @@
 //patches are structured in this convoluted way for ease of patching new parts and mods.
 //=================================================================================================================================================================
 
-	HARD REQUIREMENTS:
-	Kerbalism + all it's requirements
-	Module Manager 
-	the Kerbalism16.bin (courtesy of Sir Mortimer, he fixed a bunch of stuff) provided with this patch pack; shit will break otherwise. It should be included in later releases, but if 2.1.2 or less, you need to replace it.
-
 	Tested on KSP 1.6.1; no idea what, how, when, if, wether, etc. works on other game versions.
-	This "SHOULD NOT" break any saves, but you will get warnings for in-flight and saved crafts for missing modules, as stock experiment modules are gone.
-	Try at your own risk, no warranties.
+	This will break existing saves.
 
 //=================================================================================================================================================================
 //stock and supported mods are patched "properly" (pay attention to quotation marks)
@@ -30,7 +24,7 @@
 
 //=================================================================================================================================================================
 //most of the data scales/data collection rates/ec/s were changed to my own taste, and I have my own version of "balance". still needs a bunch of testing.
-//should you wish to fiddle around with this, go into tweakables folder. fiddle there.
+//should you wish to fiddle around with stuff, check Science.cfg for stock, and check ModSupport for individual mod configs.
 //=================================================================================================================================================================
 //should you simply wish to slap a bunch of specific experiments into a part (say, a probe core) without the ability to select through configure,
 
@@ -45,19 +39,5 @@
 		//add this module for each experiment. everything else should be taken care of by other patches in this bundle.
 }
 
-//IF YOU WANT CUSTOM VALUES, OTHER THAN WHAT'S PROVIDED (faster sampling rate, less ec/s, whatever else DIFFERENT than default configured values for your experiments), you'll have to add another part:
-
-@PART[whatever part name]:NEEDS[FeatureScience]:FINAL		//Has to be final, a lot of tweaking and balancing is done very late in the patchig process
-{
-	@MODULE[Experiment]:HAS[#experiment_id[id from above]]
-	{
-		%data_rate = 
-		%ec_rate = 
-		%transmissible = 
-		%requires = 						//these are all the possible fields.
-		%crew_operate = 					//more info at https://github.com/SirMortimer/Kerbalism/blob/ebee94eef30bc033e9de0d2f0e2fc629c2b89e76/docs/modders/modules.rst
-		%crew_reset = 						//Courtesy of Sir Mortimer for doing a bunch of work on the Experiment module.
-		%crew_prepare = 
-		%anim_deploy = 
-	}
-}
+//IF YOU WANT CUSTOM VALUES, OTHER THAN WHAT'S PROVIDED (faster sampling rate, less ec/s, whatever else DIFFERENT than default configured values for your experiments), you'll have to do it manually.
+//there's documentation on each field for the Experiment module. Needs to run at :FOR[zzzKerbalism] to take effect.
