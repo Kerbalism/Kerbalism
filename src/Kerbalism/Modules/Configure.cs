@@ -55,18 +55,31 @@ namespace KERBALISM
 			// don't break tutorial scenarios
 			if (Lib.DisableScenario(this)) return;
 
-			InitSetups();
+			// parse all setups from string data
+			var archive = new ReadArchive(data);
+			int count;
+			archive.Load(out count);
+			setups = new List<ConfigureSetup>(count);
+			while (count-- > 0) setups.Add(new ConfigureSetup(archive));
 
+			// parse configuration from string data
+			// - we avoid corner case when cfg was never set up (because craft was never in VAB)
 			selected = new List<string>();
 			if (!string.IsNullOrEmpty(cfg))
 			{
-				selected = Archive.string2list(cfg);
+				archive = new ReadArchive(cfg);
+				archive.Load(out count);
+				while (count-- > 0) { string s; archive.Load(out s); selected.Add(s); }
 			}
 
+			// parse previous configuration from string data
+			// - we avoid corner case when prev_cfg was never set up (because craft was never in VAB)
 			prev_selected = new List<string>();
 			if (!string.IsNullOrEmpty(prev_cfg))
 			{
-				prev_selected = Archive.string2list(prev_cfg);
+				archive = new ReadArchive(prev_cfg);
+				archive.Load(out count);
+				while (count-- > 0) { string s; archive.Load(out s); prev_selected.Add(s); }
 			}
 
 			// default title to part name
@@ -85,12 +98,6 @@ namespace KERBALISM
 			changes = new Dictionary<int, int>();
 		}
 
-		private static readonly Dictionary<string, List<ConfigureSetup>> _all_setups = new Dictionary<string, List<ConfigureSetup>>();
-
-		public static Dictionary<string, List<ConfigureSetup>> AllSetups()
-		{
-			return _all_setups;
-		}
 
 		public override void OnLoad(ConfigNode node)
 		{
@@ -98,31 +105,29 @@ namespace KERBALISM
 			// for this reason, we parse it and then re-serialize it as a string
 			if (HighLogic.LoadedScene == GameScenes.LOADING)
 			{
-				if (!_all_setups.ContainsKey(name)) _all_setups.Add(name, new List<ConfigureSetup>());
-
-				var _setups = _all_setups[name];
-				_setups.Clear();
-
+				// parse all setups from config node and generate details
+				setups = new List<ConfigureSetup>();
 				foreach (var setup_node in node.GetNodes("SETUP"))
 				{
-					_setups.Add(new ConfigureSetup(setup_node, this));
+					setups.Add(new ConfigureSetup(setup_node, this));
 				}
+
+				// serialize the setups to string data
+				var archive = new WriteArchive();
+				archive.Save(setups.Count);
+				foreach (var setup in setups) setup.Save(archive);
+				data = archive.Serialize();
+
+				// serialize empty configuration to string data
+				archive = new WriteArchive();
+				archive.Save(0);
+				cfg = archive.Serialize();
+
+				// serialize empty previous configuration to string data
+				archive = new WriteArchive();
+				archive.Save(0);
+				prev_cfg = archive.Serialize();
 			}
-		}
-
-		private void InitSetups()
-		{
-			if (setups != null) return;
-
-			if (!_all_setups.ContainsKey(name))
-			{
-				Lib.Log("Configure Error: " + name + " has no known setups");
-				return;
-			}
-
-			setups = new List<ConfigureSetup>();
-			foreach (var setup in _all_setups[name])
-				setups.Add(new ConfigureSetup(setup));
 		}
 
 		void IConfigurable.Configure(bool enable)
@@ -134,8 +139,6 @@ namespace KERBALISM
 
 		public void DoConfigure()
 		{
-			if (setups == null) return;
-
 			// shortcut to resource library
 			var reslib = PartResourceLibrary.Instance.resourceDefinitions;
 
@@ -252,27 +255,37 @@ namespace KERBALISM
 			foreach (string s in selected) prev_selected.Add(s);
 
 			// save configuration
-			cfg = Archive.list2str(selected);
+			WriteArchive archive = new WriteArchive();
+			archive.Save(selected.Count);
+			foreach (string s in selected) archive.Save(s);
+			cfg = archive.Serialize();
 
 			// save previous configuration
-			prev_cfg = Archive.list2str(prev_selected);
+			archive = new WriteArchive();
+			archive.Save(prev_selected.Count);
+			foreach (string s in prev_selected) archive.Save(s);
+			prev_cfg = archive.Serialize();
 
 			// in the editor
-			if (Lib.IsEditor() && !avoid_inf_recursion && symmetric)
+			if (Lib.IsEditor())
 			{
-				avoid_inf_recursion = true;
-				foreach (Part p in part.symmetryCounterparts)
+				// for each part in the symmetry group (avoid infinite recursion)
+				if (!avoid_inf_recursion && symmetric)
 				{
-					// get the Configure module
-					Configure c = p.FindModulesImplementing<Configure>().Find(k => k.title == title);
+					avoid_inf_recursion = true;
+					foreach (Part p in part.symmetryCounterparts)
+					{
+						// get the Configure module
+						Configure c = p.FindModulesImplementing<Configure>().Find(k => k.title == title);
 
-					// both modules will share configuration
-					c.selected = selected;
+						// both modules will share configuration
+						c.selected = selected;
 
-					// re-configure the other module
-					c.DoConfigure();
+						// re-configure the other module
+						c.DoConfigure();
+					}
+					avoid_inf_recursion = false;
 				}
-				avoid_inf_recursion = false;
 			}
 
 			// refresh this part ui
@@ -370,8 +383,6 @@ namespace KERBALISM
 		// specifics support
 		public Specifics Specs()
 		{
-			InitSetups();
-
 			Specifics specs = new Specifics();
 			specs.Add("Slots", slots.ToString());
 			specs.Add("Reconfigure", new CrewSpecs(reconfigure).Info());
@@ -584,22 +595,43 @@ namespace KERBALISM
 			}
 		}
 
-		public ConfigureSetup(ConfigureSetup other)
+		public ConfigureSetup(ReadArchive archive)
 		{
-			name = other.name;
-			desc = other.desc;
-			tech = other.tech;
-			cost = other.cost;
-			mass = other.mass;
+			// load basic data
+			archive.Load(out name);
+			archive.Load(out desc);
+			archive.Load(out tech);
+			archive.Load(out cost);
+			archive.Load(out mass);
 
-			modules = new List<ConfigureModule>();
-			foreach (var m in other.modules)
-				modules.Add(new ConfigureModule(m));	
+			// load modules
+			int count;
+			archive.Load(out count);
+			modules = new List<ConfigureModule>(count);
+			while (count-- > 0) modules.Add(new ConfigureModule(archive));
 
 			// load resources
-			resources = new List<ConfigureResource>();
-			foreach (var r in other.resources)
-				resources.Add(new ConfigureResource(r));	
+			archive.Load(out count);
+			resources = new List<ConfigureResource>(count);
+			while (count-- > 0) resources.Add(new ConfigureResource(archive));
+		}
+
+		public void Save(WriteArchive archive)
+		{
+			// save basic data
+			archive.Save(name);
+			archive.Save(desc);
+			archive.Save(tech);
+			archive.Save(cost);
+			archive.Save(mass);
+
+			// save modules
+			archive.Save(modules.Count);
+			foreach (ConfigureModule m in modules) m.Save(archive);
+
+			// save resources
+			archive.Save(resources.Count);
+			foreach (ConfigureResource r in resources) r.Save(archive);
 		}
 
 		public void Generate_details(Configure cfg)
@@ -703,12 +735,20 @@ namespace KERBALISM
 			id_index = Lib.ConfigValue(node, "id_index", 0);
 		}
 
-		public ConfigureModule(ConfigureModule other)
+		public ConfigureModule(ReadArchive archive)
 		{
-			type = other.type;
-			id_field = other.id_field;
-			id_value = other.id_value;
-			id_index = other.id_index;
+			archive.Load(out type);
+			archive.Load(out id_field);
+			archive.Load(out id_value);
+			archive.Load(out id_index);
+		}
+
+		public void Save(WriteArchive archive)
+		{
+			archive.Save(type);
+			archive.Save(id_field);
+			archive.Save(id_value);
+			archive.Save(id_index);
 		}
 
 		public string type;
@@ -727,11 +767,18 @@ namespace KERBALISM
 			maxAmount = Lib.ConfigValue(node, "maxAmount", string.Empty);
 		}
 
-		public ConfigureResource(ConfigureResource other)
+		public ConfigureResource(ReadArchive archive)
 		{
-			name = other.name;
-			amount = other.amount;
-			maxAmount = other.maxAmount;
+			archive.Load(out name);
+			archive.Load(out amount);
+			archive.Load(out maxAmount);
+		}
+
+		public void Save(WriteArchive archive)
+		{
+			archive.Save(name);
+			archive.Save(amount);
+			archive.Save(maxAmount);
 		}
 
 		public string name;
@@ -739,5 +786,7 @@ namespace KERBALISM
 		public string maxAmount;
 	}
 
+
 } // KERBALISM
+
 

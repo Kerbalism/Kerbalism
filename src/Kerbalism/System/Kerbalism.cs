@@ -470,12 +470,18 @@ namespace KERBALISM
 
 				// collect unique configure-related unlocks
 				HashSet<string> labels = new HashSet<string>();
-				foreach (var pair in Configure.AllSetups())
+				foreach (AvailablePart p in PartLoader.LoadedPartsList)
 				{
-					var title = pair.Key;
-					foreach (var setup in pair.Value)
-						if (setup.tech == selected.tech.techID)
-							labels.Add(Lib.BuildString(setup.name, " in ", title));
+					foreach (Configure cfg in p.partPrefab.FindModulesImplementing<Configure>())
+					{
+						foreach (ConfigureSetup setup in cfg.Setups())
+						{
+							if (setup.tech == selected.tech.techID)
+							{
+								labels.Add(Lib.BuildString(setup.name, " in ", cfg.title));
+							}
+						}
+					}
 				}
 
 				// add unique configure-related unlocks
