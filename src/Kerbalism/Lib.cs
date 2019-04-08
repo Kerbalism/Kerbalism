@@ -1262,7 +1262,6 @@ namespace KERBALISM
 
 			amount = Math.Min(amount, capacity);
 			amount = Math.Max(amount, 0);
-
 			PartResource resource = part.Resources[resourceDefinition.name];
 
 			if (resource == null)
