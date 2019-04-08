@@ -105,6 +105,10 @@ namespace KERBALISM
 			// for this reason, we parse it and then re-serialize it as a string
 			if (HighLogic.LoadedScene == GameScenes.LOADING)
 			{
+				// ----------------------------------------------
+				// - YES ITS UGLY BUT DON'T TOUCH OR IT GO BOOM -
+				// ----------------------------------------------
+
 				// parse all setups from config node and generate details
 				setups = new List<ConfigureSetup>();
 				foreach (var setup_node in node.GetNodes("SETUP"))
