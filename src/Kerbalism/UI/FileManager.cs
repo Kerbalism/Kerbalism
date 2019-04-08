@@ -36,51 +36,72 @@ namespace KERBALISM
 			if (p.Timeout(vi)) return;
 
 			var drives = DB.Vessel(v).drives;
+
+			int filesCount = 0;
+			double usedDataCapacity = 0;
+			double totalDataCapacity = 0;
+
+			int samplesCount = 0;
+			int usedSlots = 0;
+			int totalSlots = 0;
+			double totalMass = 0;
+
 			foreach (var idDrivePair in drives)
 			{
 				var drive = idDrivePair.Value;
 
-				// draw data section
-				if (drive.dataCapacity > double.Epsilon || drive.files.Count > 0)
-				{
-					var title = "DATA " + drive.name;
-					title += ", " + Lib.HumanReadableDataSize(drive.FilesSize());
-					if (drive.dataCapacity > 0)
-						title += Lib.BuildString(" (", Lib.HumanReadablePerc(drive.FilesSize() / drive.dataCapacity), ")");
-					p.AddSection(title);
+				usedDataCapacity += drive.FilesSize();
+				totalDataCapacity += drive.dataCapacity;
+				filesCount += drive.files.Count;
 
+				usedSlots += drive.SamplesSize();
+				totalSlots += drive.sampleCapacity;
+				samplesCount += drive.samples.Count;
+				foreach (var sample in drive.samples.Values) totalMass += sample.mass;
+			}
+
+			if(filesCount > 0 || totalDataCapacity > 0)
+			{
+				var title = "DATA " + Lib.HumanReadableDataSize(usedDataCapacity) + Lib.BuildString(" (", Lib.HumanReadablePerc((totalDataCapacity - usedDataCapacity) / totalDataCapacity), " available)");
+				p.AddSection(title);
+
+				foreach (var idDrivePair in drives)
+				{
+					uint partId = idDrivePair.Key;
+					var drive = idDrivePair.Value;
 					foreach (var pair in drive.files)
 					{
 						string filename = pair.Key;
 						File file = pair.Value;
-						Render_file(p, filename, file, drive, short_strings && Lib.IsFlight(), Cache.VesselInfo(v).connection.rate);
+						Render_file(p, partId, filename, file, drive, short_strings && Lib.IsFlight(), Cache.VesselInfo(v).connection.rate);
 					}
-					if (drive.files.Count == 0) p.AddContent("<i>no files</i>", string.Empty);
 				}
 
-				if (drive.sampleCapacity > 0 || drive.samples.Count > 0)
+				if(filesCount == 0) p.AddContent("<i>no files</i>", string.Empty);
+			}
+
+			if(samplesCount > 0 || totalSlots > 0)
+			{
+				var title = "SAMPLES " + Lib.HumanReadableMass(totalMass) + " (" + usedSlots + "/" + Lib.HumanReadableSampleSize(totalSlots) + " available)";
+				p.AddSection(title);
+
+				foreach (var idDrivePair in drives)
 				{
-					double mass = 0;
-					foreach (var sample in drive.samples.Values) mass += sample.mass;
-
-					var title = "SAMPLES " + drive.name;
-					title += ", " + Lib.HumanReadableSampleSize(mass);
-					if (drive.sampleCapacity > 0)
-						title += Lib.BuildString(" (", Lib.HumanReadablePerc((double)(drive.SamplesSize()) / (double)(drive.sampleCapacity)), ") ");
-					p.AddSection(title);
-
+					uint partId = idDrivePair.Key;
+					var drive = idDrivePair.Value;
 					foreach (var pair in drive.samples)
 					{
-						string filename = pair.Key;
+						string samplename = pair.Key;
 						Sample sample = pair.Value;
-						Render_sample(p, filename, sample, drive, short_strings && Lib.IsFlight());
+						Render_sample(p, partId, samplename, sample, drive, short_strings && Lib.IsFlight());
 					}
-					if (drive.samples.Count == 0) p.AddContent("<i>no samples</i>", string.Empty);
 				}
+
+				if (samplesCount == 0) p.AddContent("<i>no samples</i>", string.Empty);
 			}
 		}
 
-		static void Render_file(Panel p, string filename, File file, Drive drive, bool short_strings, double rate)
+		static void Render_file(Panel p, uint partId, string filename, File file, Drive drive, bool short_strings, double rate)
 		{
 			// get experiment info
 			ExperimentInfo exp = Science.Experiment(filename);
@@ -100,9 +121,9 @@ namespace KERBALISM
 			  "<color=#aaaaaa>", ExperimentInfo.Situation(filename), "</color>"
 			);
 			double exp_value = Science.Value(filename, file.size);
-			if (exp_value > double.Epsilon) exp_tooltip = Lib.BuildString(exp_tooltip, "\n<b>", Lib.HumanReadableScience(exp_value), "</b>");
+			if (exp_value >= 0.1) exp_tooltip = Lib.BuildString(exp_tooltip, "\n<b>", Lib.HumanReadableScience(exp_value), "</b>");
 			if (rate > 0) exp_tooltip = Lib.BuildString(exp_tooltip, "\n<i>" + Lib.HumanReadableDuration(file.size / rate) + "</i>");
-			p.AddContent(exp_label, Lib.HumanReadableDataSize(file.size), exp_tooltip);
+			p.AddContent(exp_label, Lib.HumanReadableDataSize(file.size), exp_tooltip, (Action)null, () => Highlighter.Set(partId, Color.cyan));
 
 			bool send = drive.GetFileSend(filename);
 			p.AddIcon(send ? Icons.send_cyan : Icons.send_black, "Flag the file for transmission to <b>DSN</b>", () => { drive.Send(filename, !send); });
@@ -115,7 +136,7 @@ namespace KERBALISM
 			));
 		}
 
-		static void Render_sample(Panel p, string filename, Sample sample, Drive drive, bool short_strings)
+		static void Render_sample(Panel p, uint partId, string filename, Sample sample, Drive drive, bool short_strings)
 		{
 			// get experiment info
 			ExperimentInfo exp = Science.Experiment(filename);
@@ -135,10 +156,10 @@ namespace KERBALISM
 			  "<color=#aaaaaa>", ExperimentInfo.Situation(filename), "</color>"
 			);
 			double exp_value = Science.Value(filename, sample.size);
-			if (exp_value > double.Epsilon) exp_tooltip = Lib.BuildString(exp_tooltip, "\n<b>", Lib.HumanReadableScience(exp_value), "</b>");
+			if (exp_value >= 0.1) exp_tooltip = Lib.BuildString(exp_tooltip, "\n<b>", Lib.HumanReadableScience(exp_value), "</b>");
 			if (sample.mass > Double.Epsilon) exp_tooltip = Lib.BuildString(exp_tooltip, "\n<b>", Lib.HumanReadableMass(sample.mass), "</b>");
 
-			p.AddContent(exp_label, Lib.HumanReadableSampleSize(sample.size), exp_tooltip);
+			p.AddContent(exp_label, Lib.HumanReadableSampleSize(sample.size), exp_tooltip, (Action)null, () => Highlighter.Set(partId, Color.cyan));
 			p.AddIcon(sample.analyze ? Icons.lab_cyan : Icons.lab_black, "Flag the file for analysis in a <b>laboratory</b>", () => { sample.analyze = !sample.analyze; });
 			p.AddIcon(Icons.toggle_red, "Dump the sample", () => Lib.Popup
 			(
