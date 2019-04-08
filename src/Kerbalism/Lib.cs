@@ -25,12 +25,12 @@ namespace KERBALISM
 				stackTrace.GetFrame(1).GetMethod().Name, string.Format(msg, param)));
 		}
 
-		[Conditional( "DEBUG" )]
-		public static void DebugLog( string message, params object[] param )
+		[Conditional("DEBUG")]
+		public static void DebugLog(string message, params object[] param)
 		{
 			StackTrace stackTrace = new StackTrace();
-			UnityEngine.Debug.Log( string.Format( "{0} -> debug: {1}.{2} - {3}", "[Kerbalism] ", stackTrace.GetFrame( 1 ).GetMethod().ReflectedType.Name,
-				stackTrace.GetFrame( 1 ).GetMethod().Name, string.Format( message, param ) ) );
+			UnityEngine.Debug.Log(string.Format("{0} -> debug: {1}.{2} - {3}", "[Kerbalism] ", stackTrace.GetFrame(1).GetMethod().ReflectedType.Name,
+				stackTrace.GetFrame(1).GetMethod().Name, string.Format(message, param)));
 		}
 
 		// return version as a string
@@ -51,7 +51,7 @@ namespace KERBALISM
 		}
 
 		// return true if an assembly with specified name is loaded
-		public static bool HasAssembly( string name )
+		public static bool HasAssembly(string name)
 		{
 			foreach (var a in AssemblyLoader.loadedAssemblies)
 			{
@@ -61,7 +61,7 @@ namespace KERBALISM
 		}
 
 		// swap two variables
-		public static void Swap<T>( ref T a, ref T b )
+		public static void Swap<T>(ref T a, ref T b)
 		{
 			T tmp = b;
 			b = a;
@@ -69,14 +69,14 @@ namespace KERBALISM
 		}
 
 		// find a directory in the GameData directory
-		public static bool GameDirectoryExist( string findpath )
+		public static bool GameDirectoryExist(string findpath)
 		{
 			try
 			{
-				string gamedir = Path.Combine( Path.GetFullPath( KSPUtil.ApplicationRootPath ), "GameData/" + findpath );
-				findpath = Path.GetFileName( gamedir );
-				gamedir = Path.GetDirectoryName( gamedir );
-				string[] paths = System.IO.Directory.GetDirectories( gamedir, findpath, SearchOption.AllDirectories );
+				string gamedir = Path.Combine(Path.GetFullPath(KSPUtil.ApplicationRootPath), "GameData/" + findpath);
+				findpath = Path.GetFileName(gamedir);
+				gamedir = Path.GetDirectoryName(gamedir);
+				string[] paths = System.IO.Directory.GetDirectories(gamedir, findpath, SearchOption.AllDirectories);
 				if (paths.Length > 0)
 					return true;
 				else
@@ -84,7 +84,7 @@ namespace KERBALISM
 			}
 			catch (Exception e)
 			{
-				Log( "error while looking for directory '" + findpath + "' in 'GameData' directory. (" + e.Message + ")" );
+				Log("error while looking for directory '" + findpath + "' in 'GameData' directory. (" + e.Message + ")");
 				return false;
 			}
 		}
@@ -93,31 +93,31 @@ namespace KERBALISM
 		// --- MATH -----------------------------------------------------------------
 
 		// clamp a value
-		public static int Clamp( int value, int min, int max )
+		public static int Clamp(int value, int min, int max)
 		{
-			return Math.Max( min, Math.Min( value, max ) );
+			return Math.Max(min, Math.Min(value, max));
 		}
 
 		// clamp a value
-		public static float Clamp( float value, float min, float max )
+		public static float Clamp(float value, float min, float max)
 		{
-			return Math.Max( min, Math.Min( value, max ) );
+			return Math.Max(min, Math.Min(value, max));
 		}
 
 		// clamp a value
-		public static double Clamp( double value, double min, double max )
+		public static double Clamp(double value, double min, double max)
 		{
-			return Math.Max( min, Math.Min( value, max ) );
+			return Math.Max(min, Math.Min(value, max));
 		}
 
 		// blend between two values
-		public static float Mix( float a, float b, float k )
+		public static float Mix(float a, float b, float k)
 		{
 			return a * (1.0f - k) + b * k;
 		}
 
 		// blend between two values
-		public static double Mix( double a, double b, double k )
+		public static double Mix(double a, double b, double k)
 		{
 			return a * (1.0 - k) + b * k;
 		}
@@ -129,15 +129,15 @@ namespace KERBALISM
 		static System.Random rng = new System.Random();
 
 		// return random integer
-		public static int RandomInt( int max_value )
+		public static int RandomInt(int max_value)
 		{
-			return rng.Next( max_value );
+			return rng.Next(max_value);
 		}
 
 		// return random float [0..1]
 		public static float RandomFloat()
 		{
-			return (float) rng.NextDouble();
+			return (float)rng.NextDouble();
 		}
 
 		// return random double [0..1]
@@ -160,27 +160,27 @@ namespace KERBALISM
 		// --- HASH -----------------------------------------------------------------
 
 		// combine two guid, irregardless of their order (eg: Combine(a,b) == Combine(b,a))
-		public static Guid CombineGuid( Guid a, Guid b )
+		public static Guid CombineGuid(Guid a, Guid b)
 		{
 			byte[] a_buf = a.ToByteArray();
 			byte[] b_buf = b.ToByteArray();
 			byte[] c_buf = new byte[16];
-			for (int i = 0; i < 16; ++i) c_buf[i] = (byte) (a_buf[i] ^ b_buf[i]);
-			return new Guid( c_buf );
+			for (int i = 0; i < 16; ++i) c_buf[i] = (byte)(a_buf[i] ^ b_buf[i]);
+			return new Guid(c_buf);
 		}
 
 		// combine two guid, in a non-commutative way
-		public static Guid OrderedCombineGuid( Guid a, Guid b )
+		public static Guid OrderedCombineGuid(Guid a, Guid b)
 		{
 			byte[] a_buf = a.ToByteArray();
 			byte[] b_buf = b.ToByteArray();
 			byte[] c_buf = new byte[16];
-			for (int i = 0; i < 16; ++i) c_buf[i] = (byte) (a_buf[i] & ~b_buf[i]);
-			return new Guid( c_buf );
+			for (int i = 0; i < 16; ++i) c_buf[i] = (byte)(a_buf[i] & ~b_buf[i]);
+			return new Guid(c_buf);
 		}
 
 		// get 32bit FNV-1a hash of a string
-		public static UInt32 Hash32( string s )
+		public static UInt32 Hash32(string s)
 		{
 			// offset basis
 			UInt32 h = 2166136261u;
@@ -212,18 +212,18 @@ namespace KERBALISM
 		public static double DaysInYear()
 		{
 			if (!FlightGlobals.ready) return 426.0;
-			return Math.Floor( FlightGlobals.GetHomeBody().orbit.period / (HoursInDay() * 60.0 * 60.0) );
+			return Math.Floor(FlightGlobals.GetHomeBody().orbit.period / (HoursInDay() * 60.0 * 60.0));
 		}
 
 		// stop time warping
-		public static void StopWarp( int rate = 0 )
+		public static void StopWarp(int rate = 0)
 		{
 			TimeWarp.fetch.CancelAutoWarp();
-			TimeWarp.SetRate( rate, true, false );
+			TimeWarp.SetRate(rate, true, false);
 		}
 
 		// disable time warping above a specified level
-		public static void DisableWarp( uint max_level )
+		public static void DisableWarp(uint max_level)
 		{
 			for (uint i = max_level + 1u; i < 8; ++i)
 			{
@@ -234,25 +234,25 @@ namespace KERBALISM
 		// get current time
 		public static UInt64 Clocks()
 		{
-			return (UInt64) Stopwatch.GetTimestamp();
+			return (UInt64)Stopwatch.GetTimestamp();
 		}
 
 		// convert from clocks to microseconds
-		public static double Microseconds( UInt64 clocks )
+		public static double Microseconds(UInt64 clocks)
 		{
 			return clocks * 1000000.0 / Stopwatch.Frequency;
 		}
 
 
-		public static double Milliseconds( UInt64 clocks )
+		public static double Milliseconds(UInt64 clocks)
 		{
 			return clocks * 1000.0 / Stopwatch.Frequency;
 		}
 
 
-		public static double Seconds( UInt64 clocks )
+		public static double Seconds(UInt64 clocks)
 		{
-			return clocks / (double) Stopwatch.Frequency;
+			return clocks / (double)Stopwatch.Frequency;
 		}
 
 		// return human-readable timestamp of planetarium time
@@ -264,32 +264,32 @@ namespace KERBALISM
 			double len_day = len_hour * Lib.HoursInDay();
 			double len_year = len_day * Lib.DaysInYear();
 
-			double year = Math.Floor( t / len_year );
+			double year = Math.Floor(t / len_year);
 			t -= year * len_year;
-			double day = Math.Floor( t / len_day );
+			double day = Math.Floor(t / len_day);
 			t -= day * len_day;
-			double hour = Math.Floor( t / len_hour );
+			double hour = Math.Floor(t / len_hour);
 			t -= hour * len_hour;
-			double min = Math.Floor( t / len_min );
+			double min = Math.Floor(t / len_min);
 
 			return BuildString
 			(
 			  "[",
-			  ((uint) year + 1).ToString( "D4" ),
+			  ((uint)year + 1).ToString("D4"),
 			  "/",
-			  ((uint) day + 1).ToString( "D2" ),
+			  ((uint)day + 1).ToString("D2"),
 			  " ",
-			  ((uint) hour).ToString( "D2" ),
+			  ((uint)hour).ToString("D2"),
 			  ":",
-			  ((uint) min).ToString( "D2" ),
+			  ((uint)min).ToString("D2"),
 			  "]"
 			);
 		}
 
 		// return true half the time
-		public static int Alternate( int seconds, int elements )
+		public static int Alternate(int seconds, int elements)
 		{
-			return ((int) Time.realtimeSinceStartup / seconds) % elements;
+			return ((int)Time.realtimeSinceStartup / seconds) % elements;
 		}
 
 
@@ -301,26 +301,26 @@ namespace KERBALISM
 		// note: useful when the module is from another assembly, unknown at build time
 		// note: useful when the value isn't persistent
 		// note: this function break hard when external API change, by design
-		public static T ReflectionValue<T>( PartModule m, string value_name )
+		public static T ReflectionValue<T>(PartModule m, string value_name)
 		{
-			return (T) m.GetType().GetField( value_name, flags ).GetValue( m );
+			return (T)m.GetType().GetField(value_name, flags).GetValue(m);
 		}
 
-		public static T? SafeReflectionValue<T>( PartModule m, string value_name ) where T : struct
+		public static T? SafeReflectionValue<T>(PartModule m, string value_name) where T : struct
 		{
-			FieldInfo fi = m.GetType().GetField( value_name, flags );
+			FieldInfo fi = m.GetType().GetField(value_name, flags);
 			if (fi == null)
 				return null;
-			return (T) fi.GetValue( m );
+			return (T)fi.GetValue(m);
 		}
 
 		// set a value from a module using reflection
 		// note: useful when the module is from another assembly, unknown at build time
 		// note: useful when the value isn't persistent
 		// note: this function break hard when external API change, by design
-		public static void ReflectionValue<T>( PartModule m, string value_name, T value )
+		public static void ReflectionValue<T>(PartModule m, string value_name, T value)
 		{
-			m.GetType().GetField( value_name, flags ).SetValue( m, value );
+			m.GetType().GetField(value_name, flags).SetValue(m, value);
 		}
 
 		///<summary> Sets the value of a private field via reflection </summary>
@@ -330,118 +330,118 @@ namespace KERBALISM
 		}
 
 		///<summary> Returns the value of a private field via reflection </summary>
-		public static T ReflectionValue<T>( object instance, string field_name )
+		public static T ReflectionValue<T>(object instance, string field_name)
 		{
-			return (T) instance.GetType().GetField( field_name, flags ).GetValue( instance );
+			return (T)instance.GetType().GetField(field_name, flags).GetValue(instance);
 		}
 
-		public static void ReflectionCall( PartModule m, string call_name )
+		public static void ReflectionCall(PartModule m, string call_name)
 		{
-			m.GetType().GetMethod( call_name ).Invoke( m, null );
+			m.GetType().GetMethod(call_name).Invoke(m, null);
 		}
 
-		public static T ReflectionCall<T>( PartModule m, string call_name )
+		public static T ReflectionCall<T>(PartModule m, string call_name)
 		{
-			return (T) (m.GetType().GetMethod( call_name ).Invoke( m, null ));
+			return (T)(m.GetType().GetMethod(call_name).Invoke(m, null));
 		}
 
 
 		// --- STRING ---------------------------------------------------------------
 
 		// return string limited to len, with ... at the end
-		public static string Ellipsis( string s, uint len )
+		public static string Ellipsis(string s, uint len)
 		{
-			len = Math.Max( len, 3u );
-			return s.Length <= len ? s : Lib.BuildString( s.Substring( 0, (int) len - 3 ), "..." );
+			len = Math.Max(len, 3u);
+			return s.Length <= len ? s : Lib.BuildString(s.Substring(0, (int)len - 3), "...");
 		}
 
 		// tokenize a string
-		public static List<string> Tokenize( string txt, char separator )
+		public static List<string> Tokenize(string txt, char separator)
 		{
 			List<string> ret = new List<string>();
-			string[] strings = txt.Split( separator );
+			string[] strings = txt.Split(separator);
 			foreach (string s in strings)
 			{
 				string trimmed = s.Trim();
-				if (trimmed.Length > 0) ret.Add( trimmed );
+				if (trimmed.Length > 0) ret.Add(trimmed);
 			}
 			return ret;
 		}
 
 		// return message with the macro expanded
 		// - variant: tokenize the string by '|' and select one
-		public static string ExpandMsg( string txt, Vessel v = null, ProtoCrewMember c = null, uint variant = 0 )
+		public static string ExpandMsg(string txt, Vessel v = null, ProtoCrewMember c = null, uint variant = 0)
 		{
 			// get variant
-			var variants = txt.Split( '|' );
+			var variants = txt.Split('|');
 			if (variants.Length > variant) txt = variants[variant];
 
 			// macro expansion
 			string v_name = v != null ? (v.isEVA ? "EVA" : v.vesselName) : "";
 			string c_name = c != null ? c.name : "";
 			return txt
-			  .Replace( "@", "\n" )
-			  .Replace( "$VESSEL", BuildString( "<b>", v_name, "</b>" ) )
-			  .Replace( "$KERBAL", "<b>" + c_name + "</b>" )
-			  .Replace( "$ON_VESSEL", v != null && v.isActiveVessel ? "" : BuildString( "On <b>", v_name, "</b>, " ) )
-			  .Replace( "$HIS_HER", c != null && c.gender == ProtoCrewMember.Gender.Male ? "his" : "her" );
+			  .Replace("@", "\n")
+			  .Replace("$VESSEL", BuildString("<b>", v_name, "</b>"))
+			  .Replace("$KERBAL", "<b>" + c_name + "</b>")
+			  .Replace("$ON_VESSEL", v != null && v.isActiveVessel ? "" : BuildString("On <b>", v_name, "</b>, "))
+			  .Replace("$HIS_HER", c != null && c.gender == ProtoCrewMember.Gender.Male ? "his" : "her");
 		}
 
 		// make the first letter uppercase
-		public static string UppercaseFirst( string s )
+		public static string UppercaseFirst(string s)
 		{
-			return s.Length > 0 ? char.ToUpper( s[0] ) + s.Substring( 1 ) : string.Empty;
+			return s.Length > 0 ? char.ToUpper(s[0]) + s.Substring(1) : string.Empty;
 		}
 
 
 		// return string with specified color if condition evaluate to true
-		public static string Color( string s, bool cond, string clr )
+		public static string Color(string s, bool cond, string clr)
 		{
-			return !cond ? s : BuildString( "<color=", clr, ">", s, "</color>" );
+			return !cond ? s : BuildString("<color=", clr, ">", s, "</color>");
 		}
 
 
 		// return string with specified color and bold if stated
-		public static string Color( string color, string s, bool bold = false )
+		public static string Color(string color, string s, bool bold = false)
 		{
 			if (string.IsNullOrEmpty(color))
-				return !bold ? s : ("<b>" + s + "</b>");	
+				return !bold ? s : ("<b>" + s + "</b>");
 			return !bold ? ("<color=" + color + ">" + s + "</color>") : ("<color=" + color + "><b>" + s + "</b></color>");
 		}
 
 
 		// return string in bold
-		public static string Bold( string s )
+		public static string Bold(string s)
 		{
 			return ("<b>" + s + "</b>");
 		}
 
 
 		// return string in italic
-		public static string Italic( string s )
+		public static string Italic(string s)
 		{
 			return ("<i>" + s + "</i>");
 		}
 
 
 		// add spaces on caps
-		public static string SpacesOnCaps( string s )
+		public static string SpacesOnCaps(string s)
 		{
-			return System.Text.RegularExpressions.Regex.Replace( s, "[A-Z]", " $0" ).TrimStart();
+			return System.Text.RegularExpressions.Regex.Replace(s, "[A-Z]", " $0").TrimStart();
 		}
 
 
 		// convert to smart_case
-		public static string SmartCase( string s )
+		public static string SmartCase(string s)
 		{
-			return SpacesOnCaps( s ).ToLower().Replace( ' ', '_' );
+			return SpacesOnCaps(s).ToLower().Replace(' ', '_');
 		}
 
 
 		// select a string at random
-		public static string TextVariant( params string[] list )
+		public static string TextVariant(params string[] list)
 		{
-			return list.Length == 0 ? string.Empty : list[RandomInt( list.Length )];
+			return list.Length == 0 ? string.Empty : list[RandomInt(list.Length)];
 		}
 
 
@@ -450,81 +450,81 @@ namespace KERBALISM
 		// compose a set of strings together, without creating temporary objects
 		// note: the objective here is to minimize number of temporary variables for GC
 		// note: okay to call recursively, as long as all individual concatenation is atomic
-		static StringBuilder sb = new StringBuilder( 256 );
-		public static string BuildString( string a, string b )
+		static StringBuilder sb = new StringBuilder(256);
+		public static string BuildString(string a, string b)
 		{
 			sb.Length = 0;
-			sb.Append( a );
-			sb.Append( b );
+			sb.Append(a);
+			sb.Append(b);
 			return sb.ToString();
 		}
-		public static string BuildString( string a, string b, string c )
+		public static string BuildString(string a, string b, string c)
 		{
 			sb.Length = 0;
-			sb.Append( a );
-			sb.Append( b );
-			sb.Append( c );
+			sb.Append(a);
+			sb.Append(b);
+			sb.Append(c);
 			return sb.ToString();
 		}
-		public static string BuildString( string a, string b, string c, string d )
+		public static string BuildString(string a, string b, string c, string d)
 		{
 			sb.Length = 0;
-			sb.Append( a );
-			sb.Append( b );
-			sb.Append( c );
-			sb.Append( d );
+			sb.Append(a);
+			sb.Append(b);
+			sb.Append(c);
+			sb.Append(d);
 			return sb.ToString();
 		}
-		public static string BuildString( string a, string b, string c, string d, string e )
+		public static string BuildString(string a, string b, string c, string d, string e)
 		{
 			sb.Length = 0;
-			sb.Append( a );
-			sb.Append( b );
-			sb.Append( c );
-			sb.Append( d );
-			sb.Append( e );
+			sb.Append(a);
+			sb.Append(b);
+			sb.Append(c);
+			sb.Append(d);
+			sb.Append(e);
 			return sb.ToString();
 		}
-		public static string BuildString( string a, string b, string c, string d, string e, string f )
+		public static string BuildString(string a, string b, string c, string d, string e, string f)
 		{
 			sb.Length = 0;
-			sb.Append( a );
-			sb.Append( b );
-			sb.Append( c );
-			sb.Append( d );
-			sb.Append( e );
-			sb.Append( f );
+			sb.Append(a);
+			sb.Append(b);
+			sb.Append(c);
+			sb.Append(d);
+			sb.Append(e);
+			sb.Append(f);
 			return sb.ToString();
 		}
-		public static string BuildString( string a, string b, string c, string d, string e, string f, string g )
+		public static string BuildString(string a, string b, string c, string d, string e, string f, string g)
 		{
 			sb.Length = 0;
-			sb.Append( a );
-			sb.Append( b );
-			sb.Append( c );
-			sb.Append( d );
-			sb.Append( e );
-			sb.Append( f );
-			sb.Append( g );
+			sb.Append(a);
+			sb.Append(b);
+			sb.Append(c);
+			sb.Append(d);
+			sb.Append(e);
+			sb.Append(f);
+			sb.Append(g);
 			return sb.ToString();
 		}
-		public static string BuildString( string a, string b, string c, string d, string e, string f, string g, string h )
+		public static string BuildString(string a, string b, string c, string d, string e, string f, string g, string h)
 		{
 			sb.Length = 0;
-			sb.Append( a );
-			sb.Append( b );
-			sb.Append( c );
-			sb.Append( d );
-			sb.Append( e );
-			sb.Append( f );
-			sb.Append( g );
-			sb.Append( h );
+			sb.Append(a);
+			sb.Append(b);
+			sb.Append(c);
+			sb.Append(d);
+			sb.Append(e);
+			sb.Append(f);
+			sb.Append(g);
+			sb.Append(h);
 			return sb.ToString();
 		}
-		public static string BuildString( params string[] args )
+		public static string BuildString(params string[] args)
 		{
 			sb.Length = 0;
-			foreach (string s in args) sb.Append( s );
+			foreach (string s in args) sb.Append(s);
 			return sb.ToString();
 		}
 
@@ -532,50 +532,50 @@ namespace KERBALISM
 		// --- HUMAN READABLE -------------------------------------------------------
 
 		///<summary> Pretty-print a resource rate (rate is per second, must be positive) </summary>
-		public static string HumanReadableRate( double rate, string precision = "F3" )
+		public static string HumanReadableRate(double rate, string precision = "F3")
 		{
 			if (rate <= double.Epsilon) return "none";
-			if (rate >= 0.01) return BuildString( rate.ToString( precision ), "/s" );
+			if (rate >= 0.01) return BuildString(rate.ToString(precision), "/s");
 			rate *= 60.0; // per-minute
-			if (rate >= 0.01) return BuildString( rate.ToString( precision ), "/m" );
+			if (rate >= 0.01) return BuildString(rate.ToString(precision), "/m");
 			rate *= 60.0; // per-hour
-			if (rate >= 0.01) return BuildString( rate.ToString( precision ), "/h" );
+			if (rate >= 0.01) return BuildString(rate.ToString(precision), "/h");
 			rate *= HoursInDay();  // per-day
-			if (rate >= 0.01) return BuildString( rate.ToString( precision ), "/d" );
-			return BuildString( (rate * DaysInYear()).ToString( precision ), "/y" );
+			if (rate >= 0.01) return BuildString(rate.ToString(precision), "/d");
+			return BuildString((rate * DaysInYear()).ToString(precision), "/y");
 		}
 
 		///<summary> Pretty-print a duration (duration is in seconds, must be positive) </summary>
-		public static string HumanReadableDuration( double duration )
+		public static string HumanReadableDuration(double duration)
 		{
 			if (duration <= double.Epsilon) return "none";
-			if (double.IsInfinity( duration ) || double.IsNaN( duration )) return "perpetual";
+			if (double.IsInfinity(duration) || double.IsNaN(duration)) return "perpetual";
 
 			double hours_in_day = HoursInDay();
 			double days_in_year = DaysInYear();
 
 			// seconds
-			if (duration < 60.0) return BuildString( duration.ToString( "F0" ), "s" );
+			if (duration < 60.0) return BuildString(duration.ToString("F0"), "s");
 
 			// minutes + seconds
-			double duration_min = Math.Floor( duration / 60.0 );
+			double duration_min = Math.Floor(duration / 60.0);
 			duration -= duration_min * 60.0;
-			if (duration_min < 60.0) return BuildString( duration_min.ToString( "F0" ), "m", (duration < 1.0 ? "" : BuildString( " ", duration.ToString( "F0" ), "s" )) );
+			if (duration_min < 60.0) return BuildString(duration_min.ToString("F0"), "m", (duration < 1.0 ? "" : BuildString(" ", duration.ToString("F0"), "s")));
 
 			// hours + minutes
-			double duration_h = Math.Floor( duration_min / 60.0 );
+			double duration_h = Math.Floor(duration_min / 60.0);
 			duration_min -= duration_h * 60.0;
-			if (duration_h < hours_in_day) return BuildString( duration_h.ToString( "F0" ), "h", (duration_min < 1.0 ? "" : BuildString( " ", duration_min.ToString( "F0" ), "m" )) );
+			if (duration_h < hours_in_day) return BuildString(duration_h.ToString("F0"), "h", (duration_min < 1.0 ? "" : BuildString(" ", duration_min.ToString("F0"), "m")));
 
 			// days + hours
-			double duration_d = Math.Floor( duration_h / hours_in_day );
+			double duration_d = Math.Floor(duration_h / hours_in_day);
 			duration_h -= duration_d * hours_in_day;
-			if (duration_d < days_in_year) return BuildString( duration_d.ToString( "F0" ), "d", (duration_h < 1.0 ? "" : BuildString( " ", duration_h.ToString( "F0" ), "h" )) );
+			if (duration_d < days_in_year) return BuildString(duration_d.ToString("F0"), "d", (duration_h < 1.0 ? "" : BuildString(" ", duration_h.ToString("F0"), "h")));
 
 			// years + days
-			double duration_y = Math.Floor( duration_d / days_in_year );
+			double duration_y = Math.Floor(duration_d / days_in_year);
 			duration_d -= duration_y * days_in_year;
-			return BuildString( duration_y.ToString( "F0" ), "y", (duration_d < 1.0 ? "" : BuildString( " ", duration_d.ToString( "F0" ), "d" )) );
+			return BuildString(duration_y.ToString("F0"), "y", (duration_d < 1.0 ? "" : BuildString(" ", duration_d.ToString("F0"), "d")));
 		}
 
 		public static string HumanReadableCountdown(double d)
@@ -607,95 +607,95 @@ namespace KERBALISM
 		}
 
 		///<summary> Pretty-print a range (range is in meters, must be positive) </summary>
-		public static string HumanReadableRange( double range )
+		public static string HumanReadableRange(double range)
 		{
 			if (range <= double.Epsilon) return "none";
-			if (range < 1000.0) return BuildString( range.ToString( "F1" ), " m" );
+			if (range < 1000.0) return BuildString(range.ToString("F1"), " m");
 			range /= 1000.0;
-			if (range < 1000.0) return BuildString( range.ToString( "F1" ), " Km" );
+			if (range < 1000.0) return BuildString(range.ToString("F1"), " Km");
 			range /= 1000.0;
-			if (range < 1000.0) return BuildString( range.ToString( "F1" ), " Mm" );
+			if (range < 1000.0) return BuildString(range.ToString("F1"), " Mm");
 			range /= 1000.0;
-			if (range < 1000.0) return BuildString( range.ToString( "F1" ), " Gm" );
+			if (range < 1000.0) return BuildString(range.ToString("F1"), " Gm");
 			range /= 1000.0;
-			if (range < 1000.0) return BuildString( range.ToString( "F1" ), " Tm" );
+			if (range < 1000.0) return BuildString(range.ToString("F1"), " Tm");
 			range /= 1000.0;
-			if (range < 1000.0) return BuildString( range.ToString( "F1" ), " Pm" );
+			if (range < 1000.0) return BuildString(range.ToString("F1"), " Pm");
 			range /= 1000.0;
-			return BuildString( range.ToString( "F1" ), " Em" );
+			return BuildString(range.ToString("F1"), " Em");
 		}
 
 		///<summary> Pretty-print temperature </summary>
-		public static string HumanReadableTemp( double temp )
+		public static string HumanReadableTemp(double temp)
 		{
-			return BuildString( temp.ToString( "F1" ), " K" );
+			return BuildString(temp.ToString("F1"), " K");
 		}
 
 		///<summary> Pretty-print flux </summary>
-		public static string HumanReadableFlux( double flux )
+		public static string HumanReadableFlux(double flux)
 		{
-			return BuildString( flux >= 0.0001 ? flux.ToString( "F1" ) : flux.ToString(), " W/m²" );
+			return BuildString(flux >= 0.0001 ? flux.ToString("F1") : flux.ToString(), " W/m²");
 		}
 
 		///<summary> Pretty-print magnetic strength </summary>
-		public static string HumanReadableField( double strength )
+		public static string HumanReadableField(double strength)
 		{
-			return BuildString( strength.ToString( "F1" ), " uT" ); //< micro-tesla
+			return BuildString(strength.ToString("F1"), " uT"); //< micro-tesla
 		}
 
 		///<summary> Pretty-print radiation rate </summary>
-		public static string HumanReadableRadiation( double rad )
+		public static string HumanReadableRadiation(double rad)
 		{
 			if (rad <= double.Epsilon) return "none";
 			else if (rad <= 0.0000002777) return "nominal";
-			return BuildString( (rad * 3600.0).ToString( "F3" ), " rad/h" );
+			return BuildString((rad * 3600.0).ToString("F3"), " rad/h");
 		}
 
 		///<summary> Pretty-print percentage </summary>
-		public static string HumanReadablePerc( double v, string format = "F0" )
+		public static string HumanReadablePerc(double v, string format = "F0")
 		{
-			return BuildString( (v * 100.0).ToString( format ), "%" );
+			return BuildString((v * 100.0).ToString(format), "%");
 		}
 
 		///<summary> Pretty-print pressure (value is in kPa) </summary>
-		public static string HumanReadablePressure( double v )
+		public static string HumanReadablePressure(double v)
 		{
-			return Lib.BuildString( v.ToString( "F1" ), " kPa" );
+			return Lib.BuildString(v.ToString("F1"), " kPa");
 		}
 
 		///<summary> Pretty-print volume (value is in m^3) </summary>
-		public static string HumanReadableVolume( double v )
+		public static string HumanReadableVolume(double v)
 		{
-			return Lib.BuildString( v.ToString( "F2" ), " m³" );
+			return Lib.BuildString(v.ToString("F2"), " m³");
 		}
 
 		///<summary> Pretty-print surface (value is in m^2) </summary>
-		public static string HumanReadableSurface( double v )
+		public static string HumanReadableSurface(double v)
 		{
-			return Lib.BuildString( v.ToString( "F2" ), " m²" );
+			return Lib.BuildString(v.ToString("F2"), " m²");
 		}
 
 		///<summary> Pretty-print mass </summary>
-		public static string HumanReadableMass( double v )
+		public static string HumanReadableMass(double v)
 		{
 			if (v <= double.Epsilon) return "0 kg";
-			if(v > 1) return Lib.BuildString(v.ToString("F3"), " t");
+			if (v > 1) return Lib.BuildString(v.ToString("F3"), " t");
 			v *= 1000;
-			if(v > 1) return Lib.BuildString(v.ToString("F2"), " kg");
+			if (v > 1) return Lib.BuildString(v.ToString("F2"), " kg");
 			v *= 1000;
 			return Lib.BuildString(v.ToString("F2"), " g");
 		}
 
 		///<summary> Pretty-print cost </summary>
-		public static string HumanReadableCost( double v )
+		public static string HumanReadableCost(double v)
 		{
-			return Lib.BuildString( v.ToString( "F0" ), " $" );
+			return Lib.BuildString(v.ToString("F0"), " $");
 		}
 
 		///<summary> Format a value to 2 decimal places, or return 'none' </summary>
-		public static string HumanReadableAmount( double value, string append = "" )
+		public static string HumanReadableAmount(double value, string append = "")
 		{
-			return (Math.Abs( value ) <= double.Epsilon ? "none" : BuildString( value.ToString( "F2" ), append ));
+			return (Math.Abs(value) <= double.Epsilon ? "none" : BuildString(value.ToString("F2"), append));
 		}
 
 		///<summary> Format an integer value, or return 'none' </summary>
@@ -705,25 +705,25 @@ namespace KERBALISM
 		}
 
 		///<summary> Format data size, the size parameter is in Mb </summary>
-		public static string HumanReadableDataSize( double size )
+		public static string HumanReadableDataSize(double size)
 		{
 			size *= 1048576.0; //< to bytes
 			if (size < 1.0) return "none";
-			if (size < 1024.0) return BuildString( size.ToString( "F0" ), " b" );
+			if (size < 1024.0) return BuildString(size.ToString("F0"), " b");
 			size /= 1024.0;
-			if (size < 1024.0) return BuildString( size.ToString( "F2" ), " Kb" );
+			if (size < 1024.0) return BuildString(size.ToString("F2"), " Kb");
 			size /= 1024.0;
-			if (size < 1024.0) return BuildString( size.ToString( "F2" ), " Mb" );
+			if (size < 1024.0) return BuildString(size.ToString("F2"), " Mb");
 			size /= 1024.0;
-			if (size < 1024.0) return BuildString( size.ToString( "F2" ), " Gb" );
+			if (size < 1024.0) return BuildString(size.ToString("F2"), " Gb");
 			size /= 1024.0;
-			return BuildString( size.ToString( "F2" ), " Tb" );
+			return BuildString(size.ToString("F2"), " Tb");
 		}
 
 		///<summary> Format data rate, the rate parameter is in Mb/s </summary>
-		public static string HumanReadableDataRate( double rate )
+		public static string HumanReadableDataRate(double rate)
 		{
-			return rate < 0.000001 ? "none" : Lib.BuildString( HumanReadableDataSize( rate ), "/s" );
+			return rate < 0.000001 ? "none" : Lib.BuildString(HumanReadableDataSize(rate), "/s");
 		}
 
 		public static string HumanReadableSampleSize(double size)
@@ -751,9 +751,9 @@ namespace KERBALISM
 		}
 
 		///<summary> Format science credits </summary>
-		public static string HumanReadableScience( double value )
+		public static string HumanReadableScience(double value)
 		{
-			return Lib.BuildString( "<color=cyan>", value.ToString( "F1" ), " CREDITS</color>" );
+			return Lib.BuildString("<color=cyan>", value.ToString("F1"), " CREDITS</color>");
 		}
 
 
@@ -786,14 +786,14 @@ namespace KERBALISM
 		// return true if a tutorial scenario or making history mission is active
 		public static bool IsScenario()
 		{
-            return HighLogic.CurrentGame.Mode == Game.Modes.SCENARIO
+			return HighLogic.CurrentGame.Mode == Game.Modes.SCENARIO
 				|| HighLogic.CurrentGame.Mode == Game.Modes.SCENARIO_NON_RESUMABLE
 				|| HighLogic.CurrentGame.Mode == Game.Modes.MISSION_BUILDER
 				|| HighLogic.CurrentGame.Mode == Game.Modes.MISSION;
 		}
 
 		// disable the module and return true if a tutorial scenario is active
-		public static bool DisableScenario( PartModule m )
+		public static bool DisableScenario(PartModule m)
 		{
 			if (IsScenario())
 			{
@@ -808,7 +808,7 @@ namespace KERBALISM
 		// --- BODY -----------------------------------------------------------------
 
 		// return reference body of the planetary system that contain the specified body
-		public static CelestialBody PlanetarySystem( CelestialBody body )
+		public static CelestialBody PlanetarySystem(CelestialBody body)
 		{
 			if (body.flightGlobalsIndex == 0) return body;
 			while (body.referenceBody.flightGlobalsIndex != 0) body = body.referenceBody;
@@ -826,20 +826,20 @@ namespace KERBALISM
 
 		// return terrain height at point specified
 		// - body terrain must be loaded for this to work: use it only for loaded vessels
-		public static double TerrainHeight( CelestialBody body, Vector3d pos )
+		public static double TerrainHeight(CelestialBody body, Vector3d pos)
 		{
 			PQS pqs = body.pqsController;
 			if (pqs == null) return 0.0;
-			Vector2d latlong = body.GetLatitudeAndLongitude( pos );
-			Vector3d radial = QuaternionD.AngleAxis( latlong.y, Vector3d.down ) * QuaternionD.AngleAxis( latlong.x, Vector3d.forward ) * Vector3d.right;
-			return (pos - body.position).magnitude - pqs.GetSurfaceHeight( radial );
+			Vector2d latlong = body.GetLatitudeAndLongitude(pos);
+			Vector3d radial = QuaternionD.AngleAxis(latlong.y, Vector3d.down) * QuaternionD.AngleAxis(latlong.x, Vector3d.forward) * Vector3d.right;
+			return (pos - body.position).magnitude - pqs.GetSurfaceHeight(radial);
 		}
 
 
 		// --- VESSEL ---------------------------------------------------------------
 
 		// return true if landed somewhere
-		public static bool Landed( Vessel v )
+		public static bool Landed(Vessel v)
 		{
 			if (v.loaded) return v.Landed || v.Splashed;
 			else return v.protoVessel.landed || v.protoVessel.splashed;
@@ -847,7 +847,7 @@ namespace KERBALISM
 
 
 		// return vessel position
-		public static Vector3d VesselPosition( Vessel v )
+		public static Vector3d VesselPosition(Vessel v)
 		{
 			// the issue
 			//   - GetWorldPos3D() return mainBody position for a few ticks after scene changes
@@ -859,16 +859,16 @@ namespace KERBALISM
 			Vector3d pos = v.GetWorldPos3D();
 
 			// during scene changes, it will return mainBody position
-			if (Vector3d.SqrMagnitude( pos - v.mainBody.position ) < 1.0)
+			if (Vector3d.SqrMagnitude(pos - v.mainBody.position) < 1.0)
 			{
 				// try to get it from orbit
-				pos = v.orbit.getPositionAtUT( Planetarium.GetUniversalTime() );
+				pos = v.orbit.getPositionAtUT(Planetarium.GetUniversalTime());
 
 				// if the orbit is invalid (landed, or 1 tick after prelaunch/staging/decoupling)
-				if (double.IsNaN( pos.x ))
+				if (double.IsNaN(pos.x))
 				{
 					// get it from lat/long (work even if it isn't landed)
-					pos = v.mainBody.GetWorldSurfacePosition( v.latitude, v.longitude, v.altitude );
+					pos = v.mainBody.GetWorldSurfacePosition(v.latitude, v.longitude, v.altitude);
 				}
 			}
 
@@ -878,20 +878,20 @@ namespace KERBALISM
 
 
 		// return set of crew on a vessel
-		public static List<ProtoCrewMember> CrewList( Vessel v )
+		public static List<ProtoCrewMember> CrewList(Vessel v)
 		{
 			return v.loaded ? v.GetVesselCrew() : v.protoVessel.GetVesselCrew();
 		}
 
 
 		// return crew count of a vessel
-		public static int CrewCount( Vessel v )
+		public static int CrewCount(Vessel v)
 		{
-			return v.isEVA ? 1 : CrewList( v ).Count;
+			return v.isEVA ? 1 : CrewList(v).Count;
 		}
 
 		// return crew capacity of a vessel
-		public static int CrewCapacity( Vessel v )
+		public static int CrewCapacity(Vessel v)
 		{
 			if (v.isEVA) return 1;
 			if (v.loaded)
@@ -911,7 +911,7 @@ namespace KERBALISM
 
 
 		// return true if this is a 'vessel'
-		public static bool IsVessel( Vessel v )
+		public static bool IsVessel(Vessel v)
 		{
 			// something weird is going on
 			if (v == null) return false;
@@ -934,7 +934,7 @@ namespace KERBALISM
 			return true;
 		}
 
-		public static Guid VesselID( Vessel v )
+		public static Guid VesselID(Vessel v)
 		{
 			// Lesson learned: v.persistendId is not unique. Far from it, in fact.
 
@@ -950,7 +950,7 @@ namespace KERBALISM
 			return v.id;
 		}
 
-		public static Guid VesselID( ProtoVessel pv )
+		public static Guid VesselID(ProtoVessel pv)
 		{
 			// nope
 			//byte[] b = pv.vesselID.ToByteArray();
@@ -962,7 +962,7 @@ namespace KERBALISM
 		}
 
 		// return the flight id of the root part of a vessel
-		public static UInt32 RootID( Vessel v )
+		public static UInt32 RootID(Vessel v)
 		{
 			return v.loaded && v.rootPart != null
 			  ? v.rootPart.flightID
@@ -1001,7 +1001,7 @@ namespace KERBALISM
 		// --- PART -----------------------------------------------------------------
 
 		// get list of parts recursively, useful from the editors
-		public static List<Part> GetPartsRecursively( Part root )
+		public static List<Part> GetPartsRecursively(Part root)
 		{
 			List<Part> ret = new List<Part>
 			{
@@ -1009,13 +1009,13 @@ namespace KERBALISM
 			};
 			foreach (Part p in root.children)
 			{
-				ret.AddRange( GetPartsRecursively( p ) );
+				ret.AddRange(GetPartsRecursively(p));
 			}
 			return ret;
 		}
 
 		// return the name of a part
-		public static string PartName( Part p )
+		public static string PartName(Part p)
 		{
 			return p.partInfo.name;
 		}
@@ -1023,7 +1023,7 @@ namespace KERBALISM
 		// return the volume of a part, in m^3
 		// note: this can only be called when part has not been rotated
 		//       we could use the partPrefab bounding box, but then it isn't available in GetInfo()
-		public static double PartVolume( Part p )
+		public static double PartVolume(Part p)
 		{
 			Bounds bb = p.GetPartRendererBound();
 			return bb.size.x * bb.size.y * bb.size.z * 0.785398;
@@ -1032,7 +1032,7 @@ namespace KERBALISM
 		// return the surface of a part, in m^2
 		// note: this can only be called when part has not been rotated
 		//       we could use the partPrefab bounding box, but then it isn't available in GetInfo()
-		public static double PartSurface( Part p )
+		public static double PartSurface(Part p)
 		{
 			Bounds bb = p.GetPartRendererBound();
 			double a = bb.extents.x;
@@ -1053,9 +1053,11 @@ namespace KERBALISM
 			Int64 part_id = 4294967296L + part.GetInstanceID();
 			var manifest = KSP.UI.CrewAssignmentDialog.Instance.GetManifest();
 			var part_manifest = manifest.GetCrewableParts().Find(k => k.PartID == part_id);
-			if (part_manifest != null) {
+			if (part_manifest != null)
+			{
 				int result = 0;
-				foreach (var s in part_manifest.partCrew) {
+				foreach (var s in part_manifest.partCrew)
+				{
 					if (!string.IsNullOrEmpty(s)) result++;
 				}
 				return result;
@@ -1065,7 +1067,7 @@ namespace KERBALISM
 		}
 
 		// return true if a part is manned, even in the editor
-		public static bool IsCrewed( Part p )
+		public static bool IsCrewed(Part p)
 		{
 			return CrewCount(p) > 0;
 		}
@@ -1075,7 +1077,7 @@ namespace KERBALISM
 
 		// return all modules implementing a specific type in a vessel
 		// note: disabled modules are not returned
-		public static List<T> FindModules<T>( Vessel v ) where T : class
+		public static List<T> FindModules<T>(Vessel v) where T : class
 		{
 			List<T> ret = new List<T>();
 			for (int i = 0; i < v.parts.Count; ++i)
@@ -1087,7 +1089,7 @@ namespace KERBALISM
 					if (m.isEnabled)
 					{
 						if (m is T t)
-							ret.Add( t );
+							ret.Add(t);
 					}
 				}
 			}
@@ -1096,18 +1098,18 @@ namespace KERBALISM
 
 		// return all proto modules with a specified name in a vessel
 		// note: disabled modules are not returned
-		public static List<ProtoPartModuleSnapshot> FindModules( ProtoVessel v, string module_name )
+		public static List<ProtoPartModuleSnapshot> FindModules(ProtoVessel v, string module_name)
 		{
-			List<ProtoPartModuleSnapshot> ret = new List<ProtoPartModuleSnapshot>( 8 );
+			List<ProtoPartModuleSnapshot> ret = new List<ProtoPartModuleSnapshot>(8);
 			for (int i = 0; i < v.protoPartSnapshots.Count; ++i)
 			{
 				ProtoPartSnapshot p = v.protoPartSnapshots[i];
 				for (int j = 0; j < p.modules.Count; ++j)
 				{
 					ProtoPartModuleSnapshot m = p.modules[j];
-					if (m.moduleName == module_name && Proto.GetBool( m, "isEnabled" ))
+					if (m.moduleName == module_name && Proto.GetBool(m, "isEnabled"))
 					{
-						ret.Add( m );
+						ret.Add(m);
 					}
 				}
 			}
@@ -1116,7 +1118,7 @@ namespace KERBALISM
 
 		// return true if a module implementing a specific type and satisfying the predicate specified exist in a vessel
 		// note: disabled modules are ignored
-		public static bool HasModule<T>( Vessel v, Predicate<T> filter ) where T : class
+		public static bool HasModule<T>(Vessel v, Predicate<T> filter) where T : class
 		{
 			for (int i = 0; i < v.parts.Count; ++i)
 			{
@@ -1126,7 +1128,7 @@ namespace KERBALISM
 					PartModule m = p.Modules[j];
 					if (m.isEnabled)
 					{
-						if (m is T t && filter( t ))
+						if (m is T t && filter(t))
 							return true;
 					}
 				}
@@ -1136,7 +1138,7 @@ namespace KERBALISM
 
 		// return true if a proto module with the specified name and satisfying the predicate specified exist in a vessel
 		// note: disabled modules are not returned
-		public static bool HasModule( ProtoVessel v, string module_name, Predicate<ProtoPartModuleSnapshot> filter )
+		public static bool HasModule(ProtoVessel v, string module_name, Predicate<ProtoPartModuleSnapshot> filter)
 		{
 			for (int i = 0; i < v.protoPartSnapshots.Count; ++i)
 			{
@@ -1144,7 +1146,7 @@ namespace KERBALISM
 				for (int j = 0; j < p.modules.Count; ++j)
 				{
 					ProtoPartModuleSnapshot m = p.modules[j];
-					if (m.moduleName == module_name && Proto.GetBool( m, "isEnabled" ) && filter( m ))
+					if (m.moduleName == module_name && Proto.GetBool(m, "isEnabled") && filter(m))
 					{
 						return true;
 					}
@@ -1154,7 +1156,7 @@ namespace KERBALISM
 		}
 
 		// return a module from a part by name, or null if it doesn't exist
-		public static PartModule FindModule( Part p, string module_name )
+		public static PartModule FindModule(Part p, string module_name)
 		{
 			foreach (PartModule m in p.Modules)
 			{
@@ -1164,21 +1166,21 @@ namespace KERBALISM
 		}
 
 		// return a module from a part by name, or null if it doesn't exist
-		public static T FindModuleAs<T>( Part p, string module_name ) where T : class
+		public static T FindModuleAs<T>(Part p, string module_name) where T : class
 		{
-			PartModule m = FindModule( p, module_name );
+			PartModule m = FindModule(p, module_name);
 			return m ? m as T : null;
 		}
 
 		// add a module to an EVA kerbal
-		public static void AddModuleToEVA( string module_name, ConfigNode module_node = null )
+		public static void AddModuleToEVA(string module_name, ConfigNode module_node = null)
 		{
-			var eva_parts = PartLoader.LoadedPartsList.FindAll( k => k.name == "kerbalEVA" || k.name == "kerbalEVAfemale" );
+			var eva_parts = PartLoader.LoadedPartsList.FindAll(k => k.name == "kerbalEVA" || k.name == "kerbalEVAfemale");
 			foreach (AvailablePart p in eva_parts)
 			{
-				Type type = AssemblyLoader.GetClassByName( typeof( PartModule ), module_name );
-				PartModule m = p.partPrefab.gameObject.AddComponent( type ) as PartModule;
-				if (module_node != null) m.Load( module_node );
+				Type type = AssemblyLoader.GetClassByName(typeof(PartModule), module_name);
+				PartModule m = p.partPrefab.gameObject.AddComponent(type) as PartModule;
+				if (module_node != null) m.Load(module_node);
 			}
 		}
 
@@ -1192,17 +1194,17 @@ namespace KERBALISM
 		// get module prefab
 		//  This function is used to solve the problem of obtaining a specific module prefab,
 		//  and support the case where there are multiple modules of the same type in the part.
-		public static PartModule ModulePrefab( List<PartModule> module_prefabs, string module_name, Dictionary<string, Module_prefab_data> PD )
+		public static PartModule ModulePrefab(List<PartModule> module_prefabs, string module_name, Dictionary<string, Module_prefab_data> PD)
 		{
 			// get data related to this module type, or create it
 			Module_prefab_data data;
-			if (!PD.TryGetValue( module_name, out data ))
+			if (!PD.TryGetValue(module_name, out data))
 			{
 				data = new Module_prefab_data
 				{
-					prefabs = module_prefabs.FindAll( k => k.moduleName == module_name )
+					prefabs = module_prefabs.FindAll(k => k.moduleName == module_name)
 				};
-				PD.Add( module_name, data );
+				PD.Add(module_name, data);
 			}
 
 			// return the module prefab, and increment module-specific index
@@ -1214,7 +1216,7 @@ namespace KERBALISM
 		// --- RESOURCE -------------------------------------------------------------
 
 		/// <summary> Returns the amount of a resource in a part </summary>
-		public static double Amount( Part part, string resource_name, bool ignore_flow = false )
+		public static double Amount(Part part, string resource_name, bool ignore_flow = false)
 		{
 			foreach (PartResource res in part.Resources)
 			{
@@ -1224,7 +1226,7 @@ namespace KERBALISM
 		}
 
 		/// <summary> Returns the capacity of a resource in a part </summary>
-		public static double Capacity( Part part, string resource_name, bool ignore_flow = false )
+		public static double Capacity(Part part, string resource_name, bool ignore_flow = false)
 		{
 			foreach (PartResource res in part.Resources)
 			{
@@ -1234,7 +1236,7 @@ namespace KERBALISM
 		}
 
 		/// <summary> Returns the level of a resource in a part </summary>
-		public static double Level( Part part, string resource_name, bool ignore_flow = false )
+		public static double Level(Part part, string resource_name, bool ignore_flow = false)
 		{
 			foreach (PartResource res in part.Resources)
 			{
@@ -1249,24 +1251,25 @@ namespace KERBALISM
 		/// <summary> Adds the specified resource amount and capacity to a part,
 		/// the resource is created if it doesn't already exist </summary>
 		// poached from https://github.com/blowfishpro/B9PartSwitch/blob/master/B9PartSwitch/Extensions/PartExtensions.cs
-		public static PartResource AddResource(Part part, string res_name, double amount, double capacity)
+		public static void AddResource(Part p, string res_name, double amount, double capacity)
 		{
+#if KSP16
 			var reslib = PartResourceLibrary.Instance.resourceDefinitions;
 			// if the resource is not known, log a warning and do nothing
 			if (!reslib.Contains(res_name))
 			{
 				Lib.Log(Lib.BuildString("error while adding ", res_name, ": the resource doesn't exist"));
-				return null;
+				return;
 			}
 			var resourceDefinition = reslib[res_name];
 
 			amount = Math.Min(amount, capacity);
 			amount = Math.Max(amount, 0);
-			PartResource resource = part.Resources[resourceDefinition.name];
+			PartResource resource = p.Resources[resourceDefinition.name];
 
 			if (resource == null)
 			{
-				resource = new PartResource(part);
+				resource = new PartResource(p);
 				resource.SetInfo(resourceDefinition);
 				resource.maxAmount = capacity;
 				resource.amount = amount;
@@ -1275,37 +1278,71 @@ namespace KERBALISM
 				resource.isVisible = resourceDefinition.isVisible;
 				resource.hideFlow = false;
 				resource.flowMode = PartResource.FlowMode.Both;
-				part.Resources.dict.Add(resourceDefinition.name.GetHashCode(), resource);
+				p.Resources.dict.Add(resourceDefinition.name.GetHashCode(), resource);
 
 				PartResource simulationResource = new PartResource(resource);
 				simulationResource.simulationResource = true;
-				part.SimulationResources?.dict.Add(resourceDefinition.name.GetHashCode(), simulationResource);
+				p.SimulationResources?.dict.Add(resourceDefinition.name.GetHashCode(), simulationResource);
 
-				GameEvents.onPartResourceListChange.Fire(part);
+				GameEvents.onPartResourceListChange.Fire(p);
 			}
 			else
 			{
 				resource.maxAmount = capacity;
 
-				PartResource simulationResource = part.SimulationResources?[resourceDefinition.name];
+				PartResource simulationResource = p.SimulationResources?[resourceDefinition.name];
 				if (simulationResource != null) simulationResource.maxAmount = capacity;
 
 				resource.amount = amount;
 			}
+#else
+			// if the resource is already in the part
+			if (p.Resources.Contains(res_name))
+			{
+				// add amount and capacity
+				var res = p.Resources[res_name];
+				res.amount += amount;
+				res.maxAmount += capacity;
+			}
+			// if the resource is not already in the part
+			else
+			{
+				// shortcut to resource library
+				var reslib = PartResourceLibrary.Instance.resourceDefinitions;
 
-			return resource;
+				// if the resource is not known, log a warning and do nothing
+				if (!reslib.Contains(res_name))
+				{
+					Lib.Log(Lib.BuildString("error while adding ", res_name, ": the resource doesn't exist"));
+					return;
+				}
+
+				// get resource definition
+				var def = reslib[res_name];
+
+				// create the resource
+				ConfigNode res = new ConfigNode("RESOURCE");
+				res.AddValue("name", res_name);
+				res.AddValue("amount", amount);
+				res.AddValue("maxAmount", capacity);
+
+				// add it to the part
+				p.Resources.Add(res);
+			}
+#endif
 		}
 
 		/// <summary> Removes the specified resource amount and capacity from a part,
 		/// the resource is removed completely if the capacity reaches zero </summary>
-		public static void RemoveResource(Part part, string res_name, double amount, double capacity)
+		public static void RemoveResource(Part p, string res_name, double amount, double capacity)
 		{
+#if KSP16
 			// if the resource is not in the part, do nothing
-			if (!part.Resources.Contains(res_name))
+			if (!p.Resources.Contains(res_name))
 				return;
 
 			// get the resource
-			var res = part.Resources[res_name];
+			var res = p.Resources[res_name];
 
 			// reduce amount and capacity
 			res.amount -= amount;
@@ -1320,11 +1357,33 @@ namespace KERBALISM
 				var reslib = PartResourceLibrary.Instance.resourceDefinitions;
 				var resourceDefinition = reslib[res_name];
 
-				part.Resources.dict.Remove(resourceDefinition.name.GetHashCode());
-				part.SimulationResources?.dict.Remove(resourceDefinition.name.GetHashCode());
+				p.Resources.dict.Remove(resourceDefinition.name.GetHashCode());
+				p.SimulationResources?.dict.Remove(resourceDefinition.name.GetHashCode());
 
-				GameEvents.onPartResourceListChange.Fire(part);
+				GameEvents.onPartResourceListChange.Fire(p);
 			}
+#else
+			// if the resource is not already in the part, do nothing
+			if (p.Resources.Contains(res_name))
+			{
+				// get the resource
+				var res = p.Resources[res_name];
+
+				// reduce amount and capacity
+				res.amount -= amount;
+				res.maxAmount -= capacity;
+
+				// clamp amount to capacity just in case
+				res.amount = Math.Min(res.amount, res.maxAmount);
+
+				// if the resource is empty
+				if (res.maxAmount <= 0.005) //< deal with precision issues
+				{
+					// remove it
+					p.Resources.Remove(res);
+				}
+			}
+#endif
 		}
 
 		// note: the resource must exist
