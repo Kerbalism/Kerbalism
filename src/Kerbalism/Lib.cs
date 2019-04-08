@@ -1389,15 +1389,6 @@ namespace KERBALISM
 			return reslib.Contains( name ) ? reslib[name] : null;
 		}
 
-		/// <summary> Determine if a resource is never able to flow, thus requiring special treatment </summary>
-		public static bool IsResourceImpossibleToFlow(string name, bool check_empty = false)
-		{
-			// by convention: vessel wide available, so we don't do per part processing unnecessarily
-			if (check_empty && string.IsNullOrEmpty(name)) return false;
-
-			return PartResourceLibrary.GetDefaultFlowMode(name) == ResourceFlowMode.NO_FLOW;
-		}
-
 		/// <summary> Returns name of propellant used on eva </summary>
 		public static string EvaPropellantName()
 		{

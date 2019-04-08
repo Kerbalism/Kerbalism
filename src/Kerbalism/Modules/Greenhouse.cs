@@ -7,7 +7,7 @@ namespace KERBALISM
 {
 
 
-	public sealed class Greenhouse : PartModule, IModuleInfo, ISpecifics, IContractObjectiveModule
+	public sealed class Greenhouse : PartModule, IModuleInfo, ISpecifics, IContractObjectiveModule, IConfigurable
 	{
 		// config
 		[KSPField] public string crop_resource;         // name of resource produced by harvests
@@ -43,6 +43,15 @@ namespace KERBALISM
 		// other data
 		Renderer lamps_rdr;
 		public bool WACO2 = false;        // true if we have combined WasteAtmosphere and CarbonDioxide
+
+
+		public void Configure(bool enable, int multiple) {
+			active = enable;
+			if(!active) {
+				growth = 0;
+				tta = 0;
+			}
+		}
 
 
 		public override void OnStart(StartState state)
