@@ -158,7 +158,7 @@ Here is a list of currently supported requirements:
 * AltitudeMin, AltitudeMax: min./max. Altitude in Meters
 * RadiationMin, RadiationMax: min./max. radiation in rad/h
 * Microgravity: not on a surface, not in atmosphere. Thrust provided by Engines is OK tho.
-* Body: body on which the experiment can run. Only one body is possible (f.i. `Body:Eve`)
+* Body: body on which the experiment can run. More than one name can be given (separate with semicolon), to exclude a body prefix it with ! (f.i. `Body:Eve;Duna;!Kerbin`)
 * Shadow: vessel must not be exposed to sunlight
 * Surface: vessel must be on a surface
 * Atmosphere: vessel must be within an atmosphere

@@ -313,7 +313,7 @@ namespace KERBALISM
 					case "RadiationMin": good = vi.radiation >= Double.Parse(value); break;
 					case "RadiationMax": good = vi.radiation <= Double.Parse(value); break;
 					case "Microgravity": good = vi.zerog; break;
-					case "Body": good = v.mainBody.name == value; break;
+					case "Body": good = TestBody(v.mainBody.name, value); break;
 					case "Shadow": good = vi.sunlight < Double.Epsilon; break;
 					case "CrewMin": good = vi.crew_count >= int.Parse(value); break;
 					case "CrewMax": good = vi.crew_count <= int.Parse(value); break;
@@ -382,6 +382,16 @@ namespace KERBALISM
 			return string.Empty;
 		}
 
+		private static bool TestBody(string bodyName, string requirement)
+		{
+			foreach(string s in Lib.Tokenize(requirement, ';'))
+			{
+				if (s == bodyName) return true;
+				if(s[0] == '!' && s.Substring(1) == bodyName) return false;
+			}
+			return false;
+		}
+
 		private static double AsteroidDistance(Vessel vessel)
 		{
 			var target = vessel.targetObject;
@@ -438,7 +448,7 @@ namespace KERBALISM
 					return Lib.BuildString("Min. depth ", Lib.HumanReadableRange(-v));
 				case "RadiationMin": return Lib.BuildString("Min. radiation ", Lib.HumanReadableRadiation(Double.Parse(value)));
 				case "RadiationMax": return Lib.BuildString("Max. radiation ", Lib.HumanReadableRadiation(Double.Parse(value)));
-				case "Body": return value;
+				case "Body": return PrettyBodyText(value);
 				case "TemperatureMin": return Lib.BuildString("Min. temperature ", Lib.HumanReadableTemp(Double.Parse(value)));
 				case "TemperatureMax": return Lib.BuildString("Max. temperature ", Lib.HumanReadableTemp(Double.Parse(value)));
 				case "CrewMin": return Lib.BuildString("Min. crew ", value);
@@ -460,6 +470,18 @@ namespace KERBALISM
 				default:
 					return Lib.SpacesOnCaps(condition);
 			}
+		}
+
+		public static string PrettyBodyText(string requires)
+		{
+			string result = "";
+			foreach(var s in Lib.Tokenize(requires, ';'))
+			{
+				if (result.Length > 0) result += " ";
+				if (s[0] == '!') result += "not " + s.Substring(1);
+				else result += s;
+			}
+			return result;
 		}
 
 		public static void RegisterSampleMass(string experiment_id, double sampleMass)
