@@ -123,7 +123,7 @@ namespace KERBALISM
 					switch (type)
 					{
 						case Module_type.Reliability: Reliability.BackgroundUpdate(v, p, m, module_prefab as Reliability); break;
-						case Module_type.Experiment: Experiment.BackgroundUpdate(v, m, module_prefab as Experiment, ec, elapsed_s); break;
+						case Module_type.Experiment: Experiment.BackgroundUpdate(v, m, module_prefab as Experiment, ec, resources, elapsed_s); break;
 						case Module_type.Greenhouse: Greenhouse.BackgroundUpdate(v, m, module_prefab as Greenhouse, vi, resources, elapsed_s); break;
 						case Module_type.GravityRing: GravityRing.BackgroundUpdate(v, p, m, module_prefab as GravityRing, ec, elapsed_s); break;
 						case Module_type.Emitter: Emitter.BackgroundUpdate(v, p, m, module_prefab as Emitter, ec, elapsed_s); break;

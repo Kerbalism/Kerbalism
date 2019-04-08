@@ -18,12 +18,11 @@ namespace KERBALISM
 		[KSPField] public float sample_reservoir = 0f;        // the amount of sampling mass this unit is shipped with
 		[KSPField] public bool sample_collecting = false;     // if set to true, the experiment will generate mass out of nothing
 		[KSPField] public bool allow_shrouded = true;         // true if data can be transmitted
-
 		[KSPField] public string requires = string.Empty;     // additional requirements that must be met
-
 		[KSPField] public string crew_operate = string.Empty; // operator crew. if set, crew has to be on vessel while recording
 		[KSPField] public string crew_reset = string.Empty;   // reset crew. if set, experiment will stop recording after situation change
 		[KSPField] public string crew_prepare = string.Empty; // prepare crew. if set, experiment will require crew to set up before it can start recording 
+		[KSPField] public string resources = string.Empty;    // resources consumed by this experiment
 
 		// animations
 		[KSPField] public string anim_deploy = string.Empty; // deploy animation
@@ -49,6 +48,7 @@ namespace KERBALISM
 		private CrewSpecs operator_cs;
 		private CrewSpecs reset_cs;
 		private CrewSpecs prepare_cs;
+		private List<KeyValuePair<string, double>> resourceDefs;
 
 		private String situationIssue = String.Empty;
 		[KSPField(guiActive = false, guiName = "_")] private string ExperimentStatus = string.Empty;
@@ -109,7 +109,9 @@ namespace KERBALISM
 			if (!string.IsNullOrEmpty(crew_prepare))
 				prepare_cs = new CrewSpecs(crew_prepare);
 
-			foreach(var hd in part.FindModulesImplementing<HardDrive>())
+			resourceDefs = ParseResources(resources);
+
+			foreach (var hd in part.FindModulesImplementing<HardDrive>())
 			{
 				if (hd.experiment_id == experiment_id) privateHdId = part.flightID;
 			}
@@ -213,6 +215,9 @@ namespace KERBALISM
 			issue = TestForIssues(vessel, ec, this, broken,
 				remainingSampleMass, didPrepare, shrouded, last_subject_id);
 
+			if (string.IsNullOrEmpty(issue))
+				issue = TestForResources(vessel, resourceDefs, Kerbalism.elapsed_s, ResourceCache.Get(vessel));
+
 			if (!string.IsNullOrEmpty(issue))
 				return;
 
@@ -239,13 +244,16 @@ namespace KERBALISM
 
 		private void DoRecord(Resource_info ec, string subject_id)
 		{
-			var stored = DoRecord(this, subject_id, vessel, ec, privateHdId, remainingSampleMass, dataSampled, out dataSampled, out remainingSampleMass);
+			var stored = DoRecord(this, subject_id, vessel, ec, privateHdId,
+				ResourceCache.Get(vessel), resourceDefs,
+				remainingSampleMass, dataSampled, out dataSampled, out remainingSampleMass);
 			if (!stored) issue = "insufficient storage";
 		}
 
-		private static bool DoRecord(Experiment experiment, string subject_id, Vessel vessel, Resource_info ec, uint hdId,
-		                             double remainingSampleMass, double dataSampled,
-		                             out double sampledOut, out double remainingSampleMassOut)
+		private static bool DoRecord(Experiment experiment, string subject_id, Vessel vessel, Resource_info ec, uint hdId, 
+			Vessel_resources resources, List<KeyValuePair<string, double>> resourceDefs,
+			double remainingSampleMass, double dataSampled,
+			out double sampledOut, out double remainingSampleMassOut)
 		{
 			var exp = Science.Experiment(subject_id);
 			double elapsed = Kerbalism.elapsed_s;
@@ -267,6 +275,9 @@ namespace KERBALISM
 				massDelta *= factor;
 				elapsed *= factor;
 			}
+
+			foreach(var p in resourceDefs)
+				resources.Consume(vessel, p.Key, p.Value * elapsed);
 
 			bool stored = false;
 			if (isFile)
@@ -295,7 +306,7 @@ namespace KERBALISM
 			return false;
 		}
 
-		public static void BackgroundUpdate(Vessel v, ProtoPartModuleSnapshot m, Experiment experiment, Resource_info ec, double elapsed_s)
+		public static void BackgroundUpdate(Vessel v, ProtoPartModuleSnapshot m, Experiment experiment, Resource_info ec, Vessel_resources resources, double elapsed_s)
 		{
 			bool didPrepare = Lib.Proto.GetBool(m, "didPrepare", false);
 			bool shrouded = Lib.Proto.GetBool(m, "shrouded", false);
@@ -307,6 +318,9 @@ namespace KERBALISM
 
 			string issue = TestForIssues(v, ec, experiment, broken,
 				remainingSampleMass, didPrepare, shrouded, last_subject_id);
+			if(string.IsNullOrEmpty(issue))
+				issue = TestForResources(v, ParseResources(experiment.resources), elapsed_s, resources);
+
 			Lib.Proto.Set(m, "issue", issue);
 
 			if (!string.IsNullOrEmpty(issue))
@@ -333,7 +347,9 @@ namespace KERBALISM
 				return;
 
 			uint privateHdId = Lib.Proto.GetUInt(m, "privateHdId", 0);
-			var stored = DoRecord(experiment, subject_id, v, ec, privateHdId, remainingSampleMass, dataSampled, out dataSampled, out remainingSampleMass);
+			var stored = DoRecord(experiment, subject_id, v, ec, privateHdId,
+				resources, ParseResources(experiment.resources),
+				remainingSampleMass, dataSampled, out dataSampled, out remainingSampleMass);
 			if (!stored) Lib.Proto.Set(m, "issue", "insufficient storage");
 
 			Lib.Proto.Set(m, "dataSampled", dataSampled);
@@ -374,6 +390,40 @@ namespace KERBALISM
 		public void ReliablityEvent(bool breakdown)
 		{
 			broken = breakdown;
+		}
+
+		private static string TestForResources(Vessel v, List<KeyValuePair<string, double>> defs, double elapsed_s, Vessel_resources res)
+		{
+			if (defs.Count < 1) return string.Empty;
+
+			// test if there are enough resources on the vessel
+			foreach(var p in defs)
+			{
+				var ri = res.Info(v, p.Key);
+				if (ri.amount < p.Value * elapsed_s)
+					return "missing " + ri.resource_name;
+			}
+
+			return string.Empty;
+		}
+
+		private static List<KeyValuePair<string, double>> ParseResources(string resources, bool logErros = false)
+		{
+			var reslib = PartResourceLibrary.Instance.resourceDefinitions;
+
+			List<KeyValuePair<string, double>> defs = new List<KeyValuePair<string, double>>();
+			foreach (string s in Lib.Tokenize(resources, ','))
+			{
+				// definitions are Resource@rate
+				var p = Lib.Tokenize(s, '@');
+				if (p.Count != 2) continue;				// malformed definition
+				string res = p[0];
+				if (!reslib.Contains(res)) continue;	// unknown resource
+				double rate = double.Parse(p[1]);
+				if (res.Length < 1 || rate < double.Epsilon) continue;	// rate <= 0
+				defs.Add(new KeyValuePair<string, double>(res, rate));
+			}
+			return defs;
 		}
 
 		private static string TestForIssues(Vessel v, Resource_info ec, Experiment experiment, bool broken,
@@ -618,15 +668,21 @@ namespace KERBALISM
 				specs.Add("Duration", Lib.HumanReadableDuration(expSize / data_rate));
 			}
 
-			specs.Add("EC required", Lib.HumanReadableRate(ec_rate));
+			specs.Add("");
+			specs.Add("<color=#00ffff>Needs:</color>");
+
+			specs.Add("EC", Lib.HumanReadableRate(ec_rate));
+			foreach(var p in ParseResources(resources))
+				specs.Add(p.Key, Lib.HumanReadableRate(p.Value));
+
+			if (crew_prepare.Length > 0) specs.Add("Preparation", new CrewSpecs(crew_prepare).Info());
 			if (crew_operate.Length > 0) specs.Add("Opration", new CrewSpecs(crew_operate).Info());
 			if (crew_reset.Length > 0) specs.Add("Reset", new CrewSpecs(crew_reset).Info());
-			if (crew_prepare.Length > 0) specs.Add("Preparation", new CrewSpecs(crew_prepare).Info());
 
 			if(!string.IsNullOrEmpty(requires))
 			{
 				specs.Add(string.Empty);
-				specs.Add("<color=#00ffff>Requirements:</color>", string.Empty);
+				specs.Add("<color=#00ffff>Requires:</color>", string.Empty);
 				var tokens = Lib.Tokenize(requires, ',');
 				foreach (string s in tokens) specs.Add(Lib.BuildString("• <b>", Science.RequirementText(s), "</b>"));
 			}

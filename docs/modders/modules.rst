@@ -117,6 +117,11 @@ Hooks experiments into the Kerbalism science system.
 | requires          | Additional requirements that must be met for recording.     |               |
 |                   | See below.                                                  |               |
 +-------------------+-------------------------------------------------------------+---------------+
+| resources         | Resources consumed while the experiment is running. Will    |               |
+|                   | stop if one of the resources is depleted. Rate is per sec.  |               |
+|                   | Malformed definitions or unknown resources will be ignored. |               |
+|                   | Example: resources = Water@0.01,Food@0.02                   |               |
++-------------------+-------------------------------------------------------------+---------------+
 | crew_operate      | Requirements for crew on vessel for recording. If this is   |               |
 |                   | not set, the experiment can run on unmanned probes.         |               |
 +-------------------+-------------------------------------------------------------+---------------+
