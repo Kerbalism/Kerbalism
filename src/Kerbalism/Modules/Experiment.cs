@@ -82,18 +82,19 @@ namespace KERBALISM
 			{
 				Science.RegisterSampleMass(experiment_id, sample_mass);
 			}
+
+			if (remainingSampleMass < 0)
+			{
+				remainingSampleMass = sample_mass;
+				if (sample_reservoir > float.Epsilon)
+					remainingSampleMass = sample_reservoir;
+			}
 		}
 
 		public override void OnStart(StartState state)
 		{
 			// don't break tutorial scenarios
 			if (Lib.DisableScenario(this)) return;
-
-			if(remainingSampleMass < 0) {
-				remainingSampleMass = sample_mass;
-				if (sample_reservoir > float.Epsilon)
-					remainingSampleMass = sample_reservoir;
-			}
 
 			// create animator
 			deployAnimator = new Animator(part, anim_deploy);
