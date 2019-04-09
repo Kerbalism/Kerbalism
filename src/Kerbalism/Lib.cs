@@ -1253,7 +1253,7 @@ namespace KERBALISM
 		// poached from https://github.com/blowfishpro/B9PartSwitch/blob/master/B9PartSwitch/Extensions/PartExtensions.cs
 		public static void AddResource(Part p, string res_name, double amount, double capacity)
 		{
-#if KSP16
+#if !KSP14
 			var reslib = PartResourceLibrary.Instance.resourceDefinitions;
 			// if the resource is not known, log a warning and do nothing
 			if (!reslib.Contains(res_name))
@@ -1336,7 +1336,7 @@ namespace KERBALISM
 		/// the resource is removed completely if the capacity reaches zero </summary>
 		public static void RemoveResource(Part p, string res_name, double amount, double capacity)
 		{
-#if KSP16
+#if !KSP14
 			// if the resource is not in the part, do nothing
 			if (!p.Resources.Contains(res_name))
 				return;
