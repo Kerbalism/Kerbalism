@@ -213,7 +213,7 @@ namespace KERBALISM
 			// get ec handler
 			Resource_info ec = ResourceCache.Info(vessel, "ElectricCharge");
 			shrouded = part.ShieldedFromAirstream;
-			issue = TestForIssues(vessel, ec, this, broken,
+			issue = TestForIssues(vessel, ec, this, privateHdId, broken,
 				remainingSampleMass, didPrepare, shrouded, last_subject_id);
 
 			if (string.IsNullOrEmpty(issue))
@@ -251,6 +251,17 @@ namespace KERBALISM
 			if (!stored) issue = "insufficient storage";
 		}
 
+		private static Drive GetDrive(Experiment experiment, Vessel vessel, uint hdId, double chunkSize, string subject_id)
+		{
+			bool isFile = experiment.sample_mass < float.Epsilon;
+			Drive drive = null;
+			var vd = DB.Vessel(vessel);
+			if (hdId != 0 && vd.drives.ContainsKey(hdId)) drive = vd.drives[hdId];
+			else drive = isFile ? DB.Vessel(vessel).FileDrive(chunkSize) : DB.Vessel(vessel).SampleDrive(chunkSize, subject_id);
+			return drive;
+		}
+
+
 		private static bool DoRecord(Experiment experiment, string subject_id, Vessel vessel, Resource_info ec, uint hdId, 
 			Vessel_resources resources, List<KeyValuePair<string, double>> resourceDefs,
 			double remainingSampleMass, double dataSampled,
@@ -261,13 +272,10 @@ namespace KERBALISM
 			double chunkSize = Math.Min(experiment.data_rate * elapsed, exp.max_amount);
 			double massDelta = experiment.sample_mass * chunkSize / exp.max_amount;
 
-			bool isFile = experiment.sample_mass < float.Epsilon;
-			Drive drive = null;
-			var vd = DB.Vessel(vessel);
-			if (hdId != 0 && vd.drives.ContainsKey(hdId)) drive = vd.drives[hdId];
-			else drive = isFile ? DB.Vessel(vessel).FileDrive(chunkSize) : DB.Vessel(vessel).SampleDrive(chunkSize, subject_id);
+			Drive drive = GetDrive(experiment, vessel, hdId, chunkSize, subject_id);
 
 			// on high time warp this chunk size could be too big, but we could store a sizable amount if we process less
+			bool isFile = experiment.sample_mass < float.Epsilon;
 			double maxCapacity = isFile ? drive.FileCapacityAvailable() : drive.SampleCapacityAvailable(subject_id);
 			if (maxCapacity < chunkSize)
 			{
@@ -316,8 +324,9 @@ namespace KERBALISM
 			bool broken = Lib.Proto.GetBool(m, "broken", false);
 			bool forcedRun = Lib.Proto.GetBool(m, "forcedRun", false);
 			bool recording = Lib.Proto.GetBool(m, "recording", false);
+			uint privateHdId = Lib.Proto.GetUInt(m, "privateHdId", 0);
 
-			string issue = TestForIssues(v, ec, experiment, broken,
+			string issue = TestForIssues(v, ec, experiment, privateHdId, broken,
 				remainingSampleMass, didPrepare, shrouded, last_subject_id);
 			if(string.IsNullOrEmpty(issue))
 				issue = TestForResources(v, ParseResources(experiment.resources), elapsed_s, resources);
@@ -347,7 +356,6 @@ namespace KERBALISM
 			if (dataSampled >= Science.Experiment(subject_id).max_amount)
 				return;
 
-			uint privateHdId = Lib.Proto.GetUInt(m, "privateHdId", 0);
 			var stored = DoRecord(experiment, subject_id, v, ec, privateHdId,
 				resources, ParseResources(experiment.resources),
 				remainingSampleMass, dataSampled, out dataSampled, out remainingSampleMass);
@@ -427,7 +435,7 @@ namespace KERBALISM
 			return defs;
 		}
 
-		private static string TestForIssues(Vessel v, Resource_info ec, Experiment experiment, bool broken,
+		private static string TestForIssues(Vessel v, Resource_info ec, Experiment experiment, uint hdId, bool broken,
 			double remainingSampleMass, bool didPrepare, bool isShrouded, string last_subject_id)
 		{
 			var subject_id = Science.Generate_subject_id(experiment.experiment_id, v);
@@ -461,10 +469,15 @@ namespace KERBALISM
 			if (situationIssue.Length > 0)
 				return Science.RequirementText(situationIssue);
 
-			var isFile = experiment.sample_mass < double.Epsilon;
-			var drive = isFile ? DB.Vessel(v).FileDrive() : DB.Vessel(v).SampleDrive(0, subject_id);
 			var experimentSize = Science.Experiment(subject_id).max_amount;
-			double available = experiment.sample_mass < float.Epsilon ? drive.FileCapacityAvailable() : drive.SampleCapacityAvailable(subject_id);
+			double chunkSize = Math.Min(experiment.data_rate * Kerbalism.elapsed_s, experimentSize);
+			Drive drive = GetDrive(experiment, v, hdId, chunkSize, subject_id);
+
+			var isFile = experiment.sample_mass < double.Epsilon;
+			double available = isFile ? drive.FileCapacityAvailable() : drive.SampleCapacityAvailable(subject_id);
+
+			Lib.Log("### " + experiment.name + " ID " + experiment.experiment_id + " subject_id " + subject_id + " available " + Lib.HumanReadableDataSize(available));
+
 			if (Math.Min(experiment.data_rate * Kerbalism.elapsed_s, experimentSize) > available)
 				return "insufficient storage";
 
