@@ -704,20 +704,20 @@ namespace KERBALISM
 			return (Math.Abs(value) <= 0 ? "none" : BuildString(value.ToString("F0"), append));
 		}
 
-		///<summary> Format data size, the size parameter is in Mb </summary>
+		///<summary> Format data size, the size parameter is in MB </summary>
 		public static string HumanReadableDataSize(double size)
 		{
 			size *= 1048576.0; //< to bytes
 			if (size < 1.0) return "none";
-			if (size < 1024.0) return BuildString(size.ToString("F0"), " b");
+			if (size < 1024.0) return BuildString(size.ToString("F0"), " B");
 			size /= 1024.0;
-			if (size < 1024.0) return BuildString(size.ToString("F2"), " Kb");
+			if (size < 1024.0) return BuildString(size.ToString("F2"), " kB");
 			size /= 1024.0;
-			if (size < 1024.0) return BuildString(size.ToString("F2"), " Mb");
+			if (size < 1024.0) return BuildString(size.ToString("F2"), " MB");
 			size /= 1024.0;
-			if (size < 1024.0) return BuildString(size.ToString("F2"), " Gb");
+			if (size < 1024.0) return BuildString(size.ToString("F2"), " GB");
 			size /= 1024.0;
-			return BuildString(size.ToString("F2"), " Tb");
+			return BuildString(size.ToString("F2"), " TB");
 		}
 
 		///<summary> Format data rate, the rate parameter is in Mb/s </summary>
@@ -1253,7 +1253,7 @@ namespace KERBALISM
 		// poached from https://github.com/blowfishpro/B9PartSwitch/blob/master/B9PartSwitch/Extensions/PartExtensions.cs
 		public static void AddResource(Part p, string res_name, double amount, double capacity)
 		{
-#if KSP16
+#if !KSP14
 			var reslib = PartResourceLibrary.Instance.resourceDefinitions;
 			// if the resource is not known, log a warning and do nothing
 			if (!reslib.Contains(res_name))
@@ -1336,7 +1336,7 @@ namespace KERBALISM
 		/// the resource is removed completely if the capacity reaches zero </summary>
 		public static void RemoveResource(Part p, string res_name, double amount, double capacity)
 		{
-#if KSP16
+#if !KSP14
 			// if the resource is not in the part, do nothing
 			if (!p.Resources.Contains(res_name))
 				return;

@@ -36,6 +36,7 @@ namespace KERBALISM
 					drive = DB.Vessel(vessel).DriveForPart(title, hdId, dataCapacity, sampleCapacity);
 			}
 
+			drive.is_private = experiment_id.Length > 0;
 			UpdateCapacity();
 		}
 

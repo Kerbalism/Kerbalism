@@ -50,12 +50,16 @@ namespace KERBALISM
 			{
 				var drive = idDrivePair.Value;
 
-				usedDataCapacity += drive.FilesSize();
-				totalDataCapacity += drive.dataCapacity;
-				filesCount += drive.files.Count;
+				if(!drive.is_private)
+				{
+					usedDataCapacity += drive.FilesSize();
+					totalDataCapacity += drive.dataCapacity;
 
-				usedSlots += drive.SamplesSize();
-				totalSlots += drive.sampleCapacity;
+					usedSlots += drive.SamplesSize();
+					totalSlots += drive.sampleCapacity;
+				}
+
+				filesCount += drive.files.Count;
 				samplesCount += drive.samples.Count;
 				foreach (var sample in drive.samples.Values) totalMass += sample.mass;
 			}

@@ -21,3 +21,4 @@ do
 	/bin/cp -rf "src/Kerbalism/obj/Release/Kerbalism.dll" "GameData/Kerbalism/Kerbalism${current_kspbin}.bin"
 	rm -rf $filename
 done
+rm -f GameData/Kerbalism/Kerbalism.dll
