@@ -205,7 +205,9 @@ namespace KERBALISM
 		// return hours in a day
 		public static double HoursInDay()
 		{
-			return GameSettings.KERBIN_TIME ? 6.0 : 24.0;
+			if (!FlightGlobals.ready) return GameSettings.KERBIN_TIME ? 6.0 : 24.0;
+			var homeBody = FlightGlobals.GetHomeBody();
+			return Math.Round(homeBody.rotationPeriod / 3600, 0);
 		}
 
 		// return year length
