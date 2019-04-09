@@ -313,7 +313,7 @@ namespace KERBALISM
 
 		public bool Empty()
 		{
-			return FilesSize() < double.Epsilon && SamplesSize() == 0;
+			return files.Count + samples.Count == 0;
 		}
 
 		// transfer data between two vessels

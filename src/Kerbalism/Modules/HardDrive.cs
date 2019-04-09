@@ -36,7 +36,7 @@ namespace KERBALISM
 					drive = DB.Vessel(vessel).DriveForPart(title, hdId, dataCapacity, sampleCapacity);
 			}
 
-			drive.is_private = experiment_id.Length > 0;
+			drive.is_private |= experiment_id.Length > 0;
 			UpdateCapacity();
 		}
 
@@ -55,14 +55,14 @@ namespace KERBALISM
 			else
 				drive = DB.Vessel(vessel).DriveForPart(title, hdId, dataCapacity, sampleCapacity);
 
-			drive.is_private = experiment_id.Length > 0;
+			drive.is_private |= experiment_id.Length > 0;
 			UpdateCapacity();
 		}
 
 		public void SetDrive(Drive drive)
 		{
 			this.drive = drive;
-			drive.is_private = experiment_id.Length > 0;
+			drive.is_private |= experiment_id.Length > 0;
 			UpdateCapacity();
 		}
 
@@ -74,17 +74,17 @@ namespace KERBALISM
 			{
 				// show DATA UI button, with size info
 				Events["ToggleUI"].guiName = Lib.StatusToggle("Data", drive.Empty() ? "empty" : drive.Size());
-				Events["ToggleUI"].active = true;
+				Events["ToggleUI"].active = !IsPrivate();
 
 				// show TakeData eva action button, if there is something to take
 				Events["TakeData"].active = !drive.Empty();
 
 				// show StoreData eva action button, if active vessel is an eva kerbal and there is something to store from it
 				Vessel v = FlightGlobals.ActiveVessel;
-				Events["StoreData"].active = v != null && v.isEVA && !EVA.IsDead(v) && drive.FilesSize() > double.Epsilon;
+				Events["StoreData"].active = !IsPrivate() && v != null && v.isEVA && !EVA.IsDead(v);
 
 				// hide TransferLocation button
-				var transferVisible = experiment_id.Length == 0;
+				var transferVisible = !IsPrivate();
 				if(transferVisible)
 				{
 					int count = 0;
@@ -99,9 +99,14 @@ namespace KERBALISM
 			}
 		}
 
+		public bool IsPrivate()
+		{
+			return drive.is_private;
+		}
+
 		private void UpdateCapacity()
 		{
-			if (dataCapacity < 0 || sampleCapacity < 0)
+			if (dataCapacity < 0 || sampleCapacity < 0 || IsPrivate())
 			{
 				Fields["Capacity"].guiActive = false;
 				Fields["Capacity"].guiActiveEditor = false;
