@@ -103,12 +103,20 @@ namespace KERBALISM
 		private Dictionary<uint, Drive> LoadDrives(ConfigNode node)
 		{
 			Dictionary<uint, Drive> result = new Dictionary<uint, Drive>();
-			foreach(var n in node.GetNodes("drive"))
+
+			if (node == null)
+			{
+				Lib.Log("No hard drives in save file. You are loading an old version. Expect danger and misery.");
+				return result; // old save
+			}
+
+			foreach (var n in node.GetNodes("drive"))
 			{
 				uint partId = Lib.ConfigValue(n, "hdId", (uint)0);
 				Drive drive = new Drive(n);
 				result.Add(partId, drive);
 			}
+
 			return result;
 		}
 
