@@ -49,6 +49,7 @@ namespace KERBALISM
 		private CrewSpecs reset_cs;
 		private CrewSpecs prepare_cs;
 		private List<KeyValuePair<string, double>> resourceDefs;
+		private double next_check = 0;
 
 		private String situationIssue = String.Empty;
 		[KSPField(guiActive = false, guiName = "_")] private string ExperimentStatus = string.Empty;
@@ -209,6 +210,7 @@ namespace KERBALISM
 			// basic sanity checks
 			if (Lib.IsEditor()) return;
 			if (!Cache.VesselInfo(vessel).is_valid) return;
+			if (next_check > Planetarium.GetUniversalTime()) return;
 
 			// get ec handler
 			Resource_info ec = ResourceCache.Info(vessel, "ElectricCharge");
@@ -220,7 +222,10 @@ namespace KERBALISM
 				issue = TestForResources(vessel, resourceDefs, Kerbalism.elapsed_s, ResourceCache.Get(vessel));
 
 			if (!string.IsNullOrEmpty(issue))
+			{
+				next_check = Planetarium.GetUniversalTime() + Math.Max(3, Kerbalism.elapsed_s * 3);
 				return;
+			}
 
 			var subject_id = Science.Generate_subject_id(experiment_id, vessel);
 			if (last_subject_id != subject_id)
@@ -677,6 +682,8 @@ namespace KERBALISM
 			{
 				specs.Add("Sample size", Lib.HumanReadableSampleSize(expSize));
 				specs.Add("Sample mass", Lib.HumanReadableMass(sample_mass));
+				if (Math.Abs(sample_reservoir - sample_mass) > double.Epsilon && sample_mass > double.Epsilon)
+					specs.Add("Experiments", "" + Math.Round(sample_reservoir / sample_mass, 0));
 				specs.Add("Duration", Lib.HumanReadableDuration(expSize / data_rate));
 			}
 
