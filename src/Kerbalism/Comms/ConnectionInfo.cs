@@ -6,10 +6,10 @@ namespace KERBALISM
 	public enum LinkStatus
 	{
 		direct_link = 0,
-		indirect_link,	// relayed signal
-		no_link,
-		plasma,			// plasma blackout on reentry
-		storm			// cme storm blackout
+		indirect_link = 1,	// relayed signal
+		no_link = 2,
+		plasma = 3,			// plasma blackout on reentry
+		storm = 4			// cme storm blackout
 	}
 
 	/// <summary> Stores a single vessels communication info</summary>
@@ -65,10 +65,19 @@ namespace KERBALISM
 			ec = ai.ec;
 			rate = ai.rate * PreferencesScience.Instance.transmitFactor;
 			linked = ai.linked;
-			status = ai.status;
 			strength = ai.strength;
 			target_name = ai.target_name;
 			control_path = ai.control_path;
+
+			switch(ai.status)
+			{
+				case 0: status = LinkStatus.direct_link; break;
+				case 1: status = LinkStatus.indirect_link; break;
+				case 2: status = LinkStatus.no_link; break;
+				case 3: status = LinkStatus.plasma; break;
+				case 4: status = LinkStatus.storm; break;
+				default: status = LinkStatus.no_link; break;
+			}
 		}
 
 		private static AntennaInfo GetAntennaInfo(Vessel v, bool powered, bool storm)
@@ -87,7 +96,7 @@ namespace KERBALISM
 
 			antennaInfo.ec *= 0.16;
 			antennaInfo.linked = true;
-			antennaInfo.status = LinkStatus.direct_link;
+			antennaInfo.status = (int)LinkStatus.direct_link;
 			antennaInfo.strength = 1;    // 100 %
 			antennaInfo.target_name = "DSN: KSC";
 

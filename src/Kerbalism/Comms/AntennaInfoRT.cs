@@ -98,8 +98,8 @@ namespace KERBALISM
 			if (RemoteTech.Connected(v.id))
 			{
 				linked = RemoteTech.ConnectedToKSC(v.id);
-				status = RemoteTech.TargetsKSC(v.id) ? LinkStatus.direct_link : LinkStatus.indirect_link;
-				target_name = status == LinkStatus.direct_link ? Lib.Ellipsis("DSN: " + (RemoteTech.NameTargetsKSC(v.id) ?? ""), 20) :
+				status = RemoteTech.TargetsKSC(v.id) ? (int)LinkStatus.direct_link : (int)LinkStatus.indirect_link;
+				target_name = status == (int)LinkStatus.direct_link ? Lib.Ellipsis("DSN: " + (RemoteTech.NameTargetsKSC(v.id) ?? ""), 20) :
 					Lib.Ellipsis(RemoteTech.NameFirstHopToKSC(v.id) ?? "", 20);
 
 				Guid[] controlPath = null;
@@ -115,7 +115,7 @@ namespace KERBALISM
 						strength = 1 - (dist / Math.Max(RemoteTech.GetCommsMaxDistance(v.id, controlPath[0]), 1));
 
 						// If using relay, get the lowest rate
-						if (status != LinkStatus.direct_link)
+						if (status != (int)LinkStatus.direct_link)
 						{
 							Vessel target = FlightGlobals.FindVessel(controlPath[0]);
 							strength *= Cache.VesselInfo(target).connection.strength;
@@ -140,7 +140,7 @@ namespace KERBALISM
 			// is loss of connection due to a blackout
 			else if (RemoteTech.GetCommsBlackout(v.id))
 			{
-				status = storm ? LinkStatus.storm : LinkStatus.plasma;
+				status = storm ? (int)LinkStatus.storm : (int)LinkStatus.plasma;
 			}
 		}
 	}

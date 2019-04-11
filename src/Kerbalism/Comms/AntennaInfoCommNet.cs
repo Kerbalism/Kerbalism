@@ -114,7 +114,7 @@ namespace KERBALISM
 			if(!powered || v.connection == null)
 			{
 				linked = false;
-				status = LinkStatus.no_link;
+				status = (int)LinkStatus.no_link;
 				return;
 			}
 
@@ -126,12 +126,12 @@ namespace KERBALISM
 			if (v.connection.IsConnected)
 			{
 				linked = true;
-				status = v.connection.ControlPath.First.hopType == CommNet.HopType.Home ? LinkStatus.direct_link : LinkStatus.indirect_link;
+				status = v.connection.ControlPath.First.hopType == CommNet.HopType.Home ? (int)LinkStatus.direct_link : (int)LinkStatus.indirect_link;
 				strength = v.connection.SignalStrength;
 				rate *= strength;
 				target_name = Lib.Ellipsis(Localizer.Format(v.connection.ControlPath.First.end.displayName).Replace("Kerbin", "DSN"), 20);
 
-				if (status != LinkStatus.direct_link)
+				if (status != (int)LinkStatus.direct_link)
 				{
 					Vessel firstHop = Lib.CommNodeToVessel(v.Connection.ControlPath.First.end);
 					// Get rate from the firstHop, each Hop will do the same logic, then we will have the min rate for whole path
@@ -141,7 +141,7 @@ namespace KERBALISM
 			// is loss of connection due to plasma blackout
 			else if (Lib.ReflectionValue<bool>(v.connection, "inPlasma"))  // calling InPlasma causes a StackOverflow :(
 			{
-				status = LinkStatus.plasma;
+				status = (int)LinkStatus.plasma;
 			}
 
 			control_path = new List<string[]>();

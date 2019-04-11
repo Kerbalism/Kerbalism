@@ -19,7 +19,10 @@ namespace KERBALISM
 
 		public double strength = -1;
 
-		public LinkStatus status = LinkStatus.no_link;
+		/// <summary>
+		/// direct_link = 0, indirect_link = 1 (relayed signal), no_link = 2, plasma = 3 (plasma blackout on reentry), storm = 4 (cme storm blackout)
+		/// </summary>
+		public int status = 2;
 
 		public bool linked;
 
