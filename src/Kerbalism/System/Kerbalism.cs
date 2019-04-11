@@ -37,7 +37,7 @@ namespace KERBALISM
 			// enable global access
 			Fetch = this;
 			Communications.NetworkInitialized = false;
-			RemoteTech.NetworkInitialized = false;
+			Communications.NetworkInitializing = false;
 		}
 
 		private void OnDestroy()
@@ -49,6 +49,9 @@ namespace KERBALISM
 		{
 			// deserialize data
 			DB.Load(node);
+
+			Communications.NetworkInitialized = false;
+			Communications.NetworkInitializing = false;
 
 			// initialize everything just once
 			if (!initialized)
@@ -303,10 +306,10 @@ namespace KERBALISM
 
 		void Update()
 		{
-			if (!RemoteTech.NetworkInitialized)
+			if (!Communications.NetworkInitializing)
 			{
-				RemoteTech.NetworkInitialized = true;
-				if (RemoteTech.Enabled) StartCoroutine(callbacks.NetworkInitialized());
+				Communications.NetworkInitializing = true;
+				StartCoroutine(callbacks.NetworkInitialized());
 			}
 
 			// attach map renderer to planetarium camera once

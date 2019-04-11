@@ -195,8 +195,6 @@ namespace KERBALISM
 			return RT_API != null && GetSatName != null ? (string)GetSatName.Invoke(null, new Object[] { id }) : string.Empty;
 		}
 
-		public static bool NetworkInitialized = false;
-
 		private static Type RT_API;
 		private static MethodInfo IsEnabled;
 		private static MethodInfo EnabledInSPC;

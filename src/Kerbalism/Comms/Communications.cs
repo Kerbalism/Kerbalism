@@ -9,6 +9,9 @@ namespace KERBALISM
 		/// <summary> True if CommNet is initialized </summary>
 		public static bool NetworkInitialized = false;
 
+		/// <summary> True if CommNet initialization has begin </summary>
+		public static bool NetworkInitializing = false;
+
 		public static void Update(Vessel v, Vessel_info vi, VesselData vd, Resource_info ec, double elapsed_s)
 		{
 			// consume ec for transmitters

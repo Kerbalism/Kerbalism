@@ -249,7 +249,7 @@ namespace KERBALISM
 			if (Features.Reliability) Indicator_reliability(p, v, vi);
 
 			// signal indicator
-			if (RemoteTech.Enabled || HighLogic.fetch.currentGame.Parameters.Difficulty.EnableCommNet) Indicator_signal(p, v, vi);
+			if (API.Comm.handlers.Count > 0 || HighLogic.fetch.currentGame.Parameters.Difficulty.EnableCommNet) Indicator_signal(p, v, vi);
 
 			// done
 			return true;
