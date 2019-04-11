@@ -24,12 +24,12 @@
 
 //=================================================================================================================================================================
 //most of the data scales/data collection rates/ec/s were changed to my own taste, and I have my own version of "balance". still needs a bunch of testing.
-//should you wish to fiddle around with stuff, check Science.cfg for stock, and check ModSupport for individual mod configs.
+//should you wish to fiddle around with stuff, relevant bits are at the top of the config files. strongly recommended you don't mess with anything else, as stuff is bound to break.
 //=================================================================================================================================================================
 //should you simply wish to slap a bunch of specific experiments into a part (say, a probe core) without the ability to select through configure,
 
 @PART[whatever part name]:NEEDS[FeatureScience]:BEFORE[Kerbalism]
-//if part is from a mod, add the mod's name to the NEEDS[] bit, e.g. @PART[MyPart]:NEEDS[FeatureScience,MyMod]:BEFORE[Kerbalism]
+//if part is from a mod, add the mod's name to the NEEDS[] bit, e.g. @PART[MyPart]:NEEDS[FeatureScience,MyMod]:FOR[Kerbalism]
 {
 	MODULE
 		{
