@@ -11,12 +11,18 @@ namespace KERBALISM
 {
 	public class AntennaInfo
 	{
-		/// <summary> science data rate. note that internal transmitters can not transmit science data only telemetry data </summary>
+		/// <summary>
+		/// science data rate, in MB/s. note that internal transmitters can not transmit science data only telemetry data
+		/// </summary>
 		public double rate = 0.0;
 
 		/// <summary> ec cost </summary>
 		public double ec = 0.0;
 
+		/// <summary> link quality indicator for the UI, any value from 0-1.
+		/// you MUST set this to >= 0 in your mod, otherwise the comm status
+		/// will either be handled by an other mod or by the stock implementation.
+		/// </summary>
 		public double strength = -1;
 
 		/// <summary>
@@ -24,10 +30,24 @@ namespace KERBALISM
 		/// </summary>
 		public int status = 2;
 
+		/// <summary>
+		/// true if communication is established. if false, vessels can't transmit data and might be uncontrollable.
+		/// </summary>
 		public bool linked;
 
+		/// <summary>
+		/// The name of the thing at the other end of your radio beam (KSC, name of the relay, ...)
+		/// </summary>
 		public string target_name;
 
+		/// <summary>
+		/// Optional: communication path that will be displayed in the UI.
+		/// Each entry in the List is one "hop" in your path.
+		/// provide up to 3 values for each hop: string[] hop = { name, value, tooltip }
+		/// - name: the name of the relay/station
+		/// - value: link quality to that relay
+		/// - tooltip: anything you want to display, maybe link distance, frequency band used, ...
+		/// </summary>
 		public List<string[]> control_path = null;
 	}
 
