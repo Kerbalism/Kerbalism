@@ -9,7 +9,24 @@ using System.Collections.Generic;
 
 namespace KERBALISM
 {
+	public class AntennaInfo
+	{
+		/// <summary> science data rate. note that internal transmitters can not transmit science data only telemetry data </summary>
+		public double rate = 0.0;
 
+		/// <summary> ec cost </summary>
+		public double ec = 0.0;
+
+		public double strength = -1;
+
+		public LinkStatus status = LinkStatus.no_link;
+
+		public bool linked;
+
+		public string target_name;
+
+		public List<string[]> control_path = null;
+	}
 
 	public static class API
 	{
@@ -235,7 +252,7 @@ namespace KERBALISM
 		{
 			if (!Cache.VesselInfo(v).is_valid) return 0.0;
 
-			foreach(var d in DB.Vessel(v).drives.Values)
+			foreach (var d in DB.Vessel(v).drives.Values)
 			{
 				if (d.files.ContainsKey(subject_id))
 					return d.files[subject_id].size;
@@ -327,10 +344,87 @@ namespace KERBALISM
 			}
 		}
 
+		// --- FAILURES --------------------------------------------------------------
+
+		public static FailureInfo Failure = new FailureInfo();
+
+		public class FailureInfo
+		{
+			//This is the list of methods that should be activated when the event fires
+			internal List<Action<Part, string, bool>> receivers = new List<Action<Part, string, bool>>();
+
+			//This adds a connection info handler
+			public void Add(Action<Part, string, bool> receiver)
+			{
+				//We only add it if it isn't already added. Just in case.
+				if (!receivers.Contains(receiver))
+				{
+					receivers.Add(receiver);
+				}
+			}
+
+			//This removes a connection info handler
+			public void Remove(Action<Part, string, bool> receiver)
+			{
+				//We also only remove it if it's actually in the list.
+				if (receivers.Contains(receiver))
+				{
+					receivers.Remove(receiver);
+				}
+			}
+
+			public void Notify(Part part, string type, bool failure)
+			{
+				//Loop through the list of listening methods and Invoke them.
+				foreach (Action<Part, string, bool> receiver in receivers)
+				{
+					receiver.Invoke(part, type, failure);
+				}
+			}
+		}
+
+		// --- COMMUNICATION --------------------------------------------------------------
+
+		public static CommInfo Comm = new CommInfo();
+
+		public class CommInfo
+		{
+			//This is the list of methods that should be activated when the event fires
+			internal List<Action<AntennaInfo, Vessel, bool, bool>> handlers = new List<Action<AntennaInfo, Vessel, bool, bool>>();
+
+			//This adds a connection info handler
+			public void Add(Action<AntennaInfo, Vessel, bool, bool> handler)
+			{
+				//We only add it if it isn't already added. Just in case.
+				if (!handlers.Contains(handler))
+				{
+					handlers.Add(handler);
+				}
+			}
+
+			//This removes a connection info handler
+			public void Remove(Action<AntennaInfo, Vessel, bool, bool> handler)
+			{
+				//We also only remove it if it's actually in the list.
+				if (handlers.Contains(handler))
+				{
+					handlers.Remove(handler);
+				}
+			}
+
+			//This initializes an antennaInfo object. Connection info handlers must
+			//set antennaInfo.strength to a value >= 0, otherwise the antennaInfo will
+			//be passed to the next handler.
+			public void Init(AntennaInfo antennaInfo, Vessel pv, bool powered, bool storm)
+			{
+				//Loop through the list of listening methods and Invoke them.
+				foreach (Action<AntennaInfo, Vessel, bool, bool> handler in handlers)
+				{
+					handler.Invoke(antennaInfo, pv, powered, storm);
+					if (antennaInfo.strength > -1) return;
+				}
+			}
+		}
 	}
-
-
 } // KERBALISM
-
-
 

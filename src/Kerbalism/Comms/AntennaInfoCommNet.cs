@@ -1,16 +1,13 @@
 ﻿using System.Collections.Generic;
+using System;
+using KSP.Localization;
+using CommNet;
 
 namespace KERBALISM
 {
-	public sealed class AntennaInfoCommNet
+	public sealed class AntennaInfoCommNet: AntennaInfo
 	{
-		/// <summary> science data rate. note that internal transmitters can not transmit science data only telemetry data </summary>
-		public double rate = 0.0;
-
-		/// <summary> ec cost </summary>
-		public double ec = 0.0;
-
-		public AntennaInfoCommNet(Vessel v)
+		public AntennaInfoCommNet(Vessel v, bool powered, bool storm)
 		{
 			List<ModuleDataTransmitter> transmitters;
 
@@ -107,6 +104,58 @@ namespace KERBALISM
 						}
 					}
 				}
+			}
+
+			Init(v, powered, storm);
+		}
+
+		private void Init(Vessel v, bool powered, bool storm)
+		{
+			if(!powered || v.connection == null)
+			{
+				linked = false;
+				status = LinkStatus.no_link;
+				return;
+			}
+
+			// force CommNet update of unloaded vessels
+			if (!v.loaded)
+				Lib.ReflectionValue(v.connection, "unloadedDoOnce", true);
+
+			// are we connected to DSN
+			if (v.connection.IsConnected)
+			{
+				linked = true;
+				status = v.connection.ControlPath.First.hopType == CommNet.HopType.Home ? LinkStatus.direct_link : LinkStatus.indirect_link;
+				strength = v.connection.SignalStrength;
+				rate *= strength;
+				target_name = Lib.Ellipsis(Localizer.Format(v.connection.ControlPath.First.end.displayName).Replace("Kerbin", "DSN"), 20);
+
+				if (status != LinkStatus.direct_link)
+				{
+					Vessel firstHop = Lib.CommNodeToVessel(v.Connection.ControlPath.First.end);
+					// Get rate from the firstHop, each Hop will do the same logic, then we will have the min rate for whole path
+					rate = Math.Min(Cache.VesselInfo(FlightGlobals.FindVessel(firstHop.id)).connection.rate, rate);
+				}
+			}
+			// is loss of connection due to plasma blackout
+			else if (Lib.ReflectionValue<bool>(v.connection, "inPlasma"))  // calling InPlasma causes a StackOverflow :(
+			{
+				status = LinkStatus.plasma;
+			}
+
+			control_path = new List<string[]>();
+			foreach (CommLink link in v.connection.ControlPath)
+			{
+				double antennaPower = link.end.isHome ? link.start.antennaTransmit.power + link.start.antennaRelay.power : link.start.antennaTransmit.power;
+				double signalStrength = 1 - ((link.start.position - link.end.position).magnitude / Math.Sqrt(antennaPower * link.end.antennaRelay.power));
+				signalStrength = (3 - (2 * signalStrength)) * Math.Pow(signalStrength, 2);
+
+				string name = Lib.Ellipsis(Localizer.Format(link.end.name).Replace("Kerbin", "DSN"), 35);
+				string value = Lib.HumanReadablePerc(Math.Ceiling(signalStrength * 10000) / 10000, "F2");
+				string tooltip = "Distance: " + Lib.HumanReadableRange((link.start.position - link.end.position).magnitude) +
+					"\nMax Distance: " + Lib.HumanReadableRange(Math.Sqrt((link.start.antennaTransmit.power + link.start.antennaRelay.power) * link.end.antennaRelay.power));
+				control_path.Add(new string[] { name, value, tooltip });
 			}
 		}
 	}

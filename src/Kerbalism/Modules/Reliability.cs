@@ -512,16 +512,7 @@ namespace KERBALISM
 					break;
 			}
 
-			if (RemoteTech.Enabled)
-			{
-				foreach (PartModule m in part.FindModulesImplementing<PartModule>())
-				{
-					if(RemoteTech.IsAntenna(m))
-					{
-						RemoteTech.SetBroken(m, b);
-					}
-				}
-			}
+			API.Failure.Notify(part, type, b);
 		}
 
 
