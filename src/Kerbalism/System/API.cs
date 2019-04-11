@@ -31,6 +31,11 @@ namespace KERBALISM
 		public int status = 2;
 
 		/// <summary>
+		/// This will be set to true if the vessel currently is transmitting data.
+		/// </summary>
+		public bool transmitting = false;
+
+		/// <summary>
 		/// true if communication is established. if false, vessels can't transmit data and might be uncontrollable.
 		/// </summary>
 		public bool linked;
@@ -438,7 +443,7 @@ namespace KERBALISM
 			//This initializes an antennaInfo object. Connection info handlers must
 			//set antennaInfo.strength to a value >= 0, otherwise the antennaInfo will
 			//be passed to the next handler.
-			public void Init(AntennaInfo antennaInfo, Vessel pv, bool powered, bool storm)
+			public void Init(AntennaInfo antennaInfo, Vessel pv, bool transmitting, bool powered, bool storm)
 			{
 				//Loop through the list of listening methods and Invoke them.
 				foreach (Action<AntennaInfo, Vessel, bool, bool> handler in handlers)
