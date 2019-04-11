@@ -75,7 +75,7 @@ namespace KERBALISM
 		public static void Kill(Vessel v, ProtoCrewMember c)
 		{
 			if (!Cache.VesselInfo(v).is_valid) return;
-			if (!DB.vessels.ContainsKey(Lib.RootID(v))) return;
+			if (!DB.vessels.ContainsKey(Lib.VesselID(v))) return;
 			if (!DB.ContainsKerbal(c.name)) return;
 			Misc.Kill(v, c);
 		}
@@ -84,7 +84,7 @@ namespace KERBALISM
 		public static void Breakdown(Vessel v, ProtoCrewMember c)
 		{
 			if (!Cache.VesselInfo(v).is_valid) return;
-			if (!DB.vessels.ContainsKey(Lib.RootID(v))) return;
+			if (!DB.vessels.ContainsKey(Lib.VesselID(v))) return;
 			if (!DB.ContainsKerbal(c.name)) return;
 			Misc.Breakdown(v, c);
 		}

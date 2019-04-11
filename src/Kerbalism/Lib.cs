@@ -963,6 +963,8 @@ namespace KERBALISM
 			return pv.vesselID;
 		}
 
+		/*
+		RootID is not unique.
 		// return the flight id of the root part of a vessel
 		public static UInt32 RootID(Vessel v)
 		{
@@ -970,6 +972,7 @@ namespace KERBALISM
 			  ? v.rootPart.flightID
 			  : v.protoVessel.protoPartSnapshots[v.protoVessel.rootIndex].flightID;
 		}
+		*/
 
 		public static Vessel CommNodeToVessel(CommNode node)
 		{
@@ -1891,6 +1894,11 @@ namespace KERBALISM
 			{
 				uint v;
 				return s != null && uint.TryParse( s, out v ) ? v : def_value;
+			}
+
+			public static Guid ToGuid (string s)
+			{
+				return new Guid(s);
 			}
 
 			public static float ToFloat( string s, float def_value = 0.0f )

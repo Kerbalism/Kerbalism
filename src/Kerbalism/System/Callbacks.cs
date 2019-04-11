@@ -141,7 +141,7 @@ namespace KERBALISM
 			Drive.Transfer(data.from.vessel, data.to.vessel, PreferencesScience.Instance.sampleTransfer);
 
 			// forget vessel data
-			DB.vessels.Remove(Lib.RootID(data.from.vessel));
+			DB.vessels.Remove(Lib.VesselID(data.from.vessel));
 
 			// execute script
 			DB.Vessel(data.to.vessel).computer.Execute(data.to.vessel, ScriptType.eva_in);
@@ -158,12 +158,12 @@ namespace KERBALISM
 			if (!Features.Science || HighLogic.CurrentGame.Mode == Game.Modes.SANDBOX)
 				return;
 
+			var vesselID = Lib.VesselID(v);
 			// get the drive data from DB
-			uint root_id = v.protoPartSnapshots[v.rootIndex].flightID;
-			if (!DB.vessels.ContainsKey(root_id))
+			if (!DB.vessels.ContainsKey(vesselID))
 				return;
 
-			foreach (Drive drive in DB.vessels[root_id].drives.Values)
+			foreach (Drive drive in DB.vessels[vesselID].drives.Values)
 			{
 				// for each file in the drive
 				foreach (KeyValuePair<string, File> p in drive.files)
@@ -253,12 +253,7 @@ namespace KERBALISM
 				DB.RecoverKerbal(c.name);
 			}
 
-			// for each part
-			foreach (ProtoPartSnapshot p in pv.protoPartSnapshots)
-			{
-				// forget all potential vessel data
-				DB.vessels.Remove(p.flightID);
-			}
+			DB.vessels.Remove(Lib.VesselID(pv));
 
 			// purge the caches
 			Cache.Purge(pv);
@@ -272,12 +267,7 @@ namespace KERBALISM
 			foreach (ProtoCrewMember c in pv.GetVesselCrew())
 				DB.KillKerbal(c.name, true);
 
-			// for each part
-			foreach (ProtoPartSnapshot p in pv.protoPartSnapshots)
-			{
-				// forget all potential vessel data
-				DB.vessels.Remove(p.flightID);
-			}
+			DB.vessels.Remove(Lib.VesselID(pv));
 
 			// purge the caches
 			Cache.Purge(pv);
@@ -287,12 +277,7 @@ namespace KERBALISM
 
 		void VesselDestroyed(Vessel v)
 		{
-			// for each part
-			foreach (Part p in v.parts)
-			{
-				// forget all potential vessel data
-				DB.vessels.Remove(p.flightID);
-			}
+			DB.vessels.Remove(Lib.VesselID(v));
 
 			// rescan the damn kerbals
 			// - vessel crew is empty at destruction time
@@ -323,6 +308,10 @@ namespace KERBALISM
 
 		void VesselDock(GameEvents.FromToAction<Part, Part> e)
 		{
+			var fromVessel = e.from.vessel;
+			DB.vessels.Remove(Lib.VesselID(fromVessel));
+
+			/*
 			// note:
 			//  we do not forget vessel data here, it just became inactive
 			//  and ready to be implicitly activated again on undocking
@@ -337,7 +326,7 @@ namespace KERBALISM
 			vd.storm_state = 0;
 			vd.supplies.Clear();
 			vd.scansat_id.Clear();
-
+			*/
 		}
 
 		void VesselPartCountChanged(Vessel myVessel)
@@ -402,9 +391,6 @@ namespace KERBALISM
 				if (drives.ContainsKey(hd.hdId))
 					drives.Remove(hd.hdId);
 			}
-
-			// if the part was a root part, that vessel is now gone
-			DB.vessels.Remove(p.flightID);
 		}
 
 		void AddEditorCategory()

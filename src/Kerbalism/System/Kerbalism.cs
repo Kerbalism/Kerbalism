@@ -601,7 +601,7 @@ namespace KERBALISM
 			// call action scripts
 			// - avoid creating vessel data for invalid vessels
 			Vessel v = FlightGlobals.ActiveVessel;
-			if (v != null && DB.vessels.ContainsKey(Lib.RootID(v)))
+			if (v != null && DB.vessels.ContainsKey(Lib.VesselID(v)))
 			{
 				// get computer
 				Computer computer = DB.Vessel(v).computer;
