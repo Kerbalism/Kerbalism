@@ -66,10 +66,13 @@ namespace KERBALISM
 			UpdateCapacity();
 		}
 
-		public void Update()
+		public void FixedUpdate()
 		{
 			UpdateCapacity();
+		}
 
+		public void Update()
+		{
 			if (Lib.IsFlight())
 			{
 				// show DATA UI button, with size info
@@ -106,15 +109,16 @@ namespace KERBALISM
 
 		private void UpdateCapacity()
 		{
+			double mass = 0;
+			foreach (var sample in drive.samples.Values) mass += sample.mass;
+			totalSampleMass = mass;
+
 			if (dataCapacity < 0 || sampleCapacity < 0 || IsPrivate())
 			{
 				Fields["Capacity"].guiActive = false;
 				Fields["Capacity"].guiActiveEditor = false;
 				return;
 			}
-
-			totalSampleMass = 0;
-			foreach (var sample in drive.samples.Values) totalSampleMass += sample.mass;
 
 			double availableDataCapacity = dataCapacity;
 			int availableSlots = sampleCapacity;
