@@ -49,9 +49,9 @@ namespace KERBALISM
 			}
 		}
 
-		private static void RTCommInfoHandler(AntennaInfo antennaInfo, Vessel v, bool powered, bool storm)
+		private static void RTCommInfoHandler(AntennaInfo antennaInfo, Vessel v)
 		{
-			var ai = new AntennaInfoRT(v, powered, storm);
+			var ai = new AntennaInfoRT(v, antennaInfo.powered, antennaInfo.storm);
 			antennaInfo.linked = ai.linked;
 			antennaInfo.ec = ai.ec;
 			antennaInfo.control_path = ai.control_path;

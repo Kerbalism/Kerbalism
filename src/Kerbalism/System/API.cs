@@ -11,6 +11,30 @@ namespace KERBALISM
 {
 	public class AntennaInfo
 	{
+		// ====================================================================
+		// VALUES SET BY KERBALISM
+		// ====================================================================
+
+		/// <summary>
+		/// This will be set to true if the vessel currently is transmitting data.
+		/// </summary>
+		public bool transmitting = false;
+
+		/// <summary>
+		/// Set to true if the vessel is currently subjected to a CME storm
+		/// </summary>
+		public bool storm = false;
+
+		/// <summary>
+		/// Set to true if the vessel has enough EC to operate
+		/// </summary>
+		public bool powered = true;
+
+
+		// ====================================================================
+		// VALUES TO SET FOR KERBALISM
+		// ====================================================================
+
 		/// <summary>
 		/// science data rate, in MB/s. note that internal transmitters can not transmit science data only telemetry data
 		/// </summary>
@@ -29,11 +53,6 @@ namespace KERBALISM
 		/// direct_link = 0, indirect_link = 1 (relayed signal), no_link = 2, plasma = 3 (plasma blackout on reentry), storm = 4 (cme storm blackout)
 		/// </summary>
 		public int status = 2;
-
-		/// <summary>
-		/// This will be set to true if the vessel currently is transmitting data.
-		/// </summary>
-		public bool transmitting = false;
 
 		/// <summary>
 		/// true if communication is established. if false, vessels can't transmit data and might be uncontrollable.
@@ -418,10 +437,10 @@ namespace KERBALISM
 		public class CommInfo
 		{
 			//This is the list of methods that should be activated when the event fires
-			internal List<Action<AntennaInfo, Vessel, bool, bool>> handlers = new List<Action<AntennaInfo, Vessel, bool, bool>>();
+			internal List<Action<AntennaInfo, Vessel>> handlers = new List<Action<AntennaInfo, Vessel>>();
 
 			//This adds a connection info handler
-			public void Add(Action<AntennaInfo, Vessel, bool, bool> handler)
+			public void Add(Action<AntennaInfo, Vessel> handler)
 			{
 				//We only add it if it isn't already added. Just in case.
 				if (!handlers.Contains(handler))
@@ -431,7 +450,7 @@ namespace KERBALISM
 			}
 
 			//This removes a connection info handler
-			public void Remove(Action<AntennaInfo, Vessel, bool, bool> handler)
+			public void Remove(Action<AntennaInfo, Vessel> handler)
 			{
 				//We also only remove it if it's actually in the list.
 				if (handlers.Contains(handler))
@@ -443,12 +462,12 @@ namespace KERBALISM
 			//This initializes an antennaInfo object. Connection info handlers must
 			//set antennaInfo.strength to a value >= 0, otherwise the antennaInfo will
 			//be passed to the next handler.
-			public void Init(AntennaInfo antennaInfo, Vessel pv, bool transmitting, bool powered, bool storm)
+			public void Init(AntennaInfo antennaInfo, Vessel pv)
 			{
 				//Loop through the list of listening methods and Invoke them.
-				foreach (Action<AntennaInfo, Vessel, bool, bool> handler in handlers)
+				foreach (Action<AntennaInfo, Vessel> handler in handlers)
 				{
-					handler.Invoke(antennaInfo, pv, powered, storm);
+					handler.Invoke(antennaInfo, pv);
 					if (antennaInfo.strength > -1) return;
 				}
 			}

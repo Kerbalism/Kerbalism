@@ -82,10 +82,12 @@ namespace KERBALISM
 
 		private static AntennaInfo GetAntennaInfo(Vessel v, bool powered, bool storm)
 		{
-			bool transmitting = string.IsNullOrEmpty(Cache.VesselInfo(v).transmitting);
 			AntennaInfo ai = new AntennaInfo();
-			ai.transmitting = transmitting;
-			API.Comm.Init(ai, v, transmitting, powered, storm);
+			ai.powered = powered;
+			ai.storm = storm;
+			ai.transmitting = string.IsNullOrEmpty(Cache.VesselInfo(v).transmitting);
+
+			API.Comm.Init(ai, v);
 			if (ai.strength > -1)
 				return ai;
 
