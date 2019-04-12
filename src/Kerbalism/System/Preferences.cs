@@ -78,7 +78,7 @@ namespace KERBALISM
 		[GameParameters.CustomFloatParameterUI("Antenna Speed", asPercentage = true, minValue = 0.01f, maxValue = 2f, displayFormat = "F2", toolTip = "Antenna Bandwidth factor")]
 		public float transmitFactor = 1.0f;
 
-		[GameParameters.CustomFloatParameterUI("Allow sample transfers", toolTip = "When off, only EVAs can transfer samples between drives")]
+		[GameParameters.CustomFloatParameterUI("Always allow sample transfers", toolTip = "When off, sample transfer is only available in crewed vessels")]
 		public bool sampleTransfer = false;
 
 		public override GameParameters.GameMode GameMode { get { return GameParameters.GameMode.ANY; } }

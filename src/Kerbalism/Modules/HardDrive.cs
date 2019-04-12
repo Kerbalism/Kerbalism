@@ -176,7 +176,7 @@ namespace KERBALISM
 			if (v == null || EVA.IsDead(v)) return;
 
 			// transfer data
-			Drive.Transfer(vessel, v, v.isEVA || PreferencesScience.Instance.sampleTransfer);
+			Drive.Transfer(vessel, v, PreferencesScience.Instance.sampleTransfer || Lib.CrewCount(v) > 0);
 		}
 
 
@@ -188,7 +188,7 @@ namespace KERBALISM
 			if (v == null || EVA.IsDead(v)) return;
 
 			// transfer data
-			Drive.Transfer(v, vessel, v.isEVA || PreferencesScience.Instance.sampleTransfer);
+			Drive.Transfer(v, vessel, PreferencesScience.Instance.sampleTransfer || Lib.CrewCount(v) > 0);
 		}
 
 
