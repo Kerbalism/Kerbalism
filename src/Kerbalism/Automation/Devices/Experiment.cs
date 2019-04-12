@@ -29,13 +29,11 @@ namespace KERBALISM
 
 		public override string Info()
 		{
-			if (experiment.recording && experiment.scienceValue < double.Epsilon && PreferencesScience.Instance.smartScience)
-				return "waiting...";
-
-			var exp = ResearchAndDevelopment.GetExperiment(experiment.experiment_id);
-			var sampleSize = (exp.baseValue * exp.dataScale);
-			var recordedPercent = Lib.HumanReadablePerc(experiment.dataSampled / sampleSize);
-			var eta = experiment.data_rate < double.Epsilon || experiment.dataSampled >= sampleSize ? " done" : " " + Lib.HumanReadableCountdown((sampleSize - experiment.dataSampled) / experiment.data_rate);
+			var state = Experiment.GetState(experiment.scienceValue, experiment.issue, experiment.recording, experiment.forcedRun);
+			if (state == Experiment.State.WAITING) return "waiting...";
+			var exp = Science.Experiment(experiment.experiment_id);
+			var recordedPercent = Lib.HumanReadablePerc(experiment.dataSampled / exp.max_amount);
+			var eta = experiment.data_rate < double.Epsilon || Experiment.Done(exp, experiment.dataSampled) ? " done" : " " + Lib.HumanReadableCountdown((exp.max_amount - experiment.dataSampled) / experiment.data_rate);
 
 			return !experiment.recording
 			  ? "<color=red>" + Localizer.Format("#KERBALISM_Generic_DISABLED") + " </color>"
@@ -84,19 +82,19 @@ namespace KERBALISM
 		public override string Info()
 		{
 			bool recording = Lib.Proto.GetBool(proto, "recording");
+			bool forcedRun = Lib.Proto.GetBool(proto, "forcedRun");
 			double scienceValue = Lib.Proto.GetDouble(proto, "scienceValue");
-
-			if (recording && scienceValue < double.Epsilon && PreferencesScience.Instance.smartScience)
-				return "waiting...";
-
 			string issue = Lib.Proto.GetString(proto, "issue");
+
+			var state = Experiment.GetState(scienceValue, issue, recording, forcedRun);
+			if (state == Experiment.State.WAITING) return "waiting...";
+
 			double dataSampled = Lib.Proto.GetDouble(proto, "dataSampled");
 			double data_rate = Lib.Proto.GetDouble(proto, "data_rate");
 
-			var exp = ResearchAndDevelopment.GetExperiment(prefab.experiment_id);
-			var sampleSize = (exp.baseValue * exp.dataScale);
-			var recordedPercent = Lib.HumanReadablePerc(dataSampled / sampleSize);
-			var eta = data_rate < double.Epsilon || dataSampled >= sampleSize ? " done" : " " + Lib.HumanReadableCountdown((sampleSize - dataSampled) / data_rate);
+			var exp = Science.Experiment(prefab.experiment_id);
+			var recordedPercent = Lib.HumanReadablePerc(dataSampled / exp.max_amount);
+			var eta = data_rate < double.Epsilon || Experiment.Done(exp, dataSampled) ? " done" : " " + Lib.HumanReadableCountdown((exp.max_amount - dataSampled) / data_rate);
 
 			return !recording
 			  ? "<color=red>" + Localizer.Format("#KERBALISM_Generic_STOPPED") + " </color>"
@@ -106,6 +104,19 @@ namespace KERBALISM
 
 		public override void Ctrl(bool value)
 		{
+			bool recording = Lib.Proto.GetBool(proto, "recording");
+			bool forcedRun = Lib.Proto.GetBool(proto, "forcedRun");
+			double scienceValue = Lib.Proto.GetDouble(proto, "scienceValue");
+			string issue = Lib.Proto.GetString(proto, "issue");
+			var state = Experiment.GetState(scienceValue, issue, recording, forcedRun);
+
+
+			if(state == Experiment.State.WAITING)
+			{
+				Lib.Proto.Set(proto, "forcedRun", true);
+				return;
+			}
+			   
 			if (value)
 			{
 				// The same experiment must run only once on a vessel
@@ -114,7 +125,7 @@ namespace KERBALISM
 					var e = pair.Key;
 					var p = pair.Value;
 					if (e.experiment_id != prefab.experiment_id) continue;
-					if (Lib.Proto.GetBool(p, "recording", false))
+					if (recording)
 					{
 						Experiment.PostMultipleRunsMessage(title);
 						return;

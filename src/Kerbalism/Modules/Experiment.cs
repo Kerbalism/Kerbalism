@@ -54,12 +54,12 @@ namespace KERBALISM
 		private String situationIssue = String.Empty;
 		[KSPField(guiActive = false, guiName = "_")] private string ExperimentStatus = string.Empty;
 
-		private enum State
+		public enum State
 		{
 			STOPPED = 0, WAITING, RUNNING, ISSUE
 		}
 
-		private static State GetState(double scienceValue, string issue, bool recording, bool forcedRun)
+		public static State GetState(double scienceValue, string issue, bool recording, bool forcedRun)
 		{
 			bool hasValue = scienceValue >= 0.1;
 			bool smartScience = PreferencesScience.Instance.smartScience;
@@ -119,6 +119,12 @@ namespace KERBALISM
 			}
 		}
 
+		public static bool Done(ExperimentInfo exp, double dataSampled)
+		{
+			if (exp.max_amount < double.Epsilon) return false;
+			return dataSampled / exp.max_amount > 0.999;
+		}
+
 		public void Update()
 		{
 			var exp = Science.Experiment(experiment_id);
@@ -136,8 +142,7 @@ namespace KERBALISM
 				if (!vi.is_valid) return;
 
 				var sampleSize = exp.max_amount;
-				var recordedPercent = Lib.HumanReadablePerc(dataSampled / sampleSize);
-				var eta = data_rate < double.Epsilon || dataSampled >= sampleSize ? " done" : " " + Lib.HumanReadableCountdown((sampleSize - dataSampled) / data_rate);
+				var eta = data_rate < double.Epsilon || Done(exp, dataSampled) ? " done" : " " + Lib.HumanReadableCountdown((sampleSize - dataSampled) / data_rate);
 
 				// update ui
 				var title = Lib.Ellipsis(exp.name, Styles.ScaleStringLength(24));
@@ -253,7 +258,7 @@ namespace KERBALISM
 			var stored = DoRecord(this, subject_id, vessel, ec, privateHdId,
 				ResourceCache.Get(vessel), resourceDefs,
 				remainingSampleMass, dataSampled, out dataSampled, out remainingSampleMass);
-			if (!stored) issue = "insufficient storage";
+			if (!stored) issue = "insufficient storage C";
 		}
 
 		private static Drive GetDrive(Experiment experiment, Vessel vessel, uint hdId, double chunkSize, string subject_id)
@@ -273,6 +278,13 @@ namespace KERBALISM
 			out double sampledOut, out double remainingSampleMassOut)
 		{
 			var exp = Science.Experiment(subject_id);
+
+			if (Done(exp, dataSampled)) {
+				sampledOut = dataSampled;
+				remainingSampleMassOut = remainingSampleMass;
+				return true;
+			}
+
 			double elapsed = Kerbalism.elapsed_s;
 			double chunkSize = Math.Min(experiment.data_rate * elapsed, exp.max_amount);
 			double massDelta = experiment.sample_mass * chunkSize / exp.max_amount;
@@ -364,7 +376,7 @@ namespace KERBALISM
 			var stored = DoRecord(experiment, subject_id, v, ec, privateHdId,
 				resources, ParseResources(experiment.resources),
 				remainingSampleMass, dataSampled, out dataSampled, out remainingSampleMass);
-			if (!stored) Lib.Proto.Set(m, "issue", "insufficient storage");
+			if (!stored) Lib.Proto.Set(m, "issue", "insufficient storage A");
 
 			Lib.Proto.Set(m, "dataSampled", dataSampled);
 			Lib.Proto.Set(m, "remainingSampleMass", remainingSampleMass);
@@ -482,7 +494,7 @@ namespace KERBALISM
 			double available = isFile ? drive.FileCapacityAvailable() : drive.SampleCapacityAvailable(subject_id);
 
 			if (Math.Min(experiment.data_rate * Kerbalism.elapsed_s, experimentSize) > available)
-				return "insufficient storage";
+				return "insufficient storage B";
 
 			return string.Empty;
 		}
