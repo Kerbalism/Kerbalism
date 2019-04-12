@@ -36,7 +36,7 @@
 *.vcxitems   text eol=crlf
 
 *.sh         text eol=lf
-*.cfg        text eol=crlf
+#*.cfg        text eol=crlf NOPE
 
 
 #*.sln       merge=binary
