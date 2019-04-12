@@ -46,10 +46,7 @@ namespace KERBALISM
 			_amount = 0;
 			_capacity = 0;
 
-#if DEBUG_RESOURCES
 			_protocol = new Dictionary<string, double>();
-#endif
-
 			_vessel_wide_view = new Resource_info_view_impl(resource_name, this);
 
 			// get amount & capacity
@@ -140,14 +137,12 @@ namespace KERBALISM
 		{
 			_deferred += quantity;
 
-#if DEBUG_RESOURCES
 			var key = resource_name + " produce " + tag;
 			double p = quantity;
 			if (_protocol.ContainsKey(key))
 				_protocol[key] += p;
 			else
 				_protocol.Add(key, p);
-#endif
 		}
 
 		/// <summary>record a deferred consumption for the vessel wide bookkeeping</summary>
@@ -155,14 +150,12 @@ namespace KERBALISM
 		{
 			_deferred -= quantity;
 
-#if DEBUG_RESOURCES
 			var key = resource_name + " consume " + tag;
 			double p = quantity;
 			if (_protocol.ContainsKey(key))
 				_protocol[key] += p;
 			else
 				_protocol.Add(key, p);
-#endif
 		}
 
 		/// <summary>synchronize resources from from cache to vessel</summary>
@@ -348,16 +341,17 @@ namespace KERBALISM
 			// reset deferred production/consumption
 			_deferred = 0.0;
 
-#if DEBUG_RESOURCES
 			if(_protocol.Count > 0)
 			{
-				Lib.Log("RESOURCE BLOCK " + v);
-				foreach (var p in _protocol)
-					Lib.Log(p.Key + " @ " + (p.Value / elapsed_s));
-				Lib.Log("RESOURCE BLOCK END");
+				if (PreferencesLifeSupport.Instance.resourceLogging)
+				{
+					Lib.Log("RESOURCE BLOCK " + v);
+					foreach (var p in _protocol)
+						Lib.Log(p.Key + " @ " + (p.Value / elapsed_s));
+					Lib.Log("RESOURCE BLOCK END");
+				}
 				_protocol.Clear();
 			}
-#endif
 
 			// reset meal flag
 			meal_happened = false;
@@ -468,9 +462,7 @@ namespace KERBALISM
 		private double _amount;   // amount of resource
 		private double _capacity; // storage capacity of resource
 
-#if DEBUG_RESOURCES
 		private Dictionary<string,  double> _protocol;
-#endif
 
 		private Resource_info_view _vessel_wide_view;
 	}

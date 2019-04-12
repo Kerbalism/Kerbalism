@@ -186,6 +186,9 @@ namespace KERBALISM
 		[GameParameters.CustomIntParameterUI("Amount of atmosphere lost to airlock on EVA", minValue = 1, maxValue = 100, toolTip = "Atmosphere lost in EVA airlock")]
 		public int evaAtmoLoss = Settings.LifeSupportAtmoLoss;
 
+		[GameParameters.CustomIntParameterUI("Log resource consumption", toolTip = "WARNING: this logs A LOT")]
+		public bool resourceLogging = false;
+
 		public override GameParameters.GameMode GameMode { get { return GameParameters.GameMode.ANY; } }
 
 		public override bool HasPresets { get { return false; } }
