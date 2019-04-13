@@ -37,6 +37,13 @@ namespace KERBALISM
 				// collect and deduce all info necessary
 				MetaData meta = new MetaData(data, page.host);
 
+				// ignore non-collectable experiments
+				if (!meta.is_collectable)
+				{
+					page.OnKeepData(data);
+					continue;					
+				}
+
 				// record data
 				bool recorded = false;
 				if (!meta.is_sample)
@@ -107,6 +114,7 @@ namespace KERBALISM
 		void Update()
 		{
 			var page = dialog.currentPage;
+			StockOnKeepData = page.OnKeepData;
 			page.OnKeepData = (ScienceData data) => Hijack(data, false);
 			page.OnTransmitData = (ScienceData data) => Hijack(data, true);
 			page.showTransmitWarning = false; //< mom's spaghetti
@@ -119,6 +127,12 @@ namespace KERBALISM
 
 			// collect and deduce all data necessary just once
 			MetaData meta = new MetaData(data, page.host);
+
+			if (!meta.is_collectable)
+			{
+				dialog.Dismiss();
+				return;
+			}
 
 			// hijack the dialog
 			if (!meta.is_rerunnable)
@@ -223,6 +237,7 @@ namespace KERBALISM
 
 		ExperimentsResultDialog dialog;
 		PopupDialog popup;
+		Callback<ScienceData> StockOnKeepData;
 	}
 
 
@@ -242,6 +257,9 @@ namespace KERBALISM
 			// get the stock experiment module storing the data (if that's the case)
 			experiment = container != null ? container as ModuleScienceExperiment : null;
 
+			// determine if data is supposed to be removable from the part
+			is_collectable = experiment == null || experiment.dataIsCollectable;
+
 			// determine if this is a sample (non-transmissible)
 			// - if this is a third-party data container/experiment module, we assume it is transmissible
 			// - stock experiment modules are considered sample if xmit scalar is below a threshold instead
@@ -258,6 +276,7 @@ namespace KERBALISM
 		public ModuleScienceExperiment experiment;      // module containing the data, as a stock experiment module
 		public bool is_sample;                          // true if the data can't be transmitted
 		public bool is_rerunnable;                      // true if the container/experiment can collect data multiple times
+		public bool is_collectable;                     // true if data can be collected from the module / part
 	}
 
 
