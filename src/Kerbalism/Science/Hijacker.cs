@@ -114,7 +114,6 @@ namespace KERBALISM
 		void Update()
 		{
 			var page = dialog.currentPage;
-			StockOnKeepData = page.OnKeepData;
 			page.OnKeepData = (ScienceData data) => Hijack(data, false);
 			page.OnTransmitData = (ScienceData data) => Hijack(data, true);
 			page.showTransmitWarning = false; //< mom's spaghetti
@@ -237,7 +236,6 @@ namespace KERBALISM
 
 		ExperimentsResultDialog dialog;
 		PopupDialog popup;
-		Callback<ScienceData> StockOnKeepData;
 	}
 
 
