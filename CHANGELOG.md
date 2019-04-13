@@ -31,6 +31,7 @@
 * Fixed the issue with placing parts in a symmetry group > 2 in the editor (Sir Mortimer)
 * Added API: mods now can register callbacks for failure events triggered by Kerbalism Reliability (Sir Mortimer)
 * Added API: mods now can provide their own communication characteristics (antenna info). Currently we just support RemoteTech, this opens the doors for additional mods without needing to change Kerbalism again (Sir Mortimer)
+* Fixed #249: NEOS incompatibility (Sir Mortimer) 
 
 ------------------------------------------------------------------------------------------------------
 
