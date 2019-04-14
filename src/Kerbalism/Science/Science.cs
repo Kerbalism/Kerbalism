@@ -337,31 +337,31 @@ namespace KERBALISM
 					case "InterStellar": good = body.flightGlobalsIndex == 0 && vi.interstellar; break;
 
 					case "AstronautComplexLevelMin":
-						good = !ScenarioUpgradeableFacilities.Instance.enabled || ScenarioUpgradeableFacilities.GetFacilityLevel(SpaceCenterFacility.AstronautComplex) >= int.Parse(value);
+						good = !ScenarioUpgradeableFacilities.Instance.enabled || ScenarioUpgradeableFacilities.GetFacilityLevel(SpaceCenterFacility.AstronautComplex) >= (double.Parse(value) - 1) / 2.0;
 						break;
 					case "AstronautComplexLevelMax":
-						good = !ScenarioUpgradeableFacilities.Instance.enabled || ScenarioUpgradeableFacilities.GetFacilityLevel(SpaceCenterFacility.AstronautComplex) <= int.Parse(value);
+						good = !ScenarioUpgradeableFacilities.Instance.enabled || ScenarioUpgradeableFacilities.GetFacilityLevel(SpaceCenterFacility.AstronautComplex) <= (double.Parse(value) - 1) / 2.0;
 						break;
 
 					case "TrackingStationLevelMin":
-						good = !ScenarioUpgradeableFacilities.Instance.enabled || ScenarioUpgradeableFacilities.GetFacilityLevel(SpaceCenterFacility.TrackingStation) >= int.Parse(value);
+						good = !ScenarioUpgradeableFacilities.Instance.enabled || ScenarioUpgradeableFacilities.GetFacilityLevel(SpaceCenterFacility.TrackingStation) >= (double.Parse(value) - 1) / 2.0;
 						break;
 					case "TrackingStationLevelMax":
-						good = !ScenarioUpgradeableFacilities.Instance.enabled || ScenarioUpgradeableFacilities.GetFacilityLevel(SpaceCenterFacility.TrackingStation) <= int.Parse(value);
+						good = !ScenarioUpgradeableFacilities.Instance.enabled || ScenarioUpgradeableFacilities.GetFacilityLevel(SpaceCenterFacility.TrackingStation) <= (double.Parse(value) - 1) / 2.0;
 						break;
 
 					case "MissionControlLevelMin":
-						good = !ScenarioUpgradeableFacilities.Instance.enabled || ScenarioUpgradeableFacilities.GetFacilityLevel(SpaceCenterFacility.MissionControl) >= int.Parse(value);
+						good = !ScenarioUpgradeableFacilities.Instance.enabled || ScenarioUpgradeableFacilities.GetFacilityLevel(SpaceCenterFacility.MissionControl) >= (double.Parse(value) - 1) / 2.0;
 						break;
 					case "MissionControlLevelMax":
-						good = !ScenarioUpgradeableFacilities.Instance.enabled || ScenarioUpgradeableFacilities.GetFacilityLevel(SpaceCenterFacility.MissionControl) <= int.Parse(value);
+						good = !ScenarioUpgradeableFacilities.Instance.enabled || ScenarioUpgradeableFacilities.GetFacilityLevel(SpaceCenterFacility.MissionControl) <= (double.Parse(value) - 1) / 2.0;
 						break;
 
 					case "AdministrationLevelMin":
-						good = !ScenarioUpgradeableFacilities.Instance.enabled || ScenarioUpgradeableFacilities.GetFacilityLevel(SpaceCenterFacility.Administration) >= int.Parse(value);
+						good = !ScenarioUpgradeableFacilities.Instance.enabled || ScenarioUpgradeableFacilities.GetFacilityLevel(SpaceCenterFacility.Administration) >= (double.Parse(value) - 1) / 2.0;
 						break;
 					case "AdministrationLevelMax":
-						good = !ScenarioUpgradeableFacilities.Instance.enabled || ScenarioUpgradeableFacilities.GetFacilityLevel(SpaceCenterFacility.Administration) <= int.Parse(value);
+						good = !ScenarioUpgradeableFacilities.Instance.enabled || ScenarioUpgradeableFacilities.GetFacilityLevel(SpaceCenterFacility.Administration) <= (double.Parse(value) - 1) / 2.0;
 						break;
 
 					case "MaxAsteroidDistance": good = AsteroidDistance(v) <= double.Parse(value); break;
