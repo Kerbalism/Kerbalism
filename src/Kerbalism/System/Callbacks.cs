@@ -138,7 +138,7 @@ namespace KERBALISM
 			}
 
 			// merge drives data
-			Drive.Transfer(data.from.vessel, data.to.vessel, PreferencesScience.Instance.sampleTransfer);
+			Drive.Transfer(data.from.vessel, data.to.vessel, true);
 
 			// forget vessel data
 			DB.vessels.Remove(Lib.VesselID(data.from.vessel));
