@@ -707,7 +707,7 @@ namespace KERBALISM
 				specs.Add(p.Key, Lib.HumanReadableRate(p.Value));
 
 			if (crew_prepare.Length > 0) specs.Add("Preparation", new CrewSpecs(crew_prepare).Info());
-			if (crew_operate.Length > 0) specs.Add("Opration", new CrewSpecs(crew_operate).Info());
+			if (crew_operate.Length > 0) specs.Add("Operation", new CrewSpecs(crew_operate).Info());
 			if (crew_reset.Length > 0) specs.Add("Reset", new CrewSpecs(crew_reset).Info());
 
 			if(!string.IsNullOrEmpty(requires))
