@@ -49,14 +49,6 @@ namespace KERBALISM
 				drive = new Drive();
 				return;
 			}
-
-			if (!Lib.IsFlight())
-				drive = new Drive();
-			else
-				drive = DB.Vessel(vessel).DriveForPart(title, hdId, dataCapacity, sampleCapacity);
-
-			drive.is_private |= experiment_id.Length > 0;
-			UpdateCapacity();
 		}
 
 		public void SetDrive(Drive drive)
