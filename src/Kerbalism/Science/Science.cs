@@ -11,6 +11,7 @@ namespace KERBALISM
 	{
 		// hard-coded transmission buffer size in Mb
 		private const double buffer_capacity = 12.0;
+		public const double min_file_size = 0.002;
 
 		// pseudo-ctor
 		public static void Init()
@@ -125,7 +126,7 @@ namespace KERBALISM
 				double now = Planetarium.GetUniversalTime();
 				foreach (var p in drive.files)
 				{
-					if (drive.GetFileSend(p.Key) && (p.Value.ts + 3 < now || p.Value.size > 0.003)) return p.Key;
+					if (drive.GetFileSend(p.Key) && (p.Value.ts + 3 < now || p.Value.size > min_file_size)) return p.Key;
 				}
 			}
 
