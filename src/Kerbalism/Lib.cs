@@ -7,7 +7,6 @@ using System.Text;
 using UnityEngine;
 using CommNet;
 using KSP.Localization;
-using UniLinq;
 
 namespace KERBALISM
 {

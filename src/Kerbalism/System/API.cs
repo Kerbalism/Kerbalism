@@ -5,6 +5,7 @@
 
 
 using System;
+using System.Reflection;
 using System.Collections.Generic;
 
 namespace KERBALISM
@@ -437,11 +438,16 @@ namespace KERBALISM
 		public class CommInfo
 		{
 			//This is the list of methods that should be activated when the event fires
-			internal List<Action<AntennaInfo, Vessel>> handlers = new List<Action<AntennaInfo, Vessel>>();
+			internal List<MethodInfo> handlers = new List<MethodInfo>();
 
 			//This adds a connection info handler
-			public void Add(Action<AntennaInfo, Vessel> handler)
+			public void Add(MethodInfo handler)
 			{
+				if(handler == null)
+				{
+					Lib.Log("Error: Kerbalism CommInfo.Add called with null handler");
+					return;
+				}
 				//We only add it if it isn't already added. Just in case.
 				if (!handlers.Contains(handler))
 				{
@@ -450,7 +456,7 @@ namespace KERBALISM
 			}
 
 			//This removes a connection info handler
-			public void Remove(Action<AntennaInfo, Vessel> handler)
+			public void Remove(MethodInfo handler)
 			{
 				//We also only remove it if it's actually in the list.
 				if (handlers.Contains(handler))
@@ -465,10 +471,14 @@ namespace KERBALISM
 			public void Init(AntennaInfo antennaInfo, Vessel pv)
 			{
 				//Loop through the list of listening methods and Invoke them.
-				foreach (Action<AntennaInfo, Vessel> handler in handlers)
+				foreach (MethodInfo handler in handlers)
 				{
-					handler.Invoke(antennaInfo, pv);
-					if (antennaInfo.strength > -1) return;
+					try {
+						handler.Invoke(null, new object[] { antennaInfo, pv });
+						if (antennaInfo.strength > -1) return;
+					} catch(Exception e) {
+						Lib.Log("Kerbalism: CommInfo handler threw exception " + e.Message + "\n" + e.ToString());
+					}
 				}
 			}
 		}

@@ -48,11 +48,14 @@ namespace KERBALISM
 			Lib.Log("RemoteTech Startup");
 			if (!Enabled) return;
 			Lib.Log("RemoteTech is enabled");
-			API.Comm.Add(RTCommInfoHandler);
+
+			var handler = typeof(RemoteTech).GetMethod("RTCommInfoHandler");
+			API.Comm.Add(handler);
+
 			API.Failure.Add(RTFailureHandler);
 		}
 
-		private static void RTCommInfoHandler(AntennaInfo antennaInfo, Vessel v)
+		public static void RTCommInfoHandler(AntennaInfo antennaInfo, Vessel v)
 		{
 			var ai = new AntennaInfoRT(v, antennaInfo.powered, antennaInfo.storm);
 			antennaInfo.linked = ai.linked;
@@ -64,7 +67,7 @@ namespace KERBALISM
 			antennaInfo.target_name = ai.target_name;
 		}
 
-		private static void RTFailureHandler(Part part, string type, bool failure)
+		public static void RTFailureHandler(Part part, string type, bool failure)
 		{
 			foreach (PartModule m in part.FindModulesImplementing<PartModule>())
 			{
