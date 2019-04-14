@@ -41,12 +41,15 @@ namespace KERBALISM
 					break;
 				}
 			}
+		}
 
-			if (Enabled)
-			{
-				API.Comm.Add(RTCommInfoHandler);
-				API.Failure.Add(RTFailureHandler);
-			}
+		public static void Startup()
+		{
+			Lib.Log("RemoteTech Startup");
+			if (!Enabled) return;
+			Lib.Log("RemoteTech is enabled");
+			API.Comm.Add(RTCommInfoHandler);
+			API.Failure.Add(RTFailureHandler);
 		}
 
 		private static void RTCommInfoHandler(AntennaInfo antennaInfo, Vessel v)

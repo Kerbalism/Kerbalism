@@ -58,6 +58,7 @@ namespace KERBALISM
 			yield return new WaitForSeconds(2);
 			Lib.DebugLog("NetworkInitialized");
 			Communications.NetworkInitialized = true;
+			RemoteTech.Startup();
 		}
 
 		void ToEVA(GameEvents.FromToAction<Part, Part> data)
