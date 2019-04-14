@@ -44,4 +44,4 @@ Online Community
 .. _SpaceDock: https://spacedock.info/mod/1774/Kerbalism
 .. _CHANGELOG.md: https://github.com/steamp0rt/Kerbalism/tree/master/CHANGELOG.md
 .. _Kerbal Space Program's forum: https://forum.kerbalspaceprogram.com/index.php?/topic/172400-131144-kerbalism-v171/
-.. _Discord Server: https://discord.gg/NgFawe4
+.. _Discord Server: https://discord.gg/3JAE2JE
