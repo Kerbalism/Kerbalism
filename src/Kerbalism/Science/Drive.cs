@@ -100,6 +100,7 @@ namespace KERBALISM
 			{
 				file = new File();
 				file.silentTransmission = silentTransmission;
+				file.ts = Planetarium.GetUniversalTime();
 				files.Add(subject_id, file);
 
 				if (!allowImmediateTransmission) Send(subject_id, false);
@@ -158,6 +159,7 @@ namespace KERBALISM
 			if (!samples.TryGetValue(subject_id, out sample))
 			{
 				sample = new Sample();
+				sample.analyze = PreferencesScience.Instance.analyzeSamples;
 				samples.Add(subject_id, sample);
 			}
 

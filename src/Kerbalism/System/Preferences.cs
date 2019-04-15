@@ -69,8 +69,11 @@ namespace KERBALISM
 
 	public class PreferencesScience : GameParameters.CustomParameterNode
 	{
-		[GameParameters.CustomParameterUI("Transmit Science Immediately", toolTip = "Automatically transmit science if possible")]
+		[GameParameters.CustomParameterUI("Transmit Science Immediately", toolTip = "Automatically flag science files for transmission")]
 		public bool transmitScience = true;
+
+		[GameParameters.CustomParameterUI("Analyze Samples Immediately", toolTip = "Automatically flag samples for analysis in a lab")]
+		public bool analyzeSamples = true;
 
 		[GameParameters.CustomParameterUI("Only record valuable science", toolTip = "Record experiment data only if it has at least a nominal value")]
 		public bool smartScience = true;

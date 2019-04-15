@@ -293,11 +293,15 @@ namespace KERBALISM
 			// if the analysis is completed
 			if (completed)
 			{
-				// inform the user
-				Message.Post(Lib.BuildString(Lib.Color("cyan", Localizer.Format("#KERBALISM_Laboratory_Analysis"), true), "\n",
-					Localizer.Format("#KERBALISM_Laboratory_Analyzed", Lib.Bold(v.vesselName), Lib.Bold(Science.Experiment(filename).name))), localized_results);
+				if(!PreferencesScience.Instance.analyzeSamples)
+				{
+					// only inform the user if auto-analyze is turned off
+					// otherwise we could be spamming "Analysis complete" messages
+					Message.Post(Lib.BuildString(Lib.Color("cyan", Localizer.Format("#KERBALISM_Laboratory_Analysis"), true), "\n",
+						Localizer.Format("#KERBALISM_Laboratory_Analyzed", Lib.Bold(v.vesselName), Lib.Bold(Science.Experiment(filename).name))), localized_results);
+				}
 
-				if(PreferencesScience.Instance.transmitScience)
+				if (PreferencesScience.Instance.transmitScience)
 					drive.Send(filename, true);
 
 				// record landmark event
