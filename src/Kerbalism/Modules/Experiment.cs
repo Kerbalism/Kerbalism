@@ -694,7 +694,7 @@ namespace KERBALISM
 			{
 				specs.Add("Sample size", Lib.HumanReadableSampleSize(expSize));
 				specs.Add("Sample mass", Lib.HumanReadableMass(sample_mass));
-				if (Math.Abs(sample_reservoir - sample_mass) > double.Epsilon && sample_mass > double.Epsilon)
+				if(!sample_collecting && Math.Abs(sample_reservoir - sample_mass) > double.Epsilon && sample_mass > double.Epsilon)
 					specs.Add("Experiments", "" + Math.Round(sample_reservoir / sample_mass, 0));
 				specs.Add("Duration", Lib.HumanReadableDuration(expSize / data_rate));
 			}
