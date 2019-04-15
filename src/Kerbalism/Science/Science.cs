@@ -478,7 +478,7 @@ namespace KERBALISM
 			string result = "";
 			foreach(var s in Lib.Tokenize(requires, ';'))
 			{
-				if (result.Length > 0) result += " ";
+				if (result.Length > 0) result += ", ";
 				if (s[0] == '!') result += "not " + s.Substring(1);
 				else result += s;
 			}
