@@ -23,6 +23,7 @@ namespace KERBALISM
 		[KSPField] public string crew_reset = string.Empty;   // reset crew. if set, experiment will stop recording after situation change
 		[KSPField] public string crew_prepare = string.Empty; // prepare crew. if set, experiment will require crew to set up before it can start recording 
 		[KSPField] public string resources = string.Empty;    // resources consumed by this experiment
+		[KSPField] public bool hide_when_unavailable = false; // don't show UI when the experiment is unavailable
 
 		// animations
 		[KSPField] public string anim_deploy = string.Empty; // deploy animation
@@ -199,6 +200,12 @@ namespace KERBALISM
 				}
 
 				if (scienceValue > 0.1) ExperimentStatus += " •<b>" + scienceValue.ToString("F1") + "</b>";
+
+				if(issue.Length > 0 && hide_when_unavailable)
+				{
+					Events["Toggle"].active = false;
+					Fields["ExperimentStatus"].guiActive = false;
+				}
 			}
 			// in the editor
 			else if (Lib.IsEditor())

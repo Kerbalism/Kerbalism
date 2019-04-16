@@ -95,50 +95,52 @@ Experiment
 -------
 Hooks experiments into the Kerbalism science system.
 
-+-------------------+-------------------------------------------------------------+---------------+
-| PROPERTY          | DESCRIPTION                                                 | DEFAULT       |
-+===================+=============================================================+===============+
-| experiment_id     | The ID of the experiment (which must be defined elsewhere)  |               |
-+-------------------+-------------------------------------------------------------+---------------+
-| experiment_desc   | A nice description of the experiment.                       |               |
-+-------------------+-------------------------------------------------------------+---------------+
-| data_rate         | sampling rate in Mb/s                                       | 0.01          |
-+-------------------+-------------------------------------------------------------+---------------+
-| ec_rate           | EC consumption rate per second while recording              | 0.01          |
-+-------------------+-------------------------------------------------------------+---------------+
-| allow_shrouded    | Allow the experiment to run while it's part is shrouded     | true          |
-+-------------------+-------------------------------------------------------------+---------------+
-| sample_mass       | If not 0, this is a sample and cannot be transmitted        | 0.0           |
-+-------------------+-------------------------------------------------------------+---------------+
-| sample_reservoir  | Amount of sampling material stored on the part              | = sample_mass |
-+-------------------+-------------------------------------------------------------+---------------+
-| sample_collecting | If set to true, the experiment will produce mass.           | false         |
-+-------------------+-------------------------------------------------------------+---------------+
-| requires          | Additional requirements that must be met for recording.     |               |
-|                   | See below.                                                  |               |
-+-------------------+-------------------------------------------------------------+---------------+
-| resources         | Resources consumed while the experiment is running. Will    |               |
-|                   | stop if one of the resources is depleted. Rate is per sec.  |               |
-|                   | Malformed definitions or unknown resources will be ignored. |               |
-|                   | Example: resources = Water@0.01,Food@0.02                   |               |
-+-------------------+-------------------------------------------------------------+---------------+
-| crew_operate      | Requirements for crew on vessel for recording. If this is   |               |
-|                   | not set, the experiment can run on unmanned probes.         |               |
-+-------------------+-------------------------------------------------------------+---------------+
-| crew_reset        | Requirements for crew to reset the experiment. If this is   |               |
-|                   | set, the experiment will only record data from within the   |               |
-|                   | situation where recording was started, until it is reset    |               |
-|                   | (either by a kerbal that has to match the requirement, or   |               |
-|                   | by a lab.                                                   |               |
-+-------------------+-------------------------------------------------------------+---------------+
-| crew_prepare      | If set, a kerbal has to prepare the experiment before it    |               |
-|                   | can record data. Once prepared, the experiment will only    |               |
-|                   | record data while it remains in the situation it was        |               |
-|                   | prepared for. The kerbal doing the preparation has to match |               |
-|                   | the requiremens                                             |               |
-+-------------------+-------------------------------------------------------------+---------------+
-| anim_deploy       | Name of the part animation to trigger when recording starts.|               |
-+-------------------+-------------------------------------------------------------+---------------+
++-----------------------+-------------------------------------------------------------+---------------+
+| PROPERTY              | DESCRIPTION                                                 | DEFAULT       |
++=======================+=============================================================+===============+
+| experiment_id         | The ID of the experiment (which must be defined elsewhere)  |               |
++-----------------------+-------------------------------------------------------------+---------------+
+| experiment_desc       | A nice description of the experiment.                       |               |
++-----------------------+-------------------------------------------------------------+---------------+
+| data_rate             | sampling rate in Mb/s                                       | 0.01          |
++-----------------------+-------------------------------------------------------------+---------------+
+| ec_rate               | EC consumption rate per second while recording              | 0.01          |
++-----------------------+-------------------------------------------------------------+---------------+
+| allow_shrouded        | Allow the experiment to run while it's part is shrouded     | true          |
++-----------------------+-------------------------------------------------------------+---------------+
+| sample_mass           | If not 0, this is a sample and cannot be transmitted        | 0.0           |
++-----------------------+-------------------------------------------------------------+---------------+
+| sample_reservoir      | Amount of sampling material stored on the part              | = sample_mass |
++-----------------------+-------------------------------------------------------------+---------------+
+| sample_collecting     | If set to true, the experiment will produce mass.           | false         |
++-----------------------+-------------------------------------------------------------+---------------+
+| requires              | Additional requirements that must be met for recording.     |               |
+|                       | See below.                                                  |               |
++-----------------------+-------------------------------------------------------------+---------------+
+| resources             | Resources consumed while the experiment is running. Will    |               |
+|                       | stop if one of the resources is depleted. Rate is per sec.  |               |
+|                       | Malformed definitions or unknown resources will be ignored. |               |
+|                       | Example: resources = Water@0.01,Food@0.02                   |               |
++-----------------------+-------------------------------------------------------------+---------------+
+| crew_operate          | Requirements for crew on vessel for recording. If this is   |               |
+|                       | not set, the experiment can run on unmanned probes.         |               |
++-----------------------+-------------------------------------------------------------+---------------+
+| crew_reset            | Requirements for crew to reset the experiment. If this is   |               |
+|                       | set, the experiment will only record data from within the   |               |
+|                       | situation where recording was started, until it is reset    |               |
+|                       | (either by a kerbal that has to match the requirement, or   |               |
+|                       | by a lab.                                                   |               |
++-----------------------+-------------------------------------------------------------+---------------+
+| crew_prepare          | If set, a kerbal has to prepare the experiment before it    |               |
+|                       | can record data. Once prepared, the experiment will only    |               |
+|                       | record data while it remains in the situation it was        |               |
+|                       | prepared for. The kerbal doing the preparation has to match |               |
+|                       | the requiremens                                             |               |
++-----------------------+-------------------------------------------------------------+---------------+
+| hide_when_unavailable | Don't show the UI when the experiment is unavailable.       |               |
++-----------------------+-------------------------------------------------------------+---------------+
+| anim_deploy           | Name of the part animation to trigger when recording starts.|               |
++-----------------------+-------------------------------------------------------------+---------------+
 
 **Crew** specifications (used in crew_operate, crew_reset or crew_prepare as well as in some
 other Kerbalism mods) have to be given according to `true|trait|[trait]@level`
