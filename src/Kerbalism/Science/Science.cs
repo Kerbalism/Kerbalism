@@ -142,17 +142,24 @@ namespace KERBALISM
 
 			// credit the science
 			var subject = ResearchAndDevelopment.GetSubjectByID(subject_id);
-			subject.science += credits / HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier;
-			subject.scientificValue = ResearchAndDevelopment.GetSubjectValue(subject.science, subject);
-			ResearchAndDevelopment.Instance.AddScience(credits, transmitted ? TransactionReasons.ScienceTransmission : TransactionReasons.VesselRecovery);
+			if(subject == null)
+			{
+				Lib.Log("WARNING: science subject " + subject_id + " cannot be credited in R&D");
+			}
+			else
+			{
+				subject.science += credits / HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier;
+				subject.scientificValue = ResearchAndDevelopment.GetSubjectValue(subject.science, subject);
+				ResearchAndDevelopment.Instance.AddScience(credits, transmitted ? TransactionReasons.ScienceTransmission : TransactionReasons.VesselRecovery);
 
-			// fire game event
-			// - this could be slow or a no-op, depending on the number of listeners
-			//   in any case, we are buffering the transmitting data and calling this
-			//   function only once in a while
-			GameEvents.OnScienceRecieved.Fire(credits, subject, pv, false);
+				// fire game event
+				// - this could be slow or a no-op, depending on the number of listeners
+				//   in any case, we are buffering the transmitting data and calling this
+				//   function only once in a while
+				GameEvents.OnScienceRecieved.Fire(credits, subject, pv, false);
 
-			API.OnScienceReceived.Fire(credits, subject, pv, transmitted);
+				API.OnScienceReceived.Fire(credits, subject, pv, transmitted);
+			}
 
 			// return amount of science credited
 			return credits;
@@ -217,12 +224,18 @@ namespace KERBALISM
 		public static string Generate_subject_id(string experiment_id, Vessel v)
 		{
 			var body = v.mainBody;
-			var experiment = ResearchAndDevelopment.GetExperiment(experiment_id);
-			var sit = ScienceUtil.GetExperimentSituation(v);
-			var biome = ScienceUtil.GetExperimentBiome(v.mainBody, v.latitude, v.longitude);
+			ScienceExperiment experiment = ResearchAndDevelopment.GetExperiment(experiment_id);
+			ExperimentSituations sit = ScienceUtil.GetExperimentSituation(v);
+
+			var sitStr = sit.ToString();
+			if(!string.IsNullOrEmpty(sitStr))
+			{
+				var biome = ScienceUtil.GetExperimentBiome(v.mainBody, v.latitude, v.longitude);
+				if (experiment.BiomeIsRelevantWhile(sit)) sitStr += biome;
+			}
 
 			// generate subject id
-			return Lib.BuildString(experiment_id, "@", body.name, sit + (experiment.BiomeIsRelevantWhile(sit) ? biome : ""));
+			return Lib.BuildString(experiment_id, "@", body.name, sitStr);
 		}
 
 		public static string Generate_subject(string experiment_id, Vessel v)

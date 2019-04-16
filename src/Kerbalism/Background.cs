@@ -8,8 +8,6 @@ namespace KERBALISM
 {
 	public static class Background
 	{
-		public readonly static double SCANNER_MIN_CAPACITY = 1.0/1024.0;
-
 		public enum Module_type
 		{
 			Reliability = 0,
@@ -62,8 +60,7 @@ namespace KERBALISM
 				case "ModuleLight":
 				case "ModuleColoredLensLight":
 				case "ModuleMultiPointSurfaceLight": return Module_type.Light;
-				case "SCANsat":
-				case "ModuleSCANresourceScanner": return Module_type.Scanner;
+				case "KerbalismScansat": return Module_type.Scanner;
 				case "ModuleCurvedSolarPanel": return Module_type.CurvedPanel;
 				case "FissionGenerator": return Module_type.FissionGenerator;
 				case "ModuleRadioisotopeGenerator": return Module_type.RadioisotopeGenerator;
@@ -137,7 +134,7 @@ namespace KERBALISM
 						case Module_type.AsteroidDrill: ProcessAsteroidDrill(v, p, m, module_prefab as ModuleAsteroidDrill, resources, elapsed_s); break; // Stock asteroid harvester module
 						case Module_type.StockLab: ProcessStockLab(v, p, m, module_prefab as ModuleScienceConverter, ec, elapsed_s); break;
 						case Module_type.Light: ProcessLight(v, p, m, module_prefab as ModuleLight, ec, elapsed_s); break;
-						case Module_type.Scanner: ProcessScanner(v, p, m, module_prefab, part_prefab, vd, ec, elapsed_s); break;
+						case Module_type.Scanner: KerbalismScansat.BackgroundUpdate(v, p, m, module_prefab as KerbalismScansat, part_prefab, vd, ec, elapsed_s); break;
 						case Module_type.CurvedPanel: ProcessCurvedPanel(v, p, m, module_prefab, part_prefab, vi, ec, elapsed_s); break;
 						case Module_type.FissionGenerator: ProcessFissionGenerator(v, p, m, module_prefab, ec, elapsed_s); break;
 						case Module_type.RadioisotopeGenerator: ProcessRadioisotopeGenerator(v, p, m, module_prefab, ec, elapsed_s); break;
@@ -457,6 +454,7 @@ namespace KERBALISM
 			}
 		}
 
+		/*
 		static void ProcessScanner(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule scanner, Part part_prefab, VesselData vd, Resource_info ec, double elapsed_s)
 		{
 			// get ec consumption rate
@@ -468,14 +466,6 @@ namespace KERBALISM
 			// get scanner state
 			bool is_scanning = Lib.Proto.GetBool(m, "scanning");
 
-			double capacity = 0;
-			if(Features.Science)
-			{
-				foreach (var drive in vd.drives.Values)
-					if (!drive.is_private)
-						capacity += drive.FileCapacityAvailable();
-			}
-
 			// if its scanning
 			if (is_scanning)
 			{
@@ -484,7 +474,7 @@ namespace KERBALISM
 
 				// if there isn't ec
 				// - comparing against amount in previous simulation step
-				if (ec.amount <= double.Epsilon || (Features.Science && capacity < SCANNER_MIN_CAPACITY))
+				if (ec.amount <= double.Epsilon)
 				{
 					// unregister scanner
 					SCANsat.StopScanner(v, m, part_prefab);
@@ -503,7 +493,7 @@ namespace KERBALISM
 				// if there is enough ec
 				// note: comparing against amount in previous simulation step
 				// re-enable at 25% EC
-				if (ec.level > 0.25 && (!Features.Science || capacity >= SCANNER_MIN_CAPACITY))
+				if (ec.level > 0.25)
 				{
 					// re-enable the scanner
 					SCANsat.ResumeScanner(v, m, part_prefab);
@@ -517,7 +507,7 @@ namespace KERBALISM
 			// forget active scanners
 			if (is_scanning) vd.scansat_id.Remove(p.flightID);
 		}
-
+		*/
 
 		static void ProcessCurvedPanel(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule curved_panel, Part part_prefab, Vessel_info info, Resource_info ec, double elapsed_s)
 		{

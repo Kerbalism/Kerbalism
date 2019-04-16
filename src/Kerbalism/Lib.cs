@@ -1116,13 +1116,22 @@ namespace KERBALISM
 			for (int i = 0; i < v.protoPartSnapshots.Count; ++i)
 			{
 				ProtoPartSnapshot p = v.protoPartSnapshots[i];
-				for (int j = 0; j < p.modules.Count; ++j)
+				ret.AddRange(FindModules(p, module_name));
+			}
+			return ret;
+		}
+
+		// return all proto modules with a specified name in a part
+		// note: disabled modules are not returned
+		public static List<ProtoPartModuleSnapshot> FindModules(ProtoPartSnapshot p, string module_name)
+		{
+			List<ProtoPartModuleSnapshot> ret = new List<ProtoPartModuleSnapshot>(8);
+			for (int j = 0; j < p.modules.Count; ++j)
+			{
+				ProtoPartModuleSnapshot m = p.modules[j];
+				if (m.moduleName == module_name && Proto.GetBool(m, "isEnabled"))
 				{
-					ProtoPartModuleSnapshot m = p.modules[j];
-					if (m.moduleName == module_name && Proto.GetBool(m, "isEnabled"))
-					{
-						ret.Add(m);
-					}
+					ret.Add(m);
 				}
 			}
 			return ret;
