@@ -86,7 +86,7 @@ namespace KERBALISM
 
 			if(samplesCount > 0 || totalSlots > 0)
 			{
-				var title = "SAMPLES " + Lib.HumanReadableMass(totalMass) + " (" + usedSlots + "/" + Lib.HumanReadableSampleSize(totalSlots) + " available)";
+				var title = "SAMPLES " + Lib.HumanReadableMass(totalMass) + " (" + usedSlots + "/" + Lib.HumanReadableSampleSize(totalSlots) + " used)";
 				p.AddSection(title);
 
 				foreach (var idDrivePair in drives)
