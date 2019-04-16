@@ -108,6 +108,13 @@ namespace KERBALISM
 
 			// other stuff
 			gravioli = Sim.Graviolis(v);
+
+			data_capacity = 0;
+			if(Features.Science)
+			{
+				foreach (var drive in DB.Vessel(v).drives.Values)
+					if (!drive.is_private) data_capacity += drive.FileCapacityAvailable();
+			}
 		}
 
 		// at the two highest timewarp speed, the number of sun visibility samples drop to the point that
@@ -175,6 +182,7 @@ namespace KERBALISM
 		public double gravioli;             // gravitation gauge particles detected (joke)
 		public bool powered;                // true if vessel is powered
 		public double evaPropQuantity = -1; // amount of EVA prop to set to this vessel (workaround for KSP behavior)
+		public double data_capacity = 0.0;   // available data capacity on all public drives
 	}
 
 

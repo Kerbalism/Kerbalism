@@ -259,6 +259,7 @@
     <Compile Include="System\Preferences.cs" />
     <Compile Include="Modules\Sickbay.cs" />
     <Compile Include="Automation\Devices\Sickbay.cs" />
+    <Compile Include="Modules\KerbalismScansat.cs" />
   </ItemGroup>
   <ItemGroup>
     <Analyzer Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-CSharp-firstpass.dll')" Include="$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-CSharp-firstpass.dll" />
@@ -290,7 +291,7 @@
       <Output TaskParameter="Assemblies" ItemName="Targets" />
     </GetAssemblyIdentity>
     <ItemGroup>
-      <VersionNumber Include="@(Targets->'%(Version)')" />
+      <VersionNumber Include="@(Targets-&gt;'%(Version)')" />
     </ItemGroup>
   </Target>
   <PropertyGroup>

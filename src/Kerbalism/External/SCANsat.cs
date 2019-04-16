@@ -16,6 +16,7 @@ namespace KERBALISM
 					SCANUtils = a.assembly.GetType("SCANsat.SCANUtil");
 					RegisterSensor = SCANUtils.GetMethod("registerSensorExternal");
 					UnregisterSensor = SCANUtils.GetMethod("unregisterSensorExternal");
+					GetCoverage = SCANUtils.GetMethod("GetCoverage");
 					break;
 				}
 			}
@@ -37,6 +38,15 @@ namespace KERBALISM
 		public static bool ResumeScanner(Vessel v, ProtoPartModuleSnapshot m, Part part_prefab)
 		{
 			return SCANUtils != null && (bool)RegisterSensor.Invoke(null, new Object[] { v, m, part_prefab });
+		}
+
+		// return the scanning coverage for a given sensor type on a give body
+		// - sensor_type: the sensor type
+		// - body: the body in question
+		public static double Coverage(int sensor_type, CelestialBody body)
+		{
+			if (SCANUtils == null) return 0;
+			return (double)GetCoverage.Invoke(null, new Object[] { sensor_type, body });
 		}
 
 		// return scanner EC consumption per-second
@@ -68,6 +78,7 @@ namespace KERBALISM
 		static Type SCANUtils;
 		static System.Reflection.MethodInfo RegisterSensor;
 		static System.Reflection.MethodInfo UnregisterSensor;
+		static System.Reflection.MethodInfo GetCoverage;
 	}
 
 

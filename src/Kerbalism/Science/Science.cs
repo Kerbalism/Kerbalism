@@ -53,8 +53,6 @@ namespace KERBALISM
 			// - this avoid losing science if the buffer reach threshold during a scene change
 			if (HighLogic.CurrentGame.Mode != Game.Modes.SANDBOX && ResearchAndDevelopment.Instance == null) return;
 
-			UpdateScanners(v, vi, vd, resources, elapsed_s);
-
 			// get connection info
 			ConnectionInfo conn = vi.connection;
 			if (conn == null || String.IsNullOrEmpty(vi.transmitting)) return;
@@ -105,35 +103,6 @@ namespace KERBALISM
 						Message.Post(
 						  Lib.BuildString("<color=cyan><b>DATA RECEIVED</b></color>\nTransmission of <b>", Experiment(exp_filename).name, "</b> completed"),
 						  Lib.TextVariant("Our researchers will jump on it right now", "The checksum is correct, data must be valid"));
-					}
-				}
-			}
-		}
-
-		internal static void UpdateScanners(Vessel v, Vessel_info vi, VesselData vd, Vessel_resources resources, double elapsed_s)
-		{
-			double capacity = 0;
-			foreach (var drive in vd.drives.Values)
-				if (!drive.is_private)
-					capacity += drive.FileCapacityAvailable();
-					
-			foreach (var part in v.parts)
-			{
-				foreach(PartModule module in part.Modules)
-				{
-					if(Background.ModuleType(module.name) == Background.Module_type.Scanner)
-					{
-						bool is_scanning = SCANsat.IsScanning(module);
-						if (is_scanning && capacity <= Background.SCANNER_MIN_CAPACITY)
-						{
-							SCANsat.StopScan(module);
-							vd.scansat_id.Add(part.flightID);
-						}
-						else if (vd.scansat_id.Contains(part.flightID) && capacity > Background.SCANNER_MIN_CAPACITY)
-						{
-							SCANsat.StartScan(module);
-							vd.scansat_id.Remove(part.flightID);
-						}
 					}
 				}
 			}
