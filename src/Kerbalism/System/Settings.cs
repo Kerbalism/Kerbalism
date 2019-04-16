@@ -45,6 +45,7 @@ namespace KERBALISM
 
 			// signal
 			UnlinkedControl = Lib.ConfigEnum(cfg, "UnlinkedControl", UnlinkedCtrl.none);
+			DataRateDampingExponent = Lib.ConfigValue(cfg, "DataRateDampingExponent", 6.0f);
 
 			// science
 			ScienceDialog = Lib.ConfigValue(cfg, "ScienceDialog", true);
@@ -104,6 +105,7 @@ namespace KERBALISM
 
 		// signal
 		public static UnlinkedCtrl UnlinkedControl;             // available control for unlinked vessels: 'none', 'limited' or 'full'
+		public static float DataRateDampingExponent;			// how much to damp data rate. stock is equivalent to 1, 6 gives nice values, RSS would use 4
 
 		// science
 		public static bool ScienceDialog;                       // keep showing the stock science dialog
@@ -122,9 +124,9 @@ namespace KERBALISM
 		public static bool EnforceCoherency;                    // detect and avoid issues at high timewarp in external modules
 		public static bool TrackingPivot;                       // simulate tracking solar panel around the pivot
 		public static double HeadLampsCost;                     // EC/s cost if eva headlamps are on
-		public static bool LowQualityRendering;               // use less particles to render the magnetic fields
-		public static float UIScale;                          // scale UI elements by this factor, relative to KSP scaling settings, useful for high PPI screens
-		public static float UIPanelWidthScale;                // scale UI Panel Width by this factor, relative to KSP scaling settings, useful for high PPI screens
+		public static bool LowQualityRendering;                 // use less particles to render the magnetic fields
+		public static float UIScale;                            // scale UI elements by this factor, relative to KSP scaling settings, useful for high PPI screens
+		public static float UIPanelWidthScale;                  // scale UI Panel Width by this factor, relative to KSP scaling settings, useful for high PPI screens
 
 		// presets for save game preferences
 

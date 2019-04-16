@@ -130,7 +130,7 @@ namespace KERBALISM
 				status = link.hopType == CommNet.HopType.Home ? (int)LinkStatus.direct_link : (int)LinkStatus.indirect_link;
 				strength = link.signalStrength;
 
-				rate *= Math.Pow(link.signalStrength, 6);
+				rate *= Math.Pow(link.signalStrength, Settings.DataRateDampingExponent);
 
 				target_name = Lib.Ellipsis(Localizer.Format(v.connection.ControlPath.First.end.displayName).Replace("Kerbin", "DSN"), 20);
 
