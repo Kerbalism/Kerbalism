@@ -185,6 +185,16 @@ Here is a list of currently supported requirements:
 * Facility building levels: MissionControlLevelMin, MissionControlLevelMax, AdministrationLevelMin, AdministrationLevelMax, TrackingStationLevelMin, TrackingStationLevelMax, AstronautComplexLevelMin, AstronautComplexLevelMax
 * MaxAsteroidDistance: max. distance to the nearest asteroid. For unloaded vessels this only works if the asteroid is set as the target.
 
+The following might or might not work for unloaded vessels, please udpate this list when you find out:
+
+* SurfaceSpeedMin,SurfaceSpeedMax: Speed above surface
+* VerticalSpeedMin,VerticalSpeedMax: Vertical speed
+* SpeedMin,SpeedMax: speed
+* DynamicPressureMin,DynamicPressureMax: current dynamic pressure
+* StaticPressureMin,StaticPressureMax: current static pressure
+* AtmDensityMin,AtmDensityMax: current atmospheric density
+* AltAboveGroundMin,AltAboveGroundMax: Altitude above ground. Note that this value can change rapidly as KSP loads/unloads the terrain of a body
+
 -------
 
 GravityRing

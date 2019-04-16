@@ -626,6 +626,12 @@ namespace KERBALISM
 			return BuildString(range.ToString("F1"), " Em");
 		}
 
+		///<summary> Pretty-print a speed (in meters/sec, must be positive) </summary>
+		public static string HumanReadableSpeed(double speed)
+		{
+			return Lib.BuildString(HumanReadableRange(speed), "/s");
+		}
+
 		///<summary> Pretty-print temperature </summary>
 		public static string HumanReadableTemp(double temp)
 		{

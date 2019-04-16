@@ -302,26 +302,26 @@ namespace KERBALISM
 				bool good = true;
 				switch (condition)
 				{
-					case "OrbitMinInclination": good = Math.Abs(v.orbit.inclination) >= Double.Parse(value); break;
-					case "OrbitMaxInclination": good = Math.Abs(v.orbit.inclination) <= Double.Parse(value); break;
-					case "OrbitMinEccentricity": good = Math.Abs(v.orbit.eccentricity) >= Double.Parse(value); break;
-					case "OrbitMaxEccentricity": good = Math.Abs(v.orbit.eccentricity) <= Double.Parse(value); break;
+					case "OrbitMinInclination": good = Math.Abs(v.orbit.inclination) >= double.Parse(value); break;
+					case "OrbitMaxInclination": good = Math.Abs(v.orbit.inclination) <= double.Parse(value); break;
+					case "OrbitMinEccentricity": good = Math.Abs(v.orbit.eccentricity) >= double.Parse(value); break;
+					case "OrbitMaxEccentricity": good = Math.Abs(v.orbit.eccentricity) <= double.Parse(value); break;
 
-					case "TemperatureMin": good = vi.temperature >= Double.Parse(value); break;
-					case "TemperatureMax": good = vi.temperature <= Double.Parse(value); break;
-					case "AltitudeMin": good = v.altitude >= Double.Parse(value); break;
-					case "AltitudeMax": good = v.altitude <= Double.Parse(value); break;
-					case "RadiationMin": good = vi.radiation >= Double.Parse(value); break;
-					case "RadiationMax": good = vi.radiation <= Double.Parse(value); break;
+					case "TemperatureMin": good = vi.temperature >= double.Parse(value); break;
+					case "TemperatureMax": good = vi.temperature <= double.Parse(value); break;
+					case "AltitudeMin": good = v.altitude >= double.Parse(value); break;
+					case "AltitudeMax": good = v.altitude <= double.Parse(value); break;
+					case "RadiationMin": good = vi.radiation >= double.Parse(value); break;
+					case "RadiationMax": good = vi.radiation <= double.Parse(value); break;
 					case "Microgravity": good = vi.zerog; break;
 					case "Body": good = TestBody(v.mainBody.name, value); break;
-					case "Shadow": good = vi.sunlight < Double.Epsilon; break;
+					case "Shadow": good = vi.sunlight < double.Epsilon; break;
 					case "CrewMin": good = vi.crew_count >= int.Parse(value); break;
 					case "CrewMax": good = vi.crew_count <= int.Parse(value); break;
 					case "CrewCapacityMin": good = vi.crew_capacity >= int.Parse(value); break;
 					case "CrewCapacityMax": good = vi.crew_capacity <= int.Parse(value); break;
-					case "VolumePerCrewMin": good = vi.volume_per_crew >= Double.Parse(value); break;
-					case "VolumePerCrewMax": good = vi.volume_per_crew <= Double.Parse(value); break;
+					case "VolumePerCrewMin": good = vi.volume_per_crew >= double.Parse(value); break;
+					case "VolumePerCrewMax": good = vi.volume_per_crew <= double.Parse(value); break;
 					case "Greenhouse": good = vi.greenhouses.Count > 0; break;
 					case "Surface": good = Lib.Landed(v); break;
 					case "Atmosphere": good = body.atmosphere && v.altitude < body.atmosphereDepth; break;
@@ -336,6 +336,21 @@ namespace KERBALISM
 					case "Exosphere": good = vi.exosphere; break;
 					case "InterPlanetary": good = body.flightGlobalsIndex == 0 && !vi.interstellar; break;
 					case "InterStellar": good = body.flightGlobalsIndex == 0 && vi.interstellar; break;
+
+					case "SurfaceSpeedMin": good = v.srfSpeed >= double.Parse(value); break;
+					case "SurfaceSpeedMax": good = v.srfSpeed <= double.Parse(value); break;
+					case "VerticalSpeedMin": good = v.verticalSpeed >= double.Parse(value); break;
+					case "VerticalSpeedMax": good = v.verticalSpeed <= double.Parse(value); break;
+					case "SpeedMin": good = v.speed >= double.Parse(value); break;
+					case "SpeedMax": good = v.speed <= double.Parse(value); break;
+					case "DynamicPressureMin": good = v.dynamicPressurekPa >= double.Parse(value); break;
+					case "DynamicPressureMax": good = v.dynamicPressurekPa <= double.Parse(value); break;
+					case "StaticPressureMin": good = v.staticPressurekPa >= double.Parse(value); break;
+					case "StaticPressureMax": good = v.staticPressurekPa <= double.Parse(value); break;
+					case "AtmDensityMin": good = v.atmDensity >= double.Parse(value); break;
+					case "AtmDensityMax": good = v.atmDensity <= double.Parse(value); break;
+					case "AltAboveGroundMin": good = v.heightFromTerrain >= double.Parse(value); break;
+					case "AltAboveGroundMax": good = v.heightFromTerrain <= double.Parse(value); break;
 
 					case "AstronautComplexLevelMin":
 						good = !ScenarioUpgradeableFacilities.Instance.enabled || ScenarioUpgradeableFacilities.GetFacilityLevel(SpaceCenterFacility.AstronautComplex) >= (double.Parse(value) - 1) / 2.0;
@@ -459,6 +474,22 @@ namespace KERBALISM
 				case "VolumePerCrewMin": return Lib.BuildString("Min. vol./crew ", Lib.HumanReadableVolume(double.Parse(value)));
 				case "VolumePerCrewMax": return Lib.BuildString("Max. vol./crew ", Lib.HumanReadableVolume(double.Parse(value)));
 				case "MaxAsteroidDistance": return Lib.BuildString("Max. asteroid distance ", Lib.HumanReadableRange(double.Parse(value)));
+
+				case "SurfaceSpeedMin": return Lib.BuildString("Min. surface speed ", Lib.HumanReadableSpeed(double.Parse(value)));
+				case "SurfaceSpeedMax": return Lib.BuildString("Max. surface speed ", Lib.HumanReadableSpeed(double.Parse(value)));
+				case "VerticalSpeedMin": return Lib.BuildString("Min. vertical speed ", Lib.HumanReadableSpeed(double.Parse(value)));
+				case "VerticalSpeedMax": return Lib.BuildString("Max. vertical speed ", Lib.HumanReadableSpeed(double.Parse(value)));
+				case "SpeedMin": return Lib.BuildString("Min. speed ", Lib.HumanReadableSpeed(double.Parse(value)));
+				case "SpeedMax": return Lib.BuildString("Max. speed ", Lib.HumanReadableSpeed(double.Parse(value)));
+				case "DynamicPressureMin": return Lib.BuildString("Min. dynamic pressure ", Lib.HumanReadablePressure(double.Parse(value)));
+				case "DynamicPressureMax": return Lib.BuildString("Max. dynamic pressure ", Lib.HumanReadablePressure(double.Parse(value)));
+				case "StaticPressureMin": return Lib.BuildString("Min. pressure ", Lib.HumanReadablePressure(double.Parse(value)));
+				case "StaticPressureMax": return Lib.BuildString("Max. pressure ", Lib.HumanReadablePressure(double.Parse(value)));
+				case "AtmDensityMin": return Lib.BuildString("Min. atm. density ", Lib.HumanReadablePressure(double.Parse(value)));
+				case "AtmDensityMax": return Lib.BuildString("Max. atm. density ", Lib.HumanReadablePressure(double.Parse(value)));
+				case "AltAboveGroundMin": return Lib.BuildString("Min. ground altitude ", Lib.HumanReadableRange(double.Parse(value)));
+				case "AltAboveGroundMax": return Lib.BuildString("Max. ground altitude ", Lib.HumanReadableRange(double.Parse(value)));
+
 				case "MissionControlLevelMin": return Lib.BuildString(ScenarioUpgradeableFacilities.GetFacilityName(SpaceCenterFacility.MissionControl), " level ", value);
 				case "MissionControlLevelMax": return Lib.BuildString(ScenarioUpgradeableFacilities.GetFacilityName(SpaceCenterFacility.MissionControl), " max. level ", value);
 				case "AdministrationLevelMin": return Lib.BuildString(ScenarioUpgradeableFacilities.GetFacilityName(SpaceCenterFacility.Administration), " level ", value);
