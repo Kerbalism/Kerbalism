@@ -8,9 +8,9 @@ namespace KERBALISM
 {
 	public static class Background
 	{
-		public readonly static double SCANSAT_MIN_CAPACITY = 1.0/1024.0;
+		public readonly static double SCANNER_MIN_CAPACITY = 1.0/1024.0;
 
-		enum Module_type
+		public enum Module_type
 		{
 			Reliability = 0,
 			Experiment,
@@ -37,7 +37,7 @@ namespace KERBALISM
 			NonRechargeBattery
 		}
 
-		static Module_type ModuleType(string module_name)
+		public static Module_type ModuleType(string module_name)
 		{
 			switch (module_name)
 			{
@@ -469,9 +469,12 @@ namespace KERBALISM
 			bool is_scanning = Lib.Proto.GetBool(m, "scanning");
 
 			double capacity = 0;
-			foreach (var drive in vd.drives.Values)
-				if (!drive.is_private)
-					capacity += drive.FileCapacityAvailable();
+			if(Features.Science)
+			{
+				foreach (var drive in vd.drives.Values)
+					if (!drive.is_private)
+						capacity += drive.FileCapacityAvailable();
+			}
 
 			// if its scanning
 			if (is_scanning)
@@ -481,7 +484,7 @@ namespace KERBALISM
 
 				// if there isn't ec
 				// - comparing against amount in previous simulation step
-				if (ec.amount <= double.Epsilon || (Features.Science && capacity < SCANSAT_MIN_CAPACITY))
+				if (ec.amount <= double.Epsilon || (Features.Science && capacity < SCANNER_MIN_CAPACITY))
 				{
 					// unregister scanner
 					SCANsat.StopScanner(v, m, part_prefab);
@@ -500,7 +503,7 @@ namespace KERBALISM
 				// if there is enough ec
 				// note: comparing against amount in previous simulation step
 				// re-enable at 25% EC
-				if (ec.level > 0.25 && (!Features.Science || capacity >= SCANSAT_MIN_CAPACITY))
+				if (ec.level > 0.25 && (!Features.Science || capacity >= SCANNER_MIN_CAPACITY))
 				{
 					// re-enable the scanner
 					SCANsat.ResumeScanner(v, m, part_prefab);

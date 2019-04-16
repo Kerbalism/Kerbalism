@@ -49,6 +49,21 @@ namespace KERBALISM
 			return 0.0;
 		}
 
+		public static bool IsScanning(PartModule scanner)
+		{
+			return Lib.ReflectionValue<bool>(scanner, "scanning");
+		}
+
+		public static void StopScan(PartModule scanner)
+		{
+			Lib.ReflectionCall(scanner, "stopScan");
+		}
+
+		public static void StartScan(PartModule scanner)
+		{
+			Lib.ReflectionCall(scanner, "startScan");
+		}
+
 		// reflection type of SCANUtils static class in SCANsat assembly, if present
 		static Type SCANUtils;
 		static System.Reflection.MethodInfo RegisterSensor;
