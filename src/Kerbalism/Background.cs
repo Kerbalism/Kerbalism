@@ -6,10 +6,10 @@ using UnityEngine;
 
 namespace KERBALISM
 {
-
-
 	public static class Background
 	{
+		public readonly static double SCANSAT_MIN_CAPACITY = 1.0/1024.0;
+
 		enum Module_type
 		{
 			Reliability = 0,
@@ -468,6 +468,11 @@ namespace KERBALISM
 			// get scanner state
 			bool is_scanning = Lib.Proto.GetBool(m, "scanning");
 
+			double capacity = 0;
+			foreach (var drive in vd.drives.Values)
+				if (!drive.is_private)
+					capacity += drive.FileCapacityAvailable();
+
 			// if its scanning
 			if (is_scanning)
 			{
@@ -476,7 +481,7 @@ namespace KERBALISM
 
 				// if there isn't ec
 				// - comparing against amount in previous simulation step
-				if (ec.amount <= double.Epsilon)
+				if (ec.amount <= double.Epsilon || (Features.Science && capacity < SCANSAT_MIN_CAPACITY))
 				{
 					// unregister scanner
 					SCANsat.StopScanner(v, m, part_prefab);
@@ -494,7 +499,8 @@ namespace KERBALISM
 			{
 				// if there is enough ec
 				// note: comparing against amount in previous simulation step
-				if (ec.level > 0.25) //< re-enable at 25% EC
+				// re-enable at 25% EC
+				if (ec.level > 0.25 && (!Features.Science || capacity >= SCANSAT_MIN_CAPACITY))
 				{
 					// re-enable the scanner
 					SCANsat.ResumeScanner(v, m, part_prefab);
