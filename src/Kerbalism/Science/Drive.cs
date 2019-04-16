@@ -238,13 +238,27 @@ namespace KERBALISM
 			var filesList = new List<string>();
 			foreach (var p in files)
 			{
-				if (destination.Record_file(p.Key, p.Value.size))
+				double size = Math.Max(p.Value.size, destination.FileCapacityAvailable());
+				if (destination.Record_file(p.Key, size))
 				{
 					destination.files[p.Key].buff += p.Value.buff; //< move the buffer along with the size
-					filesList.Add(p.Key);
+					p.Value.buff = 0;
+					p.Value.size -= size;
+					if (p.Value.size < double.Epsilon)
+					{
+						filesList.Add(p.Key);
+					}
+					else
+					{
+						result = false;
+						break;
+					}
 				}
 				else
+				{
 					result = false;
+					break;
+				}
 			}
 			foreach (var id in filesList) files.Remove(id);
 
@@ -254,10 +268,34 @@ namespace KERBALISM
 				var samplesList = new List<string>();
 				foreach (var p in samples)
 				{
-					if (destination.Record_sample(p.Key, p.Value.size, p.Value.mass))
-						samplesList.Add(p.Key);
-					else
+					double size = Math.Max(p.Value.size, destination.SampleCapacityAvailable(p.Key));
+					if(size < double.Epsilon)
+					{
 						result = false;
+						break;
+					}
+
+					double mass = p.Value.mass * (p.Value.size / size);
+					if (destination.Record_sample(p.Key, size, mass))
+					{
+						p.Value.size -= size;
+						p.Value.mass -= mass;
+
+						if (p.Value.size < double.Epsilon)
+						{
+							samplesList.Add(p.Key);
+						}
+						else
+						{
+							result = false;
+							break;
+						}
+					}
+					else
+					{
+						result = false;
+						break;
+					}
 				}
 				foreach (var id in samplesList) samples.Remove(id);
 			}
