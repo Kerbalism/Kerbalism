@@ -420,7 +420,6 @@ namespace KERBALISM
 					{
 						if (setup.tech == data.host.techID)
 						{
-
 							labels.Add(Lib.BuildString(setup.name, " in ", cfg.title));
 						}
 					}

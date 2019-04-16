@@ -481,7 +481,7 @@ namespace KERBALISM
 						{
 							if (setup.tech == selected.tech.techID)
 							{
-								labels.Add(Lib.BuildString(setup.name, " in ", cfg.title));
+								labels.Add(Lib.BuildString(setup.name, " to ", cfg.title));
 							}
 						}
 					}
