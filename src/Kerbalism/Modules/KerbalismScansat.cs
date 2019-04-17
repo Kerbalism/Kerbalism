@@ -8,6 +8,7 @@ namespace KERBALISM
 	public sealed class KerbalismScansat : PartModule
 	{
 		[KSPField] public string experimentType = string.Empty;
+		[KSPField] public double ec_rate = 0.0;
 
 		[KSPField(isPersistant = true)] private double min_capacity = 0.25; // TODO <- set this to something reasonable
 		[KSPField(isPersistant = true)] private int sensorType = 0;
@@ -128,15 +129,8 @@ namespace KERBALISM
 			var scanner = scanners[0];
 
 			bool is_scanning = Lib.Proto.GetBool(scanner, "scanning");
-
-			double ecRate = 0.0; // v--- TODO this ain't workin honey
-			foreach (ModuleResource res in kerbalismScansat.resHandler.inputResources)
-			{
-				if (res.name == "ElectricCharge") ecRate = res.rate;
-			}
-
-			if(is_scanning && ecRate > double.Epsilon)
-				ec.Consume(ecRate * elapsed_s, "scanner");
+			if(is_scanning && kerbalismScansat.ec_rate > double.Epsilon)
+				ec.Consume(kerbalismScansat.ec_rate * elapsed_s, "scanner");
 
 			if (!Features.Science)
 			{

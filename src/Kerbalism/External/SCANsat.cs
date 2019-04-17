@@ -49,16 +49,6 @@ namespace KERBALISM
 			return (double)GetCoverage.Invoke(null, new Object[] { sensor_type, body });
 		}
 
-		// return scanner EC consumption per-second
-		public static double EcConsumption(PartModule scanner)
-		{
-			foreach (ModuleResource res in scanner.resHandler.inputResources)
-			{
-				if (res.name == "ElectricCharge") return res.rate;
-			}
-			return 0.0;
-		}
-
 		public static bool IsScanning(PartModule scanner)
 		{
 			return Lib.ReflectionValue<bool>(scanner, "scanning");
