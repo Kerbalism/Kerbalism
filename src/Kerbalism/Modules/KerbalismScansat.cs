@@ -178,14 +178,11 @@ namespace KERBALISM
 			{
 				body_name = vessel.mainBody.name;
 				body_coverage = new_coverage;
-				Lib.Proto.Set(m, "body_name", body_name);
-				Lib.Proto.Set(m, "body_coverage", body_coverage);
 			}
 			else
 			{
 				double coverage_delta = new_coverage - body_coverage;
 				body_coverage = new_coverage;
-				Lib.Proto.Set(m, "body_coverage", body_coverage);
 
 				if (is_scanning)
 				{
@@ -236,6 +233,9 @@ namespace KERBALISM
 					}
 				}
 			}
+
+			Lib.Proto.Set(m, "body_coverage", body_coverage);
+			Lib.Proto.Set(m, "body_name", body_name);
 		}
 	}
 }
