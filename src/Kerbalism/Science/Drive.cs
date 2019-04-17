@@ -144,7 +144,7 @@ namespace KERBALISM
 			}
 
 			Sample sample;
-			if (samples.ContainsKey(subject_id))
+			if (samples.ContainsKey(subject_id) && sampleCapacity >= 0)
 			{
 				// test if adding the amount to the sample would exceed our capacity
 				sample = samples[subject_id];
