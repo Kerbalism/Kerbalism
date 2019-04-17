@@ -77,7 +77,7 @@ namespace KERBALISM
 					{
 						string filename = pair.Key;
 						File file = pair.Value;
-						Render_file(p, partId, filename, file, drive, short_strings && Lib.IsFlight(), Cache.VesselInfo(v).connection.rate, vi.connection.linked);
+						Render_file(p, partId, filename, file, drive, short_strings && Lib.IsFlight(), Cache.VesselInfo(v).connection.rate);
 					}
 				}
 
@@ -97,7 +97,7 @@ namespace KERBALISM
 					{
 						string samplename = pair.Key;
 						Sample sample = pair.Value;
-						Render_sample(p, partId, samplename, sample, drive, short_strings && Lib.IsFlight(), vi.connection.linked);
+						Render_sample(p, partId, samplename, sample, drive, short_strings && Lib.IsFlight());
 					}
 				}
 
@@ -105,7 +105,7 @@ namespace KERBALISM
 			}
 		}
 
-		static void Render_file(Panel p, uint partId, string filename, File file, Drive drive, bool short_strings, double rate, bool linked)
+		static void Render_file(Panel p, uint partId, string filename, File file, Drive drive, bool short_strings, double rate)
 		{
 			// get experiment info
 			ExperimentInfo exp = Science.Experiment(filename);
@@ -130,10 +130,9 @@ namespace KERBALISM
 			p.AddContent(exp_label, Lib.HumanReadableDataSize(file.size), exp_tooltip, (Action)null, () => Highlighter.Set(partId, Color.cyan));
 
 			bool send = drive.GetFileSend(filename);
-			p.AddIcon(send ? Icons.send_cyan : Icons.send_black, "Flag the file for transmission to <b>DSN</b>", () => { if(linked) drive.Send(filename, !send); });
+			p.AddIcon(send ? Icons.send_cyan : Icons.send_black, "Flag the file for transmission to <b>DSN</b>", () => { drive.Send(filename, !send); });
 			p.AddIcon(Icons.toggle_red, "Delete the file", () =>
 				{
-					if (!linked) return;
 					Lib.Popup("Warning!",
 						Lib.BuildString("Do you really want to delete ", exp.FullName(filename), "?"),
 						new DialogGUIButton("Delete it", () => drive.files.Remove(filename)),
@@ -142,7 +141,7 @@ namespace KERBALISM
 			);
 		}
 
-		static void Render_sample(Panel p, uint partId, string filename, Sample sample, Drive drive, bool short_strings, bool linked)
+		static void Render_sample(Panel p, uint partId, string filename, Sample sample, Drive drive, bool short_strings)
 		{
 			// get experiment info
 			ExperimentInfo exp = Science.Experiment(filename);
@@ -166,10 +165,9 @@ namespace KERBALISM
 			if (sample.mass > Double.Epsilon) exp_tooltip = Lib.BuildString(exp_tooltip, "\n<b>", Lib.HumanReadableMass(sample.mass), "</b>");
 
 			p.AddContent(exp_label, Lib.HumanReadableSampleSize(sample.size), exp_tooltip, (Action)null, () => Highlighter.Set(partId, Color.cyan));
-			p.AddIcon(sample.analyze ? Icons.lab_cyan : Icons.lab_black, "Flag the file for analysis in a <b>laboratory</b>", () => { if(linked) sample.analyze = !sample.analyze; });
+			p.AddIcon(sample.analyze ? Icons.lab_cyan : Icons.lab_black, "Flag the file for analysis in a <b>laboratory</b>", () => { sample.analyze = !sample.analyze; });
 			p.AddIcon(Icons.toggle_red, "Dump the sample", () =>
 				{
-					if (!linked) return;
 					Lib.Popup("Warning!",
 						Lib.BuildString("Do you really want to dump ", exp.FullName(filename), "?"),
 						new DialogGUIButton("Dump it", () => drive.samples.Remove(filename)),
