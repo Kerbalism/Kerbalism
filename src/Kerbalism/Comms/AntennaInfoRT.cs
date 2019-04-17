@@ -113,6 +113,7 @@ namespace KERBALISM
 					{
 						double dist = RemoteTech.GetCommsDistance(v.id, controlPath[0]);
 						strength = 1 - (dist / Math.Max(RemoteTech.GetCommsMaxDistance(v.id, controlPath[0]), 1));
+						strength = Math.Pow(strength, Settings.DataRateDampingExponent);
 
 						// If using relay, get the lowest rate
 						if (status != (int)LinkStatus.direct_link)
