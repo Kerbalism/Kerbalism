@@ -22,6 +22,8 @@ namespace KERBALISM
 			GameEvents.onVesselWillDestroy.Add(this.VesselDestroyed);
 			GameEvents.onPartCouple.Add(this.VesselDock);
 			GameEvents.onVesselPartCountChanged.Add(this.VesselPartCountChanged);
+			GameEvents.onPartDeCoupleComplete.Add(this.VesselUndock);
+
 			GameEvents.onPartDie.Add(this.PartDestroyed);
 			GameEvents.OnTechnologyResearched.Add(this.TechResearched);
 			GameEvents.onGUIEditorToolbarReady.Add(this.AddEditorCategory);
@@ -306,6 +308,10 @@ namespace KERBALISM
 			ResourceCache.Purge(v);
 		}
 
+		void VesselUndock(Part part)
+		{
+			MoveDrivesWhereTheyBelong(FlightGlobals.ActiveVessel);
+		}
 
 		void VesselDock(GameEvents.FromToAction<Part, Part> e)
 		{
@@ -350,7 +356,9 @@ namespace KERBALISM
 
 				var drives = DB.Vessel(vessel).drives;
 				foreach (var pair in drives)
+				{
 					allDrives.Add(pair.Key, pair.Value);
+				}
 				drives.Clear();
 			}
 
@@ -371,6 +379,17 @@ namespace KERBALISM
 						drives.Add(hardDrive.hdId, allDrives[hardDrive.hdId]);
 						allDrives.Remove(hardDrive.hdId);
 					}
+				}
+			}
+
+			if(allDrives.Count > 0)
+			{
+				// could not find a new home for some drives. Leave them on "my" vessel.
+				// this happens when we undocked from our root part
+				var myDrives = DB.Vessel(myVessel).drives;
+				foreach (var p in allDrives)
+				{
+					myDrives.Add(p.Key, p.Value);
 				}
 			}
 		}
