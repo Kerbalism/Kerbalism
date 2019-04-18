@@ -68,6 +68,8 @@ namespace KERBALISM
 					var subject_id = Science.Generate_subject_id(experimentType, vessel);
 					var exp = Science.Experiment(subject_id);
 					double size = exp.max_amount * coverage_delta / 100.0; // coverage is 0-100%
+					if (size > 0) min_capacity = (min_capacity * 3 + size) / 4;
+
 					size += warp_buffer;
 
 					if(size > double.Epsilon)
@@ -121,12 +123,20 @@ namespace KERBALISM
 				else if(vd.scansat_id.Contains(part.flightID))
 				{
 					double available = 0;
+					double totalCapacity = 0;
 					foreach (var drive in vd.drives.Values)
-						if (!drive.is_private) available += drive.FileCapacityAvailable();
-					if(available >= min_capacity)
+					{
+						if (!drive.is_private)
+						{
+							available += drive.FileCapacityAvailable();
+							totalCapacity += drive.dataCapacity;
+						}
+					}
+					if(available >= min_capacity || available >= totalCapacity * 0.9)
 					{
 						StartScan();
 						vd.scansat_id.Remove(part.flightID);
+						if (vd.cfg_ec) Message.Post(Lib.BuildString("SCANsat sensor resumed operations on <b>", vessel.vesselName, "</b>"));
 					}
 				}
 			}
@@ -223,6 +233,7 @@ namespace KERBALISM
 					var subject_id = Science.Generate_subject_id(kerbalismScansat.experimentType, vessel);
 					var exp = Science.Experiment(subject_id);
 					double size = exp.max_amount * coverage_delta / 100.0; // coverage is 0-100%
+					if (size > 0) min_capacity = (min_capacity * 3 + size) / 4;
 					size += warp_buffer;
 
 					if (size > double.Epsilon)
@@ -277,10 +288,16 @@ namespace KERBALISM
 				else if (vd.scansat_id.Contains(p.flightID))
 				{
 					double available = 0;
+					double totalCapacity = 0;
 					foreach (var drive in vd.drives.Values)
-						if (!drive.is_private) available += drive.FileCapacityAvailable();
-					
-					if (available >= min_capacity && ec.level >= 0.25)
+					{
+						if (!drive.is_private)
+						{
+							available += drive.FileCapacityAvailable();
+							totalCapacity += drive.dataCapacity;
+						}
+					}
+					if (ec.level >= 0.25 && (available >= min_capacity || available >= totalCapacity * 0.9))
 					{
 						SCANsat.ResumeScanner(vessel, scanner, part_prefab);
 						vd.scansat_id.Remove(p.flightID);
@@ -289,6 +306,7 @@ namespace KERBALISM
 				}
 			}
 
+			Lib.Proto.Set(m, "min_capacity", min_capacity);
 			Lib.Proto.Set(m, "warp_buffer", warp_buffer);
 			Lib.Proto.Set(m, "body_coverage", body_coverage);
 			Lib.Proto.Set(m, "body_name", body_name);
