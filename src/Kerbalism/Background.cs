@@ -180,10 +180,8 @@ namespace KERBALISM
 		static void ProcessPanel(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleDeployableSolarPanel panel, Vessel_info info, Resource_info ec, double elapsed_s)
 		{
 			// note: we ignore temperature curve, and make sure it is not relevant in the MM patch
-			// note: we ignore power curve, that is used by no panel as far as I know
 			// note: cylindrical and spherical panels are not supported
 			// note: we assume the tracking target is SUN
-
 			// if in sunlight and extended
 			if (info.sunlight > double.Epsilon && m.moduleValues.GetValue("deployState") == "EXTENDED")
 			{
@@ -191,6 +189,9 @@ namespace KERBALISM
 				Transform tr = panel.part.FindModelComponent<Transform>(panel.pivotName);
 				Vector3d dir = panel.isTracking ? tr.up : tr.forward;
 				dir = (v.transform.rotation * p.rotation * dir).normalized;
+
+				float age = (float)(v.missionTime / (Lib.HoursInDay() * 3600));
+				float effic_factor = panel.timeEfficCurve != null ? panel.timeEfficCurve.Evaluate(age) : 1.0f;
 
 				// calculate cosine factor
 				// - fixed panel: clamped cosine
@@ -211,7 +212,8 @@ namespace KERBALISM
 				// calculate output
 				double output = panel.resHandler.outputResources[0].rate              // nominal panel charge rate at 1 AU
 							  * norm_solar_flux                                       // normalized flux at panel distance from sun
-							  * cosine_factor;                                        // cosine factor of panel orientation
+							  * cosine_factor                                         // cosine factor of panel orientation
+							  * effic_factor;
 
 				// produce EC
 				ec.Produce(output * elapsed_s, "panel");
