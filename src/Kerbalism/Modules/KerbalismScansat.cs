@@ -14,6 +14,8 @@ namespace KERBALISM
 		[KSPField(isPersistant = true)] private int sensorType = 0;
 		[KSPField(isPersistant = true)] private string body_name = string.Empty;
 		[KSPField(isPersistant = true)] private double body_coverage = 0.0;
+		[KSPField(isPersistant = true)] private double warp_buffer = 0.0;
+
 
 		private PartModule scanner = null;
 		public bool IsScanning { get; internal set; }
@@ -42,8 +44,13 @@ namespace KERBALISM
 			if (!Features.Science) return;
 
 			IsScanning = SCANsat.IsScanning(scanner);
-
 			double new_coverage = SCANsat.Coverage(sensorType, vessel.mainBody);
+
+			if(body_name == vessel.mainBody.name && new_coverage < body_coverage)
+			{
+				// SCANsat sometimes reports a coverage of 0, which is wrong
+				new_coverage = body_coverage;
+			}
 
 			if (vessel.mainBody.name != body_name)
 			{
@@ -53,8 +60,6 @@ namespace KERBALISM
 			else
 			{
 				double coverage_delta = new_coverage - body_coverage;
-				body_coverage = new_coverage;
-
 				var vd = DB.Vessel(vessel);
 
 				if(IsScanning)
@@ -63,6 +68,7 @@ namespace KERBALISM
 					var subject_id = Science.Generate_subject_id(experimentType, vessel);
 					var exp = Science.Experiment(subject_id);
 					double size = exp.max_amount * coverage_delta / 100.0; // coverage is 0-100%
+					size += warp_buffer;
 
 					if(size > double.Epsilon)
 					{
@@ -81,11 +87,31 @@ namespace KERBALISM
 							if (size < double.Epsilon)
 								break;
 						}
+					}
 
+					if (size > double.Epsilon)
+					{
 						// we filled all drives up to the brim but were unable to store everything
-						// cancel scanning and annoy the user
-						if(size > double.Epsilon)
+						if (warp_buffer < double.Epsilon)
 						{
+							// warp buffer is empty, so lets store the rest there
+							warp_buffer = size;
+							size = 0;
+						}
+						else
+						{
+							// warp buffer not empty. that's ok if we didn't get new data
+							if (coverage_delta < double.Epsilon)
+							{
+								size = 0;
+							}
+							// else we're scanning too fast. stop.
+						}
+
+						// cancel scanning and annoy the user
+						if (size > double.Epsilon)
+						{
+							warp_buffer = 0;
 							StopScan();
 							vd.scansat_id.Add(part.flightID);
 							Message.Post(Lib.Color("red", "Scanner halted", true), "Scanner halted on <b>" + vessel.vesselName + "</b>. No storage left on vessel.");
@@ -171,8 +197,15 @@ namespace KERBALISM
 			int sensorType = (int)Lib.Proto.GetUInt(m, "sensorType");
 			double body_coverage = Lib.Proto.GetDouble(m, "body_coverage");
 			double min_capacity = Lib.Proto.GetDouble(m, "min_capacity");
+			double warp_buffer = Lib.Proto.GetDouble(m, "warp_buffer");
 
 			double new_coverage = SCANsat.Coverage(sensorType, vessel.mainBody);
+
+			if (body_name == vessel.mainBody.name && new_coverage < body_coverage)
+			{
+				// SCANsat sometimes reports a coverage of 0, which is wrong
+				new_coverage = body_coverage;
+			}
 
 			if (vessel.mainBody.name != body_name)
 			{
@@ -190,6 +223,7 @@ namespace KERBALISM
 					var subject_id = Science.Generate_subject_id(kerbalismScansat.experimentType, vessel);
 					var exp = Science.Experiment(subject_id);
 					double size = exp.max_amount * coverage_delta / 100.0; // coverage is 0-100%
+					size += warp_buffer;
 
 					if (size > double.Epsilon)
 					{
@@ -210,10 +244,31 @@ namespace KERBALISM
 						}
 					}
 
+					if (size > double.Epsilon)
+					{
+						// we filled all drives up to the brim but were unable to store everything
+						if (warp_buffer < double.Epsilon)
+						{
+							// warp buffer is empty, so lets store the rest there
+							warp_buffer = size;
+							size = 0;
+						}
+						else
+						{
+							// warp buffer not empty. that's ok if we didn't get new data
+							if (coverage_delta < double.Epsilon)
+							{
+								size = 0;
+							}
+							// else we're scanning too fast. stop.
+						}
+					}
+
 					// we filled all drives up to the brim but were unable to store everything
 					// cancel scanning and annoy the user
 					if (size > double.Epsilon || ec.amount < double.Epsilon)
 					{
+						warp_buffer = 0;
 						SCANsat.StopScanner(vessel, scanner, part_prefab);
 						vd.scansat_id.Add(p.flightID);
 						if (vd.cfg_ec) Message.Post(Lib.BuildString("SCANsat sensor was disabled on <b>", vessel.vesselName, "</b>"));
@@ -234,6 +289,7 @@ namespace KERBALISM
 				}
 			}
 
+			Lib.Proto.Set(m, "warp_buffer", warp_buffer);
 			Lib.Proto.Set(m, "body_coverage", body_coverage);
 			Lib.Proto.Set(m, "body_name", body_name);
 		}
