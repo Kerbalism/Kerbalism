@@ -258,24 +258,33 @@ namespace KERBALISM
 		private static Status Analyze(Vessel v, string filename, double amount)
 		{
 			Sample sample = null;
+			Drive sampleDrive = null;
 			foreach (var d in DB.Vessel(v).drives.Values)
 			{
-				if (d.samples.ContainsKey(filename))
+				if (d.samples.ContainsKey(filename) && d.samples[filename].analyze)
+				{
 					sample = d.samples[filename];
-				break;
+					sampleDrive = d;
+					break;
+				}
 			}
 
-			var drive = DB.Vessel(v).FileDrive(amount);
-
-			bool completed = sample == null;
+			bool completed = false;
 			if(sample != null)
 			{
-				// analyze, and produce data amount = Math.Min(amount, sample.size);
-				completed = amount >= sample.size - double.Epsilon;
-				bool recorded = drive.Record_file(filename, amount, false);
+				completed = amount > sample.size;
+				amount = Math.Min(amount, sample.size);
+			}
+
+			Drive fileDrive = DB.Vessel(v).FileDrive(amount);
+
+			if(sample != null)
+			{
+				bool recorded = fileDrive.Record_file(filename, amount, false);
+
 				double massRemoved = 0;
 				if (recorded)
-					massRemoved = drive.Delete_sample(filename, amount);
+					massRemoved = sampleDrive.Delete_sample(filename, amount);
 				else
 				{
 					Message.Post(
@@ -287,7 +296,7 @@ namespace KERBALISM
 				}
 
 				// return sample mass to experiment if needed
-				if(massRemoved > double.Epsilon) RestoreSampleMass(v, filename, massRemoved);
+				if (massRemoved > double.Epsilon) RestoreSampleMass(v, filename, massRemoved);
 			}
 
 			// if the analysis is completed
@@ -302,7 +311,7 @@ namespace KERBALISM
 				}
 
 				if (PreferencesScience.Instance.transmitScience)
-					drive.Send(filename, true);
+					fileDrive.Send(filename, true);
 
 				// record landmark event
 				if (!Lib.Landed(v)) DB.landmarks.space_analysis = true;
@@ -321,7 +330,6 @@ namespace KERBALISM
 				foreach (var experiment in v.FindPartModulesImplementing<Experiment>())
 				{
 					restoredAmount -= experiment.RestoreSampleMass(restoredAmount, id);
-
 				}
 			}
 			else // unloaded vessel

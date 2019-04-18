@@ -406,6 +406,7 @@ namespace KERBALISM
 
 			double delta = Math.Max(restoredAmount, sample_reservoir - remainingSampleMass);
 			remainingSampleMass += delta;
+			remainingSampleMass = Math.Min(sample_reservoir, remainingSampleMass);
 			Lib.Proto.Set(m, "remainingSampleMass", remainingSampleMass);
 			return delta;
 		}
@@ -417,6 +418,7 @@ namespace KERBALISM
 			if (remainingSampleMass >= sample_reservoir) return 0;
 			double delta = Math.Max(restoredAmount, sample_reservoir - remainingSampleMass);
 			remainingSampleMass += delta;
+			remainingSampleMass = Math.Min(sample_reservoir, remainingSampleMass);
 			return delta;
 		}
 
