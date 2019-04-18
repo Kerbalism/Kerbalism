@@ -82,7 +82,14 @@ namespace KERBALISM
 			// build up science sample mass database
 			if (HighLogic.LoadedScene == GameScenes.LOADING)
 			{
-				Science.RegisterSampleMass(experiment_id, sample_mass);
+				if (experiment_id == null)
+				{
+					Lib.Log("ERROR: EXPERIMENT WITHOUT EXPERIMENT_ID IN PART " + part);
+				}
+				else
+				{
+					Science.RegisterSampleMass(experiment_id, sample_mass);
+				}
 			}
 
 			if (remainingSampleMass < 0)
