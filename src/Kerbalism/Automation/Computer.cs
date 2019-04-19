@@ -24,7 +24,9 @@ namespace KERBALISM
 		action3 = 16,     // called when pressing 3
 		action4 = 17,     // called when pressing 4
 		action5 = 18,     // called when pressing 5
-		last = 19
+		drive_full = 19,  // called when storage capacity goes below 15%
+		drive_empty = 20, // called when storage capacity goes above 30%
+		last = 21
 	}
 
 	public sealed class Computer
@@ -99,6 +101,8 @@ namespace KERBALISM
 			bool radiation_low = vi.radiation < 0.000005552; //< 0.02 rad/h
 			bool radiation_high = vi.radiation > 0.00001388; //< 0.05 rad/h
 			bool signal = vi.connection.linked;
+			bool drive_full = vi.free_capacity < double.MaxValue && (vi.free_capacity / vi.total_capacity < 0.15);
+			bool drive_empty = vi.free_capacity >= double.MaxValue || (vi.free_capacity / vi.total_capacity > 0.9);
 
 			// get current situation
 			bool landed = false;
@@ -186,6 +190,16 @@ namespace KERBALISM
 					case ScriptType.unlinked:
 						if (!signal && script.prev == "0") to_exec.Add(script);
 						script.prev = !signal ? "1" : "0";
+						break;
+
+					case ScriptType.drive_full:
+						if (drive_full && script.prev == "0") to_exec.Add(script);
+						script.prev = drive_full ? "1" : "0";
+						break;
+
+					case ScriptType.drive_empty:
+						if (drive_empty && script.prev == "0") to_exec.Add(script);
+						script.prev = drive_empty ? "1" : "0";
 						break;
 				}
 			}

@@ -122,17 +122,8 @@ namespace KERBALISM
 				}
 				else if(vd.scansat_id.Contains(part.flightID))
 				{
-					double available = 0;
-					double totalCapacity = 0;
-					foreach (var drive in vd.drives.Values)
-					{
-						if (!drive.is_private)
-						{
-							available += drive.FileCapacityAvailable();
-							totalCapacity += drive.dataCapacity;
-						}
-					}
-					if(available >= min_capacity || available >= totalCapacity * 0.9)
+					var vi = Cache.VesselInfo(vessel);
+					if(vi.free_capacity >= min_capacity || vi.free_capacity >= vi.total_capacity * 0.9)
 					{
 						StartScan();
 						vd.scansat_id.Remove(part.flightID);
@@ -287,17 +278,8 @@ namespace KERBALISM
 				}
 				else if (vd.scansat_id.Contains(p.flightID))
 				{
-					double available = 0;
-					double totalCapacity = 0;
-					foreach (var drive in vd.drives.Values)
-					{
-						if (!drive.is_private)
-						{
-							available += drive.FileCapacityAvailable();
-							totalCapacity += drive.dataCapacity;
-						}
-					}
-					if (ec.level >= 0.25 && (available >= min_capacity || available >= totalCapacity * 0.9))
+					var vi = Cache.VesselInfo(vessel);
+					if (ec.level >= 0.25 && (vi.free_capacity >= min_capacity || vi.free_capacity >= vi.total_capacity * 0.9))
 					{
 						SCANsat.ResumeScanner(vessel, scanner, part_prefab);
 						vd.scansat_id.Remove(p.flightID);

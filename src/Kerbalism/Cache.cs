@@ -109,11 +109,30 @@ namespace KERBALISM
 			// other stuff
 			gravioli = Sim.Graviolis(v);
 
-			data_capacity = 0;
-			if(Features.Science)
+			free_capacity = 0;
+			total_capacity = 0;
+			if (Features.Science)
 			{
 				foreach (var drive in DB.Vessel(v).drives.Values)
-					if (!drive.is_private) data_capacity += drive.FileCapacityAvailable();
+				{
+					if (drive.is_private) continue;
+
+					if (drive.dataCapacity < 0 || free_capacity < 0)
+					{
+						free_capacity = -1;
+					}
+					else
+					{
+						free_capacity += drive.FileCapacityAvailable();
+						total_capacity += drive.dataCapacity;
+					}
+				}
+
+				if(free_capacity < 0)
+				{
+					free_capacity = double.MaxValue;
+					total_capacity = double.MaxValue;
+				}
 			}
 		}
 
@@ -182,7 +201,8 @@ namespace KERBALISM
 		public double gravioli;             // gravitation gauge particles detected (joke)
 		public bool powered;                // true if vessel is powered
 		public double evaPropQuantity = -1; // amount of EVA prop to set to this vessel (workaround for KSP behavior)
-		public double data_capacity = 0.0;   // available data capacity on all public drives
+		public double free_capacity = 0.0;  // free data storage available data capacity of all public drives
+		public double total_capacity = 0.0; // data capacity of all public drives
 	}
 
 
