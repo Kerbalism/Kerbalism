@@ -10,7 +10,6 @@ namespace KERBALISM
 		[KSPField] public string experimentType = string.Empty;
 		[KSPField] public double ec_rate = 0.0;
 
-		[KSPField(isPersistant = true)] private double min_capacity = 0.25; // TODO <- set this to something reasonable
 		[KSPField(isPersistant = true)] private int sensorType = 0;
 		[KSPField(isPersistant = true)] private string body_name = string.Empty;
 		[KSPField(isPersistant = true)] private double body_coverage = 0.0;
@@ -60,6 +59,7 @@ namespace KERBALISM
 			else
 			{
 				double coverage_delta = new_coverage - body_coverage;
+				body_coverage = new_coverage;
 				var vd = DB.Vessel(vessel);
 
 				if(IsScanning)
@@ -68,7 +68,6 @@ namespace KERBALISM
 					var subject_id = Science.Generate_subject_id(experimentType, vessel);
 					var exp = Science.Experiment(subject_id);
 					double size = exp.max_amount * coverage_delta / 100.0; // coverage is 0-100%
-					if (size > 0) min_capacity = (min_capacity * 3 + size) / 4;
 
 					size += warp_buffer;
 
@@ -123,7 +122,7 @@ namespace KERBALISM
 				else if(vd.scansat_id.Contains(part.flightID))
 				{
 					var vi = Cache.VesselInfo(vessel);
-					if(vi.free_capacity >= min_capacity || vi.free_capacity >= vi.total_capacity * 0.9)
+					if(vi.free_capacity / vi.total_capacity > 0.9) // restart when 90% of capacity is available 
 					{
 						StartScan();
 						vd.scansat_id.Remove(part.flightID);
@@ -197,7 +196,6 @@ namespace KERBALISM
 			string body_name = Lib.Proto.GetString(m, "body_name");
 			int sensorType = (int)Lib.Proto.GetUInt(m, "sensorType");
 			double body_coverage = Lib.Proto.GetDouble(m, "body_coverage");
-			double min_capacity = Lib.Proto.GetDouble(m, "min_capacity");
 			double warp_buffer = Lib.Proto.GetDouble(m, "warp_buffer");
 
 			double new_coverage = SCANsat.Coverage(sensorType, vessel.mainBody);
@@ -224,7 +222,6 @@ namespace KERBALISM
 					var subject_id = Science.Generate_subject_id(kerbalismScansat.experimentType, vessel);
 					var exp = Science.Experiment(subject_id);
 					double size = exp.max_amount * coverage_delta / 100.0; // coverage is 0-100%
-					if (size > 0) min_capacity = (min_capacity * 3 + size) / 4;
 					size += warp_buffer;
 
 					if (size > double.Epsilon)
@@ -279,7 +276,7 @@ namespace KERBALISM
 				else if (vd.scansat_id.Contains(p.flightID))
 				{
 					var vi = Cache.VesselInfo(vessel);
-					if (ec.level >= 0.25 && (vi.free_capacity >= min_capacity || vi.free_capacity >= vi.total_capacity * 0.9))
+					if (ec.level >= 0.25 && (vi.free_capacity / vi.total_capacity > 0.9))
 					{
 						SCANsat.ResumeScanner(vessel, scanner, part_prefab);
 						vd.scansat_id.Remove(p.flightID);
@@ -288,7 +285,6 @@ namespace KERBALISM
 				}
 			}
 
-			Lib.Proto.Set(m, "min_capacity", min_capacity);
 			Lib.Proto.Set(m, "warp_buffer", warp_buffer);
 			Lib.Proto.Set(m, "body_coverage", body_coverage);
 			Lib.Proto.Set(m, "body_name", body_name);
