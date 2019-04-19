@@ -489,6 +489,7 @@ namespace KERBALISM
 			if (!string.IsNullOrEmpty(experiment.crew_operate))
 			{
 				var cs = new CrewSpecs(experiment.crew_operate);
+				if (!cs && Lib.CrewCount(v) > 0) return "crew on board";
 				if (!cs.Check(v)) return cs.Warning();
 			}
 
@@ -722,9 +723,21 @@ namespace KERBALISM
 			foreach(var p in ParseResources(resources))
 				specs.Add(p.Key, Lib.HumanReadableRate(p.Value));
 
-			if (crew_prepare.Length > 0) specs.Add("Preparation", new CrewSpecs(crew_prepare).Info());
-			if (crew_operate.Length > 0) specs.Add("Operation", new CrewSpecs(crew_operate).Info());
-			if (crew_reset.Length > 0) specs.Add("Reset", new CrewSpecs(crew_reset).Info());
+			if (crew_prepare.Length > 0)
+			{
+				var cs = new CrewSpecs(crew_prepare);
+				specs.Add("Preparation", cs ? cs.Info() : "none");
+			}
+			if (crew_operate.Length > 0)
+			{
+				var cs = new CrewSpecs(crew_operate);
+				specs.Add("Operation", cs ? cs.Info() : "none");
+			}
+			if (crew_reset.Length > 0)
+			{
+				var cs = new CrewSpecs(crew_reset);
+				specs.Add("Reset", cs ? cs.Info() : "none");
+			}
 
 			if(!string.IsNullOrEmpty(requires))
 			{
