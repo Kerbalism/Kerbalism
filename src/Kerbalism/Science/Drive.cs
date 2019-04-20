@@ -262,34 +262,30 @@ namespace KERBALISM
 			}
 			foreach (var id in filesList) files.Remove(id);
 
-			if(moveSamples)
+			if (!moveSamples) return result;
+
+			// move samples
+			var samplesList = new List<string>();
+			foreach (var p in samples)
 			{
-				// copy samples
-				var samplesList = new List<string>();
-				foreach (var p in samples)
+				double size = Math.Min(p.Value.size, destination.SampleCapacityAvailable(p.Key));
+				if(size < double.Epsilon)
 				{
-					double size = Math.Max(p.Value.size, destination.SampleCapacityAvailable(p.Key));
-					if(size < double.Epsilon)
-					{
-						result = false;
-						break;
-					}
+					result = false;
+					break;
+				}
 
-					double mass = p.Value.mass * (p.Value.size / size);
-					if (destination.Record_sample(p.Key, size, mass))
-					{
-						p.Value.size -= size;
-						p.Value.mass -= mass;
+				double mass = p.Value.mass * (p.Value.size / size);
+				if (destination.Record_sample(p.Key, size, mass))
+				{
+					p.Value.size -= size;
+					p.Value.mass -= mass;
+					p.Value.size = Math.Max(0, p.Value.size);
+					p.Value.mass = Math.Max(0, p.Value.mass);
 
-						if (p.Value.size < double.Epsilon)
-						{
-							samplesList.Add(p.Key);
-						}
-						else
-						{
-							result = false;
-							break;
-						}
+					if (p.Value.size < double.Epsilon)
+					{
+						samplesList.Add(p.Key);
 					}
 					else
 					{
@@ -297,8 +293,13 @@ namespace KERBALISM
 						break;
 					}
 				}
-				foreach (var id in samplesList) samples.Remove(id);
+				else
+				{
+					result = false;
+					break;
+				}
 			}
+			foreach (var id in samplesList) samples.Remove(id);
 
 			return result; // true if everything was moved, false otherwise
 		}
@@ -358,6 +359,61 @@ namespace KERBALISM
 			return files.Count + samples.Count == 0;
 		}
 
+		// transfer data from a vessel to a drive
+		public static bool Transfer(Vessel src, Drive dst, bool samples)
+		{
+			double dataAmount = 0.0;
+			int sampleSlots = 0;
+			foreach (var drive in DB.Vessel(src).drives.Values)
+			{
+				dataAmount += drive.FilesSize();
+				sampleSlots += drive.SamplesSize();
+			}
+
+			if (dataAmount < double.Epsilon && (sampleSlots == 0 || !samples))
+				return true;
+
+			// get drives
+			var allSrc = DB.Vessel(src).drives.Values;
+
+			bool allMoved = true;
+			foreach (var a in allSrc)
+			{
+				if (a.Move(dst, samples))
+				{
+					allMoved = true;
+					break;
+				}
+			}
+
+			return allMoved;
+		}
+
+		// transfer data from a drive to a vessel
+		public static bool Transfer(Drive drive, Vessel dst, bool samples)
+		{
+			double dataAmount = drive.FilesSize();
+			int sampleSlots = drive.SamplesSize();
+
+			if (dataAmount < double.Epsilon && (sampleSlots == 0 || !samples))
+				return true;
+
+			// get drives
+			var allDst = DB.Vessel(dst).drives.Values;
+
+			bool allMoved = true;
+			foreach (var b in allDst)
+			{
+				if (drive.Move(b, samples))
+				{
+					allMoved = true;
+					break;
+				}
+			}
+
+			return allMoved;
+		}
+
 		// transfer data between two vessels
 		public static void Transfer(Vessel src, Vessel dst, bool samples)
 		{
@@ -372,23 +428,15 @@ namespace KERBALISM
 			if (dataAmount < double.Epsilon && (sampleSlots == 0 || !samples))
 				return;
 
-			// get drives
 			var allSrc = DB.Vessel(src).drives.Values;
-			var allDst = DB.Vessel(dst).drives.Values;
-
-			bool allMoved = true;
+			bool allMoved = false;
 			foreach(var a in allSrc)
 			{
-				bool aMoved = false;
-				foreach(var b in allDst)
+				if(Transfer(a, dst, samples))
 				{
-					if(a.Move(b, samples))
-					{
-						aMoved = true;
-						break;
-					}
+					allMoved = true;
+					break;
 				}
-				allMoved &= aMoved;
 			}
 
 			// inform the user

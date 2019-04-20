@@ -155,7 +155,7 @@ namespace KERBALISM
 			foreach(var hardDrive in hardDrives)
 			{
 				if (hardDrive == this) continue;
-				hardDrive.drive.Move(drive, PreferencesScience.Instance.sampleTransfer);
+				hardDrive.drive.Move(drive, PreferencesScience.Instance.sampleTransfer || Lib.CrewCount(vessel) > 0);
 			}
 		}
 
@@ -168,7 +168,14 @@ namespace KERBALISM
 			if (v == null || EVA.IsDead(v)) return;
 
 			// transfer data
-			Drive.Transfer(vessel, v, PreferencesScience.Instance.sampleTransfer || Lib.CrewCount(v) > 0);
+			if(!Drive.Transfer(drive, v, PreferencesScience.Instance.sampleTransfer || Lib.CrewCount(v) > 0))
+			{
+				Message.Post
+				(
+					Lib.Color("red", Lib.BuildString("WARNING: not evering copied"), true),
+					Lib.BuildString("Storage is at capacity")
+				);
+			}
 		}
 
 
@@ -180,7 +187,14 @@ namespace KERBALISM
 			if (v == null || EVA.IsDead(v)) return;
 
 			// transfer data
-			Drive.Transfer(v, vessel, PreferencesScience.Instance.sampleTransfer || Lib.CrewCount(v) > 0);
+			if(!Drive.Transfer(v, drive, PreferencesScience.Instance.sampleTransfer || Lib.CrewCount(v) > 0))
+			{
+				Message.Post
+				(
+					Lib.Color("red", Lib.BuildString("WARNING: not evering copied"), true),
+					Lib.BuildString("Storage is at capacity")
+				);
+			}
 		}
 
 
