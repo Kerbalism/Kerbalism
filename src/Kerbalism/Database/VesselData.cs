@@ -157,13 +157,21 @@ namespace KERBALISM
 				if (result == null)
 				{
 					result = drive;
+					if (size > double.Epsilon && result.FileCapacityAvailable() >= size)
+						return result;
 					continue;
 				}
 
-				if (size > double.Epsilon && drive.FileCapacityAvailable() < size)
-					continue;
-				if (drive.FileCapacityAvailable() > result.FileCapacityAvailable())
+				if (size > double.Epsilon && drive.FileCapacityAvailable() >= size)
+				{
+					return drive;
+				}
+
+				// if we're not looking for a minimum capacity, look for the biggest drive
+				if(drive.dataCapacity > result.dataCapacity)
+				{
 					result = drive;
+				}
 			}
 			if(result == null)
 			{
