@@ -490,7 +490,7 @@ namespace KERBALISM
 			{
 				var cs = new CrewSpecs(experiment.crew_operate);
 				if (!cs && Lib.CrewCount(v) > 0) return "crew on board";
-				if (!cs.Check(v)) return cs.Warning();
+				else if (cs && !cs.Check(v)) return cs.Warning();
 			}
 
 			if (!experiment.sample_collecting && remainingSampleMass < double.Epsilon && experiment.sample_mass > double.Epsilon)
@@ -731,7 +731,7 @@ namespace KERBALISM
 			if (crew_operate.Length > 0)
 			{
 				var cs = new CrewSpecs(crew_operate);
-				specs.Add("Operation", cs ? cs.Info() : "none");
+				specs.Add("Operation", cs ? cs.Info() : "without crew");
 			}
 			if (crew_reset.Length > 0)
 			{
