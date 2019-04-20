@@ -190,7 +190,7 @@ namespace KERBALISM
 				Vector3d dir = panel.isTracking ? tr.up : tr.forward;
 				dir = (v.transform.rotation * p.rotation * dir).normalized;
 
-				float age = (float)((Planetarium.GetUniversalTime() - panel.launchUT) / (Lib.HoursInDay() * 3600));
+				float age = (float)(v.missionTime / (Lib.HoursInDay() * 3600));
 				float effic_factor = panel.timeEfficCurve != null ? panel.timeEfficCurve.Evaluate(age) : 1.0f;
 
 				// calculate cosine factor
