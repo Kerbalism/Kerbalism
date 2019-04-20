@@ -9,8 +9,12 @@ namespace KERBALISM
 
 	public static class Science
 	{
-		// hard-coded transmission buffer size in Mb
-		private const double buffer_capacity = 12.0;
+		// this controls how fast science is credited while it is being transmitted.
+		// try to be conservative here, because crediting introduces a lag
+		private const double buffer_science_value = 0.4; // min. 0.01 value
+		private const double min_buffer_size = 0.01; // min. 10kB
+
+		// this is for auto-transmit throttling
 		public const double min_file_size = 0.002;
 
 		// pseudo-ctor
@@ -78,8 +82,11 @@ namespace KERBALISM
 				// accumulate in the buffer
 				file.buff += transmitted;
 
+				bool credit = file.size <= double.Epsilon;
+				if(!credit && file.buff > min_buffer_size) credit = Value(exp_filename, file.buff) > buffer_science_value;
+
 				// if buffer is full, or file was transmitted completely
-				if (file.size <= double.Epsilon || file.buff > buffer_capacity)
+				if (credit)
 				{
 					// collect the science data
 					Credit(exp_filename, file.buff, true, v.protoVessel);
