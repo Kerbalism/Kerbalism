@@ -1559,7 +1559,7 @@ namespace KERBALISM
 			// our own science system
 			else
 			{
-				foreach (var drive in DB.Vessel(v).drives.Values)
+				foreach (var drive in Drive.GetDrives(v, true))
 					if (drive.files.Count > 0) return true;
 				return false;
 			}
@@ -1606,7 +1606,7 @@ namespace KERBALISM
 			else
 			{
 				// select a file at random and remove it
-				foreach (var drive in DB.Vessel(v).drives.Values)
+				foreach (var drive in Drive.GetDrives(v, true))
 				{
 					if (drive.files.Count > 0) //< it should always be the case
 					{

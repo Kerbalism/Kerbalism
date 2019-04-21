@@ -109,31 +109,7 @@ namespace KERBALISM
 			// other stuff
 			gravioli = Sim.Graviolis(v);
 
-			free_capacity = 0;
-			total_capacity = 0;
-			if (Features.Science)
-			{
-				foreach (var drive in DB.Vessel(v).drives.Values)
-				{
-					if (drive.is_private) continue;
-
-					if (drive.dataCapacity < 0 || free_capacity < 0)
-					{
-						free_capacity = -1;
-					}
-					else
-					{
-						free_capacity += drive.FileCapacityAvailable();
-						total_capacity += drive.dataCapacity;
-					}
-				}
-
-				if(free_capacity < 0)
-				{
-					free_capacity = double.MaxValue;
-					total_capacity = double.MaxValue;
-				}
-			}
+			Drive.GetCapacity(v, out free_capacity, out total_capacity);
 		}
 
 		// at the two highest timewarp speed, the number of sun visibility samples drop to the point that

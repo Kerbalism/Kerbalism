@@ -35,7 +35,7 @@ namespace KERBALISM
  			// time-out simulation
 			if (p.Timeout(vi)) return;
 
-			var drives = DB.Vessel(v).drives;
+			var drives = Drive.GetDriveParts(v);
 
 			int filesCount = 0;
 			double usedDataCapacity = 0;

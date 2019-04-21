@@ -280,8 +280,8 @@ namespace KERBALISM
 			bool isFile = experiment.sample_mass < float.Epsilon;
 			Drive drive = null;
 			var vd = DB.Vessel(vessel);
-			if (hdId != 0 && vd.drives.ContainsKey(hdId)) drive = vd.drives[hdId];
-			else drive = isFile ? DB.Vessel(vessel).FileDrive(chunkSize) : DB.Vessel(vessel).SampleDrive(chunkSize, subject_id);
+			if (hdId != 0) drive = DB.Drive(hdId);
+			else drive = isFile ? Drive.FileDrive(vessel, chunkSize) : Drive.SampleDrive(vessel, chunkSize, subject_id);
 			return drive;
 		}
 

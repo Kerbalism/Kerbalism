@@ -300,7 +300,7 @@ namespace KERBALISM
 		{
 			if (!Cache.VesselInfo(v).is_valid) return 0.0;
 
-			foreach (var d in DB.Vessel(v).drives.Values)
+			foreach (var d in Drive.GetDrives(v, true))
 			{
 				if (d.files.ContainsKey(subject_id))
 					return d.files[subject_id].size;
@@ -313,7 +313,7 @@ namespace KERBALISM
 		public static double SampleSize(Vessel v, string subject_id)
 		{
 			if (!Cache.VesselInfo(v).is_valid) return 0.0;
-			foreach (var d in DB.Vessel(v).drives.Values)
+			foreach (var d in Drive.GetDrives(v, true))
 			{
 				if (d.samples.ContainsKey(subject_id))
 					return d.samples[subject_id].size;
@@ -326,21 +326,21 @@ namespace KERBALISM
 		public static bool StoreFile(Vessel v, string subject_id, double amount)
 		{
 			if (!Cache.VesselInfo(v).is_valid) return false;
-			return DB.Vessel(v).FileDrive(amount).Record_file(subject_id, amount);
+			return Drive.FileDrive(v, amount).Record_file(subject_id, amount);
 		}
 
 		// store a sample on a vessel
 		public static bool StoreSample(Vessel v, string subject_id, double amount, double mass = 0)
 		{
 			if (!Cache.VesselInfo(v).is_valid) return false;
-			return DB.Vessel(v).SampleDrive(amount, subject_id).Record_sample(subject_id, amount, mass);
+			return Drive.SampleDrive(v, amount, subject_id).Record_sample(subject_id, amount, mass);
 		}
 
 		// remove a file from a vessel
 		public static void RemoveFile(Vessel v, string subject_id, double amount)
 		{
 			if (!Cache.VesselInfo(v).is_valid) return;
-			foreach (var d in DB.Vessel(v).drives.Values)
+			foreach (var d in Drive.GetDrives(v, true))
 				d.Delete_file(subject_id, amount);
 		}
 
@@ -349,7 +349,7 @@ namespace KERBALISM
 		{
 			if (!Cache.VesselInfo(v).is_valid) return 0;
 			double massRemoved = 0;
-			foreach (var d in DB.Vessel(v).drives.Values)
+			foreach (var d in Drive.GetDrives(v, true))
 				massRemoved += d.Delete_sample(subject_id, amount);
 			return massRemoved;
 		}

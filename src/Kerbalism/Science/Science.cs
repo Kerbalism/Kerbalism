@@ -35,9 +35,9 @@ namespace KERBALISM
 			}
 		}
 
-		private static Drive FindDrive(VesselData vd, string filename)
+		private static Drive FindDrive(Vessel v, string filename)
 		{
-			foreach (var d in vd.drives.Values)
+			foreach (var d in Drive.GetDrives(v, true))
 			{
 				if (d.files.ContainsKey(filename))
 				{
@@ -64,7 +64,7 @@ namespace KERBALISM
 			// get filename of data being downloaded
 			var exp_filename = vi.transmitting;
 
-			var drive = FindDrive(vd, exp_filename);
+			var drive = FindDrive(v, exp_filename);
 
 			// if some data is being downloaded
 			// - avoid cornercase at scene changes
@@ -102,7 +102,7 @@ namespace KERBALISM
 					drive.files.Remove(exp_filename);
 
 					// same file on another drive?
-					drive = FindDrive(vd, exp_filename);
+					drive = FindDrive(v, exp_filename);
 
 					if (!file.silentTransmission && drive == null)
 					{
@@ -128,7 +128,7 @@ namespace KERBALISM
 			if (ResourceCache.Info(v, "ElectricCharge").amount <= double.Epsilon) return string.Empty;
 
 			// get first file flagged for transmission, AND has a ts at least 5 seconds old or is > 0.001Mb in size
-			foreach (var drive in DB.Vessel(v).drives.Values)
+			foreach (var drive in Drive.GetDrives(v, true))
 			{
 				double now = Planetarium.GetUniversalTime();
 				foreach (var p in drive.files)

@@ -43,6 +43,16 @@ namespace KERBALISM
 				}
 			}
 
+			// load drives
+			drives = new Dictionary<uint, Drive>();
+			if (node.HasNode("drives")) // old vessels used flightId, we switched to Guid with vessels2
+			{
+				foreach (var drive_node in node.GetNode("drives").GetNodes())
+				{
+					drives.Add(Lib.Parse.ToUInt(drive_node.name), new Drive(drive_node));
+				}
+			}
+
 			// load bodies data
 			bodies = new Dictionary<string, BodyData>();
 			if (node.HasNode("bodies"))
@@ -77,7 +87,6 @@ namespace KERBALISM
 			if (version != Lib.Version()) Lib.Log("savegame converted from version " + version);
 		}
 
-
 		public static void Save(ConfigNode node)
 		{
 			// save version
@@ -98,6 +107,13 @@ namespace KERBALISM
 			foreach (var p in vessels)
 			{
 				p.Value.Save(vessels_node.AddNode(p.Key.ToString()));
+			}
+
+			// save drives
+			var drives_node = node.AddNode("drives");
+			foreach (var p in drives)
+			{
+				p.Value.Save(drives_node.AddNode(p.Key.ToString()));
 			}
 
 			// save bodies data
@@ -135,6 +151,16 @@ namespace KERBALISM
 			return vessels[id];
 		}
 
+
+		public static Drive Drive(uint partId, string title = "Brick", double dataCapacity = -1, int sampleCapacity = -1)
+		{
+			if(!drives.ContainsKey(partId))
+			{
+				var d = new Drive(title, dataCapacity, sampleCapacity);
+				drives.Add(partId, d);
+			}
+			return drives[partId];
+		}
 
 		public static BodyData Body(string name)
 		{
@@ -191,6 +217,7 @@ namespace KERBALISM
 		public static int uid;                                 // savegame unique id
 		private static Dictionary<string, KerbalData> kerbals; // store data per-kerbal
 		public static Dictionary<Guid, VesselData> vessels;    // store data per-vessel, indexed by root part id
+		public static Dictionary<uint, Drive> drives;		   // all drives, of all vessels
 		public static Dictionary<string, BodyData> bodies;     // store data per-body
 		public static LandmarkData landmarks;                  // store landmark data
 		public static UIData ui;                               // store ui data

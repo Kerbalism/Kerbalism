@@ -69,7 +69,7 @@ namespace KERBALISM
 			if (hardDrive != null) drive = hardDrive.GetDrive();
 			else
 			{
-				drive = DB.Vessel(vessel).FileDrive();
+				drive = Drive.FileDrive(vessel);
 			}
 		}
 
@@ -240,7 +240,7 @@ namespace KERBALISM
 		// get next sample to analyze, return null if there isn't a sample
 		private static string NextSample(Vessel v)
 		{
-			foreach(var drive in DB.Vessel(v).drives.Values)
+			foreach(var drive in Drive.GetDrives(v, true))
 			{
 				// for each sample
 				foreach (KeyValuePair<string, Sample> sample in drive.samples)
@@ -259,7 +259,7 @@ namespace KERBALISM
 		{
 			Sample sample = null;
 			Drive sampleDrive = null;
-			foreach (var d in DB.Vessel(v).drives.Values)
+			foreach (var d in Drive.GetDrives(v, true))
 			{
 				if (d.samples.ContainsKey(filename) && d.samples[filename].analyze)
 				{
@@ -276,7 +276,7 @@ namespace KERBALISM
 				amount = Math.Min(amount, sample.size);
 			}
 
-			Drive fileDrive = DB.Vessel(v).FileDrive(amount);
+			Drive fileDrive = Drive.FileDrive(v, amount);
 
 			if(sample != null)
 			{

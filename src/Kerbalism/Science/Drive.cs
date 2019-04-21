@@ -80,7 +80,7 @@ namespace KERBALISM
 			node.AddValue("sampleCapacity", sampleCapacity);
 
 			string fileNames = string.Empty;
-			foreach(var fileName in fileSendFlags.Keys)
+			foreach (var fileName in fileSendFlags.Keys)
 			{
 				if (fileNames.Length > 0) fileNames += ",";
 				fileNames += fileName;
@@ -112,7 +112,7 @@ namespace KERBALISM
 			// clamp file size to max amount that can be collected
 			file.size = Math.Min(file.size, Science.Experiment(subject_id).max_amount);
 
-			if(file.size > Science.min_file_size / 3)
+			if (file.size > Science.min_file_size / 3)
 				file.ts = Planetarium.GetUniversalTime();
 
 			return true;
@@ -167,7 +167,7 @@ namespace KERBALISM
 			// but clamp file size to max amount that can be collected
 			var maxSize = Science.Experiment(subject_id).max_amount;
 			var sizeDelta = maxSize - sample.size;
-			if(sizeDelta >= amount)
+			if (sizeDelta >= amount)
 			{
 				sample.size += amount;
 				sample.mass += mass;
@@ -269,7 +269,7 @@ namespace KERBALISM
 			foreach (var p in samples)
 			{
 				double size = Math.Min(p.Value.size, destination.SampleCapacityAvailable(p.Key));
-				if(size < double.Epsilon)
+				if (size < double.Epsilon)
 				{
 					result = false;
 					break;
@@ -325,7 +325,8 @@ namespace KERBALISM
 			if (sampleCapacity < 0) return double.MaxValue;
 
 			double result = Lib.SlotsToSampleSize(sampleCapacity - SamplesSize());
-			if(samples.ContainsKey(filename)) {
+			if (samples.ContainsKey(filename))
+			{
 				int slotsForMyFile = Lib.SampleSizeToSlots(samples[filename].size);
 				double amountLostToSlotting = Lib.SlotsToSampleSize(slotsForMyFile) - samples[filename].size;
 				result += amountLostToSlotting;
@@ -364,7 +365,7 @@ namespace KERBALISM
 		{
 			double dataAmount = 0.0;
 			int sampleSlots = 0;
-			foreach (var drive in DB.Vessel(src).drives.Values)
+			foreach (var drive in GetDrives(src, true))
 			{
 				dataAmount += drive.FilesSize();
 				sampleSlots += drive.SamplesSize();
@@ -374,7 +375,7 @@ namespace KERBALISM
 				return true;
 
 			// get drives
-			var allSrc = DB.Vessel(src).drives.Values;
+			var allSrc = GetDrives(src, true);
 
 			bool allMoved = true;
 			foreach (var a in allSrc)
@@ -399,7 +400,7 @@ namespace KERBALISM
 				return true;
 
 			// get drives
-			var allDst = DB.Vessel(dst).drives.Values;
+			var allDst = GetDrives(dst);
 
 			bool allMoved = true;
 			foreach (var b in allDst)
@@ -419,7 +420,7 @@ namespace KERBALISM
 		{
 			double dataAmount = 0.0;
 			int sampleSlots = 0;
-			foreach (var drive in DB.Vessel(src).drives.Values)
+			foreach (var drive in GetDrives(src, true))
 			{
 				dataAmount += drive.FilesSize();
 				sampleSlots += drive.SamplesSize();
@@ -428,11 +429,11 @@ namespace KERBALISM
 			if (dataAmount < double.Epsilon && (sampleSlots == 0 || !samples))
 				return;
 
-			var allSrc = DB.Vessel(src).drives.Values;
+			var allSrc = GetDrives(src, true);
 			bool allMoved = false;
-			foreach(var a in allSrc)
+			foreach (var a in allSrc)
 			{
-				if(Transfer(a, dst, samples))
+				if (Transfer(a, dst, samples))
 				{
 					allMoved = true;
 					break;
@@ -454,6 +455,149 @@ namespace KERBALISM
 				);
 		}
 
+		public static void Purge(ProtoVessel proto_vessel)
+		{
+			foreach (ProtoPartSnapshot p in proto_vessel.protoPartSnapshots)
+			{
+				DB.drives.Remove(p.flightID);
+			}
+		}
+
+		public static List<Drive> GetDrives(ProtoVessel proto_vessel)
+		{
+			List<Drive> result = new List<Drive>();
+
+			foreach (var hd in proto_vessel.protoPartSnapshots)
+			{
+				if (DB.drives.ContainsKey(hd.flightID))
+					result.Add(DB.drives[hd.flightID]);
+			}
+
+			return result;
+		}
+
+		public static void Purge(Vessel vessel)
+		{
+			foreach (var id in GetDriveParts(vessel).Keys)
+				DB.drives.Remove(id);
+		}
+
+		public static Dictionary<uint, Drive> GetDriveParts(Vessel vessel)
+		{
+			Dictionary<uint, Drive> result = new Dictionary<uint, Drive>();
+			if(vessel.loaded)
+			{
+				foreach (var hd in vessel.FindPartModulesImplementing<HardDrive>())
+				{
+					if (DB.drives.ContainsKey(hd.part.flightID))
+						result.Add(hd.part.flightID, DB.drives[hd.part.flightID]);
+				}
+			}
+			else
+			{
+				foreach (var hd in vessel.protoVessel.protoPartSnapshots)
+				{
+					if (DB.drives.ContainsKey(hd.flightID))
+						result.Add(hd.flightID, DB.drives[hd.flightID]);
+				}
+			}
+			return result;
+		}
+
+		public static List<Drive> GetDrives(Vessel vessel, bool include_private = false)
+		{
+			List<Drive> result = new List<Drive>();
+			foreach(var d in GetDriveParts(vessel).Values)
+			{
+				if (!d.is_private || include_private)
+					result.Add(d);
+			}
+			return result;
+		}
+
+		public static void GetCapacity(Vessel vessel, out double free_capacity, out double total_capacity)
+		{
+			free_capacity = 0;
+			total_capacity = 0;
+			if (Features.Science)
+			{
+				foreach (var drive in GetDrives(vessel))
+				{
+					if (drive.dataCapacity < 0 || free_capacity < 0)
+					{
+						free_capacity = -1;
+					}
+					else
+					{
+						free_capacity += drive.FileCapacityAvailable();
+						total_capacity += drive.dataCapacity;
+					}
+				}
+
+				if (free_capacity < 0)
+				{
+					free_capacity = double.MaxValue;
+					total_capacity = double.MaxValue;
+				}
+			}
+		}
+
+		public static Drive FileDrive(Vessel vessel, double size = 0)
+		{
+			Drive result = null;
+			foreach (var drive in GetDrives(vessel))
+			{
+				if (result == null)
+				{
+					result = drive;
+					if (size > double.Epsilon && result.FileCapacityAvailable() >= size)
+						return result;
+					continue;
+				}
+
+				if (size > double.Epsilon && drive.FileCapacityAvailable() >= size)
+				{
+					return drive;
+				}
+
+				// if we're not looking for a minimum capacity, look for the biggest drive
+				if (drive.dataCapacity > result.dataCapacity)
+				{
+					result = drive;
+				}
+			}
+			if (result == null)
+			{
+				// vessel has no drive.
+				return new Drive("Broken", 0, 0);
+			}
+			return result;
+		}
+
+		public static Drive SampleDrive(Vessel vessel, double size = 0, string filename = "")
+		{
+			Drive result = null;
+			foreach (var drive in GetDrives(vessel))
+			{
+				if (result == null)
+				{
+					result = drive;
+					continue;
+				}
+
+				double available = drive.SampleCapacityAvailable(filename);
+				if (size > double.Epsilon && available < size)
+					continue;
+				if (available > result.SampleCapacityAvailable(filename))
+					result = drive;
+			}
+			if (result == null)
+			{
+				// vessel has no drive.
+				return new Drive("Broken", 0, 0);
+			}
+			return result;
+		}
 
 		public Dictionary<string, File> files;      // science files
 		public Dictionary<string, Sample> samples;  // science samples

@@ -33,7 +33,7 @@ namespace KERBALISM
 				if (!Lib.IsFlight())
 					drive = new Drive(title, dataCapacity, sampleCapacity);
 				else
-					drive = DB.Vessel(vessel).DriveForPart(title, hdId, dataCapacity, sampleCapacity);
+					drive = DB.Drive(hdId, title, dataCapacity, sampleCapacity);
 			}
 
 			drive.is_private |= experiment_id.Length > 0;
@@ -82,12 +82,7 @@ namespace KERBALISM
 				var transferVisible = !IsPrivate();
 				if(transferVisible)
 				{
-					int count = 0;
-					foreach (var d in DB.Vessel(vessel).drives.Values){
-						if (!d.is_private) count++;
-						if (count > 1) break;
-					}
-					transferVisible = count > 1;
+					transferVisible = Drive.GetDrives(vessel, true).Count > 1;
 				}
 				Events["TransferData"].active = transferVisible;
 				Events["TransferData"].guiActive = transferVisible;

@@ -21,8 +21,6 @@ namespace KERBALISM
 			GameEvents.onVesselTerminated.Add(this.VesselTerminated);
 			GameEvents.onVesselWillDestroy.Add(this.VesselDestroyed);
 			GameEvents.onPartCouple.Add(this.VesselDock);
-			GameEvents.onVesselPartCountChanged.Add(this.VesselPartCountChanged);
-			GameEvents.onPartDeCoupleComplete.Add(this.VesselUndock);
 
 			GameEvents.onPartDie.Add(this.PartDestroyed);
 			GameEvents.OnTechnologyResearched.Add(this.TechResearched);
@@ -145,6 +143,7 @@ namespace KERBALISM
 
 			// forget vessel data
 			DB.vessels.Remove(Lib.VesselID(data.from.vessel));
+			Drive.Purge(data.from.vessel);
 
 			// execute script
 			DB.Vessel(data.to.vessel).computer.Execute(data.to.vessel, ScriptType.eva_in);
@@ -166,7 +165,7 @@ namespace KERBALISM
 			if (!DB.vessels.ContainsKey(vesselID))
 				return;
 
-			foreach (Drive drive in DB.vessels[vesselID].drives.Values)
+			foreach (Drive drive in Drive.GetDrives(v))
 			{
 				// for each file in the drive
 				foreach (KeyValuePair<string, File> p in drive.files)
@@ -261,6 +260,7 @@ namespace KERBALISM
 			// purge the caches
 			Cache.Purge(pv);
 			ResourceCache.Purge(pv);
+			Drive.Purge(pv);
 		}
 
 
@@ -275,6 +275,7 @@ namespace KERBALISM
 			// purge the caches
 			Cache.Purge(pv);
 			ResourceCache.Purge(pv);
+			Drive.Purge(pv);
 		}
 
 
@@ -306,11 +307,7 @@ namespace KERBALISM
 			// purge the caches
 			Cache.Purge(v);
 			ResourceCache.Purge(v);
-		}
-
-		void VesselUndock(Part part)
-		{
-			MoveDrivesWhereTheyBelong(FlightGlobals.ActiveVessel);
+			Drive.Purge(v);
 		}
 
 		void VesselDock(GameEvents.FromToAction<Part, Part> e)
@@ -318,13 +315,11 @@ namespace KERBALISM
 			var fromVessel = e.from.vessel;
 			DB.vessels.Remove(Lib.VesselID(fromVessel));
 
-			/*
 			// note:
 			//  we do not forget vessel data here, it just became inactive
 			//  and ready to be implicitly activated again on undocking
 			//  we do however tweak the data of the vessel being docked a bit,
 			//  to avoid states getting out of sync, leading to unintuitive behaviours
-			var fromVessel = e.from.vessel;
 			VesselData vd = DB.Vessel(fromVessel);
 			vd.msg_belt = false;
 			vd.msg_signal = false;
@@ -333,65 +328,6 @@ namespace KERBALISM
 			vd.storm_state = 0;
 			vd.supplies.Clear();
 			vd.scansat_id.Clear();
-			*/
-		}
-
-		void VesselPartCountChanged(Vessel myVessel)
-		{
-			if (Lib.IsEditor()) return;
-			if (string.IsNullOrEmpty(myVessel.vesselName)) return;
-
-			MoveDrivesWhereTheyBelong(myVessel);
-		}
-
-		private static void MoveDrivesWhereTheyBelong(Vessel myVessel)
-		{
-			// Let's see if any of the nearby vessels has a drive that should be mine
-
-			var allDrives = new Dictionary<uint, Drive>();
-
-			foreach(var vessel in FlightGlobals.VesselsLoaded)
-			{
-				if (!Cache.VesselInfo(vessel).is_valid) continue;
-
-				var drives = DB.Vessel(vessel).drives;
-				foreach (var pair in drives)
-				{
-					allDrives.Add(pair.Key, pair.Value);
-				}
-				drives.Clear();
-			}
-
-			var vesselList = new List<Vessel>(FlightGlobals.VesselsLoaded);
-			vesselList.Remove(myVessel);
-			vesselList.Insert(0, myVessel);
-
-			foreach (var vessel in vesselList)
-			{
-				if (!Cache.VesselInfo(vessel).is_valid) continue;
-
-				var drives = DB.Vessel(vessel).drives;
-				foreach(var hardDrive in vessel.FindPartModulesImplementing<HardDrive>())
-				{
-					if (allDrives.ContainsKey(hardDrive.hdId))
-					{
-						hardDrive.SetDrive(allDrives[hardDrive.hdId]);
-						drives.Add(hardDrive.hdId, allDrives[hardDrive.hdId]);
-						allDrives.Remove(hardDrive.hdId);
-					}
-				}
-			}
-
-			if(allDrives.Count > 0)
-			{
-				// could not find a new home for some drives. Leave them on "my" vessel.
-				// this happens when we undocked from our root part
-				var myDrives = DB.Vessel(myVessel).drives;
-				foreach (var p in allDrives)
-				{
-					myDrives.Add(p.Key, p.Value);
-				}
-			}
 		}
 
 		void PartDestroyed(Part p)
@@ -404,13 +340,7 @@ namespace KERBALISM
 			if (!vi.is_valid)
 				return;
 
-			// did a drive explode?
-			var drives = DB.Vessel(p.vessel).drives;
-			foreach(var hd in p.FindModulesImplementing<HardDrive>())
-			{
-				if (drives.ContainsKey(hd.hdId))
-					drives.Remove(hd.hdId);
-			}
+			DB.drives.Remove(p.flightID);
 		}
 
 		void AddEditorCategory()

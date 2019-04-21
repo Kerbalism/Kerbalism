@@ -74,11 +74,8 @@ namespace KERBALISM
 					if(size > double.Epsilon)
 					{
 						// store what we can
-						foreach (var d in vd.drives.Values)
+						foreach (var d in Drive.GetDrives(vessel))
 						{
-							if (d.is_private)
-								continue;
-							
 							var available = d.FileCapacityAvailable();
 							var chunk = Math.Min(size, available);
 							if (!d.Record_file(subject_id, chunk, true, true))
@@ -227,11 +224,8 @@ namespace KERBALISM
 					if (size > double.Epsilon)
 					{
 						// store what we can
-						foreach (var d in vd.drives.Values)
+						foreach (var d in Drive.GetDrives(vessel))
 						{
-							if (d.is_private)
-								continue;
-
 							var available = d.FileCapacityAvailable();
 							var chunk = Math.Min(size, available);
 							if (!d.Record_file(subject_id, chunk, true, true))
