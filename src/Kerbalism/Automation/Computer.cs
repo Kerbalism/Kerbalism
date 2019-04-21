@@ -12,20 +12,20 @@ namespace KERBALISM
 		shadow = 4,       // called when sun set
 		unlinked = 5,     // called when signal is lost
 		linked = 6,       // called when signal is regained
-		landed = 7,       // called on landing
-		atmo = 8,         // called on entering atmosphere
-		space = 9,        // called on reaching space
-		rad_low = 10,     // called when radiation goes below 0.05 rad/h
-		rad_high = 11,    // called when radiation goes above 0.05 rad/h
-		eva_out = 12,     // called when going out on eva
-		eva_in = 13,      // called when coming back from eva
-		action1 = 14,     // called when pressing 1
-		action2 = 15,     // called when pressing 2
-		action3 = 16,     // called when pressing 3
-		action4 = 17,     // called when pressing 4
-		action5 = 18,     // called when pressing 5
-		drive_full = 19,  // called when storage capacity goes below 15%
-		drive_empty = 20, // called when storage capacity goes above 30%
+		drive_full = 7,  // called when storage capacity goes below 15%
+		drive_empty = 8, // called when storage capacity goes above 30%
+		landed = 9,       // called on landing
+		atmo = 10,         // called on entering atmosphere
+		space = 11,        // called on reaching space
+		rad_low = 12,     // called when radiation goes below 0.05 rad/h
+		rad_high = 13,    // called when radiation goes above 0.05 rad/h
+		eva_out = 14,     // called when going out on eva
+		eva_in = 15,      // called when coming back from eva
+		action1 = 16,     // called when pressing 1
+		action2 = 17,     // called when pressing 2
+		action3 = 18,     // called when pressing 3
+		action4 = 19,     // called when pressing 4
+		action5 = 20,     // called when pressing 5
 		last = 21
 	}
 
