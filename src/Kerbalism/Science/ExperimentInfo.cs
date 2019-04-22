@@ -23,7 +23,12 @@ namespace KERBALISM
 
 			// get experiment definition
 			// - available even in sandbox
-			expdef = ResearchAndDevelopment.GetExperiment(id);
+			try {
+				expdef = ResearchAndDevelopment.GetExperiment(id);
+			} catch(Exception e) {
+				Lib.Log("ERROR: failed to load experiment " + subject_id + ": " + e.Message;
+				throw e;
+			}
 
 			// deduce short name for the subject
 			name = expdef != null ? expdef.experimentTitle : Lib.UppercaseFirst(id);
