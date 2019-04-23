@@ -89,7 +89,7 @@ namespace KERBALISM
 		}
 
 		// add science data, creating new file or incrementing existing one
-		public bool Record_file(string subject_id, double amount, bool allowImmediateTransmission = true, bool silentTransmission = false)
+		public bool Record_file(string subject_id, double amount, bool allowImmediateTransmission = true)
 		{
 			if (dataCapacity >= 0 && FilesSize() + amount > dataCapacity)
 				return false;
@@ -99,7 +99,6 @@ namespace KERBALISM
 			if (!files.TryGetValue(subject_id, out file))
 			{
 				file = new File();
-				file.silentTransmission = silentTransmission;
 				file.ts = Planetarium.GetUniversalTime();
 				files.Add(subject_id, file);
 

@@ -41,6 +41,7 @@ namespace KERBALISM
 		[KSPField(isPersistant = true)] public bool forcedRun = false;
 		[KSPField(isPersistant = true)] public uint privateHdId = 0;
 
+		private static readonly string insufficient_storage = "insufficient storage";
 
 		private State state = State.STOPPED;
 		// animations
@@ -53,7 +54,6 @@ namespace KERBALISM
 		private double next_check = 0;
 
 		private String situationIssue = String.Empty;
-		[KSPField(guiActive = false, guiName = "_")] private string ExperimentStatus = string.Empty;
 
 		public enum State
 		{
@@ -154,16 +154,17 @@ namespace KERBALISM
 
 				// update ui
 				var title = Lib.Ellipsis(exp.name, Styles.ScaleStringLength(24));
+				if (scienceValue > 0.1) title += " •<b>" + scienceValue.ToString("F1") + "</b>";
 
 				string statusString = string.Empty;
 				switch (state) {
 					case State.ISSUE: statusString = Lib.Color("yellow", issue); break;
-					case State.RUNNING: statusString = Lib.HumanReadablePerc(dataSampled / sampleSize) + "..."; break;
-					case State.WAITING: statusString = "waiting..."; break;
+					case State.RUNNING: statusString = Lib.HumanReadablePerc(dataSampled / sampleSize) + eta; break;
+					case State.WAITING: statusString = "waiting" + eta; break;
 					case State.STOPPED: statusString = "stopped"; break;
 				}
 
-				Events["Toggle"].guiName = Lib.StatusToggle(exp.name, statusString);
+				Events["Toggle"].guiName = Lib.StatusToggle(title, statusString);
 				Events["Toggle"].active = (prepare_cs == null || didPrepare);
 
 				Events["Prepare"].guiName = Lib.BuildString("Prepare <b>", exp.name, "</b>");
@@ -177,38 +178,7 @@ namespace KERBALISM
 				Fields["ExperimentStatus"].guiName = exp.name;
 				Fields["ExperimentStatus"].guiActive = true;
 
-				if (issue.Length > 0)
-					ExperimentStatus = Lib.BuildString("<color=#ffff00>", issue, "</color>");
-				else if (dataSampled > 0)
-				{
-					string a = string.Empty;
-					string b = string.Empty;
-
-					if (sample_mass < float.Epsilon)
-					{
-						a = Lib.HumanReadableDataSize(dataSampled);
-						b = Lib.HumanReadableDataSize(sampleSize);
-					}
-					else
-					{
-						a = Lib.SampleSizeToSlots(dataSampled).ToString();
-						b = Lib.HumanReadableSampleSize(sampleSize);
-
-						if (remainingSampleMass > double.Epsilon)
-							b += " " + Lib.HumanReadableMass(remainingSampleMass) + " left";
-					}
-
-					ExperimentStatus = Lib.BuildString(a, "/", b, eta);
-				}
-				else
-				{
-					var size = sample_mass < double.Epsilon ? Lib.HumanReadableDataSize(sampleSize) : Lib.HumanReadableSampleSize(sampleSize);
-					ExperimentStatus = Lib.BuildString("ready ", size, " in ", Lib.HumanReadableDuration(sampleSize / data_rate));
-				}
-
-				if (scienceValue > 0.1) ExperimentStatus += " •<b>" + scienceValue.ToString("F1") + "</b>";
-
-				if(issue.Length > 0 && hide_when_unavailable)
+				if(issue.Length > 0 && hide_when_unavailable && issue != insufficient_storage)
 				{
 					Events["Toggle"].active = false;
 					Fields["ExperimentStatus"].guiActive = false;
@@ -272,7 +242,7 @@ namespace KERBALISM
 			var stored = DoRecord(this, subject_id, vessel, ec, privateHdId,
 				ResourceCache.Get(vessel), resourceDefs,
 				remainingSampleMass, dataSampled, out dataSampled, out remainingSampleMass);
-			if (!stored) issue = "insufficient storage C";
+			if (!stored) issue = insufficient_storage;
 		}
 
 		private static Drive GetDrive(Experiment experiment, Vessel vessel, uint hdId, double chunkSize, string subject_id)
@@ -321,7 +291,7 @@ namespace KERBALISM
 
 			bool stored = false;
 			if (isFile)
-				stored = drive.Record_file(subject_id, chunkSize, true, true);
+				stored = drive.Record_file(subject_id, chunkSize, true);
 			else
 				stored = drive.Record_sample(subject_id, chunkSize, massDelta);
 
@@ -390,7 +360,7 @@ namespace KERBALISM
 			var stored = DoRecord(experiment, subject_id, v, ec, privateHdId,
 				resources, ParseResources(experiment.resources),
 				remainingSampleMass, dataSampled, out dataSampled, out remainingSampleMass);
-			if (!stored) Lib.Proto.Set(m, "issue", "insufficient storage A");
+			if (!stored) Lib.Proto.Set(m, "issue", insufficient_storage);
 
 			Lib.Proto.Set(m, "dataSampled", dataSampled);
 			Lib.Proto.Set(m, "remainingSampleMass", remainingSampleMass);
@@ -511,7 +481,7 @@ namespace KERBALISM
 			double available = isFile ? drive.FileCapacityAvailable() : drive.SampleCapacityAvailable(subject_id);
 
 			if (Math.Min(experiment.data_rate * Kerbalism.elapsed_s, experimentSize) > available)
-				return "insufficient storage B";
+				return insufficient_storage;
 
 			return string.Empty;
 		}

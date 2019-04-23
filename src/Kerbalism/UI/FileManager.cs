@@ -45,6 +45,8 @@ namespace KERBALISM
 			int usedSlots = 0;
 			int totalSlots = 0;
 			double totalMass = 0;
+			bool unlimitedData = false;
+			bool unlimitedSamples = false;
 
 			foreach (var idDrivePair in drives)
 			{
@@ -54,6 +56,9 @@ namespace KERBALISM
 				{
 					usedDataCapacity += drive.FilesSize();
 					totalDataCapacity += drive.dataCapacity;
+
+					unlimitedData |= drive.dataCapacity < 0;
+					unlimitedSamples |= drive.sampleCapacity < 0;
 
 					usedSlots += drive.SamplesSize();
 					totalSlots += drive.sampleCapacity;
@@ -66,7 +71,8 @@ namespace KERBALISM
 
 			if(filesCount > 0 || totalDataCapacity > 0)
 			{
-				var title = "DATA " + Lib.HumanReadableDataSize(usedDataCapacity) + Lib.BuildString(" (", Lib.HumanReadablePerc((totalDataCapacity - usedDataCapacity) / totalDataCapacity), " available)");
+				var title = "DATA " + Lib.HumanReadableDataSize(usedDataCapacity);
+				if(!unlimitedData) title += Lib.BuildString(" (", Lib.HumanReadablePerc((totalDataCapacity - usedDataCapacity) / totalDataCapacity), " available)");
 				p.AddSection(title);
 
 				foreach (var idDrivePair in drives)
@@ -87,7 +93,7 @@ namespace KERBALISM
 			if(samplesCount > 0 || totalSlots > 0)
 			{
 				var title = "SAMPLES " + Lib.HumanReadableMass(totalMass) + " " + Lib.HumanReadableSampleSize(usedSlots);
-				if (totalSlots > 0) title += ", " + Lib.HumanReadableSampleSize(totalSlots) + " available";
+				if (totalSlots > 0 && !unlimitedSamples) title += ", " + Lib.HumanReadableSampleSize(totalSlots) + " available";
 				p.AddSection(title);
 
 				foreach (var idDrivePair in drives)

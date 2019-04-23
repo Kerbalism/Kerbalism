@@ -133,6 +133,7 @@ namespace KERBALISM
 			// evict oldest entry from vessel cache
 			Cache.Update();
 
+			/*
 			// vvvv------- This code tests for a theroy that could cause #313
 			// If KSP itself has the same vessel more than once in the
 			// FlightGlobals.Vessels list, it would cause processes to run too many times.
@@ -156,6 +157,7 @@ namespace KERBALISM
 				}
 			}
 			// ^^^^-------- end theory test code
+			*/
 
 			// store info for oldest unloaded vessel
 			double last_time = 0.0;
@@ -165,8 +167,7 @@ namespace KERBALISM
 			Vessel_resources last_resources = null;
 
 			// for each vessel
-			//foreach (Vessel v in FlightGlobals.Vessels)
-			foreach (Vessel v in vessels.Values)
+			foreach (Vessel v in FlightGlobals.Vessels)
 			{
 				// get vessel info from the cache
 				Vessel_info vi = Cache.VesselInfo(v);
