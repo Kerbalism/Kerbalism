@@ -321,7 +321,7 @@ namespace KERBALISM
 
 			bool stored = false;
 			if (isFile)
-				stored = drive.Record_file(subject_id, chunkSize, true, true);
+				stored = drive.Record_file(subject_id, chunkSize, true);
 			else
 				stored = drive.Record_sample(subject_id, chunkSize, massDelta);
 

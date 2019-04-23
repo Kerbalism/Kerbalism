@@ -78,7 +78,7 @@ namespace KERBALISM
 						{
 							var available = d.FileCapacityAvailable();
 							var chunk = Math.Min(size, available);
-							if (!d.Record_file(subject_id, chunk, true, true))
+							if (!d.Record_file(subject_id, chunk, true))
 								break;
 							size -= chunk;
 
@@ -228,7 +228,7 @@ namespace KERBALISM
 						{
 							var available = d.FileCapacityAvailable();
 							var chunk = Math.Min(size, available);
-							if (!d.Record_file(subject_id, chunk, true, true))
+							if (!d.Record_file(subject_id, chunk, true))
 								break;
 							size -= chunk;
 

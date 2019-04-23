@@ -83,7 +83,9 @@ namespace KERBALISM
 				file.buff += transmitted;
 
 				bool credit = file.size <= double.Epsilon;
-				if(!credit && file.buff > min_buffer_size) credit = Value(exp_filename, file.buff) > buffer_science_value;
+				var totalValue = Value(exp_filename);
+				var value = Value(exp_filename, file.buff);
+				if (!credit && file.buff > min_buffer_size) credit = value > buffer_science_value;
 
 				// if buffer is full, or file was transmitted completely
 				if (credit)
@@ -93,6 +95,14 @@ namespace KERBALISM
 
 					// reset the buffer
 					file.buff = 0.0;
+
+					// this was the last useful bit, there is no more value in the experiment
+					if (totalValue >= 0.1 && totalValue - value < 0.1)
+					{
+						Message.Post(
+						  Lib.BuildString("<color=cyan><b>EXPERIMENT FINISHED</b></color>\nExperiment <b>", Experiment(exp_filename).name, "</b> is completed"),
+						  Lib.TextVariant("Our researchers will jump on it right now", "Our researchers quarrel over your findings"));
+					}
 				}
 
 				// if file was transmitted completely
@@ -100,17 +110,6 @@ namespace KERBALISM
 				{
 					// remove the file
 					drive.files.Remove(exp_filename);
-
-					// same file on another drive?
-					drive = FindDrive(v, exp_filename);
-
-					if (!file.silentTransmission && drive == null)
-					{
-						// inform the user
-						Message.Post(
-						  Lib.BuildString("<color=cyan><b>DATA RECEIVED</b></color>\nTransmission of <b>", Experiment(exp_filename).name, "</b> completed"),
-						  Lib.TextVariant("Our researchers will jump on it right now", "The checksum is correct, data must be valid"));
-					}
 				}
 			}
 		}

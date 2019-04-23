@@ -11,7 +11,6 @@ namespace KERBALISM
 		{
 			size = amount;
 			buff = 0.0;
-			silentTransmission = false;
 			ts = Planetarium.GetUniversalTime();
 		}
 
@@ -19,19 +18,16 @@ namespace KERBALISM
 		{
 			size = Lib.ConfigValue(node, "size", 0.0);
 			buff = Lib.ConfigValue(node, "buff", 0.0);
-			silentTransmission = Lib.ConfigValue(node, "silentTransmission", false);
 		}
 
 		public void Save(ConfigNode node)
 		{
 			node.AddValue("size", size);
 			node.AddValue("buff", buff);
-			node.AddValue("silentTransmission", silentTransmission);
 		}
 
 		public double size;   // data size in Mb
 		public double buff;   // data transmitted but not credited
-		public bool silentTransmission; // don't show a message when transmitted
 		public double ts; // last change time
 	}
 
