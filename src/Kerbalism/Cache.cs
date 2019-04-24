@@ -258,7 +258,16 @@ namespace KERBALISM
 
 		internal static T VesselObjectsCache<T>(Vessel vessel, string key)
 		{
-			var id = Lib.VesselID(vessel);
+			return VesselObjectsCache<T>(Lib.VesselID(vessel), key);
+		}
+
+		internal static T VesselObjectsCache<T>(ProtoVessel vessel, string key)
+		{
+			return VesselObjectsCache<T>(Lib.VesselID(vessel), key);
+		}
+
+		private static T VesselObjectsCache<T>(Guid id, string key)
+		{
 			if (!parts.ContainsKey(id))
 				return default(T);
 
@@ -274,7 +283,16 @@ namespace KERBALISM
 
 		internal static void SetVesselObjectsCache<T>(Vessel vessel, string key, T value)
 		{
-			var id = Lib.VesselID(vessel);
+			SetVesselObjectsCache(Lib.VesselID(vessel), key, value);
+		}
+
+		internal static void SetVesselObjectsCache<T>(ProtoVessel pv, string key, T value)
+		{
+			SetVesselObjectsCache(Lib.VesselID(pv), key, value);
+		}
+
+		private static void SetVesselObjectsCache<T>(Guid id, string key, T value)
+		{
 			if (!parts.ContainsKey(id))
 				parts.Add(id, new Dictionary<string, object>());
 

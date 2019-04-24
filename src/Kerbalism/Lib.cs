@@ -1101,12 +1101,18 @@ namespace KERBALISM
 		// note: disabled modules are not returned
 		public static List<ProtoPartModuleSnapshot> FindModules(ProtoVessel v, string module_name)
 		{
-			List<ProtoPartModuleSnapshot> ret = new List<ProtoPartModuleSnapshot>(8);
+			var ret = Cache.VesselObjectsCache<List<ProtoPartModuleSnapshot>>(v, module_name);
+			if (ret != null)
+				return ret;
+
+			ret = new List<ProtoPartModuleSnapshot>(8);
 			for (int i = 0; i < v.protoPartSnapshots.Count; ++i)
 			{
 				ProtoPartSnapshot p = v.protoPartSnapshots[i];
 				ret.AddRange(FindModules(p, module_name));
 			}
+
+			Cache.SetVesselObjectsCache(v, module_name, ret);
 			return ret;
 		}
 
