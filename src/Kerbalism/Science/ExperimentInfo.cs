@@ -26,7 +26,7 @@ namespace KERBALISM
 			try {
 				expdef = ResearchAndDevelopment.GetExperiment(id);
 			} catch(Exception e) {
-				Lib.Log("ERROR: failed to load experiment " + subject_id + ": " + e.Message;
+				Lib.Log("ERROR: failed to load experiment " + subject_id + ": " + e.Message);
 				throw e;
 			}
 

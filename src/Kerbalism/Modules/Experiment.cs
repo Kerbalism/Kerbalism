@@ -72,11 +72,6 @@ namespace KERBALISM
 			return State.RUNNING;
 		}
 
-		private State GetState()
-		{
-			return GetState(scienceValue, issue, recording, forcedRun);
-		}
-
 		public override void OnLoad(ConfigNode node)
 		{
 			// build up science sample mass database
@@ -125,6 +120,18 @@ namespace KERBALISM
 			{
 				if (hd.experiment_id == experiment_id) privateHdId = part.flightID;
 			}
+
+			Events["Toggle"].guiActiveUncommand = true;
+			Events["Toggle"].externalToEVAOnly = true;
+			Events["Toggle"].requireFullControl = false;
+
+			Events["Prepare"].guiActiveUncommand = true;
+			Events["Prepare"].externalToEVAOnly = true;
+			Events["Prepare"].requireFullControl = false;
+
+			Events["Reset"].guiActiveUncommand = true;
+			Events["Reset"].externalToEVAOnly = true;
+			Events["Reset"].requireFullControl = false;
 		}
 
 		public static bool Done(ExperimentInfo exp, double dataSampled)
@@ -175,13 +182,9 @@ namespace KERBALISM
 				bool resetActive = (reset_cs != null || prepare_cs != null) && !string.IsNullOrEmpty(last_subject_id);
 				Events["Reset"].active = resetActive;
 
-				Fields["ExperimentStatus"].guiName = exp.name;
-				Fields["ExperimentStatus"].guiActive = true;
-
 				if(issue.Length > 0 && hide_when_unavailable && issue != insufficient_storage)
 				{
 					Events["Toggle"].active = false;
-					Fields["ExperimentStatus"].guiActive = false;
 				}
 			}
 			// in the editor
@@ -210,6 +213,9 @@ namespace KERBALISM
 			if (string.IsNullOrEmpty(issue))
 				issue = TestForResources(vessel, resourceDefs, Kerbalism.elapsed_s, ResourceCache.Get(vessel));
 
+			scienceValue = Science.Value(last_subject_id);
+			state = GetState(scienceValue, issue, recording, forcedRun);
+
 			if (!string.IsNullOrEmpty(issue))
 			{
 				next_check = Planetarium.GetUniversalTime() + Math.Max(3, Kerbalism.elapsed_s * 3);
@@ -223,8 +229,6 @@ namespace KERBALISM
 				forcedRun = false;
 			}
 			last_subject_id = subject_id;
-			scienceValue = Science.Value(last_subject_id);
-			state = GetState();
 
 			if (state != State.RUNNING)
 				return;
@@ -635,7 +639,7 @@ namespace KERBALISM
 		// action groups
 		[KSPAction("Start")] public void Start(KSPActionParam param)
 		{
-			switch (GetState()) {
+			switch (GetState(scienceValue, issue, recording, forcedRun)) {
 				case State.STOPPED:
 				case State.WAITING:
 					Toggle();
