@@ -280,7 +280,7 @@ namespace KERBALISM
 
 			if(sample != null)
 			{
-				bool recorded = fileDrive.Record_file(filename, amount, false);
+				bool recorded = fileDrive.Record_file(filename, amount, false, sample.science_cap);
 
 				double massRemoved = 0;
 				if (recorded)

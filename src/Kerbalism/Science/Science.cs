@@ -83,15 +83,15 @@ namespace KERBALISM
 				file.buff += transmitted;
 
 				bool credit = file.size <= double.Epsilon;
-				var totalValue = Value(exp_filename);
-				var value = Value(exp_filename, file.buff);
+				var totalValue = Value(exp_filename) * file.science_cap;
+				var value = Value(exp_filename, file.buff) * file.science_cap;
 				if (!credit && file.buff > min_buffer_size) credit = value > buffer_science_value;
 
 				// if buffer is full, or file was transmitted completely
 				if (credit)
 				{
 					// collect the science data
-					Credit(exp_filename, file.buff, true, v.protoVessel);
+					Credit(exp_filename, file.buff, true, v.protoVessel, (float)file.science_cap);
 
 					// reset the buffer
 					file.buff = 0.0;
@@ -142,9 +142,9 @@ namespace KERBALISM
 
 
 		// credit science for the experiment subject specified
-		public static float Credit(string subject_id, double size, bool transmitted, ProtoVessel pv)
+		public static float Credit(string subject_id, double size, bool transmitted, ProtoVessel pv, float science_cap)
 		{
-			var credits = Value(subject_id, size);
+			var credits = Value(subject_id, size) * science_cap;
 
 			// credit the science
 			var subject = ResearchAndDevelopment.GetSubjectByID(subject_id);

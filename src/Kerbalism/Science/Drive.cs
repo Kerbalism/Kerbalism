@@ -89,7 +89,7 @@ namespace KERBALISM
 		}
 
 		// add science data, creating new file or incrementing existing one
-		public bool Record_file(string subject_id, double amount, bool allowImmediateTransmission = true)
+		public bool Record_file(string subject_id, double amount, bool allowImmediateTransmission = true, double science_cap = 1)
 		{
 			if (dataCapacity >= 0 && FilesSize() + amount > dataCapacity)
 				return false;
@@ -99,6 +99,7 @@ namespace KERBALISM
 			if (!files.TryGetValue(subject_id, out file))
 			{
 				file = new File();
+				file.science_cap = science_cap;
 				file.ts = Planetarium.GetUniversalTime();
 				files.Add(subject_id, file);
 
@@ -130,7 +131,7 @@ namespace KERBALISM
 		}
 
 		// add science sample, creating new sample or incrementing existing one
-		public bool Record_sample(string subject_id, double amount, double mass)
+		public bool Record_sample(string subject_id, double amount, double mass, double science_cap = 1)
 		{
 			int currentSampleSlots = SamplesSize();
 			if (sampleCapacity >= 0)
@@ -158,6 +159,7 @@ namespace KERBALISM
 			if (!samples.TryGetValue(subject_id, out sample))
 			{
 				sample = new Sample();
+				sample.science_cap = science_cap;
 				sample.analyze = PreferencesScience.Instance.analyzeSamples;
 				samples.Add(subject_id, sample);
 			}
@@ -238,7 +240,7 @@ namespace KERBALISM
 			foreach (var p in files)
 			{
 				double size = Math.Max(p.Value.size, destination.FileCapacityAvailable());
-				if (destination.Record_file(p.Key, size))
+				if (destination.Record_file(p.Key, size, true, p.Value.science_cap))
 				{
 					destination.files[p.Key].buff += p.Value.buff; //< move the buffer along with the size
 					p.Value.buff = 0;
@@ -275,7 +277,7 @@ namespace KERBALISM
 				}
 
 				double mass = p.Value.mass * (p.Value.size / size);
-				if (destination.Record_sample(p.Key, size, mass))
+				if (destination.Record_sample(p.Key, size, mass, p.Value.science_cap))
 				{
 					p.Value.size -= size;
 					p.Value.mass -= mass;

@@ -114,6 +114,8 @@ Hooks experiments into the Kerbalism science system.
 +-----------------------+-------------------------------------------------------------+---------------+
 | sample_collecting     | If set to true, the experiment will produce mass.           | false         |
 +-----------------------+-------------------------------------------------------------+---------------+
+| science_cap           | A factor for the max. attainable science value              | 1.0           |
++-----------------------+-------------------------------------------------------------+---------------+
 | requires              | Additional requirements that must be met for recording.     |               |
 |                       | See below.                                                  |               |
 +-----------------------+-------------------------------------------------------------+---------------+
