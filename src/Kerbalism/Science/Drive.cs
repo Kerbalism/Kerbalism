@@ -485,7 +485,11 @@ namespace KERBALISM
 
 		public static Dictionary<uint, Drive> GetDriveParts(Vessel vessel)
 		{
-			Dictionary<uint, Drive> result = new Dictionary<uint, Drive>();
+			Dictionary<uint, Drive> result = Cache.VesselObjectsCache<Dictionary<uint, Drive>>(vessel, "drives");
+			if (result != null)
+				return result;
+
+			result = new Dictionary<uint, Drive>();
 			if(vessel.loaded)
 			{
 				foreach (var hd in vessel.FindPartModulesImplementing<HardDrive>())
@@ -502,6 +506,8 @@ namespace KERBALISM
 						result.Add(hd.flightID, DB.drives[hd.flightID]);
 				}
 			}
+
+			Cache.SetVesselObjectsCache(vessel, "drive", result);
 			return result;
 		}
 

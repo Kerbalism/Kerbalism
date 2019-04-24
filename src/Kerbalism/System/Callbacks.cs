@@ -22,6 +22,9 @@ namespace KERBALISM
 			GameEvents.onVesselWillDestroy.Add(this.VesselDestroyed);
 			GameEvents.onPartCouple.Add(this.VesselDock);
 
+			GameEvents.onVesselChange.Add(this.PurgePartsCache);
+			GameEvents.onVesselStandardModification.Add(this.PurgePartsCache);
+
 			GameEvents.onPartDie.Add(this.PartDestroyed);
 			GameEvents.OnTechnologyResearched.Add(this.TechResearched);
 			GameEvents.onGUIEditorToolbarReady.Add(this.AddEditorCategory);
@@ -59,6 +62,11 @@ namespace KERBALISM
 			Lib.DebugLog("NetworkInitialized");
 			Communications.NetworkInitialized = true;
 			RemoteTech.Startup();
+		}
+
+		void PurgePartsCache(Vessel vessel)
+		{
+			Cache.Purge(vessel);
 		}
 
 		void ToEVA(GameEvents.FromToAction<Part, Part> data)
@@ -328,6 +336,8 @@ namespace KERBALISM
 			vd.storm_state = 0;
 			vd.supplies.Clear();
 			vd.scansat_id.Clear();
+
+			Cache.Purge(e.from.vessel);
 		}
 
 		void PartDestroyed(Part p)
@@ -340,6 +350,7 @@ namespace KERBALISM
 			if (!vi.is_valid)
 				return;
 
+			Cache.Purge(p.vessel);
 			DB.drives.Remove(p.flightID);
 		}
 
@@ -352,7 +363,6 @@ namespace KERBALISM
 				PartCategorizer.AddCustomSubcategoryFilter(category, "Kerbalism", "Kerbalism", icon, k => k.tags.IndexOf("_kerbalism", StringComparison.Ordinal) >= 0);
 			}
 		}
-
 
 		void TechResearched(GameEvents.HostTargetAction<RDTech, RDTech.OperationResult> data)
 		{

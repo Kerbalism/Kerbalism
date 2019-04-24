@@ -970,29 +970,18 @@ namespace KERBALISM
 			return pv.vesselID;
 		}
 
-		/*
-		RootID is not unique.
-		// return the flight id of the root part of a vessel
-		public static UInt32 RootID(Vessel v)
-		{
-			return v.loaded && v.rootPart != null
-			  ? v.rootPart.flightID
-			  : v.protoVessel.protoPartSnapshots[v.protoVessel.rootIndex].flightID;
-		}
-		*/
-
 		public static Vessel CommNodeToVessel(CommNode node)
 		{
 			// Is is home return null
 			if (node.isHome) return null;
 
-			foreach (Vessel w in FlightGlobals.Vessels)
+			foreach (Vessel v in FlightGlobals.Vessels)
 			{
-				if (!IsVessel(w)) continue;
+				if (!IsVessel(v)) continue;
 
-				if (AreSame(node, w.connection.Comm))
+				if (AreSame(node, v.connection.Comm))
 				{
-					return w;
+					return v;
 				}
 			}
 
@@ -1174,35 +1163,6 @@ namespace KERBALISM
 				}
 			}
 			return false;
-		}
-
-		// return a module from a part by name, or null if it doesn't exist
-		public static PartModule FindModule(Part p, string module_name)
-		{
-			foreach (PartModule m in p.Modules)
-			{
-				if (m.moduleName == module_name) return m;
-			}
-			return null;
-		}
-
-		// return a module from a part by name, or null if it doesn't exist
-		public static T FindModuleAs<T>(Part p, string module_name) where T : class
-		{
-			PartModule m = FindModule(p, module_name);
-			return m ? m as T : null;
-		}
-
-		// add a module to an EVA kerbal
-		public static void AddModuleToEVA(string module_name, ConfigNode module_node = null)
-		{
-			var eva_parts = PartLoader.LoadedPartsList.FindAll(k => k.name == "kerbalEVA" || k.name == "kerbalEVAfemale");
-			foreach (AvailablePart p in eva_parts)
-			{
-				Type type = AssemblyLoader.GetClassByName(typeof(PartModule), module_name);
-				PartModule m = p.partPrefab.gameObject.AddComponent(type) as PartModule;
-				if (module_node != null) m.Load(module_node);
-			}
 		}
 
 		// used by ModulePrefab function, to support multiple modules of the same type in a part

@@ -229,8 +229,11 @@ namespace KERBALISM
 		// - the list is only valid for a single simulation step
 		public static Dictionary<uint, Device> Boot(Vessel v)
 		{
-			// store all devices
-			var devices = new Dictionary<uint, Device>();
+			var devices = Cache.VesselObjectsCache<Dictionary<uint, Device>>(v, "computer");
+			if (devices != null)
+				return devices;
+
+			devices = new Dictionary<uint, Device>();
 
 			// store device being added
 			Device dev;
@@ -350,6 +353,8 @@ namespace KERBALISM
 
 			devices = devices.OrderBy(k => k.Value.Name()).ToDictionary(pair => pair.Key, pair => pair.Value);
 			//return all found devices sorted by name
+
+			Cache.SetVesselObjectsCache(v, "computer", devices);
 			return devices;
 		}
 

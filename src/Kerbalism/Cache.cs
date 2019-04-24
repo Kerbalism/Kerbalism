@@ -187,6 +187,7 @@ namespace KERBALISM
 		public static void Init()
 		{
 			vessels = new Dictionary<Guid, Vessel_info>();
+			parts = new Dictionary<Guid, Dictionary<string, object>>();
 			next_inc = 0;
 		}
 
@@ -194,19 +195,24 @@ namespace KERBALISM
 		public static void Clear()
 		{
 			vessels.Clear();
+			parts.Clear();
 			next_inc = 0;
 		}
 
 
 		public static void Purge(Vessel v)
 		{
-			vessels.Remove(Lib.VesselID(v));
+			var id = Lib.VesselID(v);
+			vessels.Remove(id);
+			parts.Remove(id);
 		}
 
 
 		public static void Purge(ProtoVessel pv)
 		{
-			vessels.Remove(Lib.VesselID(pv));
+			var id = Lib.VesselID(pv);
+			vessels.Remove(id);
+			parts.Remove(id);
 		}
 
 
@@ -250,18 +256,39 @@ namespace KERBALISM
 			return info;
 		}
 
-
-		public static bool HasVesselInfo(Vessel v, out Vessel_info vi)
+		internal static T VesselObjectsCache<T>(Vessel vessel, string key)
 		{
-			return vessels.TryGetValue(Lib.VesselID(v), out vi);
+			var id = Lib.VesselID(vessel);
+			if (!parts.ContainsKey(id))
+				return default(T);
+
+			var dict = parts[id];
+			if(dict == null)
+				return default(T);
+
+			if (!dict.ContainsKey(key))
+				return default(T);
+
+			return (T)dict[key];
 		}
 
+		internal static void SetVesselObjectsCache<T>(Vessel vessel, string key, T value)
+		{
+			var id = Lib.VesselID(vessel);
+			if (!parts.ContainsKey(id))
+				parts.Add(id, new Dictionary<string, object>());
 
-		// vessel cache
-		static Dictionary<Guid, Vessel_info> vessels;
+			var dict = parts[id];
+			dict.Remove(key);
+			dict.Add(key, value);
+		}
+
+		// caches
+		private static Dictionary<Guid, Vessel_info> vessels;
+		private static Dictionary<Guid, Dictionary<string, System.Object>> parts;
 
 		// used to generate unique id
-		static UInt64 next_inc;
+		private static UInt64 next_inc;
 	}
 
 
