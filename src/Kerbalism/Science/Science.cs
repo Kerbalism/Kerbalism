@@ -304,7 +304,7 @@ namespace KERBALISM
 			return 0;
 		}
 
-		public static string TestRequirements(string experiment_id, string requirements, Vessel v)
+		public static string TestRequirements(string experiment_id, string requirements, Vessel v, Part part)
 		{
 			CelestialBody body = v.mainBody;
 			Vessel_info vi = Cache.VesselInfo(v);
@@ -372,6 +372,9 @@ namespace KERBALISM
 					case "AltAboveGroundMin": good = v.heightFromTerrain >= double.Parse(value); break;
 					case "AltAboveGroundMax": good = v.heightFromTerrain <= double.Parse(value); break;
 
+					case "Part": good = part.partName == value; break;
+					case "Module": good = Lib.FindModules(v.protoVessel, value).Count > 0; break;
+						
 					case "AstronautComplexLevelMin":
 						good = !ScenarioUpgradeableFacilities.Instance.enabled || ScenarioUpgradeableFacilities.GetFacilityLevel(SpaceCenterFacility.AstronautComplex) >= (double.Parse(value) - 1) / 2.0;
 						break;
@@ -518,6 +521,9 @@ namespace KERBALISM
 				case "TrackingStationLevelMax": return Lib.BuildString(ScenarioUpgradeableFacilities.GetFacilityName(SpaceCenterFacility.TrackingStation), " max. level ", value);
 				case "AstronautComplexLevelMin": return Lib.BuildString(ScenarioUpgradeableFacilities.GetFacilityName(SpaceCenterFacility.AstronautComplex), " level ", value);
 				case "AstronautComplexLevelMax": return Lib.BuildString(ScenarioUpgradeableFacilities.GetFacilityName(SpaceCenterFacility.AstronautComplex), " max. level ", value);
+
+				case "Part": return Lib.BuildString("On ", value);
+				case "Module": return Lib.BuildString("Requires ", value);
 
 				default:
 					return Lib.SpacesOnCaps(condition);

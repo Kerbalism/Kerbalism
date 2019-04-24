@@ -189,6 +189,8 @@ Here is a list of currently supported requirements:
 * VolumePerCrewMin, VolumePerCrewMax: min./max. habitat volume per crew member
 * Facility building levels: MissionControlLevelMin, MissionControlLevelMax, AdministrationLevelMin, AdministrationLevelMax, TrackingStationLevelMin, TrackingStationLevelMax, AstronautComplexLevelMin, AstronautComplexLevelMax
 * MaxAsteroidDistance: max. distance to the nearest asteroid. For unloaded vessels this only works if the asteroid is set as the target.
+* Part: name of the part the experiment has to be on
+* Module: name of a module that is required anywhere on the vessel
 
 The following might or might not work for unloaded vessels, please udpate this list when you find out:
 
