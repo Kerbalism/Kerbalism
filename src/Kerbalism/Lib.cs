@@ -1097,11 +1097,32 @@ namespace KERBALISM
 			return ret;
 		}
 
-		// return all proto modules with a specified name in a vessel
-		// note: disabled modules are not returned
+		public static bool HasPart(Vessel v, string part_name)
+		{
+			string ret = Cache.VesselObjectsCache<string>(v, "has_part:" + part_name);
+			if (!string.IsNullOrEmpty(ret))
+				return bool.Parse(ret);
+
+			if(v.loaded)
+			{
+				ret = (v.parts.Find(k => k.partName == part_name) != null).ToString();
+			}
+			else
+			{
+				ret = (v.protoVessel.protoPartSnapshots.Find(k => k.partName == part_name) != null).ToString();
+			}
+
+			Cache.SetVesselObjectsCache(v, "has_part:" + part_name, ret);
+			return bool.Parse(ret);
+		}
+
+		/// <summary>
+		/// return all proto modules with a specified name in a vessel.
+		/// note: disabled modules are not returned
+		/// </summary>
 		public static List<ProtoPartModuleSnapshot> FindModules(ProtoVessel v, string module_name)
 		{
-			var ret = Cache.VesselObjectsCache<List<ProtoPartModuleSnapshot>>(v, module_name);
+			var ret = Cache.VesselObjectsCache<List<ProtoPartModuleSnapshot>>(v, "mod:" + module_name);
 			if (ret != null)
 				return ret;
 
@@ -1112,7 +1133,7 @@ namespace KERBALISM
 				ret.AddRange(FindModules(p, module_name));
 			}
 
-			Cache.SetVesselObjectsCache(v, module_name, ret);
+			Cache.SetVesselObjectsCache(v, "mod:" + module_name, ret);
 			return ret;
 		}
 

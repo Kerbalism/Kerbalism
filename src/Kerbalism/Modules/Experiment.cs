@@ -474,7 +474,7 @@ namespace KERBALISM
 			if (!didPrepare && !string.IsNullOrEmpty(experiment.crew_prepare))
 				return "not prepared";
 
-			string situationIssue = Science.TestRequirements(experiment.experiment_id, experiment.requires, v, experiment.part);
+			string situationIssue = Science.TestRequirements(experiment.experiment_id, experiment.requires, v);
 			if (situationIssue.Length > 0)
 				return Science.RequirementText(situationIssue);
 
