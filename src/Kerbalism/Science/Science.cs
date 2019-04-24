@@ -344,6 +344,7 @@ namespace KERBALISM
 					case "Greenhouse": good = vi.greenhouses.Count > 0; break;
 					case "Surface": good = Lib.Landed(v); break;
 					case "Atmosphere": good = body.atmosphere && v.altitude < body.atmosphereDepth; break;
+					case "Vacuum": good = !body.atmosphere || v.altitude > body.atmosphereDepth; break;
 					case "Ocean": good = body.ocean && v.altitude < 0.0; break;
 					case "Space": good = body.flightGlobalsIndex != 0 && !Lib.Landed(v) && v.altitude > body.atmosphereDepth; break;
 					case "AbsoluteZero": good = vi.temperature < 30.0; break;

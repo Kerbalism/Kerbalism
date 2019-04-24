@@ -171,6 +171,7 @@ Here is a list of currently supported requirements:
 * Shadow: vessel must not be exposed to sunlight
 * Surface: vessel must be on a surface
 * Atmosphere: vessel must be within an atmosphere
+* Vacuum: the opposite of Atmosphere
 * Ocean: vessel must be submerged
 * Space: in planetary space, i.e. not around the sun
 * AbsoluteZero: temperature < 30 K
