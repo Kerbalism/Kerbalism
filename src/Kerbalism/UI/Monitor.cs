@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 using KSP.Localization;
 
@@ -158,8 +157,8 @@ namespace KERBALISM
 			if(filter_types.Contains(vesselType)) return false;
 			if(filter.Length <= 0 || filter == filter_placeholder) return true;
 
-			List<string> filterTags = filter.ToLower().Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()).ToList();
-			List<string> vesselTags = vesselGroup.ToLower().Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()).ToList();
+			List<string> filterTags = Lib.Tokenize(filter.ToLower(), ' ');
+			List<string> vesselTags = Lib.Tokenize(vesselGroup.ToLower(), ' ');
 
 			foreach (string tag in filterTags)
 			{
