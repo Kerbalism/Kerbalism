@@ -22,8 +22,8 @@ namespace KERBALISM
 			GameEvents.onVesselWillDestroy.Add(this.VesselDestroyed);
 			GameEvents.onPartCouple.Add(this.VesselDock);
 
-			GameEvents.onVesselChange.Add(this.PurgePartsCache);
-			GameEvents.onVesselStandardModification.Add(this.PurgePartsCache);
+			GameEvents.onVesselChange.Add(this.PurgeObjectsCache);
+			GameEvents.onVesselStandardModification.Add(this.PurgeObjectsCache);
 
 			GameEvents.onPartDie.Add(this.PartDestroyed);
 			GameEvents.OnTechnologyResearched.Add(this.TechResearched);
@@ -64,9 +64,9 @@ namespace KERBALISM
 			RemoteTech.Startup();
 		}
 
-		void PurgePartsCache(Vessel vessel)
+		void PurgeObjectsCache(Vessel vessel)
 		{
-			Cache.Purge(vessel);
+			Cache.PurgeObjects(vessel);
 		}
 
 		void ToEVA(GameEvents.FromToAction<Part, Part> data)
@@ -127,6 +127,9 @@ namespace KERBALISM
 			KerbalEVA kerbal = data.to.FindModuleImplementing<KerbalEVA>();
 			EVA.HeadLamps(kerbal, false);
 
+			Cache.PurgeObjects(data.from.vessel);
+			Cache.PurgeObjects(data.to.vessel);
+
 			// execute script
 			DB.Vessel(data.from.vessel).computer.Execute(data.from.vessel, ScriptType.eva_out);
 		}
@@ -152,6 +155,9 @@ namespace KERBALISM
 			// forget vessel data
 			DB.vessels.Remove(Lib.VesselID(data.from.vessel));
 			Drive.Purge(data.from.vessel);
+
+			Cache.PurgeObjects(data.from.vessel);
+			Cache.PurgeObjects(data.to.vessel);
 
 			// execute script
 			DB.Vessel(data.to.vessel).computer.Execute(data.to.vessel, ScriptType.eva_in);
@@ -266,9 +272,9 @@ namespace KERBALISM
 			DB.vessels.Remove(Lib.VesselID(pv));
 
 			// purge the caches
-			Cache.Purge(pv);
 			ResourceCache.Purge(pv);
 			Drive.Purge(pv);
+			Cache.PurgeObjects(pv);
 		}
 
 
@@ -281,9 +287,9 @@ namespace KERBALISM
 			DB.vessels.Remove(Lib.VesselID(pv));
 
 			// purge the caches
-			Cache.Purge(pv);
 			ResourceCache.Purge(pv);
 			Drive.Purge(pv);
+			Cache.PurgeObjects(pv);
 		}
 
 
@@ -313,9 +319,9 @@ namespace KERBALISM
 			}
 
 			// purge the caches
-			Cache.Purge(v);
 			ResourceCache.Purge(v);
 			Drive.Purge(v);
+			Cache.PurgeObjects(v);
 		}
 
 		void VesselDock(GameEvents.FromToAction<Part, Part> e)
@@ -337,7 +343,8 @@ namespace KERBALISM
 			vd.supplies.Clear();
 			vd.scansat_id.Clear();
 
-			Cache.Purge(e.from.vessel);
+			Cache.PurgeObjects(e.from.vessel);
+			Cache.PurgeObjects(e.from.vessel);
 		}
 
 		void PartDestroyed(Part p)
@@ -350,7 +357,7 @@ namespace KERBALISM
 			if (!vi.is_valid)
 				return;
 
-			Cache.Purge(p.vessel);
+			Cache.PurgeObjects(p.vessel);
 			DB.drives.Remove(p.flightID);
 		}
 

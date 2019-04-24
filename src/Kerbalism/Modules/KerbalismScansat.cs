@@ -146,8 +146,14 @@ namespace KERBALISM
 		public static void BackgroundUpdate(Vessel vessel, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, KerbalismScansat kerbalismScansat,
 		                                    Part part_prefab, VesselData vd, Resource_info ec, double elapsed_s)
 		{
-			List<ProtoPartModuleSnapshot> scanners = Lib.FindModules(p, "SCANsat");
-			if (scanners.Count == 0) scanners = Lib.FindModules(p, "ModuleSCANresourceScanner");
+			List<ProtoPartModuleSnapshot> scanners = Cache.VesselObjectsCache<List<ProtoPartModuleSnapshot>>(vessel, "scansat_" + p.flightID);
+			if(scanners == null)
+			{
+				scanners = Lib.FindModules(p, "SCANsat");
+				if (scanners.Count == 0) scanners = Lib.FindModules(p, "ModuleSCANresourceScanner");
+				Cache.SetVesselObjectsCache(vessel, "scansat_" + p.flightID, scanners);
+			}
+
 			if (scanners.Count == 0) return;
 			var scanner = scanners[0];
 

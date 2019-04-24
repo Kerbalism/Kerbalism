@@ -507,7 +507,7 @@ namespace KERBALISM
 				}
 			}
 
-			Cache.SetVesselObjectsCache(vessel, "drive", result);
+			Cache.SetVesselObjectsCache(vessel, "drives", result);
 			return result;
 		}
 

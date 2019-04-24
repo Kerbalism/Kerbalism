@@ -204,7 +204,6 @@ namespace KERBALISM
 		{
 			var id = Lib.VesselID(v);
 			vessels.Remove(id);
-			parts.Remove(id);
 		}
 
 
@@ -212,9 +211,34 @@ namespace KERBALISM
 		{
 			var id = Lib.VesselID(pv);
 			vessels.Remove(id);
+		}
+
+		/// <summary>
+		/// Called whenever a vessel changes and/or should be updated for various reasons.
+		/// Purge object cache AND vessel cache.
+		/// </summary>
+		public static void PurgeObjects(Vessel v)
+		{
+			var id = Lib.VesselID(v);
+			vessels.Remove(id);
 			parts.Remove(id);
 		}
 
+		/// <summary>
+		/// Called whenever a vessel changes and/or should be updated for various reasons.
+		/// Purge object cache AND vessel cache.
+		/// </summary>
+		public static void PurgeObjects(ProtoVessel v)
+		{
+			var id = Lib.VesselID(v);
+			vessels.Remove(id);
+			parts.Remove(id);
+		}
+
+		public static void PurgeObjects()
+		{
+			parts.Clear();	
+		}
 
 		public static void Update()
 		{
