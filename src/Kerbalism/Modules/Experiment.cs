@@ -32,14 +32,9 @@ namespace KERBALISM
 		[KSPField] public string anim_deploy = string.Empty; // deploy animation
 		[KSPField] public bool anim_deploy_reverse = false;
 
-		[KSPField] public string anim_dataRemoval = string.Empty;
-		[KSPField] public bool anim_dataRemoval_reverse = false;
+		[KSPField] public string anim_loop = string.Empty; // deploy animation
+		[KSPField] public bool anim_loop_reverse = false;
 
-		[KSPField] public string transform_sample = string.Empty;
-		[KSPField] public bool transform_sample_reverse = false;
-
-		[KSPField] public string transform_replacement = string.Empty;
-		[KSPField] public bool transform_replacement_reverse = false;
 
 		// persistence
 		[KSPField(isPersistant = true)] public bool recording;
@@ -59,6 +54,7 @@ namespace KERBALISM
 		private State state = State.STOPPED;
 		// animations
 		internal Animator deployAnimator;
+		internal Animator loopAnimator;
 
 		private CrewSpecs operator_cs;
 		private CrewSpecs reset_cs;
@@ -113,12 +109,17 @@ namespace KERBALISM
 			// don't break tutorial scenarios
 			if (Lib.DisableScenario(this)) return;
 
-			// create animator
+			// create animators
 			deployAnimator = new Animator(part, anim_deploy);
 			deployAnimator.reversed = anim_deploy_reverse;
 
-			// set initial animation state
+			loopAnimator = new Animator(part, anim_loop);
+			loopAnimator.reversed = anim_loop_reverse;
+
+			// set initial animation states
 			deployAnimator.Still(recording ? 1.0 : 0.0);
+			loopAnimator.Still(recording ? 1.0 : 0.0);
+			if (recording) loopAnimator.Play(false, true);
 
 			// parse crew specs
 			if(!string.IsNullOrEmpty(crew_operate))
@@ -624,6 +625,9 @@ namespace KERBALISM
 				return;
 			}
 
+			if (Lib.IsFlight() && !vessel.IsControllable)
+				return;
+
 			if (state == State.WAITING)
 			{
 				forcedRun = true;
@@ -656,8 +660,27 @@ namespace KERBALISM
 
 			if(previous_recording != new_recording)
 			{
-				// play deploy animation if exist
-				deployAnimator.Play(!new_recording, false, this, delegate () { recording = new_recording; });
+				
+				if(!new_recording)
+				{
+					// stop experiment
+
+					// plays the deploy animation in reverse
+					Action stop = delegate () { recording = false; deployAnimator.Play(true, false); };
+
+					// wait for loop animation to stop before deploy animation
+					if (loopAnimator.Playing())
+						loopAnimator.Stop(stop);
+					else
+						stop.Invoke();
+				}
+				else
+				{
+					// start experiment
+
+					// play the deploy animation, when it's done start the loop animation
+					deployAnimator.Play(false, false, delegate () { recording = true; loopAnimator.Play(false, true); });
+				}
 			}
 		}
 

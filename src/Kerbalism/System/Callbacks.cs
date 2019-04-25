@@ -22,8 +22,8 @@ namespace KERBALISM
 			GameEvents.onVesselWillDestroy.Add(this.VesselDestroyed);
 			GameEvents.onPartCouple.Add(this.VesselDock);
 
-			GameEvents.onVesselChange.Add(this.PurgeObjectsCache);
-			GameEvents.onVesselStandardModification.Add(this.PurgeObjectsCache);
+			GameEvents.onVesselChange.Add((v) => { Cache.PurgeObjects(v); });
+			GameEvents.onVesselStandardModification.Add((v) => { Cache.PurgeObjects(v); });
 
 			GameEvents.onPartDie.Add(this.PartDestroyed);
 			GameEvents.OnTechnologyResearched.Add(this.TechResearched);
@@ -47,7 +47,7 @@ namespace KERBALISM
 			GameEvents.onGUILaunchScreenSpawn.Add((_) => visible = false);
 			GameEvents.onGUILaunchScreenDespawn.Add(() => visible = true);
 
-			GameEvents.onGameSceneSwitchRequested.Add((_) => visible = false);
+			GameEvents.onGameSceneSwitchRequested.Add((_) => { visible = false; Cache.PurgeObjects(); });
 			GameEvents.onGUIApplicationLauncherReady.Add(() => visible = true);
 
 			GameEvents.CommNet.OnNetworkInitialized.Add(() => Kerbalism.Fetch.StartCoroutine(NetworkInitialized()));
@@ -62,11 +62,6 @@ namespace KERBALISM
 			Lib.DebugLog("NetworkInitialized");
 			Communications.NetworkInitialized = true;
 			RemoteTech.Startup();
-		}
-
-		void PurgeObjectsCache(Vessel vessel)
-		{
-			Cache.PurgeObjects(vessel);
 		}
 
 		void ToEVA(GameEvents.FromToAction<Part, Part> data)
@@ -343,8 +338,7 @@ namespace KERBALISM
 			vd.supplies.Clear();
 			vd.scansat_id.Clear();
 
-			Cache.PurgeObjects(e.from.vessel);
-			Cache.PurgeObjects(e.from.vessel);
+			Cache.PurgeObjects();
 		}
 
 		void PartDestroyed(Part p)

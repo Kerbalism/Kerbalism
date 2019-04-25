@@ -187,7 +187,7 @@ namespace KERBALISM
 		public static void Init()
 		{
 			vessels = new Dictionary<Guid, Vessel_info>();
-			parts = new Dictionary<Guid, Dictionary<string, object>>();
+			vesselObjects = new Dictionary<Guid, Dictionary<string, object>>();
 			next_inc = 0;
 		}
 
@@ -195,7 +195,7 @@ namespace KERBALISM
 		public static void Clear()
 		{
 			vessels.Clear();
-			parts.Clear();
+			vesselObjects.Clear();
 			next_inc = 0;
 		}
 
@@ -221,7 +221,7 @@ namespace KERBALISM
 		{
 			var id = Lib.VesselID(v);
 			vessels.Remove(id);
-			parts.Remove(id);
+			vesselObjects.Remove(id);
 		}
 
 		/// <summary>
@@ -232,12 +232,12 @@ namespace KERBALISM
 		{
 			var id = Lib.VesselID(v);
 			vessels.Remove(id);
-			parts.Remove(id);
+			vesselObjects.Remove(id);
 		}
 
 		public static void PurgeObjects()
 		{
-			parts.Clear();	
+			vesselObjects.Clear();	
 		}
 
 		public static void Update()
@@ -292,10 +292,10 @@ namespace KERBALISM
 
 		private static T VesselObjectsCache<T>(Guid id, string key)
 		{
-			if (!parts.ContainsKey(id))
+			if (!vesselObjects.ContainsKey(id))
 				return default(T);
 
-			var dict = parts[id];
+			var dict = vesselObjects[id];
 			if(dict == null)
 				return default(T);
 
@@ -317,17 +317,20 @@ namespace KERBALISM
 
 		private static void SetVesselObjectsCache<T>(Guid id, string key, T value)
 		{
-			if (!parts.ContainsKey(id))
-				parts.Add(id, new Dictionary<string, object>());
+			if (Lib.IsFlight() && (!FlightGlobals.ready || !FlightGlobals.ActiveVessel.loaded))
+				return;
 
-			var dict = parts[id];
+			if (!vesselObjects.ContainsKey(id))
+				vesselObjects.Add(id, new Dictionary<string, object>());
+
+			var dict = vesselObjects[id];
 			dict.Remove(key);
 			dict.Add(key, value);
 		}
 
 		// caches
 		private static Dictionary<Guid, Vessel_info> vessels;
-		private static Dictionary<Guid, Dictionary<string, System.Object>> parts;
+		private static Dictionary<Guid, Dictionary<string, System.Object>> vesselObjects;
 
 		// used to generate unique id
 		private static UInt64 next_inc;

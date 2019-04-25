@@ -100,8 +100,12 @@ namespace KERBALISM
 					if (totalValue >= 0.1 && totalValue - value < 0.1)
 					{
 						Message.Post(
-						  Lib.BuildString("<color=cyan><b>EXPERIMENT FINISHED</b></color>\nExperiment <b>", Experiment(exp_filename).name, "</b> is completed"),
-						  Lib.TextVariant("Our researchers will jump on it right now", "Our researchers quarrel over your findings"));
+							Lib.BuildString(Lib.HumanReadableScience(totalValue), " ", Experiment(exp_filename).FullName(exp_filename), " completed"),
+						  Lib.TextVariant(
+								"Our researchers will jump on it right now",
+								"There is excitement because of your findings",
+								"The results are causing a brouhaha in R&D"
+							));
 					}
 				}
 
