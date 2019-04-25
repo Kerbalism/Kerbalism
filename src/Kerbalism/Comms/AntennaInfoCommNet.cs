@@ -11,6 +11,9 @@ namespace KERBALISM
 		{
 			List<ModuleDataTransmitter> transmitters;
 
+			int transmitterCount = 0;
+			rate = 1;
+
 			// if vessel is loaded
 			if (v.loaded)
 			{
@@ -39,7 +42,8 @@ namespace KERBALISM
 								// only include data rate and ec cost if transmitter is extended
 								if (animation.deployState == ModuleDeployablePart.DeployState.EXTENDED)
 								{
-									rate += t.DataRate;
+									rate *= t.DataRate;
+									transmitterCount++;
 									ec += t.DataResourceCost * t.DataRate;
 								}
 							}
@@ -48,14 +52,16 @@ namespace KERBALISM
 								// only include data rate and ec cost if transmitter is extended
 								if (animationGeneric.animSpeed > 0)
 								{
-									rate += t.DataRate;
+									rate *= t.DataRate;
+									transmitterCount++;
 									ec += t.DataResourceCost * t.DataRate;
 								}
 							}
 							// no animation
 							else
 							{
-								rate += t.DataRate;
+								rate *= t.DataRate;
+								transmitterCount++;
 								ec += t.DataResourceCost * t.DataRate;
 							}
 						}
@@ -90,14 +96,16 @@ namespace KERBALISM
 									float animSpeed = Lib.Proto.GetFloat(m, "animSpeed");
 									if (deployState == "EXTENDED" || animSpeed > 0)
 									{
-										rate += t.DataRate;
+										rate *= t.DataRate;
+										transmitterCount++;
 										ec += t.DataResourceCost * t.DataRate;
 									}
 								}
 								// no animation
 								else
 								{
-									rate += t.DataRate;
+									rate *= t.DataRate;
+									transmitterCount++;
 									ec += t.DataResourceCost * t.DataRate;
 								}
 							}
@@ -105,6 +113,11 @@ namespace KERBALISM
 					}
 				}
 			}
+
+			if (transmitterCount > 1)
+				rate = Math.Pow(rate, 1.0 / transmitterCount);
+			else if (transmitterCount == 0)
+				rate = 0;
 
 			Init(v, powered, storm);
 		}
