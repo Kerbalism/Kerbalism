@@ -9,16 +9,22 @@ namespace KERBALISM
 	{
 		public AntennaInfoCommNet(Vessel v, bool powered, bool storm)
 		{
-			List<ModuleDataTransmitter> transmitters;
-
 			int transmitterCount = 0;
 			rate = 1;
 
 			// if vessel is loaded
 			if (v.loaded)
 			{
-				// find transmitters
-				transmitters = v.FindPartModulesImplementing<ModuleDataTransmitter>();
+				// cache transmitters
+				var transmitters = Cache.VesselObjectsCache<List<ModuleDataTransmitter>>(v, "commnet");
+				if(transmitters == null)
+				{
+					// find transmitters
+					transmitters = v.FindPartModulesImplementing<ModuleDataTransmitter>();
+					if (transmitters == null)
+						transmitters = new List<ModuleDataTransmitter>();
+					Cache.SetVesselObjectsCache(v, "commnet", transmitters);
+				}
 
 				if (transmitters != null)
 				{
@@ -71,44 +77,55 @@ namespace KERBALISM
 			// if vessel is not loaded
 			else
 			{
-				// find proto transmitters
-				foreach (ProtoPartSnapshot p in v.protoVessel.protoPartSnapshots)
+				// cache transmitters
+				var transmitters = Cache.VesselObjectsCache<List<KeyValuePair<ModuleDataTransmitter, ProtoPartSnapshot>>>(v, "commnet");
+				if (transmitters == null)
 				{
-					// get part prefab (required for module properties)
-					Part part_prefab = PartLoader.getPartInfoByName(p.partName).partPrefab;
-
-					transmitters = part_prefab.FindModulesImplementing<ModuleDataTransmitter>();
-
-					if (transmitters != null)
+					transmitters = new List<KeyValuePair<ModuleDataTransmitter, ProtoPartSnapshot>>();
+					// find proto transmitters
+					foreach (ProtoPartSnapshot p in v.protoVessel.protoPartSnapshots)
 					{
-						foreach (ModuleDataTransmitter t in transmitters)
+						// get part prefab (required for module properties)
+						Part part_prefab = PartLoader.getPartInfoByName(p.partName).partPrefab;
+
+						foreach(ModuleDataTransmitter t in part_prefab.FindModulesImplementing<ModuleDataTransmitter>())
 						{
-							if (t.antennaType == AntennaType.INTERNAL) // do not include internal data rate, ec cost only
-								ec += t.DataResourceCost * t.DataRate;
-							else
+							transmitters.Add(new KeyValuePair<ModuleDataTransmitter, ProtoPartSnapshot>(t, p));
+						}
+					}
+
+					Cache.SetVesselObjectsCache(v, "commnet", transmitters);
+				}
+
+				foreach(var pair in transmitters)
+				{
+					ModuleDataTransmitter t = pair.Key;
+					ProtoPartSnapshot p = pair.Value;
+
+					if (t.antennaType == AntennaType.INTERNAL) // do not include internal data rate, ec cost only
+						ec += t.DataResourceCost * t.DataRate;
+					else
+					{
+						// do we have an animation
+						ProtoPartModuleSnapshot m = p.FindModule("ModuleDeployableAntenna") ?? p.FindModule("ModuleAnimateGeneric");
+						if (m != null)
+						{
+							// only include data rate and ec cost if transmitter is extended
+							string deployState = Lib.Proto.GetString(m, "deployState");
+							float animSpeed = Lib.Proto.GetFloat(m, "animSpeed");
+							if (deployState == "EXTENDED" || animSpeed > 0)
 							{
-								// do we have an animation
-								ProtoPartModuleSnapshot m = p.FindModule("ModuleDeployableAntenna") ?? p.FindModule("ModuleAnimateGeneric");
-								if (m != null)
-								{
-									// only include data rate and ec cost if transmitter is extended
-									string deployState = Lib.Proto.GetString(m, "deployState");
-									float animSpeed = Lib.Proto.GetFloat(m, "animSpeed");
-									if (deployState == "EXTENDED" || animSpeed > 0)
-									{
-										rate *= t.DataRate;
-										transmitterCount++;
-										ec += t.DataResourceCost * t.DataRate;
-									}
-								}
-								// no animation
-								else
-								{
-									rate *= t.DataRate;
-									transmitterCount++;
-									ec += t.DataResourceCost * t.DataRate;
-								}
+								rate *= t.DataRate;
+								transmitterCount++;
+								ec += t.DataResourceCost * t.DataRate;
 							}
+						}
+						// no animation
+						else
+						{
+							rate *= t.DataRate;
+							transmitterCount++;
+							ec += t.DataResourceCost * t.DataRate;
 						}
 					}
 				}
