@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using Experience;
 using UnityEngine;
 using KSP.Localization;
+using System.Collections;
+
 
 namespace KERBALISM
 {
@@ -28,6 +30,16 @@ namespace KERBALISM
 
 		// animations
 		[KSPField] public string anim_deploy = string.Empty; // deploy animation
+		[KSPField] public bool anim_deploy_reverse = false;
+
+		[KSPField] public string anim_dataRemoval = string.Empty;
+		[KSPField] public bool anim_dataRemoval_reverse = false;
+
+		[KSPField] public string transform_sample = string.Empty;
+		[KSPField] public bool transform_sample_reverse = false;
+
+		[KSPField] public string transform_replacement = string.Empty;
+		[KSPField] public bool transform_replacement_reverse = false;
 
 		// persistence
 		[KSPField(isPersistant = true)] public bool recording;
@@ -103,6 +115,7 @@ namespace KERBALISM
 
 			// create animator
 			deployAnimator = new Animator(part, anim_deploy);
+			deployAnimator.reversed = anim_deploy_reverse;
 
 			// set initial animation state
 			deployAnimator.Still(recording ? 1.0 : 0.0);
@@ -618,6 +631,11 @@ namespace KERBALISM
 				return;
 			}
 
+			if (deployAnimator.Playing())
+				return; // nervous clicker? wait for it, goddamnit.
+
+			var previous_recording = recording;
+
 			// The same experiment must run only once on a vessel
 			if (!recording)
 			{
@@ -633,8 +651,14 @@ namespace KERBALISM
 				forcedRun = false;
 			}
 
-			// play deploy animation if exist
-			deployAnimator.Play(!recording, false);
+			var new_recording = recording;
+			recording = previous_recording;
+
+			if(previous_recording != new_recording)
+			{
+				// play deploy animation if exist
+				deployAnimator.Play(!new_recording, false, this, delegate () { recording = new_recording; });
+			}
 		}
 
 		// action groups
@@ -759,7 +783,7 @@ namespace KERBALISM
 					{
 						// An experiment was added in recording state? Cheeky bugger!
 						experiment.recording = false;
-						if(experiment.deployAnimator != null) experiment.deployAnimator.Still(0);
+						experiment.deployAnimator.Still(0);
 					}
 					experiments.Add(experiment);
 				}
