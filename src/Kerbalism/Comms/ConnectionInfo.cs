@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System;
 
 namespace KERBALISM
 {
@@ -35,31 +36,28 @@ namespace KERBALISM
 
 		public List<string[]> control_path = null;
 
-		// constructor
+		public static ConnectionInfo Update(Vessel v, bool powered, bool storm)
+		{
+			var result = Cache.VesselObjectsCache<ConnectionInfo>(v, "connection_info");
+			var ts = Cache.VesselObjectsCache<double>(v, "connection_info_ts");
+			var maxAge = Math.Max(2, Kerbalism.elapsed_s * 2);
+
+			if (result == null || Planetarium.GetUniversalTime() > ts + maxAge)
+			{
+				result = new ConnectionInfo(v, powered, storm);
+				Cache.SetVesselObjectsCache(v, "connection_info", result);
+				Cache.SetVesselObjectsCache(v, "connection_info_ts", Planetarium.GetUniversalTime());
+			}
+
+			return result;
+		}
+
 		/// <summary> Creates a <see cref="ConnectionInfo"/> object for the specified vessel from it's antenna modules</summary>
-		public ConnectionInfo(Vessel v, bool powered, bool storm)
+		private ConnectionInfo(Vessel v, bool powered, bool storm)
 		{
 			// return no connection if there is no ec left
 			if (!powered)
-			{
-				// hysteresis delay
-				if (DB.Vessel(v).hyspos_signal >= 5.0)
-				{
-					DB.Vessel(v).hyspos_signal = 5.0;
-					DB.Vessel(v).hysneg_signal = 0.0;
-					return;
-				}
-				DB.Vessel(v).hyspos_signal += 0.1;
-			}
-			else
-			{
-				// hysteresis delay
-				DB.Vessel(v).hysneg_signal += 0.1;
-				if (DB.Vessel(v).hysneg_signal < 5.0)
-					return;
-				DB.Vessel(v).hysneg_signal = 5.0;
-				DB.Vessel(v).hyspos_signal = 0.0;
-			}
+				return;
 
 			AntennaInfo ai = GetAntennaInfo(v, powered, storm);
 			ec = ai.ec;

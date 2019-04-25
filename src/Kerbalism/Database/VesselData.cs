@@ -21,8 +21,6 @@ namespace KERBALISM
 			cfg_script = PreferencesMessages.Instance.script;
 			cfg_highlights = PreferencesBasic.Instance.highlights;
 			cfg_showlink = true;
-			hyspos_signal = 0.0;
-			hysneg_signal = 5.0;
 			storm_time = 0.0;
 			storm_age = 0.0;
 			storm_state = 0;
@@ -44,8 +42,6 @@ namespace KERBALISM
 			cfg_script = Lib.ConfigValue(node, "cfg_script", PreferencesMessages.Instance.script);
 			cfg_highlights = Lib.ConfigValue(node, "cfg_highlights", PreferencesBasic.Instance.highlights);
 			cfg_showlink = Lib.ConfigValue(node, "cfg_showlink", true);
-			hyspos_signal = Lib.ConfigValue(node, "hyspos_signal", 0.0);
-			hysneg_signal = Lib.ConfigValue(node, "hysneg_signal", 0.0);
 			storm_time = Lib.ConfigValue(node, "storm_time", 0.0);
 			storm_age = Lib.ConfigValue(node, "storm_age", 0.0);
 			storm_state = Lib.ConfigValue(node, "storm_state", 0u);
@@ -77,8 +73,6 @@ namespace KERBALISM
 			node.AddValue("cfg_script", cfg_script);
 			node.AddValue("cfg_highlights", cfg_highlights);
 			node.AddValue("cfg_showlink", cfg_showlink);
-			node.AddValue("hyspos_signal", hyspos_signal);
-			node.AddValue("hysneg_signal", hysneg_signal);
 			node.AddValue("storm_time", storm_time);
 			node.AddValue("storm_age", storm_age);
 			node.AddValue("storm_state", storm_state);
@@ -116,8 +110,6 @@ namespace KERBALISM
 		public bool cfg_script;       // enable/disable message: scripts
 		public bool cfg_highlights;   // show/hide malfunction highlights
 		public bool cfg_showlink;     // show/hide link line
-		public double hyspos_signal;  // used to stop toggling signal on/off when near zero ec
-		public double hysneg_signal;  // used to stop toggling signal on/off when near zero ec
 		public double storm_time;     // time of next storm (interplanetary CME)
 		public double storm_age;      // time since last storm (interplanetary CME)
 		public uint storm_state;      // 0: none, 1: inbound, 2: in progress (interplanetary CME)
@@ -129,6 +121,3 @@ namespace KERBALISM
 
 
 } // KERBALISM
-
-
-
