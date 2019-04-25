@@ -321,10 +321,12 @@ namespace KERBALISM
 				bool good = true;
 				switch (condition)
 				{
-					case "OrbitMinInclination": good = Math.Abs(v.orbit.inclination) >= double.Parse(value); break;
-					case "OrbitMaxInclination": good = Math.Abs(v.orbit.inclination) <= double.Parse(value); break;
-					case "OrbitMinEccentricity": good = Math.Abs(v.orbit.eccentricity) >= double.Parse(value); break;
-					case "OrbitMaxEccentricity": good = Math.Abs(v.orbit.eccentricity) <= double.Parse(value); break;
+					case "OrbitMinInclination": good = v.orbit.inclination >= double.Parse(value); break;
+					case "OrbitMaxInclination": good = v.orbit.inclination <= double.Parse(value); break;
+					case "OrbitMinEccentricity": good = v.orbit.eccentricity >= double.Parse(value); break;
+					case "OrbitMaxEccentricity": good = v.orbit.eccentricity <= double.Parse(value); break;
+					case "OrbitMinArgOfPeriapsis": good = v.orbit.argumentOfPeriapsis >= double.Parse(value); break;
+					case "OrbitMaxArgOfPeriapsis": good = v.orbit.argumentOfPeriapsis <= double.Parse(value); break;
 
 					case "TemperatureMin": good = vi.temperature >= double.Parse(value); break;
 					case "TemperatureMax": good = vi.temperature <= double.Parse(value); break;
@@ -480,6 +482,8 @@ namespace KERBALISM
 				case "OrbitMaxInclination": return Lib.BuildString("Max. inclination ", value, "°");
 				case "OrbitMinEccentricity": return Lib.BuildString("Min. eccentricity ", value);
 				case "OrbitMaxEccentricity": return Lib.BuildString("Max. eccentricity ", value);
+				case "OrbitMinArgOfPeriapsis": return Lib.BuildString("Min. argument of Pe ", value);
+				case "OrbitMaxArgOfPeriapsis": return Lib.BuildString("Max. argument of Pe ", value);
 				case "AltitudeMin": return Lib.BuildString("Min. altitude ", Lib.HumanReadableRange(Double.Parse(value)));
 				case "AltitudeMax":
 					var v = Double.Parse(value);

@@ -163,6 +163,7 @@ Here is a list of currently supported requirements:
 
 * OrbitMinInclination, OrbitMaxInclination: min./max. inclination of the orbit (f.i. `OrbitMinInclination:30`)
 * OrbitMinEccentricity, OrbitMaxEccentricity: min./max. eccentricity of the orbit (f.i. `OrbitMaxEccentricity:0.1`)
+* OrbitMinArgOfPeriapsis, OrbitMaxArgOfPeriapsis: min./max. argument of periapsis
 * TemperatureMin, TemperatureMax: min./max. Temperature in Kelvin
 * AltitudeMin, AltitudeMax: min./max. Altitude in Meters
 * RadiationMin, RadiationMax: min./max. radiation in rad/h
