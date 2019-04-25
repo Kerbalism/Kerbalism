@@ -7,10 +7,11 @@ namespace KERBALISM
 {
 	public sealed class AntennaInfoCommNet: AntennaInfo
 	{
-		public AntennaInfoCommNet(Vessel v, bool powered, bool storm)
+		public AntennaInfoCommNet(Vessel v, bool powered, bool storm, bool transmitting)
 		{
 			int transmitterCount = 0;
 			rate = 1;
+			double ec_transmitter = 0;
 
 			// if vessel is loaded
 			if (v.loaded)
@@ -50,7 +51,8 @@ namespace KERBALISM
 								{
 									rate *= t.DataRate;
 									transmitterCount++;
-									ec += t.DataResourceCost * t.DataRate;
+									var e = t.DataResourceCost * t.DataRate;
+									ec_transmitter += e;
 								}
 							}
 							else if (animationGeneric != null)
@@ -60,7 +62,8 @@ namespace KERBALISM
 								{
 									rate *= t.DataRate;
 									transmitterCount++;
-									ec += t.DataResourceCost * t.DataRate;
+									var e = t.DataResourceCost * t.DataRate;
+									ec_transmitter += e;
 								}
 							}
 							// no animation
@@ -68,7 +71,8 @@ namespace KERBALISM
 							{
 								rate *= t.DataRate;
 								transmitterCount++;
-								ec += t.DataResourceCost * t.DataRate;
+								var e = t.DataResourceCost * t.DataRate;
+								ec_transmitter += e;
 							}
 						}
 					}
@@ -117,7 +121,7 @@ namespace KERBALISM
 							{
 								rate *= t.DataRate;
 								transmitterCount++;
-								ec += t.DataResourceCost * t.DataRate;
+								ec_transmitter += t.DataResourceCost * t.DataRate;
 							}
 						}
 						// no animation
@@ -125,7 +129,7 @@ namespace KERBALISM
 						{
 							rate *= t.DataRate;
 							transmitterCount++;
-							ec += t.DataResourceCost * t.DataRate;
+							ec_transmitter += t.DataResourceCost * t.DataRate;
 						}
 					}
 				}
@@ -135,6 +139,12 @@ namespace KERBALISM
 				rate = Math.Pow(rate, 1.0 / transmitterCount);
 			else if (transmitterCount == 0)
 				rate = 0;
+
+			// when transmitting, transmitters need more EC for the signal amplifiers.
+			// while not transmitting, transmitters only use 10-20% of that
+			ec_transmitter *= transmitting ? Settings.TransmitterActiveEcFactor : Settings.TransmitterPassiveEcFactor;
+
+			ec += ec_transmitter;
 
 			Init(v, powered, storm);
 		}
@@ -189,6 +199,11 @@ namespace KERBALISM
 				string tooltip = "Distance: " + Lib.HumanReadableRange((link.start.position - link.end.position).magnitude) +
 					"\nMax Distance: " + Lib.HumanReadableRange(Math.Sqrt((link.start.antennaTransmit.power + link.start.antennaRelay.power) * link.end.antennaRelay.power));
 				control_path.Add(new string[] { name, value, tooltip });
+			}
+
+			if(linked)
+			{
+
 			}
 		}
 	}

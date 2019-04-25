@@ -91,10 +91,10 @@ namespace KERBALISM
 
 			// if CommNet is enabled
 			if (HighLogic.fetch.currentGame.Parameters.Difficulty.EnableCommNet)
-				return new AntennaInfoCommNet(v, powered, storm);
+				return new AntennaInfoCommNet(v, powered, storm, ai.transmitting);
 
 			// default: the simple stupid always connected signal system
-			AntennaInfoCommNet antennaInfo = new AntennaInfoCommNet(v, powered, storm);
+			AntennaInfoCommNet antennaInfo = new AntennaInfoCommNet(v, powered, storm, ai.transmitting);
 
 			antennaInfo.ec *= 0.16;
 			antennaInfo.linked = true;
