@@ -753,7 +753,7 @@ namespace KERBALISM
 			if (crew_operate.Length > 0)
 			{
 				var cs = new CrewSpecs(crew_operate);
-				specs.Add("Operation", cs ? cs.Info() : "without crew");
+				specs.Add("Operation", cs ? cs.Info() : "unmanned");
 			}
 			if (crew_reset.Length > 0)
 			{
