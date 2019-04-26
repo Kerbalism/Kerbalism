@@ -490,6 +490,7 @@ namespace KERBALISM
 				return result;
 
 			result = new Dictionary<uint, Drive>();
+
 			if(vessel.loaded)
 			{
 				foreach (var hd in vessel.FindPartModulesImplementing<HardDrive>())

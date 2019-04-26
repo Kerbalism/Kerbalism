@@ -317,15 +317,31 @@ namespace KERBALISM
 
 		private static void SetVesselObjectsCache<T>(Guid id, string key, T value)
 		{
-			if (Lib.IsFlight() && (!FlightGlobals.ready || !FlightGlobals.ActiveVessel.loaded))
-				return;
-
 			if (!vesselObjects.ContainsKey(id))
 				vesselObjects.Add(id, new Dictionary<string, object>());
 
 			var dict = vesselObjects[id];
 			dict.Remove(key);
 			dict.Add(key, value);
+		}
+
+		internal static void RemoveVesselObjectsCache(Vessel vessel, string key)
+		{
+			RemoveVesselObjectsCache(Lib.VesselID(vessel), key);
+		}
+
+		internal static void RemoveVesselObjectsCache(ProtoVessel vessel, string key)
+		{
+			RemoveVesselObjectsCache(Lib.VesselID(vessel), key);
+		}
+
+		private static void RemoveVesselObjectsCache(Guid id, string key)
+		{
+			if (!vesselObjects.ContainsKey(id))
+				return;
+
+			var dict = vesselObjects[id];
+			dict.Remove(key);
 		}
 
 		// caches
