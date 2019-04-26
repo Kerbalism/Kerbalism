@@ -21,10 +21,13 @@ namespace KERBALISM
 
 			// Stock KSP adds 5 units of monoprop to EVAs. We want to limit that amount
 			// to whatever was available in the ship, so we don't magically create EVA prop out of nowhere
-			if(vi.evaPropQuantity >= 0)
+			if(Cache.HasVesselObjectsCache(v, "eva_prop"))
 			{
-				Lib.SetResource(kerbal.part, Lib.EvaPropellantName(), vi.evaPropQuantity, Lib.EvaPropellantCapacity());
-				vi.evaPropQuantity = -1;
+				Lib.Log("### have eva_prop for " + v);
+				var quantity = Cache.VesselObjectsCache<double>(v, "eva_prop");
+				Cache.RemoveVesselObjectsCache(v, "eva_prop");
+				Lib.Log("### adding " + quantity + " eva prop");
+				Lib.SetResource(kerbal.part, Lib.EvaPropellantName(), quantity, Lib.EvaPropellantCapacity());
 			}
 
 			// get resource handler

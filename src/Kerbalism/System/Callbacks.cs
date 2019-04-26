@@ -66,6 +66,9 @@ namespace KERBALISM
 
 		void ToEVA(GameEvents.FromToAction<Part, Part> data)
 		{
+			Cache.PurgeObjects(data.from.vessel);
+			Cache.PurgeObjects(data.to.vessel);
+
 			// get total crew in the origin vessel
 			double tot_crew = Lib.CrewCount(data.from.vessel) + 1.0;
 
@@ -106,7 +109,8 @@ namespace KERBALISM
 			// We can't just add the monoprop here, because that doesn't always work. It might be related
 			// to the fact that stock KSP wants to add 5 units of monoprop to new EVAs. Instead of fighting KSP here,
 			// we just let it do it's thing and set our amount later in EVA.cs - which seems to work just fine.
-			Cache.VesselInfo(data.to.vessel).evaPropQuantity = evaPropQuantity;
+			// don't put that into Cache.VesselInfo because that can be deleted before we get there
+			Cache.SetVesselObjectsCache(data.to.vessel, "eva_prop", evaPropQuantity);
 
 			// Airlock loss
 			resources.Consume(data.from.vessel, "Nitrogen", PreferencesLifeSupport.Instance.evaAtmoLoss, "airlock");
@@ -121,9 +125,6 @@ namespace KERBALISM
 			// turn off headlamp light, to avoid stock bug that show them for a split second when going on eva
 			KerbalEVA kerbal = data.to.FindModuleImplementing<KerbalEVA>();
 			EVA.HeadLamps(kerbal, false);
-
-			Cache.PurgeObjects(data.from.vessel);
-			Cache.PurgeObjects(data.to.vessel);
 
 			// execute script
 			DB.Vessel(data.from.vessel).computer.Execute(data.from.vessel, ScriptType.eva_out);

@@ -176,7 +176,6 @@ namespace KERBALISM
 		public List<Greenhouse.Data> greenhouses; // some data about greenhouses
 		public double gravioli;             // gravitation gauge particles detected (joke)
 		public bool powered;                // true if vessel is powered
-		public double evaPropQuantity = -1; // amount of EVA prop to set to this vessel (workaround for KSP behavior)
 		public double free_capacity = 0.0;  // free data storage available data capacity of all public drives
 		public double total_capacity = 0.0; // data capacity of all public drives
 	}
@@ -259,7 +258,11 @@ namespace KERBALISM
 			}
 		}
 
-
+		/// <summary>
+		/// Returns a set of cached values for a vessel, stuff we don't want to update once per physics tick.
+		/// NOTE: the vessel info cache object will be recreated quite often at random times. Do not use it
+		/// to persist any kind of information, it will be lost.
+		/// </summary>
 		public static Vessel_info VesselInfo(Vessel v)
 		{
 			// get vessel id
@@ -325,21 +328,39 @@ namespace KERBALISM
 			dict.Add(key, value);
 		}
 
+		internal static bool HasVesselObjectsCache(Vessel vessel, string key)
+		{
+			return HasVesselObjectsCache(Lib.VesselID(vessel), key);
+		}
+
+		internal static bool HasVesselObjectsCache(ProtoVessel pv, string key)
+		{
+			return HasVesselObjectsCache(Lib.VesselID(pv), key);
+		}
+
+		private static bool HasVesselObjectsCache(Guid id, string key)
+		{
+			if (!vesselObjects.ContainsKey(id))
+				return false;
+
+			var dict = vesselObjects[id];
+			return dict.ContainsKey(key);
+		}
+
 		internal static void RemoveVesselObjectsCache(Vessel vessel, string key)
 		{
 			RemoveVesselObjectsCache(Lib.VesselID(vessel), key);
 		}
 
-		internal static void RemoveVesselObjectsCache(ProtoVessel vessel, string key)
+		internal static void RemoveVesselObjectsCache<T>(ProtoVessel pv, string key)
 		{
-			RemoveVesselObjectsCache(Lib.VesselID(vessel), key);
+			RemoveVesselObjectsCache(Lib.VesselID(pv), key);
 		}
 
 		private static void RemoveVesselObjectsCache(Guid id, string key)
 		{
 			if (!vesselObjects.ContainsKey(id))
 				return;
-
 			var dict = vesselObjects[id];
 			dict.Remove(key);
 		}
