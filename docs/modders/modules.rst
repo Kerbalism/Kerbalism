@@ -172,6 +172,8 @@ Here is a list of currently supported requirements:
 * Shadow: vessel must not be exposed to sunlight
 * Surface: vessel must be on a surface
 * Atmosphere: vessel must be within an atmosphere
+* AtmosphereBody: vessel must be within the SOI of a body with atmosphere
+* AtmosphereAltMin / AtmosphereAltMax: Altitude of vessel as a multiplier of atmosphere thickness. On Kerbin, AtmosphereAltMin:1 equals 70km.
 * Vacuum: the opposite of Atmosphere
 * Ocean: vessel must be submerged
 * Space: in planetary space, i.e. not around the sun

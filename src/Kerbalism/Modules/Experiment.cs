@@ -597,7 +597,7 @@ namespace KERBALISM
 		{
 			foreach(var e in vessel.FindPartModulesImplementing<Experiment>())
 			{
-				if (e.experiment_id == experiment_id && e.recording) return true;
+				if (e.enabled && e.experiment_id == experiment_id && e.recording) return true;
 			}
 			return false;
 		}
@@ -811,6 +811,7 @@ namespace KERBALISM
 			{
 				foreach (var experiment in part.FindModulesImplementing<Experiment>())
 				{
+					if (!experiment.enabled) experiment.recording = false;
 					if (experiment.recording && !AllowStart(experiment))
 					{
 						// An experiment was added in recording state? Cheeky bugger!
