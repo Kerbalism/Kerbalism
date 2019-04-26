@@ -55,6 +55,28 @@ namespace KERBALISM
 			return Lib.BuildString(name, " (", Situation(full_subject_id), ")");
 		}
 
+		public List<string> Situations()
+		{
+			List<string> result = new List<string>();
+			string s;
+			s = MaskToString("Landed", 1, expdef.situationMask, expdef.biomeMask); if (!string.IsNullOrEmpty(s)) result.Add(s);
+			s = MaskToString("Splashed", 2, expdef.situationMask, expdef.biomeMask); if (!string.IsNullOrEmpty(s)) result.Add(s);
+			s = MaskToString("Flying Low", 4, expdef.situationMask, expdef.biomeMask); if (!string.IsNullOrEmpty(s)) result.Add(s);
+			s = MaskToString("Flying High", 8, expdef.situationMask, expdef.biomeMask); if (!string.IsNullOrEmpty(s)) result.Add(s);
+			s = MaskToString("In Space Low", 16, expdef.situationMask, expdef.biomeMask); if (!string.IsNullOrEmpty(s)) result.Add(s);
+			s = MaskToString("In Space High", 32, expdef.situationMask, expdef.biomeMask); if (!string.IsNullOrEmpty(s)) result.Add(s);
+			return result;
+		}
+
+		private static string MaskToString(string text, uint flag, uint situationMask, uint biomeMask)
+		{
+			string result = string.Empty;
+			if ((flag & situationMask) == 0) return result;
+			result = text;
+			if ((flag & biomeMask) != 0) result += " (Biomes)";
+			return result;
+		}
+
 		/// <summary>
 		/// experiment identifier
 		/// </summary>

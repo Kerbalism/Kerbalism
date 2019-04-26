@@ -738,7 +738,15 @@ namespace KERBALISM
 				specs.Add("Duration", Lib.HumanReadableDuration(expSize / data_rate));
 			}
 
-			specs.Add("");
+			List<string> situations = exp.Situations();
+			if (situations.Count > 0)
+			{
+				specs.Add(string.Empty);
+				specs.Add("<color=#00ffff>Situations:</color>", string.Empty);
+				foreach (string s in situations) specs.Add(Lib.BuildString("• <b>", s, "</b>"));
+			}
+
+			specs.Add(string.Empty);
 			specs.Add("<color=#00ffff>Needs:</color>");
 
 			specs.Add("EC", Lib.HumanReadableRate(ec_rate));
@@ -768,6 +776,7 @@ namespace KERBALISM
 				var tokens = Lib.Tokenize(requires, ',');
 				foreach (string s in tokens) specs.Add(Lib.BuildString("• <b>", Science.RequirementText(s), "</b>"));
 			}
+
 			return specs;
 		}
 
