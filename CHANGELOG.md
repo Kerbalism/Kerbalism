@@ -1,9 +1,10 @@
-## v2.2.0 for all versions of KSP from 1.4.0 to 1.6.x
+## v3.0 for all versions of KSP from 1.4.0 to 1.6.x
 
- - 2019-03-31
+ - 2019-04-27
 
 ### Changes since the last release
 
+* New Science system. You really should read the documentation on this. Seriously. (Sir Mortimer, Arthur, and a lot of people who helped with tests)
 * Add Reliability to USI Nuclear Reactors (PiezPiedPy)
 * Fix ISRU capacities for CryoTanks and USI (PiezPiedPy)
 * Correct LH2 storage capacities of the Radial container for AirlineKuisine, CryoTanks and USI (PiezPiedPy)
@@ -26,12 +27,23 @@
 * Monoprop+O2 fuel cell is now available sooner in the tech tree. Basic Science unlocks this process along with the fuel cell (Sir Mortimer)
 * Added LSS system diagrams, and a small guide on how to set up O2 + water recycling (Sir Mortimer)
 * Hide Sickbay from automation if it is unavailable (Sir Mortimer)
-* New Science system (Sir Mortimer, Arthur)
 * Reverted the part-specific process handling introduced with PR #280 as it causes other issues (Sir Mortimer)
 * Fixed the issue with placing parts in a symmetry group > 2 in the editor (Sir Mortimer)
 * Added API: mods now can register callbacks for failure events triggered by Kerbalism Reliability (Sir Mortimer)
-* Added API: mods now can provide their own communication characteristics (antenna info). Currently we just support RemoteTech, this opens the doors for additional mods without needing to change Kerbalism again (Sir Mortimer)
-* Fixed #249: NEOS incompatibility (Sir Mortimer) 
+* Added API: mods now can provide their own communication characteristics (antenna info). Currently we just support RemoteTech, this allows other mods to support Kerbalism (Sir Mortimer)
+* Fixed #249: NEOS incompatibility (Sir Mortimer)
+* Seriously, go read the documentation on the new science system.
+* Added option for automated sample analysis, works like automated data transmission (Sir Mortimer)
+* SCANsat support for new science system (Sir Mortimer)
+* Some changes to the communication system: data rates, EC consumption and range calculation changed (Sir Mortimer)
+* Support for solar panel efficiency curve. Panels can degrade over time. (Sir Mortimer)
+* KER Parts will act as hard drives (Sir Mortimer)
+* A lot of new experiments (Arthur, theJesuit)
+* Mod Support for new science: DMagic Orbital Science (Arthur)
+* Mod Support for new science: Station Science (Arthur)
+* Some performance improvements (Sir Mortimer)
+* Now go read the documentation on the new science system.
+
 
 ------------------------------------------------------------------------------------------------------
 
