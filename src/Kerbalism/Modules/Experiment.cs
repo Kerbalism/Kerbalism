@@ -43,7 +43,7 @@ namespace KERBALISM
 		[KSPField(isPersistant = true)] public bool didPrepare = false;
 		[KSPField(isPersistant = true)] public double dataSampled = 0.0;
 		[KSPField(isPersistant = true)] public bool shrouded = false;
-		[KSPField(isPersistant = true)] public double remainingSampleMass = -1;
+		[KSPField(isPersistant = true)] public double remainingSampleMass = 0;
 		[KSPField(isPersistant = true)] public bool broken = false;
 		[KSPField(isPersistant = true)] public double scienceValue = 0;
 		[KSPField(isPersistant = true)] public bool forcedRun = false;
@@ -96,11 +96,12 @@ namespace KERBALISM
 				}
 			}
 
-			if (remainingSampleMass < 0)
+			if(Lib.IsEditor())
 			{
 				remainingSampleMass = sample_mass;
 				if (sample_reservoir > float.Epsilon)
 					remainingSampleMass = sample_reservoir;
+				GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
 			}
 		}
 
@@ -228,7 +229,7 @@ namespace KERBALISM
 			if (string.IsNullOrEmpty(issue))
 				issue = TestForResources(vessel, resourceDefs, Kerbalism.elapsed_s, ResourceCache.Get(vessel));
 
-			scienceValue = Science.Value(last_subject_id) * science_cap;
+			scienceValue = Science.Value(last_subject_id, 0, science_cap);
 			state = GetState(scienceValue, issue, recording, forcedRun);
 
 			if (!string.IsNullOrEmpty(issue))
@@ -367,7 +368,7 @@ namespace KERBALISM
 				Lib.Proto.Set(m, "forcedRun", false);
 			}
 
-			double scienceValue = Science.Value(last_subject_id) * experiment.science_cap;
+			double scienceValue = Science.Value(last_subject_id, 0, experiment.science_cap);
 			Lib.Proto.Set(m, "scienceValue", scienceValue);
 
 			var state = GetState(scienceValue, issue, recording, forcedRun);
@@ -781,7 +782,7 @@ namespace KERBALISM
 		}
 
 		// module mass support
-		public float GetModuleMass(float defaultMass, ModifierStagingSituation sit) { return sample_collecting ? 0 : (float)remainingSampleMass; }
+		public float GetModuleMass(float defaultMass, ModifierStagingSituation sit) { return (float)remainingSampleMass; }
 		public ModifierChangeWhen GetModuleMassChangeWhen() { return ModifierChangeWhen.CONSTANTLY; }
 	}
 

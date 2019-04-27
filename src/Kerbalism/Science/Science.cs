@@ -83,13 +83,20 @@ namespace KERBALISM
 				file.buff += transmitted;
 
 				bool credit = file.size <= double.Epsilon;
-				var currentValue = Value(exp_filename) * file.science_cap;
-				var value = Value(exp_filename, file.buff) * file.science_cap;
-				if (!credit && file.buff > min_buffer_size) credit = value > buffer_science_value;
+
+				// this is the science value remaining for this experiment
+				var remainingValue = Value(exp_filename, 0, file.science_cap);
+
+				// this is the science value of this sample
+				var dataValue = Value(exp_filename, file.buff, file.science_cap);
+
+				if (!credit && file.buff > min_buffer_size) credit = dataValue > buffer_science_value;
 
 				// if buffer is full, or file was transmitted completely
 				if (credit)
 				{
+					var totalValue = TotalValue(exp_filename, file.science_cap);
+
 					// collect the science data
 					Credit(exp_filename, file.buff, true, v.protoVessel, (float)file.science_cap);
 
@@ -97,9 +104,9 @@ namespace KERBALISM
 					file.buff = 0.0;
 
 					// this was the last useful bit, there is no more value in the experiment
-					if (currentValue >= 0.1 && currentValue - value < 0.1)
+					if (remainingValue >= 0.1 && remainingValue - dataValue < 0.1)
 					{
-						var totalValue = TotalValue(exp_filename);
+						
 						Message.Post(
 							Lib.BuildString(Lib.HumanReadableScience(totalValue), " ", Experiment(exp_filename).FullName(exp_filename), " completed"),
 						  Lib.TextVariant(
@@ -149,7 +156,7 @@ namespace KERBALISM
 		// credit science for the experiment subject specified
 		public static float Credit(string subject_id, double size, bool transmitted, ProtoVessel pv, float science_cap)
 		{
-			var credits = Value(subject_id, size) * science_cap;
+			var credits = Value(subject_id, size, science_cap);
 
 			// credit the science
 			var subject = ResearchAndDevelopment.GetSubjectByID(subject_id);
@@ -178,13 +185,15 @@ namespace KERBALISM
 
 
 		// return value of some data about a subject, in science credits
-		public static float Value(string subject_id, double size = 0)
+		public static float Value(string subject_id, double size = 0, double science_cap = 1)
 		{
 			if(size < double.Epsilon)
 			{
 				var exp = Science.Experiment(subject_id);
 				size = exp.max_amount;
 			}
+
+			science_cap *= Lib.Clamp(science_cap, 0.0, 1.0);
 
 			// get science subject
 			// - if null, we are in sandbox mode
@@ -193,18 +202,20 @@ namespace KERBALISM
 
 			// get science value
 			// - the stock system 'degrade' science value after each credit, we don't
-			float R = ResearchAndDevelopment.GetReferenceDataValue((float)size, subject);
-			float S = subject.science;
-			float C = subject.scienceCap;
-			float credits = Mathf.Max(Mathf.Min(S + Mathf.Min(R, C), C) - S, 0.0f);
+			double R = ResearchAndDevelopment.GetReferenceDataValue((float)size, subject);
+			R *= science_cap;
+
+			double S = subject.science * science_cap;
+			double C = subject.scienceCap * science_cap;
+			double credits = Math.Max(Math.Min(S + Math.Min(R, C), C) - S, 0.0);
 
 			credits *= HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier;
 
-			return credits;
+			return (float)credits;
 		}
 
 		// return total value of some data about a subject, in science credits
-		public static float TotalValue(string subject_id)
+		public static float TotalValue(string subject_id, double science_cap)
 		{
 			var exp = Science.Experiment(subject_id);
 			var size = exp.max_amount;
@@ -214,10 +225,11 @@ namespace KERBALISM
 			var subject = ResearchAndDevelopment.GetSubjectByID(subject_id);
 			if (subject == null) return 0.0f;
 
-			var credits = ResearchAndDevelopment.GetReferenceDataValue((float)size, subject);
+			double credits = ResearchAndDevelopment.GetReferenceDataValue((float)size, subject);
+			credits *= Lib.Clamp(science_cap, 0.0, 1.0);
 			credits *= HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier;
 
-			return credits;
+			return (float)credits;
 		}
 
 		// return module acting as container of an experiment
@@ -528,6 +540,8 @@ namespace KERBALISM
 				case "VolumePerCrewMax": return Lib.BuildString("Max. vol./crew ", Lib.HumanReadableVolume(double.Parse(value)));
 				case "MaxAsteroidDistance": return Lib.BuildString("Max. asteroid distance ", Lib.HumanReadableRange(double.Parse(value)));
 
+				case "Space": return "Planetary Space";
+					
 				case "AtmosphereBody": return "Body with atmosphere";
 				case "AtmosphereAltMin": return Lib.BuildString("Min. atmosphere altitude ", value);
 				case "AtmosphereAltMax": return Lib.BuildString("Max. atmosphere altitude ", value);

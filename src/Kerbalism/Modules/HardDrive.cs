@@ -36,7 +36,7 @@ namespace KERBALISM
 					drive = DB.Drive(hdId, title, dataCapacity, sampleCapacity);
 			}
 
-			Cache.RemoveVesselObjectsCache(vessel, "drives");
+			if(vessel != null) Cache.RemoveVesselObjectsCache(vessel, "drives");
 
 			drive.is_private |= experiment_id.Length > 0;
 			UpdateCapacity();
