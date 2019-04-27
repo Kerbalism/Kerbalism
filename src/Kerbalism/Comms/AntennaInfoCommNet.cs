@@ -16,9 +16,9 @@ namespace KERBALISM
 			// if vessel is loaded
 			if (v.loaded)
 			{
-				// cache transmitters
-				var transmitters = Cache.VesselObjectsCache<List<ModuleDataTransmitter>>(v, "commnet");
-				if(transmitters == null)
+				List<ModuleDataTransmitter> transmitters;
+
+				if (!Cache.HasVesselObjectsCache(v, "commnet"))
 				{
 					// find transmitters
 					transmitters = v.FindPartModulesImplementing<ModuleDataTransmitter>();
@@ -26,48 +26,28 @@ namespace KERBALISM
 						transmitters = new List<ModuleDataTransmitter>();
 					Cache.SetVesselObjectsCache(v, "commnet", transmitters);
 				}
-
-				if (transmitters != null)
+				else
+					transmitters = Cache.VesselObjectsCache<List<ModuleDataTransmitter>>(v, "commnet");
+				
+				foreach (ModuleDataTransmitter t in transmitters)
 				{
-					foreach (ModuleDataTransmitter t in transmitters)
-					{
-						// Disable all stock buttons
-						t.Events["TransmitIncompleteToggle"].active = false;
-						t.Events["StartTransmission"].active = false;
-						t.Events["StopTransmission"].active = false;
-						t.Actions["StartTransmissionAction"].active = false;
+					// Disable all stock buttons
+					t.Events["TransmitIncompleteToggle"].active = false;
+					t.Events["StartTransmission"].active = false;
+					t.Events["StopTransmission"].active = false;
+					t.Actions["StartTransmissionAction"].active = false;
 
-						if (t.antennaType == AntennaType.INTERNAL) // do not include internal data rate, ec cost only
-							ec += t.DataResourceCost * t.DataRate;
-						else
+					if (t.antennaType == AntennaType.INTERNAL) // do not include internal data rate, ec cost only
+						ec += t.DataResourceCost * t.DataRate;
+					else
+					{
+						// do we have an animation
+						ModuleDeployableAntenna animation = t.part.FindModuleImplementing<ModuleDeployableAntenna>();
+						ModuleAnimateGeneric animationGeneric = t.part.FindModuleImplementing<ModuleAnimateGeneric>();
+						if (animation != null)
 						{
-							// do we have an animation
-							ModuleDeployableAntenna animation = t.part.FindModuleImplementing<ModuleDeployableAntenna>();
-							ModuleAnimateGeneric animationGeneric = t.part.FindModuleImplementing<ModuleAnimateGeneric>();
-							if (animation != null)
-							{
-								// only include data rate and ec cost if transmitter is extended
-								if (animation.deployState == ModuleDeployablePart.DeployState.EXTENDED)
-								{
-									rate *= t.DataRate;
-									transmitterCount++;
-									var e = t.DataResourceCost * t.DataRate;
-									ec_transmitter += e;
-								}
-							}
-							else if (animationGeneric != null)
-							{
-								// only include data rate and ec cost if transmitter is extended
-								if (animationGeneric.animSpeed > 0)
-								{
-									rate *= t.DataRate;
-									transmitterCount++;
-									var e = t.DataResourceCost * t.DataRate;
-									ec_transmitter += e;
-								}
-							}
-							// no animation
-							else
+							// only include data rate and ec cost if transmitter is extended
+							if (animation.deployState == ModuleDeployablePart.DeployState.EXTENDED)
 							{
 								rate *= t.DataRate;
 								transmitterCount++;
@@ -75,15 +55,33 @@ namespace KERBALISM
 								ec_transmitter += e;
 							}
 						}
+						else if (animationGeneric != null)
+						{
+							// only include data rate and ec cost if transmitter is extended
+							if (animationGeneric.animSpeed > 0)
+							{
+								rate *= t.DataRate;
+								transmitterCount++;
+								var e = t.DataResourceCost * t.DataRate;
+								ec_transmitter += e;
+							}
+						}
+						// no animation
+						else
+						{
+							rate *= t.DataRate;
+							transmitterCount++;
+							var e = t.DataResourceCost * t.DataRate;
+							ec_transmitter += e;
+						}
 					}
 				}
 			}
 			// if vessel is not loaded
 			else
 			{
-				// cache transmitters
-				var transmitters = Cache.VesselObjectsCache<List<KeyValuePair<ModuleDataTransmitter, ProtoPartSnapshot>>>(v, "commnet");
-				if (transmitters == null)
+				List<KeyValuePair<ModuleDataTransmitter, ProtoPartSnapshot>> transmitters;
+				if(!Cache.HasVesselObjectsCache(v, "commnet_bg"))
 				{
 					transmitters = new List<KeyValuePair<ModuleDataTransmitter, ProtoPartSnapshot>>();
 					// find proto transmitters
@@ -92,14 +90,17 @@ namespace KERBALISM
 						// get part prefab (required for module properties)
 						Part part_prefab = PartLoader.getPartInfoByName(p.partName).partPrefab;
 
-						foreach(ModuleDataTransmitter t in part_prefab.FindModulesImplementing<ModuleDataTransmitter>())
+						foreach (ModuleDataTransmitter t in part_prefab.FindModulesImplementing<ModuleDataTransmitter>())
 						{
 							transmitters.Add(new KeyValuePair<ModuleDataTransmitter, ProtoPartSnapshot>(t, p));
 						}
 					}
 
-					Cache.SetVesselObjectsCache(v, "commnet", transmitters);
+					Cache.SetVesselObjectsCache(v, "commnet_bg", transmitters);
 				}
+				else
+					// cache transmitters
+					transmitters = Cache.VesselObjectsCache<List<KeyValuePair<ModuleDataTransmitter, ProtoPartSnapshot>>>(v, "commnet_bg");
 
 				foreach(var pair in transmitters)
 				{
