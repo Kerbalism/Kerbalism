@@ -83,7 +83,7 @@ namespace KERBALISM
 				file.buff += transmitted;
 
 				bool credit = file.size <= double.Epsilon;
-				var totalValue = Value(exp_filename) * file.science_cap;
+				var currentValue = Value(exp_filename) * file.science_cap;
 				var value = Value(exp_filename, file.buff) * file.science_cap;
 				if (!credit && file.buff > min_buffer_size) credit = value > buffer_science_value;
 
@@ -97,8 +97,9 @@ namespace KERBALISM
 					file.buff = 0.0;
 
 					// this was the last useful bit, there is no more value in the experiment
-					if (totalValue >= 0.1 && totalValue - value < 0.1)
+					if (currentValue >= 0.1 && currentValue - value < 0.1)
 					{
+						var totalValue = TotalValue(exp_filename);
 						Message.Post(
 							Lib.BuildString(Lib.HumanReadableScience(totalValue), " ", Experiment(exp_filename).FullName(exp_filename), " completed"),
 						  Lib.TextVariant(
@@ -202,6 +203,22 @@ namespace KERBALISM
 			return credits;
 		}
 
+		// return total value of some data about a subject, in science credits
+		public static float TotalValue(string subject_id)
+		{
+			var exp = Science.Experiment(subject_id);
+			var size = exp.max_amount;
+
+			// get science subject
+			// - if null, we are in sandbox mode
+			var subject = ResearchAndDevelopment.GetSubjectByID(subject_id);
+			if (subject == null) return 0.0f;
+
+			var credits = ResearchAndDevelopment.GetReferenceDataValue((float)size, subject);
+			credits *= HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier;
+
+			return credits;
+		}
 
 		// return module acting as container of an experiment
 		public static IScienceDataContainer Container(Part p, string experiment_id)
