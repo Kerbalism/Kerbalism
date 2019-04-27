@@ -358,6 +358,7 @@ namespace KERBALISM
 					case "Microgravity": good = vi.zerog; break;
 					case "Body": good = TestBody(v.mainBody.name, value); break;
 					case "Shadow": good = vi.sunlight < double.Epsilon; break;
+					case "Sunlight": good = vi.sunlight > 0.5; break;
 					case "CrewMin": good = vi.crew_count >= int.Parse(value); break;
 					case "CrewMax": good = vi.crew_count <= int.Parse(value); break;
 					case "CrewCapacityMin": good = vi.crew_capacity >= int.Parse(value); break;

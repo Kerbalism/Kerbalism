@@ -170,6 +170,7 @@ Here is a list of currently supported requirements:
 * Microgravity: not on a surface, not in atmosphere. Thrust provided by Engines is OK tho.
 * Body: body on which the experiment can run. More than one name can be given (separate with semicolon), to exclude a body prefix it with ! (f.i. `Body:Eve;Duna;!Kerbin`)
 * Shadow: vessel must not be exposed to sunlight
+* Sunlight: vessel must be in the presence of a supreme being that radiates warmth and light upon it
 * Surface: vessel must be on a surface
 * Atmosphere: vessel must be within an atmosphere
 * AtmosphereBody: vessel must be within the SOI of a body with atmosphere
