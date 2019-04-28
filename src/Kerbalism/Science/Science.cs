@@ -386,7 +386,6 @@ namespace KERBALISM
 						                                
 					case "Vacuum": good = !body.atmosphere || v.altitude > body.atmosphereDepth; break;
 					case "Ocean": good = body.ocean && v.altitude < 0.0; break;
-					case "Space": good = !Lib.Landed(v) && v.altitude > body.atmosphereDepth; break;
 					case "PlanetarySpace": good = body.flightGlobalsIndex != 0 && !Lib.Landed(v) && v.altitude > body.atmosphereDepth; break;
 					case "AbsoluteZero": good = vi.temperature < 30.0; break;
 					case "InnerBelt": good = vi.inner_belt; break;

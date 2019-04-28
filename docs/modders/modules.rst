@@ -167,7 +167,7 @@ Here is a list of currently supported requirements:
 * TemperatureMin, TemperatureMax: min./max. Temperature in Kelvin
 * AltitudeMin, AltitudeMax: min./max. Altitude in Meters
 * RadiationMin, RadiationMax: min./max. radiation in rad/h
-* Microgravity: not on a surface, not in atmosphere. Thrust provided by Engines is OK tho.
+* Microgravity: not on a surface, not in atmosphere.
 * Body: body on which the experiment can run. More than one name can be given (separate with semicolon), to exclude a body prefix it with ! (f.i. `Body:Eve;Duna;!Kerbin`)
 * Shadow: vessel must not be exposed to sunlight
 * Sunlight: vessel must be in the presence of a supreme being that radiates warmth and light upon it
@@ -177,7 +177,6 @@ Here is a list of currently supported requirements:
 * AtmosphereAltMin / AtmosphereAltMax: Altitude of vessel as a multiplier of atmosphere thickness. On Kerbin, AtmosphereAltMin:1 equals 70km.
 * Vacuum: the opposite of Atmosphere
 * Ocean: vessel must be submerged
-* Space: in space, i.e. not on a surface or within an atmosphere
 * PlanetarySpace: in planetary space, i.e. not around the sun
 * AbsoluteZero: temperature < 30 K
 * InnerBelt: vessel must be in a inner Van Allen Belt
