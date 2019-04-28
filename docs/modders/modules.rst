@@ -177,7 +177,8 @@ Here is a list of currently supported requirements:
 * AtmosphereAltMin / AtmosphereAltMax: Altitude of vessel as a multiplier of atmosphere thickness. On Kerbin, AtmosphereAltMin:1 equals 70km.
 * Vacuum: the opposite of Atmosphere
 * Ocean: vessel must be submerged
-* Space: in planetary space, i.e. not around the sun
+* Space: in space, i.e. not on a surface or within an atmosphere
+* PlanetarySpace: in planetary space, i.e. not around the sun
 * AbsoluteZero: temperature < 30 K
 * InnerBelt: vessel must be in a inner Van Allen Belt
 * OuterBelt: vessel must be in a outer Van Allen Belt
