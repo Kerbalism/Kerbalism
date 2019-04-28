@@ -85,20 +85,20 @@ namespace KERBALISM
 				bool credit = file.size <= double.Epsilon;
 
 				// this is the science value remaining for this experiment
-				var remainingValue = Value(exp_filename, 0, file.science_cap);
+				var remainingValue = Value(exp_filename, 0);
 
 				// this is the science value of this sample
-				var dataValue = Value(exp_filename, file.buff, file.science_cap);
+				var dataValue = Value(exp_filename, file.buff);
 
 				if (!credit && file.buff > min_buffer_size) credit = dataValue > buffer_science_value;
 
 				// if buffer is full, or file was transmitted completely
 				if (credit)
 				{
-					var totalValue = TotalValue(exp_filename, file.science_cap);
+					var totalValue = TotalValue(exp_filename);
 
 					// collect the science data
-					Credit(exp_filename, file.buff, true, v.protoVessel, (float)file.science_cap);
+					Credit(exp_filename, file.buff, true, v.protoVessel);
 
 					// reset the buffer
 					file.buff = 0.0;
@@ -154,9 +154,9 @@ namespace KERBALISM
 
 
 		// credit science for the experiment subject specified
-		public static float Credit(string subject_id, double size, bool transmitted, ProtoVessel pv, float science_cap)
+		public static float Credit(string subject_id, double size, bool transmitted, ProtoVessel pv)
 		{
-			var credits = Value(subject_id, size, science_cap);
+			var credits = Value(subject_id, size);
 
 			// credit the science
 			var subject = ResearchAndDevelopment.GetSubjectByID(subject_id);
@@ -185,15 +185,13 @@ namespace KERBALISM
 
 
 		// return value of some data about a subject, in science credits
-		public static float Value(string subject_id, double size = 0, double science_cap = 1)
+		public static float Value(string subject_id, double size = 0)
 		{
 			if(size < double.Epsilon)
 			{
 				var exp = Science.Experiment(subject_id);
 				size = exp.max_amount;
 			}
-
-			science_cap *= Lib.Clamp(science_cap, 0.0, 1.0);
 
 			// get science subject
 			// - if null, we are in sandbox mode
@@ -203,10 +201,9 @@ namespace KERBALISM
 			// get science value
 			// - the stock system 'degrade' science value after each credit, we don't
 			double R = ResearchAndDevelopment.GetReferenceDataValue((float)size, subject);
-			R *= science_cap;
 
-			double S = subject.science * science_cap;
-			double C = subject.scienceCap * science_cap;
+			double S = subject.science;
+			double C = subject.scienceCap;
 			double credits = Math.Max(Math.Min(S + Math.Min(R, C), C) - S, 0.0);
 
 			credits *= HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier;
@@ -215,7 +212,7 @@ namespace KERBALISM
 		}
 
 		// return total value of some data about a subject, in science credits
-		public static float TotalValue(string subject_id, double science_cap)
+		public static float TotalValue(string subject_id)
 		{
 			var exp = Science.Experiment(subject_id);
 			var size = exp.max_amount;
@@ -226,7 +223,6 @@ namespace KERBALISM
 			if (subject == null) return 0.0f;
 
 			double credits = ResearchAndDevelopment.GetReferenceDataValue((float)size, subject);
-			credits *= Lib.Clamp(science_cap, 0.0, 1.0);
 			credits *= HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier;
 
 			return (float)credits;

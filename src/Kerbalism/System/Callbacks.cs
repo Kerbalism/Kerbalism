@@ -192,7 +192,7 @@ namespace KERBALISM
 					ScienceSubject subject = ResearchAndDevelopment.GetSubjectByID(filename);
 
 					// credit science
-					float credits = Science.Credit(filename, file.size, false, v, (float)file.science_cap);
+					float credits = Science.Credit(filename, file.size, false, v);
 
 					// create science widged
 					ScienceSubjectWidget widged = ScienceSubjectWidget.Create
@@ -222,7 +222,7 @@ namespace KERBALISM
 					ScienceSubject subject = ResearchAndDevelopment.GetSubjectByID(filename);
 
 					// credit science
-					float credits = Science.Credit(filename, sample.size, false, v, (float)sample.science_cap);
+					float credits = Science.Credit(filename, sample.size, false, v);
 
 					// create science widged
 					ScienceSubjectWidget widged = ScienceSubjectWidget.Create

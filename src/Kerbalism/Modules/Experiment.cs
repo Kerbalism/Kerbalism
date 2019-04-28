@@ -26,7 +26,6 @@ namespace KERBALISM
 		[KSPField] public string crew_prepare = string.Empty; // prepare crew. if set, experiment will require crew to set up before it can start recording 
 		[KSPField] public string resources = string.Empty;    // resources consumed by this experiment
 		[KSPField] public bool hide_when_unavailable = false; // don't show UI when the experiment is unavailable
-		[KSPField] public float science_cap = 1;              // factor for max. available science from underlying experiment definition
 
 		// animations
 		[KSPField] public string anim_deploy = string.Empty; // deploy animation
@@ -229,7 +228,7 @@ namespace KERBALISM
 			if (string.IsNullOrEmpty(issue))
 				issue = TestForResources(vessel, resourceDefs, Kerbalism.elapsed_s, ResourceCache.Get(vessel));
 
-			scienceValue = Science.Value(last_subject_id, 0, science_cap);
+			scienceValue = Science.Value(last_subject_id, 0);
 			state = GetState(scienceValue, issue, recording, forcedRun);
 
 			if (!string.IsNullOrEmpty(issue))
@@ -311,9 +310,9 @@ namespace KERBALISM
 
 			bool stored = false;
 			if (isFile)
-				stored = drive.Record_file(subject_id, chunkSize, true, experiment.science_cap);
+				stored = drive.Record_file(subject_id, chunkSize, true);
 			else
-				stored = drive.Record_sample(subject_id, chunkSize, massDelta, experiment.science_cap);
+				stored = drive.Record_sample(subject_id, chunkSize, massDelta);
 
 			if (stored)
 			{
@@ -368,7 +367,7 @@ namespace KERBALISM
 				Lib.Proto.Set(m, "forcedRun", false);
 			}
 
-			double scienceValue = Science.Value(last_subject_id, 0, experiment.science_cap);
+			double scienceValue = Science.Value(last_subject_id);
 			Lib.Proto.Set(m, "scienceValue", scienceValue);
 
 			var state = GetState(scienceValue, issue, recording, forcedRun);

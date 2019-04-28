@@ -16,7 +16,6 @@ namespace KERBALISM
 		{
 			this.size = size;
 			analyze = false;
-			science_cap = 1;
 		}
 
 		/// <summary>
@@ -27,7 +26,6 @@ namespace KERBALISM
 			size = Lib.ConfigValue(node, "size", 0.0);
 			analyze = Lib.ConfigValue(node, "analyze", false);
 			mass = Lib.ConfigValue(node, "mass", 0.0);
-			science_cap = Lib.ConfigValue(node, "science_cap", 1.0);
 		}
 
 		/// <summary>
@@ -38,7 +36,6 @@ namespace KERBALISM
 			node.AddValue("size", size);
 			node.AddValue("analyze", analyze);
 			node.AddValue("mass", mass);
-			node.AddValue("science_cap", science_cap);
 		}
 
 		/// <summary>
@@ -52,11 +49,6 @@ namespace KERBALISM
 		///	flagged for analysis in a laboratory
 		/// </summary>
 		public bool analyze;
-
-		/// <summary>
-		/// Factor for the max. available science value from underlying experiment
-		/// </summary>
-		public double science_cap;
 	}
 
 
