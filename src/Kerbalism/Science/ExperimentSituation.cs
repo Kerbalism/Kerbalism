@@ -6,6 +6,10 @@ using KSP.Localization;
 
 namespace KERBALISM
 {
+	public enum KerbalismSituations
+	{
+		None, InnerBelt, OuterBelt, Magnetosphere, Reentry, Interstellar
+	}
 
 	/// <summary>
 	/// Replacement for KSPs own ExperimentSituations
@@ -14,35 +18,62 @@ namespace KERBALISM
 	{
 		private Vessel vessel;
 		private ExperimentSituations sit;
+		private KerbalismSituations kerbalism_sit = KerbalismSituations.None;
 
 		public ExperimentSituation(Vessel vessel)
 		{
 			this.vessel = vessel;
-			this.sit = FixSituation();
+			FixSituation();
 		}
 
-		private ExperimentSituations FixSituation()
+		/// <summary>
+		/// The KSP stock function has the nasty habit of returning, on occasion,
+		/// situations that should not exist (flying high/low with bodies that
+		/// don't have atmosphere), so we have to force the situations a bit.
+		/// </summary>
+		private void FixSituation()
 		{
 			var body = vessel.mainBody;
 			var alt = vessel.altitude;
+			var vi = Cache.VesselInfo(vessel);
+
+
+			// if (vi.magnetosphere) kerbalism_sit = KerbalismSituations.Magnetosphere;
+			// if (vi.outer_belt) kerbalism_sit = KerbalismSituations.OuterBelt;
+			// if (vi.inner_belt) kerbalism_sit = KerbalismSituations.InnerBelt;
+
+			// leave these as an easter egg
+			if (vi.interstellar && body.flightGlobalsIndex == 0) kerbalism_sit = KerbalismSituations.Interstellar;
+
+			if (body.atmosphere	
+				&& vessel.altitude < body.atmosphereDepth
+				&& vessel.altitude > body.scienceValues.flyingAltitudeThreshold
+				&& vessel.orbit.ApA > body.atmosphereDepth
+				&& vessel.srfSpeed > 1984)
+			{
+				kerbalism_sit = KerbalismSituations.Reentry;
+			}
 
 			var treshold = body.scienceValues.spaceAltitudeThreshold;
 			if (alt > treshold)
 			{
-				return ExperimentSituations.InSpaceHigh;
+				sit = ExperimentSituations.InSpaceHigh;
+				return;
 			}
 
 			if(!body.atmosphere && alt > body.atmosphereDepth)
 			{
-				return ExperimentSituations.InSpaceLow;
+				sit = ExperimentSituations.InSpaceLow;
+				return;
 			}
 
 			if(body.atmosphere && alt > body.scienceValues.flyingAltitudeThreshold)
 			{
-				return ExperimentSituations.FlyingHigh;
+				sit = ExperimentSituations.FlyingHigh;
+				return;
 			}
 
-			return ScienceUtil.GetExperimentSituation(vessel);
+			sit = ScienceUtil.GetExperimentSituation(vessel);
 		}
 
 		internal bool IsAvailable(ScienceExperiment exp, CelestialBody mainBody)
@@ -52,18 +83,36 @@ namespace KERBALISM
 
 		public override string ToString()
 		{
-			//return "PolarOrbit"; <-- this could be... interesting.
+			if (kerbalism_sit != KerbalismSituations.None)
+				return kerbalism_sit.ToString();
 			return sit.ToString();
 		}
 
 		public bool BiomeIsRelevant(ScienceExperiment experiment)
 		{
+			if(kerbalism_sit != KerbalismSituations.None)
+				return false;
+
 			return experiment.BiomeIsRelevantWhile(sit);
 		}
 
 		public float Multiplier(CelestialBody body)
 		{
 			var values = body.scienceValues;
+
+			switch(kerbalism_sit)
+			{
+				case KerbalismSituations.InnerBelt:
+				case KerbalismSituations.OuterBelt:
+					return 1.3f * Math.Max(values.InSpaceHighDataValue, values.InSpaceLowDataValue);
+				case KerbalismSituations.Reentry:
+					return 1.5f * values.FlyingHighDataValue;
+				case KerbalismSituations.Magnetosphere:
+					return 1.1f * values.FlyingHighDataValue;
+				case KerbalismSituations.Interstellar:
+					return 3.5f * values.InSpaceHighDataValue;
+			}
+
 			switch (sit)
 			{
 				case ExperimentSituations.SrfLanded: return values.LandedDataValue;
