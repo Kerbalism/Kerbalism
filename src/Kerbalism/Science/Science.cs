@@ -260,13 +260,13 @@ namespace KERBALISM
 		{
 			var body = v.mainBody;
 			ScienceExperiment experiment = ResearchAndDevelopment.GetExperiment(experiment_id);
-			ExperimentSituations sit = ScienceUtil.GetExperimentSituation(v);
+			ExperimentSituation sit = GetExperimentSituation(v);
 
 			var sitStr = sit.ToString();
 			if(!string.IsNullOrEmpty(sitStr))
 			{
-				var biome = ScienceUtil.GetExperimentBiome(v.mainBody, v.latitude, v.longitude);
-				if (experiment.BiomeIsRelevantWhile(sit)) sitStr += biome;
+				if (sit.BiomeIsRelevant(experiment))
+					sitStr += ScienceUtil.GetExperimentBiome(v.mainBody, v.latitude, v.longitude);
 			}
 
 			// generate subject id
@@ -294,7 +294,7 @@ namespace KERBALISM
 				);
 
 				var experiment = ResearchAndDevelopment.GetExperiment(experiment_id);
-				var sit = ScienceUtil.GetExperimentSituation(v);
+				var sit = GetExperimentSituation(v);
 				var biome = ScienceUtil.GetExperimentBiome(v.mainBody, v.latitude, v.longitude);
 				float multiplier = Multiplier(v.mainBody, sit);
 				var cap = multiplier * experiment.baseValue;
@@ -316,21 +316,9 @@ namespace KERBALISM
 			return subject_id;
 		}
 
-		private static float Multiplier(CelestialBody body, ExperimentSituations sit)
+		private static float Multiplier(CelestialBody body, ExperimentSituation sit)
 		{
-			var values = body.scienceValues;
-			switch(sit)
-			{
-				case ExperimentSituations.SrfLanded: return values.LandedDataValue;
-				case ExperimentSituations.SrfSplashed: return values.SplashedDataValue;
-				case ExperimentSituations.FlyingLow: return values.FlyingLowDataValue;
-				case ExperimentSituations.FlyingHigh: return values.FlyingHighDataValue;
-				case ExperimentSituations.InSpaceLow: return values.InSpaceLowDataValue;
-				case ExperimentSituations.InSpaceHigh: return values.FlyingHighDataValue;
-			}
-
-			Lib.Log("Science: invalid/unknown situation");
-			return 0;
+			return sit.Multiplier(body);
 		}
 
 		public static string TestRequirements(string experiment_id, string requirements, Vessel v)
@@ -450,11 +438,16 @@ namespace KERBALISM
 			Science.Generate_subject(experiment_id, v);
 
 			var exp = ResearchAndDevelopment.GetExperiment(experiment_id);
-			var sit = ScienceUtil.GetExperimentSituation(v);
-			if (!exp.IsAvailableWhile(sit, v.mainBody))
+			var sit = GetExperimentSituation(v);
+			if (!sit.IsAvailable(exp, v.mainBody))
 				return "Invalid situation";
 
 			return string.Empty;
+		}
+
+		public static ExperimentSituation GetExperimentSituation(Vessel v)
+		{
+			return new ExperimentSituation(v);
 		}
 
 		private static bool TestBody(string bodyName, string requirement)

@@ -97,6 +97,7 @@ namespace KERBALISM
 				// clear caches
 				Cache.Clear();
 				ResourceCache.Clear();
+				Message.all_logs.Clear();
 
 				// sync main window pos from db
 				UI.Sync();

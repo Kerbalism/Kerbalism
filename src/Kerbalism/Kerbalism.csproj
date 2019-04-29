@@ -260,6 +260,7 @@
     <Compile Include="Modules\Sickbay.cs" />
     <Compile Include="Automation\Devices\Sickbay.cs" />
     <Compile Include="Modules\KerbalismScansat.cs" />
+    <Compile Include="Science\ExperimentSituation.cs" />
   </ItemGroup>
   <ItemGroup>
     <Analyzer Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-CSharp-firstpass.dll')" Include="$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-CSharp-firstpass.dll" />
