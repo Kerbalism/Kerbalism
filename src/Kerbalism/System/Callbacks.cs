@@ -353,6 +353,17 @@ namespace KERBALISM
 				return;
 
 			Cache.PurgeObjects(p.vessel);
+
+			if(DB.drives.ContainsKey(p.flightID))
+			{
+				foreach(var pair in DB.drives[p.flightID].files)
+				{
+					if(pair.Value.buff > double.Epsilon)
+					{
+						Science.Credit(pair.Key, pair.Value.buff, true, p.vessel.protoVessel);
+					}
+				}
+			}
 			DB.drives.Remove(p.flightID);
 		}
 

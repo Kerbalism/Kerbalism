@@ -182,15 +182,21 @@ namespace KERBALISM
 		}
 
 		// remove science data, deleting the file when it is empty
-		public void Delete_file(string subject_id, double amount)
+		public void Delete_file(string subject_id, double amount, ProtoVessel pv)
 		{
 			// get data
 			File file;
 			if (files.TryGetValue(subject_id, out file))
 			{
 				// decrease amount of data stored in the file
-				file.size -= amount;
+				file.size -= Math.Min(file.size, amount);
 				file.ts = Planetarium.GetUniversalTime();
+
+				if(file.buff > double.Epsilon && pv != null)
+				{
+					Science.Credit(subject_id, file.buff, true, pv);
+					file.buff = 0;
+				}
 
 				// remove file if empty
 				if (file.size <= double.Epsilon) files.Remove(subject_id);
@@ -478,7 +484,19 @@ namespace KERBALISM
 		public static void Purge(Vessel vessel)
 		{
 			foreach (var id in GetDriveParts(vessel).Keys)
+			{
+				if(DB.drives.ContainsKey(id))
+				{
+					foreach(var p in DB.drives[id].files)
+					{
+						if(p.Value.buff > double.Epsilon)
+						{
+							Science.Credit(p.Key, p.Value.buff, true, vessel.protoVessel);
+						}
+					}
+				}
 				DB.drives.Remove(id);
+			}
 		}
 
 		public static Dictionary<uint, Drive> GetDriveParts(Vessel vessel)

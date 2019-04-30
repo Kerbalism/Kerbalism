@@ -247,7 +247,7 @@ namespace KERBALISM
 			// remove the data
 			if (data.baseTransmitValue > float.Epsilon || data.transmitBonus > double.Epsilon)
 			{
-				drive.Delete_file(data.subjectID, data.dataAmount);
+				drive.Delete_file(data.subjectID, data.dataAmount, null);
 			}
 			else
 			{

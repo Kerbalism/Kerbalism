@@ -341,7 +341,7 @@ namespace KERBALISM
 		{
 			if (!Cache.VesselInfo(v).is_valid) return;
 			foreach (var d in Drive.GetDrives(v, true))
-				d.Delete_file(subject_id, amount);
+				d.Delete_file(subject_id, amount, v.protoVessel);
 		}
 
 		// remove a sample from a vessel

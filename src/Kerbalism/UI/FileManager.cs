@@ -83,7 +83,7 @@ namespace KERBALISM
 					{
 						string filename = pair.Key;
 						File file = pair.Value;
-						Render_file(p, partId, filename, file, drive, short_strings && Lib.IsFlight(), Cache.VesselInfo(v).connection.rate);
+						Render_file(p, partId, filename, file, drive, short_strings && Lib.IsFlight(), v);
 					}
 				}
 
@@ -112,10 +112,11 @@ namespace KERBALISM
 			}
 		}
 
-		static void Render_file(Panel p, uint partId, string filename, File file, Drive drive, bool short_strings, double rate)
+		static void Render_file(Panel p, uint partId, string filename, File file, Drive drive, bool short_strings, Vessel v)
 		{
 			// get experiment info
 			ExperimentInfo exp = Science.Experiment(filename);
+			double rate = Cache.VesselInfo(v).connection.rate;
 
 			// render experiment name
 			string exp_label = Lib.BuildString
@@ -142,7 +143,7 @@ namespace KERBALISM
 				{
 					Lib.Popup("Warning!",
 						Lib.BuildString("Do you really want to delete ", exp.FullName(filename), "?"),
-						new DialogGUIButton("Delete it", () => drive.files.Remove(filename)),
+				        new DialogGUIButton("Delete it", () => drive.Delete_file(filename, double.MaxValue, v.protoVessel)),
 						new DialogGUIButton("Keep it", () => { }));
 				}
 			);
