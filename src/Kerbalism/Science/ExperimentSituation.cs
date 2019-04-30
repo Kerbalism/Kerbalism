@@ -46,6 +46,7 @@ namespace KERBALISM
 			if (vi.interstellar && body.flightGlobalsIndex == 0) kerbalism_sit = KerbalismSituations.Interstellar;
 
 			if (body.atmosphere	
+				&& vessel.loaded
 				&& vessel.altitude < body.atmosphereDepth
 				&& vessel.altitude > body.scienceValues.flyingAltitudeThreshold
 				&& vessel.orbit.ApA > body.atmosphereDepth
@@ -110,7 +111,7 @@ namespace KERBALISM
 				case KerbalismSituations.Magnetosphere:
 					return 1.1f * values.FlyingHighDataValue;
 				case KerbalismSituations.Interstellar:
-					return 3.5f * values.InSpaceHighDataValue;
+					return 15f * values.InSpaceHighDataValue;
 			}
 
 			switch (sit)

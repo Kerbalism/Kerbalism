@@ -27,7 +27,12 @@ namespace KERBALISM
 			// all other cases: enabled, specified trait and experience
 			else
 			{
-				var tokens = Lib.Tokenize(value, '@');
+				// ModuleManager doesn't like @ in values, so accept Pilot@3 and Pilot:3
+				char separator = ':';
+				if (value.IndexOf(separator) < 0)
+					separator = '@';
+
+				var tokens = Lib.Tokenize(value, separator);
 				trait = tokens.Count > 0 ? tokens[0] : string.Empty;
 				level = tokens.Count > 1 ? Lib.Parse.ToUInt(tokens[1]) : 0;
 				enabled = true;
