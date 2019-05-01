@@ -187,6 +187,9 @@ namespace KERBALISM
 		// return value of some data about a subject, in science credits
 		public static float Value(string subject_id, double size = 0)
 		{
+			if (string.IsNullOrEmpty(subject_id))
+				return 0;
+			
 			if(size < double.Epsilon)
 			{
 				var exp = Science.Experiment(subject_id);
@@ -265,7 +268,7 @@ namespace KERBALISM
 			var sitStr = sit.ToString();
 			if(!string.IsNullOrEmpty(sitStr))
 			{
-				if (sit.BiomeIsRelevant(experiment))
+				if (sit.BiomeIsRelevant(Experiment(experiment_id)))
 					sitStr += ScienceUtil.GetExperimentBiome(v.mainBody, v.latitude, v.longitude);
 			}
 
@@ -296,7 +299,7 @@ namespace KERBALISM
 				var experiment = ResearchAndDevelopment.GetExperiment(experiment_id);
 				var sit = GetExperimentSituation(v);
 				var biome = ScienceUtil.GetExperimentBiome(v.mainBody, v.latitude, v.longitude);
-				float multiplier = Multiplier(v.mainBody, sit);
+				float multiplier = sit.Multiplier(Experiment(experiment_id));
 				var cap = multiplier * experiment.baseValue;
 
 				// create new subject
@@ -314,11 +317,6 @@ namespace KERBALISM
 			}
 
 			return subject_id;
-		}
-
-		private static float Multiplier(CelestialBody body, ExperimentSituation sit)
-		{
-			return sit.Multiplier(body);
 		}
 
 		public static string TestRequirements(string experiment_id, string requirements, Vessel v)
@@ -433,14 +431,16 @@ namespace KERBALISM
 				if (!good) return s;
 			}
 
-			// if we want to test against the stock KSP experiment,
-			// we have to create the subject at this point
-			Science.Generate_subject(experiment_id, v);
-
-			var exp = ResearchAndDevelopment.GetExperiment(experiment_id);
+			var subject_id = Science.Generate_subject_id(experiment_id, v);
+			var exp = Science.Experiment(subject_id);
 			var sit = GetExperimentSituation(v);
-			if (!sit.IsAvailable(exp, v.mainBody))
+			if (!sit.IsAvailable(exp))
 				return "Invalid situation";
+
+
+			// At this point we know the situation is valid and the experiment can be done
+			// create it in R&D
+			Science.Generate_subject(experiment_id, v);
 
 			return string.Empty;
 		}

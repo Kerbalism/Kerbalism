@@ -35,6 +35,9 @@ namespace KERBALISM
 
 			// deduce max data amount
 			max_amount = expdef != null ? expdef.baseValue * expdef.dataScale : double.MaxValue;
+
+			situationMask = expdef.situationMask;
+			biomeMask = expdef.biomeMask;
 		}
 
 		/// <summary>
@@ -58,22 +61,31 @@ namespace KERBALISM
 		public List<string> Situations()
 		{
 			List<string> result = new List<string>();
+
 			string s;
-			s = MaskToString("Landed", 1, expdef.situationMask, expdef.biomeMask); if (!string.IsNullOrEmpty(s)) result.Add(s);
-			s = MaskToString("Splashed", 2, expdef.situationMask, expdef.biomeMask); if (!string.IsNullOrEmpty(s)) result.Add(s);
-			s = MaskToString("Flying Low", 4, expdef.situationMask, expdef.biomeMask); if (!string.IsNullOrEmpty(s)) result.Add(s);
-			s = MaskToString("Flying High", 8, expdef.situationMask, expdef.biomeMask); if (!string.IsNullOrEmpty(s)) result.Add(s);
-			s = MaskToString("In Space Low", 16, expdef.situationMask, expdef.biomeMask); if (!string.IsNullOrEmpty(s)) result.Add(s);
-			s = MaskToString("In Space High", 32, expdef.situationMask, expdef.biomeMask); if (!string.IsNullOrEmpty(s)) result.Add(s);
+
+			s = MaskToString(KerbalismSituations.SrfLanded, expdef.situationMask, expdef.biomeMask); if (!string.IsNullOrEmpty(s)) result.Add(s);
+			s = MaskToString(KerbalismSituations.SrfSplashed, expdef.situationMask, expdef.biomeMask); if (!string.IsNullOrEmpty(s)) result.Add(s);
+			s = MaskToString(KerbalismSituations.FlyingLow, expdef.situationMask, expdef.biomeMask); if (!string.IsNullOrEmpty(s)) result.Add(s);
+			s = MaskToString(KerbalismSituations.FlyingHigh, expdef.situationMask, expdef.biomeMask); if (!string.IsNullOrEmpty(s)) result.Add(s);
+			s = MaskToString(KerbalismSituations.InSpaceLow, expdef.situationMask, expdef.biomeMask); if (!string.IsNullOrEmpty(s)) result.Add(s);
+			s = MaskToString(KerbalismSituations.InSpaceHigh, expdef.situationMask, expdef.biomeMask); if (!string.IsNullOrEmpty(s)) result.Add(s);
+
+			s = MaskToString(KerbalismSituations.InnerBelt, expdef.situationMask, expdef.biomeMask); if (!string.IsNullOrEmpty(s)) result.Add(s);
+			s = MaskToString(KerbalismSituations.OuterBelt, expdef.situationMask, expdef.biomeMask); if (!string.IsNullOrEmpty(s)) result.Add(s);
+			s = MaskToString(KerbalismSituations.Magnetosphere, expdef.situationMask, expdef.biomeMask); if (!string.IsNullOrEmpty(s)) result.Add(s);
+			s = MaskToString(KerbalismSituations.Reentry, expdef.situationMask, expdef.biomeMask); if (!string.IsNullOrEmpty(s)) result.Add(s);
+			s = MaskToString(KerbalismSituations.Interstellar, expdef.situationMask, expdef.biomeMask); if (!string.IsNullOrEmpty(s)) result.Add(s);
+
 			return result;
 		}
 
-		private static string MaskToString(string text, uint flag, uint situationMask, uint biomeMask)
+		private static string MaskToString(KerbalismSituations sit, uint situationMask, uint biomeMask)
 		{
 			string result = string.Empty;
-			if ((flag & situationMask) == 0) return result;
-			result = text;
-			if ((flag & biomeMask) != 0) result += " (Biomes)";
+			if (((int)sit & situationMask) == 0) return result;
+			result = Lib.SpacesOnCaps(sit.ToString().Replace("Srf", ""));
+			if (((int)sit & biomeMask) != 0) result += " (Biomes)";
 			return result;
 		}
 
@@ -96,6 +108,10 @@ namespace KERBALISM
 		/// max data amount for the experiment
 		/// </summary>
 		public double max_amount;
+
+
+		public uint situationMask;
+		public uint biomeMask;
 	}
 
 
