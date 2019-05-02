@@ -314,6 +314,7 @@ namespace KERBALISM
 				DB.KillKerbal(n, false);
 			}
 
+
 			// purge the caches
 			ResourceCache.Purge(v);
 			Drive.Purge(v);
@@ -360,6 +361,7 @@ namespace KERBALISM
 				{
 					if(pair.Value.buff > double.Epsilon)
 					{
+						Lib.Log("Part destroyed, crediting " + pair.Value.buff + " of " + pair.Key);
 						Science.Credit(pair.Key, pair.Value.buff, true, p.vessel.protoVessel);
 					}
 				}
