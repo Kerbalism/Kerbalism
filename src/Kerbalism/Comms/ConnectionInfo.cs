@@ -83,7 +83,7 @@ namespace KERBALISM
 			AntennaInfo ai = new AntennaInfo();
 			ai.powered = powered;
 			ai.storm = storm;
-			ai.transmitting = string.IsNullOrEmpty(Science.Transmitting(v, true));
+			ai.transmitting = !string.IsNullOrEmpty(Science.Transmitting(v, true));
 
 			API.Comm.Init(ai, v);
 			if (ai.strength > -1)
