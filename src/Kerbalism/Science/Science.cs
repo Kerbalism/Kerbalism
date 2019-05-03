@@ -365,7 +365,10 @@ namespace KERBALISM
 					case "AtmosphereBody": good = body.atmosphere; break;
 					case "AtmosphereAltMin": good = body.atmosphere && (v.altitude / body.atmosphereDepth) >= double.Parse(value); break;
 					case "AtmosphereAltMax": good = body.atmosphere && (v.altitude / body.atmosphereDepth) <= double.Parse(value); break;
-						                                
+						                     
+					case "SunAngleMin": good = Lib.SunBodyAngle(v) >= double.Parse(value); break;
+					case "SunAngleMax": good = Lib.SunBodyAngle(v) <= double.Parse(value); break;
+
 					case "Vacuum": good = !body.atmosphere || v.altitude > body.atmosphereDepth; break;
 					case "Ocean": good = body.ocean && v.altitude < 0.0; break;
 					case "PlanetarySpace": good = body.flightGlobalsIndex != 0 && !Lib.Landed(v) && v.altitude > body.atmosphereDepth; break;
@@ -529,6 +532,9 @@ namespace KERBALISM
 				case "VolumePerCrewMax": return Lib.BuildString("Max. vol./crew ", Lib.HumanReadableVolume(double.Parse(value)));
 				case "MaxAsteroidDistance": return Lib.BuildString("Max. asteroid distance ", Lib.HumanReadableRange(double.Parse(value)));
 
+				case "SunAngleMin": return Lib.BuildString("Min. sunlight angle", Lib.HumanReadableAngle(double.Parse(value)));
+				case "SunAngleMax": return Lib.BuildString("Max. sunlight angle", Lib.HumanReadableAngle(double.Parse(value)));
+					
 				case "AtmosphereBody": return "Body with atmosphere";
 				case "AtmosphereAltMin": return Lib.BuildString("Min. atmosphere altitude ", value);
 				case "AtmosphereAltMax": return Lib.BuildString("Max. atmosphere altitude ", value);

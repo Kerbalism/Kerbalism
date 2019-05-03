@@ -638,6 +638,12 @@ namespace KERBALISM
 			return BuildString(temp.ToString("F1"), " K");
 		}
 
+		///<summary> Pretty-print angle </summary>
+		public static string HumanReadableAngle(double angle)
+		{
+			return BuildString(angle >= 0.0001 ? angle.ToString("F1") : "0", " °");
+		}
+
 		///<summary> Pretty-print flux </summary>
 		public static string HumanReadableFlux(double flux)
 		{
@@ -844,6 +850,17 @@ namespace KERBALISM
 			return (pos - body.position).magnitude - pqs.GetSurfaceHeight(radial);
 		}
 
+		public static double SunBodyAngle(Vessel v)
+		{
+			// orbit around sun?
+			if (v.mainBody.flightGlobalsIndex == 0)
+				return 0;
+
+			var body_vessel = v.mainBody.position - Lib.VesselPosition(v);
+			var body_sun = v.mainBody.position - FlightGlobals.Bodies[0].position;
+			double angle_rad = Vector3d.Angle(body_vessel, body_sun);
+			return angle_rad * 180.0 / Math.PI;
+		}
 
 		// --- VESSEL ---------------------------------------------------------------
 
@@ -853,7 +870,6 @@ namespace KERBALISM
 			if (v.loaded) return v.Landed || v.Splashed;
 			else return v.protoVessel.landed || v.protoVessel.splashed;
 		}
-
 
 		// return vessel position
 		public static Vector3d VesselPosition(Vessel v)
