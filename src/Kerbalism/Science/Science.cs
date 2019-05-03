@@ -532,8 +532,8 @@ namespace KERBALISM
 				case "VolumePerCrewMax": return Lib.BuildString("Max. vol./crew ", Lib.HumanReadableVolume(double.Parse(value)));
 				case "MaxAsteroidDistance": return Lib.BuildString("Max. asteroid distance ", Lib.HumanReadableRange(double.Parse(value)));
 
-				case "SunAngleMin": return Lib.BuildString("Min. sunlight angle", Lib.HumanReadableAngle(double.Parse(value)));
-				case "SunAngleMax": return Lib.BuildString("Max. sunlight angle", Lib.HumanReadableAngle(double.Parse(value)));
+				case "SunAngleMin": return Lib.BuildString("Min. sunlight angle ", Lib.HumanReadableAngle(double.Parse(value)));
+				case "SunAngleMax": return Lib.BuildString("Max. sunlight angle ", Lib.HumanReadableAngle(double.Parse(value)));
 					
 				case "AtmosphereBody": return "Body with atmosphere";
 				case "AtmosphereAltMin": return Lib.BuildString("Min. atmosphere altitude ", value);

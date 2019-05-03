@@ -94,20 +94,19 @@ namespace KERBALISM
 					Science.RegisterSampleMass(experiment_id, sample_mass);
 				}
 			}
-
-			if(Lib.IsEditor())
-			{
-				remainingSampleMass = sample_mass;
-				if (sample_reservoir > float.Epsilon)
-					remainingSampleMass = sample_reservoir;
-				GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
-			}
 		}
 
 		public override void OnStart(StartState state)
 		{
 			// don't break tutorial scenarios
 			if (Lib.DisableScenario(this)) return;
+
+			if (remainingSampleMass < float.Epsilon && string.IsNullOrEmpty(issue))
+			{
+				remainingSampleMass = sample_mass;
+				if (sample_reservoir > float.Epsilon)
+					remainingSampleMass = sample_reservoir;
+			}
 
 			// create animators
 			deployAnimator = new Animator(part, anim_deploy);
