@@ -194,7 +194,6 @@ namespace KERBALISM
 
 				if(file.buff > double.Epsilon && pv != null)
 				{
-					Lib.Log("delete file, crediting " + subject_id + " of " + file.buff);
 					Science.Credit(subject_id, file.buff, true, pv);
 					file.buff = 0;
 				}
@@ -504,7 +503,6 @@ namespace KERBALISM
 					{
 						if(p.Value.buff > double.Epsilon)
 						{
-							Lib.Log("Purge, crediting " + p.Key + " of " + p.Value.buff);
 							Science.Credit(p.Key, p.Value.buff, true, vessel.protoVessel);
 						}
 					}
