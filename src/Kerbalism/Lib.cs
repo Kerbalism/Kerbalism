@@ -721,7 +721,7 @@ namespace KERBALISM
 		public static string HumanReadableDataSize(double size)
 		{
 			size *= 131072.0; //< bits
-			if (size < 1.0) return "none";
+			if (size < 0.01) return "none";
 			if (size <= 32.0) return BuildString(size.ToString("F0"), " b");
 			size *= 8; //< to bytes
 			if (size < 1024.0) return BuildString(size.ToString("F0"), " B");
@@ -738,7 +738,7 @@ namespace KERBALISM
 		///<summary> Format data rate, the rate parameter is in Mb/s </summary>
 		public static string HumanReadableDataRate(double rate)
 		{
-			return rate < 0.000001 ? "none" : Lib.BuildString(HumanReadableDataSize(rate), "/s");
+			return rate < double.Epsilon ? "none" : Lib.BuildString(HumanReadableDataSize(rate), "/s");
 		}
 
 		public static string HumanReadableSampleSize(double size)
