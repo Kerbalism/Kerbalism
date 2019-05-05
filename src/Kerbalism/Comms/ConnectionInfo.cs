@@ -38,17 +38,7 @@ namespace KERBALISM
 
 		public static ConnectionInfo Update(Vessel v, bool powered, bool storm)
 		{
-			var result = Cache.VesselObjectsCache<ConnectionInfo>(v, "connection_info");
-			var ts = Cache.VesselObjectsCache<double>(v, "connection_info_ts");
-
-			if (result == null || Planetarium.GetUniversalTime() > ts + 2)
-			{
-				result = new ConnectionInfo(v, powered, storm);
-				Cache.SetVesselObjectsCache(v, "connection_info", result);
-				Cache.SetVesselObjectsCache(v, "connection_info_ts", Planetarium.GetUniversalTime());
-			}
-
-			return result;
+			return new ConnectionInfo(v, powered, storm);
 		}
 
 		/// <summary> Creates a <see cref="ConnectionInfo"/> object for the specified vessel from it's antenna modules</summary>
