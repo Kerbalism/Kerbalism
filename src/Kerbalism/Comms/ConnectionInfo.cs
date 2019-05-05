@@ -40,9 +40,8 @@ namespace KERBALISM
 		{
 			var result = Cache.VesselObjectsCache<ConnectionInfo>(v, "connection_info");
 			var ts = Cache.VesselObjectsCache<double>(v, "connection_info_ts");
-			var maxAge = Math.Max(2, Kerbalism.elapsed_s * 2);
 
-			if (result == null || Planetarium.GetUniversalTime() > ts + maxAge)
+			if (result == null || Planetarium.GetUniversalTime() > ts + 2)
 			{
 				result = new ConnectionInfo(v, powered, storm);
 				Cache.SetVesselObjectsCache(v, "connection_info", result);
