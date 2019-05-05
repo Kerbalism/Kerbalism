@@ -853,13 +853,14 @@ namespace KERBALISM
 		public static double SunBodyAngle(Vessel v)
 		{
 			// orbit around sun?
-			if (v.mainBody.flightGlobalsIndex == 0)
+			if (v.mainBody.flightGlobalsIndex == 0) {
 				return 0;
+			}
 
 			var body_vessel = v.mainBody.position - Lib.VesselPosition(v);
 			var body_sun = v.mainBody.position - FlightGlobals.Bodies[0].position;
-			double angle_rad = Vector3d.Angle(body_vessel, body_sun);
-			return angle_rad * 180.0 / Math.PI;
+
+			return Vector3d.Angle(body_vessel, body_sun);
 		}
 
 		// --- VESSEL ---------------------------------------------------------------
