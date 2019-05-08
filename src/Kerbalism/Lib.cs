@@ -1116,21 +1116,21 @@ namespace KERBALISM
 
 		public static bool HasPart(Vessel v, string part_name)
 		{
-			string ret = Cache.VesselObjectsCache<string>(v, "has_part:" + part_name);
-			if (!string.IsNullOrEmpty(ret))
-				return bool.Parse(ret);
+			if (Cache.HasVesselObjectsCache(v, "has_part:" + part_name))
+				return Cache.VesselObjectsCache<bool>(v, "has_part:" + part_name);
 
-			if(v.loaded)
+			bool ret = false;
+			foreach(string name in Tokenize(part_name, ','))
 			{
-				ret = (v.parts.Find(k => k.partName == part_name) != null).ToString();
-			}
-			else
-			{
-				ret = (v.protoVessel.protoPartSnapshots.Find(k => k.partName == part_name) != null).ToString();
+				if (v.loaded)
+					ret = v.parts.Find(k => k.name.StartsWith(part_name, StringComparison.Ordinal)) != null;
+				else
+					ret = v.protoVessel.protoPartSnapshots.Find(k => k.partName.StartsWith(part_name, StringComparison.Ordinal)) != null;
+				if (ret) break;
 			}
 
 			Cache.SetVesselObjectsCache(v, "has_part:" + part_name, ret);
-			return bool.Parse(ret);
+			return ret;
 		}
 
 		/// <summary>
