@@ -111,8 +111,9 @@ namespace KERBALISM
 							Lib.BuildString(Lib.HumanReadableScience(totalValue), " ", Experiment(exp_filename).FullName(exp_filename), " completed"),
 						  Lib.TextVariant(
 								"Our researchers will jump on it right now",
-								"There is excitement because of your findings",
-								"The results are causing a brouhaha in R&D"
+								"Your findings cause some excitement",
+								"The results are causing a brouhaha in R&D",
+								"Our scientists look very confused"
 							));
 					}
 				}
@@ -365,7 +366,10 @@ namespace KERBALISM
 					case "AtmosphereBody": good = body.atmosphere; break;
 					case "AtmosphereAltMin": good = body.atmosphere && (v.altitude / body.atmosphereDepth) >= double.Parse(value); break;
 					case "AtmosphereAltMax": good = body.atmosphere && (v.altitude / body.atmosphereDepth) <= double.Parse(value); break;
-						                     
+
+					case "BodyWithAtmosphere": good = body.atmosphere; break;
+					case "BodyWithoutAtmosphere": good = !body.atmosphere; break;
+						
 					case "SunAngleMin": good = Lib.SunBodyAngle(v) >= double.Parse(value); break;
 					case "SunAngleMax": good = Lib.SunBodyAngle(v) <= double.Parse(value); break;
 
