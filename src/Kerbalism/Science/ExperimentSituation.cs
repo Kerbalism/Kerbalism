@@ -76,12 +76,12 @@ namespace KERBALISM
 				sit = KerbalismSituations.Interstellar;
 				return;
 			}
-			if (body.atmosphere	
-				&& vessel.loaded
-				&& vessel.altitude < body.atmosphereDepth
-				&& vessel.altitude > body.scienceValues.flyingAltitudeThreshold
-				&& vessel.orbit.ApA > body.atmosphereDepth
-				&& vessel.srfSpeed > 1984)
+			if (body.atmosphere	// only on bodies with atmosphere
+				&& vessel.verticalSpeed < 100 // descending
+				&& vessel.altitude < body.atmosphereDepth // in the atmosphere
+				&& vessel.altitude > body.scienceValues.flyingAltitudeThreshold // above the flying high treshold
+				&& (double.IsNaN(vessel.orbit.ApA) || vessel.orbit.ApA > body.atmosphereDepth) // apoapsis above atmosphere or NaN
+				&& vessel.srfSpeed > vessel.speedOfSound * 5) // mach 5
 			{
 				sit = KerbalismSituations.Reentry;
 				return;
