@@ -42,6 +42,19 @@ namespace KERBALISM
 			FixSituation();
 		}
 
+		public bool AtmosphericFlight()
+		{
+			switch(sit)
+			{
+				case KerbalismSituations.FlyingLow:
+				case KerbalismSituations.FlyingHigh:
+				case KerbalismSituations.Reentry:
+					return true;
+				default:
+					return false;
+			}
+		}
+
 		/// <summary>
 		/// The KSP stock function has the nasty habit of returning, on occasion,
 		/// situations that should not exist (flying high/low with bodies that

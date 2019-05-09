@@ -437,6 +437,10 @@ namespace KERBALISM
 			var subject_id = Science.Generate_subject_id(experiment_id, v);
 			var exp = Science.Experiment(subject_id);
 			var sit = GetExperimentSituation(v);
+
+			if (!v.loaded && sit.AtmosphericFlight())
+				return "Background flight";
+
 			if (!sit.IsAvailable(exp))
 				return "Invalid situation";
 
