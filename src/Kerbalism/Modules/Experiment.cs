@@ -101,7 +101,8 @@ namespace KERBALISM
 			// don't break tutorial scenarios
 			if (Lib.DisableScenario(this)) return;
 
-			if (remainingSampleMass < float.Epsilon && string.IsNullOrEmpty(issue))
+			// initialize the remaining sample mass in case it was not configured in the cfg.
+			if (remainingSampleMass < float.Epsilon && string.IsNullOrEmpty(issue) && !sample_collecting)
 			{
 				remainingSampleMass = sample_mass;
 				if (sample_reservoir > float.Epsilon)
