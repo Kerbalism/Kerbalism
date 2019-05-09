@@ -176,6 +176,7 @@ Here is a list of currently supported requirements:
 * AtmosphereBody: vessel must be within the SOI of a body with atmosphere
 * AtmosphereAltMin / AtmosphereAltMax: Altitude of vessel as a multiplier of atmosphere thickness. On Kerbin, AtmosphereAltMin:1 equals 70km.
 * Vacuum: the opposite of Atmosphere
+* BodyWithAtmosphere, BodyWithoutAtmosphere: does what it says on the tin.
 * Ocean: vessel must be submerged
 * PlanetarySpace: in planetary space, i.e. not around the sun
 * AbsoluteZero: temperature < 30 K
