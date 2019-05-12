@@ -337,8 +337,8 @@ namespace KERBALISM
 				bool good = true;
 				switch (condition)
 				{
-					case "OrbitMinInclination": good = v.orbit.inclination >= double.Parse(value); break;
-					case "OrbitMaxInclination": good = v.orbit.inclination <= double.Parse(value); break;
+					case "OrbitMinInclination": good = Math.Abs(v.orbit.inclination) >= double.Parse(value); break;
+					case "OrbitMaxInclination": good = Math.Abs(v.orbit.inclination) <= double.Parse(value); break;
 					case "OrbitMinEccentricity": good = v.orbit.eccentricity >= double.Parse(value); break;
 					case "OrbitMaxEccentricity": good = v.orbit.eccentricity <= double.Parse(value); break;
 					case "OrbitMinArgOfPeriapsis": good = v.orbit.argumentOfPeriapsis >= double.Parse(value); break;

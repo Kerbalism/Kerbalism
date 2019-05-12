@@ -602,9 +602,9 @@ namespace KERBALISM
 			return false;
 		}
 
-		public static void PostMultipleRunsMessage(string title)
+		public static void PostMultipleRunsMessage(string title, string vesselName)
 		{
-			Message.Post(Lib.Color("red", "ALREADY RUNNING", true), "Can't start " + title + " a second time on the same vessel");
+			Message.Post(Lib.Color("yellow", "ALREADY RUNNING", true), "Can't start " + title + " a second time on vessel " + vesselName);
 		}
 
 		[KSPEvent(guiActiveUnfocused = true, guiActive = true, guiActiveEditor = true, guiName = "_", active = true)]
@@ -615,7 +615,7 @@ namespace KERBALISM
 				if(!recording)
 				{
 					recording = EditorTracker.Instance.AllowStart(this);
-					if (!recording) PostMultipleRunsMessage(Science.Experiment(experiment_id).name);
+					if (!recording) PostMultipleRunsMessage(Science.Experiment(experiment_id).name, "");
 				}
 				else
 					recording = !recording;
@@ -644,7 +644,7 @@ namespace KERBALISM
 			if (!recording)
 			{
 				recording = !IsExperimentRunningOnVessel();
-				if(!recording) PostMultipleRunsMessage(Science.Experiment(experiment_id).name);
+				if(!recording) PostMultipleRunsMessage(Science.Experiment(experiment_id).name, vessel.vesselName);
 			}
 			else
 				recording = false;
