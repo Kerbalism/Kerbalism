@@ -43,5 +43,5 @@ Tips
 * **Unlimited Power!** You don't have it. Make sure you switch on your experiments (including those in the capsule) in the VAB and check the Kerbalism planner to see how much electrical power your vessel uses.
 * **How Much?** Generally the longer it takes and the more electrical charge it uses the more science reward you'll get. Those difficult experiments are worth doing.
 * **Automate** Just like everything else in Kerbalism those science experiments can be set to turn on and off depending on situation. Check the auto tab of the Kerbalism panel in flight.
-* **Polar Orbits** You can run biome dependent experiments on a probe in polar orbit. That way your experiment will fly over all the biomes and collect data for all of them. If your periapsis is within the atmosphere, you also can collect atmospheric science for many biomes.
+* **Polar Orbits** You can run biome dependent experiments on a probe in polar orbit. That way your experiment will fly over all the biomes and collect data for all of them.
 ----------
