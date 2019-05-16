@@ -178,6 +178,7 @@ namespace KERBALISM
 		public bool powered;                // true if vessel is powered
 		public double free_capacity = 0.0;  // free data storage available data capacity of all public drives
 		public double total_capacity = 0.0; // data capacity of all public drives
+		public Drive warp_buffer_drive = new Drive("warp buffer", 0, 0);
 	}
 
 

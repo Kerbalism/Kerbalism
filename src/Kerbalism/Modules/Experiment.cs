@@ -277,7 +277,7 @@ namespace KERBALISM
 
 		private static bool DoRecord(Experiment experiment, string subject_id, Vessel vessel, Resource_info ec, uint hdId, 
 			Vessel_resources resources, List<KeyValuePair<string, double>> resourceDefs,
-			double remainingSampleMass, double dataSampled, double elapsed,
+			double remainingSampleMass, double dataSampled, double elapsed_s,
 			out double sampledOut, out double remainingSampleMassOut)
 		{
 			var exp = Science.Experiment(subject_id);
@@ -288,35 +288,51 @@ namespace KERBALISM
 				return true;
 			}
 
-			double chunkSize = Math.Min(experiment.data_rate * elapsed, exp.max_amount);
+			double chunkSize = Math.Min(experiment.data_rate * elapsed_s, exp.max_amount);
 			double massDelta = experiment.sample_mass * chunkSize / exp.max_amount;
 
 			Drive drive = GetDrive(experiment, vessel, hdId, chunkSize, subject_id);
+			var vi = Cache.VesselInfo(vessel);
 
 			// on high time warp this chunk size could be too big, but we could store a sizable amount if we process less
 			bool isFile = experiment.sample_mass < float.Epsilon;
 			double maxCapacity = isFile ? drive.FileCapacityAvailable() : drive.SampleCapacityAvailable(subject_id);
+
+			// only use buffer if we're transmitting the file
+			if (isFile && drive.GetFileSend(subject_id)) maxCapacity += vi.warp_buffer.FileCapacityAvailable();
+
 			if (maxCapacity < chunkSize)
 			{
 				double factor = maxCapacity / chunkSize;
 				chunkSize *= factor;
 				massDelta *= factor;
-				elapsed *= factor;
+				elapsed_s *= factor;
 			}
 
 			foreach(var p in resourceDefs)
-				resources.Consume(vessel, p.Key, p.Value * elapsed, "experiment");
+				resources.Consume(vessel, p.Key, p.Value * elapsed_s, "experiment");
 
 			bool stored = false;
 			if (isFile)
-				stored = drive.Record_file(subject_id, chunkSize, true);
+			{
+				if(drive.GetFileSend(subject_id)) // only use buffer if we're transmitting the file
+				{
+					double s = Math.Min(vi.warp_buffer.FileCapacityAvailable(), chunkSize);
+					vi.warp_buffer.Record_file(subject_id, s, true);
+					stored = drive.Record_file(subject_id, chunkSize - s, true);
+				}
+				else
+				{
+					stored = drive.Record_file(subject_id, chunkSize, true);
+				}
+			}
 			else
 				stored = drive.Record_sample(subject_id, chunkSize, massDelta);
 
 			if (stored)
 			{
 				// consume ec
-				ec.Consume(experiment.ec_rate * elapsed, "experiment");
+				ec.Consume(experiment.ec_rate * elapsed_s, "experiment");
 				dataSampled += chunkSize;
 				dataSampled = Math.Min(dataSampled, exp.max_amount);
 				sampledOut = dataSampled;
