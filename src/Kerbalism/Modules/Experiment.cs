@@ -299,7 +299,7 @@ namespace KERBALISM
 			double maxCapacity = isFile ? drive.FileCapacityAvailable() : drive.SampleCapacityAvailable(subject_id);
 
 			// only use buffer if we're transmitting the file
-			if (isFile && drive.GetFileSend(subject_id)) maxCapacity += vi.warp_buffer.FileCapacityAvailable();
+			if (isFile && drive.GetFileSend(subject_id)) maxCapacity += vi.warp_buffer_drive.FileCapacityAvailable();
 
 			if (maxCapacity < chunkSize)
 			{
@@ -317,8 +317,8 @@ namespace KERBALISM
 			{
 				if(drive.GetFileSend(subject_id)) // only use buffer if we're transmitting the file
 				{
-					double s = Math.Min(vi.warp_buffer.FileCapacityAvailable(), chunkSize);
-					vi.warp_buffer.Record_file(subject_id, s, true);
+					double s = Math.Min(vi.warp_buffer_drive.FileCapacityAvailable(), chunkSize);
+					vi.warp_buffer_drive.Record_file(subject_id, s, true);
 					stored = drive.Record_file(subject_id, chunkSize - s, true);
 				}
 				else
