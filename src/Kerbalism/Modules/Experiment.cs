@@ -259,7 +259,7 @@ namespace KERBALISM
 		private void DoRecord(Resource_info ec, string subject_id)
 		{
 			var stored = DoRecord(this, subject_id, vessel, ec, privateHdId,
-				ResourceCache.Get(vessel), resourceDefs, Kerbalism.elapsed_s,
+				ResourceCache.Get(vessel), resourceDefs,
 				remainingSampleMass, dataSampled, out dataSampled, out remainingSampleMass);
 			if (!stored) issue = insufficient_storage;
 		}
@@ -277,7 +277,7 @@ namespace KERBALISM
 
 		private static bool DoRecord(Experiment experiment, string subject_id, Vessel vessel, Resource_info ec, uint hdId, 
 			Vessel_resources resources, List<KeyValuePair<string, double>> resourceDefs,
-			double remainingSampleMass, double dataSampled, double elapsed,
+			double remainingSampleMass, double dataSampled,
 			out double sampledOut, out double remainingSampleMassOut)
 		{
 			var exp = Science.Experiment(subject_id);
@@ -288,6 +288,7 @@ namespace KERBALISM
 				return true;
 			}
 
+			double elapsed = Kerbalism.elapsed_s;
 			double chunkSize = Math.Min(experiment.data_rate * elapsed, exp.max_amount);
 			double massDelta = experiment.sample_mass * chunkSize / exp.max_amount;
 
@@ -376,7 +377,7 @@ namespace KERBALISM
 				return;
 
 			var stored = DoRecord(experiment, subject_id, v, ec, privateHdId,
-				resources, ParseResources(experiment.resources), elapsed_s,
+				resources, ParseResources(experiment.resources),
 				remainingSampleMass, dataSampled, out dataSampled, out remainingSampleMass);
 			if (!stored) Lib.Proto.Set(m, "issue", insufficient_storage);
 
