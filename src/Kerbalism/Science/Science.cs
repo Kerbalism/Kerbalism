@@ -132,11 +132,6 @@ namespace KERBALISM
 					}
 				}
 			}
-
-			vi.warp_buffer_drive.files.Clear();
-			vi.warp_buffer_drive.samples.Clear();
-			vi.warp_buffer_drive.dataCapacity = conn.rate * elapsed_s;
-			vi.warp_buffer_drive.sampleCapacity = 0;
 		}
 
 		// return name of file being transmitted from vessel specified
@@ -150,10 +145,6 @@ namespace KERBALISM
 
 			// not transmitting if there is no ec left
 			if (ResourceCache.Info(v, "ElectricCharge").amount <= double.Epsilon) return string.Empty;
-
-			Drive warp_buffer = Cache.VesselInfo(v).warp_buffer_drive;
-			foreach (var p in warp_buffer.files)
-				return p.Key; // immediately transmit everything in the buffer drive
 
 			// get first file flagged for transmission, AND has a ts at least 5 seconds old or is > 0.001Mb in size
 			foreach (var drive in Drive.GetDrives(v, true))
