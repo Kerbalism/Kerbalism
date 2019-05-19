@@ -88,8 +88,9 @@ namespace KERBALISM
 			critical = Reliability.HasCriticalFailure(v);
 
 			// communications info
-			connection = ConnectionInfo.Update(v, powered, blackout);
-			transmitting = Science.Transmitting(v, connection.linked && connection.rate > double.Epsilon);
+			warp_cache_drive = new Drive("warp cache drive", 0, 0);
+			connection = ConnectionInfo.Update(v, powered, blackout, this);
+			transmitting = Science.Transmitting(v, connection.linked && connection.rate > double.Epsilon, this);
 
 			// habitat data
 			volume = Habitat.Tot_volume(v);
@@ -178,6 +179,7 @@ namespace KERBALISM
 		public bool powered;                // true if vessel is powered
 		public double free_capacity = 0.0;  // free data storage available data capacity of all public drives
 		public double total_capacity = 0.0; // data capacity of all public drives
+		public Drive warp_cache_drive;
 	}
 
 

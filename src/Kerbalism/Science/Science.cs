@@ -59,9 +59,12 @@ namespace KERBALISM
 
 			// get connection info
 			ConnectionInfo conn = vi.connection;
-			if (conn == null || String.IsNullOrEmpty(vi.transmitting)) return;
+			if (conn == null) return;
 
 			double transmitSize = conn.rate * elapsed_s;
+			vi.warp_cache_drive.dataCapacity = transmitSize;
+
+			if (String.IsNullOrEmpty(vi.transmitting)) return;
 
 			while(transmitSize > double.Epsilon && !String.IsNullOrEmpty(vi.transmitting))
 			{
@@ -127,14 +130,13 @@ namespace KERBALISM
 				{
 					// remove the file
 					drive.files.Remove(exp_filename);
-					vi.transmitting = Science.Transmitting(v, true);
+					vi.transmitting = Science.Transmitting(v, true, vi);
 				}
-
 			}
 		}
 
 		// return name of file being transmitted from vessel specified
-		public static string Transmitting(Vessel v, bool linked)
+		public static string Transmitting(Vessel v, bool linked, Vessel_info vi)
 		{
 			// never transmitting if science system is disabled
 			if (!Features.Science) return string.Empty;
@@ -144,6 +146,9 @@ namespace KERBALISM
 
 			// not transmitting if there is no ec left
 			if (ResourceCache.Info(v, "ElectricCharge").amount <= double.Epsilon) return string.Empty;
+
+			foreach(var p in vi.warp_cache_drive.files)
+				return p.Key;
 
 			// get first file flagged for transmission, AND has a ts at least 5 seconds old or is > 0.001Mb in size
 			foreach (var drive in Drive.GetDrives(v, true))

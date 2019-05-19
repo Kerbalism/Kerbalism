@@ -88,6 +88,31 @@ namespace KERBALISM
 			node.AddValue("sendFileNames", fileNames);
 		}
 
+		public static double StoreFile(Vessel vessel, string subject_id, double size, bool include_private = false)
+		{
+			if (size < double.Epsilon)
+				return 0;
+
+			// store what we can
+
+			var drives = GetDrives(vessel, include_private);
+			drives.Insert(0, Cache.VesselInfo(vessel).warp_cache_drive);
+
+			foreach (var d in drives)
+			{
+				var available = d.FileCapacityAvailable();
+				var chunk = Math.Min(size, available);
+				if (!d.Record_file(subject_id, chunk, true))
+					break;
+				size -= chunk;
+
+				if (size < double.Epsilon)
+					break;
+			}
+
+			return size;
+		}
+
 		// add science data, creating new file or incrementing existing one
 		public bool Record_file(string subject_id, double amount, bool allowImmediateTransmission = true)
 		{

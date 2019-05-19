@@ -36,19 +36,19 @@ namespace KERBALISM
 
 		public List<string[]> control_path = null;
 
-		public static ConnectionInfo Update(Vessel v, bool powered, bool storm)
+		public static ConnectionInfo Update(Vessel v, bool powered, bool storm, Vessel_info vi)
 		{
-			return new ConnectionInfo(v, powered, storm);
+			return new ConnectionInfo(v, powered, storm, vi);
 		}
 
 		/// <summary> Creates a <see cref="ConnectionInfo"/> object for the specified vessel from it's antenna modules</summary>
-		private ConnectionInfo(Vessel v, bool powered, bool storm)
+		private ConnectionInfo(Vessel v, bool powered, bool storm, Vessel_info vi)
 		{
 			// return no connection if there is no ec left
 			if (!powered)
 				return;
 
-			AntennaInfo ai = GetAntennaInfo(v, powered, storm);
+			AntennaInfo ai = GetAntennaInfo(v, powered, storm, vi);
 			ec = ai.ec;
 			rate = ai.rate * PreferencesScience.Instance.transmitFactor;
 			linked = ai.linked;
@@ -67,12 +67,12 @@ namespace KERBALISM
 			}
 		}
 
-		private static AntennaInfo GetAntennaInfo(Vessel v, bool powered, bool storm)
+		private static AntennaInfo GetAntennaInfo(Vessel v, bool powered, bool storm, Vessel_info vi)
 		{
 			AntennaInfo ai = new AntennaInfo();
 			ai.powered = powered;
 			ai.storm = storm;
-			ai.transmitting = !string.IsNullOrEmpty(Science.Transmitting(v, true));
+			ai.transmitting = !string.IsNullOrEmpty(Science.Transmitting(v, true, vi));
 
 			API.Comm.Init(ai, v);
 			if (ai.strength > -1)

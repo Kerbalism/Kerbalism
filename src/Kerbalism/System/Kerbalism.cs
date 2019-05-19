@@ -250,14 +250,14 @@ namespace KERBALISM
 
 				Communications.Update(last_v, last_vi, last_vd, last_ec, last_time);
 
-				// transmit science	data
-				Science.Update(last_v, last_vi, last_vd, last_resources, last_time);
-
 				// apply rules
 				Profile.Execute(last_v, last_vi, last_vd, last_resources, last_time);
 
 				// simulate modules in background
 				Background.Update(last_v, last_vi, last_vd, last_resources, last_time);
+
+				// transmit science	data
+				Science.Update(last_v, last_vi, last_vd, last_resources, last_time);
 
 				// apply deferred requests
 				last_resources.Sync(last_v, last_time);

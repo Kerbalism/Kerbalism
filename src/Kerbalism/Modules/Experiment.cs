@@ -297,6 +297,11 @@ namespace KERBALISM
 			// on high time warp this chunk size could be too big, but we could store a sizable amount if we process less
 			bool isFile = experiment.sample_mass < float.Epsilon;
 			double maxCapacity = isFile ? drive.FileCapacityAvailable() : drive.SampleCapacityAvailable(subject_id);
+
+			Drive warpCacheDrive = null;
+			if (isFile && drive.GetFileSend(subject_id)) warpCacheDrive = Cache.VesselInfo(vessel).warp_cache_drive;
+			if(warpCacheDrive != null) maxCapacity += warpCacheDrive.FileCapacityAvailable();
+
 			if (maxCapacity < chunkSize)
 			{
 				double factor = maxCapacity / chunkSize;
@@ -310,7 +315,17 @@ namespace KERBALISM
 
 			bool stored = false;
 			if (isFile)
-				stored = drive.Record_file(subject_id, chunkSize, true);
+			{
+				if(warpCacheDrive != null) {
+					double s = Math.Min(chunkSize, warpCacheDrive.FileCapacityAvailable());
+					Cache.VesselInfo(vessel).warp_cache_drive.Record_file(subject_id, s, true);
+					stored = drive.Record_file(subject_id, chunkSize - s, true);
+				}
+				else
+				{
+					stored = drive.Record_file(subject_id, chunkSize, true);
+				}
+			}
 			else
 				stored = drive.Record_sample(subject_id, chunkSize, massDelta);
 

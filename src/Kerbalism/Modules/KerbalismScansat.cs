@@ -68,25 +68,9 @@ namespace KERBALISM
 					var subject_id = Science.Generate_subject_id(experimentType, vessel);
 					var exp = Science.Experiment(subject_id);
 					double size = exp.max_amount * coverage_delta / 100.0; // coverage is 0-100%
-
 					size += warp_buffer;
 
-					if(size > double.Epsilon)
-					{
-						// store what we can
-						foreach (var d in Drive.GetDrives(vessel))
-						{
-							var available = d.FileCapacityAvailable();
-							var chunk = Math.Min(size, available);
-							if (!d.Record_file(subject_id, chunk, true))
-								break;
-							size -= chunk;
-
-							if (size < double.Epsilon)
-								break;
-						}
-					}
-
+					size = Drive.StoreFile(vessel, subject_id, size);
 					if (size > double.Epsilon)
 					{
 						// we filled all drives up to the brim but were unable to store everything
