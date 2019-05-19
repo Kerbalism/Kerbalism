@@ -69,68 +69,67 @@ namespace KERBALISM
 				var exp_filename = vi.transmitting;
 
 				var drive = FindDrive(v, exp_filename);
+				if (drive == null) break;
 
-				// if some data is being downloaded
-				// - avoid cornercase at scene changes
-				if (exp_filename.Length > 0 && drive != null)
+				if (string.IsNullOrEmpty(exp_filename) || drive == null)
+					break;
+
+				File file = drive.files[exp_filename];
+
+				// determine how much data is transmitted
+				double transmitted = Math.Min(file.size, transmitSize);
+				transmitSize -= transmitted;
+
+				// consume data in the file
+				file.size -= transmitted;
+
+				// accumulate in the buffer
+				file.buff += transmitted;
+
+				bool credit = file.size <= double.Epsilon;
+
+				// this is the science value remaining for this experiment
+				var remainingValue = Value(exp_filename, 0);
+
+				// this is the science value of this sample
+				var dataValue = Value(exp_filename, file.buff);
+
+				if (!credit && file.buff > min_buffer_size) credit = dataValue > buffer_science_value;
+
+				// if buffer is full, or file was transmitted completely
+				if (credit)
 				{
-					// get file
-					File file = drive.files[exp_filename];
+					var totalValue = TotalValue(exp_filename);
 
-					// determine how much data is transmitted
-					double transmitted = Math.Min(file.size, transmitSize);
-					transmitSize -= transmitted;
+					// collect the science data
+					Credit(exp_filename, file.buff, true, v.protoVessel);
 
-					// consume data in the file
-					file.size -= transmitted;
+					// reset the buffer
+					file.buff = 0.0;
 
-					// accumulate in the buffer
-					file.buff += transmitted;
-
-					bool credit = file.size <= double.Epsilon;
-
-					// this is the science value remaining for this experiment
-					var remainingValue = Value(exp_filename, 0);
-
-					// this is the science value of this sample
-					var dataValue = Value(exp_filename, file.buff);
-
-					if (!credit && file.buff > min_buffer_size) credit = dataValue > buffer_science_value;
-
-					// if buffer is full, or file was transmitted completely
-					if (credit)
+					// this was the last useful bit, there is no more value in the experiment
+					if (remainingValue >= 0.1 && remainingValue - dataValue < 0.1)
 					{
-						var totalValue = TotalValue(exp_filename);
-
-						// collect the science data
-						Credit(exp_filename, file.buff, true, v.protoVessel);
-
-						// reset the buffer
-						file.buff = 0.0;
-
-						// this was the last useful bit, there is no more value in the experiment
-						if (remainingValue >= 0.1 && remainingValue - dataValue < 0.1)
-						{
-							
-							Message.Post(
-								Lib.BuildString(Lib.HumanReadableScience(totalValue), " ", Experiment(exp_filename).FullName(exp_filename), " completed"),
-							  Lib.TextVariant(
-									"Our researchers will jump on it right now",
-									"Your findings cause some excitement",
-									"The results are causing a brouhaha in R&D",
-									"Our scientists look very confused"
-								));
-						}
-					}
-
-					// if file was transmitted completely
-					if (file.size <= double.Epsilon)
-					{
-						// remove the file
-						drive.files.Remove(exp_filename);
-						vi.transmitting = Science.Transmitting(v, true);
+						
+						Message.Post(
+							Lib.BuildString(Lib.HumanReadableScience(totalValue), " ", Experiment(exp_filename).FullName(exp_filename), " completed"),
+						  Lib.TextVariant(
+								"Our researchers will jump on it right now",
+								"Your findings cause some excitement",
+								"The results are causing a brouhaha in R&D",
+								"Our scientists look very confused"
+							));
 					}
 				}
+
+				// if file was transmitted completely
+				if (file.size <= double.Epsilon)
+				{
+					// remove the file
+					drive.files.Remove(exp_filename);
+					vi.transmitting = Science.Transmitting(v, true);
+				}
+
 			}
 		}
 
