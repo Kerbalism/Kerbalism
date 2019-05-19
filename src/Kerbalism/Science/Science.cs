@@ -62,8 +62,6 @@ namespace KERBALISM
 			if (conn == null) return;
 
 			double transmitSize = conn.rate * elapsed_s;
-			vi.warp_cache_drive.dataCapacity = transmitSize;
-
 			if (String.IsNullOrEmpty(vi.transmitting)) return;
 
 			while(transmitSize > double.Epsilon && !String.IsNullOrEmpty(vi.transmitting))
