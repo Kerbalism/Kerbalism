@@ -277,18 +277,17 @@ namespace KERBALISM
 			return drive;
 		}
 
-
 		private static bool DoRecord(Experiment experiment, string subject_id, Vessel vessel, Resource_info ec, uint hdId, 
 			Vessel_resources resources, List<KeyValuePair<string, double>> resourceDefs,
 			double remainingSampleMass, double dataSampled,
 			out double sampledOut, out double remainingSampleMassOut)
 		{
+			// default output values for early returns
+			sampledOut = dataSampled;
+			remainingSampleMassOut = remainingSampleMass;
+
 			var exp = Science.Experiment(subject_id);
-
 			if (Done(exp, dataSampled)) {
-				sampledOut = dataSampled;
-
-				remainingSampleMassOut = remainingSampleMass;
 				return true;
 			}
 
@@ -308,16 +307,14 @@ namespace KERBALISM
 				if (warpCacheDrive != null) maxCapacity += warpCacheDrive.FileCapacityAvailable();
 			}
 
-			if (maxCapacity < chunkSize)
-			{
-				double factor = maxCapacity / chunkSize;
-				chunkSize *= factor;
-				massDelta *= factor;
-				elapsed *= factor;
-			}
+			double factor = Rate(vessel, chunkSize, maxCapacity, elapsed, ec, experiment.ec_rate, resources, resourceDefs);
 
-			foreach(var p in resourceDefs)
-				resources.Consume(vessel, p.Key, p.Value * elapsed, "experiment");
+			if (factor > double.Epsilon)
+				return false;
+
+			chunkSize *= factor;
+			massDelta *= factor;
+			elapsed *= factor;
 
 			bool stored = false;
 			if (chunkSize > double.Epsilon)
@@ -341,25 +338,37 @@ namespace KERBALISM
 					stored = drive.Record_sample(subject_id, chunkSize, massDelta);
 			}
 
-			if (stored)
+			if (!stored)
+				return false;
+
+			// consume resources
+			ec.Consume(experiment.ec_rate * elapsed, "experiment");
+			foreach (var p in resourceDefs)
+				resources.Consume(vessel, p.Key, p.Value * elapsed, "experiment");
+
+			dataSampled += chunkSize;
+			dataSampled = Math.Min(dataSampled, exp.max_amount);
+			sampledOut = dataSampled;
+			if (!experiment.sample_collecting)
 			{
-				// consume ec
-				ec.Consume(experiment.ec_rate * elapsed, "experiment");
-				dataSampled += chunkSize;
-				dataSampled = Math.Min(dataSampled, exp.max_amount);
-				sampledOut = dataSampled;
-				if (!experiment.sample_collecting)
-				{
-					remainingSampleMass -= massDelta;
-					remainingSampleMass = Math.Max(remainingSampleMass, 0);
-				}
-				remainingSampleMassOut = remainingSampleMass;
-				return true;
+				remainingSampleMass -= massDelta;
+				remainingSampleMass = Math.Max(remainingSampleMass, 0);
+			}
+			remainingSampleMassOut = remainingSampleMass;
+			return true;
+		}
+
+		private static double Rate(Vessel v, double chunkSize, double maxCapacity, double elapsed, Resource_info ec, double ec_rate, Vessel_resources resources, List<KeyValuePair<string, double>> resourceDefs)
+		{
+			double result = Lib.Clamp(maxCapacity / chunkSize, 0, 1);
+			result = Math.Min(result, Lib.Clamp(ec.amount / (ec_rate * elapsed), 0, 1));
+
+			foreach (var p in resourceDefs) {
+				var ri = resources.Info(v, p.Key);
+				result = Math.Min(result, Lib.Clamp(ri.amount / (p.Value * elapsed), 0, 1));
 			}
 
-			sampledOut = dataSampled;
-			remainingSampleMassOut = remainingSampleMass;
-			return false;
+			return result;
 		}
 
 		public static void BackgroundUpdate(Vessel v, ProtoPartModuleSnapshot m, Experiment experiment, Resource_info ec, Vessel_resources resources, double elapsed_s)
