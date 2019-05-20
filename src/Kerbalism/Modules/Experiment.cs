@@ -94,6 +94,8 @@ namespace KERBALISM
 					Science.RegisterSampleMass(experiment_id, sample_mass);
 				}
 			}
+
+			base.OnLoad(node);
 		}
 
 		public override void OnStart(StartState state)
@@ -261,6 +263,7 @@ namespace KERBALISM
 			var stored = DoRecord(this, subject_id, vessel, ec, privateHdId,
 				ResourceCache.Get(vessel), resourceDefs,
 				remainingSampleMass, dataSampled, out dataSampled, out remainingSampleMass);
+
 			if (!stored) issue = insufficient_storage;
 		}
 
@@ -284,6 +287,7 @@ namespace KERBALISM
 
 			if (Done(exp, dataSampled)) {
 				sampledOut = dataSampled;
+
 				remainingSampleMassOut = remainingSampleMass;
 				return true;
 			}
@@ -299,8 +303,10 @@ namespace KERBALISM
 			double maxCapacity = isFile ? drive.FileCapacityAvailable() : drive.SampleCapacityAvailable(subject_id);
 
 			Drive warpCacheDrive = null;
-			if (isFile && drive.GetFileSend(subject_id)) warpCacheDrive = Cache.VesselInfo(vessel).warp_cache_drive;
-			if(warpCacheDrive != null) maxCapacity += warpCacheDrive.FileCapacityAvailable();
+			if(isFile) {
+				if (drive.GetFileSend(subject_id)) warpCacheDrive = Cache.VesselInfo(vessel).warp_cache_drive;
+				if (warpCacheDrive != null) maxCapacity += warpCacheDrive.FileCapacityAvailable();
+			}
 
 			if (maxCapacity < chunkSize)
 			{
@@ -314,20 +320,26 @@ namespace KERBALISM
 				resources.Consume(vessel, p.Key, p.Value * elapsed, "experiment");
 
 			bool stored = false;
-			if (isFile)
+			if (chunkSize > double.Epsilon)
 			{
-				if(warpCacheDrive != null) {
-					double s = Math.Min(chunkSize, warpCacheDrive.FileCapacityAvailable());
-					Cache.VesselInfo(vessel).warp_cache_drive.Record_file(subject_id, s, true);
-					stored = drive.Record_file(subject_id, chunkSize - s, true);
+				if (isFile)
+				{
+					if (warpCacheDrive != null)
+					{
+						double s = Math.Min(chunkSize, warpCacheDrive.FileCapacityAvailable());
+						stored = warpCacheDrive.Record_file(subject_id, s, true);
+
+						if(chunkSize > s) // only write to persisted drive if the data cannot be transmitted in this tick
+							stored &= drive.Record_file(subject_id, chunkSize - s, true);
+					}
+					else
+					{
+						stored = drive.Record_file(subject_id, chunkSize, true);
+					}
 				}
 				else
-				{
-					stored = drive.Record_file(subject_id, chunkSize, true);
-				}
+					stored = drive.Record_sample(subject_id, chunkSize, massDelta);
 			}
-			else
-				stored = drive.Record_sample(subject_id, chunkSize, massDelta);
 
 			if (stored)
 			{
@@ -667,7 +679,7 @@ namespace KERBALISM
 			if (!recording)
 			{
 				dataSampled = 0;
-				forcedRun = false;
+					forcedRun = false;
 			}
 
 			var new_recording = recording;

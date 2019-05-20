@@ -87,39 +87,44 @@ namespace KERBALISM
 				// accumulate in the buffer
 				file.buff += transmitted;
 
-				bool credit = file.size <= double.Epsilon;
-
-				// this is the science value remaining for this experiment
-				var remainingValue = Value(exp_filename, 0);
-
-				// this is the science value of this sample
-				var dataValue = Value(exp_filename, file.buff);
-
-				if (!credit && file.buff > min_buffer_size) credit = dataValue > buffer_science_value;
-
-				// if buffer is full, or file was transmitted completely
-				if (credit)
+				// special case: file size on drive = 0 -> buffer is 0, so no need to do anyhting. just delete.
+				if (file.buff > double.Epsilon)
 				{
-					var totalValue = TotalValue(exp_filename);
+					bool credit = file.size <= double.Epsilon;
 
-					// collect the science data
-					Credit(exp_filename, file.buff, true, v.protoVessel);
+					// this is the science value remaining for this experiment
+					var remainingValue = Value(exp_filename, 0);
 
-					// reset the buffer
-					file.buff = 0.0;
+					// this is the science value of this sample
+					double dataValue = Value(exp_filename, file.buff);
 
-					// this was the last useful bit, there is no more value in the experiment
-					if (remainingValue >= 0.1 && remainingValue - dataValue < 0.1)
+					if (!credit && file.buff > min_buffer_size) credit = dataValue > buffer_science_value;
+
+					// if buffer is full, or file was transmitted completely
+					if (credit)
 					{
-						
-						Message.Post(
-							Lib.BuildString(Lib.HumanReadableScience(totalValue), " ", Experiment(exp_filename).FullName(exp_filename), " completed"),
-						  Lib.TextVariant(
-								"Our researchers will jump on it right now",
-								"Your findings cause some excitement",
-								"The results are causing a brouhaha in R&D",
-								"Our scientists look very confused"
-							));
+						var totalValue = TotalValue(exp_filename);
+
+						// collect the science data
+						Credit(exp_filename, file.buff, true, v.protoVessel);
+
+						// reset the buffer
+						file.buff = 0.0;
+
+						// this was the last useful bit, there is no more value in the experiment
+						if (remainingValue >= 0.1 && remainingValue - dataValue < 0.1)
+						{
+
+							Message.Post(
+								Lib.BuildString(Lib.HumanReadableScience(totalValue), " ", Experiment(exp_filename).FullName(exp_filename), " completed"),
+							  Lib.TextVariant(
+									"Our researchers will jump on it right now",
+									"This cause some excitement",
+									"These results are causing a brouhaha in R&D",
+									"Our scientists look very confused",
+									"The scientists won't believe these readings"
+								));
+						}
 					}
 				}
 
