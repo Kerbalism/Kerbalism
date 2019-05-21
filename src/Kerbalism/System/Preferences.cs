@@ -82,7 +82,7 @@ namespace KERBALISM
 		public float transmitFactor = 1.0f;
 
 		[GameParameters.CustomFloatParameterUI("Always allow sample transfers", toolTip = "When off, sample transfer is only available in crewed vessels")]
-		public bool sampleTransfer = false;
+		public bool sampleTransfer = true;
 
 		public override GameParameters.GameMode GameMode { get { return GameParameters.GameMode.ANY; } }
 
