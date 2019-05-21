@@ -88,9 +88,8 @@ namespace KERBALISM
 			critical = Reliability.HasCriticalFailure(v);
 
 			// communications info
-			warp_cache_drive = new Drive("warp cache drive", 0, 0);
-			connection = ConnectionInfo.Update(v, powered, blackout, this);
-			transmitting = Science.Transmitting(v, connection.linked && connection.rate > double.Epsilon, this);
+			connection = ConnectionInfo.Update(v, powered, blackout);
+			transmitting = Science.Transmitting(v, connection.linked && connection.rate > double.Epsilon);
 
 			// habitat data
 			volume = Habitat.Tot_volume(v);
@@ -179,7 +178,6 @@ namespace KERBALISM
 		public bool powered;                // true if vessel is powered
 		public double free_capacity = 0.0;  // free data storage available data capacity of all public drives
 		public double total_capacity = 0.0; // data capacity of all public drives
-		public Drive warp_cache_drive;
 	}
 
 
@@ -189,6 +187,7 @@ namespace KERBALISM
 		{
 			vessels = new Dictionary<Guid, Vessel_info>();
 			vesselObjects = new Dictionary<Guid, Dictionary<string, object>>();
+			warp_caches = new Dictionary<Guid, Drive>();
 			next_inc = 0;
 		}
 
@@ -196,6 +195,7 @@ namespace KERBALISM
 		public static void Clear()
 		{
 			vessels.Clear();
+			warp_caches.Clear();
 			vesselObjects.Clear();
 			next_inc = 0;
 		}
@@ -223,6 +223,7 @@ namespace KERBALISM
 			var id = Lib.VesselID(v);
 			vessels.Remove(id);
 			vesselObjects.Remove(id);
+			warp_caches.Remove(id);
 		}
 
 		/// <summary>
@@ -234,11 +235,13 @@ namespace KERBALISM
 			var id = Lib.VesselID(v);
 			vessels.Remove(id);
 			vesselObjects.Remove(id);
+			warp_caches.Remove(id);
 		}
 
 		public static void PurgeObjects()
 		{
-			vesselObjects.Clear();	
+			vesselObjects.Clear();
+			warp_caches.Clear();
 		}
 
 		public static void Update()
@@ -283,6 +286,20 @@ namespace KERBALISM
 
 			// return the vessel info
 			return info;
+		}
+
+		public static Drive WarpCache(Vessel v)
+		{
+			Guid id = Lib.VesselID(v);
+
+			// get from the cache, if it exist
+			Drive drive;
+			if (warp_caches.TryGetValue(id, out drive))
+				return drive;
+			
+			drive = new Drive("warp cache drive", 0, 0);
+			warp_caches.Add(id, drive);
+			return drive;
 		}
 
 		internal static T VesselObjectsCache<T>(Vessel vessel, string key)
@@ -369,6 +386,7 @@ namespace KERBALISM
 
 		// caches
 		private static Dictionary<Guid, Vessel_info> vessels;
+		private static Dictionary<Guid, Drive> warp_caches;
 		private static Dictionary<Guid, Dictionary<string, System.Object>> vesselObjects;
 
 		// used to generate unique id

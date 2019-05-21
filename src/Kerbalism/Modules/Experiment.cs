@@ -303,7 +303,7 @@ namespace KERBALISM
 
 			Drive warpCacheDrive = null;
 			if(isFile) {
-				if (drive.GetFileSend(subject_id)) warpCacheDrive = Cache.VesselInfo(vessel).warp_cache_drive;
+				if (drive.GetFileSend(subject_id)) warpCacheDrive = Cache.WarpCache(vessel);
 				if (warpCacheDrive != null) maxCapacity += warpCacheDrive.FileCapacityAvailable();
 			}
 
@@ -532,7 +532,13 @@ namespace KERBALISM
 			Drive drive = GetDrive(experiment, v, hdId, chunkSize, subject_id);
 
 			var isFile = experiment.sample_mass < double.Epsilon;
-			double available = isFile ? drive.FileCapacityAvailable() : drive.SampleCapacityAvailable(subject_id);
+			double available = 0;
+			if(isFile) {
+				available = drive.FileCapacityAvailable();
+				available += Cache.WarpCache(v).FileCapacityAvailable();
+			} else {
+				available = drive.SampleCapacityAvailable(subject_id);
+			}
 
 			if (Math.Min(experiment.data_rate * Kerbalism.elapsed_s, experimentSize) > available)
 				return insufficient_storage;

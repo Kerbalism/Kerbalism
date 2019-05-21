@@ -60,32 +60,53 @@ namespace KERBALISM
 			// get connection info
 			ConnectionInfo conn = vi.connection;
 			if (conn == null) return;
-
-			double transmitSize = conn.rate * elapsed_s;
 			if (String.IsNullOrEmpty(vi.transmitting)) return;
 
-			while(transmitSize > double.Epsilon && !String.IsNullOrEmpty(vi.transmitting))
+			Drive warpCache = Cache.WarpCache(v);
+			bool isWarpCache = false;
+
+			double transmitSize = conn.rate * elapsed_s;
+			while(warpCache.files.Count > 0 || // transmit EVERYTHING in the cache, regardless of transmitSize.
+			      (transmitSize > double.Epsilon && !String.IsNullOrEmpty(vi.transmitting)))
 			{
 				// get filename of data being downloaded
 				var exp_filename = vi.transmitting;
-
-				var drive = FindDrive(v, exp_filename);
-				if (drive == null) break;
-
-				if (string.IsNullOrEmpty(exp_filename) || drive == null)
+				if (string.IsNullOrEmpty(exp_filename))
 					break;
+
+				Drive drive = null;
+				if (warpCache.files.ContainsKey(exp_filename)) {
+					drive = warpCache;
+					isWarpCache = true;
+				}
+				else
+				{
+					drive = FindDrive(v, exp_filename);
+					isWarpCache = false;
+				}
+
+				if (drive == null) break;
 
 				File file = drive.files[exp_filename];
 
-				// determine how much data is transmitted
-				double transmitted = Math.Min(file.size, transmitSize);
-				transmitSize -= transmitted;
+				if(isWarpCache) {
+					file.buff = file.size;
+					file.size = 0;
+					transmitSize -= file.size;
+				} else {
+					if (transmitSize < double.Epsilon)
+						break;
 
-				// consume data in the file
-				file.size -= transmitted;
+					// determine how much data is transmitted
+					double transmitted = Math.Min(file.size, transmitSize);
+					transmitSize -= transmitted;
 
-				// accumulate in the buffer
-				file.buff += transmitted;
+					// consume data in the file
+					file.size -= transmitted;
+
+					// accumulate in the buffer
+					file.buff += transmitted;
+				}
 
 				// special case: file size on drive = 0 -> buffer is 0, so no need to do anyhting. just delete.
 				if (file.buff > double.Epsilon)
@@ -133,13 +154,13 @@ namespace KERBALISM
 				{
 					// remove the file
 					drive.files.Remove(exp_filename);
-					vi.transmitting = Science.Transmitting(v, true, vi);
+					vi.transmitting = Science.Transmitting(v, true);
 				}
 			}
 		}
 
 		// return name of file being transmitted from vessel specified
-		public static string Transmitting(Vessel v, bool linked, Vessel_info vi)
+		public static string Transmitting(Vessel v, bool linked)
 		{
 			// never transmitting if science system is disabled
 			if (!Features.Science) return string.Empty;
@@ -150,7 +171,7 @@ namespace KERBALISM
 			// not transmitting if there is no ec left
 			if (ResourceCache.Info(v, "ElectricCharge").amount <= double.Epsilon) return string.Empty;
 
-			foreach(var p in vi.warp_cache_drive.files)
+			foreach(var p in Cache.WarpCache(v).files)
 				return p.Key;
 
 			// get first file flagged for transmission, AND has a ts at least 5 seconds old or is > 0.001Mb in size
