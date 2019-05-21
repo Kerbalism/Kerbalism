@@ -308,8 +308,7 @@ namespace KERBALISM
 			}
 
 			double factor = Rate(vessel, chunkSize, maxCapacity, elapsed, ec, experiment.ec_rate, resources, resourceDefs);
-
-			if (factor > double.Epsilon)
+			if (factor < double.Epsilon)
 				return false;
 
 			chunkSize *= factor;
