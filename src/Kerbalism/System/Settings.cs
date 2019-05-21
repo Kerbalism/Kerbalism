@@ -46,6 +46,7 @@ namespace KERBALISM
             // signal
             UnlinkedControl = Lib.ConfigEnum(cfg, "UnlinkedControl", UnlinkedCtrl.none);
             DataRateDampingExponent = Lib.ConfigValue(cfg, "DataRateDampingExponent", 6.0f);
+			DataRateDampingExponentRT = Lib.ConfigValue(cfg, "DataRateDampingExponentRT", 6.0f);
 			TransmitterActiveEcFactor = Lib.ConfigValue(cfg, "TransmitterActiveEcFactor", 1.5);
 			TransmitterPassiveEcFactor = Lib.ConfigValue(cfg, "TransmitterPassiveEcFactor", 0.2);
 
@@ -108,6 +109,7 @@ namespace KERBALISM
         // signal
         public static UnlinkedCtrl UnlinkedControl;             // available control for unlinked vessels: 'none', 'limited' or 'full'
         public static float DataRateDampingExponent;            // how much to damp data rate. stock is equivalent to 1, 6 gives nice values, RSS would use 4
+		public static float DataRateDampingExponentRT;          // same for RemoteTech
 		public static double TransmitterActiveEcFactor;			// how much of the configured EC rate is used while transmitter is active
 		public static double TransmitterPassiveEcFactor;        // how much of the configured EC rate is used while transmitter is passive
 
