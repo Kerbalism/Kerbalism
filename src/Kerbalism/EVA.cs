@@ -23,10 +23,8 @@ namespace KERBALISM
 			// to whatever was available in the ship, so we don't magically create EVA prop out of nowhere
 			if(Cache.HasVesselObjectsCache(v, "eva_prop"))
 			{
-				Lib.Log("### have eva_prop for " + v);
 				var quantity = Cache.VesselObjectsCache<double>(v, "eva_prop");
 				Cache.RemoveVesselObjectsCache(v, "eva_prop");
-				Lib.Log("### adding " + quantity + " eva prop");
 				Lib.SetResource(kerbal.part, Lib.EvaPropellantName(), quantity, Lib.EvaPropellantCapacity());
 			}
 
