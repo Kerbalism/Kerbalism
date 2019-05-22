@@ -131,7 +131,7 @@ namespace KERBALISM
 			if (!string.IsNullOrEmpty(crew_prepare))
 				prepare_cs = new CrewSpecs(crew_prepare);
 
-			resourceDefs = ParseResources(resources);
+			resourceDefs = KerbalismProcess.ParseResources(resources);
 
 			foreach (var hd in part.FindModulesImplementing<HardDrive>())
 			{
@@ -384,7 +384,7 @@ namespace KERBALISM
 			string issue = TestForIssues(v, ec, experiment, privateHdId, broken,
 				remainingSampleMass, didPrepare, shrouded, last_subject_id);
 			if(string.IsNullOrEmpty(issue))
-				issue = TestForResources(v, ParseResources(experiment.resources), elapsed_s, resources);
+				issue = TestForResources(v, KerbalismProcess.ParseResources(experiment.resources), elapsed_s, resources);
 
 			Lib.Proto.Set(m, "issue", issue);
 
@@ -412,7 +412,7 @@ namespace KERBALISM
 				return;
 
 			var stored = DoRecord(experiment, subject_id, v, ec, privateHdId,
-				resources, ParseResources(experiment.resources),
+				resources, KerbalismProcess.ParseResources(experiment.resources),
 				remainingSampleMass, dataSampled, out dataSampled, out remainingSampleMass);
 			if (!stored) Lib.Proto.Set(m, "issue", insufficient_storage);
 
@@ -471,25 +471,6 @@ namespace KERBALISM
 			}
 
 			return string.Empty;
-		}
-
-		private static List<KeyValuePair<string, double>> ParseResources(string resources, bool logErros = false)
-		{
-			var reslib = PartResourceLibrary.Instance.resourceDefinitions;
-
-			List<KeyValuePair<string, double>> defs = new List<KeyValuePair<string, double>>();
-			foreach (string s in Lib.Tokenize(resources, ','))
-			{
-				// definitions are Resource@rate
-				var p = Lib.Tokenize(s, '@');
-				if (p.Count != 2) continue;				// malformed definition
-				string res = p[0];
-				if (!reslib.Contains(res)) continue;	// unknown resource
-				double rate = double.Parse(p[1]);
-				if (res.Length < 1 || rate < double.Epsilon) continue;	// rate <= 0
-				defs.Add(new KeyValuePair<string, double>(res, rate));
-			}
-			return defs;
 		}
 
 		private static string TestForIssues(Vessel v, Resource_info ec, Experiment experiment, uint hdId, bool broken,
@@ -785,7 +766,7 @@ namespace KERBALISM
 			specs.Add("<color=#00ffff>Needs:</color>");
 
 			specs.Add("EC", Lib.HumanReadableRate(ec_rate));
-			foreach(var p in ParseResources(resources))
+			foreach(var p in KerbalismProcess.ParseResources(resources))
 				specs.Add(p.Key, Lib.HumanReadableRate(p.Value));
 
 			if (crew_prepare.Length > 0)
