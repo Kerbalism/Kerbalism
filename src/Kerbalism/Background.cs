@@ -32,7 +32,8 @@ namespace KERBALISM
 			CryoTank,
 			Unknown,
 			FNGenerator,
-			NonRechargeBattery
+			NonRechargeBattery,
+			KerbalismProcess
 		}
 
 		public static Module_type ModuleType(string module_name)
@@ -67,6 +68,7 @@ namespace KERBALISM
 				case "ModuleCryoTank": return Module_type.CryoTank;
 				case "FNGenerator": return Module_type.FNGenerator;
 				case "ModuleNonRechargeBattery": return Module_type.NonRechargeBattery;
+				case "KerbalismProcess": return Module_type.KerbalismProcess;
 			}
 			return Module_type.Unknown;
 		}
@@ -118,6 +120,7 @@ namespace KERBALISM
 					case Module_type.CryoTank: ProcessCryoTank(v, e.p, e.m, e.module_prefab, resources, ec, elapsed_s); break;
 					case Module_type.FNGenerator: ProcessFNGenerator(v, e.p, e.m, e.module_prefab, ec, elapsed_s); break;
 					case Module_type.NonRechargeBattery: ProcessNonRechargeBattery(v, e.p, e.m, e.module_prefab, ec, elapsed_s); break;
+					case Module_type.KerbalismProcess: KerbalismProcess.BackgroundUpdate(v, e.m, e.module_prefab as KerbalismProcess, ec, resources, elapsed_s); break;
 				}
 			}
 		}
