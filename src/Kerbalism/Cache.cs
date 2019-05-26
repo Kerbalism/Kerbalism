@@ -94,7 +94,7 @@ namespace KERBALISM
 			// habitat data
 			volume = Habitat.Tot_volume(v);
 			surface = Habitat.Tot_surface(v);
-			pressure = Math.Max(max_pressure, Habitat.Pressure(v));
+			pressure = Math.Min(max_pressure, Habitat.Pressure(v));
 			evas = (uint)(Math.Max(0, ResourceCache.Info(v, "Nitrogen").amount - 330) / PreferencesLifeSupport.Instance.evaAtmoLoss);
 			poisoning = Habitat.Poisoning(v);
 			humidity = Habitat.Humidity(v);
