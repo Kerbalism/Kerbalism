@@ -717,13 +717,13 @@ namespace KERBALISM
 			return (Math.Abs(value) <= 0 ? "none" : BuildString(value.ToString("F0"), append));
 		}
 
-		///<summary> Format data size, the size parameter is in MB </summary>
+		///<summary> Format data size, the size parameter is in MB (megabytes) </summary>
 		public static string HumanReadableDataSize(double size)
 		{
-			size *= 131072.0; //< bits
+			size *= 1024.0 * 1024.0 * 8.0; //< bits
 			if (size < 0.01) return "none";
 			if (size <= 32.0) return BuildString(size.ToString("F0"), " b");
-			size *= 8; //< to bytes
+			size /= 8; //< to bytes
 			if (size < 1024.0) return BuildString(size.ToString("F0"), " B");
 			size /= 1024.0;
 			if (size < 1024.0) return BuildString(size.ToString("F2"), " kB");
