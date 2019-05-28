@@ -268,7 +268,7 @@ namespace KERBALISM
 			var filesList = new List<string>();
 			foreach (var p in files)
 			{
-				double size = Math.Max(p.Value.size, destination.FileCapacityAvailable());
+				double size = Math.Min(p.Value.size, destination.FileCapacityAvailable());
 				if (destination.Record_file(p.Key, size, true))
 				{
 					destination.files[p.Key].buff += p.Value.buff; //< move the buffer along with the size
