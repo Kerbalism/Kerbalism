@@ -1,5 +1,5 @@
 #!/bin/bash
-export KSPVERS=${KSPVERS:-"1.7.0 1.6.1 1.5.1 1.4.5"}
+export KSPVERS=${KSPVERS:-"1.7.1 1.6.1 1.5.1 1.4.5"}
 export KSPBINS=${KSPBINS:-"17 16 15 14"}
 export TRAVIS_BUILD_DIR=${TRAVIS_BUILD_DIR:-$PWD}
 IFS=' ' read -r -a _KSPVERS <<< "$KSPVERS"
