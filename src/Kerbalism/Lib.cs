@@ -336,12 +336,12 @@ namespace KERBALISM
 			return (T)instance.GetType().GetField(field_name, flags).GetValue(instance);
 		}
 
-		public static void ReflectionCall(PartModule m, string call_name)
+		public static void ReflectionCall(object m, string call_name)
 		{
 			m.GetType().GetMethod(call_name).Invoke(m, null);
 		}
 
-		public static T ReflectionCall<T>(PartModule m, string call_name)
+		public static T ReflectionCall<T>(object m, string call_name)
 		{
 			return (T)(m.GetType().GetMethod(call_name).Invoke(m, null));
 		}
