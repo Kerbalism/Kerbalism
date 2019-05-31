@@ -1,5 +1,7 @@
 #!/bin/bash
 
+
+nuget restore -Verbosity detailed "$TRAVIS_BUILD_DIR/packages.config" -SolutionDirectory "$TRAVIS_BUILD_DIR"
 rm -rf "src/DLLs"
 current_kspvr="1.6.1"
 current_kspbin="16"

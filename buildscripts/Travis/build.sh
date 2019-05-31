@@ -5,6 +5,7 @@ export TRAVIS_BUILD_DIR=${TRAVIS_BUILD_DIR:-$PWD}
 IFS=' ' read -r -a _KSPVERS <<< "$KSPVERS"
 IFS=' ' read -r -a _KSPBINS <<< "$KSPBINS"
 
+nuget restore -Verbosity detailed "$TRAVIS_BUILD_DIR/packages.config" -SolutionDirectory "$TRAVIS_BUILD_DIR"
 for element in "${!_KSPVERS[@]}"
 do
 	rm -rf "src/DLLs"
