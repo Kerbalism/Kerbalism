@@ -272,7 +272,7 @@
     <Compile Include="Modules\KerbalismScansat.cs" />
     <Compile Include="Science\ExperimentSituation.cs" />
     <Compile Include="Modules\KerbalismProcess.cs" />
-    <Compile Include="System\HarmonyPatcher.cs" />
+    <Compile Include="Patches\DeployedScienceExperiment_SendDataToComms.cs" />
   </ItemGroup>
   <ItemGroup>
     <Analyzer Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-CSharp-firstpass.dll')" Include="$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-CSharp-firstpass.dll" />

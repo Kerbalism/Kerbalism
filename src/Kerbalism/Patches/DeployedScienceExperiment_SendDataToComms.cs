@@ -10,7 +10,7 @@ namespace KERBALISM
 {
 	[HarmonyPatch(typeof(DeployedScienceExperiment))]
 	[HarmonyPatch("SendDataToComms")]
-	class SDTCPatch {
+	class DeployedScienceExperiment_SendDataToComms {
 		static bool Prefix(DeployedScienceExperiment __instance, ref bool __result) {
 			// get private vars
 			ScienceSubject subject = Lib.ReflectionValue<ScienceSubject>(__instance, "subject");
@@ -27,6 +27,17 @@ namespace KERBALISM
 					Lib.ReflectionCall(__instance, "SetControllerVessel");
 					ControllerVessel = Lib.ReflectionValue<Vessel>(__instance, "ControllerVessel");
 				}
+				Part control;
+				FlightGlobals.FindLoadedPart(__instance.Cluster.ControlModulePartId, out control);
+				if(control == null) {
+					Lib.Log("DeployedScienceExperiment: couldn't find control module");
+					__result = true;
+					return false;
+				}
+				Drive hardDrive = control.FindModuleImplementing<Drive>();
+				Drive.StoreFile(control.vessel, subject.id, 0); // todo -- filesize
+				__result = false;
+				return false;
 			}
 			return false; // always return false so we don't continue to the original code
 		}
