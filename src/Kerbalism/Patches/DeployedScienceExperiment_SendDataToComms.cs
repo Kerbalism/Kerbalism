@@ -34,10 +34,8 @@ namespace KERBALISM
 					__result = true;
 					return false;
 				}
-				Drive hardDrive = control.FindModuleImplementing<Drive>();
 				Drive.StoreFile(control.vessel, subject.id, 0); // todo -- filesize
 				__result = false;
-				return false;
 			}
 			return false; // always return false so we don't continue to the original code
 		}
