@@ -15,6 +15,7 @@ namespace KERBALISM
 			// get private vars
 			ScienceSubject subject = Lib.ReflectionValue<ScienceSubject>(__instance, "subject");
 			float storedScienceData = Lib.ReflectionValue<float>(__instance, "storedScienceData");
+			float transmittedScienceData = Lib.ReflectionValue<float>(__instance, "transmittedScienceData");
 			Vessel ControllerVessel = Lib.ReflectionValue<Vessel>(__instance, "ControllerVessel");
 			if (__instance.Experiment != null && !(__instance.ExperimentVessel == null) && subject != null && !(__instance.Cluster == null) && __instance.sciencePart.Enabled && !(storedScienceData <= 0f) && __instance.ExperimentSituationValid) {
 				if (!__instance.TimeToSendStoredData())
@@ -34,7 +35,17 @@ namespace KERBALISM
 					__result = true;
 					return false;
 				}
-				Drive.StoreFile(control.vessel, subject.id, 0); // todo -- filesize
+				List<Drive> drives = Drive.GetDrives(control.vessel, false);
+				foreach (Drive drive in drives) {
+					if(drive.Record_file(subject.id, storedScienceData)) {
+						Lib.ReflectionValue<float>(__instance, "transmittedScienceData", transmittedScienceData + storedScienceData);
+						Lib.ReflectionValue<float>(__instance, "storedScienceData", 0f);
+					} else {
+						__result = true;
+						return false;
+					}
+					break;
+				}
 				__result = false;
 			}
 			return false; // always return false so we don't continue to the original code
