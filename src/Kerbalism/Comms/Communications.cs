@@ -14,6 +14,8 @@ namespace KERBALISM
 
 		public static void Update(Vessel v, Vessel_info vi, VesselData vd, Resource_info ec, double elapsed_s)
 		{
+			if(Lib.ShouldIgnoreVessel(v)) return;
+
 			// consume ec for transmitters
 			ec.Consume(vi.connection.ec * elapsed_s, "comms");
 

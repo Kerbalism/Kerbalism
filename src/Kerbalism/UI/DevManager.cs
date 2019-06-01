@@ -29,7 +29,7 @@ namespace KERBALISM
 			p.paneltype = Panel.PanelType.scripts;
 
 			// time-out simulation
-			if (p.Timeout(vi)) return;
+			if (!Lib.IsControlUnit(v) && p.Timeout(vi)) return;
 
 			// get devices
 			Dictionary<uint, Device> devices = Computer.Boot(v);

@@ -338,12 +338,12 @@ namespace KERBALISM
 
 		public static void ReflectionCall(object m, string call_name)
 		{
-			m.GetType().GetMethod(call_name).Invoke(m, null);
+			m.GetType().GetMethod(call_name, flags).Invoke(m, null);
 		}
 
 		public static T ReflectionCall<T>(object m, string call_name)
 		{
-			return (T)(m.GetType().GetMethod(call_name).Invoke(m, null));
+			return (T)(m.GetType().GetMethod(call_name, flags).Invoke(m, null));
 		}
 
 
@@ -958,6 +958,47 @@ namespace KERBALISM
 
 			// the vessel is valid
 			return true;
+		}
+
+		// returns true if it's a deployable surface thing
+		public static bool ShouldIgnoreVessel(Vessel v) {
+			if(v.loaded) {
+				if(v.parts.Count > 1)
+					return false; // deployables are 1-part vessels
+				foreach(Part part in v.parts) {
+					if(part.FindModuleImplementing<ModuleGroundExpControl>() != null)
+						continue;
+					if(part.FindModuleImplementing<ModuleGroundPart>() != null)
+						return true;
+				}
+			} else {
+				foreach (ProtoPartSnapshot p in v.protoVessel.protoPartSnapshots) {
+					Part part_prefab = PartLoader.getPartInfoByName(p.partName).partPrefab;
+					if(part_prefab.FindModuleImplementing<ModuleGroundExpControl>() != null)
+						continue;
+					if(part_prefab.FindModuleImplementing<ModuleGroundPart>() != null)
+						return true;
+				}
+			}
+			return false;
+		}
+
+		public static bool IsControlUnit(Vessel v) {
+			if(v.loaded) {
+				if(v.parts.Count > 1)
+					return false; // deployables are 1-part vessels
+				foreach(Part part in v.parts) {
+					if(part.FindModuleImplementing<ModuleGroundExpControl>() != null)
+						return true;
+				}
+			} else {
+				foreach (ProtoPartSnapshot p in v.protoVessel.protoPartSnapshots) {
+					Part part_prefab = PartLoader.getPartInfoByName(p.partName).partPrefab;
+					if(part_prefab.FindModuleImplementing<ModuleGroundExpControl>() != null)
+						return true;
+				}
+			}
+			return false;
 		}
 
 		public static Guid VesselID(Vessel v)
@@ -1852,6 +1893,37 @@ namespace KERBALISM
 				true,
 				string.Empty
 			);
+		}
+
+		public static string Greek() {
+			string[] letters = {
+				"Alpha",
+				"Beta",
+				"Gamma",
+				"Delta",
+				"Epsilon",
+				"Zeta",
+				"Eta",
+				"Theta",
+				"Iota",
+				"Kappa",
+				"Lambda",
+				"Mu",
+				"Nu",
+				"Xi",
+				"Omicron",
+				"Pi",
+				"Sigma",
+				"Tau",
+				"Upsilon",
+				"Phi",
+				"Chi",
+				"Psi",
+				"Omega"
+			};
+			System.Random rand = new System.Random();
+			int index = rand.Next(letters.Length);
+			return (string)letters[index];
 		}
 
 		// --- PROTO ----------------------------------------------------------------

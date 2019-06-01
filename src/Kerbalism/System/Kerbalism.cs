@@ -89,9 +89,6 @@ namespace KERBALISM
 				// setup callbacks
 				callbacks = new Callbacks();
 
-				HarmonyInstance harmony = HarmonyInstance.Create("Kerbalism");
-				harmony.PatchAll(Assembly.GetExecutingAssembly());
-
 				// everything was initialized
 				initialized = true;
 			}

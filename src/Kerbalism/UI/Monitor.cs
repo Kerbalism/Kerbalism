@@ -81,6 +81,7 @@ namespace KERBALISM
 				{
 					// skip active vessel
 					if (v == FlightGlobals.ActiveVessel) continue;
+					if (Lib.ShouldIgnoreVessel(v)) continue;
 
 					// draw the vessel
 					setup |= Render_vessel(panel, v);

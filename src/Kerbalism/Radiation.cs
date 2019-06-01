@@ -646,6 +646,8 @@ namespace KERBALISM
 			// if radiation is enabled
 			if (Features.Radiation)
 			{
+				if(Lib.ShouldIgnoreVessel(v)) return;
+
 				// we only show the warning for manned vessels, or for all vessels the first time its crossed
 				bool must_warn = vi.crew_count > 0 || !DB.landmarks.belt_crossing;
 
