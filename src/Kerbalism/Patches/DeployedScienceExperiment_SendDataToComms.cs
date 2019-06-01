@@ -38,7 +38,7 @@ namespace KERBALISM
 				}
 				List<Drive> drives = Drive.GetDrives(control.vessel, false);
 				foreach (Drive drive in drives) {
-					Lib.Log(Lib.BuildString("BREAKING GROUND -- ", subject.id, storedScienceData.ToString()));
+					Lib.Log(Lib.BuildString("BREAKING GROUND -- ", subject.id, " | ", storedScienceData.ToString()));
 					if(drive.Record_file(subject.id, storedScienceData)) {
 						Lib.ReflectionValue<float>(__instance, "transmittedScienceData", transmittedScienceData + storedScienceData);
 						Lib.ReflectionValue<float>(__instance, "storedScienceData", 0f);

@@ -960,6 +960,8 @@ namespace KERBALISM
 			return true;
 		}
 
+
+#if !KSP16 && !KSP15 && !KSP14
 		// returns true if it's a deployable surface thing
 		public static bool ShouldIgnoreVessel(Vessel v) {
 			if(v.loaded) {
@@ -1000,6 +1002,15 @@ namespace KERBALISM
 			}
 			return false;
 		}
+#else
+		public static bool IsControlUnit(Vessel v) {
+			return false;
+		}
+
+		public static bool ShouldIgnoreVessel(Vessel v) {
+			return false;
+		}
+#endif
 
 		public static Guid VesselID(Vessel v)
 		{
