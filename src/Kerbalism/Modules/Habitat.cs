@@ -308,7 +308,7 @@ namespace KERBALISM
 				state = State.pressurizing;
 
 				// Equalize run only in Flight mode
-				needEqualize = true && Lib.IsFlight();
+				needEqualize = Lib.IsFlight();
 			}
 
 			perctDeployed = Lib.Level(part, "Atmosphere", true);

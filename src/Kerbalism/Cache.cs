@@ -54,7 +54,7 @@ namespace KERBALISM
 			}
 
 			// determine if there is enough EC for a powered state
-			powered = ResourceCache.Info(v, "ElectricCharge").amount > double.Epsilon;
+			powered = Lib.IsPowered(v);
 
 			// determine if in sunlight, calculate sun direction and distance
 			sunlight = Sim.RaytraceBody(v, position, FlightGlobals.Bodies[0], out sun_dir, out sun_dist) ? 1.0 : 0.0;
@@ -94,7 +94,11 @@ namespace KERBALISM
 			// habitat data
 			volume = Habitat.Tot_volume(v);
 			surface = Habitat.Tot_surface(v);
+
+			if(Cache.HasVesselObjectsCache(v, "max_pressure"))
+				max_pressure = Cache.VesselObjectsCache<double>(v, "max_pressure");
 			pressure = Math.Min(max_pressure, Habitat.Pressure(v));
+
 			evas = (uint)(Math.Max(0, ResourceCache.Info(v, "Nitrogen").amount - 330) / PreferencesLifeSupport.Instance.evaAtmoLoss);
 			poisoning = Habitat.Poisoning(v);
 			humidity = Habitat.Humidity(v);

@@ -99,6 +99,9 @@ namespace KERBALISM
 		internal static Texture2D plane_black;
 		internal static Texture2D plane_white;
 
+		internal static Texture2D controller_black;
+		internal static Texture2D controller_white;
+
 		// timer controller
 		internal static float nextFlashing = Time.time;
 		internal static bool lastIcon = false;
@@ -205,7 +208,10 @@ namespace KERBALISM
 
 			plane_black = GetTexture("vessels/plane-black", 40, 40, 2.25f);
 			plane_white = GetTexture("vessels/plane-white", 40, 40, 2.25f);
-	}
+
+			controller_black = GetTexture("vessels/controller-black", 40, 40, 2.25f);
+			controller_white = GetTexture("vessels/controller-white", 40, 40, 2.25f);
+		}
 
 		/// <summary>Switch icons based on time </summary>
 		/// <param name="icon1">First Texture2D</param>

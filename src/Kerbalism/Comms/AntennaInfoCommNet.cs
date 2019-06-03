@@ -201,11 +201,6 @@ namespace KERBALISM
 					"\nMax Distance: " + Lib.HumanReadableRange(Math.Sqrt((link.start.antennaTransmit.power + link.start.antennaRelay.power) * link.end.antennaRelay.power));
 				control_path.Add(new string[] { name, value, tooltip });
 			}
-
-			if(linked)
-			{
-
-			}
 		}
 	}
 }

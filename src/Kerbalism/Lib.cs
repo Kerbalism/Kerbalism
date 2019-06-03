@@ -985,23 +985,31 @@ namespace KERBALISM
 			return false;
 		}
 
-		public static bool IsControlUnit(Vessel v) {
+		public static bool IsControlUnit(Vessel v)
+		{
+			return GetModuleGroundExpControl(v) != null;
+		}
+
+		public static ModuleGroundExpControl GetModuleGroundExpControl(Vessel v) {
 			if(v.loaded) {
 				if(v.parts.Count > 1)
-					return false; // deployables are 1-part vessels
+					return null; // deployables are 1-part vessels
 				foreach(Part part in v.parts) {
-					if(part.FindModuleImplementing<ModuleGroundExpControl>() != null)
-						return true;
+					var result = part.FindModuleImplementing<ModuleGroundExpControl>();
+					if (result != null)
+						return result;
 				}
 			} else {
 				foreach (ProtoPartSnapshot p in v.protoVessel.protoPartSnapshots) {
 					Part part_prefab = PartLoader.getPartInfoByName(p.partName).partPrefab;
-					if(part_prefab.FindModuleImplementing<ModuleGroundExpControl>() != null)
-						return true;
+					var result = part_prefab.FindModuleImplementing<ModuleGroundExpControl>();
+					if(result != null)
+						return result;
 				}
 			}
-			return false;
+			return null;
 		}
+
 #else
 		public static bool IsControlUnit(Vessel v) {
 			return false;
@@ -1011,6 +1019,18 @@ namespace KERBALISM
 			return false;
 		}
 #endif
+
+		public static bool IsPowered(Vessel v)
+		{
+#if !KSP16 && !KSP15 && !KSP14
+			if (IsControlUnit(v))
+			{
+				var module = GetModuleGroundExpControl(v);
+				return module.ScienceClusterData.IsPowered;
+			}
+#endif
+			return ResourceCache.Info(v, "ElectricCharge").amount > double.Epsilon;
+		}
 
 		public static Guid VesselID(Vessel v)
 		{

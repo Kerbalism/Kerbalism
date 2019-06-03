@@ -364,6 +364,9 @@ namespace KERBALISM
 				case VesselType.Rover:   return disabled ? Icons.rover_black :   Icons.rover_white;
 				case VesselType.Ship:    return disabled ? Icons.ship_black :    Icons.ship_white;
 				case VesselType.Station: return disabled ? Icons.station_black : Icons.station_white;
+#if !KSP16 && !KSP15 && !KSP14
+				case VesselType.DeployedScienceController: return disabled ? Icons.controller_black : Icons.controller_white;
+#endif
 				default: return Icons.empty; // this really shouldn't happen.
 			}
 		}
