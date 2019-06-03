@@ -114,7 +114,7 @@ namespace KERBALISM
 		}
 
 		// add science data, creating new file or incrementing existing one
-		public bool Record_file(string subject_id, double amount, bool allowImmediateTransmission = true)
+		public bool Record_file(string subject_id, double amount, bool allowImmediateTransmission = true, bool clamp = true)
 		{
 			if (dataCapacity >= 0 && FilesSize() + amount > dataCapacity)
 				return false;
@@ -134,7 +134,8 @@ namespace KERBALISM
 			file.size += amount;
 
 			// clamp file size to max amount that can be collected
-			file.size = Math.Min(file.size, Science.Experiment(subject_id).max_amount);
+			if(clamp)
+				file.size = Math.Min(file.size, Science.Experiment(subject_id).max_amount);
 
 			if (file.size > Science.min_file_size / 3)
 				file.ts = Planetarium.GetUniversalTime();

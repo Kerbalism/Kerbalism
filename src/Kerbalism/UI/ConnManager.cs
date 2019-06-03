@@ -26,7 +26,7 @@ namespace KERBALISM
 			p.paneltype = Panel.PanelType.connection;
 
 			// time-out simulation
-			if (p.Timeout(vi)) return;
+			if (!Lib.IsControlUnit(v) &&  p.Timeout(vi)) return;
 
 			// draw ControlPath section
 			p.AddSection("CONTROL PATH");

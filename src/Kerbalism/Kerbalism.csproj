@@ -56,6 +56,11 @@
   <Choose>
     <When Condition="'$(Configuration)'=='Release' Or '$(Configuration)'=='Debug'">
       <ItemGroup>
+        <Reference Include="0Harmony.dll">
+          <HintPath Condition="Exists('..\..\packages\Lib.Harmony.1.2.0.1\lib\net32\0Harmony.dll')">..\..\packages\Lib.Harmony.1.2.0.1\lib\net32\0Harmony.dll</HintPath>
+          <HintPath Condition="Exists('..\DLLs\0Harmony.dll')">..\DLLs\0Harmony.dll</HintPath>
+          <Private>False</Private>
+        </Reference>
         <Reference Include="Assembly-CSharp">
           <HintPath Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-CSharp.dll')">$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-CSharp.dll</HintPath>
           <HintPath Condition="Exists('..\DLLs\Assembly-CSharp.dll')">..\DLLs\Assembly-CSharp.dll</HintPath>
@@ -90,6 +95,11 @@
     </When>
     <Otherwise>
       <ItemGroup>
+        <Reference Include="0Harmony.dll">
+          <HintPath Condition="Exists('..\..\packages\Lib.Harmony.1.2.0.1\lib\net32\0Harmony.dll')">..\..\packages\Lib.Harmony.1.2.0.1\lib\net32\0Harmony.dll</HintPath>
+          <HintPath Condition="Exists('..\DLLs\0Harmony.dll')">..\DLLs\0Harmony.dll</HintPath>
+          <Private>False</Private>
+        </Reference>
         <Reference Include="Assembly-CSharp">
           <HintPath Condition="Exists('$(KSPBACKPORTDIR)\KSP_x64_Data\Managed\Assembly-CSharp.dll')">$(KSPBACKPORTDIR)\KSP_x64_Data\Managed\Assembly-CSharp.dll</HintPath>
           <HintPath Condition="Exists('..\13\Assembly-CSharp.dll')">..\13\Assembly-CSharp.dll</HintPath>
@@ -262,6 +272,7 @@
     <Compile Include="Modules\KerbalismScansat.cs" />
     <Compile Include="Science\ExperimentSituation.cs" />
     <Compile Include="Modules\KerbalismProcess.cs" />
+    <Compile Include="Patches\DeployedScienceExperiment_SendDataToComms.cs" />
   </ItemGroup>
   <ItemGroup>
     <Analyzer Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-CSharp-firstpass.dll')" Include="$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-CSharp-firstpass.dll" />
@@ -285,6 +296,7 @@
     <Analyzer Condition="Exists('.\UnityEngine.Networking.dll')" Include=".\UnityEngine.Networking.dll" />
     <Analyzer Condition="Exists('.\UnityEngine.UI.dll')" Include=".\UnityEngine.UI.dll" />
     <Analyzer Condition="Exists('.\UnityScript.Lang.dll')" Include=".\UnityScript.Lang.dll" />
+    <Analyzer Condition="Exists('..\..\packages\Lib.Harmony.1.2.0.1\lib\net32\0Harmony.dll')" Include="..\..\packages\Lib.Harmony.1.2.0.1\lib\net32\0Harmony.dll" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

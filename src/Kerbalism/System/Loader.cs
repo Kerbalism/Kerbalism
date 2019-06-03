@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Reflection;
 using System.Collections.Generic;
 using UnityEngine;
 using KSP.UI.Screens;
+using Harmony;
 
 
 namespace KERBALISM
@@ -64,6 +66,11 @@ namespace KERBALISM
 			if (Features.Humidity) Inject(root, "Feature", "Humidity");
 			if (Features.Habitat) Inject(root, "Feature", "Habitat");
 			if (Features.Supplies) Inject(root, "Feature", "Supplies");
+
+			// inject harmony patches
+			HarmonyInstance harmony = HarmonyInstance.Create("Kerbalism");
+			harmony.PatchAll(Assembly.GetExecutingAssembly());
+			var methods = harmony.GetPatchedMethods();
 		}
 
 		// inject an MM patch on-the-fly, so that NEEDS[TypeId] can be used in MM patches

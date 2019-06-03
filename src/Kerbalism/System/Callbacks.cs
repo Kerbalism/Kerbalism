@@ -20,6 +20,7 @@ namespace KERBALISM
 			GameEvents.onVesselRecovered.Add(this.VesselRecovered);
 			GameEvents.onVesselTerminated.Add(this.VesselTerminated);
 			GameEvents.onVesselWillDestroy.Add(this.VesselDestroyed);
+			GameEvents.onNewVesselCreated.Add(this.VesselCreated);
 			GameEvents.onPartCouple.Add(this.VesselDock);
 
 			GameEvents.onVesselChange.Add((v) => { Cache.PurgeObjects(v); });
@@ -288,6 +289,10 @@ namespace KERBALISM
 			Cache.PurgeObjects(pv);
 		}
 
+		void VesselCreated(Vessel v) {
+			if (Lib.IsControlUnit(v))
+				v.vesselName = Lib.BuildString(v.mainBody.name, " Surface Experiment ", Lib.Greek());
+		}
 
 		void VesselDestroyed(Vessel v)
 		{

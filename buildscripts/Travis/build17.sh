@@ -3,8 +3,8 @@
 
 nuget restore -Verbosity detailed "packages.config" -SolutionDirectory .
 rm -rf "src/DLLs"
-current_kspvr="1.6.1"
-current_kspbin="16"
+current_kspvr="1.7.1"
+current_kspbin="17"
 echo "Building for $current_kspvr / $current_kspbin"
 filename="KSP-$current_kspvr.7z"
 wget "https://img.steamport.xyz/$filename"

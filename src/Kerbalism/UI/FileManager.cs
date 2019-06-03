@@ -33,7 +33,7 @@ namespace KERBALISM
 			p.paneltype = Panel.PanelType.data;
 
  			// time-out simulation
-			if (p.Timeout(vi)) return;
+			if (!Lib.IsControlUnit(v) && p.Timeout(vi)) return;
 
 			var drives = Drive.GetDriveParts(v);
 
