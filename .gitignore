@@ -385,3 +385,5 @@ SciTE*.properties
 # Kerbalism build system
 src/DLLs
 KSP-*.7z
+Kerbalism-Core*.zip
+Kerbalism-Config*.zip
