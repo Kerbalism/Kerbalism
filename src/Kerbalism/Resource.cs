@@ -924,6 +924,7 @@ namespace KERBALISM
 			}
 
 			Cache.VesselInfo(v).max_pressure = max_pressure;
+			Cache.SetVesselObjectsCache<double>(v, "max_pressure", max_pressure);
 
 			if (!equalize) return;
 
