@@ -10,7 +10,6 @@ using KSP.Localization;
 
 #if !KSP16 && !KSP15 && !KSP14
 using Expansions.Serenity.DeployedScience.Runtime;
-#endif
 
 namespace KERBALISM
 {
@@ -21,11 +20,7 @@ namespace KERBALISM
 
 		internal static void Init()
 		{
-#if !KSP16 && !KSP15 && !KSP14
 			Enabled = Expansions.ExpansionsLoader.IsExpansionInstalled("Serenity");
-#else
-			Enabled = false;
-#endif
 		}
 
 		/// <summary>
@@ -36,11 +31,13 @@ namespace KERBALISM
 			if (!Enabled)
 				return null;
 
-			foreach(var cluster in DeployedScience.Instance.DeployedScienceClusters.Values) {
-				if(v.loaded)
+			foreach (var cluster in DeployedScience.Instance.DeployedScienceClusters.Values)
+			{
+				if (v.loaded)
 				{
 					Part part = null;
-					if(FlightGlobals.FindLoadedPart(cluster.ControlModulePartId, out part)) {
+					if (FlightGlobals.FindLoadedPart(cluster.ControlModulePartId, out part))
+					{
 						if (part.vessel == v)
 							return cluster;
 					}
@@ -48,7 +45,7 @@ namespace KERBALISM
 				else
 				{
 					ProtoPartSnapshot snapshot;
-					if(FlightGlobals.FindUnloadedPart(cluster.ControlModulePartId, out snapshot))
+					if (FlightGlobals.FindUnloadedPart(cluster.ControlModulePartId, out snapshot))
 					{
 						if (snapshot.pVesselRef == v.protoVessel)
 							return cluster;
@@ -86,3 +83,4 @@ namespace KERBALISM
 		}
 	}
 }
+#endif

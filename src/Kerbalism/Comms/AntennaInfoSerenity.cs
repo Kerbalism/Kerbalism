@@ -6,7 +6,6 @@ using KSPAssets;
 
 #if !KSP16 && !KSP15 && !KSP14
 using Expansions.Serenity.DeployedScience.Runtime;
-#endif
 
 namespace KERBALISM
 {
@@ -21,7 +20,6 @@ namespace KERBALISM
 			antennaInfo.ec = 0;
 		}
 
-#if !KSP16 && !KSP15 && !KSP14
 		override protected List<KeyValuePair<ModuleDataTransmitter, ProtoPartSnapshot>> GetTransmittersUnloaded(Vessel v)
 		{
 			List<KeyValuePair<ModuleDataTransmitter, ProtoPartSnapshot>> transmitters;
@@ -86,7 +84,6 @@ namespace KERBALISM
 
 			return transmitters;
 		}
-#endif
 
 		override public AntennaInfo AntennaInfo()
 		{
@@ -96,3 +93,4 @@ namespace KERBALISM
 		}
 	}
 }
+#endif

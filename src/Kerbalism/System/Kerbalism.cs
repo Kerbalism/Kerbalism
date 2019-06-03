@@ -70,7 +70,10 @@ namespace KERBALISM
 				ParticleRenderer.Init();
 				Highlighter.Init();
 				UI.Init();
+
+#if !KSP16 && !KSP15 && !KSP14
 				Serenity.Init();
+#endif
 
 				// prepare storm data
 				foreach (CelestialBody body in FlightGlobals.Bodies)
