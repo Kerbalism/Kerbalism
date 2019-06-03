@@ -548,8 +548,11 @@ namespace KERBALISM
 			{
 				foreach (var hd in vessel.FindPartModulesImplementing<HardDrive>())
 				{
-					if (DB.drives.ContainsKey(hd.hdId))
+					if (hd.hdId != 0 && DB.drives.ContainsKey(hd.hdId))
+					{
 						result.Add(hd.part.flightID, DB.drives[hd.hdId]);
+						break;
+					}
 				}
 			}
 			else
@@ -559,8 +562,11 @@ namespace KERBALISM
 					foreach(var pm in Lib.FindModules(p, "HardDrive"))
 					{
 						var hdId = Lib.Proto.GetUInt(pm, "hdId", 0);
-						if(hdId != 0 && DB.drives.ContainsKey(hdId))
+						if (hdId != 0 && DB.drives.ContainsKey(hdId))
+						{
 							result.Add(p.flightID, DB.drives[hdId]);
+							break;
+						}
 					}
 				}
 			}
