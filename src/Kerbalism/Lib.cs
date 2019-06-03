@@ -949,7 +949,17 @@ namespace KERBALISM
 			// - the user can change vessel type, in that case he is actually disabling this mod for the vessel
 			//   the alternative is to scan the vessel for ModuleCommand, but that is slower, and rescue vessels have no module command
 			// - flags have type set to 'station' for a single update, can still be detected as they have vesselID == 0
-			if (v.vesselType == VesselType.Debris || v.vesselType == VesselType.Flag || v.vesselType == VesselType.SpaceObject || v.vesselType == VesselType.Unknown) return false;
+			switch(v.vesselType)
+			{
+				case VesselType.Debris:
+				case VesselType.Flag:
+				case VesselType.SpaceObject:
+				case VesselType.Unknown:
+#if !KSP16 && !KSP15 && !KSP14
+				case VesselType.DeployedSciencePart:
+#endif
+					return false;
+			}
 
 			// [disabled] when going to eva (and possibly other occasions), for a single update the vessel is not properly set
 			// this can be detected by vessel.distanceToSun being 0 (an impossibility otherwise)
@@ -962,60 +972,12 @@ namespace KERBALISM
 
 
 #if !KSP16 && !KSP15 && !KSP14
-		// returns true if it's a deployable surface thing
-		public static bool ShouldIgnoreVessel(Vessel v) {
-			if(v.loaded) {
-				if(v.parts.Count > 1)
-					return false; // deployables are 1-part vessels
-				foreach(Part part in v.parts) {
-					if(part.FindModuleImplementing<ModuleGroundExpControl>() != null)
-						continue;
-					if(part.FindModuleImplementing<ModuleGroundPart>() != null)
-						return true;
-				}
-			} else {
-				foreach (ProtoPartSnapshot p in v.protoVessel.protoPartSnapshots) {
-					Part part_prefab = PartLoader.getPartInfoByName(p.partName).partPrefab;
-					if(part_prefab.FindModuleImplementing<ModuleGroundExpControl>() != null)
-						continue;
-					if(part_prefab.FindModuleImplementing<ModuleGroundPart>() != null)
-						return true;
-				}
-			}
-			return false;
-		}
-
 		public static bool IsControlUnit(Vessel v)
 		{
-			return GetModuleGroundExpControl(v) != null;
+			return Serenity.GetScienceCluster(v) != null;
 		}
-
-		public static ModuleGroundExpControl GetModuleGroundExpControl(Vessel v) {
-			if(v.loaded) {
-				if(v.parts.Count > 1)
-					return null; // deployables are 1-part vessels
-				foreach(Part part in v.parts) {
-					var result = part.FindModuleImplementing<ModuleGroundExpControl>();
-					if (result != null)
-						return result;
-				}
-			} else {
-				foreach (ProtoPartSnapshot p in v.protoVessel.protoPartSnapshots) {
-					Part part_prefab = PartLoader.getPartInfoByName(p.partName).partPrefab;
-					var result = part_prefab.FindModuleImplementing<ModuleGroundExpControl>();
-					if(result != null)
-						return result;
-				}
-			}
-			return null;
-		}
-
 #else
 		public static bool IsControlUnit(Vessel v) {
-			return false;
-		}
-
-		public static bool ShouldIgnoreVessel(Vessel v) {
 			return false;
 		}
 #endif
@@ -1023,11 +985,9 @@ namespace KERBALISM
 		public static bool IsPowered(Vessel v)
 		{
 #if !KSP16 && !KSP15 && !KSP14
-			if (IsControlUnit(v))
-			{
-				var module = GetModuleGroundExpControl(v);
-				return module.ScienceClusterData.IsPowered;
-			}
+			var cluster = Serenity.GetScienceCluster(v);
+			if (cluster != null)
+				return cluster.IsPowered;
 #endif
 			return ResourceCache.Info(v, "ElectricCharge").amount > double.Epsilon;
 		}

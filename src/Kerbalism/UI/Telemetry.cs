@@ -29,7 +29,7 @@ namespace KERBALISM
 			p.paneltype = Panel.PanelType.telemetry;
 
 			// time-out simulation
-			if (!Lib.IsControlUnit(v) && p.Timeout(vi)) return;
+			if (p.Timeout(vi)) return;
 
 			// get vessel data
 			VesselData vd = DB.Vessel(v);

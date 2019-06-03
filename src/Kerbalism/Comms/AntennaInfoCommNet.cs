@@ -5,30 +5,30 @@ using CommNet;
 
 namespace KERBALISM
 {
-	public sealed class AntennaInfoCommNet: AntennaInfo
+	internal class AntennaInfoCommNet
 	{
+		protected Vessel v;
+		protected AntennaInfo antennaInfo = new AntennaInfo();
+
 		public AntennaInfoCommNet(Vessel v, bool powered, bool storm, bool transmitting)
 		{
+			this.v = v;
+			antennaInfo.powered = powered;
+			antennaInfo.storm = storm;
+			antennaInfo.transmitting = transmitting;
+		}
+
+		public virtual AntennaInfo AntennaInfo()
+		{
 			int transmitterCount = 0;
-			rate = 1;
+			antennaInfo.rate = 1;
 			double ec_transmitter = 0;
 
 			// if vessel is loaded
 			if (v.loaded)
 			{
-				List<ModuleDataTransmitter> transmitters;
+				List<ModuleDataTransmitter> transmitters = GetTransmittersLoaded(v);
 
-				if (!Cache.HasVesselObjectsCache(v, "commnet"))
-				{
-					// find transmitters
-					transmitters = v.FindPartModulesImplementing<ModuleDataTransmitter>();
-					if (transmitters == null)
-						transmitters = new List<ModuleDataTransmitter>();
-					Cache.SetVesselObjectsCache(v, "commnet", transmitters);
-				}
-				else
-					transmitters = Cache.VesselObjectsCache<List<ModuleDataTransmitter>>(v, "commnet");
-				
 				foreach (ModuleDataTransmitter t in transmitters)
 				{
 					// Disable all stock buttons
@@ -38,7 +38,7 @@ namespace KERBALISM
 					t.Actions["StartTransmissionAction"].active = false;
 
 					if (t.antennaType == AntennaType.INTERNAL) // do not include internal data rate, ec cost only
-						ec += t.DataResourceCost * t.DataRate;
+						antennaInfo.ec += t.DataResourceCost * t.DataRate;
 					else
 					{
 						// do we have an animation
@@ -49,7 +49,7 @@ namespace KERBALISM
 							// only include data rate and ec cost if transmitter is extended
 							if (animation.deployState == ModuleDeployablePart.DeployState.EXTENDED)
 							{
-								rate *= t.DataRate;
+								antennaInfo.rate *= t.DataRate;
 								transmitterCount++;
 								var e = t.DataResourceCost * t.DataRate;
 								ec_transmitter += e;
@@ -60,7 +60,7 @@ namespace KERBALISM
 							// only include data rate and ec cost if transmitter is extended
 							if (animationGeneric.animSpeed > 0)
 							{
-								rate *= t.DataRate;
+								antennaInfo.rate *= t.DataRate;
 								transmitterCount++;
 								var e = t.DataResourceCost * t.DataRate;
 								ec_transmitter += e;
@@ -69,7 +69,7 @@ namespace KERBALISM
 						// no animation
 						else
 						{
-							rate *= t.DataRate;
+							antennaInfo.rate *= t.DataRate;
 							transmitterCount++;
 							var e = t.DataResourceCost * t.DataRate;
 							ec_transmitter += e;
@@ -80,27 +80,7 @@ namespace KERBALISM
 			// if vessel is not loaded
 			else
 			{
-				List<KeyValuePair<ModuleDataTransmitter, ProtoPartSnapshot>> transmitters;
-				if(!Cache.HasVesselObjectsCache(v, "commnet_bg"))
-				{
-					transmitters = new List<KeyValuePair<ModuleDataTransmitter, ProtoPartSnapshot>>();
-					// find proto transmitters
-					foreach (ProtoPartSnapshot p in v.protoVessel.protoPartSnapshots)
-					{
-						// get part prefab (required for module properties)
-						Part part_prefab = PartLoader.getPartInfoByName(p.partName).partPrefab;
-
-						foreach (ModuleDataTransmitter t in part_prefab.FindModulesImplementing<ModuleDataTransmitter>())
-						{
-							transmitters.Add(new KeyValuePair<ModuleDataTransmitter, ProtoPartSnapshot>(t, p));
-						}
-					}
-
-					Cache.SetVesselObjectsCache(v, "commnet_bg", transmitters);
-				}
-				else
-					// cache transmitters
-					transmitters = Cache.VesselObjectsCache<List<KeyValuePair<ModuleDataTransmitter, ProtoPartSnapshot>>>(v, "commnet_bg");
+				List<KeyValuePair<ModuleDataTransmitter, ProtoPartSnapshot>> transmitters = GetTransmittersUnloaded(v);
 
 				foreach(var pair in transmitters)
 				{
@@ -108,7 +88,7 @@ namespace KERBALISM
 					ProtoPartSnapshot p = pair.Value;
 
 					if (t.antennaType == AntennaType.INTERNAL) // do not include internal data rate, ec cost only
-						ec += t.DataResourceCost * t.DataRate;
+						antennaInfo.ec += t.DataResourceCost * t.DataRate;
 					else
 					{
 						// do we have an animation
@@ -120,7 +100,7 @@ namespace KERBALISM
 							float animSpeed = Lib.Proto.GetFloat(m, "animSpeed");
 							if (deployState == "EXTENDED" || animSpeed > 0)
 							{
-								rate *= t.DataRate;
+								antennaInfo.rate *= t.DataRate;
 								transmitterCount++;
 								ec_transmitter += t.DataResourceCost * t.DataRate;
 							}
@@ -128,7 +108,7 @@ namespace KERBALISM
 						// no animation
 						else
 						{
-							rate *= t.DataRate;
+							antennaInfo.rate *= t.DataRate;
 							transmitterCount++;
 							ec_transmitter += t.DataResourceCost * t.DataRate;
 						}
@@ -137,25 +117,76 @@ namespace KERBALISM
 			}
 
 			if (transmitterCount > 1)
-				rate = Math.Pow(rate, 1.0 / transmitterCount);
+				antennaInfo.rate = Math.Pow(antennaInfo.rate, 1.0 / transmitterCount);
 			else if (transmitterCount == 0)
-				rate = 0;
+				antennaInfo.rate = 0;
 
 			// when transmitting, transmitters need more EC for the signal amplifiers.
 			// while not transmitting, transmitters only use 10-20% of that
-			ec_transmitter *= transmitting ? Settings.TransmitterActiveEcFactor : Settings.TransmitterPassiveEcFactor;
+			ec_transmitter *= antennaInfo.transmitting ? Settings.TransmitterActiveEcFactor : Settings.TransmitterPassiveEcFactor;
 
-			ec += ec_transmitter;
+			antennaInfo.ec += ec_transmitter;
 
-			Init(v, powered, storm);
+			Init();
+
+			return antennaInfo;
 		}
 
-		private void Init(Vessel v, bool powered, bool storm)
+		protected virtual List<KeyValuePair<ModuleDataTransmitter, ProtoPartSnapshot>> GetTransmittersUnloaded(Vessel v)
 		{
-			if(!powered || v.connection == null)
+			List<KeyValuePair<ModuleDataTransmitter, ProtoPartSnapshot>> transmitters;
+
+			if (!Cache.HasVesselObjectsCache(v, "commnet_bg"))
 			{
-				linked = false;
-				status = (int)LinkStatus.no_link;
+				transmitters = new List<KeyValuePair<ModuleDataTransmitter, ProtoPartSnapshot>>();
+
+				// find proto transmitters
+				foreach (ProtoPartSnapshot p in v.protoVessel.protoPartSnapshots)
+				{
+					// get part prefab (required for module properties)
+					Part part_prefab = PartLoader.getPartInfoByName(p.partName).partPrefab;
+
+					foreach (ModuleDataTransmitter t in part_prefab.FindModulesImplementing<ModuleDataTransmitter>())
+					{
+						transmitters.Add(new KeyValuePair<ModuleDataTransmitter, ProtoPartSnapshot>(t, p));
+					}
+				}
+
+				Cache.SetVesselObjectsCache(v, "commnet_bg", transmitters);
+			}
+			else
+			{
+				// cache transmitters
+				transmitters = Cache.VesselObjectsCache<List<KeyValuePair<ModuleDataTransmitter, ProtoPartSnapshot>>>(v, "commnet_bg");
+			}
+
+			return transmitters;
+		}
+
+		protected virtual List<ModuleDataTransmitter> GetTransmittersLoaded(Vessel v)
+		{
+			List<ModuleDataTransmitter> transmitters;
+
+			if (!Cache.HasVesselObjectsCache(v, "commnet"))
+			{
+				// find transmitters
+				transmitters = v.FindPartModulesImplementing<ModuleDataTransmitter>();
+				if (transmitters == null)
+					transmitters = new List<ModuleDataTransmitter>();
+				Cache.SetVesselObjectsCache(v, "commnet", transmitters);
+			}
+			else
+				transmitters = Cache.VesselObjectsCache<List<ModuleDataTransmitter>>(v, "commnet");
+
+			return transmitters;
+		}
+
+		protected virtual void Init()
+		{
+			if(!antennaInfo.powered || v.connection == null)
+			{
+				antennaInfo.linked = false;
+				antennaInfo.status = (int)LinkStatus.no_link;
 				return;
 			}
 
@@ -166,29 +197,29 @@ namespace KERBALISM
 			// are we connected to DSN
 			if (v.connection.IsConnected)
 			{
-				linked = true;
+				antennaInfo.linked = true;
 				var link = v.connection.ControlPath.First;
-				status = link.hopType == CommNet.HopType.Home ? (int)LinkStatus.direct_link : (int)LinkStatus.indirect_link;
-				strength = link.signalStrength;
+				antennaInfo.status = link.hopType == CommNet.HopType.Home ? (int)LinkStatus.direct_link : (int)LinkStatus.indirect_link;
+				antennaInfo.strength = link.signalStrength;
 
-				rate *= Math.Pow(link.signalStrength, Settings.DataRateDampingExponent);
+				antennaInfo.rate *= Math.Pow(link.signalStrength, Settings.DataRateDampingExponent);
 
-				target_name = Lib.Ellipsis(Localizer.Format(v.connection.ControlPath.First.end.displayName).Replace("Kerbin", "DSN"), 20);
+				antennaInfo.target_name = Lib.Ellipsis(Localizer.Format(v.connection.ControlPath.First.end.displayName).Replace("Kerbin", "DSN"), 20);
 
-				if (status != (int)LinkStatus.direct_link)
+				if (antennaInfo.status != (int)LinkStatus.direct_link)
 				{
 					Vessel firstHop = Lib.CommNodeToVessel(v.Connection.ControlPath.First.end);
 					// Get rate from the firstHop, each Hop will do the same logic, then we will have the min rate for whole path
-					rate = Math.Min(Cache.VesselInfo(FlightGlobals.FindVessel(firstHop.id)).connection.rate, rate);
+					antennaInfo.rate = Math.Min(Cache.VesselInfo(FlightGlobals.FindVessel(firstHop.id)).connection.rate, antennaInfo.rate);
 				}
 			}
 			// is loss of connection due to plasma blackout
 			else if (Lib.ReflectionValue<bool>(v.connection, "inPlasma"))  // calling InPlasma causes a StackOverflow :(
 			{
-				status = (int)LinkStatus.plasma;
+				antennaInfo.status = (int)LinkStatus.plasma;
 			}
 
-			control_path = new List<string[]>();
+			antennaInfo.control_path = new List<string[]>();
 			foreach (CommLink link in v.connection.ControlPath)
 			{
 				double antennaPower = link.end.isHome ? link.start.antennaTransmit.power + link.start.antennaRelay.power : link.start.antennaTransmit.power;
@@ -199,7 +230,7 @@ namespace KERBALISM
 				string value = Lib.HumanReadablePerc(Math.Ceiling(signalStrength * 10000) / 10000, "F2");
 				string tooltip = "Distance: " + Lib.HumanReadableRange((link.start.position - link.end.position).magnitude) +
 					"\nMax Distance: " + Lib.HumanReadableRange(Math.Sqrt((link.start.antennaTransmit.power + link.start.antennaRelay.power) * link.end.antennaRelay.power));
-				control_path.Add(new string[] { name, value, tooltip });
+				antennaInfo.control_path.Add(new string[] { name, value, tooltip });
 			}
 		}
 	}

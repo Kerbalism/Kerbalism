@@ -81,7 +81,6 @@ namespace KERBALISM
 				{
 					// skip active vessel
 					if (v == FlightGlobals.ActiveVessel) continue;
-					if (Lib.ShouldIgnoreVessel(v)) continue;
 
 					// draw the vessel
 					setup |= Render_vessel(panel, v);
@@ -524,6 +523,11 @@ namespace KERBALISM
 
 		void Indicator_ec(Panel p, Vessel v, Vessel_info vi)
 		{
+#if !KSP16 && !KSP15 && !KSP14
+			if (v.vesselType == VesselType.DeployedScienceController)
+				return;
+#endif
+
 			Resource_info ec = ResourceCache.Info(v, "ElectricCharge");
 			Supply supply = Profile.supplies.Find(k => k.resource == "ElectricCharge");
 			double low_threshold = supply != null ? supply.low_threshold : 0.15;

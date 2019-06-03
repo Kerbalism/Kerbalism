@@ -290,7 +290,7 @@ namespace KERBALISM
 		}
 
 		void VesselCreated(Vessel v) {
-			if (Lib.IsControlUnit(v))
+			if (Serenity.GetModuleGroundExpControl(v) != null)
 				v.vesselName = Lib.BuildString(v.mainBody.name, " Surface Experiment ", Lib.Greek());
 		}
 

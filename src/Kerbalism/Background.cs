@@ -84,7 +84,7 @@ namespace KERBALISM
 
 		public static void Update(Vessel v, Vessel_info vi, VesselData vd, Vessel_resources resources, double elapsed_s)
 		{
-			if(Lib.ShouldIgnoreVessel(v))
+			if (!Lib.IsVessel(v))
 				return;
 
 			// get most used resource handlers

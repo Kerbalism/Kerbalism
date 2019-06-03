@@ -70,6 +70,7 @@ namespace KERBALISM
 				ParticleRenderer.Init();
 				Highlighter.Init();
 				UI.Init();
+				Serenity.Init();
 
 				// prepare storm data
 				foreach (CelestialBody body in FlightGlobals.Bodies)
