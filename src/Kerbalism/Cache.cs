@@ -54,7 +54,7 @@ namespace KERBALISM
 			}
 
 			// determine if there is enough EC for a powered state
-			powered = ResourceCache.Info(v, "ElectricCharge").amount > double.Epsilon;
+			powered = Lib.IsPowered(v);
 
 			// determine if in sunlight, calculate sun direction and distance
 			sunlight = Sim.RaytraceBody(v, position, FlightGlobals.Bodies[0], out sun_dir, out sun_dist) ? 1.0 : 0.0;

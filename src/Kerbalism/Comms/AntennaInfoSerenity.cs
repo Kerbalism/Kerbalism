@@ -54,9 +54,9 @@ namespace KERBALISM
 					if (t.isEnabled)
 						rate = 1;
 				}
-
-				Init(v, storm);
 			}
+
+			Init(v, storm);
 		}
 
 		private void Init(Vessel v, bool storm)

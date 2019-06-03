@@ -49,7 +49,6 @@ namespace KERBALISM
 						__result = true;
 						return false;
 					}
-					break;
 				}
 				__result = false;
 			}

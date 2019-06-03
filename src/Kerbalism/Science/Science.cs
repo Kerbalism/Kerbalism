@@ -169,7 +169,7 @@ namespace KERBALISM
 			if (!linked) return string.Empty;
 
 			// not transmitting if there is no ec left
-			if (ResourceCache.Info(v, "ElectricCharge").amount <= double.Epsilon) return string.Empty;
+			if (!Lib.IsPowered(v)) return string.Empty;
 
 			foreach(var p in Cache.WarpCache(v).files)
 				return p.Key;
