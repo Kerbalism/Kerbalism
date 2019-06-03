@@ -549,16 +549,20 @@ namespace KERBALISM
 			{
 				foreach (var hd in vessel.FindPartModulesImplementing<HardDrive>())
 				{
-					if (DB.drives.ContainsKey(hd.part.flightID))
-						result.Add(hd.part.flightID, DB.drives[hd.part.flightID]);
+					if (DB.drives.ContainsKey(hd.hdId))
+						result.Add(hd.part.flightID, DB.drives[hd.hdId]);
 				}
 			}
 			else
 			{
-				foreach (var hd in vessel.protoVessel.protoPartSnapshots)
+				foreach (var p in vessel.protoVessel.protoPartSnapshots)
 				{
-					if (DB.drives.ContainsKey(hd.flightID))
-						result.Add(hd.flightID, DB.drives[hd.flightID]);
+					foreach(var pm in Lib.FindModules(p, "HardDrive"))
+					{
+						var hdId = Lib.Proto.GetUInt(pm, "hdId", 0);
+						if(hdId != 0 && DB.drives.ContainsKey(hdId))
+							result.Add(p.flightID, DB.drives[hdId]);
+					}
 				}
 			}
 
