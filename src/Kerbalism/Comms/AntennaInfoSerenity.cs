@@ -22,7 +22,6 @@ namespace KERBALISM
 
 				foreach (ModuleGroundCommsPart t in transmitters)
 				{
-					Lib.Log("### serenity ModuleGroundCommsPart found, enabled: " + t.isEnabled);
 					if (t.isEnabled)
 						rate = 1;
 				}
@@ -49,8 +48,6 @@ namespace KERBALISM
 					ModuleGroundCommsPart t = pair.Key;
 					ProtoPartSnapshot p = pair.Value;
 
-					Lib.Log("### bg serenity ModuleGroundCommsPart found, enabled: " + t.isEnabled);
-
 					if (t.isEnabled)
 						rate = 1;
 				}
@@ -61,11 +58,6 @@ namespace KERBALISM
 
 		private void Init(Vessel v, bool storm)
 		{
-			Lib.Log("### bg serenity connection: " + v.connection);
-			Lib.Log("### bg serenity connection IsConnected: " + v.connection?.IsConnected);
-			Lib.Log("### bg serenity connection ControlPath: " + v.connection?.ControlPath);
-
-
 			if (v.connection == null)
 			{
 				linked = false;
