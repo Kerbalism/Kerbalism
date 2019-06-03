@@ -67,6 +67,9 @@ namespace KERBALISM
 
 		public void Update()
 		{
+			if (drive == null)
+				return;
+			
 			if (Lib.IsFlight())
 			{
 				// show DATA UI button, with size info
@@ -98,6 +101,9 @@ namespace KERBALISM
 
 		private void UpdateCapacity()
 		{
+			if (drive == null)
+				return;
+			
 			double mass = 0;
 			foreach (var sample in drive.samples.Values) mass += sample.mass;
 			totalSampleMass = mass;
