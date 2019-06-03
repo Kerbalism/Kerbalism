@@ -134,8 +134,7 @@ namespace KERBALISM
 			file.size += amount;
 
 			// clamp file size to max amount that can be collected
-			if(clamp)
-				file.size = Math.Min(file.size, Science.Experiment(subject_id).max_amount);
+			file.size = Math.Min(file.size, Science.Experiment(subject_id).max_amount);
 
 			if (file.size > Science.min_file_size / 3)
 				file.ts = Planetarium.GetUniversalTime();
