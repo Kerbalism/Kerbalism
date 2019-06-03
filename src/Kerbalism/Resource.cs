@@ -1060,6 +1060,8 @@ namespace KERBALISM
 
 					partHabitat.needEqualize = stillNeed;
 				}
+
+
 			}
 		}
 

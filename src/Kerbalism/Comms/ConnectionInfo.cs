@@ -78,6 +78,10 @@ namespace KERBALISM
 			if (ai.strength > -1)
 				return ai;
 
+			// Serenity
+			if (Lib.IsControlUnit(v))
+				return new AntennaInfoSerenity(v, powered, storm, ai.transmitting);
+
 			// if CommNet is enabled
 			if (HighLogic.fetch.currentGame.Parameters.Difficulty.EnableCommNet)
 				return new AntennaInfoCommNet(v, powered, storm, ai.transmitting);
