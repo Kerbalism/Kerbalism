@@ -28,7 +28,7 @@ do
 	/bin/cp -rf "src/Kerbalism/obj/Release/Kerbalism.dll" "GameData/Kerbalism/Kerbalism${current_kspbin}.bin"
 	rm -f $filename
 done
-cp $TRAVIS_BUILD_DIR/packages/Lib.Harmony.1.2.0.1/lib/net35/0Harmony.dll GameData/Kerbalism
+cp $TRAVIS_BUILD_DIR/packages/Lib.Harmony.1.2.0.1/lib/net35/0Harmony.dll GameData/Kerbalism/0Harmony.1.2.0.1.dll
 rm -f GameData/Kerbalism/Kerbalism.dll
 
 if [ "$1" == "clean" ]; then
