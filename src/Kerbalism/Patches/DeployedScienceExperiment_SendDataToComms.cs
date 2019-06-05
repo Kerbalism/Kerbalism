@@ -1,4 +1,4 @@
-#if !KSP16 && !KSP15 && !KSP14
+#if !KSP170 && !KSP16 && !KSP15 && !KSP14
 using System;
 using System.Reflection;
 using System.Collections.Generic;

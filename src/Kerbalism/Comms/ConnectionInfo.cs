@@ -78,7 +78,7 @@ namespace KERBALISM
 			if (ai.strength > -1)
 				return ai;
 
-#if !KSP16 && !KSP15 && !KSP14
+#if !KSP170 && !KSP16 && !KSP15 && !KSP14
 			// Serenity
 			var cluster = Serenity.GetScienceCluster(v);
 			if (cluster != null)

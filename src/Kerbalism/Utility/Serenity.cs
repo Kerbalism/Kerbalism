@@ -8,7 +8,7 @@ using UnityEngine;
 using CommNet;
 using KSP.Localization;
 
-#if !KSP16 && !KSP15 && !KSP14
+#if !KSP170 && !KSP16 && !KSP15 && !KSP14
 using Expansions.Serenity.DeployedScience.Runtime;
 
 namespace KERBALISM

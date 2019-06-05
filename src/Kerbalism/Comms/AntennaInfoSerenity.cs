@@ -4,7 +4,7 @@ using KSP.Localization;
 using CommNet;
 using KSPAssets;
 
-#if !KSP16 && !KSP15 && !KSP14
+#if !KSP170 && !KSP16 && !KSP15 && !KSP14
 using Expansions.Serenity.DeployedScience.Runtime;
 
 namespace KERBALISM
@@ -27,7 +27,7 @@ namespace KERBALISM
 			result.powered = cluster.IsPowered;
 			if(result.powered)
 				result.rate = Settings.DataRateSurfaceExperiment;
-			
+
 			Init();
 
 			return result;

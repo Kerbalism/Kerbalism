@@ -291,7 +291,7 @@ namespace KERBALISM
 
 		void VesselCreated(Vessel v)
 		{
-#if !KSP16 && !KSP15 && !KSP14
+#if !KSP170 && !KSP16 && !KSP15 && !KSP14
 			if (Serenity.GetModuleGroundExpControl(v) != null)
 				v.vesselName = Lib.BuildString(v.mainBody.name, " Surface Experiment ", Lib.Greek());
 #endif

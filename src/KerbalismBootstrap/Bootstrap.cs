@@ -20,7 +20,14 @@ namespace KerbalismBootstrap
 			if (Util.IsDllLoaded || (Util.FindKerbalismBin() != null))
 				print( "[KerbalismBootstrap] WARNING: KERBALISM HAS ALREADY LOADED BEFORE US!" );
 
-			string our_bin = Path.Combine( AssemblyDirectory( Assembly.GetExecutingAssembly() ), Util.BinName + ".bin" );
+			string our_bin;
+			string bin_r = Path.Combine( AssemblyDirectory( Assembly.GetExecutingAssembly() ), Util.BinName_R + ".bin" );
+			string bin = Path.Combine( AssemblyDirectory( Assembly.GetExecutingAssembly() ), Util.BinName + ".bin" );
+			print("[KerbalismBootstrap] " + Util.BinName_R);
+			if(File.Exists(bin_r))
+				our_bin = bin_r;
+			else
+				our_bin = bin;
 			string possible_dll = Path.Combine( AssemblyDirectory( Assembly.GetExecutingAssembly() ), "Kerbalism.dll" );
 
 			if (File.Exists( our_bin ))

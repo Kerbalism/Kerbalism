@@ -71,7 +71,7 @@ namespace KERBALISM
 				Highlighter.Init();
 				UI.Init();
 
-#if !KSP16 && !KSP15 && !KSP14
+#if !KSP170 && !KSP16 && !KSP15 && !KSP14
 				Serenity.Init();
 #endif
 
