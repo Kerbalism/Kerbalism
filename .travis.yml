@@ -23,9 +23,11 @@ after_success:
   - mv "Kerbalism-Core.zip" "Kerbalism-Core-$TRAVIS_BRANCH-$MOD_VERSION-BUILD$TRAVIS_BUILD_NUMBER.zip"
   - mv "Kerbalism-Config.zip" "Kerbalism-Config-$TRAVIS_BRANCH-$MOD_VERSION-BUILD$TRAVIS_BUILD_NUMBER.zip"
   - echo "${SFTP_KEY}" | base64 --decode >/tmp/sftp_key
-  - chmod 0600 /tmp/sftp_key
+  - eval "$(ssh-agent -s)"
+  - chmod 600 /tmp/sftp_key
+  - ssh-add /tmp/sftp_key
   - ssh-keyscan -p ${SFTP_PORT} -H ${SFTP_TARGET} >> ~/.ssh/known_hosts
-  - sshpass -p " " sftp -i /tmp/sftp_key -P ${SFTP_PORT} ${SFTP_USER}@${SFTP_TARGET}:${SFTP_DIR}/${TRAVIS_BRANCH} <<< "put \"Kerbalism-Core-$TRAVIS_BRANCH-$MOD_VERSION-BUILD$TRAVIS_BUILD_NUMBER.zip\""
-  - sshpass -p " " sftp -i /tmp/sftp_key -P ${SFTP_PORT} ${SFTP_USER}@${SFTP_TARGET}:${SFTP_DIR}/${TRAVIS_BRANCH} <<< "put \"Kerbalism-Config-$TRAVIS_BRANCH-$MOD_VERSION-BUILD$TRAVIS_BUILD_NUMBER.zip\""
+  - sftp -P ${SFTP_PORT} ${SFTP_USER}@${SFTP_TARGET}:${SFTP_DIR}/${TRAVIS_BRANCH} <<< "put \"Kerbalism-Core-$TRAVIS_BRANCH-$MOD_VERSION-BUILD$TRAVIS_BUILD_NUMBER.zip\""
+  - sftp -P ${SFTP_PORT} ${SFTP_USER}@${SFTP_TARGET}:${SFTP_DIR}/${TRAVIS_BRANCH} <<< "put \"Kerbalism-Config-$TRAVIS_BRANCH-$MOD_VERSION-BUILD$TRAVIS_BUILD_NUMBER.zip\""
 notifications:
   email: false
