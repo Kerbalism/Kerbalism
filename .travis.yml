@@ -20,14 +20,10 @@ after_success:
   - export MOD_VERSION=$(cat $TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism.version | jq '.VERSION.MAJOR').$(cat $TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism.version | jq '.VERSION.MINOR').$(cat $TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism.version | jq '.VERSION.PATCH')
   - bash "$TRAVIS_BUILD_DIR/buildscripts/Travis/avc_version.sh" $PRIMARY_KSPVER "$TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism.version"
   - bash "$TRAVIS_BUILD_DIR/buildscripts/Travis/zip_up.sh"
-  - mv "Kerbalism-Core.zip" "Kerbalism-Core-$TRAVIS_BRANCH-$MOD_VERSION-BUILD$TRAVIS_BUILD_NUMBER.zip"
-  - mv "Kerbalism-Config.zip" "Kerbalism-Config-$TRAVIS_BRANCH-$MOD_VERSION-BUILD$TRAVIS_BUILD_NUMBER.zip"
   - echo "${SFTP_KEY}" | base64 --decode >/tmp/sftp_key
-  - eval "$(ssh-agent -s)"
   - chmod 600 /tmp/sftp_key
-  - sshpass -p " " ssh-add /tmp/sftp_key
   - ssh-keyscan -p ${SFTP_PORT} -H ${SFTP_TARGET} >> ~/.ssh/known_hosts
-  - sftp -P ${SFTP_PORT} ${SFTP_USER}@${SFTP_TARGET}:${SFTP_DIR}/${TRAVIS_BRANCH} <<< "put \"Kerbalism-Core-$TRAVIS_BRANCH-$MOD_VERSION-BUILD$TRAVIS_BUILD_NUMBER.zip\""
-  - sftp -P ${SFTP_PORT} ${SFTP_USER}@${SFTP_TARGET}:${SFTP_DIR}/${TRAVIS_BRANCH} <<< "put \"Kerbalism-Config-$TRAVIS_BRANCH-$MOD_VERSION-BUILD$TRAVIS_BUILD_NUMBER.zip\""
+  - scp -P ${SFTP_PORT} -i /tmp/sftp_key Kerbalism-Core.zip "${SFTP_USER}@${SFTP_TARGET}:${SFTP_DIR}/${TRAVIS_BRANCH}/Kerbalism-Core-$TRAVIS_BRANCH-$MOD_VERSION-BUILD$TRAVIS_BUILD_NUMBER.zip"
+  - scp -P ${SFTP_PORT} -i /tmp/sftp_key Kerbalism-Config.zip "${SFTP_USER}@${SFTP_TARGET}:${SFTP_DIR}/${TRAVIS_BRANCH}/Kerbalism-Config-$TRAVIS_BRANCH-$MOD_VERSION-BUILD$TRAVIS_BUILD_NUMBER.zip"
 notifications:
   email: false
