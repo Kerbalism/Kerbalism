@@ -349,6 +349,10 @@ namespace KERBALISM
 			{
 				gsm.x_axis = ((Vector3)ScaledSpace.LocalToScaledSpace(reference.position) - gsm.origin).normalized;
 				gsm.y_axis = (Vector3)body.RotationAxis; //< initial guess
+
+				Quaternion rotation = Quaternion.Euler(10, 20, 30);
+				gsm.y_axis = (rotation * body.RotationAxis).normalized;
+
 				gsm.z_axis = Vector3.Cross(gsm.x_axis, gsm.y_axis).normalized;
 				gsm.y_axis = Vector3.Cross(gsm.z_axis, gsm.x_axis).normalized; //< orthonormalize
 			}
@@ -468,9 +472,9 @@ namespace KERBALISM
 				Space gsm = Gsm_space(rb.body, FlightGlobals.Bodies[rb.reference]);
 
 				// [debug] show axis
-				//LineRenderer.commit(gsm.origin, gsm.origin + gsm.x_axis * gsm.scale * 5.0f, Color.red);
-				//LineRenderer.commit(gsm.origin, gsm.origin + gsm.y_axis * gsm.scale * 5.0f, Color.green);
-				//LineRenderer.commit(gsm.origin, gsm.origin + gsm.z_axis * gsm.scale * 5.0f, Color.blue);
+				LineRenderer.Commit(gsm.origin, gsm.origin + gsm.x_axis * gsm.scale * 5.0f, Color.red);
+				LineRenderer.Commit(gsm.origin, gsm.origin + gsm.y_axis * gsm.scale * 5.0f, Color.green);
+				LineRenderer.Commit(gsm.origin, gsm.origin + gsm.z_axis * gsm.scale * 5.0f, Color.blue);
 
 				// get magnetic field data
 				RadiationModel mf = Info(body).model;
