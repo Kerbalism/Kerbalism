@@ -19,7 +19,7 @@ namespace KERBALISM
     {
         public static void Parse()
         {
-            var cfg = Lib.ParseConfig(API.GetConfigLocation());
+            var cfg = Lib.ParseConfig("KerbalismConfig/Kerbalism");
 
             // profile used
             Profile = Lib.ConfigValue(cfg, "Profile", string.Empty);

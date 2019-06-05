@@ -78,18 +78,6 @@ namespace KERBALISM
 
 	public static class API
 	{
-		private static string config_location = "Kerbalism/Kerbalism";
-
-		public static void SetConfigLocation(string location)
-		{
-			config_location = location;
-		}
-
-		public static string GetConfigLocation()
-		{
-			return config_location;
-		}
-
 		// show a message in the ui
 		public static void Message(string msg)
 		{
