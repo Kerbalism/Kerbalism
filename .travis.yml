@@ -12,7 +12,7 @@ matrix:
       - KSPBINS="17 170 16 15 14"
 before_install:
   - sudo apt-get update -qq
-  - sudo apt-get install -qq p7zip-full bash openssh-client jq
+  - sudo apt-get install -qq p7zip-full bash openssh-client jq sshpass
 script:
   - cd "$TRAVIS_BUILD_DIR"
   - bash "$TRAVIS_BUILD_DIR/buildscripts/Travis/build.sh"
@@ -25,7 +25,7 @@ after_success:
   - echo "${SFTP_KEY}" | base64 --decode >/tmp/sftp_key
   - chmod 0600 /tmp/sftp_key
   - ssh-keyscan -p ${SFTP_PORT} -H ${SFTP_TARGET} >> ~/.ssh/known_hosts
-  - sftp -i /tmp/sftp_key -P ${SFTP_PORT} ${SFTP_USER}@${SFTP_TARGET}:${SFTP_DIR}/${TRAVIS_BRANCH} <<< "put \"Kerbalism-Core-$TRAVIS_BRANCH-$MOD_VERSION-BUILD$TRAVIS_BUILD_NUMBER.zip\""
-  - sftp -i /tmp/sftp_key -P ${SFTP_PORT} ${SFTP_USER}@${SFTP_TARGET}:${SFTP_DIR}/${TRAVIS_BRANCH} <<< "put \"Kerbalism-Config-$TRAVIS_BRANCH-$MOD_VERSION-BUILD$TRAVIS_BUILD_NUMBER.zip\""
+  - sshpass -p "" sftp -i /tmp/sftp_key -P ${SFTP_PORT} ${SFTP_USER}@${SFTP_TARGET}:${SFTP_DIR}/${TRAVIS_BRANCH} <<< "put \"Kerbalism-Core-$TRAVIS_BRANCH-$MOD_VERSION-BUILD$TRAVIS_BUILD_NUMBER.zip\""
+  - sshpass -p "" sftp -i /tmp/sftp_key -P ${SFTP_PORT} ${SFTP_USER}@${SFTP_TARGET}:${SFTP_DIR}/${TRAVIS_BRANCH} <<< "put \"Kerbalism-Config-$TRAVIS_BRANCH-$MOD_VERSION-BUILD$TRAVIS_BUILD_NUMBER.zip\""
 notifications:
   email: false
