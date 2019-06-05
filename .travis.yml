@@ -2,6 +2,9 @@ language: csharp
 env:
   global:
     - ZIP_PASSWORD="gQn337XZBEFxzFuVwzKgc27ehZo7XLz485hh3erqF9"
+cache:
+  directories:
+    - src/archives
 matrix:
   include:
     - env:
