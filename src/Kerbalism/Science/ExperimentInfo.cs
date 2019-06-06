@@ -34,7 +34,11 @@ namespace KERBALISM
 			name = expdef != null ? expdef.experimentTitle : Lib.UppercaseFirst(id);
 
 			// deduce max data amount
-			max_amount = expdef != null ? expdef.baseValue * expdef.dataScale : double.MaxValue;
+			// use scienceCap here, not baseValue. this is because of Serenity,
+			// for deployed experiments the baseValue has the hourly rate and scienceCap the
+			// total value. This relies on a config patch that sets scienceCap = baseValue
+			// for all non-Serenity experiments.
+			max_amount = expdef != null ? expdef.scienceCap * expdef.dataScale : double.MaxValue;
 
 			situationMask = expdef.situationMask;
 			biomeMask = expdef.biomeMask;
