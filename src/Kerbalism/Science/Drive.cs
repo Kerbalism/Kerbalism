@@ -541,18 +541,18 @@ namespace KERBALISM
 			Dictionary<uint, Drive> result = Cache.VesselObjectsCache<Dictionary<uint, Drive>>(vessel, "drives");
 			if (result != null)
 				return result;
-
 			result = new Dictionary<uint, Drive>();
 
 			if(vessel.loaded)
 			{
 				foreach (var hd in vessel.FindPartModulesImplementing<HardDrive>())
 				{
+					// Serenity/ModuleManager bug workaround (duplicate drives on EVAs)
+					if (result.ContainsKey(hd.part.flightID))
+						continue;
+
 					if (hd.hdId != 0 && DB.drives.ContainsKey(hd.hdId))
-					{
 						result.Add(hd.part.flightID, DB.drives[hd.hdId]);
-						break;
-					}
 				}
 			}
 			else
@@ -563,10 +563,7 @@ namespace KERBALISM
 					{
 						var hdId = Lib.Proto.GetUInt(pm, "hdId", 0);
 						if (hdId != 0 && DB.drives.ContainsKey(hdId))
-						{
 							result.Add(p.flightID, DB.drives[hdId]);
-							break;
-						}
 					}
 				}
 			}
