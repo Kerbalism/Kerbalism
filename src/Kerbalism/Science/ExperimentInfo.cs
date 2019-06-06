@@ -34,7 +34,7 @@ namespace KERBALISM
 			name = expdef != null ? expdef.experimentTitle : Lib.UppercaseFirst(id);
 
 			// deduce max data amount
-			max_amount = expdef != null ? expdef.scienceCap * expdef.dataScale : double.MaxValue;
+			max_amount = expdef != null ? expdef.baseValue * expdef.dataScale : double.MaxValue;
 
 			situationMask = expdef.situationMask;
 			biomeMask = expdef.biomeMask;
