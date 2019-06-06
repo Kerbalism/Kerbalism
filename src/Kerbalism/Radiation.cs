@@ -348,9 +348,38 @@ namespace KERBALISM
 			if (body != reference)
 			{
 				gsm.x_axis = ((Vector3)ScaledSpace.LocalToScaledSpace(reference.position) - gsm.origin).normalized;
-				gsm.y_axis = (Vector3)body.RotationAxis; //< initial guess
 
-				Quaternion rotation = Quaternion.Euler(10, 20, 30);
+				// gsm.y_axis = (Vector3)body.RotationAxis; //< initial guess
+
+				/* "Do not try and tilt the planet, that's impossible.
+				 * Instead, only try to realize the truth...there is no tilt.
+				 * Then you'll see that it is not the planet that tilts, it is
+				 * the rest of the universe."
+				 * 
+				 * - The Matrix
+				 * 
+				 * 		 
+				 * the orbits are inclined (with respect to the equator of the
+				 * Earth), but all axes are parallel. and aligned with the unity
+				 * world z axis. or is it y? whatever, KSP uses two conventions
+				 * in different places.
+				 * if you use Principia, the current main body (or if there is
+				 * none, e.g. in the space centre or tracking station, the home
+				 * body) is not tilted (its axis is the unity vertical.	 
+				 * you can fetch the full orientation (tilt and rotation) of any
+				 * body (including the current main body) in the current unity
+				 * frame (which changes of course, because sometimes KSP uses a
+				 * rotating frame, and because Principia tilts the universe
+				 * differently if the current main body changes) as the
+				 * orientation of the scaled space body
+				 * 		 
+				 * body.scaledBody.transform.rotation or something along those lines
+				 * 
+				 * - egg
+				 */
+
+				// Quaternion rotation = Quaternion.Euler(10, 20, 30);
+				Quaternion rotation = body.scaledBody.transform.rotation;
 				gsm.y_axis = (rotation * body.RotationAxis).normalized;
 
 				gsm.z_axis = Vector3.Cross(gsm.x_axis, gsm.y_axis).normalized;
