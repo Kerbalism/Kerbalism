@@ -347,8 +347,6 @@ namespace KERBALISM
 			gsm.scale = ScaledSpace.InverseScaleFactor * (float)body.Radius;
 			if (body != reference)
 			{
-				gsm.x_axis = ((Vector3)ScaledSpace.LocalToScaledSpace(reference.position) - gsm.origin).normalized;
-
 				// gsm.y_axis = (Vector3)body.RotationAxis; //< initial guess
 
 				/* "Do not try and tilt the planet, that's impossible.
@@ -379,8 +377,20 @@ namespace KERBALISM
 				 */
 
 				// Quaternion rotation = Quaternion.Euler(10, 20, 30);
+				//Quaternion rotation = body.scaledBody.transform.rotation;
+				//gsm.y_axis = (rotation * body.RotationAxis).normalized;
+
+				float lat = 80.5f;
+				float lon = -72.8f;
+				float x = Mathf.Cos(lat) * Mathf.Cos(lon);
+				float y = Mathf.Sin(lat);
+				float z = Mathf.Cos(lat) * Mathf.Sin(lon);
+				//gsm.y_axis = new Vector3(x, y, z);
+
+				gsm.x_axis = ((Vector3)ScaledSpace.LocalToScaledSpace(reference.position) - gsm.origin).normalized;
+
 				Quaternion rotation = body.scaledBody.transform.rotation;
-				gsm.y_axis = (rotation * body.RotationAxis).normalized;
+				gsm.y_axis = rotation * new Vector3(x, y, z).normalized;
 
 				gsm.z_axis = Vector3.Cross(gsm.x_axis, gsm.y_axis).normalized;
 				gsm.y_axis = Vector3.Cross(gsm.z_axis, gsm.x_axis).normalized; //< orthonormalize
