@@ -21,8 +21,8 @@ namespace KerbalismBootstrap
 				print( "[KerbalismBootstrap] WARNING: KERBALISM HAS ALREADY LOADED BEFORE US!" );
 
 			string our_bin;
-			string bin_r = Path.Combine( AssemblyDirectory( Assembly.GetExecutingAssembly() ), Util.BinName_R + ".bin" );
-			string bin = Path.Combine( AssemblyDirectory( Assembly.GetExecutingAssembly() ), Util.BinName + ".bin" );
+			string bin_r = Path.Combine( AssemblyDirectory( Assembly.GetExecutingAssembly() ), Util.BinName_R + ".kbin" );
+			string bin = Path.Combine( AssemblyDirectory( Assembly.GetExecutingAssembly() ), Util.BinName + ".kbin" );
 			print("[KerbalismBootstrap] " + Util.BinName_R);
 			if(File.Exists(bin_r))
 				our_bin = bin_r;
@@ -48,7 +48,7 @@ namespace KerbalismBootstrap
 			}
 			else
 			{
-				print( "[KerbalismBootstrap] ERROR: COULD NOT FIND KERBALISM BIN FILE (" + Util.BinName + ".bin" + ")! Ditching!" );
+				print( "[KerbalismBootstrap] ERROR: COULD NOT FIND KERBALISM BIN FILE (" + Util.BinName + ".kbin" + ")! Ditching!" );
 				return;
 			}
 

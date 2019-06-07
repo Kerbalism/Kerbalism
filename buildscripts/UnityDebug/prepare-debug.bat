@@ -16,5 +16,5 @@ echo %TargetName%Bootstrap.dll -^> %TargetName%Bootstrap.dll.mdb
 "%scriptPath%\pdb2mdb.exe" %TargetName%Bootstrap.dll
 echo %TargetName%.dll -^> %TargetName%.dll.mdb
 "%scriptPath%\pdb2mdb.exe" %TargetName%.dll
-echo %TargetName%.dll.mdb -^> %TargetName%%KSPversion%.bin.mdb
-xcopy /y "%TargetName%.dll.mdb" "%TargetName%%KSPversion%.bin.mdb*" > nul
+echo %TargetName%.dll.mdb -^> %TargetName%%KSPversion%.kbin.mdb
+xcopy /y "%TargetName%.dll.mdb" "%TargetName%%KSPversion%.kbin.mdb*" > nul
