@@ -10,14 +10,22 @@ Hundreds of Kerbals were killed in the making of this mod.
 INSTALLATION
 ------------
 
-You need to install:
+Required modules:
+
 - Module Manager
 - CommunityResourcePack
 - Kerbalism-Core
 - Kerbalism-Config
 
-If you plan to use a different configuration set like Realism Overhaul, download that package instead. Make sure to
-install exactly one configuration package, don't combine two or more different configurations.
+Kerbalism-Core and Kerbalism-Config can be downloaded here: https://github.com/Kerbalism/Kerbalism/releases
+
+The configuration package is exchangeable. However, if you plan to use a different configuration, download
+that package instead of Kerbalism-Config. Make sure to install exactly one configuration package only, don't
+combine two or more different configurations.
+
+Known configurations:
+
+- Realism Overhaul: https://github.com/Standecco/ROKerbalism
 
 INTRODUCTION
 ------------
