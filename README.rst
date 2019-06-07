@@ -7,26 +7,6 @@ Hundreds of Kerbals were killed in the making of this mod.
 
 |docs| |build|
 
-INSTALLATION
-------------
-
-Required modules:
-
-- Module Manager
-- CommunityResourcePack
-- Kerbalism-Core
-- Kerbalism-Config
-
-Kerbalism-Core and Kerbalism-Config can be downloaded here: https://github.com/Kerbalism/Kerbalism/releases
-
-The configuration package is exchangeable. However, if you plan to use a different configuration, download
-that package instead of Kerbalism-Config. Make sure to install exactly one configuration package only, don't
-combine two or more different configurations.
-
-Known configurations:
-
-- Realism Overhaul: https://github.com/Standecco/ROKerbalism
-
 INTRODUCTION
 ------------
 Go beyond the routine of orbital mechanics and experience the full set of engineering challenges that space has to
@@ -265,13 +245,25 @@ There is a help file on GitHub for those wishing to report bugs or contribute to
 
 ----------
 
-REQUIREMENTS
+INSTALLATION
 ------------
 
-- Any KSP version from 1.3.1 to 1.6.x
-- Community Resource Pack (CRP)
-- ModuleManager 4.0.2+
+Required modules:
 
+- Module Manager
+- CommunityResourcePack
+- Kerbalism-Core
+- Kerbalism-Config
+
+Kerbalism-Core and Kerbalism-Config can be downloaded here: https://github.com/Kerbalism/Kerbalism/releases
+
+The configuration package is exchangeable. However, if you plan to use a different configuration, download
+that package instead of Kerbalism-Config. Make sure to install exactly one configuration package only, don't
+combine two or more different configurations.
+
+Known configuration packs:
+
+- Realism Overhaul: https://github.com/Standecco/ROKerbalism
 
 This mod includes version checking using MiniAVC_. If you opt-in, it will use the Internet to check whether there is a new version available. Data is only read from the Internet and no personal information is sent. For a more comprehensive version checking experience, please download the `KSP-AVC Plugin`_.
 
