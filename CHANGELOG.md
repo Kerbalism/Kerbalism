@@ -1,6 +1,6 @@
 ## v3.0 for all versions of KSP from 1.4.0 to 1.7.x
 
- - 2019-04-27
+ - 2019-06-07
 
 ### Changes since the last release
 
