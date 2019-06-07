@@ -7,6 +7,18 @@ Hundreds of Kerbals were killed in the making of this mod.
 
 |docs| |build|
 
+INSTALLATION
+------------
+
+You need to install:
+- Module Manager
+- CommunityResourcePack
+- Kerbalism-Core
+- Kerbalism-Config
+
+If you plan to use a different configuration set like Realism Overhaul, download that package instead. Make sure to
+install exactly one configuration package, don't combine two or more different configurations.
+
 INTRODUCTION
 ------------
 Go beyond the routine of orbital mechanics and experience the full set of engineering challenges that space has to
