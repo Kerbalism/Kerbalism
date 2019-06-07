@@ -5,6 +5,9 @@ using System.Text;
 namespace KERBALISM
 {
 
+	// ----------------------------------------------
+	// - YES ITS UGLY BUT DON'T TOUCH OR IT GO BOOM -
+	// ----------------------------------------------
 
 	public class ReadArchive
 	{

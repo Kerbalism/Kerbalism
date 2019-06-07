@@ -34,12 +34,22 @@ namespace KERBALISM
 			}
 
 			// load vessels data
-			vessels = new Dictionary<uint, VesselData>();
-			if (node.HasNode("vessels"))
+			vessels = new Dictionary<Guid, VesselData>();
+			if (node.HasNode("vessels2")) // old vessels used flightId, we switched to Guid with vessels2
 			{
-				foreach (var vessel_node in node.GetNode("vessels").GetNodes())
+				foreach (var vessel_node in node.GetNode("vessels2").GetNodes())
 				{
-					vessels.Add(Lib.Parse.ToUInt(vessel_node.name), new VesselData(vessel_node));
+					vessels.Add(Lib.Parse.ToGuid(vessel_node.name), new VesselData(vessel_node));
+				}
+			}
+
+			// load drives
+			drives = new Dictionary<uint, Drive>();
+			if (node.HasNode("drives")) // old vessels used flightId, we switched to Guid with vessels2
+			{
+				foreach (var drive_node in node.GetNode("drives").GetNodes())
+				{
+					drives.Add(Lib.Parse.ToUInt(drive_node.name), new Drive(drive_node));
 				}
 			}
 
@@ -77,7 +87,6 @@ namespace KERBALISM
 			if (version != Lib.Version()) Lib.Log("savegame converted from version " + version);
 		}
 
-
 		public static void Save(ConfigNode node)
 		{
 			// save version
@@ -94,10 +103,17 @@ namespace KERBALISM
 			}
 
 			// save vessels data
-			var vessels_node = node.AddNode("vessels");
+			var vessels_node = node.AddNode("vessels2");
 			foreach (var p in vessels)
 			{
 				p.Value.Save(vessels_node.AddNode(p.Key.ToString()));
+			}
+
+			// save drives
+			var drives_node = node.AddNode("drives");
+			foreach (var p in drives)
+			{
+				p.Value.Save(drives_node.AddNode(p.Key.ToString()));
 			}
 
 			// save bodies data
@@ -127,7 +143,7 @@ namespace KERBALISM
 
 		public static VesselData Vessel(Vessel v)
 		{
-			uint id = Lib.RootID(v);
+			Guid id = Lib.VesselID(v);
 			if (!vessels.ContainsKey(id))
 			{
 				vessels.Add(id, new VesselData());
@@ -135,6 +151,16 @@ namespace KERBALISM
 			return vessels[id];
 		}
 
+
+		public static Drive Drive(uint partId, string title = "Brick", double dataCapacity = -1, int sampleCapacity = -1)
+		{
+			if(!drives.ContainsKey(partId))
+			{
+				var d = new Drive(title, dataCapacity, sampleCapacity);
+				drives.Add(partId, d);
+			}
+			return drives[partId];
+		}
 
 		public static BodyData Body(string name)
 		{
@@ -190,7 +216,8 @@ namespace KERBALISM
 		public static string version;                          // savegame version
 		public static int uid;                                 // savegame unique id
 		private static Dictionary<string, KerbalData> kerbals; // store data per-kerbal
-		public static Dictionary<uint, VesselData> vessels;    // store data per-vessel, indexed by root part id
+		public static Dictionary<Guid, VesselData> vessels;    // store data per-vessel, indexed by root part id
+		public static Dictionary<uint, Drive> drives;		   // all drives, of all vessels
 		public static Dictionary<string, BodyData> bodies;     // store data per-body
 		public static LandmarkData landmarks;                  // store landmark data
 		public static UIData ui;                               // store ui data

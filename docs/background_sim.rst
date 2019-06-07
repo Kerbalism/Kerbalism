@@ -16,6 +16,8 @@ Modules that consume and produce resources are simulated for unloaded vessels.
 +---------------------------------------------+
 | Emitter                                     |
 +---------------------------------------------+
+| Experiment                                  |
++---------------------------------------------+
 | Harvester                                   |
 +---------------------------------------------+
 | Laboratory                                  |

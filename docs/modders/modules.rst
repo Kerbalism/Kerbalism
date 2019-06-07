@@ -32,6 +32,8 @@ The part allows for different *setups* of modules and resources that can be sele
 +-------------+--------------------------------------------------------------------------------------------------------+---------+
 | reconfigure | string in the format *trait@level*, specifying that the part can be reconfigured in flight by the crew |         |
 +-------------+--------------------------------------------------------------------------------------------------------+---------+
+| symmetric   | if true enforces same configuration on all parts in the symmetry group (useful for tanks)              | false   |
++-------------+--------------------------------------------------------------------------------------------------------+---------+
 | SETUP       | one or more sub-nodes that describe a setup                                                            |         |
 +-------------+--------------------------------------------------------------------------------------------------------+---------+
 
@@ -93,45 +95,54 @@ Experiment
 -------
 Hooks experiments into the Kerbalism science system.
 
-+-------------------+-------------------------------------------------------------+---------------+
-| PROPERTY          | DESCRIPTION                                                 | DEFAULT       |
-+===================+=============================================================+===============+
-| experiment_id     | The ID of the experiment (which must be defined elsewhere)  |               |
-+-------------------+-------------------------------------------------------------+---------------+
-| experiment_desc   | A nice description of the experiment.                       |               |
-+-------------------+-------------------------------------------------------------+---------------+
-| data_rate         | sampling rate in Mb/s                                       | 0.01          |
-+-------------------+-------------------------------------------------------------+---------------+
-| ec_rate           | EC consumption rate per second while recording              | 0.01          |
-+-------------------+-------------------------------------------------------------+---------------+
-| allow_shrouded    | Allow the experiment to run while it's part is shrouded     | true          |
-+-------------------+-------------------------------------------------------------+---------------+
-| sample_mass       | If not 0, this is a sample and cannot be transmitted        | 0.0           |
-+-------------------+-------------------------------------------------------------+---------------+
-| sample_reservoir  | Amount of sampling material stored on the part              | = sample_mass |
-+-------------------+-------------------------------------------------------------+---------------+
-| sample_collecting | If set to true, the experiment will produce mass.           | false         |
-+-------------------+-------------------------------------------------------------+---------------+
-| requires          | Additional requirements that must be met for recording.     |               |
-|                   | See below.                                                  |               |
-+-------------------+-------------------------------------------------------------+---------------+
-| crew_operate      | Requirements for crew on vessel for recording. If this is   |               |
-|                   | not set, the experiment can run on unmanned probes.         |               |
-+-------------------+-------------------------------------------------------------+---------------+
-| crew_reset        | Requirements for crew to reset the experiment. If this is   |               |
-|                   | set, the experiment will only record data from within the   |               |
-|                   | situation where recording was started, until it is reset    |               |
-|                   | (either by a kerbal that has to match the requirement, or   |               |
-|                   | by a lab.                                                   |               |
-+-------------------+-------------------------------------------------------------+---------------+
-| crew_prepare      | If set, a kerbal has to prepare the experiment before it    |               |
-|                   | can record data. Once prepared, the experiment will only    |               |
-|                   | record data while it remains in the situation it was        |               |
-|                   | prepared for. The kerbal doing the preparation has to match |               |
-|                   | the requiremens                                             |               |
-+-------------------+-------------------------------------------------------------+---------------+
-| anim_deploy       | Name of the part animation to trigger when recording starts.|               |
-+-------------------+-------------------------------------------------------------+---------------+
++-----------------------+-------------------------------------------------------------+---------------+
+| PROPERTY              | DESCRIPTION                                                 | DEFAULT       |
++=======================+=============================================================+===============+
+| experiment_id         | The ID of the experiment (which must be defined elsewhere)  |               |
++-----------------------+-------------------------------------------------------------+---------------+
+| experiment_desc       | A nice description of the experiment.                       |               |
++-----------------------+-------------------------------------------------------------+---------------+
+| data_rate             | sampling rate in Mb/s                                       | 0.01          |
++-----------------------+-------------------------------------------------------------+---------------+
+| ec_rate               | EC consumption rate per second while recording              | 0.01          |
++-----------------------+-------------------------------------------------------------+---------------+
+| allow_shrouded        | Allow the experiment to run while it's part is shrouded     | true          |
++-----------------------+-------------------------------------------------------------+---------------+
+| sample_mass           | If not 0, this is a sample and cannot be transmitted        | 0.0           |
++-----------------------+-------------------------------------------------------------+---------------+
+| sample_reservoir      | Amount of sampling material stored on the part              | = sample_mass |
++-----------------------+-------------------------------------------------------------+---------------+
+| sample_collecting     | If set to true, the experiment will produce mass.           | false         |
++-----------------------+-------------------------------------------------------------+---------------+
+| science_cap           | A factor for the max. attainable science value              | 1.0           |
++-----------------------+-------------------------------------------------------------+---------------+
+| requires              | Additional requirements that must be met for recording.     |               |
+|                       | See below.                                                  |               |
++-----------------------+-------------------------------------------------------------+---------------+
+| resources             | Resources consumed while the experiment is running. Will    |               |
+|                       | stop if one of the resources is depleted. Rate is per sec.  |               |
+|                       | Malformed definitions or unknown resources will be ignored. |               |
+|                       | Example: resources = Water@0.01,Food@0.02                   |               |
++-----------------------+-------------------------------------------------------------+---------------+
+| crew_operate          | Requirements for crew on vessel for recording. If this is   |               |
+|                       | not set, the experiment can run on unmanned probes.         |               |
++-----------------------+-------------------------------------------------------------+---------------+
+| crew_reset            | Requirements for crew to reset the experiment. If this is   |               |
+|                       | set, the experiment will only record data from within the   |               |
+|                       | situation where recording was started, until it is reset    |               |
+|                       | (either by a kerbal that has to match the requirement, or   |               |
+|                       | by a lab.                                                   |               |
++-----------------------+-------------------------------------------------------------+---------------+
+| crew_prepare          | If set, a kerbal has to prepare the experiment before it    |               |
+|                       | can record data. Once prepared, the experiment will only    |               |
+|                       | record data while it remains in the situation it was        |               |
+|                       | prepared for. The kerbal doing the preparation has to match |               |
+|                       | the requiremens                                             |               |
++-----------------------+-------------------------------------------------------------+---------------+
+| hide_when_unavailable | Don't show the UI when the experiment is unavailable.       |               |
++-----------------------+-------------------------------------------------------------+---------------+
+| anim_deploy           | Name of the part animation to trigger when recording starts.|               |
++-----------------------+-------------------------------------------------------------+---------------+
 
 **Crew** specifications (used in crew_operate, crew_reset or crew_prepare as well as in some
 other Kerbalism mods) have to be given according to `true|trait|[trait]@level`
@@ -152,16 +163,22 @@ Here is a list of currently supported requirements:
 
 * OrbitMinInclination, OrbitMaxInclination: min./max. inclination of the orbit (f.i. `OrbitMinInclination:30`)
 * OrbitMinEccentricity, OrbitMaxEccentricity: min./max. eccentricity of the orbit (f.i. `OrbitMaxEccentricity:0.1`)
+* OrbitMinArgOfPeriapsis, OrbitMaxArgOfPeriapsis: min./max. argument of periapsis
 * TemperatureMin, TemperatureMax: min./max. Temperature in Kelvin
 * AltitudeMin, AltitudeMax: min./max. Altitude in Meters
 * RadiationMin, RadiationMax: min./max. radiation in rad/h
-* Microgravity: not on a surface, not in atmosphere. Thrust provided by Engines is OK tho.
-* Body: body on which the experiment can run. Only one body is possible (f.i. `Body:Eve`)
+* Microgravity: not on a surface, not in atmosphere.
+* Body: body on which the experiment can run. More than one name can be given (separate with semicolon), to exclude a body prefix it with ! (f.i. `Body:Eve;Duna;!Kerbin`)
 * Shadow: vessel must not be exposed to sunlight
+* Sunlight: vessel must be in the presence of a supreme being that radiates warmth and light upon it
 * Surface: vessel must be on a surface
 * Atmosphere: vessel must be within an atmosphere
+* AtmosphereBody: vessel must be within the SOI of a body with atmosphere
+* AtmosphereAltMin / AtmosphereAltMax: Altitude of vessel as a multiplier of atmosphere thickness. On Kerbin, AtmosphereAltMin:1 equals 70km.
+* Vacuum: the opposite of Atmosphere
+* BodyWithAtmosphere, BodyWithoutAtmosphere: does what it says on the tin.
 * Ocean: vessel must be submerged
-* Space: in planetary space, i.e. not around the sun
+* PlanetarySpace: in planetary space, i.e. not around the sun
 * AbsoluteZero: temperature < 30 K
 * InnerBelt: vessel must be in a inner Van Allen Belt
 * OuterBelt: vessel must be in a outer Van Allen Belt
@@ -175,6 +192,21 @@ Here is a list of currently supported requirements:
 * CrewMin, CrewMax: min./max. amount of crew on vessel
 * CrewCapacityMin, CrewCapacityMax: min./max. crew capacity
 * VolumePerCrewMin, VolumePerCrewMax: min./max. habitat volume per crew member
+* Facility building levels: MissionControlLevelMin, MissionControlLevelMax, AdministrationLevelMin, AdministrationLevelMax, TrackingStationLevelMin, TrackingStationLevelMax, AstronautComplexLevelMin, AstronautComplexLevelMax
+* MaxAsteroidDistance: max. distance to the nearest asteroid. For unloaded vessels this only works if the asteroid is set as the target.
+* Part: name (or any of multiple names, separated by comma) of a part that has to be anywhere on the vessel
+* Module: name of a module that is required anywhere on the vessel
+* SunAngleMin, SunAngleMax: min./max. angle of sunlight on the surface of the body
+
+The following might or might not work for unloaded vessels, please udpate this list when you find out:
+
+* SurfaceSpeedMin,SurfaceSpeedMax: Speed above surface
+* VerticalSpeedMin,VerticalSpeedMax: Vertical speed
+* SpeedMin,SpeedMax: speed
+* DynamicPressureMin,DynamicPressureMax: current dynamic pressure
+* StaticPressureMin,StaticPressureMax: current static pressure
+* AtmDensityMin,AtmDensityMax: current atmospheric density
+* AltAboveGroundMin,AltAboveGroundMax: Altitude above ground. Note that this value can change rapidly as KSP loads/unloads the terrain of a body
 
 -------
 
@@ -273,6 +305,10 @@ The part has an interface to access the vessel hard drive, where the science dat
 +----------------+------------------------------------------------------------+---------+
 | title          | Name displayed in file manager                             |         |
 +----------------+------------------------------------------------------------+---------+
+| experiment_id  | If set, restricts write access to the experiment with that |         |
+|                | id ON THE SAME PART with the given experiment_id.          |         |
++----------------+------------------------------------------------------------+---------+
+
 
 -------
 

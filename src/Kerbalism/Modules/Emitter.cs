@@ -67,7 +67,7 @@ namespace KERBALISM
 				Resource_info ec = ResourceCache.Info(vessel, "ElectricCharge");
 
 				// consume EC
-				ec.Consume(ec_rate * Kerbalism.elapsed_s);
+				ec.Consume(ec_rate * Kerbalism.elapsed_s, "emitter");
 			}
 		}
 
@@ -78,7 +78,7 @@ namespace KERBALISM
 			if (Lib.Proto.GetBool(m, "running") && emitter.ec_rate > double.Epsilon)
 			{
 				// consume EC
-				ec.Consume(emitter.ec_rate * elapsed_s);
+				ec.Consume(emitter.ec_rate * elapsed_s, "emitter");
 			}
 		}
 

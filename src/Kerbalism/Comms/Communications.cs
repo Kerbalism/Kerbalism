@@ -9,10 +9,18 @@ namespace KERBALISM
 		/// <summary> True if CommNet is initialized </summary>
 		public static bool NetworkInitialized = false;
 
+		/// <summary> True if CommNet initialization has begin </summary>
+		public static bool NetworkInitializing = false;
+
 		public static void Update(Vessel v, Vessel_info vi, VesselData vd, Resource_info ec, double elapsed_s)
 		{
+			if(!Lib.IsVessel(v))
+				return;
+
 			// consume ec for transmitters
-			ec.Consume(vi.connection.ec * elapsed_s);
+			ec.Consume(vi.connection.ec * elapsed_s, "comms");
+
+			Cache.WarpCache(v).dataCapacity = vi.connection.rate * elapsed_s;
 
 			// do nothing if network is not ready
 			if (!NetworkInitialized) return;

@@ -6,25 +6,27 @@ namespace KERBALISM
 {
 	public enum ScriptType
 	{
-		landed = 1,       // called on landing
-		atmo = 2,         // called on entering atmosphere
-		space = 3,        // called on reaching space
-		sunlight = 4,     // called when sun rise
-		shadow = 5,       // called when sun set
-		power_high = 6,   // called when ec level goes above 15%
-		power_low = 7,    // called when ec level goes below 15%
-		rad_low = 8,      // called when radiation goes below 0.05 rad/h
-		rad_high = 9,     // called when radiation goes above 0.05 rad/h
-		linked = 10,      // called when signal is regained
-		unlinked = 11,    // called when signal is lost
-		eva_out = 12,     // called when going out on eva
-		eva_in = 13,      // called when coming back from eva
-		action1 = 14,     // called when pressing 1
-		action2 = 15,     // called when pressing 2
-		action3 = 16,     // called when pressing 3
-		action4 = 17,     // called when pressing 4
-		action5 = 18,     // called when pressing 5
-		last = 19
+		power_low = 1,    // called when ec level goes below 15%
+		power_high = 2,   // called when ec level goes above 15%
+		sunlight = 3,     // called when sun rise
+		shadow = 4,       // called when sun set
+		unlinked = 5,     // called when signal is lost
+		linked = 6,       // called when signal is regained
+		drive_full = 7,  // called when storage capacity goes below 15%
+		drive_empty = 8, // called when storage capacity goes above 30%
+		landed = 9,       // called on landing
+		atmo = 10,         // called on entering atmosphere
+		space = 11,        // called on reaching space
+		rad_low = 12,     // called when radiation goes below 0.05 rad/h
+		rad_high = 13,    // called when radiation goes above 0.05 rad/h
+		eva_out = 14,     // called when going out on eva
+		eva_in = 15,      // called when coming back from eva
+		action1 = 16,     // called when pressing 1
+		action2 = 17,     // called when pressing 2
+		action3 = 18,     // called when pressing 3
+		action4 = 19,     // called when pressing 4
+		action5 = 20,     // called when pressing 5
+		last = 21
 	}
 
 	public sealed class Computer
@@ -99,6 +101,8 @@ namespace KERBALISM
 			bool radiation_low = vi.radiation < 0.000005552; //< 0.02 rad/h
 			bool radiation_high = vi.radiation > 0.00001388; //< 0.05 rad/h
 			bool signal = vi.connection.linked;
+			bool drive_full = vi.free_capacity < double.MaxValue && (vi.free_capacity / vi.total_capacity < 0.15);
+			bool drive_empty = vi.free_capacity >= double.MaxValue || (vi.free_capacity / vi.total_capacity > 0.9);
 
 			// get current situation
 			bool landed = false;
@@ -187,6 +191,16 @@ namespace KERBALISM
 						if (!signal && script.prev == "0") to_exec.Add(script);
 						script.prev = !signal ? "1" : "0";
 						break;
+
+					case ScriptType.drive_full:
+						if (drive_full && script.prev == "0") to_exec.Add(script);
+						script.prev = drive_full ? "1" : "0";
+						break;
+
+					case ScriptType.drive_empty:
+						if (drive_empty && script.prev == "0") to_exec.Add(script);
+						script.prev = drive_empty ? "1" : "0";
+						break;
 				}
 			}
 
@@ -215,8 +229,11 @@ namespace KERBALISM
 		// - the list is only valid for a single simulation step
 		public static Dictionary<uint, Device> Boot(Vessel v)
 		{
-			// store all devices
-			var devices = new Dictionary<uint, Device>();
+			var devices = Cache.VesselObjectsCache<Dictionary<uint, Device>>(v, "computer");
+			if (devices != null)
+				return devices;
+
+			devices = new Dictionary<uint, Device>();
 
 			// store device being added
 			Device dev;
@@ -266,6 +283,8 @@ namespace KERBALISM
 				// store data required to support multiple modules of same type in a part
 				var PD = new Dictionary<string, Lib.Module_prefab_data>();
 
+				var experiments = new List<KeyValuePair<Experiment, ProtoPartModuleSnapshot>>();
+
 				// for each part
 				foreach (ProtoPartSnapshot p in v.protoVessel.protoPartSnapshots)
 				{
@@ -299,7 +318,12 @@ namespace KERBALISM
 							case "GravityRing":                  dev = new ProtoRingDevice(m, p.flightID);                                                        break;
 							case "Emitter":                      dev = new ProtoEmitterDevice(m, p.flightID);                                                     break;
 							case "Laboratory":                   dev = new ProtoLaboratoryDevice(m, p.flightID);                                                  break;
-							case "Experiment":                   dev = new ProtoExperimentDevice(m, module_prefab as Experiment, p.flightID);                     break;
+
+							case "Experiment":
+								experiments.Add(new KeyValuePair<Experiment, ProtoPartModuleSnapshot>(module_prefab as Experiment, m));
+								dev = new ProtoExperimentDevice(m, module_prefab as Experiment, p.flightID, v.vesselName, experiments);
+								break;
+
 							case "ModuleDeployableSolarPanel":   dev = new ProtoPanelDevice(m, module_prefab as ModuleDeployableSolarPanel, p.flightID);          break;
 							case "ModuleGenerator":              dev = new ProtoGeneratorDevice(m, module_prefab as ModuleGenerator, p.flightID);                 break;
 							case "ModuleResourceConverter":      dev = new ProtoConverterDevice(m, module_prefab as ModuleResourceConverter, p.flightID);         break;
@@ -329,6 +353,8 @@ namespace KERBALISM
 
 			devices = devices.OrderBy(k => k.Value.Name()).ToDictionary(pair => pair.Key, pair => pair.Value);
 			//return all found devices sorted by name
+
+			Cache.SetVesselObjectsCache(v, "computer", devices);
 			return devices;
 		}
 

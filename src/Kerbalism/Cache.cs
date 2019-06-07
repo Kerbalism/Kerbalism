@@ -9,7 +9,7 @@ namespace KERBALISM
 
 	public sealed class Vessel_info
 	{
-		public Vessel_info(Vessel v, UInt64 vessel_id, UInt64 inc)
+		public Vessel_info(Vessel v, Guid vessel_id, UInt64 inc)
 		{
 			// NOTE: anything used here can't in turn use cache, unless you know what you are doing
 
@@ -54,7 +54,7 @@ namespace KERBALISM
 			}
 
 			// determine if there is enough EC for a powered state
-			powered = ResourceCache.Info(v, "ElectricCharge").amount > double.Epsilon;
+			powered = Lib.IsPowered(v);
 
 			// determine if in sunlight, calculate sun direction and distance
 			sunlight = Sim.RaytraceBody(v, position, FlightGlobals.Bodies[0], out sun_dir, out sun_dist) ? 1.0 : 0.0;
@@ -88,13 +88,17 @@ namespace KERBALISM
 			critical = Reliability.HasCriticalFailure(v);
 
 			// communications info
-			connection = new ConnectionInfo(v, powered, blackout);
+			connection = ConnectionInfo.Update(v, powered, blackout);
 			transmitting = Science.Transmitting(v, connection.linked && connection.rate > double.Epsilon);
 
 			// habitat data
 			volume = Habitat.Tot_volume(v);
 			surface = Habitat.Tot_surface(v);
-			pressure = Habitat.Pressure(v);
+
+			if(Cache.HasVesselObjectsCache(v, "max_pressure"))
+				max_pressure = Cache.VesselObjectsCache<double>(v, "max_pressure");
+			pressure = Math.Min(max_pressure, Habitat.Pressure(v));
+
 			evas = (uint)(Math.Max(0, ResourceCache.Info(v, "Nitrogen").amount - 330) / PreferencesLifeSupport.Instance.evaAtmoLoss);
 			poisoning = Habitat.Poisoning(v);
 			humidity = Habitat.Humidity(v);
@@ -108,6 +112,8 @@ namespace KERBALISM
 
 			// other stuff
 			gravioli = Sim.Graviolis(v);
+
+			Drive.GetCapacity(v, out free_capacity, out total_capacity);
 		}
 
 		// at the two highest timewarp speed, the number of sun visibility samples drop to the point that
@@ -130,7 +136,7 @@ namespace KERBALISM
 		public bool is_vessel;              // true if this is a valid vessel
 		public bool is_rescue;              // true if this is a rescue mission vessel
 		public bool is_valid;               // equivalent to (is_vessel && !is_rescue && !eva_dead)
-		public UInt64 id;                   // generate the id once
+		public Guid id;                     // generate the id once
 		public int crew_count;              // number of crew on the vessel
 		public int crew_capacity;           // crew capacity of the vessel
 		public double sunlight;             // if the vessel is in direct sunlight
@@ -163,6 +169,7 @@ namespace KERBALISM
 		public double volume;               // enabled volume in m^3
 		public double surface;              // enabled surface in m^2
 		public double pressure;             // normalized pressure
+		public double max_pressure = 1.0;   // max. attainable pressure on this vessel
 		public uint evas;                   // number of EVA's using available Nitrogen
 		public double poisoning;            // waste atmosphere amount versus total atmosphere amount
 		public double humidity;             // moist atmosphere amount
@@ -173,7 +180,8 @@ namespace KERBALISM
 		public List<Greenhouse.Data> greenhouses; // some data about greenhouses
 		public double gravioli;             // gravitation gauge particles detected (joke)
 		public bool powered;                // true if vessel is powered
-		public double evaPropQuantity = -1; // amount of EVA prop to set to this vessel (workaround for KSP behavior)
+		public double free_capacity = 0.0;  // free data storage available data capacity of all public drives
+		public double total_capacity = 0.0; // data capacity of all public drives
 	}
 
 
@@ -181,7 +189,9 @@ namespace KERBALISM
 	{
 		public static void Init()
 		{
-			vessels = new Dictionary<UInt64, Vessel_info>();
+			vessels = new Dictionary<Guid, Vessel_info>();
+			vesselObjects = new Dictionary<Guid, Dictionary<string, object>>();
+			warp_caches = new Dictionary<Guid, Drive>();
 			next_inc = 0;
 		}
 
@@ -189,21 +199,54 @@ namespace KERBALISM
 		public static void Clear()
 		{
 			vessels.Clear();
+			warp_caches.Clear();
+			vesselObjects.Clear();
 			next_inc = 0;
 		}
 
 
 		public static void Purge(Vessel v)
 		{
-			vessels.Remove(Lib.VesselID(v));
+			var id = Lib.VesselID(v);
+			vessels.Remove(id);
 		}
 
 
 		public static void Purge(ProtoVessel pv)
 		{
-			vessels.Remove(Lib.VesselID(pv));
+			var id = Lib.VesselID(pv);
+			vessels.Remove(id);
 		}
 
+		/// <summary>
+		/// Called whenever a vessel changes and/or should be updated for various reasons.
+		/// Purge object cache AND vessel cache.
+		/// </summary>
+		public static void PurgeObjects(Vessel v)
+		{
+			var id = Lib.VesselID(v);
+			vessels.Remove(id);
+			vesselObjects.Remove(id);
+			warp_caches.Remove(id);
+		}
+
+		/// <summary>
+		/// Called whenever a vessel changes and/or should be updated for various reasons.
+		/// Purge object cache AND vessel cache.
+		/// </summary>
+		public static void PurgeObjects(ProtoVessel v)
+		{
+			var id = Lib.VesselID(v);
+			vessels.Remove(id);
+			vesselObjects.Remove(id);
+			warp_caches.Remove(id);
+		}
+
+		public static void PurgeObjects()
+		{
+			vesselObjects.Clear();
+			warp_caches.Clear();
+		}
 
 		public static void Update()
 		{
@@ -211,8 +254,8 @@ namespace KERBALISM
 			if (vessels.Count > 0)
 			{
 				UInt64 oldest_inc = UInt64.MaxValue;
-				UInt64 oldest_id = 0;
-				foreach (KeyValuePair<UInt64, Vessel_info> pair in vessels)
+				Guid oldest_id = Guid.Empty;
+				foreach (KeyValuePair<Guid, Vessel_info> pair in vessels)
 				{
 					if (pair.Value.inc < oldest_inc)
 					{
@@ -224,11 +267,15 @@ namespace KERBALISM
 			}
 		}
 
-
+		/// <summary>
+		/// Returns a set of cached values for a vessel, stuff we don't want to update once per physics tick.
+		/// NOTE: the vessel info cache object will be recreated quite often at random times. Do not use it
+		/// to persist any kind of information, it will be lost.
+		/// </summary>
 		public static Vessel_info VesselInfo(Vessel v)
 		{
 			// get vessel id
-			UInt64 id = Lib.VesselID(v);
+			Guid id = Lib.VesselID(v);
 
 			// get the info from the cache, if it exist
 			Vessel_info info;
@@ -245,18 +292,109 @@ namespace KERBALISM
 			return info;
 		}
 
-
-		public static bool HasVesselInfo(Vessel v, out Vessel_info vi)
+		public static Drive WarpCache(Vessel v)
 		{
-			return vessels.TryGetValue(Lib.VesselID(v), out vi);
+			Guid id = Lib.VesselID(v);
+
+			// get from the cache, if it exist
+			Drive drive;
+			if (warp_caches.TryGetValue(id, out drive))
+				return drive;
+			
+			drive = new Drive("warp cache drive", 0, 0);
+			warp_caches.Add(id, drive);
+			return drive;
 		}
 
+		internal static T VesselObjectsCache<T>(Vessel vessel, string key)
+		{
+			return VesselObjectsCache<T>(Lib.VesselID(vessel), key);
+		}
 
-		// vessel cache
-		static Dictionary<UInt64, Vessel_info> vessels;
+		internal static T VesselObjectsCache<T>(ProtoVessel vessel, string key)
+		{
+			return VesselObjectsCache<T>(Lib.VesselID(vessel), key);
+		}
+
+		private static T VesselObjectsCache<T>(Guid id, string key)
+		{
+			if (!vesselObjects.ContainsKey(id))
+				return default(T);
+
+			var dict = vesselObjects[id];
+			if(dict == null)
+				return default(T);
+
+			if (!dict.ContainsKey(key))
+				return default(T);
+
+			return (T)dict[key];
+		}
+
+		internal static void SetVesselObjectsCache<T>(Vessel vessel, string key, T value)
+		{
+			SetVesselObjectsCache(Lib.VesselID(vessel), key, value);
+		}
+
+		internal static void SetVesselObjectsCache<T>(ProtoVessel pv, string key, T value)
+		{
+			SetVesselObjectsCache(Lib.VesselID(pv), key, value);
+		}
+
+		private static void SetVesselObjectsCache<T>(Guid id, string key, T value)
+		{
+			if (!vesselObjects.ContainsKey(id))
+				vesselObjects.Add(id, new Dictionary<string, object>());
+
+			var dict = vesselObjects[id];
+			dict.Remove(key);
+			dict.Add(key, value);
+		}
+
+		internal static bool HasVesselObjectsCache(Vessel vessel, string key)
+		{
+			return HasVesselObjectsCache(Lib.VesselID(vessel), key);
+		}
+
+		internal static bool HasVesselObjectsCache(ProtoVessel pv, string key)
+		{
+			return HasVesselObjectsCache(Lib.VesselID(pv), key);
+		}
+
+		private static bool HasVesselObjectsCache(Guid id, string key)
+		{
+			if (!vesselObjects.ContainsKey(id))
+				return false;
+
+			var dict = vesselObjects[id];
+			return dict.ContainsKey(key);
+		}
+
+		internal static void RemoveVesselObjectsCache(Vessel vessel, string key)
+		{
+			RemoveVesselObjectsCache(Lib.VesselID(vessel), key);
+		}
+
+		internal static void RemoveVesselObjectsCache<T>(ProtoVessel pv, string key)
+		{
+			RemoveVesselObjectsCache(Lib.VesselID(pv), key);
+		}
+
+		private static void RemoveVesselObjectsCache(Guid id, string key)
+		{
+			if (!vesselObjects.ContainsKey(id))
+				return;
+			var dict = vesselObjects[id];
+			dict.Remove(key);
+		}
+
+		// caches
+		private static Dictionary<Guid, Vessel_info> vessels;
+		private static Dictionary<Guid, Drive> warp_caches;
+		private static Dictionary<Guid, Dictionary<string, System.Object>> vesselObjects;
 
 		// used to generate unique id
-		static UInt64 next_inc;
+		private static UInt64 next_inc;
 	}
 
 

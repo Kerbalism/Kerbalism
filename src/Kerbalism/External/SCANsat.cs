@@ -16,6 +16,7 @@ namespace KERBALISM
 					SCANUtils = a.assembly.GetType("SCANsat.SCANUtil");
 					RegisterSensor = SCANUtils.GetMethod("registerSensorExternal");
 					UnregisterSensor = SCANUtils.GetMethod("unregisterSensorExternal");
+					GetCoverage = SCANUtils.GetMethod("GetCoverage");
 					break;
 				}
 			}
@@ -39,20 +40,35 @@ namespace KERBALISM
 			return SCANUtils != null && (bool)RegisterSensor.Invoke(null, new Object[] { v, m, part_prefab });
 		}
 
-		// return scanner EC consumption per-second
-		public static double EcConsumption(PartModule scanner)
+		// return the scanning coverage for a given sensor type on a give body
+		// - sensor_type: the sensor type
+		// - body: the body in question
+		public static double Coverage(int sensor_type, CelestialBody body)
 		{
-			foreach (ModuleResource res in scanner.resHandler.inputResources)
-			{
-				if (res.name == "ElectricCharge") return res.rate;
-			}
-			return 0.0;
+			if (SCANUtils == null) return 0;
+			return (double)GetCoverage.Invoke(null, new Object[] { sensor_type, body });
+		}
+
+		public static bool IsScanning(PartModule scanner)
+		{
+			return Lib.ReflectionValue<bool>(scanner, "scanning");
+		}
+
+		public static void StopScan(PartModule scanner)
+		{
+			Lib.ReflectionCall(scanner, "stopScan");
+		}
+
+		public static void StartScan(PartModule scanner)
+		{
+			Lib.ReflectionCall(scanner, "startScan");
 		}
 
 		// reflection type of SCANUtils static class in SCANsat assembly, if present
 		static Type SCANUtils;
 		static System.Reflection.MethodInfo RegisterSensor;
 		static System.Reflection.MethodInfo UnregisterSensor;
+		static System.Reflection.MethodInfo GetCoverage;
 	}
 
 

@@ -33,51 +33,90 @@ namespace KERBALISM
 			p.paneltype = Panel.PanelType.data;
 
  			// time-out simulation
-			if (p.Timeout(vi)) return;
+			if (!Lib.IsControlUnit(v) && p.Timeout(vi)) return;
 
-			foreach (var idDrivePair in DB.Vessel(v).drives)
+			var drives = Drive.GetDriveParts(v);
+
+			int filesCount = 0;
+			double usedDataCapacity = 0;
+			double totalDataCapacity = 0;
+
+			int samplesCount = 0;
+			int usedSlots = 0;
+			int totalSlots = 0;
+			double totalMass = 0;
+			bool unlimitedData = false;
+			bool unlimitedSamples = false;
+
+			foreach (var idDrivePair in drives)
 			{
 				var drive = idDrivePair.Value;
 
-				if (drive.dataCapacity > double.Epsilon)
+				if(!drive.is_private)
 				{
-					// draw data section
-					p.AddSection(Lib.BuildString("DATA ", drive.name, " ", Lib.HumanReadableDataSize(drive.dataCapacity),
-												 " (", Lib.HumanReadablePerc(drive.FilesSize() / drive.dataCapacity), ")"));
+					usedDataCapacity += drive.FilesSize();
+					totalDataCapacity += drive.dataCapacity;
+
+					unlimitedData |= drive.dataCapacity < 0;
+					unlimitedSamples |= drive.sampleCapacity < 0;
+
+					usedSlots += drive.SamplesSize();
+					totalSlots += drive.sampleCapacity;
+				}
+
+				filesCount += drive.files.Count;
+				samplesCount += drive.samples.Count;
+				foreach (var sample in drive.samples.Values) totalMass += sample.mass;
+			}
+
+			if(filesCount > 0 || totalDataCapacity > 0)
+			{
+				var title = "DATA " + Lib.HumanReadableDataSize(usedDataCapacity);
+				if(!unlimitedData) title += Lib.BuildString(" (", Lib.HumanReadablePerc((totalDataCapacity - usedDataCapacity) / totalDataCapacity), " available)");
+				p.AddSection(title);
+
+				foreach (var idDrivePair in drives)
+				{
+					uint partId = idDrivePair.Key;
+					var drive = idDrivePair.Value;
 					foreach (var pair in drive.files)
 					{
 						string filename = pair.Key;
 						File file = pair.Value;
-						Render_file(p, filename, file, drive, short_strings && Lib.IsFlight(), Cache.VesselInfo(v).connection.rate);
+						Render_file(p, partId, filename, file, drive, short_strings && Lib.IsFlight(), v);
 					}
-					if (drive.files.Count == 0) p.AddContent("<i>no files</i>", string.Empty);
 				}
 
-				if (drive.sampleCapacity > 0)
-				{
-					double mass = 0;
-					foreach (var sample in drive.samples.Values) mass += sample.mass;
+				if(filesCount == 0) p.AddContent("<i>no files</i>", string.Empty);
+			}
 
-					// draw samples section
-					p.AddSection(Lib.BuildString("SAMPLES ", drive.name, " ",
-												 Lib.HumanReadableSampleSize(drive.sampleCapacity),
-												 " (", Lib.HumanReadablePerc(drive.SamplesSize() / drive.sampleCapacity), ") ",
-												 Lib.HumanReadableMass(mass)));
+			if(samplesCount > 0 || totalSlots > 0)
+			{
+				var title = "SAMPLES " + Lib.HumanReadableMass(totalMass) + " " + Lib.HumanReadableSampleSize(usedSlots);
+				if (totalSlots > 0 && !unlimitedSamples) title += ", " + Lib.HumanReadableSampleSize(totalSlots) + " available";
+				p.AddSection(title);
+
+				foreach (var idDrivePair in drives)
+				{
+					uint partId = idDrivePair.Key;
+					var drive = idDrivePair.Value;
 					foreach (var pair in drive.samples)
 					{
-						string filename = pair.Key;
+						string samplename = pair.Key;
 						Sample sample = pair.Value;
-						Render_sample(p, filename, sample, drive, short_strings && Lib.IsFlight());
+						Render_sample(p, partId, samplename, sample, drive, short_strings && Lib.IsFlight());
 					}
-					if (drive.samples.Count == 0) p.AddContent("<i>no samples</i>", string.Empty);
 				}
+
+				if (samplesCount == 0) p.AddContent("<i>no samples</i>", string.Empty);
 			}
 		}
 
-		static void Render_file(Panel p, string filename, File file, Drive drive, bool short_strings, double rate)
+		static void Render_file(Panel p, uint partId, string filename, File file, Drive drive, bool short_strings, Vessel v)
 		{
 			// get experiment info
 			ExperimentInfo exp = Science.Experiment(filename);
+			double rate = Cache.VesselInfo(v).connection.rate;
 
 			// render experiment name
 			string exp_label = Lib.BuildString
@@ -85,30 +124,32 @@ namespace KERBALISM
 			  "<b>",
 			  Lib.Ellipsis(exp.name, Styles.ScaleStringLength(short_strings ? 24 : 38)),
 			  "</b> <size=", Styles.ScaleInteger(10).ToString(), ">",
-			  Lib.Ellipsis(exp.situation, Styles.ScaleStringLength((short_strings ? 32 : 62) - Lib.Ellipsis(exp.name, Styles.ScaleStringLength(short_strings ? 24 : 38)).Length)),
+			  Lib.Ellipsis(ExperimentInfo.Situation(filename), Styles.ScaleStringLength((short_strings ? 32 : 62) - Lib.Ellipsis(exp.name, Styles.ScaleStringLength(short_strings ? 24 : 38)).Length)),
 			  "</size>"
 			);
 			string exp_tooltip = Lib.BuildString
 			(
 			  exp.name, "\n",
-			  "<color=#aaaaaa>", exp.situation, "</color>"
+			  "<color=#aaaaaa>", ExperimentInfo.Situation(filename), "</color>"
 			);
 			double exp_value = Science.Value(filename, file.size);
-			if (exp_value > double.Epsilon) exp_tooltip = Lib.BuildString(exp_tooltip, "\n<b>", Lib.HumanReadableScience(exp_value), "</b>");
+			if (exp_value >= 0.1) exp_tooltip = Lib.BuildString(exp_tooltip, "\n<b>", Lib.HumanReadableScience(exp_value), "</b>");
 			if (rate > 0) exp_tooltip = Lib.BuildString(exp_tooltip, "\n<i>" + Lib.HumanReadableDuration(file.size / rate) + "</i>");
-			p.AddContent(exp_label, Lib.HumanReadableDataSize(file.size), exp_tooltip);
+			p.AddContent(exp_label, Lib.HumanReadableDataSize(file.size), exp_tooltip, (Action)null, () => Highlighter.Set(partId, Color.cyan));
 
-			p.AddIcon(file.send ? Icons.send_cyan : Icons.send_black, "Flag the file for transmission to <b>DSN</b>", () => { file.send = !file.send; });
-			p.AddIcon(Icons.toggle_red, "Delete the file", () => Lib.Popup
-			(
-			  "Warning!",
-			  Lib.BuildString("Do you really want to delete ", exp.fullname, "?"),
-			  new DialogGUIButton("Delete it", () => drive.files.Remove(filename)),
-			  new DialogGUIButton("Keep it", () => { })
-			));
+			bool send = drive.GetFileSend(filename);
+			p.AddIcon(send ? Icons.send_cyan : Icons.send_black, "Flag the file for transmission to <b>DSN</b>", () => { drive.Send(filename, !send); });
+			p.AddIcon(Icons.toggle_red, "Delete the file", () =>
+				{
+					Lib.Popup("Warning!",
+						Lib.BuildString("Do you really want to delete ", exp.FullName(filename), "?"),
+				        new DialogGUIButton("Delete it", () => drive.Delete_file(filename, double.MaxValue, v.protoVessel)),
+						new DialogGUIButton("Keep it", () => { }));
+				}
+			);
 		}
 
-		static void Render_sample(Panel p, string filename, Sample sample, Drive drive, bool short_strings)
+		static void Render_sample(Panel p, uint partId, string filename, Sample sample, Drive drive, bool short_strings)
 		{
 			// get experiment info
 			ExperimentInfo exp = Science.Experiment(filename);
@@ -119,27 +160,28 @@ namespace KERBALISM
 			  "<b>",
 			  Lib.Ellipsis(exp.name, Styles.ScaleStringLength(short_strings ? 24 : 38)),
 			  "</b> <size=", Styles.ScaleInteger(10).ToString(), ">",
-			  Lib.Ellipsis(exp.situation, Styles.ScaleStringLength((short_strings ? 32 : 62) - Lib.Ellipsis(exp.name, Styles.ScaleStringLength(short_strings ? 24 : 38)).Length)),
+			  Lib.Ellipsis(ExperimentInfo.Situation(filename), Styles.ScaleStringLength((short_strings ? 32 : 62) - Lib.Ellipsis(exp.name, Styles.ScaleStringLength(short_strings ? 24 : 38)).Length)),
 			  "</size>"
 			);
 			string exp_tooltip = Lib.BuildString
 			(
 			  exp.name, "\n",
-			  "<color=#aaaaaa>", exp.situation, "</color>"
+			  "<color=#aaaaaa>", ExperimentInfo.Situation(filename), "</color>"
 			);
 			double exp_value = Science.Value(filename, sample.size);
-			if (exp_value > double.Epsilon) exp_tooltip = Lib.BuildString(exp_tooltip, "\n<b>", Lib.HumanReadableScience(exp_value), "</b>");
+			if (exp_value >= 0.1) exp_tooltip = Lib.BuildString(exp_tooltip, "\n<b>", Lib.HumanReadableScience(exp_value), "</b>");
 			if (sample.mass > Double.Epsilon) exp_tooltip = Lib.BuildString(exp_tooltip, "\n<b>", Lib.HumanReadableMass(sample.mass), "</b>");
 
-			p.AddContent(exp_label, Lib.HumanReadableSampleSize(sample.size), exp_tooltip);
+			p.AddContent(exp_label, Lib.HumanReadableSampleSize(sample.size), exp_tooltip, (Action)null, () => Highlighter.Set(partId, Color.cyan));
 			p.AddIcon(sample.analyze ? Icons.lab_cyan : Icons.lab_black, "Flag the file for analysis in a <b>laboratory</b>", () => { sample.analyze = !sample.analyze; });
-			p.AddIcon(Icons.toggle_red, "Dump the sample", () => Lib.Popup
-			(
-			  "Warning!",
-			   Lib.BuildString("Do you really want to dump ", exp.fullname, "?"),
-			   new DialogGUIButton("Dump it", () => drive.samples.Remove(filename)),
-			   new DialogGUIButton("Keep it", () => { })
-			));
+			p.AddIcon(Icons.toggle_red, "Dump the sample", () =>
+				{
+					Lib.Popup("Warning!",
+						Lib.BuildString("Do you really want to dump ", exp.FullName(filename), "?"),
+						new DialogGUIButton("Dump it", () => drive.samples.Remove(filename)),
+							  new DialogGUIButton("Keep it", () => { }));
+				}
+			);
 		}
 	}
 

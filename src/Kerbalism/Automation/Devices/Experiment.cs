@@ -29,10 +29,11 @@ namespace KERBALISM
 
 		public override string Info()
 		{
-			var exp = ResearchAndDevelopment.GetExperiment(experiment.experiment_id);
-			var sampleSize = (exp.scienceCap * exp.dataScale);
-			var recordedPercent = Lib.HumanReadablePerc(experiment.dataSampled / sampleSize);
-			var eta = experiment.data_rate < double.Epsilon || experiment.dataSampled >= sampleSize ? " done" : " T-" + Lib.HumanReadableDuration((sampleSize - experiment.dataSampled) / experiment.data_rate);
+			var state = Experiment.GetState(experiment.scienceValue, experiment.issue, experiment.recording, experiment.forcedRun);
+			if (state == Experiment.State.WAITING) return "waiting...";
+			var exp = Science.Experiment(experiment.experiment_id);
+			var recordedPercent = Lib.HumanReadablePerc(experiment.dataSampled / exp.max_amount);
+			var eta = experiment.data_rate < double.Epsilon || Experiment.Done(exp, experiment.dataSampled) ? " done" : " " + Lib.HumanReadableCountdown((exp.max_amount - experiment.dataSampled) / experiment.data_rate);
 
 			return !experiment.recording
 			  ? "<color=red>" + Localizer.Format("#KERBALISM_Generic_DISABLED") + " </color>"
@@ -57,13 +58,16 @@ namespace KERBALISM
 
 	public sealed class ProtoExperimentDevice : Device
 	{
-		public ProtoExperimentDevice(ProtoPartModuleSnapshot proto, Experiment prefab, uint part_id)
+		public ProtoExperimentDevice(ProtoPartModuleSnapshot proto, Experiment prefab, uint part_id, string vessel_name,
+		                             List<KeyValuePair<Experiment, ProtoPartModuleSnapshot>> allExperiments)
 		{
 			this.proto = proto;
 			this.prefab = prefab;
 			this.part_id = part_id;
-			this.exp_name = (prefab.sample_mass < float.Epsilon ? "sensor" : "experiment")
-				+ ": " + Lib.SpacesOnCaps(ResearchAndDevelopment.GetExperiment(prefab.experiment_id).experimentTitle).ToLower().Replace("e v a", "eva");
+			this.allExperiments = allExperiments;
+			this.title = Lib.SpacesOnCaps(ResearchAndDevelopment.GetExperiment(prefab.experiment_id).experimentTitle).Replace("E V A", "EVA");
+			this.exp_name = (prefab.sample_mass < float.Epsilon ? "sensor" : "experiment") + ": " + title.ToLower();
+			this.vessel_name = vessel_name;
 		}
 
 		public override string Name()
@@ -79,14 +83,19 @@ namespace KERBALISM
 		public override string Info()
 		{
 			bool recording = Lib.Proto.GetBool(proto, "recording");
+			bool forcedRun = Lib.Proto.GetBool(proto, "forcedRun");
+			double scienceValue = Lib.Proto.GetDouble(proto, "scienceValue");
 			string issue = Lib.Proto.GetString(proto, "issue");
+
+			var state = Experiment.GetState(scienceValue, issue, recording, forcedRun);
+			if (state == Experiment.State.WAITING) return "waiting...";
+
 			double dataSampled = Lib.Proto.GetDouble(proto, "dataSampled");
 			double data_rate = Lib.Proto.GetDouble(proto, "data_rate");
 
-			var exp = ResearchAndDevelopment.GetExperiment(prefab.experiment_id);
-			var sampleSize = (exp.scienceCap * exp.dataScale);
-			var recordedPercent = Lib.HumanReadablePerc(dataSampled / sampleSize);
-			var eta = data_rate < double.Epsilon || dataSampled >= sampleSize ? " done" : " T-" + Lib.HumanReadableDuration((sampleSize - dataSampled) / data_rate);
+			var exp = Science.Experiment(prefab.experiment_id);
+			var recordedPercent = Lib.HumanReadablePerc(dataSampled / exp.max_amount);
+			var eta = data_rate < double.Epsilon || Experiment.Done(exp, dataSampled) ? " done" : " " + Lib.HumanReadableCountdown((exp.max_amount - dataSampled) / data_rate);
 
 			return !recording
 			  ? "<color=red>" + Localizer.Format("#KERBALISM_Generic_STOPPED") + " </color>"
@@ -96,6 +105,37 @@ namespace KERBALISM
 
 		public override void Ctrl(bool value)
 		{
+			bool recording = Lib.Proto.GetBool(proto, "recording");
+			bool forcedRun = Lib.Proto.GetBool(proto, "forcedRun");
+			double scienceValue = Lib.Proto.GetDouble(proto, "scienceValue");
+			string issue = Lib.Proto.GetString(proto, "issue");
+			var state = Experiment.GetState(scienceValue, issue, recording, forcedRun);
+
+
+			if(state == Experiment.State.WAITING)
+			{
+				Lib.Proto.Set(proto, "forcedRun", true);
+				return;
+			}
+			   
+			if (value)
+			{
+				// The same experiment must run only once on a vessel
+				foreach (var pair in allExperiments)
+				{
+					var e = pair.Key;
+					var p = pair.Value;
+					if (e.experiment_id != prefab.experiment_id) continue;
+					if (!e.isEnabled || !e.enabled) continue;
+					if (e.part.flightID == prefab.part.flightID) continue;
+					if (recording)
+					{
+						Experiment.PostMultipleRunsMessage(title, vessel_name);
+						return;
+					}
+				}
+			}
+
 			Lib.Proto.Set(proto, "recording", value);
 		}
 
@@ -108,6 +148,9 @@ namespace KERBALISM
 		private readonly Experiment prefab;
 		private readonly uint part_id;
 		private readonly string exp_name;
+		private readonly string title;
+		private readonly List<KeyValuePair<Experiment, ProtoPartModuleSnapshot>> allExperiments;
+		private readonly string vessel_name;
 	}
 
 

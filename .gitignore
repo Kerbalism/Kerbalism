@@ -24,6 +24,9 @@ bld/
 [Oo]bj/
 [Ll]og/
 
+Kerbalism.dll
+AssemblyInfo.cs-E
+
 # Visual Studio 2015/2017 cache/options directory
 .vs/
 # Uncomment if you have tasks that create the project's static files in wwwroot
@@ -382,3 +385,5 @@ SciTE*.properties
 # Kerbalism build system
 src/DLLs
 KSP-*.7z
+Kerbalism-Core*.zip
+Kerbalism-Config*.zip

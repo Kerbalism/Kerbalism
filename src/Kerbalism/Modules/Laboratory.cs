@@ -69,7 +69,7 @@ namespace KERBALISM
 			if (hardDrive != null) drive = hardDrive.GetDrive();
 			else
 			{
-				drive = DB.Vessel(vessel).BestDrive();
+				drive = Drive.FileDrive(vessel);
 			}
 		}
 
@@ -115,7 +115,7 @@ namespace KERBALISM
 					{
 						// consume EC
 						ec = ResourceCache.Info(vessel, "ElectricCharge");
-						ec.Consume(ec_rate * Kerbalism.elapsed_s);
+						ec.Consume(ec_rate * Kerbalism.elapsed_s, "lab");
 
 						// if there was ec
 						// - comparing against amount in previous simulation step
@@ -162,7 +162,7 @@ namespace KERBALISM
 					if (background_sample != null)
 					{
 						// consume EC
-						ec.Consume(lab.ec_rate * elapsed_s);
+						ec.Consume(lab.ec_rate * elapsed_s, "lab");
 
 						// if there was ec
 						// - comparing against amount in previous simulation step
@@ -240,7 +240,7 @@ namespace KERBALISM
 		// get next sample to analyze, return null if there isn't a sample
 		private static string NextSample(Vessel v)
 		{
-			foreach(var drive in DB.Vessel(v).drives.Values)
+			foreach(var drive in Drive.GetDrives(v, true))
 			{
 				// for each sample
 				foreach (KeyValuePair<string, Sample> sample in drive.samples)
@@ -258,23 +258,33 @@ namespace KERBALISM
 		private static Status Analyze(Vessel v, string filename, double amount)
 		{
 			Sample sample = null;
-			foreach (var d in DB.Vessel(v).drives.Values)
+			Drive sampleDrive = null;
+			foreach (var d in Drive.GetDrives(v, true))
 			{
-				if (d.samples.ContainsKey(filename))
+				if (d.samples.ContainsKey(filename) && d.samples[filename].analyze)
+				{
 					sample = d.samples[filename];
-				break;
+					sampleDrive = d;
+					break;
+				}
 			}
 
-			var drive = DB.Vessel(v).BestDrive(amount);
-
-			bool completed = sample == null;
+			bool completed = false;
 			if(sample != null)
 			{
-				// analyze, and produce dataamount = Math.Min(amount, sample.size);
-				completed = amount >= sample.size - double.Epsilon;
-				bool recorded = drive.Record_file(filename, amount, false);
+				completed = amount > sample.size;
+				amount = Math.Min(amount, sample.size);
+			}
+
+			Drive fileDrive = Drive.FileDrive(v, amount);
+
+			if(sample != null)
+			{
+				bool recorded = fileDrive.Record_file(filename, amount, false);
+
+				double massRemoved = 0;
 				if (recorded)
-					drive.Delete_sample(filename, amount);
+					massRemoved = sampleDrive.Delete_sample(filename, amount);
 				else
 				{
 					Message.Post(
@@ -284,23 +294,52 @@ namespace KERBALISM
 
 					return Status.NO_STORAGE;
 				}
+
+				// return sample mass to experiment if needed
+				if (massRemoved > double.Epsilon) RestoreSampleMass(v, filename, massRemoved);
 			}
 
 			// if the analysis is completed
 			if (completed)
 			{
-				// inform the user
-				Message.Post(Lib.BuildString(Lib.Color("cyan", Localizer.Format("#KERBALISM_Laboratory_Analysis"), true), "\n",
-					Localizer.Format("#KERBALISM_Laboratory_Analyzed", Lib.Bold(v.vesselName), Lib.Bold(Science.Experiment(filename).name))), localized_results);
+				if(!PreferencesScience.Instance.analyzeSamples)
+				{
+					// only inform the user if auto-analyze is turned off
+					// otherwise we could be spamming "Analysis complete" messages
+					Message.Post(Lib.BuildString(Lib.Color("cyan", Localizer.Format("#KERBALISM_Laboratory_Analysis"), true), "\n",
+						Localizer.Format("#KERBALISM_Laboratory_Analyzed", Lib.Bold(v.vesselName), Lib.Bold(Science.Experiment(filename).name))), localized_results);
+				}
 
-				if(PreferencesBasic.Instance.transmitScience)
-					drive.Transmit_file(filename);
+				if (PreferencesScience.Instance.transmitScience)
+					fileDrive.Send(filename, true);
 
 				// record landmark event
 				if (!Lib.Landed(v)) DB.landmarks.space_analysis = true;
 			}
 
 			return Status.RUNNING;
+		}
+
+		private static void RestoreSampleMass(Vessel v, string filename, double restoredAmount)
+		{
+			int i = filename.IndexOf('@');
+			var id = i > 0 ? filename.Substring(0, i) : filename;
+
+			if(v.loaded) // loaded vessel
+			{
+				foreach (var experiment in v.FindPartModulesImplementing<Experiment>())
+				{
+					restoredAmount -= experiment.RestoreSampleMass(restoredAmount, id);
+				}
+			}
+			else // unloaded vessel
+			{
+				foreach (ProtoPartModuleSnapshot m in Lib.FindModules(v.protoVessel, "Experiment"))
+				{
+					restoredAmount -= Experiment.RestoreSampleMass(restoredAmount, m, id);
+					if (restoredAmount < double.Epsilon) return;
+				}
+			}
 		}
 
 		private void SetStatusText()

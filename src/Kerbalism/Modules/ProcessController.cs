@@ -20,9 +20,6 @@ namespace KERBALISM
 		// but we find useful to set running to true in the cfg node for some processes, and not others
 		[KSPField(isPersistant = true)] public bool running;
 
-		// amount of times to multiply capacity, used so configure can have the same process in more than one slot
-		[KSPField(isPersistant = true)] public int multiple = 1;
-
 		// index of currently active dump valve
 		[KSPField(isPersistant = true)] public int valve_i = 0;
 
@@ -36,7 +33,7 @@ namespace KERBALISM
 				return;
 
 			// configure on start, must be executed with enabled true on parts first load.
-			Configure(true, multiple);
+			Configure(true);
 
 			// get dump specs for associated process
 			dump_specs = Profile.processes.Find(x => x.modifiers.Contains(resource)).dump;
@@ -60,16 +57,12 @@ namespace KERBALISM
 				running = true;
 
 			// set processes enabled state
-			Lib.SetProcessEnabledDisabled(part, resource, broken ? false : running, capacity * multiple);
+			Lib.SetProcessEnabledDisabled(part, resource, broken ? false : running, capacity);
 		}
 
-		///<summary> Called by Configure.cs. Configures the controller to settings passed from the configure module,
-		/// the multiple parameter is used to indicate the number of slots used by the process </summary>
-		public void Configure(bool enable, int multiple = 1)
+		///<summary> Called by Configure.cs. Configures the controller to settings passed from the configure module</summary>
+		public void Configure(bool enable)
 		{
-			// make sure multiple is not zero
-			multiple = multiple == 0 ? 1 : multiple;
-
 			if (enable)
 			{
 				// if never set
@@ -79,33 +72,18 @@ namespace KERBALISM
 				{
 					// add the resource
 					// - always add the specified amount, even in flight
-					Lib.AddResource(part, resource, (!broken && running) ? capacity * multiple : 0.0, capacity * multiple);
+					Lib.AddResource(part, resource, (!broken && running) ? capacity : 0.0, capacity);
 				}
-				// has multiple changed
-				else if (this.multiple != multiple)
-				{
-					// multiple has increased
-					if (this.multiple < multiple)
-					{
-						Lib.AddResource(part, resource, (!broken && running) ? capacity * (multiple - this.multiple) : 0.0, capacity * (multiple - this.multiple));
-					}
-					// multiple has decreased
-					else
-					{
-						Lib.RemoveResource(part, resource, 0.0, capacity * (this.multiple - multiple));
-					}
-				}
-				this.multiple = multiple;
 			}
 			else
-				Lib.RemoveResource(part, resource, 0.0, capacity * this.multiple);
+				Lib.RemoveResource(part, resource, 0.0, capacity);
 		}
 
 		///<summary> Call this when process controller breaks down or is repaired </summary>
 		public void ReliablityEvent(bool breakdown)
 		{
 			broken = breakdown;
-			Lib.SetProcessEnabledDisabled(part, resource, broken ? false : running, capacity * multiple);
+			Lib.SetProcessEnabledDisabled(part, resource, broken ? false : running, capacity);
 		}
 
 		public void Update()
@@ -128,7 +106,7 @@ namespace KERBALISM
 			
 			// switch status
 			running = value;
-			Lib.SetProcessEnabledDisabled(part, resource, running, capacity * multiple);
+			Lib.SetProcessEnabledDisabled(part, resource, running, capacity);
 
 			// refresh VAB/SPH ui
 			if (Lib.IsEditor()) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);

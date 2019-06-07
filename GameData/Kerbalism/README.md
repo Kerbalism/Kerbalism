@@ -122,12 +122,15 @@ communication system is simple, yet it also results in more realistic vessel and
 
 ### SCIENCE
 
-Data is collected and stored in the vessel solid state drives, instead of the stock science containers. Moving data
-around the vessel doesn't require extra vehicular activities. Some data can be transmitted back directly, while other
-data needs to be analyzed in a lab first. Analyzing takes a long time, happens transparently to loaded and unloaded
-vessels alike, and can't be cheated to create science out of thin air. An interesting method is used to bridge
-existing stock and third-party experiments to the new science system, that work for most experiments without requiring
-ad-hoc support.
+Experiments don't return their science output instantly, they require some time to run. Some complete in minutes, others
+will take months. Not to worry, experiments can run on vessels in the background, you don't have to keep that vessel
+loaded. There are two differnt kinds of experiments: sensor readings and samples. Sensor readings are just plain data
+that can be transferred between vessels without extra vehicular activities, they also can be transmitted back directly.
+Samples however require the delicate handling by kerbals, and cannot be transmitted but have to be recovered instead.
+They also can be analyzed in a lab, which converts it to data that can be transmitted. Analyzing takes a long time,
+happens transparently to loaded and unloaded vessels alike, and can't be cheated to create science out of thin air. An
+interesting method is used to bridge existing stock and third-party experiments to the new science system, that works for
+most experiments without requiring ad-hoc support.
 
 
 ### AUTOMATION

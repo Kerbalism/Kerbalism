@@ -12,6 +12,11 @@ namespace KERBALISM
 		[KSPField] public bool inflatableUsingRigidWalls = false;   // can shielding be applied to inflatable structure?
 		[KSPField] public bool toggle = true;                       // show the enable/disable toggle
 
+		[KSPField] public double max_pressure = 1.0;                // max. sustainable pressure, in percent of sea level
+		// for now this won't do anything else but prohibit the "pressurized" flag to go to true in a vessel.
+		// with a reimplementation of the habitat code (that won't use hardcoded resource names any more),
+		// this should act as a pressure valve that releases excess pressure during ascent.
+
 		// persistence
 		[KSPField(isPersistant = true)] public State state = State.enabled;
 		[KSPField(isPersistant = true)] private double perctDeployed = 0;
@@ -303,7 +308,7 @@ namespace KERBALISM
 				state = State.pressurizing;
 
 				// Equalize run only in Flight mode
-				needEqualize = true && Lib.IsFlight();
+				needEqualize = Lib.IsFlight();
 			}
 
 			perctDeployed = Lib.Level(part, "Atmosphere", true);
@@ -324,6 +329,12 @@ namespace KERBALISM
 					UpdateIVA(Math.Truncate(Math.Abs((perctDeployed + ResourceBalance.precision) - 1.0) * 100000) / 100000 <= ResourceBalance.precision);
 				}
 				FixIVA = false;
+			}
+
+			if(max_pressure < Settings.PressureThreshold && Lib.IsFlight())
+			{
+				var vi = Cache.VesselInfo(vessel);
+				vi.max_pressure = Math.Min(vi.max_pressure, max_pressure);
 			}
 
 			// state machine
@@ -409,6 +420,7 @@ namespace KERBALISM
 			Specifics specs = new Specifics();
 			specs.Add("Volume", Lib.HumanReadableVolume(volume > double.Epsilon ? volume : Lib.PartVolume(part)));
 			specs.Add("Surface", Lib.HumanReadableSurface(surface > double.Epsilon ? surface : Lib.PartSurface(part)));
+			specs.Add("Pressurized", max_pressure >= Settings.PressureThreshold ? "yes" : "no");
 			if (inflate.Length > 0) specs.Add("Inflatable", "yes");
 			if(PhysicsGlobals.KerbalCrewMass > 0)
 				specs.Add("Added mass per crew", Lib.HumanReadableMass(PhysicsGlobals.KerbalCrewMass));

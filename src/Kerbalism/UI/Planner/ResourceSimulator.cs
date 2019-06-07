@@ -137,11 +137,8 @@ namespace KERBALISM.Planner
 						case "ModuleMultiPointSurfaceLight":
 							Process_light(m as ModuleLight);
 							break;
-						case "SCANsat":
-							Process_scanner(m);
-							break;
-						case "ModuleSCANresourceScanner":
-							Process_scanner(m);
+						case "KerbalismScansat":
+							Process_scanner(m as KerbalismScansat);
 							break;
 						case "ModuleCurvedSolarPanel":
 							Process_curved_panel(p, m, env);
@@ -515,9 +512,9 @@ namespace KERBALISM.Planner
 		}
 
 
-		void Process_scanner(PartModule m)
+		void Process_scanner(KerbalismScansat m)
 		{
-			Resource("ElectricCharge").Consume(SCANsat.EcConsumption(m), "SCANsat");
+			Resource("ElectricCharge").Consume(m.ec_rate, "scanner");
 		}
 
 

@@ -133,14 +133,14 @@ namespace KERBALISM
 						if (output.Length == 0)
 						{
 							// simply consume (that is faster)
-							res.Consume(required);
+							res.Consume(required, name);
 						}
 						// if there is an output and monitor is false
 						else if (!monitor)
 						{
 							// transform input into output resource
 							// - rules always dump excess overboard (because it is waste)
-							Resource_recipe recipe = new Resource_recipe((Part) null); // kerbals are not associated with a part
+							Resource_recipe recipe = new Resource_recipe((Part) null, name); // kerbals are not associated with a part
 							recipe.Input(input, required);
 							recipe.Output(output, required * ratio, true);
 							resources.Transform(recipe);
@@ -149,7 +149,7 @@ namespace KERBALISM
 						else if ((res.amount / res.capacity) + monitor_offset < 1.0)
 						{
 							// simply produce (that is faster)
-							resources.Produce(v, output, required * ratio);
+							resources.Produce(v, output, required * ratio, name);
 						}
 					}
 

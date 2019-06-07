@@ -3,13 +3,13 @@
 Automation
 ==========
 
-Components in a vessel can be turned on and off automatically by environmental conditions. The set of component changes is stored in scripts, and a simple editor UI is provided. When a specified change in conditions is detected, the relative script is executed on a vessel. This works transparently for loaded and unloaded vessels. 
+Components in a vessel can be turned on and off automatically by environmental conditions. The set of component changes is stored in scripts, and a simple editor UI is provided. When a specified change in conditions is detected, the relative script is executed on a vessel. This works transparently for loaded and unloaded vessels.
 
 ----------
 
 Scripts
 -------
-A script represents a list of state changes for all vessel components. Each component can be set in one of three states: *don't care*, *on* or *off*. 
+A script represents a list of state changes for all vessel components. Each component can be set in one of three states: *don't care*, *on* or *off*.
 
 ----------
 
@@ -58,6 +58,10 @@ Scripts are triggered by the following conditions.
 +------------+--------------------------------------+
 | eva_in     | coming back from Eva                 |
 +------------+--------------------------------------+
+| drive_full | drives are at 90% capacity           |
++------------+--------------------------------------+
+| drive_empty| drives are below 10% capacity        |
++------------+--------------------------------------+
 | action[0-5]| press [0-5], on the active vessel    |
 +------------+--------------------------------------+
 
@@ -71,6 +75,8 @@ Only these modules are supported by the automation system.
 | MODULE                                         | ACTION              |
 +================================================+=====================+
 | Antenna                                        | Extend/Retract      |
++------------------------------------------------+---------------------+
+| Experiment                                     | Enable/Disable      |
 +------------------------------------------------+---------------------+
 | Emitter                                        | Enable/Disable      |
 +------------------------------------------------+---------------------+

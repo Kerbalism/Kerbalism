@@ -2,26 +2,24 @@ language: csharp
 env:
   global:
     - ZIP_PASSWORD="gQn337XZBEFxzFuVwzKgc27ehZo7XLz485hh3erqF9"
+cache:
+  directories:
+    - src/archives
 matrix:
   include:
     - env:
-      - KSPVERS="1.6.1 1.5.1 1.4.5"
-      - KSPBINS="16 15 14"
+      - KSPVERS="1.7.1 1.7.0 1.6.1 1.5.1 1.4.5"
+      - KSPBINS="17 170 16 15 14"
 before_install:
   - sudo apt-get update -qq
-  - sudo apt-get install -qq p7zip-full bash openssh-client jq
+  - sudo apt-get install -qq p7zip-full bash openssh-client jq sshpass
 script:
   - cd "$TRAVIS_BUILD_DIR"
   - bash "$TRAVIS_BUILD_DIR/buildscripts/Travis/build.sh"
 after_success:
   - export MOD_VERSION=$(cat $TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism.version | jq '.VERSION.MAJOR').$(cat $TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism.version | jq '.VERSION.MINOR').$(cat $TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism.version | jq '.VERSION.PATCH')
   - bash "$TRAVIS_BUILD_DIR/buildscripts/Travis/avc_version.sh" $PRIMARY_KSPVER "$TRAVIS_BUILD_DIR/GameData/Kerbalism/Kerbalism.version"
-  - 7za a "$TRAVIS_BUILD_DIR/Kerbalism-$MOD_VERSION-BUILD$TRAVIS_BUILD_NUMBER.zip" "$TRAVIS_BUILD_DIR/GameData"
-  - 7za a "$TRAVIS_BUILD_DIR/Kerbalism-$MOD_VERSION-BUILD$TRAVIS_BUILD_NUMBER.zip" "$TRAVIS_BUILD_DIR/LICENSE"
-  - 7za a "$TRAVIS_BUILD_DIR/Kerbalism-$MOD_VERSION-BUILD$TRAVIS_BUILD_NUMBER.zip" "$TRAVIS_BUILD_DIR/CHANGELOG.md"
-  - echo "${SFTP_KEY}" | base64 --decode >/tmp/sftp_key
-  - chmod 400 /tmp/sftp_key
-  - ssh-keyscan -p ${SFTP_PORT} -H ${SFTP_TARGET} >> ~/.ssh/known_hosts
-  - sftp -i /tmp/sftp_key -P ${SFTP_PORT} ${SFTP_USER}@${SFTP_TARGET}:${SFTP_DIR} <<< "put \"Kerbalism-$MOD_VERSION-BUILD$TRAVIS_BUILD_NUMBER.zip\""
+  - bash "$TRAVIS_BUILD_DIR/buildscripts/Travis/zip_up.sh"
+  # if anyone ever wants to try to make an ssh deployment, feel free to do so
 notifications:
   email: false

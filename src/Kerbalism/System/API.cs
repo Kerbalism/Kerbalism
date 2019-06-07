@@ -5,11 +5,76 @@
 
 
 using System;
-
+using System.Reflection;
+using System.Collections.Generic;
 
 namespace KERBALISM
 {
+	public class AntennaInfo
+	{
+		// ====================================================================
+		// VALUES SET BY KERBALISM
+		// ====================================================================
 
+		/// <summary>
+		/// This will be set to true if the vessel currently is transmitting data.
+		/// </summary>
+		public bool transmitting = false;
+
+		/// <summary>
+		/// Set to true if the vessel is currently subjected to a CME storm
+		/// </summary>
+		public bool storm = false;
+
+		/// <summary>
+		/// Set to true if the vessel has enough EC to operate
+		/// </summary>
+		public bool powered = true;
+
+
+		// ====================================================================
+		// VALUES TO SET FOR KERBALISM
+		// ====================================================================
+
+		/// <summary>
+		/// science data rate, in MB/s. note that internal transmitters can not transmit science data only telemetry data
+		/// </summary>
+		public double rate = 0.0;
+
+		/// <summary> ec cost </summary>
+		public double ec = 0.0;
+
+		/// <summary> link quality indicator for the UI, any value from 0-1.
+		/// you MUST set this to >= 0 in your mod, otherwise the comm status
+		/// will either be handled by an other mod or by the stock implementation.
+		/// </summary>
+		public double strength = -1;
+
+		/// <summary>
+		/// direct_link = 0, indirect_link = 1 (relayed signal), no_link = 2, plasma = 3 (plasma blackout on reentry), storm = 4 (cme storm blackout)
+		/// </summary>
+		public int status = 2;
+
+		/// <summary>
+		/// true if communication is established. if false, vessels can't transmit data and might be uncontrollable.
+		/// </summary>
+		public bool linked;
+
+		/// <summary>
+		/// The name of the thing at the other end of your radio beam (KSC, name of the relay, ...)
+		/// </summary>
+		public string target_name;
+
+		/// <summary>
+		/// Optional: communication path that will be displayed in the UI.
+		/// Each entry in the List is one "hop" in your path.
+		/// provide up to 3 values for each hop: string[] hop = { name, value, tooltip }
+		/// - name: the name of the relay/station
+		/// - value: link quality to that relay
+		/// - tooltip: anything you want to display, maybe link distance, frequency band used, ...
+		/// </summary>
+		public List<string[]> control_path = null;
+	}
 
 	public static class API
 	{
@@ -23,7 +88,7 @@ namespace KERBALISM
 		public static void Kill(Vessel v, ProtoCrewMember c)
 		{
 			if (!Cache.VesselInfo(v).is_valid) return;
-			if (!DB.vessels.ContainsKey(Lib.RootID(v))) return;
+			if (!DB.vessels.ContainsKey(Lib.VesselID(v))) return;
 			if (!DB.ContainsKerbal(c.name)) return;
 			Misc.Kill(v, c);
 		}
@@ -32,7 +97,7 @@ namespace KERBALISM
 		public static void Breakdown(Vessel v, ProtoCrewMember c)
 		{
 			if (!Cache.VesselInfo(v).is_valid) return;
-			if (!DB.vessels.ContainsKey(Lib.RootID(v))) return;
+			if (!DB.vessels.ContainsKey(Lib.VesselID(v))) return;
 			if (!DB.ContainsKerbal(c.name)) return;
 			Misc.Breakdown(v, c);
 		}
@@ -223,7 +288,7 @@ namespace KERBALISM
 		{
 			if (!Cache.VesselInfo(v).is_valid) return 0.0;
 
-			foreach(var d in DB.Vessel(v).drives.Values)
+			foreach (var d in Drive.GetDrives(v, true))
 			{
 				if (d.files.ContainsKey(subject_id))
 					return d.files[subject_id].size;
@@ -236,7 +301,7 @@ namespace KERBALISM
 		public static double SampleSize(Vessel v, string subject_id)
 		{
 			if (!Cache.VesselInfo(v).is_valid) return 0.0;
-			foreach (var d in DB.Vessel(v).drives.Values)
+			foreach (var d in Drive.GetDrives(v, true))
 			{
 				if (d.samples.ContainsKey(subject_id))
 					return d.samples[subject_id].size;
@@ -249,35 +314,162 @@ namespace KERBALISM
 		public static bool StoreFile(Vessel v, string subject_id, double amount)
 		{
 			if (!Cache.VesselInfo(v).is_valid) return false;
-			return DB.Vessel(v).BestDrive(amount).Record_file(subject_id, amount);
+			return Drive.FileDrive(v, amount).Record_file(subject_id, amount);
 		}
 
 		// store a sample on a vessel
 		public static bool StoreSample(Vessel v, string subject_id, double amount, double mass = 0)
 		{
 			if (!Cache.VesselInfo(v).is_valid) return false;
-			return DB.Vessel(v).BestDrive(Lib.SampleSizeToSlots(amount)).Record_sample(subject_id, amount, mass);
+			return Drive.SampleDrive(v, amount, subject_id).Record_sample(subject_id, amount, mass);
 		}
 
 		// remove a file from a vessel
 		public static void RemoveFile(Vessel v, string subject_id, double amount)
 		{
 			if (!Cache.VesselInfo(v).is_valid) return;
-			foreach (var d in DB.Vessel(v).drives.Values)
-				d.Delete_file(subject_id, amount);
+			foreach (var d in Drive.GetDrives(v, true))
+				d.Delete_file(subject_id, amount, v.protoVessel);
 		}
 
 		// remove a sample from a vessel
-		public static void RemoveSample(Vessel v, string subject_id, double amount)
+		public static double RemoveSample(Vessel v, string subject_id, double amount)
 		{
-			if (!Cache.VesselInfo(v).is_valid) return;
-			foreach (var d in DB.Vessel(v).drives.Values)
-				d.Delete_sample(subject_id, amount);
+			if (!Cache.VesselInfo(v).is_valid) return 0;
+			double massRemoved = 0;
+			foreach (var d in Drive.GetDrives(v, true))
+				massRemoved += d.Delete_sample(subject_id, amount);
+			return massRemoved;
+		}
+
+		public static ScienceEvent OnScienceReceived = new ScienceEvent();
+
+		public class ScienceEvent
+		{
+			//This is the list of methods that should be activated when the event fires
+			private List<Action<float, ScienceSubject, ProtoVessel, bool>> listeningMethods = new List<Action<float, ScienceSubject, ProtoVessel, bool>>();
+
+			//This adds an event to the List of listening methods
+			public void Add(Action<float, ScienceSubject, ProtoVessel, bool> method)
+			{
+				//We only add it if it isn't already added. Just in case.
+				if (!listeningMethods.Contains(method))
+				{
+					listeningMethods.Add(method);
+				}
+			}
+
+			//This removes and event from the List
+			public void Remove(Action<float, ScienceSubject, ProtoVessel, bool> method)
+			{
+				//We also only remove it if it's actually in the list.
+				if (listeningMethods.Contains(method))
+				{
+					listeningMethods.Remove(method);
+				}
+			}
+
+			//This fires the event off, activating all the listening methods.
+			public void Fire(float credits, ScienceSubject subject, ProtoVessel pv, bool transmitted)
+			{
+				//Loop through the list of listening methods and Invoke them.
+				foreach (Action<float, ScienceSubject, ProtoVessel, bool> method in listeningMethods)
+				{
+					method.Invoke(credits, subject, pv, transmitted);
+				}
+			}
+		}
+
+		// --- FAILURES --------------------------------------------------------------
+
+		public static FailureInfo Failure = new FailureInfo();
+
+		public class FailureInfo
+		{
+			//This is the list of methods that should be activated when the event fires
+			internal List<Action<Part, string, bool>> receivers = new List<Action<Part, string, bool>>();
+
+			//This adds a connection info handler
+			public void Add(Action<Part, string, bool> receiver)
+			{
+				//We only add it if it isn't already added. Just in case.
+				if (!receivers.Contains(receiver))
+				{
+					receivers.Add(receiver);
+				}
+			}
+
+			//This removes a connection info handler
+			public void Remove(Action<Part, string, bool> receiver)
+			{
+				//We also only remove it if it's actually in the list.
+				if (receivers.Contains(receiver))
+				{
+					receivers.Remove(receiver);
+				}
+			}
+
+			public void Notify(Part part, string type, bool failure)
+			{
+				//Loop through the list of listening methods and Invoke them.
+				foreach (Action<Part, string, bool> receiver in receivers)
+				{
+					receiver.Invoke(part, type, failure);
+				}
+			}
+		}
+
+		// --- COMMUNICATION --------------------------------------------------------------
+
+		public static CommInfo Comm = new CommInfo();
+
+		public class CommInfo
+		{
+			//This is the list of methods that should be activated when the event fires
+			internal List<MethodInfo> handlers = new List<MethodInfo>();
+
+			//This adds a connection info handler
+			public void Add(MethodInfo handler)
+			{
+				if(handler == null)
+				{
+					Lib.Log("Error: Kerbalism CommInfo.Add called with null handler");
+					return;
+				}
+				//We only add it if it isn't already added. Just in case.
+				if (!handlers.Contains(handler))
+				{
+					handlers.Add(handler);
+				}
+			}
+
+			//This removes a connection info handler
+			public void Remove(MethodInfo handler)
+			{
+				//We also only remove it if it's actually in the list.
+				if (handlers.Contains(handler))
+				{
+					handlers.Remove(handler);
+				}
+			}
+
+			//This initializes an antennaInfo object. Connection info handlers must
+			//set antennaInfo.strength to a value >= 0, otherwise the antennaInfo will
+			//be passed to the next handler.
+			public void Init(AntennaInfo antennaInfo, Vessel pv)
+			{
+				//Loop through the list of listening methods and Invoke them.
+				foreach (MethodInfo handler in handlers)
+				{
+					try {
+						handler.Invoke(null, new object[] { antennaInfo, pv });
+						if (antennaInfo.strength > -1) return;
+					} catch(Exception e) {
+						Lib.Log("Kerbalism: CommInfo handler threw exception " + e.Message + "\n" + e.ToString());
+					}
+				}
+			}
 		}
 	}
-
-
 } // KERBALISM
-
-
 

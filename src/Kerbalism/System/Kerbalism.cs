@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reflection;
 using UnityEngine;
+using Harmony;
 using KSP.UI.Screens;
 
 
@@ -37,7 +39,7 @@ namespace KERBALISM
 			// enable global access
 			Fetch = this;
 			Communications.NetworkInitialized = false;
-			RemoteTech.NetworkInitialized = false;
+			Communications.NetworkInitializing = false;
 		}
 
 		private void OnDestroy()
@@ -49,6 +51,9 @@ namespace KERBALISM
 		{
 			// deserialize data
 			DB.Load(node);
+
+			Communications.NetworkInitialized = false;
+			Communications.NetworkInitializing = false;
 
 			// initialize everything just once
 			if (!initialized)
@@ -65,6 +70,10 @@ namespace KERBALISM
 				ParticleRenderer.Init();
 				Highlighter.Init();
 				UI.Init();
+
+#if !KSP170 && !KSP16 && !KSP15 && !KSP14
+				Serenity.Init();
+#endif
 
 				// prepare storm data
 				foreach (CelestialBody body in FlightGlobals.Bodies)
@@ -94,6 +103,7 @@ namespace KERBALISM
 				// clear caches
 				Cache.Clear();
 				ResourceCache.Clear();
+				Message.all_logs.Clear();
 
 				// sync main window pos from db
 				UI.Sync();
@@ -130,30 +140,6 @@ namespace KERBALISM
 			// evict oldest entry from vessel cache
 			Cache.Update();
 
-			// vvvv------- This code tests for a theroy that could cause #313
-			// If KSP itself has the same vessel more than once in the
-			// FlightGlobals.Vessels list, it would cause processes to run too many times.
-			// The other possible cause was a Vessel ID collision in Lib.VesselID(), which
-			// only used 4 bytes of a 16 byte GUID to create an ID from.
-			//
-			// If the BUG TRIGGERED message is never observed in the wild,
-			// it is safe to remove this chunk of code.
-			Dictionary<UInt64, Vessel> vessels = new Dictionary<UInt64, Vessel>();
-			foreach (Vessel v in FlightGlobals.Vessels)
-			{
-				if(vessels.ContainsKey(Lib.VesselID(v)))
-				{
-					Lib.Log("THIS SHOULD NOT BE HAPPENING: Vessel " + v.name + " already seen in FlightGlobals.Vessels");
-					Message.Post(Lib.BuildString(Lib.Color("red", "BUG TRIGGERED", true), "\n",
-						v.name + " duplicated in FlightGlobals.Vessels. Please report this on GitHub."));
-				}
-				else
-				{
-					vessels.Add(Lib.VesselID(v), v);
-				}
-			}
-			// ^^^^-------- end theory test code
-
 			// store info for oldest unloaded vessel
 			double last_time = 0.0;
 			Vessel last_v = null;
@@ -162,8 +148,7 @@ namespace KERBALISM
 			Vessel_resources last_resources = null;
 
 			// for each vessel
-			//foreach (Vessel v in FlightGlobals.Vessels)
-			foreach (Vessel v in vessels.Values)
+			foreach (Vessel v in FlightGlobals.Vessels)
 			{
 				// get vessel info from the cache
 				Vessel_info vi = Cache.VesselInfo(v);
@@ -271,14 +256,14 @@ namespace KERBALISM
 
 				Communications.Update(last_v, last_vi, last_vd, last_ec, last_time);
 
-				// transmit science	data
-				Science.Update(last_v, last_vi, last_vd, last_resources, last_time);
-
 				// apply rules
 				Profile.Execute(last_v, last_vi, last_vd, last_resources, last_time);
 
 				// simulate modules in background
 				Background.Update(last_v, last_vi, last_vd, last_resources, last_time);
+
+				// transmit science	data
+				Science.Update(last_v, last_vi, last_vd, last_resources, last_time);
 
 				// apply deferred requests
 				last_resources.Sync(last_v, last_time);
@@ -303,10 +288,10 @@ namespace KERBALISM
 
 		void Update()
 		{
-			if (!RemoteTech.NetworkInitialized)
+			if (!Communications.NetworkInitializing)
 			{
-				RemoteTech.NetworkInitialized = true;
-				if (RemoteTech.Enabled) StartCoroutine(callbacks.NetworkInitialized());
+				Communications.NetworkInitializing = true;
+				StartCoroutine(callbacks.NetworkInitialized());
 			}
 
 			// attach map renderer to planetarium camera once
@@ -340,7 +325,7 @@ namespace KERBALISM
 		// store time until last update for unloaded vessels
 		// note: not using reference_wrapper<T> to increase readability
 		sealed class Unloaded_data { public double time; }; //< reference wrapper
-		static Dictionary<UInt64, Unloaded_data> unloaded = new Dictionary<UInt64, Unloaded_data>();
+		static Dictionary<Guid, Unloaded_data> unloaded = new Dictionary<Guid, Unloaded_data>();
 
 		// used to update storm data on one body per step
 		static int storm_index;
@@ -448,7 +433,7 @@ namespace KERBALISM
 						break;
 					}
 				}
-				ResourceCache.Produce(v, monoprop_name, monoprop_amount);
+				ResourceCache.Produce(v, monoprop_name, monoprop_amount, "rescue");
 
 				// give the vessel some supplies
 				Profile.SetupRescue(v);
@@ -478,7 +463,7 @@ namespace KERBALISM
 						{
 							if (setup.tech == selected.tech.techID)
 							{
-								labels.Add(Lib.BuildString(setup.name, " in ", cfg.title));
+								labels.Add(Lib.BuildString(setup.name, " to ", cfg.title));
 							}
 						}
 					}
@@ -598,7 +583,7 @@ namespace KERBALISM
 			// call action scripts
 			// - avoid creating vessel data for invalid vessels
 			Vessel v = FlightGlobals.ActiveVessel;
-			if (v != null && DB.vessels.ContainsKey(Lib.RootID(v)))
+			if (v != null && DB.vessels.ContainsKey(Lib.VesselID(v)))
 			{
 				// get computer
 				Computer computer = DB.Vessel(v).computer;
@@ -767,7 +752,7 @@ namespace KERBALISM
 					Reliability.CauseMalfunction(v);
 					break;
 				case KerbalBreakdown.wrong_valve:
-					res.Consume(res.amount * res_penalty);
+					res.Consume(res.amount * res_penalty, "breakdown");
 					break;
 			}
 

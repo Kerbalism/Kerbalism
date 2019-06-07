@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 using KSP.Localization;
 
@@ -158,8 +157,8 @@ namespace KERBALISM
 			if(filter_types.Contains(vesselType)) return false;
 			if(filter.Length <= 0 || filter == filter_placeholder) return true;
 
-			List<string> filterTags = filter.ToLower().Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()).ToList();
-			List<string> vesselTags = vesselGroup.ToLower().Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()).ToList();
+			List<string> filterTags = Lib.Tokenize(filter.ToLower(), ' ');
+			List<string> vesselTags = Lib.Tokenize(vesselGroup.ToLower(), ' ');
 
 			foreach (string tag in filterTags)
 			{
@@ -249,7 +248,7 @@ namespace KERBALISM
 			if (Features.Reliability) Indicator_reliability(p, v, vi);
 
 			// signal indicator
-			if (RemoteTech.Enabled || HighLogic.fetch.currentGame.Parameters.Difficulty.EnableCommNet) Indicator_signal(p, v, vi);
+			if (API.Comm.handlers.Count > 0 || HighLogic.fetch.currentGame.Parameters.Difficulty.EnableCommNet) Indicator_signal(p, v, vi);
 
 			// done
 			return true;
@@ -364,6 +363,9 @@ namespace KERBALISM
 				case VesselType.Rover:   return disabled ? Icons.rover_black :   Icons.rover_white;
 				case VesselType.Ship:    return disabled ? Icons.ship_black :    Icons.ship_white;
 				case VesselType.Station: return disabled ? Icons.station_black : Icons.station_white;
+#if !KSP170 && !KSP16 && !KSP15 && !KSP14
+				case VesselType.DeployedScienceController: return disabled ? Icons.controller_black : Icons.controller_white;
+#endif
 				default: return Icons.empty; // this really shouldn't happen.
 			}
 		}
@@ -521,6 +523,11 @@ namespace KERBALISM
 
 		void Indicator_ec(Panel p, Vessel v, Vessel_info vi)
 		{
+#if !KSP170 && !KSP16 && !KSP15 && !KSP14
+			if (v.vesselType == VesselType.DeployedScienceController)
+				return;
+#endif
+
 			Resource_info ec = ResourceCache.Info(v, "ElectricCharge");
 			Supply supply = Profile.supplies.Find(k => k.resource == "ElectricCharge");
 			double low_threshold = supply != null ? supply.low_threshold : 0.15;

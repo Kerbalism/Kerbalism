@@ -77,25 +77,24 @@ namespace KERBALISM
 		private void ExecuteRecipe(double k, Vessel_resources resources,  double elapsed_s, Resource_recipe recipe)
 		{
 			// only execute processes if necessary
-			if (Math.Abs(k) > double.Epsilon)
+			if (Math.Abs(k) < double.Epsilon) return;
+
+			foreach (var p in inputs)
 			{
-				foreach (var p in inputs)
-				{
-					recipe.Input(p.Key, p.Value * k * elapsed_s);
-				}
-				foreach (var p in outputs)
-				{
-					recipe.Output(p.Key, p.Value * k * elapsed_s, dump.Check(p.Key));
-				}
-				foreach (var p in cures)
-				{
-					// TODO this assumes that the cure modifies always put the resource first
-					// works: modifier = _SickbayRDU,zerog works
-					// fails: modifier = zerog,_SickbayRDU
-					recipe.Cure(p.Key, p.Value * k * elapsed_s, modifiers[0]);
-				}
-				resources.Transform(recipe);
+				recipe.Input(p.Key, p.Value * k * elapsed_s);
 			}
+			foreach (var p in outputs)
+			{
+				recipe.Output(p.Key, p.Value * k * elapsed_s, dump.Check(p.Key));
+			}
+			foreach (var p in cures)
+			{
+				// TODO this assumes that the cure modifies always put the resource first
+				// works: modifier = _SickbayRDU,zerog works
+				// fails: modifier = zerog,_SickbayRDU
+				recipe.Cure(p.Key, p.Value * k * elapsed_s, modifiers[0]);
+			}
+			resources.Transform(recipe);
 		}
 
 		public void Execute(Vessel v, Vessel_info vi, Vessel_resources resources, double elapsed_s)
@@ -105,7 +104,7 @@ namespace KERBALISM
 			// remember that when a process is enabled the units of process are stored in the PartModule as a pseudo-resource
 			double k = Modifiers.Evaluate(v, vi, resources, modifiers);
 
-			Resource_recipe recipe = new Resource_recipe((Part)null);
+			Resource_recipe recipe = new Resource_recipe((Part)null, name);
 			ExecuteRecipe(k, resources, elapsed_s, recipe);
 		}
 

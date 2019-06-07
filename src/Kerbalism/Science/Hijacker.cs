@@ -37,16 +37,23 @@ namespace KERBALISM
 				// collect and deduce all info necessary
 				MetaData meta = new MetaData(data, page.host);
 
+				// ignore non-collectable experiments
+				if (!meta.is_collectable)
+				{
+					page.OnKeepData(data);
+					continue;					
+				}
+
 				// record data
 				bool recorded = false;
 				if (!meta.is_sample)
 				{
-					Drive drive = DB.Vessel(meta.vessel).BestDrive(data.dataAmount);
+					Drive drive = Drive.FileDrive(meta.vessel, data.dataAmount);
 					recorded = drive.Record_file(data.subjectID, data.dataAmount);
 				}
 				else
 				{
-					Drive drive = DB.Vessel(meta.vessel).BestDrive(Lib.SampleSizeToSlots(data.dataAmount));
+					Drive drive = Drive.SampleDrive(meta.vessel, data.dataAmount, data.subjectID);
 
 					var experimentInfo = Science.Experiment(data.subjectID);
 					var sampleMass = Science.GetSampleMass(data.subjectID);
@@ -67,15 +74,17 @@ namespace KERBALISM
 					page.OnDiscardData(data);
 
 					// inform the user
+					var exp = Science.Experiment(data.subjectID);
 					Message.Post(
-						Lib.BuildString("<b>", Science.Experiment(data.subjectID).fullname, "</b> recorded"),
+						Lib.BuildString("<b>", exp.FullName(data.subjectID), "</b> recorded"),
 						!meta.is_rerunnable ? Localizer.Format("#KERBALISM_Science_inoperable") : string.Empty
 					);
 				}
 				else
 				{
+					var exp = Science.Experiment(data.subjectID);
 					Message.Post(
-						Lib.Color("red", Lib.BuildString(Science.Experiment(data.subjectID).fullname, " can not be stored")),
+						Lib.Color("red", Lib.BuildString(exp.FullName(data.subjectID), " can not be stored")),
 						"Not enough space on hard drive"
 					);
 				}
@@ -118,6 +127,12 @@ namespace KERBALISM
 			// collect and deduce all data necessary just once
 			MetaData meta = new MetaData(data, page.host);
 
+			if (!meta.is_collectable)
+			{
+				dialog.Dismiss();
+				return;
+			}
+
 			// hijack the dialog
 			if (!meta.is_rerunnable)
 			{
@@ -156,12 +171,12 @@ namespace KERBALISM
 			bool recorded = false;
 			if (!meta.is_sample)
 			{
-				Drive drive = DB.Vessel(meta.vessel).BestDrive(data.dataAmount);
+				Drive drive = Drive.FileDrive(meta.vessel, data.dataAmount);
 				recorded = drive.Record_file(data.subjectID, data.dataAmount);
 			}
 			else
 			{
-				Drive drive = DB.Vessel(meta.vessel).BestDrive(Lib.SampleSizeToSlots(data.dataAmount));
+				Drive drive = Drive.SampleDrive(meta.vessel, data.dataAmount, data.subjectID);
 
 				var experimentInfo = Science.Experiment(data.subjectID);
 				var sampleMass = Science.GetSampleMass(data.subjectID);
@@ -175,7 +190,7 @@ namespace KERBALISM
 				// flag for sending if specified
 				if (!meta.is_sample && send)
 				{
-					foreach(var d in DB.Vessel(meta.vessel).drives.Values)
+					foreach(var d in Drive.GetDrives(meta.vessel))
 						d.Send(data.subjectID, true);
 				}
 
@@ -185,16 +200,18 @@ namespace KERBALISM
 				// dismiss the dialog and popups
 				Dismiss(data);
 
+				var exp = Science.Experiment(data.subjectID);
 				// inform the user
 				Message.Post(
-					Lib.BuildString("<b>", Science.Experiment(data.subjectID).fullname, "</b> recorded"),
+					Lib.BuildString("<b>", exp.FullName(data.subjectID), "</b> recorded"),
 					!meta.is_rerunnable ? Localizer.Format("#KERBALISM_Science_inoperable") : string.Empty
 				);
 			}
 			else
 			{
+				var exp = Science.Experiment(data.subjectID);
 				Message.Post(
-					Lib.Color("red", Lib.BuildString(Science.Experiment(data.subjectID).fullname, " can not be stored")),
+					Lib.Color("red", Lib.BuildString(exp.FullName(data.subjectID), " can not be stored")),
 					"Not enough space on hard drive"
 				);
 			}
@@ -238,6 +255,9 @@ namespace KERBALISM
 			// get the stock experiment module storing the data (if that's the case)
 			experiment = container != null ? container as ModuleScienceExperiment : null;
 
+			// determine if data is supposed to be removable from the part
+			is_collectable = experiment == null || experiment.dataIsCollectable;
+
 			// determine if this is a sample (non-transmissible)
 			// - if this is a third-party data container/experiment module, we assume it is transmissible
 			// - stock experiment modules are considered sample if xmit scalar is below a threshold instead
@@ -254,6 +274,7 @@ namespace KERBALISM
 		public ModuleScienceExperiment experiment;      // module containing the data, as a stock experiment module
 		public bool is_sample;                          // true if the data can't be transmitted
 		public bool is_rerunnable;                      // true if the container/experiment can collect data multiple times
+		public bool is_collectable;                     // true if data can be collected from the module / part
 	}
 
 

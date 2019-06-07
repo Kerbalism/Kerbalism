@@ -8,7 +8,7 @@ namespace KerbalismBootstrap
 		public static AssemblyLoader.LoadedAssembly FindKerbalismBin()
 		{
 			foreach (var a in AssemblyLoader.loadedAssemblies)
-				if (a.name == BinName)
+				if (a.name == BinName || a.name == BinName_R)
 					return a;
 			return null;
 		}
@@ -29,6 +29,14 @@ namespace KerbalismBootstrap
 			get
 			{
 				return "Kerbalism" + Versioning.version_major.ToString() + Versioning.version_minor.ToString();
+			}
+		}
+
+		public static string BinName_R
+		{
+			get
+			{
+				return "Kerbalism" + Versioning.version_major.ToString() + Versioning.version_minor.ToString() + Versioning.Revision;
 			}
 		}
 

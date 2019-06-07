@@ -1,16 +1,16 @@
-﻿namespace KERBALISM
+﻿using System;
+using System.Collections.Generic;
+
+namespace KERBALISM
 {
 	/// <summary> Return antenna info for RemoteTech </summary>
-	public sealed class AntennaInfoRT
+	public sealed class AntennaInfoRT: AntennaInfo
 	{
-		/// <summary> science data rate. note that internal transmitters can not transmit science data only telemetry data </summary>
-		public double rate = 0.0;
-
-		/// <summary> ec cost </summary>
-		public double ec = 0.0;
-
-		public AntennaInfoRT(Vessel v)
+		public AntennaInfoRT(Vessel v, bool powered, bool storm)
 		{
+			RemoteTech.SetPoweredDown(v.id, !powered);
+			RemoteTech.SetCommsBlackout(v.id, storm);
+
 			// if vessel is loaded, don't calculate ec, RT already handle it.
 			if (v.loaded)
 			{
@@ -87,6 +87,61 @@
 						}
 					}
 				}
+			}
+
+			Init(v, powered, storm);
+		}
+
+		private void Init(Vessel v, bool powered, bool storm)
+		{
+			// are we connected
+			if (RemoteTech.Connected(v.id))
+			{
+				linked = RemoteTech.ConnectedToKSC(v.id);
+				status = RemoteTech.TargetsKSC(v.id) ? (int)LinkStatus.direct_link : (int)LinkStatus.indirect_link;
+				target_name = status == (int)LinkStatus.direct_link ? Lib.Ellipsis("DSN: " + (RemoteTech.NameTargetsKSC(v.id) ?? ""), 20) :
+					Lib.Ellipsis(RemoteTech.NameFirstHopToKSC(v.id) ?? "", 20);
+
+				Guid[] controlPath = null;
+				if (linked) controlPath = RemoteTech.GetCommsControlPath(v.id);
+
+				// Get the lowest rate in ControlPath
+				if (controlPath != null)
+				{
+					// Get rate from the firstHop, each Hop will do the same logic, then we will have the lowest rate for the path
+					if (controlPath.Length > 0)
+					{
+						double dist = RemoteTech.GetCommsDistance(v.id, controlPath[0]);
+						strength = 1 - (dist / Math.Max(RemoteTech.GetCommsMaxDistance(v.id, controlPath[0]), 1));
+						strength = Math.Pow(strength, Settings.DataRateDampingExponentRT);
+
+						// If using relay, get the lowest rate
+						if (status != (int)LinkStatus.direct_link)
+						{
+							Vessel target = FlightGlobals.FindVessel(controlPath[0]);
+							strength *= Cache.VesselInfo(target).connection.strength;
+							rate = Math.Min(Cache.VesselInfo(target).connection.rate, rate * strength);
+						}
+						else rate *= strength;
+					}
+
+					control_path = new List<string[]>();
+					Guid i = v.id;
+					foreach (Guid id in controlPath)
+					{
+						var name = Lib.Ellipsis(RemoteTech.GetSatelliteName(i) + " \\ " + RemoteTech.GetSatelliteName(id), 35);
+						var value = Lib.HumanReadablePerc(Math.Ceiling((1 - (RemoteTech.GetCommsDistance(i, id) / RemoteTech.GetCommsMaxDistance(i, id))) * 10000) / 10000, "F2");
+						var tooltip = "Distance: " + Lib.HumanReadableRange(RemoteTech.GetCommsDistance(i, id)) +
+							"\nMax Distance: " + Lib.HumanReadableRange(RemoteTech.GetCommsMaxDistance(i, id));
+						control_path.Add(new string[] { name, value, tooltip });
+						i = id;
+					}
+				}
+			}
+			// is loss of connection due to a blackout
+			else if (RemoteTech.GetCommsBlackout(v.id))
+			{
+				status = storm ? (int)LinkStatus.storm : (int)LinkStatus.plasma;
 			}
 		}
 	}

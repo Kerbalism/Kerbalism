@@ -131,7 +131,7 @@ namespace KERBALISM
 			}
 
 			// add resource to the vessel
-			ResourceCache.Produce(v, resource, on_rescue);
+			ResourceCache.Produce(v, resource, on_rescue, "rescue");
 		}
 
 

@@ -11,3 +11,6 @@ In each folder for a Kerbalism part you will find:
 - Final folder that contains finished files ready to be used in the GameData/Kerbalism/Parts folders.
 
 For converting textures to the DDS format you can use the DDS4KSP app available on `GitHub <https://github.com/Telanor/DDS4KSP/releases>`_ this app will automatically flip the texture and use the correct DXT format for KSP, remember to uncheck the create mipmaps option though ;)
+
+
+antenna_array.rst is a preliminary model for a sensor array

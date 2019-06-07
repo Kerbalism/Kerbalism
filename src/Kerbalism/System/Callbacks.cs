@@ -20,8 +20,12 @@ namespace KERBALISM
 			GameEvents.onVesselRecovered.Add(this.VesselRecovered);
 			GameEvents.onVesselTerminated.Add(this.VesselTerminated);
 			GameEvents.onVesselWillDestroy.Add(this.VesselDestroyed);
-			GameEvents.onVesselPartCountChanged.Add(this.VesselPartCountChanged);
+			GameEvents.onNewVesselCreated.Add(this.VesselCreated);
 			GameEvents.onPartCouple.Add(this.VesselDock);
+
+			GameEvents.onVesselChange.Add((v) => { Cache.PurgeObjects(v); });
+			GameEvents.onVesselStandardModification.Add((v) => { Cache.PurgeObjects(v); });
+
 			GameEvents.onPartDie.Add(this.PartDestroyed);
 			GameEvents.OnTechnologyResearched.Add(this.TechResearched);
 			GameEvents.onGUIEditorToolbarReady.Add(this.AddEditorCategory);
@@ -44,7 +48,7 @@ namespace KERBALISM
 			GameEvents.onGUILaunchScreenSpawn.Add((_) => visible = false);
 			GameEvents.onGUILaunchScreenDespawn.Add(() => visible = true);
 
-			GameEvents.onGameSceneSwitchRequested.Add((_) => visible = false);
+			GameEvents.onGameSceneSwitchRequested.Add((_) => { visible = false; Cache.PurgeObjects(); });
 			GameEvents.onGUIApplicationLauncherReady.Add(() => visible = true);
 
 			GameEvents.CommNet.OnNetworkInitialized.Add(() => Kerbalism.Fetch.StartCoroutine(NetworkInitialized()));
@@ -58,10 +62,14 @@ namespace KERBALISM
 			yield return new WaitForSeconds(2);
 			Lib.DebugLog("NetworkInitialized");
 			Communications.NetworkInitialized = true;
+			RemoteTech.Startup();
 		}
 
 		void ToEVA(GameEvents.FromToAction<Part, Part> data)
 		{
+			Cache.PurgeObjects(data.from.vessel);
+			Cache.PurgeObjects(data.to.vessel);
+
 			// get total crew in the origin vessel
 			double tot_crew = Lib.CrewCount(data.from.vessel) + 1.0;
 
@@ -102,10 +110,11 @@ namespace KERBALISM
 			// We can't just add the monoprop here, because that doesn't always work. It might be related
 			// to the fact that stock KSP wants to add 5 units of monoprop to new EVAs. Instead of fighting KSP here,
 			// we just let it do it's thing and set our amount later in EVA.cs - which seems to work just fine.
-			Cache.VesselInfo(data.to.vessel).evaPropQuantity = evaPropQuantity;
+			// don't put that into Cache.VesselInfo because that can be deleted before we get there
+			Cache.SetVesselObjectsCache(data.to.vessel, "eva_prop", evaPropQuantity);
 
 			// Airlock loss
-			resources.Consume(data.from.vessel, "Nitrogen", PreferencesLifeSupport.Instance.evaAtmoLoss);
+			resources.Consume(data.from.vessel, "Nitrogen", PreferencesLifeSupport.Instance.evaAtmoLoss, "airlock");
 
 			// show warning if there is little or no EVA propellant in the suit
 			if (evaPropQuantity <= 0.05 && !Lib.Landed(data.from.vessel))
@@ -141,7 +150,11 @@ namespace KERBALISM
 			Drive.Transfer(data.from.vessel, data.to.vessel, true);
 
 			// forget vessel data
-			DB.vessels.Remove(Lib.RootID(data.from.vessel));
+			DB.vessels.Remove(Lib.VesselID(data.from.vessel));
+			Drive.Purge(data.from.vessel);
+
+			Cache.PurgeObjects(data.from.vessel);
+			Cache.PurgeObjects(data.to.vessel);
 
 			// execute script
 			DB.Vessel(data.to.vessel).computer.Execute(data.to.vessel, ScriptType.eva_in);
@@ -158,12 +171,12 @@ namespace KERBALISM
 			if (!Features.Science || HighLogic.CurrentGame.Mode == Game.Modes.SANDBOX)
 				return;
 
+			var vesselID = Lib.VesselID(v);
 			// get the drive data from DB
-			uint root_id = v.protoPartSnapshots[v.rootIndex].flightID;
-			if (!DB.vessels.ContainsKey(root_id))
+			if (!DB.vessels.ContainsKey(vesselID))
 				return;
 
-			foreach (Drive drive in DB.vessels[root_id].drives.Values)
+			foreach (Drive drive in Drive.GetDrives(v))
 			{
 				// for each file in the drive
 				foreach (KeyValuePair<string, File> p in drive.files)
@@ -180,14 +193,14 @@ namespace KERBALISM
 					ScienceSubject subject = ResearchAndDevelopment.GetSubjectByID(filename);
 
 					// credit science
-					double credits = Science.Credit(filename, file.size, false, v);
+					float credits = Science.Credit(filename, file.size, false, v);
 
 					// create science widged
 					ScienceSubjectWidget widged = ScienceSubjectWidget.Create
 					(
 					  subject,            // subject
 					  (float)file.size,   // data gathered
-					  (float)credits,     // science points
+					  credits,            // science points
 					  dialog              // recovery dialog
 					);
 
@@ -210,14 +223,14 @@ namespace KERBALISM
 					ScienceSubject subject = ResearchAndDevelopment.GetSubjectByID(filename);
 
 					// credit science
-					double credits = Science.Credit(filename, sample.size, false, v);
+					float credits = Science.Credit(filename, sample.size, false, v);
 
 					// create science widged
 					ScienceSubjectWidget widged = ScienceSubjectWidget.Create
 					(
 					  subject,            // subject
 					  (float)sample.size, // data gathered
-					  (float)credits,     // science points
+					  credits,            // science points
 					  dialog              // recovery dialog
 					);
 
@@ -253,16 +266,12 @@ namespace KERBALISM
 				DB.RecoverKerbal(c.name);
 			}
 
-			// for each part
-			foreach (ProtoPartSnapshot p in pv.protoPartSnapshots)
-			{
-				// forget all potential vessel data
-				DB.vessels.Remove(p.flightID);
-			}
+			DB.vessels.Remove(Lib.VesselID(pv));
 
 			// purge the caches
-			Cache.Purge(pv);
 			ResourceCache.Purge(pv);
+			Drive.Purge(pv);
+			Cache.PurgeObjects(pv);
 		}
 
 
@@ -272,27 +281,25 @@ namespace KERBALISM
 			foreach (ProtoCrewMember c in pv.GetVesselCrew())
 				DB.KillKerbal(c.name, true);
 
-			// for each part
-			foreach (ProtoPartSnapshot p in pv.protoPartSnapshots)
-			{
-				// forget all potential vessel data
-				DB.vessels.Remove(p.flightID);
-			}
+			DB.vessels.Remove(Lib.VesselID(pv));
 
 			// purge the caches
-			Cache.Purge(pv);
 			ResourceCache.Purge(pv);
+			Drive.Purge(pv);
+			Cache.PurgeObjects(pv);
 		}
 
+		void VesselCreated(Vessel v)
+		{
+#if !KSP170 && !KSP16 && !KSP15 && !KSP14
+			if (Serenity.GetModuleGroundExpControl(v) != null)
+				v.vesselName = Lib.BuildString(v.mainBody.name, " Surface Experiment ", Lib.Greek());
+#endif
+		}
 
 		void VesselDestroyed(Vessel v)
 		{
-			// for each part
-			foreach (Part p in v.parts)
-			{
-				// forget all potential vessel data
-				DB.vessels.Remove(p.flightID);
-			}
+			DB.vessels.Remove(Lib.VesselID(v));
 
 			// rescan the damn kerbals
 			// - vessel crew is empty at destruction time
@@ -315,20 +322,24 @@ namespace KERBALISM
 				DB.KillKerbal(n, false);
 			}
 
-			// purge the caches
-			Cache.Purge(v);
-			ResourceCache.Purge(v);
-		}
 
+			// purge the caches
+			ResourceCache.Purge(v);
+			Drive.Purge(v);
+			Cache.PurgeObjects(v);
+		}
 
 		void VesselDock(GameEvents.FromToAction<Part, Part> e)
 		{
+			var fromVessel = e.from.vessel;
+			DB.vessels.Remove(Lib.VesselID(fromVessel));
+
 			// note:
 			//  we do not forget vessel data here, it just became inactive
 			//  and ready to be implicitly activated again on undocking
 			//  we do however tweak the data of the vessel being docked a bit,
 			//  to avoid states getting out of sync, leading to unintuitive behaviours
-			VesselData vd = DB.Vessel(e.from.vessel);
+			VesselData vd = DB.Vessel(fromVessel);
 			vd.msg_belt = false;
 			vd.msg_signal = false;
 			vd.storm_age = 0.0;
@@ -337,68 +348,33 @@ namespace KERBALISM
 			vd.supplies.Clear();
 			vd.scansat_id.Clear();
 
-			// merge drives data
-			Drive.Transfer(e.from.vessel, e.to.vessel);
+			Cache.PurgeObjects();
 		}
 
-
-		void VesselPartCountChanged(Vessel vessel)
+		void PartDestroyed(Part p)
 		{
-			//Cache.Purge(vessel);
-			/* This was the old VesselModified callback.
-			 * Maybe it's no longer needed. We'll see.		
-			DB.vessels.Remove(vessel);
-
 			// do nothing in the editor
 			if (Lib.IsEditor())
 				return;
 
-			// bah
-			if (string.IsNullOrEmpty(vessel.vesselName))
+			var vi = Cache.VesselInfo(p.vessel);
+			if (!vi.is_valid)
 				return;
 
-			// did we gain or loose a hard drive?
-			vessel
+			Cache.PurgeObjects(p.vessel);
 
-			// get drive from first vessel
-			// - there is a possibility this will create it
-			// - we avoid adding a db entry for invalid vessels
-			Drive drive_a = Cache.VesselInfo(vessel_a).is_valid ? DB.Vessel(vessel_a).drive : new Drive();
-
-			// for each loaded vessel
-			foreach (Vessel vessel_b in FlightGlobals.VesselsLoaded)
+			if(DB.drives.ContainsKey(p.flightID))
 			{
-				// do not check against itself
-				if (vessel_a.id == vessel_b.id)
-					continue;
-
-				// get drive of the other vessel
-				// - there is a possibility this will create it
-				// - we avoid adding a db entry for invalid vessels
-				Drive drive_b = Cache.VesselInfo(vessel_b).is_valid ? DB.Vessel(vessel_b).drive : new Drive();
-
-				// if location of A is now in B, or viceversa
-				// - this support the case when one or both the drives locations are 0
-				if (vessel_a.parts.Find(k => k.flightID == drive_b.location) != null
-				 || vessel_b.parts.Find(k => k.flightID == drive_a.location) != null)
+				foreach(var pair in DB.drives[p.flightID].files)
 				{
-					// swap the drives
-					Lib.Swap(ref DB.Vessel(vessel_a).drive, ref DB.Vessel(vessel_b).drive);
-
-					// done, no need to go through the rest of the loaded vessels
-					break;
+					if(pair.Value.buff > double.Epsilon)
+					{
+						Science.Credit(pair.Key, pair.Value.buff, true, p.vessel.protoVessel);
+					}
 				}
 			}
-			*/
+			DB.drives.Remove(p.flightID);
 		}
-
-
-		void PartDestroyed(Part p)
-		{
-			// forget all potential vessel data
-			DB.vessels.Remove(p.flightID);
-		}
-
 
 		void AddEditorCategory()
 		{
@@ -409,7 +385,6 @@ namespace KERBALISM
 				PartCategorizer.AddCustomSubcategoryFilter(category, "Kerbalism", "Kerbalism", icon, k => k.tags.IndexOf("_kerbalism", StringComparison.Ordinal) >= 0);
 			}
 		}
-
 
 		void TechResearched(GameEvents.HostTargetAction<RDTech, RDTech.OperationResult> data)
 		{
@@ -426,7 +401,6 @@ namespace KERBALISM
 					{
 						if (setup.tech == data.host.techID)
 						{
-
 							labels.Add(Lib.BuildString(setup.name, " in ", cfg.title));
 						}
 					}

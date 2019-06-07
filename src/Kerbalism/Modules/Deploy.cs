@@ -116,7 +116,7 @@ namespace KERBALISM
 			}
 
 			// If isConsuming
-			if (isConsuming && resources != null) resources.Consume(actualCost * Kerbalism.elapsed_s);
+			if (isConsuming && resources != null) resources.Consume(actualCost * Kerbalism.elapsed_s, "deploy");
 		}
 
 		public virtual bool GetIsConsuming()
@@ -196,7 +196,7 @@ namespace KERBALISM
 
 		public static void BackgroundUpdate(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, Deploy deploy, Resource_info ec, double elapsed_s)
 		{
-			if (deploy.isConsuming) ec.Consume(deploy.extra_Cost * elapsed_s);
+			if (deploy.isConsuming) ec.Consume(deploy.extra_Cost * elapsed_s, "deploy");
 		}
 	}
 }

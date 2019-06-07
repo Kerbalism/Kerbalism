@@ -68,7 +68,7 @@ namespace KERBALISM
 				}
 
 				// scan parts for gravity ring
-				if (ResourceCache.Info(v, "ElectricCharge").amount >= 0.01)
+				if (Lib.IsPowered(v))
 				{
 					firm_ground |= Lib.HasModule<GravityRing>(v, k => k.deployed);
 				}
@@ -91,7 +91,7 @@ namespace KERBALISM
 				}
 
 				// scan parts for gravity ring
-				if (ResourceCache.Info(v, "ElectricCharge").amount >= 0.01)
+				if (Lib.IsPowered(v))
 				{
 					firm_ground |= Lib.HasModule(v.protoVessel, "GravityRing", k => Lib.Proto.GetBool(k, "deployed"));
 				}
