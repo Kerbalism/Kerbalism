@@ -25,7 +25,7 @@ do
 	bash "buildscripts/Travis/avc_to_assembly.sh"
 	msbuild /p:DefineConstants="KSP${current_kspbin}" Kerbalism.sln /t:Build /p:Configuration="Release"
 	/bin/cp -rf "src/KerbalismBootstrap/obj/Release/KerbalismBootstrap.dll" "GameData/Kerbalism/KerbalismBootstrap.dll"
-	/bin/cp -rf "src/Kerbalism/obj/Release/Kerbalism.dll" "GameData/Kerbalism/Kerbalism${current_kspbin}.bin"
+	/bin/cp -rf "src/Kerbalism/obj/Release/Kerbalism.dll" "GameData/Kerbalism/Kerbalism${current_kspbin}.kbin"
 	rm -f $filename
 done
 cp $TRAVIS_BUILD_DIR/packages/Lib.Harmony.1.2.0.1/lib/net35/0Harmony.dll GameData/Kerbalism/0Harmony.1.2.0.1.dll
