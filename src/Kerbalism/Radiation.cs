@@ -365,7 +365,7 @@ namespace KERBALISM
 				{
 					gsm.y_axis = body.RotationAxis; //< initial guess
 					gsm.z_axis = Vector3.Cross(gsm.x_axis, gsm.y_axis).normalized;
-					gsm.y_axis = Vector3.Cross(gsm.x_axis, gsm.z_axis).normalized; //< orthonormalize
+					gsm.y_axis = Vector3.Cross(gsm.z_axis, gsm.x_axis).normalized; //< orthonormalize
 				}
 				else
 				{
@@ -519,9 +519,9 @@ namespace KERBALISM
 				Space gsm_tilted = Gsm_space(rb, true);
 
 				// [debug] show axis
-				LineRenderer.Commit(gsm_tilted.origin, gsm_tilted.origin + gsm_tilted.x_axis * gsm_tilted.scale * 5.0f, Color.red);
-				LineRenderer.Commit(gsm_tilted.origin, gsm_tilted.origin + gsm_tilted.y_axis * gsm_tilted.scale * 5.0f, Color.green);
-				LineRenderer.Commit(gsm_tilted.origin, gsm_tilted.origin + gsm_tilted.z_axis * gsm_tilted.scale * 5.0f, Color.blue);
+				//LineRenderer.Commit(gsm_tilted.origin, gsm_tilted.origin + gsm_tilted.x_axis * gsm_tilted.scale * 5.0f, Color.red);
+				//LineRenderer.Commit(gsm_tilted.origin, gsm_tilted.origin + gsm_tilted.y_axis * gsm_tilted.scale * 5.0f, Color.green);
+				//LineRenderer.Commit(gsm_tilted.origin, gsm_tilted.origin + gsm_tilted.z_axis * gsm_tilted.scale * 5.0f, Color.blue);
 
 				// enable material
 				mat.SetPass(0);
