@@ -1,3 +1,11 @@
+## v3.0.1 for all versions of KSP from 1.4.0 to 1.7.x
+
+ - 2019-06-08
+
+### Changes since the last release
+
+* Fixed a gamebreaking bug with science.
+
 ## v3.0 for all versions of KSP from 1.4.0 to 1.7.x
 
  - 2019-06-07
