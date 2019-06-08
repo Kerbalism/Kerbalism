@@ -165,6 +165,7 @@ namespace KERBALISM
 			this.model = RadiationModel.none;
 			this.body = body;
 			this.reference = 0;
+			this.geomagnetic_pole = new Vector3(0.0f, 1.0f, 0.0f);
 		}
 
 		// ctor: deserialize
@@ -174,6 +175,8 @@ namespace KERBALISM
 			radiation_inner = Lib.ConfigValue(node, "radiation_inner", 0.0) / 3600.0;
 			radiation_outer = Lib.ConfigValue(node, "radiation_outer", 0.0) / 3600.0;
 			radiation_pause = Lib.ConfigValue(node, "radiation_pause", 0.0) / 3600.0;
+			geomagnetic_pole_lat = Lib.ConfigValue(node, "geomagnetic_pole_lat", 90.0f);
+			geomagnetic_pole_lon = Lib.ConfigValue(node, "geomagnetic_pole_lon", 0.0f);
 			reference = Lib.ConfigValue(node, "reference", 0);
 
 			// get the radiation environment
@@ -181,14 +184,21 @@ namespace KERBALISM
 
 			// get the body
 			this.body = body;
-		}
 
+			float x = Mathf.Cos(geomagnetic_pole_lat) * Mathf.Cos(geomagnetic_pole_lon);
+			float y = Mathf.Sin(geomagnetic_pole_lat);
+			float z = Mathf.Cos(geomagnetic_pole_lat) * Mathf.Sin(geomagnetic_pole_lon);
+			geomagnetic_pole = new Vector3(x, y, z) * -1;
+		}
 
 		public string name;               // name of the body
 		public double radiation_inner;    // rad/s inside inner belt
 		public double radiation_outer;    // rad/s inside outer belt
 		public double radiation_pause;    // rad/s inside magnetopause
 		public int reference;          // index of the body that determine x-axis of the gsm-space
+		public float geomagnetic_pole_lat = 90.0f;
+		public float geomagnetic_pole_lon = 0.0f;
+		public Vector3 geomagnetic_pole;
 
 		// shortcut to the radiation environment
 		public RadiationModel model;
@@ -340,60 +350,58 @@ namespace KERBALISM
 		// - the space is then orthonormalized
 		// - if the reference body is the same as the body,
 		//   the galactic rotation vector is used as x-axis instead
-		public static Space Gsm_space(CelestialBody body, CelestialBody reference)
+		public static Space Gsm_space(RadiationBody rb, bool tilted)
 		{
+			CelestialBody body = rb.body;
+			CelestialBody reference = FlightGlobals.Bodies[rb.reference];
+
 			Space gsm;
 			gsm.origin = ScaledSpace.LocalToScaledSpace(body.position);
 			gsm.scale = ScaledSpace.InverseScaleFactor * (float)body.Radius;
 			if (body != reference)
 			{
-				// gsm.y_axis = (Vector3)body.RotationAxis; //< initial guess
-
-				/* "Do not try and tilt the planet, that's impossible.
-				 * Instead, only try to realize the truth...there is no tilt.
-				 * Then you'll see that it is not the planet that tilts, it is
-				 * the rest of the universe."
-				 * 
-				 * - The Matrix
-				 * 
-				 * 		 
-				 * the orbits are inclined (with respect to the equator of the
-				 * Earth), but all axes are parallel. and aligned with the unity
-				 * world z axis. or is it y? whatever, KSP uses two conventions
-				 * in different places.
-				 * if you use Principia, the current main body (or if there is
-				 * none, e.g. in the space centre or tracking station, the home
-				 * body) is not tilted (its axis is the unity vertical.	 
-				 * you can fetch the full orientation (tilt and rotation) of any
-				 * body (including the current main body) in the current unity
-				 * frame (which changes of course, because sometimes KSP uses a
-				 * rotating frame, and because Principia tilts the universe
-				 * differently if the current main body changes) as the
-				 * orientation of the scaled space body
-				 * 		 
-				 * body.scaledBody.transform.rotation or something along those lines
-				 * 
-				 * - egg
-				 */
-
-				// Quaternion rotation = Quaternion.Euler(10, 20, 30);
-				//Quaternion rotation = body.scaledBody.transform.rotation;
-				//gsm.y_axis = (rotation * body.RotationAxis).normalized;
-
-				float lat = 80.5f;
-				float lon = -72.8f;
-				float x = Mathf.Cos(lat) * Mathf.Cos(lon);
-				float y = Mathf.Sin(lat);
-				float z = Mathf.Cos(lat) * Mathf.Sin(lon);
-				//gsm.y_axis = new Vector3(x, y, z);
-
 				gsm.x_axis = ((Vector3)ScaledSpace.LocalToScaledSpace(reference.position) - gsm.origin).normalized;
+				if(!tilted)
+				{
+					gsm.y_axis = body.RotationAxis; //< initial guess
+					gsm.z_axis = Vector3.Cross(gsm.x_axis, gsm.y_axis).normalized;
+					gsm.y_axis = Vector3.Cross(gsm.x_axis, gsm.z_axis).normalized; //< orthonormalize
+				}
+				else
+				{
+					/* "Do not try and tilt the planet, that's impossible.
+					 * Instead, only try to realize the truth...there is no tilt.
+					 * Then you'll see that it is not the planet that tilts, it is
+					 * the rest of the universe."
+					 * 
+					 * - The Matrix
+					 * 
+					 * 		 
+					 * the orbits are inclined (with respect to the equator of the
+					 * Earth), but all axes are parallel. and aligned with the unity
+					 * world z axis. or is it y? whatever, KSP uses two conventions
+					 * in different places.
+					 * if you use Principia, the current main body (or if there is
+					 * none, e.g. in the space centre or tracking station, the home
+					 * body) is not tilted (its axis is the unity vertical.	 
+					 * you can fetch the full orientation (tilt and rotation) of any
+					 * body (including the current main body) in the current unity
+					 * frame (which changes of course, because sometimes KSP uses a
+					 * rotating frame, and because Principia tilts the universe
+					 * differently if the current main body changes) as the
+					 * orientation of the scaled space body
+					 * 		 
+					 * body.scaledBody.transform.rotation or something along those lines
+					 * 
+					 * - egg
+					 */
 
-				Quaternion rotation = body.scaledBody.transform.rotation;
-				gsm.y_axis = rotation * new Vector3(x, y, z).normalized;
+					Quaternion rotation = body.scaledBody.transform.rotation;
+					gsm.y_axis = (rotation * rb.geomagnetic_pole).normalized;
 
-				gsm.z_axis = Vector3.Cross(gsm.x_axis, gsm.y_axis).normalized;
-				gsm.y_axis = Vector3.Cross(gsm.z_axis, gsm.x_axis).normalized; //< orthonormalize
+					gsm.z_axis = Vector3.Cross(gsm.x_axis, gsm.y_axis).normalized;
+					gsm.x_axis = Vector3.Cross(gsm.y_axis, gsm.z_axis).normalized; //< orthonormalize
+				}
 			}
 			else
 			{
@@ -508,27 +516,26 @@ namespace KERBALISM
 
 				// generate radii-normalized GMS space
 				RadiationBody rb = Info(body);
-				Space gsm = Gsm_space(rb.body, FlightGlobals.Bodies[rb.reference]);
+				Space gsm_tilted = Gsm_space(rb, true);
 
 				// [debug] show axis
-				LineRenderer.Commit(gsm.origin, gsm.origin + gsm.x_axis * gsm.scale * 5.0f, Color.red);
-				LineRenderer.Commit(gsm.origin, gsm.origin + gsm.y_axis * gsm.scale * 5.0f, Color.green);
-				LineRenderer.Commit(gsm.origin, gsm.origin + gsm.z_axis * gsm.scale * 5.0f, Color.blue);
-
-				// get magnetic field data
-				RadiationModel mf = Info(body).model;
+				LineRenderer.Commit(gsm_tilted.origin, gsm_tilted.origin + gsm_tilted.x_axis * gsm_tilted.scale * 5.0f, Color.red);
+				LineRenderer.Commit(gsm_tilted.origin, gsm_tilted.origin + gsm_tilted.y_axis * gsm_tilted.scale * 5.0f, Color.green);
+				LineRenderer.Commit(gsm_tilted.origin, gsm_tilted.origin + gsm_tilted.z_axis * gsm_tilted.scale * 5.0f, Color.blue);
 
 				// enable material
 				mat.SetPass(0);
 
+				// get magnetic field data
+				RadiationModel mf = rb.model;
+
 				// render active body fields
-				Matrix4x4 m = gsm.Look_at();
-				if (show_inner && mf.has_inner) mf.inner_pmesh.Render(m);
-				if (show_outer && mf.has_outer) mf.outer_pmesh.Render(m);
-				if (show_pause && mf.has_pause) mf.pause_pmesh.Render(m);
+				Matrix4x4 m_tilted = gsm_tilted.Look_at();
+				if (show_inner && mf.has_inner) mf.inner_pmesh.Render(m_tilted);
+				if (show_outer && mf.has_outer) mf.outer_pmesh.Render(m_tilted);
+				if (show_pause && mf.has_pause) mf.pause_pmesh.Render(Gsm_space(rb, true).Look_at());
 			}
 		}
-
 
 		public static RadiationBody Info(CelestialBody body)
 		{
@@ -569,9 +576,9 @@ namespace KERBALISM
 				if (mf.Has_field())
 				{
 					// generate radii-normalized GSM space
-					gsm = Gsm_space(rb.body, FlightGlobals.Bodies[rb.reference]);
+					gsm = Gsm_space(rb, true);
 
-					// move the poing in GSM space
+					// move the point in GSM space
 					p = gsm.Transform_in(position);
 
 					// accumulate radiation and determine pause/belt flags
@@ -589,6 +596,9 @@ namespace KERBALISM
 					}
 					if (mf.has_pause)
 					{
+						gsm = Gsm_space(rb, false);
+						p = gsm.Transform_in(position);
+
 						D = mf.Pause_func(p);
 						radiation += Lib.Clamp(D / -0.1332f, 0.0f, 1.0f) * rb.radiation_pause;
 						magnetosphere |= D < 0.0f && rb.body.flightGlobalsIndex != 0; //< ignore heliopause
@@ -645,7 +655,7 @@ namespace KERBALISM
 				if (mf.Has_field())
 				{
 					// generate radii-normalized GSM space
-					gsm = Gsm_space(rb.body, FlightGlobals.Bodies[rb.reference]);
+					gsm = Gsm_space(rb, true);
 
 					// move the poing in GSM space
 					p = gsm.Transform_in(position);
@@ -663,6 +673,8 @@ namespace KERBALISM
 					}
 					if (mf.has_pause)
 					{
+						gsm = Gsm_space(rb, false);
+						p = gsm.Transform_in(position);
 						D = mf.Pause_func(p);
 						radiation += Lib.Clamp(D / -0.1332f, 0.0f, 1.0f) * rb.radiation_pause;
 					}
