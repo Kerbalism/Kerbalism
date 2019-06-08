@@ -533,7 +533,7 @@ namespace KERBALISM
 				Matrix4x4 m_tilted = gsm_tilted.Look_at();
 				if (show_inner && mf.has_inner) mf.inner_pmesh.Render(m_tilted);
 				if (show_outer && mf.has_outer) mf.outer_pmesh.Render(m_tilted);
-				if (show_pause && mf.has_pause) mf.pause_pmesh.Render(Gsm_space(rb, true).Look_at());
+				if (show_pause && mf.has_pause) mf.pause_pmesh.Render(Gsm_space(rb, false).Look_at());
 			}
 		}
 
