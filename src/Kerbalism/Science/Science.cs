@@ -11,8 +11,7 @@ namespace KERBALISM
 	{
 		// this controls how fast science is credited while it is being transmitted.
 		// try to be conservative here, because crediting introduces a lag
-		private const double buffer_science_value = 0.4; // min. 0.01 value
-		private const double min_buffer_size = 0.01; // min. 10kB
+		private const double buffer_science_value = 0.3;
 
 		// this is for auto-transmit throttling
 		public const double min_file_size = 0.002;
@@ -111,18 +110,15 @@ namespace KERBALISM
 				// special case: file size on drive = 0 -> buffer is 0, so no need to do anyhting. just delete.
 				if (file.buff > double.Epsilon)
 				{
-					bool credit = file.size <= double.Epsilon;
-
 					// this is the science value remaining for this experiment
 					var remainingValue = Value(exp_filename, 0);
 
 					// this is the science value of this sample
 					double dataValue = Value(exp_filename, file.buff);
+					bool doCredit = file.size <= double.Epsilon || dataValue > buffer_science_value;;
 
-					if (!credit && file.buff > min_buffer_size) credit = dataValue > buffer_science_value;
-
-					// if buffer is full, or file was transmitted completely
-					if (credit)
+					// if buffer science value is high enough or file was transmitted completely
+					if (doCredit)
 					{
 						var totalValue = TotalValue(exp_filename);
 
@@ -219,7 +215,6 @@ namespace KERBALISM
 			return credits;
 		}
 
-
 		// return value of some data about a subject, in science credits
 		public static float Value(string subject_id, double size = 0)
 		{
@@ -237,10 +232,7 @@ namespace KERBALISM
 			var subject = ResearchAndDevelopment.GetSubjectByID(subject_id);
 			if (subject == null) return 0.0f;
 
-			// get science value
-			// - the stock system 'degrade' science value after each credit, we don't
-			double R = ResearchAndDevelopment.GetReferenceDataValue((float)size, subject);
-
+			double R = size / subject.dataScale * subject.subjectValue;
 			double S = subject.science;
 			double C = subject.scienceCap;
 			double credits = Math.Max(Math.Min(S + Math.Min(R, C), C) - S, 0.0);
