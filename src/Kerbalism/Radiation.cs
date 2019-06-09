@@ -185,10 +185,13 @@ namespace KERBALISM
 			// get the body
 			this.body = body;
 
-			float x = Mathf.Cos(geomagnetic_pole_lat) * Mathf.Cos(geomagnetic_pole_lon);
-			float y = Mathf.Sin(geomagnetic_pole_lat);
-			float z = Mathf.Cos(geomagnetic_pole_lat) * Mathf.Sin(geomagnetic_pole_lon);
-			geomagnetic_pole = new Vector3(x, y, z) * -1;
+			float lat = (float)(geomagnetic_pole_lat * Math.PI / 180.0);
+			float lon = (float)(geomagnetic_pole_lon * Math.PI / 180.0);
+
+			float x = Mathf.Cos(lat) * Mathf.Cos(lon);
+			float y = Mathf.Sin(lat);
+			float z = Mathf.Cos(lat) * Mathf.Sin(lon);
+			geomagnetic_pole = new Vector3(x, y, z);
 		}
 
 		public string name;               // name of the body
@@ -396,8 +399,9 @@ namespace KERBALISM
 					 * - egg
 					 */
 
+					Vector3 pole = rb.geomagnetic_pole;
 					Quaternion rotation = body.scaledBody.transform.rotation;
-					gsm.y_axis = (rotation * rb.geomagnetic_pole).normalized;
+					gsm.y_axis = (rotation * pole).normalized;
 
 					gsm.z_axis = Vector3.Cross(gsm.x_axis, gsm.y_axis).normalized;
 					gsm.x_axis = Vector3.Cross(gsm.y_axis, gsm.z_axis).normalized; //< orthonormalize
