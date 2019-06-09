@@ -1,10 +1,18 @@
+## v3.0.2 for all versions of KSP from 1.4.0 to 1.7.x
+
+ - 2019-06-08
+
+### Changes since the last release
+
+* ACTUALLY fixed the unintended need to repeat the same experiments multiple times for full science value. (SirMortimer, Arthur)
+
 ## v3.0.1 for all versions of KSP from 1.4.0 to 1.7.x
 
  - 2019-06-08
 
 ### Changes since the last release
 
-* Fixed a gamebreaking bug with science.
+* Fixed the unintended need to repeat the same experiments multiple times for full science value. (Arthur)
 
 ## v3.0 for all versions of KSP from 1.4.0 to 1.7.x
 
