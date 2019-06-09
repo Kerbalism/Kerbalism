@@ -1,3 +1,11 @@
+## v3.0.3 for all versions of KSP from 1.4.0 to 1.7.x
+
+ - 2019-06-09
+
+### Changes since the last release
+
+* Support tilted magnetic fields and radiation belts (Sir Mortimer)
+
 ## v3.0.2 for all versions of KSP from 1.4.0 to 1.7.x
 
  - 2019-06-08
