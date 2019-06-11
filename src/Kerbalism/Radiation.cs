@@ -177,6 +177,7 @@ namespace KERBALISM
 			radiation_pause = Lib.ConfigValue(node, "radiation_pause", 0.0) / 3600.0;
 			geomagnetic_pole_lat = Lib.ConfigValue(node, "geomagnetic_pole_lat", 90.0f);
 			geomagnetic_pole_lon = Lib.ConfigValue(node, "geomagnetic_pole_lon", 0.0f);
+			geomagnetic_offset = Lib.ConfigValue(node, "geomagnetic_offset", 0.0f);
 			reference = Lib.ConfigValue(node, "reference", 0);
 
 			// get the radiation environment
@@ -191,7 +192,7 @@ namespace KERBALISM
 			float x = Mathf.Cos(lat) * Mathf.Cos(lon);
 			float y = Mathf.Sin(lat);
 			float z = Mathf.Cos(lat) * Mathf.Sin(lon);
-			geomagnetic_pole = new Vector3(x, y, z);
+			geomagnetic_pole = new Vector3(x, y, z).normalized;
 		}
 
 		public string name;               // name of the body
@@ -201,6 +202,7 @@ namespace KERBALISM
 		public int reference;          // index of the body that determine x-axis of the gsm-space
 		public float geomagnetic_pole_lat = 90.0f;
 		public float geomagnetic_pole_lon = 0.0f;
+		public float geomagnetic_offset = 0.0f;
 		public Vector3 geomagnetic_pole;
 
 		// shortcut to the radiation environment
@@ -414,6 +416,9 @@ namespace KERBALISM
 				gsm.y_axis = new Vector3(0.0f, 1.0f, 0.0f);
 				gsm.z_axis = new Vector3(0.0f, 0.0f, 1.0f);
 			}
+
+			gsm.origin = gsm.origin + gsm.y_axis * (gsm.scale * rb.geomagnetic_offset);
+
 			return gsm;
 		}
 
