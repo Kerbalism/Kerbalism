@@ -253,7 +253,7 @@ namespace KERBALISM
 			var subject = ResearchAndDevelopment.GetSubjectByID(subject_id);
 			if (subject == null) return 0.0f;
 
-			double credits = ResearchAndDevelopment.GetReferenceDataValue((float)size, subject);
+			double credits = size / subject.dataScale * subject.subjectValue;
 			credits *= HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier;
 
 			return (float)credits;
