@@ -184,11 +184,57 @@ namespace KERBALISM
 			return string.Empty;
 		}
 
+		public static void ClearDeferred()
+		{
+			deferredCredit.Clear();
+		}
+
+		public static void CreditAllDeferred()
+		{
+			foreach(var deferred in deferredCredit.Values)
+			{
+				Credit(deferred.subject_id, deferred.size, true, deferred.pv, true);
+			}
+			deferredCredit.Clear();
+		}
+
+		private static void CreditDeferred(string subject_id, double size, ProtoVessel pv)
+		{
+			if (deferredCredit.ContainsKey(subject_id))
+			{
+				var deferred = deferredCredit[subject_id];
+				deferred.size += size;
+				deferred.pv = pv;
+
+				var credits = Value(subject_id, deferred.size);
+				if(credits >= buffer_science_value)
+				{
+					deferredCredit.Remove(subject_id);
+					Credit(subject_id, deferred.size, true, pv, true);
+				}
+			}
+			else
+			{
+				deferredCredit.Add(subject_id, new DeferredCreditValues(subject_id, size, pv));
+			}
+		}
 
 		// credit science for the experiment subject specified
-		public static float Credit(string subject_id, double size, bool transmitted, ProtoVessel pv)
+		public static float Credit(string subject_id, double size, bool transmitted, ProtoVessel pv, bool enforced_credit = false)
 		{
 			var credits = Value(subject_id, size);
+
+			if(!enforced_credit && transmitted && credits < buffer_science_value) {
+				CreditDeferred(subject_id, size, pv);
+				return credits;
+			}
+
+			if(deferredCredit.ContainsKey(subject_id)) {
+				var deferred = deferredCredit[subject_id];
+				size += deferred.size;
+				deferred.size = 0;
+				credits = Value(subject_id, size);
+			}
 
 			// credit the science
 			var subject = ResearchAndDevelopment.GetSubjectByID(subject_id);
@@ -651,6 +697,20 @@ namespace KERBALISM
 		static readonly Dictionary<string, ExperimentInfo> experiments = new Dictionary<string, ExperimentInfo>();
 		readonly static Dictionary<string, double> sampleMasses = new Dictionary<string, double>();
 
+		private class DeferredCreditValues {
+			internal string subject_id;
+			internal double size;
+			internal ProtoVessel pv;
+
+			public DeferredCreditValues(string subject_id, double size, ProtoVessel pv)
+			{
+				this.subject_id = subject_id;
+				this.size = size;
+				this.pv = pv;
+			}
+		}
+
+		static readonly Dictionary<string, DeferredCreditValues> deferredCredit = new Dictionary<string, DeferredCreditValues>();
 	}
 
 } // KERBALISM
