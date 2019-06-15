@@ -142,6 +142,12 @@ namespace KERBALISM
 
 		// --- RADIATION ------------------------------------------------------------
 
+		// return true if radiation is enabled
+		public static bool RadiationEnabled()
+		{
+			return Features.Radiation;
+		}
+
 		// return amount of environment radiation at the position of the specified vessel
 		public static double Radiation(Vessel v)
 		{
@@ -171,6 +177,85 @@ namespace KERBALISM
 			return Cache.VesselInfo(v).outer_belt;
 		}
 
+		// return true if the given body has an inner radiation belt (doesn't matter if visible or not)
+		public static bool HasInnerBelt(CelestialBody body)
+		{
+			if (!Features.Radiation) return false;
+			RadiationBody rb = KERBALISM.Radiation.Info(body);
+			return rb.model.has_inner;
+		}
+
+		// return true if the given body has an inner radiation belt that is visible
+		public static bool IsInnerBeltVisible(CelestialBody body)
+		{
+			if (!Features.Radiation) return false;
+			RadiationBody rb = KERBALISM.Radiation.Info(body);
+			return rb.model.has_inner && rb.inner_visible;
+		}
+
+		// set visibility of the inner radiation belt
+		public static void SetInnerBeltVisible(CelestialBody body, bool visible)
+		{
+			if (!Features.Radiation) return;
+			RadiationBody rb = KERBALISM.Radiation.Info(body);
+			rb.inner_visible = visible;
+		}
+
+		// return true if the given body has an outer radiation belt (doesn't matter if visible or not)
+		public static bool HasOuterBelt(CelestialBody body)
+		{
+			if (!Features.Radiation) return false;
+			RadiationBody rb = KERBALISM.Radiation.Info(body);
+			return rb.model.has_outer;
+		}
+
+		// return true if the given body has an outer radiation belt that is visible
+		public static bool IsOuterBeltVisible(CelestialBody body)
+		{
+			if (!Features.Radiation) return false;
+			RadiationBody rb = KERBALISM.Radiation.Info(body);
+			return rb.model.has_outer && rb.outer_visible;
+		}
+
+		// set visibility of the inner radiation belt
+		public static void SetOuterBeltVisible(CelestialBody body, bool visible)
+		{
+			if (!Features.Radiation) return;
+			RadiationBody rb = KERBALISM.Radiation.Info(body);
+			rb.outer_visible = visible;
+		}
+
+		// return true if the given body has a magnetosphere (doesn't matter if visible or not)
+		public static bool HasMagnetopause(CelestialBody body)
+		{
+			if (!Features.Radiation) return false;
+			RadiationBody rb = KERBALISM.Radiation.Info(body);
+			return rb.model.has_pause;
+		}
+
+		// return true if the given body has a magnetopause that is visible
+		public static bool IsMagnetopauseVisible(CelestialBody body)
+		{
+			if (!Features.Radiation) return false;
+			RadiationBody rb = KERBALISM.Radiation.Info(body);
+			return rb.model.has_pause && rb.pause_visible;
+		}
+
+		// set visibility of the inner radiation belt
+		public static void SetMagnetopauseVisible(CelestialBody body, bool visible)
+		{
+			if (!Features.Radiation) return;
+			RadiationBody rb = KERBALISM.Radiation.Info(body);
+			rb.pause_visible = visible;
+		}
+
+		// return true if the given body has a belt or a magnetosphere (doesn't matter if visible or not)
+		public static bool HasMagneticField(CelestialBody body)
+		{
+			if (!Features.Radiation) return false;
+			RadiationBody rb = KERBALISM.Radiation.Info(body);
+			return rb.model.Has_field();
+		}
 
 		// --- SPACE WEATHER --------------------------------------------------------
 

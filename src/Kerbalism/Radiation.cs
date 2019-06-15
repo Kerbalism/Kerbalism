@@ -205,6 +205,10 @@ namespace KERBALISM
 		public float geomagnetic_offset = 0.0f;
 		public Vector3 geomagnetic_pole;
 
+		public bool inner_visible = true;
+		public bool outer_visible = true;
+		public bool pause_visible = true;
+
 		// shortcut to the radiation environment
 		public RadiationModel model;
 
@@ -540,9 +544,9 @@ namespace KERBALISM
 
 				// render active body fields
 				Matrix4x4 m_tilted = gsm_tilted.Look_at();
-				if (show_inner && mf.has_inner) mf.inner_pmesh.Render(m_tilted);
-				if (show_outer && mf.has_outer) mf.outer_pmesh.Render(m_tilted);
-				if (show_pause && mf.has_pause) mf.pause_pmesh.Render(Gsm_space(rb, false).Look_at());
+				if (show_inner && mf.has_inner && rb.inner_visible) mf.inner_pmesh.Render(m_tilted);
+				if (show_outer && mf.has_outer && rb.outer_visible) mf.outer_pmesh.Render(m_tilted);
+				if (show_pause && mf.has_pause && rb.pause_visible) mf.pause_pmesh.Render(Gsm_space(rb, false).Look_at());
 			}
 		}
 
