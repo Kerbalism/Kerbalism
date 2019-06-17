@@ -204,19 +204,23 @@ namespace KERBALISM
 		// return hours in a day
 		public static double HoursInDay()
 		{
-			var homeBody = FlightGlobals.GetHomeBody();
-			if (homeBody == null)
-				return GameSettings.KERBIN_TIME ? 6.0 : 24.0;
-			return Math.Round(homeBody.rotationPeriod / 3600, 0);
+			if(FlightGlobals.ready || IsEditor())
+			{
+				var homeBody = FlightGlobals.GetHomeBody();
+				return Math.Round(homeBody.rotationPeriod / 3600, 0);
+			}
+			return GameSettings.KERBIN_TIME ? 6.0 : 24.0;
 		}
 
 		// return year length
 		public static double DaysInYear()
 		{
-			var homeBody = FlightGlobals.GetHomeBody();
-			if (homeBody == null)
-				return 426.0;
-			return Math.Floor(homeBody.orbit.period / (HoursInDay() * 60.0 * 60.0));
+			if (FlightGlobals.ready || IsEditor())
+			{
+				var homeBody = FlightGlobals.GetHomeBody();
+				return Math.Floor(homeBody.orbit.period / (HoursInDay() * 60.0 * 60.0));
+			}
+			return 426.0;
 		}
 
 		// stop time warping
