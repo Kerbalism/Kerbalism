@@ -1,7 +1,6 @@
 //Made by Breach Candy#6128
 
 //==========Tweakables==========\\
-
 @KERBALISM_HDD_SIZES:BEFORE[Kerbalism]:NEEDS[SampleReturnCapsule,FeatureScience]
 {
     SampleReturnCapsule
@@ -20,7 +19,6 @@
 }
 
 //==========Patches==========\\
-
 @PART[SampleReturnCapsule_CargoBay]:NEEDS[SampleReturnCapsule,FeatureScience]:AFTER[Kerbalism]
 {
     %MODULE[HardDrive]
@@ -39,7 +37,6 @@
 }
 
 //==========Add an antenna(Commtech 16S)==========\\
-
 @PART[SampleReturnCapsule_Parachute]:NEEDS[SampleReturnCapsule]
 {
     MODULE
