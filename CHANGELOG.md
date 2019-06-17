@@ -11,6 +11,7 @@
 * Crediting of zero science is now reduced to a minimum. This will fix the constant science updates with mods like Strategia (Sir Mortimer)
 * Added mod support to query the radiation model, as well as toggle visibility of belts and magnetopause (Sir Mortimer)
 * Added mod support for CME prediction accuracy that influences the probability that you get an advanced warning, and its accuracy (Sir Mortimer)
+* Configs for SoundingRockets (Arthur, Breach Candy)
 
 ## v3.0.2 for all versions of KSP from 1.4.0 to 1.7.x
 
