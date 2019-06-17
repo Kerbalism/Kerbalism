@@ -386,6 +386,29 @@ namespace KERBALISM
 		}
 
 
+		// --- VESSEL --------------------------------------------------------------
+
+		public static double VesselConnectionRate(Vessel v)
+		{
+			var vi = Cache.VesselInfo(v);
+			if (!vi.is_valid) return 0.0;
+			return vi.connection.rate;
+		}
+
+		public static bool VesselConnectionLinked(Vessel v)
+		{
+			var vi = Cache.VesselInfo(v);
+			if (!vi.is_valid) return false;
+			return vi.connection.linked;
+		}
+
+		public static String VesselConnectionTransmitting(Vessel v)
+		{
+			var vi = Cache.VesselInfo(v);
+			if (!vi.is_valid) return string.Empty;
+			return vi.transmitting;
+		}
+
 		// --- SCIENCE --------------------------------------------------------------
 
 		// return size of a file in a vessel drive
