@@ -10,6 +10,8 @@ namespace KERBALISM
 
 	public static class Storm
 	{
+		public static float sun_observation_quality = 1.0f;
+
 		public static void Update(CelestialBody body, double elapsed_s)
 		{
 			// do nothing if storms are disabled
@@ -65,10 +67,14 @@ namespace KERBALISM
 			}
 			else if (bd.msg_storm < 1 && bd.storm_state == 1)
 			{
-				if (Body_is_relevant(body))
+				// show warning message only if you're lucky...
+				if(Lib.RandomFloat() < sun_observation_quality)
 				{
-					Message.Post(Severity.warning, Lib.BuildString("Our observatories report a coronal mass ejection directed toward <b>", body.name, "</b> system"),
-					  Lib.BuildString("Time to impact: ", Lib.HumanReadableDuration(TimeBeforeCME(bd.storm_time, bd.storm_age))));
+					if (Body_is_relevant(body))
+					{
+						Message.Post(Severity.warning, Lib.BuildString("Our observatories report a coronal mass ejection directed toward <b>", body.name, "</b> system"),
+						  Lib.BuildString("Time to impact: ", Lib.HumanReadableDuration(TimeBeforeCME(bd.storm_time, bd.storm_age))));
+					}
 				}
 				bd.msg_storm = 1;
 			}
@@ -279,7 +285,23 @@ namespace KERBALISM
 		// return time left until CME is over
 		static double TimeLeftCME(double storm_time, double storm_age)
 		{
-			return Math.Max(0.0, storm_time - storm_age);
+
+			// get a pseudo-random number ranging from 0 to 1. pseudo-random because it needs
+			// to be the same number every time we get a remaining time for the same storm
+			double uncertainity = (storm_time % 100) / 100.0;
+
+			// allow under-estimation of storm duration, but tend towards over-estimation
+			uncertainity -= 0.3;
+
+			// accurate sun observation -> less uncertainity
+			uncertainity *= (1.0 - sun_observation_quality);
+
+			double timeLeft = Math.Max(0.0, storm_time - storm_age);
+
+			// add uncertainity to returned value
+			timeLeft += uncertainity * PreferencesStorm.Instance.StormMaxTime;
+
+			return timeLeft;
 		}
 
 

@@ -280,6 +280,26 @@ namespace KERBALISM
 			return Cache.VesselInfo(v).blackout;
 		}
 
+		/// <summary>
+		/// Returns the current sun observation quality (ranges from 0 to 1). this is
+		/// the probability that the player will get a warning for an incoming CME
+		/// </summary>
+		/// <returns>The observation quality.</returns>
+		public static float StormObservationQuality()
+		{
+			return Storm.sun_observation_quality;
+		}
+
+		/// <summary>
+		/// Set the current sun observation quality (ranges from 0 to 1). this is
+		/// the probability that the player will get a warning for an incoming CME
+		/// </summary>
+		/// <param name="quality">Quality.</param>
+		public static void SetStormObservationQuality(float quality)
+		{
+			Storm.sun_observation_quality = Lib.Clamp(quality, 0.0f, 1.0f);
+		}
+
 		// --- RELIABILITY ----------------------------------------------------------
 
 		// return true if at least a component has malfunctioned, or had a critical failure
