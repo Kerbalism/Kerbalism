@@ -61,13 +61,20 @@ namespace KERBALISM
 				}
 			}
 
-			// rendering panel
+			// radiation panel
 			if (Features.Radiation)
 			{
-				p.AddSection("RENDERING");
-				p.AddContent("inner belt", Radiation.show_inner ? "<color=green>show</color>" : "<color=red>hide</color>", string.Empty, () => p.Toggle(ref Radiation.show_inner));
-				p.AddContent("outer belt", Radiation.show_outer ? "<color=green>show</color>" : "<color=red>hide</color>", string.Empty, () => p.Toggle(ref Radiation.show_outer));
-				p.AddContent("magnetopause", Radiation.show_pause ? "<color=green>show</color>" : "<color=red>hide</color>", string.Empty, () => p.Toggle(ref Radiation.show_pause));
+				p.AddSection("RADIATION");
+
+				string inner, outer, pause;
+				RadiationLevels(body, out inner, out outer, out pause);
+
+				p.AddContent(Lib.BuildString("inner belt: ", Lib.Color("#cccccc", inner)),
+					Radiation.show_inner ? "<color=green>show</color>" : "<color=red>hide</color>", string.Empty, () => p.Toggle(ref Radiation.show_inner));
+				p.AddContent(Lib.BuildString("outer belt: ", Lib.Color("#cccccc", outer)),
+					Radiation.show_outer ? "<color=green>show</color>" : "<color=red>hide</color>", string.Empty, () => p.Toggle(ref Radiation.show_outer));
+				p.AddContent(Lib.BuildString("magnetopause: ", Lib.Color("#cccccc", pause)),
+					Radiation.show_pause ? "<color=green>show</color>" : "<color=red>hide</color>", string.Empty, () => p.Toggle(ref Radiation.show_pause));
 			}
 
 			// explain the user how to toggle the BodyInfo window
@@ -76,6 +83,32 @@ namespace KERBALISM
 
 			// set metadata
 			p.Title(Lib.BuildString(Lib.Ellipsis(body.bodyName, Styles.ScaleStringLength(24)), " <color=#cccccc>BODY INFO</color>"));
+		}
+
+		private static void RadiationLevels(CelestialBody body, out string inner, out string outer, out string pause)
+		{
+			// TODO cache this information in RadiationBody
+
+			double rad = PreferencesStorm.Instance.externRadiation;
+			var rbSun = Radiation.Info(FlightGlobals.Bodies[0]);
+			rad += rbSun.radiation_pause;
+
+			var rb = Radiation.Info(body);
+
+			if (rb.inner_visible)
+				inner = rb.model.has_inner ? "~" + Lib.HumanReadableRadiation(Math.Max(0, rad + rb.radiation_inner) / 3600.0) : "n/a";
+			else
+				inner = "unknown";
+
+			if (rb.outer_visible)
+				outer = rb.model.has_outer ? "~" + Lib.HumanReadableRadiation(Math.Max(0, rad + rb.radiation_outer) / 3600.0) : "n/a";
+			else
+				outer = "unknown";
+
+			if (rb.pause_visible)
+				pause = rb.model.has_pause ? "~" + Lib.HumanReadableRadiation(Math.Max(0, rad + rb.radiation_pause) / 3600.0) : "n/a";
+			else
+				pause = "unknown";
 		}
 	}
 
