@@ -353,6 +353,11 @@ namespace KERBALISM
 			return (T)(m.GetType().GetMethod(call_name, flags).Invoke(m, null));
 		}
 
+		public static T ReflectionCall<T>(object m, string call_name, Type[] types, object[] parameters)
+		{
+			return (T)(m.GetType().GetMethod(call_name, flags, null, types, null).Invoke(m, parameters));
+		}
+
 
 		// --- STRING ---------------------------------------------------------------
 
@@ -1082,7 +1087,11 @@ namespace KERBALISM
 		//       we could use the partPrefab bounding box, but then it isn't available in GetInfo()
 		public static double PartVolume(Part p)
 		{
-			Bounds bb = p.GetPartRendererBound();
+			return PartVolume(p.GetPartRendererBound());
+		}
+
+		public static double PartVolume(Bounds bb)
+		{
 			return bb.size.x * bb.size.y * bb.size.z * 0.785398;
 		}
 
@@ -1091,7 +1100,11 @@ namespace KERBALISM
 		//       we could use the partPrefab bounding box, but then it isn't available in GetInfo()
 		public static double PartSurface(Part p)
 		{
-			Bounds bb = p.GetPartRendererBound();
+			return PartSurface(p.GetPartRendererBound());
+		}
+
+		public static double PartSurface(Bounds bb)
+		{
 			double a = bb.extents.x;
 			double b = bb.extents.y;
 			double c = bb.extents.z;

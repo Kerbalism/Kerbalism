@@ -1,5 +1,6 @@
 ﻿using System;
 using KSP.Localization;
+using UnityEngine;
 
 namespace KERBALISM
 {
@@ -53,10 +54,10 @@ namespace KERBALISM
 			hasGravityRing = gravityRing != null;
 
 			// calculate habitat internal volume
-			if (volume <= double.Epsilon) volume = Lib.PartVolume(part);
+			if (volume <= double.Epsilon) volume = GetVolume();
 
 			// calculate habitat external surface
-			if (surface <= double.Epsilon) surface = Lib.PartSurface(part);
+			if (surface <= double.Epsilon) surface = GetSurface();
 
 			// set RMB UI status strings
 			Volume = Lib.HumanReadableVolume(volume);
@@ -115,6 +116,32 @@ namespace KERBALISM
 				return gravityRing.deploy;
 			}
 			return inflate;
+		}
+
+		public double GetVolume()
+		{
+			foreach(PartModule pm in part.Modules)
+			{
+				if (pm.moduleName == "SSTUModularPart")
+				{
+					Bounds bb = Lib.ReflectionCall<Bounds>(pm, "getModuleBounds", new Type[] { typeof(string) }, new string[] { "CORE" });
+					return Lib.PartVolume(bb);
+				}
+			}
+			return Lib.PartVolume(part);
+		}
+
+		public double GetSurface()
+		{
+			foreach (PartModule pm in part.Modules)
+			{
+				if (pm.moduleName == "SSTUModularPart")
+				{
+					Bounds bb = Lib.ReflectionCall<Bounds>(pm, "getModuleBounds", new Type[] { typeof(string) }, new string[] { "CORE" });
+					return Lib.PartSurface(bb);
+				}
+			}
+			return Lib.PartSurface(part);
 		}
 
 		bool Get_inflate_anim_backwards()
