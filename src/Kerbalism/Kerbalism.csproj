@@ -197,7 +197,7 @@
     <Compile Include="Modules\Sensor.cs" />
     <Compile Include="Modules\Experiment.cs" />
     <Compile Include="Modules\Reliability.cs" />
-    <Compile Include="Modules\WarpFixer.cs" />
+    <Compile Include="Modules\SolarPanelFixer.cs" />
     <Compile Include="Profile\Modifiers.cs" />
     <Compile Include="Profile\Process.cs" />
     <Compile Include="Renderer\LineRenderer.cs" />
@@ -307,7 +307,7 @@
       <Output TaskParameter="Assemblies" ItemName="Targets" />
     </GetAssemblyIdentity>
     <ItemGroup>
-      <VersionNumber Include="@(Targets-&gt;'%(Version)')" />
+      <VersionNumber Include="@(Targets->'%(Version)')" />
     </ItemGroup>
   </Target>
   <PropertyGroup>

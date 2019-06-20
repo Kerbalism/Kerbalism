@@ -17,6 +17,13 @@ namespace KERBALISM
 			mat = Lib.GetShader("AntiAliasedLine");
 		}
 
+		// for debug purpose
+		public static void CommitWorldVector(Vector3d start, Vector3d direction, float lengthKm, Color color)
+		{
+			Vector3d end = ScaledSpace.LocalToScaledSpace(start + (direction * (lengthKm * 1000.0)));
+			ScaledSpace.LocalToScaledSpace(ref start);
+			Commit(start, end, color);
+		}
 
 		// commit a line
 		public static void Commit(Vector3 a, Vector3 b, Color color)

@@ -1,5 +1,5 @@
 ﻿using System;
-
+using UnityEngine;
 
 namespace KERBALISM
 {
@@ -138,6 +138,7 @@ namespace KERBALISM
 		// - dir: will contain normalized vector from vessel to body
 		// - dist: will contain distance from vessel to body surface
 		// - return: true if visible, false otherwise
+		public static int planetaryLayerMask = int.MaxValue;
 		public static bool RaytraceBody(Vessel vessel, Vector3d vessel_pos, CelestialBody body, out Vector3d dir, out double dist)
 		{
 			// shortcuts
@@ -150,7 +151,24 @@ namespace KERBALISM
 			dir /= dist;
 			dist -= body.Radius;
 
-			// raytrace
+			// for very small bodies the analytic method is very unreliable at high latitudes
+			// we use a physic raycast (a lot slower)
+			if (vessel.Landed && mainbody.Radius < 100000.0 && (vessel.latitude < -45.0 || vessel.latitude > 45.0))
+			{
+				// get scaled space layer mask once
+				if (planetaryLayerMask == int.MaxValue)
+					planetaryLayerMask = 1 << LayerMask.NameToLayer("Scaled Scenery");
+
+				// scaled space is always 1 frame late, get past position :
+				vessel_pos = vessel_pos + (vessel.mainBody.position - vessel.mainBody.getTruePositionAtUT(Planetarium.GetUniversalTime() + TimeWarp.fixedDeltaTime));
+
+				// convert vessel position to scaled space
+				ScaledSpace.LocalToScaledSpace(ref vessel_pos);
+
+				return !Physics.Raycast(vessel_pos, ScaledSpace.LocalToScaledSpace(body.position) - vessel_pos, (float)dist * ScaledSpace.InverseScaleFactor, planetaryLayerMask);
+			}
+
+			// analytic raytrace
 			return (body == mainbody || Raytrace(vessel_pos, dir, dist, mainbody))
 				&& (body == refbody || refbody == null || Raytrace(vessel_pos, dir, dist, refbody));
 		}
@@ -468,6 +486,57 @@ namespace KERBALISM
 				double q = Ra * cos_a;
 				double path = Math.Sqrt(q * q + 2.0 * Ra * Ya + Ya * Ya) - q;
 				return body.GetSolarPowerFactor(density) * Ya / path;
+			}
+			return 1.0;
+		}
+
+		// determine average atmospheric absorption factor over the daylight period (not the whole day)
+		// - by doing an average of values at midday, sunrise and an intermediate value
+		// - using the current sun direction at the given position to approximate
+		//   the influence of high latitudes and of the inclinaison of the body orbit
+		public static double AtmosphereFactorAnalytic(CelestialBody body, Vector3d position, Vector3d sun_dir)
+		{
+			// only for atmospheric bodies whose rotation period is less than 120 hours
+			if (!body.rotates || body.rotationPeriod > 432000.0)
+				return AtmosphereFactor(body, position, sun_dir);
+
+			// get up vector & altitude
+			Vector3d radialOut = position - body.position;
+			double altitude = radialOut.magnitude;
+			radialOut /= altitude; // normalize
+			altitude -= body.Radius;
+			altitude = Math.Abs(altitude); //< deal with underwater & fp precision issues
+
+			double static_pressure = body.GetPressure(altitude);
+			if (static_pressure > 0.0)
+			{
+				Vector3d[] sunDirs = new Vector3d[3];
+
+				// east - sunrise
+				sunDirs[0] = body.getRFrmVel﻿(position).normalized;
+				// perpendicular vector
+				Vector3d sunUp = Vector3d.Cross(sunDirs[0], sun_dir).normalized;
+				// midday vector (along the radial plane + an angle depending on the original vesselSundir)
+				sunDirs[1] = Vector3d.Cross(sunUp, sunDirs[0]).normalized;
+				// invert midday vector if it's pointing toward the ground (checking against radial-out vector)
+				if (Vector3d.Dot(sunDirs[1], radialOut) < 0.0) sunDirs[1] *= -1.0;
+				// get an intermediate vector between sunrise and midday
+				sunDirs[2] = (sunDirs[0] + sunDirs[1]).normalized;
+
+				double density = body.GetDensity(static_pressure, body.GetTemperature(altitude));
+
+				// nonrefracting radially symmetrical atmosphere model [Schoenberg 1929]
+				double Ra = body.Radius + altitude;
+				double Ya = body.atmosphereDepth - altitude;
+				double atmo_factor_analytic = 0.0;
+				for (int i = 0; i < 3; i++)
+				{
+					double q = Ra * Math.Max(0.0, Vector3d.Dot(radialOut, sunDirs[i]));
+					double path = Math.Sqrt(q * q + 2.0 * Ra * Ya + Ya * Ya) - q;
+					atmo_factor_analytic += body.GetSolarPowerFactor(density) * Ya / path;
+				}
+				atmo_factor_analytic /= 3.0;
+				return atmo_factor_analytic;
 			}
 			return 1.0;
 		}

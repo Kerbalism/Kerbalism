@@ -13,9 +13,9 @@ namespace KERBALISM
 		{
 			// NOTE: anything used here can't in turn use cache, unless you know what you are doing
 
-			// NOTE: you can't cache vessel position
-			// at any point in time all vessel/body positions are relative to a different frame of reference
-			// so comparing the current position of a vessel, with the cached one of another make no sense
+			// NOTE: you can't use cached vessel position outside of the cache
+			// at different points in time, vessel/body positions are relative to a different frame of reference
+			// so comparing the current position of a vessel with the cached one of another make no sense
 
 			// associate with an unique incremental id
 			this.inc = inc;
@@ -67,11 +67,6 @@ namespace KERBALISM
 			landed = Lib.Landed(v);
 			zerog = !landed && (!v.mainBody.atmosphere || v.mainBody.atmosphereDepth < v.altitude);
 
-			if (v.mainBody.flightGlobalsIndex != 0 && TimeWarp.CurrentRate > 1000.0f)
-			{
-				highspeedWarp(v);
-			}
-
 			// temperature at vessel position
 			temperature = Sim.Temperature(v, position, sunlight, atmo_factor, out solar_flux, out albedo_flux, out body_flux, out total_flux);
 			temp_diff = Sim.TempDiff(temperature, v.mainBody, landed);
@@ -95,7 +90,7 @@ namespace KERBALISM
 			volume = Habitat.Tot_volume(v);
 			surface = Habitat.Tot_surface(v);
 
-			if(Cache.HasVesselObjectsCache(v, "max_pressure"))
+			if (Cache.HasVesselObjectsCache(v, "max_pressure"))
 				max_pressure = Cache.VesselObjectsCache<double>(v, "max_pressure");
 			pressure = Math.Min(max_pressure, Habitat.Pressure(v));
 
@@ -114,22 +109,52 @@ namespace KERBALISM
 			gravioli = Sim.Graviolis(v);
 
 			Drive.GetCapacity(v, out free_capacity, out total_capacity);
+
+			if (v.mainBody.flightGlobalsIndex != 0 && TimeWarp.CurrentRate > 1000.0f)
+			{
+				highspeedWarp(v);
+			}
 		}
 
 		// at the two highest timewarp speed, the number of sun visibility samples drop to the point that
-		// the quantization error first became noticeable, and then exceed 100%
-		// to solve this, we switch to an analytical estimation of the portion of orbit that was in sunlight
+		// the quantization error first became noticeable, and then exceed 100%, to solve this :
+		// - we switch to an analytical estimation of the sunlight/shadow period
+		// - atmo_factor become an average atmospheric absorption factor over the daylight period (not the whole day)
 		// - we check against timewarp rate, instead of index, to avoid issues during timewarp blending
-		public void highspeedWarp(Vessel v)
+		public void highspeedWarp(Vessel v, double elapsed_s = 0)
 		{
-			// don't re-calculate this on every tick. So, if sunlight is not 1.0 or 0.0, do nothing here
-			if (sunlight > 0.0001 && sunlight < 0.9999)
-			{
+			// don't update every tick but don't allow more than ~1H30 of game time between updates
+			if (!is_analytic)
+				is_analytic = true;
+			else if (elapsed_s < 5000)
 				return;
-			}
 
+			Vector3d vesselPos = Lib.VesselPosition(v);
+
+			// analytical estimation of the portion of orbit that was in sunlight, current limitations :
+			// - the result is dependant on the vessel altitude at the time of evaluation, 
+			//   consequently it gives inconsistent behavior with highly eccentric orbits
+			// - this totally ignore the orbit inclinaison, polar orbits will be treated as equatorial orbits
 			sunlight = 1.0 - Sim.ShadowPeriod(v) / Sim.OrbitalPeriod(v);
-			solar_flux = Sim.SolarFlux(Sim.SunDistance(Lib.VesselPosition(v))) * atmo_factor;
+
+			// get solar flux, this can vary a bit but not enough for it to matter much
+			solar_flux = Sim.SolarFlux(Sim.SunDistance(vesselPos));
+
+			// for atmospheric bodies whose rotation period is less than 120 hours,
+			// determine analytic atmospheric absorption over a single body revolution instead
+			// of using a discrete value that would be unreliable at large timesteps :
+			if (v.Landed && v.mainBody.atmosphere && v.altitude < v.mainBody.atmosphereDepth)
+			{
+				Vector3d sunDir = (v.mainBody.position - vesselPos).normalized;
+				double atmo_factor_analytic = Sim.AtmosphereFactorAnalytic(v.mainBody, vesselPos, sunDir);
+				// determine average flux over a full rotation period
+				solar_flux *= sunlight * atmo_factor_analytic;
+			}
+			else
+			{
+				// determine average flux for the current altitude
+				solar_flux *= sunlight;
+			}
 		}
 
 		public UInt64 inc;                  // unique incremental id for the entry
@@ -139,10 +164,8 @@ namespace KERBALISM
 		public Guid id;                     // generate the id once
 		public int crew_count;              // number of crew on the vessel
 		public int crew_capacity;           // crew capacity of the vessel
-		public double sunlight;             // if the vessel is in direct sunlight
 		public Vector3d sun_dir;            // normalized vector from vessel to sun
 		public double sun_dist;             // distance from vessel to sun
-		public double solar_flux;           // solar flux at vessel position
 		public double albedo_flux;          // solar flux reflected from the nearest body
 		public double body_flux;            // infrared radiative flux from the nearest body
 		public double total_flux;           // total flux at vessel position
@@ -156,12 +179,11 @@ namespace KERBALISM
 		public bool blackout;               // true if the vessel is inside a magnetopause (except the sun) and under storm
 		public bool thermosphere;           // true if vessel is inside thermosphere
 		public bool exosphere;              // true if vessel is inside exosphere
-		public double atmo_factor;          // proportion of flux not blocked by atmosphere
 		public double gamma_transparency;   // proportion of ionizing radiation not blocked by atmosphere
 		public bool underwater;             // true if inside ocean
 		public bool breathable;             // true if inside breathable atmosphere
 		public bool landed;                 // true if on the surface of a body
-		public bool zerog;					// true if in zero g
+		public bool zerog;                  // true if in zero g
 		public bool malfunction;            // true if at least a component has malfunctioned or had a critical failure
 		public bool critical;               // true if at least a component had a critical failure
 		public ConnectionInfo connection;   // connection info
@@ -175,15 +197,45 @@ namespace KERBALISM
 		public double humidity;             // moist atmosphere amount
 		public double shielding;            // shielding level
 		public double living_space;         // living space factor
-		public double volume_per_crew;		// Available volume per crew
+		public double volume_per_crew;      // Available volume per crew
 		public Comforts comforts;           // comfort info
 		public List<Greenhouse.Data> greenhouses; // some data about greenhouses
 		public double gravioli;             // gravitation gauge particles detected (joke)
 		public bool powered;                // true if vessel is powered
 		public double free_capacity = 0.0;  // free data storage available data capacity of all public drives
 		public double total_capacity = 0.0; // data capacity of all public drives
-	}
 
+		/// <summary>
+		/// true when we are timewarping faster than 1000x. When true, some vessel_info fields are updated more frequently
+		/// and their evaluation is changed to an analytic, timestep independant mode.
+		/// <para/>Ideally they should become a scalar representing an average value valid over a very large duration
+		/// and independant of the vessel position changes
+		/// </summary>
+		public bool is_analytic = false;
+
+		/// <summary>
+		/// return 1.0 when the vessel is in direct sunlight, 0.0 when in shadow
+		/// <para/> in analytic evaluation, this is a scalar of representing the fraction of time spent in sunlight
+		/// </summary>
+		// current limitations :
+		// - the result is dependant on the vessel altitude at the time of evaluation, 
+		//   consequently it gives inconsistent behavior with highly eccentric orbits
+		// - this totally ignore the orbit inclinaison, polar orbits will be treated as equatorial orbits
+		public double sunlight;
+
+		/// <summary>
+		/// solar flux at vessel position in W/m², include atmospheric absorption if inside an atmosphere (atmo_factor)
+		/// <para/> zero when the vessel is in shadow while evaluation is non-analytic (low timewarp rates)
+		/// <para/> in analytic evaluation, this include fractional sunlight / atmo absorbtion
+		/// </summary>
+		public double solar_flux;
+
+		/// <summary>
+		/// scalar for solar flux absorbtion by atmosphere at vessel position, not meant to be used directly (use solar_flux instead)
+		/// <para/> if integrated over orbit (analytic evaluation), average atmospheric absorption factor over the daylight period (not the whole day)
+		/// </summary>
+		public double atmo_factor;
+	}
 
 	public static class Cache
 	{

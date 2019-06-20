@@ -18,7 +18,6 @@ namespace KERBALISM
 			Emitter,
 			Laboratory,
 			Command,
-			Panel,
 			Generator,
 			Converter,
 			Drill,
@@ -26,14 +25,14 @@ namespace KERBALISM
 			StockLab,
 			Light,
 			Scanner,
-			CurvedPanel,
 			FissionGenerator,
 			RadioisotopeGenerator,
 			CryoTank,
 			Unknown,
 			FNGenerator,
 			NonRechargeBattery,
-			KerbalismProcess
+			KerbalismProcess,
+			SolarPanelFixer
 		}
 
 		public static Module_type ModuleType(string module_name)
@@ -48,7 +47,6 @@ namespace KERBALISM
 				case "Emitter": return Module_type.Emitter;
 				case "Laboratory": return Module_type.Laboratory;
 				case "ModuleCommand": return Module_type.Command;
-				case "ModuleDeployableSolarPanel": return Module_type.Panel;
 				case "ModuleGenerator": return Module_type.Generator;
 				case "ModuleResourceConverter":
 				case "ModuleKPBSConverter":
@@ -62,13 +60,13 @@ namespace KERBALISM
 				case "ModuleColoredLensLight":
 				case "ModuleMultiPointSurfaceLight": return Module_type.Light;
 				case "KerbalismScansat": return Module_type.Scanner;
-				case "ModuleCurvedSolarPanel": return Module_type.CurvedPanel;
 				case "FissionGenerator": return Module_type.FissionGenerator;
 				case "ModuleRadioisotopeGenerator": return Module_type.RadioisotopeGenerator;
 				case "ModuleCryoTank": return Module_type.CryoTank;
 				case "FNGenerator": return Module_type.FNGenerator;
 				case "ModuleNonRechargeBattery": return Module_type.NonRechargeBattery;
 				case "KerbalismProcess": return Module_type.KerbalismProcess;
+				case "SolarPanelFixer": return Module_type.SolarPanelFixer;
 			}
 			return Module_type.Unknown;
 		}
@@ -109,7 +107,6 @@ namespace KERBALISM
 					case Module_type.Harvester: Harvester.BackgroundUpdate(v, e.m, e.module_prefab as Harvester, elapsed_s); break; // Kerbalism ground and air harvester module
 					case Module_type.Laboratory: Laboratory.BackgroundUpdate(v, e.p, e.m, e.module_prefab as Laboratory, ec, elapsed_s); break;
 					case Module_type.Command: ProcessCommand(v, e.p, e.m, e.module_prefab as ModuleCommand, resources, elapsed_s); break;
-					case Module_type.Panel: ProcessPanel(v, e.p, e.m, e.module_prefab as ModuleDeployableSolarPanel, vi, ec, elapsed_s); break;
 					case Module_type.Generator: ProcessGenerator(v, e.p, e.m, e.module_prefab as ModuleGenerator, resources, elapsed_s); break;
 					case Module_type.Converter: ProcessConverter(v, e.p, e.m, e.module_prefab as ModuleResourceConverter, resources, elapsed_s); break;
 					case Module_type.Drill: ProcessDrill(v, e.p, e.m, e.module_prefab as ModuleResourceHarvester, resources, elapsed_s); break; // Stock ground harvester module
@@ -117,13 +114,13 @@ namespace KERBALISM
 					case Module_type.StockLab: ProcessStockLab(v, e.p, e.m, e.module_prefab as ModuleScienceConverter, ec, elapsed_s); break;
 					case Module_type.Light: ProcessLight(v, e.p, e.m, e.module_prefab as ModuleLight, ec, elapsed_s); break;
 					case Module_type.Scanner: KerbalismScansat.BackgroundUpdate(v, e.p, e.m, e.module_prefab as KerbalismScansat, e.part_prefab, vd, ec, elapsed_s); break;
-					case Module_type.CurvedPanel: ProcessCurvedPanel(v, e.p, e.m, e.module_prefab, e.part_prefab, vi, ec, elapsed_s); break;
 					case Module_type.FissionGenerator: ProcessFissionGenerator(v, e.p, e.m, e.module_prefab, ec, elapsed_s); break;
 					case Module_type.RadioisotopeGenerator: ProcessRadioisotopeGenerator(v, e.p, e.m, e.module_prefab, ec, elapsed_s); break;
 					case Module_type.CryoTank: ProcessCryoTank(v, e.p, e.m, e.module_prefab, resources, ec, elapsed_s); break;
 					case Module_type.FNGenerator: ProcessFNGenerator(v, e.p, e.m, e.module_prefab, ec, elapsed_s); break;
 					case Module_type.NonRechargeBattery: ProcessNonRechargeBattery(v, e.p, e.m, e.module_prefab, ec, elapsed_s); break;
 					case Module_type.KerbalismProcess: KerbalismProcess.BackgroundUpdate(v, e.m, e.module_prefab as KerbalismProcess, ec, resources, elapsed_s); break;
+					case Module_type.SolarPanelFixer: SolarPanelFixer.BackgroundUpdate(v, e.m, e.module_prefab as SolarPanelFixer, vi, ec, elapsed_s); break;
 				}
 			}
 		}
@@ -211,51 +208,6 @@ namespace KERBALISM
 				}
 			}
 		}
-
-
-		static void ProcessPanel(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleDeployableSolarPanel panel, Vessel_info info, Resource_info ec, double elapsed_s)
-		{
-			// note: we ignore temperature curve, and make sure it is not relevant in the MM patch
-			// note: cylindrical and spherical panels are not supported
-			// note: we assume the tracking target is SUN
-			// if in sunlight and extended
-			if (info.sunlight > double.Epsilon && m.moduleValues.GetValue("deployState") == "EXTENDED")
-			{
-				// get panel normal/pivot direction in world space
-				Transform tr = panel.part.FindModelComponent<Transform>(panel.pivotName);
-				Vector3d dir = panel.isTracking ? tr.up : tr.forward;
-				dir = (v.transform.rotation * p.rotation * dir).normalized;
-
-				float age = (float)(v.missionTime / (Lib.HoursInDay() * 3600));
-				float effic_factor = panel.timeEfficCurve != null ? panel.timeEfficCurve.Evaluate(age) : 1.0f;
-
-				// calculate cosine factor
-				// - fixed panel: clamped cosine
-				// - tracking panel, tracking pivot enabled: around the pivot
-				// - tracking panel, tracking pivot disabled: assume perfect alignment
-				double cosine_factor =
-					!panel.isTracking
-				  ? Math.Max(Vector3d.Dot(info.sun_dir, dir), 0.0)
-				  : Settings.TrackingPivot
-				  ? Math.Cos(1.57079632679 - Math.Acos(Vector3d.Dot(info.sun_dir, dir)))
-				  : 1.0;
-
-				// calculate normalized solar flux
-				// - this include fractional sunlight if integrated over orbit
-				// - this include atmospheric absorption if inside an atmosphere
-				double norm_solar_flux = info.solar_flux / Sim.SolarFluxAtHome();
-
-				// calculate output
-				double output = panel.resHandler.outputResources[0].rate              // nominal panel charge rate at 1 AU
-							  * norm_solar_flux                                       // normalized flux at panel distance from sun
-							  * cosine_factor                                         // cosine factor of panel orientation
-							  * effic_factor;
-
-				// produce EC
-				ec.Produce(output * elapsed_s, "panel");
-			}
-		}
-
 
 		static void ProcessGenerator(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleGenerator generator, Vessel_resources resources, double elapsed_s)
 		{
@@ -546,48 +498,6 @@ namespace KERBALISM
 			if (is_scanning) vd.scansat_id.Remove(p.flightID);
 		}
 		*/
-
-		static void ProcessCurvedPanel(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule curved_panel, Part part_prefab, Vessel_info info, Resource_info ec, double elapsed_s)
-		{
-			// note: we assume deployed, this is a current limitation
-
-			// if in sunlight
-			if (info.sunlight > double.Epsilon)
-			{
-				// get values from module
-				string transform_name = Lib.ReflectionValue<string>(curved_panel, "PanelTransformName");
-				float tot_rate = Lib.ReflectionValue<float>(curved_panel, "TotalEnergyRate");
-
-				// get components
-				Transform[] components = part_prefab.FindModelTransforms(transform_name);
-				if (components.Length == 0) return;
-
-				// calculate normalized solar flux
-				// note: this include fractional sunlight if integrated over orbit
-				// note: this include atmospheric absorption if inside an atmosphere
-				double norm_solar_flux = info.solar_flux / Sim.SolarFluxAtHome();
-
-				// calculate rate per component
-				double rate = tot_rate / (double)components.Length;
-
-				// calculate world-space part rotation quaternion
-				// note: a possible optimization here is to cache the transform lookup (unity was coded by monkeys)
-				Quaternion rot = v.transform.rotation * p.rotation;
-
-				// calculate output of all components
-				double output = 0.0;
-				foreach (Transform t in components)
-				{
-					output += rate                                                                     // nominal rate per-component at 1 AU
-							* norm_solar_flux                                                          // normalized solar flux at panel distance from sun
-							* Math.Max(Vector3d.Dot(info.sun_dir, (rot * t.forward).normalized), 0.0); // cosine factor of component orientation
-				}
-
-				// produce EC
-				ec.Produce(output * elapsed_s, "curvedpanel");
-			}
-		}
-
 
 		static void ProcessFissionGenerator(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule fission_generator, Resource_info ec, double elapsed_s)
 		{

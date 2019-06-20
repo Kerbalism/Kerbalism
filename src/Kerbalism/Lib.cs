@@ -1846,6 +1846,12 @@ namespace KERBALISM
 
 		// --- UI -------------------------------------------------------------------
 
+		/// <summary>Trigger a planner update</summary>
+		public static void RefreshPlanner()
+		{
+			Planner.Planner.RefreshPlanner();
+		}
+
 		// return true if last GUILayout element was clicked
 		public static bool IsClicked( int button = 0 )
 		{

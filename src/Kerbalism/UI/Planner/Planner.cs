@@ -81,10 +81,13 @@ namespace KERBALISM.Planner
 
 		#region EVENTS
 		///<summary> Method called when the vessel in the editor has been modified </summary>
-		internal static void EditorShipModifiedEvent(ShipConstruct sc) => update_counter = 0;
+		internal static void EditorShipModifiedEvent(ShipConstruct sc) => RefreshPlanner();
 		#endregion
 
 		#region METHODS
+		///<summary> Call this to trigger a planner update</summary>
+		internal static void RefreshPlanner() => update_counter = 0;
+
 		///<summary> Run simulators and update the planner UI sub-panels </summary>
 		internal static void Update()
 		{

@@ -101,9 +101,6 @@ namespace KERBALISM.Planner
 						case "ModuleCommand":
 							Process_command(m as ModuleCommand);
 							break;
-						case "ModuleDeployableSolarPanel":
-							Process_panel(m as ModuleDeployableSolarPanel, env);
-							break;
 						case "ModuleGenerator":
 							Process_generator(m as ModuleGenerator, p);
 							break;
@@ -140,9 +137,6 @@ namespace KERBALISM.Planner
 						case "KerbalismScansat":
 							Process_scanner(m as KerbalismScansat);
 							break;
-						case "ModuleCurvedSolarPanel":
-							Process_curved_panel(p, m, env);
-							break;
 						case "FissionGenerator":
 							Process_fission_generator(p, m);
 							break;
@@ -170,6 +164,9 @@ namespace KERBALISM.Planner
 							break;
 						case "ModuleRCSFX":
 							Process_rcsfx(m as ModuleRCSFX);
+							break;
+						case "SolarPanelFixer":
+							Process_solarPanel(m as SolarPanelFixer, env);
 							break;
 					}
 				}
@@ -394,13 +391,6 @@ namespace KERBALISM.Planner
 		}
 
 
-		void Process_panel(ModuleDeployableSolarPanel panel, EnvironmentAnalyzer env)
-		{
-			double generated = panel.resHandler.outputResources[0].rate * env.solar_flux / Sim.SolarFluxAtHome();
-			Resource("ElectricCharge").Produce(generated, "solar panel");
-		}
-
-
 		void Process_generator(ModuleGenerator generator, Part p)
 		{
 			// skip launch clamps, that include a generator
@@ -515,22 +505,6 @@ namespace KERBALISM.Planner
 		void Process_scanner(KerbalismScansat m)
 		{
 			Resource("ElectricCharge").Consume(m.ec_rate, "scanner");
-		}
-
-
-		void Process_curved_panel(Part p, PartModule m, EnvironmentAnalyzer env)
-		{
-			// note: assume half the components are in sunlight, and average inclination is half
-
-			// get total rate
-			double tot_rate = Lib.ReflectionValue<float>(m, "TotalEnergyRate");
-
-			// get number of components
-			int components = p.FindModelTransforms(Lib.ReflectionValue<string>(m, "PanelTransformName")).Length;
-
-			// approximate output
-			// 0.7071: average clamped cosine
-			Resource("ElectricCharge").Produce(tot_rate * 0.7071 * env.solar_flux / Sim.SolarFluxAtHome(), "curved panel");
 		}
 
 
@@ -712,6 +686,16 @@ namespace KERBALISM.Planner
 						Resource("LqdHydrogen").Consume(thrust_flow * fuel.ratio, "rcs");
 						break;
 				}
+			}
+		}
+
+		void Process_solarPanel(SolarPanelFixer mwp, EnvironmentAnalyzer env)
+		{
+			// TODO : use the analytic cosine method to determine an average rate
+			if (mwp.canRun)
+			{
+				double generated = mwp.nominalRate * (env.solar_flux / Sim.SolarFluxAtHome());
+				Resource("ElectricCharge").Produce(generated, "solar panel");
 			}
 		}
 
