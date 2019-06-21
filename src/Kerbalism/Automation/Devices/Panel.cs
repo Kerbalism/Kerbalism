@@ -13,7 +13,10 @@ namespace KERBALISM
 
 		public override string Name()
 		{
-			return "solar panel";
+			if (panel.SolarPanel.IsRetractable())
+				return "solar panel";
+			else
+				return "solar panel (non retractable)";
 		}
 
 		public override uint Part()
@@ -29,14 +32,13 @@ namespace KERBALISM
 				case SolarPanelFixer.PanelState.Extending: return Localizer.Format("#KERBALISM_Generic_EXTENDING");
 				case SolarPanelFixer.PanelState.Extended: return Lib.BuildString("<color=cyan>", Localizer.Format("#KERBALISM_Generic_EXTENDED"), " </color>");
 				case SolarPanelFixer.PanelState.Retracting: return Localizer.Format("#KERBALISM_Generic_RETRACTING");
-				case SolarPanelFixer.PanelState.Broken: return Lib.BuildString("<color=red>", Localizer.Format("#KERBALISM_Generic_BROKEN"), "</color>");
 			}
 			return "unknown";
 		}
 
 		public override bool IsVisible()
 		{
-			return panel.SolarPanel.SupportAutomation();
+			return panel.SolarPanel.SupportAutomation(panel.state);
 		}
 
 		public override void Ctrl(bool value)
@@ -66,7 +68,10 @@ namespace KERBALISM
 
 		public override string Name()
 		{
-			return "solar panel";
+			if (prefab.SolarPanel.IsRetractable())
+				return "solar panel";
+			else
+				return "solar panel (non retractable)";
 		}
 
 		public override uint Part()
@@ -81,14 +86,13 @@ namespace KERBALISM
 			{
 				case "Retracted": return Lib.BuildString("<color=red>", Localizer.Format("#KERBALISM_Generic_RETRACTED"), "</color>");
 				case "Extended": return Lib.BuildString("<color=cyan>", Localizer.Format("#KERBALISM_Generic_EXTENDED"), " </color>");
-				case "Broken": return Lib.BuildString("<color=red>", Localizer.Format("#KERBALISM_Generic_BROKEN"), "</color>");
 			}
-			return "fixed";
+			return "unknown";
 		}
 
 		public override bool IsVisible()
 		{
-			return prefab.SolarPanel.SupportAutomation();
+			return prefab.SolarPanel.SupportProtoAutomation(panel);
 		}
 
 		public override void Ctrl(bool value)
@@ -97,13 +101,13 @@ namespace KERBALISM
 			if ((value && state == SolarPanelFixer.PanelState.Retracted)
 				||
 				(!value && state == SolarPanelFixer.PanelState.Extended))
-			SolarPanelFixer.ProtoToggleState(panel, state);
+			SolarPanelFixer.ProtoToggleState(prefab, panel, state);
 		}
 
 		public override void Toggle()
 		{
 			SolarPanelFixer.PanelState state = (SolarPanelFixer.PanelState)Enum.Parse(typeof(SolarPanelFixer.PanelState), Lib.Proto.GetString(panel, "state"));
-			SolarPanelFixer.ProtoToggleState(panel, state);
+			SolarPanelFixer.ProtoToggleState(prefab, panel, state);
 		}
 
 		private readonly ProtoPartModuleSnapshot panel;
