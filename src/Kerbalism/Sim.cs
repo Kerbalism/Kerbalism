@@ -159,8 +159,9 @@ namespace KERBALISM
 				if (planetaryLayerMask == int.MaxValue)
 					planetaryLayerMask = 1 << LayerMask.NameToLayer("Scaled Scenery");
 
-				// scaled space is always 1 frame late, get past position :
-				vessel_pos = vessel_pos + (vessel.mainBody.position - vessel.mainBody.getTruePositionAtUT(Planetarium.GetUniversalTime() + TimeWarp.fixedDeltaTime));
+				// for unloaded vessels, position in scaledSpace is 1 fixUpdate frame desynchronized :
+				if (!vessel.loaded)
+					vessel_pos = vessel_pos + (vessel.mainBody.position - vessel.mainBody.getTruePositionAtUT(Planetarium.GetUniversalTime() + TimeWarp.fixedDeltaTime));
 
 				// convert vessel position to scaled space
 				ScaledSpace.LocalToScaledSpace(ref vessel_pos);

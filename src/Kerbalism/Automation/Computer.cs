@@ -252,7 +252,7 @@ namespace KERBALISM
 						case "Emitter":                      dev = new EmitterDevice(m as Emitter);                           break;
 						case "Laboratory":                   dev = new LaboratoryDevice(m as Laboratory);                     break;
 						case "Experiment":                   dev = new ExperimentDevice(m as Experiment);                     break;
-						case "ModuleDeployableSolarPanel":   dev = new PanelDevice(m as ModuleDeployableSolarPanel);          break;
+						case "SolarPanelFixer":				 dev = new PanelDevice(m as SolarPanelFixer);					  break;
 						case "ModuleGenerator":              dev = new GeneratorDevice(m as ModuleGenerator);                 break;
 						case "ModuleResourceConverter":      dev = new ConverterDevice(m as ModuleResourceConverter);         break;
 						case "ModuleKPBSConverter":          dev = new ConverterDevice(m as ModuleResourceConverter);         break;
@@ -324,7 +324,7 @@ namespace KERBALISM
 								dev = new ProtoExperimentDevice(m, module_prefab as Experiment, p.flightID, v.vesselName, experiments);
 								break;
 
-							case "ModuleDeployableSolarPanel":   dev = new ProtoPanelDevice(m, module_prefab as ModuleDeployableSolarPanel, p.flightID);          break;
+							case "SolarPanelFixer":              dev = new ProtoPanelDevice(m, module_prefab as SolarPanelFixer, p.flightID);					  break;
 							case "ModuleGenerator":              dev = new ProtoGeneratorDevice(m, module_prefab as ModuleGenerator, p.flightID);                 break;
 							case "ModuleResourceConverter":      dev = new ProtoConverterDevice(m, module_prefab as ModuleResourceConverter, p.flightID);         break;
 							case "ModuleKPBSConverter":          dev = new ProtoConverterDevice(m, module_prefab as ModuleResourceConverter, p.flightID);         break;

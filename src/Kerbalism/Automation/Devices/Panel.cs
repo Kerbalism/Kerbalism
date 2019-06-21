@@ -1,11 +1,12 @@
 ﻿using KSP.Localization;
+using System;
 
 namespace KERBALISM
 {
 
 	public sealed class PanelDevice : Device
 	{
-		public PanelDevice(ModuleDeployableSolarPanel panel)
+		public PanelDevice(SolarPanelFixer panel)
 		{
 			this.panel = panel;
 		}
@@ -22,43 +23,41 @@ namespace KERBALISM
 
 		public override string Info()
 		{
-			if (!panel.isTracking) return "fixed";
-			switch (panel.deployState)
+			switch (panel.state)
 			{
-				case ModuleDeployablePart.DeployState.EXTENDED: return "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_EXTENDED") + " </color>";
-				case ModuleDeployablePart.DeployState.RETRACTED: return "<color=red>" + Localizer.Format("#KERBALISM_Generic_RETRACTED") + "</color>";
-				case ModuleDeployablePart.DeployState.BROKEN: return "<color=red>" + Localizer.Format("#KERBALISM_Generic_BROKEN") + "</color>";
-				case ModuleDeployablePart.DeployState.EXTENDING: return Localizer.Format("#KERBALISM_Generic_EXTENDING");
-				case ModuleDeployablePart.DeployState.RETRACTING: return Localizer.Format("#KERBALISM_Generic_RETRACTING");
+				case SolarPanelFixer.PanelState.Retracted: return Lib.BuildString("<color=red>", Localizer.Format("#KERBALISM_Generic_RETRACTED"), "</color>");
+				case SolarPanelFixer.PanelState.Extending: return Localizer.Format("#KERBALISM_Generic_EXTENDING");
+				case SolarPanelFixer.PanelState.Extended: return Lib.BuildString("<color=cyan>", Localizer.Format("#KERBALISM_Generic_EXTENDED"), " </color>");
+				case SolarPanelFixer.PanelState.Retracting: return Localizer.Format("#KERBALISM_Generic_RETRACTING");
+				case SolarPanelFixer.PanelState.Broken: return Lib.BuildString("<color=red>", Localizer.Format("#KERBALISM_Generic_BROKEN"), "</color>");
 			}
 			return "unknown";
 		}
 
-		public override bool IsVisible() {
-			return panel.isTracking;
+		public override bool IsVisible()
+		{
+			return panel.SolarPanel.SupportAutomation();
 		}
 
 		public override void Ctrl(bool value)
 		{
-			if (!panel.isTracking) return;
-			if (!value && !panel.retractable) return;
-			if (panel.deployState == ModuleDeployablePart.DeployState.BROKEN) return;
-			if (value) panel.Extend();
-			else panel.Retract();
+			if (value && panel.state == SolarPanelFixer.PanelState.Retracted) panel.ToggleState();
+			if (!value && panel.state == SolarPanelFixer.PanelState.Extended) panel.ToggleState();
 		}
 
 		public override void Toggle()
 		{
-			Ctrl(panel.deployState != ModuleDeployablePart.DeployState.EXTENDED);
+			if (panel.state == SolarPanelFixer.PanelState.Retracted || panel.state == SolarPanelFixer.PanelState.Extended)
+				panel.ToggleState();
 		}
 
-		ModuleDeployableSolarPanel panel;
+		SolarPanelFixer panel;
 	}
 
 
 	public sealed class ProtoPanelDevice : Device
 	{
-		public ProtoPanelDevice(ProtoPartModuleSnapshot panel, ModuleDeployableSolarPanel prefab, uint part_id)
+		public ProtoPanelDevice(ProtoPartModuleSnapshot panel, SolarPanelFixer prefab, uint part_id)
 		{
 			this.panel = panel;
 			this.prefab = prefab;
@@ -77,37 +76,38 @@ namespace KERBALISM
 
 		public override string Info()
 		{
-			if (!prefab.isTracking) return "fixed";
-			string state = Lib.Proto.GetString(panel, "deployState");
+			string state = Lib.Proto.GetString(panel, "state");
 			switch (state)
 			{
-				case "EXTENDED": return "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_EXTENDED") + "</color>";
-				case "RETRACTED": return "<color=red>" + Localizer.Format("#KERBALISM_Generic_RETRACTED") + "</color>";
-				case "BROKEN": return "<color=red>" + Localizer.Format("#KERBALISM_Generic_BROKEN") + "</color>";
+				case "Retracted": return Lib.BuildString("<color=red>", Localizer.Format("#KERBALISM_Generic_RETRACTED"), "</color>");
+				case "Extended": return Lib.BuildString("<color=cyan>", Localizer.Format("#KERBALISM_Generic_EXTENDED"), " </color>");
+				case "Broken": return Lib.BuildString("<color=red>", Localizer.Format("#KERBALISM_Generic_BROKEN"), "</color>");
 			}
-			return "unknown";
+			return "fixed";
 		}
 
 		public override bool IsVisible()
 		{
-			return prefab.isTracking;
+			return prefab.SolarPanel.SupportAutomation();
 		}
 
 		public override void Ctrl(bool value)
 		{
-			if (!prefab.isTracking) return;
-			if (!value && !prefab.retractable) return;
-			if (Lib.Proto.GetString(panel, "deployState") == "BROKEN") return;
-			Lib.Proto.Set(panel, "deployState", value ? "EXTENDED" : "RETRACTED");
+			SolarPanelFixer.PanelState state = (SolarPanelFixer.PanelState)Enum.Parse(typeof(SolarPanelFixer.PanelState), Lib.Proto.GetString(panel, "state"));
+			if ((value && state == SolarPanelFixer.PanelState.Retracted)
+				||
+				(!value && state == SolarPanelFixer.PanelState.Extended))
+			SolarPanelFixer.ProtoToggleState(panel, state);
 		}
 
 		public override void Toggle()
 		{
-			Ctrl(Lib.Proto.GetString(panel, "deployState") != "EXTENDED");
+			SolarPanelFixer.PanelState state = (SolarPanelFixer.PanelState)Enum.Parse(typeof(SolarPanelFixer.PanelState), Lib.Proto.GetString(panel, "state"));
+			SolarPanelFixer.ProtoToggleState(panel, state);
 		}
 
 		private readonly ProtoPartModuleSnapshot panel;
-		private ModuleDeployableSolarPanel prefab;
+		private SolarPanelFixer prefab;
 		private readonly uint part_id;
 	}
 

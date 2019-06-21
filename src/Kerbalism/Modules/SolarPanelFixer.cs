@@ -10,6 +10,7 @@ namespace KERBALISM
 	// TODO : SolarPanelFixer features that require testing :
 	// - fully untested : time efficiency curve (must try with a stock panel defined curve, and a SolarPanelFixer defined curve)
 	// - background update : must check that the output is consistent with what we get when loaded (should be but checking can't hurt)
+	//   (note : only test it with equatorial circular orbits, other orbits will give inconsistent output due to sunlight evaluation algorithm limitations)
 
 	// TODO : SolarPanelFixer missing features :
 	// - (critical) reliability support
@@ -54,9 +55,11 @@ namespace KERBALISM
 		[KSPField(isPersistant = true)]
 		public double persistentFactor = 1.0;
 
-		/// <summary>should the panel generate EC at all : false if broken, not deployed, etc...</summary>
 		[KSPField(isPersistant = true)]
-		public bool canRun = true;
+		public PanelState state;
+
+		// this is used for not breaking existing saves
+		public bool isInitialized = false;
 
 		/// <summary>
 		/// Time based output degradation curve. Keys in hours, values in [0;1] range.
@@ -71,60 +74,97 @@ namespace KERBALISM
 		public double launchUT = -1.0;
 
 		/// <summary>internal object for handling the various hacks depending on the target solar panel module</summary>
-		private SupportedPanel solarPanel;
-
-		/// <summary>used for checking prefab state</summary>
-		public bool IsInitialized { get; private set; }
+		public SupportedPanel SolarPanel { get; private set; }
 
 		/// <summary>is this panel either in shadow or by occluded by the terrain / a scene object</summary>
 		private double occludedFactor;
 
-		bool analyticSunlight;
+		/// <summary>for UI state updating</summary>
+		private bool analyticSunlight;
 
-		public override void OnStart(StartState state)
+		public enum PanelState
 		{
-			IsInitialized = true;
+			Unknown = 0,
+			Retracted,
+			Extending,
+			Extended,
+			Retracting,
+			Static,
+			Broken,
+			Failure
+		}
 
-			// don't break tutorial scenarios
-			// TODO : does this actually work ?
-			if (Lib.DisableScenario(this)) return;
-
+		public bool GetSolarPanelModule()
+		{
 			// find the module based on explicitely supported modules
 			foreach (PartModule pm in part.Modules)
 			{
 				// stock module and derivatives
-				if (pm is ModuleDeployableSolarPanel) // stock module and derivatives
-				{
-					solarPanel = new StockPanel();
-				}
+				if (pm is ModuleDeployableSolarPanel)
+					SolarPanel = new StockPanel();
+
 
 				// other supported modules
 				switch (pm.moduleName)
 				{
-					case "ModuleCurvedSolarPanel": solarPanel = new NFSCurvedPanel(); break;
+					case "ModuleCurvedSolarPanel": SolarPanel = new NFSCurvedPanel(); break;
 					case "SSTUSolarPanelStatic": break;
 					case "SSTUSolarPanelDeployable": break;
 					case "SSTUModularPart": break;
 				}
 
-				if (solarPanel != null)
+				if (SolarPanel != null)
 				{
-					nominalRate = solarPanel.OnStart(this, pm);
+					SolarPanel.OnLoad(pm);
 					break;
 				}
 			}
 
-			if (solarPanel == null)
+			if (SolarPanel == null)
 			{
 				Lib.Log("WARNING : Could not find a supported solar panel module, disabling SolarPanelFixer module...");
 				enabled = isEnabled = moduleIsEnabled = false;
+				return false;
+			}
+
+			return true;
+		}
+
+		public override void OnLoad(ConfigNode node)
+		{
+			if (SolarPanel == null && !GetSolarPanelModule())
+				return;
+
+			// apply states changes we have done trough automation
+			if ((state == PanelState.Retracted || state == PanelState.Extended) && state != SolarPanel.GetState())
+			{
+				SolarPanel.SetState(state);
+			}
+				
+		}
+
+		public override void OnStart(StartState state)
+		{
+			// don't break tutorial scenarios
+			// TODO : does this actually work ?
+			if (Lib.DisableScenario(this)) return;
+
+			if (SolarPanel == null && !GetSolarPanelModule())
+			{
+				isInitialized = true;
 				return;
 			}
+
+			double newNominalRate = SolarPanel.OnStart(isInitialized);
+			if (newNominalRate > 0.0)
+				nominalRate = newNominalRate;
+
+			isInitialized = true;
 
 			// not sure why (I guess because of the KSPField attribute), but timeEfficCurve is instanciated with 0 keys by something instead of being null
 			if (timeEfficCurve == null || timeEfficCurve.Curve.keys.Length == 0)
 			{
-				timeEfficCurve = solarPanel.GetTimeCurve();
+				timeEfficCurve = SolarPanel.GetTimeCurve();
 				if (Lib.IsFlight() && launchUT < 0.0)
 					launchUT = Planetarium.GetUniversalTime();
 			}
@@ -135,8 +175,8 @@ namespace KERBALISM
 			// vessel can be null in OnSave (ex : on vessel creation)
 			if (!Lib.IsFlight()
 				|| vessel == null
-				|| !IsInitialized
-				|| solarPanel == null
+				|| !isInitialized
+				|| SolarPanel == null
 				|| !Lib.Landed(vessel))
 				return;
 
@@ -146,16 +186,17 @@ namespace KERBALISM
 			// do nothing if vessel is invalid
 			if (!info.is_valid) return;
 
+			// calculate average exposure over a full day when landed, will be used for panel background processing
 			persistentFactor = GetAnalyticalCosineFactorLanded(info.sun_dir);
 		}
 
 		public void Update()
 		{
 			// sanity check
-			if (solarPanel == null) return;
+			if (SolarPanel == null) return;
 
 			// call Update specfic handling, if any
-			solarPanel.OnUpdate();
+			SolarPanel.OnUpdate();
 
 			// do nothing else in editor
 			if (Lib.IsEditor()) return;
@@ -174,35 +215,31 @@ namespace KERBALISM
 			}
 		}
 
-		private double GetAnalyticalCosineFactorLanded(Vector3d sunDir)
-		{
-			Quaternion sunRot = Quaternion.AngleAxis(45, Vector3d.Cross(Vector3d.left, sunDir));
-
-			double factor = 0.0;
-			string occluding;
-			for (int i = 0; i < 8; i++)
-			{
-				sunDir = sunRot * sunDir;
-				factor += solarPanel.GetCosineFactor(sunDir, true);
-				factor += solarPanel.GetOccludedFactor(sunDir, out occluding, true);
-			}
-			return factor /= 16.0;
-		}
-
 		public void FixedUpdate()
 		{
 			// sanity check
-			if (solarPanel == null) return;
+			if (SolarPanel == null) return;
 
 			// can't produce anything if not deployed, broken, etc
-			if (canRun != solarPanel.CanRun(out panelStatus))
+			PanelState newState = SolarPanel.GetState();
+			if (state != newState)
 			{
-				canRun = !canRun;
-				if (Lib.IsEditor()) Lib.RefreshPlanner();
+				state = newState;
+				if (Lib.IsEditor() && (newState == PanelState.Extended || newState == PanelState.Retracted))
+					Lib.RefreshPlanner();
 			}
 
-			if (!canRun)
+			if (!(state == PanelState.Extended || state == PanelState.Static))
 			{
+				switch (state)
+				{
+					case PanelState.Retracted:	panelStatus = "retracted";	break;
+					case PanelState.Extending:	panelStatus = "extending";	break;
+					case PanelState.Retracting: panelStatus = "retracting"; break;
+					case PanelState.Broken:		panelStatus = "broken";		break;
+					case PanelState.Failure:	panelStatus = "failure";	break;
+					case PanelState.Unknown:	panelStatus = "invalid state"; break;
+				}
 				currentOutput = 0.0;
 				return;
 			}
@@ -239,8 +276,8 @@ namespace KERBALISM
 			{
 				currentOutput = 0.0;
 				solarFlux = 0.0;
-				panelStatus = "<color=#ff2222>in shadow</color>";
 				occludedFactor = 0.0;
+				panelStatus = "<color=#ff2222>in shadow</color>";
 				return;
 			}
 
@@ -257,28 +294,29 @@ namespace KERBALISM
 				analyticSunlight = false;
 			}
 
-
 			// cosine factor isn't updated when in analyticalSunlight / unloaded states :
 			// - evaluting sun_dir / vessel orientation gives random results resulting in inaccurate behavior / random EC rates
 			// - using the last calculated factor is a satisfactory simulation of a sun relative vessel attitude keeping behavior
 			//   without all the complexity of actually doing it
-			// local occlusion from physic raycasts is also problematic :
-			// - occlusion from parts can be considered as a permanent factor
-			// - occlusion from the terrain and static object can't be reliably evaluated at high timewarp speeds
-			// - in analyticalSunlight / unloaded states, we only apply the occlusion from parts
-			// - this ensure occlusion output factor is never lower than it should be
 			double cosineFactor = 1.0;
 			if (!analyticSunlight)
 			{
-				cosineFactor = solarPanel.GetCosineFactor(info.sun_dir);
+				// get the cosine factor
+				cosineFactor = SolarPanel.GetCosineFactor(info.sun_dir);
 				if (cosineFactor > 0.0)
 				{
-					occludedFactor = solarPanel.GetOccludedFactor(info.sun_dir, out panelStatus);
+					// the panel is oriented toward the sun
+					// now do a physic raycast to check occlusion from parts, terrain, buildings...
+					occludedFactor = SolarPanel.GetOccludedFactor(info.sun_dir, out panelStatus);
+					
 					if (panelStatus != null)
 					{
+						// if there is occlusion from a part ("out string occludingPart" not null)
+						// we save this occlusion factor to account for it in analyticalSunlight / unloaded states, 
 						persistentFactor = cosineFactor * occludedFactor;
 						if (occludedFactor == 0.0)
 						{
+							// if we are totally occluded, do nothing else
 							currentOutput = 0.0;
 							panelStatus = Lib.BuildString("<color=#ff2222>occluded by ", panelStatus, "</color>");
 							return;
@@ -286,9 +324,12 @@ namespace KERBALISM
 					}
 					else
 					{
+						// if there is no occlusion, or if occlusion is from the rest of the scene (terrain, building, not a part)
+						// don't save the occlusion factor, as occlusion from the terrain and static objects is very variable, we won't use it in analyticalSunlight / unloaded states, 
 						persistentFactor = cosineFactor;
 						if (occludedFactor == 0.0)
 						{
+							// if we are totally occluded, do nothing else
 							currentOutput = 0.0;
 							panelStatus = "<color=#ff2222>occluded by terrain</color>";
 							return;
@@ -297,9 +338,10 @@ namespace KERBALISM
 				}
 				else
 				{
+					// the panel is not oriented toward the sun, reset everything and abort
 					persistentFactor = 0.0;
 					currentOutput = 0.0;
-					panelStatus = "<color=#ff2222>not in sunlight</color>";
+					panelStatus = "<color=#ff2222>bad orientation</color>";
 					return;
 				}
 			}
@@ -318,9 +360,9 @@ namespace KERBALISM
 			double fluxFactor = solarFlux / Sim.SolarFluxAtHome();
 
 			if (analyticSunlight)
-				currentOutput = nominalRate * fluxFactor * wearFactor * persistentFactor;
+				currentOutput = nominalRate * wearFactor * fluxFactor * persistentFactor;
 			else
-				currentOutput = nominalRate * fluxFactor * wearFactor * cosineFactor * occludedFactor;
+				currentOutput = nominalRate * wearFactor * fluxFactor * cosineFactor * occludedFactor;
 
 			// get resource handler
 			Resource_info ec = ResourceCache.Info(vessel, "ElectricCharge");
@@ -349,9 +391,10 @@ namespace KERBALISM
 		public static void BackgroundUpdate(Vessel v, ProtoPartModuleSnapshot m, SolarPanelFixer prefab, Vessel_info vi, Resource_info ec, double elapsed_s)
 		{
 			// this is ugly spaghetti code but initializing the prefab at loading time is messy
-			if (!prefab.IsInitialized) prefab.OnStart(StartState.None);
+			if (!prefab.isInitialized) prefab.OnStart(StartState.None);
 
-			if (!Lib.Proto.GetBool(m, "canRun"))
+			string state = Lib.Proto.GetString(m, "state");
+			if (!(state == "Static" || state == "Deployed"))
 				return;
 
 			// We don't recalculate panel orientation factor for unloaded vessels :
@@ -365,7 +408,6 @@ namespace KERBALISM
 			// - this include atmospheric absorption if inside an atmosphere
 			// - this is zero when the vessel is in shadow when evaluation is non-analytic (low timewarp rates)
 			// - if integrated over orbit (analytic evaluation), this include fractional sunlight / atmo absorbtion
-
 			efficiencyFactor *= vi.solar_flux / Sim.SolarFluxAtHome();
 
 			// get wear factor (output degradation with time)
@@ -386,14 +428,98 @@ namespace KERBALISM
 			ec.Produce(output * elapsed_s, "panel");
 		}
 
-		private abstract class SupportedPanel
+		private static PanelState GetProtoState(ProtoPartModuleSnapshot protoModule)
 		{
-			public abstract double OnStart(SolarPanelFixer warpFixer, PartModule targetModule);
-			public abstract bool CanRun(out string issueInfo);
-			public abstract double GetOccludedFactor(Vector3d sunDir, out string occludingObject, bool analytic = false);
+			return (PanelState)Enum.Parse(typeof(PanelState), Lib.Proto.GetString(protoModule, "state"));
+		}
+
+		private static void SetProtoState(ProtoPartModuleSnapshot protoModule, PanelState newState)
+		{
+			Lib.Proto.Set(protoModule, "state", newState.ToString());
+		}
+
+		public static void ProtoToggleState(ProtoPartModuleSnapshot protoModule, PanelState currentState)
+		{
+			switch (currentState)
+			{
+				case PanelState.Retracted: SetProtoState(protoModule, PanelState.Extended); return;
+				case PanelState.Extended: SetProtoState(protoModule, PanelState.Retracted); return;
+			}
+		}
+
+		public void ToggleState()
+		{
+			SolarPanel.ToggleState(state);
+		}
+
+		private double GetAnalyticalCosineFactorLanded(Vector3d sunDir)
+		{
+			Quaternion sunRot = Quaternion.AngleAxis(45, Vector3d.Cross(Vector3d.left, sunDir));
+
+			double factor = 0.0;
+			string occluding;
+			for (int i = 0; i < 8; i++)
+			{
+				sunDir = sunRot * sunDir;
+				factor += SolarPanel.GetCosineFactor(sunDir, true);
+				factor += SolarPanel.GetOccludedFactor(sunDir, out occluding, true);
+			}
+			return factor /= 16.0;
+		}
+
+		public abstract class SupportedPanel 
+		{
+
+			/// <summary>
+			/// Will be called by the SolarPanelFixer OnLoad, must set the partmodule reference.
+			/// If the panel is deployable, GetState() must be able to return the correct state after this has been called
+			/// </summary>
+			public abstract void OnLoad(PartModule targetModule);
+
+			/// <summary>
+			/// Main inititalization method called from OnStart, every hack we do must be done here
+			/// </summary>
+			/// <param name="initialized">will be true is the method has already been called for this module (OnStart can be called multiple times in the editor)</param>
+			/// <returns>nominal rate at 1AU</returns>
+			public abstract double OnStart(bool initialized);
+
+			/// <summary>Must return a [0;1] scalar evaluating the local occlusion factor (usually with a physic raycast already done by the target module)</summary>
+			/// <param name="occludingPart">if the occluding object is a part, name of the part. MUST return null in all other cases.</param>
+			/// <param name="analytic">if true, the returned scalar must account for the given sunDir, so we can't rely on the target module raycast</param>
+			public abstract double GetOccludedFactor(Vector3d sunDir, out string occludingPart, bool analytic = false);
+
+			/// <summary>Must return a [0;1] scalar evaluating the angle of the given sunDir on the panel surface (usually a dot product clamped to [0;1])</summary>
+			/// <param name="analytic">if true and the panel is orientable, the returned scalar must be the best possible output (must use the rotation around the pivot)</param>
 			public abstract double GetCosineFactor(Vector3d sunDir, bool analytic = false);
-			public virtual void OnUpdate() { }
+
+			/// <summary>must return the state of the panel, must be able to work before GetNominalRateOnStart has been called</summary>
+			public abstract PanelState GetState();
+
+			/// <summary>Can be overridden if the target module implement a time efficiency curve. Keys are in hours.</summary>
 			public virtual FloatCurve GetTimeCurve() { return new FloatCurve(new Keyframe[] { new Keyframe(0f, 1f) }); }
+
+			public virtual bool SupportAutomation() { return false; }
+
+			/// <summary>Called at Update(), can contain target module specific hacks</summary>
+			public virtual void OnUpdate() { }
+
+			/// <summary>if the panel is extendable, must be implemented for automation support</summary>
+			public virtual void Extend() { }
+
+			/// <summary>if the panel is retractable, must be implemented for automation support</summary>
+			public virtual void Retract() { }
+
+			/// <summary>if the panel is extendable/retractable, must be implemented for automation support</summary>
+			public virtual void SetState(PanelState state) { }
+
+			public void ToggleState(PanelState state)
+			{
+				switch (state)
+				{
+					case PanelState.Retracted: Extend(); return;
+					case PanelState.Extended: Retract(); return;
+				}
+			}
 		}
 
 		private abstract class SupportedPanel<T> : SupportedPanel where T : PartModule
@@ -405,29 +531,32 @@ namespace KERBALISM
 		// - we don't support the temperatureEfficCurve
 		// - we override the stock UI
 		// - we still reuse most of the stock calculations
+		// - we let the module fixedupdate/update handle animations/suncatching
+		// - we prevent stock EC generation by reseting the reshandler rate
 		private class StockPanel : SupportedPanel<ModuleDeployableSolarPanel>
 		{
 			private Transform sunCatcher;   // suncatcher transform
 			private Transform pivot;        // pivot transform (if it's a tracking panel)
 
-			public static ModuleDeployableSolarPanel modulePrefab;
-
-			public override double OnStart(SolarPanelFixer warpFixer, PartModule targetModule)
+			public override void OnLoad(PartModule targetModule)
 			{
 				panelModule = (ModuleDeployableSolarPanel)targetModule;
+			}
 
-				if (modulePrefab == null)
-					modulePrefab = (ModuleDeployableSolarPanel)panelModule.part.partInfo.partPrefab.Modules[panelModule.part.Modules.IndexOf(panelModule)];
+			public override double OnStart(bool initialized)
+			{
+				// hide stock ui
+				foreach (BaseField field in panelModule.Fields)
+				{
+					field.guiActive = false;
+				}
 
-				double output_rate;
+				// avoid rate lost due to OnStart being called multiple times in the editor
+				if (initialized)
+					return -1.0;
 
-				// store rate, but avoid rate lost due to this being called multiple times in the editor
-				if (warpFixer.nominalRate > 0.0)
-					output_rate = warpFixer.nominalRate;
-				else
-					output_rate = panelModule.resHandler.outputResources[0].rate;
-
-				// reset rate
+				double output_rate = panelModule.resHandler.outputResources[0].rate;
+				// reset target module rate
 				// - This can break mods that evaluate solar panel output for a reason or another (eg: AmpYear, BonVoyage).
 				//   We fix that by exploiting the fact that resHandler was introduced in KSP recently, and most of
 				//   these mods weren't updated to reflect the changes or are not aware of them, and are still reading
@@ -435,19 +564,13 @@ namespace KERBALISM
 				//   So we only reset resHandler rate.
 				panelModule.resHandler.outputResources[0].rate = 0.0f;
 
-				// hide stock ui
-				foreach (BaseField field in panelModule.Fields)
-				{
-					field.guiActive = false;
-				}
-
 				return output_rate;
 			}
 
+			// akwardness award : stock timeEfficCurve use 24 hours days (1/(24*60/60)) as unit for the curve keys, we convert that to hours
 			public override FloatCurve GetTimeCurve()
 			{
-				// akwardness award : stock timeEfficCurve use 24 hours days (1/(24*60/60)) as unit for the curve keys
-				// we convert that to hours
+
 				if (panelModule.timeEfficCurve != null && panelModule.timeEfficCurve.Curve.keys.Length > 1)
 				{
 					FloatCurve timeCurve = new FloatCurve();
@@ -458,31 +581,11 @@ namespace KERBALISM
 				return base.GetTimeCurve();
 			}
 
-			public override bool CanRun(out string issueInfo)
-			{
-				if (!panelModule.moduleIsEnabled || panelModule.deployState == ModuleDeployablePart.DeployState.BROKEN)
-				{
-					issueInfo = "<color=#ff2222>broken</color>";
-					return false;
-				}
-
-				if (panelModule.deployState != ModuleDeployablePart.DeployState.EXTENDED)
-				{
-					issueInfo = "disabled";
-					return false;
-				}
-
-				issueInfo = null;
-				return true;
-			}
-
-			// detect occlusion from the scene colliders using the stock module physics raycast.
-			// Note that this cover everything from parts to buildings, terrain and bodies,
-			// and consequently can be redundant with our own cosineFactor evaluation
-			public override double GetOccludedFactor(Vector3d sunDir, out string occludingObject, bool analytic = false)
+			// detect occlusion from the scene colliders using the stock module physics raycast, or our own if analytic mode = true
+			public override double GetOccludedFactor(Vector3d sunDir, out string occludingPart, bool analytic = false)
 			{
 				double occludingFactor = 1.0;
-				occludingObject = null;
+				occludingPart = null;
 				RaycastHit raycastHit;
 				if (analytic)
 				{
@@ -505,14 +608,14 @@ namespace KERBALISM
 						if (blockingPart == panelModule.part)
 							return occludingFactor;
 
-						occludingObject = blockingPart.partInfo.title;
+						occludingPart = blockingPart.partInfo.title;
 					}
 					occludingFactor = 0.0;
 				}
 				return occludingFactor;
 			}
 
-
+			// we use the current panel orientation, only doing it ourself when analytic = true
 			public override double GetCosineFactor(Vector3d sunDir, bool analytic = false)
 			{
 #if !DEBUG
@@ -535,6 +638,48 @@ namespace KERBALISM
 				else
 					return Math.Max(Vector3d.Dot(sunDir, sunCatcher.forward), 0.0);
 			}
+
+			public override PanelState GetState()
+			{
+				if (!panelModule.isTracking)
+				{
+					if (panelModule.deployState == ModuleDeployablePart.DeployState.BROKEN)
+						return PanelState.Broken;
+
+					return PanelState.Static;
+				}
+
+				switch (panelModule.deployState)
+				{
+					case ModuleDeployablePart.DeployState.EXTENDED:
+						if (!panelModule.retractable) return PanelState.Static;
+						return PanelState.Extended;
+					case ModuleDeployablePart.DeployState.RETRACTED: return PanelState.Retracted;
+					case ModuleDeployablePart.DeployState.RETRACTING: return PanelState.Retracting;
+					case ModuleDeployablePart.DeployState.EXTENDING: return PanelState.Extending;
+					case ModuleDeployablePart.DeployState.BROKEN: return PanelState.Broken;
+				}
+				return PanelState.Unknown;
+			}
+
+			public override bool SupportAutomation() { return panelModule.useAnimation ? true : false; }
+
+			public override void SetState(PanelState state)
+			{
+				switch (state)
+				{
+					case PanelState.Retracted:
+						panelModule.deployState = ModuleDeployablePart.DeployState.RETRACTED;
+						break;
+					case PanelState.Extended:
+						panelModule.deployState = ModuleDeployablePart.DeployState.EXTENDED;
+						break;
+				}
+			}
+
+			public override void Extend() { panelModule.Extend(); }
+
+			public override void Retract() { panelModule.Retract(); }
 		}
 
 		// Near future solar curved panel support
@@ -547,19 +692,21 @@ namespace KERBALISM
 			private bool deployable;            // "Deployable" field
 			private Action panelModuleUpdate;   // delegate for the module Update() method
 
-			public override double OnStart(SolarPanelFixer warpFixer, PartModule targetModule)
+			public override void OnLoad(PartModule targetModule)
 			{
-				// get the module
 				panelModule = targetModule;
+				deployable = Lib.ReflectionValue<bool>(panelModule, "Deployable");
+			}
 
+			public override double OnStart(bool initialized)
+			{
 				// get a delegate for Update() method (avoid performance penality of reflection)
 				panelModuleUpdate = (Action)Delegate.CreateDelegate(typeof(Action), panelModule, "Update");
 
 				// since we are disabling the MonoBehavior, ensure the module Start() has been called
 				Lib.ReflectionCall(panelModule, "Start");
 
-				// get values from module
-				deployable = Lib.ReflectionValue<bool>(panelModule, "Deployable");
+				// get transform name from module
 				string transform_name = Lib.ReflectionValue<string>(panelModule, "PanelTransformName");
 
 				// get panel components
@@ -574,39 +721,17 @@ namespace KERBALISM
 				return Lib.ReflectionValue<float>(panelModule, "TotalEnergyRate");
 			}
 
-			public override bool CanRun(out string issueInfo)
-			{
-				string state = Lib.ReflectionValue<string>(panelModule, "SavedState");
-				//ModuleDeployablePart.DeployState state = (ModuleDeployablePart.DeployState)Enum.Parse(typeof(ModuleDeployablePart.DeployState), Lib.ReflectionValue<string>(panelModule, "SavedState"));
-
-				if (!panelModule.moduleIsEnabled || state == "BROKEN")
-				{
-					issueInfo = "<color=#ff2222>broken</color>";
-					return false;
-				}
-
-				if (deployable && state != "EXTENDED")
-				{
-					issueInfo = "disabled";
-					return false;
-				}
-
-				issueInfo = null;
-				return true;
-			}
-
-			public override double GetOccludedFactor(Vector3d sunDir, out string occludingObject, bool analytic = false)
+			public override double GetOccludedFactor(Vector3d sunDir, out string occludingPart, bool analytic = false)
 			{
 				double occludedFactor = 1.0;
-				occludingObject = null;
+				occludingPart = null;
 
 				RaycastHit raycastHit;
 				foreach (Transform panel in sunCatchers)
 				{
 					if (Physics.Raycast(panel.position, sunDir, out raycastHit, 10000f))
 					{
-
-						if (occludingObject == null && raycastHit.collider != null)
+						if (occludingPart == null && raycastHit.collider != null)
 						{
 							Part blockingPart = Part.GetComponentUpwards<Part>(raycastHit.transform.gameObject);
 							if (blockingPart != null)
@@ -615,7 +740,7 @@ namespace KERBALISM
 								if (blockingPart == panelModule.part)
 									continue;
 
-								occludingObject = blockingPart.partInfo.title;
+								occludingPart = blockingPart.partInfo.title;
 							}
 							occludedFactor -= 1.0 / sunCatchers.Length;
 						}
@@ -652,16 +777,57 @@ namespace KERBALISM
 					field.guiActive = false;
 				}
 			}
+
+			public override PanelState GetState()
+			{
+				string stateStr = Lib.ReflectionValue<string>(panelModule, "SavedState");
+				Type enumtype = typeof(ModuleDeployablePart.DeployState);
+				if (!Enum.IsDefined(enumtype, stateStr))
+					return PanelState.Unknown;
+
+				ModuleDeployablePart.DeployState state = (ModuleDeployablePart.DeployState)Enum.Parse(enumtype, stateStr);
+
+				switch (state)
+				{
+					case ModuleDeployablePart.DeployState.EXTENDED:
+						if (!deployable) return PanelState.Static;
+						return PanelState.Extended;
+					case ModuleDeployablePart.DeployState.RETRACTED: return PanelState.Retracted;
+					case ModuleDeployablePart.DeployState.RETRACTING: return PanelState.Retracting;
+					case ModuleDeployablePart.DeployState.EXTENDING: return PanelState.Extending;
+					case ModuleDeployablePart.DeployState.BROKEN: return PanelState.Broken;
+				}
+				return PanelState.Unknown;
+			}
+
+			public override bool SupportAutomation() { return deployable; }
+
+			public override void SetState(PanelState state)
+			{
+				switch (state)
+				{
+					case PanelState.Retracted:
+						Lib.ReflectionValue(panelModule, "SavedState", "RETRACTED");
+						break;
+					case PanelState.Extended:
+						Lib.ReflectionValue(panelModule, "SavedState", "EXTENDED");
+						break;
+				}
+			}
+
+			public override void Extend() { Lib.ReflectionCall(panelModule, "DeployPanels"); }
+
+			public override void Retract() { Lib.ReflectionCall(panelModule, "RetractPanels"); }
 		}
 
 		private class SSTUStaticPanel : SupportedPanel<PartModule>
 		{
-			public override bool CanRun(out string issueInfo)
+			public override double GetCosineFactor(Vector3d sunDir, bool analytic = false)
 			{
 				throw new NotImplementedException();
 			}
 
-			public override double GetCosineFactor(Vector3d sunDir, bool analytic = false)
+			public override double OnStart(bool initialized)
 			{
 				throw new NotImplementedException();
 			}
@@ -671,7 +837,12 @@ namespace KERBALISM
 				throw new NotImplementedException();
 			}
 
-			public override double OnStart(SolarPanelFixer warpFixer, PartModule panelModule)
+			public override PanelState GetState()
+			{
+				throw new NotImplementedException();
+			}
+
+			public override void OnLoad(PartModule targetModule)
 			{
 				throw new NotImplementedException();
 			}
