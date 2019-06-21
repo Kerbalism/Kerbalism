@@ -14,7 +14,7 @@ namespace KERBALISM
 		public override string Name()
 		{
 			if (panel.SolarPanel.IsRetractable())
-				return "solar panel";
+				return "solar panel (deployable)";
 			else
 				return "solar panel (non retractable)";
 		}
@@ -69,7 +69,7 @@ namespace KERBALISM
 		public override string Name()
 		{
 			if (prefab.SolarPanel.IsRetractable())
-				return "solar panel";
+				return "solar panel (deployable)";
 			else
 				return "solar panel (non retractable)";
 		}

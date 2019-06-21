@@ -692,7 +692,7 @@ namespace KERBALISM.Planner
 		void Process_solarPanel(SolarPanelFixer mwp, EnvironmentAnalyzer env)
 		{
 			// TODO : use the analytic cosine method to determine an average rate
-			if (mwp.state == SolarPanelFixer.PanelState.Extended || mwp.state == SolarPanelFixer.PanelState.Static)
+			if (mwp.state == SolarPanelFixer.PanelState.Extended || mwp.state == SolarPanelFixer.PanelState.ExtendedFixed || mwp.state == SolarPanelFixer.PanelState.Static)
 			{
 				double generated = mwp.nominalRate * (env.solar_flux / Sim.SolarFluxAtHome());
 				Resource("ElectricCharge").Produce(generated, "solar panel");

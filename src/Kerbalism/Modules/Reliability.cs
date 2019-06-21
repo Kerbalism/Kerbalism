@@ -9,8 +9,6 @@ using UnityEngine.UI;
 
 namespace KERBALISM
 {
-
-
 	public sealed class Reliability : PartModule, ISpecifics, IModuleInfo, IPartCostModifier, IPartMassModifier
 	{
 		// config
@@ -444,7 +442,6 @@ namespace KERBALISM
 					}
 					break;
 
-				case "ModuleDeployableSolarPanel":
 				case "ModuleDeployableRadiator":
 					if (b)
 					{
@@ -508,6 +505,12 @@ namespace KERBALISM
 						{
 							(m as Experiment).ReliablityEvent(b);
 						}
+					}
+					break;
+				case "SolarPanelFixer":
+					foreach (PartModule m in modules)
+					{
+						(m as SolarPanelFixer).ReliabilityEvent(b);
 					}
 					break;
 			}

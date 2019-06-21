@@ -258,7 +258,7 @@ namespace KERBALISM
 			// - can be disabled in settings
 			// - avoid false detection due to precision errors in stock amounts
 			// note that this is applied to all resources including non-flowing resources restricted to parts
-			if (Settings.EnforceCoherency && v.loaded && TimeWarp.CurrentRateIndex >= 6 && amount - old_amount > 1e-05 && capacity - old_capacity < 1e-05)
+			if (Settings.EnforceCoherency && v.loaded && TimeWarp.CurrentRateIndex >= 6 && _amount - old_amount > 1e-05 && _capacity - old_capacity < 1e-05)
 			{
 				Message.Post
 				(
