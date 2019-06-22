@@ -36,7 +36,7 @@ namespace KERBALISM
 	//   either we disable the monobehavior and call the methods manually, or if possible we let it run and we just get/set what we need
 	public sealed class SolarPanelFixer : PartModule
 	{
-	#region Declarations
+		#region Declarations
 		/// <summary>Main PAW info label</summary>
 		[KSPField(guiActive = true, guiActiveEditor = false, guiName = "Solar panel")]
 		public string panelStatus = string.Empty;
@@ -92,9 +92,9 @@ namespace KERBALISM
 			Broken,
 			Failure
 		}
-#endregion
+		#endregion
 
-	#region KSP/Unity methods + background update
+		#region KSP/Unity methods + background update
 		public override void OnLoad(ConfigNode node)
 		{
 			if (SolarPanel == null && !GetSolarPanelModule())
@@ -386,9 +386,9 @@ namespace KERBALISM
 			// produce EC
 			ec.Produce(output * elapsed_s, "panel");
 		}
-#endregion
+		#endregion
 
-	#region Other methods
+		#region Other methods
 		public bool GetSolarPanelModule()
 		{
 			// find the module based on explicitely supported modules
@@ -471,27 +471,26 @@ namespace KERBALISM
 			}
 			return factor /= 16.0;
 		}
-#endregion
+		#endregion
 
-	#region Abstract class for common interaction with supported PartModules
+		#region Abstract class for common interaction with supported PartModules
 		public abstract class SupportedPanel 
 		{
 			/// <summary>
 			/// Will be called by the SolarPanelFixer OnLoad, must set the partmodule reference.
-			/// If the panel is deployable, GetState() must be able to return the correct state after this has been called
+			/// GetState() must be able to return the correct state after this has been called
 			/// </summary>
 			public abstract void OnLoad(PartModule targetModule);
 
-			/// <summary>
-			/// Main inititalization method called from OnStart, every hack we do must be done here
-			/// </summary>
-			/// <param name="initialized">will be true is the method has already been called for this module (OnStart can be called multiple times in the editor)</param>
-			/// <returns>nominal rate at 1AU</returns>
+			/// <summary> Main inititalization method called from OnStart, every hack we do must be done here (In particular the one preventing the target module from generating EC)</summary>
+			/// <param name="initialized">will be true if the method has already been called for this module (OnStart can be called multiple times in the editor)</param>
+			/// <param name="nominalRate">nominal rate at 1AU</param>
+			/// <returns>must return false is something has gone wrong, will disable the whole module</returns>
 			public abstract bool OnStart(bool initialized, ref double nominalRate);
 
 			/// <summary>Must return a [0;1] scalar evaluating the local occlusion factor (usually with a physic raycast already done by the target module)</summary>
 			/// <param name="occludingPart">if the occluding object is a part, name of the part. MUST return null in all other cases.</param>
-			/// <param name="analytic">if true, the returned scalar must account for the given sunDir, so we can't rely on the target module raycast</param>
+			/// <param name="analytic">if true, the returned scalar must account for the given sunDir, so we can't rely on the target module own raycast</param>
 			public abstract double GetOccludedFactor(Vector3d sunDir, out string occludingPart, bool analytic = false);
 
 			/// <summary>Must return a [0;1] scalar evaluating the angle of the given sunDir on the panel surface (usually a dot product clamped to [0;1])</summary>
@@ -501,7 +500,7 @@ namespace KERBALISM
 			/// <summary>must return the state of the panel, must be able to work before OnStart has been called</summary>
 			public abstract PanelState GetState();
 
-			/// <summary>Can be overridden if the target module implement a time efficiency curve. Keys are in hours.</summary>
+			/// <summary>Can be overridden if the target module implement a time efficiency curve. Keys are in hours, values are a scaler in the [0:1] range.</summary>
 			public virtual FloatCurve GetTimeCurve() { return new FloatCurve(new Keyframe[] { new Keyframe(0f, 1f) }); }
 
 			/// <summary>Called at Update(), can contain target module specific hacks</summary>
@@ -525,7 +524,7 @@ namespace KERBALISM
 				}
 			}
 
-			/// <summary>Automation : override this with "return false" if the module doesn't support autmation when unloaded</summary>
+			/// <summary>Automation : override this with "return false" if the module doesn't support automation when unloaded</summary>
 			public virtual bool SupportProtoAutomation(ProtoPartModuleSnapshot protoModule)
 			{
 				switch (Lib.Proto.GetString(protoModule, "state"))
@@ -547,7 +546,7 @@ namespace KERBALISM
 			/// <summary>Automation : must be implemented if the panel is retractable</summary>
 			public virtual void Retract() { }
 
-			///<summary>Automation : Called OnLoad, must set the target module persisted extended/retracted field to reflect changes done trough automation while unloaded</summary>
+			///<summary>Automation : Called OnLoad, must set the target module persisted extended/retracted fields to reflect changes done trough automation while unloaded</summary>
 			public virtual void SetDeployedStateOnLoad(PanelState state) { }
 
 			///<summary>Automation : convenience method</summary>
@@ -567,7 +566,7 @@ namespace KERBALISM
 		}
 		#endregion
 
-	#region Stock module support (ModuleDeployableSolarPanel)
+		#region Stock module support (ModuleDeployableSolarPanel)
 		// stock solar panel module support
 		// - we don't support the temperatureEfficCurve
 		// - we override the stock UI
@@ -730,7 +729,7 @@ namespace KERBALISM
 		}
 		#endregion
 
-	#region Near Future Solar support (ModuleCurvedSolarPanel)
+		#region Near Future Solar support (ModuleCurvedSolarPanel)
 		// Near future solar curved panel support
 		// - We prevent the NFS module from running (disabled at MonoBehavior level)
 		// - We replicate the behavior of its FixedUpdate()
@@ -896,7 +895,9 @@ namespace KERBALISM
 		}
 		#endregion
 
-	#region SSTU static multi-panel module support (SSTUSolarPanelStatic)
+		#region SSTU static multi-panel module support (SSTUSolarPanelStatic)
+		// - We prevent the module from running (disabled at MonoBehavior level and KSP level)
+		// - We replicate the behavior by ourselves
 		private class SSTUStaticPanel : SupportedPanel<PartModule>
 		{
 			private Transform[] sunCatchers;    // model transforms named after the "PanelTransformName" field
@@ -995,7 +996,7 @@ namespace KERBALISM
 		}
 		#endregion
 
-	#region SSTU deployable/tracking multi-panel support (SSTUSolarPanelDeployable/SSTUModularPart)
+		#region SSTU deployable/tracking multi-panel support (SSTUSolarPanelDeployable/SSTUModularPart)
 		// SSTU common support for all solar panels that rely on the SolarModule/AnimationModule classes
 		// - We prevent stock EC generation by setting to 0.0 the fields from where SSTU is getting the rates
 		// - We use our own data structure that replicate the multiple panel per part possibilities, it store the transforms we need
@@ -1232,7 +1233,7 @@ namespace KERBALISM
 
 			public override bool SupportProtoAutomation(ProtoPartModuleSnapshot protomodule) { return false; }
 		}
-#endregion
+		#endregion
 	}
 
 	#region Utility class for drawing vectors on screen
