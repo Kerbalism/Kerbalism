@@ -860,7 +860,7 @@ namespace KERBALISM
 		public static double SunBodyAngle(Vessel v)
 		{
 			// orbit around sun?
-			if (v.mainBody.flightGlobalsIndex == 0) {
+			if (IsSun(v.mainBody)) {
 				return 0;
 			}
 
@@ -868,6 +868,11 @@ namespace KERBALISM
 			var body_sun = v.mainBody.position - FlightGlobals.Bodies[0].position;
 
 			return Vector3d.Angle(body_vessel, body_sun);
+		}
+
+		public static bool IsSun(CelestialBody body)
+		{
+			return body.flightGlobalsIndex == 0;
 		}
 
 		// --- VESSEL ---------------------------------------------------------------
