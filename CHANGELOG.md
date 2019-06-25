@@ -12,6 +12,7 @@
 * Added mod support to query the radiation model, as well as toggle visibility of belts and magnetopause (Sir Mortimer)
 * Added mod support for CME prediction accuracy that influences the probability that you get an advanced warning, and its accuracy (Sir Mortimer)
 * Configs for SoundingRockets (Arthur, Breach Candy)
+* Fixed DMOS experiment restriction to plantary space. This breaks some DMOS contracts that require experiments in solar orbit (Sir Mortimer)
 
 ## v3.0.2 for all versions of KSP from 1.4.0 to 1.7.x
 
