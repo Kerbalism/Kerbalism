@@ -443,8 +443,8 @@ namespace KERBALISM
 					case "BodyWithAtmosphere": good = body.atmosphere; break;
 					case "BodyWithoutAtmosphere": good = !body.atmosphere; break;
 						
-					case "SunAngleMin": good = Lib.SunBodyAngle(v) >= double.Parse(value); break;
-					case "SunAngleMax": good = Lib.SunBodyAngle(v) <= double.Parse(value); break;
+					case "SunAngleMin": good = Lib.IsSun(v.mainBody) || Lib.SunBodyAngle(v) >= double.Parse(value); break;
+					case "SunAngleMax": good = Lib.IsSun(v.mainBody) || Lib.SunBodyAngle(v) <= double.Parse(value); break;
 
 					case "Vacuum": good = !body.atmosphere || v.altitude > body.atmosphereDepth; break;
 					case "Ocean": good = body.ocean && v.altitude < 0.0; break;
