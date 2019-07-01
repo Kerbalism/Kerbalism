@@ -463,11 +463,12 @@ namespace KERBALISM
 			return ResourceCache.Info(v, "MoistAtmosphere").level + 0.6;
 		}
 
-		// return shielding factor in a vessel
+		/// <summary>
+		/// Return vessel shielding factor.
+		/// </summary>
 		public static double Shielding(Vessel v)
 		{
-			// the shielding factor is simply the level of shielding, scaled by the 'shielding efficiency' setting
-			return ResourceCache.Info(v, "Shielding").level * PreferencesStorm.Instance.shieldingEfficiency;
+			return Radiation.ShieldingEfficiency(ResourceCache.Info(v, "Shielding").level);
 		}
 
 		// return living space factor in a vessel
