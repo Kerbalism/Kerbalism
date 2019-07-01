@@ -167,10 +167,10 @@ namespace KERBALISM.Planner
 			// calculate shielding factor
 			double amount = sim.Resource("Shielding").amount;
 			double capacity = sim.Resource("Shielding").capacity;
-			
-			shielding = capacity > double.Epsilon 
-                ? 1 - Math.Pow(1 - PreferencesStorm.Instance.shieldingEfficiency, amount / capacity) 
-                : PreferencesStorm.Instance.shieldingEfficiency;
+
+			shielding = capacity > double.Epsilon
+				? Radiation.ShieldingEfficiency(amount / capacity)
+				: PreferencesStorm.Instance.shieldingEfficiency;
 		}
 
 		void Analyze_reliability(List<Part> parts)
