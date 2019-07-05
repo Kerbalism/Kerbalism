@@ -14,7 +14,9 @@
 * Configs for SoundingRockets (Arthur, Breach Candy)
 * Fixed DMOS experiment restriction to plantary space. This breaks some DMOS contracts that require experiments in solar orbit (Sir Mortimer)
 * Improved shielding efficiency calculation (Free Thinker)
-* Added support for Universal Storage 2 fuel cells
+* Apply artificial radiation sources after Gamma Transparency is applied (Free Thinker)
+* Fixed the configuration for EVA kerbals, a problem introduced by Serenity (Sir Mortimer)
+* Added support for Universal Storage 2 fuel cells (lordcirth)
 
 ## v3.0.2 for all versions of KSP from 1.4.0 to 1.7.x
 
