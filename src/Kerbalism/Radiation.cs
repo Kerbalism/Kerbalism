@@ -626,8 +626,7 @@ namespace KERBALISM
 			// add extern radiation
 			radiation += PreferencesStorm.Instance.ExternRadiation;
 
-			// add emitter radiation
-			radiation += Emitter.Total(v);
+
 
 			// if there is a storm in progress
 			if (Storm.InProgress(v))
@@ -637,13 +636,19 @@ namespace KERBALISM
 				if (magnetosphere) blackout = true;
 				else radiation += PreferencesStorm.Instance.StormRadiation * sunlight;
 			}
+			
+			// apply gamma transparency if inside atmosphere
+			radiation *= gamma_transparency
 
+			// add emitter radiation after atmosphere transparency
+			radiation += Emitter.Total(v);
+			
 			// clamp radiation to positive range
 			// note: we avoid radiation going to zero by using a small positive value
 			radiation = Math.Max(radiation, Nominal);
 
-			// return radiation, scaled by gamma transparency if inside atmosphere
-			return radiation * gamma_transparency;
+			// return radiation
+			return radiation;
 		}
 
 
