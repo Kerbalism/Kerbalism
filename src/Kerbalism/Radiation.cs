@@ -638,7 +638,7 @@ namespace KERBALISM
 			}
 			
 			// apply gamma transparency if inside atmosphere
-			radiation *= gamma_transparency
+			radiation *= gamma_transparency;
 
 			// add emitter radiation after atmosphere transparency
 			radiation += Emitter.Total(v);
