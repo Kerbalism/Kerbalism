@@ -4,8 +4,7 @@
 
 ### Changes since the last release
 
-* Changed density of MoistAtmosphere to 0.00000485 inspired by sswelm aka. FreeThinker
-  Saturated water vapor at STP has a true density of 4.85 g/m3 at 273 K , which translates into a density of 0.00000485 which is 165.77 times less than currently!! (GordonDry)
+* Changed density of MoistAtmosphere to 0.00000485 (inspired by sswelm aka. FreeThinker) Saturated water vapor at STP has a true density of 4.85 g/m3 at 273 K , which translates into a density of 0.00000485 which is 165.77 times less than currently!! (GordonDry)
 * Support tilted magnetic fields and radiation belts with offsets (Sir Mortimer)
 * Updated the RSS radiation model according to http://evildrganymede.net/work/magfield.htm (Sir Mortimer)
 * Fixed an error in new science support for DMOS (Sir Mortimer)
