@@ -17,6 +17,8 @@
 * Apply artificial radiation sources after Gamma Transparency is applied (Free Thinker)
 * Fixed the configuration for EVA kerbals, a problem introduced by Serenity (Sir Mortimer)
 * Added support for Universal Storage 2 fuel cells (lordcirth)
+* Added config for Unkerballed start tech tree (Sir Mortimer)
+* Added config for a new ReStock+ probe core RC-XL001 (Sir Mortimer)
 
 ## v3.0.2 for all versions of KSP from 1.4.0 to 1.7.x
 
