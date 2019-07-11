@@ -127,7 +127,7 @@ namespace KERBALISM
 		public bool supply = true;
 
 		[GameParameters.CustomParameterUI("Signal", toolTip = "Show a message when signal is lost or obtained\n(Preset, can be changed per vessel)")]
-		public bool signal = true;
+		public bool signal = false;
 
 		[GameParameters.CustomParameterUI("Failures", toolTip = "Show a message when a components fail\n(Preset, can be changed per vessel)")]
 		public bool malfunction = true;
@@ -136,7 +136,7 @@ namespace KERBALISM
 		public bool storm = true;
 
 		[GameParameters.CustomParameterUI("Scripts", toolTip = "Show a message when scripts are executed\n(Preset, can be changed per vessel)")]
-		public bool script = true;
+		public bool script = false;
 
 		[GameParameters.CustomParameterUI("Stock Messages", toolTip = "Use the stock message system instead of our own")]
 		public bool stockMessages = false;
@@ -286,25 +286,25 @@ namespace KERBALISM
 	public class PreferencesStorm : GameParameters.CustomParameterNode
 	{
 		[GameParameters.CustomIntParameterUI("Min Days Between Storms", minValue = 1, maxValue = 2000, toolTip = "Minimum days between storms over a system")]
-		public int stormMinDays = 100;
+		public int stormMinDays = Settings.StormMinDays;
 
 		[GameParameters.CustomIntParameterUI("Max Days Between Storms", minValue = 1, maxValue = 2000, toolTip = "Maximum days between storms over a system")]
-		public int stormMaxDays = 500;
+		public int stormMaxDays = Settings.StormMaxDays;
 
 		[GameParameters.CustomIntParameterUI("Storm Duration Hours", minValue = 1, maxValue = 200, toolTip = "Average duration of a storm in hours")]
-		public int stormDurationHours = 6;
+		public int stormDurationHours = Settings.StormDurationHours;//6;
 
 		[GameParameters.CustomFloatParameterUI("Storm Ejection Speed", asPercentage = true, minValue = 0.01f, maxValue = 1, displayFormat = "F2", toolTip = "CME speed as percentage of C")]
-		public float stormEjectionSpeedC = 0.33f;
+		public float stormEjectionSpeedC = Settings.StormEjectionSpeed;
 
 		[GameParameters.CustomFloatParameterUI("Shielding Efficiency", asPercentage = true, minValue = 0.01f, maxValue = 1, displayFormat = "F2", toolTip = "Proportion of radiation blocked by shielding (at max amount)")]
-		public float shieldingEfficiency = 0.9f;
+		public float shieldingEfficiency = Settings.ShieldingEfficiency;
 
 		[GameParameters.CustomFloatParameterUI("Storm Radiation rad/h", minValue = 1, maxValue = 15, displayFormat = "F2", toolTip = "Radiation during a solar storm")]
-		public float stormRadiation = 5;
+		public float stormRadiation = Settings.StormRadiation;
 
 		[GameParameters.CustomFloatParameterUI("External Radiation rad/h", minValue = 0.01f, maxValue = 2, displayFormat = "F2", toolTip = "Radiation outside the heliopause")]
-		public float externRadiation = 0.04f;
+		public float externRadiation = Settings.ExternRadiation;
 
 		public double StormMinTime { get { return stormMinDays * Lib.HoursInDay() * 3600.0; } }
 

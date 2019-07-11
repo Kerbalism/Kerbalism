@@ -83,10 +83,18 @@ namespace KERBALISM
             ComfortCallHome = Lib.ConfigValue(cfg, "ComfortCallHome", 0.1f);
             ComfortPanorama = Lib.ConfigValue(cfg, "ComfortPanorama", 0.1f);
             ComfortPlants = Lib.ConfigValue(cfg, "ComfortPlants", 0.1f);
-        }
 
-        // profile used
-        public static string Profile;                           // name of profile to use, if any
+			StormMinDays = Lib.ConfigValue(cfg, "StormMinDays", 100);
+			StormMaxDays = Lib.ConfigValue(cfg, "StormMaxDays", 500);
+			StormDurationHours = Lib.ConfigValue(cfg, "StormDurationHours", 6);
+			StormEjectionSpeed = Lib.ConfigValue(cfg, "StormEjectionSpeed", 0.33f);
+			ShieldingEfficiency = Lib.ConfigValue(cfg, "ShieldingEfficiency", 0.9f);
+			StormRadiation = Lib.ConfigValue(cfg, "StormRadiation", 5.0f);
+			ExternRadiation = Lib.ConfigValue(cfg, "ExternRadiation", 0.04f);
+		}
+
+	// profile used
+	public static string Profile;                           // name of profile to use, if any
 
         // user-defined features
         public static bool Reliability;                         // component malfunctions and critical failures
@@ -148,6 +156,14 @@ namespace KERBALISM
         public static float ComfortCallHome;
         public static float ComfortPanorama;
         public static float ComfortPlants;
+
+		public static int StormMinDays;
+		public static int StormDurationHours;
+		public static int StormMaxDays;
+		public static float StormEjectionSpeed;
+		public static float ShieldingEfficiency;
+		public static float StormRadiation;
+		public static float ExternRadiation;
 	}
 
 
