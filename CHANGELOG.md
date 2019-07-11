@@ -19,6 +19,7 @@
 * Added support for Universal Storage 2 fuel cells (lordcirth)
 * Added config for Unkerballed start tech tree (Sir Mortimer)
 * Added config for a new ReStock+ probe core RC-XL001 (Sir Mortimer)
+* Radiation values in settings now take a preset from Settings.cfg (Sir Mortimer)
 
 ## v3.0.2 for all versions of KSP from 1.4.0 to 1.7.x
 
