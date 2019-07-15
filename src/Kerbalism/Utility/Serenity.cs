@@ -16,19 +16,12 @@ namespace KERBALISM
 
 	public static class Serenity
 	{
-		public static bool Enabled { get; private set; }
-
-		internal static void Init()
-		{
-			Enabled = Expansions.ExpansionsLoader.IsExpansionInstalled("Serenity");
-		}
-
 		/// <summary>
 		/// Use this whenever possible. Note this cannot be used during deployment.
 		/// </summary>
 		internal static DeployedScienceCluster GetScienceCluster(Vessel v)
 		{
-			if (!Enabled)
+			if (!Kerbalism.SerenityEnabled)
 				return null;
 
 			foreach (var cluster in DeployedScience.Instance.DeployedScienceClusters.Values)
