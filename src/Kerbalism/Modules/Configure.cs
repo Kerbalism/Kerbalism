@@ -20,7 +20,7 @@ namespace KERBALISM
 	}
 
 
-	public sealed class Configure : PartModule, IPartCostModifier, IPartMassModifier, IModuleInfo, ISpecifics, IConfigurable
+	public class Configure : PartModule, IPartCostModifier, IPartMassModifier, IModuleInfo, ISpecifics, IConfigurable
 	{
 		// config
 		[KSPField] public string title = string.Empty;           // short description

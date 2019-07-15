@@ -7,7 +7,7 @@ namespace KERBALISM
 {
 
 
-	public sealed class PlannerController : PartModule
+	public class PlannerController : PartModule
 	{
 		// config
 		[KSPField] public bool toggle = true;                       // true to show the toggle button in editor

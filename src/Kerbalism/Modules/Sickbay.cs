@@ -6,7 +6,7 @@ namespace KERBALISM
 {
 
 
-	public sealed class Sickbay : PartModule, IModuleInfo, ISpecifics
+	public class Sickbay : PartModule, IModuleInfo, ISpecifics
 	{
 		private static int MAX_SLOTS = 5;
 

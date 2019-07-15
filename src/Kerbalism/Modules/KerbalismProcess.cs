@@ -5,7 +5,7 @@ using UnityEngine;
 // EXPERIMENTAL
 namespace KERBALISM
 {
-	public sealed class KerbalismProcess : PartModule
+	public class KerbalismProcess : PartModule
 	{
 		[KSPField] public double ec_produced = 0;    // EC produced by this part
 		[KSPField] public double ec_consumed = 0;    // EC consumed by this part

@@ -12,7 +12,7 @@ namespace KERBALISM
 	// The stock module was not simply replaced with a custom solar panel module, because
 	// dealing with tracking and with the "solar panel transforms zoo" was a pain.
 	// We reuse computations done by the stock module as much as possible.
-	public sealed class WarpFixer : PartModule
+	public class WarpFixer : PartModule
 	{
 		public override void OnStart(StartState state)
 		{

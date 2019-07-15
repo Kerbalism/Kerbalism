@@ -7,7 +7,7 @@ namespace KERBALISM
 {
 
 
-	public sealed class Greenhouse : PartModule, IModuleInfo, ISpecifics, IContractObjectiveModule, IConfigurable
+	public class Greenhouse : PartModule, IModuleInfo, ISpecifics, IContractObjectiveModule, IConfigurable
 	{
 		// config
 		[KSPField] public string crop_resource;         // name of resource produced by harvests

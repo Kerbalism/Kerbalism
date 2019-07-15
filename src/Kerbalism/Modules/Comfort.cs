@@ -8,7 +8,7 @@ namespace KERBALISM
 {
 
 
-	public sealed class Comfort : PartModule, ISpecifics
+	public class Comfort : PartModule, ISpecifics
 	{
 		// config+persistence
 		[KSPField(isPersistant = true)] public string bonus = string.Empty; // the comfort bonus provided

@@ -2,7 +2,7 @@
 
 namespace KERBALISM
 {
-	public sealed class GravityRing : PartModule, ISpecifics
+	public class GravityRing : PartModule, ISpecifics
 	{
 		// config
 		[KSPField] public double ec_rate;                                  // ec consumed per-second when deployed

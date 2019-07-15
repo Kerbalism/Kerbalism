@@ -7,7 +7,7 @@ namespace KERBALISM
 {
 
 
-	public sealed class Harvester : PartModule, IAnimatedModule, IModuleInfo, ISpecifics, IContractObjectiveModule
+	public class Harvester : PartModule, IAnimatedModule, IModuleInfo, ISpecifics, IContractObjectiveModule
 	{
 		// config
 		[KSPField] public string title = string.Empty;            // name to show on ui

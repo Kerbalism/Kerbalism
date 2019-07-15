@@ -6,7 +6,7 @@ namespace KERBALISM
 {
 
 
-	public sealed class ProcessController: PartModule, IModuleInfo, IAnimatedModule, ISpecifics, IConfigurable
+	public class ProcessController: PartModule, IModuleInfo, IAnimatedModule, ISpecifics, IConfigurable
 	{
 		// config
 		[KSPField] public string resource = string.Empty; // pseudo-resource to control

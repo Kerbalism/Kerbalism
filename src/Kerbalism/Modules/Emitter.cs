@@ -7,7 +7,7 @@ namespace KERBALISM
 {
 
 
-	public sealed class Emitter : PartModule, ISpecifics
+	public class Emitter : PartModule, ISpecifics
 	{
 		// config
 		[KSPField(isPersistant = true)] public double radiation;  // radiation in rad/s
