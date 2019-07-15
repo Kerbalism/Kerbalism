@@ -40,6 +40,8 @@ namespace KERBALISM
 			Fetch = this;
 			Communications.NetworkInitialized = false;
 			Communications.NetworkInitializing = false;
+
+			SerenityEnabled = Expansions.ExpansionsLoader.IsExpansionInstalled("Serenity");
 		}
 
 		private void OnDestroy()
@@ -70,10 +72,6 @@ namespace KERBALISM
 				ParticleRenderer.Init();
 				Highlighter.Init();
 				UI.Init();
-
-#if !KSP170 && !KSP16 && !KSP15 && !KSP14
-				Serenity.Init();
-#endif
 
 				// prepare storm data
 				foreach (CelestialBody body in FlightGlobals.Bodies)
@@ -347,6 +345,8 @@ namespace KERBALISM
 
 		// last savegame unique id
 		static int savegame_uid;
+
+		public static bool SerenityEnabled { get; private set; }
 	}
 
 	public sealed class MapCameraScript: MonoBehaviour
