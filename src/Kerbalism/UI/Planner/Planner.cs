@@ -552,8 +552,6 @@ namespace KERBALISM.Planner
 			p.AddContent("scrubbing", waste_status, waste_tooltip);
 			p.AddContent("humidity", moist_status, moist_tooltip);
 			p.AddContent("pressurization", atmo_status, atmo_tooltip);
-			p.AddContent("EVA's available", env_analyzer.breathable ? "infinite" : Lib.HumanReadableInteger(vessel_analyzer.evas),
-				env_analyzer.breathable ? "breathable atmosphere" : "approx (derived from stored N2)");
 		}
 		#endregion
 
