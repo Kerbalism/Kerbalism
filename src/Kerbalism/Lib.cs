@@ -837,8 +837,8 @@ namespace KERBALISM
 		// return reference body of the planetary system that contain the specified body
 		public static CelestialBody PlanetarySystem(CelestialBody body)
 		{
-			if (body.flightGlobalsIndex == 0) return body;
-			while (body.referenceBody.flightGlobalsIndex != 0) body = body.referenceBody;
+			if (Lib.IsSun(body)) return body;
+			while (!Lib.IsSun(body)) body = body.referenceBody;
 			return body;
 		}
 
@@ -865,14 +865,58 @@ namespace KERBALISM
 		public static double SunBodyAngle(Vessel v)
 		{
 			// orbit around sun?
-			if (v.mainBody.flightGlobalsIndex == 0) {
+			if (IsSun(v.mainBody))
+			{
 				return 0;
 			}
 
 			var body_vessel = v.mainBody.position - Lib.VesselPosition(v);
-			var body_sun = v.mainBody.position - FlightGlobals.Bodies[0].position;
+			var body_sun = v.mainBody.position - GetSun(v.mainBody).position;
 
 			return Vector3d.Angle(body_vessel, body_sun);
+		}
+
+		private static readonly Dictionary<int, bool> _IsSun = new Dictionary<int, bool>();
+		public static bool IsSun(CelestialBody body)
+		{
+			if(_IsSun.ContainsKey(body.flightGlobalsIndex))
+			{
+				return _IsSun[body.flightGlobalsIndex];
+			}
+
+			// Kopernicus stores solar luminosity in its own component
+			foreach (var c in body.GetComponentsInChildren<MonoBehaviour>(true))
+			{
+				if (c.GetType().ToString() == "LightShifter")
+				{
+					_IsSun[body.flightGlobalsIndex] = true;
+					return true;
+				}
+			}
+
+			var result = body.flightGlobalsIndex == 0 || body.referenceBody == null;
+			_IsSun[body.flightGlobalsIndex] = result;
+			return result;
+		}
+
+		public static CelestialBody GetSun(CelestialBody body)
+		{
+			if (IsSun(body))
+			{
+				return body;
+			}
+
+			var b = body.referenceBody;
+			do
+			{
+				if (IsSun(b))
+				{
+					return b;
+				}
+				b = b.referenceBody;
+			} while (b != null);
+
+			return FlightGlobals.Bodies[0];
 		}
 
 		// --- VESSEL ---------------------------------------------------------------

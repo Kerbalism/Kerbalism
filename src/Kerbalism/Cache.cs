@@ -57,7 +57,7 @@ namespace KERBALISM
 			powered = Lib.IsPowered(v);
 
 			// determine if in sunlight, calculate sun direction and distance
-			sunlight = Sim.RaytraceBody(v, position, FlightGlobals.Bodies[0], out sun_dir, out sun_dist) ? 1.0 : 0.0;
+			sunlight = Sim.RaytraceBody(v, position, Lib.GetSun(v.mainBody), out sun_dir, out sun_dist) ? 1.0 : 0.0;
 
 			// environment stuff
 			atmo_factor = Sim.AtmosphereFactor(v.mainBody, position, sun_dir);
@@ -110,7 +110,7 @@ namespace KERBALISM
 
 			Drive.GetCapacity(v, out free_capacity, out total_capacity);
 
-			if (v.mainBody.flightGlobalsIndex != 0 && TimeWarp.CurrentRate > 1000.0f)
+			if (!Lib.IsSun(v.mainBody) && TimeWarp.CurrentRate > 1000.0f)
 			{
 				highspeedWarp(v);
 			}
@@ -138,7 +138,8 @@ namespace KERBALISM
 			sunlight = 1.0 - Sim.ShadowPeriod(v) / Sim.OrbitalPeriod(v);
 
 			// get solar flux, this can vary a bit but not enough for it to matter much
-			solar_flux = Sim.SolarFlux(Sim.SunDistance(vesselPos));
+			var sun = Lib.GetSun(v.mainBody);
+			solar_flux = Sim.SolarFlux(Sim.SunDistance(vesselPos, sun), sun);
 
 			// for atmospheric bodies whose rotation period is less than 120 hours,
 			// determine analytic atmospheric absorption over a single body revolution instead

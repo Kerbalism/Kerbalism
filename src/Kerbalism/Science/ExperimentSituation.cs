@@ -71,7 +71,7 @@ namespace KERBALISM
 			//if (vi.inner_belt) sit = KerbalismSituations.InnerBelt;
 
 			// leave these as an easter eggs, for now
-			if (vi.interstellar && body.flightGlobalsIndex == 0)
+			if (vi.interstellar && Lib.IsSun(body))
 			{
 				sit = KerbalismSituations.Interstellar;
 				return;

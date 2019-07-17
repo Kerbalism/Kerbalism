@@ -7,7 +7,7 @@
 		public void Analyze(CelestialBody body, double altitude_mult, bool sunlight)
 		{
 			// shortcuts
-			CelestialBody sun = FlightGlobals.Bodies[0];
+			CelestialBody sun = Lib.GetSun(body);
 
 			this.body = body;
 			altitude = body.Radius * altitude_mult;
@@ -16,7 +16,7 @@
 			atmo_factor = Sim.AtmosphereFactor(body, 0.7071);
 			sun_dist = Sim.Apoapsis(Lib.PlanetarySystem(body)) - sun.Radius - body.Radius;
 			Vector3d sun_dir = (sun.position - body.position).normalized;
-			solar_flux = sunlight ? Sim.SolarFlux(sun_dist) * (landed ? atmo_factor : 1.0) : 0.0;
+			solar_flux = sunlight ? Sim.SolarFlux(sun_dist, sun) * (landed ? atmo_factor : 1.0) : 0.0;
 			albedo_flux = sunlight ? Sim.AlbedoFlux(body, body.position + sun_dir * (body.Radius + altitude)) : 0.0;
 			body_flux = Sim.BodyFlux(body, altitude);
 			total_flux = solar_flux + albedo_flux + body_flux + Sim.BackgroundFlux();

@@ -1,5 +1,6 @@
 ﻿using System;
 using UnityEngine;
+using System.Collections.Generic;
 
 namespace KERBALISM
 {
@@ -102,9 +103,8 @@ namespace KERBALISM
 
 
 		// get distance from the sun
-		public static double SunDistance(Vector3d pos)
+		public static double SunDistance(Vector3d pos, CelestialBody sun)
 		{
-			CelestialBody sun = FlightGlobals.Bodies[0];
 			return Vector3d.Distance(pos, sun.position) - sun.Radius;
 		}
 
@@ -232,7 +232,7 @@ namespace KERBALISM
 		// calculate irradiance in W/m2 from solar flux reflected on a celestial body in direction of the vessel
 		public static double AlbedoFlux(CelestialBody body, Vector3d pos)
 		{
-			CelestialBody sun = FlightGlobals.Bodies[0];
+			CelestialBody sun = Lib.GetSun(body);
 			Vector3d sun_dir = sun.position - body.position;
 			double sun_dist = sun_dir.magnitude;
 			sun_dir /= sun_dist;
@@ -246,7 +246,7 @@ namespace KERBALISM
 			// used to scale with distance
 			double d = Math.Min((body.Radius + body.atmosphereDepth) / (body.Radius + body_dist), 1.0);
 
-			return SolarFlux(sun_dist)                            // solar radiation
+			return SolarFlux(sun_dist, sun)                       // solar radiation
 			  * body.albedo                                       // reflected
 			  * Math.Max(0.0, Vector3d.Dot(sun_dir, body_dir))    // clamped cosine
 			  * d * d;                                            // scale with distance
@@ -255,7 +255,7 @@ namespace KERBALISM
 		// return irradiance from the surface of a body in W/m2
 		public static double BodyFlux(CelestialBody body, double altitude)
 		{
-			CelestialBody sun = FlightGlobals.Bodies[0];
+			CelestialBody sun = Lib.GetSun(body);
 			Vector3d sun_dir = sun.position - body.position;
 			double sun_dist = sun_dir.magnitude;
 			sun_dir /= sun_dist;
@@ -324,7 +324,7 @@ namespace KERBALISM
 			  * SurfaceGravity(body);
 
 			// solar flux striking the body
-			double solar_flux = SolarFlux(sun_dist);
+			double solar_flux = SolarFlux(sun_dist, sun);
 
 			// duration of lit and unlit periods
 			double half_day = body.solarDayLength * 0.5;
@@ -369,14 +369,16 @@ namespace KERBALISM
 			// get vessel body
 			CelestialBody body = v.mainBody;
 
+			var sun = Lib.GetSun(body);
+
 			// get solar radiation
-			solar_flux = SolarFlux(SunDistance(position)) * sunlight * atmo_factor;
+			solar_flux = SolarFlux(SunDistance(position, sun), sun) * sunlight * atmo_factor;
 
 			// get albedo radiation
-			albedo_flux = body.flightGlobalsIndex == 0 ? 0.0 : AlbedoFlux(body, position);
+			albedo_flux = Lib.IsSun(body) ? 0.0 : AlbedoFlux(body, position);
 
 			// get cooling radiation from the body
-			body_flux = body.flightGlobalsIndex == 0 ? 0.0 : BodyFlux(body, v.altitude);
+			body_flux = Lib.IsSun(body) ? 0.0 : BodyFlux(body, v.altitude);
 
 			// calculate total flux
 			total_flux = solar_flux + albedo_flux + body_flux + BackgroundFlux();
@@ -398,29 +400,50 @@ namespace KERBALISM
 			return temp;
 		}
 
+		// cache solar luminosity values. they're not likely to change during the game
+		private static readonly Dictionary<int, double> _SolarLuminosity = new Dictionary<int, double>();
+
 		// return sun luminosity
-		public static double SolarLuminosity()
+		public static double SolarLuminosity(CelestialBody sun)
 		{
+			if(_SolarLuminosity.ContainsKey(sun.flightGlobalsIndex))
+			{
+				return _SolarLuminosity[sun.flightGlobalsIndex];
+			}
+
+			// Kopernicus stores solar luminosity in its own component
+			foreach(var c in sun.GetComponentsInChildren<MonoBehaviour>(true))
+			{
+				if(c.GetType().ToString() == "LightShifter")
+				{
+					var l = Lib.ReflectionValue<double>(c, "solarLuminosity");
+					_SolarLuminosity[sun.flightGlobalsIndex] = l;
+					return l;
+				}
+			}
+
 			// return solar luminosity
-			// note: it is 0 before loading first vessel in a game session, we compute it in that case
+			// note: it is 0 before loading first vessel in a game session, we compute (and forget) it in that case
 			if (PhysicsGlobals.SolarLuminosity <= double.Epsilon)
 			{
 				double A = Lib.PlanetarySystem(FlightGlobals.GetHomeBody()).orbit.semiMajorAxis;
 				return A * A * 12.566370614359172 * PhysicsGlobals.SolarLuminosityAtHome;
 			}
+
+			_SolarLuminosity[sun.flightGlobalsIndex] = PhysicsGlobals.SolarLuminosity;
 			return PhysicsGlobals.SolarLuminosity;
 		}
 
 		// return energy flux from the sun
 		// - distance from the sun surface
-		public static double SolarFlux(double dist)
+		public static double SolarFlux(double dist, CelestialBody sun)
 		{
 			// note: for consistency we always consider distances to bodies to be relative to the surface
 			// however, flux, luminosity and irradiance consider distance to the sun center, and not surface
-			dist += FlightGlobals.Bodies[0].Radius;
+			dist += sun.Radius;
 
 			// calculate solar flux
-			return SolarLuminosity() / (12.566370614359172 * dist * dist);
+			return SolarLuminosity(sun) / (12.566370614359172 * dist * dist);
 		}
 
 		// return solar flux at home
@@ -634,7 +657,7 @@ namespace KERBALISM
 
 		public static double Graviolis(Vessel v)
 		{
-			double dist = Vector3d.Distance(v.GetWorldPos3D(), FlightGlobals.Bodies[0].position);
+			double dist = Vector3d.Distance(v.GetWorldPos3D(), Lib.GetSun(v.mainBody).position);
 			double au = dist / FlightGlobals.GetHomeBody().orbit.semiMajorAxis;
 			return 1.0 - Math.Min(au, 1.0); // 0 at 1AU -> 1 at sun position
 		}

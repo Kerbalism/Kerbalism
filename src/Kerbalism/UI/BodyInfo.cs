@@ -16,10 +16,10 @@ namespace KERBALISM
 
 			// only show if there is a selected body and that body is not the sun
 			CelestialBody body = Lib.SelectedBody();
-			if (body == null || (body.flightGlobalsIndex == 0 && !Features.Radiation)) return;
+			if (body == null || (Lib.IsSun(body) && !Features.Radiation)) return;
 
 			// shortcut
-			CelestialBody sun = FlightGlobals.Bodies[0];
+			CelestialBody sun = Lib.GetSun(body);
 
 			// for all bodies except the sun
 			if (body != sun)
@@ -29,7 +29,7 @@ namespace KERBALISM
 				double gamma_factor = Sim.GammaTransparency(body, 0.0);
 				double sun_dist = Sim.Apoapsis(Lib.PlanetarySystem(body)) - sun.Radius - body.Radius;
 				Vector3d sun_dir = (sun.position - body.position).normalized;
-				double solar_flux = Sim.SolarFlux(sun_dist) * atmo_factor;
+				double solar_flux = Sim.SolarFlux(sun_dist, sun) * atmo_factor;
 				double albedo_flux = Sim.AlbedoFlux(body, body.position + sun_dir * body.Radius);
 				double body_flux = Sim.BodyFlux(body, 0.0);
 				double total_flux = solar_flux + albedo_flux + body_flux + Sim.BackgroundFlux();
@@ -90,7 +90,7 @@ namespace KERBALISM
 			// TODO cache this information in RadiationBody
 
 			double rad = PreferencesStorm.Instance.externRadiation;
-			var rbSun = Radiation.Info(FlightGlobals.Bodies[0]);
+			var rbSun = Radiation.Info(Lib.GetSun(body));
 			rad += rbSun.radiation_pause;
 
 			var rb = Radiation.Info(body);

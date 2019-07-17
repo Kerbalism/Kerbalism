@@ -614,8 +614,8 @@ namespace KERBALISM
 
 						D = mf.Pause_func(p);
 						radiation += Lib.Clamp(D / -0.1332f, 0.0f, 1.0f) * rb.radiation_pause;
-						magnetosphere |= D < 0.0f && rb.body.flightGlobalsIndex != 0; //< ignore heliopause
-						interstellar |= D > 0.0f && rb.body.flightGlobalsIndex == 0; //< outside heliopause
+						magnetosphere |= D < 0.0f && !Lib.IsSun(rb.body); //< ignore heliopause
+						interstellar |= D > 0.0f && Lib.IsSun(rb.body); //< outside heliopause
 					}
 				}
 
