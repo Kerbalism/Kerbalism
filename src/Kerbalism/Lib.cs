@@ -838,7 +838,7 @@ namespace KERBALISM
 		public static CelestialBody PlanetarySystem(CelestialBody body)
 		{
 			if (Lib.IsSun(body)) return body;
-			while (!Lib.IsSun(body)) body = body.referenceBody;
+			while (!Lib.IsSun(body.referenceBody)) body = body.referenceBody;
 			return body;
 		}
 
