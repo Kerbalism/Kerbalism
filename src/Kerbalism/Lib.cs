@@ -876,27 +876,9 @@ namespace KERBALISM
 			return Vector3d.Angle(body_vessel, body_sun);
 		}
 
-		private static readonly Dictionary<int, bool> _IsSun = new Dictionary<int, bool>();
 		public static bool IsSun(CelestialBody body)
 		{
-			if(_IsSun.ContainsKey(body.flightGlobalsIndex))
-			{
-				return _IsSun[body.flightGlobalsIndex];
-			}
-
-			// Kopernicus stores solar luminosity in its own component
-			foreach (var c in body.GetComponentsInChildren<MonoBehaviour>(true))
-			{
-				if (c.GetType().ToString() == "LightShifter")
-				{
-					_IsSun[body.flightGlobalsIndex] = true;
-					return true;
-				}
-			}
-
-			var result = body.flightGlobalsIndex == 0 || body.referenceBody == null;
-			_IsSun[body.flightGlobalsIndex] = result;
-			return result;
+			return body.GetTemperature(0) > 1000.0; // if it is very hot, it is a sun.
 		}
 
 		public static CelestialBody GetSun(CelestialBody body)

@@ -411,13 +411,17 @@ namespace KERBALISM
 				return _SolarLuminosity[sun.flightGlobalsIndex];
 			}
 
+			Lib.Log("### determining solar lum for " + sun);
+
 			// Kopernicus stores solar luminosity in its own component
 			foreach(var c in sun.GetComponentsInChildren<MonoBehaviour>(true))
 			{
+				Lib.Log("### behaviour " + c.GetType());
 				if(c.GetType().ToString() == "LightShifter")
 				{
 					var l = Lib.ReflectionValue<double>(c, "solarLuminosity");
 					_SolarLuminosity[sun.flightGlobalsIndex] = l;
+					Lib.Log("### SOLAR luminosity of " + sun + " is " + l);
 					return l;
 				}
 			}
@@ -426,10 +430,12 @@ namespace KERBALISM
 			// note: it is 0 before loading first vessel in a game session, we compute (and forget) it in that case
 			if (PhysicsGlobals.SolarLuminosity <= double.Epsilon)
 			{
+				Lib.Log("### PhysicsGlobals.SolarLuminosity < epsilon");
 				double A = Lib.PlanetarySystem(FlightGlobals.GetHomeBody()).orbit.semiMajorAxis;
 				return A * A * 12.566370614359172 * PhysicsGlobals.SolarLuminosityAtHome;
 			}
 
+			Lib.Log("### solar luminosity of " + sun + " is " + PhysicsGlobals.SolarLuminosity);
 			_SolarLuminosity[sun.flightGlobalsIndex] = PhysicsGlobals.SolarLuminosity;
 			return PhysicsGlobals.SolarLuminosity;
 		}
