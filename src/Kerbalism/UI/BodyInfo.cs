@@ -20,6 +20,7 @@ namespace KERBALISM
 
 			// shortcut
 			CelestialBody sun = Lib.GetSun(body);
+			Lib.Log("### sun of " + body + " is " + sun);
 
 			// for all bodies except the sun
 			if (body != sun)

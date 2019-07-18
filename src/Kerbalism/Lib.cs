@@ -876,15 +876,9 @@ namespace KERBALISM
 			return Vector3d.Angle(body_vessel, body_sun);
 		}
 
-		private static readonly Dictionary<int, bool> _IsSun = new Dictionary<int, bool>();
 		public static bool IsSun(CelestialBody body)
 		{
-			if (_IsSun.ContainsKey(body.flightGlobalsIndex))
-				return _IsSun[body.flightGlobalsIndex];
-
-			Sun sun = body.scaledBody.GetComponentInChildren<Sun>(true);
-			_IsSun[body.flightGlobalsIndex] = sun != null;
-			return sun != null;
+			return body.GetTemperature(0) > 1000; // if it is very hot, it is a sun
 		}
 
 		public static CelestialBody GetSun(CelestialBody body)
