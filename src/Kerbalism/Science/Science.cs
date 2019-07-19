@@ -170,18 +170,29 @@ namespace KERBALISM
 			foreach(var p in Cache.WarpCache(v).files)
 				return p.Key;
 
+			double now = Planetarium.GetUniversalTime();
+			double maxXmitValue = -1;
+			string result = string.Empty;
+
 			// get first file flagged for transmission, AND has a ts at least 5 seconds old or is > 0.001Mb in size
 			foreach (var drive in Drive.GetDrives(v, true))
 			{
-				double now = Planetarium.GetUniversalTime();
 				foreach (var p in drive.files)
 				{
-					if (drive.GetFileSend(p.Key) && (p.Value.ts + 3 < now || p.Value.size > min_file_size)) return p.Key;
+					if (drive.GetFileSend(p.Key) && (p.Value.ts + 3 < now || p.Value.size > min_file_size))
+					{
+						// prioritize whichever file has the most science points per byte
+						var xmitValue = Value(p.Key, p.Value.size) / p.Value.size;
+						if(string.IsNullOrEmpty(result) || xmitValue > maxXmitValue)
+						{
+							result = p.Key;
+							maxXmitValue = xmitValue;
+						}
+					}
 				}
 			}
 
-			// no file flagged for transmission
-			return string.Empty;
+			return result;
 		}
 
 		public static void ClearDeferred()
