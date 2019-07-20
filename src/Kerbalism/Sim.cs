@@ -75,14 +75,22 @@ namespace KERBALISM
 		// return apoapsis of a body orbit
 		public static double Apoapsis(CelestialBody body)
 		{
-			return (1.0 + body.orbit.eccentricity) * body.orbit.semiMajorAxis;
+			if (body != null && body.orbit != null)
+			{
+				return (1.0 + body.orbit.eccentricity) * body.orbit.semiMajorAxis;
+			}
+			return 0;
 		}
 
 
 		// return periapsis of a body orbit
 		public static double Periapsis(CelestialBody body)
 		{
-			return (1.0 - body.orbit.eccentricity) * body.orbit.semiMajorAxis;
+			if (body != null && body.orbit != null)
+			{
+				return (1.0 - body.orbit.eccentricity) * body.orbit.semiMajorAxis;
+			}
+			return 0;
 		}
 
 
@@ -411,27 +419,23 @@ namespace KERBALISM
 				return _SolarLuminosity[sun.flightGlobalsIndex];
 			}
 
+			double AU = Lib.PlanetarySystem(FlightGlobals.GetHomeBody()).orbit.semiMajorAxis;
+
 			// Kopernicus stores solar luminosity in its own component
 			foreach (var c in sun.scaledBody.GetComponentsInChildren<MonoBehaviour>(true))
 			{
 				if(c.GetType().ToString().Contains("LightShifter"))
 				{
 					var l = Lib.ReflectionValue<double>(c, "solarLuminosity");
+					l *= AU * AU * Math.PI * 4;
 					_SolarLuminosity[sun.flightGlobalsIndex] = l;
 					return l;
 				}
 			}
 
-			// return solar luminosity
-			// note: it is 0 before loading first vessel in a game session, we compute (and forget) it in that case
-			if (PhysicsGlobals.SolarLuminosity <= double.Epsilon)
-			{
-				double A = Lib.PlanetarySystem(FlightGlobals.GetHomeBody()).orbit.semiMajorAxis;
-				return A * A * Math.PI * 4 * PhysicsGlobals.SolarLuminosityAtHome;
-			}
-
-			_SolarLuminosity[sun.flightGlobalsIndex] = PhysicsGlobals.SolarLuminosity;
-			return PhysicsGlobals.SolarLuminosity;
+			double result = AU * AU * Math.PI * 4 * PhysicsGlobals.SolarLuminosityAtHome;
+			_SolarLuminosity[sun.flightGlobalsIndex] = result;
+			return result;
 		}
 
 		// return energy flux from the sun
