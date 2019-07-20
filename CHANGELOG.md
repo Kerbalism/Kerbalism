@@ -21,6 +21,16 @@
 * Improved sunlight raytracing code, now checking occlusion against all bodies whose apparent diameter is greater than 10 arcmin from the vessel POV (Got)
 * Added an additional vertical position offset to tooltips so they don't hide what is under the cursor (Got)
 * Auto-assign reference bodies for radiation calculations (Shiolle)
+* Fixed DMOS experiment restriction to plantary space. This breaks some DMOS contracts that require experiments in solar orbit (Sir Mortimer)
+* Improved shielding efficiency calculation (Free Thinker)
+* Apply artificial radiation sources after Gamma Transparency is applied (Free Thinker)
+* Fixed the configuration for EVA kerbals, a problem introduced by Serenity (Sir Mortimer)
+* Added support for Universal Storage 2 fuel cells (lordcirth)
+* Added config for Unkerballed start tech tree (Sir Mortimer)
+* Added config for a new ReStock+ probe core RC-XL001 (Sir Mortimer)
+* Radiation values in settings now take a preset from Settings.cfg (Sir Mortimer)
+* Added radiation source to kerbal atomics engines (Shiolle)
+* When transmitting data, prioritize the file with the highest relative value (Sir Mortimer)
 
 ## v3.0.2 for all versions of KSP from 1.4.0 to 1.7.x
 
