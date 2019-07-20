@@ -157,7 +157,11 @@ namespace KERBALISM
 			if (!info.is_valid) return;
 
 			// calculate average exposure over a full day when landed, will be used for panel background processing
-			persistentFactor = GetAnalyticalCosineFactorLanded(info.sun_dir);
+			Vector3d sun_dir;
+			double sunlight;
+			double solarFlux;
+			SolarPanel.SunInfo(info, out sun_dir, out sunlight, out solarFlux);
+			persistentFactor = GetAnalyticalCosineFactorLanded(sun_dir);
 		}
 
 		public void Update()
@@ -234,36 +238,39 @@ namespace KERBALISM
 			// Reset status (will be updated from Update() if we are producing, from here if we are not)
 			panelStatus = string.Empty;
 
-#if DEBUG
-			Vector3d SunDir = info.sun_dir;
+			Vector3d sunDir;
+			double sunlight;
+			double solarFlux;
+			SolarPanel.SunInfo(info, out sunDir, out sunlight, out solarFlux);
 
+#if DEBUG
 			// flight view sun dir
-			SolarDebugDrawer.DebugLine(vessel.transform.position, vessel.transform.position + (SunDir * 100.0), Color.red);
+			SolarDebugDrawer.DebugLine(vessel.transform.position, vessel.transform.position + (sunDir * 100.0), Color.red);
 
 			// GetAnalyticalCosineFactorLanded() map view debugging
-			Vector3d sunCircle = Vector3d.Cross(Vector3d.left, SunDir);
+			Vector3d sunCircle = Vector3d.Cross(Vector3d.left, sunDir);
 			Quaternion qa = Quaternion.AngleAxis(45, sunCircle);
 			LineRenderer.CommitWorldVector(vessel.GetWorldPos3D(), sunCircle, 500f, Color.red);
-			LineRenderer.CommitWorldVector(vessel.GetWorldPos3D(), SunDir, 500f, Color.yellow);
+			LineRenderer.CommitWorldVector(vessel.GetWorldPos3D(), sunDir, 500f, Color.yellow);
 			for (int i = 0; i < 7; i++)
 			{
-				SunDir = qa * SunDir;
-				LineRenderer.CommitWorldVector(vessel.GetWorldPos3D(), SunDir, 500f, Color.green);
+				sunDir = qa * sunDir;
+				LineRenderer.CommitWorldVector(vessel.GetWorldPos3D(), sunDir, 500f, Color.green);
 			}
 #endif
 
 			// don't produce EC if in shadow, but don't reset cosineFactor
-			if (info.sunlight == 0.0)
+			if (sunlight == 0.0)
 			{
 				panelStatus = "<color=#ff2222>in shadow</color>";
 				return;
 			}
 
-			if (info.sunlight < 1.0)
+			if (sunlight < 1.0)
 			{
 				// if we are switching to analytic mode and the vessel in landed, get an average exposure over a day
 				// TODO : maybe check the rotation speed of the body, this might be inaccurate for tidally-locked bodies (test on the mun ?)
-				if (!analyticSunlight && vessel.Landed) persistentFactor = GetAnalyticalCosineFactorLanded(info.sun_dir);
+				if (!analyticSunlight && vessel.Landed) persistentFactor = GetAnalyticalCosineFactorLanded(sunDir);
 				analyticSunlight = true;
 			}
 			else
@@ -282,12 +289,12 @@ namespace KERBALISM
 			else
 			{
 				// get the cosine factor
-				double cosineFactor = SolarPanel.GetCosineFactor(info.sun_dir);
-				if (cosineFactor > 0.0)
+				double cosineFactor = SolarPanel.GetCosineFactor(sunDir);
+				if (cosineFactor > double.Epsilon)
 				{
 					// the panel is oriented toward the sun
 					// now do a physic raycast to check occlusion from parts, terrain, buildings...
-					double occludedFactor = SolarPanel.GetOccludedFactor(info.sun_dir, out panelStatus);
+					double occludedFactor = SolarPanel.GetOccludedFactor(sunDir, out panelStatus);
 					// compute final aggregate factor
 					exposureFactor = cosineFactor * occludedFactor;
 					if (panelStatus != null)
@@ -295,7 +302,7 @@ namespace KERBALISM
 						// if there is occlusion from a part ("out string occludingPart" not null)
 						// we save this occlusion factor to account for it in analyticalSunlight / unloaded states,
 						persistentFactor = exposureFactor;
-						if (occludedFactor == 0.0)
+						if (occludedFactor < double.Epsilon)
 						{
 							// if we are totally occluded, do nothing else
 							panelStatus = Lib.BuildString("<color=#ff2222>occluded by ", panelStatus, "</color>");
@@ -307,7 +314,7 @@ namespace KERBALISM
 						// if there is no occlusion, or if occlusion is from the rest of the scene (terrain, building, not a part)
 						// don't save the occlusion factor, as occlusion from the terrain and static objects is very variable, we won't use it in analyticalSunlight / unloaded states, 
 						persistentFactor = cosineFactor;
-						if (occludedFactor == 0.0)
+						if (occludedFactor < double.Epsilon)
 						{
 							// if we are totally occluded, do nothing else
 							panelStatus = "<color=#ff2222>occluded by terrain</color>";
@@ -332,7 +339,7 @@ namespace KERBALISM
 			// get solar flux and deduce a scalar based on nominal flux at 1AU
 			// - this include atmospheric absorption if inside an atmosphere
 			// - at high timewarps speeds, atmospheric absorption is analytical (integrated over a full revolution)
-			double fluxFactor = info.solar_flux / Sim.SolarFluxAtHome();
+			double fluxFactor = solarFlux / Sim.SolarFluxAtHome();
 
 			// get final output rate in EC/s
 			currentOutput = nominalRate * wearFactor * fluxFactor * exposureFactor;
@@ -367,6 +374,8 @@ namespace KERBALISM
 			// - this include atmospheric absorption if inside an atmosphere
 			// - this is zero when the vessel is in shadow when evaluation is non-analytic (low timewarp rates)
 			// - if integrated over orbit (analytic evaluation), this include fractional sunlight / atmo absorbtion
+			// - TODO: for kopernicus panels, the solar flux value used here could be wrong if the panel isn't tracking
+			// the current sun.
 			efficiencyFactor *= vi.solar_flux / Sim.SolarFluxAtHome();
 
 			// get wear factor (output degradation with time)
@@ -406,6 +415,7 @@ namespace KERBALISM
 					case "SSTUSolarPanelStatic": SolarPanel = new SSTUStaticPanel();  break;
 					case "SSTUSolarPanelDeployable": SolarPanel = new SSTUVeryComplexPanel(); break;
 					case "SSTUModularPart": SolarPanel = new SSTUVeryComplexPanel(); break;
+					case "KopernicusSolarPanel": SolarPanel = new KopernicusPanel(); break;
 				}
 
 				if (SolarPanel != null)
@@ -506,8 +516,11 @@ namespace KERBALISM
 			/// <summary>Called at Update(), can contain target module specific hacks</summary>
 			public virtual void OnUpdate() { }
 
-			/// <summary>Reliability : specific hacks for the target module that must be applied when the panel is disabled by a failure
+			/// <summary>Reliability : specific hacks for the target module that must be applied when the panel is disabled by a failure</summary>
 			public virtual void Break(bool isBroken) { }
+
+			/// <summary>Return relevant info for current sun (needed for Kopernicus and multi-star systems)</summary>
+			public virtual void SunInfo(Vessel_info info, out Vector3d sunDir, out double sunLight, out double solarFlux) { sunDir = info.sun_dir; sunLight = info.sunlight; solarFlux = info.solar_flux; }
 
 			/// <summary>Automation : override this with "return false" if the module doesn't support automation when loaded</summary>
 			public virtual bool SupportAutomation(PanelState state)
@@ -596,7 +609,7 @@ namespace KERBALISM
 					sunCatcherPosition = panelModule.part.FindModelTransform(panelModule.secondaryTransformName);
 
 				// avoid rate lost due to OnStart being called multiple times in the editor
-				if (panelModule.resHandler.outputResources[0].rate == 0.0)
+				if (panelModule.resHandler.outputResources[0].rate < double.Epsilon)
 					return true;
 
 				nominalRate = panelModule.resHandler.outputResources[0].rate;
@@ -725,6 +738,51 @@ namespace KERBALISM
 				panelModule.isEnabled = !isBroken;
 				panelModule.enabled = !isBroken;
 				if (isBroken) panelModule.part.FindModelComponents<Animation>().ForEach(k => k.Stop()); // stop the animations if we are disabling it
+			}
+		}
+		#endregion
+
+		#region Kopernicus module support (KopernicusSolarPanel extends ModuleDeployableSolarPanel)
+		private class KopernicusPanel : StockPanel
+		{
+			/// <summary>
+			/// A Kopernicus solar panel can individually track other bodies as the current star.
+			/// We need to recalculate sun direction and sunlight/shadow in that case.
+			/// </summary>
+
+			// Upcoming change in Kopernicus, according to Sigma88:
+			// if my proposed change is accepted, it will do the same as it does now, with the exception that now there's a cfg
+			// that changes the stock "ModuleDeployableSolarPanel" into "KopernicusSolarPanel" and in my proposed change instead,
+			// the module KopernicusSolarPanel will be added in addition to the existing stock "ModuleDeployableSolarPanel"
+			// my module will modify the behaviour of the solarpanel by applying changes after the stock Module
+			// rather than replacing the stock module
+
+			public override void SunInfo(Vessel_info info, out Vector3d sunDir, out double sunLight, out double solarFlux)
+			{
+				CelestialBody sun = panelModule.trackingBody;
+
+				// If the panel is tracking whatever is the "current sun", we don't need to do anything
+				if(Lib.GetSun(panelModule.vessel.mainBody) == sun) {
+					base.SunInfo(info, out sunDir, out sunLight, out solarFlux);
+					return;
+				}
+
+				// The panel is oriented at something that is not our current sun. Recalculate direction and sunlight.
+				Vector3d position = Lib.VesselPosition(panelModule.vessel);
+				double sun_dist;
+				bool inSunlight = Sim.RaytraceBody(panelModule.vessel, position, sun, out sunDir, out sun_dist);
+
+				bool analytical = info.sunlight > 0.0 && info.sunlight < 1.0;
+				if(analytical) {
+					sunLight = inSunlight ? 1.0 : 0.0;
+				} else {
+					// if we're analytical (high speed warp), just use whatever analytical factor we have to our current sun.
+					// that's wrong, we would need an analytical factor to our tracked body, but we don't have that.
+					sunLight = info.sunlight;
+				}
+
+				double atmoFactor = Sim.AtmosphereFactor(panelModule.vessel.mainBody, position, sunDir);
+				solarFlux = Sim.SolarFlux(Sim.SunDistance(position, sun), sun) * sunLight * atmoFactor;
 			}
 		}
 		#endregion
@@ -986,7 +1044,7 @@ namespace KERBALISM
 
 			public override bool SupportAutomation(PanelState state) { return false; }
 
-			public override bool SupportProtoAutomation(ProtoPartModuleSnapshot protomodule) { return false; }
+			public override bool SupportProtoAutomation(ProtoPartModuleSnapshot protoModule) { return false; }
 
 			public override void Break(bool isBroken)
 			{
@@ -1231,7 +1289,7 @@ namespace KERBALISM
 
 			public override bool SupportAutomation(PanelState state) { return false; }
 
-			public override bool SupportProtoAutomation(ProtoPartModuleSnapshot protomodule) { return false; }
+			public override bool SupportProtoAutomation(ProtoPartModuleSnapshot protoModule) { return false; }
 		}
 		#endregion
 	}
