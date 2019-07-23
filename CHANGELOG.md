@@ -14,6 +14,7 @@
 * Configs for SoundingRockets (Arthur, Breach Candy)
 * Major rewrite of the solar panel code (Got)
 * Kopernicus Support (Sir Mortimer)
+* Auto-assign reference bodies for radiation calculations (Shiolle)
 
 ## v3.0.2 for all versions of KSP from 1.4.0 to 1.7.x
 
