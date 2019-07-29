@@ -14,7 +14,7 @@ namespace KERBALISM
 
 	public static class Lib
 	{
-		// --- UTILS ----------------------------------------------------------------
+		#region UTILS
 
 		// write a message to the log
 		public static void Log(string msg, params object[] param)
@@ -87,10 +87,9 @@ namespace KERBALISM
 				return false;
 			}
 		}
+		#endregion
 
-
-		// --- MATH -----------------------------------------------------------------
-
+		#region MATH
 		// clamp a value
 		public static int Clamp(int value, int min, int max)
 		{
@@ -120,10 +119,9 @@ namespace KERBALISM
 		{
 			return a * (1.0 - k) + b * k;
 		}
+		#endregion
 
-
-		// --- RANDOM ---------------------------------------------------------------
-
+		#region RANDOM
 		// store the random number generator
 		static System.Random rng = new System.Random();
 
@@ -154,10 +152,9 @@ namespace KERBALISM
 			fast_float_seed *= 16807;
 			return fast_float_seed * 4.6566129e-010f;
 		}
+		#endregion
 
-
-		// --- HASH -----------------------------------------------------------------
-
+		#region HASH
 		// combine two guid, irregardless of their order (eg: Combine(a,b) == Combine(b,a))
 		public static Guid CombineGuid(Guid a, Guid b)
 		{
@@ -197,10 +194,9 @@ namespace KERBALISM
 			//return the hash
 			return h;
 		}
+		#endregion
 
-
-		// --- TIME -----------------------------------------------------------------
-
+		#region TIME
 		// return hours in a day
 		public static double HoursInDay()
 		{
@@ -299,10 +295,9 @@ namespace KERBALISM
 		{
 			return ((int)Time.realtimeSinceStartup / seconds) % elements;
 		}
+		#endregion
 
-
-		// --- REFLECTION -----------------------------------------------------------
-
+		#region REFLECTION
 		private static readonly BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static;
 
 		// return a value from a module using reflection
@@ -357,15 +352,25 @@ namespace KERBALISM
 		{
 			return (T)(m.GetType().GetMethod(call_name, flags, null, types, null).Invoke(m, parameters));
 		}
+		#endregion
 
-
-		// --- STRING ---------------------------------------------------------------
-
+		#region STRING
 		// return string limited to len, with ... at the end
 		public static string Ellipsis(string s, uint len)
 		{
 			len = Math.Max(len, 3u);
 			return s.Length <= len ? s : Lib.BuildString(s.Substring(0, (int)len - 3), "...");
+		}
+
+		public static string EllipsisMiddle(string s, int len)
+		{
+			if (s.Length > len)
+			{
+				len = (len - 3) / 2;
+				return Lib.BuildString(s.Substring(0, len), "...", s.Substring(s.Length - len));
+			}
+			return s;
+
 		}
 
 		// tokenize a string
@@ -456,10 +461,9 @@ namespace KERBALISM
 		{
 			return list.Length == 0 ? string.Empty : list[RandomInt(list.Length)];
 		}
+		#endregion
 
-
-		// --- BUILD STRING ---------------------------------------------------------
-
+		#region BUILD STRING
 		// compose a set of strings together, without creating temporary objects
 		// note: the objective here is to minimize number of temporary variables for GC
 		// note: okay to call recursively, as long as all individual concatenation is atomic
@@ -540,10 +544,9 @@ namespace KERBALISM
 			foreach (string s in args) sb.Append(s);
 			return sb.ToString();
 		}
+		#endregion
 
-
-		// --- HUMAN READABLE -------------------------------------------------------
-
+		#region HUMAN READABLE
 		///<summary> Pretty-print a resource rate (rate is per second, must be positive) </summary>
 		public static string HumanReadableRate(double rate, string precision = "F3")
 		{
@@ -782,10 +785,9 @@ namespace KERBALISM
 		{
 			return Lib.BuildString("<color=cyan>", value.ToString("F1"), " CREDITS</color>");
 		}
+		#endregion
 
-
-		// --- GAME LOGIC -----------------------------------------------------------
-
+		#region GAME LOGIC
 		// return true if the current scene is flight
 		public static bool IsFlight()
 		{
@@ -830,21 +832,71 @@ namespace KERBALISM
 			}
 			return false;
 		}
+		#endregion
 
+		#region BODY
 
-		// --- BODY -----------------------------------------------------------------
-
-		// return reference body of the planetary system that contain the specified body
-		public static CelestialBody PlanetarySystem(CelestialBody body)
+		/// <summary>For a given body, return the last parent body that is not a sun </summary>
+		public static CelestialBody GetParentPlanet(CelestialBody body)
 		{
 			if (Lib.IsSun(body)) return body;
 			while (!Lib.IsSun(body.referenceBody)) body = body.referenceBody;
 			return body;
 		}
 
+		/// <summary> optimized method for getting normalized direction and distance between the surface of two bodies</summary>
+		/// <param name="direction">normalized vector 'from' body 'to' body</param>
+		/// <param name="distance">distance between the body surface</param>
+		public static void DirectionAndDistance(CelestialBody from, CelestialBody to, out Vector3d direction, out double distance)
+		{
+			Lib.DirectionAndDistance(from.position, to.position, out direction, out distance);
+			distance -= from.Radius + to.Radius;
+		}
+
+		/// <summary> optimized method for getting normalized direction and distance between a world position and the surface of a body</summary>
+		/// <param name="direction">normalized vector 'from' position 'to' body</param>
+		/// <param name="distance">distance to the body surface</param>
+		public static void DirectionAndDistance(Vector3d from, CelestialBody to, out Vector3d direction, out double distance)
+		{
+			Lib.DirectionAndDistance(from, to.position, out direction, out distance);
+			distance -= to.Radius;
+		}
+
+		/// <summary> optimized method for getting normalized direction and distance between two world positions</summary>
+		/// <param name="direction">normalized vector 'from' position 'to' position</param>
+		/// <param name="distance">distance between the body surface</param>
+		public static void DirectionAndDistance(Vector3d from, Vector3d to, out Vector3d direction, out double distance)
+		{
+			direction = to - from;
+			distance = direction.magnitude;
+			direction /= distance;
+		}
+
+		/// <summary> Is this body a sun ? </summary>
+		public static bool IsSun(CelestialBody body)
+		{
+			return Sim.suns.Exists(p => p.bodyIndex == body.flightGlobalsIndex);
+		}
+
+		/// <summary> return the first found parent sun for a given body </summary>
+		public static CelestialBody GetParentSun(CelestialBody body)
+		{
+			if (IsSun(body)) return body;
+
+			CelestialBody refBody = body.referenceBody;
+			do
+			{
+				if (IsSun(refBody)) return refBody;
+				refBody = refBody.referenceBody;
+			}
+			while (refBody != null);
+
+			return FlightGlobals.Bodies[0];
+		}
+
 		// return selected body in tracking-view/map-view
 		// if a vessel is selected, return its main body
-		public static CelestialBody SelectedBody()
+		public static CelestialBody MapViewSelectedBody()
 		{
 			var target = PlanetariumCamera.fetch.target;
 			return
@@ -861,48 +913,9 @@ namespace KERBALISM
 			Vector3d radial = QuaternionD.AngleAxis(latlong.y, Vector3d.down) * QuaternionD.AngleAxis(latlong.x, Vector3d.forward) * Vector3d.right;
 			return (pos - body.position).magnitude - pqs.GetSurfaceHeight(radial);
 		}
+		#endregion
 
-		public static double SunBodyAngle(Vessel v)
-		{
-			// orbit around sun?
-			if (IsSun(v.mainBody))
-			{
-				return 0;
-			}
-
-			var body_vessel = v.mainBody.position - Lib.VesselPosition(v);
-			var body_sun = v.mainBody.position - GetSun(v.mainBody).position;
-
-			return Vector3d.Angle(body_vessel, body_sun);
-		}
-
-		public static bool IsSun(CelestialBody body)
-		{
-			return body.GetTemperature(0) > 1000; // if it is very hot, it is a sun
-		}
-
-		public static CelestialBody GetSun(CelestialBody body)
-		{
-			if (IsSun(body))
-			{
-				return body;
-			}
-
-			var b = body.referenceBody;
-			do
-			{
-				if (IsSun(b))
-				{
-					return b;
-				}
-				b = b.referenceBody;
-			} while (b != null);
-
-			return FlightGlobals.Bodies[0];
-		}
-
-		// --- VESSEL ---------------------------------------------------------------
-
+		#region VESSEL
 		// return true if landed somewhere
 		public static bool Landed(Vessel v)
 		{
@@ -1002,7 +1015,12 @@ namespace KERBALISM
 			// [disabled] when going to eva (and possibly other occasions), for a single update the vessel is not properly set
 			// this can be detected by vessel.distanceToSun being 0 (an impossibility otherwise)
 			// in this case, just wait a tick for the data being set by the game engine
-			//if (v.loaded && v.distanceToSun <= double.Epsilon) return false;
+			// if (v.loaded && v.distanceToSun <= double.Epsilon)
+			//	return false;
+
+			//
+			//if (!v.loaded && v.protoVessel == null)
+			//	continue;
 
 			// the vessel is valid
 			return true;
@@ -1085,9 +1103,9 @@ namespace KERBALISM
 
 			return a.precisePosition == b.precisePosition;
 		}
+		#endregion
 
-		// --- PART -----------------------------------------------------------------
-
+		#region PART
 		// get list of parts recursively, useful from the editors
 		public static List<Part> GetPartsRecursively(Part root)
 		{
@@ -1167,10 +1185,9 @@ namespace KERBALISM
 		{
 			return CrewCount(p) > 0;
 		}
+		#endregion
 
-
-		// --- MODULE ---------------------------------------------------------------
-
+		#region MODULE
 		// return all modules implementing a specific type in a vessel
 		// note: disabled modules are not returned
 		public static List<T> FindModules<T>(Vessel v) where T : class
@@ -1315,9 +1332,9 @@ namespace KERBALISM
 			// then we have no chances of finding the module prefab so we return null
 			return data.index < data.prefabs.Count ? data.prefabs[data.index++] : null;
 		}
+		#endregion
 
-		// --- RESOURCE -------------------------------------------------------------
-
+		#region RESOURCE
 		/// <summary> Returns the amount of a resource in a part </summary>
 		public static double Amount(Part part, string resource_name, bool ignore_flow = false)
 		{
@@ -1614,10 +1631,9 @@ namespace KERBALISM
 			// then get the first resource and return capacity
 			return p.Resources.Count == 0 ? 0.0 : p.Resources[0].maxAmount;
 		}
+		#endregion
 
-
-		// --- SCIENCE DATA ---------------------------------------------------------
-
+		#region SCIENCE DATA
 		// return true if there is experiment data on the vessel
 		public static bool HasData( Vessel v )
 		{
@@ -1736,10 +1752,9 @@ namespace KERBALISM
 			foreach (string tech_id in techs) n += HasTech( tech_id ) ? 1 : 0;
 			return n;
 		}
+		#endregion
 
-
-		// --- ASSETS ---------------------------------------------------------------
-
+		#region ASSETS
 		///<summary> Returns the path of the directory containing the DLL </summary>
 		public static string Directory()
 		{
@@ -1824,11 +1839,9 @@ namespace KERBALISM
 			}
 			return mat;
 		}
+		#endregion
 
-
-
-		// --- CONFIG ---------------------------------------------------------------
-
+		#region CONFIG
 		// get a config node from the config system
 		public static ConfigNode ParseConfig( string path )
 		{
@@ -1868,10 +1881,9 @@ namespace KERBALISM
 				return def_value;
 			}
 		}
+		#endregion
 
-
-		// --- UI -------------------------------------------------------------------
-
+		#region UI
 		/// <summary>Trigger a planner update</summary>
 		public static void RefreshPlanner()
 		{
@@ -1968,9 +1980,9 @@ namespace KERBALISM
 			int index = rand.Next(letters.Length);
 			return (string)letters[index];
 		}
+		#endregion
 
-		// --- PROTO ----------------------------------------------------------------
-
+		#region PROTO
 		public static class Proto
 		{
 			public static bool GetBool( ProtoPartModuleSnapshot m, string name, bool def_value = false )
@@ -2015,8 +2027,9 @@ namespace KERBALISM
 				module.moduleValues.SetValue( value_name, value.ToString(), true );
 			}
 		}
+		#endregion
 
-
+		#region STRING PARSING
 		public static class Parse
 		{
 			public static bool ToBool( string s, bool def_value = false )
@@ -2071,27 +2084,7 @@ namespace KERBALISM
 				return s != null && TryParseColor( s, out v ) ? v : def_value;
 			}
 		}
-
-		/// <summary>
-		/// Checks whether the location is behind the body
-		/// Original code by regex from https://github.com/NathanKell/RealSolarSystem/blob/master/Source/KSCSwitcher.cs
-		/// </summary>
-		public static bool IsOccluded( Vector3d loc, CelestialBody body )
-		{
-			Vector3d camPos = ScaledSpace.ScaledToLocalSpace( PlanetariumCamera.Camera.transform.position );
-
-			if (Vector3d.Angle( camPos - loc, body.position - loc ) > 90) { return false; }
-			return true;
-		}
-
-		public static String FormatSI( double value, String unit )
-		{
-			string[] DistanceUnits = { "", "k", "M", "G", "T" };
-			var i = (int) Clamp( Math.Floor( Math.Log10( value ) ) / 3,
-				0, DistanceUnits.Length - 1 );
-			value /= Math.Pow( 1000, i );
-			return value.ToString( "F2" ) + DistanceUnits[i] + unit;
-		}
+		#endregion
 	}
 
 

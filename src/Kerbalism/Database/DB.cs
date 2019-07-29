@@ -5,8 +5,6 @@ using UnityEngine;
 
 namespace KERBALISM
 {
-
-
 	public static class DB
 	{
 		public static void Load(ConfigNode node)
@@ -34,12 +32,22 @@ namespace KERBALISM
 			}
 
 			// load vessels data
-			vessels = new Dictionary<Guid, VesselData>();
 			if (node.HasNode("vessels2")) // old vessels used flightId, we switched to Guid with vessels2
 			{
 				foreach (var vessel_node in node.GetNode("vessels2").GetNodes())
 				{
-					vessels.Add(Lib.Parse.ToGuid(vessel_node.name), new VesselData(vessel_node));
+					Guid vId = Lib.Parse.ToGuid(vessel_node.name);
+					VesselData vd;
+					if (!vessels.ContainsKey(vId))
+					{
+						vd = new VesselData();
+						vessels.Add(Lib.Parse.ToGuid(vessel_node.name), vd);
+					}
+					else
+					{
+						vd = vessels[vId];
+					}
+					vd.Load(vessel_node);
 				}
 			}
 
@@ -140,15 +148,36 @@ namespace KERBALISM
 			return kerbals[name];
 		}
 
-
-		public static VesselData Vessel(Vessel v)
+		/// <summary> use the KerbalismData vessel extension method instead</summary>
+		private static VesselData VesselData(Vessel v)
 		{
-			Guid id = Lib.VesselID(v);
-			if (!vessels.ContainsKey(id))
+			Guid vesselId = Lib.VesselID(v);
+			if (!vessels.ContainsKey(vesselId))
 			{
-				vessels.Add(id, new VesselData());
+				vessels.Add(vesselId, new VesselData());
 			}
-			return vessels[id];
+			return vessels[vesselId];
+		}
+
+		public static VesselData KerbalismData(this Vessel vessel)
+		{
+			return VesselData(vessel);
+		}
+
+		/// <summary>shortcut for VesselData.IsValid. False in the following cases : asteroid, debris, flag, deployed ground part, dead eva, rescue</summary>
+		public static bool KerbalismIsValid(this Vessel vessel)
+		{
+			return VesselData(vessel).IsValid;
+		}
+
+		public static void KerbalismDataDelete(this Vessel vessel)
+		{
+			vessels.Remove(Lib.VesselID(vessel));
+		}
+
+		public static void KerbalismDataDelete(this ProtoVessel protoVessel)
+		{
+			vessels.Remove(Lib.VesselID(protoVessel));
 		}
 
 
@@ -216,7 +245,7 @@ namespace KERBALISM
 		public static string version;                          // savegame version
 		public static int uid;                                 // savegame unique id
 		private static Dictionary<string, KerbalData> kerbals; // store data per-kerbal
-		public static Dictionary<Guid, VesselData> vessels;    // store data per-vessel, indexed by root part id
+		private static Dictionary<Guid, VesselData> vessels = new Dictionary<Guid, VesselData>();    // store data per-vessel, indexed by root part id
 		public static Dictionary<uint, Drive> drives;		   // all drives, of all vessels
 		public static Dictionary<string, BodyData> bodies;     // store data per-body
 		public static LandmarkData landmarks;                  // store landmark data

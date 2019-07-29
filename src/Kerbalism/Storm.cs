@@ -89,7 +89,7 @@ namespace KERBALISM
 		}
 
 
-		public static void Update(Vessel v, Vessel_info vi, VesselData vd, double elapsed_s)
+		public static void Update(Vessel v, VesselData vd, double elapsed_s)
 		{
 			// do nothing if storms are disabled
 			if (!Features.SpaceWeather) return;
@@ -98,7 +98,7 @@ namespace KERBALISM
 			if (!Lib.IsSun(v.mainBody)) return;
 
 			// skip unmanned vessels
-			if (vi.crew_count == 0) return;
+			if (vd.CrewCount == 0) return;
 
 			// generate storm time if necessary
 			if (vd.storm_time <= double.Epsilon)
@@ -107,7 +107,7 @@ namespace KERBALISM
 			}
 
 			// accumulate age
-			vd.storm_age += elapsed_s * Storm_frequency(vi.sun_dist);
+			vd.storm_age += elapsed_s * Storm_frequency(vd.EnvMainSun.Distance);
 
 			// if storm is over
 			if (vd.storm_age > vd.storm_time && vd.storm_state == 2)
@@ -131,7 +131,7 @@ namespace KERBALISM
 				Lib.BuildString("Storm duration: ", Lib.HumanReadableDuration(TimeLeftCME(vd.storm_time, vd.storm_age))));
 			}
 			// if storm is incoming
-			else if (vd.storm_age > vd.storm_time - PreferencesStorm.Instance.StormDuration - Time_to_impact(vi.sun_dist) && vd.storm_state == 0)
+			else if (vd.storm_age > vd.storm_time - PreferencesStorm.Instance.StormDuration - Time_to_impact(vd.EnvMainSun.Distance) && vd.storm_state == 0)
 			{
 				vd.storm_state = 1;
 
@@ -145,7 +145,7 @@ namespace KERBALISM
 		// return storm frequency factor by distance from sun
 		static double Storm_frequency(double dist)
 		{
-			double AU = Lib.PlanetarySystem(FlightGlobals.GetHomeBody()).orbit.semiMajorAxis;
+			double AU = Lib.GetParentPlanet(FlightGlobals.GetHomeBody()).orbit.semiMajorAxis;
 			return AU / dist;
 		}
 
@@ -170,16 +170,16 @@ namespace KERBALISM
 			foreach (Vessel v in FlightGlobals.Vessels)
 			{
 				// if inside the system
-				if (Lib.PlanetarySystem(v.mainBody) == body)
+				if (Lib.GetParentPlanet(v.mainBody) == body)
 				{
 					// get info from the cache
-					Vessel_info vi = Cache.VesselInfo(v);
+					VesselData vd = v.KerbalismData();
 
 					// skip invalid vessels
-					if (!vi.is_valid) continue;
+					if (!vd.IsValid) continue;
 
 					// obey message config
-					if (!DB.Vessel(v).cfg_storm) continue;
+					if (!v.KerbalismData().cfg_storm) continue;
 
 					// body is relevant
 					return true;
@@ -213,12 +213,12 @@ namespace KERBALISM
 			// if in interplanetary space
 			if (Lib.IsSun(v.mainBody))
 			{
-				return DB.Vessel(v).storm_state == 1;
+				return v.KerbalismData().storm_state == 1;
 			}
 			// if inside a planetary system
 			else
 			{
-				return DB.Body(Lib.PlanetarySystem(v.mainBody).name).storm_state == 1;
+				return DB.Body(Lib.GetParentPlanet(v.mainBody).name).storm_state == 1;
 			}
 		}
 
@@ -229,12 +229,12 @@ namespace KERBALISM
 			// if in interplanetary space
 			if (Lib.IsSun(v.mainBody))
 			{
-				return DB.Vessel(v).storm_state == 2;
+				return v.KerbalismData().storm_state == 2;
 			}
 			// if inside a planetary system
 			else
 			{
-				return DB.Body(Lib.PlanetarySystem(v.mainBody).name).storm_state == 2;
+				return DB.Body(Lib.GetParentPlanet(v.mainBody).name).storm_state == 2;
 			}
 		}
 
@@ -247,12 +247,12 @@ namespace KERBALISM
 			// if in interplanetary space
 			if (Lib.IsSun(v.mainBody))
 			{
-				return DB.Vessel(v).storm_age < delta_time * 2.0;
+				return v.KerbalismData().storm_age < delta_time * 2.0;
 			}
 			// if inside a planetary system
 			else
 			{
-				return DB.Body(Lib.PlanetarySystem(v.mainBody).name).storm_age < delta_time * 2.0;
+				return DB.Body(Lib.GetParentPlanet(v.mainBody).name).storm_age < delta_time * 2.0;
 			}
 		}
 
@@ -270,13 +270,13 @@ namespace KERBALISM
 			// if in interplanetary space
 			if (Lib.IsSun(v.mainBody))
 			{
-				VesselData vd = DB.Vessel(v);
+				VesselData vd = v.KerbalismData();
 				return TimeBeforeCME(vd.storm_time, vd.storm_age);
 			}
 			// if inside a planetary system
 			else
 			{
-				BodyData bd = DB.Body(Lib.PlanetarySystem(v.mainBody).name);
+				BodyData bd = DB.Body(Lib.GetParentPlanet(v.mainBody).name);
 				return TimeBeforeCME(bd.storm_time, bd.storm_age);
 			}
 		}
@@ -311,13 +311,13 @@ namespace KERBALISM
 			// if in interplanetary space
 			if (Lib.IsSun(v.mainBody))
 			{
-				VesselData vd = DB.Vessel(v);
+				VesselData vd = v.KerbalismData();
 				return TimeLeftCME(vd.storm_time, vd.storm_age);
 			}
 			// if inside a planetary system
 			else
 			{
-				BodyData bd = DB.Body(Lib.PlanetarySystem(v.mainBody).name);
+				BodyData bd = DB.Body(Lib.GetParentPlanet(v.mainBody).name);
 				return TimeLeftCME(bd.storm_time, bd.storm_age);
 			}
 		}

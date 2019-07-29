@@ -17,8 +17,6 @@ namespace KERBALISM
 			// get KerbalEVA module
 			KerbalEVA kerbal = Lib.FindModules<KerbalEVA>(v)[0];
 
-			Vessel_info vi = Cache.VesselInfo(v);
-
 			// Stock KSP adds 5 units of monoprop to EVAs. We want to limit that amount
 			// to whatever was available in the ship, so we don't magically create EVA prop out of nowhere
 			if(Cache.HasVesselObjectsCache(v, "eva_prop"))

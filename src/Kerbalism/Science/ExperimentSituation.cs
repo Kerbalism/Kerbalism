@@ -64,14 +64,14 @@ namespace KERBALISM
 		{
 			var body = vessel.mainBody;
 			var alt = vessel.altitude;
-			var vi = Cache.VesselInfo(vessel);
+			var vd = vessel.KerbalismData();
 
 			//if (vi.magnetosphere) sit = KerbalismSituations.Magnetosphere;
 			//if (vi.outer_belt) sit = KerbalismSituations.OuterBelt;
 			//if (vi.inner_belt) sit = KerbalismSituations.InnerBelt;
 
 			// leave these as an easter eggs, for now
-			if (vi.interstellar && Lib.IsSun(body))
+			if (vd.EnvInterstellar && Lib.IsSun(body))
 			{
 				sit = KerbalismSituations.Interstellar;
 				return;
@@ -87,7 +87,7 @@ namespace KERBALISM
 				return;
 			}
 
-			if(vi.landed) {
+			if(vd.EnvLanded) {
 				var s = ScienceUtil.GetExperimentSituation(vessel);
 				switch (s)
 				{

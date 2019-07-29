@@ -210,7 +210,7 @@ namespace KERBALISM
 				{
 					Vessel firstHop = Lib.CommNodeToVessel(v.Connection.ControlPath.First.end);
 					// Get rate from the firstHop, each Hop will do the same logic, then we will have the min rate for whole path
-					antennaInfo.rate = Math.Min(Cache.VesselInfo(FlightGlobals.FindVessel(firstHop.id)).connection.rate, antennaInfo.rate);
+					antennaInfo.rate = Math.Min(firstHop.KerbalismData().Connection.rate, antennaInfo.rate);
 				}
 			}
 			// is loss of connection due to plasma blackout

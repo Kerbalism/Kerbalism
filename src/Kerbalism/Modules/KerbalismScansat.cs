@@ -60,9 +60,9 @@ namespace KERBALISM
 			{
 				double coverage_delta = new_coverage - body_coverage;
 				body_coverage = new_coverage;
-				var vd = DB.Vessel(vessel);
+				VesselData vd = vessel.KerbalismData();
 
-				if(IsScanning)
+				if (IsScanning)
 				{
 					Science.Generate_subject(experimentType, vessel);
 					var subject_id = Science.Generate_subject_id(experimentType, vessel);
@@ -102,8 +102,8 @@ namespace KERBALISM
 				}
 				else if(vd.scansat_id.Contains(part.flightID))
 				{
-					var vi = Cache.VesselInfo(vessel);
-					if(vi.free_capacity / vi.total_capacity > 0.9) // restart when 90% of capacity is available 
+					
+					if (vd.DrivesFreeSpace / vd.DrivesCapacity > 0.9) // restart when 90% of capacity is available 
 					{
 						StartScan();
 						vd.scansat_id.Remove(part.flightID);
@@ -259,8 +259,7 @@ namespace KERBALISM
 				}
 				else if (vd.scansat_id.Contains(p.flightID))
 				{
-					var vi = Cache.VesselInfo(vessel);
-					if (ec.level >= 0.25 && (vi.free_capacity / vi.total_capacity > 0.9))
+					if (ec.level >= 0.25 && (vd.DrivesFreeSpace / vd.DrivesCapacity > 0.9))
 					{
 						SCANsat.ResumeScanner(vessel, scanner, part_prefab);
 						vd.scansat_id.Remove(p.flightID);

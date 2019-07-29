@@ -62,6 +62,7 @@ namespace KERBALISM
 				Profile.SetupPods();
 
 				// initialize subsystems
+				Sim.Init();
 				Cache.Init();
 				ResourceCache.Init();
 				Radiation.Init();
@@ -140,26 +141,26 @@ namespace KERBALISM
 				++warp_blending;
 			elapsed_s = fixedDeltaTime;
 
-			// evict oldest entry from vessel cache
-			Cache.Update();
-
 			// store info for oldest unloaded vessel
 			double last_time = 0.0;
+			Guid last_id = Guid.Empty;
 			Vessel last_v = null;
-			Vessel_info last_vi = null;
 			VesselData last_vd = null;
 			Vessel_resources last_resources = null;
 
 			// for each vessel
 			foreach (Vessel v in FlightGlobals.Vessels)
 			{
-				// get vessel info from the cache
-				Vessel_info vi = Cache.VesselInfo(v);
+				// get vessel data
+				VesselData vd = v.KerbalismData();
+
+				// update the vessel data validity
+				vd.Update(v);
 
 				// set locks for active vessel
 				if (v.isActiveVessel)
 				{
-					Misc.SetLocks(v, vi);
+					Misc.SetLocks(v);
 				}
 
 				// maintain eva dead animation and helmet state
@@ -169,18 +170,15 @@ namespace KERBALISM
 				}
 
 				// keep track of rescue mission kerbals, and gift resources to their vessels on discovery
-				if (v.loaded && vi.is_vessel)
+				if (v.loaded && vd.is_vessel)
 				{
 					// manage rescue mission mechanics
 					Misc.ManageRescueMission(v);
 				}
 
 				// do nothing else for invalid vessels
-				if (!vi.is_valid)
+				if (!vd.IsValid)
 					continue;
-
-				// get vessel data from db
-				VesselData vd = DB.Vessel(v);
 
 				// get resource cache
 				Vessel_resources resources = ResourceCache.Get(v);
@@ -188,44 +186,47 @@ namespace KERBALISM
 				// if loaded
 				if (v.loaded)
 				{
+					// update the vessel info
+					vd.Evaluate(false, elapsed_s);
+
 					// get most used resource
 					Resource_info ec = resources.Info(v, "ElectricCharge");
 
 					// show belt warnings
-					Radiation.BeltWarnings(v, vi, vd);
+					Radiation.BeltWarnings(v, vd);
 
 					// update storm data
-					Storm.Update(v, vi, vd, elapsed_s);
+					Storm.Update(v, vd, elapsed_s);
 
-					Communications.Update(v, vi, vd, ec, elapsed_s);
+					Communications.Update(v, vd, ec, elapsed_s);
 
 					// Habitat equalization
 					ResourceBalance.Equalizer(v);
 
 					// transmit science data
-					Science.Update(v, vi, vd, resources, elapsed_s);
+					Science.Update(v, vd, resources, elapsed_s);
 
 					// apply rules
-					Profile.Execute(v, vi, vd, resources, elapsed_s);
+					Profile.Execute(v, vd, resources, elapsed_s);
 
 					// apply deferred requests
 					resources.Sync(v, elapsed_s);
 
 					// call automation scripts
-					vd.computer.Automate(v, vi, resources);
+					vd.computer.Automate(v, vd, resources);
 
 					// remove from unloaded data container
-					unloaded.Remove(vi.id);
+					unloaded.Remove(vd.VesselId);
 				}
 				// if unloaded
 				else
 				{
 					// get unloaded data, or create an empty one
 					Unloaded_data ud;
-					if (!unloaded.TryGetValue(vi.id, out ud))
+					if (!unloaded.TryGetValue(vd.VesselId, out ud))
 					{
 						ud = new Unloaded_data();
-						unloaded.Add(vi.id, ud);
+						unloaded.Add(vd.VesselId, ud);
 					}
 
 					// accumulate time
@@ -236,46 +237,48 @@ namespace KERBALISM
 					{
 						last_time = ud.time;
 						last_v = v;
-						last_vi = vi;
 						last_vd = vd;
 						last_resources = resources;
 					}
 				}
 			}
 
-			// at most one vessel gets background processing per physics tick
+			// at most one vessel gets background processing per physics tick :
 			// if there is a vessel that is not the currently loaded vessel, then
 			// we will update the vessel whose most recent background update is the oldest
 			if (last_v != null)
 			{
+				// update the vessel info (high timewarp speeds reevaluation)
+				last_vd.Evaluate(false, last_time);
+
 				// get most used resource
 				Resource_info last_ec = last_resources.Info(last_v, "ElectricCharge");
 
 				// show belt warnings
-				Radiation.BeltWarnings(last_v, last_vi, last_vd);
+				Radiation.BeltWarnings(last_v, last_vd);
 
 				// update storm data
-				Storm.Update(last_v, last_vi, last_vd, last_time);
+				Storm.Update(last_v, last_vd, last_time);
 
-				Communications.Update(last_v, last_vi, last_vd, last_ec, last_time);
+				Communications.Update(last_v, last_vd, last_ec, last_time);
 
 				// apply rules
-				Profile.Execute(last_v, last_vi, last_vd, last_resources, last_time);
+				Profile.Execute(last_v, last_vd, last_resources, last_time);
 
 				// simulate modules in background
-				Background.Update(last_v, last_vi, last_vd, last_resources, last_time);
+				Background.Update(last_v, last_vd, last_resources, last_time);
 
 				// transmit science	data
-				Science.Update(last_v, last_vi, last_vd, last_resources, last_time);
+				Science.Update(last_v, last_vd, last_resources, last_time);
 
 				// apply deferred requests
 				last_resources.Sync(last_v, last_time);
 
 				// call automation scripts
-				last_vd.computer.Automate(last_v, last_vi, last_resources);
+				last_vd.computer.Automate(last_v, last_vd, last_resources);
 
 				// remove from unloaded data container
-				unloaded.Remove(last_vi.id);
+				unloaded.Remove(last_vd.VesselId);
 			}
 
 			// update storm data for one body per-step
@@ -377,7 +380,7 @@ namespace KERBALISM
 			InputLockManager.RemoveControlLock("no_signal_lock");
 		}
 
-		public static void SetLocks(Vessel v, Vessel_info vi)
+		public static void SetLocks(Vessel v)
 		{
 			// lock controls for EVA death
 			if (EVA.IsDead(v))
@@ -586,23 +589,21 @@ namespace KERBALISM
 			// call action scripts
 			// - avoid creating vessel data for invalid vessels
 			Vessel v = FlightGlobals.ActiveVessel;
-			if (v != null && DB.vessels.ContainsKey(Lib.VesselID(v)))
-			{
-				// get computer
-				Computer computer = DB.Vessel(v).computer;
+			if (v == null) return;
+			VesselData vd = v.KerbalismData();
+			if (!vd.IsValid) return;
 
-				// call scripts with 1-5 key
-				if (Input.GetKeyDown(KeyCode.Alpha1) || Input.GetKeyDown(KeyCode.Keypad1))
-				{ computer.Execute(v, ScriptType.action1); }
-				if (Input.GetKeyDown(KeyCode.Alpha2) || Input.GetKeyDown(KeyCode.Keypad2))
-				{ computer.Execute(v, ScriptType.action2); }
-				if (Input.GetKeyDown(KeyCode.Alpha3) || Input.GetKeyDown(KeyCode.Keypad3))
-				{ computer.Execute(v, ScriptType.action3); }
-				if (Input.GetKeyDown(KeyCode.Alpha4) || Input.GetKeyDown(KeyCode.Keypad4))
-				{ computer.Execute(v, ScriptType.action4); }
-				if (Input.GetKeyDown(KeyCode.Alpha5) || Input.GetKeyDown(KeyCode.Keypad5))
-				{ computer.Execute(v, ScriptType.action5); }
-			}
+			// call scripts with 1-5 key
+			if (Input.GetKeyDown(KeyCode.Alpha1) || Input.GetKeyDown(KeyCode.Keypad1))
+			{ vd.computer.Execute(v, ScriptType.action1); }
+			if (Input.GetKeyDown(KeyCode.Alpha2) || Input.GetKeyDown(KeyCode.Keypad2))
+			{ vd.computer.Execute(v, ScriptType.action2); }
+			if (Input.GetKeyDown(KeyCode.Alpha3) || Input.GetKeyDown(KeyCode.Keypad3))
+			{ vd.computer.Execute(v, ScriptType.action3); }
+			if (Input.GetKeyDown(KeyCode.Alpha4) || Input.GetKeyDown(KeyCode.Keypad4))
+			{ vd.computer.Execute(v, ScriptType.action4); }
+			if (Input.GetKeyDown(KeyCode.Alpha5) || Input.GetKeyDown(KeyCode.Keypad5))
+			{ vd.computer.Execute(v, ScriptType.action5); }
 		}
 
 		// return true if the vessel is a rescue mission

@@ -167,11 +167,8 @@ namespace KERBALISM
 				Vessel v = FlightGlobals.ActiveVessel;
 				if (v == null || EVA.IsDead(v)) return;
 
-				// get info from cache
-				Vessel_info vi = Cache.VesselInfo(vessel);
-
 				// do nothing if vessel is invalid
-				if (!vi.is_valid) return;
+				if (!vessel.KerbalismIsValid()) return;
 
 				var sampleSize = exp.max_amount;
 				var eta = data_rate < double.Epsilon || Done(exp, dataSampled) ? " done" : " " + Lib.HumanReadableCountdown((sampleSize - dataSampled) / data_rate);
@@ -218,7 +215,7 @@ namespace KERBALISM
 		{
 			// basic sanity checks
 			if (Lib.IsEditor()) return;
-			if (!Cache.VesselInfo(vessel).is_valid) return;
+			if (!vessel.KerbalismIsValid()) return;
 			if (next_check > Planetarium.GetUniversalTime()) return;
 
 			// get ec handler

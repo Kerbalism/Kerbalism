@@ -42,7 +42,7 @@ namespace KERBALISM
 			Resource_info res = resources.Info(v, resource);
 
 			// get data from db
-			SupplyData sd = DB.Vessel(v).Supply(resource);
+			SupplyData sd = v.KerbalismData().Supply(resource);
 
 			// message obey user config
 			bool show_msg = resource == "ElectricCharge" ? vd.cfg_ec : vd.cfg_supply;

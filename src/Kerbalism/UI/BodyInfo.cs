@@ -15,21 +15,19 @@ namespace KERBALISM
 			if (!MapView.MapIsEnabled) return;
 
 			// only show if there is a selected body and that body is not the sun
-			CelestialBody body = Lib.SelectedBody();
+			CelestialBody body = Lib.MapViewSelectedBody();
 			if (body == null || (Lib.IsSun(body) && !Features.Radiation)) return;
 
-			// shortcut
-			CelestialBody sun = Lib.GetSun(body);
-
-			// for all bodies except the sun
-			if (body != sun)
+			// for all bodies except sun(s)
+			if (!Lib.IsSun(body))
 			{
+				CelestialBody mainSun;
+				Vector3d sun_dir;
+				double sun_dist;
+				double solar_flux = Sim.SolarFluxAtBody(body, false, out mainSun, out sun_dir, out sun_dist);
+				solar_flux *= Sim.AtmosphereFactor(body, 0.7071);
+
 				// calculate simulation values
-				double atmo_factor = Sim.AtmosphereFactor(body, 0.7071);
-				double gamma_factor = Sim.GammaTransparency(body, 0.0);
-				double sun_dist = Sim.Apoapsis(Lib.PlanetarySystem(body)) - sun.Radius - body.Radius;
-				Vector3d sun_dir = (sun.position - body.position).normalized;
-				double solar_flux = Sim.SolarFlux(sun_dist, sun) * atmo_factor;
 				double albedo_flux = Sim.AlbedoFlux(body, body.position + sun_dir * body.Radius);
 				double body_flux = Sim.BodyFlux(body, 0.0);
 				double total_flux = solar_flux + albedo_flux + body_flux + Sim.BackgroundFlux();
@@ -40,7 +38,7 @@ namespace KERBALISM
 				double temperature_min = Sim.BlackBodyTemperature(total_flux_min);
 
 				// calculate radiation at body surface
-				double radiation = Radiation.ComputeSurface(body, gamma_factor);
+				double radiation = Radiation.ComputeSurface(body, Sim.GammaTransparency(body, 0.0));
 
 				// surface panel
 				string temperature_str = body.atmosphere
@@ -90,7 +88,7 @@ namespace KERBALISM
 			// TODO cache this information in RadiationBody
 
 			double rad = PreferencesStorm.Instance.externRadiation;
-			var rbSun = Radiation.Info(Lib.GetSun(body));
+			var rbSun = Radiation.Info(Lib.GetParentSun(body)); // TODO Kopernicus support : not sure if this work with multiple suns/stars
 			rad += rbSun.radiation_pause;
 
 			var rb = Radiation.Info(body);

@@ -119,8 +119,9 @@ namespace KERBALISM
 						if (status != (int)LinkStatus.direct_link)
 						{
 							Vessel target = FlightGlobals.FindVessel(controlPath[0]);
-							strength *= Cache.VesselInfo(target).connection.strength;
-							rate = Math.Min(Cache.VesselInfo(target).connection.rate, rate * strength);
+							ConnectionInfo ci = target.KerbalismData().Connection;
+							strength *= ci.strength;
+							rate = Math.Min(ci.rate, rate * strength);
 						}
 						else rate *= strength;
 					}

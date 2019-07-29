@@ -80,7 +80,7 @@ namespace KERBALISM
 
 				// show message to the user
 				// - unless the script is empty (can happen when being edited)
-				if (script.states.Count > 0 && DB.Vessel(v).cfg_script)
+				if (script.states.Count > 0 && v.KerbalismData().cfg_script)
 				{
 					Message.Post(Lib.BuildString(Localizer.Format("#KERBALISM_UI_scriptvessel"), " <b>", v.vesselName, "</b>"));
 				}
@@ -88,21 +88,21 @@ namespace KERBALISM
 		}
 
 		// call scripts automatically when conditions are met
-		public void Automate(Vessel v, Vessel_info vi, Vessel_resources resources)
+		public void Automate(Vessel v, VesselData vd, Vessel_resources resources)
 		{
 			// do nothing if automation is disabled
 			if (!Features.Automation) return;
 
 			// get current states
 			Resource_info ec = resources.Info(v, "ElectricCharge");
-			bool sunlight = vi.sunlight > double.Epsilon;
+			bool sunlight = !vd.EnvInFullShadow;
 			bool power_low = ec.level < 0.2;
 			bool power_high = ec.level > 0.8;
-			bool radiation_low = vi.radiation < 0.000005552; //< 0.02 rad/h
-			bool radiation_high = vi.radiation > 0.00001388; //< 0.05 rad/h
-			bool signal = vi.connection.linked;
-			bool drive_full = vi.free_capacity < double.MaxValue && (vi.free_capacity / vi.total_capacity < 0.15);
-			bool drive_empty = vi.free_capacity >= double.MaxValue || (vi.free_capacity / vi.total_capacity > 0.9);
+			bool radiation_low = vd.EnvRadiation < 0.000005552; //< 0.02 rad/h
+			bool radiation_high = vd.EnvRadiation > 0.00001388; //< 0.05 rad/h
+			bool signal = vd.Connection.linked;
+			bool drive_full = vd.DrivesFreeSpace < double.MaxValue && (vd.DrivesFreeSpace / vd.DrivesCapacity < 0.15);
+			bool drive_empty = vd.DrivesFreeSpace >= double.MaxValue || (vd.DrivesFreeSpace / vd.DrivesCapacity > 0.9);
 
 			// get current situation
 			bool landed = false;
@@ -218,7 +218,7 @@ namespace KERBALISM
 				}
 
 				// show message to the user
-				if (DB.Vessel(v).cfg_script)
+				if (v.KerbalismData().cfg_script)
 				{
 					Message.Post(Lib.BuildString("Script called on vessel <b>", v.vesselName, "</b>"));
 				}

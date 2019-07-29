@@ -131,7 +131,7 @@ namespace KERBALISM
 			{
 				// get vessel info from the cache
 				// - if the vessel is not valid (eg: flagged as debris) then solar flux will be 0 and landed false (but that's okay)
-				Vessel_info vi = Cache.VesselInfo(vessel);
+				VesselData vd = vessel.KerbalismData();
 
 				// get resource cache
 				Vessel_resources resources = ResourceCache.Get(vessel);
@@ -141,7 +141,7 @@ namespace KERBALISM
 				if (double.IsNaN(growth) || double.IsInfinity(growth)) growth = 0.0;
 
 				// calculate natural and artificial lighting
-				natural = vi.solar_flux;
+				natural = vd.EnvSolarFluxTotal;
 				artificial = Math.Max(light_tolerance - natural, 0.0);
 
 				// consume EC for the lamps, scaled by artificial light intensity
@@ -156,25 +156,25 @@ namespace KERBALISM
 				foreach (ModuleResource input in resHandler.inputResources)
 				{
 					// WasteAtmosphere is primary combined input
-					if (WACO2 && input.name == "WasteAtmosphere") recipe.Input(input.name, vi.breathable ? 0.0 : input.rate * Kerbalism.elapsed_s, "CarbonDioxide");
+					if (WACO2 && input.name == "WasteAtmosphere") recipe.Input(input.name, vd.EnvBreathable ? 0.0 : input.rate * Kerbalism.elapsed_s, "CarbonDioxide");
 					// CarbonDioxide is secondary combined input
-					else if (WACO2 && input.name == "CarbonDioxide") recipe.Input(input.name, vi.breathable ? 0.0 : input.rate * Kerbalism.elapsed_s, "");
+					else if (WACO2 && input.name == "CarbonDioxide") recipe.Input(input.name, vd.EnvBreathable ? 0.0 : input.rate * Kerbalism.elapsed_s, "");
 					// if atmosphere is breathable disable WasteAtmosphere / CO2
-					else if (!WACO2 && (input.name == "CarbonDioxide" || input.name == "WasteAtmosphere")) recipe.Input(input.name, vi.breathable ? 0.0 : input.rate, "");
+					else if (!WACO2 && (input.name == "CarbonDioxide" || input.name == "WasteAtmosphere")) recipe.Input(input.name, vd.EnvBreathable ? 0.0 : input.rate, "");
 					else recipe.Input(input.name, input.rate * Kerbalism.elapsed_s);
 				}
 				foreach (ModuleResource output in resHandler.outputResources)
 				{
 					// if atmosphere is breathable disable Oxygen
-					if (output.name == "Oxygen") recipe.Output(output.name, vi.breathable ? 0.0 : output.rate * Kerbalism.elapsed_s, true);
+					if (output.name == "Oxygen") recipe.Output(output.name, vd.EnvBreathable ? 0.0 : output.rate * Kerbalism.elapsed_s, true);
 					else recipe.Output(output.name, output.rate * Kerbalism.elapsed_s, true);
 				}
 				resources.Transform(recipe);
 
 				// determine environment conditions
 				bool lighting = natural + artificial >= light_tolerance;
-				bool pressure = pressure_tolerance <= double.Epsilon || vi.pressure >= pressure_tolerance;
-				bool radiation = radiation_tolerance <= double.Epsilon || vi.radiation * (1.0 - vi.shielding) < radiation_tolerance;
+				bool pressure = pressure_tolerance <= double.Epsilon || vd.Pressure >= pressure_tolerance;
+				bool radiation = radiation_tolerance <= double.Epsilon || vd.EnvRadiation * (1.0 - vd.Shielding) < radiation_tolerance;
 
 				// determine input resources conditions
 				// - comparing against amounts in previous simulation step
@@ -186,7 +186,7 @@ namespace KERBALISM
 					// combine WasteAtmosphere and CO2 if both exist
 					if (input.name == "WasteAtmosphere" || input.name == "CarbonDioxide")
 					{
-						if (dis_WACO2 || Cache.VesselInfo(vessel).breathable) continue;    // skip if already checked or atmosphere is breathable
+						if (dis_WACO2 || vd.EnvBreathable) continue;    // skip if already checked or atmosphere is breathable
 						if (WACO2)
 						{
 							if (resources.Info(vessel, "WasteAtmosphere").amount <= double.Epsilon && resources.Info(vessel, "CarbonDioxide").amount <= double.Epsilon)
@@ -237,7 +237,7 @@ namespace KERBALISM
 
 
 		public static void BackgroundUpdate(Vessel v, ProtoPartModuleSnapshot m, Greenhouse g,
-											Vessel_info vi, Vessel_resources resources, double elapsed_s)
+											VesselData vd, Vessel_resources resources, double elapsed_s)
 		{
 			// get protomodule data
 			bool active = Lib.Proto.GetBool(m, "active");
@@ -250,7 +250,7 @@ namespace KERBALISM
 				Resource_info ec = resources.Info(v, "ElectricCharge");
 
 				// calculate natural and artificial lighting
-				double natural = vi.solar_flux;
+				double natural = vd.EnvSolarFluxTotal;
 				double artificial = Math.Max(g.light_tolerance - natural, 0.0);
 
 				// consume EC for the lamps, scaled by artificial light intensity
@@ -265,26 +265,26 @@ namespace KERBALISM
 				foreach (ModuleResource input in g.resHandler.inputResources) //recipe.Input(input.name, input.rate * elapsed_s);
 				{
 					// WasteAtmosphere is primary combined input
-					if (g.WACO2 && input.name == "WasteAtmosphere") recipe.Input(input.name, vi.breathable ? 0.0 : input.rate * elapsed_s, "CarbonDioxide");
+					if (g.WACO2 && input.name == "WasteAtmosphere") recipe.Input(input.name, vd.EnvBreathable ? 0.0 : input.rate * elapsed_s, "CarbonDioxide");
 					// CarbonDioxide is secondary combined input
-					else if (g.WACO2 && input.name == "CarbonDioxide") recipe.Input(input.name, vi.breathable ? 0.0 : input.rate * elapsed_s, "");
+					else if (g.WACO2 && input.name == "CarbonDioxide") recipe.Input(input.name, vd.EnvBreathable ? 0.0 : input.rate * elapsed_s, "");
 					// if atmosphere is breathable disable WasteAtmosphere / CO2
-					else if (!g.WACO2 && (input.name == "CarbonDioxide" || input.name == "WasteAtmosphere")) recipe.Input(input.name, vi.breathable ? 0.0 : input.rate, "");
+					else if (!g.WACO2 && (input.name == "CarbonDioxide" || input.name == "WasteAtmosphere")) recipe.Input(input.name, vd.EnvBreathable ? 0.0 : input.rate, "");
 					else
 						recipe.Input(input.name, input.rate * elapsed_s);
 				}
 				foreach (ModuleResource output in g.resHandler.outputResources)
 				{
 					// if atmosphere is breathable disable Oxygen
-					if (output.name == "Oxygen") recipe.Output(output.name, vi.breathable ? 0.0 : output.rate * elapsed_s, true);
+					if (output.name == "Oxygen") recipe.Output(output.name, vd.EnvBreathable ? 0.0 : output.rate * elapsed_s, true);
 					else recipe.Output(output.name, output.rate * elapsed_s, true);
 				}
 				resources.Transform(recipe);
 
 				// determine environment conditions
 				bool lighting = natural + artificial >= g.light_tolerance;
-				bool pressure = g.pressure_tolerance <= double.Epsilon || vi.pressure >= g.pressure_tolerance;
-				bool radiation = g.radiation_tolerance <= double.Epsilon || vi.radiation * (1.0 - vi.shielding) < g.radiation_tolerance;
+				bool pressure = g.pressure_tolerance <= double.Epsilon || vd.Pressure >= g.pressure_tolerance;
+				bool radiation = g.radiation_tolerance <= double.Epsilon || vd.EnvRadiation * (1.0 - vd.Shielding) < g.radiation_tolerance;
 
 				// determine inputs conditions
 				// note: comparing against amounts in previous simulation step
@@ -296,7 +296,7 @@ namespace KERBALISM
 					// combine WasteAtmosphere and CO2 if both exist
 					if (input.name == "WasteAtmosphere" || input.name == "CarbonDioxide")
 					{
-						if (dis_WACO2 || vi.breathable) continue;    // skip if already checked or atmosphere is breathable
+						if (dis_WACO2 || vd.EnvBreathable) continue;    // skip if already checked or atmosphere is breathable
 						if (g.WACO2)
 						{
 							if (resources.Info(v, "WasteAtmosphere").amount <= double.Epsilon && resources.Info(v, "CarbonDioxide").amount <= double.Epsilon)

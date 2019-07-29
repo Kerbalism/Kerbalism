@@ -80,7 +80,7 @@ namespace KERBALISM
 			internal Module_type type;
 		}
 
-		public static void Update(Vessel v, Vessel_info vi, VesselData vd, Vessel_resources resources, double elapsed_s)
+		public static void Update(Vessel v, VesselData vd, Vessel_resources resources, double elapsed_s)
 		{
 			if (!Lib.IsVessel(v))
 				return;
@@ -88,20 +88,13 @@ namespace KERBALISM
 			// get most used resource handlers
 			Resource_info ec = resources.Info(v, "ElectricCharge");
 
-			// This is basically handled in cache. However, when accelerating time warp while
-			// the vessel is in shadow, the cache logic doesn't kick in soon enough. So we double-check here
-			if (TimeWarp.CurrentRate > 1000.0f || elapsed_s > 150)  // we're time warping fast...
-			{
-				vi.highspeedWarp(v);
-			}
-
 			foreach(var e in Background_PMs(v))
 			{
 				switch(e.type)
 				{
 					case Module_type.Reliability: Reliability.BackgroundUpdate(v, e.p, e.m, e.module_prefab as Reliability); break;
 					case Module_type.Experiment: Experiment.BackgroundUpdate(v, e.m, e.module_prefab as Experiment, ec, resources, elapsed_s); break;
-					case Module_type.Greenhouse: Greenhouse.BackgroundUpdate(v, e.m, e.module_prefab as Greenhouse, vi, resources, elapsed_s); break;
+					case Module_type.Greenhouse: Greenhouse.BackgroundUpdate(v, e.m, e.module_prefab as Greenhouse, vd, resources, elapsed_s); break;
 					case Module_type.GravityRing: GravityRing.BackgroundUpdate(v, e.p, e.m, e.module_prefab as GravityRing, ec, elapsed_s); break;
 					case Module_type.Emitter: Emitter.BackgroundUpdate(v, e.p, e.m, e.module_prefab as Emitter, ec, elapsed_s); break;
 					case Module_type.Harvester: Harvester.BackgroundUpdate(v, e.m, e.module_prefab as Harvester, elapsed_s); break; // Kerbalism ground and air harvester module
@@ -120,7 +113,7 @@ namespace KERBALISM
 					case Module_type.FNGenerator: ProcessFNGenerator(v, e.p, e.m, e.module_prefab, ec, elapsed_s); break;
 					case Module_type.NonRechargeBattery: ProcessNonRechargeBattery(v, e.p, e.m, e.module_prefab, ec, elapsed_s); break;
 					case Module_type.KerbalismProcess: KerbalismProcess.BackgroundUpdate(v, e.m, e.module_prefab as KerbalismProcess, ec, resources, elapsed_s); break;
-					case Module_type.SolarPanelFixer: SolarPanelFixer.BackgroundUpdate(v, e.m, e.module_prefab as SolarPanelFixer, vi, ec, elapsed_s); break;
+					case Module_type.SolarPanelFixer: SolarPanelFixer.BackgroundUpdate(v, e.m, e.module_prefab as SolarPanelFixer, vd, ec, elapsed_s); break;
 				}
 			}
 		}

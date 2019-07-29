@@ -22,10 +22,10 @@ namespace KERBALISM
 			if (v == null) return;
 
 			// get info from the cache
-			Vessel_info vi = Cache.VesselInfo(v);
+			VesselData vd = v.KerbalismData();
 
 			// if not a valid vessel, leave the panel empty
-			if (!vi.is_valid) return;
+			if (!vd.IsValid) return;
 
 			// set metadata
 			p.Title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(40)), " <color=#cccccc>FILE MANAGER</color>"));
@@ -33,7 +33,7 @@ namespace KERBALISM
 			p.paneltype = Panel.PanelType.data;
 
  			// time-out simulation
-			if (!Lib.IsControlUnit(v) && p.Timeout(vi)) return;
+			if (!Lib.IsControlUnit(v) && p.Timeout(vd)) return;
 
 			var drives = Drive.GetDriveParts(v);
 
@@ -116,7 +116,7 @@ namespace KERBALISM
 		{
 			// get experiment info
 			ExperimentInfo exp = Science.Experiment(filename);
-			double rate = Cache.VesselInfo(v).connection.rate;
+			double rate = v.KerbalismData().Connection.rate;
 
 			// render experiment name
 			string exp_label = Lib.BuildString

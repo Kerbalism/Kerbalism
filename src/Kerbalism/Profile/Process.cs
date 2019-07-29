@@ -97,12 +97,12 @@ namespace KERBALISM
 			resources.Transform(recipe);
 		}
 
-		public void Execute(Vessel v, Vessel_info vi, Vessel_resources resources, double elapsed_s)
+		public void Execute(Vessel v, VesselData vd, Vessel_resources resources, double elapsed_s)
 		{
 			// evaluate modifiers
 			// if a given PartModule has a larger than 1 capacity for a process, then the multiplication happens here
 			// remember that when a process is enabled the units of process are stored in the PartModule as a pseudo-resource
-			double k = Modifiers.Evaluate(v, vi, resources, modifiers);
+			double k = Modifiers.Evaluate(v, vd, resources, modifiers);
 
 			Resource_recipe recipe = new Resource_recipe((Part)null, name);
 			ExecuteRecipe(k, resources, elapsed_s, recipe);

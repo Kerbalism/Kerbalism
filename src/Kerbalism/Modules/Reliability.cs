@@ -287,7 +287,7 @@ namespace KERBALISM
 		public void Break()
 		{
 			// if manned, or if safemode didn't trigger
-			if (Cache.VesselInfo(vessel).crew_capacity > 0 || Lib.RandomDouble() > PreferencesBasic.Instance.safeModeChance)
+			if (vessel.KerbalismData().CrewCapacity > 0 || Lib.RandomDouble() > PreferencesBasic.Instance.safeModeChance)
 			{
 				// flag as broken
 				broken = true;
@@ -335,7 +335,7 @@ namespace KERBALISM
 			if (reliability == null) return;
 
 			// if manned, or if safemode didn't trigger
-			if (Cache.VesselInfo(v).crew_capacity > 0 || Lib.RandomDouble() > PreferencesBasic.Instance.safeModeChance)
+			if (v.KerbalismData().CrewCapacity > 0 || Lib.RandomDouble() > PreferencesBasic.Instance.safeModeChance)
 			{
 				// flag as broken
 				Lib.Proto.Set(m, "broken", true);
@@ -558,7 +558,7 @@ namespace KERBALISM
 		// set highlighting
 		static void Highlight(Part p)
 		{
-			if (DB.Vessel(p.vessel).cfg_highlights)
+			if (p.vessel.KerbalismData().cfg_highlights)
 			{
 				// get state among all reliability components in the part
 				bool broken = false;
@@ -579,7 +579,7 @@ namespace KERBALISM
 
 		static void Broken_msg(Vessel v, string title, bool critical)
 		{
-			if (DB.Vessel(v).cfg_malfunction)
+			if (v.KerbalismData().cfg_malfunction)
 			{
 				if (!critical)
 				{

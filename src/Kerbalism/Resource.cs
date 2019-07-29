@@ -923,7 +923,7 @@ namespace KERBALISM
 				}
 			}
 
-			Cache.VesselInfo(v).max_pressure = max_pressure;
+			v.KerbalismData().maxPressure = max_pressure; // TODO: (GOT) max_pressure should be either evaluated in VesselData or set here, but it can't be both, there is something deeply wrong here !
 			Cache.SetVesselObjectsCache<double>(v, "max_pressure", max_pressure);
 
 			if (!equalize) return;

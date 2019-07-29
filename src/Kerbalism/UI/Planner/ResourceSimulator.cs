@@ -689,13 +689,26 @@ namespace KERBALISM.Planner
 			}
 		}
 
-		void Process_solarPanel(SolarPanelFixer mwp, EnvironmentAnalyzer env)
+		void Process_solarPanel(SolarPanelFixer spf, EnvironmentAnalyzer env)
 		{
-			// TODO : use the analytic cosine method to determine an average rate
-			if (mwp.state == SolarPanelFixer.PanelState.Extended || mwp.state == SolarPanelFixer.PanelState.ExtendedFixed || mwp.state == SolarPanelFixer.PanelState.Static)
+			if (spf.part.editorStarted && spf.isInitialized && spf.isEnabled && spf.editorEnabled)
 			{
-				double generated = mwp.nominalRate * (env.solar_flux / Sim.SolarFluxAtHome());
-				Resource("ElectricCharge").Produce(generated, "solar panel");
+				double editorOutput = 0.0;
+				switch (Planner.Sunlight)
+				{
+					case Planner.SunlightState.SunlightNominal:
+						editorOutput = spf.nominalRate * (env.solar_flux / Sim.SolarFluxAtHome);
+						break;
+					case Planner.SunlightState.SunlightSimulated:
+						// create a sun direction according to the shadows direction in the VAB / SPH
+						Vector3d sunDir = EditorDriver.editorFacility == EditorFacility.VAB ? new Vector3d(1.0, 1.0, 0.0).normalized : new Vector3d(0.0, 1.0, -1.0).normalized;
+						string occludingPart = null;
+						double effiencyFactor = spf.SolarPanel.GetCosineFactor(sunDir, true) * spf.SolarPanel.GetOccludedFactor(sunDir, out occludingPart, true);
+						double distanceFactor = env.solar_flux / Sim.SolarFluxAtHome;
+						editorOutput = spf.nominalRate * effiencyFactor * distanceFactor;
+						break;
+				}
+				if (editorOutput > 0.0) Resource("ElectricCharge").Produce(editorOutput, "solar panel");
 			}
 		}
 

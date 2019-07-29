@@ -17,11 +17,11 @@ namespace KERBALISM
 			// if vessel doesn't exist anymore, leave the panel empty
 			if (v == null) return;
 
-			// get info from the cache
-			Vessel_info vi = Cache.VesselInfo(v);
+			// get data
+			VesselData vd = v.KerbalismData();
 
 			// if not a valid vessel, leave the panel empty
-			if (!vi.is_valid) return;
+			if (!vd.IsValid) return;
 
 			// set metadata
 			p.Title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(20)), " <color=#cccccc>" + Localizer.Format("#KERBALISM_UI_devman") + "</color>"));
@@ -29,7 +29,7 @@ namespace KERBALISM
 			p.paneltype = Panel.PanelType.scripts;
 
 			// time-out simulation
-			if (!Lib.IsControlUnit(v) && p.Timeout(vi)) return;
+			if (!Lib.IsControlUnit(v) && p.Timeout(vd)) return;
 
 			// get devices
 			Dictionary<uint, Device> devices = Computer.Boot(v);
@@ -64,7 +64,7 @@ namespace KERBALISM
 				// get script
 				ScriptType script_type = (ScriptType)script_index;
 				string script_name = script_type.ToString().Replace('_', ' ').ToUpper();
-				Script script = DB.Vessel(v).computer.Get(script_type);
+				Script script = v.KerbalismData().computer.Get(script_type);
 
 				// draw section title and desc
 				p.AddSection

@@ -4,20 +4,18 @@
 	///<summary> Planners simulator for the environment the vessel is presently in, according to the planners environment settings </summary>
 	public sealed class EnvironmentAnalyzer
 	{
-		public void Analyze(CelestialBody body, double altitude_mult, bool sunlight)
+		public void Analyze(CelestialBody body, double altitude_mult, Planner.SunlightState sunlight)
 		{
-			// shortcuts
-			CelestialBody sun = Lib.GetSun(body);
-
 			this.body = body;
+			CelestialBody mainSun;
+			Vector3d sun_dir;
+			solar_flux = Sim.SolarFluxAtBody(body, true, out mainSun, out sun_dir, out sun_dist);
 			altitude = body.Radius * altitude_mult;
 			landed = altitude <= double.Epsilon;
-			breathable = Sim.Breathable(body) && landed;
 			atmo_factor = Sim.AtmosphereFactor(body, 0.7071);
-			sun_dist = Sim.Apoapsis(Lib.PlanetarySystem(body)) - sun.Radius - body.Radius;
-			Vector3d sun_dir = (sun.position - body.position).normalized;
-			solar_flux = sunlight ? Sim.SolarFlux(sun_dist, sun) * (landed ? atmo_factor : 1.0) : 0.0;
-			albedo_flux = sunlight ? Sim.AlbedoFlux(body, body.position + sun_dir * (body.Radius + altitude)) : 0.0;
+			solar_flux = sunlight == Planner.SunlightState.Shadow ? 0.0 : solar_flux * (landed ? atmo_factor : 1.0);
+			breathable = Sim.Breathable(body) && landed;
+			albedo_flux = sunlight == Planner.SunlightState.Shadow ? 0.0 : Sim.AlbedoFlux(body, body.position + sun_dir * (body.Radius + altitude));
 			body_flux = Sim.BodyFlux(body, altitude);
 			total_flux = solar_flux + albedo_flux + body_flux + Sim.BackgroundFlux();
 			temperature = !landed || !body.atmosphere ? Sim.BlackBodyTemperature(total_flux) : body.GetTemperature(0.0);
@@ -27,8 +25,9 @@
 			shadow_time = shadow_period / orbital_period;
 			zerog = !landed && (!body.atmosphere || body.atmosphereDepth < altitude);
 
+
 			RadiationBody rb = Radiation.Info(body);
-			RadiationBody sun_rb = Radiation.Info(sun);
+			RadiationBody sun_rb = Radiation.Info(mainSun); // TODO Kopernicus support : not sure if/how this work with multiple suns/stars
 			gamma_transparency = Sim.GammaTransparency(body, 0.0);
 			extern_rad = PreferencesStorm.Instance.ExternRadiation;
 			heliopause_rad = extern_rad + sun_rb.radiation_pause;
@@ -38,7 +37,6 @@
 			surface_rad = magnetopause_rad * gamma_transparency;
 			storm_rad = heliopause_rad + PreferencesStorm.Instance.StormRadiation * (solar_flux > double.Epsilon ? 1.0 : 0.0);
 		}
-
 
 		public CelestialBody body;                            // target body
 		public double altitude;                               // target altitude
@@ -56,7 +54,6 @@
 		public double orbital_period;                         // length of orbit
 		public double shadow_period;                          // length of orbit in shadow
 		public double shadow_time;                            // proportion of orbit that is in shadow
-
 		public double gamma_transparency;                     // proportion of radiation not blocked by atmosphere
 		public double extern_rad;                             // environment radiation outside the heliopause
 		public double heliopause_rad;                         // environment radiation inside the heliopause

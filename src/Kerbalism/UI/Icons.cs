@@ -35,6 +35,7 @@ namespace KERBALISM
 
 		internal static Texture2D sun_black;
 		internal static Texture2D sun_white;
+		internal static Texture2D solar_panel;
 
 		internal static Texture2D battery_white;
 		internal static Texture2D battery_yellow;
@@ -145,6 +146,7 @@ namespace KERBALISM
 
 			sun_black = GetTexture("sun-black");
 			sun_white = GetTexture("sun-white");
+			solar_panel = GetTexture("solar-panel");
 
 			battery_white = GetTexture("battery-white");
 			battery_yellow = GetTexture("battery-yellow");

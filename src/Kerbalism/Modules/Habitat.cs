@@ -360,8 +360,9 @@ namespace KERBALISM
 
 			if(max_pressure < Settings.PressureThreshold && Lib.IsFlight())
 			{
-				var vi = Cache.VesselInfo(vessel);
-				vi.max_pressure = Math.Min(vi.max_pressure, max_pressure);
+				VesselData vd = vessel.KerbalismData();
+				// TODO : maxPressure is both set from here and evaluated in the VesselData update, a sure sign that this is is a buggy mess
+				vd.maxPressure = Math.Min(vd.maxPressure, max_pressure);
 			}
 
 			// state machine

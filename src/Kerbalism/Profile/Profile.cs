@@ -155,7 +155,7 @@ namespace KERBALISM
 		}
 
 
-		public static void Execute(Vessel v, Vessel_info vi, VesselData vd, Vessel_resources resources, double elapsed_s)
+		public static void Execute(Vessel v, VesselData vd, Vessel_resources resources, double elapsed_s)
 		{
 			// execute all supplies
 			foreach (Supply supply in supplies)
@@ -167,13 +167,13 @@ namespace KERBALISM
 			// execute all rules
 			foreach (Rule rule in rules)
 			{
-				rule.Execute(v, vi, resources, elapsed_s);
+				rule.Execute(v, vd, resources, elapsed_s);
 			}
 
 			// execute all processes
 			foreach (Process process in processes)
 			{
-				process.Execute(v, vi, resources, elapsed_s);
+				process.Execute(v, vd, resources, elapsed_s);
 			}
 		}
 

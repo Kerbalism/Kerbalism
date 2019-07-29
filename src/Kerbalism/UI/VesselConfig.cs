@@ -5,8 +5,6 @@ using UnityEngine;
 
 namespace KERBALISM
 {
-
-
 	public static class VesselConfig
 	{
 		public static void Config(this Panel p, Vessel v)
@@ -17,19 +15,16 @@ namespace KERBALISM
 			// if vessel doesn't exist anymore, leave the panel empty
 			if (v == null) return;
 
-			// get info from the cache
-			Vessel_info vi = Cache.VesselInfo(v);
+			// get vessel data
+			VesselData vd = v.KerbalismData();
 
 			// if not a valid vessel, leave the panel empty
-			if (!vi.is_valid) return;
+			if (!vd.IsValid) return;
 
 			// set metadata
 			p.Title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(20)), " <color=#cccccc>VESSEL CONFIG</color>"));
 			p.Width(Styles.ScaleWidthFloat(355.0f));
 			p.paneltype = Panel.PanelType.config;
-
-			// get data from db
-			VesselData vd = DB.Vessel(v);
 
 			// toggle rendering
 			string tooltip;

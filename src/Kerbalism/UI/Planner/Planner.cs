@@ -9,7 +9,7 @@ namespace KERBALISM.Planner
 
 	///<summary> Class for the Planner used in the VAB/SPH, it is used to predict resource production/consumption and
 	/// provide information on life support, radiation, comfort and other relevant factors. </summary>
-	internal static class Planner
+	public static class Planner
 	{
 		#region CONSTRUCTORS_DESTRUCTORS
 		///<summary> Initializes the Planner for use </summary>
@@ -192,9 +192,14 @@ namespace KERBALISM.Planner
 				{ body_index = (body_index - 1) % FlightGlobals.Bodies.Count; if (body_index == 0) body_index = FlightGlobals.Bodies.Count - 1; update = true; }
 
 				// sunlight selector
-				GUILayout.Label(new GUIContent(sunlight ? Icons.sun_white : Icons.sun_black, "In sunlight/shadow"), icon_style);
+				switch (sunlight)
+				{
+					case SunlightState.SunlightNominal: GUILayout.Label(new GUIContent(Icons.sun_white, "In sunlight\n<b>Nominal</b> solar panel output"), icon_style); break;
+					case SunlightState.SunlightSimulated: GUILayout.Label(new GUIContent(Icons.solar_panel, "In sunlight\n<b>Estimated</b> solar panel output\n<i>Sunlight direction : look at the shadows !</i>"), icon_style); break;
+					case SunlightState.Shadow: GUILayout.Label(new GUIContent(Icons.sun_black, "In shadow"), icon_style); break;
+				}
 				if (Lib.IsClicked())
-				{ sunlight = !sunlight; update = true; }
+				{ sunlight = (SunlightState)(((int)sunlight + 1) % Enum.GetValues(typeof(SunlightState)).Length); update = true; }
 
 				// situation selector
 				GUILayout.Label(new GUIContent(situations[situation_index], "Target situation"), rightmenu_style);
@@ -576,7 +581,9 @@ namespace KERBALISM.Planner
 		// body/situation/sunlight indexes
 		private static int body_index;
 		private static int situation_index = 2;     // orbit
-		private static bool sunlight = true;
+		public enum SunlightState { SunlightNominal = 0, SunlightSimulated = 1, Shadow = 2 }
+		private static SunlightState sunlight = SunlightState.SunlightSimulated;
+		public static SunlightState Sunlight => sunlight;
 
 		// panel indexes
 		private static int resource_index;

@@ -23,8 +23,8 @@ namespace KERBALISM
 			GameEvents.onNewVesselCreated.Add(this.VesselCreated);
 			GameEvents.onPartCouple.Add(this.VesselDock);
 
-			GameEvents.onVesselChange.Add((v) => { Cache.PurgeObjects(v); });
-			GameEvents.onVesselStandardModification.Add((v) => { Cache.PurgeObjects(v); });
+			GameEvents.onVesselChange.Add((v) => { OnVesselModified(v); });
+			GameEvents.onVesselStandardModification.Add((v) => { OnVesselStandardModification(v); });
 
 			GameEvents.onPartDie.Add(this.PartDestroyed);
 			GameEvents.OnTechnologyResearched.Add(this.TechResearched);
@@ -57,6 +57,19 @@ namespace KERBALISM
 			GameEvents.onEditorShipModified.Add((sc) => Planner.Planner.EditorShipModifiedEvent(sc));
 		}
 
+		private void OnVesselStandardModification(Vessel vessel)
+		{
+			// avoid this being called on vessel launch, when vessel is not yet properly initialized
+			if (!vessel.loaded && vessel.protoVessel == null) return;
+			OnVesselModified(vessel);
+		}
+
+		private void OnVesselModified(Vessel vessel)
+		{
+			Cache.PurgeObjects(vessel);
+			vessel.KerbalismData().UpdateOnVesselModified(vessel);
+		}
+
 		public IEnumerator NetworkInitialized()
 		{
 			yield return new WaitForSeconds(2);
@@ -67,8 +80,8 @@ namespace KERBALISM
 
 		void ToEVA(GameEvents.FromToAction<Part, Part> data)
 		{
-			Cache.PurgeObjects(data.from.vessel);
-			Cache.PurgeObjects(data.to.vessel);
+			OnVesselModified(data.from.vessel);
+			OnVesselModified(data.to.vessel);
 
 			// get total crew in the origin vessel
 			double tot_crew = Lib.CrewCount(data.from.vessel) + 1.0;
@@ -128,7 +141,7 @@ namespace KERBALISM
 			EVA.HeadLamps(kerbal, false);
 
 			// execute script
-			DB.Vessel(data.from.vessel).computer.Execute(data.from.vessel, ScriptType.eva_out);
+			data.from.vessel.KerbalismData().computer.Execute(data.from.vessel, ScriptType.eva_out);
 		}
 
 
@@ -149,17 +162,17 @@ namespace KERBALISM
 			// merge drives data
 			Drive.Transfer(data.from.vessel, data.to.vessel, true);
 
-			// forget vessel data
-			DB.vessels.Remove(Lib.VesselID(data.from.vessel));
+			// forget EVA vessel data
+			data.from.vessel.KerbalismDataDelete();
+			Cache.PurgeObjects(data.from.vessel);
 			Drive.Purge(data.from.vessel);
 
-			Cache.PurgeObjects(data.from.vessel);
-			Cache.PurgeObjects(data.to.vessel);
+			// update boarded vessel
+			this.OnVesselModified(data.to.vessel);
 
 			// execute script
-			DB.Vessel(data.to.vessel).computer.Execute(data.to.vessel, ScriptType.eva_in);
+			data.to.vessel.KerbalismData().computer.Execute(data.to.vessel, ScriptType.eva_in);
 		}
-
 
 		void VesselRecoveryProcessing(ProtoVessel v, MissionRecoveryDialog dialog, float score)
 		{
@@ -171,11 +184,13 @@ namespace KERBALISM
 			if (!Features.Science || HighLogic.CurrentGame.Mode == Game.Modes.SANDBOX)
 				return;
 
-			var vesselID = Lib.VesselID(v);
-			// get the drive data from DB
-			if (!DB.vessels.ContainsKey(vesselID))
-				return;
 
+			// TODO : (vessel_info refactor) Can't understand the purpose of this check. Maybe the intent was to check VesselData.IsValid ?
+			// var vesselID = Lib.VesselID(v);
+			// if (!DB.vessels.ContainsKey(vesselID))
+			//	return;
+
+			// get the drive data from DB
 			foreach (Drive drive in Drive.GetDrives(v))
 			{
 				// for each file in the drive
@@ -266,7 +281,8 @@ namespace KERBALISM
 				DB.RecoverKerbal(c.name);
 			}
 
-			DB.vessels.Remove(Lib.VesselID(pv));
+			// delete the vessel data
+			pv.KerbalismDataDelete();
 
 			// purge the caches
 			ResourceCache.Purge(pv);
@@ -281,7 +297,8 @@ namespace KERBALISM
 			foreach (ProtoCrewMember c in pv.GetVesselCrew())
 				DB.KillKerbal(c.name, true);
 
-			DB.vessels.Remove(Lib.VesselID(pv));
+			// delete the vessel data
+			pv.KerbalismDataDelete();
 
 			// purge the caches
 			ResourceCache.Purge(pv);
@@ -299,8 +316,6 @@ namespace KERBALISM
 
 		void VesselDestroyed(Vessel v)
 		{
-			DB.vessels.Remove(Lib.VesselID(v));
-
 			// rescan the damn kerbals
 			// - vessel crew is empty at destruction time
 			// - we can't even use the flightglobal roster, because sometimes it isn't updated yet at this point
@@ -322,6 +337,8 @@ namespace KERBALISM
 				DB.KillKerbal(n, false);
 			}
 
+			// delete the vessel data
+			v.KerbalismDataDelete();
 
 			// purge the caches
 			ResourceCache.Purge(v);
@@ -331,24 +348,17 @@ namespace KERBALISM
 
 		void VesselDock(GameEvents.FromToAction<Part, Part> e)
 		{
-			var fromVessel = e.from.vessel;
-			DB.vessels.Remove(Lib.VesselID(fromVessel));
-
+			Vessel dockingVessel = e.from.vessel;
 			// note:
-			//  we do not forget vessel data here, it just became inactive
+			//  we do not delete vessel data here, it just became inactive
 			//  and ready to be implicitly activated again on undocking
 			//  we do however tweak the data of the vessel being docked a bit,
 			//  to avoid states getting out of sync, leading to unintuitive behaviours
-			VesselData vd = DB.Vessel(fromVessel);
-			vd.msg_belt = false;
-			vd.msg_signal = false;
-			vd.storm_age = 0.0;
-			vd.storm_time = 0.0;
-			vd.storm_state = 0;
-			vd.supplies.Clear();
-			vd.scansat_id.Clear();
+			dockingVessel.KerbalismData().UpdateOnDock();
+			Cache.PurgeObjects(dockingVessel);
 
-			Cache.PurgeObjects();
+			// Update docked to vessel
+			this.OnVesselModified(e.to.vessel);
 		}
 
 		void PartDestroyed(Part p)
@@ -357,12 +367,13 @@ namespace KERBALISM
 			if (Lib.IsEditor())
 				return;
 
-			var vi = Cache.VesselInfo(p.vessel);
-			if (!vi.is_valid)
-				return;
+			// only on valid vessels
+			if (!p.vessel.KerbalismIsValid()) return;
 
-			Cache.PurgeObjects(p.vessel);
+			// update vessel
+			this.OnVesselModified(p.vessel);
 
+			// credit science that was transmitted but not yet accounted for
 			if(DB.drives.ContainsKey(p.flightID))
 			{
 				foreach(var pair in DB.drives[p.flightID].files)
@@ -373,6 +384,8 @@ namespace KERBALISM
 					}
 				}
 			}
+
+			// remove drive
 			DB.drives.Remove(p.flightID);
 		}
 

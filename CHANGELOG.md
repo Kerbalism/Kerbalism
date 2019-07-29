@@ -12,8 +12,14 @@
 * Added mod support to query the radiation model, as well as toggle visibility of belts and magnetopause (Sir Mortimer)
 * Added mod support for CME prediction accuracy that influences the probability that you get an advanced warning, and its accuracy (Sir Mortimer)
 * Configs for SoundingRockets (Arthur, Breach Candy)
-* Major rewrite of the solar panel code (Got)
-* Kopernicus Support (Sir Mortimer)
+* New "SolarPanelFixer" partmodule replacing the "WarpFixer" module. This require loading all vessels in your game for panels to get updated (Got)
+* Support for (almost all) SSTU solar panels (Got)
+* Added an editor PAW option to consider / not consider solar panels in the planner (Got)
+* Added a third sunlight option in the planner : when slected, solar panel output is estimated using the VAB/SPH sun direction, with tracking/occlusion handling (Got)
+* Kopernicus stars support in the simulation and the SolarPanelFixer module (Sir Mortimer, Got)
+* Improvements to the sunlight flux evaluation and occlusion checks (Got)
+* Improved sunlight raytracing code, now checking occlusion against all bodies whose apparent diameter is greater than 10 arcmin from the vessel POV (Got)
+* Added an additional vertical position offset to tooltips so they don't hide what is under the cursor (Got)
 * Auto-assign reference bodies for radiation calculations (Shiolle)
 
 ## v3.0.2 for all versions of KSP from 1.4.0 to 1.7.x
