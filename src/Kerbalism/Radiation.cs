@@ -178,7 +178,7 @@ namespace KERBALISM
 			geomagnetic_pole_lat = Lib.ConfigValue(node, "geomagnetic_pole_lat", 90.0f);
 			geomagnetic_pole_lon = Lib.ConfigValue(node, "geomagnetic_pole_lon", 0.0f);
 			geomagnetic_offset = Lib.ConfigValue(node, "geomagnetic_offset", 0.0f);
-			reference = Lib.ConfigValue(node, "reference", Lib.GetSun(body).flightGlobalsIndex);
+			reference = Lib.ConfigValue(node, "reference", Lib.GetParentSun(body).flightGlobalsIndex);
 
 			// get the radiation environment
 			if (!models.TryGetValue(Lib.ConfigValue(node, "radiation_model", ""), out model)) model = RadiationModel.none;
