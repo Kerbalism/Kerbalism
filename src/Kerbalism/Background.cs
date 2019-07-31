@@ -112,7 +112,6 @@ namespace KERBALISM
 					case Module_type.CryoTank: ProcessCryoTank(v, e.p, e.m, e.module_prefab, resources, ec, elapsed_s); break;
 					case Module_type.FNGenerator: ProcessFNGenerator(v, e.p, e.m, e.module_prefab, ec, elapsed_s); break;
 					case Module_type.NonRechargeBattery: ProcessNonRechargeBattery(v, e.p, e.m, e.module_prefab, ec, elapsed_s); break;
-					case Module_type.KerbalismProcess: KerbalismProcess.BackgroundUpdate(v, e.m, e.module_prefab as KerbalismProcess, ec, resources, elapsed_s); break;
 					case Module_type.SolarPanelFixer: SolarPanelFixer.BackgroundUpdate(v, e.m, e.module_prefab as SolarPanelFixer, vd, ec, elapsed_s); break;
 				}
 			}

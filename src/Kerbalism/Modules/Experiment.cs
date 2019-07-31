@@ -131,7 +131,7 @@ namespace KERBALISM
 			if (!string.IsNullOrEmpty(crew_prepare))
 				prepare_cs = new CrewSpecs(crew_prepare);
 
-			resourceDefs = KerbalismProcess.ParseResources(resources);
+			resourceDefs = ParseResources(resources);
 
 			foreach (var hd in part.FindModulesImplementing<HardDrive>())
 			{
@@ -366,6 +366,28 @@ namespace KERBALISM
 			return result;
 		}
 
+		private static List<KeyValuePair<string, double>> noResources = new List<KeyValuePair<string, double>>();
+		internal static List<KeyValuePair<string, double>> ParseResources(string resources, bool logErros = false)
+		{
+			if (string.IsNullOrEmpty(resources)) return noResources;
+
+			List<KeyValuePair<string, double>> defs = new List<KeyValuePair<string, double>>();
+			var reslib = PartResourceLibrary.Instance.resourceDefinitions;
+
+			foreach (string s in Lib.Tokenize(resources, ','))
+			{
+				// definitions are Resource@rate
+				var p = Lib.Tokenize(s, '@');
+				if (p.Count != 2) continue;             // malformed definition
+				string res = p[0];
+				if (!reslib.Contains(res)) continue;    // unknown resource
+				double rate = double.Parse(p[1]);
+				if (res.Length < 1 || rate < double.Epsilon) continue;  // rate <= 0
+				defs.Add(new KeyValuePair<string, double>(res, rate));
+			}
+			return defs;
+		}
+
 		public static void BackgroundUpdate(Vessel v, ProtoPartModuleSnapshot m, Experiment experiment, Resource_info ec, Vessel_resources resources, double elapsed_s)
 		{
 			bool didPrepare = Lib.Proto.GetBool(m, "didPrepare", false);
@@ -380,7 +402,7 @@ namespace KERBALISM
 			string issue = TestForIssues(v, ec, experiment, privateHdId, broken,
 				remainingSampleMass, didPrepare, shrouded, last_subject_id);
 			if(string.IsNullOrEmpty(issue))
-				issue = TestForResources(v, KerbalismProcess.ParseResources(experiment.resources), elapsed_s, resources);
+				issue = TestForResources(v, ParseResources(experiment.resources), elapsed_s, resources);
 
 			Lib.Proto.Set(m, "issue", issue);
 
@@ -408,7 +430,7 @@ namespace KERBALISM
 				return;
 
 			var stored = DoRecord(experiment, subject_id, v, ec, privateHdId,
-				resources, KerbalismProcess.ParseResources(experiment.resources),
+				resources, ParseResources(experiment.resources),
 				remainingSampleMass, dataSampled, out dataSampled, out remainingSampleMass);
 			if (!stored) Lib.Proto.Set(m, "issue", insufficient_storage);
 
@@ -768,7 +790,7 @@ namespace KERBALISM
 			specs.Add("<color=#00ffff>Needs:</color>");
 
 			specs.Add("EC", Lib.HumanReadableRate(ec_rate));
-			foreach(var p in KerbalismProcess.ParseResources(resources))
+			foreach(var p in ParseResources(resources))
 				specs.Add(p.Key, Lib.HumanReadableRate(p.Value));
 
 			if (crew_prepare.Length > 0)
