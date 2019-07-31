@@ -535,7 +535,7 @@ namespace KERBALISM
 
 				if (SolarPanel != null)
 				{
-					SolarPanel.OnLoad(pm);
+					SolarPanel.OnLoad(this, pm);
 					break;
 				}
 			}
@@ -609,11 +609,14 @@ namespace KERBALISM
 		#region Abstract class for common interaction with supported PartModules
 		public abstract class SupportedPanel 
 		{
+			/// <summary>Reference to the SolarPanelFixer, must be set from OnLoad</summary>
+			protected SolarPanelFixer fixerModule;
+
 			/// <summary>
 			/// Will be called by the SolarPanelFixer OnLoad, must set the partmodule reference.
 			/// GetState() must be able to return the correct state after this has been called
 			/// </summary>
-			public abstract void OnLoad(PartModule targetModule);
+			public abstract void OnLoad(SolarPanelFixer fixerModule, PartModule targetModule);
 
 			/// <summary> Main inititalization method called from OnStart, every hack we do must be done here (In particular the one preventing the target module from generating EC)</summary>
 			/// <param name="initialized">will be true if the method has already been called for this module (OnStart can be called multiple times in the editor)</param>
@@ -718,8 +721,9 @@ namespace KERBALISM
 			private Transform sunCatcherPosition;   // middle point of the panel surface (usually). Use only position, panel surface direction depend on the pivot transform, even for static panels.
 			private Transform sunCatcherPivot;      // If it's a tracking panel, "up" is the pivot axis and "position" is the pivot position. In any case "forward" is the panel surface normal.
 
-			public override void OnLoad(PartModule targetModule)
+			public override void OnLoad(SolarPanelFixer fixerModule, PartModule targetModule)
 			{
+				this.fixerModule = fixerModule;
 				panelModule = (ModuleDeployableSolarPanel)targetModule;
 			}
 
@@ -886,8 +890,9 @@ namespace KERBALISM
 			private bool deployable;            // "Deployable" field
 			private Action panelModuleUpdate;   // delegate for the module Update() method
 
-			public override void OnLoad(PartModule targetModule)
+			public override void OnLoad(SolarPanelFixer fixerModule, PartModule targetModule)
 			{
+				this.fixerModule = fixerModule;
 				panelModule = targetModule;
 				deployable = Lib.ReflectionValue<bool>(panelModule, "Deployable");
 			}
@@ -1048,11 +1053,8 @@ namespace KERBALISM
 		{
 			private Transform[] sunCatchers;    // model transforms named after the "PanelTransformName" field
 
-			public override void OnLoad(PartModule targetModule)
-			{
-				// get the reference to the module
-				panelModule = targetModule;
-			}
+			public override void OnLoad(SolarPanelFixer fixerModule, PartModule targetModule)
+			{ this.fixerModule = fixerModule; panelModule = targetModule; }
 
 			public override bool OnStart(bool initialized, ref double nominalRate)
 			{
@@ -1158,6 +1160,7 @@ namespace KERBALISM
 			private List<SSTUPanelData> panels;
 			private TrackingType trackingType = TrackingType.Unknown;
 			private enum TrackingType {Unknown = 0, Fixed, SinglePivot, DoublePivot }
+			private string currentModularVariant;
 
 			private class SSTUPanelData
 			{
@@ -1172,6 +1175,7 @@ namespace KERBALISM
 					public Axis axis;
 				}
 
+				public bool IsValid => suncatchers[0].transform != null;
 				public Vector3 PivotAxisVector => GetDirection(pivot, pivotAxis);
 				public int SuncatcherCount => suncatchers.Length;
 				public Vector3 SuncatcherPosition(int index) => suncatchers[index].transform.position;
@@ -1195,7 +1199,8 @@ namespace KERBALISM
 				}
 			}
 
-			public override void OnLoad(PartModule targetModule) { panelModule = targetModule; }
+			public override void OnLoad(SolarPanelFixer fixerModule, PartModule targetModule)
+			{ this.fixerModule = fixerModule; panelModule = targetModule; }
 
 			public override bool OnStart(bool initialized, ref double nominalRate)
 			{
@@ -1206,9 +1211,15 @@ namespace KERBALISM
 					// get a reference to the "SolarModule" class instance, it has everything we need (transforms, rates, etc...)
 					switch (panelModule.moduleName)
 					{
-						case "SSTUModularPart": solarModuleSSTU = Lib.ReflectionValue<object>(panelModule, "solarFunctionsModule"); break;
-						case "SSTUSolarPanelDeployable": solarModuleSSTU = Lib.ReflectionValue<object>(panelModule, "solarModule"); break;
-						default: return false;
+						case "SSTUModularPart":
+						solarModuleSSTU = Lib.ReflectionValue<object>(panelModule, "solarFunctionsModule");
+						currentModularVariant = Lib.ReflectionValue<string>(panelModule, "currentSolar");
+						break;
+						case "SSTUSolarPanelDeployable":
+						solarModuleSSTU = Lib.ReflectionValue<object>(panelModule, "solarModule");
+						break;
+						default:
+						return false;
 					}
 
 					// Get animation module
@@ -1220,11 +1231,13 @@ namespace KERBALISM
 					// SSTU stores the sum of the nominal output for all panels in the part, we retrieve it
 					float newNominalrate = Lib.ReflectionValue<float>(solarModuleSSTU, "standardPotentialOutput");
 					// OnStart can be called multiple times in the editor, but we might already have reset the rate
-					if (newNominalrate > 0.0)
+					// In the editor, if the "no panel" variant is selected, newNominalrate will be 0.0, so also check initialized
+					if (newNominalrate > 0.0 || initialized == false)
 					{
 						nominalRate = newNominalrate;
 						// reset the rate sum in the SSTU module. This won't prevent SSTU from generating EC, but this way we can keep track of what we did
-						Lib.ReflectionValue(solarModuleSSTU, "standardPotentialOutput", 0f); 
+						// don't doit in the editor as it isn't needed and we need it in case of variant switching
+						if (Lib.IsFlight()) Lib.ReflectionValue(solarModuleSSTU, "standardPotentialOutput", 0f); 
 					}
 
 					panels = new List<SSTUPanelData>();
@@ -1245,7 +1258,7 @@ namespace KERBALISM
 						for (int i = 0; i < suncatchersCount; i++)
 						{
 							object suncatcher = suncatchers[i];
-							Lib.ReflectionValue(suncatcher, "resourceRate", 0f); // actually prevent SSTU modules from generating EC
+							if (Lib.IsFlight()) Lib.ReflectionValue(suncatcher, "resourceRate", 0f); // actually prevent SSTU modules from generating EC, but not in the editor
 							panelData.suncatchers[i] = new SSTUPanelData.SSTUSunCatcher();
 							panelData.suncatchers[i].objectRef = suncatcher; // keep a reference to the original suncatcher instance, for raycast hit acquisition
 							panelData.suncatchers[i].transform = Lib.ReflectionValue<Transform>(suncatcher, "suncatcher"); // get suncatcher transform
@@ -1299,6 +1312,7 @@ namespace KERBALISM
 				int suncatcherTotalCount = 0;
 				foreach (SSTUPanelData panel in panels)
 				{
+					if (!panel.IsValid) continue;
 					suncatcherTotalCount += panel.SuncatcherCount;
 					for (int i = 0; i < panel.SuncatcherCount; i++)
 					{
@@ -1327,6 +1341,7 @@ namespace KERBALISM
 				int suncatcherTotalCount = 0;
 				foreach (SSTUPanelData panel in panels)
 				{
+					if (!panel.IsValid) continue;
 					suncatcherTotalCount += panel.SuncatcherCount;
 					for (int i = 0; i < panel.SuncatcherCount; i++)
 					{
@@ -1361,6 +1376,17 @@ namespace KERBALISM
 				try
 				{
 #endif
+					// handle solar panel variant switching in SSTUModularPart
+					if (Lib.IsEditor() && panelModule.ClassName == "SSTUModularPart")
+					{
+						string newVariant = Lib.ReflectionValue<string>(panelModule, "currentSolar");
+						if (newVariant != currentModularVariant)
+						{
+							currentModularVariant = newVariant;
+							OnStart(false, ref fixerModule.nominalRate);
+						}
+					}
+					// get animation state
 					switch (getAnimationState())
 					{
 						case "STOPPED_START": return PanelState.Retracted;
