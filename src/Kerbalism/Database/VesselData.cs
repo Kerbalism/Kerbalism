@@ -265,63 +265,63 @@ namespace KERBALISM
 		#region evaluated vessel state information properties
 		// things like
 		// TODO : change all those fields to { get; private set; } properties
-		/// <summary>number of crew on the vessel</summary 
+		/// <summary>number of crew on the vessel</summary>
 		public int CrewCount => crewCount; int crewCount;
 
-		/// <summary>crew capacity of the vessel</summary 
+		/// <summary>crew capacity of the vessel</summary>
 		public int CrewCapacity => crewCapacity; int crewCapacity;
 
-		/// <summary>true if at least a component has malfunctioned or had a critical failure</summary 
+		/// <summary>true if at least a component has malfunctioned or had a critical failure</summary>
 		public bool Malfunction => malfunction; bool malfunction;
 
-		/// <summary>true if at least a component had a critical failure</summary 
+		/// <summary>true if at least a component had a critical failure</summary>
 		public bool Critical => critical; bool critical;
 
-		/// <summary>connection info</summary 
+		/// <summary>connection info</summary>
 		public ConnectionInfo Connection => connection; ConnectionInfo connection;
 
 
 
-		/// <summary>enabled volume in m^3</summary 
+		/// <summary>enabled volume in m^3</summary>
 		public double Volume => volume; double volume;
 
-		/// <summary>enabled surface in m^2</summary 
+		/// <summary>enabled surface in m^2</summary> 
 		public double Surface => surface; double surface;
 
-		/// <summary>normalized pressure</summary 
+		/// <summary>normalized pressure</summary>
 		public double Pressure => pressure; double pressure;
 
-		/// <summary>number of EVA's using available Nitrogen</summary 
+		/// <summary>number of EVA's using available Nitrogen</summary>
 		public uint Evas => evas; uint evas;
 
-		/// <summary>waste atmosphere amount versus total atmosphere amount</summary 
+		/// <summary>waste atmosphere amount versus total atmosphere amount</summary>
 		public double Poisoning => poisoning; double poisoning;
 
-		/// <summary>moist atmosphere amount</summary 
+		/// <summary>moist atmosphere amount</summary>
 		public double Humidity => humidity; double humidity;
 
-		/// <summary>shielding level</summary 
+		/// <summary>shielding level</summary>
 		public double Shielding => shielding; double shielding;
 
-		/// <summary>living space factor</summary 
+		/// <summary>living space factor</summary>
 		public double LivingSpace => livingSpace; double livingSpace;
 
-		/// <summary>Available volume per crew</summary 
+		/// <summary>Available volume per crew</summary>
 		public double VolumePerCrew => volumePerCrew; double volumePerCrew;
 
-		/// <summary>comfort info</summary 
+		/// <summary>comfort info</summary>
 		public Comforts Comforts => comforts; Comforts comforts;
 
-		/// <summary>some data about greenhouses</summary 
+		/// <summary>some data about greenhouses</summary>
 		public List<Greenhouse.Data> Greenhouses => greenhouses; List<Greenhouse.Data> greenhouses;
 
-		/// <summary>true if vessel is powered</summary 
+		/// <summary>true if vessel is powered</summary>
 		public bool Powered => powered; bool powered;
 
-		/// <summary>free data storage available data capacity of all public drives</summary 
+		/// <summary>free data storage available data capacity of all public drives</summary>
 		public double DrivesFreeSpace => drivesFreeSpace; double drivesFreeSpace = 0.0;
 
-		/// <summary>data capacity of all public drives</summary 
+		/// <summary>data capacity of all public drives</summary>
 		public double DrivesCapacity => drivesCapacity; double drivesCapacity = 0.0;
 		#endregion
 
@@ -593,20 +593,17 @@ namespace KERBALISM
 
 			// radiation
 			gammaTransparency = Sim.GammaTransparency(Vessel.mainBody, Vessel.altitude);
-			radiation = Radiation.Compute(Vessel, position, EnvGammaTransparency, mainSun.SunlightFactor, out blackout, out magnetosphere, out innerBelt, out outerBelt, out interstellar);
-			/*
-			bool new_inner, new_outer, new_magnetosphere;
-			radiation = Radiation.Compute(Vessel, position, gamma_transparency, mainSun.sunlightFactor, out blackout, out new_magnetosphere, out new_inner, out new_outer, out interstellar);
-			if (new_inner != inner_belt || new_outer != outer_belt || new_magnetosphere != magnetosphere)
-			{
-				inner_belt = new_inner;
-				outer_belt = new_outer;
-				magnetosphere = new_magnetosphere;
-				API.OnRadiationStateChanged.Notify(id, inner_belt, outer_belt, magnetosphere);
-			}
 
-			Science.Generate_subject_id(null, null);
-			*/
+			bool new_innerBelt, new_outerBelt, new_magnetosphere;
+			radiation = Radiation.Compute(Vessel, position, EnvGammaTransparency, mainSun.SunlightFactor, out blackout, out new_magnetosphere, out new_innerBelt, out new_outerBelt, out interstellar);
+
+			if (new_innerBelt != innerBelt || new_outerBelt != outerBelt || new_magnetosphere != magnetosphere)
+			{
+				innerBelt = new_innerBelt;
+				outerBelt = new_outerBelt;
+				magnetosphere = new_magnetosphere;
+				API.OnRadiationFieldChanged.Notify(Vessel, innerBelt, outerBelt, magnetosphere);
+			}
 
 			// extended atmosphere
 			thermosphere = Sim.InsideThermosphere(Vessel);

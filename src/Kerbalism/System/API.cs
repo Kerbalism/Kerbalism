@@ -254,6 +254,29 @@ namespace KERBALISM
 			return rb.model.Has_field();
 		}
 
+		public static RadiationFieldChanged OnRadiationFieldChanged = new RadiationFieldChanged();
+		public class RadiationFieldChanged
+		{
+			internal List<Action<Vessel, bool, bool, bool>> receivers = new List<Action<Vessel, bool, bool, bool>>();
+			public void Add(Action<Vessel, bool, bool, bool> receiver) { if (!receivers.Contains(receiver)) receivers.Add(receiver); }
+			public void Remove(Action<Vessel, bool, bool, bool> receiver) { if (receivers.Contains(receiver)) receivers.Remove(receiver); }
+
+			public void Notify(Vessel vessel, bool innerBelt, bool outerBelt, bool magnetosphere)
+			{
+				foreach (Action<Vessel, bool, bool, bool> receiver in receivers)
+				{
+					try
+					{
+						receiver.Invoke(vessel, innerBelt, outerBelt, magnetosphere);
+					}
+					catch (Exception e)
+					{
+						Lib.Log("Exception in event receiver", e);
+					}
+				}
+			}
+		}
+
 		// --- SPACE WEATHER --------------------------------------------------------
 
 		// return true if a solar storm is incoming at the vessel position
@@ -495,7 +518,7 @@ namespace KERBALISM
 			}
 
 			//This fires the event off, activating all the listening methods.
-			public void Fire(float credits, ScienceSubject subject, ProtoVessel pv, bool transmitted)
+			public void Notify(float credits, ScienceSubject subject, ProtoVessel pv, bool transmitted)
 			{
 				//Loop through the list of listening methods and Invoke them.
 				foreach (Action<float, ScienceSubject, ProtoVessel, bool> method in listeningMethods)
@@ -504,6 +527,31 @@ namespace KERBALISM
 				}
 			}
 		}
+
+		public class StringBoolStateChanged
+		{
+			internal List<Action<Vessel, string, bool>> receivers = new List<Action<Vessel, string, bool>>();
+			public void Add(Action<Vessel, string, bool> receiver) { if (!receivers.Contains(receiver)) receivers.Add(receiver); }
+			public void Remove(Action<Vessel, string, bool> receiver) { if (receivers.Contains(receiver)) receivers.Remove(receiver); }
+
+			public void Notify(Vessel vessel, string experiment_id, bool state)
+			{
+				foreach (Action<Vessel, string, bool> receiver in receivers)
+				{
+					try
+					{
+						receiver.Invoke(vessel, experiment_id, state);
+					}
+					catch (Exception e)
+					{
+						Lib.Log("Exception in event receiver", e);
+					}
+				}
+			}
+		}
+
+		public static StringBoolStateChanged OnTransmitStateChanged = new StringBoolStateChanged();
+		public static StringBoolStateChanged OnExperimentStateChanged = new StringBoolStateChanged();
 
 		// --- FAILURES --------------------------------------------------------------
 
