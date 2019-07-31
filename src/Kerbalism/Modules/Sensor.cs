@@ -7,9 +7,8 @@ using UnityEngine;
 namespace KERBALISM
 {
 
-
 	// Add a specific environment reading to a part ui, and to the telemetry panel.
-	public sealed class Sensor : PartModule, ISpecifics
+	public class Sensor : PartModule, ISpecifics
 	{
 		// config
 		[KSPField(isPersistant = true)] public string type;   // type of telemetry provided

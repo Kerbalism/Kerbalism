@@ -7,7 +7,7 @@ using KSP.Localization;
 namespace KERBALISM
 {
 
-	public sealed class Laboratory: PartModule, IModuleInfo, ISpecifics, IContractObjectiveModule
+	public class Laboratory: PartModule, IModuleInfo, ISpecifics, IContractObjectiveModule
 	{
 		// config
 		[KSPField] public double ec_rate;						// ec consumed per-second

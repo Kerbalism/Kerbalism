@@ -20,7 +20,7 @@ namespace KERBALISM
 	}
 
 
-	public sealed class Configure : PartModule, IPartCostModifier, IPartMassModifier, IModuleInfo, ISpecifics, IConfigurable
+	public class Configure : PartModule, IPartCostModifier, IPartMassModifier, IModuleInfo, ISpecifics, IConfigurable
 	{
 		// config
 		[KSPField] public string title = string.Empty;           // short description
@@ -573,7 +573,7 @@ namespace KERBALISM
 	}
 
 
-	public sealed class ConfigureSetup
+	public class ConfigureSetup
 	{
 		public ConfigureSetup(ConfigNode node, Configure cfg)
 		{
@@ -729,7 +729,7 @@ namespace KERBALISM
 	}
 
 
-	public sealed class ConfigureModule
+	public class ConfigureModule
 	{
 		public ConfigureModule(ConfigNode node)
 		{
@@ -762,7 +762,7 @@ namespace KERBALISM
 	}
 
 
-	public sealed class ConfigureResource
+	public class ConfigureResource
 	{
 		public ConfigureResource(ConfigNode node)
 		{

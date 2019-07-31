@@ -271,7 +271,6 @@
     <Compile Include="Automation\Devices\Sickbay.cs" />
     <Compile Include="Modules\KerbalismScansat.cs" />
     <Compile Include="Science\ExperimentSituation.cs" />
-    <Compile Include="Modules\KerbalismProcess.cs" />
     <Compile Include="Patches\DeployedScienceExperiment_SendDataToComms.cs" />
     <Compile Include="Comms\AntennaInfoSerenity.cs" />
     <Compile Include="Utility\Serenity.cs" />
@@ -307,7 +306,7 @@
       <Output TaskParameter="Assemblies" ItemName="Targets" />
     </GetAssemblyIdentity>
     <ItemGroup>
-      <VersionNumber Include="@(Targets->'%(Version)')" />
+      <VersionNumber Include="@(Targets-&gt;'%(Version)')" />
     </ItemGroup>
   </Target>
   <PropertyGroup>

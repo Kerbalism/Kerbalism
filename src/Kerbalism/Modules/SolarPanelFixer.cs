@@ -34,7 +34,7 @@ namespace KERBALISM
 	// - We don't have any support for the animations, the target module must be able to keep handling them despite our hacks.
 	// - Depending on how "hackable" the target module is, we use different approaches :
 	//   either we disable the monobehavior and call the methods manually, or if possible we let it run and we just get/set what we need
-	public sealed class SolarPanelFixer : PartModule
+	public class SolarPanelFixer : PartModule
 	{
 		#region Declarations
 		/// <summary>Main PAW info label</summary>

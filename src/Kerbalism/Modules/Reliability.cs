@@ -9,7 +9,7 @@ using UnityEngine.UI;
 
 namespace KERBALISM
 {
-	public sealed class Reliability : PartModule, ISpecifics, IModuleInfo, IPartCostModifier, IPartMassModifier
+	public class Reliability : PartModule, ISpecifics, IModuleInfo, IPartCostModifier, IPartMassModifier
 	{
 		// config
 		[KSPField(isPersistant = true)] public string type;                 // component name

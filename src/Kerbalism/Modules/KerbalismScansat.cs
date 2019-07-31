@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace KERBALISM
 {
-	public sealed class KerbalismScansat : PartModule
+	public class KerbalismScansat : PartModule
 	{
 		[KSPField] public string experimentType = string.Empty;
 		[KSPField] public double ec_rate = 0.0;
