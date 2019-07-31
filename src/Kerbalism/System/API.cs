@@ -551,7 +551,9 @@ namespace KERBALISM
 		}
 
 		public static StringBoolStateChanged OnTransmitStateChanged = new StringBoolStateChanged();
-		public static StringBoolStateChanged OnExperimentStateChanged = new StringBoolStateChanged();
+
+		// not yet...
+		//public static StringBoolStateChanged OnExperimentStateChanged = new StringBoolStateChanged();
 
 		// --- FAILURES --------------------------------------------------------------
 
