@@ -636,9 +636,9 @@ namespace KERBALISM
 				if (magnetosphere) blackout = true;
 				else radiation += PreferencesStorm.Instance.StormRadiation * sunlight;
 			}
-			
+
 			// apply gamma transparency if inside atmosphere
-			radiation *= gamma_transparency
+			radiation *= gamma_transparency;
 
 			// add emitter radiation after atmosphere transparency
 			radiation += Emitter.Total(v);
