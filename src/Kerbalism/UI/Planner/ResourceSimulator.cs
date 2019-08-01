@@ -698,6 +698,7 @@ namespace KERBALISM.Planner
 				{
 					case Planner.SunlightState.SunlightNominal:
 						editorOutput = spf.nominalRate * (env.solar_flux / Sim.SolarFluxAtHome);
+						if (editorOutput > 0.0) Resource("ElectricCharge").Produce(editorOutput, "solar panel (nominal)");
 						break;
 					case Planner.SunlightState.SunlightSimulated:
 						// create a sun direction according to the shadows direction in the VAB / SPH
@@ -706,9 +707,9 @@ namespace KERBALISM.Planner
 						double effiencyFactor = spf.SolarPanel.GetCosineFactor(sunDir, true) * spf.SolarPanel.GetOccludedFactor(sunDir, out occludingPart, true);
 						double distanceFactor = env.solar_flux / Sim.SolarFluxAtHome;
 						editorOutput = spf.nominalRate * effiencyFactor * distanceFactor;
+						if (editorOutput > 0.0) Resource("ElectricCharge").Produce(editorOutput, "solar panel (estimated)");
 						break;
 				}
-				if (editorOutput > 0.0) Resource("ElectricCharge").Produce(editorOutput, "solar panel");
 			}
 		}
 
