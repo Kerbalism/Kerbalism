@@ -19,17 +19,20 @@ namespace KERBALISM
 		/// <summary>False in the following cases : asteroid, debris, flag, deployed ground part, dead eva, rescue</summary>
 		public bool IsValid { get; private set; }
 
+		/// <summary>Set to true after evaluation has finished. Used to avoid triggering of events from an uninitialized status</summary>
+		private bool Evaluated = false;
+
 		// time since last update
 		private double secSinceLastEval;
 
 		#region non-evaluated non-persisted fields
 		// there are probably a lot of candidates for this in the current codebase
 
-		/// <summary>name of file being transmitted, or empty</summary
+		/// <summary>name of file being transmitted, or empty</summary>
 		// TODO : transmitting is both evaluated here and set from Science.Update(), a sure sign that the handling of this is a huge mess
 		public string transmitting;
 
-		/// <summary>max. attainable pressure on this vessel</summary
+		/// <summary>max. attainable pressure on this vessel</summary>
 		// TODO: (GOT) maxPressure should be either evaluated in VesselData or set from Habitat, but it can't be both, there is something deeply wrong here !
 		public double maxPressure = 1.0;
 
@@ -394,6 +397,7 @@ namespace KERBALISM
 
 			EvaluateEnvironment(elapsedSeconds);
 			EvaluateStatus();
+			Evaluated = true;
 		}
 
 		public void UpdateOnVesselModified(Vessel v)
@@ -602,7 +606,7 @@ namespace KERBALISM
 				innerBelt = new_innerBelt;
 				outerBelt = new_outerBelt;
 				magnetosphere = new_magnetosphere;
-				API.OnRadiationFieldChanged.Notify(Vessel, innerBelt, outerBelt, magnetosphere);
+				if(Evaluated) API.OnRadiationFieldChanged.Notify(Vessel, innerBelt, outerBelt, magnetosphere);
 			}
 
 			// extended atmosphere
@@ -611,6 +615,8 @@ namespace KERBALISM
 
 			// other stuff
 			gravioli = Sim.Graviolis(Vessel);
+
+
 		}
 		#endregion
 	}
