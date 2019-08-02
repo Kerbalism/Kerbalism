@@ -5,7 +5,7 @@ Welcome to Kerbalism
 Hundreds of Kerbals were killed in the making of this mod.
 ----------------------------------------------------------
 
-|docs| |build|
+|build|
 
 INTRODUCTION
 ------------
@@ -274,20 +274,15 @@ LICENSE
 -------
 This mod is released under the `Unlicense <LICENSE>`_. For more information, please refer to `unlicense.org <http://unlicense.org>`_
 
-.. _Support folder: https://github.com/steamp0rt/Kerbalism/tree/master/GameData/Kerbalism/Support
+.. _Support folder: https://github.com/Kerbalism/Kerbalism/tree/master/GameData/Kerbalism/Support
 .. _Kerbalism KSP forums thread: https://forum.kerbalspaceprogram.com/index.php?/topic/172400-131144-kerbalism-v171/
-.. _GitHub Kerbalism Issues: https://github.com/steamp0rt/Kerbalism/issues
-.. _Kerbalism documentation: https://kerbalism.readthedocs.io/en/latest/
+.. _GitHub Kerbalism Issues: https://github.com/Kerbalism/Kerbalism/issues
+.. _Kerbalism documentation: https://github.com/Kerbalism/Kerbalism/wiki
 
 .. _MiniAVC: https://ksp.cybutek.net/miniavc/Documents/README.htm
 .. _KSP-AVC Plugin: https://forum.kerbalspaceprogram.com/index.php?/topic/72169-13-12-ksp-avc-add-on-version-checker-plugin-1162-miniavc-ksp-avc-online-2016-10-13/
 
 .. |Kerbalism| image:: misc/img/banner.png
-
-.. |docs| image:: https://readthedocs.org/projects/kerbalism/badge/?version=latest&style=flat-square
-    :alt: Documentation Status
-    :scale: 100%
-    :target: https://kerbalism.readthedocs.io/en/latest/?badge=latest
 
 .. |build| image:: https://travis-ci.com/steamp0rt/Kerbalism.svg?style=flat-square&branch=master
     :alt: Build Status
