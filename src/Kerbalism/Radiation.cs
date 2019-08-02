@@ -636,7 +636,7 @@ namespace KERBALISM
 				if (magnetosphere) blackout = true;
 				else radiation += PreferencesStorm.Instance.StormRadiation * sunlight;
 			}
-
+			
 			// apply gamma transparency if inside atmosphere
 			radiation *= gamma_transparency;
 
@@ -768,6 +768,21 @@ namespace KERBALISM
 			  : null;
 		}
 
+		/// <summary>
+		/// Calculate radiation shielding efficiency. Parameter shielding should be in range [0..1]
+		/// <para>
+		/// If you have a thickness which stops a known amount of radiation of a known and constant
+		/// type, then if you have a new thickness, you can calculate how much it stops by:
+		/// </para>
+		/// Stoppage = 1 - ((1 - AmountStoppedByKnownThickness)^(NewThickness / KnownThickness))
+		/// <para>
+		/// source : http://www.projectrho.com/public_html/rocket/radiation.php#id--Radiation_Shielding--Shielding--Shield_Rating
+		/// </para>
+		/// </summary>
+		public static double ShieldingEfficiency(double shielding)
+		{
+			return 1 - Math.Pow(1 - PreferencesStorm.Instance.shieldingEfficiency, Lib.Clamp(shielding, 0.0, 1.0));
+		}
 
 		static Dictionary<string, RadiationModel> models = new Dictionary<string, RadiationModel>(16);
 		static Dictionary<string, RadiationBody> bodies = new Dictionary<string, RadiationBody>(32);

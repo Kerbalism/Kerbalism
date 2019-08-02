@@ -216,7 +216,7 @@ namespace KERBALISM
 				var homeBody = FlightGlobals.GetHomeBody();
 				return Math.Floor(homeBody.orbit.period / (HoursInDay() * 60.0 * 60.0));
 			}
-			return 426.0;
+			return GameSettings.KERBIN_TIME ? 426.0 : 365.0;
 		}
 
 		// stop time warping

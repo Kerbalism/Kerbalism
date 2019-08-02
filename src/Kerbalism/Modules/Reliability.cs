@@ -4,7 +4,6 @@ using System.Configuration;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.UI;
-//using RealFuels;
 
 
 namespace KERBALISM
