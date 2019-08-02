@@ -64,7 +64,6 @@ namespace KERBALISM
 				case "ModuleRadioisotopeGenerator": return Module_type.RadioisotopeGenerator;
 				case "ModuleCryoTank": return Module_type.CryoTank;
 				case "FNGenerator": return Module_type.FNGenerator;
-				case "ModuleNonRechargeBattery": return Module_type.NonRechargeBattery;
 				case "KerbalismProcess": return Module_type.KerbalismProcess;
 				case "SolarPanelFixer": return Module_type.SolarPanelFixer;
 			}
@@ -111,7 +110,6 @@ namespace KERBALISM
 					case Module_type.RadioisotopeGenerator: ProcessRadioisotopeGenerator(v, e.p, e.m, e.module_prefab, ec, elapsed_s); break;
 					case Module_type.CryoTank: ProcessCryoTank(v, e.p, e.m, e.module_prefab, resources, ec, elapsed_s); break;
 					case Module_type.FNGenerator: ProcessFNGenerator(v, e.p, e.m, e.module_prefab, ec, elapsed_s); break;
-					case Module_type.NonRechargeBattery: ProcessNonRechargeBattery(v, e.p, e.m, e.module_prefab, ec, elapsed_s); break;
 					case Module_type.SolarPanelFixer: SolarPanelFixer.BackgroundUpdate(v, e.m, e.module_prefab as SolarPanelFixer, vd, ec, elapsed_s); break;
 				}
 			}
@@ -578,15 +576,6 @@ namespace KERBALISM
 			// apply EC consumption
 			ec.Consume(total_cost * elapsed_s, "cryotank");
 		}
-
-		static void ProcessNonRechargeBattery(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule fission_generator, Resource_info ec, double elapsed_s)
-		{
-			ProtoPartResourceSnapshot proto_ec = p.resources.Find(k => k.resourceName == "ElectricCharge");
-			proto_ec.maxAmount = proto_ec.amount;
-			ec.Sync(v, elapsed_s);
-		}
 	}
-
-
 } // KERBALISM
 
