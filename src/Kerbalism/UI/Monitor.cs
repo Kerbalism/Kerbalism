@@ -532,21 +532,21 @@ namespace KERBALISM
 			Resource_info ec = ResourceCache.Info(v, "ElectricCharge");
 			Supply supply = Profile.supplies.Find(k => k.resource == "ElectricCharge");
 			double low_threshold = supply != null ? supply.low_threshold : 0.15;
-			double depletion = ec.Depletion(vd.CrewCount);
+			double depletion = ec.DepletionTime();
 
 			string tooltip = Lib.BuildString
 			(
 			  "<align=left /><b>name\tlevel\tduration</b>\n",
-			  ec.level <= 0.005 ? "<color=#ff0000>" : ec.level <= low_threshold ? "<color=#ffff00>" : "<color=#cccccc>",
+			  ec.Level <= 0.005 ? "<color=#ff0000>" : ec.Level <= low_threshold ? "<color=#ffff00>" : "<color=#cccccc>",
 			  "EC\t",
-			  Lib.HumanReadablePerc(ec.level), "\t",
+			  Lib.HumanReadablePerc(ec.Level), "\t",
 			  depletion <= double.Epsilon ? "depleted" : Lib.HumanReadableDuration(depletion),
 			  "</color>"
 			);
 
-			Texture2D image = ec.level <= 0.005
+			Texture2D image = ec.Level <= 0.005
 			  ? Icons.battery_red
-			  : ec.level <= low_threshold
+			  : ec.Level <= low_threshold
 			  ? Icons.battery_yellow
 			  : Icons.battery_white;
 
@@ -562,20 +562,20 @@ namespace KERBALISM
 				foreach (Supply supply in Profile.supplies.FindAll(k => k.resource != "ElectricCharge"))
 				{
 					Resource_info res = ResourceCache.Info(v, supply.resource);
-					double depletion = res.Depletion(vd.CrewCount);
+					double depletion = res.DepletionTime();
 
-					if (res.capacity > double.Epsilon)
+					if (res.Capacity > double.Epsilon)
 					{
 						if (tooltips.Count == 0) tooltips.Add(String.Format("<align=left /><b>{0,-18}\tlevel\tduration</b>", "name"));
 						tooltips.Add(Lib.BuildString
 						(
-						  res.level <= 0.005 ? "<color=#ff0000>" : res.level <= supply.low_threshold ? "<color=#ffff00>" : "<color=#cccccc>",
-						  String.Format("{0,-18}\t{1}\t{2}", supply.resource, Lib.HumanReadablePerc(res.level),
+						  res.Level <= 0.005 ? "<color=#ff0000>" : res.Level <= supply.low_threshold ? "<color=#ffff00>" : "<color=#cccccc>",
+						  String.Format("{0,-18}\t{1}\t{2}", supply.resource, Lib.HumanReadablePerc(res.Level),
 						  depletion <= double.Epsilon ? "depleted" : Lib.HumanReadableDuration(depletion)),
 						  "</color>"
 						));
 
-						uint severity = res.level <= 0.005 ? 2u : res.level <= supply.low_threshold ? 1u : 0;
+						uint severity = res.Level <= 0.005 ? 2u : res.Level <= supply.low_threshold ? 1u : 0;
 						max_severity = Math.Max(max_severity, severity);
 					}
 				}

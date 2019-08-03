@@ -92,11 +92,12 @@ namespace KERBALISM
 				RuleData rd = kd.Rule(name);
 				rd.lifetime = lifetime_enabled && lifetime;
 
-				// if continuous
-				double step;
-				if (interval <= double.Epsilon)
+				// influence consumption by elapsed time
+				double step; ;
+
+				// if continous
+				if (interval == 0.0)
 				{
-					// influence consumption by elapsed time
 					step = elapsed_s;
 				}
 				// if interval-based
@@ -105,30 +106,37 @@ namespace KERBALISM
 					// accumulate time
 					rd.time_since += elapsed_s;
 
-					// determine number of steps
+					// determine number of intervals that has passed (can be 2 or more if elapsed_s > interval * 2)
 					step = Math.Floor(rd.time_since / interval);
 
 					// consume time
 					rd.time_since -= step * interval;
-
-					// remember if a meal is consumed/produced in this simulation step
-					if (step > 0.99) res.SetMealHappened();
-					if (output.Length > 0 && step > 0.99) ResourceCache.Info(v, output).SetMealHappened();
 				}
 
-				// if continuous, or if one or more intervals elapsed
-				if (step > double.Epsilon)
+				// if there is a resource specified
+				if (res != null && rate > double.Epsilon)
 				{
-					double r = rate * Variance(name, c, individuality);  // kerbal-specific variance
+					// get rate including per-kerbal variance
+					double resRate =
+						rate                                // consumption rate
+						* Variance(name, c, individuality)  // kerbal-specific variance
+						* k;								// product of environment modifiers
 
-					// if there is a resource specified
-					if (res != null && r > double.Epsilon)
+					// determine amount of resource to consume
+					
+					double required = resRate * step;       // seconds elapsed or interval amount
+
+					// remember if a meal is consumed/produced in this simulation step
+					if (interval > 0.0)
 					{
-						// determine amount of resource to consume
-						double required = r           // consumption rate
-										* k           // product of environment modifiers
-										* step;       // seconds elapsed or number of steps
+						double ratePerStep = resRate / interval;
+						res.UpdateIntervalRule(-required, -ratePerStep, name);
+						if (output.Length > 0) ResourceCache.Info(v, output).UpdateIntervalRule(required * ratio, ratePerStep * ratio, name);
+					}
 
+					// if continuous, or if one or more intervals elapsed
+					if (step > 0.0)
+					{
 						// if there is no output
 						if (output.Length == 0)
 						{
@@ -140,32 +148,36 @@ namespace KERBALISM
 						{
 							// transform input into output resource
 							// - rules always dump excess overboard (because it is waste)
-							Resource_recipe recipe = new Resource_recipe((Part) null, name); // kerbals are not associated with a part
+							Resource_recipe recipe = new Resource_recipe((Part)null, name); // kerbals are not associated with a part
 							recipe.Input(input, required);
 							recipe.Output(output, required * ratio, true);
 							resources.Transform(recipe);
 						}
 						// if monitor then do not consume input resource and only produce output if resource percentage + monitor_offset is < 100%
-						else if ((res.amount / res.capacity) + monitor_offset < 1.0)
+						else if ((res.Amount / res.Capacity) + monitor_offset < 1.0)
 						{
 							// simply produce (that is faster)
 							resources.Produce(v, output, required * ratio, name);
 						}
 					}
+				}
 
+				// if continuous, or if one or more intervals elapsed
+				if (step > 0.0)
+				{
 					// degenerate:
 					// - if the environment modifier is not telling to reset (by being zero)
 					// - if the input threshold is reached if used
 					// - if this rule is resource-less, or if there was not enough resource in the vessel
 					if (input_threshold >= double.Epsilon)
 					{
-						if (res.amount >= double.Epsilon && res.capacity >= double.Epsilon)
-							trigger = (res.amount / res.capacity) + monitor_offset >= input_threshold;
+						if (res.Amount >= double.Epsilon && res.Capacity >= double.Epsilon)
+							trigger = (res.Amount / res.Capacity) + monitor_offset >= input_threshold;
 						else
 							trigger = false;
 					}
 					else
-						trigger = input.Length == 0 || res.amount <= double.Epsilon;
+						trigger = input.Length == 0 || res.Amount <= double.Epsilon;
 						
 					if (k > 0.0 && trigger)
 					{

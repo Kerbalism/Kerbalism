@@ -10,8 +10,6 @@ using KSP.Localization;
 
 namespace KERBALISM
 {
-
-
 	public static class Lib
 	{
 		#region UTILS
@@ -547,10 +545,11 @@ namespace KERBALISM
 		#endregion
 
 		#region HUMAN READABLE
-		///<summary> Pretty-print a resource rate (rate is per second, must be positive) </summary>
+		///<summary> Pretty-print a resource rate (rate is per second). Return an absolute value if a negative one is provided</summary>
 		public static string HumanReadableRate(double rate, string precision = "F3")
 		{
-			if (rate <= double.Epsilon) return "none";
+			if (rate == 0.0) return "none";
+			rate = Math.Abs(rate);
 			if (rate >= 0.01) return BuildString(rate.ToString(precision), "/s");
 			rate *= 60.0; // per-minute
 			if (rate >= 0.01) return BuildString(rate.ToString(precision), "/m");
@@ -1045,7 +1044,7 @@ namespace KERBALISM
 			if (cluster != null)
 				return cluster.IsPowered;
 #endif
-			return ResourceCache.Info(v, "ElectricCharge").amount > double.Epsilon;
+			return ResourceCache.Info(v, "ElectricCharge").Amount > double.Epsilon;
 		}
 
 		public static Guid VesselID(Vessel v)
@@ -2086,6 +2085,22 @@ namespace KERBALISM
 		}
 		#endregion
 	}
+
+	#region UTILITY CLASSES
+
+	public class ObjectPair<T, U>
+	{
+		public T a;
+		public U b;
+
+		public ObjectPair(T a, U b)
+		{
+			this.a = a;
+			this.b = b;
+		}
+	}
+
+	#endregion
 
 
 } // KERBALISM

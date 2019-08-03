@@ -57,7 +57,7 @@ namespace KERBALISM
 		public double storm_time;     // time of next storm (interplanetary CME)
 		public double storm_age;      // time since last storm (interplanetary CME)
 		public uint storm_state;      // 0: none, 1: inbound, 2: in progress (interplanetary CME)
-		public Dictionary<string, SupplyData> supplies; // supplies data
+		private Dictionary<string, SupplyData> supplies; // supplies data
 		public List<uint> scansat_id; // used to remember scansat sensors that were disabled
 		#endregion
 
@@ -147,6 +147,9 @@ namespace KERBALISM
 		/// </summary>
 		public double EnvSolarFluxTotal => solarFluxTotal; double solarFluxTotal;
 
+		/// <summary> similar to solar flux total but doesn't account for atmo absorbtion nor occlusion</summary>
+		private double rawSolarFluxTotal;
+
 		/// <summary> [environment] Average time spend in sunlight, including sunlight from all suns/stars. Each sun/star influence is pondered by its flux intensity</summary>
 		public double EnvSunlightFactor => sunlightFactor; double sunlightFactor;
 
@@ -194,6 +197,12 @@ namespace KERBALISM
 			/// </summary>
 			public double AtmoFactor => atmoFactor; double atmoFactor;
 
+			/// <summary> proportion of this sun flux in the total flux at the vessel position (ignoring atmoshere and occlusion) </summary>
+			public double FluxProportion => fluxProportion; double fluxProportion;
+
+			/// <summary> similar to solar flux but doesn't account for atmo absorbtion nor occlusion</summary>
+			private double rawSolarFlux;
+
 			public SunInfo(Sim.SunData sunData)
 			{
 				this.sunData = sunData;
@@ -215,7 +224,8 @@ namespace KERBALISM
 
 				vd.sunsInfo = new List<SunInfo>(Sim.suns.Count);
 				vd.solarFluxTotal = 0.0;
-				
+				vd.rawSolarFluxTotal = 0.0;
+
 				foreach (Sim.SunData sunData in Sim.suns)
 				{
 					SunInfo sunInfo = new SunInfo(sunData);
@@ -247,19 +257,29 @@ namespace KERBALISM
 					}
 
 					// get resulting solar flux in W/m²
-					double solarFlux = sunInfo.sunData.SolarFlux(sunInfo.distance);
-					sunInfo.solarFlux = solarFlux * sunInfo.sunlightFactor * sunInfo.atmoFactor;
+					sunInfo.rawSolarFlux = sunInfo.sunData.SolarFlux(sunInfo.distance);
+					sunInfo.solarFlux = sunInfo.rawSolarFlux * sunInfo.sunlightFactor * sunInfo.atmoFactor;
 					// increment total flux from all stars
+					vd.rawSolarFluxTotal += sunInfo.rawSolarFlux;
 					vd.solarFluxTotal += sunInfo.solarFlux;
 					// add the star to the list
 					vd.sunsInfo.Add(sunInfo);
 					// the most powerful star will be our "default" sun. Uses raw flux before atmo / sunlight factor
-					if (solarFlux > lastSolarFlux)
+					if (sunInfo.rawSolarFlux > lastSolarFlux)
 					{
-						lastSolarFlux = solarFlux;
+						lastSolarFlux = sunInfo.rawSolarFlux;
 						vd.mainSun = sunInfo;
 					}
 				}
+
+				vd.sunlightFactor = 0.0;
+				foreach (SunInfo sunInfo in vd.sunsInfo)
+				{
+					sunInfo.fluxProportion = sunInfo.rawSolarFlux / vd.rawSolarFluxTotal;
+					vd.sunlightFactor += sunInfo.SunlightFactor * sunInfo.fluxProportion;
+				}
+				// avoid rounding errors
+				if (vd.sunlightFactor > 0.99) vd.sunlightFactor = 1.0;
 			}
 		}
 
@@ -282,8 +302,6 @@ namespace KERBALISM
 
 		/// <summary>connection info</summary>
 		public ConnectionInfo Connection => connection; ConnectionInfo connection;
-
-
 
 		/// <summary>enabled volume in m^3</summary>
 		public double Volume => volume; double volume;
@@ -545,7 +563,7 @@ namespace KERBALISM
 				maxPressure = Cache.VesselObjectsCache<double>(Vessel, "max_pressure");
 			pressure = Math.Min(maxPressure, Habitat.Pressure(Vessel));
 
-			evas = (uint)(Math.Max(0, ResourceCache.Info(Vessel, "Nitrogen").amount - 330) / PreferencesLifeSupport.Instance.evaAtmoLoss);
+			evas = (uint)(Math.Max(0, ResourceCache.Info(Vessel, "Nitrogen").Amount - 330) / PreferencesLifeSupport.Instance.evaAtmoLoss);
 			poisoning = Habitat.Poisoning(Vessel);
 			humidity = Habitat.Humidity(Vessel);
 			shielding = Habitat.Shielding(Vessel);
@@ -588,7 +606,6 @@ namespace KERBALISM
 			// get the 'visibleBodies' and 'sunsInfo' lists, the 'mainSun', 'solarFluxTotal' variables.
 			// require the situation variables to be evaluated first
 			SunInfo.UpdateSunsInfo(this, position);
-			sunlightFactor = Sim.SunlightFactor(sunsInfo, solarFluxTotal);
 			sunBodyAngle = Sim.SunBodyAngle(Vessel, position, mainSun.SunData.body);
 
 			// temperature at vessel position

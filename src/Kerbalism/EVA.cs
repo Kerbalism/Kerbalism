@@ -32,7 +32,7 @@ namespace KERBALISM
 			// determine if headlamps need ec
 			// - not required if there is no EC capacity in eva kerbal (no ec supply in profile)
 			// - not required if no EC cost for headlamps is specified (set by the user)
-			bool need_ec = ec.capacity > double.Epsilon && Settings.HeadLampsCost > double.Epsilon;
+			bool need_ec = ec.Capacity > double.Epsilon && Settings.HeadLampsCost > double.Epsilon;
 
 			// consume EC for the headlamps
 			if (need_ec && kerbal.lampOn)
@@ -41,7 +41,7 @@ namespace KERBALISM
 			}
 
 			// force the headlamps on/off
-			HeadLamps(kerbal, kerbal.lampOn && (!need_ec || ec.amount > double.Epsilon));
+			HeadLamps(kerbal, kerbal.lampOn && (!need_ec || ec.Amount > double.Epsilon));
 
 			// if dead
 			if (IsDead(v))

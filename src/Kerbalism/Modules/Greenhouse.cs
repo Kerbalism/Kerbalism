@@ -148,7 +148,7 @@ namespace KERBALISM
 
 				// reset artificial lighting if there is no ec left
 				// - comparing against amount in previous simulation step
-				if (ec.amount <= double.Epsilon) artificial = 0.0;
+				if (ec.Amount <= double.Epsilon) artificial = 0.0;
 
 				// execute recipe
 				Resource_recipe recipe = new Resource_recipe(part, "greenhouse");
@@ -188,7 +188,7 @@ namespace KERBALISM
 						if (dis_WACO2 || vd.EnvBreathable) continue;    // skip if already checked or atmosphere is breathable
 						if (WACO2)
 						{
-							if (resources.Info(vessel, "WasteAtmosphere").amount <= double.Epsilon && resources.Info(vessel, "CarbonDioxide").amount <= double.Epsilon)
+							if (resources.Info(vessel, "WasteAtmosphere").Amount <= double.Epsilon && resources.Info(vessel, "CarbonDioxide").Amount <= double.Epsilon)
 							{
 								inputs = false;
 								missing_res = "CarbonDioxide";
@@ -198,7 +198,7 @@ namespace KERBALISM
 							continue;
 						}
 					}
-					if (resources.Info(vessel, input.name).amount <= double.Epsilon)
+					if (resources.Info(vessel, input.name).Amount <= double.Epsilon)
 					{
 						inputs = false;
 						missing_res = input.name;
@@ -257,7 +257,7 @@ namespace KERBALISM
 
 				// reset artificial lighting if there is no ec left
 				// note: comparing against amount in previous simulation step
-				if (ec.amount <= double.Epsilon) artificial = 0.0;
+				if (ec.Amount <= double.Epsilon) artificial = 0.0;
 
 				// execute recipe
 				Resource_recipe recipe = new Resource_recipe(g.part, "greenhouse");
@@ -298,7 +298,7 @@ namespace KERBALISM
 						if (dis_WACO2 || vd.EnvBreathable) continue;    // skip if already checked or atmosphere is breathable
 						if (g.WACO2)
 						{
-							if (resources.Info(v, "WasteAtmosphere").amount <= double.Epsilon && resources.Info(v, "CarbonDioxide").amount <= double.Epsilon)
+							if (resources.Info(v, "WasteAtmosphere").Amount <= double.Epsilon && resources.Info(v, "CarbonDioxide").Amount <= double.Epsilon)
 							{
 								inputs = false;
 								missing_res = "CarbonDioxide";
@@ -308,7 +308,7 @@ namespace KERBALISM
 							continue;
 						}
 					}
-					if (resources.Info(v, input.name).amount <= double.Epsilon)
+					if (resources.Info(v, input.name).Amount <= double.Epsilon)
 					{
 						inputs = false;
 						missing_res = input.name;

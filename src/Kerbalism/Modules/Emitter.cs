@@ -131,7 +131,7 @@ namespace KERBALISM
 			{
 				foreach (var emitter in Lib.FindModules<Emitter>(v))
 				{
-					if (ec.amount > double.Epsilon || emitter.ec_rate <= double.Epsilon)
+					if (ec.Amount > double.Epsilon || emitter.ec_rate <= double.Epsilon)
 					{
 						tot += emitter.running ? emitter.radiation : 0.0;
 					}
@@ -141,7 +141,7 @@ namespace KERBALISM
 			{
 				foreach (ProtoPartModuleSnapshot m in Lib.FindModules(v.protoVessel, "Emitter"))
 				{
-					if (ec.amount > double.Epsilon || Lib.Proto.GetDouble(m, "ec_rate") <= double.Epsilon)
+					if (ec.Amount > double.Epsilon || Lib.Proto.GetDouble(m, "ec_rate") <= double.Epsilon)
 					{
 						tot += Lib.Proto.GetBool(m, "running") ? Lib.Proto.GetDouble(m, "radiation") : 0.0;
 					}

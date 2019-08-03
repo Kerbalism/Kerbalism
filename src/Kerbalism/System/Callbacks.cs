@@ -106,7 +106,7 @@ namespace KERBALISM
 					continue;
 				}
 
-				double quantity = Math.Min(resources.Info(data.from.vessel, res.resourceName).amount / tot_crew, res.maxAmount);
+				double quantity = Math.Min(resources.Info(data.from.vessel, res.resourceName).Amount / tot_crew, res.maxAmount);
 				// remove resource from vessel
 				quantity = data.from.RequestResource(res.resourceName, quantity);
 

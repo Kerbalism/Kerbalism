@@ -460,35 +460,35 @@ namespace KERBALISM
 		public static double Tot_volume(Vessel v)
 		{
 			// we use capacity: this mean that partially pressurized parts will still count,
-			return ResourceCache.Info(v, "Atmosphere").capacity / 1e3;
+			return ResourceCache.Info(v, "Atmosphere").Capacity / 1e3;
 		}
 
 		// return habitat surface in a vessel in m^2
 		public static double Tot_surface(Vessel v)
 		{
 			// we use capacity: this mean that partially pressurized parts will still count,
-			return ResourceCache.Info(v, "Shielding").capacity;
+			return ResourceCache.Info(v, "Shielding").Capacity;
 		}
 
 		// return normalized pressure in a vessel
 		public static double Pressure(Vessel v)
 		{
 			// the pressure is simply the atmosphere level
-			return ResourceCache.Info(v, "Atmosphere").level;
+			return ResourceCache.Info(v, "Atmosphere").Level;
 		}
 
 		// return waste level in a vessel atmosphere
 		public static double Poisoning(Vessel v)
 		{
 			// the proportion of co2 in the atmosphere is simply the level of WasteAtmo
-			return ResourceCache.Info(v, "WasteAtmosphere").level;
+			return ResourceCache.Info(v, "WasteAtmosphere").Level;
 		}
 
 		// return moisture level in a vessel atmosphere
 		public static double Humidity(Vessel v)
 		{
 			// the proportion of moisture in the atmosphere is simply the level of MoistAtmo + (0.6, base humidity of 60%)
-			return ResourceCache.Info(v, "MoistAtmosphere").level + 0.6;
+			return ResourceCache.Info(v, "MoistAtmosphere").Level + 0.6;
 		}
 
 		/// <summary>
@@ -496,7 +496,7 @@ namespace KERBALISM
 		/// </summary>
 		public static double Shielding(Vessel v)
 		{
-			return Radiation.ShieldingEfficiency(ResourceCache.Info(v, "Shielding").level);
+			return Radiation.ShieldingEfficiency(ResourceCache.Info(v, "Shielding").Level);
 		}
 
 		// return living space factor in a vessel

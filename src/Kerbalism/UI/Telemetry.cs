@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
 
 
@@ -112,26 +113,59 @@ namespace KERBALISM
 				Resource_info res = resources.Info(v, supply.resource);
 
 				// only show estimate if the resource is present
-				if (res.amount <= 1e-10) continue;
+				if (res.Capacity <= 1e-10) continue;
 
 				// render panel title, if not done already
 				if (supplies == 0) p.AddSection("SUPPLIES");
 
-				// rate tooltip
-				string rate_tooltip = Math.Abs(res.rate) >= 1e-10 ? Lib.BuildString
-				(
-				  res.rate > 0.0 ? "<color=#00ff00><b>" : "<color=#ffaa00><b>",
-				  Lib.HumanReadableRate(Math.Abs(res.rate)),
-				  "</b></color>"
-				) : string.Empty;
-
 				// determine label
-				string label = supply.resource == "ElectricCharge"
-				  ? "battery"
-				  : Lib.SpacesOnCaps(supply.resource).ToLower();
+				string label = Lib.SpacesOnCaps(supply.resource).ToLower();
+
+				StringBuilder sb = new StringBuilder();
+				
+				sb.Append("<align=left />");
+				if (res.AverageRate != 0.0)
+				{
+					sb.Append(res.AverageRate > 0.0 ? "<color=#00ff00><b>+" : "<color=#ffaa00><b>-");
+					sb.Append(Lib.HumanReadableRate(Math.Abs(res.AverageRate)));
+					sb.Append("</b></color>");
+				}
+				else
+				{
+					sb.Append("<b>+0.000</b>");
+				}
+
+				if (res.Level < 0.0001) sb.Append(" <i>(empty)</i>");
+				else if (res.Level > 0.9999) sb.Append(" <i>(full)</i>");
+				else sb.Append("   "); // spaces to prevent alignement issues
+
+				sb.Append("\t");
+				sb.Append(res.Amount.ToString("F1"));
+				sb.Append("/");
+				sb.Append(res.Capacity.ToString("F1"));
+				sb.Append(" (");
+				sb.Append(res.Level.ToString("P0"));
+				sb.Append(")");
+
+				List<SupplyData.ResourceBroker> brokers = vd.Supply(supply.resource).ResourceBrokers;
+				if (brokers.Count > 0)
+				{
+					sb.Append("\n<b>------------    \t------------</b>");
+					foreach (SupplyData.ResourceBroker rb in brokers)
+					{
+						sb.Append("\n");
+						sb.Append(rb.rate > 0.0 ? "<color=#00ff00><b>+" : "<color=#ffaa00><b>-");
+						sb.Append(Lib.HumanReadableRate(Math.Abs(rb.rate)));
+						sb.Append("  </b></color>"); // spaces to prevent alignement issues
+						sb.Append("\t");
+						sb.Append(rb.name);
+					}
+				}
+
+				string rate_tooltip = sb.ToString();
 
 				// finally, render resource supply
-				p.AddContent(label, Lib.HumanReadableDuration(res.Depletion(vd.CrewCount)), rate_tooltip);
+				p.AddContent(label, Lib.HumanReadableDuration(res.DepletionTime()), rate_tooltip);
 				++supplies;
 			}
 		}

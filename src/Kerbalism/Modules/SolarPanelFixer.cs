@@ -216,7 +216,7 @@ namespace KERBALISM
 			if (!vd.IsValid) return;
 
 			// calculate average exposure over a full day when landed, will be used for panel background processing
-			persistentFactor = GetAnalyticalCosineFactorLanded(vd);
+			node.SetValue("persistentFactor", GetAnalyticalCosineFactorLanded(vd));
 		}
 
 		public void Update()
@@ -467,7 +467,7 @@ namespace KERBALISM
 			Resource_info ec = ResourceCache.Info(vessel, "ElectricCharge");
 
 			// produce EC
-			ec.Produce(currentOutput * Kerbalism.elapsed_s, "panel");
+			ec.Produce(currentOutput * Kerbalism.elapsed_s, "solar panel");
 		}
 
 		public static void BackgroundUpdate(Vessel v, ProtoPartModuleSnapshot m, SolarPanelFixer prefab, VesselData vd, Resource_info ec, double elapsed_s)
@@ -507,7 +507,7 @@ namespace KERBALISM
 			double output = nominalRate * efficiencyFactor;
 
 			// produce EC
-			ec.Produce(output * elapsed_s, "panel");
+			ec.Produce(output * elapsed_s, "solar panel");
 		}
 		#endregion
 
@@ -600,7 +600,7 @@ namespace KERBALISM
 					factor += SolarPanel.GetOccludedFactor(sunDir, out occluding, true);
 				}
 				factor /= 16.0;
-				finalFactor += factor * (sun.SolarFlux / vd.EnvSolarFluxTotal);
+				finalFactor += factor * sun.FluxProportion;
 			}
 			return finalFactor;
 		}

@@ -115,11 +115,11 @@ namespace KERBALISM
 					{
 						// consume EC
 						ec = ResourceCache.Info(vessel, "ElectricCharge");
-						ec.Consume(ec_rate * Kerbalism.elapsed_s, "lab");
+						ec.Consume(ec_rate * Kerbalism.elapsed_s, "laboratory");
 
 						// if there was ec
 						// - comparing against amount in previous simulation step
-						if (ec.amount > double.Epsilon)
+						if (ec.Amount > double.Epsilon)
 						{
 							// analyze the sample
 							status = Analyze(vessel, current_sample, rate * Kerbalism.elapsed_s);
@@ -162,11 +162,11 @@ namespace KERBALISM
 					if (background_sample != null)
 					{
 						// consume EC
-						ec.Consume(lab.ec_rate * elapsed_s, "lab");
+						ec.Consume(lab.ec_rate * elapsed_s, "laboratory");
 
 						// if there was ec
 						// - comparing against amount in previous simulation step
-						if (ec.amount > double.Epsilon)
+						if (ec.Amount > double.Epsilon)
 						{
 							// analyze the sample
 							var status = Analyze(v, background_sample, rate * elapsed_s);
