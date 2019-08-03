@@ -300,21 +300,6 @@ namespace KERBALISM
 			return solarFlux;
 		}
 
-		/// <summary> calculate sunlight/shadow average factor, pondered by the flux intensity of each star/sun. require 'sunsInfo' and 'solarFluxTotal' to be evaluated</summary>
-		public static double SunlightFactor(List<VesselData.SunInfo> sunsInfo, double solarFluxTotal)
-		{
-			double sunlightFactor = 0.0;
-			if (solarFluxTotal > 0.0)
-			{
-				foreach (VesselData.SunInfo sunInfo in sunsInfo)
-					sunlightFactor += sunInfo.SunlightFactor * (sunInfo.SolarFlux / solarFluxTotal);
-
-				// avoid rounding errors
-				if (sunlightFactor > 0.99) sunlightFactor = 1.0;
-			}
-			return sunlightFactor;
-		}
-
 		public static double SunBodyAngle(Vessel vessel, Vector3d vesselPos, CelestialBody sun)
 		{
 			// orbit around sun?
@@ -561,8 +546,8 @@ namespace KERBALISM
 		//   the influence of high latitudes and of the inclinaison of the body orbit
 		public static double AtmosphereFactorAnalytic(CelestialBody body, Vector3d position, Vector3d sun_dir)
 		{
-			// only for atmospheric bodies whose rotation or orbit period is less than 120 hours
-			if (body.rotationPeriod > 432000.0 || body.orbit.period > 432000.0)
+			// only for atmospheric bodies whose rotation period is less than 120 hours
+			if (body.rotationPeriod > 432000.0)
 				return AtmosphereFactor(body, position, sun_dir);
 
 			// get up vector & altitude

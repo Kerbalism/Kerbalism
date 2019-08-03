@@ -205,7 +205,7 @@ namespace KERBALISM
 					Profile.Execute(v, vd, resources, elapsed_s);
 
 					// apply deferred requests
-					resources.Sync(v, elapsed_s);
+					resources.Sync(v, vd, elapsed_s);
 
 					// call automation scripts
 					vd.computer.Automate(v, vd, resources);
@@ -267,7 +267,7 @@ namespace KERBALISM
 				Science.Update(last_v, last_vd, last_resources, last_time);
 
 				// apply deferred requests
-				last_resources.Sync(last_v, last_time);
+				last_resources.Sync(last_v, last_vd, last_time);
 
 				// call automation scripts
 				last_vd.computer.Automate(last_v, last_vd, last_resources);
@@ -709,7 +709,7 @@ namespace KERBALISM
 				events.Add(KerbalBreakdown.fat_finger);
 			if (Reliability.CanMalfunction(v))
 				events.Add(KerbalBreakdown.rage);
-			if (res != null && res.amount > double.Epsilon)
+			if (res != null && res.Amount > double.Epsilon)
 				events.Add(KerbalBreakdown.wrong_valve);
 
 			// choose a breakdown event
@@ -734,7 +734,7 @@ namespace KERBALISM
 					break;
 				case KerbalBreakdown.wrong_valve:
 					text = "$ON_VESSEL$KERBAL opened the wrong valve";
-					subtext = res.resource_name + " has been lost";
+					subtext = res.ResourceName + " has been lost";
 					break;
 			}
 
@@ -753,7 +753,7 @@ namespace KERBALISM
 					Reliability.CauseMalfunction(v);
 					break;
 				case KerbalBreakdown.wrong_valve:
-					res.Consume(res.amount * res_penalty, "breakdown");
+					res.Consume(res.Amount * res_penalty, "breakdown");
 					break;
 			}
 

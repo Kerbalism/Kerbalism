@@ -356,11 +356,11 @@ namespace KERBALISM
 		private static double Rate(Vessel v, double chunkSize, double maxCapacity, double elapsed, Resource_info ec, double ec_rate, Vessel_resources resources, List<KeyValuePair<string, double>> resourceDefs)
 		{
 			double result = Lib.Clamp(maxCapacity / chunkSize, 0, 1);
-			result = Math.Min(result, Lib.Clamp(ec.amount / (ec_rate * elapsed), 0, 1));
+			result = Math.Min(result, Lib.Clamp(ec.Amount / (ec_rate * elapsed), 0, 1));
 
 			foreach (var p in resourceDefs) {
 				var ri = resources.Info(v, p.Key);
-				result = Math.Min(result, Lib.Clamp(ri.amount / (p.Value * elapsed), 0, 1));
+				result = Math.Min(result, Lib.Clamp(ri.Amount / (p.Value * elapsed), 0, 1));
 			}
 
 			return result;
@@ -484,8 +484,8 @@ namespace KERBALISM
 			foreach(var p in defs)
 			{
 				var ri = res.Info(v, p.Key);
-				if (ri.amount < p.Value * elapsed_s)
-					return "missing " + ri.resource_name;
+				if (ri.Amount < p.Value * elapsed_s)
+					return "missing " + ri.ResourceName;
 			}
 
 			return string.Empty;
@@ -506,7 +506,7 @@ namespace KERBALISM
 				&& !string.IsNullOrEmpty(last_subject_id) && subject_id != last_subject_id;
 			if (needsReset) return "reset required";
 
-			if (ec.amount < double.Epsilon && experiment.ec_rate > double.Epsilon)
+			if (ec.Amount < double.Epsilon && experiment.ec_rate > double.Epsilon)
 				return "no Electricity";
 			
 			if (!string.IsNullOrEmpty(experiment.crew_operate))

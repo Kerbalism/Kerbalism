@@ -147,7 +147,7 @@ namespace KERBALISM
 
 			if (!Features.Science)
 			{
-				if(is_scanning && ec.amount < double.Epsilon)
+				if(is_scanning && ec.Amount < double.Epsilon)
 				{					
 					SCANsat.StopScanner(vessel, scanner, part_prefab);
 					is_scanning = false;
@@ -163,7 +163,7 @@ namespace KERBALISM
 					// if there is enough ec
 					// note: comparing against amount in previous simulation step
 					// re-enable at 25% EC
-					if (ec.level > 0.25)
+					if (ec.Level > 0.25)
 					{
 						// re-enable the scanner
 						SCANsat.ResumeScanner(vessel, m, part_prefab);
@@ -249,7 +249,7 @@ namespace KERBALISM
 
 					// we filled all drives up to the brim but were unable to store everything
 					// cancel scanning and annoy the user
-					if (size > double.Epsilon || ec.amount < double.Epsilon)
+					if (size > double.Epsilon || ec.Amount < double.Epsilon)
 					{
 						warp_buffer = 0;
 						SCANsat.StopScanner(vessel, scanner, part_prefab);
@@ -259,7 +259,7 @@ namespace KERBALISM
 				}
 				else if (vd.scansat_id.Contains(p.flightID))
 				{
-					if (ec.level >= 0.25 && (vd.DrivesFreeSpace / vd.DrivesCapacity > 0.9))
+					if (ec.Level >= 0.25 && (vd.DrivesFreeSpace / vd.DrivesCapacity > 0.9))
 					{
 						SCANsat.ResumeScanner(vessel, scanner, part_prefab);
 						vd.scansat_id.Remove(p.flightID);

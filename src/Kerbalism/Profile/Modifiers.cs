@@ -79,7 +79,7 @@ namespace KERBALISM
 						break;
 
 					default:
-						k *= resources.Info(v, mod).amount;
+						k *= resources.Info(v, mod).Amount;
 						break;
 				}
 			}

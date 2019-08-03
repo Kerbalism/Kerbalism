@@ -49,23 +49,23 @@ namespace KERBALISM
 
 			// messages are shown only if there is some capacity and the vessel is manned
 			// special case: ElectricCharge related messages are shown for unmanned vessels too
-			if (res.capacity > double.Epsilon && (crew.Count > 0 || resource == "ElectricCharge"))
+			if (res.Capacity > double.Epsilon && (crew.Count > 0 || resource == "ElectricCharge"))
 			{
 				// manned/probe message variant
 				uint variant = crew.Count > 0 ? 0 : 1u;
 
 				// manage messages
-				if (res.level <= double.Epsilon && sd.message < 2)
+				if (res.Level <= double.Epsilon && sd.message < 2)
 				{
 					if (empty_message.Length > 0 && show_msg) Message.Post(Severity.danger, Lib.ExpandMsg(empty_message, v, null, variant));
 					sd.message = 2;
 				}
-				else if (res.level < low_threshold && sd.message < 1)
+				else if (res.Level < low_threshold && sd.message < 1)
 				{
 					if (low_message.Length > 0 && show_msg) Message.Post(Severity.warning, Lib.ExpandMsg(low_message, v, null, variant));
 					sd.message = 1;
 				}
-				else if (res.level > low_threshold && sd.message > 0)
+				else if (res.Level > low_threshold && sd.message > 0)
 				{
 					if (refill_message.Length > 0 && show_msg) Message.Post(Severity.relax, Lib.ExpandMsg(refill_message, v, null, variant));
 					sd.message = 0;
@@ -121,7 +121,7 @@ namespace KERBALISM
 			if (on_rescue <= double.Epsilon) return;
 
 			// if the vessel has no capacity
-			if (ResourceCache.Info(v, resource).capacity <= double.Epsilon)
+			if (ResourceCache.Info(v, resource).Capacity <= double.Epsilon)
 			{
 				// find the first useful part
 				Part p = v.parts.Find(k => k.CrewCapacity > 0 || k.FindModuleImplementing<KerbalEVA>() != null);

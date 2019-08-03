@@ -69,7 +69,7 @@ namespace KERBALISM
 		{
 			// do nothing if there is no EC left on the vessel
 			Resource_info ec = ResourceCache.Info(v, "ElectricCharge");
-			if (ec.amount <= double.Epsilon) return;
+			if (ec.Amount <= double.Epsilon) return;
 
 			// get the script
 			Script script;
@@ -96,8 +96,8 @@ namespace KERBALISM
 			// get current states
 			Resource_info ec = resources.Info(v, "ElectricCharge");
 			bool sunlight = !vd.EnvInFullShadow;
-			bool power_low = ec.level < 0.2;
-			bool power_high = ec.level > 0.8;
+			bool power_low = ec.Level < 0.2;
+			bool power_high = ec.Level > 0.8;
 			bool radiation_low = vd.EnvRadiation < 0.000005552; //< 0.02 rad/h
 			bool radiation_high = vd.EnvRadiation > 0.00001388; //< 0.05 rad/h
 			bool signal = vd.Connection.linked;

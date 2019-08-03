@@ -40,7 +40,7 @@ namespace KERBALISM
 
 			// get energy from cache
 			resources = ResourceCache.Info(vessel, "ElectricCharge");
-			hasEnergy = resources.amount > double.Epsilon;
+			hasEnergy = resources.Amount > double.Epsilon;
 
 			// Force the update to run at least once
 			lastBrokenState = !isBroken;
@@ -60,7 +60,7 @@ namespace KERBALISM
 
 			// get energy from cache
 			resources = ResourceCache.Info(vessel, "ElectricCharge");
-			hasEnergy = resources.amount > double.Epsilon;
+			hasEnergy = resources.Amount > double.Epsilon;
 
 			// Update UI only if hasEnergy has changed or if is broken state has changed
 			if (isBroken)

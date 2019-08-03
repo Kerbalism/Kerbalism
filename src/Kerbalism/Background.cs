@@ -180,7 +180,7 @@ namespace KERBALISM
 			else
 				maxPower = double.Parse(maxPowerStr.Replace(" KW", ""));
 
-			ec.Produce(maxPower * elapsed_s, "fngenerator");
+			ec.Produce(maxPower * elapsed_s, "KSPIE generator");
 		}
 
 		static void ProcessCommand(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleCommand command, Vessel_resources resources, double elapsed_s)
@@ -235,7 +235,7 @@ namespace KERBALISM
 				foreach (var or in converter.outputList)
 				{
 					Resource_info res = resources.Info(v, or.ResourceName);
-					full &= (res.level >= converter.FillAmount - double.Epsilon);
+					full &= (res.Level >= converter.FillAmount - double.Epsilon);
 				}
 
 				// if not full
@@ -288,7 +288,7 @@ namespace KERBALISM
 			{
 				// do nothing if full
 				// note: comparing against previous amount
-				if (resources.Info(v, harvester.ResourceName).level < harvester.FillAmount - double.Epsilon)
+				if (resources.Info(v, harvester.ResourceName).Level < harvester.FillAmount - double.Epsilon)
 				{
 					// deduce crew bonus
 					int exp_level = -1;
@@ -398,7 +398,7 @@ namespace KERBALISM
 
 						// if there was ec
 						// note: comparing against amount in previous simulation step
-						if (resources.Info(v, "ElectricCharge").amount > double.Epsilon)
+						if (resources.Info(v, "ElectricCharge").Amount > double.Epsilon)
 						{
 							// consume asteroid mass
 							Lib.Proto.Set(asteroid_info, "currentMassVal", (mass - res_density * res_amount));
@@ -421,7 +421,7 @@ namespace KERBALISM
 			if (Lib.Proto.GetBool(m, "IsActivated"))
 			{
 				// consume ec
-				ec.Consume(lab.powerRequirement * elapsed_s, "lab");
+				ec.Consume(lab.powerRequirement * elapsed_s, "science converter");
 			}
 		}
 
@@ -496,7 +496,7 @@ namespace KERBALISM
 			double power = Lib.ReflectionValue<float>(fission_generator, "PowerGeneration");
 			var reactor = p.modules.Find(k => k.moduleName == "FissionReactor");
 			double tweakable = reactor == null ? 1.0 : Lib.ConfigValue(reactor.moduleValues, "CurrentPowerPercent", 100.0) * 0.01;
-			ec.Produce(power * tweakable * elapsed_s, "fissionreactor");
+			ec.Produce(power * tweakable * elapsed_s, "fission reactor");
 		}
 
 
@@ -508,7 +508,7 @@ namespace KERBALISM
 			double half_life = Lib.ReflectionValue<float>(radioisotope_generator, "HalfLife");
 			double mission_time = v.missionTime / (3600.0 * Lib.HoursInDay() * Lib.DaysInYear());
 			double remaining = Math.Pow(2.0, (-mission_time) / half_life);
-			ec.Produce(power * remaining * elapsed_s, "rtg");
+			ec.Produce(power * remaining * elapsed_s, "RTG");
 		}
 
 
@@ -522,7 +522,7 @@ namespace KERBALISM
 			if (fuels == null) return;
 
 			// is cooling available, note: comparing against amount in previous simulation step
-			bool available = (Lib.Proto.GetBool(m, "CoolingEnabled") && ec.amount > double.Epsilon);
+			bool available = (Lib.Proto.GetBool(m, "CoolingEnabled") && ec.Amount > double.Epsilon);
 
 			// get cooling cost
 			double cooling_cost = Lib.ReflectionValue<float>(cryotank, "CoolingCost");
@@ -544,7 +544,7 @@ namespace KERBALISM
 
 				// if there is some fuel
 				// note: comparing against amount in previous simulation step
-				if (fuel.amount > double.Epsilon)
+				if (fuel.Amount > double.Epsilon)
 				{
 					// Try to find resource "fuel_name" in PartResources
 					ProtoPartResourceSnapshot proto_fuel = p.resources.Find(k => k.resourceName == fuel_name);
@@ -574,7 +574,7 @@ namespace KERBALISM
 			}
 
 			// apply EC consumption
-			ec.Consume(total_cost * elapsed_s, "cryotank");
+			ec.Consume(total_cost * elapsed_s, "cryo tank");
 		}
 	}
 } // KERBALISM
