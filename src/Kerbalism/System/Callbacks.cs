@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using KSP.UI.Screens;
-using KSP.UI.Screens.SpaceCenter.MissionSummaryDialog;
 using UnityEngine;
 
 
@@ -16,7 +15,6 @@ namespace KERBALISM
 		{
 			GameEvents.onCrewOnEva.Add(this.ToEVA);
 			GameEvents.onCrewBoardVessel.Add(this.FromEVA);
-			GameEvents.onVesselRecoveryProcessing.Add(this.VesselRecoveryProcessing);
 			GameEvents.onVesselRecovered.Add(this.VesselRecovered);
 			GameEvents.onVesselTerminated.Add(this.VesselTerminated);
 			GameEvents.onVesselWillDestroy.Add(this.VesselDestroyed);
@@ -173,91 +171,6 @@ namespace KERBALISM
 			// execute script
 			data.to.vessel.KerbalismData().computer.Execute(data.to.vessel, ScriptType.eva_in);
 		}
-
-		void VesselRecoveryProcessing(ProtoVessel v, MissionRecoveryDialog dialog, float score)
-		{
-			// note:
-			// this function accumulate science stored in drives on recovery,
-			// and visualize the data in the recovery dialog window
-
-			// do nothing if science system is disabled, or in sandbox mode
-			if (!Features.Science || HighLogic.CurrentGame.Mode == Game.Modes.SANDBOX)
-				return;
-
-
-			// TODO : (vessel_info refactor) Can't understand the purpose of this check. Maybe the intent was to check VesselData.IsValid ?
-			// var vesselID = Lib.VesselID(v);
-			// if (!DB.vessels.ContainsKey(vesselID))
-			//	return;
-
-			// get the drive data from DB
-			foreach (Drive drive in Drive.GetDrives(v))
-			{
-				// for each file in the drive
-				foreach (KeyValuePair<string, File> p in drive.files)
-				{
-					// shortcuts
-					string filename = p.Key;
-					File file = p.Value;
-
-					// de-buffer partially transmitted data
-					file.size += file.buff;
-					file.buff = 0.0;
-
-					// get subject
-					ScienceSubject subject = ResearchAndDevelopment.GetSubjectByID(filename);
-
-					// credit science
-					float credits = Science.Credit(filename, file.size, false, v);
-
-					// create science widged
-					ScienceSubjectWidget widged = ScienceSubjectWidget.Create
-					(
-					  subject,            // subject
-					  (float)file.size,   // data gathered
-					  credits,            // science points
-					  dialog              // recovery dialog
-					);
-
-					// add widget to dialog
-					dialog.AddDataWidget(widged);
-
-					// add science credits to total
-					dialog.scienceEarned += (float)credits;
-				}
-
-				// for each sample in the drive
-				// for each file in the drive
-				foreach (KeyValuePair<string, Sample> p in drive.samples)
-				{
-					// shortcuts
-					string filename = p.Key;
-					Sample sample = p.Value;
-
-					// get subject
-					ScienceSubject subject = ResearchAndDevelopment.GetSubjectByID(filename);
-
-					// credit science
-					float credits = Science.Credit(filename, sample.size, false, v);
-
-					// create science widged
-					ScienceSubjectWidget widged = ScienceSubjectWidget.Create
-					(
-					  subject,            // subject
-					  (float)sample.size, // data gathered
-					  credits,            // science points
-					  dialog              // recovery dialog
-					);
-
-					// add widget to dialog
-					dialog.AddDataWidget(widged);
-
-					// add science credits to total
-					dialog.scienceEarned += (float)credits;
-				}
-			}
-		}
-
 
 		void VesselRecovered(ProtoVessel pv, bool b)
 		{

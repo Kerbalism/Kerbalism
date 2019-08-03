@@ -211,6 +211,12 @@ namespace KERBALISM
 		// science container implementation
 		public ScienceData[] GetData()
 		{
+			return GetData(drive);
+		}
+
+		// science container implementation
+		public static ScienceData[] GetData(Drive drive)
+		{
 			// generate and return stock science data
 			List<ScienceData> data = new List<ScienceData>();
 			foreach (var pair in drive.files)
