@@ -135,8 +135,8 @@ namespace KERBALISM
 					sb.Append("<b>+0.000</b>");
 				}
 
-				if (res.Level < 0.01) sb.Append(" <i>(empty)</i>");
-				else if (res.Level > 0.99) sb.Append(" <i>(full)</i>");
+				if (res.Level < 0.0001) sb.Append(" <i>(empty)</i>");
+				else if (res.Level > 0.9999) sb.Append(" <i>(full)</i>");
 				else sb.Append("   "); // spaces to prevent alignement issues
 
 				sb.Append("\t");

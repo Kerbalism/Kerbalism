@@ -138,7 +138,7 @@ namespace KERBALISM
 			Deferred += quantity;
 
 			// keep track of every producer contribution for UI/debug purposes
-			if (Math.Abs(quantity) < 1e-06) return;
+			if (Math.Abs(quantity) < 1e-10) return;
 
 			if (brokers.ContainsKey(tag))
 				brokers[tag] += quantity;
@@ -152,7 +152,7 @@ namespace KERBALISM
 			Deferred -= quantity;
 
 			// keep track of every consumer contribution for UI/debug purposes
-			if (Math.Abs(quantity) < 1e-06) return;
+			if (Math.Abs(quantity) < 1e-10) return;
 
 			if (brokers.ContainsKey(tag))
 				brokers[tag] -= quantity;
@@ -342,7 +342,8 @@ namespace KERBALISM
 			// - ignore interval based rules changes
 			// note that we explicitly read vessel average resources here, even for non-flowing resources, because this is
 			// for visualization which is per vessel
-			if (!v.loaded || Kerbalism.warp_blending > 50) Rate = (Amount - oldAmount - intervalRuleAmount) / elapsed_s;
+			if (!v.loaded || Kerbalism.warp_blending > 20) Rate = (Amount - oldAmount - intervalRuleAmount) / elapsed_s;
+
 
 			// recalculate level
 			Level = Capacity > double.Epsilon ? Amount / Capacity : 0.0;
@@ -360,12 +361,14 @@ namespace KERBALISM
 				Lib.Log("RESOURCE UPDATE END");
 			}
 
-
 			intervalRulesRate = 0.0;
 			foreach (var rb in ruleBrokers)
 			{
 				intervalRulesRate += rb.Value;
 			}
+
+			AverageRate = Rate;
+			if ((Level < 1.0 && intervalRulesRate > 0.0) || (Level > 0.0 && intervalRulesRate < 0.0)) AverageRate += intervalRulesRate;
 
 			brokers.Clear();
 			ruleBrokers.Clear();
@@ -375,9 +378,6 @@ namespace KERBALISM
 		/// <summary>estimate time until depletion, including the simulated rate from interval-based rules</summary>
 		public double DepletionTime()
 		{
-			// calculate total rate of change
-			double delta = AverageRate;
-
 			// return depletion
 			return Amount <= 1e-10 ? 0.0 : AverageRate >= -1e-10 ? double.NaN : Amount / -AverageRate;
 		}
@@ -403,15 +403,13 @@ namespace KERBALISM
 		public double Rate { get; private set; }
 
 		/// <summary> rate of change in amount per-second, including average rate for interval-based rules</summary>
-		public double AverageRate => Rate + intervalRulesRate;
+		public double AverageRate { get; private set; }
 
 		/// <summary> amount vs capacity, or 0 if there is no capacity</summary>
 		public double Level { get; private set; }
 
 		/// <summary> true if a meal-like consumption/production was processed in the last simulation step</summary>
 		private bool IntervalRuleHappened => intervalRuleAmount > 0.0;
-
-
 
 		// the getters provide the total value for the vessel, this is typically either:
 		// * vessel wide value if resource_name can flow between parts

@@ -130,7 +130,7 @@ namespace KERBALISM
 			// maintain elapsed_s, converting to double only once
 			// and detect warp blending
 			double fixedDeltaTime = TimeWarp.fixedDeltaTime;
-			if (Math.Abs(fixedDeltaTime - elapsed_s) > double.Epsilon)
+			if (Math.Abs(fixedDeltaTime - elapsed_s) < 0.00001)
 				warp_blending = 0;
 			else
 				++warp_blending;

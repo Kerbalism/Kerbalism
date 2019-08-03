@@ -46,7 +46,6 @@ namespace KERBALISM
 			{
 				ResourceBrokers.Add(new ResourceBroker(Lib.BuildString(p.Key, " (avg.)"), p.Value));
 			}
-
 			foreach (KeyValuePair<string, double> p in brokers)
 			{
 				ResourceBrokers.Add(new ResourceBroker(p.Key, p.Value / elapsedSeconds));
