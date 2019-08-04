@@ -53,9 +53,10 @@ namespace KERBALISM
 
 			// science
 			ScienceDialog = Lib.ConfigValue(cfg, "ScienceDialog", true);
+			AsteroidSampleMassPerMB = Lib.ConfigValue(cfg, "AsteroidSampleMassPerMB", 0.00002);
 
-            // reliability
-            QualityScale = Lib.ConfigValue(cfg, "QualityScale", 4.0);
+			// reliability
+			QualityScale = Lib.ConfigValue(cfg, "QualityScale", 4.0);
 
             // crew level
             LaboratoryCrewLevelBonus = Lib.ConfigValue(cfg, "LaboratoryCrewLevelBonus", 0.2);
@@ -125,9 +126,10 @@ namespace KERBALISM
 
 		// science
 		public static bool ScienceDialog;                       // keep showing the stock science dialog
+		public static double AsteroidSampleMassPerMB;           // When taking an asteroid sample, mass (in t) per MB of sample (baseValue * dataScale). default of 0.00002 => 34 Kg in stock
 
-        // reliability
-        public static double QualityScale;                      // scale applied to MTBF for high-quality components
+		// reliability
+		public static double QualityScale;                      // scale applied to MTBF for high-quality components
 
 
         // crew level
