@@ -353,13 +353,14 @@ namespace KERBALISM
 		#endregion
 
 		#region STRING
-		// return string limited to len, with ... at the end
+		/// <summary> return string limited to len, with ... at the end</summary>
 		public static string Ellipsis(string s, uint len)
 		{
 			len = Math.Max(len, 3u);
 			return s.Length <= len ? s : Lib.BuildString(s.Substring(0, (int)len - 3), "...");
 		}
 
+		/// <summary> return string limited to len, with ... in the middle</summary>
 		public static string EllipsisMiddle(string s, int len)
 		{
 			if (s.Length > len)
@@ -368,7 +369,6 @@ namespace KERBALISM
 				return Lib.BuildString(s.Substring(0, len), "...", s.Substring(s.Length - len));
 			}
 			return s;
-
 		}
 
 		// tokenize a string
