@@ -13,7 +13,7 @@
 * Added mod support for CME prediction accuracy that influences the probability that you get an advanced warning, and its accuracy (Sir Mortimer)
 * Configs for SoundingRockets (Arthur, Breach Candy)
 * New "SolarPanelFixer" partmodule replacing the "WarpFixer" module. This require loading all vessels in your game for panels to get updated (Got)
-* Support for (almost all) SSTU solar panels (Got)
+* Support for (almost all) SSTU solar panels, require SSTU version 0.11.49.161 min (Got)
 * Added an editor PAW option to consider / not consider solar panels in the planner (Got)
 * Added a third sunlight option in the planner : when slected, solar panel output is estimated using the VAB/SPH sun direction, with tracking/occlusion handling (Got)
 * Kopernicus stars support in the simulation and the SolarPanelFixer module (Sir Mortimer, Got)
@@ -33,6 +33,11 @@
 * When transmitting data, prioritize the file with the highest relative value (Sir Mortimer)
 * Changed the way science data is handled on recovered vessels. This should provide compatibility with stock KSP (Breaking Grounds) and other mods (Got, Sir Mortimer)
 * Added basic science information to telemetry (connection status, total science gain, last data transmitted) (Sir Mortimer)
+* Fix for taking an asteroid not working (issue #458) (Got)
+* Fix for incoherent resource producers not being detected and failing to trigger the 1000x warp limit (Got)
+* Fixed `[PartSet]: Failed to add Resource XXXXX...` log spam (Got)
+* Implemented resource rate per consumer/producer information tooltip in the Supply section of the vessel telemetry panel (Got)
+* Support configs for SSTU, require SSTU version 0.11.49.161 min (Got, Steamp0rt, Arthur)
 
 ## v3.0.2 for all versions of KSP from 1.4.0 to 1.7.x
 
