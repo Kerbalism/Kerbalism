@@ -346,6 +346,8 @@ namespace KERBALISM
 		public double DrivesCapacity => drivesCapacity; double drivesCapacity = 0.0;
 		#endregion
 
+		public ScienceLog ScienceLog { get; } = new ScienceLog();
+
 		public void Initialize(Vessel v)
 		{
 			VesselId = Lib.VesselID(v);

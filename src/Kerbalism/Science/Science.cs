@@ -219,6 +219,8 @@ namespace KERBALISM
 				GameEvents.OnScienceRecieved.Fire(credits, subject, pv, false);
 
 				API.OnScienceReceived.Notify(credits, subject, pv, transmitted);
+
+				pv.vesselRef.KerbalismData().ScienceLog.AddCredits(credits, subject);
 			}
 
 			// return amount of science credited
@@ -660,6 +662,7 @@ namespace KERBALISM
 		// experiment info cache
 		static readonly Dictionary<string, ExperimentInfo> experiments = new Dictionary<string, ExperimentInfo>();
 		readonly static Dictionary<string, double> sampleMasses = new Dictionary<string, double>();
+		static readonly Dictionary<Guid, ScienceLog> scienceLog = new Dictionary<Guid, ScienceLog>();
 
 		private class DeferredCreditValues {
 			internal string subject_id;

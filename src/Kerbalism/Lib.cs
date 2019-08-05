@@ -752,7 +752,7 @@ namespace KERBALISM
 		///<summary> Format data rate, the rate parameter is in Mb/s </summary>
 		public static string HumanReadableDataRate(double rate)
 		{
-			return rate < double.Epsilon ? "none" : Lib.BuildString(HumanReadableDataSize(rate), "/s");
+			return rate < 1/1024.0/1024.0 ? "none" : Lib.BuildString(HumanReadableDataSize(rate), "/s");
 		}
 
 		public static string HumanReadableSampleSize(double size)

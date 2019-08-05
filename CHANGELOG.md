@@ -32,6 +32,7 @@
 * Added radiation source to kerbal atomics engines (Shiolle)
 * When transmitting data, prioritize the file with the highest relative value (Sir Mortimer)
 * Changed the way science data is handled on recovered vessels. This should provide compatibility with stock KSP (Breaking Grounds) and other mods (Got, Sir Mortimer)
+* Added basic science information to telemetry (connection status, total science gain, last data transmitted) (Sir Mortimer)
 
 ## v3.0.2 for all versions of KSP from 1.4.0 to 1.7.x
 

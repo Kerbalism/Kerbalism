@@ -618,7 +618,8 @@ namespace KERBALISM
 			ConnectionInfo conn = vd.Connection;
 
 			// signal strength
-			string signal_str = conn.strength > Double.Epsilon ? Lib.HumanReadablePerc(Math.Ceiling(conn.strength * 10000) / 10000, "F2") : Lib.Color("#ffaa00", Lib.Italic(Localizer.Format("#KERBALISM_Generic_NO")));
+			var strength = Math.Ceiling(conn.strength * 10000) / 10000;
+			string signal_str = strength > 0.001 ? Lib.HumanReadablePerc(strength, "F2") : Lib.Color("#ffaa00", Lib.Italic(Localizer.Format("#KERBALISM_Generic_NO")));
 
 			// target name
 			string target_str = conn.linked ? conn.target_name : Localizer.Format("#KERBALISM_Generic_NONE");
@@ -628,7 +629,7 @@ namespace KERBALISM
 			if (vd.transmitting.Length > 0)
 			{
 				ExperimentInfo exp = Science.Experiment(vd.transmitting);
-				comms_str = exp.name;
+				comms_str = Lib.Ellipsis(exp.name, Styles.ScaleStringLength(35));
 			}
 
 			// create tooltip

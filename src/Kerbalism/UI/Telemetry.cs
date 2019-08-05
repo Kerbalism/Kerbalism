@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
-
+using KSP.Localization;
 
 namespace KERBALISM
 {
@@ -40,6 +40,7 @@ namespace KERBALISM
 
 			// draw the content
 			Render_crew(p, crew);
+			if (Features.Science) Render_science(p, v, vd);
 			Render_greenhouse(p, vd);
 			Render_supplies(p, v, vd, resources);
 			Render_habitat(p, v, vd);
@@ -100,6 +101,28 @@ namespace KERBALISM
 				if (Features.LivingSpace) p.AddContent("living space", Habitat.Living_space_to_string(vd.LivingSpace));
 				if (Features.Comfort) p.AddContent("comfort", vd.Comforts.Summary(), vd.Comforts.Tooltip());
 				if (Features.Pressure) p.AddContent("EVA's available", vd.EnvBreathable ? "infinite" : Lib.HumanReadableInteger(vd.Evas), vd.EnvBreathable ? "breathable atmosphere" : "approx (derived from stored N2)");
+			}
+		}
+
+		static void Render_science(Panel p, Vessel v, VesselData vd)
+		{
+			p.AddSection("SCIENCE");
+			ScienceLog scienceLog = v.KerbalismData().ScienceLog;
+
+			// comm status
+			ConnectionInfo conn = vd.Connection;
+			p.AddContent(Localizer.Format("#KERBALISM_UI_sciencerate"), Lib.HumanReadableDataRate(conn.rate));
+			p.AddContent("target", conn.target_name);
+
+			// total science gained by vessel
+			p.AddContent("total science gained", Lib.HumanReadableScience(scienceLog.SumTotal));
+
+			// last transmission
+			if(!string.IsNullOrEmpty(scienceLog.LastSubjectTitle))
+			{
+				string lastTransmission = Lib.Ellipsis(scienceLog.LastSubjectTitle.ToLower(), Styles.ScaleStringLength(45));
+				var ago = Planetarium.GetUniversalTime() - scienceLog.LastTransmissionTime;
+				p.AddContent(lastTransmission, ago > 5 ? ("T+" + Lib.HumanReadableDuration(ago)) : "just now");
 			}
 		}
 
