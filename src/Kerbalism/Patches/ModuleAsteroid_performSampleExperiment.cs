@@ -7,15 +7,43 @@ using KSP.Localization;
 
 namespace KERBALISM
 {
-	[HarmonyPatch(typeof(ModuleAsteroid))]
+    /*
+		Fix for sample taking from a ModuleAsteroid.
+		The module search for a ModuleScienceContainer to store the data into, it won't find it with Kerbalism
+		See issue : https://github.com/Kerbalism/Kerbalism/issues/458
+
+		ModuleAsteroid.TakeSampleEVAEvent() code ("Take sample" PAW button callback) :
+		```
+		ModuleScienceContainer collector = FlightGlobals.ActiveVessel.FindPartModuleImplementing<ModuleScienceContainer>();
+		performSampleExperiment(collector);
+		```
+
+		and then in ModuleAsteroid.performSampleExperiment(ModuleScienceContainer collector) : 
+		```
+		if (collector.HasData(experimentData))
+		{
+			ScreenMessages.PostScreenMessage("<color=orange>[" + collector.part.partInfo.title + "]: <i>" + experimentData.title + cacheAutoLOC_230121, 5f, ScreenMessageStyle.UPPER_LEFT);
+			return;
+		}
+		GameEvents.OnExperimentDeployed.Fire(experimentData);
+		if (collector.AddData(experimentData))
+		{
+			collector.ReviewData();
+		}
+		```
+	 */
+
+    [HarmonyPatch(typeof(ModuleAsteroid))]
 	[HarmonyPatch("TakeSampleEVAEvent")]
 	class ModuleAsteroid_TakeSampleEVAEvent
 	{
 		static bool Prefix(ModuleAsteroid __instance, ref ScienceExperiment ___experiment)
 		{
+			// Patch only if science is enabled
 			if (!Features.Science) return true;
 
-			ExperimentSituations experimentSituation = ScienceUtil.GetExperimentSituation(__instance.vessel);
+            // stock ModuleAsteroid.performSampleExperiment code : get situation and check availablility
+            ExperimentSituations experimentSituation = ScienceUtil.GetExperimentSituation(__instance.vessel);
 			string message = string.Empty;
 			if (!ScienceUtil.RequiredUsageExternalAvailable(__instance.vessel, FlightGlobals.ActiveVessel, (ExperimentUsageReqs)__instance.experimentUsageMask, ___experiment, ref message))
 			{
@@ -29,9 +57,10 @@ namespace KERBALISM
 				return false;
 			}
 
-			ScienceSubject subject = ResearchAndDevelopment.GetExperimentSubject(___experiment, experimentSituation, __instance.part.partInfo.name + __instance.part.flightID, __instance.part.partInfo.title, __instance.vessel.mainBody, string.Empty, string.Empty);
-			//subject = ResearchAndDevelopment.GetExperimentSubject(experiment, experimentSituation, base.part.partInfo.name + base.part.flightID, base.part.partInfo.title, base.vessel.mainBody, text, text2);
+            // stock ModuleAsteroid.performSampleExperiment code : create subject
+            ScienceSubject subject = ResearchAndDevelopment.GetExperimentSubject(___experiment, experimentSituation, __instance.part.partInfo.name + __instance.part.flightID, __instance.part.partInfo.title, __instance.vessel.mainBody, string.Empty, string.Empty);
 
+			// put the data on the EVA kerbal drive.
 			if (FlightGlobals.ActiveVessel == null) return false;
 			double size = ___experiment.baseValue * ___experiment.dataScale;
 			Drive drive = Drive.SampleDrive(FlightGlobals.ActiveVessel, size);
@@ -45,7 +74,9 @@ namespace KERBALISM
 			{
 				Message.Post("Not enough sample storage available");
 			}
-			return false;
+
+            // don't call ModuleAsteroid.TakeSampleEVAEvent (this will also prevent the call to ModuleAsteroid.performSampleExperiment)
+            return false;
 		}
 	}
 }
