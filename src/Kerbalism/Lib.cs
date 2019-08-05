@@ -1396,12 +1396,16 @@ namespace KERBALISM
 				resource.isTweakable = resourceDefinition.isTweakable;
 				resource.isVisible = resourceDefinition.isVisible;
 				resource.hideFlow = false;
-				resource.flowMode = PartResource.FlowMode.Both;
 				p.Resources.dict.Add(resourceDefinition.name.GetHashCode(), resource);
 
 				PartResource simulationResource = new PartResource(resource);
 				simulationResource.simulationResource = true;
 				p.SimulationResources?.dict.Add(resourceDefinition.name.GetHashCode(), simulationResource);
+
+				// flow mode is a property that call some code using SimulationResource in its setter.
+				// consequently it must be set after simulationResource is registered to avoid the following log error spam :
+				// [PartSet]: Failed to add Resource XXXXX to Simulation PartSet:XX as corresponding Part XXXX SimulationResource was not found.
+				resource.flowMode = PartResource.FlowMode.Both;
 
 				GameEvents.onPartResourceListChange.Fire(p);
 			}
