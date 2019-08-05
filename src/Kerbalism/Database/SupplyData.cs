@@ -38,21 +38,21 @@ namespace KERBALISM
 			}
 		}
 
-		public void UpdateResourceBrokers(Dictionary<string, double> brokers, Dictionary<string, double> ruleBrokers, double unsupportedBrokersRate, double elapsedSeconds)
+		public void UpdateResourceBrokers(Dictionary<string, double> brokersResAmount, Dictionary<string, double> ruleBrokersRate, double unsupportedBrokersRate, double elapsedSeconds)
 		{
 			ResourceBrokers.Clear();
 
-			foreach (KeyValuePair<string, double> p in ruleBrokers)
+			foreach (KeyValuePair<string, double> p in ruleBrokersRate)
 			{
 				ResourceBrokers.Add(new ResourceBroker(Lib.BuildString(p.Key, " (avg.)"), p.Value));
 			}
-			foreach (KeyValuePair<string, double> p in brokers)
+			foreach (KeyValuePair<string, double> p in brokersResAmount)
 			{
 				ResourceBrokers.Add(new ResourceBroker(p.Key, p.Value / elapsedSeconds));
 			}
 			if (unsupportedBrokersRate != 0.0)
 			{
-				ResourceBrokers.Add(new ResourceBroker("unknown", unsupportedBrokersRate)); 
+				ResourceBrokers.Add(new ResourceBroker("others", unsupportedBrokersRate)); 
 			}
 		}
 	}

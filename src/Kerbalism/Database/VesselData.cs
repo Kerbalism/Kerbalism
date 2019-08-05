@@ -563,7 +563,7 @@ namespace KERBALISM
 				maxPressure = Cache.VesselObjectsCache<double>(Vessel, "max_pressure");
 			pressure = Math.Min(maxPressure, Habitat.Pressure(Vessel));
 
-			evas = (uint)(Math.Max(0, ResourceCache.Info(Vessel, "Nitrogen").Amount - 330) / PreferencesLifeSupport.Instance.evaAtmoLoss);
+			evas = (uint)(Math.Max(0, ResourceCache.GetResource(Vessel, "Nitrogen").Amount - 330) / PreferencesLifeSupport.Instance.evaAtmoLoss);
 			poisoning = Habitat.Poisoning(Vessel);
 			humidity = Habitat.Humidity(Vessel);
 			shielding = Habitat.Shielding(Vessel);

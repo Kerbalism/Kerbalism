@@ -127,13 +127,16 @@ namespace KERBALISM
 			if (Lib.IsPaused())
 				return;
 
-			// maintain elapsed_s, converting to double only once
-			// and detect warp blending
+			// convert elapsed time to double only once
 			double fixedDeltaTime = TimeWarp.fixedDeltaTime;
-			if (Math.Abs(fixedDeltaTime - elapsed_s) < 0.00001)
+
+			// and detect warp blending
+			if (Math.Abs(fixedDeltaTime - elapsed_s) < 0.001)
 				warp_blending = 0;
 			else
 				++warp_blending;
+
+			// update elapsed time
 			elapsed_s = fixedDeltaTime;
 
 			// store info for oldest unloaded vessel
@@ -141,7 +144,7 @@ namespace KERBALISM
 			Guid last_id = Guid.Empty;
 			Vessel last_v = null;
 			VesselData last_vd = null;
-			Vessel_resources last_resources = null;
+			VesselResources last_resources = null;
 
 			// for each vessel
 			foreach (Vessel v in FlightGlobals.Vessels)
@@ -176,7 +179,7 @@ namespace KERBALISM
 					continue;
 
 				// get resource cache
-				Vessel_resources resources = ResourceCache.Get(v);
+				VesselResources resources = ResourceCache.Get(v);
 
 				// if loaded
 				if (v.loaded)
@@ -185,7 +188,7 @@ namespace KERBALISM
 					vd.Evaluate(false, elapsed_s);
 
 					// get most used resource
-					Resource_info ec = resources.Info(v, "ElectricCharge");
+					ResourceInfo ec = resources.GetResource(v, "ElectricCharge");
 
 					// show belt warnings
 					Radiation.BeltWarnings(v, vd);
@@ -247,7 +250,7 @@ namespace KERBALISM
 				last_vd.Evaluate(false, last_time);
 
 				// get most used resource
-				Resource_info last_ec = last_resources.Info(last_v, "ElectricCharge");
+				ResourceInfo last_ec = last_resources.GetResource(last_v, "ElectricCharge");
 
 				// show belt warnings
 				Radiation.BeltWarnings(last_v, last_vd);
@@ -341,7 +344,10 @@ namespace KERBALISM
 		public static double elapsed_s;
 
 		// number of steps from last warp blending
-		public static uint warp_blending;
+		private static uint warp_blending;
+
+		/// <summary>Are we in an intermediary timewarp speed ?</summary>
+		public static bool WarpBlending => warp_blending > 2u;
 
 		// last savegame unique id
 		static int savegame_uid;
@@ -693,11 +699,11 @@ namespace KERBALISM
 			const double res_penalty = 0.1;        // proportion of food lost on 'depressed' and 'wrong_valve'
 
 			// get a supply resource at random
-			Resource_info res = null;
+			ResourceInfo res = null;
 			if (Profile.supplies.Count > 0)
 			{
 				Supply supply = Profile.supplies[Lib.RandomInt(Profile.supplies.Count)];
-				res = ResourceCache.Info(v, supply.resource);
+				res = ResourceCache.GetResource(v, supply.resource);
 			}
 
 			// compile list of events with condition satisfied

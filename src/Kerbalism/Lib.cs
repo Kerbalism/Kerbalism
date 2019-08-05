@@ -1044,7 +1044,7 @@ namespace KERBALISM
 			if (cluster != null)
 				return cluster.IsPowered;
 #endif
-			return ResourceCache.Info(v, "ElectricCharge").Amount > double.Epsilon;
+			return ResourceCache.GetResource(v, "ElectricCharge").Amount > double.Epsilon;
 		}
 
 		public static Guid VesselID(Vessel v)

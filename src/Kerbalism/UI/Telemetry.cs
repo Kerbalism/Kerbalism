@@ -33,7 +33,7 @@ namespace KERBALISM
 			if (p.Timeout(vd)) return;
 
 			// get resources
-			Vessel_resources resources = ResourceCache.Get(v);
+			VesselResources resources = ResourceCache.Get(v);
 
 			// get crew
 			var crew = Lib.CrewList(v);
@@ -103,14 +103,14 @@ namespace KERBALISM
 			}
 		}
 
-		static void Render_supplies(Panel p, Vessel v, VesselData vd, Vessel_resources resources)
+		static void Render_supplies(Panel p, Vessel v, VesselData vd, VesselResources resources)
 		{
 			// for each supply
 			int supplies = 0;
 			foreach (Supply supply in Profile.supplies)
 			{
 				// get resource info
-				Resource_info res = resources.Info(v, supply.resource);
+				ResourceInfo res = resources.GetResource(v, supply.resource);
 
 				// only show estimate if the resource is present
 				if (res.Capacity <= 1e-10) continue;
@@ -132,11 +132,11 @@ namespace KERBALISM
 				}
 				else
 				{
-					sb.Append("<b>+0.000</b>");
+					sb.Append("<b>no change</b>");
 				}
 
-				if (res.Level < 0.0001) sb.Append(" <i>(empty)</i>");
-				else if (res.Level > 0.9999) sb.Append(" <i>(full)</i>");
+				if (res.AverageRate < 0.0 && res.Level < 0.0001) sb.Append(" <i>(empty)</i>");
+				else if (res.AverageRate > 0.0 && res.Level > 0.9999) sb.Append(" <i>(full)</i>");
 				else sb.Append("   "); // spaces to prevent alignement issues
 
 				sb.Append("\t");

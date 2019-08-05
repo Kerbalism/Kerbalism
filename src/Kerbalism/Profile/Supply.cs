@@ -33,13 +33,13 @@ namespace KERBALISM
 		}
 
 
-		public void Execute(Vessel v, VesselData vd, Vessel_resources resources)
+		public void Execute(Vessel v, VesselData vd, VesselResources resources)
 		{
 			// get crew
 			List<ProtoCrewMember> crew = Lib.CrewList(v);
 
 			// get resource handler
-			Resource_info res = resources.Info(v, resource);
+			ResourceInfo res = resources.GetResource(v, resource);
 
 			// get data from db
 			SupplyData sd = v.KerbalismData().Supply(resource);
@@ -121,7 +121,7 @@ namespace KERBALISM
 			if (on_rescue <= double.Epsilon) return;
 
 			// if the vessel has no capacity
-			if (ResourceCache.Info(v, resource).Capacity <= double.Epsilon)
+			if (ResourceCache.GetResource(v, resource).Capacity <= double.Epsilon)
 			{
 				// find the first useful part
 				Part p = v.parts.Find(k => k.CrewCapacity > 0 || k.FindModuleImplementing<KerbalEVA>() != null);

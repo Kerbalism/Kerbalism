@@ -36,7 +36,7 @@ namespace KERBALISM
 		private static string background_sample = null;             // sample currently being analyzed in background simulation
 		private Status status = Status.DISABLED;                    // laboratory status
 		private string status_txt = string.Empty;                   // status string to show next to the ui button
-		private Resource_info ec = null;                            // resource info for EC
+		private ResourceInfo ec = null;                            // resource info for EC
 		private Drive drive = null;                                 // my drive
 
 		// localized strings
@@ -114,7 +114,7 @@ namespace KERBALISM
 					if (current_sample != null)
 					{
 						// consume EC
-						ec = ResourceCache.Info(vessel, "ElectricCharge");
+						ec = ResourceCache.GetResource(vessel, "ElectricCharge");
 						ec.Consume(ec_rate * Kerbalism.elapsed_s, "laboratory");
 
 						// if there was ec
@@ -138,7 +138,7 @@ namespace KERBALISM
 			else status = Status.DISABLED;
 		}
 
-		public static void BackgroundUpdate(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, Laboratory lab, Resource_info ec, double elapsed_s)
+		public static void BackgroundUpdate(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, Laboratory lab, ResourceInfo ec, double elapsed_s)
 		{
 			// if enabled
 			if (Lib.Proto.GetBool(m, "running"))

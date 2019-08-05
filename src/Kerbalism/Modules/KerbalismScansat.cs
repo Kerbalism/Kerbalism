@@ -128,7 +128,7 @@ namespace KERBALISM
 		}
 
 		public static void BackgroundUpdate(Vessel vessel, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, KerbalismScansat kerbalismScansat,
-		                                    Part part_prefab, VesselData vd, Resource_info ec, double elapsed_s)
+		                                    Part part_prefab, VesselData vd, ResourceInfo ec, double elapsed_s)
 		{
 			List<ProtoPartModuleSnapshot> scanners = Cache.VesselObjectsCache<List<ProtoPartModuleSnapshot>>(vessel, "scansat_" + p.flightID);
 			if(scanners == null)

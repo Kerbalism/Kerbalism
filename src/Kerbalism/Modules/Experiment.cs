@@ -219,7 +219,7 @@ namespace KERBALISM
 			if (next_check > Planetarium.GetUniversalTime()) return;
 
 			// get ec handler
-			Resource_info ec = ResourceCache.Info(vessel, "ElectricCharge");
+			ResourceInfo ec = ResourceCache.GetResource(vessel, "ElectricCharge");
 			shrouded = part.ShieldedFromAirstream;
 			issue = TestForIssues(vessel, ec, this, privateHdId, broken,
 				remainingSampleMass, didPrepare, shrouded, last_subject_id);
@@ -255,7 +255,7 @@ namespace KERBALISM
 			DoRecord(ec, subject_id);
 		}
 
-		private void DoRecord(Resource_info ec, string subject_id)
+		private void DoRecord(ResourceInfo ec, string subject_id)
 		{
 			var stored = DoRecord(this, subject_id, vessel, ec, privateHdId,
 				ResourceCache.Get(vessel), resourceDefs,
@@ -273,8 +273,8 @@ namespace KERBALISM
 			return drive;
 		}
 
-		private static bool DoRecord(Experiment experiment, string subject_id, Vessel vessel, Resource_info ec, uint hdId, 
-			Vessel_resources resources, List<KeyValuePair<string, double>> resourceDefs,
+		private static bool DoRecord(Experiment experiment, string subject_id, Vessel vessel, ResourceInfo ec, uint hdId, 
+			VesselResources resources, List<KeyValuePair<string, double>> resourceDefs,
 			double remainingSampleMass, double dataSampled,
 			out double sampledOut, out double remainingSampleMassOut)
 		{
@@ -353,13 +353,13 @@ namespace KERBALISM
 			return true;
 		}
 
-		private static double Rate(Vessel v, double chunkSize, double maxCapacity, double elapsed, Resource_info ec, double ec_rate, Vessel_resources resources, List<KeyValuePair<string, double>> resourceDefs)
+		private static double Rate(Vessel v, double chunkSize, double maxCapacity, double elapsed, ResourceInfo ec, double ec_rate, VesselResources resources, List<KeyValuePair<string, double>> resourceDefs)
 		{
 			double result = Lib.Clamp(maxCapacity / chunkSize, 0, 1);
 			result = Math.Min(result, Lib.Clamp(ec.Amount / (ec_rate * elapsed), 0, 1));
 
 			foreach (var p in resourceDefs) {
-				var ri = resources.Info(v, p.Key);
+				var ri = resources.GetResource(v, p.Key);
 				result = Math.Min(result, Lib.Clamp(ri.Amount / (p.Value * elapsed), 0, 1));
 			}
 
@@ -388,7 +388,7 @@ namespace KERBALISM
 			return defs;
 		}
 
-		public static void BackgroundUpdate(Vessel v, ProtoPartModuleSnapshot m, Experiment experiment, Resource_info ec, Vessel_resources resources, double elapsed_s)
+		public static void BackgroundUpdate(Vessel v, ProtoPartModuleSnapshot m, Experiment experiment, ResourceInfo ec, VesselResources resources, double elapsed_s)
 		{
 			bool didPrepare = Lib.Proto.GetBool(m, "didPrepare", false);
 			bool shrouded = Lib.Proto.GetBool(m, "shrouded", false);
@@ -476,14 +476,14 @@ namespace KERBALISM
 			broken = breakdown;
 		}
 
-		private static string TestForResources(Vessel v, List<KeyValuePair<string, double>> defs, double elapsed_s, Vessel_resources res)
+		private static string TestForResources(Vessel v, List<KeyValuePair<string, double>> defs, double elapsed_s, VesselResources res)
 		{
 			if (defs.Count < 1) return string.Empty;
 
 			// test if there are enough resources on the vessel
 			foreach(var p in defs)
 			{
-				var ri = res.Info(v, p.Key);
+				var ri = res.GetResource(v, p.Key);
 				if (ri.Amount < p.Value * elapsed_s)
 					return "missing " + ri.ResourceName;
 			}
@@ -491,7 +491,7 @@ namespace KERBALISM
 			return string.Empty;
 		}
 
-		private static string TestForIssues(Vessel v, Resource_info ec, Experiment experiment, uint hdId, bool broken,
+		private static string TestForIssues(Vessel v, ResourceInfo ec, Experiment experiment, uint hdId, bool broken,
 			double remainingSampleMass, bool didPrepare, bool isShrouded, string last_subject_id)
 		{
 			var subject_id = Science.Generate_subject_id(experiment.experiment_id, v);

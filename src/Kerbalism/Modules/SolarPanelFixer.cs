@@ -464,13 +464,13 @@ namespace KERBALISM
 			}
 
 			// get resource handler
-			Resource_info ec = ResourceCache.Info(vessel, "ElectricCharge");
+			ResourceInfo ec = ResourceCache.GetResource(vessel, "ElectricCharge");
 
 			// produce EC
 			ec.Produce(currentOutput * Kerbalism.elapsed_s, "solar panel");
 		}
 
-		public static void BackgroundUpdate(Vessel v, ProtoPartModuleSnapshot m, SolarPanelFixer prefab, VesselData vd, Resource_info ec, double elapsed_s)
+		public static void BackgroundUpdate(Vessel v, ProtoPartModuleSnapshot m, SolarPanelFixer prefab, VesselData vd, ResourceInfo ec, double elapsed_s)
 		{
 			// this is ugly spaghetti code but initializing the prefab at loading time is messy
 			if (!prefab.isInitialized) prefab.OnStart(StartState.None);
