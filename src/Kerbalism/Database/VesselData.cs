@@ -495,6 +495,8 @@ namespace KERBALISM
 			{
 				scansat_id.Add(Lib.Parse.ToUInt(s));
 			}
+
+			if (node.HasNode("ScienceLog")) ScienceLog.Load(node.GetNode("ScienceLog"));
 		}
 
 		public void Save(ConfigNode node)
@@ -525,6 +527,8 @@ namespace KERBALISM
 			{
 				node.AddValue("scansat_id", id.ToString());
 			}
+
+			ScienceLog.Save(node.AddNode("ScienceLog"));
 		}
 
 		#endregion
