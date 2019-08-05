@@ -120,7 +120,7 @@ namespace KERBALISM
 			// last transmission
 			if(!string.IsNullOrEmpty(scienceLog.LastSubjectTitle))
 			{
-				string lastTransmission = Lib.Ellipsis(scienceLog.LastSubjectTitle.ToLower(), Styles.ScaleStringLength(45));
+				string lastTransmission = Lib.Ellipsis("last: " + scienceLog.LastSubjectTitle.ToLower(), Styles.ScaleStringLength(45));
 				var ago = Planetarium.GetUniversalTime() - scienceLog.LastTransmissionTime;
 				p.AddContent(lastTransmission, ago > 5 ? ("T+" + Lib.HumanReadableDuration(ago)) : "just now");
 			}
