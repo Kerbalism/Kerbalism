@@ -215,5 +215,5 @@ It includes [MiniAVC]. If you opt-in, it will use the Internet to check whether 
 [KSP-AVC Plugin]: https://forum.kerbalspaceprogram.com/index.php?/topic/72169-13-12-ksp-avc-add-on-version-checker-plugin-1162-miniavc-ksp-avc-online-2016-10-13/
 [Unlicense]: https://github.com/Kerbalism/Kerbalism/blob/master/LICENSE
 
-[KerbalismBanner]: https://github.com/Kerbalism/Kerbalism/misc/img/banner.png
+[KerbalismBanner]: https://github.com/Kerbalism/Kerbalism/blob/master/misc/img/banner.png
 [build]: https://travis-ci.com/steamp0rt/Kerbalism.svg?style=flat-square&branch=master
