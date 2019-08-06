@@ -25,7 +25,8 @@ namespace KERBALISM
 		internal void Save(ConfigNode node)
 		{
 			node.AddValue("SumTotal", SumTotal);
-			node.AddValue("LastSubjectTitle", LastSubjectTitle);
+			if(!string.IsNullOrEmpty(LastSubjectTitle))
+				node.AddValue("LastSubjectTitle", LastSubjectTitle);
 			node.AddValue("LastTransmissionTime", LastTransmissionTime);
 		}
 	}
