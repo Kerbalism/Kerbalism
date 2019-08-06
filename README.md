@@ -8,7 +8,8 @@
 **Download** and sources : **[Github releases]** or CKAN.\
 **Documentation and support** : [Github wiki] - [Github issues] - [Official Discord] - [KSP forums thread]\
 **License** : [Unlicense] (public domain)\
-**Requires** : KSP 1.4.x to 1.7.x , [Module Manager], [CommunityResourcePack]
+**Requires** : KSP 1.4.x to 1.7.x , [Module Manager], [CommunityResourcePack]\
+**[Mod compatibility] list**
 
 ## INTRODUCTION
 
