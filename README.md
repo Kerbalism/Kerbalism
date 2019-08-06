@@ -4,12 +4,13 @@
 
 ***Hundreds of Kerbals were killed in the making of this mod.***
 
-# Current version : 3.0.2 ![build]
-**Download** and sources : **[Github releases]** or CKAN.\
+# Current version : 3.0.3 
+**Download** and sources : **[Github releases]** or CKAN\
 **Documentation and support** : [Github wiki] - [Github issues] - [Official Discord] - [KSP forums thread]\
 **License** : [Unlicense] (public domain)\
 **Requires** : KSP 1.4.x to 1.7.x , [Module Manager], [CommunityResourcePack]\
-**[Mod compatibility] list**
+**[Mod compatibility]**\
+**[Changelog]**
 
 ## INTRODUCTION
 
@@ -213,6 +214,7 @@ It includes [MiniAVC]. If you opt-in, it will use the Internet to check whether 
 [Github wiki]: https://github.com/Kerbalism/Kerbalism/wiki
 [GitHub issues]: https://github.com/Kerbalism/Kerbalism/issues
 [Mod Compatibility]: https://github.com/Kerbalism/Kerbalism/wiki/Home-~-Mod-Support
+[Changelog]: https://github.com/Kerbalism/Kerbalism/blob/master/CHANGELOG.md
 [System/API.cs]: https://github.com/Kerbalism/Kerbalism/blob/master/src/System/API.cs
 [KSP forums thread]: https://forum.kerbalspaceprogram.com/index.php?/topic/172400-131144-kerbalism-v171/
 [official Discord]: https://discord.gg/3JAE2JE
