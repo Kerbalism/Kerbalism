@@ -2,9 +2,13 @@
 
 ## Welcome to Kerbalism
 
-#### Hundreds of Kerbals were killed in the making of this mod.
+***Hundreds of Kerbals were killed in the making of this mod.***
 
-![build]
+# Current version : 3.0.2 ![build]
+**Download** and sources : **[Github releases]** or CKAN.\
+**Documentation and support** : [Github wiki] - [Github issues] - [Official Discord] - [KSP forums thread]\
+**License** : [Unlicense] (public domain)\
+**Requires** : KSP 1.4.x to 1.7.x , [Module Manager], [CommunityResourcePack]
 
 ## INTRODUCTION
 
@@ -147,8 +151,8 @@ and also the means to start and stop the module in an automation script.
 **Requirements**
 
 - Multiple KSP versions are supported, see which ones on the releases page.
-- [Module Manager](https://github.com/sarbian/ModuleManager/releases) : must be installed in GameData
-- [CommunityResourcePack](https://github.com/BobPalmer/CommunityResourcePack/releases) : must be installed in GameData
+- [Module Manager] : must be installed in GameData
+- [CommunityResourcePack] : must be installed in GameData
 
 **Third-party configuration packs**
 
@@ -211,6 +215,9 @@ It includes [MiniAVC]. If you opt-in, it will use the Internet to check whether 
 [System/API.cs]: https://github.com/Kerbalism/Kerbalism/blob/master/src/System/API.cs
 [KSP forums thread]: https://forum.kerbalspaceprogram.com/index.php?/topic/172400-131144-kerbalism-v171/
 [official Discord]: https://discord.gg/3JAE2JE
+
+[Module Manager]: https://github.com/sarbian/ModuleManager/releases
+[CommunityResourcePack]: https://github.com/BobPalmer/CommunityResourcePack/releases
 [MiniAVC]: https://ksp.cybutek.net/miniavc/Documents/README.htm
 [KSP-AVC Plugin]: https://forum.kerbalspaceprogram.com/index.php?/topic/72169-13-12-ksp-avc-add-on-version-checker-plugin-1162-miniavc-ksp-avc-online-2016-10-13/
 [Unlicense]: https://github.com/Kerbalism/Kerbalism/blob/master/LICENSE
