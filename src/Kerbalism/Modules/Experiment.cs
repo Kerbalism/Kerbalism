@@ -98,18 +98,25 @@ namespace KERBALISM
 			base.OnLoad(node);
 		}
 
-		public override void OnStart(StartState state)
+		/// <summary>Called by Callbacks just after rollout to launch pad</summary>
+		public void OnRollout()
 		{
-			// don't break tutorial scenarios
 			if (Lib.DisableScenario(this)) return;
 
-			// initialize the remaining sample mass in case it was not configured in the cfg.
-			if (remainingSampleMass < float.Epsilon && string.IsNullOrEmpty(issue) && !sample_collecting)
+			// initialize the remaining sample mass
+			// this needs to be done only once just after launch
+			if (!sample_collecting)
 			{
 				remainingSampleMass = sample_mass;
 				if (sample_reservoir > float.Epsilon)
 					remainingSampleMass = sample_reservoir;
 			}
+		}
+
+		public override void OnStart(StartState state)
+		{
+			// don't break tutorial scenarios
+			if (Lib.DisableScenario(this)) return;			
 
 			// create animators
 			deployAnimator = new Animator(part, anim_deploy);

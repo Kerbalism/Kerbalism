@@ -21,6 +21,8 @@ namespace KERBALISM
 			GameEvents.onNewVesselCreated.Add(this.VesselCreated);
 			GameEvents.onPartCouple.Add(this.VesselDock);
 
+			GameEvents.OnVesselRollout.Add(this.VesselRollout);
+
 			GameEvents.onVesselChange.Add((v) => { OnVesselModified(v); });
 			GameEvents.onVesselStandardModification.Add((v) => { OnVesselStandardModification(v); });
 
@@ -272,6 +274,15 @@ namespace KERBALISM
 
 			// Update docked to vessel
 			this.OnVesselModified(e.to.vessel);
+		}
+
+		void VesselRollout(ShipConstruct newVessel)
+		{
+			var vessel = FlightGlobals.ActiveVessel;
+			foreach(var experiment in vessel.FindPartModulesImplementing<Experiment>())
+			{
+				experiment.OnRollout();
+			}
 		}
 
 		void PartDestroyed(Part p)
