@@ -2,6 +2,7 @@
 ALLVERS="1.7.1 1.7.0 1.6.1 1.5.1 1.4.5"
 ALLBINS="17 170 16 15 14"
 
+bash "buildscripts/Travis/inc_buildnumber.sh"
 
 if [ "$1" != "" ] && [ "$2" != "" ]; then
   echo "building for KSP Version $1, binary file $2"
@@ -33,7 +34,6 @@ do
 		cp "$filename" "src/archives"
 	fi
 	7za x $filename -osrc/DLLs -pgQn337XZBEFxzFuVwzKgc27ehZo7XLz485hh3erqF9
-	bash "buildscripts/Travis/avc_to_assembly.sh"
 	msbuild /p:DefineConstants="KSP${current_kspbin}" Kerbalism.sln /t:Build /p:Configuration="Release"
 	/bin/cp -rf "src/KerbalismBootstrap/obj/Release/KerbalismBootstrap.dll" "GameData/Kerbalism/KerbalismBootstrap.dll"
 	/bin/cp -rf "src/Kerbalism/obj/Release/Kerbalism.dll" "GameData/Kerbalism/Kerbalism${current_kspbin}.kbin"
