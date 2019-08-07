@@ -115,7 +115,7 @@ namespace KERBALISM
 			p.AddContent("target", conn.target_name);
 
 			// total science gained by vessel
-			p.AddContent("total science gained", Lib.HumanReadableScience(scienceLog.SumTotal));
+			p.AddContent("total science gathered", Lib.HumanReadableScience(scienceLog.SumTotal));
 
 			// last transmission
 			if(!string.IsNullOrEmpty(scienceLog.LastSubjectTitle))

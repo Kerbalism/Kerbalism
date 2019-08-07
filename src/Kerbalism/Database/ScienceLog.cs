@@ -4,15 +4,18 @@ namespace KERBALISM
 {
 	public class ScienceLog
 	{
-		public double SumTotal { get; private set; }
-		public string LastSubjectTitle { get; private set; }
-		public double LastTransmissionTime { get; private set; }
+		public double SumTotal { get; private set; } = 0;
+		public string LastSubjectTitle { get; private set; } = string.Empty;
+		public double LastTransmissionTime { get; private set; } = 0;
 
 		internal void AddCredits(float credits, ScienceSubject subject)
 		{
 			SumTotal += credits;
-			LastSubjectTitle = subject.title;
-			LastTransmissionTime = Planetarium.GetUniversalTime();
+			if (credits > 0)
+			{
+				LastSubjectTitle = subject.title;
+				LastTransmissionTime = Planetarium.GetUniversalTime();
+			}
 		}
 
 		internal void Load(ConfigNode node)
