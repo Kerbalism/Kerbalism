@@ -16,13 +16,11 @@ OUTPUT_PATH="buildscripts/MakeRelease/Output"
 CORE_NAME="Kerbalism-Core" 
 CONFIG_NAME="Kerbalism-Config"
 SPACEDOCK_NAME="Spacedock-Release"
-
+SPACEDOCK_MOD_ID="1774"
 VERSION_PATH="GameData/Kerbalism/Kerbalism.version"
 PATH_TO_README="README.md"
 PATH_TO_CHANGELOG="CHANGELOG.md"
 RELEASE_SCRIPT="buildscripts/MakeRelease/make_zip_release.sh"
-
-
 
 KSP_VERSION_INFO=$(grep '"KSP_VERSION"' "$VERSION_PATH")
 KSP_MAJOR=$(echo $KSP_VERSION_INFO | cut -d':' -f 3 | grep -oEi '[0-9]*')
@@ -115,7 +113,7 @@ case $yn in
 			-F "game-version=$KSP_VERSION" \
 			-F "notify-followers=no" \
 			-F "zipball=@$SPACEDOCK_ZIP_PATH" \
-			"https://spacedock.info/api/mod/2200/update"
+			"https://spacedock.info/api/mod/$SPACEDOCK_MOD_ID/update"
 		echo "  "
 		echo "Upload finished."
 esac
