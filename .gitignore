@@ -387,3 +387,4 @@ src/DLLs
 KSP-*.7z
 Kerbalism-Core*.zip
 Kerbalism-Config*.zip
+/buildscripts/MakeRelease/Output
