@@ -2002,6 +2002,13 @@ namespace KERBALISM
 				return s != null && uint.TryParse( s, out v ) ? v : def_value;
 			}
 
+			public static int GetInt(ProtoPartModuleSnapshot m, string name, int def_value = 0)
+			{
+				int v;
+				string s = m.moduleValues.GetValue(name);
+				return s != null && int.TryParse(s, out v) ? v : def_value;
+			}
+
 			public static float GetFloat( ProtoPartModuleSnapshot m, string name, float def_value = 0.0f )
 			{
 				// note: we set NaN and infinity values to zero, to cover some weird inter-mod interactions
