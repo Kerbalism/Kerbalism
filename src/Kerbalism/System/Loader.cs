@@ -34,7 +34,7 @@ namespace KERBALISM
 		public void Start()
 		{
 			// log version
-			Lib.Log("version " + Lib.Version());
+			Lib.Log("Version : " + Lib.KerbalismVersion + " - Build : " + Lib.KerbalismDevBuild);
 
 			Lib.Log("Forcing KSP to load resources...");
 			PartResourceLibrary.Instance.LoadDefinitions();

@@ -10,16 +10,16 @@ namespace KERBALISM
 		public static void Load(ConfigNode node)
 		{
 			// get version (or use current one for new savegames)
-			version = Lib.ConfigValue(node, "version", Lib.Version());
+			string versionStr = Lib.ConfigValue(node, "version", Lib.KerbalismVersion.ToString());
+			// sanitize old saves (pre 3.1) format (X.X.X.X) to new format (X.X)
+			if (versionStr.Split('.').Length > 2) versionStr = versionStr.Split('.')[0] + "." + versionStr.Split('.')[1];
+			version = new Version(versionStr);
+
+			// if this is an unsupported version, print warning
+			if (version <= new Version(1, 2)) Lib.Log("loading save from unsupported version " + version);
 
 			// get unique id (or generate one for new savegames)
 			uid = Lib.ConfigValue(node, "uid", Lib.RandomInt(int.MaxValue));
-
-			// if this is an unsupported version, print warning
-			if (string.CompareOrdinal(version, "1.1.5.0") < 0)
-			{
-				Lib.Log("loading save from unsupported version " + version);
-			}
 
 			// load kerbals data
 			kerbals = new Dictionary<string, KerbalData>();
@@ -92,13 +92,13 @@ namespace KERBALISM
 			}
 
 			// if an old savegame was imported, log some debug info
-			if (version != Lib.Version()) Lib.Log("savegame converted from version " + version);
+			if (version != Lib.KerbalismVersion) Lib.Log("savegame converted from version " + version + " to " + Lib.KerbalismVersion);
 		}
 
 		public static void Save(ConfigNode node)
 		{
 			// save version
-			node.AddValue("version", Lib.Version());
+			node.AddValue("version", Lib.KerbalismVersion.ToString());
 
 			// save unique id
 			node.AddValue("uid", uid);
@@ -242,7 +242,7 @@ namespace KERBALISM
 		public static string To_safe_key(string key) { return key.Replace(" ", "___"); }
 		public static string From_safe_key(string key) { return key.Replace("___", " "); }
 
-		public static string version;                          // savegame version
+		public static Version version;                         // savegame version
 		public static int uid;                                 // savegame unique id
 		private static Dictionary<string, KerbalData> kerbals; // store data per-kerbal
 		private static Dictionary<Guid, VesselData> vessels = new Dictionary<Guid, VesselData>();    // store data per-vessel, indexed by root part id
