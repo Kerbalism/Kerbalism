@@ -388,3 +388,5 @@ KSP-*.7z
 Kerbalism-Core*.zip
 Kerbalism-Config*.zip
 /buildscripts/MakeRelease/Output
+/buildscripts/BuildDebug/DebugConfig.xml
+/buildscripts/BuildDebug/Output
