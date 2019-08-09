@@ -31,6 +31,9 @@ namespace KERBALISM
 				Sim.SolarFluxAtHome = PhysicsGlobals.SolarLuminosityAtHome;
 			}
 
+			// calculate each sun total flux (must be done after the "suns" list is populated
+			foreach (SunData sd in suns) sd.InitSolarFluxTotal();
+
 			// get scaled space planetary layer for physic raytracing
 			planetaryLayerMask = 1 << LayerMask.NameToLayer("Scaled Scenery");
 		}
@@ -227,18 +230,24 @@ namespace KERBALISM
 
 		/// <summary>List of all suns/stars, with reference to their CB and their (total) luminosity</summary>
 		public static readonly List<SunData> suns = new List<SunData>();
-		public struct SunData
+		public class SunData
 		{
 			public CelestialBody body;
 			public int bodyIndex;
+			private double solarFluxAtAU;
 			private double solarFluxTotal;
 
-			public SunData(int bodyIndex, double solarFluxAtHome)
+			public SunData(int bodyIndex, double solarFluxAtAU)
 			{
 				body = FlightGlobals.Bodies[bodyIndex];
 				this.bodyIndex = bodyIndex;
-				double au = (FlightGlobals.GetHomeBody().position - body.position).magnitude;
-				solarFluxTotal = solarFluxAtHome * au * au * Math.PI * 4;
+				this.solarFluxAtAU = solarFluxAtAU;
+			}
+
+			// This must be called after "suns" SunData list is populated (because it use AU > Lib.IsSun)
+			public void InitSolarFluxTotal()
+			{
+				this.solarFluxTotal = solarFluxAtAU * AU * AU * Math.PI * 4.0;
 			}
 
 			/// <summary>Luminosity in W/m² at the given distance from this sun/star</summary>
@@ -251,6 +260,21 @@ namespace KERBALISM
 
 				// calculate solar flux
 				return solarFluxTotal / (Math.PI * 4 * distance * distance);
+			}
+		}
+
+		static double au = 0.0;
+		/// <summary> Distance between the home body and its main sun</summary>
+		public static double AU
+		{
+			get
+			{
+				if (au == 0.0)
+				{
+					CelestialBody home = FlightGlobals.GetHomeBody();
+					au = (home.position - Lib.GetParentSun(home).position).magnitude;
+				}
+				return au;
 			}
 		}
 
@@ -682,7 +706,7 @@ namespace KERBALISM
 		{
 			double dist = Vector3d.Distance(v.GetWorldPos3D(), Lib.GetParentSun(v.mainBody).position);
 			double au = dist / FlightGlobals.GetHomeBody().orbit.semiMajorAxis;
-			return 1.0 - Math.Min(au, 1.0); // 0 at 1AU -> 1 at sun position
+			return 1.0 - Math.Min(AU, 1.0); // 0 at 1AU -> 1 at sun position
 		}
 		#endregion
 	}
