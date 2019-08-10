@@ -547,12 +547,23 @@ namespace KERBALISM
 			{
 				foreach (var hd in vessel.FindPartModulesImplementing<HardDrive>())
 				{
-					// Serenity/ModuleManager bug workaround (duplicate drives on EVAs)
-					if (result.ContainsKey(hd.part.flightID))
-						continue;
+					if (!hd.isEnabled || hd.hdId == 0) continue;
 
-					if (hd.hdId != 0 && DB.drives.ContainsKey(hd.hdId))
-						result.Add(hd.part.flightID, DB.drives[hd.hdId]);
+					if (result.ContainsKey(hd.part.flightID))
+					{
+						Lib.Log("WARNING: you have multiple hard drives in one part. This is not supported and an issue in your configuration. I will combine the capacities of all affected drives. (loaded)");
+						hd.enabled = false;
+						hd.isEnabled = false;
+
+						var existing = result[hd.part.flightID];
+						if(hd.dataCapacity > 0) existing.dataCapacity += hd.dataCapacity;
+						if(hd.sampleCapacity > 0) existing.sampleCapacity += hd.sampleCapacity;
+					}
+					else
+					{
+						if (DB.drives.ContainsKey(hd.hdId))
+							result.Add(hd.part.flightID, DB.drives[hd.hdId]);
+					}
 				}
 			}
 			else
@@ -561,8 +572,25 @@ namespace KERBALISM
 				{
 					foreach(var pm in Lib.FindModules(p, "HardDrive"))
 					{
+						var isEnabled = Lib.Proto.GetBool(pm, "isEnabled", true);
 						var hdId = Lib.Proto.GetUInt(pm, "hdId", 0);
-						if (hdId != 0 && DB.drives.ContainsKey(hdId))
+						if (!isEnabled || hdId == 0) continue;
+
+						if (result.ContainsKey(p.flightID))
+						{
+							Lib.Log("WARNING: you have multiple hard drives in one part. This is not supported and an issue in your configuration. I will combine the capacities of all affected drives. (unloaded)");
+							Lib.Proto.Set(pm, "enabled", false);
+							Lib.Proto.Set(pm, "isEnabled", false);
+
+							var dataCapacity = Lib.Proto.GetFloat(pm, "dataCapacity", 0);
+							var sampleCapacity = Lib.Proto.GetInt(pm, "sampleCapacity", 0);
+
+							var existing = result[p.flightID];
+							if (dataCapacity > 0) existing.dataCapacity += dataCapacity;
+							if (sampleCapacity > 0) existing.sampleCapacity += sampleCapacity;
+						}
+
+						if (DB.drives.ContainsKey(hdId))
 							result.Add(p.flightID, DB.drives[hdId]);
 					}
 				}

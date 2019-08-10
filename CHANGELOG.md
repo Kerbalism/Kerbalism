@@ -38,6 +38,7 @@
 * Fixed `[PartSet]: Failed to add Resource XXXXX...` log spam (Got)
 * Implemented resource rate per consumer/producer information tooltip in the Supply section of the vessel telemetry panel (Got)
 * Support configs for SSTU, require SSTU version 0.11.49.161 min (Got, Steamp0rt, Arthur)
+* Better handling of multiple hard drives in one part (#479) (Sir Mortimer)
 
 ## v3.0.2 for all versions of KSP from 1.4.0 to 1.7.x
 

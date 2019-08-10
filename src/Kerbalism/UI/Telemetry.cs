@@ -106,6 +106,9 @@ namespace KERBALISM
 
 		static void Render_science(Panel p, Vessel v, VesselData vd)
 		{
+			// don't show env panel in eva kerbals
+			if (v.isEVA) return;
+
 			p.AddSection("SCIENCE");
 			ScienceLog scienceLog = v.KerbalismData().ScienceLog;
 
