@@ -1,8 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
+<!--<Project ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">-->
+<Project ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <!-- Create this file and adjust the values according to your KSP dev environment -->
-  <!-- There is a "DebugConfig.xml.example" file that you can copy -->
-  <Import Condition="Exists('..\..\buildscripts\BuildDebug\DebugConfig.xml')" Project="..\..\buildscripts\BuildDebug\DebugConfig.xml" />
+  <!-- There is a "DevEnvConfig.xml.example" file that you can copy -->
+  <Import Condition="Exists('..\..\buildscripts\DevEnvConfig.xml')" Project="..\..\buildscripts\DevEnvConfig.xml" />
+  <Import Condition="Exists('..\..\buildscripts\BuildGlobals.xml')" Project="..\..\buildscripts\BuildGlobals.xml" />
   <!-- -->
   <PropertyGroup>
     <ProjectGuid>{7CF587A9-6E49-46E8-AB3F-87B80A6276DA}</ProjectGuid>
@@ -23,6 +25,7 @@
     <SignAssembly>False</SignAssembly>
     <TargetFrameworkProfile />
   </PropertyGroup>
+
   <!-- /////////////////////////////////////////////////// -->
   <!-- //////////// DEBUG CONFIGURATION SETUP //////////// -->
   <!-- /////////////////////////////////////////////////// -->
@@ -35,46 +38,58 @@
     <StartAction>Program</StartAction>
     <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
     <NoWarn>IDE0018</NoWarn>
-    <LangVersion>latest</LangVersion>
-    <!-- Don't change these, they are used by the post-build events -->
-    <KerbalismDebugPath>..\..\buildscripts\BuildDebug</KerbalismDebugPath>
-    <OutputPath>$(KerbalismDebugPath)\Output</OutputPath>
-    <IntermediateOutputPath>$(OutputPath)\obj</IntermediateOutputPath>
-    <!-- Default values. These will be overriden if the DebugConfig.xml file exists-->
+    <LangVersion>7.1</LangVersion>
+    <!-- Default values. These will be overriden if the DevEnvConfig.xml file exists-->
     <DefineConstants>TRACE;DEBUG;ENABLE_PROFILER;DEBUG_PROFILER;DEBUG_RESOURCES</DefineConstants>
     <StartProgram>KSP_x64.exe</StartProgram>
     <StartWorkingDirectory>..\</StartWorkingDirectory>
   </PropertyGroup>
-  <!-- User dev environment defined in DebugConfig.xls -->
-  <Choose>
-    <When Condition="Exists('..\..\buildscripts\BuildDebug\DebugConfig.xml')">
-      <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
-        <DefineConstants>TRACE;DEBUG;$(DebugDefineConstants);$(KSPDevVersion)</DefineConstants>
-        <StartProgram>$(KSPDevPath)\$(KSPDevExecutable)</StartProgram>
-        <StartWorkingDirectory>$(KSPDevPath)</StartWorkingDirectory>
-      </PropertyGroup>
-    </When>
-  </Choose>
+
   <!-- ///////////////////////////////////////////////////// -->
   <!-- //////////// RELEASE CONFIGURATION SETUP //////////// -->
   <!-- ///////////////////////////////////////////////////// -->
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
-    <OutputPath Condition="Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">$(KSPDEVDIR)\GameData\Kerbalism\</OutputPath>
-    <OutputPath Condition="!Exists('$(KSPDEVDIR)\GameData\Kerbalism\')">obj\Kerbalism\</OutputPath>
     <WarningLevel>4</WarningLevel>
     <DefineConstants>
     </DefineConstants>
     <DebugType>none</DebugType>
     <Prefer32Bit>false</Prefer32Bit>
     <StartAction>Program</StartAction>
-    <StartProgram>$(KSPDevDir)\KSP_x64.exe</StartProgram>
-    <StartWorkingDirectory>$(KSPDEVDIR)</StartWorkingDirectory>
     <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
     <NoWarn>IDE0018</NoWarn>
-    <LangVersion>latest</LangVersion>
+    <LangVersion>7.1</LangVersion>
+    <Optimize>true</Optimize>
+    <!-- Default values. These will be overriden if the DevEnvConfig.xml file exists-->
+    <StartProgram>KSP_x64.exe</StartProgram>
+    <StartWorkingDirectory>..\</StartWorkingDirectory>
   </PropertyGroup>
+  <!-- /////////////////////////////////////////////////// -->
+  <!-- ///////// USER-DEFINED (DevEnvConfig.xml) ///////// -->
+  <!-- /////////////////////////////////////////////////// -->
+  <!-- this must be after the default configuration setups -->
+  <Choose>
+    <When Condition="Exists('..\..\buildscripts\DevEnvConfig.xml')">
+      <PropertyGroup>
+        <DefineConstants Condition="'$(Configuration)' == 'Debug'">TRACE;DEBUG;$(DebugDefineConstants);$(KSPDevVersion)</DefineConstants>
+        <StartProgram>$(KSPDevPath)\$(KSPDevExecutable)</StartProgram>
+        <StartWorkingDirectory>$(KSPDevPath)</StartWorkingDirectory>
+      </PropertyGroup>
+    </When>
+  </Choose>
+
+  <!-- ///////////////////////////////////////////////////// -->
+  <!-- //////////////////// REFERENCES ///////////////////// -->
+  <!-- ///////////////////////////////////////////////////// -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\KerbalismBootstrap\KerbalismBootstrap.csproj">
+      <Project>{D07330FA-DEA1-4190-963D-31F4C81E8C82}</Project>
+      <Name>KerbalismBootstrap</Name>
+    </ProjectReference>
+  </ItemGroup>
+  
   <ItemGroup>
     <Reference Include="System">
       <Private>False</Private>
@@ -88,42 +103,73 @@
     <Reference Include="System.Xml.Linq">
       <Private>False</Private>
     </Reference>
-    <Reference Include="0Harmony.dll">
-      <HintPath Condition="Exists('..\..\packages\Lib.Harmony.1.2.0.1\lib\net32\0Harmony.dll')">..\..\packages\Lib.Harmony.1.2.0.1\lib\net32\0Harmony.dll</HintPath>
-      <HintPath Condition="Exists('..\DLLs\0Harmony.dll')">..\DLLs\0Harmony.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Assembly-CSharp">
-      <HintPath Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-CSharp.dll')">$(KSPDevPath)\KSP_x64_Data\Managed\Assembly-CSharp.dll</HintPath>
-      <HintPath Condition="Exists('..\DLLs\Assembly-CSharp.dll')">..\DLLs\Assembly-CSharp.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Assembly-CSharp-firstpass">
-      <HintPath Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-CSharp-firstpass.dll')">$(KSPDevPath)\KSP_x64_Data\Managed\Assembly-CSharp-firstpass.dll</HintPath>
-      <HintPath Condition="Exists('..\DLLs\Assembly-CSharp-firstpass.dll')">..\DLLs\Assembly-CSharp-firstpass.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Assembly-UnityScript">
-      <HintPath Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-UnityScript.dll')">$(KSPDevPath)\KSP_x64_Data\Managed\Assembly-UnityScript.dll</HintPath>
-      <HintPath Condition="Exists('..\DLLs\Assembly-UnityScript.dll')">..\DLLs\Assembly-UnityScript.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Assembly-UnityScript-firstpass">
-      <HintPath Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-UnityScript-firstpass.dll')">$(KSPDevPath)\KSP_x64_Data\Managed\Assembly-UnityScript-firstpass.dll</HintPath>
-      <HintPath Condition="Exists('..\DLLs\Assembly-UnityScript-firstpass.dll')">..\DLLs\Assembly-UnityScript-firstpass.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="UnityEngine">
-      <HintPath Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\UnityEngine.dll')">$(KSPDevPath)\KSP_x64_Data\Managed\UnityEngine.dll</HintPath>
-      <HintPath Condition="Exists('..\DLLs\UnityEngine.dll')">..\DLLs\UnityEngine.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="UnityEngine.UI">
-      <HintPath Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\UnityEngine.UI.dll')">$(KSPDevPath)\KSP_x64_Data\Managed\UnityEngine.UI.dll</HintPath>
-      <HintPath Condition="Exists('..\DLLs\UnityEngine.UI.dll')">..\DLLs\UnityEngine.UI.dll</HintPath>
+    <Reference Include="Harmony">
+      <HintPath>..\..\GameData\Kerbalism\0Harmony.1.2.0.1.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
+
+  <Choose>
+    <When Condition="'$(Configuration)' == 'Debug' AND Exists('..\..\buildscripts\DevEnvConfig.xml')">
+      <ItemGroup>
+        <Reference Include="Assembly-CSharp">
+          <HintPath>$(KSPDevPath)\KSP_x64_Data\Managed\Assembly-CSharp.dll</HintPath>
+          <Private>False</Private>
+        </Reference>
+        <Reference Include="Assembly-CSharp-firstpass">
+          <HintPath>$(KSPDevPath)\KSP_x64_Data\Managed\Assembly-CSharp-firstpass.dll</HintPath>
+          <Private>False</Private>
+        </Reference>
+        <Reference Include="Assembly-UnityScript">
+          <HintPath>$(KSPDevPath)\KSP_x64_Data\Managed\Assembly-UnityScript.dll</HintPath>
+          <Private>False</Private>
+        </Reference>
+        <Reference Include="Assembly-UnityScript-firstpass">
+          <HintPath>$(KSPDevPath)\KSP_x64_Data\Managed\Assembly-UnityScript-firstpass.dll</HintPath>
+          <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine">
+          <HintPath>$(KSPDevPath)\KSP_x64_Data\Managed\UnityEngine.dll</HintPath>
+          <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.UI">
+          <HintPath>$(KSPDevPath)\KSP_x64_Data\Managed\UnityEngine.UI.dll</HintPath>
+          <Private>False</Private>
+        </Reference>
+      </ItemGroup>
+    </When>
+    <Otherwise>
+      <ItemGroup>
+        <Reference Include="Assembly-CSharp">
+          <HintPath>$(KerbalismBuildPath)\KSPReferenceDlls\Assembly-CSharp.dll</HintPath>
+          <Private>False</Private>
+        </Reference>
+        <Reference Include="Assembly-CSharp-firstpass">
+          <HintPath>$(KerbalismBuildPath)\KSPReferenceDlls\Assembly-CSharp-firstpass.dll</HintPath>
+          <Private>False</Private>
+        </Reference>
+        <Reference Include="Assembly-UnityScript">
+          <HintPath>$(KerbalismBuildPath)\KSPReferenceDlls\Assembly-UnityScript.dll</HintPath>
+          <Private>False</Private>
+        </Reference>
+        <Reference Include="Assembly-UnityScript-firstpass">
+          <HintPath>$(KerbalismBuildPath)\KSPReferenceDlls\Assembly-UnityScript-firstpass.dll</HintPath>
+          <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine">
+          <HintPath>$(KerbalismBuildPath)\KSPReferenceDlls\UnityEngine.dll</HintPath>
+          <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.UI">
+          <HintPath>$(KerbalismBuildPath)\KSPReferenceDlls\UnityEngine.UI.dll</HintPath>
+          <Private>False</Private>
+        </Reference>
+      </ItemGroup>
+    </Otherwise>
+  </Choose>
+  <!-- ///////////////////////////////////////////////////// -->
+  <!-- ///////////////////// COMPILES ////////////////////// -->
+  <!-- ///////////////////////////////////////////////////// -->
   <ItemGroup>
     <Compile Include="Automation\Computer.cs" />
     <Compile Include="Automation\Device.cs" />
@@ -254,46 +300,14 @@
     <Compile Include="Patches\VesselRecovery_OnVesselRecovered.cs" />
     <Compile Include="Database\ScienceLog.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <Analyzer Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-CSharp-firstpass.dll')" Include="$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-CSharp-firstpass.dll" />
-    <Analyzer Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-CSharp.dll')" Include="$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-CSharp.dll" />
-    <Analyzer Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-UnityScript.dll')" Include="$(KSPDEVDIR)\KSP_x64_Data\Managed\Assembly-UnityScript.dll" />
-    <Analyzer Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\UnityEngine.dll')" Include="$(KSPDEVDIR)\KSP_x64_Data\Managed\UnityEngine.dll" />
-    <Analyzer Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\UnityEngine.Networking.dll')" Include="$(KSPDEVDIR)\KSP_x64_Data\Managed\UnityEngine.Networking.dll" />
-    <Analyzer Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\UnityEngine.UI.dll')" Include="$(KSPDEVDIR)\KSP_x64_Data\Managed\UnityEngine.UI.dll" />
-    <Analyzer Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\UnityScript.Lang.dll')" Include="$(KSPDEVDIR)\KSP_x64_Data\Managed\UnityScript.Lang.dll" />
-    <Analyzer Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\Boo.Lang.dll')" Include="$(KSPDEVDIR)\KSP_x64_Data\Managed\Boo.Lang.dll" />
-    <Analyzer Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\KSPTrackIR.dll')" Include="$(KSPDEVDIR)\KSP_x64_Data\Managed\KSPTrackIR.dll" />
-    <Analyzer Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\KSPAssets.dll')" Include="$(KSPDEVDIR)\KSP_x64_Data\Managed\KSPAssets.dll" />
-    <Analyzer Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\Mono.Cecil.dll')" Include="$(KSPDEVDIR)\KSP_x64_Data\Managed\Mono.Cecil.dll" />
-    <Analyzer Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\Ionic.Zip.dll')" Include="$(KSPDEVDIR)\KSP_x64_Data\Managed\Ionic.Zip.dll" />
-    <Analyzer Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\TDx.TDxInput.dll')" Include="$(KSPDEVDIR)\KSP_x64_Data\Managed\TDx.TDxInput.dll" />
-    <Analyzer Condition="Exists('$(KSPDEVDIR)\KSP_x64_Data\Managed\RedShellSDK.dll')" Include="$(KSPDEVDIR)\KSP_x64_Data\Managed\RedShellSDK.dll" />
-    <Analyzer Condition="Exists('.\Assembly-CSharp-firstpass.dll')" Include=".\Assembly-CSharp-firstpass.dll" />
-    <Analyzer Condition="Exists('.\Assembly-CSharp.dll')" Include=".\Assembly-CSharp.dll" />
-    <Analyzer Condition="Exists('.\Assembly-UnityScript.dll')" Include=".\Assembly-UnityScript.dll" />
-    <Analyzer Condition="Exists('.\UnityEngine.dll')" Include=".\UnityEngine.dll" />
-    <Analyzer Condition="Exists('.\UnityEngine.Networking.dll')" Include=".\UnityEngine.Networking.dll" />
-    <Analyzer Condition="Exists('.\UnityEngine.UI.dll')" Include=".\UnityEngine.UI.dll" />
-    <Analyzer Condition="Exists('.\UnityScript.Lang.dll')" Include=".\UnityScript.Lang.dll" />
-    <Analyzer Condition="Exists('..\..\packages\Lib.Harmony.1.2.0.1\lib\net32\0Harmony.dll')" Include="..\..\packages\Lib.Harmony.1.2.0.1\lib\net32\0Harmony.dll" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\KerbalismBootstrap\KerbalismBootstrap.csproj">
-      <Project>{D07330FA-DEA1-4190-963D-31F4C81E8C82}</Project>
-      <Name>KerbalismBootstrap</Name>
-    </ProjectReference>
-  </ItemGroup>
+
+
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <Target Name="PostBuildMacros">
-    <GetAssemblyIdentity AssemblyFiles="$(TargetPath)">
-      <Output TaskParameter="Assemblies" ItemName="Targets" />
-    </GetAssemblyIdentity>
-    <ItemGroup>
-      <VersionNumber Include="@(Targets->'%(Version)')" />
-    </ItemGroup>
-  </Target>
-  <Target Name="BeforeBuild" Condition="$(Configuration)==Debug AND Exists('..\..\buildscripts\BuildDebug\DebugConfig.xml')">
+
+  <!-- ///////////////////////////////////////////////////// -->
+  <!-- /////////// DEBUG CONFIGURATION SCRIPTS ///////////// -->
+  <!-- ///////////////////////////////////////////////////// -->
+  <Target Name="BeforeBuild" Condition="$(Configuration)==Debug AND Exists('..\..\buildscripts\DevEnvConfig.xml')">
     <Message Text="DEBUG BUILD : PRE BUILD EVENT..." Importance="high" />
     <Message Text="Building for KSP version tag : $(KSPDevVersion)" Importance="high" />
     <Message Text="Cleaning build output folder..." Importance="high" />
@@ -302,11 +316,11 @@
   </Target>
   <!-- Debug post-build script -->
   <!-- Note that this also handle KerbalismBootstrap dll/mdb copying, as it is build at the same time because it's used as a reference  -->
-  <Target Name="AfterBuild" Condition="$(Configuration)==Debug AND Exists('..\..\buildscripts\BuildDebug\DebugConfig.xml')">
+  <Target Name="AfterBuild" Condition="$(Configuration)==Debug AND Exists('..\..\buildscripts\DevEnvConfig.xml')">
     <Message Text="DEBUG BUILD : POST BUILD EVENT BEGIN" Importance="high" />
     <!-- Get absolute paths for the output dirs -->
-    <ConvertToAbsolutePath Paths="$(KerbalismDebugPath)">
-      <Output TaskParameter="AbsolutePaths" PropertyName="KerbalismDebugPathAbs" />
+    <ConvertToAbsolutePath Paths="$(KerbalismBuildPath)">
+      <Output TaskParameter="AbsolutePaths" PropertyName="KerbalismBuildPathAbs" />
     </ConvertToAbsolutePath>
     <ConvertToAbsolutePath Paths="$(OutputPath)">
       <Output TaskParameter="AbsolutePaths" PropertyName="OutputPathAbs" />
@@ -315,17 +329,21 @@
     <Message Text="to your dev install : $(KSPDevPath)" Importance="high" />
     <PropertyGroup>
       <KerbalismDll>$(OutputPath)\Kerbalism.dll</KerbalismDll>
-      <KerbalismMDB>$(OutputPath)\Kerbalism.mdb</KerbalismMDB>
+      <KerbalismMDB>$(OutputPath)\Kerbalism.dll.mdb</KerbalismMDB>
       <KerbalismBootstrapDll>$(OutputPath)\KerbalismBootstrap.dll</KerbalismBootstrapDll>
-      <KerbalismBootstrapMDB>$(OutputPath)KerbalismBootstrap.mdb</KerbalismBootstrapMDB>
+      <KerbalismBootstrapMDB>$(OutputPath)KerbalismBootstrap.dll.mdb</KerbalismBootstrapMDB>
     </PropertyGroup>
     <!-- On windows, generate the mono debug symbols (*.mdb files) -->
+    <!-- 
+    Note : there is currently (08/2019) no solution to generate them on linux/osx. 
+    - Only "full" PDB files can be converted into MDB files.
+    - Mono 5+ can't generate "full" PDB files (it automatically change <DebugType>full</DebugType> to <DebugType>portable</DebugType>)
+    - The version of MSBuild (15.1) and of the compiler used by Mono 4.8 (last version able to generate MDB files) are just too old (no C# 7 support + too much breaking code)
+    -->
     <Message Condition="'$(OS)' == 'Windows_NT'" Text="(Windows build) Generating mono debug mdb files..." Importance="high" />
-    <Exec Condition="'$(OS)' == 'Windows_NT'" Command="$(KerbalismDebugPathAbs)\Utility\pdb2mdb.exe $(OutputPathAbs)Kerbalism.dll" />
-    <Exec Condition="'$(OS)' == 'Windows_NT'" Command="$(KerbalismDebugPathAbs)\Utility\pdb2mdb.exe $(OutputPathAbs)KerbalismBootstrap.dll" />
-    <Move Condition="'$(OS)' == 'Windows_NT'" SourceFiles="$(OutputPath)\Kerbalism.dll.mdb" DestinationFiles="$(KerbalismMDB)" />
-    <Move Condition="'$(OS)' == 'Windows_NT'" SourceFiles="$(OutputPath)\KerbalismBootstrap.dll.mdb" DestinationFiles="$(KerbalismBootstrapMDB)" />
-    <!-- If requested in DebugConfig.xml, copy gamedata -->
+    <Exec Condition="'$(OS)' == 'Windows_NT'" Command="$(KerbalismBuildPathAbs)\Utility\pdb2mdb.exe $(OutputPathAbs)Kerbalism.dll" />
+    <Exec Condition="'$(OS)' == 'Windows_NT'" Command="$(KerbalismBuildPathAbs)\Utility\pdb2mdb.exe $(OutputPathAbs)KerbalismBootstrap.dll" />
+    <!-- If requested in DevEnvConfig.xml, copy gamedata -->
     <ItemGroup>
       <GameDataContent Include="..\..\GameData\**\*.*" />
     </ItemGroup>
@@ -334,20 +352,38 @@
     <Copy Condition="'$(CopyGameDataOnBuild)' == 'true'" SourceFiles="@(GameDataContent)" DestinationFolder="$(KSPDevPath)\GameData\%(RecursiveDir)" />
     <!-- copy dll and mdb files -->
     <Message Text="Copying dll and mdb files..." Importance="high" />
-    <Copy SourceFiles="$(KerbalismDll);$(KerbalismMDB);$(KerbalismBootstrapDll);$(KerbalismBootstrapMDB)" DestinationFolder="$(KSPDevPath)\GameData\Kerbalism" />
+    <Copy Condition="'$(OS)' == 'Windows_NT'" SourceFiles="$(KerbalismMDB);$(KerbalismBootstrapMDB)" DestinationFolder="$(KSPDevPath)\GameData\Kerbalism" />
+    <Copy SourceFiles="$(KerbalismDll);$(KerbalismBootstrapDll)" DestinationFolder="$(KSPDevPath)\GameData\Kerbalism" />
     <!-- done -->
     <Message Text="DEBUG BUILD : POST BUILD EVENT END" Importance="high" />
   </Target>
-  <!--
-  <Choose>
-    <When Condition="Exists('..\..\buildscripts\BuildDebug\DebugConfig.xml')">
-      <Target Name="AfterBuild" Condition="$(Configuration)==Debug AND ">
 
-        <Exec Condition="'$(OS)' == 'Windows_NT'" Command="'..\..\buildscripts\BuildDebug\Utility\pdb2mdb.exe %TargetName%Bootstrap.dll'" />
-      </Target>
-    </When>
-  </Choose>
-  -->
+
+  <!-- ///////////////////////////////////////////////////// -->
+  <!-- ////////// RELEASE CONFIGURATION SCRIPTS //////////// -->
+  <!-- ///////////////////////////////////////////////////// -->
+<!--
+  <Import Condition="$(Configuration)==Release AND Exists('..\..\GameData\Kerbalism\KerbalismBootstrap.xml')" Project="..\..\GameData\Kerbalism\KerbalismBootstrap.xml" />
+  
+
+  <Target Name="BeforeBuild" Condition="$(Configuration)==Debug AND Exists('..\..\buildscripts\DevEnvConfig.xml')">
+    <Message Text="DEBUG BUILD : PRE BUILD EVENT..." Importance="high" />
+    <Message Text="Building for KSP version tag : $(KSPDevVersion)" Importance="high" />
+    <Message Text="Cleaning build output folder..." Importance="high" />
+    <RemoveDir Directories="$(OutputPath)" />
+    <Message Text="DEBUG BUILD : PRE BUILD EVENT END" Importance="high" />
+  </Target>
+
+
+
+  <Target Name="Demo">
+    <Message Text="Not batched: @(Files->'%(Identity)')"/>
+
+    <Message Text="========================================"/>
+
+    <Message Text="Batched: %(Files.Identity)"/>
+  </Target>
+-->
   <ProjectExtensions>
     <VisualStudio>
       <UserProperties __JSONSchema="https://gist.githubusercontent.com/janbrohl/c614d2b4a2aee805d93428a2cbc44df5/raw/fdfc6366cd9b1b4f512d2d25778d1ebf209358d6/ksp-avc.schema.json" />
