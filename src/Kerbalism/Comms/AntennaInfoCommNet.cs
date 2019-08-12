@@ -118,6 +118,7 @@ namespace KERBALISM
 
 			if (transmitterCount > 1)
 				antennaInfo.rate = Math.Pow(antennaInfo.rate, 1.0 / transmitterCount);
+
 			else if (transmitterCount == 0)
 				antennaInfo.rate = 0;
 
@@ -128,6 +129,12 @@ namespace KERBALISM
 			antennaInfo.ec += ec_transmitter;
 
 			Init();
+
+			if (antennaInfo.linked && transmitterCount > 0)
+			{
+				var bitsPerMB = 1024.0 * 1024.0 * 8.0;
+				antennaInfo.rate += Settings.DataRateMinimumBitsPerSecond / bitsPerMB;
+			}
 
 			return antennaInfo;
 		}
