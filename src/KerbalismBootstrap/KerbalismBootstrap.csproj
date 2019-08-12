@@ -3,7 +3,8 @@
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
 
   <Import Condition="Exists('..\..\buildscripts\BuildGlobals.xml')" Project="..\..\buildscripts\BuildGlobals.xml" />
-  <Import Condition="$(Configuration)==Release AND Exists('..\..\GameData\Kerbalism\KerbalismBootstrap.xml')" Project="..\..\GameData\Kerbalism\KerbalismBootstrap.xml" />
+  <Import Condition="Exists('..\..\buildscripts\DevEnvConfig.xml')" Project="..\..\buildscripts\DevEnvConfig.xml" />
+  <Import Condition="$(Configuration)==Release AND Exists('..\..\GameData\Kerbalism\VersionConfig.xml')" Project="..\..\GameData\Kerbalism\VersionConfig.xml" />
 
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -34,9 +35,6 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
-
-
-
   <Choose>
     <When Condition="'$(Configuration)' == 'Debug' AND Exists('..\..\buildscripts\DevEnvConfig.xml')">
       <ItemGroup>
@@ -55,6 +53,7 @@
         </Reference>
       </ItemGroup>
     </When>
+    
     <Otherwise>
       <ItemGroup>
         <Reference Include="System" />
@@ -82,8 +81,11 @@
     <Compile Include="Util.cs" />
   </ItemGroup>
   
+  <!-- use default build targets -->
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 
+  <!-- For release builds, we want to use the KSP dlls from the latest supported version -->
+  <!-- We extract them from the archive before building, so the Reference -> HintPath can find them-->
   <Target Name="BeforeBuild" Condition="$(Configuration)==Release">
          
     <FindInList CaseSensitive="false" List="@(KBinVersionConstant)" ItemSpecToFind="$(KBinMaxVersion)">

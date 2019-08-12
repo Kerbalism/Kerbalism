@@ -391,3 +391,4 @@ Kerbalism-Config*.zip
 /buildscripts/BuildDebug/Output
 /buildscripts/BuildRelease/Output
 /buildscripts/DevEnvConfig.xml
+/buildscripts/BuildRelease/KSPReferenceDlls

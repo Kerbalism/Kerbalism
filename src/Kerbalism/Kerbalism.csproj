@@ -25,7 +25,6 @@
     <SignAssembly>False</SignAssembly>
     <TargetFrameworkProfile />
   </PropertyGroup>
-
   <!-- /////////////////////////////////////////////////// -->
   <!-- //////////// DEBUG CONFIGURATION SETUP //////////// -->
   <!-- /////////////////////////////////////////////////// -->
@@ -35,16 +34,10 @@
     <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
     <DebugType>full</DebugType>
     <Prefer32Bit>false</Prefer32Bit>
-    <StartAction>Program</StartAction>
     <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
     <NoWarn>IDE0018</NoWarn>
     <LangVersion>7.1</LangVersion>
-    <!-- Default values. These will be overriden if the DevEnvConfig.xml file exists-->
-    <DefineConstants>TRACE;DEBUG;ENABLE_PROFILER;DEBUG_PROFILER;DEBUG_RESOURCES</DefineConstants>
-    <StartProgram>KSP_x64.exe</StartProgram>
-    <StartWorkingDirectory>..\</StartWorkingDirectory>
   </PropertyGroup>
-
   <!-- ///////////////////////////////////////////////////// -->
   <!-- //////////// RELEASE CONFIGURATION SETUP //////////// -->
   <!-- ///////////////////////////////////////////////////// -->
@@ -52,44 +45,22 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
     <WarningLevel>4</WarningLevel>
-    <DefineConstants>
-    </DefineConstants>
     <DebugType>none</DebugType>
     <Prefer32Bit>false</Prefer32Bit>
-    <StartAction>Program</StartAction>
     <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
     <NoWarn>IDE0018</NoWarn>
     <LangVersion>7.1</LangVersion>
     <Optimize>true</Optimize>
-    <!-- Default values. These will be overriden if the DevEnvConfig.xml file exists-->
-    <StartProgram>KSP_x64.exe</StartProgram>
-    <StartWorkingDirectory>..\</StartWorkingDirectory>
   </PropertyGroup>
-  <!-- /////////////////////////////////////////////////// -->
-  <!-- ///////// USER-DEFINED (DevEnvConfig.xml) ///////// -->
-  <!-- /////////////////////////////////////////////////// -->
-  <!-- this must be after the default configuration setups -->
-  <Choose>
-    <When Condition="Exists('..\..\buildscripts\DevEnvConfig.xml')">
-      <PropertyGroup>
-        <DefineConstants Condition="'$(Configuration)' == 'Debug'">TRACE;DEBUG;$(DebugDefineConstants);$(KSPDevVersion)</DefineConstants>
-        <StartProgram>$(KSPDevPath)\$(KSPDevExecutable)</StartProgram>
-        <StartWorkingDirectory>$(KSPDevPath)</StartWorkingDirectory>
-      </PropertyGroup>
-    </When>
-  </Choose>
-
   <!-- ///////////////////////////////////////////////////// -->
   <!-- //////////////////// REFERENCES ///////////////////// -->
   <!-- ///////////////////////////////////////////////////// -->
-
   <ItemGroup>
     <ProjectReference Include="..\KerbalismBootstrap\KerbalismBootstrap.csproj">
       <Project>{D07330FA-DEA1-4190-963D-31F4C81E8C82}</Project>
       <Name>KerbalismBootstrap</Name>
     </ProjectReference>
   </ItemGroup>
-  
   <ItemGroup>
     <Reference Include="System">
       <Private>False</Private>
@@ -108,7 +79,6 @@
       <Private>False</Private>
     </Reference>
   </ItemGroup>
-
   <Choose>
     <When Condition="'$(Configuration)' == 'Debug' AND Exists('..\..\buildscripts\DevEnvConfig.xml')">
       <ItemGroup>
@@ -300,90 +270,9 @@
     <Compile Include="Patches\VesselRecovery_OnVesselRecovered.cs" />
     <Compile Include="Database\ScienceLog.cs" />
   </ItemGroup>
-
-
+  
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 
-  <!-- ///////////////////////////////////////////////////// -->
-  <!-- /////////// DEBUG CONFIGURATION SCRIPTS ///////////// -->
-  <!-- ///////////////////////////////////////////////////// -->
-  <Target Name="BeforeBuild" Condition="$(Configuration)==Debug AND Exists('..\..\buildscripts\DevEnvConfig.xml')">
-    <Message Text="DEBUG BUILD : PRE BUILD EVENT..." Importance="high" />
-    <Message Text="Building for KSP version tag : $(KSPDevVersion)" Importance="high" />
-    <Message Text="Cleaning build output folder..." Importance="high" />
-    <RemoveDir Directories="$(OutputPath)" />
-    <Message Text="DEBUG BUILD : PRE BUILD EVENT END" Importance="high" />
-  </Target>
-  <!-- Debug post-build script -->
-  <!-- Note that this also handle KerbalismBootstrap dll/mdb copying, as it is build at the same time because it's used as a reference  -->
-  <Target Name="AfterBuild" Condition="$(Configuration)==Debug AND Exists('..\..\buildscripts\DevEnvConfig.xml')">
-    <Message Text="DEBUG BUILD : POST BUILD EVENT BEGIN" Importance="high" />
-    <!-- Get absolute paths for the output dirs -->
-    <ConvertToAbsolutePath Paths="$(KerbalismBuildPath)">
-      <Output TaskParameter="AbsolutePaths" PropertyName="KerbalismBuildPathAbs" />
-    </ConvertToAbsolutePath>
-    <ConvertToAbsolutePath Paths="$(OutputPath)">
-      <Output TaskParameter="AbsolutePaths" PropertyName="OutputPathAbs" />
-    </ConvertToAbsolutePath>
-    <Message Text="This will move the build from : $(OutputPathAbs)" Importance="high" />
-    <Message Text="to your dev install : $(KSPDevPath)" Importance="high" />
-    <PropertyGroup>
-      <KerbalismDll>$(OutputPath)\Kerbalism.dll</KerbalismDll>
-      <KerbalismMDB>$(OutputPath)\Kerbalism.dll.mdb</KerbalismMDB>
-      <KerbalismBootstrapDll>$(OutputPath)\KerbalismBootstrap.dll</KerbalismBootstrapDll>
-      <KerbalismBootstrapMDB>$(OutputPath)KerbalismBootstrap.dll.mdb</KerbalismBootstrapMDB>
-    </PropertyGroup>
-    <!-- On windows, generate the mono debug symbols (*.mdb files) -->
-    <!-- 
-    Note : there is currently (08/2019) no solution to generate them on linux/osx. 
-    - Only "full" PDB files can be converted into MDB files.
-    - Mono 5+ can't generate "full" PDB files (it automatically change <DebugType>full</DebugType> to <DebugType>portable</DebugType>)
-    - The version of MSBuild (15.1) and of the compiler used by Mono 4.8 (last version able to generate MDB files) are just too old (no C# 7 support + too much breaking code)
-    -->
-    <Message Condition="'$(OS)' == 'Windows_NT'" Text="(Windows build) Generating mono debug mdb files..." Importance="high" />
-    <Exec Condition="'$(OS)' == 'Windows_NT'" Command="$(KerbalismBuildPathAbs)\Utility\pdb2mdb.exe $(OutputPathAbs)Kerbalism.dll" />
-    <Exec Condition="'$(OS)' == 'Windows_NT'" Command="$(KerbalismBuildPathAbs)\Utility\pdb2mdb.exe $(OutputPathAbs)KerbalismBootstrap.dll" />
-    <!-- If requested in DevEnvConfig.xml, copy gamedata -->
-    <ItemGroup>
-      <GameDataContent Include="..\..\GameData\**\*.*" />
-    </ItemGroup>
-    <Message Condition="'$(CopyGameDataOnBuild)' == 'true'" Text="Copying GameData..." Importance="high" />
-    <RemoveDir Condition="'$(CopyGameDataOnBuild)' == 'true'" Directories="$(KSPDevPath)\GameData\Kerbalism;$(KSPDevPath)\GameData\KerbalismConfig" />
-    <Copy Condition="'$(CopyGameDataOnBuild)' == 'true'" SourceFiles="@(GameDataContent)" DestinationFolder="$(KSPDevPath)\GameData\%(RecursiveDir)" />
-    <!-- copy dll and mdb files -->
-    <Message Text="Copying dll and mdb files..." Importance="high" />
-    <Copy Condition="'$(OS)' == 'Windows_NT'" SourceFiles="$(KerbalismMDB);$(KerbalismBootstrapMDB)" DestinationFolder="$(KSPDevPath)\GameData\Kerbalism" />
-    <Copy SourceFiles="$(KerbalismDll);$(KerbalismBootstrapDll)" DestinationFolder="$(KSPDevPath)\GameData\Kerbalism" />
-    <!-- done -->
-    <Message Text="DEBUG BUILD : POST BUILD EVENT END" Importance="high" />
-  </Target>
-
-
-  <!-- ///////////////////////////////////////////////////// -->
-  <!-- ////////// RELEASE CONFIGURATION SCRIPTS //////////// -->
-  <!-- ///////////////////////////////////////////////////// -->
-<!--
-  <Import Condition="$(Configuration)==Release AND Exists('..\..\GameData\Kerbalism\KerbalismBootstrap.xml')" Project="..\..\GameData\Kerbalism\KerbalismBootstrap.xml" />
-  
-
-  <Target Name="BeforeBuild" Condition="$(Configuration)==Debug AND Exists('..\..\buildscripts\DevEnvConfig.xml')">
-    <Message Text="DEBUG BUILD : PRE BUILD EVENT..." Importance="high" />
-    <Message Text="Building for KSP version tag : $(KSPDevVersion)" Importance="high" />
-    <Message Text="Cleaning build output folder..." Importance="high" />
-    <RemoveDir Directories="$(OutputPath)" />
-    <Message Text="DEBUG BUILD : PRE BUILD EVENT END" Importance="high" />
-  </Target>
-
-
-
-  <Target Name="Demo">
-    <Message Text="Not batched: @(Files->'%(Identity)')"/>
-
-    <Message Text="========================================"/>
-
-    <Message Text="Batched: %(Files.Identity)"/>
-  </Target>
--->
   <ProjectExtensions>
     <VisualStudio>
       <UserProperties __JSONSchema="https://gist.githubusercontent.com/janbrohl/c614d2b4a2aee805d93428a2cbc44df5/raw/fdfc6366cd9b1b4f512d2d25778d1ebf209358d6/ksp-avc.schema.json" />
