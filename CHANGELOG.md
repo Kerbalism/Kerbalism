@@ -40,6 +40,7 @@
 * Support configs for SSTU, require SSTU version 0.11.49.161 min (Got, Steamp0rt, Arthur)
 * Better handling of multiple hard drives in one part (#479) (Sir Mortimer)
 * Fixed gravity ring disappearing with Community Category Kit (CoriW)
+* Broken antennas / data transmitters will no longer transmit data (Sir Mortimer)
 
 ## v3.0.2 for all versions of KSP from 1.4.0 to 1.7.x
 
