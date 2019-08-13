@@ -181,6 +181,10 @@ namespace KERBALISM
 			return transmitters;
 		}
 
+
+		private static string lastTestedId;
+
+
 		protected virtual void Init()
 		{
 			if(!antennaInfo.powered || v.connection == null)
@@ -209,8 +213,21 @@ namespace KERBALISM
 				if (antennaInfo.status != (int)LinkStatus.direct_link)
 				{
 					Vessel firstHop = Lib.CommNodeToVessel(v.Connection.ControlPath.First.end);
-					// Get rate from the firstHop, each Hop will do the same logic, then we will have the min rate for whole path
-					antennaInfo.rate = Math.Min(Cache.VesselInfo(FlightGlobals.FindVessel(firstHop.id)).connection.rate, antennaInfo.rate);
+					string thisTestedId = FlightGlobals.FindVessel(firstHop.id).ToString();
+
+					// Prevent the recursion loop
+					if (lastTestedId == thisTestedId)
+					{
+						antennaInfo.rate = 0;
+					}
+					else
+					{ 
+						lastTestedId = thisTestedId;
+						// Get rate from the firstHop, each Hop will do the same logic, then we will have the min rate for whole path
+						antennaInfo.rate = Math.Min(Cache.VesselInfo(FlightGlobals.FindVessel(firstHop.id)).connection.rate, antennaInfo.rate);
+
+					}
+					
 				}
 			}
 			// is loss of connection due to plasma blackout
