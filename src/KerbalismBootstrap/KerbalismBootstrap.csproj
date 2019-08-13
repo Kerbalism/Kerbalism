@@ -1,11 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
-
-  <Import Condition="Exists('..\..\buildscripts\BuildGlobals.xml')" Project="..\..\buildscripts\BuildGlobals.xml" />
-  <Import Condition="Exists('..\..\buildscripts\DevEnvConfig.xml')" Project="..\..\buildscripts\DevEnvConfig.xml" />
+  
+  <Import Condition="Exists('..\..\buildsystem\MSBuildSystem.xml')" Project="..\..\buildsystem\MSBuildSystem.xml" />
+  <Import Condition="Exists('..\..\buildsystem\DevEnvConfig.xml')" Project="..\..\buildsystem\DevEnvConfig.xml" />
   <Import Condition="$(Configuration)==Release AND Exists('..\..\GameData\Kerbalism\VersionConfig.xml')" Project="..\..\GameData\Kerbalism\VersionConfig.xml" />
-
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -34,9 +32,8 @@
     <WarningLevel>4</WarningLevel>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
-
   <Choose>
-    <When Condition="'$(Configuration)' == 'Debug' AND Exists('..\..\buildscripts\DevEnvConfig.xml')">
+    <When Condition="'$(Configuration)' == 'Debug' AND Exists('..\..\buildsystem\DevEnvConfig.xml')">
       <ItemGroup>
         <Reference Include="System" />
         <Reference Include="Assembly-CSharp">
@@ -53,50 +50,39 @@
         </Reference>
       </ItemGroup>
     </When>
-    
     <Otherwise>
       <ItemGroup>
         <Reference Include="System" />
         <Reference Include="Assembly-CSharp">
-          <HintPath>$(KerbalismBuildPath)\KSPReferenceDlls\Assembly-CSharp.dll</HintPath>
+          <HintPath>$(KSPReferenceDllsPath)\Assembly-CSharp.dll</HintPath>
           <Private>False</Private>
         </Reference>
         <Reference Include="Assembly-CSharp-firstpass">
-          <HintPath>$(KerbalismBuildPath)\KSPReferenceDlls\Assembly-CSharp-firstpass.dll</HintPath>
+          <HintPath>$(KSPReferenceDllsPath)\Assembly-CSharp-firstpass.dll</HintPath>
           <Private>False</Private>
         </Reference>
         <Reference Include="UnityEngine">
-          <HintPath>$(KerbalismBuildPath)\KSPReferenceDlls\UnityEngine.dll</HintPath>
+          <HintPath>$(KSPReferenceDllsPath)\UnityEngine.dll</HintPath>
           <Private>False</Private>
         </Reference>
       </ItemGroup>
     </Otherwise>
   </Choose>
-  
-  
   <ItemGroup>
-    <Compile Include="AddonLoaderWrapper.cs" />
     <Compile Include="Bootstrap.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Util.cs" />
   </ItemGroup>
-  
+  <ItemGroup>
+    <Reference Include="System.Xml" />
+  </ItemGroup>
   <!-- use default build targets -->
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-
   <!-- For release builds, we want to use the KSP dlls from the latest supported version -->
   <!-- We extract them from the archive before building, so the Reference -> HintPath can find them-->
   <Target Name="BeforeBuild" Condition="$(Configuration)==Release">
-         
     <FindInList CaseSensitive="false" List="@(KBinVersionConstant)" ItemSpecToFind="$(KBinMaxVersion)">
-      <Output TaskParameter="ItemFound" ItemName="MaxKSPVersion"/>
+      <Output TaskParameter="ItemFound" ItemName="MaxKSPVersion" />
     </FindInList>
-
-    <MSBuild
-      Projects="KerbalismBootstrap.csproj"
-      Properties="KSPVersion=%(MaxKSPVersion.KSPBuildVersion)"
-      Targets="ExtractKSPDlls"/>
-
+    <MSBuild Projects="KerbalismBootstrap.csproj" Properties="KSPVersion=%(MaxKSPVersion.KSPBuildVersion)" Targets="ExtractKSPDlls" />
   </Target>
-
 </Project>

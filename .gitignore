@@ -387,8 +387,9 @@ src/DLLs
 KSP-*.7z
 Kerbalism-Core*.zip
 Kerbalism-Config*.zip
-/buildscripts/MakeRelease/Output
-/buildscripts/BuildDebug/Output
-/buildscripts/BuildRelease/Output
-/buildscripts/DevEnvConfig.xml
-/buildscripts/BuildRelease/KSPReferenceDlls
+
+/buildsystem/DeploymentOutput
+/buildsystem/BinariesDebug
+/buildsystem/BinariesRelease
+/buildsystem/References/KSPReferenceDlls
+/buildsystem/DevEnvConfig.xml

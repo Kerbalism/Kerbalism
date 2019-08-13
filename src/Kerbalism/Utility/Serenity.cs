@@ -1,14 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Reflection;
-using System.Text;
-using UnityEngine;
-using CommNet;
-using KSP.Localization;
-
-#if !KSP170 && !KSP16 && !KSP15 && !KSP14
+﻿#if !KSP15_16 && !KSP14
 using Expansions.Serenity.DeployedScience.Runtime;
 
 namespace KERBALISM
@@ -51,6 +41,9 @@ namespace KERBALISM
 
 		internal static ModuleGroundExpControl GetModuleGroundExpControl(Vessel v)
 		{
+			if (!Kerbalism.SerenityEnabled)
+				return null;
+
 			if (v.loaded)
 			{
 				if (v.parts.Count > 1)

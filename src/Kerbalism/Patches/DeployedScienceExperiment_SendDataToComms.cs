@@ -1,9 +1,6 @@
-#if !KSP170 && !KSP16 && !KSP15 && !KSP14
-using System;
-using System.Reflection;
+#if !KSP15_16 && !KSP14
 using System.Collections.Generic;
 using Harmony;
-using Harmony.ILCopying;
 using Expansions.Serenity.DeployedScience.Runtime;
 
 namespace KERBALISM

@@ -1,14 +1,14 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <!-- 
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   -->
   
   <!-- Create this file and adjust the values according to your KSP dev environment -->
   <!-- There is a "DevEnvConfig.xml.example" file that you can copy -->
-  <Import Condition="Exists('..\..\buildscripts\DevEnvConfig.xml')" Project="..\..\buildscripts\DevEnvConfig.xml" />
-  <Import Condition="Exists('..\..\buildscripts\BuildGlobals.xml')" Project="..\..\buildscripts\BuildGlobals.xml" />
+  <Import Condition="Exists('..\..\buildsystem\MSBuildSystem.xml')" Project="..\..\buildsystem\MSBuildSystem.xml" />
   <Import Condition="Exists('..\..\GameData\Kerbalism\VersionConfig.xml')" Project="..\..\GameData\Kerbalism\VersionConfig.xml" />
+  <Import Condition="Exists('..\..\buildsystem\DevEnvConfig.xml')" Project="..\..\buildsystem\DevEnvConfig.xml" />
   
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -57,11 +57,11 @@
   </PropertyGroup>
 
   <!-- /////////////////////////////////////////////////// -->
-  <!-- ///////// USER-DEFINED (DevEnvConfig.xml) ///////// -->
+  <!-- //// USER-DEFINED OVERRIDES (DevEnvConfig.xml) //// -->
   <!-- /////////////////////////////////////////////////// -->
   <!-- this must be after the default configuration setups -->
   <Choose>
-    <When Condition="Exists('..\..\buildscripts\DevEnvConfig.xml')">
+    <When Condition="Exists('..\..\buildsystem\DevEnvConfig.xml')">
       <PropertyGroup>
         <DefineConstants Condition="'$(Configuration)' == 'Debug'">TRACE;DEBUG;$(DebugDefineConstants);$(KSPDevVersion)</DefineConstants>
         <StartProgram>$(KSPDevPath)\$(KSPDevExecutable)</StartProgram>
@@ -70,6 +70,9 @@
     </When>
   </Choose>
 
+  <!-- /////////////////////////////////////////////////// -->
+  <!-- ///////////// DEFAULT BUILD TARGET //////////////// -->
+  <!-- /////////////////////////////////////////////////// -->
   <Target Name="Build">
     <MSBuild
       Condition="$(Configuration)==Release"
@@ -80,132 +83,5 @@
       Condition="$(Configuration)==Debug"
       Projects="KerbalismBuild.csproj"
       Targets="BuildDebug"/>
-  </Target>
-  
-  <!-- /////////////////////////////////////////////////// -->
-  <!-- /////// RELEASE CONFIGURATION BUILD SCRIPT //////// -->
-  <!-- /////////////////////////////////////////////////// -->
-
-
-  <Target Name="BuildRelease" Condition="Exists('..\..\GameData\Kerbalism\VersionConfig.xml')">
-
-    <Message Text="[KERBALISM-BUILD-RELEASE] Initiating RELEASE build..." Importance="high" />
-    <Message Text="[KERBALISM-BUILD-RELEASE] Building KerbalismBootstrap..." Importance="high" />
-    <!-- KerbalismBootstrap need to be built first, it's a dependency of Kerbalism -->
-    <MSBuild
-      Projects="../KerbalismBootstrap/KerbalismBootstrap.csproj"
-      Properties="Configuration=Release"/>
-
-    <!-- calling a build for each KBinVersionConstant item in GameData\Kerbalism\VersionConfig.xml -->
-    <Message Text="[KERBALISM-BUILD-RELEASE] Building all kbins..." Importance="high" />
-    <MSBuild 
-      Projects="KerbalismBuild.csproj"
-      Properties="KBinVersionConstant=%(KBinVersionConstant.Identity);KSPBuildVersion=%(KBinVersionConstant.KSPBuildVersion)"
-      Targets="KBinGenerator"/>
-
-    <Message Text="[KERBALISM-BUILD-RELEASE] Cleaning output folder..." Importance="high" />
-    <RemoveDir Directories="$(IntermediateOutputPath)\" />
-
-    <Message Text="[KERBALISM-BUILD-RELEASE] Kerbalism RELEASE build generated in $(OutputPath)" Importance="high" />
-     
-  </Target>
-
-  <!-- This is the actual release build process for each kbin-->
-  <Target Name="KBinGenerator">
-
-    <PropertyGroup>
-      <KBinOutputPath>$(OutputPath)/$(KBinVersionConstant)</KBinOutputPath>
-      <KBinConstant>KSP$(KBinVersionConstant)</KBinConstant>
-      <KBinFileName>Kerbalism$(KBinVersionConstant).kbin</KBinFileName>
-    </PropertyGroup>
-
-    <Message Text="[KERBALISM-BUILD-RELEASE] Generating '$(KBinFileName)' using KSP $(KSPBuildVersion) dlls..." Importance="high" />
-    <!-- KerbalismBootstrap is a reference for Kerbalism, we need it in the output folder -->
-    <Copy SourceFiles="$(OutputPath)\KerbalismBootstrap.dll" DestinationFolder="$(KBinOutputPath)" />
-
-    <!-- The ExtractKSPDlls target is defined in BuildGlobals.xml, it will extract the KSP dlls from their archive for the specified version -->
-    <!-- We use the MSBuild task to call the target because we need to pass the version argument. the "Projects" used doesn't matter -->
-    <Message Text="[KERBALISM-BUILD-RELEASE] Extracting KSP $(KSPBuildVersion) dlls..." Importance="high" />
-    <MSBuild
-      Projects="KerbalismBuild.csproj"
-      Properties="KSPVersion=$(KSPBuildVersion)"
-      Targets="ExtractKSPDlls"/>
-
-    <!-- Now call MSBuild to actually build the Kerbalism project, in a sub-folder named after the passed version constant-->
-    <Message Text="[KERBALISM-BUILD-RELEASE] Building kerbalism project with the '$(KBinConstant)' constant..." Importance="high" />
-    <MSBuild
-      Projects="../Kerbalism/Kerbalism.csproj"
-      Properties="Configuration=Release;DefineConstants=$(KBinConstant);OutputPath=$(KBinOutputPath)"
-      />
-    <!-- Move and rename the Kerbalism.dll to the base output folder -->
-    <Move SourceFiles="$(KBinOutputPath)\Kerbalism.dll" DestinationFiles="$(OutputPath)\$(KBinFileName)" />
-    <Message Text="[KERBALISM-BUILD-RELEASE] Cleaning temporary files..." Importance="high" />
-
-    <!-- Delete the sub-folder named after the passed version constant -->
-    <RemoveDir Directories="$(KBinOutputPath)" />
-
-    <Message Text="[KERBALISM-BUILD-RELEASE] '$(KBinFileName)' generated." Importance="high" />
-  </Target>
-
-  <!-- ///////////////////////////////////////////////////// -->
-  <!-- /////////// DEBUG CONFIGURATION SCRIPTS ///////////// -->
-  <!-- ///////////////////////////////////////////////////// -->
-
-  <Target Name="BuildDebug" Condition="Exists('..\..\buildscripts\DevEnvConfig.xml')">
-    
-    <Message Text="[KERBALISM-BUILD-DEBUG] Building for KSP version tag : $(KSPDevVersion)" Importance="high" />
-    <Message Text="[KERBALISM-BUILD-DEBUG] Cleaning build output folder..." Importance="high" />
-    <RemoveDir Directories="$(OutputPath)" />
-
-    <Message Text="[KERBALISM-BUILD-DEBUG] Building KerbalismBootstrap..." Importance="high" />
-    <!-- KerbalismBootstrap need to be built first, it's a dependency of Kerbalism -->
-    <MSBuild
-      Projects="../KerbalismBootstrap/KerbalismBootstrap.csproj"
-      Properties="Configuration=Debug"/>
-    
-    <Message Text="[KERBALISM-BUILD-DEBUG] Building using constants '$(DefineConstants)'" Importance="high" />
-    <MSBuild
-      Projects="../Kerbalism/Kerbalism.csproj"
-      Properties="Configuration=Debug;DefineConstants=$(DefineConstants);OutputPath=$(OutputPath)"
-      />
-    <Message Text="[KERBALISM-BUILD-DEBUG] Build completed, output folder : $(OutputPath)" Importance="high" />
-    
-    <!-- Get absolute paths for the output dirs -->
-    <ConvertToAbsolutePath Paths="$(KerbalismBuildPath)">
-      <Output TaskParameter="AbsolutePaths" PropertyName="KerbalismBuildPathAbs" />
-    </ConvertToAbsolutePath>
-    <ConvertToAbsolutePath Paths="$(OutputPath)">
-      <Output TaskParameter="AbsolutePaths" PropertyName="OutputPathAbs" />
-    </ConvertToAbsolutePath>
-    <PropertyGroup>
-      <KerbalismDll>$(OutputPath)\Kerbalism.dll</KerbalismDll>
-      <KerbalismMDB>$(OutputPath)\Kerbalism.dll.mdb</KerbalismMDB>
-      <KerbalismBootstrapDll>$(OutputPath)\KerbalismBootstrap.dll</KerbalismBootstrapDll>
-      <KerbalismBootstrapMDB>$(OutputPath)\KerbalismBootstrap.dll.mdb</KerbalismBootstrapMDB>
-    </PropertyGroup>
-    <!-- On windows, generate the mono debug symbols (*.mdb files) -->
-    <!-- 
-    Note : there is currently (08/2019) no solution to generate them on linux/osx. 
-    - Only "full" PDB files can be converted into MDB files.
-    - Mono 5+ can't generate "full" PDB files (it automatically change <DebugType>full</DebugType> to <DebugType>portable</DebugType>)
-    - The version of MSBuild (15.1) and of the compiler used by Mono 4.8 (last version able to generate MDB files) are just too old (no C# 7 support + too much breaking code)
-    -->
-    <Message Condition="'$(OS)' == 'Windows_NT'" Text="[KERBALISM-BUILD-DEBUG] Windows build : generating mono debug mdb files..." Importance="high" />
-    <Exec Condition="'$(OS)' == 'Windows_NT'" Command="$(KerbalismBuildPathAbs)\Utility\pdb2mdb.exe $(OutputPathAbs)\Kerbalism.dll" />
-    <Exec Condition="'$(OS)' == 'Windows_NT'" Command="$(KerbalismBuildPathAbs)\Utility\pdb2mdb.exe $(OutputPathAbs)\KerbalismBootstrap.dll" />
-    
-    <!-- If requested in DevEnvConfig.xml, copy gamedata -->
-    <ItemGroup>
-      <GameDataContent Include="..\..\GameData\**\*.*" />
-    </ItemGroup>
-    <Message Condition="'$(CopyGameDataOnBuild)' == 'true'" Text="[KERBALISM-BUILD-DEBUG] Copying GameData to $(KSPDevPath)..." Importance="high" />
-    <RemoveDir Condition="'$(CopyGameDataOnBuild)' == 'true'" Directories="$(KSPDevPath)\GameData\Kerbalism;$(KSPDevPath)\GameData\KerbalismConfig" />
-    <Copy Condition="'$(CopyGameDataOnBuild)' == 'true'" SourceFiles="@(GameDataContent)" DestinationFolder="$(KSPDevPath)\GameData\%(RecursiveDir)" />
-    <!-- copy dll and mdb files -->
-    <Message Text="[KERBALISM-BUILD-DEBUG] Copying build dlls to $(KSPDevPath)\GameData\Kerbalism..." Importance="high" />
-    <Copy Condition="'$(OS)' == 'Windows_NT'" SourceFiles="$(KerbalismMDB);$(KerbalismBootstrapMDB)" DestinationFolder="$(KSPDevPath)\GameData\Kerbalism" />
-    <Copy SourceFiles="$(KerbalismDll);$(KerbalismBootstrapDll)" DestinationFolder="$(KSPDevPath)\GameData\Kerbalism" />
-    <!-- done -->
-    <Message Text="[KERBALISM-BUILD-DEBUG] : Kerbalism DEBUG build generated." Importance="high" />
   </Target>
 </Project>

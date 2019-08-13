@@ -13,16 +13,16 @@
 			<KSPMinMinor>7</KSPMinMinor>
 			<KSPMinBuild>0</KSPMinBuild>
 			<KSPMaxMajor>1</KSPMaxMajor>
-			<KSPMaxMaxor>7</KSPMaxMaxor>
+			<KSPMaxMinor>7</KSPMaxMinor>
 			<KSPMaxBuild>99</KSPMaxBuild>
 			<KSPBuildVersion>1.7.3</KSPBuildVersion>
 		</KBinVersionConstant>
-		<KBinVersionConstant Include="16">
+		<KBinVersionConstant Include="15_16">
 			<KSPMinMajor>1</KSPMinMajor>
 			<KSPMinMinor>5</KSPMinMinor>
 			<KSPMinBuild>0</KSPMinBuild>
 			<KSPMaxMajor>1</KSPMaxMajor>
-			<KSPMaxMaxor>6</KSPMaxMaxor>
+      <KSPMaxMinor>6</KSPMaxMinor>
 			<KSPMaxBuild>1</KSPMaxBuild>
 			<KSPBuildVersion>1.6.1</KSPBuildVersion>
 		</KBinVersionConstant>
@@ -31,7 +31,7 @@
 			<KSPMinMinor>4</KSPMinMinor>
 			<KSPMinBuild>0</KSPMinBuild>
 			<KSPMaxMajor>1</KSPMaxMajor>
-			<KSPMaxMaxor>4</KSPMaxMaxor>
+      <KSPMaxMinor>4</KSPMaxMinor>
 			<KSPMaxBuild>5</KSPMaxBuild>
 			<KSPBuildVersion>1.4.5</KSPBuildVersion>
 		</KBinVersionConstant>

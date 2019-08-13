@@ -78,13 +78,11 @@ namespace KERBALISM
 			if (ai.strength > -1)
 				return ai;
 
-#if !KSP170 && !KSP16 && !KSP15 && !KSP14
-			// Serenity
+#if !KSP15_16 && !KSP14
 			var cluster = Serenity.GetScienceCluster(v);
 			if (cluster != null)
 				return new AntennaInfoSerenity(v, cluster, storm, ai.transmitting).AntennaInfo();
 #endif
-
 			// if CommNet is enabled
 			if (HighLogic.fetch.currentGame.Parameters.Difficulty.EnableCommNet)
 				return new AntennaInfoCommNet(v, powered, storm, ai.transmitting).AntennaInfo();

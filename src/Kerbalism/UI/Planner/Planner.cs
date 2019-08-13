@@ -76,6 +76,13 @@ namespace KERBALISM.Planner
 			{
 				alignment = TextAnchor.MiddleCenter
 			};
+
+			// debug header style
+			devbuild_style = new GUIStyle();
+			devbuild_style.normal.textColor = Color.white;
+			devbuild_style.stretchHeight = true;
+			devbuild_style.fontSize = Styles.ScaleInteger(12);
+			devbuild_style.alignment = TextAnchor.MiddleCenter;
 		}
 		#endregion
 
@@ -167,7 +174,11 @@ namespace KERBALISM.Planner
 		{
 			if (EditorLogic.RootPart != null)
 			{
+#if DEVBUILD
+				return Styles.ScaleFloat(45.0f) + panel.Height(); // Dev build info + header + ui content
+#else
 				return Styles.ScaleFloat(30.0f) + panel.Height(); // header + ui content
+#endif
 			}
 			else
 			{
@@ -181,6 +192,12 @@ namespace KERBALISM.Planner
 			// if there is something in the editor
 			if (EditorLogic.RootPart != null)
 			{
+#if DEVBUILD
+				GUILayout.BeginHorizontal(Styles.title_container);
+				GUILayout.Label(new GUIContent("KERBALISM DEV BUILD " + Lib.KerbalismDevBuild), devbuild_style);
+				GUILayout.EndHorizontal();
+#endif
+
 				// start header
 				GUILayout.BeginHorizontal(Styles.title_container);
 
@@ -553,14 +570,15 @@ namespace KERBALISM.Planner
 			p.AddContent("humidity", moist_status, moist_tooltip);
 			p.AddContent("pressurization", atmo_status, atmo_tooltip);
 		}
-		#endregion
+#endregion
 
-		#region FIELDS_PROPERTIES
+#region FIELDS_PROPERTIES
 		// store situations and altitude multipliers
 		private static readonly string[] situations = { "Landed", "Low Orbit", "Orbit", "High Orbit" };
 		private static readonly double[] altitude_mults = { 0.0, 0.33, 1.0, 3.0 };
 
 		// styles
+		private static GUIStyle devbuild_style;
 		private static GUIStyle leftmenu_style;
 		private static GUIStyle rightmenu_style;
 		private static GUIStyle quote_style;
@@ -592,7 +610,7 @@ namespace KERBALISM.Planner
 		private static Panel panel = new Panel();
 		private static bool update = false;
 		private static int update_counter = 0;
-		#endregion
+#endregion
 	}
 
 
