@@ -261,7 +261,7 @@ namespace KERBALISM
 			// determine if this is a sample (non-transmissible)
 			// - if this is a third-party data container/experiment module, we assume it is transmissible
 			// - stock experiment modules are considered sample if xmit scalar is below a threshold instead
-			is_sample = experiment != null && experiment.xmitDataScalar < 0.666f;
+			is_sample = experiment != null && experiment.xmitDataScalar < 0.001f;
 
 			// determine if the container/experiment can collect the data multiple times
 			// - if this is a third-party data container/experiment, we assume it can collect multiple times
