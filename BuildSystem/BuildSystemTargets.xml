@@ -421,12 +421,21 @@
 
     <!--Get commit hash of the last dev build in this branch that we made from this task, by searching the commit text for our specific format -->
     <PropertyGroup>
-      <GitCommand Condition="'$(OS)' == 'Windows_NT'">git --no-pager log origin/$(CurrentGitBranch) --grep=&quot;$(LastVersionCommitGrep)&quot; -n 1 --format=&quot;%25%25H&quot;</GitCommand>
-      <GitCommand Condition="'$(OS)' != 'Windows_NT'">git --no-pager log origin/$(CurrentGitBranch) --grep=&quot;$(LastVersionCommitGrep)&quot; -n 1 --format=&quot;%25H&quot;</GitCommand>
+      <GitLogCommand Condition="'$(OS)' == 'Windows_NT'">git --no-pager log origin/$(CurrentGitBranch) --grep=&quot;$(LastVersionCommitGrep)&quot; -n 1 --format=&quot;%25%25H&quot;</GitLogCommand>
+      <GitLogCommand Condition="'$(OS)' != 'Windows_NT'">git --no-pager log origin/$(CurrentGitBranch) --grep=&quot;$(LastVersionCommitGrep)&quot; -n 1 --format=&quot;%25H&quot;</GitLogCommand>
+  </PropertyGroup>
+
+    <Exec Command="$(GitLogCommand)" ConsoleToMSBuild="true" StandardOutputImportance="normal">
+      <Output TaskParameter="ConsoleOutput" PropertyName="LastDevCommitHash" />
+    </Exec>
+
+    <PropertyGroup>
+      <GitShowCommand Condition="'$(OS)' == 'Windows_NT'">git --no-pager show $(LastDevCommitHash) --format=&quot;%25%25s&quot;</GitShowCommand>
+      <GitShowCommand Condition="'$(OS)' != 'Windows_NT'">git --no-pager show $(LastDevCommitHash) --format=&quot;%25s&quot;</GitShowCommand>
     </PropertyGroup>
 
-    <Exec Command="$(GitCommand)" ConsoleToMSBuild="true" StandardOutputImportance="normal">
-      <Output TaskParameter="ConsoleOutput" PropertyName="LastDevCommitHash" />
+    <Exec Command="$(GitShowCommand)" ConsoleToMSBuild="true" StandardOutputImportance="normal">
+      <Output TaskParameter="ConsoleOutput" PropertyName="LastDevCommitName" />
     </Exec>
 
     <!-- setup all the properties we need -->
@@ -451,14 +460,14 @@
       <LocalGitIsInSync Condition="'$(RemoteGitLastCommit)' != '$(LocalGitLastCommit)'">false</LocalGitIsInSync>
 
       <!-- get the name of the last (detected) build -->
-      <LastBuildName>$([System.Text.RegularExpressions.Regex]::Replace($(LastDevCommitHash), "@Branch.*", ""))</LastBuildName>
+      <LastBuildName>$([System.Text.RegularExpressions.Regex]::Replace($(LastDevCommitName), "@Branch.*", ""))</LastBuildName>
       <LastBuildName Condition="'$(LastBuildName)' == '' ">NONE</LastBuildName>
 
       <!-- set the name of the new build -->
       <NewBuildName>DevBuild-$(BootstrapBuild)</NewBuildName>
 
       <!-- set the text of the commit that will be made to identify this release -->
-      <ReleaseCommitName>DevBuild-$(NewBuildName)@Branch:$(CurrentGitBranch) [BuildSystem]</ReleaseCommitName>
+      <ReleaseCommitName>$(NewBuildName)@Branch:$(CurrentGitBranch) [BuildSystem]</ReleaseCommitName>
 
     </PropertyGroup>
 
@@ -468,7 +477,7 @@
     </ItemGroup>
 
     <!-- Since we are making a commit, we need to be synchronized with origin -->
-    <Message Text="[KERBALISM-PUBLISH-DEV] ERROR : Can't create release commit, the you are not synchronized with 'origin/$(CurrentGitBranch)' Pull/Push before releasing." Importance="high" Condition="'$(LocalGitIsInSync)' == 'false'"/>
+    <Message Text="[KERBALISM-PUBLISH-DEV] ERROR : Can't create release commit, you are not synchronized with 'origin/$(CurrentGitBranch)'. Pull before releasing." Importance="high" Condition="'$(LocalGitIsInSync)' == 'false'"/>
     <Error Condition="'$(LocalGitIsInSync)' == 'false'" Text="Can't create release commit : git status"/>
 
     <Message Text="[KERBALISM-PUBLISH-DEV] ----------------------------------------------------------------------------------------" Importance="high" />
@@ -486,6 +495,7 @@
     <Message Text="[KERBALISM-PUBLISH-DEV] ----------------------------------------------------------------------------------------" Importance="high" />
     <Message Text="[KERBALISM-PUBLISH-DEV] WARNING : Releasing from the '$(CurrentGitBranch)' branch instead of '$(DefaultGitBranch)'. Is that intended ?" Importance="high" Condition="'$(LocalGitIsRightBranch)' == 'false'"/>
     <Message Text="[KERBALISM-PUBLISH-DEV] WARNING : You have uncommitted changes." Importance="high" Condition="'$(LocalGitHasChanges)' == 'true'"/>
+    <Message Text="[KERBALISM-PUBLISH-DEV] WARNING : The release '$(NewBuildName)' already exists !" Importance="high" Condition="'$(LastBuildName)' == '$(NewBuildName)'"/>
 
     <!-- Prompt confirmation -->
     <PromptUser PromptText="[KERBALISM-PUBLISH-DEV] Confirm the upload [y/n] :">
@@ -496,7 +506,7 @@
     <Error Condition="!('$(UserInput)' == 'y')" Text="Action cancelled by user"/>
 
     <!-- get the commit changelog. This part is quite brittle, sorry for that but the combined quirks of the git CLI and of MSBuild don't help -->
-    <!-- The exec task output strip down a lot of special characters and all blank lines, so we use a "_NEWLINE_" that we will remplace to put blank lines between the commits -->
+    <!-- The exec task output strip down a lot of special characters and all blank lines, so we use a "_NEWLINE_" that we will replace to put blank lines between the commits -->
     <PropertyGroup>
       <GitCommand Condition="'$(OS)' == 'Windows_NT'">git --no-pager log $(LastDevCommitHash)..origin/$(CurrentGitBranch) --format=&quot;#### `%25%25h` - %25%25an - %25%25ad%25%25n%25%25B_NEWLINE_ &quot; --date=short --max-count=100</GitCommand>
       <GitCommand Condition="'$(OS)' != 'Windows_NT'">git --no-pager log $(LastDevCommitHash)..origin/$(CurrentGitBranch) --format='#### `%25h` - %25an - %25ad%25n%25B_NEWLINE_ ' --date=short --max-count=100</GitCommand>
@@ -509,7 +519,7 @@
     </Exec>
 
     <PropertyGroup>
-      <!-- As for the 2 follwing lines, I honestly have no idea why they work, this is pure luck after trying countless alternatives-->
+      <!-- As for the 2 following lines, I honestly have no idea why they work, this is pure luck after trying countless alternatives-->
       <ReleaseDescCommits>$(CommitLog.Replace("_NEWLINE_", "%0a"))</ReleaseDescCommits>
       <ReleaseDescCommits>$(ReleaseDescCommits.Replace(";", "%0a"))</ReleaseDescCommits>
       <ReleaseDesc Condition="'$(ExtraDescription)' != ''">$(ExtraDescription)%0a%0a</ReleaseDesc>
