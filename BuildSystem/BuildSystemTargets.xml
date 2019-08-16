@@ -799,7 +799,7 @@ msbuild BuildSystemTargets.xml -verbosity:minimal -target:UpdateAssembliesVersio
   <!-- create and upload a GitHub release -->
   <!-- Note : the code for this is in src\KerbalismBuild\UploadGitHubRelease.cs because the "Source=" parameter doesn't resolve paths on MSBuild for mono (it's fine on windows) -->
   <!-- see https://github.com/microsoft/msbuild/issues/4614 -->
-  <UsingTask TaskName="UploadGitHubRelease" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll" >
+  <UsingTask TaskName="UploadGitHubRelease" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll" >
     <ParameterGroup>
       <GithubOAuthToken ParameterType="System.String" Required="true" />
       <GithubUser ParameterType="System.String" Required="true" />

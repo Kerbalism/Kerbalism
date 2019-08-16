@@ -43,7 +43,7 @@ public class UploadGitHubRelease : Task
 
     public override bool Execute()
     {
-        System.Threading.Tasks.Task.Run(() => Upload()).Wait();
+        //System.Threading.Tasks.Task.Run(() => Upload()).Wait();
         return !Log.HasLoggedErrors;
     }
 
