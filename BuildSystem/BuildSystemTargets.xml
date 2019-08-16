@@ -820,7 +820,7 @@ msbuild BuildSystemTargets.xml -verbosity:minimal -target:UpdateAssembliesVersio
       <Reference Include="System.Data" />
       <Reference Include="System.Xml" />
       <Reference Include="System.Web" />
-      <Code Type="class" Language="cs" Source="$(UtilityPath)/UploadGitHubRelease.cs" />
+      <Code Type="class" Language="cs" Source="$(UtilityPath)\UploadGitHubRelease.cs" />
     </Task>
   </UsingTask>
 
