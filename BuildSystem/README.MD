@@ -36,6 +36,12 @@ Notes :
 The release configuration that generate the *.kbin files require a special setup, 
 ask us first if you really need to build it.
 
+## OSX
+
+To build on OSX, you need to download and install Unity first. Then look into setup_mac.sh and change the installation
+locations of Unity and KSP. Once you're sure the locations suit your needs, run setup_mac.sh (from any folder). It will
+create a folder with symbolic links to the (hopefully) correct DLL files you need to build Kerbalism on OSX.
+
 ## I want to use the command line !
 
 **On Windows** MSBuild is installed by default with Visual Studio. 
