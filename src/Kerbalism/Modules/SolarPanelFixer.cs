@@ -206,7 +206,8 @@ namespace KERBALISM
 				|| vessel == null
 				|| !isInitialized
 				|| SolarPanel == null
-				|| !Lib.Landed(vessel))
+				|| !Lib.Landed(vessel)
+				|| exposureState == ExposureState.Disabled) // don't to broken panels ! (issue #492)
 				return;
 
 			// get vessel data
