@@ -760,7 +760,9 @@ namespace KERBALISM
 		///<summary> Format data size, the size parameter is in MB (megabytes) </summary>
 		public static string HumanReadableDataSize(double size)
 		{
-			size *= 1024.0 * 1024.0 * 8.0; //< bits
+			var bitsPerMB = 1024.0 * 1024.0 * 8.0;
+
+			size *= bitsPerMB; //< bits
 			if (size < 0.01) return "none";
 			if (size <= 32.0) return BuildString(size.ToString("F0"), " b");
 			size /= 8; //< to bytes
@@ -778,7 +780,9 @@ namespace KERBALISM
 		///<summary> Format data rate, the rate parameter is in Mb/s </summary>
 		public static string HumanReadableDataRate(double rate)
 		{
-			return rate < 1/1024.0/1024.0 ? "none" : Lib.BuildString(HumanReadableDataSize(rate), "/s");
+			// say "none" for rates < 0.5 bits per second
+			var bitsPerMB = 1024.0 * 1024.0 * 8.0;
+			return rate < 1/bitsPerMB/2.0 ? "none" : Lib.BuildString(HumanReadableDataSize(rate), "/s");
 		}
 
 		public static string HumanReadableSampleSize(double size)
@@ -808,7 +812,7 @@ namespace KERBALISM
 		///<summary> Format science credits </summary>
 		public static string HumanReadableScience(double value)
 		{
-			return Lib.BuildString("<color=cyan>", value.ToString("F1"), " CREDITS</color>");
+			return Lib.BuildString("<color=#6DCFF6>", value.ToString("F1"), " CREDITS</color>");
 		}
 #endregion
 

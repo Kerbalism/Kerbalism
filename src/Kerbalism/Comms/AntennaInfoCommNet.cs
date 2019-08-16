@@ -37,6 +37,9 @@ namespace KERBALISM
 					t.Events["StopTransmission"].active = false;
 					t.Actions["StartTransmissionAction"].active = false;
 
+					// ignore broken / disabled transmitters
+					if (!t.isEnabled) continue;
+
 					if (t.antennaType == AntennaType.INTERNAL) // do not include internal data rate, ec cost only
 						antennaInfo.ec += t.DataResourceCost * t.DataRate;
 					else
@@ -87,6 +90,10 @@ namespace KERBALISM
 					ModuleDataTransmitter t = pair.Key;
 					ProtoPartSnapshot p = pair.Value;
 
+					// ignore broken/disabled transmitters
+					var mdt = p.FindModule("ModuleDataTransmitter");
+					if (mdt != null && !Lib.Proto.GetBool(mdt, "isEnabled", true)) continue;
+
 					if (t.antennaType == AntennaType.INTERNAL) // do not include internal data rate, ec cost only
 						antennaInfo.ec += t.DataResourceCost * t.DataRate;
 					else
@@ -118,6 +125,7 @@ namespace KERBALISM
 
 			if (transmitterCount > 1)
 				antennaInfo.rate = Math.Pow(antennaInfo.rate, 1.0 / transmitterCount);
+
 			else if (transmitterCount == 0)
 				antennaInfo.rate = 0;
 
@@ -128,6 +136,12 @@ namespace KERBALISM
 			antennaInfo.ec += ec_transmitter;
 
 			Init();
+
+			if (antennaInfo.linked && transmitterCount > 0)
+			{
+				var bitsPerMB = 1024.0 * 1024.0 * 8.0;
+				antennaInfo.rate += Settings.DataRateMinimumBitsPerSecond / bitsPerMB;
+			}
 
 			return antennaInfo;
 		}
