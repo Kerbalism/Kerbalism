@@ -84,27 +84,27 @@
     <When Condition="'$(Configuration)' == 'Debug'">
       <ItemGroup>
         <Reference Include="Assembly-CSharp">
-          <HintPath>$(KSPDevPath)\KSP_x64_Data\Managed\Assembly-CSharp.dll</HintPath>
+          <HintPath>$(KSPDevPath)\$(KSPDevDllsRelativePath)\Assembly-CSharp.dll</HintPath>
           <Private>False</Private>
         </Reference>
         <Reference Include="Assembly-CSharp-firstpass">
-          <HintPath>$(KSPDevPath)\KSP_x64_Data\Managed\Assembly-CSharp-firstpass.dll</HintPath>
+          <HintPath>$(KSPDevPath)\$(KSPDevDllsRelativePath)\Assembly-CSharp-firstpass.dll</HintPath>
           <Private>False</Private>
         </Reference>
         <Reference Include="Assembly-UnityScript">
-          <HintPath>$(KSPDevPath)\KSP_x64_Data\Managed\Assembly-UnityScript.dll</HintPath>
+          <HintPath>$(KSPDevPath)\$(KSPDevDllsRelativePath)\Assembly-UnityScript.dll</HintPath>
           <Private>False</Private>
         </Reference>
         <Reference Include="Assembly-UnityScript-firstpass">
-          <HintPath>$(KSPDevPath)\KSP_x64_Data\Managed\Assembly-UnityScript-firstpass.dll</HintPath>
+          <HintPath>$(KSPDevPath)\$(KSPDevDllsRelativePath)\Assembly-UnityScript-firstpass.dll</HintPath>
           <Private>False</Private>
         </Reference>
         <Reference Include="UnityEngine">
-          <HintPath>$(KSPDevPath)\KSP_x64_Data\Managed\UnityEngine.dll</HintPath>
+          <HintPath>$(KSPDevPath)\$(KSPDevDllsRelativePath)\UnityEngine.dll</HintPath>
           <Private>False</Private>
         </Reference>
         <Reference Include="UnityEngine.UI">
-          <HintPath>$(KSPDevPath)\KSP_x64_Data\Managed\UnityEngine.UI.dll</HintPath>
+          <HintPath>$(KSPDevPath)\$(KSPDevDllsRelativePath)\UnityEngine.UI.dll</HintPath>
           <Private>False</Private>
         </Reference>
       </ItemGroup>

@@ -7,13 +7,11 @@
   <!-- /////////////////////////////////////////////////// -->
 
   <!--
-     Note : all paths defined here are also defined in the "BuildSystemProperties.xml" file
-     This file is intended to be imported from the *.csproj files, 
-     while the BuildSystemProperties.xml is imported by BuildSystemTargets.xml, because :
+     Note : all paths defined here are also defined in the "BuildSystemTargets.xml" file
+     This file is intended to be imported from the *.csproj files, we can't import 
+     "BuildSystemTargets.xml" in the project files because : 
+     1. It create a circular reference
      1. The relative "RepoBasePath" is different for the build system and the projects 
-     2. Using the same file result in multiple imports of it from different projects 
-     during the build process, making MSBuild log tons of warnings
-     3. It can cause circular references and all sort of issues
      To differentiate the properties defined here, they are suffixed with "PR"
      -->
   

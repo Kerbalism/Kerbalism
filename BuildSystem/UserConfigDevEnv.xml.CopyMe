@@ -36,8 +36,15 @@
     <!-- This is only needed to build release versions of Kerbalism, -->
     <!-- the debug configuration should always be used in development-->
     <!-- The UserConfigRelease.xml file is git-ignored but it is highly recommended to provide-->
-    <!--a path that is OUTSIDE the repository to make sure it is never committed-->
+    <!-- a path that is OUTSIDE the repository to make sure it is never committed -->
     <ContributorConfigFolder>C:\SOMEWHERE\ON\MY\COMPUTER\BUT\NOT\IN\THE\REPO</ContributorConfigFolder>
+	
+	<!-- DON'T CHANGE UNLESS NOT WORKING : Relative path from 'KSPDevPath' to the folder containing your KSP dlls -->
+    <!-- Note : the non-windows path is the default on OSX, it probably won't work with a linux install -->
+    <KSPDevDllsRelativePath Condition="'$(OS)' == 'Windows_NT'">KSP_x64_Data\Managed</KSPDevDllsRelativePath>
+    <KSPDevDllsRelativePath Condition="'$(OS)' != 'Windows_NT'">KSP.app\Contents\Resources\Data\Managed</KSPDevDllsRelativePath>
+    <!-- Note 2 : not sure this will be evaluated correctly from Monodevelop.-->
+    <KSPDevDllsRelativePath Condition="$([MSBuild]::IsOsPlatform('Linux'))">KSP_Data\Managed</KSPDevDllsRelativePath>
     
   </PropertyGroup>
 </Project>

@@ -38,15 +38,15 @@
       <ItemGroup>
         <Reference Include="System" />
         <Reference Include="Assembly-CSharp">
-          <HintPath>$(KSPDevPath)\KSP_x64_Data\Managed\Assembly-CSharp.dll</HintPath>
+          <HintPath>$(KSPDevPath)\$(KSPDevDllsRelativePath)\Assembly-CSharp.dll</HintPath>
           <Private>False</Private>
         </Reference>
         <Reference Include="Assembly-CSharp-firstpass">
-          <HintPath>$(KSPDevPath)\KSP_x64_Data\Managed\Assembly-CSharp-firstpass.dll</HintPath>
+          <HintPath>$(KSPDevPath)\$(KSPDevDllsRelativePath)\Assembly-CSharp-firstpass.dll</HintPath>
           <Private>False</Private>
         </Reference>
         <Reference Include="UnityEngine">
-          <HintPath>$(KSPDevPath)\KSP_x64_Data\Managed\UnityEngine.dll</HintPath>
+          <HintPath>$(KSPDevPath)\$(KSPDevDllsRelativePath)\UnityEngine.dll</HintPath>
           <Private>False</Private>
         </Reference>
       </ItemGroup>

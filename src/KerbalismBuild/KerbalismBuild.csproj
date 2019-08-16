@@ -44,9 +44,6 @@
     <StartProgram>KSP_x64.exe</StartProgram>
     <StartWorkingDirectory>..\</StartWorkingDirectory>
   </PropertyGroup>
-  <ItemGroup>
-    <Compile Include="UploadGitHubRelease.cs" />
-  </ItemGroup>
 
   <Import Condition="Exists('..\..\BuildSystem\UserConfigDevEnv.xml')" Project="..\..\BuildSystem\UserConfigDevEnv.xml" />
 
@@ -69,12 +66,6 @@
   <!-- /////////////////////////////////////////////////// -->
   <Target Name="Build">
     <MSBuild Condition="$(Configuration)==Release" Projects="..\..\BuildSystem\BuildSystemTargets.xml" Targets="BuildRelease" />
-    <MSBuild Condition="$(Configuration)==Debug" Projects="..\..\BuildSystem\BuildSystemTargets.xml" Targets="BuildDebug" />
+    <MSBuild Condition="$(Configuration)==Debug" Projects="..\..\BuildSystem\BuildSystemTargets.xml" Targets="BuildDebug" Properties="DefineConstants=$(DefineConstants)"/>
   </Target>
-
-  <!-- /////////////////////////////////////////////////// -->
-  <!-- //////////////// Other targets /////////////////// -->
-  <!-- /////////////////////////////////////////////////// -->
-
-
 </Project>

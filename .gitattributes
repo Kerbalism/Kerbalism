@@ -17,6 +17,7 @@
 
 .gitattributes text eol=crlf 
 *.sln        text eol=crlf
+*.xml        text eol=crlf
 *.csproj     text eol=crlf
 *.vbproj     text eol=crlf
 *.vcxproj    text eol=crlf
@@ -39,7 +40,9 @@
 #*.cfg        text eol=crlf NOPE
 
 
+
 #*.sln       merge=binary
+#*.xml       merge=binary
 #*.csproj    merge=binary
 #*.vbproj    merge=binary
 #*.vcxproj   merge=binary

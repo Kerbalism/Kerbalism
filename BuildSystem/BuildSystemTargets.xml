@@ -6,15 +6,78 @@
 
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
-  <Import Condition="Exists('BuildSystemProperties.xml')" Project="BuildSystemProperties.xml" />
+  <!-- /////////////////////////////////////////////////// -->
+  <!-- ///////// GLOBAL BUILD SYSTEM PROPERTIES ////////// -->
+  <!-- /////////////////////////////////////////////////// -->
+
+  <!--
+  Note : The paths defined CAN'T be passed as is to the *.csproj targets, 
+  as they are relative to the BuildSystemTargets.xml path.
+  If you need to pass a path to a target elsewhere, you need to use 
+  the "make relative" property function (see KBinGenerator target in 
+  BuildSystemTargets for an example).
+  -->
+
+  <PropertyGroup>
+
+    <!-- This is used to write the version file -->
+    <KerbalismDownloadLink>https://github.com/Kerbalism/Kerbalism/releases</KerbalismDownloadLink>
+    <KerbalismChangelogLink>https://github.com/Kerbalism/Kerbalism/blob/master/CHANGELOG.md</KerbalismChangelogLink>
+
+    <!-- Path to the repo root. We use this everywhere to get ride of the relative path hell -->
+    <RepoBasePath>..</RepoBasePath>
+    <!-- This is where the magic happen (mostly) -->
+    <BuildSystemTargets>$(RepoBasePath)\BuildSystem\BuildSystemTargets.xml</BuildSystemTargets>
+    <!-- Build paths -->
+    <!-- Because all targets are made for a specific configuration we don't require the right configuration to be set from the msbuild cmd line -->
+    <!-- but that mean that outputpath/intermediateoutputpath will potentially be wrong if used directly -->
+    <!-- so we keep both versions to use when needed-->
+    <DebugOutputPath>$(RepoBasePath)\BuildSystem\BinariesDebug</DebugOutputPath>
+    <ReleaseOutputPath>$(RepoBasePath)\BuildSystem\BinariesRelease</ReleaseOutputPath>
+    <OutputPath Condition="$(Configuration)==Debug" >$(DebugOutputPath)</OutputPath>
+    <OutputPath Condition="$(Configuration)==Release" >$(ReleaseOutputPath)</OutputPath>
+    <IntermediateOutputPath>$(OutputPath)\obj</IntermediateOutputPath>
+    <!-- Deployment path -->
+    <DeploymentOutputPath>$(RepoBasePath)\BuildSystem\DeploymentOutput\</DeploymentOutputPath>
+    <!-- Repo Gamedata paths -->
+    <GameDataKerbalismPath>$(RepoBasePath)\GameData\Kerbalism</GameDataKerbalismPath>
+    <GameDataKerbalismConfigPath>$(RepoBasePath)\GameData\KerbalismConfig</GameDataKerbalismConfigPath>
+    <!-- Repo projects paths -->
+    <KerbalismProjectPath>$(RepoBasePath)\src\Kerbalism</KerbalismProjectPath>
+    <KerbalismProjectFile>$(KerbalismProjectPath)\Kerbalism.csproj</KerbalismProjectFile>
+    <KerbalismBootstrapProjectPath>$(RepoBasePath)\src\KerbalismBootstrap</KerbalismBootstrapProjectPath>
+    <KerbalismBootstrapProjectFile>$(KerbalismBootstrapProjectPath)\KerbalismBootstrap.csproj</KerbalismBootstrapProjectFile>
+    <!-- other paths -->
+    <UtilityPath>$(RepoBasePath)\BuildSystem\Utility</UtilityPath>
+    <KSPReferenceZipsPath>$(RepoBasePath)\BuildSystem\References\KSPReferenceZips</KSPReferenceZipsPath>
+    <KSPReferenceDllsPath>$(RepoBasePath)\BuildSystem\References\KSPReferenceDlls</KSPReferenceDllsPath>
+    <!-- version files -->
+    <XMLVersionFilePath>$(GameDataKerbalismPath)\VersionConfig.xml</XMLVersionFilePath>
+    <AVCVersionFilePath>$(GameDataKerbalismPath)\Kerbalism.version</AVCVersionFilePath>
+    <!-- other files -->
+    <ReadmeFilePath>$(RepoBasePath)\README.md</ReadmeFilePath>
+    <ChangelogFilePath>$(RepoBasePath)\CHANGELOG.md</ChangelogFilePath>
+  </PropertyGroup>
+
+
+  <!-- /////////////////////////////////////////////////// -->
+  <!-- //////////////////// IMPORTS ////////////////////// -->
+  <!-- /////////////////////////////////////////////////// -->
+
+  <!-- User dev environment variable (KSP path, version, debug compilation constants...) -->
   <Import Condition="Exists('UserConfigDevEnv.xml')" Project="UserConfigDevEnv.xml" />
+
+  <!-- Kerbalism version and supported KSP versions information -->
   <Import Condition="Exists('$(XMLVersionFilePath)')" Project="$(XMLVersionFilePath)" />
+
+  <!-- Passwords for the KSP dll archives, and credentials for uploading releases -->
   <Import Condition="Exists('$(ContributorConfigFolder)\UserConfigRelease.xml')" Project="$(ContributorConfigFolder)\UserConfigRelease.xml" />
 
-  <!-- /////////////////////////////////////////////////// -->
-  <!-- /////// RELEASE CONFIGURATION BUILD SCRIPT //////// -->
-  <!-- /////////////////////////////////////////////////// -->
 
+  <!-- /////////////////////////////////////////////////// -->
+  <!-- /////// RELEASE CONFIGURATION BUILD TARGET //////// -->
+  <!-- /////////////////////////////////////////////////// -->
+  
   <Target Name="BuildRelease">
 
     <Message Text="[KERBALISM-BUILD-RELEASE] Initiating RELEASE build..." Importance="high" />
@@ -65,7 +128,7 @@
       Targets="KBinGenerator"/>
 
     <Message Text="[KERBALISM-BUILD-RELEASE] Cleaning output folder..." Importance="high" />
-    <RemoveDir Directories="$(IntermediateOutputPath)\" />
+    <RemoveDir Directories="$(IntermediateOutputPath)" />
 
     <Message Text="[KERBALISM-BUILD-RELEASE] Kerbalism RELEASE build generated in $(OutputPath)" Importance="high" />
 
@@ -135,27 +198,28 @@
   </Target>
 
   <!-- ///////////////////////////////////////////////////// -->
-  <!-- //////// DEBUG CONFIGURATION BUILD SCRIPT /////////// -->
+  <!-- //////// DEBUG CONFIGURATION BUILD TARGET /////////// -->
   <!-- ///////////////////////////////////////////////////// -->
 
   <Target Name="BuildDebug">
 
     <Message Text="[KERBALISM-BUILD-DEBUG] 'BuildSystem\UserConfigDevEnv.xml' not found. You need to create it to build Kerbalism" Condition="! Exists('UserConfigDevEnv.xml')" Importance="high" />
-    <Message Text="[KERBALISM-BUILD-DEBUG] Can't find the KSP assemblies in '$(KSPDevPath)'. Check your 'BuildSystem\UserConfigDevEnv.xml file'." Condition="! Exists('$(KSPDevPath)\KSP_x64_Data\Managed\Assembly-CSharp.dll')" Importance="high" />
+    <Message Text="[KERBALISM-BUILD-DEBUG] Can't find the KSP assemblies in '$(KSPDevPath)\$(KSPDevDllsRelativePath)'. Check your 'BuildSystem\UserConfigDevEnv.xml file'." Condition="! Exists('$(KSPDevPath)\$(KSPDevDllsRelativePath)\Assembly-CSharp.dll')" Importance="high" />
 
-    <Error Condition="(! Exists('UserConfigDevEnv.xml')) OR (! Exists('$(KSPDevPath)\KSP_x64_Data\Managed\Assembly-CSharp.dll'))" Text=""/>
+    <Error Condition="(! Exists('UserConfigDevEnv.xml')) OR (! Exists('$(KSPDevPath)\$(KSPDevDllsRelativePath)\Assembly-CSharp.dll'))" Text=""/>
 
     <Message Text="[KERBALISM-BUILD-DEBUG] Building for KSP version tag : $(KSPDevVersion)" Importance="high" />
     <Message Text="[KERBALISM-BUILD-DEBUG] Cleaning build output folder..." Importance="high" />
     <RemoveDir Directories="$(DebugOutputPath)" />
 
     <Message Text="[KERBALISM-BUILD-DEBUG] Building KerbalismBootstrap..." Importance="high" />
-    <!-- KerbalismBootstrap need to be built first, it's a dependency of Kerbalism -->
+
     <MSBuild
       Projects="$(KerbalismBootstrapProjectFile)"
-      Properties="Configuration=Debug"
+      Properties="Configuration=Debug;DefineConstants=$(DefineConstants)"
       RunEachTargetSeparately="true"/>
 
+    
     <Message Text="[KERBALISM-BUILD-DEBUG] Building Kerbalism using constants '$(DefineConstants)'..." Importance="high" />
     <MSBuild
       Projects="$(KerbalismProjectFile)"
@@ -231,8 +295,8 @@
       <KSPVersionMax>%(MaxKSPVersion.KSPMaxMajor).%(MaxKSPVersion.KSPMaxMinor).%(MaxKSPVersion.KSPMaxBuild)</KSPVersionMax>
     </PropertyGroup>
 
-    <Message Condition="'$(IsDevRelease)' == 'true'" Text="[KERBALISM-BUILD-GLOBAL] Creating zips for DEV RELEASE" Importance="high" />
-    <Message Condition="'$(IsDevRelease)' != 'true'" Text="[KERBALISM-BUILD-GLOBAL] Creating zips for NON-DEV RELEASE" Importance="high" />
+    <Message Condition="'$(IsDevRelease)' == 'true'" Text="[KERBALISM-BUILD-DEPLOY] Creating zips for DEV RELEASE" Importance="high" />
+    <Message Condition="'$(IsDevRelease)' != 'true'" Text="[KERBALISM-BUILD-DEPLOY] Creating zips for NON-DEV RELEASE" Importance="high" />
     <Message Text="[KERBALISM-BUILD-DEPLOY] Version information : $(KerbalismVersion) for KSP $(KSPVersionMin) to $(KSPVersionMax)" Importance="high" />
 
     <!-- Build Kerbalism in release configuration, with the extra "DEVBUILD" constant if this is a dev build -->
@@ -312,39 +376,7 @@
     <Message Text="[KERBALISM-BUILD-DEPLOY] Zip releases created in $(DeploymentOutputPath)" Importance="high" />
   </Target>
 
-  <!-- ///////////////////////////////////////////////////// -->
-  <!-- //////////////// PUBLISH TARGETS //////////////////// -->
-  <!-- ///////////////////////////////////////////////////// -->
-
   <!-- ///////////// UploadGitHubDevRelease //////////////// -->
-  <!--
-    This target build a dev release and upload it to the "DevBuilds" GitHub repo releases.
-    Note that this target can't be run unattended, there is an user prompt for confirmation
-  
-    Command line usage :
-    msbuild BuildSystemTargets.xml -verbosity:minimal -target:UploadGitHubDevRelease -property:prop1=value1;prop2=value2
-  
-    The target can use various properties, but they are all optional excepted for the first one :
-    The default value is the
-  
-    - "GithubOAuthToken" : GitHub OAuth Token for your github account, to generate it, 
-    go to your guthub account Settings > Developer settings > Personal access tokens
-    To avoid having to put this every time, it can be defined in "UserConfigRelease.xml", 
-    whose path is defined in "UserConfigDevEnv.xml"
-  
-    - "PushVersionCommit=true/false" (default true) : by default, this target will push an empty
-    commit to the active branch with the name of the release. This is used by this script to find 
-    the previous release and generate the commit changelog. Set to false to prevent this commit
-    from being created.
-  
-    - "DraftRelease=true/false" (default false) : if true, create a release with the "draft" 
-    status on GitHub. In this case, the "PushVersionCommit" paroperty will be forced to "false".
-  
-    - "LastVersionCommitGrep" (default "DevBuild.*BuildSystem") : git-grep style regular 
-    expression used to find the commit corresponding to the previous version and generate
-    the changelog history. You can change this if you want to generate the changelog history
-    from a specific commit (must match the text of the commit).
-    -->
 
   <!-- Default values for overrideable properties -->
   <PropertyGroup>
@@ -356,8 +388,7 @@
   <!-- msbuild.exe Kerbalism.sln -verbosity:minimal -target:UploadGitHubDevRelease -->
   <Target Name="UploadGitHubDevRelease">
 
-
-
+    <!-- build with the DEVBUILD contant and zip the release -->
     <MSBuild
       Projects="$(BuildSystemTargets)"
       Properties="IsDevRelease=true"
@@ -539,16 +570,16 @@
       <VersionFileKSPVersionMin>"KSP_VERSION_MIN": {"MAJOR": %(MinKSPVersion.KSPMinMajor), "MINOR": %(MinKSPVersion.KSPMinMinor), "PATCH": %(MinKSPVersion.KSPMinBuild)}</VersionFileKSPVersionMin>
       <VersionFileKSPVersionMax>"KSP_VERSION_MAX": {"MAJOR": %(MaxKSPVersion.KSPMaxMajor), "MINOR": %(MaxKSPVersion.KSPMaxMinor), "PATCH": %(MaxKSPVersion.KSPMaxBuild)}</VersionFileKSPVersionMax>
       <KerbalismVersionFileContent>
-        {
-        "NAME": "Kerbalism",
-        $(VersionFileURL),
-        $(VersionFileDownloadLink),
-        $(VersionFileChangelogLink),
-        $(VersionFileKerbalismVersion),
-        $(VersionFileKSPVersion),
-        $(VersionFileKSPVersionMin),
-        $(VersionFileKSPVersionMax)
-        }
+{
+  "NAME": "Kerbalism",
+  $(VersionFileURL),
+  $(VersionFileDownloadLink),
+  $(VersionFileChangelogLink),
+  $(VersionFileKerbalismVersion),
+  $(VersionFileKSPVersion),
+  $(VersionFileKSPVersionMin),
+  $(VersionFileKSPVersionMax)
+}
       </KerbalismVersionFileContent>
     </PropertyGroup>
 
@@ -586,9 +617,9 @@
 
   <!-- //////////////// UpdateAssembliesVersion ////////////////// -->
   <!-- 
-    Update the assemblyInfo.cs files in Kerbalism and KerbalismBootstrap to match the version defined in VersionConfig.xml
-    This target is standalone and can be used from the MSBuild command line like this :
-    msbuild BuildSystemTargets.xml -verbosity:minimal -target:UpdateAssembliesVersion
+Update the assemblyInfo.cs files in Kerbalism and KerbalismBootstrap to match the version defined in VersionConfig.xml
+This target is standalone and can be used from the MSBuild command line like this :
+msbuild BuildSystemTargets.xml -verbosity:minimal -target:UpdateAssembliesVersion
     -->
   <Target Name="UpdateAssembliesVersion">
 
@@ -635,6 +666,12 @@
   </Target>
 
 
+  <!-- //////////////// CreateKSPDllProtectedZip ////////////////// -->
+  <!--
+    Create a password-protected 7zip archive named KSP-X.X.X.7z from the specified KSP installation and 
+    copy it the BuildSystem\References\KSPReferenceZips folder
+    msbuild BuildSystemTargets.xml -verbosity:minimal -target:CreateKSPDllProtectedZip -property:KSPVersion=1.7.3;KSPDllPath=Path\To\KSP\DLLS
+    -->
   <Target Name="CreateKSPDllProtectedZip">
 
     <Message Text="[KERBALISM-BUILD-UTILITY] Target 'CreateKSPDllProtectedZip' starting with parameters :" Importance="high" />
@@ -653,7 +690,7 @@
       <KSP7ZipPath>$(KSPReferenceZipsPath)\KSP-$(KSPVersion).7z</KSP7ZipPath>
     </PropertyGroup>
 
-    <Message Text="[KERBALISM-BUILD-UTILITY] ERROR : The archive $(KSP7ZipPath) exists, it should not be replaced under normal circonstances." Condition="Exists('$(KSP7ZipPath)')" Importance="high" />
+    <Message Text="[KERBALISM-BUILD-UTILITY] ERROR : The archive $(KSP7ZipPath) exists, it should not be replaced." Condition="Exists('$(KSP7ZipPath)')" Importance="high" />
     <Error Condition="Exists('$(KSP7ZipPath)')" Text=""/>
 
     <ItemGroup>
