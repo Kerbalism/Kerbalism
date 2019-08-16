@@ -43,7 +43,7 @@ public class UploadGitHubRelease : Task
 
     public override bool Execute()
     {
-        //System.Threading.Tasks.Task.Run(() => Upload()).Wait();
+        System.Threading.Tasks.Task.Run(() => Upload()).Wait();
         return !Log.HasLoggedErrors;
     }
 
@@ -57,7 +57,7 @@ public class UploadGitHubRelease : Task
 
             HttpResponseMessage createReleaseResponse;
 
-            File.WriteAllText(@"C:\Users\Got\Desktop\JSONTEST_beforetransform.txt", ReleaseDescription);
+            //File.WriteAllText(@"C:\Users\Got\Desktop\JSONTEST_beforetransform.txt", ReleaseDescription);
 
             string postUrl = @"https://api.github.com/repos/" + GithubUser + @"/" + GithubRepo + @"/releases";
             using (var request = new HttpRequestMessage(new HttpMethod("POST"), postUrl))
@@ -74,7 +74,7 @@ public class UploadGitHubRelease : Task
                 json += PreRelease.ToString().ToLower();
                 json += @"}";
 
-                File.WriteAllText(@"C:\Users\Got\Desktop\JSONTEST_afterTransform.txt", json);
+                //File.WriteAllText(@"C:\Users\Got\Desktop\JSONTEST_afterTransform.txt", json);
 
                 //string json = @"{ ""tag_name"": ""v11.0.0"", ""target_commitish"": ""master"", ""name"": ""release name v11.0.0"", ""body"": ""Description of the release"", ""draft"": true, ""prerelease"": false}";
                 request.Content = new StringContent(json, Encoding.UTF8, "application/json");
