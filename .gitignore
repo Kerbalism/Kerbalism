@@ -393,10 +393,11 @@ Kerbalism-Config*.zip
 # It is git-ignored by it is highly recommended to put it
 # outside the repository as an additional security
 UserConfigRelease.xml
-/buildsystem/UserConfigDevEnv.xml
-/buildsystem/DeploymentOutput
-/buildsystem/BinariesDebug
-/buildsystem/BinariesRelease
-/buildsystem/References/KSPReferenceDlls
-!/buildsystem/References/KSPReferenceZips/KSP-*.7z
+BuildSystem/UserConfigDevEnv.xml
+BuildSystem/DeploymentOutput
+BuildSystem/BinariesDebug
+BuildSystem/BinariesRelease
+BuildSystem/References/KSPReferenceDlls
+!BuildSystem/References/KSPReferenceZips/KSP-*.7z
+
 
