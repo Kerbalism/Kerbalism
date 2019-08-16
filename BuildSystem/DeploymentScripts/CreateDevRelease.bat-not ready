@@ -1,0 +1,6 @@
+@echo off
+
+for /f "tokens=*" %%i in ('C:\Users\Got\source\repos\Kerbalism\Kerbalism\buildsystem\Utility\win_vswhere\vswhere.exe -latest -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe') do set msbuild=%%i
+
+@echo on
+REM "%msbuild%" "C:\Users\Got\Source\repos\Kerbalism\Kerbalism\Kerbalism.sln" -verbosity:minimal -target:CreateDevRelease /p:Configuration=Debug

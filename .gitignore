@@ -382,14 +382,21 @@ docs/_[Bb]uild
 # SciTE editor config files
 SciTE*.properties
 
-# Kerbalism build system
+# Old Kerbalism build system
 src/DLLs
 KSP-*.7z
 Kerbalism-Core*.zip
 Kerbalism-Config*.zip
 
+# New Kerbalism build system
+# UserConfigRelease.xml can contain sensitive information.
+# It is git-ignored by it is highly recommended to put it
+# outside the repository as an additional security
+UserConfigRelease.xml
+/buildsystem/UserConfigDevEnv.xml
 /buildsystem/DeploymentOutput
 /buildsystem/BinariesDebug
 /buildsystem/BinariesRelease
 /buildsystem/References/KSPReferenceDlls
-/buildsystem/DevEnvConfig.xml
+!/buildsystem/References/KSPReferenceZips/KSP-*.7z
+

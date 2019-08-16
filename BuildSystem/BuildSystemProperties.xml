@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- /////////////////////////////////////////////////// -->
+<!-- ///////////// WELCOME TO THIS MADNESS ///////////// -->
+<!-- /////////////////////////////////////////////////// -->
+
+
+<Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <!-- /////////////////////////////////////////////////// -->
+  <!-- ///////// GLOBAL BUILD SYSTEM PROPERTIES ////////// -->
+  <!-- /////////////////////////////////////////////////// -->
+
+  <!--
+  Note : The paths defined CAN'T be passed as is to the *.csproj targets, 
+  as they are relative to the BuildSystemTargets.xml path.
+  If you need to pass a path to a target elsewhere, you need to use 
+  the "make relative" property function (see KBinGenerator target in 
+  BuildSystemTargets for an example).
+  -->
+
+  <PropertyGroup>
+    
+    <!-- This is used to write the version file -->
+    <KerbalismDownloadLink>https://github.com/Kerbalism/Kerbalism/releases</KerbalismDownloadLink>
+    <KerbalismChangelogLink>https://github.com/Kerbalism/Kerbalism/blob/master/CHANGELOG.md</KerbalismChangelogLink>
+    
+    <!-- Path to the repo root. We use this everywhere to get ride of the relative path hell -->
+    <RepoBasePath>..</RepoBasePath>
+    <!-- This is where the magic happen (mostly) -->
+    <BuildSystemTargets>$(RepoBasePath)\BuildSystem\BuildSystemTargets.xml</BuildSystemTargets>
+    <!-- Build paths -->
+    <!-- Because all targets are made for a specific configuration we don't require the right configuration to be set from the msbuild cmd line -->
+    <!-- but that mean that outputpath/intermediateoutputpath will potentially be wrong if used directly -->
+    <!-- so we keep both versions to use when needed-->
+    <DebugOutputPath>$(RepoBasePath)\BuildSystem\BinariesDebug</DebugOutputPath>
+    <ReleaseOutputPath>$(RepoBasePath)\BuildSystem\BinariesRelease</ReleaseOutputPath>
+    <OutputPath Condition="$(Configuration)==Debug" >$(DebugOutputPath)</OutputPath>
+    <OutputPath Condition="$(Configuration)==Release" >$(ReleaseOutputPath)</OutputPath>
+    <IntermediateOutputPath>$(OutputPath)\obj</IntermediateOutputPath>
+    <!-- Deployment path -->
+    <DeploymentOutputPath>$(RepoBasePath)\BuildSystem\DeploymentOutput\</DeploymentOutputPath>
+    <!-- Repo Gamedata paths -->
+    <GameDataKerbalismPath>$(RepoBasePath)\GameData\Kerbalism</GameDataKerbalismPath>
+    <GameDataKerbalismConfigPath>$(RepoBasePath)\GameData\KerbalismConfig</GameDataKerbalismConfigPath>
+    <!-- Repo projects paths -->
+    <KerbalismProjectPath>$(RepoBasePath)\src\Kerbalism</KerbalismProjectPath>
+    <KerbalismProjectFile>$(KerbalismProjectPath)\Kerbalism.csproj</KerbalismProjectFile>
+    <KerbalismBootstrapProjectPath>$(RepoBasePath)\src\KerbalismBootstrap</KerbalismBootstrapProjectPath>
+    <KerbalismBootstrapProjectFile>$(KerbalismBootstrapProjectPath)\KerbalismBootstrap.csproj</KerbalismBootstrapProjectFile>
+    <!-- other paths -->
+    <UtilityPath>$(RepoBasePath)\BuildSystem\Utility</UtilityPath>
+    <KSPReferenceZipsPath>$(RepoBasePath)\BuildSystem\References\KSPReferenceZips</KSPReferenceZipsPath>
+    <KSPReferenceDllsPath>$(RepoBasePath)\BuildSystem\References\KSPReferenceDlls</KSPReferenceDllsPath>
+    <!-- version files -->
+    <XMLVersionFilePath>$(GameDataKerbalismPath)\VersionConfig.xml</XMLVersionFilePath>
+    <AVCVersionFilePath>$(GameDataKerbalismPath)\Kerbalism.version</AVCVersionFilePath>
+    <!-- other files -->
+    <ReadmeFilePath>$(RepoBasePath)\README.md</ReadmeFilePath>
+    <ChangelogFilePath>$(RepoBasePath)\CHANGELOG.md</ChangelogFilePath>
+  </PropertyGroup>
+</Project>

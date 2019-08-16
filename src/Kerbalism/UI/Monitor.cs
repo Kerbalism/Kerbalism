@@ -56,9 +56,9 @@ namespace KERBALISM
 		{
 			// reset panel
 			panel.Clear();
-#if DEVBUILD
-			panel.AddHeader("KERBALISM DEV BUILD " + Lib.KerbalismDevBuild);
-#endif
+			
+			if (Lib.IsDevBuild) panel.AddHeader("KERBALISM DEV BUILD " + Lib.KerbalismDevBuild);
+
 			// get vessel
 			selected_v = selected_id == Guid.Empty ? null : FlightGlobals.FindVessel(selected_id);
 

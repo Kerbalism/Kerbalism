@@ -1,0 +1,796 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- /////////////////////////////////////////////////// -->
+<!-- ///////////// WELCOME TO THIS MADNESS ///////////// -->
+<!-- /////////////////////////////////////////////////// -->
+
+<Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <Import Condition="Exists('BuildSystemProperties.xml')" Project="BuildSystemProperties.xml" />
+  <Import Condition="Exists('UserConfigDevEnv.xml')" Project="UserConfigDevEnv.xml" />
+  <Import Condition="Exists('$(XMLVersionFilePath)')" Project="$(XMLVersionFilePath)" />
+  <Import Condition="Exists('$(ContributorConfigFolder)\UserConfigRelease.xml')" Project="$(ContributorConfigFolder)\UserConfigRelease.xml" />
+
+  <!-- /////////////////////////////////////////////////// -->
+  <!-- /////// RELEASE CONFIGURATION BUILD SCRIPT //////// -->
+  <!-- /////////////////////////////////////////////////// -->
+
+  <Target Name="BuildRelease">
+
+    <Message Text="[KERBALISM-BUILD-RELEASE] Initiating RELEASE build..." Importance="high" />
+    <Message Text="[KERBALISM-BUILD-RELEASE] ERROR : Can't find the '$(ContributorConfigFolder)\UserConfigRelease.xml'. Check your 'BuildSystem\UserConfigDevEnv.xml' file." Condition="! Exists('$(ContributorConfigFolder)\UserConfigRelease.xml')" Importance="high"/>
+    <Message Text="[KERBALISM-BUILD-RELEASE] ERROR : 'KSPDllArchivesPassword' isn't defined in UserConfigRelease.xml. The password is required to build in release configuration." Condition=" '$(KSPDllArchivesPassword)' == '' " Importance="high" />
+    <Message Text="[KERBALISM-BUILD-RELEASE] If you don't have the password, you don't need it. Build Kerbalism in the 'Debug' configuration instead." Condition=" '$(KSPDllArchivesPassword)' == '' " Importance="high" />
+
+    <Error Condition="(! Exists('$(ContributorConfigFolder)\UserConfigRelease.xml')) OR '$(KSPDllArchivesPassword)' == '' " Text=""/>
+
+    <RemoveDir Directories="$(OutputPath)" />
+
+    <!-- Keeping assemblies versions in sync -->
+    <MSBuild
+      Projects="$(BuildSystemTargets)"
+      Targets="UpdateAssembliesVersion"/>
+
+    <!-- Keeping kerbalism.version file in sync -->
+    <MSBuild
+      Projects="$(BuildSystemTargets)"
+      Targets="UpdateVersionFile"/>
+
+    <Message Text="[KERBALISM-BUILD-RELEASE] Building KerbalismBootstrap..." Importance="high" />
+    <!-- Extract the latest DLL version for building KerbalismBootstrap -->
+    <!-- Note : maybe this should be other way (use the oldest available version) -->
+    <!-- If this is an issue, you can try changing ItemSpecToFind -->
+    <!-- it can use either "$(KBinMaxVersion)", "$(KBinMinVersion)" or even a specific version constant available in VersionConfig.xml (ex "15_16")-->
+    <FindInList CaseSensitive="false" List="@(KBinVersionConstant)" ItemSpecToFind="$(KBinMaxVersion)">
+      <Output TaskParameter="ItemFound" ItemName="MaxKSPVersion" />
+    </FindInList>
+    <MSBuild Projects="$(BuildSystemTargets)" Properties="KSPVersion=%(MaxKSPVersion.KSPBuildVersion)" Targets="ExtractKSPDlls" />
+
+    <!-- calling a build for KerbalismBootstrap-->
+    <!-- I'm not sure RunEachTargetSeparately is really needed-->
+    <MSBuild
+      Projects="$(KerbalismBootstrapProjectFile)"
+      Properties="Configuration=Release"
+      RunEachTargetSeparately="true"/>
+
+    <!-- Clean the build temporaries-->
+    <RemoveDir Directories="$(IntermediateOutputPath)" />
+    <RemoveDir Directories="$(KSPReferenceDllsPath)" />
+
+    <!-- calling a build for each KBinVersionConstant item in GameData\Kerbalism\VersionConfig.xml -->
+    <Message Text="[KERBALISM-BUILD-RELEASE] Building all kbins..." Importance="high" />
+    <MSBuild
+      Projects="$(BuildSystemTargets)"
+      Properties="KBinVersionConstant=%(KBinVersionConstant.Identity);KSPBuildVersion=%(KBinVersionConstant.KSPBuildVersion);IsDevRelease=$(IsDevRelease)"
+      Targets="KBinGenerator"/>
+
+    <Message Text="[KERBALISM-BUILD-RELEASE] Cleaning output folder..." Importance="high" />
+    <RemoveDir Directories="$(IntermediateOutputPath)\" />
+
+    <Message Text="[KERBALISM-BUILD-RELEASE] Kerbalism RELEASE build generated in $(OutputPath)" Importance="high" />
+
+  </Target>
+
+  <!-- This is the actual release build process for each kbin-->
+  <Target Name="KBinGenerator">
+
+    <PropertyGroup>
+      <KBinOutputPath>$(OutputPath)\$(KBinVersionConstant)</KBinOutputPath>
+      <KBinConstant>KSP$(KBinVersionConstant)</KBinConstant>
+      <KBinFileName>Kerbalism$(KBinVersionConstant).kbin</KBinFileName>
+    </PropertyGroup>
+
+    <Message Text="[KERBALISM-BUILD-RELEASE] Generating '$(KBinFileName)' using KSP $(KSPBuildVersion) dlls..." Importance="high" />
+    <!-- KerbalismBootstrap is a reference for Kerbalism, we need it in the output folder -->
+    <Copy SourceFiles="$(OutputPath)\KerbalismBootstrap.dll" DestinationFolder="$(KBinOutputPath)" />
+    <Copy SourceFiles="$(OutputPath)\KerbalismBootstrap.dll" DestinationFolder="$(KBinOutputPath)\obj" />
+
+    <!-- The ExtractKSPDlls target is defined in BuildSystemTargets.xml, it will extract the KSP dlls from their archive for the specified version -->
+    <!-- We use the MSBuild task to call the target because we need to pass the version argument. the "Projects" used doesn't matter -->
+    <Message Text="[KERBALISM-BUILD-RELEASE] Extracting KSP $(KSPBuildVersion) dlls..." Importance="high" />
+
+    <MSBuild
+      Projects="$(BuildSystemTargets)"
+      Properties="KSPVersion=$(KSPBuildVersion)"
+      Targets="ExtractKSPDlls"/>
+    
+    
+    <!-- we need to pass the output path of each Kbin relative the Kerbalism.csproj, 
+    so get this relative path using the MakeRelative property function -->
+    <ConvertToAbsolutePath Paths="$(KBinOutputPath)">
+      <Output TaskParameter="AbsolutePaths" PropertyName="KBinOutputPathAbs" />
+    </ConvertToAbsolutePath>
+    <ConvertToAbsolutePath Paths="$(KerbalismProjectPath)">
+      <Output TaskParameter="AbsolutePaths" PropertyName="KerbalismProjectPathAbs" />
+    </ConvertToAbsolutePath>
+    <PropertyGroup>
+      <KBinRelativeFromProjectPath>$([MSBuild]::MakeRelative($(KerbalismProjectPathAbs), $(KBinOutputPathAbs)))</KBinRelativeFromProjectPath>
+    </PropertyGroup>
+
+    <!-- Parse the devbuild constant if needed-->
+    <PropertyGroup>
+      <ReleaseDefineConstants>$(KBinConstant)</ReleaseDefineConstants>
+      <ReleaseDefineConstants Condition=" '$(IsDevRelease)' == 'true' ">$(KBinConstant);DEVBUILD</ReleaseDefineConstants>
+    </PropertyGroup>
+
+    <!-- Now call MSBuild to actually build the Kerbalism project, in a sub-folder named after the passed version constant-->
+    <Message Text="[KERBALISM-BUILD-RELEASE] Building kerbalism project with the '$(ReleaseDefineConstants)' constant..." Importance="high" />
+    <MSBuild
+      Projects="$(KerbalismProjectFile)"
+      Properties="Configuration=Release;DefineConstants=$(ReleaseDefineConstants);OutputPath=$(KBinRelativeFromProjectPath)"
+      RunEachTargetSeparately="true"
+        />
+
+    <!-- Move and rename the Kerbalism.dll to the base output folder -->
+    <Move SourceFiles="$(KBinOutputPath)\Kerbalism.dll" DestinationFiles="$(OutputPath)\$(KBinFileName)" />
+    <Message Text="[KERBALISM-BUILD-RELEASE] Cleaning temporary files..." Importance="high" />
+
+    <!-- Delete the sub-folder named after the passed version constant -->
+    <RemoveDir Directories="$(KBinOutputPath)" />
+    <!-- Clean the build temporaries-->
+    <RemoveDir Directories="$(IntermediateOutputPath)" />
+    <RemoveDir Directories="$(KSPReferenceDllsPath)" />
+
+    <Message Text="[KERBALISM-BUILD-RELEASE] '$(KBinFileName)' generated." Importance="high" />
+  </Target>
+
+  <!-- ///////////////////////////////////////////////////// -->
+  <!-- //////// DEBUG CONFIGURATION BUILD SCRIPT /////////// -->
+  <!-- ///////////////////////////////////////////////////// -->
+
+  <Target Name="BuildDebug">
+
+    <Message Text="[KERBALISM-BUILD-DEBUG] 'BuildSystem\UserConfigDevEnv.xml' not found. You need to create it to build Kerbalism" Condition="! Exists('UserConfigDevEnv.xml')" Importance="high" />
+    <Message Text="[KERBALISM-BUILD-DEBUG] Can't find the KSP assemblies in '$(KSPDevPath)'. Check your 'BuildSystem\UserConfigDevEnv.xml file'." Condition="! Exists('$(KSPDevPath)\KSP_x64_Data\Managed\Assembly-CSharp.dll')" Importance="high" />
+
+    <Error Condition="(! Exists('UserConfigDevEnv.xml')) OR (! Exists('$(KSPDevPath)\KSP_x64_Data\Managed\Assembly-CSharp.dll'))" Text=""/>
+
+    <Message Text="[KERBALISM-BUILD-DEBUG] Building for KSP version tag : $(KSPDevVersion)" Importance="high" />
+    <Message Text="[KERBALISM-BUILD-DEBUG] Cleaning build output folder..." Importance="high" />
+    <RemoveDir Directories="$(DebugOutputPath)" />
+
+    <Message Text="[KERBALISM-BUILD-DEBUG] Building KerbalismBootstrap..." Importance="high" />
+    <!-- KerbalismBootstrap need to be built first, it's a dependency of Kerbalism -->
+    <MSBuild
+      Projects="$(KerbalismBootstrapProjectFile)"
+      Properties="Configuration=Debug"
+      RunEachTargetSeparately="true"/>
+
+    <Message Text="[KERBALISM-BUILD-DEBUG] Building Kerbalism using constants '$(DefineConstants)'..." Importance="high" />
+    <MSBuild
+      Projects="$(KerbalismProjectFile)"
+      Properties="Configuration=Debug;DefineConstants=$(DefineConstants)"
+      RunEachTargetSeparately="true"
+        />
+    <Message Text="[KERBALISM-BUILD-DEBUG] Build completed, output folder : $(DebugOutputPath)" Importance="high" />
+
+    <!-- Get absolute path for the output dir -->
+    <ConvertToAbsolutePath Paths="$(DebugOutputPath)">
+      <Output TaskParameter="AbsolutePaths" PropertyName="OutputPathAbs" />
+    </ConvertToAbsolutePath>
+    <PropertyGroup>
+      <KerbalismDll>$(DebugOutputPath)\Kerbalism.dll</KerbalismDll>
+      <KerbalismMDB>$(DebugOutputPath)\Kerbalism.dll.mdb</KerbalismMDB>
+      <KerbalismBootstrapDll>$(DebugOutputPath)\KerbalismBootstrap.dll</KerbalismBootstrapDll>
+      <KerbalismBootstrapMDB>$(DebugOutputPath)\KerbalismBootstrap.dll.mdb</KerbalismBootstrapMDB>
+    </PropertyGroup>
+    <!-- On windows, generate the mono debug symbols (*.mdb files) -->
+    <!-- 
+      Note : there is currently (08/2019) no solution to generate them on linux/osx. 
+      - Only "full" PDB files can be converted into MDB files.
+      - Mono 5+ can't generate "full" PDB files (it automatically change <DebugType>full</DebugType> to <DebugType>portable</DebugType>)
+      - The version of MSBuild (15.1) and of the compiler used by Mono 4.8 (last version able to generate MDB files) are just too old (no C# 7 support + too much breaking code)
+      The only practical workaround would be to setup a windows build server somewhere and get the full PDBs from it
+      -->
+    <Message Condition="'$(OS)' == 'Windows_NT'" Text="[KERBALISM-BUILD-DEBUG] Windows build : generating mono debug mdb files..." Importance="high" />
+    <Exec Condition="'$(OS)' == 'Windows_NT'" Command="$(UtilityPath)\win_pdb2mdb\pdb2mdb.exe $(OutputPathAbs)\Kerbalism.dll" />
+    <Exec Condition="'$(OS)' == 'Windows_NT'" Command="$(UtilityPath)\win_pdb2mdb\pdb2mdb.exe $(OutputPathAbs)\KerbalismBootstrap.dll" />
+
+    <!-- If requested in UserConfigDevEnv.xml, copy gamedata -->
+    <ItemGroup>
+      <GameDataContent Include="$(RepoBasePath)\GameData\**\*.*" />
+    </ItemGroup>
+    <Message Condition="'$(CopyGameDataOnBuild)' == 'true'" Text="[KERBALISM-BUILD-DEBUG] Copying GameData to $(KSPDevPath)..." Importance="high" />
+    <RemoveDir Condition="'$(CopyGameDataOnBuild)' == 'true'" Directories="$(KSPDevPath)\GameData\Kerbalism;$(KSPDevPath)\GameData\KerbalismConfig" />
+    <Copy Condition="'$(CopyGameDataOnBuild)' == 'true'" SourceFiles="@(GameDataContent)" DestinationFolder="$(KSPDevPath)\GameData\%(RecursiveDir)" />
+    <!-- copy dll and mdb files -->
+    <Message Text="[KERBALISM-BUILD-DEBUG] Copying build dlls to $(KSPDevPath)\GameData\Kerbalism..." Importance="high" />
+    <Copy Condition="'$(OS)' == 'Windows_NT'" SourceFiles="$(KerbalismMDB);$(KerbalismBootstrapMDB)" DestinationFolder="$(KSPDevPath)\GameData\Kerbalism" />
+    <Copy SourceFiles="$(KerbalismDll);$(KerbalismBootstrapDll)" DestinationFolder="$(KSPDevPath)\GameData\Kerbalism" />
+    <!-- done -->
+    <Message Text="[KERBALISM-BUILD-DEBUG] : Kerbalism DEBUG build generated." Importance="high" />
+  </Target>
+
+  <!-- ///////////////////////////////////////////////////// -->
+  <!-- /////////////// DEPLOYMENT TARGET /////////////////// -->
+  <!-- ///////////////////////////////////////////////////// -->
+  <!-- 
+    Create zipped releases in the BuildSystem\DeploymentOutput folder
+    If "IsDevRelease=true", it will be compiled with the "DEVBUILD" constant and the version will 
+    use a number autogenerated by the compiler when KerbalismBootstrap is built (because it's assemblyInfo version has a "X.X.*" format.
+    This target is standalone and can be used from the MSBuild command line like this :
+    msbuild BuildSystemTargets.xml -verbosity:minimal -target:CreateZippedRelease -property:IsDevRelease=true/false 
+    -->
+  <Target Name="CreateZippedRelease">
+
+    <!-- make sure we are in the release configuration -->
+    <PropertyGroup>
+      <Configuration>Release</Configuration>
+    </PropertyGroup>
+
+    <!-- get the kerbalism and supported KSP versions from the versionconfig.xml file -->
+    <FindInList CaseSensitive="false" List="@(KBinVersionConstant)" ItemSpecToFind="$(KBinMinVersion)">
+      <Output TaskParameter="ItemFound" ItemName="MinKSPVersion"/>
+    </FindInList>
+    <FindInList CaseSensitive="false" List="@(KBinVersionConstant)" ItemSpecToFind="$(KBinMaxVersion)">
+      <Output TaskParameter="ItemFound" ItemName="MaxKSPVersion"/>
+    </FindInList>
+    <PropertyGroup>
+      <KerbalismVersion>$(KerbalismVersionMajor).$(KerbalismVersionMinor)</KerbalismVersion>
+      <KSPVersionMin>%(MinKSPVersion.KSPMinMajor).%(MinKSPVersion.KSPMinMinor).%(MinKSPVersion.KSPMinBuild)</KSPVersionMin>
+      <KSPVersionMax>%(MaxKSPVersion.KSPMaxMajor).%(MaxKSPVersion.KSPMaxMinor).%(MaxKSPVersion.KSPMaxBuild)</KSPVersionMax>
+    </PropertyGroup>
+
+    <Message Condition="'$(IsDevRelease)' == 'true'" Text="[KERBALISM-BUILD-GLOBAL] Creating zips for DEV RELEASE" Importance="high" />
+    <Message Condition="'$(IsDevRelease)' != 'true'" Text="[KERBALISM-BUILD-GLOBAL] Creating zips for NON-DEV RELEASE" Importance="high" />
+    <Message Text="[KERBALISM-BUILD-DEPLOY] Version information : $(KerbalismVersion) for KSP $(KSPVersionMin) to $(KSPVersionMax)" Importance="high" />
+
+    <!-- Build Kerbalism in release configuration, with the extra "DEVBUILD" constant if this is a dev build -->
+    <!-- This include the automatic update of the AVC version file and of the assemblies version -->
+    <MSBuild
+      Projects="$(BuildSystemTargets)"
+      Properties="Configuration=Release;IsDevRelease=$(IsDevRelease)"
+      Targets="BuildRelease"/>
+
+    <!-- Get the build version autogenerated by the compiler in KerbalismBootstrap -->
+    <GetAssemblyBuildVersion AssemblyPath="$(ReleaseOutputPath)\KerbalismBootstrap.dll">
+      <Output TaskParameter="BuildVersion" PropertyName="BootstrapBuild" />
+    </GetAssemblyBuildVersion>
+
+    <Message Text="[KERBALISM-BUILD-DEPLOY] DEV BUILD VERSION : $(BootstrapBuild)" Importance="high" />
+
+    <!-- Generate zip filenames -->
+    <PropertyGroup>
+      <ZipSuffix Condition="'$(IsDevRelease)' == 'true'">_dev-$(BootstrapBuild)_for_KSP$(KSPVersionMin)-$(KSPVersionMax).zip</ZipSuffix>
+      <ZipSuffix Condition="'$(IsDevRelease)' != 'true'">_v$(KerbalismVersion)_for_KSP$(KSPVersionMin)-$(KSPVersionMax).zip</ZipSuffix>
+      <KerbalismZipPath>$(DeploymentOutputPath)\Kerbalism-Core$(ZipSuffix)</KerbalismZipPath>
+      <KerbalismConfigZipPath>$(DeploymentOutputPath)\Kerbalism-Config$(ZipSuffix)</KerbalismConfigZipPath>
+    </PropertyGroup>
+
+    <!-- Clean the deployment folders -->
+    <RemoveDir Directories="$(DeploymentOutputPath)" />
+    <MakeDir Directories="$(DeploymentOutputPath)\temp"/>
+
+    <!-- Get the repo gamedata contents -->
+    <ItemGroup>
+      <KerbalismGameData Include="$(GameDataKerbalismPath)\**\*.*" />
+      <KerbalismConfigGameData Include="$(GameDataKerbalismConfigPath)\**\*.*" />
+    </ItemGroup>
+
+    <!-- Copy the Gamedata\Kerbalism folder to a temp folder -->
+    <Copy SourceFiles="@(KerbalismGameData)" DestinationFolder="$(DeploymentOutputPath)\temp\GameData\Kerbalism\%(RecursiveDir)" />
+
+    <!-- Delete all dlls and kbins in the temp folder -->
+    <ItemGroup>
+      <DeployPath Include="$(DeploymentOutputPath)\temp\GameData\Kerbalism\Kerbalism.dll" />
+      <DeployPath Include="$(DeploymentOutputPath)\temp\GameData\Kerbalism\KerbalismBootstrap.dll" />
+      <DeployPath Include="$(DeploymentOutputPath)\temp\GameData\Kerbalism\*.kbin" />
+    </ItemGroup>
+    <Delete Files="@(DeployPath)" />
+
+    <!-- get the just built binaries and copy them to the temp folder -->
+    <ItemGroup>
+      <GeneratedBinaries Include="$(ReleaseOutputPath)\*.dll" />
+      <GeneratedBinaries Include="$(ReleaseOutputPath)\*.kbin" />
+    </ItemGroup>
+    <Copy SourceFiles="@(GeneratedBinaries)" DestinationFolder="$(DeploymentOutputPath)\temp\GameData\Kerbalism" />
+
+    <!-- Put the readme and changelog at the root of the zips -->
+    <Copy SourceFiles="$(ReadmeFilePath);$(ChangelogFilePath)" DestinationFolder="$(DeploymentOutputPath)\temp" />
+
+    <!-- create the kerbalism zip from the temp folder -->
+    <ZipDirectory SourceDirectory="$(DeploymentOutputPath)\temp" DestinationFile="$(KerbalismZipPath)" />
+
+    <!-- clean the temp folder -->
+    <RemoveDir Directories="$(DeploymentOutputPath)\temp" />
+    <MakeDir Directories="$(DeploymentOutputPath)\temp"/>
+
+    <!-- copy KerbalismConfig to the temp folder -->
+    <Copy SourceFiles="@(KerbalismConfigGameData)" DestinationFolder="$(DeploymentOutputPath)\temp\GameData\KerbalismConfig\%(RecursiveDir)" />
+
+    <!-- The Kerbalism.version file is also needed in the KerbalismConfig zip because these 2 zips are separate mods on CKAN-->
+    <Copy SourceFiles="$(AVCVersionFilePath)" DestinationFolder="$(DeploymentOutputPath)\temp\GameData\KerbalismConfig" />
+
+    <!-- Put the readme and changelog at the root of the zips -->
+    <Copy SourceFiles="$(ReadmeFilePath);$(ChangelogFilePath)" DestinationFolder="$(DeploymentOutputPath)\temp" />
+
+    <!-- create the KerbalismConfig zip from the temp folder -->
+    <ZipDirectory SourceDirectory="$(DeploymentOutputPath)\temp" DestinationFile="$(KerbalismConfigZipPath)" />
+
+    <RemoveDir Directories="$(DeploymentOutputPath)\temp" />
+
+    <Message Text="[KERBALISM-BUILD-DEPLOY] Zip releases created in $(DeploymentOutputPath)" Importance="high" />
+  </Target>
+
+  <!-- ///////////////////////////////////////////////////// -->
+  <!-- //////////////// PUBLISH TARGETS //////////////////// -->
+  <!-- ///////////////////////////////////////////////////// -->
+
+  <!-- ///////////// UploadGitHubDevRelease //////////////// -->
+  <!--
+    This target build a dev release and upload it to the "DevBuilds" GitHub repo releases.
+    Note that this target can't be run unattended, there is an user prompt for confirmation
+  
+    Command line usage :
+    msbuild BuildSystemTargets.xml -verbosity:minimal -target:UploadGitHubDevRelease -property:prop1=value1;prop2=value2
+  
+    The target can use various properties, but they are all optional excepted for the first one :
+    The default value is the
+  
+    - "GithubOAuthToken" : GitHub OAuth Token for your github account, to generate it, 
+    go to your guthub account Settings > Developer settings > Personal access tokens
+    To avoid having to put this every time, it can be defined in "UserConfigRelease.xml", 
+    whose path is defined in "UserConfigDevEnv.xml"
+  
+    - "PushVersionCommit=true/false" (default true) : by default, this target will push an empty
+    commit to the active branch with the name of the release. This is used by this script to find 
+    the previous release and generate the commit changelog. Set to false to prevent this commit
+    from being created.
+  
+    - "DraftRelease=true/false" (default false) : if true, create a release with the "draft" 
+    status on GitHub. In this case, the "PushVersionCommit" paroperty will be forced to "false".
+  
+    - "LastVersionCommitGrep" (default "DevBuild.*BuildSystem") : git-grep style regular 
+    expression used to find the commit corresponding to the previous version and generate
+    the changelog history. You can change this if you want to generate the changelog history
+    from a specific commit (must match the text of the commit).
+    -->
+
+  <!-- Default values for overrideable properties -->
+  <PropertyGroup>
+    <DraftRelease>false</DraftRelease>
+    <PushVersionCommit>true</PushVersionCommit>
+    <LastVersionCommitGrep>DevBuild.*BuildSystem</LastVersionCommitGrep>
+  </PropertyGroup>
+
+  <!-- msbuild.exe Kerbalism.sln -verbosity:minimal -target:UploadGitHubDevRelease -->
+  <Target Name="UploadGitHubDevRelease">
+
+
+
+    <MSBuild
+      Projects="$(BuildSystemTargets)"
+      Properties="IsDevRelease=true"
+      Targets="CreateZippedRelease"/>
+
+    <!-- Get the build version autogenerated by the compiler in KerbalismBootstrap -->
+    <GetAssemblyBuildVersion AssemblyPath="$(ReleaseOutputPath)\KerbalismBootstrap.dll">
+      <Output TaskParameter="BuildVersion" PropertyName="BootstrapBuild" />
+    </GetAssemblyBuildVersion>
+
+    <!--Get name of current local branch-->
+    <Exec Command="git rev-parse --abbrev-ref HEAD" ConsoleToMSBuild="true" StandardOutputImportance="normal">
+      <Output TaskParameter="ConsoleOutput" PropertyName="CurrentGitBranch" />
+    </Exec>
+
+    <!--Return a list of the uncommitted local changes. Result is an empty string if there are no changes-->
+    <Exec Command="git status --porcelain" ConsoleToMSBuild="true" StandardOutputImportance="normal">
+      <Output TaskParameter="ConsoleOutput" PropertyName="UncommittedChanges" />
+    </Exec>
+
+    <!--Get last commit hash in remote -->
+    <Exec Command="git rev-parse origin/$(CurrentGitBranch)" ConsoleToMSBuild="true" StandardOutputImportance="normal">
+      <Output TaskParameter="ConsoleOutput" PropertyName="RemoteGitLastCommit" />
+    </Exec>
+
+    <!--Get last commit hash in local -->
+    <Exec Command="git rev-parse HEAD" ConsoleToMSBuild="true" StandardOutputImportance="normal">
+      <Output TaskParameter="ConsoleOutput" PropertyName="LocalGitLastCommit" />
+    </Exec>
+
+    <!--Get commit hash of the last dev build in this branch that we made from this task, by searching the commit text for our specific format -->
+    <PropertyGroup>
+      <GitCommand Condition="'$(OS)' == 'Windows_NT'">git --no-pager log origin/$(CurrentGitBranch) --grep=&quot;$(LastVersionCommitGrep)&quot; -n 1 --format=&quot;%25%25H&quot;</GitCommand>
+      <GitCommand Condition="'$(OS)' != 'Windows_NT'">git --no-pager log origin/$(CurrentGitBranch) --grep=&quot;$(LastVersionCommitGrep)&quot; -n 1 --format=&quot;%25H&quot;</GitCommand>
+    </PropertyGroup>
+
+    <Exec Command="$(GitCommand)" ConsoleToMSBuild="true" StandardOutputImportance="normal">
+      <Output TaskParameter="ConsoleOutput" PropertyName="LastDevCommitHash" />
+    </Exec>
+
+    <!-- setup all the properties we need -->
+    <PropertyGroup>
+
+      <!-- never create the version commit if the release is a draft -->
+      <PushVersionCommit Condition="'$(DraftRelease)' == 'true' ">false</PushVersionCommit>
+
+      <!-- default branch that should be used (no effect other than a warning) -->
+      <DefaultGitBranch>dev</DefaultGitBranch>
+
+      <!-- is there uncommitted changes on the local repo ? -->
+      <LocalGitHasChanges Condition="'$(UncommittedChanges)' == '' ">false</LocalGitHasChanges>
+      <LocalGitHasChanges Condition="'$(UncommittedChanges)' != '' ">true</LocalGitHasChanges>
+
+      <!-- Are we using the default branch ? -->
+      <LocalGitIsRightBranch Condition="'$(DefaultGitBranch)' == '$(CurrentGitBranch)'">true</LocalGitIsRightBranch>
+      <LocalGitIsRightBranch Condition="'$(DefaultGitBranch)' != '$(CurrentGitBranch)'">false</LocalGitIsRightBranch>
+
+      <!-- Are we synchronized with remote repo ? -->
+      <LocalGitIsInSync Condition="'$(RemoteGitLastCommit)' == '$(LocalGitLastCommit)'">true</LocalGitIsInSync>
+      <LocalGitIsInSync Condition="'$(RemoteGitLastCommit)' != '$(LocalGitLastCommit)'">false</LocalGitIsInSync>
+
+      <!-- get the name of the last (detected) build -->
+      <LastBuildName>$([System.Text.RegularExpressions.Regex]::Replace($(LastDevCommitHash), "@Branch.*", ""))</LastBuildName>
+      <LastBuildName Condition="'$(LastBuildName)' == '' ">NONE</LastBuildName>
+
+      <!-- set the name of the new build -->
+      <NewBuildName>DevBuild-$(BootstrapBuild)</NewBuildName>
+
+      <!-- set the text of the commit that will be made to identify this release -->
+      <ReleaseCommitName>DevBuild-$(NewBuildName)@Branch:$(CurrentGitBranch) [BuildSystem]</ReleaseCommitName>
+
+    </PropertyGroup>
+
+    <!-- get the zips to upload -->
+    <ItemGroup>
+      <ReleaseZips Include="$(DeploymentOutputPath)\*.zip" />
+    </ItemGroup>
+
+    <!-- Since we are making a commit, we need to be synchronized with origin -->
+    <Message Text="[KERBALISM-PUBLISH-DEV] ERROR : Can't create release commit, the you are not synchronized with 'origin/$(CurrentGitBranch)' Pull/Push before releasing." Importance="high" Condition="'$(LocalGitIsInSync)' == 'false'"/>
+    <Error Condition="'$(LocalGitIsInSync)' == 'false'" Text="Can't create release commit : git status"/>
+
+    <Message Text="[KERBALISM-PUBLISH-DEV] ----------------------------------------------------------------------------------------" Importance="high" />
+    <Message Text="[KERBALISM-PUBLISH-DEV] BEWARE : THIS SCRIPT WILL PUSH A COMMIT TO THE `$(CurrentGitBranch)` REMOTE BRANCH" Importance="high" />
+    <Message Text="[KERBALISM-PUBLISH-DEV] MAKE SURE YOU DON'T HAVE ANY STAGED CHANGES AND THAT YOU ARE UP-TO-DATE WITH REMOTE" Importance="high" />
+    <Message Text="[KERBALISM-PUBLISH-DEV] ----------------------------------------------------------------------------------------" Importance="high" />
+    <Message Text="[KERBALISM-PUBLISH-DEV] You are about to upload a DEV release on https://github.com/Kerbalism/DevBuilds/releases" Importance="high" />
+    <Message Text="[KERBALISM-PUBLISH-DEV] Please review the following information :" Importance="high" />
+    <Message Text="[KERBALISM-PUBLISH-DEV] NEW BUILD VERSION   : $(NewBuildName)" Importance="high" />
+    <Message Text="[KERBALISM-PUBLISH-DEV] PREVIOUS VERSION    : $(LastBuildName)" Importance="high" />
+    <Message Text="[KERBALISM-PUBLISH-DEV] RELEASE AS DRAFT    : $(DraftRelease)" Importance="high" />
+    <Message Text="[KERBALISM-PUBLISH-DEV] PUSH VERSION COMMIT : $(PushVersionCommit)" Importance="high" />
+    <Message Text="[KERBALISM-PUBLISH-DEV] ZIPS TO UPLOAD      :" Importance="high" />
+    <Message Text="[KERBALISM-PUBLISH-DEV] %(ReleaseZips.Identity)" Importance="high" />
+    <Message Text="[KERBALISM-PUBLISH-DEV] ----------------------------------------------------------------------------------------" Importance="high" />
+    <Message Text="[KERBALISM-PUBLISH-DEV] WARNING : Releasing from the '$(CurrentGitBranch)' branch instead of '$(DefaultGitBranch)'. Is that intended ?" Importance="high" Condition="'$(LocalGitIsRightBranch)' == 'false'"/>
+    <Message Text="[KERBALISM-PUBLISH-DEV] WARNING : You have uncommitted changes." Importance="high" Condition="'$(LocalGitHasChanges)' == 'true'"/>
+
+    <!-- Prompt confirmation -->
+    <PromptUser PromptText="[KERBALISM-PUBLISH-DEV] Confirm the upload [y/n] :">
+      <Output TaskParameter="UserInput" PropertyName="UserInput"/>
+    </PromptUser>
+    <Message Text="[KERBALISM-PUBLISH-DEV] ----------------------------------------------------------------------------------------" Importance="high" />
+    <Message Text="[KERBALISM-PUBLISH-DEV] GitHub release upload cancelled. The release is still available in $(DeploymentOutputPath)." Importance="high" Condition="!('$(UserInput)' == 'y')"/>
+    <Error Condition="!('$(UserInput)' == 'y')" Text="Action cancelled by user"/>
+
+    <!-- get the commit changelog. This part is quite brittle, sorry for that but the combined quirks of the git CLI and of MSBuild don't help -->
+    <!-- The exec task output strip down a lot of special characters and all blank lines, so we use a "_NEWLINE_" that we will remplace to put blank lines between the commits -->
+    <PropertyGroup>
+      <GitCommand Condition="'$(OS)' == 'Windows_NT'">git --no-pager log $(LastDevCommitHash)..origin/$(CurrentGitBranch) --format=&quot;#### `%25%25h` - %25%25an - %25%25ad%25%25n%25%25B_NEWLINE_ &quot; --date=short --max-count=100</GitCommand>
+      <GitCommand Condition="'$(OS)' != 'Windows_NT'">git --no-pager log $(LastDevCommitHash)..origin/$(CurrentGitBranch) --format='#### `%25h` - %25an - %25ad%25n%25B_NEWLINE_ ' --date=short --max-count=100</GitCommand>
+    </PropertyGroup>
+    <Exec
+      Command="$(GitCommand)"
+      ConsoleToMSBuild="true"
+      StandardOutputImportance="normal">
+      <Output TaskParameter="ConsoleOutput" PropertyName="CommitLog" />
+    </Exec>
+
+    <PropertyGroup>
+      <!-- As for the 2 follwing lines, I honestly have no idea why they work, this is pure luck after trying countless alternatives-->
+      <ReleaseDescCommits>$(CommitLog.Replace("_NEWLINE_", "%0a"))</ReleaseDescCommits>
+      <ReleaseDescCommits>$(ReleaseDescCommits.Replace(";", "%0a"))</ReleaseDescCommits>
+      <ReleaseDesc Condition="'$(ExtraDescription)' != ''">$(ExtraDescription)%0a%0a</ReleaseDesc>
+      <ReleaseDesc>$(ReleaseDesc)This is an automated build from the [Kerbalism '$(CurrentGitBranch)' branch](https://github.com/Kerbalism/Kerbalism/tree/$(CurrentGitBranch))\%0aIt might be unstable and/or corrupt your save.\%0aGo to the main repository to [get stable releases](https://github.com/Kerbalism/Kerbalism/releases)</ReleaseDesc>
+      <ReleaseDesc Condition="'$(LastBuildName)' != 'NONE' ">$(ReleaseDesc)%0a%0a### Commit log since build '$(LastBuildName)' :%0a%0a$(ReleaseDescCommits)"</ReleaseDesc>
+    </PropertyGroup>
+
+    <!-- Call our custom task for the GitHub API-->
+    <UploadGitHubRelease
+      GithubOAuthToken="$(GithubOAuthToken)"
+      GithubUser="Kerbalism"
+      GithubRepo="DevBuilds"
+      ReleaseName="Kerbalism $(NewBuildName) [branch:$(CurrentGitBranch)]"
+      ReleaseTag="$(NewBuildName)"
+      ReleaseDescription="$(ReleaseDesc)"
+      PreRelease="false"
+      Draft="$(DraftRelease)"
+      ZipFilesToUpload="@(ReleaseZips)"/>
+
+    <!-- Push the release commit-->
+    <Exec Condition="'$(PushVersionCommit)' == 'true'" Command="git commit -m &quot;$(ReleaseCommitName)&quot; --allow-empty" StandardOutputImportance="normal"/>
+    <Exec Condition="'$(PushVersionCommit)' == 'true'" Command="git push"/>
+    <Message Condition="'$(PushVersionCommit)' == 'true'" Text="[KERBALISM-PUBLISH-DEV] Commit '$(ReleaseCommitName)' pushed to the '$(CurrentGitBranch)' branch" Importance="high" />
+
+  </Target>
+
+  <!-- ///////////////////////////////////////////////////// -->
+  <!-- /////////////// UTILITY TARGETS ///////////////////// -->
+  <!-- ///////////////////////////////////////////////////// -->
+
+  <!-- All those targets are called from the main ones, but most of them can be used standalone in the CLI -->
+
+  <!-- //////////////// UpdateVersionFile ////////////////// -->
+  <!-- 
+    Update the Kerbalism.version file based on the VersionConfig.xml file
+    This target is standalone and can be used from the MSBuild command line like this :
+    msbuild BuildSystemTargets.xml -verbosity:minimal -target:UpdateVersionFile
+    -->
+  <Target Name="UpdateVersionFile">
+
+    <Message Text="[KERBALISM-BUILD-UTILITY] Task 'UpdateVersionFile' : Starting..." Importance="high" />
+
+    <!-- filter the KBinVersionConstant ItemGroup to find the min / max version item, and copy it in a new ItemGroup (that will have only 1 item) -->
+    <FindInList CaseSensitive="false" List="@(KBinVersionConstant)" ItemSpecToFind="$(KBinMinVersion)">
+      <Output TaskParameter="ItemFound" ItemName="MinKSPVersion"/>
+    </FindInList>
+    <FindInList CaseSensitive="false" List="@(KBinVersionConstant)" ItemSpecToFind="$(KBinMaxVersion)">
+      <Output TaskParameter="ItemFound" ItemName="MaxKSPVersion"/>
+    </FindInList>
+
+    <!-- we can't iterate over multiple ItemGroups (MinKSPVersion and MaxKSPVersion) in the same property , so split the parsing -->
+    <PropertyGroup>
+      <VersionFileURL>"URL": "http://ksp-avc.cybutek.net/version.php?id=559"</VersionFileURL>
+      <VersionFileDownloadLink>"DOWNLOAD": "$(KerbalismDownloadLink)"</VersionFileDownloadLink>
+      <VersionFileChangelogLink>"CHANGE_LOG_URL": "$(KerbalismChangelogLink)"</VersionFileChangelogLink>
+      <VersionFileKerbalismVersion>"VERSION": {"MAJOR": $(KerbalismVersionMajor), "MINOR": $(KerbalismVersionMinor), "PATCH": 0, "BUILD": 0}</VersionFileKerbalismVersion>
+      <VersionFileKSPVersion>"KSP_VERSION": {"MAJOR": %(MaxKSPVersion.KSPMinMajor), "MINOR": %(MaxKSPVersion.KSPMinMinor), "PATCH": %(MaxKSPVersion.KSPMinBuild)}</VersionFileKSPVersion>
+      <VersionFileKSPVersionMin>"KSP_VERSION_MIN": {"MAJOR": %(MinKSPVersion.KSPMinMajor), "MINOR": %(MinKSPVersion.KSPMinMinor), "PATCH": %(MinKSPVersion.KSPMinBuild)}</VersionFileKSPVersionMin>
+      <VersionFileKSPVersionMax>"KSP_VERSION_MAX": {"MAJOR": %(MaxKSPVersion.KSPMaxMajor), "MINOR": %(MaxKSPVersion.KSPMaxMinor), "PATCH": %(MaxKSPVersion.KSPMaxBuild)}</VersionFileKSPVersionMax>
+      <KerbalismVersionFileContent>
+        {
+        "NAME": "Kerbalism",
+        $(VersionFileURL),
+        $(VersionFileDownloadLink),
+        $(VersionFileChangelogLink),
+        $(VersionFileKerbalismVersion),
+        $(VersionFileKSPVersion),
+        $(VersionFileKSPVersionMin),
+        $(VersionFileKSPVersionMax)
+        }
+      </KerbalismVersionFileContent>
+    </PropertyGroup>
+
+    <Message Text="[KERBALISM-BUILD-UTILITY] VersionConfig.xml parsing done :" Importance="high" />
+    <Message Text="$(KerbalismVersionFileContent)" Importance="high" />
+
+    <!-- write the output to a temp file -->
+    <WriteLinesToFile
+      File="$(IntermediateOutputPath)\Kerbalism.version"
+      Overwrite="true"
+      Lines="$(KerbalismVersionFileContent)" />
+
+    <!-- read the temp file -->
+    <ReadLinesFromFile File="$(IntermediateOutputPath)\Kerbalism.version" >
+      <Output TaskParameter="Lines" PropertyName="NewVersionFile"/>
+    </ReadLinesFromFile>
+
+    <!-- read the original file -->
+    <ReadLinesFromFile File="$(AVCVersionFilePath)" >
+      <Output TaskParameter="Lines" PropertyName="OriginalVersionFile"/>
+    </ReadLinesFromFile>
+
+    <!-- only overwrite the original file if the content has changed, to avoid modifying the modification date and doing useless commits -->
+    <Message Condition="'$(NewVersionFile)' != '$(OriginalVersionFile)'" Text="[KERBALISM-BUILD-UTILITY] Version has changed, updating $(AVCVersionFilePath)..." Importance="high" />
+    <Message Condition="'$(NewVersionFile)' == '$(OriginalVersionFile)'" Text="[KERBALISM-BUILD-UTILITY] Version hasn't changed, version file not modified." Importance="high" />
+
+    <WriteLinesToFile
+      Condition="'$(NewVersionFile)' != '$(OriginalVersionFile)'"
+      File="$(AVCVersionFilePath)"
+      Overwrite="true"
+      Lines="$(KerbalismVersionFileContent)" />
+
+    <Message Text="[KERBALISM-BUILD-UTILITY] Task 'UpdateVersionFile' : Done." Importance="high" />
+  </Target>
+
+  <!-- //////////////// UpdateAssembliesVersion ////////////////// -->
+  <!-- 
+    Update the assemblyInfo.cs files in Kerbalism and KerbalismBootstrap to match the version defined in VersionConfig.xml
+    This target is standalone and can be used from the MSBuild command line like this :
+    msbuild BuildSystemTargets.xml -verbosity:minimal -target:UpdateAssembliesVersion
+    -->
+  <Target Name="UpdateAssembliesVersion">
+
+    <Message Text="[KERBALISM-BUILD-GLOBAL] Task 'UpdateAssembliesVersion' : updating version to $(KerbalismVersionMajor).$(KerbalismVersionMinor)..." Importance="high" />
+
+    <!-- Use our custom task to update the assemblyInfo.cs files -->
+    <UpdateAssemblyVersion versionMajor="$(KerbalismVersionMajor)" versionMinor="$(KerbalismVersionMinor)" projectPath="$(KerbalismProjectPath)" useAutoBuild="false" />
+    <UpdateAssemblyVersion versionMajor="$(KerbalismVersionMajor)" versionMinor="$(KerbalismVersionMinor)" projectPath="$(KerbalismBootstrapProjectPath)" useAutoBuild="true" />
+
+    <Message Text="[KERBALISM-BUILD-GLOBAL] Task 'UpdateAssembliesVersion' : Done." Importance="high" />
+
+  </Target>
+
+  <!-- //////////////// ExtractKSPDlls ////////////////// -->
+  <!--
+    Extract the KSP dlls from the zips stored in BuildSystem\References\KSPReferenceZips to the BuildSystem\References\KSPReferenceDlls folder
+    A KSP version property formated "X.X.X" matching the 7zip archives name must be given. example usage :
+    msbuild BuildSystemTargets.xml -verbosity:minimal -target:ExtractKSPDlls -property:KSPVersion=1.7.3
+    -->
+  <Target Name="ExtractKSPDlls">
+
+    <Message Text="[KERBALISM-BUILD-GLOBAL] Task 'ExtractKSPDlls' : Starting with parameter 'KSPVersion=$(KSPVersion)'..." Importance="high" />
+    <ConvertToAbsolutePath Paths="$(KSPReferenceZipsPath)\KSP-$(KSPVersion).7z">
+      <Output TaskParameter="AbsolutePaths" PropertyName="ZipAbsolutePath" />
+    </ConvertToAbsolutePath>
+    <ConvertToAbsolutePath Paths="$(UtilityPath)\win_7za\7za.exe">
+      <Output TaskParameter="AbsolutePaths" PropertyName="ZaWinAbsolutePath" />
+    </ConvertToAbsolutePath>
+    <ConvertToAbsolutePath Paths="$(KSPReferenceDllsPath)">
+      <Output TaskParameter="AbsolutePaths" PropertyName="DllsAbsolutePath" />
+    </ConvertToAbsolutePath>
+
+    <!-- always clean the dll folder -->
+    <RemoveDir Directories="$(KSPReferenceDllsPath)" />
+
+    <Message Text="[KERBALISM-BUILD-GLOBAL] Unzipping KSP $(KSPZip) dlls from $(ZipAbsolutePath)" Importance="high" />
+    <Message Text="[KERBALISM-BUILD-GLOBAL] to $(DllsAbsolutePath)" Importance="high" />
+
+    <RemoveDir Directories="$(OutputAbsolutePath)" />
+    <Exec Condition="'$(OS)' == 'Windows_NT'" Command="$(ZaWinAbsolutePath) x $(ZipAbsolutePath) -y -bso0 -bsp0 -o$(DllsAbsolutePath) -p$(KSPDllArchivesPassword) > nul" />
+    <Exec Condition="'$(OS)' != 'Windows_NT'" Command="7za x $(ZipAbsolutePath) -y -bso0 -bsp0 -o$(DllsAbsolutePath) -p$(KSPDllArchivesPassword)" />
+    <Message Text="[KERBALISM-BUILD-GLOBAL] Task 'ExtractKSPDlls' : Done." Importance="high" />
+
+  </Target>
+
+
+  <Target Name="CreateKSPDllProtectedZip">
+
+    <Message Text="[KERBALISM-BUILD-UTILITY] Target 'CreateKSPDllProtectedZip' starting with parameters :" Importance="high" />
+    <Message Text="[KERBALISM-BUILD-UTILITY] KSPVersion = '$(KSPVersion)'" Importance="high" />
+    <Message Text="[KERBALISM-BUILD-UTILITY] KSPDllPath = '$(KSPDllPath)'" Importance="high" />
+
+    <FindInList CaseSensitive="true" List="%(KBinVersionConstant.KSPBuildVersion)" ItemSpecToFind="$(KSPVersion)">
+      <Output TaskParameter="ItemFound" PropertyName="MaxKSPVersion"/>
+    </FindInList>
+
+    <Message Text="[KERBALISM-BUILD-UTILITY] ERROR : Version '$(KSPVersion)' doesn't exist in $(XMLVersionFilePath), Valid versions are :" Condition="'$(MaxKSPVersion)' == ''" Importance="high" />
+    <Message Text="[KERBALISM-BUILD-UTILITY] '%(KBinVersionConstant.KSPBuildVersion)'" Condition="'$(MaxKSPVersion)' == ''" Importance="high" />
+    <Error Condition="'$(MaxKSPVersion)' == ''" Text=""/>
+
+    <PropertyGroup>
+      <KSP7ZipPath>$(KSPReferenceZipsPath)\KSP-$(KSPVersion).7z</KSP7ZipPath>
+    </PropertyGroup>
+
+    <Message Text="[KERBALISM-BUILD-UTILITY] ERROR : The archive $(KSP7ZipPath) exists, it should not be replaced under normal circonstances." Condition="Exists('$(KSP7ZipPath)')" Importance="high" />
+    <Error Condition="Exists('$(KSP7ZipPath)')" Text=""/>
+
+    <ItemGroup>
+      <DllCheck Include="$(KSPDllPath)\Assembly-CSharp.dll" />
+      <DllCheck Include="$(KSPDllPath)\Assembly-CSharp-firstpass.dll" />
+      <DllCheck Include="$(KSPDllPath)\Assembly-UnityScript.dll" />
+      <DllCheck Include="$(KSPDllPath)\Assembly-UnityScript-firstpass.dll" />
+      <DllCheck Include="$(KSPDllPath)\UnityEngine.dll" />
+      <DllCheck Include="$(KSPDllPath)\UnityEngine.UI.dll" />
+      <AllKSPDlls Include="$(KSPDllPath)\*.dll" />
+    </ItemGroup>
+
+    <Message Text="[KERBALISM-BUILD-UTILITY] ERROR : The required dll '@(DllCheck)' wasn't found " Condition="! Exists('@(DllCheck)')" Importance="high" />
+    <Error Condition="! Exists('@(DllCheck)')" Text=""/>
+
+    <ConvertToAbsolutePath Paths="$(KSP7ZipPath)">
+      <Output TaskParameter="AbsolutePaths" PropertyName="KSP7ZipAbsolutePath" />
+    </ConvertToAbsolutePath>
+    <ConvertToAbsolutePath Paths="$(UtilityPath)\win_7za\7za.exe">
+      <Output TaskParameter="AbsolutePaths" PropertyName="ZaWinAbsolutePath" />
+    </ConvertToAbsolutePath>
+
+    <Message Text="[KERBALISM-BUILD-UTILITY] Creating archive... " Importance="high" />
+    <Exec Condition="'$(OS)' == 'Windows_NT'" Command="$(ZaWinAbsolutePath) a &quot;$(KSP7ZipAbsolutePath)&quot; &quot;%(AllKSPDlls.Identity)&quot; -p$(KSPDllArchivesPassword) -mhe=on -t7z -y -bso0 -bsp0 > nul " />
+    <Exec Condition="'$(OS)' != 'Windows_NT'" Command="7za &quot;$(KSP7ZipAbsolutePath)&quot; &quot;%(AllKSPDlls.Identity)&quot; -p$(KSPDllArchivesPassword) -mhe=on -t7z -y -bso0 -bsp0" />
+    <Message Text="[KERBALISM-BUILD-UTILITY] Created $(KSP7ZipAbsolutePath)" Importance="high" />
+
+  </Target>
+
+  <!-- ///////////////////////////////////////////////////// -->
+  <!-- /////////////// C# TASKS LIBRARY //////////////////// -->
+  <!-- ///////////////////////////////////////////////////// -->
+
+  <!-- //////////////// UpdateAssemblyVersion ////////////////// -->
+  <!-- This task update the version to the given Minor/Major version in the Properties\AssemblyInfo.cs for the given project path-->
+  <!-- If useAutoBuild = true, the AssemblyVersion will use the "Major.Minor.*" format, making the compiler autogenerate the version build and revision-->
+  <!-- After being build, the build (3rd) number is the number of days since the year 2000, and the revision (4th) number is the number of seconds since midnight (divided by 2)-->
+  <!-- We use this autogenerated build number in KerbalismBootstrap to generate our "dev branch" release version -->
+  <UsingTask TaskName="UpdateAssemblyVersion" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll" >
+    <ParameterGroup>
+      <versionMajor ParameterType="System.String" Required="true" />
+      <versionMinor ParameterType="System.String" Required="true" />
+      <projectPath ParameterType="System.String" Required="true" />
+      <useAutoBuild ParameterType="System.Boolean" Required="true" />
+    </ParameterGroup>
+    <Task>
+      <Using Namespace="System.IO"/>
+      <Using Namespace="System.Text"/>
+      <Using Namespace="System.Text.RegularExpressions"/>
+      <Code Type="Fragment" Language="cs">
+        <![CDATA[
+              string assemblyInfoPath = Path.Combine(projectPath, "Properties", "AssemblyInfo.cs").ToString();
+              string[] oldAssemblyInfo = File.ReadAllLines(assemblyInfoPath);
+              string[] newAssemblyInfo = File.ReadAllLines(assemblyInfoPath);
+
+              bool hasChanged = false;
+
+              for (int i = 0; i < newAssemblyInfo.Length; i++)
+              {
+                  if (Regex.IsMatch(newAssemblyInfo[i], @"^\[ *assembly *: *AssemblyVersion.*?\]"))
+                  {
+                      newAssemblyInfo[i] = "[assembly: AssemblyVersion(\"" + versionMajor + "." + versionMinor;
+                      if (useAutoBuild) newAssemblyInfo[i] += ".*";
+                      newAssemblyInfo[i] += "\")]";
+                  }
+
+                  if (Regex.IsMatch(newAssemblyInfo[i], @"^\[ *assembly *: *AssemblyFileVersion.*?\]"))
+                      newAssemblyInfo[i] = "[assembly: AssemblyFileVersion(\"" + versionMajor + "." + versionMinor + "\")]";
+
+                  if (hasChanged == false && newAssemblyInfo[i] != oldAssemblyInfo[i]) hasChanged = true;
+              }
+
+              if (hasChanged) File.WriteAllLines(assemblyInfoPath, newAssemblyInfo, Encoding.UTF8);
+           ]]>
+      </Code>
+    </Task>
+  </UsingTask>
+
+  <!-- //////////////// GetAssemblyBuildVersion ////////////////// -->
+  <UsingTask TaskName="GetAssemblyBuildVersion" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll" >
+    <ParameterGroup>
+      <AssemblyPath ParameterType="System.String" Required="true" />
+      <BuildVersion ParameterType="System.String" Output="true" />
+    </ParameterGroup>
+    <Task>
+      <Using Namespace="System.Reflection"/>
+      <Code Type="Fragment" Language="cs">
+        <![CDATA[
+          BuildVersion = AssemblyName.GetAssemblyName(AssemblyPath).Version.Build.ToString();
+           ]]>
+      </Code>
+    </Task>
+  </UsingTask>
+
+  <!-- //////////////// UploadGitHubRelease ////////////////// -->
+  <!-- create and upload a GitHub release -->
+  <!-- Note : the code for this is in src\KerbalismBuild\UploadGitHubRelease.cs because the "Source=" parameter doesn't resolve paths on MSBuild for mono (it's fine on windows) -->
+  <!-- see https://github.com/microsoft/msbuild/issues/4614 -->
+  <UsingTask TaskName="UploadGitHubRelease" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll" >
+    <ParameterGroup>
+      <GithubOAuthToken ParameterType="System.String" Required="true" />
+      <GithubUser ParameterType="System.String" Required="true" />
+      <GithubRepo ParameterType="System.String" Required="true" />
+      <ReleaseName ParameterType="System.String" Required="true" />
+      <ReleaseTag ParameterType="System.String" Required="true" />
+      <ReleaseDescription ParameterType="System.String" Required="true" />
+      <PreRelease ParameterType="System.Boolean" Required="true" />
+      <Draft ParameterType="System.Boolean" Required="true" />
+      <ZipFilesToUpload ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="false" />
+    </ParameterGroup>
+    <Task>
+      <Reference Include="System.Net.Http" />
+      <Reference Include="System.Runtime.Serialization" />
+      <Reference Include="System.Web.Extensions" />
+      <Reference Include="System.Xml.Linq" />
+      <Reference Include="System.Data.DataSetExtensions" />
+      <Reference Include="System.Data" />
+      <Reference Include="System.Xml" />
+      <Reference Include="System.Web" />
+      <Code Type="class" Language="cs" Source="$(UtilityPath)\UploadGitHubRelease.cs" />
+    </Task>
+  </UsingTask>
+
+  <!-- //////////////// PromptUser ////////////////// -->
+  <UsingTask TaskName="PromptUser" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll" >
+    <ParameterGroup>
+      <PromptText ParameterType="System.String" Required="true" />
+      <UserInput ParameterType="System.String" Output="true" />
+    </ParameterGroup>
+    <Task>
+      <Code Type="Fragment" Language="cs">
+        <![CDATA[
+          Console.WriteLine(PromptText);
+          UserInput = Console.ReadLine();
+          return true;
+           ]]>
+      </Code>
+    </Task>
+  </UsingTask>
+</Project>

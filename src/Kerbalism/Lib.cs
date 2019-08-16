@@ -7,7 +7,6 @@ using System.Text;
 using UnityEngine;
 using CommNet;
 using KSP.Localization;
-using KerbalismBootstrap;
 
 namespace KERBALISM
 {
@@ -31,13 +30,20 @@ namespace KERBALISM
 				stackTrace.GetFrame(1).GetMethod().Name, string.Format(message, param)));
 		}
 
+		/// <summary> This constant is being set by the build system when a dev release is requested</summary>
+#if DEVBUILD
+		public static bool IsDevBuild => true ;
+#else
+		public static bool IsDevBuild => false;
+#endif
+
 		static Version kerbalismVersion;
 		/// <summary> current Kerbalism major/minor version</summary>
 		public static Version KerbalismVersion
 		{
 			get
 			{
-				if (kerbalismVersion == null) kerbalismVersion = new Version(Assembly.GetAssembly(typeof(Bootstrap)).GetName().Version.Major, Assembly.GetAssembly(typeof(Bootstrap)).GetName().Version.Minor);
+				if (kerbalismVersion == null) kerbalismVersion = new Version(Assembly.GetAssembly(typeof(Kerbalism)).GetName().Version.Major, Assembly.GetAssembly(typeof(Kerbalism)).GetName().Version.Minor);
 				return kerbalismVersion;
 			}
 		}
@@ -57,7 +63,12 @@ namespace KERBALISM
 		{
 			get
 			{
-				if (kerbalismDevBuild == -1) kerbalismDevBuild = Assembly.GetAssembly(typeof(Bootstrap)).GetName().Version.Build;
+				if (IsDevBuild && kerbalismDevBuild == -1)
+				{
+					Assembly bootstrap = Assembly.GetAssembly(Type.GetType("Bootstrap"));
+					if (bootstrap != null) kerbalismDevBuild = bootstrap.GetName().Version.Build;
+					else Lib.Log("ERROR : This is a dev build but KerbalismBootstrap wasn't found!");
+				}
 				return kerbalismDevBuild;
 			}
 		}
@@ -100,9 +111,9 @@ namespace KERBALISM
 				return false;
 			}
 		}
-		#endregion
+#endregion
 
-		#region MATH
+#region MATH
 		// clamp a value
 		public static int Clamp(int value, int min, int max)
 		{
@@ -132,9 +143,9 @@ namespace KERBALISM
 		{
 			return a * (1.0 - k) + b * k;
 		}
-		#endregion
+#endregion
 
-		#region RANDOM
+#region RANDOM
 		// store the random number generator
 		static System.Random rng = new System.Random();
 
@@ -165,9 +176,9 @@ namespace KERBALISM
 			fast_float_seed *= 16807;
 			return fast_float_seed * 4.6566129e-010f;
 		}
-		#endregion
+#endregion
 
-		#region HASH
+#region HASH
 		// combine two guid, irregardless of their order (eg: Combine(a,b) == Combine(b,a))
 		public static Guid CombineGuid(Guid a, Guid b)
 		{
@@ -207,9 +218,9 @@ namespace KERBALISM
 			//return the hash
 			return h;
 		}
-		#endregion
+#endregion
 
-		#region TIME
+#region TIME
 		// return hours in a day
 		public static double HoursInDay()
 		{
@@ -308,9 +319,9 @@ namespace KERBALISM
 		{
 			return ((int)Time.realtimeSinceStartup / seconds) % elements;
 		}
-		#endregion
+#endregion
 
-		#region REFLECTION
+#region REFLECTION
 		private static readonly BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static;
 
 		// return a value from a module using reflection
@@ -365,9 +376,9 @@ namespace KERBALISM
 		{
 			return (T)(m.GetType().GetMethod(call_name, flags, null, types, null).Invoke(m, parameters));
 		}
-		#endregion
+#endregion
 
-		#region STRING
+#region STRING
 		/// <summary> return string limited to len, with ... at the end</summary>
 		public static string Ellipsis(string s, uint len)
 		{
@@ -474,9 +485,9 @@ namespace KERBALISM
 		{
 			return list.Length == 0 ? string.Empty : list[RandomInt(list.Length)];
 		}
-		#endregion
+#endregion
 
-		#region BUILD STRING
+#region BUILD STRING
 		// compose a set of strings together, without creating temporary objects
 		// note: the objective here is to minimize number of temporary variables for GC
 		// note: okay to call recursively, as long as all individual concatenation is atomic
@@ -557,9 +568,9 @@ namespace KERBALISM
 			foreach (string s in args) sb.Append(s);
 			return sb.ToString();
 		}
-		#endregion
+#endregion
 
-		#region HUMAN READABLE
+#region HUMAN READABLE
 		///<summary> Pretty-print a resource rate (rate is per second). Return an absolute value if a negative one is provided</summary>
 		public static string HumanReadableRate(double rate, string precision = "F3")
 		{
@@ -799,9 +810,9 @@ namespace KERBALISM
 		{
 			return Lib.BuildString("<color=cyan>", value.ToString("F1"), " CREDITS</color>");
 		}
-		#endregion
+#endregion
 
-		#region GAME LOGIC
+#region GAME LOGIC
 		// return true if the current scene is flight
 		public static bool IsFlight()
 		{
@@ -846,9 +857,9 @@ namespace KERBALISM
 			}
 			return false;
 		}
-		#endregion
+#endregion
 
-		#region BODY
+#region BODY
 
 		/// <summary>For a given body, return the last parent body that is not a sun </summary>
 		public static CelestialBody GetParentPlanet(CelestialBody body)
@@ -927,9 +938,9 @@ namespace KERBALISM
 			Vector3d radial = QuaternionD.AngleAxis(latlong.y, Vector3d.down) * QuaternionD.AngleAxis(latlong.x, Vector3d.forward) * Vector3d.right;
 			return (pos - body.position).magnitude - pqs.GetSurfaceHeight(radial);
 		}
-		#endregion
+#endregion
 
-		#region VESSEL
+#region VESSEL
 		// return true if landed somewhere
 		public static bool Landed(Vessel v)
 		{
@@ -1116,9 +1127,9 @@ namespace KERBALISM
 
 			return a.precisePosition == b.precisePosition;
 		}
-		#endregion
+#endregion
 
-		#region PART
+#region PART
 		// get list of parts recursively, useful from the editors
 		public static List<Part> GetPartsRecursively(Part root)
 		{
@@ -1198,9 +1209,9 @@ namespace KERBALISM
 		{
 			return CrewCount(p) > 0;
 		}
-		#endregion
+#endregion
 
-		#region MODULE
+#region MODULE
 		// return all modules implementing a specific type in a vessel
 		// note: disabled modules are not returned
 		public static List<T> FindModules<T>(Vessel v) where T : class
@@ -1345,9 +1356,9 @@ namespace KERBALISM
 			// then we have no chances of finding the module prefab so we return null
 			return data.index < data.prefabs.Count ? data.prefabs[data.index++] : null;
 		}
-		#endregion
+#endregion
 
-		#region RESOURCE
+#region RESOURCE
 		/// <summary> Returns the amount of a resource in a part </summary>
 		public static double Amount(Part part, string resource_name, bool ignore_flow = false)
 		{
@@ -1648,9 +1659,9 @@ namespace KERBALISM
 			// then get the first resource and return capacity
 			return p.Resources.Count == 0 ? 0.0 : p.Resources[0].maxAmount;
 		}
-		#endregion
+#endregion
 
-		#region SCIENCE DATA
+#region SCIENCE DATA
 		// return true if there is experiment data on the vessel
 		public static bool HasData( Vessel v )
 		{
@@ -1769,9 +1780,9 @@ namespace KERBALISM
 			foreach (string tech_id in techs) n += HasTech( tech_id ) ? 1 : 0;
 			return n;
 		}
-		#endregion
+#endregion
 
-		#region ASSETS
+#region ASSETS
 		///<summary> Returns the path of the directory containing the DLL </summary>
 		public static string Directory()
 		{
@@ -1856,9 +1867,9 @@ namespace KERBALISM
 			}
 			return mat;
 		}
-		#endregion
+#endregion
 
-		#region CONFIG
+#region CONFIG
 		// get a config node from the config system
 		public static ConfigNode ParseConfig( string path )
 		{
@@ -1898,9 +1909,9 @@ namespace KERBALISM
 				return def_value;
 			}
 		}
-		#endregion
+#endregion
 
-		#region UI
+#region UI
 		/// <summary>Trigger a planner update</summary>
 		public static void RefreshPlanner()
 		{
@@ -1997,9 +2008,9 @@ namespace KERBALISM
 			int index = rand.Next(letters.Length);
 			return (string)letters[index];
 		}
-		#endregion
+#endregion
 
-		#region PROTO
+#region PROTO
 		public static class Proto
 		{
 			public static bool GetBool( ProtoPartModuleSnapshot m, string name, bool def_value = false )
@@ -2051,9 +2062,9 @@ namespace KERBALISM
 				module.moduleValues.SetValue( value_name, value.ToString(), true );
 			}
 		}
-		#endregion
+#endregion
 
-		#region STRING PARSING
+#region STRING PARSING
 		public static class Parse
 		{
 			public static bool ToBool( string s, bool def_value = false )
@@ -2108,10 +2119,10 @@ namespace KERBALISM
 				return s != null && TryParseColor( s, out v ) ? v : def_value;
 			}
 		}
-		#endregion
+#endregion
 	}
 
-	#region UTILITY CLASSES
+#region UTILITY CLASSES
 
 	public class ObjectPair<T, U>
 	{
@@ -2125,7 +2136,7 @@ namespace KERBALISM
 		}
 	}
 
-	#endregion
+#endregion
 
 
 } // KERBALISM

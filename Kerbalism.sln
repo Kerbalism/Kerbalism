@@ -8,18 +8,27 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KerbalismBootstrap", "src\KerbalismBootstrap\KerbalismBootstrap.csproj", "{D07330FA-DEA1-4190-963D-31F4C81E8C82}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kerbalism", "src\Kerbalism\Kerbalism.csproj", "{7CF587A9-6E49-46E8-AB3F-87B80A6276DA}"
-	ProjectSection(ProjectDependencies) = postProject
-		{D07330FA-DEA1-4190-963D-31F4C81E8C82} = {D07330FA-DEA1-4190-963D-31F4C81E8C82}
-	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{6AEED929-B0AF-4EB1-82A0-84B98C5BA185}"
 	ProjectSection(SolutionItems) = preProject
-		.editorconfig = .editorconfig
+		.gitignore = .gitignore
 		.travis.yml = .travis.yml
-		buildsystem\MSBuildSystem.xml = buildsystem\MSBuildSystem.xml
 		CHANGELOG.md = CHANGELOG.md
-		buildsystem\DevEnvConfig.xml = buildsystem\DevEnvConfig.xml
 		GameData\Kerbalism\VersionConfig.xml = GameData\Kerbalism\VersionConfig.xml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "BuildSystem", "BuildSystem", "{F7A47BB9-1697-4ECA-AECD-9FC4A36B3BBD}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+		buildsystem\BuildSystemProperties.xml = buildsystem\BuildSystemProperties.xml
+		buildsystem\BuildSystemTargets.xml = buildsystem\BuildSystemTargets.xml
+		buildsystem\ProjectsCommonProperties.xml = buildsystem\ProjectsCommonProperties.xml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "User IDE - dev settings", "User IDE - dev settings", "{BFB3522D-10B4-4A7D-80C5-D7BE32C91C0B}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+		BuildSystem\UserConfigDevEnv.xml = BuildSystem\UserConfigDevEnv.xml
 	EndProjectSection
 EndProject
 Global
@@ -39,6 +48,10 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{F7A47BB9-1697-4ECA-AECD-9FC4A36B3BBD} = {6AEED929-B0AF-4EB1-82A0-84B98C5BA185}
+		{BFB3522D-10B4-4A7D-80C5-D7BE32C91C0B} = {6AEED929-B0AF-4EB1-82A0-84B98C5BA185}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BE63E70D-469E-4AE2-894C-A7946813FAEE}

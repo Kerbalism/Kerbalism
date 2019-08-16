@@ -1,19 +1,16 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <!-- Create this file and adjust the values according to your KSP dev environment -->
-  <!-- There is a "DevEnvConfig.xml.example" file that you can copy -->
-  <Import Condition="Exists('..\..\buildsystem\DevEnvConfig.xml')" Project="..\..\buildsystem\DevEnvConfig.xml" />
-  <Import Condition="Exists('..\..\buildsystem\MSBuildSystem.xml')" Project="..\..\buildsystem\MSBuildSystem.xml" />
-  <!-- -->
+
+
+  <!-- /////////////////////////////////////////////////// -->
+  <!-- /////////////// COMMON PROPERTIES ///////////////// -->
+  <!-- /////////////////////////////////////////////////// -->
   <PropertyGroup>
     <ProjectGuid>{7CF587A9-6E49-46E8-AB3F-87B80A6276DA}</ProjectGuid>
     <ProjectTypeGuids>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <OutputType>Library</OutputType>
-    <RootNamespace>KERBALISM</RootNamespace>
-    <AssemblyName>Kerbalism</AssemblyName>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <NoWin32Manifest>False</NoWin32Manifest>
     <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
@@ -22,7 +19,8 @@
     <TreatWarningsAsErrors>False</TreatWarningsAsErrors>
     <WarningLevel>4</WarningLevel>
     <SignAssembly>False</SignAssembly>
-    <TargetFrameworkProfile />
+    <RootNamespace>KERBALISM</RootNamespace>
+    <AssemblyName>Kerbalism</AssemblyName>
   </PropertyGroup>
   <!-- /////////////////////////////////////////////////// -->
   <!-- //////////// DEBUG CONFIGURATION SETUP //////////// -->
@@ -35,9 +33,6 @@
     <Prefer32Bit>false</Prefer32Bit>
     <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
     <NoWarn>IDE0018</NoWarn>
-    <LangVersion>7.1</LangVersion>
-    <!-- Note : this is overriden by KerbalismBuild, but in order to ghave the correct constants when editing the code, it has to there too -->
-    <DefineConstants Condition="'$(Configuration)' == 'Debug'">TRACE;DEBUG;$(DebugDefineConstants);$(KSPDevVersion)</DefineConstants>
   </PropertyGroup>
   <!-- ///////////////////////////////////////////////////// -->
   <!-- //////////// RELEASE CONFIGURATION SETUP //////////// -->
@@ -50,9 +45,20 @@
     <Prefer32Bit>false</Prefer32Bit>
     <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
     <NoWarn>IDE0018</NoWarn>
-    <LangVersion>7.1</LangVersion>
     <Optimize>true</Optimize>
   </PropertyGroup>
+
+  <!-- /////////////////////////////////////////////////// -->
+  <!-- ///////// BUILD SYSTEM AND USER OVERRIDES ///////// -->
+  <!-- /////////////////////////////////////////////////// -->
+  <Import Condition="Exists('..\..\BuildSystem\UserConfigDevEnv.xml')" Project="..\..\BuildSystem\UserConfigDevEnv.xml" />
+  <Import Condition="Exists('..\..\BuildSystem\ProjectsCommonProperties.xml')" Project="..\..\BuildSystem\ProjectsCommonProperties.xml" />
+  
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+    <!-- Note : this is overriden by the build engine, but in order to have the correct constants in the IDE, it has to be there too -->
+    <DefineConstants>TRACE;DEBUG;$(DebugDefineConstants);$(KSPDevVersion)</DefineConstants>
+  </PropertyGroup>
+
   <!-- ///////////////////////////////////////////////////// -->
   <!-- //////////////////// REFERENCES ///////////////////// -->
   <!-- ///////////////////////////////////////////////////// -->
@@ -69,17 +75,13 @@
     <Reference Include="System.Xml.Linq">
       <Private>False</Private>
     </Reference>
-    <Reference Include="KerbalismBootstrap">
-      <HintPath>$(GameDataKerbalismPath)\KerbalismBootstrap.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="Harmony">
-      <HintPath>$(GameDataKerbalismPath)\0Harmony.1.2.0.1.dll</HintPath>
+      <HintPath>$(GameDataKerbalismPathPR)\0Harmony.1.2.0.1.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
   <Choose>
-    <When Condition="'$(Configuration)' == 'Debug' AND Exists('..\..\buildsystem\DevEnvConfig.xml')">
+    <When Condition="'$(Configuration)' == 'Debug'">
       <ItemGroup>
         <Reference Include="Assembly-CSharp">
           <HintPath>$(KSPDevPath)\KSP_x64_Data\Managed\Assembly-CSharp.dll</HintPath>
@@ -110,27 +112,27 @@
     <Otherwise>
       <ItemGroup>
         <Reference Include="Assembly-CSharp">
-          <HintPath>$(KSPReferenceDllsPath)\Assembly-CSharp.dll</HintPath>
+          <HintPath>$(KSPReferenceDllsPathPR)\Assembly-CSharp.dll</HintPath>
           <Private>False</Private>
         </Reference>
         <Reference Include="Assembly-CSharp-firstpass">
-          <HintPath>$(KSPReferenceDllsPath)\Assembly-CSharp-firstpass.dll</HintPath>
+          <HintPath>$(KSPReferenceDllsPathPR)\Assembly-CSharp-firstpass.dll</HintPath>
           <Private>False</Private>
         </Reference>
         <Reference Include="Assembly-UnityScript">
-          <HintPath>$(KSPReferenceDllsPath)\Assembly-UnityScript.dll</HintPath>
+          <HintPath>$(KSPReferenceDllsPathPR)\Assembly-UnityScript.dll</HintPath>
           <Private>False</Private>
         </Reference>
         <Reference Include="Assembly-UnityScript-firstpass">
-          <HintPath>$(KSPReferenceDllsPath)\Assembly-UnityScript-firstpass.dll</HintPath>
+          <HintPath>$(KSPReferenceDllsPathPR)\Assembly-UnityScript-firstpass.dll</HintPath>
           <Private>False</Private>
         </Reference>
         <Reference Include="UnityEngine">
-          <HintPath>$(KSPReferenceDllsPath)\UnityEngine.dll</HintPath>
+          <HintPath>$(KSPReferenceDllsPathPR)\UnityEngine.dll</HintPath>
           <Private>False</Private>
         </Reference>
         <Reference Include="UnityEngine.UI">
-          <HintPath>$(KSPReferenceDllsPath)\UnityEngine.UI.dll</HintPath>
+          <HintPath>$(KSPReferenceDllsPathPR)\UnityEngine.UI.dll</HintPath>
           <Private>False</Private>
         </Reference>
       </ItemGroup>
@@ -270,7 +272,27 @@
     <Compile Include="Database\ScienceLog.cs" />
   </ItemGroup>
 
+  <!-- ///////////////////////////////////////////////////// -->
+  <!-- ////////// IMPORT DEFAULT MS BUILD PROCESS ////////// -->
+  <!-- ///////////////////////////////////////////////////// -->
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+
+  <!-- This target is called before the build, you can use it for debugging the build system -->
+  <Target Name="BeforeBuild">
+    
+   <!--
+    <ConvertToAbsolutePath Paths="$(OutputPath)">
+      <Output TaskParameter="AbsolutePaths" PropertyName="OutputPathAbs" />
+    </ConvertToAbsolutePath>
+    <Message Text="Kerbalism build MSBuildProjectDirectory='$(MSBuildProjectDirectory)'" Importance="high" />
+    <Message Text="Kerbalism build OutputPathAbs='$(OutputPathAbs)'" Importance="high" />
+    -->
+    
+  </Target>
+
+  <!-- ///////////////////////////////////////////////////// -->
+  <!-- ///////////////// KSP-AVC THINGHY /////////////////// -->
+  <!-- ///////////////////////////////////////////////////// -->
   <ProjectExtensions>
     <VisualStudio>
       <UserProperties __JSONSchema="https://gist.githubusercontent.com/janbrohl/c614d2b4a2aee805d93428a2cbc44df5/raw/fdfc6366cd9b1b4f512d2d25778d1ebf209358d6/ksp-avc.schema.json" />

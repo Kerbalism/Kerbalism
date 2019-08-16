@@ -1,15 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <!-- 
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
-  -->
-  
-  <!-- Create this file and adjust the values according to your KSP dev environment -->
-  <!-- There is a "DevEnvConfig.xml.example" file that you can copy -->
-  <Import Condition="Exists('..\..\buildsystem\MSBuildSystem.xml')" Project="..\..\buildsystem\MSBuildSystem.xml" />
-  <Import Condition="Exists('..\..\GameData\Kerbalism\VersionConfig.xml')" Project="..\..\GameData\Kerbalism\VersionConfig.xml" />
-  <Import Condition="Exists('..\..\buildsystem\DevEnvConfig.xml')" Project="..\..\buildsystem\DevEnvConfig.xml" />
-  
+<Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -21,7 +12,6 @@
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
   </PropertyGroup>
-
   <!-- /////////////////////////////////////////////////// -->
   <!-- //////////// DEBUG CONFIGURATION SETUP //////////// -->
   <!-- /////////////////////////////////////////////////// -->
@@ -34,12 +24,11 @@
     <WarningLevel>4</WarningLevel>
     <StartAction>Program</StartAction>
     <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
-    <!-- Default values. These will be overriden if the DevEnvConfig.xml file exists-->
+    <!-- Default values. These will be overriden if the UserConfigDevEnv.xml file exists-->
     <DefineConstants>TRACE;DEBUG;ENABLE_PROFILER;DEBUG_PROFILER;DEBUG_RESOURCES</DefineConstants>
     <StartProgram>KSP_x64.exe</StartProgram>
     <StartWorkingDirectory>..\</StartWorkingDirectory>
   </PropertyGroup>
-  
   <!-- ///////////////////////////////////////////////////// -->
   <!-- //////////// RELEASE CONFIGURATION SETUP //////////// -->
   <!-- ///////////////////////////////////////////////////// -->
@@ -51,17 +40,22 @@
     <WarningLevel>4</WarningLevel>
     <StartAction>Program</StartAction>
     <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
-    <!-- Default values. These will be overriden if the DevEnvConfig.xml file exists-->
+    <!-- Default values. These will be overriden if the UserConfigDevEnv.xml file exists-->
     <StartProgram>KSP_x64.exe</StartProgram>
     <StartWorkingDirectory>..\</StartWorkingDirectory>
   </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="UploadGitHubRelease.cs" />
+  </ItemGroup>
+
+  <Import Condition="Exists('..\..\BuildSystem\UserConfigDevEnv.xml')" Project="..\..\BuildSystem\UserConfigDevEnv.xml" />
 
   <!-- /////////////////////////////////////////////////// -->
-  <!-- //// USER-DEFINED OVERRIDES (DevEnvConfig.xml) //// -->
+  <!-- //// USER-DEFINED OVERRIDES (UserConfigDevEnv.xml) //// -->
   <!-- /////////////////////////////////////////////////// -->
   <!-- this must be after the default configuration setups -->
   <Choose>
-    <When Condition="Exists('..\..\buildsystem\DevEnvConfig.xml')">
+    <When Condition="Exists('..\..\BuildSystem\UserConfigDevEnv.xml')">
       <PropertyGroup>
         <DefineConstants Condition="'$(Configuration)' == 'Debug'">TRACE;DEBUG;$(DebugDefineConstants);$(KSPDevVersion)</DefineConstants>
         <StartProgram>$(KSPDevPath)\$(KSPDevExecutable)</StartProgram>
@@ -69,19 +63,18 @@
       </PropertyGroup>
     </When>
   </Choose>
-
+  
   <!-- /////////////////////////////////////////////////// -->
   <!-- ///////////// DEFAULT BUILD TARGET //////////////// -->
   <!-- /////////////////////////////////////////////////// -->
   <Target Name="Build">
-    <MSBuild
-      Condition="$(Configuration)==Release"
-      Projects="KerbalismBuild.csproj"
-      Targets="BuildRelease"/>
-
-    <MSBuild
-      Condition="$(Configuration)==Debug"
-      Projects="KerbalismBuild.csproj"
-      Targets="BuildDebug"/>
+    <MSBuild Condition="$(Configuration)==Release" Projects="..\..\BuildSystem\BuildSystemTargets.xml" Targets="BuildRelease" />
+    <MSBuild Condition="$(Configuration)==Debug" Projects="..\..\BuildSystem\BuildSystemTargets.xml" Targets="BuildDebug" />
   </Target>
+
+  <!-- /////////////////////////////////////////////////// -->
+  <!-- //////////////// Other targets /////////////////// -->
+  <!-- /////////////////////////////////////////////////// -->
+
+
 </Project>

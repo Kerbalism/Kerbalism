@@ -173,17 +173,9 @@ namespace KERBALISM.Planner
 		internal static float Height()
 		{
 			if (EditorLogic.RootPart != null)
-			{
-#if DEVBUILD
-				return Styles.ScaleFloat(45.0f) + panel.Height(); // Dev build info + header + ui content
-#else
-				return Styles.ScaleFloat(30.0f) + panel.Height(); // header + ui content
-#endif
-			}
+				return Styles.ScaleFloat(Lib.IsDevBuild ? 45.0f : 30.0f) + panel.Height(); // header + ui content + dev build header if present
 			else
-			{
 				return Styles.ScaleFloat(66.0f); // quote-only
-			}
 		}
 
 		///<summary> Render planner UI panel </summary>
@@ -192,11 +184,12 @@ namespace KERBALISM.Planner
 			// if there is something in the editor
 			if (EditorLogic.RootPart != null)
 			{
-#if DEVBUILD
-				GUILayout.BeginHorizontal(Styles.title_container);
-				GUILayout.Label(new GUIContent("KERBALISM DEV BUILD " + Lib.KerbalismDevBuild), devbuild_style);
-				GUILayout.EndHorizontal();
-#endif
+				if (Lib.IsDevBuild)
+				{
+					GUILayout.BeginHorizontal(Styles.title_container);
+					GUILayout.Label(new GUIContent("KERBALISM DEV BUILD " + Lib.KerbalismDevBuild), devbuild_style);
+					GUILayout.EndHorizontal();
+				}
 
 				// start header
 				GUILayout.BeginHorizontal(Styles.title_container);

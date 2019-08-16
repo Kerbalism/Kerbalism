@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <!-- IMPORTANT NOTE : any change made here won't be applied in your IDE (Visual Studio, Monodevelop...) -->
+  <!-- until you completely close and reload the solution (the "reload" option in VS won't work). -->
+  <!-- Not doing it will result in weird things happening -->
+  
+  <PropertyGroup>
+    
+    <!-- REQUIRED : Full path to your KSP installation -->
+    <KSPDevPath>C:\MY\PATH\TO\KSP</KSPDevPath>
+
+    <!-- REQUIRED : KSP version compilation constant, must match the version you are using for development -->
+    <!-- See GameData\Kerbalism\VersionConfig.xml for valid values, currently we have 'KSP14', 'KSP15_16' and 'KSP17' -->
+    <!-- Example : for the Include="15_16" value in VersionConfig.xml, the constant defined here must be formatted "KSP15_16" -->
+    <KSPDevVersion>KSP17</KSPDevVersion>
+	
+    <!-- OPTIONAL : unity debug executable (or of the regular KSP executable if you don't use the unity one) -->
+    <!-- Defining this will allow you to run the solution from the "start" button of your IDE -->
+    <!-- On windows this usually is "KSP_x64_Dbg.exe" if you followed the instructions in CONTRIBUTING.MD -->
+    <!-- On mac this will be "KSP_Debug.app" if you used the "setup_mac.sh" script -->
+    <KSPDevExecutable>KSP_x64_Dbg.exe</KSPDevExecutable>
+	
+    <!-- OPTIONAL : If true, each time you build, the Kerbalism and KerbalismConfig folders will be copied from the repo to your dev install -->
+    <!-- If false, only the KerbalismBootstrap.dll, Kerbalism.dll and mdb (debug symbols) files will be copied -->
+    <CopyGameDataOnBuild>False</CopyGameDataOnBuild>
+	
+    <!-- OPTIONAL : Additional DEFINE constants to use in debug builds, separate multiple values with semicolons-->
+    <!-- "ENABLE_PROFILER" : use this if you want to use the unity editor profiler-->
+    <!-- "DEBUG_PROFILER" : enable kerbalism in-house profiler (see Utility/Profiler.cs) -->
+    <!-- "DEBUG_RESOURCES" : show hidden resources in the KSP UI (usually pseudo-resources)-->
+    <DebugDefineConstants>DEBUG_PROFILER;DEBUG_RESOURCES</DebugDefineConstants>
+
+    <!-- OPTIONAL : Path to the folder containing your "UserConfigRelease.xml" file -->
+    <!-- This is only needed to build release versions of Kerbalism, -->
+    <!-- the debug configuration should always be used in development-->
+    <!-- The UserConfigRelease.xml file is git-ignored but it is highly recommended to provide-->
+    <!--a path that is OUTSIDE the repository to make sure it is never committed-->
+    <ContributorConfigFolder>C:\SOMEWHERE\ON\MY\COMPUTER\BUT\NOT\IN\THE\REPO</ContributorConfigFolder>
+    
+  </PropertyGroup>
+</Project>
