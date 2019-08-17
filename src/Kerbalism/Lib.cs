@@ -4,6 +4,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Text;
+using System.Linq;
+
 using UnityEngine;
 using CommNet;
 using KSP.Localization;
@@ -65,8 +67,8 @@ namespace KERBALISM
 			{
 				if (IsDevBuild && kerbalismDevBuild == -1)
 				{
-					Assembly bootstrap = Assembly.GetAssembly(Type.GetType("Bootstrap"));
-					if (bootstrap != null) kerbalismDevBuild = bootstrap.GetName().Version.Build;
+					AssemblyLoader.LoadedAssembly bootstrap = AssemblyLoader.loadedAssemblies.FirstOrDefault(p => p.name == "KerbalismBootstrap");
+					if (bootstrap != null && bootstrap.assembly != null) kerbalismDevBuild = bootstrap.assembly.GetName().Version.Build;
 					else Lib.Log("ERROR : This is a dev build but KerbalismBootstrap wasn't found!");
 				}
 				return kerbalismDevBuild;
