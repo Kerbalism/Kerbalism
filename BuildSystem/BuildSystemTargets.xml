@@ -524,7 +524,7 @@
       <ReleaseDescCommits>$(ReleaseDescCommits.Replace(";", "%0a"))</ReleaseDescCommits>
       <ReleaseDesc Condition="'$(ExtraDescription)' != ''">$(ExtraDescription)%0a%0a</ReleaseDesc>
       <ReleaseDesc>$(ReleaseDesc)This is an automated build from the [Kerbalism '$(CurrentGitBranch)' branch](https://github.com/Kerbalism/Kerbalism/tree/$(CurrentGitBranch))\%0aIt might be unstable and/or corrupt your save.\%0aGo to the main repository to [get stable releases](https://github.com/Kerbalism/Kerbalism/releases)</ReleaseDesc>
-      <ReleaseDesc Condition="'$(LastBuildName)' != 'NONE' ">$(ReleaseDesc)%0a%0a### Commit log since build '$(LastBuildName)' :%0a%0a$(ReleaseDescCommits)"</ReleaseDesc>
+      <ReleaseDesc Condition="'$(LastBuildName)' != 'NONE' ">$(ReleaseDesc)%0a%0a### Commit log since build '$(LastBuildName)' :%0a%0a$(ReleaseDescCommits)</ReleaseDesc>
     </PropertyGroup>
 
     <!-- Call our custom task for the GitHub API-->
@@ -538,6 +538,8 @@
       PreRelease="false"
       Draft="$(DraftRelease)"
       ZipFilesToUpload="@(ReleaseZips)"/>
+
+    <Message Text="[KERBALISM-PUBLISH-DEV] GitHub release created." Importance="high"/>
 
     <!-- Push the release commit-->
     <Exec Condition="'$(PushVersionCommit)' == 'true'" Command="git commit -m &quot;$(ReleaseCommitName)&quot; --allow-empty" StandardOutputImportance="normal"/>
@@ -797,9 +799,12 @@ msbuild BuildSystemTargets.xml -verbosity:minimal -target:UpdateAssembliesVersio
 
   <!-- //////////////// UploadGitHubRelease ////////////////// -->
   <!-- create and upload a GitHub release -->
-  <!-- Note : the code for this is in src\KerbalismBuild\UploadGitHubRelease.cs because the "Source=" parameter doesn't resolve paths on MSBuild for mono (it's fine on windows) -->
+  <!-- Note : the UploadGitHubRelease.cs must be in the same folder as this file because the "Source=" parameter doesn't resolve paths on MSBuild for mono (it's fine on windows) -->
   <!-- see https://github.com/microsoft/msbuild/issues/4614 -->
-  <UsingTask TaskName="UploadGitHubRelease" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll" >
+  
+  <!--  Workaround using the more recent RoslynCodeTaskFactory compiler does not work (not a workaround then -->
+  <!-- <UsingTask TaskName="UploadGitHubRelease" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildBinPath)\Microsoft.Build.Tasks.Core.dll" >-->
+  <UsingTask TaskName="UploadGitHubRelease" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll" >
     <ParameterGroup>
       <GithubOAuthToken ParameterType="System.String" Required="true" />
       <GithubUser ParameterType="System.String" Required="true" />
@@ -812,6 +817,7 @@ msbuild BuildSystemTargets.xml -verbosity:minimal -target:UpdateAssembliesVersio
       <ZipFilesToUpload ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="false" />
     </ParameterGroup>
     <Task>
+      <!-- The includes are needed for the regular CodeTaskFactory, but won't work with RoslynCodeTaskFactory-->
       <Reference Include="System.Net.Http" />
       <Reference Include="System.Runtime.Serialization" />
       <Reference Include="System.Web.Extensions" />
@@ -820,7 +826,7 @@ msbuild BuildSystemTargets.xml -verbosity:minimal -target:UpdateAssembliesVersio
       <Reference Include="System.Data" />
       <Reference Include="System.Xml" />
       <Reference Include="System.Web" />
-      <Code Type="class" Language="cs" Source="$(UtilityPath)\UploadGitHubRelease.cs" />
+      <Code Type="class" Language="cs" Source="UploadGitHubRelease.cs" />
     </Task>
   </UsingTask>
 

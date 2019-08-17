@@ -12,6 +12,8 @@ using System.Text;
 using System.Xml.Linq;
 using System.Xml.XPath;
 using System.Web;
+using System;
+using System.Runtime;
 
 public class UploadGitHubRelease : Task
 {
@@ -57,8 +59,6 @@ public class UploadGitHubRelease : Task
 
             HttpResponseMessage createReleaseResponse;
 
-            //File.WriteAllText(@"C:\Users\Got\Desktop\JSONTEST_beforetransform.txt", ReleaseDescription);
-
             string postUrl = @"https://api.github.com/repos/" + GithubUser + @"/" + GithubRepo + @"/releases";
             using (var request = new HttpRequestMessage(new HttpMethod("POST"), postUrl))
             {
@@ -74,8 +74,6 @@ public class UploadGitHubRelease : Task
                 json += PreRelease.ToString().ToLower();
                 json += @"}";
 
-                //File.WriteAllText(@"C:\Users\Got\Desktop\JSONTEST_afterTransform.txt", json);
-
                 //string json = @"{ ""tag_name"": ""v11.0.0"", ""target_commitish"": ""master"", ""name"": ""release name v11.0.0"", ""body"": ""Description of the release"", ""draft"": true, ""prerelease"": false}";
                 request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
@@ -86,9 +84,9 @@ public class UploadGitHubRelease : Task
 
             if (!createReleaseResponse.IsSuccessStatusCode)
             {
-                Log.LogMessage(createReleaseResponse.ToString());
-                Log.LogMessage(createReleaseOutput.ToString());
-                Log.LogError("[UploadGitHubRelease] Failed to create release :");
+                Log.LogMessage(MessageImportance.High, createReleaseResponse.ToString());
+                Log.LogMessage(MessageImportance.High, createReleaseOutput.ToString());
+                Log.LogError("[UploadGitHubRelease] Failed to create release with the GitHub API V3");
                 return;
             }
 
@@ -98,7 +96,7 @@ public class UploadGitHubRelease : Task
             string uploadURL = root.XPathSelectElement("//upload_url").Value;
             uploadURL = uploadURL.Replace("{?name,label}", "?name=");
 
-            Log.LogMessage("[UploadGitHubRelease] Release '" + ReleaseName + "' created with tag '" + ReleaseTag + "'");
+            Log.LogMessage(MessageImportance.High, "[UploadGitHubRelease] Release '" + ReleaseName + "' created with tag '" + ReleaseTag + "'");
 
             if (ZipFilesToUpload == null) return;
 
@@ -106,7 +104,7 @@ public class UploadGitHubRelease : Task
             {
                 HttpResponseMessage uploadZipResponse;
                 string zipname = Path.GetFileName(zipItem.ItemSpec);
-                Log.LogMessage("[UploadGitHubRelease] Uploading '" + zipname + "'...");
+                Log.LogMessage(MessageImportance.High, "[UploadGitHubRelease] Uploading '" + zipname + "'...");
                 using (var request = new HttpRequestMessage(new HttpMethod("POST"), uploadURL + zipname))
                 {
                     request.Content = new ByteArrayContent(File.ReadAllBytes(zipItem.ItemSpec));
@@ -117,13 +115,13 @@ public class UploadGitHubRelease : Task
 
                 if (!uploadZipResponse.IsSuccessStatusCode)
                 {
-                    Log.LogMessage(uploadZipResponse.ToString());
-                    Log.LogMessage(await uploadZipResponse.Content.ReadAsStringAsync());
-                    Log.LogError("[UploadGitHubRelease] Failed to upload zip file : " + zipItem.ItemSpec);
+                    Log.LogMessage(MessageImportance.High, uploadZipResponse.ToString());
+                    Log.LogMessage(MessageImportance.High, await uploadZipResponse.Content.ReadAsStringAsync());
+                    Log.LogError("[UploadGitHubRelease] Failed to upload zip file with the GitHub API V3 : " + zipItem.ItemSpec);
                     break;
                 }
 
-                Log.LogMessage("[UploadGitHubRelease] " + zipname + " uploaded successfully");
+                Log.LogMessage(MessageImportance.High, "[UploadGitHubRelease] " + zipname + " uploaded successfully");
             }
         }
     }
