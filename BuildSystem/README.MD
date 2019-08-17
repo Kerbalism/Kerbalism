@@ -15,7 +15,7 @@ We currently target the C# version 7.1.
 Before you can build Kerbalism, your IDE has to know where the Unity and KSP assemblies are, 
 and what version of KSP you are using. 
 
-This is done by creating a configuration file :
+#### Mandatory steps :
 
   - Close your IDE (Visual Studio, Monodevelop...)
   - In your file explorer, go to the `BuildSystem` folder
@@ -25,7 +25,7 @@ This is done by creating a configuration file :
   - Make sure the active / start project is **KerbalismBuild** (should be in bold in Visual Studio)
   - Hit the "Start" button. This should trigger a build and run KSP with the just built dlls.
 
-Notes :
+#### Notes :
 
   - It is recommended to only build the whole solution, don't build the individual projects
   - Building the solution will copy the dlls (and on Windows, the *.mdb files) to your KSP installation, no need to do it manually.
@@ -33,13 +33,26 @@ Notes :
   - After editing the `UserConfigDevEnv.xml`, **always close and reload the solution** in your IDE. 
     The "reload" option in VS won't work. Not doing it will result in weird things happening.
 
+#### Building outside the IDE
+
+There are batch scripts available in `BuildSystem\UserScripts`.
+Run `Windows-DoThisFirst-FindMSBuild.bat` first to find the path to your MSBuild.exe, 
+then add it to your `PATH` system environnement variable (google that if you don't know how).
+
+Instead of the batch scripts, you can also directly use the commands documented later in this file.
+
 The release configuration that generate the *.kbin files require a special setup, 
-ask us first if you really need to build it.
+ask us first if you really need to build it (and all the targets that depend on it).
 
-## OSX
+## Additional steps for OSX
 
-To build on OSX, you need to download and install Unity first. Then look into setup_mac.sh and change the installation
-locations of Unity and KSP. Once you're sure the locations suit your needs, run setup_mac.sh (from any folder). It will
+To build in debug configuration on OSX, you can't compile with the Unity dlls shipped with KSP, they are different from the Unity standard distribution.
+You will need to use the ones provided with the Unity editor for mac.
+
+For KSP 1.4 to 1.7 it's the `2017.1.3p1` version, available at the [Unity download archive](https://unity3d.com/get-unity/download/archive)
+
+Then copy the `BuildSystem\DevEnvInstall\OSX\setup_mac.sh` somewhere and change the installation locations of Unity and KSP. 
+Once you're sure the locations suit your needs, run setup_mac.sh (from any folder). It will
 create a folder with symbolic links to the (hopefully) correct DLL files you need to build Kerbalism on OSX.
 
 ## I want to use the command line !
