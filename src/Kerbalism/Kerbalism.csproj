@@ -1,7 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-
-
   <!-- /////////////////////////////////////////////////// -->
   <!-- /////////////// COMMON PROPERTIES ///////////////// -->
   <!-- /////////////////////////////////////////////////// -->
@@ -47,18 +45,15 @@
     <NoWarn>IDE0018</NoWarn>
     <Optimize>true</Optimize>
   </PropertyGroup>
-
   <!-- /////////////////////////////////////////////////// -->
   <!-- ///////// BUILD SYSTEM AND USER OVERRIDES ///////// -->
   <!-- /////////////////////////////////////////////////// -->
   <Import Condition="Exists('..\..\BuildSystem\UserConfigDevEnv.xml')" Project="..\..\BuildSystem\UserConfigDevEnv.xml" />
   <Import Condition="Exists('..\..\BuildSystem\ProjectsCommonProperties.xml')" Project="..\..\BuildSystem\ProjectsCommonProperties.xml" />
-  
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
     <!-- Note : this is overriden by the build engine, but in order to have the correct constants in the IDE, it has to be there too -->
     <DefineConstants>TRACE;DEBUG;$(DebugDefineConstants);$(KSPDevVersion)</DefineConstants>
   </PropertyGroup>
-
   <!-- ///////////////////////////////////////////////////// -->
   <!-- //////////////////// REFERENCES ///////////////////// -->
   <!-- ///////////////////////////////////////////////////// -->
@@ -192,6 +187,7 @@
     <Compile Include="Modules\Experiment.cs" />
     <Compile Include="Modules\Reliability.cs" />
     <Compile Include="Modules\SolarPanelFixer.cs" />
+    <Compile Include="Patches\ModuleAsteroid_performSampleExperiment.cs" />
     <Compile Include="Profile\Modifiers.cs" />
     <Compile Include="Profile\Process.cs" />
     <Compile Include="Renderer\LineRenderer.cs" />
@@ -271,25 +267,20 @@
     <Compile Include="Patches\VesselRecovery_OnVesselRecovered.cs" />
     <Compile Include="Database\ScienceLog.cs" />
   </ItemGroup>
-
   <!-- ///////////////////////////////////////////////////// -->
   <!-- ////////// IMPORT DEFAULT MS BUILD PROCESS ////////// -->
   <!-- ///////////////////////////////////////////////////// -->
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-
   <!-- This target is called before the build, you can use it for debugging the build system -->
   <Target Name="BeforeBuild">
-    
-   <!--
+    <!--
     <ConvertToAbsolutePath Paths="$(OutputPath)">
       <Output TaskParameter="AbsolutePaths" PropertyName="OutputPathAbs" />
     </ConvertToAbsolutePath>
     <Message Text="Kerbalism build MSBuildProjectDirectory='$(MSBuildProjectDirectory)'" Importance="high" />
     <Message Text="Kerbalism build OutputPathAbs='$(OutputPathAbs)'" Importance="high" />
     -->
-    
   </Target>
-
   <!-- ///////////////////////////////////////////////////// -->
   <!-- ///////////////// KSP-AVC THINGHY /////////////////// -->
   <!-- ///////////////////////////////////////////////////// -->
