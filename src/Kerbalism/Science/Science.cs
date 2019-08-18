@@ -131,16 +131,25 @@ namespace KERBALISM
 						// this was the last useful bit, there is no more value in the experiment
 						if (remainingValue >= 0.1 && remainingValue - dataValue < 0.1)
 						{
-
-							Message.Post(
-								Lib.BuildString(Lib.HumanReadableScience(totalValue), " ", Experiment(exp_filename).FullName(exp_filename), " completed"),
-							  Lib.TextVariant(
+							// get the result text from the EXPERIMENT_DEFINITION > RESULTS configs and format it a bit
+							string subjectResult = ResearchAndDevelopment.GetResults(exp_filename);
+							if (!string.IsNullOrEmpty(subjectResult))
+							{
+								Lib.WordWrapAtLength(subjectResult, 70);
+							}
+							// else use our own text
+							else
+							{
+								subjectResult = Lib.TextVariant(
 									"Our researchers will jump on it right now",
 									"This cause some excitement",
 									"These results are causing a brouhaha in R&D",
 									"Our scientists look very confused",
 									"The scientists won't believe these readings"
-								));
+								);
+							}
+
+							Message.Post(Lib.BuildString(Experiment(exp_filename).FullName(exp_filename), " completed\n", Lib.HumanReadableScience(totalValue)), subjectResult);
 						}
 					}
 				}

@@ -132,9 +132,15 @@ namespace KERBALISM
 			  exp.name, "\n",
 			  "<color=#aaaaaa>", ExperimentInfo.Situation(filename), "</color>"
 			);
+
 			double exp_value = Science.Value(filename, file.size);
 			if (exp_value >= 0.1) exp_tooltip = Lib.BuildString(exp_tooltip, "\n<b>", Lib.HumanReadableScience(exp_value), "</b>");
-			if (rate > 0) exp_tooltip = Lib.BuildString(exp_tooltip, "\n<i>" + Lib.HumanReadableDuration(file.size / rate) + "</i>");
+			if (rate > 0) exp_tooltip = Lib.BuildString(exp_tooltip, "\n<i>" , Lib.HumanReadableDuration(file.size / rate) , "</i>");
+
+			// Add config-defined result text to tooltip
+			string exp_tooltip_result = ResearchAndDevelopment.GetResults(filename);
+			if (!String.IsNullOrEmpty(exp_tooltip_result)) exp_tooltip = Lib.BuildString(exp_tooltip, "\n", Lib.WordWrapAtLength(exp_tooltip_result, 50));
+
 			p.AddContent(exp_label, Lib.HumanReadableDataSize(file.size), exp_tooltip, (Action)null, () => Highlighter.Set(partId, Color.cyan));
 
 			bool send = drive.GetFileSend(filename);
@@ -168,9 +174,14 @@ namespace KERBALISM
 			  exp.name, "\n",
 			  "<color=#aaaaaa>", ExperimentInfo.Situation(filename), "</color>"
 			);
+
 			double exp_value = Science.Value(filename, sample.size);
 			if (exp_value >= 0.1) exp_tooltip = Lib.BuildString(exp_tooltip, "\n<b>", Lib.HumanReadableScience(exp_value), "</b>");
 			if (sample.mass > Double.Epsilon) exp_tooltip = Lib.BuildString(exp_tooltip, "\n<b>", Lib.HumanReadableMass(sample.mass), "</b>");
+
+			// Add config-defined result text to tooltip
+			string exp_tooltip_result = ResearchAndDevelopment.GetResults(filename);
+			if (!String.IsNullOrEmpty(exp_tooltip_result)) exp_tooltip = Lib.BuildString(exp_tooltip, "\n", Lib.WordWrapAtLength(exp_tooltip_result, 50));
 
 			p.AddContent(exp_label, Lib.HumanReadableSampleSize(sample.size), exp_tooltip, (Action)null, () => Highlighter.Set(partId, Color.cyan));
 			p.AddIcon(sample.analyze ? Icons.lab_cyan : Icons.lab_black, "Flag the file for analysis in a <b>laboratory</b>", () => { sample.analyze = !sample.analyze; });

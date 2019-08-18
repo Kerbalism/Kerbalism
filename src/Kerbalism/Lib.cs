@@ -487,9 +487,48 @@ namespace KERBALISM
 		{
 			return list.Length == 0 ? string.Empty : list[RandomInt(list.Length)];
 		}
-#endregion
 
-#region BUILD STRING
+
+		/// <summary> insert lines break to have a max line length of 'maxCharPerLine' characters </summary>
+		public static string WordWrapAtLength(string longText, int maxCharPerLine)
+		{
+
+			longText = longText.Replace("\n", "");
+			int currentPosition = 0;
+			int textLength = longText.Length;
+			while (true)
+			{
+				// if the remaining text is shorter that maxCharPerLine, return.
+				if (currentPosition + maxCharPerLine >= textLength)
+					break;
+
+				// get position of first space before maxCharPerLine
+				int nextSpacePosition = longText.LastIndexOf(' ', currentPosition + maxCharPerLine);
+
+				// we found a space in the next line, replace it with a new line
+				if (nextSpacePosition > currentPosition)
+				{
+					char[] longTextArray = longText.ToCharArray();
+					longTextArray[nextSpacePosition] = '\n';
+					longText = new string(longTextArray);
+					currentPosition = nextSpacePosition;
+
+				}
+				// else break the word
+				else
+				{
+					nextSpacePosition = currentPosition + maxCharPerLine;
+					longText = longText.Insert(nextSpacePosition, "-\n");
+					textLength += 2;
+					currentPosition = nextSpacePosition + 2;
+				}
+			}
+			return longText;
+
+		}
+		#endregion
+
+		#region BUILD STRING
 		// compose a set of strings together, without creating temporary objects
 		// note: the objective here is to minimize number of temporary variables for GC
 		// note: okay to call recursively, as long as all individual concatenation is atomic
