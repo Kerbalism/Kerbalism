@@ -26,7 +26,7 @@ namespace KERBALISM
 			// don't break tutorial scenarios
 			if (Lib.DisableScenario(this)) return;
 
-			if (hdId == 0) hdId = part.flightID;
+			if (Lib.IsFlight() && hdId == 0) hdId = part.flightID;
 
 			if(drive == null)
 			{

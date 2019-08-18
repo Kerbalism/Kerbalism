@@ -140,11 +140,6 @@ namespace KERBALISM
 
 			resourceDefs = ParseResources(resources);
 
-			foreach (var hd in part.FindModulesImplementing<HardDrive>())
-			{
-				if (hd.experiment_id == experiment_id) privateHdId = part.flightID;
-			}
-
 			Events["Toggle"].guiActiveUncommand = true;
 			Events["Toggle"].externalToEVAOnly = true;
 			Events["Toggle"].requireFullControl = false;
@@ -156,6 +151,14 @@ namespace KERBALISM
 			Events["Reset"].guiActiveUncommand = true;
 			Events["Reset"].externalToEVAOnly = true;
 			Events["Reset"].requireFullControl = false;
+
+			if (Lib.IsFlight())
+			{
+				foreach (var hd in part.FindModulesImplementing<HardDrive>())
+				{
+					if (hd.experiment_id == experiment_id) privateHdId = part.flightID;
+				}
+			}
 		}
 
 		public static bool Done(ExperimentInfo exp, double dataSampled)
