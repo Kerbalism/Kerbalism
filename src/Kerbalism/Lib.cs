@@ -5,10 +5,10 @@ using System.IO;
 using System.Reflection;
 using System.Text;
 using System.Linq;
-
 using UnityEngine;
 using CommNet;
 using KSP.Localization;
+using KSP.UI.Screens;
 
 namespace KERBALISM
 {
@@ -1215,9 +1215,26 @@ namespace KERBALISM
 		{
 			return CrewCount(p) > 0;
 		}
-#endregion
 
-#region MODULE
+		/// <summary>
+		/// In the editor, remove the symmetry constraint for this part and its symmetric counterparts. 
+		/// This method is available in stock (Part.RemoveFromSymmetry()) since 1.7.2, copied here for 1.4-1.6 compatibility
+		/// </summary>
+		public static void EditorClearSymmetry(Part part)
+		{
+			part.CleanSymmetryReferences();
+			if (part.stackIcon != null)
+			{
+				part.stackIcon.RemoveIcon();
+				part.stackIcon.CreateIcon();
+				if (StageManager.Instance != null) StageManager.Instance.SortIcons(true);
+			}
+			EditorLogic.fetch.SetBackup();
+		}
+
+		#endregion
+
+		#region MODULE
 		// return all modules implementing a specific type in a vessel
 		// note: disabled modules are not returned
 		public static List<T> FindModules<T>(Vessel v) where T : class
