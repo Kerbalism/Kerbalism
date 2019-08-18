@@ -45,6 +45,10 @@ namespace KERBALISM.Planner
 				for (int i = 0; i < p.Resources.Count; ++i)
 				{
 					Process_part(p, p.Resources[i].resourceName);
+#if DEBUG_RESOURCES
+					p.Resources[i].isVisible = true;
+					p.Resources[i].isTweakable = true;
+#endif
 				}
 			}
 
