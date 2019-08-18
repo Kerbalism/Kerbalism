@@ -18,7 +18,7 @@ and what version of KSP you are using.
 #### Mandatory steps :
 
   - Close your IDE (Visual Studio, Monodevelop...)
-  - In your file explorer, go to the `BuildSystem` folder
+  - In your file explorer, go to the `Kerbalism\BuildSystem` folder
   - Make a copy of the `UserConfigDevEnv.xml.CopyMe` file and rename it to `UserConfigDevEnv.xml`
   - Edit this file in a text editor and follow the instructions in the comments
   - Open your IDE and make sure that you are in the **Debug** configuration
@@ -27,11 +27,14 @@ and what version of KSP you are using.
 
 #### Notes :
 
+  - **Before editing the `UserConfigDevEnv.xml`, close the solution** in your IDE. 
+    Additionally, after re-opening the solution in Visual Studio, click on the `Refresh` button in the `Solution Explorer` header (be sure to have the `Kerbalism` project selected). 
+    To make sure everything is synchronized, you can check that the projects `References` point to your KSP installation
+    and that in the projects `Properties` > `Build` , the `Conditional compilation symbols` match the values defined in `UserConfigDevEnv.xml`.
   - It is recommended to only build the whole solution, don't build the individual projects
   - Building the solution will copy the dlls (and on Windows, the *.mdb files) to your KSP installation, no need to do it manually.
   - The generated dlls are located in `BuildSystem\BinariesDebug`
-  - After editing the `UserConfigDevEnv.xml`, **always close and reload the solution** in your IDE. 
-    The "reload" option in VS won't work. Not doing it will result in weird things happening.
+
 
 #### Building outside the IDE
 
@@ -113,7 +116,7 @@ While using a data structure syntax, MSbuild XML files are used like a script la
 ## Targets
 
 There are a handfull of targets defined in `BuildSystemTargets.xml` :
-  - Build targets : compile the code and create binaries (*.dll files)
+  - Build targets : compile the code and create binaries (*.dll and *.kbin files)
   - Deployment targets : package and upload releases
   - Utility targets : specialized targets for performing common actions
 
@@ -155,7 +158,7 @@ As an alternative, you can pass the `KSPDllArchivesPassword` property to the tar
 
 This target will build Kerbalism and KerbalismBootstrap in the debug configuration :
 - Clean/create the `BuildSystem\BinariesDebug` folder
-- Build `KerbalismBootstrap` in debug configuration :
+- Build `KerbalismBootstrap` and `Kerbalism` in debug configuration :
   - Using the KSP dlls from the KSP installation defined in `UserConfigDevEnv.xml`
   - With the `DEBUG` and `TRACE` constants
   - With the KSPXX version constant defined in `UserConfigDevEnv.xml`
