@@ -26,11 +26,17 @@ namespace KERBALISM
 			// don't break tutorial scenarios
 			if (Lib.DisableScenario(this)) return;
 
-			if(drive == null && !Lib.IsFlight())
+			if (Lib.IsFlight() && hdId == 0) hdId = part.flightID;
+			if (drive == null)
 			{
-				drive = DB.Drive(hdId, title, dataCapacity, sampleCapacity);
-				drive.is_private = experiment_id.Length > 0;
+				if (!Lib.IsFlight())
+					drive = new Drive(title, dataCapacity, sampleCapacity);
+				else
+					drive = DB.Drive(hdId, title, dataCapacity, sampleCapacity);
 			}
+
+			if (vessel != null) Cache.RemoveVesselObjectsCache(vessel, "drives");
+			drive.is_private |= experiment_id.Length > 0;
 
 			UpdateCapacity();
 		}
