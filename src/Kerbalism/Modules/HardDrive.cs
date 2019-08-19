@@ -26,19 +26,12 @@ namespace KERBALISM
 			// don't break tutorial scenarios
 			if (Lib.DisableScenario(this)) return;
 
-			if (Lib.IsFlight() && hdId == 0) hdId = part.flightID;
-
-			if(drive == null)
+			if(drive == null && !Lib.IsFlight())
 			{
-				if (!Lib.IsFlight())
-					drive = new Drive(title, dataCapacity, sampleCapacity);
-				else
-					drive = DB.Drive(hdId, title, dataCapacity, sampleCapacity);
+				drive = DB.Drive(hdId, title, dataCapacity, sampleCapacity);
+				drive.is_private = experiment_id.Length > 0;
 			}
 
-			if(vessel != null) Cache.RemoveVesselObjectsCache(vessel, "drives");
-
-			drive.is_private |= experiment_id.Length > 0;
 			UpdateCapacity();
 		}
 
@@ -53,11 +46,20 @@ namespace KERBALISM
 			}
 		}
 
-		public void SetDrive(Drive drive)
+		/// <summary>Called by Callbacks just after rollout to launch pad</summary>
+		public void OnRollout()
 		{
-			this.drive = drive;
-			drive.is_private |= experiment_id.Length > 0;
+			if (Lib.DisableScenario(this)) return;
+
+			// register the drive in the kerbalism DB
+			// this needs to be done only once just after launch
+			hdId = part.flightID;
+			drive = DB.Drive(hdId, title, dataCapacity, sampleCapacity);
+			drive.is_private = experiment_id.Length > 0;
+
 			UpdateCapacity();
+
+			if (vessel != null) Cache.RemoveVesselObjectsCache(vessel, "drives");
 		}
 
 		public void FixedUpdate()

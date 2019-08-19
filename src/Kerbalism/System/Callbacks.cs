@@ -279,9 +279,13 @@ namespace KERBALISM
 		void VesselRollout(ShipConstruct newVessel)
 		{
 			var vessel = FlightGlobals.ActiveVessel;
-			foreach(var experiment in vessel.FindPartModulesImplementing<Experiment>())
+			foreach (var experiment in vessel.FindPartModulesImplementing<Experiment>())
 			{
 				experiment.OnRollout();
+			}
+			foreach (var hardDrive in vessel.FindPartModulesImplementing<HardDrive>())
+			{
+				hardDrive.OnRollout();
 			}
 		}
 
