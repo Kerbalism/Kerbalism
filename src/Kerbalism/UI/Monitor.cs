@@ -137,9 +137,10 @@ namespace KERBALISM
 
 		public float Width()
 		{
-			if ((page == MonitorPage.data || page == MonitorPage.log || selected_id == Guid.Empty) && !Lib.IsFlight())
-				return Styles.ScaleWidthFloat(465.0f);
-			return Styles.ScaleWidthFloat(355.0f);
+			//if ((page == MonitorPage.data || page == MonitorPage.log || selected_id == Guid.Empty) && !Lib.IsFlight())
+			//	return Styles.ScaleWidthFloat(465.0f);
+			//return Styles.ScaleWidthFloat(355.0f);
+			return Styles.ScaleWidthFloat(405.0f);
 		}
 
 		public float Height()
