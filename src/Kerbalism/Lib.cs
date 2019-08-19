@@ -16,7 +16,7 @@ namespace KERBALISM
 	{
 		#region UTILS
 
-		// write a message to the log
+		///<summary>write a message to the log</summary>
 		public static void Log(string msg, params object[] param)
 		{
 			StackTrace stackTrace = new StackTrace();
@@ -75,7 +75,7 @@ namespace KERBALISM
 			}
 		}
 
-		// return true if an assembly with specified name is loaded
+		///<summary>return true if an assembly with specified name is loaded</summary>
 		public static bool HasAssembly(string name)
 		{
 			foreach (var a in AssemblyLoader.loadedAssemblies)
@@ -85,7 +85,7 @@ namespace KERBALISM
 			return false;
 		}
 
-		// swap two variables
+		///<summary>swap two variables</summary>
 		public static void Swap<T>(ref T a, ref T b)
 		{
 			T tmp = b;
@@ -93,7 +93,7 @@ namespace KERBALISM
 			a = tmp;
 		}
 
-		// find a directory in the GameData directory
+		///<summary>find a directory in the GameData directory</summary>
 		public static bool GameDirectoryExist(string findpath)
 		{
 			try
@@ -113,75 +113,78 @@ namespace KERBALISM
 				return false;
 			}
 		}
-#endregion
+		#endregion
 
-#region MATH
-		// clamp a value
+		#region MATH
+		///<summary>clamp a value</summary>
 		public static int Clamp(int value, int min, int max)
 		{
 			return Math.Max(min, Math.Min(value, max));
 		}
 
-		// clamp a value
+		///<summary>clamp a value</summary>
 		public static float Clamp(float value, float min, float max)
 		{
 			return Math.Max(min, Math.Min(value, max));
 		}
 
-		// clamp a value
+		///<summary>clamp a value</summary>
 		public static double Clamp(double value, double min, double max)
 		{
 			return Math.Max(min, Math.Min(value, max));
 		}
 
-		// blend between two values
+		///<summary>blend between two values</summary>
 		public static float Mix(float a, float b, float k)
 		{
 			return a * (1.0f - k) + b * k;
 		}
 
-		// blend between two values
+		///<summary>blend between two values</summary>
 		public static double Mix(double a, double b, double k)
 		{
 			return a * (1.0 - k) + b * k;
 		}
-#endregion
+		#endregion
 
-#region RANDOM
+		#region RANDOM
 		// store the random number generator
 		static System.Random rng = new System.Random();
 
-		// return random integer
+		///<summary>return random integer</summary>
 		public static int RandomInt(int max_value)
 		{
 			return rng.Next(max_value);
 		}
 
-		// return random float [0..1]
+		///<summary>return random float [0..1]</summary>
 		public static float RandomFloat()
 		{
 			return (float)rng.NextDouble();
 		}
 
-		// return random double [0..1]
+		///<summary>return random double [0..1]</summary>
 		public static double RandomDouble()
 		{
 			return rng.NextDouble();
 		}
 
-		// return random float in [-1,+1] range
-		// - it is less random than the c# RNG, but is way faster
-		// - the seed is meant to overflow! (turn off arithmetic overflow/underflow exceptions)
+
 		static int fast_float_seed = 1;
+		/// <summary>
+		/// return random float in [-1,+1] range
+		/// - it is less random than the c# RNG, but is way faster
+		/// - the seed is meant to overflow! (turn off arithmetic overflow/underflow exceptions)
+		/// </summary>
 		public static float FastRandomFloat()
 		{
 			fast_float_seed *= 16807;
 			return fast_float_seed * 4.6566129e-010f;
 		}
-#endregion
+		#endregion
 
-#region HASH
-		// combine two guid, irregardless of their order (eg: Combine(a,b) == Combine(b,a))
+		#region HASH
+		///<summary>combine two guid, irregardless of their order (eg: Combine(a,b) == Combine(b,a))</summary>
 		public static Guid CombineGuid(Guid a, Guid b)
 		{
 			byte[] a_buf = a.ToByteArray();
@@ -191,7 +194,7 @@ namespace KERBALISM
 			return new Guid(c_buf);
 		}
 
-		// combine two guid, in a non-commutative way
+		///<summary>combine two guid, in a non-commutative way</summary>
 		public static Guid OrderedCombineGuid(Guid a, Guid b)
 		{
 			byte[] a_buf = a.ToByteArray();
@@ -201,7 +204,7 @@ namespace KERBALISM
 			return new Guid(c_buf);
 		}
 
-		// get 32bit FNV-1a hash of a string
+		///<summary>get 32bit FNV-1a hash of a string</summary>
 		public static UInt32 Hash32(string s)
 		{
 			// offset basis
@@ -220,10 +223,10 @@ namespace KERBALISM
 			//return the hash
 			return h;
 		}
-#endregion
+		#endregion
 
-#region TIME
-		// return hours in a day
+		#region TIME
+		///<summary>return hours in a day</summary>
 		public static double HoursInDay()
 		{
 			if(FlightGlobals.ready || IsEditor())
@@ -234,7 +237,7 @@ namespace KERBALISM
 			return GameSettings.KERBIN_TIME ? 6.0 : 24.0;
 		}
 
-		// return year length
+		///<summary>return year length</summary>
 		public static double DaysInYear()
 		{
 			if (FlightGlobals.ready || IsEditor())
@@ -245,14 +248,14 @@ namespace KERBALISM
 			return GameSettings.KERBIN_TIME ? 426.0 : 365.0;
 		}
 
-		// stop time warping
+		///<summary>stop time warping</summary>
 		public static void StopWarp(int rate = 0)
 		{
 			TimeWarp.fetch.CancelAutoWarp();
 			TimeWarp.SetRate(rate, true, false);
 		}
 
-		// disable time warping above a specified level
+		///<summary>disable time warping above a specified level</summary>
 		public static void DisableWarp(uint max_level)
 		{
 			for (uint i = max_level + 1u; i < 8; ++i)
@@ -261,13 +264,13 @@ namespace KERBALISM
 			}
 		}
 
-		// get current time
+		///<summary>get current time</summary>
 		public static UInt64 Clocks()
 		{
 			return (UInt64)Stopwatch.GetTimestamp();
 		}
 
-		// convert from clocks to microseconds
+		///<summary>convert from clocks to microseconds</summary>
 		public static double Microseconds(UInt64 clocks)
 		{
 			return clocks * 1000000.0 / Stopwatch.Frequency;
@@ -285,7 +288,7 @@ namespace KERBALISM
 			return clocks / (double)Stopwatch.Frequency;
 		}
 
-		// return human-readable timestamp of planetarium time
+		///<summary>return human-readable timestamp of planetarium time</summary>
 		public static string PlanetariumTimestamp()
 		{
 			double t = Planetarium.GetUniversalTime();
@@ -316,20 +319,22 @@ namespace KERBALISM
 			);
 		}
 
-		// return true half the time
+		///<summary>return true half the time</summary>
 		public static int Alternate(int seconds, int elements)
 		{
 			return ((int)Time.realtimeSinceStartup / seconds) % elements;
 		}
-#endregion
+		#endregion
 
-#region REFLECTION
+		#region REFLECTION
 		private static readonly BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static;
 
-		// return a value from a module using reflection
-		// note: useful when the module is from another assembly, unknown at build time
-		// note: useful when the value isn't persistent
-		// note: this function break hard when external API change, by design
+		///<summary>
+		/// return a value from a module using reflection
+		/// note: useful when the module is from another assembly, unknown at build time
+		/// note: useful when the value isn't persistent
+		/// note: this function break hard when external API change, by design
+		/// </summary>
 		public static T ReflectionValue<T>(PartModule m, string value_name)
 		{
 			return (T)m.GetType().GetField(value_name, flags).GetValue(m);
@@ -343,10 +348,11 @@ namespace KERBALISM
 			return (T)fi.GetValue(m);
 		}
 
-		// set a value from a module using reflection
-		// note: useful when the module is from another assembly, unknown at build time
-		// note: useful when the value isn't persistent
-		// note: this function break hard when external API change, by design
+		///<summary>
+		/// set a value from a module using reflection
+		/// note: useful when the module is from another assembly, unknown at build time
+		/// note: useful when the value isn't persistent
+		/// note: this function break hard when external API change, by design		///</summary>
 		public static void ReflectionValue<T>(PartModule m, string value_name, T value)
 		{
 			m.GetType().GetField(value_name, flags).SetValue(m, value);
@@ -378,9 +384,9 @@ namespace KERBALISM
 		{
 			return (T)(m.GetType().GetMethod(call_name, flags, null, types, null).Invoke(m, parameters));
 		}
-#endregion
+		#endregion
 
-#region STRING
+		#region STRING
 		/// <summary> return string limited to len, with ... at the end</summary>
 		public static string Ellipsis(string s, uint len)
 		{
@@ -399,7 +405,7 @@ namespace KERBALISM
 			return s;
 		}
 
-		// tokenize a string
+		///<summary>tokenize a string</summary>
 		public static List<string> Tokenize(string txt, char separator)
 		{
 			List<string> ret = new List<string>();
@@ -412,8 +418,10 @@ namespace KERBALISM
 			return ret;
 		}
 
-		// return message with the macro expanded
-		// - variant: tokenize the string by '|' and select one
+		///<summary>
+		/// return message with the macro expanded
+		///- variant: tokenize the string by '|' and select one
+		///</summary>
 		public static string ExpandMsg(string txt, Vessel v = null, ProtoCrewMember c = null, uint variant = 0)
 		{
 			// get variant
@@ -431,21 +439,21 @@ namespace KERBALISM
 			  .Replace("$HIS_HER", c != null && c.gender == ProtoCrewMember.Gender.Male ? "his" : "her");
 		}
 
-		// make the first letter uppercase
+		///<summary>make the first letter uppercase</summary>
 		public static string UppercaseFirst(string s)
 		{
 			return s.Length > 0 ? char.ToUpper(s[0]) + s.Substring(1) : string.Empty;
 		}
 
 
-		// return string with specified color if condition evaluate to true
+		///<summary>return string with specified color if condition evaluate to true</summary>
 		public static string Color(string s, bool cond, string clr)
 		{
 			return !cond ? s : BuildString("<color=", clr, ">", s, "</color>");
 		}
 
 
-		// return string with specified color and bold if stated
+		///<summary>return string with specified color and bold if stated</summary>
 		public static string Color(string color, string s, bool bold = false)
 		{
 			if (string.IsNullOrEmpty(color))
@@ -454,35 +462,35 @@ namespace KERBALISM
 		}
 
 
-		// return string in bold
+		///<summary>return string in bold</summary>
 		public static string Bold(string s)
 		{
 			return ("<b>" + s + "</b>");
 		}
 
 
-		// return string in italic
+		///<summary>return string in italic</summary>
 		public static string Italic(string s)
 		{
 			return ("<i>" + s + "</i>");
 		}
 
 
-		// add spaces on caps
+		///<summary>add spaces on caps</summary>
 		public static string SpacesOnCaps(string s)
 		{
 			return System.Text.RegularExpressions.Regex.Replace(s, "[A-Z]", " $0").TrimStart();
 		}
 
 
-		// convert to smart_case
+		///<summary>convert to smart_case</summary>
 		public static string SmartCase(string s)
 		{
 			return SpacesOnCaps(s).ToLower().Replace(' ', '_');
 		}
 
 
-		// select a string at random
+		///<summary>select a string at random</summary>
 		public static string TextVariant(params string[] list)
 		{
 			return list.Length == 0 ? string.Empty : list[RandomInt(list.Length)];
@@ -611,7 +619,7 @@ namespace KERBALISM
 		}
 #endregion
 
-#region HUMAN READABLE
+		#region HUMAN READABLE
 		///<summary> Pretty-print a resource rate (rate is per second). Return an absolute value if a negative one is provided</summary>
 		public static string HumanReadableRate(double rate, string precision = "F3")
 		{
@@ -855,34 +863,34 @@ namespace KERBALISM
 		{
 			return Lib.BuildString("<color=#6DCFF6>", value.ToString("F1"), " CREDITS</color>");
 		}
-#endregion
+		#endregion
 
-#region GAME LOGIC
-		// return true if the current scene is flight
+		#region GAME LOGIC
+		///<summary>return true if the current scene is flight</summary>
 		public static bool IsFlight()
 		{
 			return HighLogic.LoadedSceneIsFlight;
 		}
 
-		// return true if the current scene is editor
+		///<summary>return true if the current scene is editor</summary>
 		public static bool IsEditor()
 		{
 			return HighLogic.LoadedSceneIsEditor;
 		}
 
-		// return true if the current scene is not the main menu
+		///<summary>return true if the current scene is not the main menu</summary>
 		public static bool IsGame()
 		{
 			return HighLogic.LoadedSceneIsGame;
 		}
 
-		// return true if game is paused
+		///<summary>return true if game is paused</summary>
 		public static bool IsPaused()
 		{
 			return FlightDriver.Pause || Planetarium.Pause;
 		}
 
-		// return true if a tutorial scenario or making history mission is active
+		///<summary>return true if a tutorial scenario or making history mission is active</summary>
 		public static bool IsScenario()
 		{
 			return HighLogic.CurrentGame.Mode == Game.Modes.SCENARIO
@@ -891,7 +899,7 @@ namespace KERBALISM
 				|| HighLogic.CurrentGame.Mode == Game.Modes.MISSION;
 		}
 
-		// disable the module and return true if a tutorial scenario is active
+		///<summary>disable the module and return true if a tutorial scenario is active</summary>
 		public static bool DisableScenario(PartModule m)
 		{
 			if (IsScenario())
@@ -902,9 +910,9 @@ namespace KERBALISM
 			}
 			return false;
 		}
-#endregion
+		#endregion
 
-#region BODY
+		#region BODY
 
 		/// <summary>For a given body, return the last parent body that is not a sun </summary>
 		public static CelestialBody GetParentPlanet(CelestialBody body)
@@ -964,8 +972,9 @@ namespace KERBALISM
 			return FlightGlobals.Bodies[0];
 		}
 
-		// return selected body in tracking-view/map-view
-		// if a vessel is selected, return its main body
+		///<summary
+		/// return selected body in tracking-view/map-view
+		/// >if a vessel is selected, return its main body		///</summary>
 		public static CelestialBody MapViewSelectedBody()
 		{
 			var target = PlanetariumCamera.fetch.target;
@@ -973,8 +982,10 @@ namespace KERBALISM
 				target == null ? null : target.celestialBody ?? target.vessel?.mainBody;
 		}
 
-		// return terrain height at point specified
-		// - body terrain must be loaded for this to work: use it only for loaded vessels
+		/// <summary
+		/// return terrain height at point specified
+		///- body terrain must be loaded for this to work: use it only for loaded vessels
+		/// </summary>
 		public static double TerrainHeight(CelestialBody body, Vector3d pos)
 		{
 			PQS pqs = body.pqsController;
@@ -983,17 +994,17 @@ namespace KERBALISM
 			Vector3d radial = QuaternionD.AngleAxis(latlong.y, Vector3d.down) * QuaternionD.AngleAxis(latlong.x, Vector3d.forward) * Vector3d.right;
 			return (pos - body.position).magnitude - pqs.GetSurfaceHeight(radial);
 		}
-#endregion
+		#endregion
 
-#region VESSEL
-		// return true if landed somewhere
+		#region VESSEL
+		///<summary>return true if landed somewhere</summary>
 		public static bool Landed(Vessel v)
 		{
 			if (v.loaded) return v.Landed || v.Splashed;
 			else return v.protoVessel.landed || v.protoVessel.splashed;
 		}
 
-		// return vessel position
+		///<summary>return vessel position</summary>
 		public static Vector3d VesselPosition(Vessel v)
 		{
 			// the issue
@@ -1024,20 +1035,20 @@ namespace KERBALISM
 		}
 
 
-		// return set of crew on a vessel
+		///<summary>return set of crew on a vessel</summary>
 		public static List<ProtoCrewMember> CrewList(Vessel v)
 		{
 			return v.loaded ? v.GetVesselCrew() : v.protoVessel.GetVesselCrew();
 		}
 
 
-		// return crew count of a vessel
+		///<summary>return crew count of a vessel</summary>
 		public static int CrewCount(Vessel v)
 		{
 			return v.isEVA ? 1 : CrewList(v).Count;
 		}
 
-		// return crew capacity of a vessel
+		///<summary>return crew capacity of a vessel</summary>
 		public static int CrewCapacity(Vessel v)
 		{
 			if (v.isEVA) return 1;
@@ -1057,7 +1068,7 @@ namespace KERBALISM
 		}
 
 
-		// return true if this is a 'vessel'
+		///<summary>return true if this is a 'vessel'</summary>
 		public static bool IsVessel(Vessel v)
 		{
 			// something weird is going on
@@ -1172,10 +1183,10 @@ namespace KERBALISM
 
 			return a.precisePosition == b.precisePosition;
 		}
-#endregion
+		#endregion
 
-#region PART
-		// get list of parts recursively, useful from the editors
+		#region PART
+		///<summary>get list of parts recursively, useful from the editors</summary>
 		public static List<Part> GetPartsRecursively(Part root)
 		{
 			List<Part> ret = new List<Part>
@@ -1189,15 +1200,16 @@ namespace KERBALISM
 			return ret;
 		}
 
-		// return the name of a part
+		///<summary>return the name of a part</summary>
 		public static string PartName(Part p)
 		{
 			return p.partInfo.name;
 		}
 
-		// return the volume of a part, in m^3
-		// note: this can only be called when part has not been rotated
-		//       we could use the partPrefab bounding box, but then it isn't available in GetInfo()
+		/// <summary>
+		/// return the volume of a part, in m^3
+		/// note: this can only be called when part has not been rotated
+		/// we could use the partPrefab bounding box, but then it isn't available in GetInfo()		/// </summary>
 		public static double PartVolume(Part p)
 		{
 			return PartVolume(p.GetPartRendererBound());
@@ -1208,9 +1220,10 @@ namespace KERBALISM
 			return bb.size.x * bb.size.y * bb.size.z * 0.785398;
 		}
 
-		// return the surface of a part, in m^2
-		// note: this can only be called when part has not been rotated
-		//       we could use the partPrefab bounding box, but then it isn't available in GetInfo()
+		/// <summary>
+		/// return the surface of a part, in m^2
+		/// note: this can only be called when part has not been rotated
+		/// we could use the partPrefab bounding box, but then it isn't available in GetInfo()		/// </summary>
 		public static double PartSurface(Part p)
 		{
 			return PartSurface(p.GetPartRendererBound());
@@ -1249,7 +1262,7 @@ namespace KERBALISM
 			return 0;
 		}
 
-		// return true if a part is manned, even in the editor
+		///<summary>return true if a part is manned, even in the editor</summary>
 		public static bool IsCrewed(Part p)
 		{
 			return CrewCount(p) > 0;
@@ -1274,8 +1287,10 @@ namespace KERBALISM
 		#endregion
 
 		#region MODULE
-		// return all modules implementing a specific type in a vessel
-		// note: disabled modules are not returned
+		///<summary>
+		/// return all modules implementing a specific type in a vessel
+		/// note: disabled modules are not returned
+		/// </summary>
 		public static List<T> FindModules<T>(Vessel v) where T : class
 		{
 			List<T> ret = new List<T>();
@@ -1335,8 +1350,10 @@ namespace KERBALISM
 			return ret;
 		}
 
-		// return all proto modules with a specified name in a part
-		// note: disabled modules are not returned
+		///<summary>
+		/// return all proto modules with a specified name in a part
+		/// note: disabled modules are not returned
+		/// </summary>
 		public static List<ProtoPartModuleSnapshot> FindModules(ProtoPartSnapshot p, string module_name)
 		{
 			List<ProtoPartModuleSnapshot> ret = new List<ProtoPartModuleSnapshot>(8);
@@ -1351,8 +1368,9 @@ namespace KERBALISM
 			return ret;
 		}
 
-		// return true if a module implementing a specific type and satisfying the predicate specified exist in a vessel
-		// note: disabled modules are ignored
+		///<summary>
+		/// return true if a module implementing a specific type and satisfying the predicate specified exist in a vessel
+		/// note: disabled modules are ignored		///</summary>
 		public static bool HasModule<T>(Vessel v, Predicate<T> filter) where T : class
 		{
 			for (int i = 0; i < v.parts.Count; ++i)
@@ -1371,8 +1389,9 @@ namespace KERBALISM
 			return false;
 		}
 
-		// return true if a proto module with the specified name and satisfying the predicate specified exist in a vessel
-		// note: disabled modules are not returned
+		///<summary>
+		/// return true if a proto module with the specified name and satisfying the predicate specified exist in a vessel
+		///note: disabled modules are not returned		///</summary>
 		public static bool HasModule(ProtoVessel v, string module_name, Predicate<ProtoPartModuleSnapshot> filter)
 		{
 			for (int i = 0; i < v.protoPartSnapshots.Count; ++i)
@@ -1390,16 +1409,18 @@ namespace KERBALISM
 			return false;
 		}
 
-		// used by ModulePrefab function, to support multiple modules of the same type in a part
+		///<summary>used by ModulePrefab function, to support multiple modules of the same type in a part</summary>
 		public sealed class Module_prefab_data
 		{
 			public int index;                         // index of current module of this type
 			public List<PartModule> prefabs;          // set of module prefabs of this type
 		}
 
-		// get module prefab
-		//  This function is used to solve the problem of obtaining a specific module prefab,
-		//  and support the case where there are multiple modules of the same type in the part.
+		///<summary>
+		/// get module prefab
+		///  This function is used to solve the problem of obtaining a specific module prefab,
+		/// and support the case where there are multiple modules of the same type in the part.
+		/// </summary>
 		public static PartModule ModulePrefab(List<PartModule> module_prefabs, string module_name, Dictionary<string, Module_prefab_data> PD)
 		{
 			// get data related to this module type, or create it
@@ -1418,9 +1439,9 @@ namespace KERBALISM
 			// then we have no chances of finding the module prefab so we return null
 			return data.index < data.prefabs.Count ? data.prefabs[data.index++] : null;
 		}
-#endregion
+		#endregion
 
-#region RESOURCE
+		#region RESOURCE
 		/// <summary> Returns the amount of a resource in a part </summary>
 		public static double Amount(Part part, string resource_name, bool ignore_flow = false)
 		{
@@ -1456,7 +1477,7 @@ namespace KERBALISM
 
 		/// <summary> Adds the specified resource amount and capacity to a part,
 		/// the resource is created if it doesn't already exist </summary>
-		// poached from https://github.com/blowfishpro/B9PartSwitch/blob/master/B9PartSwitch/Extensions/PartExtensions.cs
+		///<summary>poached from https://github.com/blowfishpro/B9PartSwitch/blob/master/B9PartSwitch/Extensions/PartExtensions.cs
 		public static void AddResource(Part p, string res_name, double amount, double capacity)
 		{
 #if !KSP14
@@ -1596,7 +1617,7 @@ namespace KERBALISM
 #endif
 		}
 
-		// note: the resource must exist
+		///<summary>note: the resource must exist</summary>
 		public static void SetResourceCapacity( Part p, string res_name, double capacity )
 		{
 			// if the resource is not in the part, log a warning and do nothing
@@ -1612,7 +1633,7 @@ namespace KERBALISM
 			res.amount = Math.Min( res.amount, capacity );
 		}
 
-		// note: the resource must exist
+		///<summary>note: the resource must exist</summary>
 		public static void SetResource( Part p, string res_name, double amount, double capacity )
 		{
 			// if the resource is not in the part, log a warning and do nothing
@@ -1721,10 +1742,10 @@ namespace KERBALISM
 			// then get the first resource and return capacity
 			return p.Resources.Count == 0 ? 0.0 : p.Resources[0].maxAmount;
 		}
-#endregion
+		#endregion
 
-#region SCIENCE DATA
-		// return true if there is experiment data on the vessel
+		#region SCIENCE DATA
+		///<summary>return true if there is experiment data on the vessel</summary>
 		public static bool HasData( Vessel v )
 		{
 			// stock science system
@@ -1753,7 +1774,7 @@ namespace KERBALISM
 			}
 		}
 
-		// remove one experiment at random from the vessel
+		///<summary>remove one experiment at random from the vessel</summary>
 		public static void RemoveData( Vessel v )
 		{
 			// stock science system
@@ -1818,7 +1839,7 @@ namespace KERBALISM
 
 		// -- TECH ------------------------------------------------------------------
 
-		// return true if the tech has been researched
+		///<summary>return true if the tech has been researched</summary>
 		public static bool HasTech( string tech_id )
 		{
 			// if science is disabled, all technologies are considered available
@@ -1835,16 +1856,16 @@ namespace KERBALISM
 			return ResearchAndDevelopment.GetTechnologyState( tech_id ) == RDTech.State.Available;
 		}
 
-		// return number of techs researched among the list specified
+		///<summary>return number of techs researched among the list specified</summary>
 		public static int CountTech( string[] techs )
 		{
 			int n = 0;
 			foreach (string tech_id in techs) n += HasTech( tech_id ) ? 1 : 0;
 			return n;
 		}
-#endregion
+		#endregion
 
-#region ASSETS
+		#region ASSETS
 		///<summary> Returns the path of the directory containing the DLL </summary>
 		public static string Directory()
 		{
@@ -1929,22 +1950,22 @@ namespace KERBALISM
 			}
 			return mat;
 		}
-#endregion
+		#endregion
 
-#region CONFIG
-		// get a config node from the config system
+		#region CONFIG
+		///<summary>get a config node from the config system</summary>
 		public static ConfigNode ParseConfig( string path )
 		{
 			return GameDatabase.Instance.GetConfigNode( path ) ?? new ConfigNode();
 		}
 
-		// get a set of config nodes from the config system
+		///<summary>get a set of config nodes from the config system</summary>
 		public static ConfigNode[] ParseConfigs( string path )
 		{
 			return GameDatabase.Instance.GetConfigNodes( path );
 		}
 
-		// get a value from config
+		///<summary>get a value from config</summary>
 		public static T ConfigValue<T>( ConfigNode cfg, string key, T def_value )
 		{
 			try
@@ -1958,7 +1979,7 @@ namespace KERBALISM
 			}
 		}
 
-		// get an enum from config
+		///<summary>get an enum from config</summary>
 		public static T ConfigEnum<T>( ConfigNode cfg, string key, T def_value )
 		{
 			try
@@ -1971,16 +1992,16 @@ namespace KERBALISM
 				return def_value;
 			}
 		}
-#endregion
+		#endregion
 
-#region UI
+		#region UI
 		/// <summary>Trigger a planner update</summary>
 		public static void RefreshPlanner()
 		{
 			Planner.Planner.RefreshPlanner();
 		}
 
-		// return true if last GUILayout element was clicked
+		///<summary>return true if last GUILayout element was clicked</summary>
 		public static bool IsClicked( int button = 0 )
 		{
 			return Event.current.type == EventType.MouseDown
@@ -1988,17 +2009,19 @@ namespace KERBALISM
 				&& GUILayoutUtility.GetLastRect().Contains( Event.current.mousePosition );
 		}
 
-		// return true if the mouse is inside the last GUILayout element
+		///<summary>return true if the mouse is inside the last GUILayout element</summary>
 		public static bool IsHover()
 		{
 			return GUILayoutUtility.GetLastRect().Contains( Event.current.mousePosition );
 		}
 
-		// render a text field with placeholder
-		// - id: an unique name for the text field
-		// - text: the previous text field content
-		// - placeholder: the text to show if the content is empty
-		// - style: GUIStyle to use for the text field
+		///<summary>
+		/// render a text field with placeholder
+		/// - id: an unique name for the text field
+		/// - text: the previous text field content
+		/// - placeholder: the text to show if the content is empty
+		/// - style: GUIStyle to use for the text field
+		///</summary>
 		public static string TextFieldPlaceholder( string id, string text, string placeholder, GUIStyle style )
 		{
 			GUI.SetNextControlName( id );
@@ -2018,14 +2041,14 @@ namespace KERBALISM
 			return text;
 		}
 
-		// used to make rmb ui status toggles look all the same
+		///<summary>used to make rmb ui status toggles look all the same</summary>
 		public static string StatusToggle( string title, string status )
 		{
 			return Lib.BuildString( "<b>", title, "</b>: ", status );
 		}
 
 
-		// show a modal popup window where the user can choose among two options
+		///<summary>show a modal popup window where the user can choose among two options</summary>
 		public static PopupDialog Popup( string title, string msg, params DialogGUIBase[] buttons)
 		{
 			return PopupDialog.SpawnPopupDialog
@@ -2070,9 +2093,9 @@ namespace KERBALISM
 			int index = rand.Next(letters.Length);
 			return (string)letters[index];
 		}
-#endregion
+		#endregion
 
-#region PROTO
+		#region PROTO
 		public static class Proto
 		{
 			public static bool GetBool( ProtoPartModuleSnapshot m, string name, bool def_value = false )
@@ -2118,15 +2141,15 @@ namespace KERBALISM
 				return s ?? def_value;
 			}
 
-			// set a value in a proto module
+			///<summary>set a value in a proto module</summary>
 			public static void Set<T>( ProtoPartModuleSnapshot module, string value_name, T value )
 			{
 				module.moduleValues.SetValue( value_name, value.ToString(), true );
 			}
 		}
-#endregion
+		#endregion
 
-#region STRING PARSING
+		#region STRING PARSING
 		public static class Parse
 		{
 			public static bool ToBool( string s, bool def_value = false )
@@ -2181,7 +2204,7 @@ namespace KERBALISM
 				return s != null && TryParseColor( s, out v ) ? v : def_value;
 			}
 		}
-#endregion
+		#endregion
 	}
 
 #region UTILITY CLASSES
