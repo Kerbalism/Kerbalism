@@ -67,6 +67,8 @@ namespace KERBALISM
 				}
 			}
 
+			protoHardDrive.moduleName = "ModuleScienceContainer";
+
 			return true; // continue to the original code
 		}
 	}
