@@ -35,7 +35,7 @@ namespace KERBALISM
 				ScienceData data = page.pageData;
 
 				// collect and deduce all info necessary
-				MetaData meta = new MetaData(data, page.host);
+				MetaData meta = new MetaData(data, page.host, page.xmitDataScalar);
 
 				// ignore non-collectable experiments
 				if (!meta.is_collectable)
@@ -125,7 +125,7 @@ namespace KERBALISM
 			ExperimentResultDialogPage page = dialog.currentPage;
 
 			// collect and deduce all data necessary just once
-			MetaData meta = new MetaData(data, page.host);
+			MetaData meta = new MetaData(data, page.host, page.xmitDataScalar);
 
 			if (!meta.is_collectable)
 			{
@@ -241,7 +241,7 @@ namespace KERBALISM
 
 	public sealed class MetaData
 	{
-		public MetaData(ScienceData data, Part host)
+		public MetaData(ScienceData data, Part host, float xmitScalar)
 		{
 			// find the part containing the data
 			part = host;
@@ -261,7 +261,7 @@ namespace KERBALISM
 			// determine if this is a sample (non-transmissible)
 			// - if this is a third-party data container/experiment module, we assume it is transmissible
 			// - stock experiment modules are considered sample if xmit scalar is below a threshold instead
-			is_sample = experiment != null && experiment.xmitDataScalar < 0.001f;
+			is_sample = xmitScalar < 0.001f;
 
 			// determine if the container/experiment can collect the data multiple times
 			// - if this is a third-party data container/experiment, we assume it can collect multiple times
