@@ -638,6 +638,8 @@ namespace KERBALISM
 		///<summary> Pretty-print a duration (duration is in seconds, must be positive) </summary>
 		public static string HumanReadableDuration(double duration)
 		{
+			duration = Math.Floor(duration);
+
 			if (duration <= double.Epsilon) return "none";
 			if (double.IsInfinity(duration) || double.IsNaN(duration)) return "perpetual";
 
