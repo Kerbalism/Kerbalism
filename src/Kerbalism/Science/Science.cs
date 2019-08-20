@@ -131,25 +131,23 @@ namespace KERBALISM
 						// this was the last useful bit, there is no more value in the experiment
 						if (remainingValue >= 0.1 && remainingValue - dataValue < 0.1)
 						{
-							// get the result text from the EXPERIMENT_DEFINITION > RESULTS configs and format it a bit
-							string subjectResult = ResearchAndDevelopment.GetResults(exp_filename);
-							if (!string.IsNullOrEmpty(subjectResult))
+							string subjectResultText; 
+							if (string.IsNullOrEmpty(file.resultText))
 							{
-								Lib.WordWrapAtLength(subjectResult, 70);
+								subjectResultText = Lib.TextVariant(
+								  "Our researchers will jump on it right now",
+								  "This cause some excitement",
+								  "These results are causing a brouhaha in R&D",
+								  "Our scientists look very confused",
+								  "The scientists won't believe these readings");
 							}
-							// else use our own text
 							else
 							{
-								subjectResult = Lib.TextVariant(
-									"Our researchers will jump on it right now",
-									"This cause some excitement",
-									"These results are causing a brouhaha in R&D",
-									"Our scientists look very confused",
-									"The scientists won't believe these readings"
-								);
+								subjectResultText = file.resultText;
 							}
 
-							Message.Post(Lib.BuildString(Experiment(exp_filename).FullName(exp_filename), " completed\n", Lib.HumanReadableScience(totalValue)), subjectResult);
+							subjectResultText = Lib.WordWrapAtLength(subjectResultText, 70);
+							Message.Post(Lib.BuildString(Experiment(exp_filename).FullName(exp_filename), " completed\n", Lib.HumanReadableScience(totalValue)), subjectResultText);
 						}
 					}
 				}
@@ -636,6 +634,28 @@ namespace KERBALISM
 				if (result.Length > 0) result += ", ";
 				if (s[0] == '!') result += "not " + s.Substring(1);
 				else result += s;
+			}
+			return result;
+		}
+
+		/// <summary>
+		/// Return the result description (Experiment definition RESULTS node) for the subject_id.
+		/// Same as the stock ResearchAndDevelopment.GetResults(subject_id) but can be forced to return a non-randomized result
+		/// </summary>
+		/// <param name="randomized">If true the result can be different each this is called</param>
+		/// <param name="useGenericIfNotFound">If true, a generic text will be returned if no RESULTS{} definition exists</param>
+		public static string SubjectResultDescription(string subject_id, bool useGenericIfNotFound = true)
+		{
+			string result = ResearchAndDevelopment.GetResults(subject_id);
+			if (result == null) result = string.Empty;
+			if (result == string.Empty && useGenericIfNotFound)
+			{
+				result = Lib.TextVariant(
+					  "Our researchers will jump on it right now",
+					  "This cause some excitement",
+					  "These results are causing a brouhaha in R&D",
+					  "Our scientists look very confused",
+					  "The scientists won't believe these readings");
 			}
 			return result;
 		}

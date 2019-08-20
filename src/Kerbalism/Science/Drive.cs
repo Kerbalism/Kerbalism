@@ -123,7 +123,7 @@ namespace KERBALISM
 			File file;
 			if (!files.TryGetValue(subject_id, out file))
 			{
-				file = new File();
+				file = new File(subject_id);
 				file.ts = Planetarium.GetUniversalTime();
 				files.Add(subject_id, file);
 
@@ -182,7 +182,7 @@ namespace KERBALISM
 			// create new data or get existing one
 			if (!samples.TryGetValue(subject_id, out sample))
 			{
-				sample = new Sample();
+				sample = new Sample(subject_id);
 				sample.analyze = PreferencesScience.Instance.analyzeSamples;
 				samples.Add(subject_id, sample);
 			}

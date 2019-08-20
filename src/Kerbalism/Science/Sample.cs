@@ -12,10 +12,11 @@ namespace KERBALISM
 		/// <summary>
 		/// Creates a science sample with the specified size in Mb
 		/// </summary>
-		public Sample(double size = 0.0)
+		public Sample(string subject_id, double size = 0.0)
 		{
 			this.size = size;
 			analyze = false;
+			resultText = ResearchAndDevelopment.GetResults(subject_id);
 		}
 
 		/// <summary>
@@ -26,6 +27,7 @@ namespace KERBALISM
 			size = Lib.ConfigValue(node, "size", 0.0);
 			analyze = Lib.ConfigValue(node, "analyze", false);
 			mass = Lib.ConfigValue(node, "mass", 0.0);
+			resultText = Lib.ConfigValue(node, "resultText", "");
 		}
 
 		/// <summary>
@@ -36,18 +38,18 @@ namespace KERBALISM
 			node.AddValue("size", size);
 			node.AddValue("analyze", analyze);
 			node.AddValue("mass", mass);
+			node.AddValue("resultText", resultText);
 		}
 
-		/// <summary>
-		/// data size in Mb
-		/// </summary>
+		/// <summary>data size in Mb </summary>
 		public double size;
 
 		public double mass;
 
-		/// <summary>
-		///	flagged for analysis in a laboratory
-		/// </summary>
+		/// <summary>randomized result text</summary>
+		public string resultText; // 
+
+		/// <summary>flagged for analysis in a laboratory</summary>
 		public bool analyze;
 	}
 
