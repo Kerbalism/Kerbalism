@@ -68,4 +68,6 @@
     <MSBuild Condition="$(Configuration)==Release" Projects="..\..\BuildSystem\BuildSystemTargets.xml" Targets="BuildRelease" />
     <MSBuild Condition="$(Configuration)==Debug" Projects="..\..\BuildSystem\BuildSystemTargets.xml" Targets="BuildDebug" Properties="DefineConstants=$(DefineConstants)"/>
   </Target>
+  <Target Name="Clean">
+  </Target>
 </Project>
