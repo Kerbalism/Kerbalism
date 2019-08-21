@@ -183,6 +183,7 @@
     <Compile Include="Modules\HardDrive.cs" />
     <Compile Include="Modules\Laboratory.cs" />
     <Compile Include="Modules\ProcessController.cs" />
+    <Compile Include="Modules\RadiatorFixer.cs" />
     <Compile Include="Modules\Sensor.cs" />
     <Compile Include="Modules\Experiment.cs" />
     <Compile Include="Modules\Reliability.cs" />

@@ -32,7 +32,8 @@ namespace KERBALISM
 			FNGenerator,
 			NonRechargeBattery,
 			KerbalismProcess,
-			SolarPanelFixer
+			SolarPanelFixer,
+			RadiatorFixer
 		}
 
 		public static Module_type ModuleType(string module_name)
@@ -66,6 +67,7 @@ namespace KERBALISM
 				case "FNGenerator": return Module_type.FNGenerator;
 				case "KerbalismProcess": return Module_type.KerbalismProcess;
 				case "SolarPanelFixer": return Module_type.SolarPanelFixer;
+				case "RadiatorFixer": return Module_type.RadiatorFixer;
 			}
 			return Module_type.Unknown;
 		}
@@ -111,6 +113,7 @@ namespace KERBALISM
 					case Module_type.CryoTank: ProcessCryoTank(v, e.p, e.m, e.module_prefab, resources, ec, elapsed_s); break;
 					case Module_type.FNGenerator: ProcessFNGenerator(v, e.p, e.m, e.module_prefab, ec, elapsed_s); break;
 					case Module_type.SolarPanelFixer: SolarPanelFixer.BackgroundUpdate(v, e.m, e.module_prefab as SolarPanelFixer, vd, ec, elapsed_s); break;
+					case Module_type.RadiatorFixer: RadiatorFixer.BackgroundUpdate(v, e.p, e.m, e.module_prefab as RadiatorFixer, elapsed_s); break;
 				}
 			}
 		}
