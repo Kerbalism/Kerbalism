@@ -158,8 +158,6 @@ namespace KERBALISM
 			ScaledSpace.LocalToScaledSpace(ref end);
 			Vector3d dir = end - vesselPos;
 			if (endNegOffset > 0) dir -= dir.normalized * (endNegOffset * ScaledSpace.InverseScaleFactor);
-			RaycastHit raycastHit;
-			Physics.Raycast(vesselPos, dir, out raycastHit, (float)dir.magnitude, planetaryLayerMask);
 
 			return !Physics.Raycast(vesselPos, dir, (float)dir.magnitude, planetaryLayerMask);
 		}
