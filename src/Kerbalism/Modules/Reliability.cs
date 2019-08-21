@@ -231,7 +231,9 @@ namespace KERBALISM
 				if (next <= 0)
 				{
 					last = now;
-					next = last + mtbf * (quality ? Settings.QualityScale : 1.0) * 2.0 * Lib.RandomDouble();
+					var guaranteed = mtbf / 2.0;
+					var r = 1 - Math.Pow(Lib.RandomDouble(), 3);
+					next = last + guaranteed + mtbf * (quality ? Settings.QualityScale : 1.0) * r;
 				}
 
 				// if it has failed, trigger malfunction
@@ -323,7 +325,10 @@ namespace KERBALISM
 				bool quality = Lib.Proto.GetBool(m, "quality");
 
 				double last = Planetarium.GetUniversalTime();
-				next = last + reliability.mtbf * (quality ? Settings.QualityScale : 1.0) * 2.0 * Lib.RandomDouble();
+
+				var guaranteed = reliability.mtbf / 2.0;
+				var r = 1 - Math.Pow(Lib.RandomDouble(), 3);
+				next = last + guaranteed + reliability.mtbf * (quality ? Settings.QualityScale : 1.0) * r;
 				Lib.Proto.Set(m, "last", last);
 				Lib.Proto.Set(m, "next", next);
 			}
