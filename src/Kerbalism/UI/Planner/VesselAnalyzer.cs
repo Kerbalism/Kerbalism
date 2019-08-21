@@ -196,6 +196,7 @@ namespace KERBALISM.Planner
 
 						// calculate mtbf
 						double mtbf = reliability.mtbf * (reliability.quality ? Settings.QualityScale : 1.0);
+						if (mtbf <= 0) continue;
 
 						// accumulate failures/y
 						failure_year += year_time / mtbf;
