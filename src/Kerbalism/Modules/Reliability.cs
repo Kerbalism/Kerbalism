@@ -22,7 +22,7 @@ namespace KERBALISM
 		// engine only features
 		[KSPField] public double turnon_failure_probability = -1;           // probability of a failure when turned on or staged
 		[KSPField] public double rated_operation_duration = -1;             // failure rate increases dramatically if this is exceeded
-		[KSPField] public double rated_ignitions = -1;                      // failure rate increases dramatically if this is exceeded
+		[KSPField] public int rated_ignitions = -1;                         // failure rate increases dramatically if this is exceeded
 
 		// persistence
 		[KSPField(isPersistant = true)] public bool broken;                 // true if broken
@@ -78,6 +78,11 @@ namespace KERBALISM
 			if (broken) Apply(true);
 		}
 
+		/// <summary>
+		/// Currently this is called for loaded vessels only, but potentially could be
+		/// used for other stuff that can be turned on and off, like lights, processes, antennas.
+		/// However, doing that would require a IsRunning() implementation for unloaded vessels.
+		/// </summary>
 		protected static void OnTurnon(Reliability reliability, ProtoPartModuleSnapshot m)
 		{
 			bool quality = Lib.Proto.GetBool(m, "quality");
@@ -107,8 +112,9 @@ namespace KERBALISM
 					}
 
 					Lib.Proto.Set(m, "next", reliability.next);
-
+#if DEBUG
 					Lib.Log("Reliability: Turn-On breakdown");
+#endif
 					if (reliability.part != null)
 					{
 						FlightLogger.fetch?.LogEvent("Engine failed on ignition");
@@ -117,26 +123,33 @@ namespace KERBALISM
 				}
 			}
 
-			if(reliability.rated_ignitions > 0 && ignitions > reliability.rated_ignitions)
+			if(reliability.rated_ignitions > 0)
 			{
-				var q = 2.0 * (quality ? Settings.QualityScale : 1.0) * Lib.RandomDouble();
-				q /= (ignitions - reliability.rated_ignitions);
+				int total_ignitions = reliability.rated_ignitions;
+				if (quality) total_ignitions += (int)Math.Ceiling(total_ignitions * Settings.QualityScale * 0.3);
 
-				if (q < 0.5)
+				if(ignitions > total_ignitions)
 				{
-					// enforce immediate breakdown
-					reliability.enforce_breakdown = true;
-					Lib.Proto.Set(m, "enforce_breakdown", true);
-					reliability.next = Planetarium.GetUniversalTime() + 1;
-					Lib.Log("Reliability: Ignition limit breakdown");
-					if (reliability.part != null)
+					var q = 2.0 * (quality ? Settings.QualityScale : 1.0) * Lib.RandomDouble();
+					q /= (ignitions - total_ignitions); // progressively increase the odds of a failure with every extra ignition
+
+					if (q < 0.5)
 					{
-						FlightLogger.fetch?.LogEvent("Engine exceeded max. rated ignitions");
+						// enforce immediate breakdown
+						reliability.enforce_breakdown = true;
+						Lib.Proto.Set(m, "enforce_breakdown", true);
+						reliability.next = Planetarium.GetUniversalTime() + 1;
+#if DEBUG
+						Lib.Log("Reliability: Ignition limit breakdown");
+#endif
+						if (reliability.part != null) // don't flight log on unloaded vessels
+						{
+							FlightLogger.fetch?.LogEvent("Engine exceeded max. rated ignitions");
+						}
 					}
 				}
+
 			}
-
-
 		}
 
 		public void Update()
@@ -211,28 +224,35 @@ namespace KERBALISM
 			if (Lib.IsEditor()) return;
 
 			// if it has not malfunctioned
-			if (!broken)
+			if (!broken && mtbf > 0)
 			{
+				var now = Planetarium.GetUniversalTime();
 				// calculate time of next failure if necessary
-				if (next <= 0 && mtbf > 0)
+				if (next <= 0)
 				{
-					last = Planetarium.GetUniversalTime();
+					last = now;
 					next = last + mtbf * (quality ? Settings.QualityScale : 1.0) * 2.0 * Lib.RandomDouble();
 				}
 
 				// if it has failed, trigger malfunction
-				if (Planetarium.GetUniversalTime() > next) Break();
+				if (now > next) Break();
 			}
 		}
 
 		protected double nextRunningCheck = 0.0;
 		protected double lastRunningCheck = 0.0;
+
+		/// <summary>
+		/// This checks burn time and ignition failures, which is intended for engines only.
+		/// Since engines don't run on on unloaded vessels in KSP, this is only implemented
+		/// for loaded vessels.
+		/// </summary>
 		protected void RunningCheck()
 		{
 			if (broken || enforce_breakdown || turnon_failure_probability <= 0 && rated_operation_duration <= 0) return;
 			double now = Planetarium.GetUniversalTime();
 			if (now < nextRunningCheck) return;
-			nextRunningCheck = now + 0.5;
+			nextRunningCheck = now + 0.5; // twice a second is fast enough for a smooth countdown in the PAW
 
 			if (!running)
 			{
@@ -247,10 +267,6 @@ namespace KERBALISM
 				running = IsRunning();
 			}
 
-
-			// rated_operation_duration, rated_ignitions:
-			// these is supposed to be used for engines only. since engines cannot run in background,
-			// there is no background handling for this.
 			if (running && rated_operation_duration > 1 && lastRunningCheck > 0)
 			{
 				var duration = now - lastRunningCheck;
@@ -258,12 +274,21 @@ namespace KERBALISM
 
 				if(fail_duration <= 0)
 				{
+					// calculate a random point on which the engine will fail
+
 					var f = rated_operation_duration;
 					if (quality) f *= Settings.QualityScale;
 
-					// 50% guaranteed burn duration
-					var guaranteed_operation = f / 2;
-					fail_duration = guaranteed_operation + Lib.RandomDouble() * f;
+					// random^3 so we get an exponentially increasing probability
+					var p = Math.Pow(Lib.RandomDouble(), 3);
+
+					// 1-p turns the probability of failure into one of non-failure
+					p = 1 - p;
+
+					// 20% guaranteed burn duration
+					var guaranteed_operation = f * 0.2;
+
+					fail_duration = guaranteed_operation + f * p;
 #if DEBUG
 					Lib.Log(part + " will fail after " + Lib.HumanReadableDuration(fail_duration) + " burn time");
 #endif
@@ -271,9 +296,11 @@ namespace KERBALISM
 
 				if (fail_duration < operation_duration)
 				{
-					next = now + Lib.RandomDouble() * 2;
+					next = now;
 					enforce_breakdown = true;
-					Lib.Log("Reliability: " + part + " fails in " + Lib.HumanReadableDuration(next - now) + " because of overstress");
+#if DEBUG
+					Lib.Log("Reliability: " + part + " fails because of overstress");
+#endif
 					FlightLogger.fetch?.LogEvent("Engine failed because of overstress");
 				}
 			}
@@ -563,25 +590,30 @@ namespace KERBALISM
 			if (redundancy.Length > 0) specs.Add("Redundancy", redundancy);
 			specs.Add("Repair", new CrewSpecs(repair).Info());
 
-			if (rated_ignitions > 0) specs.Add("Rated ignitions", rated_ignitions.ToString());
+			
 
 			specs.Add(string.Empty);
 			specs.Add("<color=#00ffff>Standard quality</color>");
 			if(mtbf > 0) specs.Add("MTBF", Lib.HumanReadableDuration(mtbf));
 			if (turnon_failure_probability > 0) specs.Add("Ignition failures", Lib.HumanReadablePerc(turnon_failure_probability, "F1"));
 			if (rated_operation_duration > 0) specs.Add("Rated burn duration", Lib.HumanReadableDuration(rated_operation_duration));
+			if (rated_ignitions > 0) specs.Add("Rated ignitions", rated_ignitions.ToString());
 
 			specs.Add(string.Empty);
 			specs.Add("<color=#00ffff>High quality</color>");
+			if (extra_cost > double.Epsilon) specs.Add("Extra cost", Lib.HumanReadableCost(extra_cost * part.partInfo.cost));
+			if (extra_mass > double.Epsilon) specs.Add("Extra mass", Lib.HumanReadableMass(extra_mass * part.partInfo.partPrefab.mass));
 			if (mtbf > 0) specs.Add("MTBF", Lib.HumanReadableDuration(mtbf * Settings.QualityScale));
 			if (turnon_failure_probability > 0) specs.Add("Ignition failures", Lib.HumanReadablePerc(turnon_failure_probability / Settings.QualityScale, "F1"));
 			if (rated_operation_duration > 0) specs.Add("Rated burn duration", Lib.HumanReadableDuration(rated_operation_duration * Settings.QualityScale));
-			if (extra_cost > double.Epsilon) specs.Add("Extra cost", Lib.HumanReadableCost(extra_cost * part.partInfo.cost));
-			if (extra_mass > double.Epsilon) specs.Add("Extra mass", Lib.HumanReadableMass(extra_mass * part.partInfo.partPrefab.mass));
+			if (rated_ignitions > 0)
+			{
+				int quality_ignitions = rated_ignitions + (int)Math.Ceiling(rated_ignitions * Settings.QualityScale * 0.3);
+				if (rated_ignitions > 0) specs.Add("Rated ignitions", quality_ignitions.ToString());
+			}
 
 			return specs;
 		}
-
 
 		// module info support
 		public string GetModuleTitle() { return Lib.BuildString(title, " Reliability"); }
@@ -617,6 +649,11 @@ namespace KERBALISM
 				case "ModuleEnginesFX":
 					foreach (PartModule m in modules)
 						return (m as ModuleEngines).resultingThrust > 0;
+					return false;
+
+				case "ModuleEnginesRF":
+					foreach (PartModule m in modules)
+						return Lib.ReflectionValue<bool>(m, "ignited");
 					return false;
 			}
 
