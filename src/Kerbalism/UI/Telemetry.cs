@@ -109,12 +109,12 @@ namespace KERBALISM
 			// don't show env panel in eva kerbals
 			if (v.isEVA) return;
 
-			p.AddSection("SCIENCE");
+			p.AddSection("TRANSMISSION");
 			ScienceLog scienceLog = v.KerbalismData().ScienceLog;
 
 			// comm status
 			ConnectionInfo conn = vd.Connection;
-			p.AddContent(Localizer.Format("#KERBALISM_UI_sciencerate"), Lib.HumanReadableDataRate(conn.rate));
+			p.AddContent(Localizer.Format("transmission rate"), Lib.HumanReadableDataRate(conn.rate));
 			p.AddContent("target", conn.target_name);
 
 			// total science gained by vessel
