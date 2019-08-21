@@ -146,7 +146,8 @@ namespace KERBALISM
 		private static int planetaryLayerMask = int.MaxValue;
 
 		/// <summary>Return true if there is no CelestialBody between the vessel position and the 'end' point. Beware that this uses a (very slow) physic raycast.</summary>
-		public static bool RaytracePhysic(Vessel vessel, Vector3d vesselPos, Vector3d end)
+		/// <param name="endNegOffset">distance from which the ray will stop before hitting the 'end' point, put the body radius here if the end point is a CB</param>
+		public static bool RaytracePhysic(Vessel vessel, Vector3d vesselPos, Vector3d end, double endNegOffset = 0.0)
 		{
 			// for unloaded vessels, position in scaledSpace is 1 fixedUpdate frame desynchronized :
 			if (!vessel.loaded)
@@ -156,6 +157,9 @@ namespace KERBALISM
 			ScaledSpace.LocalToScaledSpace(ref vesselPos);
 			ScaledSpace.LocalToScaledSpace(ref end);
 			Vector3d dir = end - vesselPos;
+			if (endNegOffset > 0) dir -= dir.normalized * (endNegOffset * ScaledSpace.InverseScaleFactor);
+			RaycastHit raycastHit;
+			Physics.Raycast(vesselPos, dir, out raycastHit, (float)dir.magnitude, planetaryLayerMask);
 
 			return !Physics.Raycast(vesselPos, dir, (float)dir.magnitude, planetaryLayerMask);
 		}
@@ -193,8 +197,8 @@ namespace KERBALISM
 
 			// for very small bodies the analytic method is very unreliable at high latitudes
 			// we use a physic raycast (a lot slower)
-			if (vessel.Landed && vessel.mainBody.Radius < 100000.0 && (vessel.latitude < -45.0 || vessel.latitude > 45.0))
-				return RaytracePhysic(vessel, vesselPos, body.position);
+			if (Lib.Landed(vessel) && vessel.mainBody.Radius < 100000.0 && (vessel.latitude < -45.0 || vessel.latitude > 45.0))
+				return RaytracePhysic(vessel, vesselPos, body.position, body.Radius);
 
 			// check if the ray intersect one of the provided bodies
 			foreach (CelestialBody occludingBody in occludingBodies)
