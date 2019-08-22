@@ -25,7 +25,7 @@ namespace KERBALISM
 		public bool isConsuming;                            // Module is consuming energy
 		public bool hasEnergyChanged;                       // Energy state has changed since last update?
 		public bool hasFixedEnergyChanged;                  // Energy state has changed since last fixed update?
-		public VesselResource resources;
+		public IResource resources;
 
 		public PartModule module;                           // component cache, the Reliability.cs is one to many, instead the Deploy will be one to one
 		public KeyValuePair<bool, double> modReturn;        // Return from DeviceEC
@@ -194,7 +194,7 @@ namespace KERBALISM
 			}
 		}
 
-		public static void BackgroundUpdate(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, Deploy deploy, VesselResource ec, double elapsed_s)
+		public static void BackgroundUpdate(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, Deploy deploy, IResource ec, double elapsed_s)
 		{
 			if (deploy.isConsuming) ec.Consume(deploy.extra_Cost * elapsed_s, "deploy");
 		}

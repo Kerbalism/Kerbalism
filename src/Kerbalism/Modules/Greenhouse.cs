@@ -134,7 +134,7 @@ namespace KERBALISM
 
 				// get resource cache
 				VesselResHandler resources = ResourceCache.Get(vessel);
-				VesselResource ec = resources.GetResource(vessel, "ElectricCharge");
+				IResource ec = resources.GetResource(vessel, "ElectricCharge");
 
 				// deal with corner cases when greenhouse is assembled using KIS
 				if (double.IsNaN(growth) || double.IsInfinity(growth)) growth = 0.0;
@@ -151,7 +151,7 @@ namespace KERBALISM
 				if (ec.Amount <= double.Epsilon) artificial = 0.0;
 
 				// execute recipe
-				ResourceRecipe recipe = new ResourceRecipe(part, "greenhouse");
+				Recipe recipe = new Recipe(part, "greenhouse");
 				foreach (ModuleResource input in resHandler.inputResources)
 				{
 					// WasteAtmosphere is primary combined input
@@ -246,7 +246,7 @@ namespace KERBALISM
 			if (active && growth < 0.99)
 			{
 				// get resource handler
-				VesselResource ec = resources.GetResource(v, "ElectricCharge");
+				IResource ec = resources.GetResource(v, "ElectricCharge");
 
 				// calculate natural and artificial lighting
 				double natural = vd.EnvSolarFluxTotal;
@@ -260,7 +260,7 @@ namespace KERBALISM
 				if (ec.Amount <= double.Epsilon) artificial = 0.0;
 
 				// execute recipe
-				ResourceRecipe recipe = new ResourceRecipe(g.part, "greenhouse");
+				Recipe recipe = new Recipe(g.part, "greenhouse");
 				foreach (ModuleResource input in g.resHandler.inputResources) //recipe.Input(input.name, input.rate * elapsed_s);
 				{
 					// WasteAtmosphere is primary combined input

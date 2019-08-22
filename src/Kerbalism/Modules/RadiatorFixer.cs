@@ -10,6 +10,11 @@ NFE reactor partmodule :
 - core damage
 - flow restriction
 
+double
+double heatproduced
+double fuelamount
+floatcurve cooldowncurve // residual heat production after the module is disabled
+bool explodeOnOverheat
 
 */
 
@@ -98,7 +103,7 @@ namespace KERBALISM
 
 			if (inputResourceRate > 0.0)
 			{
-				ResourceRecipe recipe = new ResourceRecipe(part, "radiator");
+				Recipe recipe = new Recipe(part, "radiator");
 				recipe.AddInput(inputResource, inputResourceRate * Kerbalism.elapsed_s);
 				recipe.AddOutput(outputResource, outputResourceRate * Kerbalism.elapsed_s, false);
 				ResourceCache.AddRecipe(vessel, recipe);
@@ -115,7 +120,7 @@ namespace KERBALISM
 
 			if (prefab.inputResourceRate > 0.0)
 			{
-				ResourceRecipe recipe = new ResourceRecipe(p, "radiator");
+				Recipe recipe = new Recipe(p, "radiator");
 				recipe.AddInput(prefab.inputResource, prefab.inputResourceRate * elapsed_s);
 				recipe.AddOutput(prefab.outputResource, prefab.outputResourceRate * elapsed_s, false);
 				ResourceCache.AddRecipe(v, recipe);

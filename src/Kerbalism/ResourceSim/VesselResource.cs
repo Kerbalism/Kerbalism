@@ -4,13 +4,13 @@ using System.Collections.Generic;
 namespace KERBALISM
 {
 	/// <summary>
-	/// Handler for a single resource on a vessel. Expose vessel-wide information about amounts, rates and brokers (consumers/producers).
+	/// Handler for a single "real" resource on a vessel. Expose vessel-wide information about amounts, rates and brokers (consumers/producers).
 	/// Responsible for synchronization between the resource simulator and the actual resources present on each part. 
 	/// </summary>
-	public sealed class VesselResource
+	public class VesselResource : IResource
 	{
 		/// <summary> Associated resource name</summary>
-		public string ResourceName { get; private set; }
+		public string Name { get; private set; }
 
 		/// <summary> Rate of change in amount per-second, this is purely for visualization</summary>
 		public double Rate { get; private set; }
@@ -49,7 +49,7 @@ namespace KERBALISM
 		public VesselResource(Vessel v, string res_name)
 		{
 			// remember resource name
-			ResourceName = res_name;
+			Name = res_name;
 
 			Deferred = 0;
 			Amount = 0;
@@ -65,7 +65,7 @@ namespace KERBALISM
 				{
 					foreach (PartResource r in p.Resources)
 					{
-						if (r.resourceName == ResourceName)
+						if (r.resourceName == Name)
 						{
 							if (r.flowState) // has the user chosen to make a flowable resource flow
 							{
@@ -86,7 +86,7 @@ namespace KERBALISM
 				{
 					foreach (ProtoPartResourceSnapshot r in p.resources)
 					{
-						if (r.flowState && r.resourceName == ResourceName)
+						if (r.flowState && r.resourceName == Name)
 						{
 							if (r.flowState) // has the user chosen to make a flowable resource flow
 							{
@@ -99,7 +99,7 @@ namespace KERBALISM
 			}
 
 			// calculate level
-			Level = Capacity > double.Epsilon ? Amount / Capacity : 0.0;
+			Level = Capacity > 0.0 ? Amount / Capacity : 0.0;
 		}
 
 		/// <summary>Record a production, it will be stored in "Deferred" and later synchronized to the vessel in Sync()</summary>
@@ -185,7 +185,7 @@ namespace KERBALISM
 				{
 					foreach (PartResource r in p.Resources)
 					{
-						if (r.flowState && r.resourceName == ResourceName)
+						if (r.flowState && r.resourceName == Name)
 						{
 							Amount += r.amount;
 							Capacity += r.maxAmount;
@@ -199,7 +199,7 @@ namespace KERBALISM
 				{
 					foreach (ProtoPartResourceSnapshot r in p.resources)
 					{
-						if (r.flowState && r.resourceName == ResourceName)
+						if (r.flowState && r.resourceName == Name)
 						{
 							Amount += r.amount;
 							Capacity += r.maxAmount;
@@ -234,7 +234,7 @@ namespace KERBALISM
 					{
 						foreach (PartResource r in p.Resources)
 						{
-							if (r.flowState && r.resourceName == ResourceName)
+							if (r.flowState && r.resourceName == Name)
 							{
 								// calculate consumption/production coefficient for the part
 								double k = Deferred < 0.0
@@ -253,7 +253,7 @@ namespace KERBALISM
 					{
 						foreach (ProtoPartResourceSnapshot r in p.resources)
 						{
-							if (r.flowState && r.resourceName == ResourceName)
+							if (r.flowState && r.resourceName == Name)
 							{
 								// calculate consumption/production coefficient for the part
 								double k = Deferred < 0.0
@@ -298,13 +298,13 @@ namespace KERBALISM
 			// - normal brokers that use Consume() or Produce()
 			// - "virtual" brokers from interval-based rules
 			// - non-Kerbalism brokers (aggregated rate)
-			vd.Supply(ResourceName).UpdateResourceBrokers(brokersResourceAmounts, intervalRuleBrokersRates, unsupportedBrokersRate, elapsed_s);
+			vd.Supply(Name).UpdateResourceBrokers(brokersResourceAmounts, intervalRuleBrokersRates, unsupportedBrokersRate, elapsed_s);
 
 			if (PreferencesLifeSupport.Instance.resourceLogging)
 			{
 				Lib.Log("RESOURCE UPDATE : " + v);
-				foreach (var rb in vd.Supply(ResourceName).ResourceBrokers)
-					Lib.Log(Lib.BuildString(ResourceName, " : ", rb.rate.ToString("+0.000000;-0.000000;+0.000000"), "/s (", rb.name, ")"));
+				foreach (var rb in vd.Supply(Name).ResourceBrokers)
+					Lib.Log(Lib.BuildString(Name, " : ", rb.rate.ToString("+0.000000;-0.000000;+0.000000"), "/s (", rb.name, ")"));
 				Lib.Log("RESOURCE UPDATE END");
 			}
 
@@ -325,7 +325,7 @@ namespace KERBALISM
 				  Lib.BuildString
 				  (
 					!v.isActiveVessel ? Lib.BuildString("On <b>", v.vesselName, "</b>\na ") : "A ",
-					"producer of <b>", ResourceName, "</b> has\n",
+					"producer of <b>", Name, "</b> has\n",
 					"incoherent behavior at high warp speed.\n",
 					"<i>Unload the vessel before warping</i>"
 				  )

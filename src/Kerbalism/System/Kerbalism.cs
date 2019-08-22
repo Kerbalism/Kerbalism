@@ -188,7 +188,7 @@ namespace KERBALISM
 					vd.Evaluate(false, elapsed_s);
 
 					// get most used resource
-					VesselResource ec = resources.GetResource(v, "ElectricCharge");
+					IResource ec = resources.GetResource(v, "ElectricCharge");
 
 					// show belt warnings
 					Radiation.BeltWarnings(v, vd);
@@ -250,7 +250,7 @@ namespace KERBALISM
 				last_vd.Evaluate(false, last_time);
 
 				// get most used resource
-				VesselResource last_ec = last_resources.GetResource(last_v, "ElectricCharge");
+				IResource last_ec = last_resources.GetResource(last_v, "ElectricCharge");
 
 				// show belt warnings
 				Radiation.BeltWarnings(last_v, last_vd);
@@ -699,7 +699,7 @@ namespace KERBALISM
 			const double res_penalty = 0.1;        // proportion of food lost on 'depressed' and 'wrong_valve'
 
 			// get a supply resource at random
-			VesselResource res = null;
+			IResource res = null;
 			if (Profile.supplies.Count > 0)
 			{
 				Supply supply = Profile.supplies[Lib.RandomInt(Profile.supplies.Count)];
@@ -740,7 +740,7 @@ namespace KERBALISM
 					break;
 				case KerbalBreakdown.wrong_valve:
 					text = "$ON_VESSEL$KERBAL opened the wrong valve";
-					subtext = res.ResourceName + " has been lost";
+					subtext = res.Name + " has been lost";
 					break;
 			}
 

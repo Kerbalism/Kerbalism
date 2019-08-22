@@ -196,9 +196,9 @@
     <Compile Include="Renderer\ParticleMesh.cs" />
     <Compile Include="Renderer\ParticleRenderer.cs" />
     <Compile Include="ResourceSim\HabitatEqualizer.cs" />
-    <Compile Include="ResourceSim\IKerbalismResource.cs" />
+    <Compile Include="ResourceSim\IResource.cs" />
     <Compile Include="ResourceSim\VirtualResource.cs" />
-    <Compile Include="ResourceSim\ResourceRecipe.cs" />
+    <Compile Include="ResourceSim\Recipe.cs" />
     <Compile Include="ResourceSim\VesselResource.cs" />
     <Compile Include="ResourceSim\VesselResHandler.cs" />
     <Compile Include="ResourceSim\ResourceCache.cs" />

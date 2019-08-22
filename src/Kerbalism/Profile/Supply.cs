@@ -39,7 +39,7 @@ namespace KERBALISM
 			List<ProtoCrewMember> crew = Lib.CrewList(v);
 
 			// get resource handler
-			VesselResource res = resources.GetResource(v, resource);
+			IResource res = resources.GetResource(v, resource);
 
 			// get data from db
 			SupplyData sd = v.KerbalismData().Supply(resource);

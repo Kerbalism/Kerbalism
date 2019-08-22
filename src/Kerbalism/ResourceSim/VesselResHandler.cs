@@ -5,26 +5,29 @@ namespace KERBALISM
 {
 	/// <summary>
 	/// Handler for the vessel resources simulator.
-	/// Allow access to the resource information (VesselResource) for all resources on the vessel
+	/// Allow access to the resource information (IResource) for all resources on the vessel
 	/// and also stores of all recorded recipes (ResourceRecipe)
 	/// </summary>
 	public sealed class VesselResHandler
 	{
-		private Dictionary<string, VesselResource> resources = new Dictionary<string, VesselResource>(32);
-		private List<ResourceRecipe> recipes = new List<ResourceRecipe>(4);
+		private Dictionary<string, IResource> resources = new Dictionary<string, IResource>(32);
+		private List<Recipe> recipes = new List<Recipe>(4);
 
 		/// <summary>return the VesselResource object for this resource or create it if it doesn't exists</summary>
-		public VesselResource GetResource(Vessel v, string resource_name)
+		public IResource GetResource(Vessel v, string resourceName)
 		{
 			// try to get existing entry if any
-			VesselResource res;
-			if (resources.TryGetValue(resource_name, out res)) return res;
+			IResource res;
+			if (resources.TryGetValue(resourceName, out res)) return res;
 
-			// create new entry
-			res = new VesselResource(v, resource_name);
+			// create new entry, "real" resource if it exists in the game, virtual resource otherwise.
+			if (PartResourceLibrary.Instance.resourceDefinitions.Contains(resourceName))
+				res = new VesselResource(v, resourceName);
+			else
+				res = new VirtualResource(resourceName);
 
 			// remember new entry
-			resources.Add(resource_name, res);
+			resources.Add(resourceName, res);
 
 			// return new entry
 			return res;
@@ -38,13 +41,13 @@ namespace KERBALISM
 		public void Sync(Vessel v, VesselData vd, double elapsed_s)
 		{
 			// execute all recorded recipes
-			ResourceRecipe.ExecuteRecipes(v, this, recipes);
+			Recipe.ExecuteRecipes(v, this, recipes);
 
 			// forget the recipes
 			recipes.Clear();
 
 			// apply all deferred requests and synchronize to vessel
-			foreach (VesselResource info in resources.Values) info.Sync(v, vd, elapsed_s);
+			foreach (IResource vr in resources.Values) vr.Sync(v, vd, elapsed_s);
 		}
 
 		/// <summary> record deferred production of a resource (shortcut) </summary>
@@ -62,7 +65,7 @@ namespace KERBALISM
 		}
 
 		/// <summary> record deferred execution of a recipe (shortcut) </summary>
-		public void AddRecipe(ResourceRecipe recipe)
+		public void AddRecipe(Recipe recipe)
 		{
 			recipes.Add(recipe);
 		}

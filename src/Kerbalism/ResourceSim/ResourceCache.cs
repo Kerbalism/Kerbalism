@@ -15,19 +15,19 @@ namespace KERBALISM
 			entries = new Dictionary<Guid, VesselResHandler>();
 		}
 
-		/// <summary> clear all resource information for all vessels </summary>
+		/// <summary> clear all resource information for all vessels. Must only be called if all vessels are destroyed</summary>
 		public static void Clear()
 		{
 			entries.Clear();
 		}
 
-		/// <summary> Reset the whole resource simulation for the vessel </summary>
+		/// <summary> Reset the whole resource simulation for the vessel. Must only be called if the vessel is destroyed</summary>
 		public static void Purge(Vessel v)
 		{
 			entries.Remove(v.id);
 		}
 
-		/// <summary> Reset the whole resource simulation for the vessel </summary>
+		/// <summary> Reset the whole resource simulation for the vessel. Must only be called if the vessel is destroyed</summary>
 		public static void Purge(ProtoVessel pv)
 		{
 			entries.Remove(pv.vesselID);
@@ -50,8 +50,7 @@ namespace KERBALISM
 			return entry;
 		}
 
-		/// <summary> return a resource handler (shortcut) </summary>
-		public static VesselResource GetResource(Vessel v, string resource_name)
+		public static IResource GetResource(Vessel v, string resource_name)
 		{
 			return Get(v).GetResource(v, resource_name);
 		}
@@ -71,7 +70,7 @@ namespace KERBALISM
 		}
 
 		/// <summary> register deferred execution of a recipe (shortcut)</summary>
-		public static void AddRecipe(Vessel v, ResourceRecipe recipe)
+		public static void AddRecipe(Vessel v, Recipe recipe)
 		{
 			Get(v).AddRecipe(recipe);
 		}

@@ -66,7 +66,7 @@ namespace KERBALISM
 			List<ProtoCrewMember> deferred_kills = new List<ProtoCrewMember>();
 
 			// get input resource handler
-			VesselResource res = input.Length > 0 ? resources.GetResource(v, input) : null;
+			VesselResource res = input.Length > 0 ? (VesselResource)resources.GetResource(v, input) : null;
 
 			// determine message variant
 			uint variant = vd.EnvTemperature < PreferencesLifeSupport.Instance.survivalTemperature ? 0 : 1u;
@@ -131,7 +131,11 @@ namespace KERBALISM
 					{
 						double ratePerStep = resRate / interval;
 						res.UpdateIntervalRule(-required, -ratePerStep, name);
-						if (output.Length > 0) ResourceCache.GetResource(v, output).UpdateIntervalRule(required * ratio, ratePerStep * ratio, name);
+						if (output.Length > 0)
+						{
+							VesselResource outputRes = (VesselResource)ResourceCache.GetResource(v, output);
+							outputRes.UpdateIntervalRule(required * ratio, ratePerStep * ratio, name);
+						}
 					}
 
 					// if continuous, or if one or more intervals elapsed
@@ -148,7 +152,7 @@ namespace KERBALISM
 						{
 							// transform input into output resource
 							// - rules always dump excess overboard (because it is waste)
-							ResourceRecipe recipe = new ResourceRecipe((Part)null, name); // kerbals are not associated with a part
+							Recipe recipe = new Recipe((Part)null, name); // kerbals are not associated with a part
 							recipe.AddInput(input, required);
 							recipe.AddOutput(output, required * ratio, true);
 							resources.AddRecipe(recipe);

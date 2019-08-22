@@ -62,7 +62,7 @@ namespace KERBALISM
 			if (running && ec_rate > double.Epsilon)
 			{
 				// get resource cache
-				VesselResource ec = ResourceCache.GetResource(vessel, "ElectricCharge");
+				IResource ec = ResourceCache.GetResource(vessel, "ElectricCharge");
 
 				// consume EC
 				ec.Consume(ec_rate * Kerbalism.elapsed_s, "emitter");
@@ -70,7 +70,7 @@ namespace KERBALISM
 		}
 
 
-		public static void BackgroundUpdate(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, Emitter emitter, VesselResource ec, double elapsed_s)
+		public static void BackgroundUpdate(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, Emitter emitter, IResource ec, double elapsed_s)
 		{
 			// if enabled, and EC is required
 			if (Lib.Proto.GetBool(m, "running") && emitter.ec_rate > double.Epsilon)
@@ -124,7 +124,7 @@ namespace KERBALISM
 		public static double Total(Vessel v)
 		{
 			// get resource cache
-			VesselResource ec = ResourceCache.GetResource(v, "ElectricCharge");
+			IResource ec = ResourceCache.GetResource(v, "ElectricCharge");
 
 			double tot = 0.0;
 			if (v.loaded)

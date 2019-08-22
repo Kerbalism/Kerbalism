@@ -176,14 +176,14 @@ namespace KERBALISM
 			if (Is_consuming_energy())
 			{
 				// get resource handler
-				VesselResource ec = ResourceCache.GetResource(vessel, "ElectricCharge");
+				IResource ec = ResourceCache.GetResource(vessel, "ElectricCharge");
 
 				// consume ec
 				ec.Consume(ec_rate * Kerbalism.elapsed_s, "gravity ring");
 			}
 		}
 
-		public static void BackgroundUpdate(Vessel vessel, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, GravityRing ring, VesselResource ec, double elapsed_s)
+		public static void BackgroundUpdate(Vessel vessel, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, GravityRing ring, IResource ec, double elapsed_s)
 		{
 			// if the module is either non-deployable or deployed
 			if (ring.deploy.Length == 0 || Lib.Proto.GetBool(m, "deployed"))

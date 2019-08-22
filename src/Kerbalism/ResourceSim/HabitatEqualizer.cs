@@ -41,7 +41,7 @@ namespace KERBALISM
 			// intial value
 			for (int i = 0; i < resourceName.Length; i++)
 			{
-				totalAmount[i] = new VesselResource(v, resourceName[i]).Rate;        // Get generate rate for each resource
+				totalAmount[i] = ((VesselResource)ResourceCache.GetResource(v, resourceName[i])).Rate;        // Get generate rate for each resource
 				maxAmount[i] = 0;
 
 				totalE[i] = 0;

@@ -136,7 +136,7 @@ namespace KERBALISM
 			foreach (Supply supply in Profile.supplies)
 			{
 				// get resource info
-				VesselResource res = resources.GetResource(v, supply.resource);
+				VesselResource res = (VesselResource)resources.GetResource(v, supply.resource);
 
 				// only show estimate if the resource is present
 				if (res.Capacity <= 1e-10) continue;

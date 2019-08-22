@@ -21,7 +21,7 @@ namespace KERBALISM
 	// then check "antennaOutput" availability to scale the amount of data sent
 	// This would also allow removing the "Cures" thing.
 
-	public sealed class ResourceRecipe
+	public sealed class Recipe
 	{
 		public struct Entry
 		{
@@ -47,7 +47,7 @@ namespace KERBALISM
 
 		private string name;
 
-		public ResourceRecipe(Part p, string name)
+		public Recipe(Part p, string name)
 		{
 			this.inputs = new List<Entry>();
 			this.outputs = new List<Entry>();
@@ -56,7 +56,7 @@ namespace KERBALISM
 			this.name = name;
 		}
 
-		public ResourceRecipe(ProtoPartSnapshot p, string name)
+		public Recipe(ProtoPartSnapshot p, string name)
 		{
 			this.inputs = new List<Entry>();
 			this.outputs = new List<Entry>();
@@ -102,7 +102,7 @@ namespace KERBALISM
 		}
 
 		/// <summary>Execute all recipes and record deferred consumption/production for inputs/ouputs</summary>
-		public static void ExecuteRecipes(Vessel v, VesselResHandler resources, List<ResourceRecipe> recipes)
+		public static void ExecuteRecipes(Vessel v, VesselResHandler resources, List<Recipe> recipes)
 		{
 			bool executing = true;
 			while (executing)
@@ -110,7 +110,7 @@ namespace KERBALISM
 				executing = false;
 				for (int i = 0; i < recipes.Count; ++i)
 				{
-					ResourceRecipe recipe = recipes[i];
+					Recipe recipe = recipes[i];
 					if (recipe.left > double.Epsilon)
 					{
 						executing |= recipe.ExecuteRecipeStep(v, resources);
@@ -134,7 +134,7 @@ namespace KERBALISM
 				for (int i = 0; i < inputs.Count; ++i)
 				{
 					Entry e = inputs[i];
-					VesselResource res = resources.GetResource(v, e.name);
+					IResource res = resources.GetResource(v, e.name);
 
 					// handle combined inputs
 					if (e.combined != null)
@@ -143,7 +143,7 @@ namespace KERBALISM
 						if (e.combined != "")
 						{
 							Entry sec_e = inputs.Find(x => x.name.Contains(e.combined));
-							VesselResource sec = resources.GetResource(v, sec_e.name);
+							IResource sec = resources.GetResource(v, sec_e.name);
 							double pri_worst = Lib.Clamp((res.Amount + res.Deferred) * e.inv_quantity, 0.0, worst_input);
 							if (pri_worst > 0.0)
 							{
@@ -172,7 +172,7 @@ namespace KERBALISM
 					Entry e = outputs[i];
 					if (!e.dump) // ignore outputs that can dump overboard
 					{
-						VesselResource res = resources.GetResource(v, e.name);
+						IResource res = resources.GetResource(v, e.name);
 						worst_output = Lib.Clamp((res.Capacity - (res.Amount + res.Deferred)) * e.inv_quantity, 0.0, worst_output);
 					}
 				}
@@ -185,7 +185,7 @@ namespace KERBALISM
 			for (int i = 0; i < inputs.Count; ++i)
 			{
 				Entry e = inputs[i];
-				VesselResource res = resources.GetResource(v, e.name);
+				IResource res = resources.GetResource(v, e.name);
 				// handle combined inputs
 				if (e.combined != null)
 				{
@@ -193,7 +193,7 @@ namespace KERBALISM
 					if (e.combined != "")
 					{
 						Entry sec_e = inputs.Find(x => x.name.Contains(e.combined));
-						VesselResource sec = resources.GetResource(v, sec_e.name);
+						IResource sec = resources.GetResource(v, sec_e.name);
 						double need = (e.quantity * worst_io) + (sec_e.quantity * worst_io);
 						// do we have enough primary to satisfy needs, if so don't consume secondary
 						if (res.Amount + res.Deferred >= need) resources.Consume(v, e.name, need, name);
@@ -216,7 +216,7 @@ namespace KERBALISM
 			for (int i = 0; i < outputs.Count; ++i)
 			{
 				Entry e = outputs[i];
-				VesselResource res = resources.GetResource(v, e.name);
+				IResource res = resources.GetResource(v, e.name);
 				res.Produce(e.quantity * worst_io, name);
 			}
 

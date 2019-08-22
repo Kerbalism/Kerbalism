@@ -74,7 +74,7 @@ namespace KERBALISM
 			dump = new DumpSpecs(Lib.ConfigValue(node, "dump", "false"), Lib.ConfigValue(node, "dump_valve", "false"));
 		}
 
-		private void ExecuteRecipe(double k, VesselResHandler resources,  double elapsed_s, ResourceRecipe recipe)
+		private void ExecuteRecipe(double k, VesselResHandler resources,  double elapsed_s, Recipe recipe)
 		{
 			// only execute processes if necessary
 			if (Math.Abs(k) < double.Epsilon) return;
@@ -104,7 +104,7 @@ namespace KERBALISM
 			// remember that when a process is enabled the units of process are stored in the PartModule as a pseudo-resource
 			double k = Modifiers.Evaluate(v, vd, resources, modifiers);
 
-			ResourceRecipe recipe = new ResourceRecipe((Part)null, name);
+			Recipe recipe = new Recipe((Part)null, name);
 			ExecuteRecipe(k, resources, elapsed_s, recipe);
 		}
 

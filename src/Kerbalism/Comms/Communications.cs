@@ -12,7 +12,7 @@ namespace KERBALISM
 		/// <summary> True if CommNet initialization has begin </summary>
 		public static bool NetworkInitializing = false;
 
-		public static void Update(Vessel v, VesselData vd, VesselResource ec, double elapsed_s)
+		public static void Update(Vessel v, VesselData vd, IResource ec, double elapsed_s)
 		{
 			if(!Lib.IsVessel(v))
 				return;
