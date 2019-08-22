@@ -185,11 +185,10 @@ namespace KERBALISM
 
 			// not sure why (I guess because of the KSPField attribute), but timeEfficCurve is instanciated with 0 keys by something instead of being null
 			if (timeEfficCurve == null || timeEfficCurve.Curve.keys.Length == 0)
-			{
 				timeEfficCurve = SolarPanel.GetTimeCurve();
-				if (Lib.IsFlight() && launchUT < 0.0)
-					launchUT = Planetarium.GetUniversalTime();
-			}
+
+			if (Lib.IsFlight() && launchUT < 0.0)
+				launchUT = Planetarium.GetUniversalTime();
 
 			// setup star selection GUI
 			Events["ManualTracking"].active = Sim.suns.Count > 1 && SolarPanel.IsTracking;
@@ -253,19 +252,19 @@ namespace KERBALISM
 			{
 				case ExposureState.InShadow:
 					panelStatus = "<color=#ff2222>in shadow</color>";
-					if (currentOutput > 0.05) panelStatus = Lib.BuildString(currentOutput.ToString("F1"), " EC/s, ", panelStatus);
+					if (currentOutput > 0.05) panelStatus = Lib.BuildString(currentOutput.ToString("F2"), " EC/s, ", panelStatus);
 					break;
 				case ExposureState.OccludedTerrain:
 					panelStatus = "<color=#ff2222>occluded by terrain</color>";
-					if (currentOutput > 0.05) panelStatus = Lib.BuildString(currentOutput.ToString("F1"), " EC/s, ", panelStatus);
+					if (currentOutput > 0.05) panelStatus = Lib.BuildString(currentOutput.ToString("F2"), " EC/s, ", panelStatus);
 					break;
 				case ExposureState.OccludedPart:
 					panelStatus = Lib.BuildString("<color=#ff2222>occluded by ", mainOccludingPart, "</color>");
-					if (currentOutput > 0.05) panelStatus = Lib.BuildString(currentOutput.ToString("F1"), " EC/s, ", panelStatus);
+					if (currentOutput > 0.05) panelStatus = Lib.BuildString(currentOutput.ToString("F2"), " EC/s, ", panelStatus);
 					break;
 				case ExposureState.BadOrientation:
 					panelStatus = "<color=#ff2222>bad orientation</color>";
-					if (currentOutput > 0.05) panelStatus = Lib.BuildString(currentOutput.ToString("F1"), " EC/s, ", panelStatus);
+					if (currentOutput > 0.05) panelStatus = Lib.BuildString(currentOutput.ToString("F2"), " EC/s, ", panelStatus);
 					break;
 				case ExposureState.Disabled:
 					switch (state)
@@ -280,7 +279,7 @@ namespace KERBALISM
 					break;
 				case ExposureState.Exposed:
 					StringBuilder sb = new StringBuilder(256);
-					sb.Append(currentOutput.ToString("F1"));
+					sb.Append(currentOutput.ToString("F2"));
 					sb.Append(" EC/s");
 					if (analyticSunlight)
 					{
@@ -433,7 +432,7 @@ namespace KERBALISM
 
 					// Add the final factor to the saved exposure factor to be used in analytical / unloaded states.
 					// If occlusion is from the scene, not a part (terrain, building...) don't save the occlusion factor,
-					// as occlusion from the terrain and static objects is too variable to be reliable.
+					// as occlusion from the terrain and static objects is too variable over time.
 					if (occludingPart != null)
 						persistentFactor += sunExposureFactor;
 					else
@@ -441,6 +440,7 @@ namespace KERBALISM
 
 					// Only apply the exposure factor if not in shadow (body occlusion check)
 					if (sunInfo.SunlightFactor == 1.0) exposureFactor += sunExposureFactor;
+					else if (sunInfo == trackedSunInfo) exposureState = ExposureState.InShadow;
 				}
 			}
 
@@ -452,7 +452,7 @@ namespace KERBALISM
 			// get wear factor (time based output degradation)
 			wearFactor = 1.0;
 			if (timeEfficCurve != null && timeEfficCurve.Curve.keys.Length > 1)
-				wearFactor = timeEfficCurve.Evaluate((float)((Planetarium.GetUniversalTime() - launchUT) / 3600.0));
+				wearFactor = Lib.Clamp(timeEfficCurve.Evaluate((float)((Planetarium.GetUniversalTime() - launchUT) / 3600.0)), 0.0, 1.0);
 
 			// get final output rate in EC/s
 			currentOutput = nominalRate * wearFactor * distanceFactor * exposureFactor;
@@ -497,7 +497,7 @@ namespace KERBALISM
 			if (prefab.timeEfficCurve != null && prefab.timeEfficCurve.Curve.keys.Length > 1)
 			{
 				double launchUT = Lib.Proto.GetDouble(m, "launchUT");
-				efficiencyFactor *= prefab.timeEfficCurve.Evaluate((float)((Planetarium.GetUniversalTime() - launchUT) / 3600.0));
+				efficiencyFactor *= Lib.Clamp(prefab.timeEfficCurve.Evaluate((float)((Planetarium.GetUniversalTime() - launchUT) / 3600.0)), 0.0, 1.0);
 			}
 
 			// get nominal panel charge rate at 1 AU
@@ -810,13 +810,24 @@ namespace KERBALISM
 				SolarDebugDrawer.DebugLine(sunCatcherPosition.position, sunCatcherPosition.position + sunCatcherPivot.forward, Color.yellow);
 				if (panelModule.isTracking) SolarDebugDrawer.DebugLine(sunCatcherPivot.position, sunCatcherPivot.position + (sunCatcherPivot.up * -1f), Color.blue);
 #endif
-				if (!analytic)
-					return Math.Max(Vector3d.Dot(sunDir, panelModule.trackingDotTransform.forward), 0.0);
+				switch (panelModule.panelType)
+				{
+					case ModuleDeployableSolarPanel.PanelType.FLAT:
+						if (!analytic)
+							return Math.Max(Vector3d.Dot(sunDir, panelModule.trackingDotTransform.forward), 0.0);
 
-				if (panelModule.isTracking)
-					return Math.Cos(1.57079632679 - Math.Acos(Vector3d.Dot(sunDir, sunCatcherPivot.up)));
-				else
-					return Math.Max(Vector3d.Dot(sunDir, sunCatcherPivot.forward), 0.0);
+						if (panelModule.isTracking)
+							return Math.Cos(1.57079632679 - Math.Acos(Vector3d.Dot(sunDir, sunCatcherPivot.up)));
+						else
+							return Math.Max(Vector3d.Dot(sunDir, sunCatcherPivot.forward), 0.0);
+
+					case ModuleDeployableSolarPanel.PanelType.CYLINDRICAL:
+						return Math.Max((1.0 - Math.Abs(Vector3d.Dot(sunDir, panelModule.trackingDotTransform.forward))) * (1.0 / Math.PI), 0.0);
+					case ModuleDeployableSolarPanel.PanelType.SPHERICAL:
+						return 0.25;
+					default:
+						return 0.0;
+				}
 			}
 
 			public override PanelState GetState()
