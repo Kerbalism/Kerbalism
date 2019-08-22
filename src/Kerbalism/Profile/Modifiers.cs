@@ -11,7 +11,7 @@ namespace KERBALISM
 	public static class Modifiers
 	{
 		///<summary> Modifiers Evaluate method used for the Monitors background and current vessel simulation </summary>
-		public static double Evaluate(Vessel v, VesselData vd, VesselResources resources, List<string> modifiers)
+		public static double Evaluate(Vessel v, VesselData vd, VesselResHandler resources, List<string> modifiers)
 		{
 			double k = 1.0;
 			foreach (string mod in modifiers)

@@ -93,8 +93,8 @@ namespace KERBALISM
 			}
 			else
 			{
-				SetPassable(Math.Truncate(Math.Abs((perctDeployed + ResourceBalance.precision) - 1.0) * 100000) / 100000 <= ResourceBalance.precision);
-				UpdateIVA(Math.Truncate(Math.Abs((perctDeployed + ResourceBalance.precision) - 1.0) * 100000) / 100000 <= ResourceBalance.precision);
+				SetPassable(Math.Truncate(Math.Abs((perctDeployed + HabitatEqualizer.precision) - 1.0) * 100000) / 100000 <= HabitatEqualizer.precision);
+				UpdateIVA(Math.Truncate(Math.Abs((perctDeployed + HabitatEqualizer.precision) - 1.0) * 100000) / 100000 <= HabitatEqualizer.precision);
 			}
 
 			if (Lib.IsFlight())
@@ -215,7 +215,7 @@ namespace KERBALISM
 				bool cond1 = true;
 
 				// check amounts
-				foreach (string resource in ResourceBalance.resourceName)
+				foreach (string resource in HabitatEqualizer.resourceName)
 				{
 					if (part.Resources.Contains(resource))
 						cond1 &= part.Resources[resource].amount <= double.Epsilon;
@@ -231,7 +231,7 @@ namespace KERBALISM
 			else
 			{
 				// set amount to zero
-				foreach (string resource in ResourceBalance.resourceName)
+				foreach (string resource in HabitatEqualizer.resourceName)
 				{
 					if (part.Resources.Contains(resource))
 						part.Resources[resource].amount = 0.0;
@@ -248,7 +248,7 @@ namespace KERBALISM
 			if (Lib.IsFlight())
 			{
 				// full pressure the level is 99.9999% deployed or more
-				if (Math.Truncate(Math.Abs((perctDeployed + ResourceBalance.precision) - 1.0) * 100000) / 100000 <= ResourceBalance.precision)
+				if (Math.Truncate(Math.Abs((perctDeployed + HabitatEqualizer.precision) - 1.0) * 100000) / 100000 <= HabitatEqualizer.precision)
 				{
 					SetPassable(true);
 					UpdateIVA(true);
@@ -289,7 +289,7 @@ namespace KERBALISM
 			switch (state)
 			{
 				case State.enabled:
-					if (Math.Truncate(Math.Abs((perctDeployed + ResourceBalance.precision) - 1.0) * 100000) / 100000 > ResourceBalance.precision)
+					if (Math.Truncate(Math.Abs((perctDeployed + HabitatEqualizer.precision) - 1.0) * 100000) / 100000 > HabitatEqualizer.precision)
 					{
 						// No inflatable can be enabled been pressurizing
 						status_str = Localizer.Format("#KERBALISM_Habitat_pressurizing");
@@ -352,8 +352,8 @@ namespace KERBALISM
 				else
 				{
 					// Inflatable modules shows IVA and are passable only in 99.9999% deployed
-					SetPassable(Lib.IsCrewed(part) || Math.Truncate(Math.Abs((perctDeployed + ResourceBalance.precision) - 1.0) * 100000) / 100000 <= ResourceBalance.precision);
-					UpdateIVA(Math.Truncate(Math.Abs((perctDeployed + ResourceBalance.precision) - 1.0) * 100000) / 100000 <= ResourceBalance.precision);
+					SetPassable(Lib.IsCrewed(part) || Math.Truncate(Math.Abs((perctDeployed + HabitatEqualizer.precision) - 1.0) * 100000) / 100000 <= HabitatEqualizer.precision);
+					UpdateIVA(Math.Truncate(Math.Abs((perctDeployed + HabitatEqualizer.precision) - 1.0) * 100000) / 100000 <= HabitatEqualizer.precision);
 				}
 				FixIVA = false;
 			}

@@ -33,13 +33,13 @@ namespace KERBALISM
 		}
 
 
-		public void Execute(Vessel v, VesselData vd, VesselResources resources)
+		public void Execute(Vessel v, VesselData vd, VesselResHandler resources)
 		{
 			// get crew
 			List<ProtoCrewMember> crew = Lib.CrewList(v);
 
 			// get resource handler
-			ResourceInfo res = resources.GetResource(v, resource);
+			VesselResource res = resources.GetResource(v, resource);
 
 			// get data from db
 			SupplyData sd = v.KerbalismData().Supply(resource);

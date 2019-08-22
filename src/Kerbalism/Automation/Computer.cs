@@ -68,7 +68,7 @@ namespace KERBALISM
 		public void Execute(Vessel v, ScriptType type)
 		{
 			// do nothing if there is no EC left on the vessel
-			ResourceInfo ec = ResourceCache.GetResource(v, "ElectricCharge");
+			VesselResource ec = ResourceCache.GetResource(v, "ElectricCharge");
 			if (ec.Amount <= double.Epsilon) return;
 
 			// get the script
@@ -88,13 +88,13 @@ namespace KERBALISM
 		}
 
 		// call scripts automatically when conditions are met
-		public void Automate(Vessel v, VesselData vd, VesselResources resources)
+		public void Automate(Vessel v, VesselData vd, VesselResHandler resources)
 		{
 			// do nothing if automation is disabled
 			if (!Features.Automation) return;
 
 			// get current states
-			ResourceInfo ec = resources.GetResource(v, "ElectricCharge");
+			VesselResource ec = resources.GetResource(v, "ElectricCharge");
 			bool sunlight = !vd.EnvInFullShadow;
 			bool power_low = ec.Level < 0.2;
 			bool power_high = ec.Level > 0.8;

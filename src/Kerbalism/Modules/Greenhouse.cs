@@ -133,8 +133,8 @@ namespace KERBALISM
 				VesselData vd = vessel.KerbalismData();
 
 				// get resource cache
-				VesselResources resources = ResourceCache.Get(vessel);
-				ResourceInfo ec = resources.GetResource(vessel, "ElectricCharge");
+				VesselResHandler resources = ResourceCache.Get(vessel);
+				VesselResource ec = resources.GetResource(vessel, "ElectricCharge");
 
 				// deal with corner cases when greenhouse is assembled using KIS
 				if (double.IsNaN(growth) || double.IsInfinity(growth)) growth = 0.0;
@@ -236,7 +236,7 @@ namespace KERBALISM
 
 
 		public static void BackgroundUpdate(Vessel v, ProtoPartModuleSnapshot m, Greenhouse g,
-											VesselData vd, VesselResources resources, double elapsed_s)
+											VesselData vd, VesselResHandler resources, double elapsed_s)
 		{
 			// get protomodule data
 			bool active = Lib.Proto.GetBool(m, "active");
@@ -246,7 +246,7 @@ namespace KERBALISM
 			if (active && growth < 0.99)
 			{
 				// get resource handler
-				ResourceInfo ec = resources.GetResource(v, "ElectricCharge");
+				VesselResource ec = resources.GetResource(v, "ElectricCharge");
 
 				// calculate natural and artificial lighting
 				double natural = vd.EnvSolarFluxTotal;

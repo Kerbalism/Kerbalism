@@ -60,13 +60,13 @@ namespace KERBALISM
 		}
 
 
-		public void Execute(Vessel v, VesselData vd, VesselResources resources, double elapsed_s)
+		public void Execute(Vessel v, VesselData vd, VesselResHandler resources, double elapsed_s)
 		{
 			// store list of crew to kill
 			List<ProtoCrewMember> deferred_kills = new List<ProtoCrewMember>();
 
 			// get input resource handler
-			ResourceInfo res = input.Length > 0 ? resources.GetResource(v, input) : null;
+			VesselResource res = input.Length > 0 ? resources.GetResource(v, input) : null;
 
 			// determine message variant
 			uint variant = vd.EnvTemperature < PreferencesLifeSupport.Instance.survivalTemperature ? 0 : 1u;

@@ -87,7 +87,7 @@ namespace KERBALISM
 			double tot_crew = Lib.CrewCount(data.from.vessel) + 1.0;
 
 			// get vessel resources handler
-			VesselResources resources = ResourceCache.Get(data.from.vessel);
+			VesselResHandler resources = ResourceCache.Get(data.from.vessel);
 
 			// setup supply resources capacity in the eva kerbal
 			Profile.SetupEva(data.to);

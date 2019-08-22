@@ -27,7 +27,7 @@ namespace KERBALISM
 			}
 
 			// get resource handler
-			ResourceInfo ec = ResourceCache.GetResource(v, "ElectricCharge");
+			VesselResource ec = ResourceCache.GetResource(v, "ElectricCharge");
 
 			// determine if headlamps need ec
 			// - not required if there is no EC capacity in eva kerbal (no ec supply in profile)

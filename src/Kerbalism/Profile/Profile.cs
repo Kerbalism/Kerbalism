@@ -155,7 +155,7 @@ namespace KERBALISM
 		}
 
 
-		public static void Execute(Vessel v, VesselData vd, VesselResources resources, double elapsed_s)
+		public static void Execute(Vessel v, VesselData vd, VesselResHandler resources, double elapsed_s)
 		{
 			// execute all supplies
 			foreach (Supply supply in supplies)

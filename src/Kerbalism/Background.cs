@@ -81,13 +81,13 @@ namespace KERBALISM
 			internal Module_type type;
 		}
 
-		public static void Update(Vessel v, VesselData vd, VesselResources resources, double elapsed_s)
+		public static void Update(Vessel v, VesselData vd, VesselResHandler resources, double elapsed_s)
 		{
 			if (!Lib.IsVessel(v))
 				return;
 
 			// get most used resource handlers
-			ResourceInfo ec = resources.GetResource(v, "ElectricCharge");
+			VesselResource ec = resources.GetResource(v, "ElectricCharge");
 
 			foreach(var e in Background_PMs(v))
 			{
@@ -172,7 +172,7 @@ namespace KERBALISM
 			return result;
 		}
 
-		static void ProcessFNGenerator(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule fission_generator, ResourceInfo ec, double elapsed_s)
+		static void ProcessFNGenerator(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule fission_generator, VesselResource ec, double elapsed_s)
 		{
 			string maxPowerStr = Lib.Proto.GetString(m, "MaxPowerStr");
 			double maxPower = 0;
@@ -186,7 +186,7 @@ namespace KERBALISM
 			ec.Produce(maxPower * elapsed_s, "KSPIE generator");
 		}
 
-		static void ProcessCommand(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleCommand command, VesselResources resources, double elapsed_s)
+		static void ProcessCommand(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleCommand command, VesselResHandler resources, double elapsed_s)
 		{
 			// do not consume if this is a MCM with no crew
 			// rationale: for consistency, the game doesn't consume resources for MCM without crew in loaded vessels
@@ -202,7 +202,7 @@ namespace KERBALISM
 			}
 		}
 
-		static void ProcessGenerator(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleGenerator generator, VesselResources resources, double elapsed_s)
+		static void ProcessGenerator(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleGenerator generator, VesselResHandler resources, double elapsed_s)
 		{
 			// if active
 			if (Lib.Proto.GetBool(m, "generatorIsActive"))
@@ -222,7 +222,7 @@ namespace KERBALISM
 		}
 
 
-		static void ProcessConverter(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleResourceConverter converter, VesselResources resources, double elapsed_s)
+		static void ProcessConverter(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleResourceConverter converter, VesselResHandler resources, double elapsed_s)
 		{
 			// note: ignore stock temperature mechanic of converters
 			// note: ignore auto shutdown
@@ -237,7 +237,7 @@ namespace KERBALISM
 				bool full = true;
 				foreach (var or in converter.outputList)
 				{
-					ResourceInfo res = resources.GetResource(v, or.ResourceName);
+					VesselResource res = resources.GetResource(v, or.ResourceName);
 					full &= (res.Level >= converter.FillAmount - double.Epsilon);
 				}
 
@@ -279,7 +279,7 @@ namespace KERBALISM
 		}
 
 
-		static void ProcessDrill(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleResourceHarvester harvester, VesselResources resources, double elapsed_s)
+		static void ProcessDrill(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleResourceHarvester harvester, VesselResHandler resources, double elapsed_s)
 		{
 			// note: ignore stock temperature mechanic of harvesters
 			// note: ignore auto shutdown
@@ -342,7 +342,7 @@ namespace KERBALISM
 		}
 
 
-		static void ProcessAsteroidDrill(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleAsteroidDrill asteroid_drill, VesselResources resources, double elapsed_s)
+		static void ProcessAsteroidDrill(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleAsteroidDrill asteroid_drill, VesselResHandler resources, double elapsed_s)
 		{
 			// note: untested
 			// note: ignore stock temperature mechanic of asteroid drills
@@ -415,7 +415,7 @@ namespace KERBALISM
 		}
 
 
-		static void ProcessStockLab(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleScienceConverter lab, ResourceInfo ec, double elapsed_s)
+		static void ProcessStockLab(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleScienceConverter lab, VesselResource ec, double elapsed_s)
 		{
 			// note: we are only simulating the EC consumption
 			// note: there is no easy way to 'stop' the lab when there isn't enough EC
@@ -429,7 +429,7 @@ namespace KERBALISM
 		}
 
 
-		static void ProcessLight(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleLight light, ResourceInfo ec, double elapsed_s)
+		static void ProcessLight(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleLight light, VesselResource ec, double elapsed_s)
 		{
 			if (light.useResources && Lib.Proto.GetBool(m, "isOn"))
 			{
@@ -438,7 +438,7 @@ namespace KERBALISM
 		}
 
 		/*
-		static void ProcessScanner(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule scanner, Part part_prefab, VesselData vd, ResourceInfo ec, double elapsed_s)
+		static void ProcessScanner(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule scanner, Part part_prefab, VesselData vd, VesselResource ec, double elapsed_s)
 		{
 			// get ec consumption rate
 			double power = SCANsat.EcConsumption(scanner);
@@ -492,7 +492,7 @@ namespace KERBALISM
 		}
 		*/
 
-		static void ProcessFissionGenerator(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule fission_generator, ResourceInfo ec, double elapsed_s)
+		static void ProcessFissionGenerator(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule fission_generator, VesselResource ec, double elapsed_s)
 		{
 			// note: ignore heat
 
@@ -503,7 +503,7 @@ namespace KERBALISM
 		}
 
 
-		static void ProcessRadioisotopeGenerator(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule radioisotope_generator, ResourceInfo ec, double elapsed_s)
+		static void ProcessRadioisotopeGenerator(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule radioisotope_generator, VesselResource ec, double elapsed_s)
 		{
 			// note: doesn't support easy mode
 
@@ -515,7 +515,7 @@ namespace KERBALISM
 		}
 
 
-		static void ProcessCryoTank(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule cryotank, VesselResources resources, ResourceInfo ec, double elapsed_s)
+		static void ProcessCryoTank(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule cryotank, VesselResHandler resources, VesselResource ec, double elapsed_s)
 		{
 			// Note. Currently background simulation of Cryotanks has an irregularity in that boiloff of a fuel type in a tank removes resources from all tanks
 			// but at least some simulation is better than none ;)
@@ -543,7 +543,7 @@ namespace KERBALISM
 					continue;
 
 				//get fuel resource
-				ResourceInfo fuel = resources.GetResource(v, fuel_name);
+				VesselResource fuel = resources.GetResource(v, fuel_name);
 
 				// if there is some fuel
 				// note: comparing against amount in previous simulation step

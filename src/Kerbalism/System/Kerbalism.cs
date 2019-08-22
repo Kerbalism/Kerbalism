@@ -144,7 +144,7 @@ namespace KERBALISM
 			Guid last_id = Guid.Empty;
 			Vessel last_v = null;
 			VesselData last_vd = null;
-			VesselResources last_resources = null;
+			VesselResHandler last_resources = null;
 
 			// for each vessel
 			foreach (Vessel v in FlightGlobals.Vessels)
@@ -179,7 +179,7 @@ namespace KERBALISM
 					continue;
 
 				// get resource cache
-				VesselResources resources = ResourceCache.Get(v);
+				VesselResHandler resources = ResourceCache.Get(v);
 
 				// if loaded
 				if (v.loaded)
@@ -188,7 +188,7 @@ namespace KERBALISM
 					vd.Evaluate(false, elapsed_s);
 
 					// get most used resource
-					ResourceInfo ec = resources.GetResource(v, "ElectricCharge");
+					VesselResource ec = resources.GetResource(v, "ElectricCharge");
 
 					// show belt warnings
 					Radiation.BeltWarnings(v, vd);
@@ -199,7 +199,7 @@ namespace KERBALISM
 					Communications.Update(v, vd, ec, elapsed_s);
 
 					// Habitat equalization
-					ResourceBalance.Equalizer(v);
+					HabitatEqualizer.Equalizer(v);
 
 					// transmit science data
 					Science.Update(v, vd, resources, elapsed_s);
@@ -250,7 +250,7 @@ namespace KERBALISM
 				last_vd.Evaluate(false, last_time);
 
 				// get most used resource
-				ResourceInfo last_ec = last_resources.GetResource(last_v, "ElectricCharge");
+				VesselResource last_ec = last_resources.GetResource(last_v, "ElectricCharge");
 
 				// show belt warnings
 				Radiation.BeltWarnings(last_v, last_vd);
@@ -699,7 +699,7 @@ namespace KERBALISM
 			const double res_penalty = 0.1;        // proportion of food lost on 'depressed' and 'wrong_valve'
 
 			// get a supply resource at random
-			ResourceInfo res = null;
+			VesselResource res = null;
 			if (Profile.supplies.Count > 0)
 			{
 				Supply supply = Profile.supplies[Lib.RandomInt(Profile.supplies.Count)];
