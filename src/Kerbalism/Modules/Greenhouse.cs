@@ -151,7 +151,7 @@ namespace KERBALISM
 				if (ec.Amount <= double.Epsilon) artificial = 0.0;
 
 				// execute recipe
-				Recipe recipe = new Recipe(part, "greenhouse");
+				Recipe recipe = new Recipe("greenhouse");
 				foreach (ModuleResource input in resHandler.inputResources)
 				{
 					// WasteAtmosphere is primary combined input
@@ -260,7 +260,7 @@ namespace KERBALISM
 				if (ec.Amount <= double.Epsilon) artificial = 0.0;
 
 				// execute recipe
-				Recipe recipe = new Recipe(g.part, "greenhouse");
+				Recipe recipe = new Recipe("greenhouse");
 				foreach (ModuleResource input in g.resHandler.inputResources) //recipe.Input(input.name, input.rate * elapsed_s);
 				{
 					// WasteAtmosphere is primary combined input

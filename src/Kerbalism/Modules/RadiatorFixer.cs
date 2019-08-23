@@ -24,7 +24,7 @@ namespace KERBALISM
 {
 	public class RadiatorFixer : PartModule
 	{
-		private ModuleActiveRadiator coreRadiatorModule;
+		private ModuleActiveRadiator stockRadiatorModule;
 		private ModuleDeployablePart deployModule;
 
 		[KSPField]
@@ -46,7 +46,7 @@ namespace KERBALISM
 		[KSPField(isPersistant = true)]
 		public double outputResourceRate = 1000.0;
 
-		[KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Coolant radiator")]
+		[KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Coolant pump")]
 		public bool radiatorEnabled = true;
 
 		public override void OnStart(StartState startState)
@@ -61,13 +61,13 @@ namespace KERBALISM
 
 			foreach (PartModule pm in part.Modules)
 			{
-				if (pm is ModuleActiveRadiator) coreRadiatorModule = (ModuleActiveRadiator)pm;
+				if (pm is ModuleActiveRadiator) stockRadiatorModule = (ModuleActiveRadiator)pm;
 				if (pm is ModuleDeployablePart) deployModule = (ModuleDeployablePart)pm;
 			}
 
 			if (useStockRadiatorConfig)
 			{
-				if (coreRadiatorModule == null)
+				if (stockRadiatorModule == null)
 				{
 					Lib.Log("WARNING : Could not find a ModuleActiveRadiator on '" + part.partInfo.title + "', disabling RadiatorFixer module...");
 					enabled = isEnabled = moduleIsEnabled = false;
@@ -75,7 +75,7 @@ namespace KERBALISM
 				}
 
 				// get max heat dissipation capacity in kW
-				outputResourceRate = coreRadiatorModule.maxEnergyTransfer / 50.0; // KSP hardcoded value. Nice.
+				outputResourceRate = stockRadiatorModule.maxEnergyTransfer / 50.0; // KSP hardcoded value. Nice.
 
 				// get consumed resource name and rate for max heat dissipation capacity
 				ModuleResource input = resHandler.inputResources.FirstOrDefault();
@@ -103,7 +103,7 @@ namespace KERBALISM
 
 			if (inputResourceRate > 0.0)
 			{
-				Recipe recipe = new Recipe(part, "radiator");
+				Recipe recipe = new Recipe("radiator");
 				recipe.AddInput(inputResource, inputResourceRate * Kerbalism.elapsed_s);
 				recipe.AddOutput(outputResource, outputResourceRate * Kerbalism.elapsed_s, false);
 				ResourceCache.AddRecipe(vessel, recipe);
@@ -120,7 +120,7 @@ namespace KERBALISM
 
 			if (prefab.inputResourceRate > 0.0)
 			{
-				Recipe recipe = new Recipe(p, "radiator");
+				Recipe recipe = new Recipe("radiator");
 				recipe.AddInput(prefab.inputResource, prefab.inputResourceRate * elapsed_s);
 				recipe.AddOutput(prefab.outputResource, prefab.outputResourceRate * elapsed_s, false);
 				ResourceCache.AddRecipe(v, recipe);

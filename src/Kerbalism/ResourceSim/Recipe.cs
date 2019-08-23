@@ -47,16 +47,7 @@ namespace KERBALISM
 
 		private string name;
 
-		public Recipe(Part p, string name)
-		{
-			this.inputs = new List<Entry>();
-			this.outputs = new List<Entry>();
-			this.cures = new List<Entry>();
-			this.left = 1.0;
-			this.name = name;
-		}
-
-		public Recipe(ProtoPartSnapshot p, string name)
+		public Recipe(string name)
 		{
 			this.inputs = new List<Entry>();
 			this.outputs = new List<Entry>();
