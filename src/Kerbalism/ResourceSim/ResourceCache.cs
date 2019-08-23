@@ -34,7 +34,7 @@ namespace KERBALISM
 		}
 
 		/// <summary> Return the VesselResHandler handler for this vessel </summary>
-		public static VesselResHandler Get(Vessel v)
+		public static VesselResHandler GetVesselHandler(Vessel v)
 		{
 			// try to get existing entry if any
 			VesselResHandler entry;
@@ -52,7 +52,7 @@ namespace KERBALISM
 
 		public static IResource GetResource(Vessel v, string resource_name)
 		{
-			return Get(v).GetResource(v, resource_name);
+			return GetVesselHandler(v).GetResource(v, resource_name);
 		}
 
 		/// <summary> record deferred production of a resource (shortcut) </summary>
@@ -72,7 +72,7 @@ namespace KERBALISM
 		/// <summary> register deferred execution of a recipe (shortcut)</summary>
 		public static void AddRecipe(Vessel v, Recipe recipe)
 		{
-			Get(v).AddRecipe(recipe);
+			GetVesselHandler(v).AddRecipe(recipe);
 		}
 	}
 }

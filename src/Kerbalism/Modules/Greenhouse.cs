@@ -133,7 +133,7 @@ namespace KERBALISM
 				VesselData vd = vessel.KerbalismData();
 
 				// get resource cache
-				VesselResHandler resources = ResourceCache.Get(vessel);
+				VesselResHandler resources = ResourceCache.GetVesselHandler(vessel);
 				IResource ec = resources.GetResource(vessel, "ElectricCharge");
 
 				// deal with corner cases when greenhouse is assembled using KIS

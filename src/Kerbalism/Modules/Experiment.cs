@@ -235,7 +235,7 @@ namespace KERBALISM
 				remainingSampleMass, didPrepare, shrouded, last_subject_id);
 
 			if (string.IsNullOrEmpty(issue))
-				issue = TestForResources(vessel, resourceDefs, Kerbalism.elapsed_s, ResourceCache.Get(vessel));
+				issue = TestForResources(vessel, resourceDefs, Kerbalism.elapsed_s, ResourceCache.GetVesselHandler(vessel));
 
 			scienceValue = Science.Value(last_subject_id, 0);
 			state = GetState(scienceValue, issue, recording, forcedRun);
@@ -268,7 +268,7 @@ namespace KERBALISM
 		private void DoRecord(IResource ec, string subject_id)
 		{
 			var stored = DoRecord(this, subject_id, vessel, ec, privateHdId,
-				ResourceCache.Get(vessel), resourceDefs,
+				ResourceCache.GetVesselHandler(vessel), resourceDefs,
 				remainingSampleMass, dataSampled, out dataSampled, out remainingSampleMass);
 
 			if (!stored) issue = insufficient_storage;

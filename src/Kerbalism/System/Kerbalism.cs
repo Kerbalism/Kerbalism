@@ -179,7 +179,7 @@ namespace KERBALISM
 					continue;
 
 				// get resource cache
-				VesselResHandler resources = ResourceCache.Get(v);
+				VesselResHandler resources = ResourceCache.GetVesselHandler(v);
 
 				// if loaded
 				if (v.loaded)
