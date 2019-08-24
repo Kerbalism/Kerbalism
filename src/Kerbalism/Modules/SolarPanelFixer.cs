@@ -93,6 +93,7 @@ namespace KERBALISM
 		private double wearFactor;
 		private ExposureState exposureState;
 		private string mainOccludingPart;
+		private string rateFormat;
 
 		public enum PanelState
 		{
@@ -196,6 +197,12 @@ namespace KERBALISM
 
 			// setup target module animation for custom star tracking
 			SolarPanel.SetTrackedBody(FlightGlobals.Bodies[trackedSunIndex]);
+
+			// set how many decimal points are needed to show the panel Ec output in the UI
+			if (nominalRate < 0.1) rateFormat = "F4";
+			else if (nominalRate < 1.0) rateFormat = "F3";
+			else if (nominalRate < 10.0) rateFormat = "F2";
+			else rateFormat = "F1";
 		}
 
 		public override void OnSave(ConfigNode node)
@@ -252,19 +259,19 @@ namespace KERBALISM
 			{
 				case ExposureState.InShadow:
 					panelStatus = "<color=#ff2222>in shadow</color>";
-					if (currentOutput > 0.05) panelStatus = Lib.BuildString(currentOutput.ToString("F2"), " EC/s, ", panelStatus);
+					if (currentOutput > 0.001) panelStatus = Lib.BuildString(currentOutput.ToString(rateFormat), " EC/s, ", panelStatus);
 					break;
 				case ExposureState.OccludedTerrain:
 					panelStatus = "<color=#ff2222>occluded by terrain</color>";
-					if (currentOutput > 0.05) panelStatus = Lib.BuildString(currentOutput.ToString("F2"), " EC/s, ", panelStatus);
+					if (currentOutput > 0.001) panelStatus = Lib.BuildString(currentOutput.ToString(rateFormat), " EC/s, ", panelStatus);
 					break;
 				case ExposureState.OccludedPart:
 					panelStatus = Lib.BuildString("<color=#ff2222>occluded by ", mainOccludingPart, "</color>");
-					if (currentOutput > 0.05) panelStatus = Lib.BuildString(currentOutput.ToString("F2"), " EC/s, ", panelStatus);
+					if (currentOutput > 0.001) panelStatus = Lib.BuildString(currentOutput.ToString(rateFormat), " EC/s, ", panelStatus);
 					break;
 				case ExposureState.BadOrientation:
 					panelStatus = "<color=#ff2222>bad orientation</color>";
-					if (currentOutput > 0.05) panelStatus = Lib.BuildString(currentOutput.ToString("F2"), " EC/s, ", panelStatus);
+					if (currentOutput > 0.001) panelStatus = Lib.BuildString(currentOutput.ToString(rateFormat), " EC/s, ", panelStatus);
 					break;
 				case ExposureState.Disabled:
 					switch (state)
@@ -279,7 +286,7 @@ namespace KERBALISM
 					break;
 				case ExposureState.Exposed:
 					StringBuilder sb = new StringBuilder(256);
-					sb.Append(currentOutput.ToString("F2"));
+					sb.Append(currentOutput.ToString(rateFormat));
 					sb.Append(" EC/s");
 					if (analyticSunlight)
 					{
@@ -763,7 +770,7 @@ namespace KERBALISM
 				{
 					FloatCurve timeCurve = new FloatCurve();
 					foreach (Keyframe key in panelModule.timeEfficCurve.Curve.keys)
-						timeCurve.Add(key.time * 24f, key.value);
+						timeCurve.Add(key.time * 24f, key.value, 0f, 0f);
 					return timeCurve;
 				}
 				return base.GetTimeCurve();
