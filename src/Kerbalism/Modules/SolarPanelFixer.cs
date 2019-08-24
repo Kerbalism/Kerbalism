@@ -770,7 +770,7 @@ namespace KERBALISM
 				{
 					FloatCurve timeCurve = new FloatCurve();
 					foreach (Keyframe key in panelModule.timeEfficCurve.Curve.keys)
-						timeCurve.Add(key.time * 24f, key.value, 0f, 0f);
+						timeCurve.Add(key.time * 24f, key.value, key.inTangent * (1f / 24f), key.outTangent * (1f / 24f));
 					return timeCurve;
 				}
 				return base.GetTimeCurve();
