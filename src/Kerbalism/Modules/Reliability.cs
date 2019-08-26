@@ -28,8 +28,8 @@ namespace KERBALISM
 		[KSPField(isPersistant = true)] public bool broken;                 // true if broken
 		[KSPField(isPersistant = true)] public bool critical;               // true if failure can't be repaired
 		[KSPField(isPersistant = true)] public bool quality;                // true if the component is high-quality
-		[KSPField(isPersistant = true)] public double last;                 // time of last failure
-		[KSPField(isPersistant = true)] public double next;                 // time of next failure
+		[KSPField(isPersistant = true)] public double last = 0.0;           // time of last failure
+		[KSPField(isPersistant = true)] public double next = 0.0;           // time of next failure
 		[KSPField(isPersistant = true)] public bool needMaintenance = false;// true when component is inspected and about to fail
 		[KSPField(isPersistant = true)] public bool enforce_breakdown = false; // true when the next failure is enforced
 		[KSPField(isPersistant = true)] public bool running = false;        // true when the next failure is enforced
@@ -38,7 +38,7 @@ namespace KERBALISM
 		[KSPField(isPersistant = true)] public int ignitions = 0;           // accumulated ignitions
 
 		// status ui
-		[KSPField(guiActive = false, guiName = "_")] public string Status;  // show component status
+		[KSPField(guiActive = false, guiActiveEditor = false, guiName = "_")] public string Status;  // show component status
 
 		// data
 		List<PartModule> modules;                                           // components cache
@@ -50,6 +50,8 @@ namespace KERBALISM
 			// don't break tutorial scenarios
 			if (Lib.DisableScenario(this)) return;
 
+			Fields["Status"].guiName = title;
+
 			// do nothing in the editors and when compiling parts
 			if (!Lib.IsFlight()) return;
 
@@ -60,7 +62,6 @@ namespace KERBALISM
 			repair_cs = new CrewSpecs(repair);
 
 			// setup ui
-			Fields["Status"].guiName = title;
 			Events["Inspect"].guiName = Lib.BuildString("Inspect <b>", title, "</b>");
 			Events["Repair"].guiName = Lib.BuildString("Repair <b>", title, "</b>");
 
@@ -107,8 +108,8 @@ namespace KERBALISM
 					}
 					else
 					{
-						// enforce a breakdown within the next 10-20 seconds
-						reliability.next = Planetarium.GetUniversalTime() + when + 5;
+						// enforce a breakdown within the next 20-30 seconds
+						reliability.next = Planetarium.GetUniversalTime() + when + 15;
 					}
 
 					Lib.Proto.Set(m, "next", reliability.next);
@@ -215,6 +216,28 @@ namespace KERBALISM
 				string quality_label = part.FindModulesImplementing<Reliability>().Count > 1
 				  ? Lib.BuildString("<b>", title, "</b> quality") : "Quality";
 				Events["Quality"].guiName = Lib.StatusToggle(quality_label, quality ? "high" : "standard");
+
+				if (rated_operation_duration > 0 || rated_ignitions > 0)
+				{
+					Status = string.Empty;
+					if (rated_operation_duration > 0)
+					{
+						var q = quality ? Settings.QualityScale : 1.0;
+						Status = Lib.BuildString("Burn time: ",
+							Lib.HumanReadableDuration(Math.Max(0, q * rated_operation_duration)));
+					}
+					if (rated_ignitions > 0)
+					{
+						Status = Lib.BuildString(Status,
+							(string.IsNullOrEmpty(Status) ? "" : ", "),
+							"ignitions: ", rated_ignitions.ToString());
+					}
+					Fields["Status"].guiActiveEditor = true;
+				}
+				else
+				{
+					Fields["Status"].guiActiveEditor = false;
+				}
 			}
 		}
 
@@ -237,7 +260,13 @@ namespace KERBALISM
 				}
 
 				// if it has failed, trigger malfunction
-				if (now > next) Break();
+				if (now > next)
+				{
+#if DEBUG
+					Lib.Log("Reliablity: MTBF breakdown for " + part);
+#endif
+					Break();
+				}
 			}
 		}
 
@@ -323,7 +352,6 @@ namespace KERBALISM
 			{
 				// get quality
 				bool quality = Lib.Proto.GetBool(m, "quality");
-
 				double last = Planetarium.GetUniversalTime();
 
 				var guaranteed = reliability.mtbf / 2.0;
@@ -334,7 +362,7 @@ namespace KERBALISM
 			}
 
 			// if it has failed, trigger malfunction
-			if (Planetarium.GetUniversalTime() > next) ProtoBreak(v, p, m);
+			if (next > 0 && Planetarium.GetUniversalTime() > next) ProtoBreak(v, p, m);
 		}
 
 		// toggle between standard and high quality
@@ -477,10 +505,14 @@ namespace KERBALISM
 			}
 		}
 
-
-		//[KSPEvent(guiActive = true, guiActiveUnfocused = true, guiName = "Break [TEST]", active = true)] // [for testing]
+#if DEBUG
+		[KSPEvent(guiActive = true, guiActiveUnfocused = true, guiName = "Break [TEST]", active = true)] // [for testing]
+#endif
 		public void Break()
 		{
+#if DEBUG
+			Lib.Log("Reliability: breaking " + part + ", enforced=" + enforce_breakdown);
+#endif
 			// if enforced, manned, or if safemode didn't trigger
 			if (enforce_breakdown || vessel.KerbalismData().CrewCapacity > 0 || Lib.RandomDouble() > PreferencesBasic.Instance.safeModeChance)
 			{
@@ -529,6 +561,10 @@ namespace KERBALISM
 			if (reliability == null) return;
 
 			bool enforce_breakdown = Lib.Proto.GetBool(m, "enforce_breakdown", false);
+
+#if DEBUG
+			Lib.Log("ProtoBreak " + type + " enforce_breakdown=" + enforce_breakdown);
+#endif
 
 			// if manned, or if safemode didn't trigger
 			if (enforce_breakdown || v.KerbalismData().CrewCapacity > 0 || Lib.RandomDouble() > PreferencesBasic.Instance.safeModeChance)
@@ -579,7 +615,6 @@ namespace KERBALISM
 				Incentive_redundancy(v, reliability.redundancy);
 			}
 		}
-
 
 		// part tooltip
 		public override string GetInfo()
