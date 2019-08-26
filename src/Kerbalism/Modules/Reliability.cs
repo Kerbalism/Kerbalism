@@ -38,7 +38,7 @@ namespace KERBALISM
 		[KSPField(isPersistant = true)] public int ignitions = 0;           // accumulated ignitions
 
 		// status ui
-		[KSPField(guiActive = false, guiActiveEditor = false, guiName = "_")] public string Status;  // show component status
+		[KSPField(guiActive = false, guiActiveEditor = true, guiName = "_")] public string Status;  // show component status
 
 		// data
 		List<PartModule> modules;                                           // components cache
@@ -126,9 +126,7 @@ namespace KERBALISM
 
 			if(reliability.rated_ignitions > 0)
 			{
-				int total_ignitions = reliability.rated_ignitions;
-				if (quality) total_ignitions += (int)Math.Ceiling(total_ignitions * Settings.QualityScale * 0.3);
-
+				int total_ignitions = EffectiveIgnitions(quality, reliability.rated_ignitions);
 				if(ignitions > total_ignitions)
 				{
 					var q = 2.0 * (quality ? Settings.QualityScale : 1.0) * Lib.RandomDouble();
@@ -181,15 +179,15 @@ namespace KERBALISM
 					Status = string.Empty;
 					if(rated_operation_duration > 0)
 					{
-						var q = quality ? Settings.QualityScale : 1.0;
-						Status = Lib.BuildString("Remaining burn: ",
-							Lib.HumanReadableDuration(Math.Max(0, q * rated_operation_duration - operation_duration)));
+						double effective_duration = EffectiveDuration(quality, rated_operation_duration);
+						Status = Lib.BuildString("Remaining burn: ", Lib.HumanReadableDuration(Math.Max(0, effective_duration - operation_duration)));
 					}
 					if(rated_ignitions > 0)
 					{
+						int effective_ignitions = EffectiveIgnitions(quality, rated_ignitions);
 						Status = Lib.BuildString(Status,
 							(string.IsNullOrEmpty(Status) ? "" : ", "),
-							"ignitions: ", Math.Max(0, rated_ignitions - ignitions).ToString());
+							"ignitions: ", Math.Max(0, effective_ignitions - ignitions).ToString());
 					}
 					Fields["Status"].guiActive = true;
 				}
@@ -217,26 +215,30 @@ namespace KERBALISM
 				  ? Lib.BuildString("<b>", title, "</b> quality") : "Quality";
 				Events["Quality"].guiName = Lib.StatusToggle(quality_label, quality ? "high" : "standard");
 
-				if (rated_operation_duration > 0 || rated_ignitions > 0)
+				Status = string.Empty;
+				if(mtbf > 0)
 				{
-					Status = string.Empty;
-					if (rated_operation_duration > 0)
-					{
-						var q = quality ? Settings.QualityScale : 1.0;
-						Status = Lib.BuildString("Burn time: ",
-							Lib.HumanReadableDuration(Math.Max(0, q * rated_operation_duration)));
-					}
-					if (rated_ignitions > 0)
-					{
-						Status = Lib.BuildString(Status,
+					double effective_mtbf = EffectiveMTBF(quality, mtbf);
+					Status = Lib.BuildString(Status,
 							(string.IsNullOrEmpty(Status) ? "" : ", "),
-							"ignitions: ", rated_ignitions.ToString());
-					}
-					Fields["Status"].guiActiveEditor = true;
+							"MTBF: ", Lib.HumanReadableDuration(effective_mtbf));
 				}
-				else
+
+				if (rated_operation_duration > 0)
 				{
-					Fields["Status"].guiActiveEditor = false;
+					double effective_duration = EffectiveDuration(quality, rated_operation_duration);
+					Status = Lib.BuildString(Status,
+						(string.IsNullOrEmpty(Status) ? "" : ", "),
+						"Burn time: ",
+						Lib.HumanReadableDuration(effective_duration));
+				}
+
+				if (rated_ignitions > 0)
+				{
+					int effective_ignitions = EffectiveIgnitions(quality, rated_ignitions);
+					Status = Lib.BuildString(Status,
+						(string.IsNullOrEmpty(Status) ? "" : ", "),
+						"ignitions: ", effective_ignitions.ToString());
 				}
 			}
 		}
@@ -622,6 +624,21 @@ namespace KERBALISM
 			return Specs().Info();
 		}
 
+		public static double EffectiveMTBF(bool quality, double mtbf)
+		{
+			return mtbf * (quality ? Settings.QualityScale : 1.0);
+		}
+
+		public static double EffectiveDuration(bool quality, double duration)
+		{
+			return duration * (quality ? Settings.QualityScale : 1.0);
+		}
+
+		public static int EffectiveIgnitions(bool quality, int ignitions)
+		{
+			if(quality) return ignitions + (int)Math.Ceiling(ignitions * Settings.QualityScale * 0.3);
+			return ignitions;
+		}
 
 		// specifics support
 		public Specifics Specs()
@@ -634,23 +651,19 @@ namespace KERBALISM
 
 			specs.Add(string.Empty);
 			specs.Add("<color=#00ffff>Standard quality</color>");
-			if(mtbf > 0) specs.Add("MTBF", Lib.HumanReadableDuration(mtbf));
+			if(mtbf > 0) specs.Add("MTBF", Lib.HumanReadableDuration(EffectiveMTBF(false, mtbf)));
 			if (turnon_failure_probability > 0) specs.Add("Ignition failures", Lib.HumanReadablePerc(turnon_failure_probability, "F1"));
-			if (rated_operation_duration > 0) specs.Add("Rated burn duration", Lib.HumanReadableDuration(rated_operation_duration));
-			if (rated_ignitions > 0) specs.Add("Rated ignitions", rated_ignitions.ToString());
+			if (rated_operation_duration > 0) specs.Add("Rated burn duration", Lib.HumanReadableDuration(EffectiveDuration(false, rated_operation_duration)));
+			if (rated_ignitions > 0) specs.Add("Rated ignitions", EffectiveIgnitions(false, rated_ignitions).ToString());
 
 			specs.Add(string.Empty);
 			specs.Add("<color=#00ffff>High quality</color>");
 			if (extra_cost > double.Epsilon) specs.Add("Extra cost", Lib.HumanReadableCost(extra_cost * part.partInfo.cost));
 			if (extra_mass > double.Epsilon) specs.Add("Extra mass", Lib.HumanReadableMass(extra_mass * part.partInfo.partPrefab.mass));
-			if (mtbf > 0) specs.Add("MTBF", Lib.HumanReadableDuration(mtbf * Settings.QualityScale));
+			if (mtbf > 0) specs.Add("MTBF", Lib.HumanReadableDuration(EffectiveMTBF(true, mtbf)));
 			if (turnon_failure_probability > 0) specs.Add("Ignition failures", Lib.HumanReadablePerc(turnon_failure_probability / Settings.QualityScale, "F1"));
-			if (rated_operation_duration > 0) specs.Add("Rated burn duration", Lib.HumanReadableDuration(rated_operation_duration * Settings.QualityScale));
-			if (rated_ignitions > 0)
-			{
-				int quality_ignitions = rated_ignitions + (int)Math.Ceiling(rated_ignitions * Settings.QualityScale * 0.3);
-				if (rated_ignitions > 0) specs.Add("Rated ignitions", quality_ignitions.ToString());
-			}
+			if (rated_operation_duration > 0) specs.Add("Rated burn duration", Lib.HumanReadableDuration(EffectiveDuration(true, rated_operation_duration)));
+			if (rated_ignitions > 0) specs.Add("Rated ignitions", EffectiveIgnitions(true, rated_ignitions).ToString());
 
 			return specs;
 		}
