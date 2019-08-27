@@ -180,7 +180,7 @@ namespace KERBALISM
 					Fields["Status"].guiActive = false;
 				}
 
-				Events["Inspect"].active = !broken && !needMaintenance && mtbf > 0;
+				Events["Inspect"].active = !broken && !needMaintenance;
 				Events["Repair"].active = repair_cs && (broken || needMaintenance) && !critical;
 
 				if(needMaintenance) {
@@ -383,11 +383,13 @@ namespace KERBALISM
 
 			// get normalized time to failure
 			double time_k = (Planetarium.GetUniversalTime() - last) / (next - last);
+			needMaintenance = time_k > 0.35;
+			if (rated_ignitions > 0 && ignitions > Math.Ceiling(EffectiveIgnitions(quality, rated_ignitions) * 0.75)) needMaintenance = true;
+			if (rated_operation_duration > 0 && operation_duration > EffectiveDuration(quality, rated_operation_duration) * 0.75) needMaintenance = true;
 
 			// notify user
-			if (time_k < 0.35)
+			if (!needMaintenance)
 			{
-				needMaintenance = false;
 				Message.Post(Lib.TextVariant(
 					"It is practically new",
 					"It is in good shape",
@@ -398,7 +400,6 @@ namespace KERBALISM
 			}
 			else
 			{
-				needMaintenance = true;
 				Message.Post(Lib.TextVariant(
 					"It will keep working for some more time. Maybe.",
 					"Better get the duck tape ready!",
