@@ -63,20 +63,20 @@ namespace KERBALISM
 			Vector2 tooltip_size = Styles.tooltip.CalcSize(tooltip_content);
 			tooltip_size.y = Styles.tooltip.CalcHeight(tooltip_content, tooltip_size.x);
 
-			// calculate tooltip position
-			Rect tooltip_rect = new Rect(mouse_pos.x - Mathf.Floor(tooltip_size.x / 2.0f), mouse_pos.y - Mathf.Floor(tooltip_size.y / 2.0f), tooltip_size.x, tooltip_size.y);
+			// calculate tooltip position, default vertical position is above the cursor
+			Rect tooltip_rect = new Rect(mouse_pos.x - Mathf.Floor(tooltip_size.x / 2.0f), mouse_pos.y - tooltip_size.y - 10.0f, tooltip_size.x, tooltip_size.y);
 
-			// get the mouse out of the way
-			tooltip_rect.yMin -= Mathf.Floor(tooltip_size.y / 2.0f) + 10.0f;
-			tooltip_rect.yMax -= Mathf.Floor(tooltip_size.y / 2.0f) + 10.0f;
+			// if vertical position above cursor goes outside the screen, change that to below the cursor
+			if (tooltip_rect.yMin < 0f)
+			{
+				tooltip_rect.yMin = mouse_pos.y + 20f;
+				tooltip_rect.yMax = tooltip_rect.yMin + tooltip_size.y;
+			}
 
-			// clamp to screen rect
+			// horizontal position : clamp to screen rect
 			float offset_x = Math.Max(0.0f, -tooltip_rect.xMin) + Math.Min(0.0f, screen_rect.width - tooltip_rect.xMax);
-			float offset_y = Math.Max(0.0f, -tooltip_rect.yMin) + Math.Min(0.0f, screen_rect.height - tooltip_rect.yMax);
 			tooltip_rect.xMin += offset_x;
 			tooltip_rect.xMax += offset_x;
-			tooltip_rect.yMin += offset_y;
-			tooltip_rect.yMax += offset_y;
 
 			// finally, render the tooltip
 			GUILayout.BeginArea(tooltip_rect, Styles.tooltip_container);

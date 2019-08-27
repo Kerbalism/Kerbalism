@@ -114,6 +114,14 @@ namespace KERBALISM
 
 		public void Render()
 		{
+			// in flight / map view, put the menu on top
+			if (HighLogic.LoadedSceneIsFlight)
+			{
+				// vessel filter or vessel menu if a vessel is selected
+				if (selected_v != null) Render_menu(selected_v);
+				else Render_filter();
+			}
+
 			// start scrolling view
 			scroll_pos = GUILayout.BeginScrollView(scroll_pos, HighLogic.Skin.horizontalScrollbar, HighLogic.Skin.verticalScrollbar);
 
@@ -123,9 +131,13 @@ namespace KERBALISM
 			// end scroll view
 			GUILayout.EndScrollView();
 
-			// if a vessel is selected, and exist
-			if (selected_v != null) Render_menu(selected_v);
-			else Render_filter();
+			// in planetarium / space center, put the menu at bottom
+			if (!HighLogic.LoadedSceneIsFlight)
+			{
+				// vessel filter or vessel menu if a vessel is selected
+				if (selected_v != null) Render_menu(selected_v);
+				else Render_filter();
+			}
 
 			// right click goes back to list view
 			if (Event.current.type == EventType.MouseDown
