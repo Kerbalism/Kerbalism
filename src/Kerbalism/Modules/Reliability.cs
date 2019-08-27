@@ -1,10 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Configuration;
 using UnityEngine;
-using UnityEngine.Rendering;
-using UnityEngine.UI;
-
+using System.Text;
 
 namespace KERBALISM
 {
@@ -83,8 +80,9 @@ namespace KERBALISM
 		/// Currently this is called for loaded vessels only, but potentially could be
 		/// used for other stuff that can be turned on and off, like lights, processes, antennas.
 		/// However, doing that would require a IsRunning() implementation for unloaded vessels.
+		/// Returns true if a failure should be triggered.
 		/// </summary>
-		protected static void OnTurnon(Reliability reliability, ProtoPartModuleSnapshot m)
+		protected static bool TurnonFailure(Reliability reliability, ProtoPartModuleSnapshot m)
 		{
 			bool quality = Lib.Proto.GetBool(m, "quality");
 			int ignitions = Lib.Proto.GetInt(m, "ignitions", 0);
@@ -92,63 +90,49 @@ namespace KERBALISM
 			reliability.ignitions = ignitions;
 			Lib.Proto.Set(m, "ignitions", ignitions);
 
+			bool fail = false;
+
 			if (reliability.turnon_failure_probability > 0)
 			{
 				var q = quality ? Settings.QualityScale : 1.0;
 				if (Lib.RandomDouble() < reliability.turnon_failure_probability / q)
 				{
-					reliability.enforce_breakdown = true;
-					Lib.Proto.Set(m, "enforce_breakdown", true);
-
-					double when = Lib.RandomDouble() * 15;
-					if (when < 5)
-					{
-						// enforce immediate breakdown
-						reliability.next = Planetarium.GetUniversalTime() + 1;
-					}
-					else
-					{
-						// enforce a breakdown within the next 20-30 seconds
-						reliability.next = Planetarium.GetUniversalTime() + when + 15;
-					}
-
-					Lib.Proto.Set(m, "next", reliability.next);
-#if DEBUG
-					Lib.Log("Reliability: Turn-On breakdown");
-#endif
-					if (reliability.part != null)
-					{
-						FlightLogger.fetch?.LogEvent("Engine failed on ignition");
-					}
-					return;
+					fail = true;
 				}
 			}
 
-			if(reliability.rated_ignitions > 0)
+			if (reliability.rated_ignitions > 0)
 			{
 				int total_ignitions = EffectiveIgnitions(quality, reliability.rated_ignitions);
-				if(ignitions > total_ignitions)
+				if (ignitions > total_ignitions)
 				{
-					var q = 2.0 * (quality ? Settings.QualityScale : 1.0) * Lib.RandomDouble();
+					var q = (quality ? Settings.QualityScale : 1.0) * Lib.RandomDouble();
 					q /= (ignitions - total_ignitions); // progressively increase the odds of a failure with every extra ignition
+
+#if DEBUG
+					Lib.Log("Reliability: ignition exceeded q=" + q + " ignitions=" + ignitions + " total_ignitions=" + total_ignitions);
+#endif
 
 					if (q < 0.5)
 					{
-						// enforce immediate breakdown
-						reliability.enforce_breakdown = true;
-						Lib.Proto.Set(m, "enforce_breakdown", true);
-						reliability.next = Planetarium.GetUniversalTime() + 1;
-#if DEBUG
-						Lib.Log("Reliability: Ignition limit breakdown");
-#endif
-						if (reliability.part != null) // don't flight log on unloaded vessels
-						{
-							FlightLogger.fetch?.LogEvent("Engine exceeded max. rated ignitions");
-						}
+						fail = true;
 					}
 				}
-
 			}
+
+			if (fail)
+			{
+				reliability.enforce_breakdown = true;
+				Lib.Proto.Set(m, "enforce_breakdown", true);
+
+				reliability.next = Planetarium.GetUniversalTime() + Lib.RandomDouble() * 2.0;
+				Lib.Proto.Set(m, "next", reliability.next);
+				if (reliability.part != null)
+				{
+					FlightLogger.fetch?.LogEvent("Engine failure on ignition");
+				}
+			}
+			return fail;
 		}
 
 		public void Update()
@@ -265,7 +249,7 @@ namespace KERBALISM
 				if (now > next)
 				{
 #if DEBUG
-					Lib.Log("Reliablity: MTBF breakdown for " + part);
+					Lib.Log("Reliablity: background MTBF breakdown for " + part);
 #endif
 					Break();
 				}
@@ -292,7 +276,8 @@ namespace KERBALISM
 				if (IsRunning())
 				{
 					running = true;
-					OnTurnon(this, this.snapshot);
+					if (TurnonFailure(this, this.snapshot))
+						Break();
 				}
 			}
 			else
@@ -456,7 +441,13 @@ namespace KERBALISM
 			last = 0.0;
 			next = 0.0;
 			lastRunningCheck = 0;
-			operation_duration /= 3;
+
+			// add a bit of operation duration
+			operation_duration *= 0.75;
+
+			// add a copule of ignitions
+			ignitions = (int)Math.Round(ignitions * 0.75);
+
 			fail_duration = 0;
 
 			if (broken)
@@ -512,9 +503,6 @@ namespace KERBALISM
 #endif
 		public void Break()
 		{
-#if DEBUG
-			Lib.Log("Reliability: breaking " + part + ", enforced=" + enforce_breakdown);
-#endif
 			// if enforced, manned, or if safemode didn't trigger
 			if (enforce_breakdown || vessel.KerbalismData().CrewCapacity > 0 || Lib.RandomDouble() > PreferencesBasic.Instance.safeModeChance)
 			{
@@ -563,10 +551,6 @@ namespace KERBALISM
 			if (reliability == null) return;
 
 			bool enforce_breakdown = Lib.Proto.GetBool(m, "enforce_breakdown", false);
-
-#if DEBUG
-			Lib.Log("ProtoBreak " + type + " enforce_breakdown=" + enforce_breakdown);
-#endif
 
 			// if manned, or if safemode didn't trigger
 			if (enforce_breakdown || v.KerbalismData().CrewCapacity > 0 || Lib.RandomDouble() > PreferencesBasic.Instance.safeModeChance)
@@ -636,7 +620,7 @@ namespace KERBALISM
 
 		public static int EffectiveIgnitions(bool quality, int ignitions)
 		{
-			if(quality) return ignitions + (int)Math.Ceiling(ignitions * Settings.QualityScale * 0.3);
+			if(quality) return ignitions + (int)Math.Ceiling(ignitions * Settings.QualityScale * 0.2);
 			return ignitions;
 		}
 
@@ -962,6 +946,7 @@ namespace KERBALISM
 					if (Lib.Proto.GetBool(m, "broken")) return true;
 				}
 			}
+
 			return false;
 		}
 
