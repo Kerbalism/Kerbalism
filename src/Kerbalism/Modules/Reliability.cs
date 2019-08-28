@@ -16,6 +16,9 @@ namespace KERBALISM
 		[KSPField] public double extra_cost;                                // extra cost for high-quality, in proportion of part cost
 		[KSPField] public double extra_mass;                                // extra mass for high-quality, in proportion of part mass
 
+		[KSPField] public double rated_radiation = 0;                       // rad/h this part can sustain without taking any damage. Only effective with MTBF failures.
+		[KSPField] public double radiation_decay_rate = 20;                 // time to next failure is reduced by (rad/h - rated_radiation) * radiation_decay_rate seconds
+
 		// engine only features
 		[KSPField] public double turnon_failure_probability = -1;           // probability of a failure when turned on or staged
 		[KSPField] public double rated_operation_duration = -1;             // failure rate increases dramatically if this is exceeded
@@ -48,6 +51,9 @@ namespace KERBALISM
 			if (Lib.DisableScenario(this)) return;
 
 			Fields["Status"].guiName = title;
+#if DEBUG
+			Events["Break"].guiName = "Break " + title + " [DEBUG]";
+#endif
 
 			// do nothing in the editors and when compiling parts
 			if (!Lib.IsFlight()) return;
@@ -173,6 +179,7 @@ namespace KERBALISM
 							(string.IsNullOrEmpty(Status) ? "" : ", "),
 							"ignitions: ", Math.Max(0, effective_ignitions - ignitions).ToString());
 					}
+
 					Fields["Status"].guiActive = true;
 				}
 				else
@@ -244,6 +251,9 @@ namespace KERBALISM
 					var r = 1 - Math.Pow(Lib.RandomDouble(), 3);
 					next = last + guaranteed + mtbf * (quality ? Settings.QualityScale : 1.0) * r;
 				}
+
+				var decay = RadiationDecay(quality, vessel.KerbalismData().EnvRadiation, Kerbalism.elapsed_s, rated_radiation, radiation_decay_rate);
+				next -= decay;
 
 				// if it has failed, trigger malfunction
 				if (now > next)
@@ -326,7 +336,7 @@ namespace KERBALISM
 			lastRunningCheck = now;
 		}
 
-		public static void BackgroundUpdate(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, Reliability reliability)
+		public static void BackgroundUpdate(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, Reliability reliability, double elapsed_s)
 		{
 			// if it has not malfunctioned
 			if (Lib.Proto.GetBool(m, "broken")) return;
@@ -334,18 +344,29 @@ namespace KERBALISM
 			// get time of next failure
 			double next = Lib.Proto.GetDouble(m, "next");
 
-			// calculate epoch of failure if necessary
-			if (next <= 0 && reliability.mtbf > 0)
+			if(reliability.mtbf > 0)
 			{
-				// get quality
 				bool quality = Lib.Proto.GetBool(m, "quality");
-				double last = Planetarium.GetUniversalTime();
 
-				var guaranteed = reliability.mtbf / 2.0;
-				var r = 1 - Math.Pow(Lib.RandomDouble(), 3);
-				next = last + guaranteed + reliability.mtbf * (quality ? Settings.QualityScale : 1.0) * r;
-				Lib.Proto.Set(m, "last", last);
-				Lib.Proto.Set(m, "next", next);
+				// calculate epoch of failure if necessary
+				if (next <= 0)
+				{
+					double last = Planetarium.GetUniversalTime();
+
+					var guaranteed = reliability.mtbf / 2.0;
+					var r = 1 - Math.Pow(Lib.RandomDouble(), 3);
+					next = last + guaranteed + reliability.mtbf * (quality ? Settings.QualityScale : 1.0) * r;
+					Lib.Proto.Set(m, "last", last);
+					Lib.Proto.Set(m, "next", next);
+				}
+
+				var rad = v.KerbalismData().EnvRadiation;
+				var decay = RadiationDecay(quality, rad, elapsed_s, reliability.rated_radiation, reliability.radiation_decay_rate);
+				if(decay > 0)
+				{
+					next -= decay;
+					Lib.Proto.Set(m, "next", next);
+				}
 			}
 
 			// if it has failed, trigger malfunction
@@ -497,7 +518,7 @@ namespace KERBALISM
 		}
 
 #if DEBUG
-		[KSPEvent(guiActive = true, guiActiveUnfocused = true, guiName = "Break [TEST]", active = true)] // [for testing]
+		[KSPEvent(guiActive = true, guiActiveUnfocused = true, guiName = "_", active = true)] // [for testing]
 #endif
 		public void Break()
 		{
@@ -622,6 +643,17 @@ namespace KERBALISM
 			return ignitions;
 		}
 
+		public static double RadiationDecay(bool quality, double rad, double elapsed_s, double rated_radiation, double radiation_decay_rate)
+		{
+			rad *= 3600.0;
+			if (quality) rated_radiation *= Settings.QualityScale;
+			if (rad <= 0 || rated_radiation <= 0 || rad < rated_radiation) return 0.0;
+
+			rad -= rated_radiation;
+
+			return rad * elapsed_s * radiation_decay_rate;
+		}
+
 		// specifics support
 		public Specifics Specs()
 		{
@@ -637,6 +669,7 @@ namespace KERBALISM
 			if (turnon_failure_probability > 0) specs.Add("Ignition failures", Lib.HumanReadablePerc(turnon_failure_probability, "F1"));
 			if (rated_operation_duration > 0) specs.Add("Rated burn duration", Lib.HumanReadableDuration(EffectiveDuration(false, rated_operation_duration)));
 			if (rated_ignitions > 0) specs.Add("Rated ignitions", EffectiveIgnitions(false, rated_ignitions).ToString());
+			if (mtbf > 0 && rated_radiation > 0) specs.Add("Radiation rating", Lib.HumanReadableRadiation(rated_radiation / 3600.0));
 
 			specs.Add(string.Empty);
 			specs.Add("<color=#00ffff>High quality</color>");
@@ -646,6 +679,7 @@ namespace KERBALISM
 			if (turnon_failure_probability > 0) specs.Add("Ignition failures", Lib.HumanReadablePerc(turnon_failure_probability / Settings.QualityScale, "F1"));
 			if (rated_operation_duration > 0) specs.Add("Rated burn duration", Lib.HumanReadableDuration(EffectiveDuration(true, rated_operation_duration)));
 			if (rated_ignitions > 0) specs.Add("Rated ignitions", EffectiveIgnitions(true, rated_ignitions).ToString());
+			if (mtbf > 0 && rated_radiation > 0) specs.Add("Radiation rating", Lib.HumanReadableRadiation(Settings.QualityScale * rated_radiation / 3600.0));
 
 			return specs;
 		}
