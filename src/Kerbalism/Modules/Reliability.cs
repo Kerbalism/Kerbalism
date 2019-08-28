@@ -383,9 +383,9 @@ namespace KERBALISM
 
 			// get normalized time to failure
 			double time_k = (Planetarium.GetUniversalTime() - last) / (next - last);
-			needMaintenance = time_k > 0.35;
-			if (rated_ignitions > 0 && ignitions > Math.Ceiling(EffectiveIgnitions(quality, rated_ignitions) * 0.75)) needMaintenance = true;
-			if (rated_operation_duration > 0 && operation_duration > EffectiveDuration(quality, rated_operation_duration) * 0.75) needMaintenance = true;
+			needMaintenance = mtbf > 0 && time_k > 0.35;
+			if (rated_ignitions > 0 && ignitions > Math.Ceiling(EffectiveIgnitions(quality, rated_ignitions) * 0.7)) needMaintenance = true;
+			if (rated_operation_duration > 0 && operation_duration > EffectiveDuration(quality, rated_operation_duration) * 0.7) needMaintenance = true;
 
 			// notify user
 			if (!needMaintenance)
@@ -401,7 +401,7 @@ namespace KERBALISM
 			else
 			{
 				Message.Post(Lib.TextVariant(
-					"It will keep working for some more time. Maybe.",
+					"Looks like it's going to fall off soon.",
 					"Better get the duck tape ready!",
 					"It is reaching its operational limits.",
 					"How is this still working?",
@@ -443,11 +443,8 @@ namespace KERBALISM
 			next = 0.0;
 			lastRunningCheck = 0;
 
-			// add a bit of operation duration
-			operation_duration *= 0.75;
-
-			// add a copule of ignitions
-			ignitions = (int)Math.Round(ignitions * 0.75);
+			operation_duration = Math.Min(operation_duration, EffectiveDuration(quality, rated_operation_duration) * 0.3);
+			ignitions = Math.Min(ignitions, (int)(EffectiveIgnitions(quality, rated_ignitions) * 0.3));
 
 			fail_duration = 0;
 
@@ -477,10 +474,10 @@ namespace KERBALISM
 				  Lib.BuildString("<b>", title, "</b> repaired"),
 				  Lib.TextVariant
 				  (
-					"A powerkick did the trick",
+					"A powerkick did the trick.",
 					"Duct tape, is there something it can't fix?",
-					"Fully operational again",
-					"We are back in business"
+					"Fully operational again.",
+					"We are back in business."
 				  )
 				);
 			} else {
@@ -490,10 +487,10 @@ namespace KERBALISM
 				  Lib.BuildString("<b>", title, "</b> serviced"),
 				  Lib.TextVariant
 				  (
-					"I don't know how this was still working",
-					"Fastened a loose screw there",
-					"Someone forgot a cloth in there",
-					"As good as new"
+					"I don't know how this was still working.",
+					"Fastened that loose screw.",
+					"Someone forgot a toothpick in there.",
+					"As good as new!"
 				  )
 				);
 			}
