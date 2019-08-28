@@ -44,6 +44,8 @@
 * Fixes for Breaking Grounds: the return contracts now are doable, and the rover arm scans are drastically reduced in data size (Sir Mortimer)
 * UI windows made a bit wider, and they now are all the same widths (Sir Mortimer)
 * Some configuration fixes for DMagic Orbital Science (Sir Mortimer)
+* Reliability changes: engine failures depending on ignitions and burn duration, radiation damage to solar panels, transmitters and reaction wheels (Sir Mortimer)
+
 
 ## v3.0.2 for all versions of KSP from 1.4.0 to 1.7.x
 
