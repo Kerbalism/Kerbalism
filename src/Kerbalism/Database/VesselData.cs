@@ -48,7 +48,6 @@ namespace KERBALISM
 		public bool cfg_script;       // enable/disable message: scripts
 		public bool cfg_highlights;   // show/hide malfunction highlights
 		public bool cfg_showlink;     // show/hide link line
-		public string group;          // vessel group
 		public Computer computer;     // store scripts
 
 		// other persisted fields
@@ -456,7 +455,6 @@ namespace KERBALISM
 			storm_time = 0.0;
 			storm_age = 0.0;
 			storm_state = 0;
-			group = "NONE";
 			computer = new Computer();
 			supplies = new Dictionary<string, SupplyData>();
 			scansat_id = new List<uint>();
@@ -481,7 +479,6 @@ namespace KERBALISM
 			storm_time = Lib.ConfigValue(node, "storm_time", 0.0);
 			storm_age = Lib.ConfigValue(node, "storm_age", 0.0);
 			storm_state = Lib.ConfigValue(node, "storm_state", 0u);
-			group = Lib.ConfigValue(node, "group", "NONE");
 			computer = node.HasNode("computer") ? new Computer(node.GetNode("computer")) : new Computer();
 
 			supplies = new Dictionary<string, SupplyData>();
@@ -514,7 +511,6 @@ namespace KERBALISM
 			node.AddValue("storm_time", storm_time);
 			node.AddValue("storm_age", storm_age);
 			node.AddValue("storm_state", storm_state);
-			node.AddValue("group", group);
 			computer.Save(node.AddNode("computer"));
 
 			var supplies_node = node.AddNode("supplies");

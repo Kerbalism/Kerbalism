@@ -36,15 +36,6 @@ namespace KERBALISM
 			config_style.imagePosition = ImagePosition.ImageLeft;
 			config_style.fontSize = Styles.ScaleInteger(9);
 
-			// group text field style
-			group_style = new GUIStyle(config_style)
-			{
-				imagePosition = ImagePosition.TextOnly,
-				stretchWidth = true,
-				fixedHeight = Styles.ScaleFloat(11.0f)
-			};
-			group_style.normal.textColor = Color.yellow;
-
 			// initialize panel
 			panel = new Panel();
 
@@ -167,13 +158,13 @@ namespace KERBALISM
 			return Math.Min(h, Screen.height * 0.75f);
 		}
 
-		bool Filter_match(VesselType vesselType, string vesselGroup)
+		bool Filter_match(VesselType vesselType, string tags)
 		{
 			if(filter_types.Contains(vesselType)) return false;
 			if(filter.Length <= 0 || filter == filter_placeholder) return true;
 
 			List<string> filterTags = Lib.Tokenize(filter.ToLower(), ' ');
-			List<string> vesselTags = Lib.Tokenize(vesselGroup.ToLower(), ' ');
+			List<string> vesselTags = Lib.Tokenize(tags.ToLower(), ' ');
 
 			foreach (string tag in filterTags)
 			{
@@ -204,7 +195,7 @@ namespace KERBALISM
 			string body_name = v.mainBody.name.ToUpper();
 
 			// skip filtered vessels
-			if (!Filter_match(v.vesselType, vd.group + " " + body_name + " " + vessel_name)) return false;
+			if (!Filter_match(v.vesselType, body_name + " " + vessel_name)) return false;
 
 			// render entry
 			p.AddHeader
@@ -325,8 +316,6 @@ namespace KERBALISM
 				else
 					UI.Open((p) => p.Config(v));
 			}
-			GUILayout.Label(new GUIContent(" GROUP ", Icons.small_search, "Organize in groups"), config_style);
-			vd.group = Lib.TextFieldPlaceholder("Kerbalism_group", vd.group, "NONE", group_style).ToUpper();
 			GUILayout.EndHorizontal();
 			GUILayout.Space(Styles.ScaleFloat(10.0f));
 		}
@@ -703,7 +692,6 @@ namespace KERBALISM
 		// styles
 		GUIStyle filter_style;            // vessel filter
 		GUIStyle config_style;            // config entry label
-		GUIStyle group_style;             // config group textfield
 
 		// monitor page
 		MonitorPage page = MonitorPage.telemetry;
