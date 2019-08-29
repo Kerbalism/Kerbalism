@@ -66,6 +66,11 @@ namespace KERBALISM
 
 		private void OnVesselModified(Vessel vessel)
 		{
+			foreach(var emitter in vessel.FindPartModulesImplementing<Emitter>())
+			{
+				emitter.RecalculateShieldingParts();
+			}
+
 			Cache.PurgeObjects(vessel);
 			vessel.KerbalismData().UpdateOnVesselModified(vessel);
 		}

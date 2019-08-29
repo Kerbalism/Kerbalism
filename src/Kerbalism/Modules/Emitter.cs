@@ -15,12 +15,14 @@ namespace KERBALISM
 
 		// persistent
 		[KSPField(isPersistant = true)] public bool running;
+		[KSPField(isPersistant = true)] public double radiation_factor = 1.0; // calculated based on vessel design
 
 		// rmb status
 		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "_")] public string Status;  // rate of radiation emitted/shielded
 
 		// animations
 		Animator active_anim;
+		bool radiation_calculated = false;
 
 		// pseudo-ctor
 		public override void OnStart(StartState state)
@@ -43,6 +45,129 @@ namespace KERBALISM
 			active_anim.Still(running ? 0.0 : 1.0);
 		}
 
+		public class ShieldingPartInfo
+		{
+			public Habitat habitat;
+			// public List<Part> collidingParts;
+			public float distance;
+
+			public ShieldingPartInfo(Habitat habitat, float distance)
+			{
+				this.habitat = habitat;
+				this.distance = distance;
+				// collidingParts = new List<Part>();
+			}
+		}
+		List<ShieldingPartInfo> shieldingPartInfos = null;
+
+		public void RecalculateShieldingParts()
+		{
+			shieldingPartInfos = null;
+			CalculateRadiationImpact();
+		}
+
+		public void RaycastParts()
+		{
+			if (shieldingPartInfos != null) return;
+
+			// find all parts that intersect with the line from the emitter to the habitat
+			if (part.transform == null) return;
+			var emitterPosition = part.transform.position;
+
+			List<Habitat> habitats;
+
+			if(Lib.IsEditor())
+			{
+				habitats = new List<Habitat>();
+
+				List<Part> parts = Lib.GetPartsRecursively(EditorLogic.RootPart);
+				foreach(var p in parts)
+				{
+					var habitat = p.FindModuleImplementing<Habitat>();
+					if (habitat != null) habitats.Add(habitat);
+				}
+			}
+			else
+			{
+				habitats = vessel.FindPartModulesImplementing<Habitat>();
+			}
+
+			shieldingPartInfos = new List<ShieldingPartInfo>();
+
+			foreach (var habitat in habitats)
+			{
+				var habitatPosition = habitat.part.transform.position;
+				var vector = habitatPosition - emitterPosition;
+
+				ShieldingPartInfo spi = new ShieldingPartInfo(habitat, vector.magnitude);
+				shieldingPartInfos.Add(spi);
+
+				/*
+				Ray r = new Ray(emitterPosition, vector);
+				var hits = Physics.RaycastAll(r, vector.magnitude);
+				foreach (var hit in hits)
+				{
+					if(hit.collider != null && hit.collider.gameObject != null)
+					{
+						Part a = Part.GetComponentUpwards<Part>(hit.collider.gameObject);
+						if (a == habitat.part) continue;
+						if(a != null) spi.collidingParts.Add(a);
+					}
+				}
+				*/
+			}
+		}
+
+		/// <summary>Calculate the average radiation effect to all habitats. returns true if successful.</summary>
+		public bool CalculateRadiationImpact()
+		{
+			if(radiation < 0)
+			{
+				radiation_factor = 1.0;
+				return true;
+			}
+
+			if (shieldingPartInfos == null) RaycastParts();
+			if (shieldingPartInfos == null) return false;
+
+			radiation_factor = 0.0;
+			int habitatCount = 0;
+
+			foreach(var spi in shieldingPartInfos)
+			{
+				// radiation decreases with 1/4 * r^2
+				var factor = 1.0 / Math.Max(1, spi.distance * spi.distance / 4.0);
+
+				/*
+				foreach (var p in spi.collidingParts)
+				{
+					double mass = p.mass + p.GetResourceMass();
+					mass *= 1000.0; // KSP masses are in tons
+
+					// the following is guesswork:
+
+					// radiation has to pass through that part mass in a straight line.
+					// use the cubic root of the part mass as radiation damping factor, since the ray
+					// doesn't have to go through the total mass, just through that one line
+
+					// the shielding effect is the inverse of the cubic root of the part mass,
+					// multiplied by a mass shielding effect coefficient
+					var massShielding = 0.6 * Math.Pow(mass, 1.0/3.0);
+					var massFactor = 1.0 / Math.Max(1, massShielding);
+
+					factor *= massFactor;
+				}
+				*/
+
+				radiation_factor += factor;
+				habitatCount++;
+			}
+
+			if (habitatCount > 1)
+				radiation_factor /= habitatCount;
+
+			return true;
+		}
 
 		public void Update()
 		{
@@ -51,11 +176,12 @@ namespace KERBALISM
 			Events["Toggle"].guiName = Lib.StatusToggle(Localizer.Format("#kerbalism-activeshield_Part_title").Replace("Shield", "shield"), running ? Localizer.Format("#KERBALISM_Generic_ACTIVE") : Localizer.Format("#KERBALISM_Generic_DISABLED")); //i'm lazy lol
 		}
 
-
-
 		public void FixedUpdate()
 		{
-			// do nothing in the editor
+			if (!radiation_calculated)
+				radiation_calculated = CalculateRadiationImpact();
+
+			// do nothing else in the editor
 			if (Lib.IsEditor()) return;
 
 			// if enabled, and there is ec consumption
@@ -99,7 +225,6 @@ namespace KERBALISM
 		[KSPAction("#KERBALISM_Emitter_Action")] public void Action(KSPActionParam param) { Toggle(); }
 
 
-
 		// part tooltip
 		public override string GetInfo()
 		{
@@ -133,7 +258,11 @@ namespace KERBALISM
 				{
 					if (ec.Amount > double.Epsilon || emitter.ec_rate <= double.Epsilon)
 					{
-						tot += emitter.running ? emitter.radiation : 0.0;
+						if(emitter.running)
+						{
+							if (emitter.radiation > 0) tot += emitter.radiation * emitter.radiation_factor;
+							else tot += emitter.radiation; // always account for full shielding effect
+						}
 					}
 				}
 			}
@@ -143,7 +272,15 @@ namespace KERBALISM
 				{
 					if (ec.Amount > double.Epsilon || Lib.Proto.GetDouble(m, "ec_rate") <= double.Epsilon)
 					{
-						tot += Lib.Proto.GetBool(m, "running") ? Lib.Proto.GetDouble(m, "radiation") : 0.0;
+						if(Lib.Proto.GetBool(m, "running"))
+						{
+							var rad = Lib.Proto.GetDouble(m, "radiation");
+							if (rad < 0) tot += rad;
+							else
+							{
+								tot += rad * Lib.Proto.GetDouble(m, "radiation_factor");
+							}
+						}
 					}
 				}
 			}

@@ -155,8 +155,13 @@ namespace KERBALISM.Planner
 					if (m.moduleName == "Emitter")
 					{
 						Emitter emitter = m as Emitter;
+						emitter.RecalculateShieldingParts();
 
-						emitted += emitter.running ? emitter.radiation : 0.0;
+						if(emitter.running)
+						{
+							if (emitter.radiation > 0) emitted += emitter.radiation * emitter.radiation_factor;
+							else emitted += emitter.radiation;
+						}
 					}
 				}
 			}
