@@ -68,7 +68,7 @@ namespace KERBALISM
 		{
 			foreach(var emitter in vessel.FindPartModulesImplementing<Emitter>())
 			{
-				emitter.RecalculateShieldingParts();
+				emitter.Recalculate();
 			}
 
 			Cache.PurgeObjects(vessel);

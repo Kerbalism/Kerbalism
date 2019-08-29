@@ -91,8 +91,10 @@ namespace KERBALISM
 			if (vd.CrewCount == 0) return;
 
 			// render panel, add some content based on enabled features
-			p.AddSection("HABITAT");
+			p.AddSection(v.isEVA ? "EVA SUIT" : "HABITAT");
 			if (Features.Poisoning) p.AddContent("co2 level", Lib.Color(Lib.HumanReadablePerc(vd.Poisoning, "F2"), vd.Poisoning > Settings.PoisoningThreshold, "yellow"));
+			if (Features.Radiation && v.isEVA) p.AddContent("radiation", Lib.HumanReadableRadiation(vd.EnvRadiation));
+
 			if (!v.isEVA)
 			{
 				if (Features.Humidity) p.AddContent("humidity", Lib.Color(Lib.HumanReadablePerc(vd.Humidity, "F2"), vd.Humidity > Settings.HumidityThreshold, "yellow"));

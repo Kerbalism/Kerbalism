@@ -642,7 +642,10 @@ namespace KERBALISM
 
 			// add emitter radiation after atmosphere transparency
 			radiation += Emitter.Total(v);
-			
+
+			// for EVAs, add the effect of nearby emitters
+			if (v.isEVA) radiation += Emitter.Nearby(v);
+
 			// clamp radiation to positive range
 			// note: we avoid radiation going to zero by using a small positive value
 			radiation = Math.Max(radiation, Nominal);

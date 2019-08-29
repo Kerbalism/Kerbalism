@@ -60,7 +60,7 @@ namespace KERBALISM
 		}
 		List<ShieldingPartInfo> shieldingPartInfos = null;
 
-		public void RecalculateShieldingParts()
+		public void Recalculate()
 		{
 			shieldingPartInfos = null;
 			CalculateRadiationImpact();
@@ -244,6 +244,39 @@ namespace KERBALISM
 			return specs;
 		}
 
+		/// <summary>
+		/// get the total radiation emitted by nearby emitters (used for EVAs). only works for loaded vessels.
+		/// </summary>
+		public static double Nearby(Vessel v)
+		{
+			if (!v.loaded || !v.isEVA) return 0.0;
+			var evaPosition = v.rootPart.transform.position;
+
+			double result = 0.0;
+
+			foreach (Vessel n in FlightGlobals.VesselsLoaded)
+			{
+				var vd = n.KerbalismData();
+				if (!vd.IsValid) continue;
+
+				foreach (var emitter in vd.Emitters())
+				{
+					if (emitter.part == null || emitter.part.transform == null) continue;
+					if (emitter.radiation <= 0) continue; // ignore shielding effects here
+					if (!emitter.running) continue;
+
+					var emitterPosition = emitter.part.transform.position;
+					var vector = evaPosition - emitterPosition;
+					var distance = vector.magnitude;
+
+					// radiation decreases with 1/4 * r^2
+					var factor = 1.0 / Math.Max(1, distance * distance / 4.0);
+					result += factor * emitter.radiation;
+				}
+			}
+
+			return result;
+		}
 
 		// return total radiation emitted in a vessel
 		public static double Total(Vessel v)

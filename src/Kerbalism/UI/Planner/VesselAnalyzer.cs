@@ -155,7 +155,7 @@ namespace KERBALISM.Planner
 					if (m.moduleName == "Emitter")
 					{
 						Emitter emitter = m as Emitter;
-						emitter.RecalculateShieldingParts();
+						emitter.Recalculate();
 
 						if(emitter.running)
 						{

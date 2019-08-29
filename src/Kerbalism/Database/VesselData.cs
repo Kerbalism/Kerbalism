@@ -162,6 +162,15 @@ namespace KERBALISM
 		/// <summary> [environment] List of all stars/suns and the related data/calculations for the current vessel</summary>
 		public List<SunInfo> EnvSunsInfo => sunsInfo; List<SunInfo> sunsInfo;
 
+		/// <summary> all active emitters on this vessel </summary>
+		List<Emitter> emitters;
+		public List<Emitter> Emitters()
+		{
+			if (emitters != null) return emitters;
+			emitters = Lib.FindModules<Emitter>(Vessel);
+			return emitters;
+		}
+
 		public class SunInfo
 		{
 			/// <summary> reference to the sun/star</summary>
@@ -421,6 +430,7 @@ namespace KERBALISM
 
 		public void UpdateOnVesselModified(Vessel v)
 		{
+			emitters = null;
 			Update(v);
 			if (IsValid) EvaluateStatus();
 		}
@@ -433,6 +443,7 @@ namespace KERBALISM
 			storm_age = 0.0;
 			storm_time = 0.0;
 			storm_state = 0;
+			emitters = null;
 			supplies.Clear();
 			scansat_id.Clear();
 		}
