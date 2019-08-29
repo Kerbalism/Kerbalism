@@ -108,9 +108,7 @@ hierarchy of 3D zones, modeled and rendered using signed distance fields. These 
 belts, magnetosphere and even the heliopause. Solar weather is represented by Coronal Mass Ejection events, that
 happen sporadically, increase radiation and cause communication blackouts.
 
-<img src="https://github.com/Kerbalism/Kerbalism/blob/master/misc/img/rdr/radiation-fields-0.png" alt="Radiation model" height="250" align="right">
-
-<img src="https://github.com/Kerbalism/Kerbalism/blob/master/misc/img/rdr/radiation-fields-2.png" alt="Radiation model" height="250">
+[![Kerbalism Radiation Belts](https://img.youtube.com/vi/CXmeSMBzf1c/0.jpg)](https://www.youtube.com/watch?v=CXmeSMBzf1c)
 
 ## HABITAT
 
