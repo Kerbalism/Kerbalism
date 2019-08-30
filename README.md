@@ -4,7 +4,7 @@
 
 ***Hundreds of Kerbals were killed in the making of this mod.***
 
-## Current version : 3.0.2 
+## Current version : 3.1 
 
 **Download** : **[Github releases]** - **[CKAN]**\
 **Docs & support** : **[Github wiki]** - **[Discord]** - [Github issues] - [KSP forums thread]\
