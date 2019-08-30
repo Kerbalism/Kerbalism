@@ -43,6 +43,7 @@ namespace KERBALISM
 		// data
 		List<PartModule> modules;                                           // components cache
 		CrewSpecs repair_cs;                                                // crew specs
+		bool explode = false;
 
 
 		public override void OnStart(StartState state)
@@ -82,34 +83,25 @@ namespace KERBALISM
 			if (broken) Apply(true);
 		}
 
-		/// <summary>
-		/// Currently this is called for loaded vessels only, but potentially could be
-		/// used for other stuff that can be turned on and off, like lights, processes, antennas.
-		/// However, doing that would require a IsRunning() implementation for unloaded vessels.
-		/// Returns true if a failure should be triggered.
-		/// </summary>
-		protected static bool TurnonFailure(Reliability reliability, ProtoPartModuleSnapshot m)
+		/// <summary> Returns true if a failure should be triggered. </summary>
+		protected bool IgnitionCheck()
 		{
-			bool quality = Lib.Proto.GetBool(m, "quality");
-			int ignitions = Lib.Proto.GetInt(m, "ignitions", 0);
 			ignitions++;
-			reliability.ignitions = ignitions;
-			Lib.Proto.Set(m, "ignitions", ignitions);
 
 			bool fail = false;
 
-			if (reliability.turnon_failure_probability > 0)
+			if (turnon_failure_probability > 0)
 			{
 				var q = quality ? Settings.QualityScale : 1.0;
-				if (Lib.RandomDouble() < reliability.turnon_failure_probability / q)
+				if (Lib.RandomDouble() < turnon_failure_probability / q)
 				{
 					fail = true;
 				}
 			}
 
-			if (reliability.rated_ignitions > 0)
+			if (rated_ignitions > 0)
 			{
-				int total_ignitions = EffectiveIgnitions(quality, reliability.rated_ignitions);
+				int total_ignitions = EffectiveIgnitions(quality, rated_ignitions);
 				if (ignitions > total_ignitions)
 				{
 					var q = (quality ? Settings.QualityScale : 1.0) * Lib.RandomDouble();
@@ -128,15 +120,11 @@ namespace KERBALISM
 
 			if (fail)
 			{
-				reliability.enforce_breakdown = true;
-				Lib.Proto.Set(m, "enforce_breakdown", true);
+				enforce_breakdown = true;
+				explode = Lib.RandomDouble() < 0.1;
 
-				reliability.next = Planetarium.GetUniversalTime() + Lib.RandomDouble() * 2.0;
-				Lib.Proto.Set(m, "next", reliability.next);
-				if (reliability.part != null)
-				{
-					FlightLogger.fetch?.LogEvent("Engine failure on ignition");
-				}
+				next = Planetarium.GetUniversalTime() + Lib.RandomDouble() * 2.0;
+				FlightLogger.fetch?.LogEvent("Engine failure on ignition");
 			}
 			return fail;
 		}
@@ -286,7 +274,7 @@ namespace KERBALISM
 				if (IsRunning())
 				{
 					running = true;
-					if (TurnonFailure(this, this.snapshot))
+					if (IgnitionCheck())
 						Break();
 				}
 			}
@@ -313,8 +301,8 @@ namespace KERBALISM
 					// 1-p turns the probability of failure into one of non-failure
 					p = 1 - p;
 
-					// 20% guaranteed burn duration
-					var guaranteed_operation = f * 0.2;
+					// 35% guaranteed burn duration
+					var guaranteed_operation = f * 0.35;
 
 					fail_duration = guaranteed_operation + f * p;
 #if DEBUG
@@ -326,6 +314,7 @@ namespace KERBALISM
 				{
 					next = now;
 					enforce_breakdown = true;
+					explode = Lib.RandomDouble() < 0.35;
 #if DEBUG
 					Lib.Log("Reliability: " + part + " fails because of overstress");
 #endif
@@ -522,6 +511,13 @@ namespace KERBALISM
 #endif
 		public void Break()
 		{
+			if(explode)
+			{
+				foreach (PartModule m in modules)
+					m.part.explode();
+				return;
+			}
+
 			// if enforced, manned, or if safemode didn't trigger
 			if (enforce_breakdown || vessel.KerbalismData().CrewCapacity > 0 || Lib.RandomDouble() > PreferencesBasic.Instance.safeModeChance)
 			{
