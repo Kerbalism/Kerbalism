@@ -497,6 +497,8 @@ namespace KERBALISM
 			}
 
 			if (node.HasNode("ScienceLog")) ScienceLog.Load(node.GetNode("ScienceLog"));
+
+			VirtualResource.LoadVirtualResources(Vessel, node);
 		}
 
 		public void Save(ConfigNode node)
@@ -529,6 +531,8 @@ namespace KERBALISM
 			}
 
 			ScienceLog.Save(node.AddNode("ScienceLog"));
+
+			VirtualResource.SaveVirtualResources(Vessel, node);
 		}
 
 		#endregion

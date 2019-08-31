@@ -36,6 +36,8 @@ namespace KERBALISM
 		/// <summary> Amount vs capacity, or 0 if there is no capacity</summary>
 		public double Level { get; private set; }
 
+		public bool IsNewInstance { get; private set; }
+
 		public VirtualResource(string virtualName)
 		{
 			Name = virtualName;
@@ -43,12 +45,15 @@ namespace KERBALISM
 			Deferred = 0.0;
 			Capacity = double.MaxValue;
 			Level = 0.0;
+			IsNewInstance = true;
 		}
 
 		public void Sync(Vessel v, VesselData vd, double elapsed_s)
 		{
-			// This doesn't seem right
-			Amount = Deferred;
+			IsNewInstance = false;
+			Amount += Deferred;
+			Deferred = 0.0;
+			Level = Capacity > 0.0 ? Amount / Capacity : 0.0;
 		}
 
 		/// <summary>Record a consumption, it will be stored in 'Deferred' until the Sync() method synchronize it to 'Amount'</summary>
@@ -63,6 +68,33 @@ namespace KERBALISM
 		public void Consume(double quantity, string brokerName)
 		{
 			Deferred -= quantity;
+		}
+
+		public static void LoadVirtualResources(Vessel v, ConfigNode vesselDataNode)
+		{
+			foreach (ConfigNode node in vesselDataNode.GetNodes("VirtualResources"))
+			{
+				string resName = Lib.ConfigValue(node, "Name", string.Empty);
+				if (string.IsNullOrEmpty(resName)) return;
+				VirtualResource res = (VirtualResource)ResourceCache.GetResource(v, resName);
+				res.Amount = Lib.ConfigValue(node, "Amount", 0.0);
+				res.Capacity = Lib.ConfigValue(node, "Capacity", 0.0);
+				res.Level = res.Capacity > 0.0 ? res.Amount / res.Capacity : 0.0;
+				res.IsNewInstance = false;
+			}
+		}
+
+		public static void SaveVirtualResources(Vessel v, ConfigNode node)
+		{
+			if (v == null) return;
+			foreach (VirtualResource vRes in ResourceCache.GetVesselHandler(v).GetVirtualResources())
+			{
+				if (vRes.Amount <= 0.0 && vRes.Capacity <= 0.0) continue;
+				ConfigNode vResNode = node.AddNode("VirtualResources");
+				node.AddValue("Name", vRes.Name);
+				node.AddValue("Amount", vRes.Amount);
+				node.AddValue("Capacity", vRes.Capacity);
+			}
 		}
 	}
 }

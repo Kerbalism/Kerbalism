@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace KERBALISM
 {
@@ -31,6 +32,19 @@ namespace KERBALISM
 
 			// return new entry
 			return res;
+		}
+
+		/// <summary>
+		/// Get all virtual resources that exist on the vessel. Quite slow, don't use this in update/fixedupdate.
+		/// Note that it isn't garanteed that these resources are still present/used on the vessel.
+		/// </summary>
+		public List<VirtualResource> GetVirtualResources()
+		{
+			List<VirtualResource> virtualResources = new List<VirtualResource>();
+			foreach (IResource res in resources.Values)
+				if (res is VirtualResource) virtualResources.Add((VirtualResource)res);
+
+			return virtualResources;
 		}
 
 		/// <summary>
