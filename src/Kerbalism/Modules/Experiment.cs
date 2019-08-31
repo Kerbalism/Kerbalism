@@ -269,7 +269,8 @@ namespace KERBALISM
 		{
 			var stored = DoRecord(this, subject_id, vessel, ec, privateHdId,
 				ResourceCache.Get(vessel), resourceDefs,
-				remainingSampleMass, dataSampled, out dataSampled, out remainingSampleMass);
+				remainingSampleMass, dataSampled, Kerbalism.elapsed_s,
+				out dataSampled, out remainingSampleMass);
 
 			if (!stored) issue = insufficient_storage;
 		}
@@ -285,7 +286,7 @@ namespace KERBALISM
 
 		private static bool DoRecord(Experiment experiment, string subject_id, Vessel vessel, ResourceInfo ec, uint hdId, 
 			VesselResources resources, List<KeyValuePair<string, double>> resourceDefs,
-			double remainingSampleMass, double dataSampled,
+			double remainingSampleMass, double dataSampled, double elapsed_s,
 			out double sampledOut, out double remainingSampleMassOut)
 		{
 			// default output values for early returns
@@ -297,8 +298,8 @@ namespace KERBALISM
 				return true;
 			}
 
-			double elapsed = Kerbalism.elapsed_s;
-			double chunkSize = Math.Min(experiment.data_rate * elapsed, exp.max_amount);
+			//double elapsed_s = Kerbalism.elapsed_s;
+			double chunkSize = Math.Min(experiment.data_rate * elapsed_s, exp.max_amount);
 			double massDelta = experiment.sample_mass * chunkSize / exp.max_amount;
 
 			Drive drive = GetDrive(experiment, vessel, hdId, chunkSize, subject_id);
@@ -313,13 +314,13 @@ namespace KERBALISM
 				if (warpCacheDrive != null) maxCapacity += warpCacheDrive.FileCapacityAvailable();
 			}
 
-			double factor = Rate(vessel, chunkSize, maxCapacity, elapsed, ec, experiment.ec_rate, resources, resourceDefs);
+			double factor = Rate(vessel, chunkSize, maxCapacity, elapsed_s, ec, experiment.ec_rate, resources, resourceDefs);
 			if (factor < double.Epsilon)
 				return false;
 
 			chunkSize *= factor;
 			massDelta *= factor;
-			elapsed *= factor;
+			elapsed_s *= factor;
 
 			bool stored = false;
 			if (chunkSize > double.Epsilon)
@@ -347,9 +348,9 @@ namespace KERBALISM
 				return false;
 
 			// consume resources
-			ec.Consume(experiment.ec_rate * elapsed, "experiment");
+			ec.Consume(experiment.ec_rate * elapsed_s, "experiment");
 			foreach (var p in resourceDefs)
-				resources.Consume(vessel, p.Key, p.Value * elapsed, "experiment");
+				resources.Consume(vessel, p.Key, p.Value * elapsed_s, "experiment");
 
 			dataSampled += chunkSize;
 			dataSampled = Math.Min(dataSampled, exp.max_amount);
@@ -441,7 +442,8 @@ namespace KERBALISM
 
 			var stored = DoRecord(experiment, subject_id, v, ec, privateHdId,
 				resources, ParseResources(experiment.resources),
-				remainingSampleMass, dataSampled, out dataSampled, out remainingSampleMass);
+				remainingSampleMass, dataSampled, elapsed_s,
+				out dataSampled, out remainingSampleMass);
 			if (!stored) Lib.Proto.Set(m, "issue", insufficient_storage);
 
 			Lib.Proto.Set(m, "dataSampled", dataSampled);
