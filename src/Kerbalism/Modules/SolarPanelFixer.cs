@@ -465,7 +465,7 @@ namespace KERBALISM
 			currentOutput = nominalRate * wearFactor * distanceFactor * exposureFactor;
 
 			// ignore very small outputs
-			if (currentOutput < 0.001)
+			if (currentOutput < 1e-10)
 			{
 				currentOutput = 0.0;
 				return;

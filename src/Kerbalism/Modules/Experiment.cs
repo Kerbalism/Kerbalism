@@ -737,7 +737,7 @@ namespace KERBALISM
 		}
 
 		// action groups
-		[KSPAction("Start")] public void Start(KSPActionParam param)
+		[KSPAction("Start")] public void StartAction(KSPActionParam param)
 		{
 			switch (GetState(scienceValue, issue, recording, forcedRun)) {
 				case State.STOPPED:
@@ -746,7 +746,7 @@ namespace KERBALISM
 					break;
 			}
 		}
-		[KSPAction("Stop")] public void Stop(KSPActionParam param) {
+		[KSPAction("Stop")] public void StopAction(KSPActionParam param) {
 			if(recording) Toggle();
 		}
 
