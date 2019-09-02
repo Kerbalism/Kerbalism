@@ -10,9 +10,7 @@ namespace KERBALISM
 	public class HardDrive : PartModule, IScienceDataContainer, ISpecifics, IModuleInfo, IPartMassModifier, IPartCostModifier
 	{
 		[KSPField] public double dataCapacity = -1;             // base drive capacity, in Mb. -1 = unlimited
-		[KSPField] public double effectiveDataCapacity = -1;    // effective drive capacity, in Mb. -1 = unlimited
 		[KSPField] public int sampleCapacity = -1;              // base drive capacity, in slots. -1 = unlimited
-		[KSPField] public int effectiveSampleCapacity = -1;     // effective drive capacity, in slots. -1 = unlimited
 		[KSPField] public string title = "Kerbodyne ZeroBit";   // drive name to be displayed in file manager
 		[KSPField] public string experiment_id = string.Empty;  // if set, restricts write access to the experiment on the same part, with the given experiment_id.
 
@@ -25,7 +23,8 @@ namespace KERBALISM
 		[KSPField] public float sampleCapacityMass = 0;         // added part mass per sample capacity
 
 		[KSPField(isPersistant = true)] public uint hdId = 0;
-
+		[KSPField(isPersistant = true)] public double effectiveDataCapacity = -1;    // effective drive capacity, in Mb. -1 = unlimited
+		[KSPField(isPersistant = true)] public int effectiveSampleCapacity = -1;     // effective drive capacity, in slots. -1 = unlimited
 
 		[KSPField(isPersistant = false, guiName = "Data Capacity", guiActive = false, guiActiveEditor = false), UI_ChooseOption(scene = UI_Scene.Editor)]
 		public string dataCapacityUI = "0";
