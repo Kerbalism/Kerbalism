@@ -17,10 +17,10 @@ namespace KERBALISM
 		[KSPField] public int maxDataCapacityFactor = 4;        // how much additional data capacity to allow in editor
 		[KSPField] public int maxSampleCapacityFactor = 4;      // how much additional data capacity to allow in editor
 
-		[KSPField] public float dataCapacityCost = 0;           // added part cost per data capacity
-		[KSPField] public float dataCapacityMass = 0;           // added part mass per data capacity
-		[KSPField] public float sampleCapacityCost = 0;         // added part cost per sample capacity
-		[KSPField] public float sampleCapacityMass = 0;         // added part mass per sample capacity
+		[KSPField] public float dataCapacityCost = 400;         // added part cost per data capacity
+		[KSPField] public float dataCapacityMass = 0.005f;      // added part mass per data capacity
+		[KSPField] public float sampleCapacityCost = 300;       // added part cost per sample capacity
+		[KSPField] public float sampleCapacityMass = 0.008f;    // added part mass per sample capacity
 
 		[KSPField(isPersistant = true)] public uint hdId = 0;
 		[KSPField(isPersistant = true)] public double effectiveDataCapacity = -1;    // effective drive capacity, in Mb. -1 = unlimited
@@ -151,21 +151,38 @@ namespace KERBALISM
 
 			if (Lib.IsEditor())
 			{
+				bool update = false;
 				if(dataCapacities != null)
 				{
-					foreach(var c in dataCapacities)
-						if (c.Key == dataCapacityUI) effectiveDataCapacity = c.Value;
+					foreach (var c in dataCapacities)
+						if (c.Key == dataCapacityUI)
+						{
+							effectiveDataCapacity = c.Value;
+							update = true;
+						}
 				}
 
 				if (sampleCapacities != null)
 				{
 					foreach (var c in sampleCapacities)
-						if (c.Key == sampleCapacityUI) effectiveSampleCapacity = c.Value;
+						if (c.Key == sampleCapacityUI)
+						{
+							effectiveSampleCapacity = c.Value;
+							update = true;
+						}
 				}
 
 				drive.dataCapacity = effectiveDataCapacity;
 				drive.sampleCapacity = effectiveSampleCapacity;
-				UpdateCapacity();
+
+				Fields["sampleCapacityUI"].guiActiveEditor = sampleCapacity > 0;
+				Fields["dataCapacityUI"].guiActiveEditor = dataCapacity > 0;
+
+				if (update)
+				{
+					GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+					UpdateCapacity();
+				}
 			}
 
 			if (Lib.IsFlight())
@@ -417,9 +434,9 @@ namespace KERBALISM
 		public float GetModuleMass(float defaultMass, ModifierStagingSituation sit) {
 			double result = totalSampleMass;
 			if (effectiveSampleCapacity > 0)
-				result += effectiveSampleCapacity * sampleCapacityMass;
+				result += (effectiveSampleCapacity - sampleCapacity) * sampleCapacityMass;
 			if (effectiveDataCapacity > 0)
-				result += effectiveDataCapacity * dataCapacityMass;
+				result += (effectiveDataCapacity - dataCapacity) * dataCapacityMass;
 			return (float)result;
 		}
 		public ModifierChangeWhen GetModuleMassChangeWhen() { return ModifierChangeWhen.CONSTANTLY; }
@@ -428,9 +445,9 @@ namespace KERBALISM
 		{
 			double result = 0;
 			if (effectiveSampleCapacity > 0)
-				result += effectiveSampleCapacity * sampleCapacityCost;
+				result += (effectiveSampleCapacity - sampleCapacity) * sampleCapacityCost;
 			if (effectiveDataCapacity > 0)
-				result += effectiveDataCapacity * dataCapacityCost;
+				result += (effectiveDataCapacity - dataCapacity) * dataCapacityCost;
 			return (float)result;
 		}
 		public ModifierChangeWhen GetModuleCostChangeWhen() { return ModifierChangeWhen.CONSTANTLY; }
