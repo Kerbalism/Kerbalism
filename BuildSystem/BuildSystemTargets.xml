@@ -247,8 +247,8 @@
       The only practical workaround would be to setup a windows build server somewhere and get the full PDBs from it
       -->
     <Message Condition="'$(OS)' == 'Windows_NT'" Text="[KERBALISM-BUILD-DEBUG] Windows build : generating mono debug mdb files..." Importance="high" />
-    <Exec Condition="'$(OS)' == 'Windows_NT'" Command="$(UtilityPath)\win_pdb2mdb\pdb2mdb.exe $(OutputPathAbs)\Kerbalism.dll" />
-    <Exec Condition="'$(OS)' == 'Windows_NT'" Command="$(UtilityPath)\win_pdb2mdb\pdb2mdb.exe $(OutputPathAbs)\KerbalismBootstrap.dll" />
+    <Exec Condition="'$(OS)' == 'Windows_NT'" Command="$(UtilityPath)\win_pdb2mdb\pdb2mdb.exe &quot;$(OutputPathAbs)\Kerbalism.dll&quot;" />
+    <Exec Condition="'$(OS)' == 'Windows_NT'" Command="$(UtilityPath)\win_pdb2mdb\pdb2mdb.exe &quot;$(OutputPathAbs)\KerbalismBootstrap.dll&quot;" />
 
     <!-- If requested in UserConfigDevEnv.xml, copy gamedata -->
     <ItemGroup>
