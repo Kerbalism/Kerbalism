@@ -7,38 +7,110 @@ using UnityEngine;
 namespace KERBALISM
 {
 
-	public class HardDrive : PartModule, IScienceDataContainer, ISpecifics, IModuleInfo, IPartMassModifier
+	public class HardDrive : PartModule, IScienceDataContainer, ISpecifics, IModuleInfo, IPartMassModifier, IPartCostModifier
 	{
-		[KSPField] public double dataCapacity = -1;             // drive capacity, in Mb. -1 = unlimited
-		[KSPField] public int sampleCapacity = -1;              // drive capacity, in slots. -1 = unlimited
+		[KSPField] public double dataCapacity = -1;             // base drive capacity, in Mb. -1 = unlimited
+		[KSPField] public double effectiveDataCapacity = -1;    // effective drive capacity, in Mb. -1 = unlimited
+		[KSPField] public int sampleCapacity = -1;              // base drive capacity, in slots. -1 = unlimited
+		[KSPField] public int effectiveSampleCapacity = -1;     // effective drive capacity, in slots. -1 = unlimited
 		[KSPField] public string title = "Kerbodyne ZeroBit";   // drive name to be displayed in file manager
 		[KSPField] public string experiment_id = string.Empty;  // if set, restricts write access to the experiment on the same part, with the given experiment_id.
 
+		[KSPField] public int maxDataCapacityFactor = 4;        // how much additional data capacity to allow in editor
+		[KSPField] public int maxSampleCapacityFactor = 4;      // how much additional data capacity to allow in editor
+
+		[KSPField] public float dataCapacityCost = 0;           // added part cost per data capacity
+		[KSPField] public float dataCapacityMass = 0;           // added part mass per data capacity
+		[KSPField] public float sampleCapacityCost = 0;         // added part cost per sample capacity
+		[KSPField] public float sampleCapacityMass = 0;         // added part mass per sample capacity
+
 		[KSPField(isPersistant = true)] public uint hdId = 0;
+
+
+		[KSPField(isPersistant = false, guiName = "Data Capacity", guiActive = false, guiActiveEditor = false), UI_ChooseOption(scene = UI_Scene.Editor)]
+		public string dataCapacityUI = "0";
+		[KSPField(isPersistant = false, guiName = "Sample Capacity", guiActive = false, guiActiveEditor = false), UI_ChooseOption(scene = UI_Scene.Editor)]
+		public string sampleCapacityUI = "0";
 
 		[KSPField(guiActive = true, guiName = "Capacity", guiActiveEditor = true)] public string Capacity;
 
 		private Drive drive;
 		private double totalSampleMass;
 
+		List<KeyValuePair<string, double>> dataCapacities = null;
+		List<KeyValuePair<string, int>> sampleCapacities = null;
+
 		public override void OnStart(StartState state)
 		{
 			// don't break tutorial scenarios
 			if (Lib.DisableScenario(this)) return;
 
+			if (Lib.IsEditor())
+			{
+				effectiveDataCapacity = dataCapacity;
+				effectiveSampleCapacity = sampleCapacity;
+
+				if(dataCapacity > 0 && maxDataCapacityFactor > 0)
+				{
+					Fields["dataCapacityUI"].guiActiveEditor = true;
+					var o =(UI_ChooseOption)Fields["dataCapacityUI"].uiControlEditor;
+
+					dataCapacities = GetDataCapacitySizes();
+					dataCapacityUI = dataCapacities[0].Key;
+					effectiveDataCapacity = dataCapacities[0].Value;
+
+					string[] dataOptions = new string[dataCapacities.Count];
+					for(int i = 0; i < dataCapacities.Count; i++)
+						dataOptions[i] = Lib.HumanReadableDataSize(dataCapacities[i].Value);
+					o.options = dataOptions;
+				}
+
+				if (sampleCapacity > 0 && maxSampleCapacityFactor > 0)
+				{
+					Fields["sampleCapacityUI"].guiActiveEditor = true;
+					var o = (UI_ChooseOption)Fields["sampleCapacityUI"].uiControlEditor;
+
+					sampleCapacities = GetSampleCapacitySizes();
+					sampleCapacityUI = sampleCapacities[0].Key;
+					effectiveSampleCapacity = sampleCapacities[0].Value;
+
+					string[] sampleOptions = new string[sampleCapacities.Count];
+					for (int i = 0; i < sampleCapacities.Count; i++)
+						sampleOptions[i] = Lib.HumanReadableSampleSize(sampleCapacities[i].Value);
+					o.options = sampleOptions;
+				}
+			}
+
 			if (Lib.IsFlight() && hdId == 0) hdId = part.flightID;
 			if (drive == null)
 			{
 				if (!Lib.IsFlight())
-					drive = new Drive(title, dataCapacity, sampleCapacity);
+					drive = new Drive(title, effectiveDataCapacity, effectiveSampleCapacity);
 				else
-					drive = DB.Drive(hdId, title, dataCapacity, sampleCapacity);
+					drive = DB.Drive(hdId, title, effectiveDataCapacity, effectiveSampleCapacity);
 			}
+
 
 			if (vessel != null) Cache.RemoveVesselObjectsCache(vessel, "drives");
 			drive.is_private |= experiment_id.Length > 0;
 
 			UpdateCapacity();
+		}
+
+		protected List<KeyValuePair<string, double>> GetDataCapacitySizes()
+		{
+			List<KeyValuePair<string, double>> result = new List<KeyValuePair<string, double>>();
+			for(var i = 1; i <= maxDataCapacityFactor; i++)
+				result.Add(new KeyValuePair<string, double>(Lib.HumanReadableDataSize(dataCapacity * i), dataCapacity * i));
+			return result;
+		}
+
+		protected List<KeyValuePair<string, int>> GetSampleCapacitySizes()
+		{
+			List<KeyValuePair<string, int>> result = new List<KeyValuePair<string, int>>();
+			for (var i = 1; i <= maxSampleCapacityFactor; i++)
+				result.Add(new KeyValuePair<string, int>(Lib.HumanReadableSampleSize(sampleCapacity * i), sampleCapacity * i));
+			return result;
 		}
 
 		public override void OnLoad(ConfigNode node)
@@ -60,7 +132,7 @@ namespace KERBALISM
 			// register the drive in the kerbalism DB
 			// this needs to be done only once just after launch
 			hdId = part.flightID;
-			drive = DB.Drive(hdId, title, dataCapacity, sampleCapacity);
+			drive = DB.Drive(hdId, title, effectiveDataCapacity, effectiveSampleCapacity);
 			drive.is_private = experiment_id.Length > 0;
 
 			UpdateCapacity();
@@ -77,7 +149,26 @@ namespace KERBALISM
 		{
 			if (drive == null)
 				return;
-			
+
+			if (Lib.IsEditor())
+			{
+				if(dataCapacities != null)
+				{
+					foreach(var c in dataCapacities)
+						if (c.Key == dataCapacityUI) effectiveDataCapacity = c.Value;
+				}
+
+				if (sampleCapacities != null)
+				{
+					foreach (var c in sampleCapacities)
+						if (c.Key == sampleCapacityUI) effectiveSampleCapacity = c.Value;
+				}
+
+				drive.dataCapacity = effectiveDataCapacity;
+				drive.sampleCapacity = effectiveSampleCapacity;
+				UpdateCapacity();
+			}
+
 			if (Lib.IsFlight())
 			{
 				// show DATA UI button, with size info
@@ -116,15 +207,15 @@ namespace KERBALISM
 			foreach (var sample in drive.samples.Values) mass += sample.mass;
 			totalSampleMass = mass;
 
-			if (dataCapacity < 0 || sampleCapacity < 0 || IsPrivate())
+			if (effectiveDataCapacity < 0 || effectiveSampleCapacity < 0 || IsPrivate())
 			{
 				Fields["Capacity"].guiActive = false;
 				Fields["Capacity"].guiActiveEditor = false;
 				return;
 			}
 
-			double availableDataCapacity = dataCapacity;
-			int availableSlots = sampleCapacity;
+			double availableDataCapacity = effectiveDataCapacity;
+			int availableSlots = effectiveSampleCapacity;
 
 			if (Lib.IsFlight())
 			{
@@ -324,8 +415,26 @@ namespace KERBALISM
 		public Callback<Rect> GetDrawModulePanelCallback() { return null; }
 
 		// module mass support
-		public float GetModuleMass(float defaultMass, ModifierStagingSituation sit) { return (float)totalSampleMass; }
+		public float GetModuleMass(float defaultMass, ModifierStagingSituation sit) {
+			double result = totalSampleMass;
+			if (effectiveSampleCapacity > 0)
+				result += effectiveSampleCapacity * sampleCapacityMass;
+			if (effectiveDataCapacity > 0)
+				result += effectiveDataCapacity * dataCapacityMass;
+			return (float)result;
+		}
 		public ModifierChangeWhen GetModuleMassChangeWhen() { return ModifierChangeWhen.CONSTANTLY; }
+
+		public float GetModuleCost(float defaultCost, ModifierStagingSituation sit)
+		{
+			double result = 0;
+			if (effectiveSampleCapacity > 0)
+				result += effectiveSampleCapacity * sampleCapacityCost;
+			if (effectiveDataCapacity > 0)
+				result += effectiveDataCapacity * dataCapacityCost;
+			return (float)result;
+		}
+		public ModifierChangeWhen GetModuleCostChangeWhen() { return ModifierChangeWhen.CONSTANTLY; }
 	}
 
 
