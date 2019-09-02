@@ -358,13 +358,6 @@ namespace KERBALISM
 				FixIVA = false;
 			}
 
-			if(max_pressure < Settings.PressureThreshold && Lib.IsFlight())
-			{
-				VesselData vd = vessel.KerbalismData();
-				// TODO : maxPressure is both set from here and evaluated in the VesselData update, a sure sign that this is is a buggy mess
-				vd.maxPressure = Math.Min(vd.maxPressure, max_pressure);
-			}
-
 			// state machine
 			switch (state)
 			{

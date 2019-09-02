@@ -640,7 +640,7 @@ namespace KERBALISM
 			// add extern radiation
 			radiation += PreferencesStorm.Instance.ExternRadiation;
 
-
+			UpdateSunShieldingFactor(v);
 
 			// if there is a storm in progress
 			if (Storm.InProgress(v))
@@ -648,7 +648,11 @@ namespace KERBALISM
 				// inside a magnetopause (except heliosphere), blackout the signal
 				// outside, add storm radiations modulated by sun visibility
 				if (magnetosphere) blackout = true;
-				else radiation += PreferencesStorm.Instance.StormRadiation * sunlight;
+				else
+				{
+					var vd = v.KerbalismData();
+					radiation += PreferencesStorm.Instance.StormRadiation * sunlight * vd.RadiationSunShieldingFactor;
+				}
 			}
 			
 			// apply gamma transparency if inside atmosphere
@@ -668,6 +672,46 @@ namespace KERBALISM
 			return radiation;
 		}
 
+		/// <summary> update habitat sun shielding factor for loaded vessels
+		/// TODO do this for one habitat at a time only
+		/// </summary>
+		public static void UpdateSunShieldingFactor(Vessel v)
+		{
+			if (!v.loaded) return;
+
+			var vd = v.KerbalismData();
+			var habitats = Lib.FindModules<Habitat>(v);
+			double blockingMass = 0;
+
+			foreach (var habitat in habitats)
+			{
+				var habitatPosition = habitat.part.transform.position;
+
+				Ray r = new Ray(habitatPosition, vd.EnvMainSun.Direction);
+				var hits = Physics.RaycastAll(r, 2000);
+				foreach (var hit in hits)
+				{
+					if (hit.collider != null && hit.collider.gameObject != null)
+					{
+						Part blockingPart = Part.GetComponentUpwards<Part>(hit.collider.gameObject);
+						if (blockingPart == null || blockingPart == habitat.part) continue;
+						var mass = blockingPart.mass + blockingPart.GetResourceMass();
+						blockingMass += mass * 1000; // KSP masses are in tons
+					}
+				}
+			}
+
+			// the following is guesswork:
+
+			// radiation has to pass through that part mass in a straight line.
+			// use the cubic root of the part mass as radiation damping factor, since the ray
+			// doesn't have to go through the total mass, just through that one line
+
+			// the shielding effect is the inverse of the cubic root of the part mass,
+			// multiplied by a low mass shielding effect coefficient
+			var massShielding = 0.3 * Math.Pow(blockingMass, 1.0 / 3.0);
+			vd.RadiationSunShieldingFactor = 1 / Math.Max(1, massShielding);
+		}
 
 		// return the surface radiation for the body specified (used by body info panel)
 		public static double ComputeSurface(CelestialBody b, double gamma_transparency)

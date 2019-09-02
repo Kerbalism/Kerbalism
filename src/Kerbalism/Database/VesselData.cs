@@ -32,10 +32,6 @@ namespace KERBALISM
 		// TODO : transmitting is both evaluated here and set from Science.Update(), a sure sign that the handling of this is a huge mess
 		public string transmitting;
 
-		/// <summary>max. attainable pressure on this vessel</summary>
-		// TODO: (GOT) maxPressure should be either evaluated in VesselData or set from Habitat, but it can't be both, there is something deeply wrong here !
-		public double maxPressure = 1.0;
-
 		#endregion
 
 		#region non-evaluated persisted fields
@@ -162,14 +158,7 @@ namespace KERBALISM
 		/// <summary> [environment] List of all stars/suns and the related data/calculations for the current vessel</summary>
 		public List<SunInfo> EnvSunsInfo => sunsInfo; List<SunInfo> sunsInfo;
 
-		/// <summary> all active emitters on this vessel </summary>
-		List<Emitter> emitters;
-		public List<Emitter> Emitters()
-		{
-			if (emitters != null) return emitters;
-			emitters = Lib.FindModules<Emitter>(Vessel);
-			return emitters;
-		}
+		public double RadiationSunShieldingFactor;
 
 		public class SunInfo
 		{
@@ -290,7 +279,6 @@ namespace KERBALISM
 				if (vd.sunlightFactor > 0.99) vd.sunlightFactor = 1.0;
 			}
 		}
-
 		#endregion
 
 		#region evaluated vessel state information properties
@@ -355,11 +343,16 @@ namespace KERBALISM
 		#endregion
 
 		public ScienceLog ScienceLog { get; } = new ScienceLog();
+		public VesselCache Cache => cache;
+
+		VesselCache cache;
 
 		public void Initialize(Vessel v)
 		{
 			VesselId = Lib.VesselID(v);
 			Vessel = v;
+
+			cache = new VesselCache(v);
 
 			EvaluateValidity(v);
 			if (!IsValid) return;
@@ -430,20 +423,20 @@ namespace KERBALISM
 
 		public void UpdateOnVesselModified(Vessel v)
 		{
-			emitters = null;
+			cache.Clear();
 			Update(v);
 			if (IsValid) EvaluateStatus();
 		}
 
 		public void UpdateOnDock()
 		{
+			cache.Clear();
 			this.Vessel = null;
 			msg_belt = false;
 			msg_signal = false;
 			storm_age = 0.0;
 			storm_time = 0.0;
 			storm_state = 0;
-			emitters = null;
 			supplies.Clear();
 			scansat_id.Clear();
 		}
@@ -490,6 +483,9 @@ namespace KERBALISM
 			storm_time = Lib.ConfigValue(node, "storm_time", 0.0);
 			storm_age = Lib.ConfigValue(node, "storm_age", 0.0);
 			storm_state = Lib.ConfigValue(node, "storm_state", 0u);
+
+			RadiationSunShieldingFactor = Lib.ConfigValue(node, "RadiationSunShieldingFactor", 0.0);
+
 			computer = node.HasNode("computer") ? new Computer(node.GetNode("computer")) : new Computer();
 
 			supplies = new Dictionary<string, SupplyData>();
@@ -522,6 +518,9 @@ namespace KERBALISM
 			node.AddValue("storm_time", storm_time);
 			node.AddValue("storm_age", storm_age);
 			node.AddValue("storm_state", storm_state);
+
+			node.AddValue("RadiationSunShieldingFactor", RadiationSunShieldingFactor);
+
 			computer.Save(node.AddNode("computer"));
 
 			var supplies_node = node.AddNode("supplies");
@@ -570,11 +569,7 @@ namespace KERBALISM
 			// habitat data
 			volume = Habitat.Tot_volume(Vessel);
 			surface = Habitat.Tot_surface(Vessel);
-
-			// TODO : more maxPressure mess ??!!??
-			if (Cache.HasVesselObjectsCache(Vessel, "max_pressure"))
-				maxPressure = Cache.VesselObjectsCache<double>(Vessel, "max_pressure");
-			pressure = Math.Min(maxPressure, Habitat.Pressure(Vessel));
+			pressure = Habitat.Pressure(Vessel);
 
 			evas = (uint)(Math.Max(0, ResourceCache.GetResource(Vessel, "Nitrogen").Amount - 330) / PreferencesLifeSupport.Instance.evaAtmoLoss);
 			poisoning = Habitat.Poisoning(Vessel);
@@ -645,9 +640,8 @@ namespace KERBALISM
 
 			// other stuff
 			gravioli = Sim.Graviolis(Vessel);
-
-
 		}
+
 		#endregion
 	}
 } // KERBALISM

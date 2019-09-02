@@ -129,7 +129,7 @@ namespace KERBALISM
 		}
 
 		/// <summary> record deferred consumption of a resource (shortcut) </summary>
-		/// <param name="brokerName">short ui-friendly name for the consumer</param>
+		/// <param name="tag">short ui-friendly name for the consumer</param>
 		public void Consume(Vessel v, string resource_name, double quantity, string tag)
 		{
 			GetResource(v, resource_name).Consume(quantity, tag);
@@ -619,7 +619,7 @@ namespace KERBALISM
 
 		/// <summary>
 		/// Execute the recipe and record deferred consumption/production for inputs/ouputs.
-		/// This need to be called multiple times until left <= 0.0 for complete execution of the recipe.
+		/// This need to be called multiple times until left &lt;= 0.0 for complete execution of the recipe.
 		/// return true if recipe execution is completed, false otherwise
 		/// </summary>
 		private bool ExecuteRecipeStep(Vessel v, VesselResources resources)
@@ -841,9 +841,6 @@ namespace KERBALISM
 					}
 				}
 			}
-
-			v.KerbalismData().maxPressure = max_pressure; // TODO: (GOT) max_pressure should be either evaluated in VesselData or set here, but it can't be both, there is something deeply wrong here !
-			Cache.SetVesselObjectsCache<double>(v, "max_pressure", max_pressure);
 
 			if (!equalize) return;
 

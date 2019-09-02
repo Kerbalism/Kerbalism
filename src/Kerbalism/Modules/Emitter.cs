@@ -45,32 +45,28 @@ namespace KERBALISM
 			active_anim.Still(running ? 0.0 : 1.0);
 		}
 
-		public class ShieldingPartInfo
+		public class HabitatInfo
 		{
 			public Habitat habitat;
-			// public List<Part> collidingParts;
 			public float distance;
 
-			public ShieldingPartInfo(Habitat habitat, float distance)
+			public HabitatInfo(Habitat habitat, float distance)
 			{
 				this.habitat = habitat;
 				this.distance = distance;
-				// collidingParts = new List<Part>();
 			}
 		}
-		List<ShieldingPartInfo> shieldingPartInfos = null;
+		List<HabitatInfo> habitatInfos = null;
 
 		public void Recalculate()
 		{
-			shieldingPartInfos = null;
+			habitatInfos = null;
 			CalculateRadiationImpact();
 		}
 
-		public void RaycastParts()
+		public void BuildHabitatInfos()
 		{
-			if (shieldingPartInfos != null) return;
-
-			// find all parts that intersect with the line from the emitter to the habitat
+			if (habitatInfos != null) return;
 			if (part.transform == null) return;
 			var emitterPosition = part.transform.position;
 
@@ -92,15 +88,15 @@ namespace KERBALISM
 				habitats = vessel.FindPartModulesImplementing<Habitat>();
 			}
 
-			shieldingPartInfos = new List<ShieldingPartInfo>();
+			habitatInfos = new List<HabitatInfo>();
 
 			foreach (var habitat in habitats)
 			{
 				var habitatPosition = habitat.part.transform.position;
 				var vector = habitatPosition - emitterPosition;
 
-				ShieldingPartInfo spi = new ShieldingPartInfo(habitat, vector.magnitude);
-				shieldingPartInfos.Add(spi);
+				HabitatInfo spi = new HabitatInfo(habitat, vector.magnitude);
+				habitatInfos.Add(spi);
 
 				/*
 				Ray r = new Ray(emitterPosition, vector);
@@ -127,16 +123,16 @@ namespace KERBALISM
 				return true;
 			}
 
-			if (shieldingPartInfos == null) RaycastParts();
-			if (shieldingPartInfos == null) return false;
+			if (habitatInfos == null) BuildHabitatInfos();
+			if (habitatInfos == null) return false;
 
 			radiation_factor = 0.0;
 			int habitatCount = 0;
 
-			foreach(var spi in shieldingPartInfos)
+			foreach(var hi in habitatInfos)
 			{
 				// radiation decreases with 1/4 * r^2
-				var factor = 1.0 / Math.Max(1, spi.distance * spi.distance / 4.0);
+				var factor = 1.0 / Math.Max(1, hi.distance * hi.distance / 4.0);
 
 				/*
 				foreach (var p in spi.collidingParts)
@@ -259,7 +255,7 @@ namespace KERBALISM
 				var vd = n.KerbalismData();
 				if (!vd.IsValid) continue;
 
-				foreach (var emitter in vd.Emitters())
+				foreach (var emitter in vd.Cache.Emitters())
 				{
 					if (emitter.part == null || emitter.part.transform == null) continue;
 					if (emitter.radiation <= 0) continue; // ignore shielding effects here
@@ -320,7 +316,6 @@ namespace KERBALISM
 			return tot;
 		}
 	}
-
 
 } // KERBALISM
 
