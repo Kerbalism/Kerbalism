@@ -22,18 +22,9 @@
 			<KSPMinMinor>5</KSPMinMinor>
 			<KSPMinBuild>0</KSPMinBuild>
 			<KSPMaxMajor>1</KSPMaxMajor>
-      <KSPMaxMinor>6</KSPMaxMinor>
+			<KSPMaxMinor>6</KSPMaxMinor>
 			<KSPMaxBuild>1</KSPMaxBuild>
 			<KSPBuildVersion>1.6.1</KSPBuildVersion>
-		</KBinVersionConstant>
-		<KBinVersionConstant Include="14">
-			<KSPMinMajor>1</KSPMinMajor>
-			<KSPMinMinor>4</KSPMinMinor>
-			<KSPMinBuild>0</KSPMinBuild>
-			<KSPMaxMajor>1</KSPMaxMajor>
-      <KSPMaxMinor>4</KSPMaxMinor>
-			<KSPMaxBuild>5</KSPMaxBuild>
-			<KSPBuildVersion>1.4.5</KSPBuildVersion>
 		</KBinVersionConstant>
 	</ItemGroup>
 </Project>
