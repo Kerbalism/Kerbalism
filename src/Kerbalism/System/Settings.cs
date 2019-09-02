@@ -17,7 +17,10 @@ namespace KERBALISM
 
     public static class Settings
     {
-        public static void Parse()
+		public static string MODS_INCOMPATIBLE = "TacLifeSupport,Snacks,BackgroundResources,DynamicBatteryStorage,KolonyTools,USILifeSupport";
+		public static string MODS_WARNING = "";
+
+		public static void Parse()
         {
             var cfg = Lib.ParseConfig("KerbalismConfig/Kerbalism");
 
@@ -93,10 +96,13 @@ namespace KERBALISM
 			ShieldingEfficiency = Lib.ConfigValue(cfg, "ShieldingEfficiency", 0.9f);
 			StormRadiation = Lib.ConfigValue(cfg, "StormRadiation", 5.0f);
 			ExternRadiation = Lib.ConfigValue(cfg, "ExternRadiation", 0.04f);
+
+			ModsIncompatible = Lib.ConfigValue(cfg, "ModsIncompatible", MODS_INCOMPATIBLE);
+			ModsWarning = Lib.ConfigValue(cfg, "ModsWarning", MODS_WARNING);
 		}
 
-	// profile used
-	public static string Profile;                           // name of profile to use, if any
+		// profile used
+		public static string Profile;                           // name of profile to use, if any
 
         // user-defined features
         public static bool Reliability;                         // component malfunctions and critical failures
@@ -168,6 +174,9 @@ namespace KERBALISM
 		public static float ShieldingEfficiency;
 		public static float StormRadiation;
 		public static float ExternRadiation;
+
+		public static string ModsIncompatible;
+		public static string ModsWarning;
 	}
 
 

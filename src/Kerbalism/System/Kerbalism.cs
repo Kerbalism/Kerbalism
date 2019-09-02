@@ -17,7 +17,7 @@ namespace KERBALISM
 		public void Start()
 		{
 			Icons.Initialize();				// set up the icon textures
-			RemoteTech.EnableInSPC();		// allow RemoteTech Core to run in the Space Center
+			RemoteTech.EnableInSPC();       // allow RemoteTech Core to run in the Space Center
 
 			// Set the loaded trigger to false, this we will load a new
 			// settings after selecting a save game. This is necessary
@@ -33,6 +33,8 @@ namespace KERBALISM
 		// permit global access
 		public static Kerbalism Fetch { get; private set; } = null;
 
+		private static bool didSanityCheck = false;
+
 		//  constructor
 		public Kerbalism()
 		{
@@ -42,6 +44,56 @@ namespace KERBALISM
 			Communications.NetworkInitializing = false;
 
 			SerenityEnabled = Expansions.ExpansionsLoader.IsExpansionInstalled("Serenity");
+		}
+
+		private void SanityCheck()
+		{
+			var incompatibleMods = Lib.Tokenize(Settings.ModsIncompatible.ToLower(), ',');
+			var warningMods = Lib.Tokenize(Settings.ModsIncompatible.ToLower(), ',');
+
+			List<string> incompatibleModsFound = new List<string>();
+			List<string> warningModsFound = new List<string>();
+
+			foreach (var a in AssemblyLoader.loadedAssemblies)
+			{
+				if (incompatibleMods.Contains(a.name.ToLower())) incompatibleModsFound.Add(a.name);
+				if (warningMods.Contains(a.name.ToLower())) warningModsFound.Add(a.name);
+			}
+
+			string msg = string.Empty;
+
+#if !KSP14 // I won't bother to implement the check for KSP 1.4
+			// check for CRP
+			var reslib = PartResourceLibrary.Instance.resourceDefinitions;
+			if (!reslib.Contains("Oxygen") || !reslib.Contains("Water") || !reslib.Contains("Shielding"))
+			{
+				msg += "<color=#FF4500>CommunityResourcePack (CRP) is not installed.</color>\nYou REALLY need CRP for Kerbalism!\n\n";
+			}
+#endif
+
+			if(incompatibleModsFound.Count > 0)
+			{
+				msg += "<color=#FF4500>Mods with known incompatibilities found:</color>\n";
+				foreach (var m in incompatibleModsFound) msg += "- " + m + "\n";
+				msg += "Kerbalism will not run properly with these mods. Please remove them.\n\n";
+			}
+
+			if (warningModsFound.Count > 0)
+			{
+				msg += "<color=#FF4500>Mods with limited compatibility found:</color>\n";
+				foreach (var m in warningModsFound) msg += "- " + m + "\n";
+				msg += "You might have problems with these mods. Consider removing them.\n\n";
+			}
+
+			if (!string.IsNullOrEmpty(msg))
+			{
+				msg = "<b>KERBALISM WARNING</b>\n\n" + msg;
+				ScreenMessage sm = new ScreenMessage(msg, 60, ScreenMessageStyle.UPPER_LEFT);
+				sm.color = Color.cyan;
+				ScreenMessages.PostScreenMessage(sm);
+				ScreenMessages.PostScreenMessage(msg, true);
+				Lib.Log("Sanity check: " + msg);
+			}
 		}
 
 		private void OnDestroy()
@@ -292,6 +344,12 @@ namespace KERBALISM
 
 		void Update()
 		{
+			if (!didSanityCheck)
+			{
+				SanityCheck();
+				didSanityCheck = true;
+			}
+
 			if (!Communications.NetworkInitializing)
 			{
 				Communications.NetworkInitializing = true;
