@@ -12,7 +12,7 @@
     <KSPDevPath>C:\MY\PATH\TO\KSP</KSPDevPath>
 
     <!-- REQUIRED : KSP version compilation constant, must match the version you are using for development -->
-    <!-- See GameData\Kerbalism\VersionConfig.xml for valid values, currently we have 'KSP14', 'KSP15_16' and 'KSP17' -->
+    <!-- See GameData\Kerbalism\VersionConfig.xml for valid values, currently we have 'KSP15_16' and 'KSP17' -->
     <!-- Example : for the Include="15_16" value in VersionConfig.xml, the constant defined here must be formatted "KSP15_16" -->
     <KSPDevVersion>KSP17</KSPDevVersion>
 	

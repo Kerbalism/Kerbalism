@@ -78,7 +78,7 @@ namespace KERBALISM
 			if (ai.strength > -1)
 				return ai;
 
-#if !KSP15_16 && !KSP14
+#if !KSP15_16
 			var cluster = Serenity.GetScienceCluster(v);
 			if (cluster != null)
 				return new AntennaInfoSerenity(v, cluster, storm, ai.transmitting).AntennaInfo();

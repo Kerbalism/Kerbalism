@@ -1089,7 +1089,7 @@ namespace KERBALISM
 				case VesselType.Flag:
 				case VesselType.SpaceObject:
 				case VesselType.Unknown:
-#if !KSP15_16 && !KSP14
+#if !KSP15_16
 				case VesselType.DeployedSciencePart:
 #endif
 					return false;
@@ -1113,7 +1113,7 @@ namespace KERBALISM
 
 		public static bool IsControlUnit(Vessel v)
 		{
-#if !KSP15_16 && !KSP14
+#if !KSP15_16
 			return Serenity.GetScienceCluster(v) != null;
 #else
 			return false;
@@ -1122,7 +1122,7 @@ namespace KERBALISM
 
 		public static bool IsPowered(Vessel v)
 		{
-#if !KSP15_16 && !KSP14
+#if !KSP15_16
 			var cluster = Serenity.GetScienceCluster(v);
 			if (cluster != null)
 				return cluster.IsPowered;
@@ -1482,7 +1482,6 @@ namespace KERBALISM
 		///<summary>poached from https://github.com/blowfishpro/B9PartSwitch/blob/master/B9PartSwitch/Extensions/PartExtensions.cs
 		public static void AddResource(Part p, string res_name, double amount, double capacity)
 		{
-#if !KSP14
 			var reslib = PartResourceLibrary.Instance.resourceDefinitions;
 			// if the resource is not known, log a warning and do nothing
 			if (!reslib.Contains(res_name))
@@ -1528,48 +1527,12 @@ namespace KERBALISM
 
 				resource.amount = amount;
 			}
-#else
-			// if the resource is already in the part
-			if (p.Resources.Contains(res_name))
-			{
-				// add amount and capacity
-				var res = p.Resources[res_name];
-				res.amount += amount;
-				res.maxAmount += capacity;
-			}
-			// if the resource is not already in the part
-			else
-			{
-				// shortcut to resource library
-				var reslib = PartResourceLibrary.Instance.resourceDefinitions;
-
-				// if the resource is not known, log a warning and do nothing
-				if (!reslib.Contains(res_name))
-				{
-					Lib.Log(Lib.BuildString("error while adding ", res_name, ": the resource doesn't exist"));
-					return;
-				}
-
-				// get resource definition
-				var def = reslib[res_name];
-
-				// create the resource
-				ConfigNode res = new ConfigNode("RESOURCE");
-				res.AddValue("name", res_name);
-				res.AddValue("amount", amount);
-				res.AddValue("maxAmount", capacity);
-
-				// add it to the part
-				p.Resources.Add(res);
-			}
-#endif
 		}
 
 		/// <summary> Removes the specified resource amount and capacity from a part,
 		/// the resource is removed completely if the capacity reaches zero </summary>
 		public static void RemoveResource(Part p, string res_name, double amount, double capacity)
 		{
-#if !KSP14
 			// if the resource is not in the part, do nothing
 			if (!p.Resources.Contains(res_name))
 				return;
@@ -1595,28 +1558,6 @@ namespace KERBALISM
 
 				GameEvents.onPartResourceListChange.Fire(p);
 			}
-#else
-			// if the resource is not already in the part, do nothing
-			if (p.Resources.Contains(res_name))
-			{
-				// get the resource
-				var res = p.Resources[res_name];
-
-				// reduce amount and capacity
-				res.amount -= amount;
-				res.maxAmount -= capacity;
-
-				// clamp amount to capacity just in case
-				res.amount = Math.Min(res.amount, res.maxAmount);
-
-				// if the resource is empty
-				if (res.maxAmount <= 0.005) //< deal with precision issues
-				{
-					// remove it
-					p.Resources.Remove(res);
-				}
-			}
-#endif
 		}
 
 		///<summary>note: the resource must exist</summary>

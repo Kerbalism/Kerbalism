@@ -335,7 +335,7 @@ namespace KERBALISM
 			Render_TypeFilterButon(VesselType.Relay);
 			Render_TypeFilterButon(VesselType.EVA);
 
-#if !KSP15_16 && !KSP14
+#if !KSP15_16
 			if (Kerbalism.SerenityEnabled) Render_TypeFilterButon(VesselType.DeployedScienceController);
 #endif
 
@@ -368,7 +368,7 @@ namespace KERBALISM
 				case VesselType.Rover:   return disabled ? Icons.rover_black :   Icons.rover_white;
 				case VesselType.Ship:    return disabled ? Icons.ship_black :    Icons.ship_white;
 				case VesselType.Station: return disabled ? Icons.station_black : Icons.station_white;
-#if !KSP15_16 && !KSP14
+#if !KSP15_16
 				case VesselType.DeployedScienceController: return disabled ? Icons.controller_black : Icons.controller_white;
 #endif
 				default: return Icons.empty; // this really shouldn't happen.
@@ -528,7 +528,7 @@ namespace KERBALISM
 
 		void Indicator_ec(Panel p, Vessel v, VesselData vd)
 		{
-#if !KSP15_16 && !KSP14
+#if !KSP15_16
 			if (v.vesselType == VesselType.DeployedScienceController)
 				return;
 #endif

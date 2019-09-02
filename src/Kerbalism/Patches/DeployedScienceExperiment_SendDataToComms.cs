@@ -1,4 +1,4 @@
-#if !KSP15_16 && !KSP14
+#if !KSP15_16
 using System.Collections.Generic;
 using Harmony;
 using Expansions.Serenity.DeployedScience.Runtime;

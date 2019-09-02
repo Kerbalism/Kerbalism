@@ -62,14 +62,12 @@ namespace KERBALISM
 
 			string msg = string.Empty;
 
-#if !KSP14 // I won't bother to implement the check for KSP 1.4
 			// check for CRP
 			var reslib = PartResourceLibrary.Instance.resourceDefinitions;
 			if (!reslib.Contains("Oxygen") || !reslib.Contains("Water") || !reslib.Contains("Shielding"))
 			{
 				msg += "<color=#FF4500>CommunityResourcePack (CRP) is not installed.</color>\nYou REALLY need CRP for Kerbalism!\n\n";
 			}
-#endif
 
 			if(incompatibleModsFound.Count > 0)
 			{
