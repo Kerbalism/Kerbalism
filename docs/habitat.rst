@@ -21,7 +21,7 @@ Some pseudo-resources are added to each habitat. Each one is used to simulate th
 +-----------------+----------------+---------------------+--------------------------------------+
 | MoistAtmosphere | Set by volume  | Humidity level      | 1 m³ of Saturated water vapor at STP |
 +-----------------+----------------+---------------------+--------------------------------------+
-| Shielding       | Set by surface | Radiation shielding | 1 m² of a 20mm Lead (Pb) layer       |
+| Shielding       | Set by surface | Radiation shielding | 0.075 (alloy composite shielding)    |
 +-----------------+----------------+---------------------+--------------------------------------+
 
 ----------

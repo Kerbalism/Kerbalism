@@ -47,6 +47,7 @@
 * Reliability changes: engine failures depending on ignitions and burn duration, radiation damage to solar panels, transmitters and reaction wheels (Sir Mortimer)
 * Account for distance between radiation emitters (NERVs, RTGs etc.) and habitats when calculating the effect of radiation (Sir Mortimer)
 * EVAs will receive radiation from nearby emitters (Sir Mortimer)
+* Lead was replaced by a lighter alloy composite as a shielding material. For our type of radiation, it provides the same shielding effect with less mass. (Sir Mortimer)
 
 ## v3.0.2 for all versions of KSP from 1.4.0 to 1.7.x
 

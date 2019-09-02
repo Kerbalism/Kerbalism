@@ -515,7 +515,7 @@ namespace KERBALISM
 		// return a verbose description of shielding capability
 		public static string Shielding_to_string(double v)
 		{
-			return v <= double.Epsilon ? "none" : Lib.BuildString((20.0 * v / PreferencesStorm.Instance.shieldingEfficiency).ToString("F2"), " mm Pb");
+			return v <= double.Epsilon ? "none" : Lib.BuildString((20.0 * v / PreferencesStorm.Instance.shieldingEfficiency).ToString("F2"), " mm");
 		}
 
 		// traduce living space value to string
