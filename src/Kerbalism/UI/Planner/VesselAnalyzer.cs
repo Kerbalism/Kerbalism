@@ -157,9 +157,9 @@ namespace KERBALISM.Planner
 						Emitter emitter = m as Emitter;
 						emitter.Recalculate();
 
-						if(emitter.running)
+						if (emitter.running)
 						{
-							if (emitter.radiation > 0) emitted += emitter.radiation * emitter.radiation_factor;
+							if (emitter.radiation > 0) emitted += emitter.radiation * emitter.radiation_impact;
 							else emitted += emitter.radiation;
 						}
 					}

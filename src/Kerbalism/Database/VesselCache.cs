@@ -15,6 +15,7 @@ namespace KERBALISM
 		public void Clear()
 		{
 			emitters = null;
+			RadiationSunShieldingParts = null;
 		}
 
 		private List<Emitter> emitters;
@@ -24,5 +25,7 @@ namespace KERBALISM
 			emitters = Lib.FindModules<Emitter>(vessel);
 			return emitters;
 		}
+
+		public List<Radiation.SunShieldingInfo> RadiationSunShieldingParts { get; internal set; }
 	}
 }

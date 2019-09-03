@@ -158,8 +158,6 @@ namespace KERBALISM
 		/// <summary> [environment] List of all stars/suns and the related data/calculations for the current vessel</summary>
 		public List<SunInfo> EnvSunsInfo => sunsInfo; List<SunInfo> sunsInfo;
 
-		public double RadiationSunShieldingFactor;
-
 		public class SunInfo
 		{
 			/// <summary> reference to the sun/star</summary>
@@ -484,8 +482,6 @@ namespace KERBALISM
 			storm_age = Lib.ConfigValue(node, "storm_age", 0.0);
 			storm_state = Lib.ConfigValue(node, "storm_state", 0u);
 
-			RadiationSunShieldingFactor = Lib.ConfigValue(node, "RadiationSunShieldingFactor", 0.0);
-
 			computer = node.HasNode("computer") ? new Computer(node.GetNode("computer")) : new Computer();
 
 			supplies = new Dictionary<string, SupplyData>();
@@ -518,8 +514,6 @@ namespace KERBALISM
 			node.AddValue("storm_time", storm_time);
 			node.AddValue("storm_age", storm_age);
 			node.AddValue("storm_state", storm_state);
-
-			node.AddValue("RadiationSunShieldingFactor", RadiationSunShieldingFactor);
 
 			computer.Save(node.AddNode("computer"));
 

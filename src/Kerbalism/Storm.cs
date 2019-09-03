@@ -97,9 +97,6 @@ namespace KERBALISM
 			// only consider vessels in interplanetary space
 			if (!Lib.IsSun(v.mainBody)) return;
 
-			// skip unmanned vessels
-			if (vd.CrewCount == 0) return;
-
 			// generate storm time if necessary
 			if (vd.storm_time <= double.Epsilon)
 			{

@@ -15,14 +15,14 @@ namespace KERBALISM
 
 		// persistent
 		[KSPField(isPersistant = true)] public bool running;
-		[KSPField(isPersistant = true)] public double radiation_factor = 1.0; // calculated based on vessel design
+		[KSPField(isPersistant = true)] public double radiation_impact = 1.0; // calculated based on vessel design
 
 		// rmb status
 		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "_")] public string Status;  // rate of radiation emitted/shielded
 
 		// animations
 		Animator active_anim;
-		bool radiation_calculated = false;
+		bool radiation_impact_calculated = false;
 
 		// pseudo-ctor
 		public override void OnStart(StartState state)
@@ -97,20 +97,6 @@ namespace KERBALISM
 
 				HabitatInfo spi = new HabitatInfo(habitat, vector.magnitude);
 				habitatInfos.Add(spi);
-
-				/*
-				Ray r = new Ray(emitterPosition, vector);
-				var hits = Physics.RaycastAll(r, vector.magnitude);
-				foreach (var hit in hits)
-				{
-					if(hit.collider != null && hit.collider.gameObject != null)
-					{
-						Part a = Part.GetComponentUpwards<Part>(hit.collider.gameObject);
-						if (a == habitat.part) continue;
-						if(a != null) spi.collidingParts.Add(a);
-					}
-				}
-				*/
 			}
 		}
 
@@ -119,48 +105,24 @@ namespace KERBALISM
 		{
 			if(radiation < 0)
 			{
-				radiation_factor = 1.0;
+				radiation_impact = 1.0;
 				return true;
 			}
 
 			if (habitatInfos == null) BuildHabitatInfos();
 			if (habitatInfos == null) return false;
 
-			radiation_factor = 0.0;
+			radiation_impact = 0.0;
 			int habitatCount = 0;
 
 			foreach(var hi in habitatInfos)
 			{
-				// radiation decreases with 1/4 * r^2
-				var factor = 1.0 / Math.Max(1, hi.distance * hi.distance / 4.0);
-
-				/*
-				foreach (var p in spi.collidingParts)
-				{
-					double mass = p.mass + p.GetResourceMass();
-					mass *= 1000.0; // KSP masses are in tons
-
-					// the following is guesswork:
-
-					// radiation has to pass through that part mass in a straight line.
-					// use the cubic root of the part mass as radiation damping factor, since the ray
-					// doesn't have to go through the total mass, just through that one line
-
-					// the shielding effect is the inverse of the cubic root of the part mass,
-					// multiplied by a mass shielding effect coefficient
-					var massShielding = 0.6 * Math.Pow(mass, 1.0/3.0);
-					var massFactor = 1.0 / Math.Max(1, massShielding);
-
-					factor *= massFactor;
-				}
-				*/
-
-				radiation_factor += factor;
+				radiation_impact += Radiation.DistanceFactor(1.0, hi.distance);
 				habitatCount++;
 			}
 
 			if (habitatCount > 1)
-				radiation_factor /= habitatCount;
+				radiation_impact /= habitatCount;
 
 			return true;
 		}
@@ -174,8 +136,8 @@ namespace KERBALISM
 
 		public void FixedUpdate()
 		{
-			if (!radiation_calculated)
-				radiation_calculated = CalculateRadiationImpact();
+			if (!radiation_impact_calculated)
+				radiation_impact_calculated = CalculateRadiationImpact();
 
 			// do nothing else in the editor
 			if (Lib.IsEditor()) return;
@@ -265,9 +227,7 @@ namespace KERBALISM
 					var vector = evaPosition - emitterPosition;
 					var distance = vector.magnitude;
 
-					// radiation decreases with 1/4 * r^2
-					var factor = 1.0 / Math.Max(1, distance * distance / 4.0);
-					result += factor * emitter.radiation;
+					result += Radiation.DistanceFactor(emitter.radiation, distance);
 				}
 			}
 
@@ -289,7 +249,7 @@ namespace KERBALISM
 					{
 						if(emitter.running)
 						{
-							if (emitter.radiation > 0) tot += emitter.radiation * emitter.radiation_factor;
+							if (emitter.radiation > 0) tot += emitter.radiation * emitter.radiation_impact;
 							else tot += emitter.radiation; // always account for full shielding effect
 						}
 					}
