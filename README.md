@@ -6,11 +6,11 @@
 
 ## Current version : 3.0.2 
 
-**Download** : **[Github releases]** - **[CKAN]**\
-**Docs & support** : **[Github wiki]** - **[Discord]** - [Github issues] - [KSP forums thread]\
-**License** : [Unlicense] (public domain)\
-**KSP version** : 1.4.x to 1.7.x\
-**Requires** : [Module Manager], [CommunityResourcePack]\
+**Download** : **[Github releases]** - **[CKAN]**  
+**Docs & support** : **[Github wiki]** - **[Discord]** - [Github issues] - [KSP forums thread]  
+**License** : [Unlicense] (public domain)  
+**KSP version** : 1.4.x to 1.7.x  
+**Requires** : [Module Manager], [CommunityResourcePack]  
 **[Mod compatibility]** - [Changelog] - [Dev Builds]
 
 ## Download and installation
@@ -19,7 +19,7 @@
 
 Two packages are available :
 - **Kerbalism** is the core plugin, always required.
-- **KerbalismConfig** is the default configuration pack.\
+- **KerbalismConfig** is the default configuration pack.  
   It can be be replaced by other packs distributed elsewhere.
 
 **Requirements**
@@ -45,7 +45,7 @@ Don't combine packs unless there is explicit instructions to do so.
 
 Checking the **[mod compatibility]** page is **mandatory before installing Kerbalism on a heavily modded game**.
 
-Kerbalism does very custom stuff. This can break other mods. For a lot of mods that breaks or need balancing, we provide support code and configuration patches. However some mods are incompatible because there is too much feature overlap or support is too complex to implement.
+Kerbalism does very custom stuff and can break other mods. For a lot of mods that break or need balancing, we provide support code and configuration patches. However some mods are incompatible because there is too much feature overlap or support is too complex to implement.
 
 ## Documentation, help and bug-reporting
 
@@ -154,17 +154,15 @@ and at the same time challenging system to keep your crew alive. The stock ISRU 
 replaced with an equivalent one that is easier to plan against, as it is now vital for long-term manned missions. The
 means to harvest from atmospheres and oceans is also present, given the importance of atmospheric resources in this regard.
 
-No life-support like mod would be complete without a greenhouse of some kind. The one included in this mod has a
-relatively complete set of input resources and by-products, and some more unique characteristics like a lamp that adapts consumption to natural lighting, emergency harvesting, pressure requirements and radiation tolerance.
+No life-support like mod would be complete without a greenhouse of some kind. The one included in this mod has a relatively complete set of input resources and by-products, and some more unique characteristics like a lamp that adapts consumption to natural lighting, emergency harvesting, pressure requirements and radiation tolerance.
 
 A planetary resource distribution that mimics the real solar system completes the package.
 
 ## RELIABILITY
 
 Components don't last forever in the real world. This is modeled by a simple system that can trigger failures on
-arbitrary modules. Manufacturing quality can be chosen in the editor, per-component, and improve the MTBF but also
-requires extra cost and mass. The crew can inspect and repair malfunctioned components. Redundancy now becomes a key aspect
-of the design phase.
+arbitrary modules. Manufacturing quality can be chosen in the editor, per-component, and improve durability but also
+requires extra cost and mass. The crew can inspect and repair components. Redundancy is a key aspect of the design phase.
 
 ## SIGNAL
 
@@ -172,40 +170,40 @@ Transmission rates are realistic, and scale with distance to the point that it m
 the outer solar system. Data transmission happens transparently in loaded and unloaded vessels. The resulting
 communication system is simple, yet it also results in more realistic vessel and mission designs.
 
-<img src="https://github.com/Kerbalism/Kerbalism/raw/master/misc/img/showcase/experiments.png" align="left">
 
 ## SCIENCE
 
-Experiments don't return their science output instantly, they require some time to run. Some complete in minutes, others
-will take months. Not to worry, experiments can run on vessels in the background, you don't have to keep that vessel loaded.
-There are two different kinds of experiments: sensor readings and samples. Sensor readings are just plain
-data that can be transferred between vessels without extra vehicular activities, they also can be transmitted back directly.
-Samples however require the delicate handling by kerbals, and cannot be transmitted but have to be recovered instead. They
-also can be analyzed in a lab, which converts it to data that can be transmitted. Analyzing takes a long time, happens
-transparently to loaded and unloaded vessels alike, and can't be cheated to create science out of thin air. An interesting
-method is used to bridge existing stock and third-party experiments to the new science system, that works for most
-experiments without requiring ad-hoc support.
+<img src="https://github.com/Kerbalism/Kerbalism/raw/master/misc/img/showcase/experiments.png" align="right">
 
-<img src="https://github.com/Kerbalism/Kerbalism/raw/master/misc/img/showcase/telemetry-demo.gif" align="right">
+Experiments don't return their science output instantly, they require some time to run. Some complete in minutes, others
+will take months. Not to worry, experiments can run on vessels in the background, you don't have to watch your vessel while it
+is collecting or transmitting science.
+
+There are two different kinds of experiments: sensor readings and samples. Sensor readings are just plain
+data that can be transmitted back directly, like a temperature reading or an EVA report. Samples however are physical, they require the delicate handling by kerbals, and cannot be transmitted. Instead they have to be recovered, either by crew or by recovering the experiment on Kerbin. Samples also can be analyzed in a lab, which converts them to data that can be transmitted. Analyzing takes a long time, happens transparently to loaded and unloaded vessels alike, and can't be cheated to create science out of thin air.
+
+We support many of the most popular science mods directly, for others we use an interesting method to bridge existing stock and third-party experiments to the new science system. It works works for most experiments, including Breaking Grounds.
+
 
 ## AUTOMATION
 
-Components can be automated using a minimalist scripting system, with a graphical editor. Scripts are triggered
-manually or by environmental conditions. You can create a script to turn on all the lights as soon as the Sun is not
-visible anymore, or retract all solar panels as soon as you enter an atmosphere etc.
+<img src="https://github.com/Kerbalism/Kerbalism/raw/master/misc/img/showcase/telemetry-demo.gif" align="right">
+
+Components can be controlled and automated using a minimalist scripting system, with a neat little editor. Scripts are triggered manually or by environmental conditions. You can create a script to turn on all the lights as soon as the Sun is not visible anymore, or retract all solar panels as soon as you enter an atmosphere, or extend antennas as soon as you landed. You don't even have to load the vessel to do it, all this can be done from the KSC!
+
 
 ## USER INTERFACE
 
-The UI provided by this mod took more than 5 minutes to write. A planner UI is available in the editor, to help the
-user design around all the new mechanics introduced. The planner analysis include resource estimates, habitat
-informations, redundancy analysis, connectivity simulation, multi-environment radiation details and more. To monitor
-the status of vessels, the monitor UI is also provided. This looks like a simple list of vessels at first, but just
-click on it to discover an ingenuous little organizer that allow to watch vessel telemetry, control components, create
+Kerbalism has a nice user interface with an unique look & feel. A planner UI is available in the editor, to help designing
+missions for all the new mechanics introduced. The planner analysis includes resource estimates, habitat
+information, redundancy analysis, connectivity simulation, multi-environment radiation details and more. To monitor
+the status of vessels, there is a monitor window. It looks like a simple list of vessels at first, but just
+click on it to discover an ingenious little organizer that allows to watch vessel telemetry, control components, create
 scripts, manage your science data including transmission and analysis, and configure the alerts per-vessel.
 
-<img src="https://github.com/Kerbalism/Kerbalism/raw/master/misc/img/showcase/planner-demo.gif"  align="left">
-
 ## MODULES EMULATION
+
+<img src="https://github.com/Kerbalism/Kerbalism/raw/master/misc/img/showcase/planner-demo.gif"  align="left">
 
 Most stock modules and some third-party ones are emulated for what concerns the mechanics introduced by the mod. The
 level of support depends on the specific module, and may include: simulation of resource consumption and production in
