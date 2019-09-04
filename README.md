@@ -9,7 +9,7 @@
 **Download** : **[Github releases]** - **[CKAN]**  
 **Docs & support** : **[Github wiki]** - **[Discord]** - [Github issues] - [KSP forums thread]  
 **License** : [Unlicense] (public domain)  
-**KSP version** : 1.4.x to 1.7.x  
+**KSP version** : 1.5.x to 1.7.x  
 **Requires** : [Module Manager], [CommunityResourcePack]  
 **[Mod compatibility]** - [Changelog] - [Dev Builds]
 
