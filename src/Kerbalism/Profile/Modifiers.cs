@@ -39,7 +39,7 @@ namespace KERBALISM
 						break;
 
 					case "radiation":
-						k *= vd.EnvRadiation;
+						k *= vd.EnvHabitatRadiation;
 						break;
 
 					case "shielding":

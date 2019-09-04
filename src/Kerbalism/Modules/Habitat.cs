@@ -14,9 +14,7 @@ namespace KERBALISM
 		[KSPField] public bool toggle = true;                       // show the enable/disable toggle
 
 		[KSPField] public double max_pressure = 1.0;                // max. sustainable pressure, in percent of sea level
-		// for now this won't do anything else but prohibit the "pressurized" flag to go to true in a vessel.
-		// with a reimplementation of the habitat code (that won't use hardcoded resource names any more),
-		// this should act as a pressure valve that releases excess pressure during ascent.
+		// for now this won't do anything
 
 		// persistence
 		[KSPField(isPersistant = true)] public State state = State.enabled;
@@ -315,6 +313,11 @@ namespace KERBALISM
 					Set_pressurized(false);
 					break;
 			}
+
+#if DEBUG
+			status_str += " Radiation " + Lib.HumanReadableRadiation(vessel.KerbalismData().EnvHabitatRadiation);
+#endif
+
 			Events["Toggle"].guiName = Lib.StatusToggle("Habitat", status_str);
 
 			// Changing this animation when we expect rotation will not work because

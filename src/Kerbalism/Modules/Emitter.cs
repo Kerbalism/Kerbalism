@@ -217,7 +217,7 @@ namespace KERBALISM
 				var vd = n.KerbalismData();
 				if (!vd.IsValid) continue;
 
-				foreach (var emitter in vd.Cache.Emitters())
+				foreach (var emitter in Lib.FindModules<Emitter>(v))
 				{
 					if (emitter.part == null || emitter.part.transform == null) continue;
 					if (emitter.radiation <= 0) continue; // ignore shielding effects here

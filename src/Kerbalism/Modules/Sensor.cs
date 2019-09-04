@@ -81,6 +81,7 @@ namespace KERBALISM
 			{
 				case "temperature": return Math.Min(vd.EnvTemperature / 11000.0, 1.0);
 				case "radiation": return Math.Min(vd.EnvRadiation * 3600.0 / 11.0, 1.0);
+				case "habitat_radiation": return Math.Min(vd.EnvHabitatRadiation * 3600.0 / 11.0, 1.0);
 				case "pressure": return Math.Min(v.mainBody.GetPressure(v.altitude) / Sim.PressureAtSeaLevel() / 11.0, 1.0);
 				case "gravioli": return Math.Min(vd.EnvGravioli, 1.0);
 			}
@@ -94,7 +95,8 @@ namespace KERBALISM
 			{
 				case "temperature": return vd.EnvTemperature;
 				case "radiation": return vd.EnvRadiation;
-				case "pressure": return v.mainBody.GetPressure(v.altitude); ;
+				case "habitat_radiation": return vd.EnvHabitatRadiation;
+				case "pressure": return v.mainBody.GetPressure(v.altitude);
 				case "gravioli": return vd.EnvGravioli;
 			}
 			return 0.0;
@@ -107,6 +109,7 @@ namespace KERBALISM
 			{
 				case "temperature": return Lib.HumanReadableTemp(vd.EnvTemperature);
 				case "radiation": return Lib.HumanReadableRadiation(vd.EnvRadiation);
+				case "habitat_radiation": return Lib.HumanReadableRadiation(vd.EnvHabitatRadiation);
 				case "pressure": return Lib.HumanReadablePressure(v.mainBody.GetPressure(v.altitude));
 				case "gravioli": return vd.EnvGravioli < 0.33 ? "nothing here" : vd.EnvGravioli < 0.66 ? "almost one" : "WOW!";
 			}
@@ -128,7 +131,13 @@ namespace KERBALISM
 					);
 
 				case "radiation":
-					return string.Empty;
+				case "habitat_radiation":
+					return Lib.BuildString
+					(
+						"<align=left />",
+						String.Format("{0,-14}\t<b>{1}</b>\n", "environment", Lib.HumanReadableRadiation(vd.EnvRadiation)),
+						String.Format("{0,-14}\t<b>{1}</b>\n", "habitats", Lib.HumanReadableRadiation(vd.EnvHabitatRadiation))
+					);
 
 				case "pressure":
 					return vd.EnvUnderwater

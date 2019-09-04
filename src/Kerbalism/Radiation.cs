@@ -566,7 +566,7 @@ namespace KERBALISM
 
 		// return the total environent radiation at position specified
 		public static double Compute(Vessel v, Vector3d position, double gamma_transparency, double sunlight, out bool blackout,
-									 out bool magnetosphere, out bool inner_belt, out bool outer_belt, out bool interstellar)
+									 out bool magnetosphere, out bool inner_belt, out bool outer_belt, out bool interstellar, out double shieldedRadiation)
 		{
 			// prepare out parameters
 			blackout = false;
@@ -574,6 +574,7 @@ namespace KERBALISM
 			inner_belt = false;
 			outer_belt = false;
 			interstellar = false;
+			shieldedRadiation = 0.0;
 
 			// no-op when Radiation is disabled
 			if (!Features.Radiation) return 0.0;
@@ -632,8 +633,12 @@ namespace KERBALISM
 						{
 							// radiation = r0 / (4 * pi * AU^2)
 							// r0 = radiation * (4 * pi * AU^2)
-							var r0 = rb.radiation_gamma * 4 * Math.PI * Sim.AU * Sim.AU / 3600.0;
-							radiation += r0 / (4 * Math.PI * distance * distance);
+							var r0 = rb.radiation_gamma * 4 * Math.PI * Sim.AU * Sim.AU;
+							var r1 = DistanceFactor(r0, distance);
+							radiation += r1;
+#if DEBUG
+							Lib.Log("Vessel " + v + " body " + body + " gamma radiation: " + Lib.HumanReadableRadiation(rb.radiation_gamma) + " r0 " + Lib.HumanReadableRadiation(r0) + " r1 " + Lib.HumanReadableRadiation(r1));
+#endif
 						}
 					}
 				}
@@ -645,44 +650,45 @@ namespace KERBALISM
 			// add extern radiation
 			radiation += PreferencesStorm.Instance.ExternRadiation;
 
+			// apply gamma transparency if inside atmosphere
+			radiation *= gamma_transparency;
+
 			BuildRadiationSunShieldingParts(v);
+			shieldedRadiation = radiation;
 
 			// if there is a storm in progress
-			if (Storm.InProgress(v))
+			if (true || Storm.InProgress(v))
 			{
 				// inside a magnetopause (except heliosphere), blackout the signal
 				// outside, add storm radiations modulated by sun visibility
 				if (magnetosphere) blackout = true;
-				else radiation += SunShieldingPartRadiation(v, PreferencesStorm.Instance.StormRadiation * sunlight);
+				else
+				{
+					radiation += PreferencesStorm.Instance.StormRadiation * sunlight;
+					shieldedRadiation += PartShieldedRadiation(v, PreferencesStorm.Instance.StormRadiation * sunlight);
+				}
 			}
-			
-			// apply gamma transparency if inside atmosphere
-			radiation *= gamma_transparency;
 
 			// add emitter radiation after atmosphere transparency
-			radiation += Emitter.Total(v);
+			var emitterRadiation = Emitter.Total(v);
+			radiation += emitterRadiation;
+			shieldedRadiation += emitterRadiation;
 
 			// for EVAs, add the effect of nearby emitters
-			if (v.isEVA) radiation += Emitter.Nearby(v);
+			if (v.isEVA)
+			{
+				var nearbyEmitters = Emitter.Nearby(v);
+				radiation += nearbyEmitters;
+				shieldedRadiation += nearbyEmitters;
+			}
 
 			// clamp radiation to positive range
 			// note: we avoid radiation going to zero by using a small positive value
 			radiation = Math.Max(radiation, Nominal);
+			shieldedRadiation = Math.Max(shieldedRadiation, Nominal);
 
 			// return radiation
 			return radiation;
-		}
-
-		public class SunShieldingInfo
-		{
-			public double distance;
-			public double thickness;
-
-			public SunShieldingInfo(double distance, double thickness)
-			{
-				this.distance = distance;
-				this.thickness = thickness;
-			}
 		}
 
 		/// <summary> update habitat sun shielding parts for loaded vessels </summary>
@@ -690,14 +696,11 @@ namespace KERBALISM
 		{
 			if (!v.loaded) return;
 
-			/// TODO do this for one habitat at a time only
-
 			var vd = v.KerbalismData();
-
 
 			var habitats = Lib.FindModules<Habitat>(v);
 
-			List<SunShieldingInfo> sunShieldingParts = new List<SunShieldingInfo>();
+			List<VesselData.SunShieldingPartInfo> sunShieldingParts = new List<VesselData.SunShieldingPartInfo>();
 
 			foreach (var habitat in habitats)
 			{
@@ -720,7 +723,7 @@ namespace KERBALISM
 
 						var thickness = Math.Pow(mass / 2699.0, 1.0 / 3.0);
 
-						sunShieldingParts.Add(new SunShieldingInfo(hit.distance, thickness));
+						sunShieldingParts.Add(new VesselData.SunShieldingPartInfo(hit.distance, thickness));
 					}
 				}
 			}
@@ -746,17 +749,20 @@ namespace KERBALISM
 
 						var thickness = Math.Pow(mass / 2699.0, 1.0 / 3.0);
 
-						sunShieldingParts.Add(new SunShieldingInfo(hit.distance, thickness));
+						sunShieldingParts.Add(new VesselData.SunShieldingPartInfo(hit.distance, thickness));
 					}
 				}
 			}
 
-			vd.Cache.RadiationSunShieldingParts = sunShieldingParts;
+			// sort by distance, in reverse
+			sunShieldingParts.Sort((a, b) => b.distance.CompareTo(a.distance));
+
+			vd.SunShieldingPartInfos = sunShieldingParts;
 		}
 
-		public static double SunShieldingPartRadiation(Vessel v, double radiation)
+		public static double PartShieldedRadiation(Vessel v, double radiation)
 		{
-			var shieldingParts = v.KerbalismData().Cache.RadiationSunShieldingParts;
+			var shieldingParts = v.KerbalismData().SunShieldingPartInfos;
 			if (shieldingParts == null) return radiation;
 
 			var result = 0.0;

@@ -266,7 +266,6 @@
     <Compile Include="Utility\Serenity.cs" />
     <Compile Include="Patches\VesselRecovery_OnVesselRecovered.cs" />
     <Compile Include="Database\ScienceLog.cs" />
-    <Compile Include="Database\VesselCache.cs" />
   </ItemGroup>
   <!-- ///////////////////////////////////////////////////// -->
   <!-- ////////// IMPORT DEFAULT MS BUILD PROCESS ////////// -->

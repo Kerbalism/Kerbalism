@@ -77,7 +77,7 @@ namespace KERBALISM
 			p.AddSection("ENVIRONMENT");
 			foreach (string type in readings)
 			{
-				p.AddContent(type, Sensor.Telemetry_content(v, vd, type), Sensor.Telemetry_tooltip(v, vd, type));
+				p.AddContent(type.ToLower().Replace('_', ' '), Sensor.Telemetry_content(v, vd, type), Sensor.Telemetry_tooltip(v, vd, type));
 			}
 			if (readings.Count == 0) p.AddContent("<i>no sensors installed</i>");
 		}

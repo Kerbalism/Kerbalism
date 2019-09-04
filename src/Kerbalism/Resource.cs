@@ -800,14 +800,11 @@ namespace KERBALISM
 				mannedisPriority[i] = false;
 			}
 
-			double max_pressure = 1.0;
 			foreach (Habitat partHabitat in v.FindPartModulesImplementing<Habitat>())
 			{
 				// Skip disabled habitats
 				if (partHabitat.state != Habitat.State.disabled)
 				{
-					max_pressure = Math.Min(max_pressure, partHabitat.max_pressure);
-
 					// Has flag to be Equalized?
 					equalize |= partHabitat.needEqualize;
 
