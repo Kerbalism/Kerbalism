@@ -199,7 +199,7 @@ namespace KERBALISM
 			(
 			  Lib.BuildString("<b>",
 			  Lib.Ellipsis(vessel_name, Styles.ScaleStringLength(((page == MonitorPage.data || page == MonitorPage.log || selected_id == Guid.Empty) && !Lib.IsFlight()) ? 45 : 25)),
-			  "</b> <size=", Styles.ScaleInteger(9).ToString(), ">", Lib.Color("#cccccc", Lib.Ellipsis(body_name, Styles.ScaleStringLength(8))), "</size>"),
+			  "</b> <size=", Styles.ScaleInteger(9).ToString(), ">", Lib.Color(Lib.Ellipsis(body_name, Styles.ScaleStringLength(8)), Lib.KColor.LightGrey), "</size>"),
 			  string.Empty,
 			  () => { selected_id = selected_id != v.id ? v.id : Guid.Empty; }
 			);
@@ -622,7 +622,7 @@ namespace KERBALISM
 
 			// signal strength
 			var strength = Math.Ceiling(conn.strength * 10000) / 10000;
-			string signal_str = strength > 0.001 ? Lib.HumanReadablePerc(strength, "F2") : Lib.Color("#ffaa00", Lib.Italic(Localizer.Format("#KERBALISM_Generic_NO")));
+			string signal_str = strength > 0.001 ? Lib.HumanReadablePerc(strength, "F2") : Lib.Color(Lib.Italic(Localizer.Format("#KERBALISM_Generic_NO")), Lib.KColor.Orange);
 
 			// target name
 			string target_str = conn.linked ? conn.target_name : Localizer.Format("#KERBALISM_Generic_NONE");
@@ -640,7 +640,7 @@ namespace KERBALISM
 			(
 			  "<align=left />",
 			  String.Format("{0,-14}\t<b>{1}</b>\n", Localizer.Format("#KERBALISM_UI_DSNconnected"), conn.linked ?
-					Lib.Color("green", Localizer.Format("#KERBALISM_Generic_YES")) : Lib.Color("#ffaa00", Lib.Italic(Localizer.Format("#KERBALISM_Generic_NO")))),
+					Lib.Color(Localizer.Format("#KERBALISM_Generic_YES"), Lib.KColor.Green) : Lib.Color(Lib.Italic(Localizer.Format("#KERBALISM_Generic_NO")), Lib.KColor.Orange)),
 			  String.Format("{0,-14}\t<b>{1}</b>\n", Localizer.Format("#KERBALISM_UI_sciencerate"), Lib.HumanReadableDataRate(conn.rate)),
 			  String.Format("{0,-14}\t<b>{1}</b>\n", Localizer.Format("#KERBALISM_UI_strength"), signal_str),
 			  String.Format("{0,-14}\t<b>{1}</b>\n", Localizer.Format("#KERBALISM_UI_target"), target_str),
@@ -657,15 +657,15 @@ namespace KERBALISM
 
 				case LinkStatus.indirect_link:
 					image = conn.strength > 0.05 ? Icons.signal_white : Icons.iconSwitch(Icons.signal_yellow, image);   // or 5% signal strength
-					tooltip += Lib.Color("yellow", "\n" + Localizer.Format("#KERBALISM_UI_Signalrelayed"));
+					tooltip += Lib.Color(Lib.BuildString("\n", Localizer.Format("#KERBALISM_UI_Signalrelayed")), Lib.KColor.Yellow);
 					break;
 
 				case LinkStatus.plasma:
-					tooltip += Lib.Color("red", Lib.Italic("\n" + Localizer.Format("#KERBALISM_UI_Plasmablackout")));
+					tooltip += Lib.Color(Lib.Italic("\n" + Localizer.Format("#KERBALISM_UI_Plasmablackout")), Lib.KColor.Red);
 					break;
 
 				case LinkStatus.storm:
-					tooltip += Lib.Color("red", Lib.Italic("\n" + Localizer.Format("#KERBALISM_UI_Stormblackout")));
+					tooltip += Lib.Color(Lib.Italic("\n" + Localizer.Format("#KERBALISM_UI_Stormblackout")), Lib.KColor.Red);
 					break;
 			}
 

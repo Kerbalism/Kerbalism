@@ -96,7 +96,7 @@ namespace KERBALISM
 							warp_buffer = 0;
 							StopScan();
 							vd.scansat_id.Add(part.flightID);
-							Message.Post(Lib.Color("red", "Scanner halted", true), "Scanner halted on <b>" + vessel.vesselName + "</b>. No storage left on vessel.");
+							Message.Post(Lib.Color("Scanner halted", Lib.KColor.Red, true), "Scanner halted on <b>" + vessel.vesselName + "</b>. No storage left on vessel.");
 						}
 					}
 				}

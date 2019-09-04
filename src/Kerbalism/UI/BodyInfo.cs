@@ -67,12 +67,12 @@ namespace KERBALISM
 				string inner, outer, pause;
 				RadiationLevels(body, out inner, out outer, out pause);
 
-				p.AddContent(Lib.BuildString("inner belt: ", Lib.Color("#cccccc", inner)),
-					Radiation.show_inner ? "<color=green>show</color>" : "<color=red>hide</color>", string.Empty, () => p.Toggle(ref Radiation.show_inner));
-				p.AddContent(Lib.BuildString("outer belt: ", Lib.Color("#cccccc", outer)),
-					Radiation.show_outer ? "<color=green>show</color>" : "<color=red>hide</color>", string.Empty, () => p.Toggle(ref Radiation.show_outer));
-				p.AddContent(Lib.BuildString("magnetopause: ", Lib.Color("#cccccc", pause)),
-					Radiation.show_pause ? "<color=green>show</color>" : "<color=red>hide</color>", string.Empty, () => p.Toggle(ref Radiation.show_pause));
+				p.AddContent(Lib.BuildString("inner belt: ", Lib.Color(inner, Lib.KColor.LightGrey)),
+					Radiation.show_inner ? Lib.Color("show", Lib.KColor.Green) : Lib.Color("hide", Lib.KColor.Orange), string.Empty, () => p.Toggle(ref Radiation.show_inner));
+				p.AddContent(Lib.BuildString("outer belt: ", Lib.Color(outer, Lib.KColor.LightGrey)),
+					Radiation.show_outer ? Lib.Color("show", Lib.KColor.Green) : Lib.Color("hide", Lib.KColor.Orange), string.Empty, () => p.Toggle(ref Radiation.show_outer));
+				p.AddContent(Lib.BuildString("magnetopause: ", Lib.Color(pause, Lib.KColor.LightGrey)),
+					Radiation.show_pause ? Lib.Color("show", Lib.KColor.Green) : Lib.Color("hide", Lib.KColor.Orange), string.Empty, () => p.Toggle(ref Radiation.show_pause));
 			}
 
 			// explain the user how to toggle the BodyInfo window

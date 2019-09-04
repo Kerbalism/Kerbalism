@@ -92,10 +92,10 @@ namespace KERBALISM
 
 			// render panel, add some content based on enabled features
 			p.AddSection("HABITAT");
-			if (Features.Poisoning) p.AddContent("co2 level", Lib.Color(Lib.HumanReadablePerc(vd.Poisoning, "F2"), vd.Poisoning > Settings.PoisoningThreshold, "yellow"));
+			if (Features.Poisoning) p.AddContent("co2 level", Lib.Color(Lib.HumanReadablePerc(vd.Poisoning, "F2"), vd.Poisoning > Settings.PoisoningThreshold, Lib.KColor.Yellow));
 			if (!v.isEVA)
 			{
-				if (Features.Humidity) p.AddContent("humidity", Lib.Color(Lib.HumanReadablePerc(vd.Humidity, "F2"), vd.Humidity > Settings.HumidityThreshold, "yellow"));
+				if (Features.Humidity) p.AddContent("humidity", Lib.Color(Lib.HumanReadablePerc(vd.Humidity, "F2"), vd.Humidity > Settings.HumidityThreshold, Lib.KColor.Yellow));
 				if (Features.Pressure) p.AddContent("pressure", Lib.HumanReadablePressure(vd.Pressure * Sim.PressureAtSeaLevel()));
 				if (Features.Shielding) p.AddContent("shielding", Habitat.Shielding_to_string(vd.Shielding));
 				if (Features.LivingSpace) p.AddContent("living space", Habitat.Living_space_to_string(vd.LivingSpace));

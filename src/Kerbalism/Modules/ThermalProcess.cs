@@ -6,8 +6,22 @@ using UnityEngine;
 
 namespace KERBALISM
 {
-	public class ThermalProcess : PartModule
+	public class ThermalProcess : PartModule, IPartCostModifier, IPartMassModifier
 	{
+		// TODO :
+		// - auto-limit load based on coolant available
+		// - internal resource depletion ETA
+		// - planner tools :
+		//	- set internal resource amounts -> floatrange (see UIPartActionFloatRange.slider.interactable +
+		//  - external resources : 
+
+
+
+
+
+
+
+
 
 		/// <summary>
 		/// resource stored inside the module and that can require special condtions to be loaded/unloaded (ex : EnrichedUranium, DepletedFuel)
@@ -17,8 +31,8 @@ namespace KERBALISM
 			public string name;
 			public double rate;			// rate of consumption/production
 			public double transferRate; // transfer rate when loading/unloading the resource
-			public double amount;		// current stored amount
-			public double maxAmount;    // storage capacity
+			public float amount;       // current stored amount
+			public float maxAmount;    // storage capacity
 
 			public bool loadingEnabled;
 			public bool unloadingEnabled;
@@ -30,9 +44,13 @@ namespace KERBALISM
 
 			public string virtualResID;
 
-			public BaseEvent pawEvent;
-			public BaseField pawStatus;
-			public string statusInfo;
+			private PartResourceDefinition stockDefinition;
+			public float MassPerUnit => stockDefinition.density;
+			public float CostPerUnit => stockDefinition.unitCost;
+
+			private BaseEvent pawEvent;
+			private BaseField pawSlider;
+			private UI_FloatRange sliderControl;
 			private ThermalProcess module;
 
 			public InternalResource(ThermalProcess module, ConfigNode node)
@@ -47,21 +65,40 @@ namespace KERBALISM
 				unloadingEnabled = Lib.ConfigValue(node, "unloadingEnabled", true);
 				loadingReqs = new CrewSpecs(Lib.ConfigValue(node, "loadingReqs", "false"));
 				unloadingReqs = new CrewSpecs(Lib.ConfigValue(node, "unloadingReqs", "false"));
+
+				stockDefinition = PartResourceLibrary.Instance.GetDefinition(name);
 			}
 
+#if !KSP15_16
+			public void PAWInit(ThermalProcess module, BasePAWGroup resGroup)
+#else
 			public void PAWInit(ThermalProcess module)
+#endif
 			{
 				pawEvent = new BaseEvent(module.Events, name, new BaseEventDelegate(PAWEvent), new KSPEvent());
 
 				pawEvent.guiActive = true;
 				pawEvent.guiName = name + " : " + amount.ToString("F2") + " / " + maxAmount.ToString("F2");
-				module.Events.Add(pawEvent);
 
-				pawStatus = new BaseField(new KSPField(), GetType().GetField("statusInfo"), this);
-				pawStatus.guiActive = true;
-				pawStatus.guiActiveEditor = true;
-				pawStatus.guiName = name;
-				module.Fields.Add(pawStatus);
+
+				sliderControl = new UI_FloatRange();
+				sliderControl.minValue = 0f;
+				sliderControl.maxValue = (float)maxAmount;
+
+				pawSlider = new BaseField(new KSPField(), GetType().GetField("amount"), this);
+				pawSlider.guiActive = true;
+				pawSlider.guiActiveEditor = true;
+				pawSlider.guiName = name;
+				pawSlider.guiFormat = "F2";
+				pawSlider.uiControlEditor = sliderControl;
+				pawSlider.uiControlFlight = sliderControl;
+
+#if !KSP15_16
+				pawEvent.group = resGroup;
+				pawSlider.group = resGroup;
+#endif
+				module.Events.Add(pawEvent);
+				module.Fields.Add(pawSlider);
 			}
 
 			public void PAWEvent()
@@ -82,6 +119,7 @@ namespace KERBALISM
 
 			public void PAWUpdate(bool transferAvailable)
 			{
+
 				pawEvent.guiActive = transferAvailable;
 				if (transferAvailable)
 				{
@@ -89,7 +127,17 @@ namespace KERBALISM
 					if (transferState != TransferState.none) pawEvent.guiName = Lib.BuildString(pawEvent.guiName, " (", transferState.ToString(), "...)");
 				}
 
-				statusInfo = Lib.BuildString( amount.ToString("F2"), " / ", maxAmount.ToString("F2"));
+				if (Lib.IsFlight() && sliderControl.partActionItem != null)
+				{
+					UIPartActionFloatRange actionItem = (UIPartActionFloatRange)pawSlider.uiControlEditor.partActionItem;
+
+					actionItem.slider.interactable = false;
+#if !KSP15_16
+					// float input fields are only available since KSP 1.7.3
+					if (Lib.KSPVersion >= new Version(1,7,3))
+						actionItem.inputField.interactable = false;
+#endif
+				}
 			}
 
 			public void LoadFromVessel(Vessel v, double elapsedSec)
@@ -103,7 +151,7 @@ namespace KERBALISM
 					return;
 				}
 
-				amount = resHandler.GetResource(v, virtualResID).Amount;
+				amount = (float)resHandler.GetResource(v, virtualResID).Amount;
 
 				if (amount == maxAmount) 
 				{
@@ -128,7 +176,7 @@ namespace KERBALISM
 					return;
 				}
 
-				amount = resHandler.GetResource(v, virtualResID).Amount;
+				amount = (float)resHandler.GetResource(v, virtualResID).Amount;
 
 				if (amount == 0.0)
 				{
@@ -178,12 +226,10 @@ namespace KERBALISM
 			Stopped,
 			RequestStart,
 			Starting,
-			StartFailed,
 			Running,
-			Stopping,
 			Meltdown,
-			MeltdownStopped,
-			Failure
+			Failure,
+			EditorDecay
 		}
 
 		// config
@@ -192,7 +238,8 @@ namespace KERBALISM
 		[KSPField] public double thermalFeebackFactor;       // influence of the temperature on the minThermalPower. a value of 1.0 mean that minThermalPower is 100 % at nominalTemp and 200% at nominalTemp * 2.0. A value of 0.1 mean 110% at nominalTemp * 2.0.
 		// a process with a high value will be able to start by itself without using the start resource but will be more prone to meltdown
 		[KSPField] public double passiveCoolingPower;   // thermal power passively removed all the time (kW)
-		[KSPField] public double nominalEnergy;         // nominal thermal capacity (kJ). Determine how fast the temperature will change and how much startup and coolant resource are needed. 
+		[KSPField] public double nominalEnergy;         // nominal thermal capacity (kJ). Determine how fast the temperature will change and how much startup and coolant resource are needed.
+		[KSPField] public double baseTemp = 285.0;   // base temperature (K)
 		[KSPField] public double nominalTemp = 600.0;   // Nominal running temperature (K). Need to be reached by consuming the startup resource for the process to start
 		[KSPField] public double meltdownTemp = 1200.0; // Meltdown temperature (K). Note that the combination of the nominal and meltdown energies and temperatures are all used to calculate the "Kelvin per kJ" factor of the process
 		[KSPField] public double explosionTemp = 1600.0; // Temperature this will trigger a part explosion (K)
@@ -215,56 +262,89 @@ namespace KERBALISM
 
 
 		// internals
-		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "storedHeatEnergy")]
+		//[KSPField(guiActive = true, guiActiveEditor = true, guiName = "storedHeatEnergy")]
 		private double thermalEnergy;                     // thermal energy accumulated (kJ)
 		private double currentLoad;
 		private double temperature;
 		private double decayFactor;
 		public List<Resource> resources;						// inputs/outputs
 		public List<InternalResource> internalResources;       // non-removable inputs/outputs (simulating no-flow)
+		private float internalResourcesCost;
+		private float internalResourcesMass;
 
-		[KSPField(isPersistant = true)] public float hoursSinceShutdown;
+		//[KSPField(guiActive = true, guiActiveEditor = true, guiName = "Thermal power", guiFormat = "F0", guiUnits = "kW")]
+		public double thermalPowerProduced;                     // thermal power produced (kW)
+
+		//[KSPField(guiActive = true, guiActiveEditor = true, guiName = "Coolant need", guiFormat = "F0", guiUnits = "kW")]
+		public double coolantPowerRequired;                     // thermal power produced (kW)
+
+
+
 		[KSPField(isPersistant = true)] public string processID; // I would prefer not having to use that
 		[KSPField(isPersistant = true)] public string startOutputID;
 		[KSPField(isPersistant = true)] public string nominalOutputID;
 		[KSPField(isPersistant = true)] public string thermalOutputID;
 		[KSPField(isPersistant = true)] public double KelvinPerkJ;
 
-		public float silly = 0f;
+		//[KSPField(guiActive = true, guiActiveEditor = true, guiName = "state")]
+		public RunningState state;
 
-		// PAW
-		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "processInfo")]
-		public string processInfo;
+		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "State")]
+		public string stateInfo;
+
+		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "Temp")]
+		public string thermalInfo;
+
+		[KSPField(guiActive = true, guiActiveEditor = false, guiName = "Load limit safety"),
+		UI_Toggle(scene = UI_Scene.All)]
+		public bool loadLimitAutoMode = true;
 
 		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "Load limiter", guiFormat = "P0"),
 		UI_FloatRange(minValue = 0f, maxValue = 1f, stepIncrement = 0.01f, scene = UI_Scene.All)]
 		public float loadLimit = 1f;
 
+		[KSPField(isPersistant = true, guiName = "Hours since shutdown", guiFormat = "F1", guiUnits = "Hours"),
+		UI_FloatRange(minValue = 0f, stepIncrement = 0.1f, scene = UI_Scene.Editor)]
+		public float hoursSinceShutdown = float.MaxValue;
 
+		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "Time to depletion")]
+		public string resourcesInfo;
 
-		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "state")]
-		public RunningState state;
-
-		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "Toggle", active = true)]
-		public void Toggle()
+		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "ToggleState")]
+		public void ToggleState()
 		{
-			switch (state)
+			if (Lib.IsEditor())
 			{
-				case RunningState.Stopped:
-				case RunningState.Stopping:
-				case RunningState.StartFailed:
-					state = RunningState.RequestStart;
-					break;
-				case RunningState.Starting:
-					state = RunningState.StartFailed;
-					ThermalReset();
-					break;
+				switch (state)
+				{
+					case RunningState.Stopped: state = RunningState.Starting; break;
+					case RunningState.Starting: state = RunningState.Running; break;
+					case RunningState.Running:
+						state = RunningState.EditorDecay;
+						hoursSinceShutdown = 0f;
+						break;
+					case RunningState.EditorDecay: state = RunningState.Stopped; break;
 
-				case RunningState.Running:
-					state = RunningState.Stopping;
-					ThermalReset();
-					hoursSinceShutdown = 0f;
-					break;
+				}
+			}
+			else
+			{
+				switch (state)
+				{
+					case RunningState.Stopped:
+						state = RunningState.RequestStart;
+						break;
+					case RunningState.Starting:
+						state = RunningState.Stopped;
+						ThermalReset();
+						break;
+
+					case RunningState.Running:
+						state = RunningState.Stopped;
+						ThermalReset();
+						hoursSinceShutdown = 0f;
+						break;
+				}
 			}
 		}
 
@@ -280,17 +360,7 @@ namespace KERBALISM
 			}
 			else
 			{
-				ThermalProcess prefab;
-				try { prefab = (ThermalProcess)part.partInfo.partPrefab.Modules[part.Modules.IndexOf(this)]; }
-				catch (Exception)
-				{
-					Lib.Log("ERROR : Could not find the ThermalProcess module prefab at index " + part.Modules.IndexOf(this) + " on part " + part.partName);
-					enabled = isEnabled = moduleIsEnabled = false;
-					return;
-				}
-
-				resources = prefab.resources;
-				internalResources = prefab.internalResources;
+				GetInternalResourcesFromPrefab();
 			}
 
 			foreach (ConfigNode intResNode in node.GetNodes("TP_INTERNAL_RESOURCE_STATE"))
@@ -299,6 +369,21 @@ namespace KERBALISM
 				if (intRes == null) continue;
 				intRes.LoadState(intResNode);
 			}
+		}
+
+		private void GetInternalResourcesFromPrefab()
+		{
+			ThermalProcess prefab;
+			try { prefab = (ThermalProcess)part.partInfo.partPrefab.Modules[part.Modules.IndexOf(this)]; }
+			catch (Exception)
+			{
+				Lib.Log("ERROR : Could not find the ThermalProcess module prefab at index " + part.Modules.IndexOf(this) + " on part " + part.partName);
+				enabled = isEnabled = moduleIsEnabled = false;
+				return;
+			}
+
+			resources = prefab.resources;
+			internalResources = prefab.internalResources;
 		}
 
 		public override void OnSave(ConfigNode node)
@@ -319,90 +404,190 @@ namespace KERBALISM
 			startOutputID = "start_" + processID;
 			nominalOutputID = "nominal_" + processID;
 			thermalOutputID = "thermal_" + processID;
-			KelvinPerkJ = nominalTemp / nominalEnergy;
+			KelvinPerkJ = (nominalTemp - baseTemp) / nominalEnergy;
 
-			if (Lib.IsEditor()) return;
+#if !KSP15_16
+			BasePAWGroup processGroup = new BasePAWGroup(processName, processName, false);
+			Fields["thermalInfo"].group = processGroup;
+			Fields["stateInfo"].group = processGroup;
+			Fields["loadLimitAutoMode"].group = processGroup;
+			Fields["loadLimit"].group = processGroup;
+			Events["ToggleState"].group = processGroup;
+			Fields["hoursSinceShutdown"].group = processGroup;
+			BasePAWGroup resourcesGroup = new BasePAWGroup("Internal resources", "Internal resources", false);
+			Fields["resourcesInfo"].group = resourcesGroup;
+#endif
+			GetInternalResourcesFromPrefab();
 
-			VesselResHandler resHandler = ResourceCache.GetVesselHandler(vessel);
 			foreach (InternalResource intRes in internalResources)
 			{
-				intRes.virtualResID = intRes.name + "_" + processID;
-				// synchronize resource cache amounts with locally persisted amounts
-				VirtualResource virtualRes = (VirtualResource)resHandler.GetResource(vessel, intRes.virtualResID);
-				virtualRes.Amount = intRes.amount;
-				virtualRes.Capacity = intRes.maxAmount;
+#if !KSP15_16
+				intRes.PAWInit(this, resourcesGroup);
+#else
 				intRes.PAWInit(this);
+#endif
+				intRes.virtualResID = intRes.name + "_" + processID;
+				if (Lib.IsFlight())
+				{
+					// synchronize resource cache amounts with locally persisted amounts
+					VirtualResource virtualRes = (VirtualResource)ResourceCache.GetResource(vessel, intRes.virtualResID);
+					virtualRes.Amount = intRes.amount;
+					virtualRes.Capacity = intRes.maxAmount;
+				}
 			}
 
+			if (Lib.IsFlight()) ThermalReset();
 		}
 
 		public void Update()
 		{
 
-			if (state == RunningState.Stopped)
-				temperature = vessel.KerbalismData().EnvTemperature;
-			else
-				temperature = thermalEnergy * KelvinPerkJ;
-
-			string basicTempInfo;
-			if (temperature < nominalTemp + 1.0) basicTempInfo = Lib.BuildString("temp. ", temperature.ToString("F0"), " K");
-			else basicTempInfo = Lib.BuildString("<color=#ff2222><b>temp. ", temperature.ToString("F0"), " K</b></color>");
-
-			string fullTempInfo;
-			if (temperature < nominalTemp - 1.0) fullTempInfo = Lib.BuildString(basicTempInfo, " (", nominalTemp.ToString("F0"), " K nominal)");
-			else if (temperature > meltdownTemp + 1.0) fullTempInfo = Lib.BuildString(basicTempInfo, " (explosion ", explosionTemp.ToString("F0"), "K)");
-			else if (temperature > nominalTemp + 1.0) fullTempInfo = Lib.BuildString(basicTempInfo, " (meltdown ", meltdownTemp.ToString("F0"), "K)");
-			else fullTempInfo = basicTempInfo;
-
-			switch (state)
+			double timeToDepletion = double.MaxValue;
+			foreach (InternalResource intRes in internalResources)
 			{
-				case RunningState.Stopped:
-					Events["Toggle"].guiActive = true;
-					Events["Toggle"].guiName = Lib.BuildString("Start ", processName);
-					Fields["processInfo"].guiName = "Stopped";
-					processInfo = fullTempInfo;
-					break;
-				case RunningState.Starting:
-					Events["Toggle"].guiActive = true;
-					Events["Toggle"].guiName = Lib.BuildString("Stop ", processName);
-					Fields["processInfo"].guiName = "Warming up";
-					processInfo = fullTempInfo;
-					break;
-				case RunningState.StartFailed:
-					Events["Toggle"].guiActive = true;
-					Events["Toggle"].guiName = Lib.BuildString("Start ", processName);
-					Fields["processInfo"].guiName = "Start failed";
-					processInfo = fullTempInfo;
-					break;
-				case RunningState.Running:
-					Events["Toggle"].guiActive = true;
-					Events["Toggle"].guiName = Lib.BuildString("Stop ", processName);
-					Fields["processInfo"].guiName = "Running";
-					processInfo = Lib.BuildString("load ", currentLoad.ToString("P0"), ", ", fullTempInfo);
-					break;
-				case RunningState.Stopping:
-					Events["Toggle"].guiActive = true;
-					Events["Toggle"].guiName = Lib.BuildString("Start ", processName);
-					Fields["processInfo"].guiName = "Stopping";
-					processInfo = Lib.BuildString("waste heat ", (decayFactor * minThermalPower).ToString("F0"), "kW, ", basicTempInfo);
-					break;
-				case RunningState.Meltdown:
-				case RunningState.MeltdownStopped:
-					Events["Toggle"].guiActive = false;
-					Fields["processInfo"].guiName = "Meltdown";
-					processInfo = Lib.BuildString("waste heat ", (decayFactor * minThermalPower).ToString("F0"), "kW, ", basicTempInfo);
-					break;
-				case RunningState.Failure:
-					Events["Toggle"].guiActive = false;
-					Fields["processInfo"].guiName = "Failure";
-					break;
+				
+				intRes.PAWUpdate(state == RunningState.Stopped);
+				if (intRes.rate < 0.0)
+				{
+					double effectiveRate = Math.Abs(intRes.rate) * powerFactor * (Lib.IsEditor() ? loadLimit : currentLoad);
+					if (effectiveRate > 0.0) 
+					{
+						double resTimeToDepletion = intRes.amount / effectiveRate;
+						if (resTimeToDepletion < timeToDepletion) timeToDepletion = resTimeToDepletion;
+					}
+				}
 			}
+			if (timeToDepletion == double.MaxValue) timeToDepletion = 0.0;
 
-			foreach (InternalResource intRes in internalResources) intRes.PAWUpdate(state == RunningState.Stopped);
+			if (Lib.IsFlight())
+			{
+				resourcesInfo = Lib.HumanReadableDuration(timeToDepletion);
+
+				switch (state)
+				{
+					case RunningState.Stopped:
+						Events["ToggleState"].active = true;
+						Events["ToggleState"].guiName = Lib.BuildString("Start ", processName);
+						break;
+					case RunningState.Starting:
+					case RunningState.Running:
+						Events["ToggleState"].active = true;
+						Events["ToggleState"].guiName = Lib.BuildString("Stop ", processName);
+						break;
+					default:
+						Events["ToggleState"].active = false;
+						break;
+				}
+
+				StringBuilder sb = new StringBuilder();
+
+				if (temperature > nominalTemp + 1.0) sb.Append("<color=#ff2222><b>");
+				sb.Append(temperature.ToString("F0"));
+				sb.Append(" K");
+				if (temperature > nominalTemp + 1.0) sb.Append("</b></color>");
+				if (temperature < nominalTemp - 1.0)
+				{
+					sb.Append(" (nominal ");
+					sb.Append(nominalTemp.ToString("F0"));
+					sb.Append("K)");
+				}
+				else if (temperature > meltdownTemp + 1.0)
+				{
+					sb.Append(" (explosion ");
+					sb.Append(nominalTemp.ToString("F0"));
+					sb.Append("K)");
+				}
+				else if (temperature > nominalTemp + 1.0)
+				{
+					sb.Append(" (meltdown ");
+					sb.Append(meltdownTemp.ToString("F0"));
+					sb.Append("K)");
+				}
+				thermalInfo = sb.ToString();
+
+				sb.Length = 0;
+
+				switch (state)
+				{
+					case RunningState.Meltdown: sb.Append(Lib.Color(state.ToString().ToLower(), Lib.KColor.Red, true)); break;
+					case RunningState.Failure: sb.Append(Lib.Color(state.ToString().ToLower(), Lib.KColor.Red, true)); break;
+					case RunningState.Starting: sb.Append(Lib.Color(state.ToString().ToLower(), Lib.KColor.Yellow, true)); break;
+					default: sb.Append(Lib.Color(state.ToString().ToLower(), Lib.KColor.Green, true)); break;
+				}
+
+				if (state == RunningState.Running)
+				{
+					sb.Append(", load ");
+					sb.Append(currentLoad.ToString("P0"));
+				}
+				if (thermalPowerProduced > 0)
+				{
+					sb.Append(", heat ");
+					sb.Append(thermalPowerProduced.ToString("F0"));
+					sb.Append(" kW");
+				}
+
+				stateInfo = sb.ToString();
+			}
+			else
+			{
+				switch (state)
+				{
+					case RunningState.Stopped:
+						Events["ToggleState"].guiName = "Simulate starting state";
+						Fields["hoursSinceShutdown"].guiActiveEditor = false;
+						thermalInfo = Lib.BuildString(baseTemp.ToString("F0"), " K");
+						stateInfo = Lib.Color("Stopped", Lib.KColor.Yellow, true);
+						resourcesInfo = "none";
+						break;
+					case RunningState.Starting:
+						Events["ToggleState"].guiName = "Simulate running state";
+						Fields["hoursSinceShutdown"].guiActiveEditor = false;
+						thermalInfo = Lib.BuildString("warming up from ", baseTemp.ToString("F0"), " K to ", nominalTemp.ToString("F0"), " K");
+						double startResRate = startupResourceMaxRate * powerFactor;
+						stateInfo = Lib.BuildString(Lib.Color("Starting", Lib.KColor.Orange, true), ", -", startResRate.ToString("F2"), " ",
+							PartResourceLibrary.Instance.GetDefinition(startupResource).abbreviation, "/s for ",
+							Lib.HumanReadableDuration(nominalEnergy / (startResRate * startupResourceKJ)));
+						resourcesInfo = "none";
+						break;
+					case RunningState.Running:
+						Events["ToggleState"].guiName = "Simulate thermal decay";
+						Fields["hoursSinceShutdown"].guiActiveEditor = false;
+						double runningCoolant = (((maxThermalPower - minThermalPower) * loadLimit) + minThermalPower - passiveCoolingPower) * coolantResourceKJ;
+						thermalInfo = Lib.BuildString(nominalTemp.ToString("F0"), " K, need ", runningCoolant.ToString("F0"), " ", coolantResourceName, "/s");
+						stateInfo = Lib.Color("Running", Lib.KColor.Green, true);
+						resourcesInfo = Lib.HumanReadableDuration(timeToDepletion);
+						break;
+					case RunningState.EditorDecay:
+						Events["ToggleState"].guiName = "Simulate stopped state";
+						((UI_FloatRange)Fields["hoursSinceShutdown"].uiControlEditor).maxValue = thermalDecayCurve.maxTime;
+						Fields["hoursSinceShutdown"].guiActiveEditor = true;
+						double decayCoolant = Math.Max((minThermalPower * thermalDecayCurve.Evaluate(hoursSinceShutdown)) - passiveCoolingPower, 0.0) * coolantResourceKJ;
+						thermalInfo = Lib.BuildString("to ", baseTemp.ToString("F0"), " K, need ", decayCoolant.ToString("F0"), " ", coolantResourceName, "/s");
+						stateInfo = Lib.Color("Thermal decay", Lib.KColor.Orange, true);
+						resourcesInfo = "none";
+						break;
+				}
+			}
 		}
 
 		public void FixedUpdate()
 		{
+
+			internalResourcesCost = 0f;
+			internalResourcesMass = 0f;
+			foreach (InternalResource intRes in internalResources)
+			{
+				internalResourcesCost += intRes.amount * intRes.CostPerUnit;
+				internalResourcesMass += intRes.amount * intRes.MassPerUnit;
+
+				switch (intRes.transferState)
+				{
+					case InternalResource.TransferState.loading: intRes.LoadFromVessel(vessel, Kerbalism.elapsed_s); break;
+					case InternalResource.TransferState.unloading: intRes.UnloadToVessel(vessel, Kerbalism.elapsed_s); break;
+				}
+			}
+
 			if (Lib.IsEditor()) return;
 
 			VesselResHandler resHandler = ResourceCache.GetVesselHandler(vessel);
@@ -412,10 +597,6 @@ namespace KERBALISM
 				case RunningState.RequestStart:
 
 					internalResources.ForEach(a => a.transferState = InternalResource.TransferState.none);
-
-					double environnementEnergy = vessel.KerbalismData().EnvTemperature / KelvinPerkJ;
-					if (environnementEnergy < 0.0) thermalEnergy = environnementEnergy;
-					else thermalEnergy = Math.Max(thermalEnergy, environnementEnergy);
 					
 					if (startupResourceMaxRate == 0.0)
 					{
@@ -423,58 +604,31 @@ namespace KERBALISM
 					}
 					else
 					{
-						((VirtualResource)resHandler.GetResource(vessel, startOutputID)).Amount = 0.001;
+						((VirtualResource)resHandler.GetResource(vessel, startOutputID)).Amount = 0.0;
 						state = RunningState.Starting;
 					}
 					break;
 				case RunningState.Starting:
-
-					VirtualResource startResourceOutput = (VirtualResource)resHandler.GetResource(vessel, startOutputID);
-					thermalEnergy += startResourceOutput.Amount;
-					if (startResourceOutput.Amount == 0.0)
-					{
-						state = RunningState.StartFailed;
-						ThermalReset();
-						return;
-					}
+					
 					if (thermalEnergy >= nominalEnergy)
 					{
 						state = RunningState.Running;
 						ThermalReset();
 						return;
 					}
-
-					startResourceOutput.Amount = 0.0;
-
-					double heatNeeded = Math.Min(nominalEnergy - thermalEnergy, startupResourceMaxRate * startupResourceKJ * powerFactor * Kerbalism.elapsed_s);
-					Recipe startRecipe = new Recipe(processName);
-					startRecipe.AddInput(startupResource, heatNeeded);
-					startRecipe.AddOutput(startOutputID, heatNeeded, false);
-					resHandler.AddRecipe(startRecipe);
-					break;
-
-				case RunningState.StartFailed:
-					if (thermalEnergy < vessel.KerbalismData().EnvTemperature / KelvinPerkJ)
-					{
-						state = RunningState.Stopped;
-						return;
-					}
-					thermalEnergy -= passiveCoolingPower * Kerbalism.elapsed_s;
-
-					//ThermalUpdate(resHandler, 0.0, ref thermalEnergy);
 					break;
 
 				case RunningState.Running:
 					// synchronize internal resources amounts after consumption/production in last resource sim step
 					foreach (InternalResource intRes in internalResources)
-						intRes.amount = resHandler.GetResource(vessel, intRes.virtualResID).Amount;
+						intRes.amount = (float)resHandler.GetResource(vessel, intRes.virtualResID).Amount;
 
 					// get outputs results from last resource sim step
 					VirtualResource nominalOutput = (VirtualResource)resHandler.GetResource(vessel, nominalOutputID);
+					if (loadLimitAutoMode && thermalEnergy > 0.0) loadLimit *= (float)Math.Min(nominalEnergy / thermalEnergy, 1.0);
+
 					currentLoad = nominalOutput.Amount * loadLimit;
 					nominalOutput.Amount = 0.0;
-
-					ThermalUpdate(resHandler, ((maxThermalPower - minThermalPower) * currentLoad) + minThermalPower, ref thermalEnergy);
 
 					// create input/outputs recipe
 					Recipe nominalRecipe = new Recipe(processName);
@@ -494,30 +648,35 @@ namespace KERBALISM
 					// register recipe
 					resHandler.AddRecipe(nominalRecipe);
 					break;
-
-				case RunningState.Stopping:
-					if (ThermalDecayUpdate(resHandler, thermalDecayCurve, ref hoursSinceShutdown, ref thermalEnergy, out decayFactor))
-						state = RunningState.Stopped;
-					break;
-
-				case RunningState.Meltdown:
-					if (ThermalDecayUpdate(resHandler, thermalDecayCurve, ref hoursSinceShutdown, ref thermalEnergy, out decayFactor))
-						state = RunningState.MeltdownStopped;
-					break;
-
 			}
 
-			foreach (InternalResource intRes in internalResources)
+
+			if (state != RunningState.Running)
 			{
-				switch (intRes.transferState)
+				if (state == RunningState.Starting)
 				{
-					case InternalResource.TransferState.loading: intRes.LoadFromVessel(vessel, Kerbalism.elapsed_s); break;
-					case InternalResource.TransferState.unloading: intRes.UnloadToVessel(vessel, Kerbalism.elapsed_s); break;
+					float thermalDecayTime = thermalDecayCurve.maxTime * (float)Math.Min(thermalEnergy / nominalEnergy, 1.0);
+					if (hoursSinceShutdown > thermalDecayTime) hoursSinceShutdown = thermalDecayTime;
 				}
-
+				if (hoursSinceShutdown < thermalDecayCurve.maxTime)
+				{
+					hoursSinceShutdown += (float)(Kerbalism.elapsed_s / 3600.0);
+					decayFactor = thermalDecayCurve.Evaluate(hoursSinceShutdown);
+					ThermalUpdate(resHandler, decayFactor * minThermalPower);
+				}
+				else
+				{
+					ThermalUpdate(resHandler, 0.0);
+				}
+			}
+			else
+			{
+				ThermalUpdate(resHandler, ((maxThermalPower - minThermalPower) * currentLoad) + minThermalPower);
 			}
 
-			if (thermalEnergy > explosionTemp / KelvinPerkJ)
+
+
+			if (temperature > explosionTemp)
 			{
 				if (part.parent != null) part.parent.AddThermalFlux(thermalEnergy / Kerbalism.elapsed_s) ;
 				foreach (Part child in part.children.Where(p => p.parent == part)) child.AddThermalFlux(thermalEnergy / Kerbalism.elapsed_s);
@@ -525,9 +684,12 @@ namespace KERBALISM
 				return;
 			}
 
-			if (thermalEnergy > meltdownTemp / KelvinPerkJ)
+			if (temperature > meltdownTemp && state != RunningState.Meltdown)
+			{
 				state = RunningState.Meltdown;
-
+				hoursSinceShutdown = 0f;
+				ThermalReset();
+			}
 		}
 
 
@@ -539,52 +701,75 @@ namespace KERBALISM
 			thermalOutput.Amount = 0.0;
 		}
 
-		/// <summary> update thermals while the process is stopping. Return true when temperature has has been removed, false otherwise </summary>
-		private bool ThermalDecayUpdate(VesselResHandler resHandler, FloatCurve thermalDecayCurve, ref float hoursSinceShutdown, ref double storedHeatEnergy, out double decayFactor)
-		{
-			hoursSinceShutdown += (float)(Kerbalism.elapsed_s / 3600.0);
-			decayFactor = thermalDecayCurve.Evaluate(hoursSinceShutdown);
-			ThermalUpdate(resHandler, decayFactor * minThermalPower, ref storedHeatEnergy);
-			return decayFactor < 0.01;
-		}
-
 		/// <summary> update thermal state </summary>
-		private void ThermalUpdate(VesselResHandler resHandler, double thermalPowerProduced, ref double storedHeatEnergy)
+		private void ThermalUpdate(VesselResHandler resHandler, double thermalPowerAdded)
 		{
 			// get thermal energy virtual resource
 			VirtualResource thermalOutput = (VirtualResource)resHandler.GetResource(vessel, thermalOutputID);
 
 			// update stored heat based on removed amount (capacity was set at the energy level accounting for last step heat production)
 			// don't do it when the virtual resource was just created
-			if (thermalOutput.Capacity > 0.0) storedHeatEnergy = thermalOutput.Capacity - thermalOutput.Amount;
+			if (thermalOutput.Capacity > 0.0)
+				thermalEnergy = thermalOutput.Capacity - thermalOutput.Amount;
 
 			// reset virtual resource amount
 			thermalOutput.Amount = 0.0;
 
+
+			if (state == RunningState.Starting)
+			{
+				VirtualResource startResourceOutput = (VirtualResource)resHandler.GetResource(vessel, startOutputID);
+				thermalEnergy += startResourceOutput.Amount;
+
+				startResourceOutput.Amount = 0.0;
+
+				double heatNeeded = Math.Min(nominalEnergy - thermalEnergy, startupResourceMaxRate * startupResourceKJ * powerFactor * Kerbalism.elapsed_s);
+				Recipe startRecipe = new Recipe(processName);
+				startRecipe.AddInput(startupResource, heatNeeded);
+				startRecipe.AddOutput(startOutputID, heatNeeded, false);
+				resHandler.AddRecipe(startRecipe);
+			}
+
+			temperature = baseTemp + (thermalEnergy * KelvinPerkJ);
+
 			// calculate thermal power (kW) dissipation needs based on the process power specs
-			double coolantPowerNeed = Math.Max(thermalPowerProduced - passiveCoolingPower, 0.0);
+			thermalPowerProduced = Math.Max(thermalPowerAdded - passiveCoolingPower, 0.0);
 			// scale it by time elapsed to get energy (kJ), add it to the currently stored energy and save the value in the virtual resource capacity
 			// this allow to keep track of the added/removed energy between updates without having to use a persisted variable for that.
-			thermalOutput.Capacity = (coolantPowerNeed * coolantResourceKJ * Kerbalism.elapsed_s) + storedHeatEnergy;
+
+			thermalOutput.Capacity = (thermalPowerProduced * Kerbalism.elapsed_s) + thermalEnergy;
 
 			// when running or starting, we want to keep the process at the nominal energy (and temperature)
-			double coolantEnergyNeed = thermalOutput.Capacity;
+			double energyToRemove = thermalOutput.Capacity;
 			if (state == RunningState.Running || state == RunningState.Starting)
-				coolantEnergyNeed -= nominalEnergy;
+				energyToRemove -= nominalEnergy;
 
 			// do nothing is no cooling is requested
-			if (coolantEnergyNeed <= 0.0) return;
+			if (energyToRemove <= 0.0)
+			{
+				coolantPowerRequired = 0.0;
+			}
+			else
+			{
+				energyToRemove *= coolantResourceKJ;
+				coolantPowerRequired = energyToRemove / Kerbalism.elapsed_s;
+				// create coolant recipe
+				Recipe coolantRecipe = new Recipe(processName);
+				coolantRecipe.AddInput(coolantResourceName, energyToRemove);
+				coolantRecipe.AddOutput(thermalOutputID, energyToRemove, false);
+				resHandler.AddRecipe(coolantRecipe);
+			}
 
 
-			
-			// create coolant recipe
-			Recipe coolantRecipe = new Recipe(processName);
-			coolantRecipe.AddInput(coolantResourceName, coolantEnergyNeed);
-			coolantRecipe.AddOutput(thermalOutputID, coolantEnergyNeed, false);
-			resHandler.AddRecipe(coolantRecipe);
+
+
 		}
 
+		
+		public float GetModuleCost(float defaultCost, ModifierStagingSituation sit) => internalResourcesCost;
+		public ModifierChangeWhen GetModuleCostChangeWhen() => ModifierChangeWhen.CONSTANTLY;
 
-
+		public float GetModuleMass(float defaultMass, ModifierStagingSituation sit) => internalResourcesMass;
+		public ModifierChangeWhen GetModuleMassChangeWhen() => ModifierChangeWhen.CONSTANTLY;
 	}
 }

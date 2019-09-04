@@ -480,7 +480,7 @@ namespace KERBALISM
 			else
 				Message.Post
 				(
-					Lib.Color("red", Lib.BuildString("WARNING: not evering copied"), true),
+					Lib.Color("WARNING: not evering copied", Lib.KColor.Red, true),
 					Lib.BuildString(Localizer.Format("#KERBALISM_Generic_FROM"), " <b>", src.vesselName, "</b> ", Localizer.Format("#KERBALISM_Generic_TO"), " <b>", dst.vesselName, "</b>")
 				);
 		}

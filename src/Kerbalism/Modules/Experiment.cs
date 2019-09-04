@@ -189,7 +189,7 @@ namespace KERBALISM
 
 				string statusString = string.Empty;
 				switch (state) {
-					case State.ISSUE: statusString = Lib.Color("yellow", issue); break;
+					case State.ISSUE: statusString = Lib.Color(issue, Lib.KColor.Yellow); break;
 					case State.RUNNING: statusString = Lib.HumanReadablePerc(dataSampled / sampleSize) + eta; break;
 					case State.WAITING: statusString = "waiting" + eta; break;
 					case State.STOPPED: statusString = "stopped"; break;
@@ -654,7 +654,7 @@ namespace KERBALISM
 
 		public static void PostMultipleRunsMessage(string title, string vesselName)
 		{
-			Message.Post(Lib.Color("yellow", "ALREADY RUNNING", true), "Can't start " + title + " a second time on vessel " + vesselName);
+			Message.Post(Lib.Color("ALREADY RUNNING", Lib.KColor.Yellow, true), "Can't start " + title + " a second time on vessel " + vesselName);
 		}
 
 		[KSPEvent(guiActiveUnfocused = true, guiActive = true, guiActiveEditor = true, guiName = "_", active = true)]

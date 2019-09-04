@@ -50,6 +50,17 @@ namespace KERBALISM
 			}
 		}
 
+		static Version kspVersion;
+		/// <summary> current KSP version (not including build number)</summary>
+		public static Version KSPVersion
+		{
+			get
+			{
+				if (kspVersion == null) kspVersion = new Version(Versioning.version_major, Versioning.version_minor, Versioning.Revision);
+				return kspVersion;
+			}
+		}
+
 		/// <summary> current KSP version as a "MajorMinor" string</summary>
 		public static string KSPVersionCompact
 		{
@@ -352,7 +363,8 @@ namespace KERBALISM
 		/// set a value from a module using reflection
 		/// note: useful when the module is from another assembly, unknown at build time
 		/// note: useful when the value isn't persistent
-		/// note: this function break hard when external API change, by design		///</summary>
+		/// note: this function break hard when external API change, by design
+		///</summary>
 		public static void ReflectionValue<T>(PartModule m, string value_name, T value)
 		{
 			m.GetType().GetField(value_name, flags).SetValue(m, value);
@@ -445,34 +457,63 @@ namespace KERBALISM
 			return s.Length > 0 ? char.ToUpper(s[0]) + s.Substring(1) : string.Empty;
 		}
 
-
-		///<summary>return string with specified color if condition evaluate to true</summary>
-		public static string Color(string s, bool cond, string clr)
+		///<summary>standardized kerbalism string colors</summary>
+		public enum KColor
 		{
-			return !cond ? s : BuildString("<color=", clr, ">", s, "</color>");
+			None,
+			Green,
+			Yellow,
+			Orange,
+			Red,
+			PosRate,
+			NegRate,
+			ScienceBlue,
+			Cyan,
+			LightGrey
 		}
 
-
-		///<summary>return string with specified color and bold if stated</summary>
-		public static string Color(string color, string s, bool bold = false)
+		///<summary>return the hex representation for kerbalism colors</summary>
+		public static string HexColor(KColor color)
 		{
-			if (string.IsNullOrEmpty(color))
-				return !bold ? s : ("<b>" + s + "</b>");
-			return !bold ? ("<color=" + color + ">" + s + "</color>") : ("<color=" + color + "><b>" + s + "</b></color>");
+			switch (color)
+			{
+				case KColor.None: return "#ffffff"; // use this in the Color() methods if no color tag is to be applied
+				case KColor.Green: return "#CCFF00"; // ksp ui green
+				case KColor.Yellow: return "#FFD200"; // ksp ui yellow
+				case KColor.Orange: return "#FF8000"; // ksp ui orange
+				case KColor.Red: return "#C21807"; // custom red
+				case KColor.PosRate: return "#CCFF00"; // green
+				case KColor.NegRate: return "#FF8000"; // orange
+				case KColor.ScienceBlue: return "#6DCFF6"; // ksp science color
+				case KColor.Cyan: return "#ACFFFC"; // ksp ui light cyan (VAB part tooltip text)
+				case KColor.LightGrey: return "#CCCCCC"; // light grey
+				default: return "#fefefe";
+			}
 		}
 
+		///<summary>return string with the predefined color and bold if stated</summary>
+		public static string Color(string s, KColor color, bool bold = false)
+		{
+			return !bold ? BuildString("<color=", HexColor(color), ">", s, "</color>") : BuildString("<color=", HexColor(color), "><b>", s, "</b></color>");
+		}
+
+		///<summary>return string with different colors depending on the specified condition. "KColor.Default" will not apply any coloring</summary>
+		public static string Color(string s, bool condition, KColor colorIfTrue, KColor colorIfFalse = KColor.None, bool bold = false)
+		{
+			return condition ? Color(s, colorIfTrue, bold) : colorIfFalse == KColor.None ? bold ? Bold(s) : s : Color(s, colorIfFalse, bold);
+		}
 
 		///<summary>return string in bold</summary>
 		public static string Bold(string s)
 		{
-			return ("<b>" + s + "</b>");
+			return BuildString("<b>", s ,"</b>");
 		}
 
 
 		///<summary>return string in italic</summary>
 		public static string Italic(string s)
 		{
-			return ("<i>" + s + "</i>");
+			return BuildString("<i>", s, "</i>");
 		}
 
 
@@ -638,7 +679,7 @@ namespace KERBALISM
 		///<summary> Pretty-print a duration (duration is in seconds, must be positive) </summary>
 		public static string HumanReadableDuration(double duration)
 		{
-			if (duration <= double.Epsilon) return "none";
+			if (duration <= 0.0) return "none";
 			if (double.IsInfinity(duration) || double.IsNaN(duration)) return "perpetual";
 
 			double hours_in_day = HoursInDay();
@@ -974,7 +1015,8 @@ namespace KERBALISM
 
 		///<summary
 		/// return selected body in tracking-view/map-view
-		/// >if a vessel is selected, return its main body		///</summary>
+		/// >if a vessel is selected, return its main body
+		///</summary>
 		public static CelestialBody MapViewSelectedBody()
 		{
 			var target = PlanetariumCamera.fetch.target;
@@ -1209,7 +1251,8 @@ namespace KERBALISM
 		/// <summary>
 		/// return the volume of a part, in m^3
 		/// note: this can only be called when part has not been rotated
-		/// we could use the partPrefab bounding box, but then it isn't available in GetInfo()		/// </summary>
+		/// we could use the partPrefab bounding box, but then it isn't available in GetInfo()
+		/// </summary>
 		public static double PartVolume(Part p)
 		{
 			return PartVolume(p.GetPartRendererBound());
@@ -1223,7 +1266,8 @@ namespace KERBALISM
 		/// <summary>
 		/// return the surface of a part, in m^2
 		/// note: this can only be called when part has not been rotated
-		/// we could use the partPrefab bounding box, but then it isn't available in GetInfo()		/// </summary>
+		/// we could use the partPrefab bounding box, but then it isn't available in GetInfo()
+		/// </summary>
 		public static double PartSurface(Part p)
 		{
 			return PartSurface(p.GetPartRendererBound());
@@ -1370,7 +1414,8 @@ namespace KERBALISM
 
 		///<summary>
 		/// return true if a module implementing a specific type and satisfying the predicate specified exist in a vessel
-		/// note: disabled modules are ignored		///</summary>
+		/// note: disabled modules are ignored
+		///</summary>
 		public static bool HasModule<T>(Vessel v, Predicate<T> filter) where T : class
 		{
 			for (int i = 0; i < v.parts.Count; ++i)
@@ -1391,7 +1436,8 @@ namespace KERBALISM
 
 		///<summary>
 		/// return true if a proto module with the specified name and satisfying the predicate specified exist in a vessel
-		///note: disabled modules are not returned		///</summary>
+		///note: disabled modules are not returned
+		///</summary>
 		public static bool HasModule(ProtoVessel v, string module_name, Predicate<ProtoPartModuleSnapshot> filter)
 		{
 			for (int i = 0; i < v.protoPartSnapshots.Count; ++i)
