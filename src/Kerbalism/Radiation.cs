@@ -175,6 +175,7 @@ namespace KERBALISM
 			radiation_inner = Lib.ConfigValue(node, "radiation_inner", 0.0) / 3600.0;
 			radiation_outer = Lib.ConfigValue(node, "radiation_outer", 0.0) / 3600.0;
 			radiation_pause = Lib.ConfigValue(node, "radiation_pause", 0.0) / 3600.0;
+			radiation_gamma = Lib.ConfigValue(node, "radiation_gamma", 0.0) / 3600.0;
 			geomagnetic_pole_lat = Lib.ConfigValue(node, "geomagnetic_pole_lat", 90.0f);
 			geomagnetic_pole_lon = Lib.ConfigValue(node, "geomagnetic_pole_lon", 0.0f);
 			geomagnetic_offset = Lib.ConfigValue(node, "geomagnetic_offset", 0.0f);
@@ -195,10 +196,11 @@ namespace KERBALISM
 			geomagnetic_pole = new Vector3(x, y, z).normalized;
 		}
 
-		public string name;               // name of the body
-		public double radiation_inner;    // rad/s inside inner belt
-		public double radiation_outer;    // rad/s inside outer belt
-		public double radiation_pause;    // rad/s inside magnetopause
+		public string name;            // name of the body
+		public double radiation_inner; // rad/h inside inner belt
+		public double radiation_outer; // rad/h inside outer belt
+		public double radiation_pause; // rad/h inside magnetopause
+		public double radiation_gamma; // rad/h of gamma radiation emitted by body at 1 AU
 		public int reference;          // index of the body that determine x-axis of the gsm-space
 		public float geomagnetic_pole_lat = 90.0f;
 		public float geomagnetic_pole_lon = 0.0f;
@@ -616,6 +618,18 @@ namespace KERBALISM
 						radiation += Lib.Clamp(D / -0.1332f, 0.0f, 1.0f) * rb.radiation_pause;
 						magnetosphere |= D < 0.0f && !Lib.IsSun(rb.body); //< ignore heliopause
 						interstellar |= D > 0.0f && Lib.IsSun(rb.body); //< outside heliopause
+					}
+					if(rb.radiation_gamma > 0)
+					{
+						Vector3d direction;
+						double distance;
+						if(Sim.IsBodyVisible(v, position, body, v.KerbalismData().EnvVisibleBodies, out direction, out distance))
+						{
+							// radiation = r0 / (4 * pi * AU^2)
+							// r0 = radiation * (4 * pi * AU^2)
+							var r0 = rb.radiation_gamma * 4 * Math.PI * Sim.AU * Sim.AU / 3600.0;
+							radiation += r0 / (4 * Math.PI * distance * distance);
+						}
 					}
 				}
 
