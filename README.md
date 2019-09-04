@@ -174,13 +174,13 @@ communication system is simple, yet it also results in more realistic vessel and
 ## SCIENCE
 
 <img src="https://github.com/Kerbalism/Kerbalism/raw/master/misc/img/showcase/experiments.png" align="right">
+Experiments don't return their science output instantly, they require some time to run. Some complete in minutes, others will take months. Not to worry, experiments can run on vessels in the background, you don't have to watch your vessel while it is collecting or transmitting science.
 
-Experiments don't return their science output instantly, they require some time to run. Some complete in minutes, others
-will take months. Not to worry, experiments can run on vessels in the background, you don't have to watch your vessel while it
-is collecting or transmitting science.
+While experiments take some time to finish, they don't have to finish in one run. If you don't have enough time to collect that pressure reading in high atmosphere, just do it again on your next flight - it will pick up from where it stopped last time.
 
-There are two different kinds of experiments: sensor readings and samples. Sensor readings are just plain
-data that can be transmitted back directly, like a temperature reading or an EVA report. Samples however are physical, they require the delicate handling by kerbals, and cannot be transmitted. Instead they have to be recovered, either by crew or by recovering the experiment on Kerbin. Samples also can be analyzed in a lab, which converts them to data that can be transmitted. Analyzing takes a long time, happens transparently to loaded and unloaded vessels alike, and can't be cheated to create science out of thin air.
+There are two different kinds of experiments: sensor readings and samples. Sensor readings are just plain data that can be transmitted back directly, like a temperature reading or an EVA report. Samples however are physical, they require the delicate handling by kerbals, and cannot be transmitted. Instead they have to be recovered, either by crew or by recovering the experiment on Kerbin. Samples also can be analyzed in a lab, which converts them to data that can be transmitted. Analyzing takes a long time, happens transparently to loaded and unloaded vessels alike, and can't be cheated to create science out of thin air.
+
+Kerbalism also extends the science system quite a bit by adding new requirements that have to be met for experiments: some only work around certain bodies, others don't work near any body at all but require to be in interplanetary space. There even are experiments that need to be submerged deep in an ocean.
 
 We support many of the most popular science mods directly, for others we use an interesting method to bridge existing stock and third-party experiments to the new science system. It works works for most experiments, including Breaking Grounds.
 
@@ -188,8 +188,13 @@ We support many of the most popular science mods directly, for others we use an 
 ## AUTOMATION
 
 <img src="https://github.com/Kerbalism/Kerbalism/raw/master/misc/img/showcase/telemetry-demo.gif" align="right">
+Components can be controlled and automated using a minimalist scripting system, with a neat little editor.
 
-Components can be controlled and automated using a minimalist scripting system, with a neat little editor. Scripts are triggered manually or by environmental conditions. You can create a script to turn on all the lights as soon as the Sun is not visible anymore, or retract all solar panels as soon as you enter an atmosphere, or extend antennas as soon as you landed. You don't even have to load the vessel to do it, all this can be done from the KSC!
+Scripts are triggered manually or by environmental conditions, on all your vessels, all the time.
+
+You can create a script to turn on all the lights as soon as the Sun is not visible anymore, or retract all solar panels as soon as you enter an atmosphere, or extend antennas as soon as you landed.
+
+You don't even have to load the vessel to change the programming of the automation, it can be done from the KSC!
 
 
 ## USER INTERFACE
@@ -204,12 +209,9 @@ scripts, manage your science data including transmission and analysis, and confi
 ## MODULES EMULATION
 
 <img src="https://github.com/Kerbalism/Kerbalism/raw/master/misc/img/showcase/planner-demo.gif"  align="left">
+Most stock modules and some third-party ones are emulated for what concerns the mechanics introduced by the mod.
 
-Most stock modules and some third-party ones are emulated for what concerns the mechanics introduced by the mod. The
-level of support depends on the specific module, and may include: simulation of resource consumption and production in
-unloaded vessels, fixing of timewarp issues in loaded vessels, the ability to disable the module after malfunctions,
-and also the means to start and stop the module in an automation script.
-
+The level of support depends on the specific module, and may include: simulation of resource consumption and production in unloaded vessels, fixing of timewarp issues in loaded vessels, the ability to disable the module after malfunctions, and also the means to start and stop the module in an automation script.
 
 
 
