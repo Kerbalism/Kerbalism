@@ -686,8 +686,11 @@ namespace KERBALISM
 				if (magnetosphere) blackout = true;
 				else
 				{
-					radiation += PreferencesStorm.Instance.StormRadiation * sunlight;
-					shieldedRadiation += vd.EnvSunShieldingInfo.AverageHabitatRadiation(PreferencesStorm.Instance.StormRadiation * sunlight);
+					var activity = SolarActivity(vd.EnvMainSun.SunData.body, false) / 2.0;
+					var strength = PreferencesStorm.Instance.StormRadiation * sunlight * (activity + 0.5);
+
+					radiation += strength;
+					shieldedRadiation += vd.EnvSunShieldingInfo.AverageHabitatRadiation(strength);
 				}
 			}
 
@@ -806,7 +809,6 @@ namespace KERBALISM
 			}
 		}
 
-
 		// deduce first interesting body for radiation in the body chain
 		static CelestialBody Interesting_body(CelestialBody body)
 		{
@@ -816,6 +818,7 @@ namespace KERBALISM
 				return Interesting_body(body.referenceBody);      // recursively
 			else return null;                                   // nothing in chain
 		}
+
 		static CelestialBody Interesting_body()
 		{
 			var target = PlanetariumCamera.fetch.target;
@@ -862,6 +865,5 @@ namespace KERBALISM
 		// nominal radiation is used to never allow zero radiation
 		public static double Nominal = 0.00000001;
 	}
-
 
 } // KERBALISM

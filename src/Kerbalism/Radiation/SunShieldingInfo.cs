@@ -6,8 +6,8 @@ namespace KERBALISM
 {
 	public class SunShieldingPartInfo
 	{
-		public double distance;
-		public double thickness;
+		public double distance = 1.0;
+		public double thickness = 1.0;
 
 		public SunShieldingPartInfo(double distance, double thickness)
 		{
@@ -23,14 +23,16 @@ namespace KERBALISM
 
 		public void Save(ConfigNode node)
 		{
-			node.SetValue("distance", distance);
-			node.SetValue("thickness", thickness);
+			node.AddValue("distance", distance);
+			node.AddValue("thickness", thickness);
 		}
 	}
 
 	public class SunShieldingInfo
 	{
 		public Dictionary<uint, List<SunShieldingPartInfo>> habitatShieldings = new Dictionary<uint, List<SunShieldingPartInfo>>();
+		private int habitatIndex = -1;
+		private List<Habitat> habitats;
 
 		public SunShieldingInfo()
 		{
@@ -39,35 +41,30 @@ namespace KERBALISM
 
 		public SunShieldingInfo(ConfigNode node)
 		{
-			/*
 			if (!node.HasNode("sspi")) return;
-
-
 			foreach(var n in node.GetNode("sspi").GetNodes())
 			{
-
 				uint partId = uint.Parse(n.name);
-				n.
-
+				List<SunShieldingPartInfo> sspiList = new List<SunShieldingPartInfo>();
+				foreach (var p in n.GetNodes())
+				{
+					sspiList.Add(new SunShieldingPartInfo(p));
+				}
+				habitatShieldings[partId] = sspiList;
 			}
-			*/
 		}
 
 		internal void Save(ConfigNode node)
 		{
-			/*
-			var parts_node = node.AddNode("sspi");
+			var sspiNode = node.AddNode("sspi");
 			foreach(var entry in habitatShieldings)
 			{
-				var n = parts_node.AddNode(entry.Key.ToString());
-				foreach(var i in entry.Value)
+				var n = sspiNode.AddNode(entry.Key.ToString());
+				for(var i = 0; i < entry.Value.Count; i++)
 				{
-					n.GetValues()
-					i.Save(n.AddNode()
+					entry.Value[i].Save(n.AddNode(i.ToString()));
 				}
-				entry.Value.Save(parts_node.AddNode(entry.Key.ToString());
 			}
-			*/
 		}
 
 		public void Add(Part habitat)
@@ -103,7 +100,6 @@ namespace KERBALISM
 			habitatShieldings[habitat.flightID] = sunShieldingParts;
 		}
 
-
 		public double AverageHabitatRadiation(double radiation)
 		{
 			if (habitatShieldings.Count < 1) return radiation;
@@ -122,13 +118,14 @@ namespace KERBALISM
 					// to many GeV (the fastest particles can approach the speed of light, as in a
 					// "ground-level event"). This is why they are such a big problem for interplanetary space travel.
 
-					// We assume a 1m halfing thickness for that kind of ionized radiation.
+					// We just assume a big halfing thickness for that kind of ionized radiation.
+					var halfingThickness = 1.0;
 
 					// halfing factor h = part thickness / halfing thickness
 					// remaining radiation = radiation / (2^h)
 					// However, what you loose in particle radiation you gain in gamma radiation (Bremsstrahlung)
 
-					var bremsstrahlung = remainingRadiation / Math.Pow(2, shieldingInfo.thickness);
+					var bremsstrahlung = remainingRadiation / Math.Pow(2, shieldingInfo.thickness / halfingThickness);
 					remainingRadiation -= bremsstrahlung;
 
 					result += Radiation.DistanceFactor(bremsstrahlung, shieldingInfo.distance);
@@ -144,14 +141,24 @@ namespace KERBALISM
 		{
 			if (!v.loaded) return;
 
-			var vd = v.KerbalismData();
-			habitatShieldings.Clear();
+			if(habitats == null)
+				habitats = Lib.FindModules<Habitat>(v);
 
-			var habitats = Lib.FindModules<Habitat>(v);
+			if(habitatIndex < 0)
+			{
+				// first run, do them all
+				foreach (var habitat in habitats)
+					Add(habitat.part);
+				habitatIndex = 0;
+			}
+			else
+			{
+				// only do one habitat at a time to preserve some performance
+				Add(habitats[habitatIndex].part);
+				habitatIndex = (habitatIndex + 1) % habitats.Count;
+			}
 
-			foreach (var habitat in habitats)
-				Add(habitat.part);
-
+			// always do EVAs
 			if (v.isEVA)
 				Add(v.rootPart);
 		}

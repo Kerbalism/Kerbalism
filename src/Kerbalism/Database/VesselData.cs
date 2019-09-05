@@ -421,16 +421,18 @@ namespace KERBALISM
 
 		public void UpdateOnVesselModified(Vessel v)
 		{
+			sunShieldingInfo = new SunShieldingInfo();
 			Update(v);
 			if (IsValid) EvaluateStatus();
 		}
 
 		public void UpdateOnDock()
 		{
-			this.Vessel = null;
+			Vessel = null;
 			msg_belt = false;
 			msg_signal = false;
 			stormData = new StormData();
+			sunShieldingInfo = new SunShieldingInfo();
 			supplies.Clear();
 			scansat_id.Clear();
 		}
@@ -451,6 +453,7 @@ namespace KERBALISM
 			cfg_highlights = PreferencesBasic.Instance.highlights;
 			cfg_showlink = true;
 			stormData = new StormData();
+			sunShieldingInfo = new SunShieldingInfo();
 			computer = new Computer();
 			supplies = new Dictionary<string, SupplyData>();
 			scansat_id = new List<uint>();
@@ -491,7 +494,6 @@ namespace KERBALISM
 			}
 
 			if (node.HasNode("ScienceLog")) ScienceLog.Load(node.GetNode("ScienceLog"));
-
 			if (node.HasNode("SunShielding")) sunShieldingInfo = new SunShieldingInfo(node.GetNode("SunShielding"));
 		}
 
@@ -523,8 +525,7 @@ namespace KERBALISM
 			}
 
 			ScienceLog.Save(node.AddNode("ScienceLog"));
-
-			if (EnvSunShieldingInfo != null) EnvSunShieldingInfo.Save(node.AddNode("SunShielding"));
+			EnvSunShieldingInfo.Save(node.AddNode("SunShielding"));
 		}
 
 		#endregion

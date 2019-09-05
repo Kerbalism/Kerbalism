@@ -163,7 +163,6 @@
     <Compile Include="Contracts\MannedOrbit.cs" />
     <Compile Include="Contracts\SpaceAnalysis.cs" />
     <Compile Include="Contracts\SpaceHarvest.cs" />
-    <Compile Include="Database\StormData.cs" />
     <Compile Include="Database\DB.cs" />
     <Compile Include="Database\KerbalData.cs" />
     <Compile Include="Database\LandmarkData.cs" />
@@ -240,7 +239,6 @@
     <Compile Include="Profile\Supply.cs" />
     <Compile Include="Profile\Rule.cs" />
     <Compile Include="Sim.cs" />
-    <Compile Include="Storm.cs" />
     <Compile Include="System\Features.cs" />
     <Compile Include="System\Kerbalism.cs" />
     <Compile Include="Lib.cs" />
@@ -267,6 +265,8 @@
     <Compile Include="Database\ScienceLog.cs" />
     <Compile Include="Radiation\Radiation.cs" />
     <Compile Include="Radiation\SunShieldingInfo.cs" />
+    <Compile Include="Radiation\StormData.cs" />
+    <Compile Include="Radiation\Storm.cs" />
   </ItemGroup>
   <!-- ///////////////////////////////////////////////////// -->
   <!-- ////////// IMPORT DEFAULT MS BUILD PROCESS ////////// -->

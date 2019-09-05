@@ -24,7 +24,7 @@ namespace KERBALISM
 				var avgDuration = PreferencesStorm.Instance.AvgStormDuration;
 
 				// retry after 5 * average storm duration + some random jitter
-				bd.storm_generation = now + avgDuration * 10 + avgDuration * Lib.RandomDouble();
+				bd.storm_generation = now + avgDuration * 5 + avgDuration * Lib.RandomDouble() * 5;
 
 				var activity = Radiation.SolarActivity(sun);
 				if (Lib.RandomDouble() < activity * 0.8)
@@ -36,8 +36,19 @@ namespace KERBALISM
 					// if further out, the storm lasts longer (but is weaker)
 					bd.storm_duration /= Storm_frequency(distanceToSun);
 
+					// set a start time to give enough time for warning
+					bd.storm_time = now + Time_to_impact(distanceToSun) + 60;
+
 					// delay next storm generation by duration of this one
 					bd.storm_generation += bd.storm_duration;
+
+#if DEBUG
+					Lib.Log("Storm on " + body + " will start in " + Lib.HumanReadableDuration(bd.storm_time - now) + " and last for " + Lib.HumanReadableDuration(bd.storm_duration));
+				}
+				else
+				{
+					Lib.Log("No storm on " + body + ", will retry in " + Lib.HumanReadableDuration(bd.storm_generation - now));
+#endif
 				}
 			}
 
