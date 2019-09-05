@@ -351,7 +351,7 @@ namespace KERBALISM
 			else
 				exposureState = ExposureState.Exposed;
 
-#if DEBUG
+#if DEBUG_SOLAR
 			Vector3d sunDirDebug = trackedSunInfo.Direction;
 
 			// flight view sun dir
@@ -813,7 +813,7 @@ namespace KERBALISM
 			// we use the current panel orientation, only doing it ourself when analytic = true
 			public override double GetCosineFactor(Vector3d sunDir, bool analytic = false)
 			{
-#if DEBUG
+#if DEBUG_SOLAR
 				SolarDebugDrawer.DebugLine(sunCatcherPosition.position, sunCatcherPosition.position + sunCatcherPivot.forward, Color.yellow);
 				if (panelModule.isTracking) SolarDebugDrawer.DebugLine(sunCatcherPivot.position, sunCatcherPivot.position + (sunCatcherPivot.up * -1f), Color.blue);
 #endif
@@ -918,7 +918,7 @@ namespace KERBALISM
 
 			public override bool OnStart(bool initialized, ref double nominalRate)
 			{
-#if !DEBUG
+#if !DEBUG_SOLAR
 				try
 				{
 #endif
@@ -942,7 +942,7 @@ namespace KERBALISM
 					nominalRate = Lib.ReflectionValue<float>(panelModule, "TotalEnergyRate");
 
 					return true;
-#if !DEBUG
+#if !DEBUG_SOLAR
 				}
 				catch (Exception ex) 
 				{
@@ -989,7 +989,7 @@ namespace KERBALISM
 				foreach (Transform panel in sunCatchers)
 				{
 					cosineFactor += Math.Max(Vector3d.Dot(sunDir, panel.forward), 0.0);
-#if DEBUG
+#if DEBUG_SOLAR
 					SolarDebugDrawer.DebugLine(panel.position, panel.position + panel.forward, Color.yellow);
 #endif
 				}
@@ -1079,7 +1079,7 @@ namespace KERBALISM
 			{
 				// disable it completely
 				panelModule.enabled = panelModule.isEnabled = panelModule.moduleIsEnabled = false;
-#if !DEBUG
+#if !DEBUG_SOLAR
 				try
 				{
 #endif
@@ -1092,7 +1092,7 @@ namespace KERBALISM
 					// the nominal rate defined in SSTU is per transform
 					nominalRate = Lib.ReflectionValue<float>(panelModule, "resourceAmount") * sunCatchers.Length;
 					return true;
-#if !DEBUG
+#if !DEBUG_SOLAR
 				}
 				catch (Exception ex)
 				{
@@ -1110,7 +1110,7 @@ namespace KERBALISM
 				foreach (Transform panel in sunCatchers)
 				{
 					cosineFactor += Math.Max(Vector3d.Dot(sunDir, panel.forward), 0.0);
-#if DEBUG
+#if DEBUG_SOLAR
 					SolarDebugDrawer.DebugLine(panel.position, panel.position + panel.forward, Color.yellow);
 #endif
 				}
@@ -1223,7 +1223,7 @@ namespace KERBALISM
 
 			public override bool OnStart(bool initialized, ref double nominalRate)
 			{
-#if !DEBUG
+#if !DEBUG_SOLAR
 				try
 				{
 #endif
@@ -1315,7 +1315,7 @@ namespace KERBALISM
 						case "SSTUSolarPanelDeployable": foreach(var field in panelModule.Fields) field.guiActive = false; break;
 					}
 					return true;
-#if !DEBUG
+#if !DEBUG_SOLAR
 				}
 				catch (Exception ex)
 				{
@@ -1335,7 +1335,7 @@ namespace KERBALISM
 					suncatcherTotalCount += panel.SuncatcherCount;
 					for (int i = 0; i < panel.SuncatcherCount; i++)
 					{
-#if DEBUG
+#if DEBUG_SOLAR
 						SolarDebugDrawer.DebugLine(panel.SuncatcherPosition(i), panel.SuncatcherPosition(i) + panel.SuncatcherAxisVector(i), Color.yellow);
 						if (trackingType == TrackingType.SinglePivot) SolarDebugDrawer.DebugLine(panel.pivot.position, panel.pivot.position + (panel.PivotAxisVector * -1f), Color.blue);
 #endif
@@ -1391,7 +1391,7 @@ namespace KERBALISM
 					case TrackingType.Fixed: return PanelState.Static;
 					case TrackingType.Unknown: return PanelState.Unknown;
 				}
-#if !DEBUG
+#if !DEBUG_SOLAR
 				try
 				{
 #endif
@@ -1413,7 +1413,7 @@ namespace KERBALISM
 						case "PLAYING_FORWARD": return PanelState.Extending;
 						case "PLAYING_BACKWARD": return PanelState.Retracting;
 					}
-#if !DEBUG
+#if !DEBUG_SOLAR
 				}
 				catch { return PanelState.Unknown; }
 #endif
@@ -1487,25 +1487,25 @@ namespace KERBALISM
 			}
 		}
 
-		[Conditional("DEBUG")]
+		[Conditional("DEBUG_SOLAR")]
 		public static void DebugLine(Vector3 start, Vector3 end, Color col)
 		{
 			lines.Add(new Line(start, end, col));
 		}
 
-		[Conditional("DEBUG")]
+		[Conditional("DEBUG_SOLAR")]
 		public static void DebugPoint(Vector3 start, Color col)
 		{
 			points.Add(new Point(start, col));
 		}
 
-		[Conditional("DEBUG")]
+		[Conditional("DEBUG_SOLAR")]
 		public static void DebugTransforms(Transform t)
 		{
 			transforms.Add(new Trans(t.position, t.up, t.right, t.forward));
 		}
 
-		[Conditional("DEBUG")]
+		[Conditional("DEBUG_SOLAR")]
 		private void Start()
 		{
 			DontDestroyOnLoad(this);

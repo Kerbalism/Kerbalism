@@ -314,10 +314,6 @@ namespace KERBALISM
 					break;
 			}
 
-#if DEBUG
-			status_str += " Radiation " + Lib.HumanReadableRadiation(vessel.KerbalismData().EnvHabitatRadiation);
-#endif
-
 			Events["Toggle"].guiName = Lib.StatusToggle("Habitat", status_str);
 
 			// Changing this animation when we expect rotation will not work because
