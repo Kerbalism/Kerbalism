@@ -654,7 +654,7 @@ namespace KERBALISM
 							var r0 = rb.radiation_surface * 4 * Math.PI * body.Radius * body.Radius;
 
 							// if there is a solar cycle, add a bit of radiation variation relative to current activity
-							if(rb.solar_cycle > 0) r0 += r0 * 0.2 * SolarActivity(body, false);
+							if(rb.solar_cycle > 0) r0 += r0 * 0.2 * Math.Max(0, SolarActivity(body, false));
 
 							// radiation = r0 / (4 * pi * r^2) where r is the distance from the emitter r0
 							var r1 = DistanceFactor(r0, distance);
