@@ -5,8 +5,6 @@ using UnityEngine;
 
 namespace KERBALISM
 {
-
-
 	public static class BodyInfo
 	{
 		public static void Body_info(this Panel p)
@@ -65,7 +63,20 @@ namespace KERBALISM
 				p.AddSection("RADIATION");
 
 				string inner, outer, pause;
-				RadiationLevels(body, out inner, out outer, out pause);
+				double activity, cycle;
+				RadiationLevels(body, out inner, out outer, out pause, out activity, out cycle);
+
+				if (Storm.sun_observation_quality > 0.5 && activity > -1)
+				{
+					string title = "solar activity";
+
+					if(Storm.sun_observation_quality > 0.75)
+					{
+						title = Lib.BuildString(title, ": ", Lib.Color("#cccc", Lib.HumanReadableDuration(cycle) + " cycle"));
+					}
+
+					p.AddContent(title, Lib.HumanReadablePerc(activity));
+				}
 
 				p.AddContent(Lib.BuildString("inner belt: ", Lib.Color("#cccccc", inner)),
 					Radiation.show_inner ? "<color=green>show</color>" : "<color=red>hide</color>", string.Empty, () => p.Toggle(ref Radiation.show_inner));
@@ -83,15 +94,14 @@ namespace KERBALISM
 			p.Title(Lib.BuildString(Lib.Ellipsis(body.bodyName, Styles.ScaleStringLength(24)), " <color=#cccccc>BODY INFO</color>"));
 		}
 
-		private static void RadiationLevels(CelestialBody body, out string inner, out string outer, out string pause)
+		private static void RadiationLevels(CelestialBody body, out string inner, out string outer, out string pause, out double activity, out double cycle)
 		{
-			// TODO cache this information in RadiationBody
-
-			double rad = PreferencesStorm.Instance.externRadiation;
-			var rbSun = Radiation.Info(Lib.GetParentSun(body)); // TODO Kopernicus support : not sure if this work with multiple suns/stars
-			rad += rbSun.radiation_pause;
+			// TODO cache this information somewhere
 
 			var rb = Radiation.Info(body);
+			double rad = PreferencesStorm.Instance.externRadiation;
+			var rbSun = Radiation.Info(Lib.GetParentSun(body));
+			rad += rbSun.radiation_pause;
 
 			if (rb.inner_visible)
 				inner = rb.model.has_inner ? "~" + Lib.HumanReadableRadiation(Math.Max(0, rad + rb.radiation_inner) / 3600.0) : "n/a";
@@ -107,6 +117,10 @@ namespace KERBALISM
 				pause = rb.model.has_pause ? "~" + Lib.HumanReadableRadiation(Math.Max(0, rad + rb.radiation_pause) / 3600.0) : "n/a";
 			else
 				pause = "unknown";
+
+			activity = -1;
+			cycle = rb.solar_cycle;
+			if(cycle > 0) activity = Radiation.SolarActivity(body);
 		}
 	}
 

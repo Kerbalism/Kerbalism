@@ -285,17 +285,8 @@ namespace KERBALISM
 
 	public class PreferencesStorm : GameParameters.CustomParameterNode
 	{
-		[GameParameters.CustomIntParameterUI("Min Days Between Storms", minValue = 1, maxValue = 2000, toolTip = "Minimum days between storms over a system")]
-		public int stormMinDays = Settings.StormMinDays;
-
-		[GameParameters.CustomIntParameterUI("Max Days Between Storms", minValue = 1, maxValue = 2000, toolTip = "Maximum days between storms over a system")]
-		public int stormMaxDays = Settings.StormMaxDays;
-
-		[GameParameters.CustomIntParameterUI("Storm Duration Hours", minValue = 1, maxValue = 200, toolTip = "Average duration of a storm in hours")]
-		public int stormDurationHours = Settings.StormDurationHours;//6;
-
-		[GameParameters.CustomFloatParameterUI("Storm Ejection Speed", asPercentage = true, minValue = 0.01f, maxValue = 1, displayFormat = "F2", toolTip = "CME speed as percentage of C")]
-		public float stormEjectionSpeedC = Settings.StormEjectionSpeed;
+		[GameParameters.CustomIntParameterUI("Average storm duration (hours)", minValue = 1, maxValue = 200, toolTip = "Average duration of a sun storm in hours")]
+		public int stormDurationHours = Settings.StormDurationHours;
 
 		[GameParameters.CustomFloatParameterUI("Shielding Efficiency", asPercentage = true, minValue = 0.01f, maxValue = 1, displayFormat = "F2", toolTip = "Proportion of radiation blocked by shielding (at max amount)")]
 		public float shieldingEfficiency = Settings.ShieldingEfficiency;
@@ -306,17 +297,13 @@ namespace KERBALISM
 		[GameParameters.CustomFloatParameterUI("External Radiation rad/h", minValue = 0.01f, maxValue = 2, displayFormat = "F2", toolTip = "Radiation outside the heliopause")]
 		public float externRadiation = Settings.ExternRadiation;
 
-		public double StormMinTime { get { return stormMinDays * Lib.HoursInDay() * 3600.0; } }
-
-		public double StormMaxTime { get { return stormMaxDays * Lib.HoursInDay() * 3600.0; } }
-
-		public double StormDuration { get { return stormDurationHours * 3600.0; } }
+		public double AvgStormDuration { get { return stormDurationHours * 3600.0; } }
 
 		public double ExternRadiation { get { return externRadiation / 3600.0; } }
 
 		public double StormRadiation { get { return stormRadiation / 3600.0; } }
 
-		public double StormEjectionSpeed { get { return stormEjectionSpeedC * 299792458.0; } }
+		public double StormEjectionSpeed { get { return Settings.StormEjectionSpeed * 299792458.0; } }
 
 		public override GameParameters.GameMode GameMode { get { return GameParameters.GameMode.ANY; } }
 
@@ -328,7 +315,7 @@ namespace KERBALISM
 
 		public override int SectionOrder { get { return 2; } }
 
-		public override string Title { get { return "Storms & Radiation"; } }
+		public override string Title { get { return "Radiation"; } }
 
 		private static PreferencesStorm instance;
 

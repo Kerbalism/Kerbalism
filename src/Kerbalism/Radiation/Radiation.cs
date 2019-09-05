@@ -8,8 +8,6 @@ using UnityEngine;
 
 namespace KERBALISM
 {
-
-
 	// store data for a radiation environment model
 	// and can evaluate signed distance from the inner & outer belt and the magnetopause
 	public sealed class RadiationModel
@@ -175,7 +173,8 @@ namespace KERBALISM
 			radiation_inner = Lib.ConfigValue(node, "radiation_inner", 0.0) / 3600.0;
 			radiation_outer = Lib.ConfigValue(node, "radiation_outer", 0.0) / 3600.0;
 			radiation_pause = Lib.ConfigValue(node, "radiation_pause", 0.0) / 3600.0;
-			radiation_gamma = Lib.ConfigValue(node, "radiation_gamma", 0.0) / 3600.0;
+			radiation_surface = Lib.ConfigValue(node, "radiation_surface", 0.0) / 3600.0;
+			solar_cycle = Lib.ConfigValue(node, "solar_cycle", 0);
 			geomagnetic_pole_lat = Lib.ConfigValue(node, "geomagnetic_pole_lat", 90.0f);
 			geomagnetic_pole_lon = Lib.ConfigValue(node, "geomagnetic_pole_lon", 0.0f);
 			geomagnetic_offset = Lib.ConfigValue(node, "geomagnetic_offset", 0.0f);
@@ -200,7 +199,8 @@ namespace KERBALISM
 		public double radiation_inner; // rad/h inside inner belt
 		public double radiation_outer; // rad/h inside outer belt
 		public double radiation_pause; // rad/h inside magnetopause
-		public double radiation_gamma; // rad/h of gamma radiation emitted by body at 1 AU
+		public double radiation_surface; // rad/h of gamma radiation on the surface
+		public double solar_cycle;     // interval time of solar activity (11 years for sun)
 		public int reference;          // index of the body that determine x-axis of the gsm-space
 		public float geomagnetic_pole_lat = 90.0f;
 		public float geomagnetic_pole_lon = 0.0f;
@@ -558,10 +558,26 @@ namespace KERBALISM
 			return bodies.TryGetValue(body.bodyName, out rb) ? rb : null; //< this should never happen
 		}
 
+		/// <summary> Calculate radiation at a given distance to an emitter by inverse square law </summary>
 		public static double DistanceFactor(double radiation, double distance)
 		{
 			// result = radiation / (4 * Pi * r^2)
 			return radiation / Math.Max(1.0, 4 * Math.PI * distance * distance);
+		}
+
+		/// <summary> Return a number between 0 and 1 that represents current solar activity </summary>
+		public static double SolarActivity(CelestialBody sun, bool clamp = true)
+		{
+			var info = Info(sun);
+			if (info.solar_cycle <= 0) return 0;
+
+			var t = Planetarium.GetUniversalTime() / info.solar_cycle;
+
+			// this gives a pseudo-erratic curve, see https://www.desmos.com/calculator/tyuqgdk4jh
+			var r = (-Math.Cos(t) + Math.Sin(t * 75) / 5 + 0.9) / 2.0;
+
+			if (clamp) r = Lib.Clamp(r, 0.0, 1.0);
+			return r;
 		}
 
 		// return the total environent radiation at position specified
@@ -625,15 +641,22 @@ namespace KERBALISM
 						magnetosphere |= D < 0.0f && !Lib.IsSun(rb.body); //< ignore heliopause
 						interstellar |= D > 0.0f && Lib.IsSun(rb.body); //< outside heliopause
 					}
-					if(rb.radiation_gamma > 0)
+					if(rb.radiation_surface > 0)
 					{
 						Vector3d direction;
 						double distance;
 						if(Sim.IsBodyVisible(v, position, body, v.KerbalismData().EnvVisibleBodies, out direction, out distance))
 						{
-							// radiation = r0 / (4 * pi * AU^2)
-							// r0 = radiation * (4 * pi * AU^2)
-							var r0 = rb.radiation_gamma * 4 * Math.PI * Sim.AU * Sim.AU;
+							// for easier configuration, the radiation model sets the radiation on the surface of the body.
+							// from there, it decreases according to the inverse square law with distance from the surface.
+
+							// calculate point emitter strength r0 at center of body
+							var r0 = rb.radiation_surface * 4 * Math.PI * body.Radius * body.Radius;
+
+							// if there is a solar cycle, add a bit of radiation variation relative to current activity
+							if(rb.solar_cycle > 0) r0 += r0 * 0.2 * SolarActivity(body, false);
+
+							// radiation = r0 / (4 * pi * r^2) where r is the distance from the emitter r0
 							var r1 = DistanceFactor(r0, distance);
 							radiation += r1;
 						}
