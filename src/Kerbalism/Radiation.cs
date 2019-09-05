@@ -175,7 +175,7 @@ namespace KERBALISM
 			radiation_inner = Lib.ConfigValue(node, "radiation_inner", 0.0) / 3600.0;
 			radiation_outer = Lib.ConfigValue(node, "radiation_outer", 0.0) / 3600.0;
 			radiation_pause = Lib.ConfigValue(node, "radiation_pause", 0.0) / 3600.0;
-			radiation_gamma = Lib.ConfigValue(node, "radiation_gamma", 0.0) / 3600.0;
+			radiation_surface = Lib.ConfigValue(node, "radiation_surface", 0.0) / 3600.0;
 			geomagnetic_pole_lat = Lib.ConfigValue(node, "geomagnetic_pole_lat", 90.0f);
 			geomagnetic_pole_lon = Lib.ConfigValue(node, "geomagnetic_pole_lon", 0.0f);
 			geomagnetic_offset = Lib.ConfigValue(node, "geomagnetic_offset", 0.0f);
@@ -200,7 +200,7 @@ namespace KERBALISM
 		public double radiation_inner; // rad/h inside inner belt
 		public double radiation_outer; // rad/h inside outer belt
 		public double radiation_pause; // rad/h inside magnetopause
-		public double radiation_gamma; // rad/h of gamma radiation emitted by body at 1 AU
+		public double radiation_surface; // rad/h of gamma radiation on the surface
 		public int reference;          // index of the body that determine x-axis of the gsm-space
 		public float geomagnetic_pole_lat = 90.0f;
 		public float geomagnetic_pole_lon = 0.0f;
@@ -625,19 +625,23 @@ namespace KERBALISM
 						magnetosphere |= D < 0.0f && !Lib.IsSun(rb.body); //< ignore heliopause
 						interstellar |= D > 0.0f && Lib.IsSun(rb.body); //< outside heliopause
 					}
-					if(rb.radiation_gamma > 0)
+					if(rb.radiation_surface > 0)
 					{
 						Vector3d direction;
 						double distance;
 						if(Sim.IsBodyVisible(v, position, body, v.KerbalismData().EnvVisibleBodies, out direction, out distance))
 						{
-							// radiation = r0 / (4 * pi * AU^2)
-							// r0 = radiation * (4 * pi * AU^2)
-							var r0 = rb.radiation_gamma * 4 * Math.PI * Sim.AU * Sim.AU;
+							// for easier configuration, the radiation model sets the radiation on the surface of the body.
+							// from there, it decreases according to the inverse square law with distance from the surface.
+
+							// calculate point emitter strength r0 at center of body
+							var r0 = rb.radiation_surface * 4 * Math.PI * body.Radius * body.Radius;
+
+							// radiation = r0 / (4 * pi * r^2) where r is the distance from the emitter r0
 							var r1 = DistanceFactor(r0, distance);
 							radiation += r1;
 #if DEBUG
-							Lib.Log("Vessel " + v + " body " + body + " gamma radiation: " + Lib.HumanReadableRadiation(rb.radiation_gamma) + " r0 " + Lib.HumanReadableRadiation(r0) + " r1 " + Lib.HumanReadableRadiation(r1));
+							Lib.Log("Vessel " + v + " body " + body + " surface radiation: " + Lib.HumanReadableRadiation(rb.radiation_surface) + " r1 " + Lib.HumanReadableRadiation(r1));
 #endif
 						}
 					}
