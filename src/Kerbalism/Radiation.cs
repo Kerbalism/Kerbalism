@@ -8,8 +8,6 @@ using UnityEngine;
 
 namespace KERBALISM
 {
-
-
 	// store data for a radiation environment model
 	// and can evaluate signed distance from the inner & outer belt and the magnetopause
 	public sealed class RadiationModel
@@ -176,6 +174,7 @@ namespace KERBALISM
 			radiation_outer = Lib.ConfigValue(node, "radiation_outer", 0.0) / 3600.0;
 			radiation_pause = Lib.ConfigValue(node, "radiation_pause", 0.0) / 3600.0;
 			radiation_surface = Lib.ConfigValue(node, "radiation_surface", 0.0) / 3600.0;
+			solar_cycle = Lib.ConfigValue(node, "solar_cycle", 11 * Lib.DaysInYear() * Lib.HoursInDay() * 3600.0);
 			geomagnetic_pole_lat = Lib.ConfigValue(node, "geomagnetic_pole_lat", 90.0f);
 			geomagnetic_pole_lon = Lib.ConfigValue(node, "geomagnetic_pole_lon", 0.0f);
 			geomagnetic_offset = Lib.ConfigValue(node, "geomagnetic_offset", 0.0f);
@@ -201,6 +200,7 @@ namespace KERBALISM
 		public double radiation_outer; // rad/h inside outer belt
 		public double radiation_pause; // rad/h inside magnetopause
 		public double radiation_surface; // rad/h of gamma radiation on the surface
+		public double solar_cycle;     // interval time of solar activity (11 years for sun)
 		public int reference;          // index of the body that determine x-axis of the gsm-space
 		public float geomagnetic_pole_lat = 90.0f;
 		public float geomagnetic_pole_lon = 0.0f;
@@ -558,10 +558,22 @@ namespace KERBALISM
 			return bodies.TryGetValue(body.bodyName, out rb) ? rb : null; //< this should never happen
 		}
 
+		/// <summary> Calculate radiation at a given distance to an emitter by inverse square law </summary>
 		public static double DistanceFactor(double radiation, double distance)
 		{
 			// result = radiation / (4 * Pi * r^2)
 			return radiation / Math.Max(1.0, 4 * Math.PI * distance * distance);
+		}
+
+		/// <summary> Return a number between 0 and 1 that represents current solar activity </summary>
+		public static double SolarActivity(CelestialBody sun)
+		{
+			var t = Planetarium.GetUniversalTime() / Info(sun).solar_cycle;
+
+			// this gives a pseudo-erratic curve
+			var r = -Math.Cos(t) + Math.Sin(t * 23) / 2 + 0.5; // r in [-0.5 .. 2]
+			r /= 2.0; // r in [-0.25 .. 1]
+			return Math.Max(0, r); // truncate at 0, if <0 there's no activity at all
 		}
 
 		// return the total environent radiation at position specified

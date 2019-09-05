@@ -49,9 +49,7 @@ namespace KERBALISM
 		// other persisted fields
 		public bool msg_signal;       // message flag: link status
 		public bool msg_belt;         // message flag: crossing radiation belt
-		public double storm_time;     // time of next storm (interplanetary CME)
-		public double storm_age;      // time since last storm (interplanetary CME)
-		public uint storm_state;      // 0: none, 1: inbound, 2: in progress (interplanetary CME)
+		public StormData stormData;
 		private Dictionary<string, SupplyData> supplies; // supplies data
 		public List<uint> scansat_id; // used to remember scansat sensors that were disabled
 		#endregion
@@ -456,9 +454,7 @@ namespace KERBALISM
 			this.Vessel = null;
 			msg_belt = false;
 			msg_signal = false;
-			storm_age = 0.0;
-			storm_time = 0.0;
-			storm_state = 0;
+			stormData = new StormData();
 			supplies.Clear();
 			scansat_id.Clear();
 		}
@@ -478,9 +474,7 @@ namespace KERBALISM
 			cfg_script = PreferencesMessages.Instance.script;
 			cfg_highlights = PreferencesBasic.Instance.highlights;
 			cfg_showlink = true;
-			storm_time = 0.0;
-			storm_age = 0.0;
-			storm_state = 0;
+			stormData = new StormData();
 			computer = new Computer();
 			supplies = new Dictionary<string, SupplyData>();
 			scansat_id = new List<uint>();
@@ -502,9 +496,9 @@ namespace KERBALISM
 			cfg_script = Lib.ConfigValue(node, "cfg_script", PreferencesMessages.Instance.script);
 			cfg_highlights = Lib.ConfigValue(node, "cfg_highlights", PreferencesBasic.Instance.highlights);
 			cfg_showlink = Lib.ConfigValue(node, "cfg_showlink", true);
-			storm_time = Lib.ConfigValue(node, "storm_time", 0.0);
-			storm_age = Lib.ConfigValue(node, "storm_age", 0.0);
-			storm_state = Lib.ConfigValue(node, "storm_state", 0u);
+
+			if (node.HasNode("StormData")) stormData = new StormData(node.GetNode("StormData"));
+			else stormData = new StormData();
 
 			computer = node.HasNode("computer") ? new Computer(node.GetNode("computer")) : new Computer();
 
@@ -544,10 +538,8 @@ namespace KERBALISM
 			node.AddValue("cfg_script", cfg_script);
 			node.AddValue("cfg_highlights", cfg_highlights);
 			node.AddValue("cfg_showlink", cfg_showlink);
-			node.AddValue("storm_time", storm_time);
-			node.AddValue("storm_age", storm_age);
-			node.AddValue("storm_state", storm_state);
 
+			stormData.Save(node.AddNode("StormData"));
 			computer.Save(node.AddNode("computer"));
 
 			var supplies_node = node.AddNode("supplies");

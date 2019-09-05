@@ -489,12 +489,12 @@ namespace KERBALISM
 			if (Storm.Incoming(v))
 			{
 				icons.Add(Icons.storm_yellow);
-				tooltips.Add(Lib.BuildString("Coronal mass ejection incoming <i>(", Lib.HumanReadableDuration(Storm.TimeBeforeCME(v)), ")</i>"));
+				tooltips.Add(Lib.BuildString("Coronal mass ejection incoming</i>"));
 			}
 			if (Storm.InProgress(v))
 			{
 				icons.Add(Icons.storm_red);
-				tooltips.Add(Lib.BuildString("Solar storm in progress <i>(", Lib.HumanReadableDuration(Storm.TimeLeftCME(v)), ")</i>"));
+				tooltips.Add(Lib.BuildString("Solar storm in progress"));
 			}
 		}
 
