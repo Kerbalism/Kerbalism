@@ -566,7 +566,7 @@ namespace KERBALISM
 		}
 
 		/// <summary> Return a number between 0 and 1 that represents current solar activity </summary>
-		public static double SolarActivity(CelestialBody sun)
+		public static double SolarActivity(CelestialBody sun, bool clamp = true)
 		{
 			var info = Info(sun);
 			if (info.solar_cycle <= 0) return 0;
@@ -576,7 +576,8 @@ namespace KERBALISM
 			// this gives a pseudo-erratic curve, see https://www.desmos.com/calculator/tyuqgdk4jh
 			var r = (-Math.Cos(t) + Math.Sin(t * 75) / 5 + 0.9) / 2.0;
 
-			return Lib.Clamp(r, 0.0, 1.0);
+			if (clamp) r = Lib.Clamp(r, 0.0, 1.0);
+			return r;
 		}
 
 		// return the total environent radiation at position specified
@@ -651,6 +652,9 @@ namespace KERBALISM
 
 							// calculate point emitter strength r0 at center of body
 							var r0 = rb.radiation_surface * 4 * Math.PI * body.Radius * body.Radius;
+
+							// if there is a solar cycle, add a bit of radiation variation relative to current activity
+							if(rb.solar_cycle > 0) r0 += r0 * 0.2 * SolarActivity(body, false);
 
 							// radiation = r0 / (4 * pi * r^2) where r is the distance from the emitter r0
 							var r1 = DistanceFactor(r0, distance);
