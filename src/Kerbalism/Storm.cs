@@ -7,10 +7,10 @@ namespace KERBALISM
 {
 	public static class Storm
 	{
+		// TODO multi sun support?
 		public static float sun_observation_quality = 1.0f;
 
-
-		internal static void CreateStorm(StormData bd, CelestialBody sun, double distanceToSun)
+		internal static void CreateStorm(StormData bd, CelestialBody body, double distanceToSun)
 		{
 			// do nothing if storms are disabled
 			if (!Features.SpaceWeather) return;
@@ -19,13 +19,15 @@ namespace KERBALISM
 
 			if (bd.storm_generation < now)
 			{
+				var sun = Lib.GetParentSun(body);
+
 				var avgDuration = PreferencesStorm.Instance.AvgStormDuration;
 
 				// retry after 5 * average storm duration + some random jitter
-				bd.storm_generation = now + avgDuration * 5 + avgDuration * Lib.RandomDouble();
+				bd.storm_generation = now + avgDuration * 10 + avgDuration * Lib.RandomDouble();
 
 				var activity = Radiation.SolarActivity(sun);
-				if (Lib.RandomDouble() < activity * 0.8) // there's a (slim) chance of no storm during solar maxima
+				if (Lib.RandomDouble() < activity * 0.8)
 				{
 					// storm duration depends on current solar activity
 					// this gives a duration in [avg/2 .. 2.5 * avg]

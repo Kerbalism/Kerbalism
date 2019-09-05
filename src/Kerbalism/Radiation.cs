@@ -174,7 +174,7 @@ namespace KERBALISM
 			radiation_outer = Lib.ConfigValue(node, "radiation_outer", 0.0) / 3600.0;
 			radiation_pause = Lib.ConfigValue(node, "radiation_pause", 0.0) / 3600.0;
 			radiation_surface = Lib.ConfigValue(node, "radiation_surface", 0.0) / 3600.0;
-			solar_cycle = Lib.ConfigValue(node, "solar_cycle", 11 * Lib.DaysInYear() * Lib.HoursInDay() * 3600.0);
+			solar_cycle = Lib.ConfigValue(node, "solar_cycle", 0);
 			geomagnetic_pole_lat = Lib.ConfigValue(node, "geomagnetic_pole_lat", 90.0f);
 			geomagnetic_pole_lon = Lib.ConfigValue(node, "geomagnetic_pole_lon", 0.0f);
 			geomagnetic_offset = Lib.ConfigValue(node, "geomagnetic_offset", 0.0f);
@@ -568,12 +568,15 @@ namespace KERBALISM
 		/// <summary> Return a number between 0 and 1 that represents current solar activity </summary>
 		public static double SolarActivity(CelestialBody sun)
 		{
-			var t = Planetarium.GetUniversalTime() / Info(sun).solar_cycle;
+			var info = Info(sun);
+			if (info.solar_cycle <= 0) return 0;
 
-			// this gives a pseudo-erratic curve
-			var r = -Math.Cos(t) + Math.Sin(t * 23) / 2 + 0.5; // r in [-0.5 .. 2]
-			r /= 2.0; // r in [-0.25 .. 1]
-			return Math.Max(0, r); // truncate at 0, if <0 there's no activity at all
+			var t = Planetarium.GetUniversalTime() / info.solar_cycle;
+
+			// this gives a pseudo-erratic curve, see https://www.desmos.com/calculator/tyuqgdk4jh
+			var r = (-Math.Cos(t) + Math.Sin(t * 75) / 5 + 0.9) / 2.0;
+
+			return Lib.Clamp(r, 0.0, 1.0);
 		}
 
 		// return the total environent radiation at position specified
@@ -652,9 +655,6 @@ namespace KERBALISM
 							// radiation = r0 / (4 * pi * r^2) where r is the distance from the emitter r0
 							var r1 = DistanceFactor(r0, distance);
 							radiation += r1;
-#if DEBUG
-							Lib.Log("Vessel " + v + " body " + body + " surface radiation: " + Lib.HumanReadableRadiation(rb.radiation_surface) + " r1 " + Lib.HumanReadableRadiation(r1));
-#endif
 						}
 					}
 				}
