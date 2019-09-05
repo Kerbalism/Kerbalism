@@ -636,9 +636,6 @@ namespace KERBALISM
 							var r0 = rb.radiation_gamma * 4 * Math.PI * Sim.AU * Sim.AU;
 							var r1 = DistanceFactor(r0, distance);
 							radiation += r1;
-#if DEBUG
-							Lib.Log("Vessel " + v + " body " + body + " gamma radiation: " + Lib.HumanReadableRadiation(rb.radiation_gamma) + " r0 " + Lib.HumanReadableRadiation(r0) + " r1 " + Lib.HumanReadableRadiation(r1));
-#endif
 						}
 					}
 				}
@@ -653,11 +650,13 @@ namespace KERBALISM
 			// apply gamma transparency if inside atmosphere
 			radiation *= gamma_transparency;
 
-			BuildRadiationSunShieldingParts(v);
+			var vd = v.KerbalismData();
+			vd.EnvSunShieldingInfo.Update(v);
+
 			shieldedRadiation = radiation;
 
 			// if there is a storm in progress
-			if (true || Storm.InProgress(v))
+			if (Storm.InProgress(v))
 			{
 				// inside a magnetopause (except heliosphere), blackout the signal
 				// outside, add storm radiations modulated by sun visibility
@@ -665,7 +664,7 @@ namespace KERBALISM
 				else
 				{
 					radiation += PreferencesStorm.Instance.StormRadiation * sunlight;
-					shieldedRadiation += PartShieldedRadiation(v, PreferencesStorm.Instance.StormRadiation * sunlight);
+					shieldedRadiation += vd.EnvSunShieldingInfo.AverageHabitatRadiation(PreferencesStorm.Instance.StormRadiation * sunlight);
 				}
 			}
 
@@ -689,107 +688,6 @@ namespace KERBALISM
 
 			// return radiation
 			return radiation;
-		}
-
-		/// <summary> update habitat sun shielding parts for loaded vessels </summary>
-		public static void BuildRadiationSunShieldingParts(Vessel v)
-		{
-			if (!v.loaded) return;
-
-			var vd = v.KerbalismData();
-
-			var habitats = Lib.FindModules<Habitat>(v);
-
-			List<VesselData.SunShieldingPartInfo> sunShieldingParts = new List<VesselData.SunShieldingPartInfo>();
-
-			foreach (var habitat in habitats)
-			{
-				var habitatPosition = habitat.part.transform.position;
-
-				Ray r = new Ray(habitatPosition, vd.EnvMainSun.Direction);
-				var hits = Physics.RaycastAll(r, 200);
-				foreach (var hit in hits)
-				{
-					if (hit.collider != null && hit.collider.gameObject != null)
-					{
-						Part blockingPart = Part.GetComponentUpwards<Part>(hit.collider.gameObject);
-						if (blockingPart == null || blockingPart == habitat.part) continue;
-						var mass = blockingPart.mass + blockingPart.GetResourceMass();
-						mass *= 1000; // KSP masses are in tons
-
-						// divide part mass by the mass of aluminium (2699 kg/m³), cubic root of that
-						// gives a very rough approximation of the thickness, assuming it's a cube.
-						// So a 40.000 kg fuel tank would be equivalent to 2.45m aluminium.
-
-						var thickness = Math.Pow(mass / 2699.0, 1.0 / 3.0);
-
-						sunShieldingParts.Add(new VesselData.SunShieldingPartInfo(hit.distance, thickness));
-					}
-				}
-			}
-
-			if(v.isEVA)
-			{
-				var evaPosition = v.rootPart.transform.position;
-
-				Ray r = new Ray(evaPosition, vd.EnvMainSun.Direction);
-				var hits = Physics.RaycastAll(r, 200);
-				foreach (var hit in hits)
-				{
-					if (hit.collider != null && hit.collider.gameObject != null)
-					{
-						Part blockingPart = Part.GetComponentUpwards<Part>(hit.collider.gameObject);
-						if (blockingPart == null || blockingPart == v.rootPart) continue;
-						var mass = blockingPart.mass + blockingPart.GetResourceMass();
-						mass *= 1000; // KSP masses are in tons
-
-						// divide part mass by the mass of aluminium (2699 kg/m³), cubic root of that
-						// gives a very rough approximation of the thickness, assuming it's a cube.
-						// So a 40.000 kg fuel tank would be equivalent to 2.45m aluminium.
-
-						var thickness = Math.Pow(mass / 2699.0, 1.0 / 3.0);
-
-						sunShieldingParts.Add(new VesselData.SunShieldingPartInfo(hit.distance, thickness));
-					}
-				}
-			}
-
-			// sort by distance, in reverse
-			sunShieldingParts.Sort((a, b) => b.distance.CompareTo(a.distance));
-
-			vd.SunShieldingPartInfos = sunShieldingParts;
-		}
-
-		public static double PartShieldedRadiation(Vessel v, double radiation)
-		{
-			var shieldingParts = v.KerbalismData().SunShieldingPartInfos;
-			if (shieldingParts == null) return radiation;
-
-			var result = 0.0;
-
-			foreach (var sp in shieldingParts)
-			{
-				// for a 500 keV gamma ray, halfing thickness for aluminium is 3.05cm. But...
-				// Solar energetic particles (SEP) are high-energy particles coming from the Sun.
-				// They consist of protons, electrons and HZE ions with energy ranging from a few tens of keV
-				// to many GeV (the fastest particles can approach the speed of light, as in a
-				// "ground-level event"). This is why they are such a big problem for interplanetary space travel.
-
-				// We assume a 1m halfing thickness for that kind of ionized radiation.
-
-				// halfing factor h = part thickness / halfing thickness
-				// remaining radiation = radiation / (2^h)
-				// However, what you loose in particle radiation you gain in gamma radiation (Bremsstrahlung)
-
-				var bremsstrahlung = radiation / Math.Pow(2, sp.thickness);
-				radiation -= bremsstrahlung;
-
-				result += DistanceFactor(bremsstrahlung, sp.distance); 
-			}
-
-			result += radiation;
-
-			return result;
 		}
 
 		// return the surface radiation for the body specified (used by body info panel)

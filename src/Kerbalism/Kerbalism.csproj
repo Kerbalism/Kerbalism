@@ -234,7 +234,6 @@
     <Compile Include="Modules\GravityRing.cs" />
     <Compile Include="Modules\Habitat.cs" />
     <Compile Include="Modules\PlannerController.cs" />
-    <Compile Include="Radiation.cs" />
     <Compile Include="EVA.cs" />
     <Compile Include="Resource.cs" />
     <Compile Include="Profile\Profile.cs" />
@@ -266,10 +265,15 @@
     <Compile Include="Utility\Serenity.cs" />
     <Compile Include="Patches\VesselRecovery_OnVesselRecovered.cs" />
     <Compile Include="Database\ScienceLog.cs" />
+    <Compile Include="Radiation\Radiation.cs" />
+    <Compile Include="Radiation\SunShieldingInfo.cs" />
   </ItemGroup>
   <!-- ///////////////////////////////////////////////////// -->
   <!-- ////////// IMPORT DEFAULT MS BUILD PROCESS ////////// -->
   <!-- ///////////////////////////////////////////////////// -->
+  <ItemGroup>
+    <Folder Include="Radiation\" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- This target is called before the build, you can use it for debugging the build system -->
   <Target Name="BeforeBuild">

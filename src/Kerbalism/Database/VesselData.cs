@@ -158,32 +158,8 @@ namespace KERBALISM
 		// this threshold is also used to ignore light coming from distant/weak stars 
 		public bool EnvInFullShadow => sunlightFactor < 0.1;
 
-
-		public class SunShieldingPartInfo
-		{
-			public double distance;
-			public double thickness;
-
-			public SunShieldingPartInfo(double distance, double thickness)
-			{
-				this.distance = distance;
-				this.thickness = thickness;
-			}
-
-			internal string ToToken()
-			{
-				return distance.ToString("r") + "/" + thickness.ToString("r");
-			}
-
-			internal static SunShieldingPartInfo FromToken(string token)
-			{
-				var p = Lib.Tokenize(token, '/');
-				var distance = Double.Parse(p[0]);
-				var thickness = Double.Parse(p[1]);
-				return new SunShieldingPartInfo(distance, thickness);
-			}
-		}
-		public List<SunShieldingPartInfo> SunShieldingPartInfos;
+		/// <summary> List of all habitats and their relevant sun shielding parts </summary>
+		public SunShieldingInfo EnvSunShieldingInfo => sunShieldingInfo; SunShieldingInfo sunShieldingInfo;
 
 		/// <summary> [environment] List of all stars/suns and the related data/calculations for the current vessel</summary>
 		public List<SunInfo> EnvSunsInfo => sunsInfo; List<SunInfo> sunsInfo;
@@ -522,14 +498,7 @@ namespace KERBALISM
 
 			if (node.HasNode("ScienceLog")) ScienceLog.Load(node.GetNode("ScienceLog"));
 
-			if (node.HasValue("SunShieldingParts"))
-			{
-				SunShieldingPartInfos = new List<SunShieldingPartInfo>();
-				foreach(var token in Lib.Tokenize(node.GetValue("SunShieldingParts"), ','))
-				{
-					SunShieldingPartInfos.Add(SunShieldingPartInfo.FromToken(token));
-				}
-			}
+			if (node.HasNode("SunShielding")) sunShieldingInfo = new SunShieldingInfo(node.GetNode("SunShielding"));
 		}
 
 		public void Save(ConfigNode node)
@@ -563,16 +532,7 @@ namespace KERBALISM
 
 			ScienceLog.Save(node.AddNode("ScienceLog"));
 
-			if(SunShieldingPartInfos != null)
-			{
-				string tokens = string.Empty;
-				foreach(var spi in SunShieldingPartInfos)
-				{
-					if (!string.IsNullOrEmpty(tokens)) tokens += ",";
-					tokens += spi.ToToken();
-				}
-				node.AddValue("SunShieldingParts", tokens);
-			}
+			if (EnvSunShieldingInfo != null) EnvSunShieldingInfo.Save(node.AddNode("SunShielding"));
 		}
 
 		#endregion
