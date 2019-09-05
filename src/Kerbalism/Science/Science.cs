@@ -207,6 +207,8 @@ namespace KERBALISM
 		{
 			var credits = Value(subject_id, size);
 
+			if (credits <= 0f) return 0f;
+
 			// credit the science
 			var subject = ResearchAndDevelopment.GetSubjectByID(subject_id);
 			if(subject == null)
