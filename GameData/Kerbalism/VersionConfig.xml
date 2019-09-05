@@ -5,7 +5,7 @@
 		<KerbalismVersionMajor>3</KerbalismVersionMajor>
 		<KerbalismVersionMinor>1</KerbalismVersionMinor>
 		<KBinMaxVersion>17</KBinMaxVersion>
-		<KBinMinVersion>14</KBinMinVersion>
+		<KBinMinVersion>15_16</KBinMinVersion>
 	</PropertyGroup>
 	<ItemGroup>
 		<KBinVersionConstant Include="17">
