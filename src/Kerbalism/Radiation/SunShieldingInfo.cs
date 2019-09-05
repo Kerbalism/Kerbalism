@@ -144,6 +144,8 @@ namespace KERBALISM
 			if(habitats == null)
 				habitats = Lib.FindModules<Habitat>(v);
 
+			if (habitats.Count == 0) return;
+
 			if(habitatIndex < 0)
 			{
 				// first run, do them all
