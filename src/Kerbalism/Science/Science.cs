@@ -225,8 +225,7 @@ namespace KERBALISM
 				// - this could be slow or a no-op, depending on the number of listeners
 				//   in any case, we are buffering the transmitting data and calling this
 				//   function only once in a while
-				if(credits > 0.1)
-					GameEvents.OnScienceRecieved.Fire(credits, subject, pv, false);
+				GameEvents.OnScienceRecieved.Fire(credits, subject, pv, false);
 
 				API.OnScienceReceived.Notify(credits, subject, pv, transmitted);
 
