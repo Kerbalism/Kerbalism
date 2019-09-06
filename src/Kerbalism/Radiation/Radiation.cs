@@ -193,6 +193,10 @@ namespace KERBALISM
 			float y = Mathf.Sin(lat);
 			float z = Mathf.Cos(lat) * Mathf.Sin(lon);
 			geomagnetic_pole = new Vector3(x, y, z).normalized;
+
+			// suns without a solar cycle configuration default to a cycle of 6 years
+			if(Lib.IsSun(body) && solar_cycle <= 0)
+				solar_cycle = Lib.HoursInDay() * 3600 * Lib.DaysInYear() * 6;
 		}
 
 		public string name;            // name of the body
