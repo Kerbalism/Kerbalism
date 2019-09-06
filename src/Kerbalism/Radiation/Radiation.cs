@@ -173,8 +173,8 @@ namespace KERBALISM
 			radiation_inner = Lib.ConfigValue(node, "radiation_inner", 0.0) / 3600.0;
 			radiation_outer = Lib.ConfigValue(node, "radiation_outer", 0.0) / 3600.0;
 			radiation_pause = Lib.ConfigValue(node, "radiation_pause", 0.0) / 3600.0;
-			radiation_surface = Lib.ConfigValue(node, "radiation_surface", 0.0) / 3600.0;
-			solar_cycle = Lib.ConfigValue(node, "solar_cycle", 0);
+			radiation_surface = Lib.ConfigValue(node, "radiation_surface", -1.0) / 3600.0;
+			solar_cycle = Lib.ConfigValue(node, "solar_cycle", -1.0);
 			geomagnetic_pole_lat = Lib.ConfigValue(node, "geomagnetic_pole_lat", 90.0f);
 			geomagnetic_pole_lon = Lib.ConfigValue(node, "geomagnetic_pole_lon", 0.0f);
 			geomagnetic_offset = Lib.ConfigValue(node, "geomagnetic_offset", 0.0f);
@@ -194,9 +194,19 @@ namespace KERBALISM
 			float z = Mathf.Cos(lat) * Mathf.Sin(lon);
 			geomagnetic_pole = new Vector3(x, y, z).normalized;
 
-			// suns without a solar cycle configuration default to a cycle of 6 years
-			if(Lib.IsSun(body) && solar_cycle <= 0)
-				solar_cycle = Lib.HoursInDay() * 3600 * Lib.DaysInYear() * 6;
+			if(Lib.IsSun(body))
+			{
+				// suns without a solar cycle configuration default to a cycle of 6 years
+				// (set to 0 if you really want none)
+				if (solar_cycle < 0)
+					solar_cycle = Lib.HoursInDay() * 3600 * Lib.DaysInYear() * 6;
+
+				// add a rather nominal surface radiation for suns that have no config
+				// for comparison: the stock kerbin sun has a surface radiation of 47 rad/h, which gives 0.01 rad/h near Kerbin
+				// (set to 0 if you really want none)
+				if (radiation_surface < 0)
+					radiation_surface = 10.0 * 3600.0;
+			}
 		}
 
 		public string name;            // name of the body
