@@ -27,7 +27,7 @@ namespace KERBALISM
 				bd.storm_generation = now + avgDuration * 5 + avgDuration * Lib.RandomDouble() * 5;
 
 				var activity = Radiation.SolarActivity(sun);
-				if (Lib.RandomDouble() < activity * 0.8)
+				if (Lib.RandomDouble() < activity * 0.4)
 				{
 					// storm duration depends on current solar activity
 					// this gives a duration in [avg/2 .. 2.5 * avg]
@@ -51,10 +51,6 @@ namespace KERBALISM
 #endif
 				}
 			}
-
-#if DEBUG
-			Lib.Log("Storm state " + body + ": start in " + (bd.storm_time - now) + " state " + bd.storm_state);
-#endif
 
 			if (bd.storm_time + bd.storm_duration < now)
 			{
@@ -101,10 +97,9 @@ namespace KERBALISM
 						// show warning message only if you're lucky...
 						if (bd.msg_storm < 1 && Lib.RandomFloat() < sun_observation_quality)
 						{
-							var tti = Planetarium.GetUniversalTime() - bd.storm_time;
-							var error = tti * 3 * Lib.RandomDouble() * (1 - sun_observation_quality);
+							var tti = Time_to_impact(body.orbit.semiMajorAxis);
 							Message.Post(Severity.warning, Lib.BuildString("Our observatories report a coronal mass ejection directed toward <b>", body.name, "</b> system"),
-								Lib.BuildString("Time to impact: ", Lib.HumanReadableDuration(tti + error)));
+								Lib.BuildString("Time to impact: ", Lib.HumanReadableDuration(tti)));
 						}
 						break;
 
@@ -143,7 +138,7 @@ namespace KERBALISM
 					break;
 
 				case 2: // storm in progress
-					if (bd.msg_storm < 2)
+					if (vd.cfg_storm && bd.msg_storm < 2)
 					{
 						var stormDuration = bd.storm_duration;
 						var error = stormDuration * 3 * Lib.RandomDouble() * (1 - sun_observation_quality);
@@ -154,12 +149,11 @@ namespace KERBALISM
 
 				case 1: // storm incoming
 					// show warning message only if you're lucky...
-					if (bd.msg_storm < 1 && Lib.RandomFloat() < sun_observation_quality)
+					if (vd.cfg_storm && bd.msg_storm < 1 && Lib.RandomFloat() < sun_observation_quality)
 					{
-						var tti = Planetarium.GetUniversalTime() - bd.storm_time;
-						var error = tti * 3 * Lib.RandomDouble() * (1 - sun_observation_quality);
+						var tti = Time_to_impact(vd.EnvMainSun.Distance);
 						Message.Post(Severity.warning, Lib.BuildString("Our observatories report a coronal mass ejection directed toward <b>", v.vesselName, "</b>"),
-							Lib.BuildString("Time to impact: ", Lib.HumanReadableDuration(tti + error)));
+							Lib.BuildString("Time to impact: ", Lib.HumanReadableDuration(tti)));
 					}
 					break;
 			}
