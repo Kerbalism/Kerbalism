@@ -129,7 +129,7 @@ namespace KERBALISM
 			switch (bd.storm_state)
 			{
 				case 0: // no storm
-					if (bd.msg_storm == 2)
+					if (vd.cfg_storm && bd.msg_storm == 2)
 					{
 						// send message
 						Message.Post(Severity.relax, Lib.BuildString("The solar storm around <b>", v.vesselName, "</b> is over"));
