@@ -52,12 +52,16 @@ namespace KERBALISM
 				}
 			}
 
+#if DEBUG
+			Lib.Log("Storm state " + body + ": start in " + (bd.storm_time - now) + " state " + bd.storm_state);
+#endif
+
 			if (bd.storm_time + bd.storm_duration < now)
 			{
 				// storm is over
 				bd.storm_state = 0;
 			}
-			else if (bd.storm_time > now && bd.storm_time + bd.storm_duration < now)
+			else if (bd.storm_time < now && bd.storm_time + bd.storm_duration > now)
 			{
 				// storm in progress
 				bd.storm_state = 2;

@@ -489,7 +489,7 @@ namespace KERBALISM
 			if (Storm.Incoming(v))
 			{
 				icons.Add(Icons.storm_yellow);
-				tooltips.Add(Lib.BuildString("Coronal mass ejection incoming</i>"));
+				tooltips.Add(Lib.BuildString("Coronal mass ejection incoming"));
 			}
 			if (Storm.InProgress(v))
 			{
