@@ -4,6 +4,8 @@
 
 ***Hundreds of Kerbals were killed in the making of this mod.***
 
+Kerbalism is a mod for Kerbal Space Program that alters the game to add life support, radiation, failures and an entirely new way of doing science.
+
 ## Current version : 3.0.2 
 
 **Download** : **[Github releases]** - **[CKAN]**\
