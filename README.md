@@ -6,11 +6,11 @@
 
 ## Current version : 3.0.2 
 
-**Download** : **[Github releases]** - **[CKAN]**  
-**Docs & support** : **[Github wiki]** - **[Discord]** - [Github issues] - [KSP forums thread]  
-**License** : [Unlicense] (public domain)  
-**KSP version** : 1.4.x to 1.7.x  
-**Requires** : [Module Manager], [CommunityResourcePack]  
+**Download** : **[Github releases]** - **[CKAN]**\
+**Docs & support** : **[Github wiki]** - **[Discord]** - [Github issues] - [KSP forums thread]\
+**License** : [Unlicense] (public domain)\
+**KSP version** : 1.4.x to 1.7.x\
+**Requires** : [Module Manager], [CommunityResourcePack]\
 **[Mod compatibility]** - [Changelog] - [Dev Builds]
 
 ## Download and installation
@@ -19,7 +19,7 @@
 
 Two packages are available :
 - **Kerbalism** is the core plugin, always required.
-- **KerbalismConfig** is the default configuration pack.  
+- **KerbalismConfig** is the default configuration pack.\
   It can be be replaced by other packs distributed elsewhere.
 
 **Requirements**
@@ -45,7 +45,7 @@ Don't combine packs unless there is explicit instructions to do so.
 
 Checking the **[mod compatibility]** page is **mandatory before installing Kerbalism on a heavily modded game**.
 
-Kerbalism does very custom stuff and can break other mods. For a lot of mods that break or need balancing, we provide support code and configuration patches. However some mods are incompatible because there is too much feature overlap or support is too complex to implement.
+Kerbalism does very custom stuff. This can break other mods. For a lot of mods that breaks or need balancing, we provide support code and configuration patches. However some mods are incompatible because there is too much feature overlap or support is too complex to implement.
 
 ## Documentation, help and bug-reporting
 
@@ -75,143 +75,6 @@ Kerbalism does very custom stuff and can break other mods. For a lot of mods tha
 This mod is released under the [Unlicense], which mean it's in the public domain.
 
 It includes [MiniAVC]. If you opt-in, it will use the Internet to check whether there is a new version available. Data is only read from the Internet and no personal information is sent. For more control, download the full [KSP-AVC Plugin].
-
-# INTRODUCTION
-
-Go beyond the routine of orbital mechanics and experience the full set of engineering challenges that space has to
-offer. This mod extends KSP by simulating the crew, components, resources and environment in a more complex way.
-All mechanics can be configured to some degree, or even disabled if you don't like some of them. A big part of the
-mod is fully data-driven, so that you can create your own customized game play with only a text editor and a
-minimal amount of espresso. Or simply use the set of rules already included, or the ones shared by other users.
-
-## ARCHITECTURE
-
-Contrary to popular belief, the observable universe is not a sphere of a 3km radius centered around the active vessel.
-All mechanics are simulated for loaded and unloaded vessels alike, without exception. Acceptable performance was
-obtained by a mix of smart approximations and common sense. The computational complexity is by and large independent
-from the number of vessels.
-
-## RESOURCES
-
-This isn't your classic post-facto resource simulation. Consumption and production work for all vessels, all the time,
-and is coherent irregardless of warp speed or storage capacity. Complex chains of transformations just work. Enjoy
-designing missions without the luxury of stopping the flow of time. No suspension of disbelief required.
-
-## ENVIRONMENT
-
-The environment of space is modeled in a simple yet effective way. Temperature is calculated using the direct solar
-flux, the indirect solar flux bouncing off from celestial bodies, and the radiative infrared cooling of their surfaces.
-
-The simulation of the latter is especially interesting, and contrary to popular models it is able to reproduce
-satisfactory results for both atmospheric and atmospheric-less worlds. Radiation is implemented using an overlapping
-hierarchy of 3D zones, modeled and rendered using signed distance fields. These are used to simulate inner and outer
-belts, magnetosphere and even the heliopause. Solar weather is represented by Coronal Mass Ejection events, that
-happen sporadically, increase radiation and cause communication blackouts.
-
-[![Kerbalism Radiation Belts](https://img.youtube.com/vi/CXmeSMBzf1c/0.jpg)](https://www.youtube.com/watch?v=CXmeSMBzf1c)
-
-## HABITAT
-
-The habitats of vessels are modeled in terms of internal volume, external surface, and a set of dedicated pseudo
-resources. These elements are then used to calculate such things as: living space per-capita, the pressure, CO2 and humidity
-levels of the internal atmosphere, and radiation shielding. Individual habitats can be enabled or disabled, in the
-editor and in flight, to reconfigure the internal space and everything associated with it during the mission.
-Inflatable habitats are driven directly by the part pressure.
-
-## BIOLOGICAL NEEDS
-
-Your crew need a constant intake of Food, Water and Oxygen. Failure to provide for these needs will result in
-unceremonious death. Configurable supply containers are provided.
-
-## PSYCHOLOGICAL NEEDS
-
-The era of tin can interplanetary travel is over. Your crew need some living space, however minimal. Failure to provide
-enough living space will result in unforeseen events in the vessel, the kind that happen when operators lose
-concentration. While not fatal directly, they often lead to fatal consequences later on. Some basic comforts can be
-provided to delay the inevitable mental breakdown. Nothing fancy, just things like windows to look out, antennas to
-call back home, or gravity rings to generate artificial gravity. Finally, recent research points out that living in a
-pressurized environment is vastly superior to living in a suit. So bring some Nitrogen to compensate for leaks and keep
-the internal atmosphere at an acceptable pressure.
-
-## ENVIRONMENTAL HAZARDS
-
-Your crew evolved in particular conditions of temperature, and at a very low level of radiation. You should reproduce
-these conditions wherever your crew go, no matter the external temperature or radiation at that point. Or else death
-ensues. The vessel habitat can be climatized at the expense of ElectricCharge. Environment radiation can be shielded by
-applying material layers to the hull, with obvious longevity vs mass trade off.
-
-## ECLSS
-
-A set of ECLSS components is available for installation in any pod. The scrubber for example, that must be used to keep
-the level of CO2 in the internal atmosphere below a threshold. Or the pressure control system, that can be used to
-maintain a comfortable atmospheric pressure inside the vessel. In general, if you ever heard of some kind of apparatus
-used by space agencies to keep the crew alive, you will find it in this mod.
-
-## ISRU
-
-The stock ISRU converters can host a set of reality-inspired chemical processes. The emerging chains provide a flexible
-and at the same time challenging system to keep your crew alive. The stock ISRU harvesters functionality has been
-replaced with an equivalent one that is easier to plan against, as it is now vital for long-term manned missions. The
-means to harvest from atmospheres and oceans is also present, given the importance of atmospheric resources in this regard.
-
-No life-support like mod would be complete without a greenhouse of some kind. The one included in this mod has a relatively complete set of input resources and by-products, and some more unique characteristics like a lamp that adapts consumption to natural lighting, emergency harvesting, pressure requirements and radiation tolerance.
-
-A planetary resource distribution that mimics the real solar system completes the package.
-
-## RELIABILITY
-
-Components don't last forever in the real world. This is modeled by a simple system that can trigger failures on
-arbitrary modules. Manufacturing quality can be chosen in the editor, per-component, and improve durability but also
-requires extra cost and mass. The crew can inspect and repair components. Redundancy is a key aspect of the design phase.
-
-## SIGNAL
-
-Transmission rates are realistic, and scale with distance to the point that it may take a long time to transmit data from
-the outer solar system. Data transmission happens transparently in loaded and unloaded vessels. The resulting
-communication system is simple, yet it also results in more realistic vessel and mission designs.
-
-
-## SCIENCE
-
-<img src="https://github.com/Kerbalism/Kerbalism/raw/master/misc/img/showcase/experiments.png" align="right">
-Experiments don't return their science output instantly, they require some time to run. Some complete in minutes, others will take months. Not to worry, experiments can run on vessels in the background, you don't have to watch your vessel while it is collecting or transmitting science.
-
-While experiments take some time to finish, they don't have to finish in one run. If you don't have enough time to collect that pressure reading in high atmosphere, just do it again on your next flight - it will pick up from where it stopped last time.
-
-There are two different kinds of experiments: sensor readings and samples. Sensor readings are just plain data that can be transmitted back directly, like a temperature reading or an EVA report. Samples however are physical, they require the delicate handling by kerbals, and cannot be transmitted. Instead they have to be recovered, either by crew or by recovering the experiment on Kerbin. Samples also can be analyzed in a lab, which converts them to data that can be transmitted. Analyzing takes a long time, happens transparently to loaded and unloaded vessels alike, and can't be cheated to create science out of thin air.
-
-Kerbalism also extends the science system quite a bit by adding new requirements that have to be met for experiments: some only work around certain bodies, others don't work near any body at all but require to be in interplanetary space. There even are experiments that need to be submerged deep in an ocean.
-
-We support many of the most popular science mods directly, for others we use an interesting method to bridge existing stock and third-party experiments to the new science system. It works works for most experiments, including Breaking Grounds.
-
-
-## AUTOMATION
-
-<img src="https://github.com/Kerbalism/Kerbalism/raw/master/misc/img/showcase/telemetry-demo.gif" align="right">
-Components can be controlled and automated using a minimalist scripting system, with a neat little editor.
-
-Scripts are triggered manually or by environmental conditions, on all your vessels, all the time.
-
-You can create a script to turn on all the lights as soon as the Sun is not visible anymore, or retract all solar panels as soon as you enter an atmosphere, or extend antennas as soon as you landed.
-
-You don't even have to load the vessel to change the programming of the automation, it can be done from the KSC!
-
-
-## USER INTERFACE
-
-Kerbalism has a nice user interface with an unique look & feel. A planner UI is available in the editor, to help designing
-missions for all the new mechanics introduced. The planner analysis includes resource estimates, habitat
-information, redundancy analysis, connectivity simulation, multi-environment radiation details and more. To monitor
-the status of vessels, there is a monitor window. It looks like a simple list of vessels at first, but just
-click on it to discover an ingenious little organizer that allows to watch vessel telemetry, control components, create
-scripts, manage your science data including transmission and analysis, and configure the alerts per-vessel.
-
-## MODULES EMULATION
-
-<img src="https://github.com/Kerbalism/Kerbalism/raw/master/misc/img/showcase/planner-demo.gif"  align="left">
-Most stock modules and some third-party ones are emulated for what concerns the mechanics introduced by the mod.
-
-The level of support depends on the specific module, and may include: simulation of resource consumption and production in unloaded vessels, fixing of timewarp issues in loaded vessels, the ability to disable the module after malfunctions, and also the means to start and stop the module in an automation script.
 
 
 
