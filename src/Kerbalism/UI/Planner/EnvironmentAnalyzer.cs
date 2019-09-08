@@ -27,14 +27,21 @@
 
 
 			RadiationBody rb = Radiation.Info(body);
-			RadiationBody sun_rb = Radiation.Info(mainSun); // TODO Kopernicus support : not sure if/how this work with multiple suns/stars
+			RadiationBody sun_rb = Radiation.Info(mainSun); // TODO Kopernicus support: not sure if/how this work with multiple suns/stars
 			gamma_transparency = Sim.GammaTransparency(body, 0.0);
+
+			// add gamma radiation emitted by body and its sun
+			var gamma_radiation = Radiation.DistanceFactor(rb.radiation_r0, altitude);
+			if (mainSun != body)
+				gamma_radiation += Radiation.DistanceFactor(sun_rb.radiation_r0, body.orbit.semiMajorAxis);
+			gamma_radiation /= 3600.0;
+
 			extern_rad = PreferencesStorm.Instance.ExternRadiation;
-			heliopause_rad = extern_rad + sun_rb.radiation_pause;
-			magnetopause_rad = heliopause_rad + rb.radiation_pause;
-			inner_rad = magnetopause_rad + rb.radiation_inner;
-			outer_rad = magnetopause_rad + rb.radiation_outer;
-			surface_rad = magnetopause_rad * gamma_transparency;
+			heliopause_rad = gamma_radiation + extern_rad + sun_rb.radiation_pause;
+			magnetopause_rad = gamma_radiation + heliopause_rad + rb.radiation_pause;
+			inner_rad = gamma_radiation + magnetopause_rad + rb.radiation_inner;
+			outer_rad = gamma_radiation + magnetopause_rad + rb.radiation_outer;
+			surface_rad = magnetopause_rad * gamma_transparency + rb.radiation_surface;
 			storm_rad = heliopause_rad + PreferencesStorm.Instance.StormRadiation * (solar_flux > double.Epsilon ? 1.0 : 0.0);
 		}
 

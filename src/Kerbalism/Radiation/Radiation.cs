@@ -207,6 +207,9 @@ namespace KERBALISM
 				if (radiation_surface < 0)
 					radiation_surface = 10.0 * 3600.0;
 			}
+
+			// calculate point emitter strength r0 at center of body
+			radiation_r0 = radiation_surface * 4 * Math.PI * body.Radius * body.Radius;
 		}
 
 		public string name;            // name of the body
@@ -214,6 +217,7 @@ namespace KERBALISM
 		public double radiation_outer; // rad/h inside outer belt
 		public double radiation_pause; // rad/h inside magnetopause
 		public double radiation_surface; // rad/h of gamma radiation on the surface
+		public double radiation_r0;    // rad/h of gamma radiation at the center of the body (calculated from radiation_surface)
 		public double solar_cycle;     // interval time of solar activity (11 years for sun)
 		public int reference;          // index of the body that determine x-axis of the gsm-space
 		public float geomagnetic_pole_lat = 90.0f;
@@ -614,9 +618,6 @@ namespace KERBALISM
 			Vector3 p;
 			float D;
 
-			// transform to local space once
-			position = ScaledSpace.LocalToScaledSpace(position);
-
 			// accumulate radiation
 			double radiation = 0.0;
 			CelestialBody body = v.mainBody;
@@ -624,13 +625,17 @@ namespace KERBALISM
 			{
 				RadiationBody rb = Info(body);
 				RadiationModel mf = rb.model;
+
 				if (mf.Has_field())
 				{
+					// transform to local space once
+					var scaled_position = ScaledSpace.LocalToScaledSpace(position);
+
 					// generate radii-normalized GSM space
 					gsm = Gsm_space(rb, true);
 
 					// move the point in GSM space
-					p = gsm.Transform_in(position);
+					p = gsm.Transform_in(scaled_position);
 
 					// accumulate radiation and determine pause/belt flags
 					if (mf.has_inner)
@@ -648,32 +653,32 @@ namespace KERBALISM
 					if (mf.has_pause)
 					{
 						gsm = Gsm_space(rb, false);
-						p = gsm.Transform_in(position);
+						p = gsm.Transform_in(scaled_position);
 
 						D = mf.Pause_func(p);
 						radiation += Lib.Clamp(D / -0.1332f, 0.0f, 1.0f) * rb.radiation_pause;
 						magnetosphere |= D < 0.0f && !Lib.IsSun(rb.body); //< ignore heliopause
 						interstellar |= D > 0.0f && Lib.IsSun(rb.body); //< outside heliopause
 					}
-					if(rb.radiation_surface > 0)
+				}
+
+				if (rb.radiation_surface > 0)
+				{
+					Vector3d direction;
+					double distance;
+					if (Sim.IsBodyVisible(v, position, body, v.KerbalismData().EnvVisibleBodies, out direction, out distance))
 					{
-						Vector3d direction;
-						double distance;
-						if(Sim.IsBodyVisible(v, position, body, v.KerbalismData().EnvVisibleBodies, out direction, out distance))
-						{
-							// for easier configuration, the radiation model sets the radiation on the surface of the body.
-							// from there, it decreases according to the inverse square law with distance from the surface.
+						// for easier configuration, the radiation model sets the radiation on the surface of the body.
+						// from there, it decreases according to the inverse square law with distance from the surface.
 
-							// calculate point emitter strength r0 at center of body
-							var r0 = rb.radiation_surface * 4 * Math.PI * body.Radius * body.Radius;
+						var r0 = rb.radiation_r0;
 
-							// if there is a solar cycle, add a bit of radiation variation relative to current activity
-							if(rb.solar_cycle > 0) r0 += r0 * 0.2 * Math.Max(0, SolarActivity(body, false));
+						// if there is a solar cycle, add a bit of radiation variation relative to current activity
+						if (rb.solar_cycle > 0) r0 += r0 * 0.2 * Math.Max(0, SolarActivity(body, false));
 
-							// radiation = r0 / (4 * pi * r^2) where r is the distance from the emitter r0
-							var r1 = DistanceFactor(r0, distance);
-							radiation += r1;
-						}
+						// radiation = r0 / (4 * pi * r^2) where r is the distance from the emitter r0
+						var r1 = DistanceFactor(r0, distance);
+						radiation += r1;
 					}
 				}
 
