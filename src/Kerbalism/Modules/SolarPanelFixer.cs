@@ -9,12 +9,6 @@ using UnityEngine;
 
 namespace KERBALISM
 {
-	// TODO : SolarPanelFixer features that require testing :
-	// - fully untested : time efficiency curve (must try with a stock panel defined curve, and a SolarPanelFixer defined curve)
-	// - background update : must check that the output is consistent with what we get when loaded (should be but checking can't hurt)
-	//   (note : only test it with equatorial circular orbits, other orbits will give inconsistent output due to sunlight evaluation algorithm limitations)
-	// - reliability support should work but I did only a very quick test
-
 	// TODO : SolarPanelFixer missing features :
 	// - SSTU automation / better reliability support
 
@@ -480,7 +474,7 @@ namespace KERBALISM
 
 		public static void BackgroundUpdate(Vessel v, ProtoPartModuleSnapshot m, SolarPanelFixer prefab, VesselData vd, ResourceInfo ec, double elapsed_s)
 		{
-			// this is ugly spaghetti code but initializing the prefab at loading time is messy
+			// this is ugly spaghetti code but initializing the prefab at loading time is messy because the targeted solar panel module may not be loaded yet
 			if (!prefab.isInitialized) prefab.OnStart(StartState.None);
 
 			string state = Lib.Proto.GetString(m, "state");
