@@ -90,7 +90,7 @@ namespace KERBALISM
 		protected bool IgnitionCheck()
 		{
 			ignitions++;
-			vessel.KerbalismData().ReliabilityStatus().Clear();
+			vessel.KerbalismData().ResetReliabilityStatus();
 
 			bool fail = false;
 
@@ -291,7 +291,7 @@ namespace KERBALISM
 			{
 				var duration = now - lastRunningCheck;
 				operation_duration += duration;
-				vessel.KerbalismData().ReliabilityStatus().Clear();
+				vessel.KerbalismData().ResetReliabilityStatus();
 
 				if (fail_duration <= 0)
 				{
@@ -402,7 +402,7 @@ namespace KERBALISM
 			if (rated_ignitions > 0 && ignitions > Math.Ceiling(EffectiveIgnitions(quality, rated_ignitions) * 0.7)) needMaintenance = true;
 			if (rated_operation_duration > 0 && operation_duration > EffectiveDuration(quality, rated_operation_duration) * 0.7) needMaintenance = true;
 
-			v.KerbalismData().ReliabilityStatus().Clear();
+			v.KerbalismData().ResetReliabilityStatus();
 
 			// notify user
 			if (!needMaintenance)
@@ -466,7 +466,7 @@ namespace KERBALISM
 			ignitions = Math.Min(ignitions, (int)(EffectiveIgnitions(quality, rated_ignitions) * 0.3));
 
 			fail_duration = 0;
-			v.KerbalismData().ReliabilityStatus().Clear();
+			v.KerbalismData().ResetReliabilityStatus();
 
 			if (broken)
 			{
@@ -521,9 +521,9 @@ namespace KERBALISM
 #endif
 		public void Break()
 		{
-			vessel.KerbalismData().ReliabilityStatus().Clear();
+			vessel.KerbalismData().ResetReliabilityStatus();
 
-			if(explode)
+			if (explode)
 			{
 				foreach (PartModule m in modules)
 					m.part.explode();
@@ -572,7 +572,7 @@ namespace KERBALISM
 
 		public static void ProtoBreak(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m)
 		{
-			v.KerbalismData().ReliabilityStatus().Clear();
+			v.KerbalismData().ResetReliabilityStatus();
 
 			// get reliability module prefab
 			string type = Lib.Proto.GetString(m, "type", string.Empty);

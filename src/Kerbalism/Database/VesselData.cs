@@ -280,6 +280,7 @@ namespace KERBALISM
 				if (vd.sunlightFactor > 0.99) vd.sunlightFactor = 1.0;
 			}
 		}
+
 		#endregion
 
 		#region evaluated vessel state information properties
@@ -348,6 +349,11 @@ namespace KERBALISM
 			if (reliabilityStatus != null) return reliabilityStatus;
 			reliabilityStatus = ReliabilityInfo.BuildList(Vessel);
 			return reliabilityStatus;
+		}
+
+		public void ResetReliabilityStatus()
+		{
+			reliabilityStatus = null;
 		}
 
 		#endregion
@@ -428,6 +434,7 @@ namespace KERBALISM
 
 		public void UpdateOnVesselModified(Vessel v)
 		{
+			ResetReliabilityStatus();
 			sunShieldingInfo = new SunShieldingInfo();
 			Update(v);
 			if (IsValid) EvaluateStatus();
@@ -442,6 +449,7 @@ namespace KERBALISM
 			sunShieldingInfo = new SunShieldingInfo();
 			supplies.Clear();
 			scansat_id.Clear();
+			ResetReliabilityStatus();
 		}
 
 		public VesselData()

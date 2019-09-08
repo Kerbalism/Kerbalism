@@ -38,11 +38,10 @@ namespace KERBALISM
 			// for each device
 			foreach (var ri in devices)
 			{
-				if(ri.group != section || string.IsNullOrEmpty(section))
+				if(section != Group2Section(ri.group))
 				{
-					section = ri.group;
-					if (string.IsNullOrEmpty(section)) p.AddSection("Misc");
-					else p.AddSection(section);
+					section = Group2Section(ri.group);
+					p.AddSection(section);
 				}
 
 				string status = StatusString(ri);
@@ -62,6 +61,12 @@ namespace KERBALISM
 			}
 		}
 
+		private static string Group2Section(string group)
+		{
+			if (string.IsNullOrEmpty(group)) return "Misc";
+			return group;
+		}
+
 		private static string StatusString(ReliabilityInfo ri)
 		{
 			if (ri.broken)
@@ -76,8 +81,8 @@ namespace KERBALISM
 
 			if(ri.mtbf <= 0)
 			{
-				if (ri.rel_ignitions > 0.95) return Lib.Color("#ADFF2F", "ignition limit");
-				if (ri.rel_duration > 0.75) return Lib.Color("#ADFF2F", "operation duration");
+				if (ri.rel_ignitions > 0.95) return Lib.Color("#FFD700", "ignition limit");
+				if (ri.rel_duration > 0.75) return Lib.Color("#FFD700", "operation duration");
 			}
 
 			return Lib.Color("#32CD32", "good");
