@@ -29,6 +29,7 @@ namespace KERBALISM
 		internal static Texture2D small_config;
 		internal static Texture2D small_search;
 		internal static Texture2D small_notes;
+		internal static Texture2D small_wrench;
 
 		internal static Texture2D category_normal;
 		internal static Texture2D category_selected;
@@ -140,6 +141,7 @@ namespace KERBALISM
 			small_config = GetTexture("small-config");
 			small_search = GetTexture("small-search");
 			small_notes = GetTexture("small-notes");
+			small_wrench = GetTexture("small-wrench");
 
 			category_normal = GetTexture("category-normal");
 			category_selected = GetTexture("category-selected");

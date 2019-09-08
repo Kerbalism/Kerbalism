@@ -267,6 +267,8 @@
     <Compile Include="Radiation\SunShieldingInfo.cs" />
     <Compile Include="Radiation\StormData.cs" />
     <Compile Include="Radiation\Storm.cs" />
+    <Compile Include="UI\FailuresManager.cs" />
+    <Compile Include="Database\ReliabilityInfo.cs" />
   </ItemGroup>
   <!-- ///////////////////////////////////////////////////// -->
   <!-- ////////// IMPORT DEFAULT MS BUILD PROCESS ////////// -->

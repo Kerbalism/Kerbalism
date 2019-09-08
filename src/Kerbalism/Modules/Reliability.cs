@@ -30,6 +30,7 @@ namespace KERBALISM
 		[KSPField(isPersistant = true)] public bool quality;                // true if the component is high-quality
 		[KSPField(isPersistant = true)] public double last = 0.0;           // time of last failure
 		[KSPField(isPersistant = true)] public double next = 0.0;           // time of next failure
+		[KSPField(isPersistant = true)] public double last_inspection = 0.0;   // time of last service
 		[KSPField(isPersistant = true)] public bool needMaintenance = false;// true when component is inspected and about to fail
 		[KSPField(isPersistant = true)] public bool enforce_breakdown = false; // true when the next failure is enforced
 		[KSPField(isPersistant = true)] public bool running = false;        // true when the next failure is enforced
@@ -59,6 +60,8 @@ namespace KERBALISM
 			// do nothing in the editors and when compiling parts
 			if (!Lib.IsFlight()) return;
 
+			if (last_inspection <= 0) last_inspection = Planetarium.GetUniversalTime();
+
 			// cache list of modules
 			modules = part.FindModulesImplementing<PartModule>().FindAll(k => k.moduleName == type);
 
@@ -87,6 +90,7 @@ namespace KERBALISM
 		protected bool IgnitionCheck()
 		{
 			ignitions++;
+			vessel.KerbalismData().ReliabilityStatus().Clear();
 
 			bool fail = false;
 
@@ -287,8 +291,9 @@ namespace KERBALISM
 			{
 				var duration = now - lastRunningCheck;
 				operation_duration += duration;
+				vessel.KerbalismData().ReliabilityStatus().Clear();
 
-				if(fail_duration <= 0)
+				if (fail_duration <= 0)
 				{
 					// calculate a random point on which the engine will fail
 
@@ -397,9 +402,12 @@ namespace KERBALISM
 			if (rated_ignitions > 0 && ignitions > Math.Ceiling(EffectiveIgnitions(quality, rated_ignitions) * 0.7)) needMaintenance = true;
 			if (rated_operation_duration > 0 && operation_duration > EffectiveDuration(quality, rated_operation_duration) * 0.7) needMaintenance = true;
 
+			v.KerbalismData().ReliabilityStatus().Clear();
+
 			// notify user
 			if (!needMaintenance)
 			{
+				last_inspection = Planetarium.GetUniversalTime();
 				Message.Post(Lib.TextVariant(
 					"It is practically new",
 					"It is in good shape",
@@ -452,11 +460,13 @@ namespace KERBALISM
 			last = 0.0;
 			next = 0.0;
 			lastRunningCheck = 0;
+			last_inspection = Planetarium.GetUniversalTime();
 
 			operation_duration = Math.Min(operation_duration, EffectiveDuration(quality, rated_operation_duration) * 0.3);
 			ignitions = Math.Min(ignitions, (int)(EffectiveIgnitions(quality, rated_ignitions) * 0.3));
 
 			fail_duration = 0;
+			v.KerbalismData().ReliabilityStatus().Clear();
 
 			if (broken)
 			{
@@ -511,6 +521,8 @@ namespace KERBALISM
 #endif
 		public void Break()
 		{
+			vessel.KerbalismData().ReliabilityStatus().Clear();
+
 			if(explode)
 			{
 				foreach (PartModule m in modules)
@@ -560,6 +572,8 @@ namespace KERBALISM
 
 		public static void ProtoBreak(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m)
 		{
+			v.KerbalismData().ReliabilityStatus().Clear();
+
 			// get reliability module prefab
 			string type = Lib.Proto.GetString(m, "type", string.Empty);
 			Reliability reliability = p.partPrefab.FindModulesImplementing<Reliability>().Find(k => k.type == type);

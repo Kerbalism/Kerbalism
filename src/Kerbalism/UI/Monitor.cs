@@ -10,6 +10,7 @@ namespace KERBALISM
 		telemetry,
 		data,
 		scripts,
+		failures,
 		config,
 		log
 	}
@@ -99,6 +100,7 @@ namespace KERBALISM
 					case MonitorPage.scripts: panel.Devman(selected_v); break;
 					case MonitorPage.config: panel.Config(selected_v); break;
 					case MonitorPage.log: panel.Logman(selected_v); break;
+					case MonitorPage.failures: panel.Failman(selected_v); break;
 				}
 			}
 		}
@@ -293,6 +295,18 @@ namespace KERBALISM
 						UI.window.Close();
 					else
 						UI.Open((p) => p.Devman(v));
+				}
+			}
+			if (Features.Reliability)
+			{
+				GUILayout.Label(new GUIContent(page == MonitorPage.failures ? " <color=#00ffff>FAILURES</color> " : " FAILURES ", Icons.small_wrench, "See failures and maintenance state" + tooltip), config_style);
+				if (Lib.IsClicked()) page = MonitorPage.failures;
+				else if (Lib.IsClicked(2))
+				{
+					if (UI.window.PanelType == Panel.PanelType.failures)
+						UI.window.Close();
+					else
+						UI.Open((p) => p.Failman(v));
 				}
 			}
 			if (PreferencesMessages.Instance.stockMessages != true)

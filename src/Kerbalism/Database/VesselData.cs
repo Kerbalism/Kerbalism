@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using UnityEngine;
 
 
 namespace KERBALISM
@@ -342,6 +341,14 @@ namespace KERBALISM
 
 		/// <summary>data capacity of all public drives</summary>
 		public double DrivesCapacity => drivesCapacity; double drivesCapacity = 0.0;
+
+		private List<ReliabilityInfo> reliabilityStatus;
+		public List<ReliabilityInfo> ReliabilityStatus()
+		{
+			if (reliabilityStatus != null) return reliabilityStatus;
+			reliabilityStatus = ReliabilityInfo.BuildList(Vessel);
+			return reliabilityStatus;
+		}
 
 		#endregion
 

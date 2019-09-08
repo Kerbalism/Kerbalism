@@ -13,6 +13,7 @@ namespace KERBALISM
 			telemetry,
 			data,
 			scripts,
+			failures,
 			config,
 			log,
 			connection
