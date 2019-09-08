@@ -58,9 +58,7 @@
   <!-- //////////////////// REFERENCES ///////////////////// -->
   <!-- ///////////////////////////////////////////////////// -->
   <ItemGroup>
-    <Reference Include="System">
-      <Private>False</Private>
-    </Reference>
+    <Reference Include="System" />
     <Reference Include="System.Core">
       <Private>False</Private>
     </Reference>
@@ -167,6 +165,9 @@
     <Compile Include="Database\DB.cs" />
     <Compile Include="Database\KerbalData.cs" />
     <Compile Include="Database\LandmarkData.cs" />
+    <Compile Include="Database\PartData.cs" />
+    <Compile Include="Database\PartModuleData.cs" />
+    <Compile Include="Database\Persistence.cs" />
     <Compile Include="Database\RuleData.cs" />
     <Compile Include="Database\SupplyData.cs" />
     <Compile Include="Database\UIData.cs" />

@@ -481,7 +481,7 @@ namespace KERBALISM
 				case KColor.Green: return "#CCFF00"; // ksp ui green
 				case KColor.Yellow: return "#FFD200"; // ksp ui yellow
 				case KColor.Orange: return "#FF8000"; // ksp ui orange
-				case KColor.Red: return "#C21807"; // custom red
+				case KColor.Red: return "#F22613"; // custom red
 				case KColor.PosRate: return "#CCFF00"; // green
 				case KColor.NegRate: return "#FF8000"; // orange
 				case KColor.ScienceBlue: return "#6DCFF6"; // ksp science color
