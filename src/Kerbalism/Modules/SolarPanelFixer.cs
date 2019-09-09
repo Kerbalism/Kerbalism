@@ -440,6 +440,7 @@ namespace KERBALISM
 					if (sunInfo.SunlightFactor == 1.0) exposureFactor += sunExposureFactor;
 					else if (sunInfo == trackedSunInfo) exposureState = ExposureState.InShadow;
 				}
+				vd.SaveSolarPanelExposure(persistentFactor);
 			}
 
 			// get solar flux and deduce a scalar based on nominal flux at 1AU
@@ -602,6 +603,14 @@ namespace KERBALISM
 				finalFactor += factor * sun.FluxProportion;
 			}
 			return finalFactor;
+		}
+
+		public static double GetSolarPanelsAverageExposure(List<double> exposures)
+		{
+			if (exposures.Count == 0) return -1.0;
+			double averageExposure = 0.0;
+			foreach (double exposure in exposures) averageExposure += exposure;
+			return averageExposure / exposures.Count;
 		}
 		#endregion
 

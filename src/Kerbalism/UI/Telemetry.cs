@@ -75,6 +75,12 @@ namespace KERBALISM
 			readings.Remove(string.Empty);
 
 			p.AddSection("ENVIRONMENT");
+
+			if (vd.SolarPanelsAverageExposure >= 0.0)
+			{
+				p.AddContent("solar panels average exposure", vd.SolarPanelsAverageExposure.ToString("P1"),"<b>Exposure ignoring bodies occlusion</b>\n<i>Won't change on unloaded vessels\nMake sure to optimize it before switching</i>");
+			}
+
 			foreach (string type in readings)
 			{
 				p.AddContent(type.ToLower().Replace('_', ' '), Sensor.Telemetry_content(v, vd, type), Sensor.Telemetry_tooltip(v, vd, type));
@@ -133,8 +139,8 @@ namespace KERBALISM
 
 		static void Render_supplies(Panel p, Vessel v, VesselData vd, VesselResources resources)
 		{
-			// for each supply
 			int supplies = 0;
+			// for each supply
 			foreach (Supply supply in Profile.supplies)
 			{
 				// get resource info

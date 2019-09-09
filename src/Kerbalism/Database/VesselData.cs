@@ -343,6 +343,11 @@ namespace KERBALISM
 		/// <summary>data capacity of all public drives</summary>
 		public double DrivesCapacity => drivesCapacity; double drivesCapacity = 0.0;
 
+		/// <summary>evaluated on loaded vessels based on the data pushed by SolarPanelFixer. This doesn't change for unloaded vessel, so the value is persisted</summary>
+		public double SolarPanelsAverageExposure => solarPanelsAverageExposure; double solarPanelsAverageExposure = -1.0;
+		private List<double> solarPanelsExposure = new List<double>(); // values are added by SolarPanelFixer, then cleared by VesselData once solarPanelsAverageExposure has been computed
+		public void SaveSolarPanelExposure(double exposure) => solarPanelsExposure.Add(exposure); // meant to be called by SolarPanelFixer
+
 		private List<ReliabilityInfo> reliabilityStatus;
 		public List<ReliabilityInfo> ReliabilityStatus()
 		{
@@ -491,6 +496,8 @@ namespace KERBALISM
 			cfg_highlights = Lib.ConfigValue(node, "cfg_highlights", PreferencesBasic.Instance.highlights);
 			cfg_showlink = Lib.ConfigValue(node, "cfg_showlink", true);
 
+			solarPanelsAverageExposure = Lib.ConfigValue(node, "solarPanelsAverageExposure", -1.0);
+
 			if (node.HasNode("StormData")) stormData = new StormData(node.GetNode("StormData"));
 			else stormData = new StormData();
 
@@ -524,6 +531,8 @@ namespace KERBALISM
 			node.AddValue("cfg_script", cfg_script);
 			node.AddValue("cfg_highlights", cfg_highlights);
 			node.AddValue("cfg_showlink", cfg_showlink);
+
+			node.AddValue("solarPanelsAverageExposure", solarPanelsAverageExposure);
 
 			stormData.Save(node.AddNode("StormData"));
 			computer.Save(node.AddNode("computer"));
@@ -589,6 +598,13 @@ namespace KERBALISM
 			greenhouses = Greenhouse.Greenhouses(Vessel);
 
 			Drive.GetCapacity(Vessel, out drivesFreeSpace, out drivesCapacity);
+
+			// solar panels data
+			if (Vessel.loaded)
+			{
+				solarPanelsAverageExposure = SolarPanelFixer.GetSolarPanelsAverageExposure(solarPanelsExposure);
+				solarPanelsExposure.Clear();
+			}
 		}
 		#endregion
 
