@@ -425,11 +425,8 @@ namespace KERBALISM
 						}
 					}
 
-					// Get the proportion of this sun flux in the total flux from all suns.
-					double sunFluxPercent = sunInfo.SolarFlux / vd.EnvSolarFluxTotal;
-
 					// Compute final aggregate exposure factor
-					double sunExposureFactor = sunCosineFactor * sunOccludedFactor * sunFluxPercent;
+					double sunExposureFactor = sunCosineFactor * sunOccludedFactor * sunInfo.FluxProportion;
 
 					// Add the final factor to the saved exposure factor to be used in analytical / unloaded states.
 					// If occlusion is from the scene, not a part (terrain, building...) don't save the occlusion factor,
@@ -437,7 +434,7 @@ namespace KERBALISM
 					if (occludingPart != null)
 						persistentFactor += sunExposureFactor;
 					else
-						persistentFactor += sunCosineFactor * sunFluxPercent;
+						persistentFactor += sunCosineFactor * sunInfo.FluxProportion;
 
 					// Only apply the exposure factor if not in shadow (body occlusion check)
 					if (sunInfo.SunlightFactor == 1.0) exposureFactor += sunExposureFactor;
