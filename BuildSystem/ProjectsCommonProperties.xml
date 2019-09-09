@@ -38,7 +38,7 @@
     
     <!-- GameData paths-->
     <GameDataKerbalismPathPR>$(RepoBasePathPR)\GameData\Kerbalism</GameDataKerbalismPathPR>
-    <GameDataKerbalismConfigPathPR>$(RepoBasePathPR)\GameData\KerbalismConfig</GameDataKerbalismConfigPathPR>
+    <GameDataKerbalismConfigPathPR>$(RepoBasePathPR)\GameData\KerbalismConfigDefault</GameDataKerbalismConfigPathPR>
     
   </PropertyGroup>
 </Project>

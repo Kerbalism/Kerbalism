@@ -22,7 +22,7 @@ namespace KERBALISM
 
 		public static void Parse()
         {
-            var cfg = Lib.ParseConfig("KerbalismConfig/Kerbalism");
+            ConfigNode cfg = GameDatabase.Instance.GetConfigs("Kerbalism")[0].config;
 
             // profile used
             Profile = Lib.ConfigValue(cfg, "Profile", string.Empty);
