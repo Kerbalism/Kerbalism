@@ -9,12 +9,6 @@ using UnityEngine;
 
 namespace KERBALISM
 {
-	// TODO : SolarPanelFixer features that require testing :
-	// - fully untested : time efficiency curve (must try with a stock panel defined curve, and a SolarPanelFixer defined curve)
-	// - background update : must check that the output is consistent with what we get when loaded (should be but checking can't hurt)
-	//   (note : only test it with equatorial circular orbits, other orbits will give inconsistent output due to sunlight evaluation algorithm limitations)
-	// - reliability support should work but I did only a very quick test
-
 	// TODO : SolarPanelFixer missing features :
 	// - SSTU automation / better reliability support
 
@@ -431,11 +425,8 @@ namespace KERBALISM
 						}
 					}
 
-					// Get the proportion of this sun flux in the total flux from all suns.
-					double sunFluxPercent = sunInfo.SolarFlux / vd.EnvSolarFluxTotal;
-
 					// Compute final aggregate exposure factor
-					double sunExposureFactor = sunCosineFactor * sunOccludedFactor * sunFluxPercent;
+					double sunExposureFactor = sunCosineFactor * sunOccludedFactor * sunInfo.FluxProportion;
 
 					// Add the final factor to the saved exposure factor to be used in analytical / unloaded states.
 					// If occlusion is from the scene, not a part (terrain, building...) don't save the occlusion factor,
@@ -443,7 +434,7 @@ namespace KERBALISM
 					if (occludingPart != null)
 						persistentFactor += sunExposureFactor;
 					else
-						persistentFactor += sunCosineFactor * sunFluxPercent;
+						persistentFactor += sunCosineFactor * sunInfo.FluxProportion;
 
 					// Only apply the exposure factor if not in shadow (body occlusion check)
 					if (sunInfo.SunlightFactor == 1.0) exposureFactor += sunExposureFactor;
@@ -480,7 +471,7 @@ namespace KERBALISM
 
 		public static void BackgroundUpdate(Vessel v, ProtoPartModuleSnapshot m, SolarPanelFixer prefab, VesselData vd, ResourceInfo ec, double elapsed_s)
 		{
-			// this is ugly spaghetti code but initializing the prefab at loading time is messy
+			// this is ugly spaghetti code but initializing the prefab at loading time is messy because the targeted solar panel module may not be loaded yet
 			if (!prefab.isInitialized) prefab.OnStart(StartState.None);
 
 			string state = Lib.Proto.GetString(m, "state");

@@ -12,7 +12,7 @@
 * Added mod support to query the radiation model, as well as toggle visibility of belts and magnetopause (Sir Mortimer)
 * Added mod support for CME prediction accuracy that influences the probability that you get an advanced warning, and its accuracy (Sir Mortimer)
 * Configs for SoundingRockets (Arthur, Breach Candy)
-* New "SolarPanelFixer" partmodule replacing the "WarpFixer" module. This require loading all vessels in your game for panels to get updated (Got)
+* New "SolarPanelFixer" partmodule replacing the "WarpFixer" module. **Unloaded vessels will have incorrect solar panel EC rates until reloaded** (Got)
 * Support for (almost all) SSTU solar panels, require SSTU version 0.11.49.161 min (Got)
 * Added an editor PAW option to consider / not consider solar panels in the planner (Got)
 * Added a third sunlight option in the planner : when slected, solar panel output is estimated using the VAB/SPH sun direction, with tracking/occlusion handling (Got)
