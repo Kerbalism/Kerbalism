@@ -75,6 +75,7 @@ namespace KERBALISM
 
 			Ray r = new Ray(habitatPosition, vd.EnvMainSun.Direction);
 			var hits = Physics.RaycastAll(r, 200);
+
 			foreach (var hit in hits)
 			{
 				if (hit.collider != null && hit.collider.gameObject != null)
@@ -139,9 +140,13 @@ namespace KERBALISM
 
 		internal void Update(Vessel v)
 		{
-			if (!v.loaded) return;
+			if (v == null || !v.loaded) return;
 
-			if(habitats == null)
+			// always do EVAs
+			if (v.isEVA)
+				Add(v.rootPart);
+
+			if (habitats == null)
 				habitats = Lib.FindModules<Habitat>(v);
 
 			if (habitats.Count == 0) return;
@@ -159,10 +164,6 @@ namespace KERBALISM
 				Add(habitats[habitatIndex].part);
 				habitatIndex = (habitatIndex + 1) % habitats.Count;
 			}
-
-			// always do EVAs
-			if (v.isEVA)
-				Add(v.rootPart);
 		}
 	}
 }
