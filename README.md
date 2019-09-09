@@ -40,7 +40,7 @@ Don't combine packs unless there is explicit instructions to do so.
 
 - `CommunityResourcePack` (folder)
 - `Kerbalism` (folder)
-- `KerbalismConfigDefault` (folder, can be replaced by a third-party config pack)
+- `KerbalismConfig` (folder, can be replaced by a third-party config pack)
 - `ModuleManager.X.X.X.dll` (file)
 
 ## Mod compatibility and support

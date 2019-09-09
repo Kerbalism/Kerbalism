@@ -41,7 +41,7 @@
     <DeploymentOutputPath>$(RepoBasePath)\BuildSystem\DeploymentOutput\</DeploymentOutputPath>
     <!-- Repo Gamedata paths -->
     <GameDataKerbalismPath>$(RepoBasePath)\GameData\Kerbalism</GameDataKerbalismPath>
-    <GameDataKerbalismConfigPath>$(RepoBasePath)\GameData\KerbalismConfigDefault</GameDataKerbalismConfigPath>
+    <GameDataKerbalismConfigPath>$(RepoBasePath)\GameData\KerbalismConfig</GameDataKerbalismConfigPath>
     <!-- Repo projects paths -->
     <KerbalismProjectPath>$(RepoBasePath)\src\Kerbalism</KerbalismProjectPath>
     <KerbalismProjectFile>$(KerbalismProjectPath)\Kerbalism.csproj</KerbalismProjectFile>
@@ -255,7 +255,7 @@
       <GameDataContent Include="$(RepoBasePath)\GameData\**\*.*" />
     </ItemGroup>
     <Message Condition="'$(CopyGameDataOnBuild)' == 'true'" Text="[KERBALISM-BUILD-DEBUG] Copying GameData to $(KSPDevPath)..." Importance="high" />
-    <RemoveDir Condition="'$(CopyGameDataOnBuild)' == 'true'" Directories="$(KSPDevPath)\GameData\Kerbalism;$(KSPDevPath)\GameData\KerbalismConfigDefault" />
+    <RemoveDir Condition="'$(CopyGameDataOnBuild)' == 'true'" Directories="$(KSPDevPath)\GameData\Kerbalism;$(KSPDevPath)\GameData\KerbalismConfig" />
     <Copy Condition="'$(CopyGameDataOnBuild)' == 'true'" SourceFiles="@(GameDataContent)" DestinationFolder="$(KSPDevPath)\GameData\%(RecursiveDir)" />
     <!-- copy dll and mdb files -->
     <Message Text="[KERBALISM-BUILD-DEBUG] Copying build dlls to $(KSPDevPath)\GameData\Kerbalism..." Importance="high" />
@@ -352,6 +352,10 @@
     <!-- Put the readme and changelog at the root of the zips -->
     <Copy SourceFiles="$(ReadmeFilePath);$(ChangelogFilePath)" DestinationFolder="$(DeploymentOutputPath)\temp" />
 
+    <!-- Put some warnings for dumb users-->
+    <WriteLinesToFile File="$(DeploymentOutputPath)\temp\WARNING - Kerbalism require the CommunityResourcePack mod" />
+    <WriteLinesToFile File="$(DeploymentOutputPath)\temp\WARNING - Kerbalism require the ModuleManager plugin" />
+
     <!-- create the kerbalism zip from the temp folder -->
     <ZipDirectory SourceDirectory="$(DeploymentOutputPath)\temp" DestinationFile="$(KerbalismZipPath)" />
 
@@ -359,14 +363,17 @@
     <RemoveDir Directories="$(DeploymentOutputPath)\temp" />
     <MakeDir Directories="$(DeploymentOutputPath)\temp"/>
 
-    <!-- copy KerbalismConfigDefault to the temp folder -->
-    <Copy SourceFiles="@(KerbalismConfigGameData)" DestinationFolder="$(DeploymentOutputPath)\temp\GameData\KerbalismConfigDefault\%(RecursiveDir)" />
+    <!-- copy KerbalismConfig to the temp folder -->
+    <Copy SourceFiles="@(KerbalismConfigGameData)" DestinationFolder="$(DeploymentOutputPath)\temp\GameData\KerbalismConfig\%(RecursiveDir)" />
 
     <!-- The Kerbalism.version file is also needed in the KerbalismConfig zip because these 2 zips are separate mods on CKAN-->
-    <Copy SourceFiles="$(AVCVersionFilePath)" DestinationFolder="$(DeploymentOutputPath)\temp\GameData\KerbalismConfigDefault" />
+    <Copy SourceFiles="$(AVCVersionFilePath)" DestinationFolder="$(DeploymentOutputPath)\temp\GameData\KerbalismConfig" />
 
     <!-- Put the readme and changelog at the root of the zips -->
     <Copy SourceFiles="$(ReadmeFilePath);$(ChangelogFilePath)" DestinationFolder="$(DeploymentOutputPath)\temp" />
+    
+    <!-- Put some warnings for dumb users-->
+    <WriteLinesToFile File="$(DeploymentOutputPath)\temp\WARNING - Don't install KerbalismConfig if you are using a third-party config pack" />
 
     <!-- create the KerbalismConfig zip from the temp folder -->
     <ZipDirectory SourceDirectory="$(DeploymentOutputPath)\temp" DestinationFile="$(KerbalismConfigZipPath)" />

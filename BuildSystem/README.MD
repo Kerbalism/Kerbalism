@@ -165,7 +165,7 @@ This target will build Kerbalism and KerbalismBootstrap in the debug configurati
   - With the additional debug constants defined in `UserConfigDevEnv.xml`
 - On windows only, it will generate the *.mdb debug symbols to use with the *Visual Studio Tools for Unity* debugger
 - If the `CopyGameDataOnBuild` is set to `true` in the `UserConfigDevEnv.xml` file, it will copy 
-  the whole Kerbalism\KerbalismConfigDefault folders from the repository to your KSP installation GameData.
+  the whole Kerbalism\KerbalismConfig folders from the repository to your KSP installation GameData.
 - It will copy Kerbalism.dll, KerbalismBootstrap.dll and the *.mdb files to your KSP installation GameData.
 
 ### Deployement targets
@@ -177,11 +177,11 @@ This target will build Kerbalism and KerbalismBootstrap in the debug configurati
 [**`IsDevRelease`**=`true`/`false`, default `false`] : will pass the same property the `BuildRelease` target
 
 Create zipped releases in the `BuildSystem\DeploymentOutput` folder :
-- Create 2 zips, one containing `GameData\Kerbalism`, the other `GameData\KerbalismConfigDefault`
+- Create 2 zips, one containing `GameData\Kerbalism`, the other `GameData\KerbalismConfig`
 - Format the zip name as follow : `[Kerbalism-Core/Kerbalism-Config]_[Version]_for_KSP[VersionMin]-[VersionMax]`
 - [Version] will be formatted as `dev-[BuildNumber]` if this is a dev build
 - Copy `KerbalismBootstrap.dll` and the `*.kbins` files in the `Kerbalism-Core` zip
-- Copy the repo `GameData\Kerbalism\Kerbalism.version` to the `Kerbalism-Config` zip, in `GameData\KerbalismConfigDefault`
+- Copy the repo `GameData\Kerbalism\Kerbalism.version` to the `Kerbalism-Config` zip, in `GameData\KerbalismConfig`
   Why : The Kerbalism.version file is also needed in the KerbalismConfig zip because these 2 zips are separate mods on CKAN
 - Copy the README.MD and CHANGELOG.MD files at the root of each zip
 
