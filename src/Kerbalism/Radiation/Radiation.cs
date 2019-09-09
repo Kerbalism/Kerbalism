@@ -589,7 +589,7 @@ namespace KERBALISM
 			var info = Info(sun);
 			if (info.solar_cycle <= 0) return 0;
 
-			var t = Planetarium.GetUniversalTime() / info.solar_cycle;
+			var t = Planetarium.GetUniversalTime() / info.solar_cycle * 2 * Math.PI; // Math.Sin/Cos works with radians
 
 			// this gives a pseudo-erratic curve, see https://www.desmos.com/calculator/tyuqgdk4jh
 			var r = (-Math.Cos(t) + Math.Sin(t * 75) / 5 + 0.9) / 2.0;
