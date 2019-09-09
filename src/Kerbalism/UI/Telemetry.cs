@@ -93,7 +93,7 @@ namespace KERBALISM
 			// render panel, add some content based on enabled features
 			p.AddSection("HABITAT");
 			if (Features.Poisoning) p.AddContent("co2 level", Lib.Color(Lib.HumanReadablePerc(vd.Poisoning, "F2"), vd.Poisoning > Settings.PoisoningThreshold, "yellow"));
-			if (Features.Radiation && v.isEVA) p.AddContent("radiation", Lib.HumanReadableRadiation(vd.EnvRadiation));
+			if (Features.Radiation && v.isEVA) p.AddContent("radiation", Lib.HumanReadableRadiation(vd.EnvHabitatRadiation));
 
 			if (!v.isEVA)
 			{
