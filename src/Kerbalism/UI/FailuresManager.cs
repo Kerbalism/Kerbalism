@@ -81,8 +81,8 @@ namespace KERBALISM
 
 			if(ri.mtbf <= 0)
 			{
-				if (ri.rel_ignitions > 0.95) return Lib.Color("#FFD700", "ignition limit");
 				if (ri.rel_duration > 0.75) return Lib.Color("#FFD700", "operation duration");
+				if (ri.rel_ignitions > 0.95) return Lib.Color("#FFD700", "ignition limit");
 			}
 
 			return Lib.Color("#32CD32", "good");
