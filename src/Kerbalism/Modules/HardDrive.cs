@@ -290,7 +290,7 @@ namespace KERBALISM
 			{
 				Message.Post
 				(
-					Lib.Color("red", Lib.BuildString("WARNING: not evering copied"), true),
+					Lib.Color(Lib.BuildString("WARNING: not evering copied"), Lib.KColor.Red, true),
 					Lib.BuildString("Storage is at capacity")
 				);
 			}
@@ -309,7 +309,7 @@ namespace KERBALISM
 			{
 				Message.Post
 				(
-					Lib.Color("red", Lib.BuildString("WARNING: not evering copied"), true),
+					Lib.Color(Lib.BuildString("WARNING: not evering copied"), Lib.KColor.Red, true),
 					Lib.BuildString("Storage is at capacity")
 				);
 			}

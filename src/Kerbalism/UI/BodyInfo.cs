@@ -72,18 +72,18 @@ namespace KERBALISM
 
 					if(Storm.sun_observation_quality > 0.75)
 					{
-						title = Lib.BuildString(title, ": ", Lib.Color("#cccc", Lib.HumanReadableDuration(cycle) + " cycle"));
+						title = Lib.BuildString(title, ": ", Lib.Color(Lib.HumanReadableDuration(cycle) + " cycle", Lib.KColor.LightGrey));
 					}
 
 					p.AddContent(title, Lib.HumanReadablePerc(activity));
 				}
 
-				p.AddContent(Lib.BuildString("inner belt: ", Lib.Color("#cccccc", inner)),
-					Radiation.show_inner ? "<color=green>show</color>" : "<color=red>hide</color>", string.Empty, () => p.Toggle(ref Radiation.show_inner));
-				p.AddContent(Lib.BuildString("outer belt: ", Lib.Color("#cccccc", outer)),
-					Radiation.show_outer ? "<color=green>show</color>" : "<color=red>hide</color>", string.Empty, () => p.Toggle(ref Radiation.show_outer));
-				p.AddContent(Lib.BuildString("magnetopause: ", Lib.Color("#cccccc", pause)),
-					Radiation.show_pause ? "<color=green>show</color>" : "<color=red>hide</color>", string.Empty, () => p.Toggle(ref Radiation.show_pause));
+				p.AddContent(Lib.BuildString("inner belt: ", Lib.Color(inner, Lib.KColor.LightGrey)),
+					Radiation.show_inner ? Lib.Color("show", Lib.KColor.Green) : Lib.Color("hide", Lib.KColor.Red), string.Empty, () => p.Toggle(ref Radiation.show_inner));
+				p.AddContent(Lib.BuildString("outer belt: ", Lib.Color(outer, Lib.KColor.LightGrey)),
+					Radiation.show_outer ? Lib.Color("show", Lib.KColor.Green) : Lib.Color("hide", Lib.KColor.Red), string.Empty, () => p.Toggle(ref Radiation.show_outer));
+				p.AddContent(Lib.BuildString("magnetopause: ", Lib.Color(pause, Lib.KColor.LightGrey)),
+					Radiation.show_pause ? Lib.Color("show", Lib.KColor.Green) : Lib.Color("hide", Lib.KColor.Red), string.Empty, () => p.Toggle(ref Radiation.show_pause));
 			}
 
 			// explain the user how to toggle the BodyInfo window
@@ -91,7 +91,7 @@ namespace KERBALISM
 			p.AddContent("<i>Press <b>B</b> to open this window again</i>");
 
 			// set metadata
-			p.Title(Lib.BuildString(Lib.Ellipsis(body.bodyName, Styles.ScaleStringLength(24)), " <color=#cccccc>BODY INFO</color>"));
+			p.Title(Lib.BuildString(Lib.Ellipsis(body.bodyName, Styles.ScaleStringLength(24)), " ", Lib.Color("BODY INFO", Lib.KColor.LightGrey)));
 		}
 
 		private static void RadiationLevels(CelestialBody body, out string inner, out string outer, out string pause, out double activity, out double cycle)

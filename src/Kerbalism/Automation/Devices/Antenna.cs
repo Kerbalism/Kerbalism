@@ -40,9 +40,9 @@ namespace KERBALISM
 				case "ModuleDeployableAntenna":
 					switch (animDefault.deployState)
 					{
-						case DeployState.EXTENDED: return "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_EXTENDED") + " </color>";
-						case DeployState.RETRACTED: return "<color=red>" + Localizer.Format("#KERBALISM_Generic_RETRACTED") + "</color>";
-						case DeployState.BROKEN: return "<color=red>" + Localizer.Format("#KERBALISM_Generic_BROKEN") + "</color>";
+						case DeployState.EXTENDED: return Lib.Color(Localizer.Format("#KERBALISM_Generic_EXTENDED"), Lib.KColor.Green);
+						case DeployState.RETRACTED: return Lib.Color(Localizer.Format("#KERBALISM_Generic_RETRACTED"), Lib.KColor.Yellow);
+						case DeployState.BROKEN: return Lib.Color(Localizer.Format("#KERBALISM_Generic_BROKEN"), Lib.KColor.Red);
 						case DeployState.EXTENDING: return Localizer.Format("#KERBALISM_Generic_EXTENDING");
 						case DeployState.RETRACTING: return Localizer.Format("#KERBALISM_Generic_RETRACTING");
 					}
@@ -53,13 +53,13 @@ namespace KERBALISM
 						return specialCase.animSpeed > 0 ? Localizer.Format("#KERBALISM_Generic_EXTENDING")
 														 : Localizer.Format("#KERBALISM_Generic_RETRACTING");
 					}
-					return specialCase.animSpeed > 0 ? "<color=cyan>deployed</color>" : "<color=red>retracted</color>";
+					return specialCase.animSpeed > 0 ? Lib.Color("deployed", Lib.KColor.Green) : Lib.Color("retracted", Lib.KColor.Yellow);
 				case "ModuleDataTransmitter":
 					return "fixed";
 				case "ModuleRTAntenna":
 					return Lib.ReflectionValue<bool>(antenna, "IsRTActive")
-					  ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_ACTIVE") + "</color>"
-					  : "<color=red>" + Localizer.Format("#KERBALISM_Generic_INACTIVE") + "</color>";
+					  ? Lib.Color(Localizer.Format("#KERBALISM_Generic_ACTIVE"), Lib.KColor.Green)
+					  : Lib.Color(Localizer.Format("#KERBALISM_Generic_INACTIVE"), Lib.KColor.Yellow);
 			}
 			return "unknown";
 		}
@@ -160,21 +160,21 @@ namespace KERBALISM
 					string state = Lib.Proto.GetString(antenna, "deployState");
 					switch (state)
 					{
-						case "EXTENDED": return "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_EXTENDED") + "</color>";
-						case "RETRACTED": return "<color=red>" + Localizer.Format("#KERBALISM_Generic_RETRACTED") + "</color>";
-						case "BROKEN": return "<color=red>" + Localizer.Format("#KERBALISM_Generic_BROKEN") + "</color>";
+						case "EXTENDED": return Lib.Color(Localizer.Format("#KERBALISM_Generic_EXTENDED"), Lib.KColor.Green);
+						case "RETRACTED": return Lib.Color(Localizer.Format("#KERBALISM_Generic_RETRACTED"), Lib.KColor.Yellow);
+						case "BROKEN": return Lib.Color(Localizer.Format("#KERBALISM_Generic_BROKEN"), Lib.KColor.Red);
 					}
 					break;
 				case "ModuleAnimateGeneric":
 					return Lib.Proto.GetFloat(antenna, "animSpeed") > 0 ?
-						"<color=cyan>" + Localizer.Format("#KERBALISM_Generic_EXTENDED") + "</color>" :
-						"<color=red>" + Localizer.Format("#KERBALISM_Generic_RETRACTED") + "</color>";
+						Lib.Color(Localizer.Format("#KERBALISM_Generic_EXTENDED"), Lib.KColor.Green) :
+						Lib.Color(Localizer.Format("#KERBALISM_Generic_RETRACTED"), Lib.KColor.Yellow);
 				case "ModuleDataTransmitter":
 					return "fixed";
 				case "ModuleRTAntenna":
 					return Lib.Proto.GetBool(antenna, "IsRTActive")
-						? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_ACTIVE") + "</color>"
-						: "<color=red>" + Localizer.Format("#KERBALISM_Generic_INACTIVE") + "</color>";
+					  ? Lib.Color(Localizer.Format("#KERBALISM_Generic_ACTIVE"), Lib.KColor.Green)
+					  : Lib.Color(Localizer.Format("#KERBALISM_Generic_INACTIVE"), Lib.KColor.Yellow);
 			}
 			return "unknown";
 		}

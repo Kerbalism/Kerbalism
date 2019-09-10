@@ -44,7 +44,7 @@ namespace KERBALISM
 		private static readonly string localized_toggle = Localizer.Format("#KERBALISM_Laboratory_Toggle");
 		private static readonly string localized_enabled = Localizer.Format("#KERBALISM_Generic_ENABLED");
 		private static readonly string localized_disabled = Localizer.Format("#KERBALISM_Generic_DISABLED");
-		private static readonly string localized_noEC = Lib.Color("yellow", Localizer.Format("#KERBALISM_Laboratory_NoEC"));
+		private static readonly string localized_noEC = Lib.Color(Localizer.Format("#KERBALISM_Laboratory_NoEC"), Lib.KColor.Orange);
 		private static readonly string localized_noSample = Localizer.Format("#KERBALISM_Laboratory_NoSample");
 		private static readonly string localized_cleaned = Localizer.Format("#KERBALISM_Laboratory_Cleaned");
 		private static readonly string localized_results = Localizer.Format("#KERBALISM_Laboratory_Results");
@@ -288,7 +288,7 @@ namespace KERBALISM
 				else
 				{
 					Message.Post(
-						Lib.Color("red", Lib.BuildString(Localizer.Format("#KERBALISM_Laboratory_Analysis"), " stopped")),
+						Lib.Color(Lib.BuildString(Localizer.Format("#KERBALISM_Laboratory_Analysis"), " stopped"), Lib.KColor.Red),
 						"Not enough space on hard drive"
 					);
 
@@ -306,7 +306,7 @@ namespace KERBALISM
 				{
 					// only inform the user if auto-analyze is turned off
 					// otherwise we could be spamming "Analysis complete" messages
-					Message.Post(Lib.BuildString(Lib.Color("cyan", Localizer.Format("#KERBALISM_Laboratory_Analysis"), true), "\n",
+					Message.Post(Lib.BuildString(Lib.Color(Localizer.Format("#KERBALISM_Laboratory_Analysis"), Lib.KColor.Science, true), "\n",
 						Localizer.Format("#KERBALISM_Laboratory_Analyzed", Lib.Bold(v.vesselName), Lib.Bold(Science.Experiment(filename).name))), localized_results);
 				}
 
@@ -356,13 +356,13 @@ namespace KERBALISM
 					status_txt = localized_noStorage;
 					break;
 				case Status.NO_RESEARCHER:
-					status_txt = Lib.Color("yellow", researcher_cs.Warning());
+					status_txt = Lib.Color(researcher_cs.Warning(), Lib.KColor.Orange);
 					break;
 				case Status.NO_SAMPLE:
 					status_txt = localized_noSample;
 					break;
 				case Status.RUNNING:
-					status_txt = Lib.Color("green", Science.Experiment(current_sample).name);
+					status_txt = Lib.Color(Science.Experiment(current_sample).name, Lib.KColor.Green);
 					break;
 			}
 		}

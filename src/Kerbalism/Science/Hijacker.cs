@@ -84,7 +84,7 @@ namespace KERBALISM
 				{
 					var exp = Science.Experiment(data.subjectID);
 					Message.Post(
-						Lib.Color("red", Lib.BuildString(exp.FullName(data.subjectID), " can not be stored")),
+						Lib.Color(Lib.BuildString(exp.FullName(data.subjectID), " can not be stored"), Lib.KColor.Red),
 						"Not enough space on hard drive"
 					);
 				}
@@ -211,7 +211,7 @@ namespace KERBALISM
 			{
 				var exp = Science.Experiment(data.subjectID);
 				Message.Post(
-					Lib.Color("red", Lib.BuildString(exp.FullName(data.subjectID), " can not be stored")),
+					Lib.Color(Lib.BuildString(exp.FullName(data.subjectID), " can not be stored"), Lib.KColor.Red),
 					"Not enough space on hard drive"
 				);
 			}

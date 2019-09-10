@@ -70,7 +70,6 @@ namespace KERBALISM
 
             // misc
             EnforceCoherency = Lib.ConfigValue(cfg, "EnforceCoherency", true);
-            TrackingPivot = Lib.ConfigValue(cfg, "TrackingPivot", true);
             HeadLampsCost = Lib.ConfigValue(cfg, "HeadLampsCost", 0.002);
             LowQualityRendering = Lib.ConfigValue(cfg, "LowQualityRendering", false);
             UIScale = Lib.ConfigValue(cfg, "UIScale", 1.0f);
@@ -148,7 +147,6 @@ namespace KERBALISM
 
         // misc
         public static bool EnforceCoherency;                    // detect and avoid issues at high timewarp in external modules
-        public static bool TrackingPivot;                       // simulate tracking solar panel around the pivot
         public static double HeadLampsCost;                     // EC/s cost if eva headlamps are on
         public static bool LowQualityRendering;                 // use less particles to render the magnetic fields
         public static float UIScale;                            // scale UI elements by this factor, relative to KSP scaling settings, useful for high PPI screens

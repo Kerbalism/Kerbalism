@@ -25,7 +25,7 @@ namespace KERBALISM
 			if (!vd.IsValid) return;
 
 			// set metadata
-			p.Title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(20)), " <color=#cccccc>TELEMETRY</color>"));
+			p.Title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(20)), " ", Lib.Color("TELEMETRY", Lib.KColor.LightGrey));
 			p.Width(Styles.ScaleWidthFloat(355.0f));
 			p.paneltype = Panel.PanelType.telemetry;
 
@@ -98,12 +98,12 @@ namespace KERBALISM
 
 			// render panel, add some content based on enabled features
 			p.AddSection("HABITAT");
-			if (Features.Poisoning) p.AddContent("co2 level", Lib.Color(Lib.HumanReadablePerc(vd.Poisoning, "F2"), vd.Poisoning > Settings.PoisoningThreshold, "yellow"));
+			if (Features.Poisoning) p.AddContent("co2 level", Lib.Color(vd.Poisoning > Settings.PoisoningThreshold, Lib.HumanReadablePerc(vd.Poisoning, "F2"), Lib.KColor.Yellow));
 			if (Features.Radiation && v.isEVA) p.AddContent("radiation", Lib.HumanReadableRadiation(vd.EnvHabitatRadiation));
 
 			if (!v.isEVA)
 			{
-				if (Features.Humidity) p.AddContent("humidity", Lib.Color(Lib.HumanReadablePerc(vd.Humidity, "F2"), vd.Humidity > Settings.HumidityThreshold, "yellow"));
+				if (Features.Humidity) p.AddContent("humidity", Lib.Color(vd.Humidity > Settings.HumidityThreshold, Lib.HumanReadablePerc(vd.Humidity, "F2"), Lib.KColor.Yellow));
 				if (Features.Pressure) p.AddContent("pressure", Lib.HumanReadablePressure(vd.Pressure * Sim.PressureAtSeaLevel()));
 				if (Features.Shielding) p.AddContent("shielding", Habitat.Shielding_to_string(vd.Shielding));
 				if (Features.LivingSpace) p.AddContent("living space", Habitat.Living_space_to_string(vd.LivingSpace));
@@ -160,9 +160,10 @@ namespace KERBALISM
 				sb.Append("<align=left />");
 				if (res.AverageRate != 0.0)
 				{
-					sb.Append(res.AverageRate > 0.0 ? "<color=#00ff00><b>+" : "<color=#ffaa00><b>-");
-					sb.Append(Lib.HumanReadableRate(Math.Abs(res.AverageRate)));
-					sb.Append("</b></color>");
+					sb.Append(Lib.Color(res.AverageRate > 0.0,
+						Lib.BuildString("+", Lib.HumanReadableRate(Math.Abs(res.AverageRate))), Lib.KColor.PosRate,
+						Lib.BuildString("-", Lib.HumanReadableRate(Math.Abs(res.AverageRate))), Lib.KColor.NegRate,
+						true));
 				}
 				else
 				{
@@ -188,9 +189,10 @@ namespace KERBALISM
 					foreach (SupplyData.ResourceBroker rb in brokers)
 					{
 						sb.Append("\n");
-						sb.Append(rb.rate > 0.0 ? "<color=#00ff00><b>+" : "<color=#ffaa00><b>-");
-						sb.Append(Lib.HumanReadableRate(Math.Abs(rb.rate)));
-						sb.Append("  </b></color>"); // spaces to prevent alignement issues
+						sb.Append(Lib.Color(rb.rate > 0.0,
+							Lib.BuildString("+", Lib.HumanReadableRate(Math.Abs(rb.rate)), "   "), Lib.KColor.PosRate, // spaces to mitigate alignement issues
+							Lib.BuildString("-", Lib.HumanReadableRate(Math.Abs(rb.rate)), "   "), Lib.KColor.NegRate, // spaces to mitigate alignement issues
+							true)); 
 						sb.Append("\t");
 						sb.Append(rb.name);
 					}
@@ -251,7 +253,7 @@ namespace KERBALISM
 				string name = kerbal.name.ToLower().Replace(" kerman", string.Empty);
 
 				// render selectable title
-				p.AddContent(Lib.Ellipsis(name, Styles.ScaleStringLength(30)), kd.disabled ? "<color=#00ffff>HYBERNATED</color>" : string.Empty);
+				p.AddContent(Lib.Ellipsis(name, Styles.ScaleStringLength(30)), kd.disabled ? Lib.Color("HYBERNATED", Lib.KColor.Cyan) : string.Empty);
 				p.AddIcon(health_severity == 0 ? Icons.health_white : health_severity == 1 ? Icons.health_yellow : Icons.health_red, tooltip);
 				p.AddIcon(stress_severity == 0 ? Icons.brain_white : stress_severity == 1 ? Icons.brain_yellow : Icons.brain_red, tooltip);
 			}
@@ -272,9 +274,9 @@ namespace KERBALISM
 
 				// state string
 				string state = greenhouse.issue.Length > 0
-				  ? Lib.BuildString("<color=yellow>", greenhouse.issue, "</color>")
+				  ? Lib.Color(greenhouse.issue, Lib.KColor.Yellow)
 				  : greenhouse.growth >= 0.99
-				  ? "<color=green>ready to harvest</color>"
+				  ? Lib.Color("ready to harvest", Lib.KColor.Green)
 				  : "growing";
 
 				// tooltip with summary

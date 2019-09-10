@@ -28,7 +28,7 @@ namespace KERBALISM
 			if (!vd.IsValid) return;
 
 			// set metadata
-			p.Title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(40)), " <color=#cccccc>FILE MANAGER</color>"));
+			p.Title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(40)), " ", Lib.Color("FILE MANAGER", Lib.KColor.LightGrey)));
 			p.Width(Styles.ScaleWidthFloat(465.0f));
 			p.paneltype = Panel.PanelType.data;
 
@@ -130,7 +130,7 @@ namespace KERBALISM
 			string exp_tooltip = Lib.BuildString
 			(
 			  exp.name, "\n",
-			  "<color=#aaaaaa>", ExperimentInfo.Situation(filename), "</color>"
+			  Lib.Color(ExperimentInfo.Situation(filename), Lib.KColor.LightGrey)
 			);
 
 			double exp_value = Science.Value(filename, file.size);
@@ -169,7 +169,7 @@ namespace KERBALISM
 			string exp_tooltip = Lib.BuildString
 			(
 			  exp.name, "\n",
-			  "<color=#aaaaaa>", ExperimentInfo.Situation(filename), "</color>"
+			  Lib.Color(ExperimentInfo.Situation(filename), Lib.KColor.LightGrey)
 			);
 
 			double exp_value = Science.Value(filename, sample.size);

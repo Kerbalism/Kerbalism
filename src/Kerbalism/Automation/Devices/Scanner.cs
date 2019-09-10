@@ -27,9 +27,7 @@ namespace KERBALISM
 
 		public override string Info()
 		{
-			return Lib.ReflectionValue<bool>(scanner, "scanning")
-			  ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_ENABLED") + "</color>"
-			  : "<color=red>" + Localizer.Format("#KERBALISM_Generic_DISABLED") + "</color>";
+			return Lib.Color(Lib.ReflectionValue<bool>(scanner, "scanning"), Localizer.Format("#KERBALISM_Generic_ENABLED"), Lib.KColor.Green, Localizer.Format("#KERBALISM_Generic_DISABLED"), Lib.KColor.Yellow);
 		}
 
 		public override void Ctrl(bool value)
@@ -70,9 +68,7 @@ namespace KERBALISM
 
 		public override string Info()
 		{
-			return Lib.Proto.GetBool(scanner, "scanning")
-			  ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_ENABLED") + "</color>"
-			  : "<color=red>" + Localizer.Format("#KERBALISM_Generic_DISABLED") + "</color>";
+			return Lib.Color(Lib.Proto.GetBool(scanner, "scanning"), Localizer.Format("#KERBALISM_Generic_ENABLED"), Lib.KColor.Green, Localizer.Format("#KERBALISM_Generic_DISABLED"), Lib.KColor.Yellow);
 		}
 
 		public override void Ctrl(bool value)

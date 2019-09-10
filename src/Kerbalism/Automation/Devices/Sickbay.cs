@@ -27,9 +27,7 @@ namespace KERBALISM
 
 		public override string Info()
 		{
-			return sickbay_ctrl.running
-			  ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_RUNNING") + "</color>"
-			  : "<color=red>" + Localizer.Format("#KERBALISM_Generic_STOPPED") + "</color>";
+			return Lib.Color(sickbay_ctrl.running, Localizer.Format("#KERBALISM_Generic_RUNNING"), Lib.KColor.Green, Localizer.Format("#KERBALISM_Generic_STOPPED"), Lib.KColor.Yellow);
 		}
 
 		public override void Ctrl(bool value)
@@ -72,9 +70,7 @@ namespace KERBALISM
 
 		public override string Info()
 		{
-			return Lib.Proto.GetBool(sickbay_ctrl, "running")
-			  ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_RUNNING") + "</color>"
-			  : "<color=red>" + Localizer.Format("#KERBALISM_Generic_STOPPED") + "</color>";
+			return Lib.Color(Lib.Proto.GetBool(sickbay_ctrl, "running"), Localizer.Format("#KERBALISM_Generic_RUNNING"), Lib.KColor.Green, Localizer.Format("#KERBALISM_Generic_STOPPED"), Lib.KColor.Yellow);
 		}
 
 		public override void Ctrl(bool value)

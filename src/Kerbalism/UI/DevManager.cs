@@ -24,7 +24,7 @@ namespace KERBALISM
 			if (!vd.IsValid) return;
 
 			// set metadata
-			p.Title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(20)), " <color=#cccccc>" + Localizer.Format("#KERBALISM_UI_devman") + "</color>"));
+			p.Title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(20)), Lib.Color("#KERBALISM_UI_devman", Lib.KColor.LightGrey)));
 			p.Width(Styles.ScaleWidthFloat(355.0f));
 			p.paneltype = Panel.PanelType.scripts;
 
@@ -93,7 +93,7 @@ namespace KERBALISM
 					p.AddContent
 					(
 					  dev.Name(),
-					  state == -1 ? "<color=#999999>" + Localizer.Format("#KERBALISM_UI_dontcare") + " </color>" : state == 0 ? "<color=red>" + Localizer.Format("#KERBALISM_Generic_OFF") + "</color>" : "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_ON") + "</color>",
+					  state == -1 ? Lib.Color(Localizer.Format("#KERBALISM_UI_dontcare"), Lib.KColor.DarkGrey) : Lib.Color(state == 0, Localizer.Format("#KERBALISM_Generic_OFF"), Lib.KColor.Yellow, Localizer.Format("#KERBALISM_Generic_ON"), Lib.KColor.Green),
 					  string.Empty,
 					  () =>
 					  {

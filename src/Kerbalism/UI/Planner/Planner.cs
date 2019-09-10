@@ -465,21 +465,8 @@ namespace KERBALISM.Planner
 				{
 					if (sb.Length > 0)
 						sb.Append("\n");
-					sb.Append("<b>");
-					switch (pair.Value)
-					{
-						case 1:
-							sb.Append("<color=red>");
-							break;
-						case 2:
-							sb.Append("<color=yellow>");
-							break;
-						default:
-							sb.Append("<color=green>");
-							break;
-					}
-					sb.Append(pair.Value.ToString());
-					sb.Append("</color></b>\t");
+					sb.Append(Lib.Color(pair.Value.ToString(), pair.Value == 1 ? Lib.KColor.Red : pair.Value == 2 ? Lib.KColor.Yellow : Lib.KColor.Green, true));
+					sb.Append("\t");
 					sb.Append(pair.Key);
 				}
 				redundancy_tooltip = Lib.BuildString("<align=left />", sb.ToString());
@@ -527,10 +514,10 @@ namespace KERBALISM.Planner
 			  : waste_res.produced <= double.Epsilon                    //< unnecessary
 			  ? "not required"
 			  : waste_res.consumed <= double.Epsilon                    //< no scrubbing
-			  ? "<color=#ffff00>none</color>"
+			  ? Lib.Color("none", Lib.KColor.Orange)
 			  : waste_res.produced > waste_res.consumed * 1.001         //< insufficient scrubbing
-			  ? "<color=#ffff00>inadequate</color>"
-			  : "good";                                                 //< sufficient scrubbing
+			  ? Lib.Color("inadequate", Lib.KColor.Yellow)
+			  : Lib.Color("good", Lib.KColor.Green);                    //< sufficient scrubbing
 
 			// generate status string for humidity
 			string moist_status = !Features.Humidity                    //< feature disabled
@@ -538,10 +525,10 @@ namespace KERBALISM.Planner
 			  : moist_res.produced <= double.Epsilon                    //< unnecessary
 			  ? "not required"
 			  : moist_res.consumed <= double.Epsilon                    //< no humidity control
-			  ? "<color=#ffff00>none</color>"
+			  ? Lib.Color("none", Lib.KColor.Orange)
 			  : moist_res.produced > moist_res.consumed * 1.001         //< insufficient humidity control
-			  ? "<color=#ffff00>inadequate</color>"
-			  : "good";                                                 //< sufficient humidity control
+			  ? Lib.Color("inadequate", Lib.KColor.Yellow)
+			  : Lib.Color("good", Lib.KColor.Green);                    //< sufficient humidity control
 
 			// generate status string for pressurization
 			string atmo_status = !Features.Pressure                     //< feature disabled
@@ -549,10 +536,10 @@ namespace KERBALISM.Planner
 			  : atmo_res.consumed <= double.Epsilon                     //< unnecessary
 			  ? "not required"
 			  : atmo_res.produced <= double.Epsilon                     //< no pressure control
-			  ? "<color=#ffff00>none</color>"
+			  ? Lib.Color("none", Lib.KColor.Orange)
 			  : atmo_res.consumed > atmo_res.produced * 1.001           //< insufficient pressure control
-			  ? "<color=#ffff00>inadequate</color>"
-			  : "good";                                                 //< sufficient pressure control
+			  ? Lib.Color("inadequate", Lib.KColor.Yellow)
+			  : Lib.Color("good", Lib.KColor.Green);                    //< sufficient pressure control
 
 			p.AddSection("HABITAT", string.Empty,
 				() => { p.Prev(ref environment_index, panel_environment.Count); update = true; },

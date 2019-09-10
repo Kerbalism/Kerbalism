@@ -27,7 +27,7 @@ namespace KERBALISM
 
 		public override string Info()
 		{
-			return generator.isAlwaysActive ? Localizer.Format("#KERBALISM_Generic_ALWAYSON") : generator.generatorIsActive ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_ON") + "</color>" : "<color=red>" + Localizer.Format("#KERBALISM_Generic_OFF") + "</color>";
+			return generator.isAlwaysActive ? Localizer.Format("#KERBALISM_Generic_ALWAYSON") : Lib.Color(generator.generatorIsActive, Localizer.Format("#KERBALISM_Generic_ON"), Lib.KColor.Green, Localizer.Format("#KERBALISM_Generic_OFF"),  Lib.KColor.Yellow);
 		}
 
 		public override void Ctrl(bool value)
@@ -74,7 +74,7 @@ namespace KERBALISM
 		{
 			if (prefab.isAlwaysActive) return Localizer.Format("#KERBALISM_Generic_ALWAYSON");
 			bool is_on = Lib.Proto.GetBool(generator, "generatorIsActive");
-			return is_on ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_ON") + "</color>" : "<color=red>" + Localizer.Format("#KERBALISM_Generic_OFF") + "</color>";
+			return Lib.Color(is_on, Localizer.Format("#KERBALISM_Generic_ON"), Lib.KColor.Green, Localizer.Format("#KERBALISM_Generic_OFF"), Lib.KColor.Yellow);
 		}
 
 		public override void Ctrl(bool value)

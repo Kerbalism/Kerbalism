@@ -30,10 +30,10 @@ namespace KERBALISM
 			return animator != null && !harvester.deployed
 			  ? "not deployed"
 			  : !harvester.running
-			  ? "<color=red>" + Localizer.Format("#KERBALISM_Generic_STOPPED") + "</color>"
+			  ? Lib.Color(Localizer.Format("#KERBALISM_Generic_STOPPED"), Lib.KColor.Yellow)
 			  : harvester.issue.Length == 0
-			  ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_RUNNING") + "</color>"
-			  : Lib.BuildString("<color=yellow>", harvester.issue, "</color>");
+			  ? Lib.Color(Localizer.Format("#KERBALISM_Generic_RUNNING"), Lib.KColor.Green)
+			  : Lib.Color(harvester.issue, Lib.KColor.Red);
 		}
 
 		public override void Ctrl(bool value)
@@ -83,10 +83,10 @@ namespace KERBALISM
 			return animator != null && !deployed
 			  ? "not deployed"
 			  : !running
-			  ? "<color=red>" + Localizer.Format("#KERBALISM_Generic_STOPPED") + "</color>"
+			  ? Lib.Color(Localizer.Format("#KERBALISM_Generic_STOPPED"), Lib.KColor.Yellow)
 			  : issue.Length == 0
-			  ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_RUNNING") + "</color>"
-			  : Lib.BuildString("<color=yellow>", issue, "</color>");
+			  ? Lib.Color(Localizer.Format("#KERBALISM_Generic_RUNNING"), Lib.KColor.Green)
+			  : Lib.Color(issue, Lib.KColor.Red);
 		}
 
 		public override void Ctrl(bool value)

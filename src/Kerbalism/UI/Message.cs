@@ -150,11 +150,11 @@ namespace KERBALISM
 			string title = "";
 			switch (severity)
 			{
-				case Severity.relax: title = "<color=#00BB00><b>RELAX</b></color>\n"; break;
-				case Severity.warning: title = "<color=#BBBB00><b>WARNING</b></color>\n"; Lib.StopWarp(); break;
-				case Severity.danger: title = "<color=#BB0000><b>DANGER</b></color>\n"; Lib.StopWarp(); break;
-				case Severity.fatality: title = "<color=#BB0000><b>FATALITY</b></color>\n"; Lib.StopWarp(); break;
-				case Severity.breakdown: title = "<color=#BB0000><b>BREAKDOWN</b></color>\n"; Lib.StopWarp(); break;
+				case Severity.relax: title = Lib.BuildString(Lib.Color("RELAX", Lib.KColor.Green, true), "\n"); break;
+				case Severity.warning: title = Lib.BuildString(Lib.Color("WARNING", Lib.KColor.Yellow, true), "\n"); Lib.StopWarp(); break; 
+				case Severity.danger: title = Lib.BuildString(Lib.Color("DANGER", Lib.KColor.Orange, true), "\n"); Lib.StopWarp(); break; 
+				case Severity.fatality: title = Lib.BuildString(Lib.Color("FATALITY", Lib.KColor.Red, true), "\n"); Lib.StopWarp(); break; 
+				case Severity.breakdown: title = Lib.BuildString(Lib.Color("BREAKDOWN", Lib.KColor.Red, true), "\n"); Lib.StopWarp(); break; 
 			}
 			if (subtext.Length == 0) Post(Lib.BuildString(title, text));
 			else Post(Lib.BuildString(title, text, "\n<i>", subtext, "</i>"));

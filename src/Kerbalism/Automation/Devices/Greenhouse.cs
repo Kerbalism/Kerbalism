@@ -27,7 +27,7 @@ namespace KERBALISM
 
 		public override string Info()
 		{
-			return greenhouse.active ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_ENABLED") + "</color>" : "<color=red>" + Localizer.Format("#KERBALISM_Generic_DISABLED") + "</color>";
+			return Lib.Color(greenhouse.active, Localizer.Format("#KERBALISM_Generic_ENABLED"), Lib.KColor.Green, Localizer.Format("#KERBALISM_Generic_DISABLED"), Lib.KColor.Yellow);
 		}
 
 		public override void Ctrl(bool value)
@@ -64,8 +64,7 @@ namespace KERBALISM
 
 		public override string Info()
 		{
-			bool active = Lib.Proto.GetBool(greenhouse, "active");
-			return active ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_ENABLED") + "</color>" : "<color=red>" + Localizer.Format("#KERBALISM_Generic_DISABLED") + "</color>";
+			return Lib.Color(Lib.Proto.GetBool(greenhouse, "active"), Localizer.Format("#KERBALISM_Generic_ENABLED"), Lib.KColor.Green, Localizer.Format("#KERBALISM_Generic_DISABLED"), Lib.KColor.Yellow);
 		}
 
 		public override void Ctrl(bool value)

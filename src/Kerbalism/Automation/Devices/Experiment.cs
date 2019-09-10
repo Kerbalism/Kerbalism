@@ -30,15 +30,16 @@ namespace KERBALISM
 		public override string Info()
 		{
 			var state = Experiment.GetState(experiment.scienceValue, experiment.issue, experiment.recording, experiment.forcedRun);
-			if (state == Experiment.State.WAITING) return "waiting...";
+			if (state == Experiment.State.WAITING) return Lib.Color("waiting...", Lib.KColor.Science);
 			var exp = Science.Experiment(experiment.experiment_id);
 			var recordedPercent = Lib.HumanReadablePerc(experiment.dataSampled / exp.max_amount);
 			var eta = experiment.data_rate < double.Epsilon || Experiment.Done(exp, experiment.dataSampled) ? " done" : " " + Lib.HumanReadableCountdown((exp.max_amount - experiment.dataSampled) / experiment.data_rate);
 
 			return !experiment.recording
-			  ? "<color=red>" + Localizer.Format("#KERBALISM_Generic_DISABLED") + " </color>"
-			  : experiment.issue.Length == 0 ? "<color=cyan>" + Lib.BuildString(recordedPercent, eta) + "</color>"
-			  : Lib.BuildString("<color=yellow>", experiment.issue.ToLower(), "</color>");
+			  ? Lib.Color(Localizer.Format("#KERBALISM_Generic_STOPPED"), Lib.KColor.Yellow)
+			  : experiment.issue.Length == 0
+			  ? Lib.Color(Lib.BuildString(recordedPercent, eta), Lib.KColor.Science)
+			  : Lib.Color(experiment.issue.ToLower(), Lib.KColor.Red);
 		}
 
 		public override void Ctrl(bool value)
@@ -88,7 +89,7 @@ namespace KERBALISM
 			string issue = Lib.Proto.GetString(proto, "issue");
 
 			var state = Experiment.GetState(scienceValue, issue, recording, forcedRun);
-			if (state == Experiment.State.WAITING) return "waiting...";
+			if (state == Experiment.State.WAITING) return Lib.Color("waiting...", Lib.KColor.Science);
 
 			double dataSampled = Lib.Proto.GetDouble(proto, "dataSampled");
 			double data_rate = Lib.Proto.GetDouble(proto, "data_rate");
@@ -98,9 +99,10 @@ namespace KERBALISM
 			var eta = data_rate < double.Epsilon || Experiment.Done(exp, dataSampled) ? " done" : " " + Lib.HumanReadableCountdown((exp.max_amount - dataSampled) / data_rate);
 
 			return !recording
-			  ? "<color=red>" + Localizer.Format("#KERBALISM_Generic_STOPPED") + " </color>"
-			  : issue.Length == 0 ? "<color=cyan>" + Lib.BuildString(recordedPercent, eta) + "</color>"
-			  : Lib.BuildString("<color=yellow>", issue.ToLower(), "</color>");
+			  ? Lib.Color(Localizer.Format("#KERBALISM_Generic_STOPPED"), Lib.KColor.Yellow)
+			  : issue.Length == 0
+			  ? Lib.Color(Lib.BuildString(recordedPercent, eta), Lib.KColor.Science)
+			  : Lib.Color(issue.ToLower(), Lib.KColor.Red);
 		}
 
 		public override void Ctrl(bool value)

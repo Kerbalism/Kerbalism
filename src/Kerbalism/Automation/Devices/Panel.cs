@@ -28,9 +28,9 @@ namespace KERBALISM
 		{
 			switch (panel.state)
 			{
-				case SolarPanelFixer.PanelState.Retracted: return Lib.BuildString("<color=red>", Localizer.Format("#KERBALISM_Generic_RETRACTED"), "</color>");
+				case SolarPanelFixer.PanelState.Retracted: return Lib.Color(Localizer.Format("#KERBALISM_Generic_RETRACTED"), Lib.KColor.Yellow);
 				case SolarPanelFixer.PanelState.Extending: return Localizer.Format("#KERBALISM_Generic_EXTENDING");
-				case SolarPanelFixer.PanelState.Extended: return Lib.BuildString("<color=cyan>", Localizer.Format("#KERBALISM_Generic_EXTENDED"), " </color>");
+				case SolarPanelFixer.PanelState.Extended: return Lib.Color(Localizer.Format("#KERBALISM_Generic_EXTENDED"), Lib.KColor.Green);
 				case SolarPanelFixer.PanelState.Retracting: return Localizer.Format("#KERBALISM_Generic_RETRACTING");
 			}
 			return "unknown";
@@ -84,8 +84,8 @@ namespace KERBALISM
 			string state = Lib.Proto.GetString(panel, "state");
 			switch (state)
 			{
-				case "Retracted": return Lib.BuildString("<color=red>", Localizer.Format("#KERBALISM_Generic_RETRACTED"), "</color>");
-				case "Extended": return Lib.BuildString("<color=cyan>", Localizer.Format("#KERBALISM_Generic_EXTENDED"), " </color>");
+				case "Retracted": return Lib.Color(Localizer.Format("#KERBALISM_Generic_RETRACTED"), Lib.KColor.Yellow);
+				case "Extended": return Lib.Color(Localizer.Format("#KERBALISM_Generic_EXTENDED"), Lib.KColor.Green);
 			}
 			return "unknown";
 		}

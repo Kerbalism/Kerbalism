@@ -27,7 +27,7 @@ namespace KERBALISM
 
 		public override string Info()
 		{
-			return light.isOn ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_ON") + "</color>" : "<color=red>" + Localizer.Format("#KERBALISM_Generic_OFF") + "</color>";
+			return Lib.Color(light.isOn, Localizer.Format("#KERBALISM_Generic_ON"), Lib.KColor.Green, Localizer.Format("#KERBALISM_Generic_OFF"), Lib.KColor.Yellow);
 		}
 
 		public override void Ctrl(bool value)
@@ -65,8 +65,7 @@ namespace KERBALISM
 
 		public override string Info()
 		{
-			bool is_on = Lib.Proto.GetBool(light, "isOn");
-			return is_on ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_ON") + "</color>" : "<color=red>" + Localizer.Format("#KERBALISM_Generic_OFF") + "</color>";
+			return Lib.Color(Lib.Proto.GetBool(light, "isOn"), Localizer.Format("#KERBALISM_Generic_ON"), Lib.KColor.Green, Localizer.Format("#KERBALISM_Generic_OFF"), Lib.KColor.Yellow);
 		}
 
 		public override void Ctrl(bool value)

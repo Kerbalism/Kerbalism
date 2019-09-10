@@ -49,7 +49,7 @@ namespace KERBALISM
 			// reset panel
 			panel.Clear();
 			
-			if (Lib.IsDevBuild) panel.AddHeader(Lib.Color("#0000ff", "KERBALISM DEV BUILD " + Lib.KerbalismDevBuild));
+			if (Lib.IsDevBuild) panel.AddHeader(Lib.Color("KERBALISM DEV BUILD " + Lib.KerbalismDevBuild, Lib.KColor.Orange));
 
 			// get vessel
 			selected_v = selected_id == Guid.Empty ? null : FlightGlobals.FindVessel(selected_id);
@@ -205,7 +205,7 @@ namespace KERBALISM
 			(
 			  Lib.BuildString("<b>",
 			  Lib.Ellipsis(vessel_name, Styles.ScaleStringLength(((page == MonitorPage.data || page == MonitorPage.log || selected_id == Guid.Empty) && !Lib.IsFlight()) ? 45 : 25)),
-			  "</b> <size=", Styles.ScaleInteger(9).ToString(), ">", Lib.Color("#cccccc", Lib.Ellipsis(body_name, Styles.ScaleStringLength(8))), "</size>"),
+			  "</b> <size=", Styles.ScaleInteger(9).ToString(), ">", Lib.Color(Lib.Ellipsis(body_name, Styles.ScaleStringLength(8)), Lib.KColor.LightGrey), "</size>"),
 			  string.Empty,
 			  () => { selected_id = selected_id != v.id ? v.id : Guid.Empty; }
 			);
@@ -265,7 +265,7 @@ namespace KERBALISM
 			const string tooltip = "\n<i>(middle-click to popout in a window, middle-click again to close popout)</i>";
 			VesselData vd = v.KerbalismData();
 			GUILayout.BeginHorizontal(Styles.entry_container);
-			GUILayout.Label(new GUIContent(page == MonitorPage.telemetry ? " <color=#00ffff>INFO</color> " : " INFO ", Icons.small_info, "Telemetry readings" + tooltip), config_style);
+			GUILayout.Label(new GUIContent(Lib.Color(page == MonitorPage.telemetry, " INFO", Lib.KColor.Green, Lib.KColor.None, true), Icons.small_info, "Telemetry readings" + tooltip), config_style);
 			if (Lib.IsClicked()) page = MonitorPage.telemetry;
 			else if (Lib.IsClicked(2))
 			{
@@ -276,7 +276,7 @@ namespace KERBALISM
 			}
 			if (Features.Science)
 			{
-				GUILayout.Label(new GUIContent(page == MonitorPage.data ? " <color=#00ffff>DATA</color> " : " DATA ", Icons.small_folder, "Stored files and samples" + tooltip), config_style);
+				GUILayout.Label(new GUIContent(Lib.Color(page == MonitorPage.data, " DATA", Lib.KColor.Green, Lib.KColor.None, true), Icons.small_folder, "Stored files and samples" + tooltip), config_style);
 				if (Lib.IsClicked()) page = MonitorPage.data;
 				else if (Lib.IsClicked(2))
 				{
@@ -288,7 +288,7 @@ namespace KERBALISM
 			}
 			if (Features.Automation)
 			{
-				GUILayout.Label(new GUIContent(page == MonitorPage.scripts ? " <color=#00ffff>AUTO</color> " : " AUTO ", Icons.small_console, "Control and automate components" + tooltip), config_style);
+				GUILayout.Label(new GUIContent(Lib.Color(page == MonitorPage.scripts, " AUTO", Lib.KColor.Green, Lib.KColor.None, true), Icons.small_console, "Control and automate components" + tooltip), config_style);
 				if (Lib.IsClicked()) page = MonitorPage.scripts;
 				else if (Lib.IsClicked(2))
 				{
@@ -300,7 +300,7 @@ namespace KERBALISM
 			}
 			if (Features.Reliability)
 			{
-				GUILayout.Label(new GUIContent(page == MonitorPage.failures ? " <color=#00ffff>FAILURES</color> " : " FAILURES ", Icons.small_wrench, "See failures and maintenance state" + tooltip), config_style);
+				GUILayout.Label(new GUIContent(Lib.Color(page == MonitorPage.failures, " FAILURES", Lib.KColor.Green, Lib.KColor.None, true), Icons.small_wrench, "See failures and maintenance state" + tooltip), config_style);
 				if (Lib.IsClicked()) page = MonitorPage.failures;
 				else if (Lib.IsClicked(2))
 				{
@@ -312,7 +312,7 @@ namespace KERBALISM
 			}
 			if (PreferencesMessages.Instance.stockMessages != true)
 			{
-				GUILayout.Label(new GUIContent(page == MonitorPage.log ? " <color=#00ffff>LOG</color> " : " LOG ", Icons.small_notes, "See previous notifications" + tooltip), config_style);
+				GUILayout.Label(new GUIContent(Lib.Color(page == MonitorPage.log, " LOG", Lib.KColor.Green, Lib.KColor.None, true), Icons.small_notes, "See previous notifications" + tooltip), config_style);
 				if (Lib.IsClicked()) page = MonitorPage.log;
 				else if (Lib.IsClicked(2))
 				{
@@ -322,7 +322,7 @@ namespace KERBALISM
 						UI.Open((p) => p.Logman(v));
 				}
 			}
-			GUILayout.Label(new GUIContent(page == MonitorPage.config ? " <color=#00ffff>CFG</color> " : " CFG ", Icons.small_config, "Configure the vessel" + tooltip), config_style);
+			GUILayout.Label(new GUIContent(Lib.Color(page == MonitorPage.config, " CFG", Lib.KColor.Green, Lib.KColor.None, true), Icons.small_config, "Configure the vessel" + tooltip), config_style);
 			if (Lib.IsClicked()) page = MonitorPage.config;
 			else if (Lib.IsClicked(2))
 			{
@@ -556,11 +556,8 @@ namespace KERBALISM
 			string tooltip = Lib.BuildString
 			(
 			  "<align=left /><b>name\tlevel\tduration</b>\n",
-			  ec.Level <= 0.005 ? "<color=#ff0000>" : ec.Level <= low_threshold ? "<color=#ffff00>" : "<color=#cccccc>",
-			  "EC\t",
-			  Lib.HumanReadablePerc(ec.Level), "\t",
-			  depletion <= double.Epsilon ? "depleted" : Lib.HumanReadableDuration(depletion),
-			  "</color>"
+			  Lib.Color(Lib.BuildString("EC\t", Lib.HumanReadablePerc(ec.Level), "\t", depletion <= double.Epsilon ? "depleted" : Lib.HumanReadableDuration(depletion)),
+			  ec.Level <= 0.005 ? Lib.KColor.Red : ec.Level <= low_threshold ? Lib.KColor.Orange : Lib.KColor.None)
 			);
 
 			Texture2D image = ec.Level <= 0.005
@@ -586,12 +583,9 @@ namespace KERBALISM
 					if (res.Capacity > double.Epsilon)
 					{
 						if (tooltips.Count == 0) tooltips.Add(String.Format("<align=left /><b>{0,-18}\tlevel\tduration</b>", "name"));
-						tooltips.Add(Lib.BuildString
-						(
-						  res.Level <= 0.005 ? "<color=#ff0000>" : res.Level <= supply.low_threshold ? "<color=#ffff00>" : "<color=#cccccc>",
-						  String.Format("{0,-18}\t{1}\t{2}", supply.resource, Lib.HumanReadablePerc(res.Level),
-						  depletion <= double.Epsilon ? "depleted" : Lib.HumanReadableDuration(depletion)),
-						  "</color>"
+						tooltips.Add(Lib.Color(
+							String.Format("{0,-18}\t{1}\t{2}", supply.resource, Lib.HumanReadablePerc(res.Level), depletion <= double.Epsilon ? "depleted" : Lib.HumanReadableDuration(depletion)),
+							res.Level <= 0.005 ? Lib.KColor.Red : res.Level <= supply.low_threshold ? Lib.KColor.Orange : Lib.KColor.None
 						));
 
 						uint severity = res.Level <= 0.005 ? 2u : res.Level <= supply.low_threshold ? 1u : 0;
@@ -638,7 +632,7 @@ namespace KERBALISM
 
 			// signal strength
 			var strength = Math.Ceiling(conn.strength * 10000) / 10000;
-			string signal_str = strength > 0.001 ? Lib.HumanReadablePerc(strength, "F2") : Lib.Color("#ffaa00", Lib.Italic(Localizer.Format("#KERBALISM_Generic_NO")));
+			string signal_str = strength > 0.001 ? Lib.HumanReadablePerc(strength, "F2") : Lib.Color(Lib.Italic(Localizer.Format("#KERBALISM_Generic_NO")), Lib.KColor.Orange);
 
 			// target name
 			string target_str = conn.linked ? conn.target_name : Localizer.Format("#KERBALISM_Generic_NONE");
@@ -656,7 +650,7 @@ namespace KERBALISM
 			(
 			  "<align=left />",
 			  String.Format("{0,-14}\t<b>{1}</b>\n", Localizer.Format("#KERBALISM_UI_DSNconnected"), conn.linked ?
-					Lib.Color("green", Localizer.Format("#KERBALISM_Generic_YES")) : Lib.Color("#ffaa00", Lib.Italic(Localizer.Format("#KERBALISM_Generic_NO")))),
+					Lib.Color(Localizer.Format("#KERBALISM_Generic_YES"), Lib.KColor.Green) : Lib.Color(Lib.Italic(Localizer.Format("#KERBALISM_Generic_NO")), Lib.KColor.Orange)),
 			  String.Format("{0,-14}\t<b>{1}</b>\n", Localizer.Format("#KERBALISM_UI_sciencerate"), Lib.HumanReadableDataRate(conn.rate)),
 			  String.Format("{0,-14}\t<b>{1}</b>\n", Localizer.Format("#KERBALISM_UI_strength"), signal_str),
 			  String.Format("{0,-14}\t<b>{1}</b>\n", Localizer.Format("#KERBALISM_UI_target"), target_str),
@@ -673,15 +667,15 @@ namespace KERBALISM
 
 				case LinkStatus.indirect_link:
 					image = conn.strength > 0.05 ? Icons.signal_white : Icons.iconSwitch(Icons.signal_yellow, image);   // or 5% signal strength
-					tooltip += Lib.Color("yellow", "\n" + Localizer.Format("#KERBALISM_UI_Signalrelayed"));
+					tooltip += Lib.Color("\n" + Localizer.Format("#KERBALISM_UI_Signalrelayed"), Lib.KColor.Yellow);
 					break;
 
 				case LinkStatus.plasma:
-					tooltip += Lib.Color("red", Lib.Italic("\n" + Localizer.Format("#KERBALISM_UI_Plasmablackout")));
+					tooltip += Lib.Color(Lib.Italic("\n" + Localizer.Format("#KERBALISM_UI_Plasmablackout")), Lib.KColor.Red);
 					break;
 
 				case LinkStatus.storm:
-					tooltip += Lib.Color("red", Lib.Italic("\n" + Localizer.Format("#KERBALISM_UI_Stormblackout")));
+					tooltip += Lib.Color(Lib.Italic("\n" + Localizer.Format("#KERBALISM_UI_Stormblackout")), Lib.KColor.Red);
 					break;
 			}
 
