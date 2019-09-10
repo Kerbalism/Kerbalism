@@ -8,7 +8,6 @@
 * Updated the RSS radiation model according to http://evildrganymede.net/work/magfield.htm (Sir Mortimer)
 * Fixed an error in new science support for DMOS (Sir Mortimer)
 * Breaking Grounds DLC: Fixed the science value indication when the transmission is complete (Sir Mortimer)
-* Crediting of zero science is now reduced to a minimum. This will fix the constant science updates with mods like Strategia (Sir Mortimer)
 * Added mod support to query the radiation model, as well as toggle visibility of belts and magnetopause (Sir Mortimer)
 * Added mod support for CME prediction accuracy that influences the probability that you get an advanced warning, and its accuracy (Sir Mortimer)
 * Configs for SoundingRockets (Arthur, Breach Candy)
