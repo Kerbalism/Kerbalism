@@ -217,7 +217,9 @@ namespace KERBALISM
 			if (!vd.IsValid) return;
 
 			// calculate average exposure over a full day when landed, will be used for panel background processing
-			node.SetValue("persistentFactor", GetAnalyticalCosineFactorLanded(vd));
+			double landedPersistentFactor = GetAnalyticalCosineFactorLanded(vd);
+			node.SetValue("persistentFactor", landedPersistentFactor);
+			vd.SaveSolarPanelExposure(landedPersistentFactor);
 		}
 
 		public void Update()
