@@ -433,21 +433,40 @@ namespace KERBALISM
 		// module mass support
 		public float GetModuleMass(float defaultMass, ModifierStagingSituation sit) {
 			double result = totalSampleMass;
-			if (effectiveSampleCapacity > 0)
-				result += (effectiveSampleCapacity - sampleCapacity) * sampleCapacityMass;
-			if (effectiveDataCapacity > 0)
-				result += (effectiveDataCapacity - dataCapacity) * dataCapacityMass;
+
+			if (effectiveSampleCapacity > sampleCapacity && sampleCapacity > 0)
+			{
+				var sampleMultiplier = effectiveSampleCapacity / sampleCapacity;
+				result += sampleMultiplier * sampleCapacityMass;
+			}
+
+			if (effectiveDataCapacity > dataCapacity && dataCapacity > 0)
+			{
+				var dataMultiplier = effectiveDataCapacity / dataCapacity;
+				result += dataMultiplier * dataCapacityMass;
+			}
+
 			return (float)result;
 		}
 		public ModifierChangeWhen GetModuleMassChangeWhen() { return ModifierChangeWhen.CONSTANTLY; }
 
+		// module cost support
 		public float GetModuleCost(float defaultCost, ModifierStagingSituation sit)
 		{
 			double result = 0;
-			if (effectiveSampleCapacity > 0)
-				result += (effectiveSampleCapacity - sampleCapacity) * sampleCapacityCost;
-			if (effectiveDataCapacity > 0)
-				result += (effectiveDataCapacity - dataCapacity) * dataCapacityCost;
+
+			if(effectiveSampleCapacity > sampleCapacity && sampleCapacity > 0)
+			{
+				var sampleMultiplier = effectiveSampleCapacity / sampleCapacity;
+				result += sampleMultiplier * sampleCapacityCost;
+			}
+
+			if (effectiveDataCapacity > dataCapacity && dataCapacity > 0)
+			{
+				var dataMultiplier = effectiveDataCapacity / dataCapacity;
+				result += dataMultiplier * dataCapacityCost;
+			}
+
 			return (float)result;
 		}
 		public ModifierChangeWhen GetModuleCostChangeWhen() { return ModifierChangeWhen.CONSTANTLY; }
