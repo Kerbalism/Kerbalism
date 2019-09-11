@@ -135,7 +135,7 @@ namespace KERBALISM.Planner
 						panel_resource.Add(res);
 
 				// reset current panel if necessary
-				if (resource_index > panel_resource.Count) resource_index = 0;
+				if (resource_index >= panel_resource.Count) resource_index = 0;
 
 				// add resource panel
 				if (panel_resource.Count > 0)
