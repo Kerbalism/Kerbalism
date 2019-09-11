@@ -23,7 +23,7 @@ namespace KERBALISM.Planner
 
 			// resource panels
 			// - add all resources defined in the Profiles Supply configs except EC
-			Profile.supplies.FindAll(k => k.resource != "ElectricCharge").ForEach(k => panel_resource.Add(k.resource));
+			Profile.supplies.FindAll(k => k.resource != "ElectricCharge").ForEach(k => supplies.Add(k.resource));
 
 			// special panels
 			// - stress & radiation panels require that a rule using the living_space/radiation modifier exist (current limitation)
@@ -127,6 +127,15 @@ namespace KERBALISM.Planner
 
 				// add ec panel
 				AddSubPanelEC(panel);
+
+				// get vessel resources
+				panel_resource.Clear();
+				foreach (string res in supplies)
+					if (resource_sim.Resource(res).capacity > 0.0)
+						panel_resource.Add(res);
+
+				// reset current panel if necessary
+				if (resource_index > panel_resource.Count) resource_index = 0;
 
 				// add resource panel
 				if (panel_resource.Count > 0)
@@ -570,6 +579,7 @@ namespace KERBALISM.Planner
 		private static VesselAnalyzer vessel_analyzer = new VesselAnalyzer();
 
 		// panel arrays
+		private static List<string> supplies = new List<string>();
 		private static List<string> panel_resource = new List<string>();
 		private static List<string> panel_special = new List<string>();
 		private static List<string> panel_environment = new List<string>();
