@@ -264,11 +264,11 @@
     <Compile Include="Patches\VesselRecovery_OnVesselRecovered.cs" />
     <Compile Include="Database\ScienceLog.cs" />
     <Compile Include="Radiation\Radiation.cs" />
-    <Compile Include="Radiation\SunShieldingInfo.cs" />
     <Compile Include="Radiation\StormData.cs" />
     <Compile Include="Radiation\Storm.cs" />
     <Compile Include="UI\FailuresManager.cs" />
     <Compile Include="Database\ReliabilityInfo.cs" />
+    <Compile Include="Database\VesselHabitatInfo.cs" />
   </ItemGroup>
   <!-- ///////////////////////////////////////////////////// -->
   <!-- ////////// IMPORT DEFAULT MS BUILD PROCESS ////////// -->

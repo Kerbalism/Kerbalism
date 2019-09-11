@@ -692,9 +692,6 @@ namespace KERBALISM
 			// apply gamma transparency if inside atmosphere
 			radiation *= gamma_transparency;
 
-			var vd = v.KerbalismData();
-			vd.EnvSunShieldingInfo.Update(v);
-
 			shieldedRadiation = radiation;
 
 			// if there is a storm in progress
@@ -705,11 +702,13 @@ namespace KERBALISM
 				if (magnetosphere) blackout = true;
 				else
 				{
+					var vd = v.KerbalismData();
+
 					var activity = SolarActivity(vd.EnvMainSun.SunData.body, false) / 2.0;
 					var strength = PreferencesStorm.Instance.StormRadiation * sunlight * (activity + 0.5);
 
 					radiation += strength;
-					shieldedRadiation += vd.EnvSunShieldingInfo.AverageHabitatRadiation(strength);
+					shieldedRadiation += vd.EnvHabitatInfo.AverageHabitatRadiation(strength);
 				}
 			}
 

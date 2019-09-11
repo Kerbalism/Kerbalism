@@ -156,7 +156,7 @@ namespace KERBALISM
 		public bool EnvInFullShadow => sunlightFactor < 0.1;
 
 		/// <summary> List of all habitats and their relevant sun shielding parts </summary>
-		public SunShieldingInfo EnvSunShieldingInfo => sunShieldingInfo; SunShieldingInfo sunShieldingInfo;
+		public VesselHabitatInfo EnvHabitatInfo => habitatInfo; VesselHabitatInfo habitatInfo;
 
 		/// <summary> [environment] List of all stars/suns and the related data/calculations for the current vessel</summary>
 		public List<SunInfo> EnvSunsInfo => sunsInfo; List<SunInfo> sunsInfo;
@@ -440,7 +440,7 @@ namespace KERBALISM
 		public void UpdateOnVesselModified(Vessel v)
 		{
 			ResetReliabilityStatus();
-			sunShieldingInfo = new SunShieldingInfo();
+			habitatInfo = new VesselHabitatInfo();
 			Update(v);
 			if (IsValid) EvaluateStatus();
 		}
@@ -451,7 +451,7 @@ namespace KERBALISM
 			msg_belt = false;
 			msg_signal = false;
 			stormData = new StormData();
-			sunShieldingInfo = new SunShieldingInfo();
+			habitatInfo = new VesselHabitatInfo();
 			supplies.Clear();
 			scansat_id.Clear();
 			ResetReliabilityStatus();
@@ -473,7 +473,7 @@ namespace KERBALISM
 			cfg_highlights = PreferencesBasic.Instance.highlights;
 			cfg_showlink = true;
 			stormData = new StormData();
-			sunShieldingInfo = new SunShieldingInfo();
+			habitatInfo = new VesselHabitatInfo();
 			computer = new Computer();
 			supplies = new Dictionary<string, SupplyData>();
 			scansat_id = new List<uint>();
@@ -516,7 +516,7 @@ namespace KERBALISM
 			}
 
 			if (node.HasNode("ScienceLog")) ScienceLog.Load(node.GetNode("ScienceLog"));
-			if (node.HasNode("SunShielding")) sunShieldingInfo = new SunShieldingInfo(node.GetNode("SunShielding"));
+			if (node.HasNode("SunShielding")) habitatInfo = new VesselHabitatInfo(node.GetNode("SunShielding"));
 		}
 
 		public void Save(ConfigNode node)
@@ -549,7 +549,7 @@ namespace KERBALISM
 			}
 
 			ScienceLog.Save(node.AddNode("ScienceLog"));
-			EnvSunShieldingInfo.Save(node.AddNode("SunShielding"));
+			EnvHabitatInfo.Save(node.AddNode("SunShielding"));
 		}
 
 		#endregion
@@ -582,9 +582,10 @@ namespace KERBALISM
 			transmitting = Science.Transmitting(Vessel, connection.linked && connection.rate > double.Epsilon);
 
 			// habitat data
+			habitatInfo.Update(Vessel);
 			volume = Habitat.Tot_volume(Vessel);
 			surface = Habitat.Tot_surface(Vessel);
-			pressure = Habitat.Pressure(Vessel);
+			pressure = Math.Min(Habitat.Pressure(Vessel), habitatInfo.MaxPressure);
 
 			evas = (uint)(Math.Max(0, ResourceCache.GetResource(Vessel, "Nitrogen").Amount - 330) / PreferencesLifeSupport.Instance.evaAtmoLoss);
 			poisoning = Habitat.Poisoning(Vessel);
