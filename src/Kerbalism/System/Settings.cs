@@ -17,8 +17,9 @@ namespace KERBALISM
 
     public static class Settings
     {
-		public static string MODS_INCOMPATIBLE = "TacLifeSupport,Snacks,BackgroundResources,DynamicBatteryStorage,KolonyTools,USILifeSupport";
-		public static string MODS_WARNING = "RemoteTech";
+		private static string MODS_INCOMPATIBLE = "TacLifeSupport,Snacks,BackgroundResources,DynamicBatteryStorage,KolonyTools,USILifeSupport";
+		private static string MODS_WARNING = "RemoteTech";
+		private static string MODS_SCIENCE = "KEI,[x] Science!";
 
 		public static void Parse()
         {
@@ -98,13 +99,29 @@ namespace KERBALISM
 
 			ModsIncompatible = Lib.ConfigValue(cfg, "ModsIncompatible", MODS_INCOMPATIBLE);
 			ModsWarning = Lib.ConfigValue(cfg, "ModsWarning", MODS_WARNING);
+			ModsScience = Lib.ConfigValue(cfg, "ModsScience", MODS_SCIENCE);
 		}
 
 		// profile used
-		public static string Profile;                           // name of profile to use, if any
+		public static string Profile;
 
-        // user-defined features
-        public static bool Reliability;                         // component malfunctions and critical failures
+		internal static List<string> IncompatibleMods()
+        {
+			var result = Lib.Tokenize(ModsIncompatible.ToLower(), ',');
+			return result;
+		}
+
+		internal static List<string> WarningMods()
+		{
+			var result = Lib.Tokenize(ModsWarning.ToLower(), ',');
+			if (Features.Science) result.AddRange(Lib.Tokenize(ModsScience.ToLower(), ','));
+			return result;
+		}
+
+		// name of profile to use, if any
+
+		// user-defined features
+		public static bool Reliability;                         // component malfunctions and critical failures
         public static bool Deploy;                              // add EC cost to keep module working/animation, add EC cost to Extend\Retract
         public static bool Science;                             // science data storage, transmission and analysis
         public static bool SpaceWeather;                        // coronal mass ejections
@@ -175,6 +192,7 @@ namespace KERBALISM
 
 		public static string ModsIncompatible;
 		public static string ModsWarning;
+		public static string ModsScience;
 	}
 
 

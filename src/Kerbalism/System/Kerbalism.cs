@@ -48,8 +48,8 @@ namespace KERBALISM
 
 		private void SanityCheck()
 		{
-			var incompatibleMods = Lib.Tokenize(Settings.ModsIncompatible.ToLower(), ',');
-			var warningMods = Lib.Tokenize(Settings.ModsIncompatible.ToLower(), ',');
+			List<string> incompatibleMods = Settings.IncompatibleMods();
+			List<string> warningMods = Settings.WarningMods();
 
 			List<string> incompatibleModsFound = new List<string>();
 			List<string> warningModsFound = new List<string>();
