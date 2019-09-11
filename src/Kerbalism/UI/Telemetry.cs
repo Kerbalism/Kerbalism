@@ -78,7 +78,9 @@ namespace KERBALISM
 
 			if (vd.SolarPanelsAverageExposure >= 0.0)
 			{
-				p.AddContent("solar panels average exposure", vd.SolarPanelsAverageExposure.ToString("P1"),"<b>Exposure ignoring bodies occlusion</b>\n<i>Won't change on unloaded vessels\nMake sure to optimize it before switching</i>");
+				var exposureString = vd.SolarPanelsAverageExposure.ToString("P1");
+				if (vd.SolarPanelsAverageExposure < 0.2) exposureString = Lib.Color(exposureString, Lib.KColor.Orange);
+				p.AddContent("solar panels average exposure", exposureString, "<b>Exposure ignoring bodies occlusion</b>\n<i>Won't change on unloaded vessels\nMake sure to optimize it before switching</i>");
 			}
 
 			foreach (string type in readings)
