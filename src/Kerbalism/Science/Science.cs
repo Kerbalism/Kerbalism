@@ -115,7 +115,7 @@ namespace KERBALISM
 
 					// this is the science value of this sample
 					double dataValue = Value(exp_filename, file.buff);
-					bool doCredit = file.size <= double.Epsilon || dataValue > buffer_science_value;;
+					bool doCredit = file.size <= double.Epsilon || dataValue > buffer_science_value;
 
 					// if buffer science value is high enough or file was transmitted completely
 					if (doCredit)
@@ -131,6 +131,13 @@ namespace KERBALISM
 						// this was the last useful bit, there is no more value in the experiment
 						if (remainingValue >= 0.1 && remainingValue - dataValue < 0.1)
 						{
+							// fire game event
+							// - this could be slow or a no-op, depending on the number of listeners
+							//   in any case, we are buffering the transmitting data and calling this
+							//   function only once in a while
+							var subject = ResearchAndDevelopment.GetSubjectByID(exp_filename);
+							GameEvents.OnScienceRecieved.Fire(totalValue, subject, v.protoVessel, false);
+
 							string subjectResultText; 
 							if (string.IsNullOrEmpty(file.resultText))
 							{
@@ -207,8 +214,6 @@ namespace KERBALISM
 		{
 			var credits = Value(subject_id, size);
 
-			if (credits <= 0f) return 0f;
-
 			// credit the science
 			var subject = ResearchAndDevelopment.GetSubjectByID(subject_id);
 			if(subject == null)
@@ -220,12 +225,6 @@ namespace KERBALISM
 				subject.science += credits / HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier;
 				subject.scientificValue = ResearchAndDevelopment.GetSubjectValue(subject.science, subject);
 				ResearchAndDevelopment.Instance.AddScience(credits, transmitted ? TransactionReasons.ScienceTransmission : TransactionReasons.VesselRecovery);
-
-				// fire game event
-				// - this could be slow or a no-op, depending on the number of listeners
-				//   in any case, we are buffering the transmitting data and calling this
-				//   function only once in a while
-				GameEvents.OnScienceRecieved.Fire(credits, subject, pv, false);
 
 				API.OnScienceReceived.Notify(credits, subject, pv, transmitted);
 
