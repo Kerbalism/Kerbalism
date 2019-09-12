@@ -62,14 +62,17 @@ namespace KERBALISM
 
 			string msg = string.Empty;
 
-			// check for CRP
-			var reslib = PartResourceLibrary.Instance.resourceDefinitions;
-			if (!reslib.Contains("Oxygen") || !reslib.Contains("Water") || !reslib.Contains("Shielding"))
+			if (Features.Habitat)
 			{
-				msg += "<color=#FF4500>CommunityResourcePack (CRP) is not installed.</color>\nYou REALLY need CRP for Kerbalism!\n\n";
+				// check for CRP
+				var reslib = PartResourceLibrary.Instance.resourceDefinitions;
+				if (!reslib.Contains("Oxygen") || !reslib.Contains("Water") || !reslib.Contains("Shielding"))
+				{
+					msg += "<color=#FF4500>CommunityResourcePack (CRP) is not installed.</color>\nYou REALLY need CRP for Kerbalism!\n\n";
+				}
 			}
 
-			if(incompatibleModsFound.Count > 0)
+			if (incompatibleModsFound.Count > 0)
 			{
 				msg += "<color=#FF4500>Mods with known incompatibilities found:</color>\n";
 				foreach (var m in incompatibleModsFound) msg += "- " + m + "\n";
