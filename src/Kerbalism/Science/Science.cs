@@ -138,19 +138,16 @@ namespace KERBALISM
 							var subject = ResearchAndDevelopment.GetSubjectByID(exp_filename);
 							GameEvents.OnScienceRecieved.Fire(totalValue, subject, v.protoVessel, false);
 
-							string subjectResultText; 
-							if (string.IsNullOrEmpty(file.resultText))
+							string subjectResultText = file.resultText;
+							if (string.IsNullOrEmpty(subjectResultText))
 							{
+								// I think this never happens
 								subjectResultText = Lib.TextVariant(
 								  "Our researchers will jump on it right now",
 								  "This cause some excitement",
 								  "These results are causing a brouhaha in R&D",
 								  "Our scientists look very confused",
 								  "The scientists won't believe these readings");
-							}
-							else
-							{
-								subjectResultText = file.resultText;
 							}
 
 							subjectResultText = Lib.WordWrapAtLength(subjectResultText, 70);
