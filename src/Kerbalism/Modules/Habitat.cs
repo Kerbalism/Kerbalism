@@ -7,8 +7,8 @@ namespace KERBALISM
 	public class Habitat: PartModule, ISpecifics
 	{
 		// config
-		[KSPField] public double volume = 0.0;                      // habitable volume in m^3, deduced from bounding box if not specified
-		[KSPField] public double surface = 0.0;                     // external surface in m^2, deduced from bounding box if not specified
+		[KSPField(isPersistant = true)] public double volume = 0.0;                      // habitable volume in m^3, deduced from bounding box if not specified
+		[KSPField(isPersistant = true)] public double surface = 0.0;                     // external surface in m^2, deduced from bounding box if not specified
 		[KSPField] public string inflate = string.Empty;            // inflate animation, if any
 		[KSPField] public bool inflatableUsingRigidWalls = false;   // can shielding be applied to inflatable structure?
 		[KSPField] public bool toggle = true;                       // show the enable/disable toggle
