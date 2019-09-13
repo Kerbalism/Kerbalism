@@ -62,13 +62,18 @@ namespace KERBALISM
 
 			string msg = string.Empty;
 
+			if(GameDatabase.Instance.GetConfigs("Kerbalism").Length > 1)
+			{
+				msg += "<color=#FF4500>Multiple configurations detected</color>\nHint: delete KerbalismConfig if you are using a custom config pack.\n\n";
+			}
+
 			if (Features.Habitat)
 			{
 				// check for CRP
 				var reslib = PartResourceLibrary.Instance.resourceDefinitions;
 				if (!reslib.Contains("Oxygen") || !reslib.Contains("Water") || !reslib.Contains("Shielding"))
 				{
-					msg += "<color=#FF4500>CommunityResourcePack (CRP) is not installed.</color>\nYou REALLY need CRP for Kerbalism!\n\n";
+					msg += "<color=#FF4500>CommunityResourcePack (CRP) is not installed</color>\nYou REALLY need CRP for Kerbalism!\n\n";
 				}
 			}
 
