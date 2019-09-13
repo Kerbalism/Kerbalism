@@ -216,7 +216,7 @@ namespace KERBALISM
 			{
 				subject.science += credits / HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier;
 				subject.scientificValue = ResearchAndDevelopment.GetSubjectValue(subject.science, subject);
-				ResearchAndDevelopment.Instance.AddScience(credits, transmitted ? TransactionReasons.ScienceTransmission : TransactionReasons.VesselRecovery);
+				ResearchAndDevelopment.Instance.AddScience(credits, transmitted ? TransactionReasons.None : TransactionReasons.VesselRecovery);
 
 				// fire game event
 				// - this could be slow or a no-op, depending on the number of listeners
