@@ -213,8 +213,8 @@ namespace KERBALISM
 			plane_black = GetTexture("vessels/plane-black", 40, 40, 2.25f);
 			plane_white = GetTexture("vessels/plane-white", 40, 40, 2.25f);
 
-			controller_black = GetTexture("vessels/controller-black", 40, 40, 2.25f);
-			controller_white = GetTexture("vessels/controller-white", 40, 40, 2.25f);
+			controller_black = GetTexture("vessels/controller-black", 80, 80, 2.25f);
+			controller_white = GetTexture("vessels/controller-white", 80, 80, 2.25f);
 		}
 
 		/// <summary>Switch icons based on time </summary>
