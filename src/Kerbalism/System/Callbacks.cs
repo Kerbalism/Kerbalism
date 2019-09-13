@@ -230,7 +230,7 @@ namespace KERBALISM
 		{
 #if !KSP15_16
 			if (Serenity.GetModuleGroundExpControl(v) != null)
-				v.vesselName = Lib.BuildString(v.mainBody.name, " Surface Experiment ", Lib.Greek());
+				v.vesselName = Lib.BuildString(v.mainBody.name, " Site ", Lib.Greek());
 #endif
 		}
 
