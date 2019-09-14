@@ -675,36 +675,36 @@ namespace KERBALISM
 		///<summary> Pretty-print a duration (duration is in seconds, must be positive) </summary>
 		public static string HumanReadableDuration(double duration)
 		{
-			duration = Math.Floor(duration);
 
 			if (duration <= double.Epsilon) return "none";
 			if (double.IsInfinity(duration) || double.IsNaN(duration)) return "perpetual";
 
-			double hours_in_day = HoursInDay();
-			double days_in_year = DaysInYear();
+			int hours_in_day = (int)HoursInDay();
+			int days_in_year = (int)DaysInYear();
+
+			int duration_seconds = (int)duration;
+
+			int seconds = duration_seconds % 60;
+			int minutes = (duration_seconds / 60) % 60;
+			int hours = (duration_seconds / 3600) % hours_in_day;
+			int days = (duration_seconds / (3600 * hours_in_day)) % days_in_year;
+			int years = duration_seconds / (3600 * hours_in_day * days_in_year);
+
 
 			// seconds
-			if (duration < 60.0) return BuildString(duration.ToString("F0"), "s");
+			if (duration < 60.0) return BuildString(seconds.ToString("F0"), "s");
 
 			// minutes + seconds
-			double duration_min = Math.Floor(duration / 60.0);
-			duration -= duration_min * 60.0;
-			if (duration_min < 60.0) return BuildString(duration_min.ToString("F0"), "m", (duration < 1.0 ? "" : BuildString(" ", duration.ToString("F0"), "s")));
+			if (duration < 3600.0) return BuildString(minutes.ToString("F0"), "m ", seconds.ToString("F0"), "s");
 
 			// hours + minutes
-			double duration_h = Math.Floor(duration_min / 60.0);
-			duration_min -= duration_h * 60.0;
-			if (duration_h < hours_in_day) return BuildString(duration_h.ToString("F0"), "h", (duration_min < 1.0 ? "" : BuildString(" ", duration_min.ToString("F0"), "m")));
+			if (duration < 3600.0 * hours_in_day) return BuildString(hours.ToString("F0"), "h ", minutes.ToString("F0"), "m");
 
 			// days + hours
-			double duration_d = Math.Floor(duration_h / hours_in_day);
-			duration_h -= duration_d * hours_in_day;
-			if (duration_d < days_in_year) return BuildString(duration_d.ToString("F0"), "d", (duration_h < 1.0 ? "" : BuildString(" ", duration_h.ToString("F0"), "h")));
+			if (duration < 3600.0 * hours_in_day * days_in_year) return BuildString(days.ToString("F0"), "d ", hours.ToString("F0"), "h");
 
 			// years + days
-			double duration_y = Math.Floor(duration_d / days_in_year);
-			duration_d -= duration_y * days_in_year;
-			return BuildString(duration_y.ToString("F0"), "y", (duration_d < 1.0 ? "" : BuildString(" ", duration_d.ToString("F0"), "d")));
+			return BuildString(years.ToString("F0"), "y ", days.ToString("F0"), "d");
 		}
 
 		public static string HumanReadableCountdown(double d)
@@ -787,9 +787,32 @@ namespace KERBALISM
 		///<summary> Pretty-print radiation rate </summary>
 		public static string HumanReadableRadiation(double rad)
 		{
-			if (rad <= double.Epsilon) return "none";
-			else if (rad <= 0.0000002777) return "nominal";
-			return BuildString((rad * 3600.0).ToString("F3"), " rad/h");
+			//if (rad <= 0) return "none";
+
+			rad *= 3600.0;
+			var unit = "rad/h";
+			var prefix = "";
+
+			if(Settings.RadiationInSievert)
+			{
+				rad /= 100.0;
+				unit = "Sv/h";
+			}
+
+			if(rad < 0.00001)
+			{
+				rad *= 1000000;
+				prefix = "μ";
+			}
+			else if(rad < 0.01)
+			{
+				rad *= 1000;
+				prefix = "m";
+			}
+
+			//if (rad < 0.001) return "nominal";
+
+			return BuildString((rad).ToString("F3"), " ", prefix, unit);
 		}
 
 		///<summary> Pretty-print percentage </summary>
