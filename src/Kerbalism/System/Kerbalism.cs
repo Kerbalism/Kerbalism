@@ -67,7 +67,7 @@ namespace KERBALISM
 				msg += "<color=#FF4500>Multiple configurations detected</color>\nHint: delete KerbalismConfig if you are using a custom config pack.\n\n";
 			}
 
-			if (Features.Habitat)
+			if (Features.Habitat && Settings.CheckForCRP)
 			{
 				// check for CRP
 				var reslib = PartResourceLibrary.Instance.resourceDefinitions;

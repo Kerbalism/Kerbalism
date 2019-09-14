@@ -31,9 +31,9 @@
 			gamma_transparency = Sim.GammaTransparency(body, 0.0);
 
 			// add gamma radiation emitted by body and its sun
-			var gamma_radiation = Radiation.DistanceFactor(rb.radiation_r0, altitude);
+			var gamma_radiation = Radiation.DistanceRadiation(rb.radiation_r0, altitude);
 			if (mainSun != body)
-				gamma_radiation += Radiation.DistanceFactor(sun_rb.radiation_r0, body.orbit.semiMajorAxis);
+				gamma_radiation += Radiation.DistanceRadiation(sun_rb.radiation_r0, body.orbit.semiMajorAxis);
 			gamma_radiation /= 3600.0;
 
 			extern_rad = PreferencesStorm.Instance.ExternRadiation;

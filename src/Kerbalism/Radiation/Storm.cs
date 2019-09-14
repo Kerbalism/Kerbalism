@@ -26,7 +26,7 @@ namespace KERBALISM
 				// retry after 5 * average storm duration + some random jitter
 				bd.storm_generation = now + avgDuration * 5 + avgDuration * Lib.RandomDouble() * 5;
 
-				var activity = Radiation.SolarActivity(sun);
+				var activity = Radiation.Info(sun).SolarActivity();
 				if (Lib.RandomDouble() < activity * 0.4)
 				{
 					// storm duration depends on current solar activity

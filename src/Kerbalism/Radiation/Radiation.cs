@@ -10,7 +10,7 @@ namespace KERBALISM
 {
 	// store data for a radiation environment model
 	// and can evaluate signed distance from the inner & outer belt and the magnetopause
-	public sealed class RadiationModel
+	public class RadiationModel
 	{
 		// ctor: default
 		public RadiationModel()
@@ -155,7 +155,7 @@ namespace KERBALISM
 
 
 	// store data about radiation for a body
-	public sealed class RadiationBody
+	public class RadiationBody
 	{
 		// ctor: default
 		public RadiationBody(CelestialBody body)
@@ -175,6 +175,7 @@ namespace KERBALISM
 			radiation_pause = Lib.ConfigValue(node, "radiation_pause", 0.0) / 3600.0;
 			radiation_surface = Lib.ConfigValue(node, "radiation_surface", -1.0) / 3600.0;
 			solar_cycle = Lib.ConfigValue(node, "solar_cycle", -1.0);
+			solar_cycle_offset = Lib.ConfigValue(node, "solar_cycle_offset", 0.0);
 			geomagnetic_pole_lat = Lib.ConfigValue(node, "geomagnetic_pole_lat", 90.0f);
 			geomagnetic_pole_lon = Lib.ConfigValue(node, "geomagnetic_pole_lon", 0.0f);
 			geomagnetic_offset = Lib.ConfigValue(node, "geomagnetic_offset", 0.0f);
@@ -209,16 +210,18 @@ namespace KERBALISM
 			}
 
 			// calculate point emitter strength r0 at center of body
-			radiation_r0 = radiation_surface * 4 * Math.PI * body.Radius * body.Radius;
-		}
+			if(radiation_surface > 0)
+				radiation_r0 = radiation_surface * 4 * Math.PI * body.Radius * body.Radius;
+ 		}
 
 		public string name;            // name of the body
 		public double radiation_inner; // rad/h inside inner belt
 		public double radiation_outer; // rad/h inside outer belt
 		public double radiation_pause; // rad/h inside magnetopause
 		public double radiation_surface; // rad/h of gamma radiation on the surface
-		public double radiation_r0;    // rad/h of gamma radiation at the center of the body (calculated from radiation_surface)
+		public double radiation_r0 = 0.0; // rad/h of gamma radiation at the center of the body (calculated from radiation_surface)
 		public double solar_cycle;     // interval time of solar activity (11 years for sun)
+		public double solar_cycle_offset; // time to add to the universal time when calculating the cycle, used to have cycles that don't start at 0
 		public int reference;          // index of the body that determine x-axis of the gsm-space
 		public float geomagnetic_pole_lat = 90.0f;
 		public float geomagnetic_pole_lon = 0.0f;
@@ -234,8 +237,31 @@ namespace KERBALISM
 
 		// shortcut to the body
 		public CelestialBody body;
-	}
 
+		/// <summary> Returns the magnetopause radiation level, accounting for solar activity cycles </summary>
+		public double RadiationPause()
+		{
+			if (solar_cycle > 0)
+			{
+				return radiation_pause + radiation_pause * 0.2 * SolarActivity();
+			}
+			return radiation_pause;
+		}
+
+		/// <summary> Return a number [-0.15 .. 1.05] that represents current solar activity, clamped to [0 .. 1] if clamp is true </summary>
+		public double SolarActivity(bool clamp = true)
+		{
+			if (solar_cycle <= 0) return 0;
+
+			var t = (solar_cycle_offset + Planetarium.GetUniversalTime()) / solar_cycle * 2 * Math.PI; // Math.Sin/Cos works with radians
+
+			// this gives a pseudo-erratic curve, see https://www.desmos.com/calculator/q5flvzvxia
+			// in range -0.15 .. 1.05
+			var r = (-Math.Cos(t) + Math.Sin(t * 75) / 5 + 0.9) / 2.0;
+			if (clamp) r = Lib.Clamp(r, 0.0, 1.0);
+			return r;
+		}
+	}
 
 	// the radiation system
 	public static class Radiation
@@ -577,25 +603,29 @@ namespace KERBALISM
 		}
 
 		/// <summary> Calculate radiation at a given distance to an emitter by inverse square law </summary>
-		public static double DistanceFactor(double radiation, double distance)
+		public static double DistanceRadiation(double radiation, double distance)
 		{
 			// result = radiation / (4 * Pi * r^2)
 			return radiation / Math.Max(1.0, 4 * Math.PI * distance * distance);
 		}
 
-		/// <summary> Return a number between 0 and 1 that represents current solar activity </summary>
-		public static double SolarActivity(CelestialBody sun, bool clamp = true)
+		/// <summary> Returns the radiation emitted by the body at the center, adjusted by solar activity cycle </summary>
+		private static double RadiationR0(RadiationBody rb)
 		{
-			var info = Info(sun);
-			if (info.solar_cycle <= 0) return 0;
+			// for easier configuration, the radiation model sets the radiation on the surface of the body.
+			// from there, it decreases according to the inverse square law with distance from the surface.
 
-			var t = Planetarium.GetUniversalTime() / info.solar_cycle * 2 * Math.PI; // Math.Sin/Cos works with radians
+			var r0 = rb.radiation_r0; // precomputed
 
-			// this gives a pseudo-erratic curve, see https://www.desmos.com/calculator/tyuqgdk4jh
-			var r = (-Math.Cos(t) + Math.Sin(t * 75) / 5 + 0.9) / 2.0;
+			// if there is a solar cycle, add a bit of radiation variation relative to current activity
 
-			if (clamp) r = Lib.Clamp(r, 0.0, 1.0);
-			return r;
+			if(rb.solar_cycle > 0)
+			{
+				var activity = rb.SolarActivity() * 0.3;
+				r0 = r0 + r0 * activity;
+			}
+
+			return r0;
 		}
 
 		// return the total environent radiation at position specified
@@ -623,8 +653,12 @@ namespace KERBALISM
 			CelestialBody body = v.mainBody;
 			while (body != null)
 			{
+				// Compute radiation values from overlapping 3d fields (belts + magnetospheres)
+
 				RadiationBody rb = Info(body);
 				RadiationModel mf = rb.model;
+
+				//if (v.loaded) Lib.Log("Radiation " + v + " for " + body + ": " + Lib.HumanReadableRadiation(radiation));
 
 				if (mf.Has_field())
 				{
@@ -642,43 +676,49 @@ namespace KERBALISM
 					{
 						D = mf.Inner_func(p);
 						radiation += Lib.Clamp(D / -0.0666f, 0.0f, 1.0f) * rb.radiation_inner;
+
+						//if (v.loaded) Lib.Log("Radiation " + v + " inner belt of " + body + ": " + Lib.HumanReadableRadiation(radiation));
+
 						inner_belt |= D < 0.0f;
 					}
 					if (mf.has_outer)
 					{
 						D = mf.Outer_func(p);
 						radiation += Lib.Clamp(D / -0.0333f, 0.0f, 1.0f) * rb.radiation_outer;
+
+						//if (v.loaded) Lib.Log("Radiation " + v + " outer belt of " + body + ": " + Lib.HumanReadableRadiation(radiation));
+
 						outer_belt |= D < 0.0f;
 					}
 					if (mf.has_pause)
 					{
 						gsm = Gsm_space(rb, false);
 						p = gsm.Transform_in(scaled_position);
-
 						D = mf.Pause_func(p);
-						radiation += Lib.Clamp(D / -0.1332f, 0.0f, 1.0f) * rb.radiation_pause;
+
+						//if (v.loaded) Lib.Log("Radiation in pause of " + body + ": " + Lib.HumanReadableRadiation(rb.RadiationPause()));
+
+						radiation += Lib.Clamp(D / -0.1332f, 0.0f, 1.0f) * rb.RadiationPause();
+
+						//if (v.loaded) Lib.Log("Radiation " + v + " pause of " + body + ": " + Lib.HumanReadableRadiation(radiation));
+
 						magnetosphere |= D < 0.0f && !Lib.IsSun(rb.body); //< ignore heliopause
 						interstellar |= D > 0.0f && Lib.IsSun(rb.body); //< outside heliopause
 					}
 				}
 
-				if (rb.radiation_surface > 0)
+				if (rb.radiation_surface > 0 && body != v.mainBody)
 				{
 					Vector3d direction;
 					double distance;
 					if (Sim.IsBodyVisible(v, position, body, v.KerbalismData().EnvVisibleBodies, out direction, out distance))
 					{
-						// for easier configuration, the radiation model sets the radiation on the surface of the body.
-						// from there, it decreases according to the inverse square law with distance from the surface.
-
-						var r0 = rb.radiation_r0;
-
-						// if there is a solar cycle, add a bit of radiation variation relative to current activity
-						if (rb.solar_cycle > 0) r0 += r0 * 0.2 * Math.Max(0, SolarActivity(body, false));
-
-						// radiation = r0 / (4 * pi * r^2) where r is the distance from the emitter r0
-						var r1 = DistanceFactor(r0, distance);
+						var r0 = RadiationR0(rb);
+						var r1 = DistanceRadiation(r0, distance);
 						radiation += r1;
+
+						//if (v.loaded) Lib.Log("Radiation " + v + " from surface of " + body + ": " + Lib.HumanReadableRadiation(radiation) + " gamma: " + Lib.HumanReadableRadiation(r1));
+
 					}
 				}
 
@@ -689,8 +729,16 @@ namespace KERBALISM
 			// add extern radiation
 			radiation += PreferencesStorm.Instance.ExternRadiation;
 
+			//if (v.loaded) Lib.Log("Radiation " + v + " extern: " + Lib.HumanReadableRadiation(radiation) + " gamma: " + Lib.HumanReadableRadiation(PreferencesStorm.Instance.ExternRadiation));
+
 			// apply gamma transparency if inside atmosphere
 			radiation *= gamma_transparency;
+
+			//if (v.loaded) Lib.Log("Radiation " + v + " after gamma: " + Lib.HumanReadableRadiation(radiation) + " transparency: " + gamma_transparency);
+
+			// add surface radiation of the body itself
+			radiation += DistanceRadiation(RadiationR0(Info(v.mainBody)), v.altitude);
+			//if (v.loaded) Lib.Log("Radiation " + v + " from current main body: " + Lib.HumanReadableRadiation(radiation) + " gamma: " + Lib.HumanReadableRadiation(DistanceRadiation(RadiationR0(Info(v.mainBody)), v.altitude)));
 
 			shieldedRadiation = radiation;
 
@@ -704,7 +752,7 @@ namespace KERBALISM
 				{
 					var vd = v.KerbalismData();
 
-					var activity = SolarActivity(vd.EnvMainSun.SunData.body, false) / 2.0;
+					var activity = Info(vd.EnvMainSun.SunData.body).SolarActivity(false) / 2.0;
 					var strength = PreferencesStorm.Instance.StormRadiation * sunlight * (activity + 0.5);
 
 					radiation += strength;
@@ -717,6 +765,8 @@ namespace KERBALISM
 			radiation += emitterRadiation;
 			shieldedRadiation += emitterRadiation;
 
+			//if (v.loaded) Lib.Log("Radiation " + v + " after emitters: " + Lib.HumanReadableRadiation(radiation));
+
 			// for EVAs, add the effect of nearby emitters
 			if (v.isEVA)
 			{
@@ -725,10 +775,14 @@ namespace KERBALISM
 				shieldedRadiation += nearbyEmitters;
 			}
 
+			//if (v.loaded) Lib.Log("Radiation " + v + " before clamp: " + Lib.HumanReadableRadiation(radiation));
+
 			// clamp radiation to positive range
 			// note: we avoid radiation going to zero by using a small positive value
 			radiation = Math.Max(radiation, Nominal);
 			shieldedRadiation = Math.Max(shieldedRadiation, Nominal);
+
+			//if (v.loaded) Lib.Log("Radiation " + v + " after clamp: " + Lib.HumanReadableRadiation(radiation));
 
 			// return radiation
 			return radiation;
@@ -737,6 +791,8 @@ namespace KERBALISM
 		// return the surface radiation for the body specified (used by body info panel)
 		public static double ComputeSurface(CelestialBody b, double gamma_transparency)
 		{
+			if (!Features.Radiation) return 0.0;
+
 			// store stuff
 			Space gsm;
 			Vector3 p;
@@ -776,8 +832,20 @@ namespace KERBALISM
 						gsm = Gsm_space(rb, false);
 						p = gsm.Transform_in(position);
 						D = mf.Pause_func(p);
-						radiation += Lib.Clamp(D / -0.1332f, 0.0f, 1.0f) * rb.radiation_pause;
+						radiation += Lib.Clamp(D / -0.1332f, 0.0f, 1.0f) * rb.RadiationPause();
 					}
+				}
+
+				if (rb.radiation_surface > 0 && body != b)
+				{
+					// add surface radiation emitted from other body
+					double distance = (b.position - body.position).magnitude;
+					var r0 = RadiationR0(rb);
+					var r1 = DistanceRadiation(r0, distance);
+
+					Lib.Log("Surface radiation on " + b + " from " + body + ": " + Lib.HumanReadableRadiation(r1) + " distance " + distance);
+
+					radiation += r1;
 				}
 
 				// avoid loops in the chain
@@ -787,12 +855,24 @@ namespace KERBALISM
 			// add extern radiation
 			radiation += PreferencesStorm.Instance.ExternRadiation;
 
+			Lib.Log("Radiation subtotal on " + b + ": " + Lib.HumanReadableRadiation(radiation) + ", gamma " + gamma_transparency);
+
+			// scale radiation by gamma transparency if inside atmosphere
+			radiation *= gamma_transparency;
+			Lib.Log("srf scaled on " + b + ": " + Lib.HumanReadableRadiation(radiation));
+
+			// add surface radiation of the body itself
+			radiation += DistanceRadiation(RadiationR0(Info(b)), b.Radius);
+
+			Lib.Log("Radiation on " + b + ": " + Lib.HumanReadableRadiation(radiation) + ", own surface radiation " + Lib.HumanReadableRadiation(DistanceRadiation(RadiationR0(Info(b)), b.Radius)));
+
+			Lib.Log("radiation " + radiation + " nominal " + Nominal);
+
 			// clamp radiation to positive range
 			// note: we avoid radiation going to zero by using a small positive value
 			radiation = Math.Max(radiation, Nominal);
 
-			// return radiation, scaled by gamma transparency if inside atmosphere
-			return radiation * gamma_transparency;
+			return radiation;
 		}
 
 		// show warning message when a vessel cross a radiation belt
@@ -855,7 +935,7 @@ namespace KERBALISM
 		/// <para>
 		/// If you have a thickness which stops a known amount of radiation of a known and constant
 		/// type, then if you have a new thickness, you can calculate how much it stops by:
-		/// </para>
+		/// </
 		/// Stoppage = 1 - ((1 - AmountStoppedByKnownThickness)^(NewThickness / KnownThickness))
 		/// <para>
 		/// source : http://www.projectrho.com/public_html/rocket/radiation.php#id--Radiation_Shielding--Shielding--Shield_Rating
@@ -881,7 +961,7 @@ namespace KERBALISM
 		public static bool show_pause;
 
 		// nominal radiation is used to never allow zero radiation
-		public static double Nominal = 0.00000001;
+		public static double Nominal = 0.00000000001;
 	}
 
 } // KERBALISM

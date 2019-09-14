@@ -266,7 +266,8 @@ namespace KERBALISM
 		public static double GetSolarActivity(CelestialBody body)
 		{
 			if (!Features.Radiation) return 0.0;
-			return KERBALISM.Radiation.SolarActivity(body, false);
+			var info = KERBALISM.Radiation.Info(body);
+			return info.SolarActivity(false);
 		}
 
 		public static RadiationFieldChanged OnRadiationFieldChanged = new RadiationFieldChanged();

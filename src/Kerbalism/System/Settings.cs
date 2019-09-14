@@ -96,10 +96,12 @@ namespace KERBALISM
 			ShieldingEfficiency = Lib.ConfigValue(cfg, "ShieldingEfficiency", 0.9f);
 			StormRadiation = Lib.ConfigValue(cfg, "StormRadiation", 5.0f);
 			ExternRadiation = Lib.ConfigValue(cfg, "ExternRadiation", 0.04f);
+			RadiationInSievert = Lib.ConfigValue(cfg, "RadiationInSievert", false);
 
 			ModsIncompatible = Lib.ConfigValue(cfg, "ModsIncompatible", MODS_INCOMPATIBLE);
 			ModsWarning = Lib.ConfigValue(cfg, "ModsWarning", MODS_WARNING);
 			ModsScience = Lib.ConfigValue(cfg, "ModsScience", MODS_SCIENCE);
+			CheckForCRP = Lib.ConfigValue(cfg, "CheckForCRP", true);
 		}
 
 		// profile used
@@ -189,10 +191,13 @@ namespace KERBALISM
 		public static float ShieldingEfficiency;
 		public static float StormRadiation;
 		public static float ExternRadiation;
+		public static bool RadiationInSievert; // use Sievert iso. rad
 
+		// sanity check settings
 		public static string ModsIncompatible;
 		public static string ModsWarning;
 		public static string ModsScience;
+		public static bool CheckForCRP;
 	}
 
 

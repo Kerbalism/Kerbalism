@@ -16,6 +16,9 @@ namespace KERBALISM
 			CelestialBody body = Lib.MapViewSelectedBody();
 			if (body == null || (Lib.IsSun(body) && !Features.Radiation)) return;
 
+			// calculate radiation at body surface
+			double surfaceRadiation = Radiation.ComputeSurface(body, Sim.GammaTransparency(body, 0.0));
+
 			// for all bodies except sun(s)
 			if (!Lib.IsSun(body))
 			{
@@ -35,9 +38,6 @@ namespace KERBALISM
 				double total_flux_min = Sim.AlbedoFlux(body, body.position - sun_dir * body.Radius) + body_flux + Sim.BackgroundFlux();
 				double temperature_min = Sim.BlackBodyTemperature(total_flux_min);
 
-				// calculate radiation at body surface
-				double radiation = Radiation.ComputeSurface(body, Sim.GammaTransparency(body, 0.0));
-
 				// surface panel
 				string temperature_str = body.atmosphere
 				  ? Lib.HumanReadableTemp(temperature)
@@ -45,7 +45,7 @@ namespace KERBALISM
 				p.AddSection("SURFACE");
 				p.AddContent("temperature", temperature_str);
 				p.AddContent("solar flux", Lib.HumanReadableFlux(solar_flux));
-				if (Features.Radiation) p.AddContent("radiation", Lib.HumanReadableRadiation(radiation));
+				if (Features.Radiation) p.AddContent("radiation", Lib.HumanReadableRadiation(surfaceRadiation));
 
 				// atmosphere panel
 				if (body.atmosphere)
@@ -70,12 +70,17 @@ namespace KERBALISM
 				{
 					string title = "solar activity";
 
-					if(Storm.sun_observation_quality > 0.75)
+					if(Storm.sun_observation_quality > 0.7)
 					{
 						title = Lib.BuildString(title, ": ", Lib.Color(Lib.HumanReadableDuration(cycle) + " cycle", Lib.KColor.LightGrey));
 					}
 
 					p.AddContent(title, Lib.HumanReadablePerc(activity));
+				}
+
+				if (Storm.sun_observation_quality > 0.8)
+				{
+					p.AddContent("radiation on surface:", Lib.HumanReadableRadiation(surfaceRadiation));
 				}
 
 				p.AddContent(Lib.BuildString("inner belt: ", Lib.Color(inner, Lib.KColor.LightGrey)),
@@ -120,7 +125,7 @@ namespace KERBALISM
 
 			activity = -1;
 			cycle = rb.solar_cycle;
-			if(cycle > 0) activity = Radiation.SolarActivity(body);
+			if(cycle > 0) activity = rb.SolarActivity();
 		}
 	}
 

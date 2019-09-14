@@ -294,7 +294,7 @@ namespace KERBALISM
 		[GameParameters.CustomFloatParameterUI("Storm Radiation rad/h", minValue = 1, maxValue = 15, displayFormat = "F2", toolTip = "Radiation during a solar storm")]
 		public float stormRadiation = Settings.StormRadiation;
 
-		[GameParameters.CustomFloatParameterUI("External Radiation rad/h", minValue = 0.01f, maxValue = 2, displayFormat = "F2", toolTip = "Radiation outside the heliopause")]
+		//[GameParameters.CustomFloatParameterUI("External Radiation rad/h", minValue = 0.01f, maxValue = 2, displayFormat = "F2", toolTip = "Galactic background radiation")]
 		public float externRadiation = Settings.ExternRadiation;
 
 		public double AvgStormDuration { get { return stormDurationHours * 3600.0; } }

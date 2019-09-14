@@ -72,12 +72,12 @@ namespace KERBALISM
 
 			List<Habitat> habitats;
 
-			if(Lib.IsEditor())
+			if (Lib.IsEditor())
 			{
 				habitats = new List<Habitat>();
 
 				List<Part> parts = Lib.GetPartsRecursively(EditorLogic.RootPart);
-				foreach(var p in parts)
+				foreach (var p in parts)
 				{
 					var habitat = p.FindModuleImplementing<Habitat>();
 					if (habitat != null) habitats.Add(habitat);
@@ -103,7 +103,7 @@ namespace KERBALISM
 		/// <summary>Calculate the average radiation effect to all habitats. returns true if successful.</summary>
 		public bool CalculateRadiationImpact()
 		{
-			if(radiation < 0)
+			if (radiation < 0)
 			{
 				radiation_impact = 1.0;
 				return true;
@@ -115,9 +115,9 @@ namespace KERBALISM
 			radiation_impact = 0.0;
 			int habitatCount = 0;
 
-			foreach(var hi in habitatInfos)
+			foreach (var hi in habitatInfos)
 			{
-				radiation_impact += Radiation.DistanceFactor(1.0, hi.distance);
+				radiation_impact += Radiation.DistanceRadiation(1.0, hi.distance);
 				habitatCount++;
 			}
 
@@ -227,7 +227,7 @@ namespace KERBALISM
 					var vector = evaPosition - emitterPosition;
 					var distance = vector.magnitude;
 
-					result += Radiation.DistanceFactor(emitter.radiation, distance);
+					result += Radiation.DistanceRadiation(emitter.radiation, distance);
 				}
 			}
 
@@ -247,7 +247,7 @@ namespace KERBALISM
 				{
 					if (ec.Amount > double.Epsilon || emitter.ec_rate <= double.Epsilon)
 					{
-						if(emitter.running)
+						if (emitter.running)
 						{
 							if (emitter.radiation > 0) tot += emitter.radiation * emitter.radiation_impact;
 							else tot += emitter.radiation; // always account for full shielding effect
@@ -261,7 +261,7 @@ namespace KERBALISM
 				{
 					if (ec.Amount > double.Epsilon || Lib.Proto.GetDouble(m, "ec_rate") <= double.Epsilon)
 					{
-						if(Lib.Proto.GetBool(m, "running"))
+						if (Lib.Proto.GetBool(m, "running"))
 						{
 							var rad = Lib.Proto.GetDouble(m, "radiation");
 							if (rad < 0) tot += rad;
