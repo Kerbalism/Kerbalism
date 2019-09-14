@@ -787,8 +787,9 @@ namespace KERBALISM
 		///<summary> Pretty-print radiation rate </summary>
 		public static string HumanReadableRadiation(double rad)
 		{
-			//if (rad <= 0) return "none";
-
+//#if !DEBUG
+			if (rad <= Radiation.Nominal) return "nominal";
+//#endif
 			rad *= 3600.0;
 			var unit = "rad/h";
 			var prefix = "";
@@ -809,8 +810,6 @@ namespace KERBALISM
 				rad *= 1000;
 				prefix = "m";
 			}
-
-			//if (rad < 0.001) return "nominal";
 
 			return BuildString((rad).ToString("F3"), " ", prefix, unit);
 		}
@@ -925,9 +924,9 @@ namespace KERBALISM
 		{
 			return Lib.BuildString("<color=#6DCFF6>", value.ToString("F1"), " CREDITS</color>");
 		}
-		#endregion
+#endregion
 
-		#region GAME LOGIC
+#region GAME LOGIC
 		///<summary>return true if the current scene is flight</summary>
 		public static bool IsFlight()
 		{
@@ -972,9 +971,9 @@ namespace KERBALISM
 			}
 			return false;
 		}
-		#endregion
+#endregion
 
-		#region BODY
+#region BODY
 
 		/// <summary>For a given body, return the last parent body that is not a sun </summary>
 		public static CelestialBody GetParentPlanet(CelestialBody body)
@@ -1057,9 +1056,9 @@ namespace KERBALISM
 			Vector3d radial = QuaternionD.AngleAxis(latlong.y, Vector3d.down) * QuaternionD.AngleAxis(latlong.x, Vector3d.forward) * Vector3d.right;
 			return (pos - body.position).magnitude - pqs.GetSurfaceHeight(radial);
 		}
-		#endregion
+#endregion
 
-		#region VESSEL
+#region VESSEL
 		///<summary>return true if landed somewhere</summary>
 		public static bool Landed(Vessel v)
 		{
@@ -1246,9 +1245,9 @@ namespace KERBALISM
 
 			return a.precisePosition == b.precisePosition;
 		}
-		#endregion
+#endregion
 
-		#region PART
+#region PART
 		///<summary>get list of parts recursively, useful from the editors</summary>
 		public static List<Part> GetPartsRecursively(Part root)
 		{
@@ -1349,9 +1348,9 @@ namespace KERBALISM
 			EditorLogic.fetch.SetBackup();
 		}
 
-		#endregion
+#endregion
 
-		#region MODULE
+#region MODULE
 		///<summary>
 		/// return all modules implementing a specific type in a vessel
 		/// note: disabled modules are not returned
@@ -1506,9 +1505,9 @@ namespace KERBALISM
 			// then we have no chances of finding the module prefab so we return null
 			return data.index < data.prefabs.Count ? data.prefabs[data.index++] : null;
 		}
-		#endregion
+#endregion
 
-		#region RESOURCE
+#region RESOURCE
 		/// <summary> Returns the amount of a resource in a part </summary>
 		public static double Amount(Part part, string resource_name, bool ignore_flow = false)
 		{
@@ -1750,9 +1749,9 @@ namespace KERBALISM
 			// then get the first resource and return capacity
 			return p.Resources.Count == 0 ? 0.0 : p.Resources[0].maxAmount;
 		}
-		#endregion
+#endregion
 
-		#region SCIENCE DATA
+#region SCIENCE DATA
 		///<summary>return true if there is experiment data on the vessel</summary>
 		public static bool HasData( Vessel v )
 		{
@@ -1871,9 +1870,9 @@ namespace KERBALISM
 			foreach (string tech_id in techs) n += HasTech( tech_id ) ? 1 : 0;
 			return n;
 		}
-		#endregion
+#endregion
 
-		#region ASSETS
+#region ASSETS
 		///<summary> Returns the path of the directory containing the DLL </summary>
 		public static string Directory()
 		{
@@ -1958,9 +1957,9 @@ namespace KERBALISM
 			}
 			return mat;
 		}
-		#endregion
+#endregion
 
-		#region CONFIG
+#region CONFIG
 		///<summary>get a config node from the config system</summary>
 		public static ConfigNode ParseConfig( string path )
 		{
@@ -2000,9 +1999,9 @@ namespace KERBALISM
 				return def_value;
 			}
 		}
-		#endregion
+#endregion
 
-		#region UI
+#region UI
 		/// <summary>Trigger a planner update</summary>
 		public static void RefreshPlanner()
 		{
@@ -2101,9 +2100,9 @@ namespace KERBALISM
 			int index = rand.Next(letters.Length);
 			return (string)letters[index];
 		}
-		#endregion
+#endregion
 
-		#region PROTO
+#region PROTO
 		public static class Proto
 		{
 			public static bool GetBool( ProtoPartModuleSnapshot m, string name, bool def_value = false )
@@ -2155,9 +2154,9 @@ namespace KERBALISM
 				module.moduleValues.SetValue( value_name, value.ToString(), true );
 			}
 		}
-		#endregion
+#endregion
 
-		#region STRING PARSING
+#region STRING PARSING
 		public static class Parse
 		{
 			public static bool ToBool( string s, bool def_value = false )
@@ -2212,7 +2211,7 @@ namespace KERBALISM
 				return s != null && TryParseColor( s, out v ) ? v : def_value;
 			}
 		}
-		#endregion
+#endregion
 	}
 
 #region UTILITY CLASSES

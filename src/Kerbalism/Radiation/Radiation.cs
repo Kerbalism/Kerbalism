@@ -960,7 +960,7 @@ namespace KERBALISM
 		public static bool show_pause;
 
 		// nominal radiation is used to never allow zero radiation
-		public static double Nominal = 0.00000000001;
+		public static double Nominal = 0.0003 / 3600.0; // < 3 mrad/h is nominal
 	}
 
 } // KERBALISM
