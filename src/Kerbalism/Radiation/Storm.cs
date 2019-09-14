@@ -20,27 +20,33 @@ namespace KERBALISM
 			if (bd.storm_generation < now)
 			{
 				var sun = Lib.GetParentSun(body);
-
 				var avgDuration = PreferencesStorm.Instance.AvgStormDuration;
 
-				// retry after 5 * average storm duration + some random jitter
+				// retry after 5 * average storm duration + jitter
 				bd.storm_generation = now + avgDuration * 5 + avgDuration * Lib.RandomDouble() * 5;
 
 				var activity = Radiation.Info(sun).SolarActivity();
 				if (Lib.RandomDouble() < activity * 0.4)
 				{
 					// storm duration depends on current solar activity
-					// this gives a duration in [avg/2 .. 2.5 * avg]
 					bd.storm_duration = avgDuration / 2.0 + avgDuration * activity * 2;
 
 					// if further out, the storm lasts longer (but is weaker)
 					bd.storm_duration /= Storm_frequency(distanceToSun);
 
 					// set a start time to give enough time for warning
-					bd.storm_time = now + Time_to_impact(distanceToSun) + 60;
+					bd.storm_time = now + Time_to_impact(distanceToSun);
 
 					// delay next storm generation by duration of this one
 					bd.storm_generation += bd.storm_duration;
+
+					// add a random error to the estimated storm duration if we don't observe the sun too well
+					var error = bd.storm_duration * 3 * Lib.RandomDouble() * (1 - sun_observation_quality);
+					bd.displayed_duration = bd.storm_duration + error;
+
+					// show warning message only if you're lucky...
+					bd.display_warning = Lib.RandomFloat() < sun_observation_quality;
+
 
 #if DEBUG
 					Lib.Log("Storm on " + body + " will start in " + Lib.HumanReadableDuration(bd.storm_time - now) + " and last for " + Lib.HumanReadableDuration(bd.storm_duration));
@@ -55,14 +61,14 @@ namespace KERBALISM
 			if (bd.storm_time + bd.storm_duration < now)
 			{
 				// storm is over
-				bd.storm_state = 0;
+				bd.Reset();
 			}
 			else if (bd.storm_time < now && bd.storm_time + bd.storm_duration > now)
 			{
 				// storm in progress
 				bd.storm_state = 2;
 			}
-			else if (bd.storm_time - Time_to_impact(distanceToSun) > now)
+			else if (bd.storm_time > now)
 			{
 				// storm incoming
 				bd.storm_state = 1;
@@ -86,18 +92,15 @@ namespace KERBALISM
 					case 2:
 						if (bd.msg_storm < 2)
 						{
-							var stormDuration = bd.storm_duration;
-							var error = stormDuration * 3 * Lib.RandomDouble() * (1 - sun_observation_quality);
 							Message.Post(Severity.danger, Lib.BuildString("The coronal mass ejection hit <b>", body.name, "</b> system"),
-								Lib.BuildString("Storm duration: ", Lib.HumanReadableDuration(stormDuration + error)));
+								Lib.BuildString("Storm duration: ", Lib.HumanReadableDuration(bd.displayed_duration)));
 						}
 						break;
 
 					case 1:
-						// show warning message only if you're lucky...
-						if (bd.msg_storm < 1 && Lib.RandomFloat() < sun_observation_quality)
+						if (bd.msg_storm < 1 && bd.display_warning)
 						{
-							var tti = Time_to_impact(body.orbit.semiMajorAxis);
+							var tti = bd.storm_time - Planetarium.GetUniversalTime();
 							Message.Post(Severity.warning, Lib.BuildString("Our observatories report a coronal mass ejection directed toward <b>", body.name, "</b> system"),
 								Lib.BuildString("Time to impact: ", Lib.HumanReadableDuration(tti)));
 						}
@@ -140,18 +143,15 @@ namespace KERBALISM
 				case 2: // storm in progress
 					if (vd.cfg_storm && bd.msg_storm < 2)
 					{
-						var stormDuration = bd.storm_duration;
-						var error = stormDuration * 3 * Lib.RandomDouble() * (1 - sun_observation_quality);
 						Message.Post(Severity.danger, Lib.BuildString("The coronal mass ejection hit <b>", v.vesselName, "</b>"),
-						  Lib.BuildString("Storm duration: ", Lib.HumanReadableDuration(stormDuration + error)));
+						  Lib.BuildString("Storm duration: ", Lib.HumanReadableDuration(bd.displayed_duration)));
 					}
 					break;
 
 				case 1: // storm incoming
-					// show warning message only if you're lucky...
-					if (vd.cfg_storm && bd.msg_storm < 1 && Lib.RandomFloat() < sun_observation_quality)
+					if (vd.cfg_storm && bd.msg_storm < 1 && bd.display_warning)
 					{
-						var tti = Time_to_impact(vd.EnvMainSun.Distance);
+						var tti = bd.storm_time - Planetarium.GetUniversalTime();
 						Message.Post(Severity.warning, Lib.BuildString("Our observatories report a coronal mass ejection directed toward <b>", v.vesselName, "</b>"),
 							Lib.BuildString("Time to impact: ", Lib.HumanReadableDuration(tti)));
 					}
@@ -228,7 +228,7 @@ namespace KERBALISM
 		public static bool Incoming(Vessel v)
 		{
 			var bd = Lib.IsSun(v.mainBody) ? v.KerbalismData().stormData : DB.Body(Lib.GetParentPlanet(v.mainBody).name);
-			return bd.storm_state == 1;
+			return bd.storm_state == 1 && bd.display_warning;
 		}
 
 		/// <summary>return true if a storm is in progress</summary>

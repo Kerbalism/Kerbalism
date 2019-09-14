@@ -504,12 +504,18 @@ namespace KERBALISM
 			if (Storm.Incoming(v))
 			{
 				icons.Add(Icons.storm_yellow);
-				tooltips.Add(Lib.BuildString("Coronal mass ejection incoming"));
+
+				var bd = Lib.IsSun(v.mainBody) ? v.KerbalismData().stormData : DB.Body(Lib.GetParentPlanet(v.mainBody).name);
+				var tti = bd.storm_time - Planetarium.GetUniversalTime();
+				tooltips.Add(Lib.BuildString(Lib.Color("Coronal mass ejection incoming", Lib.KColor.Orange), "\n<i>Time to impact: ", Lib.HumanReadableDuration(tti), "</i>"));
 			}
 			if (Storm.InProgress(v))
 			{
 				icons.Add(Icons.storm_red);
-				tooltips.Add(Lib.BuildString("Solar storm in progress"));
+
+				var bd = Lib.IsSun(v.mainBody) ? v.KerbalismData().stormData : DB.Body(Lib.GetParentPlanet(v.mainBody).name);
+				var remainingDuration = bd.storm_time + bd.displayed_duration - Planetarium.GetUniversalTime();
+				tooltips.Add(Lib.BuildString(Lib.Color("Solar storm in progress", Lib.KColor.Red), "\n<i>Remaining duration: ", Lib.HumanReadableDuration(remainingDuration), "</i>"));
 			}
 		}
 

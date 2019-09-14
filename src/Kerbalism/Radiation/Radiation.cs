@@ -718,7 +718,6 @@ namespace KERBALISM
 						radiation += r1;
 
 						//if (v.loaded) Lib.Log("Radiation " + v + " from surface of " + body + ": " + Lib.HumanReadableRadiation(radiation) + " gamma: " + Lib.HumanReadableRadiation(r1));
-
 					}
 				}
 
@@ -782,7 +781,7 @@ namespace KERBALISM
 			radiation = Math.Max(radiation, Nominal);
 			shieldedRadiation = Math.Max(shieldedRadiation, Nominal);
 
-			//if (v.loaded) Lib.Log("Radiation " + v + " after clamp: " + Lib.HumanReadableRadiation(radiation));
+			//	if (v.loaded) Lib.Log("Radiation " + v + " after clamp: " + Lib.HumanReadableRadiation(radiation));
 
 			// return radiation
 			return radiation;
