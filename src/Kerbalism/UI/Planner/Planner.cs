@@ -108,7 +108,7 @@ namespace KERBALISM.Planner
 				update = true;
 
 			// only update when we need to, repeat update a number of times to allow the simulators to catch up
-			if (!(update || (update_counter++ < 3)))
+			if (!update || update_counter++ > 3)
 				return;
 
 			// clear the panel

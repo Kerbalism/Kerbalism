@@ -30,6 +30,7 @@ namespace KERBALISM
 			StackTrace stackTrace = new StackTrace();
 			UnityEngine.Debug.Log(string.Format("{0} -> debug: {1}.{2} - {3}", "[Kerbalism] ", stackTrace.GetFrame(1).GetMethod().ReflectedType.Name,
 				stackTrace.GetFrame(1).GetMethod().Name, string.Format(message, param)));
+			UnityEngine.Debug.Log(stackTrace);
 		}
 
 		/// <summary> This constant is being set by the build system when a dev release is requested</summary>

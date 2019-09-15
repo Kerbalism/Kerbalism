@@ -157,8 +157,8 @@ namespace KERBALISM
 					foreach (var c in dataCapacities)
 						if (c.Key == dataCapacityUI)
 						{
+							update |= effectiveDataCapacity != c.Value;
 							effectiveDataCapacity = c.Value;
-							update = true;
 						}
 				}
 
@@ -167,8 +167,8 @@ namespace KERBALISM
 					foreach (var c in sampleCapacities)
 						if (c.Key == sampleCapacityUI)
 						{
+							update |= effectiveSampleCapacity != c.Value;
 							effectiveSampleCapacity = c.Value;
-							update = true;
 						}
 				}
 
