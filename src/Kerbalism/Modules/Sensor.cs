@@ -142,8 +142,8 @@ namespace KERBALISM
 					return Lib.BuildString
 					(
 						"<align=left />",
-						String.Format("{0,-14}\t<b>{1}</b>\n", "environment", Lib.HumanReadableRadiation(vd.EnvRadiation)),
-						String.Format("{0,-14}\t<b>{1}</b>", "habitats", Lib.HumanReadableRadiation(vd.EnvHabitatRadiation))
+						String.Format("{0,-14}\t<b>{1}</b>\n", "environment", Lib.HumanReadableRadiation(vd.EnvRadiation, false)),
+						String.Format("{0,-14}\t<b>{1}</b>", "habitats", Lib.HumanReadableRadiation(HabitatRadiation(vd), false))
 					);
 
 				case "pressure":
