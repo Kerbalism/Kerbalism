@@ -726,7 +726,7 @@ namespace KERBALISM
 			}
 
 			// add extern radiation
-			radiation += PreferencesStorm.Instance.ExternRadiation;
+			radiation += Settings.ExternRadiation / 3600.0;
 
 			//if (v.loaded) Lib.Log("Radiation " + v + " extern: " + Lib.HumanReadableRadiation(radiation) + " gamma: " + Lib.HumanReadableRadiation(PreferencesStorm.Instance.ExternRadiation));
 
@@ -852,7 +852,7 @@ namespace KERBALISM
 			}
 
 			// add extern radiation
-			radiation += PreferencesStorm.Instance.ExternRadiation;
+			radiation += Settings.ExternRadiation / 3600.0;
 
 			Lib.Log("Radiation subtotal on " + b + ": " + Lib.HumanReadableRadiation(radiation) + ", gamma " + gamma_transparency);
 

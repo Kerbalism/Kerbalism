@@ -36,7 +36,7 @@
 				gamma_radiation += Radiation.DistanceRadiation(sun_rb.radiation_r0, body.orbit.semiMajorAxis);
 			gamma_radiation /= 3600.0;
 
-			extern_rad = PreferencesStorm.Instance.ExternRadiation;
+			extern_rad = Settings.ExternRadiation / 3600.0;
 			heliopause_rad = gamma_radiation + extern_rad + sun_rb.radiation_pause;
 			magnetopause_rad = gamma_radiation + heliopause_rad + rb.radiation_pause;
 			inner_rad = gamma_radiation + magnetopause_rad + rb.radiation_inner;

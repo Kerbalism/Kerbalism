@@ -104,7 +104,7 @@ namespace KERBALISM
 			// TODO cache this information somewhere
 
 			var rb = Radiation.Info(body);
-			double rad = PreferencesStorm.Instance.externRadiation;
+			double rad = Settings.ExternRadiation / 3600.0;
 			var rbSun = Radiation.Info(Lib.GetParentSun(body));
 			rad += rbSun.radiation_pause;
 
