@@ -128,6 +128,13 @@ namespace KERBALISM
 				explode = Lib.RandomDouble() < 0.1;
 
 				next = Planetarium.GetUniversalTime() + Lib.RandomDouble() * 2.0;
+
+				if(Lib.RandomDouble() < 0.1)
+				{
+					// delayed ignition failure
+					next += Lib.RandomDouble() * 10;
+				}
+
 				FlightLogger.fetch?.LogEvent("Engine failure on ignition");
 			}
 			return fail;
@@ -466,7 +473,7 @@ namespace KERBALISM
 			ignitions = Math.Min(ignitions, (int)(EffectiveIgnitions(quality, rated_ignitions) * 0.3));
 
 			fail_duration = 0;
-			v.KerbalismData().ResetReliabilityStatus();
+			vessel.KerbalismData().ResetReliabilityStatus();
 
 			if (broken)
 			{
