@@ -269,6 +269,7 @@
     <Compile Include="UI\FailuresManager.cs" />
     <Compile Include="Database\ReliabilityInfo.cs" />
     <Compile Include="Database\VesselHabitatInfo.cs" />
+    <Compile Include="GlobalSuppressions.cs" />
   </ItemGroup>
   <!-- ///////////////////////////////////////////////////// -->
   <!-- ////////// IMPORT DEFAULT MS BUILD PROCESS ////////// -->
