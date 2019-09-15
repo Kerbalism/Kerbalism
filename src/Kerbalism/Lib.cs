@@ -786,11 +786,10 @@ namespace KERBALISM
 		}
 
 		///<summary> Pretty-print radiation rate </summary>
-		public static string HumanReadableRadiation(double rad)
+		public static string HumanReadableRadiation(double rad, bool nominal = true)
 		{
-//#if !DEBUG
-			if (rad <= Radiation.Nominal) return "nominal";
-//#endif
+			if (nominal && rad <= Radiation.Nominal) return "nominal";
+
 			rad *= 3600.0;
 			var unit = "rad/h";
 			var prefix = "";
