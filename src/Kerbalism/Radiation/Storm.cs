@@ -22,11 +22,13 @@ namespace KERBALISM
 				var sun = Lib.GetParentSun(body);
 				var avgDuration = PreferencesStorm.Instance.AvgStormDuration;
 
-				// retry after 5 * average storm duration + jitter
-				bd.storm_generation = now + avgDuration * 5 + avgDuration * Lib.RandomDouble() * 5;
+				// retry after 3 * average storm duration + jitter (to avoid recalc spikes)
+				bd.storm_generation = now + avgDuration * 3 + avgDuration * Lib.RandomDouble();
 
-				var activity = Radiation.Info(sun).SolarActivity();
-				if (Lib.RandomDouble() < activity * 0.4)
+				var rb = Radiation.Info(sun);
+				var activity = rb.solar_cycle > 0 ? rb.SolarActivity() : 1.0;
+
+				if (Lib.RandomDouble() < activity * PreferencesStorm.Instance.stormFrequency)
 				{
 					// storm duration depends on current solar activity
 					bd.storm_duration = avgDuration / 2.0 + avgDuration * activity * 2;

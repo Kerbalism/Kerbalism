@@ -89,8 +89,7 @@ namespace KERBALISM
             ComfortPanorama = Lib.ConfigValue(cfg, "ComfortPanorama", 0.1f);
             ComfortPlants = Lib.ConfigValue(cfg, "ComfortPlants", 0.1f);
 
-			StormMinDays = Lib.ConfigValue(cfg, "StormMinDays", 100);
-			StormMaxDays = Lib.ConfigValue(cfg, "StormMaxDays", 500);
+			StormFrequency = Lib.ConfigValue(cfg, "StormFrequency", 0.4f);
 			StormDurationHours = Lib.ConfigValue(cfg, "StormDurationHours", 6);
 			StormEjectionSpeed = Lib.ConfigValue(cfg, "StormEjectionSpeed", 0.33f);
 			ShieldingEfficiency = Lib.ConfigValue(cfg, "ShieldingEfficiency", 0.9f);
@@ -184,9 +183,8 @@ namespace KERBALISM
         public static float ComfortPanorama;
         public static float ComfortPlants;
 
-		public static int StormMinDays;
+		public static float StormFrequency;
 		public static int StormDurationHours;
-		public static int StormMaxDays;
 		public static float StormEjectionSpeed;
 		public static float ShieldingEfficiency;
 		public static float StormRadiation;

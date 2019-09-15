@@ -285,14 +285,17 @@ namespace KERBALISM
 
 	public class PreferencesStorm : GameParameters.CustomParameterNode
 	{
+		[GameParameters.CustomFloatParameterUI("Storm probability", asPercentage = true, minValue = 0, maxValue = 5, displayFormat = "F2", toolTip = "Probability of solar storms")]
+		public float stormFrequency = Settings.StormFrequency;
+
 		[GameParameters.CustomIntParameterUI("Average storm duration (hours)", minValue = 1, maxValue = 200, toolTip = "Average duration of a sun storm in hours")]
 		public int stormDurationHours = Settings.StormDurationHours;
 
+		[GameParameters.CustomFloatParameterUI("Average storm radiation rad/h", minValue = 1, maxValue = 15, displayFormat = "F2", toolTip = "Radiation during a solar storm")]
+		public float stormRadiation = Settings.StormRadiation;
+
 		[GameParameters.CustomFloatParameterUI("Shielding Efficiency", asPercentage = true, minValue = 0.01f, maxValue = 1, displayFormat = "F2", toolTip = "Proportion of radiation blocked by shielding (at max amount)")]
 		public float shieldingEfficiency = Settings.ShieldingEfficiency;
-
-		[GameParameters.CustomFloatParameterUI("Storm Radiation rad/h", minValue = 1, maxValue = 15, displayFormat = "F2", toolTip = "Radiation during a solar storm")]
-		public float stormRadiation = Settings.StormRadiation;
 
 		public double AvgStormDuration { get { return stormDurationHours * 3600.0; } }
 
