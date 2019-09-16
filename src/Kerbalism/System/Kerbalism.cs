@@ -62,9 +62,14 @@ namespace KERBALISM
 
 			string msg = string.Empty;
 
-			if(GameDatabase.Instance.GetConfigs("Kerbalism").Length > 1)
+			var configNodes = GameDatabase.Instance.GetConfigs("Kerbalism");
+			if (configNodes.Length > 1)
 			{
 				msg += "<color=#FF4500>Multiple configurations detected</color>\nHint: delete KerbalismConfig if you are using a custom config pack.\n\n";
+			}
+			else if(configNodes.Length == 0)
+			{
+				msg += "<color=#FF4500>No configuration found</color>\nYou need KerbalismConfig (or any other Kerbalism config pack).\n\n";
 			}
 
 			if (Features.Habitat && Settings.CheckForCRP)
