@@ -306,8 +306,13 @@ namespace KERBALISM
 
 		public void FixedUpdate()
 		{
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.SolarPanelFixer.FixedUpdate");
 			// sanity check
-			if (SolarPanel == null) return;
+			if (SolarPanel == null)
+			{
+				UnityEngine.Profiling.Profiler.EndSample();
+				return;
+			}
 
 			// can't produce anything if not deployed, broken, etc
 			PanelState newState = SolarPanel.GetState();
@@ -321,17 +326,26 @@ namespace KERBALISM
 			if (!(state == PanelState.Extended || state == PanelState.ExtendedFixed || state == PanelState.Static))
 			{
 				exposureState = ExposureState.Disabled;
+				UnityEngine.Profiling.Profiler.EndSample();
 				return;
 			}
 
 			// do nothing else in editor
-			if (Lib.IsEditor()) return;
+			if (Lib.IsEditor())
+			{
+				UnityEngine.Profiling.Profiler.EndSample();
+				return;
+			}
 
 			// get vessel data from cache
 			VesselData vd = vessel.KerbalismData();
 
 			// do nothing if vessel is invalid
-			if (!vd.IsValid) return;
+			if (!vd.IsValid)
+			{
+				UnityEngine.Profiling.Profiler.EndSample();
+				return;
+			}
 
 			// Update tracked sun in auto mode
 			if (!manualTracking && trackedSunIndex != vd.EnvMainSun.SunData.bodyIndex)
@@ -462,6 +476,7 @@ namespace KERBALISM
 			if (currentOutput < 1e-10)
 			{
 				currentOutput = 0.0;
+				UnityEngine.Profiling.Profiler.EndSample();
 				return;
 			}
 
@@ -470,16 +485,21 @@ namespace KERBALISM
 
 			// produce EC
 			ec.Produce(currentOutput * Kerbalism.elapsed_s, "solar panel");
+			UnityEngine.Profiling.Profiler.EndSample();
 		}
 
 		public static void BackgroundUpdate(Vessel v, ProtoPartModuleSnapshot m, SolarPanelFixer prefab, VesselData vd, ResourceInfo ec, double elapsed_s)
 		{
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.SolarPanelFixer.BackgroundUpdate");
 			// this is ugly spaghetti code but initializing the prefab at loading time is messy because the targeted solar panel module may not be loaded yet
 			if (!prefab.isInitialized) prefab.OnStart(StartState.None);
 
 			string state = Lib.Proto.GetString(m, "state");
 			if (!(state == "Static" || state == "Extended" || state == "ExtendedFixed"))
+			{
+				UnityEngine.Profiling.Profiler.EndSample();
 				return;
+			}
 
 			// We don't recalculate panel orientation factor for unloaded vessels :
 			// - this ensure output consistency and prevent timestep-dependant fluctuations
@@ -510,6 +530,7 @@ namespace KERBALISM
 
 			// produce EC
 			ec.Produce(output * elapsed_s, "solar panel");
+			UnityEngine.Profiling.Profiler.EndSample();
 		}
 		#endregion
 

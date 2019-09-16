@@ -223,10 +223,23 @@ namespace KERBALISM
 
 		public void FixedUpdate()
 		{
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Experiment.FixedUpdate");
 			// basic sanity checks
-			if (Lib.IsEditor()) return;
-			if (!vessel.KerbalismIsValid()) return;
-			if (next_check > Planetarium.GetUniversalTime()) return;
+			if (Lib.IsEditor())
+			{
+				UnityEngine.Profiling.Profiler.EndSample();
+				return;
+			}
+			if (!vessel.KerbalismIsValid())
+			{
+				UnityEngine.Profiling.Profiler.EndSample();
+				return;
+			}
+			if (next_check > Planetarium.GetUniversalTime())
+			{
+				UnityEngine.Profiling.Profiler.EndSample();
+				return;
+			}
 
 			// get ec handler
 			ResourceInfo ec = ResourceCache.GetResource(vessel, "ElectricCharge");
@@ -243,6 +256,7 @@ namespace KERBALISM
 			if (!string.IsNullOrEmpty(issue))
 			{
 				next_check = Planetarium.GetUniversalTime() + Math.Max(3, Kerbalism.elapsed_s * 3);
+				UnityEngine.Profiling.Profiler.EndSample();
 				return;
 			}
 
@@ -255,14 +269,21 @@ namespace KERBALISM
 			last_subject_id = subject_id;
 
 			if (state != State.RUNNING)
+			{
+				UnityEngine.Profiling.Profiler.EndSample();
 				return;
+			}
 
 			var exp = Science.Experiment(experiment_id);
 			if (dataSampled >= exp.max_amount)
+			{
+				UnityEngine.Profiling.Profiler.EndSample();
 				return;
+			}
 
 			// if experiment is active and there are no issues
 			DoRecord(ec, subject_id);
+			UnityEngine.Profiling.Profiler.EndSample();
 		}
 
 		private void DoRecord(ResourceInfo ec, string subject_id)
@@ -401,6 +422,7 @@ namespace KERBALISM
 
 		public static void BackgroundUpdate(Vessel v, ProtoPartModuleSnapshot m, Experiment experiment, ResourceInfo ec, VesselResources resources, double elapsed_s)
 		{
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Experiment.BackgroundUpdate");
 			bool didPrepare = Lib.Proto.GetBool(m, "didPrepare", false);
 			bool shrouded = Lib.Proto.GetBool(m, "shrouded", false);
 			string last_subject_id = Lib.Proto.GetString(m, "last_subject_id", "");
@@ -418,7 +440,10 @@ namespace KERBALISM
 			Lib.Proto.Set(m, "issue", issue);
 
 			if (!string.IsNullOrEmpty(issue))
+			{
+				UnityEngine.Profiling.Profiler.EndSample();
 				return;
+			}	
 
 			var subject_id = Science.Generate_subject_id(experiment.experiment_id, v);
 			Lib.Proto.Set(m, "last_subject_id", subject_id);
@@ -436,9 +461,15 @@ namespace KERBALISM
 
 			var state = GetState(scienceValue, issue, recording, forcedRun);
 			if (state != State.RUNNING)
+			{
+				UnityEngine.Profiling.Profiler.EndSample();
 				return;
+			}
 			if (dataSampled >= Science.Experiment(subject_id).max_amount)
+			{
+				UnityEngine.Profiling.Profiler.EndSample();
 				return;
+			}
 
 			var stored = DoRecord(experiment, subject_id, v, ec, privateHdId,
 				resources, ParseResources(experiment.resources),
@@ -448,6 +479,7 @@ namespace KERBALISM
 
 			Lib.Proto.Set(m, "dataSampled", dataSampled);
 			Lib.Proto.Set(m, "remainingSampleMass", remainingSampleMass);
+			UnityEngine.Profiling.Profiler.EndSample();
 		}
 
 		internal static double RestoreSampleMass(double restoredAmount, ProtoPartModuleSnapshot m, string id)

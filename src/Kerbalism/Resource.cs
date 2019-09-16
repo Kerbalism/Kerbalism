@@ -112,13 +112,60 @@ namespace KERBALISM
 		public void Sync(Vessel v, VesselData vd, double elapsed_s)
 		{
 			// execute all recorded recipes
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Resource.ExecuteRecipes");
 			ResourceRecipe.ExecuteRecipes(v, this, recipes);
+			UnityEngine.Profiling.Profiler.EndSample();
 
 			// forget the recipes
 			recipes.Clear();
 
 			// apply all deferred requests and synchronize to vessel
-			foreach (ResourceInfo info in resources.Values) info.Sync(v, vd, elapsed_s);
+			// PartResourceList is slow and VERY garbagey to iterate over (because it's a dictionary disguised as a list),
+			// so acquiring a full list of all resources in a single loop is faster and less ram consuming than a
+			// "n ResourceInfo" * "n parts" * "n PartResource" loop (can easily result in 1000+ calls to p.Resources.dict.Values)
+			// It's also faster for unloaded vessels in the case of the ProtoPartResourceSnapshot lists, at the cost of a bit of garbage
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Resource.SyncAll");
+			if (v.loaded)
+			{
+				Dictionary<string, List<PartResource>> resInfos = new Dictionary<string, List<PartResource>>(resources.Count);
+				foreach (ResourceInfo resInfo in resources.Values)
+					resInfos.Add(resInfo.ResourceName, new List<PartResource>());
+
+				foreach (Part p in v.Parts)
+				{
+					foreach (PartResource r in p.Resources.dict.Values)
+					{
+						if (r.flowState && resInfos.ContainsKey(r.resourceName))
+						{
+							resInfos[r.resourceName].Add(r);
+						}
+					}
+				}
+
+				foreach (ResourceInfo resInfo in resources.Values)
+					resInfo.Sync(v, vd, elapsed_s, resInfos[resInfo.ResourceName], null);
+			}
+			else
+			{
+				Dictionary<string, List<ProtoPartResourceSnapshot>> resInfos = new Dictionary<string, List<ProtoPartResourceSnapshot>>(resources.Count);
+				foreach (ResourceInfo resInfo in resources.Values)
+					resInfos.Add(resInfo.ResourceName, new List<ProtoPartResourceSnapshot>());
+
+				foreach (ProtoPartSnapshot p in v.protoVessel.protoPartSnapshots)
+				{
+					foreach (ProtoPartResourceSnapshot r in p.resources)
+					{
+						if (r.flowState && resInfos.ContainsKey(r.resourceName))
+						{
+							resInfos[r.resourceName].Add(r);
+						}
+					}
+				}
+
+				foreach (ResourceInfo resInfo in resources.Values)
+					resInfo.Sync(v, vd, elapsed_s, null, resInfos[resInfo.ResourceName]);
+			}
+			UnityEngine.Profiling.Profiler.EndSample();
 		}
 
 		/// <summary> record deferred production of a resource (shortcut) </summary>
@@ -276,8 +323,9 @@ namespace KERBALISM
 		/// this function will also sync from vessel to cache so you can always use the
 		/// ResourceInfo interface to get information about resources
 		/// </remarks>
-		public void Sync(Vessel v, VesselData vd, double elapsed_s)
+		public void Sync(Vessel v, VesselData vd, double elapsed_s, List<PartResource> loadedResList, List<ProtoPartResourceSnapshot> unloadedResList)
 		{
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Resource.Sync");
 			// # OVERVIEW
 			// - consumption/production is accumulated in "Deferred", then this function called
 			// - save previous step amount/capacity
@@ -320,30 +368,18 @@ namespace KERBALISM
 
 			if (v.loaded)
 			{
-				foreach (Part p in v.Parts)
+				foreach (PartResource r in loadedResList)
 				{
-					foreach (PartResource r in p.Resources)
-					{
-						if (r.flowState && r.resourceName == ResourceName)
-						{
-							Amount += r.amount;
-							Capacity += r.maxAmount;
-						}
-					}
+					Amount += r.amount;
+					Capacity += r.maxAmount;
 				}
 			}
 			else
 			{
-				foreach (ProtoPartSnapshot p in v.protoVessel.protoPartSnapshots)
+				foreach (ProtoPartResourceSnapshot r in unloadedResList)
 				{
-					foreach (ProtoPartResourceSnapshot r in p.resources)
-					{
-						if (r.flowState && r.resourceName == ResourceName)
-						{
-							Amount += r.amount;
-							Capacity += r.maxAmount;
-						}
-					}
+					Amount += r.amount;
+					Capacity += r.maxAmount;
 				}
 			}
 
@@ -369,40 +405,28 @@ namespace KERBALISM
 			{
 				if (v.loaded)
 				{
-					foreach (Part p in v.parts)
+					foreach (PartResource r in loadedResList)
 					{
-						foreach (PartResource r in p.Resources)
-						{
-							if (r.flowState && r.resourceName == ResourceName)
-							{
-								// calculate consumption/production coefficient for the part
-								double k = Deferred < 0.0
-								  ? r.amount / Amount
-								  : (r.maxAmount - r.amount) / (Capacity - Amount);
+						// calculate consumption/production coefficient for the part
+						double k = Deferred < 0.0
+						  ? r.amount / Amount
+						  : (r.maxAmount - r.amount) / (Capacity - Amount);
 
-								// apply deferred consumption/production
-								r.amount += Deferred * k;
-							}
-						}
+						// apply deferred consumption/production
+						r.amount += Deferred * k;
 					}
 				}
 				else
 				{
-					foreach (ProtoPartSnapshot p in v.protoVessel.protoPartSnapshots)
+					foreach (ProtoPartResourceSnapshot r in unloadedResList)
 					{
-						foreach (ProtoPartResourceSnapshot r in p.resources)
-						{
-							if (r.flowState && r.resourceName == ResourceName)
-							{
-								// calculate consumption/production coefficient for the part
-								double k = Deferred < 0.0
-								  ? r.amount / Amount
-								  : (r.maxAmount - r.amount) / (Capacity - Amount);
+						// calculate consumption/production coefficient for the part
+						double k = Deferred < 0.0
+						  ? r.amount / Amount
+						  : (r.maxAmount - r.amount) / (Capacity - Amount);
 
-								// apply deferred consumption/production
-								r.amount += Deferred * k;
-							}
-						}
+						// apply deferred consumption/production
+						r.amount += Deferred * k;
 					}
 				}
 			}
@@ -478,6 +502,7 @@ namespace KERBALISM
 
 			// reset amount added/removed from interval-based rules
 			intervalRuleAmount = 0.0;
+			UnityEngine.Profiling.Profiler.EndSample();
 		}
 
 		/// <summary>estimate time until depletion, including the simulated rate from interval-based rules</summary>
