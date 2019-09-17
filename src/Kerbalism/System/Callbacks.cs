@@ -22,7 +22,6 @@ namespace KERBALISM
 			GameEvents.onPartCouple.Add(this.VesselDock);
 
 			GameEvents.OnVesselRollout.Add(this.VesselRollout);
-			GameEvents.onGameStatePostLoad.Add(this.GameLoaded);
 
 			GameEvents.onVesselChange.Add((v) => { OnVesselModified(v); });
 			GameEvents.onVesselStandardModification.Add((v) => { OnVesselStandardModification(v); });
@@ -288,11 +287,6 @@ namespace KERBALISM
 			{
 				m.OnRollout();
 			}
-		}
-
-		void GameLoaded(ConfigNode node)
-		{
-			Kerbalism.gameLoadTime = Time.time;
 		}
 
 		void PartDestroyed(Part p)
