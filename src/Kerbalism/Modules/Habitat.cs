@@ -523,7 +523,6 @@ namespace KERBALISM
 		// enable/disable dialog "Transfer crew" on UI
 		public void RefreshDialog()
 		{
-			Lib.DebugLog("Refreshing Dialog");
 			if (HighLogic.LoadedSceneIsEditor)
 			{
 				GameEvents.onEditorPartEvent.Fire(ConstructionEventType.PartTweaked, part);

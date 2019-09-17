@@ -89,6 +89,12 @@ namespace KERBALISM
 		/// <summary> Returns true if a failure should be triggered. </summary>
 		protected bool IgnitionCheck()
 		{
+			// don't check for a couple of seconds after the vessel was loaded.
+			// when loading a quicksave with the engines running, the engine state
+			// is off at first which would cost an ignition and possibly trigger a failure
+			if (Time.time < Kerbalism.gameLoadTime + 3)
+				return false;
+
 			ignitions++;
 			vessel.KerbalismData().ResetReliabilityStatus();
 
@@ -102,6 +108,8 @@ namespace KERBALISM
 					fail = true;
 				}
 			}
+
+			// Lib.DebugLog("Ignition check: " + part.partInfo.title + " ignitions " + ignitions + " turnon failure " + fail);
 
 			if (rated_ignitions > 0)
 			{

@@ -9,7 +9,7 @@ using System.Collections;
 namespace KERBALISM
 {
 
-	public class Experiment : PartModule, ISpecifics, IPartMassModifier
+	public class Experiment : PartModule, ISpecifics, IPartMassModifier, IModuleRollout
 	{
 		// config
 		[KSPField] public string experiment_id;               // id of associated experiment definition

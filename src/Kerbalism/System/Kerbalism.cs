@@ -446,6 +446,9 @@ namespace KERBALISM
 		// last savegame unique id
 		static int savegame_uid;
 
+		/// <summary> real time of last game loaded event </summary>
+		public static float gameLoadTime = 0.0f;
+    
 		public static bool SerenityEnabled { get; private set; }
 	}
 

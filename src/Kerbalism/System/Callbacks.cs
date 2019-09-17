@@ -22,6 +22,7 @@ namespace KERBALISM
 			GameEvents.onPartCouple.Add(this.VesselDock);
 
 			GameEvents.OnVesselRollout.Add(this.VesselRollout);
+			GameEvents.onGameStatePostLoad.Add(this.GameLoaded);
 
 			GameEvents.onVesselChange.Add((v) => { OnVesselModified(v); });
 			GameEvents.onVesselStandardModification.Add((v) => { OnVesselStandardModification(v); });
@@ -78,7 +79,6 @@ namespace KERBALISM
 		public IEnumerator NetworkInitialized()
 		{
 			yield return new WaitForSeconds(2);
-			Lib.DebugLog("NetworkInitialized");
 			Communications.NetworkInitialized = true;
 			RemoteTech.Startup();
 		}
@@ -284,14 +284,15 @@ namespace KERBALISM
 		void VesselRollout(ShipConstruct newVessel)
 		{
 			var vessel = FlightGlobals.ActiveVessel;
-			foreach (var experiment in vessel.FindPartModulesImplementing<Experiment>())
+			foreach (var m in vessel.FindPartModulesImplementing<IModuleRollout>())
 			{
-				experiment.OnRollout();
+				m.OnRollout();
 			}
-			foreach (var hardDrive in vessel.FindPartModulesImplementing<HardDrive>())
-			{
-				hardDrive.OnRollout();
-			}
+		}
+
+		void GameLoaded(ConfigNode node)
+		{
+			Kerbalism.gameLoadTime = Time.time;
 		}
 
 		void PartDestroyed(Part p)

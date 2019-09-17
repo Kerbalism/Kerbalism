@@ -270,6 +270,7 @@
     <Compile Include="Database\ReliabilityInfo.cs" />
     <Compile Include="Database\VesselHabitatInfo.cs" />
     <Compile Include="GlobalSuppressions.cs" />
+    <Compile Include="System\ModuleInterfaces.cs" />
   </ItemGroup>
   <!-- ///////////////////////////////////////////////////// -->
   <!-- ////////// IMPORT DEFAULT MS BUILD PROCESS ////////// -->
