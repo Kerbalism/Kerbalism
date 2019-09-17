@@ -250,10 +250,18 @@ namespace KERBALISM
 		}
 
 		///<summary>stop time warping</summary>
-		public static void StopWarp(int rate = 0)
+		public static void StopWarp(double maxSpeed = 0)
 		{
-			TimeWarp.fetch.CancelAutoWarp();
-			TimeWarp.SetRate(rate, true, false);
+			var warp = TimeWarp.fetch;
+			warp.CancelAutoWarp();
+			int rate = warp.current_rate_index;
+			int maxRate = 0;
+			for (int i = 0; i < warp.warpRates.Length; ++i)
+			{
+				if (warp.warpRates[i] < maxSpeed)
+					maxRate = i;
+			}
+			TimeWarp.SetRate(Math.Min(rate, maxRate), true, false);
 		}
 
 		///<summary>disable time warping above a specified level</summary>
