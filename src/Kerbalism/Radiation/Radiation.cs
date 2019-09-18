@@ -653,6 +653,7 @@ namespace KERBALISM
 			Space gsm;
 			Vector3 p;
 			float D;
+			double r;
 
 			// accumulate radiation
 			double radiation = 0.0;
@@ -681,20 +682,16 @@ namespace KERBALISM
 					if (mf.has_inner)
 					{
 						D = mf.Inner_func(p);
-						radiation += Lib.Clamp(D / -0.0666f, 0.0f, 1.0f) * rb.radiation_inner;
-
-						//if (v.loaded) Lib.Log("Radiation " + v + " inner belt of " + body + ": " + Lib.HumanReadableRadiation(radiation));
-
-						inner_belt |= D < 0.0f;
+						r = BeltRadiation(D, mf.inner_radius, rb.radiation_inner);
+						radiation += r;
+						if (r > 0.0) inner_belt = true;
 					}
 					if (mf.has_outer)
 					{
 						D = mf.Outer_func(p);
-						radiation += Lib.Clamp(D / -0.0333f, 0.0f, 1.0f) * rb.radiation_outer;
-
-						//if (v.loaded) Lib.Log("Radiation " + v + " outer belt of " + body + ": " + Lib.HumanReadableRadiation(radiation));
-
-						outer_belt |= D < 0.0f;
+						r = BeltRadiation(D, mf.outer_radius, rb.radiation_outer);
+						radiation += r;
+						if (r > 0.0) outer_belt = true;
 					}
 					if (mf.has_pause)
 					{
@@ -793,6 +790,15 @@ namespace KERBALISM
 			return radiation;
 		}
 
+		private static double BeltRadiation(float depth, float radius, double max_radiation, double d = 1.2)
+		{
+			if (depth >= 0) return 0;
+
+			// d makes sure we have a solid body of maximum radiation around the center of the belt
+			var s = Math.Pow(-d * depth / radius, 3);
+			return Lib.Clamp(s, 0.0f, 1.0f) * max_radiation;
+		}
+
 		// return the surface radiation for the body specified (used by body info panel)
 		public static double ComputeSurface(CelestialBody b, double gamma_transparency)
 		{
@@ -825,12 +831,12 @@ namespace KERBALISM
 					if (mf.has_inner)
 					{
 						D = mf.Inner_func(p);
-						radiation += Lib.Clamp(D / -0.0666f, 0.0f, 1.0f) * rb.radiation_inner;
+						radiation += BeltRadiation(D, mf.inner_radius, rb.radiation_inner);
 					}
 					if (mf.has_outer)
 					{
 						D = mf.Outer_func(p);
-						radiation += Lib.Clamp(D / -0.0333f, 0.0f, 1.0f) * rb.radiation_outer;
+						radiation += BeltRadiation(D, mf.outer_radius, rb.radiation_outer);
 					}
 					if (mf.has_pause)
 					{
