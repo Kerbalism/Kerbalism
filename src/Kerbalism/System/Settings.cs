@@ -96,6 +96,7 @@ namespace KERBALISM
 			StormRadiation = Lib.ConfigValue(cfg, "StormRadiation", 5.0f);
 			ExternRadiation = Lib.ConfigValue(cfg, "ExternRadiation", 0.04f);
 			RadiationInSievert = Lib.ConfigValue(cfg, "RadiationInSievert", false);
+			RadiationFieldLimit = Lib.ConfigValue(cfg, "RadiationFieldLimit", 0.1);
 
 			ModsIncompatible = Lib.ConfigValue(cfg, "ModsIncompatible", MODS_INCOMPATIBLE);
 			ModsWarning = Lib.ConfigValue(cfg, "ModsWarning", MODS_WARNING);
@@ -190,6 +191,7 @@ namespace KERBALISM
 		public static float StormRadiation;
 		public static float ExternRadiation;
 		public static bool RadiationInSievert; // use Sievert iso. rad
+		public static double RadiationFieldLimit; // radiation field borders will be displayed at the region where the radiation effect will have this strength (0.1 = 10%)
 
 		// sanity check settings
 		public static string ModsIncompatible;
