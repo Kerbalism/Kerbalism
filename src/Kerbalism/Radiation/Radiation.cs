@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics;
@@ -25,20 +25,24 @@ namespace KERBALISM
 			has_inner = Lib.ConfigValue(node, "has_inner", false);
 			inner_dist = Lib.ConfigValue(node, "inner_dist", 0.0f);
 			inner_radius = Lib.ConfigValue(node, "inner_radius", 0.0f);
+			inner_deform_xy = Lib.ConfigValue(node, "inner_deform_xy", 1.0f);
 			inner_compression = Lib.ConfigValue(node, "inner_compression", 1.0f);
 			inner_extension = Lib.ConfigValue(node, "inner_extension", 1.0f);
 			inner_border_dist = Lib.ConfigValue(node, "inner_border_dist", 0.0001f);
 			inner_border_radius = Lib.ConfigValue(node, "inner_border_radius", 0.0f);
+			inner_border_deform_xy = Lib.ConfigValue(node, "inner_border_deform_xy", 1.0f);
 			inner_deform = Lib.ConfigValue(node, "inner_deform", 0.0f);
 			inner_quality = Lib.ConfigValue(node, "inner_quality", 30.0f);
 
 			has_outer = Lib.ConfigValue(node, "has_outer", false);
 			outer_dist = Lib.ConfigValue(node, "outer_dist", 0.0f);
 			outer_radius = Lib.ConfigValue(node, "outer_radius", 0.0f);
+			outer_deform_xy = Lib.ConfigValue(node, "outer_deform_xy", 1.0f);
 			outer_compression = Lib.ConfigValue(node, "outer_compression", 1.0f);
 			outer_extension = Lib.ConfigValue(node, "outer_extension", 1.0f);
-			outer_border_dist = Lib.ConfigValue(node, "outer_border_dist", 0.0001f);
+			outer_border_dist = Lib.ConfigValue(node, "outer_border_dist", 0.001f);
 			outer_border_radius = Lib.ConfigValue(node, "outer_border_radius", 0.0f);
+			outer_border_deform_xy = Lib.ConfigValue(node, "outer_border_deform_xy", 1.0f);
 			outer_deform = Lib.ConfigValue(node, "outer_deform", 0.0f);
 			outer_quality = Lib.ConfigValue(node, "outer_quality", 40.0f);
 
@@ -55,44 +59,48 @@ namespace KERBALISM
 		public float Inner_func(Vector3 p)
 		{
 			p.x *= p.x < 0.0f ? inner_extension : inner_compression;
-			float q1 = Mathf.Sqrt(p.x * p.x + p.z * p.z) - inner_dist;
+			float q1 = Mathf.Sqrt((p.x * p.x + p.z * p.z) * inner_deform_xy) - inner_dist;
 			float d1 = Mathf.Sqrt(q1 * q1 + p.y * p.y) - inner_radius;
-			float q2 = Mathf.Sqrt(p.x * p.x + p.z * p.z) - inner_border_dist;
+			float q2 = Mathf.Sqrt((p.x * p.x + p.z * p.z) * inner_border_deform_xy) - inner_border_dist;
 			float d2 = Mathf.Sqrt(q2 * q2 + p.y * p.y) - inner_border_radius;
 			return Mathf.Max(d1, -d2) + (inner_deform > 0.001 ? (Mathf.Sin(p.x * 5.0f) * Mathf.Sin(p.y * 7.0f) * Mathf.Sin(p.z * 6.0f)) * inner_deform : 0.0f);
 		}
 
 		public Vector3 Inner_domain()
 		{
-			float w = inner_dist + inner_radius;
-			return new Vector3((w / inner_compression + w / inner_extension) * 0.5f, inner_radius, w) * (1.0f + inner_deform);
+			float p = Mathf.Max((inner_dist + inner_radius), (inner_border_dist + inner_border_radius));
+			float w = p * Mathf.Sqrt(1 / Mathf.Min(inner_deform_xy, inner_border_deform_xy));
+			return new Vector3((w / inner_compression + w / inner_extension) * 0.5f, Mathf.Max(inner_radius, inner_border_radius), w) * (1.0f + inner_deform);
 		}
 
 		public Vector3 Inner_offset()
 		{
-			float w = inner_dist + inner_radius;
+			float p = Mathf.Max((inner_dist + inner_radius), (inner_border_dist + inner_border_radius));
+			float w = p * Mathf.Sqrt(1 / Mathf.Min(inner_deform_xy, inner_border_deform_xy));
 			return new Vector3(w / inner_compression - (w / inner_compression + w / inner_extension) * 0.5f, 0.0f, 0.0f);
 		}
 
 		public float Outer_func(Vector3 p)
 		{
 			p.x *= p.x < 0.0f ? outer_extension : outer_compression;
-			float q1 = Mathf.Sqrt(p.x * p.x + p.z * p.z) - outer_dist;
+			float q1 = Mathf.Sqrt((p.x * p.x + p.z * p.z) * outer_deform_xy) - outer_dist;
 			float d1 = Mathf.Sqrt(q1 * q1 + p.y * p.y) - outer_radius;
-			float q2 = Mathf.Sqrt(p.x * p.x + p.z * p.z) - outer_border_dist;
+			float q2 = Mathf.Sqrt((p.x * p.x + p.z * p.z) * outer_border_deform_xy) - outer_border_dist;
 			float d2 = Mathf.Sqrt(q2 * q2 + p.y * p.y) - outer_border_radius;
 			return Mathf.Max(d1, -d2) + (outer_deform > 0.001 ? (Mathf.Sin(p.x * 5.0f) * Mathf.Sin(p.y * 7.0f) * Mathf.Sin(p.z * 6.0f)) * outer_deform : 0.0f);
 		}
 
 		public Vector3 Outer_domain()
 		{
-			float w = outer_dist + outer_radius;
-			return new Vector3((w / outer_compression + w / outer_extension) * 0.5f, outer_radius, w) * (1.0f + outer_deform);
+			float p = Mathf.Max((outer_dist + outer_radius), (outer_border_dist + outer_border_radius));
+			float w = p * Mathf.Sqrt(1 / Mathf.Min(outer_deform_xy, outer_border_deform_xy));
+			return new Vector3((w / outer_compression + w / outer_extension) * 0.5f, Mathf.Max(outer_radius, outer_border_radius), w) * (1.0f + outer_deform);
 		}
 
 		public Vector3 Outer_offset()
 		{
-			float w = outer_dist + outer_radius;
+			float p = Mathf.Max((outer_dist + outer_radius), (outer_border_dist + outer_border_radius));
+			float w = p * Mathf.Sqrt(1 / Mathf.Min(outer_deform_xy, outer_border_deform_xy));
 			return new Vector3(w / outer_compression - (w / outer_compression + w / outer_extension) * 0.5f, 0.0f, 0.0f);
 		}
 
@@ -121,39 +129,43 @@ namespace KERBALISM
 		}
 
 
-		public string name;					// name of the type of radiation environment
+		public string name;                     // name of the type of radiation environment
 
-		public bool has_inner;				// true if there is an inner radiation ring
-		public float inner_dist;			// distance from inner belt center to body center
-		public float inner_radius;			// radius of inner belt torus
-		public float inner_compression;		// compression factor in sun-exposed side
-		public float inner_extension;		// extension factor opposite to sun-exposed side
-		public float inner_border_dist;		// center of the inner torus we substract
-		public float inner_border_radius;	// radius of the inner torus we substract
-		public float inner_deform;			// size of sin deformation (scale hard-coded to [5,7,6])
-		public float inner_quality;			// quality at the border
+		public bool has_inner;                  // true if there is an inner radiation ring
+		public float inner_dist;                // distance from inner belt center to body center
+		public float inner_radius;              // radius of inner belt torus
+		public float inner_deform_xy;           // wanted (high / diameter) ^ 2
+		public float inner_compression;         // compression factor in sun-exposed side
+		public float inner_extension;           // extension factor opposite to sun-exposed side
+		public float inner_border_dist;         // center of the inner torus we substract
+		public float inner_border_radius;       // radius of the inner torus we substract
+		public float inner_border_deform_xy;    // wanted (high / diameter) ^ 2
+		public float inner_deform;              // size of sin deformation (scale hard-coded to [5,7,6])
+		public float inner_quality;             // quality at the border
 
-		public bool has_outer;				// true if there is an outer radiation ring
-		public float outer_dist;			// distance from outer belt center to body center
-		public float outer_radius;			// radius of outer belt torus
-		public float outer_compression;		// compression factor in sun-exposed side
-		public float outer_extension;		// extension factor opposite to sun-exposed side
-		public float outer_border_dist;		// center of the outer torus we substract
-		public float outer_border_radius;	// radius of the outer torus we substract
-		public float outer_deform;			// size of sin deformation (scale hard-coded to [5,7,6])
-		public float outer_quality;			// quality at the border
+		public bool has_outer;                  // true if there is an outer radiation ring
+		public float outer_dist;                // distance from outer belt center to body center
+		public float outer_radius;              // radius of outer belt torus
+		public float outer_deform_xy;           // wanted (high / diameter) ^ 2
+		public float outer_compression;         // compression factor in sun-exposed side
+		public float outer_extension;           // extension factor opposite to sun-exposed side
+		public float outer_border_dist;         // center of the outer torus we substract
+		public float outer_border_radius;       // radius of the outer torus we substract
+		public float outer_border_deform_xy;    // wanted (high / diameter) ^ 2
+		public float outer_deform;              // size of sin deformation (scale hard-coded to [5,7,6])
+		public float outer_quality;             // quality at the border
 
-		public bool has_pause;				// true if there is a magnetopause
-		public float pause_radius;			// basic radius of magnetopause
-		public float pause_compression;		// compression factor in sun-exposed side
-		public float pause_extension;		// extension factor opposite to sun-exposed side
-		public float pause_height_scale;	// vertical compression factor
-		public float pause_deform;			// size of sin deformation (scale is hardcoded as [5,7,6])
-		public float pause_quality;			// quality at the border
+		public bool has_pause;                  // true if there is a magnetopause
+		public float pause_radius;              // basic radius of magnetopause
+		public float pause_compression;         // compression factor in sun-exposed side
+		public float pause_extension;           // extension factor opposite to sun-exposed side
+		public float pause_height_scale;        // vertical compression factor
+		public float pause_deform;              // size of sin deformation (scale is hardcoded as [5,7,6])
+		public float pause_quality;             // quality at the border
 
-		public ParticleMesh inner_pmesh;	// used to render the inner belt
-		public ParticleMesh outer_pmesh;	// used to render the outer belt
-		public ParticleMesh pause_pmesh;	// used to render the magnetopause
+		public ParticleMesh inner_pmesh;        // used to render the inner belt
+		public ParticleMesh outer_pmesh;        // used to render the outer belt
+		public ParticleMesh pause_pmesh;        // used to render the magnetopause
 
 		// default radiation model
 		public static RadiationModel none = new RadiationModel();
@@ -653,6 +665,7 @@ namespace KERBALISM
 			Space gsm;
 			Vector3 p;
 			float D;
+			double r;
 
 			// accumulate radiation
 			double radiation = 0.0;
@@ -681,20 +694,24 @@ namespace KERBALISM
 					if (mf.has_inner)
 					{
 						D = mf.Inner_func(p);
-						radiation += Lib.Clamp(D / -0.0666f, 0.0f, 1.0f) * rb.radiation_inner;
-
-						//if (v.loaded) Lib.Log("Radiation " + v + " inner belt of " + body + ": " + Lib.HumanReadableRadiation(radiation));
-
-						inner_belt |= D < 0.0f;
+						if(D < 0)
+						{
+							r = BeltRadiation(D, mf.inner_radius, rb.radiation_inner);
+							radiation += r;
+							// if(v.loaded) Lib.Log("Radiation " + v + " inner " + D.ToString("F3") + " r " + r.ToString("F3") + " " + Lib.HumanReadableRadiation(r));
+							inner_belt |= r > 0.0;
+						}
 					}
 					if (mf.has_outer)
 					{
 						D = mf.Outer_func(p);
-						radiation += Lib.Clamp(D / -0.0333f, 0.0f, 1.0f) * rb.radiation_outer;
-
-						//if (v.loaded) Lib.Log("Radiation " + v + " outer belt of " + body + ": " + Lib.HumanReadableRadiation(radiation));
-
-						outer_belt |= D < 0.0f;
+						if (D < 0)
+						{
+							r = BeltRadiation(D, mf.outer_radius, rb.radiation_outer);
+							radiation += r;
+							// if(v.loaded) Lib.Log("Radiation " + v + " outer " + D.ToString("F3") + " r " + r.ToString("F3") + " " + Lib.HumanReadableRadiation(r));
+							outer_belt |= r > 0.0;
+						}
 					}
 					if (mf.has_pause)
 					{
@@ -793,6 +810,21 @@ namespace KERBALISM
 			return radiation;
 		}
 
+		public static double BeltRadiation(float depth, float scale, double max_radiation, double d = 1.8)
+		{
+			// depth is the distance from the border of the belt, in planetary radii.
+			// scale should be a value representing the "thickness" of the radiation belt, so that we can
+			// transpose depth to a scalar [0..1]
+			// d should be > 1 and is used to make sure that the core of the radiation belt has a good region
+			// where the max radiation levels are reached
+
+			if (depth >= 0) return 0;
+
+			// d makes sure we have a solid body of maximum radiation around the center of the belt
+			var s = Math.Pow(d * -depth / scale, 2);
+			return Lib.Clamp(s, 0.0f, 1.0f) * max_radiation;
+		}
+
 		// return the surface radiation for the body specified (used by body info panel)
 		public static double ComputeSurface(CelestialBody b, double gamma_transparency)
 		{
@@ -825,12 +857,12 @@ namespace KERBALISM
 					if (mf.has_inner)
 					{
 						D = mf.Inner_func(p);
-						radiation += Lib.Clamp(D / -0.0666f, 0.0f, 1.0f) * rb.radiation_inner;
+						radiation += BeltRadiation(D, mf.inner_radius, rb.radiation_inner);
 					}
 					if (mf.has_outer)
 					{
 						D = mf.Outer_func(p);
-						radiation += Lib.Clamp(D / -0.0333f, 0.0f, 1.0f) * rb.radiation_outer;
+						radiation += BeltRadiation(D, mf.outer_radius, rb.radiation_outer);
 					}
 					if (mf.has_pause)
 					{
@@ -848,7 +880,7 @@ namespace KERBALISM
 					var r0 = RadiationR0(rb);
 					var r1 = DistanceRadiation(r0, distance);
 
-					Lib.Log("Surface radiation on " + b + " from " + body + ": " + Lib.HumanReadableRadiation(r1) + " distance " + distance);
+					// Lib.Log("Surface radiation on " + b + " from " + body + ": " + Lib.HumanReadableRadiation(r1) + " distance " + distance);
 
 					radiation += r1;
 				}
@@ -860,18 +892,18 @@ namespace KERBALISM
 			// add extern radiation
 			radiation += Settings.ExternRadiation / 3600.0;
 
-			Lib.Log("Radiation subtotal on " + b + ": " + Lib.HumanReadableRadiation(radiation) + ", gamma " + gamma_transparency);
+			// Lib.Log("Radiation subtotal on " + b + ": " + Lib.HumanReadableRadiation(radiation) + ", gamma " + gamma_transparency);
 
 			// scale radiation by gamma transparency if inside atmosphere
 			radiation *= gamma_transparency;
-			Lib.Log("srf scaled on " + b + ": " + Lib.HumanReadableRadiation(radiation));
+			// Lib.Log("srf scaled on " + b + ": " + Lib.HumanReadableRadiation(radiation));
 
 			// add surface radiation of the body itself
 			radiation += DistanceRadiation(RadiationR0(Info(b)), b.Radius);
 
-			Lib.Log("Radiation on " + b + ": " + Lib.HumanReadableRadiation(radiation) + ", own surface radiation " + Lib.HumanReadableRadiation(DistanceRadiation(RadiationR0(Info(b)), b.Radius)));
+			// Lib.Log("Radiation on " + b + ": " + Lib.HumanReadableRadiation(radiation) + ", own surface radiation " + Lib.HumanReadableRadiation(DistanceRadiation(RadiationR0(Info(b)), b.Radius)));
 
-			Lib.Log("radiation " + radiation + " nominal " + Nominal);
+			// Lib.Log("radiation " + radiation + " nominal " + Nominal);
 
 			// clamp radiation to positive range
 			// note: we avoid radiation going to zero by using a small positive value

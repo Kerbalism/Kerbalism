@@ -46,11 +46,20 @@ namespace KERBALISM
 				// calculate signed distance
 				D = dist_func(p);
 
-				// if inside
-				if (D <= 0.0f && D > -thickness)
+				if (D <= 0.0f) // if inside
 				{
-					points.Add(p);
-					++i;
+					if(D <= 0.0 && D > - thickness)
+					{
+						points.Add(p);
+						++i;
+					}
+
+					var r = Radiation.BeltRadiation(D, 1.0f, 1.0);
+					if (r > 0.5 && r < 0.52)
+					{
+						points.Add(p);
+						++i;
+					}
 				}
 
 				// count samples

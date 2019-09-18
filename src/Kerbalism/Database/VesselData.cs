@@ -426,14 +426,12 @@ namespace KERBALISM
 			secSinceLastEval += elapsedSeconds;
 
 			// don't update more than every second of game time
-			if (!forced)
-			{
-				if (secSinceLastEval < 1.0) return;
-				secSinceLastEval = 0.0;
-			}
+			if (!forced && secSinceLastEval < 1.0)
+				return;
 
-			EvaluateEnvironment(elapsedSeconds);
+			EvaluateEnvironment(secSinceLastEval);
 			EvaluateStatus();
+			secSinceLastEval = 0.0;
 			Evaluated = true;
 		}
 
@@ -636,14 +634,19 @@ namespace KERBALISM
 			// get solar info (with multiple stars / Kopernicus support)
 			// get the 'visibleBodies' and 'sunsInfo' lists, the 'mainSun', 'solarFluxTotal' variables.
 			// require the situation variables to be evaluated first
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.VesselData.Sunlight");
 			SunInfo.UpdateSunsInfo(this, position);
+			UnityEngine.Profiling.Profiler.EndSample();
 			sunBodyAngle = Sim.SunBodyAngle(Vessel, position, mainSun.SunData.body);
 
 			// temperature at vessel position
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.VesselData.Temperature");
 			temperature = Sim.Temperature(Vessel, position, solarFluxTotal, out albedoFlux, out bodyFlux, out totalFlux);
 			tempDiff = Sim.TempDiff(EnvTemperature, Vessel.mainBody, EnvLanded);
+			UnityEngine.Profiling.Profiler.EndSample();
 
 			// radiation
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.VesselData.Radiation");
 			gammaTransparency = Sim.GammaTransparency(Vessel.mainBody, Vessel.altitude);
 
 			bool new_innerBelt, new_outerBelt, new_magnetosphere;
@@ -656,6 +659,7 @@ namespace KERBALISM
 				magnetosphere = new_magnetosphere;
 				if(Evaluated) API.OnRadiationFieldChanged.Notify(Vessel, innerBelt, outerBelt, magnetosphere);
 			}
+			UnityEngine.Profiling.Profiler.EndSample();
 
 			// extended atmosphere
 			thermosphere = Sim.InsideThermosphere(Vessel);
