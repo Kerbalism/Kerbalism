@@ -222,15 +222,15 @@ namespace KERBALISM
 		/// <param name="icon2">Second Texture2D</param>
 		/// <param name="interval">interval in sec</param>
 		/// <returns></returns>
-		internal static Texture2D iconSwitch(Texture2D icon1, Texture2D icon2, float interval = 0.3f)
+		internal static Texture2D iconSwitch(Texture2D icon1, Texture2D icon2, float interval = 1f)
 		{
 			if (Time.time > nextFlashing)
 			{
-				nextFlashing += interval;
+				nextFlashing = Time.time + interval;
 				lastIcon ^= true;
 			}
 			if (lastIcon) return icon1;
-			else return icon2;
+			return icon2;
 		}
 	}
 } // KERBALISM
