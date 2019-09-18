@@ -63,7 +63,23 @@ namespace KERBALISM
 			if (last_inspection <= 0) last_inspection = Planetarium.GetUniversalTime();
 
 			// cache list of modules
-			modules = part.FindModulesImplementing<PartModule>().FindAll(k => k.moduleName == type);
+			if(type == "ModuleEngines")
+			{
+				// do this generically. there are many different engine types derived from ModuleEngines:
+				// ModuleEnginesFX, ModuleEnginesRF, all the SolverEngines, possibly more
+				// this will also reduce the amount of configuration overhead, no need to duplicate the same
+				// config for stock with ModuleEngines and ModuleEnginesFX
+				modules = new List<PartModule>();
+				var engines = part.FindModulesImplementing<ModuleEngines>();
+                foreach (var engine in engines)
+                {
+					modules.Add(engine);
+                }
+            }
+			else
+			{
+				modules = part.FindModulesImplementing<PartModule>().FindAll(k => k.moduleName == type);
+			}
 
 			// parse crew specs
 			repair_cs = new CrewSpecs(repair);
@@ -740,14 +756,8 @@ namespace KERBALISM
 					return false;
 
 				case "ModuleEngines":
-				case "ModuleEnginesFX":
 					foreach (PartModule m in modules)
 						return (m as ModuleEngines).resultingThrust > 0;
-					return false;
-
-				case "ModuleEnginesRF":
-					foreach (PartModule m in modules)
-						return Lib.ReflectionValue<bool>(m, "ignited");
 					return false;
 			}
 
@@ -795,22 +805,11 @@ namespace KERBALISM
 					break;
 
 				case "ModuleEngines":
-				case "ModuleEnginesFX":
 					if (b)
 					{
 						foreach (PartModule m in modules)
 						{
 							(m as ModuleEngines).Shutdown();
-						}
-					}
-					break;
-
-				case "ModuleEnginesRF":
-					if (b)
-					{
-						foreach (PartModule m in modules)
-						{
-							Lib.ReflectionCall(m, "Shutdown");
 						}
 					}
 					break;
