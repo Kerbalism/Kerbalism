@@ -694,20 +694,24 @@ namespace KERBALISM
 					if (mf.has_inner)
 					{
 						D = mf.Inner_func(p);
-						r = BeltRadiation(D, mf.inner_radius, rb.radiation_inner);
-						radiation += r;
-																														  
-
-						if (r > 0.0) inner_belt = true;
+						if(D < 0)
+						{
+							r = BeltRadiation(D, mf.inner_radius, rb.radiation_inner);
+							radiation += r;
+							// if(v.loaded) Lib.Log("Radiation " + v + " inner " + D.ToString("F3") + " r " + r.ToString("F3") + " " + Lib.HumanReadableRadiation(r));
+							inner_belt |= r > 0.0;
+						}
 					}
 					if (mf.has_outer)
 					{
 						D = mf.Outer_func(p);
-						r = BeltRadiation(D, mf.outer_radius, rb.radiation_outer);
-						radiation += r;
-																														  
-
-						if (r > 0.0) outer_belt = true;
+						if (D < 0)
+						{
+							r = BeltRadiation(D, mf.outer_radius, rb.radiation_outer);
+							radiation += r;
+							// if(v.loaded) Lib.Log("Radiation " + v + " outer " + D.ToString("F3") + " r " + r.ToString("F3") + " " + Lib.HumanReadableRadiation(r));
+							outer_belt |= r > 0.0;
+						}
 					}
 					if (mf.has_pause)
 					{
@@ -806,12 +810,18 @@ namespace KERBALISM
 			return radiation;
 		}
 
-		private static double BeltRadiation(float depth, float radius, double max_radiation, double d = 1.2)
+		public static double BeltRadiation(float depth, float scale, double max_radiation, double d = 1.8)
 		{
+			// depth is the distance from the border of the belt, in planetary radii.
+			// scale should be a value representing the "thickness" of the radiation belt, so that we can
+			// transpose depth to a scalar [0..1]
+			// d should be > 1 and is used to make sure that the core of the radiation belt has a good region
+			// where the max radiation levels are reached
+
 			if (depth >= 0) return 0;
 
 			// d makes sure we have a solid body of maximum radiation around the center of the belt
-			var s = Math.Pow(-d * depth / radius, 3);
+			var s = Math.Pow(d * -depth / scale, 2);
 			return Lib.Clamp(s, 0.0f, 1.0f) * max_radiation;
 		}
 
