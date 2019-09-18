@@ -23,7 +23,6 @@ namespace KERBALISM
 			// store stuff
 			Vector3 p;
 			float D;
-			double r;
 
 			// hard-limit on sample count, to avoid infinite sampling when the distance function is positive everywhere
 			int sample_limit = particle_count * 1000;
@@ -49,17 +48,8 @@ namespace KERBALISM
 
 				if (D <= 0.0f) // if inside
 				{
-#if DEBUG_RADIATION
 					// this displays the exact radiation field border
 					if(D <= 0.0 && D > - thickness)
-					{
-						points.Add(p);
-						++i;
-					}
-#endif
-					// this displays the radiation field beginning at an intensity of 10%
-					r = Radiation.BeltRadiationIntensity(D, 1.0f);
-					if (r > Settings.RadiationFieldLimit && r < Settings.RadiationFieldLimit + 0.3)
 					{
 						points.Add(p);
 						++i;

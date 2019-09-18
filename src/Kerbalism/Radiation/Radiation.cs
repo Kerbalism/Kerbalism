@@ -699,7 +699,7 @@ namespace KERBALISM
 							r = BeltRadiationIntensity(D, mf.inner_radius);
 							radiation += r * rb.radiation_inner;
 							// if(v.loaded) Lib.Log("Radiation " + v + " inner " + D.ToString("F3") + " r " + r.ToString("F3") + " " + Lib.HumanReadableRadiation(r * rb.radiation_inner));
-							inner_belt |= r > Settings.RadiationFieldLimit;
+							inner_belt |= r > 0;
 						}
 					}
 					if (mf.has_outer)
@@ -710,7 +710,7 @@ namespace KERBALISM
 							r = BeltRadiationIntensity(D, mf.outer_radius);
 							radiation += r * rb.radiation_outer;
 							// if(v.loaded) Lib.Log("Radiation " + v + " outer " + D.ToString("F3") + " r " + r.ToString("F3") + " " + Lib.HumanReadableRadiation(r * rb.radiation_outer));
-							outer_belt |= r > Settings.RadiationFieldLimit;
+							outer_belt |= r > 0;
 						}
 					}
 					if (mf.has_pause)
