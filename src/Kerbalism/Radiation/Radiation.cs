@@ -170,7 +170,6 @@ namespace KERBALISM
 		// default radiation model
 		public static RadiationModel none = new RadiationModel();
 	}
-	}
 
 
 	// store data about radiation for a body
