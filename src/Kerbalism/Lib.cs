@@ -30,6 +30,7 @@ namespace KERBALISM
 			StackTrace stackTrace = new StackTrace();
 			UnityEngine.Debug.Log(string.Format("{0} -> debug: {1}.{2} - {3}", "[Kerbalism] ", stackTrace.GetFrame(1).GetMethod().ReflectedType.Name,
 				stackTrace.GetFrame(1).GetMethod().Name, string.Format(message, param)));
+			UnityEngine.Debug.Log(stackTrace);
 		}
 
 		/// <summary> This constant is being set by the build system when a dev release is requested</summary>
@@ -249,10 +250,17 @@ namespace KERBALISM
 		}
 
 		///<summary>stop time warping</summary>
-		public static void StopWarp(int rate = 0)
+		public static void StopWarp(double maxSpeed = 0)
 		{
-			TimeWarp.fetch.CancelAutoWarp();
-			TimeWarp.SetRate(rate, true, false);
+			var warp = TimeWarp.fetch;
+			warp.CancelAutoWarp();
+			int maxRate = 0;
+			for (int i = 0; i < warp.warpRates.Length; ++i)
+			{
+				if (warp.warpRates[i] < maxSpeed)
+					maxRate = i;
+			}
+			TimeWarp.SetRate(maxRate, true, false);
 		}
 
 		///<summary>disable time warping above a specified level</summary>
@@ -785,11 +793,10 @@ namespace KERBALISM
 		}
 
 		///<summary> Pretty-print radiation rate </summary>
-		public static string HumanReadableRadiation(double rad)
+		public static string HumanReadableRadiation(double rad, bool nominal = true)
 		{
-//#if !DEBUG
-			if (rad <= Radiation.Nominal) return "nominal";
-//#endif
+			if (nominal && rad <= Radiation.Nominal) return "nominal";
+
 			rad *= 3600.0;
 			var unit = "rad/h";
 			var prefix = "";

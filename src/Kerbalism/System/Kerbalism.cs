@@ -62,9 +62,14 @@ namespace KERBALISM
 
 			string msg = string.Empty;
 
-			if(GameDatabase.Instance.GetConfigs("Kerbalism").Length > 1)
+			var configNodes = GameDatabase.Instance.GetConfigs("Kerbalism");
+			if (configNodes.Length > 1)
 			{
 				msg += "<color=#FF4500>Multiple configurations detected</color>\nHint: delete KerbalismConfig if you are using a custom config pack.\n\n";
+			}
+			else if(configNodes.Length == 0)
+			{
+				msg += "<color=#FF4500>No configuration found</color>\nYou need KerbalismConfig (or any other Kerbalism config pack).\n\n";
 			}
 
 			if (Features.Habitat && Settings.CheckForCRP)
@@ -165,6 +170,8 @@ namespace KERBALISM
 				// remember savegame id
 				savegame_uid = DB.uid;
 			}
+
+			Kerbalism.gameLoadTime = Time.time;
 		}
 
 		public override void OnSave(ConfigNode node)
@@ -239,31 +246,43 @@ namespace KERBALISM
 				// if loaded
 				if (v.loaded)
 				{
+					//UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Loaded.VesselDataEval");
 					// update the vessel info
 					vd.Evaluate(false, elapsed_s);
+					//UnityEngine.Profiling.Profiler.EndSample();
 
 					// get most used resource
 					ResourceInfo ec = resources.GetResource(v, "ElectricCharge");
 
+					UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Loaded.Radiation");
 					// show belt warnings
 					Radiation.BeltWarnings(v, vd);
 
 					// update storm data
 					Storm.Update(v, vd, elapsed_s);
+					UnityEngine.Profiling.Profiler.EndSample();
 
+					UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Loaded.Comms");
 					Communications.Update(v, vd, ec, elapsed_s);
+					UnityEngine.Profiling.Profiler.EndSample();
 
 					// Habitat equalization
 					ResourceBalance.Equalizer(v);
 
+					UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Loaded.Science");
 					// transmit science data
 					Science.Update(v, vd, resources, elapsed_s);
+					UnityEngine.Profiling.Profiler.EndSample();
 
+					UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Loaded.Profile");
 					// apply rules
 					Profile.Execute(v, vd, resources, elapsed_s);
+					UnityEngine.Profiling.Profiler.EndSample();
 
+					UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Loaded.Resource");
 					// apply deferred requests
 					resources.Sync(v, vd, elapsed_s);
+					UnityEngine.Profiling.Profiler.EndSample();
 
 					// call automation scripts
 					vd.computer.Automate(v, vd, resources);
@@ -301,31 +320,45 @@ namespace KERBALISM
 			// we will update the vessel whose most recent background update is the oldest
 			if (last_v != null)
 			{
+				//UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Unloaded.VesselDataEval");
 				// update the vessel info (high timewarp speeds reevaluation)
 				last_vd.Evaluate(false, last_time);
+				//UnityEngine.Profiling.Profiler.EndSample();
 
 				// get most used resource
 				ResourceInfo last_ec = last_resources.GetResource(last_v, "ElectricCharge");
 
+				UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Unloaded.Radiation");
 				// show belt warnings
 				Radiation.BeltWarnings(last_v, last_vd);
 
 				// update storm data
 				Storm.Update(last_v, last_vd, last_time);
+				UnityEngine.Profiling.Profiler.EndSample();
 
+				UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Unloaded.Comms");
 				Communications.Update(last_v, last_vd, last_ec, last_time);
+				UnityEngine.Profiling.Profiler.EndSample();
 
+				UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Unloaded.Profile");
 				// apply rules
 				Profile.Execute(last_v, last_vd, last_resources, last_time);
+				UnityEngine.Profiling.Profiler.EndSample();
 
+				UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Unloaded.Background");
 				// simulate modules in background
 				Background.Update(last_v, last_vd, last_resources, last_time);
+				UnityEngine.Profiling.Profiler.EndSample();
 
+				UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Unloaded.Science");
 				// transmit science	data
 				Science.Update(last_v, last_vd, last_resources, last_time);
+				UnityEngine.Profiling.Profiler.EndSample();
 
+				UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Unloaded.Resource");
 				// apply deferred requests
 				last_resources.Sync(last_v, last_vd, last_time);
+				UnityEngine.Profiling.Profiler.EndSample();
 
 				// call automation scripts
 				last_vd.computer.Automate(last_v, last_vd, last_resources);
@@ -373,7 +406,9 @@ namespace KERBALISM
 			Highlighter.Update();
 
 			// prepare gui content
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.UI.Update");
 			UI.Update(callbacks.visible);
+			UnityEngine.Profiling.Profiler.EndSample();
 		}
 
 		void OnGUI()
@@ -413,6 +448,9 @@ namespace KERBALISM
 		// last savegame unique id
 		static int savegame_uid;
 
+		/// <summary> real time of last game loaded event </summary>
+		public static float gameLoadTime = 0.0f;
+    
 		public static bool SerenityEnabled { get; private set; }
 	}
 

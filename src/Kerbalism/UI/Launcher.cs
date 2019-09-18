@@ -50,6 +50,10 @@ namespace KERBALISM
 			if (!ui_initialized)
 				return;
 
+			// do nothing if the UI is not shown
+			if (win_rect.width == 0f)
+				return;
+
 			// update planner/monitor content
 			if (Lib.IsEditor())
 			{
@@ -70,7 +74,7 @@ namespace KERBALISM
 				return;
 
 			// render the window
-			if (launcher_btn.toggleButton.Value || launcher_btn.IsHovering || (win_rect.width > 0 && win_rect.Contains(Mouse.screenPos)))
+			if (launcher_btn.toggleButton.Value || launcher_btn.IsHovering || (win_rect.width > 0f && win_rect.Contains(Mouse.screenPos)))
 			{
 				// hard-coded offsets
 				// note: there is a bug in stock that only set appscale properly in non-flight-mode after you go in flight-mode at least once
@@ -129,7 +133,7 @@ namespace KERBALISM
 			else
 			{
 				// set zero area win_rect
-				win_rect.width = 0;
+				win_rect.width = 0f;
 			}
 
 			// get mouse over state

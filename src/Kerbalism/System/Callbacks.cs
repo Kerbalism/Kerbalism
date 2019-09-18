@@ -78,7 +78,6 @@ namespace KERBALISM
 		public IEnumerator NetworkInitialized()
 		{
 			yield return new WaitForSeconds(2);
-			Lib.DebugLog("NetworkInitialized");
 			Communications.NetworkInitialized = true;
 			RemoteTech.Startup();
 		}
@@ -284,13 +283,9 @@ namespace KERBALISM
 		void VesselRollout(ShipConstruct newVessel)
 		{
 			var vessel = FlightGlobals.ActiveVessel;
-			foreach (var experiment in vessel.FindPartModulesImplementing<Experiment>())
+			foreach (var m in vessel.FindPartModulesImplementing<IModuleRollout>())
 			{
-				experiment.OnRollout();
-			}
-			foreach (var hardDrive in vessel.FindPartModulesImplementing<HardDrive>())
-			{
-				hardDrive.OnRollout();
+				m.OnRollout();
 			}
 		}
 

@@ -848,7 +848,7 @@ namespace KERBALISM
 					var r0 = RadiationR0(rb);
 					var r1 = DistanceRadiation(r0, distance);
 
-					Lib.Log("Surface radiation on " + b + " from " + body + ": " + Lib.HumanReadableRadiation(r1) + " distance " + distance);
+					// Lib.Log("Surface radiation on " + b + " from " + body + ": " + Lib.HumanReadableRadiation(r1) + " distance " + distance);
 
 					radiation += r1;
 				}
@@ -860,18 +860,18 @@ namespace KERBALISM
 			// add extern radiation
 			radiation += Settings.ExternRadiation / 3600.0;
 
-			Lib.Log("Radiation subtotal on " + b + ": " + Lib.HumanReadableRadiation(radiation) + ", gamma " + gamma_transparency);
+			// Lib.Log("Radiation subtotal on " + b + ": " + Lib.HumanReadableRadiation(radiation) + ", gamma " + gamma_transparency);
 
 			// scale radiation by gamma transparency if inside atmosphere
 			radiation *= gamma_transparency;
-			Lib.Log("srf scaled on " + b + ": " + Lib.HumanReadableRadiation(radiation));
+			// Lib.Log("srf scaled on " + b + ": " + Lib.HumanReadableRadiation(radiation));
 
 			// add surface radiation of the body itself
 			radiation += DistanceRadiation(RadiationR0(Info(b)), b.Radius);
 
-			Lib.Log("Radiation on " + b + ": " + Lib.HumanReadableRadiation(radiation) + ", own surface radiation " + Lib.HumanReadableRadiation(DistanceRadiation(RadiationR0(Info(b)), b.Radius)));
+			// Lib.Log("Radiation on " + b + ": " + Lib.HumanReadableRadiation(radiation) + ", own surface radiation " + Lib.HumanReadableRadiation(DistanceRadiation(RadiationR0(Info(b)), b.Radius)));
 
-			Lib.Log("radiation " + radiation + " nominal " + Nominal);
+			// Lib.Log("radiation " + radiation + " nominal " + Nominal);
 
 			// clamp radiation to positive range
 			// note: we avoid radiation going to zero by using a small positive value

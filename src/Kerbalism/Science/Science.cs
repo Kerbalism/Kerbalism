@@ -162,17 +162,33 @@ namespace KERBALISM
 		// return name of file being transmitted from vessel specified
 		public static string Transmitting(Vessel v, bool linked)
 		{
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Science.Transmitting");
 			// never transmitting if science system is disabled
-			if (!Features.Science) return string.Empty;
+			if (!Features.Science)
+			{
+				UnityEngine.Profiling.Profiler.EndSample();
+				return string.Empty;
+			}
 
 			// not transmitting if unlinked
-			if (!linked) return string.Empty;
+			if (!linked)
+			{
+				UnityEngine.Profiling.Profiler.EndSample();
+				return string.Empty;
+			}
 
 			// not transmitting if there is no ec left
-			if (!Lib.IsPowered(v)) return string.Empty;
+			if (!Lib.IsPowered(v))
+			{
+				UnityEngine.Profiling.Profiler.EndSample();
+				return string.Empty;
+			}
 
-			foreach(var p in Cache.WarpCache(v).files)
+			foreach (var p in Cache.WarpCache(v).files)
+			{
+				UnityEngine.Profiling.Profiler.EndSample();
 				return p.Key;
+			}
 
 			double now = Planetarium.GetUniversalTime();
 			double maxXmitValue = -1;
@@ -196,15 +212,21 @@ namespace KERBALISM
 				}
 			}
 
+			UnityEngine.Profiling.Profiler.EndSample();
 			return result;
 		}
 
 		// credit science for the experiment subject specified
 		public static float Credit(string subject_id, double size, bool transmitted, ProtoVessel pv)
 		{
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Science.Credit");
 			var credits = Value(subject_id, size);
 
-			if (credits <= 0f) return 0f;
+			if (credits <= 0f)
+			{
+				UnityEngine.Profiling.Profiler.EndSample();
+				return 0f;
+			}
 
 			// credit the science
 			var subject = ResearchAndDevelopment.GetSubjectByID(subject_id);
@@ -230,6 +252,7 @@ namespace KERBALISM
 			}
 
 			// return amount of science credited
+			UnityEngine.Profiling.Profiler.EndSample();
 			return credits;
 		}
 
@@ -307,6 +330,7 @@ namespace KERBALISM
 
 		public static string Generate_subject_id(string experiment_id, Vessel v)
 		{
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Science.Generate_subject_id");
 			var body = v.mainBody;
 			ScienceExperiment experiment = ResearchAndDevelopment.GetExperiment(experiment_id);
 			ExperimentSituation sit = GetExperimentSituation(v);
@@ -319,15 +343,21 @@ namespace KERBALISM
 			}
 
 			// generate subject id
+			UnityEngine.Profiling.Profiler.EndSample();
 			return Lib.BuildString(experiment_id, "@", body.name, sitStr);
 		}
 
 		public static string Generate_subject(string experiment_id, Vessel v)
 		{
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Science.Generate_subject");
 			var subject_id = Generate_subject_id(experiment_id, v);
 
 			// in sandbox, do nothing else
-				if (ResearchAndDevelopment.Instance == null) return subject_id;
+			if (ResearchAndDevelopment.Instance == null)
+			{
+				UnityEngine.Profiling.Profiler.EndSample();
+				return subject_id;
+			}
 
 			// if the subject id was never added to RnD
 			if (ResearchAndDevelopment.GetSubjectByID(subject_id) == null)
@@ -362,11 +392,13 @@ namespace KERBALISM
 				subjects.Add(subject_id, subject);
 			}
 
+			UnityEngine.Profiling.Profiler.EndSample();
 			return subject_id;
 		}
 
 		public static string TestRequirements(string experiment_id, string requirements, Vessel v)
 		{
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Science.TestRequirements");
 			CelestialBody body = v.mainBody;
 			VesselData vd = v.KerbalismData();
 
@@ -480,7 +512,11 @@ namespace KERBALISM
 					case "MaxAsteroidDistance": good = AsteroidDistance(v) <= double.Parse(value); break;
 				}
 
-				if (!good) return s;
+				if (!good)
+				{
+					UnityEngine.Profiling.Profiler.EndSample();
+					return s;
+				}
 			}
 
 			var subject_id = Science.Generate_subject_id(experiment_id, v);
@@ -489,16 +525,25 @@ namespace KERBALISM
 			var sit = GetExperimentSituation(v);
 
 			if (!v.loaded && sit.AtmosphericFlight())
+			{
+				UnityEngine.Profiling.Profiler.EndSample();
 				return "Background flight";
+			}
+			
 
 			if (!sit.IsAvailable(exp))
+			{
+				UnityEngine.Profiling.Profiler.EndSample();
 				return "Invalid situation";
+			}
+			
 
 
 			// At this point we know the situation is valid and the experiment can be done
 			// create it in R&D
 			Science.Generate_subject(experiment_id, v);
 
+			UnityEngine.Profiling.Profiler.EndSample();
 			return string.Empty;
 		}
 

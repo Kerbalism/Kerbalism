@@ -186,35 +186,35 @@ namespace KERBALISM
 			plant_white = GetTexture("plant-white");
 			plant_yellow = GetTexture("plant-yellow");
 
-			station_black = GetTexture("vessels/station-black", 80, 80, 4);
-			station_white = GetTexture("vessels/station-white", 80, 80, 4);
+			station_black = GetTexture("vessels/station-black", 80, 80, 4f);
+			station_white = GetTexture("vessels/station-white", 80, 80, 4f);
 
-			base_black = GetTexture("vessels/base-black", 80, 80, 4);
-			base_white = GetTexture("vessels/base-white", 80, 80, 4);
+			base_black = GetTexture("vessels/base-black", 80, 80, 4f);
+			base_white = GetTexture("vessels/base-white", 80, 80, 4f);
 
-			ship_black = GetTexture("vessels/ship-black", 80, 80, 4);
-			ship_white = GetTexture("vessels/ship-white", 80, 80, 4);
+			ship_black = GetTexture("vessels/ship-black", 80, 80, 4f);
+			ship_white = GetTexture("vessels/ship-white", 80, 80, 4f);
 
-			probe_black = GetTexture("vessels/probe-black", 80, 80, 4);
-			probe_white = GetTexture("vessels/probe-white", 80, 80, 4);
+			probe_black = GetTexture("vessels/probe-black", 80, 80, 4f);
+			probe_white = GetTexture("vessels/probe-white", 80, 80, 4f);
 
 			relay_black = GetTexture("vessels/relay-black", 40, 40, 1.75f);
 			relay_white = GetTexture("vessels/relay-white", 40, 40, 1.75f);
 
-			rover_black = GetTexture("vessels/rover-black", 80, 80, 4);
-			rover_white = GetTexture("vessels/rover-white", 80, 80, 4);
+			rover_black = GetTexture("vessels/rover-black", 80, 80, 4f);
+			rover_white = GetTexture("vessels/rover-white", 80, 80, 4f);
 
-			lander_black = GetTexture("vessels/lander-black", 80, 80, 4);
-			lander_white = GetTexture("vessels/lander-white", 80, 80, 4);
+			lander_black = GetTexture("vessels/lander-black", 80, 80, 4f);
+			lander_white = GetTexture("vessels/lander-white", 80, 80, 4f);
 
-			eva_black = GetTexture("vessels/eva-black", 80, 80, 4);
-			eva_white = GetTexture("vessels/eva-white", 80, 80, 4);
+			eva_black = GetTexture("vessels/eva-black", 80, 80, 4f);
+			eva_white = GetTexture("vessels/eva-white", 80, 80, 4f);
 
 			plane_black = GetTexture("vessels/plane-black", 40, 40, 2.25f);
 			plane_white = GetTexture("vessels/plane-white", 40, 40, 2.25f);
 
-			controller_black = GetTexture("vessels/controller-black", 80, 80, 2.25f);
-			controller_white = GetTexture("vessels/controller-white", 80, 80, 2.25f);
+			controller_black = GetTexture("vessels/controller-black", 80, 80, 4f);
+			controller_white = GetTexture("vessels/controller-white", 80, 80, 4f);
 		}
 
 		/// <summary>Switch icons based on time </summary>

@@ -7,7 +7,7 @@ using UnityEngine;
 namespace KERBALISM
 {
 
-	public class HardDrive : PartModule, IScienceDataContainer, ISpecifics, IModuleInfo, IPartMassModifier, IPartCostModifier
+	public class HardDrive : PartModule, IScienceDataContainer, ISpecifics, IModuleInfo, IPartMassModifier, IPartCostModifier, IModuleRollout
 	{
 		[KSPField] public double dataCapacity = -1;             // base drive capacity, in Mb. -1 = unlimited
 		[KSPField] public int sampleCapacity = -1;              // base drive capacity, in slots. -1 = unlimited
@@ -157,8 +157,8 @@ namespace KERBALISM
 					foreach (var c in dataCapacities)
 						if (c.Key == dataCapacityUI)
 						{
+							update |= effectiveDataCapacity != c.Value;
 							effectiveDataCapacity = c.Value;
-							update = true;
 						}
 				}
 
@@ -167,8 +167,8 @@ namespace KERBALISM
 					foreach (var c in sampleCapacities)
 						if (c.Key == sampleCapacityUI)
 						{
+							update |= effectiveSampleCapacity != c.Value;
 							effectiveSampleCapacity = c.Value;
-							update = true;
 						}
 				}
 
