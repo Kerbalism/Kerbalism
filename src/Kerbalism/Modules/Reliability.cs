@@ -210,7 +210,6 @@ namespace KERBALISM
 						}
 					}
 
-					Lib.Log(part.partInfo.title + " rated radiation " + rated_radiation);
 					if(rated_radiation > 0)
 					{
 						var rated = quality ? rated_radiation * Settings.QualityScale : rated_radiation;
