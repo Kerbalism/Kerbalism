@@ -122,10 +122,13 @@ namespace KERBALISM
 				if (Lib.RandomDouble() < turnon_failure_probability / q)
 				{
 					fail = true;
+#if DEBUG
+					Lib.DebugLog("Ignition check: " + part.partInfo.title + " ignitions " + ignitions + " turnon failure");
+#endif
 				}
 			}
 
-			// Lib.DebugLog("Ignition check: " + part.partInfo.title + " ignitions " + ignitions + " turnon failure " + fail);
+			// 
 
 			if (rated_ignitions > 0)
 			{
@@ -159,7 +162,7 @@ namespace KERBALISM
 					next += Lib.RandomDouble() * 10;
 				}
 
-				FlightLogger.fetch?.LogEvent("Engine failure on ignition");
+				FlightLogger.fetch?.LogEvent(part.partInfo.title + " failure on ignition");
 			}
 			return fail;
 		}
@@ -179,6 +182,8 @@ namespace KERBALISM
 					}
 				}
 
+				Status = string.Empty;
+
 				// update ui
 				if (broken)
 				{
@@ -187,28 +192,39 @@ namespace KERBALISM
 					  : "<color=red>Critical failure</color>";
 					Fields["Status"].guiActive = true;
 				}
-				else if (rated_operation_duration > 0 || rated_ignitions > 0)
-				{
-					Status = string.Empty;
-					if(rated_operation_duration > 0)
-					{
-						double effective_duration = EffectiveDuration(quality, rated_operation_duration);
-						Status = Lib.BuildString("Remaining burn: ", Lib.HumanReadableDuration(Math.Max(0, effective_duration - operation_duration)));
-					}
-					if(rated_ignitions > 0)
-					{
-						int effective_ignitions = EffectiveIgnitions(quality, rated_ignitions);
-						Status = Lib.BuildString(Status,
-							(string.IsNullOrEmpty(Status) ? "" : ", "),
-							"ignitions: ", Math.Max(0, effective_ignitions - ignitions).ToString());
-					}
-
-					Fields["Status"].guiActive = true;
-				}
 				else
 				{
-					Fields["Status"].guiActive = false;
+					if (rated_operation_duration > 0 || rated_ignitions > 0)
+					{
+						if (rated_operation_duration > 0)
+						{
+							double effective_duration = EffectiveDuration(quality, rated_operation_duration);
+							Status = Lib.BuildString("Remaining burn: ", Lib.HumanReadableDuration(Math.Max(0, effective_duration - operation_duration)));
+						}
+						if (rated_ignitions > 0)
+						{
+							int effective_ignitions = EffectiveIgnitions(quality, rated_ignitions);
+							Status = Lib.BuildString(Status,
+								(string.IsNullOrEmpty(Status) ? "" : ", "),
+								"ignitions: ", Math.Max(0, effective_ignitions - ignitions).ToString());
+						}
+					}
+
+					if(rated_radiation > 0)
+					{
+						var r = quality ? rated_radiation * Settings.QualityScale : rated_radiation;
+						var rad = vessel.KerbalismData().EnvRadiation - r / 3600.0;
+#if DEBUG
+						Lib.Log(part.partInfo.title + " rated " + Lib.HumanReadableRadiation(r / 3600.0) + " current " + Lib.HumanReadableRadiation(vessel.KerbalismData().EnvRadiation));
+#endif
+						if(rad > 0)
+						{
+							Status = Lib.BuildString(Status, (string.IsNullOrEmpty(Status) ? "" : ", "), Lib.Color("rad. exceeded", Lib.KColor.Orange));
+						}
+					}
 				}
+
+				Fields["Status"].guiActive = !string.IsNullOrEmpty(Status);
 
 				Events["Inspect"].active = !broken && !needMaintenance;
 				Events["Repair"].active = repair_cs && (broken || needMaintenance) && !critical;
@@ -254,6 +270,14 @@ namespace KERBALISM
 						(string.IsNullOrEmpty(Status) ? "" : ", "),
 						"ignitions: ", effective_ignitions.ToString());
 				}
+
+				if (rated_radiation > 0)
+				{
+					var r = quality ? rated_radiation * Settings.QualityScale : rated_radiation;
+					Status = Lib.BuildString(Status,
+						(string.IsNullOrEmpty(Status) ? "" : ", "),
+						"radiation: ", Lib.HumanReadableRadiation(r));
+				}
 			}
 		}
 
@@ -276,13 +300,16 @@ namespace KERBALISM
 				}
 
 				var decay = RadiationDecay(quality, vessel.KerbalismData().EnvRadiation, Kerbalism.elapsed_s, rated_radiation, radiation_decay_rate);
+#if DEBUG
+				if(decay > 0) Lib.Log(part.partInfo.title + " radiation decay " + decay);
+#endif
 				next -= decay;
 
 				// if it has failed, trigger malfunction
 				if (now > next)
 				{
 #if DEBUG
-					Lib.Log("Reliablity: background MTBF breakdown for " + part);
+					Lib.Log("Reliablity: background MTBF breakdown for " + part.partInfo.title);
 #endif
 					Break();
 				}
@@ -342,7 +369,7 @@ namespace KERBALISM
 
 					fail_duration = guaranteed_operation + f * p;
 #if DEBUG
-					Lib.Log(part + " will fail after " + Lib.HumanReadableDuration(fail_duration) + " burn time");
+					Lib.Log(part.partInfo.title + " will fail after " + Lib.HumanReadableDuration(fail_duration) + " burn time");
 #endif
 				}
 
@@ -352,9 +379,9 @@ namespace KERBALISM
 					enforce_breakdown = true;
 					explode = Lib.RandomDouble() < 0.35;
 #if DEBUG
-					Lib.Log("Reliability: " + part + " fails because of overstress");
+					Lib.Log("Reliability: " + part.partInfo.title + " fails because of overstress");
 #endif
-					FlightLogger.fetch?.LogEvent("Engine failed because of overstress");
+					FlightLogger.fetch?.LogEvent(part.partInfo.title + " failed because of overstress");
 				}
 			}
 
@@ -389,6 +416,10 @@ namespace KERBALISM
 				var decay = RadiationDecay(quality, rad, elapsed_s, reliability.rated_radiation, reliability.radiation_decay_rate);
 				if(decay > 0)
 				{
+#if DEBUG
+					Lib.Log("radiation decay " + decay);
+#endif
+
 					next -= decay;
 					Lib.Proto.Set(m, "next", next);
 				}

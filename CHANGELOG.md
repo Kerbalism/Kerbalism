@@ -49,6 +49,7 @@
 * Lead was replaced by a lighter alloy composite as a shielding material. For our type of radiation, it provides the same shielding effect with less mass. (Sir Mortimer)
 * Warn users about incompatible mods or missing CommunityResourcePack (Sir Mortimer)
 * Dropped support for KSP 1.4 (Sir Mortimer)
+* New radiation belt model (EagleEyeLogic)
 
 ## v3.0.2 for all versions of KSP from 1.4.0 to 1.7.x
 
