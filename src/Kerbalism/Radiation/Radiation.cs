@@ -189,7 +189,9 @@ namespace KERBALISM
 		{
 			name = Lib.ConfigValue(node, "name", "");
 			radiation_inner = Lib.ConfigValue(node, "radiation_inner", 0.0) / 3600.0;
+			radiation_inner_gradient = Lib.ConfigValue(node, "radiation_inner_gradient", 3.3);
 			radiation_outer = Lib.ConfigValue(node, "radiation_outer", 0.0) / 3600.0;
+			radiation_outer_gradient = Lib.ConfigValue(node, "radiation_outer_gradient", 2.2);
 			radiation_pause = Lib.ConfigValue(node, "radiation_pause", 0.0) / 3600.0;
 			radiation_surface = Lib.ConfigValue(node, "radiation_surface", -1.0) / 3600.0;
 			solar_cycle = Lib.ConfigValue(node, "solar_cycle", -1.0);
@@ -234,7 +236,9 @@ namespace KERBALISM
 
 		public string name;            // name of the body
 		public double radiation_inner; // rad/h inside inner belt
+		public double radiation_inner_gradient; // how quickly the radiation rises as you go deeper into the belt
 		public double radiation_outer; // rad/h inside outer belt
+		public double radiation_outer_gradient; // how quickly the radiation rises as you go deeper into the belt
 		public double radiation_pause; // rad/h inside magnetopause
 		public double radiation_surface; // rad/h of gamma radiation on the surface
 		public double radiation_r0 = 0.0; // rad/h of gamma radiation at the center of the body (calculated from radiation_surface)
@@ -664,7 +668,7 @@ namespace KERBALISM
 			// store stuff
 			Space gsm;
 			Vector3 p;
-			float D;
+			double D;
 			double r;
 
 			// accumulate radiation
@@ -677,7 +681,8 @@ namespace KERBALISM
 				RadiationBody rb = Info(body);
 				RadiationModel mf = rb.model;
 
-				//if (v.loaded) Lib.Log("Radiation " + v + " for " + body + ": " + Lib.HumanReadableRadiation(radiation));
+				// activity is [-0.15..1.05]
+				var activity = rb.SolarActivity(false);
 
 				if (mf.Has_field())
 				{
@@ -694,24 +699,22 @@ namespace KERBALISM
 					if (mf.has_inner)
 					{
 						D = mf.Inner_func(p);
-						if(D < 0)
-						{
-							r = BeltRadiationIntensity(D, mf.inner_radius);
-							radiation += r * rb.radiation_inner;
-							// if(v.loaded) Lib.Log("Radiation " + v + " inner " + D.ToString("F3") + " r " + r.ToString("F3") + " " + Lib.HumanReadableRadiation(r * rb.radiation_inner));
-							inner_belt |= r > 0;
-						}
+						inner_belt |= D < 0;
+
+						// allow for radiation field to grow/shrink with solar activity
+						D -= activity * 0.25 / mf.inner_radius;
+						r = RadiationInBelt(D, mf.inner_radius, rb.radiation_inner_gradient);
+						radiation += r * rb.radiation_inner * (1 + activity * 0.3);
 					}
 					if (mf.has_outer)
 					{
 						D = mf.Outer_func(p);
-						if (D < 0)
-						{
-							r = BeltRadiationIntensity(D, mf.outer_radius);
-							radiation += r * rb.radiation_outer;
-							// if(v.loaded) Lib.Log("Radiation " + v + " outer " + D.ToString("F3") + " r " + r.ToString("F3") + " " + Lib.HumanReadableRadiation(r * rb.radiation_outer));
-							outer_belt |= r > 0;
-						}
+						outer_belt |= D < 0;
+
+						// allow for radiation field to grow/shrink with solar activity
+						D -= activity * 0.25 / mf.outer_radius;
+						r = RadiationInBelt(D, mf.outer_radius, rb.radiation_outer_gradient);
+						radiation += r * rb.radiation_outer * (1 + activity * 0.3);
 					}
 					if (mf.has_pause)
 					{
@@ -719,11 +722,7 @@ namespace KERBALISM
 						p = gsm.Transform_in(scaled_position);
 						D = mf.Pause_func(p);
 
-						//if (v.loaded) Lib.Log("Radiation in pause of " + body + ": " + Lib.HumanReadableRadiation(rb.RadiationPause()));
-
 						radiation += Lib.Clamp(D / -0.1332f, 0.0f, 1.0f) * rb.RadiationPause();
-
-						//if (v.loaded) Lib.Log("Radiation " + v + " pause of " + body + ": " + Lib.HumanReadableRadiation(radiation));
 
 						magnetosphere |= D < 0.0f && !Lib.IsSun(rb.body); //< ignore heliopause
 						interstellar |= D > 0.0f && Lib.IsSun(rb.body); //< outside heliopause
@@ -810,18 +809,15 @@ namespace KERBALISM
 			return radiation;
 		}
 
-		public static double BeltRadiationIntensity(float depth, float scale)
+		/// <summary>
+		/// Return the factor for the radiation in a belt at the given depth
+		/// </summary>
+		/// <param name="depth">distance from the border of the belt, in panetary radii. negative while in belt.</param>
+		/// <param name="scale">represents the 'thickness' of the belt (radius of the outer torus)</param>
+		/// <param name="gradient">represents how steeply the value will increase</param>
+		public static double RadiationInBelt(double depth, double scale, double gradient = 1.5)
 		{
-			// depth is the distance from the border of the belt, in planetary radii.
-			// scale should be a value representing the "thickness" of the radiation belt, so that we can
-			// transpose depth to a scalar [0..1]
-			// where the max radiation levels are reached
-
-			if (depth >= 0) return 0;
-
-			// factor 1.8 ensures we have a solid body of maximum radiation around the center of the belt
-			var s = Math.Pow(1.8 * -depth / scale, 2);
-			return Lib.Clamp(s, 0.0f, 1.0f);
+			return Lib.Clamp(gradient * -depth / scale, 0.0, 1.0);
 		}
 
 		// return the surface radiation for the body specified (used by body info panel)
@@ -832,7 +828,7 @@ namespace KERBALISM
 			// store stuff
 			Space gsm;
 			Vector3 p;
-			float D;
+			double D;
 
 			// transform to local space once
 			Vector3d position = ScaledSpace.LocalToScaledSpace(b.position);
@@ -844,6 +840,9 @@ namespace KERBALISM
 			{
 				RadiationBody rb = Info(body);
 				RadiationModel mf = rb.model;
+
+				var activity = rb.SolarActivity(false);
+
 				if (mf.Has_field())
 				{
 					// generate radii-normalized GSM space
@@ -856,12 +855,20 @@ namespace KERBALISM
 					if (mf.has_inner)
 					{
 						D = mf.Inner_func(p);
-						radiation += BeltRadiationIntensity(D, mf.inner_radius) * rb.radiation_inner;
+						// allow for radiation field to grow/shrink with solar activity
+						D -= activity * 0.25 / mf.inner_radius;
+
+						var r = RadiationInBelt(D, mf.inner_radius, rb.radiation_inner_gradient);
+						radiation += r * rb.radiation_inner * (1 + activity * 0.3);
 					}
 					if (mf.has_outer)
 					{
 						D = mf.Outer_func(p);
-						radiation += BeltRadiationIntensity(D, mf.outer_radius) * rb.radiation_outer;
+						// allow for radiation field to grow/shrink with solar activity
+						D -= activity * 0.25 / mf.outer_radius;
+
+						var r = RadiationInBelt(D, mf.outer_radius, rb.radiation_outer_gradient);
+						radiation += r * rb.radiation_outer * (1 + activity * 0.3);
 					}
 					if (mf.has_pause)
 					{
