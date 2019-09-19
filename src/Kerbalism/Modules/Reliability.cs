@@ -273,7 +273,7 @@ namespace KERBALISM
 					var r = quality ? rated_radiation * Settings.QualityScale : rated_radiation;
 					Status = Lib.BuildString(Status,
 						(string.IsNullOrEmpty(Status) ? "" : ", "),
-						"radiation: ", Lib.HumanReadableRadiation(r));
+						Lib.HumanReadableRadiation(r / 3600.0));
 				}
 			}
 		}
