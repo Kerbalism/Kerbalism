@@ -79,11 +79,8 @@ namespace KERBALISM
 				return Lib.Color("needs service", Lib.KColor.Yellow);
 			}
 
-			if(ri.mtbf <= 0)
-			{
-				if (ri.rel_duration > 0.75) return Lib.Color("operation duration", Lib.KColor.Yellow);
-				if (ri.rel_ignitions > 0.95) return Lib.Color("ignition limit", Lib.KColor.Yellow);
-			}
+			if (ri.rel_duration > 0.75) return Lib.Color("operation duration", Lib.KColor.Yellow);
+			if (ri.rel_ignitions > 0.95) return Lib.Color("ignition limit", Lib.KColor.Yellow);
 
 			return Lib.Color("good", Lib.KColor.Green);
 		}

@@ -187,9 +187,7 @@ namespace KERBALISM
 				// update ui
 				if (broken)
 				{
-					Status = !critical
-					  ? "<color=yellow>Malfunction</color=yellow>"
-					  : "<color=red>Critical failure</color>";
+					Status = critical ? Lib.Color("Critical failure", Lib.KColor.Red) : Lib.Color("Malfunction", Lib.KColor.Yellow);
 					Fields["Status"].guiActive = true;
 				}
 				else
@@ -200,6 +198,7 @@ namespace KERBALISM
 						{
 							double effective_duration = EffectiveDuration(quality, rated_operation_duration);
 							Status = Lib.BuildString("Remaining burn: ", Lib.HumanReadableDuration(Math.Max(0, effective_duration - operation_duration)));
+							Fields["Status"].guiActive = true;
 						}
 						if (rated_ignitions > 0)
 						{
@@ -207,24 +206,22 @@ namespace KERBALISM
 							Status = Lib.BuildString(Status,
 								(string.IsNullOrEmpty(Status) ? "" : ", "),
 								"ignitions: ", Math.Max(0, effective_ignitions - ignitions).ToString());
+							Fields["Status"].guiActive = true;
 						}
 					}
 
+					Lib.Log(part.partInfo.title + " rated radiation " + rated_radiation);
 					if(rated_radiation > 0)
 					{
-						var r = quality ? rated_radiation * Settings.QualityScale : rated_radiation;
-						var rad = vessel.KerbalismData().EnvRadiation - r / 3600.0;
-#if DEBUG
-						Lib.Log(part.partInfo.title + " rated " + Lib.HumanReadableRadiation(r / 3600.0) + " current " + Lib.HumanReadableRadiation(vessel.KerbalismData().EnvRadiation));
-#endif
-						if(rad > 0)
+						var rated = quality ? rated_radiation * Settings.QualityScale : rated_radiation;
+						var current = vessel.KerbalismData().EnvRadiation * 3600.0;
+						if(rated < current)
 						{
-							Status = Lib.BuildString(Status, (string.IsNullOrEmpty(Status) ? "" : ", "), Lib.Color("rad. exceeded", Lib.KColor.Orange));
+							Status = Lib.BuildString(Status, (string.IsNullOrEmpty(Status) ? "" : ", "), Lib.Color("Radiation too high", Lib.KColor.Orange));
+							Fields["Status"].guiActive = true;
 						}
 					}
 				}
-
-				Fields["Status"].guiActive = !string.IsNullOrEmpty(Status);
 
 				Events["Inspect"].active = !broken && !needMaintenance;
 				Events["Repair"].active = repair_cs && (broken || needMaintenance) && !critical;
@@ -300,9 +297,6 @@ namespace KERBALISM
 				}
 
 				var decay = RadiationDecay(quality, vessel.KerbalismData().EnvRadiation, Kerbalism.elapsed_s, rated_radiation, radiation_decay_rate);
-#if DEBUG
-				if(decay > 0) Lib.Log(part.partInfo.title + " radiation decay " + decay);
-#endif
 				next -= decay;
 
 				// if it has failed, trigger malfunction
@@ -416,10 +410,6 @@ namespace KERBALISM
 				var decay = RadiationDecay(quality, rad, elapsed_s, reliability.rated_radiation, reliability.radiation_decay_rate);
 				if(decay > 0)
 				{
-#if DEBUG
-					Lib.Log("radiation decay " + decay);
-#endif
-
 					next -= decay;
 					Lib.Proto.Set(m, "next", next);
 				}
