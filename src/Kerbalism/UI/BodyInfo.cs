@@ -119,7 +119,7 @@ namespace KERBALISM
 				outer = "unknown";
 
 			if (rb.pause_visible)
-				pause = rb.model.has_pause ? "~" + Lib.HumanReadableRadiation(Math.Max(0, rad + rb.radiation_pause)) : "n/a";
+				pause = rb.model.has_pause ? "∆" + Lib.HumanReadableRadiation(Math.Abs(rb.radiation_pause)) : "n/a";
 			else
 				pause = "unknown";
 
