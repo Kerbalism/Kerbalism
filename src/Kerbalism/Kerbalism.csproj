@@ -262,7 +262,6 @@
     <Compile Include="Comms\AntennaInfoSerenity.cs" />
     <Compile Include="Utility\Serenity.cs" />
     <Compile Include="Patches\VesselRecovery_OnVesselRecovered.cs" />
-    <Compile Include="Database\ScienceLog.cs" />
     <Compile Include="Radiation\Radiation.cs" />
     <Compile Include="Radiation\StormData.cs" />
     <Compile Include="Radiation\Storm.cs" />
@@ -275,9 +274,7 @@
   <!-- ///////////////////////////////////////////////////// -->
   <!-- ////////// IMPORT DEFAULT MS BUILD PROCESS ////////// -->
   <!-- ///////////////////////////////////////////////////// -->
-  <ItemGroup>
-    <Folder Include="Radiation\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- This target is called before the build, you can use it for debugging the build system -->
   <Target Name="BeforeBuild">

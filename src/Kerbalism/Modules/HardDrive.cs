@@ -337,14 +337,12 @@ namespace KERBALISM
 			foreach (var pair in drive.files)
 			{
 				File file = pair.Value;
-				var exp = Science.Experiment(pair.Key);
-				data.Add(new ScienceData((float)file.size, 1.0f, 1.0f, pair.Key, exp.FullName(pair.Key)));
+				data.Add(new ScienceData((float)file.size, 1.0f, 1.0f, pair.Key, Science.Experiment(pair.Key).SubjectName));
 			}
 			foreach (var pair in drive.samples)
 			{
 				Sample sample = pair.Value;
-				var exp = Science.Experiment(pair.Key);
-				data.Add(new ScienceData((float)sample.size, 0.0f, 0.0f, pair.Key, exp.FullName(pair.Key)));
+				data.Add(new ScienceData((float)sample.size, 0.0f, 0.0f, pair.Key, Science.Experiment(pair.Key).SubjectName));
 			}
 			return data.ToArray();
 		}
@@ -363,7 +361,7 @@ namespace KERBALISM
 			{
 				var experimentInfo = Science.Experiment(data.subjectID);
 				var sampleMass = Science.GetSampleMass(data.subjectID);
-				var mass = sampleMass / experimentInfo.max_amount * data.dataAmount;
+				var mass = sampleMass / experimentInfo.MaxAmount * data.dataAmount;
 
 				result = drive.Record_sample(data.subjectID, data.dataAmount, mass);
 			}
@@ -374,7 +372,7 @@ namespace KERBALISM
 			// remove the data
 			if (data.baseTransmitValue > float.Epsilon || data.transmitBonus > double.Epsilon)
 			{
-				drive.Delete_file(data.subjectID, data.dataAmount, null);
+				drive.Delete_file(data.subjectID, data.dataAmount);
 			}
 			else
 			{

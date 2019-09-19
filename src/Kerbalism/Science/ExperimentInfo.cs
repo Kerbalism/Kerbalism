@@ -12,42 +12,151 @@ namespace KERBALISM
 	/// </summary>
 	public sealed class ExperimentInfo
 	{
+		/// <summary> experiment definition </summary>
+		private ScienceExperiment expdef;
+
+		/// <summary> experiment identifier </summary>
+		public string ExperimentId { get; private set; }
+
+		/// <summary> UI friendly name of the experiment </summary>
+		public string Name { get; private set; }
+
+		/// <summary> max data amount for the experiment </summary>
+		public double MaxAmount { get; private set; }
+
+		/// <summary> experiment situation mask </summary>
+		public uint SituationMask { get; private set; }
+
+		/// <summary> experiment biome mask </summary>
+		public uint BiomeMask { get; private set; }
+
+		/// <summary> if true, this ExperimentInfo is about a specific subject, and all Subject* properties can be used </summary>
+		public bool IsSubject { get; private set; }
+
+		/// <summary> subject identifier </summary>
+		public string SubjectId { get; private set; }
+
+		/// <summary> full description of the subject </summary>
+		public string SubjectName { get; private set; }
+
+		/// <summary> subject situation </summary>
+		public string SubjectSituation { get; private set; }
+
+		/// <summary> is the subject completed ? </summary>
+		public bool SubjectIsCompleted { get; set; }
+
+		/// <summary> subject science points per MB of data </summary>
+		public double SubjectSciencePerMB => ScienceValue / MaxAmount;
+
+		/// <summary> science points collected in all vessels but not yet recovered or transmitted </summary>
+		public double SubjectScienceCollectedInFlight { get; private set; }
+
+		/// <summary> stock science subject definition, will be null before an experiment create it</summary>
+		public ScienceSubject StockSubject
+			=> ResearchAndDevelopment.GetSubjectByID(SubjectId);
+
+		/// <summary> science points recovered or transmitted </summary>
+		public float ScienceCollectedInKSC
+			=> StockSubject == null ? 0f : StockSubject.science * HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier;
+
+		/// <summary> all science points recovered, transmitted or collected in flight </summary>
+		public float ScienceCollectedTotal
+			=> (float)SubjectScienceCollectedInFlight + ScienceCollectedInKSC;
+
+		/// <summary> total science value of the subject. Will be PositiveInfinity until an experiment create the subject </summary>
+		public float ScienceValue
+			=> StockSubject == null ? float.PositiveInfinity : StockSubject.scienceCap * HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier;
+
+		/// <summary> science value remaining to collect. Will be PositiveInfinity until an experiment create the subject </summary>
+		public float ScienceRemainingToCollect
+			=> ScienceValue - ScienceCollectedTotal;
+
+		/// <summary> science value remaining to retriecve. Will be PositiveInfinity until an experiment create the subject </summary>
+		public float ScienceRemainingToRetrieve
+			=> ScienceValue - ScienceCollectedInKSC;
+
+		/// <summary> percentage [0;1] of science collected </summary>
+		public float PercentCollectedTotal => ScienceCollectedTotal / ScienceValue;
+
 		/// <summary>
-		/// Creates information for an experiment with the specified identifier
+		/// Creates information for an experiment or a subject with the specified identifier
 		/// </summary>
 		public ExperimentInfo(string subject_id)
 		{
+			SubjectId = subject_id;
+
 			// get experiment id out of subject id
 			int i = subject_id.IndexOf('@');
-			id = i > 0 ? subject_id.Substring(0, i) : subject_id;
+			IsSubject = i > 0;
+
+			ExperimentId = IsSubject ? subject_id.Substring(0, i) : subject_id;
 
 			// get experiment definition
 			// - available even in sandbox
 			try {
-				expdef = ResearchAndDevelopment.GetExperiment(id);
+				expdef = ResearchAndDevelopment.GetExperiment(ExperimentId);
 			} catch(Exception e) {
 				Lib.Log("ERROR: failed to load experiment " + subject_id + ": " + e.Message);
 				throw e;
 			}
 
-			// deduce short name for the subject
-			name = expdef != null ? expdef.experimentTitle : Lib.UppercaseFirst(id);
+			// deduce short name for the experiment
+			Name = expdef != null ? expdef.experimentTitle : Lib.UppercaseFirst(ExperimentId);
 
 			// deduce max data amount
 			// use scienceCap here, not baseValue. this is because of Serenity,
 			// for deployed experiments the baseValue has the hourly rate and scienceCap the
 			// total value. This relies on a config patch that sets scienceCap = baseValue
 			// for all non-Serenity experiments.
-			max_amount = expdef != null ? expdef.scienceCap * expdef.dataScale : double.MaxValue;
+			MaxAmount = expdef != null ? expdef.scienceCap * expdef.dataScale : float.MaxValue;
 
-			situationMask = expdef.situationMask;
-			biomeMask = expdef.biomeMask;
+			SituationMask = expdef.situationMask;
+			BiomeMask = expdef.biomeMask;
+
+			SubjectScienceCollectedInFlight = 0f;
+			SubjectSituation = Situation(subject_id);
+			SubjectName = Lib.BuildString(Name, " (", SubjectSituation, ")");
+
+			// we collect data only if the subject exists
+			if (StockSubject != null)
+			{
+				SubjectIsCompleted = ScienceRemainingToRetrieve < 0.1f;
+
+				foreach (Drive drive in DB.drives.Values)
+				{
+					if (drive.files.ContainsKey(subject_id))
+						SubjectScienceCollectedInFlight += (float)(drive.files[subject_id].size * SubjectSciencePerMB);
+
+					if (drive.samples.ContainsKey(subject_id))
+						SubjectScienceCollectedInFlight += (float)(drive.samples[subject_id].size * SubjectSciencePerMB);
+				}
+			}
+		}
+
+		/// <summary> add data to the in-flight collected science </summary>
+		public void AddDataCollectedInFlight(double dataAmount)
+		{
+			SubjectScienceCollectedInFlight += dataAmount * SubjectSciencePerMB;
+		}
+
+		/// <summary> remove data from the in-flight collected science </summary>
+		public void RemoveDataCollectedInFlight(double dataAmount)
+		{
+			SubjectScienceCollectedInFlight -= dataAmount * SubjectSciencePerMB;
+			if (SubjectScienceCollectedInFlight < 0f) SubjectScienceCollectedInFlight = 0f;
+		}
+
+		/// <summary> remove science points from the in-flight collected science </summary>
+		public void RemoveDataCollectedInFlight(float credits)
+		{
+			SubjectScienceCollectedInFlight -= credits;
+			if (SubjectScienceCollectedInFlight < 0f) SubjectScienceCollectedInFlight = 0f;
 		}
 
 		/// <summary>
 		/// returns  a pretty printed situation description for the UI
 		/// </summary>
-		public static string Situation(string full_subject_id)
+		private string Situation(string full_subject_id)
 		{
 			int i = full_subject_id.IndexOf('@');
 			var situation = full_subject_id.Length < i + 2
@@ -55,11 +164,6 @@ namespace KERBALISM
 				: Lib.SpacesOnCaps(full_subject_id.Substring(i + 1));
 			situation = situation.Replace("Srf ", string.Empty).Replace("In ", string.Empty);
 			return situation;
-		}
-
-		public string FullName(string full_subject_id)
-		{
-			return Lib.BuildString(name, " (", Situation(full_subject_id), ")");
 		}
 
 		public List<string> Situations()
@@ -93,29 +197,7 @@ namespace KERBALISM
 			return result;
 		}
 
-		/// <summary>
-		/// experiment identifier
-		/// </summary>
-		public string id;
 
-		/// <summary>
-		/// experiment definition
-		/// </summary>
-		private ScienceExperiment expdef;
-
-		/// <summary>
-		/// short description of the experiment
-		/// </summary>
-		public string name;
-
-		/// <summary>
-		/// max data amount for the experiment
-		/// </summary>
-		public double max_amount;
-
-
-		public uint situationMask;
-		public uint biomeMask;
 	}
 
 

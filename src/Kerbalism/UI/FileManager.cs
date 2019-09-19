@@ -115,38 +115,56 @@ namespace KERBALISM
 		static void Render_file(Panel p, uint partId, string filename, File file, Drive drive, bool short_strings, Vessel v)
 		{
 			// get experiment info
-			ExperimentInfo exp = Science.Experiment(filename);
-			double rate = v.KerbalismData().Connection.rate;
+			ExperimentInfo expInfo = Science.Experiment(filename);
 
 			// render experiment name
 			string exp_label = Lib.BuildString
 			(
 			  "<b>",
-			  Lib.Ellipsis(exp.name, Styles.ScaleStringLength(short_strings ? 24 : 38)),
+			  Lib.Ellipsis(expInfo.Name, Styles.ScaleStringLength(short_strings ? 24 : 38)),
 			  "</b> <size=", Styles.ScaleInteger(10).ToString(), ">",
-			  Lib.Ellipsis(ExperimentInfo.Situation(filename), Styles.ScaleStringLength((short_strings ? 32 : 62) - Lib.Ellipsis(exp.name, Styles.ScaleStringLength(short_strings ? 24 : 38)).Length)),
+			  Lib.Ellipsis(expInfo.SubjectSituation, Styles.ScaleStringLength((short_strings ? 32 : 62) - Lib.Ellipsis(expInfo.Name, Styles.ScaleStringLength(short_strings ? 24 : 38)).Length)),
 			  "</size>"
 			);
 			string exp_tooltip = Lib.BuildString
 			(
-			  exp.name, "\n",
-			  Lib.Color(ExperimentInfo.Situation(filename), Lib.KColor.LightGrey)
+			  expInfo.Name, "\n",
+			  Lib.Color(expInfo.SubjectSituation, Lib.KColor.LightGrey)
 			);
 
-			double exp_value = Science.Value(filename, file.size);
-			if (exp_value >= 0.1) exp_tooltip = Lib.BuildString(exp_tooltip, "\n<b>", Lib.HumanReadableScience(exp_value), "</b>");
-			if (rate > 0) exp_tooltip = Lib.BuildString(exp_tooltip, "\n<i>" , Lib.HumanReadableDuration(file.size / rate) , "</i>");
-			if (!string.IsNullOrEmpty(file.resultText)) exp_tooltip = Lib.BuildString(exp_tooltip, "\n", Lib.WordWrapAtLength(file.resultText, 50));
+			double exp_value = file.size * expInfo.SubjectSciencePerMB;
+			if (expInfo.ScienceRemainingToRetrieve > 0f && file.size > 0.0)
+				exp_tooltip = Lib.BuildString(exp_tooltip, "\n<b>", Lib.HumanReadableScience(file.size * expInfo.SubjectSciencePerMB), "</b>");
+			if (file.transmitRate > 0.0)
+				exp_tooltip = Lib.Color(Lib.BuildString(exp_tooltip, "\nTransmitting at ", Lib.HumanReadableDataRate(file.transmitRate), " : <i>" , Lib.HumanReadableCountdown(file.size / file.transmitRate) , "</i>"), Lib.KColor.Cyan);
+			else if (v.KerbalismData().Connection.rate > 0.0)
+				exp_tooltip = Lib.BuildString(exp_tooltip, "\nTransmit duration : <i>", Lib.HumanReadableDuration(file.size / v.KerbalismData().Connection.rate), "</i>");
+			if (!string.IsNullOrEmpty(file.resultText))
+				exp_tooltip = Lib.BuildString(exp_tooltip, "\n", Lib.WordWrapAtLength(file.resultText, 50));
 
-			p.AddContent(exp_label, Lib.HumanReadableDataSize(file.size), exp_tooltip, (Action)null, () => Highlighter.Set(partId, Color.cyan));
+			string size;
+
+			if (file.transmitRate > 0.0 )
+			{
+				if (file.size == 0.0)
+					size = Lib.Color(Lib.BuildString("↑ ", Lib.HumanReadableDataRate(file.transmitRate)), Lib.KColor.Cyan);
+				else
+					size = Lib.Color(Lib.BuildString("↑ ", Lib.HumanReadableDataSize(file.size)), Lib.KColor.Cyan);
+			}
+			else
+			{
+				size = Lib.HumanReadableDataSize(file.size);
+			}
+
+			p.AddContent(exp_label, size, exp_tooltip, (Action)null, () => Highlighter.Set(partId, Color.cyan));
 
 			bool send = drive.GetFileSend(filename);
 			p.AddIcon(send ? Icons.send_cyan : Icons.send_black, "Flag the file for transmission to <b>DSN</b>", () => { drive.Send(filename, !send); });
 			p.AddIcon(Icons.toggle_red, "Delete the file", () =>
 				{
 					Lib.Popup("Warning!",
-						Lib.BuildString("Do you really want to delete ", exp.FullName(filename), "?"),
-				        new DialogGUIButton("Delete it", () => drive.Delete_file(filename, double.MaxValue, v.protoVessel)),
+						Lib.BuildString("Do you really want to delete ", Science.Experiment(filename).SubjectName, "?"),
+				        new DialogGUIButton("Delete it", () => drive.Delete_file(filename, double.MaxValue)),
 						new DialogGUIButton("Keep it", () => { }));
 				}
 			);
@@ -155,24 +173,24 @@ namespace KERBALISM
 		static void Render_sample(Panel p, uint partId, string filename, Sample sample, Drive drive, bool short_strings)
 		{
 			// get experiment info
-			ExperimentInfo exp = Science.Experiment(filename);
+			ExperimentInfo expInfo = Science.Experiment(filename);
 
 			// render experiment name
 			string exp_label = Lib.BuildString
 			(
 			  "<b>",
-			  Lib.Ellipsis(exp.name, Styles.ScaleStringLength(short_strings ? 24 : 38)),
+			  Lib.Ellipsis(expInfo.Name, Styles.ScaleStringLength(short_strings ? 24 : 38)),
 			  "</b> <size=", Styles.ScaleInteger(10).ToString(), ">",
-			  Lib.Ellipsis(ExperimentInfo.Situation(filename), Styles.ScaleStringLength((short_strings ? 32 : 62) - Lib.Ellipsis(exp.name, Styles.ScaleStringLength(short_strings ? 24 : 38)).Length)),
+			  Lib.Ellipsis(expInfo.SubjectSituation, Styles.ScaleStringLength((short_strings ? 32 : 62) - Lib.Ellipsis(expInfo.Name, Styles.ScaleStringLength(short_strings ? 24 : 38)).Length)),
 			  "</size>"
 			);
 			string exp_tooltip = Lib.BuildString
 			(
-			  exp.name, "\n",
-			  Lib.Color(ExperimentInfo.Situation(filename), Lib.KColor.LightGrey)
+			  expInfo.Name, "\n",
+			  Lib.Color(expInfo.SubjectSituation, Lib.KColor.LightGrey)
 			);
 
-			double exp_value = Science.Value(filename, sample.size);
+			double exp_value = sample.size * expInfo.SubjectSciencePerMB;
 			if (exp_value >= 0.1) exp_tooltip = Lib.BuildString(exp_tooltip, "\n<b>", Lib.HumanReadableScience(exp_value), "</b>");
 			if (sample.mass > Double.Epsilon) exp_tooltip = Lib.BuildString(exp_tooltip, "\n<b>", Lib.HumanReadableMass(sample.mass), "</b>");
 			if (!string.IsNullOrEmpty(sample.resultText)) exp_tooltip = Lib.BuildString(exp_tooltip, "\n", Lib.WordWrapAtLength(sample.resultText, 50));
@@ -182,7 +200,7 @@ namespace KERBALISM
 			p.AddIcon(Icons.toggle_red, "Dump the sample", () =>
 				{
 					Lib.Popup("Warning!",
-						Lib.BuildString("Do you really want to dump ", exp.FullName(filename), "?"),
+						Lib.BuildString("Do you really want to dump ", Science.Experiment(filename).SubjectName, "?"),
 						new DialogGUIButton("Dump it", () => drive.samples.Remove(filename)),
 							  new DialogGUIButton("Keep it", () => { }));
 				}

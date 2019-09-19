@@ -442,7 +442,7 @@ namespace KERBALISM
 		{
 			var vi = v.KerbalismData();
 			if (!vi.IsValid) return string.Empty;
-			return vi.transmitting;
+			return vi.filesTransmitted.Count > 0 ? vi.filesTransmitted[0].subject_id : string.Empty;
 		}
 
 		// --- SCIENCE --------------------------------------------------------------
@@ -493,7 +493,7 @@ namespace KERBALISM
 		{
 			if (!v.KerbalismData().IsValid) return;
 			foreach (var d in Drive.GetDrives(v, true))
-				d.Delete_file(subject_id, amount, v.protoVessel);
+				d.Delete_file(subject_id, amount);
 		}
 
 		// remove a sample from a vessel
@@ -534,12 +534,12 @@ namespace KERBALISM
 			}
 
 			//This fires the event off, activating all the listening methods.
-			public void Notify(float credits, ScienceSubject subject, ProtoVessel pv, bool transmitted)
+			public void Notify(float credits, ScienceSubject subject, ProtoVessel pv, bool subjectCompleted)
 			{
 				//Loop through the list of listening methods and Invoke them.
 				foreach (Action<float, ScienceSubject, ProtoVessel, bool> method in listeningMethods)
 				{
-					method.Invoke(credits, subject, pv, transmitted);
+					method.Invoke(credits, subject, pv, subjectCompleted);
 				}
 			}
 		}

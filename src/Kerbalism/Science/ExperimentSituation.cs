@@ -34,7 +34,7 @@ namespace KERBALISM
 	public sealed class ExperimentSituation
 	{
 		private Vessel vessel;
-		private KerbalismSituations sit = KerbalismSituations.None;
+		public KerbalismSituations Situation { get; private set; } = KerbalismSituations.None;
 
 		public ExperimentSituation(Vessel vessel)
 		{
@@ -44,7 +44,7 @@ namespace KERBALISM
 
 		public bool AtmosphericFlight()
 		{
-			switch(sit)
+			switch(Situation)
 			{
 				case KerbalismSituations.FlyingLow:
 				case KerbalismSituations.FlyingHigh:
@@ -73,7 +73,7 @@ namespace KERBALISM
 			// leave these as an easter eggs, for now
 			if (vd.EnvInterstellar && Lib.IsSun(body))
 			{
-				sit = KerbalismSituations.Interstellar;
+				Situation = KerbalismSituations.Interstellar;
 				return;
 			}
 			if (body.atmosphere	// only on bodies with atmosphere
@@ -83,7 +83,7 @@ namespace KERBALISM
 				&& (double.IsNaN(vessel.orbit.ApA) || vessel.orbit.ApA > body.atmosphereDepth) // apoapsis above atmosphere or NaN
 				&& vessel.srfSpeed > vessel.speedOfSound * 5) // mach 5
 			{
-				sit = KerbalismSituations.Reentry;
+				Situation = KerbalismSituations.Reentry;
 				return;
 			}
 
@@ -91,63 +91,63 @@ namespace KERBALISM
 				var s = ScienceUtil.GetExperimentSituation(vessel);
 				switch (s)
 				{
-					case ExperimentSituations.SrfLanded: sit = KerbalismSituations.SrfLanded; return;
-					case ExperimentSituations.SrfSplashed: sit = KerbalismSituations.SrfSplashed; return;
+					case ExperimentSituations.SrfLanded: Situation = KerbalismSituations.SrfLanded; return;
+					case ExperimentSituations.SrfSplashed: Situation = KerbalismSituations.SrfSplashed; return;
 				}
 			}
 
 			var treshold = body.scienceValues.spaceAltitudeThreshold;
 			if (alt > treshold)
 			{
-				sit = KerbalismSituations.InSpaceHigh;
+				Situation = KerbalismSituations.InSpaceHigh;
 				return;
 			}
 
 			if(alt > body.atmosphereDepth)
 			{
-				sit = KerbalismSituations.InSpaceLow;
+				Situation = KerbalismSituations.InSpaceLow;
 				return;
 			}
 
 			if(body.atmosphere && alt > body.scienceValues.flyingAltitudeThreshold)
 			{
-				sit = KerbalismSituations.FlyingHigh;
+				Situation = KerbalismSituations.FlyingHigh;
 				return;
 			}
 
-			sit = KerbalismSituations.FlyingLow;
+			Situation = KerbalismSituations.FlyingLow;
 		}
 
 		public override string ToString()
 		{
-			return sit.ToString();
+			return Situation.ToString();
 		}
 
 		internal bool IsAvailable(ExperimentInfo exp)
 		{
 			// make sure to not supersede SpaceHigh with our custom situations, otherwise
 			// those experiments won't run any more while in space high and in a belt
-			var s = sit;
-			if ((exp.situationMask & (int)s) != 0) return true;
+			var s = Situation;
+			if ((exp.SituationMask & (int)s) != 0) return true;
 
 			if (s >= KerbalismSituations.InnerBelt) s = KerbalismSituations.InSpaceHigh;
-			return (exp.situationMask & (int)s) != 0;
+			return (exp.SituationMask & (int)s) != 0;
 		}
 
 		public bool BiomeIsRelevant(ExperimentInfo experiment)
 		{
-			return (experiment.biomeMask & (int)sit) != 0;
+			return (experiment.BiomeMask & (int)Situation) != 0;
 		}
 
 		public float Multiplier(ExperimentInfo experiment)
 		{
 			var values = vessel.mainBody.scienceValues;
 
-			var s = sit;
+			var s = Situation;
 
 			// only consider kerbalism situation multipliers if the experiment is enabled for them
-			if (experiment.situationMask < (int)KerbalismSituations.InnerBelt)
-				s = StockSituation(sit);
+			if (experiment.SituationMask < (int)KerbalismSituations.InnerBelt)
+				s = StockSituation(Situation);
 
 			switch(s)
 			{
@@ -167,7 +167,7 @@ namespace KERBALISM
 				case KerbalismSituations.Interstellar: return 15f * values.InSpaceHighDataValue;
 			}
 
-			Lib.Log("Science: invalid/unknown situation " + sit.ToString());
+			Lib.Log("Science: invalid/unknown situation " + Situation.ToString());
 			return 0;
 		}
 

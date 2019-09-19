@@ -57,7 +57,7 @@ namespace KERBALISM
 
 					var experimentInfo = Science.Experiment(data.subjectID);
 					var sampleMass = Science.GetSampleMass(data.subjectID);
-					var mass = sampleMass / experimentInfo.max_amount * data.dataAmount;
+					var mass = sampleMass / experimentInfo.MaxAmount * data.dataAmount;
 
 					recorded = drive.Record_sample(data.subjectID, data.dataAmount, mass);
 				}
@@ -74,17 +74,15 @@ namespace KERBALISM
 					page.OnDiscardData(data);
 
 					// inform the user
-					var exp = Science.Experiment(data.subjectID);
 					Message.Post(
-						Lib.BuildString("<b>", exp.FullName(data.subjectID), "</b> recorded"),
+						Lib.BuildString("<b>", Science.Experiment(data.subjectID).SubjectName, "</b> recorded"),
 						!meta.is_rerunnable ? Localizer.Format("#KERBALISM_Science_inoperable") : string.Empty
 					);
 				}
 				else
 				{
-					var exp = Science.Experiment(data.subjectID);
 					Message.Post(
-						Lib.Color(Lib.BuildString(exp.FullName(data.subjectID), " can not be stored"), Lib.KColor.Red),
+						Lib.Color(Lib.BuildString(Science.Experiment(data.subjectID).SubjectName, " can not be stored"), Lib.KColor.Red),
 						"Not enough space on hard drive"
 					);
 				}
@@ -180,7 +178,7 @@ namespace KERBALISM
 
 				var experimentInfo = Science.Experiment(data.subjectID);
 				var sampleMass = Science.GetSampleMass(data.subjectID);
-				var mass = sampleMass / experimentInfo.max_amount * data.dataAmount;
+				var mass = sampleMass / experimentInfo.MaxAmount * data.dataAmount;
 
 				recorded = drive.Record_sample(data.subjectID, data.dataAmount, mass);
 			}
@@ -203,7 +201,7 @@ namespace KERBALISM
 				var exp = Science.Experiment(data.subjectID);
 				// inform the user
 				Message.Post(
-					Lib.BuildString("<b>", exp.FullName(data.subjectID), "</b> recorded"),
+					Lib.BuildString("<b>", Science.Experiment(data.subjectID).SubjectName, "</b> recorded"),
 					!meta.is_rerunnable ? Localizer.Format("#KERBALISM_Science_inoperable") : string.Empty
 				);
 			}
@@ -211,7 +209,7 @@ namespace KERBALISM
 			{
 				var exp = Science.Experiment(data.subjectID);
 				Message.Post(
-					Lib.Color(Lib.BuildString(exp.FullName(data.subjectID), " can not be stored"), Lib.KColor.Red),
+					Lib.Color(Lib.BuildString(Science.Experiment(data.subjectID).SubjectName, " can not be stored"), Lib.KColor.Red),
 					"Not enough space on hard drive"
 				);
 			}
@@ -250,7 +248,7 @@ namespace KERBALISM
 			vessel = part.vessel;
 
 			// get the container module storing the data
-			container = Science.Container(part, Science.Experiment(data.subjectID).id);
+			container = Science.Container(part, Science.Experiment(data.subjectID).ExperimentId);
 
 			// get the stock experiment module storing the data (if that's the case)
 			experiment = container != null ? container as ModuleScienceExperiment : null;

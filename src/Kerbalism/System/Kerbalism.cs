@@ -271,7 +271,7 @@ namespace KERBALISM
 
 					UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Loaded.Science");
 					// transmit science data
-					Science.Update(v, vd, resources, elapsed_s);
+					Science.Update(v, vd, ec, elapsed_s);
 					UnityEngine.Profiling.Profiler.EndSample();
 
 					UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Loaded.Profile");
@@ -352,7 +352,7 @@ namespace KERBALISM
 
 				UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Unloaded.Science");
 				// transmit science	data
-				Science.Update(last_v, last_vd, last_resources, last_time);
+				Science.Update(last_v, last_vd, last_ec, last_time);
 				UnityEngine.Profiling.Profiler.EndSample();
 
 				UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Unloaded.Resource");

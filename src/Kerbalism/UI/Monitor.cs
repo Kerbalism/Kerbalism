@@ -644,12 +644,13 @@ namespace KERBALISM
 			string target_str = conn.linked ? conn.target_name : Localizer.Format("#KERBALISM_Generic_NONE");
 
 			// transmitting info
-			string comms_str = conn.linked ? Localizer.Format("#KERBALISM_UI_telemetry") : Localizer.Format("#KERBALISM_Generic_NOTHING");
-			if (vd.transmitting.Length > 0)
-			{
-				ExperimentInfo exp = Science.Experiment(vd.transmitting);
-				comms_str = Lib.Ellipsis(exp.name, Styles.ScaleStringLength(35));
-			}
+			string comms_str;
+			if (!conn.linked)
+				comms_str = Localizer.Format("#KERBALISM_Generic_NOTHING");
+			else if (vd.filesTransmitted.Count == 0)
+				comms_str = Localizer.Format("#KERBALISM_UI_telemetry");
+			else
+				comms_str = Lib.BuildString(vd.filesTransmitted.Count.ToString(), vd.filesTransmitted.Count > 1 ? " files" : " file");
 
 			// create tooltip
 			string tooltip = Lib.BuildString

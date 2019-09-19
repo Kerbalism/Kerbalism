@@ -307,7 +307,7 @@ namespace KERBALISM
 					// only inform the user if auto-analyze is turned off
 					// otherwise we could be spamming "Analysis complete" messages
 					Message.Post(Lib.BuildString(Lib.Color(Localizer.Format("#KERBALISM_Laboratory_Analysis"), Lib.KColor.Science, true), "\n",
-						Localizer.Format("#KERBALISM_Laboratory_Analyzed", Lib.Bold(v.vesselName), Lib.Bold(Science.Experiment(filename).name))), localized_results);
+						Localizer.Format("#KERBALISM_Laboratory_Analyzed", Lib.Bold(v.vesselName), Lib.Bold(Science.Experiment(filename).Name))), localized_results);
 				}
 
 				if (PreferencesScience.Instance.transmitScience)
@@ -362,7 +362,7 @@ namespace KERBALISM
 					status_txt = localized_noSample;
 					break;
 				case Status.RUNNING:
-					status_txt = Lib.Color(Science.Experiment(current_sample).name, Lib.KColor.Green);
+					status_txt = Lib.Color(Science.Experiment(current_sample).Name, Lib.KColor.Green);
 					break;
 			}
 		}

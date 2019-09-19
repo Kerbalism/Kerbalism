@@ -9,12 +9,28 @@ namespace KERBALISM
 
 	public static class Science
 	{
-		// this controls how fast science is credited while it is being transmitted.
-		// try to be conservative here, because crediting introduces a lag
-		private const double buffer_science_value = 0.3;
-
 		// this is for auto-transmit throttling
 		public const double min_file_size = 0.002;
+
+		private class XmitFile
+		{
+			public string subject_id;
+			public ExperimentInfo expInfo;
+			public File file;
+			public Drive drive;
+			public bool isInWarpCache;
+			public File realDriveFile; // reference to the "real" file for files in the warp cache
+
+			public XmitFile(string subject_id, ExperimentInfo expInfo, File file, Drive drive, bool isInWarpCache, File realDriveFile = null)
+			{
+				this.subject_id = subject_id;
+				this.expInfo = expInfo;
+				this.file = file;
+				this.drive = drive;
+				this.isInWarpCache = isInWarpCache;
+				this.realDriveFile = realDriveFile;
+			}
+		}
 
 		// pseudo-ctor
 		public static void Init()
@@ -47,257 +63,168 @@ namespace KERBALISM
 		}
 
 		// consume EC for transmission, and transmit science data
-		public static void Update(Vessel v, VesselData vd, VesselResources resources, double elapsed_s)
+		public static void Update(Vessel v, VesselData vd, ResourceInfo ec, double elapsed_s)
 		{
 			// do nothing if science system is disabled
 			if (!Features.Science) return;
 
 			// avoid corner-case when RnD isn't live during scene changes
 			// - this avoid losing science if the buffer reach threshold during a scene change
-			if (HighLogic.CurrentGame.Mode != Game.Modes.SANDBOX && ResearchAndDevelopment.Instance == null) return;
+			if (HighLogic.CurrentGame.Mode != Game.Modes.SANDBOX && ResearchAndDevelopment.Instance == null)
+				return;
+			
+			// clear list of files transmitted
+			vd.filesTransmitted.Clear();
 
-			// get connection info
-			ConnectionInfo conn = vd.Connection;
-			if (conn == null) return;
-			if (String.IsNullOrEmpty(vd.transmitting)) return;
+			// check connection
+			if (vd.Connection == null || !vd.Connection.linked || vd.Connection.rate <= 0.0 || ec.Amount < vd.Connection.ec * elapsed_s)
+				return;
+			
+			double transmitCapacity = vd.Connection.rate * elapsed_s;
+			float scienceCredited = 0f;
 
-			Drive warpCache = Cache.WarpCache(v);
-			bool isWarpCache = false;
+			GetFilesToTransmit(v);
 
-			double transmitSize = conn.rate * elapsed_s;
-			while(warpCache.files.Count > 0 || // transmit EVERYTHING in the cache, regardless of transmitSize.
-			      (transmitSize > double.Epsilon && !String.IsNullOrEmpty(vd.transmitting)))
+			if (xmitFiles.Count == 0)
+				return;
+
+			// traverse the list in reverse because :
+			// - warp cache files are at the end, and they are always transmitted regerdless of transmit capacity
+			// - others files are next, sorted in science value per MB ascending order 
+			for (int i = xmitFiles.Count - 1; i >= 0; i--)
 			{
-				// get filename of data being downloaded
-				var exp_filename = vd.transmitting;
-				if (string.IsNullOrEmpty(exp_filename))
+				XmitFile xmitFile = xmitFiles[i];
+
+				if (xmitFile.file.size == 0.0)
+					continue;
+
+				// always transmit everything in the warp cache
+				if (!xmitFile.isInWarpCache && transmitCapacity <= 0.0)
 					break;
 
-				Drive drive = null;
-				if (warpCache.files.ContainsKey(exp_filename)) {
-					drive = warpCache;
-					isWarpCache = true;
+				// determine how much data is transmitted
+				double transmitted = xmitFile.isInWarpCache ? xmitFile.file.size : Math.Min(xmitFile.file.size, transmitCapacity);
+
+				// consume transmit capacity
+				transmitCapacity -= transmitted;
+
+				// get science value
+				float xmitScienceValue = (float)(transmitted * xmitFile.expInfo.SubjectSciencePerMB);
+
+				// increase science points to credit
+				scienceCredited += xmitScienceValue;
+
+				// fire subject completed events
+				if (!xmitFile.expInfo.SubjectIsCompleted && xmitFile.expInfo.ScienceRemainingToRetrieve < 0.1f) // large threshold because of floating point errors.
+					SubjectXmitCompleted(xmitFile, v);
+
+				// consume data in the file
+				xmitFile.file.size -= transmitted;
+				xmitFile.expInfo.RemoveDataCollectedInFlight(xmitScienceValue);
+
+				if (xmitFile.isInWarpCache && xmitFile.realDriveFile != null)
+				{
+					xmitFile.realDriveFile.transmitRate = transmitted / elapsed_s;
+					vd.filesTransmitted.Add(xmitFile.realDriveFile);
 				}
 				else
 				{
-					drive = FindDrive(v, exp_filename);
-					isWarpCache = false;
+					xmitFile.file.transmitRate = transmitted / elapsed_s;
+					vd.filesTransmitted.Add(xmitFile.file);
 				}
 
-				if (drive == null) break;
-
-				File file = drive.files[exp_filename];
-
-				if(isWarpCache) {
-					file.buff = file.size;
-					file.size = 0;
-					transmitSize -= file.size;
-				} else {
-					if (transmitSize < double.Epsilon)
-						break;
-
-					// determine how much data is transmitted
-					double transmitted = Math.Min(file.size, transmitSize);
-					transmitSize -= transmitted;
-
-					// consume data in the file
-					file.size -= transmitted;
-
-					// accumulate in the buffer
-					file.buff += transmitted;
-				}
-
-				// special case: file size on drive = 0 -> buffer is 0, so no need to do anyhting. just delete.
-				if (file.buff > double.Epsilon)
-				{
-					// this is the science value remaining for this experiment
-					var remainingValue = Value(exp_filename, 0);
-
-					// this is the science value of this sample
-					double dataValue = Value(exp_filename, file.buff);
-					bool doCredit = file.size <= double.Epsilon || dataValue > buffer_science_value;;
-
-					// if buffer science value is high enough or file was transmitted completely
-					if (doCredit)
-					{
-						var totalValue = TotalValue(exp_filename);
-
-						// collect the science data
-						Credit(exp_filename, file.buff, true, v.protoVessel);
-
-						// reset the buffer
-						file.buff = 0.0;
-
-						// this was the last useful bit, there is no more value in the experiment
-						if (remainingValue >= 0.1 && remainingValue - dataValue < 0.1)
-						{
-							string subjectResultText = file.resultText;
-							if (string.IsNullOrEmpty(subjectResultText))
-							{
-								// I think this never happens
-								subjectResultText = Lib.TextVariant(
-								  "Our researchers will jump on it right now",
-								  "This cause some excitement",
-								  "These results are causing a brouhaha in R&D",
-								  "Our scientists look very confused",
-								  "The scientists won't believe these readings");
-							}
-
-							subjectResultText = Lib.WordWrapAtLength(subjectResultText, 70);
-							Message.Post(Lib.BuildString(Experiment(exp_filename).FullName(exp_filename), " completed\n", Lib.HumanReadableScience(totalValue)), subjectResultText);
-						}
-					}
-				}
-
-				// if file was transmitted completely
-				if (file.size <= double.Epsilon)
-				{
-					// remove the file
-					drive.files.Remove(exp_filename);
-					vd.transmitting = Science.Transmitting(v, true);
-				}
+				// credit the subject
+				ScienceSubject stockSubject = xmitFile.expInfo.StockSubject;
+				stockSubject.science = Math.Min(stockSubject.science + (xmitScienceValue / HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier), stockSubject.scienceCap);
+				stockSubject.scientificValue = ResearchAndDevelopment.GetSubjectValue(stockSubject.science, stockSubject);
 			}
+
+			// Add science points
+			// We don't use "TransactionReasons.ScienceTransmission" because AddScience fire a bunch of events,
+			// triggering a lot of side issues (ex : chatterer transmit sound playing continously, strategia "+0.0 science" popup...)
+			ResearchAndDevelopment.Instance.AddScience(scienceCredited, TransactionReasons.None);
+			vd.scienceTransmitted += scienceCredited;
 		}
 
-		// return name of file being transmitted from vessel specified
-		public static string Transmitting(Vessel v, bool linked)
+		private static void GetFilesToTransmit(Vessel v)
 		{
-			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Science.Transmitting");
-			// never transmitting if science system is disabled
-			if (!Features.Science)
-			{
-				UnityEngine.Profiling.Profiler.EndSample();
-				return string.Empty;
-			}
+			Drive warpCache = Cache.WarpCache(v);
 
-			// not transmitting if unlinked
-			if (!linked)
-			{
-				UnityEngine.Profiling.Profiler.EndSample();
-				return string.Empty;
-			}
+			xmitFiles.Clear();
 
-			// not transmitting if there is no ec left
-			if (!Lib.IsPowered(v))
-			{
-				UnityEngine.Profiling.Profiler.EndSample();
-				return string.Empty;
-			}
+			List<string> filesToRemove = new List<string>();
 
-			foreach (var p in Cache.WarpCache(v).files)
-			{
-				UnityEngine.Profiling.Profiler.EndSample();
-				return p.Key;
-			}
-
-			double now = Planetarium.GetUniversalTime();
-			double maxXmitValue = -1;
-			string result = string.Empty;
-
-			// get first file flagged for transmission, AND has a ts at least 5 seconds old or is > 0.001Mb in size
 			foreach (var drive in Drive.GetDrives(v, true))
 			{
+				filesToRemove.Clear();
 				foreach (var p in drive.files)
 				{
-					if (drive.GetFileSend(p.Key) && (p.Value.ts + 3 < now || p.Value.size > min_file_size))
+					if (p.Value.size <= 0.0 && (!warpCache.files.ContainsKey(p.Key) || warpCache.files[p.Key].size == 0.0))
 					{
-						// prioritize whichever file has the most science points per byte
-						var xmitValue = Value(p.Key, p.Value.size) / p.Value.size;
-						if(string.IsNullOrEmpty(result) || xmitValue > maxXmitValue)
-						{
-							result = p.Key;
-							maxXmitValue = xmitValue;
-						}
+						filesToRemove.Add(p.Key);
+						continue;
+					}
+	
+					if (drive.GetFileSend(p.Key))
+					{
+						p.Value.transmitRate = 0.0;
+						xmitFiles.Add(new XmitFile(p.Key, Experiment(p.Key), p.Value, drive, false));
 					}
 				}
+
+				foreach (string fileToRemove in filesToRemove)
+					drive.files.Remove(fileToRemove);
 			}
 
-			UnityEngine.Profiling.Profiler.EndSample();
-			return result;
+			// sort files by science value per MB ascending order so high value files are transmitted first
+			// because XmitFile list is processed from end to start
+			xmitFiles.Sort((x, y) => x.expInfo.SubjectSciencePerMB.CompareTo(y.expInfo.SubjectSciencePerMB));
+
+			// add all warpcache files to the end of the XmitFile list
+			foreach (var p in warpCache.files)
+			{
+				// don't transmit empty files
+				if (p.Value.size <= 0.0)
+					continue;
+
+				XmitFile driveFile = xmitFiles.Find(pr => pr.subject_id == p.Key);
+				if (driveFile != null)
+					xmitFiles.Add(new XmitFile(p.Key, Experiment(p.Key), p.Value, warpCache, true, driveFile.file));
+				else
+					xmitFiles.Add(new XmitFile(p.Key, Experiment(p.Key), p.Value, warpCache, true)); // should not be happening, but better safe than sorry
+			}
 		}
 
-		// credit science for the experiment subject specified
-		public static float Credit(string subject_id, double size, bool transmitted, ProtoVessel pv)
+		private static void SubjectXmitCompleted(XmitFile xmitFile, Vessel v)
 		{
-			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Science.Credit");
-			var credits = Value(subject_id, size);
+			// remember that the subject is complete
+			xmitFile.expInfo.SubjectIsCompleted = true;
 
-			if (credits <= 0f)
-			{
-				UnityEngine.Profiling.Profiler.EndSample();
-				return 0f;
-			}
+			// fire science transmission game event. This is used by stock contracts and a few other things.
+			GameEvents.OnScienceRecieved.Fire(xmitFile.expInfo.ScienceValue, xmitFile.expInfo.StockSubject, v.protoVessel, false);
 
-			// credit the science
-			var subject = ResearchAndDevelopment.GetSubjectByID(subject_id);
-			if(subject == null)
+			// fire our API event
+			// Note (GOT) : disabled, nobody is using it and i'm not sure what is the added value compared to the stock event,
+			// unless we fire it for every transmission, and in this case this is a very bad idea from a performance standpoint
+			// API.OnScienceReceived.Notify(credits, subject, pv, true);
+
+			// notify the player
+			string subjectResultText;
+			if (string.IsNullOrEmpty(xmitFile.file.resultText))
 			{
-				Lib.Log("WARNING: science subject " + subject_id + " cannot be credited in R&D");
+				subjectResultText = Lib.TextVariant(
+					"Our researchers will jump on it right now",
+					"This cause some excitement",
+					"These results are causing a brouhaha in R&D",
+					"Our scientists look very confused",
+					"The scientists won't believe these readings");
 			}
 			else
 			{
-				subject.science += credits / HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier;
-				subject.scientificValue = ResearchAndDevelopment.GetSubjectValue(subject.science, subject);
-				ResearchAndDevelopment.Instance.AddScience(credits, transmitted ? TransactionReasons.None : TransactionReasons.VesselRecovery);
-
-				// fire game event
-				// - this could be slow or a no-op, depending on the number of listeners
-				//   in any case, we are buffering the transmitting data and calling this
-				//   function only once in a while
-				GameEvents.OnScienceRecieved.Fire(credits, subject, pv, false);
-
-				API.OnScienceReceived.Notify(credits, subject, pv, transmitted);
-
-				pv.vesselRef.KerbalismData().ScienceLog.AddCredits(credits, subject);
+				subjectResultText = xmitFile.file.resultText;
 			}
-
-			// return amount of science credited
-			UnityEngine.Profiling.Profiler.EndSample();
-			return credits;
-		}
-
-		// return value of some data about a subject, in science credits
-		public static float Value(string subject_id, double size = 0)
-		{
-			if (string.IsNullOrEmpty(subject_id))
-				return 0;
-			
-			if(size < double.Epsilon)
-			{
-				var exp = Science.Experiment(subject_id);
-				size = exp.max_amount;
-			}
-
-			// get science subject
-			// - if null, we are in sandbox mode
-			var subject = ResearchAndDevelopment.GetSubjectByID(subject_id);
-			if (subject == null) return 0.0f;
-
-			double R = size / subject.dataScale * subject.subjectValue;
-			double S = subject.science;
-			double C = subject.scienceCap;
-			double credits = Math.Max(Math.Min(S + Math.Min(R, C), C) - S, 0.0);
-
-			credits *= HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier;
-
-			return (float)credits;
-		}
-
-		// return total value of some data about a subject, in science credits
-		public static float TotalValue(string subject_id)
-		{
-			var exp = Science.Experiment(subject_id);
-			var size = exp.max_amount;
-
-			// get science subject
-			// - if null, we are in sandbox mode
-			var subject = ResearchAndDevelopment.GetSubjectByID(subject_id);
-			if (subject == null) return 0.0f;
-
-			double credits = size / subject.dataScale * subject.subjectValue;
-			credits *= HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier;
-
-			return (float)credits;
+			subjectResultText = Lib.WordWrapAtLength(subjectResultText, 70);
+			Message.Post(Lib.BuildString(xmitFile.expInfo.SubjectName, " completed\n", Lib.HumanReadableScience(xmitFile.expInfo.ScienceValue)), subjectResultText);
 		}
 
 		// return module acting as container of an experiment
@@ -328,12 +255,14 @@ namespace KERBALISM
 			return info;
 		}
 
-		public static string Generate_subject_id(string experiment_id, Vessel v)
+		public static void PurgeExperimentInfos()
 		{
-			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Science.Generate_subject_id");
+			experiments.Clear();
+		}
+
+		public static string Generate_subject_id(string experiment_id, Vessel v, ExperimentSituation sit)
+		{
 			var body = v.mainBody;
-			ScienceExperiment experiment = ResearchAndDevelopment.GetExperiment(experiment_id);
-			ExperimentSituation sit = GetExperimentSituation(v);
 
 			var sitStr = sit.ToString();
 			if(!string.IsNullOrEmpty(sitStr))
@@ -343,21 +272,13 @@ namespace KERBALISM
 			}
 
 			// generate subject id
-			UnityEngine.Profiling.Profiler.EndSample();
 			return Lib.BuildString(experiment_id, "@", body.name, sitStr);
 		}
 
-		public static string Generate_subject(string experiment_id, Vessel v)
+		public static string Generate_subject(string experiment_id, string subject_id, Vessel v)
 		{
-			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Science.Generate_subject");
-			var subject_id = Generate_subject_id(experiment_id, v);
-
 			// in sandbox, do nothing else
-			if (ResearchAndDevelopment.Instance == null)
-			{
-				UnityEngine.Profiling.Profiler.EndSample();
-				return subject_id;
-			}
+			if (ResearchAndDevelopment.Instance == null) return subject_id;
 
 			// if the subject id was never added to RnD
 			if (ResearchAndDevelopment.GetSubjectByID(subject_id) == null)
@@ -392,13 +313,11 @@ namespace KERBALISM
 				subjects.Add(subject_id, subject);
 			}
 
-			UnityEngine.Profiling.Profiler.EndSample();
 			return subject_id;
 		}
 
-		public static string TestRequirements(string experiment_id, string requirements, Vessel v)
+		public static string TestRequirements(string subject_id, string experiment_id, string requirements, Vessel v, ExperimentSituation sit)
 		{
-			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Science.TestRequirements");
 			CelestialBody body = v.mainBody;
 			VesselData vd = v.KerbalismData();
 
@@ -513,37 +432,19 @@ namespace KERBALISM
 				}
 
 				if (!good)
-				{
-					UnityEngine.Profiling.Profiler.EndSample();
 					return s;
-				}
 			}
-
-			var subject_id = Science.Generate_subject_id(experiment_id, v);
-
-			var exp = Science.Experiment(subject_id);
-			var sit = GetExperimentSituation(v);
-
+			
 			if (!v.loaded && sit.AtmosphericFlight())
-			{
-				UnityEngine.Profiling.Profiler.EndSample();
 				return "Background flight";
-			}
-			
-
-			if (!sit.IsAvailable(exp))
-			{
-				UnityEngine.Profiling.Profiler.EndSample();
-				return "Invalid situation";
-			}
-			
-
+				
+			if (!sit.IsAvailable(Experiment(experiment_id)))
+				return Lib.BuildString("Situation ", sit.Situation.ToString(), " invalid");
 
 			// At this point we know the situation is valid and the experiment can be done
 			// create it in R&D
-			Science.Generate_subject(experiment_id, v);
+			Generate_subject(experiment_id, subject_id, v);
 
-			UnityEngine.Profiling.Profiler.EndSample();
 			return string.Empty;
 		}
 
@@ -734,8 +635,8 @@ namespace KERBALISM
 
 		// experiment info cache
 		static readonly Dictionary<string, ExperimentInfo> experiments = new Dictionary<string, ExperimentInfo>();
-		readonly static Dictionary<string, double> sampleMasses = new Dictionary<string, double>();
-		static readonly Dictionary<Guid, ScienceLog> scienceLog = new Dictionary<Guid, ScienceLog>();
+		static readonly Dictionary<string, double> sampleMasses = new Dictionary<string, double>();
+		static readonly List<XmitFile> xmitFiles = new List<XmitFile>();
 
 		private class DeferredCreditValues {
 			internal string subject_id;

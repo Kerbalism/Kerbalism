@@ -22,9 +22,9 @@ namespace KERBALISM
 
 		/// <summary>
 		/// Called whenever a vessel changes and/or should be updated for various reasons.
-		/// Purge object cache AND vessel cache.
+		/// Purge the anonymous cache and science transmission cache
 		/// </summary>
-		public static void PurgeObjects(Vessel v)
+		public static void PurgeVesselCaches(Vessel v)
 		{
 			var id = Lib.VesselID(v);
 			vesselObjects.Remove(id);
@@ -33,19 +33,25 @@ namespace KERBALISM
 
 		/// <summary>
 		/// Called whenever a vessel changes and/or should be updated for various reasons.
-		/// Purge object cache AND vessel cache.
+		/// Purge the anonymous cache and science transmission cache
 		/// </summary>
-		public static void PurgeObjects(ProtoVessel v)
+		public static void PurgeVesselCaches(ProtoVessel v)
 		{
 			var id = Lib.VesselID(v);
 			vesselObjects.Remove(id);
 			warp_caches.Remove(id);
 		}
 
-		public static void PurgeObjects()
+		/// <summary>
+		/// Called when the game state has changed (savegame loads), must reset all non-persisted data that won't be loaded from DB
+		/// Purge all anonymous caches, science transmission caches, experiments cached data, and log messages
+		/// </summary>
+		public static void PurgeAllCaches()
 		{
 			vesselObjects.Clear();
 			warp_caches.Clear();
+			Science.PurgeExperimentInfos();
+			Message.all_logs.Clear();
 		}
 
 		public static Drive WarpCache(Vessel v)

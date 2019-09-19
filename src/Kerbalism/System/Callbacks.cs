@@ -23,6 +23,8 @@ namespace KERBALISM
 
 			GameEvents.OnVesselRollout.Add(this.VesselRollout);
 
+			GameEvents.onGameStatePostLoad.Add(this.GameStateLoad);
+
 			GameEvents.onVesselChange.Add((v) => { OnVesselModified(v); });
 			GameEvents.onVesselStandardModification.Add((v) => { OnVesselStandardModification(v); });
 
@@ -48,13 +50,20 @@ namespace KERBALISM
 			GameEvents.onGUILaunchScreenSpawn.Add((_) => visible = false);
 			GameEvents.onGUILaunchScreenDespawn.Add(() => visible = true);
 
-			GameEvents.onGameSceneSwitchRequested.Add((_) => { visible = false; Cache.PurgeObjects(); });
+			GameEvents.onGameSceneSwitchRequested.Add((_) => visible = false);
 			GameEvents.onGUIApplicationLauncherReady.Add(() => visible = true);
+
+			
 
 			GameEvents.CommNet.OnNetworkInitialized.Add(() => Kerbalism.Fetch.StartCoroutine(NetworkInitialized()));
 
 			// add editor events
 			GameEvents.onEditorShipModified.Add((sc) => Planner.Planner.EditorShipModifiedEvent(sc));
+		}
+
+		private void GameStateLoad(ConfigNode data)
+		{
+			Cache.PurgeAllCaches();
 		}
 
 		private void OnVesselStandardModification(Vessel vessel)
@@ -71,7 +80,7 @@ namespace KERBALISM
 				emitter.Recalculate();
 			}
 
-			Cache.PurgeObjects(vessel);
+			Cache.PurgeVesselCaches(vessel);
 			vessel.KerbalismData().UpdateOnVesselModified(vessel);
 		}
 
@@ -168,7 +177,7 @@ namespace KERBALISM
 
 			// forget EVA vessel data
 			data.from.vessel.KerbalismDataDelete();
-			Cache.PurgeObjects(data.from.vessel);
+			Cache.PurgeVesselCaches(data.from.vessel);
 			Drive.Purge(data.from.vessel);
 
 			// update boarded vessel
@@ -206,7 +215,7 @@ namespace KERBALISM
 			// purge the caches
 			ResourceCache.Purge(pv);
 			Drive.Purge(pv);
-			Cache.PurgeObjects(pv);
+			Cache.PurgeVesselCaches(pv);
 		}
 
 
@@ -222,7 +231,7 @@ namespace KERBALISM
 			// purge the caches
 			ResourceCache.Purge(pv);
 			Drive.Purge(pv);
-			Cache.PurgeObjects(pv);
+			Cache.PurgeVesselCaches(pv);
 		}
 
 		void VesselCreated(Vessel v)
@@ -262,7 +271,7 @@ namespace KERBALISM
 			// purge the caches
 			ResourceCache.Purge(v);
 			Drive.Purge(v);
-			Cache.PurgeObjects(v);
+			Cache.PurgeVesselCaches(v);
 		}
 
 		void VesselDock(GameEvents.FromToAction<Part, Part> e)
@@ -274,7 +283,7 @@ namespace KERBALISM
 			//  we do however tweak the data of the vessel being docked a bit,
 			//  to avoid states getting out of sync, leading to unintuitive behaviours
 			dockingVessel.KerbalismData().UpdateOnDock();
-			Cache.PurgeObjects(dockingVessel);
+			Cache.PurgeVesselCaches(dockingVessel);
 
 			// Update docked to vessel
 			this.OnVesselModified(e.to.vessel);
@@ -301,20 +310,9 @@ namespace KERBALISM
 			// update vessel
 			this.OnVesselModified(p.vessel);
 
-			// credit science that was transmitted but not yet accounted for
-			if(DB.drives.ContainsKey(p.flightID))
-			{
-				foreach(var pair in DB.drives[p.flightID].files)
-				{
-					if(pair.Value.buff > double.Epsilon)
-					{
-						Science.Credit(pair.Key, pair.Value.buff, true, p.vessel.protoVessel);
-					}
-				}
-			}
-
 			// remove drive
-			DB.drives.Remove(p.flightID);
+			if (DB.drives.ContainsKey(p.flightID))
+				DB.drives[p.flightID].Purge(p.flightID);
 		}
 
 		void AddEditorCategory()

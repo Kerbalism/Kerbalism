@@ -120,23 +120,31 @@ namespace KERBALISM
 			if (v.isEVA) return;
 
 			p.AddSection("TRANSMISSION");
-			ScienceLog scienceLog = v.KerbalismData().ScienceLog;
 
 			// comm status
-			ConnectionInfo conn = vd.Connection;
-			p.AddContent(Localizer.Format("transmission rate"), Lib.HumanReadableDataRate(conn.rate));
-			p.AddContent("target", conn.target_name);
+			if (vd.filesTransmitted.Count > 0)
+			{
+				double transmitRate = 0.0;
+				StringBuilder tooltip = new StringBuilder();
+				tooltip.Append(string.Format("<align=left /><b>{0,-30}\t{1,-10}</b>\n", "file transmitted", "rate"));
+				for (int i = 0; i < vd.filesTransmitted.Count; i++)
+				{
+					transmitRate += vd.filesTransmitted[i].transmitRate;
+					tooltip.Append(string.Format("{0,-30}\t{1,-10}", Lib.Ellipsis(vd.filesTransmitted[i].expInfo.SubjectName, 30u), Lib.HumanReadableDataRate(vd.filesTransmitted[i].transmitRate)));
+					if (i < vd.filesTransmitted.Count - 1) tooltip.Append("\n");
+				}
+				
+				p.AddContent("transmitting", Lib.BuildString(vd.filesTransmitted.Count.ToString(), vd.filesTransmitted.Count > 1 ? " files at " : " file at ",  Lib.HumanReadableDataRate(transmitRate)), tooltip.ToString());
+			}
+			else
+			{
+				p.AddContent("max transmission rate", Lib.HumanReadableDataRate(vd.Connection.rate));
+			}
+
+			p.AddContent("target", vd.Connection.target_name);
 
 			// total science gained by vessel
-			p.AddContent("total science transmitted", Lib.HumanReadableScience(scienceLog.SumTotal));
-
-			// last transmission
-			if(!string.IsNullOrEmpty(scienceLog.LastSubjectTitle))
-			{
-				string lastTransmission = Lib.Ellipsis("last: " + scienceLog.LastSubjectTitle.ToLower(), Styles.ScaleStringLength(45));
-				var ago = Planetarium.GetUniversalTime() - scienceLog.LastTransmissionTime;
-				p.AddContent(lastTransmission, ago > 5 ? ("T+" + Lib.HumanReadableDuration(ago)) : "just now");
-			}
+			p.AddContent("total science transmitted", Lib.HumanReadableScience(vd.scienceTransmitted));
 		}
 
 		static void Render_supplies(Panel p, Vessel v, VesselData vd, VesselResources resources)

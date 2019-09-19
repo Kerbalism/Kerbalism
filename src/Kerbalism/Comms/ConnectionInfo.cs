@@ -72,7 +72,7 @@ namespace KERBALISM
 			AntennaInfo ai = new AntennaInfo();
 			ai.powered = powered;
 			ai.storm = storm;
-			ai.transmitting = !string.IsNullOrEmpty(Science.Transmitting(v, true));
+			ai.transmitting = v.KerbalismData().filesTransmitted.Count > 0;
 
 			API.Comm.Init(ai, v);
 			if (ai.strength > -1)

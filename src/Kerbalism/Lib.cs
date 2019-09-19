@@ -929,7 +929,7 @@ namespace KERBALISM
 		///<summary> Format science credits </summary>
 		public static string HumanReadableScience(double value)
 		{
-			return Lib.BuildString("<color=#6DCFF6>", value.ToString("F1"), " CREDITS</color>");
+			return Lib.Color(Lib.BuildString(value.ToString("F1"), " CREDITS"), KColor.Science);
 		}
 #endregion
 

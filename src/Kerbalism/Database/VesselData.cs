@@ -27,9 +27,8 @@ namespace KERBALISM
 		#region non-evaluated non-persisted fields
 		// there are probably a lot of candidates for this in the current codebase
 
-		/// <summary>name of file being transmitted, or empty</summary>
-		// TODO : transmitting is both evaluated here and set from Science.Update(), a sure sign that the handling of this is a huge mess
-		public string transmitting;
+		/// <summary>name of last file being transmitted, or empty if nothing is being transmitted</summary>
+		public List<File> filesTransmitted;
 
 		#endregion
 
@@ -51,6 +50,7 @@ namespace KERBALISM
 		public StormData stormData;
 		private Dictionary<string, SupplyData> supplies; // supplies data
 		public List<uint> scansat_id; // used to remember scansat sensors that were disabled
+		public double scienceTransmitted;
 		#endregion
 
 		#region evaluated environment properties
@@ -363,8 +363,6 @@ namespace KERBALISM
 
 		#endregion
 
-		public ScienceLog ScienceLog { get; } = new ScienceLog();
-
 		public void Initialize(Vessel v)
 		{
 			VesselId = Lib.VesselID(v);
@@ -458,7 +456,6 @@ namespace KERBALISM
 		public VesselData()
 		{
 			IsValid = false;
-			//Initialize(v);
 
 			msg_signal = false;
 			msg_belt = false;
@@ -475,12 +472,12 @@ namespace KERBALISM
 			computer = new Computer();
 			supplies = new Dictionary<string, SupplyData>();
 			scansat_id = new List<uint>();
+			filesTransmitted = new List<File>();
+			scienceTransmitted = 0.0;
 		}
 
 		#region persistence methods
 
-		//TODO : I'm pretty sure this doesn't work as intended, as there is a good chance that the dictionary entry for this vessel is already set from elsewhere when this could have been called
-		// In any case it should be a lot cleaner to move this in a "OnLoad" method instead of it being a ctor.
 		public void Load(ConfigNode node)
 		{
 			msg_signal = Lib.ConfigValue(node, "msg_signal", false);
@@ -495,6 +492,7 @@ namespace KERBALISM
 			cfg_showlink = Lib.ConfigValue(node, "cfg_showlink", true);
 
 			solarPanelsAverageExposure = Lib.ConfigValue(node, "solarPanelsAverageExposure", -1.0);
+			scienceTransmitted = Lib.ConfigValue(node, "scienceTransmitted", 0.0);
 
 			if (node.HasNode("StormData")) stormData = new StormData(node.GetNode("StormData"));
 			else stormData = new StormData();
@@ -513,7 +511,6 @@ namespace KERBALISM
 				scansat_id.Add(Lib.Parse.ToUInt(s));
 			}
 
-			if (node.HasNode("ScienceLog")) ScienceLog.Load(node.GetNode("ScienceLog"));
 			if (node.HasNode("SunShielding")) habitatInfo = new VesselHabitatInfo(node.GetNode("SunShielding"));
 		}
 
@@ -531,6 +528,7 @@ namespace KERBALISM
 			node.AddValue("cfg_showlink", cfg_showlink);
 
 			node.AddValue("solarPanelsAverageExposure", solarPanelsAverageExposure);
+			node.AddValue("scienceTransmitted", scienceTransmitted);
 
 			stormData.Save(node.AddNode("StormData"));
 			computer.Save(node.AddNode("computer"));
@@ -546,7 +544,6 @@ namespace KERBALISM
 				node.AddValue("scansat_id", id.ToString());
 			}
 
-			ScienceLog.Save(node.AddNode("ScienceLog"));
 			EnvHabitatInfo.Save(node.AddNode("SunShielding"));
 		}
 
@@ -577,7 +574,6 @@ namespace KERBALISM
 
 			// communications info
 			connection = ConnectionInfo.Update(Vessel, powered, EnvBlackout);
-			transmitting = Science.Transmitting(Vessel, connection.linked && connection.rate > double.Epsilon);
 
 			// habitat data
 			habitatInfo.Update(Vessel);

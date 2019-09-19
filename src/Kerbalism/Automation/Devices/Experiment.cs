@@ -29,17 +29,8 @@ namespace KERBALISM
 
 		public override string Info()
 		{
-			var state = Experiment.GetState(experiment.scienceValue, experiment.issue, experiment.recording, experiment.forcedRun);
-			if (state == Experiment.State.WAITING) return Lib.Color("waiting...", Lib.KColor.Science);
-			var exp = Science.Experiment(experiment.experiment_id);
-			var recordedPercent = Lib.HumanReadablePerc(experiment.dataSampled / exp.max_amount);
-			var eta = experiment.data_rate < double.Epsilon || Experiment.Done(exp, experiment.dataSampled) ? " done" : " " + Lib.HumanReadableCountdown((exp.max_amount - experiment.dataSampled) / experiment.data_rate);
-
-			return !experiment.recording
-			  ? Lib.Color(Localizer.Format("#KERBALISM_Generic_STOPPED"), Lib.KColor.Yellow)
-			  : experiment.issue.Length == 0
-			  ? Lib.Color(Lib.BuildString(recordedPercent, eta), Lib.KColor.Science)
-			  : Lib.Color(experiment.issue.ToLower(), Lib.KColor.Red);
+			ExperimentInfo expInfo = Science.Experiment(experiment.last_subject_id);
+			return Experiment.StateInfo(Experiment.GetState(expInfo, experiment.issue, experiment.recording, experiment.forcedRun), expInfo, experiment.data_rate, experiment.issue);
 		}
 
 		public override void Ctrl(bool value)
@@ -85,36 +76,26 @@ namespace KERBALISM
 		{
 			bool recording = Lib.Proto.GetBool(proto, "recording");
 			bool forcedRun = Lib.Proto.GetBool(proto, "forcedRun");
-			double scienceValue = Lib.Proto.GetDouble(proto, "scienceValue");
 			string issue = Lib.Proto.GetString(proto, "issue");
+			string subject_id = Lib.Proto.GetString(proto, "last_subject_id", prefab.experiment_id);
+			if (string.IsNullOrEmpty(subject_id)) subject_id = prefab.experiment_id;
 
-			var state = Experiment.GetState(scienceValue, issue, recording, forcedRun);
-			if (state == Experiment.State.WAITING) return Lib.Color("waiting...", Lib.KColor.Science);
-
-			double dataSampled = Lib.Proto.GetDouble(proto, "dataSampled");
-			double data_rate = Lib.Proto.GetDouble(proto, "data_rate");
-
-			var exp = Science.Experiment(prefab.experiment_id);
-			var recordedPercent = Lib.HumanReadablePerc(dataSampled / exp.max_amount);
-			var eta = data_rate < double.Epsilon || Experiment.Done(exp, dataSampled) ? " done" : " " + Lib.HumanReadableCountdown((exp.max_amount - dataSampled) / data_rate);
-
-			return !recording
-			  ? Lib.Color(Localizer.Format("#KERBALISM_Generic_STOPPED"), Lib.KColor.Yellow)
-			  : issue.Length == 0
-			  ? Lib.Color(Lib.BuildString(recordedPercent, eta), Lib.KColor.Science)
-			  : Lib.Color(issue.ToLower(), Lib.KColor.Red);
+			ExperimentInfo expInfo = Science.Experiment(subject_id);
+			return Experiment.StateInfo(Experiment.GetState(expInfo, issue, recording, forcedRun), expInfo, prefab.data_rate, issue);
 		}
 
 		public override void Ctrl(bool value)
 		{
 			bool recording = Lib.Proto.GetBool(proto, "recording");
 			bool forcedRun = Lib.Proto.GetBool(proto, "forcedRun");
-			double scienceValue = Lib.Proto.GetDouble(proto, "scienceValue");
 			string issue = Lib.Proto.GetString(proto, "issue");
-			var state = Experiment.GetState(scienceValue, issue, recording, forcedRun);
+			string subject_id = Lib.Proto.GetString(proto, "last_subject_id", prefab.experiment_id);
+			if (string.IsNullOrEmpty(subject_id)) subject_id = prefab.experiment_id;
+
+			var state = Experiment.GetState(Science.Experiment(subject_id), issue, recording, forcedRun);
 
 
-			if(state == Experiment.State.WAITING)
+			if (state == Experiment.State.WAITING)
 			{
 				Lib.Proto.Set(proto, "forcedRun", true);
 				return;
@@ -129,7 +110,7 @@ namespace KERBALISM
 					var p = pair.Value;
 					if (e.experiment_id != prefab.experiment_id) continue;
 					if (!e.isEnabled || !e.enabled) continue;
-					if (e.part.flightID == prefab.part.flightID) continue;
+					// if (p.part.flightID == prefab.part.flightID) continue;
 					if (recording)
 					{
 						Experiment.PostMultipleRunsMessage(title, vessel_name);
