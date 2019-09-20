@@ -49,7 +49,7 @@ namespace KERBALISM
 				return;
 
 			// wait until network is initialized (2 seconds after load)
-			if (Communications.NetworkInitialized)
+			if (!Communications.NetworkInitialized)
 				return;
 
 			AntennaInfo ai = GetAntennaInfo(v, powered, storm);
