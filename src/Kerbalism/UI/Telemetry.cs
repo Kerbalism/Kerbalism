@@ -126,11 +126,11 @@ namespace KERBALISM
 			{
 				double transmitRate = 0.0;
 				StringBuilder tooltip = new StringBuilder();
-				tooltip.Append(string.Format("<align=left /><b>{0,-30}\t{1,-10}</b>\n", "file transmitted", "rate"));
+				tooltip.Append(string.Format("<align=left /><b>{0,-15}\t{1}</b>\n", "rate", "file transmitted"));
 				for (int i = 0; i < vd.filesTransmitted.Count; i++)
 				{
 					transmitRate += vd.filesTransmitted[i].transmitRate;
-					tooltip.Append(string.Format("{0,-30}\t{1,-10}", Lib.Ellipsis(vd.filesTransmitted[i].expInfo.SubjectName, 30u), Lib.HumanReadableDataRate(vd.filesTransmitted[i].transmitRate)));
+					tooltip.Append(string.Format("{0,-15}\t{1}", Lib.HumanReadableDataRate(vd.filesTransmitted[i].transmitRate), Lib.Ellipsis(vd.filesTransmitted[i].expInfo.SubjectName, 40u)));
 					if (i < vd.filesTransmitted.Count - 1) tooltip.Append("\n");
 				}
 				

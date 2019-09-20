@@ -262,9 +262,7 @@ namespace KERBALISM
 
 		public static string Generate_subject_id(string experiment_id, Vessel v, ExperimentSituation sit)
 		{
-			var body = v.mainBody;
-
-			var sitStr = sit.ToString();
+			string sitStr = sit.ToString();
 			if(!string.IsNullOrEmpty(sitStr))
 			{
 				if (sit.BiomeIsRelevant(Experiment(experiment_id)))
@@ -272,7 +270,7 @@ namespace KERBALISM
 			}
 
 			// generate subject id
-			return Lib.BuildString(experiment_id, "@", body.name, sitStr);
+			return Lib.BuildString(experiment_id, "@", v.mainBody.name, sitStr);
 		}
 
 		public static string Generate_subject(string experiment_id, string subject_id, Vessel v)

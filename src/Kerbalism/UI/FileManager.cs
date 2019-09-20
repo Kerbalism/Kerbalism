@@ -136,14 +136,18 @@ namespace KERBALISM
 			if (expInfo.ScienceRemainingToRetrieve > 0f && file.size > 0.0)
 				exp_tooltip = Lib.BuildString(exp_tooltip, "\n<b>", Lib.HumanReadableScience(file.size * expInfo.SubjectSciencePerMB), "</b>");
 			if (file.transmitRate > 0.0)
-				exp_tooltip = Lib.Color(Lib.BuildString(exp_tooltip, "\nTransmitting at ", Lib.HumanReadableDataRate(file.transmitRate), " : <i>" , Lib.HumanReadableCountdown(file.size / file.transmitRate) , "</i>"), Lib.KColor.Cyan);
+			{
+				if (file.size > 0.0)
+					exp_tooltip = Lib.Color(Lib.BuildString(exp_tooltip, "\nTransmitting at ", Lib.HumanReadableDataRate(file.transmitRate), " : <i>", Lib.HumanReadableCountdown(file.size / file.transmitRate), "</i>"), Lib.KColor.Cyan);
+				else
+					exp_tooltip = Lib.Color(Lib.BuildString(exp_tooltip, "\nTransmitting at ", Lib.HumanReadableDataRate(file.transmitRate)), Lib.KColor.Cyan);
+			}
 			else if (v.KerbalismData().Connection.rate > 0.0)
 				exp_tooltip = Lib.BuildString(exp_tooltip, "\nTransmit duration : <i>", Lib.HumanReadableDuration(file.size / v.KerbalismData().Connection.rate), "</i>");
 			if (!string.IsNullOrEmpty(file.resultText))
 				exp_tooltip = Lib.BuildString(exp_tooltip, "\n", Lib.WordWrapAtLength(file.resultText, 50));
 
 			string size;
-
 			if (file.transmitRate > 0.0 )
 			{
 				if (file.size == 0.0)

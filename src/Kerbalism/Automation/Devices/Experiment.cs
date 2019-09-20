@@ -19,7 +19,7 @@ namespace KERBALISM
 
 		public override string Name()
 		{
-			return exp_name;
+			return Lib.BuildString(exp_name, " - ", Experiment.DoneInfo(Science.Experiment(string.IsNullOrEmpty(experiment.last_subject_id) ? experiment.experiment_id : experiment.last_subject_id), experiment.data_rate));
 		}
 
 		public override uint Part()
@@ -29,8 +29,8 @@ namespace KERBALISM
 
 		public override string Info()
 		{
-			ExperimentInfo expInfo = Science.Experiment(experiment.last_subject_id);
-			return Experiment.StateInfo(Experiment.GetState(expInfo, experiment.issue, experiment.recording, experiment.forcedRun), expInfo, experiment.data_rate, experiment.issue);
+			ExperimentInfo expInfo = Science.Experiment(string.IsNullOrEmpty(experiment.last_subject_id) ? experiment.experiment_id : experiment.last_subject_id);
+			return Experiment.StateInfoShort(Experiment.GetState(expInfo, experiment.issue, experiment.recording, experiment.forcedRun), experiment.forcedRun, experiment.issue);
 		}
 
 		public override void Ctrl(bool value)
@@ -58,13 +58,15 @@ namespace KERBALISM
 			this.part_id = part_id;
 			this.allExperiments = allExperiments;
 			this.title = Lib.SpacesOnCaps(ResearchAndDevelopment.GetExperiment(prefab.experiment_id).experimentTitle).Replace("E V A", "EVA");
-			this.exp_name = (prefab.sample_mass < float.Epsilon ? "sensor" : "experiment") + ": " + title.ToLower();
+			this.exp_name = Lib.BuildString((prefab.sample_mass < float.Epsilon ? "sensor" : "experiment"), ": ", title.ToLower());
 			this.vessel_name = vessel_name;
 		}
 
 		public override string Name()
 		{
-			return exp_name;
+			string subject_id = Lib.Proto.GetString(proto, "last_subject_id", prefab.experiment_id);
+			if (string.IsNullOrEmpty(subject_id)) subject_id = prefab.experiment_id;
+			return Lib.BuildString(exp_name, " - ", Experiment.DoneInfo(Science.Experiment(subject_id), prefab.data_rate));
 		}
 
 		public override uint Part()
@@ -74,44 +76,30 @@ namespace KERBALISM
 
 		public override string Info()
 		{
-			bool recording = Lib.Proto.GetBool(proto, "recording");
-			bool forcedRun = Lib.Proto.GetBool(proto, "forcedRun");
 			string issue = Lib.Proto.GetString(proto, "issue");
+			bool forcedRun = Lib.Proto.GetBool(proto, "forcedRun");
 			string subject_id = Lib.Proto.GetString(proto, "last_subject_id", prefab.experiment_id);
 			if (string.IsNullOrEmpty(subject_id)) subject_id = prefab.experiment_id;
 
 			ExperimentInfo expInfo = Science.Experiment(subject_id);
-			return Experiment.StateInfo(Experiment.GetState(expInfo, issue, recording, forcedRun), expInfo, prefab.data_rate, issue);
+
+			return Experiment.StateInfoShort(
+				Experiment.GetState(expInfo, issue,  Lib.Proto.GetBool(proto, "recording"), forcedRun),
+				forcedRun,
+				issue);
 		}
 
 		public override void Ctrl(bool value)
 		{
-			bool recording = Lib.Proto.GetBool(proto, "recording");
-			bool forcedRun = Lib.Proto.GetBool(proto, "forcedRun");
-			string issue = Lib.Proto.GetString(proto, "issue");
-			string subject_id = Lib.Proto.GetString(proto, "last_subject_id", prefab.experiment_id);
-			if (string.IsNullOrEmpty(subject_id)) subject_id = prefab.experiment_id;
-
-			var state = Experiment.GetState(Science.Experiment(subject_id), issue, recording, forcedRun);
-
-
-			if (state == Experiment.State.WAITING)
-			{
-				Lib.Proto.Set(proto, "forcedRun", true);
-				return;
-			}
-			   
 			if (value)
 			{
 				// The same experiment must run only once on a vessel
 				foreach (var pair in allExperiments)
 				{
-					var e = pair.Key;
-					var p = pair.Value;
-					if (e.experiment_id != prefab.experiment_id) continue;
-					if (!e.isEnabled || !e.enabled) continue;
-					// if (p.part.flightID == prefab.part.flightID) continue;
-					if (recording)
+					if (pair.Key.experiment_id != prefab.experiment_id) continue; // check if this is the same experiment
+					if (pair.Value == proto) continue; // check if this is the same module
+					//if (!prefab.isEnabled || !prefab.enabled) continue;
+					if (Lib.Proto.GetBool(pair.Value, "recording"))
 					{
 						Experiment.PostMultipleRunsMessage(title, vessel_name);
 						return;
@@ -119,7 +107,21 @@ namespace KERBALISM
 				}
 			}
 
+			if (!value)
+			{
+				if (!Lib.Proto.GetBool(proto, "forcedRun"))
+				{
+					Lib.Proto.Set(proto, "forcedRun", true);
+					return;
+				}
+				else
+				{
+					Lib.Proto.Set(proto, "forcedRun", false);
+				}
+			}
+
 			Lib.Proto.Set(proto, "recording", value);
+			return;
 		}
 
 		public override void Toggle()

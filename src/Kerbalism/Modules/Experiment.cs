@@ -165,7 +165,7 @@ namespace KERBALISM
 			if (float.IsInfinity(expInfo.ScienceValue))
 				return Lib.BuildString(
 					Lib.Color("?", Lib.KColor.Science, true),
-					" ", Lib.HumanReadableCountdown(dataRate * expInfo.MaxAmount));
+					" ", Lib.HumanReadableCountdown(expInfo.MaxAmount / dataRate));
 
 			if (expInfo.PercentCollectedTotal < 1f)
 				return Lib.BuildString(
@@ -177,6 +177,18 @@ namespace KERBALISM
 				")");
 		}
 
+		public static string StateInfoShort(State state, bool forcedRun, string issue)
+		{
+			switch (state)
+			{
+				case State.ISSUE: return Lib.Color(issue, Lib.KColor.Orange);
+				case State.RUNNING: return Lib.Color(forcedRun ? "forced" : "running", Lib.KColor.Green);
+				case State.WAITING: return Lib.Color("waiting", Lib.KColor.Science);
+				case State.STOPPED: return Lib.Color(Localizer.Format("#KERBALISM_Generic_STOPPED"), Lib.KColor.Yellow);
+			}
+			return "error";
+		}
+
 		public static string StateInfo(State state, ExperimentInfo expInfo, double dataRate, string issue)
 		{
 			switch (state)
@@ -184,7 +196,7 @@ namespace KERBALISM
 				case State.ISSUE:
 					return Lib.Color(issue, Lib.KColor.Orange);
 				case State.RUNNING:
-					return Lib.BuildString("running, ", DoneInfo(expInfo, dataRate));
+					return Lib.BuildString(Lib.BuildString(Lib.Color("running", Lib.KColor.Green), ", "), DoneInfo(expInfo, dataRate));
 				case State.WAITING:
 					return Lib.Color("waiting", Lib.KColor.Science);
 				case State.STOPPED:
@@ -243,6 +255,8 @@ namespace KERBALISM
 			if (!recording)
 			{
 				state = State.STOPPED;
+				ExperimentSituation situation = Science.GetExperimentSituation(vessel);
+				last_subject_id = Science.Generate_subject_id(experiment_id, vessel, situation);
 				UnityEngine.Profiling.Profiler.EndSample();
 				return;
 			}
@@ -439,6 +453,9 @@ namespace KERBALISM
 
 			if (!recording)
 			{
+				ExperimentSituation situation = Science.GetExperimentSituation(v);
+				string subject_id = Science.Generate_subject_id(experiment.experiment_id, v, situation);
+				Lib.Proto.Set(m, "last_subject_id", subject_id);
 				UnityEngine.Profiling.Profiler.EndSample();
 				return;
 			}

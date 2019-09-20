@@ -62,9 +62,8 @@ namespace KERBALISM
 		/// </summary>
 		private void FixSituation()
 		{
-			var body = vessel.mainBody;
-			var alt = vessel.altitude;
-			var vd = vessel.KerbalismData();
+			CelestialBody body = vessel.mainBody;
+			VesselData vd = vessel.KerbalismData();
 
 			//if (vi.magnetosphere) sit = KerbalismSituations.Magnetosphere;
 			//if (vi.outer_belt) sit = KerbalismSituations.OuterBelt;
@@ -87,29 +86,28 @@ namespace KERBALISM
 				return;
 			}
 
-			if(vd.EnvLanded) {
-				var s = ScienceUtil.GetExperimentSituation(vessel);
-				switch (s)
+			if(vd.EnvLanded)
+			{
+				switch (ScienceUtil.GetExperimentSituation(vessel))
 				{
 					case ExperimentSituations.SrfLanded: Situation = KerbalismSituations.SrfLanded; return;
 					case ExperimentSituations.SrfSplashed: Situation = KerbalismSituations.SrfSplashed; return;
 				}
 			}
 
-			var treshold = body.scienceValues.spaceAltitudeThreshold;
-			if (alt > treshold)
+			if (vessel.altitude > body.scienceValues.spaceAltitudeThreshold)
 			{
 				Situation = KerbalismSituations.InSpaceHigh;
 				return;
 			}
 
-			if(alt > body.atmosphereDepth)
+			if (vessel.altitude > body.atmosphereDepth)
 			{
 				Situation = KerbalismSituations.InSpaceLow;
 				return;
 			}
 
-			if(body.atmosphere && alt > body.scienceValues.flyingAltitudeThreshold)
+			if(body.atmosphere && vessel.altitude > body.scienceValues.flyingAltitudeThreshold)
 			{
 				Situation = KerbalismSituations.FlyingHigh;
 				return;
