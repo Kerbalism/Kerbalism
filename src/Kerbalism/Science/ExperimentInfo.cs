@@ -120,7 +120,7 @@ namespace KERBALISM
 			// we collect data only if the subject exists
 			if (StockSubject != null)
 			{
-				SubjectIsCompleted = ScienceRemainingToRetrieve < 0.1f;
+				SubjectIsCompleted = ScienceRemainingToRetrieve < Science.scienceLeftForSubjectCompleted;
 
 				foreach (Drive drive in DB.drives.Values)
 				{

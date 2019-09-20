@@ -13,8 +13,7 @@ namespace KERBALISM
 		public ExperimentDevice(Experiment exp)
 		{
 			this.experiment = exp;
-			this.exp_name = (exp.sample_mass < float.Epsilon ? "sensor" : "experiment")
-				+ ": " + Lib.SpacesOnCaps(ResearchAndDevelopment.GetExperiment(exp.experiment_id).experimentTitle).ToLower().Replace("e v a", "eva");
+			this.exp_name = Lib.BuildString((exp.sample_mass < float.Epsilon ? "sensor" : "experiment"), ": ", ResearchAndDevelopment.GetExperiment(exp.experiment_id).experimentTitle);
 		}
 
 		public override string Name()
@@ -57,8 +56,8 @@ namespace KERBALISM
 			this.prefab = prefab;
 			this.part_id = part_id;
 			this.allExperiments = allExperiments;
-			this.title = Lib.SpacesOnCaps(ResearchAndDevelopment.GetExperiment(prefab.experiment_id).experimentTitle).Replace("E V A", "EVA");
-			this.exp_name = Lib.BuildString((prefab.sample_mass < float.Epsilon ? "sensor" : "experiment"), ": ", title.ToLower());
+			this.title = ResearchAndDevelopment.GetExperiment(prefab.experiment_id).experimentTitle;
+			this.exp_name = Lib.BuildString((prefab.sample_mass < float.Epsilon ? "sensor" : "experiment"), ": ", title);
 			this.vessel_name = vessel_name;
 		}
 

@@ -21,8 +21,11 @@ namespace KERBALISM
             // get unique id (or generate one for new savegames)
             uid = Lib.ConfigValue(node, "uid", Lib.RandomInt(int.MaxValue));
 
-            // load kerbals data
-            kerbals = new Dictionary<string, KerbalData>();
+			// load science points
+			uncreditedScience = Lib.ConfigValue(node, "uncreditedScience", 0.0);
+
+			// load kerbals data
+			kerbals = new Dictionary<string, KerbalData>();
             if (node.HasNode("kerbals"))
             {
                 foreach (var kerbal_node in node.GetNode("kerbals").GetNodes())
@@ -103,8 +106,11 @@ namespace KERBALISM
             // save unique id
             node.AddValue("uid", uid);
 
-            // save kerbals data
-            var kerbals_node = node.AddNode("kerbals");
+			// save science
+			node.AddValue("uncreditedScience", uncreditedScience);
+
+			// save kerbals data
+			var kerbals_node = node.AddNode("kerbals");
             foreach (var p in kerbals)
             {
                 p.Value.Save(kerbals_node.AddNode(To_safe_key(p.Key)));
@@ -256,6 +262,7 @@ namespace KERBALISM
         public static Dictionary<string, StormData> bodies;     // store data per-body
         public static LandmarkData landmarks;                  // store landmark data
         public static UIData ui;                               // store ui data
+		public static double uncreditedScience;
     }
 
 

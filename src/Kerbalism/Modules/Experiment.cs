@@ -182,7 +182,7 @@ namespace KERBALISM
 			switch (state)
 			{
 				case State.ISSUE: return Lib.Color(issue, Lib.KColor.Orange);
-				case State.RUNNING: return Lib.Color(forcedRun ? "forced" : "running", Lib.KColor.Green);
+				case State.RUNNING: return Lib.Color(forcedRun, "forced run", Lib.KColor.Orange, "running", Lib.KColor.Green);
 				case State.WAITING: return Lib.Color("waiting", Lib.KColor.Science);
 				case State.STOPPED: return Lib.Color(Localizer.Format("#KERBALISM_Generic_STOPPED"), Lib.KColor.Yellow);
 			}

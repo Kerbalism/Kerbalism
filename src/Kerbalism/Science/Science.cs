@@ -9,8 +9,12 @@ namespace KERBALISM
 
 	public static class Science
 	{
-		// this is for auto-transmit throttling
-		public const double min_file_size = 0.002;
+		// science points from transmission won't be credited until they reach this amount
+		public const double minCreditBuffer = 0.1;
+
+		// a subject will be completed (gamevent fired and popup shown) when there is less than this value to retrieve in RnD
+		// this is needed because of floating point imprecisions in the in-flight science count (due to a gazillion add of very small values)
+		public const float scienceLeftForSubjectCompleted = 0.1f;
 
 		private class XmitFile
 		{
@@ -50,18 +54,6 @@ namespace KERBALISM
 			}
 		}
 
-		private static Drive FindDrive(Vessel v, string filename)
-		{
-			foreach (var d in Drive.GetDrives(v, true))
-			{
-				if (d.files.ContainsKey(filename))
-				{
-					return d;
-				}
-			}
-			return null;
-		}
-
 		// consume EC for transmission, and transmit science data
 		public static void Update(Vessel v, VesselData vd, ResourceInfo ec, double elapsed_s)
 		{
@@ -87,6 +79,8 @@ namespace KERBALISM
 
 			if (xmitFiles.Count == 0)
 				return;
+
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Science.Update-Loop");
 
 			// traverse the list in reverse because :
 			// - warp cache files are at the end, and they are always transmitted regerdless of transmit capacity
@@ -115,7 +109,7 @@ namespace KERBALISM
 				scienceCredited += xmitScienceValue;
 
 				// fire subject completed events
-				if (!xmitFile.expInfo.SubjectIsCompleted && xmitFile.expInfo.ScienceRemainingToRetrieve < 0.1f) // large threshold because of floating point errors.
+				if (!xmitFile.expInfo.SubjectIsCompleted && xmitFile.expInfo.ScienceRemainingToRetrieve < scienceLeftForSubjectCompleted) // large threshold because of floating point errors.
 					SubjectXmitCompleted(xmitFile, v);
 
 				// consume data in the file
@@ -139,15 +133,28 @@ namespace KERBALISM
 				stockSubject.scientificValue = ResearchAndDevelopment.GetSubjectValue(stockSubject.science, stockSubject);
 			}
 
-			// Add science points
-			// We don't use "TransactionReasons.ScienceTransmission" because AddScience fire a bunch of events,
-			// triggering a lot of side issues (ex : chatterer transmit sound playing continously, strategia "+0.0 science" popup...)
-			ResearchAndDevelopment.Instance.AddScience(scienceCredited, TransactionReasons.None);
+			UnityEngine.Profiling.Profiler.EndSample();
+
 			vd.scienceTransmitted += scienceCredited;
+
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Science.Update-AddScience");
+
+			// Add science points, but wait until we have at least 0.1 points to add because AddScience is VERY slow
+			// We don't use "TransactionReasons.ScienceTransmission" because AddScience fire multiple events not meant to be fired continuously
+			// this avoid many side issues (ex : chatterer transmit sound playing continously, strategia "+0.0 science" popup...)
+			DB.uncreditedScience += scienceCredited;
+			if (DB.uncreditedScience > 0.1)
+			{
+				ResearchAndDevelopment.Instance.AddScience((float)DB.uncreditedScience, TransactionReasons.None);
+				DB.uncreditedScience = 0.0;
+			}
+
+			UnityEngine.Profiling.Profiler.EndSample();
 		}
 
 		private static void GetFilesToTransmit(Vessel v)
 		{
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Science.GetFilesToTransmit");
 			Drive warpCache = Cache.WarpCache(v);
 
 			xmitFiles.Clear();
@@ -178,7 +185,11 @@ namespace KERBALISM
 
 			// sort files by science value per MB ascending order so high value files are transmitted first
 			// because XmitFile list is processed from end to start
+
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Science.GetFilesToTransmit-Sort");
+			// TODO : this is slow and unnecessary. We just need to most valuable file to be last, we don't care much about the others
 			xmitFiles.Sort((x, y) => x.expInfo.SubjectSciencePerMB.CompareTo(y.expInfo.SubjectSciencePerMB));
+			UnityEngine.Profiling.Profiler.EndSample();
 
 			// add all warpcache files to the end of the XmitFile list
 			foreach (var p in warpCache.files)
@@ -193,6 +204,7 @@ namespace KERBALISM
 				else
 					xmitFiles.Add(new XmitFile(p.Key, Experiment(p.Key), p.Value, warpCache, true)); // should not be happening, but better safe than sorry
 			}
+			UnityEngine.Profiling.Profiler.EndSample();
 		}
 
 		private static void SubjectXmitCompleted(XmitFile xmitFile, Vessel v)
@@ -636,18 +648,6 @@ namespace KERBALISM
 		static readonly Dictionary<string, double> sampleMasses = new Dictionary<string, double>();
 		static readonly List<XmitFile> xmitFiles = new List<XmitFile>();
 
-		private class DeferredCreditValues {
-			internal string subject_id;
-			internal double size;
-			internal ProtoVessel pv;
-
-			public DeferredCreditValues(string subject_id, double size, ProtoVessel pv)
-			{
-				this.subject_id = subject_id;
-				this.size = size;
-				this.pv = pv;
-			}
-		}
 	}
 
 } // KERBALISM
