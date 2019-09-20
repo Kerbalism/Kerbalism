@@ -167,6 +167,7 @@
     <Compile Include="Database\KerbalData.cs" />
     <Compile Include="Database\LandmarkData.cs" />
     <Compile Include="Database\RuleData.cs" />
+    <Compile Include="Database\SubjectData.cs" />
     <Compile Include="Database\SupplyData.cs" />
     <Compile Include="Database\UIData.cs" />
     <Compile Include="Database\VesselData.cs" />

@@ -18,19 +18,17 @@ namespace KERBALISM
 
 		private class XmitFile
 		{
-			public string subject_id;
-			public ExperimentInfo expInfo;
 			public File file;
+			public double sciencePerMB; // caching this because it's slow to get
 			public Drive drive;
 			public bool isInWarpCache;
 			public File realDriveFile; // reference to the "real" file for files in the warp cache
 
-			public XmitFile(string subject_id, ExperimentInfo expInfo, File file, Drive drive, bool isInWarpCache, File realDriveFile = null)
+			public XmitFile(File file, Drive drive, double sciencePerMB, bool isInWarpCache, File realDriveFile = null)
 			{
-				this.subject_id = subject_id;
-				this.expInfo = expInfo;
 				this.file = file;
 				this.drive = drive;
+				this.sciencePerMB = sciencePerMB;
 				this.isInWarpCache = isInWarpCache;
 				this.realDriveFile = realDriveFile;
 			}
@@ -103,18 +101,19 @@ namespace KERBALISM
 				transmitCapacity -= transmitted;
 
 				// get science value
-				float xmitScienceValue = (float)(transmitted * xmitFile.expInfo.SubjectSciencePerMB);
+				float xmitScienceValue = (float)(transmitted * xmitFile.sciencePerMB);
 
 				// increase science points to credit
 				scienceCredited += xmitScienceValue;
 
 				// fire subject completed events
-				if (!xmitFile.expInfo.SubjectIsCompleted && xmitFile.expInfo.ScienceRemainingToRetrieve < scienceLeftForSubjectCompleted) // large threshold because of floating point errors.
-					SubjectXmitCompleted(xmitFile, v);
+				int timesCompleted = xmitFile.file.expInfo.UpdateSubjectCompletion(xmitScienceValue);
+				if (timesCompleted > 0)
+					SubjectXmitCompleted(xmitFile.file, timesCompleted, v);
 
 				// consume data in the file
 				xmitFile.file.size -= transmitted;
-				xmitFile.expInfo.RemoveDataCollectedInFlight(xmitScienceValue);
+				xmitFile.file.expInfo.RemoveDataCollectedInFlight(xmitScienceValue);
 
 				if (xmitFile.isInWarpCache && xmitFile.realDriveFile != null)
 				{
@@ -128,7 +127,7 @@ namespace KERBALISM
 				}
 
 				// credit the subject
-				ScienceSubject stockSubject = xmitFile.expInfo.StockSubject;
+				ScienceSubject stockSubject = xmitFile.file.expInfo.StockSubject;
 				stockSubject.science = Math.Min(stockSubject.science + (xmitScienceValue / HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier), stockSubject.scienceCap);
 				stockSubject.scientificValue = ResearchAndDevelopment.GetSubjectValue(stockSubject.science, stockSubject);
 			}
@@ -158,71 +157,68 @@ namespace KERBALISM
 			Drive warpCache = Cache.WarpCache(v);
 
 			xmitFiles.Clear();
-
 			List<string> filesToRemove = new List<string>();
 
 			foreach (var drive in Drive.GetDrives(v, true))
 			{
-				filesToRemove.Clear();
-				foreach (var p in drive.files)
+				foreach (File f in drive.files.Values)
 				{
-					if (p.Value.size <= 0.0 && (!warpCache.files.ContainsKey(p.Key) || warpCache.files[p.Key].size == 0.0))
+					// delete empty files that aren't being transmitted
+					if (f.size <= 0.0 && (!warpCache.files.ContainsKey(f.subject_id) || warpCache.files[f.subject_id].size == 0.0))
 					{
-						filesToRemove.Add(p.Key);
+						filesToRemove.Add(f.subject_id);
 						continue;
 					}
 	
-					if (drive.GetFileSend(p.Key))
+					if (drive.GetFileSend(f.subject_id))
 					{
-						p.Value.transmitRate = 0.0;
-						xmitFiles.Add(new XmitFile(p.Key, Experiment(p.Key), p.Value, drive, false));
+						f.transmitRate = 0.0;
+						xmitFiles.Add(new XmitFile(f, drive, f.expInfo.SubjectSciencePerMB, false));
 					}
 				}
 
 				foreach (string fileToRemove in filesToRemove)
 					drive.files.Remove(fileToRemove);
+
+				filesToRemove.Clear();
 			}
 
 			// sort files by science value per MB ascending order so high value files are transmitted first
 			// because XmitFile list is processed from end to start
-
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Science.GetFilesToTransmit-Sort");
-			// TODO : this is slow and unnecessary. We just need to most valuable file to be last, we don't care much about the others
-			xmitFiles.Sort((x, y) => x.expInfo.SubjectSciencePerMB.CompareTo(y.expInfo.SubjectSciencePerMB));
+			xmitFiles.Sort((x, y) => x.sciencePerMB.CompareTo(y.sciencePerMB));
 			UnityEngine.Profiling.Profiler.EndSample();
 
-			// add all warpcache files to the end of the XmitFile list
-			foreach (var p in warpCache.files)
+			// add all warpcache files to the beginning of the XmitFile list
+			foreach (File f in warpCache.files.Values)
 			{
 				// don't transmit empty files
-				if (p.Value.size <= 0.0)
+				if (f.size <= 0.0)
 					continue;
 
-				XmitFile driveFile = xmitFiles.Find(pr => pr.subject_id == p.Key);
-				if (driveFile != null)
-					xmitFiles.Add(new XmitFile(p.Key, Experiment(p.Key), p.Value, warpCache, true, driveFile.file));
+				int driveFileIndex = xmitFiles.FindIndex(df => df.file.subject_id == f.subject_id);
+				if (driveFileIndex >= 0)
+					xmitFiles.Add(new XmitFile(f, warpCache, f.expInfo.SubjectSciencePerMB, true, xmitFiles[driveFileIndex].file));
 				else
-					xmitFiles.Add(new XmitFile(p.Key, Experiment(p.Key), p.Value, warpCache, true)); // should not be happening, but better safe than sorry
+					xmitFiles.Add(new XmitFile(f, warpCache, f.expInfo.SubjectSciencePerMB, true)); // should not be happening, but better safe than sorry
+
 			}
 			UnityEngine.Profiling.Profiler.EndSample();
 		}
 
-		private static void SubjectXmitCompleted(XmitFile xmitFile, Vessel v)
+		private static void SubjectXmitCompleted(File file, int timesCompleted, Vessel v)
 		{
-			// remember that the subject is complete
-			xmitFile.expInfo.SubjectIsCompleted = true;
-
 			// fire science transmission game event. This is used by stock contracts and a few other things.
-			GameEvents.OnScienceRecieved.Fire(xmitFile.expInfo.ScienceValue, xmitFile.expInfo.StockSubject, v.protoVessel, false);
+			GameEvents.OnScienceRecieved.Fire(timesCompleted == 1 ? file.expInfo.ScienceValue : 0f, file.expInfo.StockSubject, v.protoVessel, false);
 
 			// fire our API event
 			// Note (GOT) : disabled, nobody is using it and i'm not sure what is the added value compared to the stock event,
-			// unless we fire it for every transmission, and in this case this is a very bad idea from a performance standpoint
+			// unless we fire it for every transmission tick, and in this case this is a very bad idea from a performance standpoint
 			// API.OnScienceReceived.Notify(credits, subject, pv, true);
 
 			// notify the player
 			string subjectResultText;
-			if (string.IsNullOrEmpty(xmitFile.file.resultText))
+			if (string.IsNullOrEmpty(file.resultText))
 			{
 				subjectResultText = Lib.TextVariant(
 					"Our researchers will jump on it right now",
@@ -233,10 +229,10 @@ namespace KERBALISM
 			}
 			else
 			{
-				subjectResultText = xmitFile.file.resultText;
+				subjectResultText = file.resultText;
 			}
 			subjectResultText = Lib.WordWrapAtLength(subjectResultText, 70);
-			Message.Post(Lib.BuildString(xmitFile.expInfo.SubjectName, " completed\n", Lib.HumanReadableScience(xmitFile.expInfo.ScienceValue)), subjectResultText);
+			Message.Post(Lib.BuildString(file.expInfo.SubjectName, " transmitted\n", timesCompleted == 1 ? Lib.HumanReadableScience(file.expInfo.ScienceValue) : Lib.Color("no science gain : we already had this data", Lib.KColor.Orange, true)), subjectResultText);
 		}
 
 		// return module acting as container of an experiment

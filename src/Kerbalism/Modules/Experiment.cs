@@ -167,7 +167,7 @@ namespace KERBALISM
 					Lib.Color("?", Lib.KColor.Science, true),
 					" ", Lib.HumanReadableCountdown(expInfo.MaxAmount / dataRate));
 
-			if (expInfo.PercentCollectedTotal < 1f)
+			if (expInfo.PercentCollectedTotal < 1.0)
 				return Lib.BuildString(
 					Lib.Color(Lib.BuildString(expInfo.ScienceCollectedTotal.ToString("F1"), "/", expInfo.ScienceValue.ToString("F1")), Lib.KColor.Science, true),
 					" ", Lib.HumanReadableCountdown((expInfo.MaxAmount / dataRate) * Math.Max(1.0 - expInfo.PercentCollectedTotal, 0.0)));
@@ -177,11 +177,13 @@ namespace KERBALISM
 				")");
 		}
 
-		public static string StateInfoShort(State state, bool forcedRun, string issue)
+		public static string StateInfoShort(State state, bool forcedRun, string issue, bool recording)
 		{
 			switch (state)
 			{
-				case State.ISSUE: return Lib.Color(issue, Lib.KColor.Orange);
+				case State.ISSUE:
+					if (recording) return Lib.BuildString(Lib.Color(forcedRun, "[F]", Lib.KColor.Orange, "[R]", Lib.KColor.Green), " req: ", Lib.Color(issue, Lib.KColor.Orange));
+					else return Lib.BuildString(Lib.Color("[S]", Lib.KColor.Yellow), " req: ", Lib.Color(issue, Lib.KColor.Orange));
 				case State.RUNNING: return Lib.Color(forcedRun, "forced run", Lib.KColor.Orange, "running", Lib.KColor.Green);
 				case State.WAITING: return Lib.Color("waiting", Lib.KColor.Science);
 				case State.STOPPED: return Lib.Color(Localizer.Format("#KERBALISM_Generic_STOPPED"), Lib.KColor.Yellow);

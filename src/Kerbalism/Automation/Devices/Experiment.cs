@@ -13,7 +13,7 @@ namespace KERBALISM
 		public ExperimentDevice(Experiment exp)
 		{
 			this.experiment = exp;
-			this.exp_name = Lib.BuildString((exp.sample_mass < float.Epsilon ? "sensor" : "experiment"), ": ", ResearchAndDevelopment.GetExperiment(exp.experiment_id).experimentTitle);
+			this.exp_name = Lib.BuildString(exp.sample_mass < float.Epsilon ? "sensor: " : "sample: ", ResearchAndDevelopment.GetExperiment(exp.experiment_id).experimentTitle);
 		}
 
 		public override string Name()
@@ -29,7 +29,8 @@ namespace KERBALISM
 		public override string Info()
 		{
 			ExperimentInfo expInfo = Science.Experiment(string.IsNullOrEmpty(experiment.last_subject_id) ? experiment.experiment_id : experiment.last_subject_id);
-			return Experiment.StateInfoShort(Experiment.GetState(expInfo, experiment.issue, experiment.recording, experiment.forcedRun), experiment.forcedRun, experiment.issue);
+			Experiment.State state = Experiment.GetState(expInfo, experiment.issue, experiment.recording, experiment.forcedRun);
+			return Experiment.StateInfoShort(state, experiment.forcedRun, experiment.issue, experiment.recording);
 		}
 
 		public override void Ctrl(bool value)
@@ -77,15 +78,17 @@ namespace KERBALISM
 		{
 			string issue = Lib.Proto.GetString(proto, "issue");
 			bool forcedRun = Lib.Proto.GetBool(proto, "forcedRun");
+			bool recording = Lib.Proto.GetBool(proto, "recording");
 			string subject_id = Lib.Proto.GetString(proto, "last_subject_id", prefab.experiment_id);
 			if (string.IsNullOrEmpty(subject_id)) subject_id = prefab.experiment_id;
 
 			ExperimentInfo expInfo = Science.Experiment(subject_id);
 
 			return Experiment.StateInfoShort(
-				Experiment.GetState(expInfo, issue,  Lib.Proto.GetBool(proto, "recording"), forcedRun),
+				Experiment.GetState(expInfo, issue, recording, forcedRun),
 				forcedRun,
-				issue);
+				issue,
+				recording);
 		}
 
 		public override void Ctrl(bool value)

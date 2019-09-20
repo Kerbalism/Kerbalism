@@ -33,6 +33,8 @@ namespace KERBALISM
 		/// <summary> if true, this ExperimentInfo is about a specific subject, and all Subject* properties can be used </summary>
 		public bool IsSubject { get; private set; }
 
+		private SubjectData subjectData;
+
 		/// <summary> subject identifier </summary>
 		public string SubjectId { get; private set; }
 
@@ -42,8 +44,14 @@ namespace KERBALISM
 		/// <summary> subject situation </summary>
 		public string SubjectSituation { get; private set; }
 
-		/// <summary> is the subject completed ? </summary>
-		public bool SubjectIsCompleted { get; set; }
+		/// <summary> has the subject been retrieved fully in RnD at least once ? </summary>
+		public bool SubjectIsCompleted => subjectData == null ? false : subjectData.timesCompleted > 0;
+
+		/// <summary> how many times the subject has been fully retrieved in RnD </summary>
+		public int SubjectTimesCompleted => subjectData == null ? 0 : subjectData.timesCompleted;
+
+		/// <summary> percentage [0;1] of science retrieved </summary>
+		public double PercentRetrieved => subjectData == null ? 0.0 : subjectData.completionPercent;
 
 		/// <summary> subject science points per MB of data </summary>
 		public double SubjectSciencePerMB => ScienceValue / MaxAmount;
@@ -69,7 +77,7 @@ namespace KERBALISM
 
 		/// <summary> science value remaining to collect. Will be PositiveInfinity until an experiment create the subject </summary>
 		public float ScienceRemainingToCollect
-			=> ScienceValue - ScienceCollectedTotal;
+			=> Math.Max(ScienceValue - ScienceCollectedTotal, 0f);
 
 		/// <summary> science value remaining to retriecve. Will be PositiveInfinity until an experiment create the subject </summary>
 		public float ScienceRemainingToRetrieve
@@ -117,11 +125,12 @@ namespace KERBALISM
 			SubjectSituation = Situation(subject_id);
 			SubjectName = Lib.BuildString(Name, " (", SubjectSituation, ")");
 
+			if (IsSubject)
+				subjectData = DB.Subject(SubjectId);
+
 			// we collect data only if the subject exists
 			if (StockSubject != null)
 			{
-				SubjectIsCompleted = ScienceRemainingToRetrieve < Science.scienceLeftForSubjectCompleted;
-
 				foreach (Drive drive in DB.drives.Values)
 				{
 					if (drive.files.ContainsKey(subject_id))
@@ -151,6 +160,27 @@ namespace KERBALISM
 		{
 			SubjectScienceCollectedInFlight -= credits;
 			if (SubjectScienceCollectedInFlight < 0f) SubjectScienceCollectedInFlight = 0f;
+		}
+
+		/// <summary>
+		/// update our subject completion database.
+		/// if the subject was just completed, return the amount of times it has ever been completed.
+		/// otherwise return -1
+		/// </summary>
+		public int UpdateSubjectCompletion(float scienceAdded)
+		{
+			subjectData.completionPercent = ((subjectData.completionPercent * ScienceValue) + scienceAdded) / ScienceValue;
+
+			double decimalPart = subjectData.completionPercent - Math.Truncate(subjectData.completionPercent);
+			int timesCompleted = (int)(subjectData.completionPercent / 1.0) + (decimalPart < 1.0 - Science.scienceLeftForSubjectCompleted ? 0 : 1);
+
+			if (timesCompleted > subjectData.timesCompleted)
+			{
+				subjectData.timesCompleted = timesCompleted;
+				return timesCompleted;
+			}
+
+			return -1;
 		}
 
 		/// <summary>

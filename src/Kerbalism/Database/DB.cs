@@ -54,8 +54,18 @@ namespace KERBALISM
                 }
             }
 
-            // load drives
-            drives = new Dictionary<uint, Drive>();
+			// load science subjects completion level (note : this must be done before drives are loaded)
+			subjectsCompletion = new Dictionary<string, SubjectData>();
+			if (node.HasNode("subjectsCompletion"))
+			{
+				foreach (var subjectNode in node.GetNode("subjectsCompletion").GetNodes())
+				{
+					subjectsCompletion.Add(From_safe_key(subjectNode.name), new SubjectData(subjectNode));
+				}
+			}
+
+			// load drives
+			drives = new Dictionary<uint, Drive>();
             if (node.HasNode("drives")) // old vessels used flightId, we switched to Guid with vessels2
             {
                 foreach (var drive_node in node.GetNode("drives").GetNodes())
@@ -142,6 +152,13 @@ namespace KERBALISM
 
             // save ui data
             ui.Save(node.AddNode("ui"));
+
+			// save science subjects completion level
+			var subjectsNode = node.AddNode("subjectsCompletion");
+			foreach (var p in subjectsCompletion)
+			{
+				p.Value.Save(subjectsNode.AddNode(To_safe_key(p.Key)));
+			}
         }
 
 
@@ -206,7 +223,16 @@ namespace KERBALISM
             return bodies[name];
         }
 
-        public static Boolean ContainsKerbal(string name)
+		public static SubjectData Subject(string subject_id)
+		{
+			if (!subjectsCompletion.ContainsKey(subject_id))
+			{
+				subjectsCompletion.Add(subject_id, new SubjectData(subject_id));
+			}
+			return subjectsCompletion[subject_id];
+		}
+
+		public static Boolean ContainsKerbal(string name)
         {
             return kerbals.ContainsKey(name);
         }
@@ -263,6 +289,7 @@ namespace KERBALISM
         public static LandmarkData landmarks;                  // store landmark data
         public static UIData ui;                               // store ui data
 		public static double uncreditedScience;
+		public static Dictionary<string, SubjectData> subjectsCompletion; // science subjects completion %
     }
 
 
