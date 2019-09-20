@@ -158,6 +158,10 @@ namespace KERBALISM
 
 		void FromEVA(GameEvents.FromToAction<Part, Part> data)
 		{
+			// contract configurator calls this event with both parts being the same when it adds a passenger
+			if (data.from == data.to)
+				return;
+
 			String prop_name = Lib.EvaPropellantName();
 
 			// for each resource in the eva kerbal
