@@ -252,15 +252,6 @@ namespace KERBALISM
 		{
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Experiment.FixedUpdate");
 
-			if (!recording)
-			{
-				state = State.STOPPED;
-				ExperimentSituation situation = Science.GetExperimentSituation(vessel);
-				last_subject_id = Science.Generate_subject_id(experiment_id, vessel, situation);
-				UnityEngine.Profiling.Profiler.EndSample();
-				return;
-			}
-
 			// basic sanity checks
 			if (Lib.IsEditor())
 			{
@@ -274,6 +265,15 @@ namespace KERBALISM
 			}
 			if (next_check > Planetarium.GetUniversalTime())
 			{
+				UnityEngine.Profiling.Profiler.EndSample();
+				return;
+			}
+
+			if (!recording)
+			{
+				state = State.STOPPED;
+				ExperimentSituation situation = Science.GetExperimentSituation(vessel);
+				last_subject_id = Science.Generate_subject_id(experiment_id, vessel, situation);
 				UnityEngine.Profiling.Profiler.EndSample();
 				return;
 			}
