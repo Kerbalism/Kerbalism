@@ -48,6 +48,10 @@ namespace KERBALISM
 			if (!powered)
 				return;
 
+			// wait until network is initialized (2 seconds after load)
+			if (Communications.NetworkInitialized)
+				return;
+
 			AntennaInfo ai = GetAntennaInfo(v, powered, storm);
 			ec = ai.ec;
 			rate = ai.rate * PreferencesScience.Instance.transmitFactor;
