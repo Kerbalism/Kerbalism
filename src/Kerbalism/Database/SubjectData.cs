@@ -22,7 +22,7 @@ namespace KERBALISM
 
 			completionPercent = stockSubject.science / stockSubject.scienceCap;
 			double decimalPart = completionPercent - Math.Truncate(completionPercent);
-			timesCompleted = (int)(completionPercent / 1.0) + decimalPart < 1.0 - Science.scienceLeftForSubjectCompleted ? 0 : 1;
+			timesCompleted = (int)(completionPercent / 1.0) + (decimalPart < 1.0 - Science.scienceLeftForSubjectCompleted ? 0 : 1);
 		}
 
 		public SubjectData(ConfigNode node)
