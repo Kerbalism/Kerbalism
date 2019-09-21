@@ -10,7 +10,7 @@ namespace KERBALISM
 		// click through locks
 		private bool clickThroughLocked = false;
 		private const ControlTypes MainGUILockTypes = ControlTypes.MANNODE_ADDEDIT | ControlTypes.MANNODE_DELETE | ControlTypes.MAP_UI |
-			ControlTypes.TARGETING | ControlTypes.VESSEL_SWITCHING | ControlTypes.TWEAKABLES | ControlTypes.EDITOR_UI | ControlTypes.EDITOR_SOFT_LOCK;
+			ControlTypes.TARGETING | ControlTypes.VESSEL_SWITCHING | ControlTypes.TWEAKABLES | ControlTypes.EDITOR_UI | ControlTypes.EDITOR_SOFT_LOCK | ControlTypes.UI | ControlTypes.CAMERACONTROLS;
 
 		public Launcher()
 		{
@@ -137,7 +137,8 @@ namespace KERBALISM
 			}
 
 			// get mouse over state
-			bool mouse_over = win_rect.Contains(Event.current.mousePosition);
+			// bool mouse_over = win_rect.Contains(Event.current.mousePosition);
+			bool mouse_over = win_rect.Contains(new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y));
 
 			// disable camera mouse scrolling on mouse over
 			if (mouse_over)
