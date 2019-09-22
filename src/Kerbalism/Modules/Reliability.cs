@@ -777,7 +777,10 @@ namespace KERBALISM
 
 				case "ModuleEngines":
 					foreach (PartModule m in modules)
-						return (m as ModuleEngines).resultingThrust > 0;
+					{
+						var e = m as ModuleEngines;
+						return e.EngineIgnited && e.resultingThrust > 0;
+					}
 					return false;
 			}
 
