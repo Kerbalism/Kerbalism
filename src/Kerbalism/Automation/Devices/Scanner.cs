@@ -25,7 +25,7 @@ namespace KERBALISM
 			return scanner.part.flightID;
 		}
 
-		public override string Info()
+		public override string Status()
 		{
 			return Lib.Color(Lib.ReflectionValue<bool>(scanner, "scanning"), Localizer.Format("#KERBALISM_Generic_ENABLED"), Lib.KColor.Green, Localizer.Format("#KERBALISM_Generic_DISABLED"), Lib.KColor.Yellow);
 		}
@@ -66,7 +66,7 @@ namespace KERBALISM
 			return part_id;
 		}
 
-		public override string Info()
+		public override string Status()
 		{
 			return Lib.Color(Lib.Proto.GetBool(scanner, "scanning"), Localizer.Format("#KERBALISM_Generic_ENABLED"), Lib.KColor.Green, Localizer.Format("#KERBALISM_Generic_DISABLED"), Lib.KColor.Yellow);
 		}

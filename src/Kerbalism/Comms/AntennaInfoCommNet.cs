@@ -242,8 +242,8 @@ namespace KERBALISM
 
 				string name = Lib.Ellipsis(Localizer.Format(link.end.name).Replace("Kerbin", "DSN"), 35);
 				string value = Lib.HumanReadablePerc(Math.Ceiling(signalStrength * 10000) / 10000, "F2");
-				string tooltip = "Distance: " + Lib.HumanReadableRange((link.start.position - link.end.position).magnitude) +
-					"\nMax Distance: " + Lib.HumanReadableRange(Math.Sqrt((link.start.antennaTransmit.power + link.start.antennaRelay.power) * link.end.antennaRelay.power));
+				string tooltip = "Distance: " + Lib.HumanReadableDistance((link.start.position - link.end.position).magnitude) +
+					"\nMax Distance: " + Lib.HumanReadableDistance(Math.Sqrt((link.start.antennaTransmit.power + link.start.antennaRelay.power) * link.end.antennaRelay.power));
 				antennaInfo.control_path.Add(new string[] { name, value, tooltip });
 			}
 		}

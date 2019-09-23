@@ -194,6 +194,7 @@
     <Compile Include="Renderer\ParticleMesh.cs" />
     <Compile Include="Renderer\ParticleRenderer.cs" />
     <Compile Include="Science\Drive.cs" />
+    <Compile Include="Science\ExperimentRequirements.cs" />
     <Compile Include="Science\ExperimentInfo.cs" />
     <Compile Include="Science\File.cs" />
     <Compile Include="Science\Hijacker.cs" />
@@ -210,6 +211,7 @@
     <Compile Include="UI\Planner\SimulatedResource.cs" />
     <Compile Include="UI\Planner\SimulatedResourceView.cs" />
     <Compile Include="UI\Planner\VesselAnalyzer.cs" />
+    <Compile Include="UI\SciencePopup.cs" />
     <Compile Include="Utility\GotoVessel.cs" />
     <Compile Include="System\Loader.cs" />
     <Compile Include="System\Settings.cs" />

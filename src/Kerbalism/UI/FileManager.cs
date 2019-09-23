@@ -133,7 +133,7 @@ namespace KERBALISM
 			);
 
 			double exp_value = file.size * expInfo.SubjectSciencePerMB;
-			if (expInfo.ScienceRemainingToRetrieve > 0f && file.size > 0.0)
+			if (expInfo.SubjectScienceRemainingToRetrieve > 0f && file.size > 0.0)
 				exp_tooltip = Lib.BuildString(exp_tooltip, "\n<b>", Lib.HumanReadableScience(file.size * expInfo.SubjectSciencePerMB), "</b>");
 			if (file.transmitRate > 0.0)
 			{

@@ -33,7 +33,7 @@ namespace KERBALISM
 			return antenna.part.flightID;
 		}
 
-		public override string Info()
+		public override string Status()
 		{
 			switch (ModuleName)
 			{
@@ -152,7 +152,7 @@ namespace KERBALISM
 			return part_id;
 		}
 
-		public override string Info()
+		public override string Status()
 		{
 			switch (ModuleName)
 			{

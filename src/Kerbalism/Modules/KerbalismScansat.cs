@@ -66,10 +66,10 @@ namespace KERBALISM
 				{
 					ExperimentSituation situation = Science.GetExperimentSituation(vessel);
 					string subject_id = Science.Generate_subject_id(experimentType, vessel, situation);
-					Science.Generate_subject(experimentType, subject_id, vessel);
-					
-					var exp = Science.Experiment(subject_id);
-					double size = exp.MaxAmount * coverage_delta / 100.0; // coverage is 0-100%
+					ExperimentInfo expInfo = Science.Experiment(subject_id);
+					expInfo.CreateSubjectInRnD(vessel, situation);
+
+					double size = expInfo.MaxAmount * coverage_delta / 100.0; // coverage is 0-100%
 					size += warp_buffer;
 
 					size = Drive.StoreFile(vessel, subject_id, size);
@@ -209,9 +209,10 @@ namespace KERBALISM
 				{
 					ExperimentSituation situation = Science.GetExperimentSituation(vessel);
 					string subject_id = Science.Generate_subject_id(kerbalismScansat.experimentType, vessel, situation);
-					Science.Generate_subject(kerbalismScansat.experimentType, subject_id, vessel);
-					var exp = Science.Experiment(subject_id);
-					double size = exp.MaxAmount * coverage_delta / 100.0; // coverage is 0-100%
+					ExperimentInfo expInfo = Science.Experiment(subject_id);
+					expInfo.CreateSubjectInRnD(vessel, situation);
+
+					double size = expInfo.MaxAmount * coverage_delta / 100.0; // coverage is 0-100%
 					size += warp_buffer;
 
 					if (size > double.Epsilon)

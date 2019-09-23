@@ -25,7 +25,7 @@ namespace KERBALISM
 			return ring.part.flightID;
 		}
 
-		public override string Info()
+		public override string Status()
 		{
 			return Lib.Color(ring.deployed, Localizer.Format("#KERBALISM_Generic_DEPLOYED"), Lib.KColor.Green, Localizer.Format("#KERBALISM_Generic_RETRACTED"), Lib.KColor.Yellow);
 		}
@@ -65,7 +65,7 @@ namespace KERBALISM
 			return part_id;
 		}
 
-		public override string Info()
+		public override string Status()
 		{
 			return Lib.Color(Lib.Proto.GetBool(ring, "deployed"), Localizer.Format("#KERBALISM_Generic_DEPLOYED"), Lib.KColor.Green, Localizer.Format("#KERBALISM_Generic_RETRACTED"), Lib.KColor.Yellow);
 		}

@@ -25,7 +25,7 @@ namespace KERBALISM
 			return sickbay_ctrl.part.flightID;
 		}
 
-		public override string Info()
+		public override string Status()
 		{
 			return Lib.Color(sickbay_ctrl.running, Localizer.Format("#KERBALISM_Generic_RUNNING"), Lib.KColor.Green, Localizer.Format("#KERBALISM_Generic_STOPPED"), Lib.KColor.Yellow);
 		}
@@ -68,7 +68,7 @@ namespace KERBALISM
 			return part_id;
 		}
 
-		public override string Info()
+		public override string Status()
 		{
 			return Lib.Color(Lib.Proto.GetBool(sickbay_ctrl, "running"), Localizer.Format("#KERBALISM_Generic_RUNNING"), Lib.KColor.Green, Localizer.Format("#KERBALISM_Generic_STOPPED"), Lib.KColor.Yellow);
 		}
