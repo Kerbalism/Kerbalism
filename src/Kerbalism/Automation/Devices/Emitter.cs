@@ -25,7 +25,7 @@ namespace KERBALISM
 			return emitter.part.flightID;
 		}
 
-		public override string Info()
+		public override string Status()
 		{
 			return Lib.Color(emitter.running, Localizer.Format("#KERBALISM_Generic_ON"), Lib.KColor.Green, Localizer.Format("#KERBALISM_Generic_OFF"), Lib.KColor.Yellow);
 		}
@@ -68,7 +68,7 @@ namespace KERBALISM
 			return part_id;
 		}
 
-		public override string Info()
+		public override string Status()
 		{
 			return Lib.Color(Lib.Proto.GetBool(emitter, "running"), Localizer.Format("#KERBALISM_Generic_ACTIVE"), Lib.KColor.Green, Localizer.Format("#KERBALISM_Generic_DISABLED"), Lib.KColor.Yellow);
 		}

@@ -25,7 +25,7 @@ namespace KERBALISM
 			return harvester.part.flightID;
 		}
 
-		public override string Info()
+		public override string Status()
 		{
 			return animator != null && !harvester.deployed
 			  ? "not deployed"
@@ -74,7 +74,7 @@ namespace KERBALISM
 			return part_id;
 		}
 
-		public override string Info()
+		public override string Status()
 		{
 			bool deployed = Lib.Proto.GetBool(harvester, "deployed");
 			bool running = Lib.Proto.GetBool(harvester, "running");

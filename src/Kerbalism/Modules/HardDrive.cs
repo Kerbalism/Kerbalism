@@ -322,7 +322,6 @@ namespace KERBALISM
 			return Specs().Info();
 		}
 
-
 		// science container implementation
 		public ScienceData[] GetData()
 		{
@@ -334,16 +333,13 @@ namespace KERBALISM
 		{
 			// generate and return stock science data
 			List<ScienceData> data = new List<ScienceData>();
-			foreach (var pair in drive.files)
-			{
-				File file = pair.Value;
-				data.Add(new ScienceData((float)file.size, 1.0f, 1.0f, pair.Key, Science.Experiment(pair.Key).SubjectName));
-			}
-			foreach (var pair in drive.samples)
-			{
-				Sample sample = pair.Value;
-				data.Add(new ScienceData((float)sample.size, 0.0f, 0.0f, pair.Key, Science.Experiment(pair.Key).SubjectName));
-			}
+
+			foreach (File file in drive.files.Values)
+				data.Add(file.ConvertToStockData());
+
+			foreach (Sample sample in drive.samples.Values)
+				data.Add(sample.ConvertToStockData());
+
 			return data.ToArray();
 		}
 

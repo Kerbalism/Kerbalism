@@ -49,7 +49,7 @@ namespace KERBALISM
 				if (!meta.is_sample)
 				{
 					Drive drive = Drive.FileDrive(meta.vessel, data.dataAmount);
-					recorded = drive.Record_file(data.subjectID, data.dataAmount);
+					recorded = drive.Record_file(data.subjectID, data.dataAmount, true, true);
 				}
 				else
 				{
@@ -59,7 +59,7 @@ namespace KERBALISM
 					var sampleMass = Science.GetSampleMass(data.subjectID);
 					var mass = sampleMass / experimentInfo.MaxAmount * data.dataAmount;
 
-					recorded = drive.Record_sample(data.subjectID, data.dataAmount, mass);
+					recorded = drive.Record_sample(data.subjectID, data.dataAmount, mass, true);
 				}
 
 				if (recorded)
@@ -170,7 +170,7 @@ namespace KERBALISM
 			if (!meta.is_sample)
 			{
 				Drive drive = Drive.FileDrive(meta.vessel, data.dataAmount);
-				recorded = drive.Record_file(data.subjectID, data.dataAmount);
+				recorded = drive.Record_file(data.subjectID, data.dataAmount, true, true);
 			}
 			else
 			{
@@ -180,7 +180,7 @@ namespace KERBALISM
 				var sampleMass = Science.GetSampleMass(data.subjectID);
 				var mass = sampleMass / experimentInfo.MaxAmount * data.dataAmount;
 
-				recorded = drive.Record_sample(data.subjectID, data.dataAmount, mass);
+				recorded = drive.Record_sample(data.subjectID, data.dataAmount, mass, true);
 			}
 
 			if (recorded)

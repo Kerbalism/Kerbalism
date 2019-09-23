@@ -116,7 +116,7 @@ namespace KERBALISM
 		}
 
 		// add science data, creating new file or incrementing existing one
-		public bool Record_file(string subject_id, double amount, bool allowImmediateTransmission = true, bool clamp = true)
+		public bool Record_file(string subject_id, double amount, bool allowImmediateTransmission = true, bool useStockCrediting = false)
 		{
 			if (dataCapacity >= 0 && FilesSize() + amount > dataCapacity)
 				return false;
@@ -125,7 +125,7 @@ namespace KERBALISM
 			File file;
 			if (!files.TryGetValue(subject_id, out file))
 			{
-				file = new File(subject_id);
+				file = new File(subject_id, 0.0, useStockCrediting);
 				files.Add(subject_id, file);
 
 				if (!allowImmediateTransmission) Send(subject_id, false);
@@ -153,7 +153,7 @@ namespace KERBALISM
 		}
 
 		// add science sample, creating new sample or incrementing existing one
-		public bool Record_sample(string subject_id, double amount, double mass)
+		public bool Record_sample(string subject_id, double amount, double mass, bool useStockCrediting = false)
 		{
 			int currentSampleSlots = SamplesSize();
 			if (sampleCapacity >= 0)
@@ -180,7 +180,7 @@ namespace KERBALISM
 			// create new data or get existing one
 			if (!samples.TryGetValue(subject_id, out sample))
 			{
-				sample = new Sample(subject_id);
+				sample = new Sample(subject_id, 0.0, useStockCrediting);
 				sample.analyze = PreferencesScience.Instance.analyzeSamples;
 				samples.Add(subject_id, sample);
 			}

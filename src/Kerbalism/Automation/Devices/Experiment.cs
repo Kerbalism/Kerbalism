@@ -13,12 +13,13 @@ namespace KERBALISM
 		public ExperimentDevice(Experiment exp)
 		{
 			this.experiment = exp;
-			this.exp_name = Lib.BuildString(exp.sample_mass < float.Epsilon ? "sensor: " : "sample: ", ResearchAndDevelopment.GetExperiment(exp.experiment_id).experimentTitle);
+			expInfo = Science.Experiment(string.IsNullOrEmpty(experiment.last_subject_id) ? experiment.experiment_id : experiment.last_subject_id);
+			icon = new DeviceIcon(exp.sample_mass > 0f ? Icons.sample_scicolor : Icons.file_scicolor, "open experiment window", () => new SciencePopup(exp.vessel, exp));
 		}
 
 		public override string Name()
 		{
-			return Lib.BuildString(exp_name, " - ", Experiment.DoneInfo(Science.Experiment(string.IsNullOrEmpty(experiment.last_subject_id) ? experiment.experiment_id : experiment.last_subject_id), experiment.data_rate));
+			return Lib.BuildString(" ", expInfo.Name);
 		}
 
 		public override uint Part()
@@ -26,47 +27,56 @@ namespace KERBALISM
 			return experiment.part.flightID;
 		}
 
-		public override string Info()
+		public override string Status()
 		{
-			ExperimentInfo expInfo = Science.Experiment(string.IsNullOrEmpty(experiment.last_subject_id) ? experiment.experiment_id : experiment.last_subject_id);
-			Experiment.State state = Experiment.GetState(expInfo, experiment.issue, experiment.recording, experiment.forcedRun);
-			return Experiment.StateInfoShort(state, experiment.forcedRun, experiment.issue, experiment.recording);
+			return Experiment.StatusInfo(experiment.Status, experiment.issue);
 		}
+
+		public override string Tooltip()
+		{
+			return Lib.BuildString(experiment.part.partInfo.title, "\nissue : ", experiment.issue);
+		}
+
+		public override DeviceIcon Icon => icon;
 
 		public override void Ctrl(bool value)
 		{
-			if (value != experiment.recording) experiment.Toggle();
+			if (value != experiment.Running) Toggle();
 		}
 
 		public override void Toggle()
 		{
-			Ctrl(!experiment.recording);
+			experiment.Toggle();
 		}
 
+		private ExperimentInfo expInfo;
 		private Experiment experiment;
-		private readonly string exp_name;
+		private readonly DeviceIcon icon;
 	}
-
 
 	public sealed class ProtoExperimentDevice : Device
 	{
-		public ProtoExperimentDevice(ProtoPartModuleSnapshot proto, Experiment prefab, uint part_id, string vessel_name,
-		                             List<KeyValuePair<Experiment, ProtoPartModuleSnapshot>> allExperiments)
+		public ProtoExperimentDevice(ProtoPartModuleSnapshot proto, Experiment prefab, uint part_id, Vessel vessel)
 		{
 			this.proto = proto;
 			this.prefab = prefab;
 			this.part_id = part_id;
-			this.allExperiments = allExperiments;
-			this.title = ResearchAndDevelopment.GetExperiment(prefab.experiment_id).experimentTitle;
-			this.exp_name = Lib.BuildString((prefab.sample_mass < float.Epsilon ? "sensor" : "experiment"), ": ", title);
-			this.vessel_name = vessel_name;
+			this.vessel = vessel;
+
+			isSample = prefab.sample_mass > 0f;
+			issue = Lib.Proto.GetString(proto, "issue");
+			forcedRun = Lib.Proto.GetBool(proto, "forcedRun");
+			recording = Lib.Proto.GetBool(proto, "recording");
+			subject_id = Lib.Proto.GetString(proto, "last_subject_id", prefab.experiment_id);
+			if (string.IsNullOrEmpty(subject_id)) subject_id = prefab.experiment_id;
+			expInfo = Science.Experiment(subject_id);
+			status = Lib.Proto.GetEnum(proto, "status", Experiment.ExpStatus.Stopped);
+			icon = new DeviceIcon(prefab.sample_mass > 0f ? Icons.sample_scicolor : Icons.file_scicolor, "open experiment window", () => new SciencePopup(vessel, prefab, proto));
 		}
 
 		public override string Name()
 		{
-			string subject_id = Lib.Proto.GetString(proto, "last_subject_id", prefab.experiment_id);
-			if (string.IsNullOrEmpty(subject_id)) subject_id = prefab.experiment_id;
-			return Lib.BuildString(exp_name, " - ", Experiment.DoneInfo(Science.Experiment(subject_id), prefab.data_rate));
+			return Lib.BuildString(" ", expInfo.Name);
 		}
 
 		public override uint Part()
@@ -74,70 +84,43 @@ namespace KERBALISM
 			return part_id;
 		}
 
-		public override string Info()
+		public override string Status()
 		{
-			string issue = Lib.Proto.GetString(proto, "issue");
-			bool forcedRun = Lib.Proto.GetBool(proto, "forcedRun");
-			bool recording = Lib.Proto.GetBool(proto, "recording");
-			string subject_id = Lib.Proto.GetString(proto, "last_subject_id", prefab.experiment_id);
-			if (string.IsNullOrEmpty(subject_id)) subject_id = prefab.experiment_id;
-
-			ExperimentInfo expInfo = Science.Experiment(subject_id);
-
-			return Experiment.StateInfoShort(
-				Experiment.GetState(expInfo, issue, recording, forcedRun),
-				forcedRun,
-				issue,
-				recording);
+			return Experiment.StatusInfo(status);
 		}
+
+		public override string Tooltip()
+		{
+			return issue;
+		}
+
+		public override DeviceIcon Icon => icon;
 
 		public override void Ctrl(bool value)
 		{
-			if (value)
-			{
-				// The same experiment must run only once on a vessel
-				foreach (var pair in allExperiments)
-				{
-					if (pair.Key.experiment_id != prefab.experiment_id) continue; // check if this is the same experiment
-					if (pair.Value == proto) continue; // check if this is the same module
-					//if (!prefab.isEnabled || !prefab.enabled) continue;
-					if (Lib.Proto.GetBool(pair.Value, "recording"))
-					{
-						Experiment.PostMultipleRunsMessage(title, vessel_name);
-						return;
-					}
-				}
-			}
-
-			if (!value)
-			{
-				if (!Lib.Proto.GetBool(proto, "forcedRun"))
-				{
-					Lib.Proto.Set(proto, "forcedRun", true);
-					return;
-				}
-				else
-				{
-					Lib.Proto.Set(proto, "forcedRun", false);
-				}
-			}
-
-			Lib.Proto.Set(proto, "recording", value);
-			return;
+			if (value != Experiment.IsRunning(status)) Experiment.ProtoToggle(vessel, prefab, proto);
 		}
 
 		public override void Toggle()
 		{
-			Ctrl(!Lib.Proto.GetBool(proto, "recording"));
+			Experiment.ProtoToggle(vessel, prefab, proto);
 		}
 
 		private readonly ProtoPartModuleSnapshot proto;
 		private readonly Experiment prefab;
 		private readonly uint part_id;
-		private readonly string exp_name;
-		private readonly string title;
-		private readonly List<KeyValuePair<Experiment, ProtoPartModuleSnapshot>> allExperiments;
-		private readonly string vessel_name;
+		private readonly Vessel vessel;
+
+		private readonly DeviceIcon icon;
+
+		private readonly bool isSample;
+
+		private readonly string issue;
+		private readonly bool forcedRun;
+		private readonly bool recording;
+		private readonly string subject_id;
+		private ExperimentInfo expInfo;
+		private Experiment.ExpStatus status;
 	}
 
 

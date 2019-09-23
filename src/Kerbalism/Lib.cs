@@ -470,6 +470,14 @@ namespace KERBALISM
 			DarkGrey
 		}
 
+		///<summary>return a colored "[V]" or "[X]" depending on the condition</summary>
+		public static string Checkbox(bool condition)
+		{
+			return condition
+				? "<color=#88FF00>[ <b><i>V</i></b> ]</color>"
+				: "<color=#FF8000>[ <b><i>X</i></b> ]</color>";
+		}
+
 		///<summary>return the hex representation for kerbalism colors</summary>
 		public static string KColorToHex(KColor color)
 		{
@@ -681,91 +689,98 @@ namespace KERBALISM
 		}
 
 		///<summary> Pretty-print a duration (duration is in seconds, must be positive) </summary>
-		public static string HumanReadableDuration(double duration)
+		public static string HumanReadableDuration(double d, bool fullprecison = false)
 		{
+			if (!fullprecison)
+			{
+				if (d <= double.Epsilon) return "none";
+				if (double.IsInfinity(d) || double.IsNaN(d)) return "perpetual";
 
-			if (duration <= double.Epsilon) return "none";
-			if (double.IsInfinity(duration) || double.IsNaN(duration)) return "perpetual";
+				int hours_in_day = (int)HoursInDay();
+				int days_in_year = (int)DaysInYear();
 
-			int hours_in_day = (int)HoursInDay();
-			int days_in_year = (int)DaysInYear();
+				int duration_seconds = (int)d;
 
-			int duration_seconds = (int)duration;
-
-			int seconds = duration_seconds % 60;
-			int minutes = (duration_seconds / 60) % 60;
-			int hours = (duration_seconds / 3600) % hours_in_day;
-			int days = (duration_seconds / (3600 * hours_in_day)) % days_in_year;
-			int years = duration_seconds / (3600 * hours_in_day * days_in_year);
+				int seconds = duration_seconds % 60;
+				int minutes = (duration_seconds / 60) % 60;
+				int hours = (duration_seconds / 3600) % hours_in_day;
+				int days = (duration_seconds / (3600 * hours_in_day)) % days_in_year;
+				int years = duration_seconds / (3600 * hours_in_day * days_in_year);
 
 
-			// seconds
-			if (duration < 60.0) return BuildString(seconds.ToString("F0"), "s");
+				// seconds
+				if (d < 60.0) return BuildString(seconds.ToString("F0"), "s");
 
-			// minutes + seconds
-			if (duration < 3600.0) return BuildString(minutes.ToString("F0"), "m ", seconds.ToString("F0"), "s");
+				// minutes + seconds
+				if (d < 3600.0) return BuildString(minutes.ToString("F0"), "m ", seconds.ToString("F0"), "s");
 
-			// hours + minutes
-			if (duration < 3600.0 * hours_in_day) return BuildString(hours.ToString("F0"), "h ", minutes.ToString("F0"), "m");
+				// hours + minutes
+				if (d < 3600.0 * hours_in_day) return BuildString(hours.ToString("F0"), "h ", minutes.ToString("F0"), "m");
 
-			// days + hours
-			if (duration < 3600.0 * hours_in_day * days_in_year) return BuildString(days.ToString("F0"), "d ", hours.ToString("F0"), "h");
+				// days + hours
+				if (d < 3600.0 * hours_in_day * days_in_year) return BuildString(days.ToString("F0"), "d ", hours.ToString("F0"), "h");
 
-			// years + days
-			return BuildString(years.ToString("F0"), "y ", days.ToString("F0"), "d");
+				// years + days
+				return BuildString(years.ToString("F0"), "y ", days.ToString("F0"), "d");
+			}
+			else
+			{
+				if (d <= double.Epsilon) return string.Empty;
+				if (double.IsInfinity(d) || double.IsNaN(d)) return "never";
+
+				double hours_in_day = HoursInDay();
+				double days_in_year = DaysInYear();
+
+				int duration = (int)d;
+				int seconds = duration % 60;
+				duration /= 60;
+				int minutes = duration % 60;
+				duration /= 60;
+				int hours = duration % (int)hours_in_day;
+				duration /= (int)hours_in_day;
+				int days = duration % (int)days_in_year;
+				int years = duration / (int)days_in_year;
+
+				string result = string.Empty;
+				if (years > 0) result += years + "y ";
+				if (years > 0 || days > 0) result += days + "d ";
+				if (years > 0 || days > 0 || hours > 0) result += hours.ToString("D2") + ":";
+				if (years > 0 || days > 0 || hours > 0 || minutes > 0) result += minutes.ToString("D2") + ":";
+				result += seconds.ToString("D2");
+
+				return result;
+			}
 		}
 
-		public static string HumanReadableCountdown(double d)
+		public static string HumanReadableCountdown(double duration, bool compact = false)
 		{
-			if (d <= double.Epsilon) return string.Empty;
-			if (double.IsInfinity(d) || double.IsNaN(d)) return "never";
-
-			double hours_in_day = HoursInDay();
-			double days_in_year = DaysInYear();
-
-			int duration = (int)d;
-			int seconds = duration % 60;
-			duration /= 60;
-			int minutes = duration % 60;
-			duration /= 60;
-			int hours = duration % (int)hours_in_day;
-			duration /= (int)hours_in_day;
-			int days = duration % (int)days_in_year;
-			int years = duration / (int)days_in_year;
-
-			string result = "T-";
-			if (years > 0) result += years + "y ";
-			if (years > 0 || days > 0) result += days + "d ";
-			if (years > 0 || days > 0 || hours > 0) result += hours.ToString("D2") + ":";
-			if (years > 0 || days > 0 || hours > 0 || minutes > 0) result += minutes.ToString("D2") + ":";
-			result += seconds.ToString("D2");
-
-			return result;
+			return BuildString("T-", HumanReadableDuration(duration, !compact));
 		}
 
-		///<summary> Pretty-print a range (range is in meters, must be positive) </summary>
-		public static string HumanReadableRange(double range)
+		///<summary> Pretty-print a range (range is in meters) </summary>
+		public static string HumanReadableDistance(double distance)
 		{
-			if (range <= double.Epsilon) return "none";
-			if (range < 1000.0) return BuildString(range.ToString("F1"), " m");
-			range /= 1000.0;
-			if (range < 1000.0) return BuildString(range.ToString("F1"), " Km");
-			range /= 1000.0;
-			if (range < 1000.0) return BuildString(range.ToString("F1"), " Mm");
-			range /= 1000.0;
-			if (range < 1000.0) return BuildString(range.ToString("F1"), " Gm");
-			range /= 1000.0;
-			if (range < 1000.0) return BuildString(range.ToString("F1"), " Tm");
-			range /= 1000.0;
-			if (range < 1000.0) return BuildString(range.ToString("F1"), " Pm");
-			range /= 1000.0;
-			return BuildString(range.ToString("F1"), " Em");
+            if (distance == 0.0) return "none";
+            if (distance < 0.0) return Lib.BuildString("-", HumanReadableDistance(-distance));
+			if (distance < 1000.0) return BuildString(distance.ToString("F1"), " m");
+			distance /= 1000.0;
+			if (distance < 1000.0) return BuildString(distance.ToString("F1"), " Km");
+			distance /= 1000.0;
+			if (distance < 1000.0) return BuildString(distance.ToString("F1"), " Mm");
+			distance /= 1000.0;
+			if (distance < 1000.0) return BuildString(distance.ToString("F1"), " Gm");
+			distance /= 1000.0;
+			if (distance < 1000.0) return BuildString(distance.ToString("F1"), " Tm");
+			distance /= 1000.0;
+			if (distance < 1000.0) return BuildString(distance.ToString("F1"), " Pm");
+			distance /= 1000.0;
+			return BuildString(distance.ToString("F1"), " Em");
 		}
 
-		///<summary> Pretty-print a speed (in meters/sec, must be positive) </summary>
+		///<summary> Pretty-print a speed (in meters/sec) </summary>
 		public static string HumanReadableSpeed(double speed)
 		{
-			return Lib.BuildString(HumanReadableRange(speed), "/s");
+			return Lib.BuildString(HumanReadableDistance(speed), "/s");
 		}
 
 		///<summary> Pretty-print temperature </summary>
@@ -2153,6 +2168,22 @@ namespace KERBALISM
 			{
 				string s = m.moduleValues.GetValue( name );
 				return s ?? def_value;
+			}
+
+			public static T GetEnum<T>(ProtoPartModuleSnapshot m, string name, T def_value)
+			{
+				string s = m.moduleValues.GetValue(name);
+				if (s != null && Enum.IsDefined(typeof(T), s))
+					return (T)Enum.Parse(typeof(T), s);
+				return def_value;
+			}
+
+			public static T GetEnum<T>(ProtoPartModuleSnapshot m, string name)
+			{
+				string s = m.moduleValues.GetValue(name);
+				if (s != null && Enum.IsDefined(typeof(T), s))
+					return (T)Enum.Parse(typeof(T), s);
+				return (T)Enum.GetValues(typeof(T)).GetValue(0);
 			}
 
 			///<summary>set a value in a proto module</summary>

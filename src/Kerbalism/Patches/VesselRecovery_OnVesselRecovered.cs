@@ -34,6 +34,11 @@ namespace KERBALISM
 	 *
 	 * See https://github.com/Kerbalism/Kerbalism/issues/476
 	 * See https://github.com/Kerbalism/Kerbalism/issues/249
+	 *
+	 * Further note :
+	 * We don't want our experiments data to be credited through the stock system, because it has this
+	 * formula that degrade the value when a subject is partially completed.
+	 * So keep track of by what the data was created in the `bool useStockCrediting` of files/samples
 	 */
 	[HarmonyPatch(typeof(VesselRecovery))]
 	[HarmonyPatch("OnVesselRecovered")]
@@ -58,16 +63,50 @@ namespace KERBALISM
 			if (protoHardDrive == null)
 				return true; // no drive on the vessel - nothing to do.
 
+			double scienceToCredit = 0.0;
+
 			foreach (Drive drive in Drive.GetDrives(pv))
 			{
-				ScienceData[] sd = HardDrive.GetData(drive);
-				foreach(ScienceData d in sd)
+				foreach (File file in drive.files.Values)
 				{
-					d.Save(protoHardDrive.moduleValues.AddNode("ScienceData"));
+					double totalScienceValue = file.expInfo.ScienceValue(file.size);
+					file.expInfo.RemoveScienceCollectedInFlight(totalScienceValue);
+					file.expInfo.UpdateSubjectCompletion(totalScienceValue);
+
+					if (file.useStockCrediting)
+					{
+						file.ConvertToStockData().Save(protoHardDrive.moduleValues.AddNode("ScienceData"));
+					}
+					else
+					{
+						double subjectValue = file.expInfo.ScienceValue(file.size, true);
+						Science.AddScienceToRnDSubject(file.expInfo.StockSubject, subjectValue);
+						scienceToCredit += subjectValue;
+					}
+				}
+
+				foreach (Sample sample in drive.samples.Values)
+				{
+					double totalScienceValue = sample.expInfo.ScienceValue(sample.size);
+					sample.expInfo.RemoveScienceCollectedInFlight(totalScienceValue);
+					sample.expInfo.UpdateSubjectCompletion(totalScienceValue);
+
+					if (sample.useStockCrediting)
+					{
+						sample.ConvertToStockData().Save(protoHardDrive.moduleValues.AddNode("ScienceData"));
+					}
+					else
+					{
+						double subjectValue = sample.expInfo.ScienceValue(sample.size, true);
+						Science.AddScienceToRnDSubject(sample.expInfo.StockSubject, subjectValue);
+						scienceToCredit += subjectValue;
+					}
 				}
 			}
 
 			protoHardDrive.moduleName = "ModuleScienceContainer";
+
+			ResearchAndDevelopment.Instance.AddScience((float)scienceToCredit, TransactionReasons.VesselRecovery);
 
 			return true; // continue to the original code
 		}

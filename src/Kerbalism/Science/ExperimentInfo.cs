@@ -8,7 +8,8 @@ namespace KERBALISM
 {
 
 	/// <summary>
-	/// Stores information about an experiment
+	/// Stores information about an experiment_id or a subject_id
+	/// Beware that subject information will be incomplete until the stock `ScienceSubject` is created in RnD
 	/// </summary>
 	public sealed class ExperimentInfo
 	{
@@ -33,6 +34,12 @@ namespace KERBALISM
 		/// <summary> if true, this ExperimentInfo is about a specific subject, and all Subject* properties can be used </summary>
 		public bool IsSubject { get; private set; }
 
+		/// <summary>
+		/// false if the stock ScienceSubject hasn't been created yet in the RnD instance. 
+		/// while false, SubjectScienceMaxValue and all derived properties will return invalid values
+		/// </summary>
+		public bool SubjectExistsInRnD => StockSubject != null;
+
 		private SubjectData subjectData;
 
 		/// <summary> subject identifier </summary>
@@ -41,7 +48,7 @@ namespace KERBALISM
 		/// <summary> full description of the subject </summary>
 		public string SubjectName { get; private set; }
 
-		/// <summary> subject situation </summary>
+		/// <summary> UI friendly subject situation </summary>
 		public string SubjectSituation { get; private set; }
 
 		/// <summary> has the subject been retrieved fully in RnD at least once ? </summary>
@@ -50,11 +57,11 @@ namespace KERBALISM
 		/// <summary> how many times the subject has been fully retrieved in RnD </summary>
 		public int SubjectTimesCompleted => subjectData == null ? 0 : subjectData.timesCompleted;
 
-		/// <summary> percentage [0;1] of science retrieved </summary>
-		public double PercentRetrieved => subjectData == null ? 0.0 : subjectData.completionPercent;
+		/// <summary> percentage [0;x] of science retrieved, can be > 1 if subject has been retrieved more than once</summary>
+		public double SubjectPercentRetrieved => subjectData == null ? 0.0 : subjectData.completionPercent;
 
-		/// <summary> subject science points per MB of data </summary>
-		public double SubjectSciencePerMB => ScienceValue / MaxAmount;
+		/// <summary> subject science points per MB of data. Will be PositiveInfinity while SubjectExistsInRnD is false</summary>
+		public double SubjectSciencePerMB => SubjectScienceMaxValue / MaxAmount;
 
 		/// <summary> science points collected in all vessels but not yet recovered or transmitted </summary>
 		public double SubjectScienceCollectedInFlight { get; private set; }
@@ -64,27 +71,39 @@ namespace KERBALISM
 			=> ResearchAndDevelopment.GetSubjectByID(SubjectId);
 
 		/// <summary> science points recovered or transmitted </summary>
-		public float ScienceCollectedInKSC
-			=> StockSubject == null ? 0f : StockSubject.science * HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier;
+		public float SubjectScienceRetrievedInKSC
+			=> SubjectExistsInRnD ? StockSubject.science * HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier : 0f;
 
 		/// <summary> all science points recovered, transmitted or collected in flight </summary>
-		public float ScienceCollectedTotal
-			=> (float)SubjectScienceCollectedInFlight + ScienceCollectedInKSC;
+		public float SubjectScienceCollectedTotal
+			=> (float)SubjectScienceCollectedInFlight + SubjectScienceRetrievedInKSC;
 
-		/// <summary> total science value of the subject. Will be PositiveInfinity until an experiment create the subject </summary>
-		public float ScienceValue
-			=> StockSubject == null ? float.PositiveInfinity : StockSubject.scienceCap * HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier;
+		/// <summary> total science value of the subject. Will be PositiveInfinity while SubjectExistsInRnD is false </summary>
+		public float SubjectScienceMaxValue
+			=> SubjectExistsInRnD ? StockSubject.scienceCap * HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier : float.PositiveInfinity;
 
-		/// <summary> science value remaining to collect. Will be PositiveInfinity until an experiment create the subject </summary>
-		public float ScienceRemainingToCollect
-			=> Math.Max(ScienceValue - ScienceCollectedTotal, 0f);
+		/// <summary> science value remaining to collect. Will be PositiveInfinity while SubjectExistsInRnD is false </summary>
+		public float SubjectScienceRemainingToCollect
+			=> Math.Max(SubjectScienceMaxValue - SubjectScienceCollectedTotal, 0f);
 
-		/// <summary> science value remaining to retriecve. Will be PositiveInfinity until an experiment create the subject </summary>
-		public float ScienceRemainingToRetrieve
-			=> ScienceValue - ScienceCollectedInKSC;
+		/// <summary> science value remaining to retriecve. Will be PositiveInfinity while SubjectExistsInRnD is false</summary>
+		public float SubjectScienceRemainingToRetrieve
+			=> SubjectScienceMaxValue - SubjectScienceRetrievedInKSC;
 
-		/// <summary> percentage [0;1] of science collected </summary>
-		public float PercentCollectedTotal => ScienceCollectedTotal / ScienceValue;
+		/// <summary> percentage [0;1] of science collected. Will be PositiveInfinity while SubjectExistsInRnD is false</summary>
+		public float SubjectPercentCollectedTotal
+			=> SubjectScienceCollectedTotal / SubjectScienceMaxValue;
+
+		/// <summary> science value for the given data size </summary>
+		public double ScienceValue(double dataSize, bool clampByScienceRetrieved = false, bool clampByScienceRetrievedAndCollected = false)
+		{
+			if (clampByScienceRetrievedAndCollected)
+				return Math.Min(dataSize * SubjectSciencePerMB, SubjectScienceRemainingToCollect);
+			if (clampByScienceRetrieved)
+				return Math.Min(dataSize * SubjectSciencePerMB, SubjectScienceRemainingToRetrieve);
+
+			return dataSize * SubjectSciencePerMB;
+		}
 
 		/// <summary>
 		/// Creates information for an experiment or a subject with the specified identifier
@@ -122,24 +141,74 @@ namespace KERBALISM
 			BiomeMask = expdef.biomeMask;
 
 			SubjectScienceCollectedInFlight = 0f;
-			SubjectSituation = Situation(subject_id);
+			SubjectSituation = ParseSubjectSituation(subject_id);
 			SubjectName = Lib.BuildString(Name, " (", SubjectSituation, ")");
 
 			if (IsSubject)
+			{
 				subjectData = DB.Subject(SubjectId);
 
-			// we collect data only if the subject exists
-			if (StockSubject != null)
-			{
-				foreach (Drive drive in DB.drives.Values)
+				if (HighLogic.CurrentGame.Mode != Game.Modes.SANDBOX && ResearchAndDevelopment.Instance == null)
 				{
-					if (drive.files.ContainsKey(subject_id))
-						SubjectScienceCollectedInFlight += (float)(drive.files[subject_id].size * SubjectSciencePerMB);
 
-					if (drive.samples.ContainsKey(subject_id))
-						SubjectScienceCollectedInFlight += (float)(drive.samples[subject_id].size * SubjectSciencePerMB);
+				}
+
+				// we collect data only if the subject exists
+				if (StockSubject != null)
+				{
+					foreach (Drive drive in DB.drives.Values)
+					{
+						if (drive.files.ContainsKey(subject_id))
+							SubjectScienceCollectedInFlight += (float)(drive.files[subject_id].size * SubjectSciencePerMB);
+
+						if (drive.samples.ContainsKey(subject_id))
+							SubjectScienceCollectedInFlight += (float)(drive.samples[subject_id].size * SubjectSciencePerMB);
+					}
+				}
+				else
+				{
+
 				}
 			}
+
+		}
+
+		public void CreateSubjectInRnD(Vessel v, ExperimentSituation sit)
+		{
+			// in sandbox, do nothing else
+			if (ResearchAndDevelopment.Instance == null)
+				return;
+
+			if (!IsSubject || SubjectExistsInRnD)
+				return;
+
+			// get subjects container using reflection
+			// - we tried just changing the subject.id instead, and
+			//   it worked but the new id was obviously used only after
+			//   putting RnD through a serialization->deserialization cycle
+			Dictionary<string, ScienceSubject> subjects = Lib.ReflectionValue<Dictionary<string, ScienceSubject>>
+			(
+				ResearchAndDevelopment.Instance,
+				"scienceSubjects"
+			);
+
+			float multiplier = sit.Multiplier(this);
+			float cap = multiplier * expdef.baseValue;
+
+			// create new subject
+			ScienceSubject subject = new ScienceSubject
+			(
+				  	SubjectId,
+					SubjectName,
+					expdef.dataScale,
+				  	multiplier,
+					cap
+			);
+
+			// add it to RnD
+			subjects.Add(SubjectId, subject);
+
+			return;
 		}
 
 		/// <summary> add data to the in-flight collected science </summary>
@@ -152,14 +221,14 @@ namespace KERBALISM
 		public void RemoveDataCollectedInFlight(double dataAmount)
 		{
 			SubjectScienceCollectedInFlight -= dataAmount * SubjectSciencePerMB;
-			if (SubjectScienceCollectedInFlight < 0f) SubjectScienceCollectedInFlight = 0f;
+			if (SubjectScienceCollectedInFlight < 0.0) SubjectScienceCollectedInFlight = 0.0;
 		}
 
 		/// <summary> remove science points from the in-flight collected science </summary>
-		public void RemoveDataCollectedInFlight(float credits)
+		public void RemoveScienceCollectedInFlight(double credits)
 		{
 			SubjectScienceCollectedInFlight -= credits;
-			if (SubjectScienceCollectedInFlight < 0f) SubjectScienceCollectedInFlight = 0f;
+			if (SubjectScienceCollectedInFlight < 0.0) SubjectScienceCollectedInFlight = 0.0;
 		}
 
 		/// <summary>
@@ -167,9 +236,9 @@ namespace KERBALISM
 		/// if the subject was just completed, return the amount of times it has ever been completed.
 		/// otherwise return -1
 		/// </summary>
-		public int UpdateSubjectCompletion(float scienceAdded)
+		public int UpdateSubjectCompletion(double scienceAdded)
 		{
-			subjectData.completionPercent = ((subjectData.completionPercent * ScienceValue) + scienceAdded) / ScienceValue;
+			subjectData.completionPercent = ((subjectData.completionPercent * SubjectScienceMaxValue) + scienceAdded) / SubjectScienceMaxValue;
 
 			double decimalPart = subjectData.completionPercent - Math.Truncate(subjectData.completionPercent);
 			int timesCompleted = (int)(subjectData.completionPercent / 1.0) + (decimalPart < 1.0 - Science.scienceLeftForSubjectCompleted ? 0 : 1);
@@ -183,19 +252,23 @@ namespace KERBALISM
 			return -1;
 		}
 
-		/// <summary>
-		/// returns  a pretty printed situation description for the UI
-		/// </summary>
-		private string Situation(string full_subject_id)
+		/// <summary> UI friendly situation description for the subject (slow, use the non-static SubjectSituation property is possible)</summary>
+		public static string ParseSubjectSituation(string full_subject_id)
 		{
 			int i = full_subject_id.IndexOf('@');
-			var situation = full_subject_id.Length < i + 2
+			string situation = full_subject_id.Length < i + 2
 				? Localizer.Format("#KERBALISM_ExperimentInfo_Unknown")
-				: Lib.SpacesOnCaps(full_subject_id.Substring(i + 1));
-			situation = situation.Replace("Srf ", string.Empty).Replace("In ", string.Empty);
+				: ParseSituationSubstring(full_subject_id.Substring(i + 1));
 			return situation;
 		}
 
+		/// <summary> UI friendly description for the situation (as formatted after the "@" of a subject_id)</summary>
+		public static string ParseSituationSubstring(string situationSubstring)
+		{
+			return Lib.SpacesOnCaps(situationSubstring.Replace("Srf", string.Empty).Replace("In", string.Empty));
+		}
+
+		/// <summary> UI friendly list of situations available for the experiment</summary>
 		public List<string> Situations()
 		{
 			List<string> result = new List<string>();

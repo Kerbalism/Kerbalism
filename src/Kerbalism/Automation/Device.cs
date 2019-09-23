@@ -1,5 +1,5 @@
 ﻿using System;
-
+using UnityEngine;
 
 namespace KERBALISM
 {
@@ -7,6 +7,20 @@ namespace KERBALISM
 
 	public abstract class Device
 	{
+		public class DeviceIcon
+		{
+			public Texture2D texture;
+			public string tooltip;
+			public Action onClick;
+
+			public DeviceIcon(Texture2D texture, string tooltip = "", Action onClick = null)
+			{
+				this.texture = texture;
+				this.tooltip = tooltip;
+				this.onClick = onClick;
+			}
+		}
+
 		// return device name
 		public abstract string Name();
 
@@ -14,7 +28,13 @@ namespace KERBALISM
 		public abstract uint Part();
 
 		// return short device status string
-		public abstract string Info();
+		public abstract string Status();
+
+		// return tooltip string
+		public virtual string Tooltip() => string.Empty;
+
+		// return icon/button
+		public virtual DeviceIcon Icon => null;
 
 		// control the device using a value
 		public abstract void Ctrl(bool value);

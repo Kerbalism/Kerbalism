@@ -132,8 +132,8 @@ namespace KERBALISM
 					{
 						var name = Lib.Ellipsis(RemoteTech.GetSatelliteName(i) + " \\ " + RemoteTech.GetSatelliteName(id), 35);
 						var value = Lib.HumanReadablePerc(Math.Ceiling((1 - (RemoteTech.GetCommsDistance(i, id) / RemoteTech.GetCommsMaxDistance(i, id))) * 10000) / 10000, "F2");
-						var tooltip = "Distance: " + Lib.HumanReadableRange(RemoteTech.GetCommsDistance(i, id)) +
-							"\nMax Distance: " + Lib.HumanReadableRange(RemoteTech.GetCommsMaxDistance(i, id));
+						var tooltip = "Distance: " + Lib.HumanReadableDistance(RemoteTech.GetCommsDistance(i, id)) +
+							"\nMax Distance: " + Lib.HumanReadableDistance(RemoteTech.GetCommsMaxDistance(i, id));
 						control_path.Add(new string[] { name, value, tooltip });
 						i = id;
 					}

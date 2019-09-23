@@ -283,8 +283,6 @@ namespace KERBALISM
 				// store data required to support multiple modules of same type in a part
 				var PD = new Dictionary<string, Lib.Module_prefab_data>();
 
-				var experiments = new List<KeyValuePair<Experiment, ProtoPartModuleSnapshot>>();
-
 				// for each part
 				foreach (ProtoPartSnapshot p in v.protoVessel.protoPartSnapshots)
 				{
@@ -318,12 +316,7 @@ namespace KERBALISM
 							case "GravityRing":                  dev = new ProtoRingDevice(m, p.flightID);                                                        break;
 							case "Emitter":                      dev = new ProtoEmitterDevice(m, p.flightID);                                                     break;
 							case "Laboratory":                   dev = new ProtoLaboratoryDevice(m, p.flightID);                                                  break;
-
-							case "Experiment":
-								experiments.Add(new KeyValuePair<Experiment, ProtoPartModuleSnapshot>(module_prefab as Experiment, m));
-								dev = new ProtoExperimentDevice(m, module_prefab as Experiment, p.flightID, v.vesselName, experiments);
-								break;
-
+							case "Experiment":					 dev = new ProtoExperimentDevice(m, module_prefab as Experiment, p.flightID, v);				  break;
 							case "SolarPanelFixer":              dev = new ProtoPanelDevice(m, module_prefab as SolarPanelFixer, p.flightID);					  break;
 							case "ModuleGenerator":              dev = new ProtoGeneratorDevice(m, module_prefab as ModuleGenerator, p.flightID);                 break;
 							case "ModuleResourceConverter":      dev = new ProtoConverterDevice(m, module_prefab as ModuleResourceConverter, p.flightID);         break;

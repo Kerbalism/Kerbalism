@@ -54,7 +54,10 @@ namespace KERBALISM
 					// render device entry
 					Device dev = pair.Value;
 					if (!dev.IsVisible()) continue;
-					p.AddContent(dev.Name(), dev.Info(), string.Empty, dev.Toggle, () => Highlighter.Set(dev.Part(), Color.cyan));
+					p.AddContent(dev.Name(), dev.Status(), dev.Tooltip(), dev.Toggle, () => Highlighter.Set(dev.Part(), Color.cyan));
+					if (dev.Icon != null)
+						p.AddIcon(dev.Icon.texture, dev.Icon.tooltip, dev.Icon.onClick);
+
 					deviceCount++;
 				}
 			}

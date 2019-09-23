@@ -25,7 +25,7 @@ namespace KERBALISM
 			return drill.part.flightID;
 		}
 
-		public override string Info()
+		public override string Status()
 		{
 			if (drill.AlwaysActive) return Localizer.Format("#KERBALISM_Generic_ALWAYSON");
 			return Lib.Color(drill.IsActivated, Localizer.Format("#KERBALISM_Generic_ON"), Lib.KColor.Green, Localizer.Format("#KERBALISM_Generic_OFF"), Lib.KColor.Yellow);
@@ -66,7 +66,7 @@ namespace KERBALISM
 			return part_id;
 		}
 
-		public override string Info()
+		public override string Status()
 		{
 			if (prefab.AlwaysActive) Localizer.Format("#KERBALISM_Generic_ALWAYSON");
 			bool is_on = Lib.Proto.GetBool(drill, "IsActivated");

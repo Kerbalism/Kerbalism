@@ -24,7 +24,7 @@ namespace KERBALISM
 			return panel.part.flightID;
 		}
 
-		public override string Info()
+		public override string Status()
 		{
 			switch (panel.state)
 			{
@@ -79,7 +79,7 @@ namespace KERBALISM
 			return part_id;
 		}
 
-		public override string Info()
+		public override string Status()
 		{
 			string state = Lib.Proto.GetString(panel, "state");
 			switch (state)

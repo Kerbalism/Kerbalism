@@ -67,7 +67,7 @@ namespace KERBALISM
 			if (drive != null)
 			{
 				double mass = size * Settings.AsteroidSampleMassPerMB;
-				drive.Record_sample(subject.id, size, mass);
+				drive.Record_sample(subject.id, size, mass, true);
 				Message.Post(Lib.BuildString("<b><color=ffffff>", subject.title, "</color></b>\n", (mass * 1000.0).ToString("F1"), "<b><i> Kg of sample stored</i></b>"));
 			}
 			else
