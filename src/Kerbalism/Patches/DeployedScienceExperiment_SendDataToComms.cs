@@ -16,24 +16,31 @@ namespace KERBALISM
 			Vessel ControllerVessel = Lib.ReflectionValue<Vessel>(__instance, "ControllerVessel");
 			//Lib.Log("SendDataToComms!: " + subject.title);
 			if (__instance.Experiment != null && !(__instance.ExperimentVessel == null) && subject != null && !(__instance.Cluster == null) && __instance.sciencePart.Enabled && !(storedScienceData <= 0f) && __instance.ExperimentSituationValid) {
-				if (!__instance.TimeToSendStoredData())
+			/*	if (!__instance.TimeToSendStoredData())
 				{
 					__result = true;
+					Lib.Log(Lib.BuildString("BREAKING GROUND bailout 1"));
 					return false;
-				}
+				} */
+				
 				if(ControllerVessel == null && __instance.Cluster != null)
 				{
 					Lib.ReflectionCall(__instance, "SetControllerVessel");
 					ControllerVessel = Lib.ReflectionValue<Vessel>(__instance, "ControllerVessel");
 				}
+
+				/*
 				Part control;
 				FlightGlobals.FindLoadedPart(__instance.Cluster.ControlModulePartId, out control);
 				if(control == null) {
 					//Lib.Log("DeployedScienceExperiment: couldn't find control module");
 					__result = true;
+					Lib.Log(Lib.BuildString("BREAKING GROUND bailout 2"));
 					return false;
 				}
-				List<Drive> drives = Drive.GetDrives(control.vessel, false);
+				*/
+
+				List<Drive> drives = Drive.GetDrives(ControllerVessel, false);
 				foreach (Drive drive in drives) {
 					//Lib.Log(Lib.BuildString("BREAKING GROUND -- ", subject.id, " | ", storedScienceData.ToString()));
 					if(drive.Record_file(subject.id, storedScienceData, true)) {
