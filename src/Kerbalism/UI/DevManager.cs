@@ -54,8 +54,8 @@ namespace KERBALISM
 					// render device entry
 					Device dev = pair.Value;
 					dev.OnUpdate();
-					if (!dev.IsVisible()) continue;
-					p.AddContent(dev.Name(), dev.Status(), dev.Tooltip(), dev.Toggle, () => Highlighter.Set(dev.Part(), Color.cyan));
+					if (!dev.IsVisible) continue;
+					p.AddContent(dev.Name, dev.Status, dev.Tooltip, dev.Toggle, () => Highlighter.Set(dev.PartId, Color.cyan));
 					if (dev.Icon != null)
 						p.SetLeftIcon(dev.Icon.texture, dev.Icon.tooltip, dev.Icon.onClick);
 
@@ -85,7 +85,7 @@ namespace KERBALISM
 				{
 					Device dev = pair.Value;
 					dev.OnUpdate();
-					if (!dev.IsVisible()) continue;
+					if (!dev.IsVisible) continue;
 
 					// determine tribool state
 					int state = !script.states.ContainsKey(pair.Key)
@@ -97,7 +97,7 @@ namespace KERBALISM
 					// render device entry
 					p.AddContent
 					(
-					  dev.Name(),
+					  dev.Name,
 					  state == -1 ? Lib.Color(Localizer.Format("#KERBALISM_UI_dontcare"), Lib.KColor.DarkGrey) : Lib.Color(state == 0, Localizer.Format("#KERBALISM_Generic_OFF"), Lib.KColor.Yellow, Localizer.Format("#KERBALISM_Generic_ON"), Lib.KColor.Green),
 					  string.Empty,
 					  () =>
@@ -109,7 +109,7 @@ namespace KERBALISM
 							  case 1: script.Set(dev, false); break;
 						  }
 					  },
-					  () => Highlighter.Set(dev.Part(), Color.cyan)
+					  () => Highlighter.Set(dev.PartId, Color.cyan)
 					);
 					deviceCount++;
 				}

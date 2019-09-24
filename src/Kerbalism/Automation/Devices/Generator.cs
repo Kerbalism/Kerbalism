@@ -6,96 +6,60 @@ using KSP.Localization;
 
 namespace KERBALISM
 {
-
-
-	public sealed class GeneratorDevice : Device
+	public sealed class GeneratorDevice : LoadedDevice<ModuleGenerator>
 	{
-		public GeneratorDevice(ModuleGenerator generator)
-		{
-			this.generator = generator;
-		}
+		public GeneratorDevice(ModuleGenerator module) : base(module) { }
 
-		public override string Name()
-		{
-			return "generator";
-		}
+		public override string Name => "generator";
 
-		public override uint Part()
-		{
-			return generator.part.flightID;
-		}
-
-		public override string Status()
-		{
-			return generator.isAlwaysActive ? Localizer.Format("#KERBALISM_Generic_ALWAYSON") : Lib.Color(generator.generatorIsActive, Localizer.Format("#KERBALISM_Generic_ON"), Lib.KColor.Green, Localizer.Format("#KERBALISM_Generic_OFF"),  Lib.KColor.Yellow);
-		}
+		public override string Status
+			=> module.isAlwaysActive ? Localizer.Format("#KERBALISM_Generic_ALWAYSON") : Lib.Color(module.generatorIsActive, Localizer.Format("#KERBALISM_Generic_ON"), Lib.KColor.Green, Localizer.Format("#KERBALISM_Generic_OFF"),  Lib.KColor.Yellow);
 
 		public override void Ctrl(bool value)
 		{
-			if (generator.isAlwaysActive) return;
-			if (value) generator.Activate();
-			else generator.Shutdown();
+			if (module.isAlwaysActive) return;
+			if (value) module.Activate();
+			else module.Shutdown();
 		}
 
 		public override void Toggle()
 		{
-			Ctrl(!generator.generatorIsActive);
+			Ctrl(!module.generatorIsActive);
 		}
 
-		public override bool IsVisible()
-		{
-			return !generator.isAlwaysActive;
-		}
-
-		ModuleGenerator generator;
+		public override bool IsVisible => !module.isAlwaysActive;
 	}
 
 
-	public sealed class ProtoGeneratorDevice : Device
+	public sealed class ProtoGeneratorDevice : ProtoDevice<ModuleGenerator>
 	{
-		public ProtoGeneratorDevice(ProtoPartModuleSnapshot generator, ModuleGenerator prefab, uint part_id)
-		{
-			this.generator = generator;
-			this.prefab = prefab;
-			this.part_id = part_id;
-		}
+		public ProtoGeneratorDevice(ModuleGenerator prefab, ProtoPartSnapshot protoPart, ProtoPartModuleSnapshot protoModule)
+			: base(prefab, protoPart, protoModule) { }
 
-		public override string Name()
-		{
-			return "generator";
-		}
+		public override string Name => "generator";
 
-		public override uint Part()
+		public override string Status
 		{
-			return part_id;
-		}
-
-		public override string Status()
-		{
-			if (prefab.isAlwaysActive) return Localizer.Format("#KERBALISM_Generic_ALWAYSON");
-			bool is_on = Lib.Proto.GetBool(generator, "generatorIsActive");
-			return Lib.Color(is_on, Localizer.Format("#KERBALISM_Generic_ON"), Lib.KColor.Green, Localizer.Format("#KERBALISM_Generic_OFF"), Lib.KColor.Yellow);
+			get
+			{
+				if (prefab.isAlwaysActive) return Localizer.Format("#KERBALISM_Generic_ALWAYSON");
+				bool is_on = Lib.Proto.GetBool(protoModule, "generatorIsActive");
+				return Lib.Color(is_on, Localizer.Format("#KERBALISM_Generic_ON"), Lib.KColor.Green, Localizer.Format("#KERBALISM_Generic_OFF"), Lib.KColor.Yellow);
+			}
 		}
 
 		public override void Ctrl(bool value)
 		{
 			if (prefab.isAlwaysActive) return;
-			Lib.Proto.Set(generator, "generatorIsActive", value);
+			Lib.Proto.Set(protoModule, "generatorIsActive", value);
 		}
 
 		public override void Toggle()
 		{
-			Ctrl(!Lib.Proto.GetBool(generator, "generatorIsActive"));
+			Ctrl(!Lib.Proto.GetBool(protoModule, "generatorIsActive"));
 		}
 
-		public override bool IsVisible()
-		{
-			return !prefab.isAlwaysActive;
-		}
-
-		private readonly ProtoPartModuleSnapshot generator;
-		private ModuleGenerator prefab;
-		private readonly uint part_id;
+		public override bool IsVisible => !prefab.isAlwaysActive;
 	}
 
 

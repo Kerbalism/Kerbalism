@@ -38,10 +38,10 @@ namespace KERBALISM
 
 		public void Set(Device dev, bool? state)
 		{
-			states.Remove(dev.Id());
+			states.Remove(dev.Id);
 			if (state != null)
 			{
-				states.Add(dev.Id(), state == true);
+				states.Add(dev.Id, state == true);
 			}
 		}
 

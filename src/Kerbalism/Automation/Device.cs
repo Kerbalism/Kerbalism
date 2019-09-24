@@ -7,6 +7,11 @@ namespace KERBALISM
 
 	public abstract class Device
 	{
+		public Device()
+		{
+			DeviceType = GetType().Name;
+		}
+
 		public class DeviceIcon
 		{
 			public Texture2D texture;
@@ -21,17 +26,22 @@ namespace KERBALISM
 			}
 		}
 
+		public string DeviceType { get; private set; }
+
 		// return device name
-		public abstract string Name();
+		public abstract string Name { get; }
 
 		// return part id
-		public abstract uint Part();
+		public abstract uint PartId { get; }
+
+		// return part name
+		public abstract string PartName { get; }
 
 		// return short device status string
-		public abstract string Status();
+		public abstract string Status { get; }
 
 		// return tooltip string
-		public virtual string Tooltip() => string.Empty;
+		public virtual string Tooltip => Lib.BuildString(Lib.Bold(Name), "\non ", PartName);
 
 		// return icon/button
 		public virtual DeviceIcon Icon => null;
@@ -44,11 +54,43 @@ namespace KERBALISM
 
 		// generate unique id for the module
 		// - multiple same-type components in the same part will have the same id
-		public uint Id() { return Part() + (uint)Name().GetHashCode(); }
+		public uint Id => PartId + (uint)Name.GetHashCode();
 
-		public virtual bool IsVisible() { return true; }
+		public virtual bool IsVisible => true;
 
 		public virtual void OnUpdate() { }
+	}
+
+	public abstract class LoadedDevice<T> : Device where T : PartModule
+	{
+		protected readonly T module;
+
+		public LoadedDevice(T module) : base()
+		{
+			this.module = module;
+		}
+
+		public override string PartName => module.part.partInfo.title;
+		public override string Name => module is IModuleInfo ? ((IModuleInfo)module).GetModuleTitle() : module.GUIName;
+		public override uint PartId => module.part.flightID;
+	}
+
+	public abstract class ProtoDevice<T> : Device where T : PartModule
+	{
+		protected readonly T prefab;
+		protected readonly ProtoPartSnapshot protoPart;
+		protected readonly ProtoPartModuleSnapshot protoModule;
+
+		public ProtoDevice(T prefab, ProtoPartSnapshot protoPart, ProtoPartModuleSnapshot protoModule) : base()
+		{
+			this.prefab = prefab;
+			this.protoPart = protoPart;
+			this.protoModule = protoModule;
+		}
+
+		public override string PartName => prefab.part.partInfo.title;
+		public override string Name => prefab is IModuleInfo ? ((IModuleInfo)prefab).GetModuleTitle() : prefab.GUIName;
+		public override uint PartId => protoPart.flightID;
 	}
 
 

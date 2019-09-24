@@ -6,79 +6,40 @@ using KSP.Localization;
 
 namespace KERBALISM
 {
-
-
-	public sealed class LaboratoryDevice : Device
+	public sealed class LaboratoryDevice : LoadedDevice<Laboratory>
 	{
-		public LaboratoryDevice(Laboratory lab)
-		{
-			this.lab = lab;
-		}
+		public LaboratoryDevice(Laboratory module) : base(module) { }
 
-		public override string Name()
-		{
-			return "laboratory";
-		}
-
-		public override uint Part()
-		{
-			return lab.part.flightID;
-		}
-
-		public override string Status()
-		{
-			return Lib.Color(lab.running, Localizer.Format("#KERBALISM_Generic_ACTIVE"), Lib.KColor.Green, Localizer.Format("#KERBALISM_Generic_DISABLED"), Lib.KColor.Yellow);
-		}
+		public override string Status => Lib.Color(module.running, Localizer.Format("#KERBALISM_Generic_ACTIVE"), Lib.KColor.Green, Localizer.Format("#KERBALISM_Generic_DISABLED"), Lib.KColor.Yellow);
 
 		public override void Ctrl(bool value)
 		{
-			if (lab.running != value) lab.Toggle();
+			if (module.running != value) module.Toggle();
 		}
 
 		public override void Toggle()
 		{
-			Ctrl(!lab.running);
+			Ctrl(!module.running);
 		}
-
-		Laboratory lab;
 	}
 
 
-	public sealed class ProtoLaboratoryDevice : Device
+	public sealed class ProtoLaboratoryDevice : ProtoDevice<Laboratory>
 	{
-		public ProtoLaboratoryDevice(ProtoPartModuleSnapshot lab, uint part_id)
-		{
-			this.lab = lab;
-			this.part_id = part_id;
-		}
+		public ProtoLaboratoryDevice(Laboratory prefab, ProtoPartSnapshot protoPart, ProtoPartModuleSnapshot protoModule)
+			: base(prefab, protoPart, protoModule) { }
 
-		public override string Name()
-		{
-			return "laboratory";
-		}
-
-		public override uint Part()
-		{
-			return part_id;
-		}
-
-		public override string Status()
-		{
-			return Lib.Color(Lib.Proto.GetBool(lab, "running"), Localizer.Format("#KERBALISM_Generic_ACTIVE"), Lib.KColor.Green, Localizer.Format("#KERBALISM_Generic_DISABLED"), Lib.KColor.Yellow);
-		}
+		public override string Status => Lib.Color(Lib.Proto.GetBool(protoModule, "running"), Localizer.Format("#KERBALISM_Generic_ACTIVE"), Lib.KColor.Green, Localizer.Format("#KERBALISM_Generic_DISABLED"), Lib.KColor.Yellow);
 
 		public override void Ctrl(bool value)
 		{
-			Lib.Proto.Set(lab, "running", value);
+			Lib.Proto.Set(protoModule, "running", value);
 		}
 
 		public override void Toggle()
 		{
-			Ctrl(!Lib.Proto.GetBool(lab, "running"));
+			Ctrl(!Lib.Proto.GetBool(protoModule, "running"));
 		}
-
-		private readonly ProtoPartModuleSnapshot lab;
-		private readonly uint part_id;
 	}
 
 

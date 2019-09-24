@@ -5,107 +5,87 @@ using KSP.Localization;
 
 namespace KERBALISM
 {
-
-
-	public sealed class HarvesterDevice : Device
+	public sealed class HarvesterDevice : LoadedDevice<Harvester>
 	{
-		public HarvesterDevice(Harvester harvester)
+		private readonly ModuleAnimationGroup animator;
+
+		public HarvesterDevice(Harvester module) : base(module)
 		{
-			this.harvester = harvester;
-			this.animator = harvester.part.FindModuleImplementing<ModuleAnimationGroup>();
+			animator = module.part.FindModuleImplementing<ModuleAnimationGroup>();
 		}
 
-		public override string Name()
-		{
-			return Lib.BuildString(harvester.resource, " harvester").ToLower();
-		}
+		public override string Name => Lib.BuildString(module.resource, " harvester").ToLower();
 
-		public override uint Part()
+		public override string Status
 		{
-			return harvester.part.flightID;
-		}
-
-		public override string Status()
-		{
-			return animator != null && !harvester.deployed
+			get
+			{
+			return animator != null && !module.deployed
 			  ? "not deployed"
-			  : !harvester.running
+			  : !module.running
 			  ? Lib.Color(Localizer.Format("#KERBALISM_Generic_STOPPED"), Lib.KColor.Yellow)
-			  : harvester.issue.Length == 0
+			  : module.issue.Length == 0
 			  ? Lib.Color(Localizer.Format("#KERBALISM_Generic_RUNNING"), Lib.KColor.Green)
-			  : Lib.Color(harvester.issue, Lib.KColor.Red);
+			  : Lib.Color(module.issue, Lib.KColor.Red);
+			}
 		}
 
 		public override void Ctrl(bool value)
 		{
-			if (harvester.deployed)
+			if (module.deployed)
 			{
-				harvester.running = value;
+				module.running = value;
 			}
 		}
 
 		public override void Toggle()
 		{
-			Ctrl(!harvester.running);
+			Ctrl(!module.running);
 		}
-
-		private Harvester harvester;
-		private readonly ModuleAnimationGroup animator;
 	}
 
-
-	public sealed class ProtoHarvesterDevice : Device
+	public sealed class ProtoHarvesterDevice : ProtoDevice<Harvester>
 	{
-		public ProtoHarvesterDevice(ProtoPartModuleSnapshot harvester, Harvester prefab, uint part_id)
+		private readonly ProtoPartModuleSnapshot animator;
+
+		public ProtoHarvesterDevice(Harvester prefab, ProtoPartSnapshot protoPart, ProtoPartModuleSnapshot protoModule)
+			: base(prefab, protoPart, protoModule)
 		{
-			this.harvester = harvester;
-			this.animator = FlightGlobals.FindProtoPartByID(part_id).FindModule("ModuleAnimationGroup");
-			this.prefab = prefab;
-			this.part_id = part_id;
+			this.animator = protoPart.FindModule("ModuleAnimationGroup");
 		}
 
-		public override string Name()
-		{
-			return Lib.BuildString(prefab.resource, " harvester").ToLower();
-		}
+		public override string Name => Lib.BuildString(prefab.resource, " harvester").ToLower();
 
-		public override uint Part()
+		public override string Status
 		{
-			return part_id;
-		}
+			get
+			{
+				bool deployed = Lib.Proto.GetBool(protoModule, "deployed");
+				bool running = Lib.Proto.GetBool(protoModule, "running");
+				string issue = Lib.Proto.GetString(protoModule, "issue");
 
-		public override string Status()
-		{
-			bool deployed = Lib.Proto.GetBool(harvester, "deployed");
-			bool running = Lib.Proto.GetBool(harvester, "running");
-			string issue = Lib.Proto.GetString(harvester, "issue");
-
-			return animator != null && !deployed
-			  ? "not deployed"
-			  : !running
-			  ? Lib.Color(Localizer.Format("#KERBALISM_Generic_STOPPED"), Lib.KColor.Yellow)
-			  : issue.Length == 0
-			  ? Lib.Color(Localizer.Format("#KERBALISM_Generic_RUNNING"), Lib.KColor.Green)
-			  : Lib.Color(issue, Lib.KColor.Red);
+				return animator != null && !deployed
+				  ? "not deployed"
+				  : !running
+				  ? Lib.Color(Localizer.Format("#KERBALISM_Generic_STOPPED"), Lib.KColor.Yellow)
+				  : issue.Length == 0
+				  ? Lib.Color(Localizer.Format("#KERBALISM_Generic_RUNNING"), Lib.KColor.Green)
+				  : Lib.Color(issue, Lib.KColor.Red);
+			}
 		}
 
 		public override void Ctrl(bool value)
 		{
-			if (Lib.Proto.GetBool(harvester, "deployed"))
+			if (Lib.Proto.GetBool(protoModule, "deployed"))
 			{
-				Lib.Proto.Set(harvester, "running", value);
+				Lib.Proto.Set(protoModule, "running", value);
 			}
 		}
 
 		public override void Toggle()
 		{
-			Ctrl(!Lib.Proto.GetBool(harvester, "running"));
+			Ctrl(!Lib.Proto.GetBool(protoModule, "running"));
 		}
-
-		private readonly ProtoPartModuleSnapshot harvester;
-		private readonly ProtoPartModuleSnapshot animator;
-		private Harvester prefab;
-		private readonly uint part_id;
 	}
 
 

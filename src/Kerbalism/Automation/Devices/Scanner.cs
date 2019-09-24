@@ -7,86 +7,48 @@ using KSP.Localization;
 namespace KERBALISM
 {
 
-
-	public sealed class ScannerDevice : Device
+	public sealed class ScannerDevice : LoadedDevice<PartModule>
 	{
-		public ScannerDevice(PartModule scanner)
-		{
-			this.scanner = scanner;
-		}
+		public ScannerDevice(PartModule module) : base(module) { }
 
-		public override string Name()
-		{
-			return "scanner";
-		}
-
-		public override uint Part()
-		{
-			return scanner.part.flightID;
-		}
-
-		public override string Status()
-		{
-			return Lib.Color(Lib.ReflectionValue<bool>(scanner, "scanning"), Localizer.Format("#KERBALISM_Generic_ENABLED"), Lib.KColor.Green, Localizer.Format("#KERBALISM_Generic_DISABLED"), Lib.KColor.Yellow);
-		}
+		public override string Status => Lib.Color(Lib.ReflectionValue<bool>(module, "scanning"), Localizer.Format("#KERBALISM_Generic_ENABLED"), Lib.KColor.Green, Localizer.Format("#KERBALISM_Generic_DISABLED"), Lib.KColor.Yellow);
 
 		public override void Ctrl(bool value)
 		{
-			bool scanning = Lib.ReflectionValue<bool>(scanner, "scanning");
-			if (scanning && !value) scanner.Events["stopScan"].Invoke();
-			else if (!scanning && value) scanner.Events["startScan"].Invoke();
+			bool scanning = Lib.ReflectionValue<bool>(module, "scanning");
+			if (scanning && !value) module.Events["stopScan"].Invoke();
+			else if (!scanning && value) module.Events["startScan"].Invoke();
 		}
 
 		public override void Toggle()
 		{
-			Ctrl(!Lib.ReflectionValue<bool>(scanner, "scanning"));
+			Ctrl(!Lib.ReflectionValue<bool>(module, "scanning"));
 		}
-
-		PartModule scanner;
 	}
 
-
-	public sealed class ProtoScannerDevice : Device
+	public sealed class ProtoScannerDevice : ProtoDevice<PartModule>
 	{
-		public ProtoScannerDevice(ProtoPartModuleSnapshot scanner, Part part_prefab, Vessel v, uint part_id)
+		private readonly Vessel vessel;
+
+		public ProtoScannerDevice(PartModule prefab, ProtoPartSnapshot protoPart, ProtoPartModuleSnapshot protoModule, Vessel v)
+			: base(prefab, protoPart, protoModule)
 		{
-			this.scanner = scanner;
-			this.part_prefab = part_prefab;
 			this.vessel = v;
-			this.part_id = part_id;
 		}
 
-		public override string Name()
-		{
-			return "scanner";
-		}
-
-		public override uint Part()
-		{
-			return part_id;
-		}
-
-		public override string Status()
-		{
-			return Lib.Color(Lib.Proto.GetBool(scanner, "scanning"), Localizer.Format("#KERBALISM_Generic_ENABLED"), Lib.KColor.Green, Localizer.Format("#KERBALISM_Generic_DISABLED"), Lib.KColor.Yellow);
-		}
+		public override string Status => Lib.Color(Lib.Proto.GetBool(protoModule, "scanning"), Localizer.Format("#KERBALISM_Generic_ENABLED"), Lib.KColor.Green, Localizer.Format("#KERBALISM_Generic_DISABLED"), Lib.KColor.Yellow);
 
 		public override void Ctrl(bool value)
 		{
-			bool scanning = Lib.Proto.GetBool(scanner, "scanning");
-			if (scanning && !value) SCANsat.StopScanner(vessel, scanner, part_prefab);
-			else if (!scanning && value) SCANsat.ResumeScanner(vessel, scanner, part_prefab);
+			bool scanning = Lib.Proto.GetBool(protoModule, "scanning");
+			if (scanning && !value) SCANsat.StopScanner(vessel, protoModule, prefab.part);
+			else if (!scanning && value) SCANsat.ResumeScanner(vessel, protoModule, prefab.part);
 		}
 
 		public override void Toggle()
 		{
-			Ctrl(!Lib.Proto.GetBool(scanner, "scanning"));
+			Ctrl(!Lib.Proto.GetBool(protoModule, "scanning"));
 		}
-
-		private readonly ProtoPartModuleSnapshot scanner;
-		private readonly Part part_prefab;
-		private readonly Vessel vessel;
-		private readonly uint part_id;
 	}
 
 

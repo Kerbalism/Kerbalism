@@ -6,79 +6,39 @@ using KSP.Localization;
 
 namespace KERBALISM
 {
-
-
-	public sealed class GreenhouseDevice : Device
+	public sealed class GreenhouseDevice : LoadedDevice<Greenhouse>
 	{
-		public GreenhouseDevice(Greenhouse greenhouse)
-		{
-			this.greenhouse = greenhouse;
-		}
+		public GreenhouseDevice(Greenhouse module) : base(module) { }
 
-		public override string Name()
-		{
-			return "greenhouse";
-		}
-
-		public override uint Part()
-		{
-			return greenhouse.part.flightID;
-		}
-
-		public override string Status()
-		{
-			return Lib.Color(greenhouse.active, Localizer.Format("#KERBALISM_Generic_ENABLED"), Lib.KColor.Green, Localizer.Format("#KERBALISM_Generic_DISABLED"), Lib.KColor.Yellow);
-		}
+		public override string Status => Lib.Color(module.active, Localizer.Format("#KERBALISM_Generic_ENABLED"), Lib.KColor.Green, Localizer.Format("#KERBALISM_Generic_DISABLED"), Lib.KColor.Yellow);
 
 		public override void Ctrl(bool value)
 		{
-			if (greenhouse.active != value) greenhouse.Toggle();
+			if (module.active != value) module.Toggle();
 		}
 
 		public override void Toggle()
 		{
-			Ctrl(!greenhouse.active);
+			Ctrl(!module.active);
 		}
-
-		Greenhouse greenhouse;
 	}
 
-
-	public sealed class ProtoGreenhouseDevice : Device
+	public sealed class ProtoGreenhouseDevice : ProtoDevice<Greenhouse>
 	{
-		public ProtoGreenhouseDevice(ProtoPartModuleSnapshot greenhouse, uint part_id)
-		{
-			this.greenhouse = greenhouse;
-			this.part_id = part_id;
-		}
+		public ProtoGreenhouseDevice(Greenhouse prefab, ProtoPartSnapshot protoPart, ProtoPartModuleSnapshot protoModule)
+			: base(prefab, protoPart, protoModule) { }
 
-		public override string Name()
-		{
-			return "greenhouse";
-		}
-
-		public override uint Part()
-		{
-			return part_id;
-		}
-
-		public override string Status()
-		{
-			return Lib.Color(Lib.Proto.GetBool(greenhouse, "active"), Localizer.Format("#KERBALISM_Generic_ENABLED"), Lib.KColor.Green, Localizer.Format("#KERBALISM_Generic_DISABLED"), Lib.KColor.Yellow);
-		}
+		public override string Status => Lib.Color(Lib.Proto.GetBool(protoModule, "active"), Localizer.Format("#KERBALISM_Generic_ENABLED"), Lib.KColor.Green, Localizer.Format("#KERBALISM_Generic_DISABLED"), Lib.KColor.Yellow);
 
 		public override void Ctrl(bool value)
 		{
-			Lib.Proto.Set(greenhouse, "active", value);
+			Lib.Proto.Set(protoModule, "active", value);
 		}
 
 		public override void Toggle()
 		{
-			Ctrl(!Lib.Proto.GetBool(greenhouse, "active"));
+			Ctrl(!Lib.Proto.GetBool(protoModule, "active"));
 		}
-
-		private readonly ProtoPartModuleSnapshot greenhouse;
-		private readonly uint part_id;
 	}
 
 
