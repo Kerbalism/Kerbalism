@@ -75,9 +75,6 @@ namespace KERBALISM
 		[GameParameters.CustomParameterUI("Analyze Samples Immediately", toolTip = "Automatically flag samples for analysis in a lab")]
 		public bool analyzeSamples = true;
 
-		[GameParameters.CustomParameterUI("Only record valuable science", toolTip = "Record experiment data only if it has at least a nominal value")]
-		public bool smartScience = true;
-
 		[GameParameters.CustomFloatParameterUI("Antenna Speed", asPercentage = true, minValue = 0.01f, maxValue = 2f, displayFormat = "F2", toolTip = "Antenna Bandwidth factor")]
 		public float transmitFactor = 1.0f;
 

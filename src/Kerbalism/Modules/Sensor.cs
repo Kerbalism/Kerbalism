@@ -15,11 +15,15 @@ namespace KERBALISM
 		[KSPField] public string pin = string.Empty;        // pin animation
 
 		// status
+
+#if KSP15_16
 		[KSPField(guiActive = true, guiName = "_")] public string Status;
+#else
+		[KSPField(guiActive = true, guiName = "_", groupName = "Sensors", groupDisplayName = "Sensors", groupStartCollapsed = true)] public string Status;
+#endif
 
 		// animations
 		Animator pin_anim;
-
 
 		public override void OnStart(StartState state)
 		{

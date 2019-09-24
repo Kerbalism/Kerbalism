@@ -411,7 +411,7 @@ namespace KERBALISM
 			return result;
 		}
 
-		public static string ValueFormat(Require req, object reqValue)
+		public static string ReqValueFormat(Require req, object reqValue)
 		{
 			switch (req)
 			{

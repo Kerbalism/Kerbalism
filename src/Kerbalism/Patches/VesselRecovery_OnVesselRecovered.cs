@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Collections.Generic;
 using Harmony;
 using Harmony.ILCopying;
+using UnityEngine;
 
 namespace KERBALISM
 {
@@ -65,6 +66,8 @@ namespace KERBALISM
 
 			double scienceToCredit = 0.0;
 
+			List<DialogGUIBase> labels = new List<DialogGUIBase>();
+
 			foreach (Drive drive in Drive.GetDrives(pv))
 			{
 				foreach (File file in drive.files.Values)
@@ -82,7 +85,18 @@ namespace KERBALISM
 						double subjectValue = file.expInfo.ScienceValue(file.size, true);
 						Science.AddScienceToRnDSubject(file.expInfo.StockSubject, subjectValue);
 						scienceToCredit += subjectValue;
+						labels.Add(new DialogGUILabel(Lib.BuildString(
+							Lib.Color("+ " + subjectValue.ToString("F1"), Lib.KColor.Science),
+							" (",
+							Lib.Color(file.expInfo.SubjectScienceRetrievedInKSC.ToString("F1"), Lib.KColor.Science, true),
+							" / ",
+							Lib.Color(file.expInfo.SubjectScienceMaxValue.ToString("F1"), Lib.KColor.Science, true),
+							") : ",
+							file.expInfo.SubjectName
+							)));
 					}
+
+					
 				}
 
 				foreach (Sample sample in drive.samples.Values)
@@ -100,13 +114,46 @@ namespace KERBALISM
 						double subjectValue = sample.expInfo.ScienceValue(sample.size, true);
 						Science.AddScienceToRnDSubject(sample.expInfo.StockSubject, subjectValue);
 						scienceToCredit += subjectValue;
+						labels.Add(new DialogGUILabel(Lib.BuildString(
+							Lib.Color("+ " + subjectValue.ToString("F1"), Lib.KColor.Science),
+							" (",
+							Lib.Color(sample.expInfo.SubjectScienceRetrievedInKSC.ToString("F1"), Lib.KColor.Science, true),
+							" / ",
+							Lib.Color(sample.expInfo.SubjectScienceMaxValue.ToString("F1"), Lib.KColor.Science, true),
+							") : ",
+							sample.expInfo.SubjectName
+							)));
 					}
 				}
 			}
 
 			protoHardDrive.moduleName = "ModuleScienceContainer";
 
-			ResearchAndDevelopment.Instance.AddScience((float)scienceToCredit, TransactionReasons.VesselRecovery);
+			if (scienceToCredit > 0.0)
+			{
+				ResearchAndDevelopment.Instance.AddScience((float)scienceToCredit, TransactionReasons.VesselRecovery);
+
+				// ideally we should hack the stock dialog to add the little science widgets to it but I'm lazy
+				// plus it looks like crap anyway
+				PopupDialog.SpawnPopupDialog
+				(
+					new MultiOptionDialog
+					(
+						"scienceResults", "", pv.vesselName + " recovery", HighLogic.UISkin, new Rect(0.3f, 0.5f, 350f, 100f),
+						new DialogGUIVerticalLayout
+						(
+							new DialogGUIBox("SCIENCE RECOVERED : " + Lib.Color(scienceToCredit.ToString("F1") + " CREDITS", Lib.KColor.Science, true), 340f, 30f),
+							new DialogGUIScrollList
+							(
+								new Vector2(340f, 250f), false, true,
+								new DialogGUIVerticalLayout(labels.ToArray())
+							),
+							new DialogGUIButton("OK", null, 340f, 30f, true, HighLogic.UISkin.button)
+						)
+					),
+					false, HighLogic.UISkin
+				);
+			}
 
 			return true; // continue to the original code
 		}

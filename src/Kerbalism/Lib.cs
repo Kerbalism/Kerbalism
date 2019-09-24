@@ -535,7 +535,6 @@ namespace KERBALISM
 			return System.Text.RegularExpressions.Regex.Replace(s, "[A-Z]", " $0").TrimStart();
 		}
 
-
 		///<summary>convert to smart_case</summary>
 		public static string SmartCase(string s)
 		{
@@ -942,9 +941,13 @@ namespace KERBALISM
 		}
 
 		///<summary> Format science credits </summary>
-		public static string HumanReadableScience(double value)
+		public static string HumanReadableScience(double value, bool compact = true)
 		{
-			return Lib.Color(Lib.BuildString(value.ToString("F1"), " CREDITS"), KColor.Science);
+			if (compact)
+				return Lib.Color(value.ToString("F1"), KColor.Science, true);
+			else
+				return Lib.Color(Lib.BuildString(value.ToString("F1"), " CREDITS"), KColor.Science);
+
 		}
 #endregion
 

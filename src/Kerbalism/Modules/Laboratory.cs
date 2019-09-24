@@ -178,7 +178,11 @@ namespace KERBALISM
 			}
 		}
 
-		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "Toggle", active = true)]
+#if KSP15_16
+		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "Toggle Lab", active = true)]
+#else
+		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "Toggle Lab", active = true, groupName = "Science", groupDisplayName = "Science")]
+#endif
 		public void Toggle()
 		{
 			running = !running;
@@ -187,7 +191,11 @@ namespace KERBALISM
 			if (Lib.IsEditor()) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
 		}
 
-		[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "Clean", active = true)]
+#if KSP15_16
+		[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "Clean Lab", active = true)]
+#else
+		[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "Clean Lab", active = true, groupName = "Science", groupDisplayName = "Science")]
+#endif
 		public void CleanExperiments()
 		{
 			bool message = false;

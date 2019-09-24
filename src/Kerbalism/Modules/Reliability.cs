@@ -39,7 +39,13 @@ namespace KERBALISM
 		[KSPField(isPersistant = true)] public int ignitions = 0;           // accumulated ignitions
 
 		// status ui
-		[KSPField(guiActive = false, guiActiveEditor = true, guiName = "_")] public string Status;  // show component status
+#if KSP15_16
+		[KSPField(guiActive = false, guiActiveEditor = true, guiName = "_")]
+		public string Status;  // show component status
+#else
+		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "_", groupName = "Reliability", groupDisplayName = "Reliability")]
+		public string Status; // show component status
+#endif
 
 		// data
 		List<PartModule> modules;                                           // components cache
@@ -187,8 +193,7 @@ namespace KERBALISM
 				// update ui
 				if (broken)
 				{
-					Status = critical ? Lib.Color("Critical failure", Lib.KColor.Red) : Lib.Color("Malfunction", Lib.KColor.Yellow);
-					Fields["Status"].guiActive = true;
+					Status = critical ? Lib.Color("critical failure", Lib.KColor.Red) : Lib.Color("malfunction", Lib.KColor.Yellow);
 				}
 				else
 				{
@@ -197,8 +202,7 @@ namespace KERBALISM
 						if (rated_operation_duration > 0)
 						{
 							double effective_duration = EffectiveDuration(quality, rated_operation_duration);
-							Status = Lib.BuildString("Remaining burn: ", Lib.HumanReadableDuration(Math.Max(0, effective_duration - operation_duration)));
-							Fields["Status"].guiActive = true;
+							Status = Lib.BuildString("remaining burn: ", Lib.HumanReadableDuration(Math.Max(0, effective_duration - operation_duration)));
 						}
 						if (rated_ignitions > 0)
 						{
@@ -206,7 +210,6 @@ namespace KERBALISM
 							Status = Lib.BuildString(Status,
 								(string.IsNullOrEmpty(Status) ? "" : ", "),
 								"ignitions: ", Math.Max(0, effective_ignitions - ignitions).ToString());
-							Fields["Status"].guiActive = true;
 						}
 					}
 
@@ -216,11 +219,12 @@ namespace KERBALISM
 						var current = vessel.KerbalismData().EnvRadiation * 3600.0;
 						if(rated < current)
 						{
-							Status = Lib.BuildString(Status, (string.IsNullOrEmpty(Status) ? "" : ", "), Lib.Color("Radiation too high", Lib.KColor.Orange));
-							Fields["Status"].guiActive = true;
+							Status = Lib.BuildString(Status, (string.IsNullOrEmpty(Status) ? "" : ", "), Lib.Color("taking radiation damage", Lib.KColor.Orange));
 						}
 					}
 				}
+
+				if (string.IsNullOrEmpty(Status)) Status = "nominal";
 
 				Events["Inspect"].active = !broken && !needMaintenance;
 				Events["Repair"].active = repair_cs && (broken || needMaintenance) && !critical;
@@ -418,8 +422,12 @@ namespace KERBALISM
 			if (next > 0 && Planetarium.GetUniversalTime() > next) ProtoBreak(v, p, m);
 		}
 
-		// toggle between standard and high quality
+#if KSP15_16
 		[KSPEvent(guiActiveEditor = true, guiName = "_", active = true)]
+#else
+		[KSPEvent(guiActiveEditor = true, guiName = "_", active = true, groupName = "Reliability", groupDisplayName = "Reliability")]
+#endif
+		// toggle between standard and high quality
 		public void Quality()
 		{
 			quality = !quality;
@@ -438,9 +446,12 @@ namespace KERBALISM
 			if (Lib.IsEditor()) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
 		}
 
-
-		// show a message with some hint on time to next failure
+#if KSP15_16
 		[KSPEvent(guiActiveUnfocused = true, guiName = "_", active = false)]
+#else
+		[KSPEvent(guiActiveUnfocused = true, guiName = "_", active = false, groupName = "Reliability", groupDisplayName = "Reliability")]
+#endif
+		// show a message with some hint on time to next failure
 		public void Inspect()
 		{
 			// disable for dead eva kerbals
@@ -479,9 +490,12 @@ namespace KERBALISM
 			}
 		}
 
-
-		// repair malfunctioned component
+#if KSP15_16
 		[KSPEvent(guiActiveUnfocused = true, guiName = "_", active = false)]
+#else
+		[KSPEvent(guiActiveUnfocused = true, guiName = "_", active = false, groupName = "Reliability", groupDisplayName = "Reliability")]
+#endif
+		// repair malfunctioned component
 		public void Repair()
 		{
 			// disable for dead eva kerbals

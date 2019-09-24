@@ -176,17 +176,20 @@ namespace KERBALISM
 			{
 				foreach (File f in drive.files.Values)
 				{
-					// find empty files that aren't being transmitted
+					// always reset transmit rate
+					f.transmitRate = 0.0;
+
+					// delete empty files that aren't being transmitted
+					// note : this won't work in case the same subject is split over multiple files (on different drives)
 					if (f.size <= 0.0 && (!warpCache.files.ContainsKey(f.subject_id) || warpCache.files[f.subject_id].size == 0.0))
 					{
 						filesToRemove.Add(f.subject_id);
 						continue;
 					}
 
-					// get files tagged for transmit and reset their transmit rate
+					// get files tagged for transmit
 					if (drive.GetFileSend(f.subject_id))
 					{
-						f.transmitRate = 0.0;
 						xmitFiles.Add(new XmitFile(f, drive, f.expInfo.SubjectSciencePerMB, false));
 					}
 				}
@@ -255,7 +258,7 @@ namespace KERBALISM
 				subjectResultText = file.resultText;
 			}
 			subjectResultText = Lib.WordWrapAtLength(subjectResultText, 70);
-			Message.Post(Lib.BuildString(file.expInfo.SubjectName, " transmitted\n", timesCompleted == 1 ? Lib.HumanReadableScience(file.expInfo.SubjectScienceMaxValue) : Lib.Color("no science gain : we already had this data", Lib.KColor.Orange, true)), subjectResultText);
+			Message.Post(Lib.BuildString(file.expInfo.SubjectName, " transmitted\n", timesCompleted == 1 ? Lib.HumanReadableScience(file.expInfo.SubjectScienceMaxValue, false) : Lib.Color("no science gain : we already had this data", Lib.KColor.Orange, true)), subjectResultText);
 		}
 
 		// return module acting as container of an experiment

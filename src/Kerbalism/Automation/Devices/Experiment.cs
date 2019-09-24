@@ -64,14 +64,9 @@ namespace KERBALISM
 			this.vessel = vessel;
 
 			isSample = prefab.sample_mass > 0f;
-			issue = Lib.Proto.GetString(proto, "issue");
-			forcedRun = Lib.Proto.GetBool(proto, "forcedRun");
-			recording = Lib.Proto.GetBool(proto, "recording");
-			subject_id = Lib.Proto.GetString(proto, "last_subject_id", prefab.experiment_id);
-			if (string.IsNullOrEmpty(subject_id)) subject_id = prefab.experiment_id;
-			expInfo = Science.Experiment(subject_id);
-			status = Lib.Proto.GetEnum(proto, "status", Experiment.ExpStatus.Stopped);
 			icon = new DeviceIcon(prefab.sample_mass > 0f ? Icons.sample_scicolor : Icons.file_scicolor, "open experiment window", () => new SciencePopup(vessel, prefab, proto));
+
+			OnUpdate();
 		}
 
 		public override string Name()
@@ -106,19 +101,25 @@ namespace KERBALISM
 			Experiment.ProtoToggle(vessel, prefab, proto);
 		}
 
+		public override void OnUpdate()
+		{
+			issue = Lib.Proto.GetString(proto, "issue");
+			subject_id = Lib.Proto.GetString(proto, "last_subject_id", prefab.experiment_id);
+			if (string.IsNullOrEmpty(subject_id)) subject_id = prefab.experiment_id;
+			expInfo = Science.Experiment(subject_id);
+			status = Lib.Proto.GetEnum(proto, "status", Experiment.ExpStatus.Stopped);
+		}
+
 		private readonly ProtoPartModuleSnapshot proto;
 		private readonly Experiment prefab;
 		private readonly uint part_id;
 		private readonly Vessel vessel;
 
 		private readonly DeviceIcon icon;
-
 		private readonly bool isSample;
 
-		private readonly string issue;
-		private readonly bool forcedRun;
-		private readonly bool recording;
-		private readonly string subject_id;
+		private string issue;
+		private string subject_id;
 		private ExperimentInfo expInfo;
 		private Experiment.ExpStatus status;
 	}

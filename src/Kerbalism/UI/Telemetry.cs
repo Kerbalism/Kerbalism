@@ -144,7 +144,7 @@ namespace KERBALISM
 			p.AddContent("target", vd.Connection.target_name);
 
 			// total science gained by vessel
-			p.AddContent("total science transmitted", Lib.HumanReadableScience(vd.scienceTransmitted));
+			p.AddContent("total science transmitted", Lib.HumanReadableScience(vd.scienceTransmitted, false));
 		}
 
 		static void Render_supplies(Panel p, Vessel v, VesselData vd, VesselResources resources)
@@ -264,8 +264,8 @@ namespace KERBALISM
 
 				// render selectable title
 				p.AddContent(Lib.Ellipsis(name, Styles.ScaleStringLength(30)), kd.disabled ? Lib.Color("HYBERNATED", Lib.KColor.Cyan) : string.Empty);
-				p.AddIcon(health_severity == 0 ? Icons.health_white : health_severity == 1 ? Icons.health_yellow : Icons.health_red, tooltip);
-				p.AddIcon(stress_severity == 0 ? Icons.brain_white : stress_severity == 1 ? Icons.brain_yellow : Icons.brain_red, tooltip);
+				p.AddRightIcon(health_severity == 0 ? Icons.health_white : health_severity == 1 ? Icons.health_yellow : Icons.health_red, tooltip);
+				p.AddRightIcon(stress_severity == 0 ? Icons.brain_white : stress_severity == 1 ? Icons.brain_yellow : Icons.brain_red, tooltip);
 			}
 		}
 
@@ -303,7 +303,7 @@ namespace KERBALISM
 				p.AddContent(Lib.BuildString("crop #", (i + 1).ToString()), state, tooltip);
 
 				// issues too, why not
-				p.AddIcon(greenhouse.issue.Length == 0 ? Icons.plant_white : Icons.plant_yellow, tooltip);
+				p.AddRightIcon(greenhouse.issue.Length == 0 ? Icons.plant_white : Icons.plant_yellow, tooltip);
 			}
 		}
 	}

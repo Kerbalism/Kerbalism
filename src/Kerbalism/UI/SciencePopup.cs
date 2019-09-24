@@ -178,6 +178,10 @@ namespace KERBALISM
 						subjectGuiList.Add(new DialogGUILabel(sb.ToString(), whiteText, true));
 						sb.Length = 0;
 					}
+					else
+					{
+						sb.Append("\n");
+					}
 				}
 			}
 
@@ -396,9 +400,9 @@ namespace KERBALISM
 					{
 						lines++;
 						sb.Append(" : ");
-						sb.Append(Lib.Color(ValueFormat(req.requireDef.require, req.requireDef.value), Lib.KColor.Yellow, true));
+						sb.Append(Lib.Color(ReqValueFormat(req.requireDef.require, req.requireDef.value), Lib.KColor.Yellow, true));
 						sb.Append("\n\tcurrent : ");
-						sb.Append(Lib.Color(req.isValid, ValueFormat(req.requireDef.require, req.value), Lib.KColor.Green, Lib.KColor.Orange, true));
+						sb.Append(Lib.Color(req.isValid, ReqValueFormat(req.requireDef.require, req.value), Lib.KColor.Green, Lib.KColor.Orange, true));
 					}
 				}
 			}
@@ -421,9 +425,9 @@ namespace KERBALISM
 		{
 			Experiment.RunningState newState;
 			if (isProto)
-				newState = Experiment.ProtoToggle(v, moduleOrPrefab, protoModule);
+				Experiment.ProtoToggle(v, moduleOrPrefab, protoModule);
 			else
-				newState = moduleOrPrefab.Toggle();
+				moduleOrPrefab.Toggle();
 		}
 
 

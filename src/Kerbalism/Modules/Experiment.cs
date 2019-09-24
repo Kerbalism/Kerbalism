@@ -61,6 +61,8 @@ namespace KERBALISM
 		
 		private double next_check = 0;
 
+		#region state/status
+
 		public enum ExpStatus { Stopped, Running, Forced, Waiting, Issue, Broken }
 		public enum RunningState { Stopped, Running, Forced, Broken }
 
@@ -106,6 +108,8 @@ namespace KERBALISM
 			=> state == RunningState.Broken;
 		public bool Broken
 			=> IsBroken(State);
+
+		#endregion
 
 		#region init / parsing
 
@@ -163,6 +167,10 @@ namespace KERBALISM
 			Events["ToggleEvent"].guiActiveUncommand = true;
 			Events["ToggleEvent"].externalToEVAOnly = true;
 			Events["ToggleEvent"].requireFullControl = false;
+
+			Events["ShowPopup"].guiActiveUncommand = true;
+			Events["ShowPopup"].externalToEVAOnly = true;
+			Events["ShowPopup"].requireFullControl = false;
 
 			Events["Prepare"].guiActiveUncommand = true;
 			Events["Prepare"].externalToEVAOnly = true;
@@ -236,9 +244,19 @@ namespace KERBALISM
 				// do nothing if vessel is invalid
 				if (!vessel.KerbalismIsValid()) return;
 
-				// update ui
-				Events["ToggleEvent"].guiName = Lib.StatusToggle(Lib.Ellipsis(ExpInfo.Name, Styles.ScaleStringLength(25)), StatusInfo(status, issue));
-				Events["ToggleEvent"].active = (prepare_cs == null || didPrepare);
+				if (prepare_cs == null || didPrepare || (hide_when_unavailable && status != ExpStatus.Issue))
+				{
+					Events["ToggleEvent"].active = true;
+					Events["ShowPopup"].active = true;
+
+					Events["ToggleEvent"].guiName = Lib.StatusToggle(Lib.Ellipsis(ExpInfo.Name, Styles.ScaleStringLength(25)), StatusInfo(status, issue));
+					Events["ShowPopup"].guiName = Lib.BuildString("info : ", ScienceValue(ExpInfo), " ", RunningCountdown(ExpInfo, data_rate));
+				}
+				else
+				{
+					Events["ToggleEvent"].active = false;
+					Events["ShowPopup"].active = false;
+				}
 
 				Events["Prepare"].guiName = Lib.BuildString("Prepare <b>", ExpInfo.Name, "</b>");
 				Events["Prepare"].active = !didPrepare && prepare_cs != null && string.IsNullOrEmpty(last_subject_id);
@@ -247,11 +265,6 @@ namespace KERBALISM
 				// we need a reset either if we have recorded data or did a setup
 				bool resetActive = (reset_cs != null || prepare_cs != null) && !string.IsNullOrEmpty(last_subject_id);
 				Events["Reset"].active = resetActive;
-
-				if(issue.Length > 0 && hide_when_unavailable && issue != insufficient_storage)
-				{
-					Events["ToggleEvent"].active = false;
-				}
 			}
 			// in the editor
 			else if (Lib.IsEditor())
@@ -589,11 +602,7 @@ namespace KERBALISM
 
 		#region user interaction
 
-		[KSPEvent(guiActiveUnfocused = true, guiActive = true, guiActiveEditor = true, guiName = "_", active = true)]
-		public void ToggleEvent()
-		{
-			Toggle();
-		}
+
 
 		public RunningState Toggle(bool setForcedRun = false)
 		{
@@ -663,19 +672,26 @@ namespace KERBALISM
 			return State;
 		}
 
-		public static RunningState ProtoToggle(Vessel v, Experiment prefab, ProtoPartModuleSnapshot protoModule, bool setForcedRun = false)
+		public static void ProtoToggle(Vessel v, Experiment prefab, ProtoPartModuleSnapshot protoModule, bool setForcedRun = false)
 		{
 			RunningState expState = Lib.Proto.GetEnum(protoModule, "expState", RunningState.Stopped);
 
 			if (expState == RunningState.Broken)
-				return expState;
+			{
+				ProtoSetState(protoModule, expState);
+				return;
+			}
+				
 
 			if (!IsRunning(expState))
 			{
 				if (IsExperimentRunningOnVessel(v, prefab.experiment_id))
 				{
 					PostMultipleRunsMessage(Science.Experiment(prefab.experiment_id).Name, v.vesselName);
-					return expState;
+					{
+						ProtoSetState(protoModule, expState);
+						return;
+					}
 				}
 				expState = setForcedRun ? RunningState.Forced : RunningState.Running;
 			}
@@ -689,7 +705,7 @@ namespace KERBALISM
 			}
 
 			ProtoSetState(protoModule, expState);
-			return expState;
+			return;
 		}
 
 		public static void ProtoSetState(ProtoPartModuleSnapshot protoModule, RunningState expState)
@@ -747,13 +763,31 @@ namespace KERBALISM
 			return false;
 		}
 
-		[KSPEvent(guiActiveUnfocused = true, guiName = "_", active = true, guiActive = true)]
+#if KSP15_16
+		[KSPEvent(guiActiveUnfocused = true, guiActive = true, guiActiveEditor = true, guiName = "_", active = true)]
+#else
+		[KSPEvent(guiActiveUnfocused = true, guiActive = true, guiActiveEditor = true, guiName = "_", active = true, groupName = "Science", groupDisplayName = "Science")]
+#endif
+		public void ToggleEvent()
+		{
+			Toggle();
+		}
+
+#if KSP15_16
+		[KSPEvent(guiActiveUnfocused = true, guiActive = true, guiName = "_", active = true)]
+#else
+		[KSPEvent(guiActiveUnfocused = true, guiActive = true, guiName = "_", active = true, groupName = "Science", groupDisplayName = "Science")]
+#endif
 		public void ShowPopup()
 		{
 			new SciencePopup(vessel, this);
 		}
 
+#if KSP15_16
 		[KSPEvent(guiActiveUnfocused = true, guiName = "_", active = false)]
+#else
+		[KSPEvent(guiActiveUnfocused = true, guiName = "_", active = false, groupName = "Science", groupDisplayName = "Science")]
+#endif
 		public void Prepare()
 		{
 			// disable for dead eva kerbals
@@ -790,7 +824,11 @@ namespace KERBALISM
 			);
 		}
 
+#if KSP15_16
 		[KSPEvent(guiActiveUnfocused = true, guiName = "_", active = false)]
+#else
+		[KSPEvent(guiActiveUnfocused = true, guiName = "_", active = false, groupName = "Science", groupDisplayName = "Science")]
+#endif
 		public void Reset()
 		{
 			Reset(true);
@@ -853,9 +891,9 @@ namespace KERBALISM
 			if (Running) Toggle();
 		}
 
-		#endregion
+#endregion
 
-		#region info / UI
+#region info / UI
 
 		public static string StatusInfo(ExpStatus status, string issue = null)
 		{
@@ -866,7 +904,7 @@ namespace KERBALISM
 				case ExpStatus.Forced: return Lib.Color("forced run", Lib.KColor.Red);
 				case ExpStatus.Waiting: return Lib.Color("waiting", Lib.KColor.Science);
 				case ExpStatus.Broken: return Lib.Color("broken", Lib.KColor.Red);
-				case ExpStatus.Issue: return Lib.Color(issue == null ? "issue" : issue, Lib.KColor.Orange);
+				case ExpStatus.Issue: return Lib.Color(string.IsNullOrEmpty(issue) ? "issue" : issue, Lib.KColor.Orange);
 				default: return string.Empty;
 			}
 		}
@@ -882,71 +920,26 @@ namespace KERBALISM
 			return Lib.HumanReadableCountdown(count, compact);
 		}
 
+		public static string ScienceValue(ExperimentInfo expInfo)
+		{
+			if (expInfo.SubjectExistsInRnD)
+				return Lib.BuildString(Lib.HumanReadableScience(expInfo.SubjectScienceCollectedTotal), " / ", Lib.HumanReadableScience(expInfo.SubjectScienceMaxValue));
+			else
+				return Lib.Color("unknown", Lib.KColor.Science, true);
+		}
+
 		// specifics support
 		public Specifics Specs()
 		{
-			var specs = new Specifics();
-			var exp = Science.Experiment(experiment_id);
-			if (exp == null)
-			{
-				specs.Add(Localizer.Format("#KERBALISM_ExperimentInfo_Unknown"));
-				return specs;
-			}
+			Specifics specs = SpecsWithoutRequires();
 
-			if(!string.IsNullOrEmpty(experiment_desc))
-			{
-				specs.Add(Lib.BuildString("<i>", experiment_desc, "</i>"));
-				specs.Add(string.Empty);
-			}
-			
-			double expSize = exp.MaxAmount;
-			if (sample_mass < float.Epsilon)
-			{
-				specs.Add("Data size", Lib.HumanReadableDataSize(expSize));
-				specs.Add("Data rate", Lib.HumanReadableDataRate(data_rate));
-				specs.Add("Duration", Lib.HumanReadableDuration(expSize / data_rate));
-			}
-			else
-			{
-				specs.Add("Sample size", Lib.HumanReadableSampleSize(expSize));
-				specs.Add("Sample mass", Lib.HumanReadableMass(sample_mass));
-				if(!sample_collecting && Math.Abs(sample_reservoir - sample_mass) > double.Epsilon && sample_mass > double.Epsilon)
-					specs.Add("Experiments", "" + Math.Round(sample_reservoir / sample_mass, 0));
-				specs.Add("Duration", Lib.HumanReadableDuration(expSize / data_rate));
-			}
-
-			List<string> situations = exp.Situations();
-			if (situations.Count > 0)
+			if (Requirements.Requires.Length > 0)
 			{
 				specs.Add(string.Empty);
-				specs.Add("<color=#00ffff>Situations:</color>", string.Empty);
-				foreach (string s in situations) specs.Add(Lib.BuildString("• <b>", s, "</b>"));
+				specs.Add("<color=#00ffff>Requires:</color>", string.Empty);
+				foreach (RequireDef req in Requirements.Requires)
+					specs.Add(Lib.BuildString("• <b>", ReqName(req.require), "</b>"), ReqValueFormat(req.require, req.value));
 			}
-
-			specs.Add(string.Empty);
-			specs.Add("<color=#00ffff>Needs:</color>");
-
-			specs.Add("EC", Lib.HumanReadableRate(ec_rate));
-			foreach(var p in ParseResources(resources))
-				specs.Add(p.a, Lib.HumanReadableRate(p.b));
-
-			if (crew_prepare.Length > 0)
-			{
-				var cs = new CrewSpecs(crew_prepare);
-				specs.Add("Preparation", cs ? cs.Info() : "none");
-			}
-			if (crew_operate.Length > 0)
-			{
-				var cs = new CrewSpecs(crew_operate);
-				specs.Add("Operation", cs ? cs.Info() : "unmanned");
-			}
-			if (crew_reset.Length > 0)
-			{
-				var cs = new CrewSpecs(crew_reset);
-				specs.Add("Reset", cs ? cs.Info() : "none");
-			}
-
-			specs.Add(SpecsWithoutRequires().Info());
 
 			return specs;
 		}
@@ -1035,9 +1028,9 @@ namespace KERBALISM
 		public string GetPrimaryField() { return string.Empty; }
 		public Callback<Rect> GetDrawModulePanelCallback() { return null; }
 
-		#endregion
+#endregion
 
-		#region utility / other
+#region utility / other
 
 		public void ReliablityEvent(bool breakdown)
 		{
@@ -1050,9 +1043,9 @@ namespace KERBALISM
 			Message.Post(Lib.Color("ALREADY RUNNING", Lib.KColor.Orange, true), "Can't start " + title + " a second time on vessel " + vesselName);
 		}
 
-		#endregion
+#endregion
 
-		#region sample mass
+#region sample mass
 
 		internal static double RestoreSampleMass(double restoredAmount, ProtoPartModuleSnapshot m, string id)
 		{
@@ -1090,7 +1083,7 @@ namespace KERBALISM
 		public float GetModuleMass(float defaultMass, ModifierStagingSituation sit) { return (float)remainingSampleMass; }
 		public ModifierChangeWhen GetModuleMassChangeWhen() { return ModifierChangeWhen.CONSTANTLY; }
 
-		#endregion
+#endregion
 	}
 
 	internal class EditorTracker

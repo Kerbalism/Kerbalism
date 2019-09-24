@@ -40,7 +40,7 @@ namespace KERBALISM
 		/// </summary>
 		public bool SubjectExistsInRnD => StockSubject != null;
 
-		private SubjectData subjectData;
+		private SubjectData SubjectData => DB.Subject(SubjectId);
 
 		/// <summary> subject identifier </summary>
 		public string SubjectId { get; private set; }
@@ -52,13 +52,13 @@ namespace KERBALISM
 		public string SubjectSituation { get; private set; }
 
 		/// <summary> has the subject been retrieved fully in RnD at least once ? </summary>
-		public bool SubjectIsCompleted => subjectData == null ? false : subjectData.timesCompleted > 0;
+		public bool SubjectIsCompleted => SubjectData.timesCompleted > 0;
 
 		/// <summary> how many times the subject has been fully retrieved in RnD </summary>
-		public int SubjectTimesCompleted => subjectData == null ? 0 : subjectData.timesCompleted;
+		public int SubjectTimesCompleted => SubjectData.timesCompleted;
 
 		/// <summary> percentage [0;x] of science retrieved, can be > 1 if subject has been retrieved more than once</summary>
-		public double SubjectPercentRetrieved => subjectData == null ? 0.0 : subjectData.completionPercent;
+		public double SubjectPercentRetrieved => SubjectData.completionPercent;
 
 		/// <summary> subject science points per MB of data. Will be PositiveInfinity while SubjectExistsInRnD is false</summary>
 		public double SubjectSciencePerMB => SubjectScienceMaxValue / MaxAmount;
@@ -146,11 +146,11 @@ namespace KERBALISM
 
 			if (IsSubject)
 			{
-				subjectData = DB.Subject(SubjectId);
-
-				if (HighLogic.CurrentGame.Mode != Game.Modes.SANDBOX && ResearchAndDevelopment.Instance == null)
+				// TODO : remove this for release
+				if (StockSubject == null)
 				{
-
+					// Message.Post("DEBUG : Experiment info created but subject '" + SubjectId + "' doesn't exists in RnD\nRnD instance : " + (ResearchAndDevelopment.Instance == null ? "null" : "not null"));
+					Lib.Log("Experiment info created but subject '" + SubjectId + "' doesn't exists in RnD - RnD instance : " + (ResearchAndDevelopment.Instance == null ? "null" : "not null"));
 				}
 
 				// we collect data only if the subject exists
@@ -165,12 +165,7 @@ namespace KERBALISM
 							SubjectScienceCollectedInFlight += (float)(drive.samples[subject_id].size * SubjectSciencePerMB);
 					}
 				}
-				else
-				{
-
-				}
 			}
-
 		}
 
 		public void CreateSubjectInRnD(Vessel v, ExperimentSituation sit)
@@ -238,14 +233,14 @@ namespace KERBALISM
 		/// </summary>
 		public int UpdateSubjectCompletion(double scienceAdded)
 		{
-			subjectData.completionPercent = ((subjectData.completionPercent * SubjectScienceMaxValue) + scienceAdded) / SubjectScienceMaxValue;
+			SubjectData.completionPercent = ((SubjectData.completionPercent * SubjectScienceMaxValue) + scienceAdded) / SubjectScienceMaxValue;
 
-			double decimalPart = subjectData.completionPercent - Math.Truncate(subjectData.completionPercent);
-			int timesCompleted = (int)(subjectData.completionPercent / 1.0) + (decimalPart < 1.0 - Science.scienceLeftForSubjectCompleted ? 0 : 1);
+			double decimalPart = SubjectData.completionPercent - Math.Truncate(SubjectData.completionPercent);
+			int timesCompleted = (int)(SubjectData.completionPercent / 1.0) + (decimalPart < 1.0 - Science.scienceLeftForSubjectCompleted ? 0 : 1);
 
-			if (timesCompleted > subjectData.timesCompleted)
+			if (timesCompleted > SubjectData.timesCompleted)
 			{
-				subjectData.timesCompleted = timesCompleted;
+				SubjectData.timesCompleted = timesCompleted;
 				return timesCompleted;
 			}
 

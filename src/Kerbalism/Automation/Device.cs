@@ -47,6 +47,8 @@ namespace KERBALISM
 		public uint Id() { return Part() + (uint)Name().GetHashCode(); }
 
 		public virtual bool IsVisible() { return true; }
+
+		public virtual void OnUpdate() { }
 	}
 
 

@@ -193,7 +193,11 @@ namespace KERBALISM
 			}
 		}
 
+#if KSP15_16
 		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "#KERBALISM_GravityRing_Toggle", active = true)]
+#else
+		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "#KERBALISM_GravityRing_Toggle", active = true, groupName = "Habitat", groupDisplayName = "Habitat")]
+#endif
 		public void Toggle()
 		{
 			// switch deployed state

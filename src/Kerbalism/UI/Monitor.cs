@@ -212,14 +212,14 @@ namespace KERBALISM
 
 			// vessel type icon
 			if (!selected)
-			p.SetIcon(GetVesselTypeIcon(v.vesselType), v.vesselType.displayDescription(), () => { selected_id = selected_id != v.id ? v.id : Guid.Empty; });
+			p.SetLeftIcon(GetVesselTypeIcon(v.vesselType), v.vesselType.displayDescription(), () => { selected_id = selected_id != v.id ? v.id : Guid.Empty; });
 			else
 			{
 				if (FlightGlobals.ActiveVessel != v)
 				{
 					if (Lib.IsFlight())
 					{
-						p.SetIcon(GetVesselTypeIcon(v.vesselType), "Go to vessel!", () => Lib.Popup
+						p.SetLeftIcon(GetVesselTypeIcon(v.vesselType), "Go to vessel!", () => Lib.Popup
 						("Warning!",
 							Lib.BuildString("Do you really want go to ", vessel_name, " vessel?"),
 							new DialogGUIButton("Go", () => { GotoVessel.JumpToVessel(v); }),
@@ -228,7 +228,7 @@ namespace KERBALISM
 					}
 					else
 					{
-						p.SetIcon(GetVesselTypeIcon(v.vesselType), "Go to vessel!", () => Lib.Popup
+						p.SetLeftIcon(GetVesselTypeIcon(v.vesselType), "Go to vessel!", () => Lib.Popup
 						("Warning!",
 							Lib.BuildString("Do you really want go to ", vessel_name, " vessel?"),
 							new DialogGUIButton("Go", () => { GotoVessel.JumpToVessel(v); }),
@@ -237,7 +237,7 @@ namespace KERBALISM
 				}
 				else
 				{
-					p.SetIcon(GetVesselTypeIcon(v.vesselType), v.vesselType.displayDescription(), () => { });
+					p.SetLeftIcon(GetVesselTypeIcon(v.vesselType), v.vesselType.displayDescription(), () => { });
 				}
 			}
 
@@ -544,7 +544,7 @@ namespace KERBALISM
 			}
 
 			// generate problem icon
-			p.AddIcon(problem_icon, String.Join("\n", problem_tooltips.ToArray()));
+			p.AddRightIcon(problem_icon, String.Join("\n", problem_tooltips.ToArray()));
 		}
 
 		void Indicator_ec(Panel p, Vessel v, VesselData vd)
@@ -572,7 +572,7 @@ namespace KERBALISM
 			  ? Icons.battery_yellow
 			  : Icons.battery_white;
 
-			p.AddIcon(image, tooltip);
+			p.AddRightIcon(image, tooltip);
 		}
 
 		void Indicator_supplies(Panel p, Vessel v, VesselData vd)
@@ -606,7 +606,7 @@ namespace KERBALISM
 			  ? Icons.box_yellow
 			  : Icons.box_white;
 
-			p.AddIcon(image, string.Join("\n", tooltips.ToArray()));
+			p.AddRightIcon(image, string.Join("\n", tooltips.ToArray()));
 		}
 
 		void Indicator_reliability(Panel p, Vessel v, VesselData vd)
@@ -629,7 +629,7 @@ namespace KERBALISM
 				tooltip = "Critical failures";
 			}
 
-			p.AddIcon(image, tooltip);
+			p.AddRightIcon(image, tooltip);
 		}
 
 		void Indicator_signal(Panel p, Vessel v, VesselData vd)
@@ -686,7 +686,7 @@ namespace KERBALISM
 					break;
 			}
 
-			p.AddIcon(image, tooltip, () => UI.Open((p2) => p2.ConnMan(v)));
+			p.AddRightIcon(image, tooltip, () => UI.Open((p2) => p2.ConnMan(v)));
 		}
 
 		// id of selected vessel
