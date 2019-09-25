@@ -423,7 +423,6 @@ namespace KERBALISM
 
 		private void Toggle()
 		{
-			Experiment.RunningState newState;
 			if (isProto)
 				Experiment.ProtoToggle(v, moduleOrPrefab, protoModule);
 			else
