@@ -34,7 +34,7 @@ namespace KERBALISM
 			pin_anim = new Animator(part, pin);
 
 			// setup ui
-			Fields["Status"].guiName = Lib.UppercaseFirst(type);
+			Fields["Status"].guiName = Lib.SpacesOnCaps(Lib.SpacesOnUnderscore(type));
 		}
 
 

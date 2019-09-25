@@ -541,6 +541,12 @@ namespace KERBALISM
 			return SpacesOnCaps(s).ToLower().Replace(' ', '_');
 		}
 
+		///<summary>converts_from_this to this</summary>
+		public static string SpacesOnUnderscore(string s)
+		{
+			return s.Replace('_', ' ');
+		}
+
 
 		///<summary>select a string at random</summary>
 		public static string TextVariant(params string[] list)
