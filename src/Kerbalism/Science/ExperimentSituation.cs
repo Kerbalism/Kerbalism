@@ -38,8 +38,10 @@ namespace KERBALISM
 
 		public ExperimentSituation(Vessel vessel)
 		{
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.GetExperimentSituation");
 			this.vessel = vessel;
 			FixSituation();
+			UnityEngine.Profiling.Profiler.EndSample();
 		}
 
 		public bool AtmosphericFlight()
@@ -125,11 +127,10 @@ namespace KERBALISM
 		{
 			// make sure to not supersede SpaceHigh with our custom situations, otherwise
 			// those experiments won't run any more while in space high and in a belt
-			var s = Situation;
-			if ((exp.SituationMask & (int)s) != 0) return true;
+			if ((exp.SituationMask & (int)Situation) != 0) return true;
 
-			if (s >= KerbalismSituations.InnerBelt) s = KerbalismSituations.InSpaceHigh;
-			return (exp.SituationMask & (int)s) != 0;
+			if (Situation >= KerbalismSituations.InnerBelt) Situation = KerbalismSituations.InSpaceHigh;
+			return (exp.SituationMask & (int)Situation) != 0;
 		}
 
 		public bool BiomeIsRelevant(ExperimentInfo experiment)

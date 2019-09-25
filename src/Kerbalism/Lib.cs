@@ -2175,9 +2175,15 @@ namespace KERBALISM
 
 			public static T GetEnum<T>(ProtoPartModuleSnapshot m, string name, T def_value)
 			{
+				UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Lib.Proto.GetEnum");
 				string s = m.moduleValues.GetValue(name);
 				if (s != null && Enum.IsDefined(typeof(T), s))
-					return (T)Enum.Parse(typeof(T), s);
+				{
+					T forprofiling = (T)Enum.Parse(typeof(T), s);
+					UnityEngine.Profiling.Profiler.EndSample();
+					return forprofiling;
+				}
+				UnityEngine.Profiling.Profiler.EndSample();
 				return def_value;
 			}
 

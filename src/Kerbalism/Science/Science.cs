@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Text;
 using UnityEngine;
 
 
@@ -17,7 +18,12 @@ namespace KERBALISM
 		// this is needed because of floating point imprecisions in the in-flight science count (due to a gazillion add of very small values)
 		public const float scienceLeftForSubjectCompleted = 0.1f;
 
-		public static bool RnDIsLive = true;
+		// experiment info cache
+		static readonly Dictionary<string, ExperimentInfo> experiments = new Dictionary<string, ExperimentInfo>();
+		static readonly Dictionary<string, double> sampleMasses = new Dictionary<string, double>();
+		static readonly List<XmitFile> xmitFiles = new List<XmitFile>();
+
+		private static StringBuilder subjectSB = new StringBuilder();
 
 		private class XmitFile
 		{
@@ -307,32 +313,61 @@ namespace KERBALISM
 			experiments.Clear();
 		}
 
-		public static string Generate_subject_id(string experiment_id, Vessel v, ExperimentSituation sit)
+
+		/// <summary>
+		/// return the subject_id for the given experiment and situation, and the corresponding ExperimentInfo.
+		/// if the subject is not valid, the ExperimentInfo of the experiment will be returned, and the return value will be false
+		/// </summary>
+		public static bool GetSubjectId(string experiment_id, Vessel v, ExperimentSituation sit, out string subject_id, out ExperimentInfo expInfo)
 		{
-			string sitStr = sit.ToString();
-			if(!string.IsNullOrEmpty(sitStr))
+			subjectSB.Length = 0;
+			subjectSB.Append(experiment_id);
+			subjectSB.Append('@');
+			subjectSB.Append(v.mainBody.name);
+			subjectSB.Append(sit.ToString());
+
+			// get the info for the experiment
+			expInfo = Experiment(experiment_id);
+
+			if (sit.BiomeIsRelevant(expInfo))
+				subjectSB.Append(ScienceUtil.GetExperimentBiome(v.mainBody, v.latitude, v.longitude));
+
+			// get the subject id
+			subject_id = subjectSB.ToString();
+
+			// if the subject is valid (according to the situation/biome mask of the experiment),
+			// set the ExperimentInfo to the subject
+			if (sit.IsAvailable(expInfo))
 			{
-				if (sit.BiomeIsRelevant(Experiment(experiment_id)))
-					sitStr += ScienceUtil.GetExperimentBiome(v.mainBody, v.latitude, v.longitude);
+				expInfo = Experiment(subject_id);
+				return true;
 			}
 
-			// generate subject id
-			return Lib.BuildString(experiment_id, "@", v.mainBody.name, sitStr);
+			// else return with the experimentInfo of the experiment (non-subject specific)
+			return false;
+		}
+
+		/// <summary>
+		/// return the subject_id for the given experiment and situation
+		/// </summary>
+		public static string GetSubjectId(string experiment_id, Vessel v, ExperimentSituation sit)
+		{
+			subjectSB.Length = 0;
+			subjectSB.Append(experiment_id);
+			subjectSB.Append('@');
+			subjectSB.Append(v.mainBody.name);
+			subjectSB.Append(sit.ToString());
+
+			if (sit.BiomeIsRelevant(Experiment(experiment_id)))
+				subjectSB.Append(ScienceUtil.GetExperimentBiome(v.mainBody, v.latitude, v.longitude));
+
+			// get the subject id
+			return subjectSB.ToString();
 		}
 
 		public static ExperimentSituation GetExperimentSituation(Vessel v)
 		{
 			return new ExperimentSituation(v);
-		}
-
-		private static bool TestBody(string bodyName, string requirement)
-		{
-			foreach(string s in Lib.Tokenize(requirement, ';'))
-			{
-				if (s == bodyName) return true;
-				if(s[0] == '!' && s.Substring(1) == bodyName) return false;
-			}
-			return false;
 		}
 
 		/// <summary>
@@ -385,10 +420,7 @@ namespace KERBALISM
 			return sampleMasses[id];
 		}
 
-		// experiment info cache
-		static readonly Dictionary<string, ExperimentInfo> experiments = new Dictionary<string, ExperimentInfo>();
-		static readonly Dictionary<string, double> sampleMasses = new Dictionary<string, double>();
-		static readonly List<XmitFile> xmitFiles = new List<XmitFile>();
+
 
 	}
 

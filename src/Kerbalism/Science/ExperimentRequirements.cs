@@ -125,6 +125,7 @@ namespace KERBALISM
 
 		public bool TestRequirements(Vessel v, out RequireResult[] results, bool testAll = false)
 		{
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.ExperimentRequirements.TestRequirements");
 			VesselData vd = v.KerbalismData();
 
 			results = new RequireResult[Requires.Length];
@@ -216,11 +217,15 @@ namespace KERBALISM
 				}
 
 				if (!testAll && !results[i].isValid)
+				{
+					UnityEngine.Profiling.Profiler.EndSample();
 					return false;
+				}
 
 				good &= results[i].isValid;
 			}
 
+			UnityEngine.Profiling.Profiler.EndSample();
 			return good;
 		}
 

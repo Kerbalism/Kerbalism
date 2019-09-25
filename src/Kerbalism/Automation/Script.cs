@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
 
 namespace KERBALISM
@@ -45,14 +46,16 @@ namespace KERBALISM
 			}
 		}
 
-		public void Execute(Dictionary<uint, Device> devices)
+		public void Execute(List<Device> devices)
 		{
-			Device dev;
 			foreach (var p in states)
 			{
-				if (devices.TryGetValue(p.Key, out dev))
+				foreach (Device device in devices)
 				{
-					dev.Ctrl(p.Value);
+					if (device.Id == p.Key)
+					{
+						device.Ctrl(p.Value);
+					}
 				}
 			}
 		}

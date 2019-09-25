@@ -1,6 +1,7 @@
 ﻿using KSP.Localization;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
 
 namespace KERBALISM
@@ -32,7 +33,7 @@ namespace KERBALISM
 			if (!Lib.IsControlUnit(v) && p.Timeout(vd)) return;
 
 			// get devices
-			Dictionary<uint, Device> devices = Computer.Boot(v);
+			List<Device> devices = Computer.Boot(v);
 			int deviceCount = 0;
 
 			// direct control
@@ -45,14 +46,13 @@ namespace KERBALISM
 				  Description(),
 				  () => p.Prev(ref script_index, (int)ScriptType.last),
 				  () => p.Next(ref script_index, (int)ScriptType.last),
-					 true
+					 false
 				);
 
 				// for each device
-				foreach (var pair in devices)
+				foreach (Device dev in devices)
 				{
 					// render device entry
-					Device dev = pair.Value;
 					dev.OnUpdate();
 					if (!dev.IsVisible) continue;
 					p.AddContent(dev.Name, dev.Status, dev.Tooltip, dev.Toggle, () => Highlighter.Set(dev.PartId, Color.cyan));
@@ -81,16 +81,15 @@ namespace KERBALISM
 				);
 
 				// for each device
-				foreach (var pair in devices)
+				foreach (Device dev in devices)
 				{
-					Device dev = pair.Value;
 					dev.OnUpdate();
 					if (!dev.IsVisible) continue;
 
 					// determine tribool state
-					int state = !script.states.ContainsKey(pair.Key)
+					int state = !script.states.ContainsKey(dev.Id)
 					  ? -1
-					  : !script.states[pair.Key]
+					  : !script.states[dev.Id]
 					  ? 0
 					  : 1;
 

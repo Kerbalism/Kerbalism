@@ -91,8 +91,8 @@ namespace KERBALISM
 			=> SubjectScienceMaxValue - SubjectScienceRetrievedInKSC;
 
 		/// <summary> percentage [0;1] of science collected. Will be PositiveInfinity while SubjectExistsInRnD is false</summary>
-		public float SubjectPercentCollectedTotal
-			=> SubjectScienceCollectedTotal / SubjectScienceMaxValue;
+		public double SubjectPercentCollectedTotal
+			=> (SubjectScienceCollectedInFlight / SubjectScienceMaxValue) + SubjectPercentRetrieved;
 
 		/// <summary> science value for the given data size </summary>
 		public double ScienceValue(double dataSize, bool clampByScienceRetrieved = false, bool clampByScienceRetrievedAndCollected = false)
@@ -147,11 +147,11 @@ namespace KERBALISM
 			if (IsSubject)
 			{
 				// TODO : remove this for release
-				if (StockSubject == null)
-				{
-					// Message.Post("DEBUG : Experiment info created but subject '" + SubjectId + "' doesn't exists in RnD\nRnD instance : " + (ResearchAndDevelopment.Instance == null ? "null" : "not null"));
-					Lib.Log("Experiment info created but subject '" + SubjectId + "' doesn't exists in RnD - RnD instance : " + (ResearchAndDevelopment.Instance == null ? "null" : "not null"));
-				}
+				//if (StockSubject == null)
+				//{
+				//	// Message.Post("DEBUG : Experiment info created but subject '" + SubjectId + "' doesn't exists in RnD\nRnD instance : " + (ResearchAndDevelopment.Instance == null ? "null" : "not null"));
+				//	Lib.Log("Experiment info created but subject '" + SubjectId + "' doesn't exists in RnD - RnD instance : " + (ResearchAndDevelopment.Instance == null ? "null" : "not null"));
+				//}
 
 				// we collect data only if the subject exists
 				if (StockSubject != null)

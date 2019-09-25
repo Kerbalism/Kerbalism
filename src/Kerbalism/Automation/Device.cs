@@ -7,11 +7,6 @@ namespace KERBALISM
 
 	public abstract class Device
 	{
-		public Device()
-		{
-			DeviceType = GetType().Name;
-		}
-
 		public class DeviceIcon
 		{
 			public Texture2D texture;
@@ -25,6 +20,14 @@ namespace KERBALISM
 				this.onClick = onClick;
 			}
 		}
+
+		public Device()
+		{
+			DeviceType = GetType().Name;
+		}
+
+		// generate (probably) unique id for the module
+		public uint Id { get; protected set; }
 
 		public string DeviceType { get; private set; }
 
@@ -52,10 +55,6 @@ namespace KERBALISM
 		// toggle the device state
 		public abstract void Toggle();
 
-		// generate unique id for the module
-		// - multiple same-type components in the same part will have the same id
-		public uint Id => PartId + (uint)Name.GetHashCode();
-
 		public virtual bool IsVisible => true;
 
 		public virtual void OnUpdate() { }
@@ -68,6 +67,7 @@ namespace KERBALISM
 		public LoadedDevice(T module) : base()
 		{
 			this.module = module;
+			Id = PartId + (uint)DeviceType.GetHashCode() + (uint)Lib.RandomInt(int.MaxValue);
 		}
 
 		public override string PartName => module.part.partInfo.title;
@@ -86,6 +86,7 @@ namespace KERBALISM
 			this.prefab = prefab;
 			this.protoPart = protoPart;
 			this.protoModule = protoModule;
+			Id = PartId + (uint)DeviceType.GetHashCode() + (uint)Lib.RandomInt(int.MaxValue);
 		}
 
 		public override string PartName => prefab.part.partInfo.title;

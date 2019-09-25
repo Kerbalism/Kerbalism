@@ -249,7 +249,7 @@ namespace KERBALISM
 				)
 			);
 
-			multiOptionDialog = new MultiOptionDialog(moduleOrPrefab.experiment_id, null, Science.Experiment(moduleOrPrefab.experiment_id).Name, HighLogic.UISkin, 460f, content);
+			multiOptionDialog = new MultiOptionDialog(moduleOrPrefab.experiment_id, "THIS UI IS UGLY, BUGGY AND NOT FINAL", Science.Experiment(moduleOrPrefab.experiment_id).Name, HighLogic.UISkin, 460f, content);
 			multiOptionDialog.OnUpdate = OnUpdate;
 
 

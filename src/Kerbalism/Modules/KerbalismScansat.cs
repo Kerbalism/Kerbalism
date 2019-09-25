@@ -65,7 +65,7 @@ namespace KERBALISM
 				if (IsScanning)
 				{
 					ExperimentSituation situation = Science.GetExperimentSituation(vessel);
-					string subject_id = Science.Generate_subject_id(experimentType, vessel, situation);
+					string subject_id = Science.GetSubjectId(experimentType, vessel, situation);
 					ExperimentInfo expInfo = Science.Experiment(subject_id);
 					expInfo.CreateSubjectInRnD(vessel, situation);
 
@@ -208,7 +208,7 @@ namespace KERBALISM
 				if (is_scanning)
 				{
 					ExperimentSituation situation = Science.GetExperimentSituation(vessel);
-					string subject_id = Science.Generate_subject_id(kerbalismScansat.experimentType, vessel, situation);
+					string subject_id = Science.GetSubjectId(kerbalismScansat.experimentType, vessel, situation);
 					ExperimentInfo expInfo = Science.Experiment(subject_id);
 					expInfo.CreateSubjectInRnD(vessel, situation);
 

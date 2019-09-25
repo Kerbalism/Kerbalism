@@ -46,8 +46,8 @@ namespace KERBALISM
 		[KSPField(isPersistant = true)] private RunningState expState = RunningState.Stopped;
 		[KSPField(isPersistant = true)] private ExpStatus status = ExpStatus.Stopped;
 
-		private static readonly string insufficient_storage = "insufficient storage";
-		public ExperimentInfo ExpInfo { get; private set; }
+		public ExperimentInfo ExpInfo => expInfo;
+		private ExperimentInfo expInfo;
 		public ExperimentRequirements Requirements { get; private set; }
 		public List<ObjectPair<string, double>> ResourceDefs { get; private set; }
 
@@ -59,7 +59,7 @@ namespace KERBALISM
 		private CrewSpecs reset_cs;
 		private CrewSpecs prepare_cs;
 		
-		private double next_check = 0;
+		// private double next_check = 0;
 
 		#region state/status
 
@@ -232,8 +232,8 @@ namespace KERBALISM
 
 		public void Update()
 		{
-			if (ExpInfo == null)
-				ExpInfo = Science.Experiment(last_subject_id);
+			if (expInfo == null)
+				expInfo = Science.Experiment(last_subject_id);
 
 			// in flight
 			if (Lib.IsFlight())
@@ -250,7 +250,7 @@ namespace KERBALISM
 					Events["ShowPopup"].active = true;
 
 					Events["ToggleEvent"].guiName = Lib.StatusToggle(Lib.Ellipsis(ExpInfo.Name, Styles.ScaleStringLength(25)), StatusInfo(status, issue));
-					Events["ShowPopup"].guiName = Lib.BuildString("info : ", ScienceValue(ExpInfo), " ", RunningCountdown(ExpInfo, data_rate));
+					Events["ShowPopup"].guiName = Lib.BuildString("info : ", ScienceValue(ExpInfo), " ", State == RunningState.Forced ? ExpInfo.SubjectPercentCollectedTotal.ToString("P0") : RunningCountdown(ExpInfo, data_rate));
 				}
 				else
 				{
@@ -300,27 +300,26 @@ namespace KERBALISM
 			if (!Running)
 			{
 				ExperimentSituation situation = Science.GetExperimentSituation(vessel);
-				last_subject_id = Science.Generate_subject_id(experiment_id, vessel, situation);
+				Science.GetSubjectId(experiment_id, vessel, situation, out last_subject_id, out expInfo);
 				UnityEngine.Profiling.Profiler.EndSample();
 				return;
 			}
 
 			shrouded = part.ShieldedFromAirstream;
-			ExperimentInfo newExpInfo;
 
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Experiment.FixedUpdate.RunningUpdate");
 			RunningUpdate(
 				vessel, this, privateHdId, didPrepare, shrouded,
 				ResourceCache.GetResource(vessel, "ElectricCharge"),
 				ResourceCache.Get(vessel),
 				ResourceDefs,
+				expState,
 				Kerbalism.elapsed_s,
 				ref last_subject_id,
-				ref expState,
 				ref remainingSampleMass,
-				out newExpInfo,
+				out expInfo,
 				out issue);
-
-			ExpInfo = newExpInfo;
+			UnityEngine.Profiling.Profiler.EndSample();
 
 			status = GetStatus(expState, ExpInfo, issue);
 
@@ -335,11 +334,12 @@ namespace KERBALISM
 			if (!IsRunning(expState))
 			{
 				ExperimentSituation situation = Science.GetExperimentSituation(v);
-				string subject_id = Science.Generate_subject_id(prefab.experiment_id, v, situation);
+				string subject_id = Science.GetSubjectId(prefab.experiment_id, v, situation);
 				Lib.Proto.Set(m, "last_subject_id", subject_id);
 				UnityEngine.Profiling.Profiler.EndSample();
 				return;
 			}
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Experiment.BackgroundUpdate.GetProto");
 
 			bool didPrepare = Lib.Proto.GetBool(m, "didPrepare", false);
 			bool shrouded = Lib.Proto.GetBool(m, "shrouded", false);
@@ -347,28 +347,33 @@ namespace KERBALISM
 			double remainingSampleMass = Lib.Proto.GetDouble(m, "remainingSampleMass", 0.0);
 			uint privateHdId = Lib.Proto.GetUInt(m, "privateHdId", 0u);
 
+			UnityEngine.Profiling.Profiler.EndSample();
+
 			string issue;
 			ExperimentInfo expInfo;
 
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Experiment.BackgroundUpdate.RunningUpdate");
 			RunningUpdate(
 				v, prefab, privateHdId, didPrepare, shrouded,
 				ec,
 				resources,
 				prefab.ResourceDefs,
+				expState,
 				elapsed_s,
 				ref last_subject_id,
-				ref expState,
 				ref remainingSampleMass,
 				out expInfo,
 				out issue);
+			UnityEngine.Profiling.Profiler.EndSample();
 
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Experiment.BackgroundUpdate.SetProto");
 			Lib.Proto.Set(m, "last_subject_id", last_subject_id);
-			Lib.Proto.Set(m, "expState", expState);
 			Lib.Proto.Set(m, "status", GetStatus(expState, expInfo, issue));
 			Lib.Proto.Set(m, "issue", issue);
 
 			if (prefab.sample_mass > 0f)
 				Lib.Proto.Set(m, "remainingSampleMass", remainingSampleMass);
+			UnityEngine.Profiling.Profiler.EndSample();
 
 			UnityEngine.Profiling.Profiler.EndSample();
 		}
@@ -376,23 +381,22 @@ namespace KERBALISM
 		private static void RunningUpdate(
 			Vessel v, Experiment prefab, uint hdId, bool didPrepare, bool isShrouded,
 			ResourceInfo ec, VesselResources resources, List<ObjectPair<string, double>> resourceDefs,
-			double elapsed_s,
-			ref string subjectId, ref RunningState expState, ref double remainingSampleMass, out ExperimentInfo expInfo, out string mainIssue)
+			RunningState expState, double elapsed_s,
+			ref string subjectId, ref double remainingSampleMass, out ExperimentInfo expInfo, out string mainIssue)
 		{
 			mainIssue = string.Empty;
 			ExperimentSituation situation = Science.GetExperimentSituation(v);
-			string newSubjectId = Science.Generate_subject_id(prefab.experiment_id, v, situation);
-			expInfo = Science.Experiment(newSubjectId);
+			string newSubjectId;
+			bool isSituationValid = Science.GetSubjectId(prefab.experiment_id, v, situation, out newSubjectId, out expInfo);
 
 			bool subjectHasChanged = subjectId != newSubjectId;
 			if (subjectHasChanged)
-			{
 				subjectId = newSubjectId;
-				if (expState == RunningState.Forced)
-				{
-					expState = RunningState.Stopped;
-					return;
-				}
+
+			if (!isSituationValid)
+			{
+				mainIssue = "invalid situation";
+				return;
 			}
 
 			float scienceRemaining = expInfo.SubjectScienceRemainingToCollect;
@@ -455,12 +459,6 @@ namespace KERBALISM
 			if (!prefab.Requirements.TestRequirements(v, out reqResults))
 			{
 				mainIssue = "unmet requirement";
-				return;
-			}
-
-			if (!situation.IsAvailable(expInfo))
-			{
-				mainIssue = "invalid situation";
 				return;
 			}
 
@@ -572,10 +570,12 @@ namespace KERBALISM
 
 		private static Drive GetDrive(Experiment experiment, Vessel vessel, uint hdId, double chunkSize, string subject_id)
 		{
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Experiment.GetDrive");
 			bool isFile = experiment.sample_mass < float.Epsilon;
 			Drive drive = null;
 			if (hdId != 0) drive = DB.Drive(hdId);
 			else drive = isFile ? Drive.FileDrive(vessel, chunkSize) : Drive.SampleDrive(vessel, chunkSize, subject_id);
+			UnityEngine.Profiling.Profiler.EndSample();
 			return drive;
 		}
 

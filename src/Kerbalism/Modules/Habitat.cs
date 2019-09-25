@@ -26,7 +26,6 @@ namespace KERBALISM
 		public string Volume;
 		[KSPField(guiActive = false, guiActiveEditor = true, guiName = "#KERBALISM_Habitat_Surface")]
 		public string Surface;
-
 #else
 		[KSPField(guiActive = false, guiActiveEditor = true, guiName = "#KERBALISM_Habitat_Volume", groupName = "Habitat", groupDisplayName = "Habitat")]
 		public string Volume;
