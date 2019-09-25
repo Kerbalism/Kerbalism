@@ -451,18 +451,18 @@ namespace KERBALISM
 
 		void Problem_radiation(VesselData vd, ref List<Texture2D> icons, ref List<string> tooltips)
 		{
-			string radiation_str = Lib.BuildString(" (<i>", (vd.EnvRadiation * 60.0 * 60.0).ToString("F3"), " rad/h)</i>");
-			if (vd.EnvRadiation > 1.0 / 3600.0)
+			string radiation_str = Lib.BuildString(" (<i>", (vd.EnvHabitatRadiation * 60.0 * 60.0).ToString("F3"), " rad/h)</i>");
+			if (vd.EnvHabitatRadiation > 1.0 / 3600.0)
 			{
 				icons.Add(Icons.radiation_red);
 				tooltips.Add(Lib.BuildString("Exposed to extreme radiation", radiation_str));
 			}
-			else if (vd.EnvRadiation > 0.15 / 3600.0)
+			else if (vd.EnvHabitatRadiation > 0.15 / 3600.0)
 			{
 				icons.Add(Icons.radiation_yellow);
 				tooltips.Add(Lib.BuildString("Exposed to intense radiation", radiation_str));
 			}
-			else if (vd.EnvRadiation > 0.0195 / 3600.0)
+			else if (vd.EnvHabitatRadiation > 0.0195 / 3600.0)
 			{
 				icons.Add(Icons.radiation_yellow);
 				tooltips.Add(Lib.BuildString("Exposed to moderate radiation", radiation_str));
