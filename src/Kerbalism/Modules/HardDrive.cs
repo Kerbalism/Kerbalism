@@ -271,7 +271,7 @@ namespace KERBALISM
 		}
 
 #if KSP15_16
-		[KSPEvent(guiActive = true, guiName = "_", active = true, active = true)]
+		[KSPEvent(guiActive = true, guiName = "_", active = true)]
 #else
 		[KSPEvent(guiActive = true, guiName = "_", active = true, groupName = "Science", groupDisplayName = "Science")]
 #endif
