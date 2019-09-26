@@ -369,9 +369,10 @@ namespace KERBALISM
 			if (!ScenarioUpgradeableFacilities.Instance.enabled)
 				return int.MaxValue;
 
+
 			double maxlevel = ScenarioUpgradeableFacilities.GetFacilityLevelCount(facility);
 			if (maxlevel <= 0) maxlevel = 2; // not sure why, but GetFacilityLevelCount return -1 in career
-			return (int)Math.Round(ScenarioUpgradeableFacilities.GetFacilityLevel(facility) * maxlevel);
+			return (int)Math.Round(ScenarioUpgradeableFacilities.GetFacilityLevel(facility) * maxlevel + 1); // They start counting at 0
 		}
 
 		private bool TestBody(string[] body_reqs, string[] body_name)
