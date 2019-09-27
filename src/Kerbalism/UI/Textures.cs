@@ -4,7 +4,7 @@ namespace KERBALISM
 {
 
 	///<summary> Kerbalism's Icons </summary>
-	internal static class Icons
+	internal static class Textures
 	{
 		///<summary> Path to Kerbalism's textures </summary>
 		internal static string TexturePath;
@@ -107,15 +107,40 @@ namespace KERBALISM
 		internal static Texture2D controller_black;
 		internal static Texture2D controller_white;
 
+		// KsmGui
+
+		internal static Sprite KsmGuiSpriteBackground;
+
+		internal static Sprite KsmGuiSpriteBtnNormal;
+		internal static Sprite KsmGuiSpriteBtnHighlight;
+		internal static Sprite KsmGuiSpriteBtnDisabled;
+
+		internal static Texture2D KsmGuiTexCheckmark;
+
+		internal static Texture2D KsmGuiTexHeaderClose;
+		internal static Texture2D KsmGuiTexHeaderArrowsLeft;
+		internal static Texture2D KsmGuiTexHeaderArrowsRight;
+		internal static Texture2D KsmGuiTexHeaderArrowsUp;
+		internal static Texture2D KsmGuiTexHeaderArrowsDown;
+
 		// timer controller
 		internal static float nextFlashing = Time.time;
 		internal static bool lastIcon = false;
 
-		internal static Texture2D GetTexture(string name) {
+		internal static Sprite Get9SlicesSprite(string textureName, int width, int height, int borderSize)
+		{
+			// 9 slice sprites are self extending, they don't need to get scaled manually (I think...)
+			Texture2D tex = Lib.GetTexture(textureName, width, height);
+			return Sprite.Create(tex, new Rect(0f, 0f, width, height), new Vector2(0.5f, 0.5f), 100f, 0u, SpriteMeshType.Tight, new Vector4(borderSize, borderSize, borderSize, borderSize));
+		}
+
+		internal static Texture2D GetTexture(string name)
+		{
 			return Styles.GetUIScaledTexture(name);
 		}
 
-		internal static Texture2D GetTexture(string name, int width = 16, int height = 16, float prescalar = 1.0f) {
+		internal static Texture2D GetTexture(string name, int width = 16, int height = 16, float prescalar = 1.0f)
+		{
 			return Styles.GetUIScaledTexture(name, width, height, prescalar);
 		}
 
@@ -221,6 +246,30 @@ namespace KERBALISM
 
 			controller_black = GetTexture("vessels/controller-black", 80, 80, 4f);
 			controller_white = GetTexture("vessels/controller-white", 80, 80, 4f);
+
+			// ksmGui
+
+			KsmGuiSpriteBackground = Get9SlicesSprite("ksm-gui/background-64-5", 64, 64, 5);
+
+			KsmGuiSpriteBtnNormal = Get9SlicesSprite("ksm-gui/btn-black-64-5", 64, 64, 5);
+			KsmGuiSpriteBtnHighlight = Get9SlicesSprite("ksm-gui/btn-black-highlight-64-5", 64, 64, 5);
+			KsmGuiSpriteBtnDisabled = Get9SlicesSprite("ksm-gui/btn-black-disabled-64-5", 64, 64, 5);
+
+			KsmGuiTexCheckmark = GetTexture("ksm-gui/checkmark-20", 20, 20);
+
+			KsmGuiTexHeaderClose = GetTexture("ksm-gui/i8-header-close-32", 32, 32);
+			KsmGuiTexHeaderArrowsLeft = GetTexture("ksm-gui/arrows-left-32", 32, 32);
+			KsmGuiTexHeaderArrowsRight = GetTexture("ksm-gui/arrows-right-32", 32, 32);
+			KsmGuiTexHeaderArrowsUp = GetTexture("ksm-gui/arrows-up-32", 32, 32);
+			KsmGuiTexHeaderArrowsDown = GetTexture("ksm-gui/arrows-down-32", 32, 32);
+
+			//Texture2D winBg = Lib.GetTexture("ui-core/window-background", 64, 64);
+			//// inspecting pixelPerUnit gives 92.75362, but 100f is the default value and seems to work fine
+			//window_background = Sprite.Create(winBg, new Rect(0f, 0f, 64f, 64f), new Vector2(0.5f, 0.5f), 100f, 0u, SpriteMeshType.Tight, new Vector4(4.6f, 4.6f, 4.6f, 4.6f));
+
+			//close_btn_tex = Lib.GetTexture("ui-core/icons8-cancel-24", 24, 24);
+			//close_btn = Sprite.Create(close_btn_tex, new Rect(0f, 0f, 24f, 24f), new Vector2(0.5f, 0.5f), 100f);
+
 		}
 
 		/// <summary>Switch icons based on time </summary>

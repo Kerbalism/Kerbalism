@@ -36,43 +36,43 @@ namespace KERBALISM
 			{
 				tooltip = "Highlight failed components";
 				p.AddContent("highlight malfunctions", string.Empty, tooltip);
-				p.AddRightIcon(vd.cfg_highlights ? Icons.toggle_green : Icons.toggle_red, tooltip, () => p.Toggle(ref vd.cfg_highlights));
+				p.AddRightIcon(vd.cfg_highlights ? Textures.toggle_green : Textures.toggle_red, tooltip, () => p.Toggle(ref vd.cfg_highlights));
 			}
 
 			// toggle messages
 			p.AddSection("MESSAGES");
 			tooltip = "Receive a message when\nElectricCharge level is low";
 			p.AddContent("battery", string.Empty, tooltip);
-			p.AddRightIcon(vd.cfg_ec ? Icons.toggle_green : Icons.toggle_red, tooltip, () => p.Toggle(ref vd.cfg_ec));
+			p.AddRightIcon(vd.cfg_ec ? Textures.toggle_green : Textures.toggle_red, tooltip, () => p.Toggle(ref vd.cfg_ec));
 			if (Features.Supplies)
 			{
 				tooltip = "Receive a message when\nsupply resources level is low";
 				p.AddContent("supply", string.Empty, tooltip);
-				p.AddRightIcon(vd.cfg_supply ? Icons.toggle_green : Icons.toggle_red, tooltip, () => p.Toggle(ref vd.cfg_supply));
+				p.AddRightIcon(vd.cfg_supply ? Textures.toggle_green : Textures.toggle_red, tooltip, () => p.Toggle(ref vd.cfg_supply));
 			}
 			if (API.Comm.handlers.Count > 0 || HighLogic.fetch.currentGame.Parameters.Difficulty.EnableCommNet)
 			{
 				tooltip = "Receive a message when signal is lost or obtained";
 				p.AddContent("signal", string.Empty, tooltip);
-				p.AddRightIcon(vd.cfg_signal ? Icons.toggle_green : Icons.toggle_red, tooltip, () => p.Toggle(ref vd.cfg_signal));
+				p.AddRightIcon(vd.cfg_signal ? Textures.toggle_green : Textures.toggle_red, tooltip, () => p.Toggle(ref vd.cfg_signal));
 			}
 			if (Features.Reliability)
 			{
 				tooltip = "Receive a message\nwhen a component fail";
 				p.AddContent("reliability", string.Empty, tooltip);
-				p.AddRightIcon(vd.cfg_malfunction ? Icons.toggle_green : Icons.toggle_red, tooltip, () => p.Toggle(ref vd.cfg_malfunction));
+				p.AddRightIcon(vd.cfg_malfunction ? Textures.toggle_green : Textures.toggle_red, tooltip, () => p.Toggle(ref vd.cfg_malfunction));
 			}
 			if (Features.SpaceWeather)
 			{
 				tooltip = "Receive a message\nduring CME events";
 				p.AddContent("storm", string.Empty, tooltip);
-				p.AddRightIcon(vd.cfg_storm ? Icons.toggle_green : Icons.toggle_red, tooltip, () => p.Toggle(ref vd.cfg_storm));
+				p.AddRightIcon(vd.cfg_storm ? Textures.toggle_green : Textures.toggle_red, tooltip, () => p.Toggle(ref vd.cfg_storm));
 			}
 			if (Features.Automation)
 			{
 				tooltip = "Receive a message when\nscripts are executed";
 				p.AddContent("script", string.Empty, tooltip);
-				p.AddRightIcon(vd.cfg_script ? Icons.toggle_green : Icons.toggle_red, tooltip, () => p.Toggle(ref vd.cfg_script));
+				p.AddRightIcon(vd.cfg_script ? Textures.toggle_green : Textures.toggle_red, tooltip, () => p.Toggle(ref vd.cfg_script));
 			}
 		}
 	}

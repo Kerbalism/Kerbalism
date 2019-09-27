@@ -265,7 +265,7 @@ namespace KERBALISM
 			const string tooltip = "\n<i>(middle-click to popout in a window, middle-click again to close popout)</i>";
 			VesselData vd = v.KerbalismData();
 			GUILayout.BeginHorizontal(Styles.entry_container);
-			GUILayout.Label(new GUIContent(Lib.Color(page == MonitorPage.telemetry, " INFO", Lib.KColor.Green, Lib.KColor.None, true), Icons.small_info, "Telemetry readings" + tooltip), config_style);
+			GUILayout.Label(new GUIContent(Lib.Color(page == MonitorPage.telemetry, " INFO", Lib.KColor.Green, Lib.KColor.None, true), Textures.small_info, "Telemetry readings" + tooltip), config_style);
 			if (Lib.IsClicked()) page = MonitorPage.telemetry;
 			else if (Lib.IsClicked(2))
 			{
@@ -276,7 +276,7 @@ namespace KERBALISM
 			}
 			if (Features.Science)
 			{
-				GUILayout.Label(new GUIContent(Lib.Color(page == MonitorPage.data, " DATA", Lib.KColor.Green, Lib.KColor.None, true), Icons.small_folder, "Stored files and samples" + tooltip), config_style);
+				GUILayout.Label(new GUIContent(Lib.Color(page == MonitorPage.data, " DATA", Lib.KColor.Green, Lib.KColor.None, true), Textures.small_folder, "Stored files and samples" + tooltip), config_style);
 				if (Lib.IsClicked()) page = MonitorPage.data;
 				else if (Lib.IsClicked(2))
 				{
@@ -288,7 +288,7 @@ namespace KERBALISM
 			}
 			if (Features.Automation)
 			{
-				GUILayout.Label(new GUIContent(Lib.Color(page == MonitorPage.scripts, " AUTO", Lib.KColor.Green, Lib.KColor.None, true), Icons.small_console, "Control and automate components" + tooltip), config_style);
+				GUILayout.Label(new GUIContent(Lib.Color(page == MonitorPage.scripts, " AUTO", Lib.KColor.Green, Lib.KColor.None, true), Textures.small_console, "Control and automate components" + tooltip), config_style);
 				if (Lib.IsClicked()) page = MonitorPage.scripts;
 				else if (Lib.IsClicked(2))
 				{
@@ -300,7 +300,7 @@ namespace KERBALISM
 			}
 			if (Features.Reliability)
 			{
-				GUILayout.Label(new GUIContent(Lib.Color(page == MonitorPage.failures, " FAILURES", Lib.KColor.Green, Lib.KColor.None, true), Icons.small_wrench, "See failures and maintenance state" + tooltip), config_style);
+				GUILayout.Label(new GUIContent(Lib.Color(page == MonitorPage.failures, " FAILURES", Lib.KColor.Green, Lib.KColor.None, true), Textures.small_wrench, "See failures and maintenance state" + tooltip), config_style);
 				if (Lib.IsClicked()) page = MonitorPage.failures;
 				else if (Lib.IsClicked(2))
 				{
@@ -312,7 +312,7 @@ namespace KERBALISM
 			}
 			if (PreferencesMessages.Instance.stockMessages != true)
 			{
-				GUILayout.Label(new GUIContent(Lib.Color(page == MonitorPage.log, " LOG", Lib.KColor.Green, Lib.KColor.None, true), Icons.small_notes, "See previous notifications" + tooltip), config_style);
+				GUILayout.Label(new GUIContent(Lib.Color(page == MonitorPage.log, " LOG", Lib.KColor.Green, Lib.KColor.None, true), Textures.small_notes, "See previous notifications" + tooltip), config_style);
 				if (Lib.IsClicked()) page = MonitorPage.log;
 				else if (Lib.IsClicked(2))
 				{
@@ -322,7 +322,7 @@ namespace KERBALISM
 						UI.Open((p) => p.Logman(v));
 				}
 			}
-			GUILayout.Label(new GUIContent(Lib.Color(page == MonitorPage.config, " CFG", Lib.KColor.Green, Lib.KColor.None, true), Icons.small_config, "Configure the vessel" + tooltip), config_style);
+			GUILayout.Label(new GUIContent(Lib.Color(page == MonitorPage.config, " CFG", Lib.KColor.Green, Lib.KColor.None, true), Textures.small_config, "Configure the vessel" + tooltip), config_style);
 			if (Lib.IsClicked()) page = MonitorPage.config;
 			else if (Lib.IsClicked(2))
 			{
@@ -374,19 +374,19 @@ namespace KERBALISM
 		{
 			switch(type)
 			{
-				case VesselType.Base:    return disabled ? Icons.base_black :    Icons.base_white;
-				case VesselType.EVA:     return disabled ? Icons.eva_black :     Icons.eva_white;
-				case VesselType.Lander:  return disabled ? Icons.lander_black :  Icons.lander_white;
-				case VesselType.Plane:   return disabled ? Icons.plane_black :   Icons.plane_white;
-				case VesselType.Probe:   return disabled ? Icons.probe_black :   Icons.probe_white;
-				case VesselType.Relay:   return disabled ? Icons.relay_black :   Icons.relay_white;
-				case VesselType.Rover:   return disabled ? Icons.rover_black :   Icons.rover_white;
-				case VesselType.Ship:    return disabled ? Icons.ship_black :    Icons.ship_white;
-				case VesselType.Station: return disabled ? Icons.station_black : Icons.station_white;
+				case VesselType.Base:    return disabled ? Textures.base_black :    Textures.base_white;
+				case VesselType.EVA:     return disabled ? Textures.eva_black :     Textures.eva_white;
+				case VesselType.Lander:  return disabled ? Textures.lander_black :  Textures.lander_white;
+				case VesselType.Plane:   return disabled ? Textures.plane_black :   Textures.plane_white;
+				case VesselType.Probe:   return disabled ? Textures.probe_black :   Textures.probe_white;
+				case VesselType.Relay:   return disabled ? Textures.relay_black :   Textures.relay_white;
+				case VesselType.Rover:   return disabled ? Textures.rover_black :   Textures.rover_white;
+				case VesselType.Ship:    return disabled ? Textures.ship_black :    Textures.ship_white;
+				case VesselType.Station: return disabled ? Textures.station_black : Textures.station_white;
 #if !KSP15_16
-				case VesselType.DeployedScienceController: return disabled ? Icons.controller_black : Icons.controller_white;
+				case VesselType.DeployedScienceController: return disabled ? Textures.controller_black : Textures.controller_white;
 #endif
-				default: return Icons.empty; // this really shouldn't happen.
+				default: return Textures.empty; // this really shouldn't happen.
 			}
 		}
 
@@ -394,7 +394,7 @@ namespace KERBALISM
 		{
 			if (vd.EnvInFullShadow)
 			{
-				icons.Add(Icons.sun_black);
+				icons.Add(Textures.sun_black);
 				tooltips.Add("In shadow");
 			}
 		}
@@ -407,7 +407,7 @@ namespace KERBALISM
 			{
 				if (greenhouse.issue.Length > 0)
 				{
-					if (!icons.Contains(Icons.plant_yellow)) icons.Add(Icons.plant_yellow);
+					if (!icons.Contains(Textures.plant_yellow)) icons.Add(Textures.plant_yellow);
 					tooltips.Add(Lib.BuildString("Greenhouse: <b>", greenhouse.issue, "</b>"));
 				}
 			}
@@ -443,10 +443,10 @@ namespace KERBALISM
 				}
 
 			}
-			if (health_severity == 1) icons.Add(Icons.health_yellow);
-			else if (health_severity == 2) icons.Add(Icons.health_red);
-			if (stress_severity == 1) icons.Add(Icons.brain_yellow);
-			else if (stress_severity == 2) icons.Add(Icons.brain_red);
+			if (health_severity == 1) icons.Add(Textures.health_yellow);
+			else if (health_severity == 2) icons.Add(Textures.health_red);
+			if (stress_severity == 1) icons.Add(Textures.brain_yellow);
+			else if (stress_severity == 2) icons.Add(Textures.brain_red);
 		}
 
 		void Problem_radiation(VesselData vd, ref List<Texture2D> icons, ref List<string> tooltips)
@@ -454,17 +454,17 @@ namespace KERBALISM
 			string radiation_str = Lib.BuildString(" (<i>", (vd.EnvHabitatRadiation * 60.0 * 60.0).ToString("F3"), " rad/h)</i>");
 			if (vd.EnvHabitatRadiation > 1.0 / 3600.0)
 			{
-				icons.Add(Icons.radiation_red);
+				icons.Add(Textures.radiation_red);
 				tooltips.Add(Lib.BuildString("Exposed to extreme radiation", radiation_str));
 			}
 			else if (vd.EnvHabitatRadiation > 0.15 / 3600.0)
 			{
-				icons.Add(Icons.radiation_yellow);
+				icons.Add(Textures.radiation_yellow);
 				tooltips.Add(Lib.BuildString("Exposed to intense radiation", radiation_str));
 			}
 			else if (vd.EnvHabitatRadiation > 0.0195 / 3600.0)
 			{
-				icons.Add(Icons.radiation_yellow);
+				icons.Add(Textures.radiation_yellow);
 				tooltips.Add(Lib.BuildString("Exposed to moderate radiation", radiation_str));
 			}
 		}
@@ -474,12 +474,12 @@ namespace KERBALISM
 			string poisoning_str = Lib.BuildString("CO2 level in internal atmosphere: <b>", Lib.HumanReadablePerc(vd.Poisoning), "</b>");
 			if (vd.Poisoning >= Settings.PoisoningThreshold)
 			{
-				icons.Add(Icons.recycle_red);
+				icons.Add(Textures.recycle_red);
 				tooltips.Add(poisoning_str);
 			}
 			else if (vd.Poisoning > Settings.PoisoningThreshold / 1.25)
 			{
-				icons.Add(Icons.recycle_yellow);
+				icons.Add(Textures.recycle_yellow);
 				tooltips.Add(poisoning_str);
 			}
 		}
@@ -489,12 +489,12 @@ namespace KERBALISM
 			string humidity_str = Lib.BuildString("Humidity level in internal atmosphere: <b>", Lib.HumanReadablePerc(vd.Humidity), "</b>");
 			if (vd.Humidity >= Settings.HumidityThreshold)
 			{
-				icons.Add(Icons.recycle_red);
+				icons.Add(Textures.recycle_red);
 				tooltips.Add(humidity_str);
 			}
 			else if (vd.Humidity > Settings.HumidityThreshold / 1.25)
 			{
-				icons.Add(Icons.recycle_yellow);
+				icons.Add(Textures.recycle_yellow);
 				tooltips.Add(humidity_str);
 			}
 		}
@@ -503,7 +503,7 @@ namespace KERBALISM
 		{
 			if (Storm.Incoming(v))
 			{
-				icons.Add(Icons.storm_yellow);
+				icons.Add(Textures.storm_yellow);
 
 				var bd = Lib.IsSun(v.mainBody) ? v.KerbalismData().stormData : DB.Body(Lib.GetParentPlanet(v.mainBody).name);
 				var tti = bd.storm_time - Planetarium.GetUniversalTime();
@@ -511,7 +511,7 @@ namespace KERBALISM
 			}
 			if (Storm.InProgress(v))
 			{
-				icons.Add(Icons.storm_red);
+				icons.Add(Textures.storm_red);
 
 				var bd = Lib.IsSun(v.mainBody) ? v.KerbalismData().stormData : DB.Body(Lib.GetParentPlanet(v.mainBody).name);
 				var remainingDuration = bd.storm_time + bd.displayed_duration - Planetarium.GetUniversalTime();
@@ -536,7 +536,7 @@ namespace KERBALISM
 
 			// choose problem icon
 			const UInt64 problem_icon_time = 3;
-			Texture2D problem_icon = Icons.empty;
+			Texture2D problem_icon = Textures.empty;
 			if (problem_icons.Count > 0)
 			{
 				UInt64 problem_index = ((UInt64)Time.realtimeSinceStartup / problem_icon_time) % (UInt64)(problem_icons.Count);
@@ -567,10 +567,10 @@ namespace KERBALISM
 			);
 
 			Texture2D image = ec.Level <= 0.005
-			  ? Icons.battery_red
+			  ? Textures.battery_red
 			  : ec.Level <= low_threshold
-			  ? Icons.battery_yellow
-			  : Icons.battery_white;
+			  ? Textures.battery_yellow
+			  : Textures.battery_white;
 
 			p.AddRightIcon(image, tooltip);
 		}
@@ -601,10 +601,10 @@ namespace KERBALISM
 			}
 
 			Texture2D image = max_severity == 2
-			  ? Icons.box_red
+			  ? Textures.box_red
 			  : max_severity == 1
-			  ? Icons.box_yellow
-			  : Icons.box_white;
+			  ? Textures.box_yellow
+			  : Textures.box_white;
 
 			p.AddRightIcon(image, string.Join("\n", tooltips.ToArray()));
 		}
@@ -615,17 +615,17 @@ namespace KERBALISM
 			string tooltip;
 			if (!vd.Malfunction)
 			{
-				image = Icons.wrench_white;
+				image = Textures.wrench_white;
 				tooltip = string.Empty;
 			}
 			else if (!vd.Critical)
 			{
-				image = Icons.wrench_yellow;
+				image = Textures.wrench_yellow;
 				tooltip = "Malfunctions";
 			}
 			else
 			{
-				image = Icons.wrench_red;
+				image = Textures.wrench_red;
 				tooltip = "Critical failures";
 			}
 
@@ -665,15 +665,15 @@ namespace KERBALISM
 			);
 
 			// create icon status
-			Texture2D image = Icons.signal_red;
+			Texture2D image = Textures.signal_red;
 			switch (conn.status)
 			{
 				case LinkStatus.direct_link:
-					image = conn.strength > 0.05 ? Icons.signal_white : Icons.iconSwitch(Icons.signal_yellow, image);   // or 5% signal strength
+					image = conn.strength > 0.05 ? Textures.signal_white : Textures.iconSwitch(Textures.signal_yellow, image);   // or 5% signal strength
 					break;
 
 				case LinkStatus.indirect_link:
-					image = conn.strength > 0.05 ? Icons.signal_white : Icons.iconSwitch(Icons.signal_yellow, image);   // or 5% signal strength
+					image = conn.strength > 0.05 ? Textures.signal_white : Textures.iconSwitch(Textures.signal_yellow, image);   // or 5% signal strength
 					tooltip += Lib.Color("\n" + Localizer.Format("#KERBALISM_UI_Signalrelayed"), Lib.KColor.Yellow);
 					break;
 

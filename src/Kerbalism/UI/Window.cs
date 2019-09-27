@@ -116,9 +116,9 @@ namespace KERBALISM
 		{
 			// render window title
 			GUILayout.BeginHorizontal(Styles.title_container);
-			GUILayout.Label(Icons.empty, Styles.left_icon);
+			GUILayout.Label(Textures.empty, Styles.left_icon);
 			GUILayout.Label(panel.Title().ToUpper(), Styles.title_text);
-			GUILayout.Label(Icons.close, Styles.right_icon);
+			GUILayout.Label(Textures.close, Styles.right_icon);
 			bool b = Lib.IsClicked();
 			GUILayout.EndHorizontal();
 			if (b) { Close(); return; }

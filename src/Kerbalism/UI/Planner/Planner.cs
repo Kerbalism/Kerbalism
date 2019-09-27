@@ -213,9 +213,9 @@ namespace KERBALISM.Planner
 				// sunlight selector
 				switch (sunlight)
 				{
-					case SunlightState.SunlightNominal: GUILayout.Label(new GUIContent(Icons.sun_white, "In sunlight\n<b>Nominal</b> solar panel output"), icon_style); break;
-					case SunlightState.SunlightSimulated: GUILayout.Label(new GUIContent(Icons.solar_panel, "In sunlight\n<b>Estimated</b> solar panel output\n<i>Sunlight direction : look at the shadows !</i>"), icon_style); break;
-					case SunlightState.Shadow: GUILayout.Label(new GUIContent(Icons.sun_black, "In shadow"), icon_style); break;
+					case SunlightState.SunlightNominal: GUILayout.Label(new GUIContent(Textures.sun_white, "In sunlight\n<b>Nominal</b> solar panel output"), icon_style); break;
+					case SunlightState.SunlightSimulated: GUILayout.Label(new GUIContent(Textures.solar_panel, "In sunlight\n<b>Estimated</b> solar panel output\n<i>Sunlight direction : look at the shadows !</i>"), icon_style); break;
+					case SunlightState.Shadow: GUILayout.Label(new GUIContent(Textures.sun_black, "In shadow"), icon_style); break;
 				}
 				if (Lib.IsClicked())
 				{ sunlight = (SunlightState)(((int)sunlight + 1) % Enum.GetValues(typeof(SunlightState)).Length); enforceUpdate = true; }

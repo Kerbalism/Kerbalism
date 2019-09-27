@@ -157,13 +157,13 @@ namespace KERBALISM
 				GUILayout.BeginHorizontal(Styles.section_container);
 				if (p.left != null)
 				{
-					GUILayout.Label(Icons.left_arrow, Styles.left_icon);
+					GUILayout.Label(Textures.left_arrow, Styles.left_icon);
 					if (Lib.IsClicked()) callbacks.Add(p.left);
 				}
 				GUILayout.Label(p.title, Styles.section_text);
 				if (p.right != null)
 				{
-					GUILayout.Label(Icons.right_arrow, Styles.right_icon);
+					GUILayout.Label(Textures.right_arrow, Styles.right_icon);
 					if (Lib.IsClicked()) callbacks.Add(p.right);
 				}
 				GUILayout.EndHorizontal();

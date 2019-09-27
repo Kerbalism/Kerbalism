@@ -672,14 +672,14 @@ namespace KERBALISM
 			return State;
 		}
 
-		public static void ProtoToggle(Vessel v, Experiment prefab, ProtoPartModuleSnapshot protoModule, bool setForcedRun = false)
+		public static RunningState ProtoToggle(Vessel v, Experiment prefab, ProtoPartModuleSnapshot protoModule, bool setForcedRun = false)
 		{
 			RunningState expState = Lib.Proto.GetEnum(protoModule, "expState", RunningState.Stopped);
 
 			if (expState == RunningState.Broken)
 			{
 				ProtoSetState(protoModule, expState);
-				return;
+				return expState;
 			}
 				
 
@@ -690,7 +690,7 @@ namespace KERBALISM
 					PostMultipleRunsMessage(Science.Experiment(prefab.experiment_id).Name, v.vesselName);
 					{
 						ProtoSetState(protoModule, expState);
-						return;
+						return expState;
 					}
 				}
 				expState = setForcedRun ? RunningState.Forced : RunningState.Running;
@@ -705,7 +705,7 @@ namespace KERBALISM
 			}
 
 			ProtoSetState(protoModule, expState);
-			return;
+			return expState;
 		}
 
 		public static void ProtoSetState(ProtoPartModuleSnapshot protoModule, RunningState expState)

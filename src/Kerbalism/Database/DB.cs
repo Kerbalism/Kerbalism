@@ -60,7 +60,7 @@ namespace KERBALISM
 			{
 				foreach (var subjectNode in node.GetNode("subjectsCompletion").GetNodes())
 				{
-					subjectsCompletion.Add(From_safe_key(subjectNode.name), new SubjectData(subjectNode));
+					subjectsCompletion.Add(From_safe_key(subjectNode.name), new SubjectData(subjectNode, From_safe_key(subjectNode.name)));
 				}
 			}
 
@@ -157,7 +157,7 @@ namespace KERBALISM
 			var subjectsNode = node.AddNode("subjectsCompletion");
 			foreach (var p in subjectsCompletion)
 			{
-				p.Value.Save(subjectsNode.AddNode(To_safe_key(p.Key)));
+				p.Value.Save(subjectsNode.AddNode(To_safe_key(p.Key)), p.Key);
 			}
         }
 

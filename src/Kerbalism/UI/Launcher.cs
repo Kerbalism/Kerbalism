@@ -31,7 +31,7 @@ namespace KERBALISM
 
 				// create the button
 				// note: for some weird reasons, the callbacks can be called BEFORE this function return
-				launcher_btn = ApplicationLauncher.Instance.AddApplication(null, null, null, null, null, null, Icons.applauncher);
+				launcher_btn = ApplicationLauncher.Instance.AddApplication(null, null, null, null, null, null, Textures.applauncher);
 
 				// enable the launcher button for some scenes
 				launcher_btn.VisibleInScenes =

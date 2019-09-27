@@ -1911,11 +1911,11 @@ namespace KERBALISM
 			return dll_path.Substring( 0, dll_path.LastIndexOf( Path.DirectorySeparatorChar ) );
 		}
 
-		///<summary> Loads a .png texture from the folder defined in <see cref="Icons.TexturePath"/> </summary>
+		///<summary> Loads a .png texture from the folder defined in <see cref="Textures.TexturePath"/> </summary>
 		public static Texture2D GetTexture( string name, int width = 16, int height = 16 )
 		{
 			Texture2D texture = new Texture2D( width, height, TextureFormat.ARGB32, false );
-			ImageConversion.LoadImage(texture, System.IO.File.ReadAllBytes(Icons.TexturePath + name + ".png"));
+			ImageConversion.LoadImage(texture, System.IO.File.ReadAllBytes(Textures.TexturePath + name + ".png"));
 			return texture;
 		}
 

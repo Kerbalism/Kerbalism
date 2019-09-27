@@ -1,49 +1,17 @@
-﻿using System;
+﻿using KSP.UI;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using UnityEngine;
-using UnityEngine.UI;
+using UnityEngine.Events;
 using static KERBALISM.ExperimentRequirements;
+using static KERBALISM.Experiment;
 
 namespace KERBALISM
 {
 	public class SciencePopup
 	{
-		// args
-		Vessel v;
-		Experiment moduleOrPrefab;
-		ProtoPartModuleSnapshot protoModule;
-
-		// main panel
-		DialogGUIToggle forcedToggle;
-		DialogGUIBox stateInfoBox;
-		float stateInfoHeight = 100f;
-
-		// left panel
-		DialogGUIVerticalLayout leftPanel;
-		DialogGUILabel experimentSpecs;
-		DialogGUIScrollList scienceArchive;
-		enum LeftPanelState { Hidden, ScienceArchive, ExpSpecs }
-		LeftPanelState leftPanelState = LeftPanelState.Hidden;
-
-		// top objects refs
-		MultiOptionDialog multiOptionDialog;
-		PopupDialog popupDialog;
-
-		// state vars
-		bool isProto;
-		string subject_id;
-		ExperimentInfo expInfo;
-		Experiment.ExpStatus status;
-		Experiment.RunningState expState;
-		bool forcedRun;
-		bool running;
-		string issue;
-
-		// utils
-		StringBuilder sb = new StringBuilder();
-
 		private class SubjectInfo
 		{
 			public string body;
@@ -55,22 +23,48 @@ namespace KERBALISM
 			public double percentRetrieved;
 		}
 
+		// args
+		Vessel v;
+		Experiment moduleOrPrefab;
+		ProtoPartModuleSnapshot protoModule;
+
+		// state vars
+		bool isProto;
+		string subject_id;
+		ExperimentInfo expInfo;
+		ExpStatus status;
+		RunningState expState;
+		bool forcedRun;
+		bool running;
+		string issue;
+
+		// utils
+		StringBuilder sb = new StringBuilder();
+
+		// UI references
+		bool leftPanelIsVisible = false;
+
+		KsmGuiWindow window;
+
+		KsmGuiIconButton leftPanelVisibilityButton;
+		UnityAction leftPanelVisibilityAction;
+
+		KsmGuiVerticalLayout leftPanel;
+		KsmGuiHeader experimentInfoHeader;
+		KsmGuiTextBox experimentInfoBox;
+		KsmGuiHeader rndArchiveHeader;
+		KsmGuiVerticalScrollView rndArchiveView;
+
+		KsmGuiTextBox statusBox;
+
+		KsmGuiHeader requirementsHeader;
+		KsmGuiTextBox requirementsBox;
+
+		KsmGuiButton forcedRunButton;
+		KsmGuiButton startStopButton;
+
 		public SciencePopup(Vessel v, Experiment moduleOrPrefab, ProtoPartModuleSnapshot protoModule = null)
 		{
-
-
-			UIStyle whiteText = new UIStyle(HighLogic.UISkin.label);
-			UIStyleState whiteTextState = new UIStyleState();
-			whiteTextState.textColor = Color.white;
-			whiteText.normal = whiteTextState;
-
-			UIStyle whiteTextBox = new UIStyle(HighLogic.UISkin.box);
-			UIStyleState whiteTextBoxState = new UIStyleState();
-			whiteTextBoxState.textColor = Color.white;
-			whiteTextBoxState.background = HighLogic.UISkin.box.normal.background;
-			whiteTextBox.normal = whiteTextBoxState;
-			
-
 			if (protoModule == null)
 			{
 				isProto = false;
@@ -84,7 +78,205 @@ namespace KERBALISM
 			this.moduleOrPrefab = moduleOrPrefab;
 			this.v = v;
 
-			OnUpdate();
+			// parse the module / protomodule data so we can use it right now
+			GetData();
+
+			// create the window
+			window = new KsmGuiWindow(KsmGuiWindow.TopLayoutType.Vertical, 0.8f, true);
+			window.SetLayoutElement(false, false, -1, -1, -1, 150);
+			window.SetUpdateAction(GetData);
+
+			// top header
+			KsmGuiHeader topHeader = new KsmGuiHeader(expInfo.Name);
+			leftPanelVisibilityButton = new KsmGuiIconButton(Textures.KsmGuiTexHeaderArrowsLeft, ToggleLeftPanel, "show left panel");
+			topHeader.AddFirst(leftPanelVisibilityButton);
+			topHeader.Add(new KsmGuiIconButton(Textures.KsmGuiTexHeaderClose, () => window.Close(), "close"));
+			window.Add(topHeader);
+
+			// 2 columns
+			KsmGuiHorizontalLayout panels = new KsmGuiHorizontalLayout(5, 0, 0, 5, 0);
+			window.Add(panels);
+
+			// left panel
+			leftPanel = new KsmGuiVerticalLayout(5, 0, 0, 5, 0);
+			leftPanel.SetLayoutElement(false, true, -1, -1, 200);
+			leftPanel.Enabled = false;
+			panels.Add(leftPanel);
+
+			// left panel : experiment info
+			experimentInfoHeader = new KsmGuiHeader("EXPERIMENT INFO");
+			leftPanel.Add(experimentInfoHeader);
+			experimentInfoBox = new KsmGuiTextBox(moduleOrPrefab.SpecsWithoutRequires().Info());
+			leftPanel.Add(experimentInfoBox);
+
+			// left panel : RnD archive
+			rndArchiveHeader = new KsmGuiHeader("SCIENCE ARCHIVE");
+			leftPanel.Add(rndArchiveHeader);
+			rndArchiveView = new KsmGuiVerticalScrollView(250);
+			rndArchiveView.SetUpdateAction(RnDUpdate, 250);
+			leftPanel.Add(rndArchiveView);
+			//KsmGuiText tempRnD = new KsmGuiText("body\nsituation\nbiome\nbiome\nbiome\nbiome\nbody\nsituation\nbiome\nbiome\nbiome\nbiome");
+			//rndArchiveView.Add(tempRnD);
+			
+			// right panel
+			KsmGuiVerticalLayout rightPanel = new KsmGuiVerticalLayout(5, 0, 0, 5, 0);
+			rightPanel.SetLayoutElement(false, true, -1, -1, 230);
+			panels.Add(rightPanel);
+
+			// right panel : experiment status
+			rightPanel.Add(new KsmGuiHeader("STATUS"));
+			statusBox = new KsmGuiTextBox("");
+			statusBox.SetUpdateAction(StatusUpdate);
+			rightPanel.Add(statusBox);
+
+			// right panel : experiment requirements
+			if (moduleOrPrefab.Requirements.Requires.Length > 0)
+			{
+				requirementsHeader = new KsmGuiHeader("REQUIREMENTS");
+				rightPanel.Add(requirementsHeader);
+				requirementsBox = new KsmGuiTextBox("_");
+				requirementsBox.SetUpdateAction(RequirementsUpdate);
+				rightPanel.Add(requirementsBox);
+			}
+
+			// right panel : buttons
+			KsmGuiHorizontalLayout buttons = new KsmGuiHorizontalLayout(5);
+			rightPanel.Add(buttons);
+
+			forcedRunButton = new KsmGuiButton("forced run", ToggleForcedRun, "force experiment to run even\nif there is no science value left");
+			forcedRunButton.SetUpdateAction(UpdateForcedRunButton);
+			buttons.Add(forcedRunButton);
+
+			startStopButton = new KsmGuiButton("_", Toggle, "_");
+			startStopButton.SetUpdateAction(UpdateStartStopButton);
+			buttons.Add(startStopButton);
+
+			foreach (RectTransform rt in window.TopTransform.GetComponentsInChildren<RectTransform>())
+			{
+				rt.localScale = Vector3.one;
+			}
+
+		}
+
+		private void GetData()
+		{
+			if (isProto)
+			{
+				status = Lib.Proto.GetEnum(protoModule, "status", ExpStatus.Stopped);
+				expState = Lib.Proto.GetEnum(protoModule, "expState", RunningState.Stopped);
+				subject_id = Lib.Proto.GetString(protoModule, "last_subject_id");
+				expInfo = Science.Experiment(subject_id);
+				running = IsRunning(expState);
+				forcedRun = expState == RunningState.Forced;
+				issue = Lib.Proto.GetString(protoModule, "issue");
+			}
+			else
+			{
+				status = moduleOrPrefab.Status;
+				expState = moduleOrPrefab.State;
+				subject_id = moduleOrPrefab.last_subject_id;
+				expInfo = moduleOrPrefab.ExpInfo;
+				running = moduleOrPrefab.Running;
+				forcedRun = moduleOrPrefab.State == RunningState.Forced;
+				issue = moduleOrPrefab.issue;
+			}
+		}
+
+		private void StatusUpdate()
+		{
+			sb.Length = 0;
+
+			sb.Append("status : ");
+			sb.Append(Lib.Bold(Experiment.StatusInfo(status)));
+
+			if (status == Experiment.ExpStatus.Issue)
+			{
+				sb.Append("\nissue : ");
+				sb.Append(Lib.Color(issue, Lib.KColor.Orange));
+			}
+
+			sb.Append("\nsituation : ");
+			sb.Append(Lib.Color(expInfo.SubjectSituation, Lib.KColor.Yellow, true));
+
+			if (status == Experiment.ExpStatus.Running)
+			{
+				sb.Append("\ncompletion : ");
+				sb.Append(Lib.Color(expInfo.SubjectPercentCollectedTotal.ToString("P0"), Lib.KColor.Yellow, true));
+				sb.Append(" - ");
+				sb.Append(Lib.Color(Experiment.RunningCountdown(expInfo, moduleOrPrefab.data_rate, true), Lib.KColor.Yellow));
+			}
+
+
+			if (!expInfo.SubjectExistsInRnD)
+			{
+				sb.Append("\nscience value : ");
+				sb.Append(Lib.Color("unknown", Lib.KColor.Science, true));
+			}
+			else
+			{
+				sb.Append("\nretrieved in RnD : ");
+				if (expInfo.SubjectTimesCompleted > 0)
+				{
+					sb.Append(Lib.Color(Lib.BuildString(expInfo.SubjectTimesCompleted.ToString(), expInfo.SubjectTimesCompleted > 1 ? " times" : " time"), Lib.KColor.Yellow));
+				}
+				else
+				{
+					sb.Append(Lib.Color(" never", Lib.KColor.Yellow));
+				}
+				if (expInfo.SubjectPercentRetrieved > 0.0)
+				{
+					sb.Append(" (");
+					sb.Append(Lib.Color(expInfo.SubjectPercentRetrieved.ToString("P0"), Lib.KColor.Yellow, true));
+					sb.Append(")");
+				}
+				sb.Append("\nscience value :\n");
+				sb.Append(Lib.Color(expInfo.SubjectScienceRetrievedInKSC.ToString("F1"), Lib.KColor.Science, true));
+				sb.Append(" in RnD");
+				if (expInfo.SubjectScienceCollectedInFlight > 0.05)
+				{
+					sb.Append(" (");
+					sb.Append(Lib.Color(Lib.BuildString("+", expInfo.SubjectScienceCollectedInFlight.ToString("F1")), Lib.KColor.Science, true));
+					sb.Append(" in flight)");
+				}
+				sb.Append(" / ");
+				sb.Append(Lib.Color(expInfo.SubjectScienceMaxValue.ToString("F1"), Lib.KColor.Science, true));
+
+			}
+			statusBox.SetText(sb.ToString());
+		}
+
+		private void RequirementsUpdate()
+		{
+			sb.Length = 0;
+
+			RequireResult[] reqs;
+			moduleOrPrefab.Requirements.TestRequirements(v, out reqs, true);
+
+			bool first = true;
+			foreach (RequireResult req in reqs)
+			{
+				if (!first)
+					sb.Append("\n");
+				first = false;
+				sb.Append(Lib.Checkbox(req.isValid));
+				sb.Append(" ");
+				sb.Append(Lib.Bold(ReqName(req.requireDef.require)));
+				if (req.value != null)
+				{
+					sb.Append(" : ");
+					sb.Append(Lib.Color(ReqValueFormat(req.requireDef.require, req.requireDef.value), Lib.KColor.Yellow, true));
+					sb.Append("\n\tcurrent : ");
+					sb.Append(Lib.Color(req.isValid, ReqValueFormat(req.requireDef.require, req.value), Lib.KColor.Green, Lib.KColor.Orange, true));
+				}
+			}
+
+			requirementsBox.SetText(sb.ToString());
+		}
+
+		// TODO : clean this mess
+		private void RnDUpdate()
+		{
+			rndArchiveView.Content.ClearChildren();
 
 			Dictionary<string, SubjectInfo> subjectInfos = new Dictionary<string, SubjectInfo>();
 			float scienceGainMultiplier = HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier;
@@ -123,7 +315,7 @@ namespace KERBALISM
 
 			if (subjectInfos.Count == 0)
 			{
-				subjectGuiList.Add(new DialogGUILabel(Lib.Color("Nothing retrieved yet", Lib.KColor.Yellow, true), whiteText, true));
+				rndArchiveView.Add(new KsmGuiText(Lib.Color("Nothing retrieved yet", Lib.KColor.Yellow, true)));
 			}
 			else
 			{
@@ -141,14 +333,14 @@ namespace KERBALISM
 					{
 						currentBody = si.body;
 						currentSituation = string.Empty;
-						subjectGuiList.Add(new DialogGUILabel(Lib.Color(currentBody, Lib.KColor.Orange, true), whiteText, true));
+						rndArchiveView.Add(new KsmGuiText(Lib.Color(currentBody, Lib.KColor.Orange, true)));
 					}
 
 					if (currentSituation != si.situation)
 					{
 						if (hasBiome)
 						{
-							subjectGuiList.Add(new DialogGUILabel(sb.ToString(), whiteText, true));
+							rndArchiveView.Add(new KsmGuiText(sb.ToString()));
 							sb.Length = 0;
 						}
 
@@ -156,7 +348,7 @@ namespace KERBALISM
 						hasBiome = !string.IsNullOrEmpty(si.biome);
 
 						if (hasBiome)
-							subjectGuiList.Add(new DialogGUILabel(Lib.Color(currentSituation, Lib.KColor.Yellow, true), whiteText, true));
+							rndArchiveView.Add(new KsmGuiText(Lib.Color(currentSituation, Lib.KColor.Yellow, true)));
 					}
 
 					sb.Append(hasBiome ? si.biome : Lib.Color(currentSituation, Lib.KColor.Yellow));
@@ -175,7 +367,7 @@ namespace KERBALISM
 					sb.Append(")");
 					if (!hasBiome || i == 0)
 					{
-						subjectGuiList.Add(new DialogGUILabel(sb.ToString(), whiteText, true));
+						rndArchiveView.Add(new KsmGuiText(sb.ToString()));
 						sb.Length = 0;
 					}
 					else
@@ -184,260 +376,61 @@ namespace KERBALISM
 					}
 				}
 			}
-
-			scienceArchive = new DialogGUIScrollList
-			(
-				new Vector2(215f, 100f), new Vector2(215f, 50f * subjectInfos.Count), false, true,
-				new DialogGUIVerticalLayout
-				(
-					false, false, 0f, new RectOffset(3, 3, 3, 3), TextAnchor.UpperLeft, subjectGuiList.ToArray()
-				)
-			);
-			//scienceArchive.OptionEnabledCondition = () => leftPanelState == LeftPanelState.ScienceArchive;
-
-			experimentSpecs = new DialogGUILabel(moduleOrPrefab.SpecsWithoutRequires().Info(), whiteText, true);
-			//experimentSpecs.OptionEnabledCondition = () => leftPanelState == LeftPanelState.ExpSpecs;
-
-			leftPanel = new DialogGUIVerticalLayout
-			(
-				230f, 250f,
-				//new DialogGUILabel(RightPanelTitle, true),
-				experimentSpecs,
-				scienceArchive
-			);
-			//leftPanel.OptionEnabledCondition = () => leftPanelState != LeftPanelState.Hidden;
-
-			forcedToggle = new DialogGUIToggle(forcedRun, "force collecting", ToggleForcedRun);
-			forcedToggle.OptionInteractableCondition = () => running;
-
-			stateInfoBox = new DialogGUIBox
-			(
-				"", 230f, 400f, null,
-				new DialogGUIVerticalLayout
-				(
-					false, true, 0f, new RectOffset(3, 3, 3, 3), TextAnchor.UpperLeft,
-					new DialogGUILabel(GetExpState, whiteText, true)
-				)
-			);
-			stateInfoBox.flexibleHeight = true;
-
-			//stateInfoBox.OnUpdate = () =>
-			//{
-			//	if (stateInfoBox.size.y != stateInfoHeight)
-			//	{
-			//		stateInfoBox.size.y = stateInfoHeight;
-			//		stateInfoBox.height = stateInfoHeight;
-			//		multiOptionDialog.Dirty = true;
-			//	}
-			//};
-
-			DialogGUIHorizontalLayout content = new DialogGUIHorizontalLayout
-			(
-				true, true,
-				leftPanel,
-				new DialogGUIVerticalLayout // width 230
-				(
-					stateInfoBox,
-					forcedToggle,
-					new DialogGUIHorizontalLayout
-					(
-						220f, 20f,
-						//new DialogGUIButton("< info", RightPanelToggle, 72f, 28f, false, HighLogic.UISkin.button),
-						new DialogGUIButton(() => running ? "stop" : "start", Toggle, null, 100f, 28f, false, HighLogic.UISkin.button),
-						new DialogGUIButton("close", null, 100f, 28f, true, HighLogic.UISkin.button)
-					)
-				)
-			);
-
-			multiOptionDialog = new MultiOptionDialog(moduleOrPrefab.experiment_id, "THIS UI IS UGLY, BUGGY AND NOT FINAL", Science.Experiment(moduleOrPrefab.experiment_id).Name, HighLogic.UISkin, 460f, content);
-			multiOptionDialog.OnUpdate = OnUpdate;
-
-
-			popupDialog = PopupDialog.SpawnPopupDialog(multiOptionDialog, false, HighLogic.UISkin, false);
-
-
 		}
 
-		private void OnUpdate()
+		private void UpdateStartStopButton()
 		{
-			if (isProto)
+			if (IsRunning(expState))
 			{
-				status = Lib.Proto.GetEnum(protoModule, "status", Experiment.ExpStatus.Stopped);
-				expState = Lib.Proto.GetEnum(protoModule, "expState", Experiment.RunningState.Stopped);
-				subject_id = Lib.Proto.GetString(protoModule, "last_subject_id");
-				expInfo = Science.Experiment(subject_id);
-				running = Experiment.IsRunning(expState);
-				forcedRun = expState == Experiment.RunningState.Forced;
-				issue = Lib.Proto.GetString(protoModule, "issue");
+				startStopButton.SetText("stop");
+				startStopButton.SetTooltipText("stop experiment");
 			}
 			else
 			{
-				status = moduleOrPrefab.Status;
-				expState = moduleOrPrefab.State;
-				subject_id = moduleOrPrefab.last_subject_id;
-				expInfo = moduleOrPrefab.ExpInfo;
-				running = moduleOrPrefab.Running;
-				forcedRun = moduleOrPrefab.State == Experiment.RunningState.Forced;
-				issue = moduleOrPrefab.issue;
+				startStopButton.SetText("start");
+				startStopButton.SetTooltipText("start experiment");
 			}
+
+			startStopButton.SetInteractable(!IsBroken(expState));
 		}
 
-		private string RightPanelTitle()
+		private void UpdateForcedRunButton()
 		{
-			// return "test";
-			switch (leftPanelState)
-			{
-				case LeftPanelState.ScienceArchive: return "<size=14><b>Science Archive</b></size>";
-				case LeftPanelState.ExpSpecs: return "<size=14><b>Experiment specs</b></size>";
-				default: return "title";
-			}
+			forcedRunButton.SetInteractable(expState == RunningState.Stopped || expState == RunningState.Running);
 		}
-
-		private void RightPanelToggle()
-		{
-			switch (leftPanelState)
-			{
-				case LeftPanelState.Hidden:
-					leftPanelState = LeftPanelState.ScienceArchive;
-					multiOptionDialog.dialogRect.x = 450f;
-					break;
-				case LeftPanelState.ScienceArchive:
-					leftPanelState = LeftPanelState.ExpSpecs;
-					multiOptionDialog.dialogRect.x = 450f;
-					break;
-				case LeftPanelState.ExpSpecs:
-					leftPanelState = LeftPanelState.Hidden;
-					multiOptionDialog.dialogRect.x = 240f;
-					break;
-			}
-			multiOptionDialog.Resize();
-		}
-
-		private string GetExpState()
-		{
-			int lines = 1;
-			sb.Length = 0;
-
-			sb.Append("status : ");
-			sb.Append(Lib.Bold(Experiment.StatusInfo(status)));
-
-			if (status == Experiment.ExpStatus.Issue)
-			{
-				lines++;
-				sb.Append("\nissue : ");
-				sb.Append(Lib.Color(issue, Lib.KColor.Orange));
-			}
-
-			lines++;
-			sb.Append("\nsituation : ");
-			sb.Append(Lib.Color(expInfo.SubjectSituation, Lib.KColor.Yellow, true));
-
-			if (status == Experiment.ExpStatus.Running)
-			{
-				sb.Append("\ncompletion : ");
-				sb.Append(Lib.Color(expInfo.SubjectPercentCollectedTotal.ToString("P0"), Lib.KColor.Yellow, true));
-				sb.Append(" - ");
-				sb.Append(Lib.Color(Experiment.RunningCountdown(expInfo, moduleOrPrefab.data_rate, true), Lib.KColor.Yellow));
-				lines++;
-			}
-
-			
-			if (!expInfo.SubjectExistsInRnD)
-			{
-				lines++;
-				sb.Append("\nscience value : ");
-				sb.Append(Lib.Color("unknown", Lib.KColor.Science, true));
-			}
-			else
-			{
-				lines++;
-				sb.Append("\nretrieved in RnD : ");
-				if (expInfo.SubjectTimesCompleted > 0)
-				{
-					sb.Append(Lib.Color(Lib.BuildString(expInfo.SubjectTimesCompleted.ToString(), expInfo.SubjectTimesCompleted > 1 ? " times" : " time"), Lib.KColor.Yellow));
-				}
-				else
-				{
-					sb.Append(Lib.Color(" never", Lib.KColor.Yellow));
-				}
-				if (expInfo.SubjectPercentRetrieved > 0.0)
-				{
-					sb.Append(" (");
-					sb.Append(Lib.Color(expInfo.SubjectPercentRetrieved.ToString("P0"), Lib.KColor.Yellow, true));
-					sb.Append(")");
-				}
-				lines++;
-				sb.Append("\nscience value :\n");
-				sb.Append(Lib.Color(Lib.BuildString(expInfo.SubjectScienceRetrievedInKSC.ToString("F1"), "•"), Lib.KColor.Science, true));
-				sb.Append(" in RnD");
-				if (expInfo.SubjectScienceCollectedInFlight > 0.05)
-				{
-					sb.Append(" (");
-					sb.Append(Lib.Color(Lib.BuildString("+", expInfo.SubjectScienceCollectedInFlight.ToString("F1"), "•"), Lib.KColor.Science, true));
-					sb.Append(" in flight)");
-				}
-				sb.Append(" / ");
-				sb.Append(Lib.Color(Lib.BuildString(expInfo.SubjectScienceMaxValue.ToString("F1"), "•"), Lib.KColor.Science, true));
-
-			}
-
-			if (moduleOrPrefab.Requirements.Requires.Length > 0)
-			{
-				RequireResult[] reqs;
-				moduleOrPrefab.Requirements.TestRequirements(v, out reqs, true);
-
-				lines += 3;
-				sb.Append(Lib.Bold("\n\nRequirements :\n"));
-
-				foreach (RequireResult req in reqs)
-				{
-					lines++;
-					sb.Append("\n");
-					sb.Append(Lib.Checkbox(req.isValid));
-					sb.Append(" ");
-					sb.Append(Lib.Bold(ReqName(req.requireDef.require)));
-					if (req.value != null)
-					{
-						lines++;
-						sb.Append(" : ");
-						sb.Append(Lib.Color(ReqValueFormat(req.requireDef.require, req.requireDef.value), Lib.KColor.Yellow, true));
-						sb.Append("\n\tcurrent : ");
-						sb.Append(Lib.Color(req.isValid, ReqValueFormat(req.requireDef.require, req.value), Lib.KColor.Green, Lib.KColor.Orange, true));
-					}
-				}
-			}
-
-
-
-			stateInfoHeight = Math.Max(stateInfoHeight, 18f * lines);
-
-
-			return sb.ToString();
-		}
-
-		private void IsRunning()
-		{
-
-		}
-
 
 		private void Toggle()
 		{
 			if (isProto)
-				Experiment.ProtoToggle(v, moduleOrPrefab, protoModule);
+				ProtoToggle(v, moduleOrPrefab, protoModule);
 			else
 				moduleOrPrefab.Toggle();
 		}
 
 
-		private void ToggleForcedRun(bool selected)
+		private void ToggleForcedRun()
 		{
-			if (!running) return;
-
 			if (isProto)
-				Experiment.ProtoToggle(v, moduleOrPrefab, protoModule, true);
+				ProtoToggle(v, moduleOrPrefab, protoModule, true);
 			else
 				moduleOrPrefab.Toggle(true);
+		}
+
+
+		private void ToggleLeftPanel()
+		{
+			if (leftPanel.Enabled)
+			{
+				leftPanel.Enabled = false;
+				leftPanelVisibilityButton.SetIconTexture(Textures.KsmGuiTexHeaderArrowsLeft);
+				leftPanelVisibilityButton.SetTooltipText("show left panel");
+			}
+			else
+			{
+				leftPanel.Enabled = true;
+				leftPanelVisibilityButton.SetIconTexture(Textures.KsmGuiTexHeaderArrowsRight);
+				leftPanelVisibilityButton.SetTooltipText("hide left panel");
+			}
 		}
 	}
 }

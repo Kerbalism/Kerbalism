@@ -163,8 +163,8 @@ namespace KERBALISM
 			p.AddContent(exp_label, size, exp_tooltip, (Action)null, () => Highlighter.Set(partId, Color.cyan));
 
 			bool send = drive.GetFileSend(filename);
-			p.AddRightIcon(send ? Icons.send_cyan : Icons.send_black, "Flag the file for transmission to <b>DSN</b>", () => { drive.Send(filename, !send); });
-			p.AddRightIcon(Icons.toggle_red, "Delete the file", () =>
+			p.AddRightIcon(send ? Textures.send_cyan : Textures.send_black, "Flag the file for transmission to <b>DSN</b>", () => { drive.Send(filename, !send); });
+			p.AddRightIcon(Textures.toggle_red, "Delete the file", () =>
 				{
 					Lib.Popup("Warning!",
 						Lib.BuildString("Do you really want to delete ", Science.Experiment(filename).SubjectName, "?"),
@@ -200,8 +200,8 @@ namespace KERBALISM
 			if (!string.IsNullOrEmpty(sample.resultText)) exp_tooltip = Lib.BuildString(exp_tooltip, "\n", Lib.WordWrapAtLength(sample.resultText, 50));
 
 			p.AddContent(exp_label, Lib.HumanReadableSampleSize(sample.size), exp_tooltip, (Action)null, () => Highlighter.Set(partId, Color.cyan));
-			p.AddRightIcon(sample.analyze ? Icons.lab_cyan : Icons.lab_black, "Flag the file for analysis in a <b>laboratory</b>", () => { sample.analyze = !sample.analyze; });
-			p.AddRightIcon(Icons.toggle_red, "Dump the sample", () =>
+			p.AddRightIcon(sample.analyze ? Textures.lab_cyan : Textures.lab_black, "Flag the file for analysis in a <b>laboratory</b>", () => { sample.analyze = !sample.analyze; });
+			p.AddRightIcon(Textures.toggle_red, "Dump the sample", () =>
 				{
 					Lib.Popup("Warning!",
 						Lib.BuildString("Do you really want to dump ", Science.Experiment(filename).SubjectName, "?"),
