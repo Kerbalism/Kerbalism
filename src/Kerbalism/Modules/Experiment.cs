@@ -464,7 +464,7 @@ namespace KERBALISM
 
 			if (!HasRequiredResources(v, resourceDefs, resources, out mainIssue))
 			{
-				mainIssue = "invalid requirement";
+				mainIssue = "missing resource";
 				return;
 			}
 
@@ -499,7 +499,7 @@ namespace KERBALISM
 
 			if (available <= 0.0)
 			{
-				mainIssue = "insufficient_storage";
+				mainIssue = "no storage space";
 				return;
 			}
 
@@ -526,7 +526,7 @@ namespace KERBALISM
 
 			if (prodFactor == 0.0)
 			{
-				mainIssue = "insufficient resources";
+				mainIssue = "missing resource";
 				return;
 			}
 

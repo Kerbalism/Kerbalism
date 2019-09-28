@@ -128,8 +128,6 @@ namespace KERBALISM
 			rightPanel.SetLayoutElement(false, true, -1, -1, 230);
 			panels.Add(rightPanel);
 
-
-
 			// right panel : experiment status
 			rightPanel.Add(new KsmGuiHeader("STATUS"));
 			statusBox = new KsmGuiTextBox("");
@@ -198,7 +196,13 @@ namespace KERBALISM
 			sb.Append("state :<pos=20em>");
 			sb.Append(Lib.Bold(RunningStateInfo(expState)));
 			sb.Append("\nstatus :<pos=20em>");
-			sb.Append(Lib.Bold(Experiment.StatusInfo(status, issue)));
+			sb.Append(Lib.Bold(StatusInfo(status, issue)));
+
+			if (status == ExpStatus.Running)
+			{
+				sb.Append(", ");
+				sb.Append(RunningCountdown(expInfo, moduleOrPrefab.data_rate, true));
+			}
 
 			if (isSample)
 			{
