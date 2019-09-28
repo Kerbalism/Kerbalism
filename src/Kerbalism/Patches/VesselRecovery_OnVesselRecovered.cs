@@ -85,6 +85,7 @@ namespace KERBALISM
 						double subjectValue = file.expInfo.ScienceValue(file.size, true);
 						Science.AddScienceToRnDSubject(file.expInfo.StockSubject, subjectValue);
 						scienceToCredit += subjectValue;
+						GameEvents.OnScienceRecieved.Fire((float)subjectValue, file.expInfo.StockSubject, pv, true); // needed for contracts
 						labels.Add(new DialogGUILabel(Lib.BuildString(
 							Lib.Color("+ " + subjectValue.ToString("F1"), Lib.KColor.Science),
 							" (",
@@ -114,6 +115,7 @@ namespace KERBALISM
 						double subjectValue = sample.expInfo.ScienceValue(sample.size, true);
 						Science.AddScienceToRnDSubject(sample.expInfo.StockSubject, subjectValue);
 						scienceToCredit += subjectValue;
+						GameEvents.OnScienceRecieved.Fire((float)subjectValue, sample.expInfo.StockSubject, pv, true); // needed for contracts
 						labels.Add(new DialogGUILabel(Lib.BuildString(
 							Lib.Color("+ " + subjectValue.ToString("F1"), Lib.KColor.Science),
 							" (",
