@@ -210,10 +210,11 @@
     <Compile Include="UI\KsmGui\KsmGuiButton.cs" />
     <Compile Include="UI\KsmGui\KsmGuiHeader.cs" />
     <Compile Include="UI\KsmGui\KsmGuiIcon.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiMasterController.cs" />
     <Compile Include="UI\KsmGui\KsmGuiScrollView.cs" />
     <Compile Include="UI\KsmGui\KsmGuiText.cs" />
     <Compile Include="UI\KsmGui\KsmGuiTextBox.cs" />
-    <Compile Include="UI\KsmGui\KsmGuiUtils.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiLib.cs" />
     <Compile Include="UI\KsmGui\KsmGuiVerticalLayout.cs" />
     <Compile Include="UI\KsmGui\KsmGuiHorizontalLayout.cs" />
     <Compile Include="UI\KsmGui\KsmGuiIconButton.cs" />

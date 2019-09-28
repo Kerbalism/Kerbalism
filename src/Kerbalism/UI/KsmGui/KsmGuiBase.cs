@@ -1,10 +1,9 @@
-﻿using KSP.UI;
-using System;
-using TMPro;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace KERBALISM
+namespace KERBALISM.KsmGui
 {
 	public class KsmGuiBase
 	{

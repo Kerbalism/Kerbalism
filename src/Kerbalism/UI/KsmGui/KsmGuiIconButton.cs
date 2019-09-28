@@ -1,10 +1,10 @@
-﻿using KSP.UI;
-using TMPro;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
 
-namespace KERBALISM
+namespace KERBALISM.KsmGui
 {
 	/// <summary>
 	/// a 16x16 icon that can be clicked

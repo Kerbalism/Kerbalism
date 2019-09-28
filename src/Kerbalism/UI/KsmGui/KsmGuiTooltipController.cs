@@ -1,13 +1,11 @@
-﻿using KSP.UI;
+﻿using System;
+using System.Collections.Generic;
+using KSP.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
-namespace KERBALISM
+namespace KERBALISM.KsmGui
 {
 	public class KsmGuiTooltipController : MonoBehaviour
 	{

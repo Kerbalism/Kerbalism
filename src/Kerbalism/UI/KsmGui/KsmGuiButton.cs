@@ -1,11 +1,11 @@
-﻿using KSP.UI;
-using System;
+﻿using System;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
 
-namespace KERBALISM
+namespace KERBALISM.KsmGui
 {
 	public class KsmGuiButton : KsmGuiHorizontalLayout, IKsmGuiText, IKsmGuiInteractable, IKsmGuiButton, IKsmGuiIcon
 	{

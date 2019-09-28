@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using UnityEngine;
 
-namespace KERBALISM
+namespace KERBALISM.KsmGui
 {
-	public static class KsmGuiUtils
+	public static class KsmGuiLib
 	{
 		public static void SetParentAtOneScale(this Transform child, Transform parent)
 		{
@@ -18,6 +16,14 @@ namespace KERBALISM
 		{
 			child.SetParent(parent, worldPositionStay);
 			child.localScale = Vector3.one;
+		}
+
+		public static void ForceOneScale(RectTransform transform)
+		{
+			transform.localScale = Vector3.one;
+
+			foreach (RectTransform rt in transform.GetComponentsInChildren<RectTransform>())
+				rt.localScale = Vector3.one;
 		}
 
 	}

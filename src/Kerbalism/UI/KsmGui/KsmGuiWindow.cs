@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using KSP.UI;
-using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-namespace KERBALISM
+namespace KERBALISM.KsmGui
 {
 
 
@@ -109,7 +107,7 @@ namespace KERBALISM
 			// distance in pixels between the anchor and the pivot
 			TopTransform.anchoredPosition = new Vector2(posX, posY);
 
-			TopTransform.SetParentAtOneScale(Kerbalism.uitransform, false);
+			TopTransform.SetParentAtOneScale(KsmGuiMasterController.Instance.KsmGuiTransform, false);
 			TopTransform.localScale = Vector3.one;
 
 			// our custom lock manager

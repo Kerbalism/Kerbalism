@@ -1,10 +1,9 @@
-﻿using KSP.UI;
-using TMPro;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.UI;
 
-namespace KERBALISM
+namespace KERBALISM.KsmGui
 {
 	public class KsmGuiTooltip : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
 	{

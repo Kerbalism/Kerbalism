@@ -4,20 +4,17 @@ using System.Reflection;
 using UnityEngine;
 using Harmony;
 using KSP.UI.Screens;
-using KSP.UI;
-using UnityEngine.UI;
 
 namespace KERBALISM
 {
-
-
 	/// <summary> Main class, instantiated during Main menu scene.</summary>
 	[KSPAddon(KSPAddon.Startup.MainMenu, false)]
 	public class KerbalismMain: MonoBehaviour
 	{
 		public void Start()
 		{
-			Textures.Initialize();				// set up the icon textures
+			Textures.Initialize();              // set up the icon textures
+			KsmGui.KsmGuiMasterController.Initialize(); // setup the gui framework
 			RemoteTech.EnableInSPC();       // allow RemoteTech Core to run in the Space Center
 		}
 	}
@@ -25,14 +22,6 @@ namespace KERBALISM
 	[KSPScenario(ScenarioCreationOptions.AddToAllGames, new[] { GameScenes.SPACECENTER, GameScenes.TRACKSTATION, GameScenes.FLIGHT, GameScenes.EDITOR })]
 	public sealed class Kerbalism: ScenarioModule
 	{
-		// temp UI stuff
-		public static GameObject kerbalismCanvas;
-		public static RectTransform uitransform;
-		public static Canvas canvas;
-		public static CanvasScaler canvasScaler;
-		public static GraphicRaycaster graphicRaycaster;
-
-
 		// permit global access
 		public static Kerbalism Fetch { get; private set; } = null;
 
@@ -139,47 +128,6 @@ namespace KERBALISM
 				ParticleRenderer.Init();
 				Highlighter.Init();
 				UI.Init();
-
-				// UI INIT - TEMPORARY
-
-				// Add tooltip controller to the tooltip canvas
-				UIMasterController.Instance.tooltipCanvas.gameObject.AddComponent<KsmGuiTooltipController>();
-
-				// create our own canvas as a child of the UIMaster object. this allow :
-				// - using an independant scaling factor
-				// - setting the render order as we need
-				kerbalismCanvas = new GameObject("KerbalismCanvas");
-				uitransform = kerbalismCanvas.AddComponent<RectTransform>();
-				
-				canvas = kerbalismCanvas.AddComponent<Canvas>();
-				canvas.renderMode = RenderMode.ScreenSpaceCamera; 
-				canvas.pixelPerfect = true;
-				canvas.worldCamera = UIMasterController.Instance.uiCamera;
-				canvas.sortingLayerName = "Dialogs"; // not sure this is needed
-				canvas.additionalShaderChannels = AdditionalCanvasShaderChannels.TexCoord1 | AdditionalCanvasShaderChannels.Normal | AdditionalCanvasShaderChannels.Tangent;
-
-				// render order of the various UI canvases (lower value = on top)
-				// maincanvas => Z 750
-				// appCanvas => Z 625
-				// actionCanvas => Z 500 (PAW)
-				// screenMessageCanvas => Z 450
-				// dialogCanvas => Z 400 (DialogGUI windows)
-				// dragDropcanvas => Z 333
-				// debugCanvas => Z 315
-				// tooltipCanvas => Z 300
-				canvas.planeDistance = 475f;
-				canvasScaler = kerbalismCanvas.AddComponent<CanvasScaler>();
-
-				// TODO : change it on GameEvents.onUIScaleChange
-				canvasScaler.scaleFactor = Settings.UIScale * GameSettings.UI_SCALE;
-				graphicRaycaster = kerbalismCanvas.AddComponent<GraphicRaycaster>();
-
-				uitransform.SetParentAtOneScale(UIMasterController.Instance.transform, false);
-				uitransform.SetAsLastSibling();
-
-				// things not on layer 5 will not be rendered
-				kerbalismCanvas.SetLayerRecursive(5);
-				Canvas.ForceUpdateCanvases();
 
 				// prepare storm data
 				foreach (CelestialBody body in FlightGlobals.Bodies)

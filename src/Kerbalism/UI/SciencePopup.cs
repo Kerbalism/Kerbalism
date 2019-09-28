@@ -7,6 +7,7 @@ using UnityEngine;
 using UnityEngine.Events;
 using static KERBALISM.ExperimentRequirements;
 using static KERBALISM.Experiment;
+using KERBALISM.KsmGui;
 
 namespace KERBALISM
 {
