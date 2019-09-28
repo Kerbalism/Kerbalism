@@ -34,24 +34,20 @@ namespace KERBALISM
 		ExperimentInfo expInfo;
 		ExpStatus status;
 		RunningState expState;
-		bool forcedRun;
-		bool running;
+		bool isSample;
+		double remainingSampleMass;
 		string issue;
 
 		// utils
 		StringBuilder sb = new StringBuilder();
 
 		// UI references
-		bool leftPanelIsVisible = false;
-
 		KsmGuiWindow window;
 
 		KsmGuiIconButton leftPanelVisibilityButton;
-		UnityAction leftPanelVisibilityAction;
 
 		KsmGuiVerticalLayout leftPanel;
-		KsmGuiHeader experimentInfoHeader;
-		KsmGuiTextBox experimentInfoBox;
+
 		KsmGuiHeader rndArchiveHeader;
 		KsmGuiVerticalScrollView rndArchiveView;
 
@@ -59,6 +55,9 @@ namespace KERBALISM
 
 		KsmGuiHeader requirementsHeader;
 		KsmGuiTextBox requirementsBox;
+
+		KsmGuiIconButton expInfoVisibilityButton;
+		KsmGuiTextBox expInfoBox;
 
 		KsmGuiButton forcedRunButton;
 		KsmGuiButton startStopButton;
@@ -77,6 +76,7 @@ namespace KERBALISM
 
 			this.moduleOrPrefab = moduleOrPrefab;
 			this.v = v;
+			isSample = moduleOrPrefab.sample_mass > 0f;
 
 			// parse the module / protomodule data so we can use it right now
 			GetData();
@@ -88,7 +88,7 @@ namespace KERBALISM
 
 			// top header
 			KsmGuiHeader topHeader = new KsmGuiHeader(expInfo.Name);
-			leftPanelVisibilityButton = new KsmGuiIconButton(Textures.KsmGuiTexHeaderArrowsLeft, ToggleLeftPanel, "show left panel");
+			leftPanelVisibilityButton = new KsmGuiIconButton(Textures.KsmGuiTexHeaderArrowsLeft, ToggleLeftPanel, "show info & science archive");
 			topHeader.AddFirst(leftPanelVisibilityButton);
 			topHeader.Add(new KsmGuiIconButton(Textures.KsmGuiTexHeaderClose, () => window.Close(), "close"));
 			window.Add(topHeader);
@@ -103,16 +103,20 @@ namespace KERBALISM
 			leftPanel.Enabled = false;
 			panels.Add(leftPanel);
 
-			// left panel : experiment info
-			experimentInfoHeader = new KsmGuiHeader("EXPERIMENT INFO");
+			// right panel : experiment info
+			KsmGuiHeader experimentInfoHeader = new KsmGuiHeader("EXPERIMENT INFO");
 			leftPanel.Add(experimentInfoHeader);
-			experimentInfoBox = new KsmGuiTextBox(moduleOrPrefab.SpecsWithoutRequires().Info());
-			leftPanel.Add(experimentInfoBox);
+			expInfoVisibilityButton = new KsmGuiIconButton(Textures.KsmGuiTexHeaderArrowsDown, ToggleExpInfo, "show experiment info");
+			experimentInfoHeader.AddFirst(expInfoVisibilityButton);
+			expInfoBox = new KsmGuiTextBox(moduleOrPrefab.SpecsWithoutRequires().Info());
+			expInfoBox.Enabled = false;
+			leftPanel.Add(expInfoBox);
 
 			// left panel : RnD archive
 			rndArchiveHeader = new KsmGuiHeader("SCIENCE ARCHIVE");
 			leftPanel.Add(rndArchiveHeader);
-			rndArchiveView = new KsmGuiVerticalScrollView(250);
+			rndArchiveView = new KsmGuiVerticalScrollView();
+			rndArchiveView.SetLayoutElement(true, true, -1, -1, -1, 200);
 			rndArchiveView.SetUpdateAction(RnDUpdate, 250);
 			leftPanel.Add(rndArchiveView);
 			//KsmGuiText tempRnD = new KsmGuiText("body\nsituation\nbiome\nbiome\nbiome\nbiome\nbody\nsituation\nbiome\nbiome\nbiome\nbiome");
@@ -122,6 +126,8 @@ namespace KERBALISM
 			KsmGuiVerticalLayout rightPanel = new KsmGuiVerticalLayout(5, 0, 0, 5, 0);
 			rightPanel.SetLayoutElement(false, true, -1, -1, 230);
 			panels.Add(rightPanel);
+
+
 
 			// right panel : experiment status
 			rightPanel.Add(new KsmGuiHeader("STATUS"));
@@ -150,12 +156,6 @@ namespace KERBALISM
 			startStopButton = new KsmGuiButton("_", Toggle, "_");
 			startStopButton.SetUpdateAction(UpdateStartStopButton);
 			buttons.Add(startStopButton);
-
-			foreach (RectTransform rt in window.TopTransform.GetComponentsInChildren<RectTransform>())
-			{
-				rt.localScale = Vector3.one;
-			}
-
 		}
 
 		private void GetData()
@@ -166,9 +166,8 @@ namespace KERBALISM
 				expState = Lib.Proto.GetEnum(protoModule, "expState", RunningState.Stopped);
 				subject_id = Lib.Proto.GetString(protoModule, "last_subject_id");
 				expInfo = Science.Experiment(subject_id);
-				running = IsRunning(expState);
-				forcedRun = expState == RunningState.Forced;
 				issue = Lib.Proto.GetString(protoModule, "issue");
+				if (isSample) remainingSampleMass = Lib.Proto.GetDouble(protoModule, "remainingSampleMass", 0.0);
 			}
 			else
 			{
@@ -176,71 +175,84 @@ namespace KERBALISM
 				expState = moduleOrPrefab.State;
 				subject_id = moduleOrPrefab.last_subject_id;
 				expInfo = moduleOrPrefab.ExpInfo;
-				running = moduleOrPrefab.Running;
-				forcedRun = moduleOrPrefab.State == RunningState.Forced;
 				issue = moduleOrPrefab.issue;
+				if (isSample) remainingSampleMass = moduleOrPrefab.remainingSampleMass;
 			}
 		}
 
 		private void StatusUpdate()
 		{
+			/*
+			state :<pos=20em><b><color=#FFD200>started</color></b>
+			status :<pos=20em><b><color=#FFD200>running</color></b>
+			samples :<pos=20em><b><color=#FFD200>1.5</color></b> (<b><color=#FFD200>20 kg</color></b>)
+			situation :<pos=20em><color=#FFD200><b>Duna Space High</b></color>
+			retrieved :<pos=20em><color=#FFD200>never</color> (<color=#FFD200><b>0 %</b></color>)
+			collected :<pos=20em><color=#6DCFF6><b>4.3</b></color> in RnD (<color=#6DCFF6><b>+2.1</b></color> in flight)
+			value :<pos=20em><color=#6DCFF6><b>50.0</b></color>
+			*/
+
 			sb.Length = 0;
 
-			sb.Append("status : ");
-			sb.Append(Lib.Bold(Experiment.StatusInfo(status)));
+			sb.Append("state :<pos=20em>");
+			sb.Append(Lib.Bold(RunningStateInfo(expState)));
+			sb.Append("\nstatus :<pos=20em>");
+			sb.Append(Lib.Bold(Experiment.StatusInfo(status, issue)));
 
-			if (status == Experiment.ExpStatus.Issue)
+			if (isSample)
 			{
-				sb.Append("\nissue : ");
-				sb.Append(Lib.Color(issue, Lib.KColor.Orange));
+				sb.Append("\nsamples :<pos=20em>");
+				sb.Append(Lib.Color((remainingSampleMass / moduleOrPrefab.sample_mass).ToString("F1"), Lib.KColor.Yellow, true));
+				sb.Append(" (");
+				sb.Append(Lib.Color(Lib.HumanReadableMass(remainingSampleMass), Lib.KColor.Yellow, true));
+				sb.Append(")");
 			}
 
-			sb.Append("\nsituation : ");
+			sb.Append("\nsituation :<pos=20em>");
 			sb.Append(Lib.Color(expInfo.SubjectSituation, Lib.KColor.Yellow, true));
-
-			if (status == Experiment.ExpStatus.Running)
-			{
-				sb.Append("\ncompletion : ");
-				sb.Append(Lib.Color(expInfo.SubjectPercentCollectedTotal.ToString("P0"), Lib.KColor.Yellow, true));
-				sb.Append(" - ");
-				sb.Append(Lib.Color(Experiment.RunningCountdown(expInfo, moduleOrPrefab.data_rate, true), Lib.KColor.Yellow));
-			}
-
 
 			if (!expInfo.SubjectExistsInRnD)
 			{
-				sb.Append("\nscience value : ");
+				sb.Append("\nretrieved :<pos=20em>");
+				sb.Append(Lib.Color("never", Lib.KColor.Yellow, true));
+
+				sb.Append("\ncollected :<pos=20em>");
+				sb.Append(Lib.Color("0.0", Lib.KColor.Science, true));
+				sb.Append(Lib.InlineSpriteScience);
+
+				sb.Append("\nvalue :<pos=20em>");
 				sb.Append(Lib.Color("unknown", Lib.KColor.Science, true));
 			}
 			else
 			{
-				sb.Append("\nretrieved in RnD : ");
+				sb.Append("\nretrieved :<pos=20em>");
 				if (expInfo.SubjectTimesCompleted > 0)
-				{
 					sb.Append(Lib.Color(Lib.BuildString(expInfo.SubjectTimesCompleted.ToString(), expInfo.SubjectTimesCompleted > 1 ? " times" : " time"), Lib.KColor.Yellow));
-				}
 				else
-				{
-					sb.Append(Lib.Color(" never", Lib.KColor.Yellow));
-				}
+					sb.Append(Lib.Color("never", Lib.KColor.Yellow));
+
 				if (expInfo.SubjectPercentRetrieved > 0.0)
 				{
 					sb.Append(" (");
 					sb.Append(Lib.Color(expInfo.SubjectPercentRetrieved.ToString("P0"), Lib.KColor.Yellow, true));
 					sb.Append(")");
 				}
-				sb.Append("\nscience value :\n");
+
+				sb.Append("\ncollected :<pos=20em>");
 				sb.Append(Lib.Color(expInfo.SubjectScienceRetrievedInKSC.ToString("F1"), Lib.KColor.Science, true));
+				sb.Append(Lib.InlineSpriteScience);
 				sb.Append(" in RnD");
 				if (expInfo.SubjectScienceCollectedInFlight > 0.05)
 				{
 					sb.Append(" (");
 					sb.Append(Lib.Color(Lib.BuildString("+", expInfo.SubjectScienceCollectedInFlight.ToString("F1")), Lib.KColor.Science, true));
+					sb.Append(Lib.InlineSpriteScience);
 					sb.Append(" in flight)");
 				}
-				sb.Append(" / ");
-				sb.Append(Lib.Color(expInfo.SubjectScienceMaxValue.ToString("F1"), Lib.KColor.Science, true));
 
+				sb.Append("\nvalue :<pos=20em>");
+				sb.Append(Lib.Color(expInfo.SubjectScienceMaxValue.ToString("F1"), Lib.KColor.Science, true));
+				sb.Append(Lib.InlineSpriteScience);
 			}
 			statusBox.SetText(sb.ToString());
 		}
@@ -259,14 +271,15 @@ namespace KERBALISM
 					sb.Append("\n");
 				first = false;
 				sb.Append(Lib.Checkbox(req.isValid));
-				sb.Append(" ");
+				//sb.Append(" ");
 				sb.Append(Lib.Bold(ReqName(req.requireDef.require)));
 				if (req.value != null)
 				{
 					sb.Append(" : ");
 					sb.Append(Lib.Color(ReqValueFormat(req.requireDef.require, req.requireDef.value), Lib.KColor.Yellow, true));
-					sb.Append("\n\tcurrent : ");
+					sb.Append("\n<indent=5em>current : "); // match the checkbox indentation
 					sb.Append(Lib.Color(req.isValid, ReqValueFormat(req.requireDef.require, req.value), Lib.KColor.Green, Lib.KColor.Orange, true));
+					sb.Append("</indent>");
 				}
 			}
 
@@ -423,13 +436,29 @@ namespace KERBALISM
 			{
 				leftPanel.Enabled = false;
 				leftPanelVisibilityButton.SetIconTexture(Textures.KsmGuiTexHeaderArrowsLeft);
-				leftPanelVisibilityButton.SetTooltipText("show left panel");
+				leftPanelVisibilityButton.SetTooltipText("show info & science archive");
 			}
 			else
 			{
 				leftPanel.Enabled = true;
 				leftPanelVisibilityButton.SetIconTexture(Textures.KsmGuiTexHeaderArrowsRight);
-				leftPanelVisibilityButton.SetTooltipText("hide left panel");
+				leftPanelVisibilityButton.SetTooltipText("hide info & science archive");
+			}
+		}
+
+		private void ToggleExpInfo()
+		{
+			if (expInfoBox.Enabled)
+			{
+				expInfoBox.Enabled = false;
+				expInfoVisibilityButton.SetIconTexture(Textures.KsmGuiTexHeaderArrowsDown);
+				expInfoVisibilityButton.SetTooltipText("show experiment info");
+			}
+			else
+			{
+				expInfoBox.Enabled = true;
+				expInfoVisibilityButton.SetIconTexture(Textures.KsmGuiTexHeaderArrowsUp);
+				expInfoVisibilityButton.SetTooltipText("hide experiment info");
 			}
 		}
 	}

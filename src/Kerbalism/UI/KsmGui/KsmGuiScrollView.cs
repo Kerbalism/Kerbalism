@@ -10,7 +10,7 @@ namespace KERBALISM
 	{
 		public RectTransform Content { get; private set; }
 
-		public KsmGuiVerticalScrollView(int minHeight) : base ()
+		public KsmGuiVerticalScrollView() : base ()
 		{
 			ScrollRect scrollRect = TopObject.AddComponent<ScrollRect>();
 			scrollRect.horizontal = false;
@@ -25,8 +25,6 @@ namespace KERBALISM
 
 			Image scrollRectBackground = TopObject.AddComponent<Image>();
 			scrollRectBackground.color = KsmGuiStyle.boxColor;
-
-			SetLayoutElement(true, false, -1, -1, -1, minHeight);
 
 			// viewport object (child of top object)
 			GameObject viewport = new GameObject("viewport");

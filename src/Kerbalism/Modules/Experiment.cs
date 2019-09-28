@@ -891,9 +891,22 @@ namespace KERBALISM
 			if (Running) Toggle();
 		}
 
-#endregion
+		#endregion
 
-#region info / UI
+		#region info / UI
+
+		public static string RunningStateInfo(RunningState state)
+		{
+			switch (state)
+			{
+				case RunningState.Stopped: return Lib.Color("stopped", Lib.KColor.Yellow);
+				case RunningState.Running: return Lib.Color("started", Lib.KColor.Green);
+				case RunningState.Forced: return Lib.Color("forced run", Lib.KColor.Red);
+				case RunningState.Broken: return Lib.Color("broken", Lib.KColor.Red);
+				default: return string.Empty;
+			}
+
+		}
 
 		public static string StatusInfo(ExpStatus status, string issue = null)
 		{

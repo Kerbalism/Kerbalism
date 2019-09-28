@@ -470,12 +470,12 @@ namespace KERBALISM
 			DarkGrey
 		}
 
-		///<summary>return a colored "[V]" or "[X]" depending on the condition</summary>
+		///<summary>return a colored "[V]" or "[X]" depending on the condition. Only work if placed at the begining of a line. To align other lines, use the "<pos=5em>" tag</summary>
 		public static string Checkbox(bool condition)
 		{
 			return condition
-				? "<color=#88FF00>[ <b><i>V</i></b> ]</color>"
-				: "<color=#FF8000>[ <b><i>X</i></b> ]</color>";
+				? " <color=#88FF00><mark=#88FF0033><mspace=1em><b><i>V </i></b></mspace></mark></color><pos=5em>"
+				: " <color=#FF8000><mark=#FF800033><mspace=1em><b><i>X </i></b></mspace></mark></color><pos=5em>";
 		}
 
 		///<summary>return the hex representation for kerbalism colors</summary>
@@ -675,9 +675,15 @@ namespace KERBALISM
 			foreach (string s in args) sb.Append(s);
 			return sb.ToString();
 		}
-#endregion
+		#endregion
 
 		#region HUMAN READABLE
+
+		public static string InlineSpriteScience => "<sprite=\"CurrencySpriteAsset\" name=\"Science\" color=#6DCFF6>";
+		public static string InlineSpriteFunds => "<sprite=\"CurrencySpriteAsset\" name=\"Funds\" color=#B4D455>";
+		public static string InlineSpriteReputation => "<sprite=\"CurrencySpriteAsset\" name=\"Reputation\" color=#E0D503>";
+		public static string InlineSpriteFlask => "<sprite=\"CurrencySpriteAsset\" name=\"Flask\" color=#CE5DAE>";
+
 		///<summary> Pretty-print a resource rate (rate is per second). Return an absolute value if a negative one is provided</summary>
 		public static string HumanReadableRate(double rate, string precision = "F3")
 		{
@@ -957,7 +963,7 @@ namespace KERBALISM
 		}
 #endregion
 
-#region GAME LOGIC
+		#region GAME LOGIC
 		///<summary>return true if the current scene is flight</summary>
 		public static bool IsFlight()
 		{

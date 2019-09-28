@@ -31,11 +31,13 @@ namespace KERBALISM
 			{
 				TopObject.SetActive(value);
 				// if enabling and update frequency is more than every update, update immediately
-				if (value && UpdateHandler != null && UpdateHandler.updateFrequency > 1)
-					UpdateHandler.updateAction();
+				if (value && UpdateHandler != null)
+					UpdateHandler.UpdateASAP();
 			}
 		}
 
+		/// <summary> callback that will be called on this object Update(). Won't be called if Enabled = false </summary>
+		/// <param name="updateFrequency">amount of Update() frames skipped between each call. 50 =~ 1 sec </param>
 		public void SetUpdateAction(Action action, int updateFrequency = 1)
 		{
 			if (UpdateHandler == null)
@@ -43,6 +45,7 @@ namespace KERBALISM
 
 			UpdateHandler.updateAction = action;
 			UpdateHandler.updateFrequency = updateFrequency;
+			//UpdateHandler.UpdateASAP();
 		}
 
 		public void SetTooltipText(string text)
@@ -74,7 +77,6 @@ namespace KERBALISM
 		{
 			elementToAdd.TopTransform.SetParentAtOneScale(TopTransform);
 			elementToAdd.TopObject.SetLayerRecursive(5);
-			//ApplyCanvasScalerScale(elementToAdd.TopTransform);
 		}
 
 		public virtual void AddFirst(KsmGuiBase elementToAdd)
@@ -82,25 +84,11 @@ namespace KERBALISM
 			elementToAdd.TopTransform.SetParentAtOneScale(TopTransform);
 			elementToAdd.TopObject.SetLayerRecursive(5);
 			elementToAdd.TopTransform.SetAsFirstSibling();
-			//ApplyCanvasScalerScale(elementToAdd.TopTransform);
 		}
 
 		public virtual void AddAfter(KsmGuiBase afterThis, KsmGuiBase elementToAdd)
 		{
 
-		}
-
-
-		// objects instantiated at runtime under a CanvasScaler have their scale
-		// automagically altered to "compensate" the scaling factor of the CanvasScaler
-		// this is silly and annoying (and took me 2 days to figure out the problem)
-		// so here is the brute-force solution
-		public static void ApplyCanvasScalerScale(RectTransform transform)
-		{
-			transform.localScale = Vector3.one;
-
-			foreach (RectTransform rt in transform.GetComponentsInChildren<RectTransform>())
-				rt.localScale = Vector3.one;
 		}
 
 

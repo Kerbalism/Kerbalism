@@ -16,9 +16,12 @@ namespace KERBALISM
 		public int updateFrequency = 1;
 		public Action updateAction;
 
+		public void UpdateASAP() => updateCounter = updateFrequency;
+
 		void Start()
 		{
-			updateCounter = 0;
+			// always update on start
+			updateCounter = updateFrequency;
 		}
 
 		void Update()

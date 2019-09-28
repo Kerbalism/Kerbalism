@@ -117,15 +117,16 @@ namespace KERBALISM
 
 		public void SetTooltipText(string text)
 		{
-			this.textComponent.text = text;
+			textComponent.SetText(text);
 		}
 
 		public void ShowTooltip(string text)
 		{
 			if (!string.IsNullOrEmpty(text))
 			{
-				this.textComponent.text = text;
 				tooltipObject.SetActive(true);
+				textComponent.SetText(text);
+				LayoutRebuilder.ForceRebuildLayoutImmediate(TopTransform);
 				IsVisible = true;
 			}
 		}
