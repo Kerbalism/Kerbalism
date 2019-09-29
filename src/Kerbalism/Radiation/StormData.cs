@@ -33,6 +33,15 @@ namespace KERBALISM
 			msg_storm = Lib.ConfigValue(node, "msg_storm", 0u);
 			displayed_duration = Lib.ConfigValue(node, "displayed_duration", storm_duration);
 			display_warning = Lib.ConfigValue(node, "display_warning", true);
+
+			if(storm_time > 0 && storm_duration <= 0) // legacy save games did storms differently.
+			{
+				// storm_time used to be the point of time of the next storm, there was no storm_duration
+				// as storms all had a fixed duration depending on the distance to the sun.
+				// setting this to 0 will trigger a reroll of storm generation based on the new implementation.
+				storm_time = 0;
+				storm_generation = 0;
+			}
 		}
 
 		public void Save(ConfigNode node)
