@@ -59,7 +59,7 @@ namespace KERBALISM
 			if (Lib.DisableScenario(this)) return;
 
 			Fields["Status"].guiName = title;
-#if DEBUG
+#if DEBUG_RELIABILITY
 			Events["Break"].guiName = "Break " + title + " [DEBUG]";
 #endif
 
@@ -128,7 +128,7 @@ namespace KERBALISM
 				if (Lib.RandomDouble() < turnon_failure_probability / q)
 				{
 					fail = true;
-#if DEBUG
+#if DEBUG_RELIABILITY
 					Lib.DebugLog("Ignition check: " + part.partInfo.title + " ignitions " + ignitions + " turnon failure");
 #endif
 				}
@@ -144,7 +144,7 @@ namespace KERBALISM
 					var q = (quality ? Settings.QualityScale : 1.0) * Lib.RandomDouble();
 					q /= (ignitions - total_ignitions); // progressively increase the odds of a failure with every extra ignition
 
-#if DEBUG
+#if DEBUG_RELIABILITY
 					Lib.Log("Reliability: ignition exceeded q=" + q + " ignitions=" + ignitions + " total_ignitions=" + total_ignitions);
 #endif
 
@@ -305,7 +305,7 @@ namespace KERBALISM
 				// if it has failed, trigger malfunction
 				if (now > next)
 				{
-#if DEBUG
+#if DEBUG_RELIABILITY
 					Lib.Log("Reliablity: background MTBF breakdown for " + part.partInfo.title);
 #endif
 					Break();
@@ -365,7 +365,7 @@ namespace KERBALISM
 					var guaranteed_operation = f * 0.35;
 
 					fail_duration = guaranteed_operation + f * p;
-#if DEBUG
+#if DEBUG_RELIABILITY
 					Lib.Log(part.partInfo.title + " will fail after " + Lib.HumanReadableDuration(fail_duration) + " burn time");
 #endif
 				}
@@ -375,7 +375,7 @@ namespace KERBALISM
 					next = now;
 					enforce_breakdown = true;
 					explode = Lib.RandomDouble() < 0.35;
-#if DEBUG
+#if DEBUG_RELIABILITY
 					Lib.Log("Reliability: " + part.partInfo.title + " fails because of overstress");
 #endif
 					FlightLogger.fetch?.LogEvent(part.partInfo.title + " failed because of overstress");
@@ -581,7 +581,7 @@ namespace KERBALISM
 			}
 		}
 
-#if DEBUG
+#if DEBUG_RELIABILITY
 		[KSPEvent(guiActive = true, guiActiveUnfocused = true, guiName = "_", active = true)] // [for testing]
 #endif
 		public void Break()
