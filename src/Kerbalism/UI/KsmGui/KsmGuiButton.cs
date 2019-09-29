@@ -50,7 +50,7 @@ namespace KERBALISM.KsmGui
 
 			TextObject = new KsmGuiText(buttonText, null, TextAlignmentOptions.Center);
 			TextObject.SetLayoutElement(true);
-			TextObject.TopTransform.SetParentAtOneScale(TopTransform);
+			TextObject.TopTransform.SetParentFixScale(TopTransform);
 
 			if (tooltipText != null) SetTooltipText(tooltipText);
 		}
@@ -81,7 +81,7 @@ namespace KERBALISM.KsmGui
 			if (texture != null && IconObject == null)
 			{
 				IconObject = new KsmGuiIcon(texture, null, width, width);
-				IconObject.TopTransform.SetParentAtOneScale(TopTransform);
+				IconObject.TopTransform.SetParentFixScale(TopTransform);
 			}
 
 			if (IconObject != null)

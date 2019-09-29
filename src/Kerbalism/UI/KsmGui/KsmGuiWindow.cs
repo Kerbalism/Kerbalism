@@ -107,7 +107,7 @@ namespace KERBALISM.KsmGui
 			// distance in pixels between the anchor and the pivot
 			TopTransform.anchoredPosition = new Vector2(posX, posY);
 
-			TopTransform.SetParentAtOneScale(KsmGuiMasterController.Instance.KsmGuiTransform, false);
+			TopTransform.SetParentFixScale(KsmGuiMasterController.Instance.KsmGuiTransform);
 			TopTransform.localScale = Vector3.one;
 
 			// our custom lock manager

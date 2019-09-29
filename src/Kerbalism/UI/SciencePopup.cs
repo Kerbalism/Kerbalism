@@ -110,6 +110,7 @@ namespace KERBALISM
 			expInfoVisibilityButton = new KsmGuiIconButton(Textures.KsmGuiTexHeaderArrowsDown, ToggleExpInfo, "show experiment info");
 			experimentInfoHeader.AddFirst(expInfoVisibilityButton);
 			expInfoBox = new KsmGuiTextBox(moduleOrPrefab.SpecsWithoutRequires().Info());
+			expInfoBox.SetLayoutElement(false, false, 200);
 			expInfoBox.Enabled = false;
 			leftPanel.Add(expInfoBox);
 

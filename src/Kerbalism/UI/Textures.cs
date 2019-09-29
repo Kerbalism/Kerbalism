@@ -255,13 +255,13 @@ namespace KERBALISM
 			KsmGuiSpriteBtnHighlight = Get9SlicesSprite("ksm-gui/btn-black-highlight-64-5", 64, 64, 5);
 			KsmGuiSpriteBtnDisabled = Get9SlicesSprite("ksm-gui/btn-black-disabled-64-5", 64, 64, 5);
 
-			KsmGuiTexCheckmark = GetTexture("ksm-gui/checkmark-20", 20, 20);
+			KsmGuiTexCheckmark = Lib.GetTexture("ksm-gui/checkmark-20", 20, 20);
 
-			KsmGuiTexHeaderClose = GetTexture("ksm-gui/i8-header-close-32", 32, 32);
-			KsmGuiTexHeaderArrowsLeft = GetTexture("ksm-gui/arrows-left-32", 32, 32);
-			KsmGuiTexHeaderArrowsRight = GetTexture("ksm-gui/arrows-right-32", 32, 32);
-			KsmGuiTexHeaderArrowsUp = GetTexture("ksm-gui/arrows-up-32", 32, 32);
-			KsmGuiTexHeaderArrowsDown = GetTexture("ksm-gui/arrows-down-32", 32, 32);
+			KsmGuiTexHeaderClose = Lib.GetTexture("ksm-gui/i8-header-close-32", 32, 32);
+			KsmGuiTexHeaderArrowsLeft = Lib.GetTexture("ksm-gui/arrows-left-32", 32, 32);
+			KsmGuiTexHeaderArrowsRight = Lib.GetTexture("ksm-gui/arrows-right-32", 32, 32);
+			KsmGuiTexHeaderArrowsUp = Lib.GetTexture("ksm-gui/arrows-up-32", 32, 32);
+			KsmGuiTexHeaderArrowsDown = Lib.GetTexture("ksm-gui/arrows-down-32", 32, 32);
 
 			//Texture2D winBg = Lib.GetTexture("ui-core/window-background", 64, 64);
 			//// inspecting pixelPerUnit gives 92.75362, but 100f is the default value and seems to work fine

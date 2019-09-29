@@ -38,7 +38,7 @@ namespace KERBALISM.KsmGui
 
 			SetIconTexture(texture, width, height);
 
-			IconTransform.SetParentAtOneScale(TopTransform, false);
+			IconTransform.SetParentFixScale(TopTransform);
 
 			if (tooltipText != null) SetTooltipText(tooltipText);
 		}

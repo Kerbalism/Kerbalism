@@ -43,7 +43,7 @@ namespace KERBALISM.KsmGui
 			// dragDropcanvas => Z 333
 			// debugCanvas => Z 315
 			// tooltipCanvas => Z 300
-			TopTransform.SetParentAtOneScale(UIMasterController.Instance.tooltipCanvas.transform, false);
+			TopTransform.SetParentFixScale(UIMasterController.Instance.tooltipCanvas.transform);
 
 			tooltipObject.AddComponent<CanvasRenderer>();
 
@@ -61,7 +61,7 @@ namespace KERBALISM.KsmGui
 			// first child : 1px white border
 			GameObject border = new GameObject("KsmGuiTooltipBorder");
 			ContentTransform = border.AddComponent<RectTransform>();
-			ContentTransform.SetParentAtOneScale(TopTransform);
+			ContentTransform.SetParentFixScale(TopTransform);
 			border.AddComponent<CanvasRenderer>();
 
 			VerticalLayoutGroup borderLayout = border.AddComponent<VerticalLayoutGroup>();
@@ -79,7 +79,7 @@ namespace KERBALISM.KsmGui
 			// 2nd child : black background
 			GameObject background = new GameObject("KsmGuiTooltipBackground");
 			RectTransform backgroundTranform = background.AddComponent<RectTransform>();
-			backgroundTranform.SetParentAtOneScale(ContentTransform);
+			backgroundTranform.SetParentFixScale(ContentTransform);
 			background.AddComponent<CanvasRenderer>();
 
 			VerticalLayoutGroup backgroundLayout = background.AddComponent<VerticalLayoutGroup>();
@@ -97,7 +97,7 @@ namespace KERBALISM.KsmGui
 			// last child : text
 			GameObject textObject = new GameObject("KsmGuiTooltipText");
 			RectTransform textTransform = textObject.AddComponent<RectTransform>();
-			textTransform.SetParentAtOneScale(backgroundTranform);
+			textTransform.SetParentFixScale(backgroundTranform);
 			textObject.AddComponent<CanvasRenderer>();
 
 			textComponent = textObject.AddComponent<TextMeshProUGUI>();

@@ -74,13 +74,13 @@ namespace KERBALISM.KsmGui
 
 		public virtual void Add(KsmGuiBase elementToAdd)
 		{
-			elementToAdd.TopTransform.SetParentAtOneScale(TopTransform);
+			elementToAdd.TopTransform.SetParentFixScale(TopTransform);
 			elementToAdd.TopObject.SetLayerRecursive(5);
 		}
 
 		public virtual void AddFirst(KsmGuiBase elementToAdd)
 		{
-			elementToAdd.TopTransform.SetParentAtOneScale(TopTransform);
+			elementToAdd.TopTransform.SetParentFixScale(TopTransform);
 			elementToAdd.TopObject.SetLayerRecursive(5);
 			elementToAdd.TopTransform.SetAsFirstSibling();
 		}

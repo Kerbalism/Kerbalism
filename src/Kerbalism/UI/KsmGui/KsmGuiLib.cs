@@ -6,16 +6,9 @@ namespace KERBALISM.KsmGui
 {
 	public static class KsmGuiLib
 	{
-		public static void SetParentAtOneScale(this Transform child, Transform parent)
+		public static void SetParentFixScale(this Transform child, Transform parent)
 		{
-			child.SetParent(parent);
-			child.localScale = Vector3.one;
-		}
-
-		public static void SetParentAtOneScale(this Transform child, Transform parent, bool worldPositionStay)
-		{
-			child.SetParent(parent, worldPositionStay);
-			child.localScale = Vector3.one;
+			child.SetParent(parent, false);
 		}
 
 		public static void ForceOneScale(RectTransform transform)

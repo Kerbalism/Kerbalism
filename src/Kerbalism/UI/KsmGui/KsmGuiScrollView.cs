@@ -36,7 +36,7 @@ namespace KERBALISM.KsmGui
 			Image viewportImage = viewport.AddComponent<Image>();
 			viewportImage.color = new Color(1f, 1f, 1f, 1f);
 
-			viewportTransform.SetParentAtOneScale(TopTransform);
+			viewportTransform.SetParentFixScale(TopTransform);
 			scrollRect.viewport = viewportTransform;
 
 			// content object (child of viewport)
@@ -61,7 +61,7 @@ namespace KERBALISM.KsmGui
 			contentGroup.childForceExpandHeight = false;
 			contentGroup.childForceExpandWidth = false;
 
-			Content.SetParentAtOneScale(viewportTransform, false);
+			Content.SetParentFixScale(viewportTransform);
 			scrollRect.content = Content;
 
 			// scrollbar (child of top object)
@@ -93,7 +93,7 @@ namespace KERBALISM.KsmGui
 			scrollbarComponent.direction = Scrollbar.Direction.BottomToTop;
 			scrollRect.verticalScrollbar = scrollbarComponent;
 
-			scrollbarTransform.SetParentAtOneScale(TopTransform, false);
+			scrollbarTransform.SetParentFixScale(TopTransform);
 
 			// scrollbar sliding area
 			GameObject slidingArea = new GameObject("slidingArea");
@@ -103,7 +103,7 @@ namespace KERBALISM.KsmGui
 			slidingAreaTransform.pivot = new Vector2(0.5f, 0.5f);
 			slidingAreaTransform.anchoredPosition = new Vector2(5f, 5f);
 			slidingAreaTransform.sizeDelta = new Vector2(5f, 5f); // scrollbar width / 2
-			slidingAreaTransform.SetParentAtOneScale(scrollbarTransform, false);
+			slidingAreaTransform.SetParentFixScale(scrollbarTransform);
 
 			// scrollbar handle
 			GameObject scrollbarHandle = new GameObject("scrollbarHandle");
@@ -116,20 +116,20 @@ namespace KERBALISM.KsmGui
 
 			Image handleImage = scrollbarHandle.AddComponent<Image>();
 			handleImage.color = new Color(0.4f, 0.4f, 0.4f);
-			handleTransform.SetParentAtOneScale(slidingAreaTransform, false);
+			handleTransform.SetParentFixScale(slidingAreaTransform);
 			scrollbarComponent.targetGraphic = handleImage;
 		}
 
 		public override void Add(KsmGuiBase elementToAdd)
 		{
-			elementToAdd.TopTransform.SetParentAtOneScale(Content);
+			elementToAdd.TopTransform.SetParentFixScale(Content);
 			elementToAdd.TopObject.SetLayerRecursive(5);
 			//ApplyCanvasScalerScale(elementToAdd.TopTransform);
 		}
 
 		public override void AddFirst(KsmGuiBase elementToAdd)
 		{
-			elementToAdd.TopTransform.SetParentAtOneScale(Content);
+			elementToAdd.TopTransform.SetParentFixScale(Content);
 			elementToAdd.TopObject.SetLayerRecursive(5);
 			elementToAdd.TopTransform.SetAsFirstSibling();
 			//ApplyCanvasScalerScale(elementToAdd.TopTransform);
