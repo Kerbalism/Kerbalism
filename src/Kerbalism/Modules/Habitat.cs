@@ -189,7 +189,6 @@ namespace KERBALISM
 				// - disabled habitats start with zero atmosphere
 				Lib.AddResource(part, "Atmosphere", (state == State.enabled && Features.Pressure) ? volume * 1e3 : 0.0, volume * 1e3);
 				Lib.AddResource(part, "WasteAtmosphere", 0.0, volume * 1e3);
-				Lib.AddResource(part, "MoistAtmosphere", 0.0, volume * 1e3);
 
 				// add external surface shielding
 				Lib.AddResource(part, "Shielding", 0.0, surface);
@@ -208,7 +207,6 @@ namespace KERBALISM
 		{
 			Lib.SetResourceFlow(part, "Atmosphere", b);
 			Lib.SetResourceFlow(part, "WasteAtmosphere", b);
-			Lib.SetResourceFlow(part, "MoistAtmosphere", b);
 			Lib.SetResourceFlow(part, "Shielding", b);
 		}
 
@@ -486,13 +484,6 @@ namespace KERBALISM
 		{
 			// the proportion of co2 in the atmosphere is simply the level of WasteAtmo
 			return ResourceCache.GetResource(v, "WasteAtmosphere").Level;
-		}
-
-		// return moisture level in a vessel atmosphere
-		public static double Humidity(Vessel v)
-		{
-			// the proportion of moisture in the atmosphere is simply the level of MoistAtmo + (0.6, base humidity of 60%)
-			return ResourceCache.GetResource(v, "MoistAtmosphere").Level + 0.6;
 		}
 
 		/// <summary>

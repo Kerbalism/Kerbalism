@@ -35,7 +35,7 @@ namespace KERBALISM.Planner
 				panel_special.Add("reliability");
 
 			// environment panels
-			if (Features.Pressure || Features.Poisoning || Features.Humidity)
+			if (Features.Pressure || Features.Poisoning)
 				panel_environment.Add("habitat");
 			panel_environment.Add("environment");
 		}
@@ -510,12 +510,10 @@ namespace KERBALISM.Planner
 		{
 			SimulatedResource atmo_res = resource_sim.Resource("Atmosphere");
 			SimulatedResource waste_res = resource_sim.Resource("WasteAtmosphere");
-			SimulatedResource moist_res = resource_sim.Resource("MoistAtmosphere");
 
 			// generate tooltips
 			string atmo_tooltip = atmo_res.Tooltip();
 			string waste_tooltip = waste_res.Tooltip(true);
-			string moist_tooltip = moist_res.Tooltip(true);
 
 			// generate status string for scrubbing
 			string waste_status = !Features.Poisoning                   //< feature disabled
@@ -527,17 +525,6 @@ namespace KERBALISM.Planner
 			  : waste_res.produced > waste_res.consumed * 1.001         //< insufficient scrubbing
 			  ? Lib.Color("inadequate", Lib.KColor.Yellow)
 			  : Lib.Color("good", Lib.KColor.Green);                    //< sufficient scrubbing
-
-			// generate status string for humidity
-			string moist_status = !Features.Humidity                    //< feature disabled
-			  ? "n/a"
-			  : moist_res.produced <= double.Epsilon                    //< unnecessary
-			  ? "not required"
-			  : moist_res.consumed <= double.Epsilon                    //< no humidity control
-			  ? Lib.Color("none", Lib.KColor.Orange)
-			  : moist_res.produced > moist_res.consumed * 1.001         //< insufficient humidity control
-			  ? Lib.Color("inadequate", Lib.KColor.Yellow)
-			  : Lib.Color("good", Lib.KColor.Green);                    //< sufficient humidity control
 
 			// generate status string for pressurization
 			string atmo_status = !Features.Pressure                     //< feature disabled
@@ -556,7 +543,6 @@ namespace KERBALISM.Planner
 			p.AddContent("volume", Lib.HumanReadableVolume(vessel_analyzer.volume), "volume of enabled habitats");
 			p.AddContent("surface", Lib.HumanReadableSurface(vessel_analyzer.surface), "surface of enabled habitats");
 			p.AddContent("scrubbing", waste_status, waste_tooltip);
-			p.AddContent("humidity", moist_status, moist_tooltip);
 			p.AddContent("pressurization", atmo_status, atmo_tooltip);
 		}
 #endregion

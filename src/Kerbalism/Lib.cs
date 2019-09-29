@@ -227,27 +227,52 @@ namespace KERBALISM
 		#endregion
 
 		#region TIME
+
+		private static double hoursInDay = -1.0;
 		///<summary>return hours in a day</summary>
-		public static double HoursInDay()
+		public static double HoursInDay
 		{
-			if(FlightGlobals.ready || IsEditor())
+			get
 			{
-				var homeBody = FlightGlobals.GetHomeBody();
-				return Math.Round(homeBody.rotationPeriod / 3600, 0);
+				if (hoursInDay == -1.0)
+				{
+					if (FlightGlobals.ready || IsEditor())
+					{
+						var homeBody = FlightGlobals.GetHomeBody();
+						hoursInDay = Math.Round(homeBody.rotationPeriod / 3600, 0);
+					}
+					else
+					{
+						return GameSettings.KERBIN_TIME ? 6.0 : 24.0;
+					}
+
+				}
+				return hoursInDay;
 			}
-			return GameSettings.KERBIN_TIME ? 6.0 : 24.0;
 		}
 
+		private static double daysInYear = -1.0;
 		///<summary>return year length</summary>
-		public static double DaysInYear()
+		public static double DaysInYear
 		{
-			if (FlightGlobals.ready || IsEditor())
+			get
 			{
-				var homeBody = FlightGlobals.GetHomeBody();
-				return Math.Floor(homeBody.orbit.period / (HoursInDay() * 60.0 * 60.0));
+				if (daysInYear == -1.0)
+				{
+					if (FlightGlobals.ready || IsEditor())
+					{
+						var homeBody = FlightGlobals.GetHomeBody();
+						daysInYear = Math.Floor(homeBody.orbit.period / (HoursInDay * 60.0 * 60.0));
+					}
+					else
+					{
+						return GameSettings.KERBIN_TIME ? 426.0 : 365.0;
+					}
+				}
+				return daysInYear;
 			}
-			return GameSettings.KERBIN_TIME ? 426.0 : 365.0;
 		}
+
 
 		///<summary>stop time warping</summary>
 		public static void StopWarp(double maxSpeed = 0)
@@ -302,8 +327,8 @@ namespace KERBALISM
 			double t = Planetarium.GetUniversalTime();
 			const double len_min = 60.0;
 			const double len_hour = len_min * 60.0;
-			double len_day = len_hour * Lib.HoursInDay();
-			double len_year = len_day * Lib.DaysInYear();
+			double len_day = len_hour * Lib.HoursInDay;
+			double len_year = len_day * Lib.DaysInYear;
 
 			double year = Math.Floor(t / len_year);
 			t -= year * len_year;
@@ -694,9 +719,9 @@ namespace KERBALISM
 			if (rate >= 0.01) return BuildString(rate.ToString(precision), "/m");
 			rate *= 60.0; // per-hour
 			if (rate >= 0.01) return BuildString(rate.ToString(precision), "/h");
-			rate *= HoursInDay();  // per-day
+			rate *= HoursInDay;  // per-day
 			if (rate >= 0.01) return BuildString(rate.ToString(precision), "/d");
-			return BuildString((rate * DaysInYear()).ToString(precision), "/y");
+			return BuildString((rate * DaysInYear).ToString(precision), "/y");
 		}
 
 		///<summary> Pretty-print a duration (duration is in seconds, must be positive) </summary>
@@ -707,8 +732,8 @@ namespace KERBALISM
 				if (d <= double.Epsilon) return "none";
 				if (double.IsInfinity(d) || double.IsNaN(d)) return "perpetual";
 
-				int hours_in_day = (int)HoursInDay();
-				int days_in_year = (int)DaysInYear();
+				int hours_in_day = (int)HoursInDay;
+				int days_in_year = (int)DaysInYear;
 
 				int duration_seconds = (int)d;
 
@@ -739,8 +764,8 @@ namespace KERBALISM
 				if (d <= double.Epsilon) return string.Empty;
 				if (double.IsInfinity(d) || double.IsNaN(d)) return "never";
 
-				double hours_in_day = HoursInDay();
-				double days_in_year = DaysInYear();
+				double hours_in_day = HoursInDay;
+				double days_in_year = DaysInYear;
 
 				int duration = (int)d;
 				int seconds = duration % 60;

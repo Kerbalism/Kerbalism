@@ -484,21 +484,6 @@ namespace KERBALISM
 			}
 		}
 
-		void Problem_humidity(VesselData vd, ref List<Texture2D> icons, ref List<string> tooltips)
-		{
-			string humidity_str = Lib.BuildString("Humidity level in internal atmosphere: <b>", Lib.HumanReadablePerc(vd.Humidity), "</b>");
-			if (vd.Humidity >= Settings.HumidityThreshold)
-			{
-				icons.Add(Textures.recycle_red);
-				tooltips.Add(humidity_str);
-			}
-			else if (vd.Humidity > Settings.HumidityThreshold / 1.25)
-			{
-				icons.Add(Textures.recycle_yellow);
-				tooltips.Add(humidity_str);
-			}
-		}
-
 		void Problem_storm(Vessel v, ref List<Texture2D> icons, ref List<string> tooltips)
 		{
 			if (Storm.Incoming(v))
@@ -532,7 +517,6 @@ namespace KERBALISM
 			if (crew.Count > 0 && Features.Radiation) Problem_radiation(vd, ref problem_icons, ref problem_tooltips);
 			Problem_greenhouses(v, vd.Greenhouses, ref problem_icons, ref problem_tooltips);
 			if (Features.Poisoning) Problem_poisoning(vd, ref problem_icons, ref problem_tooltips);
-			if (Features.Humidity) Problem_humidity(vd, ref problem_icons, ref problem_tooltips);
 
 			// choose problem icon
 			const UInt64 problem_icon_time = 3;

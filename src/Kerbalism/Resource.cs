@@ -873,8 +873,8 @@ namespace KERBALISM
 
 				// Manned is priority?
 				// If resource amount is less then maxAmount in manned habitat and it's flagged to equalize, define as priority
-				// Using Atmosphere, N2, O2 as Priority trigger (we don't want to use CO2 or Humidity as a trigger)
-				if (resourceName[i] != "WasteAtmosphere" && resourceName[i] != "MoistAtmosphere" && equalize)
+				// Using Atmosphere, N2, O2 as Priority trigger (we don't want to use CO2 as a trigger)
+				if (resourceName[i] != "WasteAtmosphere" && equalize)
 				{
 					mannedisPriority[i] = maxP[i] - totalP[i] > 0;
 				}
@@ -1007,7 +1007,7 @@ namespace KERBALISM
 		const double equalize_speed = 0.01;  // equalization/venting mutiple speed per-second, in proportion to amount
 
 		// Resources to equalize
-		public static string[] resourceName = new string[3] { "Atmosphere", "WasteAtmosphere", "MoistAtmosphere" };
+		public static string[] resourceName = new string[2] { "Atmosphere", "WasteAtmosphere" };
 
 		// Resources to equalize
 		public static double precision = 0.00001;

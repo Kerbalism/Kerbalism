@@ -63,7 +63,6 @@ namespace KERBALISM
 			if (Features.Comfort) Inject(root, "Feature", "Comfort");
 			if (Features.Poisoning) Inject(root, "Feature", "Poisoning");
 			if (Features.Pressure) Inject(root, "Feature", "Pressure");
-			if (Features.Humidity) Inject(root, "Feature", "Humidity");
 			if (Features.Habitat) Inject(root, "Feature", "Habitat");
 			if (Features.Supplies) Inject(root, "Feature", "Supplies");
 

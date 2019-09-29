@@ -55,7 +55,7 @@ namespace KERBALISM.Planner
 			// process all rules
 			foreach (Rule r in Profile.rules)
 			{
-				if ((r.input.Length > 0 || (r.monitor && r.output.Length > 0)) && r.rate > 0.0)
+				if (r.input.Length > 0 && r.rate > 0.0)
 				{
 					Process_rule(parts, r, env, va);
 				}
@@ -229,20 +229,11 @@ namespace KERBALISM.Planner
 			}
 			else if (rate > double.Epsilon)
 			{
-				// simulate recipe if output_only is false
-				if (!r.monitor)
-				{
-					// - rules always dump excess overboard (because it is waste)
-					SimulatedRecipe recipe = new SimulatedRecipe(p, r.name);
-					recipe.Input(r.input, rate * k);
-					recipe.Output(r.output, rate * k * r.ratio, true);
-					recipes.Add(recipe);
-				}
-				// only simulate output
-				else
-				{
-					Resource(r.output).Produce(rate * k, r.name);
-				}
+				// - rules always dump excess overboard (because it is waste)
+				SimulatedRecipe recipe = new SimulatedRecipe(p, r.name);
+				recipe.Input(r.input, rate * k);
+				recipe.Output(r.output, rate * k * r.ratio, true);
+				recipes.Add(recipe);
 			}
 		}
 

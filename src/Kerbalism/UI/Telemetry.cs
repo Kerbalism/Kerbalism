@@ -105,7 +105,6 @@ namespace KERBALISM
 
 			if (!v.isEVA)
 			{
-				if (Features.Humidity) p.AddContent("humidity", Lib.Color(vd.Humidity > Settings.HumidityThreshold, Lib.HumanReadablePerc(vd.Humidity, "F2"), Lib.KColor.Yellow));
 				if (Features.Pressure) p.AddContent("pressure", Lib.HumanReadablePressure(vd.Pressure * Sim.PressureAtSeaLevel()));
 				if (Features.Shielding) p.AddContent("shielding", Habitat.Shielding_to_string(vd.Shielding));
 				if (Features.LivingSpace) p.AddContent("living space", Habitat.Living_space_to_string(vd.LivingSpace));

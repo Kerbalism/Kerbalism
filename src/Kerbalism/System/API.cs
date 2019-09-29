@@ -395,14 +395,6 @@ namespace KERBALISM
 			return v.KerbalismData().Poisoning;
 		}
 
-		// return level of co2 of internal habitat
-		public static double Humidity(Vessel v)
-		{
-			if (!Features.Humidity)
-				return 0.0;
-			return v.KerbalismData().Humidity;
-		}
-
 		// return proportion of radiation blocked by shielding
 		public static double Shielding(Vessel v)
 		{

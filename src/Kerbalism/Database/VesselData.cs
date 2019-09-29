@@ -316,9 +316,6 @@ namespace KERBALISM
 		/// <summary>waste atmosphere amount versus total atmosphere amount</summary>
 		public double Poisoning => poisoning; double poisoning;
 
-		/// <summary>moist atmosphere amount</summary>
-		public double Humidity => humidity; double humidity;
-
 		/// <summary>shielding level</summary>
 		public double Shielding => shielding; double shielding;
 
@@ -583,7 +580,6 @@ namespace KERBALISM
 
 			evas = (uint)(Math.Max(0, ResourceCache.GetResource(Vessel, "Nitrogen").Amount - 330) / PreferencesLifeSupport.Instance.evaAtmoLoss);
 			poisoning = Habitat.Poisoning(Vessel);
-			humidity = Habitat.Humidity(Vessel);
 			shielding = Habitat.Shielding(Vessel);
 			livingSpace = Habitat.Living_space(Vessel);
 			volumePerCrew = Habitat.Volume_per_crew(Vessel);

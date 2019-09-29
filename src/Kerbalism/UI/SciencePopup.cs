@@ -131,7 +131,8 @@ namespace KERBALISM
 
 			// right panel : experiment status
 			rightPanel.Add(new KsmGuiHeader("STATUS"));
-			statusBox = new KsmGuiTextBox("");
+			statusBox = new KsmGuiTextBox("_");
+			statusBox.SetLayoutElement(false, false, 230);
 			statusBox.SetUpdateAction(StatusUpdate);
 			rightPanel.Add(statusBox);
 
@@ -141,6 +142,7 @@ namespace KERBALISM
 				requirementsHeader = new KsmGuiHeader("REQUIREMENTS");
 				rightPanel.Add(requirementsHeader);
 				requirementsBox = new KsmGuiTextBox("_");
+				requirementsBox.SetLayoutElement(false, false, 230);
 				requirementsBox.SetUpdateAction(RequirementsUpdate);
 				rightPanel.Add(requirementsBox);
 			}

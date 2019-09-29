@@ -82,9 +82,6 @@ namespace KERBALISM.Planner
 			// determine if the vessel has scrubbing capabilities
 			scrubbed = sim.Resource("WasteAtmosphere").consumed > 0.0 || env.breathable;
 
-			// determine if the vessel has humidity control capabilities
-			humid = sim.Resource("MoistAtmosphere").consumed > 0.0 || env.breathable;
-
 			// scan the parts
 			double max_pressure = 1.0;
 			foreach (Part p in parts)
@@ -184,7 +181,7 @@ namespace KERBALISM.Planner
 			redundancy = new Dictionary<string, int>();
 
 			// scan the parts
-			double year_time = 60.0 * 60.0 * Lib.HoursInDay() * Lib.DaysInYear();
+			double year_time = 60.0 * 60.0 * Lib.HoursInDay * Lib.DaysInYear;
 			foreach (Part p in parts)
 			{
 				// for each module
