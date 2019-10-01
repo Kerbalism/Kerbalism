@@ -11,16 +11,20 @@ namespace KERBALISM
 
 		public AntennaDevice(PartModule module, string ModuleName) : base(module)
 		{
+			this.ModuleName = ModuleName;
 			if (ModuleName == "ModuleDataTransmitter")
 			{
 				// do we have an animation
 				animDefault = module.part.FindModuleImplementing<ModuleDeployableAntenna>();
 				specialCase = module.part.FindModuleImplementing<ModuleAnimateGeneric>();
 				if (animDefault != null) this.ModuleName = "ModuleDeployableAntenna";
-				else if (specialCase != null) this.ModuleName = "ModuleAnimateGeneric";
-				else this.ModuleName = "ModuleDataTransmitter";
+				else if (specialCase != null && !module.part.name.Contains("Lander"))
+				{
+					// the Mk-2 lander can has doors that can be opened via a ModuleAnimateGeneric
+					// and would show up as "antenna" in automation.
+					this.ModuleName = "ModuleAnimateGeneric";
+				}
 			}
-			else this.ModuleName = ModuleName;
 		}
 
 		public override string Name => "antenna";
@@ -110,23 +114,21 @@ namespace KERBALISM
 		public ProtoAntennaDevice(PartModule prefab, ProtoPartSnapshot protoPart, ProtoPartModuleSnapshot protoModule, string ModuleName)
 			: base(prefab, protoPart, protoModule)
 		{
-
 			if (ModuleName == "ModuleDataTransmitter")
 			{
+				this.ModuleName = "ModuleDataTransmitter";
+				this.antenna = protoModule;
+
 				if (protoPart.FindModule("ModuleDeployableAntenna") != null)
 				{
 					this.ModuleName = "ModuleDeployableAntenna";
 					this.antenna = protoPart.FindModule("ModuleDeployableAntenna");
 				}
-				else if (protoPart.FindModule("ModuleAnimateGeneric") != null)
+				else if (protoPart.FindModule("ModuleAnimateGeneric") != null
+					&& !protoPart.partName.Contains("Lander")) // see above
 				{
 					this.ModuleName = "ModuleAnimateGeneric";
 					this.antenna = protoPart.FindModule("ModuleAnimateGeneric");
-				}
-				else
-				{
-					this.ModuleName = "ModuleDataTransmitter";
-					this.antenna = protoModule;
 				}
 			}
 			else
