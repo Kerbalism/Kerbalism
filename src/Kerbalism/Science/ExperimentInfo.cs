@@ -140,7 +140,7 @@ namespace KERBALISM
 			Title = this.stockDef != null ? this.stockDef.experimentTitle : Lib.UppercaseFirst(ExperimentId);
 
 #if KSP15_16
-			DataSize = expdef.baseValue * expdef.dataScale;
+			DataSize = this.stockDef.baseValue * this.stockDef.dataScale;
 #else
 			// A new bool field was added in 1.7 for serenity : applyScienceScale
 			// if not specified, the default is `true`, which is the case for all non-serenity science defs
