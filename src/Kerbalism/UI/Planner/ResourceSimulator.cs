@@ -372,7 +372,7 @@ namespace KERBALISM.Planner
 		{
 			if (exp.Running)
 			{
-				Resource("ElectricCharge").Consume(exp.ec_rate, exp.sample_mass < float.Epsilon ? "sensor" : "experiment");
+				Resource("ElectricCharge").Consume(exp.ec_rate, exp.ExpInfo.SampleMass == 0.0 ? "sensor" : "experiment");
 			}
 		}
 

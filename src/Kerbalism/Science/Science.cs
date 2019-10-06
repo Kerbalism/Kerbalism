@@ -18,11 +18,8 @@ namespace KERBALISM
 		// this is needed because of floating point imprecisions in the in-flight science count (due to a gazillion add of very small values)
 		public const float scienceLeftForSubjectCompleted = 0.1f;
 
-		// experiment info cache
-		static readonly Dictionary<string, ExperimentInfo> experiments = new Dictionary<string, ExperimentInfo>();
-		static readonly Dictionary<string, double> sampleMasses = new Dictionary<string, double>();
+		// utility things
 		static readonly List<XmitFile> xmitFiles = new List<XmitFile>();
-
 		private static StringBuilder subjectSB = new StringBuilder();
 
 		private class XmitFile
@@ -46,19 +43,16 @@ namespace KERBALISM
 		// pseudo-ctor
 		public static void Init()
 		{
-			// make the science dialog invisible, just once
-			if (Features.Science)
-			{
-				GameObject prefab = AssetBase.GetPrefab("ScienceResultsDialog");
-				if (Settings.ScienceDialog)
-				{
-					prefab.gameObject.AddOrGetComponent<Hijacker>();
-				}
-				else
-				{
-					prefab.gameObject.AddOrGetComponent<MiniHijacker>();
-				}
-			}
+			
+			if (!Features.Science)
+				return;
+
+			// Add our hijacker to the science dialog prefab
+			GameObject prefab = AssetBase.GetPrefab("ScienceResultsDialog");
+			if (Settings.ScienceDialog)
+				prefab.gameObject.AddOrGetComponent<Hijacker>();
+			else
+				prefab.gameObject.AddOrGetComponent<MiniHijacker>();
 		}
 
 		// consume EC for transmission, and transmit science data
@@ -119,10 +113,10 @@ namespace KERBALISM
 				xmitFile.file.size -= transmitted;
 
 				// remove science collected (ignoring final science value clamped to subject completion)
-				xmitFile.file.expInfo.RemoveScienceCollectedInFlight(xmitScienceValue);
+				xmitFile.file.subjectData.RemoveScienceCollectedInFlight(xmitScienceValue);
 
 				// fire subject completed events
-				int timesCompleted = xmitFile.file.expInfo.UpdateSubjectCompletion(xmitScienceValue);
+				int timesCompleted = xmitFile.file.subjectData.UpdateSubjectCompletion(xmitScienceValue);
 				if (timesCompleted > 0)
 					SubjectXmitCompleted(xmitFile.file, timesCompleted, v);
 
@@ -139,7 +133,7 @@ namespace KERBALISM
 				}
 
 				// clamp science value to subject max value
-				xmitScienceValue = Math.Min(xmitScienceValue, xmitFile.file.expInfo.SubjectScienceRemainingToRetrieve);
+				xmitScienceValue = Math.Min(xmitScienceValue, xmitFile.file.subjectData.ScienceRemainingToRetrieve);
 
 				if (xmitScienceValue > 0.0)
 				{
@@ -147,7 +141,7 @@ namespace KERBALISM
 					scienceCredited += xmitScienceValue;
 
 					// credit the subject
-					AddScienceToRnDSubject(xmitFile.file.expInfo.StockSubject, xmitScienceValue);
+					xmitFile.file.subjectData.AddScienceToRnDSubject(xmitScienceValue);
 				}
 			}
 
@@ -160,11 +154,11 @@ namespace KERBALISM
 			// Add science points, but wait until we have at least 0.1 points to add because AddScience is VERY slow
 			// We don't use "TransactionReasons.ScienceTransmission" because AddScience fire multiple events not meant to be fired continuously
 			// this avoid many side issues (ex : chatterer transmit sound playing continously, strategia "+0.0 science" popup...)
-			DB.uncreditedScience += scienceCredited;
-			if (DB.uncreditedScience > 0.1)
+			ScienceDB.uncreditedScience += scienceCredited;
+			if (ScienceDB.uncreditedScience > 0.1)
 			{
-				ResearchAndDevelopment.Instance.AddScience((float)DB.uncreditedScience, TransactionReasons.None);
-				DB.uncreditedScience = 0.0;
+				ResearchAndDevelopment.Instance.AddScience((float)ScienceDB.uncreditedScience, TransactionReasons.None);
+				ScienceDB.uncreditedScience = 0.0;
 			}
 
 			UnityEngine.Profiling.Profiler.EndSample();
@@ -176,7 +170,7 @@ namespace KERBALISM
 			Drive warpCache = Cache.WarpCache(v);
 
 			xmitFiles.Clear();
-			List<string> filesToRemove = new List<string>();
+			List<SubjectData> filesToRemove = new List<SubjectData>();
 
 			foreach (var drive in Drive.GetDrives(v, true))
 			{
@@ -187,21 +181,21 @@ namespace KERBALISM
 
 					// delete empty files that aren't being transmitted
 					// note : this won't work in case the same subject is split over multiple files (on different drives)
-					if (f.size <= 0.0 && (!warpCache.files.ContainsKey(f.subject_id) || warpCache.files[f.subject_id].size == 0.0))
+					if (f.size <= 0.0 && (!warpCache.files.ContainsKey(f.subjectData) || warpCache.files[f.subjectData].size == 0.0))
 					{
-						filesToRemove.Add(f.subject_id);
+						filesToRemove.Add(f.subjectData);
 						continue;
 					}
 
 					// get files tagged for transmit
-					if (drive.GetFileSend(f.subject_id))
+					if (drive.GetFileSend(f.subjectData.Id))
 					{
-						xmitFiles.Add(new XmitFile(f, drive, f.expInfo.SubjectSciencePerMB, false));
+						xmitFiles.Add(new XmitFile(f, drive, f.subjectData.SciencePerMB, false));
 					}
 				}
 
 				// delete found empty files from the drive
-				foreach (string fileToRemove in filesToRemove)
+				foreach (SubjectData fileToRemove in filesToRemove)
 					drive.files.Remove(fileToRemove);
 
 				filesToRemove.Clear();
@@ -222,26 +216,22 @@ namespace KERBALISM
 
 				// find the file on a "real" drive that correspond to this warpcache file
 				// this allow to use the real file for displaying transmit info and saving state (filemanager, monitor, vesseldata...)
-				int driveFileIndex = xmitFiles.FindIndex(df => df.file.subject_id == f.subject_id);
+				int driveFileIndex = xmitFiles.FindIndex(df => df.file.subjectData == f.subjectData);
 				if (driveFileIndex >= 0)
-					xmitFiles.Add(new XmitFile(f, warpCache, f.expInfo.SubjectSciencePerMB, true, xmitFiles[driveFileIndex].file));
+					xmitFiles.Add(new XmitFile(f, warpCache, f.subjectData.SciencePerMB, true, xmitFiles[driveFileIndex].file));
 				else
-					xmitFiles.Add(new XmitFile(f, warpCache, f.expInfo.SubjectSciencePerMB, true)); // should not be happening, but better safe than sorry
+					xmitFiles.Add(new XmitFile(f, warpCache, f.subjectData.SciencePerMB, true)); // should not be happening, but better safe than sorry
 
 			}
 			UnityEngine.Profiling.Profiler.EndSample();
 		}
 
-		public static void AddScienceToRnDSubject(ScienceSubject stockSubject, double scienceValue)
-		{
-			stockSubject.science += (float)scienceValue;
-			stockSubject.scientificValue = ResearchAndDevelopment.GetSubjectValue(stockSubject.science, stockSubject);
-		}
+
 
 		private static void SubjectXmitCompleted(File file, int timesCompleted, Vessel v)
 		{
 			// fire science transmission game event. This is used by stock contracts and a few other things.
-			GameEvents.OnScienceRecieved.Fire(timesCompleted == 1 ? file.expInfo.SubjectScienceMaxValue : 0f, file.expInfo.StockSubject, v.protoVessel, false);
+			GameEvents.OnScienceRecieved.Fire(timesCompleted == 1 ? (float)file.subjectData.ScienceMaxValue : 0f, file.subjectData.RnDSubject, v.protoVessel, false);
 
 			// fire our API event
 			// Note (GOT) : disabled, nobody is using it and i'm not sure what is the added value compared to the stock event,
@@ -264,7 +254,11 @@ namespace KERBALISM
 				subjectResultText = file.resultText;
 			}
 			subjectResultText = Lib.WordWrapAtLength(subjectResultText, 70);
-			Message.Post(Lib.BuildString(file.expInfo.SubjectName, " transmitted\n", timesCompleted == 1 ? Lib.HumanReadableScience(file.expInfo.SubjectScienceMaxValue, false) : Lib.Color("no science gain : we already had this data", Lib.KColor.Orange, true)), subjectResultText);
+			Message.Post(Lib.BuildString(
+				file.subjectData.FullTitle,
+				" transmitted\n",
+				timesCompleted == 1 ? Lib.HumanReadableScience(file.subjectData.ScienceMaxValue, false) : Lib.Color("no science gain : we already had this data", Lib.Kolor.Orange, true)),
+				subjectResultText);
 		}
 
 		// return module acting as container of an experiment
@@ -280,94 +274,6 @@ namespace KERBALISM
 			// if none was found, default to the first module implementing the science data container interface
 			// - this support third-party modules that implement IScienceDataContainer, but don't derive from ModuleScienceExperiment
 			return p.FindModuleImplementing<IScienceDataContainer>();
-		}
-
-
-		// return info about an experiment
-		public static ExperimentInfo Experiment(string subject_id)
-		{
-			ExperimentInfo info;
-			if (!experiments.TryGetValue(subject_id, out info))
-			{
-				info = new ExperimentInfo(subject_id);
-				experiments.Add(subject_id, info);
-			}
-			return info;
-		}
-
-		// get science collected in flight for a subject, but avoid creating the ExperimentInfo if there is none
-		public static double ScienceCollectedInFlight(string subject_id)
-		{
-			if (experiments.ContainsKey(subject_id))
-				return experiments[subject_id].SubjectScienceCollectedInFlight;
-			return 0.0;
-		}
-
-		public static IEnumerable<ExperimentInfo> GetExperimentInfos()
-		{
-			return experiments.Values;
-		}
-
-		public static void PurgeExperimentInfos()
-		{
-			experiments.Clear();
-		}
-
-
-		/// <summary>
-		/// return the subject_id for the given experiment and situation, and the corresponding ExperimentInfo.
-		/// if the subject is not valid, the ExperimentInfo of the experiment will be returned, and the return value will be false
-		/// </summary>
-		public static bool GetSubjectId(string experiment_id, Vessel v, ExperimentSituation sit, out string subject_id, out ExperimentInfo expInfo)
-		{
-			subjectSB.Length = 0;
-			subjectSB.Append(experiment_id);
-			subjectSB.Append('@');
-			subjectSB.Append(v.mainBody.name);
-			subjectSB.Append(sit.ToString());
-
-			// get the info for the experiment
-			expInfo = Experiment(experiment_id);
-
-			if (sit.BiomeIsRelevant(expInfo))
-				subjectSB.Append(ScienceUtil.GetExperimentBiome(v.mainBody, v.latitude, v.longitude));
-
-			// get the subject id
-			subject_id = subjectSB.ToString();
-
-			// if the subject is valid (according to the situation/biome mask of the experiment),
-			// set the ExperimentInfo to the subject
-			if (sit.IsAvailable(expInfo))
-			{
-				expInfo = Experiment(subject_id);
-				return true;
-			}
-
-			// else return with the experimentInfo of the experiment (non-subject specific)
-			return false;
-		}
-
-		/// <summary>
-		/// return the subject_id for the given experiment and situation
-		/// </summary>
-		public static string GetSubjectId(string experiment_id, Vessel v, ExperimentSituation sit)
-		{
-			subjectSB.Length = 0;
-			subjectSB.Append(experiment_id);
-			subjectSB.Append('@');
-			subjectSB.Append(v.mainBody.name);
-			subjectSB.Append(sit.ToString());
-
-			if (sit.BiomeIsRelevant(Experiment(experiment_id)))
-				subjectSB.Append(ScienceUtil.GetExperimentBiome(v.mainBody, v.latitude, v.longitude));
-
-			// get the subject id
-			return subjectSB.ToString();
-		}
-
-		public static ExperimentSituation GetExperimentSituation(Vessel v)
-		{
-			return new ExperimentSituation(v);
 		}
 
 		/// <summary>
@@ -391,37 +297,6 @@ namespace KERBALISM
 			}
 			return result;
 		}
-
-		public static void RegisterSampleMass(string experiment_id, double sampleMass)
-		{
-			// get experiment id out of subject id
-			int i = experiment_id.IndexOf('@');
-			var id = i > 0 ? experiment_id.Substring(0, i) : experiment_id;
-
-			if (sampleMasses.ContainsKey(id))
-			{
-				if (Math.Abs(sampleMasses[id] - sampleMass) > double.Epsilon)
-					Lib.Log("Science Warning: different sample masses for Experiment " + id + " defined.");
-			}
-			else
-			{
-				sampleMasses.Add(id, sampleMass);
-				Lib.Log("Science: registered sample mass for " + id + ": " + sampleMass.ToString("F3"));
-			}
-		}
-
-		public static double GetSampleMass(string experiment_id)
-		{
-			// get experiment id out of subject id
-			int i = experiment_id.IndexOf('@');
-			var id = i > 0 ? experiment_id.Substring(0, i) : experiment_id;
-
-			if (!sampleMasses.ContainsKey(id)) return 0;
-			return sampleMasses[id];
-		}
-
-
-
 	}
 
 } // KERBALISM

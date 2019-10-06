@@ -25,7 +25,7 @@ namespace KERBALISM
 			if (!vd.IsValid) return;
 
 			// set metadata
-			p.Title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(20)), " ", Lib.Color("TELEMETRY", Lib.KColor.LightGrey)));
+			p.Title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(20)), " ", Lib.Color("TELEMETRY", Lib.Kolor.LightGrey)));
 			p.Width(Styles.ScaleWidthFloat(355.0f));
 			p.paneltype = Panel.PanelType.telemetry;
 
@@ -79,7 +79,7 @@ namespace KERBALISM
 			if (vd.SolarPanelsAverageExposure >= 0.0)
 			{
 				var exposureString = vd.SolarPanelsAverageExposure.ToString("P1");
-				if (vd.SolarPanelsAverageExposure < 0.2) exposureString = Lib.Color(exposureString, Lib.KColor.Orange);
+				if (vd.SolarPanelsAverageExposure < 0.2) exposureString = Lib.Color(exposureString, Lib.Kolor.Orange);
 				p.AddContent("solar panels average exposure", exposureString, "<b>Exposure ignoring bodies occlusion</b>\n<i>Won't change on unloaded vessels\nMake sure to optimize it before switching</i>");
 			}
 
@@ -100,7 +100,7 @@ namespace KERBALISM
 
 			// render panel, add some content based on enabled features
 			p.AddSection("HABITAT");
-			if (Features.Poisoning) p.AddContent("co2 level", Lib.Color(vd.Poisoning > Settings.PoisoningThreshold, Lib.HumanReadablePerc(vd.Poisoning, "F2"), Lib.KColor.Yellow));
+			if (Features.Poisoning) p.AddContent("co2 level", Lib.Color(vd.Poisoning > Settings.PoisoningThreshold, Lib.HumanReadablePerc(vd.Poisoning, "F2"), Lib.Kolor.Yellow));
 			if (Features.Radiation && v.isEVA) p.AddContent("radiation", Lib.HumanReadableRadiation(vd.EnvHabitatRadiation));
 
 			if (!v.isEVA)
@@ -129,7 +129,7 @@ namespace KERBALISM
 				for (int i = 0; i < vd.filesTransmitted.Count; i++)
 				{
 					transmitRate += vd.filesTransmitted[i].transmitRate;
-					tooltip.Append(string.Format("{0,-15}\t{1}", Lib.HumanReadableDataRate(vd.filesTransmitted[i].transmitRate), Lib.Ellipsis(vd.filesTransmitted[i].expInfo.SubjectName, 40u)));
+					tooltip.Append(string.Format("{0,-15}\t{1}", Lib.HumanReadableDataRate(vd.filesTransmitted[i].transmitRate), Lib.Ellipsis(vd.filesTransmitted[i].subjectData.FullTitle, 40u)));
 					if (i < vd.filesTransmitted.Count - 1) tooltip.Append("\n");
 				}
 				
@@ -170,8 +170,8 @@ namespace KERBALISM
 				if (res.AverageRate != 0.0)
 				{
 					sb.Append(Lib.Color(res.AverageRate > 0.0,
-						Lib.BuildString("+", Lib.HumanReadableRate(Math.Abs(res.AverageRate))), Lib.KColor.PosRate,
-						Lib.BuildString("-", Lib.HumanReadableRate(Math.Abs(res.AverageRate))), Lib.KColor.NegRate,
+						Lib.BuildString("+", Lib.HumanReadableRate(Math.Abs(res.AverageRate))), Lib.Kolor.PosRate,
+						Lib.BuildString("-", Lib.HumanReadableRate(Math.Abs(res.AverageRate))), Lib.Kolor.NegRate,
 						true));
 				}
 				else
@@ -199,8 +199,8 @@ namespace KERBALISM
 					{
 						sb.Append("\n");
 						sb.Append(Lib.Color(rb.rate > 0.0,
-							Lib.BuildString("+", Lib.HumanReadableRate(Math.Abs(rb.rate)), "   "), Lib.KColor.PosRate, // spaces to mitigate alignement issues
-							Lib.BuildString("-", Lib.HumanReadableRate(Math.Abs(rb.rate)), "   "), Lib.KColor.NegRate, // spaces to mitigate alignement issues
+							Lib.BuildString("+", Lib.HumanReadableRate(Math.Abs(rb.rate)), "   "), Lib.Kolor.PosRate, // spaces to mitigate alignement issues
+							Lib.BuildString("-", Lib.HumanReadableRate(Math.Abs(rb.rate)), "   "), Lib.Kolor.NegRate, // spaces to mitigate alignement issues
 							true)); 
 						sb.Append("\t");
 						sb.Append(rb.name);
@@ -262,7 +262,7 @@ namespace KERBALISM
 				string name = kerbal.name.ToLower().Replace(" kerman", string.Empty);
 
 				// render selectable title
-				p.AddContent(Lib.Ellipsis(name, Styles.ScaleStringLength(30)), kd.disabled ? Lib.Color("HYBERNATED", Lib.KColor.Cyan) : string.Empty);
+				p.AddContent(Lib.Ellipsis(name, Styles.ScaleStringLength(30)), kd.disabled ? Lib.Color("HYBERNATED", Lib.Kolor.Cyan) : string.Empty);
 				p.AddRightIcon(health_severity == 0 ? Textures.health_white : health_severity == 1 ? Textures.health_yellow : Textures.health_red, tooltip);
 				p.AddRightIcon(stress_severity == 0 ? Textures.brain_white : stress_severity == 1 ? Textures.brain_yellow : Textures.brain_red, tooltip);
 			}
@@ -283,9 +283,9 @@ namespace KERBALISM
 
 				// state string
 				string state = greenhouse.issue.Length > 0
-				  ? Lib.Color(greenhouse.issue, Lib.KColor.Yellow)
+				  ? Lib.Color(greenhouse.issue, Lib.Kolor.Yellow)
 				  : greenhouse.growth >= 0.99
-				  ? Lib.Color("ready to harvest", Lib.KColor.Green)
+				  ? Lib.Color("ready to harvest", Lib.Kolor.Green)
 				  : "growing";
 
 				// tooltip with summary

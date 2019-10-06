@@ -430,138 +430,145 @@ namespace KERBALISM
 			return vi.Connection.linked;
 		}
 
-		public static String VesselConnectionTransmitting(Vessel v)
+		public static int VesselConnectionTransmitting(Vessel v)
 		{
 			var vi = v.KerbalismData();
-			if (!vi.IsValid) return string.Empty;
-			return vi.filesTransmitted.Count > 0 ? vi.filesTransmitted[0].subject_id : string.Empty;
+			if (!vi.IsValid) return 0;
+			return vi.filesTransmitted.Count;
 		}
 
 		// --- SCIENCE --------------------------------------------------------------
 
-		// return size of a file in a vessel drive
-		public static double FileSize(Vessel v, string subject_id)
-		{
-			if (!v.KerbalismData().IsValid) return 0.0;
+/*
 
-			foreach (var d in Drive.GetDrives(v, true))
+
+	// return size of a file in a vessel drive
+	public static double FileSize(Vessel v, string subject_id)
+	{
+		if (!v.KerbalismData().IsValid) return 0.0;
+
+		foreach (var d in Drive.GetDrives(v, true))
+		{
+			if (d.files.ContainsKey(subject_id))
+				return d.files[subject_id].size;
+		}
+
+		return 0.0;
+	}
+
+	// return size of a sample in a vessel drive
+	public static double SampleSize(Vessel v, string subject_id)
+	{
+		if (!v.KerbalismData().IsValid) return 0.0;
+		foreach (var d in Drive.GetDrives(v, true))
+		{
+			if (d.samples.ContainsKey(subject_id))
+				return d.samples[subject_id].size;
+		}
+
+		return 0.0;
+	}
+
+	// store a file on a vessel
+	public static bool StoreFile(Vessel v, string subject_id, double amount)
+	{
+		if (!v.KerbalismData().IsValid) return false;
+		return Drive.FileDrive(v, amount).Record_file(subject_id, amount);
+	}
+
+	// store a sample on a vessel
+	public static bool StoreSample(Vessel v, string subject_id, double amount, double mass = 0)
+	{
+		if (!v.KerbalismData().IsValid) return false;
+		return Drive.SampleDrive(v, amount, subject_id).Record_sample(subject_id, amount, mass);
+	}
+
+	// remove a file from a vessel
+	public static void RemoveFile(Vessel v, string subject_id, double amount)
+	{
+		if (!v.KerbalismData().IsValid) return;
+		foreach (var d in Drive.GetDrives(v, true))
+			d.Delete_file(subject_id, amount);
+	}
+
+	// remove a sample from a vessel
+	public static double RemoveSample(Vessel v, string subject_id, double amount)
+	{
+		if (!v.KerbalismData().IsValid) return 0;
+		double massRemoved = 0;
+		foreach (var d in Drive.GetDrives(v, true))
+			massRemoved += d.Delete_sample(subject_id, amount);
+		return massRemoved;
+	}
+
+	public static ScienceEvent OnScienceReceived = new ScienceEvent();
+
+	public class ScienceEvent
+	{
+		//This is the list of methods that should be activated when the event fires
+		private List<Action<float, ScienceSubject, ProtoVessel, bool>> listeningMethods = new List<Action<float, ScienceSubject, ProtoVessel, bool>>();
+
+		//This adds an event to the List of listening methods
+		public void Add(Action<float, ScienceSubject, ProtoVessel, bool> method)
+		{
+			//We only add it if it isn't already added. Just in case.
+			if (!listeningMethods.Contains(method))
 			{
-				if (d.files.ContainsKey(subject_id))
-					return d.files[subject_id].size;
+				listeningMethods.Add(method);
 			}
-
-			return 0.0;
 		}
 
-		// return size of a sample in a vessel drive
-		public static double SampleSize(Vessel v, string subject_id)
+		//This removes and event from the List
+		public void Remove(Action<float, ScienceSubject, ProtoVessel, bool> method)
 		{
-			if (!v.KerbalismData().IsValid) return 0.0;
-			foreach (var d in Drive.GetDrives(v, true))
+			//We also only remove it if it's actually in the list.
+			if (listeningMethods.Contains(method))
 			{
-				if (d.samples.ContainsKey(subject_id))
-					return d.samples[subject_id].size;
+				listeningMethods.Remove(method);
 			}
-
-			return 0.0;
 		}
 
-		// store a file on a vessel
-		public static bool StoreFile(Vessel v, string subject_id, double amount)
+		//This fires the event off, activating all the listening methods.
+		public void Notify(float credits, ScienceSubject subject, ProtoVessel pv, bool subjectCompleted)
 		{
-			if (!v.KerbalismData().IsValid) return false;
-			return Drive.FileDrive(v, amount).Record_file(subject_id, amount);
-		}
-
-		// store a sample on a vessel
-		public static bool StoreSample(Vessel v, string subject_id, double amount, double mass = 0)
-		{
-			if (!v.KerbalismData().IsValid) return false;
-			return Drive.SampleDrive(v, amount, subject_id).Record_sample(subject_id, amount, mass);
-		}
-
-		// remove a file from a vessel
-		public static void RemoveFile(Vessel v, string subject_id, double amount)
-		{
-			if (!v.KerbalismData().IsValid) return;
-			foreach (var d in Drive.GetDrives(v, true))
-				d.Delete_file(subject_id, amount);
-		}
-
-		// remove a sample from a vessel
-		public static double RemoveSample(Vessel v, string subject_id, double amount)
-		{
-			if (!v.KerbalismData().IsValid) return 0;
-			double massRemoved = 0;
-			foreach (var d in Drive.GetDrives(v, true))
-				massRemoved += d.Delete_sample(subject_id, amount);
-			return massRemoved;
-		}
-
-		public static ScienceEvent OnScienceReceived = new ScienceEvent();
-
-		public class ScienceEvent
-		{
-			//This is the list of methods that should be activated when the event fires
-			private List<Action<float, ScienceSubject, ProtoVessel, bool>> listeningMethods = new List<Action<float, ScienceSubject, ProtoVessel, bool>>();
-
-			//This adds an event to the List of listening methods
-			public void Add(Action<float, ScienceSubject, ProtoVessel, bool> method)
+			//Loop through the list of listening methods and Invoke them.
+			foreach (Action<float, ScienceSubject, ProtoVessel, bool> method in listeningMethods)
 			{
-				//We only add it if it isn't already added. Just in case.
-				if (!listeningMethods.Contains(method))
+				method.Invoke(credits, subject, pv, subjectCompleted);
+			}
+		}
+	}
+
+
+
+	public class StringBoolStateChanged
+	{
+		internal List<Action<Vessel, string, bool>> receivers = new List<Action<Vessel, string, bool>>();
+		public void Add(Action<Vessel, string, bool> receiver) { if (!receivers.Contains(receiver)) receivers.Add(receiver); }
+		public void Remove(Action<Vessel, string, bool> receiver) { if (receivers.Contains(receiver)) receivers.Remove(receiver); }
+
+		public void Notify(Vessel vessel, string experiment_id, bool state)
+		{
+			foreach (Action<Vessel, string, bool> receiver in receivers)
+			{
+				try
 				{
-					listeningMethods.Add(method);
+					receiver.Invoke(vessel, experiment_id, state);
+				}
+				catch (Exception e)
+				{
+					Lib.Log("Exception in event receiver", e);
 				}
 			}
-
-			//This removes and event from the List
-			public void Remove(Action<float, ScienceSubject, ProtoVessel, bool> method)
-			{
-				//We also only remove it if it's actually in the list.
-				if (listeningMethods.Contains(method))
-				{
-					listeningMethods.Remove(method);
-				}
-			}
-
-			//This fires the event off, activating all the listening methods.
-			public void Notify(float credits, ScienceSubject subject, ProtoVessel pv, bool subjectCompleted)
-			{
-				//Loop through the list of listening methods and Invoke them.
-				foreach (Action<float, ScienceSubject, ProtoVessel, bool> method in listeningMethods)
-				{
-					method.Invoke(credits, subject, pv, subjectCompleted);
-				}
-			}
 		}
+	}
 
-		public class StringBoolStateChanged
-		{
-			internal List<Action<Vessel, string, bool>> receivers = new List<Action<Vessel, string, bool>>();
-			public void Add(Action<Vessel, string, bool> receiver) { if (!receivers.Contains(receiver)) receivers.Add(receiver); }
-			public void Remove(Action<Vessel, string, bool> receiver) { if (receivers.Contains(receiver)) receivers.Remove(receiver); }
+	public static StringBoolStateChanged OnTransmitStateChanged = new StringBoolStateChanged();
 
-			public void Notify(Vessel vessel, string experiment_id, bool state)
-			{
-				foreach (Action<Vessel, string, bool> receiver in receivers)
-				{
-					try
-					{
-						receiver.Invoke(vessel, experiment_id, state);
-					}
-					catch (Exception e)
-					{
-						Lib.Log("Exception in event receiver", e);
-					}
-				}
-			}
-		}
+	// not yet...
+	//public static StringBoolStateChanged OnExperimentStateChanged = new StringBoolStateChanged();
 
-		public static StringBoolStateChanged OnTransmitStateChanged = new StringBoolStateChanged();
-
-		// not yet...
-		//public static StringBoolStateChanged OnExperimentStateChanged = new StringBoolStateChanged();
+*/
 
 		// --- FAILURES --------------------------------------------------------------
 

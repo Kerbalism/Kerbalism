@@ -193,7 +193,7 @@ namespace KERBALISM
 				// update ui
 				if (broken)
 				{
-					Status = critical ? Lib.Color("critical failure", Lib.KColor.Red) : Lib.Color("malfunction", Lib.KColor.Yellow);
+					Status = critical ? Lib.Color("critical failure", Lib.Kolor.Red) : Lib.Color("malfunction", Lib.Kolor.Yellow);
 				}
 				else
 				{
@@ -219,7 +219,7 @@ namespace KERBALISM
 						var current = vessel.KerbalismData().EnvRadiation * 3600.0;
 						if(rated < current)
 						{
-							Status = Lib.BuildString(Status, (string.IsNullOrEmpty(Status) ? "" : ", "), Lib.Color("taking radiation damage", Lib.KColor.Orange));
+							Status = Lib.BuildString(Status, (string.IsNullOrEmpty(Status) ? "" : ", "), Lib.Color("taking radiation damage", Lib.Kolor.Orange));
 						}
 					}
 				}

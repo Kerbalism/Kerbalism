@@ -37,6 +37,9 @@ namespace KERBALISM
 				// collect and deduce all info necessary
 				MetaData meta = new MetaData(data, page.host, page.xmitDataScalar);
 
+				if (meta.subjectData == null)
+					continue;
+
 				// ignore non-collectable experiments
 				if (!meta.is_collectable)
 				{
@@ -49,17 +52,12 @@ namespace KERBALISM
 				if (!meta.is_sample)
 				{
 					Drive drive = Drive.FileDrive(meta.vessel, data.dataAmount);
-					recorded = drive.Record_file(data.subjectID, data.dataAmount, true, true);
+					recorded = drive.Record_file(meta.subjectData, data.dataAmount, true, true);
 				}
 				else
 				{
-					Drive drive = Drive.SampleDrive(meta.vessel, data.dataAmount, data.subjectID);
-
-					var experimentInfo = Science.Experiment(data.subjectID);
-					var sampleMass = Science.GetSampleMass(data.subjectID);
-					var mass = sampleMass / experimentInfo.MaxAmount * data.dataAmount;
-
-					recorded = drive.Record_sample(data.subjectID, data.dataAmount, mass, true);
+					Drive drive = Drive.SampleDrive(meta.vessel, data.dataAmount, meta.subjectData);
+					recorded = drive.Record_sample(meta.subjectData, data.dataAmount, meta.subjectData.ExpInfo.MassPerMB * data.dataAmount, true);
 				}
 
 				if (recorded)
@@ -75,14 +73,14 @@ namespace KERBALISM
 
 					// inform the user
 					Message.Post(
-						Lib.BuildString("<b>", Science.Experiment(data.subjectID).SubjectName, "</b> recorded"),
+						Lib.BuildString("<b>", meta.subjectData.FullTitle, "</b> recorded"),
 						!meta.is_rerunnable ? Localizer.Format("#KERBALISM_Science_inoperable") : string.Empty
 					);
 				}
 				else
 				{
 					Message.Post(
-						Lib.Color(Lib.BuildString(Science.Experiment(data.subjectID).SubjectName, " can not be stored"), Lib.KColor.Red),
+						Lib.Color(Lib.BuildString(meta.subjectData.FullTitle, " can not be stored"), Lib.Kolor.Red),
 						"Not enough space on hard drive"
 					);
 				}
@@ -158,6 +156,9 @@ namespace KERBALISM
 				return;
 			}
 
+			if (meta.subjectData == null)
+				return;
+
 			// if this is a sample and we are trying to send it, warn the user and do nothing else
 			if (meta.is_sample && send)
 			{
@@ -170,17 +171,12 @@ namespace KERBALISM
 			if (!meta.is_sample)
 			{
 				Drive drive = Drive.FileDrive(meta.vessel, data.dataAmount);
-				recorded = drive.Record_file(data.subjectID, data.dataAmount, true, true);
+				recorded = drive.Record_file(meta.subjectData, data.dataAmount, true, true);
 			}
 			else
 			{
-				Drive drive = Drive.SampleDrive(meta.vessel, data.dataAmount, data.subjectID);
-
-				var experimentInfo = Science.Experiment(data.subjectID);
-				var sampleMass = Science.GetSampleMass(data.subjectID);
-				var mass = sampleMass / experimentInfo.MaxAmount * data.dataAmount;
-
-				recorded = drive.Record_sample(data.subjectID, data.dataAmount, mass, true);
+				Drive drive = Drive.SampleDrive(meta.vessel, data.dataAmount, meta.subjectData);
+				recorded = drive.Record_sample(meta.subjectData, data.dataAmount, meta.subjectData.ExpInfo.MassPerMB * data.dataAmount, true);
 			}
 
 			if (recorded)
@@ -198,18 +194,16 @@ namespace KERBALISM
 				// dismiss the dialog and popups
 				Dismiss(data);
 
-				var exp = Science.Experiment(data.subjectID);
 				// inform the user
 				Message.Post(
-					Lib.BuildString("<b>", Science.Experiment(data.subjectID).SubjectName, "</b> recorded"),
+					Lib.BuildString("<b>", meta.subjectData.FullTitle, "</b> recorded"),
 					!meta.is_rerunnable ? Localizer.Format("#KERBALISM_Science_inoperable") : string.Empty
 				);
 			}
 			else
 			{
-				var exp = Science.Experiment(data.subjectID);
 				Message.Post(
-					Lib.Color(Lib.BuildString(Science.Experiment(data.subjectID).SubjectName, " can not be stored"), Lib.KColor.Red),
+					Lib.Color(Lib.BuildString(meta.subjectData.FullTitle, " can not be stored"), Lib.Kolor.Red),
 					"Not enough space on hard drive"
 				);
 			}
@@ -247,8 +241,12 @@ namespace KERBALISM
 			// get the vessel
 			vessel = part.vessel;
 
+			subjectData = ScienceDB.GetSubjectDataFromStockId(data.subjectID);
+			if (subjectData == null)
+				return;
+
 			// get the container module storing the data
-			container = Science.Container(part, Science.Experiment(data.subjectID).ExperimentId);
+			container = Science.Container(part, subjectData.ExpInfo.ExperimentId);
 
 			// get the stock experiment module storing the data (if that's the case)
 			experiment = container != null ? container as ModuleScienceExperiment : null;
@@ -273,6 +271,7 @@ namespace KERBALISM
 		public bool is_sample;                          // true if the data can't be transmitted
 		public bool is_rerunnable;                      // true if the container/experiment can collect data multiple times
 		public bool is_collectable;                     // true if data can be collected from the module / part
+		public SubjectData subjectData;
 	}
 
 

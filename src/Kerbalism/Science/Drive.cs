@@ -10,8 +10,8 @@ namespace KERBALISM
 	{
 		public Drive(string name, double dataCapacity, int sampleCapacity)
 		{
-			this.files = new Dictionary<string, File>();
-			this.samples = new Dictionary<string, Sample>();
+			this.files = new Dictionary<SubjectData, File>();
+			this.samples = new Dictionary<SubjectData, Sample>();
 			this.fileSendFlags = new Dictionary<string, bool>();
 			this.dataCapacity = dataCapacity;
 			this.sampleCapacity = sampleCapacity;
@@ -23,24 +23,53 @@ namespace KERBALISM
 		public Drive(ConfigNode node)
 		{
 			// parse science  files
-			files = new Dictionary<string, File>();
+			files = new Dictionary<SubjectData, File>();
 			if (node.HasNode("files"))
 			{
 				foreach (var file_node in node.GetNode("files").GetNodes())
 				{
 					string subject_id = DB.From_safe_key(file_node.name);
-					files.Add(subject_id, new File(subject_id, file_node));
+					File file = File.Load(subject_id, file_node);
+					if (file != null)
+					{
+						files.Add(file.subjectData, file);
+						file.subjectData.AddDataCollectedInFlight(file.size);
+					}
+					else
+					{
+						file = File.LoadOldFormat(subject_id, file_node);
+						if (file != null)
+						{
+							files.Add(file.subjectData, file);
+							file.subjectData.AddDataCollectedInFlight(file.size);
+						}
+					}
 				}
 			}
 
 			// parse science samples
-			samples = new Dictionary<string, Sample>();
+			samples = new Dictionary<SubjectData, Sample>();
 			if (node.HasNode("samples"))
 			{
 				foreach (var sample_node in node.GetNode("samples").GetNodes())
 				{
 					string subject_id = DB.From_safe_key(sample_node.name);
-					samples.Add(subject_id, new Sample(subject_id, sample_node));
+					Sample sample = Sample.Load(subject_id, sample_node);
+					if (sample != null)
+					{
+						samples.Add(sample.subjectData, sample);
+						sample.subjectData.AddDataCollectedInFlight(sample.size);
+					}
+					else
+					{
+						sample = Sample.LoadOldFormat(subject_id, sample_node);
+						if (sample != null)
+						{
+							samples.Add(sample.subjectData, sample);
+							sample.subjectData.AddDataCollectedInFlight(sample.size);
+						}
+					}
+
 				}
 			}
 
@@ -53,8 +82,8 @@ namespace KERBALISM
 			sampleCapacity = Lib.ConfigValue(node, "sampleCapacity", 1000);
 
 			fileSendFlags = new Dictionary<string, bool>();
-			var fileNames = Lib.ConfigValue(node, "sendFileNames", string.Empty);
-			foreach (var fileName in Lib.Tokenize(fileNames, ','))
+			string fileNames = Lib.ConfigValue(node, "sendFileNames", string.Empty);
+			foreach (string fileName in Lib.Tokenize(fileNames, ','))
 			{
 				Send(fileName, true);
 			}
@@ -64,16 +93,16 @@ namespace KERBALISM
 		{
 			// save science files
 			var files_node = node.AddNode("files");
-			foreach (var p in files)
+			foreach (File file in files.Values)
 			{
-				p.Value.Save(files_node.AddNode(DB.To_safe_key(p.Key)));
+				file.Save(files_node.AddNode(DB.To_safe_key(file.subjectData.Id)));
 			}
 
 			// save science samples
 			var samples_node = node.AddNode("samples");
-			foreach (var p in samples)
+			foreach (Sample	sample in samples.Values)
 			{
-				p.Value.Save(samples_node.AddNode(DB.To_safe_key(p.Key)));
+				sample.Save(samples_node.AddNode(DB.To_safe_key(sample.subjectData.Id)));
 			}
 
 			node.AddValue("name", name);
@@ -82,15 +111,15 @@ namespace KERBALISM
 			node.AddValue("sampleCapacity", sampleCapacity);
 
 			string fileNames = string.Empty;
-			foreach (var fileName in fileSendFlags.Keys)
+			foreach (string subjectId in fileSendFlags.Keys)
 			{
 				if (fileNames.Length > 0) fileNames += ",";
-				fileNames += fileName;
+				fileNames += subjectId;
 			}
 			node.AddValue("sendFileNames", fileNames);
 		}
 
-		public static double StoreFile(Vessel vessel, string subject_id, double size, bool include_private = false)
+		public static double StoreFile(Vessel vessel, SubjectData subjectData, double size, bool include_private = false)
 		{
 			if (size < double.Epsilon)
 				return 0;
@@ -104,7 +133,7 @@ namespace KERBALISM
 			{
 				var available = d.FileCapacityAvailable();
 				var chunk = Math.Min(size, available);
-				if (!d.Record_file(subject_id, chunk, true))
+				if (!d.Record_file(subjectData, chunk, true))
 					break;
 				size -= chunk;
 
@@ -116,49 +145,49 @@ namespace KERBALISM
 		}
 
 		// add science data, creating new file or incrementing existing one
-		public bool Record_file(string subject_id, double amount, bool allowImmediateTransmission = true, bool useStockCrediting = false)
+		public bool Record_file(SubjectData subjectData, double amount, bool allowImmediateTransmission = true, bool useStockCrediting = false)
 		{
 			if (dataCapacity >= 0 && FilesSize() + amount > dataCapacity)
 				return false;
 
 			// create new data or get existing one
 			File file;
-			if (!files.TryGetValue(subject_id, out file))
+			if (!files.TryGetValue(subjectData, out file))
 			{
-				file = new File(subject_id, 0.0, useStockCrediting);
-				files.Add(subject_id, file);
+				file = new File(subjectData, 0.0, useStockCrediting);
+				files.Add(subjectData, file);
 
-				if (!allowImmediateTransmission) Send(subject_id, false);
+				if (!allowImmediateTransmission) Send(subjectData.Id, false);
 			}
 
 			// increase amount of data stored in the file
 			file.size += amount;
 
 			// keep track of data collected
-			Science.Experiment(subject_id).AddDataCollectedInFlight(amount);
+			subjectData.AddDataCollectedInFlight(amount);
 
 			return true;
 		}
 
-		public void Send(string filename, bool send)
+		public void Send(string subjectId, bool send)
 		{
-			if (!fileSendFlags.ContainsKey(filename)) fileSendFlags.Add(filename, send);
-			else fileSendFlags[filename] = send;
+			if (!fileSendFlags.ContainsKey(subjectId)) fileSendFlags.Add(subjectId, send);
+			else fileSendFlags[subjectId] = send;
 		}
 
-		public bool GetFileSend(string filename)
+		public bool GetFileSend(string subjectId)
 		{
-			if (!fileSendFlags.ContainsKey(filename)) return PreferencesScience.Instance.transmitScience;
-			return fileSendFlags[filename];
+			if (!fileSendFlags.ContainsKey(subjectId)) return PreferencesScience.Instance.transmitScience;
+			return fileSendFlags[subjectId];
 		}
 
 		// add science sample, creating new sample or incrementing existing one
-		public bool Record_sample(string subject_id, double amount, double mass, bool useStockCrediting = false)
+		public bool Record_sample(SubjectData subjectData, double amount, double mass, bool useStockCrediting = false)
 		{
 			int currentSampleSlots = SamplesSize();
 			if (sampleCapacity >= 0)
 			{
-				if (!samples.ContainsKey(subject_id) && currentSampleSlots >= sampleCapacity)
+				if (!samples.ContainsKey(subjectData) && currentSampleSlots >= sampleCapacity)
 				{
 					// can't take a new sample if we're already at capacity
 					return false;
@@ -166,10 +195,10 @@ namespace KERBALISM
 			}
 
 			Sample sample;
-			if (samples.ContainsKey(subject_id) && sampleCapacity >= 0)
+			if (samples.ContainsKey(subjectData) && sampleCapacity >= 0)
 			{
 				// test if adding the amount to the sample would exceed our capacity
-				sample = samples[subject_id];
+				sample = samples[subjectData];
 
 				int existingSampleSlots = Lib.SampleSizeToSlots(sample.size);
 				int newSampleSlots = Lib.SampleSizeToSlots(sample.size + amount);
@@ -178,11 +207,11 @@ namespace KERBALISM
 			}
 
 			// create new data or get existing one
-			if (!samples.TryGetValue(subject_id, out sample))
+			if (!samples.TryGetValue(subjectData, out sample))
 			{
-				sample = new Sample(subject_id, 0.0, useStockCrediting);
+				sample = new Sample(subjectData, 0.0, useStockCrediting);
 				sample.analyze = PreferencesScience.Instance.analyzeSamples;
-				samples.Add(subject_id, sample);
+				samples.Add(subjectData, sample);
 			}
 
 			// increase amount of data stored in the sample
@@ -190,48 +219,56 @@ namespace KERBALISM
 			sample.mass += mass;
 
 			// keep track of data collected
-			Science.Experiment(subject_id).AddDataCollectedInFlight(amount);
+			subjectData.AddDataCollectedInFlight(amount);
 
 			return true;
 		}
 
 		// remove science data, deleting the file when it is empty
-		public void Delete_file(string subject_id, double amount)
+		public void Delete_file(SubjectData subjectData, double amount = 0.0)
 		{
 			// get data
 			File file;
-			if (files.TryGetValue(subject_id, out file))
+			if (files.TryGetValue(subjectData, out file))
 			{
 				// decrease amount of data stored in the file
-				amount = Math.Min(file.size, amount);
+				if (amount == 0.0)
+					amount = file.size;
+				else
+					amount = Math.Min(amount, file.size);
+
 				file.size -= amount;
 
 				// keep track of data collected
-				Science.Experiment(subject_id).RemoveDataCollectedInFlight(amount);
+				subjectData.RemoveDataCollectedInFlight(amount);
 
 				// remove file if empty
-				if (file.size <= 0.0) files.Remove(subject_id);
+				if (file.size <= 0.0) files.Remove(subjectData);
 			}
 		}
 
 		// remove science sample, deleting the sample when it is empty
-		public double Delete_sample(string subject_id, double amount)
+		public double Delete_sample(SubjectData subjectData, double amount = 0.0)
 		{
 			// get data
 			Sample sample;
-			if (samples.TryGetValue(subject_id, out sample))
+			if (samples.TryGetValue(subjectData, out sample))
 			{
 				// decrease amount of data stored in the sample
-				amount = Math.Min(amount, sample.size);
+				if (amount == 0.0)
+					amount = sample.size;
+				else
+					amount = Math.Min(amount, sample.size);
+
 				double massDelta = sample.mass * amount / sample.size;
 				sample.size -= amount;
 				sample.mass -= massDelta;
 
 				// keep track of data collected
-				Science.Experiment(subject_id).RemoveDataCollectedInFlight(amount);
+				subjectData.RemoveDataCollectedInFlight(amount);
 
 				// remove sample if empty
-				if (sample.size <= 0.0) samples.Remove(subject_id);
+				if (sample.size <= 0.0) samples.Remove(subjectData);
 
 				return massDelta;
 			}
@@ -239,10 +276,10 @@ namespace KERBALISM
 		}
 
 		// set analyze flag for a sample
-		public void Analyze(string subject_id, bool b)
+		public void Analyze(SubjectData subjectData, bool b)
 		{
 			Sample sample;
-			if (samples.TryGetValue(subject_id, out sample))
+			if (samples.TryGetValue(subjectData, out sample))
 			{
 				sample.analyze = b;
 			}
@@ -254,17 +291,17 @@ namespace KERBALISM
 			bool result = true;
 
 			// copy files
-			var filesList = new List<string>();
-			foreach (var p in files)
+			List<SubjectData> filesList = new List<SubjectData>();
+			foreach (File file in files.Values)
 			{
-				double size = Math.Min(p.Value.size, destination.FileCapacityAvailable());
-				if (destination.Record_file(p.Key, size, true))
+				double size = Math.Min(file.size, destination.FileCapacityAvailable());
+				if (destination.Record_file(file.subjectData, size, true))
 				{
-					p.Value.size -= size;
-					Science.Experiment(p.Key).RemoveDataCollectedInFlight(size);
-					if (p.Value.size < double.Epsilon)
+					file.size -= size;
+					file.subjectData.RemoveDataCollectedInFlight(size);
+					if (file.size < double.Epsilon)
 					{
-						filesList.Add(p.Key);
+						filesList.Add(file.subjectData);
 					}
 					else
 					{
@@ -278,31 +315,31 @@ namespace KERBALISM
 					break;
 				}
 			}
-			foreach (var id in filesList) files.Remove(id);
+			foreach (SubjectData id in filesList) files.Remove(id);
 
 			if (!moveSamples) return result;
 
 			// move samples
-			var samplesList = new List<string>();
-			foreach (var p in samples)
+			List<SubjectData> samplesList = new List<SubjectData>();
+			foreach (Sample sample in samples.Values)
 			{
-				double size = Math.Min(p.Value.size, destination.SampleCapacityAvailable(p.Key));
+				double size = Math.Min(sample.size, destination.SampleCapacityAvailable(sample.subjectData));
 				if (size < double.Epsilon)
 				{
 					result = false;
 					break;
 				}
 
-				double mass = p.Value.mass * (p.Value.size / size);
-				if (destination.Record_sample(p.Key, size, mass))
+				double mass = sample.mass * (sample.size / size);
+				if (destination.Record_sample(sample.subjectData, size, mass))
 				{
-					p.Value.size -= size;
-					Science.Experiment(p.Key).RemoveDataCollectedInFlight(size);
-					p.Value.mass -= mass;
+					sample.size -= size;
+					sample.subjectData.RemoveDataCollectedInFlight(size);
+					sample.mass -= mass;
 
-					if (p.Value.size < double.Epsilon)
+					if (sample.size < double.Epsilon)
 					{
-						samplesList.Add(p.Key);
+						samplesList.Add(sample.subjectData);
 					}
 					else
 					{
@@ -337,15 +374,15 @@ namespace KERBALISM
 			return amount;
 		}
 
-		public double SampleCapacityAvailable(string filename = "")
+		public double SampleCapacityAvailable(SubjectData subject = null)
 		{
 			if (sampleCapacity < 0) return double.MaxValue;
 
 			double result = Lib.SlotsToSampleSize(sampleCapacity - SamplesSize());
-			if (samples.ContainsKey(filename))
+			if (subject != null && samples.ContainsKey(subject))
 			{
-				int slotsForMyFile = Lib.SampleSizeToSlots(samples[filename].size);
-				double amountLostToSlotting = Lib.SlotsToSampleSize(slotsForMyFile) - samples[filename].size;
+				int slotsForMyFile = Lib.SampleSizeToSlots(samples[subject].size);
+				double amountLostToSlotting = Lib.SlotsToSampleSize(slotsForMyFile) - samples[subject].size;
 				result += amountLostToSlotting;
 			}
 			return result;
@@ -467,18 +504,18 @@ namespace KERBALISM
 			else
 				Message.Post
 				(
-					Lib.Color(Lib.BuildString("WARNING: not evering copied"), Lib.KColor.Red, true),
+					Lib.Color(Lib.BuildString("WARNING: not evering copied"), Lib.Kolor.Red, true),
 					Lib.BuildString(Localizer.Format("#KERBALISM_Generic_FROM"), " <b>", src.vesselName, "</b> ", Localizer.Format("#KERBALISM_Generic_TO"), " <b>", dst.vesselName, "</b>")
 				);
 		}
 
 		public void Purge(uint flightID)
 		{
-			foreach (var file in files)
-				Science.Experiment(file.Key).RemoveDataCollectedInFlight(file.Value.size);
+			foreach (File file in files.Values)
+				file.subjectData.RemoveDataCollectedInFlight(file.size);
 
-			foreach (var sample in samples)
-				Science.Experiment(sample.Key).RemoveDataCollectedInFlight(sample.Value.size);
+			foreach (Sample sample in samples.Values)
+				sample.subjectData.RemoveDataCollectedInFlight(sample.size);
 
 			DB.drives.Remove(flightID);
 		}
@@ -647,7 +684,7 @@ namespace KERBALISM
 			return result;
 		}
 
-		public static Drive SampleDrive(Vessel vessel, double size = 0, string filename = "")
+		public static Drive SampleDrive(Vessel vessel, double size = 0, SubjectData subject = null)
 		{
 			Drive result = null;
 			foreach (var drive in GetDrives(vessel))
@@ -658,10 +695,10 @@ namespace KERBALISM
 					continue;
 				}
 
-				double available = drive.SampleCapacityAvailable(filename);
+				double available = drive.SampleCapacityAvailable(subject);
 				if (size > double.Epsilon && available < size)
 					continue;
-				if (available > result.SampleCapacityAvailable(filename))
+				if (available > result.SampleCapacityAvailable(subject))
 					result = drive;
 			}
 			if (result == null)
@@ -672,8 +709,8 @@ namespace KERBALISM
 			return result;
 		}
 
-		public Dictionary<string, File> files;      // science files
-		public Dictionary<string, Sample> samples;  // science samples
+		public Dictionary<SubjectData, File> files;      // science files
+		public Dictionary<SubjectData, Sample> samples;  // science samples
 		public Dictionary<string, bool> fileSendFlags; // file send flags
 		public double dataCapacity;
 		public int sampleCapacity;

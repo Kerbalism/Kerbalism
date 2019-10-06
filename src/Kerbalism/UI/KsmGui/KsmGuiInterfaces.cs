@@ -24,5 +24,9 @@ namespace KERBALISM.KsmGui
 	public interface IKsmGuiIcon
 	{
 		void SetIconTexture(Texture2D texture, int width = 16, int height = 16);
+
+		void SetIconColor(Color color);
+
+		void SetIconColor(Lib.Kolor kColor);
 	}
 }

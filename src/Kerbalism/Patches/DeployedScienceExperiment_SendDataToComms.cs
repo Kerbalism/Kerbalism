@@ -41,9 +41,10 @@ namespace KERBALISM
 				*/
 
 				List<Drive> drives = Drive.GetDrives(ControllerVessel, false);
+				SubjectData subjectData = ScienceDB.GetSubjectDataFromStockId(subject.id);
 				foreach (Drive drive in drives) {
 					//Lib.Log(Lib.BuildString("BREAKING GROUND -- ", subject.id, " | ", storedScienceData.ToString()));
-					if(drive.Record_file(subject.id, storedScienceData, true)) {
+					if(drive.Record_file(subjectData, storedScienceData, true)) {
 						//Lib.Log("BREAKING GROUND -- file recorded!");
 						Lib.ReflectionValue<float>(__instance, "transmittedScienceData", transmittedScienceData + storedScienceData);
 						Lib.ReflectionValue<float>(__instance, "storedScienceData", 0f);

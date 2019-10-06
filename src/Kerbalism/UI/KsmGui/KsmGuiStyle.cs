@@ -17,6 +17,8 @@ namespace KERBALISM.KsmGui
 
 		public static readonly Color boxColor = new Color(0f, 0f, 0f, 0.2f);
 
+		public static readonly Color headerColor = Color.black;
+
 		public static readonly float tooltipMaxWidth = 300f;
 
 		public static readonly ColorBlock iconTransitionColorBlock = new ColorBlock()

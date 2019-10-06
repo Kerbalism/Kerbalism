@@ -13,7 +13,7 @@ namespace KERBALISM.KsmGui
 		/// <summary> force the size of the icon. This will ignore all layout constraints</summary>
 		public void ForceIconSize(float width, float height) => IconTransform.sizeDelta = new Vector2(width, height);
 
-		public KsmGuiIcon(Texture2D texture, string tooltipText = null, int width = 16, int height = 16) : base()
+		public KsmGuiIcon(KsmGuiBase parent, Texture2D texture, string tooltipText = null, int width = 16, int height = 16) : base(parent)
 		{
 			// we use a child gameobject because KsmGuiIcon can be used as a button (we need it as a child in this case)
 			// we directly set its size trough anchors / sizeDelta instead of using layout components, this way it can be used
@@ -48,6 +48,16 @@ namespace KERBALISM.KsmGui
 			SetLayoutElement(false, false, -1, -1, width, height);
 			Image.texture = texture;
 			IconTransform.sizeDelta = new Vector2(width, height);
+		}
+
+		public void SetIconColor(Color color)
+		{
+			Image.color = color;
+		}
+
+		public void SetIconColor(Lib.Kolor kolor)
+		{
+			Image.color = Lib.KolorToColor(kolor);
 		}
 	}
 }

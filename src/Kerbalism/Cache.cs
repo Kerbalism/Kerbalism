@@ -50,7 +50,6 @@ namespace KERBALISM
 		{
 			vesselObjects.Clear();
 			warp_caches.Clear();
-			Science.PurgeExperimentInfos();
 			Message.all_logs.Clear();
 		}
 

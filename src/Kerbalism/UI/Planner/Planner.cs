@@ -474,7 +474,7 @@ namespace KERBALISM.Planner
 				{
 					if (sb.Length > 0)
 						sb.Append("\n");
-					sb.Append(Lib.Color(pair.Value.ToString(), pair.Value == 1 ? Lib.KColor.Red : pair.Value == 2 ? Lib.KColor.Yellow : Lib.KColor.Green, true));
+					sb.Append(Lib.Color(pair.Value.ToString(), pair.Value == 1 ? Lib.Kolor.Red : pair.Value == 2 ? Lib.Kolor.Yellow : Lib.Kolor.Green, true));
 					sb.Append("\t");
 					sb.Append(pair.Key);
 				}
@@ -521,10 +521,10 @@ namespace KERBALISM.Planner
 			  : waste_res.produced <= double.Epsilon                    //< unnecessary
 			  ? "not required"
 			  : waste_res.consumed <= double.Epsilon                    //< no scrubbing
-			  ? Lib.Color("none", Lib.KColor.Orange)
+			  ? Lib.Color("none", Lib.Kolor.Orange)
 			  : waste_res.produced > waste_res.consumed * 1.001         //< insufficient scrubbing
-			  ? Lib.Color("inadequate", Lib.KColor.Yellow)
-			  : Lib.Color("good", Lib.KColor.Green);                    //< sufficient scrubbing
+			  ? Lib.Color("inadequate", Lib.Kolor.Yellow)
+			  : Lib.Color("good", Lib.Kolor.Green);                    //< sufficient scrubbing
 
 			// generate status string for pressurization
 			string atmo_status = !Features.Pressure                     //< feature disabled
@@ -532,10 +532,10 @@ namespace KERBALISM.Planner
 			  : atmo_res.consumed <= double.Epsilon                     //< unnecessary
 			  ? "not required"
 			  : atmo_res.produced <= double.Epsilon                     //< no pressure control
-			  ? Lib.Color("none", Lib.KColor.Orange)
+			  ? Lib.Color("none", Lib.Kolor.Orange)
 			  : atmo_res.consumed > atmo_res.produced * 1.001           //< insufficient pressure control
-			  ? Lib.Color("inadequate", Lib.KColor.Yellow)
-			  : Lib.Color("good", Lib.KColor.Green);                    //< sufficient pressure control
+			  ? Lib.Color("inadequate", Lib.Kolor.Yellow)
+			  : Lib.Color("good", Lib.Kolor.Green);                    //< sufficient pressure control
 
 			p.AddSection("HABITAT", string.Empty,
 				() => { p.Prev(ref environment_index, panel_environment.Count); enforceUpdate = true; },

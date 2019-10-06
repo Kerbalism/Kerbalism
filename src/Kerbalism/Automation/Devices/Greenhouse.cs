@@ -10,7 +10,7 @@ namespace KERBALISM
 	{
 		public GreenhouseDevice(Greenhouse module) : base(module) { }
 
-		public override string Status => Lib.Color(module.active, Localizer.Format("#KERBALISM_Generic_ENABLED"), Lib.KColor.Green, Localizer.Format("#KERBALISM_Generic_DISABLED"), Lib.KColor.Yellow);
+		public override string Status => Lib.Color(module.active, Localizer.Format("#KERBALISM_Generic_ENABLED"), Lib.Kolor.Green, Localizer.Format("#KERBALISM_Generic_DISABLED"), Lib.Kolor.Yellow);
 
 		public override void Ctrl(bool value)
 		{
@@ -28,7 +28,7 @@ namespace KERBALISM
 		public ProtoGreenhouseDevice(Greenhouse prefab, ProtoPartSnapshot protoPart, ProtoPartModuleSnapshot protoModule)
 			: base(prefab, protoPart, protoModule) { }
 
-		public override string Status => Lib.Color(Lib.Proto.GetBool(protoModule, "active"), Localizer.Format("#KERBALISM_Generic_ENABLED"), Lib.KColor.Green, Localizer.Format("#KERBALISM_Generic_DISABLED"), Lib.KColor.Yellow);
+		public override string Status => Lib.Color(Lib.Proto.GetBool(protoModule, "active"), Localizer.Format("#KERBALISM_Generic_ENABLED"), Lib.Kolor.Green, Localizer.Format("#KERBALISM_Generic_DISABLED"), Lib.Kolor.Yellow);
 
 		public override void Ctrl(bool value)
 		{

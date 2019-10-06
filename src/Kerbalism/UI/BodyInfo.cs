@@ -72,7 +72,7 @@ namespace KERBALISM
 
 					if(Storm.sun_observation_quality > 0.7)
 					{
-						title = Lib.BuildString(title, ": ", Lib.Color(Lib.HumanReadableDuration(cycle) + " cycle", Lib.KColor.LightGrey));
+						title = Lib.BuildString(title, ": ", Lib.Color(Lib.HumanReadableDuration(cycle) + " cycle", Lib.Kolor.LightGrey));
 					}
 
 					p.AddContent(title, Lib.HumanReadablePerc(activity));
@@ -83,12 +83,12 @@ namespace KERBALISM
 					p.AddContent("radiation on surface:", Lib.HumanReadableRadiation(surfaceRadiation));
 				}
 
-				p.AddContent(Lib.BuildString("inner belt: ", Lib.Color(inner, Lib.KColor.LightGrey)),
-					Radiation.show_inner ? Lib.Color("show", Lib.KColor.Green) : Lib.Color("hide", Lib.KColor.Red), string.Empty, () => p.Toggle(ref Radiation.show_inner));
-				p.AddContent(Lib.BuildString("outer belt: ", Lib.Color(outer, Lib.KColor.LightGrey)),
-					Radiation.show_outer ? Lib.Color("show", Lib.KColor.Green) : Lib.Color("hide", Lib.KColor.Red), string.Empty, () => p.Toggle(ref Radiation.show_outer));
-				p.AddContent(Lib.BuildString("magnetopause: ", Lib.Color(pause, Lib.KColor.LightGrey)),
-					Radiation.show_pause ? Lib.Color("show", Lib.KColor.Green) : Lib.Color("hide", Lib.KColor.Red), string.Empty, () => p.Toggle(ref Radiation.show_pause));
+				p.AddContent(Lib.BuildString("inner belt: ", Lib.Color(inner, Lib.Kolor.LightGrey)),
+					Radiation.show_inner ? Lib.Color("show", Lib.Kolor.Green) : Lib.Color("hide", Lib.Kolor.Red), string.Empty, () => p.Toggle(ref Radiation.show_inner));
+				p.AddContent(Lib.BuildString("outer belt: ", Lib.Color(outer, Lib.Kolor.LightGrey)),
+					Radiation.show_outer ? Lib.Color("show", Lib.Kolor.Green) : Lib.Color("hide", Lib.Kolor.Red), string.Empty, () => p.Toggle(ref Radiation.show_outer));
+				p.AddContent(Lib.BuildString("magnetopause: ", Lib.Color(pause, Lib.Kolor.LightGrey)),
+					Radiation.show_pause ? Lib.Color("show", Lib.Kolor.Green) : Lib.Color("hide", Lib.Kolor.Red), string.Empty, () => p.Toggle(ref Radiation.show_pause));
 			}
 
 			// explain the user how to toggle the BodyInfo window
@@ -96,7 +96,7 @@ namespace KERBALISM
 			p.AddContent("<i>Press <b>B</b> to open this window again</i>");
 
 			// set metadata
-			p.Title(Lib.BuildString(Lib.Ellipsis(body.bodyName, Styles.ScaleStringLength(24)), " ", Lib.Color("BODY INFO", Lib.KColor.LightGrey)));
+			p.Title(Lib.BuildString(Lib.Ellipsis(body.bodyName, Styles.ScaleStringLength(24)), " ", Lib.Color("BODY INFO", Lib.Kolor.LightGrey)));
 		}
 
 		private static void RadiationLevels(CelestialBody body, out string inner, out string outer, out string pause, out double activity, out double cycle)

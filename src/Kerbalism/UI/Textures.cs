@@ -117,11 +117,14 @@ namespace KERBALISM
 
 		internal static Texture2D KsmGuiTexCheckmark;
 
-		internal static Texture2D KsmGuiTexHeaderClose;
 		internal static Texture2D KsmGuiTexHeaderArrowsLeft;
 		internal static Texture2D KsmGuiTexHeaderArrowsRight;
 		internal static Texture2D KsmGuiTexHeaderArrowsUp;
 		internal static Texture2D KsmGuiTexHeaderArrowsDown;
+
+		internal static Texture2D KsmGuiTexHeaderClose;
+		internal static Texture2D KsmGuiTexHeaderInfo;
+		internal static Texture2D KsmGuiTexHeaderRnD;
 
 		// timer controller
 		internal static float nextFlashing = Time.time;
@@ -262,6 +265,12 @@ namespace KERBALISM
 			KsmGuiTexHeaderArrowsRight = Lib.GetTexture("ksm-gui/arrows-right-32", 32, 32);
 			KsmGuiTexHeaderArrowsUp = Lib.GetTexture("ksm-gui/arrows-up-32", 32, 32);
 			KsmGuiTexHeaderArrowsDown = Lib.GetTexture("ksm-gui/arrows-down-32", 32, 32);
+
+
+
+			KsmGuiTexHeaderClose = Lib.GetTexture("ksm-gui/i8-header-close-32", 32, 32);
+			KsmGuiTexHeaderInfo = Lib.GetTexture("ksm-gui/info-32", 32, 32);
+			KsmGuiTexHeaderRnD = Lib.GetTexture("ksm-gui/i8-rnd-32", 32, 32);
 
 			//Texture2D winBg = Lib.GetTexture("ui-core/window-background", 64, 64);
 			//// inspecting pixelPerUnit gives 92.75362, but 100f is the default value and seems to work fine

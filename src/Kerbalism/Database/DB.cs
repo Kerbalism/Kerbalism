@@ -21,9 +21,6 @@ namespace KERBALISM
             // get unique id (or generate one for new savegames)
             uid = Lib.ConfigValue(node, "uid", Lib.RandomInt(int.MaxValue));
 
-			// load science points
-			uncreditedScience = Lib.ConfigValue(node, "uncreditedScience", 0.0);
-
 			// load kerbals data
 			kerbals = new Dictionary<string, KerbalData>();
             if (node.HasNode("kerbals"))
@@ -54,15 +51,8 @@ namespace KERBALISM
                 }
             }
 
-			// load science subjects completion level (note : this must be done before drives are loaded)
-			subjectsCompletion = new Dictionary<string, SubjectData>();
-			if (node.HasNode("subjectsCompletion"))
-			{
-				foreach (var subjectNode in node.GetNode("subjectsCompletion").GetNodes())
-				{
-					subjectsCompletion.Add(From_safe_key(subjectNode.name), new SubjectData(subjectNode, From_safe_key(subjectNode.name)));
-				}
-			}
+			// load the science database, has to be before drives are loaded
+			ScienceDB.Load(node);
 
 			// load drives
 			drives = new Dictionary<uint, Drive>();
@@ -104,8 +94,8 @@ namespace KERBALISM
                 ui = new UIData();
             }
 
-            // if an old savegame was imported, log some debug info
-            if (version != Lib.KerbalismVersion) Lib.Log("savegame converted from version " + version + " to " + Lib.KerbalismVersion);
+			// if an old savegame was imported, log some debug info
+			if (version != Lib.KerbalismVersion) Lib.Log("savegame converted from version " + version + " to " + Lib.KerbalismVersion);
         }
 
         public static void Save(ConfigNode node)
@@ -115,9 +105,6 @@ namespace KERBALISM
 
             // save unique id
             node.AddValue("uid", uid);
-
-			// save science
-			node.AddValue("uncreditedScience", uncreditedScience);
 
 			// save kerbals data
 			var kerbals_node = node.AddNode("kerbals");
@@ -133,8 +120,11 @@ namespace KERBALISM
                 p.Value.Save(vessels_node.AddNode(p.Key.ToString()));
             }
 
-            // save drives
-            var drives_node = node.AddNode("drives");
+			// save the science database
+			ScienceDB.Save(node);
+
+			// save drives
+			var drives_node = node.AddNode("drives");
             foreach (var p in drives)
             {
                 p.Value.Save(drives_node.AddNode(p.Key.ToString()));
@@ -152,13 +142,6 @@ namespace KERBALISM
 
             // save ui data
             ui.Save(node.AddNode("ui"));
-
-			// save science subjects completion level
-			var subjectsNode = node.AddNode("subjectsCompletion");
-			foreach (var p in subjectsCompletion)
-			{
-				p.Value.Save(subjectsNode.AddNode(To_safe_key(p.Key)), p.Key);
-			}
         }
 
 
@@ -223,15 +206,6 @@ namespace KERBALISM
             return bodies[name];
         }
 
-		public static SubjectData Subject(string subject_id)
-		{
-			if (!subjectsCompletion.ContainsKey(subject_id))
-			{
-				subjectsCompletion.Add(subject_id, new SubjectData(subject_id));
-			}
-			return subjectsCompletion[subject_id];
-		}
-
 		public static Boolean ContainsKerbal(string name)
         {
             return kerbals.ContainsKey(name);
@@ -288,8 +262,6 @@ namespace KERBALISM
         public static Dictionary<string, StormData> bodies;     // store data per-body
         public static LandmarkData landmarks;                  // store landmark data
         public static UIData ui;                               // store ui data
-		public static double uncreditedScience;
-		public static Dictionary<string, SubjectData> subjectsCompletion; // science subjects completion %
     }
 
 

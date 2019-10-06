@@ -17,7 +17,7 @@ namespace KERBALISM
 			get
 			{
 				if (module.AlwaysActive) return Localizer.Format("#KERBALISM_Generic_ALWAYSON");
-				return Lib.Color(module.IsActivated, Localizer.Format("#KERBALISM_Generic_ON"), Lib.KColor.Green, Localizer.Format("#KERBALISM_Generic_OFF"), Lib.KColor.Yellow);
+				return Lib.Color(module.IsActivated, Localizer.Format("#KERBALISM_Generic_ON"), Lib.Kolor.Green, Localizer.Format("#KERBALISM_Generic_OFF"), Lib.Kolor.Yellow);
 			}
 		}
 
@@ -48,7 +48,7 @@ namespace KERBALISM
 			{
 				if (prefab.AlwaysActive) Localizer.Format("#KERBALISM_Generic_ALWAYSON");
 				bool is_on = Lib.Proto.GetBool(protoModule, "IsActivated");
-				return Lib.Color(is_on, Localizer.Format("#KERBALISM_Generic_ON"), Lib.KColor.Green, Localizer.Format("#KERBALISM_Generic_OFF"), Lib.KColor.Yellow);
+				return Lib.Color(is_on, Localizer.Format("#KERBALISM_Generic_ON"), Lib.Kolor.Green, Localizer.Format("#KERBALISM_Generic_OFF"), Lib.Kolor.Yellow);
 			}
 		}
 

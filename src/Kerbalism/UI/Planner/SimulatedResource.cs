@@ -221,7 +221,7 @@ namespace KERBALISM.Planner
 			{
 				if (sb.Length > 0)
 					sb.Append("\n");
-				sb.Append(Lib.Color(Lib.HumanReadableRate(pair.Value.value), Lib.KColor.PosRate, true));
+				sb.Append(Lib.Color(Lib.HumanReadableRate(pair.Value.value), Lib.Kolor.PosRate, true));
 				sb.Append("\t");
 				sb.Append(pair.Key);
 			}
@@ -229,7 +229,7 @@ namespace KERBALISM.Planner
 			{
 				if (sb.Length > 0)
 					sb.Append("\n");
-				sb.Append(Lib.Color(Lib.HumanReadableRate(pair.Value.value), Lib.KColor.NegRate, true));
+				sb.Append(Lib.Color(Lib.HumanReadableRate(pair.Value.value), Lib.Kolor.NegRate, true));
 				sb.Append("\t");
 				sb.Append(pair.Key);
 			}

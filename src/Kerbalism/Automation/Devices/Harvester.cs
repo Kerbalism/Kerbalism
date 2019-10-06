@@ -23,10 +23,10 @@ namespace KERBALISM
 			return animator != null && !module.deployed
 			  ? "not deployed"
 			  : !module.running
-			  ? Lib.Color(Localizer.Format("#KERBALISM_Generic_STOPPED"), Lib.KColor.Yellow)
+			  ? Lib.Color(Localizer.Format("#KERBALISM_Generic_STOPPED"), Lib.Kolor.Yellow)
 			  : module.issue.Length == 0
-			  ? Lib.Color(Localizer.Format("#KERBALISM_Generic_RUNNING"), Lib.KColor.Green)
-			  : Lib.Color(module.issue, Lib.KColor.Red);
+			  ? Lib.Color(Localizer.Format("#KERBALISM_Generic_RUNNING"), Lib.Kolor.Green)
+			  : Lib.Color(module.issue, Lib.Kolor.Red);
 			}
 		}
 
@@ -67,10 +67,10 @@ namespace KERBALISM
 				return animator != null && !deployed
 				  ? "not deployed"
 				  : !running
-				  ? Lib.Color(Localizer.Format("#KERBALISM_Generic_STOPPED"), Lib.KColor.Yellow)
+				  ? Lib.Color(Localizer.Format("#KERBALISM_Generic_STOPPED"), Lib.Kolor.Yellow)
 				  : issue.Length == 0
-				  ? Lib.Color(Localizer.Format("#KERBALISM_Generic_RUNNING"), Lib.KColor.Green)
-				  : Lib.Color(issue, Lib.KColor.Red);
+				  ? Lib.Color(Localizer.Format("#KERBALISM_Generic_RUNNING"), Lib.Kolor.Green)
+				  : Lib.Color(issue, Lib.Kolor.Red);
 			}
 		}
 

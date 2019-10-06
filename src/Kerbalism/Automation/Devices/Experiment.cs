@@ -8,22 +8,20 @@ namespace KERBALISM
 {
 	public sealed class ExperimentDevice : LoadedDevice<Experiment>
 	{
-		private ExperimentInfo expInfo;
 		private readonly DeviceIcon icon;
 		private StringBuilder sb;
 		private string scienceValue;
 
 		public ExperimentDevice(Experiment module) : base(module)
 		{
-			expInfo = Science.Experiment(string.IsNullOrEmpty(module.last_subject_id) ? module.experiment_id : module.last_subject_id);
-			icon = new DeviceIcon(module.sample_mass > 0f ? Textures.sample_scicolor : Textures.file_scicolor, "open experiment window", () => new SciencePopup(module.vessel, module));
+			icon = new DeviceIcon(module.ExpInfo.SampleMass > 0.0 ? Textures.sample_scicolor : Textures.file_scicolor, "open experiment window", () => new SciencePopup(module.vessel, module));
 			sb = new StringBuilder();
 			OnUpdate();
 		}
 
 		public override void OnUpdate()
 		{
-			scienceValue = Experiment.ScienceValue(module.ExpInfo);
+			scienceValue = Experiment.ScienceValue(module.Subject);
 		}
 
 		public override string Name
@@ -31,19 +29,19 @@ namespace KERBALISM
 			get
 			{
 				sb.Length = 0;
-				sb.Append(expInfo.Name);
+				sb.Append(Lib.EllipsisMiddle(module.ExpInfo.Title, 28));
 				sb.Append(": ");
 				sb.Append(scienceValue);
 
 				if (module.Status == Experiment.ExpStatus.Running)
 				{
 					sb.Append(" ");
-					sb.Append(Experiment.RunningCountdown(module.ExpInfo, module.data_rate));
+					sb.Append(Experiment.RunningCountdown(module.ExpInfo, module.Subject, module.data_rate));
 				}
-				else if (module.Status == Experiment.ExpStatus.Forced)
+				else if (module.Subject != null && module.Status == Experiment.ExpStatus.Forced)
 				{
 					sb.Append(" ");
-					sb.Append(module.ExpInfo.SubjectPercentCollectedTotal.ToString("P0"));
+					sb.Append(module.Subject.PercentCollectedTotal.ToString("P0"));
 				}
 				return sb.ToString();
 			}
@@ -56,10 +54,10 @@ namespace KERBALISM
 			get
 			{
 				sb.Length = 0;
-				if (module.Running)
-					sb.Append(expInfo.SubjectName);
+				if (module.Subject != null)
+					sb.Append(module.Subject.FullTitle);
 				else
-					sb.Append(expInfo.Name);
+					sb.Append(module.ExpInfo.Title);
 				sb.Append("\non ");
 				sb.Append(module.part.partInfo.title);
 				sb.Append("\nstatus : ");
@@ -68,7 +66,7 @@ namespace KERBALISM
 				if (module.Status == Experiment.ExpStatus.Issue)
 				{
 					sb.Append("\nissue : ");
-					sb.Append(Lib.Color(module.issue, Lib.KColor.Orange));
+					sb.Append(Lib.Color(module.issue, Lib.Kolor.Orange));
 				}
 				sb.Append("\nscience value : ");
 				sb.Append(scienceValue);
@@ -76,12 +74,12 @@ namespace KERBALISM
 				if (module.Status == Experiment.ExpStatus.Running)
 				{
 					sb.Append("\ncompletion : ");
-					sb.Append(Experiment.RunningCountdown(module.ExpInfo, module.data_rate, false));
+					sb.Append(Experiment.RunningCountdown(module.ExpInfo, module.Subject, module.data_rate, false));
 				}
-				else if (module.Status == Experiment.ExpStatus.Forced)
+				else if (module.Subject != null && module.Status == Experiment.ExpStatus.Forced)
 				{
 					sb.Append("\ncompletion : ");
-					sb.Append(module.ExpInfo.SubjectPercentCollectedTotal.ToString("P0"));
+					sb.Append(module.Subject.PercentCollectedTotal.ToString("P0"));
 				}
 
 				return sb.ToString();
@@ -110,9 +108,9 @@ namespace KERBALISM
 		private readonly DeviceIcon icon;
 
 		private string issue;
-		private string subject_id;
 		private ExperimentInfo expInfo;
 		private Experiment.ExpStatus status;
+		private SubjectData subject;
 		private string scienceValue;
 
 		private StringBuilder sb;
@@ -121,8 +119,8 @@ namespace KERBALISM
 			: base(prefab, protoPart, protoModule)
 		{
 			this.vessel = vessel;
-			icon = new DeviceIcon(prefab.sample_mass > 0f ? Textures.sample_scicolor : Textures.file_scicolor, "open experiment info", () => new SciencePopup(vessel, prefab, protoModule));
-
+			expInfo = ScienceDB.GetExperimentInfo(prefab.experiment_id);
+			icon = new DeviceIcon(expInfo.SampleMass > 0f ? Textures.sample_scicolor : Textures.file_scicolor, "open experiment info", () => new SciencePopup(vessel, prefab, protoModule));
 			sb = new StringBuilder();
 
 			OnUpdate();
@@ -131,11 +129,9 @@ namespace KERBALISM
 		public override void OnUpdate()
 		{
 			issue = Lib.Proto.GetString(protoModule, "issue");
-			subject_id = Lib.Proto.GetString(protoModule, "last_subject_id", prefab.experiment_id);
-			if (string.IsNullOrEmpty(subject_id)) subject_id = prefab.experiment_id;
-			expInfo = Science.Experiment(subject_id);
 			status = Lib.Proto.GetEnum(protoModule, "status", Experiment.ExpStatus.Stopped);
-			scienceValue = Experiment.ScienceValue(expInfo);
+			subject = ScienceDB.GetSubjectData(expInfo, vessel.KerbalismData().VesselSituation);
+			scienceValue = Experiment.ScienceValue(subject);
 		}
 
 		public override string Name
@@ -143,19 +139,19 @@ namespace KERBALISM
 			get
 			{
 				sb.Length = 0;
-				sb.Append(expInfo.Name);
+				sb.Append(Lib.EllipsisMiddle(expInfo.Title, 28));
 				sb.Append(": ");
 				sb.Append(scienceValue);
 
 				if (status == Experiment.ExpStatus.Running)
 				{
 					sb.Append(" ");
-					sb.Append(Experiment.RunningCountdown(expInfo, prefab.data_rate));
+					sb.Append(Experiment.RunningCountdown(expInfo, subject, prefab.data_rate));
 				}
-				else if (status == Experiment.ExpStatus.Forced)
+				else if (subject != null && status == Experiment.ExpStatus.Forced)
 				{
 					sb.Append(" ");
-					sb.Append(expInfo.SubjectPercentCollectedTotal.ToString("P0"));
+					sb.Append(subject.PercentCollectedTotal.ToString("P0"));
 				}
 				return sb.ToString();
 			}
@@ -168,10 +164,10 @@ namespace KERBALISM
 			get
 			{
 				sb.Length = 0;
-				if (Experiment.IsRunning(status))
-					sb.Append(expInfo.SubjectName);
+				if (subject != null && Experiment.IsRunning(status))
+					sb.Append(subject.FullTitle);
 				else
-					sb.Append(expInfo.Name);
+					sb.Append(expInfo.Title);
 				sb.Append("\non ");
 				sb.Append(prefab.part.partInfo.title);
 				sb.Append("\nstatus : ");
@@ -180,7 +176,7 @@ namespace KERBALISM
 				if (status == Experiment.ExpStatus.Issue)
 				{
 					sb.Append("\nissue : ");
-					sb.Append(Lib.Color(issue, Lib.KColor.Orange));
+					sb.Append(Lib.Color(issue, Lib.Kolor.Orange));
 				}
 				sb.Append("\nscience value : ");
 				sb.Append(scienceValue);
@@ -188,12 +184,12 @@ namespace KERBALISM
 				if (status == Experiment.ExpStatus.Running)
 				{
 					sb.Append("\ncompletion : ");
-					sb.Append(Experiment.RunningCountdown(expInfo, prefab.data_rate, false));
+					sb.Append(Experiment.RunningCountdown(expInfo, subject, prefab.data_rate, false));
 				}
-				else if (status == Experiment.ExpStatus.Forced)
+				else if (subject != null && status == Experiment.ExpStatus.Forced)
 				{
 					sb.Append("\ncompletion : ");
-					sb.Append(expInfo.SubjectPercentCollectedTotal.ToString("P0"));
+					sb.Append(subject.PercentCollectedTotal.ToString("P0"));
 				}
 
 				return sb.ToString();

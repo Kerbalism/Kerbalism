@@ -24,7 +24,7 @@ namespace KERBALISM
 			if (!vd.IsValid) return;
 
 			// set metadata
-			p.Title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(20)), " ", Lib.Color("Quality Management", Lib.KColor.LightGrey)));
+			p.Title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(20)), " ", Lib.Color("Quality Management", Lib.Kolor.LightGrey)));
 			p.Width(Styles.ScaleWidthFloat(355.0f));
 			p.paneltype = Panel.PanelType.failures;
 
@@ -71,18 +71,18 @@ namespace KERBALISM
 		{
 			if (ri.broken)
 			{
-				if (ri.critical) return Lib.Color("busted", Lib.KColor.Red);
-				return Lib.Color("needs repair", Lib.KColor.Orange);
+				if (ri.critical) return Lib.Color("busted", Lib.Kolor.Red);
+				return Lib.Color("needs repair", Lib.Kolor.Orange);
 			}
 			if (ri.NeedsMaintenance())
 			{
-				return Lib.Color("needs service", Lib.KColor.Yellow);
+				return Lib.Color("needs service", Lib.Kolor.Yellow);
 			}
 
-			if (ri.rel_duration > 0.75) return Lib.Color("operation duration", Lib.KColor.Yellow);
-			if (ri.rel_ignitions > 0.95) return Lib.Color("ignition limit", Lib.KColor.Yellow);
+			if (ri.rel_duration > 0.75) return Lib.Color("operation duration", Lib.Kolor.Yellow);
+			if (ri.rel_ignitions > 0.95) return Lib.Color("ignition limit", Lib.Kolor.Yellow);
 
-			return Lib.Color("good", Lib.KColor.Green);
+			return Lib.Color("good", Lib.Kolor.Green);
 		}
 	}
 

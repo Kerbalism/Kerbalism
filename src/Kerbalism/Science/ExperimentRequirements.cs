@@ -25,9 +25,6 @@ namespace KERBALISM
 			AltitudeMax,
 			RadiationMin,
 			RadiationMax,
-			Microgravity,
-			AllowedBodies,
-			RestrictedBodies,
 			Shadow,
 			Sunlight,
 			CrewMin,
@@ -37,26 +34,17 @@ namespace KERBALISM
 			VolumePerCrewMin,
 			VolumePerCrewMax,
 			Greenhouse,
-			Surface,
-			Atmosphere,
-			AtmosphereBody,
 			AtmosphereAltMin,
 			AtmosphereAltMax,
 
 			SunAngleMin,
 			SunAngleMax,
 
-			Vacuum,
-			Ocean,
-			PlanetarySpace,
 			AbsoluteZero,
 			InnerBelt,
 			OuterBelt,
 			MagneticBelt,
 			Magnetosphere,
-			Thermosphere,
-			Exosphere,
-			InterPlanetary,
 			InterStellar,
 
 			SurfaceSpeedMin,
@@ -86,9 +74,6 @@ namespace KERBALISM
 			MissionControlLevelMax,
 			AdministrationLevelMin,
 			AdministrationLevelMax,
-
-			BodyWithAtmosphere,
-			BodyWithoutAtmosphere
 		}
 
 		public class RequireDef
@@ -186,32 +171,17 @@ namespace KERBALISM
 					case Require.AdministrationLevelMin  : TestReq((c, r) => c >= r, GetFacilityLevel(SpaceCenterFacility.Administration),   (int)Requires[i].value, results[i]); break;
 					case Require.AdministrationLevelMax  : TestReq((c, r) => c <= r, GetFacilityLevel(SpaceCenterFacility.Administration),   (int)Requires[i].value, results[i]); break;
 
-					case Require.AllowedBodies   : TestReq((c, r) => TestBody(r, c), new string[] { v.mainBody.name },  (string[])Requires[i].value, results[i]); break;
-					case Require.RestrictedBodies: TestReq((c, r) => !TestBody(r, c), new string[] { v.mainBody.name }, (string[])Requires[i].value, results[i]); break;
-
-					case Require.Microgravity   : TestReq(() => vd.EnvZeroG,                                                                                     results[i]); break;
-					case Require.Shadow         : TestReq(() => vd.EnvInFullShadow,                                                                              results[i]); break; 
-					case Require.Sunlight       : TestReq(() => vd.EnvInSunlight,                                                                                results[i]); break; 
-					case Require.Greenhouse     : TestReq(() => vd.Greenhouses.Count > 0,                                                                        results[i]); break;
-					case Require.Surface        : TestReq(() => Lib.Landed(v),                                                                                   results[i]); break;
-					case Require.Atmosphere     : TestReq(() => v.mainBody.atmosphere && v.altitude < v.mainBody.atmosphereDepth,                                results[i]); break;
-					case Require.AtmosphereBody : TestReq(() => v.mainBody.atmosphere,                                                                           results[i]); break;
-					case Require.Vacuum         : TestReq(() => !v.mainBody.atmosphere || v.altitude > v.mainBody.atmosphereDepth,                               results[i]); break;
-					case Require.Ocean          : TestReq(() => v.mainBody.ocean && v.altitude < 0.0,                                                            results[i]); break;
-					case Require.PlanetarySpace : TestReq(() => v.mainBody.flightGlobalsIndex != 0 && !Lib.Landed(v) && v.altitude > v.mainBody.atmosphereDepth, results[i]); break;
-					case Require.AbsoluteZero   : TestReq(() => vd.EnvTemperature < 30.0,                                                                        results[i]); break;
-					case Require.InnerBelt      : TestReq(() => vd.EnvInnerBelt,                                                                                 results[i]); break;
-					case Require.OuterBelt      : TestReq(() => vd.EnvOuterBelt,                                                                                 results[i]); break;
-					case Require.MagneticBelt   : TestReq(() => vd.EnvInnerBelt || vd.EnvOuterBelt,                                                              results[i]); break;
-					case Require.Magnetosphere  : TestReq(() => vd.EnvMagnetosphere,                                                                             results[i]); break;
-					case Require.Thermosphere   : TestReq(() => vd.EnvThermosphere,                                                                              results[i]); break;
-					case Require.Exosphere      : TestReq(() => vd.EnvExosphere,                                                                                 results[i]); break;
-					case Require.InterPlanetary : TestReq(() => v.mainBody.flightGlobalsIndex == 0 && !vd.EnvInterstellar,                                       results[i]); break;
-					case Require.InterStellar   : TestReq(() => v.mainBody.flightGlobalsIndex == 0 && vd.EnvInterstellar,                                        results[i]); break;
+					case Require.Shadow         : TestReq(() => vd.EnvInFullShadow,                                                                                  results[i]); break; 
+					case Require.Sunlight       : TestReq(() => vd.EnvInSunlight,                                                                                    results[i]); break; 
+					case Require.Greenhouse     : TestReq(() => vd.Greenhouses.Count > 0,                                                                            results[i]); break;
+					case Require.AbsoluteZero   : TestReq(() => vd.EnvTemperature < 30.0,                                                                            results[i]); break;
+					case Require.InnerBelt      : TestReq(() => vd.EnvInnerBelt,                                                                                     results[i]); break;
+					case Require.OuterBelt      : TestReq(() => vd.EnvOuterBelt,                                                                                     results[i]); break;
+					case Require.MagneticBelt   : TestReq(() => vd.EnvInnerBelt || vd.EnvOuterBelt,                                                                  results[i]); break;
+					case Require.Magnetosphere  : TestReq(() => vd.EnvMagnetosphere,                                                                                 results[i]); break;
+					case Require.InterStellar   : TestReq(() => Lib.IsSun(v.mainBody) && vd.EnvInterstellar,                                                         results[i]); break;
 					case Require.Part           : TestReq(() => Lib.HasPart(v, (string)Requires[i].value),															 results[i]); break;
 					case Require.Module         : TestReq(() => Lib.FindModules(v.protoVessel, (string)Requires[i].value).Count > 0,								 results[i]); break;
-					case Require.BodyWithAtmosphere:	TestReq(() => v.mainBody.atmosphere,																	 results[i]); break;
-					case Require.BodyWithoutAtmosphere: TestReq(() => !v.mainBody.atmosphere,																	 results[i]); break;
 
 					default: results[i].isValid = true; break;
 				}
@@ -256,22 +226,14 @@ namespace KERBALISM
 					if (reqString.Length > 1)
 					{
 						reqString[1].Trim();
-						if (reqString[0] == "Body")
+						// key/value requirements
+						if (!Enum.IsDefined(typeof(Require), reqString[0]))
 						{
-							// parse body allowed/restricted subvalues to a string array
-							ParseRequireBodies(reqString[1], reqList);
+							Lib.Log("Error : could not parse the experiment requires '" + s + "'");
+							continue;
 						}
-						else
-						{
-							// key/value requirements
-							if (!Enum.IsDefined(typeof(Require), reqString[0]))
-							{
-								Lib.Log("Error : could not parse the experiment requires '" + s + "'");
-								continue;
-							}
-							Require reqEnum = (Require)Enum.Parse(typeof(Require), reqString[0]);
-							reqList.Add(ParseRequiresValue(reqEnum, reqString[1]));
-						}
+						Require reqEnum = (Require)Enum.Parse(typeof(Require), reqString[0]);
+						reqList.Add(ParseRequiresValue(reqEnum, reqString[1]));
 					}
 					else
 					{
@@ -287,25 +249,6 @@ namespace KERBALISM
 				}
 			}
 			return reqList.ToArray();
-		}
-
-		private void ParseRequireBodies(string body_list, List<RequireDef> reqList)
-		{
-			List<string> allowedBodiesList = new List<string>();
-			List<string> restrictedBodiesList = new List<string>();
-			foreach (string vb in body_list.Split(';'))
-			{
-				vb.Trim();
-				if (vb[0] == '!')
-					restrictedBodiesList.Add(vb.Substring(1));
-				else
-					allowedBodiesList.Add(vb);
-			}
-			if (allowedBodiesList.Count > 0)
-				reqList.Add(new RequireDef(Require.AllowedBodies, allowedBodiesList.ToArray()));
-
-			if (restrictedBodiesList.Count > 0)
-				reqList.Add(new RequireDef(Require.RestrictedBodies, restrictedBodiesList.ToArray()));
 		}
 
 		private RequireDef ParseRequiresValue(Require req, string value)
@@ -373,13 +316,6 @@ namespace KERBALISM
 			double maxlevel = ScenarioUpgradeableFacilities.GetFacilityLevelCount(facility);
 			if (maxlevel <= 0) maxlevel = 2; // not sure why, but GetFacilityLevelCount return -1 in career
 			return (int)Math.Round(ScenarioUpgradeableFacilities.GetFacilityLevel(facility) * maxlevel + 1); // They start counting at 0
-		}
-
-		private bool TestBody(string[] body_reqs, string[] body_name)
-		{
-			for (int i = 0; i < body_reqs.Length; i++)
-				if (body_reqs[i] == body_name[0]) return true;
-			return false;
 		}
 
 		private double TestAsteroidDistance(Vessel vessel)
@@ -475,9 +411,6 @@ namespace KERBALISM
 				case Require.AdministrationLevelMin:
 				case Require.AdministrationLevelMax:
 					return ((int)reqValue).ToString();
-				case Require.AllowedBodies:
-				case Require.RestrictedBodies:
-					return string.Join(", ", (string[])reqValue);
 				default:
 					return string.Empty;
 			}
@@ -536,32 +469,18 @@ namespace KERBALISM
 				case Require.AdministrationLevelMin: return "Administration min level ";
 				case Require.AdministrationLevelMax: return "Administration max level ";
 
-				case Require.AllowedBodies: return "Body " ;
-				case Require.RestrictedBodies: return "Not body ";
-				case Require.Atmosphere: return "In atmosphere" ;
-				case Require.AtmosphereBody: return "Atmospheric bodies";
 				case Require.Part: return "Need part " ;
 				case Require.Module: return "Need module " ;
-				case Require.BodyWithAtmosphere: return "Atmospheric bodies";
-				case Require.BodyWithoutAtmosphere: return "Non-atmospheric bodies";
 
-				case Require.Vacuum:
-				case Require.Ocean:
-				case Require.PlanetarySpace:
 				case Require.AbsoluteZero:
 				case Require.InnerBelt:
 				case Require.OuterBelt:
 				case Require.MagneticBelt:
 				case Require.Magnetosphere:
-				case Require.Thermosphere:
-				case Require.Exosphere:
-				case Require.InterPlanetary:
 				case Require.InterStellar:
-				case Require.Microgravity:
 				case Require.Shadow:
 				case Require.Sunlight:
 				case Require.Greenhouse:
-				case Require.Surface:
 				default:
 					return req.ToString();
 			}

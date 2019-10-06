@@ -137,8 +137,6 @@ namespace KERBALISM
 			return (1.0 - v.orbit.eccentricity) * v.orbit.semiMajorAxis;
 		}
 
-
-
 		#endregion
 
 		#region RAYTRACING

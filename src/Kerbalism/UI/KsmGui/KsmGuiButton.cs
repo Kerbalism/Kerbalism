@@ -17,6 +17,7 @@ namespace KERBALISM.KsmGui
 
 		public KsmGuiButton
 			(
+			KsmGuiBase parent,
 			string buttonText,
 			UnityAction onClick,
 			string tooltipText = null,
@@ -25,7 +26,7 @@ namespace KERBALISM.KsmGui
 			Texture2D iconTexture = null,
 			int iconWidth = 16,
 			int iconHeight = 16
-			) : base(2, 3, 3, 0, 0, TextAnchor.MiddleCenter)
+			) : base(parent, 2, 3, 3, 0, 0, TextAnchor.MiddleCenter)
 		{
 			// buttons are 18 px high and expand horizontaly in their container by default, but a fixed width can be defined in the ctor
 			// in any case, SetLayoutElement can be called after to customise the button size.
@@ -48,7 +49,7 @@ namespace KERBALISM.KsmGui
 
 			SetIconTexture(iconTexture, iconWidth, iconHeight);
 
-			TextObject = new KsmGuiText(buttonText, null, TextAlignmentOptions.Center);
+			TextObject = new KsmGuiText(this, buttonText, null, TextAlignmentOptions.Center);
 			TextObject.SetLayoutElement(true);
 			TextObject.TopTransform.SetParentFixScale(TopTransform);
 
@@ -80,12 +81,22 @@ namespace KERBALISM.KsmGui
 		{
 			if (texture != null && IconObject == null)
 			{
-				IconObject = new KsmGuiIcon(texture, null, width, width);
+				IconObject = new KsmGuiIcon(this, texture, null, width, width);
 				IconObject.TopTransform.SetParentFixScale(TopTransform);
 			}
 
 			if (IconObject != null)
 				IconObject.SetIconTexture(texture);
+		}
+
+		public void SetIconColor(Color color)
+		{
+			IconObject.SetIconColor(color);
+		}
+
+		public void SetIconColor(Lib.Kolor kColor)
+		{
+			IconObject.SetIconColor(kColor);
 		}
 	}
 }

@@ -14,8 +14,8 @@ namespace KERBALISM.KsmGui
 		public Button ButtonComponent { get; private set; }
 		private UnityAction onClick;
 
-		public KsmGuiIconButton(Texture2D texture, UnityAction onClick = null, string tooltipText = null, int width = 16, int height = 16)
-			: base(texture, tooltipText, width, height)
+		public KsmGuiIconButton(KsmGuiBase parent, Texture2D texture, UnityAction onClick = null, string tooltipText = null, int width = 16, int height = 16)
+			: base(parent, texture, tooltipText, width, height)
 		{
 			ButtonComponent = TopObject.AddComponent<Button>();
 			ButtonComponent.targetGraphic = Image;

@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -61,52 +63,23 @@ namespace KERBALISM.KsmGui
 		public DragPanel DragPanel { get; private set; }
 		public ContentSizeFitter SizeFitter { get; private set; }
 		public Action OnClose { get; set; }
-		public HorizontalOrVerticalLayoutGroup TopLayout { get; private set; }
+		public HorizontalOrVerticalLayoutGroup LayoutGroup { get; private set; }
 
-		public enum TopLayoutType { Vertical, Horizontal }
+		public enum LayoutGroupType { Vertical, Horizontal }
 
 		public KsmGuiWindow
 			(
-				TopLayoutType topLayout,
+				LayoutGroupType topLayout,
 				float opacity = 1f,
 				bool isDraggable = false, int dragOffset = 0,
-				TextAnchor layoutAlignment = TextAnchor.UpperLeft,
+				TextAnchor groupAlignment = TextAnchor.UpperLeft,
+				float groupSpacing = 0f,
 				TextAnchor screenAnchor = TextAnchor.MiddleCenter,
 				TextAnchor windowPivot = TextAnchor.MiddleCenter,
-				float posX = 0f, float posY = 0f
-			) : base()
+				int posX = 0, int posY = 0
+			) : base(null)
 		{
-			// set the anchor (origin point) on the parent (screen) that will be used as reference in anchoredPosition
-			switch (screenAnchor)
-			{
-				case TextAnchor.UpperLeft:    TopTransform.anchorMin = new Vector2(0.0f, 1.0f); TopTransform.anchorMax = new Vector2(0.0f, 1.0f); break;
-				case TextAnchor.UpperCenter:  TopTransform.anchorMin = new Vector2(0.5f, 1.0f); TopTransform.anchorMax = new Vector2(0.5f, 1.0f); break;
-				case TextAnchor.UpperRight:   TopTransform.anchorMin = new Vector2(1.0f, 1.0f); TopTransform.anchorMax = new Vector2(1.0f, 1.0f); break;
-				case TextAnchor.MiddleLeft:   TopTransform.anchorMin = new Vector2(0.0f, 0.5f); TopTransform.anchorMax = new Vector2(0.0f, 0.5f); break;
-				case TextAnchor.MiddleCenter: TopTransform.anchorMin = new Vector2(0.5f, 0.5f); TopTransform.anchorMax = new Vector2(0.5f, 0.5f); break;
-				case TextAnchor.MiddleRight:  TopTransform.anchorMin = new Vector2(1.0f, 0.5f); TopTransform.anchorMax = new Vector2(1.0f, 0.5f); break;
-				case TextAnchor.LowerLeft:    TopTransform.anchorMin = new Vector2(0.0f, 0.0f); TopTransform.anchorMax = new Vector2(0.0f, 0.0f); break;
-				case TextAnchor.LowerCenter:  TopTransform.anchorMin = new Vector2(0.5f, 0.0f); TopTransform.anchorMax = new Vector2(0.5f, 0.0f); break;
-				case TextAnchor.LowerRight:   TopTransform.anchorMin = new Vector2(1.0f, 0.0f); TopTransform.anchorMax = new Vector2(1.0f, 0.0f); break;
-			}
-
-			// set the pivot (destination point) on the window that will be used as reference in anchoredPosition
-			switch (windowPivot)
-			{
-				case TextAnchor.UpperLeft:    TopTransform.pivot = new Vector2(0.0f, 1.0f); break;
-				case TextAnchor.UpperCenter:  TopTransform.pivot = new Vector2(0.5f, 1.0f); break;
-				case TextAnchor.UpperRight:   TopTransform.pivot = new Vector2(1.0f, 1.0f); break;
-				case TextAnchor.MiddleLeft:   TopTransform.pivot = new Vector2(0.0f, 0.5f); break;
-				case TextAnchor.MiddleCenter: TopTransform.pivot = new Vector2(0.5f, 0.5f); break;
-				case TextAnchor.MiddleRight:  TopTransform.pivot = new Vector2(1.0f, 0.5f); break;
-				case TextAnchor.LowerLeft:    TopTransform.pivot = new Vector2(0.0f, 0.0f); break;
-				case TextAnchor.LowerCenter:  TopTransform.pivot = new Vector2(0.5f, 0.0f); break;
-				case TextAnchor.LowerRight:   TopTransform.pivot = new Vector2(1.0f, 0.0f); break;
-			}
-
-			// distance in pixels between the anchor and the pivot
-			TopTransform.anchoredPosition = new Vector2(posX, posY);
-
+			TopTransform.SetAnchorsAndPosition(screenAnchor, windowPivot, posX, posY);
 			TopTransform.SetParentFixScale(KsmGuiMasterController.Instance.KsmGuiTransform);
 			TopTransform.localScale = Vector3.one;
 
@@ -131,17 +104,18 @@ namespace KERBALISM.KsmGui
 			SizeFitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
 			SizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-			if (topLayout == TopLayoutType.Vertical)
-				TopLayout = TopObject.AddComponent<VerticalLayoutGroup>();
+			if (topLayout == LayoutGroupType.Vertical)
+				LayoutGroup = TopObject.AddComponent<VerticalLayoutGroup>();
 			else
-				TopLayout = TopObject.AddComponent<HorizontalLayoutGroup>();
+				LayoutGroup = TopObject.AddComponent<HorizontalLayoutGroup>();
 
-			TopLayout.padding = new RectOffset(5, 5, 5, 5);
-			TopLayout.childControlHeight = true;
-			TopLayout.childControlWidth = true;
-			TopLayout.childForceExpandHeight = false;
-			TopLayout.childForceExpandWidth = false;
-			TopLayout.childAlignment = layoutAlignment;
+			LayoutGroup.spacing = groupSpacing;
+			LayoutGroup.padding = new RectOffset(5, 5, 5, 5);
+			LayoutGroup.childControlHeight = true;
+			LayoutGroup.childControlWidth = true;
+			LayoutGroup.childForceExpandHeight = false;
+			LayoutGroup.childForceExpandWidth = false;
+			LayoutGroup.childAlignment = groupAlignment;
 
 			// close on scene changes
 			GameEvents.onGameSceneLoadRequested.Add(OnSceneChange);

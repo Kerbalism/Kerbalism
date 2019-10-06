@@ -13,13 +13,14 @@ namespace KERBALISM.KsmGui
 
 		public KsmGuiHorizontalLayout
 		(
+			KsmGuiBase parent,
 			int spacing = 0,
 			int paddingLeft = 0,
 			int paddingRight = 0,
 			int paddingTop = 0,
 			int paddingBottom = 0,
 			TextAnchor childAlignement = TextAnchor.UpperLeft
-		) : base()
+		) : base(parent)
 		{
 			LayoutGroup = TopObject.AddComponent<HorizontalLayoutGroup>();
 			LayoutGroup.spacing = spacing;

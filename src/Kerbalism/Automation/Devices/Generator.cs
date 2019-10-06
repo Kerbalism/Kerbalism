@@ -13,7 +13,7 @@ namespace KERBALISM
 		public override string Name => "generator";
 
 		public override string Status
-			=> module.isAlwaysActive ? Localizer.Format("#KERBALISM_Generic_ALWAYSON") : Lib.Color(module.generatorIsActive, Localizer.Format("#KERBALISM_Generic_ON"), Lib.KColor.Green, Localizer.Format("#KERBALISM_Generic_OFF"),  Lib.KColor.Yellow);
+			=> module.isAlwaysActive ? Localizer.Format("#KERBALISM_Generic_ALWAYSON") : Lib.Color(module.generatorIsActive, Localizer.Format("#KERBALISM_Generic_ON"), Lib.Kolor.Green, Localizer.Format("#KERBALISM_Generic_OFF"),  Lib.Kolor.Yellow);
 
 		public override void Ctrl(bool value)
 		{
@@ -44,7 +44,7 @@ namespace KERBALISM
 			{
 				if (prefab.isAlwaysActive) return Localizer.Format("#KERBALISM_Generic_ALWAYSON");
 				bool is_on = Lib.Proto.GetBool(protoModule, "generatorIsActive");
-				return Lib.Color(is_on, Localizer.Format("#KERBALISM_Generic_ON"), Lib.KColor.Green, Localizer.Format("#KERBALISM_Generic_OFF"), Lib.KColor.Yellow);
+				return Lib.Color(is_on, Localizer.Format("#KERBALISM_Generic_ON"), Lib.Kolor.Green, Localizer.Format("#KERBALISM_Generic_OFF"), Lib.Kolor.Yellow);
 			}
 		}
 

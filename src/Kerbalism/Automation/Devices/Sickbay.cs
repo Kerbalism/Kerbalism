@@ -11,7 +11,7 @@ namespace KERBALISM
 		public SickbayDevice(Sickbay module) : base(module) { }
 
 		public override string Status
-			=> Lib.Color(module.running, Localizer.Format("#KERBALISM_Generic_RUNNING"), Lib.KColor.Green, Localizer.Format("#KERBALISM_Generic_STOPPED"), Lib.KColor.Yellow);
+			=> Lib.Color(module.running, Localizer.Format("#KERBALISM_Generic_RUNNING"), Lib.Kolor.Green, Localizer.Format("#KERBALISM_Generic_STOPPED"), Lib.Kolor.Yellow);
 
 		public override void Ctrl(bool value)
 		{
@@ -32,7 +32,7 @@ namespace KERBALISM
 			: base(prefab, protoPart, protoModule) { }
 
 		public override string Status
-			=> Lib.Color(Lib.Proto.GetBool(protoModule, "running"), Localizer.Format("#KERBALISM_Generic_RUNNING"), Lib.KColor.Green, Localizer.Format("#KERBALISM_Generic_STOPPED"), Lib.KColor.Yellow);
+			=> Lib.Color(Lib.Proto.GetBool(protoModule, "running"), Localizer.Format("#KERBALISM_Generic_RUNNING"), Lib.Kolor.Green, Localizer.Format("#KERBALISM_Generic_STOPPED"), Lib.Kolor.Yellow);
 
 		public override void Ctrl(bool value)
 		{

@@ -8,11 +8,10 @@ namespace KERBALISM.KsmGui
 	{
 		public KsmGuiText TextObject { get; private set; }
 
-		public KsmGuiTextBox(string text, string tooltipText = null, TextAlignmentOptions alignement = TextAlignmentOptions.TopLeft) : base()
+		public KsmGuiTextBox(KsmGuiBase parent, string text, string tooltipText = null, TextAlignmentOptions alignement = TextAlignmentOptions.TopLeft) : base(parent)
 		{
 			SetLayoutElement(true, true);
-			TextObject = new KsmGuiText(text, null, alignement);
-			Add(TextObject);
+			TextObject = new KsmGuiText(this, text, null, alignement);
 
 			if (tooltipText != null) SetTooltipText(text);
 		}

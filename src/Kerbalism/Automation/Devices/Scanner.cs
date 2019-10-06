@@ -11,7 +11,7 @@ namespace KERBALISM
 	{
 		public ScannerDevice(PartModule module) : base(module) { }
 
-		public override string Status => Lib.Color(Lib.ReflectionValue<bool>(module, "scanning"), Localizer.Format("#KERBALISM_Generic_ENABLED"), Lib.KColor.Green, Localizer.Format("#KERBALISM_Generic_DISABLED"), Lib.KColor.Yellow);
+		public override string Status => Lib.Color(Lib.ReflectionValue<bool>(module, "scanning"), Localizer.Format("#KERBALISM_Generic_ENABLED"), Lib.Kolor.Green, Localizer.Format("#KERBALISM_Generic_DISABLED"), Lib.Kolor.Yellow);
 
 		public override void Ctrl(bool value)
 		{
@@ -36,7 +36,7 @@ namespace KERBALISM
 			this.vessel = v;
 		}
 
-		public override string Status => Lib.Color(Lib.Proto.GetBool(protoModule, "scanning"), Localizer.Format("#KERBALISM_Generic_ENABLED"), Lib.KColor.Green, Localizer.Format("#KERBALISM_Generic_DISABLED"), Lib.KColor.Yellow);
+		public override string Status => Lib.Color(Lib.Proto.GetBool(protoModule, "scanning"), Localizer.Format("#KERBALISM_Generic_ENABLED"), Lib.Kolor.Green, Localizer.Format("#KERBALISM_Generic_DISABLED"), Lib.Kolor.Yellow);
 
 		public override void Ctrl(bool value)
 		{

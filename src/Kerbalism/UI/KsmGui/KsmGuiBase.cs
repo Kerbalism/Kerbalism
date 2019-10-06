@@ -12,18 +12,37 @@ namespace KERBALISM.KsmGui
 		public LayoutElement LayoutElement { get; private set; }
 		public KsmGuiUpdateHandler UpdateHandler { get; private set; }
 		private KsmGuiTooltip tooltip;
+		private KsmGuiLayoutOptimizer layoutOptimizer;
 
-		public KsmGuiBase()
+		/// <summary>
+		/// transform that will be used as parent for child KsmGui objects.
+		/// override this if you have an internal object hierarchy where child
+		/// objects must be parented to a specific transform (ex : scroll view)
+		/// </summary>
+		public virtual RectTransform ParentTransformForChilds => TopTransform;
+
+		public KsmGuiBase(KsmGuiBase parent)
 		{
 			TopObject = new GameObject(Name);
 			TopTransform = TopObject.AddComponent<RectTransform>();
 			TopObject.AddComponent<CanvasRenderer>();
+
+			if (parent != null)
+			{
+				layoutOptimizer = parent.layoutOptimizer;
+				TopTransform.SetParentFixScale(parent.ParentTransformForChilds);
+			}
+			else
+			{
+				layoutOptimizer = TopObject.AddComponent<KsmGuiLayoutOptimizer>();
+			}
+
 			TopObject.SetLayerRecursive(5);
 		}
 
 		public virtual string Name => GetType().Name;
 
-		public bool Enabled
+		public virtual bool Enabled
 		{
 			get => TopObject.activeSelf;
 			set
@@ -72,24 +91,16 @@ namespace KERBALISM.KsmGui
 			LayoutElement.minHeight = minHeight;
 		}
 
-		public virtual void Add(KsmGuiBase elementToAdd)
+		public void RebuildLayout() => layoutOptimizer.RebuildLayout();
+
+		public void MoveAsFirstChild()
 		{
-			elementToAdd.TopTransform.SetParentFixScale(TopTransform);
-			elementToAdd.TopObject.SetLayerRecursive(5);
+			TopTransform.SetAsFirstSibling();
 		}
 
-		public virtual void AddFirst(KsmGuiBase elementToAdd)
+		public void MoveAfter(KsmGuiBase afterThis)
 		{
-			elementToAdd.TopTransform.SetParentFixScale(TopTransform);
-			elementToAdd.TopObject.SetLayerRecursive(5);
-			elementToAdd.TopTransform.SetAsFirstSibling();
+			
 		}
-
-		public virtual void AddAfter(KsmGuiBase afterThis, KsmGuiBase elementToAdd)
-		{
-
-		}
-
-
 	}
 }

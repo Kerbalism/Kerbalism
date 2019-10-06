@@ -11,11 +11,20 @@ namespace KERBALISM
 	[KSPAddon(KSPAddon.Startup.MainMenu, false)]
 	public class KerbalismMain: MonoBehaviour
 	{
+		private static bool initDone = false;
+
 		public void Start()
 		{
-			Textures.Initialize();              // set up the icon textures
-			KsmGui.KsmGuiMasterController.Initialize(); // setup the gui framework
-			RemoteTech.EnableInSPC();       // allow RemoteTech Core to run in the Space Center
+			if (!initDone)
+			{
+				initDone = true;
+				Textures.Initialize();                      // set up the icon textures
+				KsmGui.KsmGuiMasterController.Initialize(); // setup the gui framework
+				Sim.Init();                                 // find suns (Kopernicus support)
+				ScienceDB.Init();                           // build the science database (needs Sim.Init() first)
+			}
+
+			RemoteTech.EnableInSPC();					// allow RemoteTech Core to run in the Space Center
 		}
 	}
 
@@ -119,7 +128,7 @@ namespace KERBALISM
 				Profile.SetupPods();
 
 				// initialize subsystems
-				Sim.Init();
+				//Sim.Init();
 				Cache.Init();
 				ResourceCache.Init();
 				Radiation.Init();
@@ -703,6 +712,12 @@ namespace KERBALISM
 		// return true if the vessel is a rescue mission
 		public static bool IsRescueMission(Vessel v)
 		{
+			// avoid corner-case situation on the first update : rescue vessel handling code is called
+			// after the VesselData creation, causing Vesseldata evaluation to be delayed, causing anything
+			// that rely on it to fail on its first update or in OnStart
+			if (v.situation == Vessel.Situations.PRELAUNCH)
+				return false;
+
 			// if at least one of the crew is flagged as rescue, consider it a rescue mission
 			foreach (var c in Lib.CrewList(v))
 			{

@@ -35,7 +35,7 @@ namespace KERBALISM.KsmGui
 
 			Canvas = KsmGuiCanvas.AddComponent<Canvas>();
 			Canvas.renderMode = RenderMode.ScreenSpaceCamera;
-			Canvas.pixelPerfect = true;
+			Canvas.pixelPerfect = false;
 			Canvas.worldCamera = UIMasterController.Instance.uiCamera;
 			Canvas.sortingLayerName = "Dialogs"; // it seems this is actually handling the sorting, not the Z value...
 			Canvas.additionalShaderChannels = AdditionalCanvasShaderChannels.TexCoord1 | AdditionalCanvasShaderChannels.Normal | AdditionalCanvasShaderChannels.Tangent;

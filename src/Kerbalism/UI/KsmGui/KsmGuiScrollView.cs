@@ -8,8 +8,11 @@ namespace KERBALISM.KsmGui
 	public class KsmGuiVerticalScrollView : KsmGuiBase
 	{
 		public RectTransform Content { get; private set; }
+		public VerticalLayoutGroup ContentGroup { get; private set; }
 
-		public KsmGuiVerticalScrollView() : base ()
+		public override RectTransform ParentTransformForChilds => Content;
+
+		public KsmGuiVerticalScrollView(KsmGuiBase parent) : base (parent)
 		{
 			ScrollRect scrollRect = TopObject.AddComponent<ScrollRect>();
 			scrollRect.horizontal = false;
@@ -52,14 +55,14 @@ namespace KERBALISM.KsmGui
 			sizeFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
 			sizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-			VerticalLayoutGroup contentGroup = contentObject.AddComponent<VerticalLayoutGroup>();
-			contentGroup.padding = new RectOffset(5, 5, 5, 5);
-			contentGroup.spacing = 5f;
-			contentGroup.childAlignment = TextAnchor.UpperLeft;
-			contentGroup.childControlHeight = true;
-			contentGroup.childControlWidth = true;
-			contentGroup.childForceExpandHeight = false;
-			contentGroup.childForceExpandWidth = false;
+			ContentGroup = contentObject.AddComponent<VerticalLayoutGroup>();
+			ContentGroup.padding = new RectOffset(5, 5, 5, 5);
+			ContentGroup.spacing = 5f;
+			ContentGroup.childAlignment = TextAnchor.UpperLeft;
+			ContentGroup.childControlHeight = true;
+			ContentGroup.childControlWidth = true;
+			ContentGroup.childForceExpandHeight = false;
+			ContentGroup.childForceExpandWidth = false;
 
 			Content.SetParentFixScale(viewportTransform);
 			scrollRect.content = Content;
@@ -118,21 +121,6 @@ namespace KERBALISM.KsmGui
 			handleImage.color = new Color(0.4f, 0.4f, 0.4f);
 			handleTransform.SetParentFixScale(slidingAreaTransform);
 			scrollbarComponent.targetGraphic = handleImage;
-		}
-
-		public override void Add(KsmGuiBase elementToAdd)
-		{
-			elementToAdd.TopTransform.SetParentFixScale(Content);
-			elementToAdd.TopObject.SetLayerRecursive(5);
-			//ApplyCanvasScalerScale(elementToAdd.TopTransform);
-		}
-
-		public override void AddFirst(KsmGuiBase elementToAdd)
-		{
-			elementToAdd.TopTransform.SetParentFixScale(Content);
-			elementToAdd.TopObject.SetLayerRecursive(5);
-			elementToAdd.TopTransform.SetAsFirstSibling();
-			//ApplyCanvasScalerScale(elementToAdd.TopTransform);
 		}
 
 	}

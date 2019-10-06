@@ -480,7 +480,7 @@ namespace KERBALISM
 		}
 
 		///<summary>standardized kerbalism string colors</summary>
-		public enum KColor
+		public enum Kolor
 		{
 			None,
 			Green,
@@ -503,42 +503,62 @@ namespace KERBALISM
 				: " <color=#FF8000><mark=#FF800033><mspace=1em><b><i>X </i></b></mspace></mark></color><pos=5em>";
 		}
 
-		///<summary>return the hex representation for kerbalism colors</summary>
-		public static string KColorToHex(KColor color)
+		///<summary>return the hex representation for kerbalism Kolors</summary>
+		public static string KolorToHex(Kolor color)
 		{
 			switch (color)
 			{
-				case KColor.None:		return "#FFFFFF"; // use this in the Color() methods if no color tag is to be applied
-				case KColor.Green:		return "#88FF00"; // green whith slightly less red than the ksp ui default (CCFF00), for better contrast with yellow
-				case KColor.Yellow:		return "#FFD200"; // ksp ui yellow
-				case KColor.Orange:		return "#FF8000"; // ksp ui orange
-				case KColor.Red:		return "#FF3333"; // custom red
-				case KColor.PosRate:	return "#88FF00"; // green
-				case KColor.NegRate:	return "#FF8000"; // orange
-				case KColor.Science:	return "#6DCFF6"; // ksp science color
-				case KColor.Cyan:		return "#ACFFFC"; // ksp ui light cyan (VAB part tooltip text)
-				case KColor.LightGrey:	return "#CCCCCC"; // light grey
-				case KColor.DarkGrey:	return "#999999"; // dark grey	
+				case Kolor.None:		return "#FFFFFF"; // use this in the Color() methods if no color tag is to be applied
+				case Kolor.Green:		return "#88FF00"; // green whith slightly less red than the ksp ui default (CCFF00), for better contrast with yellow
+				case Kolor.Yellow:		return "#FFD200"; // ksp ui yellow
+				case Kolor.Orange:		return "#FF8000"; // ksp ui orange
+				case Kolor.Red:		    return "#FF3333"; // custom red
+				case Kolor.PosRate:	    return "#88FF00"; // green
+				case Kolor.NegRate:	    return "#FF8000"; // orange
+				case Kolor.Science:	    return "#6DCFF6"; // ksp science color
+				case Kolor.Cyan:		return "#ACFFFC"; // ksp ui light cyan (VAB part tooltip text)
+				case Kolor.LightGrey:	return "#CCCCCC"; // light grey
+				case Kolor.DarkGrey:	return "#999999"; // dark grey	
 				default:				return "#FEFEFE";
 			}
 		}
 
-		///<summary>return string with the specified color and bold if stated</summary>
-		public static string Color(string s, KColor color, bool bold = false)
+		///<summary>return the unity Colot  for kerbalism Kolors</summary>
+		public static Color KolorToColor(Kolor color)
 		{
-			return !bold ? BuildString("<color=", KColorToHex(color), ">", s, "</color>") : BuildString("<color=", KColorToHex(color), "><b>", s, "</b></color>");
+			switch (color)
+			{
+				case Kolor.None:      return new Color(1.000f, 1.000f, 1.000f); 
+				case Kolor.Green:     return new Color(0.533f, 1.000f, 0.000f);
+				case Kolor.Yellow:    return new Color(1.000f, 0.824f, 0.000f);
+				case Kolor.Orange:    return new Color(1.000f, 0.502f, 0.000f);
+				case Kolor.Red:       return new Color(1.000f, 0.200f, 0.200f);
+				case Kolor.PosRate:   return new Color(0.533f, 1.000f, 0.000f);
+				case Kolor.NegRate:   return new Color(1.000f, 0.502f, 0.000f);
+				case Kolor.Science:   return new Color(0.427f, 0.812f, 0.965f);
+				case Kolor.Cyan:      return new Color(0.675f, 1.000f, 0.988f);
+				case Kolor.LightGrey: return new Color(0.800f, 0.800f, 0.800f);
+				case Kolor.DarkGrey:  return new Color(0.600f, 0.600f, 0.600f);
+				default:              return new Color(1.000f, 1.000f, 1.000f);
+			}
+		}
+
+		///<summary>return string with the specified color and bold if stated</summary>
+		public static string Color(string s, Kolor color, bool bold = false)
+		{
+			return !bold ? BuildString("<color=", KolorToHex(color), ">", s, "</color>") : BuildString("<color=", KolorToHex(color), "><b>", s, "</b></color>");
 		}
 
 		///<summary>return string with different colors depending on the specified condition. "KColor.Default" will not apply any coloring</summary>
-		public static string Color(bool condition, string s, KColor colorIfTrue, KColor colorIfFalse = KColor.None, bool bold = false)
+		public static string Color(bool condition, string s, Kolor colorIfTrue, Kolor colorIfFalse = Kolor.None, bool bold = false)
 		{
-			return condition ? Color(s, colorIfTrue, bold) : colorIfFalse == KColor.None ? bold ? Bold(s) : s : Color(s, colorIfFalse, bold);
+			return condition ? Color(s, colorIfTrue, bold) : colorIfFalse == Kolor.None ? bold ? Bold(s) : s : Color(s, colorIfFalse, bold);
 		}
 
 		///<summary>return different colored strings depending on the specified condition. "KColor.Default" will not apply any coloring</summary>
-		public static string Color(bool condition, string sIfTrue, KColor colorIfTrue, string sIfFalse, KColor colorIfFalse = KColor.None, bool bold = false)
+		public static string Color(bool condition, string sIfTrue, Kolor colorIfTrue, string sIfFalse, Kolor colorIfFalse = Kolor.None, bool bold = false)
 		{
-			return condition ? Color(sIfTrue, colorIfTrue, bold) : colorIfFalse == KColor.None ? bold ? Bold(sIfFalse) : sIfFalse : Color(sIfFalse, colorIfFalse, bold);
+			return condition ? Color(sIfTrue, colorIfTrue, bold) : colorIfFalse == Kolor.None ? bold ? Bold(sIfFalse) : sIfFalse : Color(sIfFalse, colorIfFalse, bold);
 		}
 
 		///<summary>return string in bold</summary>
@@ -981,9 +1001,9 @@ namespace KERBALISM
 		public static string HumanReadableScience(double value, bool compact = true)
 		{
 			if (compact)
-				return Lib.Color(value.ToString("F1"), KColor.Science, true);
+				return Lib.Color(value.ToString("F1"), Kolor.Science, true);
 			else
-				return Lib.Color(Lib.BuildString(value.ToString("F1"), " CREDITS"), KColor.Science);
+				return Lib.Color(Lib.BuildString(value.ToString("F1"), " CREDITS"), Kolor.Science);
 
 		}
 #endregion
@@ -1888,13 +1908,13 @@ namespace KERBALISM
 				{
 					if (drive.files.Count > 0) //< it should always be the case
 					{
-						string filename = string.Empty;
+						SubjectData filename = null;
 						int i = Lib.RandomInt(drive.files.Count);
-						foreach (var pair in drive.files)
+						foreach (File file in drive.files.Values)
 						{
 							if (i-- == 0)
 							{
-								filename = pair.Key;
+								filename = file.subjectData;
 								break;
 							}
 						}
@@ -2302,13 +2322,13 @@ namespace KERBALISM
 
 	public class ObjectPair<T, U>
 	{
-		public T a;
-		public U b;
+		public T Key;
+		public U Value;
 
-		public ObjectPair(T a, U b)
+		public ObjectPair(T key, U Value)
 		{
-			this.a = a;
-			this.b = b;
+			this.Key = key;
+			this.Value = Value;
 		}
 	}
 

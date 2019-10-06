@@ -161,6 +161,8 @@ namespace KERBALISM
 		/// <summary> [environment] List of all stars/suns and the related data/calculations for the current vessel</summary>
 		public List<SunInfo> EnvSunsInfo => sunsInfo; List<SunInfo> sunsInfo;
 
+		public VesselSituation VesselSituation => vesselSituation; VesselSituation vesselSituation;
+
 		public class SunInfo
 		{
 			/// <summary> reference to the sun/star</summary>
@@ -618,6 +620,7 @@ namespace KERBALISM
 			underwater = Sim.Underwater(Vessel);
 			breathable = Sim.Breathable(Vessel, EnvUnderwater);
 			landed = Lib.Landed(Vessel);
+			vesselSituation = VesselSituation.GetExperimentSituation(Vessel);
 			inAtmosphere = Vessel.mainBody.atmosphere && Vessel.altitude < Vessel.mainBody.atmosphereDepth;
 			zeroG = !EnvLanded && !inAtmosphere;
 

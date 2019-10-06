@@ -72,28 +72,29 @@ namespace KERBALISM
 			{
 				foreach (File file in drive.files.Values)
 				{
-					double totalScienceValue = file.expInfo.ScienceValue(file.size);
-					file.expInfo.RemoveScienceCollectedInFlight(totalScienceValue);
-					file.expInfo.UpdateSubjectCompletion(totalScienceValue);
+					double totalScienceValue = file.subjectData.ScienceValue(file.size);
+					file.subjectData.RemoveScienceCollectedInFlight(totalScienceValue);
+					file.subjectData.UpdateSubjectCompletion(totalScienceValue);
 
 					if (file.useStockCrediting)
 					{
 						file.ConvertToStockData().Save(protoHardDrive.moduleValues.AddNode("ScienceData"));
+						file.subjectData.SetAsPersistent();
 					}
 					else
 					{
-						double subjectValue = file.expInfo.ScienceValue(file.size, true);
-						Science.AddScienceToRnDSubject(file.expInfo.StockSubject, subjectValue);
+						double subjectValue = file.subjectData.ScienceValue(file.size, true);
+						file.subjectData.AddScienceToRnDSubject(subjectValue);
 						scienceToCredit += subjectValue;
-						GameEvents.OnScienceRecieved.Fire((float)subjectValue, file.expInfo.StockSubject, pv, true); // needed for contracts
+						GameEvents.OnScienceRecieved.Fire((float)subjectValue, file.subjectData.RnDSubject, pv, true); // needed for contracts
 						labels.Add(new DialogGUILabel(Lib.BuildString(
-							Lib.Color("+ " + subjectValue.ToString("F1"), Lib.KColor.Science),
+							Lib.Color("+ " + subjectValue.ToString("F1"), Lib.Kolor.Science),
 							" (",
-							Lib.Color(file.expInfo.SubjectScienceRetrievedInKSC.ToString("F1"), Lib.KColor.Science, true),
+							Lib.Color(file.subjectData.ScienceRetrievedInKSC.ToString("F1"), Lib.Kolor.Science, true),
 							" / ",
-							Lib.Color(file.expInfo.SubjectScienceMaxValue.ToString("F1"), Lib.KColor.Science, true),
+							Lib.Color(file.subjectData.ScienceMaxValue.ToString("F1"), Lib.Kolor.Science, true),
 							") : ",
-							file.expInfo.SubjectName
+							file.subjectData.FullTitle
 							)));
 					}
 
@@ -102,28 +103,29 @@ namespace KERBALISM
 
 				foreach (Sample sample in drive.samples.Values)
 				{
-					double totalScienceValue = sample.expInfo.ScienceValue(sample.size);
-					sample.expInfo.RemoveScienceCollectedInFlight(totalScienceValue);
-					sample.expInfo.UpdateSubjectCompletion(totalScienceValue);
+					double totalScienceValue = sample.subjectData.ScienceValue(sample.size);
+					sample.subjectData.RemoveScienceCollectedInFlight(totalScienceValue);
+					sample.subjectData.UpdateSubjectCompletion(totalScienceValue);
 
 					if (sample.useStockCrediting)
 					{
 						sample.ConvertToStockData().Save(protoHardDrive.moduleValues.AddNode("ScienceData"));
+						sample.subjectData.SetAsPersistent();
 					}
 					else
 					{
-						double subjectValue = sample.expInfo.ScienceValue(sample.size, true);
-						Science.AddScienceToRnDSubject(sample.expInfo.StockSubject, subjectValue);
+						double subjectValue = sample.subjectData.ScienceValue(sample.size, true);
+						sample.subjectData.AddScienceToRnDSubject(subjectValue);
 						scienceToCredit += subjectValue;
-						GameEvents.OnScienceRecieved.Fire((float)subjectValue, sample.expInfo.StockSubject, pv, true); // needed for contracts
+						GameEvents.OnScienceRecieved.Fire((float)subjectValue, sample.subjectData.RnDSubject, pv, true); // needed for contracts
 						labels.Add(new DialogGUILabel(Lib.BuildString(
-							Lib.Color("+ " + subjectValue.ToString("F1"), Lib.KColor.Science),
+							Lib.Color("+ " + subjectValue.ToString("F1"), Lib.Kolor.Science),
 							" (",
-							Lib.Color(sample.expInfo.SubjectScienceRetrievedInKSC.ToString("F1"), Lib.KColor.Science, true),
+							Lib.Color(sample.subjectData.ScienceRetrievedInKSC.ToString("F1"), Lib.Kolor.Science, true),
 							" / ",
-							Lib.Color(sample.expInfo.SubjectScienceMaxValue.ToString("F1"), Lib.KColor.Science, true),
+							Lib.Color(sample.subjectData.ScienceMaxValue.ToString("F1"), Lib.Kolor.Science, true),
 							") : ",
-							sample.expInfo.SubjectName
+							sample.subjectData.FullTitle
 							)));
 					}
 				}
@@ -144,7 +146,7 @@ namespace KERBALISM
 						"scienceResults", "", pv.vesselName + " recovery", HighLogic.UISkin, new Rect(0.3f, 0.5f, 350f, 100f),
 						new DialogGUIVerticalLayout
 						(
-							new DialogGUIBox("SCIENCE RECOVERED : " + Lib.Color(scienceToCredit.ToString("F1") + " CREDITS", Lib.KColor.Science, true), 340f, 30f),
+							new DialogGUIBox("SCIENCE RECOVERED : " + Lib.Color(scienceToCredit.ToString("F1") + " CREDITS", Lib.Kolor.Science, true), 340f, 30f),
 							new DialogGUIScrollList
 							(
 								new Vector2(340f, 250f), false, true,

@@ -311,7 +311,7 @@ namespace KERBALISM
 			{
 				Message.Post
 				(
-					Lib.Color(Lib.BuildString("WARNING: not evering copied"), Lib.KColor.Red, true),
+					Lib.Color(Lib.BuildString("WARNING: not evering copied"), Lib.Kolor.Red, true),
 					Lib.BuildString("Storage is at capacity")
 				);
 			}
@@ -333,7 +333,7 @@ namespace KERBALISM
 			{
 				Message.Post
 				(
-					Lib.Color(Lib.BuildString("WARNING: not evering copied"), Lib.KColor.Red, true),
+					Lib.Color(Lib.BuildString("WARNING: not evering copied"), Lib.Kolor.Red, true),
 					Lib.BuildString("Storage is at capacity")
 				);
 			}
@@ -369,34 +369,34 @@ namespace KERBALISM
 
 		// TODO do something about limited capacity...
 		// EVAs returning should get a warning if needed
+		// TODO : this should not be used for EVA boarding, too much information is lost in the conversion
 		public void ReturnData(ScienceData data)
 		{
-			// store the data
-			bool result = false;
-			if (data.baseTransmitValue > float.Epsilon || data.transmitBonus > double.Epsilon)
+			SubjectData subjectData = ScienceDB.GetSubjectDataFromStockId(data.subjectID);
+			if (subjectData == null)
+				return;
+
+			if (data.baseTransmitValue > float.Epsilon || data.transmitBonus > float.Epsilon)
 			{
-				result = drive.Record_file(data.subjectID, data.dataAmount);
+				drive.Record_file(subjectData, data.dataAmount);
 			}
 			else
 			{
-				var experimentInfo = Science.Experiment(data.subjectID);
-				var sampleMass = Science.GetSampleMass(data.subjectID);
-				var mass = sampleMass / experimentInfo.MaxAmount * data.dataAmount;
-
-				result = drive.Record_sample(data.subjectID, data.dataAmount, mass);
+				drive.Record_sample(subjectData, data.dataAmount, subjectData.ExpInfo.MassPerMB * data.dataAmount);
 			}
 		}
 
 		public void DumpData(ScienceData data)
 		{
+			SubjectData subjectData = ScienceDB.GetSubjectDataFromStockId(data.subjectID);
 			// remove the data
-			if (data.baseTransmitValue > float.Epsilon || data.transmitBonus > double.Epsilon)
+			if (data.baseTransmitValue > float.Epsilon || data.transmitBonus > float.Epsilon)
 			{
-				drive.Delete_file(data.subjectID, data.dataAmount);
+				drive.Delete_file(subjectData, data.dataAmount);
 			}
 			else
 			{
-				drive.Delete_sample(data.subjectID, data.dataAmount);
+				drive.Delete_sample(subjectData, data.dataAmount);
 			}
 		}
 

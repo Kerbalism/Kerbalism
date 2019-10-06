@@ -7,7 +7,7 @@ namespace KERBALISM.KsmGui
 {
 	public class KsmGuiVerticalSection : KsmGuiVerticalLayout
 	{
-		public KsmGuiVerticalSection() : base(0,5,5,5,5, TextAnchor.UpperLeft)
+		public KsmGuiVerticalSection(KsmGuiBase parent) : base(parent, 0, 5,5,5,5, TextAnchor.UpperLeft)
 		{
 			Image background = TopObject.AddComponent<Image>();
 			background.color = KsmGuiStyle.boxColor;

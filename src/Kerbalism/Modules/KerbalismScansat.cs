@@ -17,6 +17,7 @@ namespace KERBALISM
 
 
 		private PartModule scanner = null;
+		ExperimentInfo expInfo;
 		public bool IsScanning { get; internal set; }
 
 		public override void OnStart(StartState state)
@@ -35,6 +36,7 @@ namespace KERBALISM
 
 			if (scanner == null) return;
 			sensorType = Lib.ReflectionValue<int>(scanner, "sensorType");
+			expInfo = ScienceDB.GetExperimentInfo(experimentType);
 		}
 
 		public void FixedUpdate()
@@ -64,15 +66,14 @@ namespace KERBALISM
 
 				if (IsScanning)
 				{
-					ExperimentSituation situation = Science.GetExperimentSituation(vessel);
-					string subject_id = Science.GetSubjectId(experimentType, vessel, situation);
-					ExperimentInfo expInfo = Science.Experiment(subject_id);
-					expInfo.CreateSubjectInRnD(vessel, situation);
+					SubjectData subject = ScienceDB.GetSubjectData(expInfo, vd.VesselSituation);
+					if (subject == null)
+						return;
 
-					double size = expInfo.MaxAmount * coverage_delta / 100.0; // coverage is 0-100%
+
+					double size = expInfo.DataSize * coverage_delta / 100.0; // coverage is 0-100%
 					size += warp_buffer;
-
-					size = Drive.StoreFile(vessel, subject_id, size);
+					size = Drive.StoreFile(vessel, subject, size);
 					if (size > double.Epsilon)
 					{
 						// we filled all drives up to the brim but were unable to store everything
@@ -98,7 +99,7 @@ namespace KERBALISM
 							warp_buffer = 0;
 							StopScan();
 							vd.scansat_id.Add(part.flightID);
-							Message.Post(Lib.Color("Scanner halted", Lib.KColor.Red, true), "Scanner halted on <b>" + vessel.vesselName + "</b>. No storage left on vessel.");
+							Message.Post(Lib.Color("Scanner halted", Lib.Kolor.Red, true), "Scanner halted on <b>" + vessel.vesselName + "</b>. No storage left on vessel.");
 						}
 					}
 				}
@@ -207,12 +208,12 @@ namespace KERBALISM
 
 				if (is_scanning)
 				{
-					ExperimentSituation situation = Science.GetExperimentSituation(vessel);
-					string subject_id = Science.GetSubjectId(kerbalismScansat.experimentType, vessel, situation);
-					ExperimentInfo expInfo = Science.Experiment(subject_id);
-					expInfo.CreateSubjectInRnD(vessel, situation);
+					ExperimentInfo expInfo = ScienceDB.GetExperimentInfo(kerbalismScansat.experimentType);
+					SubjectData subject = ScienceDB.GetSubjectData(expInfo, vd.VesselSituation);
+					if (subject == null)
+						return;
 
-					double size = expInfo.MaxAmount * coverage_delta / 100.0; // coverage is 0-100%
+					double size = expInfo.DataSize * coverage_delta / 100.0; // coverage is 0-100%
 					size += warp_buffer;
 
 					if (size > double.Epsilon)
@@ -222,7 +223,7 @@ namespace KERBALISM
 						{
 							var available = d.FileCapacityAvailable();
 							var chunk = Math.Min(size, available);
-							if (!d.Record_file(subject_id, chunk, true))
+							if (!d.Record_file(subject, chunk, true))
 								break;
 							size -= chunk;
 
