@@ -11,6 +11,21 @@ namespace KERBALISM
 
 	public static class Science
 	{
+		public static bool GameHasRnD
+		{
+			get
+			{
+				switch (HighLogic.CurrentGame.Mode)
+				{
+					case Game.Modes.CAREER:
+					case Game.Modes.SCIENCE_SANDBOX:
+						return true;
+					default:
+						return false;
+				}
+			}
+		}
+
 		// science points from transmission won't be credited until they reach this amount
 		public const double minCreditBuffer = 0.1;
 
@@ -40,10 +55,38 @@ namespace KERBALISM
 			}
 		}
 
+		public static void PatchExperimentPrefabs()
+		{
+			// parts that have experiments can't get their module info (what is shown in the VAB tooltip) correctly setup
+			// because the ExperimentInfo database isn't available at loading time, so we recompile their info manually when
+			// loading a save.
+			foreach (AvailablePart ap in PartLoader.LoadedPartsList)
+			{
+				List<Experiment> experimentModules = ap.partPrefab.FindModulesImplementing<Experiment>();
+
+				if (experimentModules.Count == 0)
+					continue;
+
+				ap.moduleInfos.Clear();
+				ap.resourceInfos.Clear();
+
+				foreach (Experiment experimentModule in experimentModules)
+					experimentModule.ExpInfo = ScienceDB.GetExperimentInfo(experimentModule.experiment_id);
+
+				try
+				{
+					Lib.ReflectionCall(PartLoader.Instance, "CompilePartInfo", new Type[] { typeof(AvailablePart), typeof(Part) }, new object[] { ap, ap.partPrefab });
+				}
+				catch (Exception)
+				{
+					Lib.Log("Could not patch the moduleInfo for part " + ap.name);
+				}
+			}
+		}
+
 		// pseudo-ctor
 		public static void Init()
 		{
-			
 			if (!Features.Science)
 				return;
 
@@ -157,7 +200,9 @@ namespace KERBALISM
 			ScienceDB.uncreditedScience += scienceCredited;
 			if (ScienceDB.uncreditedScience > 0.1)
 			{
-				ResearchAndDevelopment.Instance.AddScience((float)ScienceDB.uncreditedScience, TransactionReasons.None);
+				if (GameHasRnD)
+					ResearchAndDevelopment.Instance.AddScience((float)ScienceDB.uncreditedScience, TransactionReasons.None);
+				
 				ScienceDB.uncreditedScience = 0.0;
 			}
 
@@ -230,6 +275,9 @@ namespace KERBALISM
 
 		private static void SubjectXmitCompleted(File file, int timesCompleted, Vessel v)
 		{
+			if (!GameHasRnD)
+				return;
+
 			// fire science transmission game event. This is used by stock contracts and a few other things.
 			GameEvents.OnScienceRecieved.Fire(timesCompleted == 1 ? (float)file.subjectData.ScienceMaxValue : 0f, file.subjectData.RnDSubject, v.protoVessel, false);
 

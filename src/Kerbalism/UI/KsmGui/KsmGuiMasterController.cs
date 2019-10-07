@@ -16,7 +16,7 @@ namespace KERBALISM.KsmGui
 		public GraphicRaycaster GraphicRaycaster { get; private set; }
 		public Canvas Canvas { get; private set; }
 
-		public static void Initialize()
+		public static void Init()
 		{
 			Instance = UIMasterController.Instance.gameObject.AddOrGetComponent<KsmGuiMasterController>();
 		}

@@ -414,6 +414,11 @@ namespace KERBALISM
 			return (T)(m.GetType().GetMethod(call_name, flags).Invoke(m, null));
 		}
 
+		public static void ReflectionCall(object m, string call_name, Type[] types, object[] parameters)
+		{
+			m.GetType().GetMethod(call_name, flags, null, types, null).Invoke(m, parameters);
+		}
+
 		public static T ReflectionCall<T>(object m, string call_name, Type[] types, object[] parameters)
 		{
 			return (T)(m.GetType().GetMethod(call_name, flags, null, types, null).Invoke(m, parameters));
@@ -1053,9 +1058,26 @@ namespace KERBALISM
 			}
 			return false;
 		}
+
+		///<summary>if current game is neither science or career, disable the module and return false</summary>
+		public static bool ModuleEnableInScienceAndCareer(PartModule m)
+		{
+			switch (HighLogic.CurrentGame.Mode)
+			{
+				case Game.Modes.CAREER:
+				case Game.Modes.SCIENCE_SANDBOX:
+					m.enabled = true;
+					m.isEnabled = true;
+					return true;
+				default:
+					m.enabled = false;
+					m.isEnabled = false;
+					return false;
+			}
+		}
 #endregion
 
-#region BODY
+		#region BODY
 
 		/// <summary>For a given body, return the last parent body that is not a sun </summary>
 		public static CelestialBody GetParentPlanet(CelestialBody body)

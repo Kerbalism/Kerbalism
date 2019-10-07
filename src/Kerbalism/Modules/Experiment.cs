@@ -45,7 +45,7 @@ namespace KERBALISM
 		[KSPField(isPersistant = true)] private RunningState expState = RunningState.Stopped;
 		[KSPField(isPersistant = true)] private ExpStatus status = ExpStatus.Stopped;
 
-		public ExperimentInfo ExpInfo => expInfo; private ExperimentInfo expInfo;
+		public ExperimentInfo ExpInfo { get; set; }
 		public VesselSituation VesselSituation => vesselSituation; private VesselSituation vesselSituation;
 		public SubjectData Subject => subject; private SubjectData subject;
 
@@ -127,12 +127,8 @@ namespace KERBALISM
 
 		public override void OnStart(StartState state)
 		{
-			// don't break tutorial scenarios
-			if (Lib.DisableScenario(this)) return;
-
-			
-
-			//if (last_subject_id == string.Empty) last_subject_id = experiment_id;
+			// experiments are only available in science and career games
+			if (!Lib.ModuleEnableInScienceAndCareer(this)) return;
 
 			// create animators
 			deployAnimator = new Animator(part, anim_deploy);
@@ -173,12 +169,12 @@ namespace KERBALISM
 			Events["Reset"].externalToEVAOnly = true;
 			Events["Reset"].requireFullControl = false;
 
-			expInfo = ScienceDB.GetExperimentInfo(experiment_id);
+			ExpInfo = ScienceDB.GetExperimentInfo(experiment_id);
 
 			if (Lib.IsFlight())
 			{
 				vesselSituation = vessel.KerbalismData().VesselSituation;
-				subject = ScienceDB.GetSubjectData(expInfo, vesselSituation);
+				subject = ScienceDB.GetSubjectData(ExpInfo, vesselSituation);
 
 				foreach (var hd in part.FindModulesImplementing<HardDrive>())
 				{
@@ -306,7 +302,7 @@ namespace KERBALISM
 			if (!Running)
 			{
 				vesselSituation = vd.VesselSituation;
-				subject = ScienceDB.GetSubjectData(expInfo, vesselSituation, out situationId);
+				subject = ScienceDB.GetSubjectData(ExpInfo, vesselSituation, out situationId);
 				UnityEngine.Profiling.Profiler.EndSample();
 				return;
 			}
@@ -622,8 +618,6 @@ namespace KERBALISM
 
 		#region user interaction
 
-
-
 		public RunningState Toggle(bool setForcedRun = false)
 		{
 			if (State == RunningState.Broken)
@@ -639,7 +633,7 @@ namespace KERBALISM
 				{
 					if (!EditorTracker.Instance.AllowStart(this))
 					{
-						PostMultipleRunsMessage(expInfo.Title, "");
+						PostMultipleRunsMessage(ExpInfo.Title, "");
 						return State;
 					}
 					State = RunningState.Running;
@@ -678,7 +672,7 @@ namespace KERBALISM
 				// The same experiment must run only once on a vessel
 				if (IsExperimentRunningOnVessel(vessel, experiment_id))
 				{
-					PostMultipleRunsMessage(expInfo.Title, vessel.vesselName);
+					PostMultipleRunsMessage(ExpInfo.Title, vessel.vesselName);
 					return State;
 				}
 				// start experiment
@@ -1053,7 +1047,10 @@ namespace KERBALISM
 		// part tooltip
 		public override string GetInfo()
 		{
-			return Specs().Info();
+			if (ExpInfo != null)
+				return Specs().Info();
+
+			return string.Empty;
 		}
 
 		// IModuleInfo

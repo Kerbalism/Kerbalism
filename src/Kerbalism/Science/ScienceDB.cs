@@ -364,6 +364,10 @@ namespace KERBALISM
 				}
 			}
 
+			// RnD subjects don't exists in sandbox
+			if (!Science.GameHasRnD)
+				return;
+
 			// remove multiSubjects (asteroid samples) from the database
 			foreach (MultiSubjectData subjectData in multiSubjectDataList)
 			{

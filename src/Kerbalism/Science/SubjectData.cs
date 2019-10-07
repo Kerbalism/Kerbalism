@@ -178,7 +178,8 @@ namespace KERBALISM
 		/// </summary>
 		public int UpdateSubjectCompletion(double scienceAdded)
 		{
-			
+			if (!Science.GameHasRnD) return -1;
+
 			PercentRetrieved = ((PercentRetrieved * ScienceMaxValue) + scienceAdded) / ScienceMaxValue;
 			int newTimesCompleted = GetTimesCompleted(PercentRetrieved);
 			if (newTimesCompleted > TimesCompleted)
@@ -196,6 +197,9 @@ namespace KERBALISM
 
 		public void AddScienceToRnDSubject(double scienceValue)
 		{
+			if (!Science.GameHasRnD)
+				return;
+
 			if (!ExistsInRnD)
 				CreateSubjectInRnD();
 

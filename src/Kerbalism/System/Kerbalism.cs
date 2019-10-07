@@ -7,105 +7,98 @@ using KSP.UI.Screens;
 
 namespace KERBALISM
 {
-	/// <summary> Main class, instantiated during Main menu scene.</summary>
+	/// <summary>
+	/// Main initialization class : for everything that isn't save-game dependant.
+	/// For save-dependant things, or things that require the game to be loaded do it in Kerbalism.OnLoad()
+	/// </summary>
 	[KSPAddon(KSPAddon.Startup.MainMenu, false)]
-	public class KerbalismMain: MonoBehaviour
+	public class KerbalismCoreSystems : MonoBehaviour
 	{
-		private static bool initDone = false;
-
 		public void Start()
 		{
-			if (!initDone)
+			// reset the save game initialized flag
+			Kerbalism.IsSaveGameInitDone = false;
+
+			// things in here will be only called once per KSP launch, after loading
+			// nearly everything is available at this point, including the Kopernicus patched bodies.
+			if (!Kerbalism.IsCoreMainMenuInitDone)
 			{
-				initDone = true;
-				Textures.Initialize();                      // set up the icon textures
-				KsmGui.KsmGuiMasterController.Initialize(); // setup the gui framework
-				Sim.Init();                                 // find suns (Kopernicus support)
-				ScienceDB.Init();                           // build the science database (needs Sim.Init() first)
+				Kerbalism.IsCoreMainMenuInitDone = true;
 			}
 
-			RemoteTech.EnableInSPC();					// allow RemoteTech Core to run in the Space Center
+			// things in here will be called every the player goes to the main menu 
+			RemoteTech.EnableInSPC();                   // allow RemoteTech Core to run in the Space Center
 		}
 	}
 
 	[KSPScenario(ScenarioCreationOptions.AddToAllGames, new[] { GameScenes.SPACECENTER, GameScenes.TRACKSTATION, GameScenes.FLIGHT, GameScenes.EDITOR })]
-	public sealed class Kerbalism: ScenarioModule
+	public sealed class Kerbalism : ScenarioModule
 	{
-		// permit global access
+		#region declarations
+
+		/// <summary> global access </summary>
 		public static Kerbalism Fetch { get; private set; } = null;
 
+		/// <summary> Is the one-time main menu init done. Becomes true after loading, when the the main menu is shown, and never becomes false again</summary>
+		public static bool IsCoreMainMenuInitDone { get; set; } = false;
+
+		/// <summary> Is the one-time on game load init done. Becomes true after the first OnLoad() of a game, and never becomes false again</summary>
+		public static bool IsCoreGameInitDone { get; set; } = false;
+
+		/// <summary> Is the savegame (or new game) first load done. Becomes true after the first OnLoad(), and false when returning to the main menu</summary>
+		public static bool IsSaveGameInitDone { get; set; } = false;
+
+		// used to setup KSP callbacks
+		static Callbacks callbacks;
+
+		// the rendering script attached to map camera
+		static MapCameraScript map_camera_script;
+
+		// store time until last update for unloaded vessels
+		// note: not using reference_wrapper<T> to increase readability
+		sealed class Unloaded_data { public double time; }; //< reference wrapper
+		static Dictionary<Guid, Unloaded_data> unloaded = new Dictionary<Guid, Unloaded_data>();
+
+		// used to update storm data on one body per step
+		static int storm_index;
+		class Storm_data { public double time; public CelestialBody body; };
+		static List<Storm_data> storm_bodies = new List<Storm_data>();
+
+		// equivalent to TimeWarp.fixedDeltaTime
+		// note: stored here to avoid converting it to double every time
+		public static double elapsed_s;
+
+		// number of steps from last warp blending
+		private static uint warp_blending;
+
+		/// <summary>Are we in an intermediary timewarp speed ?</summary>
+		public static bool WarpBlending => warp_blending > 2u;
+
+		// last savegame unique id
+		static int savegame_uid;
+
+		/// <summary> real time of last game loaded event </summary>
+		public static float gameLoadTime = 0.0f;
+
+		public static bool SerenityEnabled { get; private set; }
+
 		private static bool didSanityCheck = false;
+
+		#endregion
+
+		#region initialization & save/load
 
 		//  constructor
 		public Kerbalism()
 		{
 			// enable global access
 			Fetch = this;
+
+			// You just don't know what you are doing, no ?
 			Communications.NetworkInitialized = false;
 			Communications.NetworkInitializing = false;
 
 			SerenityEnabled = Expansions.ExpansionsLoader.IsExpansionInstalled("Serenity");
-		}
-
-		private void SanityCheck()
-		{
-			List<string> incompatibleMods = Settings.IncompatibleMods();
-			List<string> warningMods = Settings.WarningMods();
-
-			List<string> incompatibleModsFound = new List<string>();
-			List<string> warningModsFound = new List<string>();
-
-			foreach (var a in AssemblyLoader.loadedAssemblies)
-			{
-				if (incompatibleMods.Contains(a.name.ToLower())) incompatibleModsFound.Add(a.name);
-				if (warningMods.Contains(a.name.ToLower())) warningModsFound.Add(a.name);
-			}
-
-			string msg = string.Empty;
-
-			var configNodes = GameDatabase.Instance.GetConfigs("Kerbalism");
-			if (configNodes.Length > 1)
-			{
-				msg += "<color=#FF4500>Multiple configurations detected</color>\nHint: delete KerbalismConfig if you are using a custom config pack.\n\n";
-			}
-			else if(configNodes.Length == 0)
-			{
-				msg += "<color=#FF4500>No configuration found</color>\nYou need KerbalismConfig (or any other Kerbalism config pack).\n\n";
-			}
-
-			if (Features.Habitat && Settings.CheckForCRP)
-			{
-				// check for CRP
-				var reslib = PartResourceLibrary.Instance.resourceDefinitions;
-				if (!reslib.Contains("Oxygen") || !reslib.Contains("Water") || !reslib.Contains("Shielding"))
-				{
-					msg += "<color=#FF4500>CommunityResourcePack (CRP) is not installed</color>\nYou REALLY need CRP for Kerbalism!\n\n";
-				}
-			}
-
-			if (incompatibleModsFound.Count > 0)
-			{
-				msg += "<color=#FF4500>Mods with known incompatibilities found:</color>\n";
-				foreach (var m in incompatibleModsFound) msg += "- " + m + "\n";
-				msg += "Kerbalism will not run properly with these mods. Please remove them.\n\n";
-			}
-
-			if (warningModsFound.Count > 0)
-			{
-				msg += "<color=#FF4500>Mods with limited compatibility found:</color>\n";
-				foreach (var m in warningModsFound) msg += "- " + m + "\n";
-				msg += "You might have problems with these mods. Consider removing them.\n\n";
-			}
-
-			if (!string.IsNullOrEmpty(msg))
-			{
-				msg = "<b>KERBALISM WARNING</b>\n\n" + msg;
-				ScreenMessage sm = new ScreenMessage(msg, 60, ScreenMessageStyle.UPPER_LEFT);
-				sm.color = Color.cyan;
-				ScreenMessages.PostScreenMessage(sm);
-				ScreenMessages.PostScreenMessage(msg, true);
-				Lib.Log("Sanity check: " + msg);
-			}
 		}
 
 		private void OnDestroy()
@@ -115,29 +108,42 @@ namespace KERBALISM
 
 		public override void OnLoad(ConfigNode node)
 		{
-			// deserialize data
-			DB.Load(node);
-
-			Communications.NetworkInitialized = false;
-			Communications.NetworkInitializing = false;
-
-			// initialize everything just once
-			if (!initialized)
+			// everything in there will be called only one time : the first time a game is loaded from the main menu
+			if (!IsCoreGameInitDone)
 			{
-				// add supply resources to pods
-				Profile.SetupPods();
+				// core game systems
+				Sim.Init();			// find suns (Kopernicus support)
+				ScienceDB.Init();   // build the science database (needs Sim.Init() first)
+				Radiation.Init();   // create the radiation fields
+				Science.Init();     // register teh science hijacker
 
-				// initialize subsystems
-				//Sim.Init();
-				Cache.Init();
-				ResourceCache.Init();
-				Radiation.Init();
-				Science.Init();
+				// static graphic components
 				LineRenderer.Init();
 				ParticleRenderer.Init();
 				Highlighter.Init();
-				UI.Init();
 
+				// UI
+				Textures.Init();                      // set up the icon textures
+				UI.Init();                                  // message system, main gui, launcher
+				KsmGui.KsmGuiMasterController.Init(); // setup the new gui framework
+
+				// part prefabs hacks
+				Profile.SetupPods(); // add supply resources to pods
+				Misc.TweakPartIcons(); // various tweaks to the part icons in the editor
+				Science.PatchExperimentPrefabs(); // setup experiment modules VAB info
+
+				// GameEvents callbacks
+				callbacks = new Callbacks();
+
+				IsCoreGameInitDone = true;
+			}
+
+			// everything in there will be called every time a savegame (or a new game) is loaded from the main menu
+			if (!IsSaveGameInitDone)
+			{
+				Cache.Init();
+				ResourceCache.Init();
+				
 				// prepare storm data
 				foreach (CelestialBody body in FlightGlobals.Bodies)
 				{
@@ -147,15 +153,20 @@ namespace KERBALISM
 					storm_bodies.Add(sd);
 				}
 
-				// various tweaks to the part icons in the editor
-				Misc.TweakPartIcons();
-
-				// setup callbacks
-				callbacks = new Callbacks();
-
-				// everything was initialized
-				initialized = true;
+				IsSaveGameInitDone = true;
 			}
+
+			// eveything else will be called on every OnLoad() call :
+			// - save/load
+			// - every scene change
+			// - in various semi-random situations (thanks KSP)
+
+			// deserialize our database
+			DB.Load(node);
+
+			// I'm smelling the hacky mess in here.
+			Communications.NetworkInitialized = false;
+			Communications.NetworkInitializing = false;
 
 			// detect if this is a different savegame
 			if (DB.uid != savegame_uid)
@@ -180,6 +191,10 @@ namespace KERBALISM
 			// serialize data
 			DB.Save(node);
 		}
+
+		#endregion
+
+		#region fixedupdate
 
 		void FixedUpdate()
 		{
@@ -379,6 +394,10 @@ namespace KERBALISM
 			}
 		}
 
+		#endregion
+
+		#region Update and GUI
+
 		void Update()
 		{
 			if (!didSanityCheck)
@@ -417,42 +436,70 @@ namespace KERBALISM
 			UI.On_gui(callbacks.visible);
 		}
 
-		// used to setup KSP callbacks
-		static Callbacks callbacks;
+		#endregion
 
-		// the rendering script attached to map camera
-		static MapCameraScript map_camera_script;
+		private void SanityCheck()
+		{
+			List<string> incompatibleMods = Settings.IncompatibleMods();
+			List<string> warningMods = Settings.WarningMods();
 
-		// store time until last update for unloaded vessels
-		// note: not using reference_wrapper<T> to increase readability
-		sealed class Unloaded_data { public double time; }; //< reference wrapper
-		static Dictionary<Guid, Unloaded_data> unloaded = new Dictionary<Guid, Unloaded_data>();
+			List<string> incompatibleModsFound = new List<string>();
+			List<string> warningModsFound = new List<string>();
 
-		// used to update storm data on one body per step
-		static int storm_index;
-		class Storm_data { public double time; public CelestialBody body; };
-		static List<Storm_data> storm_bodies = new List<Storm_data>();
+			foreach (var a in AssemblyLoader.loadedAssemblies)
+			{
+				if (incompatibleMods.Contains(a.name.ToLower())) incompatibleModsFound.Add(a.name);
+				if (warningMods.Contains(a.name.ToLower())) warningModsFound.Add(a.name);
+			}
 
-		// used to initialize everything just once
-		static bool initialized;
+			string msg = string.Empty;
 
-		// equivalent to TimeWarp.fixedDeltaTime
-		// note: stored here to avoid converting it to double every time
-		public static double elapsed_s;
+			var configNodes = GameDatabase.Instance.GetConfigs("Kerbalism");
+			if (configNodes.Length > 1)
+			{
+				msg += "<color=#FF4500>Multiple configurations detected</color>\nHint: delete KerbalismConfig if you are using a custom config pack.\n\n";
+			}
+			else if (configNodes.Length == 0)
+			{
+				msg += "<color=#FF4500>No configuration found</color>\nYou need KerbalismConfig (or any other Kerbalism config pack).\n\n";
+			}
 
-		// number of steps from last warp blending
-		private static uint warp_blending;
+			if (Features.Habitat && Settings.CheckForCRP)
+			{
+				// check for CRP
+				var reslib = PartResourceLibrary.Instance.resourceDefinitions;
+				if (!reslib.Contains("Oxygen") || !reslib.Contains("Water") || !reslib.Contains("Shielding"))
+				{
+					msg += "<color=#FF4500>CommunityResourcePack (CRP) is not installed</color>\nYou REALLY need CRP for Kerbalism!\n\n";
+				}
+			}
 
-		/// <summary>Are we in an intermediary timewarp speed ?</summary>
-		public static bool WarpBlending => warp_blending > 2u;
+			if (incompatibleModsFound.Count > 0)
+			{
+				msg += "<color=#FF4500>Mods with known incompatibilities found:</color>\n";
+				foreach (var m in incompatibleModsFound) msg += "- " + m + "\n";
+				msg += "Kerbalism will not run properly with these mods. Please remove them.\n\n";
+			}
 
-		// last savegame unique id
-		static int savegame_uid;
+			if (warningModsFound.Count > 0)
+			{
+				msg += "<color=#FF4500>Mods with limited compatibility found:</color>\n";
+				foreach (var m in warningModsFound) msg += "- " + m + "\n";
+				msg += "You might have problems with these mods. Consider removing them.\n\n";
+			}
 
-		/// <summary> real time of last game loaded event </summary>
-		public static float gameLoadTime = 0.0f;
-    
-		public static bool SerenityEnabled { get; private set; }
+			if (!string.IsNullOrEmpty(msg))
+			{
+				msg = "<b>KERBALISM WARNING</b>\n\n" + msg;
+				ScreenMessage sm = new ScreenMessage(msg, 60, ScreenMessageStyle.UPPER_LEFT);
+				sm.color = Color.cyan;
+				ScreenMessages.PostScreenMessage(sm);
+				ScreenMessages.PostScreenMessage(msg, true);
+				Lib.Log("Sanity check: " + msg);
+			}
+		}
+
+
 	}
 
 	public sealed class MapCameraScript: MonoBehaviour

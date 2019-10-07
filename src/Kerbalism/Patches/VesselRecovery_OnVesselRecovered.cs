@@ -45,6 +45,9 @@ namespace KERBALISM
 	[HarmonyPatch("OnVesselRecovered")]
 	class VesselRecovery_OnVesselRecovered {
 		static bool Prefix(ref ProtoVessel pv, ref bool quick) {
+
+			if (!Science.GameHasRnD) return true;
+
 			if (pv == null) return true;
 
 
@@ -86,7 +89,7 @@ namespace KERBALISM
 						double subjectValue = file.subjectData.ScienceValue(file.size, true);
 						file.subjectData.AddScienceToRnDSubject(subjectValue);
 						scienceToCredit += subjectValue;
-						GameEvents.OnScienceRecieved.Fire((float)subjectValue, file.subjectData.RnDSubject, pv, true); // needed for contracts
+						GameEvents.OnScienceRecieved.Fire((float)subjectValue, file.subjectData.RnDSubject, pv, false); // needed for contracts
 						labels.Add(new DialogGUILabel(Lib.BuildString(
 							Lib.Color("+ " + subjectValue.ToString("F1"), Lib.Kolor.Science),
 							" (",
@@ -117,7 +120,7 @@ namespace KERBALISM
 						double subjectValue = sample.subjectData.ScienceValue(sample.size, true);
 						sample.subjectData.AddScienceToRnDSubject(subjectValue);
 						scienceToCredit += subjectValue;
-						GameEvents.OnScienceRecieved.Fire((float)subjectValue, sample.subjectData.RnDSubject, pv, true); // needed for contracts
+						GameEvents.OnScienceRecieved.Fire((float)subjectValue, sample.subjectData.RnDSubject, pv, false); // needed for contracts
 						labels.Add(new DialogGUILabel(Lib.BuildString(
 							Lib.Color("+ " + subjectValue.ToString("F1"), Lib.Kolor.Science),
 							" (",
