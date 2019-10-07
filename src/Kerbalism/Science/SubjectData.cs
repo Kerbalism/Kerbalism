@@ -105,7 +105,7 @@ namespace KERBALISM
 
 		public void Save(ConfigNode node)
 		{
-			node.AddValue("completionPercent", PercentRetrieved);
+			node.AddValue("percentRetrieved", PercentRetrieved);
 		}
 
 		private int GetTimesCompleted(double percentRetrieved)
