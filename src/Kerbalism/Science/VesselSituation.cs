@@ -112,6 +112,15 @@ namespace KERBALISM
 			return true;
 		}
 
+		public static int GetBiomeAgnosticIdForExperiment(int situationId, ExperimentInfo expInfo)
+		{
+			if (!((ScienceSituation)(byte)(situationId >> 16)).IsBiomesRelevantForExperiment(expInfo))
+			{
+				return situationId | (agnosticBiomeIndex << 24);
+			}
+			return situationId;
+		}
+
 		public int GetBiomeAgnosticId()
 		{
 			return Id | (agnosticBiomeIndex << 24);

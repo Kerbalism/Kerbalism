@@ -40,6 +40,7 @@ namespace KERBALISM
 						file = File.LoadOldFormat(subject_id, file_node);
 						if (file != null)
 						{
+							Lib.Log("Drive file load : converted '" + subject_id + "' to new format");
 							files.Add(file.subjectData, file);
 							file.subjectData.AddDataCollectedInFlight(file.size);
 						}
@@ -65,6 +66,7 @@ namespace KERBALISM
 						sample = Sample.LoadOldFormat(subject_id, sample_node);
 						if (sample != null)
 						{
+							Lib.Log("Drive sample load : converted '" + subject_id + "' to new format");
 							samples.Add(sample.subjectData, sample);
 							sample.subjectData.AddDataCollectedInFlight(sample.size);
 						}

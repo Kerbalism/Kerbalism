@@ -152,39 +152,37 @@ namespace KERBALISM
 			else
 				DataSize = this.stockDef.scienceCap * this.stockDef.dataScale;
 #endif
-			// if we have a custom "KERBALISM_EXPERIMENT" definition for the experiment, load it
-			if (expInfoNode != null)
+			// if we have a custom "KERBALISM_EXPERIMENT" definition for the experiment, load it, else just use an empty node to avoid nullrefs
+			if (expInfoNode == null) expInfoNode = new ConfigNode();
+
+			SampleMass = Lib.ConfigValue(expInfoNode, "SampleMass", 0.0);
+			ExpBodyConditions = new BodyConditions(expInfoNode);
+
+			// if defined, override stock situation / biome mask
+			if (expInfoNode.HasValue("Situation"))
 			{
-				SampleMass = Lib.ConfigValue(expInfoNode, "SampleMass", 0.0);
-				ExpBodyConditions = new BodyConditions(expInfoNode);
-
-				// if defined, override stock situation / biome mask
-				if (expInfoNode.HasValue("Situation"))
+				uint situationMask = 0;
+				uint biomeMask = 0;
+				foreach (string situation in expInfoNode.GetValues("Situation"))
 				{
-					uint situationMask = 0;
-					uint biomeMask = 0;
-					foreach (string situation in expInfoNode.GetValues("Situation"))
+					string[] sitAtBiome = situation.Split(new char[] { '@' }, StringSplitOptions.RemoveEmptyEntries);
+					if (sitAtBiome.Length == 0 || sitAtBiome.Length > 2)
+						continue;
+
+					ScienceSituation scienceSituation = ScienceSituationUtils.ScienceSituationDeserialize(sitAtBiome[0]);
+
+					if (scienceSituation != ScienceSituation.None)
 					{
-						string[] sitAtBiome = situation.Split(new char[] { '@' }, StringSplitOptions.RemoveEmptyEntries);
-						if (sitAtBiome.Length == 0 || sitAtBiome.Length > 2)
-							continue;
+						situationMask += scienceSituation.BitValue();
 
-						ScienceSituation scienceSituation = ScienceSituationUtils.ScienceSituationDeserialize(sitAtBiome[0]);
-
-						if (scienceSituation != ScienceSituation.None)
+						if (sitAtBiome.Length == 2 && sitAtBiome[1].Equals("Biomes", StringComparison.OrdinalIgnoreCase))
 						{
-							situationMask += scienceSituation.BitValue();
-
-							if (sitAtBiome.Length == 2 && sitAtBiome[1].Equals("Biomes", StringComparison.OrdinalIgnoreCase))
-							{
-								biomeMask += scienceSituation.BitValue();
-							}
+							biomeMask += scienceSituation.BitValue();
 						}
 					}
-					stockDef.situationMask = situationMask;
-					stockDef.biomeMask = biomeMask;
 				}
-
+				stockDef.situationMask = situationMask;
+				stockDef.biomeMask = biomeMask;
 			}
 		}
 

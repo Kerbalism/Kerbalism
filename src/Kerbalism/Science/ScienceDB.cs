@@ -428,6 +428,21 @@ namespace KERBALISM
 			return subjectData;
 		}
 
+		/// <summary> return the subject information for the given experiment and situation, or null if the situation isn't available. </summary>
+		public static SubjectData GetSubjectData(ExperimentInfo expInfo, VesselSituation situation, out int situationId)
+		{
+			if (!situation.ScienceSituation.IsBiomesRelevantForExperiment(expInfo))
+				situationId = situation.GetBiomeAgnosticId();
+			else
+				situationId = situation.Id;
+
+			SubjectData subjectData;
+			if (!subjectByExpThenSituationId[expInfo].TryGetValue(situationId, out subjectData))
+				return null;
+
+			return subjectData;
+		}
+
 		/// <summary> return the subject information for the given experiment and situation id, or null if the situation isn't available. </summary>
 		public static SubjectData GetSubjectData(ExperimentInfo expInfo, int situationId)
 		{
@@ -476,7 +491,7 @@ namespace KERBALISM
 
 		/// <summary>
 		/// Create our SubjectData by parsing the stock "experiment@situation" subject id string.
-		/// Used for asteroid samples and for converting stock ScienceData into SubjectData
+		/// Used for asteroid samples, for compatibility with RnD archive data of removed mods and for converting stock ScienceData into SubjectData
 		/// </summary>
 		public static SubjectData GetSubjectDataFromStockId(string stockSubjectId, ScienceSubject RnDSubject = null)
 		{
@@ -552,7 +567,26 @@ namespace KERBALISM
 			{
 				for (int i = 0; i < subjectBody.BiomeMap.Attributes.Length; i++)
 				{
-					if (subjectBody.BiomeMap.Attributes[i].name.Replace(" ", string.Empty) == bodyAndBiome[1])
+					// Note : a stock subject has its spaces in the biome name removed but prior versions of kerbalism didn't do that,
+					// so we try to fix it, in order not to create duplicates in the RnD archives.
+
+					// TODO : also, we need to remove the "reentry" subjects, as stock is failing to parse them, altough this is in a try/catch block and handled gracefully.
+					string sanitizedBiome = bodyAndBiome[1].Replace(" ", string.Empty);
+					if (RnDSubject != null && extraSituationInfo == string.Empty && sanitizedBiome != bodyAndBiome[1])
+					{
+						string correctedSubjectId = expAndSit[0] + "@" + bodyAndBiome[0] + situation + sanitizedBiome;
+						RnDSubject.id = correctedSubjectId;
+
+						Dictionary<string, ScienceSubject> stockSubjects = Lib.ReflectionValue<Dictionary<string, ScienceSubject>>(ResearchAndDevelopment.Instance, "scienceSubjects");
+						if (stockSubjects.Remove(stockSubjectId) && !stockSubjects.ContainsKey(correctedSubjectId))
+						{
+							stockSubjects.Add(correctedSubjectId, RnDSubject);
+						}
+
+						Lib.Log("RnD subject load : misformatted subject '" + stockSubjectId + "' was corrected to '" + correctedSubjectId + "'");
+					}
+
+					if (subjectBody.BiomeMap.Attributes[i].name.Replace(" ", string.Empty).Equals(sanitizedBiome, StringComparison.OrdinalIgnoreCase))
 					{
 						biomeIndex = i;
 						break;
@@ -564,7 +598,7 @@ namespace KERBALISM
 			VesselSituation vesselSituation = new VesselSituation(bodyIndex, scienceSituation, biomeIndex);
 
 			SubjectData subjectData = null;
-			// if the subject isn't an asteroid sample or another kind of "more than one by situation" subject, we should have it in the DB
+			// if the subject isn't an asteroid sample or another kind of "more than one by situation" subject, we should have it in the DB, unless there has been a config change
 			if (extraSituationInfo == string.Empty)
 				subjectData = GetSubjectData(expInfo, vesselSituation);
 

@@ -306,8 +306,7 @@ namespace KERBALISM
 			if (!Running)
 			{
 				vesselSituation = vd.VesselSituation;
-				situationId = vesselSituation.Id;
-				subject = ScienceDB.GetSubjectData(expInfo, vesselSituation);
+				subject = ScienceDB.GetSubjectData(expInfo, vesselSituation, out situationId);
 				UnityEngine.Profiling.Profiler.EndSample();
 				return;
 			}
@@ -347,10 +346,12 @@ namespace KERBALISM
 			}
 
 			RunningState expState = Lib.Proto.GetEnum(m, "expState", RunningState.Stopped);
+			ExperimentInfo expInfo = ScienceDB.GetExperimentInfo(prefab.experiment_id);
 
 			if (!IsRunning(expState))
 			{
-				Lib.Proto.Set(m, "situationId", vd.VesselSituation.Id);
+				int notRunningSituationId = VesselSituation.GetBiomeAgnosticIdForExperiment(vd.VesselSituation.Id, expInfo);
+				Lib.Proto.Set(m, "situationId", notRunningSituationId);
 				UnityEngine.Profiling.Profiler.EndSample();
 				return;
 			}
@@ -361,7 +362,7 @@ namespace KERBALISM
 			double remainingSampleMass = Lib.Proto.GetDouble(m, "remainingSampleMass", 0.0);
 			uint privateHdId = Lib.Proto.GetUInt(m, "privateHdId", 0u);
 
-			ExperimentInfo expInfo = ScienceDB.GetExperimentInfo(prefab.experiment_id);
+			
 			string issue;
 			SubjectData subjectData;
 

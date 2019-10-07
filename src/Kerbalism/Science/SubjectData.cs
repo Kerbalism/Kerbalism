@@ -119,28 +119,32 @@ namespace KERBALISM
 			if (ExistsInRnD || ResearchAndDevelopment.Instance == null)
 				return;
 
-			// get subjects container using reflection
-			// - we tried just changing the subject.id instead, and
-			//   it worked but the new id was obviously used only after
-			//   putting RnD through a serialization->deserialization cycle
-			Dictionary<string, ScienceSubject> subjects = Lib.ReflectionValue<Dictionary<string, ScienceSubject>>
-			(
-				ResearchAndDevelopment.Instance,
-				"scienceSubjects"
-			);
+			// try to get it, might be already created in some corner-case situation
+			RnDSubject = ResearchAndDevelopment.GetSubjectByID(StockSubjectId);
 
-			// create new subject
-			RnDSubject = new ScienceSubject
-			(
-				  	StockSubjectId,
-					FullTitle,
-					(float)ExpInfo.DataScale,
-				  	Situation.SituationMultiplier,
-					(float)ScienceMaxValue
-			);
+			if (RnDSubject == null)
+			{
+				// get subjects container using reflection
+				Dictionary<string, ScienceSubject> subjects = Lib.ReflectionValue<Dictionary<string, ScienceSubject>>
+				(
+					ResearchAndDevelopment.Instance,
+					"scienceSubjects"
+				);
 
-			// add it to RnD
-			subjects.Add(StockSubjectId, RnDSubject);
+				// create new subject
+				RnDSubject = new ScienceSubject
+				(
+						  StockSubjectId,
+						FullTitle,
+						(float)ExpInfo.DataScale,
+						  Situation.SituationMultiplier,
+						(float)ScienceMaxValue
+				);
+
+				// add it to RnD
+				subjects.Add(StockSubjectId, RnDSubject);
+			}
+
 			ExistsInRnD = true;
 			SetAsPersistent();
 		}
@@ -239,7 +243,7 @@ namespace KERBALISM
 		{
 			get
 			{
-				return (RnDSubject.science * HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier) / ScienceMaxValue;
+				return ExistsInRnD ? (RnDSubject.science * HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier) / ScienceMaxValue : 0.0;
 			}
 			protected set { }
 		}
@@ -247,7 +251,7 @@ namespace KERBALISM
 		{
 			get
 			{
-				return (int)(RnDSubject.science / (RnDSubject.scienceCap - Science.scienceLeftForSubjectCompleted));
+				return ExistsInRnD ? (int)(RnDSubject.science / (RnDSubject.scienceCap - Science.scienceLeftForSubjectCompleted)) : 0;
 			}
 			protected set { }
 		}

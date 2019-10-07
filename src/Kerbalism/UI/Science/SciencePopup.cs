@@ -229,6 +229,10 @@ namespace KERBALISM
 					sb.Append(Lib.InlineSpriteScience);
 					sb.Append(" in flight)");
 				}
+
+				sb.Append("\nvalue :<pos=20em>");
+				sb.Append(Lib.Color(subjectData.ScienceMaxValue.ToString("F1"), Lib.Kolor.Science, true));
+				sb.Append(Lib.InlineSpriteScience);
 			}
 
 			statusBox.SetText(sb.ToString());
