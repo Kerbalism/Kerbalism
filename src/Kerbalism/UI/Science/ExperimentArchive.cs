@@ -242,26 +242,10 @@ namespace KERBALISM
 
 			private void Update()
 			{
-				if (SubjectData.ScienceRetrievedInKSC <= 0)
-					rndText.SetText("--");
-				else
-					rndText.SetText(SubjectData.ScienceRetrievedInKSC.ToString("F1"));
-
-				if (SubjectData.ScienceCollectedInFlight <= 0)
-					flightText.SetText("--");
-				else
-					flightText.SetText(Lib.BuildString("+", SubjectData.ScienceCollectedInFlight.ToString("F1")));
-
-				var remainingValue = SubjectData.ScienceMaxValue - SubjectData.ScienceCollectedInFlight - SubjectData.ScienceRetrievedInKSC;
-				if (remainingValue <= 0)
-					valueText.SetText("--");
-				else
-					valueText.SetText(remainingValue.ToString("F1"));
-
-				if (SubjectData.PercentRetrieved <= 0)
-					completedText.SetText("--");
-				else
-					completedText.SetText(Lib.BuildString(SubjectData.PercentRetrieved.ToString("F1"), "x"));
+				rndText.SetText(SubjectData.ScienceRetrievedInKSC.ToString("0.0;--;--"));
+				flightText.SetText(SubjectData.ScienceCollectedInFlight.ToString("+0.0;--;--"));
+				valueText.SetText(SubjectData.ScienceRemainingTotal.ToString("0.0;--;--"));
+				completedText.SetText(SubjectData.PercentRetrieved.ToString("0.0x;--;--"));
 			}
 
 		}
