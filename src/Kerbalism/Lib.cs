@@ -551,7 +551,7 @@ namespace KERBALISM
 		///<summary>return string with the specified color and bold if stated</summary>
 		public static string Color(string s, Kolor color, bool bold = false)
 		{
-			return !bold ? BuildString("<color=", KolorToHex(color), ">", s, "</color>") : BuildString("<color=", KolorToHex(color), "><b>", s, "</b></color>");
+			return !bold ? BuildString("<color=", KolorToHex(color), ">", Localizer.Format(s), "</color>") : BuildString("<color=", KolorToHex(color), "><b>", s, "</b></color>");
 		}
 
 		///<summary>return string with different colors depending on the specified condition. "KColor.Default" will not apply any coloring</summary>

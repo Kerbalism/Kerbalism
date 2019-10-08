@@ -18,7 +18,7 @@ namespace KERBALISM
 
 		public ExperimentArchive(KsmGuiBase parent, ExperimentInfo expInfo) : base(parent)
 		{
-			KnownSubjectsToggle = new KsmGuiToggle(this, "Show only known subjects", true, ToggleKnownSubjects);
+			KnownSubjectsToggle = new KsmGuiToggle(this, "Show known subjects only", true, ToggleKnownSubjects);
 
 			KsmGuiBase listHeader = new KsmGuiBase(this);
 			listHeader.SetLayoutElement(true, false, -1, 16);
@@ -36,7 +36,7 @@ namespace KERBALISM
 			flightHeaderText.TopTransform.SetAnchorsAndPosition(TextAnchor.MiddleLeft, TextAnchor.MiddleLeft, 60, 0);
 			flightHeaderText.TopTransform.SetSizeDelta(50, 16);
 
-			KsmGuiText valueHeaderText = new KsmGuiText(listHeader, "Value", "Total value of the subject", TextAlignmentOptions.Left);
+			KsmGuiText valueHeaderText = new KsmGuiText(listHeader, "Value", "Remaining value of the subject", TextAlignmentOptions.Left);
 			valueHeaderText.TextComponent.color = Lib.KolorToColor(Lib.Kolor.Science);
 			valueHeaderText.TextComponent.fontStyle = FontStyles.Bold;
 			valueHeaderText.TopTransform.SetAnchorsAndPosition(TextAnchor.MiddleLeft, TextAnchor.MiddleLeft, 110, 0);
@@ -242,11 +242,26 @@ namespace KERBALISM
 
 			private void Update()
 			{
-				rndText.SetText(SubjectData.ScienceRetrievedInKSC.ToString("F1"));
-				flightText.SetText(Lib.BuildString("+", SubjectData.ScienceCollectedInFlight.ToString("F1")));
-				valueText.SetText(SubjectData.ScienceMaxValue.ToString("F1"));
-				completedText.SetText(Lib.BuildString(SubjectData.PercentRetrieved.ToString("F1"), "x"));
+				if (SubjectData.ScienceRetrievedInKSC <= 0)
+					rndText.SetText("--");
+				else
+					rndText.SetText(SubjectData.ScienceRetrievedInKSC.ToString("F1"));
 
+				if (SubjectData.ScienceCollectedInFlight <= 0)
+					flightText.SetText("--");
+				else
+					flightText.SetText(Lib.BuildString("+", SubjectData.ScienceCollectedInFlight.ToString("F1")));
+
+				var remainingValue = SubjectData.ScienceMaxValue - SubjectData.ScienceCollectedInFlight - SubjectData.ScienceRetrievedInKSC;
+				if (remainingValue <= 0)
+					valueText.SetText("--");
+				else
+					valueText.SetText(remainingValue.ToString("F1"));
+
+				if (SubjectData.PercentRetrieved <= 0)
+					completedText.SetText("--");
+				else
+					completedText.SetText(Lib.BuildString(SubjectData.PercentRetrieved.ToString("F1"), "x"));
 			}
 
 		}
