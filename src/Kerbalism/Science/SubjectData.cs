@@ -53,10 +53,13 @@ namespace KERBALISM
 		public double ScienceCollectedTotal => ScienceCollectedInFlight + ScienceRetrievedInKSC;
 
 		/// <summary> science value remaining to collect. </summary>
-		public double ScienceRemainingToCollect => Math.Max(ScienceMaxValue - ScienceCollectedTotal, 0f);
+		public double ScienceRemainingToCollect => Math.Max(ScienceMaxValue - ScienceCollectedTotal, 0.0);
 
-		/// <summary> science value remaining to retriecve. </summary>
+		/// <summary> science value remaining to retrieve. </summary>
 		public double ScienceRemainingToRetrieve => ScienceMaxValue - ScienceRetrievedInKSC;
+
+		/// <summary> science value remaining (accounting for retrieved in KSC and collected in flight) </summary>
+		public double ScienceRemainingTotal => Math.Max(ScienceMaxValue - ScienceCollectedTotal, 0.0);
 
 		/// <summary> percentage [0;1] of science collected. </summary>
 		public double PercentCollectedTotal => (ScienceCollectedInFlight / ScienceMaxValue) + PercentRetrieved;

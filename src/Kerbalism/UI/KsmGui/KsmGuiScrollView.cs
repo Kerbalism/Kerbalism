@@ -33,11 +33,16 @@ namespace KERBALISM.KsmGui
 			RectTransform viewportTransform = viewport.AddComponent<RectTransform>();
 			viewport.AddComponent<CanvasRenderer>();
 
-			Mask viewportMask = viewport.AddComponent<Mask>();
-			viewportMask.showMaskGraphic = false;
+			// Note : using a standard "Mask" has a bug where scrollrect content is visible
+			// in other windows scollrects (like if all masks were "global" for all masked content)
+			// see https://issuetracker.unity3d.com/issues/scroll-view-content-is-visible-outside-of-mask-when-there-is-another-masked-ui-element-in-the-same-canvas
+			// using a RectMask2D fixes it, at the cost of the ability to use an image mask (but we don't care)
+			viewport.AddComponent<RectMask2D>();
 
-			Image viewportImage = viewport.AddComponent<Image>();
-			viewportImage.color = new Color(1f, 1f, 1f, 1f);
+			//Mask viewportMask = viewport.AddComponent<Mask>();
+			//viewportMask.showMaskGraphic = false;
+			//Image viewportImage = viewport.AddComponent<Image>();
+			//viewportImage.color = new Color(1f, 1f, 1f, 1f);
 
 			viewportTransform.SetParentFixScale(TopTransform);
 			scrollRect.viewport = viewportTransform;

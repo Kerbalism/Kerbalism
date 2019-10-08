@@ -21,14 +21,14 @@ namespace KERBALISM.KsmGui
 	public class KsmGuiLayoutOptimizer : MonoBehaviour
 	{
 		private List<UIBehaviour> layoutControllers = new List<UIBehaviour>();
-		private bool willRebuild;
+		private bool isRebuilding;
 		
 		public void RebuildLayout()
 		{
-			if (willRebuild)
+			if (isRebuilding)
 				return;
 
-			willRebuild = true;
+			isRebuilding = true;
 
 			layoutControllers.Clear();
 			foreach (ILayoutController ILayoutController in GetComponentsInChildren<ILayoutController>(true))
@@ -56,7 +56,7 @@ namespace KERBALISM.KsmGui
 				layoutController.enabled = false;
 			}
 
-			willRebuild = false;
+			isRebuilding = false;
 		}
 
 		private IEnumerator WaitForFrames(int frameCount)
