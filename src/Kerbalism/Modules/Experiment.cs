@@ -186,7 +186,7 @@ namespace KERBALISM
 		/// <summary>Called by Callbacks just after rollout to launch pad</summary>
 		public void OnRollout()
 		{
-			if (Lib.DisableScenario(this)) return;
+			if (!Lib.ModuleEnableInScienceAndCareer(this)) return;
 
 			// initialize the remaining sample mass
 			// this needs to be done only once just after launch

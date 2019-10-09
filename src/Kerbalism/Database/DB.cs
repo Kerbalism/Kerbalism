@@ -113,12 +113,21 @@ namespace KERBALISM
                 p.Value.Save(kerbals_node.AddNode(To_safe_key(p.Key)));
             }
 
-            // save vessels data
+            // save vessels data, and clean the database of vessels that no longer exists
             var vessels_node = node.AddNode("vessels2");
+			List<Guid> vesselsToRemove = new List<Guid>();
             foreach (var p in vessels)
             {
+				if (p.Value.Vessel == null)
+				{
+					vesselsToRemove.Add(p.Key);
+					continue;
+				}
                 p.Value.Save(vessels_node.AddNode(p.Key.ToString()));
             }
+
+			foreach (Guid guid in vesselsToRemove)
+				vessels.Remove(guid);
 
 			// save the science database
 			ScienceDB.Save(node);

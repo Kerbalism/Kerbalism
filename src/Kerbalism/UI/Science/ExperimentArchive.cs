@@ -36,7 +36,7 @@ namespace KERBALISM
 			flightHeaderText.TopTransform.SetAnchorsAndPosition(TextAnchor.MiddleLeft, TextAnchor.MiddleLeft, 60, 0);
 			flightHeaderText.TopTransform.SetSizeDelta(50, 16);
 
-			KsmGuiText valueHeaderText = new KsmGuiText(listHeader, "Value", "Remaining value of the subject", TextAlignmentOptions.Left);
+			KsmGuiText valueHeaderText = new KsmGuiText(listHeader, "Value", "Remaining science value\naccounting for data retrieved in RnD\nand collected in flight", TextAlignmentOptions.Left);
 			valueHeaderText.TextComponent.color = Lib.KolorToColor(Lib.Kolor.Science);
 			valueHeaderText.TextComponent.fontStyle = FontStyles.Bold;
 			valueHeaderText.TopTransform.SetAnchorsAndPosition(TextAnchor.MiddleLeft, TextAnchor.MiddleLeft, 110, 0);

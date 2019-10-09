@@ -55,7 +55,7 @@ namespace KERBALISM
 					// render device entry
 					dev.OnUpdate();
 					if (!dev.IsVisible) continue;
-					p.AddContent(dev.Name, dev.Status, dev.Tooltip, dev.Toggle, () => Highlighter.Set(dev.PartId, Color.cyan));
+					p.AddContent(dev.DisplayName, dev.Status, dev.Tooltip, dev.Toggle, () => Highlighter.Set(dev.PartId, Color.cyan));
 					if (dev.Icon != null)
 						p.SetLeftIcon(dev.Icon.texture, dev.Icon.tooltip, dev.Icon.onClick);
 
@@ -95,7 +95,7 @@ namespace KERBALISM
 					// render device entry
 					p.AddContent
 					(
-					  dev.Name,
+					  dev.DisplayName,
 					  state == -1 ? Lib.Color(Localizer.Format("#KERBALISM_UI_dontcare"), Lib.Kolor.DarkGrey) : Lib.Color(state == 0, Localizer.Format("#KERBALISM_Generic_OFF"), Lib.Kolor.Yellow, Localizer.Format("#KERBALISM_Generic_ON"), Lib.Kolor.Green),
 					  string.Empty,
 					  () =>

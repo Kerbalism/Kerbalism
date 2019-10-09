@@ -24,7 +24,9 @@ namespace KERBALISM
 			scienceValue = Experiment.ScienceValue(module.Subject);
 		}
 
-		public override string Name
+		public override string Name => module.experiment_id;
+
+		public override string DisplayName
 		{
 			get
 			{

@@ -22,7 +22,7 @@ namespace KERBALISM
 			foreach (string s in node.GetValues("state"))
 			{
 				var tokens = Lib.Tokenize(s, '@');
-				if (tokens.Count < 2) continue;
+				if (tokens.Count != 2) continue;
 				states.Add(Lib.Parse.ToUInt(tokens[0]), Lib.Parse.ToBool(tokens[1]));
 			}
 			prev = Lib.ConfigValue(node, "prev", string.Empty);

@@ -179,6 +179,13 @@ namespace KERBALISM
 				sb.Append(", ");
 				sb.Append(RunningCountdown(expInfo, subjectData, moduleOrPrefab.data_rate, true));
 			}
+			else if (status == ExpStatus.Forced && subjectData != null)
+			{
+				sb.Append(" (");
+				sb.Append(subjectData.PercentCollectedTotal.ToString("P1"));
+				sb.Append(Lib.Color(subjectData.PercentCollectedTotal.ToString("P1"), Lib.Kolor.Science));
+				sb.Append(" collected)");
+			}
 
 			if (isSample)
 			{

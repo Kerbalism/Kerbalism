@@ -26,13 +26,29 @@ namespace KERBALISM
 			DeviceType = GetType().Name;
 		}
 
-		// generate (probably) unique id for the module
-		public uint Id { get; protected set; }
+		// note 1 : the Id must be unique and always the same (persistence), so the Name property must always be the
+		// same, and be unique in case multiple modules of the same type exists on the part.
+		// note 2 : dynamically generate the id when first requested.
+		// can't do it in the base ctor because the PartId and Name may be overloaded.
+		public uint Id
+		{
+			get
+			{
+				if (id == uint.MaxValue)
+					id = PartId + (uint)Name.GetHashCode();
+
+				return id;
+			}
+		}
+		private uint id = uint.MaxValue; // lets just hope nothing will ever have that id
 
 		public string DeviceType { get; private set; }
 
-		// return device name
+		// return device name, must be static and unique in case several modules of the same type are on the part
 		public abstract string Name { get; }
+
+		// the name that will be displayed. can be overloaded in case some dynamic text is added (see experiments)
+		public virtual string DisplayName => Name;
 
 		// return part id
 		public abstract uint PartId { get; }
@@ -44,7 +60,7 @@ namespace KERBALISM
 		public abstract string Status { get; }
 
 		// return tooltip string
-		public virtual string Tooltip => Lib.BuildString(Lib.Bold(Name), "\non ", PartName);
+		public virtual string Tooltip => Lib.BuildString(Lib.Bold(DisplayName), "\non ", PartName);
 
 		// return icon/button
 		public virtual DeviceIcon Icon => null;
@@ -67,7 +83,6 @@ namespace KERBALISM
 		public LoadedDevice(T module) : base()
 		{
 			this.module = module;
-			Id = PartId + (uint)DeviceType.GetHashCode() + (uint)Lib.RandomInt(int.MaxValue);
 		}
 
 		public override string PartName => module.part.partInfo.title;
@@ -86,7 +101,6 @@ namespace KERBALISM
 			this.prefab = prefab;
 			this.protoPart = protoPart;
 			this.protoModule = protoModule;
-			Id = PartId + (uint)DeviceType.GetHashCode() + (uint)Lib.RandomInt(int.MaxValue);
 		}
 
 		public override string PartName => prefab.part.partInfo.title;
