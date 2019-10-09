@@ -185,7 +185,7 @@ namespace KERBALISM
 				// determine environment conditions
 				bool lighting = natural + artificial >= light_tolerance;
 				bool pressure = pressure_tolerance <= double.Epsilon || vd.Pressure >= pressure_tolerance;
-				bool radiation = radiation_tolerance <= double.Epsilon || vd.EnvRadiation * (1.0 - vd.Shielding) < radiation_tolerance;
+				bool radiation = radiation_tolerance <= double.Epsilon || (1.0 - vd.Shielding) * vd.EnvHabitatRadiation < radiation_tolerance;
 
 				// determine input resources conditions
 				// - comparing against amounts in previous simulation step
@@ -294,8 +294,8 @@ namespace KERBALISM
 
 				// determine environment conditions
 				bool lighting = natural + artificial >= g.light_tolerance;
-				bool pressure = g.pressure_tolerance <= double.Epsilon || vd.Pressure >= g.pressure_tolerance;
-				bool radiation = g.radiation_tolerance <= double.Epsilon || vd.EnvRadiation * (1.0 - vd.Shielding) < g.radiation_tolerance;
+				bool pressure = g.pressure_tolerance <= 0 || vd.Pressure >= g.pressure_tolerance;
+				bool radiation = g.radiation_tolerance <= 0 || vd.EnvRadiation * (1.0 - vd.Shielding) < g.radiation_tolerance;
 
 				// determine inputs conditions
 				// note: comparing against amounts in previous simulation step
