@@ -113,6 +113,9 @@ namespace KERBALISM
 		/// <summary> Returns true if a failure should be triggered. </summary>
 		protected bool IgnitionCheck()
 		{
+			if (!PreferencesBasic.Instance.engineFailures)
+				return false;
+
 			// don't check for a couple of seconds after the vessel was loaded.
 			// when loading a quicksave with the engines running, the engine state
 			// is off at first which would cost an ignition and possibly trigger a failure
@@ -199,7 +202,7 @@ namespace KERBALISM
 				}
 				else
 				{
-					if (rated_operation_duration > 0 || rated_ignitions > 0)
+					if (PreferencesBasic.Instance.engineFailures && (rated_operation_duration > 0 || rated_ignitions > 0))
 					{
 						if (rated_operation_duration > 0)
 						{
@@ -248,7 +251,7 @@ namespace KERBALISM
 				Events["Quality"].guiName = Lib.StatusToggle(quality_label, quality ? "high" : "standard");
 
 				Status = string.Empty;
-				if(mtbf > 0)
+				if(mtbf > 0 && PreferencesBasic.Instance.mtbfFailures)
 				{
 					double effective_mtbf = EffectiveMTBF(quality, mtbf);
 					Status = Lib.BuildString(Status,
@@ -256,7 +259,7 @@ namespace KERBALISM
 							"MTBF: ", Lib.HumanReadableDuration(effective_mtbf));
 				}
 
-				if (rated_operation_duration > 0)
+				if (rated_operation_duration > 0 && PreferencesBasic.Instance.engineFailures)
 				{
 					double effective_duration = EffectiveDuration(quality, rated_operation_duration);
 					Status = Lib.BuildString(Status,
@@ -265,7 +268,7 @@ namespace KERBALISM
 						Lib.HumanReadableDuration(effective_duration));
 				}
 
-				if (rated_ignitions > 0)
+				if (rated_ignitions > 0 && PreferencesBasic.Instance.engineFailures)
 				{
 					int effective_ignitions = EffectiveIgnitions(quality, rated_ignitions);
 					Status = Lib.BuildString(Status,
@@ -273,7 +276,7 @@ namespace KERBALISM
 						"ignitions: ", effective_ignitions.ToString());
 				}
 
-				if (rated_radiation > 0)
+				if (rated_radiation > 0 && PreferencesBasic.Instance.mtbfFailures)
 				{
 					var r = quality ? rated_radiation * Settings.QualityScale : rated_radiation;
 					Status = Lib.BuildString(Status,
@@ -289,7 +292,7 @@ namespace KERBALISM
 			if (Lib.IsEditor()) return;
 
 			// if it has not malfunctioned
-			if (!broken && mtbf > 0)
+			if (!broken && mtbf > 0 && PreferencesBasic.Instance.mtbfFailures)
 			{
 				var now = Planetarium.GetUniversalTime();
 				// calculate time of next failure if necessary
@@ -328,6 +331,7 @@ namespace KERBALISM
 		/// </summary>
 		protected void RunningCheck()
 		{
+			if (!PreferencesBasic.Instance.engineFailures) return;
 			if (broken || enforce_breakdown || turnon_failure_probability <= 0 && rated_operation_duration <= 0) return;
 			double now = Planetarium.GetUniversalTime();
 			if (now < nextRunningCheck) return;
@@ -392,6 +396,8 @@ namespace KERBALISM
 
 		public static void BackgroundUpdate(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, Reliability reliability, double elapsed_s)
 		{
+			if(!PreferencesBasic.Instance.mtbfFailures) return;
+
 			// check for existing malfunction and if it actually uses MTBF failures
 			if (Lib.Proto.GetBool(m, "broken")) return;
 			if (reliability.mtbf <= 0) return;

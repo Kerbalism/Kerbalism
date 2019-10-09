@@ -841,7 +841,7 @@ namespace KERBALISM
 			// remove reputation
 			if (HighLogic.CurrentGame.Mode == Game.Modes.CAREER)
 			{
-				Reputation.Instance.AddReputation(-PreferencesBasic.Instance.deathPenalty, TransactionReasons.Any);
+				Reputation.Instance.AddReputation(-Settings.KerbalDeathReputationPenalty, TransactionReasons.Any);
 			}
 		}
 
@@ -919,7 +919,7 @@ namespace KERBALISM
 			// remove reputation
 			if (HighLogic.CurrentGame.Mode == Game.Modes.CAREER)
 			{
-				Reputation.Instance.AddReputation(-PreferencesBasic.Instance.breakdownPenalty, TransactionReasons.Any);
+				Reputation.Instance.AddReputation(-Settings.KerbalBreakdownReputationPenalty, TransactionReasons.Any);
 			}
 		}
 

@@ -71,9 +71,11 @@ namespace KERBALISM
             LowQualityRendering = Lib.ConfigValue(cfg, "LowQualityRendering", false);
             UIScale = Lib.ConfigValue(cfg, "UIScale", 1.0f);
             UIPanelWidthScale = Lib.ConfigValue(cfg, "UIPanelWidthScale", 1.0f);
+			KerbalDeathReputationPenalty = Lib.ConfigValue(cfg, "KerbalDeathReputationPenalty", 100.0f);
+			KerbalBreakdownReputationPenalty = Lib.ConfigValue(cfg, "KerbalBreakdownReputationPenalty", 30f);
 
-            // save game settings presets
-            LifeSupportAtmoLoss = Lib.ConfigValue(cfg, "LifeSupportAtmoLoss", 50);
+			// save game settings presets
+			LifeSupportAtmoLoss = Lib.ConfigValue(cfg, "LifeSupportAtmoLoss", 50);
             LifeSupportSurvivalTemperature = Lib.ConfigValue(cfg, "LifeSupportSurvivalTemperature", 295);
             LifeSupportSurvivalRange = Lib.ConfigValue(cfg, "LifeSupportSurvivalRange", 5);
 
@@ -161,10 +163,13 @@ namespace KERBALISM
         public static bool LowQualityRendering;                 // use less particles to render the magnetic fields
         public static float UIScale;                            // scale UI elements by this factor, relative to KSP scaling settings, useful for high PPI screens
         public static float UIPanelWidthScale;                  // scale UI Panel Width by this factor, relative to KSP scaling settings, useful for high PPI screens
+		public static float KerbalDeathReputationPenalty;       // Reputation penalty when Kerbals dies
+		public static float KerbalBreakdownReputationPenalty;   // Reputation removed when Kerbals loose their marbles in space
 
-        // presets for save game preferences
 
-        public static int LifeSupportAtmoLoss;
+		// presets for save game preferences
+
+		public static int LifeSupportAtmoLoss;
         public static int LifeSupportSurvivalTemperature;
         public static int LifeSupportSurvivalRange;
         public static int ComfortLivingSpace;

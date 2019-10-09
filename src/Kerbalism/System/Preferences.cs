@@ -6,23 +6,14 @@ namespace KERBALISM
 {
 	public class PreferencesBasic : GameParameters.CustomParameterNode
 	{
+		[GameParameters.CustomParameterUI("Engine Malfunctions", toolTip = "Allow engine failures on ignition and exceeded burn durations")]
+		public bool engineFailures = true;
+
+		[GameParameters.CustomParameterUI("Part Malfunctions", toolTip = "Allow engine failures based on part age and mean time between failures")]
+		public bool mtbfFailures = true;
+
 		[GameParameters.CustomParameterUI("Highlight Malfunctions", toolTip = "Highlight faild parts in flight")]
 		public bool highlights = true;
-
-		[GameParameters.CustomParameterUI("Lifetime Radiation", toolTip = "Do not reset radiation values for kerbals recovered on kerbin")]
-		public bool lifetime = false;
-
-		[GameParameters.CustomParameterUI("Stress Breakdowns", toolTip = "Kerbals can make mistakes when they're under stress")]
-		public bool stressBreakdowns = false;
-
-		[GameParameters.CustomFloatParameterUI("Stress Breakdown Probability", asPercentage = true, minValue = 0, maxValue = 1, displayFormat = "F2", toolTip = "Probability of one stress induced mistake per year")]
-		public float stressBreakdownRate = 0.25f;
-
-		[GameParameters.CustomIntParameterUI("Breakdown Reputation Penalty", minValue = 0, maxValue = 300, toolTip = "Reputation removed when a Kerbal looses his marbles in space")]
-		public int breakdownPenalty = 10;
-
-		[GameParameters.CustomIntParameterUI("Death Reputation Penalty", minValue = 0, maxValue = 300, toolTip = "Reputation removed when a Kerbal dies")]
-		public int deathPenalty = 100;
 
 		[GameParameters.CustomParameterUI("Incentive Redundancy", toolTip = "Each malfunction will increase the MTBF\nof components in the same redundancy group")]
 		public bool incentiveRedundancy = true;
@@ -32,6 +23,15 @@ namespace KERBALISM
 
 		[GameParameters.CustomFloatParameterUI("Fixable Failure Rate", asPercentage = true, minValue = 0, maxValue = 1, displayFormat = "F2", toolTip = "Proportion of malfunctions that can be fixed remotely")]
 		public float safeModeChance = 0.5f;
+
+		[GameParameters.CustomParameterUI("Lifetime Radiation", toolTip = "Do not reset radiation values for kerbals recovered on kerbin")]
+		public bool lifetime = false;
+
+		[GameParameters.CustomParameterUI("Stress Breakdowns", toolTip = "Kerbals can make mistakes when they're under stress")]
+		public bool stressBreakdowns = false;
+
+		[GameParameters.CustomFloatParameterUI("Stress Breakdown Probability", asPercentage = true, minValue = 0, maxValue = 1, displayFormat = "F2", toolTip = "Probability of one stress induced mistake per year")]
+		public float stressBreakdownRate = 0.25f;
 
 		public override GameParameters.GameMode GameMode { get { return GameParameters.GameMode.ANY; } }
 
