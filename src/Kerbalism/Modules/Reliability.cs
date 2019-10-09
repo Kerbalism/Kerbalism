@@ -1,3 +1,5 @@
+#define DEBUG_RELIABILITY
+
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -59,9 +61,9 @@ namespace KERBALISM
 			if (Lib.DisableScenario(this)) return;
 
 			Fields["Status"].guiName = title;
-#if DEBUG_RELIABILITY
-			Events["Break"].guiName = "Break " + title + " [DEBUG]";
-#endif
+//#if DEBUG_RELIABILITY
+//			Events["Break"].guiName = "Break " + title + " [DEBUG]";
+//#endif
 
 			// do nothing in the editors and when compiling parts
 			if (!Lib.IsFlight()) return;
@@ -296,7 +298,10 @@ namespace KERBALISM
 					last = now;
 					var guaranteed = mtbf / 2.0;
 					var r = 1 - Math.Pow(Lib.RandomDouble(), 3);
-					next = last + guaranteed + mtbf * (quality ? Settings.QualityScale : 1.0) * r;
+					next = now + guaranteed + mtbf * (quality ? Settings.QualityScale : 1.0) * r;
+#if DEBUG_RELIABILITY
+					Lib.Log("Reliability: MTBF failure in " + (now - next) + " for " + part.partInfo.title);
+#endif
 				}
 
 				var decay = RadiationDecay(quality, vessel.KerbalismData().EnvRadiation, Kerbalism.elapsed_s, rated_radiation, radiation_decay_rate);
@@ -306,7 +311,7 @@ namespace KERBALISM
 				if (now > next)
 				{
 #if DEBUG_RELIABILITY
-					Lib.Log("Reliablity: background MTBF breakdown for " + part.partInfo.title);
+					Lib.Log("Reliablity: MTBF breakdown for " + part.partInfo.title);
 #endif
 					Break();
 				}
@@ -387,39 +392,44 @@ namespace KERBALISM
 
 		public static void BackgroundUpdate(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, Reliability reliability, double elapsed_s)
 		{
-			// if it has not malfunctioned
+			// check for existing malfunction and if it actually uses MTBF failures
 			if (Lib.Proto.GetBool(m, "broken")) return;
+			if (reliability.mtbf <= 0) return;
 
 			// get time of next failure
 			double next = Lib.Proto.GetDouble(m, "next");
+			bool quality = Lib.Proto.GetBool(m, "quality");
+			var now = Planetarium.GetUniversalTime();
 
-			if(reliability.mtbf > 0)
+			// calculate epoch of failure if necessary
+			if (next <= 0)
 			{
-				bool quality = Lib.Proto.GetBool(m, "quality");
+				var guaranteed = reliability.mtbf / 2.0;
+				var r = 1 - Math.Pow(Lib.RandomDouble(), 3);
+				next = now + guaranteed + reliability.mtbf * (quality ? Settings.QualityScale : 1.0) * r;
+				Lib.Proto.Set(m, "last", now);
+				Lib.Proto.Set(m, "next", next);
+#if DEBUG_RELIABILITY
+				Lib.Log("Reliability: background MTBF failure in " + (now - next) + " for " + p);
+#endif
+			}
 
-				// calculate epoch of failure if necessary
-				if (next <= 0)
-				{
-					double last = Planetarium.GetUniversalTime();
-
-					var guaranteed = reliability.mtbf / 2.0;
-					var r = 1 - Math.Pow(Lib.RandomDouble(), 3);
-					next = last + guaranteed + reliability.mtbf * (quality ? Settings.QualityScale : 1.0) * r;
-					Lib.Proto.Set(m, "last", last);
-					Lib.Proto.Set(m, "next", next);
-				}
-
-				var rad = v.KerbalismData().EnvRadiation;
-				var decay = RadiationDecay(quality, rad, elapsed_s, reliability.rated_radiation, reliability.radiation_decay_rate);
-				if(decay > 0)
-				{
-					next -= decay;
-					Lib.Proto.Set(m, "next", next);
-				}
+			var rad = v.KerbalismData().EnvRadiation;
+			var decay = RadiationDecay(quality, rad, elapsed_s, reliability.rated_radiation, reliability.radiation_decay_rate);
+			if (decay > 0)
+			{
+				next -= decay;
+				Lib.Proto.Set(m, "next", next);
 			}
 
 			// if it has failed, trigger malfunction
-			if (next > 0 && Planetarium.GetUniversalTime() > next) ProtoBreak(v, p, m);
+			if (now > next)
+			{
+#if DEBUG_RELIABILITY
+				Lib.Log("Reliablity: background MTBF failure for " + p);
+#endif
+				ProtoBreak(v, p, m);
+			}
 		}
 
 #if KSP15_16
@@ -581,9 +591,9 @@ namespace KERBALISM
 			}
 		}
 
-#if DEBUG_RELIABILITY
-		[KSPEvent(guiActive = true, guiActiveUnfocused = true, guiName = "_", active = true)] // [for testing]
-#endif
+//#if DEBUG_RELIABILITY
+//		[KSPEvent(guiActive = true, guiActiveUnfocused = true, guiName = "_", active = true)] // [for testing]
+//#endif
 		public void Break()
 		{
 			vessel.KerbalismData().ResetReliabilityStatus();
