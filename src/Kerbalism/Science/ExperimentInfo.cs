@@ -251,10 +251,18 @@ namespace KERBALISM
 
 			public bool IsBodyAllowed(CelestialBody body)
 			{
-				bool isAllowed = true;
+				bool isAllowed;
 
-				foreach (BodyCondition bodyCondition in bodiesAllowed)
-					isAllowed &= bodyCondition.TestCondition(body);
+				if (bodiesAllowed.Count > 0)
+				{
+					isAllowed = false;
+					foreach (BodyCondition bodyCondition in bodiesAllowed)
+						isAllowed |= bodyCondition.TestCondition(body);
+				}
+				else
+				{
+					isAllowed = true;
+				}
 
 				foreach (BodyCondition bodyCondition in bodiesNotAllowed)
 					isAllowed &= !bodyCondition.TestCondition(body);
