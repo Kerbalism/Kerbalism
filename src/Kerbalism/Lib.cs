@@ -1066,8 +1066,6 @@ namespace KERBALISM
 			{
 				case Game.Modes.CAREER:
 				case Game.Modes.SCIENCE_SANDBOX:
-					m.enabled = true;
-					m.isEnabled = true;
 					return true;
 				default:
 					m.enabled = false;
