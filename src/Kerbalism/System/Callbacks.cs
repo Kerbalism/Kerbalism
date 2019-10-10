@@ -138,7 +138,7 @@ namespace KERBALISM
 			Cache.SetVesselObjectsCache(data.to.vessel, "eva_prop", evaPropQuantity);
 
 			// Airlock loss
-			resources.Consume(data.from.vessel, "Nitrogen", PreferencesLifeSupport.Instance.evaAtmoLoss, "airlock");
+			resources.Consume(data.from.vessel, "Nitrogen", Settings.LifeSupportAtmoLoss, "airlock");
 
 			// show warning if there is little or no EVA propellant in the suit
 			if (evaPropQuantity <= 0.05 && !Lib.Landed(data.from.vessel))

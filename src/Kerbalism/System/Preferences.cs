@@ -4,19 +4,15 @@ using KSP.IO;
 
 namespace KERBALISM
 {
-	public class PreferencesBasic : GameParameters.CustomParameterNode
+
+
+	public class PreferencesReliability : GameParameters.CustomParameterNode
 	{
-		[GameParameters.CustomParameterUI("Engine Malfunctions", toolTip = "Allow engine failures on ignition and exceeded burn durations")]
-		public bool engineFailures = true;
-
-		[GameParameters.CustomParameterUI("Part Malfunctions", toolTip = "Allow engine failures based on part age and mean time between failures")]
-		public bool mtbfFailures = true;
-
 		[GameParameters.CustomParameterUI("Highlight Malfunctions", toolTip = "Highlight faild parts in flight")]
 		public bool highlights = true;
 
-		[GameParameters.CustomParameterUI("Incentive Redundancy", toolTip = "Each malfunction will increase the MTBF\nof components in the same redundancy group")]
-		public bool incentiveRedundancy = true;
+		[GameParameters.CustomParameterUI("Part Malfunctions", toolTip = "Allow engine failures based on part age and mean time between failures")]
+		public bool mtbfFailures = true;
 
 		[GameParameters.CustomFloatParameterUI("Critical Failure Rate", asPercentage = true, minValue = 0, maxValue = 1, displayFormat = "F2", toolTip = "Proportion of malfunctions that lead to critical failures")]
 		public float criticalChance = 0.25f;
@@ -24,37 +20,37 @@ namespace KERBALISM
 		[GameParameters.CustomFloatParameterUI("Fixable Failure Rate", asPercentage = true, minValue = 0, maxValue = 1, displayFormat = "F2", toolTip = "Proportion of malfunctions that can be fixed remotely")]
 		public float safeModeChance = 0.5f;
 
-		[GameParameters.CustomParameterUI("Lifetime Radiation", toolTip = "Do not reset radiation values for kerbals recovered on kerbin")]
-		public bool lifetime = false;
+		[GameParameters.CustomParameterUI("Incentive Redundancy", toolTip = "Each malfunction will increase the MTBF\nof components in the same redundancy group")]
+		public bool incentiveRedundancy = true;
 
-		[GameParameters.CustomParameterUI("Stress Breakdowns", toolTip = "Kerbals can make mistakes when they're under stress")]
-		public bool stressBreakdowns = false;
+		[GameParameters.CustomParameterUI("Engine Malfunctions", toolTip = "Allow engine failures on ignition and exceeded burn durations")]
+		public bool engineFailures = true;
 
-		[GameParameters.CustomFloatParameterUI("Stress Breakdown Probability", asPercentage = true, minValue = 0, maxValue = 1, displayFormat = "F2", toolTip = "Probability of one stress induced mistake per year")]
-		public float stressBreakdownRate = 0.25f;
+		[GameParameters.CustomFloatParameterUI("Engine Ignition Failure Chance", asPercentage = true, minValue = 0, maxValue = 3, displayFormat = "F2", toolTip = "Adjust the probability of engine failures on ignition")]
+		public float ignitionFailureChance = 1.0f;
 
 		public override GameParameters.GameMode GameMode { get { return GameParameters.GameMode.ANY; } }
 
 		public override bool HasPresets { get { return false; } }
 
-		public override string DisplaySection { get { return "Kerbalism"; } }
+		public override string DisplaySection { get { return "Kerbalism (1)"; } }
 
-		public override string Section { get { return "Kerbalism"; } }
+		public override string Section { get { return "Kerbalism (1)"; } }
 
-		public override int SectionOrder { get { return 0; } }
+		public override int SectionOrder { get { return 1; } }
 
-		public override string Title { get { return "Common"; } }
+		public override string Title { get { return "Reliability"; } }
 
-		private static PreferencesBasic instance;
+		private static PreferencesReliability instance;
 
-		public static PreferencesBasic Instance
+		public static PreferencesReliability Instance
 		{
 			get
 			{
 				if (instance == null)
 				{
 					if (HighLogic.CurrentGame != null)
-					{ instance = HighLogic.CurrentGame.Parameters.CustomParams<PreferencesBasic>(); }
+					{ instance = HighLogic.CurrentGame.Parameters.CustomParams<PreferencesReliability>(); }
 				}
 				return instance;
 			}
@@ -85,11 +81,11 @@ namespace KERBALISM
 
 		public override bool HasPresets { get { return false; } }
 
-		public override string DisplaySection { get { return "Kerbalism"; } }
+		public override string DisplaySection { get { return "Kerbalism (1)"; } }
 
-		public override string Section { get { return "Kerbalism"; } }
+		public override string Section { get { return "Kerbalism (1)"; } }
 
-		public override int SectionOrder { get { return 1; } }
+		public override int SectionOrder { get { return 2; } }
 
 		public override string Title { get { return "Science"; } }
 
@@ -145,11 +141,11 @@ namespace KERBALISM
 
 		public override bool HasPresets { get { return false; } }
 
-		public override string DisplaySection { get { return "Kerbalism"; } }
+		public override string DisplaySection { get { return "Kerbalism (2)"; } }
 
-		public override string Section { get { return "Kerbalism"; } }
+		public override string Section { get { return "Kerbalism (2)"; } }
 
-		public override int SectionOrder { get { return 2; } }
+		public override int SectionOrder { get { return 0; } }
 
 		public override string Title { get { return "Notifications"; } }
 
@@ -175,56 +171,14 @@ namespace KERBALISM
 		}
 	}
 
-	public class PreferencesLifeSupport : GameParameters.CustomParameterNode
-	{
-		[GameParameters.CustomIntParameterUI("Survival Temperature", minValue = 250, maxValue = 330, toolTip = "Ideal living temperature")]
-		public int survivalTemperature = Settings.LifeSupportSurvivalTemperature;
-
-		[GameParameters.CustomIntParameterUI("Survival Temperature Range", minValue = 1, maxValue = 20, toolTip = "Sweet spot around survival temperature")]
-		public int survivalRange = Settings.LifeSupportSurvivalRange;
-
-		[GameParameters.CustomIntParameterUI("Amount of atmosphere lost to airlock on EVA", minValue = 1, maxValue = 100, toolTip = "Atmosphere lost in EVA airlock")]
-		public int evaAtmoLoss = Settings.LifeSupportAtmoLoss;
-
-		[GameParameters.CustomIntParameterUI("Log resource consumption", toolTip = "WARNING: this logs A LOT")]
-		public bool resourceLogging = false;
-
-		public override GameParameters.GameMode GameMode { get { return GameParameters.GameMode.ANY; } }
-
-		public override bool HasPresets { get { return false; } }
-
-		public override string DisplaySection { get { return "Kerbalism (Advanced)"; } }
-
-		public override string Section { get { return "Kerbalism (Advanced)"; } }
-
-		public override int SectionOrder { get { return 2; } }
-
-		public override string Title { get { return "Life Support"; } }
-
-		private static PreferencesLifeSupport instance;
-
-		public static PreferencesLifeSupport Instance
-		{
-			get
-			{
-				if (instance == null)
-				{
-					if (HighLogic.CurrentGame != null)
-					{ instance = HighLogic.CurrentGame.Parameters.CustomParams<PreferencesLifeSupport>(); }
-				}
-				return instance;
-			}
-		}
-
-		public override void OnLoad(ConfigNode node)
-		{
-			base.OnLoad(node);
-			instance = null;
-		}
-	}
-
 	public class PreferencesComfort : GameParameters.CustomParameterNode
 	{
+		[GameParameters.CustomParameterUI("Stress Breakdowns", toolTip = "Kerbals can make mistakes when they're under stress")]
+		public bool stressBreakdowns = false;
+
+		[GameParameters.CustomFloatParameterUI("Stress Breakdown Probability", asPercentage = true, minValue = 0, maxValue = 1, displayFormat = "F2", toolTip = "Probability of one stress induced mistake per year")]
+		public float stressBreakdownRate = 0.25f;
+
 		[GameParameters.CustomIntParameterUI("Ideal Living Space", minValue = 5, maxValue = 200, toolTip = "Ideal living space per-capita in m^3")]
 		public int livingSpace = Settings.ComfortLivingSpace;
 
@@ -250,11 +204,11 @@ namespace KERBALISM
 
 		public override bool HasPresets { get { return false; } }
 
-		public override string DisplaySection { get { return "Kerbalism (Advanced)"; } }
+		public override string DisplaySection { get { return "Kerbalism (2)"; } }
 
-		public override string Section { get { return "Kerbalism (Advanced)"; } }
+		public override string Section { get { return "Kerbalism (2)"; } }
 
-		public override int SectionOrder { get { return 0; } }
+		public override int SectionOrder { get { return 1; } }
 
 		public override string Title { get { return "Comfort"; } }
 
@@ -280,8 +234,11 @@ namespace KERBALISM
 		}
 	}
 
-	public class PreferencesStorm : GameParameters.CustomParameterNode
+	public class PreferencesRadiation : GameParameters.CustomParameterNode
 	{
+		[GameParameters.CustomParameterUI("Lifetime Radiation", toolTip = "Do not reset radiation values for kerbals recovered on kerbin")]
+		public bool lifetime = false;
+
 		[GameParameters.CustomFloatParameterUI("Storm probability", asPercentage = true, minValue = 0, maxValue = 5, displayFormat = "F2", toolTip = "Probability of solar storms")]
 		public float stormFrequency = Settings.StormFrequency;
 
@@ -304,24 +261,24 @@ namespace KERBALISM
 
 		public override bool HasPresets { get { return false; } }
 
-		public override string DisplaySection { get { return "Kerbalism (Advanced)"; } }
+		public override string DisplaySection { get { return "Kerbalism (1)"; } }
 
-		public override string Section { get { return "Kerbalism (Advanced)"; } }
+		public override string Section { get { return "Kerbalism (1)"; } }
 
-		public override int SectionOrder { get { return 2; } }
+		public override int SectionOrder { get { return 0; } }
 
 		public override string Title { get { return "Radiation"; } }
 
-		private static PreferencesStorm instance;
+		private static PreferencesRadiation instance;
 
-		public static PreferencesStorm Instance
+		public static PreferencesRadiation Instance
 		{
 			get
 			{
 				if (instance == null)
 				{
 					if (HighLogic.CurrentGame != null)
-					{ instance = HighLogic.CurrentGame.Parameters.CustomParams<PreferencesStorm>(); }
+					{ instance = HighLogic.CurrentGame.Parameters.CustomParams<PreferencesRadiation>(); }
 				}
 				return instance;
 			}

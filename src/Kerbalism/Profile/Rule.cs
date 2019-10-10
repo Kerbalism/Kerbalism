@@ -64,12 +64,12 @@ namespace KERBALISM
 			ResourceInfo res = input.Length > 0 ? resources.GetResource(v, input) : null;
 
 			// determine message variant
-			uint variant = vd.EnvTemperature < PreferencesLifeSupport.Instance.survivalTemperature ? 0 : 1u;
+			uint variant = vd.EnvTemperature < Settings.LifeSupportSurvivalTemperature ? 0 : 1u;
 
 			// get product of all environment modifiers
 			double k = Modifiers.Evaluate(v, vd, resources, modifiers);
 
-			bool lifetime_enabled = PreferencesBasic.Instance.lifetime;
+			bool lifetime_enabled = PreferencesRadiation.Instance.lifetime;
 
 			// for each crew
 			foreach (ProtoCrewMember c in Lib.CrewList(v))
@@ -173,7 +173,7 @@ namespace KERBALISM
 
 				bool do_breakdown = false;
 
-				if(breakdown && PreferencesBasic.Instance.stressBreakdowns) {
+				if(breakdown && PreferencesComfort.Instance.stressBreakdowns) {
 					// stress level
 					double breakdown_probability = rd.problem / warning_threshold;
 					breakdown_probability = Lib.Clamp(breakdown_probability, 0.0, 1.0);
@@ -183,7 +183,7 @@ namespace KERBALISM
 					breakdown_probability *= c.stupidity * 0.6 + 0.4;
 
 					// apply the weekly error rate
-					breakdown_probability *= PreferencesBasic.Instance.stressBreakdownRate;
+					breakdown_probability *= PreferencesComfort.Instance.stressBreakdownRate;
 
 					// now we have the probability for one failure per week, based on the
 					// individual stupidity and stress level of the kerbal.

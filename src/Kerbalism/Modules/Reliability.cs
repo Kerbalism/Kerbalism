@@ -113,7 +113,7 @@ namespace KERBALISM
 		/// <summary> Returns true if a failure should be triggered. </summary>
 		protected bool IgnitionCheck()
 		{
-			if (!PreferencesBasic.Instance.engineFailures)
+			if (!PreferencesReliability.Instance.engineFailures)
 				return false;
 
 			// don't check for a couple of seconds after the vessel was loaded.
@@ -130,7 +130,7 @@ namespace KERBALISM
 			if (turnon_failure_probability > 0)
 			{
 				var q = quality ? Settings.QualityScale : 1.0;
-				if (Lib.RandomDouble() < turnon_failure_probability / q)
+				if (Lib.RandomDouble() < (turnon_failure_probability * PreferencesReliability.Instance.ignitionFailureChance) / q)
 				{
 					fail = true;
 #if DEBUG_RELIABILITY
@@ -147,13 +147,14 @@ namespace KERBALISM
 				if (ignitions > total_ignitions)
 				{
 					var q = (quality ? Settings.QualityScale : 1.0) * Lib.RandomDouble();
+					q /= PreferencesReliability.Instance.ignitionFailureChance;
 					q /= (ignitions - total_ignitions); // progressively increase the odds of a failure with every extra ignition
 
 #if DEBUG_RELIABILITY
 					Lib.Log("Reliability: ignition exceeded q=" + q + " ignitions=" + ignitions + " total_ignitions=" + total_ignitions);
 #endif
 
-					if (q < 0.5)
+					if (q < 0.3)
 					{
 						fail = true;
 					}
@@ -202,7 +203,7 @@ namespace KERBALISM
 				}
 				else
 				{
-					if (PreferencesBasic.Instance.engineFailures && (rated_operation_duration > 0 || rated_ignitions > 0))
+					if (PreferencesReliability.Instance.engineFailures && (rated_operation_duration > 0 || rated_ignitions > 0))
 					{
 						if (rated_operation_duration > 0)
 						{
@@ -251,7 +252,7 @@ namespace KERBALISM
 				Events["Quality"].guiName = Lib.StatusToggle(quality_label, quality ? "high" : "standard");
 
 				Status = string.Empty;
-				if(mtbf > 0 && PreferencesBasic.Instance.mtbfFailures)
+				if(mtbf > 0 && PreferencesReliability.Instance.mtbfFailures)
 				{
 					double effective_mtbf = EffectiveMTBF(quality, mtbf);
 					Status = Lib.BuildString(Status,
@@ -259,7 +260,7 @@ namespace KERBALISM
 							"MTBF: ", Lib.HumanReadableDuration(effective_mtbf));
 				}
 
-				if (rated_operation_duration > 0 && PreferencesBasic.Instance.engineFailures)
+				if (rated_operation_duration > 0 && PreferencesReliability.Instance.engineFailures)
 				{
 					double effective_duration = EffectiveDuration(quality, rated_operation_duration);
 					Status = Lib.BuildString(Status,
@@ -268,7 +269,7 @@ namespace KERBALISM
 						Lib.HumanReadableDuration(effective_duration));
 				}
 
-				if (rated_ignitions > 0 && PreferencesBasic.Instance.engineFailures)
+				if (rated_ignitions > 0 && PreferencesReliability.Instance.engineFailures)
 				{
 					int effective_ignitions = EffectiveIgnitions(quality, rated_ignitions);
 					Status = Lib.BuildString(Status,
@@ -276,7 +277,7 @@ namespace KERBALISM
 						"ignitions: ", effective_ignitions.ToString());
 				}
 
-				if (rated_radiation > 0 && PreferencesBasic.Instance.mtbfFailures)
+				if (rated_radiation > 0 && PreferencesReliability.Instance.mtbfFailures)
 				{
 					var r = quality ? rated_radiation * Settings.QualityScale : rated_radiation;
 					Status = Lib.BuildString(Status,
@@ -292,7 +293,7 @@ namespace KERBALISM
 			if (Lib.IsEditor()) return;
 
 			// if it has not malfunctioned
-			if (!broken && mtbf > 0 && PreferencesBasic.Instance.mtbfFailures)
+			if (!broken && mtbf > 0 && PreferencesReliability.Instance.mtbfFailures)
 			{
 				var now = Planetarium.GetUniversalTime();
 				// calculate time of next failure if necessary
@@ -331,7 +332,7 @@ namespace KERBALISM
 		/// </summary>
 		protected void RunningCheck()
 		{
-			if (!PreferencesBasic.Instance.engineFailures) return;
+			if (!PreferencesReliability.Instance.engineFailures) return;
 			if (broken || enforce_breakdown || turnon_failure_probability <= 0 && rated_operation_duration <= 0) return;
 			double now = Planetarium.GetUniversalTime();
 			if (now < nextRunningCheck) return;
@@ -396,7 +397,7 @@ namespace KERBALISM
 
 		public static void BackgroundUpdate(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, Reliability reliability, double elapsed_s)
 		{
-			if(!PreferencesBasic.Instance.mtbfFailures) return;
+			if(!PreferencesReliability.Instance.mtbfFailures) return;
 
 			// check for existing malfunction and if it actually uses MTBF failures
 			if (Lib.Proto.GetBool(m, "broken")) return;
@@ -612,13 +613,13 @@ namespace KERBALISM
 			}
 
 			// if enforced, manned, or if safemode didn't trigger
-			if (enforce_breakdown || vessel.KerbalismData().CrewCapacity > 0 || Lib.RandomDouble() > PreferencesBasic.Instance.safeModeChance)
+			if (enforce_breakdown || vessel.KerbalismData().CrewCapacity > 0 || Lib.RandomDouble() > PreferencesReliability.Instance.safeModeChance)
 			{
 				// flag as broken
 				broken = true;
 
 				// determine if this is a critical failure
-				critical = Lib.RandomDouble() < PreferencesBasic.Instance.criticalChance;
+				critical = Lib.RandomDouble() < PreferencesReliability.Instance.criticalChance;
 
 				// disable module
 				foreach (PartModule m in modules)
@@ -645,7 +646,7 @@ namespace KERBALISM
 			}
 
 			// in any case, incentive redundancy
-			if (PreferencesBasic.Instance.incentiveRedundancy)
+			if (PreferencesReliability.Instance.incentiveRedundancy)
 			{
 				Incentive_redundancy(vessel, redundancy);
 			}
@@ -663,13 +664,13 @@ namespace KERBALISM
 			bool enforce_breakdown = Lib.Proto.GetBool(m, "enforce_breakdown", false);
 
 			// if manned, or if safemode didn't trigger
-			if (enforce_breakdown || v.KerbalismData().CrewCapacity > 0 || Lib.RandomDouble() > PreferencesBasic.Instance.safeModeChance)
+			if (enforce_breakdown || v.KerbalismData().CrewCapacity > 0 || Lib.RandomDouble() > PreferencesReliability.Instance.safeModeChance)
 			{
 				// flag as broken
 				Lib.Proto.Set(m, "broken", true);
 
 				// determine if this is a critical failure
-				bool critical = Lib.RandomDouble() < PreferencesBasic.Instance.criticalChance;
+				bool critical = Lib.RandomDouble() < PreferencesReliability.Instance.criticalChance;
 				Lib.Proto.Set(m, "critical", critical);
 
 				// for each associated module
@@ -706,7 +707,7 @@ namespace KERBALISM
 			}
 
 			// in any case, incentive redundancy
-			if (PreferencesBasic.Instance.incentiveRedundancy)
+			if (PreferencesReliability.Instance.incentiveRedundancy)
 			{
 				Incentive_redundancy(v, reliability.redundancy);
 			}

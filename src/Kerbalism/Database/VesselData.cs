@@ -464,7 +464,7 @@ namespace KERBALISM
 			cfg_malfunction = PreferencesMessages.Instance.malfunction;
 			cfg_storm = PreferencesMessages.Instance.storm;
 			cfg_script = PreferencesMessages.Instance.script;
-			cfg_highlights = PreferencesBasic.Instance.highlights;
+			cfg_highlights = PreferencesReliability.Instance.highlights;
 			cfg_showlink = true;
 			stormData = new StormData();
 			habitatInfo = new VesselHabitatInfo();
@@ -487,7 +487,7 @@ namespace KERBALISM
 			cfg_malfunction = Lib.ConfigValue(node, "cfg_malfunction", PreferencesMessages.Instance.malfunction);
 			cfg_storm = Lib.ConfigValue(node, "cfg_storm", PreferencesMessages.Instance.storm);
 			cfg_script = Lib.ConfigValue(node, "cfg_script", PreferencesMessages.Instance.script);
-			cfg_highlights = Lib.ConfigValue(node, "cfg_highlights", PreferencesBasic.Instance.highlights);
+			cfg_highlights = Lib.ConfigValue(node, "cfg_highlights", PreferencesReliability.Instance.highlights);
 			cfg_showlink = Lib.ConfigValue(node, "cfg_showlink", true);
 
 			solarPanelsAverageExposure = Lib.ConfigValue(node, "solarPanelsAverageExposure", -1.0);
@@ -580,7 +580,7 @@ namespace KERBALISM
 			surface = Habitat.Tot_surface(Vessel);
 			pressure = Math.Min(Habitat.Pressure(Vessel), habitatInfo.MaxPressure);
 
-			evas = (uint)(Math.Max(0, ResourceCache.GetResource(Vessel, "Nitrogen").Amount - 330) / PreferencesLifeSupport.Instance.evaAtmoLoss);
+			evas = (uint)(Math.Max(0, ResourceCache.GetResource(Vessel, "Nitrogen").Amount - 330) / Settings.LifeSupportAtmoLoss);
 			poisoning = Habitat.Poisoning(Vessel);
 			shielding = Habitat.Shielding(Vessel);
 			livingSpace = Habitat.Living_space(Vessel);
