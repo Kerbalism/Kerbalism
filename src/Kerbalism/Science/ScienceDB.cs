@@ -338,6 +338,9 @@ namespace KERBALISM
 
 		public static void Load(ConfigNode node)
 		{
+			if (ResearchAndDevelopment.Instance == null)
+				Lib.Log("ERROR : ResearchAndDevelopment.Instance is null on subjects load !");
+
 			// load uncredited science (transmission buffer)
 			uncreditedScience = Lib.ConfigValue(node, "uncreditedScience", 0.0);
 

@@ -78,7 +78,7 @@ EXPERIMENT_DEFINITION
 										
 		// Optional : situation values will create-or-replace the stock situationMask/biomeMask values.
 		// Multiple lines allowed, format is "Situation = SituationKeyword", and append "@Biomes" to allow biomes
-		// Valid keywords : SrfLanded, SrfSplashed, FlyingLow, FlyingHigh, InSpaceLow, InSpaceHigh, Reentry
+		// Valid keywords : SrfLanded, SrfSplashed, FlyingLow, FlyingHigh, InSpaceLow, InSpaceHigh
 		// There are other situations, but they aren't implemented properly yet.
 		Situation = SrfLanded@Biomes
 		Situation = SrfSplashed@Biomes

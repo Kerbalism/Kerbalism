@@ -127,6 +127,10 @@ namespace KERBALISM
 			// try to get it, might be already created in some corner-case situation
 			RnDSubject = ResearchAndDevelopment.GetSubjectByID(StockSubjectId);
 
+			// TODO : DEBUG, REMOVE THIS
+			if (RnDSubject != null)
+				Lib.Log("CreateSubjectInRnD : ScienceSubject " + StockSubjectId + "exist already, this should not be happening !");
+
 			if (RnDSubject == null)
 			{
 				// get subjects container using reflection
