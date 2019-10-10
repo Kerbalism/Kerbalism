@@ -132,6 +132,9 @@ namespace KERBALISM
 				Misc.TweakPartIcons(); // various tweaks to the part icons in the editor
 				Science.PatchExperimentPrefabs(); // setup experiment modules VAB info
 
+				// static KsmGui windows
+				ScienceArchiveWindow.Init();
+
 				// GameEvents callbacks
 				callbacks = new Callbacks();
 

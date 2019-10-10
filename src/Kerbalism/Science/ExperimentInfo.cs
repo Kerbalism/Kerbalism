@@ -276,7 +276,7 @@ namespace KERBALISM
 
 				if (bodiesAllowed.Count > 0)
 				{
-					ExpInfoSB.Append(Lib.Color("Bodies allowed :\n", Lib.Kolor.Cyan));
+					ExpInfoSB.Append(Lib.Color("Bodies allowed:\n", Lib.Kolor.Cyan, true));
 					for (int i = bodiesAllowed.Count - 1; i >= 0; i--)
 					{
 						ExpInfoSB.Append(bodiesAllowed[i].Title);
@@ -289,7 +289,7 @@ namespace KERBALISM
 
 				if (bodiesNotAllowed.Count > 0)
 				{
-					ExpInfoSB.Append(Lib.Color("Bodies not allowed :\n", Lib.Kolor.Cyan));
+					ExpInfoSB.Append(Lib.Color("Bodies not allowed:\n", Lib.Kolor.Cyan, true));
 					for (int i = bodiesNotAllowed.Count - 1; i >= 0; i--)
 					{
 						ExpInfoSB.Append(bodiesNotAllowed[i].Title);

@@ -10,15 +10,15 @@ using static KERBALISM.ScienceDB;
 
 namespace KERBALISM
 {
-	public class ExperimentArchive : KsmGuiVerticalLayout
+	public class ExperimentSubjectList : KsmGuiVerticalLayout
 	{
 		public KsmGuiToggle KnownSubjectsToggle {get; private set;}
 		public List<BodyContainer> BodyContainers = new List<BodyContainer>();
 
 
-		public ExperimentArchive(KsmGuiBase parent, ExperimentInfo expInfo) : base(parent)
+		public ExperimentSubjectList(KsmGuiBase parent, ExperimentInfo expInfo, bool autoUpdate = true) : base(parent)
 		{
-			KnownSubjectsToggle = new KsmGuiToggle(this, "Show known subjects only", true, ToggleKnownSubjects);
+			KnownSubjectsToggle = new KsmGuiToggle(this, "Show only known subjects", true, ToggleKnownSubjects);
 
 			KsmGuiBase listHeader = new KsmGuiBase(this);
 			listHeader.SetLayoutElement(true, false, -1, 16);
@@ -55,11 +55,13 @@ namespace KERBALISM
 			foreach (ObjectPair<int, SituationsBiomesSubject> bodySubjects in GetSubjectsForExperiment(expInfo))
 			{
 				CelestialBody body = FlightGlobals.Bodies[bodySubjects.Key];
-				BodyContainer bodyEntry = new BodyContainer(scrollView, body, bodySubjects.Value);
+				BodyContainer bodyEntry = new BodyContainer(scrollView, body, bodySubjects.Value, autoUpdate);
 				BodyContainers.Add(bodyEntry);
 			}
 
-			SetUpdateAction(CheckKnownSubjects, 50);
+			if (autoUpdate)
+				SetUpdateAction(CheckKnownSubjects, 50);
+
 			CheckKnownSubjects();
 			ToggleKnownSubjects(true);
 		}
@@ -110,13 +112,27 @@ namespace KERBALISM
 			}
 		}
 
+		public void ForceUpdate()
+		{
+			CheckKnownSubjects();
+			ToggleKnownSubjects(true);
+
+			foreach (BodyContainer body in BodyContainers)
+			{
+				foreach (SubjectLine subjectLine in body.SubjectsContainer.SubjectLines)
+				{
+					subjectLine.Update();
+				}
+			}
+		}
+
 		public class BodyContainer: KsmGuiVerticalLayout
 		{
 			public bool isKnown;
 			public SubjectsContainer SubjectsContainer { get; private set; }
 			KsmGuiIconButton bodyToggle;
 
-			public BodyContainer(KsmGuiBase parent, CelestialBody body, SituationsBiomesSubject situationsAndSubjects) : base(parent)
+			public BodyContainer(KsmGuiBase parent, CelestialBody body, SituationsBiomesSubject situationsAndSubjects, bool autoupdate = true) : base(parent)
 			{
 				KsmGuiHeader header = new KsmGuiHeader(this, body.name, KsmGuiStyle.boxColor);
 				header.TextObject.TextComponent.fontStyle = FontStyles.Bold;
@@ -126,7 +142,7 @@ namespace KERBALISM
 				bodyToggle.SetIconColor(Lib.Kolor.Orange);
 				bodyToggle.MoveAsFirstChild();
 
-				SubjectsContainer = new SubjectsContainer(this, body, situationsAndSubjects);
+				SubjectsContainer = new SubjectsContainer(this, body, situationsAndSubjects, autoupdate);
 			}
 
 			public void ToggleBody()
@@ -146,7 +162,7 @@ namespace KERBALISM
 		{
 			public List<SubjectLine> SubjectLines { get; private set; } = new List<SubjectLine>();
 
-			public SubjectsContainer(KsmGuiBase parent, CelestialBody body, SituationsBiomesSubject situationsAndSubjects) : base(parent)
+			public SubjectsContainer(KsmGuiBase parent, CelestialBody body, SituationsBiomesSubject situationsAndSubjects, bool autoupdate = true) : base(parent)
 			{
 				foreach (ObjectPair<ScienceSituation, BiomesSubject> situation in situationsAndSubjects)
 				{
@@ -165,9 +181,9 @@ namespace KERBALISM
 							SubjectLine subject;
 							
 							if (subjects.Key >= 0)
-								subject = new SubjectLine(this, body.BiomeMap.Attributes[subjects.Key].displayname, subjectData, situationLine);
+								subject = new SubjectLine(this, body.BiomeMap.Attributes[subjects.Key].displayname, subjectData, situationLine, autoupdate);
 							else
-								subject = new SubjectLine(this, string.Empty, subjectData, situationLine);
+								subject = new SubjectLine(this, string.Empty, subjectData, situationLine, autoupdate);
 
 							SubjectLines.Add(subject);
 						}
@@ -193,9 +209,7 @@ namespace KERBALISM
 			private KsmGuiText valueText;
 			private KsmGuiText completedText;
 
-			
-
-			public SubjectLine(KsmGuiBase parent, string biomeName, SubjectData subject, SituationLine situationLine) : base(parent)
+			public SubjectLine(KsmGuiBase parent, string biomeName, SubjectData subject, SituationLine situationLine, bool autoupdate = true) : base(parent)
 			{
 				SituationLine = situationLine;
 				SubjectData = subject;
@@ -232,16 +246,16 @@ namespace KERBALISM
 					biomeText.TopTransform.SetSizeDelta(200, 14);
 				}
 
-				SetUpdateAction(Update, 50);
 				Update();
-				
 
-				//IsKnown = SubjectData.ScienceCollectedTotal > 0.0;
-				//Enabled = IsKnown;
+				if (autoupdate)
+				{
+					SetUpdateAction(Update, 50);
+				}
 			}
 
-			private void Update()
-			{
+			public void Update()
+			{ 
 				rndText.SetText(SubjectData.ScienceRetrievedInKSC.ToString("0.0;--;--"));
 				flightText.SetText(SubjectData.ScienceCollectedInFlight.ToString("+0.0;--;--"));
 				valueText.SetText(SubjectData.ScienceRemainingTotal.ToString("0.0;--;--"));

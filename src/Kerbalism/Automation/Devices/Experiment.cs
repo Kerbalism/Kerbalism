@@ -14,7 +14,7 @@ namespace KERBALISM
 
 		public ExperimentDevice(Experiment module) : base(module)
 		{
-			icon = new DeviceIcon(module.ExpInfo.SampleMass > 0.0 ? Textures.sample_scicolor : Textures.file_scicolor, "open experiment window", () => new SciencePopup(module.vessel, module));
+			icon = new DeviceIcon(module.ExpInfo.SampleMass > 0.0 ? Textures.sample_scicolor : Textures.file_scicolor, "open experiment window", () => new ExperimentPopup(module.vessel, module, PartId, PartName));
 			sb = new StringBuilder();
 			OnUpdate();
 		}
@@ -122,7 +122,7 @@ namespace KERBALISM
 		{
 			this.vessel = vessel;
 			expInfo = ScienceDB.GetExperimentInfo(prefab.experiment_id);
-			icon = new DeviceIcon(expInfo.SampleMass > 0f ? Textures.sample_scicolor : Textures.file_scicolor, "open experiment info", () => new SciencePopup(vessel, prefab, protoModule));
+			icon = new DeviceIcon(expInfo.SampleMass > 0f ? Textures.sample_scicolor : Textures.file_scicolor, "open experiment info", () => new ExperimentPopup(vessel, prefab, protoPart.flightID, prefab.part.partInfo.title, protoModule));
 			sb = new StringBuilder();
 
 			OnUpdate();

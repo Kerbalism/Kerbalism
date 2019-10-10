@@ -10,7 +10,7 @@ namespace KERBALISM
 		/// <summary>randomized result text</summary>
 		public string resultText;
 
-		/// <summary> will be true if the file was created by the hijacker. Force the stock crediting formula to be applied </summary>
+		/// <summary> will be true if the file was created by the hijacker. Force the stock crediting formula to be applied on recovery</summary>
 		public bool useStockCrediting;
 
 		public SubjectData subjectData;

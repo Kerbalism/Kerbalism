@@ -27,9 +27,10 @@ namespace KERBALISM.KsmGui
 				ControlTypes.VESSEL_SWITCHING |
 				ControlTypes.TWEAKABLES |
 				//ControlTypes.EDITOR_UI |
-				ControlTypes.EDITOR_SOFT_LOCK |
+				ControlTypes.EDITOR_SOFT_LOCK //|
 				//ControlTypes.UI |
-				ControlTypes.CAMERACONTROLS;
+				//ControlTypes.CAMERACONTROLS
+				;
 
 			void Awake()
 			{
@@ -64,13 +65,15 @@ namespace KERBALISM.KsmGui
 		public ContentSizeFitter SizeFitter { get; private set; }
 		public Action OnClose { get; set; }
 		public HorizontalOrVerticalLayoutGroup LayoutGroup { get; private set; }
+		public bool destroyOnClose;
 
 		public enum LayoutGroupType { Vertical, Horizontal }
 
 		public KsmGuiWindow
 			(
 				LayoutGroupType topLayout,
-				float opacity = 1f,
+				bool destroyOnClose = true,
+				float opacity = 0.8f,
 				bool isDraggable = false, int dragOffset = 0,
 				TextAnchor groupAlignment = TextAnchor.UpperLeft,
 				float groupSpacing = 0f,
@@ -79,6 +82,9 @@ namespace KERBALISM.KsmGui
 				int posX = 0, int posY = 0
 			) : base(null)
 		{
+
+			this.destroyOnClose = destroyOnClose;
+
 			TopTransform.SetAnchorsAndPosition(screenAnchor, windowPivot, posX, posY);
 			TopTransform.SetParentFixScale(KsmGuiMasterController.Instance.KsmGuiTransform);
 			TopTransform.localScale = Vector3.one;
@@ -127,7 +133,11 @@ namespace KERBALISM.KsmGui
 		{
 			if (OnClose != null) OnClose();
 			KsmGuiTooltipController.Instance.HideTooltip();
-			TopObject.DestroyGameObject();
+
+			if (destroyOnClose)
+				TopObject.DestroyGameObject();
+			else
+				Enabled = false;
 		}
 
 		private void OnDestroy()

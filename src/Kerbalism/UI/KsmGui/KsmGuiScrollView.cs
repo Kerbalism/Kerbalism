@@ -12,7 +12,7 @@ namespace KERBALISM.KsmGui
 
 		public override RectTransform ParentTransformForChilds => Content;
 
-		public KsmGuiVerticalScrollView(KsmGuiBase parent) : base (parent)
+		public KsmGuiVerticalScrollView(KsmGuiBase parent, int contentSpacing = 5, int contentPaddingLeft = 5, int contentPaddingRight = 5, int contentPaddingTop = 5, int contentPaddingBottom = 5) : base (parent)
 		{
 			ScrollRect scrollRect = TopObject.AddComponent<ScrollRect>();
 			scrollRect.horizontal = false;
@@ -61,8 +61,8 @@ namespace KERBALISM.KsmGui
 			sizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
 			ContentGroup = contentObject.AddComponent<VerticalLayoutGroup>();
-			ContentGroup.padding = new RectOffset(5, 5, 5, 5);
-			ContentGroup.spacing = 5f;
+			ContentGroup.padding = new RectOffset(contentPaddingLeft, contentPaddingRight, contentPaddingTop, contentPaddingBottom);
+			ContentGroup.spacing = contentSpacing;
 			ContentGroup.childAlignment = TextAnchor.UpperLeft;
 			ContentGroup.childControlHeight = true;
 			ContentGroup.childControlWidth = true;
@@ -117,6 +117,8 @@ namespace KERBALISM.KsmGui
 			GameObject scrollbarHandle = new GameObject("scrollbarHandle");
 			RectTransform handleTransform = scrollbarHandle.AddComponent<RectTransform>();
 			scrollbarHandle.AddComponent<CanvasRenderer>();
+			handleTransform.anchorMin = new Vector2(0f, 0f);
+			handleTransform.anchorMax = new Vector2(1f, 1f);
 			handleTransform.pivot = new Vector2(0.5f, 0.5f);
 			handleTransform.anchoredPosition = new Vector2(-4f, -4f); // relative to sliding area width
 			handleTransform.sizeDelta = new Vector2(-4f, -4f); // relative to sliding area width
@@ -127,6 +129,5 @@ namespace KERBALISM.KsmGui
 			handleTransform.SetParentFixScale(slidingAreaTransform);
 			scrollbarComponent.targetGraphic = handleImage;
 		}
-
 	}
 }

@@ -40,9 +40,6 @@ namespace KERBALISM
 		// - other operations all have the O(n) lookup overhead, but no garbage generation
 		public class KeyValueList<TKey, TValue>
 		{
-
-
-
 			private readonly List<ObjectPair<TKey, TValue>> keyValuePairs = new List<ObjectPair<TKey, TValue>>();
 
 			public TValue this[TKey key]
@@ -212,6 +209,9 @@ namespace KERBALISM
 		/// <summary> All ExperimentInfos, accessible by experimentId </summary>
 		private static readonly Dictionary<string, ExperimentInfo>
 			experiments = new Dictionary<string, ExperimentInfo>();
+
+		/// <summary> All ExperimentInfos </summary>
+		public static IEnumerable<ExperimentInfo> ExperimentInfos => experiments.Values;
 
 		/// <summary>
 		/// For every ExperimentInfo, for every VesselSituation id, the corresponding SubjectData.

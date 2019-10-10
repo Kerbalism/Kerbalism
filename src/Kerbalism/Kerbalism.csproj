@@ -220,6 +220,7 @@
     <Compile Include="UI\KsmGui\KsmGuiTextBox.cs" />
     <Compile Include="UI\KsmGui\KsmGuiLib.cs" />
     <Compile Include="UI\KsmGui\KsmGuiToggle.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiToggleList.cs" />
     <Compile Include="UI\KsmGui\KsmGuiVerticalLayout.cs" />
     <Compile Include="UI\KsmGui\KsmGuiHorizontalLayout.cs" />
     <Compile Include="UI\KsmGui\KsmGuiIconButton.cs" />
@@ -235,8 +236,9 @@
     <Compile Include="UI\Planner\SimulatedResource.cs" />
     <Compile Include="UI\Planner\SimulatedResourceView.cs" />
     <Compile Include="UI\Planner\VesselAnalyzer.cs" />
-    <Compile Include="UI\Science\ExperimentArchive.cs" />
-    <Compile Include="UI\Science\SciencePopup.cs" />
+    <Compile Include="UI\Science\ExperimentSubjectsList.cs" />
+    <Compile Include="UI\Science\ExperimentPopup.cs" />
+    <Compile Include="UI\Science\ScienceArchiveWindow.cs" />
     <Compile Include="Utility\GotoVessel.cs" />
     <Compile Include="System\Loader.cs" />
     <Compile Include="System\Settings.cs" />

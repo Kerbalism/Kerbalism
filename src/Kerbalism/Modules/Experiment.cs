@@ -794,7 +794,7 @@ namespace KERBALISM
 #endif
 		public void ShowPopup()
 		{
-			new SciencePopup(vessel, this);
+			new ExperimentPopup(vessel, this, part.flightID, part.partInfo.title);
 		}
 
 #if KSP15_16
@@ -963,7 +963,7 @@ namespace KERBALISM
 			if (Requirements.Requires.Length > 0)
 			{
 				specs.Add(string.Empty);
-				specs.Add("<color=#00ffff>Requires:</color>", string.Empty);
+				specs.Add(Lib.Color("Requires:", Lib.Kolor.Cyan, true));
 				foreach (RequireDef req in Requirements.Requires)
 					specs.Add(Lib.BuildString("• <b>", ReqName(req.require), "</b>"), ReqValueFormat(req.require, req.value));
 			}
@@ -1006,7 +1006,7 @@ namespace KERBALISM
 			if (situations.Count > 0)
 			{
 				specs.Add(string.Empty);
-				specs.Add("<color=#00ffff>Situations:</color>", string.Empty);
+				specs.Add(Lib.Color("Situations:", Lib.Kolor.Cyan, true));
 				foreach (string s in situations) specs.Add(Lib.BuildString("• <b>", s, "</b>"));
 			}
 
@@ -1017,7 +1017,7 @@ namespace KERBALISM
 			}
 
 			specs.Add(string.Empty);
-			specs.Add("<color=#00ffff>Needs:</color>");
+			specs.Add(Lib.Color("Needs:", Lib.Kolor.Cyan, true));
 
 			specs.Add("EC", Lib.HumanReadableRate(prefab.ec_rate));
 			foreach (var p in ParseResources(prefab.resources))
@@ -1038,8 +1038,6 @@ namespace KERBALISM
 				var cs = new CrewSpecs(prefab.crew_reset);
 				specs.Add("Reset", cs ? cs.Info() : "none");
 			}
-
-
 
 			return specs;
 		}

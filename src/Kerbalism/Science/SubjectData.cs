@@ -42,12 +42,14 @@ namespace KERBALISM
 		public double ScienceCollectedInFlight { get; protected set; }
 
 		/// <summary> total science value of the subject.  </summary>
-		public double ScienceMaxValue => ExpInfo.ScienceCap * Situation.SituationMultiplier;
+		public double ScienceMaxValue => ExpInfo.ScienceCap * Situation.SituationMultiplier; 
 
 		public double SciencePerMB => ScienceMaxValue / ExpInfo.DataSize;
 
 		/// <summary> science points recovered or transmitted </summary>
-		public double ScienceRetrievedInKSC => ExistsInRnD ? RnDSubject.science * HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier : 0.0;
+		// Note : because of float to double conversions, we can't garantee that the RnD collectd science (float) will ever be equal to ScienceMaxValue
+		// so we artifically increase the RnD value and clamp it to max value
+		public double ScienceRetrievedInKSC => ExistsInRnD ? Math.Min(1E-6 + (RnDSubject.science * HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier), ScienceMaxValue) : 0.0;
 
 		/// <summary> all science points recovered, transmitted or collected in flight </summary>
 		public double ScienceCollectedTotal => ScienceCollectedInFlight + ScienceRetrievedInKSC;
@@ -56,7 +58,7 @@ namespace KERBALISM
 		public double ScienceRemainingToCollect => Math.Max(ScienceMaxValue - ScienceCollectedTotal, 0.0);
 
 		/// <summary> science value remaining to retrieve. </summary>
-		public double ScienceRemainingToRetrieve => ScienceMaxValue - ScienceRetrievedInKSC;
+		public double ScienceRemainingToRetrieve => Math.Max(ScienceMaxValue - ScienceRetrievedInKSC, 0.0);
 
 		/// <summary> science value remaining (accounting for retrieved in KSC and collected in flight) </summary>
 		public double ScienceRemainingTotal => Math.Max(ScienceMaxValue - ScienceCollectedTotal, 0.0);
@@ -114,7 +116,7 @@ namespace KERBALISM
 		private int GetTimesCompleted(double percentRetrieved)
 		{
 			double decimalPart = percentRetrieved - Math.Truncate(percentRetrieved);
-			return (int)(percentRetrieved / 1.0) + (decimalPart < 1.0 - Science.scienceLeftForSubjectCompleted ? 0 : 1);
+			return ((int)percentRetrieved) + (decimalPart < 1.0 - (Science.scienceLeftForSubjectCompleted / ScienceMaxValue) ? 0 : 1);
 		}
 
 		public void CreateSubjectInRnD()
@@ -137,11 +139,11 @@ namespace KERBALISM
 				// create new subject
 				RnDSubject = new ScienceSubject
 				(
-						  StockSubjectId,
-						FullTitle,
-						(float)ExpInfo.DataScale,
-						  Situation.SituationMultiplier,
-						(float)ScienceMaxValue
+					StockSubjectId,
+					FullTitle,
+					(float)ExpInfo.DataScale,
+					(float)Situation.SituationMultiplier,
+					(float)ScienceMaxValue
 				);
 
 				// add it to RnD

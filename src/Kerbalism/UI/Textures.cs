@@ -21,7 +21,8 @@ namespace KERBALISM
 		internal static Texture2D lab_black;
 		internal static Texture2D lab_cyan;
 
-		internal static Texture2D applauncher;
+		internal static Texture2D applauncher_vessels;
+		internal static Texture2D applauncher_database;
 
 		internal static Texture2D small_info;
 		internal static Texture2D small_folder;
@@ -164,7 +165,8 @@ namespace KERBALISM
 			lab_black = GetTexture("lab-black");
 			lab_cyan = GetTexture("lab-cyan");
 
-			applauncher = GetTexture("applauncher", 38, 38);
+			applauncher_vessels = GetTexture("applauncher-vessels", 38, 38);
+			applauncher_database = GetTexture("applauncher-database", 38, 38);
 
 			small_info = GetTexture("small-info");
 			small_folder = GetTexture("small-folder");

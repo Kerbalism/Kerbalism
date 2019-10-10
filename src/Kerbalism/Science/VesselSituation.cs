@@ -151,7 +151,7 @@ namespace KERBALISM
 
 		public ExperimentSituations StockSituation => ScienceSituation.ToStockSituation();
 
-		public float SituationMultiplier => ScienceSituation.BodyMultiplier(Body);
+		public double SituationMultiplier => ScienceSituation.BodyMultiplier(Body);
 
 		public string ExperimentSituationName(ExperimentInfo expInfo)
 		{

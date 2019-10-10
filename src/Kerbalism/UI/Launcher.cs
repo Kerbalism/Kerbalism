@@ -10,7 +10,7 @@ namespace KERBALISM
 		// click through locks
 		private bool clickThroughLocked = false;
 		private const ControlTypes MainGUILockTypes = ControlTypes.MANNODE_ADDEDIT | ControlTypes.MANNODE_DELETE | ControlTypes.MAP_UI |
-			ControlTypes.TARGETING | ControlTypes.VESSEL_SWITCHING | ControlTypes.TWEAKABLES | ControlTypes.EDITOR_UI | ControlTypes.EDITOR_SOFT_LOCK | ControlTypes.UI | ControlTypes.CAMERACONTROLS;
+			ControlTypes.TARGETING | ControlTypes.VESSEL_SWITCHING | ControlTypes.TWEAKABLES | ControlTypes.EDITOR_UI | ControlTypes.EDITOR_SOFT_LOCK | ControlTypes.UI;
 
 		public Launcher()
 		{
@@ -31,16 +31,27 @@ namespace KERBALISM
 
 				// create the button
 				// note: for some weird reasons, the callbacks can be called BEFORE this function return
-				launcher_btn = ApplicationLauncher.Instance.AddApplication(null, null, null, null, null, null, Textures.applauncher);
+				vesselListLauncher = ApplicationLauncher.Instance.AddApplication(null, null, null, null, null, null, Textures.applauncher_vessels);
+				generalMenuLauncher = ApplicationLauncher.Instance.AddApplication(null, null, null, null, null, null, Textures.applauncher_database);
 
 				// enable the launcher button for some scenes
-				launcher_btn.VisibleInScenes =
+				vesselListLauncher.VisibleInScenes =
 					ApplicationLauncher.AppScenes.SPACECENTER
 				  | ApplicationLauncher.AppScenes.FLIGHT
 				  | ApplicationLauncher.AppScenes.MAPVIEW
 				  | ApplicationLauncher.AppScenes.TRACKSTATION
 				  | ApplicationLauncher.AppScenes.VAB
 				  | ApplicationLauncher.AppScenes.SPH;
+
+				generalMenuLauncher.VisibleInScenes =
+					ApplicationLauncher.AppScenes.SPACECENTER
+				  | ApplicationLauncher.AppScenes.FLIGHT
+				  | ApplicationLauncher.AppScenes.MAPVIEW
+				  | ApplicationLauncher.AppScenes.TRACKSTATION
+				  | ApplicationLauncher.AppScenes.VAB
+				  | ApplicationLauncher.AppScenes.SPH;
+
+				generalMenuLauncher.onLeftClick = () => ScienceArchiveWindow.Open();
 			}
 		}
 
@@ -74,7 +85,7 @@ namespace KERBALISM
 				return;
 
 			// render the window
-			if (launcher_btn.toggleButton.Value || launcher_btn.IsHovering || (win_rect.width > 0f && win_rect.Contains(Mouse.screenPos)))
+			if (vesselListLauncher.toggleButton.Value || vesselListLauncher.IsHovering || (win_rect.width > 0f && win_rect.Contains(Mouse.screenPos)))
 			{
 				// hard-coded offsets
 				// note: there is a bug in stock that only set appscale properly in non-flight-mode after you go in flight-mode at least once
@@ -164,7 +175,9 @@ namespace KERBALISM
 		bool ui_initialized;
 
 		// store reference to applauncher button
-		ApplicationLauncherButton launcher_btn;
+		ApplicationLauncherButton vesselListLauncher;
+
+		ApplicationLauncherButton generalMenuLauncher;
 
 		// window geometry
 		Rect win_rect;

@@ -6,15 +6,13 @@ using UnityEngine;
 
 namespace KERBALISM
 {
-
-
 	// a window containing a panel
 	public sealed class Window
 	{
 		// click through locks
 		private bool clickThroughLocked = false;
 		private const ControlTypes WindowLockTypes = ControlTypes.MANNODE_ADDEDIT | ControlTypes.MANNODE_DELETE | ControlTypes.MAP_UI |
-			ControlTypes.TARGETING | ControlTypes.VESSEL_SWITCHING | ControlTypes.TWEAKABLES | ControlTypes.EDITOR_UI | ControlTypes.EDITOR_SOFT_LOCK | ControlTypes.UI | ControlTypes.CAMERACONTROLS;
+			ControlTypes.TARGETING | ControlTypes.VESSEL_SWITCHING | ControlTypes.TWEAKABLES | ControlTypes.EDITOR_UI | ControlTypes.EDITOR_SOFT_LOCK | ControlTypes.UI;
 
 		// - width: window width in pixel
 		// - left: initial window horizontal position

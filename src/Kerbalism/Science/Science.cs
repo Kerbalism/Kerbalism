@@ -30,12 +30,11 @@ namespace KERBALISM
 		public const double minCreditBuffer = 0.1;
 
 		// a subject will be completed (gamevent fired and popup shown) when there is less than this value to retrieve in RnD
-		// this is needed because of floating point imprecisions in the in-flight science count (due to a gazillion add of very small values)
-		public const float scienceLeftForSubjectCompleted = 0.1f;
+		// this is needed because of floating point imprecisions in the in-flight science count (due to a gazillion adds of very small values)
+		public const double scienceLeftForSubjectCompleted = 0.0005;
 
 		// utility things
 		static readonly List<XmitFile> xmitFiles = new List<XmitFile>();
-		private static StringBuilder subjectSB = new StringBuilder();
 
 		private class XmitFile
 		{
@@ -150,7 +149,7 @@ namespace KERBALISM
 				transmitCapacity -= transmitted;
 
 				// get science value
-				double xmitScienceValue = (float)(transmitted * xmitFile.sciencePerMB);
+				double xmitScienceValue = transmitted * xmitFile.sciencePerMB;
 
 				// consume data in the file
 				xmitFile.file.size -= transmitted;
@@ -226,7 +225,7 @@ namespace KERBALISM
 
 					// delete empty files that aren't being transmitted
 					// note : this won't work in case the same subject is split over multiple files (on different drives)
-					if (f.size <= 0.0 && (!warpCache.files.ContainsKey(f.subjectData) || warpCache.files[f.subjectData].size == 0.0))
+					if (f.size <= 0.0 && (!warpCache.files.ContainsKey(f.subjectData) || warpCache.files[f.subjectData].size <= 0.0))
 					{
 						filesToRemove.Add(f.subjectData);
 						continue;

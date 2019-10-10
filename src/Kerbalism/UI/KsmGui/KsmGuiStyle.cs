@@ -8,6 +8,8 @@ namespace KERBALISM.KsmGui
 {
 	public static class KsmGuiStyle
 	{
+		public static readonly float defaultWindowOpacity = 0.8f;
+
 		public static readonly Color textColor = Color.white;
 		public static readonly TMP_FontAsset textFont = UISkinManager.TMPFont; // KSP default font : Noto-sans
 		public static readonly float textSize = 12f;
@@ -16,6 +18,7 @@ namespace KERBALISM.KsmGui
 		public static readonly Color tooltipBorderColor = Color.white; // new Color(1f, 0.82f, 0f); // yellow #FFD200
 
 		public static readonly Color boxColor = new Color(0f, 0f, 0f, 0.2f);
+		public static readonly Color selectedBoxColor = new Color(0f, 0f, 0f, 0.5f);
 
 		public static readonly Color headerColor = Color.black;
 

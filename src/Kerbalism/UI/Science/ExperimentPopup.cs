@@ -13,7 +13,7 @@ using static KERBALISM.ScienceDB;
 namespace KERBALISM
 {
 
-	public class SciencePopup
+	public class ExperimentPopup
 	{
 		// args
 		Vessel v;
@@ -54,10 +54,20 @@ namespace KERBALISM
 		KsmGuiHeader expInfoHeader;
 
 		KsmGuiHeader rndArchiveHeader;
-		ExperimentArchive rndArchiveView;
+		ExperimentSubjectList rndArchiveView;
 
-		public SciencePopup(Vessel v, Experiment moduleOrPrefab, ProtoPartModuleSnapshot protoModule = null)
+		private static List<long> activePopups = new List<long>();
+		private long popupId;
+
+		public ExperimentPopup(Vessel v, Experiment moduleOrPrefab, uint partId, string partName, ProtoPartModuleSnapshot protoModule = null)
 		{
+			popupId = partId + moduleOrPrefab.experiment_id.GetHashCode();
+
+			if (activePopups.Contains(popupId))
+				return;
+
+			activePopups.Add(popupId);
+
 			if (protoModule == null)
 			{
 				isProto = false;
@@ -78,12 +88,14 @@ namespace KERBALISM
 			GetData();
 
 			// create the window
-			window = new KsmGuiWindow(KsmGuiWindow.LayoutGroupType.Vertical, 0.8f, true, 0, TextAnchor.UpperLeft, 5f);
+			window = new KsmGuiWindow(KsmGuiWindow.LayoutGroupType.Vertical, true, KsmGuiStyle.defaultWindowOpacity, true, 0, TextAnchor.UpperLeft, 5f);
+			window.OnClose = () => activePopups.Remove(popupId);
 			window.SetLayoutElement(false, false, -1, -1, -1, 150);
 			window.SetUpdateAction(GetData);
 
 			// top header
 			KsmGuiHeader topHeader = new KsmGuiHeader(window, expInfo.Title, default, 120);
+			topHeader.TextObject.SetTooltipText(Lib.BuildString("on vessel : ", Lib.Bold(v.vesselName), "\n", "on part : ", Lib.Bold(partName)));
 			rndVisibilityButton = new KsmGuiIconButton(topHeader, Textures.KsmGuiTexHeaderRnD, ToggleArchivePanel, "show science archive");
 			rndVisibilityButton.MoveAsFirstChild();
 			expInfoVisibilityButton = new KsmGuiIconButton(topHeader, Textures.KsmGuiTexHeaderInfo, ToggleExpInfo, "show experiment info");
@@ -110,6 +122,8 @@ namespace KERBALISM
 			// right panel : experiment status
 			new KsmGuiHeader(rightPanel, "STATUS");
 			statusBox = new KsmGuiTextBox(rightPanel, "_");
+			statusBox.TextObject.TextComponent.enableWordWrapping = false;
+			statusBox.TextObject.TextComponent.overflowMode = TMPro.TextOverflowModes.Truncate;
 			statusBox.SetLayoutElement(true, true, 230);
 			statusBox.SetUpdateAction(StatusUpdate);
 
@@ -181,13 +195,12 @@ namespace KERBALISM
 			}
 			else if (status == ExpStatus.Forced && subjectData != null)
 			{
-				sb.Append(" (");
-				sb.Append(subjectData.PercentCollectedTotal.ToString("P1"));
-				sb.Append(Lib.Color(subjectData.PercentCollectedTotal.ToString("P1"), Lib.Kolor.Science));
-				sb.Append(" collected)");
+				sb.Append(", ");
+				sb.Append(Lib.Color(subjectData.PercentCollectedTotal.ToString("P1"), Lib.Kolor.Yellow, true));
+				sb.Append(" collected");
 			}
 
-			if (isSample)
+			if (isSample && !moduleOrPrefab.sample_collecting)
 			{
 				sb.Append("\nsamples :<pos=20em>");
 				sb.Append(Lib.Color((remainingSampleMass / expInfo.SampleMass).ToString("F1"), Lib.Kolor.Yellow, true));
@@ -319,7 +332,7 @@ namespace KERBALISM
 				if (rndArchiveHeader == null)
 				{
 					rndArchiveHeader = new KsmGuiHeader(window, "SCIENCE ARCHIVE");
-					rndArchiveView = new ExperimentArchive(window, expInfo);
+					rndArchiveView = new ExperimentSubjectList(window, expInfo);
 					rndArchiveView.SetLayoutElement(true, false, 320, -1, -1, 250);
 				}
 				rndArchiveHeader.Enabled = true;

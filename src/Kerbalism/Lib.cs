@@ -521,7 +521,7 @@ namespace KERBALISM
 				case Kolor.PosRate:	    return "#88FF00"; // green
 				case Kolor.NegRate:	    return "#FF8000"; // orange
 				case Kolor.Science:	    return "#6DCFF6"; // ksp science color
-				case Kolor.Cyan:		return "#ACFFFC"; // ksp ui light cyan (VAB part tooltip text)
+				case Kolor.Cyan:		return "#00FFFF"; // cyan
 				case Kolor.LightGrey:	return "#CCCCCC"; // light grey
 				case Kolor.DarkGrey:	return "#999999"; // dark grey	
 				default:				return "#FEFEFE";
@@ -541,7 +541,7 @@ namespace KERBALISM
 				case Kolor.PosRate:   return new Color(0.533f, 1.000f, 0.000f);
 				case Kolor.NegRate:   return new Color(1.000f, 0.502f, 0.000f);
 				case Kolor.Science:   return new Color(0.427f, 0.812f, 0.965f);
-				case Kolor.Cyan:      return new Color(0.675f, 1.000f, 0.988f);
+				case Kolor.Cyan:      return new Color(0.000f, 1.000f, 1.000f);
 				case Kolor.LightGrey: return new Color(0.800f, 0.800f, 0.800f);
 				case Kolor.DarkGrey:  return new Color(0.600f, 0.600f, 0.600f);
 				default:              return new Color(1.000f, 1.000f, 1.000f);
