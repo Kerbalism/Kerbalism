@@ -66,10 +66,10 @@ namespace KERBALISM
 
 				if (IsScanning)
 				{
-					SubjectData subject = ScienceDB.GetSubjectData(expInfo, vd.VesselSituation);
+					VesselSituation scanSatSituation = new VesselSituation(vessel.mainBody.flightGlobalsIndex, ScienceSituation.InSpaceHigh);
+					SubjectData subject = ScienceDB.GetSubjectData(expInfo, scanSatSituation);
 					if (subject == null)
 						return;
-
 
 					double size = expInfo.DataSize * coverage_delta / 100.0; // coverage is 0-100%
 					size += warp_buffer;
