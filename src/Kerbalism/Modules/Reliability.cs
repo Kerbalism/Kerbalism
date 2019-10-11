@@ -435,7 +435,7 @@ namespace KERBALISM
 #if DEBUG_RELIABILITY
 				Lib.Log("Reliablity: background MTBF failure for " + p);
 #endif
-				ProtoBreak(v, p, m);
+					ProtoBreak(v, p, m);
 			}
 		}
 
@@ -914,22 +914,28 @@ namespace KERBALISM
 			}
 			else
 			{
-				foreach (ProtoPartModuleSnapshot m in Lib.FindModules(v.protoVessel, "Reliability"))
+				var PD = new Dictionary<string, Lib.Module_prefab_data>();
+
+				foreach (ProtoPartSnapshot p in v.protoVessel.protoPartSnapshots)
 				{
-					// find part
-					ProtoPartSnapshot p = v.protoVessel.protoPartSnapshots.Find(k => k.modules.Contains(m));
+					Part part_prefab = PartLoader.getPartInfoByName(p.partName).partPrefab;
+					var module_prefabs = part_prefab.FindModulesImplementing<PartModule>();
+					PD.Clear();
 
-					// find module prefab
-					string type = Lib.Proto.GetString(m, "type", string.Empty);
-					Reliability reliability = p.partPrefab.FindModulesImplementing<Reliability>().Find(k => k.type == type);
-					if (reliability == null) continue;
-
-					// double time to next failure
-					if (reliability.redundancy == redundancy)
+					foreach (ProtoPartModuleSnapshot m in p.modules)
 					{
-						double last = Lib.Proto.GetDouble(m, "last");
-						double next = Lib.Proto.GetDouble(m, "next");
-						Lib.Proto.Set(m, "next", next + (next - last));
+						if (m.moduleName != "Reliability") continue;
+
+						PartModule module_prefab = Lib.ModulePrefab(module_prefabs, m.moduleName, PD);
+						if (!module_prefab) continue;
+
+						string r = Lib.Proto.GetString(m, "redundancy", string.Empty);
+						if (r == redundancy)
+						{
+							double last = Lib.Proto.GetDouble(m, "last");
+							double next = Lib.Proto.GetDouble(m, "next");
+							Lib.Proto.Set(m, "next", next + (next - last));
+						}
 					}
 				}
 			}
