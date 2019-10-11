@@ -129,7 +129,7 @@ namespace KERBALISM
 		/// <summary> experiment biome mask </summary>
 		public uint BiomeMask => stockDef.biomeMask;
 
-		public double ScienceCap => stockDef.scienceCap;
+		public double ScienceCap => stockDef.scienceCap * HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier;
 
 		public ExperimentInfo(ScienceExperiment stockDef, ConfigNode expInfoNode)
 		{
