@@ -26,7 +26,7 @@ namespace KERBALISM
 			GameEvents.onVesselChange.Add((v) => { OnVesselModified(v); });
 			GameEvents.onVesselStandardModification.Add((v) => { OnVesselStandardModification(v); });
 
-			GameEvents.onPartDie.Add(this.PartDestroyed);
+			GameEvents.onPartWillDie.Add(this.PartDestroyed);
 			GameEvents.OnTechnologyResearched.Add(this.TechResearched);
 			GameEvents.onGUIEditorToolbarReady.Add(this.AddEditorCategory);
 
@@ -209,8 +209,8 @@ namespace KERBALISM
 
 			// purge the caches
 			ResourceCache.Purge(pv);
-			Drive.Purge(pv);
 			Cache.PurgeVesselCaches(pv);
+			Drive.Purge(pv);
 		}
 
 
@@ -225,8 +225,8 @@ namespace KERBALISM
 
 			// purge the caches
 			ResourceCache.Purge(pv);
-			Drive.Purge(pv);
 			Cache.PurgeVesselCaches(pv);
+			Drive.Purge(pv);
 		}
 
 		void VesselCreated(Vessel v)
