@@ -255,11 +255,11 @@ namespace KERBALISM
 			}
 
 			public void Update()
-			{ 
-				rndText.SetText(SubjectData.ScienceRetrievedInKSC.ToString("0.0;--;--"));
-				flightText.SetText(SubjectData.ScienceCollectedInFlight.ToString("+0.0;--;--"));
-				valueText.SetText(SubjectData.ScienceRemainingTotal.ToString("0.0;--;--"));
-				completedText.SetText(SubjectData.PercentRetrieved.ToString("0.0x;--;--"));
+			{
+				rndText.SetText(Math.Round(SubjectData.ScienceRetrievedInKSC, 3).ToString("0.0;--;--"));
+				flightText.SetText(Math.Round(SubjectData.ScienceCollectedInFlight, 3).ToString("+0.0;--;--"));
+				valueText.SetText(Math.Round(SubjectData.ScienceRemainingTotal, 3).ToString("0.0;--;--"));
+				completedText.SetText(Math.Round(SubjectData.PercentRetrieved, 3).ToString("0.0x;--;--"));
 			}
 
 		}
