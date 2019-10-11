@@ -50,7 +50,9 @@ namespace KERBALISM
 		// Note : the RnD subject science value (float) will never reach ScienceMaxValue (double)
 		// because the "last transmission value" will always be less than the float min increment.
 		// so we artifically increase the exposed RnD value by 1E-4F and clamp it to max value
-		public double ScienceRetrievedInKSC => ExistsInRnD ? Math.Min(RnDSubject.science, ScienceMaxValue) : 0.0;
+		//public double ScienceRetrievedInKSC => ExistsInRnD ? Math.Min(RnDSubject.science, ScienceMaxValue) : 0.0;
+		public double ScienceRetrievedInKSC => ExistsInRnD ? (RnDSubject.scienceCap - RnDSubject.science == 0f) ? ScienceMaxValue : RnDSubject.science : 0.0;
+
 
 		/// <summary> all science points recovered, transmitted or collected in flight </summary>
 		public double ScienceCollectedTotal => ScienceCollectedInFlight + ScienceRetrievedInKSC;
