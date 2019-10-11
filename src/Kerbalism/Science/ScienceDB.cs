@@ -256,8 +256,6 @@ namespace KERBALISM
 
 		public static void Init()
 		{
-
-
 			// get our extra defintions
 			ConfigNode[] expDefNodes = GameDatabase.Instance.GetConfigNodes("EXPERIMENT_DEFINITION");
 
@@ -266,10 +264,6 @@ namespace KERBALISM
 			// no matter if the RnD instance is null or not because the ScienceExperiment dictionary is static.
 			foreach (string experimentId in ResearchAndDevelopment.GetExperimentIDs())
 			{
-				// the recovery experiment (created at runtime by KSP) uses a non standard situation system and a ton of custom handling, so we just ignore it
-				if (experimentId == "recovery")
-					continue;
-
 				ConfigNode kerbalismExpNode = null;
 				foreach (ConfigNode expDefNode in expDefNodes)
 				{
@@ -282,10 +276,6 @@ namespace KERBALISM
 				}
 
 				ExperimentInfo expInfo = new ExperimentInfo(ResearchAndDevelopment.GetExperiment(experimentId), kerbalismExpNode);
-
-				experiments.Add(experimentId, expInfo);
-				subjectByExpThenSituationId.Add(expInfo, new Dictionary<int, SubjectData>());
-
 
 				for (int bodyIndex = 0; bodyIndex < FlightGlobals.Bodies.Count; bodyIndex++)
 				{
@@ -304,6 +294,12 @@ namespace KERBALISM
 						// don't add impossible body / situation combinations
 						if (!scienceSituation.IsAvailableOnBody(body))
 							continue;
+
+						// only register the experiment in the DB now that we are sure it has at least one possible subject
+						if (!experiments.ContainsKey(experimentId))
+							experiments.Add(experimentId, expInfo);
+						if (!subjectByExpThenSituationId.ContainsKey(expInfo))
+							subjectByExpThenSituationId.Add(expInfo, new Dictionary<int, SubjectData>());
 
 						// if the body has no biomes, a single biome (?) or if the experiment is biome agnostic for this situation, generate the global situation
 						if (body.BiomeMap == null || body.BiomeMap.Attributes.Length <= 1 || !scienceSituation.IsBiomesRelevantForExperiment(expInfo))

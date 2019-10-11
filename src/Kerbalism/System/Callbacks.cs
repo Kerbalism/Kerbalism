@@ -23,8 +23,6 @@ namespace KERBALISM
 
 			GameEvents.OnVesselRollout.Add(this.VesselRollout);
 
-			GameEvents.onGameStatePostLoad.Add(this.GameStateLoad);
-
 			GameEvents.onVesselChange.Add((v) => { OnVesselModified(v); });
 			GameEvents.onVesselStandardModification.Add((v) => { OnVesselStandardModification(v); });
 
@@ -57,11 +55,6 @@ namespace KERBALISM
 
 			// add editor events
 			GameEvents.onEditorShipModified.Add((sc) => Planner.Planner.EditorShipModifiedEvent(sc));
-		}
-
-		private void GameStateLoad(ConfigNode data)
-		{
-			Cache.PurgeAllCaches();
 		}
 
 		private void OnVesselStandardModification(Vessel vessel)

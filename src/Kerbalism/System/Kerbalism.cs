@@ -164,6 +164,10 @@ namespace KERBALISM
 			// - every scene change
 			// - in various semi-random situations (thanks KSP)
 
+			// always clear the caches
+			Cache.Clear();
+			ResourceCache.Clear();
+
 			// deserialize our database
 			DB.Load(node);
 
@@ -175,8 +179,6 @@ namespace KERBALISM
 			if (DB.uid != savegame_uid)
 			{
 				// clear caches
-				Cache.Clear();
-				ResourceCache.Clear();
 				Message.all_logs.Clear();
 
 				// sync main window pos from db
