@@ -47,9 +47,10 @@ namespace KERBALISM
 		public double SciencePerMB => ScienceMaxValue / ExpInfo.DataSize;
 
 		/// <summary> science points recovered or transmitted </summary>
-		// Note : because of float to double conversions, we can't garantee that the RnD collectd science (float) will ever be equal to ScienceMaxValue
-		// so we artifically increase the RnD value and clamp it to max value
-		public double ScienceRetrievedInKSC => ExistsInRnD ? Math.Min(1E-6 + (RnDSubject.science * HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier), ScienceMaxValue) : 0.0;
+		// Note : the RnD subject science value (float) will never reach ScienceMaxValue (double)
+		// because the "last transmission value" will almost always be less than 
+		// so we artifically increase the RnD value by 1E-5 (to always cover float min precision) and clamp it to max value
+		public double ScienceRetrievedInKSC => ExistsInRnD ? Math.Min(1E-5 + (RnDSubject.science * HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier), ScienceMaxValue) : 0.0;
 
 		/// <summary> all science points recovered, transmitted or collected in flight </summary>
 		public double ScienceCollectedTotal => ScienceCollectedInFlight + ScienceRetrievedInKSC;
@@ -212,7 +213,7 @@ namespace KERBALISM
 			if (!ExistsInRnD)
 				CreateSubjectInRnD();
 
-			RnDSubject.science += (float)scienceValue;
+			RnDSubject.science = Math.Min(RnDSubject.science + (float)scienceValue, RnDSubject.scienceCap);
 			RnDSubject.scientificValue = ResearchAndDevelopment.GetSubjectValue(RnDSubject.science, RnDSubject);
 		}
 	}
