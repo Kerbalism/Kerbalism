@@ -625,6 +625,16 @@ namespace KERBALISM
 
 		public static BodiesSituationsBiomesSubject GetSubjectsForExperiment(ExperimentInfo expInfo)
 		{
+			if (!expBodiesSituationsBiomesSubject.ContainsKey(expInfo))
+			{
+				Lib.Log("ERROR: " + expInfo.ExperimentId + " isn't in the ScienceDB!!!");
+			}
+
+			if (ResearchAndDevelopment.Instance == null)
+			{
+				Lib.Log("ERROR: GetSubjectsForExperiment: RnD instance is null!!!");
+			}
+
 			return expBodiesSituationsBiomesSubject[expInfo];
 		}
 	}
