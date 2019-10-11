@@ -49,7 +49,7 @@ namespace KERBALISM
 		public static bool IsSaveGameInitDone { get; set; } = false;
 
 		// used to setup KSP callbacks
-		static Callbacks callbacks;
+		public static Callbacks Callbacks { get; private set; }
 
 		// the rendering script attached to map camera
 		static MapCameraScript map_camera_script;
@@ -136,7 +136,7 @@ namespace KERBALISM
 				ScienceArchiveWindow.Init();
 
 				// GameEvents callbacks
-				callbacks = new Callbacks();
+				Callbacks = new Callbacks();
 
 				IsCoreGameInitDone = true;
 			}
@@ -414,7 +414,7 @@ namespace KERBALISM
 			if (!Communications.NetworkInitializing)
 			{
 				Communications.NetworkInitializing = true;
-				StartCoroutine(callbacks.NetworkInitialized());
+				StartCoroutine(Callbacks.NetworkInitialized());
 			}
 
 			// attach map renderer to planetarium camera once
@@ -432,13 +432,13 @@ namespace KERBALISM
 
 			// prepare gui content
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.UI.Update");
-			UI.Update(callbacks.visible);
+			UI.Update(Callbacks.visible);
 			UnityEngine.Profiling.Profiler.EndSample();
 		}
 
 		void OnGUI()
 		{
-			UI.On_gui(callbacks.visible);
+			UI.On_gui(Callbacks.visible);
 		}
 
 		#endregion

@@ -1,13 +1,31 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using Harmony;
 using KSP.UI.Screens;
 using UnityEngine;
 
 
 namespace KERBALISM
 {
+	// OnPartDie is not called for the root part
+	// OnPartWillDie works but isn't available in 1.5/1.6
+	// Until we drop 1.5/1.6 support, we use this patch instead
+	[HarmonyPatch(typeof(Part))]
+	[HarmonyPatch("Die")]
+	class Part_Die
+	{
+		static bool Prefix(Part __instance)
+		{
+			// replicate OnPartWillDie
+			if (__instance.State == PartStates.DEAD)
+				return true;
 
+			Kerbalism.Callbacks.PartDestroyed(__instance);
+
+			return true; // continue to Part.Die()
+		}
+	}
 
 	public sealed class Callbacks
 	{
@@ -26,7 +44,6 @@ namespace KERBALISM
 			GameEvents.onVesselChange.Add((v) => { OnVesselModified(v); });
 			GameEvents.onVesselStandardModification.Add((v) => { OnVesselStandardModification(v); });
 
-			GameEvents.onPartWillDie.Add(this.PartDestroyed);
 			GameEvents.OnTechnologyResearched.Add(this.TechResearched);
 			GameEvents.onGUIEditorToolbarReady.Add(this.AddEditorCategory);
 
@@ -293,21 +310,21 @@ namespace KERBALISM
 			}
 		}
 
-		void PartDestroyed(Part p)
+		public void PartDestroyed(Part p)
 		{
 			// do nothing in the editor
 			if (Lib.IsEditor())
 				return;
+
+			// remove drive
+			if (DB.drives.ContainsKey(p.flightID))
+				DB.drives[p.flightID].Purge(p.flightID);
 
 			// only on valid vessels
 			if (!p.vessel.KerbalismIsValid()) return;
 
 			// update vessel
 			this.OnVesselModified(p.vessel);
-
-			// remove drive
-			if (DB.drives.ContainsKey(p.flightID))
-				DB.drives[p.flightID].Purge(p.flightID);
 		}
 
 		void AddEditorCategory()
