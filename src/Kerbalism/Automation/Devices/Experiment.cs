@@ -136,7 +136,9 @@ namespace KERBALISM
 			scienceValue = Experiment.ScienceValue(subject);
 		}
 
-		public override string Name
+		public override string Name => prefab.experiment_id;
+
+		public override string DisplayName
 		{
 			get
 			{

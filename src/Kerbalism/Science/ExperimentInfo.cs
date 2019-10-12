@@ -345,7 +345,7 @@ namespace KERBALISM
 			private class HomeBodyAndMoons : BodyCondition
 			{
 				public override bool TestCondition(CelestialBody body) => body.isHomeWorld || body.referenceBody.isHomeWorld;
-				public override string Title => "home body and moons";
+				public override string Title => "home body and its moons";
 			}
 
 			private class Planets : BodyCondition

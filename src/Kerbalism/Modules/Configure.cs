@@ -357,8 +357,11 @@ namespace KERBALISM
 			}
 		}
 
-
+#if KSP15_16
 		[KSPEvent(guiActive = true, guiActiveUnfocused = true, guiActiveEditor = true, guiName = "_", active = false)]
+#else
+		[KSPEvent(guiActive = true, guiActiveUnfocused = true, guiActiveEditor = true, guiName = "_", active = false, groupName = "Configuration", groupDisplayName = "Configuration")]
+#endif
 		public void ToggleWindow()
 		{
 			// in flight

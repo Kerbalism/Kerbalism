@@ -107,13 +107,39 @@ namespace KERBALISM
 
 				foreach (AvailablePart ap in PartLoader.LoadedPartsList)
 				{
-					foreach (Experiment expModule in ap.partPrefab.FindModulesImplementing<Experiment>())
+					foreach (PartModule module in ap.partPrefab.Modules)
 					{
-						if (expModule.experiment_id == expInfo.ExperimentId)
+						if (module is Experiment)
 						{
-							expSpecs = expModule.GetInfo();
-							goto breakOuter;
+							Experiment expModule = (Experiment)module;
+							if (expModule.experiment_id == expInfo.ExperimentId)
+							{
+								expSpecs = expModule.GetInfo();
+								goto breakOuter;
+							}
 						}
+
+						if (module is ModuleScienceExperiment)
+						{
+							ModuleScienceExperiment stockExpModule = (ModuleScienceExperiment)module;
+							if (stockExpModule.experimentID == expInfo.ExperimentId)
+							{
+								expSpecs = stockExpModule.GetInfo();
+								goto breakOuter;
+							}
+						}
+
+#if !KSP15_16
+						if (module is ModuleGroundExperiment)
+						{
+							ModuleGroundExperiment groundExpModule = (ModuleGroundExperiment)module;
+							if (groundExpModule.experimentId == expInfo.ExperimentId)
+							{
+								expSpecs = groundExpModule.GetInfo();
+								goto breakOuter;
+							}
+						}
+#endif
 					}
 				}
 			breakOuter:;
