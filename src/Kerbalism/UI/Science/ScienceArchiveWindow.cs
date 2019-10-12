@@ -58,7 +58,7 @@ namespace KERBALISM
 
 			foreach (ExperimentInfo expInfo in ScienceDB.ExperimentInfos.OrderBy(p => p.Title))
 			{
-				ExperimentSubjectList experimentSubjectList = new ExperimentSubjectList(columns, expInfo, false);
+				ExperimentSubjectList experimentSubjectList = new ExperimentSubjectList(columns, expInfo);
 				experimentSubjectList.Enabled = false;
 				ExpInfoPlus expInfoPlus = new ExpInfoPlus(expInfo, experimentSubjectList);
 				new KsmGuiToggleListElement<ExpInfoPlus>(experimentsToggleList, expInfoPlus, expInfo.Title);
@@ -71,7 +71,6 @@ namespace KERBALISM
 
 			currentExperiment = experimentsToggleList.ChildToggles[0].ToggleId;
 			currentExperiment.experimentSubjectList.Enabled = true;
-			currentExperiment.experimentSubjectList.ForceUpdate();
 
 			KsmGuiVerticalLayout expInfoColumn = new KsmGuiVerticalLayout(columns, 5);
 			new KsmGuiHeader(expInfoColumn, "EXPERIMENT INFO");
@@ -89,7 +88,6 @@ namespace KERBALISM
 		{
 			currentExperiment.experimentSubjectList.Enabled = false;
 			currentExperiment = expInfo;
-			expInfo.experimentSubjectList.ForceUpdate();
 			expInfo.experimentSubjectList.KnownSubjectsToggle.SetOnState(true, true);
 			expInfo.experimentSubjectList.Enabled = true;
 			expInfoText.SetText(expInfo.expSpecs);

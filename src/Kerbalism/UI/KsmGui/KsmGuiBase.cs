@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -64,6 +65,21 @@ namespace KERBALISM.KsmGui
 			UpdateHandler.updateAction = action;
 			UpdateHandler.updateFrequency = updateFrequency;
 			//UpdateHandler.UpdateASAP();
+		}
+
+		/// <summary> coroutine-like (IEnumerable) method that will be called repeatedly as long as Enabled = true </summary>
+		public void SetUpdateCoroutine(KsmGuiUpdateCoroutine coroutineFactory)
+		{
+			if (UpdateHandler == null)
+				UpdateHandler = TopObject.AddComponent<KsmGuiUpdateHandler>();
+
+			UpdateHandler.coroutineFactory = coroutineFactory;
+		}
+
+		public void ForceExecuteCoroutine(bool fromStart = false)
+		{
+			if (UpdateHandler != null)
+				UpdateHandler.ForceExecuteCoroutine(fromStart);
 		}
 
 		public void SetTooltipText(string text)

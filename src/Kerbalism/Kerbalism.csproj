@@ -229,7 +229,7 @@
     <Compile Include="UI\KsmGui\KsmGuiTooltipController.cs" />
     <Compile Include="UI\KsmGui\KsmGuiVerticalSection.cs" />
     <Compile Include="UI\KsmGui\KsmGuiWindow.cs" />
-    <Compile Include="UI\KsmGui\KsmGuiWindowUpdate.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiUpdate.cs" />
     <Compile Include="UI\Planner\EnvironmentAnalyzer.cs" />
     <Compile Include="UI\Planner\ResourceSimulator.cs" />
     <Compile Include="UI\Planner\SimulatedRecipe.cs" />
