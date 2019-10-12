@@ -56,11 +56,27 @@ namespace KERBALISM
 
 			// load drives
 			drives = new Dictionary<uint, Drive>();
-            if (node.HasNode("drives")) // old vessels used flightId, we switched to Guid with vessels2
+            if (node.HasNode("drives"))
             {
-                foreach (var drive_node in node.GetNode("drives").GetNodes())
+				// get all valid flight ids in the save
+				// until 3.1 there was many cases were drives weren't removed on vessel destruction,
+				// so we want to clean those saves. At some point in the future, maybe put this code
+				// in debug conditionals
+				HashSet<uint> allFlightIds = new HashSet<uint>();
+				foreach (ProtoVessel pv in HighLogic.CurrentGame.flightState.protoVessels)
+					foreach (ProtoPartSnapshot protoPart in pv.protoPartSnapshots)
+						allFlightIds.Add(protoPart.flightID);
+				
+				foreach (var drive_node in node.GetNode("drives").GetNodes())
                 {
-                    drives.Add(Lib.Parse.ToUInt(drive_node.name), new Drive(drive_node));
+					uint driveId = Lib.Parse.ToUInt(drive_node.name);
+					if (!allFlightIds.Contains(driveId))
+					{
+						Lib.Log("WARNING : removed drive with id " + driveId + ", there is no part with this id in this save.");
+						continue;
+					}
+						
+					drives.Add(driveId, new Drive(drive_node));
                 }
             }
 

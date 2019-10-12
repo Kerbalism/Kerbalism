@@ -36,6 +36,7 @@ namespace KERBALISM
 			GameEvents.onVesselRecovered.Add(this.VesselRecovered);
 			GameEvents.onVesselTerminated.Add(this.VesselTerminated);
 			GameEvents.onVesselWillDestroy.Add(this.VesselDestroyed);
+			GameEvents.onVesselDestroy.Add(this.VesselDestroyed); // called on debris removal (onVesselWillDestroy isn't called for those)
 			GameEvents.onNewVesselCreated.Add(this.VesselCreated);
 			GameEvents.onPartCouple.Add(this.VesselDock);
 
@@ -266,10 +267,10 @@ namespace KERBALISM
 				foreach (ProtoCrewMember c in Lib.CrewList(ov))
 					kerbals_alive.Add(c.name);
 			}
-			foreach (KeyValuePair<string, KerbalData> p in DB.Kerbals())
+			foreach (string key in DB.Kerbals().Keys)
 			{
-				if (!kerbals_alive.Contains(p.Key))
-					kerbals_dead.Add(p.Key);
+				if (!kerbals_alive.Contains(key))
+					kerbals_dead.Add(key);
 			}
 			foreach (string n in kerbals_dead)
 			{
@@ -278,12 +279,12 @@ namespace KERBALISM
 			}
 
 			// delete the vessel data
-			v.KerbalismDataDelete();
+			v.KerbalismDataDelete();	// works with loaded and unloaded vessels
 
 			// purge the caches
-			ResourceCache.Purge(v);
-			Drive.Purge(v);
-			Cache.PurgeVesselCaches(v);
+			ResourceCache.Purge(v);		// works with loaded and unloaded vessels
+			Drive.Purge(v);				// works with loaded and unloaded vessels
+			Cache.PurgeVesselCaches(v); // works with loaded and unloaded vessels
 		}
 
 		void VesselDock(GameEvents.FromToAction<Part, Part> e)
