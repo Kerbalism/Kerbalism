@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -23,7 +24,7 @@ namespace KERBALISM
 		[KSPField] public float sampleCapacityMass = 0.008f;    // added part mass per sample capacity
 
 		[KSPField(isPersistant = true)] public uint hdId = 0;
-		[KSPField(isPersistant = true)] public double effectiveDataCapacity = -1;    // effective drive capacity, in Mb. -1 = unlimited
+		[KSPField(isPersistant = true)] public double effectiveDataCapacity = -1.0;    // effective drive capacity, in Mb. -1 = unlimited
 		[KSPField(isPersistant = true)] public int effectiveSampleCapacity = -1;     // effective drive capacity, in slots. -1 = unlimited
 
 
@@ -57,17 +58,25 @@ namespace KERBALISM
 
 			if (Lib.IsEditor())
 			{
-				effectiveDataCapacity = dataCapacity;
-				effectiveSampleCapacity = sampleCapacity;
+				if (effectiveDataCapacity == -1.0)
+					effectiveDataCapacity = dataCapacity;
 
-				if(dataCapacity > 0 && maxDataCapacityFactor > 0)
+				if (dataCapacity > 0.0 && maxDataCapacityFactor > 0)
 				{
 					Fields["dataCapacityUI"].guiActiveEditor = true;
 					var o =(UI_ChooseOption)Fields["dataCapacityUI"].uiControlEditor;
 
 					dataCapacities = GetDataCapacitySizes();
-					dataCapacityUI = dataCapacities[0].Key;
-					effectiveDataCapacity = dataCapacities[0].Value;
+					int currentCapacityIndex = dataCapacities.FindIndex(p => p.Value == effectiveDataCapacity);
+					if (currentCapacityIndex >= 0)
+					{
+						dataCapacityUI = dataCapacities[currentCapacityIndex].Key;
+					}
+					else
+					{
+						effectiveDataCapacity = dataCapacities[0].Value;
+						dataCapacityUI = dataCapacities[0].Key;
+					}
 
 					string[] dataOptions = new string[dataCapacities.Count];
 					for(int i = 0; i < dataCapacities.Count; i++)
@@ -75,14 +84,25 @@ namespace KERBALISM
 					o.options = dataOptions;
 				}
 
+				if (effectiveSampleCapacity == -1)
+					effectiveSampleCapacity = sampleCapacity;
+
 				if (sampleCapacity > 0 && maxSampleCapacityFactor > 0)
 				{
 					Fields["sampleCapacityUI"].guiActiveEditor = true;
 					var o = (UI_ChooseOption)Fields["sampleCapacityUI"].uiControlEditor;
 
 					sampleCapacities = GetSampleCapacitySizes();
-					sampleCapacityUI = sampleCapacities[0].Key;
-					effectiveSampleCapacity = sampleCapacities[0].Value;
+					int currentCapacityIndex = sampleCapacities.FindIndex(p => p.Value == effectiveSampleCapacity);
+					if (currentCapacityIndex >= 0)
+					{
+						sampleCapacityUI = sampleCapacities[currentCapacityIndex].Key;
+					}
+					else
+					{
+						effectiveSampleCapacity = sampleCapacities[0].Value;
+						sampleCapacityUI = sampleCapacities[0].Key;
+					}
 
 					string[] sampleOptions = new string[sampleCapacities.Count];
 					for (int i = 0; i < sampleCapacities.Count; i++)
