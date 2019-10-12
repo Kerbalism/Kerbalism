@@ -31,7 +31,44 @@ namespace KERBALISM
 
 		public override GameParameters.GameMode GameMode { get { return GameParameters.GameMode.ANY; } }
 
-		public override bool HasPresets { get { return false; } }
+		public override bool HasPresets { get { return true; } }
+
+		public override void SetDifficultyPreset(GameParameters.Preset preset)
+		{
+			switch (preset)
+			{
+				case GameParameters.Preset.Easy:
+					criticalChance = 0.15f;
+					safeModeChance = 0.6f;
+					ignitionFailureChance = 0.75f;
+					engineFailures = false;
+					mtbfFailures = false;
+					break;
+				case GameParameters.Preset.Normal:
+					criticalChance = 0.25f;
+					safeModeChance = 0.5f;
+					ignitionFailureChance = 0.8f;
+					engineFailures = true;
+					mtbfFailures = true;
+					break;
+				case GameParameters.Preset.Moderate:
+					criticalChance = 0.3f;
+					safeModeChance = 0.45f;
+					ignitionFailureChance = 1.0f;
+					engineFailures = true;
+					mtbfFailures = true;
+					break;
+				case GameParameters.Preset.Hard:
+					criticalChance = 0.35f;
+					safeModeChance = 0.4f;
+					ignitionFailureChance = 1.5f;
+					engineFailures = true;
+					mtbfFailures = true;
+					break;
+				default:
+					break;
+			}
+		}
 
 		public override string DisplaySection { get { return "Kerbalism (1)"; } }
 
@@ -79,7 +116,32 @@ namespace KERBALISM
 
 		public override GameParameters.GameMode GameMode { get { return GameParameters.GameMode.ANY; } }
 
-		public override bool HasPresets { get { return false; } }
+		public override bool HasPresets { get { return true; } }
+
+		public override void SetDifficultyPreset(GameParameters.Preset preset)
+		{
+			switch (preset)
+			{
+				case GameParameters.Preset.Easy:
+					sampleTransfer = true;
+					transmitFactor = 2f;
+					break;
+				case GameParameters.Preset.Normal:
+					sampleTransfer = false;
+					transmitFactor = 1.5f;
+					break;
+				case GameParameters.Preset.Moderate:
+					sampleTransfer = false;
+					transmitFactor = 1.2f;
+					break;
+				case GameParameters.Preset.Hard:
+					sampleTransfer = false;
+					transmitFactor = 1.0f;
+					break;
+				default:
+					break;
+			}
+		}
 
 		public override string DisplaySection { get { return "Kerbalism (1)"; } }
 
@@ -202,7 +264,32 @@ namespace KERBALISM
 
 		public override GameParameters.GameMode GameMode { get { return GameParameters.GameMode.ANY; } }
 
-		public override bool HasPresets { get { return false; } }
+		public override bool HasPresets { get { return true; } }
+
+		public override void SetDifficultyPreset(GameParameters.Preset preset)
+		{
+			switch (preset)
+			{
+				case GameParameters.Preset.Easy:
+					stressBreakdowns = false;
+					stressBreakdownRate = 0.2f;
+					break;
+				case GameParameters.Preset.Normal:
+					stressBreakdowns = true;
+					stressBreakdownRate = 0.25f;
+					break;
+				case GameParameters.Preset.Moderate:
+					stressBreakdowns = true;
+					stressBreakdownRate = 0.3f;
+					break;
+				case GameParameters.Preset.Hard:
+					stressBreakdowns = true;
+					stressBreakdownRate = 0.35f;
+					break;
+				default:
+					break;
+			}
+		}
 
 		public override string DisplaySection { get { return "Kerbalism (2)"; } }
 
@@ -259,7 +346,40 @@ namespace KERBALISM
 
 		public override GameParameters.GameMode GameMode { get { return GameParameters.GameMode.ANY; } }
 
-		public override bool HasPresets { get { return false; } }
+		public override bool HasPresets { get { return true; } }
+
+		public override void SetDifficultyPreset(GameParameters.Preset preset)
+		{
+			switch (preset)
+			{
+				case GameParameters.Preset.Easy:
+					lifetime = false;
+					stormFrequency = Settings.StormFrequency * 0.9f;
+					stormRadiation = Settings.StormRadiation * 0.9f;
+					shieldingEfficiency = Lib.Clamp(Settings.ShieldingEfficiency * 1.1f, 0.0f, 0.99f);
+					break;
+				case GameParameters.Preset.Normal:
+					lifetime = false;
+					stormFrequency = Settings.StormFrequency;
+					stormRadiation = Settings.StormRadiation;
+					shieldingEfficiency = Lib.Clamp(Settings.ShieldingEfficiency, 0.0f, 0.99f);
+					break;
+				case GameParameters.Preset.Moderate:
+					lifetime = false;
+					stormFrequency = Settings.StormFrequency * 1.3f;
+					stormRadiation = Settings.StormRadiation * 1.2f;
+					shieldingEfficiency = Lib.Clamp(Settings.ShieldingEfficiency * 0.9f, 0.0f, 0.99f);
+					break;
+				case GameParameters.Preset.Hard:
+					lifetime = true;
+					stormFrequency = Settings.StormFrequency * 1.5f;
+					stormRadiation = Settings.StormRadiation * 1.5f;
+					shieldingEfficiency = Lib.Clamp(Settings.ShieldingEfficiency * 0.8f, 0.0f, 0.99f);
+					break;
+				default:
+					break;
+			}
+		}
 
 		public override string DisplaySection { get { return "Kerbalism (1)"; } }
 
