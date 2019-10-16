@@ -87,7 +87,7 @@ namespace KERBALISM
 		// kill a kerbal, even an EVA one
 		public static void Kill(Vessel v, ProtoCrewMember c)
 		{
-			if (!v.KerbalismData().IsValid) return;
+			if (!v.KerbalismData().IsSimulated) return;
 			if (!DB.ContainsKerbal(c.name)) return;
 			Misc.Kill(v, c);
 		}
@@ -95,7 +95,7 @@ namespace KERBALISM
 		// trigger an undesiderable event for the kerbal specified
 		public static void Breakdown(Vessel v, ProtoCrewMember c)
 		{
-			if (!v.KerbalismData().IsValid) return;
+			if (!v.KerbalismData().IsSimulated) return;
 			if (!DB.ContainsKerbal(c.name)) return;
 			Misc.Breakdown(v, c);
 		}
@@ -299,14 +299,14 @@ namespace KERBALISM
 		public static bool StormIncoming(Vessel v)
 		{
 			if (!Features.SpaceWeather) return false;
-			return v.KerbalismData().IsValid && Storm.Incoming(v);
+			return v.KerbalismData().IsSimulated && Storm.Incoming(v);
 		}
 
 		// return true if a solar storm is in progress at the vessel position
 		public static bool StormInProgress(Vessel v)
 		{
 			if (!Features.SpaceWeather) return false;
-			return v.KerbalismData().IsValid && Storm.InProgress(v);
+			return v.KerbalismData().IsSimulated && Storm.InProgress(v);
 		}
 
 		// return true if the vessel is subject to a signal blackout
@@ -419,21 +419,21 @@ namespace KERBALISM
 		public static double VesselConnectionRate(Vessel v)
 		{
 			var vi = v.KerbalismData();
-			if (!vi.IsValid) return 0.0;
+			if (!vi.IsSimulated) return 0.0;
 			return vi.Connection.rate;
 		}
 
 		public static bool VesselConnectionLinked(Vessel v)
 		{
 			var vi = v.KerbalismData();
-			if (!vi.IsValid) return false;
+			if (!vi.IsSimulated) return false;
 			return vi.Connection.linked;
 		}
 
 		public static int VesselConnectionTransmitting(Vessel v)
 		{
 			var vi = v.KerbalismData();
-			if (!vi.IsValid) return 0;
+			if (!vi.IsSimulated) return 0;
 			return vi.filesTransmitted.Count;
 		}
 

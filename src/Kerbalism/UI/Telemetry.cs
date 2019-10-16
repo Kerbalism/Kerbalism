@@ -22,7 +22,7 @@ namespace KERBALISM
 			VesselData vd = v.KerbalismData();
 
 			// if not a valid vessel, leave the panel empty
-			if (!vd.IsValid) return;
+			if (!vd.IsSimulated) return;
 
 			// set metadata
 			p.Title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(20)), " ", Lib.Color("TELEMETRY", Lib.Kolor.LightGrey)));

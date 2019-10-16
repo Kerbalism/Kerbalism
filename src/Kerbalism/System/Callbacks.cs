@@ -21,9 +21,55 @@ namespace KERBALISM
 			if (__instance.State == PartStates.DEAD)
 				return true;
 
-			Kerbalism.Callbacks.PartDestroyed(__instance);
+			Kerbalism.Callbacks.OnPartWillDie(__instance);
 
 			return true; // continue to Part.Die()
+		}
+	}
+
+	// Create a "OnPartAfterDecouple" event that happen after the decoupling is complete, 
+	// and where you have access to the old vessel and the new vessel.
+	[HarmonyPatch(typeof(Part))]
+	[HarmonyPatch("decouple")]
+	class Part_decouple
+	{
+		static bool Prefix(Part __instance, out Vessel __state)
+		{
+			// get the vessel of the part, before decoupling
+			__state = __instance.vessel;
+			return true; // continue to Part.decouple()
+		}
+
+		static void Postfix(Part __instance, Vessel __state)
+		{
+			// only fire the event if a new vessel has been created
+			if (__instance.vessel != null && __state != null && __instance.vessel != __state)
+			{
+				Kerbalism.Callbacks.OnPartAfterDecouple(__instance, __state, __instance.vessel);
+			}
+		}
+	}
+
+	// Create a "OnPartAfterUndock" event that happen after the undocking is complete, 
+	// and where you have access to the old vessel and the new vessel.
+	[HarmonyPatch(typeof(Part))]
+	[HarmonyPatch("Undock")]
+	class Part_Undock
+	{
+		static bool Prefix(Part __instance, out Vessel __state)
+		{
+			// get the vessel of the part, before decoupling
+			__state = __instance.vessel;
+			return true; // continue to Part.decouple()
+		}
+
+		static void Postfix(Part __instance, Vessel __state)
+		{
+			// only fire the event if a new vessel has been created
+			if (__instance.vessel != null && __state != null && __instance.vessel != __state)
+			{
+				Kerbalism.Callbacks.OnPartAfterUndock(__instance, __state, __instance.vessel);
+			}
 		}
 	}
 
@@ -31,12 +77,15 @@ namespace KERBALISM
 	{
 		public Callbacks()
 		{
+			GameEvents.onPartCouple.Add(OnPartCouple);
+
+
+
 			GameEvents.onCrewOnEva.Add(this.ToEVA);
 			GameEvents.onCrewBoardVessel.Add(this.FromEVA);
 			GameEvents.onVesselRecovered.Add(this.VesselRecovered);
 			GameEvents.onVesselTerminated.Add(this.VesselTerminated);
 			GameEvents.onVesselWillDestroy.Add(this.VesselDestroyed);
-			GameEvents.onVesselDestroy.Add(this.VesselDestroyed); // called on debris removal (onVesselWillDestroy isn't called for those)
 			GameEvents.onNewVesselCreated.Add(this.VesselCreated);
 			GameEvents.onPartCouple.Add(this.VesselDock);
 
@@ -75,6 +124,39 @@ namespace KERBALISM
 			GameEvents.onEditorShipModified.Add((sc) => Planner.Planner.EditorShipModifiedEvent(sc));
 		}
 
+		private void OnPartCouple(GameEvents.FromToAction<Part, Part> data)
+		{
+			VesselData.OnPartCouple(data);
+		}
+
+		// Called by an harmony patch, happens every time a part is decoupled (decouplers, joint failure...)
+		// but only if a new vessel has been created in the process
+		public void OnPartAfterUndock(Part part, Vessel oldVessel, Vessel newVessel)
+		{
+			VesselData.OnDecoupleOrUndock(oldVessel, newVessel);
+		}
+
+		// Called by an harmony patch, happens every time a part is undocked
+		// but only if a new vessel has been created in the process
+		public void OnPartAfterDecouple(Part part, Vessel oldVessel, Vessel newVessel)
+		{
+			VesselData.OnDecoupleOrUndock(oldVessel, newVessel);
+		}
+
+		// Called by an harmony patch, exactly the same as the stock OnPartWillDie (that is not available in 1.5/1.6)
+		public void OnPartWillDie(Part p)
+		{
+			// do nothing in the editor
+			if (Lib.IsEditor())
+				return;
+
+			// remove part from vesseldata
+			VesselData.OnPartWillDie(p);
+
+			// update vessel
+			this.OnVesselModified(p.vessel);
+		}
+
 		private void OnVesselStandardModification(Vessel vessel)
 		{
 			// avoid this being called on vessel launch, when vessel is not yet properly initialized
@@ -85,12 +167,10 @@ namespace KERBALISM
 		private void OnVesselModified(Vessel vessel)
 		{
 			foreach(var emitter in vessel.FindPartModulesImplementing<Emitter>())
-			{
 				emitter.Recalculate();
-			}
 
 			Cache.PurgeVesselCaches(vessel);
-			vessel.KerbalismData().UpdateOnVesselModified(vessel);
+			//vessel.KerbalismData().UpdateOnVesselModified();
 		}
 
 		public IEnumerator NetworkInitialized()
@@ -189,9 +269,8 @@ namespace KERBALISM
 			Drive.Transfer(data.from.vessel, data.to.vessel, true);
 
 			// forget EVA vessel data
-			data.from.vessel.KerbalismDataDelete();
 			Cache.PurgeVesselCaches(data.from.vessel);
-			Drive.Purge(data.from.vessel);
+			//Drive.Purge(data.from.vessel);
 
 			// update boarded vessel
 			this.OnVesselModified(data.to.vessel);
@@ -222,13 +301,9 @@ namespace KERBALISM
 				DB.RecoverKerbal(c.name);
 			}
 
-			// delete the vessel data
-			pv.KerbalismDataDelete();
-
 			// purge the caches
 			ResourceCache.Purge(pv);
 			Cache.PurgeVesselCaches(pv);
-			Drive.Purge(pv);
 		}
 
 
@@ -238,13 +313,10 @@ namespace KERBALISM
 			foreach (ProtoCrewMember c in pv.GetVesselCrew())
 				DB.KillKerbal(c.name, true);
 
-			// delete the vessel data
-			pv.KerbalismDataDelete();
-
 			// purge the caches
 			ResourceCache.Purge(pv);
 			Cache.PurgeVesselCaches(pv);
-			Drive.Purge(pv);
+			//Drive.Purge(pv);
 		}
 
 		void VesselCreated(Vessel v)
@@ -278,26 +350,15 @@ namespace KERBALISM
 				DB.KillKerbal(n, false);
 			}
 
-			// delete the vessel data
-			v.KerbalismDataDelete();	// works with loaded and unloaded vessels
-
 			// purge the caches
 			ResourceCache.Purge(v);		// works with loaded and unloaded vessels
-			Drive.Purge(v);				// works with loaded and unloaded vessels
+			//Drive.Purge(v);				// works with loaded and unloaded vessels
 			Cache.PurgeVesselCaches(v); // works with loaded and unloaded vessels
 		}
 
 		void VesselDock(GameEvents.FromToAction<Part, Part> e)
 		{
-			Vessel dockingVessel = e.from.vessel;
-			// note:
-			//  we do not delete vessel data here, it just became inactive
-			//  and ready to be implicitly activated again on undocking
-			//  we do however tweak the data of the vessel being docked a bit,
-			//  to avoid states getting out of sync, leading to unintuitive behaviours
-			dockingVessel.KerbalismData().UpdateOnDock();
-			Cache.PurgeVesselCaches(dockingVessel);
-
+			Cache.PurgeVesselCaches(e.from.vessel);
 			// Update docked to vessel
 			this.OnVesselModified(e.to.vessel);
 		}
@@ -309,23 +370,6 @@ namespace KERBALISM
 			{
 				m.OnRollout();
 			}
-		}
-
-		public void PartDestroyed(Part p)
-		{
-			// do nothing in the editor
-			if (Lib.IsEditor())
-				return;
-
-			// remove drive
-			if (DB.drives.ContainsKey(p.flightID))
-				DB.drives[p.flightID].Purge(p.flightID);
-
-			// only on valid vessels
-			if (!p.vessel.KerbalismIsValid()) return;
-
-			// update vessel
-			this.OnVesselModified(p.vessel);
 		}
 
 		void AddEditorCategory()

@@ -47,7 +47,7 @@ namespace KERBALISM
 				VesselData vd = vessel.KerbalismData();
 
 				// do nothing if vessel is invalid
-				if (!vd.IsValid) return;
+				if (!vd.IsSimulated) return;
 
 				// update status
 				Status = Telemetry_content(vessel, vd, type);

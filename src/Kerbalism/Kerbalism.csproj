@@ -166,6 +166,7 @@
     <Compile Include="Database\DB.cs" />
     <Compile Include="Database\KerbalData.cs" />
     <Compile Include="Database\LandmarkData.cs" />
+    <Compile Include="Database\PartData.cs" />
     <Compile Include="Database\RuleData.cs" />
     <Compile Include="Science\SubjectData.cs" />
     <Compile Include="Database\SupplyData.cs" />

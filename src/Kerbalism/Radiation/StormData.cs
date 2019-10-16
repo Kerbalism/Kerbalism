@@ -8,12 +8,6 @@ namespace KERBALISM
 
 	public class StormData
 	{
-		public StormData()
-		{
-			storm_generation = 0.0;
-			Reset();
-		}
-
 		public void Reset()
 		{
 			storm_time = 0.0;
@@ -26,6 +20,13 @@ namespace KERBALISM
 
 		public StormData(ConfigNode node)
 		{
+			if (node == null)
+			{
+				storm_generation = 0.0;
+				Reset();
+				return;
+			}
+
 			storm_time = Lib.ConfigValue(node, "storm_time", 0.0);
 			storm_duration = Lib.ConfigValue(node, "storm_duration", 0.0);
 			storm_generation = Lib.ConfigValue(node, "storm_generation", 0.0);

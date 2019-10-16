@@ -229,6 +229,11 @@ namespace KERBALISM
 			VesselData last_vd = null;
 			VesselResources last_resources = null;
 
+			foreach (VesselData vd in DB.VesselDatas)
+			{
+				vd.EarlyUpdate();
+			}
+
 			// for each vessel
 			foreach (Vessel v in FlightGlobals.Vessels)
 			{
@@ -258,7 +263,7 @@ namespace KERBALISM
 				}
 
 				// do nothing else for invalid vessels
-				if (!vd.IsValid)
+				if (!vd.IsSimulated)
 					continue;
 
 				// get resource cache
@@ -746,7 +751,7 @@ namespace KERBALISM
 			Vessel v = FlightGlobals.ActiveVessel;
 			if (v == null) return;
 			VesselData vd = v.KerbalismData();
-			if (!vd.IsValid) return;
+			if (!vd.IsSimulated) return;
 
 			// call scripts with 1-5 key
 			if (Input.GetKeyDown(KeyCode.Alpha1) || Input.GetKeyDown(KeyCode.Keypad1))

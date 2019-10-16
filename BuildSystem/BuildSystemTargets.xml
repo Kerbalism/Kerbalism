@@ -34,8 +34,9 @@
     <!-- so we keep both versions to use when needed-->
     <DebugOutputPath>$(RepoBasePath)\BuildSystem\BinariesDebug</DebugOutputPath>
     <ReleaseOutputPath>$(RepoBasePath)\BuildSystem\BinariesRelease</ReleaseOutputPath>
+    <OutputPath>$(ReleaseOutputPath)</OutputPath> 
     <OutputPath Condition="$(Configuration)==Debug" >$(DebugOutputPath)</OutputPath>
-    <OutputPath Condition="$(Configuration)==Release" >$(ReleaseOutputPath)</OutputPath>
+    <!--<OutputPath Condition="$(Configuration)==Release" >$(ReleaseOutputPath)</OutputPath> -->
     <IntermediateOutputPath>$(OutputPath)\obj</IntermediateOutputPath>
     <!-- Deployment path -->
     <DeploymentOutputPath>$(RepoBasePath)\BuildSystem\DeploymentOutput\</DeploymentOutputPath>
@@ -124,7 +125,7 @@
     <Message Text="[KERBALISM-BUILD-RELEASE] Building all kbins..." Importance="high" />
     <MSBuild
       Projects="$(BuildSystemTargets)"
-      Properties="KBinVersionConstant=%(KBinVersionConstant.Identity);KSPBuildVersion=%(KBinVersionConstant.KSPBuildVersion);IsDevRelease=$(IsDevRelease)"
+      Properties="Configuration=Release;KBinVersionConstant=%(KBinVersionConstant.Identity);KSPBuildVersion=%(KBinVersionConstant.KSPBuildVersion);IsDevRelease=$(IsDevRelease)"
       Targets="KBinGenerator"/>
 
     <Message Text="[KERBALISM-BUILD-RELEASE] Cleaning output folder..." Importance="high" />

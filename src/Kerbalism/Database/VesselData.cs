@@ -11,18 +11,21 @@ namespace KERBALISM
 		public Vessel Vessel { get; private set; }
 
 		// validity
+		/// <summary> True if the vessel exists in FlightGlobals. will be false in the editor</summary>
+		public bool ExistsInFlight { get; private set; }
 		public bool is_vessel;              // true if this is a valid vessel
 		public bool is_rescue;              // true if this is a rescue mission vessel
 		public bool is_eva_dead;
 
 		/// <summary>False in the following cases : asteroid, debris, flag, deployed ground part, dead eva, rescue</summary>
-		public bool IsValid { get; private set; }
+		public bool IsSimulated { get; private set; }
 
 		/// <summary>Set to true after evaluation has finished. Used to avoid triggering of events from an uninitialized status</summary>
 		private bool Evaluated = false;
 
 		// time since last update
 		private double secSinceLastEval;
+
 
 		#region non-evaluated non-persisted fields
 		// there are probably a lot of candidates for this in the current codebase
@@ -45,6 +48,15 @@ namespace KERBALISM
 		public Computer computer;     // store scripts
 
 		// other persisted fields
+		private Dictionary<uint, PartData> parts; // all parts by flightID
+		public Dictionary<uint, PartData>.ValueCollection PartDatas => parts.Values;
+		public PartData GetPartData(uint flightID)
+		{
+			PartData pd;
+			parts.TryGetValue(flightID, out pd);
+			return pd;
+		}
+
 		public bool msg_signal;       // message flag: link status
 		public bool msg_belt;         // message flag: crossing radiation belt
 		public StormData stormData;
@@ -362,53 +374,55 @@ namespace KERBALISM
 
 		#endregion
 
-		public void Initialize(Vessel v)
+		#region core update handling
+
+		/// <summary> Garanteed to be called for every VesselData in DB before any other method (FixedUpdate/Evaluate) is called </summary>
+		public void EarlyUpdate()
 		{
-			VesselId = Lib.VesselID(v);
-			Vessel = v;
-
-			EvaluateValidity(v);
-			if (!IsValid) return;
-
-			// use a random initial time to avoid having all loaded vessels being updated in the same tick
-			Evaluate(true, Lib.RandomDouble());
+			ExistsInFlight = false;
 		}
 
-		/// <summary>Called for all vessels every FixedUpdate. </summary>
+		/// <summary>Called every FixedUpdate for all existing flightglobal vessels </summary>
 		public void Update(Vessel v)
 		{
-			// Acquiring the vessel reference is needed in the following case :
-			// - when instantiating VesselData from DB.Load, the vessel doesn't exist yet
-			// - after undocking, Vessel will be null because VesselData is not deleted on docking(we want to restore the cfg fields when the vessel will undock;
-			if (Vessel == null) Initialize(v);
+			bool isInit = Vessel == null; // debug
 
-			EvaluateValidity(v);
-		}
+			Vessel = v;
+			ExistsInFlight = true;
 
-		private void EvaluateValidity(Vessel v)
-		{
-			// determine if this is a valid vessel
-			is_vessel = Lib.IsVessel(v);
-
-			// determine if this is a rescue mission vessel
-			is_rescue = Misc.IsRescueMission(v);
-
-			// dead EVA are not valid vessels
-			is_eva_dead = EVA.IsDead(v);
-
-			if (!is_vessel || is_rescue || is_eva_dead)
+			if (!ExistsInFlight || !CheckIfSimulated())
 			{
-				IsValid = false;
+				IsSimulated = false;
 			}
 			else
 			{
-				// if vessel was invalid but is now valid, immediatly update everything.
-				if (!IsValid)
+				// if vessel wasn't simulated previously : update everything immediately.
+				if (!IsSimulated)
 				{
-					IsValid = true;
+					Lib.Log("VesselData : id '" + VesselId + "' (" + Vessel.vesselName + ") is now simulated (wasn't previously)");
+					IsSimulated = true;
 					Evaluate(true, Lib.RandomDouble());
 				}
 			}
+
+			if (isInit)
+			{
+				Lib.Log("Init complete : IsSimulated={3}, is_vessel={0}, is_rescue={1}, is_eva_dead={2} ({4})", is_vessel, is_rescue, is_eva_dead, IsSimulated, Vessel.vesselName);
+			}
+		}
+
+		private bool CheckIfSimulated()
+		{
+			// determine if this is a valid vessel
+			is_vessel = Lib.IsVessel(Vessel);
+
+			// determine if this is a rescue mission vessel
+			is_rescue = Misc.IsRescueMission(Vessel);
+
+			// dead EVA are not valid vessels
+			is_eva_dead = EVA.IsDead(Vessel);
+
+			return is_vessel && !is_rescue && !is_eva_dead;
 		}
 
 		/// <summary>
@@ -418,7 +432,7 @@ namespace KERBALISM
 		/// </summary>
 		public void Evaluate(bool forced, double elapsedSeconds)
 		{
-			if (!IsValid) return;
+			if (!IsSimulated) return;
 
 			secSinceLastEval += elapsedSeconds;
 
@@ -432,30 +446,163 @@ namespace KERBALISM
 			Evaluated = true;
 		}
 
-		public void UpdateOnVesselModified(Vessel v)
+		#endregion
+
+		#region events handling
+
+		public void UpdateOnVesselModified()
 		{
+			if (!IsSimulated)
+				return;
+
 			ResetReliabilityStatus();
-			habitatInfo = new VesselHabitatInfo();
-			Update(v);
-			if (IsValid) EvaluateStatus();
+			habitatInfo = new VesselHabitatInfo(null);
+			EvaluateStatus();
+
+			Lib.Log("VesselData updated on vessel modified event ({0})", Vessel.vesselName);
 		}
 
-		public void UpdateOnDock()
+		/// <summary> Called by GameEvents.onVesselsUndocking, just after 2 vessels have undocked </summary>
+		internal static void OnDecoupleOrUndock(Vessel oldVessel, Vessel newVessel)
 		{
-			Vessel = null;
-			msg_belt = false;
-			msg_signal = false;
-			stormData = new StormData();
-			habitatInfo = new VesselHabitatInfo();
-			supplies.Clear();
-			scansat_id.Clear();
-			ResetReliabilityStatus();
+			Lib.Log("Decoupling vessel '{0}' from vessel '{1}'", newVessel.vesselName, oldVessel.vesselName);
+
+			VesselData oldVD = oldVessel.KerbalismData();
+			VesselData newVD = newVessel.KerbalismData();
+
+			// remove all partdata on the new vessel
+			newVD.parts.Clear();
+
+			foreach (Part part in newVessel.Parts)
+			{
+				PartData pd;
+				// for all parts in the new vessel, move the corresponding partdata from the old vessel to the new vessel
+				if (oldVD.parts.TryGetValue(part.flightID, out pd))
+				{
+					newVD.parts.Add(part.flightID, pd);
+					oldVD.parts.Remove(part.flightID);
+				}
+			}
+
+			newVD.UpdateOnVesselModified();
+			oldVD.UpdateOnVesselModified();
+
+			Lib.Log("Decoupling complete for new vessel, vd.partcount={1}, v.partcount={2} ({0})", newVessel.vesselName, newVD.parts.Count, newVessel.parts.Count);
+			Lib.Log("Decoupling complete for old vessel, vd.partcount={1}, v.partcount={2} ({0})", oldVessel.vesselName, oldVD.parts.Count, oldVessel.parts.Count);
 		}
 
-		public VesselData()
+		// This is for mods (KIS), won't be used in a stock game (the docking is handled in the OnDock method
+		internal static void OnPartCouple(GameEvents.FromToAction<Part, Part> data)
 		{
-			IsValid = false;
+			Lib.Log("Coupling part '{0}' from vessel '{1}' to vessel '{2}'", data.from.partInfo.title, data.from.vessel.vesselName, data.to.vessel.vesselName);
 
+			Vessel fromVessel = data.from.vessel;
+			Vessel toVessel = data.to.vessel;
+
+			VesselData fromVD = fromVessel.KerbalismData();
+			VesselData toVD = toVessel.KerbalismData();
+
+			// GameEvents.onPartCouple may be fired by mods (KIS) that add new parts to an existing vessel
+			// In the case of KIS, the part vessel is already set to the destination vessel when the event is fired
+			// so we just add the part.
+			if (fromVD == toVD)
+			{
+				if (!toVD.parts.ContainsKey(data.from.flightID))
+				{
+					toVD.parts.Add(data.from.flightID, new PartData(data.from));
+					Lib.Log("VesselData : newly created part '{0}' added to vessel '{1}'", data.from.partInfo.title, data.to.vessel.vesselName);
+					return;
+				}
+			}
+
+			// add all partdata of the docking vessel to the docked to vessel
+			foreach (PartData partData in fromVD.parts.Values)
+			{
+				toVD.parts.Add(partData.FlightId, partData);
+			}
+			// remove all partdata from the docking vessel
+			fromVD.parts.Clear();
+
+			// reset a few things on the docked to vessel
+			toVD.supplies.Clear();
+			toVD.scansat_id.Clear();
+			toVD.UpdateOnVesselModified();
+
+			Lib.Log("Coupling complete to   vessel, vd.partcount={1}, v.partcount={2} ({0})", toVessel.vesselName, toVD.parts.Count, toVessel.parts.Count);
+			Lib.Log("Coupling complete from vessel, vd.partcount={1}, v.partcount={2} ({0})", fromVessel.vesselName, fromVD.parts.Count, fromVessel.parts.Count);
+		}
+
+		internal static void OnPartWillDie(Part part)
+		{
+			VesselData vd = part.vessel.KerbalismData();
+			vd.parts.Remove(part.flightID);
+			vd.UpdateOnVesselModified();
+			Lib.Log("Removing dead part, vd.partcount={0}, v.partcount={1} (part '{2}' in vessel '{3}')", vd.parts.Count, part.vessel.parts.Count, part.partInfo.title, part.vessel.vesselName);
+		}
+
+		#endregion
+
+		#region ctor / init / persistence
+
+		/// <summary> This ctor is to be used for newly created vessels </summary>
+		public VesselData(Vessel vessel)
+		{
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.VesselData.Ctor");
+
+			ExistsInFlight = true;	// vessel exists
+			IsSimulated = false;	// will be evaluated in next fixedupdate
+
+			Vessel = vessel;
+			VesselId = Vessel.id;
+			
+			parts = new Dictionary<uint, PartData>();
+			if (Vessel.loaded)
+				foreach (Part part in Vessel.Parts)
+					parts.Add(part.flightID, new PartData(part));
+			else
+				// vessels can be created unloaded, asteroids for example
+				foreach (ProtoPartSnapshot protopart in Vessel.protoVessel.protoPartSnapshots)
+					parts.Add(protopart.flightID, new PartData(protopart));
+
+
+			FieldsDefaultInit();
+
+			Lib.Log("VesselData ctor (new vessel) : id '" + VesselId + "' (" + Vessel.vesselName + "), part count : " + parts.Count);
+			UnityEngine.Profiling.Profiler.EndSample();
+		}
+
+		/// <summary>
+		/// This ctor is meant to be used in OnLoad only, but can be used as a fallback
+		/// with a null ConfigNode to create VesselData from a protovessel. 
+		/// The Vessel reference will be acquired in the next fixedupdate
+		/// </summary>
+		public VesselData(ProtoVessel protoVessel, ConfigNode node)
+		{
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.VesselData.Ctor");
+			ExistsInFlight = false;
+			IsSimulated = false;
+
+			VesselId = protoVessel.vesselID;
+
+			parts = new Dictionary<uint, PartData>();
+			foreach (ProtoPartSnapshot protopart in protoVessel.protoPartSnapshots)
+				parts.Add(protopart.flightID, new PartData(protopart));
+
+			if (node == null)
+			{
+				FieldsDefaultInit();
+				Lib.Log("VesselData ctor (created from protovessel) : id '" + VesselId + "' (" + protoVessel.vesselName + "), part count : " + parts.Count);
+			}
+			else
+			{
+				Load(node);
+				Lib.Log("VesselData ctor (loaded from database) : id '" + VesselId + "' (" + protoVessel.vesselName + "), part count : " + parts.Count);
+			}
+			UnityEngine.Profiling.Profiler.EndSample();
+		}
+
+		private void FieldsDefaultInit()
+		{
 			msg_signal = false;
 			msg_belt = false;
 			cfg_ec = PreferencesMessages.Instance.ec;
@@ -466,18 +613,16 @@ namespace KERBALISM
 			cfg_script = PreferencesMessages.Instance.script;
 			cfg_highlights = PreferencesReliability.Instance.highlights;
 			cfg_showlink = true;
-			stormData = new StormData();
-			habitatInfo = new VesselHabitatInfo();
-			computer = new Computer();
+
+			stormData = new StormData(null);
+			habitatInfo = new VesselHabitatInfo(null);
+			computer = new Computer(null);
 			supplies = new Dictionary<string, SupplyData>();
 			scansat_id = new List<uint>();
 			filesTransmitted = new List<File>();
-			scienceTransmitted = 0.0;
 		}
 
-		#region persistence methods
-
-		public void Load(ConfigNode node)
+		private void Load(ConfigNode node)
 		{
 			msg_signal = Lib.ConfigValue(node, "msg_signal", false);
 			msg_belt = Lib.ConfigValue(node, "msg_belt", false);
@@ -493,10 +638,9 @@ namespace KERBALISM
 			solarPanelsAverageExposure = Lib.ConfigValue(node, "solarPanelsAverageExposure", -1.0);
 			scienceTransmitted = Lib.ConfigValue(node, "scienceTransmitted", 0.0);
 
-			if (node.HasNode("StormData")) stormData = new StormData(node.GetNode("StormData"));
-			else stormData = new StormData();
-
-			computer = node.HasNode("computer") ? new Computer(node.GetNode("computer")) : new Computer();
+			stormData = new StormData(node.GetNode("StormData"));
+			habitatInfo = new VesselHabitatInfo(node.GetNode("SunShielding"));
+			computer = new Computer(node.GetNode("computer"));
 
 			supplies = new Dictionary<string, SupplyData>();
 			foreach (var supply_node in node.GetNode("supplies").GetNodes())
@@ -510,7 +654,18 @@ namespace KERBALISM
 				scansat_id.Add(Lib.Parse.ToUInt(s));
 			}
 
-			if (node.HasNode("SunShielding")) habitatInfo = new VesselHabitatInfo(node.GetNode("SunShielding"));
+			ConfigNode partsNode = new ConfigNode();
+			if (node.TryGetNode("parts", ref partsNode))
+			{
+				foreach (ConfigNode partDataNode in partsNode.GetNodes())
+				{
+					PartData partData;
+					if (parts.TryGetValue(Lib.Parse.ToUInt(partDataNode.name), out partData))
+						partData.Load(partDataNode);
+				}
+			}
+
+			filesTransmitted = new List<File>();
 		}
 
 		public void Save(ConfigNode node)
@@ -544,6 +699,23 @@ namespace KERBALISM
 			}
 
 			EnvHabitatInfo.Save(node.AddNode("SunShielding"));
+
+			ConfigNode partsNode = node.AddNode("parts");
+			foreach (PartData partData in parts.Values)
+			{
+				// currently we only use partdata for drives, so optimize it a bit
+				if (partData.Drive != null)
+				{
+					ConfigNode partNode = partsNode.AddNode(partData.FlightId.ToString());
+					partData.Save(partNode);
+				}
+			}
+
+			if (Vessel != null)
+				Lib.Log("VesselData saved for vessel " + Vessel.vesselName);
+			else
+				Lib.Log("VesselData saved for vessel (Vessel is null)");
+
 		}
 
 		#endregion
@@ -560,6 +732,7 @@ namespace KERBALISM
 		#region vessel state evaluation
 		private void EvaluateStatus()
 		{
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.VesselData.EvaluateStatus");
 			// determine if there is enough EC for a powered state
 			powered = Lib.IsPowered(Vessel);
 
@@ -598,12 +771,14 @@ namespace KERBALISM
 				solarPanelsAverageExposure = SolarPanelFixer.GetSolarPanelsAverageExposure(solarPanelsExposure);
 				solarPanelsExposure.Clear();
 			}
+			UnityEngine.Profiling.Profiler.EndSample();
 		}
 		#endregion
 
 		#region environment evaluation
 		private void EvaluateEnvironment(double elapsedSeconds)
 		{
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.VesselData.EvaluateStatus");
 			// we use analytic mode if more than 2 minutes of game time has passed since last evaluation (~ x6000 timewarp speed)
 			isAnalytic = elapsedSeconds > 120.0;
 
@@ -662,6 +837,7 @@ namespace KERBALISM
 
 			// other stuff
 			gravioli = Sim.Graviolis(Vessel);
+			UnityEngine.Profiling.Profiler.EndSample();
 		}
 
 		#endregion

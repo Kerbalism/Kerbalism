@@ -80,9 +80,12 @@ namespace KERBALISM
 		/// <summary>for tracking analytic mode changes and ui updating</summary>
 		private bool analyticSunlight;
 
+		/// <summary>can be used by external mods to get the current EC/s</summary>
+		[KSPField]
+		public double currentOutput;
+
 		// The following fields are local to FixedUpdate() but are shared for status string updates in Update()
 		// Their value can be inconsistent, don't rely on them for anything else
-		private double currentOutput;
 		private double exposureFactor;
 		private double wearFactor;
 		private ExposureState exposureState;
@@ -214,7 +217,7 @@ namespace KERBALISM
 			VesselData vd = vessel.KerbalismData();
 
 			// do nothing if vessel is invalid
-			if (!vd.IsValid) return;
+			if (!vd.IsSimulated) return;
 
 			// calculate average exposure over a full day when landed, will be used for panel background processing
 			double landedPersistentFactor = GetAnalyticalCosineFactorLanded(vd);
@@ -326,6 +329,7 @@ namespace KERBALISM
 			if (!(state == PanelState.Extended || state == PanelState.ExtendedFixed || state == PanelState.Static))
 			{
 				exposureState = ExposureState.Disabled;
+				currentOutput = 0.0;
 				UnityEngine.Profiling.Profiler.EndSample();
 				return;
 			}
@@ -341,7 +345,7 @@ namespace KERBALISM
 			VesselData vd = vessel.KerbalismData();
 
 			// do nothing if vessel is invalid
-			if (!vd.IsValid)
+			if (!vd.IsSimulated)
 			{
 				UnityEngine.Profiling.Profiler.EndSample();
 				return;

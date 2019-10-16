@@ -6,9 +6,6 @@ using UnityEngine;
 
 namespace KERBALISM
 {
-
-
-
 	public class SubjectData
 	{
 		public ExperimentInfo ExpInfo { get; protected set; }

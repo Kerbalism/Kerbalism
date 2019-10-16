@@ -79,10 +79,10 @@ namespace KERBALISM
 
         public static void Update(CelestialBody body, double elapsed_s)
         {
-            // do nothing if storms are disabled
-            if (!Features.SpaceWeather) return;
+			// do nothing if storms are disabled
+			if (!Features.SpaceWeather) return;
 
-            StormData bd = DB.Body(body.name);
+            StormData bd = DB.Storm(body.name);
             CreateStorm(bd, body, body.orbit.semiMajorAxis);
 
             // send messages
@@ -199,7 +199,7 @@ namespace KERBALISM
                     VesselData vd = v.KerbalismData();
 
                     // skip invalid vessels
-                    if (!vd.IsValid) continue;
+                    if (!vd.IsSimulated) continue;
 
                     // obey message config
                     if (!v.KerbalismData().cfg_storm) continue;
@@ -232,14 +232,14 @@ namespace KERBALISM
         /// <summary>return true if a storm is incoming</summary>
         public static bool Incoming(Vessel v)
         {
-            var bd = Lib.IsSun(v.mainBody) ? v.KerbalismData().stormData : DB.Body(Lib.GetParentPlanet(v.mainBody).name);
+            var bd = Lib.IsSun(v.mainBody) ? v.KerbalismData().stormData : DB.Storm(Lib.GetParentPlanet(v.mainBody).name);
             return bd.storm_state == 1 && bd.display_warning;
         }
 
         /// <summary>return true if a storm is in progress</summary>
         public static bool InProgress(Vessel v)
         {
-            var bd = Lib.IsSun(v.mainBody) ? v.KerbalismData().stormData : DB.Body(Lib.GetParentPlanet(v.mainBody).name);
+            var bd = Lib.IsSun(v.mainBody) ? v.KerbalismData().stormData : DB.Storm(Lib.GetParentPlanet(v.mainBody).name);
             return bd.storm_state == 2;
         }
     }

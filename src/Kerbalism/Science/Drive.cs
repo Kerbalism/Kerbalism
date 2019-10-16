@@ -8,7 +8,7 @@ namespace KERBALISM
 
 	public sealed class Drive
 	{
-		public Drive(string name, double dataCapacity, int sampleCapacity)
+		public Drive(string name, double dataCapacity, int sampleCapacity, bool is_private = false)
 		{
 			this.files = new Dictionary<SubjectData, File>();
 			this.samples = new Dictionary<SubjectData, Sample>();
@@ -17,8 +17,6 @@ namespace KERBALISM
 			this.sampleCapacity = sampleCapacity;
 			this.name = name;
 		}
-
-		public Drive() : this("Brick", 0, 0) { }
 
 		public Drive(ConfigNode node)
 		{
@@ -120,6 +118,8 @@ namespace KERBALISM
 			}
 			node.AddValue("sendFileNames", fileNames);
 		}
+
+
 
 		public static double StoreFile(Vessel vessel, SubjectData subjectData, double size, bool include_private = false)
 		{
@@ -511,120 +511,65 @@ namespace KERBALISM
 				);
 		}
 
-		public void Purge(uint flightID)
+		public void DeleteDriveData()
 		{
 			foreach (File file in files.Values)
 				file.subjectData.RemoveDataCollectedInFlight(file.size);
 
 			foreach (Sample sample in samples.Values)
 				sample.subjectData.RemoveDataCollectedInFlight(sample.size);
-
-			DB.drives.Remove(flightID);
 		}
 
-		public static void Purge(ProtoVessel proto_vessel)
+		public static void DeleteDrive(Vessel vessel, uint partFlightID)
 		{
-			foreach (ProtoPartSnapshot p in proto_vessel.protoPartSnapshots)
+			PartData partData = vessel.KerbalismData().GetPartData(partFlightID);
+			if (partData != null)
 			{
-				if (DB.drives.ContainsKey(p.flightID))
-					DB.drives[p.flightID].Purge(p.flightID);
+				partData.Drive.DeleteDriveData();
+				partData.Drive = null;
 			}
 		}
 
-		public static void Purge(Vessel vessel)
+		public static void DeleteDrives(Vessel vessel)
 		{
-			foreach (var kvp in GetDriveParts(vessel))
+			foreach (PartData partData in vessel.KerbalismData().PartDatas)
 			{
-				kvp.Value.Purge(kvp.Key);
-			}
-		}
-
-		public static List<Drive> GetDrives(ProtoVessel proto_vessel)
-		{
-			List<Drive> result = new List<Drive>();
-
-			foreach (var hd in proto_vessel.protoPartSnapshots)
-			{
-				if (DB.drives.ContainsKey(hd.flightID))
-					result.Add(DB.drives[hd.flightID]);
-			}
-
-			return result;
-		}
-
-		public static Dictionary<uint, Drive> GetDriveParts(Vessel vessel)
-		{
-			Dictionary<uint, Drive> result = Cache.VesselObjectsCache<Dictionary<uint, Drive>>(vessel, "drives");
-			if (result != null)
-				return result;
-			result = new Dictionary<uint, Drive>();
-
-			if(vessel.loaded)
-			{
-				foreach (var hd in vessel.FindPartModulesImplementing<HardDrive>())
+				if (partData != null)
 				{
-					if (!hd.isEnabled || hd.hdId == 0) continue;
-
-					if (result.ContainsKey(hd.part.flightID))
-					{
-						Lib.Log("WARNING: you have multiple hard drives in one part. This is not supported and an issue in your configuration. I will combine the capacities of all affected drives. (loaded)");
-						hd.enabled = false;
-						hd.isEnabled = false;
-
-						var existing = result[hd.part.flightID];
-						if(hd.dataCapacity > 0) existing.dataCapacity += hd.dataCapacity;
-						if(hd.sampleCapacity > 0) existing.sampleCapacity += hd.sampleCapacity;
-					}
-					else
-					{
-						if (DB.drives.ContainsKey(hd.hdId))
-							result.Add(hd.part.flightID, DB.drives[hd.hdId]);
-					}
+					partData.Drive.DeleteDriveData();
+					partData.Drive = null;
 				}
 			}
-			else
+		}
+
+		public static List<Drive> GetDrives(Vessel v, bool includePrivate = false)
+		{
+			List<Drive> drives = new List<Drive>();
+
+			foreach (PartData partData in v.KerbalismData().PartDatas)
 			{
-				foreach (var p in vessel.protoVessel.protoPartSnapshots)
+				if (partData.Drive != null && (includePrivate || !partData.Drive.is_private))
 				{
-					foreach(var pm in Lib.FindModules(p, "HardDrive"))
-					{
-						var isEnabled = Lib.Proto.GetBool(pm, "isEnabled", true);
-						var hdId = Lib.Proto.GetUInt(pm, "hdId", 0);
-						if (!isEnabled || hdId == 0) continue;
-
-						if (result.ContainsKey(p.flightID))
-						{
-							Lib.Log("WARNING: you have multiple hard drives in one part. This is not supported and an issue in your configuration. I will combine the capacities of all affected drives. (unloaded)");
-							Lib.Proto.Set(pm, "enabled", false);
-							Lib.Proto.Set(pm, "isEnabled", false);
-
-							var dataCapacity = Lib.Proto.GetFloat(pm, "dataCapacity", 0);
-							var sampleCapacity = Lib.Proto.GetInt(pm, "sampleCapacity", 0);
-
-							var existing = result[p.flightID];
-							if (dataCapacity > 0) existing.dataCapacity += dataCapacity;
-							if (sampleCapacity > 0) existing.sampleCapacity += sampleCapacity;
-						}
-
-						if (DB.drives.ContainsKey(hdId))
-							result.Add(p.flightID, DB.drives[hdId]);
-					}
+					drives.Add(partData.Drive);
 				}
 			}
 
-			Cache.SetVesselObjectsCache(vessel, "drives", result);
-			return result;
+			return drives;
 		}
 
-		public static List<Drive> GetDrives(Vessel vessel, bool include_private = false)
+		public static List<Drive> GetDrives(ProtoVessel pv, bool includePrivate = false)
 		{
-			List<Drive> result = new List<Drive>();
-			foreach(var d in GetDriveParts(vessel).Values)
+			List<Drive> drives = new List<Drive>();
+
+			foreach (PartData partData in pv.KerbalismData().PartDatas)
 			{
-				if (!d.is_private || include_private)
-					result.Add(d);
+				if (partData.Drive != null && (includePrivate || !partData.Drive.is_private))
+				{
+					drives.Add(partData.Drive);
+				}
 			}
-			return result;
+
+			return drives;
 		}
 
 		public static void GetCapacity(Vessel vessel, out double free_capacity, out double total_capacity)
@@ -654,7 +599,8 @@ namespace KERBALISM
 			}
 		}
 
-		public static Drive FileDrive(Vessel vessel, double size = 0)
+		/// <summary> Get a drive for storing files. Will return null if there are no drives on the vessel </summary>
+		public static Drive FileDrive(Vessel vessel, double size = 0.0)
 		{
 			Drive result = null;
 			foreach (var drive in GetDrives(vessel))
@@ -662,12 +608,12 @@ namespace KERBALISM
 				if (result == null)
 				{
 					result = drive;
-					if (size > double.Epsilon && result.FileCapacityAvailable() >= size)
+					if (size > 0.0 && result.FileCapacityAvailable() >= size)
 						return result;
 					continue;
 				}
 
-				if (size > double.Epsilon && drive.FileCapacityAvailable() >= size)
+				if (size > 0.0 && drive.FileCapacityAvailable() >= size)
 				{
 					return drive;
 				}
@@ -678,14 +624,10 @@ namespace KERBALISM
 					result = drive;
 				}
 			}
-			if (result == null)
-			{
-				// vessel has no drive.
-				return new Drive("Broken", 0, 0);
-			}
 			return result;
 		}
 
+		/// <summary> Get a drive for storing samples. Will return null if there are no drives on the vessel </summary>
 		public static Drive SampleDrive(Vessel vessel, double size = 0, SubjectData subject = null)
 		{
 			Drive result = null;
@@ -702,11 +644,6 @@ namespace KERBALISM
 					continue;
 				if (available > result.SampleCapacityAvailable(subject))
 					result = drive;
-			}
-			if (result == null)
-			{
-				// vessel has no drive.
-				return new Drive("Broken", 0, 0);
 			}
 			return result;
 		}

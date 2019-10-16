@@ -199,13 +199,13 @@ namespace KERBALISM
 					// if the module exist
 					if (m != null)
 					{
-						// call configure/deconfigure functions on module if available
-						if (m is IConfigurable configurable_module)
-							configurable_module.Configure(active);
-
 						// enable/disable the module
 						m.isEnabled = active;
 						m.enabled = active;
+
+						// call configure/deconfigure functions on module if available
+						if (m is IConfigurable configurable_module)
+							configurable_module.Configure(active);
 					}
 				}
 

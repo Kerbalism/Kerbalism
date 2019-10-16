@@ -247,9 +247,7 @@ namespace KERBALISM
 			else
 			{
 				// update ui
-				string quality_label = part.FindModulesImplementing<Reliability>().Count > 1
-				  ? Lib.BuildString("<b>", title, "</b> quality") : "Quality";
-				Events["Quality"].guiName = Lib.StatusToggle(quality_label, quality ? "high" : "standard");
+				Events["Quality"].guiName = Lib.StatusToggle(Lib.BuildString("<b>", title, "</b> quality"), quality ? "high" : "standard");
 
 				Status = string.Empty;
 				if(mtbf > 0 && PreferencesReliability.Instance.mtbfFailures)

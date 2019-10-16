@@ -37,7 +37,6 @@ namespace KERBALISM
 		private Status status = Status.DISABLED;                    // laboratory status
 		private string status_txt = string.Empty;                   // status string to show next to the ui button
 		private ResourceInfo ec = null;                            // resource info for EC
-		private Drive drive = null;                                 // my drive
 
 		// localized strings
 		private static readonly string localized_title = Lib.BuildString("<size=1><color=#00000000>00</color></size>", Localizer.Format("#KERBALISM_Laboratory_Title"));
@@ -64,13 +63,6 @@ namespace KERBALISM
 
 			// parse crew specs
 			researcher_cs = new CrewSpecs(researcher);
-
-			var hardDrive = part.FindModuleImplementing<HardDrive>();
-			if (hardDrive != null) drive = hardDrive.GetDrive();
-			else
-			{
-				drive = Drive.FileDrive(vessel);
-			}
 		}
 
 		public void Update()
@@ -285,6 +277,9 @@ namespace KERBALISM
 			}
 
 			Drive fileDrive = Drive.FileDrive(v, amount);
+
+			if (fileDrive == null)
+				return Status.NO_STORAGE;
 
 			if(sample != null)
 			{

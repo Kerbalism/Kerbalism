@@ -1081,8 +1081,9 @@ namespace KERBALISM
 		public static CelestialBody GetParentPlanet(CelestialBody body)
 		{
 			if (Lib.IsSun(body)) return body;
-			while (!Lib.IsSun(body.referenceBody)) body = body.referenceBody;
-			return body;
+			CelestialBody checkedBody = body;
+			while (!Lib.IsSun(checkedBody.referenceBody)) checkedBody = checkedBody.referenceBody;
+			return checkedBody;
 		}
 
 		/// <summary> optimized method for getting normalized direction and distance between the surface of two bodies</summary>

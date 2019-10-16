@@ -8,7 +8,7 @@ using UnityEngine;
 namespace KERBALISM
 {
 
-	public class HardDrive : PartModule, IScienceDataContainer, ISpecifics, IModuleInfo, IPartMassModifier, IPartCostModifier, IModuleRollout
+	public class HardDrive : PartModule, IScienceDataContainer, ISpecifics, IModuleInfo, IPartMassModifier, IPartCostModifier //, IModuleRollout
 	{
 		[KSPField] public double dataCapacity = -1;             // base drive capacity, in Mb. -1 = unlimited
 		[KSPField] public int sampleCapacity = -1;              // base drive capacity, in slots. -1 = unlimited
@@ -115,14 +115,25 @@ namespace KERBALISM
 			if (drive == null)
 			{
 				if (!Lib.IsFlight())
+				{
 					drive = new Drive(title, effectiveDataCapacity, effectiveSampleCapacity);
+				}
 				else
-					drive = DB.Drive(hdId, title, effectiveDataCapacity, effectiveSampleCapacity);
+				{
+					PartData pd = vessel.KerbalismData().GetPartData(part.flightID);
+					if (pd.Drive == null)
+					{
+						drive = new Drive(part.partInfo.title, effectiveDataCapacity, effectiveSampleCapacity, !string.IsNullOrEmpty(experiment_id));
+						pd.Drive = drive;
+					}
+					else
+					{
+						drive = vessel.KerbalismData().GetPartData(part.flightID).Drive;
+					}
+				}
+					
+					//DB.Drive(hdId, title, effectiveDataCapacity, effectiveSampleCapacity);
 			}
-
-
-			if (vessel != null) Cache.RemoveVesselObjectsCache(vessel, "drives");
-			drive.is_private |= experiment_id.Length > 0;
 
 			UpdateCapacity();
 		}
@@ -143,32 +154,37 @@ namespace KERBALISM
 			return result;
 		}
 
-		public override void OnLoad(ConfigNode node)
-		{
-			base.OnLoad(node);
+		//public override void OnLoad(ConfigNode node)
+		//{
+		//	base.OnLoad(node);
 
-			if (HighLogic.LoadedScene == GameScenes.LOADING)
-			{
-				drive = new Drive();
-				return;
-			}
-		}
+		//	if (HighLogic.LoadedScene == GameScenes.LOADING)
+		//	{
+		//		drive = new Drive(title, effectiveDataCapacity, effectiveSampleCapacity); // unused, 
+		//		return;
+		//	}
+		//}
 
 		/// <summary>Called by Callbacks just after rollout to launch pad</summary>
-		public void OnRollout()
-		{
-			if (Lib.DisableScenario(this)) return;
+		//public void OnRollout()
+		//{
+		//	if (Lib.DisableScenario(this)) return;
 
-			// register the drive in the kerbalism DB
-			// this needs to be done only once just after launch
-			hdId = part.flightID;
-			drive = DB.Drive(hdId, title, effectiveDataCapacity, effectiveSampleCapacity);
-			drive.is_private = experiment_id.Length > 0;
+		//	// register the drive in the kerbalism DB
+		//	// this needs to be done only once just after launch
+		//	VesselData vd = vessel.KerbalismData();
+		//	hdId = part.flightID;
+		//	PartData pd = vd.GetPartData(hdId);
+		//	if (pd != null)
+		//	{
+		//		drive = new Drive(part.partInfo.title, effectiveDataCapacity, effectiveSampleCapacity, !string.IsNullOrEmpty(experiment_id));
+		//		pd.Drive = drive;
+		//	}
 
-			UpdateCapacity();
+		//	UpdateCapacity();
 
-			if (vessel != null) Cache.RemoveVesselObjectsCache(vessel, "drives");
-		}
+		//	if (vessel != null) Cache.RemoveVesselObjectsCache(vessel, "drives");
+		//}
 
 		public void FixedUpdate()
 		{

@@ -215,7 +215,7 @@ namespace KERBALISM
 			foreach (Vessel n in FlightGlobals.VesselsLoaded)
 			{
 				var vd = n.KerbalismData();
-				if (!vd.IsValid) continue;
+				if (!vd.IsSimulated) continue;
 
 				foreach (var emitter in Lib.FindModules<Emitter>(v))
 				{

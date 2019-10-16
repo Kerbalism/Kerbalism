@@ -25,7 +25,7 @@ namespace KERBALISM
 			VesselData vd = v.KerbalismData();
 
 			// if not a valid vessel, leave the panel empty
-			if (!vd.IsValid) return;
+			if (!vd.IsSimulated) return;
 
 			// set metadata
 			p.Title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(40)), " ", Lib.Color("FILE MANAGER", Lib.Kolor.LightGrey)));
@@ -35,7 +35,7 @@ namespace KERBALISM
  			// time-out simulation
 			if (!Lib.IsControlUnit(v) && p.Timeout(vd)) return;
 
-			var drives = Drive.GetDriveParts(v);
+			List<ObjectPair<uint, Drive>> drives = new List<ObjectPair<uint, Drive>>();
 
 			int filesCount = 0;
 			double usedDataCapacity = 0;
@@ -48,11 +48,15 @@ namespace KERBALISM
 			bool unlimitedData = false;
 			bool unlimitedSamples = false;
 
-			foreach (var idDrivePair in drives)
+			foreach (PartData partData in vd.PartDatas)
 			{
-				var drive = idDrivePair.Value;
+				Drive drive = partData.Drive;
+				if (drive == null)
+					continue;
 
-				if(!drive.is_private)
+				drives.Add(new ObjectPair<uint, Drive>(partData.FlightId, drive));
+
+				if (!drive.is_private)
 				{
 					usedDataCapacity += drive.FilesSize();
 					totalDataCapacity += drive.dataCapacity;
@@ -75,12 +79,11 @@ namespace KERBALISM
 				if(!unlimitedData) title += Lib.BuildString(" (", Lib.HumanReadablePerc((totalDataCapacity - usedDataCapacity) / totalDataCapacity), " available)");
 				p.AddSection(title);
 
-				foreach (var idDrivePair in drives)
+				foreach (var drive in drives)
 				{
-					uint partId = idDrivePair.Key;
-					foreach (File file in idDrivePair.Value.files.Values)
+					foreach (File file in drive.Value.files.Values)
 					{
-						Render_file(p, partId, file, idDrivePair.Value, short_strings && Lib.IsFlight(), v);
+						Render_file(p, drive.Key, file, drive.Value, short_strings && Lib.IsFlight(), v);
 					}
 				}
 
@@ -93,13 +96,11 @@ namespace KERBALISM
 				if (totalSlots > 0 && !unlimitedSamples) title += ", " + Lib.HumanReadableSampleSize(totalSlots) + " available";
 				p.AddSection(title);
 
-				foreach (var idDrivePair in drives)
+				foreach (var drive in drives)
 				{
-					uint partId = idDrivePair.Key;
-
-					foreach (Sample sample in idDrivePair.Value.samples.Values)
+					foreach (Sample sample in drive.Value.samples.Values)
 					{
-						Render_sample(p, partId, sample, idDrivePair.Value, short_strings && Lib.IsFlight());
+						Render_sample(p, drive.Key, sample, drive.Value, short_strings && Lib.IsFlight());
 					}
 				}
 

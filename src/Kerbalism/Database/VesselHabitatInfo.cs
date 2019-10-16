@@ -36,13 +36,11 @@ namespace KERBALISM
 
 		public double MaxPressure => maxPressure; private double maxPressure;
 
-		public VesselHabitatInfo()
-		{
-			// default constructor
-		}
-
 		public VesselHabitatInfo(ConfigNode node)
 		{
+			if (node == null)
+				return;
+
 			maxPressure = Lib.ConfigValue(node, "maxPressure", 1.0);
 
 			if (!node.HasNode("sspi")) return;
@@ -150,10 +148,6 @@ namespace KERBALISM
 		{
 			if (v == null || !v.loaded) return;
 
-			// always do EVAs
-			if (v.isEVA)
-				RaytraceToSun(v.rootPart);
-
 			if (habitats == null)
 			{
 				habitats = Lib.FindModules<Habitat>(v);
@@ -162,8 +156,16 @@ namespace KERBALISM
 					maxPressure = Math.Min(maxPressure, habitat.max_pressure);
 			}
 
-			if (!Features.Radiation || habitats.Count == 0) return;
+			if (!Features.Radiation || habitats.Count == 0)
+				return;
 
+			// always do EVAs
+			if (v.isEVA)
+			{
+				RaytraceToSun(v.rootPart);
+				return;
+			}
+				
 			if (habitatIndex < 0)
 			{
 				// first run, do them all
@@ -174,7 +176,12 @@ namespace KERBALISM
 			else
 			{
 				// only do one habitat at a time to preserve some performance
-				RaytraceToSun(habitats[habitatIndex].part);
+				// and check that part still exists
+				if (habitats[habitatIndex].part == null)
+					habitats.RemoveAt(habitatIndex);
+				else
+					RaytraceToSun(habitats[habitatIndex].part);
+
 				habitatIndex = (habitatIndex + 1) % habitats.Count;
 			}
 		}

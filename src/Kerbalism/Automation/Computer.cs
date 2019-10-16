@@ -31,15 +31,15 @@ namespace KERBALISM
 
 	public sealed class Computer
 	{
-		public Computer()
-		{
-			scripts = new Dictionary<ScriptType, Script>();
-		}
 
 		public Computer(ConfigNode node)
 		{
-			// load scripts
 			scripts = new Dictionary<ScriptType, Script>();
+
+			if (node == null)
+				return;
+
+			// load scripts
 			foreach (var script_node in node.GetNode("scripts").GetNodes())
 			{
 				scripts.Add((ScriptType)Lib.Parse.ToUInt(script_node.name), new Script(script_node));

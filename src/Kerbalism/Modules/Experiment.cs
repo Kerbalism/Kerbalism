@@ -9,7 +9,7 @@ using static KERBALISM.ExperimentRequirements;
 namespace KERBALISM
 {
 
-	public class Experiment : PartModule, ISpecifics, IModuleInfo, IPartMassModifier, IModuleRollout
+	public class Experiment : PartModule, ISpecifics, IModuleInfo, IPartMassModifier, IModuleRollout, IConfigurable
 	{
 		// config
 		[KSPField] public string experiment_id;               // id of associated experiment definition
@@ -46,7 +46,7 @@ namespace KERBALISM
 		[KSPField(isPersistant = true)] private ExpStatus status = ExpStatus.Stopped;
 
 		public ExperimentInfo ExpInfo { get; set; }
-		public VesselSituation VesselSituation => vesselSituation; private VesselSituation vesselSituation;
+		private VesselSituation vesselSituation;
 		public SubjectData Subject => subject; private SubjectData subject;
 
 		public ExperimentRequirements Requirements { get; private set; }
@@ -114,6 +114,15 @@ namespace KERBALISM
 
 		#region init / parsing
 
+		public void Configure(bool enable)
+		{
+			if (Lib.ModuleEnableInScienceAndCareer(this))
+			{
+				enabled = enable;
+				isEnabled = enable;
+			}
+		}
+
 		public override void OnLoad(ConfigNode node)
 		{
 			if (HighLogic.LoadedScene == GameScenes.LOADING)
@@ -173,8 +182,8 @@ namespace KERBALISM
 
 			if (Lib.IsFlight())
 			{
-				vesselSituation = vessel.KerbalismData().VesselSituation;
-				subject = ScienceDB.GetSubjectData(ExpInfo, vesselSituation);
+				//vesselSituation = vessel.KerbalismData().VesselSituation;
+				//subject = ScienceDB.GetSubjectData(ExpInfo, vesselSituation);
 
 				foreach (var hd in part.FindModulesImplementing<HardDrive>())
 				{
@@ -227,11 +236,8 @@ namespace KERBALISM
 			// in flight
 			if (Lib.IsFlight())
 			{
-				Vessel v = FlightGlobals.ActiveVessel;
-				if (v == null || EVA.IsDead(v)) return;
-
-				// do nothing if vessel is invalid
-				if (!vessel.KerbalismIsValid()) return;
+				VesselData vd = vessel.KerbalismData();
+				if (!vd.IsSimulated) return;
 
 				if (prepare_cs == null || didPrepare || (hide_when_unavailable && status != ExpStatus.Issue))
 				{
@@ -246,7 +252,7 @@ namespace KERBALISM
 					else
 					{
 						Events["ToggleEvent"].guiName = Lib.StatusToggle(Lib.Ellipsis(ExpInfo.Title, Styles.ScaleStringLength(25)), StatusInfo(status, issue));
-						Events["ShowPopup"].guiName = Lib.StatusToggle("info", VesselSituation.Title);
+						Events["ShowPopup"].guiName = Lib.StatusToggle("info", vd.VesselSituation.Title);
 					}
 				}
 				else
@@ -286,7 +292,7 @@ namespace KERBALISM
 
 			VesselData vd = vessel.KerbalismData();
 
-			if (!vd.IsValid)
+			if (!vd.IsSimulated)
 			{
 				UnityEngine.Profiling.Profiler.EndSample();
 				return;
@@ -335,7 +341,7 @@ namespace KERBALISM
 
 			VesselData vd = v.KerbalismData();
 
-			if (!vd.IsValid)
+			if (!vd.IsSimulated)
 			{
 				UnityEngine.Profiling.Profiler.EndSample();
 				return;
@@ -491,7 +497,13 @@ namespace KERBALISM
 			else
 				chunkSize = chunkSizeMax;
 
-			Drive drive = GetDrive(prefab, v, hdId, chunkSize, subjectData);
+			Drive drive = GetDrive(v, hdId, chunkSize, subjectData);
+			if (drive == null)
+			{
+				mainIssue = "no storage space";
+				return;
+			}
+
 			Drive warpDrive = null;
 			bool isFile = expInfo.SampleMass == 0.0;
 			double available;
@@ -584,13 +596,15 @@ namespace KERBALISM
 			}
 		}
 
-		private static Drive GetDrive(Experiment experiment, Vessel vessel, uint hdId, double chunkSize, SubjectData subjectData)
+		private static Drive GetDrive(Vessel vessel, uint hdId, double chunkSize, SubjectData subjectData)
 		{
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Experiment.GetDrive");
 			bool isFile = subjectData.ExpInfo.SampleMass == 0.0;
 			Drive drive = null;
-			if (hdId != 0) drive = DB.Drive(hdId);
-			else drive = isFile ? Drive.FileDrive(vessel, chunkSize) : Drive.SampleDrive(vessel, chunkSize, subjectData);
+			if (hdId != 0)
+				drive = vessel.KerbalismData().GetPartData(hdId).Drive;
+			else
+				drive = isFile ? Drive.FileDrive(vessel, chunkSize) : Drive.SampleDrive(vessel, chunkSize, subjectData);
 			UnityEngine.Profiling.Profiler.EndSample();
 			return drive;
 		}
@@ -1113,7 +1127,7 @@ namespace KERBALISM
 		public float GetModuleMass(float defaultMass, ModifierStagingSituation sit) { return (float)remainingSampleMass; }
 		public ModifierChangeWhen GetModuleMassChangeWhen() { return ModifierChangeWhen.CONSTANTLY; }
 
-#endregion
+		#endregion
 	}
 
 	internal class EditorTracker

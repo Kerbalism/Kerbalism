@@ -186,7 +186,7 @@ namespace KERBALISM
 			VesselData vd = v.KerbalismData();
 
 			// skip invalid vessels
-			if (!vd.IsValid) return false;
+			if (!vd.IsSimulated) return false;
 
 			// get vessel crew
 			List<ProtoCrewMember> crew = Lib.CrewList(v);
@@ -490,7 +490,7 @@ namespace KERBALISM
 			{
 				icons.Add(Textures.storm_yellow);
 
-				var bd = Lib.IsSun(v.mainBody) ? v.KerbalismData().stormData : DB.Body(Lib.GetParentPlanet(v.mainBody).name);
+				var bd = Lib.IsSun(v.mainBody) ? v.KerbalismData().stormData : DB.Storm(Lib.GetParentPlanet(v.mainBody).name);
 				var tti = bd.storm_time - Planetarium.GetUniversalTime();
 				tooltips.Add(Lib.BuildString(Lib.Color("Coronal mass ejection incoming", Lib.Kolor.Orange), "\n<i>Time to impact: ", Lib.HumanReadableDuration(tti), "</i>"));
 			}
@@ -498,7 +498,7 @@ namespace KERBALISM
 			{
 				icons.Add(Textures.storm_red);
 
-				var bd = Lib.IsSun(v.mainBody) ? v.KerbalismData().stormData : DB.Body(Lib.GetParentPlanet(v.mainBody).name);
+				var bd = Lib.IsSun(v.mainBody) ? v.KerbalismData().stormData : DB.Storm(Lib.GetParentPlanet(v.mainBody).name);
 				var remainingDuration = bd.storm_time + bd.displayed_duration - Planetarium.GetUniversalTime();
 				tooltips.Add(Lib.BuildString(Lib.Color("Solar storm in progress", Lib.Kolor.Red), "\n<i>Remaining duration: ", Lib.HumanReadableDuration(remainingDuration), "</i>"));
 			}

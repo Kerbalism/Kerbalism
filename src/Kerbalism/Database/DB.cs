@@ -31,62 +31,60 @@ namespace KERBALISM
                 }
             }
 
-            // load vessels data
-            if (node.HasNode("vessels2")) // old vessels used flightId, we switched to Guid with vessels2
-            {
-                foreach (var vessel_node in node.GetNode("vessels2").GetNodes())
-                {
-                    Guid vId = Lib.Parse.ToGuid(vessel_node.name);
-                    VesselData vd;
-                    if (!vessels.ContainsKey(vId))
-                    {
-                        vd = new VesselData();
-                        vessels.Add(Lib.Parse.ToGuid(vessel_node.name), vd);
-                    }
-                    else
-                    {
-                        vd = vessels[vId];
-                    }
-                    vd.Load(vessel_node);
-                }
-            }
-
-			// load the science database, has to be before drives are loaded
+			// load the science database, has to be before vessels are loaded
 			ScienceDB.Load(node);
 
-			// load drives
-			drives = new Dictionary<uint, Drive>();
-            if (node.HasNode("drives"))
-            {
-				// get all valid flight ids in the save
-				// until 3.1 there was many cases were drives weren't removed on vessel destruction,
-				// so we want to clean those saves. At some point in the future, maybe put this code
-				// in debug conditionals
-				HashSet<uint> allFlightIds = new HashSet<uint>();
+			vessels.Clear();
+			// flightstate will be null when first creating the game
+			if (HighLogic.CurrentGame.flightState != null)
+			{
+				ConfigNode vesselsNode = node.GetNode("vessels2");
+				// HighLogic.CurrentGame.flightState.protoVessels is what is used by KSP to persist vessels
+				// It is always available and synchronized in OnLoad, no matter the scene, excepted on the first OnLoad in a new game
 				foreach (ProtoVessel pv in HighLogic.CurrentGame.flightState.protoVessels)
-					foreach (ProtoPartSnapshot protoPart in pv.protoPartSnapshots)
-						allFlightIds.Add(protoPart.flightID);
-				
-				foreach (var drive_node in node.GetNode("drives").GetNodes())
-                {
-					uint driveId = Lib.Parse.ToUInt(drive_node.name);
-					if (!allFlightIds.Contains(driveId))
+				{
+					if (pv.vesselID == Guid.Empty)
 					{
-						Lib.Log("WARNING : removed drive with id " + driveId + ", there is no part with this id in this save.");
+						// It seems flags are saved with an empty GUID. skip them.
+						Lib.Log("Skipping VesselData load for vessel with empty GUID :" + pv.vesselName);
 						continue;
 					}
-						
-					drives.Add(driveId, new Drive(drive_node));
-                }
-            }
 
-            // load bodies data
-            bodies = new Dictionary<string, StormData>();
+					VesselData vd = new VesselData(pv, vesselsNode.GetNode(pv.vesselID.ToString()));
+					vessels.Add(pv.vesselID, vd);
+					Lib.Log("VesselData loaded for vessel " + pv.vesselName);
+				}
+			}
+
+			// for compatibility with old saves, convert drives data (it's now saved in PartData)
+			if (node.HasNode("drives"))
+			{
+				Dictionary<uint, PartData> allParts = new Dictionary<uint, PartData>();
+				foreach (VesselData vesselData in vessels.Values)
+				{
+					foreach (PartData partData in vesselData.PartDatas)
+					{
+						allParts.Add(partData.FlightId, partData);
+					}
+				}
+
+				foreach (var drive_node in node.GetNode("drives").GetNodes())
+				{
+					uint driveId = Lib.Parse.ToUInt(drive_node.name);
+					if (allParts.ContainsKey(driveId))
+					{
+						allParts[driveId].Drive = new Drive(drive_node);
+					}
+				}
+			}
+
+			// load bodies data
+			storms = new Dictionary<string, StormData>();
             if (node.HasNode("bodies"))
             {
                 foreach (var body_node in node.GetNode("bodies").GetNodes())
                 {
-                    bodies.Add(From_safe_key(body_node.name), new StormData(body_node));
+                    storms.Add(From_safe_key(body_node.name), new StormData(body_node));
                 }
             }
 
@@ -129,35 +127,29 @@ namespace KERBALISM
                 p.Value.Save(kerbals_node.AddNode(To_safe_key(p.Key)));
             }
 
-            // save vessels data, and clean the database of vessels that no longer exists
-            var vessels_node = node.AddNode("vessels2");
-			List<Guid> vesselsToRemove = new List<Guid>();
-            foreach (var p in vessels)
-            {
-				if (p.Value.Vessel == null)
+			// only persist vessels that exists in KSP own vessel persistence
+			// this prevent creating junk data without going into the mess of using gameevents
+            ConfigNode vesselsNode = node.AddNode("vessels2");
+			foreach (ProtoVessel pv in HighLogic.CurrentGame.flightState.protoVessels)
+			{
+				if (pv.vesselID == Guid.Empty)
 				{
-					vesselsToRemove.Add(p.Key);
+					// It seems flags are saved with an empty GUID. skip them.
+					Lib.Log("Skipping VesselData save for vessel with empty GUID :" + pv.vesselName);
 					continue;
 				}
-                p.Value.Save(vessels_node.AddNode(p.Key.ToString()));
-            }
 
-			foreach (Guid guid in vesselsToRemove)
-				vessels.Remove(guid);
+				VesselData vd = pv.KerbalismData();
+				ConfigNode vesselNode = vesselsNode.AddNode(pv.vesselID.ToString());
+				vd.Save(vesselNode);
+			}
 
 			// save the science database
 			ScienceDB.Save(node);
 
-			// save drives
-			var drives_node = node.AddNode("drives");
-            foreach (var p in drives)
-            {
-                p.Value.Save(drives_node.AddNode(p.Key.ToString()));
-            }
-
             // save bodies data
             var bodies_node = node.AddNode("bodies");
-            foreach (var p in bodies)
+            foreach (var p in storms)
             {
                 p.Value.Save(bodies_node.AddNode(To_safe_key(p.Key)));
             }
@@ -179,56 +171,45 @@ namespace KERBALISM
             return kerbals[name];
         }
 
-        /// <summary> use the KerbalismData vessel extension method instead</summary>
-        private static VesselData VesselData(Vessel v)
+		public static VesselData KerbalismData(this Vessel vessel)
+		{
+			VesselData vd;
+			if (!vessels.TryGetValue(vessel.id, out vd))
+			{
+				Lib.Log("Creating Vesseldata for new vessel " + vessel.vesselName);
+				vd = new VesselData(vessel);
+				vessels.Add(vessel.id, vd);
+			}
+			return vd;
+		}
+
+		public static VesselData KerbalismData(this ProtoVessel protoVessel)
+		{
+			VesselData vd;
+			if (!vessels.TryGetValue(protoVessel.vesselID, out vd))
+			{
+				Lib.Log("WARNING : VesselData for protovessel " + protoVessel.vesselName + ", ID=" + protoVessel.vesselID + " doesn't exist !");
+				vd = new VesselData(protoVessel, null);
+				vessels.Add(protoVessel.vesselID, vd);
+			}
+			return vd;
+		}
+
+		/// <summary>shortcut for VesselData.IsValid. False in the following cases : asteroid, debris, flag, deployed ground part, dead eva, rescue</summary>
+		public static bool KerbalismIsValid(this Vessel vessel)
         {
-            Guid vesselId = Lib.VesselID(v);
-            if (!vessels.ContainsKey(vesselId))
+            return KerbalismData(vessel).IsSimulated;
+        }
+
+		public static Dictionary<Guid, VesselData>.ValueCollection VesselDatas => vessels.Values;
+
+        public static StormData Storm(string name)
+        {
+            if (!storms.ContainsKey(name))
             {
-                vessels.Add(vesselId, new VesselData());
+                storms.Add(name, new StormData(null));
             }
-            return vessels[vesselId];
-        }
-
-        public static VesselData KerbalismData(this Vessel vessel)
-        {
-            return VesselData(vessel);
-        }
-
-        /// <summary>shortcut for VesselData.IsValid. False in the following cases : asteroid, debris, flag, deployed ground part, dead eva, rescue</summary>
-        public static bool KerbalismIsValid(this Vessel vessel)
-        {
-            return VesselData(vessel).IsValid;
-        }
-
-        public static void KerbalismDataDelete(this Vessel vessel)
-        {
-            vessels.Remove(Lib.VesselID(vessel));
-        }
-
-        public static void KerbalismDataDelete(this ProtoVessel protoVessel)
-        {
-            vessels.Remove(Lib.VesselID(protoVessel));
-        }
-
-
-        public static Drive Drive(uint partId, string title = "Brick", double dataCapacity = -1, int sampleCapacity = -1)
-        {
-            if (!drives.ContainsKey(partId))
-            {
-                var d = new Drive(title, dataCapacity, sampleCapacity);
-                drives.Add(partId, d);
-            }
-            return drives[partId];
-        }
-
-        public static StormData Body(string name)
-        {
-            if (!bodies.ContainsKey(name))
-            {
-                bodies.Add(name, new StormData());
-            }
-            return bodies[name];
+            return storms[name];
         }
 
 		public static Boolean ContainsKerbal(string name)
@@ -282,9 +263,8 @@ namespace KERBALISM
         public static Version version;                         // savegame version
         public static int uid;                                 // savegame unique id
         private static Dictionary<string, KerbalData> kerbals; // store data per-kerbal
-        private static Dictionary<Guid, VesselData> vessels = new Dictionary<Guid, VesselData>();    // store data per-vessel, indexed by root part id
-        public static Dictionary<uint, Drive> drives;          // all drives, of all vessels
-        public static Dictionary<string, StormData> bodies;     // store data per-body
+        private static Dictionary<Guid, VesselData> vessels = new Dictionary<Guid, VesselData>();    // store data per-vessel
+        public static Dictionary<string, StormData> storms;     // store data per-body
         public static LandmarkData landmarks;                  // store landmark data
         public static UIData ui;                               // store ui data
     }
