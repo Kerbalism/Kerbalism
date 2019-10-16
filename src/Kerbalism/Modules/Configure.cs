@@ -518,7 +518,7 @@ namespace KERBALISM
 			if (!Lib.IsEditor())
 			{
 				// if part doesn't exist anymore
-				if (FlightGlobals.FindPartByID(part.flightID) == null) return;
+				if (part.flightID == 0 || FlightGlobals.FindPartByID(part.flightID) == null) return;
 			}
 			// inside the editor
 			else

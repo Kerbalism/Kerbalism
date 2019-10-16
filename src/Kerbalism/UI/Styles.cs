@@ -44,7 +44,7 @@ namespace KERBALISM
 			{
 				stretchWidth = true,
 				fixedHeight = ScaleFloat(16.0f),
-				normal = { background = Lib.GetTexture("black-background") },
+				normal = { background = Texture2D.blackTexture }, //Lib.GetTexture("black-background") },
 				margin =
 				{
 					bottom = ScaleInteger(4),
@@ -156,12 +156,14 @@ namespace KERBALISM
 				border = new RectOffset(0, 0, 0, 0),
 				normal =
 				{
-					textColor = Color.white,
-					background = Lib.GetTexture("black-background")
+					textColor = Color.white, 
+					background = Texture2D.blackTexture //Lib.GetTexture("black-background")
 				},
 				margin = new RectOffset(0, 0, 0, 0),
 				padding = new RectOffset(ScaleInteger(6), ScaleInteger(6), ScaleInteger(3), ScaleInteger(3))
 			};
+
+			tooltip.normal.background.wrapMode = TextureWrapMode.Repeat;
 
 			// tooltip container style
 			tooltip_container = new GUIStyle

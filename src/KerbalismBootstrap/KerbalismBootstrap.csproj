@@ -38,18 +38,43 @@
   </PropertyGroup>
 
 
+  <ItemGroup>
+    <Reference Include="System">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Core">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Xml">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Xml.Linq">
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+
   <Choose>
     <When Condition="'$(Configuration)' == 'Debug'">
       <ItemGroup>
-        <Reference Include="$(KSPDevPath)\$(KSPDevDllsRelativePath)\*.dll" />
+        <!-- KSP Dlls -->
+        <Reference Include="$(KSPDevPath)\$(KSPDevDllsRelativePath)\Assembly-CSharp.dll" />
+        <Reference Include="$(KSPDevPath)\$(KSPDevDllsRelativePath)\Assembly-CSharp-firstpass.dll" />
+        <!-- load all UnityEngine Dlls (since 1.8 we only need those) -->
+        <Reference Include="$(KSPDevPath)\$(KSPDevDllsRelativePath)\UnityEngine*.dll" />
       </ItemGroup>
     </When>
     <When Condition="'$(Configuration)' == 'Release'">
       <ItemGroup>
-        <Reference Include="$(KSPReferenceDllsPathPR)\*.dll" />
+        <!-- KSP Dlls -->
+        <Reference Include="$(KSPReferenceDllsPathPR)\Assembly-CSharp.dll" />
+        <Reference Include="$(KSPReferenceDllsPathPR)\Assembly-CSharp-firstpass.dll" />
+        <!-- load all UnityEngine Dlls (since 1.8 we only need those) -->
+        <Reference Include="$(KSPReferenceDllsPathPR)\UnityEngine*.dll" />
       </ItemGroup>
     </When>
   </Choose>
+  
+ 
   <!--<Choose>
     <When Condition="'$(Configuration)' == 'Debug'">
       <ItemGroup>
