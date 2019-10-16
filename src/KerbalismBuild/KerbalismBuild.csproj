@@ -54,7 +54,7 @@
   <Choose>
     <When Condition="Exists('..\..\BuildSystem\UserConfigDevEnv.xml')">
       <PropertyGroup>
-        <DefineConstants Condition="'$(Configuration)' == 'Debug'">TRACE;DEBUG;$(DebugDefineConstants);$(KSPDevVersion)</DefineConstants>
+        <DefineConstants Condition="'$(Configuration)' == 'Debug'">TRACE;DEBUG;$(DebugDefineConstants);KSP$(KSPDevVersion)</DefineConstants>
         <StartProgram>$(KSPDevPath)\$(KSPDevExecutable)</StartProgram>
         <StartWorkingDirectory>$(KSPDevPath)</StartWorkingDirectory>
       </PropertyGroup>

@@ -52,13 +52,28 @@
   <Import Condition="Exists('..\..\BuildSystem\ProjectsCommonProperties.xml')" Project="..\..\BuildSystem\ProjectsCommonProperties.xml" />
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
     <!-- Note : this is overriden by the build engine, but in order to have the correct constants in the IDE, it has to be there too -->
-    <DefineConstants>TRACE;DEBUG;$(DebugDefineConstants);$(KSPDevVersion)</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;$(DebugDefineConstants);KSP$(KSPDevVersion)</DefineConstants>
   </PropertyGroup>
+
+  <PropertyGroup>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion Condition="'$(KSPReferenceSet)' == 'POST18'" >v4.0</TargetFrameworkVersion>
+  </PropertyGroup>
+
+
+
+
+  <!--<Import Condition="Exists('$(XMLVersionFilePath)')" Project="$(XMLVersionFilePath)" />-->
+
+  <!--<FindInList CaseSensitive="false" List="@(KBinVersionConstant)" ItemSpecToFind="$(KSPDevVersion)">-->
+  <!--  <Output TaskParameter="ItemFound" ItemName="ReferenceSet" />-->
+  <!--</FindInList>-->
+
   <!-- ///////////////////////////////////////////////////// -->
   <!-- //////////////////// REFERENCES ///////////////////// -->
   <!-- ///////////////////////////////////////////////////// -->
   <ItemGroup>
-    <Reference Include="System">
+    <!--<Reference Include="System">
       <Private>False</Private>
     </Reference>
     <Reference Include="System.Core">
@@ -69,7 +84,7 @@
     </Reference>
     <Reference Include="System.Xml.Linq">
       <Private>False</Private>
-    </Reference>
+    </Reference>-->
     <Reference Include="Harmony">
       <HintPath>$(GameDataKerbalismPathPR)\0Harmony.1.2.0.1.dll</HintPath>
       <Private>False</Private>
@@ -78,60 +93,14 @@
   <Choose>
     <When Condition="'$(Configuration)' == 'Debug'">
       <ItemGroup>
-        <Reference Include="Assembly-CSharp">
-          <HintPath>$(KSPDevPath)\$(KSPDevDllsRelativePath)\Assembly-CSharp.dll</HintPath>
-          <Private>False</Private>
-        </Reference>
-        <Reference Include="Assembly-CSharp-firstpass">
-          <HintPath>$(KSPDevPath)\$(KSPDevDllsRelativePath)\Assembly-CSharp-firstpass.dll</HintPath>
-          <Private>False</Private>
-        </Reference>
-        <Reference Include="Assembly-UnityScript">
-          <HintPath>$(KSPDevPath)\$(KSPDevDllsRelativePath)\Assembly-UnityScript.dll</HintPath>
-          <Private>False</Private>
-        </Reference>
-        <Reference Include="Assembly-UnityScript-firstpass">
-          <HintPath>$(KSPDevPath)\$(KSPDevDllsRelativePath)\Assembly-UnityScript-firstpass.dll</HintPath>
-          <Private>False</Private>
-        </Reference>
-        <Reference Include="UnityEngine">
-          <HintPath>$(KSPDevPath)\$(KSPDevDllsRelativePath)\UnityEngine.dll</HintPath>
-          <Private>False</Private>
-        </Reference>
-        <Reference Include="UnityEngine.UI">
-          <HintPath>$(KSPDevPath)\$(KSPDevDllsRelativePath)\UnityEngine.UI.dll</HintPath>
-          <Private>False</Private>
-        </Reference>
+        <Reference Include="$(KSPDevPath)\$(KSPDevDllsRelativePath)\*.dll" />
       </ItemGroup>
     </When>
-    <Otherwise>
+    <When Condition="'$(Configuration)' == 'Release'">
       <ItemGroup>
-        <Reference Include="Assembly-CSharp">
-          <HintPath>$(KSPReferenceDllsPathPR)\Assembly-CSharp.dll</HintPath>
-          <Private>False</Private>
-        </Reference>
-        <Reference Include="Assembly-CSharp-firstpass">
-          <HintPath>$(KSPReferenceDllsPathPR)\Assembly-CSharp-firstpass.dll</HintPath>
-          <Private>False</Private>
-        </Reference>
-        <Reference Include="Assembly-UnityScript">
-          <HintPath>$(KSPReferenceDllsPathPR)\Assembly-UnityScript.dll</HintPath>
-          <Private>False</Private>
-        </Reference>
-        <Reference Include="Assembly-UnityScript-firstpass">
-          <HintPath>$(KSPReferenceDllsPathPR)\Assembly-UnityScript-firstpass.dll</HintPath>
-          <Private>False</Private>
-        </Reference>
-        <Reference Include="UnityEngine">
-          <HintPath>$(KSPReferenceDllsPathPR)\UnityEngine.dll</HintPath>
-          <Private>False</Private>
-        </Reference>
-        <Reference Include="UnityEngine.UI">
-          <HintPath>$(KSPReferenceDllsPathPR)\UnityEngine.UI.dll</HintPath>
-          <Private>False</Private>
-        </Reference>
+        <Reference Include="$(KSPReferenceDllsPathPR)\*.dll" />
       </ItemGroup>
-    </Otherwise>
+    </When>
   </Choose>
   <!-- ///////////////////////////////////////////////////// -->
   <!-- ///////////////////// COMPILES ////////////////////// -->

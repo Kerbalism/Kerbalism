@@ -19,7 +19,7 @@ The values defined here will be propagated to :
     Must match the `include=XXXX` of a KBinVersionConstant item, 
     used to determine the lowest and highest supported KSP version in the Kerbalism.version KSP-AVC file.
     -->
-		<KBinMaxVersion>17</KBinMaxVersion>
+		<KBinMaxVersion>18</KBinMaxVersion>
 		<KBinMinVersion>15_16</KBinMinVersion>
 	</PropertyGroup>
     <!-- 
@@ -32,14 +32,25 @@ The values defined here will be propagated to :
     match the version (X.X.X format) of one of zips (KSP-X.X.X.7z) in BuildSystem\References\KSPReferenceZips
     -->
 	<ItemGroup>
+    <KBinVersionConstant Include="18">
+      <KSPMinMajor>1</KSPMinMajor>
+      <KSPMinMinor>8</KSPMinMinor>
+      <KSPMinBuild>0</KSPMinBuild>
+      <KSPMaxMajor>1</KSPMaxMajor>
+      <KSPMaxMinor>8</KSPMaxMinor>
+      <KSPMaxBuild>9</KSPMaxBuild>
+      <KSPBuildVersion>1.8.0</KSPBuildVersion>
+      <KSPReferenceSet>POST18</KSPReferenceSet>
+    </KBinVersionConstant>
 		<KBinVersionConstant Include="17">
 			<KSPMinMajor>1</KSPMinMajor>
 			<KSPMinMinor>7</KSPMinMinor>
 			<KSPMinBuild>0</KSPMinBuild>
 			<KSPMaxMajor>1</KSPMaxMajor>
 			<KSPMaxMinor>7</KSPMaxMinor>
-			<KSPMaxBuild>99</KSPMaxBuild>
+			<KSPMaxBuild>3</KSPMaxBuild>
 			<KSPBuildVersion>1.7.3</KSPBuildVersion>
+      <KSPReferenceSet>PRE18</KSPReferenceSet>
 		</KBinVersionConstant>
 		<KBinVersionConstant Include="15_16">
 			<KSPMinMajor>1</KSPMinMajor>
@@ -49,6 +60,7 @@ The values defined here will be propagated to :
 			<KSPMaxMinor>6</KSPMaxMinor>
 			<KSPMaxBuild>1</KSPMaxBuild>
 			<KSPBuildVersion>1.6.1</KSPBuildVersion>
+      <KSPReferenceSet>PRE18</KSPReferenceSet>
 		</KBinVersionConstant>
 	</ItemGroup>
 </Project>

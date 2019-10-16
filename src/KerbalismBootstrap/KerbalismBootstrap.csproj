@@ -1,6 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -29,11 +28,29 @@
     <WarningLevel>4</WarningLevel>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
-
   <Import Condition="Exists('..\..\BuildSystem\UserConfigDevEnv.xml')" Project="..\..\BuildSystem\UserConfigDevEnv.xml" />
   <Import Condition="Exists('..\..\BuildSystem\ProjectsCommonProperties.xml')" Project="..\..\BuildSystem\ProjectsCommonProperties.xml" />
-  
+
+
+  <PropertyGroup>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion Condition="'$(KSPReferenceSet)' == 'POST18'" >v4.0</TargetFrameworkVersion>
+  </PropertyGroup>
+
+
   <Choose>
+    <When Condition="'$(Configuration)' == 'Debug'">
+      <ItemGroup>
+        <Reference Include="$(KSPDevPath)\$(KSPDevDllsRelativePath)\*.dll" />
+      </ItemGroup>
+    </When>
+    <When Condition="'$(Configuration)' == 'Release'">
+      <ItemGroup>
+        <Reference Include="$(KSPReferenceDllsPathPR)\*.dll" />
+      </ItemGroup>
+    </When>
+  </Choose>
+  <!--<Choose>
     <When Condition="'$(Configuration)' == 'Debug'">
       <ItemGroup>
         <Reference Include="System" />
@@ -68,20 +85,19 @@
         </Reference>
       </ItemGroup>
     </Otherwise>
-  </Choose>
+  </Choose>-->
   <ItemGroup>
     <Compile Include="Bootstrap.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="System" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <!-- use default build targets -->
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-
   <!-- This target is called before the build, you can use it for debugging the build system -->
   <Target Name="BeforeBuild">
-
     <!--
     <ConvertToAbsolutePath Paths="$(OutputPath)">
       <Output TaskParameter="AbsolutePaths" PropertyName="OutputPathAbs" />
@@ -89,6 +105,5 @@
     <Message Text="KerbalismBootstrap build MSBuildProjectDirectory='$(MSBuildProjectDirectory)'" Importance="high" />
     <Message Text="KerbalismBootstrap build OutputPathAbs='$(OutputPathAbs)'" Importance="high" />
     -->
-    
   </Target>
 </Project>

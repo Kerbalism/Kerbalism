@@ -716,10 +716,6 @@ msbuild BuildSystemTargets.xml -verbosity:minimal -target:UpdateAssembliesVersio
     <ItemGroup>
       <DllCheck Include="$(KSPDllPath)\Assembly-CSharp.dll" />
       <DllCheck Include="$(KSPDllPath)\Assembly-CSharp-firstpass.dll" />
-      <DllCheck Include="$(KSPDllPath)\Assembly-UnityScript.dll" />
-      <DllCheck Include="$(KSPDllPath)\Assembly-UnityScript-firstpass.dll" />
-      <DllCheck Include="$(KSPDllPath)\UnityEngine.dll" />
-      <DllCheck Include="$(KSPDllPath)\UnityEngine.UI.dll" />
       <AllKSPDlls Include="$(KSPDllPath)\*.dll" />
     </ItemGroup>
 
