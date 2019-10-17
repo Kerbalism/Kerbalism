@@ -27,8 +27,6 @@
     <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
     <ErrorReport>prompt</ErrorReport>
     <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
-    <DebugType>full</DebugType>
-    <!--<DebugType>portable</DebugType>-->
     <Prefer32Bit>false</Prefer32Bit>
     <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
     <NoWarn>IDE0018</NoWarn>
@@ -54,6 +52,8 @@
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
     <!-- Note : this is overriden by the build engine, but in order to have the correct constants in the IDE, it has to be there too -->
     <DefineConstants>TRACE;DEBUG;$(DebugDefineConstants);KSP$(KSPDevVersion)</DefineConstants>
+    <DebugType>$(DebugTypeOverride)</DebugType>
+    <DebugType Condition="'$(DebugTypeOverride)' == ''">none</DebugType>
   </PropertyGroup>
 
   <PropertyGroup>

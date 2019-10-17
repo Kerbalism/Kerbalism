@@ -18,6 +18,12 @@
     <!-- REQUIRED : must match the version you are using for developmement -->
     <!-- use "v3.5" for KSP version before 1.8 and "v4.0" for KSP 1.8 and latter versions -->
     <FrameworkVersionOverride>v4.0</FrameworkVersionOverride>
+    
+    <!-- REQUIRED : set the DebugType for the debug configuration. Possible values : -->
+    <!-- "none" : don't generate any debug symbols-->
+    <!-- "full" : for KSP versions lower than 1.8, trigger the generation of the *.mdb debug symbol files by PDB2MDB (Windows only)-->
+    <!-- "portable" : for KSP 1.8+ only, generate portable *.pdb debug files that can be used for debugging under Windows/OSX/Linux-->
+    <DebugTypeOverride>portable</DebugTypeOverride>
 	
     <!-- OPTIONAL : unity debug executable (or of the regular KSP executable if you don't use the unity one) -->
     <!-- Defining this will allow you to run the solution from the "start" button of your IDE -->
