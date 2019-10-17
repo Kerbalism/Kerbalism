@@ -16,7 +16,7 @@ namespace KERBALISM
 		[KSPField] public string experiment_desc = string.Empty;  // some nice lines of text
 		[KSPField] public double data_rate;                   // sampling rate in Mb/s
 		[KSPField] public double ec_rate;                     // EC consumption rate per-second
-		[KSPField] public int sample_amount = 0;			  // the amount of samples this unit is shipped with
+		[KSPField] public double sample_amount = 0.0;		  // the amount of samples this unit is shipped with
 		[KSPField] public bool sample_collecting = false;     // if set to true, the experiment will generate mass out of nothing
 		[KSPField] public bool allow_shrouded = true;         // true if data can be transmitted
 		[KSPField] public string requires = string.Empty;     // additional requirements that must be met
@@ -1012,7 +1012,7 @@ namespace KERBALISM
 				specs.Add("Sample size", Lib.HumanReadableSampleSize(expSize));
 				specs.Add("Sample mass", Lib.HumanReadableMass(expInfo.SampleMass));
 				if (expInfo.SampleMass > 0.0 && !prefab.sample_collecting)
-					specs.Add("Samples", prefab.sample_amount.ToString());
+					specs.Add("Samples", prefab.sample_amount.ToString("F2"));
 				specs.Add("Duration", Lib.HumanReadableDuration(expSize / prefab.data_rate));
 			}
 
