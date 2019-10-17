@@ -164,6 +164,9 @@ namespace KERBALISM
 			// - every scene change
 			// - in various semi-random situations (thanks KSP)
 
+			// Fix for background IMGUI textures being dropped on scene changes since KSP 1.8
+			Styles.ReloadBackgroundStyles();
+
 			// always clear the caches
 			Cache.Clear();
 			ResourceCache.Clear();
