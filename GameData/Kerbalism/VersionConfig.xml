@@ -40,7 +40,7 @@ The values defined here will be propagated to :
       <KSPMaxMinor>8</KSPMaxMinor>
       <KSPMaxBuild>9</KSPMaxBuild>
       <KSPBuildVersion>1.8.0</KSPBuildVersion>
-      <KSPReferenceSet>POST18</KSPReferenceSet>
+      <KSPNETFramework>v4.0</KSPNETFramework>
     </KBinVersionConstant>
 		<KBinVersionConstant Include="17">
 			<KSPMinMajor>1</KSPMinMajor>
@@ -50,7 +50,7 @@ The values defined here will be propagated to :
 			<KSPMaxMinor>7</KSPMaxMinor>
 			<KSPMaxBuild>3</KSPMaxBuild>
 			<KSPBuildVersion>1.7.3</KSPBuildVersion>
-      <KSPReferenceSet>PRE18</KSPReferenceSet>
+      <KSPNETFramework>v3.5</KSPNETFramework>
 		</KBinVersionConstant>
 		<KBinVersionConstant Include="15_16">
 			<KSPMinMajor>1</KSPMinMajor>
@@ -60,7 +60,7 @@ The values defined here will be propagated to :
 			<KSPMaxMinor>6</KSPMaxMinor>
 			<KSPMaxBuild>1</KSPMaxBuild>
 			<KSPBuildVersion>1.6.1</KSPBuildVersion>
-      <KSPReferenceSet>PRE18</KSPReferenceSet>
+      <KSPNETFramework>v3.5</KSPNETFramework>
 		</KBinVersionConstant>
 	</ItemGroup>
 </Project>

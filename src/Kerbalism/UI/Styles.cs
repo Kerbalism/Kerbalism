@@ -44,7 +44,7 @@ namespace KERBALISM
 			{
 				stretchWidth = true,
 				fixedHeight = ScaleFloat(16.0f),
-				normal = { background = Texture2D.blackTexture }, //Lib.GetTexture("black-background") },
+				normal = { background = Lib.GetTexture("black-background") },
 				margin =
 				{
 					bottom = ScaleInteger(4),
@@ -157,7 +157,7 @@ namespace KERBALISM
 				normal =
 				{
 					textColor = Color.white, 
-					background = Texture2D.blackTexture //Lib.GetTexture("black-background")
+					background = Lib.GetTexture("black-background")
 				},
 				margin = new RectOffset(0, 0, 0, 0),
 				padding = new RectOffset(ScaleInteger(6), ScaleInteger(6), ScaleInteger(3), ScaleInteger(3))

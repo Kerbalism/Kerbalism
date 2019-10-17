@@ -43,7 +43,7 @@ namespace KERBALISM
 
 			// setup style
 			style = new GUIStyle();
-			style.normal.background = Texture2D.blackTexture; //Lib.GetTexture("black-background");
+			style.normal.background = Lib.GetTexture("black-background");
 			style.normal.textColor = new Color(0.66f, 0.66f, 0.66f, 1.0f);
 			style.richText = true;
 			style.stretchWidth = true;

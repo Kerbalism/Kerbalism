@@ -33,12 +33,17 @@
 
 
   <PropertyGroup>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
-    <TargetFrameworkVersion Condition="'$(KSPReferenceSet)' == 'POST18'" >v4.0</TargetFrameworkVersion>
+    <!-- The bootstrapper need to work on pre-1.8 KSP versions, so we keep it targeting .NET 3.5 -->
+    <!-- this require it to be built against pre-1.8 dlls-->
+    <!-- Note that in the debug configuration it will use whatever framework version is defined in UserConfigDevEnv.xml -->
+    <TargetFrameworkVersion>$(FrameworkVersionOverride)</TargetFrameworkVersion>
+    <EffectiveKSPDllPath Condition="'$(Configuration)' == 'Debug'">$(KSPDevPath)\$(KSPDevDllsRelativePath)</EffectiveKSPDllPath>
+    <EffectiveKSPDllPath Condition="'$(Configuration)' == 'Release'">$(KSPReferenceDllsPathPR)</EffectiveKSPDllPath>
   </PropertyGroup>
 
-
   <ItemGroup>
+    
+    <!-- System Dlls -->
     <Reference Include="System">
       <Private>False</Private>
     </Reference>
@@ -51,66 +56,21 @@
     <Reference Include="System.Xml.Linq">
       <Private>False</Private>
     </Reference>
+
+    <!-- KSP Dlls -->
+    <Reference Include="$(EffectiveKSPDllPath)\Assembly-CSharp.dll">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="$(EffectiveKSPDllPath)\Assembly-CSharp-firstpass.dll">
+      <Private>False</Private>
+    </Reference>
+    
+    <!-- load all UnityEngine Dlls (since 1.8 we only need those) -->
+    <Reference Include="$(EffectiveKSPDllPath)\UnityEngine*.dll">
+      <Private>False</Private>
+    </Reference>
   </ItemGroup>
 
-  <Choose>
-    <When Condition="'$(Configuration)' == 'Debug'">
-      <ItemGroup>
-        <!-- KSP Dlls -->
-        <Reference Include="$(KSPDevPath)\$(KSPDevDllsRelativePath)\Assembly-CSharp.dll" />
-        <Reference Include="$(KSPDevPath)\$(KSPDevDllsRelativePath)\Assembly-CSharp-firstpass.dll" />
-        <!-- load all UnityEngine Dlls (since 1.8 we only need those) -->
-        <Reference Include="$(KSPDevPath)\$(KSPDevDllsRelativePath)\UnityEngine*.dll" />
-      </ItemGroup>
-    </When>
-    <When Condition="'$(Configuration)' == 'Release'">
-      <ItemGroup>
-        <!-- KSP Dlls -->
-        <Reference Include="$(KSPReferenceDllsPathPR)\Assembly-CSharp.dll" />
-        <Reference Include="$(KSPReferenceDllsPathPR)\Assembly-CSharp-firstpass.dll" />
-        <!-- load all UnityEngine Dlls (since 1.8 we only need those) -->
-        <Reference Include="$(KSPReferenceDllsPathPR)\UnityEngine*.dll" />
-      </ItemGroup>
-    </When>
-  </Choose>
-  
- 
-  <!--<Choose>
-    <When Condition="'$(Configuration)' == 'Debug'">
-      <ItemGroup>
-        <Reference Include="System" />
-        <Reference Include="Assembly-CSharp">
-          <HintPath>$(KSPDevPath)\$(KSPDevDllsRelativePath)\Assembly-CSharp.dll</HintPath>
-          <Private>False</Private>
-        </Reference>
-        <Reference Include="Assembly-CSharp-firstpass">
-          <HintPath>$(KSPDevPath)\$(KSPDevDllsRelativePath)\Assembly-CSharp-firstpass.dll</HintPath>
-          <Private>False</Private>
-        </Reference>
-        <Reference Include="UnityEngine">
-          <HintPath>$(KSPDevPath)\$(KSPDevDllsRelativePath)\UnityEngine.dll</HintPath>
-          <Private>False</Private>
-        </Reference>
-      </ItemGroup>
-    </When>
-    <Otherwise>
-      <ItemGroup>
-        <Reference Include="System" />
-        <Reference Include="Assembly-CSharp">
-          <HintPath>$(KSPReferenceDllsPathPR)\Assembly-CSharp.dll</HintPath>
-          <Private>False</Private>
-        </Reference>
-        <Reference Include="Assembly-CSharp-firstpass">
-          <HintPath>$(KSPReferenceDllsPathPR)\Assembly-CSharp-firstpass.dll</HintPath>
-          <Private>False</Private>
-        </Reference>
-        <Reference Include="UnityEngine">
-          <HintPath>$(KSPReferenceDllsPathPR)\UnityEngine.dll</HintPath>
-          <Private>False</Private>
-        </Reference>
-      </ItemGroup>
-    </Otherwise>
-  </Choose>-->
   <ItemGroup>
     <Compile Include="Bootstrap.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

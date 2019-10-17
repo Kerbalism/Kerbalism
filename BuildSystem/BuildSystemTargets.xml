@@ -101,20 +101,20 @@
       Targets="UpdateVersionFile"/>
 
     <Message Text="[KERBALISM-BUILD-RELEASE] Building KerbalismBootstrap..." Importance="high" />
-    <!-- Extract the latest DLL version for building KerbalismBootstrap -->
-    <!-- Note : maybe this should be other way (use the oldest available version) -->
-    <!-- If this is an issue, you can try changing ItemSpecToFind -->
-    <!-- it can use either "$(KBinMaxVersion)", "$(KBinMinVersion)" or even a specific version constant available in VersionConfig.xml (ex "15_16")-->
-    <FindInList CaseSensitive="false" List="@(KBinVersionConstant)" ItemSpecToFind="$(KBinMaxVersion)">
-      <Output TaskParameter="ItemFound" ItemName="MaxKSPVersion" />
+    <!-- Extract the KSP DLLs for building KerbalismBootstrap -->
+    <!-- To make it work against all KSP versions, KerbalismBootstrap uses the oldest supported DLL set -->
+    <!-- And is still built against the 3.5 .NET framework -->
+    <!-- Note : To change that behavior, you can use either "$(KBinMaxVersion)", "$(KBinMinVersion)" or a specific version constant available in VersionConfig.xml (ex "15_16")-->
+    <FindInList CaseSensitive="false" List="@(KBinVersionConstant)" ItemSpecToFind="$(KBinMinVersion)">
+      <Output TaskParameter="ItemFound" ItemName="BootstrapReferenceDllsVersion" />
     </FindInList>
-    <MSBuild Projects="$(BuildSystemTargets)" Properties="KSPVersion=%(MaxKSPVersion.KSPBuildVersion)" Targets="ExtractKSPDlls" />
+    <MSBuild Projects="$(BuildSystemTargets)" Properties="KSPVersion=%(BootstrapReferenceDllsVersion.KSPBuildVersion)" Targets="ExtractKSPDlls" />
 
     <!-- calling a build for KerbalismBootstrap-->
     <!-- I'm not sure RunEachTargetSeparately is really needed-->
     <MSBuild
       Projects="$(KerbalismBootstrapProjectFile)"
-      Properties="Configuration=Release"
+      Properties="Configuration=Release;FrameworkVersionOverride=%(BootstrapReferenceDllsVersion.KSPNETFramework)"
       RunEachTargetSeparately="true"/>
 
     <!-- Clean the build temporaries-->
@@ -125,7 +125,7 @@
     <Message Text="[KERBALISM-BUILD-RELEASE] Building all kbins..." Importance="high" />
     <MSBuild
       Projects="$(BuildSystemTargets)"
-      Properties="Configuration=Release;KBinVersionConstant=%(KBinVersionConstant.Identity);KSPBuildVersion=%(KBinVersionConstant.KSPBuildVersion);IsDevRelease=$(IsDevRelease)"
+      Properties="Configuration=Release;KBinVersionConstant=%(KBinVersionConstant.Identity);KSPBuildVersion=%(KBinVersionConstant.KSPBuildVersion);KSPNETFramework=%(KBinVersionConstant.KSPNETFramework);IsDevRelease=$(IsDevRelease)"
       Targets="KBinGenerator"/>
 
     <Message Text="[KERBALISM-BUILD-RELEASE] Cleaning output folder..." Importance="high" />
@@ -158,7 +158,6 @@
       Properties="KSPVersion=$(KSPBuildVersion)"
       Targets="ExtractKSPDlls"/>
     
-    
     <!-- we need to pass the output path of each Kbin relative the Kerbalism.csproj, 
     so get this relative path using the MakeRelative property function -->
     <ConvertToAbsolutePath Paths="$(KBinOutputPath)">
@@ -181,7 +180,7 @@
     <Message Text="[KERBALISM-BUILD-RELEASE] Building kerbalism project with the '$(ReleaseDefineConstants)' constant..." Importance="high" />
     <MSBuild
       Projects="$(KerbalismProjectFile)"
-      Properties="Configuration=Release;DefineConstants=$(ReleaseDefineConstants);OutputPath=$(KBinRelativeFromProjectPath)"
+      Properties="Configuration=Release;DefineConstants=$(ReleaseDefineConstants);FrameworkVersionOverride=$(KSPNETFramework);OutputPath=$(KBinRelativeFromProjectPath)"
       RunEachTargetSeparately="true"
         />
 

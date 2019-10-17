@@ -12,9 +12,12 @@
     <KSPDevPath>C:\MY\PATH\TO\KSP</KSPDevPath>
 
     <!-- REQUIRED : KSP version compilation constant, must match the version you are using for development -->
-    <!-- See GameData\Kerbalism\VersionConfig.xml for valid values, currently we have 'KSP15_16' and 'KSP17' -->
-    <!-- Example : for the Include="15_16" value in VersionConfig.xml, the constant defined here must be formatted "KSP15_16" -->
-    <KSPDevVersion>KSP17</KSPDevVersion>
+    <!-- See GameData\Kerbalism\VersionConfig.xml for valid values, currently we have '15_16' and '17' and '18' -->
+    <KSPDevVersion>18</KSPDevVersion>
+    
+    <!-- REQUIRED : must match the version you are using for developmement -->
+    <!-- use "v3.5" for KSP version before 1.8 and "v4.0" for KSP 1.8 and latter versions -->
+    <FrameworkVersionOverride>v4.0</FrameworkVersionOverride>
 	
     <!-- OPTIONAL : unity debug executable (or of the regular KSP executable if you don't use the unity one) -->
     <!-- Defining this will allow you to run the solution from the "start" button of your IDE -->

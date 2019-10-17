@@ -16,9 +16,6 @@
      -->
   
   <PropertyGroup>
-    <!-- KSP is still stuck at .NET 3.5 -->
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
-
     <!-- We use up to C# version 7.1 (Visual Studio 2017 is required) -->
     <LangVersion>7.1</LangVersion>
 

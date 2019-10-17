@@ -57,23 +57,17 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
-    <TargetFrameworkVersion Condition="'$(KSPReferenceSet)' == 'POST18'" >v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>$(FrameworkVersionOverride)</TargetFrameworkVersion>
+    <EffectiveKSPDllPath Condition="'$(Configuration)' == 'Debug'">$(KSPDevPath)\$(KSPDevDllsRelativePath)</EffectiveKSPDllPath>
+    <EffectiveKSPDllPath Condition="'$(Configuration)' == 'Release'">$(KSPReferenceDllsPathPR)</EffectiveKSPDllPath>
   </PropertyGroup>
-
-
-
-
-  <!--<Import Condition="Exists('$(XMLVersionFilePath)')" Project="$(XMLVersionFilePath)" />-->
-
-  <!--<FindInList CaseSensitive="false" List="@(KBinVersionConstant)" ItemSpecToFind="$(KSPDevVersion)">-->
-  <!--  <Output TaskParameter="ItemFound" ItemName="ReferenceSet" />-->
-  <!--</FindInList>-->
 
   <!-- ///////////////////////////////////////////////////// -->
   <!-- //////////////////// REFERENCES ///////////////////// -->
   <!-- ///////////////////////////////////////////////////// -->
   <ItemGroup>
+
+    <!-- System Dlls -->
     <Reference Include="System">
       <Private>False</Private>
     </Reference>
@@ -86,41 +80,44 @@
     <Reference Include="System.Xml.Linq">
       <Private>False</Private>
     </Reference>
+
+    <!-- Harmony reference, get it from the gamedata folder -->
     <Reference Include="Harmony">
       <HintPath>$(GameDataKerbalismPathPR)\0Harmony.1.2.0.1.dll</HintPath>
       <Private>False</Private>
     </Reference>
+
+    <!-- KSP Dlls -->
+    <Reference Include="$(EffectiveKSPDllPath)\Assembly-CSharp.dll">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="$(EffectiveKSPDllPath)\Assembly-CSharp-firstpass.dll">
+      <Private>False</Private>
+    </Reference>
+
+    <!-- load all UnityEngine Dlls (since 1.8 we only need those) -->
+    <Reference Include="$(EffectiveKSPDllPath)\UnityEngine*.dll">
+      <Private>False</Private>
+    </Reference>
+    
   </ItemGroup>
+
+  <!-- Unity Dlls (don't exists anymore since KSP 1.8, so test for their existence) -->
+  <!-- Note : this is done in choose block instead of simple condition on the reference -->
+  <!-- because Visual Studio is bypassing those. -->
   <Choose>
-    <When Condition="'$(Configuration)' == 'Debug'">
+    <When Condition="Exists('$(EffectiveKSPDllPath)\Assembly-UnityScript.dll')">
       <ItemGroup>
-        <!-- KSP Dlls -->
-        <Reference Include="$(KSPDevPath)\$(KSPDevDllsRelativePath)\Assembly-CSharp.dll" />
-        <Reference Include="$(KSPDevPath)\$(KSPDevDllsRelativePath)\Assembly-CSharp-firstpass.dll" />
-
-        <!-- Unity Dlls (don't exists anymore since KSP 1.8, but we don't care) -->
-        <Reference Include="$(KSPDevPath)\$(KSPDevDllsRelativePath)\Assembly-UnityScript.dll" />
-        <Reference Include="$(KSPDevPath)\$(KSPDevDllsRelativePath)\Assembly-UnityScript-firstpass.dll" />
-
-        <!-- load all UnityEngine Dlls (since 1.8 we only need those) -->
-        <Reference Include="$(KSPDevPath)\$(KSPDevDllsRelativePath)\UnityEngine*.dll" />
-      </ItemGroup>
-    </When>
-    <When Condition="'$(Configuration)' == 'Release'">
-      <ItemGroup>
-        <!-- KSP Dlls -->
-        <Reference Include="$(KSPReferenceDllsPathPR)\Assembly-CSharp.dll" />
-        <Reference Include="$(KSPReferenceDllsPathPR)\Assembly-CSharp-firstpass.dll" />
-
-        <!-- Unity Dlls (don't exists anymore since KSP 1.8, but we don't care) -->
-        <Reference Include="$(KSPReferenceDllsPathPR)\Assembly-UnityScript.dll" />
-        <Reference Include="$(KSPReferenceDllsPathPR)\Assembly-UnityScript-firstpass.dll" />
-
-        <!-- load all UnityEngine Dlls (since 1.8 we only need those) -->
-        <Reference Include="$(KSPReferenceDllsPathPR)\UnityEngine*.dll" />
+        <Reference Include="$(EffectiveKSPDllPath)\Assembly-UnityScript.dll">
+          <Private>False</Private>
+        </Reference>
+        <Reference Include="$(EffectiveKSPDllPath)\Assembly-UnityScript-firstpass.dll">
+          <Private>False</Private>
+        </Reference>
       </ItemGroup>
     </When>
   </Choose>
+
   <!-- ///////////////////////////////////////////////////// -->
   <!-- ///////////////////// COMPILES ////////////////////// -->
   <!-- ///////////////////////////////////////////////////// -->
