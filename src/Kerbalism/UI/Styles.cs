@@ -184,6 +184,24 @@ namespace KERBALISM
 				fontSize = ScaleInteger(12),
 				normal = { textColor = Color.white }
 			};
+
+			message = new GUIStyle()
+			{
+				normal =
+				{
+					background = blackBackground,
+					textColor = new Color(0.66f, 0.66f, 0.66f, 1.0f)
+				},
+				richText = true,
+				stretchWidth = true,
+				stretchHeight = true,
+				fixedWidth = 0,
+				fixedHeight = 0,
+				fontSize = Styles.ScaleInteger(12),
+				alignment = TextAnchor.MiddleCenter,
+				border = new RectOffset(0, 0, 0, 0),
+				padding = new RectOffset(Styles.ScaleInteger(2), Styles.ScaleInteger(2), Styles.ScaleInteger(2), Styles.ScaleInteger(2))
+			};
 		}
 
 		/// <summary>
@@ -194,6 +212,7 @@ namespace KERBALISM
 		{
 			section_container.normal.background = blackBackground;
 			tooltip.normal.background = blackBackground;
+			message.normal.background = blackBackground;
 		}
 
 		public static int ScaleInteger(int val)
@@ -245,5 +264,6 @@ namespace KERBALISM
 		public static GUIStyle tooltip_container;         // tooltip label container
 		public static GUIStyle smallStationHead;
 		public static GUIStyle smallStationText;
+		public static GUIStyle message;
 	}
 } // KERBALISM

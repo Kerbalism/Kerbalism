@@ -42,18 +42,7 @@ namespace KERBALISM
 			instance = this;
 
 			// setup style
-			style = new GUIStyle();
-			style.normal.background = Lib.GetTexture("black-background");
-			style.normal.textColor = new Color(0.66f, 0.66f, 0.66f, 1.0f);
-			style.richText = true;
-			style.stretchWidth = true;
-			style.stretchHeight = true;
-			style.fixedWidth = 0;
-			style.fixedHeight = 0;
-			style.fontSize = Styles.ScaleInteger(12);
-			style.alignment = TextAnchor.MiddleCenter;
-			style.border = new RectOffset(0, 0, 0, 0);
-			style.padding = new RectOffset(Styles.ScaleInteger(2), Styles.ScaleInteger(2), Styles.ScaleInteger(2), Styles.ScaleInteger(2));
+			style = Styles.message;
 
 			if (all_logs == null)
 			{
