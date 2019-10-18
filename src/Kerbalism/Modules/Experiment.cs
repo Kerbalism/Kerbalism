@@ -497,7 +497,7 @@ namespace KERBALISM
 			else
 				chunkSize = chunkSizeMax;
 
-			Drive drive = GetDrive(v, hdId, chunkSize, subjectData);
+			Drive drive = GetDrive(vd, hdId, chunkSize, subjectData);
 			if (drive == null)
 			{
 				mainIssue = "no storage space";
@@ -596,15 +596,15 @@ namespace KERBALISM
 			}
 		}
 
-		private static Drive GetDrive(Vessel vessel, uint hdId, double chunkSize, SubjectData subjectData)
+		private static Drive GetDrive(VesselData vesselData, uint hdId, double chunkSize, SubjectData subjectData)
 		{
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Experiment.GetDrive");
 			bool isFile = subjectData.ExpInfo.SampleMass == 0.0;
 			Drive drive = null;
 			if (hdId != 0)
-				drive = vessel.KerbalismData().GetPartData(hdId).Drive;
+				drive = vesselData.GetPartData(hdId).Drive;
 			else
-				drive = isFile ? Drive.FileDrive(vessel, chunkSize) : Drive.SampleDrive(vessel, chunkSize, subjectData);
+				drive = isFile ? Drive.FileDrive(vesselData, chunkSize) : Drive.SampleDrive(vesselData, chunkSize, subjectData);
 			UnityEngine.Profiling.Profiler.EndSample();
 			return drive;
 		}

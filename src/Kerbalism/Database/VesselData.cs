@@ -769,7 +769,7 @@ namespace KERBALISM
 			// data about greenhouses
 			greenhouses = Greenhouse.Greenhouses(Vessel);
 
-			Drive.GetCapacity(Vessel, out drivesFreeSpace, out drivesCapacity);
+			Drive.GetCapacity(this, out drivesFreeSpace, out drivesCapacity);
 
 			// solar panels data
 			if (Vessel.loaded)

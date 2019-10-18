@@ -276,7 +276,7 @@ namespace KERBALISM
 				amount = Math.Min(amount, sample.size);
 			}
 
-			Drive fileDrive = Drive.FileDrive(v, amount);
+			Drive fileDrive = Drive.FileDrive(v.KerbalismData(), amount);
 
 			if (fileDrive == null)
 				return Status.NO_STORAGE;

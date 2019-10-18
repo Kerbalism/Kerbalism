@@ -569,13 +569,13 @@ namespace KERBALISM
 			return GetDrives(pv.KerbalismData(), includePrivate);
 		}
 
-		public static void GetCapacity(Vessel vessel, out double free_capacity, out double total_capacity)
+		public static void GetCapacity(VesselData vesseldata, out double free_capacity, out double total_capacity)
 		{
 			free_capacity = 0;
 			total_capacity = 0;
 			if (Features.Science)
 			{
-				foreach (var drive in GetDrives(vessel))
+				foreach (var drive in GetDrives(vesseldata))
 				{
 					if (drive.dataCapacity < 0 || free_capacity < 0)
 					{
@@ -597,10 +597,10 @@ namespace KERBALISM
 		}
 
 		/// <summary> Get a drive for storing files. Will return null if there are no drives on the vessel </summary>
-		public static Drive FileDrive(Vessel vessel, double size = 0.0)
+		public static Drive FileDrive(VesselData vesselData, double size = 0.0)
 		{
 			Drive result = null;
-			foreach (var drive in GetDrives(vessel))
+			foreach (var drive in GetDrives(vesselData))
 			{
 				if (result == null)
 				{
@@ -625,10 +625,10 @@ namespace KERBALISM
 		}
 
 		/// <summary> Get a drive for storing samples. Will return null if there are no drives on the vessel </summary>
-		public static Drive SampleDrive(Vessel vessel, double size = 0, SubjectData subject = null)
+		public static Drive SampleDrive(VesselData vesselData, double size = 0, SubjectData subject = null)
 		{
 			Drive result = null;
-			foreach (var drive in GetDrives(vessel))
+			foreach (var drive in GetDrives(vesselData))
 			{
 				if (result == null)
 				{

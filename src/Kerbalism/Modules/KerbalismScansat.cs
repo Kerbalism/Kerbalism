@@ -219,7 +219,7 @@ namespace KERBALISM
 					if (size > double.Epsilon)
 					{
 						// store what we can
-						foreach (var d in Drive.GetDrives(vessel))
+						foreach (var d in Drive.GetDrives(vd))
 						{
 							var available = d.FileCapacityAvailable();
 							var chunk = Math.Min(size, available);

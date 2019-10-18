@@ -51,13 +51,13 @@ namespace KERBALISM
 				bool recorded = false;
 				if (!meta.is_sample)
 				{
-					Drive drive = Drive.FileDrive(meta.vessel, data.dataAmount);
+					Drive drive = Drive.FileDrive(meta.vessel.KerbalismData(), data.dataAmount);
 					if (drive != null)
 						recorded = drive.Record_file(meta.subjectData, data.dataAmount, true, true);
 				}
 				else
 				{
-					Drive drive = Drive.SampleDrive(meta.vessel, data.dataAmount, meta.subjectData);
+					Drive drive = Drive.SampleDrive(meta.vessel.KerbalismData(), data.dataAmount, meta.subjectData);
 					if (drive != null)
 						recorded = drive.Record_sample(meta.subjectData, data.dataAmount, meta.subjectData.ExpInfo.MassPerMB * data.dataAmount, true);
 				}
@@ -172,13 +172,13 @@ namespace KERBALISM
 			bool recorded = false;
 			if (!meta.is_sample)
 			{
-				Drive drive = Drive.FileDrive(meta.vessel, data.dataAmount);
+				Drive drive = Drive.FileDrive(meta.vessel.KerbalismData(), data.dataAmount);
 				if (drive != null)
 					recorded = drive.Record_file(meta.subjectData, data.dataAmount, true, true);
 			}
 			else
 			{
-				Drive drive = Drive.SampleDrive(meta.vessel, data.dataAmount, meta.subjectData);
+				Drive drive = Drive.SampleDrive(meta.vessel.KerbalismData(), data.dataAmount, meta.subjectData);
 				if (drive != null)
 					recorded = drive.Record_sample(meta.subjectData, data.dataAmount, meta.subjectData.ExpInfo.MassPerMB * data.dataAmount, true);
 			}
