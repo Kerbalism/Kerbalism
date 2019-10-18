@@ -363,7 +363,7 @@ namespace KERBALISM
 		public double FileCapacityAvailable()
 		{
 			if (dataCapacity < 0) return double.MaxValue;
-			return dataCapacity - FilesSize();
+			return Math.Max(dataCapacity - FilesSize(), 0.0); // clamp to 0 due to fp precision in FilesSize()
 		}
 
 		public double FilesSize()
@@ -542,11 +542,12 @@ namespace KERBALISM
 			}
 		}
 
-		public static List<Drive> GetDrives(Vessel v, bool includePrivate = false)
+		public static List<Drive> GetDrives (VesselData vd, bool includePrivate = false)
 		{
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Drive.GetDrives");
 			List<Drive> drives = new List<Drive>();
 
-			foreach (PartData partData in v.KerbalismData().PartDatas)
+			foreach (PartData partData in vd.PartDatas)
 			{
 				if (partData.Drive != null && (includePrivate || !partData.Drive.is_private))
 				{
@@ -554,22 +555,18 @@ namespace KERBALISM
 				}
 			}
 
+			UnityEngine.Profiling.Profiler.EndSample();
 			return drives;
+		}
+
+		public static List<Drive> GetDrives(Vessel v, bool includePrivate = false)
+		{
+			return GetDrives(v.KerbalismData(), includePrivate);
 		}
 
 		public static List<Drive> GetDrives(ProtoVessel pv, bool includePrivate = false)
 		{
-			List<Drive> drives = new List<Drive>();
-
-			foreach (PartData partData in pv.KerbalismData().PartDatas)
-			{
-				if (partData.Drive != null && (includePrivate || !partData.Drive.is_private))
-				{
-					drives.Add(partData.Drive);
-				}
-			}
-
-			return drives;
+			return GetDrives(pv.KerbalismData(), includePrivate);
 		}
 
 		public static void GetCapacity(Vessel vessel, out double free_capacity, out double total_capacity)
