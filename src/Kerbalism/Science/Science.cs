@@ -112,13 +112,25 @@ namespace KERBALISM
 			vd.filesTransmitted.Clear();
 
 			// check connection
-			if (vd.Connection == null || !vd.Connection.linked || vd.Connection.rate <= 0.0 || ec.Amount < vd.Connection.ec * elapsed_s)
+			if (vd.Connection == null
+				|| !vd.Connection.linked
+				|| vd.Connection.rate <= 0.0
+				|| !vd.deviceTransmit
+				|| ec.Amount < vd.Connection.ec * elapsed_s)
+			{
+				// reset all files transmit rate
+				foreach (Drive drive in Drive.GetDrives(vd, true))
+					foreach (File f in drive.files.Values)
+						f.transmitRate = 0.0;
+
+				// do nothing else
 				return;
+			}
 			
 			double transmitCapacity = vd.Connection.rate * elapsed_s;
 			double scienceCredited = 0.0;
 
-			GetFilesToTransmit(v);
+			GetFilesToTransmit(v, vd);
 
 			if (xmitFiles.Count == 0)
 				return;
@@ -208,7 +220,7 @@ namespace KERBALISM
 			UnityEngine.Profiling.Profiler.EndSample();
 		}
 
-		private static void GetFilesToTransmit(Vessel v)
+		private static void GetFilesToTransmit(Vessel v, VesselData vd)
 		{
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Science.GetFilesToTransmit");
 			Drive warpCache = Cache.WarpCache(v);
@@ -216,7 +228,7 @@ namespace KERBALISM
 			xmitFiles.Clear();
 			List<SubjectData> filesToRemove = new List<SubjectData>();
 
-			foreach (var drive in Drive.GetDrives(v, true))
+			foreach (Drive drive in Drive.GetDrives(vd, true))
 			{
 				foreach (File f in drive.files.Values)
 				{

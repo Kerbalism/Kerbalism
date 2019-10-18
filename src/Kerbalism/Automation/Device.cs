@@ -35,7 +35,7 @@ namespace KERBALISM
 			get
 			{
 				if (id == uint.MaxValue)
-					id = PartId + (uint)Name.GetHashCode();
+					id = PartId + (uint)Math.Abs(Name.GetHashCode());
 
 				return id;
 			}
@@ -106,6 +106,22 @@ namespace KERBALISM
 		public override string PartName => prefab.part.partInfo.title;
 		public override string Name => prefab is IModuleInfo ? ((IModuleInfo)prefab).GetModuleTitle() : prefab.GUIName;
 		public override uint PartId => protoPart.flightID;
+	}
+
+	public abstract class VesselDevice : Device
+	{
+		protected readonly Vessel vessel;
+		protected readonly VesselData vesselData;
+
+		public VesselDevice(Vessel v, VesselData vd) : base()
+		{
+			vessel = v;
+			vesselData = vd;
+		}
+
+		public override uint PartId => 0u;
+		public override string PartName => string.Empty;
+		public override string Tooltip => Lib.Bold(DisplayName);
 	}
 
 

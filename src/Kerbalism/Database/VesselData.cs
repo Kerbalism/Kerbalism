@@ -46,6 +46,7 @@ namespace KERBALISM
 		public bool cfg_highlights;   // show/hide malfunction highlights
 		public bool cfg_showlink;     // show/hide link line
 		public Computer computer;     // store scripts
+		public bool deviceTransmit;   // vessel wide automation : enable/disable data transmission
 
 		// other persisted fields
 		private Dictionary<uint, PartData> parts; // all parts by flightID
@@ -613,6 +614,7 @@ namespace KERBALISM
 			cfg_script = PreferencesMessages.Instance.script;
 			cfg_highlights = PreferencesReliability.Instance.highlights;
 			cfg_showlink = true;
+			deviceTransmit = true;
 
 			stormData = new StormData(null);
 			habitatInfo = new VesselHabitatInfo(null);
@@ -634,6 +636,8 @@ namespace KERBALISM
 			cfg_script = Lib.ConfigValue(node, "cfg_script", PreferencesMessages.Instance.script);
 			cfg_highlights = Lib.ConfigValue(node, "cfg_highlights", PreferencesReliability.Instance.highlights);
 			cfg_showlink = Lib.ConfigValue(node, "cfg_showlink", true);
+
+			deviceTransmit = Lib.ConfigValue(node, "deviceTransmit", true);
 
 			solarPanelsAverageExposure = Lib.ConfigValue(node, "solarPanelsAverageExposure", -1.0);
 			scienceTransmitted = Lib.ConfigValue(node, "scienceTransmitted", 0.0);
@@ -680,6 +684,8 @@ namespace KERBALISM
 			node.AddValue("cfg_script", cfg_script);
 			node.AddValue("cfg_highlights", cfg_highlights);
 			node.AddValue("cfg_showlink", cfg_showlink);
+
+			node.AddValue("deviceTransmit", deviceTransmit);
 
 			node.AddValue("solarPanelsAverageExposure", solarPanelsAverageExposure);
 			node.AddValue("scienceTransmitted", scienceTransmitted);

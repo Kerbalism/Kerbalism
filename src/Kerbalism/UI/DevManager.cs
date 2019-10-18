@@ -33,7 +33,7 @@ namespace KERBALISM
 			if (!Lib.IsControlUnit(v) && p.Timeout(vd)) return;
 
 			// get devices
-			List<Device> devices = Computer.Boot(v);
+			List<Device> devices = Computer.GetModuleDevices(v);
 			int deviceCount = 0;
 
 			// direct control
@@ -49,13 +49,41 @@ namespace KERBALISM
 					 false
 				);
 
+				bool hasVesselDeviceSection = false;
+				bool hasModuleDeviceSection = false;
+
 				// for each device
-				foreach (Device dev in devices)
+				for (int i = devices.Count - 1; i >= 0; i--)
 				{
-					// render device entry
+					Device dev = devices[i];
+					
 					dev.OnUpdate();
 					if (!dev.IsVisible) continue;
-					p.AddContent(dev.DisplayName, dev.Status, dev.Tooltip, dev.Toggle, () => Highlighter.Set(dev.PartId, Color.cyan));
+
+					// create vessel device section if necessary
+					if (dev is VesselDevice)
+					{
+						if (!hasVesselDeviceSection)
+						{
+							p.AddSection("VESSEL DEVICES");
+							hasVesselDeviceSection = true;
+						}
+					}
+					// create module device section if necessary
+					else
+					{
+						if (!hasModuleDeviceSection)
+						{
+							p.AddSection("MODULE DEVICES");
+							hasModuleDeviceSection = true;
+						}
+					}
+
+					if (dev.PartId != 0u)
+						p.AddContent(dev.DisplayName, dev.Status, dev.Tooltip, dev.Toggle, () => Highlighter.Set(dev.PartId, Color.cyan));
+					else
+						p.AddContent(dev.DisplayName, dev.Status, dev.Tooltip, dev.Toggle);
+
 					if (dev.Icon != null)
 						p.SetLeftIcon(dev.Icon.texture, dev.Icon.tooltip, dev.Icon.onClick);
 
@@ -79,9 +107,14 @@ namespace KERBALISM
 				  () => p.Next(ref script_index, (int)ScriptType.last)
 				);
 
+				bool hasVesselDeviceSection = false;
+				bool hasModuleDeviceSection = false;
+
 				// for each device
-				foreach (Device dev in devices)
+				for (int i = devices.Count - 1; i >= 0; i--)
 				{
+					Device dev = devices[i];
+
 					dev.OnUpdate();
 					if (!dev.IsVisible) continue;
 
@@ -91,6 +124,25 @@ namespace KERBALISM
 					  : !script.states[dev.Id]
 					  ? 0
 					  : 1;
+
+					// create vessel device section if necessary
+					if (dev is VesselDevice)
+					{
+						if (!hasVesselDeviceSection)
+						{
+							p.AddSection("VESSEL DEVICES");
+							hasVesselDeviceSection = true;
+						}
+					}
+					// create module device section if necessary
+					else
+					{
+						if (!hasModuleDeviceSection)
+						{
+							p.AddSection("MODULE DEVICES");
+							hasModuleDeviceSection = true;
+						}
+					}
 
 					// render device entry
 					p.AddContent

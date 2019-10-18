@@ -76,7 +76,7 @@ namespace KERBALISM
 			if (scripts.TryGetValue(type, out script))
 			{
 				// execute the script
-				script.Execute(Boot(v));
+				script.Execute(GetModuleDevices(v));
 
 				// show message to the user
 				// - unless the script is empty (can happen when being edited)
@@ -209,7 +209,7 @@ namespace KERBALISM
 			{
 				// get list of devices
 				// - we avoid creating it when there are no scripts to be executed, making its overall cost trivial
-				List<Device> devices = Boot(v);
+				List<Device> devices = GetModuleDevices(v);
 
 				// execute all scripts
 				foreach (Script script in to_exec)
@@ -227,13 +227,13 @@ namespace KERBALISM
 
 		// return set of devices on a vessel
 		// - the list is only valid for a single simulation step
-		public static List<Device> Boot(Vessel v)
+		public static List<Device> GetModuleDevices(Vessel v)
 		{
-			List<Device> devices = Cache.VesselObjectsCache<List<Device>>(v, "computer");
-			if (devices != null)
-				return devices;
+			List<Device> moduleDevices = Cache.VesselObjectsCache<List<Device>>(v, "computer");
+			if (moduleDevices != null)
+				return moduleDevices;
 
-			devices = new List<Device>();
+			moduleDevices = new List<Device>();
 
 			// store device being added
 			Device device;
@@ -270,7 +270,7 @@ namespace KERBALISM
 					}
 
 					// add the device
-					devices.Add(device);
+					moduleDevices.Add(device);
 				}
 			}
 			// unloaded vessel
@@ -331,21 +331,27 @@ namespace KERBALISM
 						}
 
 						// add the device
-						devices.Add(device);
+						moduleDevices.Add(device);
 					}
 				}
 			}
 
-			//return all found devices sorted by type, then by name
-			devices.Sort((a, b) =>
+			// return all found module devices sorted by type, then by name
+			// in reverse (the list will be presented from end to start in the UI)
+			moduleDevices.Sort((b, a) =>
 			{
 				int xdiff = a.DeviceType.CompareTo(b.DeviceType);
 				if (xdiff != 0) return xdiff;
 				else return a.Name.CompareTo(b.Name);
 			});
 
-			Cache.SetVesselObjectsCache(v, "computer", devices);
-			return devices;
+			// now add vessel wide devices to the end of the list
+			VesselData vd = v.KerbalismData();
+
+			moduleDevices.Add(new VesselDeviceTransmit(v, vd)); // vessel wide transmission toggle
+
+			Cache.SetVesselObjectsCache(v, "computer", moduleDevices);
+			return moduleDevices;
 		}
 
 		Dictionary<ScriptType, Script> scripts;
