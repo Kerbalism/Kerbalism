@@ -43,15 +43,18 @@ namespace KERBALISM
 				  | ApplicationLauncher.AppScenes.VAB
 				  | ApplicationLauncher.AppScenes.SPH;
 
-				generalMenuLauncher.VisibleInScenes =
-					ApplicationLauncher.AppScenes.SPACECENTER
-				  | ApplicationLauncher.AppScenes.FLIGHT
-				  | ApplicationLauncher.AppScenes.MAPVIEW
-				  | ApplicationLauncher.AppScenes.TRACKSTATION
-				  | ApplicationLauncher.AppScenes.VAB
-				  | ApplicationLauncher.AppScenes.SPH;
+				if (Features.Science)
+				{
+					generalMenuLauncher.VisibleInScenes =
+						ApplicationLauncher.AppScenes.SPACECENTER
+					  | ApplicationLauncher.AppScenes.FLIGHT
+					  | ApplicationLauncher.AppScenes.MAPVIEW
+					  | ApplicationLauncher.AppScenes.TRACKSTATION
+					  | ApplicationLauncher.AppScenes.VAB
+					  | ApplicationLauncher.AppScenes.SPH;
 
-				generalMenuLauncher.onLeftClick = () => ScienceArchiveWindow.Open();
+					generalMenuLauncher.onLeftClick = () => ScienceArchiveWindow.Open();
+				}
 			}
 		}
 
