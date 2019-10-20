@@ -61,9 +61,9 @@ namespace KERBALISM
 			if (Lib.DisableScenario(this)) return;
 
 			Fields["Status"].guiName = title;
-//#if DEBUG_RELIABILITY
-//			Events["Break"].guiName = "Break " + title + " [DEBUG]";
-//#endif
+#if DEBUG_RELIABILITY
+			Events["Break"].guiName = "Break " + title + " [DEBUG]";
+#endif
 
 			// do nothing in the editors and when compiling parts
 			if (!Lib.IsFlight()) return;
@@ -241,6 +241,16 @@ namespace KERBALISM
 
 				RunningCheck();
 
+				// if it has failed, trigger malfunction
+				var now = Planetarium.GetUniversalTime();
+				if (next > 0 && now > next && !broken)
+				{
+#if DEBUG_RELIABILITY
+					Lib.Log("Reliablity: breakdown for " + part.partInfo.title);
+#endif
+					Break();
+				}
+
 				// set highlight
 				Highlight(part);
 			}
@@ -290,10 +300,11 @@ namespace KERBALISM
 			// do nothing in the editor
 			if (Lib.IsEditor()) return;
 
+			var now = Planetarium.GetUniversalTime();
+
 			// if it has not malfunctioned
 			if (!broken && mtbf > 0 && PreferencesReliability.Instance.mtbfFailures)
 			{
-				var now = Planetarium.GetUniversalTime();
 				// calculate time of next failure if necessary
 				if (next <= 0)
 				{
@@ -308,15 +319,6 @@ namespace KERBALISM
 
 				var decay = RadiationDecay(quality, vessel.KerbalismData().EnvRadiation, Kerbalism.elapsed_s, rated_radiation, radiation_decay_rate);
 				next -= decay;
-
-				// if it has failed, trigger malfunction
-				if (now > next)
-				{
-#if DEBUG_RELIABILITY
-					Lib.Log("Reliablity: MTBF breakdown for " + part.partInfo.title);
-#endif
-					Break();
-				}
 			}
 		}
 
@@ -372,7 +374,7 @@ namespace KERBALISM
 					// 35% guaranteed burn duration
 					var guaranteed_operation = f * 0.35;
 
-					fail_duration = guaranteed_operation + f * p;
+					fail_duration = guaranteed_operation + (f - guaranteed_operation/2) * p;
 #if DEBUG_RELIABILITY
 					Lib.Log(part.partInfo.title + " will fail after " + Lib.HumanReadableDuration(fail_duration) + " burn time");
 #endif
@@ -596,9 +598,9 @@ namespace KERBALISM
 			}
 		}
 
-//#if DEBUG_RELIABILITY
-//		[KSPEvent(guiActive = true, guiActiveUnfocused = true, guiName = "_", active = true)] // [for testing]
-//#endif
+#if DEBUG_RELIABILITY
+		[KSPEvent(guiActive = true, guiActiveUnfocused = true, guiName = "_", active = true)] // [for testing]
+#endif
 		public void Break()
 		{
 			vessel.KerbalismData().ResetReliabilityStatus();
