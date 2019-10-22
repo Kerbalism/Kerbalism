@@ -1,4 +1,4 @@
-﻿using System;
+﻿using System.Text;
 using Harmony;
 using KSP.UI.TooltipTypes;
 
@@ -8,26 +8,26 @@ namespace KERBALISM
 	[HarmonyPatch("SetTooltip")]
 	public class TooltipController_CrewAC_SetTooltip
 	{
+		static StringBuilder sb = new StringBuilder(256);
+
 		static void Postfix(TooltipController_CrewAC __instance, ProtoCrewMember pcm)
 		{
-			var rules = DB.Kerbal(pcm.name).rules;
-			if (!rules.ContainsKey("radiation")) return;
+			var crewRules = DB.Kerbal(pcm.name).rules;
+			sb.Length = 0;
 
-			var radiation = rules["radiation"];
-			if (!radiation.lifetime) return;
-
-			string unit = " rad";
-			double limit = 200.0;
-			if(Settings.RadiationInSievert)
+			foreach (var rule in Profile.rules)
 			{
-				// 100 rad = 1 Sv
-				unit = " mSv";
-				limit *= 10.0;
+				if (!rule.lifetime) continue;
+				if (!crewRules.ContainsKey(rule.name)) continue;
+
+				var level = crewRules[rule.name].problem / rule.fatal_threshold;
+				sb.Append(Lib.BuildString("<b>Career ", rule.name, "</b>: ", Lib.HumanReadablePerc(level), "\n"));
 			}
 
-			__instance.descriptionString += Lib.BuildString("\n\n<b>Career Radiation:</b> ",
-				(radiation.problem * limit).ToString("F0"), "/", limit.ToString("F0"), unit,
-				" (", Lib.HumanReadablePerc(radiation.problem), ")");
+			if(sb.Length > 0)
+			{
+				__instance.descriptionString += Lib.BuildString("\n\n", sb.ToString());
+			}
 		}
 	}
 }
