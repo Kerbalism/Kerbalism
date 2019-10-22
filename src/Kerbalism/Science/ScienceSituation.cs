@@ -75,7 +75,7 @@ namespace KERBALISM
 				case ScienceSituation.FlyingLow:   return body.scienceValues.FlyingLowDataValue;
 				case ScienceSituation.FlyingHigh:  return body.scienceValues.FlyingHighDataValue;
 				case ScienceSituation.InSpaceLow:  return body.scienceValues.InSpaceLowDataValue;
-				case ScienceSituation.InSpaceHigh: return body.scienceValues.FlyingHighDataValue;
+				case ScienceSituation.InSpaceHigh: return body.scienceValues.InSpaceHighDataValue;
 
 				case ScienceSituation.InnerBelt:
 				case ScienceSituation.OuterBelt:
