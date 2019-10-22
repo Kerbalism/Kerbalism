@@ -59,8 +59,21 @@ namespace KERBALISM
 			// parts that have experiments can't get their module info (what is shown in the VAB tooltip) correctly setup
 			// because the ExperimentInfo database isn't available at loading time, so we recompile their info manually when
 			// loading a save.
+
+			if(PartLoader.LoadedPartsList == null)
+			{
+				Lib.Log("Dazed and confused: PartLoader.LoadedPartsList == null");
+				return;
+			}
+
 			foreach (AvailablePart ap in PartLoader.LoadedPartsList)
 			{
+				if (ap == null || ap.partPrefab == null)
+				{
+					Lib.Log("AvailablePart is null or without prefab: " + ap);
+					continue;
+				}
+
 				List<Experiment> experimentModules = ap.partPrefab.FindModulesImplementing<Experiment>();
 
 				if (experimentModules.Count == 0)
