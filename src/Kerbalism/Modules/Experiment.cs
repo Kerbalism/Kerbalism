@@ -1124,7 +1124,16 @@ namespace KERBALISM
 		}
 
 		// IPartMassModifier
-		public float GetModuleMass(float defaultMass, ModifierStagingSituation sit) { return (float)remainingSampleMass; }
+		public float GetModuleMass(float defaultMass, ModifierStagingSituation sit) {
+			if(Double.IsNaN(remainingSampleMass))
+			{
+				Lib.Log("Experiment remaining sample mass is NaN");
+//#if !DEBUG && !DEVBUILD
+				return 0;
+//#endif
+			}
+			return (float)remainingSampleMass;
+		}
 		public ModifierChangeWhen GetModuleMassChangeWhen() { return ModifierChangeWhen.CONSTANTLY; }
 
 		#endregion
