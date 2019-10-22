@@ -603,6 +603,8 @@ namespace KERBALISM
 		{
 			vessel.KerbalismData().ResetReliabilityStatus();
 
+			if (broken) return;
+
 			if (explode)
 			{
 				foreach (PartModule m in modules)
@@ -808,7 +810,7 @@ namespace KERBALISM
 					foreach (PartModule m in modules)
 					{
 						var e = m as ModuleEngines;
-						return e.EngineIgnited && e.resultingThrust > 0;
+						return e.currentThrottle > 0 && e.EngineIgnited && e.resultingThrust > 0;
 					}
 					return false;
 			}
