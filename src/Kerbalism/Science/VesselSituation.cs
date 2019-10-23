@@ -207,7 +207,7 @@ namespace KERBALISM
 				double y = lat * (1.0 / Math.PI) + 0.5;
 				double x = 1.0 - lon * 0.15915494309189535;
 				Color pixelColor = biomeMap.GetPixelColor(x, y);
-
+				currentBiomeIndex = 0;
 				float currentSqrMag = float.MaxValue;
 				for (int i = 0; i < biomeMap.Attributes.Length; i++)
 				{
