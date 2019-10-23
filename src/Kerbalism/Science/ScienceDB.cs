@@ -341,8 +341,9 @@ namespace KERBALISM
 
 		public static void Load(ConfigNode node)
 		{
-			if (ResearchAndDevelopment.Instance == null)
-				Lib.Log("ERROR : ResearchAndDevelopment.Instance is null on subjects load !");
+			// RnD subjects don't exists in sandbox
+			if (!Science.GameHasRnD)
+				return;
 
 			// load uncredited science (transmission buffer)
 			uncreditedScience = Lib.ConfigValue(node, "uncreditedScience", 0.0);
@@ -370,9 +371,8 @@ namespace KERBALISM
 				}
 			}
 
-			// RnD subjects don't exists in sandbox
-			if (!Science.GameHasRnD)
-				return;
+			if (ResearchAndDevelopment.Instance == null)
+				Lib.Log("ERROR : ResearchAndDevelopment.Instance is null on subjects load !");
 
 			// remove multiSubjects (asteroid samples) from the database
 			foreach (MultiSubjectData subjectData in multiSubjectDataList)
@@ -401,6 +401,10 @@ namespace KERBALISM
 
 		public static void Save(ConfigNode node)
 		{
+			// RnD subjects don't exists in sandbox
+			if (!Science.GameHasRnD)
+				return;
+
 			// save uncredited science (transmission buffer)
 			node.AddValue("uncreditedScience", uncreditedScience);
 
@@ -633,9 +637,9 @@ namespace KERBALISM
 				Lib.Log("ERROR: " + expInfo.ExperimentId + " isn't in the ScienceDB!!!");
 			}
 
-			if (ResearchAndDevelopment.Instance == null)
+			if (Science.GameHasRnD && ResearchAndDevelopment.Instance == null)
 			{
-				Lib.Log("ERROR: GetSubjectsForExperiment: RnD instance is null!!!");
+				Lib.Log("ERROR: RnD instance is null while getting subjects for " + expInfo.ExperimentId);
 			}
 
 			return expBodiesSituationsBiomesSubject[expInfo];

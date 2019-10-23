@@ -117,9 +117,9 @@ namespace KERBALISM
 		/// <summary> max data amount for the experiment, equal to stockDef.baseValue * stockDef.dataScale</summary>
 		public double DataSize { get; private set; }
 
-		public bool IsSample => SampleMass > 0.0;
+		public bool IsSample { get; private set; }
 
-		public double MassPerMB => SampleMass / DataSize;
+		public double MassPerMB { get; private set; }
 
 		public double DataScale => stockDef.dataScale;
 
@@ -163,16 +163,21 @@ namespace KERBALISM
 				DataSize = this.stockDef.scienceCap * this.stockDef.dataScale;
 #endif
 
-			// make sure we don't produce NaN values down the line because of odd/wrong configs
-			if (DataSize == 0)
+			IsSample = SampleMass > 0.0;
+
+			if (IsSample)
 			{
-				Lib.Log("ERROR: DataSize=0 for " + ExperimentId + ", your configuration is broken!");
-				DataSize = 1;
+				// make sure we don't produce NaN values down the line because of odd/wrong configs
+				if (DataSize <= 0.0)
+				{
+					Lib.Log("ERROR: " + ExperimentId + " has DataSize=" + DataSize + ", your configuration is broken!");
+					DataSize = 1.0;
+				}
+				MassPerMB = SampleMass / DataSize;
 			}
-			if (this.stockDef.scienceCap == 0)
+			else
 			{
-				Lib.Log("ERROR: scienceCap=0 for " + ExperimentId + ", your configuration is broken!");
-				stockDef.scienceCap = 1;
+				MassPerMB = 0.0;
 			}
 
 			// if we have a custom "KERBALISM_EXPERIMENT" definition for the experiment, load it, else just use an empty node to avoid nullrefs
