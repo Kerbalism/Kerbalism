@@ -77,11 +77,14 @@ namespace KERBALISM
 				body.Enabled = true;
 				body.ToggleBody(body.isKnown);
 
-				for (int i = 0; i < body.SubjectsContainer.SubjectLines.Count; i++)
+				foreach (SituationContainer situation in body.SubjectsContainer.Situations)
 				{
-					SubjectLine subjectLine = body.SubjectsContainer.SubjectLines[i];
-					subjectLine.Enabled = (onlyKnown && subjectLine.isKnown) || !onlyKnown;
-					subjectLine.SituationLine.Enabled = (onlyKnown && subjectLine.SituationLine.isKnown) || !onlyKnown;
+					situation.Enabled = (onlyKnown && situation.isKnown) || !onlyKnown;
+
+					foreach (SubjectLine subject in situation.SubjectLines)
+					{
+						subject.Enabled = (onlyKnown && subject.isKnown) || !onlyKnown;
+					}
 				}
 			}
 			RebuildLayout();
@@ -92,33 +95,33 @@ namespace KERBALISM
 			foreach (BodyContainer body in BodyContainers)
 			{
 				body.isKnown = false;
-				SituationLine currentSituation = null;
-				foreach (SubjectLine subjectLine in body.SubjectsContainer.SubjectLines)
+
+				foreach (SituationContainer situation in body.SubjectsContainer.Situations)
 				{
-					if (currentSituation != subjectLine.SituationLine)
+					situation.isKnown = false;
+
+					foreach (SubjectLine subject in situation.SubjectLines)
 					{
-						currentSituation = subjectLine.SituationLine;
-						currentSituation.isKnown = false;
+						if (subject.SubjectData.ScienceCollectedTotal > 0.0)
+						{
+							subject.isKnown = true;
+							situation.isKnown |= true;
+							body.isKnown |= true;
+						}
+
+						if (KnownSubjectsToggle.IsOn && subject.Enabled != subject.isKnown)
+						{
+							if (!body.SubjectsContainer.IsInstantiated)
+								body.SubjectsContainer.InstantiateUIObjects();
+
+							subject.Enabled = subject.isKnown;
+							situation.Enabled = situation.isKnown;
+							RebuildLayout();
+						}
+
+						// only do 1 line per update
+						yield return null;
 					}
-
-					if (subjectLine.SubjectData.ScienceCollectedTotal > 0.0)
-					{
-						subjectLine.isKnown = true;
-						currentSituation.isKnown |= true;
-						body.isKnown |= true;
-					}
-
-					subjectLine.Update();
-
-					if (KnownSubjectsToggle.IsOn && subjectLine.Enabled != subjectLine.isKnown)
-					{
-						subjectLine.Enabled = subjectLine.isKnown;
-						currentSituation.Enabled = currentSituation.isKnown;
-						RebuildLayout();
-					}
-
-					// only do 1 line per update
-					yield return null;
 				}
 
 				if (KnownSubjectsToggle.IsOn && body.Enabled != body.isKnown)
@@ -128,30 +131,6 @@ namespace KERBALISM
 				}
 			}
 			yield break;
-		}
-
-		private void CheckKnownSubjects()
-		{
-			foreach (BodyContainer body in BodyContainers)
-			{
-				body.isKnown = false;
-				SituationLine currentSituation = null;
-				foreach (SubjectLine subjectLine in body.SubjectsContainer.SubjectLines)
-				{
-					if (currentSituation != subjectLine.SituationLine)
-					{
-						currentSituation = subjectLine.SituationLine;
-						currentSituation.isKnown = false;
-					}
-
-					if (subjectLine.SubjectData.ScienceCollectedTotal > 0.0)
-					{
-						subjectLine.isKnown = true;
-						currentSituation.isKnown |= true;
-						body.isKnown |= true;
-					}
-				}
-			}
 		}
 
 		public class BodyContainer: KsmGuiVerticalLayout
@@ -170,7 +149,7 @@ namespace KERBALISM
 				bodyToggle.SetIconColor(Lib.Kolor.Orange);
 				bodyToggle.MoveAsFirstChild();
 
-				SubjectsContainer = new SubjectsContainer(this, body, situationsAndSubjects);
+				SubjectsContainer = new SubjectsContainer(this, situationsAndSubjects);
 			}
 
 			public void ToggleBody()
@@ -180,6 +159,9 @@ namespace KERBALISM
 
 			public void ToggleBody(bool enable)
 			{
+				if (enable)
+					SubjectsContainer.InstantiateUIObjects();
+
 				SubjectsContainer.Enabled = enable;
 				bodyToggle.SetIconTexture(enable ? Textures.KsmGuiTexHeaderArrowsUp : Textures.KsmGuiTexHeaderArrowsDown);
 				RebuildLayout();
@@ -188,95 +170,149 @@ namespace KERBALISM
 
 		public class SubjectsContainer : KsmGuiVerticalLayout
 		{
-			public List<SubjectLine> SubjectLines { get; private set; } = new List<SubjectLine>();
+			public List<SituationContainer> Situations { get; private set; } = new List<SituationContainer>();
+			public bool IsInstantiated { get; private set; } = false;
 
-			public SubjectsContainer(KsmGuiBase parent, CelestialBody body, SituationsBiomesSubject situationsAndSubjects) : base(parent)
+			public SubjectsContainer(BodyContainer parent, SituationsBiomesSubject situationsSubjects) : base(parent)
 			{
-				foreach (ObjectPair<ScienceSituation, BiomesSubject> situation in situationsAndSubjects)
+				foreach (ObjectPair<ScienceSituation, BiomesSubject> situation in situationsSubjects)
 				{
+					Situations.Add(new SituationContainer(situation));
+				}
+			}
 
-					SituationLine situationLine = new SituationLine(this, situation.Key.Title());
-					//situationLine.SetLayoutElement(true, false, -1, 14);
-					situationLine.TopTransform.SetAnchorsAndPosition(TextAnchor.MiddleLeft, TextAnchor.MiddleLeft, 5);
-					situationLine.TopTransform.SetSizeDelta(150, 14);
-					situationLine.TextComponent.color = Lib.KolorToColor(Lib.Kolor.Yellow);
-					situationLine.TextComponent.fontStyle = FontStyles.Bold;
+			public void InstantiateUIObjects()
+			{
+				if (IsInstantiated || Situations.Count == 0)
+					return;
 
-					foreach (ObjectPair<int, List<SubjectData>> subjects in situation.Value)
+				IsInstantiated = true;
+
+				foreach (SituationContainer situationContainer in Situations)
+				{
+					situationContainer.InstantiateUIObjects(this);
+				}
+			}
+
+			public void DestroyUIObjects()
+			{
+				if (IsInstantiated)
+				{
+					IsInstantiated = false;
+					foreach (SituationContainer situationContainer in Situations)
 					{
-						foreach (SubjectData subjectData in subjects.Value)
-						{
-							SubjectLine subject;
-							
-							if (subjects.Key >= 0)
-								subject = new SubjectLine(this, body.BiomeMap.Attributes[subjects.Key].displayname, subjectData, situationLine);
-							else
-								subject = new SubjectLine(this, string.Empty, subjectData, situationLine);
-
-							SubjectLines.Add(subject);
-						}
-						
+						situationContainer.DestroyUIObjects();
 					}
 				}
 			}
 		}
 
-		public class SituationLine : KsmGuiText
+		public class SituationContainer
 		{
 			public bool isKnown;
-			public SituationLine(KsmGuiBase parent, string situation) : base(parent, situation) { }
-		}
+			KsmGuiText situationText;
+			public bool IsInstantiated => situationText != null;
 
-		public class SubjectLine : KsmGuiText
-		{
-			public bool isKnown;
-			public SituationLine SituationLine { get; private set; }
-			public SubjectData SubjectData { get; private set; }
-			string biomeName;
-
-
-			public SubjectLine(KsmGuiBase parent, string biomeName, SubjectData subject, SituationLine situationLine) : base(parent, "_")
+			public bool Enabled
 			{
-				this.biomeName = biomeName;
-				SituationLine = situationLine;
-				SubjectData = subject;
-				SetLayoutElement(true, false, -1, 14);
-
-				//rndText = new KsmGuiText(this, "RnD");
-				//rndText.TextComponent.color = Lib.KolorToColor(Lib.Kolor.Science);
-				//rndText.TextComponent.fontStyle = FontStyles.Bold;
-				//rndText.TopTransform.SetAnchorsAndPosition(TextAnchor.MiddleLeft, TextAnchor.MiddleLeft, 10);
-				//rndText.TopTransform.SetSizeDelta(50, 14);
-
-				//flightText = new KsmGuiText(this, "flight", null, TextAlignmentOptions.Left);
-				//flightText.TextComponent.color = Lib.KolorToColor(Lib.Kolor.Science);
-				//flightText.TextComponent.fontStyle = FontStyles.Bold;
-				//flightText.TopTransform.SetAnchorsAndPosition(TextAnchor.MiddleLeft, TextAnchor.MiddleLeft, 60);
-				//flightText.TopTransform.SetSizeDelta(50, 14);
-
-				//valueText = new KsmGuiText(this, "value", null, TextAlignmentOptions.Left);
-				//valueText.TextComponent.color = Lib.KolorToColor(Lib.Kolor.Science);
-				//valueText.TextComponent.fontStyle = FontStyles.Bold;
-				//valueText.TopTransform.SetAnchorsAndPosition(TextAnchor.MiddleLeft, TextAnchor.MiddleLeft, 110);
-				//valueText.TopTransform.SetSizeDelta(50, 14);
-
-				//completedText = new KsmGuiText(this, "completed", null, TextAlignmentOptions.Left);
-				//completedText.TextComponent.color = Lib.KolorToColor(Lib.Kolor.Yellow);
-				//completedText.TextComponent.fontStyle = FontStyles.Bold;
-				//completedText.TopTransform.SetAnchorsAndPosition(TextAnchor.MiddleLeft, TextAnchor.MiddleLeft, 160);
-				//completedText.TopTransform.SetSizeDelta(50, 14);
-
-				//if (!string.IsNullOrEmpty(biomeName))
-				//{
-				//	KsmGuiText biomeText = new KsmGuiText(this, biomeName, null, TextAlignmentOptions.Left);
-				//	biomeText.TopTransform.SetAnchorsAndPosition(TextAnchor.UpperLeft, TextAnchor.UpperLeft, 215);
-				//	biomeText.TopTransform.SetSizeDelta(200, 14);
-				//}
+				get => situationText != null ? situationText.Enabled : false;
+				set
+				{
+					if (situationText != null)
+						situationText.Enabled = value;
+				}
 			}
 
-			public void Update()
+			public List<SubjectLine> SubjectLines { get; private set; } = new List<SubjectLine>();
+
+			public SituationContainer(ObjectPair<ScienceSituation, BiomesSubject> situationSubjects)
 			{
-				SetText(Lib.BuildString(
+				foreach (ObjectPair<int, List<SubjectData>> subjects in situationSubjects.Value)
+				{
+					foreach (SubjectData subjectData in subjects.Value)
+					{
+						SubjectLines.Add(new SubjectLine(subjectData));
+					}
+				}
+			}
+
+			public void InstantiateUIObjects(SubjectsContainer parent)
+			{
+				if (SubjectLines.Count == 0)
+					return;
+
+				situationText = new KsmGuiText(parent, SubjectLines[0].SubjectData.Situation.ScienceSituationTitle);
+				situationText.TopTransform.SetAnchorsAndPosition(TextAnchor.MiddleLeft, TextAnchor.MiddleLeft, 5);
+				situationText.TopTransform.SetSizeDelta(150, 14);
+				situationText.TextComponent.color = Lib.KolorToColor(Lib.Kolor.Yellow);
+				situationText.TextComponent.fontStyle = FontStyles.Bold;
+
+				isKnown = false;
+
+				foreach (SubjectLine subjectLine in SubjectLines)
+				{
+					subjectLine.InstantiateText(parent);
+
+					if (subjectLine.SubjectData.ScienceCollectedTotal > 0.0)
+					{
+						subjectLine.isKnown = true;
+						isKnown |= true;
+					}
+				}
+			}
+
+			public void DestroyUIObjects()
+			{
+				situationText.TopObject.DestroyGameObject();
+				situationText = null;
+
+				foreach (SubjectLine subjectLine in SubjectLines)
+					subjectLine.DestroyText();
+			}
+		}
+
+		public class SubjectLine
+		{
+			public bool isKnown;
+			public SubjectData SubjectData { get; private set; }
+			KsmGuiText subjectText;
+
+			public bool Enabled
+			{
+				get => subjectText != null ? subjectText.Enabled : false;
+				set
+				{
+					if (subjectText != null)
+						subjectText.Enabled = value;
+				}
+			}
+
+			public SubjectLine(SubjectData subject)
+			{
+				SubjectData = subject;
+			}
+
+			public void InstantiateText(SubjectsContainer parent)
+			{
+				subjectText = new KsmGuiText(parent, GetText());
+				subjectText.SetLayoutElement(true, false, -1, 14);
+			}
+
+			public void DestroyText()
+			{
+				subjectText.TopObject.DestroyGameObject();
+				subjectText = null;
+			}
+
+			public void UpdateText()
+			{
+				subjectText?.SetText(GetText());
+			}
+
+			public string GetText()
+			{
+				return Lib.BuildString
+				(
 					"<pos=10>",
 					Lib.Color(SubjectData.ScienceRetrievedInKSC.ToString("0.0;--;--"), Lib.Kolor.Science, true),
 					"<pos=60>",
@@ -286,18 +322,9 @@ namespace KERBALISM
 					"<pos=160>",
 					Lib.Color(SubjectData.PercentRetrieved.ToString("0.0x;--;--"), Lib.Kolor.Yellow, true),
 					"<pos=200>",
-					biomeName
-
-					));
-
-
-
-				//rndText.SetText(Math.Round(SubjectData.ScienceRetrievedInKSC, 3).ToString("0.0;--;--"));
-				//flightText.SetText(Math.Round(SubjectData.ScienceCollectedInFlight, 3).ToString("+0.0;--;--"));
-				//valueText.SetText(Math.Round(SubjectData.ScienceRemainingTotal, 3).ToString("0.0;--;--"));
-				//completedText.SetText(Math.Round(SubjectData.PercentRetrieved, 3).ToString("0.0x;--;--"));
+					SubjectData.Situation.BiomeTitle
+				);
 			}
-
 		}
 	}
 

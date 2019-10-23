@@ -53,7 +53,7 @@ namespace KERBALISM
 					  | ApplicationLauncher.AppScenes.VAB
 					  | ApplicationLauncher.AppScenes.SPH;
 
-					generalMenuLauncher.onLeftClick = () => ScienceArchiveWindow.Open();
+					generalMenuLauncher.onLeftClick = () => ScienceArchiveWindow.Toggle();
 				}
 			}
 		}

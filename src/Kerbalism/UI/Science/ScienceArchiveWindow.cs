@@ -10,18 +10,30 @@ namespace KERBALISM
 {
 	public static class ScienceArchiveWindow
 	{
-		public static void Open()
+		public static void Toggle()
 		{
 			if (window.Enabled)
 			{
-				window.Close();
-				return;
+				Close();
 			}
 			else
 			{
 				window.RebuildLayout();
 				window.Enabled = true;
 			}
+		}
+
+		public static void Close()
+		{
+			foreach (KsmGuiToggleListElement<ExpInfoAndSubjects> exp in experimentsToggleList.ChildToggles)
+			{
+				foreach (ExperimentSubjectList.BodyContainer body in exp.ToggleId.experimentSubjectList.BodyContainers)
+				{
+					body.SubjectsContainer.DestroyUIObjects();
+				}
+			}
+
+			window.Close();
 		}
 
 		static KsmGuiWindow window;
@@ -46,7 +58,7 @@ namespace KERBALISM
 				-100, -100);
 
 			KsmGuiHeader mainHeader = new KsmGuiHeader(window, "SCIENCE ARCHIVE");
-			new KsmGuiIconButton(mainHeader, Textures.KsmGuiTexHeaderClose, () => window.Close());
+			new KsmGuiIconButton(mainHeader, Textures.KsmGuiTexHeaderClose, () => Close());
 
 			KsmGuiHorizontalLayout columns = new KsmGuiHorizontalLayout(window, 5, 0, 0, 5, 0);
 
