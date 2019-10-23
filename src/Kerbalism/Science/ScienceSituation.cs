@@ -90,7 +90,7 @@ namespace KERBALISM
 
 			if(result == 0)
 			{
-				Lib.Log("Science: invalid/unknown situation " + situation.ToString());
+				Lib.Log("ERROR: Science: invalid/unknown situation " + situation.ToString());
 				result = 1.0f; // returning 0 will result in NaN values
 			}
 			return result;

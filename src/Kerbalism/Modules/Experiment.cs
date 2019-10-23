@@ -202,6 +202,10 @@ namespace KERBALISM
 			if (!sample_collecting && ExpInfo.SampleMass > 0.0)
 			{
 				remainingSampleMass = ExpInfo.SampleMass * sample_amount;
+				if(Double.IsNaN(remainingSampleMass))
+				{
+					Lib.Log("ERROR: remainingSampleMass is NaN on rollout " + ExpInfo.ExperimentId + " " + ExpInfo.SampleMass + " / " + sample_amount);
+				}
 			}
 		}
 
@@ -552,6 +556,13 @@ namespace KERBALISM
 			chunkSize = chunkSizeMax * prodFactor;
 			elapsed_s *= prodFactor;
 			double massDelta = expInfo.SampleMass * chunkSize / expInfo.DataSize;
+
+#if DEBUG || DEVBUILD
+			if(Double.IsNaN(massDelta))
+			{
+				Lib.Log("ERROR: mass delta is NaN " + expInfo.ExperimentId + " " + expInfo.SampleMass + " / " + chunkSize + " / " + expInfo.DataSize);
+			}
+#endif
 
 			if (isFile)
 			{
@@ -1118,10 +1129,10 @@ namespace KERBALISM
 		public float GetModuleMass(float defaultMass, ModifierStagingSituation sit) {
 			if(Double.IsNaN(remainingSampleMass))
 			{
-				Lib.Log("Experiment remaining sample mass is NaN");
-//#if !DEBUG && !DEVBUILD
+#if DEBUG || DEVBUILD // this is logspammy, don't do it in releases
+				Lib.Log("ERROR: Experiment remaining sample mass is NaN " + experiment_id);
+#endif
 				return 0;
-//#endif
 			}
 			return (float)remainingSampleMass;
 		}
