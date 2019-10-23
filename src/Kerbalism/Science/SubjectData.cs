@@ -64,7 +64,7 @@ namespace KERBALISM
 		public double ScienceRemainingTotal => Math.Max(ScienceMaxValue - ScienceCollectedTotal, 0.0);
 
 		/// <summary> percentage [0;1] of science collected. </summary>
-		public double PercentCollectedTotal => (ScienceCollectedInFlight / ScienceMaxValue) + PercentRetrieved;
+		public double PercentCollectedTotal => ScienceMaxValue == 0 ? 0 : (ScienceCollectedInFlight / ScienceMaxValue) + PercentRetrieved;
 
 		/// <summary> science value for the given data size </summary>
 		public double ScienceValue(double dataSize, bool clampByScienceRetrieved = false, bool clampByScienceRetrievedAndCollected = false)

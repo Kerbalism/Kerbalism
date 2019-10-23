@@ -68,26 +68,32 @@ namespace KERBALISM
 
 		public static float BodyMultiplier(this ScienceSituation situation, CelestialBody body)
 		{
+			float result = 0;
 			switch (situation)
 			{
-				case ScienceSituation.SrfLanded:   return body.scienceValues.LandedDataValue;
-				case ScienceSituation.SrfSplashed: return body.scienceValues.SplashedDataValue;
-				case ScienceSituation.FlyingLow:   return body.scienceValues.FlyingLowDataValue;
-				case ScienceSituation.FlyingHigh:  return body.scienceValues.FlyingHighDataValue;
-				case ScienceSituation.InSpaceLow:  return body.scienceValues.InSpaceLowDataValue;
-				case ScienceSituation.InSpaceHigh: return body.scienceValues.InSpaceHighDataValue;
+				case ScienceSituation.SrfLanded:   result = body.scienceValues.LandedDataValue; break;
+				case ScienceSituation.SrfSplashed: result = body.scienceValues.SplashedDataValue; break;
+				case ScienceSituation.FlyingLow:   result = body.scienceValues.FlyingLowDataValue; break;
+				case ScienceSituation.FlyingHigh:  result = body.scienceValues.FlyingHighDataValue; break;
+				case ScienceSituation.InSpaceLow:  result = body.scienceValues.InSpaceLowDataValue; break;
+				case ScienceSituation.InSpaceHigh: result = body.scienceValues.InSpaceHighDataValue; break;
 
 				case ScienceSituation.InnerBelt:
 				case ScienceSituation.OuterBelt:
-					return 1.3f * Math.Max(body.scienceValues.InSpaceHighDataValue, body.scienceValues.InSpaceLowDataValue);
+					result = 1.3f * Math.Max(body.scienceValues.InSpaceHighDataValue, body.scienceValues.InSpaceLowDataValue);
+					break;
 
-				case ScienceSituation.Reentry:       return 1.5f * body.scienceValues.FlyingHighDataValue;
-				case ScienceSituation.Magnetosphere: return 1.1f * body.scienceValues.FlyingHighDataValue;
-				case ScienceSituation.Interstellar:  return 15f * body.scienceValues.InSpaceHighDataValue;
+				case ScienceSituation.Reentry:       result = 1.5f * body.scienceValues.FlyingHighDataValue; break;
+				case ScienceSituation.Magnetosphere: result = 1.1f * body.scienceValues.FlyingHighDataValue; break;
+				case ScienceSituation.Interstellar:  result = 15f * body.scienceValues.InSpaceHighDataValue; break;
 			}
 
-			Lib.Log("Science: invalid/unknown situation " + situation.ToString());
-			return 0f;
+			if(result == 0)
+			{
+				Lib.Log("Science: invalid/unknown situation " + situation.ToString());
+				result = 1.0f; // returning 0 will result in NaN values
+			}
+			return result;
 		}
 
 		public static uint BitValue(this ScienceSituation situation)

@@ -152,6 +152,19 @@ namespace KERBALISM
 			else
 				DataSize = this.stockDef.scienceCap * this.stockDef.dataScale;
 #endif
+
+			// make sure we don't produce NaN values down the line because of odd/wrong configs
+			if(DataSize == 0)
+			{
+				Lib.Log("ERROR: DataSize=0 for " + ExperimentId + ", your configuration is broken!");
+				DataSize = 1;
+			}
+			if (this.stockDef.scienceCap == 0)
+			{
+				Lib.Log("ERROR: scienceCap=0 for " + ExperimentId + ", your configuration is broken!");
+				stockDef.scienceCap = 1;
+			}
+
 			// if we have a custom "KERBALISM_EXPERIMENT" definition for the experiment, load it, else just use an empty node to avoid nullrefs
 			if (expInfoNode == null) expInfoNode = new ConfigNode();
 
