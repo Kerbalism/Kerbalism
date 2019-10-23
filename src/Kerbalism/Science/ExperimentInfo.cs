@@ -131,13 +131,23 @@ namespace KERBALISM
 
 		public double ScienceCap => stockDef.scienceCap * HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier;
 
+		/// <summary> Cache the information returned by GetInfo() in the first found module using that experiment</summary>
+		public string ModuleInfo { get; private set; }
+
+		public bool IsROC { get; private set; }
+
 		public ExperimentInfo(ScienceExperiment stockDef, ConfigNode expInfoNode)
 		{
 			this.stockDef = stockDef;
 			ExperimentId = stockDef.id;
 
-			// deduce short name for the experiment
-			Title = this.stockDef != null ? this.stockDef.experimentTitle : Lib.UppercaseFirst(ExperimentId);
+			// We have some custom handling for breaking ground ROC experiments
+			IsROC = ExperimentId.StartsWith("ROCScience");
+
+			if (IsROC)
+				Title = "ROC: " + stockDef.experimentTitle;	// group ROC together in the science archive (sorted by Title)
+			else
+				Title = stockDef.experimentTitle;
 
 #if KSP15_16
 			DataSize = this.stockDef.baseValue * this.stockDef.dataScale;
@@ -153,23 +163,30 @@ namespace KERBALISM
 				DataSize = this.stockDef.scienceCap * this.stockDef.dataScale;
 #endif
 
-			// make sure we don't produce NaN values down the line because of odd/wrong configs
-			if(DataSize == 0)
-			{
-				Lib.Log("ERROR: DataSize=0 for " + ExperimentId + ", your configuration is broken!");
-				DataSize = 1;
-			}
-			if (this.stockDef.scienceCap == 0)
-			{
-				Lib.Log("ERROR: scienceCap=0 for " + ExperimentId + ", your configuration is broken!");
-				stockDef.scienceCap = 1;
-			}
-
 			// if we have a custom "KERBALISM_EXPERIMENT" definition for the experiment, load it, else just use an empty node to avoid nullrefs
 			if (expInfoNode == null) expInfoNode = new ConfigNode();
 
 			SampleMass = Lib.ConfigValue(expInfoNode, "SampleMass", 0.0);
-			ExpBodyConditions = new BodyConditions(expInfoNode);
+
+			if (IsROC)
+			{
+				// Parse the ROC definition name to find which body it's available on
+				// This rely on the ROC definitions having the body name in the ExperimentId
+				ConfigNode ROCBodyNode = new ConfigNode();
+				foreach (CelestialBody body in FlightGlobals.Bodies)
+				{
+					if (ExperimentId.IndexOf(body.name, StringComparison.OrdinalIgnoreCase) != -1)
+					{
+						ROCBodyNode.AddValue("BodyAllowed", body.name);
+						break;
+					}
+				}
+				ExpBodyConditions = new BodyConditions(ROCBodyNode);
+			}
+			else
+			{
+				ExpBodyConditions = new BodyConditions(expInfoNode);
+			}
 
 			// if defined, override stock situation / biome mask
 			if (expInfoNode.HasValue("Situation"))
@@ -196,6 +213,92 @@ namespace KERBALISM
 				}
 				stockDef.situationMask = situationMask;
 				stockDef.biomeMask = biomeMask;
+			}
+
+			// patch experiment prfabs and get module infos.
+			// must be done at the end of the ctor so everything in "this" is properly setup
+			SetupPrefabs();
+		}
+
+		/// <summary>
+		/// parts that have experiments can't get their module info (what is shown in the VAB tooltip) correctly setup
+		/// because the ExperimentInfo database isn't available at loading time, so we recompile their info manually.
+		/// </summary>
+		public void SetupPrefabs()
+		{
+			if (PartLoader.LoadedPartsList == null)
+			{
+				Lib.Log("Dazed and confused: PartLoader.LoadedPartsList == null");
+				return;
+			}
+
+			foreach (AvailablePart ap in PartLoader.LoadedPartsList)
+			{
+				if (ap == null || ap.partPrefab == null)
+				{
+					Lib.Log("AvailablePart is null or without prefab: " + ap);
+					continue;
+				}
+
+				bool partHasExperimentModule = false;
+
+				foreach (PartModule module in ap.partPrefab.Modules)
+				{
+					if (module is Experiment)
+					{
+						Experiment expModule = (Experiment)module;
+						if (expModule.experiment_id == ExperimentId)
+						{
+							expModule.ExpInfo = this; // works inside the ExperimentInfo ctor, but make sure it's called at the end of it.
+							partHasExperimentModule = true;
+
+							// get module info for the ExperimentInfo, once
+							if (string.IsNullOrEmpty(ModuleInfo))
+								ModuleInfo = expModule.GetInfo();
+						}
+					}
+
+					if (module is ModuleScienceExperiment)
+					{
+						ModuleScienceExperiment stockExpModule = (ModuleScienceExperiment)module;
+
+						if (string.IsNullOrEmpty(ModuleInfo))
+						{
+							if (stockExpModule.experimentID == ExperimentId
+								|| (IsROC && stockExpModule.experimentID == "ROCScience"))
+							{
+								ModuleInfo = stockExpModule.GetInfo();
+							}
+						}
+					}
+
+#if !KSP15_16
+					if (module is ModuleGroundExperiment)
+					{
+						ModuleGroundExperiment groundExpModule = (ModuleGroundExperiment)module;
+
+						if (string.IsNullOrEmpty(ModuleInfo) && groundExpModule.experimentId == ExperimentId)
+						{
+							ModuleInfo = groundExpModule.GetInfo();
+						}
+					}
+#endif
+				}
+
+				if (partHasExperimentModule)
+				{
+					ap.moduleInfos.Clear();
+					ap.resourceInfos.Clear();
+
+					try
+					{
+						Lib.ReflectionCall(PartLoader.Instance, "CompilePartInfo", new Type[] { typeof(AvailablePart), typeof(Part) }, new object[] { ap, ap.partPrefab });
+					}
+					catch (Exception)
+					{
+						Lib.Log("Could not patch the moduleInfo for part " + ap.name);
+					}
+				}
 			}
 		}
 

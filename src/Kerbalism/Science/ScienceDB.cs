@@ -256,6 +256,9 @@ namespace KERBALISM
 
 		public static void Init()
 		{
+			Lib.Log("ScienceDB init started");
+			int subjectCount = 0;
+
 			// get our extra defintions
 			ConfigNode[] expDefNodes = GameDatabase.Instance.GetConfigNodes("EXPERIMENT_DEFINITION");
 
@@ -306,6 +309,7 @@ namespace KERBALISM
 						{
 							VesselSituation vesselSituation = new VesselSituation(bodyIndex, scienceSituation);
 							SubjectData subjectData = new SubjectData(expInfo, vesselSituation);
+							subjectCount++;
 
 							subjectByExpThenSituationId[expInfo].Add(vesselSituation.Id, subjectData);
 							expBodiesSituationsBiomesSubject.AddSubject(expInfo, bodyIndex, scienceSituation, -1, subjectData);
@@ -319,6 +323,7 @@ namespace KERBALISM
 							{
 								VesselSituation vesselSituation = new VesselSituation(bodyIndex, scienceSituation, biomeIndex);
 								SubjectData subjectData = new SubjectData(expInfo, vesselSituation);
+								subjectCount++;
 
 								subjectByExpThenSituationId[expInfo].Add(vesselSituation.Id, subjectData);
 								expBodiesSituationsBiomesSubject.AddSubject(expInfo, bodyIndex, scienceSituation, biomeIndex, subjectData);
@@ -330,6 +335,8 @@ namespace KERBALISM
 					}
 				}
 			}
+
+			Lib.Log("ScienceDB init done : " + subjectCount + " subjects found");
 		}
 
 		public static void Load(ConfigNode node)

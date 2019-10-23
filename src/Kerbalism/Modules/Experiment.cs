@@ -402,7 +402,6 @@ namespace KERBALISM
 			mainIssue = string.Empty;
 			
 			subjectData = ScienceDB.GetSubjectData(expInfo, vd.VesselSituation);
-			//bool isSituationValid = Science.GetSubjectId(prefab.experiment_id, v, situation, out newSubjectId, out expInfo);
 
 			bool subjectHasChanged;
 			if (subjectData != null)
@@ -486,10 +485,6 @@ namespace KERBALISM
 				return;
 			}
 
-			// create the subject at the last possible moment, otherwise we will fill
-			// the RnD archives with empty subjects
-			//expInfo.CreateSubjectInRnD(v, situation);
-
 			double chunkSizeMax = prefab.data_rate * elapsed_s;
 			double chunkSize;
 			if (expState != RunningState.Forced)
@@ -553,10 +548,6 @@ namespace KERBALISM
 				mainIssue = "missing resource";
 				return;
 			}
-
-			// create the subject at the last possible moment, otherwise we will fill
-			// the RnD archives with empty subjects
-			// subjectData.CreateSubjectInRnD();
 
 			chunkSize = chunkSizeMax * prodFactor;
 			elapsed_s *= prodFactor;

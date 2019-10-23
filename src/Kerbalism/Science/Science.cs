@@ -54,48 +54,6 @@ namespace KERBALISM
 			}
 		}
 
-		public static void PatchExperimentPrefabs()
-		{
-			// parts that have experiments can't get their module info (what is shown in the VAB tooltip) correctly setup
-			// because the ExperimentInfo database isn't available at loading time, so we recompile their info manually when
-			// loading a save.
-
-			if(PartLoader.LoadedPartsList == null)
-			{
-				Lib.Log("Dazed and confused: PartLoader.LoadedPartsList == null");
-				return;
-			}
-
-			foreach (AvailablePart ap in PartLoader.LoadedPartsList)
-			{
-				if (ap == null || ap.partPrefab == null)
-				{
-					Lib.Log("AvailablePart is null or without prefab: " + ap);
-					continue;
-				}
-
-				List<Experiment> experimentModules = ap.partPrefab.FindModulesImplementing<Experiment>();
-
-				if (experimentModules.Count == 0)
-					continue;
-
-				ap.moduleInfos.Clear();
-				ap.resourceInfos.Clear();
-
-				foreach (Experiment experimentModule in experimentModules)
-					experimentModule.ExpInfo = ScienceDB.GetExperimentInfo(experimentModule.experiment_id);
-
-				try
-				{
-					Lib.ReflectionCall(PartLoader.Instance, "CompilePartInfo", new Type[] { typeof(AvailablePart), typeof(Part) }, new object[] { ap, ap.partPrefab });
-				}
-				catch (Exception)
-				{
-					Lib.Log("Could not patch the moduleInfo for part " + ap.name);
-				}
-			}
-		}
-
 		// pseudo-ctor
 		public static void Init()
 		{

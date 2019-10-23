@@ -124,7 +124,7 @@ namespace KERBALISM
 			if (ExistsInRnD || ResearchAndDevelopment.Instance == null)
 				return;
 
-			// try to get it, might be already created in some corner-case situation
+			// try to get it, might be already created in some corner-case situations
 			RnDSubject = ResearchAndDevelopment.GetSubjectByID(StockSubjectId);
 
 			// TODO : DEBUG, REMOVE THIS
@@ -211,12 +211,6 @@ namespace KERBALISM
 
 			if (!ExistsInRnD)
 				CreateSubjectInRnD();
-
-			//float scienceValue;
-			//if (scienceValue)
-			//{
-
-			//}
 
 			RnDSubject.science = Math.Min((float)(RnDSubject.science + scienceValue), RnDSubject.scienceCap);
 			RnDSubject.scientificValue = ResearchAndDevelopment.GetSubjectValue(RnDSubject.science, RnDSubject);

@@ -227,60 +227,75 @@ namespace KERBALISM
 			public SituationLine(KsmGuiBase parent, string situation) : base(parent, situation) { }
 		}
 
-		public class SubjectLine : KsmGuiBase
+		public class SubjectLine : KsmGuiText
 		{
 			public bool isKnown;
 			public SituationLine SituationLine { get; private set; }
 			public SubjectData SubjectData { get; private set; }
-			private KsmGuiText rndText;
-			private KsmGuiText flightText;
-			private KsmGuiText valueText;
-			private KsmGuiText completedText;
+			string biomeName;
 
-			public SubjectLine(KsmGuiBase parent, string biomeName, SubjectData subject, SituationLine situationLine) : base(parent)
+
+			public SubjectLine(KsmGuiBase parent, string biomeName, SubjectData subject, SituationLine situationLine) : base(parent, "_")
 			{
+				this.biomeName = biomeName;
 				SituationLine = situationLine;
 				SubjectData = subject;
 				SetLayoutElement(true, false, -1, 14);
 
-				rndText = new KsmGuiText(this, "RnD");
-				rndText.TextComponent.color = Lib.KolorToColor(Lib.Kolor.Science);
-				rndText.TextComponent.fontStyle = FontStyles.Bold;
-				rndText.TopTransform.SetAnchorsAndPosition(TextAnchor.MiddleLeft, TextAnchor.MiddleLeft, 10);
-				rndText.TopTransform.SetSizeDelta(50, 14);
+				//rndText = new KsmGuiText(this, "RnD");
+				//rndText.TextComponent.color = Lib.KolorToColor(Lib.Kolor.Science);
+				//rndText.TextComponent.fontStyle = FontStyles.Bold;
+				//rndText.TopTransform.SetAnchorsAndPosition(TextAnchor.MiddleLeft, TextAnchor.MiddleLeft, 10);
+				//rndText.TopTransform.SetSizeDelta(50, 14);
 
-				flightText = new KsmGuiText(this, "flight", null, TextAlignmentOptions.Left);
-				flightText.TextComponent.color = Lib.KolorToColor(Lib.Kolor.Science);
-				flightText.TextComponent.fontStyle = FontStyles.Bold;
-				flightText.TopTransform.SetAnchorsAndPosition(TextAnchor.MiddleLeft, TextAnchor.MiddleLeft, 60);
-				flightText.TopTransform.SetSizeDelta(50, 14);
+				//flightText = new KsmGuiText(this, "flight", null, TextAlignmentOptions.Left);
+				//flightText.TextComponent.color = Lib.KolorToColor(Lib.Kolor.Science);
+				//flightText.TextComponent.fontStyle = FontStyles.Bold;
+				//flightText.TopTransform.SetAnchorsAndPosition(TextAnchor.MiddleLeft, TextAnchor.MiddleLeft, 60);
+				//flightText.TopTransform.SetSizeDelta(50, 14);
 
-				valueText = new KsmGuiText(this, "value", null, TextAlignmentOptions.Left);
-				valueText.TextComponent.color = Lib.KolorToColor(Lib.Kolor.Science);
-				valueText.TextComponent.fontStyle = FontStyles.Bold;
-				valueText.TopTransform.SetAnchorsAndPosition(TextAnchor.MiddleLeft, TextAnchor.MiddleLeft, 110);
-				valueText.TopTransform.SetSizeDelta(50, 14);
+				//valueText = new KsmGuiText(this, "value", null, TextAlignmentOptions.Left);
+				//valueText.TextComponent.color = Lib.KolorToColor(Lib.Kolor.Science);
+				//valueText.TextComponent.fontStyle = FontStyles.Bold;
+				//valueText.TopTransform.SetAnchorsAndPosition(TextAnchor.MiddleLeft, TextAnchor.MiddleLeft, 110);
+				//valueText.TopTransform.SetSizeDelta(50, 14);
 
-				completedText = new KsmGuiText(this, "completed", null, TextAlignmentOptions.Left);
-				completedText.TextComponent.color = Lib.KolorToColor(Lib.Kolor.Yellow);
-				completedText.TextComponent.fontStyle = FontStyles.Bold;
-				completedText.TopTransform.SetAnchorsAndPosition(TextAnchor.MiddleLeft, TextAnchor.MiddleLeft, 160);
-				completedText.TopTransform.SetSizeDelta(50, 14);
+				//completedText = new KsmGuiText(this, "completed", null, TextAlignmentOptions.Left);
+				//completedText.TextComponent.color = Lib.KolorToColor(Lib.Kolor.Yellow);
+				//completedText.TextComponent.fontStyle = FontStyles.Bold;
+				//completedText.TopTransform.SetAnchorsAndPosition(TextAnchor.MiddleLeft, TextAnchor.MiddleLeft, 160);
+				//completedText.TopTransform.SetSizeDelta(50, 14);
 
-				if (!string.IsNullOrEmpty(biomeName))
-				{
-					KsmGuiText biomeText = new KsmGuiText(this, biomeName, null, TextAlignmentOptions.Left);
-					biomeText.TopTransform.SetAnchorsAndPosition(TextAnchor.UpperLeft, TextAnchor.UpperLeft, 215);
-					biomeText.TopTransform.SetSizeDelta(200, 14);
-				}
+				//if (!string.IsNullOrEmpty(biomeName))
+				//{
+				//	KsmGuiText biomeText = new KsmGuiText(this, biomeName, null, TextAlignmentOptions.Left);
+				//	biomeText.TopTransform.SetAnchorsAndPosition(TextAnchor.UpperLeft, TextAnchor.UpperLeft, 215);
+				//	biomeText.TopTransform.SetSizeDelta(200, 14);
+				//}
 			}
 
 			public void Update()
 			{
-				rndText.SetText(Math.Round(SubjectData.ScienceRetrievedInKSC, 3).ToString("0.0;--;--"));
-				flightText.SetText(Math.Round(SubjectData.ScienceCollectedInFlight, 3).ToString("+0.0;--;--"));
-				valueText.SetText(Math.Round(SubjectData.ScienceRemainingTotal, 3).ToString("0.0;--;--"));
-				completedText.SetText(Math.Round(SubjectData.PercentRetrieved, 3).ToString("0.0x;--;--"));
+				SetText(Lib.BuildString(
+					"<pos=10>",
+					Lib.Color(SubjectData.ScienceRetrievedInKSC.ToString("0.0;--;--"), Lib.Kolor.Science, true),
+					"<pos=60>",
+					Lib.Color(SubjectData.ScienceCollectedInFlight.ToString("+0.0;--;--"), Lib.Kolor.Science, true),
+					"<pos=110>",
+					Lib.Color(SubjectData.ScienceRemainingTotal.ToString("0.0;--;--"), Lib.Kolor.Science, true),
+					"<pos=160>",
+					Lib.Color(SubjectData.PercentRetrieved.ToString("0.0x;--;--"), Lib.Kolor.Yellow, true),
+					"<pos=200>",
+					biomeName
+
+					));
+
+
+
+				//rndText.SetText(Math.Round(SubjectData.ScienceRetrievedInKSC, 3).ToString("0.0;--;--"));
+				//flightText.SetText(Math.Round(SubjectData.ScienceCollectedInFlight, 3).ToString("+0.0;--;--"));
+				//valueText.SetText(Math.Round(SubjectData.ScienceRemainingTotal, 3).ToString("0.0;--;--"));
+				//completedText.SetText(Math.Round(SubjectData.PercentRetrieved, 3).ToString("0.0x;--;--"));
 			}
 
 		}

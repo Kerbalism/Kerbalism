@@ -130,7 +130,6 @@ namespace KERBALISM
 				// part prefabs hacks
 				Profile.SetupPods(); // add supply resources to pods
 				Misc.TweakPartIcons(); // various tweaks to the part icons in the editor
-				Science.PatchExperimentPrefabs(); // setup experiment modules VAB info
 
 				// static KsmGui windows
 				ScienceArchiveWindow.Init();
@@ -172,7 +171,9 @@ namespace KERBALISM
 			ResourceCache.Clear();
 
 			// deserialize our database
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.DB.Load");
 			DB.Load(node);
+			UnityEngine.Profiling.Profiler.EndSample();
 
 			// I'm smelling the hacky mess in here.
 			Communications.NetworkInitialized = false;
@@ -197,7 +198,9 @@ namespace KERBALISM
 		public override void OnSave(ConfigNode node)
 		{
 			// serialize data
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.DB.Save");
 			DB.Save(node);
+			UnityEngine.Profiling.Profiler.EndSample();
 		}
 
 		#endregion

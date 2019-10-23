@@ -25,12 +25,14 @@ namespace KERBALISM
 		}
 
 		static KsmGuiWindow window;
-		static KsmGuiToggleList<ExpInfoPlus> experimentsToggleList;
-		static ExpInfoPlus currentExperiment;
+		static KsmGuiToggleList<ExpInfoAndSubjects> experimentsToggleList;
+		static ExpInfoAndSubjects currentExperiment;
 		static KsmGuiText expInfoText;
 
 		public static void Init()
 		{
+			Lib.Log("Science Archive init started");
+
 			window = new KsmGuiWindow(
 				KsmGuiWindow.LayoutGroupType.Vertical,
 				false,
@@ -54,14 +56,14 @@ namespace KERBALISM
 
 			KsmGuiVerticalScrollView experimentsScrollView = new KsmGuiVerticalScrollView(experimentColumn, 0, 0, 0, 0, 0);
 			experimentsScrollView.SetLayoutElement(true, true, 150);
-			experimentsToggleList = new KsmGuiToggleList<ExpInfoPlus>(experimentsScrollView, OnToggleExperiment);
+			experimentsToggleList = new KsmGuiToggleList<ExpInfoAndSubjects>(experimentsScrollView, OnToggleExperiment);
 
 			foreach (ExperimentInfo expInfo in ScienceDB.ExperimentInfos.OrderBy(p => p.Title))
 			{
 				ExperimentSubjectList experimentSubjectList = new ExperimentSubjectList(columns, expInfo);
 				experimentSubjectList.Enabled = false;
-				ExpInfoPlus expInfoPlus = new ExpInfoPlus(expInfo, experimentSubjectList);
-				new KsmGuiToggleListElement<ExpInfoPlus>(experimentsToggleList, expInfoPlus, expInfo.Title);
+				ExpInfoAndSubjects expInfoPlus = new ExpInfoAndSubjects(expInfo, experimentSubjectList);
+				new KsmGuiToggleListElement<ExpInfoAndSubjects>(experimentsToggleList, expInfoPlus, expInfo.Title);
 			}
 
 			Toggle.ToggleEvent temp = experimentsToggleList.ChildToggles[0].ToggleComponent.onValueChanged;
@@ -76,73 +78,34 @@ namespace KERBALISM
 			new KsmGuiHeader(expInfoColumn, "EXPERIMENT INFO");
 			KsmGuiVerticalScrollView expInfoScrollView = new KsmGuiVerticalScrollView(expInfoColumn);
 			expInfoScrollView.SetLayoutElement(false, true, 200);
-			expInfoText = new KsmGuiText(expInfoScrollView, currentExperiment.expSpecs);
+			expInfoText = new KsmGuiText(expInfoScrollView, currentExperiment.expInfo.ModuleInfo);
 			expInfoText.SetLayoutElement(true, true);
 
 			
 			window.RebuildLayout();
 			window.Close();
+			Lib.Log("Science Archive init done");
 		}
 
-		private static void OnToggleExperiment(ExpInfoPlus expInfo)
+		private static void OnToggleExperiment(ExpInfoAndSubjects expInfoAndSubjects)
 		{
 			currentExperiment.experimentSubjectList.Enabled = false;
-			currentExperiment = expInfo;
-			expInfo.experimentSubjectList.KnownSubjectsToggle.SetOnState(true, true);
-			expInfo.experimentSubjectList.Enabled = true;
-			expInfoText.SetText(expInfo.expSpecs);
+			currentExperiment = expInfoAndSubjects;
+			expInfoAndSubjects.experimentSubjectList.KnownSubjectsToggle.SetOnState(true, true);
+			expInfoAndSubjects.experimentSubjectList.Enabled = true;
+			expInfoText.SetText(expInfoAndSubjects.expInfo.ModuleInfo);
 			window.RebuildLayout();
 		}
 
-		private class ExpInfoPlus
+		private class ExpInfoAndSubjects
 		{
 			public ExperimentInfo expInfo;
 			public ExperimentSubjectList experimentSubjectList;
-			public string expSpecs;
 
-			public ExpInfoPlus(ExperimentInfo expInfo, ExperimentSubjectList experimentSubjectList)
+			public ExpInfoAndSubjects(ExperimentInfo expInfo, ExperimentSubjectList experimentSubjectList)
 			{
 				this.expInfo = expInfo;
 				this.experimentSubjectList = experimentSubjectList;
-
-				foreach (AvailablePart ap in PartLoader.LoadedPartsList)
-				{
-					foreach (PartModule module in ap.partPrefab.Modules)
-					{
-						if (module is Experiment)
-						{
-							Experiment expModule = (Experiment)module;
-							if (expModule.experiment_id == expInfo.ExperimentId)
-							{
-								expSpecs = expModule.GetInfo();
-								goto breakOuter;
-							}
-						}
-
-						if (module is ModuleScienceExperiment)
-						{
-							ModuleScienceExperiment stockExpModule = (ModuleScienceExperiment)module;
-							if (stockExpModule.experimentID == expInfo.ExperimentId)
-							{
-								expSpecs = stockExpModule.GetInfo();
-								goto breakOuter;
-							}
-						}
-
-#if !KSP15_16
-						if (module is ModuleGroundExperiment)
-						{
-							ModuleGroundExperiment groundExpModule = (ModuleGroundExperiment)module;
-							if (groundExpModule.experimentId == expInfo.ExperimentId)
-							{
-								expSpecs = groundExpModule.GetInfo();
-								goto breakOuter;
-							}
-						}
-#endif
-					}
-				}
-			breakOuter:;
 			}
 		}
 	}
