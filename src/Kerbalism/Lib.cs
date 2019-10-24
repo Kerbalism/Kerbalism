@@ -20,7 +20,7 @@ namespace KERBALISM
 		public static void Log(string msg, params object[] param)
 		{
 			StackTrace stackTrace = new StackTrace();
-			UnityEngine.Debug.Log(string.Format("{0} -> verbose: {1}.{2} - {3}", "[Kerbalism] ", stackTrace.GetFrame(1).GetMethod().ReflectedType.Name,
+			UnityEngine.Debug.Log(string.Format("[Kerbalism] {0}.{1} {2}", stackTrace.GetFrame(1).GetMethod().ReflectedType.Name,
 				stackTrace.GetFrame(1).GetMethod().Name, string.Format(msg, param)));
 		}
 
@@ -28,7 +28,7 @@ namespace KERBALISM
 		public static void DebugLog(string message, params object[] param)
 		{
 			StackTrace stackTrace = new StackTrace();
-			UnityEngine.Debug.Log(string.Format("{0} -> debug: {1}.{2} - {3}", "[Kerbalism] ", stackTrace.GetFrame(1).GetMethod().ReflectedType.Name,
+			UnityEngine.Debug.Log(string.Format("[Kerbalism] debug {0}.{1} {2}", stackTrace.GetFrame(1).GetMethod().ReflectedType.Name,
 				stackTrace.GetFrame(1).GetMethod().Name, string.Format(message, param)));
 			UnityEngine.Debug.Log(stackTrace);
 		}
