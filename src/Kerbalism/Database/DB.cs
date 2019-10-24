@@ -66,7 +66,12 @@ namespace KERBALISM
 				{
 					foreach (PartData partData in vesselData.PartDatas)
 					{
-						allParts.Add(partData.FlightId, partData);
+						// we had a case of someone having a save with multiple parts having the same flightID
+						// 5 duplicates, all were asteroids.
+						if (!allParts.ContainsKey(partData.FlightId))
+						{
+							allParts.Add(partData.FlightId, partData);
+						}
 					}
 				}
 

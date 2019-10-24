@@ -300,7 +300,7 @@ namespace KERBALISM
 #endif
 				}
 
-				if (partHasExperimentModule)
+				if (partHasExperimentModule && !ap.name.StartsWith("kerbalEVA"))
 				{
 					ap.moduleInfos.Clear();
 					ap.resourceInfos.Clear();
