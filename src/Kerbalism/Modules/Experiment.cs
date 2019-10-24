@@ -558,10 +558,11 @@ namespace KERBALISM
 			double massDelta = expInfo.SampleMass * chunkSize / expInfo.DataSize;
 
 #if DEBUG || DEVBUILD
-			if(Double.IsNaN(massDelta))
-			{
+			if (Double.IsNaN(chunkSize))
+				Lib.Log("ERROR: chunkSize is NaN " + expInfo.ExperimentId + " " + chunkSizeMax + " / " + prodFactor + " / " + available + " / " + ec.Amount + " / " + prefab.ec_rate + " / " + prefab.data_rate);
+
+			if (Double.IsNaN(massDelta))
 				Lib.Log("ERROR: mass delta is NaN " + expInfo.ExperimentId + " " + expInfo.SampleMass + " / " + chunkSize + " / " + expInfo.DataSize);
-			}
 #endif
 
 			if (isFile)
