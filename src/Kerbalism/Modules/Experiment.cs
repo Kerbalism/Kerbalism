@@ -542,7 +542,6 @@ namespace KERBALISM
 
 			if (prefab.ec_rate > 0.0)
 				prodFactor = Math.Min(prodFactor, Lib.Clamp(ec.Amount / (prefab.ec_rate * elapsed_s), 0.0, 1.0));
-
 			
 			foreach (ObjectPair<string, double> p in resourceDefs)
 			{
