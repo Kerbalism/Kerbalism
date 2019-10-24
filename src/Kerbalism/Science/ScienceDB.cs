@@ -278,7 +278,14 @@ namespace KERBALISM
 					}
 				}
 
-				ExperimentInfo expInfo = new ExperimentInfo(ResearchAndDevelopment.GetExperiment(experimentId), kerbalismExpNode);
+				ScienceExperiment stockDef = ResearchAndDevelopment.GetExperiment(experimentId);
+				if (stockDef == null)
+				{
+					Lib.Log("ERROR : ScienceExperiment is null for experimentID=" + experimentId + ", skipping...");
+					continue;
+				}
+
+				ExperimentInfo expInfo = new ExperimentInfo(stockDef, kerbalismExpNode);
 
 				for (int bodyIndex = 0; bodyIndex < FlightGlobals.Bodies.Count; bodyIndex++)
 				{

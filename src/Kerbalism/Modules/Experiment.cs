@@ -504,9 +504,8 @@ namespace KERBALISM
 			}
 
 			Drive warpDrive = null;
-			bool isFile = expInfo.SampleMass == 0.0;
 			double available;
-			if (isFile)
+			if (!expInfo.IsSample)
 			{
 				available = drive.FileCapacityAvailable();
 				if (drive.GetFileSend(subjectData.Id))
@@ -540,9 +539,14 @@ namespace KERBALISM
 			// There is no way to fix that currently, this is another example of why virtual ressource recipes are needed
 			double prodFactor;
 			prodFactor = chunkSize / chunkSizeMax;
-			prodFactor = Math.Min(prodFactor, Lib.Clamp(ec.Amount / (prefab.ec_rate * elapsed_s), 0.0, 1.0));
+
+			if (prefab.ec_rate > 0.0)
+				prodFactor = Math.Min(prodFactor, Lib.Clamp(ec.Amount / (prefab.ec_rate * elapsed_s), 0.0, 1.0));
+
+			
 			foreach (ObjectPair<string, double> p in resourceDefs)
 			{
+				if (p.Value <= 0.0) continue;
 				ResourceInfo ri = resources.GetResource(v, p.Key);
 				prodFactor = Math.Min(prodFactor, Lib.Clamp(ri.Amount / (p.Value * elapsed_s), 0.0, 1.0));
 			}
@@ -555,7 +559,7 @@ namespace KERBALISM
 
 			chunkSize = chunkSizeMax * prodFactor;
 			elapsed_s *= prodFactor;
-			double massDelta = expInfo.SampleMass * chunkSize / expInfo.DataSize;
+			double massDelta = chunkSize * expInfo.MassPerMB;
 
 #if DEBUG || DEVBUILD
 			if (Double.IsNaN(chunkSize))
@@ -565,7 +569,7 @@ namespace KERBALISM
 				Lib.Log("ERROR: mass delta is NaN " + expInfo.ExperimentId + " " + expInfo.SampleMass + " / " + chunkSize + " / " + expInfo.DataSize);
 #endif
 
-			if (isFile)
+			if (!expInfo.IsSample)
 			{
 				if (warpDrive != null)
 				{

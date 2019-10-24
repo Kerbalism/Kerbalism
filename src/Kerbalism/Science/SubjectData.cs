@@ -18,7 +18,7 @@ namespace KERBALISM
 		/// <summary> how many times the subject has been fully retrieved in RnD </summary>
 		public virtual int TimesCompleted { get; protected set; }
 
-		public bool ExistsInRnD { get; protected set; }
+		public bool ExistsInRnD => RnDSubject != null;
 
 		public ScienceSubject RnDSubject { get; protected set; }
 
@@ -48,8 +48,7 @@ namespace KERBALISM
 		// because the "last transmission value" will always be less than the float min increment.
 		// so we artifically increase the exposed RnD value by 1E-4F and clamp it to max value
 		//public double ScienceRetrievedInKSC => ExistsInRnD ? Math.Min(RnDSubject.science, ScienceMaxValue) : 0.0;
-		public double ScienceRetrievedInKSC => ExistsInRnD ? (RnDSubject.scienceCap - RnDSubject.science == 0f) ? ScienceMaxValue : RnDSubject.science : 0.0;
-
+		public double ScienceRetrievedInKSC => ExistsInRnD ? (RnDSubject.scienceCap - RnDSubject.science <= 0f) ? ScienceMaxValue : RnDSubject.science : 0.0;
 
 		/// <summary> all science points recovered, transmitted or collected in flight </summary>
 		public double ScienceCollectedTotal => ScienceCollectedInFlight + ScienceRetrievedInKSC;
@@ -64,7 +63,7 @@ namespace KERBALISM
 		public double ScienceRemainingTotal => Math.Max(ScienceMaxValue - ScienceCollectedTotal, 0.0);
 
 		/// <summary> percentage [0;1] of science collected. </summary>
-		public double PercentCollectedTotal => ScienceMaxValue == 0 ? 0 : (ScienceCollectedInFlight / ScienceMaxValue) + PercentRetrieved;
+		public double PercentCollectedTotal => ScienceMaxValue == 0.0 ? 0.0 : (ScienceCollectedInFlight / ScienceMaxValue) + PercentRetrieved;
 
 		/// <summary> science value for the given data size </summary>
 		public double ScienceValue(double dataSize, bool clampByScienceRetrieved = false, bool clampByScienceRetrievedAndCollected = false)
@@ -91,13 +90,11 @@ namespace KERBALISM
 			{
 				PercentRetrieved = 0.0;
 				TimesCompleted = 0;
-				ExistsInRnD = false;
 			}
 			else
 			{
 				PercentRetrieved = RnDSubject.science / RnDSubject.scienceCap;
 				TimesCompleted = GetTimesCompleted(PercentRetrieved);
-				ExistsInRnD = true;
 				ScienceDB.persistedSubjects.Add(this);
 			}
 		}
@@ -126,10 +123,8 @@ namespace KERBALISM
 
 			// try to get it, might be already created in some corner-case situations
 			RnDSubject = ResearchAndDevelopment.GetSubjectByID(StockSubjectId);
-
-			// TODO : DEBUG, REMOVE THIS
 			if (RnDSubject != null)
-				Lib.Log("CreateSubjectInRnD : ScienceSubject " + StockSubjectId + "exist already, this should not be happening !");
+				Lib.Log("CreateSubjectInRnD : ScienceSubject " + StockSubjectId + "exists already, this should not be happening !");
 
 			if (RnDSubject == null)
 			{
@@ -154,7 +149,6 @@ namespace KERBALISM
 				subjects.Add(StockSubjectId, RnDSubject);
 			}
 
-			ExistsInRnD = true;
 			SetAsPersistent();
 		}
 
@@ -233,7 +227,6 @@ namespace KERBALISM
 			this.extraSituationInfo = extraSituationInfo;
 			ExpInfo = expInfo;
 			Situation = situation;
-			ExistsInRnD = stockSubject != null;
 			RnDSubject = stockSubject;
 			ScienceCollectedInFlight = 0.0;
 		}

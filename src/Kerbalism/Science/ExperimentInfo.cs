@@ -138,6 +138,9 @@ namespace KERBALISM
 
 		public ExperimentInfo(ScienceExperiment stockDef, ConfigNode expInfoNode)
 		{
+			// if we have a custom "KERBALISM_EXPERIMENT" definition for the experiment, load it, else just use an empty node to avoid nullrefs
+			if (expInfoNode == null) expInfoNode = new ConfigNode();
+
 			this.stockDef = stockDef;
 			ExperimentId = stockDef.id;
 
@@ -163,8 +166,8 @@ namespace KERBALISM
 				DataSize = this.stockDef.scienceCap * this.stockDef.dataScale;
 #endif
 
+			SampleMass = Lib.ConfigValue(expInfoNode, "SampleMass", 0.0);
 			IsSample = SampleMass > 0.0;
-
 			if (IsSample)
 			{
 				// make sure we don't produce NaN values down the line because of odd/wrong configs
@@ -179,11 +182,6 @@ namespace KERBALISM
 			{
 				MassPerMB = 0.0;
 			}
-
-			// if we have a custom "KERBALISM_EXPERIMENT" definition for the experiment, load it, else just use an empty node to avoid nullrefs
-			if (expInfoNode == null) expInfoNode = new ConfigNode();
-
-			SampleMass = Lib.ConfigValue(expInfoNode, "SampleMass", 0.0);
 
 			if (IsROC)
 			{
