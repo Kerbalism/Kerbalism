@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System;
 
 namespace KERBALISM
 {
@@ -41,6 +40,18 @@ namespace KERBALISM
 			return new ConnectionInfo(v, powered, storm);
 		}
 
+		private static double SanityCheck(double value, string name, Vessel v)
+		{
+			if (double.IsNaN(value) || double.IsInfinity(value))
+			{
+#if DEBUG || DEVBUILD
+				Lib.Log("ERROR: Comms: invalid value: " + name + " on " + v + " (" + value + ")");
+#endif
+				value = 0;
+			}
+			return value;
+		}
+
 		/// <summary> Creates a <see cref="ConnectionInfo"/> object for the specified vessel from it's antenna modules</summary>
 		private ConnectionInfo(Vessel v, bool powered, bool storm)
 		{
@@ -53,10 +64,11 @@ namespace KERBALISM
 				return;
 
 			AntennaInfo ai = GetAntennaInfo(v, powered, storm);
-			ec = ai.ec;
-			rate = ai.rate * PreferencesScience.Instance.transmitFactor;
+
+			ec = SanityCheck(ai.ec, "EC", v);
+			rate = SanityCheck(ai.rate, "rate", v) * PreferencesScience.Instance.transmitFactor;
 			linked = ai.linked;
-			strength = ai.strength;
+			strength = SanityCheck(ai.strength, "strength", v);
 			target_name = ai.target_name;
 			control_path = ai.control_path;
 
