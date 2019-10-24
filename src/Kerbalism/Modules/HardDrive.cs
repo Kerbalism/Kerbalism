@@ -385,20 +385,19 @@ namespace KERBALISM
 		// science container implementation
 		public ScienceData[] GetData()
 		{
-			return GetData(drive);
-		}
-
-		// science container implementation
-		public static ScienceData[] GetData(Drive drive)
-		{
 			// generate and return stock science data
 			List<ScienceData> data = new List<ScienceData>();
 
-			foreach (File file in drive.files.Values)
-				data.Add(file.ConvertToStockData());
+			// this might be called before we had the chance to execute our OnStart() method
+			// (looking at you, RasterPropMonitor)
+			if(drive != null)
+			{
+				foreach (File file in drive.files.Values)
+					data.Add(file.ConvertToStockData());
 
-			foreach (Sample sample in drive.samples.Values)
-				data.Add(sample.ConvertToStockData());
+				foreach (Sample sample in drive.samples.Values)
+					data.Add(sample.ConvertToStockData());
+			}
 
 			return data.ToArray();
 		}
