@@ -200,6 +200,9 @@ namespace KERBALISM
 				// kill kerbal if necessary
 				if (rd.problem >= fatal_threshold)
 				{
+#if DEBUG || DEVBUILD
+					Lib.Log("Rule " + name + " kills " + c.name + " at " + rd.problem + " " + degeneration + "/" + k + "/" + step + "/" + Variance(name, c, variance));
+#endif
 					if (fatal_message.Length > 0)
 						Message.Post(breakdown ? Severity.breakdown : Severity.fatality, Lib.ExpandMsg(fatal_message, v, c, variant));
 
@@ -261,6 +264,7 @@ namespace KERBALISM
 			double k = (double)Lib.Hash32(name + c.courage.ToString() + c.stupidity.ToString()) / (double)UInt32.MaxValue;
 
 			// move in [-1..+1] range
+			//k = Lib.Clamp(k * 2.0 - 1.0, -1.0, 1.0);
 			k = k * 2.0 - 1.0;
 
 			// return kerbal-specific variance in range [1-n .. 1+n]
