@@ -199,6 +199,33 @@ namespace KERBALISM
 			return good;
 		}
 
+		public bool TestProgressionRequirements()
+		{
+			RequireResult[] results = new RequireResult[Requires.Length];
+
+			for (int i = 0; i < Requires.Length; i++)
+			{
+				results[i] = new RequireResult(Requires[i]);
+				switch (Requires[i].require)
+				{
+					case Require.AstronautComplexLevelMin: TestReq((c, r) => c >= r, GetFacilityLevel(SpaceCenterFacility.AstronautComplex), (int)Requires[i].value, results[i]); break;
+					case Require.AstronautComplexLevelMax: TestReq((c, r) => c <= r, GetFacilityLevel(SpaceCenterFacility.AstronautComplex), (int)Requires[i].value, results[i]); break;
+					case Require.TrackingStationLevelMin: TestReq((c, r) => c >= r, GetFacilityLevel(SpaceCenterFacility.TrackingStation), (int)Requires[i].value, results[i]); break;
+					case Require.TrackingStationLevelMax: TestReq((c, r) => c <= r, GetFacilityLevel(SpaceCenterFacility.TrackingStation), (int)Requires[i].value, results[i]); break;
+					case Require.MissionControlLevelMin: TestReq((c, r) => c >= r, GetFacilityLevel(SpaceCenterFacility.MissionControl), (int)Requires[i].value, results[i]); break;
+					case Require.MissionControlLevelMax: TestReq((c, r) => c <= r, GetFacilityLevel(SpaceCenterFacility.MissionControl), (int)Requires[i].value, results[i]); break;
+					case Require.AdministrationLevelMin: TestReq((c, r) => c >= r, GetFacilityLevel(SpaceCenterFacility.Administration), (int)Requires[i].value, results[i]); break;
+					case Require.AdministrationLevelMax: TestReq((c, r) => c <= r, GetFacilityLevel(SpaceCenterFacility.Administration), (int)Requires[i].value, results[i]); break;
+
+					default: results[i].isValid = true; break;
+				}
+
+				if (!results[i].isValid)
+					return false;
+			}
+			return true;
+		}
+
 		private void TestReq(Func<bool> Condition, RequireResult result)
 		{
 			result.isValid = Condition();

@@ -26,6 +26,9 @@ namespace KERBALISM
 			}
 		}
 
+		/// <summary> When converting stock experiments / data, if the XmitDataScalar is less than this, the data will be converted as a sample.</summary>
+		public const float maxXmitDataScalarForSample = 0.001f;
+
 		// science points from transmission won't be credited until they reach this amount
 		public const double minCreditBuffer = 0.1;
 

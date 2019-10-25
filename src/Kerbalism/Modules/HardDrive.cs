@@ -411,7 +411,7 @@ namespace KERBALISM
 			if (subjectData == null)
 				return;
 
-			if (data.baseTransmitValue > float.Epsilon || data.transmitBonus > float.Epsilon)
+			if (data.baseTransmitValue > Science.maxXmitDataScalarForSample || data.transmitBonus > Science.maxXmitDataScalarForSample)
 			{
 				drive.Record_file(subjectData, data.dataAmount);
 			}

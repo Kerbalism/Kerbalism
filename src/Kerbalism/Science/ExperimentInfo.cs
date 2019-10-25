@@ -132,7 +132,7 @@ namespace KERBALISM
 		public double ScienceCap => stockDef.scienceCap * HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier;
 
 		/// <summary> Cache the information returned by GetInfo() in the first found module using that experiment</summary>
-		public string ModuleInfo { get; private set; }
+		public string ModuleInfo { get; private set; } = string.Empty;
 
 		public bool IsROC { get; private set; }
 
@@ -259,9 +259,8 @@ namespace KERBALISM
 
 				foreach (PartModule module in ap.partPrefab.Modules)
 				{
-					if (module is Experiment)
+					if (module is Experiment expModule)
 					{
-						Experiment expModule = (Experiment)module;
 						if (expModule.experiment_id == ExperimentId)
 						{
 							expModule.ExpInfo = this; // works inside the ExperimentInfo ctor, but make sure it's called at the end of it.
@@ -269,36 +268,101 @@ namespace KERBALISM
 
 							// get module info for the ExperimentInfo, once
 							if (string.IsNullOrEmpty(ModuleInfo))
-								ModuleInfo = expModule.GetInfo();
-						}
-					}
-
-					if (module is ModuleScienceExperiment)
-					{
-						ModuleScienceExperiment stockExpModule = (ModuleScienceExperiment)module;
-
-						if (string.IsNullOrEmpty(ModuleInfo))
-						{
-							if (stockExpModule.experimentID == ExperimentId
-								|| (IsROC && stockExpModule.experimentID == "ROCScience"))
 							{
-								ModuleInfo = stockExpModule.GetInfo();
+								ModuleInfo = Lib.Color(Title, Lib.Kolor.Cyan, true);
+								ModuleInfo += "\n";
+								ModuleInfo += expModule.GetInfo();
 							}
 						}
 					}
 
-#if !KSP15_16
-					if (module is ModuleGroundExperiment)
-					{
-						ModuleGroundExperiment groundExpModule = (ModuleGroundExperiment)module;
+					if (!string.IsNullOrEmpty(ModuleInfo))
+						continue;
 
-						if (string.IsNullOrEmpty(ModuleInfo) && groundExpModule.experimentId == ExperimentId)
+					if (module is ModuleScienceExperiment stockExpModule)
+					{
+						if (stockExpModule.experimentID == ExperimentId)
 						{
-							ModuleInfo = groundExpModule.GetInfo();
+							ModuleInfo = Lib.Color(Title, Lib.Kolor.Cyan, true);
+							ModuleInfo += "\nData size: ";
+							ModuleInfo += Lib.HumanReadableDataSize(DataSize);
+							if (stockExpModule.xmitDataScalar < Science.maxXmitDataScalarForSample)
+							{
+								ModuleInfo += "\nWill generate a sample.";
+								ModuleInfo += "\nSample size: ";
+								ModuleInfo += Lib.HumanReadableSampleSize(DataSize);
+							}
+							ModuleInfo += "\n\n";
+							ModuleInfo += Lib.Color("Situations:\n", Lib.Kolor.Cyan, true);
+
+							foreach (string s in AvailableSituations())
+								ModuleInfo += Lib.BuildString("• <b>", s, "</b>\n");
+
+							ModuleInfo += "\n";
+							ModuleInfo += stockExpModule.GetInfo();
+						}
+					}
+
+#if !KSP15_16
+					else if (module is ModuleGroundExperiment groundExpModule)
+					{
+						if (groundExpModule.experimentId == ExperimentId)
+						{
+							ModuleInfo = Lib.Color(Title, Lib.Kolor.Cyan, true);
+							ModuleInfo += "\nData size: ";
+							ModuleInfo += Lib.HumanReadableDataSize(DataSize);
+							ModuleInfo += "\n\n";
+							ModuleInfo += groundExpModule.GetInfo();
 						}
 					}
 #endif
 				}
+
+				// special cases
+				if (ExperimentId == "asteroidSample")
+				{
+					ModuleInfo = "Asteroid samples can be taken by kerbals on EVA";
+					ModuleInfo += "\nSample size: ";
+					ModuleInfo += Lib.HumanReadableSampleSize(DataSize);
+					ModuleInfo += "\nSample mass: ";
+					ModuleInfo += Lib.HumanReadableMass(DataSize * Settings.AsteroidSampleMassPerMB);
+				}
+#if !KSP15_16
+				else if (IsROC)
+				{
+					string rocType = ExperimentId.Substring(ExperimentId.IndexOf('_') + 1);
+					ROCDefinition rocDef = ROCManager.Instance.rocDefinitions.Find(p => p.type == rocType);
+					if (rocDef != null)
+					{
+						ModuleInfo = Lib.Color(rocDef.displayName, Lib.Kolor.Cyan, true);
+						ModuleInfo += "\n- Analyse with a scanner arm";
+						ModuleInfo += "\n  Data size: ";
+						ModuleInfo += Lib.HumanReadableDataSize(DataSize);
+
+						if (rocDef.smallRoc)
+						{
+							ModuleInfo += "\n- Collectable on EVA as a sample";
+							ModuleInfo += "\nSample size: ";
+							ModuleInfo += Lib.HumanReadableSampleSize(DataSize);
+						}
+						else
+						{
+							ModuleInfo += "\n- Can't be collected on EVA";
+						}
+
+						foreach (RocCBDefinition body in rocDef.myCelestialBodies)
+						{
+							ModuleInfo += Lib.Color("\n\nFound on " + body.name + "'s :", Lib.Kolor.Cyan, true);
+							foreach (string biome in body.biomes)
+							{
+								ModuleInfo += "\n- ";
+								ModuleInfo += biome;
+							}
+						}
+					}
+				}
+#endif
+
 
 				if (partHasExperimentModule && !ap.name.StartsWith("kerbalEVA"))
 				{

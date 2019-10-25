@@ -19,7 +19,7 @@ namespace KERBALISM
 
 		public ExperimentSubjectList(KsmGuiBase parent, ExperimentInfo expInfo) : base(parent)
 		{
-			KnownSubjectsToggle = new KsmGuiToggle(this, "Show only known subjects", true, ToggleKnownSubjects);
+			KnownSubjectsToggle = new KsmGuiToggle(this, "Show only known subjects", true, ToggleKnownSubjects, null, -1, 21);
 
 			KsmGuiBase listHeader = new KsmGuiBase(this);
 			listHeader.SetLayoutElement(true, false, -1, 16);
@@ -50,7 +50,7 @@ namespace KERBALISM
 			completedHeaderText.TopTransform.SetSizeDelta(100, 16);
 
 			KsmGuiVerticalScrollView scrollView = new KsmGuiVerticalScrollView(this);
-			scrollView.SetLayoutElement(true, false, 320, -1, -1, 250);
+			scrollView.SetLayoutElement(true, true, 320, -1, -1, 250);
 			scrollView.ContentGroup.padding = new RectOffset(0, 5, 5, 5);
 
 			foreach (ObjectPair<int, SituationsBiomesSubject> bodySubjects in GetSubjectsForExperiment(expInfo))
@@ -115,13 +115,20 @@ namespace KERBALISM
 								body.SubjectsContainer.InstantiateUIObjects();
 
 							subject.Enabled = subject.isKnown;
-							situation.Enabled = situation.isKnown;
 							RebuildLayout();
 						}
 
-						// only do 1 line per update
-						yield return null;
+						subject.UpdateText();
 					}
+
+					if (KnownSubjectsToggle.IsOn && body.SubjectsContainer.IsInstantiated && situation.Enabled != situation.isKnown)
+					{
+						situation.Enabled = situation.isKnown;
+						RebuildLayout();
+					}
+
+					// only do 1 situation per update
+					yield return null;
 				}
 
 				if (KnownSubjectsToggle.IsOn && body.Enabled != body.isKnown)
@@ -294,7 +301,7 @@ namespace KERBALISM
 
 			public void InstantiateText(SubjectsContainer parent)
 			{
-				subjectText = new KsmGuiText(parent, GetText());
+				subjectText = new KsmGuiText(parent, GetText(), null, TextAlignmentOptions.TopLeft, false);
 				subjectText.SetLayoutElement(true, false, -1, 14);
 			}
 

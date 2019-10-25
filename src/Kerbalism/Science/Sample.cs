@@ -104,7 +104,7 @@ namespace KERBALISM
 
 		public ScienceData ConvertToStockData()
 		{
-			return new ScienceData((float)size, 1.0f, 1.0f, subjectData.StockSubjectId, subjectData.FullTitle);
+			return new ScienceData((float)size, 0.0f, 0.0f, subjectData.StockSubjectId, subjectData.FullTitle);
 		}
 	}
 

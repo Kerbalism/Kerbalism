@@ -144,6 +144,8 @@ namespace KERBALISM
 				requirementsBox.SetLayoutElement(false, false, 230);
 				requirementsBox.SetUpdateAction(RequirementsUpdate);
 			}
+
+			window.RebuildLayout();
 		}
 
 		private void GetData()

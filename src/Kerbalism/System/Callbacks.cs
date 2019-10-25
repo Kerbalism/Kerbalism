@@ -75,11 +75,11 @@ namespace KERBALISM
 
 	public sealed class Callbacks
 	{
+		public static EventData<Part, Configure> onConfigure = new EventData<Part, Configure>("onConfigure");
+
 		public Callbacks()
 		{
 			GameEvents.onPartCouple.Add(OnPartCouple);
-
-
 
 			GameEvents.onCrewOnEva.Add(this.ToEVA);
 			GameEvents.onCrewBoardVessel.Add(this.FromEVA);

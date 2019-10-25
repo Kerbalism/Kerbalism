@@ -72,5 +72,10 @@ namespace KERBALISM.KsmGui
 				yield return null;
 			}
 		}
+
+		private void OnDisable()
+		{
+			isRebuilding = false;
+		}
 	}
 }

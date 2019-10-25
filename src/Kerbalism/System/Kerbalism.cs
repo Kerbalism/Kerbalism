@@ -131,8 +131,8 @@ namespace KERBALISM
 				Profile.SetupPods(); // add supply resources to pods
 				Misc.TweakPartIcons(); // various tweaks to the part icons in the editor
 
-				// static KsmGui windows
-				ScienceArchiveWindow.Init();
+				// Create KsmGui windows
+				new ScienceArchiveWindow();
 
 				// GameEvents callbacks
 				Callbacks = new Callbacks();

@@ -141,6 +141,21 @@ namespace KERBALISM
 			DoConfigure();
 		}
 
+		public List<ConfigureSetup> GetUnlockedSetups()
+		{
+			List<ConfigureSetup> unlockedSetups = new List<ConfigureSetup>();
+			foreach (ConfigureSetup setup in setups)
+			{
+				// if unlocked
+				if (setup.tech.Length == 0 || Lib.HasTech(setup.tech))
+				{
+					// unlock
+					unlockedSetups.Add(setup);
+				}
+			}
+			return unlockedSetups;
+		}
+
 		public void DoConfigure()
 		{
 			// shortcut to resource library
@@ -151,16 +166,7 @@ namespace KERBALISM
 			extra_mass = 0.0;
 
 			// find modules unlocked by tech
-			unlocked = new List<ConfigureSetup>();
-			foreach (ConfigureSetup setup in setups)
-			{
-				// if unlocked
-				if (setup.tech.Length == 0 || Lib.HasTech(setup.tech))
-				{
-					// unlock
-					unlocked.Add(setup);
-				}
-			}
+			unlocked = GetUnlockedSetups();
 
 			// make sure configuration include all available slots
 			// this also create default configuration
@@ -303,6 +309,8 @@ namespace KERBALISM
 
 			// refresh VAB ui
 			if (Lib.IsEditor()) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+
+			Callbacks.onConfigure.Fire(part, this);
 
 			// this was configured at least once
 			initialized = true;
