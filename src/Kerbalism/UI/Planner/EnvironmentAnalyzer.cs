@@ -25,27 +25,52 @@
             shadow_time = shadow_period / orbital_period;
             zerog = !landed && (!body.atmosphere || body.atmosphereDepth < altitude);
 
-
             RadiationBody rb = Radiation.Info(body);
             RadiationBody sun_rb = Radiation.Info(mainSun); // TODO Kopernicus support: not sure if/how this work with multiple suns/stars
             gamma_transparency = Sim.GammaTransparency(body, 0.0);
 
-            // add gamma radiation emitted by body and its sun
-            var gamma_radiation = Radiation.DistanceRadiation(rb.radiation_r0, altitude);
-            if (mainSun != body)
-                gamma_radiation += Radiation.DistanceRadiation(sun_rb.radiation_r0, body.orbit.semiMajorAxis);
-            gamma_radiation /= 3600.0;
+			// add gamma radiation emitted by body and its sun
+			var gamma_radiation = Radiation.DistanceRadiation(rb.radiation_r0, altitude) / 3600.0;
 
-            extern_rad = Settings.ExternRadiation / 3600.0;
+#if DEBUG_RADIATION
+			Lib.Log("Planner/EA: " + body + " sun " + mainSun + " alt " + altitude + " sol flux " + solar_flux + " aalbedo flux " + albedo_flux + " body flux " + body_flux + " total flux " + total_flux);
+			Lib.Log("Planner/EA: body surface radiation " + Lib.HumanReadableRadiation(gamma_radiation, false));
+#endif
+
+			var b = body;
+			while (b != null && b.orbit != null && b != mainSun)
+			{
+				if (b == b.referenceBody) break;
+				var dist = b.orbit.semiMajorAxis;
+				b = b.referenceBody;
+
+				gamma_radiation += Radiation.DistanceRadiation(Radiation.Info(b).radiation_r0, dist) / 3600.0;
+#if DEBUG_RADIATION
+				Lib.Log("Planner/EA: with gamma radiation from " + b + " " + Lib.HumanReadableRadiation(gamma_radiation, false));
+				Lib.Log("Planner/EA: semi major axis " + dist);
+#endif
+			}
+
+			extern_rad = Settings.ExternRadiation / 3600.0;
             heliopause_rad = gamma_radiation + extern_rad + sun_rb.radiation_pause;
-            magnetopause_rad = gamma_radiation + heliopause_rad + rb.radiation_pause;
-            inner_rad = gamma_radiation + magnetopause_rad + rb.radiation_inner;
-            outer_rad = gamma_radiation + magnetopause_rad + rb.radiation_outer;
-            surface_rad = magnetopause_rad * gamma_transparency + rb.radiation_surface;
-            storm_rad = heliopause_rad + PreferencesRadiation.Instance.StormRadiation * (solar_flux > double.Epsilon ? 1.0 : 0.0);
-        }
+			magnetopause_rad = gamma_radiation + heliopause_rad + rb.radiation_pause;
+			inner_rad = gamma_radiation + magnetopause_rad + rb.radiation_inner;
+			outer_rad = gamma_radiation + magnetopause_rad + rb.radiation_outer;
+			surface_rad = magnetopause_rad * gamma_transparency + rb.radiation_surface / 3600.0;
+			storm_rad = heliopause_rad + PreferencesRadiation.Instance.StormRadiation * (solar_flux > double.Epsilon ? 1.0 : 0.0);
 
-        public CelestialBody body;                            // target body
+#if DEBUG_RADIATION
+			Lib.Log("Planner/EA: extern_rad " + Lib.HumanReadableRadiation(extern_rad, false));
+			Lib.Log("Planner/EA: heliopause_rad " + Lib.HumanReadableRadiation(heliopause_rad, false));
+			Lib.Log("Planner/EA: magnetopause_rad " + Lib.HumanReadableRadiation(magnetopause_rad, false));
+			Lib.Log("Planner/EA: inner_rad " + Lib.HumanReadableRadiation(inner_rad, false));
+			Lib.Log("Planner/EA: outer_rad " + Lib.HumanReadableRadiation(outer_rad, false));
+			Lib.Log("Planner/EA: surface_rad " + Lib.HumanReadableRadiation(surface_rad, false));
+			Lib.Log("Planner/EA: storm_rad " + Lib.HumanReadableRadiation(storm_rad, false));
+#endif
+		}
+
+		public CelestialBody body;                            // target body
         public double altitude;                               // target altitude
         public bool landed;                                   // true if landed
         public bool breathable;                               // true if inside breathable atmosphere

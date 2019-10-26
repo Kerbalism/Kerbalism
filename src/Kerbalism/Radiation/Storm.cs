@@ -50,7 +50,7 @@ namespace KERBALISM
                     bd.display_warning = Lib.RandomFloat() < sun_observation_quality;
 
 
-#if DEBUG
+#if DEBUG_RADIATION
 					Lib.Log("Storm on " + body + " will start in " + Lib.HumanReadableDuration(bd.storm_time - now) + " and last for " + Lib.HumanReadableDuration(bd.storm_duration));
 				}
 				else
