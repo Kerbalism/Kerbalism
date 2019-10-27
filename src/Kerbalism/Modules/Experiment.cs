@@ -235,7 +235,7 @@ namespace KERBALISM
 
 		#region update methods
 
-		public void Update()
+		public virtual void Update()
 		{
 			// in flight
 			if (Lib.IsFlight())
@@ -283,7 +283,7 @@ namespace KERBALISM
 			}
 		}
 
-		public void FixedUpdate()
+		public virtual void FixedUpdate()
 		{
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Experiment.FixedUpdate");
 
@@ -301,17 +301,10 @@ namespace KERBALISM
 				UnityEngine.Profiling.Profiler.EndSample();
 				return;
 			}
-			//if (next_check > Planetarium.GetUniversalTime())
-			//{
-			//	UnityEngine.Profiling.Profiler.EndSample();
-			//	return;
-			//}
-
-
 
 			if (!Running)
 			{
-				vesselSituation = vd.VesselSituation;
+				vesselSituation = GetSituation(vd);
 				subject = ScienceDB.GetSubjectData(ExpInfo, vesselSituation, out situationId);
 				UnityEngine.Profiling.Profiler.EndSample();
 				return;
@@ -321,7 +314,7 @@ namespace KERBALISM
 
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Experiment.FixedUpdate.RunningUpdate");
 			RunningUpdate(
-				vessel, vd, this, privateHdId, didPrepare, shrouded,
+				vessel, vd, GetSituation(vd), this, privateHdId, didPrepare, shrouded,
 				ResourceCache.GetResource(vessel, "ElectricCharge"),
 				ResourceCache.Get(vessel),
 				ResourceDefs,
@@ -339,11 +332,10 @@ namespace KERBALISM
 			UnityEngine.Profiling.Profiler.EndSample();
 		}
 
-		public static void BackgroundUpdate(Vessel v, ProtoPartModuleSnapshot m, Experiment prefab, ResourceInfo ec, VesselResources resources, double elapsed_s)
+		// note : we use a non-static method so it can be overriden
+		public virtual void BackgroundUpdate(Vessel v, VesselData vd, ProtoPartModuleSnapshot m, ResourceInfo ec, VesselResources resources, double elapsed_s)
 		{
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Experiment.BackgroundUpdate");
-
-			VesselData vd = v.KerbalismData();
 
 			if (!vd.IsSimulated)
 			{
@@ -352,11 +344,11 @@ namespace KERBALISM
 			}
 
 			RunningState expState = Lib.Proto.GetEnum(m, "expState", RunningState.Stopped);
-			ExperimentInfo expInfo = ScienceDB.GetExperimentInfo(prefab.experiment_id);
+			ExperimentInfo expInfo = ScienceDB.GetExperimentInfo(experiment_id); // from prefab
 
 			if (!IsRunning(expState))
 			{
-				int notRunningSituationId = VesselSituation.GetBiomeAgnosticIdForExperiment(vd.VesselSituation.Id, expInfo);
+				int notRunningSituationId = VesselSituation.GetBiomeAgnosticIdForExperiment(GetSituation(vd).Id, expInfo);
 				Lib.Proto.Set(m, "situationId", notRunningSituationId);
 				UnityEngine.Profiling.Profiler.EndSample();
 				return;
@@ -374,10 +366,10 @@ namespace KERBALISM
 
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Experiment.BackgroundUpdate.RunningUpdate");
 			RunningUpdate(
-				v, vd, prefab, privateHdId, didPrepare, shrouded,
+				v, vd, GetSituation(vd), this, privateHdId, didPrepare, shrouded, // "this" is the prefab
 				ec,
 				resources,
-				prefab.ResourceDefs,
+				ResourceDefs, // from prefab
 				expInfo,
 				expState,
 				elapsed_s,
@@ -398,14 +390,14 @@ namespace KERBALISM
 		}
 
 		private static void RunningUpdate(
-			Vessel v, VesselData vd, Experiment prefab, uint hdId, bool didPrepare, bool isShrouded,
+			Vessel v, VesselData vd, VesselSituation vs, Experiment prefab, uint hdId, bool didPrepare, bool isShrouded,
 			ResourceInfo ec, VesselResources resources, List<ObjectPair<string, double>> resourceDefs,
 			ExperimentInfo expInfo, RunningState expState, double elapsed_s,
 			ref int lastSituationId, ref double remainingSampleMass, out SubjectData subjectData, out string mainIssue)
 		{
 			mainIssue = string.Empty;
 			
-			subjectData = ScienceDB.GetSubjectData(expInfo, vd.VesselSituation);
+			subjectData = ScienceDB.GetSubjectData(expInfo, vs);
 
 			bool subjectHasChanged;
 			if (subjectData != null)
@@ -600,6 +592,11 @@ namespace KERBALISM
 				remainingSampleMass -= massDelta;
 				remainingSampleMass = Math.Max(remainingSampleMass, 0.0);
 			}
+		}
+
+		public virtual VesselSituation GetSituation(VesselData vd)
+		{
+			return vd.VesselSituation;
 		}
 
 		private static Drive GetDrive(VesselData vesselData, uint hdId, double chunkSize, SubjectData subjectData)
