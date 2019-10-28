@@ -308,8 +308,10 @@ namespace KERBALISM.Planner
 			// create tooltip
 			string tooltip = res.Tooltip();
 
+			var resource = PartResourceLibrary.Instance.resourceDefinitions[res_name];
+
 			// render the panel section
-			p.AddSection(Lib.SpacesOnCaps(res_name).ToUpper(), string.Empty,
+			p.AddSection(Lib.SpacesOnCaps(resource.displayName).ToUpper(), string.Empty,
 				() => { p.Prev(ref resource_index, panel_resource.Count); enforceUpdate = true; },
 				() => { p.Next(ref resource_index, panel_resource.Count); enforceUpdate = true; });
 			p.AddContent("storage", Lib.HumanReadableAmount(res.storage), tooltip);
