@@ -65,7 +65,7 @@
 * Show career radiation dosis in Kerbal info window (Sir Mortimer)
 * Added + fixed radiation configs for Atomic Age and mK2Expansion (Shaddow Phönix)
 * Fixed life support slot upgrades in SSPX (Hauke Lampe)
-
+* Unpressurized habitats include a fair warning in the part description and title (zer0Kerbal)
 
 ## v3.0.2 for all versions of KSP from 1.4.0 to 1.7.x
 
