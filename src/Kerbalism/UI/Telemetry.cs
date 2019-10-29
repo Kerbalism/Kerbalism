@@ -162,7 +162,8 @@ namespace KERBALISM
 				if (supplies == 0) p.AddSection("SUPPLIES");
 
 				// determine label
-				string label = Lib.SpacesOnCaps(supply.resource).ToLower();
+				var resource = PartResourceLibrary.Instance.resourceDefinitions[supply.resource];
+				string label = Lib.SpacesOnCaps(resource.displayName).ToLower();
 
 				StringBuilder sb = new StringBuilder();
 				
