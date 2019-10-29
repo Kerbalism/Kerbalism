@@ -1,3 +1,4 @@
+#define DEBUG_RELIABILITY
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -863,7 +864,18 @@ namespace KERBALISM
 					{
 						foreach (PartModule m in modules)
 						{
-							(m as ModuleEngines).Shutdown();
+							var e = m as ModuleEngines;
+							e.Shutdown();
+							e.EngineIgnited = false;
+							e.flameout = true;
+
+							var efx = m as ModuleEnginesFX;
+							if (efx != null)
+							{
+								efx.DeactivateRunningFX();
+								efx.DeactivatePowerFX();
+								efx.DeactivateLoopingFX();
+							}
 						}
 					}
 					break;
