@@ -1,8 +1,7 @@
-#define DEBUG_RELIABILITY
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using System.Text;
 
 namespace KERBALISM
 {
@@ -53,7 +52,6 @@ namespace KERBALISM
 		CrewSpecs repair_cs;                                                // crew specs
 		bool explode = false;
 
-
 		public override void OnStart(StartState state)
 		{
 			// don't break tutorial scenarios
@@ -70,7 +68,7 @@ namespace KERBALISM
 			if (last_inspection <= 0) last_inspection = Planetarium.GetUniversalTime();
 
 			// cache list of modules
-			if(type == "ModuleEngines")
+			if(type.StartsWith("ModuleEngines", StringComparison.Ordinal))
 			{
 				// do this generically. there are many different engine types derived from ModuleEngines:
 				// ModuleEnginesFX, ModuleEnginesRF, all the SolverEngines, possibly more
@@ -102,11 +100,22 @@ namespace KERBALISM
 				foreach (PartModule m in modules)
 				{
 					m.enabled = false;
+					m.isEnabled = false;
 				}
 			}
 
-			// type-specific hacks
-			if (broken) Apply(true);
+			if(broken) StartCoroutine(DeferredApply());
+		}
+
+		public IEnumerator DeferredApply()
+		{
+			// wait until vessel is unpacked. doing this will ensure that module
+			// specific hacks are executed after the module itself was OnStart()ed.
+			yield return new WaitUntil(() => !vessel.packed);
+			if (broken)
+			{
+				Apply(true);
+			}
 		}
 
 		/// <summary> Returns true if a failure should be triggered. </summary>
@@ -795,6 +804,16 @@ namespace KERBALISM
 
 		protected bool IsRunning()
 		{
+			if (type.StartsWith("ModuleEngines", StringComparison.Ordinal))
+			{
+				foreach (PartModule m in modules)
+				{
+					var e = m as ModuleEngines;
+					return e.currentThrottle > 0 && e.EngineIgnited && e.resultingThrust > 0;
+				}
+				return false;
+			}
+
 			switch (type)
 			{
 				case "ProcessController":
@@ -806,14 +825,6 @@ namespace KERBALISM
 					foreach (PartModule m in modules)
 						return (m as ModuleLight).isOn;
 					return false;
-
-				case "ModuleEngines":
-					foreach (PartModule m in modules)
-					{
-						var e = m as ModuleEngines;
-						return e.currentThrottle > 0 && e.EngineIgnited && e.resultingThrust > 0;
-					}
-					return false;
 			}
 
 			return false;
@@ -822,6 +833,25 @@ namespace KERBALISM
 		// apply type-specific hacks to enable/disable the module
 		protected void Apply(bool b)
 		{
+			if(b && type.StartsWith("ModuleEngines", StringComparison.Ordinal))
+			{
+				foreach (PartModule m in modules)
+				{
+					var e = m as ModuleEngines;
+					e.Shutdown();
+					e.EngineIgnited = false;
+					e.flameout = true;
+
+					var efx = m as ModuleEnginesFX;
+					if (efx != null)
+					{
+						efx.DeactivateRunningFX();
+						efx.DeactivatePowerFX();
+						efx.DeactivateLoopingFX();
+					}
+				}
+			}
+
 			switch (type)
 			{
 				case "ProcessController":
@@ -859,22 +889,16 @@ namespace KERBALISM
 					}
 					break;
 
-				case "ModuleEngines":
+				case "ModuleRCSFX":
 					if (b)
 					{
 						foreach (PartModule m in modules)
 						{
-							var e = m as ModuleEngines;
-							e.Shutdown();
-							e.EngineIgnited = false;
-							e.flameout = true;
-
-							var efx = m as ModuleEnginesFX;
-							if (efx != null)
+							var e = m as ModuleRCSFX;
+							if(e != null)
 							{
-								efx.DeactivateRunningFX();
-								efx.DeactivatePowerFX();
-								efx.DeactivateLoopingFX();
+								e.DeactivateFX();
+								e.DeactivatePowerFX();
 							}
 						}
 					}
