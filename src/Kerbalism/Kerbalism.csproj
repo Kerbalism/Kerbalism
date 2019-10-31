@@ -145,6 +145,7 @@
     <Compile Include="Database\LandmarkData.cs" />
     <Compile Include="Database\PartData.cs" />
     <Compile Include="Database\RuleData.cs" />
+    <Compile Include="Database\VesselSituations.cs" />
     <Compile Include="Science\SubjectData.cs" />
     <Compile Include="Database\SupplyData.cs" />
     <Compile Include="Database\UIData.cs" />
@@ -182,7 +183,7 @@
     <Compile Include="Comms\Communications.cs" />
     <Compile Include="Science\ScienceDB.cs" />
     <Compile Include="Science\ScienceSituation.cs" />
-    <Compile Include="Science\VesselSituation.cs" />
+    <Compile Include="Science\Situation.cs" />
     <Compile Include="System\API.cs" />
     <Compile Include="System\Callbacks.cs" />
     <Compile Include="UI\ConnManager.cs" />

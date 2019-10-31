@@ -34,7 +34,7 @@ namespace KERBALISM
 
 		// a subject will be completed (gamevent fired and popup shown) when there is less than this value to retrieve in RnD
 		// this is needed because of floating point imprecisions in the in-flight science count (due to a gazillion adds of very small values)
-		public const double scienceLeftForSubjectCompleted = 0.0005;
+		public const double scienceLeftForSubjectCompleted = 0.01;
 
 		// utility things
 		static readonly List<XmitFile> xmitFiles = new List<XmitFile>();

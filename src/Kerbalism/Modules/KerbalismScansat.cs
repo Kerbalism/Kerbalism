@@ -66,7 +66,7 @@ namespace KERBALISM
 
 				if (IsScanning)
 				{
-					VesselSituation scanSatSituation = new VesselSituation(vessel.mainBody.flightGlobalsIndex, ScienceSituation.InSpaceHigh);
+					Situation scanSatSituation = new Situation(vessel.mainBody.flightGlobalsIndex, ScienceSituation.InSpaceHigh);
 					SubjectData subject = ScienceDB.GetSubjectData(expInfo, scanSatSituation);
 					if (subject == null)
 						return;
@@ -209,7 +209,7 @@ namespace KERBALISM
 				if (is_scanning)
 				{
 					ExperimentInfo expInfo = ScienceDB.GetExperimentInfo(kerbalismScansat.experimentType);
-					SubjectData subject = ScienceDB.GetSubjectData(expInfo, vd.VesselSituation);
+					SubjectData subject = ScienceDB.GetSubjectData(expInfo, vd.VesselSituations.GetExperimentSituation(expInfo));
 					if (subject == null)
 						return;
 

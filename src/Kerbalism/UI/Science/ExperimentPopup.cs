@@ -212,7 +212,7 @@ namespace KERBALISM
 			}
 
 			sb.Append("\nsituation :<pos=20em>");
-			sb.Append(Lib.Color(vd.VesselSituation.ExperimentSituationName(expInfo), Lib.Kolor.Yellow, true));
+			sb.Append(Lib.Color(vd.VesselSituations.GetExperimentSituation(expInfo).GetTitleForExperiment(expInfo), Lib.Kolor.Yellow, true));
 
 			if (subjectData == null)
 			{

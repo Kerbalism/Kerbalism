@@ -72,18 +72,43 @@ EXPERIMENT_DEFINITION
 		// Body restrictions, multiple lines allowed (just don't use confictiong combinations).
 		// Can be "BodyAllowed = X" / "BodyNotAllowed = X" with either a body name or the following keywords :
 		// Atmospheric, NonAtmospheric, Gaseous, Solid, Oceanic, HomeBody, HomeBodyAndMoons, Planets, Moons, Suns
-		// Example : only planets and moons that aren't in the home system (kerbin, mun & minmus in stock)
-		BodyAllowed = HomeBodyAndMoons
+		// Example : all bodies that have an atmosphere excepted Duna and all suns (suns are atmospheric bodies)
+		BodyAllowed = Atmospheric
 		BodyNotAllowed = Suns
+		BodyNotAllowed = Duna
+
+		// Optional : virtual biomes are hardcoded special biomes that will generate individual subjects
+		// Virtual biomes are enabled per situation and can't be combined with normal body biomes
+		// When using multiple virtual biomes that may be available at the same time, the priority is hardcoded (see list)
+		// Note that virtual biomes experiments are incompatible with the contract system, you may get contracts that are not doable.
+		// Multiple lines allowed, format is `VirtualBiome = VirtualBiomeKeyword`. Valid keywords are :
+		// - NoBiome : create a "biome-agostic" situation available when no virtual biome is available.
+		// - NorthernHemisphere : available when on/over the body north hemisphere. Lowest priority. Implemented DMOS contracts compatibility.
+		// - SouthernHemisphere : available when on/over the body south hemisphere. Lowest priority. Implemented DMOS contracts compatibility.
+		// - InnerBelt : available when inside the body inner radiation belt
+		// - OuterBelt : available when inside the body outer radiation belt
+		// - Magnetosphere : available when inside the body magnetosphere. Lower priority than the belt biomes.
+		// - Interstellar : available when in a sun SOI and outside the heliopause
+		// - Reentry : available when descending rapidly in atmosphere over mach 5 while apoapsis is outside the atmosphere. 
+		// Example : these 4 subjects will be available for every situation defined with `@VirtualBiomes`
+		VirtualBiome = NoBiome
+		VirtualBiome = InnerBelt
+		VirtualBiome = OuterBelt
+		VirtualBiome = Magnetosphere
 										
 		// Optional : situation values will create-or-replace the stock situationMask/biomeMask values.
-		// Multiple lines allowed, format is "Situation = SituationKeyword", and append "@Biomes" to allow biomes
-		// Valid keywords : SrfLanded, SrfSplashed, FlyingLow, FlyingHigh, InSpaceLow, InSpaceHigh
-		// There are other situations, but they aren't implemented properly yet.
-		Situation = SrfLanded@Biomes
-		Situation = SrfSplashed@Biomes
+		// Multiple lines allowed, format is `Situation = SituationKeyword`, and append `@Biomes` or `@VirtualBiomes` to allow biomes or virtual biomes
+		// Valid situation keyword :
+		// - SrfLanded, SrfSplashed, FlyingLow, FlyingHigh, InSpaceLow, InSpaceHigh
+		// - Surface : valid when landed or splashed, uses the SrfLanded science value. Incompatible with SrfLanded/SrfSplashed.
+		// - Flying : valid when in atmosphere, uses the FlyingHigh science value. Incompatible with FlyingLow/FlyingHigh.
+		// - Space : valid when in space, uses the InSpaceLow science value. Incompatible with InSpaceLow/InSpaceHigh.
+		// - BodyGlobal : always valid, uses the InSpaceLow science value. Incompatible with all other situations.
+		// Example : normal body biomes for the landed+splashed situation and flying low, no biomes for flying high, and the virtual biomes for the space low+high situation
+		Situation = Landed@Biomes
 		Situation = FlyingLow@Biomes 
 		Situation = FlyingHigh
+		Situation = Space@VirtualBiomes
 	}
 }
 
@@ -109,12 +134,12 @@ namespace KERBALISM
 		/// <summary> UI friendly name of the experiment </summary>
 		public string Title { get; private set; }
 
-		/// <summary> max data amount for the experiment </summary>
+		/// <summary> mass of a full sample </summary>
 		public double SampleMass { get; private set; }
 
 		public BodyConditions ExpBodyConditions { get; private set; }
 
-		/// <summary> max data amount for the experiment, equal to stockDef.baseValue * stockDef.dataScale</summary>
+		/// <summary> size of a full file or sample</summary>
 		public double DataSize { get; private set; }
 
 		public bool IsSample { get; private set; }
@@ -123,11 +148,22 @@ namespace KERBALISM
 
 		public double DataScale => stockDef.dataScale;
 
-		/// <summary> experiment situation mask </summary>
-		public uint SituationMask => stockDef.situationMask;
+		/// <summary> situation mask </summary>
+		public uint SituationMask { get; private set; }
 
-		/// <summary> experiment biome mask </summary>
-		public uint BiomeMask => stockDef.biomeMask;
+		/// <summary> stock ScienceExperiment situation mask </summary>
+		public uint StockSituationMask => stockDef.situationMask;
+
+		/// <summary> biome mask </summary>
+		public uint BiomeMask { get; private set; }
+
+		/// <summary> stock ScienceExperiment biome mask </summary>
+		public uint StockBiomeMask => stockDef.biomeMask;
+
+		/// <summary> virtual biomes mask </summary>
+		public uint VirtualBiomeMask { get; private set; }
+
+		public List<VirtualBiome> VirtualBiomes { get; private set; } = new List<VirtualBiome>();
 
 		public double ScienceCap => stockDef.scienceCap * HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier;
 
@@ -135,6 +171,10 @@ namespace KERBALISM
 		public string ModuleInfo { get; private set; } = string.Empty;
 
 		public bool IsROC { get; private set; }
+
+		public bool HasDBSubjects { get; private set; }
+
+		public bool IgnoreBodyRestrictions { get; private set; }
 
 		public ExperimentInfo(ScienceExperiment stockDef, ConfigNode expInfoNode)
 		{
@@ -203,11 +243,26 @@ namespace KERBALISM
 				ExpBodyConditions = new BodyConditions(expInfoNode);
 			}
 
+			foreach (string virtualBiomeStr in expInfoNode.GetValues("VirtualBiome"))
+			{
+				if (Enum.IsDefined(typeof(VirtualBiome), virtualBiomeStr))
+				{
+					VirtualBiomes.Add((VirtualBiome)Enum.Parse(typeof(VirtualBiome), virtualBiomeStr));
+				}
+				else
+				{
+					Lib.Log("ERROR : Experiment definition `{0}` has unknown VirtualBiome={1}", ExperimentId, virtualBiomeStr);
+				}
+			}
+
+			IgnoreBodyRestrictions = Lib.ConfigValue(expInfoNode, "IgnoreBodyRestrictions", false);
+
+			uint situationMask = 0;
+			uint biomeMask = 0;
+			uint virtualBiomeMask = 0;
 			// if defined, override stock situation / biome mask
 			if (expInfoNode.HasValue("Situation"))
 			{
-				uint situationMask = 0;
-				uint biomeMask = 0;
 				foreach (string situation in expInfoNode.GetValues("Situation"))
 				{
 					string[] sitAtBiome = situation.Split(new char[] { '@' }, StringSplitOptions.RemoveEmptyEntries);
@@ -220,17 +275,56 @@ namespace KERBALISM
 					{
 						situationMask += scienceSituation.BitValue();
 
-						if (sitAtBiome.Length == 2 && sitAtBiome[1].Equals("Biomes", StringComparison.OrdinalIgnoreCase))
+						if (sitAtBiome.Length == 2)
 						{
-							biomeMask += scienceSituation.BitValue();
+							if (sitAtBiome[1].Equals("Biomes", StringComparison.OrdinalIgnoreCase))
+							{
+								biomeMask += scienceSituation.BitValue();
+							}
+							else if (sitAtBiome[1].Equals("VirtualBiomes", StringComparison.OrdinalIgnoreCase) && VirtualBiomes.Count > 0)
+							{
+								virtualBiomeMask += scienceSituation.BitValue();
+							}
 						}
 					}
+					else
+					{
+						Lib.Log("WARNING : Experiment definition `{0}` has unknown situation : `{1}`", ExperimentId, sitAtBiome[0]);
+					}
 				}
-				stockDef.situationMask = situationMask;
-				stockDef.biomeMask = biomeMask;
+			}
+			else
+			{
+				situationMask = stockDef.situationMask;
+				biomeMask = stockDef.biomeMask;
 			}
 
-			// patch experiment prfabs and get module infos.
+			if (situationMask == 0)
+			{
+				Lib.Log("Experiment definition `{0}` : `0` situationMask is unsupported, patching to `BodyGlobal`", ExperimentId);
+				situationMask = ScienceSituation.BodyGlobal.BitValue();
+				HasDBSubjects = false;
+			}
+			else
+			{
+				HasDBSubjects = !Lib.ConfigValue(expInfoNode, "IsGeneratingSubjects", false);
+			}
+
+			string error;
+			uint stockSituationMask;
+			uint stockBiomeMask;
+			if (!ScienceSituationUtils.ValidateSituationBitMask(ref situationMask, biomeMask, out stockSituationMask, out stockBiomeMask, out error))
+			{
+				Lib.Log("ERROR : Experiment definition `{0}` is incorrect :\n{1}", ExperimentId, error);
+			}
+
+			SituationMask = situationMask;
+			BiomeMask = biomeMask;
+			VirtualBiomeMask = virtualBiomeMask;
+			stockDef.situationMask = stockSituationMask;
+			stockDef.biomeMask = stockBiomeMask;
+
+			// patch experiment prefabs and get module infos.
 			// must be done at the end of the ctor so everything in "this" is properly setup
 			SetupPrefabs();
 		}
@@ -368,14 +462,13 @@ namespace KERBALISM
 				{
 					ap.moduleInfos.Clear();
 					ap.resourceInfos.Clear();
-
 					try
 					{
 						Lib.ReflectionCall(PartLoader.Instance, "CompilePartInfo", new Type[] { typeof(AvailablePart), typeof(Part) }, new object[] { ap, ap.partPrefab });
 					}
-					catch (Exception)
+					catch (Exception ex)
 					{
-						Lib.Log("Could not patch the moduleInfo for part " + ap.name);
+						Lib.Log("Could not patch the moduleInfo for part " + ap.name + " - " + ex.Message + "\n" + ex.StackTrace);
 					}
 				}
 			}
@@ -390,10 +483,21 @@ namespace KERBALISM
 			{
 				if (situation.IsAvailableForExperiment(this))
 				{
-					if (situation.IsBiomesRelevantForExperiment(this))
+					if (situation.IsBodyBiomesRelevantForExperiment(this))
+					{
 						result.Add(Lib.BuildString(situation.Title(), " (biomes)"));
+					}
+					else if (situation.IsVirtualBiomesRelevantForExperiment(this))
+					{
+						foreach (VirtualBiome biome in VirtualBiomes)
+						{
+							result.Add(Lib.BuildString(situation.Title(), " (", biome.Title(),")"));
+						}
+					}
 					else
+					{
 						result.Add(situation.Title());
+					}
 				}
 			}
 

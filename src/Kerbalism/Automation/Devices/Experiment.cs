@@ -132,7 +132,7 @@ namespace KERBALISM
 		{
 			issue = Lib.Proto.GetString(protoModule, "issue");
 			status = Lib.Proto.GetEnum(protoModule, "status", Experiment.ExpStatus.Stopped);
-			subject = ScienceDB.GetSubjectData(expInfo, vessel.KerbalismData().VesselSituation);
+			subject = ScienceDB.GetSubjectData(expInfo, Lib.Proto.GetInt(protoModule, "situationId"));
 			scienceValue = Experiment.ScienceValue(subject);
 		}
 

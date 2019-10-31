@@ -95,7 +95,7 @@ namespace KERBALISM
 			node.AddValue("resultText", resultText);
 			node.AddValue("useStockCrediting", useStockCrediting);
 
-			if (subjectData is MultiSubjectData)
+			if (subjectData is UnknownSubjectData)
 				node.AddValue("stockSubjectId", subjectData.StockSubjectId);
 
 			node.AddValue("analyze", analyze);

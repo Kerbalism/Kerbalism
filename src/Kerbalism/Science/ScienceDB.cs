@@ -120,7 +120,10 @@ namespace KERBALISM
 					biomesSubjects.Add(biomeIndex, subjects);
 				}
 
-				subjects.Add(subjectData);
+				if (subjectData != null)
+				{
+					subjects.Add(subjectData);
+				}
 			}
 
 			public void RemoveSubject(int bodyIndex, ScienceSituation scienceSituation, int biomeIndex, SubjectData subjectData)
@@ -181,7 +184,11 @@ namespace KERBALISM
 					biomesSubject.Add(biomeIndex, subjectDataList);
 				}
 
-				subjectDataList.Add(subjectData);
+				if (subjectData != null)
+				{
+					subjectDataList.Add(subjectData);
+				}
+				
 			}
 
 			public void RemoveSubject(ExperimentInfo expInfo, int bodyIndex, ScienceSituation scienceSituation, int biomeIndex, SubjectData subjectData)
@@ -245,7 +252,7 @@ namespace KERBALISM
 		// HashSet of all subjects using the stock string id as key, used for RnD subjects synchronization
 		private static readonly HashSet<string> knownStockSubjectsId = new HashSet<string>();
 
-		private static readonly List<MultiSubjectData> multiSubjectDataList = new List<MultiSubjectData>();
+		private static readonly Dictionary<string, SubjectData> unknownSubjectDatas = new Dictionary<string, SubjectData>();
 
 		public static double uncreditedScience;
 
@@ -267,6 +274,9 @@ namespace KERBALISM
 			// no matter if the RnD instance is null or not because the ScienceExperiment dictionary is static.
 			foreach (string experimentId in ResearchAndDevelopment.GetExperimentIDs())
 			{
+				if (experimentId == "recovery")
+					continue;
+
 				ConfigNode kerbalismExpNode = null;
 				foreach (ConfigNode expDefNode in expDefNodes)
 				{
@@ -281,17 +291,21 @@ namespace KERBALISM
 				ScienceExperiment stockDef = ResearchAndDevelopment.GetExperiment(experimentId);
 				if (stockDef == null)
 				{
-					Lib.Log("ERROR : ScienceExperiment is null for experimentID=" + experimentId + ", skipping...");
+					Lib.Log("ERROR : ScienceExperiment is null for experiment Id=" + experimentId + ", skipping...");
 					continue;
 				}
 
 				ExperimentInfo expInfo = new ExperimentInfo(stockDef, kerbalismExpNode);
+				if (!experiments.ContainsKey(experimentId))
+					experiments.Add(experimentId, expInfo);
+				if (!subjectByExpThenSituationId.ContainsKey(expInfo))
+					subjectByExpThenSituationId.Add(expInfo, new Dictionary<int, SubjectData>());
 
 				for (int bodyIndex = 0; bodyIndex < FlightGlobals.Bodies.Count; bodyIndex++)
 				{
 					CelestialBody body = FlightGlobals.Bodies[bodyIndex];
 
-					if (!expInfo.ExpBodyConditions.IsBodyAllowed(body))
+					if (!expInfo.IgnoreBodyRestrictions && !expInfo.ExpBodyConditions.IsBodyAllowed(body))
 						continue;
 
 					// ScienceSituationUtils.validSituations is all situations in the enum, apart from the "None" value
@@ -302,42 +316,65 @@ namespace KERBALISM
 							continue;
 
 						// don't add impossible body / situation combinations
-						if (!scienceSituation.IsAvailableOnBody(body))
+						if (!expInfo.IgnoreBodyRestrictions && !scienceSituation.IsAvailableOnBody(body))
 							continue;
 
-						// only register the experiment in the DB now that we are sure it has at least one possible subject
-						if (!experiments.ContainsKey(experimentId))
-							experiments.Add(experimentId, expInfo);
-						if (!subjectByExpThenSituationId.ContainsKey(expInfo))
-							subjectByExpThenSituationId.Add(expInfo, new Dictionary<int, SubjectData>());
-
-						// if the body has no biomes, a single biome (?) or if the experiment is biome agnostic for this situation, generate the global situation
-						if (body.BiomeMap == null || body.BiomeMap.Attributes.Length <= 1 || !scienceSituation.IsBiomesRelevantForExperiment(expInfo))
+						// virtual biomes always have priority over normal biomes :
+						if (scienceSituation.IsVirtualBiomesRelevantForExperiment(expInfo))
 						{
-							VesselSituation vesselSituation = new VesselSituation(bodyIndex, scienceSituation);
-							SubjectData subjectData = new SubjectData(expInfo, vesselSituation);
-							subjectCount++;
+							foreach (VirtualBiome virtualBiome in expInfo.VirtualBiomes)
+							{
+								if (!virtualBiome.IsAvailableOnBody(body))
+									continue;
 
-							subjectByExpThenSituationId[expInfo].Add(vesselSituation.Id, subjectData);
-							expBodiesSituationsBiomesSubject.AddSubject(expInfo, bodyIndex, scienceSituation, -1, subjectData);
-							bodiesSituationsBiomesSubjects.AddSubject(bodyIndex, scienceSituation, -1, subjectData);
-
-							knownStockSubjectsId.Add(subjectData.StockSubjectId);
+								SubjectData subjectData = null;
+								if (expInfo.HasDBSubjects)
+								{
+									Situation situation = new Situation(bodyIndex, scienceSituation, (int)virtualBiome);
+									subjectData = new SubjectData(expInfo, situation);
+									subjectByExpThenSituationId[expInfo].Add(situation.Id, subjectData);
+									knownStockSubjectsId.Add(subjectData.StockSubjectId);
+									subjectCount++;
+								}
+								
+								expBodiesSituationsBiomesSubject.AddSubject(expInfo, bodyIndex, scienceSituation, (int)virtualBiome, subjectData);
+								bodiesSituationsBiomesSubjects.AddSubject(bodyIndex, scienceSituation, (int)virtualBiome, subjectData);
+							}
 						}
-						else
+						// if the biome mask says the situation is biome dependant :
+						else if (scienceSituation.IsBodyBiomesRelevantForExperiment(expInfo) && body.BiomeMap != null && body.BiomeMap.Attributes.Length > 1)
 						{
 							for (int biomeIndex = 0; biomeIndex < body.BiomeMap.Attributes.Length; biomeIndex++)
 							{
-								VesselSituation vesselSituation = new VesselSituation(bodyIndex, scienceSituation, biomeIndex);
-								SubjectData subjectData = new SubjectData(expInfo, vesselSituation);
-								subjectCount++;
+								SubjectData subjectData = null;
+								if (expInfo.HasDBSubjects)
+								{
+									Situation situation = new Situation(bodyIndex, scienceSituation, biomeIndex);
+									subjectData = new SubjectData(expInfo, situation);
+									subjectByExpThenSituationId[expInfo].Add(situation.Id, subjectData);
+									knownStockSubjectsId.Add(subjectData.StockSubjectId);
+									subjectCount++;
+								}
 
-								subjectByExpThenSituationId[expInfo].Add(vesselSituation.Id, subjectData);
 								expBodiesSituationsBiomesSubject.AddSubject(expInfo, bodyIndex, scienceSituation, biomeIndex, subjectData);
 								bodiesSituationsBiomesSubjects.AddSubject(bodyIndex, scienceSituation, biomeIndex, subjectData);
-
-								knownStockSubjectsId.Add(subjectData.StockSubjectId);
 							}
+						}
+						// else generate the global, biome agnostic situation
+						else
+						{
+							SubjectData subjectData = null;
+							if (expInfo.HasDBSubjects)
+							{
+								Situation situation = new Situation(bodyIndex, scienceSituation);
+								subjectData = new SubjectData(expInfo, situation);
+								subjectByExpThenSituationId[expInfo].Add(situation.Id, subjectData);
+								knownStockSubjectsId.Add(subjectData.StockSubjectId);
+								subjectCount++;
+							}
+
+							expBodiesSituationsBiomesSubject.AddSubject(expInfo, bodyIndex, scienceSituation, -1, subjectData);
+							bodiesSituationsBiomesSubjects.AddSubject(bodyIndex, scienceSituation, -1, subjectData);
 						}
 					}
 				}
@@ -381,29 +418,27 @@ namespace KERBALISM
 			if (ResearchAndDevelopment.Instance == null)
 				Lib.Log("ERROR : ResearchAndDevelopment.Instance is null on subjects load !");
 
-			// remove multiSubjects (asteroid samples) from the database
-			foreach (MultiSubjectData subjectData in multiSubjectDataList)
+			// remove unknown subjects from the database
+			foreach (SubjectData subjectData in unknownSubjectDatas.Values)
 			{
 				int bodyIndex;
 				int scienceSituation;
 				int biomeIndex;
 
-				VesselSituation.IdToFields(subjectData.Situation.Id, out bodyIndex, out scienceSituation, out biomeIndex);
+				Situation.IdToFields(subjectData.Situation.Id, out bodyIndex, out scienceSituation, out biomeIndex);
 
 				expBodiesSituationsBiomesSubject.RemoveSubject(subjectData.ExpInfo, bodyIndex, (ScienceSituation)scienceSituation, biomeIndex, subjectData);
 				bodiesSituationsBiomesSubjects.RemoveSubject(bodyIndex, (ScienceSituation)scienceSituation, biomeIndex, subjectData);
 			}
 
 			// clear the list
-			multiSubjectDataList.Clear();
+			unknownSubjectDatas.Clear();
 
 
 			// find them again
 			foreach (ScienceSubject stockSubject in ResearchAndDevelopment.GetSubjects())
 				if (!knownStockSubjectsId.Contains(stockSubject.id))
 					GetSubjectDataFromStockId(stockSubject.id, stockSubject);
-
-
 		}
 
 		public static void Save(ConfigNode node)
@@ -434,7 +469,7 @@ namespace KERBALISM
 		}
 
 		/// <summary> return the subject information for the given experiment and situation, or null if the situation isn't available. </summary>
-		public static SubjectData GetSubjectData(ExperimentInfo expInfo, VesselSituation situation)
+		public static SubjectData GetSubjectData(ExperimentInfo expInfo, Situation situation)
 		{
 			int situationId;
 			if (!situation.ScienceSituation.IsBiomesRelevantForExperiment(expInfo))
@@ -450,7 +485,7 @@ namespace KERBALISM
 		}
 
 		/// <summary> return the subject information for the given experiment and situation, or null if the situation isn't available. </summary>
-		public static SubjectData GetSubjectData(ExperimentInfo expInfo, VesselSituation situation, out int situationId)
+		public static SubjectData GetSubjectData(ExperimentInfo expInfo, Situation situation, out int situationId)
 		{
 			if (!situation.ScienceSituation.IsBiomesRelevantForExperiment(expInfo))
 				situationId = situation.GetBiomeAgnosticId();
@@ -516,6 +551,11 @@ namespace KERBALISM
 		/// </summary>
 		public static SubjectData GetSubjectDataFromStockId(string stockSubjectId, ScienceSubject RnDSubject = null)
 		{
+			SubjectData subjectData = null;
+
+			if (unknownSubjectDatas.TryGetValue(stockSubjectId, out subjectData))
+				return subjectData;
+
 			string[] expAndSit = stockSubjectId.Split(new char[] { '@' }, StringSplitOptions.RemoveEmptyEntries);
 
 			if (expAndSit.Length != 2)
@@ -584,7 +624,7 @@ namespace KERBALISM
 			ScienceSituation scienceSituation = ScienceSituationUtils.ScienceSituationDeserialize(situation);
 
 			int biomeIndex = -1;
-			if (bodyAndBiome.Length == 2 && ScienceSituationUtils.IsBiomesRelevantForExperiment(scienceSituation, expInfo) && subjectBody.BiomeMap != null)
+			if (bodyAndBiome.Length == 2 && ScienceSituationUtils.IsBodyBiomesRelevantForExperiment(scienceSituation, expInfo) && subjectBody.BiomeMap != null)
 			{
 				for (int i = 0; i < subjectBody.BiomeMap.Attributes.Length; i++)
 				{
@@ -616,22 +656,28 @@ namespace KERBALISM
 			}
 
 			int bodyIndex = subjectBody.flightGlobalsIndex;
-			VesselSituation vesselSituation = new VesselSituation(bodyIndex, scienceSituation, biomeIndex);
-
-			SubjectData subjectData = null;
-			// if the subject isn't an asteroid sample or another kind of "more than one by situation" subject, we should have it in the DB, unless there has been a config change
+			Situation vesselSituation = new Situation(bodyIndex, scienceSituation, biomeIndex);
+			
+			// if the subject is a "doable" subject, we should have it in the DB.
 			if (extraSituationInfo == string.Empty)
 				subjectData = GetSubjectData(expInfo, vesselSituation);
 
-			// if it's an asteroid sample, or if it wasn't found, add it to the subject archives, but not to the available subjects dictionary
-			// and keep track of them in multiSubjectDataList so we can clear and reload them on load
+			// else create the subjectdata. this can happen either because :
+			// - it's a subject using the stock "extra id" system (asteroid samples)
+			// - the subject was created in RnD prior to an experiment definition config change
+			// - it was created by a mod that does things in a non-stock way (ex : DMOS anomaly scans uses the anomaly name as biomes)
 			if (subjectData == null)
 			{
-				MultiSubjectData multiSubjectData = new MultiSubjectData(expInfo, vesselSituation, stockSubjectId, RnDSubject, extraSituationInfo);
-				subjectData = multiSubjectData;
-				multiSubjectDataList.Add(multiSubjectData);
-				expBodiesSituationsBiomesSubject.AddSubject(subjectData.ExpInfo, bodyIndex, scienceSituation, biomeIndex, multiSubjectData);
-				bodiesSituationsBiomesSubjects.AddSubject(bodyIndex, scienceSituation, biomeIndex, multiSubjectData);
+				if (bodyAndBiome.Length == 2 && bodyAndBiome[1] != string.Empty && string.IsNullOrEmpty(extraSituationInfo))
+				{
+					extraSituationInfo = bodyAndBiome[1];
+				}
+
+				UnknownSubjectData unknownSubjectData = new UnknownSubjectData(expInfo, vesselSituation, stockSubjectId, RnDSubject, extraSituationInfo);
+				subjectData = unknownSubjectData;
+				unknownSubjectDatas.Add(stockSubjectId, unknownSubjectData);
+				expBodiesSituationsBiomesSubject.AddSubject(subjectData.ExpInfo, bodyIndex, scienceSituation, biomeIndex, subjectData);
+				bodiesSituationsBiomesSubjects.AddSubject(bodyIndex, scienceSituation, biomeIndex, subjectData);
 			}
 				
 			return subjectData;
@@ -639,17 +685,9 @@ namespace KERBALISM
 
 		public static BodiesSituationsBiomesSubject GetSubjectsForExperiment(ExperimentInfo expInfo)
 		{
-			if (!expBodiesSituationsBiomesSubject.ContainsKey(expInfo))
-			{
-				Lib.Log("ERROR: " + expInfo.ExperimentId + " isn't in the ScienceDB!!!");
-			}
-
-			if (Science.GameHasRnD && ResearchAndDevelopment.Instance == null)
-			{
-				Lib.Log("ERROR: RnD instance is null while getting subjects for " + expInfo.ExperimentId);
-			}
-
-			return expBodiesSituationsBiomesSubject[expInfo];
+			BodiesSituationsBiomesSubject result;
+			expBodiesSituationsBiomesSubject.TryGetValue(expInfo, out result);
+			return result;
 		}
 	}
 }

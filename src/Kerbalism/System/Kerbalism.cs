@@ -112,10 +112,10 @@ namespace KERBALISM
 			if (!IsCoreGameInitDone)
 			{
 				// core game systems
-				Sim.Init();			// find suns (Kopernicus support)
-				ScienceDB.Init();   // build the science database (needs Sim.Init() first)
+				Sim.Init();         // find suns (Kopernicus support)
 				Radiation.Init();   // create the radiation fields
-				Science.Init();     // register teh science hijacker
+				ScienceDB.Init();   // build the science database (needs Sim.Init() and Radiation.Init() first)
+				Science.Init();     // register the science hijacker
 
 				// static graphic components
 				LineRenderer.Init();

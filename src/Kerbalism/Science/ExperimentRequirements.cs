@@ -447,57 +447,53 @@ namespace KERBALISM
 		{
 			switch (req)
 			{
-				case Require.OrbitMinInclination: return "Min. inclination ";
-				case Require.OrbitMaxInclination: return "Max. inclination ";
-				case Require.OrbitMinEccentricity: return "Min. eccentricity ";
-				case Require.OrbitMaxEccentricity: return "Max. eccentricity ";
-				case Require.OrbitMinArgOfPeriapsis: return "Min. argument of Pe ";
-				case Require.OrbitMaxArgOfPeriapsis: return "Max. argument of Pe ";
-				case Require.TemperatureMin: return "Min. temperature ";
-				case Require.TemperatureMax: return "Max. temperature ";
-				case Require.AltitudeMin: return "Min. altitude ";
-				case Require.AltitudeMax: return "Max. altitude ";
-				case Require.RadiationMin: return "Min. radiation ";
-				case Require.RadiationMax: return "Max. radiation ";
-
-				case Require.VolumePerCrewMin: return "Min. vol./crew ";
-				case Require.VolumePerCrewMax: return "Max. vol./crew ";
-				case Require.SunAngleMin: return "Min. sun-surface angle ";
-				case Require.SunAngleMax: return "Max. sun-surface angle ";
-				case Require.SurfaceSpeedMin: return "Min. surface speed ";
-				case Require.SurfaceSpeedMax: return "Max. surface speed ";
-				case Require.VerticalSpeedMin: return "Min. vertical speed ";
-				case Require.VerticalSpeedMax: return "Max. vertical speed ";
-				case Require.SpeedMin: return "Min. speed ";
-				case Require.SpeedMax: return "Max. speed ";
-				case Require.DynamicPressureMin: return "Min. dynamic pressure ";
-				case Require.DynamicPressureMax: return "Max. dynamic pressure ";
-				case Require.StaticPressureMin: return "Min. pressure " ;
-				case Require.StaticPressureMax: return "Max. pressure ";
-				case Require.AtmDensityMin: return "Min. atm. density ";
-				case Require.AtmDensityMax: return "Max. atm. density ";
-				case Require.AltAboveGroundMin: return "Min. ground altitude ";
-				case Require.AltAboveGroundMax: return "Max. ground altitude ";
-				case Require.MaxAsteroidDistance: return "Max. asteroid distance ";
-
-				case Require.AtmosphereAltMin: return "Min. atmosphere altitude ";
-				case Require.AtmosphereAltMax: return "Max. atmosphere altitude ";
-
-				case Require.CrewMin: return "Min. crew ";
-				case Require.CrewMax: return "Max. crew ";
-				case Require.CrewCapacityMin: return "Min. crew capacity ";
-				case Require.CrewCapacityMax: return "Max. crew capacity ";
+				case Require.OrbitMinInclination:      return "Min. inclination ";
+				case Require.OrbitMaxInclination:      return "Max. inclination ";
+				case Require.OrbitMinEccentricity:     return "Min. eccentricity ";
+				case Require.OrbitMaxEccentricity:     return "Max. eccentricity ";
+				case Require.OrbitMinArgOfPeriapsis:   return "Min. argument of Pe ";
+				case Require.OrbitMaxArgOfPeriapsis:   return "Max. argument of Pe ";
+				case Require.TemperatureMin:           return "Min. temperature ";
+				case Require.TemperatureMax:           return "Max. temperature ";
+				case Require.AltitudeMin:              return "Min. altitude ";
+				case Require.AltitudeMax:              return "Max. altitude ";
+				case Require.RadiationMin:             return "Min. radiation ";
+				case Require.RadiationMax:             return "Max. radiation ";
+				case Require.VolumePerCrewMin:         return "Min. vol./crew ";
+				case Require.VolumePerCrewMax:         return "Max. vol./crew ";
+				case Require.SunAngleMin:              return "Min sun-surface angle";
+				case Require.SunAngleMax:              return "Max sun-surface angle";
+				case Require.SurfaceSpeedMin:          return "Min. surface speed ";
+				case Require.SurfaceSpeedMax:          return "Max. surface speed ";
+				case Require.VerticalSpeedMin:         return "Min. vertical speed ";
+				case Require.VerticalSpeedMax:         return "Max. vertical speed ";
+				case Require.SpeedMin:                 return "Min. speed ";
+				case Require.SpeedMax:                 return "Max. speed ";
+				case Require.DynamicPressureMin:       return "Min dynamic pressure";
+				case Require.DynamicPressureMax:       return "Max dynamic pressure";
+				case Require.StaticPressureMin:        return "Min. pressure " ;
+				case Require.StaticPressureMax:        return "Max. pressure ";
+				case Require.AtmDensityMin:            return "Min. atm. density ";
+				case Require.AtmDensityMax:            return "Max. atm. density ";
+				case Require.AltAboveGroundMin:        return "Min ground altitude";
+				case Require.AltAboveGroundMax:        return "Max ground altitude";
+				case Require.MaxAsteroidDistance:      return "Max asteroid distance";
+				case Require.AtmosphereAltMin:         return "Min atmosphere altitude ";
+				case Require.AtmosphereAltMax:         return "Max atmosphere altitude ";
+				case Require.CrewMin:                  return "Min. crew ";
+				case Require.CrewMax:                  return "Max. crew ";
+				case Require.CrewCapacityMin:          return "Min. crew capacity ";
+				case Require.CrewCapacityMax:          return "Max. crew capacity ";
 				case Require.AstronautComplexLevelMin: return "Astronaut Complex min level ";
 				case Require.AstronautComplexLevelMax: return "Astronaut Complex max level ";
-				case Require.TrackingStationLevelMin: return "Tracking Station min level ";
-				case Require.TrackingStationLevelMax: return "Tracking Station max level ";
-				case Require.MissionControlLevelMin: return "Mission Control min level ";
-				case Require.MissionControlLevelMax: return "Mission Control max level ";
-				case Require.AdministrationLevelMin: return "Administration min level ";
-				case Require.AdministrationLevelMax: return "Administration max level ";
-
-				case Require.Part: return "Need part " ;
-				case Require.Module: return "Need module " ;
+				case Require.TrackingStationLevelMin:  return "Tracking Station min level ";
+				case Require.TrackingStationLevelMax:  return "Tracking Station max level ";
+				case Require.MissionControlLevelMin:   return "Mission Control min level ";
+				case Require.MissionControlLevelMax:   return "Mission Control max level ";
+				case Require.AdministrationLevelMin:   return "Administration min level ";
+				case Require.AdministrationLevelMax:   return "Administration max level ";
+				case Require.Part:                     return "Need part " ;
+				case Require.Module:                   return "Need module " ;
 
 				case Require.AbsoluteZero:
 				case Require.InnerBelt:

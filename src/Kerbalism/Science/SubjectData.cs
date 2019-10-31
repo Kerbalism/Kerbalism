@@ -10,7 +10,7 @@ namespace KERBALISM
 	{
 		public ExperimentInfo ExpInfo { get; protected set; }
 
-		public VesselSituation Situation { get; protected set; }
+		public Situation Situation { get; protected set; }
 
 		/// <summary> [SERIALIZED] percentage [0;x] of science retrieved, can be > 1 if subject has been retrieved more than once</summary>
 		public virtual double PercentRetrieved { get; protected set; }
@@ -26,14 +26,16 @@ namespace KERBALISM
 		public virtual string Id { get; protected set; }
 
 		/// <summary> stock subject identifier ("experimentId@situation") </summary>
-		public virtual string StockSubjectId => Lib.BuildString(ExpInfo.ExperimentId, "@", Situation.ExperimentSituationId(ExpInfo));
+		public virtual string StockSubjectId => Lib.BuildString(ExpInfo.ExperimentId, "@", Situation.GetStockIdForExperiment(ExpInfo));
 
 		/// <summary> full description of the subject </summary>
 		public virtual string FullTitle => Lib.BuildString(ExpInfo.Title, " (", SituationTitle, ")");
 
 		public virtual string ExperimentTitle => ExpInfo.Title;
 
-		public virtual string SituationTitle => Situation.ExperimentSituationName(ExpInfo);
+		public virtual string SituationTitle => Situation.GetTitleForExperiment(ExpInfo);
+
+		public virtual string BiomeTitle => Situation.BiomeTitle;
 
 		/// <summary> science points collected in all vessels but not yet recovered or transmitted </summary>
 		public double ScienceCollectedInFlight { get; protected set; }
@@ -44,10 +46,7 @@ namespace KERBALISM
 		public double SciencePerMB => ScienceMaxValue / ExpInfo.DataSize;
 
 		/// <summary> science points recovered or transmitted </summary>
-		// Note : the RnD subject science value (float) will never reach ScienceMaxValue (double)
-		// because the "last transmission value" will always be less than the float min increment.
-		// so we artifically increase the exposed RnD value by 1E-4F and clamp it to max value
-		//public double ScienceRetrievedInKSC => ExistsInRnD ? Math.Min(RnDSubject.science, ScienceMaxValue) : 0.0;
+		// Note : this code is a bit convoluted to avoid "never completed" issues due to float <> double conversions
 		public double ScienceRetrievedInKSC => ExistsInRnD ? (RnDSubject.scienceCap - RnDSubject.science <= 0f) ? ScienceMaxValue : RnDSubject.science : 0.0;
 
 		/// <summary> all science points recovered, transmitted or collected in flight </summary>
@@ -76,7 +75,7 @@ namespace KERBALISM
 			return dataSize * SciencePerMB;
 		}
 
-		public SubjectData(ExperimentInfo expInfo, VesselSituation situation)
+		public SubjectData(ExperimentInfo expInfo, Situation situation)
 		{
 			ExpInfo = expInfo;
 			Situation = situation;
@@ -216,12 +215,12 @@ namespace KERBALISM
 	/// ResearchAndDevelopment.GetExperimentSubject overload that take a "sourceUId" string.
 	/// In stock, it is only used by the asteroid samples, and I don't think there is any mod using that.
 	/// </summary>
-	public class MultiSubjectData : SubjectData
+	public class UnknownSubjectData : SubjectData
 	{
 		private string extraSituationInfo;
 		private string subjectId;
 
-		public MultiSubjectData(ExperimentInfo expInfo, VesselSituation situation, string subjectId, ScienceSubject stockSubject = null, string extraSituationInfo = "") : base(expInfo, situation)
+		public UnknownSubjectData(ExperimentInfo expInfo, Situation situation, string subjectId, ScienceSubject stockSubject = null, string extraSituationInfo = "") : base(expInfo, situation)
 		{
 			this.subjectId = subjectId;
 			this.extraSituationInfo = extraSituationInfo;
@@ -229,6 +228,9 @@ namespace KERBALISM
 			Situation = situation;
 			RnDSubject = stockSubject;
 			ScienceCollectedInFlight = 0.0;
+
+			TimesCompleted = ExistsInRnD ? (int)(RnDSubject.science / (RnDSubject.scienceCap - Science.scienceLeftForSubjectCompleted)) : 0;
+			PercentRetrieved = ExistsInRnD ? RnDSubject.science / ScienceMaxValue : 0.0;
 		}
 
 		public override string Id => subjectId;
@@ -245,21 +247,11 @@ namespace KERBALISM
 			? base.SituationTitle
 			: Lib.BuildString(base.SituationTitle, " from ", extraSituationInfo);
 
-		public override double PercentRetrieved
-		{
-			get
-			{
-				return ExistsInRnD ? (RnDSubject.science * HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier) / ScienceMaxValue : 0.0;
-			}
-			protected set { }
-		}
-		public override int TimesCompleted
-		{
-			get
-			{
-				return ExistsInRnD ? (int)(RnDSubject.science / (RnDSubject.scienceCap - Science.scienceLeftForSubjectCompleted)) : 0;
-			}
-			protected set { }
-		}
+		public override string BiomeTitle =>
+			string.IsNullOrEmpty(Situation.BiomeTitle)
+			? extraSituationInfo
+			: string.IsNullOrEmpty(extraSituationInfo)
+			? Situation.BiomeTitle
+			: Lib.BuildString(Situation.BiomeTitle, " - ", extraSituationInfo);
 	}
 }

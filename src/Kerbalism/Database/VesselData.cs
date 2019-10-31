@@ -132,6 +132,9 @@ namespace KERBALISM
 		/// <summary> [environment] true if vessel is inside exosphere</summary>
 		public bool EnvExosphere => exosphere; bool exosphere;
 
+		/// <summary> [environment] true if vessel is inside exosphere</summary>
+		public bool EnvStorm => inStorm; bool inStorm;
+
 		/// <summary> [environment] proportion of ionizing radiation not blocked by atmosphere</summary>
 		public double EnvGammaTransparency => gammaTransparency; double gammaTransparency;
 
@@ -174,7 +177,7 @@ namespace KERBALISM
 		/// <summary> [environment] List of all stars/suns and the related data/calculations for the current vessel</summary>
 		public List<SunInfo> EnvSunsInfo => sunsInfo; List<SunInfo> sunsInfo;
 
-		public VesselSituation VesselSituation => vesselSituation; VesselSituation vesselSituation;
+		public VesselSituations VesselSituations => vesselSituations; VesselSituations vesselSituations;
 
 		public class SunInfo
 		{
@@ -622,6 +625,7 @@ namespace KERBALISM
 			supplies = new Dictionary<string, SupplyData>();
 			scansat_id = new List<uint>();
 			filesTransmitted = new List<File>();
+			vesselSituations = new VesselSituations(this);
 		}
 
 		private void Load(ConfigNode node)
@@ -670,6 +674,7 @@ namespace KERBALISM
 			}
 
 			filesTransmitted = new List<File>();
+			vesselSituations = new VesselSituations(this);
 		}
 
 		public void Save(ConfigNode node)
@@ -801,7 +806,7 @@ namespace KERBALISM
 			underwater = Sim.Underwater(Vessel);
 			breathable = Sim.Breathable(Vessel, EnvUnderwater);
 			landed = Lib.Landed(Vessel);
-			vesselSituation = VesselSituation.GetExperimentSituation(Vessel);
+			
 			inAtmosphere = Vessel.mainBody.atmosphere && Vessel.altitude < Vessel.mainBody.atmosphereDepth;
 			zeroG = !EnvLanded && !inAtmosphere;
 
@@ -837,9 +842,10 @@ namespace KERBALISM
 			}
 			UnityEngine.Profiling.Profiler.EndSample();
 
-			// extended atmosphere
 			thermosphere = Sim.InsideThermosphere(Vessel);
 			exosphere = Sim.InsideExosphere(Vessel);
+			inStorm = Storm.InProgress(Vessel);
+			vesselSituations.Update();
 
 			// other stuff
 			gravioli = Sim.Graviolis(Vessel);

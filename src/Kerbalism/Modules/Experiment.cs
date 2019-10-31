@@ -46,7 +46,7 @@ namespace KERBALISM
 		[KSPField(isPersistant = true)] private ExpStatus status = ExpStatus.Stopped;
 
 		public ExperimentInfo ExpInfo { get; set; }
-		private VesselSituation vesselSituation;
+		private Situation situation;
 		public SubjectData Subject => subject; private SubjectData subject;
 
 		public ExperimentRequirements Requirements { get; private set; }
@@ -182,9 +182,6 @@ namespace KERBALISM
 
 			if (Lib.IsFlight())
 			{
-				//vesselSituation = vessel.KerbalismData().VesselSituation;
-				//subject = ScienceDB.GetSubjectData(ExpInfo, vesselSituation);
-
 				foreach (var hd in part.FindModulesImplementing<HardDrive>())
 				{
 					if (hd.experiment_id == experiment_id) privateHdId = part.flightID;
@@ -256,7 +253,7 @@ namespace KERBALISM
 					else
 					{
 						Events["ToggleEvent"].guiName = Lib.StatusToggle(Lib.Ellipsis(ExpInfo.Title, Styles.ScaleStringLength(25)), StatusInfo(status, issue));
-						Events["ShowPopup"].guiName = Lib.StatusToggle("info", vd.VesselSituation.Title);
+						Events["ShowPopup"].guiName = Lib.StatusToggle("info", vd.VesselSituations.FirstSituationTitle);
 					}
 				}
 				else
@@ -304,8 +301,8 @@ namespace KERBALISM
 
 			if (!Running)
 			{
-				vesselSituation = GetSituation(vd);
-				subject = ScienceDB.GetSubjectData(ExpInfo, vesselSituation, out situationId);
+				situation = GetSituation(vd);
+				subject = ScienceDB.GetSubjectData(ExpInfo, situation, out situationId);
 				UnityEngine.Profiling.Profiler.EndSample();
 				return;
 			}
@@ -348,7 +345,7 @@ namespace KERBALISM
 
 			if (!IsRunning(expState))
 			{
-				int notRunningSituationId = VesselSituation.GetBiomeAgnosticIdForExperiment(GetSituation(vd).Id, expInfo);
+				int notRunningSituationId = Situation.GetBiomeAgnosticIdForExperiment(GetSituation(vd).Id, expInfo);
 				Lib.Proto.Set(m, "situationId", notRunningSituationId);
 				UnityEngine.Profiling.Profiler.EndSample();
 				return;
@@ -390,7 +387,7 @@ namespace KERBALISM
 		}
 
 		private static void RunningUpdate(
-			Vessel v, VesselData vd, VesselSituation vs, Experiment prefab, uint hdId, bool didPrepare, bool isShrouded,
+			Vessel v, VesselData vd, Situation vs, Experiment prefab, uint hdId, bool didPrepare, bool isShrouded,
 			ResourceInfo ec, VesselResources resources, List<ObjectPair<string, double>> resourceDefs,
 			ExperimentInfo expInfo, RunningState expState, double elapsed_s,
 			ref int lastSituationId, ref double remainingSampleMass, out SubjectData subjectData, out string mainIssue)
@@ -407,7 +404,7 @@ namespace KERBALISM
 			}
 			else
 			{
-				lastSituationId = vd.VesselSituation.Id;
+				lastSituationId = vd.VesselSituations.FirstSituation.Id;
 				mainIssue = "invalid situation";
 				return;
 			}
@@ -594,9 +591,9 @@ namespace KERBALISM
 			}
 		}
 
-		public virtual VesselSituation GetSituation(VesselData vd)
+		public virtual Situation GetSituation(VesselData vd)
 		{
-			return vd.VesselSituation;
+			return vd.VesselSituations.GetExperimentSituation(ExpInfo);
 		}
 
 		private static Drive GetDrive(VesselData vesselData, uint hdId, double chunkSize, SubjectData subjectData)
@@ -746,7 +743,7 @@ namespace KERBALISM
 				GetStatus
 				(
 					expState,
-					ScienceDB.GetSubjectData(ScienceDB.GetExperimentInfo(prefab.experiment_id), v.KerbalismData().VesselSituation),
+					ScienceDB.GetSubjectData(ScienceDB.GetExperimentInfo(prefab.experiment_id), prefab.GetSituation(v.KerbalismData())),
 					Lib.Proto.GetString(protoModule, "issue")
 				));
 		}

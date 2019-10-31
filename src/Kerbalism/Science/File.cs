@@ -13,6 +13,10 @@ namespace KERBALISM
 		/// <summary> will be true if the file was created by the hijacker. Force the stock crediting formula to be applied on recovery</summary>
 		public bool useStockCrediting;
 
+		//public double scienceValueRatio;
+		//public double ScienceMaxValue => Math.Max((subjectData.ScienceMaxValue * scienceValueRatio) - subjectData.ScienceRetrievedInKSC, 0.0);
+		//public double SciencePerMB => subjectData.SciencePerMB * scienceValueRatio;
+
 		public SubjectData subjectData;
 
 		public double transmitRate = 0.0;
@@ -69,7 +73,7 @@ namespace KERBALISM
 			node.AddValue("resultText", resultText);
 			node.AddValue("useStockCrediting", useStockCrediting);
 
-			if (subjectData is MultiSubjectData)
+			if (subjectData is UnknownSubjectData)
 				node.AddValue("stockSubjectId", subjectData.StockSubjectId);
 		}
 

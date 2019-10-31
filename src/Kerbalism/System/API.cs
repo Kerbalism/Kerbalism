@@ -306,7 +306,8 @@ namespace KERBALISM
 		public static bool StormInProgress(Vessel v)
 		{
 			if (!Features.SpaceWeather) return false;
-			return v.KerbalismData().IsSimulated && Storm.InProgress(v);
+			VesselData vd = v.KerbalismData();
+			return vd.IsSimulated && vd.EnvStorm;
 		}
 
 		// return true if the vessel is subject to a signal blackout

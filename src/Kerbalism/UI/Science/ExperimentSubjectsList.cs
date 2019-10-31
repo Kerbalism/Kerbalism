@@ -53,11 +53,15 @@ namespace KERBALISM
 			scrollView.SetLayoutElement(true, true, 320, -1, -1, 250);
 			scrollView.ContentGroup.padding = new RectOffset(0, 5, 5, 5);
 
-			foreach (ObjectPair<int, SituationsBiomesSubject> bodySubjects in GetSubjectsForExperiment(expInfo))
+			BodiesSituationsBiomesSubject subjects = GetSubjectsForExperiment(expInfo);
+			if (subjects != null)
 			{
-				CelestialBody body = FlightGlobals.Bodies[bodySubjects.Key];
-				BodyContainer bodyEntry = new BodyContainer(scrollView, body, bodySubjects.Value);
-				BodyContainers.Add(bodyEntry);
+				foreach (ObjectPair<int, SituationsBiomesSubject> bodySubjects in GetSubjectsForExperiment(expInfo))
+				{
+					CelestialBody body = FlightGlobals.Bodies[bodySubjects.Key];
+					BodyContainer bodyEntry = new BodyContainer(scrollView, body, bodySubjects.Value);
+					BodyContainers.Add(bodyEntry);
+				}
 			}
 
 			SetUpdateCoroutine(new KsmGuiUpdateCoroutine(Update));
@@ -98,8 +102,11 @@ namespace KERBALISM
 
 				foreach (SituationContainer situation in body.SubjectsContainer.Situations)
 				{
-					situation.isKnown = false;
+					// check if unknown (non-DB) subjects have been created
+					if (situation.DBLinesCount() != situation.SubjectLines.Count)
+						situation.UpdateLines();
 
+					situation.isKnown = false;
 					foreach (SubjectLine subject in situation.SubjectLines)
 					{
 						if (subject.SubjectData.ScienceCollectedTotal > 0.0)
@@ -219,6 +226,7 @@ namespace KERBALISM
 			public bool isKnown;
 			KsmGuiText situationText;
 			public bool IsInstantiated => situationText != null;
+			private ObjectPair<ScienceSituation, BiomesSubject> situationSubjects;
 
 			public bool Enabled
 			{
@@ -234,6 +242,27 @@ namespace KERBALISM
 
 			public SituationContainer(ObjectPair<ScienceSituation, BiomesSubject> situationSubjects)
 			{
+				this.situationSubjects = situationSubjects;
+				foreach (ObjectPair<int, List<SubjectData>> subjects in situationSubjects.Value)
+				{
+					foreach (SubjectData subjectData in subjects.Value)
+					{
+						SubjectLines.Add(new SubjectLine(subjectData));
+					}
+				}
+			}
+
+			public int DBLinesCount()
+			{
+				int count = 0;
+				foreach (ObjectPair<int, List<SubjectData>> subjects in situationSubjects.Value)
+					count += subjects.Value.Count;
+				return count;
+			}
+
+			public void UpdateLines()
+			{
+				SubjectLines.Clear();
 				foreach (ObjectPair<int, List<SubjectData>> subjects in situationSubjects.Value)
 				{
 					foreach (SubjectData subjectData in subjects.Value)
@@ -245,6 +274,8 @@ namespace KERBALISM
 
 			public void InstantiateUIObjects(SubjectsContainer parent)
 			{
+				isKnown = false;
+
 				if (SubjectLines.Count == 0)
 					return;
 
@@ -253,8 +284,6 @@ namespace KERBALISM
 				situationText.TopTransform.SetSizeDelta(150, 14);
 				situationText.TextComponent.color = Lib.KolorToColor(Lib.Kolor.Yellow);
 				situationText.TextComponent.fontStyle = FontStyles.Bold;
-
-				isKnown = false;
 
 				foreach (SubjectLine subjectLine in SubjectLines)
 				{
@@ -270,8 +299,11 @@ namespace KERBALISM
 
 			public void DestroyUIObjects()
 			{
-				situationText.TopObject.DestroyGameObject();
-				situationText = null;
+				if (situationText != null)
+				{
+					situationText.TopObject.DestroyGameObject();
+					situationText = null;
+				}
 
 				foreach (SubjectLine subjectLine in SubjectLines)
 					subjectLine.DestroyText();
@@ -307,8 +339,11 @@ namespace KERBALISM
 
 			public void DestroyText()
 			{
-				subjectText.TopObject.DestroyGameObject();
-				subjectText = null;
+				if (subjectText != null)
+				{
+					subjectText.TopObject.DestroyGameObject();
+					subjectText = null;
+				}
 			}
 
 			public void UpdateText()
@@ -321,15 +356,15 @@ namespace KERBALISM
 				return Lib.BuildString
 				(
 					"<pos=10>",
-					Lib.Color(SubjectData.ScienceRetrievedInKSC.ToString("0.0;--;--"), Lib.Kolor.Science, true),
+					Lib.Color(Math.Round(SubjectData.ScienceRetrievedInKSC, 1).ToString("0.0;--;--"), Lib.Kolor.Science, true),
 					"<pos=60>",
-					Lib.Color(SubjectData.ScienceCollectedInFlight.ToString("+0.0;--;--"), Lib.Kolor.Science, true),
+					Lib.Color(Math.Round(SubjectData.ScienceCollectedInFlight, 1).ToString("+0.0;--;--"), Lib.Kolor.Science, true),
 					"<pos=110>",
-					Lib.Color(SubjectData.ScienceRemainingTotal.ToString("0.0;--;--"), Lib.Kolor.Science, true),
+					Lib.Color(Math.Round(SubjectData.ScienceRemainingTotal, 1).ToString("0.0;--;--"), Lib.Kolor.Science, true),
 					"<pos=160>",
-					Lib.Color(SubjectData.PercentRetrieved.ToString("0.0x;--;--"), Lib.Kolor.Yellow, true),
+					Lib.Color(Math.Round(SubjectData.PercentRetrieved, 1).ToString("0.0x;--;--"), Lib.Kolor.Yellow, true),
 					"<pos=200>",
-					SubjectData.Situation.BiomeTitle
+					SubjectData.BiomeTitle
 				);
 			}
 		}
