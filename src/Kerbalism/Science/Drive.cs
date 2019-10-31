@@ -297,7 +297,7 @@ namespace KERBALISM
 			foreach (File file in files.Values)
 			{
 				double size = Math.Min(file.size, destination.FileCapacityAvailable());
-				if (destination.Record_file(file.subjectData, size, true))
+				if (destination.Record_file(file.subjectData, size, true, file.useStockCrediting))
 				{
 					file.size -= size;
 					file.subjectData.RemoveDataCollectedInFlight(size);
@@ -333,7 +333,7 @@ namespace KERBALISM
 				}
 
 				double mass = sample.mass * (sample.size / size);
-				if (destination.Record_sample(sample.subjectData, size, mass))
+				if (destination.Record_sample(sample.subjectData, size, mass, sample.useStockCrediting))
 				{
 					sample.size -= size;
 					sample.subjectData.RemoveDataCollectedInFlight(size);
