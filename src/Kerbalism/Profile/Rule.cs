@@ -173,7 +173,12 @@ namespace KERBALISM
 
 				bool do_breakdown = false;
 
-				if(breakdown && PreferencesComfort.Instance.stressBreakdowns) {
+				if (breakdown)
+				{
+					// don't do breakdowns and don't show stress message if disabled
+					if (!PreferencesComfort.Instance.stressBreakdowns)
+						return;
+
 					// stress level
 					double breakdown_probability = rd.problem / warning_threshold;
 					breakdown_probability = Lib.Clamp(breakdown_probability, 0.0, 1.0);
