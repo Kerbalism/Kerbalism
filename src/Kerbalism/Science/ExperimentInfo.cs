@@ -105,7 +105,7 @@ EXPERIMENT_DEFINITION
 		// - Space : valid when in space, uses the InSpaceLow science value. Incompatible with InSpaceLow/InSpaceHigh.
 		// - BodyGlobal : always valid, uses the InSpaceLow science value. Incompatible with all other situations.
 		// Example : normal body biomes for the landed+splashed situation and flying low, no biomes for flying high, and the virtual biomes for the space low+high situation
-		Situation = Landed@Biomes
+		Situation = Surface@Biomes
 		Situation = FlyingLow@Biomes 
 		Situation = FlyingHigh
 		Situation = Space@VirtualBiomes
