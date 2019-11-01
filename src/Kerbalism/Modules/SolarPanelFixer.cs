@@ -541,9 +541,20 @@ namespace KERBALISM
 		#region Other methods
 		public bool GetSolarPanelModule()
 		{
+			// handle the possibility of multiple solar panel and SolarPanelFixer modules on the part
+			List<SolarPanelFixer> fixerModules = new List<SolarPanelFixer>();
+			foreach (PartModule pm in part.Modules)
+			{
+				if (pm is SolarPanelFixer fixerModule)
+					fixerModules.Add(fixerModule);
+			}
+
 			// find the module based on explicitely supported modules
 			foreach (PartModule pm in part.Modules)
 			{
+				if (fixerModules.Exists(p => p.SolarPanel != null && p.SolarPanel.TargetModule == pm))
+					continue;
+
 				// mod supported modules
 				switch (pm.moduleName)
 				{
@@ -647,6 +658,9 @@ namespace KERBALISM
 			/// <summary>Reference to the SolarPanelFixer, must be set from OnLoad</summary>
 			protected SolarPanelFixer fixerModule;
 
+			/// <summary>Reference to the target module</summary>
+			public abstract PartModule TargetModule { get; }
+
 			/// <summary>
 			/// Will be called by the SolarPanelFixer OnLoad, must set the partmodule reference.
 			/// GetState() must be able to return the correct state after this has been called
@@ -740,6 +754,7 @@ namespace KERBALISM
 		private abstract class SupportedPanel<T> : SupportedPanel where T : PartModule
 		{
 			public T panelModule;
+			public override PartModule TargetModule => panelModule;
 		}
 		#endregion
 
@@ -772,6 +787,12 @@ namespace KERBALISM
 					sunCatcherPivot = panelModule.part.FindModelComponent<Transform>(panelModule.pivotName);
 				if (sunCatcherPosition == null)
 					sunCatcherPosition = panelModule.part.FindModelTransform(panelModule.secondaryTransformName);
+
+				if (sunCatcherPosition == null)
+				{
+					Lib.Log("ERROR : could not find suncatcher transform `{0}` in part `{1}`", panelModule.secondaryTransformName, panelModule.part.name);
+					return false;
+				}
 
 				// avoid rate lost due to OnStart being called multiple times in the editor
 				if (panelModule.resHandler.outputResources[0].rate == 0.0)
