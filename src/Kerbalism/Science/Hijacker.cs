@@ -100,11 +100,8 @@ namespace KERBALISM
 		{
 			double remaining = data.dataAmount;
 
-			while (remaining > 0)
+			foreach(var drive in Drive.GetDrives(meta.vessel.KerbalismData(), false))
 			{
-				Drive drive = Drive.FileDrive(meta.vessel.KerbalismData());
-				if (drive == null) break;
-
 				var size = Math.Min(remaining, drive.FileCapacityAvailable());
 				drive.Record_file(meta.subjectData, size, true, true);
 				remaining -= size;
