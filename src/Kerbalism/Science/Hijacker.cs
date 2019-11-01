@@ -47,13 +47,14 @@ namespace KERBALISM
 					continue;					
 				}
 
-				// record data
 				bool recorded = false;
+				bool partial_record = false;
+
 				if (!meta.is_sample)
 				{
-					Drive drive = Drive.FileDrive(meta.vessel.KerbalismData(), data.dataAmount);
-					if (drive != null)
-						recorded = drive.Record_file(meta.subjectData, data.dataAmount, true, true);
+					var remaining = RecordData(data, meta);
+					if (remaining > 0) partial_record = true;
+					recorded = remaining < data.dataAmount;
 				}
 				else
 				{
@@ -64,20 +65,23 @@ namespace KERBALISM
 
 				if (recorded)
 				{
-					// render experiment inoperable if necessary
-					if (!meta.is_rerunnable)
+					if(!partial_record)
 					{
-						meta.experiment.SetInoperable();
+						// render experiment inoperable if necessary
+						if (!meta.is_rerunnable)
+						{
+							meta.experiment.SetInoperable();
+						}
+
+						// inform the user
+						Message.Post(
+							Lib.BuildString("<b>", meta.subjectData.FullTitle, "</b> recorded"),
+							!meta.is_rerunnable ? Localizer.Format("#KERBALISM_Science_inoperable") : string.Empty
+						);
 					}
 
 					// dump the data
 					page.OnDiscardData(data);
-
-					// inform the user
-					Message.Post(
-						Lib.BuildString("<b>", meta.subjectData.FullTitle, "</b> recorded"),
-						!meta.is_rerunnable ? Localizer.Format("#KERBALISM_Science_inoperable") : string.Empty
-					);
 				}
 				else
 				{
@@ -92,9 +96,32 @@ namespace KERBALISM
 			dialog.Dismiss();
 		}
 
+		internal static double RecordData(ScienceData data, MetaData meta)
+		{
+			double remaining = data.dataAmount;
+
+			while (remaining > 0)
+			{
+				Drive drive = Drive.FileDrive(meta.vessel.KerbalismData());
+				if (drive == null) break;
+
+				var size = Math.Min(remaining, drive.FileCapacityAvailable());
+				drive.Record_file(meta.subjectData, size, true, true);
+				remaining -= size;
+			}
+
+			if (remaining > 0)
+			{
+				Message.Post(
+					Lib.Color(Lib.BuildString(meta.subjectData.FullTitle, " stored partially"), Lib.Kolor.Orange),
+					"Not enough space on hard drive"
+				);
+			}
+			return remaining;
+		}
+
 		ExperimentsResultDialog dialog;
 	}
-
 
 	// Manipulate science dialog callbacks to remove the data from the experiment
 	// (rendering it inoperable) and store it in the vessel drive. The same data
@@ -170,11 +197,13 @@ namespace KERBALISM
 
 			// record data in the drive
 			bool recorded = false;
+			bool partial_record = false;
+
 			if (!meta.is_sample)
 			{
-				Drive drive = Drive.FileDrive(meta.vessel.KerbalismData(), data.dataAmount);
-				if (drive != null)
-					recorded = drive.Record_file(meta.subjectData, data.dataAmount, true, true);
+				var remaining = MiniHijacker.RecordData(data, meta);
+				if (remaining > 0) partial_record = true;
+				recorded = remaining < data.dataAmount;
 			}
 			else
 			{
@@ -193,16 +222,19 @@ namespace KERBALISM
 				}
 
 				// render experiment inoperable if necessary
-				if (!meta.is_rerunnable) meta.experiment.SetInoperable();
+				if (!meta.is_rerunnable && !partial_record) meta.experiment.SetInoperable();
 
 				// dismiss the dialog and popups
 				Dismiss(data);
 
-				// inform the user
-				Message.Post(
-					Lib.BuildString("<b>", meta.subjectData.FullTitle, "</b> recorded"),
-					!meta.is_rerunnable ? Localizer.Format("#KERBALISM_Science_inoperable") : string.Empty
-				);
+				if(!partial_record)
+				{
+					// inform the user
+					Message.Post(
+						Lib.BuildString("<b>", meta.subjectData.FullTitle, "</b> recorded"),
+						!meta.is_rerunnable ? Localizer.Format("#KERBALISM_Science_inoperable") : string.Empty
+					);
+				}
 			}
 			else
 			{
