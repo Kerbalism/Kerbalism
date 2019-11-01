@@ -103,8 +103,11 @@ namespace KERBALISM
 			foreach(var drive in Drive.GetDrives(meta.vessel.KerbalismData(), false))
 			{
 				var size = Math.Min(remaining, drive.FileCapacityAvailable());
-				drive.Record_file(meta.subjectData, size, true, true);
-				remaining -= size;
+				if(size > 0)
+				{
+					drive.Record_file(meta.subjectData, size, true, true);
+					remaining -= size;
+				}
 			}
 
 			if (remaining > 0)
