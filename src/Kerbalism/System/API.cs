@@ -287,7 +287,7 @@ namespace KERBALISM
 					}
 					catch (Exception e)
 					{
-						Lib.Log("Exception in event receiver", e);
+						Lib.Log("RadiationFieldChanged: Exception in event receiver " + e.Message + "\n" + e.ToString());
 					}
 				}
 			}
@@ -460,7 +460,7 @@ namespace KERBALISM
 					}
 					catch (Exception e)
 					{
-						Lib.Log("Exception in event receiver", e);
+						Lib.Log("ExperimentStateChanged: Exception in event receiver " + e.Message + "\n" + e.ToString());
 					}
 				}
 			}
@@ -600,7 +600,7 @@ namespace KERBALISM
 						handler.Invoke(null, new object[] { antennaInfo, pv });
 						if (antennaInfo.strength > -1) return;
 					} catch(Exception e) {
-						Lib.Log("Kerbalism: CommInfo handler threw exception " + e.Message + "\n" + e.ToString());
+						Lib.Log("CommInfo handler threw exception " + e.Message + "\n" + e.ToString());
 					}
 				}
 			}
