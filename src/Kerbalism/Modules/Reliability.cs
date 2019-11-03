@@ -394,9 +394,9 @@ namespace KERBALISM
 					enforce_breakdown = true;
 					explode = Lib.RandomDouble() < 0.35;
 #if DEBUG_RELIABILITY
-					Lib.Log("Reliability: " + part.partInfo.title + " fails because of overstress");
+					Lib.Log("Reliability: " + part.partInfo.title + " fails because of material fatigue");
 #endif
-					FlightLogger.fetch?.LogEvent(part.partInfo.title + " failed because of overstress");
+					FlightLogger.fetch?.LogEvent(part.partInfo.title + " failed because of material fatigue");
 				}
 			}
 
