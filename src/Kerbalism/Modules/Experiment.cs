@@ -73,7 +73,10 @@ namespace KERBALISM
 			set
 			{
 				expState = value;
-				status = GetStatus(value, Subject, issue);
+
+				var newStatus = GetStatus(value, Subject, issue);
+				API.OnExperimentStateChanged.Notify(vessel, experiment_id, status, newStatus);
+				status = newStatus;
 			}
 		}
 
@@ -324,7 +327,9 @@ namespace KERBALISM
 				out issue);
 			UnityEngine.Profiling.Profiler.EndSample();
 
-			status = GetStatus(expState, subject, issue);
+			var newStatus = GetStatus(expState, subject, issue);
+			API.OnExperimentStateChanged.Notify(vessel, experiment_id, status, newStatus);
+			status = newStatus;
 
 			UnityEngine.Profiling.Profiler.EndSample();
 		}
@@ -356,8 +361,8 @@ namespace KERBALISM
 			int situationId = Lib.Proto.GetInt(m, "situationId", 0);
 			double remainingSampleMass = Lib.Proto.GetDouble(m, "remainingSampleMass", 0.0);
 			uint privateHdId = Lib.Proto.GetUInt(m, "privateHdId", 0u);
+			var oldStatus = Lib.Proto.GetEnum<ExpStatus>(m, "status", ExpStatus.Stopped);
 
-			
 			string issue;
 			SubjectData subjectData;
 
@@ -376,12 +381,15 @@ namespace KERBALISM
 				out issue);
 			UnityEngine.Profiling.Profiler.EndSample();
 
+			var newStatus = GetStatus(expState, subjectData, issue);
 			Lib.Proto.Set(m, "situationId", situationId);
-			Lib.Proto.Set(m, "status", GetStatus(expState, subjectData, issue));
+			Lib.Proto.Set(m, "status", newStatus);
 			Lib.Proto.Set(m, "issue", issue);
 
 			if (expInfo.SampleMass > 0.0)
 				Lib.Proto.Set(m, "remainingSampleMass", remainingSampleMass);
+
+			API.OnExperimentStateChanged.Notify(vessel, experiment_id, oldStatus, status);
 
 			UnityEngine.Profiling.Profiler.EndSample();
 		}
@@ -663,7 +671,7 @@ namespace KERBALISM
 
 			if (deployAnimator.Playing())
 				return State; // nervous clicker? wait for it, goddamnit.
-			
+
 			if (Running)
 			{
 				if (setForcedRun && expState == RunningState.Running)
