@@ -40,6 +40,8 @@ namespace KERBALISM
 			if (HighLogic.CurrentGame.flightState != null)
 			{
 				ConfigNode vesselsNode = node.GetNode("vessels2");
+				if (vesselsNode == null)
+					vesselsNode = new ConfigNode();
 				// HighLogic.CurrentGame.flightState.protoVessels is what is used by KSP to persist vessels
 				// It is always available and synchronized in OnLoad, no matter the scene, excepted on the first OnLoad in a new game
 				foreach (ProtoVessel pv in HighLogic.CurrentGame.flightState.protoVessels)
