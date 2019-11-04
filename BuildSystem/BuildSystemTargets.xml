@@ -206,7 +206,7 @@
     <Message Text="[KERBALISM-BUILD-DEBUG] 'BuildSystem\UserConfigDevEnv.xml' not found. You need to create it to build Kerbalism" Condition="! Exists('UserConfigDevEnv.xml')" Importance="high" />
     <Message Text="[KERBALISM-BUILD-DEBUG] Can't find the KSP assemblies in '$(KSPDevPath)\$(KSPDevDllsRelativePath)'. Check your 'BuildSystem\UserConfigDevEnv.xml file'." Condition="! Exists('$(KSPDevPath)\$(KSPDevDllsRelativePath)\Assembly-CSharp.dll')" Importance="high" />
 
-    <Error Condition="(! Exists('UserConfigDevEnv.xml')) OR (! Exists('$(KSPDevPath)\$(KSPDevDllsRelativePath)\Assembly-CSharp.dll'))" Text=""/>
+    <Error Condition="(! Exists('UserConfigDevEnv.xml')) OR (! Exists('$(KSPDevPath)\$(KSPDevDllsRelativePath)\Assembly-CSharp.dll'))" Text="UserConfigDevEnv.xml or $(KSPDevPath)\$(KSPDevDllsRelativePath)\Assembly-CSharp.dll does not exist"/>
 
     <Message Text="[KERBALISM-BUILD-DEBUG] Building for KSP version tag : $(KSPDevVersion)" Importance="high" />
     <Message Text="[KERBALISM-BUILD-DEBUG] Cleaning build output folder..." Importance="high" />
