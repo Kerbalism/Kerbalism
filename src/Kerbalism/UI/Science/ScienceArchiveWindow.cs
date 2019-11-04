@@ -207,7 +207,7 @@ namespace KERBALISM
 				else if (vesselFilter.Enabled && vesselFilter.IsOn && !vesselExpInfos.Contains(exp.ToggleId.expInfo))
 					visible = false;
 
-				if (ROCFilter.IsOn && ROCExpInfos.Contains(exp.ToggleId.expInfo))
+				if (ROCFilter != null && ROCFilter.IsOn && ROCExpInfos.Contains(exp.ToggleId.expInfo))
 					visible = false;
 
 				if (exp.Enabled != visible)
