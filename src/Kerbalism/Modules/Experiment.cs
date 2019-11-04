@@ -389,7 +389,7 @@ namespace KERBALISM
 			if (expInfo.SampleMass > 0.0)
 				Lib.Proto.Set(m, "remainingSampleMass", remainingSampleMass);
 
-			API.OnExperimentStateChanged.Notify(vessel, experiment_id, oldStatus, status);
+			API.OnExperimentStateChanged.Notify(v, experiment_id, oldStatus, newStatus);
 
 			UnityEngine.Profiling.Profiler.EndSample();
 		}
@@ -747,13 +747,15 @@ namespace KERBALISM
 		private static void ProtoSetState(Vessel v, Experiment prefab, ProtoPartModuleSnapshot protoModule, RunningState expState)
 		{
 			Lib.Proto.Set(protoModule, "expState", expState);
-			Lib.Proto.Set(protoModule, "status",
-				GetStatus
-				(
-					expState,
-					ScienceDB.GetSubjectData(ScienceDB.GetExperimentInfo(prefab.experiment_id), prefab.GetSituation(v.KerbalismData())),
-					Lib.Proto.GetString(protoModule, "issue")
-				));
+
+			var oldStatus = Lib.Proto.GetEnum<ExpStatus>(protoModule, "status", ExpStatus.Stopped);
+			var newStatus = GetStatus(expState,
+				ScienceDB.GetSubjectData(ScienceDB.GetExperimentInfo(prefab.experiment_id), prefab.GetSituation(v.KerbalismData())),
+				Lib.Proto.GetString(protoModule, "issue")
+			);
+			Lib.Proto.Set(protoModule, "status", newStatus);
+
+			API.OnExperimentStateChanged.Notify(v, prefab.experiment_id, oldStatus, newStatus);
 		}
 
 		/// <summary> works for loaded and unloaded vessel. very slow method, don't use it every tick </summary>
