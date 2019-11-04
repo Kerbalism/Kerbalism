@@ -368,8 +368,8 @@
     <Copy SourceFiles="$(ReadmeFilePath);$(ChangelogFilePath)" DestinationFolder="$(DeploymentOutputPath)\temp" />
 
     <!-- Put some warnings for dumb users-->
-    <WriteLinesToFile File="$(DeploymentOutputPath)\temp\WARNING - Kerbalism require the CommunityResourcePack mod" />
-    <WriteLinesToFile File="$(DeploymentOutputPath)\temp\WARNING - Kerbalism require the ModuleManager plugin" />
+    <WriteLinesToFile File="$(DeploymentOutputPath)\temp\WARNING - Kerbalism requires the CommunityResourcePack mod" />
+    <WriteLinesToFile File="$(DeploymentOutputPath)\temp\WARNING - Kerbalism requires the ModuleManager plugin" />
 
     <!-- create the kerbalism zip from the temp folder -->
     <ZipDirectory SourceDirectory="$(DeploymentOutputPath)\temp" DestinationFile="$(KerbalismZipPath)" />
