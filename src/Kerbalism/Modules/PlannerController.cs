@@ -6,7 +6,6 @@ using UnityEngine;
 namespace KERBALISM
 {
 
-
 	public class PlannerController : PartModule
 	{
 		// config

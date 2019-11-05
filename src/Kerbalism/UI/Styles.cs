@@ -6,6 +6,8 @@ namespace KERBALISM
 	{
 		static Styles()
 		{
+			blackBackground = Lib.GetTexture("black-background");
+
 			// window container
 			win = new GUIStyle(HighLogic.Skin.window)
 			{
@@ -44,7 +46,7 @@ namespace KERBALISM
 			{
 				stretchWidth = true,
 				fixedHeight = ScaleFloat(16.0f),
-				normal = { background = Lib.GetTexture("black-background") },
+				normal = { background = blackBackground },
 				margin =
 				{
 					bottom = ScaleInteger(4),
@@ -157,11 +159,13 @@ namespace KERBALISM
 				normal =
 				{
 					textColor = Color.white,
-					background = Lib.GetTexture("black-background")
+					background = blackBackground
 				},
 				margin = new RectOffset(0, 0, 0, 0),
 				padding = new RectOffset(ScaleInteger(6), ScaleInteger(6), ScaleInteger(3), ScaleInteger(3))
 			};
+
+			tooltip.normal.background.wrapMode = TextureWrapMode.Repeat;
 
 			// tooltip container style
 			tooltip_container = new GUIStyle
@@ -180,6 +184,35 @@ namespace KERBALISM
 				fontSize = ScaleInteger(12),
 				normal = { textColor = Color.white }
 			};
+
+			message = new GUIStyle()
+			{
+				normal =
+				{
+					background = blackBackground,
+					textColor = new Color(0.66f, 0.66f, 0.66f, 1.0f)
+				},
+				richText = true,
+				stretchWidth = true,
+				stretchHeight = true,
+				fixedWidth = 0,
+				fixedHeight = 0,
+				fontSize = Styles.ScaleInteger(12),
+				alignment = TextAnchor.MiddleCenter,
+				border = new RectOffset(0, 0, 0, 0),
+				padding = new RectOffset(Styles.ScaleInteger(2), Styles.ScaleInteger(2), Styles.ScaleInteger(2), Styles.ScaleInteger(2))
+			};
+		}
+
+		/// <summary>
+		/// for some unkwnown reason since KSP 1.8 IMGUI background textures are dropped on scene changes
+		/// so we reload then on every OnLoad()
+		/// </summary>
+		public static void ReloadBackgroundStyles()
+		{
+			section_container.normal.background = blackBackground;
+			tooltip.normal.background = blackBackground;
+			message.normal.background = blackBackground;
 		}
 
 		public static int ScaleInteger(int val)
@@ -213,6 +246,7 @@ namespace KERBALISM
 		}
 
 		// styles
+		private static Texture2D blackBackground;
 		public static GUIStyle win;                       // window
 		public static GUIStyle title_container;           // window title container
 		public static GUIStyle title_text;                // window title text
@@ -230,5 +264,6 @@ namespace KERBALISM
 		public static GUIStyle tooltip_container;         // tooltip label container
 		public static GUIStyle smallStationHead;
 		public static GUIStyle smallStationText;
+		public static GUIStyle message;
 	}
 } // KERBALISM

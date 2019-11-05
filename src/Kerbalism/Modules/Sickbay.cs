@@ -5,7 +5,6 @@ using System;
 namespace KERBALISM
 {
 
-
 	public class Sickbay : PartModule, IModuleInfo, ISpecifics
 	{
 		private static int MAX_SLOTS = 5;
@@ -24,7 +23,12 @@ namespace KERBALISM
 
 		[KSPField(isPersistant = true)] public bool running;
 
+
+#if KSP15_16
 		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true)]
+#else
+		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true, groupName = "Habitat", groupDisplayName = "Habitat")]
+#endif
 		public void Toggle()
 		{
 			// switch status
@@ -49,6 +53,7 @@ namespace KERBALISM
 
 		[KSPAction("_")] public void Action(KSPActionParam param) { Toggle(); }
 
+#if KSP15_16
 		[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "cure", active = false)]
 		public void Toggle1() { Toggle(1); }
 		[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "cure", active = false)]
@@ -59,7 +64,18 @@ namespace KERBALISM
 		public void Toggle4() { Toggle(4); }
 		[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "cure", active = false)]
 		public void Toggle5() { Toggle(5); }
-
+#else
+		[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "cure", active = false, groupName = "Habitat", groupDisplayName = "Habitat")]
+		public void Toggle1() { Toggle(1); }
+		[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "cure", active = false, groupName = "Habitat", groupDisplayName = "Habitat")]
+		public void Toggle2() { Toggle(2); }
+		[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "cure", active = false, groupName = "Habitat", groupDisplayName = "Habitat")]
+		public void Toggle3() { Toggle(3); }
+		[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "cure", active = false, groupName = "Habitat", groupDisplayName = "Habitat")]
+		public void Toggle4() { Toggle(4); }
+		[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "cure", active = false, groupName = "Habitat", groupDisplayName = "Habitat")]
+		public void Toggle5() { Toggle(5); }
+#endif
 
 		public void Start()
 		{

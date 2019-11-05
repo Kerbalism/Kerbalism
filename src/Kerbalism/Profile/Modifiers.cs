@@ -11,7 +11,7 @@ namespace KERBALISM
 	public static class Modifiers
 	{
 		///<summary> Modifiers Evaluate method used for the Monitors background and current vessel simulation </summary>
-		public static double Evaluate(Vessel v, Vessel_info vi, Vessel_resources resources, List<string> modifiers)
+		public static double Evaluate(Vessel v, VesselData vd, VesselResources resources, List<string> modifiers)
 		{
 			double k = 1.0;
 			foreach (string mod in modifiers)
@@ -19,67 +19,63 @@ namespace KERBALISM
 				switch (mod)
 				{
 					case "zerog":
-						k *= vi.zerog ? 1.0 : 0.0;
+						k *= vd.EnvZeroG ? 1.0 : 0.0;
 						break;
 
 					case "landed":
-						k *= vi.landed ? 1.0 : 0.0;
+						k *= vd.EnvLanded ? 1.0 : 0.0;
 						break;
 
 					case "breathable":
-						k *= vi.breathable ? 1.0 : 0.0;
+						k *= vd.EnvBreathable ? 1.0 : 0.0;
 						break;
 
 					case "non_breathable":
-						k *= vi.breathable ? 0.0 : 1.0;
+						k *= vd.EnvBreathable ? 0.0 : 1.0;
 						break;
 
 					case "temperature":
-						k *= vi.temp_diff;
+						k *= vd.EnvTempDiff;
 						break;
 
 					case "radiation":
-						k *= vi.radiation;
+						k *= vd.EnvHabitatRadiation;
 						break;
 
 					case "shielding":
-						k *= 1.0 - vi.shielding;
+						k *= 1.0 - vd.Shielding;
 						break;
 
 					case "volume":
-						k *= vi.volume;
+						k *= vd.Volume;
 						break;
 
 					case "surface":
-						k *= vi.surface;
+						k *= vd.Surface;
 						break;
 
 					case "living_space":
-						k /= vi.living_space;
+						k /= vd.LivingSpace;
 						break;
 
 					case "comfort":
-						k /= vi.comforts.factor;
+						k /= vd.Comforts.factor;
 						break;
 
 					case "pressure":
-						k *= vi.pressure > Settings.PressureThreshold ? 1.0 : Settings.PressureFactor;
+						k *= vd.Pressure > Settings.PressureThreshold ? 1.0 : Settings.PressureFactor;
 						break;
 
 					case "poisoning":
-						k *= vi.poisoning > Settings.PoisoningThreshold ? 1.0 : Settings.PoisoningFactor;
-						break;
-
-					case "humidity":
-						k *= vi.humidity > Settings.HumidityThreshold ? 1.0 : Settings.HumidityFactor;
+						k *= vd.Poisoning > Settings.PoisoningThreshold ? 1.0 : Settings.PoisoningFactor;
 						break;
 
 					case "per_capita":
-						k /= (double)Math.Max(vi.crew_count, 1);
+						k /= (double)Math.Max(vd.CrewCount, 1);
 						break;
 
 					default:
-						k *= resources.Info(v, mod).amount;
+						k *= resources.GetResource(v, mod).Amount;
 						break;
 				}
 			}
@@ -145,10 +141,6 @@ namespace KERBALISM
 
 					case "poisoning":
 						k *= !va.scrubbed ? 1.0 : Settings.PoisoningFactor;
-						break;
-
-					case "humidity":
-						k *= !va.humid ? 1.0 : Settings.HumidityFactor;
 						break;
 
 					case "per_capita":

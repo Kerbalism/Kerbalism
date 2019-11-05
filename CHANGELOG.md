@@ -1,6 +1,6 @@
-## v3.0.3 for all versions of KSP from 1.4.0 to 1.7.x
+## v3.1 for all versions of KSP from 1.5.0 to 1.8.9
 
- - 2019-06-09
+ - 2019-10-28
 
 ### Changes since the last release
 
@@ -8,10 +8,18 @@
 * Updated the RSS radiation model according to http://evildrganymede.net/work/magfield.htm (Sir Mortimer)
 * Fixed an error in new science support for DMOS (Sir Mortimer)
 * Breaking Grounds DLC: Fixed the science value indication when the transmission is complete (Sir Mortimer)
-* Crediting of zero science is now reduced to a minimum. This will fix the constant science updates with mods like Strategia (Sir Mortimer)
 * Added mod support to query the radiation model, as well as toggle visibility of belts and magnetopause (Sir Mortimer)
 * Added mod support for CME prediction accuracy that influences the probability that you get an advanced warning, and its accuracy (Sir Mortimer)
 * Configs for SoundingRockets (Arthur, Breach Candy)
+* New "SolarPanelFixer" partmodule replacing the "WarpFixer" module. **Unloaded vessels will have incorrect solar panel EC rates until reloaded** (Got)
+* Support for (almost all) SSTU solar panels, require SSTU version 0.11.49.161 min (Got)
+* Added an editor PAW option to consider / not consider solar panels in the planner (Got)
+* Added a third sunlight option in the planner : when slected, solar panel output is estimated using the VAB/SPH sun direction, with tracking/occlusion handling (Got)
+* Kopernicus stars support in the simulation and Solar Panels, including multi-star systems support (Got)
+* Improvements to the sunlight flux evaluation and occlusion checks (Got)
+* Improved sunlight raytracing code, now checking occlusion against all bodies whose apparent diameter is greater than 10 arcmin from the vessel POV (Got)
+* Added an additional vertical position offset to tooltips so they don't hide what is under the cursor (Got)
+* Auto-assign reference bodies for radiation calculations (Shiolle)
 * Fixed DMOS experiment restriction to plantary space. This breaks some DMOS contracts that require experiments in solar orbit (Sir Mortimer)
 * Improved shielding efficiency calculation (Free Thinker)
 * Apply artificial radiation sources after Gamma Transparency is applied (Free Thinker)
@@ -22,6 +30,42 @@
 * Radiation values in settings now take a preset from Settings.cfg (Sir Mortimer)
 * Added radiation source to kerbal atomics engines (Shiolle)
 * When transmitting data, prioritize the file with the highest relative value (Sir Mortimer)
+* Changed the way science data is handled on recovered vessels. This should provide compatibility with stock KSP (Breaking Grounds) and other mods (Got, Sir Mortimer)
+* Added basic science information to telemetry (connection status, total science gain, last data transmitted) (Sir Mortimer)
+* Fix for taking an asteroid not working (issue #458) (Got)
+* Fix for incoherent resource producers not being detected and failing to trigger the 1000x warp limit (Got)
+* Fixed `[PartSet]: Failed to add Resource XXXXX...` log spam (Got)
+* Implemented resource rate per consumer/producer information tooltip in the Supply section of the vessel telemetry panel (Got)
+* Support configs for SSTU, require SSTU version 0.11.49.161 min (Got, Steamp0rt, Arthur)
+* Better handling of multiple hard drives in one part (#479) (Sir Mortimer)
+* Fixed gravity ring disappearing with Community Category Kit (CoriW)
+* Broken antennas / data transmitters will no longer transmit data (Sir Mortimer)
+* Fixes for Breaking Grounds: the return contracts now are doable, and the rover arm scans are drastically reduced in data size (Sir Mortimer)
+* UI windows made a bit wider, and they now are all the same widths (Sir Mortimer)
+* Some configuration fixes for DMagic Orbital Science (Sir Mortimer)
+* Reliability changes: engine failures depending on ignitions and burn duration, radiation damage to solar panels, transmitters and reaction wheels (Sir Mortimer, Valerian)
+* Account for distance between radiation emitters (NERVs, RTGs etc.) and habitats when calculating the effect of radiation (Sir Mortimer)
+* EVAs will receive radiation from nearby emitters (Sir Mortimer)
+* Lead was replaced by a lighter alloy composite as a shielding material. For our type of radiation, it provides the same shielding effect with less mass. (Sir Mortimer)
+* Warn users about incompatible mods or missing CommunityResourcePack (Sir Mortimer)
+* Dropped support for KSP 1.4 (Sir Mortimer)
+* Kidney-shaped radiation belts (EagleEyeLogic)
+* Added surface gamma radiation to celestial bodies (Sir Mortimer)
+* Detect habitat shielding against CMEs using raytracing from habitats to the sun (Sir Mortimer)
+* Added a warning when CRP is missing, or known mods with incompatibilities are installed (Sir Mortimer)
+* Hard drives with customizable capacity (Sir Mortimer)
+* Intensity, duration and frequency of CME events depend on solar cycle (Sir Mortimer)
+* Many fixes in science gathering and transmission (Got)
+* Added a science archive window, available in flight, KSC and editors (Got)
+* All configs moved to KerbalismConfig folder, even the ones that remained in Kerbalism core previously (Got)
+* Overall cleanup and improvement of UI windows (Got)
+* Radiation unit can be changed from rad to Sievert in the cfg file (Sir Mortimer)
+* Reorganized in-game preferences, added some new options, removed some old and obscure ones. Now with easy/normal/moderate/hard presets. (Sir Mortimer)
+* Atmosphere humidity removed. Humidity controller removed. (Got)
+* Show career radiation dosis in Kerbal info window (Sir Mortimer)
+* Added + fixed radiation configs for Atomic Age and mK2Expansion (Shaddow Phönix)
+* Fixed life support slot upgrades in SSPX (Hauke Lampe)
+* Unpressurized habitats include a fair warning in the part description and title (zer0Kerbal)
 
 ## v3.0.2 for all versions of KSP from 1.4.0 to 1.7.x
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
 
 namespace KERBALISM
@@ -21,7 +22,7 @@ namespace KERBALISM
 			foreach (string s in node.GetValues("state"))
 			{
 				var tokens = Lib.Tokenize(s, '@');
-				if (tokens.Count < 2) continue;
+				if (tokens.Count != 2) continue;
 				states.Add(Lib.Parse.ToUInt(tokens[0]), Lib.Parse.ToBool(tokens[1]));
 			}
 			prev = Lib.ConfigValue(node, "prev", string.Empty);
@@ -38,21 +39,23 @@ namespace KERBALISM
 
 		public void Set(Device dev, bool? state)
 		{
-			states.Remove(dev.Id());
+			states.Remove(dev.Id);
 			if (state != null)
 			{
-				states.Add(dev.Id(), state == true);
+				states.Add(dev.Id, state == true);
 			}
 		}
 
-		public void Execute(Dictionary<uint, Device> devices)
+		public void Execute(List<Device> devices)
 		{
-			Device dev;
 			foreach (var p in states)
 			{
-				if (devices.TryGetValue(p.Key, out dev))
+				foreach (Device device in devices)
 				{
-					dev.Ctrl(p.Value);
+					if (device.Id == p.Key)
+					{
+						device.Ctrl(p.Value);
+					}
 				}
 			}
 		}

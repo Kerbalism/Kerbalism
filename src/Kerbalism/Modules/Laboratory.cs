@@ -32,19 +32,18 @@ namespace KERBALISM
 		// other data
 		private CrewSpecs researcher_cs;                            // crew specs for the researcher
 		private static CrewSpecs background_researcher_cs;          // crew specs for the researcher in background simulation
-		private string current_sample = null;                       // sample currently being analyzed
-		private static string background_sample = null;             // sample currently being analyzed in background simulation
+		private SubjectData current_sample = null;                       // sample currently being analyzed
+		private static SubjectData background_sample = null;             // sample currently being analyzed in background simulation
 		private Status status = Status.DISABLED;                    // laboratory status
 		private string status_txt = string.Empty;                   // status string to show next to the ui button
-		private Resource_info ec = null;                            // resource info for EC
-		private Drive drive = null;                                 // my drive
+		private ResourceInfo ec = null;                            // resource info for EC
 
 		// localized strings
 		private static readonly string localized_title = Lib.BuildString("<size=1><color=#00000000>00</color></size>", Localizer.Format("#KERBALISM_Laboratory_Title"));
 		private static readonly string localized_toggle = Localizer.Format("#KERBALISM_Laboratory_Toggle");
 		private static readonly string localized_enabled = Localizer.Format("#KERBALISM_Generic_ENABLED");
 		private static readonly string localized_disabled = Localizer.Format("#KERBALISM_Generic_DISABLED");
-		private static readonly string localized_noEC = Lib.Color("yellow", Localizer.Format("#KERBALISM_Laboratory_NoEC"));
+		private static readonly string localized_noEC = Lib.Color(Localizer.Format("#KERBALISM_Laboratory_NoEC"), Lib.Kolor.Orange);
 		private static readonly string localized_noSample = Localizer.Format("#KERBALISM_Laboratory_NoSample");
 		private static readonly string localized_cleaned = Localizer.Format("#KERBALISM_Laboratory_Cleaned");
 		private static readonly string localized_results = Localizer.Format("#KERBALISM_Laboratory_Results");
@@ -64,13 +63,6 @@ namespace KERBALISM
 
 			// parse crew specs
 			researcher_cs = new CrewSpecs(researcher);
-
-			var hardDrive = part.FindModuleImplementing<HardDrive>();
-			if (hardDrive != null) drive = hardDrive.GetDrive();
-			else
-			{
-				drive = Drive.FileDrive(vessel);
-			}
 		}
 
 		public void Update()
@@ -114,12 +106,12 @@ namespace KERBALISM
 					if (current_sample != null)
 					{
 						// consume EC
-						ec = ResourceCache.Info(vessel, "ElectricCharge");
-						ec.Consume(ec_rate * Kerbalism.elapsed_s, "lab");
+						ec = ResourceCache.GetResource(vessel, "ElectricCharge");
+						ec.Consume(ec_rate * Kerbalism.elapsed_s, "laboratory");
 
 						// if there was ec
 						// - comparing against amount in previous simulation step
-						if (ec.amount > double.Epsilon)
+						if (ec.Amount > double.Epsilon)
 						{
 							// analyze the sample
 							status = Analyze(vessel, current_sample, rate * Kerbalism.elapsed_s);
@@ -138,7 +130,7 @@ namespace KERBALISM
 			else status = Status.DISABLED;
 		}
 
-		public static void BackgroundUpdate(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, Laboratory lab, Resource_info ec, double elapsed_s)
+		public static void BackgroundUpdate(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, Laboratory lab, ResourceInfo ec, double elapsed_s)
 		{
 			// if enabled
 			if (Lib.Proto.GetBool(m, "running"))
@@ -162,11 +154,11 @@ namespace KERBALISM
 					if (background_sample != null)
 					{
 						// consume EC
-						ec.Consume(lab.ec_rate * elapsed_s, "lab");
+						ec.Consume(lab.ec_rate * elapsed_s, "laboratory");
 
 						// if there was ec
 						// - comparing against amount in previous simulation step
-						if (ec.amount > double.Epsilon)
+						if (ec.Amount > double.Epsilon)
 						{
 							// analyze the sample
 							var status = Analyze(v, background_sample, rate * elapsed_s);
@@ -178,7 +170,11 @@ namespace KERBALISM
 			}
 		}
 
-		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "Toggle", active = true)]
+#if KSP15_16
+		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "Toggle Lab", active = true)]
+#else
+		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "Toggle Lab", active = true, groupName = "Science", groupDisplayName = "Science")]
+#endif
 		public void Toggle()
 		{
 			running = !running;
@@ -187,7 +183,11 @@ namespace KERBALISM
 			if (Lib.IsEditor()) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
 		}
 
-		[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "Clean", active = true)]
+#if KSP15_16
+		[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "Clean Lab", active = true)]
+#else
+		[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "Clean Lab", active = true, groupName = "Science", groupDisplayName = "Science")]
+#endif
 		public void CleanExperiments()
 		{
 			bool message = false;
@@ -238,15 +238,15 @@ namespace KERBALISM
 		public string GetContractObjectiveType() { return "Laboratory"; }
 
 		// get next sample to analyze, return null if there isn't a sample
-		private static string NextSample(Vessel v)
+		private static SubjectData NextSample(Vessel v)
 		{
 			foreach(var drive in Drive.GetDrives(v, true))
 			{
 				// for each sample
-				foreach (KeyValuePair<string, Sample> sample in drive.samples)
+				foreach (Sample sample in drive.samples.Values)
 				{
 					// if flagged for analysis
-					if (sample.Value.analyze) return sample.Key;
+					if (sample.analyze) return sample.subjectData;
 				}
 			}
 
@@ -255,15 +255,15 @@ namespace KERBALISM
 		}
 
 		// analyze a sample
-		private static Status Analyze(Vessel v, string filename, double amount)
+		private static Status Analyze(Vessel v, SubjectData subject, double amount)
 		{
 			Sample sample = null;
 			Drive sampleDrive = null;
 			foreach (var d in Drive.GetDrives(v, true))
 			{
-				if (d.samples.ContainsKey(filename) && d.samples[filename].analyze)
+				if (d.samples.ContainsKey(subject) && d.samples[subject].analyze)
 				{
-					sample = d.samples[filename];
+					sample = d.samples[subject];
 					sampleDrive = d;
 					break;
 				}
@@ -276,19 +276,22 @@ namespace KERBALISM
 				amount = Math.Min(amount, sample.size);
 			}
 
-			Drive fileDrive = Drive.FileDrive(v, amount);
+			Drive fileDrive = Drive.FileDrive(v.KerbalismData(), amount);
+
+			if (fileDrive == null)
+				return Status.NO_STORAGE;
 
 			if(sample != null)
 			{
-				bool recorded = fileDrive.Record_file(filename, amount, false);
+				bool recorded = fileDrive.Record_file(subject, amount, false);
 
-				double massRemoved = 0;
+				double massRemoved = 0.0;
 				if (recorded)
-					massRemoved = sampleDrive.Delete_sample(filename, amount);
+					massRemoved = sampleDrive.Delete_sample(subject, amount);
 				else
 				{
 					Message.Post(
-						Lib.Color("red", Lib.BuildString(Localizer.Format("#KERBALISM_Laboratory_Analysis"), " stopped")),
+						Lib.Color(Lib.BuildString(Localizer.Format("#KERBALISM_Laboratory_Analysis"), " stopped"), Lib.Kolor.Red),
 						"Not enough space on hard drive"
 					);
 
@@ -296,7 +299,7 @@ namespace KERBALISM
 				}
 
 				// return sample mass to experiment if needed
-				if (massRemoved > double.Epsilon) RestoreSampleMass(v, filename, massRemoved);
+				if (massRemoved > 0.0) RestoreSampleMass(v, subject, massRemoved);
 			}
 
 			// if the analysis is completed
@@ -306,12 +309,12 @@ namespace KERBALISM
 				{
 					// only inform the user if auto-analyze is turned off
 					// otherwise we could be spamming "Analysis complete" messages
-					Message.Post(Lib.BuildString(Lib.Color("cyan", Localizer.Format("#KERBALISM_Laboratory_Analysis"), true), "\n",
-						Localizer.Format("#KERBALISM_Laboratory_Analyzed", Lib.Bold(v.vesselName), Lib.Bold(Science.Experiment(filename).name))), localized_results);
+					Message.Post(Lib.BuildString(Lib.Color(Localizer.Format("#KERBALISM_Laboratory_Analysis"), Lib.Kolor.Science, true), "\n",
+						Localizer.Format("#KERBALISM_Laboratory_Analyzed", Lib.Bold(v.vesselName), Lib.Bold(subject.FullTitle))), localized_results);
 				}
 
 				if (PreferencesScience.Instance.transmitScience)
-					fileDrive.Send(filename, true);
+					fileDrive.Send(subject.Id, true);
 
 				// record landmark event
 				if (!Lib.Landed(v)) DB.landmarks.space_analysis = true;
@@ -320,23 +323,20 @@ namespace KERBALISM
 			return Status.RUNNING;
 		}
 
-		private static void RestoreSampleMass(Vessel v, string filename, double restoredAmount)
+		private static void RestoreSampleMass(Vessel v, SubjectData filename, double restoredAmount)
 		{
-			int i = filename.IndexOf('@');
-			var id = i > 0 ? filename.Substring(0, i) : filename;
-
 			if(v.loaded) // loaded vessel
 			{
 				foreach (var experiment in v.FindPartModulesImplementing<Experiment>())
 				{
-					restoredAmount -= experiment.RestoreSampleMass(restoredAmount, id);
+					restoredAmount -= experiment.RestoreSampleMass(restoredAmount, filename.ExpInfo.ExperimentId);
 				}
 			}
 			else // unloaded vessel
 			{
 				foreach (ProtoPartModuleSnapshot m in Lib.FindModules(v.protoVessel, "Experiment"))
 				{
-					restoredAmount -= Experiment.RestoreSampleMass(restoredAmount, m, id);
+					restoredAmount -= Experiment.RestoreSampleMass(restoredAmount, m, filename.ExpInfo.ExperimentId);
 					if (restoredAmount < double.Epsilon) return;
 				}
 			}
@@ -356,13 +356,13 @@ namespace KERBALISM
 					status_txt = localized_noStorage;
 					break;
 				case Status.NO_RESEARCHER:
-					status_txt = Lib.Color("yellow", researcher_cs.Warning());
+					status_txt = Lib.Color(researcher_cs.Warning(), Lib.Kolor.Orange);
 					break;
 				case Status.NO_SAMPLE:
 					status_txt = localized_noSample;
 					break;
 				case Status.RUNNING:
-					status_txt = Lib.Color("green", Science.Experiment(current_sample).name);
+					status_txt = Lib.Color(current_sample.FullTitle, Lib.Kolor.Green);
 					break;
 			}
 		}

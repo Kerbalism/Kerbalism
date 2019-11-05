@@ -1,0 +1,73 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{1C9C2C4A-FC39-4F84-B4A2-1A5E38C14815}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>KerbalismBuild</RootNamespace>
+    <AssemblyName>KerbalismBuild</AssemblyName>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+  <!-- /////////////////////////////////////////////////// -->
+  <!-- //////////// DEBUG CONFIGURATION SETUP //////////// -->
+  <!-- /////////////////////////////////////////////////// -->
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <StartAction>Program</StartAction>
+    <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
+    <!-- Default values. These will be overriden if the UserConfigDevEnv.xml file exists-->
+    <DefineConstants>TRACE;DEBUG;ENABLE_PROFILER;DEBUG_PROFILER;DEBUG_RESOURCES</DefineConstants>
+    <StartProgram>KSP_x64.exe</StartProgram>
+    <StartWorkingDirectory>..\</StartWorkingDirectory>
+  </PropertyGroup>
+  <!-- ///////////////////////////////////////////////////// -->
+  <!-- //////////// RELEASE CONFIGURATION SETUP //////////// -->
+  <!-- ///////////////////////////////////////////////////// -->
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>none</DebugType>
+    <Optimize>true</Optimize>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <StartAction>Program</StartAction>
+    <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
+    <!-- Default values. These will be overriden if the UserConfigDevEnv.xml file exists-->
+    <StartProgram>KSP_x64.exe</StartProgram>
+    <StartWorkingDirectory>..\</StartWorkingDirectory>
+  </PropertyGroup>
+
+  <Import Condition="Exists('..\..\BuildSystem\UserConfigDevEnv.xml')" Project="..\..\BuildSystem\UserConfigDevEnv.xml" />
+
+  <!-- /////////////////////////////////////////////////// -->
+  <!-- //// USER-DEFINED OVERRIDES (UserConfigDevEnv.xml) //// -->
+  <!-- /////////////////////////////////////////////////// -->
+  <!-- this must be after the default configuration setups -->
+  <Choose>
+    <When Condition="Exists('..\..\BuildSystem\UserConfigDevEnv.xml')">
+      <PropertyGroup>
+        <DefineConstants Condition="'$(Configuration)' == 'Debug'">TRACE;DEBUG;$(DebugDefineConstants);KSP$(KSPDevVersion)</DefineConstants>
+        <StartProgram>$(KSPDevPath)\$(KSPDevExecutable)</StartProgram>
+        <StartWorkingDirectory>$(KSPDevPath)</StartWorkingDirectory>
+      </PropertyGroup>
+    </When>
+  </Choose>
+  
+  <!-- /////////////////////////////////////////////////// -->
+  <!-- ///////////// DEFAULT BUILD TARGET //////////////// -->
+  <!-- /////////////////////////////////////////////////// -->
+  <Target Name="Build">
+    <MSBuild Condition="$(Configuration)==Release" Projects="..\..\BuildSystem\BuildSystemTargets.xml" Targets="BuildRelease" />
+    <MSBuild Condition="$(Configuration)==Debug" Projects="..\..\BuildSystem\BuildSystemTargets.xml" Targets="BuildDebug" Properties="DefineConstants=$(DefineConstants)" />
+  </Target>
+  <Target Name="Clean">
+  </Target>
+</Project>

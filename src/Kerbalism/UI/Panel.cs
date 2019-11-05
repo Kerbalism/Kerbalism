@@ -13,6 +13,7 @@ namespace KERBALISM
 			telemetry,
 			data,
 			scripts,
+			failures,
 			config,
 			log,
 			connection
@@ -45,13 +46,13 @@ namespace KERBALISM
 				tooltip = tooltip,
 				click = click,
 				icons = new List<Icon>(),
-				icon = null
+				leftIcon = null
 			};
 			headers.Add(h);
 		}
 
-		///<summary> Sets the last added header's leading icon </summary>
-		public void SetIcon(Texture2D texture, string tooltip = "", Action click = null)
+		///<summary> Sets the last added header or content leading icon (doesn't support sections)</summary>
+		public void SetLeftIcon(Texture2D texture, string tooltip = "", Action click = null)
 		{
 			Icon i = new Icon
 			{
@@ -59,10 +60,16 @@ namespace KERBALISM
 				tooltip = tooltip,
 				click = click
 			};
-			if (headers.Count > 0)
+
+			if (sections.Count > 0)
+			{
+				Section p = sections[sections.Count - 1];
+				p.entries[p.entries.Count - 1].leftIcon = i;
+			}
+			else if (headers.Count > 0)
 			{
 				Header h = headers[headers.Count - 1];
-				h.icon = i;
+				h.leftIcon = i;
 			}
 		}
 
@@ -99,8 +106,8 @@ namespace KERBALISM
 			}
 		}
 
-		///<summary> Adds an icon to the last added header </summary>
-		public void AddIcon(Texture2D texture, string tooltip = "", Action click = null)
+		///<summary> Adds an icon to the last added header or content (doesn't support sections) </summary>
+		public void AddRightIcon(Texture2D texture, string tooltip = "", Action click = null)
 		{
 			Icon i = new Icon
 			{
@@ -126,11 +133,11 @@ namespace KERBALISM
 			foreach (Header h in headers)
 			{
 				GUILayout.BeginHorizontal(Styles.entry_container);
-				if (h.icon != null)
+				if (h.leftIcon != null)
 				{
-					GUILayout.Label(new GUIContent(h.icon.texture, h.icon.tooltip), Styles.left_icon);
-					if (h.icon.click != null && Lib.IsClicked())
-						callbacks.Add(h.icon.click);
+					GUILayout.Label(new GUIContent(h.leftIcon.texture, h.leftIcon.tooltip), Styles.left_icon);
+					if (h.leftIcon.click != null && Lib.IsClicked())
+						callbacks.Add(h.leftIcon.click);
 				}
 				GUILayout.Label(new GUIContent(h.label, h.tooltip), Styles.entry_label_nowrap);
 				if (h.click != null && Lib.IsClicked()) callbacks.Add(h.click);
@@ -150,13 +157,13 @@ namespace KERBALISM
 				GUILayout.BeginHorizontal(Styles.section_container);
 				if (p.left != null)
 				{
-					GUILayout.Label(Icons.left_arrow, Styles.left_icon);
+					GUILayout.Label(Textures.left_arrow, Styles.left_icon);
 					if (Lib.IsClicked()) callbacks.Add(p.left);
 				}
 				GUILayout.Label(p.title, Styles.section_text);
 				if (p.right != null)
 				{
-					GUILayout.Label(Icons.right_arrow, Styles.right_icon);
+					GUILayout.Label(Textures.right_arrow, Styles.right_icon);
 					if (Lib.IsClicked()) callbacks.Add(p.right);
 				}
 				GUILayout.EndHorizontal();
@@ -177,6 +184,12 @@ namespace KERBALISM
 				foreach (Entry e in p.entries)
 				{
 					GUILayout.BeginHorizontal(Styles.entry_container);
+					if (e.leftIcon != null)
+					{
+						GUILayout.Label(new GUIContent(e.leftIcon.texture, e.leftIcon.tooltip), Styles.left_icon);
+						if (e.leftIcon.click != null && Lib.IsClicked())
+							callbacks.Add(e.leftIcon.click);
+					}
 					GUILayout.Label(new GUIContent(e.label, e.tooltip), Styles.entry_label, GUILayout.Height(Styles.entry_label.fontSize));
 					if (e.hover != null && Lib.IsHover()) callbacks.Add(e.hover);
 					GUILayout.Label(new GUIContent(e.value, e.tooltip), Styles.entry_value, GUILayout.Height(Styles.entry_value.fontSize));
@@ -285,7 +298,7 @@ namespace KERBALISM
 			public string tooltip;
 			public Action click;
 			public List<Icon> icons;
-			public Icon icon;
+			public Icon leftIcon;
 		}
 
 		sealed class Section
@@ -307,6 +320,7 @@ namespace KERBALISM
 			public Action click;
 			public Action hover;
 			public List<Icon> icons;
+			public Icon leftIcon;
 		}
 
 		sealed class Icon

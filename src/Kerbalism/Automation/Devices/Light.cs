@@ -6,81 +6,45 @@ using KSP.Localization;
 
 namespace KERBALISM
 {
-
-
-	public sealed class LightDevice : Device
+	public sealed class LightDevice : LoadedDevice<ModuleLight>
 	{
-		public LightDevice(ModuleLight light)
-		{
-			this.light = light;
-		}
+		public LightDevice(ModuleLight module) : base(module) { }
 
-		public override string Name()
-		{
-			return "light";
-		}
+		public override string Name => "light";
 
-		public override uint Part()
-		{
-			return light.part.flightID;
-		}
-
-		public override string Info()
-		{
-			return light.isOn ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_ON") + "</color>" : "<color=red>" + Localizer.Format("#KERBALISM_Generic_OFF") + "</color>";
-		}
+		public override string Status => Lib.Color(module.isOn, Localizer.Format("#KERBALISM_Generic_ON"), Lib.Kolor.Green, Localizer.Format("#KERBALISM_Generic_OFF"), Lib.Kolor.Yellow);
 
 		public override void Ctrl(bool value)
 		{
-			if (value) light.LightsOn();
-			else light.LightsOff();
+			if (value) module.LightsOn();
+			else module.LightsOff();
 		}
 
 		public override void Toggle()
 		{
-			Ctrl(!light.isOn);
+			Ctrl(!module.isOn);
 		}
-
-		ModuleLight light;
 	}
 
 
-	public sealed class ProtoLightDevice : Device
+	public sealed class ProtoLightDevice : ProtoDevice<ModuleLight>
 	{
-		public ProtoLightDevice(ProtoPartModuleSnapshot light, uint part_id)
-		{
-			this.light = light;
-			this.part_id = part_id;
-		}
+		public ProtoLightDevice(ModuleLight prefab, ProtoPartSnapshot protoPart, ProtoPartModuleSnapshot protoModule)
+			: base(prefab, protoPart, protoModule) { }
 
-		public override string Name()
-		{
-			return "light";
-		}
+		public override string Name => "light";
 
-		public override uint Part()
-		{
-			return part_id;
-		}
-
-		public override string Info()
-		{
-			bool is_on = Lib.Proto.GetBool(light, "isOn");
-			return is_on ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_ON") + "</color>" : "<color=red>" + Localizer.Format("#KERBALISM_Generic_OFF") + "</color>";
-		}
+		public override string Status => Lib.Color(Lib.Proto.GetBool(protoModule, "isOn"), Localizer.Format("#KERBALISM_Generic_ON"), Lib.Kolor.Green, Localizer.Format("#KERBALISM_Generic_OFF"), Lib.Kolor.Yellow);
 
 		public override void Ctrl(bool value)
 		{
-			Lib.Proto.Set(light, "isOn", value);
+			Lib.Proto.Set(protoModule, "isOn", value);
 		}
 
 		public override void Toggle()
 		{
-			Ctrl(!Lib.Proto.GetBool(light, "isOn"));
+			Ctrl(!Lib.Proto.GetBool(protoModule, "isOn"));
 		}
-
-		private readonly ProtoPartModuleSnapshot light;
-		private readonly uint part_id;
 	}
 
 

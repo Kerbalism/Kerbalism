@@ -115,7 +115,7 @@ namespace KERBALISM
 		{
 			// update RMB ui
 			Events["Toggle"].guiName = deployed ? Localizer.Format("#KERBALISM_Generic_RETRACT") : Localizer.Format("#KERBALISM_Generic_DEPLOY");
-			Events["Toggle"].active = (deploy.Length > 0) && (part.FindModuleImplementing<Habitat>() == null) && !deploy_anim.Playing() && !waitRotation && ResourceCache.Info(vessel, "ElectricCharge").amount > ec_rate;
+			Events["Toggle"].active = (deploy.Length > 0) && (part.FindModuleImplementing<Habitat>() == null) && !deploy_anim.Playing() && !waitRotation && ResourceCache.GetResource(vessel, "ElectricCharge").Amount > ec_rate;
 
 			// in flight
 			if (Lib.IsFlight())
@@ -124,7 +124,7 @@ namespace KERBALISM
 				if (deployed)
 				{
 					// if there is no ec
-					if (ResourceCache.Info(vessel, "ElectricCharge").amount < 0.01)
+					if (ResourceCache.GetResource(vessel, "ElectricCharge").Amount < 0.01)
 					{
 						// pause rotate animation
 						// - safe to pause multiple times
@@ -176,24 +176,28 @@ namespace KERBALISM
 			if (Is_consuming_energy())
 			{
 				// get resource handler
-				Resource_info ec = ResourceCache.Info(vessel, "ElectricCharge");
+				ResourceInfo ec = ResourceCache.GetResource(vessel, "ElectricCharge");
 
 				// consume ec
-				ec.Consume(ec_rate * Kerbalism.elapsed_s, "gravityring");
+				ec.Consume(ec_rate * Kerbalism.elapsed_s, "gravity ring");
 			}
 		}
 
-		public static void BackgroundUpdate(Vessel vessel, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, GravityRing ring, Resource_info ec, double elapsed_s)
+		public static void BackgroundUpdate(Vessel vessel, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, GravityRing ring, ResourceInfo ec, double elapsed_s)
 		{
 			// if the module is either non-deployable or deployed
 			if (ring.deploy.Length == 0 || Lib.Proto.GetBool(m, "deployed"))
 			{
 				// consume ec
-				ec.Consume(ring.ec_rate * elapsed_s, "gravityring");
+				ec.Consume(ring.ec_rate * elapsed_s, "gravity ring");
 			}
 		}
 
+#if KSP15_16
 		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "#KERBALISM_GravityRing_Toggle", active = true)]
+#else
+		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "#KERBALISM_GravityRing_Toggle", active = true, groupName = "Habitat", groupDisplayName = "Habitat")]
+#endif
 		public void Toggle()
 		{
 			// switch deployed state

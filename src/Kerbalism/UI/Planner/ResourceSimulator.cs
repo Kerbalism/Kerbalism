@@ -45,13 +45,17 @@ namespace KERBALISM.Planner
 				for (int i = 0; i < p.Resources.Count; ++i)
 				{
 					Process_part(p, p.Resources[i].resourceName);
+#if DEBUG_RESOURCES
+					p.Resources[i].isVisible = true;
+					p.Resources[i].isTweakable = true;
+#endif
 				}
 			}
 
 			// process all rules
 			foreach (Rule r in Profile.rules)
 			{
-				if ((r.input.Length > 0 || (r.monitor && r.output.Length > 0)) && r.rate > 0.0)
+				if (r.input.Length > 0 && r.rate > 0.0)
 				{
 					Process_rule(parts, r, env, va);
 				}
@@ -101,9 +105,6 @@ namespace KERBALISM.Planner
 						case "ModuleCommand":
 							Process_command(m as ModuleCommand);
 							break;
-						case "ModuleDeployableSolarPanel":
-							Process_panel(m as ModuleDeployableSolarPanel, env);
-							break;
 						case "ModuleGenerator":
 							Process_generator(m as ModuleGenerator, p);
 							break;
@@ -140,9 +141,6 @@ namespace KERBALISM.Planner
 						case "KerbalismScansat":
 							Process_scanner(m as KerbalismScansat);
 							break;
-						case "ModuleCurvedSolarPanel":
-							Process_curved_panel(p, m, env);
-							break;
 						case "FissionGenerator":
 							Process_fission_generator(p, m);
 							break;
@@ -170,6 +168,9 @@ namespace KERBALISM.Planner
 							break;
 						case "ModuleRCSFX":
 							Process_rcsfx(m as ModuleRCSFX);
+							break;
+						case "SolarPanelFixer":
+							Process_solarPanel(m as SolarPanelFixer, env);
 							break;
 					}
 				}
@@ -228,20 +229,11 @@ namespace KERBALISM.Planner
 			}
 			else if (rate > double.Epsilon)
 			{
-				// simulate recipe if output_only is false
-				if (!r.monitor)
-				{
-					// - rules always dump excess overboard (because it is waste)
-					SimulatedRecipe recipe = new SimulatedRecipe(p, r.name);
-					recipe.Input(r.input, rate * k);
-					recipe.Output(r.output, rate * k * r.ratio, true);
-					recipes.Add(recipe);
-				}
-				// only simulate output
-				else
-				{
-					Resource(r.output).Produce(rate * k, r.name);
-				}
+				// - rules always dump excess overboard (because it is waste)
+				SimulatedRecipe recipe = new SimulatedRecipe(p, r.name);
+				recipe.Input(r.input, rate * k);
+				recipe.Output(r.output, rate * k * r.ratio, true);
+				recipes.Add(recipe);
 			}
 		}
 
@@ -378,9 +370,9 @@ namespace KERBALISM.Planner
 
 		void Process_experiment(Experiment exp)
 		{
-			if (exp.recording)
+			if (exp.Running)
 			{
-				Resource("ElectricCharge").Consume(exp.ec_rate, exp.sample_mass < float.Epsilon ? "sensor" : "experiment");
+				Resource("ElectricCharge").Consume(exp.ec_rate, exp.ExpInfo.SampleMass == 0.0 ? "sensor" : "experiment");
 			}
 		}
 
@@ -391,13 +383,6 @@ namespace KERBALISM.Planner
 			{
 				Resource(res.name).Consume(res.rate, "command");
 			}
-		}
-
-
-		void Process_panel(ModuleDeployableSolarPanel panel, EnvironmentAnalyzer env)
-		{
-			double generated = panel.resHandler.outputResources[0].rate * env.solar_flux / Sim.SolarFluxAtHome();
-			Resource("ElectricCharge").Produce(generated, "solar panel");
 		}
 
 
@@ -515,22 +500,6 @@ namespace KERBALISM.Planner
 		void Process_scanner(KerbalismScansat m)
 		{
 			Resource("ElectricCharge").Consume(m.ec_rate, "scanner");
-		}
-
-
-		void Process_curved_panel(Part p, PartModule m, EnvironmentAnalyzer env)
-		{
-			// note: assume half the components are in sunlight, and average inclination is half
-
-			// get total rate
-			double tot_rate = Lib.ReflectionValue<float>(m, "TotalEnergyRate");
-
-			// get number of components
-			int components = p.FindModelTransforms(Lib.ReflectionValue<string>(m, "PanelTransformName")).Length;
-
-			// approximate output
-			// 0.7071: average clamped cosine
-			Resource("ElectricCharge").Produce(tot_rate * 0.7071 * env.solar_flux / Sim.SolarFluxAtHome(), "curved panel");
 		}
 
 
@@ -710,6 +679,30 @@ namespace KERBALISM.Planner
 						break;
 					case "LqdHydrogen":     // added for cryotanks and any other supported mod that uses Liquid Hydrogen
 						Resource("LqdHydrogen").Consume(thrust_flow * fuel.ratio, "rcs");
+						break;
+				}
+			}
+		}
+
+		void Process_solarPanel(SolarPanelFixer spf, EnvironmentAnalyzer env)
+		{
+			if (spf.part.editorStarted && spf.isInitialized && spf.isEnabled && spf.editorEnabled)
+			{
+				double editorOutput = 0.0;
+				switch (Planner.Sunlight)
+				{
+					case Planner.SunlightState.SunlightNominal:
+						editorOutput = spf.nominalRate * (env.solar_flux / Sim.SolarFluxAtHome);
+						if (editorOutput > 0.0) Resource("ElectricCharge").Produce(editorOutput, "solar panel (nominal)");
+						break;
+					case Planner.SunlightState.SunlightSimulated:
+						// create a sun direction according to the shadows direction in the VAB / SPH
+						Vector3d sunDir = EditorDriver.editorFacility == EditorFacility.VAB ? new Vector3d(1.0, 1.0, 0.0).normalized : new Vector3d(0.0, 1.0, -1.0).normalized;
+						string occludingPart = null;
+						double effiencyFactor = spf.SolarPanel.GetCosineFactor(sunDir, true) * spf.SolarPanel.GetOccludedFactor(sunDir, out occludingPart, true);
+						double distanceFactor = env.solar_flux / Sim.SolarFluxAtHome;
+						editorOutput = spf.nominalRate * effiencyFactor * distanceFactor;
+						if (editorOutput > 0.0) Resource("ElectricCharge").Produce(editorOutput, "solar panel (estimated)");
 						break;
 				}
 			}

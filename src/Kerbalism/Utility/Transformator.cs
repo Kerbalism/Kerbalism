@@ -24,11 +24,11 @@ namespace KERBALISM
 
 			if (transf_name.Length > 0)
 			{
-				Lib.DebugLog("Looking for : {0}", transf_name);
+				Lib.LogDebugStack("Looking for : {0}", transf_name);
 				Transform[] transfArray = p.FindModelTransforms(transf_name);
 				if (transfArray.Length > 0)
 				{
-					Lib.DebugLog("Transform has been found");
+					Lib.LogDebugStack("Transform has been found");
 					name = transf_name;
 
 					transf = transfArray[0];
@@ -41,13 +41,13 @@ namespace KERBALISM
 
 		public void Play()
 		{
-			Lib.DebugLog("Playing Transformation");
+			Lib.LogDebugStack("Playing Transformation");
 			if (transf != null) rotationRateGoal = 1.0f;
 		}
 
 		public void Stop()
 		{
-			Lib.DebugLog("Stopping Transformation");
+			Lib.LogDebugStack("Stopping Transformation");
 			if (transf != null) rotationRateGoal = 0.0f;
 		}
 

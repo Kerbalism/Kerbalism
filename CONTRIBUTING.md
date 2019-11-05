@@ -289,7 +289,7 @@ To ensure smooth sailing with pull requests, please follow these guidelines:
   - Please follow the [code style guidelines](#code-style)
   - Please submit readable, high-quality code! 
 
-Once you followed the guidelines above, please submit your pull request to the **[main repository](https://github.com/MoreRobustThanYou/Kerbalism/pulls)**.
+Once you followed the guidelines above, please submit your pull request to the **[main repository](https://github.com/Kerbalism/Kerbalism/pulls)**.
 Please select "allow edits from maintainers" so that the maintainer can help you with your pull request.
 
 Adding commits after you submitted the pull request is not forbidden - after all, if you gotta change something, you gotta change something.
@@ -308,59 +308,46 @@ Please observe some basic style rules for your contributions:
   - Avoid trailing whitespace
   - Please document your code briefly with inline-comments. If you add new functions, provide summaries that explain parameters, return values and side effects.
 
+## Setup guide
 
-## Debugging with Visual Studio and Unity
+Kerbalism uses a custom build and deployment system. From your IDE, don't try to change the project references and don't change anything in the project properties, that won't work.
 
-This section will guide you through setting up your development environment so that it's suitable for the Development of KSP mods.
+### Supported IDE / C# versions
 
-### Installation and Environment Setup
+You will need **Visual Studio 2017** or later on Windows or an IDE that work with **Mono 6.0** or later on Linux/Mac.
 
-#### Unity
-For building and/or debugging KSP Kerbalism with Visual Studio or Unity Editor you will need to download and install the exact version of Unity Editor that was used to build the version of KSP you are working with.
+We currently target the C# version 7.1.
+
+### Project Setup
+
+Before you can build Kerbalism, your IDE has to know where the Unity and KSP assemblies are, and what version of KSP you are using. 
+
+This is done by editing a configuration file :
+
+  - Close your IDE (Visual Studio, Monodevelop)
+  - In you file explorer, go to the **BuildSystem** folder
+  - Make a copy of the **UserConfigDevEnv.xml.CopyMe** file and rename it to **UserConfigDevEnv.xml**
+  - Open this file in a text editor and follow the instructions in the comments.
+  - Save the file
+  - Open you IDE and make sure you are in the **Debug** configuration
+  
+The release configuration require a special setup, ask us first if you really need to build it.
+
+### Debugging with Visual Studio Tools for Unity (Windows only)
+
+To be able to place breakpoint and is the debugging functions of Visual Studio, you need to :
+  - Modify your KSP installation to use the unity player instead of the KSP executable
+  - Install the **Visual Studio Tools for Unity** extension
+
+#### Downloading the Unity player
+You will need to download and install the exact version of Unity Editor that was used to build the version of KSP you are working with.
 For KSP1.4.x You can find out which Unity version your current KSP install is using by looking at the first line of `C:\Users\YOURUSERNAME\AppData\LocalLow\Squad\Kerbal Space Program/output_log.txt`. It should read something like this:
 
     Initialize engine version: 2017.1.3p1 (02d73f71d3bd)
 
 In this case, the Unity version for your KSP version is 2017.1.3p1.
 
-And for KSP1.3.1 you can find out which Unity version your current KSP install is using by looking at the first line of `KSP_Data/output_log.txt` (or `KSP_x64_Data/output_log.txt`). It should read something like this:
-
-    Initialize engine version: 5.4.0p4 (b15b5ae035b7)
-
-In this case, the Unity version for your KSP version is 5.4.0p4.
-
-
-The Unity Editor for **KSP v1.4.x** is **Unity v2017.1.3p1** and can be downloaded here: [UnityDownloadAssistant-2017.1.3p1.exe](https://beta.unity3d.com/download/02d73f71d3bd/UnityDownloadAssistant-2017.1.3p1.exe )
-
-The Unity Editor for **KSP v1.3.1** is **Unity v5.4.0.p4** and can be downloaded here: [UnityDownloadAssistant-5.4.0p4.exe](https://beta.unity3d.com/download/b15b5ae035b7/UnityDownloadAssistant-5.4.0p4.exe )
-
-#### Visual Studio
-
-It is recommended to use **Visual Studio 2017**. Any version should work (including the free *Community* version).
-To save on disk space and installation time, you should only select the "Game development with Unity" component. In the right hand side, uncheck the "Unity 5.6-Editor" component, since this is the wrong version of the Editor anyway.
- 
-
-##### Visual Studio Tools for Unity
-
-If you want to debug with Visual Studio then you will need the **Visual Studio Tools for Unity** Extension.
-
-If you selected the "Game development with Unity" component above, this should already be installed.
-If it is not, you download and install by using the **Tools->Extensions and Updates** window in Visual Studio, selecting the "Online" tab on the left hand column and then searching for "Unity" in the search bar in the upper right corner.
-
-##### Editor Settings
-
-Please install the [Trailing Whitespace Visualizer Plugin](https://marketplace.visualstudio.com/items?itemName=MadsKristensen.TrailingWhitespaceVisualizer)
-to make sure that you don't add trailing whitespace.
-
-The Kerbalism repository contains a file called `.editorconfig` which should configure your editor automatically if you use Visual Studio 2017.
-If you use Visual Studio 2015 or older, please set the following options in Visual Studio:
-
-Under Tools -> Options -> Text Editor -> C# -> Tabs:
-  - Indenting: Smart
-  - Tab Size: 4
-  - Indent Size: 4
-  - Insert Spaces
-
+For **KSP 1.4 to 1.7** the Unity version is **Unity v2017.1.3p1** and can be downloaded here: [UnityDownloadAssistant-2017.1.3p1.exe](https://beta.unity3d.com/download/02d73f71d3bd/UnityDownloadAssistant-2017.1.3p1.exe )
 
 #### Kerbal Space Program Install
 
@@ -369,89 +356,24 @@ You should create a KSP install just for Development that is separate from your 
 To do that, you follow these steps:
 
   - Copy your game install to another location
-  - Remove everything but the `Squad` directory from `GameData`
+  - Copy the `PlayerConnectionConfigFile` file available in the Kerbalism repository in `BuildSystem\DevEnvInstall\Windows` and put it into your KSP dev `KSP_x64_Data` folder.
   - Find your Unity install, and go into the subdirectory `Unity\Editor\Data\PlaybackEngines\windowsstandalonesupport\Variations\win64_development_mono`.
     Copy the file `player_win.exe` into your KSP dev main directory
-  - Delete or rename `KSP_x64.exe` in your KSP dev main directory
-  - Rename the `player_win.exe` to `KSP_x64.exe`
-  - Copy the `PlayerConnectionConfigFile` file from `buildscripts\UnityDebug` and put it into your KSP dev `KSP_x64_Data` folder.
-
-This will turn your KSP install into a Development version only. If you want to use this install as a release (non-Development) test install as well, then instead of deleting or renaming `KSP_x64.exe`, you can do the following:
-
   - Rename the copied file `player_win.exe` now in your KSP dev install folder to `KSP_x64_Dbg.exe`.
   - Create a junction in your KSP dev install folder named `KSP_x64_Dbg_Data` linking to your KSP dev `KSP_x64_Data` folder.
     This is done by opening a command prompt in your KSP dev install folder and running the following command:
 
-        mklink /J KSP_x64_Dbg_Data KSP_x64_Data
+        `mklink /J KSP_x64_Dbg_Data KSP_x64_Data`
 
-Now you can choose between the Development version (launch `KSP_x64_Dbg.exe`) and the release test non-Development version (run `KSP_x64.exe`).
+Now you can choose between the debuggable version (launch `KSP_x64_Dbg.exe`) and the normal version (run `KSP_x64.exe`).
 
-#### System Environment Variables
+#### How to debug in Visual Studio
 
-To make your life a little easier, the Kerbalism Visual Studio Project respects two environment variables called `KSPDEVDIR` and `KSPBACKPORTDIR`
-If you set their values to the paths of the relevant versions of your KSP development installs, the reference and debugging paths inside the project should be set automatically. Obviously `KSPDEVDIR` should point to your KSP1.4.x install and `KSPBACKPORTDIR` to your KSP1.3.1 install. 
-If it is not set, your reference paths and the Debugging paths have to be set manually.
-Please note that you don't need to use both installs if you plan on making private builds but if you plan on making pull requests then it will be appreciated if you make sure your code works for both versions. You can also use the compiler directive `KSP13` in the source to switch relevant code specific to a KSP version.
+First, install the **Visual Studio Tools for Unity** from the **Tools->Extensions and Updates** menu in Visual Studio.
 
-To set the variables, follow the instructions in this link, before starting a Visual Studio instance:
+Make sure you are in the **debug** configuration and click on the green "start" button.
 
-https://superuser.com/a/949577
-
-
-### Development and Debugging
-
-#### Project Setup
-
-Before you can build Kerbalism, your Visual Studio has to know where the Unity and KSP assemblies are that it references.
-If you set your `KSPDEVDIR` variable as mentioned [above](#system-environment-variables), then this should already be set. If not, then please:
-
-  - Double-Click the "Properties" page in the Solution Explorer in Visual Studio
-  - Change to the **Reference Paths** tab and select the `\KSP_x64_Data\Managed` subdirectory of your KSP dev install
-  - Click "Add" to actually add the selected path
- 
- To be able to quicklaunch KSP using F5 (or Ctrl-F5), you have to set which external program should start. This should already be set if you set your `KSPDEVDIR` and/or `KSPBACKPORTDIR` environment variables. If not,
-  
- - Double-Click the "Properties" page in the Solution Explorer in Visual Studio
- - Change to the **Debug** tab, select "Start External Program" and select the KSP executable that you want to start.
- - In the Working Directory, select the KSP dev root directory
-
-#### Building
-
-If your reference paths are set up correctly, then building the project should be as simple as Clicking Build -> Build Solution.
-If `KSPDEVDIR` and/or `KSPBACKPORTDIR` is set, then the output path will be the `\GameData\Kerbalism\` subdirectory of your KSP install. If not, you have to configure the output path yourself in Properties -> Build -> Output Path.
-
-You can use the configuration menu to switch between `Debug` and `Release` for KSP1.4.x and also `Debug 1.3` and `Release 1.3` for KSP1.3.1
-
-When you are building in Debug mode, one additional file with the ending `.mdb` is created. This file is required for unity debugging.
-
-#### Debugging
-
-To debug KSP, you have to enable the "Background Simulation" option inside the game, by going to KSP Main Menu -> Settings -> General -> Simulate In Background and setting it to **ON**.
-It is recommended to debug KSP in a window rather than fullscreen, so turn off full screen by going to KSP Main Menu -> Settings -> Graphics and unchecking "Full screen".
-To save startup time, seconds of our life and the environment, it is recommended to set the Graphics options way down. For that, go to KSP Main Menu -> Settings -> Graphics and set:
-
-  - Render Quality: Fastest
-  - Texture Quality: Eighth Res
-  - Aerodynamic FX Quality: Minimal
-  - Anti-Aliasing: Disabled
-  - V-Sync: Don't sync
-  - Frame-Limit: Whatever you're comfortable with (I use 60 FPS)
-  - Pixel Light Count: 0
-  - Shadow Cascades: 0
-
-Before building Kerbalism, consider turning on a few conditional compilation symbols, that may or may not aid you in development and debugging:
-
-  - `DEBUG_PROFILER`: Turn on Kerbalism internal profiler (see [below](#profiling))
-
-##### Visual Studio
-
-For debugging, switch to the debug configuration and build the project. Then, you can start KSP in the regular way using the Debug executable.
-
-You can also directly build and start the project with the "Start Without Debugging" hotkey Ctrl-F5.
-The reason you should use Ctrl-F5 over F5 ("Start Debugging") is that in the latter case, Visual Studio attaches to the KSP process - *but in the wrong way*.
-We need to attach the KSP process using the Visual Studio tools for Unity.
-
-We can do this by Selecting "Debug -> Attach Unity Debugger" from the Visual Studio menu, and then selecting the *"WindowsPlayer"* process.
+Then, go to "Debug -> Attach Unity Debugger" from the Visual Studio menu, and then select the *"WindowsPlayer"* process.
 If the *"WindowsPlayer"* process doesn't show up in this menu, check that
   - Both KSP and Visual Studio are allowed to communicate through the local firewall
   - That you created or downloaded the PlayerConnectionConfigFile described [above](#kerbal-space-program-install)
@@ -461,14 +383,13 @@ If that doesn't happen (the debugger just doesn't halt where you want it to), ma
 
 Note that while you are halting at a breakpoint, the KSP will become unresponsive. If you try to open it while halted, Windows will suggest to kill it. This is not what you want when debugging ;)
 
+#### Tips on debugging
 
-##### MonoDevelop
-
-For Monodevelop debugging you need the .mdb files and will have to attach to the KSP dev install debug executable, to do this start Monodevelop and then start your KSP dev install debug executable, now use Monodevelop's **Run Menu->Attach to Process** option to open the process attach window. *Unity Debugger* should be selected in the lower left selection box, now you can select KSP's process called *"WindowsPlayer"* and click OK to attach to it. Monodevelop should now switch into debugging mode.
-
+To debug KSP, you have to enable the "Background Simulation" option inside the game, by going to KSP Main Menu -> Settings -> General -> Simulate In Background and setting it to **ON**.
+It is recommended to debug KSP in a window rather than fullscreen, so turn off full screen by going to KSP Main Menu -> Settings -> Graphics and unchecking "Full screen".
+To save startup time, seconds of our life and the environment, it is recommended to set the Graphics options way down.
 
 #### Profiling
-
 
 ##### Unity Profiler
 
@@ -499,29 +420,14 @@ You can enable/disable the display of any calls not called in the last frame wit
 
 ### Development on MacOS
 
-To get a working development environment on mac, things are a little different. This little guide will help you get going if you want to develop Kerbalism on MacOS. Follow these steps:
+There is currently (08/2019) no solution to debug using the unity tools on OSX. 
+  - Only "full" PDB files can be converted into MDB files.
+  - Mono 5+ can't generate "full" PDB files (it automatically change <DebugType>full</DebugType> to <DebugType>portable</DebugType>)
+  - The version of MSBuild (15.1) and of the compiler used by Mono 4.8 (last version able to generate MDB files) are just too old (no C# 7 support + too much breaking code)
+	
+The only practical workaround would be to setup a windows build server somewhere and get the full PDBs from it
 
-- Download and install Visual Studio, the community edition is free of charge. Bear in mind that it will also require you to have XCode installed - so you could easily end up downloading about 2 GB.
-- Download and install Unity.
-- If you did not install Unity to the default location, or do not want to use your default KSP installation (the one in /Applications/KSP_osx) for development, edit buildscripts/setup_mac.sh accordingly.
-- Execute the script `setup_mac.sh` from the `buildscripts` folder in this repository. This will set up the environment variable `KSPDEVDIR` and create a few symbolic links in your KSP installation folder that will make it compatible with the Visual Studio Project.
-- Start visual studio from the console: `open /Applications/Visual\ Studio.app`. By starting it from the console you will have the environment variable `KSPDEVDIR` set for the time it runs, Visual Studio depends on this variable to find a couple of libraries in your KSP folder. If you have a better way to set that variable when you start Visual Studio from the launchpad, please adapt this guide.
-- Within Visual Studio, open the 'Kerbalism.sln' project. You should be able to create a release build now.
-
-I didn't try to run KSP in a debugger yet. If you know how to do this, please update this guide. It might work with using the Launcher.app in your KSP folder (which is already used to build Kerbalism), so maybe you won't even have to download Unity.
-
-
-## Building Releases
-
-Making releases is as simple as updating two version files and the clicking build. Below is a small checklist for releases.
-
-However, before creating a release, make sure that *you are actually authorized* to make one.
-While the code is open source and you could theoretically do what you want, it would be very, very, **very** appreciated that you don't create new releases unless the current maintainer has either stepped back or has gone missing for a long time and doesn't reply to requests.
-
-If you want to distribute your own version for testing, please do so by making it very clear to everyone that it's not an official release, and **CHANGE THE VERSION NUMBER** according to the versioning scheme below.
-
-
-### Release Checklist
+### Release Checklist (OBSOLETE)
 
   - Complete the `CHANGELOG.md` file, and fill out the release date field. Make sure to credit all contributors.
   - Adjust the compatible KSP version numbers in `Kerbalism.version`. Actually test if they work in all the KSP version claimed compatible.
@@ -538,26 +444,8 @@ If you want to distribute your own version for testing, please do so by making i
   - On the KSP forums, create a new post with the changelog and links to both GitHub and SpaceDock.
   - On http://ksp-avc.cybutek.net, update the version and compatibility numbers according to the AVC version file
 
-### Versioning
-
-The rules for versioning are rather lax, except for the main most important #1 rule:
-
-**DO NOT RELEASE DIFFERENT PRODUCTS UNDER THE SAME VERSION NUMBER**
-
-While the rules below are guidelines and can be ignored rather arbitrarily by the maintainer, the rule above is THE LAW.
-If you let a build slip out that differs from another build by as little as one bit but has the same version number, kittens will die and Krakens shall eat your ship.
-Increment the version number even if the change is minuscule.
-
-If the Version is MAJOR.MINOR.PATCH, then
-
-  - MAJOR is the major version number, to be incremented when a major code restructuring and/or change in functionality has taken place.
-  - MINOR is incremented when there are notable and visible changes and/or additions to functionality
-  - PATCH is incremented for smaller and/or invisible changes
-
-I believe that 3 version numbers are precise enough, so even when creating bugfix releases with tiny changes,
-don't add another version number - increment the PATCH number instead.
-
 <!--
+##### CONTRIBUTING.md, Updated 08-2019 by Gotmachine for the new build system.
 ##### CONTRIBUTING.md, Updated VS Project files and Overhauled build Scripts by [PiezPiedPy](https://github.com/PiezPiedPy)
 ##### CONTRIBUTING.md Originally created by [PiezPiedPy](https://github.com/PiezPiedPy) and [fat-lobyte] (https://github.com/fat-lobyte) for [KSPTrajectories] (https://github.com/neuoy/KSPTrajectories)
 -->

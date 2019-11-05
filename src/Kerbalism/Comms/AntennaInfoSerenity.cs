@@ -1,10 +1,9 @@
-﻿using System.Collections.Generic;
+﻿#if !KSP15_16
+using System.Collections.Generic;
 using System;
 using KSP.Localization;
 using CommNet;
 using KSPAssets;
-
-#if !KSP170 && !KSP16 && !KSP15 && !KSP14
 using Expansions.Serenity.DeployedScience.Runtime;
 
 namespace KERBALISM
