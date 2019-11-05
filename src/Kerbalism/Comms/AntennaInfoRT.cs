@@ -65,8 +65,8 @@ namespace KERBALISM
 										// workaround for old savegames
 										if (mResource == null || packet_size == null || packet_Interval == null)
 										{
-											Lib.DebugLog("Old SaveGame PartModule ModuleRTAntenna for part '{0}' on unloaded vessel '{1}', using default values as a workaround", p.partName, v.vesselName);
-											Lib.DebugLog("ElectricCharge isNull: '{0}', RTPacketSize isNull: '{1}', RTPacketInterval isNull: '{2}'", mResource == null, packet_size == null, packet_Interval == null);
+											Lib.LogDebugStack("Old SaveGame PartModule ModuleRTAntenna for part '{0}' on unloaded vessel '{1}', using default values as a workaround", p.partName, v.vesselName);
+											Lib.LogDebugStack("ElectricCharge isNull: '{0}', RTPacketSize isNull: '{1}', RTPacketInterval isNull: '{2}'", mResource == null, packet_size == null, packet_Interval == null);
 											rate += 6.6666;          // 6.67 Mb/s in 100% factor
 											ec += 0.025;             // 25 W/s
 										}
@@ -79,7 +79,7 @@ namespace KERBALISM
 								}
 								if (!mFound)
 								{
-									Lib.DebugLog("Could not find PartModule ModuleRTAntenna for part {0} on unloaded vessel {1}, using default values as a workaround", p.partName, v.vesselName);
+									Lib.LogDebugStack("Could not find PartModule ModuleRTAntenna for part {0} on unloaded vessel {1}, using default values as a workaround", p.partName, v.vesselName);
 									rate += 6.6666;          // 6.67 Mb/s in 100% factor
 									ec += 0.025;             // 25 W/s
 								}

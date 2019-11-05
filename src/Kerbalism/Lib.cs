@@ -24,8 +24,14 @@ namespace KERBALISM
 				stackTrace.GetFrame(1).GetMethod().Name, string.Format(msg, param)));
 		}
 
-		[Conditional("DEBUG")]
-		public static void DebugLog(string message, params object[] param)
+		[Conditional("DEBUG"), Conditional("DEVBUILD")]
+		public static void LogDebug(string msg, params object[] param)
+		{
+			Log(msg, param);
+		}
+
+		[Conditional("DEBUG"), Conditional("DEVBUILD")]
+		public static void LogDebugStack(string message, params object[] param)
 		{
 			StackTrace stackTrace = new StackTrace();
 			UnityEngine.Debug.Log(string.Format("[Kerbalism] debug {0}.{1} {2}", stackTrace.GetFrame(1).GetMethod().ReflectedType.Name,
@@ -1769,7 +1775,7 @@ namespace KERBALISM
 				var res = p.Resources[res_name];
 				res.flowState = enable;
 			} else {
-				Lib.DebugLog("Resource " + res_name + " not in part " + p.name);
+				Lib.LogDebugStack("Resource " + res_name + " not in part " + p.name);
 			}
 		}
 
@@ -1783,7 +1789,7 @@ namespace KERBALISM
 				res.amount = res.maxAmount;
 			}
 			else {
-				Lib.DebugLog("Resource " + res_name + " not in part " + p.name); }
+				Lib.LogDebugStack("Resource " + res_name + " not in part " + p.name); }
 		}
 
 		/// <summary> Sets the amount of a resource in the specified part to zero </summary>
@@ -1793,7 +1799,7 @@ namespace KERBALISM
 			if (p.Resources.Contains(res_name))
 				p.Resources[res_name].amount = 0.0;
 			else {
-				Lib.DebugLog("Resource " + res_name + " not in part " + p.name); }
+				Lib.LogDebugStack("Resource " + res_name + " not in part " + p.name); }
 		}
 
 		/// <summary> Set the enabled/disabled state of a process

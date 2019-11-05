@@ -204,7 +204,7 @@ namespace KERBALISM
 				remainingSampleMass = ExpInfo.SampleMass * sample_amount;
 				if(Double.IsNaN(remainingSampleMass))
 				{
-					Lib.Log("ERROR: remainingSampleMass is NaN on rollout " + ExpInfo.ExperimentId + " " + ExpInfo.SampleMass + " / " + sample_amount);
+					Lib.LogDebug("ERROR: remainingSampleMass is NaN on rollout " + ExpInfo.ExperimentId + " " + ExpInfo.SampleMass + " / " + sample_amount);
 				}
 			}
 		}

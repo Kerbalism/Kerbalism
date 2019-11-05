@@ -403,7 +403,7 @@ namespace KERBALISM
 				// if vessel wasn't simulated previously : update everything immediately.
 				if (!IsSimulated)
 				{
-					Lib.Log("VesselData : id '" + VesselId + "' (" + Vessel.vesselName + ") is now simulated (wasn't previously)");
+					Lib.LogDebug("VesselData : id '" + VesselId + "' (" + Vessel.vesselName + ") is now simulated (wasn't previously)");
 					IsSimulated = true;
 					Evaluate(true, Lib.RandomDouble());
 				}
@@ -411,7 +411,7 @@ namespace KERBALISM
 
 			if (isInit)
 			{
-				Lib.Log("Init complete : IsSimulated={3}, is_vessel={0}, is_rescue={1}, is_eva_dead={2} ({4})", is_vessel, is_rescue, is_eva_dead, IsSimulated, Vessel.vesselName);
+				Lib.LogDebug("Init complete : IsSimulated={3}, is_vessel={0}, is_rescue={1}, is_eva_dead={2} ({4})", is_vessel, is_rescue, is_eva_dead, IsSimulated, Vessel.vesselName);
 			}
 		}
 
@@ -463,13 +463,13 @@ namespace KERBALISM
 			habitatInfo = new VesselHabitatInfo(null);
 			EvaluateStatus();
 
-			Lib.Log("VesselData updated on vessel modified event ({0})", Vessel.vesselName);
+			Lib.LogDebug("VesselData updated on vessel modified event ({0})", Vessel.vesselName);
 		}
 
 		/// <summary> Called by GameEvents.onVesselsUndocking, just after 2 vessels have undocked </summary>
 		internal static void OnDecoupleOrUndock(Vessel oldVessel, Vessel newVessel)
 		{
-			Lib.Log("Decoupling vessel '{0}' from vessel '{1}'", newVessel.vesselName, oldVessel.vesselName);
+			Lib.LogDebug("Decoupling vessel '{0}' from vessel '{1}'", newVessel.vesselName, oldVessel.vesselName);
 
 			VesselData oldVD = oldVessel.KerbalismData();
 			VesselData newVD = newVessel.KerbalismData();
@@ -491,14 +491,14 @@ namespace KERBALISM
 			newVD.UpdateOnVesselModified();
 			oldVD.UpdateOnVesselModified();
 
-			Lib.Log("Decoupling complete for new vessel, vd.partcount={1}, v.partcount={2} ({0})", newVessel.vesselName, newVD.parts.Count, newVessel.parts.Count);
-			Lib.Log("Decoupling complete for old vessel, vd.partcount={1}, v.partcount={2} ({0})", oldVessel.vesselName, oldVD.parts.Count, oldVessel.parts.Count);
+			Lib.LogDebug("Decoupling complete for new vessel, vd.partcount={1}, v.partcount={2} ({0})", newVessel.vesselName, newVD.parts.Count, newVessel.parts.Count);
+			Lib.LogDebug("Decoupling complete for old vessel, vd.partcount={1}, v.partcount={2} ({0})", oldVessel.vesselName, oldVD.parts.Count, oldVessel.parts.Count);
 		}
 
 		// This is for mods (KIS), won't be used in a stock game (the docking is handled in the OnDock method
 		internal static void OnPartCouple(GameEvents.FromToAction<Part, Part> data)
 		{
-			Lib.Log("Coupling part '{0}' from vessel '{1}' to vessel '{2}'", data.from.partInfo.title, data.from.vessel.vesselName, data.to.vessel.vesselName);
+			Lib.LogDebug("Coupling part '{0}' from vessel '{1}' to vessel '{2}'", data.from.partInfo.title, data.from.vessel.vesselName, data.to.vessel.vesselName);
 
 			Vessel fromVessel = data.from.vessel;
 			Vessel toVessel = data.to.vessel;
@@ -514,7 +514,7 @@ namespace KERBALISM
 				if (!toVD.parts.ContainsKey(data.from.flightID))
 				{
 					toVD.parts.Add(data.from.flightID, new PartData(data.from));
-					Lib.Log("VesselData : newly created part '{0}' added to vessel '{1}'", data.from.partInfo.title, data.to.vessel.vesselName);
+					Lib.LogDebug("VesselData : newly created part '{0}' added to vessel '{1}'", data.from.partInfo.title, data.to.vessel.vesselName);
 					return;
 				}
 			}
@@ -532,8 +532,8 @@ namespace KERBALISM
 			toVD.scansat_id.Clear();
 			toVD.UpdateOnVesselModified();
 
-			Lib.Log("Coupling complete to   vessel, vd.partcount={1}, v.partcount={2} ({0})", toVessel.vesselName, toVD.parts.Count, toVessel.parts.Count);
-			Lib.Log("Coupling complete from vessel, vd.partcount={1}, v.partcount={2} ({0})", fromVessel.vesselName, fromVD.parts.Count, fromVessel.parts.Count);
+			Lib.LogDebug("Coupling complete to   vessel, vd.partcount={1}, v.partcount={2} ({0})", toVessel.vesselName, toVD.parts.Count, toVessel.parts.Count);
+			Lib.LogDebug("Coupling complete from vessel, vd.partcount={1}, v.partcount={2} ({0})", fromVessel.vesselName, fromVD.parts.Count, fromVessel.parts.Count);
 		}
 
 		internal static void OnPartWillDie(Part part)
@@ -541,7 +541,7 @@ namespace KERBALISM
 			VesselData vd = part.vessel.KerbalismData();
 			vd.parts.Remove(part.flightID);
 			vd.UpdateOnVesselModified();
-			Lib.Log("Removing dead part, vd.partcount={0}, v.partcount={1} (part '{2}' in vessel '{3}')", vd.parts.Count, part.vessel.parts.Count, part.partInfo.title, part.vessel.vesselName);
+			Lib.LogDebug("Removing dead part, vd.partcount={0}, v.partcount={1} (part '{2}' in vessel '{3}')", vd.parts.Count, part.vessel.parts.Count, part.partInfo.title, part.vessel.vesselName);
 		}
 
 		#endregion
@@ -571,7 +571,7 @@ namespace KERBALISM
 
 			FieldsDefaultInit();
 
-			Lib.Log("VesselData ctor (new vessel) : id '" + VesselId + "' (" + Vessel.vesselName + "), part count : " + parts.Count);
+			Lib.LogDebug("VesselData ctor (new vessel) : id '" + VesselId + "' (" + Vessel.vesselName + "), part count : " + parts.Count);
 			UnityEngine.Profiling.Profiler.EndSample();
 		}
 
@@ -595,12 +595,12 @@ namespace KERBALISM
 			if (node == null)
 			{
 				FieldsDefaultInit();
-				Lib.Log("VesselData ctor (created from protovessel) : id '" + VesselId + "' (" + protoVessel.vesselName + "), part count : " + parts.Count);
+				Lib.LogDebug("VesselData ctor (created from protovessel) : id '" + VesselId + "' (" + protoVessel.vesselName + "), part count : " + parts.Count);
 			}
 			else
 			{
 				Load(node);
-				Lib.Log("VesselData ctor (loaded from database) : id '" + VesselId + "' (" + protoVessel.vesselName + "), part count : " + parts.Count);
+				Lib.LogDebug("VesselData ctor (loaded from database) : id '" + VesselId + "' (" + protoVessel.vesselName + "), part count : " + parts.Count);
 			}
 			UnityEngine.Profiling.Profiler.EndSample();
 		}
@@ -723,9 +723,9 @@ namespace KERBALISM
 			}
 
 			if (Vessel != null)
-				Lib.Log("VesselData saved for vessel " + Vessel.vesselName);
+				Lib.LogDebug("VesselData saved for vessel " + Vessel.vesselName);
 			else
-				Lib.Log("VesselData saved for vessel (Vessel is null)");
+				Lib.LogDebug("VesselData saved for vessel (Vessel is null)");
 
 		}
 
