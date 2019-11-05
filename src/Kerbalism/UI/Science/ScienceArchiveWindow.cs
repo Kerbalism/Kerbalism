@@ -74,9 +74,9 @@ namespace KERBALISM
 				0,
 				TextAnchor.UpperLeft,
 				5f,
-				TextAnchor.UpperRight,
-				TextAnchor.UpperRight,
-				-100, -100);
+				TextAnchor.UpperLeft,
+				TextAnchor.UpperLeft,
+				280, -100);
 
 			KsmGuiHeader mainHeader = new KsmGuiHeader(window, "SCIENCE ARCHIVE");
 			new KsmGuiIconButton(mainHeader, Textures.KsmGuiTexHeaderClose, () => Close());
