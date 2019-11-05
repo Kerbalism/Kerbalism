@@ -8,6 +8,7 @@ Kerbalism is a mod for Kerbal Space Program that alters the game to add life sup
 
 ## Current version : 3.1 
 
+**What's new?** [New and Noteworthy]
 **Download** : **[Github releases]** - **[CKAN]**  
 **Docs & support** : **[Github wiki]** - **[Discord]** - [Github issues] - [KSP forums thread]  
 **License** : [Unlicense] (public domain)  
@@ -102,3 +103,5 @@ It includes [MiniAVC]. If you opt-in, it will use the Internet to check whether 
 [Unlicense]: https://github.com/Kerbalism/Kerbalism/blob/master/LICENSE
 
 [KerbalismBanner]: https://github.com/Kerbalism/Kerbalism/raw/master/misc/img/banner.png
+
+[New and Noteworthy]: https://github.com/Kerbalism/Kerbalism/wiki/New-And-Noteworthy
