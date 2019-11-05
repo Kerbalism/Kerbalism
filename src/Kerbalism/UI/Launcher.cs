@@ -32,7 +32,6 @@ namespace KERBALISM
 				// create the button
 				// note: for some weird reasons, the callbacks can be called BEFORE this function return
 				vesselListLauncher = ApplicationLauncher.Instance.AddApplication(null, null, null, null, null, null, Textures.applauncher_vessels);
-				generalMenuLauncher = ApplicationLauncher.Instance.AddApplication(null, null, null, null, null, null, Textures.applauncher_database);
 
 				// enable the launcher button for some scenes
 				vesselListLauncher.VisibleInScenes =
@@ -42,9 +41,13 @@ namespace KERBALISM
 				  | ApplicationLauncher.AppScenes.TRACKSTATION
 				  | ApplicationLauncher.AppScenes.VAB
 				  | ApplicationLauncher.AppScenes.SPH;
+			}
 
-				if (Features.Science)
+			if (Features.Science && (HighLogic.CurrentGame.Mode == Game.Modes.CAREER || HighLogic.CurrentGame.Mode == Game.Modes.SCIENCE_SANDBOX))
+			{
+				if (generalMenuLauncher == null)
 				{
+					generalMenuLauncher = ApplicationLauncher.Instance.AddApplication(null, null, null, null, null, null, Textures.applauncher_database);
 					generalMenuLauncher.VisibleInScenes =
 						ApplicationLauncher.AppScenes.SPACECENTER
 					  | ApplicationLauncher.AppScenes.FLIGHT
@@ -54,6 +57,15 @@ namespace KERBALISM
 					  | ApplicationLauncher.AppScenes.SPH;
 
 					generalMenuLauncher.onLeftClick = () => ScienceArchiveWindow.Toggle();
+				}
+			}
+			else
+			{
+				if (generalMenuLauncher != null)
+				{
+					generalMenuLauncher.onLeftClick = null;
+					ApplicationLauncher.Instance.RemoveApplication(generalMenuLauncher);
+					generalMenuLauncher = null;
 				}
 			}
 		}
