@@ -763,16 +763,16 @@ namespace KERBALISM
 				if (d <= double.Epsilon) return "none";
 				if (double.IsInfinity(d) || double.IsNaN(d)) return "perpetual";
 
-				int hours_in_day = (int)HoursInDay;
-				int days_in_year = (int)DaysInYear;
+				long hours_in_day = (long)HoursInDay;
+				long days_in_year = (long)DaysInYear;
 
-				int duration_seconds = (int)d;
+				long duration_seconds = (long)d;
 
-				int seconds = duration_seconds % 60;
-				int minutes = (duration_seconds / 60) % 60;
-				int hours = (duration_seconds / 3600) % hours_in_day;
-				int days = (duration_seconds / (3600 * hours_in_day)) % days_in_year;
-				int years = duration_seconds / (3600 * hours_in_day * days_in_year);
+				long seconds = duration_seconds % 60;
+				long minutes = (duration_seconds / 60) % 60;
+				long hours = (duration_seconds / 3600) % hours_in_day;
+				long days = (duration_seconds / (3600 * hours_in_day)) % days_in_year;
+				long years = duration_seconds / (3600 * hours_in_day * days_in_year);
 
 
 				// seconds
@@ -798,15 +798,15 @@ namespace KERBALISM
 				double hours_in_day = HoursInDay;
 				double days_in_year = DaysInYear;
 
-				int duration = (int)d;
-				int seconds = duration % 60;
+				long duration = (long)d;
+				long seconds = duration % 60;
 				duration /= 60;
-				int minutes = duration % 60;
+				long minutes = duration % 60;
 				duration /= 60;
-				int hours = duration % (int)hours_in_day;
-				duration /= (int)hours_in_day;
-				int days = duration % (int)days_in_year;
-				int years = duration / (int)days_in_year;
+				long hours = duration % (long)hours_in_day;
+				duration /= (long)hours_in_day;
+				long days = duration % (long)days_in_year;
+				long years = duration / (long)days_in_year;
 
 				string result = string.Empty;
 				if (years > 0) result += years + "y ";
