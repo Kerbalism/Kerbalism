@@ -300,13 +300,12 @@ namespace KERBALISM
 			// - non-Kerbalism brokers (aggregated rate)
 			vd.Supply(Name).UpdateResourceBrokers(brokersResourceAmounts, intervalRuleBrokersRates, unsupportedBrokersRate, elapsed_s);
 
-			if (PreferencesLifeSupport.Instance.resourceLogging)
-			{
-				Lib.Log("RESOURCE UPDATE : " + v);
-				foreach (var rb in vd.Supply(Name).ResourceBrokers)
-					Lib.Log(Lib.BuildString(Name, " : ", rb.rate.ToString("+0.000000;-0.000000;+0.000000"), "/s (", rb.name, ")"));
-				Lib.Log("RESOURCE UPDATE END");
-			}
+			/*
+			Lib.Log("RESOURCE UPDATE : " + v);
+			foreach (var rb in vd.Supply(Name).ResourceBrokers)
+				Lib.Log(Lib.BuildString(Name, " : ", rb.rate.ToString("+0.000000;-0.000000;+0.000000"), "/s (", rb.name, ")"));
+			Lib.Log("RESOURCE UPDATE END");
+			*/
 
 			// reset amount added/removed from interval-based rules
 			IntervalRuleHappened = intervalRuleAmount > 0.0;

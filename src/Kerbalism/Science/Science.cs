@@ -72,7 +72,7 @@ namespace KERBALISM
 		}
 
 		// consume EC for transmission, and transmit science data
-		public static void Update(Vessel v, VesselData vd, ResourceInfo ec, double elapsed_s)
+		public static void Update(Vessel v, VesselData vd, IResource ec, double elapsed_s)
 		{
 			// do nothing if science system is disabled
 			if (!Features.Science) return;

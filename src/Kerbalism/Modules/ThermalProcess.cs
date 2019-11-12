@@ -8,14 +8,15 @@ using System.Collections;
 
 namespace KERBALISM
 {
-	public interface IBackgroundModule<MD, PM>
-	where MD : PartModuleData
-	where PM : PartModule
+	public interface IKsmModule<MD, PM>
+		where MD : PartModuleData
+		where PM : PartModule
 	{
-		void BackgroundUpdate(Vessel v, PartData pd, MD md, PM prefab, double elapsedSec);
+		void PreResourceUpdate(Vessel v, PartData pd, PartModuleData md, PartModule prefab, double elapsedSec);
+		void PostResourceUpdate(Vessel v, PartData pd, PartModuleData md, PartModule prefab, double elapsedSec);
 	}
 
-	public class ThermalProcess : PartModule, IPartCostModifier, IPartMassModifier, IBackgroundModule<ThermalProcess.ThermalProcessData, ThermalProcess>
+	public class ThermalProcess : PartModule, IPartCostModifier, IPartMassModifier, IKsmModule<ThermalProcess.ThermalProcessData, ThermalProcess>
 	{
 		// TODO :
 		// - better "safety" toggle that work at high timewarp rate (maybe we just need to cheat the thermal system)
@@ -125,7 +126,7 @@ namespace KERBALISM
 		[KSPField] public string overheatAnimationName;
 
 		// internals
-		[PersistentField] 
+		[KsmPersistent] 
 
 		private float internalResourcesCost;
 		private float internalResourcesMass;
@@ -693,7 +694,7 @@ namespace KERBALISM
 		public float GetModuleMass(float defaultMass, ModifierStagingSituation sit) => internalResourcesMass;
 		public ModifierChangeWhen GetModuleMassChangeWhen() => ModifierChangeWhen.CONSTANTLY;
 
-		public void BackgroundUpdate(Vessel v, PartData pd, ThermalProcessData md, ThermalProcess prefab, double elapsedSec)
+		public void BackgroundUpdate(Vessel v, PartData pd, PartModuleData md, PartModule prefab, double elapsedSec)
 		{
 			throw new NotImplementedException();
 		}
@@ -744,7 +745,7 @@ namespace KERBALISM
 			/// <summary> transfer rate when loading/unloading the resource </summary>
 			public double transferRate;
 			/// <summary> current stored amount, persisted </summary>
-			[PersistentField] public float amount;
+			[KsmPersistent] public float amount;
 			/// <summary> internal storage capacity </summary>
 			public float maxAmount;
 			/// <summary> default true, is vessel to internal transfer available in flight ? </summary>
@@ -763,8 +764,8 @@ namespace KERBALISM
 
 			// internal variables
 			public enum TransferState { none, loading, unloading }
-			[PersistentField] public TransferState transferState = TransferState.none;
-			[PersistentField] public string virtualResID;
+			[KsmPersistent] public TransferState transferState = TransferState.none;
+			[KsmPersistent] public string virtualResID;
 			private ThermalProcess module;
 
 			// PAW UI
@@ -941,23 +942,23 @@ namespace KERBALISM
 
 		public class ThermalProcessData : PartModuleData
 		{
-			[PersistentField] private double thermalEnergy;                     // thermal energy accumulated (kJ)
-			[PersistentField] private double currentLoad;
-			[PersistentField] private double temperature;
+			[KsmPersistent] private double thermalEnergy;                     // thermal energy accumulated (kJ)
+			[KsmPersistent] private double currentLoad;
+			[KsmPersistent] private double temperature;
 
-			[PersistentField] public string startingOutputID;
-			[PersistentField] public string runningOutputID;
-			[PersistentField] public string thermalOutputID;
-			[PersistentField] public RunningState state;
+			[KsmPersistent] public string startingOutputID;
+			[KsmPersistent] public string runningOutputID;
+			[KsmPersistent] public string thermalOutputID;
+			[KsmPersistent] public RunningState state;
 
-			[PersistentField] public bool loadLimitAutoMode = true;
+			[KsmPersistent] public bool loadLimitAutoMode = true;
 
-			[PersistentField] public float loadLimit = 1f;
+			[KsmPersistent] public float loadLimit = 1f;
 
-			[PersistentField] public float hoursSinceShutdown = float.MaxValue;
+			[KsmPersistent] public float hoursSinceShutdown = float.MaxValue;
 
-			[PersistentField] public List<Resource> resources;                      // inputs/outputs
-			[PersistentField] public List<InternalResource> internalResources;       // non-removable inputs/outputs (simulating no-flow)
+			[KsmPersistent] public List<Resource> resources;                      // inputs/outputs
+			[KsmPersistent] public List<InternalResource> internalResources;       // non-removable inputs/outputs (simulating no-flow)
 		}
 
 

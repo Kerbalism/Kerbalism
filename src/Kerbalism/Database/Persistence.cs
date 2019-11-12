@@ -9,66 +9,56 @@ using UnityEngine;
 namespace KERBALISM
 {
 
-	[AttributeUsage(AttributeTargets.Field)]
-	public class PersistentField : Attribute { }
+	[AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
+	public class KsmPersistent : Attribute { }
 
 	[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct)]
-	public class PersistentData : Attribute
-	{
-
-	}
-
-	/// <summary>
-	/// Use this on a class or struct containing `[PersistentField]` fields, stored in a IList (List, Array...) that itself has the `[PersistentField]` attribute. 
-	/// </summary>
-	[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct)]
-	public class PersistentIListData : Attribute
-	{
-		/// <summary>
-		/// <para/>If true, the IList and its elements will be instanciated on load. The class must have a parameterless ctor.
-		/// <para/>If false, the IList will be searched (see `instanceIdentifierField`) and the `[PersistentField]` fields values applied on matched elements.
-		/// </summary>
-		public bool createInstance = true;
-
-		/// <summary>
-		/// Only required if `createInstance` is false. Must match the name of a non persistent field defined in the IList elements class or struct.
-		/// The field must be assigned with an unique value that stay the same between saves/loads, and is already populated in OnLoad.
-		/// </summary>
-		public string instanceIdentifierField = string.Empty;
-
-		public PersistentIListData()
-		{
-			createInstance = true;
-			instanceIdentifierField = string.Empty;
-		}
-	}
+	public class KsmPersistentType : Attribute { }
 
 	public static class Persistence
 	{
-		/// <summary> save to `node` all fields in `instance` that have the `[IsPersistent]` attribute </summary>
-		public static void SaveFields<T>(T instance, ConfigNode node)
+		static Type persistentAttr = typeof(KsmPersistent);
+		static Type PersistentTypeAttr = typeof(KsmPersistentType);
+
+		/// <summary> save to `node` all fields and properties in `instance` that have the `[KsmPersistent]` attribute </summary>
+		public static void SaveMembers<T>(T instance, ConfigNode node)
 		{
-			foreach (FieldInfo fi in typeof(T).GetFields(BindingFlags.Public | BindingFlags.NonPublic))
+			Type instanceType = typeof(T);
+			foreach (FieldInfo fi in instanceType.GetFields(BindingFlags.Public | BindingFlags.NonPublic))
 			{
-				if (fi.IsDefined(typeof(PersistentField), true))
+				if (fi.IsDefined(persistentAttr, true))
 				{
-					if (typeof(T).IsDefined(typeof(PersistentData), true))
+					if (fi.FieldType.IsDefined(PersistentTypeAttr, true))
 					{
 						ConfigNode dataFieldNode = new ConfigNode(fi.Name);
-						SaveFields(fi.GetValue(instance), dataFieldNode);
+						SaveMembers(fi.GetValue(instance), dataFieldNode);
 						node.AddNode(dataFieldNode);
-					}
-					else if (true)
-					{
-
 					}
 					else
 					{
-						SaveField(fi, fi.GetValue(instance), node);
+						SaveMember(fi, fi.GetValue(instance), node);
 					}
-					return;
 				}
 			}
+			foreach (PropertyInfo pi in instanceType.GetProperties(BindingFlags.Public | BindingFlags.NonPublic))
+			{
+				if (pi.IsDefined(persistentAttr, true))
+				{
+					if (pi.PropertyType.IsDefined(PersistentTypeAttr, true))
+					{
+						ConfigNode dataFieldNode = new ConfigNode(pi.Name);
+						SaveMembers(pi.GetValue(instance, null), dataFieldNode);
+						node.AddNode(dataFieldNode);
+					}
+					else
+					{
+						SaveMember(pi, pi.GetValue(instance, null), node);
+					}
+				}
+			}
+
+
+
 		}
 
 		/// <summary>
@@ -76,94 +66,68 @@ namespace KERBALISM
 		/// This support :
 		/// <para/> 1. Types implemented in ConfigNode.TryGetValue().
 		/// <para/> 2. Types implementing the `IList` interface (List, Array...), each item is stored as a subnode.
-		/// This support lists of a custom class that itself has `[Persistent]` fields, as long as it has a parameterless ctor
+		/// This support lists of a custom class that itself has `[Persistent]` fields, as long as the class has a parameterless ctor
 		/// </summary>
-		public static void SaveField<T>(FieldInfo fieldInfo, T field, ConfigNode node)
+		public static void SaveMember<T>(MemberInfo fieldOrPropertyInfo, T field, ConfigNode node)
 		{
-			if (Nullable.GetUnderlyingType(typeof(T)) != null && field == null) return;
+			if (field == null) return;
 
 			if (field is IList iList)
 			{
 				if (iList.Count == 0) return;
 
-				Type listObjType = iList[0].GetType();
-				PersistentIListData pci = (PersistentIListData)listObjType.GetCustomAttributes(true).FirstOrDefault(p => p.GetType() == typeof(PersistentIListData));
-				if (pci != null)
+				foreach (object listObj in iList)
 				{
-					FieldInfo identifierField = listObjType.GetFields(BindingFlags.Public | BindingFlags.NonPublic).FirstOrDefault(p => p.Name == pci.instanceIdentifierField);
-					foreach (object listObj in iList)
-					{
-						ConfigNode listObjNode = new ConfigNode(fieldInfo.Name);
-						listObjNode.AddValue(identifierField.Name, identifierField.GetValue(listObj));
-						SaveFields(listObj, listObjNode);
-						node.AddNode(listObjNode);
-					}
-				}
-				else
-				{
-					foreach (object listObj in iList)
-					{
-						ConfigNode listObjNode = new ConfigNode(fieldInfo.Name);
-						SaveFields(listObj, listObjNode);
-						node.AddNode(listObjNode);
-					}
+					ConfigNode listObjNode = new ConfigNode(fieldOrPropertyInfo.Name);
+					SaveMembers(listObj, listObjNode);
+					node.AddNode(listObjNode);
 				}
 			}
 			else
 			{
-
-				node.AddValue(fieldInfo.Name, field);
+				node.AddValue(fieldOrPropertyInfo.Name, field);
 			}
 		}
 
-		public static void LoadFields<T>(T instance, ConfigNode node)
+		public static void LoadMembers<T>(T instance, ConfigNode node)
 		{
 			foreach (FieldInfo fi in typeof(T).GetFields(BindingFlags.Public | BindingFlags.NonPublic))
 			{
 				if (fi.GetCustomAttributes(false).Any(p => p.GetType() == typeof(Persistent)))
 				{
-					LoadField(fi, instance, node);
+					LoadMember(fi, instance, node);
 				}
 			}
 		}
 
-		public static void LoadField<T>(FieldInfo fieldInfo, T field, ConfigNode node)
+		public static void LoadMember<T>(MemberInfo fieldOrPropertyInfo, T field, ConfigNode node)
 		{
-			Type fieldType = fieldInfo.FieldType;
-			if (fieldType.IsAssignableFrom(typeof(IList<>)))
+			Type fieldType = typeof(T);
+			object loadedMember;
+				
+			if (typeof(IList).IsAssignableFrom(fieldType))
 			{
-				if (!node.HasNode(fieldInfo.Name)) return;
-
-				Type listObjectType = fieldType.GetInterfaces().First(p => p == typeof(IList<>)).GetGenericArguments().Single();
-				PersistentIListData pci = (PersistentIListData)listObjectType.GetCustomAttributes(true).FirstOrDefault(p => p.GetType() == typeof(PersistentIListData));
-				IList iList;
-				if (pci != null)
+				Type elementType = fieldType.GetElementType(); // will work only for arrays
+				if (elementType == null)
 				{
-					iList = (IList)field;
-
-					FieldInfo identifierField = listObjectType.GetFields(BindingFlags.Public | BindingFlags.NonPublic).FirstOrDefault(p => p.Name == pci.instanceIdentifierField);
-
-					foreach (object listObject in iList)
-					{
-						ConfigNode listObjectNode = node.GetNode(fieldInfo.Name, identifierField.Name, (string)identifierField.GetValue(listObject));
-						if (listObjectNode != null)
-						{
-							LoadFields(listObject, listObjectNode);
-						}
-					}
+					elementType = fieldType.GetGenericArguments().FirstOrDefault(); // should work for any other collection
 				}
-				else
+				if (elementType == null)
 				{
-					iList = (IList)Activator.CreateInstance(fieldType);
-
-					foreach (ConfigNode listObjectNode in node.GetNodes(fieldInfo.Name))
-					{
-						object listObject = Activator.CreateInstance(listObjectType);
-						LoadFields(listObject, listObjectNode);
-						iList.Add(listObject);
-					}
-					fieldInfo.SetValue(field, iList);
+					Lib.Log($"ERROR : load failed for field or property {fieldOrPropertyInfo.Name} of type {fieldType.ToString()} : could not find the elements type");
+					return;
 				}
+					
+				IList iList = (IList)Activator.CreateInstance(fieldType);
+
+				foreach (ConfigNode listObjectNode in node.GetNodes(fieldOrPropertyInfo.Name))
+				{
+					object listObject = Activator.CreateInstance(elementType);
+					LoadMembers(listObject, listObjectNode);
+					iList.Add(listObject);
+				}
+
+				loadedMember = iList;
 			}
 			else
 			{
