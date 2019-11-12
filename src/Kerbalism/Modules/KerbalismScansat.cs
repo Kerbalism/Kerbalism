@@ -17,6 +17,7 @@ namespace KERBALISM
 
 
 		private PartModule scanner = null;
+		ExperimentInfo expInfo;
 		public bool IsScanning { get; internal set; }
 
 		public override void OnStart(StartState state)
@@ -35,6 +36,7 @@ namespace KERBALISM
 
 			if (scanner == null) return;
 			sensorType = Lib.ReflectionValue<int>(scanner, "sensorType");
+			expInfo = ScienceDB.GetExperimentInfo(experimentType);
 		}
 
 		public void FixedUpdate()
@@ -64,13 +66,14 @@ namespace KERBALISM
 
 				if (IsScanning)
 				{
-					Science.Generate_subject(experimentType, vessel);
-					var subject_id = Science.Generate_subject_id(experimentType, vessel);
-					var exp = Science.Experiment(subject_id);
-					double size = exp.max_amount * coverage_delta / 100.0; // coverage is 0-100%
-					size += warp_buffer;
+					Situation scanSatSituation = new Situation(vessel.mainBody.flightGlobalsIndex, ScienceSituation.InSpaceHigh);
+					SubjectData subject = ScienceDB.GetSubjectData(expInfo, scanSatSituation);
+					if (subject == null)
+						return;
 
-					size = Drive.StoreFile(vessel, subject_id, size);
+					double size = expInfo.DataSize * coverage_delta / 100.0; // coverage is 0-100%
+					size += warp_buffer;
+					size = Drive.StoreFile(vessel, subject, size);
 					if (size > double.Epsilon)
 					{
 						// we filled all drives up to the brim but were unable to store everything
@@ -96,7 +99,7 @@ namespace KERBALISM
 							warp_buffer = 0;
 							StopScan();
 							vd.scansat_id.Add(part.flightID);
-							Message.Post(Lib.Color("Scanner halted", Lib.KColor.Red, true), "Scanner halted on <b>" + vessel.vesselName + "</b>. No storage left on vessel.");
+							Message.Post(Lib.Color("Scanner halted", Lib.Kolor.Red, true), "Scanner halted on <b>" + vessel.vesselName + "</b>. No storage left on vessel.");
 						}
 					}
 				}
@@ -128,7 +131,7 @@ namespace KERBALISM
 		}
 
 		public static void BackgroundUpdate(Vessel vessel, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, KerbalismScansat kerbalismScansat,
-		                                    Part part_prefab, VesselData vd, IResource ec, double elapsed_s)
+		                                    Part part_prefab, VesselData vd, ResourceInfo ec, double elapsed_s)
 		{
 			List<ProtoPartModuleSnapshot> scanners = Cache.VesselObjectsCache<List<ProtoPartModuleSnapshot>>(vessel, "scansat_" + p.flightID);
 			if(scanners == null)
@@ -205,20 +208,22 @@ namespace KERBALISM
 
 				if (is_scanning)
 				{
-					Science.Generate_subject(kerbalismScansat.experimentType, vessel);
-					var subject_id = Science.Generate_subject_id(kerbalismScansat.experimentType, vessel);
-					var exp = Science.Experiment(subject_id);
-					double size = exp.max_amount * coverage_delta / 100.0; // coverage is 0-100%
+					ExperimentInfo expInfo = ScienceDB.GetExperimentInfo(kerbalismScansat.experimentType);
+					SubjectData subject = ScienceDB.GetSubjectData(expInfo, vd.VesselSituations.GetExperimentSituation(expInfo));
+					if (subject == null)
+						return;
+
+					double size = expInfo.DataSize * coverage_delta / 100.0; // coverage is 0-100%
 					size += warp_buffer;
 
 					if (size > double.Epsilon)
 					{
 						// store what we can
-						foreach (var d in Drive.GetDrives(vessel))
+						foreach (var d in Drive.GetDrives(vd))
 						{
 							var available = d.FileCapacityAvailable();
 							var chunk = Math.Min(size, available);
-							if (!d.Record_file(subject_id, chunk, true))
+							if (!d.Record_file(subject, chunk, true))
 								break;
 							size -= chunk;
 

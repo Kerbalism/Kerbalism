@@ -87,7 +87,7 @@ namespace KERBALISM
 		// kill a kerbal, even an EVA one
 		public static void Kill(Vessel v, ProtoCrewMember c)
 		{
-			if (!v.KerbalismData().IsValid) return;
+			if (!v.KerbalismData().IsSimulated) return;
 			if (!DB.ContainsKerbal(c.name)) return;
 			Misc.Kill(v, c);
 		}
@@ -95,7 +95,7 @@ namespace KERBALISM
 		// trigger an undesiderable event for the kerbal specified
 		public static void Breakdown(Vessel v, ProtoCrewMember c)
 		{
-			if (!v.KerbalismData().IsValid) return;
+			if (!v.KerbalismData().IsSimulated) return;
 			if (!DB.ContainsKerbal(c.name)) return;
 			Misc.Breakdown(v, c);
 		}
@@ -157,41 +157,48 @@ namespace KERBALISM
 
 		// --- RADIATION ------------------------------------------------------------
 
-		// return true if radiation is enabled
+		/// <summary>return true if radiation is enabled</summary>
 		public static bool RadiationEnabled()
 		{
 			return Features.Radiation;
 		}
 
-		// return amount of environment radiation at the position of the specified vessel
+		/// <summary>return amount of environment radiation at the position of the specified vessel</summary>
 		public static double Radiation(Vessel v)
 		{
 			if (!Features.Radiation) return 0.0;
 			return v.KerbalismData().EnvRadiation;
 		}
 
-		// return true if the vessel is inside the magnetopause of some body (except the sun)
+		/// <summary>return amount of environment effective in the habitats of the given vessel</summary>
+		public static double HabitatRadiation(Vessel v)
+		{
+			if (!Features.Radiation) return 0.0;
+			return v.KerbalismData().EnvHabitatRadiation;
+		}
+
+		/// <summary>return true if the vessel is inside the magnetopause of some body (except the sun)</summary>
 		public static bool Magnetosphere(Vessel v)
 		{
 			if (!Features.Radiation) return false;
 			return v.KerbalismData().EnvMagnetosphere;
 		}
 
-		// return true if the vessel is inside the radiation belt of some body
+		/// <summary>return true if the vessel is inside the radiation belt of some body</summary>
 		public static bool InnerBelt(Vessel v)
 		{
 			if (!Features.Radiation) return false;
 			return v.KerbalismData().EnvInnerBelt;
 		}
 
-		// return true if the vessel is inside the radiation belt of some body
+		/// <summary>return true if the vessel is inside the radiation belt of some body</summary>
 		public static bool OuterBelt(Vessel v)
 		{
 			if (!Features.Radiation) return false;
 			return v.KerbalismData().EnvOuterBelt;
 		}
 
-		// return true if the given body has an inner radiation belt (doesn't matter if visible or not)
+		/// <summary>return true if the given body has an inner radiation belt (doesn't matter if visible or not)</summary>
 		public static bool HasInnerBelt(CelestialBody body)
 		{
 			if (!Features.Radiation) return false;
@@ -199,7 +206,7 @@ namespace KERBALISM
 			return rb.model.has_inner;
 		}
 
-		// return true if the given body has an inner radiation belt that is visible
+		/// <summary>return true if the given body has an inner radiation belt that is visible</summary>
 		public static bool IsInnerBeltVisible(CelestialBody body)
 		{
 			if (!Features.Radiation) return false;
@@ -207,7 +214,7 @@ namespace KERBALISM
 			return rb.model.has_inner && rb.inner_visible;
 		}
 
-		// set visibility of the inner radiation belt
+		/// <summary>set visibility of the inner radiation belt</summary>
 		public static void SetInnerBeltVisible(CelestialBody body, bool visible)
 		{
 			if (!Features.Radiation) return;
@@ -215,7 +222,7 @@ namespace KERBALISM
 			rb.inner_visible = visible;
 		}
 
-		// return true if the given body has an outer radiation belt (doesn't matter if visible or not)
+		/// <summary>return true if the given body has an outer radiation belt (doesn't matter if visible or not)</summary>
 		public static bool HasOuterBelt(CelestialBody body)
 		{
 			if (!Features.Radiation) return false;
@@ -223,7 +230,7 @@ namespace KERBALISM
 			return rb.model.has_outer;
 		}
 
-		// return true if the given body has an outer radiation belt that is visible
+		/// <summary>return true if the given body has an outer radiation belt that is visible</summary>
 		public static bool IsOuterBeltVisible(CelestialBody body)
 		{
 			if (!Features.Radiation) return false;
@@ -231,7 +238,7 @@ namespace KERBALISM
 			return rb.model.has_outer && rb.outer_visible;
 		}
 
-		// set visibility of the inner radiation belt
+		/// <summary>set visibility of the inner radiation belt</summary>
 		public static void SetOuterBeltVisible(CelestialBody body, bool visible)
 		{
 			if (!Features.Radiation) return;
@@ -239,7 +246,7 @@ namespace KERBALISM
 			rb.outer_visible = visible;
 		}
 
-		// return true if the given body has a magnetosphere (doesn't matter if visible or not)
+		/// <summary>return true if the given body has a magnetosphere (doesn't matter if visible or not)</summary>
 		public static bool HasMagnetopause(CelestialBody body)
 		{
 			if (!Features.Radiation) return false;
@@ -247,7 +254,7 @@ namespace KERBALISM
 			return rb.model.has_pause;
 		}
 
-		// return true if the given body has a magnetopause that is visible
+		/// <summary>return true if the given body has a magnetopause that is visible</summary>
 		public static bool IsMagnetopauseVisible(CelestialBody body)
 		{
 			if (!Features.Radiation) return false;
@@ -255,7 +262,7 @@ namespace KERBALISM
 			return rb.model.has_pause && rb.pause_visible;
 		}
 
-		// set visibility of the inner radiation belt
+		/// <summary>set visibility of the inner radiation belt</summary>
 		public static void SetMagnetopauseVisible(CelestialBody body, bool visible)
 		{
 			if (!Features.Radiation) return;
@@ -263,12 +270,21 @@ namespace KERBALISM
 			rb.pause_visible = visible;
 		}
 
-		// return true if the given body has a belt or a magnetosphere (doesn't matter if visible or not)
+		/// <summary>return true if the given body has a belt or a magnetosphere (doesn't matter if visible or not)</summary>
 		public static bool HasMagneticField(CelestialBody body)
 		{
 			if (!Features.Radiation) return false;
 			RadiationBody rb = KERBALISM.Radiation.Info(body);
 			return rb.model.Has_field();
+		}
+
+		/// <summary> Return the current solar activity for the given body. Normal activity ranges
+		/// from 0..1, but be smaller than 0 or bigger than 1 during times of extreme low or high activity. </summary>
+		public static double GetSolarActivity(CelestialBody body)
+		{
+			if (!Features.Radiation) return 0.0;
+			var info = KERBALISM.Radiation.Info(body);
+			return info.SolarActivity(false);
 		}
 
 		public static RadiationFieldChanged OnRadiationFieldChanged = new RadiationFieldChanged();
@@ -288,7 +304,7 @@ namespace KERBALISM
 					}
 					catch (Exception e)
 					{
-						Lib.Log("Exception in event receiver", e);
+						Lib.Log("RadiationFieldChanged: Exception in event receiver " + e.Message + "\n" + e.ToString());
 					}
 				}
 			}
@@ -300,14 +316,15 @@ namespace KERBALISM
 		public static bool StormIncoming(Vessel v)
 		{
 			if (!Features.SpaceWeather) return false;
-			return v.KerbalismData().IsValid && Storm.Incoming(v);
+			return v.KerbalismData().IsSimulated && Storm.Incoming(v);
 		}
 
 		// return true if a solar storm is in progress at the vessel position
 		public static bool StormInProgress(Vessel v)
 		{
 			if (!Features.SpaceWeather) return false;
-			return v.KerbalismData().IsValid && Storm.InProgress(v);
+			VesselData vd = v.KerbalismData();
+			return vd.IsSimulated && vd.EnvStorm;
 		}
 
 		// return true if the vessel is subject to a signal blackout
@@ -396,14 +413,6 @@ namespace KERBALISM
 			return v.KerbalismData().Poisoning;
 		}
 
-		// return level of co2 of internal habitat
-		public static double Humidity(Vessel v)
-		{
-			if (!Features.Humidity)
-				return 0.0;
-			return v.KerbalismData().Humidity;
-		}
-
 		// return proportion of radiation blocked by shielding
 		public static double Shielding(Vessel v)
 		{
@@ -428,149 +437,100 @@ namespace KERBALISM
 		public static double VesselConnectionRate(Vessel v)
 		{
 			var vi = v.KerbalismData();
-			if (!vi.IsValid) return 0.0;
+			if (!vi.IsSimulated) return 0.0;
 			return vi.Connection.rate;
 		}
 
 		public static bool VesselConnectionLinked(Vessel v)
 		{
 			var vi = v.KerbalismData();
-			if (!vi.IsValid) return false;
+			if (!vi.IsSimulated) return false;
 			return vi.Connection.linked;
 		}
 
-		public static String VesselConnectionTransmitting(Vessel v)
+		public static int VesselConnectionTransmitting(Vessel v)
 		{
 			var vi = v.KerbalismData();
-			if (!vi.IsValid) return string.Empty;
-			return vi.transmitting;
+			if (!vi.IsSimulated) return 0;
+			return vi.filesTransmitted.Count;
 		}
 
 		// --- SCIENCE --------------------------------------------------------------
 
-		// return size of a file in a vessel drive
-		public static double FileSize(Vessel v, string subject_id)
-		{
-			if (!v.KerbalismData().IsValid) return 0.0;
-
-			foreach (var d in Drive.GetDrives(v, true))
-			{
-				if (d.files.ContainsKey(subject_id))
-					return d.files[subject_id].size;
-			}
-
-			return 0.0;
-		}
-
-		// return size of a sample in a vessel drive
-		public static double SampleSize(Vessel v, string subject_id)
-		{
-			if (!v.KerbalismData().IsValid) return 0.0;
-			foreach (var d in Drive.GetDrives(v, true))
-			{
-				if (d.samples.ContainsKey(subject_id))
-					return d.samples[subject_id].size;
-			}
-
-			return 0.0;
-		}
-
-		// store a file on a vessel
-		public static bool StoreFile(Vessel v, string subject_id, double amount)
-		{
-			if (!v.KerbalismData().IsValid) return false;
-			return Drive.FileDrive(v, amount).Record_file(subject_id, amount);
-		}
-
-		// store a sample on a vessel
-		public static bool StoreSample(Vessel v, string subject_id, double amount, double mass = 0)
-		{
-			if (!v.KerbalismData().IsValid) return false;
-			return Drive.SampleDrive(v, amount, subject_id).Record_sample(subject_id, amount, mass);
-		}
-
-		// remove a file from a vessel
-		public static void RemoveFile(Vessel v, string subject_id, double amount)
-		{
-			if (!v.KerbalismData().IsValid) return;
-			foreach (var d in Drive.GetDrives(v, true))
-				d.Delete_file(subject_id, amount, v.protoVessel);
-		}
-
-		// remove a sample from a vessel
-		public static double RemoveSample(Vessel v, string subject_id, double amount)
-		{
-			if (!v.KerbalismData().IsValid) return 0;
-			double massRemoved = 0;
-			foreach (var d in Drive.GetDrives(v, true))
-				massRemoved += d.Delete_sample(subject_id, amount);
-			return massRemoved;
-		}
-
-		public static ScienceEvent OnScienceReceived = new ScienceEvent();
-
-		public class ScienceEvent
-		{
-			//This is the list of methods that should be activated when the event fires
-			private List<Action<float, ScienceSubject, ProtoVessel, bool>> listeningMethods = new List<Action<float, ScienceSubject, ProtoVessel, bool>>();
-
-			//This adds an event to the List of listening methods
-			public void Add(Action<float, ScienceSubject, ProtoVessel, bool> method)
-			{
-				//We only add it if it isn't already added. Just in case.
-				if (!listeningMethods.Contains(method))
-				{
-					listeningMethods.Add(method);
-				}
-			}
-
-			//This removes and event from the List
-			public void Remove(Action<float, ScienceSubject, ProtoVessel, bool> method)
-			{
-				//We also only remove it if it's actually in the list.
-				if (listeningMethods.Contains(method))
-				{
-					listeningMethods.Remove(method);
-				}
-			}
-
-			//This fires the event off, activating all the listening methods.
-			public void Notify(float credits, ScienceSubject subject, ProtoVessel pv, bool transmitted)
-			{
-				//Loop through the list of listening methods and Invoke them.
-				foreach (Action<float, ScienceSubject, ProtoVessel, bool> method in listeningMethods)
-				{
-					method.Invoke(credits, subject, pv, transmitted);
-				}
-			}
-		}
-
-		public class StringBoolStateChanged
+		public static ExperimentStateChanged OnExperimentStateChanged = new ExperimentStateChanged();
+		public class ExperimentStateChanged
 		{
 			internal List<Action<Vessel, string, bool>> receivers = new List<Action<Vessel, string, bool>>();
 			public void Add(Action<Vessel, string, bool> receiver) { if (!receivers.Contains(receiver)) receivers.Add(receiver); }
 			public void Remove(Action<Vessel, string, bool> receiver) { if (receivers.Contains(receiver)) receivers.Remove(receiver); }
 
-			public void Notify(Vessel vessel, string experiment_id, bool state)
+			public void Notify(Vessel vessel, string experiment_id, Experiment.ExpStatus oldStatus, Experiment.ExpStatus newStatus)
 			{
+				bool wasRunning = oldStatus == Experiment.ExpStatus.Forced || oldStatus == Experiment.ExpStatus.Running;
+				bool isRunning = newStatus == Experiment.ExpStatus.Forced || newStatus == Experiment.ExpStatus.Running;
+				if (wasRunning == isRunning) return;
 				foreach (Action<Vessel, string, bool> receiver in receivers)
 				{
 					try
 					{
-						receiver.Invoke(vessel, experiment_id, state);
+						receiver.Invoke(vessel, experiment_id, isRunning);
 					}
 					catch (Exception e)
 					{
-						Lib.Log("Exception in event receiver", e);
+						Lib.Log("ExperimentStateChanged: Exception in event receiver " + e.Message + "\n" + e.ToString());
 					}
 				}
 			}
 		}
 
-		public static StringBoolStateChanged OnTransmitStateChanged = new StringBoolStateChanged();
+		/// <summary> Returns true if the experiment is currently active and collecting data </summary>
+		public static bool ExperimentIsRunning(Vessel vessel, string experiment_id)
+		{
+			if (!Features.Science) return false;
 
-		// not yet...
-		//public static StringBoolStateChanged OnExperimentStateChanged = new StringBoolStateChanged();
+			if (vessel.loaded)
+			{
+				foreach (Experiment e in vessel.FindPartModulesImplementing<Experiment>())
+				{
+					if (e.enabled && e.experiment_id == experiment_id &&
+						(e.State == Experiment.RunningState.Running || e.State == Experiment.RunningState.Forced))
+						return true;
+				}
+			}
+			else
+			{
+				var PD = new Dictionary<string, Lib.Module_prefab_data>();
+				foreach (ProtoPartSnapshot p in vessel.protoVessel.protoPartSnapshots)
+				{
+					// get part prefab (required for module properties)
+					Part part_prefab = PartLoader.getPartInfoByName(p.partName).partPrefab;
+					// get all module prefabs
+					var module_prefabs = part_prefab.FindModulesImplementing<PartModule>();
+					// clear module indexes
+					PD.Clear();
+					foreach (ProtoPartModuleSnapshot m in p.modules)
+					{
+						// get the module prefab
+						// if the prefab doesn't contain this module, skip it
+						PartModule module_prefab = Lib.ModulePrefab(module_prefabs, m.moduleName, PD);
+						if (!module_prefab) continue;
+						// if the module is disabled, skip it
+						// note: this must be done after ModulePrefab is called, so that indexes are right
+						if (!Lib.Proto.GetBool(m, "isEnabled")) continue;
+
+						if (m.moduleName == "Experiment"
+							&& ((Experiment)module_prefab).experiment_id == experiment_id)
+						{
+							var state = Lib.Proto.GetEnum(m, "expState", Experiment.RunningState.Stopped);
+							if (state == Experiment.RunningState.Running || state == Experiment.RunningState.Forced)
+								return true;
+						}
+					}
+				}
+			}
+
+			return false;
+		}
 
 		// --- FAILURES --------------------------------------------------------------
 
@@ -657,7 +617,7 @@ namespace KERBALISM
 						handler.Invoke(null, new object[] { antennaInfo, pv });
 						if (antennaInfo.strength > -1) return;
 					} catch(Exception e) {
-						Lib.Log("Kerbalism: CommInfo handler threw exception " + e.Message + "\n" + e.ToString());
+						Lib.Log("CommInfo handler threw exception " + e.Message + "\n" + e.ToString());
 					}
 				}
 			}

@@ -82,9 +82,6 @@ namespace KERBALISM.Planner
 			// determine if the vessel has scrubbing capabilities
 			scrubbed = sim.Resource("WasteAtmosphere").consumed > 0.0 || env.breathable;
 
-			// determine if the vessel has humidity control capabilities
-			humid = sim.Resource("MoistAtmosphere").consumed > 0.0 || env.breathable;
-
 			// scan the parts
 			double max_pressure = 1.0;
 			foreach (Part p in parts)
@@ -155,8 +152,13 @@ namespace KERBALISM.Planner
 					if (m.moduleName == "Emitter")
 					{
 						Emitter emitter = m as Emitter;
+						emitter.Recalculate();
 
-						emitted += emitter.running ? emitter.radiation : 0.0;
+						if (emitter.running)
+						{
+							if (emitter.radiation > 0) emitted += emitter.radiation * emitter.radiation_impact;
+							else emitted += emitter.radiation;
+						}
 					}
 				}
 			}
@@ -165,9 +167,9 @@ namespace KERBALISM.Planner
 			double amount = sim.Resource("Shielding").amount;
 			double capacity = sim.Resource("Shielding").capacity;
 
-			shielding = capacity > double.Epsilon
+			shielding = capacity > 0
 				? Radiation.ShieldingEfficiency(amount / capacity)
-				: PreferencesStorm.Instance.shieldingEfficiency;
+				: 0;
 		}
 
 		void Analyze_reliability(List<Part> parts)
@@ -179,7 +181,7 @@ namespace KERBALISM.Planner
 			redundancy = new Dictionary<string, int>();
 
 			// scan the parts
-			double year_time = 60.0 * 60.0 * Lib.HoursInDay() * Lib.DaysInYear();
+			double year_time = 60.0 * 60.0 * Lib.HoursInDay * Lib.DaysInYear;
 			foreach (Part p in parts)
 			{
 				// for each module
@@ -196,6 +198,7 @@ namespace KERBALISM.Planner
 
 						// calculate mtbf
 						double mtbf = reliability.mtbf * (reliability.quality ? Settings.QualityScale : 1.0);
+						if (mtbf <= 0) continue;
 
 						// accumulate failures/y
 						failure_year += year_time / mtbf;

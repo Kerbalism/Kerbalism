@@ -42,18 +42,7 @@ namespace KERBALISM
 			instance = this;
 
 			// setup style
-			style = new GUIStyle();
-			style.normal.background = Lib.GetTexture("black-background");
-			style.normal.textColor = new Color(0.66f, 0.66f, 0.66f, 1.0f);
-			style.richText = true;
-			style.stretchWidth = true;
-			style.stretchHeight = true;
-			style.fixedWidth = 0;
-			style.fixedHeight = 0;
-			style.fontSize = Styles.ScaleInteger(12);
-			style.alignment = TextAnchor.MiddleCenter;
-			style.border = new RectOffset(0, 0, 0, 0);
-			style.padding = new RectOffset(Styles.ScaleInteger(2), Styles.ScaleInteger(2), Styles.ScaleInteger(2), Styles.ScaleInteger(2));
+			style = Styles.message;
 
 			if (all_logs == null)
 			{
@@ -150,11 +139,11 @@ namespace KERBALISM
 			string title = "";
 			switch (severity)
 			{
-				case Severity.relax: title = "<color=#00BB00><b>RELAX</b></color>\n"; break;
-				case Severity.warning: title = "<color=#BBBB00><b>WARNING</b></color>\n"; Lib.StopWarp(); break;
-				case Severity.danger: title = "<color=#BB0000><b>DANGER</b></color>\n"; Lib.StopWarp(); break;
-				case Severity.fatality: title = "<color=#BB0000><b>FATALITY</b></color>\n"; Lib.StopWarp(); break;
-				case Severity.breakdown: title = "<color=#BB0000><b>BREAKDOWN</b></color>\n"; Lib.StopWarp(); break;
+				case Severity.relax: title = Lib.BuildString(Lib.Color("RELAX", Lib.Kolor.Green, true), "\n"); break;
+				case Severity.warning: title = Lib.BuildString(Lib.Color("WARNING", Lib.Kolor.Yellow, true), "\n"); Lib.StopWarp(); break; 
+				case Severity.danger: title = Lib.BuildString(Lib.Color("DANGER", Lib.Kolor.Red, true), "\n"); Lib.StopWarp(); break; 
+				case Severity.fatality: title = Lib.BuildString(Lib.Color("FATALITY", Lib.Kolor.Red, true), "\n"); Lib.StopWarp(); break; 
+				case Severity.breakdown: title = Lib.BuildString(Lib.Color("BREAKDOWN", Lib.Kolor.Orange, true), "\n"); Lib.StopWarp(); break; 
 			}
 			if (subtext.Length == 0) Post(Lib.BuildString(title, text));
 			else Post(Lib.BuildString(title, text, "\n<i>", subtext, "</i>"));

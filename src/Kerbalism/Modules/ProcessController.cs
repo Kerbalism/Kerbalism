@@ -92,10 +92,27 @@ namespace KERBALISM
 			Events["DumpValve"].guiName = Lib.StatusToggle("Dump", dump_specs.valves[valve_i]);
 		}
 
+#if KSP15_16
 		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true)]
+#else
+		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true, groupName = "Processes", groupDisplayName = "Processes")]
+#endif
 		public void Toggle()
 		{
 			SetRunning(!running);
+		}
+
+#if KSP15_16
+		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "Dump", active = true)]
+#else
+		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "Dump", active = true, groupName = "Processes", groupDisplayName = "Processes")]
+#endif
+		public void DumpValve()
+		{
+			valve_i = dump_specs.NextValve;
+
+			// refresh VAB/SPH ui
+			if (Lib.IsEditor()) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
 		}
 
 		public void SetRunning(bool value)
@@ -111,18 +128,8 @@ namespace KERBALISM
 			if (Lib.IsEditor()) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
 		}
 
-		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "Dump", active = true)]
-		public void DumpValve()
-		{
-			valve_i = dump_specs.NextValve;
-
-			// refresh VAB/SPH ui
-			if (Lib.IsEditor()) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
-		}
-
 		// action groups
 		[KSPAction("_")] public void Action(KSPActionParam param) { Toggle(); }
-
 
 		// part tooltip
 		public override string GetInfo()

@@ -23,7 +23,7 @@ namespace KERBALISM.Planner
 
 			// resource panels
 			// - add all resources defined in the Profiles Supply configs except EC
-			Profile.supplies.FindAll(k => k.resource != "ElectricCharge").ForEach(k => panel_resource.Add(k.resource));
+			Profile.supplies.FindAll(k => k.resource != "ElectricCharge").ForEach(k => supplies.Add(k.resource));
 
 			// special panels
 			// - stress & radiation panels require that a rule using the living_space/radiation modifier exist (current limitation)
@@ -35,7 +35,7 @@ namespace KERBALISM.Planner
 				panel_special.Add("reliability");
 
 			// environment panels
-			if (Features.Pressure || Features.Poisoning || Features.Humidity)
+			if (Features.Pressure || Features.Poisoning)
 				panel_environment.Add("habitat");
 			panel_environment.Add("environment");
 		}
@@ -105,10 +105,10 @@ namespace KERBALISM.Planner
 
 			// check for number of crew change
 			if (vessel_analyzer.crew_count != manifest.CrewCount)
-				update = true;
+				enforceUpdate = true;
 
 			// only update when we need to, repeat update a number of times to allow the simulators to catch up
-			if (!(update || (update_counter++ < 3)))
+			if (!enforceUpdate && update_counter++ > 3)
 				return;
 
 			// clear the panel
@@ -127,6 +127,15 @@ namespace KERBALISM.Planner
 
 				// add ec panel
 				AddSubPanelEC(panel);
+
+				// get vessel resources
+				panel_resource.Clear();
+				foreach (string res in supplies)
+					if (resource_sim.Resource(res).capacity > 0.0)
+						panel_resource.Add(res);
+
+				// reset current panel if necessary
+				if (resource_index >= panel_resource.Count) resource_index = 0;
 
 				// add resource panel
 				if (panel_resource.Count > 0)
@@ -160,7 +169,7 @@ namespace KERBALISM.Planner
 						break;
 				}
 			}
-			update = false;
+			enforceUpdate = false;
 		}
 
 		///<summary> Planner panel UI width </summary>
@@ -197,26 +206,26 @@ namespace KERBALISM.Planner
 				// body selector
 				GUILayout.Label(new GUIContent(FlightGlobals.Bodies[body_index].name, "Target body"), leftmenu_style);
 				if (Lib.IsClicked())
-				{ body_index = (body_index + 1) % FlightGlobals.Bodies.Count; if (body_index == 0) ++body_index; update = true; }
+				{ body_index = (body_index + 1) % FlightGlobals.Bodies.Count; if (body_index == 0) ++body_index; enforceUpdate = true; }
 				else if (Lib.IsClicked(1))
-				{ body_index = (body_index - 1) % FlightGlobals.Bodies.Count; if (body_index == 0) body_index = FlightGlobals.Bodies.Count - 1; update = true; }
+				{ body_index = (body_index - 1) % FlightGlobals.Bodies.Count; if (body_index == 0) body_index = FlightGlobals.Bodies.Count - 1; enforceUpdate = true; }
 
 				// sunlight selector
 				switch (sunlight)
 				{
-					case SunlightState.SunlightNominal: GUILayout.Label(new GUIContent(Icons.sun_white, "In sunlight\n<b>Nominal</b> solar panel output"), icon_style); break;
-					case SunlightState.SunlightSimulated: GUILayout.Label(new GUIContent(Icons.solar_panel, "In sunlight\n<b>Estimated</b> solar panel output\n<i>Sunlight direction : look at the shadows !</i>"), icon_style); break;
-					case SunlightState.Shadow: GUILayout.Label(new GUIContent(Icons.sun_black, "In shadow"), icon_style); break;
+					case SunlightState.SunlightNominal: GUILayout.Label(new GUIContent(Textures.sun_white, "In sunlight\n<b>Nominal</b> solar panel output"), icon_style); break;
+					case SunlightState.SunlightSimulated: GUILayout.Label(new GUIContent(Textures.solar_panel, "In sunlight\n<b>Estimated</b> solar panel output\n<i>Sunlight direction : look at the shadows !</i>"), icon_style); break;
+					case SunlightState.Shadow: GUILayout.Label(new GUIContent(Textures.sun_black, "In shadow"), icon_style); break;
 				}
 				if (Lib.IsClicked())
-				{ sunlight = (SunlightState)(((int)sunlight + 1) % Enum.GetValues(typeof(SunlightState)).Length); update = true; }
+				{ sunlight = (SunlightState)(((int)sunlight + 1) % Enum.GetValues(typeof(SunlightState)).Length); enforceUpdate = true; }
 
 				// situation selector
 				GUILayout.Label(new GUIContent(situations[situation_index], "Target situation"), rightmenu_style);
 				if (Lib.IsClicked())
-				{ situation_index = (situation_index + 1) % situations.Length; update = true; }
+				{ situation_index = (situation_index + 1) % situations.Length; enforceUpdate = true; }
 				else if (Lib.IsClicked(1))
-				{ situation_index = (situation_index == 0 ? situations.Length : situation_index) - 1; update = true; }
+				{ situation_index = (situation_index == 0 ? situations.Length : situation_index) - 1; enforceUpdate = true; }
 
 				// end header
 				GUILayout.EndHorizontal();
@@ -260,8 +269,8 @@ namespace KERBALISM.Planner
 			string shadowtime_str = Lib.HumanReadableDuration(env_analyzer.shadow_period) + " (" + (env_analyzer.shadow_time * 100.0).ToString("F0") + "%)";
 
 			p.AddSection("ENVIRONMENT", string.Empty,
-				() => { p.Prev(ref environment_index, panel_environment.Count); update = true; },
-				() => { p.Next(ref environment_index, panel_environment.Count); update = true; });
+				() => { p.Prev(ref environment_index, panel_environment.Count); enforceUpdate = true; },
+				() => { p.Next(ref environment_index, panel_environment.Count); enforceUpdate = true; });
 			p.AddContent("temperature", Lib.HumanReadableTemp(env_analyzer.temperature), env_analyzer.body.atmosphere && env_analyzer.landed ? "atmospheric" : flux_tooltip);
 			p.AddContent("difference", Lib.HumanReadableTemp(env_analyzer.temp_diff), "difference between external and survival temperature");
 			p.AddContent("atmosphere", env_analyzer.body.atmosphere ? "yes" : "no", atmosphere_tooltip);
@@ -299,10 +308,12 @@ namespace KERBALISM.Planner
 			// create tooltip
 			string tooltip = res.Tooltip();
 
+			var resource = PartResourceLibrary.Instance.resourceDefinitions[res_name];
+
 			// render the panel section
-			p.AddSection(Lib.SpacesOnCaps(res_name).ToUpper(), string.Empty,
-				() => { p.Prev(ref resource_index, panel_resource.Count); update = true; },
-				() => { p.Next(ref resource_index, panel_resource.Count); update = true; });
+			p.AddSection(Lib.SpacesOnCaps(resource.displayName).ToUpper(), string.Empty,
+				() => { p.Prev(ref resource_index, panel_resource.Count); enforceUpdate = true; },
+				() => { p.Next(ref resource_index, panel_resource.Count); enforceUpdate = true; });
 			p.AddContent("storage", Lib.HumanReadableAmount(res.storage), tooltip);
 			p.AddContent("consumed", Lib.HumanReadableRate(res.consumed), tooltip);
 			p.AddContent("produced", Lib.HumanReadableRate(res.produced), tooltip);
@@ -319,8 +330,8 @@ namespace KERBALISM.Planner
 
 			// render title
 			p.AddSection("STRESS", string.Empty,
-				() => { p.Prev(ref special_index, panel_special.Count); update = true; },
-				() => { p.Next(ref special_index, panel_special.Count); update = true; });
+				() => { p.Prev(ref special_index, panel_special.Count); enforceUpdate = true; },
+				() => { p.Next(ref special_index, panel_special.Count); enforceUpdate = true; });
 
 			// render living space data
 			// generate details tooltips
@@ -411,8 +422,8 @@ namespace KERBALISM.Planner
 
 			// render the panel
 			p.AddSection("RADIATION", string.Empty,
-				() => { p.Prev(ref special_index, panel_special.Count); update = true; },
-				() => { p.Next(ref special_index, panel_special.Count); update = true; });
+				() => { p.Prev(ref special_index, panel_special.Count); enforceUpdate = true; },
+				() => { p.Next(ref special_index, panel_special.Count); enforceUpdate = true; });
 			p.AddContent("surface", Lib.HumanReadableRadiation(env_analyzer.surface_rad + vessel_analyzer.emitted), tooltip);
 			p.AddContent("orbit", Lib.HumanReadableRadiation(env_analyzer.magnetopause_rad), tooltip);
 			if (vessel_analyzer.emitted >= 0.0)
@@ -465,21 +476,8 @@ namespace KERBALISM.Planner
 				{
 					if (sb.Length > 0)
 						sb.Append("\n");
-					sb.Append("<b>");
-					switch (pair.Value)
-					{
-						case 1:
-							sb.Append("<color=red>");
-							break;
-						case 2:
-							sb.Append("<color=yellow>");
-							break;
-						default:
-							sb.Append("<color=green>");
-							break;
-					}
-					sb.Append(pair.Value.ToString());
-					sb.Append("</color></b>\t");
+					sb.Append(Lib.Color(pair.Value.ToString(), pair.Value == 1 ? Lib.Kolor.Red : pair.Value == 2 ? Lib.Kolor.Yellow : Lib.Kolor.Green, true));
+					sb.Append("\t");
 					sb.Append(pair.Key);
 				}
 				redundancy_tooltip = Lib.BuildString("<align=left />", sb.ToString());
@@ -501,8 +499,8 @@ namespace KERBALISM.Planner
 
 			// render panel
 			p.AddSection("RELIABILITY", string.Empty,
-				() => { p.Prev(ref special_index, panel_special.Count); update = true; },
-				() => { p.Next(ref special_index, panel_special.Count); update = true; });
+				() => { p.Prev(ref special_index, panel_special.Count); enforceUpdate = true; },
+				() => { p.Next(ref special_index, panel_special.Count); enforceUpdate = true; });
 			p.AddContent("malfunctions", Lib.HumanReadableAmount(vessel_analyzer.failure_year, "/y"), "average case estimate\nfor the whole vessel");
 			p.AddContent("high quality", Lib.HumanReadablePerc(vessel_analyzer.high_quality), "percentage of high quality components");
 			p.AddContent("redundancy", redundancy_str, redundancy_tooltip);
@@ -514,12 +512,10 @@ namespace KERBALISM.Planner
 		{
 			SimulatedResource atmo_res = resource_sim.Resource("Atmosphere");
 			SimulatedResource waste_res = resource_sim.Resource("WasteAtmosphere");
-			SimulatedResource moist_res = resource_sim.Resource("MoistAtmosphere");
 
 			// generate tooltips
 			string atmo_tooltip = atmo_res.Tooltip();
 			string waste_tooltip = waste_res.Tooltip(true);
-			string moist_tooltip = moist_res.Tooltip(true);
 
 			// generate status string for scrubbing
 			string waste_status = !Features.Poisoning                   //< feature disabled
@@ -527,21 +523,10 @@ namespace KERBALISM.Planner
 			  : waste_res.produced <= double.Epsilon                    //< unnecessary
 			  ? "not required"
 			  : waste_res.consumed <= double.Epsilon                    //< no scrubbing
-			  ? "<color=#ffff00>none</color>"
+			  ? Lib.Color("none", Lib.Kolor.Orange)
 			  : waste_res.produced > waste_res.consumed * 1.001         //< insufficient scrubbing
-			  ? "<color=#ffff00>inadequate</color>"
-			  : "good";                                                 //< sufficient scrubbing
-
-			// generate status string for humidity
-			string moist_status = !Features.Humidity                    //< feature disabled
-			  ? "n/a"
-			  : moist_res.produced <= double.Epsilon                    //< unnecessary
-			  ? "not required"
-			  : moist_res.consumed <= double.Epsilon                    //< no humidity control
-			  ? "<color=#ffff00>none</color>"
-			  : moist_res.produced > moist_res.consumed * 1.001         //< insufficient humidity control
-			  ? "<color=#ffff00>inadequate</color>"
-			  : "good";                                                 //< sufficient humidity control
+			  ? Lib.Color("inadequate", Lib.Kolor.Yellow)
+			  : Lib.Color("good", Lib.Kolor.Green);                    //< sufficient scrubbing
 
 			// generate status string for pressurization
 			string atmo_status = !Features.Pressure                     //< feature disabled
@@ -549,18 +534,17 @@ namespace KERBALISM.Planner
 			  : atmo_res.consumed <= double.Epsilon                     //< unnecessary
 			  ? "not required"
 			  : atmo_res.produced <= double.Epsilon                     //< no pressure control
-			  ? "<color=#ffff00>none</color>"
+			  ? Lib.Color("none", Lib.Kolor.Orange)
 			  : atmo_res.consumed > atmo_res.produced * 1.001           //< insufficient pressure control
-			  ? "<color=#ffff00>inadequate</color>"
-			  : "good";                                                 //< sufficient pressure control
+			  ? Lib.Color("inadequate", Lib.Kolor.Yellow)
+			  : Lib.Color("good", Lib.Kolor.Green);                    //< sufficient pressure control
 
 			p.AddSection("HABITAT", string.Empty,
-				() => { p.Prev(ref environment_index, panel_environment.Count); update = true; },
-				() => { p.Next(ref environment_index, panel_environment.Count); update = true; });
+				() => { p.Prev(ref environment_index, panel_environment.Count); enforceUpdate = true; },
+				() => { p.Next(ref environment_index, panel_environment.Count); enforceUpdate = true; });
 			p.AddContent("volume", Lib.HumanReadableVolume(vessel_analyzer.volume), "volume of enabled habitats");
 			p.AddContent("surface", Lib.HumanReadableSurface(vessel_analyzer.surface), "surface of enabled habitats");
 			p.AddContent("scrubbing", waste_status, waste_tooltip);
-			p.AddContent("humidity", moist_status, moist_tooltip);
 			p.AddContent("pressurization", atmo_status, atmo_tooltip);
 		}
 #endregion
@@ -583,6 +567,7 @@ namespace KERBALISM.Planner
 		private static VesselAnalyzer vessel_analyzer = new VesselAnalyzer();
 
 		// panel arrays
+		private static List<string> supplies = new List<string>();
 		private static List<string> panel_resource = new List<string>();
 		private static List<string> panel_special = new List<string>();
 		private static List<string> panel_environment = new List<string>();
@@ -601,7 +586,7 @@ namespace KERBALISM.Planner
 
 		// panel ui
 		private static Panel panel = new Panel();
-		private static bool update = false;
+		private static bool enforceUpdate = false;
 		private static int update_counter = 0;
 #endregion
 	}

@@ -52,7 +52,7 @@ ask us first if you really need to build it (and all the targets that depend on 
 To build in debug configuration on OSX, you can't compile with the Unity dlls shipped with KSP, they are different from the Unity standard distribution.
 You will need to use the ones provided with the Unity editor for mac.
 
-For KSP 1.4 to 1.7 it's the `2017.1.3p1` version, available at the [Unity download archive](https://unity3d.com/get-unity/download/archive)
+For KSP 1.5 to 1.7 it's the `2017.1.3p1` version, available at the [Unity download archive](https://unity3d.com/get-unity/download/archive)
 
 Then copy the `BuildSystem\DevEnvInstall\OSX\setup_mac.sh` somewhere and change the installation locations of Unity and KSP. 
 Once you're sure the locations suit your needs, run setup_mac.sh (from any folder). It will

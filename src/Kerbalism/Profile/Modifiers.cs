@@ -39,7 +39,7 @@ namespace KERBALISM
 						break;
 
 					case "radiation":
-						k *= vd.EnvRadiation;
+						k *= vd.EnvHabitatRadiation;
 						break;
 
 					case "shielding":
@@ -68,10 +68,6 @@ namespace KERBALISM
 
 					case "poisoning":
 						k *= vd.Poisoning > Settings.PoisoningThreshold ? 1.0 : Settings.PoisoningFactor;
-						break;
-
-					case "humidity":
-						k *= vd.Humidity > Settings.HumidityThreshold ? 1.0 : Settings.HumidityFactor;
 						break;
 
 					case "per_capita":
@@ -145,10 +141,6 @@ namespace KERBALISM
 
 					case "poisoning":
 						k *= !va.scrubbed ? 1.0 : Settings.PoisoningFactor;
-						break;
-
-					case "humidity":
-						k *= !va.humid ? 1.0 : Settings.HumidityFactor;
 						break;
 
 					case "per_capita":

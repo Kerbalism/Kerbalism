@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <!-- /////////////////////////////////////////////////// -->
   <!-- /////////////// COMMON PROPERTIES ///////////////// -->
   <!-- /////////////////////////////////////////////////// -->
@@ -27,7 +27,6 @@
     <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
     <ErrorReport>prompt</ErrorReport>
     <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
-    <DebugType>full</DebugType>
     <Prefer32Bit>false</Prefer32Bit>
     <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
     <NoWarn>IDE0018</NoWarn>
@@ -52,13 +51,23 @@
   <Import Condition="Exists('..\..\BuildSystem\ProjectsCommonProperties.xml')" Project="..\..\BuildSystem\ProjectsCommonProperties.xml" />
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
     <!-- Note : this is overriden by the build engine, but in order to have the correct constants in the IDE, it has to be there too -->
-    <DefineConstants>TRACE;DEBUG;$(DebugDefineConstants);$(KSPDevVersion)</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;$(DebugDefineConstants);KSP$(KSPDevVersion)</DefineConstants>
+    <DebugType>$(DebugTypeOverride)</DebugType>
+    <DebugType Condition="'$(DebugTypeOverride)' == ''">none</DebugType>
+  </PropertyGroup>
+  <PropertyGroup>
+    <TargetFrameworkVersion>$(FrameworkVersionOverride)</TargetFrameworkVersion>
+    <EffectiveKSPDllPath Condition="'$(Configuration)' == 'Debug'">$(KSPDevPath)\$(KSPDevDllsRelativePath)</EffectiveKSPDllPath>
+    <EffectiveKSPDllPath Condition="'$(Configuration)' == 'Release'">$(KSPReferenceDllsPathPR)</EffectiveKSPDllPath>
   </PropertyGroup>
   <!-- ///////////////////////////////////////////////////// -->
   <!-- //////////////////// REFERENCES ///////////////////// -->
   <!-- ///////////////////////////////////////////////////// -->
   <ItemGroup>
-    <Reference Include="System" />
+    <!-- System Dlls -->
+    <Reference Include="System">
+      <Private>False</Private>
+    </Reference>
     <Reference Include="System.Core">
       <Private>False</Private>
     </Reference>
@@ -68,68 +77,37 @@
     <Reference Include="System.Xml.Linq">
       <Private>False</Private>
     </Reference>
+    <!-- Harmony reference, get it from the gamedata folder -->
     <Reference Include="Harmony">
       <HintPath>$(GameDataKerbalismPathPR)\0Harmony.1.2.0.1.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <!-- KSP Dlls -->
+    <Reference Include="$(EffectiveKSPDllPath)\Assembly-CSharp.dll">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="$(EffectiveKSPDllPath)\Assembly-CSharp-firstpass.dll">
+      <Private>False</Private>
+    </Reference>
+    <!-- load all UnityEngine Dlls (since 1.8 we only need those) -->
+    <Reference Include="$(EffectiveKSPDllPath)\UnityEngine*.dll">
+      <Private>False</Private>
+    </Reference>
   </ItemGroup>
+  <!-- Unity Dlls (don't exists anymore since KSP 1.8, so test for their existence) -->
+  <!-- Note : this is done in choose block instead of simple condition on the reference -->
+  <!-- because Visual Studio is bypassing those. -->
   <Choose>
-    <When Condition="'$(Configuration)' == 'Debug'">
+    <When Condition="Exists('$(EffectiveKSPDllPath)\Assembly-UnityScript.dll')">
       <ItemGroup>
-        <Reference Include="Assembly-CSharp">
-          <HintPath>$(KSPDevPath)\$(KSPDevDllsRelativePath)\Assembly-CSharp.dll</HintPath>
+        <Reference Include="$(EffectiveKSPDllPath)\Assembly-UnityScript.dll">
           <Private>False</Private>
         </Reference>
-        <Reference Include="Assembly-CSharp-firstpass">
-          <HintPath>$(KSPDevPath)\$(KSPDevDllsRelativePath)\Assembly-CSharp-firstpass.dll</HintPath>
-          <Private>False</Private>
-        </Reference>
-        <Reference Include="Assembly-UnityScript">
-          <HintPath>$(KSPDevPath)\$(KSPDevDllsRelativePath)\Assembly-UnityScript.dll</HintPath>
-          <Private>False</Private>
-        </Reference>
-        <Reference Include="Assembly-UnityScript-firstpass">
-          <HintPath>$(KSPDevPath)\$(KSPDevDllsRelativePath)\Assembly-UnityScript-firstpass.dll</HintPath>
-          <Private>False</Private>
-        </Reference>
-        <Reference Include="UnityEngine">
-          <HintPath>$(KSPDevPath)\$(KSPDevDllsRelativePath)\UnityEngine.dll</HintPath>
-          <Private>False</Private>
-        </Reference>
-        <Reference Include="UnityEngine.UI">
-          <HintPath>$(KSPDevPath)\$(KSPDevDllsRelativePath)\UnityEngine.UI.dll</HintPath>
+        <Reference Include="$(EffectiveKSPDllPath)\Assembly-UnityScript-firstpass.dll">
           <Private>False</Private>
         </Reference>
       </ItemGroup>
     </When>
-    <Otherwise>
-      <ItemGroup>
-        <Reference Include="Assembly-CSharp">
-          <HintPath>$(KSPReferenceDllsPathPR)\Assembly-CSharp.dll</HintPath>
-          <Private>False</Private>
-        </Reference>
-        <Reference Include="Assembly-CSharp-firstpass">
-          <HintPath>$(KSPReferenceDllsPathPR)\Assembly-CSharp-firstpass.dll</HintPath>
-          <Private>False</Private>
-        </Reference>
-        <Reference Include="Assembly-UnityScript">
-          <HintPath>$(KSPReferenceDllsPathPR)\Assembly-UnityScript.dll</HintPath>
-          <Private>False</Private>
-        </Reference>
-        <Reference Include="Assembly-UnityScript-firstpass">
-          <HintPath>$(KSPReferenceDllsPathPR)\Assembly-UnityScript-firstpass.dll</HintPath>
-          <Private>False</Private>
-        </Reference>
-        <Reference Include="UnityEngine">
-          <HintPath>$(KSPReferenceDllsPathPR)\UnityEngine.dll</HintPath>
-          <Private>False</Private>
-        </Reference>
-        <Reference Include="UnityEngine.UI">
-          <HintPath>$(KSPReferenceDllsPathPR)\UnityEngine.UI.dll</HintPath>
-          <Private>False</Private>
-        </Reference>
-      </ItemGroup>
-    </Otherwise>
   </Choose>
   <!-- ///////////////////////////////////////////////////// -->
   <!-- ///////////////////// COMPILES ////////////////////// -->
@@ -143,6 +121,7 @@
     <Compile Include="Automation\Devices\Experiment.cs" />
     <Compile Include="Automation\Devices\Scanner.cs" />
     <Compile Include="Automation\Script.cs" />
+    <Compile Include="Automation\VesselDevices\VesselTransmit.cs" />
     <Compile Include="Background.cs" />
     <Compile Include="Cache.cs" />
     <Compile Include="Automation\Devices\Converter.cs" />
@@ -161,7 +140,6 @@
     <Compile Include="Contracts\MannedOrbit.cs" />
     <Compile Include="Contracts\SpaceAnalysis.cs" />
     <Compile Include="Contracts\SpaceHarvest.cs" />
-    <Compile Include="Database\BodyData.cs" />
     <Compile Include="Database\DB.cs" />
     <Compile Include="Database\KerbalData.cs" />
     <Compile Include="Database\LandmarkData.cs" />
@@ -169,6 +147,8 @@
     <Compile Include="Database\PartModuleData.cs" />
     <Compile Include="Database\Persistence.cs" />
     <Compile Include="Database\RuleData.cs" />
+    <Compile Include="Database\VesselSituations.cs" />
+    <Compile Include="Science\SubjectData.cs" />
     <Compile Include="Database\SupplyData.cs" />
     <Compile Include="Database\UIData.cs" />
     <Compile Include="Database\VesselData.cs" />
@@ -204,6 +184,7 @@
     <Compile Include="ResourceSim\VesselResHandler.cs" />
     <Compile Include="ResourceSim\ResourceCache.cs" />
     <Compile Include="Science\Drive.cs" />
+    <Compile Include="Science\ExperimentRequirements.cs" />
     <Compile Include="Science\ExperimentInfo.cs" />
     <Compile Include="Science\File.cs" />
     <Compile Include="Science\Hijacker.cs" />
@@ -211,22 +192,50 @@
     <Compile Include="Science\Science.cs" />
     <Compile Include="Comms\ConnectionInfo.cs" />
     <Compile Include="Comms\Communications.cs" />
+    <Compile Include="Science\ScienceDB.cs" />
+    <Compile Include="Science\ScienceSituation.cs" />
+    <Compile Include="Science\Situation.cs" />
     <Compile Include="System\API.cs" />
     <Compile Include="System\Callbacks.cs" />
     <Compile Include="UI\ConnManager.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiInterfaces.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiBase.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiButton.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiHeader.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiIcon.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiLayoutOptimizer.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiMasterController.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiScrollView.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiText.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiTextBox.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiLib.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiToggle.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiToggleList.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiVerticalLayout.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiHorizontalLayout.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiIconButton.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiStyle.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiTooltip.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiTooltipController.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiVerticalSection.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiWindow.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiUpdate.cs" />
     <Compile Include="UI\Planner\EnvironmentAnalyzer.cs" />
     <Compile Include="UI\Planner\ResourceSimulator.cs" />
     <Compile Include="UI\Planner\SimulatedRecipe.cs" />
     <Compile Include="UI\Planner\SimulatedResource.cs" />
     <Compile Include="UI\Planner\SimulatedResourceView.cs" />
     <Compile Include="UI\Planner\VesselAnalyzer.cs" />
+    <Compile Include="UI\Science\ExperimentSubjectsList.cs" />
+    <Compile Include="UI\Science\ExperimentPopup.cs" />
+    <Compile Include="UI\Science\ScienceArchiveWindow.cs" />
     <Compile Include="Utility\GotoVessel.cs" />
     <Compile Include="System\Loader.cs" />
     <Compile Include="System\Settings.cs" />
     <Compile Include="UI\BodyInfo.cs" />
     <Compile Include="UI\DevManager.cs" />
     <Compile Include="UI\FileManager.cs" />
-    <Compile Include="UI\Icons.cs" />
+    <Compile Include="UI\Textures.cs" />
     <Compile Include="UI\NotificationLog.cs" />
     <Compile Include="UI\Panel.cs" />
     <Compile Include="UI\TimedOut.cs" />
@@ -244,13 +253,11 @@
     <Compile Include="Modules\GravityRing.cs" />
     <Compile Include="Modules\Habitat.cs" />
     <Compile Include="Modules\PlannerController.cs" />
-    <Compile Include="Radiation.cs" />
     <Compile Include="EVA.cs" />
     <Compile Include="Profile\Profile.cs" />
     <Compile Include="Profile\Supply.cs" />
     <Compile Include="Profile\Rule.cs" />
     <Compile Include="Sim.cs" />
-    <Compile Include="Storm.cs" />
     <Compile Include="System\Features.cs" />
     <Compile Include="System\Kerbalism.cs" />
     <Compile Include="Lib.cs" />
@@ -269,16 +276,24 @@
     <Compile Include="Modules\Sickbay.cs" />
     <Compile Include="Automation\Devices\Sickbay.cs" />
     <Compile Include="Modules\KerbalismScansat.cs" />
-    <Compile Include="Science\ExperimentSituation.cs" />
     <Compile Include="Patches\DeployedScienceExperiment_SendDataToComms.cs" />
     <Compile Include="Comms\AntennaInfoSerenity.cs" />
     <Compile Include="Utility\Serenity.cs" />
     <Compile Include="Patches\VesselRecovery_OnVesselRecovered.cs" />
-    <Compile Include="Database\ScienceLog.cs" />
+    <Compile Include="Radiation\Radiation.cs" />
+    <Compile Include="Radiation\StormData.cs" />
+    <Compile Include="Radiation\Storm.cs" />
+    <Compile Include="UI\FailuresManager.cs" />
+    <Compile Include="Database\ReliabilityInfo.cs" />
+    <Compile Include="Database\VesselHabitatInfo.cs" />
+    <Compile Include="GlobalSuppressions.cs" />
+    <Compile Include="System\ModuleInterfaces.cs" />
+    <Compile Include="Patches\TooltipController_CrewAC_SetTooltip.cs" />
   </ItemGroup>
   <!-- ///////////////////////////////////////////////////// -->
   <!-- ////////// IMPORT DEFAULT MS BUILD PROCESS ////////// -->
   <!-- ///////////////////////////////////////////////////// -->
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- This target is called before the build, you can use it for debugging the build system -->
   <Target Name="BeforeBuild">

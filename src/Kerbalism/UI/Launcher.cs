@@ -10,7 +10,7 @@ namespace KERBALISM
 		// click through locks
 		private bool clickThroughLocked = false;
 		private const ControlTypes MainGUILockTypes = ControlTypes.MANNODE_ADDEDIT | ControlTypes.MANNODE_DELETE | ControlTypes.MAP_UI |
-			ControlTypes.TARGETING | ControlTypes.VESSEL_SWITCHING | ControlTypes.TWEAKABLES | ControlTypes.EDITOR_UI | ControlTypes.EDITOR_SOFT_LOCK;
+			ControlTypes.TARGETING | ControlTypes.VESSEL_SWITCHING | ControlTypes.TWEAKABLES | ControlTypes.EDITOR_UI | ControlTypes.EDITOR_SOFT_LOCK | ControlTypes.UI;
 
 		public Launcher()
 		{
@@ -31,10 +31,10 @@ namespace KERBALISM
 
 				// create the button
 				// note: for some weird reasons, the callbacks can be called BEFORE this function return
-				launcher_btn = ApplicationLauncher.Instance.AddApplication(null, null, null, null, null, null, Icons.applauncher);
+				vesselListLauncher = ApplicationLauncher.Instance.AddApplication(null, null, null, null, null, null, Textures.applauncher_vessels);
 
 				// enable the launcher button for some scenes
-				launcher_btn.VisibleInScenes =
+				vesselListLauncher.VisibleInScenes =
 					ApplicationLauncher.AppScenes.SPACECENTER
 				  | ApplicationLauncher.AppScenes.FLIGHT
 				  | ApplicationLauncher.AppScenes.MAPVIEW
@@ -42,12 +42,42 @@ namespace KERBALISM
 				  | ApplicationLauncher.AppScenes.VAB
 				  | ApplicationLauncher.AppScenes.SPH;
 			}
+
+			if (Features.Science && (HighLogic.CurrentGame.Mode == Game.Modes.CAREER || HighLogic.CurrentGame.Mode == Game.Modes.SCIENCE_SANDBOX))
+			{
+				if (generalMenuLauncher == null)
+				{
+					generalMenuLauncher = ApplicationLauncher.Instance.AddApplication(null, null, null, null, null, null, Textures.applauncher_database);
+					generalMenuLauncher.VisibleInScenes =
+						ApplicationLauncher.AppScenes.SPACECENTER
+					  | ApplicationLauncher.AppScenes.FLIGHT
+					  | ApplicationLauncher.AppScenes.MAPVIEW
+					  | ApplicationLauncher.AppScenes.TRACKSTATION
+					  | ApplicationLauncher.AppScenes.VAB
+					  | ApplicationLauncher.AppScenes.SPH;
+
+					generalMenuLauncher.onLeftClick = () => ScienceArchiveWindow.Toggle();
+				}
+			}
+			else
+			{
+				if (generalMenuLauncher != null)
+				{
+					generalMenuLauncher.onLeftClick = null;
+					ApplicationLauncher.Instance.RemoveApplication(generalMenuLauncher);
+					generalMenuLauncher = null;
+				}
+			}
 		}
 
 		public void Update()
 		{
 			// do nothing if GUI has not been initialized
 			if (!ui_initialized)
+				return;
+
+			// do nothing if the UI is not shown
+			if (win_rect.width == 0f)
 				return;
 
 			// update planner/monitor content
@@ -70,7 +100,7 @@ namespace KERBALISM
 				return;
 
 			// render the window
-			if (launcher_btn.toggleButton.Value || launcher_btn.IsHovering || (win_rect.width > 0 && win_rect.Contains(Mouse.screenPos)))
+			if (vesselListLauncher.toggleButton.Value || vesselListLauncher.IsHovering || (win_rect.width > 0f && win_rect.Contains(Mouse.screenPos)))
 			{
 				// hard-coded offsets
 				// note: there is a bug in stock that only set appscale properly in non-flight-mode after you go in flight-mode at least once
@@ -129,11 +159,12 @@ namespace KERBALISM
 			else
 			{
 				// set zero area win_rect
-				win_rect.width = 0;
+				win_rect.width = 0f;
 			}
 
 			// get mouse over state
-			bool mouse_over = win_rect.Contains(Event.current.mousePosition);
+			// bool mouse_over = win_rect.Contains(Event.current.mousePosition);
+			bool mouse_over = win_rect.Contains(new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y));
 
 			// disable camera mouse scrolling on mouse over
 			if (mouse_over)
@@ -159,7 +190,9 @@ namespace KERBALISM
 		bool ui_initialized;
 
 		// store reference to applauncher button
-		ApplicationLauncherButton launcher_btn;
+		ApplicationLauncherButton vesselListLauncher;
+
+		ApplicationLauncherButton generalMenuLauncher;
 
 		// window geometry
 		Rect win_rect;

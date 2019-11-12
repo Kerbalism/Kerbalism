@@ -15,12 +15,14 @@ namespace KERBALISM
 
 		// persistent
 		[KSPField(isPersistant = true)] public bool running;
+		[KSPField(isPersistant = true)] public double radiation_impact = 1.0; // calculated based on vessel design
 
 		// rmb status
 		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "_")] public string Status;  // rate of radiation emitted/shielded
 
 		// animations
 		Animator active_anim;
+		bool radiation_impact_calculated = false;
 
 		// pseudo-ctor
 		public override void OnStart(StartState state)
@@ -43,6 +45,87 @@ namespace KERBALISM
 			active_anim.Still(running ? 0.0 : 1.0);
 		}
 
+		public class HabitatInfo
+		{
+			public Habitat habitat;
+			public float distance;
+
+			public HabitatInfo(Habitat habitat, float distance)
+			{
+				this.habitat = habitat;
+				this.distance = distance;
+			}
+		}
+		List<HabitatInfo> habitatInfos = null;
+
+		public void Recalculate()
+		{
+			habitatInfos = null;
+			CalculateRadiationImpact();
+		}
+
+		public void BuildHabitatInfos()
+		{
+			if (habitatInfos != null) return;
+			if (part.transform == null) return;
+			var emitterPosition = part.transform.position;
+
+			List<Habitat> habitats;
+
+			if (Lib.IsEditor())
+			{
+				habitats = new List<Habitat>();
+
+				List<Part> parts = Lib.GetPartsRecursively(EditorLogic.RootPart);
+				foreach (var p in parts)
+				{
+					var habitat = p.FindModuleImplementing<Habitat>();
+					if (habitat != null) habitats.Add(habitat);
+				}
+			}
+			else
+			{
+				habitats = vessel.FindPartModulesImplementing<Habitat>();
+			}
+
+			habitatInfos = new List<HabitatInfo>();
+
+			foreach (var habitat in habitats)
+			{
+				var habitatPosition = habitat.part.transform.position;
+				var vector = habitatPosition - emitterPosition;
+
+				HabitatInfo spi = new HabitatInfo(habitat, vector.magnitude);
+				habitatInfos.Add(spi);
+			}
+		}
+
+		/// <summary>Calculate the average radiation effect to all habitats. returns true if successful.</summary>
+		public bool CalculateRadiationImpact()
+		{
+			if (radiation < 0)
+			{
+				radiation_impact = 1.0;
+				return true;
+			}
+
+			if (habitatInfos == null) BuildHabitatInfos();
+			if (habitatInfos == null) return false;
+
+			radiation_impact = 0.0;
+			int habitatCount = 0;
+
+			foreach (var hi in habitatInfos)
+			{
+				radiation_impact += Radiation.DistanceRadiation(1.0, hi.distance);
+				habitatCount++;
+			}
+
+			if (habitatCount > 1)
+				radiation_impact /= habitatCount;
+
+			return true;
+		}
 
 		public void Update()
 		{
@@ -51,11 +134,12 @@ namespace KERBALISM
 			Events["Toggle"].guiName = Lib.StatusToggle(Localizer.Format("#kerbalism-activeshield_Part_title").Replace("Shield", "shield"), running ? Localizer.Format("#KERBALISM_Generic_ACTIVE") : Localizer.Format("#KERBALISM_Generic_DISABLED")); //i'm lazy lol
 		}
 
-
-
 		public void FixedUpdate()
 		{
-			// do nothing in the editor
+			if (!radiation_impact_calculated)
+				radiation_impact_calculated = CalculateRadiationImpact();
+
+			// do nothing else in the editor
 			if (Lib.IsEditor()) return;
 
 			// if enabled, and there is ec consumption
@@ -99,7 +183,6 @@ namespace KERBALISM
 		[KSPAction("#KERBALISM_Emitter_Action")] public void Action(KSPActionParam param) { Toggle(); }
 
 
-
 		// part tooltip
 		public override string GetInfo()
 		{
@@ -119,6 +202,37 @@ namespace KERBALISM
 			return specs;
 		}
 
+		/// <summary>
+		/// get the total radiation emitted by nearby emitters (used for EVAs). only works for loaded vessels.
+		/// </summary>
+		public static double Nearby(Vessel v)
+		{
+			if (!v.loaded || !v.isEVA) return 0.0;
+			var evaPosition = v.rootPart.transform.position;
+
+			double result = 0.0;
+
+			foreach (Vessel n in FlightGlobals.VesselsLoaded)
+			{
+				var vd = n.KerbalismData();
+				if (!vd.IsSimulated) continue;
+
+				foreach (var emitter in Lib.FindModules<Emitter>(n))
+				{
+					if (emitter.part == null || emitter.part.transform == null) continue;
+					if (emitter.radiation <= 0) continue; // ignore shielding effects here
+					if (!emitter.running) continue;
+
+					var emitterPosition = emitter.part.transform.position;
+					var vector = evaPosition - emitterPosition;
+					var distance = vector.magnitude;
+
+					result += Radiation.DistanceRadiation(emitter.radiation, distance);
+				}
+			}
+
+			return result;
+		}
 
 		// return total radiation emitted in a vessel
 		public static double Total(Vessel v)
@@ -133,7 +247,11 @@ namespace KERBALISM
 				{
 					if (ec.Amount > double.Epsilon || emitter.ec_rate <= double.Epsilon)
 					{
-						tot += emitter.running ? emitter.radiation : 0.0;
+						if (emitter.running)
+						{
+							if (emitter.radiation > 0) tot += emitter.radiation * emitter.radiation_impact;
+							else tot += emitter.radiation; // always account for full shielding effect
+						}
 					}
 				}
 			}
@@ -143,14 +261,21 @@ namespace KERBALISM
 				{
 					if (ec.Amount > double.Epsilon || Lib.Proto.GetDouble(m, "ec_rate") <= double.Epsilon)
 					{
-						tot += Lib.Proto.GetBool(m, "running") ? Lib.Proto.GetDouble(m, "radiation") : 0.0;
+						if (Lib.Proto.GetBool(m, "running"))
+						{
+							var rad = Lib.Proto.GetDouble(m, "radiation");
+							if (rad < 0) tot += rad;
+							else
+							{
+								tot += rad * Lib.Proto.GetDouble(m, "radiation_factor");
+							}
+						}
 					}
 				}
 			}
 			return tot;
 		}
 	}
-
 
 } // KERBALISM
 

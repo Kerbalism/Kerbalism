@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -54,7 +54,7 @@
   <Choose>
     <When Condition="Exists('..\..\BuildSystem\UserConfigDevEnv.xml')">
       <PropertyGroup>
-        <DefineConstants Condition="'$(Configuration)' == 'Debug'">TRACE;DEBUG;$(DebugDefineConstants);$(KSPDevVersion)</DefineConstants>
+        <DefineConstants Condition="'$(Configuration)' == 'Debug'">TRACE;DEBUG;$(DebugDefineConstants);KSP$(KSPDevVersion)</DefineConstants>
         <StartProgram>$(KSPDevPath)\$(KSPDevExecutable)</StartProgram>
         <StartWorkingDirectory>$(KSPDevPath)</StartWorkingDirectory>
       </PropertyGroup>
@@ -66,6 +66,8 @@
   <!-- /////////////////////////////////////////////////// -->
   <Target Name="Build">
     <MSBuild Condition="$(Configuration)==Release" Projects="..\..\BuildSystem\BuildSystemTargets.xml" Targets="BuildRelease" />
-    <MSBuild Condition="$(Configuration)==Debug" Projects="..\..\BuildSystem\BuildSystemTargets.xml" Targets="BuildDebug" Properties="DefineConstants=$(DefineConstants)"/>
+    <MSBuild Condition="$(Configuration)==Debug" Projects="..\..\BuildSystem\BuildSystemTargets.xml" Targets="BuildDebug" Properties="DefineConstants=$(DefineConstants)" />
+  </Target>
+  <Target Name="Clean">
   </Target>
 </Project>

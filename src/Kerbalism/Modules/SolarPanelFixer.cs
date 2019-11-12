@@ -9,12 +9,6 @@ using UnityEngine;
 
 namespace KERBALISM
 {
-	// TODO : SolarPanelFixer features that require testing :
-	// - fully untested : time efficiency curve (must try with a stock panel defined curve, and a SolarPanelFixer defined curve)
-	// - background update : must check that the output is consistent with what we get when loaded (should be but checking can't hurt)
-	//   (note : only test it with equatorial circular orbits, other orbits will give inconsistent output due to sunlight evaluation algorithm limitations)
-	// - reliability support should work but I did only a very quick test
-
 	// TODO : SolarPanelFixer missing features :
 	// - SSTU automation / better reliability support
 
@@ -86,13 +80,17 @@ namespace KERBALISM
 		/// <summary>for tracking analytic mode changes and ui updating</summary>
 		private bool analyticSunlight;
 
+		/// <summary>can be used by external mods to get the current EC/s</summary>
+		[KSPField]
+		public double currentOutput;
+
 		// The following fields are local to FixedUpdate() but are shared for status string updates in Update()
 		// Their value can be inconsistent, don't rely on them for anything else
-		private double currentOutput;
 		private double exposureFactor;
 		private double wearFactor;
 		private ExposureState exposureState;
 		private string mainOccludingPart;
+		private string rateFormat;
 
 		public enum PanelState
 		{
@@ -185,11 +183,10 @@ namespace KERBALISM
 
 			// not sure why (I guess because of the KSPField attribute), but timeEfficCurve is instanciated with 0 keys by something instead of being null
 			if (timeEfficCurve == null || timeEfficCurve.Curve.keys.Length == 0)
-			{
 				timeEfficCurve = SolarPanel.GetTimeCurve();
-				if (Lib.IsFlight() && launchUT < 0.0)
-					launchUT = Planetarium.GetUniversalTime();
-			}
+
+			if (Lib.IsFlight() && launchUT < 0.0)
+				launchUT = Planetarium.GetUniversalTime();
 
 			// setup star selection GUI
 			Events["ManualTracking"].active = Sim.suns.Count > 1 && SolarPanel.IsTracking;
@@ -197,6 +194,12 @@ namespace KERBALISM
 
 			// setup target module animation for custom star tracking
 			SolarPanel.SetTrackedBody(FlightGlobals.Bodies[trackedSunIndex]);
+
+			// set how many decimal points are needed to show the panel Ec output in the UI
+			if (nominalRate < 0.1) rateFormat = "F4";
+			else if (nominalRate < 1.0) rateFormat = "F3";
+			else if (nominalRate < 10.0) rateFormat = "F2";
+			else rateFormat = "F1";
 		}
 
 		public override void OnSave(ConfigNode node)
@@ -214,10 +217,12 @@ namespace KERBALISM
 			VesselData vd = vessel.KerbalismData();
 
 			// do nothing if vessel is invalid
-			if (!vd.IsValid) return;
+			if (!vd.IsSimulated) return;
 
 			// calculate average exposure over a full day when landed, will be used for panel background processing
-			node.SetValue("persistentFactor", GetAnalyticalCosineFactorLanded(vd));
+			double landedPersistentFactor = GetAnalyticalCosineFactorLanded(vd);
+			node.SetValue("persistentFactor", landedPersistentFactor);
+			vd.SaveSolarPanelExposure(landedPersistentFactor);
 		}
 
 		public void Update()
@@ -253,19 +258,19 @@ namespace KERBALISM
 			{
 				case ExposureState.InShadow:
 					panelStatus = "<color=#ff2222>in shadow</color>";
-					if (currentOutput > 0.05) panelStatus = Lib.BuildString(currentOutput.ToString("F1"), " EC/s, ", panelStatus);
+					if (currentOutput > 0.001) panelStatus = Lib.BuildString(currentOutput.ToString(rateFormat), " EC/s, ", panelStatus);
 					break;
 				case ExposureState.OccludedTerrain:
 					panelStatus = "<color=#ff2222>occluded by terrain</color>";
-					if (currentOutput > 0.05) panelStatus = Lib.BuildString(currentOutput.ToString("F1"), " EC/s, ", panelStatus);
+					if (currentOutput > 0.001) panelStatus = Lib.BuildString(currentOutput.ToString(rateFormat), " EC/s, ", panelStatus);
 					break;
 				case ExposureState.OccludedPart:
 					panelStatus = Lib.BuildString("<color=#ff2222>occluded by ", mainOccludingPart, "</color>");
-					if (currentOutput > 0.05) panelStatus = Lib.BuildString(currentOutput.ToString("F1"), " EC/s, ", panelStatus);
+					if (currentOutput > 0.001) panelStatus = Lib.BuildString(currentOutput.ToString(rateFormat), " EC/s, ", panelStatus);
 					break;
 				case ExposureState.BadOrientation:
 					panelStatus = "<color=#ff2222>bad orientation</color>";
-					if (currentOutput > 0.05) panelStatus = Lib.BuildString(currentOutput.ToString("F1"), " EC/s, ", panelStatus);
+					if (currentOutput > 0.001) panelStatus = Lib.BuildString(currentOutput.ToString(rateFormat), " EC/s, ", panelStatus);
 					break;
 				case ExposureState.Disabled:
 					switch (state)
@@ -280,7 +285,7 @@ namespace KERBALISM
 					break;
 				case ExposureState.Exposed:
 					StringBuilder sb = new StringBuilder(256);
-					sb.Append(currentOutput.ToString("F1"));
+					sb.Append(currentOutput.ToString(rateFormat));
 					sb.Append(" EC/s");
 					if (analyticSunlight)
 					{
@@ -304,8 +309,13 @@ namespace KERBALISM
 
 		public void FixedUpdate()
 		{
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.SolarPanelFixer.FixedUpdate");
 			// sanity check
-			if (SolarPanel == null) return;
+			if (SolarPanel == null)
+			{
+				UnityEngine.Profiling.Profiler.EndSample();
+				return;
+			}
 
 			// can't produce anything if not deployed, broken, etc
 			PanelState newState = SolarPanel.GetState();
@@ -319,17 +329,27 @@ namespace KERBALISM
 			if (!(state == PanelState.Extended || state == PanelState.ExtendedFixed || state == PanelState.Static))
 			{
 				exposureState = ExposureState.Disabled;
+				currentOutput = 0.0;
+				UnityEngine.Profiling.Profiler.EndSample();
 				return;
 			}
 
 			// do nothing else in editor
-			if (Lib.IsEditor()) return;
+			if (Lib.IsEditor())
+			{
+				UnityEngine.Profiling.Profiler.EndSample();
+				return;
+			}
 
 			// get vessel data from cache
 			VesselData vd = vessel.KerbalismData();
 
 			// do nothing if vessel is invalid
-			if (!vd.IsValid) return;
+			if (!vd.IsSimulated)
+			{
+				UnityEngine.Profiling.Profiler.EndSample();
+				return;
+			}
 
 			// Update tracked sun in auto mode
 			if (!manualTracking && trackedSunIndex != vd.EnvMainSun.SunData.bodyIndex)
@@ -345,7 +365,7 @@ namespace KERBALISM
 			else
 				exposureState = ExposureState.Exposed;
 
-#if DEBUG
+#if DEBUG_SOLAR
 			Vector3d sunDirDebug = trackedSunInfo.Direction;
 
 			// flight view sun dir
@@ -425,23 +445,22 @@ namespace KERBALISM
 						}
 					}
 
-					// Get the proportion of this sun flux in the total flux from all suns.
-					double sunFluxPercent = sunInfo.SolarFlux / vd.EnvSolarFluxTotal;
-
 					// Compute final aggregate exposure factor
-					double sunExposureFactor = sunCosineFactor * sunOccludedFactor * sunFluxPercent;
+					double sunExposureFactor = sunCosineFactor * sunOccludedFactor * sunInfo.FluxProportion;
 
 					// Add the final factor to the saved exposure factor to be used in analytical / unloaded states.
 					// If occlusion is from the scene, not a part (terrain, building...) don't save the occlusion factor,
-					// as occlusion from the terrain and static objects is too variable to be reliable.
+					// as occlusion from the terrain and static objects is too variable over time.
 					if (occludingPart != null)
 						persistentFactor += sunExposureFactor;
 					else
-						persistentFactor += sunCosineFactor * sunFluxPercent;
+						persistentFactor += sunCosineFactor * sunInfo.FluxProportion;
 
 					// Only apply the exposure factor if not in shadow (body occlusion check)
 					if (sunInfo.SunlightFactor == 1.0) exposureFactor += sunExposureFactor;
+					else if (sunInfo == trackedSunInfo) exposureState = ExposureState.InShadow;
 				}
+				vd.SaveSolarPanelExposure(persistentFactor);
 			}
 
 			// get solar flux and deduce a scalar based on nominal flux at 1AU
@@ -452,15 +471,16 @@ namespace KERBALISM
 			// get wear factor (time based output degradation)
 			wearFactor = 1.0;
 			if (timeEfficCurve != null && timeEfficCurve.Curve.keys.Length > 1)
-				wearFactor = timeEfficCurve.Evaluate((float)((Planetarium.GetUniversalTime() - launchUT) / 3600.0));
+				wearFactor = Lib.Clamp(timeEfficCurve.Evaluate((float)((Planetarium.GetUniversalTime() - launchUT) / 3600.0)), 0.0, 1.0);
 
 			// get final output rate in EC/s
 			currentOutput = nominalRate * wearFactor * distanceFactor * exposureFactor;
 
 			// ignore very small outputs
-			if (currentOutput < 0.001)
+			if (currentOutput < 1e-10)
 			{
 				currentOutput = 0.0;
+				UnityEngine.Profiling.Profiler.EndSample();
 				return;
 			}
 
@@ -469,16 +489,21 @@ namespace KERBALISM
 
 			// produce EC
 			ec.Produce(currentOutput * Kerbalism.elapsed_s, "solar panel");
+			UnityEngine.Profiling.Profiler.EndSample();
 		}
 
 		public static void BackgroundUpdate(Vessel v, ProtoPartModuleSnapshot m, SolarPanelFixer prefab, VesselData vd, IResource ec, double elapsed_s)
 		{
-			// this is ugly spaghetti code but initializing the prefab at loading time is messy
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.SolarPanelFixer.BackgroundUpdate");
+			// this is ugly spaghetti code but initializing the prefab at loading time is messy because the targeted solar panel module may not be loaded yet
 			if (!prefab.isInitialized) prefab.OnStart(StartState.None);
 
 			string state = Lib.Proto.GetString(m, "state");
 			if (!(state == "Static" || state == "Extended" || state == "ExtendedFixed"))
+			{
+				UnityEngine.Profiling.Profiler.EndSample();
 				return;
+			}
 
 			// We don't recalculate panel orientation factor for unloaded vessels :
 			// - this ensure output consistency and prevent timestep-dependant fluctuations
@@ -497,7 +522,7 @@ namespace KERBALISM
 			if (prefab.timeEfficCurve != null && prefab.timeEfficCurve.Curve.keys.Length > 1)
 			{
 				double launchUT = Lib.Proto.GetDouble(m, "launchUT");
-				efficiencyFactor *= prefab.timeEfficCurve.Evaluate((float)((Planetarium.GetUniversalTime() - launchUT) / 3600.0));
+				efficiencyFactor *= Lib.Clamp(prefab.timeEfficCurve.Evaluate((float)((Planetarium.GetUniversalTime() - launchUT) / 3600.0)), 0.0, 1.0);
 			}
 
 			// get nominal panel charge rate at 1 AU
@@ -509,15 +534,27 @@ namespace KERBALISM
 
 			// produce EC
 			ec.Produce(output * elapsed_s, "solar panel");
+			UnityEngine.Profiling.Profiler.EndSample();
 		}
 		#endregion
 
 		#region Other methods
 		public bool GetSolarPanelModule()
 		{
+			// handle the possibility of multiple solar panel and SolarPanelFixer modules on the part
+			List<SolarPanelFixer> fixerModules = new List<SolarPanelFixer>();
+			foreach (PartModule pm in part.Modules)
+			{
+				if (pm is SolarPanelFixer fixerModule)
+					fixerModules.Add(fixerModule);
+			}
+
 			// find the module based on explicitely supported modules
 			foreach (PartModule pm in part.Modules)
 			{
+				if (fixerModules.Exists(p => p.SolarPanel != null && p.SolarPanel.TargetModule == pm))
+					continue;
+
 				// mod supported modules
 				switch (pm.moduleName)
 				{
@@ -605,6 +642,14 @@ namespace KERBALISM
 			}
 			return finalFactor;
 		}
+
+		public static double GetSolarPanelsAverageExposure(List<double> exposures)
+		{
+			if (exposures.Count == 0) return -1.0;
+			double averageExposure = 0.0;
+			foreach (double exposure in exposures) averageExposure += exposure;
+			return averageExposure / exposures.Count;
+		}
 		#endregion
 
 		#region Abstract class for common interaction with supported PartModules
@@ -612,6 +657,9 @@ namespace KERBALISM
 		{
 			/// <summary>Reference to the SolarPanelFixer, must be set from OnLoad</summary>
 			protected SolarPanelFixer fixerModule;
+
+			/// <summary>Reference to the target module</summary>
+			public abstract PartModule TargetModule { get; }
 
 			/// <summary>
 			/// Will be called by the SolarPanelFixer OnLoad, must set the partmodule reference.
@@ -706,6 +754,7 @@ namespace KERBALISM
 		private abstract class SupportedPanel<T> : SupportedPanel where T : PartModule
 		{
 			public T panelModule;
+			public override PartModule TargetModule => panelModule;
 		}
 		#endregion
 
@@ -739,6 +788,12 @@ namespace KERBALISM
 				if (sunCatcherPosition == null)
 					sunCatcherPosition = panelModule.part.FindModelTransform(panelModule.secondaryTransformName);
 
+				if (sunCatcherPosition == null)
+				{
+					Lib.Log("ERROR : could not find suncatcher transform `{0}` in part `{1}`", panelModule.secondaryTransformName, panelModule.part.name);
+					return false;
+				}
+
 				// avoid rate lost due to OnStart being called multiple times in the editor
 				if (panelModule.resHandler.outputResources[0].rate == 0.0)
 					return true;
@@ -763,7 +818,7 @@ namespace KERBALISM
 				{
 					FloatCurve timeCurve = new FloatCurve();
 					foreach (Keyframe key in panelModule.timeEfficCurve.Curve.keys)
-						timeCurve.Add(key.time * 24f, key.value);
+						timeCurve.Add(key.time * 24f, key.value, key.inTangent * (1f / 24f), key.outTangent * (1f / 24f));
 					return timeCurve;
 				}
 				return base.GetTimeCurve();
@@ -806,17 +861,28 @@ namespace KERBALISM
 			// we use the current panel orientation, only doing it ourself when analytic = true
 			public override double GetCosineFactor(Vector3d sunDir, bool analytic = false)
 			{
-#if DEBUG
+#if DEBUG_SOLAR
 				SolarDebugDrawer.DebugLine(sunCatcherPosition.position, sunCatcherPosition.position + sunCatcherPivot.forward, Color.yellow);
 				if (panelModule.isTracking) SolarDebugDrawer.DebugLine(sunCatcherPivot.position, sunCatcherPivot.position + (sunCatcherPivot.up * -1f), Color.blue);
 #endif
-				if (!analytic)
-					return Math.Max(Vector3d.Dot(sunDir, panelModule.trackingDotTransform.forward), 0.0);
+				switch (panelModule.panelType)
+				{
+					case ModuleDeployableSolarPanel.PanelType.FLAT:
+						if (!analytic)
+							return Math.Max(Vector3d.Dot(sunDir, panelModule.trackingDotTransform.forward), 0.0);
 
-				if (panelModule.isTracking)
-					return Math.Cos(1.57079632679 - Math.Acos(Vector3d.Dot(sunDir, sunCatcherPivot.up)));
-				else
-					return Math.Max(Vector3d.Dot(sunDir, sunCatcherPivot.forward), 0.0);
+						if (panelModule.isTracking)
+							return Math.Cos(1.57079632679 - Math.Acos(Vector3d.Dot(sunDir, sunCatcherPivot.up)));
+						else
+							return Math.Max(Vector3d.Dot(sunDir, sunCatcherPivot.forward), 0.0);
+
+					case ModuleDeployableSolarPanel.PanelType.CYLINDRICAL:
+						return Math.Max((1.0 - Math.Abs(Vector3d.Dot(sunDir, panelModule.trackingDotTransform.forward))) * (1.0 / Math.PI), 0.0);
+					case ModuleDeployableSolarPanel.PanelType.SPHERICAL:
+						return 0.25;
+					default:
+						return 0.0;
+				}
 			}
 
 			public override PanelState GetState()
@@ -900,7 +966,7 @@ namespace KERBALISM
 
 			public override bool OnStart(bool initialized, ref double nominalRate)
 			{
-#if !DEBUG
+#if !DEBUG_SOLAR
 				try
 				{
 #endif
@@ -924,7 +990,7 @@ namespace KERBALISM
 					nominalRate = Lib.ReflectionValue<float>(panelModule, "TotalEnergyRate");
 
 					return true;
-#if !DEBUG
+#if !DEBUG_SOLAR
 				}
 				catch (Exception ex) 
 				{
@@ -971,7 +1037,7 @@ namespace KERBALISM
 				foreach (Transform panel in sunCatchers)
 				{
 					cosineFactor += Math.Max(Vector3d.Dot(sunDir, panel.forward), 0.0);
-#if DEBUG
+#if DEBUG_SOLAR
 					SolarDebugDrawer.DebugLine(panel.position, panel.position + panel.forward, Color.yellow);
 #endif
 				}
@@ -1061,7 +1127,7 @@ namespace KERBALISM
 			{
 				// disable it completely
 				panelModule.enabled = panelModule.isEnabled = panelModule.moduleIsEnabled = false;
-#if !DEBUG
+#if !DEBUG_SOLAR
 				try
 				{
 #endif
@@ -1074,7 +1140,7 @@ namespace KERBALISM
 					// the nominal rate defined in SSTU is per transform
 					nominalRate = Lib.ReflectionValue<float>(panelModule, "resourceAmount") * sunCatchers.Length;
 					return true;
-#if !DEBUG
+#if !DEBUG_SOLAR
 				}
 				catch (Exception ex)
 				{
@@ -1092,7 +1158,7 @@ namespace KERBALISM
 				foreach (Transform panel in sunCatchers)
 				{
 					cosineFactor += Math.Max(Vector3d.Dot(sunDir, panel.forward), 0.0);
-#if DEBUG
+#if DEBUG_SOLAR
 					SolarDebugDrawer.DebugLine(panel.position, panel.position + panel.forward, Color.yellow);
 #endif
 				}
@@ -1205,7 +1271,7 @@ namespace KERBALISM
 
 			public override bool OnStart(bool initialized, ref double nominalRate)
 			{
-#if !DEBUG
+#if !DEBUG_SOLAR
 				try
 				{
 #endif
@@ -1297,7 +1363,7 @@ namespace KERBALISM
 						case "SSTUSolarPanelDeployable": foreach(var field in panelModule.Fields) field.guiActive = false; break;
 					}
 					return true;
-#if !DEBUG
+#if !DEBUG_SOLAR
 				}
 				catch (Exception ex)
 				{
@@ -1317,7 +1383,7 @@ namespace KERBALISM
 					suncatcherTotalCount += panel.SuncatcherCount;
 					for (int i = 0; i < panel.SuncatcherCount; i++)
 					{
-#if DEBUG
+#if DEBUG_SOLAR
 						SolarDebugDrawer.DebugLine(panel.SuncatcherPosition(i), panel.SuncatcherPosition(i) + panel.SuncatcherAxisVector(i), Color.yellow);
 						if (trackingType == TrackingType.SinglePivot) SolarDebugDrawer.DebugLine(panel.pivot.position, panel.pivot.position + (panel.PivotAxisVector * -1f), Color.blue);
 #endif
@@ -1373,7 +1439,7 @@ namespace KERBALISM
 					case TrackingType.Fixed: return PanelState.Static;
 					case TrackingType.Unknown: return PanelState.Unknown;
 				}
-#if !DEBUG
+#if !DEBUG_SOLAR
 				try
 				{
 #endif
@@ -1395,7 +1461,7 @@ namespace KERBALISM
 						case "PLAYING_FORWARD": return PanelState.Extending;
 						case "PLAYING_BACKWARD": return PanelState.Retracting;
 					}
-#if !DEBUG
+#if !DEBUG_SOLAR
 				}
 				catch { return PanelState.Unknown; }
 #endif
@@ -1469,25 +1535,25 @@ namespace KERBALISM
 			}
 		}
 
-		[Conditional("DEBUG")]
+		[Conditional("DEBUG_SOLAR")]
 		public static void DebugLine(Vector3 start, Vector3 end, Color col)
 		{
 			lines.Add(new Line(start, end, col));
 		}
 
-		[Conditional("DEBUG")]
+		[Conditional("DEBUG_SOLAR")]
 		public static void DebugPoint(Vector3 start, Color col)
 		{
 			points.Add(new Point(start, col));
 		}
 
-		[Conditional("DEBUG")]
+		[Conditional("DEBUG_SOLAR")]
 		public static void DebugTransforms(Transform t)
 		{
 			transforms.Add(new Trans(t.position, t.up, t.right, t.forward));
 		}
 
-		[Conditional("DEBUG")]
+		[Conditional("DEBUG_SOLAR")]
 		private void Start()
 		{
 			DontDestroyOnLoad(this);

@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Collections.Generic;
 using Harmony;
 using Harmony.ILCopying;
+using UnityEngine;
 
 namespace KERBALISM
 {
@@ -34,11 +35,19 @@ namespace KERBALISM
 	 *
 	 * See https://github.com/Kerbalism/Kerbalism/issues/476
 	 * See https://github.com/Kerbalism/Kerbalism/issues/249
+	 *
+	 * Further note :
+	 * We don't want our experiments data to be credited through the stock system, because it has this
+	 * formula that degrade the value when a subject is partially completed.
+	 * So keep track of by what the data was created in the `bool useStockCrediting` of files/samples
 	 */
 	[HarmonyPatch(typeof(VesselRecovery))]
 	[HarmonyPatch("OnVesselRecovered")]
 	class VesselRecovery_OnVesselRecovered {
 		static bool Prefix(ref ProtoVessel pv, ref bool quick) {
+
+			if (!Science.GameHasRnD) return true;
+
 			if (pv == null) return true;
 
 
@@ -58,16 +67,100 @@ namespace KERBALISM
 			if (protoHardDrive == null)
 				return true; // no drive on the vessel - nothing to do.
 
-			foreach (Drive drive in Drive.GetDrives(pv))
+			double scienceToCredit = 0.0;
+
+			List<DialogGUIBase> labels = new List<DialogGUIBase>();
+
+			foreach (Drive drive in Drive.GetDrives(pv, true))
 			{
-				ScienceData[] sd = HardDrive.GetData(drive);
-				foreach(ScienceData d in sd)
+				foreach (File file in drive.files.Values)
 				{
-					d.Save(protoHardDrive.moduleValues.AddNode("ScienceData"));
+					double totalScienceValue = file.subjectData.ScienceValue(file.size);
+					file.subjectData.RemoveScienceCollectedInFlight(totalScienceValue);
+					file.subjectData.UpdateSubjectCompletion(totalScienceValue);
+
+					if (file.useStockCrediting)
+					{
+						file.ConvertToStockData().Save(protoHardDrive.moduleValues.AddNode("ScienceData"));
+						file.subjectData.SetAsPersistent();
+					}
+					else
+					{
+						double subjectValue = file.subjectData.ScienceValue(file.size, true);
+						file.subjectData.AddScienceToRnDSubject(subjectValue);
+						scienceToCredit += subjectValue;
+						GameEvents.OnScienceRecieved.Fire((float)subjectValue, file.subjectData.RnDSubject, pv, false); // needed for contracts
+						labels.Add(new DialogGUILabel(Lib.BuildString(
+							Lib.Color("+ " + subjectValue.ToString("F1"), Lib.Kolor.Science),
+							" (",
+							Lib.Color(file.subjectData.ScienceRetrievedInKSC.ToString("F1"), Lib.Kolor.Science, true),
+							" / ",
+							Lib.Color(file.subjectData.ScienceMaxValue.ToString("F1"), Lib.Kolor.Science, true),
+							") : ",
+							file.subjectData.FullTitle
+							)));
+					}
+
+					
+				}
+
+				foreach (Sample sample in drive.samples.Values)
+				{
+					double totalScienceValue = sample.subjectData.ScienceValue(sample.size);
+					sample.subjectData.RemoveScienceCollectedInFlight(totalScienceValue);
+					sample.subjectData.UpdateSubjectCompletion(totalScienceValue);
+
+					if (sample.useStockCrediting)
+					{
+						sample.ConvertToStockData().Save(protoHardDrive.moduleValues.AddNode("ScienceData"));
+						sample.subjectData.SetAsPersistent();
+					}
+					else
+					{
+						double subjectValue = sample.subjectData.ScienceValue(sample.size, true);
+						sample.subjectData.AddScienceToRnDSubject(subjectValue);
+						scienceToCredit += subjectValue;
+						GameEvents.OnScienceRecieved.Fire((float)subjectValue, sample.subjectData.RnDSubject, pv, false); // needed for contracts
+						labels.Add(new DialogGUILabel(Lib.BuildString(
+							Lib.Color("+ " + subjectValue.ToString("F1"), Lib.Kolor.Science),
+							" (",
+							Lib.Color(sample.subjectData.ScienceRetrievedInKSC.ToString("F1"), Lib.Kolor.Science, true),
+							" / ",
+							Lib.Color(sample.subjectData.ScienceMaxValue.ToString("F1"), Lib.Kolor.Science, true),
+							") : ",
+							sample.subjectData.FullTitle
+							)));
+					}
 				}
 			}
 
 			protoHardDrive.moduleName = "ModuleScienceContainer";
+
+			if (scienceToCredit > 0.0)
+			{
+				ResearchAndDevelopment.Instance.AddScience((float)scienceToCredit, TransactionReasons.VesselRecovery);
+
+				// ideally we should hack the stock dialog to add the little science widgets to it but I'm lazy
+				// plus it looks like crap anyway
+				PopupDialog.SpawnPopupDialog
+				(
+					new MultiOptionDialog
+					(
+						"scienceResults", "", pv.vesselName + " recovery", HighLogic.UISkin, new Rect(0.3f, 0.5f, 350f, 100f),
+						new DialogGUIVerticalLayout
+						(
+							new DialogGUIBox("SCIENCE RECOVERED : " + Lib.Color(scienceToCredit.ToString("F1") + " CREDITS", Lib.Kolor.Science, true), 340f, 30f),
+							new DialogGUIScrollList
+							(
+								new Vector2(340f, 250f), false, true,
+								new DialogGUIVerticalLayout(labels.ToArray())
+							),
+							new DialogGUIButton("OK", null, 340f, 30f, true, HighLogic.UISkin.button)
+						)
+					),
+					false, HighLogic.UISkin
+				);
+			}
 
 			return true; // continue to the original code
 		}

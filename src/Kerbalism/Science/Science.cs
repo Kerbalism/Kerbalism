@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Text;
 using UnityEngine;
 
 
@@ -9,273 +11,287 @@ namespace KERBALISM
 
 	public static class Science
 	{
-		// this controls how fast science is credited while it is being transmitted.
-		// try to be conservative here, because crediting introduces a lag
-		private const double buffer_science_value = 0.3;
+		public static bool GameHasRnD
+		{
+			get
+			{
+				switch (HighLogic.CurrentGame.Mode)
+				{
+					case Game.Modes.CAREER:
+					case Game.Modes.SCIENCE_SANDBOX:
+						return true;
+					default:
+						return false;
+				}
+			}
+		}
 
-		// this is for auto-transmit throttling
-		public const double min_file_size = 0.002;
+		/// <summary> When converting stock experiments / data, if the XmitDataScalar is less than this, the data will be converted as a sample.</summary>
+		public const float maxXmitDataScalarForSample = 0.001f;
+
+		// science points from transmission won't be credited until they reach this amount
+		public const double minCreditBuffer = 0.1;
+
+		// a subject will be completed (gamevent fired and popup shown) when there is less than this value to retrieve in RnD
+		// this is needed because of floating point imprecisions in the in-flight science count (due to a gazillion adds of very small values)
+		public const double scienceLeftForSubjectCompleted = 0.01;
+
+		// utility things
+		static readonly List<XmitFile> xmitFiles = new List<XmitFile>();
+
+		private class XmitFile
+		{
+			public File file;
+			public double sciencePerMB; // caching this because it's slow to get
+			public Drive drive;
+			public bool isInWarpCache;
+			public File realDriveFile; // reference to the "real" file for files in the warp cache
+
+			public XmitFile(File file, Drive drive, double sciencePerMB, bool isInWarpCache, File realDriveFile = null)
+			{
+				this.file = file;
+				this.drive = drive;
+				this.sciencePerMB = sciencePerMB;
+				this.isInWarpCache = isInWarpCache;
+				this.realDriveFile = realDriveFile;
+			}
+		}
 
 		// pseudo-ctor
 		public static void Init()
 		{
-			// make the science dialog invisible, just once
-			if (Features.Science)
-			{
-				GameObject prefab = AssetBase.GetPrefab("ScienceResultsDialog");
-				if (Settings.ScienceDialog)
-				{
-					prefab.gameObject.AddOrGetComponent<Hijacker>();
-				}
-				else
-				{
-					prefab.gameObject.AddOrGetComponent<MiniHijacker>();
-				}
-			}
-		}
+			if (!Features.Science)
+				return;
 
-		private static Drive FindDrive(Vessel v, string filename)
-		{
-			foreach (var d in Drive.GetDrives(v, true))
-			{
-				if (d.files.ContainsKey(filename))
-				{
-					return d;
-				}
-			}
-			return null;
+			// Add our hijacker to the science dialog prefab
+			GameObject prefab = AssetBase.GetPrefab("ScienceResultsDialog");
+			if (Settings.ScienceDialog)
+				prefab.gameObject.AddOrGetComponent<Hijacker>();
+			else
+				prefab.gameObject.AddOrGetComponent<MiniHijacker>();
 		}
 
 		// consume EC for transmission, and transmit science data
-		public static void Update(Vessel v, VesselData vd, VesselResHandler resources, double elapsed_s)
+		public static void Update(Vessel v, VesselData vd, ResourceInfo ec, double elapsed_s)
 		{
 			// do nothing if science system is disabled
 			if (!Features.Science) return;
 
 			// avoid corner-case when RnD isn't live during scene changes
 			// - this avoid losing science if the buffer reach threshold during a scene change
-			if (HighLogic.CurrentGame.Mode != Game.Modes.SANDBOX && ResearchAndDevelopment.Instance == null) return;
+			if (HighLogic.CurrentGame.Mode != Game.Modes.SANDBOX && ResearchAndDevelopment.Instance == null)
+				return;
 
-			// get connection info
-			ConnectionInfo conn = vd.Connection;
-			if (conn == null) return;
-			if (String.IsNullOrEmpty(vd.transmitting)) return;
+			// clear list of files transmitted
+			vd.filesTransmitted.Clear();
 
-			Drive warpCache = Cache.WarpCache(v);
-			bool isWarpCache = false;
-
-			double transmitSize = conn.rate * elapsed_s;
-			while(warpCache.files.Count > 0 || // transmit EVERYTHING in the cache, regardless of transmitSize.
-			      (transmitSize > double.Epsilon && !String.IsNullOrEmpty(vd.transmitting)))
+			// check connection
+			if (vd.Connection == null
+				|| !vd.Connection.linked
+				|| vd.Connection.rate <= 0.0
+				|| !vd.deviceTransmit
+				|| ec.Amount < vd.Connection.ec * elapsed_s)
 			{
-				// get filename of data being downloaded
-				var exp_filename = vd.transmitting;
-				if (string.IsNullOrEmpty(exp_filename))
+				// reset all files transmit rate
+				foreach (Drive drive in Drive.GetDrives(vd, true))
+					foreach (File f in drive.files.Values)
+						f.transmitRate = 0.0;
+
+				// do nothing else
+				return;
+			}
+			
+			double transmitCapacity = vd.Connection.rate * elapsed_s;
+			double scienceCredited = 0.0;
+
+			GetFilesToTransmit(v, vd);
+
+			if (xmitFiles.Count == 0)
+				return;
+
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Science.Update-Loop");
+
+			// traverse the list in reverse because :
+			// - warp cache files are at the end, and they are always transmitted regerdless of transmit capacity
+			// - others files are next, sorted in science value per MB ascending order 
+			for (int i = xmitFiles.Count - 1; i >= 0; i--)
+			{
+				XmitFile xmitFile = xmitFiles[i];
+
+				if (xmitFile.file.size == 0.0)
+					continue;
+
+				// always transmit everything in the warp cache
+				if (!xmitFile.isInWarpCache && transmitCapacity <= 0.0)
 					break;
 
-				Drive drive = null;
-				if (warpCache.files.ContainsKey(exp_filename)) {
-					drive = warpCache;
-					isWarpCache = true;
+				// determine how much data is transmitted
+				double transmitted = xmitFile.isInWarpCache ? xmitFile.file.size : Math.Min(xmitFile.file.size, transmitCapacity);
+
+				if (transmitted == 0.0)
+					continue;
+
+				// consume transmit capacity
+				transmitCapacity -= transmitted;
+
+				// get science value
+				double xmitScienceValue = transmitted * xmitFile.sciencePerMB;
+
+				// consume data in the file
+				xmitFile.file.size -= transmitted;
+
+				// remove science collected (ignoring final science value clamped to subject completion)
+				xmitFile.file.subjectData.RemoveScienceCollectedInFlight(xmitScienceValue);
+
+				// fire subject completed events
+				int timesCompleted = xmitFile.file.subjectData.UpdateSubjectCompletion(xmitScienceValue);
+				if (timesCompleted > 0)
+					SubjectXmitCompleted(xmitFile.file, timesCompleted, v);
+
+				// save transmit rate for the file, and add it to the VesselData list of files being transmitted
+				if (xmitFile.isInWarpCache && xmitFile.realDriveFile != null)
+				{
+					xmitFile.realDriveFile.transmitRate = transmitted / elapsed_s;
+					vd.filesTransmitted.Add(xmitFile.realDriveFile);
 				}
 				else
 				{
-					drive = FindDrive(v, exp_filename);
-					isWarpCache = false;
+					xmitFile.file.transmitRate = transmitted / elapsed_s;
+					vd.filesTransmitted.Add(xmitFile.file);
 				}
 
-				if (drive == null) break;
+				// clamp science value to subject max value
+				xmitScienceValue = Math.Min(xmitScienceValue, xmitFile.file.subjectData.ScienceRemainingToRetrieve);
 
-				File file = drive.files[exp_filename];
-
-				if(isWarpCache) {
-					file.buff = file.size;
-					file.size = 0;
-					transmitSize -= file.size;
-				} else {
-					if (transmitSize < double.Epsilon)
-						break;
-
-					// determine how much data is transmitted
-					double transmitted = Math.Min(file.size, transmitSize);
-					transmitSize -= transmitted;
-
-					// consume data in the file
-					file.size -= transmitted;
-
-					// accumulate in the buffer
-					file.buff += transmitted;
-				}
-
-				// special case: file size on drive = 0 -> buffer is 0, so no need to do anyhting. just delete.
-				if (file.buff > double.Epsilon)
+				if (xmitScienceValue > 0.0)
 				{
-					// this is the science value remaining for this experiment
-					var remainingValue = Value(exp_filename, 0);
+					// add credits
+					scienceCredited += xmitScienceValue;
 
-					// this is the science value of this sample
-					double dataValue = Value(exp_filename, file.buff);
-					bool doCredit = file.size <= double.Epsilon || dataValue > buffer_science_value;;
-
-					// if buffer science value is high enough or file was transmitted completely
-					if (doCredit)
-					{
-						var totalValue = TotalValue(exp_filename);
-
-						// collect the science data
-						Credit(exp_filename, file.buff, true, v.protoVessel);
-
-						// reset the buffer
-						file.buff = 0.0;
-
-						// this was the last useful bit, there is no more value in the experiment
-						if (remainingValue >= 0.1 && remainingValue - dataValue < 0.1)
-						{
-							string subjectResultText; 
-							if (string.IsNullOrEmpty(file.resultText))
-							{
-								subjectResultText = Lib.TextVariant(
-								  "Our researchers will jump on it right now",
-								  "This cause some excitement",
-								  "These results are causing a brouhaha in R&D",
-								  "Our scientists look very confused",
-								  "The scientists won't believe these readings");
-							}
-							else
-							{
-								subjectResultText = file.resultText;
-							}
-
-							subjectResultText = Lib.WordWrapAtLength(subjectResultText, 70);
-							Message.Post(Lib.BuildString(Experiment(exp_filename).FullName(exp_filename), " completed\n", Lib.HumanReadableScience(totalValue)), subjectResultText);
-						}
-					}
-				}
-
-				// if file was transmitted completely
-				if (file.size <= double.Epsilon)
-				{
-					// remove the file
-					drive.files.Remove(exp_filename);
-					vd.transmitting = Science.Transmitting(v, true);
-				}
-			}
-		}
-
-		// return name of file being transmitted from vessel specified
-		public static string Transmitting(Vessel v, bool linked)
-		{
-			// never transmitting if science system is disabled
-			if (!Features.Science) return string.Empty;
-
-			// not transmitting if unlinked
-			if (!linked) return string.Empty;
-
-			// not transmitting if there is no ec left
-			if (!Lib.IsPowered(v)) return string.Empty;
-
-			foreach(var p in Cache.WarpCache(v).files)
-				return p.Key;
-
-			double now = Planetarium.GetUniversalTime();
-			double maxXmitValue = -1;
-			string result = string.Empty;
-
-			// get first file flagged for transmission, AND has a ts at least 5 seconds old or is > 0.001Mb in size
-			foreach (var drive in Drive.GetDrives(v, true))
-			{
-				foreach (var p in drive.files)
-				{
-					if (drive.GetFileSend(p.Key) && (p.Value.ts + 3 < now || p.Value.size > min_file_size))
-					{
-						// prioritize whichever file has the most science points per byte
-						var xmitValue = Value(p.Key, p.Value.size) / p.Value.size;
-						if(string.IsNullOrEmpty(result) || xmitValue > maxXmitValue)
-						{
-							result = p.Key;
-							maxXmitValue = xmitValue;
-						}
-					}
+					// credit the subject
+					xmitFile.file.subjectData.AddScienceToRnDSubject(xmitScienceValue);
 				}
 			}
 
-			return result;
+			UnityEngine.Profiling.Profiler.EndSample();
+
+			vd.scienceTransmitted += scienceCredited;
+
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Science.Update-AddScience");
+
+			// Add science points, but wait until we have at least 0.1 points to add because AddScience is VERY slow
+			// We don't use "TransactionReasons.ScienceTransmission" because AddScience fire multiple events not meant to be fired continuously
+			// this avoid many side issues (ex : chatterer transmit sound playing continously, strategia "+0.0 science" popup...)
+			ScienceDB.uncreditedScience += scienceCredited;
+			if (ScienceDB.uncreditedScience > 0.1)
+			{
+				if (GameHasRnD)
+					ResearchAndDevelopment.Instance.AddScience((float)ScienceDB.uncreditedScience, TransactionReasons.None);
+				
+				ScienceDB.uncreditedScience = 0.0;
+			}
+
+			UnityEngine.Profiling.Profiler.EndSample();
 		}
 
-		// credit science for the experiment subject specified
-		public static float Credit(string subject_id, double size, bool transmitted, ProtoVessel pv)
+		private static void GetFilesToTransmit(Vessel v, VesselData vd)
 		{
-			var credits = Value(subject_id, size);
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Science.GetFilesToTransmit");
+			Drive warpCache = Cache.WarpCache(v);
 
-			// credit the science
-			var subject = ResearchAndDevelopment.GetSubjectByID(subject_id);
-			if(subject == null)
+			xmitFiles.Clear();
+			List<SubjectData> filesToRemove = new List<SubjectData>();
+
+			foreach (Drive drive in Drive.GetDrives(vd, true))
 			{
-				Lib.Log("WARNING: science subject " + subject_id + " cannot be credited in R&D");
+				foreach (File f in drive.files.Values)
+				{
+					// always reset transmit rate
+					f.transmitRate = 0.0;
+
+					// delete empty files that aren't being transmitted
+					// note : this won't work in case the same subject is split over multiple files (on different drives)
+					if (f.size <= 0.0 && (!warpCache.files.ContainsKey(f.subjectData) || warpCache.files[f.subjectData].size <= 0.0))
+					{
+						filesToRemove.Add(f.subjectData);
+						continue;
+					}
+
+					// get files tagged for transmit
+					if (drive.GetFileSend(f.subjectData.Id))
+					{
+						xmitFiles.Add(new XmitFile(f, drive, f.subjectData.SciencePerMB, false));
+					}
+				}
+
+				// delete found empty files from the drive
+				foreach (SubjectData fileToRemove in filesToRemove)
+					drive.files.Remove(fileToRemove);
+
+				filesToRemove.Clear();
+			}
+
+			// sort files by science value per MB ascending order so high value files are transmitted first
+			// because XmitFile list is processed from end to start
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Science.GetFilesToTransmit-Sort");
+			xmitFiles.Sort((x, y) => x.sciencePerMB.CompareTo(y.sciencePerMB));
+			UnityEngine.Profiling.Profiler.EndSample();
+
+			// add all warpcache files to the beginning of the XmitFile list
+			foreach (File f in warpCache.files.Values)
+			{
+				// don't transmit empty files
+				if (f.size <= 0.0)
+					continue;
+
+				// find the file on a "real" drive that correspond to this warpcache file
+				// this allow to use the real file for displaying transmit info and saving state (filemanager, monitor, vesseldata...)
+				int driveFileIndex = xmitFiles.FindIndex(df => df.file.subjectData == f.subjectData);
+				if (driveFileIndex >= 0)
+					xmitFiles.Add(new XmitFile(f, warpCache, f.subjectData.SciencePerMB, true, xmitFiles[driveFileIndex].file));
+				else
+					xmitFiles.Add(new XmitFile(f, warpCache, f.subjectData.SciencePerMB, true)); // should not be happening, but better safe than sorry
+
+			}
+			UnityEngine.Profiling.Profiler.EndSample();
+		}
+
+
+
+		private static void SubjectXmitCompleted(File file, int timesCompleted, Vessel v)
+		{
+			if (!GameHasRnD)
+				return;
+
+			// fire science transmission game event. This is used by stock contracts and a few other things.
+			GameEvents.OnScienceRecieved.Fire(timesCompleted == 1 ? (float)file.subjectData.ScienceMaxValue : 0f, file.subjectData.RnDSubject, v.protoVessel, false);
+
+			// fire our API event
+			// Note (GOT) : disabled, nobody is using it and i'm not sure what is the added value compared to the stock event,
+			// unless we fire it for every transmission tick, and in this case this is a very bad idea from a performance standpoint
+			// API.OnScienceReceived.Notify(credits, subject, pv, true);
+
+			// notify the player
+			string subjectResultText;
+			if (string.IsNullOrEmpty(file.resultText))
+			{
+				subjectResultText = Lib.TextVariant(
+					"Our researchers will jump on it right now",
+					"This cause some excitement",
+					"These results are causing a brouhaha in R&D",
+					"Our scientists look very confused",
+					"The scientists won't believe these readings");
 			}
 			else
 			{
-				subject.science += credits / HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier;
-				subject.scientificValue = ResearchAndDevelopment.GetSubjectValue(subject.science, subject);
-				ResearchAndDevelopment.Instance.AddScience(credits, transmitted ? TransactionReasons.ScienceTransmission : TransactionReasons.VesselRecovery);
-
-				// fire game event
-				// - this could be slow or a no-op, depending on the number of listeners
-				//   in any case, we are buffering the transmitting data and calling this
-				//   function only once in a while
-				GameEvents.OnScienceRecieved.Fire(credits, subject, pv, false);
-
-				API.OnScienceReceived.Notify(credits, subject, pv, transmitted);
-
-				pv.vesselRef.KerbalismData().ScienceLog.AddCredits(credits, subject);
+				subjectResultText = file.resultText;
 			}
-
-			// return amount of science credited
-			return credits;
-		}
-
-		// return value of some data about a subject, in science credits
-		public static float Value(string subject_id, double size = 0)
-		{
-			if (string.IsNullOrEmpty(subject_id))
-				return 0;
-			
-			if(size < double.Epsilon)
-			{
-				var exp = Science.Experiment(subject_id);
-				size = exp.max_amount;
-			}
-
-			// get science subject
-			// - if null, we are in sandbox mode
-			var subject = ResearchAndDevelopment.GetSubjectByID(subject_id);
-			if (subject == null) return 0.0f;
-
-			double R = size / subject.dataScale * subject.subjectValue;
-			double S = subject.science;
-			double C = subject.scienceCap;
-			double credits = Math.Max(Math.Min(S + Math.Min(R, C), C) - S, 0.0);
-
-			credits *= HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier;
-
-			return (float)credits;
-		}
-
-		// return total value of some data about a subject, in science credits
-		public static float TotalValue(string subject_id)
-		{
-			var exp = Science.Experiment(subject_id);
-			var size = exp.max_amount;
-
-			// get science subject
-			// - if null, we are in sandbox mode
-			var subject = ResearchAndDevelopment.GetSubjectByID(subject_id);
-			if (subject == null) return 0.0f;
-
-			double credits = size / subject.dataScale * subject.subjectValue;
-			credits *= HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier;
-
-			return (float)credits;
+			subjectResultText = Lib.WordWrapAtLength(subjectResultText, 70);
+			Message.Post(Lib.BuildString(
+				file.subjectData.FullTitle,
+				" transmitted\n",
+				timesCompleted == 1 ? Lib.HumanReadableScience(file.subjectData.ScienceMaxValue, false) : Lib.Color("no science gain : we already had this data", Lib.Kolor.Orange, true)),
+				subjectResultText);
 		}
 
 		// return module acting as container of an experiment
@@ -291,351 +307,6 @@ namespace KERBALISM
 			// if none was found, default to the first module implementing the science data container interface
 			// - this support third-party modules that implement IScienceDataContainer, but don't derive from ModuleScienceExperiment
 			return p.FindModuleImplementing<IScienceDataContainer>();
-		}
-
-
-		// return info about an experiment
-		public static ExperimentInfo Experiment(string subject_id)
-		{
-			ExperimentInfo info;
-			if (!experiments.TryGetValue(subject_id, out info))
-			{
-				info = new ExperimentInfo(subject_id);
-				experiments.Add(subject_id, info);
-			}
-			return info;
-		}
-
-		public static string Generate_subject_id(string experiment_id, Vessel v)
-		{
-			var body = v.mainBody;
-			ScienceExperiment experiment = ResearchAndDevelopment.GetExperiment(experiment_id);
-			ExperimentSituation sit = GetExperimentSituation(v);
-
-			var sitStr = sit.ToString();
-			if(!string.IsNullOrEmpty(sitStr))
-			{
-				if (sit.BiomeIsRelevant(Experiment(experiment_id)))
-					sitStr += ScienceUtil.GetExperimentBiome(v.mainBody, v.latitude, v.longitude);
-			}
-
-			// generate subject id
-			return Lib.BuildString(experiment_id, "@", body.name, sitStr);
-		}
-
-		public static string Generate_subject(string experiment_id, Vessel v)
-		{
-			var subject_id = Generate_subject_id(experiment_id, v);
-
-			// in sandbox, do nothing else
-				if (ResearchAndDevelopment.Instance == null) return subject_id;
-
-			// if the subject id was never added to RnD
-			if (ResearchAndDevelopment.GetSubjectByID(subject_id) == null)
-			{
-				// get subjects container using reflection
-				// - we tried just changing the subject.id instead, and
-				//   it worked but the new id was obviously used only after
-				//   putting RnD through a serialization->deserialization cycle
-				var subjects = Lib.ReflectionValue<Dictionary<string, ScienceSubject>>
-				(
-				  ResearchAndDevelopment.Instance,
-				  "scienceSubjects"
-				);
-
-				var experiment = ResearchAndDevelopment.GetExperiment(experiment_id);
-				var sit = GetExperimentSituation(v);
-				var biome = ScienceUtil.GetExperimentBiome(v.mainBody, v.latitude, v.longitude);
-				float multiplier = sit.Multiplier(Experiment(experiment_id));
-				var cap = multiplier * experiment.baseValue;
-
-				// create new subject
-				ScienceSubject subject = new ScienceSubject
-				(
-				  		subject_id,
-						Lib.BuildString(experiment.experimentTitle, " (", Lib.SpacesOnCaps(sit + biome), ")"),
-						experiment.dataScale,
-				  		multiplier,
-						cap
-				);
-
-				// add it to RnD
-				subjects.Add(subject_id, subject);
-			}
-
-			return subject_id;
-		}
-
-		public static string TestRequirements(string experiment_id, string requirements, Vessel v)
-		{
-			CelestialBody body = v.mainBody;
-			VesselData vd = v.KerbalismData();
-
-			List<string> list = Lib.Tokenize(requirements, ',');
-			foreach (string s in list)
-			{
-				var parts = Lib.Tokenize(s, ':');
-
-				var condition = parts[0];
-				string value = string.Empty;
-				if(parts.Count > 1) value = parts[1];
-
-				bool good = true;
-				switch (condition)
-				{
-					case "OrbitMinInclination": good = Math.Abs(v.orbit.inclination) >= double.Parse(value); break;
-					case "OrbitMaxInclination": good = Math.Abs(v.orbit.inclination) <= double.Parse(value); break;
-					case "OrbitMinEccentricity": good = v.orbit.eccentricity >= double.Parse(value); break;
-					case "OrbitMaxEccentricity": good = v.orbit.eccentricity <= double.Parse(value); break;
-					case "OrbitMinArgOfPeriapsis": good = v.orbit.argumentOfPeriapsis >= double.Parse(value); break;
-					case "OrbitMaxArgOfPeriapsis": good = v.orbit.argumentOfPeriapsis <= double.Parse(value); break;
-
-					case "TemperatureMin": good = vd.EnvTemperature >= double.Parse(value); break;
-					case "TemperatureMax": good = vd.EnvTemperature <= double.Parse(value); break;
-					case "AltitudeMin": good = v.altitude >= double.Parse(value); break;
-					case "AltitudeMax": good = v.altitude <= double.Parse(value); break;
-					case "RadiationMin": good = vd.EnvRadiation >= double.Parse(value); break;
-					case "RadiationMax": good = vd.EnvRadiation <= double.Parse(value); break;
-					case "Microgravity": good = vd.EnvZeroG; break;
-					case "Body": good = TestBody(v.mainBody.name, value); break;
-					case "Shadow": good = vd.EnvInFullShadow; break;
-					case "Sunlight": good = vd.EnvInSunlight; break;
-					case "CrewMin": good = vd.CrewCount >= int.Parse(value); break;
-					case "CrewMax": good = vd.CrewCount <= int.Parse(value); break;
-					case "CrewCapacityMin": good = vd.CrewCapacity >= int.Parse(value); break;
-					case "CrewCapacityMax": good = vd.CrewCapacity <= int.Parse(value); break;
-					case "VolumePerCrewMin": good = vd.VolumePerCrew >= double.Parse(value); break;
-					case "VolumePerCrewMax": good = vd.VolumePerCrew <= double.Parse(value); break;
-					case "Greenhouse": good = vd.Greenhouses.Count > 0; break;
-					case "Surface": good = Lib.Landed(v); break;
-					case "Atmosphere": good = body.atmosphere && v.altitude < body.atmosphereDepth; break;
-					case "AtmosphereBody": good = body.atmosphere; break;
-					case "AtmosphereAltMin": good = body.atmosphere && (v.altitude / body.atmosphereDepth) >= double.Parse(value); break;
-					case "AtmosphereAltMax": good = body.atmosphere && (v.altitude / body.atmosphereDepth) <= double.Parse(value); break;
-
-					case "BodyWithAtmosphere": good = body.atmosphere; break;
-					case "BodyWithoutAtmosphere": good = !body.atmosphere; break;
-						
-					case "SunAngleMin": good = vd.EnvSunBodyAngle >= double.Parse(value); break;
-					case "SunAngleMax": good = vd.EnvSunBodyAngle <= double.Parse(value); break;
-
-					case "Vacuum": good = !body.atmosphere || v.altitude > body.atmosphereDepth; break;
-					case "Ocean": good = body.ocean && v.altitude < 0.0; break;
-					case "PlanetarySpace": good = !Lib.IsSun(body) && !Lib.Landed(v) && v.altitude > body.atmosphereDepth; break;
-					case "AbsoluteZero": good = vd.EnvTemperature < 30.0; break;
-					case "InnerBelt": good = vd.EnvInnerBelt; break;
-					case "OuterBelt": good = vd.EnvOuterBelt; break;
-					case "MagneticBelt": good = vd.EnvInnerBelt || vd.EnvOuterBelt; break;
-					case "Magnetosphere": good = vd.EnvMagnetosphere; break;
-					case "Thermosphere": good = vd.EnvThermosphere; break;
-					case "Exosphere": good = vd.EnvExosphere; break;
-					case "InterPlanetary": good = Lib.IsSun(body) && !vd.EnvInterstellar; break;
-					case "InterStellar": good = Lib.IsSun(body) && vd.EnvInterstellar; break;
-
-					case "SurfaceSpeedMin": good = v.srfSpeed >= double.Parse(value); break;
-					case "SurfaceSpeedMax": good = v.srfSpeed <= double.Parse(value); break;
-					case "VerticalSpeedMin": good = v.verticalSpeed >= double.Parse(value); break;
-					case "VerticalSpeedMax": good = v.verticalSpeed <= double.Parse(value); break;
-					case "SpeedMin": good = v.speed >= double.Parse(value); break;
-					case "SpeedMax": good = v.speed <= double.Parse(value); break;
-					case "DynamicPressureMin": good = v.dynamicPressurekPa >= double.Parse(value); break;
-					case "DynamicPressureMax": good = v.dynamicPressurekPa <= double.Parse(value); break;
-					case "StaticPressureMin": good = v.staticPressurekPa >= double.Parse(value); break;
-					case "StaticPressureMax": good = v.staticPressurekPa <= double.Parse(value); break;
-					case "AtmDensityMin": good = v.atmDensity >= double.Parse(value); break;
-					case "AtmDensityMax": good = v.atmDensity <= double.Parse(value); break;
-					case "AltAboveGroundMin": good = v.heightFromTerrain >= double.Parse(value); break;
-					case "AltAboveGroundMax": good = v.heightFromTerrain <= double.Parse(value); break;
-
-					case "Part": good = Lib.HasPart(v, value); break;
-					case "Module": good = Lib.FindModules(v.protoVessel, value).Count > 0; break;
-						
-					case "AstronautComplexLevelMin":
-						good = (ScenarioUpgradeableFacilities.Instance == null) || ScenarioUpgradeableFacilities.GetFacilityLevel(SpaceCenterFacility.AstronautComplex) >= (double.Parse(value) - 1) / 2.0;
-						break;
-					case "AstronautComplexLevelMax":
-						good = (ScenarioUpgradeableFacilities.Instance == null) || ScenarioUpgradeableFacilities.GetFacilityLevel(SpaceCenterFacility.AstronautComplex) <= (double.Parse(value) - 1) / 2.0;
-						break;
-
-					case "TrackingStationLevelMin":
-						good = (ScenarioUpgradeableFacilities.Instance == null) || ScenarioUpgradeableFacilities.GetFacilityLevel(SpaceCenterFacility.TrackingStation) >= (double.Parse(value) - 1) / 2.0;
-						break;
-					case "TrackingStationLevelMax":
-						good = (ScenarioUpgradeableFacilities.Instance == null) || ScenarioUpgradeableFacilities.GetFacilityLevel(SpaceCenterFacility.TrackingStation) <= (double.Parse(value) - 1) / 2.0;
-						break;
-
-					case "MissionControlLevelMin":
-						good = (ScenarioUpgradeableFacilities.Instance == null) || ScenarioUpgradeableFacilities.GetFacilityLevel(SpaceCenterFacility.MissionControl) >= (double.Parse(value) - 1) / 2.0;
-						break;
-					case "MissionControlLevelMax":
-						good = (ScenarioUpgradeableFacilities.Instance == null) || ScenarioUpgradeableFacilities.GetFacilityLevel(SpaceCenterFacility.MissionControl) <= (double.Parse(value) - 1) / 2.0;
-						break;
-
-					case "AdministrationLevelMin":
-						good = (ScenarioUpgradeableFacilities.Instance == null) || ScenarioUpgradeableFacilities.GetFacilityLevel(SpaceCenterFacility.Administration) >= (double.Parse(value) - 1) / 2.0;
-						break;
-					case "AdministrationLevelMax":
-						good = (ScenarioUpgradeableFacilities.Instance == null) || ScenarioUpgradeableFacilities.GetFacilityLevel(SpaceCenterFacility.Administration) <= (double.Parse(value) - 1) / 2.0;
-						break;
-
-					case "MaxAsteroidDistance": good = AsteroidDistance(v) <= double.Parse(value); break;
-				}
-
-				if (!good) return s;
-			}
-
-			var subject_id = Science.Generate_subject_id(experiment_id, v);
-
-			var exp = Science.Experiment(subject_id);
-			var sit = GetExperimentSituation(v);
-
-			if (!v.loaded && sit.AtmosphericFlight())
-				return "Background flight";
-
-			if (!sit.IsAvailable(exp))
-				return "Invalid situation";
-
-
-			// At this point we know the situation is valid and the experiment can be done
-			// create it in R&D
-			Science.Generate_subject(experiment_id, v);
-
-			return string.Empty;
-		}
-
-		public static ExperimentSituation GetExperimentSituation(Vessel v)
-		{
-			return new ExperimentSituation(v);
-		}
-
-		private static bool TestBody(string bodyName, string requirement)
-		{
-			foreach(string s in Lib.Tokenize(requirement, ';'))
-			{
-				if (s == bodyName) return true;
-				if(s[0] == '!' && s.Substring(1) == bodyName) return false;
-			}
-			return false;
-		}
-
-		private static double AsteroidDistance(Vessel vessel)
-		{
-			var target = vessel.targetObject;
-			var vesselPosition = Lib.VesselPosition(vessel);
-
-			// while there is a target, only consider the targeted vessel
-			if(!vessel.loaded || target != null)
-			{
-				// asteroid MUST be the target if vessel is unloaded
-				if (target == null) return double.MaxValue;
-
-				var targetVessel = target.GetVessel();
-				if (targetVessel == null) return double.MaxValue;
-
-				if (targetVessel.vesselType != VesselType.SpaceObject) return double.MaxValue;
-
-				// this assumes that all vessels of type space object are asteroids.
-				// should be a safe bet unless Squad introduces alien UFOs.
-				var asteroidPosition = Lib.VesselPosition(targetVessel);
-				return Vector3d.Distance(vesselPosition, asteroidPosition);
-			}
-
-			// there's no target and vessel is not unloaded
-			// look for nearby asteroids
-			double result = double.MaxValue;
-			foreach(Vessel v in FlightGlobals.VesselsLoaded)
-			{
-				if (v.vesselType != VesselType.SpaceObject) continue;
-				var asteroidPosition = Lib.VesselPosition(v);
-				double distance = Vector3d.Distance(vesselPosition, asteroidPosition);
-				if (distance < result) result = distance;
-			}
-			return result;
-		}
-
-		public static string RequirementText(string requirement)
-		{
-			var parts = Lib.Tokenize(requirement, ':');
-
-			var condition = parts[0];
-			string value = string.Empty;
-			if (parts.Count > 1) value = parts[1];
-						
-			switch (condition)
-			{
-				case "OrbitMinInclination": return Lib.BuildString("Min. inclination ", value, "°");
-				case "OrbitMaxInclination": return Lib.BuildString("Max. inclination ", value, "°");
-				case "OrbitMinEccentricity": return Lib.BuildString("Min. eccentricity ", value);
-				case "OrbitMaxEccentricity": return Lib.BuildString("Max. eccentricity ", value);
-				case "OrbitMinArgOfPeriapsis": return Lib.BuildString("Min. argument of Pe ", value);
-				case "OrbitMaxArgOfPeriapsis": return Lib.BuildString("Max. argument of Pe ", value);
-				case "AltitudeMin": return Lib.BuildString("Min. altitude ", Lib.HumanReadableRange(Double.Parse(value)));
-				case "AltitudeMax":
-					var v = Double.Parse(value);
-					if (v >= 0) return Lib.BuildString("Max. altitude ", Lib.HumanReadableRange(v));
-					return Lib.BuildString("Min. depth ", Lib.HumanReadableRange(-v));
-				case "RadiationMin": return Lib.BuildString("Min. radiation ", Lib.HumanReadableRadiation(Double.Parse(value)));
-				case "RadiationMax": return Lib.BuildString("Max. radiation ", Lib.HumanReadableRadiation(Double.Parse(value)));
-				case "Body": return PrettyBodyText(value);
-				case "TemperatureMin": return Lib.BuildString("Min. temperature ", Lib.HumanReadableTemp(Double.Parse(value)));
-				case "TemperatureMax": return Lib.BuildString("Max. temperature ", Lib.HumanReadableTemp(Double.Parse(value)));
-				case "CrewMin": return Lib.BuildString("Min. crew ", value);
-				case "CrewMax": return Lib.BuildString("Max. crew ", value);
-				case "CrewCapacityMin": return Lib.BuildString("Min. crew capacity ", value);
-				case "CrewCapacityMax": return Lib.BuildString("Max. crew capacity ", value);
-				case "VolumePerCrewMin": return Lib.BuildString("Min. vol./crew ", Lib.HumanReadableVolume(double.Parse(value)));
-				case "VolumePerCrewMax": return Lib.BuildString("Max. vol./crew ", Lib.HumanReadableVolume(double.Parse(value)));
-				case "MaxAsteroidDistance": return Lib.BuildString("Max. asteroid distance ", Lib.HumanReadableRange(double.Parse(value)));
-
-				case "SunAngleMin": return Lib.BuildString("Min. sun angle ", Lib.HumanReadableAngle(double.Parse(value)));
-				case "SunAngleMax": return Lib.BuildString("Max. sun angle ", Lib.HumanReadableAngle(double.Parse(value)));
-					
-				case "AtmosphereBody": return "Body with atmosphere";
-				case "AtmosphereAltMin": return Lib.BuildString("Min. atmosphere altitude ", value);
-				case "AtmosphereAltMax": return Lib.BuildString("Max. atmosphere altitude ", value);
-					
-				case "SurfaceSpeedMin": return Lib.BuildString("Min. surface speed ", Lib.HumanReadableSpeed(double.Parse(value)));
-				case "SurfaceSpeedMax": return Lib.BuildString("Max. surface speed ", Lib.HumanReadableSpeed(double.Parse(value)));
-				case "VerticalSpeedMin": return Lib.BuildString("Min. vertical speed ", Lib.HumanReadableSpeed(double.Parse(value)));
-				case "VerticalSpeedMax": return Lib.BuildString("Max. vertical speed ", Lib.HumanReadableSpeed(double.Parse(value)));
-				case "SpeedMin": return Lib.BuildString("Min. speed ", Lib.HumanReadableSpeed(double.Parse(value)));
-				case "SpeedMax": return Lib.BuildString("Max. speed ", Lib.HumanReadableSpeed(double.Parse(value)));
-				case "DynamicPressureMin": return Lib.BuildString("Min. dynamic pressure ", Lib.HumanReadablePressure(double.Parse(value)));
-				case "DynamicPressureMax": return Lib.BuildString("Max. dynamic pressure ", Lib.HumanReadablePressure(double.Parse(value)));
-				case "StaticPressureMin": return Lib.BuildString("Min. pressure ", Lib.HumanReadablePressure(double.Parse(value)));
-				case "StaticPressureMax": return Lib.BuildString("Max. pressure ", Lib.HumanReadablePressure(double.Parse(value)));
-				case "AtmDensityMin": return Lib.BuildString("Min. atm. density ", Lib.HumanReadablePressure(double.Parse(value)));
-				case "AtmDensityMax": return Lib.BuildString("Max. atm. density ", Lib.HumanReadablePressure(double.Parse(value)));
-				case "AltAboveGroundMin": return Lib.BuildString("Min. ground altitude ", Lib.HumanReadableRange(double.Parse(value)));
-				case "AltAboveGroundMax": return Lib.BuildString("Max. ground altitude ", Lib.HumanReadableRange(double.Parse(value)));
-
-				case "MissionControlLevelMin": return Lib.BuildString(ScenarioUpgradeableFacilities.GetFacilityName(SpaceCenterFacility.MissionControl), " level ", value);
-				case "MissionControlLevelMax": return Lib.BuildString(ScenarioUpgradeableFacilities.GetFacilityName(SpaceCenterFacility.MissionControl), " max. level ", value);
-				case "AdministrationLevelMin": return Lib.BuildString(ScenarioUpgradeableFacilities.GetFacilityName(SpaceCenterFacility.Administration), " level ", value);
-				case "AdministrationLevelMax": return Lib.BuildString(ScenarioUpgradeableFacilities.GetFacilityName(SpaceCenterFacility.Administration), " max. level ", value);
-				case "TrackingStationLevelMin": return Lib.BuildString(ScenarioUpgradeableFacilities.GetFacilityName(SpaceCenterFacility.TrackingStation), " level ", value);
-				case "TrackingStationLevelMax": return Lib.BuildString(ScenarioUpgradeableFacilities.GetFacilityName(SpaceCenterFacility.TrackingStation), " max. level ", value);
-				case "AstronautComplexLevelMin": return Lib.BuildString(ScenarioUpgradeableFacilities.GetFacilityName(SpaceCenterFacility.AstronautComplex), " level ", value);
-				case "AstronautComplexLevelMax": return Lib.BuildString(ScenarioUpgradeableFacilities.GetFacilityName(SpaceCenterFacility.AstronautComplex), " max. level ", value);
-
-				case "Part": return Lib.BuildString("Needs part ", value);
-				case "Module": return Lib.BuildString("Needs module ", value);
-
-				default:
-					return Lib.SpacesOnCaps(condition);
-			}
-		}
-
-		public static string PrettyBodyText(string requires)
-		{
-			string result = "";
-			foreach(var s in Lib.Tokenize(requires, ';'))
-			{
-				if (result.Length > 0) result += ", ";
-				if (s[0] == '!') result += "not " + s.Substring(1);
-				else result += s;
-			}
-			return result;
 		}
 
 		/// <summary>
@@ -658,52 +329,6 @@ namespace KERBALISM
 					  "The scientists won't believe these readings");
 			}
 			return result;
-		}
-
-		public static void RegisterSampleMass(string experiment_id, double sampleMass)
-		{
-			// get experiment id out of subject id
-			int i = experiment_id.IndexOf('@');
-			var id = i > 0 ? experiment_id.Substring(0, i) : experiment_id;
-
-			if (sampleMasses.ContainsKey(id))
-			{
-				if (Math.Abs(sampleMasses[id] - sampleMass) > double.Epsilon)
-					Lib.Log("Science Warning: different sample masses for Experiment " + id + " defined.");
-			}
-			else
-			{
-				sampleMasses.Add(id, sampleMass);
-				Lib.Log("Science: registered sample mass for " + id + ": " + sampleMass.ToString("F3"));
-			}
-		}
-
-		public static double GetSampleMass(string experiment_id)
-		{
-			// get experiment id out of subject id
-			int i = experiment_id.IndexOf('@');
-			var id = i > 0 ? experiment_id.Substring(0, i) : experiment_id;
-
-			if (!sampleMasses.ContainsKey(id)) return 0;
-			return sampleMasses[id];
-		}
-
-		// experiment info cache
-		static readonly Dictionary<string, ExperimentInfo> experiments = new Dictionary<string, ExperimentInfo>();
-		readonly static Dictionary<string, double> sampleMasses = new Dictionary<string, double>();
-		static readonly Dictionary<Guid, ScienceLog> scienceLog = new Dictionary<Guid, ScienceLog>();
-
-		private class DeferredCreditValues {
-			internal string subject_id;
-			internal double size;
-			internal ProtoVessel pv;
-
-			public DeferredCreditValues(string subject_id, double size, ProtoVessel pv)
-			{
-				this.subject_id = subject_id;
-				this.size = size;
-				this.pv = pv;
-			}
 		}
 	}
 

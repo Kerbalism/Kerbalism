@@ -22,6 +22,9 @@ namespace KERBALISM
 			// for each part from previous frame
 			foreach (var prev_p in prev_parts)
 			{
+				if (prev_p.Key == 0)
+					continue;
+
 				// get the part
 				Part prev_part = FlightGlobals.FindPartByID(prev_p.Key);
 
@@ -44,6 +47,9 @@ namespace KERBALISM
 			// for each part in this farme
 			foreach (var p in parts)
 			{
+				if (p.Key == 0)
+					continue;
+
 				// get the part
 				Part part = FlightGlobals.FindPartByID(p.Key);
 

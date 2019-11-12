@@ -6,7 +6,7 @@ namespace KERBALISM
 	{
 		public static void Logman(this Panel p, Vessel v)
 		{
-			p.Title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(40)), " <color=#cccccc>ALL LOGS</color>"));
+			p.Title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(40)), " ", Lib.Color("ALL LOGS", Lib.Kolor.LightGrey)));
 			p.Width(Styles.ScaleWidthFloat(465.0f));
 			p.paneltype = Panel.PanelType.log;
 
@@ -27,7 +27,7 @@ namespace KERBALISM
 					}
 					else
 					{
-						p.AddContent("<color=#DCDCDC><b>ALERT</b></color>   ", log.msg.Replace("\n", ". "));
+						p.AddContent(Lib.Color("ALERT   ", Lib.Kolor.Yellow), log.msg.Replace("\n", ". "));
 					}
 					if (Message.all_logs.Count > 1)
 					{

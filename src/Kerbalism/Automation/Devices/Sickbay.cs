@@ -6,97 +6,46 @@ using KSP.Localization;
 
 namespace KERBALISM
 {
-
-
-	public sealed class SickbayDevice : Device
+	public sealed class SickbayDevice : LoadedDevice<Sickbay>
 	{
-		public SickbayDevice(Sickbay sickbay_ctrl)
-		{
-			this.sickbay_ctrl = sickbay_ctrl;
-		}
+		public SickbayDevice(Sickbay module) : base(module) { }
 
-		public override string Name()
-		{
-			return sickbay_ctrl.title.ToLower();
-		}
-
-		public override uint Part()
-		{
-			return sickbay_ctrl.part.flightID;
-		}
-
-		public override string Info()
-		{
-			return sickbay_ctrl.running
-			  ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_RUNNING") + "</color>"
-			  : "<color=red>" + Localizer.Format("#KERBALISM_Generic_STOPPED") + "</color>";
-		}
+		public override string Status
+			=> Lib.Color(module.running, Localizer.Format("#KERBALISM_Generic_RUNNING"), Lib.Kolor.Green, Localizer.Format("#KERBALISM_Generic_STOPPED"), Lib.Kolor.Yellow);
 
 		public override void Ctrl(bool value)
 		{
-			sickbay_ctrl.running = value;
+			module.running = value;
 		}
 
 		public override void Toggle()
 		{
-			Ctrl(!sickbay_ctrl.running);
+			Ctrl(!module.running);
 		}
 
-		public override bool IsVisible()
-		{
-			return sickbay_ctrl.slots > 0;
-		}
-
-		Sickbay sickbay_ctrl;
+		public override bool IsVisible => module.slots > 0;
 	}
 
-
-	public sealed class ProtoSickbayDevice : Device
+	public sealed class ProtoSickbayDevice : ProtoDevice<Sickbay>
 	{
-		public ProtoSickbayDevice(ProtoPartModuleSnapshot process_ctrl, Sickbay prefab, uint part_id)
-		{
-			this.sickbay_ctrl = process_ctrl;
-			this.prefab = prefab;
-			this.part_id = part_id;
-		}
+		public ProtoSickbayDevice(Sickbay prefab, ProtoPartSnapshot protoPart, ProtoPartModuleSnapshot protoModule)
+			: base(prefab, protoPart, protoModule) { }
 
-		public override string Name()
-		{
-			return prefab.title.ToLower();
-		}
-
-		public override uint Part()
-		{
-			return part_id;
-		}
-
-		public override string Info()
-		{
-			return Lib.Proto.GetBool(sickbay_ctrl, "running")
-			  ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_RUNNING") + "</color>"
-			  : "<color=red>" + Localizer.Format("#KERBALISM_Generic_STOPPED") + "</color>";
-		}
+		public override string Status
+			=> Lib.Color(Lib.Proto.GetBool(protoModule, "running"), Localizer.Format("#KERBALISM_Generic_RUNNING"), Lib.Kolor.Green, Localizer.Format("#KERBALISM_Generic_STOPPED"), Lib.Kolor.Yellow);
 
 		public override void Ctrl(bool value)
 		{
-			Lib.Proto.Set(sickbay_ctrl, "running", value);
-			ProtoPartSnapshot part_prefab = FlightGlobals.FindProtoPartByID(part_id);
-			part_prefab.resources.Find(k => k.resourceName == prefab.resource).flowState = value;
+			Lib.Proto.Set(protoModule, "running", value);
+			protoPart.resources.Find(k => k.resourceName == prefab.resource).flowState = value;
 		}
 
 		public override void Toggle()
 		{
-			Ctrl(!Lib.Proto.GetBool(sickbay_ctrl, "running"));
+			Ctrl(!Lib.Proto.GetBool(protoModule, "running"));
 		}
 
-		public override bool IsVisible()
-		{
-			return Lib.Proto.GetUInt(sickbay_ctrl, "slots", 0) > 0;
-		}
-
-		private readonly ProtoPartModuleSnapshot sickbay_ctrl;
-		private Sickbay prefab;
-		private readonly uint part_id;
+		public override bool IsVisible => Lib.Proto.GetUInt(protoModule, "slots", 0) > 0;
 	}
 
 

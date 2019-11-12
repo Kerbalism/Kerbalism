@@ -20,16 +20,23 @@ namespace KERBALISM
 		public static void Log(string msg, params object[] param)
 		{
 			StackTrace stackTrace = new StackTrace();
-			UnityEngine.Debug.Log(string.Format("{0} -> verbose: {1}.{2} - {3}", "[Kerbalism] ", stackTrace.GetFrame(1).GetMethod().ReflectedType.Name,
+			UnityEngine.Debug.Log(string.Format("[Kerbalism] {0}.{1} {2}", stackTrace.GetFrame(1).GetMethod().ReflectedType.Name,
 				stackTrace.GetFrame(1).GetMethod().Name, string.Format(msg, param)));
 		}
 
-		[Conditional("DEBUG")]
-		public static void DebugLog(string message, params object[] param)
+		[Conditional("DEBUG"), Conditional("DEVBUILD")]
+		public static void LogDebug(string msg, params object[] param)
+		{
+			Log(msg, param);
+		}
+
+		[Conditional("DEBUG"), Conditional("DEVBUILD")]
+		public static void LogDebugStack(string message, params object[] param)
 		{
 			StackTrace stackTrace = new StackTrace();
-			UnityEngine.Debug.Log(string.Format("{0} -> debug: {1}.{2} - {3}", "[Kerbalism] ", stackTrace.GetFrame(1).GetMethod().ReflectedType.Name,
+			UnityEngine.Debug.Log(string.Format("[Kerbalism] debug {0}.{1} {2}", stackTrace.GetFrame(1).GetMethod().ReflectedType.Name,
 				stackTrace.GetFrame(1).GetMethod().Name, string.Format(message, param)));
+			UnityEngine.Debug.Log(stackTrace);
 		}
 
 		/// <summary> This constant is being set by the build system when a dev release is requested</summary>
@@ -47,17 +54,6 @@ namespace KERBALISM
 			{
 				if (kerbalismVersion == null) kerbalismVersion = new Version(Assembly.GetAssembly(typeof(Kerbalism)).GetName().Version.Major, Assembly.GetAssembly(typeof(Kerbalism)).GetName().Version.Minor);
 				return kerbalismVersion;
-			}
-		}
-
-		static Version kspVersion;
-		/// <summary> current KSP version (not including build number)</summary>
-		public static Version KSPVersion
-		{
-			get
-			{
-				if (kspVersion == null) kspVersion = new Version(Versioning.version_major, Versioning.version_minor, Versioning.Revision);
-				return kspVersion;
 			}
 		}
 
@@ -237,33 +233,65 @@ namespace KERBALISM
 		#endregion
 
 		#region TIME
+
+		private static double hoursInDay = -1.0;
 		///<summary>return hours in a day</summary>
-		public static double HoursInDay()
+		public static double HoursInDay
 		{
-			if(FlightGlobals.ready || IsEditor())
+			get
 			{
-				var homeBody = FlightGlobals.GetHomeBody();
-				return Math.Round(homeBody.rotationPeriod / 3600, 0);
+				if (hoursInDay == -1.0)
+				{
+					if (FlightGlobals.ready || IsEditor())
+					{
+						var homeBody = FlightGlobals.GetHomeBody();
+						hoursInDay = Math.Round(homeBody.rotationPeriod / 3600, 0);
+					}
+					else
+					{
+						return GameSettings.KERBIN_TIME ? 6.0 : 24.0;
+					}
+
+				}
+				return hoursInDay;
 			}
-			return GameSettings.KERBIN_TIME ? 6.0 : 24.0;
 		}
 
+		private static double daysInYear = -1.0;
 		///<summary>return year length</summary>
-		public static double DaysInYear()
+		public static double DaysInYear
 		{
-			if (FlightGlobals.ready || IsEditor())
+			get
 			{
-				var homeBody = FlightGlobals.GetHomeBody();
-				return Math.Floor(homeBody.orbit.period / (HoursInDay() * 60.0 * 60.0));
+				if (daysInYear == -1.0)
+				{
+					if (FlightGlobals.ready || IsEditor())
+					{
+						var homeBody = FlightGlobals.GetHomeBody();
+						daysInYear = Math.Floor(homeBody.orbit.period / (HoursInDay * 60.0 * 60.0));
+					}
+					else
+					{
+						return GameSettings.KERBIN_TIME ? 426.0 : 365.0;
+					}
+				}
+				return daysInYear;
 			}
-			return GameSettings.KERBIN_TIME ? 426.0 : 365.0;
 		}
+
 
 		///<summary>stop time warping</summary>
-		public static void StopWarp(int rate = 0)
+		public static void StopWarp(double maxSpeed = 0)
 		{
-			TimeWarp.fetch.CancelAutoWarp();
-			TimeWarp.SetRate(rate, true, false);
+			var warp = TimeWarp.fetch;
+			warp.CancelAutoWarp();
+			int maxRate = 0;
+			for (int i = 0; i < warp.warpRates.Length; ++i)
+			{
+				if (warp.warpRates[i] < maxSpeed)
+					maxRate = i;
+			}
+			TimeWarp.SetRate(maxRate, true, false);
 		}
 
 		///<summary>disable time warping above a specified level</summary>
@@ -305,8 +333,8 @@ namespace KERBALISM
 			double t = Planetarium.GetUniversalTime();
 			const double len_min = 60.0;
 			const double len_hour = len_min * 60.0;
-			double len_day = len_hour * Lib.HoursInDay();
-			double len_year = len_day * Lib.DaysInYear();
+			double len_day = len_hour * Lib.HoursInDay;
+			double len_year = len_day * Lib.DaysInYear;
 
 			double year = Math.Floor(t / len_year);
 			t -= year * len_year;
@@ -392,6 +420,11 @@ namespace KERBALISM
 			return (T)(m.GetType().GetMethod(call_name, flags).Invoke(m, null));
 		}
 
+		public static void ReflectionCall(object m, string call_name, Type[] types, object[] parameters)
+		{
+			m.GetType().GetMethod(call_name, flags, null, types, null).Invoke(m, parameters);
+		}
+
 		public static T ReflectionCall<T>(object m, string call_name, Type[] types, object[] parameters)
 		{
 			return (T)(m.GetType().GetMethod(call_name, flags, null, types, null).Invoke(m, parameters));
@@ -458,7 +491,7 @@ namespace KERBALISM
 		}
 
 		///<summary>standardized kerbalism string colors</summary>
-		public enum KColor
+		public enum Kolor
 		{
 			None,
 			Green,
@@ -467,46 +500,82 @@ namespace KERBALISM
 			Red,
 			PosRate,
 			NegRate,
-			ScienceBlue,
+			Science,
 			Cyan,
-			LightGrey
+			LightGrey,
+			DarkGrey
 		}
 
-		///<summary>return the hex representation for kerbalism colors</summary>
-		public static string HexColor(KColor color)
+		///<summary>return a colored "[V]" or "[X]" depending on the condition. Only work if placed at the begining of a line. To align other lines, use the "<pos=5em>" tag</summary>
+		public static string Checkbox(bool condition)
+		{
+			return condition
+				? " <color=#88FF00><mark=#88FF0033><mspace=1em><b><i>V </i></b></mspace></mark></color><pos=5em>"
+				: " <color=#FF8000><mark=#FF800033><mspace=1em><b><i>X </i></b></mspace></mark></color><pos=5em>";
+		}
+
+		///<summary>return the hex representation for kerbalism Kolors</summary>
+		public static string KolorToHex(Kolor color)
 		{
 			switch (color)
 			{
-				case KColor.None: return "#ffffff"; // use this in the Color() methods if no color tag is to be applied
-				case KColor.Green: return "#CCFF00"; // ksp ui green
-				case KColor.Yellow: return "#FFD200"; // ksp ui yellow
-				case KColor.Orange: return "#FF8000"; // ksp ui orange
-				case KColor.Red: return "#F22613"; // custom red
-				case KColor.PosRate: return "#CCFF00"; // green
-				case KColor.NegRate: return "#FF8000"; // orange
-				case KColor.ScienceBlue: return "#6DCFF6"; // ksp science color
-				case KColor.Cyan: return "#ACFFFC"; // ksp ui light cyan (VAB part tooltip text)
-				case KColor.LightGrey: return "#CCCCCC"; // light grey
-				default: return "#fefefe";
+				case Kolor.None:		return "#FFFFFF"; // use this in the Color() methods if no color tag is to be applied
+				case Kolor.Green:		return "#88FF00"; // green whith slightly less red than the ksp ui default (CCFF00), for better contrast with yellow
+				case Kolor.Yellow:		return "#FFD200"; // ksp ui yellow
+				case Kolor.Orange:		return "#FF8000"; // ksp ui orange
+				case Kolor.Red:		    return "#FF3333"; // custom red
+				case Kolor.PosRate:	    return "#88FF00"; // green
+				case Kolor.NegRate:	    return "#FF8000"; // orange
+				case Kolor.Science:	    return "#6DCFF6"; // ksp science color
+				case Kolor.Cyan:		return "#00FFFF"; // cyan
+				case Kolor.LightGrey:	return "#CCCCCC"; // light grey
+				case Kolor.DarkGrey:	return "#999999"; // dark grey	
+				default:				return "#FEFEFE";
 			}
 		}
 
-		///<summary>return string with the predefined color and bold if stated</summary>
-		public static string Color(string s, KColor color, bool bold = false)
+		///<summary>return the unity Colot  for kerbalism Kolors</summary>
+		public static Color KolorToColor(Kolor color)
 		{
-			return !bold ? BuildString("<color=", HexColor(color), ">", s, "</color>") : BuildString("<color=", HexColor(color), "><b>", s, "</b></color>");
+			switch (color)
+			{
+				case Kolor.None:      return new Color(1.000f, 1.000f, 1.000f); 
+				case Kolor.Green:     return new Color(0.533f, 1.000f, 0.000f);
+				case Kolor.Yellow:    return new Color(1.000f, 0.824f, 0.000f);
+				case Kolor.Orange:    return new Color(1.000f, 0.502f, 0.000f);
+				case Kolor.Red:       return new Color(1.000f, 0.200f, 0.200f);
+				case Kolor.PosRate:   return new Color(0.533f, 1.000f, 0.000f);
+				case Kolor.NegRate:   return new Color(1.000f, 0.502f, 0.000f);
+				case Kolor.Science:   return new Color(0.427f, 0.812f, 0.965f);
+				case Kolor.Cyan:      return new Color(0.000f, 1.000f, 1.000f);
+				case Kolor.LightGrey: return new Color(0.800f, 0.800f, 0.800f);
+				case Kolor.DarkGrey:  return new Color(0.600f, 0.600f, 0.600f);
+				default:              return new Color(1.000f, 1.000f, 1.000f);
+			}
+		}
+
+		///<summary>return string with the specified color and bold if stated</summary>
+		public static string Color(string s, Kolor color, bool bold = false)
+		{
+			return !bold ? BuildString("<color=", KolorToHex(color), ">", Localizer.Format(s), "</color>") : BuildString("<color=", KolorToHex(color), "><b>", s, "</b></color>");
 		}
 
 		///<summary>return string with different colors depending on the specified condition. "KColor.Default" will not apply any coloring</summary>
-		public static string Color(string s, bool condition, KColor colorIfTrue, KColor colorIfFalse = KColor.None, bool bold = false)
+		public static string Color(bool condition, string s, Kolor colorIfTrue, Kolor colorIfFalse = Kolor.None, bool bold = false)
 		{
-			return condition ? Color(s, colorIfTrue, bold) : colorIfFalse == KColor.None ? bold ? Bold(s) : s : Color(s, colorIfFalse, bold);
+			return condition ? Color(s, colorIfTrue, bold) : colorIfFalse == Kolor.None ? bold ? Bold(s) : s : Color(s, colorIfFalse, bold);
+		}
+
+		///<summary>return different colored strings depending on the specified condition. "KColor.Default" will not apply any coloring</summary>
+		public static string Color(bool condition, string sIfTrue, Kolor colorIfTrue, string sIfFalse, Kolor colorIfFalse = Kolor.None, bool bold = false)
+		{
+			return condition ? Color(sIfTrue, colorIfTrue, bold) : colorIfFalse == Kolor.None ? bold ? Bold(sIfFalse) : sIfFalse : Color(sIfFalse, colorIfFalse, bold);
 		}
 
 		///<summary>return string in bold</summary>
 		public static string Bold(string s)
 		{
-			return BuildString("<b>", s ,"</b>");
+			return BuildString("<b>", s, "</b>");
 		}
 
 
@@ -516,18 +585,22 @@ namespace KERBALISM
 			return BuildString("<i>", s, "</i>");
 		}
 
-
 		///<summary>add spaces on caps</summary>
 		public static string SpacesOnCaps(string s)
 		{
 			return System.Text.RegularExpressions.Regex.Replace(s, "[A-Z]", " $0").TrimStart();
 		}
 
-
 		///<summary>convert to smart_case</summary>
 		public static string SmartCase(string s)
 		{
 			return SpacesOnCaps(s).ToLower().Replace(' ', '_');
+		}
+
+		///<summary>converts_from_this to this</summary>
+		public static string SpacesOnUnderscore(string s)
+		{
+			return s.Replace('_', ' ');
 		}
 
 
@@ -658,9 +731,15 @@ namespace KERBALISM
 			foreach (string s in args) sb.Append(s);
 			return sb.ToString();
 		}
-#endregion
+		#endregion
 
 		#region HUMAN READABLE
+
+		public static string InlineSpriteScience => "<sprite=\"CurrencySpriteAsset\" name=\"Science\" color=#6DCFF6>";
+		public static string InlineSpriteFunds => "<sprite=\"CurrencySpriteAsset\" name=\"Funds\" color=#B4D455>";
+		public static string InlineSpriteReputation => "<sprite=\"CurrencySpriteAsset\" name=\"Reputation\" color=#E0D503>";
+		public static string InlineSpriteFlask => "<sprite=\"CurrencySpriteAsset\" name=\"Flask\" color=#CE5DAE>";
+
 		///<summary> Pretty-print a resource rate (rate is per second). Return an absolute value if a negative one is provided</summary>
 		public static string HumanReadableRate(double rate, string precision = "F3")
 		{
@@ -671,95 +750,104 @@ namespace KERBALISM
 			if (rate >= 0.01) return BuildString(rate.ToString(precision), "/m");
 			rate *= 60.0; // per-hour
 			if (rate >= 0.01) return BuildString(rate.ToString(precision), "/h");
-			rate *= HoursInDay();  // per-day
+			rate *= HoursInDay;  // per-day
 			if (rate >= 0.01) return BuildString(rate.ToString(precision), "/d");
-			return BuildString((rate * DaysInYear()).ToString(precision), "/y");
+			return BuildString((rate * DaysInYear).ToString(precision), "/y");
 		}
 
 		///<summary> Pretty-print a duration (duration is in seconds, must be positive) </summary>
-		public static string HumanReadableDuration(double duration)
+		public static string HumanReadableDuration(double d, bool fullprecison = false)
 		{
-			if (duration <= 0.0) return "none";
-			if (double.IsInfinity(duration) || double.IsNaN(duration)) return "perpetual";
+			if (!fullprecison)
+			{
+				if (d <= double.Epsilon) return "none";
+				if (double.IsInfinity(d) || double.IsNaN(d)) return "perpetual";
 
-			double hours_in_day = HoursInDay();
-			double days_in_year = DaysInYear();
+				long hours_in_day = (long)HoursInDay;
+				long days_in_year = (long)DaysInYear;
 
-			// seconds
-			if (duration < 60.0) return BuildString(duration.ToString("F0"), "s");
+				long duration_seconds = (long)d;
 
-			// minutes + seconds
-			double duration_min = Math.Floor(duration / 60.0);
-			duration -= duration_min * 60.0;
-			if (duration_min < 60.0) return BuildString(duration_min.ToString("F0"), "m", (duration < 1.0 ? "" : BuildString(" ", duration.ToString("F0"), "s")));
+				long seconds = duration_seconds % 60;
+				long minutes = (duration_seconds / 60) % 60;
+				long hours = (duration_seconds / 3600) % hours_in_day;
+				long days = (duration_seconds / (3600 * hours_in_day)) % days_in_year;
+				long years = duration_seconds / (3600 * hours_in_day * days_in_year);
 
-			// hours + minutes
-			double duration_h = Math.Floor(duration_min / 60.0);
-			duration_min -= duration_h * 60.0;
-			if (duration_h < hours_in_day) return BuildString(duration_h.ToString("F0"), "h", (duration_min < 1.0 ? "" : BuildString(" ", duration_min.ToString("F0"), "m")));
 
-			// days + hours
-			double duration_d = Math.Floor(duration_h / hours_in_day);
-			duration_h -= duration_d * hours_in_day;
-			if (duration_d < days_in_year) return BuildString(duration_d.ToString("F0"), "d", (duration_h < 1.0 ? "" : BuildString(" ", duration_h.ToString("F0"), "h")));
+				// seconds
+				if (d < 60.0) return BuildString(seconds.ToString("F0"), "s");
 
-			// years + days
-			double duration_y = Math.Floor(duration_d / days_in_year);
-			duration_d -= duration_y * days_in_year;
-			return BuildString(duration_y.ToString("F0"), "y", (duration_d < 1.0 ? "" : BuildString(" ", duration_d.ToString("F0"), "d")));
+				// minutes + seconds
+				if (d < 3600.0) return BuildString(minutes.ToString("F0"), "m ", seconds.ToString("F0"), "s");
+
+				// hours + minutes
+				if (d < 3600.0 * hours_in_day) return BuildString(hours.ToString("F0"), "h ", minutes.ToString("F0"), "m");
+
+				// days + hours
+				if (d < 3600.0 * hours_in_day * days_in_year) return BuildString(days.ToString("F0"), "d ", hours.ToString("F0"), "h");
+
+				// years + days
+				return BuildString(years.ToString("F0"), "y ", days.ToString("F0"), "d");
+			}
+			else
+			{
+				if (d <= double.Epsilon) return string.Empty;
+				if (double.IsInfinity(d) || double.IsNaN(d)) return "never";
+
+				double hours_in_day = HoursInDay;
+				double days_in_year = DaysInYear;
+
+				long duration = (long)d;
+				long seconds = duration % 60;
+				duration /= 60;
+				long minutes = duration % 60;
+				duration /= 60;
+				long hours = duration % (long)hours_in_day;
+				duration /= (long)hours_in_day;
+				long days = duration % (long)days_in_year;
+				long years = duration / (long)days_in_year;
+
+				string result = string.Empty;
+				if (years > 0) result += years + "y ";
+				if (years > 0 || days > 0) result += days + "d ";
+				if (years > 0 || days > 0 || hours > 0) result += hours.ToString("D2") + ":";
+				if (years > 0 || days > 0 || hours > 0 || minutes > 0) result += minutes.ToString("D2") + ":";
+				result += seconds.ToString("D2");
+
+				return result;
+			}
 		}
 
-		public static string HumanReadableCountdown(double d)
+		public static string HumanReadableCountdown(double duration, bool compact = false)
 		{
-			if (d <= double.Epsilon) return string.Empty;
-			if (double.IsInfinity(d) || double.IsNaN(d)) return "never";
-
-			double hours_in_day = HoursInDay();
-			double days_in_year = DaysInYear();
-
-			int duration = (int)d;
-			int seconds = duration % 60;
-			duration /= 60;
-			int minutes = duration % 60;
-			duration /= 60;
-			int hours = duration % (int)hours_in_day;
-			duration /= (int)hours_in_day;
-			int days = duration % (int)days_in_year;
-			int years = duration / (int)days_in_year;
-
-			string result = "T-";
-			if (years > 0) result += years + "y ";
-			if (years > 0 || days > 0) result += days + "d ";
-			if (years > 0 || days > 0 || hours > 0) result += hours.ToString("D2") + ":";
-			if (years > 0 || days > 0 || hours > 0 || minutes > 0) result += minutes.ToString("D2") + ":";
-			result += seconds.ToString("D2");
-
-			return result;
+			return BuildString("T-", HumanReadableDuration(duration, !compact));
 		}
 
-		///<summary> Pretty-print a range (range is in meters, must be positive) </summary>
-		public static string HumanReadableRange(double range)
+		///<summary> Pretty-print a range (range is in meters) </summary>
+		public static string HumanReadableDistance(double distance)
 		{
-			if (range <= double.Epsilon) return "none";
-			if (range < 1000.0) return BuildString(range.ToString("F1"), " m");
-			range /= 1000.0;
-			if (range < 1000.0) return BuildString(range.ToString("F1"), " Km");
-			range /= 1000.0;
-			if (range < 1000.0) return BuildString(range.ToString("F1"), " Mm");
-			range /= 1000.0;
-			if (range < 1000.0) return BuildString(range.ToString("F1"), " Gm");
-			range /= 1000.0;
-			if (range < 1000.0) return BuildString(range.ToString("F1"), " Tm");
-			range /= 1000.0;
-			if (range < 1000.0) return BuildString(range.ToString("F1"), " Pm");
-			range /= 1000.0;
-			return BuildString(range.ToString("F1"), " Em");
+            if (distance == 0.0) return "none";
+            if (distance < 0.0) return Lib.BuildString("-", HumanReadableDistance(-distance));
+			if (distance < 1000.0) return BuildString(distance.ToString("F1"), " m");
+			distance /= 1000.0;
+			if (distance < 1000.0) return BuildString(distance.ToString("F1"), " Km");
+			distance /= 1000.0;
+			if (distance < 1000.0) return BuildString(distance.ToString("F1"), " Mm");
+			distance /= 1000.0;
+			if (distance < 1000.0) return BuildString(distance.ToString("F1"), " Gm");
+			distance /= 1000.0;
+			if (distance < 1000.0) return BuildString(distance.ToString("F1"), " Tm");
+			distance /= 1000.0;
+			if (distance < 1000.0) return BuildString(distance.ToString("F1"), " Pm");
+			distance /= 1000.0;
+			return BuildString(distance.ToString("F1"), " Em");
 		}
 
-		///<summary> Pretty-print a speed (in meters/sec, must be positive) </summary>
+		///<summary> Pretty-print a speed (in meters/sec) </summary>
 		public static string HumanReadableSpeed(double speed)
 		{
-			return Lib.BuildString(HumanReadableRange(speed), "/s");
+			return Lib.BuildString(HumanReadableDistance(speed), "/s");
 		}
 
 		///<summary> Pretty-print temperature </summary>
@@ -787,11 +875,32 @@ namespace KERBALISM
 		}
 
 		///<summary> Pretty-print radiation rate </summary>
-		public static string HumanReadableRadiation(double rad)
+		public static string HumanReadableRadiation(double rad, bool nominal = true)
 		{
-			if (rad <= double.Epsilon) return "none";
-			else if (rad <= 0.0000002777) return "nominal";
-			return BuildString((rad * 3600.0).ToString("F3"), " rad/h");
+			if (nominal && rad <= Radiation.Nominal) return "nominal";
+
+			rad *= 3600.0;
+			var unit = "rad/h";
+			var prefix = "";
+
+			if(Settings.RadiationInSievert)
+			{
+				rad /= 100.0;
+				unit = "Sv/h";
+			}
+
+			if(rad < 0.00001)
+			{
+				rad *= 1000000;
+				prefix = "μ";
+			}
+			else if(rad < 0.01)
+			{
+				rad *= 1000;
+				prefix = "m";
+			}
+
+			return BuildString((rad).ToString("F3"), " ", prefix, unit);
 		}
 
 		///<summary> Pretty-print percentage </summary>
@@ -900,11 +1009,15 @@ namespace KERBALISM
 		}
 
 		///<summary> Format science credits </summary>
-		public static string HumanReadableScience(double value)
+		public static string HumanReadableScience(double value, bool compact = true)
 		{
-			return Lib.BuildString("<color=#6DCFF6>", value.ToString("F1"), " CREDITS</color>");
+			if (compact)
+				return Lib.Color(value.ToString("F1"), Kolor.Science, true);
+			else
+				return Lib.Color(Lib.BuildString(value.ToString("F1"), " CREDITS"), Kolor.Science);
+
 		}
-		#endregion
+#endregion
 
 		#region GAME LOGIC
 		///<summary>return true if the current scene is flight</summary>
@@ -951,7 +1064,22 @@ namespace KERBALISM
 			}
 			return false;
 		}
-		#endregion
+
+		///<summary>if current game is neither science or career, disable the module and return false</summary>
+		public static bool ModuleEnableInScienceAndCareer(PartModule m)
+		{
+			switch (HighLogic.CurrentGame.Mode)
+			{
+				case Game.Modes.CAREER:
+				case Game.Modes.SCIENCE_SANDBOX:
+					return true;
+				default:
+					m.enabled = false;
+					m.isEnabled = false;
+					return false;
+			}
+		}
+#endregion
 
 		#region BODY
 
@@ -959,8 +1087,9 @@ namespace KERBALISM
 		public static CelestialBody GetParentPlanet(CelestialBody body)
 		{
 			if (Lib.IsSun(body)) return body;
-			while (!Lib.IsSun(body.referenceBody)) body = body.referenceBody;
-			return body;
+			CelestialBody checkedBody = body;
+			while (!Lib.IsSun(checkedBody.referenceBody)) checkedBody = checkedBody.referenceBody;
+			return checkedBody;
 		}
 
 		/// <summary> optimized method for getting normalized direction and distance between the surface of two bodies</summary>
@@ -1036,9 +1165,9 @@ namespace KERBALISM
 			Vector3d radial = QuaternionD.AngleAxis(latlong.y, Vector3d.down) * QuaternionD.AngleAxis(latlong.x, Vector3d.forward) * Vector3d.right;
 			return (pos - body.position).magnitude - pqs.GetSurfaceHeight(radial);
 		}
-		#endregion
+#endregion
 
-		#region VESSEL
+#region VESSEL
 		///<summary>return true if landed somewhere</summary>
 		public static bool Landed(Vessel v)
 		{
@@ -1129,7 +1258,7 @@ namespace KERBALISM
 				case VesselType.Flag:
 				case VesselType.SpaceObject:
 				case VesselType.Unknown:
-#if !KSP15_16 && !KSP14
+#if !KSP15_16
 				case VesselType.DeployedSciencePart:
 #endif
 					return false;
@@ -1153,7 +1282,7 @@ namespace KERBALISM
 
 		public static bool IsControlUnit(Vessel v)
 		{
-#if !KSP15_16 && !KSP14
+#if !KSP15_16
 			return Serenity.GetScienceCluster(v) != null;
 #else
 			return false;
@@ -1162,7 +1291,7 @@ namespace KERBALISM
 
 		public static bool IsPowered(Vessel v)
 		{
-#if !KSP15_16 && !KSP14
+#if !KSP15_16
 			var cluster = Serenity.GetScienceCluster(v);
 			if (cluster != null)
 				return cluster.IsPowered;
@@ -1225,9 +1354,9 @@ namespace KERBALISM
 
 			return a.precisePosition == b.precisePosition;
 		}
-		#endregion
+#endregion
 
-		#region PART
+#region PART
 		///<summary>get list of parts recursively, useful from the editors</summary>
 		public static List<Part> GetPartsRecursively(Part root)
 		{
@@ -1328,9 +1457,9 @@ namespace KERBALISM
 			EditorLogic.fetch.SetBackup();
 		}
 
-		#endregion
+#endregion
 
-		#region MODULE
+#region MODULE
 		///<summary>
 		/// return all modules implementing a specific type in a vessel
 		/// note: disabled modules are not returned
@@ -1485,9 +1614,9 @@ namespace KERBALISM
 			// then we have no chances of finding the module prefab so we return null
 			return data.index < data.prefabs.Count ? data.prefabs[data.index++] : null;
 		}
-		#endregion
+#endregion
 
-		#region RESOURCE
+#region RESOURCE
 		/// <summary> Returns the amount of a resource in a part </summary>
 		public static double Amount(Part part, string resource_name, bool ignore_flow = false)
 		{
@@ -1526,7 +1655,6 @@ namespace KERBALISM
 		///<summary>poached from https://github.com/blowfishpro/B9PartSwitch/blob/master/B9PartSwitch/Extensions/PartExtensions.cs
 		public static void AddResource(Part p, string res_name, double amount, double capacity)
 		{
-#if !KSP14
 			var reslib = PartResourceLibrary.Instance.resourceDefinitions;
 			// if the resource is not known, log a warning and do nothing
 			if (!reslib.Contains(res_name))
@@ -1572,48 +1700,12 @@ namespace KERBALISM
 
 				resource.amount = amount;
 			}
-#else
-			// if the resource is already in the part
-			if (p.Resources.Contains(res_name))
-			{
-				// add amount and capacity
-				var res = p.Resources[res_name];
-				res.amount += amount;
-				res.maxAmount += capacity;
-			}
-			// if the resource is not already in the part
-			else
-			{
-				// shortcut to resource library
-				var reslib = PartResourceLibrary.Instance.resourceDefinitions;
-
-				// if the resource is not known, log a warning and do nothing
-				if (!reslib.Contains(res_name))
-				{
-					Lib.Log(Lib.BuildString("error while adding ", res_name, ": the resource doesn't exist"));
-					return;
-				}
-
-				// get resource definition
-				var def = reslib[res_name];
-
-				// create the resource
-				ConfigNode res = new ConfigNode("RESOURCE");
-				res.AddValue("name", res_name);
-				res.AddValue("amount", amount);
-				res.AddValue("maxAmount", capacity);
-
-				// add it to the part
-				p.Resources.Add(res);
-			}
-#endif
 		}
 
 		/// <summary> Removes the specified resource amount and capacity from a part,
 		/// the resource is removed completely if the capacity reaches zero </summary>
 		public static void RemoveResource(Part p, string res_name, double amount, double capacity)
 		{
-#if !KSP14
 			// if the resource is not in the part, do nothing
 			if (!p.Resources.Contains(res_name))
 				return;
@@ -1639,28 +1731,6 @@ namespace KERBALISM
 
 				GameEvents.onPartResourceListChange.Fire(p);
 			}
-#else
-			// if the resource is not already in the part, do nothing
-			if (p.Resources.Contains(res_name))
-			{
-				// get the resource
-				var res = p.Resources[res_name];
-
-				// reduce amount and capacity
-				res.amount -= amount;
-				res.maxAmount -= capacity;
-
-				// clamp amount to capacity just in case
-				res.amount = Math.Min(res.amount, res.maxAmount);
-
-				// if the resource is empty
-				if (res.maxAmount <= 0.005) //< deal with precision issues
-				{
-					// remove it
-					p.Resources.Remove(res);
-				}
-			}
-#endif
 		}
 
 		///<summary>note: the resource must exist</summary>
@@ -1705,7 +1775,7 @@ namespace KERBALISM
 				var res = p.Resources[res_name];
 				res.flowState = enable;
 			} else {
-				Lib.DebugLog("Resource " + res_name + " not in part " + p.name);
+				Lib.LogDebugStack("Resource " + res_name + " not in part " + p.name);
 			}
 		}
 
@@ -1719,7 +1789,7 @@ namespace KERBALISM
 				res.amount = res.maxAmount;
 			}
 			else {
-				Lib.DebugLog("Resource " + res_name + " not in part " + p.name); }
+				Lib.LogDebugStack("Resource " + res_name + " not in part " + p.name); }
 		}
 
 		/// <summary> Sets the amount of a resource in the specified part to zero </summary>
@@ -1729,7 +1799,7 @@ namespace KERBALISM
 			if (p.Resources.Contains(res_name))
 				p.Resources[res_name].amount = 0.0;
 			else {
-				Lib.DebugLog("Resource " + res_name + " not in part " + p.name); }
+				Lib.LogDebugStack("Resource " + res_name + " not in part " + p.name); }
 		}
 
 		/// <summary> Set the enabled/disabled state of a process
@@ -1788,9 +1858,9 @@ namespace KERBALISM
 			// then get the first resource and return capacity
 			return p.Resources.Count == 0 ? 0.0 : p.Resources[0].maxAmount;
 		}
-		#endregion
+#endregion
 
-		#region SCIENCE DATA
+#region SCIENCE DATA
 		///<summary>return true if there is experiment data on the vessel</summary>
 		public static bool HasData( Vessel v )
 		{
@@ -1865,13 +1935,13 @@ namespace KERBALISM
 				{
 					if (drive.files.Count > 0) //< it should always be the case
 					{
-						string filename = string.Empty;
+						SubjectData filename = null;
 						int i = Lib.RandomInt(drive.files.Count);
-						foreach (var pair in drive.files)
+						foreach (File file in drive.files.Values)
 						{
 							if (i-- == 0)
 							{
-								filename = pair.Key;
+								filename = file.subjectData;
 								break;
 							}
 						}
@@ -1909,9 +1979,9 @@ namespace KERBALISM
 			foreach (string tech_id in techs) n += HasTech( tech_id ) ? 1 : 0;
 			return n;
 		}
-		#endregion
+#endregion
 
-		#region ASSETS
+#region ASSETS
 		///<summary> Returns the path of the directory containing the DLL </summary>
 		public static string Directory()
 		{
@@ -1919,11 +1989,11 @@ namespace KERBALISM
 			return dll_path.Substring( 0, dll_path.LastIndexOf( Path.DirectorySeparatorChar ) );
 		}
 
-		///<summary> Loads a .png texture from the folder defined in <see cref="Icons.TexturePath"/> </summary>
+		///<summary> Loads a .png texture from the folder defined in <see cref="Textures.TexturePath"/> </summary>
 		public static Texture2D GetTexture( string name, int width = 16, int height = 16 )
 		{
 			Texture2D texture = new Texture2D( width, height, TextureFormat.ARGB32, false );
-			ImageConversion.LoadImage(texture, System.IO.File.ReadAllBytes(Icons.TexturePath + name + ".png"));
+			ImageConversion.LoadImage(texture, System.IO.File.ReadAllBytes(Textures.TexturePath + name + ".png"));
 			return texture;
 		}
 
@@ -1996,9 +2066,9 @@ namespace KERBALISM
 			}
 			return mat;
 		}
-		#endregion
+#endregion
 
-		#region CONFIG
+#region CONFIG
 		///<summary>get a config node from the config system</summary>
 		public static ConfigNode ParseConfig( string path )
 		{
@@ -2038,9 +2108,9 @@ namespace KERBALISM
 				return def_value;
 			}
 		}
-		#endregion
+#endregion
 
-		#region UI
+#region UI
 		/// <summary>Trigger a planner update</summary>
 		public static void RefreshPlanner()
 		{
@@ -2139,9 +2209,9 @@ namespace KERBALISM
 			int index = rand.Next(letters.Length);
 			return (string)letters[index];
 		}
-		#endregion
+#endregion
 
-		#region PROTO
+#region PROTO
 		public static class Proto
 		{
 			public static bool GetBool( ProtoPartModuleSnapshot m, string name, bool def_value = false )
@@ -2187,15 +2257,37 @@ namespace KERBALISM
 				return s ?? def_value;
 			}
 
+			public static T GetEnum<T>(ProtoPartModuleSnapshot m, string name, T def_value)
+			{
+				UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Lib.Proto.GetEnum");
+				string s = m.moduleValues.GetValue(name);
+				if (s != null && Enum.IsDefined(typeof(T), s))
+				{
+					T forprofiling = (T)Enum.Parse(typeof(T), s);
+					UnityEngine.Profiling.Profiler.EndSample();
+					return forprofiling;
+				}
+				UnityEngine.Profiling.Profiler.EndSample();
+				return def_value;
+			}
+
+			public static T GetEnum<T>(ProtoPartModuleSnapshot m, string name)
+			{
+				string s = m.moduleValues.GetValue(name);
+				if (s != null && Enum.IsDefined(typeof(T), s))
+					return (T)Enum.Parse(typeof(T), s);
+				return (T)Enum.GetValues(typeof(T)).GetValue(0);
+			}
+
 			///<summary>set a value in a proto module</summary>
 			public static void Set<T>( ProtoPartModuleSnapshot module, string value_name, T value )
 			{
 				module.moduleValues.SetValue( value_name, value.ToString(), true );
 			}
 		}
-		#endregion
+#endregion
 
-		#region STRING PARSING
+#region STRING PARSING
 		public static class Parse
 		{
 			public static bool ToBool( string s, bool def_value = false )
@@ -2250,20 +2342,20 @@ namespace KERBALISM
 				return s != null && TryParseColor( s, out v ) ? v : def_value;
 			}
 		}
-		#endregion
+#endregion
 	}
 
 #region UTILITY CLASSES
 
 	public class ObjectPair<T, U>
 	{
-		public T a;
-		public U b;
+		public T Key;
+		public U Value;
 
-		public ObjectPair(T a, U b)
+		public ObjectPair(T key, U Value)
 		{
-			this.a = a;
-			this.b = b;
+			this.Key = key;
+			this.Value = Value;
 		}
 	}
 

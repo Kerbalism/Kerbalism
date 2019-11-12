@@ -1,6 +1,7 @@
 ﻿using KSP.Localization;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
 
 namespace KERBALISM
@@ -21,10 +22,10 @@ namespace KERBALISM
 			VesselData vd = v.KerbalismData();
 
 			// if not a valid vessel, leave the panel empty
-			if (!vd.IsValid) return;
+			if (!vd.IsSimulated) return;
 
 			// set metadata
-			p.Title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(20)), " <color=#cccccc>" + Localizer.Format("#KERBALISM_UI_devman") + "</color>"));
+			p.Title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(20)), Lib.Color("#KERBALISM_UI_devman", Lib.Kolor.LightGrey)));
 			p.Width(Styles.ScaleWidthFloat(355.0f));
 			p.paneltype = Panel.PanelType.scripts;
 
@@ -32,7 +33,7 @@ namespace KERBALISM
 			if (!Lib.IsControlUnit(v) && p.Timeout(vd)) return;
 
 			// get devices
-			Dictionary<uint, Device> devices = Computer.Boot(v);
+			List<Device> devices = Computer.GetModuleDevices(v);
 			int deviceCount = 0;
 
 			// direct control
@@ -45,16 +46,47 @@ namespace KERBALISM
 				  Description(),
 				  () => p.Prev(ref script_index, (int)ScriptType.last),
 				  () => p.Next(ref script_index, (int)ScriptType.last),
-					 true
+					 false
 				);
 
+				bool hasVesselDeviceSection = false;
+				bool hasModuleDeviceSection = false;
+
 				// for each device
-				foreach (var pair in devices)
+				for (int i = devices.Count - 1; i >= 0; i--)
 				{
-					// render device entry
-					Device dev = pair.Value;
-					if (!dev.IsVisible()) continue;
-					p.AddContent(dev.Name(), dev.Info(), string.Empty, dev.Toggle, () => Highlighter.Set(dev.Part(), Color.cyan));
+					Device dev = devices[i];
+					
+					dev.OnUpdate();
+					if (!dev.IsVisible) continue;
+
+					// create vessel device section if necessary
+					if (dev is VesselDevice)
+					{
+						if (!hasVesselDeviceSection)
+						{
+							p.AddSection("VESSEL DEVICES");
+							hasVesselDeviceSection = true;
+						}
+					}
+					// create module device section if necessary
+					else
+					{
+						if (!hasModuleDeviceSection)
+						{
+							p.AddSection("MODULE DEVICES");
+							hasModuleDeviceSection = true;
+						}
+					}
+
+					if (dev.PartId != 0u)
+						p.AddContent(dev.DisplayName, dev.Status, dev.Tooltip, dev.Toggle, () => Highlighter.Set(dev.PartId, Color.cyan));
+					else
+						p.AddContent(dev.DisplayName, dev.Status, dev.Tooltip, dev.Toggle);
+
+					if (dev.Icon != null)
+						p.SetLeftIcon(dev.Icon.texture, dev.Icon.tooltip, dev.Icon.onClick);
+
 					deviceCount++;
 				}
 			}
@@ -72,28 +104,51 @@ namespace KERBALISM
 				  script_name,
 				  Description(),
 				  () => p.Prev(ref script_index, (int)ScriptType.last),
-				  () => p.Next(ref script_index, (int)ScriptType.last),
-					 true
+				  () => p.Next(ref script_index, (int)ScriptType.last)
 				);
 
+				bool hasVesselDeviceSection = false;
+				bool hasModuleDeviceSection = false;
+
 				// for each device
-				foreach (var pair in devices)
+				for (int i = devices.Count - 1; i >= 0; i--)
 				{
-					Device dev = pair.Value;
-					if (!dev.IsVisible()) continue;
+					Device dev = devices[i];
+
+					dev.OnUpdate();
+					if (!dev.IsVisible) continue;
 
 					// determine tribool state
-					int state = !script.states.ContainsKey(pair.Key)
+					int state = !script.states.ContainsKey(dev.Id)
 					  ? -1
-					  : !script.states[pair.Key]
+					  : !script.states[dev.Id]
 					  ? 0
 					  : 1;
+
+					// create vessel device section if necessary
+					if (dev is VesselDevice)
+					{
+						if (!hasVesselDeviceSection)
+						{
+							p.AddSection("VESSEL DEVICES");
+							hasVesselDeviceSection = true;
+						}
+					}
+					// create module device section if necessary
+					else
+					{
+						if (!hasModuleDeviceSection)
+						{
+							p.AddSection("MODULE DEVICES");
+							hasModuleDeviceSection = true;
+						}
+					}
 
 					// render device entry
 					p.AddContent
 					(
-					  dev.Name(),
-					  state == -1 ? "<color=#999999>" + Localizer.Format("#KERBALISM_UI_dontcare") + " </color>" : state == 0 ? "<color=red>" + Localizer.Format("#KERBALISM_Generic_OFF") + "</color>" : "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_ON") + "</color>",
+					  dev.DisplayName,
+					  state == -1 ? Lib.Color(Localizer.Format("#KERBALISM_UI_dontcare"), Lib.Kolor.DarkGrey) : Lib.Color(state == 0, Localizer.Format("#KERBALISM_Generic_OFF"), Lib.Kolor.Yellow, Localizer.Format("#KERBALISM_Generic_ON"), Lib.Kolor.Green),
 					  string.Empty,
 					  () =>
 					  {
@@ -104,7 +159,7 @@ namespace KERBALISM
 							  case 1: script.Set(dev, false); break;
 						  }
 					  },
-					  () => Highlighter.Set(dev.Part(), Color.cyan)
+					  () => Highlighter.Set(dev.PartId, Color.cyan)
 					);
 					deviceCount++;
 				}

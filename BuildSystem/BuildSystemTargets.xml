@@ -34,8 +34,9 @@
     <!-- so we keep both versions to use when needed-->
     <DebugOutputPath>$(RepoBasePath)\BuildSystem\BinariesDebug</DebugOutputPath>
     <ReleaseOutputPath>$(RepoBasePath)\BuildSystem\BinariesRelease</ReleaseOutputPath>
+    <OutputPath>$(ReleaseOutputPath)</OutputPath> 
     <OutputPath Condition="$(Configuration)==Debug" >$(DebugOutputPath)</OutputPath>
-    <OutputPath Condition="$(Configuration)==Release" >$(ReleaseOutputPath)</OutputPath>
+    <!--<OutputPath Condition="$(Configuration)==Release" >$(ReleaseOutputPath)</OutputPath> -->
     <IntermediateOutputPath>$(OutputPath)\obj</IntermediateOutputPath>
     <!-- Deployment path -->
     <DeploymentOutputPath>$(RepoBasePath)\BuildSystem\DeploymentOutput\</DeploymentOutputPath>
@@ -100,20 +101,20 @@
       Targets="UpdateVersionFile"/>
 
     <Message Text="[KERBALISM-BUILD-RELEASE] Building KerbalismBootstrap..." Importance="high" />
-    <!-- Extract the latest DLL version for building KerbalismBootstrap -->
-    <!-- Note : maybe this should be other way (use the oldest available version) -->
-    <!-- If this is an issue, you can try changing ItemSpecToFind -->
-    <!-- it can use either "$(KBinMaxVersion)", "$(KBinMinVersion)" or even a specific version constant available in VersionConfig.xml (ex "15_16")-->
-    <FindInList CaseSensitive="false" List="@(KBinVersionConstant)" ItemSpecToFind="$(KBinMaxVersion)">
-      <Output TaskParameter="ItemFound" ItemName="MaxKSPVersion" />
+    <!-- Extract the KSP DLLs for building KerbalismBootstrap -->
+    <!-- To make it work against all KSP versions, KerbalismBootstrap uses the oldest supported DLL set -->
+    <!-- And is still built against the 3.5 .NET framework -->
+    <!-- Note : To change that behavior, you can use either "$(KBinMaxVersion)", "$(KBinMinVersion)" or a specific version constant available in VersionConfig.xml (ex "15_16")-->
+    <FindInList CaseSensitive="false" List="@(KBinVersionConstant)" ItemSpecToFind="$(KBinMinVersion)">
+      <Output TaskParameter="ItemFound" ItemName="BootstrapReferenceDllsVersion" />
     </FindInList>
-    <MSBuild Projects="$(BuildSystemTargets)" Properties="KSPVersion=%(MaxKSPVersion.KSPBuildVersion)" Targets="ExtractKSPDlls" />
+    <MSBuild Projects="$(BuildSystemTargets)" Properties="KSPVersion=%(BootstrapReferenceDllsVersion.KSPBuildVersion)" Targets="ExtractKSPDlls" />
 
     <!-- calling a build for KerbalismBootstrap-->
     <!-- I'm not sure RunEachTargetSeparately is really needed-->
     <MSBuild
       Projects="$(KerbalismBootstrapProjectFile)"
-      Properties="Configuration=Release"
+      Properties="Configuration=Release;FrameworkVersionOverride=%(BootstrapReferenceDllsVersion.KSPNETFramework)"
       RunEachTargetSeparately="true"/>
 
     <!-- Clean the build temporaries-->
@@ -124,7 +125,7 @@
     <Message Text="[KERBALISM-BUILD-RELEASE] Building all kbins..." Importance="high" />
     <MSBuild
       Projects="$(BuildSystemTargets)"
-      Properties="KBinVersionConstant=%(KBinVersionConstant.Identity);KSPBuildVersion=%(KBinVersionConstant.KSPBuildVersion);IsDevRelease=$(IsDevRelease)"
+      Properties="Configuration=Release;KBinVersionConstant=%(KBinVersionConstant.Identity);KSPBuildVersion=%(KBinVersionConstant.KSPBuildVersion);KSPNETFramework=%(KBinVersionConstant.KSPNETFramework);IsDevRelease=$(IsDevRelease)"
       Targets="KBinGenerator"/>
 
     <Message Text="[KERBALISM-BUILD-RELEASE] Cleaning output folder..." Importance="high" />
@@ -157,7 +158,6 @@
       Properties="KSPVersion=$(KSPBuildVersion)"
       Targets="ExtractKSPDlls"/>
     
-    
     <!-- we need to pass the output path of each Kbin relative the Kerbalism.csproj, 
     so get this relative path using the MakeRelative property function -->
     <ConvertToAbsolutePath Paths="$(KBinOutputPath)">
@@ -180,7 +180,7 @@
     <Message Text="[KERBALISM-BUILD-RELEASE] Building kerbalism project with the '$(ReleaseDefineConstants)' constant..." Importance="high" />
     <MSBuild
       Projects="$(KerbalismProjectFile)"
-      Properties="Configuration=Release;DefineConstants=$(ReleaseDefineConstants);OutputPath=$(KBinRelativeFromProjectPath)"
+      Properties="Configuration=Release;DefineConstants=$(ReleaseDefineConstants);FrameworkVersionOverride=$(KSPNETFramework);OutputPath=$(KBinRelativeFromProjectPath)"
       RunEachTargetSeparately="true"
         />
 
@@ -206,7 +206,7 @@
     <Message Text="[KERBALISM-BUILD-DEBUG] 'BuildSystem\UserConfigDevEnv.xml' not found. You need to create it to build Kerbalism" Condition="! Exists('UserConfigDevEnv.xml')" Importance="high" />
     <Message Text="[KERBALISM-BUILD-DEBUG] Can't find the KSP assemblies in '$(KSPDevPath)\$(KSPDevDllsRelativePath)'. Check your 'BuildSystem\UserConfigDevEnv.xml file'." Condition="! Exists('$(KSPDevPath)\$(KSPDevDllsRelativePath)\Assembly-CSharp.dll')" Importance="high" />
 
-    <Error Condition="(! Exists('UserConfigDevEnv.xml')) OR (! Exists('$(KSPDevPath)\$(KSPDevDllsRelativePath)\Assembly-CSharp.dll'))" Text=""/>
+    <Error Condition="(! Exists('UserConfigDevEnv.xml')) OR (! Exists('$(KSPDevPath)\$(KSPDevDllsRelativePath)\Assembly-CSharp.dll'))" Text="UserConfigDevEnv.xml or $(KSPDevPath)\$(KSPDevDllsRelativePath)\Assembly-CSharp.dll does not exist"/>
 
     <Message Text="[KERBALISM-BUILD-DEBUG] Building for KSP version tag : $(KSPDevVersion)" Importance="high" />
     <Message Text="[KERBALISM-BUILD-DEBUG] Cleaning build output folder..." Importance="high" />
@@ -228,27 +228,15 @@
         />
     <Message Text="[KERBALISM-BUILD-DEBUG] Build completed, output folder : $(DebugOutputPath)" Importance="high" />
 
+
+    
+    
     <!-- Get absolute path for the output dir -->
     <ConvertToAbsolutePath Paths="$(DebugOutputPath)">
       <Output TaskParameter="AbsolutePaths" PropertyName="OutputPathAbs" />
     </ConvertToAbsolutePath>
-    <PropertyGroup>
-      <KerbalismDll>$(DebugOutputPath)\Kerbalism.dll</KerbalismDll>
-      <KerbalismMDB>$(DebugOutputPath)\Kerbalism.dll.mdb</KerbalismMDB>
-      <KerbalismBootstrapDll>$(DebugOutputPath)\KerbalismBootstrap.dll</KerbalismBootstrapDll>
-      <KerbalismBootstrapMDB>$(DebugOutputPath)\KerbalismBootstrap.dll.mdb</KerbalismBootstrapMDB>
-    </PropertyGroup>
-    <!-- On windows, generate the mono debug symbols (*.mdb files) -->
-    <!-- 
-      Note : there is currently (08/2019) no solution to generate them on linux/osx. 
-      - Only "full" PDB files can be converted into MDB files.
-      - Mono 5+ can't generate "full" PDB files (it automatically change <DebugType>full</DebugType> to <DebugType>portable</DebugType>)
-      - The version of MSBuild (15.1) and of the compiler used by Mono 4.8 (last version able to generate MDB files) are just too old (no C# 7 support + too much breaking code)
-      The only practical workaround would be to setup a windows build server somewhere and get the full PDBs from it
-      -->
-    <Message Condition="'$(OS)' == 'Windows_NT'" Text="[KERBALISM-BUILD-DEBUG] Windows build : generating mono debug mdb files..." Importance="high" />
-    <Exec Condition="'$(OS)' == 'Windows_NT'" Command="$(UtilityPath)\win_pdb2mdb\pdb2mdb.exe $(OutputPathAbs)\Kerbalism.dll" />
-    <Exec Condition="'$(OS)' == 'Windows_NT'" Command="$(UtilityPath)\win_pdb2mdb\pdb2mdb.exe $(OutputPathAbs)\KerbalismBootstrap.dll" />
+
+    <CallTarget Targets="GenerateDebugMDB" Condition="'$(OS)' == 'Windows_NT' AND '$(DebugTypeOverride)' == 'full'"/>
 
     <!-- If requested in UserConfigDevEnv.xml, copy gamedata -->
     <ItemGroup>
@@ -257,14 +245,41 @@
     <Message Condition="'$(CopyGameDataOnBuild)' == 'true'" Text="[KERBALISM-BUILD-DEBUG] Copying GameData to $(KSPDevPath)..." Importance="high" />
     <RemoveDir Condition="'$(CopyGameDataOnBuild)' == 'true'" Directories="$(KSPDevPath)\GameData\Kerbalism;$(KSPDevPath)\GameData\KerbalismConfig" />
     <Copy Condition="'$(CopyGameDataOnBuild)' == 'true'" SourceFiles="@(GameDataContent)" DestinationFolder="$(KSPDevPath)\GameData\%(RecursiveDir)" />
+
     <!-- copy dll and mdb files -->
     <Message Text="[KERBALISM-BUILD-DEBUG] Copying build dlls to $(KSPDevPath)\GameData\Kerbalism..." Importance="high" />
-    <Copy Condition="'$(OS)' == 'Windows_NT'" SourceFiles="$(KerbalismMDB);$(KerbalismBootstrapMDB)" DestinationFolder="$(KSPDevPath)\GameData\Kerbalism" />
-    <Copy SourceFiles="$(KerbalismDll);$(KerbalismBootstrapDll)" DestinationFolder="$(KSPDevPath)\GameData\Kerbalism" />
+
+    <ItemGroup>
+      <BinariesAndDebugFiles Include="$(DebugOutputPath)\*.dll" />
+      <BinariesAndDebugFiles Include="$(DebugOutputPath)\*.mdb" Condition="'$(DebugTypeOverride)' == 'full'"/>
+      <BinariesAndDebugFiles Include="$(DebugOutputPath)\*.pdb" Condition="'$(DebugTypeOverride)' == 'portable'"/>
+    </ItemGroup>
+    
+    <Copy SourceFiles="@(BinariesAndDebugFiles)" DestinationFolder="$(KSPDevPath)\GameData\Kerbalism" />
+    
     <!-- done -->
     <Message Text="[KERBALISM-BUILD-DEBUG] : Kerbalism DEBUG build generated." Importance="high" />
   </Target>
 
+  <Target Name="GenerateDebugMDB">
+    <!-- 
+      Note : MDB files are used to debug KSP versions prior to 1.8. It's not possible to generate them on linux/osx :
+      - Only "full" PDB files can be converted into MDB files.
+      - Mono 5+ can't generate "full" PDB files (it automatically change <DebugType>full</DebugType> to <DebugType>portable</DebugType>)
+      - The version of MSBuild (15.1) and of the compiler used by Mono 4.8 (last version able to generate MDB files) are just too old (no C# 7 support + too much breaking code)
+      The only practical workaround would be to setup a windows build server somewhere and get the full PDBs from it
+     -->
+    
+    <ConvertToAbsolutePath Paths="$(DebugOutputPath)">
+      <Output TaskParameter="AbsolutePaths" PropertyName="OutputPathAbs" />
+    </ConvertToAbsolutePath>
+
+    <Message Condition="'$(OS)' == 'Windows_NT'" Text="[KERBALISM-BUILD-DEBUG] Windows build : generating mono debug mdb files..." Importance="high" />
+    <Exec Condition="'$(OS)' == 'Windows_NT'" Command="$(UtilityPath)\win_pdb2mdb\pdb2mdb.exe &quot;$(OutputPathAbs)\Kerbalism.dll&quot;" />
+    <Exec Condition="'$(OS)' == 'Windows_NT'" Command="$(UtilityPath)\win_pdb2mdb\pdb2mdb.exe &quot;$(OutputPathAbs)\KerbalismBootstrap.dll&quot;" />
+    
+  </Target>
+  
   <!-- ///////////////////////////////////////////////////// -->
   <!-- /////////////// DEPLOYMENT TARGET /////////////////// -->
   <!-- ///////////////////////////////////////////////////// -->
@@ -352,6 +367,10 @@
     <!-- Put the readme and changelog at the root of the zips -->
     <Copy SourceFiles="$(ReadmeFilePath);$(ChangelogFilePath)" DestinationFolder="$(DeploymentOutputPath)\temp" />
 
+    <!-- Put some warnings for dumb users-->
+    <WriteLinesToFile File="$(DeploymentOutputPath)\temp\WARNING - Kerbalism requires the CommunityResourcePack mod" />
+    <WriteLinesToFile File="$(DeploymentOutputPath)\temp\WARNING - Kerbalism requires the ModuleManager plugin" />
+
     <!-- create the kerbalism zip from the temp folder -->
     <ZipDirectory SourceDirectory="$(DeploymentOutputPath)\temp" DestinationFile="$(KerbalismZipPath)" />
 
@@ -367,6 +386,9 @@
 
     <!-- Put the readme and changelog at the root of the zips -->
     <Copy SourceFiles="$(ReadmeFilePath);$(ChangelogFilePath)" DestinationFolder="$(DeploymentOutputPath)\temp" />
+    
+    <!-- Put some warnings for dumb users-->
+    <WriteLinesToFile File="$(DeploymentOutputPath)\temp\WARNING - Don't install KerbalismConfig if you are using a third-party config pack" />
 
     <!-- create the KerbalismConfig zip from the temp folder -->
     <ZipDirectory SourceDirectory="$(DeploymentOutputPath)\temp" DestinationFile="$(KerbalismConfigZipPath)" />
@@ -708,10 +730,6 @@ msbuild BuildSystemTargets.xml -verbosity:minimal -target:UpdateAssembliesVersio
     <ItemGroup>
       <DllCheck Include="$(KSPDllPath)\Assembly-CSharp.dll" />
       <DllCheck Include="$(KSPDllPath)\Assembly-CSharp-firstpass.dll" />
-      <DllCheck Include="$(KSPDllPath)\Assembly-UnityScript.dll" />
-      <DllCheck Include="$(KSPDllPath)\Assembly-UnityScript-firstpass.dll" />
-      <DllCheck Include="$(KSPDllPath)\UnityEngine.dll" />
-      <DllCheck Include="$(KSPDllPath)\UnityEngine.UI.dll" />
       <AllKSPDlls Include="$(KSPDllPath)\*.dll" />
     </ItemGroup>
 

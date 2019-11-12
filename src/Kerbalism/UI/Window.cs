@@ -6,15 +6,13 @@ using UnityEngine;
 
 namespace KERBALISM
 {
-
-
 	// a window containing a panel
 	public sealed class Window
 	{
 		// click through locks
 		private bool clickThroughLocked = false;
 		private const ControlTypes WindowLockTypes = ControlTypes.MANNODE_ADDEDIT | ControlTypes.MANNODE_DELETE | ControlTypes.MAP_UI |
-			ControlTypes.TARGETING | ControlTypes.VESSEL_SWITCHING | ControlTypes.TWEAKABLES | ControlTypes.EDITOR_UI | ControlTypes.EDITOR_SOFT_LOCK;
+			ControlTypes.TARGETING | ControlTypes.VESSEL_SWITCHING | ControlTypes.TWEAKABLES | ControlTypes.EDITOR_UI | ControlTypes.EDITOR_SOFT_LOCK | ControlTypes.UI;
 
 		// - width: window width in pixel
 		// - left: initial window horizontal position
@@ -90,7 +88,8 @@ namespace KERBALISM
 			win_rect = GUILayout.Window(win_id, win_rect, Draw_window, "", Styles.win);
 
 			// get mouse over state
-			bool mouse_over = win_rect.Contains(Event.current.mousePosition);
+			//bool mouse_over = win_rect.Contains(Event.current.mousePosition);
+			bool mouse_over = win_rect.Contains(new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y));
 
 			// disable camera mouse scrolling on mouse over
 			if (mouse_over)
@@ -115,9 +114,9 @@ namespace KERBALISM
 		{
 			// render window title
 			GUILayout.BeginHorizontal(Styles.title_container);
-			GUILayout.Label(Icons.empty, Styles.left_icon);
+			GUILayout.Label(Textures.empty, Styles.left_icon);
 			GUILayout.Label(panel.Title().ToUpper(), Styles.title_text);
-			GUILayout.Label(Icons.close, Styles.right_icon);
+			GUILayout.Label(Textures.close, Styles.right_icon);
 			bool b = Lib.IsClicked();
 			GUILayout.EndHorizontal();
 			if (b) { Close(); return; }

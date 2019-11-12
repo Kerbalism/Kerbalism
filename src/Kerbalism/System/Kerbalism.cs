@@ -5,39 +5,96 @@ using UnityEngine;
 using Harmony;
 using KSP.UI.Screens;
 
-
 namespace KERBALISM
 {
-
-
-	/// <summary> Main class, instantiated during Main menu scene.</summary>
+	/// <summary>
+	/// Main initialization class : for everything that isn't save-game dependant.
+	/// For save-dependant things, or things that require the game to be loaded do it in Kerbalism.OnLoad()
+	/// </summary>
 	[KSPAddon(KSPAddon.Startup.MainMenu, false)]
-	public class KerbalismMain: MonoBehaviour
+	public class KerbalismCoreSystems : MonoBehaviour
 	{
 		public void Start()
 		{
-			Icons.Initialize();				// set up the icon textures
-			RemoteTech.EnableInSPC();		// allow RemoteTech Core to run in the Space Center
+			// reset the save game initialized flag
+			Kerbalism.IsSaveGameInitDone = false;
 
-			// Set the loaded trigger to false, this we will load a new
-			// settings after selecting a save game. This is necessary
-			// for switching between saves without shutting down the KSP
-			// instance.
-			//Settings.Instance.SettingsLoaded = false;
+			// things in here will be only called once per KSP launch, after loading
+			// nearly everything is available at this point, including the Kopernicus patched bodies.
+			if (!Kerbalism.IsCoreMainMenuInitDone)
+			{
+				Kerbalism.IsCoreMainMenuInitDone = true;
+			}
+
+			// things in here will be called every the player goes to the main menu 
+			RemoteTech.EnableInSPC();                   // allow RemoteTech Core to run in the Space Center
 		}
 	}
 
 	[KSPScenario(ScenarioCreationOptions.AddToAllGames, new[] { GameScenes.SPACECENTER, GameScenes.TRACKSTATION, GameScenes.FLIGHT, GameScenes.EDITOR })]
-	public sealed class Kerbalism: ScenarioModule
+	public sealed class Kerbalism : ScenarioModule
 	{
-		// permit global access
+		#region declarations
+
+		/// <summary> global access </summary>
 		public static Kerbalism Fetch { get; private set; } = null;
+
+		/// <summary> Is the one-time main menu init done. Becomes true after loading, when the the main menu is shown, and never becomes false again</summary>
+		public static bool IsCoreMainMenuInitDone { get; set; } = false;
+
+		/// <summary> Is the one-time on game load init done. Becomes true after the first OnLoad() of a game, and never becomes false again</summary>
+		public static bool IsCoreGameInitDone { get; set; } = false;
+
+		/// <summary> Is the savegame (or new game) first load done. Becomes true after the first OnLoad(), and false when returning to the main menu</summary>
+		public static bool IsSaveGameInitDone { get; set; } = false;
+
+		// used to setup KSP callbacks
+		public static Callbacks Callbacks { get; private set; }
+
+		// the rendering script attached to map camera
+		static MapCameraScript map_camera_script;
+
+		// store time until last update for unloaded vessels
+		// note: not using reference_wrapper<T> to increase readability
+		sealed class Unloaded_data { public double time; }; //< reference wrapper
+		static Dictionary<Guid, Unloaded_data> unloaded = new Dictionary<Guid, Unloaded_data>();
+
+		// used to update storm data on one body per step
+		static int storm_index;
+		class Storm_data { public double time; public CelestialBody body; };
+		static List<Storm_data> storm_bodies = new List<Storm_data>();
+
+		// equivalent to TimeWarp.fixedDeltaTime
+		// note: stored here to avoid converting it to double every time
+		public static double elapsed_s;
+
+		// number of steps from last warp blending
+		private static uint warp_blending;
+
+		/// <summary>Are we in an intermediary timewarp speed ?</summary>
+		public static bool WarpBlending => warp_blending > 2u;
+
+		// last savegame unique id
+		static int savegame_uid;
+
+		/// <summary> real time of last game loaded event </summary>
+		public static float gameLoadTime = 0.0f;
+
+		public static bool SerenityEnabled { get; private set; }
+
+		private static bool didSanityCheck = false;
+
+		#endregion
+
+		#region initialization & save/load
 
 		//  constructor
 		public Kerbalism()
 		{
 			// enable global access
 			Fetch = this;
+
+			// You just don't know what you are doing, no ?
 			Communications.NetworkInitialized = false;
 			Communications.NetworkInitializing = false;
 
@@ -51,57 +108,81 @@ namespace KERBALISM
 
 		public override void OnLoad(ConfigNode node)
 		{
-			// deserialize data
-			DB.Load(node);
-
-			Communications.NetworkInitialized = false;
-			Communications.NetworkInitializing = false;
-
-			// initialize everything just once
-			if (!initialized)
+			// everything in there will be called only one time : the first time a game is loaded from the main menu
+			if (!IsCoreGameInitDone)
 			{
-				// add supply resources to pods
-				Profile.SetupPods();
+				// core game systems
+				Sim.Init();         // find suns (Kopernicus support)
+				Radiation.Init();   // create the radiation fields
+				ScienceDB.Init();   // build the science database (needs Sim.Init() and Radiation.Init() first)
+				Science.Init();     // register the science hijacker
 
-				// initialize subsystems
-				Sim.Init();
-				Cache.Init();
-				ResourceCache.Init();
-				Radiation.Init();
-				Science.Init();
+				// static graphic components
 				LineRenderer.Init();
 				ParticleRenderer.Init();
 				Highlighter.Init();
-				UI.Init();
 
+				// UI
+				Textures.Init();                      // set up the icon textures
+				UI.Init();                                  // message system, main gui, launcher
+				KsmGui.KsmGuiMasterController.Init(); // setup the new gui framework
+
+				// part prefabs hacks
+				Profile.SetupPods(); // add supply resources to pods
+				Misc.TweakPartIcons(); // various tweaks to the part icons in the editor
+
+				// Create KsmGui windows
+				new ScienceArchiveWindow();
+
+				// GameEvents callbacks
+				Callbacks = new Callbacks();
+
+				IsCoreGameInitDone = true;
+			}
+
+			// everything in there will be called every time a savegame (or a new game) is loaded from the main menu
+			if (!IsSaveGameInitDone)
+			{
+				Cache.Init();
+				ResourceCache.Init();
+				
 				// prepare storm data
 				foreach (CelestialBody body in FlightGlobals.Bodies)
 				{
 					if (Storm.Skip_body(body))
 						continue;
-					Storm_data sd = new Storm_data
-					{
-						body = body
-					};
+					Storm_data sd = new Storm_data { body = body };
 					storm_bodies.Add(sd);
 				}
 
-				// various tweaks to the part icons in the editor
-				Misc.TweakPartIcons();
-
-				// setup callbacks
-				callbacks = new Callbacks();
-
-				// everything was initialized
-				initialized = true;
+				IsSaveGameInitDone = true;
 			}
+
+			// eveything else will be called on every OnLoad() call :
+			// - save/load
+			// - every scene change
+			// - in various semi-random situations (thanks KSP)
+
+			// Fix for background IMGUI textures being dropped on scene changes since KSP 1.8
+			Styles.ReloadBackgroundStyles();
+
+			// always clear the caches
+			Cache.Clear();
+			ResourceCache.Clear();
+
+			// deserialize our database
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.DB.Load");
+			DB.Load(node);
+			UnityEngine.Profiling.Profiler.EndSample();
+
+			// I'm smelling the hacky mess in here.
+			Communications.NetworkInitialized = false;
+			Communications.NetworkInitializing = false;
 
 			// detect if this is a different savegame
 			if (DB.uid != savegame_uid)
 			{
 				// clear caches
-				Cache.Clear();
-				ResourceCache.Clear();
 				Message.all_logs.Clear();
 
 				// sync main window pos from db
@@ -110,13 +191,21 @@ namespace KERBALISM
 				// remember savegame id
 				savegame_uid = DB.uid;
 			}
+
+			Kerbalism.gameLoadTime = Time.time;
 		}
 
 		public override void OnSave(ConfigNode node)
 		{
 			// serialize data
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.DB.Save");
 			DB.Save(node);
+			UnityEngine.Profiling.Profiler.EndSample();
 		}
+
+		#endregion
+
+		#region fixedupdate
 
 		void FixedUpdate()
 		{
@@ -145,6 +234,11 @@ namespace KERBALISM
 			Vessel last_v = null;
 			VesselData last_vd = null;
 			VesselResHandler last_resources = null;
+
+			foreach (VesselData vd in DB.VesselDatas)
+			{
+				vd.EarlyUpdate();
+			}
 
 			// for each vessel
 			foreach (Vessel v in FlightGlobals.Vessels)
@@ -175,7 +269,7 @@ namespace KERBALISM
 				}
 
 				// do nothing else for invalid vessels
-				if (!vd.IsValid)
+				if (!vd.IsSimulated)
 					continue;
 
 				// get resource cache
@@ -184,31 +278,43 @@ namespace KERBALISM
 				// if loaded
 				if (v.loaded)
 				{
+					//UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Loaded.VesselDataEval");
 					// update the vessel info
 					vd.Evaluate(false, elapsed_s);
+					//UnityEngine.Profiling.Profiler.EndSample();
 
 					// get most used resource
 					IResource ec = resources.GetResource(v, "ElectricCharge");
 
+					UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Loaded.Radiation");
 					// show belt warnings
 					Radiation.BeltWarnings(v, vd);
 
 					// update storm data
 					Storm.Update(v, vd, elapsed_s);
+					UnityEngine.Profiling.Profiler.EndSample();
 
+					UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Loaded.Comms");
 					Communications.Update(v, vd, ec, elapsed_s);
+					UnityEngine.Profiling.Profiler.EndSample();
 
 					// Habitat equalization
 					HabitatEqualizer.Equalizer(v);
 
+					UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Loaded.Science");
 					// transmit science data
-					Science.Update(v, vd, resources, elapsed_s);
+					Science.Update(v, vd, ec, elapsed_s);
+					UnityEngine.Profiling.Profiler.EndSample();
 
+					UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Loaded.Profile");
 					// apply rules
 					Profile.Execute(v, vd, resources, elapsed_s);
+					UnityEngine.Profiling.Profiler.EndSample();
 
+					UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Loaded.Resource");
 					// apply deferred requests
 					resources.Sync(v, vd, elapsed_s);
+					UnityEngine.Profiling.Profiler.EndSample();
 
 					// call automation scripts
 					vd.computer.Automate(v, vd, resources);
@@ -246,31 +352,45 @@ namespace KERBALISM
 			// we will update the vessel whose most recent background update is the oldest
 			if (last_v != null)
 			{
+				//UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Unloaded.VesselDataEval");
 				// update the vessel info (high timewarp speeds reevaluation)
 				last_vd.Evaluate(false, last_time);
+				//UnityEngine.Profiling.Profiler.EndSample();
 
 				// get most used resource
 				IResource last_ec = last_resources.GetResource(last_v, "ElectricCharge");
 
+				UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Unloaded.Radiation");
 				// show belt warnings
 				Radiation.BeltWarnings(last_v, last_vd);
 
 				// update storm data
 				Storm.Update(last_v, last_vd, last_time);
+				UnityEngine.Profiling.Profiler.EndSample();
 
+				UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Unloaded.Comms");
 				Communications.Update(last_v, last_vd, last_ec, last_time);
+				UnityEngine.Profiling.Profiler.EndSample();
 
+				UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Unloaded.Profile");
 				// apply rules
 				Profile.Execute(last_v, last_vd, last_resources, last_time);
+				UnityEngine.Profiling.Profiler.EndSample();
 
+				UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Unloaded.Background");
 				// simulate modules in background
 				Background.Update(last_v, last_vd, last_resources, last_time);
+				UnityEngine.Profiling.Profiler.EndSample();
 
+				UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Unloaded.Science");
 				// transmit science	data
-				Science.Update(last_v, last_vd, last_resources, last_time);
+				Science.Update(last_v, last_vd, last_ec, last_time);
+				UnityEngine.Profiling.Profiler.EndSample();
 
+				UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Unloaded.Resource");
 				// apply deferred requests
 				last_resources.Sync(last_v, last_vd, last_time);
+				UnityEngine.Profiling.Profiler.EndSample();
 
 				// call automation scripts
 				last_vd.computer.Automate(last_v, last_vd, last_resources);
@@ -290,12 +410,22 @@ namespace KERBALISM
 			}
 		}
 
+		#endregion
+
+		#region Update and GUI
+
 		void Update()
 		{
+			if (!didSanityCheck)
+			{
+				SanityCheck();
+				didSanityCheck = true;
+			}
+
 			if (!Communications.NetworkInitializing)
 			{
 				Communications.NetworkInitializing = true;
-				StartCoroutine(callbacks.NetworkInitialized());
+				StartCoroutine(Callbacks.NetworkInitialized());
 			}
 
 			// attach map renderer to planetarium camera once
@@ -312,47 +442,80 @@ namespace KERBALISM
 			Highlighter.Update();
 
 			// prepare gui content
-			UI.Update(callbacks.visible);
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.UI.Update");
+			UI.Update(Callbacks.visible);
+			UnityEngine.Profiling.Profiler.EndSample();
 		}
 
 		void OnGUI()
 		{
-			UI.On_gui(callbacks.visible);
+			UI.On_gui(Callbacks.visible);
 		}
 
-		// used to setup KSP callbacks
-		static Callbacks callbacks;
+		#endregion
 
-		// the rendering script attached to map camera
-		static MapCameraScript map_camera_script;
+		private void SanityCheck()
+		{
+			List<string> incompatibleMods = Settings.IncompatibleMods();
+			List<string> warningMods = Settings.WarningMods();
 
-		// store time until last update for unloaded vessels
-		// note: not using reference_wrapper<T> to increase readability
-		sealed class Unloaded_data { public double time; }; //< reference wrapper
-		static Dictionary<Guid, Unloaded_data> unloaded = new Dictionary<Guid, Unloaded_data>();
+			List<string> incompatibleModsFound = new List<string>();
+			List<string> warningModsFound = new List<string>();
 
-		// used to update storm data on one body per step
-		static int storm_index;
-		class Storm_data { public double time; public CelestialBody body; };
-		static List<Storm_data> storm_bodies = new List<Storm_data>();
+			foreach (var a in AssemblyLoader.loadedAssemblies)
+			{
+				if (incompatibleMods.Contains(a.name.ToLower())) incompatibleModsFound.Add(a.name);
+				if (warningMods.Contains(a.name.ToLower())) warningModsFound.Add(a.name);
+			}
 
-		// used to initialize everything just once
-		static bool initialized;
+			string msg = string.Empty;
 
-		// equivalent to TimeWarp.fixedDeltaTime
-		// note: stored here to avoid converting it to double every time
-		public static double elapsed_s;
+			var configNodes = GameDatabase.Instance.GetConfigs("Kerbalism");
+			if (configNodes.Length > 1)
+			{
+				msg += "<color=#FF4500>Multiple configurations detected</color>\nHint: delete KerbalismConfig if you are using a custom config pack.\n\n";
+			}
+			else if (configNodes.Length == 0)
+			{
+				msg += "<color=#FF4500>No configuration found</color>\nYou need KerbalismConfig (or any other Kerbalism config pack).\n\n";
+			}
 
-		// number of steps from last warp blending
-		private static uint warp_blending;
+			if (Features.Habitat && Settings.CheckForCRP)
+			{
+				// check for CRP
+				var reslib = PartResourceLibrary.Instance.resourceDefinitions;
+				if (!reslib.Contains("Oxygen") || !reslib.Contains("Water") || !reslib.Contains("Shielding"))
+				{
+					msg += "<color=#FF4500>CommunityResourcePack (CRP) is not installed</color>\nYou REALLY need CRP for Kerbalism!\n\n";
+				}
+			}
 
-		/// <summary>Are we in an intermediary timewarp speed ?</summary>
-		public static bool WarpBlending => warp_blending > 2u;
+			if (incompatibleModsFound.Count > 0)
+			{
+				msg += "<color=#FF4500>Mods with known incompatibilities found:</color>\n";
+				foreach (var m in incompatibleModsFound) msg += "- " + m + "\n";
+				msg += "Kerbalism will not run properly with these mods. Please remove them.\n\n";
+			}
 
-		// last savegame unique id
-		static int savegame_uid;
+			if (warningModsFound.Count > 0)
+			{
+				msg += "<color=#FF4500>Mods with limited compatibility found:</color>\n";
+				foreach (var m in warningModsFound) msg += "- " + m + "\n";
+				msg += "You might have problems with these mods. Consider removing them.\n\n";
+			}
 
-		public static bool SerenityEnabled { get; private set; }
+			if (!string.IsNullOrEmpty(msg))
+			{
+				msg = "<b>KERBALISM WARNING</b>\n\n" + msg;
+				ScreenMessage sm = new ScreenMessage(msg, 60, ScreenMessageStyle.UPPER_LEFT);
+				sm.color = Color.cyan;
+				ScreenMessages.PostScreenMessage(sm);
+				ScreenMessages.PostScreenMessage(msg, true);
+				Lib.Log("Sanity check: " + msg);
+			}
+		}
+
+
 	}
 
 	public sealed class MapCameraScript: MonoBehaviour
@@ -466,6 +629,11 @@ namespace KERBALISM
 				HashSet<string> labels = new HashSet<string>();
 				foreach (AvailablePart p in PartLoader.LoadedPartsList)
 				{
+					// workaround for FindModulesImplementing nullrefs in 1.8 when called on the strange kerbalEVA_RD_Exp prefab
+					// due to the (private) cachedModuleLists being null on it
+					if (p.partPrefab.Modules.Count == 0)
+						continue;
+
 					foreach (Configure cfg in p.partPrefab.FindModulesImplementing<Configure>())
 					{
 						foreach (ConfigureSetup setup in cfg.Setups())
@@ -594,7 +762,7 @@ namespace KERBALISM
 			Vessel v = FlightGlobals.ActiveVessel;
 			if (v == null) return;
 			VesselData vd = v.KerbalismData();
-			if (!vd.IsValid) return;
+			if (!vd.IsSimulated) return;
 
 			// call scripts with 1-5 key
 			if (Input.GetKeyDown(KeyCode.Alpha1) || Input.GetKeyDown(KeyCode.Keypad1))
@@ -612,6 +780,12 @@ namespace KERBALISM
 		// return true if the vessel is a rescue mission
 		public static bool IsRescueMission(Vessel v)
 		{
+			// avoid corner-case situation on the first update : rescue vessel handling code is called
+			// after the VesselData creation, causing Vesseldata evaluation to be delayed, causing anything
+			// that rely on it to fail on its first update or in OnStart
+			if (v.situation == Vessel.Situations.PRELAUNCH)
+				return false;
+
 			// if at least one of the crew is flagged as rescue, consider it a rescue mission
 			foreach (var c in Lib.CrewList(v))
 			{
@@ -688,7 +862,7 @@ namespace KERBALISM
 			// remove reputation
 			if (HighLogic.CurrentGame.Mode == Game.Modes.CAREER)
 			{
-				Reputation.Instance.AddReputation(-PreferencesBasic.Instance.deathPenalty, TransactionReasons.Any);
+				Reputation.Instance.AddReputation(-Settings.KerbalDeathReputationPenalty, TransactionReasons.Any);
 			}
 		}
 
@@ -766,7 +940,7 @@ namespace KERBALISM
 			// remove reputation
 			if (HighLogic.CurrentGame.Mode == Game.Modes.CAREER)
 			{
-				Reputation.Instance.AddReputation(-PreferencesBasic.Instance.breakdownPenalty, TransactionReasons.Any);
+				Reputation.Instance.AddReputation(-Settings.KerbalBreakdownReputationPenalty, TransactionReasons.Any);
 			}
 		}
 

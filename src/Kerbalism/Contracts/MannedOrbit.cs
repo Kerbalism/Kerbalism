@@ -82,10 +82,10 @@ namespace KERBALISM.CONTRACTS
 			foreach (Vessel v in FlightGlobals.Vessels)
 			{
 				VesselData vd = v.KerbalismData();
-				if (!vd.IsValid) continue;
+				if (!vd.IsSimulated) continue;
 				bool manned = vd.CrewCount > 0;
 				bool in_orbit = Sim.Apoapsis(v) > v.mainBody.atmosphereDepth && Sim.Periapsis(v) > v.mainBody.atmosphereDepth;
-				bool for_30days = v.missionTime > 60.0 * 60.0 * Lib.HoursInDay() * 30.0;
+				bool for_30days = v.missionTime > 60.0 * 60.0 * Lib.HoursInDay * 30.0;
 				if (manned && in_orbit && for_30days)
 				{
 					SetComplete();

@@ -141,6 +141,21 @@ namespace KERBALISM
 			DoConfigure();
 		}
 
+		public List<ConfigureSetup> GetUnlockedSetups()
+		{
+			List<ConfigureSetup> unlockedSetups = new List<ConfigureSetup>();
+			foreach (ConfigureSetup setup in setups)
+			{
+				// if unlocked
+				if (setup.tech.Length == 0 || Lib.HasTech(setup.tech))
+				{
+					// unlock
+					unlockedSetups.Add(setup);
+				}
+			}
+			return unlockedSetups;
+		}
+
 		public void DoConfigure()
 		{
 			// shortcut to resource library
@@ -151,16 +166,7 @@ namespace KERBALISM
 			extra_mass = 0.0;
 
 			// find modules unlocked by tech
-			unlocked = new List<ConfigureSetup>();
-			foreach (ConfigureSetup setup in setups)
-			{
-				// if unlocked
-				if (setup.tech.Length == 0 || Lib.HasTech(setup.tech))
-				{
-					// unlock
-					unlocked.Add(setup);
-				}
-			}
+			unlocked = GetUnlockedSetups();
 
 			// make sure configuration include all available slots
 			// this also create default configuration
@@ -199,13 +205,13 @@ namespace KERBALISM
 					// if the module exist
 					if (m != null)
 					{
-						// call configure/deconfigure functions on module if available
-						if (m is IConfigurable configurable_module)
-							configurable_module.Configure(active);
-
 						// enable/disable the module
 						m.isEnabled = active;
 						m.enabled = active;
+
+						// call configure/deconfigure functions on module if available
+						if (m is IConfigurable configurable_module)
+							configurable_module.Configure(active);
 					}
 				}
 
@@ -304,6 +310,8 @@ namespace KERBALISM
 			// refresh VAB ui
 			if (Lib.IsEditor()) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
 
+			Callbacks.onConfigure.Fire(part, this);
+
 			// this was configured at least once
 			initialized = true;
 		}
@@ -357,8 +365,11 @@ namespace KERBALISM
 			}
 		}
 
-
+#if KSP15_16
 		[KSPEvent(guiActive = true, guiActiveUnfocused = true, guiActiveEditor = true, guiName = "_", active = false)]
+#else
+		[KSPEvent(guiActive = true, guiActiveUnfocused = true, guiActiveEditor = true, guiName = "_", active = false, groupName = "Configuration", groupDisplayName = "Configuration")]
+#endif
 		public void ToggleWindow()
 		{
 			// in flight
@@ -515,7 +526,7 @@ namespace KERBALISM
 			if (!Lib.IsEditor())
 			{
 				// if part doesn't exist anymore
-				if (FlightGlobals.FindPartByID(part.flightID) == null) return;
+				if (part.flightID == 0 || FlightGlobals.FindPartByID(part.flightID) == null) return;
 			}
 			// inside the editor
 			else

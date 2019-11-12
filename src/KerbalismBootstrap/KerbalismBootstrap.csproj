@@ -1,6 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -29,59 +28,61 @@
     <WarningLevel>4</WarningLevel>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
-
   <Import Condition="Exists('..\..\BuildSystem\UserConfigDevEnv.xml')" Project="..\..\BuildSystem\UserConfigDevEnv.xml" />
   <Import Condition="Exists('..\..\BuildSystem\ProjectsCommonProperties.xml')" Project="..\..\BuildSystem\ProjectsCommonProperties.xml" />
-  
-  <Choose>
-    <When Condition="'$(Configuration)' == 'Debug'">
-      <ItemGroup>
-        <Reference Include="System" />
-        <Reference Include="Assembly-CSharp">
-          <HintPath>$(KSPDevPath)\$(KSPDevDllsRelativePath)\Assembly-CSharp.dll</HintPath>
-          <Private>False</Private>
-        </Reference>
-        <Reference Include="Assembly-CSharp-firstpass">
-          <HintPath>$(KSPDevPath)\$(KSPDevDllsRelativePath)\Assembly-CSharp-firstpass.dll</HintPath>
-          <Private>False</Private>
-        </Reference>
-        <Reference Include="UnityEngine">
-          <HintPath>$(KSPDevPath)\$(KSPDevDllsRelativePath)\UnityEngine.dll</HintPath>
-          <Private>False</Private>
-        </Reference>
-      </ItemGroup>
-    </When>
-    <Otherwise>
-      <ItemGroup>
-        <Reference Include="System" />
-        <Reference Include="Assembly-CSharp">
-          <HintPath>$(KSPReferenceDllsPathPR)\Assembly-CSharp.dll</HintPath>
-          <Private>False</Private>
-        </Reference>
-        <Reference Include="Assembly-CSharp-firstpass">
-          <HintPath>$(KSPReferenceDllsPathPR)\Assembly-CSharp-firstpass.dll</HintPath>
-          <Private>False</Private>
-        </Reference>
-        <Reference Include="UnityEngine">
-          <HintPath>$(KSPReferenceDllsPathPR)\UnityEngine.dll</HintPath>
-          <Private>False</Private>
-        </Reference>
-      </ItemGroup>
-    </Otherwise>
-  </Choose>
+
+
+  <PropertyGroup>
+    <!-- The bootstrapper need to work on pre-1.8 KSP versions, so we keep it targeting .NET 3.5 -->
+    <!-- this require it to be built against pre-1.8 dlls-->
+    <!-- Note that in the debug configuration it will use whatever framework version is defined in UserConfigDevEnv.xml -->
+    <TargetFrameworkVersion>$(FrameworkVersionOverride)</TargetFrameworkVersion>
+    <EffectiveKSPDllPath Condition="'$(Configuration)' == 'Debug'">$(KSPDevPath)\$(KSPDevDllsRelativePath)</EffectiveKSPDllPath>
+    <EffectiveKSPDllPath Condition="'$(Configuration)' == 'Release'">$(KSPReferenceDllsPathPR)</EffectiveKSPDllPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    
+    <!-- System Dlls -->
+    <Reference Include="System">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Core">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Xml">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Xml.Linq">
+      <Private>False</Private>
+    </Reference>
+
+    <!-- KSP Dlls -->
+    <Reference Include="$(EffectiveKSPDllPath)\Assembly-CSharp.dll">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="$(EffectiveKSPDllPath)\Assembly-CSharp-firstpass.dll">
+      <Private>False</Private>
+    </Reference>
+    
+    <!-- load all UnityEngine Dlls (since 1.8 we only need those) -->
+    <Reference Include="$(EffectiveKSPDllPath)\UnityEngine*.dll">
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+
   <ItemGroup>
     <Compile Include="Bootstrap.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="System" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <!-- use default build targets -->
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-
   <!-- This target is called before the build, you can use it for debugging the build system -->
   <Target Name="BeforeBuild">
-
     <!--
     <ConvertToAbsolutePath Paths="$(OutputPath)">
       <Output TaskParameter="AbsolutePaths" PropertyName="OutputPathAbs" />
@@ -89,6 +90,5 @@
     <Message Text="KerbalismBootstrap build MSBuildProjectDirectory='$(MSBuildProjectDirectory)'" Importance="high" />
     <Message Text="KerbalismBootstrap build OutputPathAbs='$(OutputPathAbs)'" Importance="high" />
     -->
-    
   </Target>
 </Project>

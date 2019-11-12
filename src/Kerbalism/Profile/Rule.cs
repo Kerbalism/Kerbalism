@@ -16,15 +16,12 @@ namespace KERBALISM
 			interval = Lib.ConfigValue(node, "interval", 0.0);
 			rate = Lib.ConfigValue(node, "rate", 0.0);
 			ratio = Lib.ConfigValue(node, "ratio", 0.0);
-			input_threshold = Lib.ConfigValue(node, "input_threshold", 0.0);
 			degeneration = Lib.ConfigValue(node, "degeneration", 0.0);
 			variance = Lib.ConfigValue(node, "variance", 0.0);
 			individuality = Lib.ConfigValue(node, "individuality", 0.0);
 			modifiers = Lib.Tokenize(Lib.ConfigValue(node, "modifier", string.Empty), ',');
 			breakdown = Lib.ConfigValue(node, "breakdown", false);
-			monitor = Lib.ConfigValue(node, "monitor", false);
 			lifetime = Lib.ConfigValue(node, "lifetime", false);
-			monitor_offset = Lib.ConfigValue(node, "monitor_offset", 0.0);
 			warning_threshold = Lib.ConfigValue(node, "warning_threshold", 0.33);
 			danger_threshold = Lib.ConfigValue(node, "danger_threshold", 0.66);
 			fatal_threshold = Lib.ConfigValue(node, "fatal_threshold", 1.0);
@@ -55,8 +52,6 @@ namespace KERBALISM
 				var output_density = Lib.GetDefinition(output).density;
 				ratio = Math.Min(input_density, output_density) > double.Epsilon ? input_density / output_density : 1.0;
 			}
-
-			trigger = false;
 		}
 
 
@@ -69,12 +64,12 @@ namespace KERBALISM
 			VesselResource res = input.Length > 0 ? (VesselResource)resources.GetResource(v, input) : null;
 
 			// determine message variant
-			uint variant = vd.EnvTemperature < PreferencesLifeSupport.Instance.survivalTemperature ? 0 : 1u;
+			uint variant = vd.EnvTemperature < Settings.LifeSupportSurvivalTemperature ? 0 : 1u;
 
 			// get product of all environment modifiers
 			double k = Modifiers.Evaluate(v, vd, resources, modifiers);
 
-			bool lifetime_enabled = PreferencesBasic.Instance.lifetime;
+			bool lifetime_enabled = PreferencesRadiation.Instance.lifetime;
 
 			// for each crew
 			foreach (ProtoCrewMember c in Lib.CrewList(v))
@@ -147,8 +142,8 @@ namespace KERBALISM
 							// simply consume (that is faster)
 							res.Consume(required, name);
 						}
-						// if there is an output and monitor is false
-						else if (!monitor)
+						// if there is an output
+						else
 						{
 							// transform input into output resource
 							// - rules always dump excess overboard (because it is waste)
@@ -156,12 +151,6 @@ namespace KERBALISM
 							recipe.AddInput(input, required);
 							recipe.AddOutput(output, required * ratio, true);
 							resources.AddRecipe(recipe);
-						}
-						// if monitor then do not consume input resource and only produce output if resource percentage + monitor_offset is < 100%
-						else if ((res.Amount / res.Capacity) + monitor_offset < 1.0)
-						{
-							// simply produce (that is faster)
-							resources.Produce(v, output, required * ratio, name);
 						}
 					}
 				}
@@ -171,19 +160,8 @@ namespace KERBALISM
 				{
 					// degenerate:
 					// - if the environment modifier is not telling to reset (by being zero)
-					// - if the input threshold is reached if used
 					// - if this rule is resource-less, or if there was not enough resource in the vessel
-					if (input_threshold >= double.Epsilon)
-					{
-						if (res.Amount >= double.Epsilon && res.Capacity >= double.Epsilon)
-							trigger = (res.Amount / res.Capacity) + monitor_offset >= input_threshold;
-						else
-							trigger = false;
-					}
-					else
-						trigger = input.Length == 0 || res.Amount <= double.Epsilon;
-						
-					if (k > 0.0 && trigger)
+					if (k > 0.0 && (input.Length == 0 || res.Amount <= double.Epsilon))
 					{
 						rd.problem += degeneration           // degeneration rate per-second or per-interval
 								   * k                       // product of environment modifiers
@@ -199,7 +177,12 @@ namespace KERBALISM
 
 				bool do_breakdown = false;
 
-				if(breakdown && PreferencesBasic.Instance.stressBreakdowns) {
+				if (breakdown)
+				{
+					// don't do breakdowns and don't show stress message if disabled
+					if (!PreferencesComfort.Instance.stressBreakdowns)
+						return;
+
 					// stress level
 					double breakdown_probability = rd.problem / warning_threshold;
 					breakdown_probability = Lib.Clamp(breakdown_probability, 0.0, 1.0);
@@ -209,12 +192,12 @@ namespace KERBALISM
 					breakdown_probability *= c.stupidity * 0.6 + 0.4;
 
 					// apply the weekly error rate
-					breakdown_probability *= PreferencesBasic.Instance.stressBreakdownRate;
+					breakdown_probability *= PreferencesComfort.Instance.stressBreakdownRate;
 
 					// now we have the probability for one failure per week, based on the
 					// individual stupidity and stress level of the kerbal.
 
-					breakdown_probability = (breakdown_probability * elapsed_s) / (Lib.DaysInYear() * Lib.HoursInDay() * 3600);
+					breakdown_probability = (breakdown_probability * elapsed_s) / (Lib.DaysInYear * Lib.HoursInDay * 3600);
 					if (breakdown_probability > Lib.RandomDouble()) {
 						do_breakdown = true;
 
@@ -226,6 +209,9 @@ namespace KERBALISM
 				// kill kerbal if necessary
 				if (rd.problem >= fatal_threshold)
 				{
+#if DEBUG || DEVBUILD
+					Lib.Log("Rule " + name + " kills " + c.name + " at " + rd.problem + " " + degeneration + "/" + k + "/" + step + "/" + Variance(name, c, variance));
+#endif
 					if (fatal_message.Length > 0)
 						Message.Post(breakdown ? Severity.breakdown : Severity.fatality, Lib.ExpandMsg(fatal_message, v, c, variant));
 
@@ -279,7 +265,7 @@ namespace KERBALISM
 		static double Variance(String name, ProtoCrewMember c, double variance)
 		{
 			if (variance < Double.Epsilon)
-				return 1;
+				return 1.0;
 
 			// get a value in [0..1] range associated with a kerbal
 			// we want this to be pseudo-random, so don't just add/multiply the two values, that would be too predictable
@@ -287,6 +273,7 @@ namespace KERBALISM
 			double k = (double)Lib.Hash32(name + c.courage.ToString() + c.stupidity.ToString()) / (double)UInt32.MaxValue;
 
 			// move in [-1..+1] range
+			//k = Lib.Clamp(k * 2.0 - 1.0, -1.0, 1.0);
 			k = k * 2.0 - 1.0;
 
 			// return kerbal-specific variance in range [1-n .. 1+n]
@@ -300,14 +287,11 @@ namespace KERBALISM
 		public double interval;           // if 0 the rule is executed per-second, else it is executed every 'interval' seconds
 		public double rate;               // amount of input resource to consume at each execution
 		public double ratio;              // ratio of output resource in relation to input consumed
-		public double input_threshold;    // when input resource reaches this percentage of its capacity trigger degeneration [range 0 to 1]
 		public double degeneration;       // amount to add to the degeneration at each execution (when we must degenerate)
 		public double variance;           // variance for degeneration rate, unique per-kerbal and in range [1.0-x, 1.0+x]
 		public double individuality;      // variance for process rate, unique per-kerbal and in range [1.0-x, 1.0+x]
 		public List<string> modifiers;    // if specified, rates are influenced by the product of all environment modifiers
 		public bool breakdown;            // if true, trigger a breakdown instead of killing the kerbal
-		public bool monitor;              // if true and input resource exists only monitor the input resource, do not consume it
-		public double monitor_offset;     // add this percentage to input resource to stop output and alter trigger [range 0 to 1]
 		public double warning_threshold;  // threshold of degeneration used to show warning messages and yellow status color
 		public double danger_threshold;   // threshold of degeneration used to show danger messages and red status color
 		public double fatal_threshold;    // threshold of degeneration used to show fatal messages and kill/breakdown the kerbal
@@ -316,8 +300,6 @@ namespace KERBALISM
 		public string fatal_message;      // .
 		public string relax_message;      // .
 		public bool lifetime;             // does this value accumulate over the lifetime of a kerbal
-
-		private bool trigger;             // internal use
 	}
 
 
