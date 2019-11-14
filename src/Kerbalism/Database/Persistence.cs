@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
@@ -8,7 +9,6 @@ using UnityEngine;
 
 namespace KERBALISM
 {
-
 	[AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
 	public class KsmPersistent : Attribute { }
 
@@ -18,7 +18,7 @@ namespace KERBALISM
 	public static class Persistence
 	{
 		static Type persistentAttr = typeof(KsmPersistent);
-		static Type PersistentTypeAttr = typeof(KsmPersistentType);
+		static Type persistentTypeAttr = typeof(KsmPersistentType);
 
 		/// <summary> save to `node` all fields and properties in `instance` that have the `[KsmPersistent]` attribute </summary>
 		public static void SaveMembers<T>(T instance, ConfigNode node)
@@ -28,7 +28,7 @@ namespace KERBALISM
 			{
 				if (fi.IsDefined(persistentAttr, true))
 				{
-					if (fi.FieldType.IsDefined(PersistentTypeAttr, true))
+					if (fi.FieldType.IsDefined(persistentTypeAttr, true))
 					{
 						ConfigNode dataFieldNode = new ConfigNode(fi.Name);
 						SaveMembers(fi.GetValue(instance), dataFieldNode);
@@ -44,7 +44,7 @@ namespace KERBALISM
 			{
 				if (pi.IsDefined(persistentAttr, true))
 				{
-					if (pi.PropertyType.IsDefined(PersistentTypeAttr, true))
+					if (pi.PropertyType.IsDefined(persistentTypeAttr, true))
 					{
 						ConfigNode dataFieldNode = new ConfigNode(pi.Name);
 						SaveMembers(pi.GetValue(instance, null), dataFieldNode);
@@ -56,9 +56,6 @@ namespace KERBALISM
 					}
 				}
 			}
-
-
-
 		}
 
 		/// <summary>
@@ -68,32 +65,50 @@ namespace KERBALISM
 		/// <para/> 2. Types implementing the `IList` interface (List, Array...), each item is stored as a subnode.
 		/// This support lists of a custom class that itself has `[Persistent]` fields, as long as the class has a parameterless ctor
 		/// </summary>
-		public static void SaveMember<T>(MemberInfo fieldOrPropertyInfo, T field, ConfigNode node)
+		public static void SaveMember<T>(MemberInfo fieldOrPropertyInfo, T memberInstance, ConfigNode node)
 		{
-			if (field == null) return;
+			if (memberInstance == null) return;
 
-			if (field is IList iList)
+			if (memberInstance is IList iList)
 			{
 				if (iList.Count == 0) return;
 
-				foreach (object listObj in iList)
-				{
-					ConfigNode listObjNode = new ConfigNode(fieldOrPropertyInfo.Name);
-					SaveMembers(listObj, listObjNode);
-					node.AddNode(listObjNode);
-				}
+				ConfigNode listObjNode = new ConfigNode(fieldOrPropertyInfo.Name);
+
+				// if this is a custom class or struct that has the [KsmPersistentType] attribute, call
+				if (iList[0].GetType().IsDefined(persistentTypeAttr, true))
+					foreach (object listObj in iList)
+						SaveMembers(listObj, listObjNode);
+				else
+					foreach (object listObj in iList)
+						listObjNode.AddValue(listObj, listObjNode);
+
+
+
+
+				node.AddNode(listObjNode);
 			}
 			else
 			{
-				node.AddValue(fieldOrPropertyInfo.Name, field);
+				if (Serialization.SerializeValue(memberInstance, out string serializedValue))
+					node.AddValue(fieldOrPropertyInfo.Name, serializedValue);
+				else
+					Lib.Log($"ERROR : could not save field or property {fieldOrPropertyInfo.Name} to ConfigNode {node.name}");
 			}
 		}
 
 		public static void LoadMembers<T>(T instance, ConfigNode node)
 		{
+			foreach (var item in collection)
+			{
+
+			}
+
+
+
 			foreach (FieldInfo fi in typeof(T).GetFields(BindingFlags.Public | BindingFlags.NonPublic))
 			{
-				if (fi.GetCustomAttributes(false).Any(p => p.GetType() == typeof(Persistent)))
+				if (fi.IsDefined(persistentAttr, true))
 				{
 					LoadMember(fi, instance, node);
 				}
@@ -104,7 +119,7 @@ namespace KERBALISM
 		{
 			Type fieldType = typeof(T);
 			object loadedMember;
-				
+
 			if (typeof(IList).IsAssignableFrom(fieldType))
 			{
 				Type elementType = fieldType.GetElementType(); // will work only for arrays
@@ -117,7 +132,7 @@ namespace KERBALISM
 					Lib.Log($"ERROR : load failed for field or property {fieldOrPropertyInfo.Name} of type {fieldType.ToString()} : could not find the elements type");
 					return;
 				}
-					
+
 				IList iList = (IList)Activator.CreateInstance(fieldType);
 
 				foreach (ConfigNode listObjectNode in node.GetNodes(fieldOrPropertyInfo.Name))
@@ -129,116 +144,8 @@ namespace KERBALISM
 
 				loadedMember = iList;
 			}
-			else
+			else if (true)
 			{
-				string stringValue = node.GetValue(fieldInfo.Name);
-				if (string.IsNullOrEmpty(stringValue)) return;
-
-				if (fieldType == typeof(string))
-				{
-					fieldInfo.SetValue(field, stringValue);
-				}
-				else if (fieldType.IsAssignableFrom(typeof(Enum)))
-				{
-					if (!Enum.IsDefined(fieldType, stringValue)) return;
-					fieldInfo.SetValue(field, Enum.Parse(fieldType, stringValue));
-				}
-				else if (fieldType == typeof(float))
-				{
-					if (!float.TryParse(stringValue, out float value)) return;
-					fieldInfo.SetValue(field, value);
-				}
-				else if (fieldType == typeof(double))
-				{
-					if (!double.TryParse(stringValue, out double value)) return;
-					fieldInfo.SetValue(field, value);
-				}
-				else if (fieldType == typeof(int))
-				{
-					if (!int.TryParse(stringValue, out int value)) return;
-					fieldInfo.SetValue(field, value);
-				}
-				else if (fieldType == typeof(uint))
-				{
-					if (!uint.TryParse(stringValue, out uint value)) return;
-					fieldInfo.SetValue(field, value);
-				}
-				else if (fieldType == typeof(long))
-				{
-					if (!long.TryParse(stringValue, out long value)) return;
-					fieldInfo.SetValue(field, value);
-				}
-				else if (fieldType == typeof(ulong))
-				{
-					if (!ulong.TryParse(stringValue, out ulong value)) return;
-					fieldInfo.SetValue(field, value);
-				}
-				else if (fieldType == typeof(bool))
-				{
-					if (!bool.TryParse(stringValue, out bool value)) return;
-					fieldInfo.SetValue(field, value);
-				}
-				else if (fieldType == typeof(Vector2))
-				{
-					if (!ParseExtensions.TryParseVector2(stringValue, out Vector2 value)) return;
-					fieldInfo.SetValue(field, value);
-				}
-				else if (fieldType == typeof(Vector2d))
-				{
-					if (!ParseExtensions.TryParseVector2d(stringValue, out Vector2d value)) return;
-					fieldInfo.SetValue(field, value);
-				}
-				else if (fieldType == typeof(Vector3))
-				{
-					if (!ParseExtensions.TryParseVector3(stringValue, out Vector3 value)) return;
-					fieldInfo.SetValue(field, value);
-				}
-				else if (fieldType == typeof(Vector3d))
-				{
-					if (!ParseExtensions.TryParseVector3d(stringValue, out Vector3d value)) return;
-					fieldInfo.SetValue(field, value);
-				}
-				else if (fieldType == typeof(Vector4))
-				{
-					if (!ParseExtensions.TryParseVector4(stringValue, out Vector4 value)) return;
-					fieldInfo.SetValue(field, value);
-				}
-				else if (fieldType == typeof(Vector4d))
-				{
-					if (!ParseExtensions.TryParseVector4d(stringValue, out Vector4d value)) return;
-					fieldInfo.SetValue(field, value);
-				}
-				else if (fieldType == typeof(Quaternion))
-				{
-					if (!ParseExtensions.TryParseQuaternion(stringValue, out Quaternion value)) return;
-					fieldInfo.SetValue(field, value);
-				}
-				else if (fieldType == typeof(QuaternionD))
-				{
-					if (!ParseExtensions.TryParseQuaternionD(stringValue, out QuaternionD value)) return;
-					fieldInfo.SetValue(field, value);
-				}
-				else if (fieldType == typeof(Rect))
-				{
-					if (!ParseExtensions.TryParseRect(stringValue, out Rect value)) return;
-					fieldInfo.SetValue(field, value);
-				}
-				else if (fieldType == typeof(Color))
-				{
-					if (!ParseExtensions.TryParseColor(stringValue, out Color value)) return;
-					fieldInfo.SetValue(field, value);
-				}
-				else if (fieldType == typeof(Color32))
-				{
-					if (!ParseExtensions.TryParseColor32(stringValue, out Color32 value)) return;
-					fieldInfo.SetValue(field, value);
-				}
-				else if (fieldType == typeof(Guid))
-				{
-					Guid value;
-					try { value = new Guid(stringValue); } catch { return; }
-					fieldInfo.SetValue(field, value);
-				}
 
 			}
 		}

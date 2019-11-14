@@ -269,6 +269,7 @@
     <Compile Include="Utility\DumpSpec.cs" />
     <Compile Include="Utility\Highlighter.cs" />
     <Compile Include="Utility\Profiler.cs" />
+    <Compile Include="Utility\Serialization.cs" />
     <Compile Include="Utility\Space.cs" />
     <Compile Include="Utility\Specifics.cs" />
     <Compile Include="Utility\Transformator.cs" />
