@@ -1,3 +1,18 @@
+## v3.2 for all versions of KSP from 1.5.0 to 1.8.9
+
+ - 2019-xx-xx
+
+### Changes since the last release
+
+* Spanish localization (elbuglione)
+* Some adjustments to engine failure probabilities (Sir Mortimer)
+* DMagic Orbital Science experiments tweaked to make them a bit easier to finish (Sir Mortimer)
+* Fixed remaining duration display for very long durations (lampeh)
+* Fixed invisible data being saved during time warp (Got)
+* Fixed facility level requirement evaluation in science mode for surface samples (Sir Mortimer)
+* fix restock+ sample capsule patch (Got)
+
+
 ## v3.1 for all versions of KSP from 1.5.0 to 1.8.9
 
  - 2019-10-28
