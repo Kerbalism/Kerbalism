@@ -29,6 +29,9 @@ namespace KERBALISM
 		[GameParameters.CustomFloatParameterUI("Engine Ignition Failure Chance", asPercentage = true, minValue = 0, maxValue = 3, displayFormat = "F2", toolTip = "Adjust the probability of engine failures on ignition")]
 		public float ignitionFailureChance = 1.0f;
 
+		[GameParameters.CustomFloatParameterUI("Engine Burn Failure Chance", asPercentage = true, minValue = 0, maxValue = 3, displayFormat = "F2", toolTip = "Adjust the probability of an engine failure caused by excessive burn time")]
+		public float engineOperationFailureChance = 1.0f;
+
 		public override GameParameters.GameMode GameMode { get { return GameParameters.GameMode.ANY; } }
 
 		public override bool HasPresets { get { return true; } }
@@ -41,6 +44,7 @@ namespace KERBALISM
 					criticalChance = 0.15f;
 					safeModeChance = 0.6f;
 					ignitionFailureChance = 0.5f;
+					engineOperationFailureChance = 0.5f;
 					engineFailures = false;
 					mtbfFailures = false;
 					break;
@@ -48,6 +52,7 @@ namespace KERBALISM
 					criticalChance = 0.25f;
 					safeModeChance = 0.5f;
 					ignitionFailureChance = 0.75f;
+					engineOperationFailureChance = 0.75f;
 					engineFailures = true;
 					mtbfFailures = true;
 					break;
@@ -55,6 +60,7 @@ namespace KERBALISM
 					criticalChance = 0.3f;
 					safeModeChance = 0.45f;
 					ignitionFailureChance = 0.8f;
+					engineOperationFailureChance = 0.8f;
 					engineFailures = true;
 					mtbfFailures = true;
 					break;
@@ -62,6 +68,7 @@ namespace KERBALISM
 					criticalChance = 0.35f;
 					safeModeChance = 0.4f;
 					ignitionFailureChance = 1f;
+					engineOperationFailureChance = 1f;
 					engineFailures = true;
 					mtbfFailures = true;
 					break;

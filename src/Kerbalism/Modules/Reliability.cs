@@ -134,12 +134,15 @@ namespace KERBALISM
 			vessel.KerbalismData().ResetReliabilityStatus();
 
 			bool fail = false;
+			bool launchpad = vessel.situation == Vessel.Situations.PRELAUNCH || ignitions <= 1 && vessel.situation == Vessel.Situations.LANDED;
 
 			if (turnon_failure_probability > 0)
 			{
 				// q = quality indicator
 				var q = quality ? Settings.QualityScale : 1.0;
-				if (ignitions <= 1) q /= 2.0; // the very first ignition is more likely to fail
+
+
+				if (launchpad) q /= 2.5; // the very first ignition is more likely to fail
 				if (Lib.RandomDouble() < (turnon_failure_probability * PreferencesReliability.Instance.ignitionFailureChance) / q)
 				{
 					fail = true;
@@ -178,11 +181,14 @@ namespace KERBALISM
 
 				next = Planetarium.GetUniversalTime() + Lib.RandomDouble() * 2.0;
 
-				if(Lib.RandomDouble() < 0.2)
+				var fuelSystemFailureProbability = 0.1;
+				if (launchpad) fuelSystemFailureProbability = 0.5;
+
+				if(Lib.RandomDouble() < fuelSystemFailureProbability)
 				{
 					// broken fuel line -> delayed kaboom
 					explode = true;
-					next += Lib.RandomDouble() * 10 + 3;
+					next += Lib.RandomDouble() * 10 + 4;
 					FlightLogger.fetch?.LogEvent(part.partInfo.title + " fuel system leak caused destruction of the engine");
 				}
 				else
@@ -379,7 +385,10 @@ namespace KERBALISM
 					var f = rated_operation_duration;
 					if (quality) f *= Settings.QualityScale;
 
-					// random^3 so we get an exponentially increasing probability
+					// extend engine burn duration by preference value 
+					f /= PreferencesReliability.Instance.engineOperationFailureChance;
+
+					// random^3 so we get an exponentially increasing failure probability
 					var p = Math.Pow(Lib.RandomDouble(), 3);
 
 					// 1-p turns the probability of failure into one of non-failure
