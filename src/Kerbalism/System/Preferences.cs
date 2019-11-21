@@ -40,28 +40,28 @@ namespace KERBALISM
 				case GameParameters.Preset.Easy:
 					criticalChance = 0.15f;
 					safeModeChance = 0.6f;
-					ignitionFailureChance = 0.75f;
+					ignitionFailureChance = 0.5f;
 					engineFailures = false;
 					mtbfFailures = false;
 					break;
 				case GameParameters.Preset.Normal:
 					criticalChance = 0.25f;
 					safeModeChance = 0.5f;
-					ignitionFailureChance = 0.8f;
+					ignitionFailureChance = 0.75f;
 					engineFailures = true;
 					mtbfFailures = true;
 					break;
 				case GameParameters.Preset.Moderate:
 					criticalChance = 0.3f;
 					safeModeChance = 0.45f;
-					ignitionFailureChance = 1.0f;
+					ignitionFailureChance = 0.8f;
 					engineFailures = true;
 					mtbfFailures = true;
 					break;
 				case GameParameters.Preset.Hard:
 					criticalChance = 0.35f;
 					safeModeChance = 0.4f;
-					ignitionFailureChance = 1.5f;
+					ignitionFailureChance = 1f;
 					engineFailures = true;
 					mtbfFailures = true;
 					break;

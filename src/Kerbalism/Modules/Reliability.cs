@@ -137,7 +137,9 @@ namespace KERBALISM
 
 			if (turnon_failure_probability > 0)
 			{
+				// q = quality indicator
 				var q = quality ? Settings.QualityScale : 1.0;
+				if (ignitions <= 1) q /= 2.0; // the very first ignition is more likely to fail
 				if (Lib.RandomDouble() < (turnon_failure_probability * PreferencesReliability.Instance.ignitionFailureChance) / q)
 				{
 					fail = true;
@@ -176,13 +178,17 @@ namespace KERBALISM
 
 				next = Planetarium.GetUniversalTime() + Lib.RandomDouble() * 2.0;
 
-				if(Lib.RandomDouble() < 0.1)
+				if(Lib.RandomDouble() < 0.2)
 				{
-					// delayed ignition failure
-					next += Lib.RandomDouble() * 10;
+					// broken fuel line -> delayed kaboom
+					explode = true;
+					next += Lib.RandomDouble() * 10 + 3;
+					FlightLogger.fetch?.LogEvent(part.partInfo.title + " fuel system leak caused destruction of the engine");
 				}
-
-				FlightLogger.fetch?.LogEvent(part.partInfo.title + " failure on ignition");
+				else
+				{
+					FlightLogger.fetch?.LogEvent(part.partInfo.title + " failure on ignition");
+				}
 			}
 			return fail;
 		}
@@ -382,7 +388,7 @@ namespace KERBALISM
 					// 35% guaranteed burn duration
 					var guaranteed_operation = f * 0.35;
 
-					fail_duration = guaranteed_operation + (f - guaranteed_operation/2) * p;
+					fail_duration = guaranteed_operation + f * p;
 #if DEBUG_RELIABILITY
 					Lib.Log(part.partInfo.title + " will fail after " + Lib.HumanReadableDuration(fail_duration) + " burn time");
 #endif
@@ -392,7 +398,7 @@ namespace KERBALISM
 				{
 					next = now;
 					enforce_breakdown = true;
-					explode = Lib.RandomDouble() < 0.35;
+					explode = Lib.RandomDouble() < 0.2;
 #if DEBUG_RELIABILITY
 					Lib.Log("Reliability: " + part.partInfo.title + " fails because of material fatigue");
 #endif
