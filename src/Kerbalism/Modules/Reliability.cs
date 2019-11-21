@@ -140,9 +140,10 @@ namespace KERBALISM
 			{
 				// q = quality indicator
 				var q = quality ? Settings.QualityScale : 1.0;
-
-
 				if (launchpad) q /= 2.5; // the very first ignition is more likely to fail
+
+				q += Lib.Clamp(ignitions - 1, 0.0, 6.0) / 20.0; // subsequent ignition failures become less and less likely, reducing by up to 30%
+
 				if (Lib.RandomDouble() < (turnon_failure_probability * PreferencesReliability.Instance.ignitionFailureChance) / q)
 				{
 					fail = true;
