@@ -30,8 +30,15 @@ namespace KERBALISM
 					File file = File.Load(subject_id, file_node);
 					if (file != null)
 					{
-						files.Add(file.subjectData, file);
-						file.subjectData.AddDataCollectedInFlight(file.size);
+						if(files.ContainsKey(file.subjectData))
+						{
+							Lib.Log("Warning: discarding duplicate subject " + file.subjectData);
+						}
+						else
+						{
+							files.Add(file.subjectData, file);
+							file.subjectData.AddDataCollectedInFlight(file.size);
+						}
 					}
 					else
 					{
@@ -39,8 +46,15 @@ namespace KERBALISM
 						if (file != null)
 						{
 							Lib.Log("Drive file load : converted '" + subject_id + "' to new format");
-							files.Add(file.subjectData, file);
-							file.subjectData.AddDataCollectedInFlight(file.size);
+							if(files.ContainsKey(file.subjectData))
+							{
+								Lib.Log("Warning: discarding duplicate converted subject " + file.subjectData);
+							}
+							else
+							{
+								files.Add(file.subjectData, file);
+								file.subjectData.AddDataCollectedInFlight(file.size);
+							}
 						}
 					}
 				}
