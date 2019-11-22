@@ -77,6 +77,9 @@ namespace KERBALISM
 			// do nothing if science system is disabled
 			if (!Features.Science) return;
 
+			// consume ec for transmitters
+			ec.Consume(vd.Connection.ec_idle * elapsed_s, "comms (idle)");
+
 			// avoid corner-case when RnD isn't live during scene changes
 			// - this avoid losing science if the buffer reach threshold during a scene change
 			if (HighLogic.CurrentGame.Mode != Game.Modes.SANDBOX && ResearchAndDevelopment.Instance == null)
@@ -178,10 +181,10 @@ namespace KERBALISM
 
 			vd.scienceTransmitted += scienceCredited;
 
-			// consume EC cost for transmission (ec_idle is consumed elsewhere)
+			// consume EC cost for transmission (ec_idle is consumed above)
 			double transmittedCapacity = totalTransmitCapacity - remainingTransmitCapacity;
 			double transmissionCost = (vd.Connection.ec - vd.Connection.ec_idle) * (transmittedCapacity / vd.Connection.rate);
-			ec.Consume(transmissionCost, "transmission");
+			ec.Consume(transmissionCost, "comms (xmit)");
 
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Science.Update-AddScience");
 

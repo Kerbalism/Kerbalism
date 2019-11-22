@@ -17,8 +17,7 @@ namespace KERBALISM
 			if(!Lib.IsVessel(v))
 				return;
 
-			// consume ec for transmitters
-			ec.Consume(vd.Connection.ec_idle * elapsed_s, "comms");
+			// EC consumption is handled in Science update
 
 			Cache.WarpCache(v).dataCapacity = vd.deviceTransmit ? vd.Connection.rate * elapsed_s : 0.0;
 
