@@ -133,7 +133,8 @@ namespace KERBALISM
 			// while not transmitting, transmitters only use 10-20% of that
 			ec_transmitter *= antennaInfo.transmitting ? Settings.TransmitterActiveEcFactor : Settings.TransmitterPassiveEcFactor;
 
-			antennaInfo.ec += ec_transmitter;
+			antennaInfo.ec = ec_transmitter * Settings.TransmitterActiveEcFactor;
+			antennaInfo.ec_idle = ec_transmitter * Settings.TransmitterPassiveEcFactor;
 
 			Init();
 

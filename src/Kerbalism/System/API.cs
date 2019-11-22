@@ -41,8 +41,11 @@ namespace KERBALISM
 		/// </summary>
 		public double rate = 0.0;
 
-		/// <summary> ec cost </summary>
+		/// <summary> ec cost while transmitting at the above rate </summary>
 		public double ec = 0.0;
+
+		/// <summary> ec cost while not transmitting </summary>
+		public double ec_idle = 0.0;
 
 		/// <summary> link quality indicator for the UI, any value from 0-1.
 		/// you MUST set this to >= 0 in your mod, otherwise the comm status

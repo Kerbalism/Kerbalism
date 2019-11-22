@@ -18,7 +18,7 @@ namespace KERBALISM
 				return;
 
 			// consume ec for transmitters
-			ec.Consume(vd.Connection.ec * elapsed_s, "comms");
+			ec.Consume(vd.Connection.ec_idle * elapsed_s, "comms");
 
 			Cache.WarpCache(v).dataCapacity = vd.deviceTransmit ? vd.Connection.rate * elapsed_s : 0.0;
 

@@ -90,7 +90,7 @@ namespace KERBALISM
 				|| !vd.Connection.linked
 				|| vd.Connection.rate <= 0.0
 				|| !vd.deviceTransmit
-				|| ec.Amount < vd.Connection.ec * elapsed_s)
+				|| ec.Amount < vd.Connection.ec_idle * elapsed_s)
 			{
 				// reset all files transmit rate
 				foreach (Drive drive in Drive.GetDrives(vd, true))
@@ -101,7 +101,8 @@ namespace KERBALISM
 				return;
 			}
 			
-			double transmitCapacity = vd.Connection.rate * elapsed_s;
+			double totalTransmitCapacity = vd.Connection.rate * elapsed_s;
+			double remainingTransmitCapacity = totalTransmitCapacity;
 			double scienceCredited = 0.0;
 
 			GetFilesToTransmit(v, vd);
@@ -122,17 +123,17 @@ namespace KERBALISM
 					continue;
 
 				// always transmit everything in the warp cache
-				if (!xmitFile.isInWarpCache && transmitCapacity <= 0.0)
+				if (!xmitFile.isInWarpCache && remainingTransmitCapacity <= 0.0)
 					break;
 
 				// determine how much data is transmitted
-				double transmitted = xmitFile.isInWarpCache ? xmitFile.file.size : Math.Min(xmitFile.file.size, transmitCapacity);
+				double transmitted = xmitFile.isInWarpCache ? xmitFile.file.size : Math.Min(xmitFile.file.size, remainingTransmitCapacity);
 
 				if (transmitted == 0.0)
 					continue;
 
 				// consume transmit capacity
-				transmitCapacity -= transmitted;
+				remainingTransmitCapacity -= transmitted;
 
 				// get science value
 				double xmitScienceValue = transmitted * xmitFile.sciencePerMB;
@@ -176,6 +177,11 @@ namespace KERBALISM
 			UnityEngine.Profiling.Profiler.EndSample();
 
 			vd.scienceTransmitted += scienceCredited;
+
+			// consume EC cost for transmission (ec_idle is consumed elsewhere)
+			double transmittedCapacity = totalTransmitCapacity - remainingTransmitCapacity;
+			double transmissionCost = (vd.Connection.ec - vd.Connection.ec_idle) * (transmittedCapacity / vd.Connection.rate);
+			ec.Consume(transmissionCost, "transmission");
 
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Science.Update-AddScience");
 
