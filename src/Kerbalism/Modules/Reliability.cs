@@ -502,8 +502,8 @@ namespace KERBALISM
 			// get normalized time to failure
 			double time_k = (Planetarium.GetUniversalTime() - last) / (next - last);
 			needMaintenance = mtbf > 0 && time_k > 0.35;
-			if (rated_ignitions > 0 && ignitions > Math.Ceiling(EffectiveIgnitions(quality, rated_ignitions) * 0.7)) needMaintenance = true;
-			if (rated_operation_duration > 0 && operation_duration > EffectiveDuration(quality, rated_operation_duration) * 0.7) needMaintenance = true;
+			if (rated_ignitions > 0 && ignitions > Math.Ceiling(EffectiveIgnitions(quality, rated_ignitions) * 0.4)) needMaintenance = true;
+			if (rated_operation_duration > 0 && operation_duration > EffectiveDuration(quality, rated_operation_duration) * 0.4) needMaintenance = true;
 
 			v.KerbalismData().ResetReliabilityStatus();
 
@@ -568,9 +568,8 @@ namespace KERBALISM
 			lastRunningCheck = 0;
 			last_inspection = Planetarium.GetUniversalTime();
 
-			operation_duration = Math.Min(operation_duration, EffectiveDuration(quality, rated_operation_duration) * 0.3);
-			ignitions = Math.Min(ignitions, (int)(EffectiveIgnitions(quality, rated_ignitions) * 0.3));
-
+			operation_duration = 0;
+			ignitions = 0;
 			fail_duration = 0;
 			vessel.KerbalismData().ResetReliabilityStatus();
 
