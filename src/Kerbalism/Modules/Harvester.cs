@@ -204,10 +204,14 @@ namespace KERBALISM
 			// if there is no drill transform specified, or if the specified one doesn't exist, assume ground contact
 			if (drill_head == null) return true;
 
+			// unable to determine terrain altitude, assume ground contact
+			if (vessel.mainBody.pqsController == null) return true;
+
 			// get distance from drill head to terrain
 			// - the drill head transform of stock parts doesn't refer to the drill head (of course),
 			//   but to the start of the extendible portion of the drill
-			return Lib.TerrainHeight(vessel.mainBody, drill_head.position) < length;
+			// - terrain altitude evaluation is not very reliable, so allow for some error
+			return Lib.TerrainHeight(vessel.mainBody, drill_head.position) < length * 1.5;
 		}
 
 		// action groups
