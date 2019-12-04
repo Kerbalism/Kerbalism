@@ -158,6 +158,7 @@ namespace KERBALISM
 			if (rated_ignitions > 0)
 			{
 				int total_ignitions = EffectiveIgnitions(quality, rated_ignitions);
+				if (ignitions >= total_ignitions * 0.9) needMaintenance = true;
 				if (ignitions > total_ignitions)
 				{
 					var q = (quality ? Settings.QualityScale : 1.0) * Lib.RandomDouble();
@@ -502,8 +503,9 @@ namespace KERBALISM
 			// get normalized time to failure
 			double time_k = (Planetarium.GetUniversalTime() - last) / (next - last);
 			needMaintenance = mtbf > 0 && time_k > 0.35;
-			if (rated_ignitions > 0 && ignitions > Math.Ceiling(EffectiveIgnitions(quality, rated_ignitions) * 0.4)) needMaintenance = true;
-			if (rated_operation_duration > 0 && operation_duration > EffectiveDuration(quality, rated_operation_duration) * 0.4) needMaintenance = true;
+
+			if (rated_ignitions > 0 && ignitions >= Math.Ceiling(EffectiveIgnitions(quality, rated_ignitions) * 0.4)) needMaintenance = true;
+			if (rated_operation_duration > 0 && operation_duration >= EffectiveDuration(quality, rated_operation_duration) * 0.4) needMaintenance = true;
 
 			v.KerbalismData().ResetReliabilityStatus();
 
