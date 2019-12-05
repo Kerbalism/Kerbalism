@@ -19,7 +19,7 @@ namespace KERBALISM
 		[KSPField] public double abundance_rate = 0.1;            // abundance level at which rate is specified (10% by default)
 		[KSPField] public double ec_rate = 0.0;                   // rate of ec consumption per-second, irregardless of abundance
 		[KSPField] public string drill = string.Empty;            // the drill head transform
-		[KSPField] public double length = 5.0;                    // tolerable distance between drill head and the ground (length of the extendible part)
+		[KSPField] public float length = 5f;                    // tolerable distance between drill head and the ground (length of the extendible part)
 
 		// persistence
 		[KSPField(isPersistant = true)] public bool deployed;     // true if the harvester is deployed
@@ -161,7 +161,7 @@ namespace KERBALISM
 			switch (type)
 			{
 				case 0:
-					bool land_valid = vessel.Landed;// && GroundContact();
+					bool land_valid = vessel.Landed && GroundContact();
 					if (!land_valid) return "no ground contact";
 					break;
 
@@ -198,22 +198,15 @@ namespace KERBALISM
 		}
 
 
-		/* Lib.TerrainHeight appears to be broken / unlreliable
 		// return true if the drill head penetrate the ground
 		bool GroundContact()
 		{
 			// if there is no drill transform specified, or if the specified one doesn't exist, assume ground contact
 			if (drill_head == null) return true;
 
-			// unable to determine terrain altitude, assume ground contact
-			if (vessel.mainBody.pqsController == null) return true;
-
-			// get distance from drill head to terrain
-			// - the drill head transform of stock parts doesn't refer to the drill head (of course),
-			//   but to the start of the extendible portion of the drill
-			return Lib.TerrainHeight(vessel.mainBody, drill_head.position) < length * 1.5;
+			// Replicating ModuleResourceHarvester.CheckForImpact()
+			return Physics.Raycast(drill_head.position, drill_head.forward, length, 32768);
 		}
-		*/
 
 		// action groups
 		[KSPAction("#KERBALISM_Harvester_Action")] public void Action(KSPActionParam param) { Toggle(); }

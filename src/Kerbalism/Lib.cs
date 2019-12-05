@@ -1153,7 +1153,7 @@ namespace KERBALISM
 				target == null ? null : target.celestialBody ?? target.vessel?.mainBody;
 		}
 
-		/* this appears to be broken / working unreliably
+		/* this appears to be broken / working unreliably, use a raycast instead
 		/// <summary
 		/// return terrain height at point specified
 		///- body terrain must be loaded for this to work: use it only for loaded vessels
