@@ -1,0 +1,71 @@
+PART
+{
+	MODEL
+	{
+		model = ThunderAerospace/TacLifeSupportContainers/TacContainer
+		position = 0.0, 0.0, 0.0
+		scale = 1.0, 1.0, 1.0
+		rotation = 0.0, 0.0, 0.0
+		texture = Texture, ThunderAerospace/TacLifeSupportContainers/WasteTexture
+	}
+
+	// --- general parameters ---
+	name = TacWasteContainerLarge
+	module = Part
+	author = TaranisElsu
+
+	// --- asset parameters ---
+	scale = 1
+	rescaleFactor = 2
+
+	// --- node Definitions ---
+	node_stack_top = 0.0, 0.125, 0.0, 0.0, 1.0, 0.0, 2
+	node_stack_bottom = 0.0, -0.125, 0.0, 0.0, -1.0, 0.0, 2
+
+	// attachment rules: stack, srfAttach, allowStack, allowSrfAttach, allowCollision
+	attachRules = 1,0,1,1,0
+
+	// --- editor parameters ---
+	TechRequired = heavyRocketry
+	entryCost = 800
+	cost = 2000
+	category = Utility
+	subcategory = 0
+	bulkheadProfiles = size2
+	title = #autoLOC_TACLS_00129 //Life Support Waste Container, 2.5m
+	manufacturer = #autoLOC_TACLS_00153 //Thunder Aerospace Corporation
+	description = #autoLOC_TACLS_00130 //A large 2.5-meter container for holding Life Support waste products.
+	
+	tags = #autoLOC_TACLS_00133 //tacls life support waste CO2 wastewater container cck-lifesupport
+
+	// --- standard part parameters ---
+	mass = 0.75
+	dragModelType = default
+	maximum_drag = 0.2
+	minimum_drag = 0.2
+	angularDrag = 1
+	crashTolerance = 12
+	breakingForce = 500
+	breakingTorque = 500
+	maxTemp = 3200
+
+	// --- resource parameters ---
+	RESOURCE
+	{
+		name = CarbonDioxide
+		amount = 0
+		maxAmount = 172334.5
+	}
+	RESOURCE
+	{
+		name = WasteWater
+		amount = 0
+		maxAmount = 1658.8
+	}
+	RESOURCE
+	{
+		name = Waste
+		amount = 0
+		maxAmount = 179.2
+	}
+}

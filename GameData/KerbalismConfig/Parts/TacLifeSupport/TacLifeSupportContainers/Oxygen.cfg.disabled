@@ -1,0 +1,59 @@
+PART
+{
+	MODEL
+	{
+		model = ThunderAerospace/TacLifeSupportContainers/TacContainer
+		position = 0.0, 0.0, 0.0
+		scale = 1.0, 1.0, 1.0
+		rotation = 0.0, 0.0, 0.0
+		texture = Texture, ThunderAerospace/TacLifeSupportContainers/OxygenTexture
+	}
+
+	// --- general parameters ---
+	name = TacOxygenContainer
+	module = Part
+	author = TaranisElsu
+
+	// --- asset parameters ---
+	scale = 1
+	rescaleFactor = 1
+
+	// --- node Definitions ---
+	node_stack_top = 0.0, 0.125, 0.0, 0.0, 1.0, 0.0, 1
+	node_stack_bottom = 0.0, -0.125, 0.0, 0.0, -1.0, 0.0, 1
+
+	// attachment rules: stack, srfAttach, allowStack, allowSrfAttach, allowCollision
+	attachRules = 1,0,1,1,0
+
+	// --- editor parameters ---
+	TechRequired = survivability
+	entryCost = 400
+	cost = 303
+	category = Utility
+	subcategory = 0
+	bulkheadProfiles = size1
+	title = #autoLOC_TACLS_00118 //Life Support Oxygen Container, 1.25m
+	manufacturer = #autoLOC_TACLS_00153 //Thunder Aerospace Corporation
+	description = #autoLOC_TACLS_00119 //A 1.25-meter container full of Breathing Oxygen supplies.
+
+	tags = #autoLOC_TACLS_00124 //tacls life support oxygen container supplies cck-lifesupport
+
+	// --- standard part parameters ---
+	mass = 0.20
+	dragModelType = default
+	maximum_drag = 0.2
+	minimum_drag = 0.2
+	angularDrag = 1
+	crashTolerance = 12
+	breakingForce = 500
+	breakingTorque = 500
+	maxTemp = 3200
+
+	// --- resource parameters ---
+	RESOURCE
+	{
+		name = Oxygen
+		amount = 53072.3
+		maxAmount = 53072.3
+	}
+}

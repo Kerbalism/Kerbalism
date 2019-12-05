@@ -1,0 +1,71 @@
+PART
+{
+	MODEL
+	{
+		model = ThunderAerospace/TacLifeSupportContainers/TacContainer
+		position = 0.0, 0.0, 0.0
+		scale = 1.0, 1.0, 1.0
+		rotation = 0.0, 0.0, 0.0
+		texture = Texture, ThunderAerospace/TacLifeSupportContainers/Texture
+	}
+
+	// --- general parameters ---
+	name = TacLifeSupportContainerLarge
+	module = Part
+	author = TaranisElsu
+
+	// --- asset parameters ---
+	scale = 1
+	rescaleFactor = 2
+
+	// --- node Definitions ---
+	node_stack_top = 0.0, 0.125, 0.0, 0.0, 1.0, 0.0, 2
+	node_stack_bottom = 0.0, -0.125, 0.0, 0.0, -1.0, 0.0, 2
+
+	// attachment rules: stack, srfAttach, allowStack, allowSrfAttach, allowCollision
+	attachRules = 1,0,1,1,0
+
+	// --- editor parameters ---
+	TechRequired = heavyRocketry
+	entryCost = 800
+	cost = 2255
+	category = Utility
+	subcategory = 0
+	bulkheadProfiles = size2
+	title = #autoLOC_TACLS_00111 //Life Support Supplies Container, 2.5m
+	manufacturer = #autoLOC_TACLS_00153 //Thunder Aerospace Corporation
+	description = #autoLOC_TACLS_00112 //A large 2.5-meter container full of Life Support supplies.
+	
+	tags = #autoLOC_TACLS_00115 //tacls life support food water oxygen container supplies cck-lifesupport
+
+	// --- standard part parameters ---
+	mass = 0.75
+	dragModelType = default
+	maximum_drag = 0.2
+	minimum_drag = 0.2
+	angularDrag = 1
+	crashTolerance = 12
+	breakingForce = 500
+	breakingTorque = 500
+	maxTemp = 3200
+
+	// --- resource parameters ---
+	RESOURCE
+	{
+		name = Food
+		amount = 1038.3
+		maxAmount = 1038.3
+	}
+	RESOURCE
+	{
+		name = Water
+		amount = 686.3
+		maxAmount = 686.3
+	}
+	RESOURCE
+	{
+		name = Oxygen
+		amount = 105113.2
+		maxAmount = 105113.2
+	}
+}
