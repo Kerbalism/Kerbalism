@@ -161,7 +161,7 @@ namespace KERBALISM
 			switch (type)
 			{
 				case 0:
-					bool land_valid = vessel.Landed && GroundContact();
+					bool land_valid = vessel.Landed;// && GroundContact();
 					if (!land_valid) return "no ground contact";
 					break;
 
@@ -198,6 +198,7 @@ namespace KERBALISM
 		}
 
 
+		/* Lib.TerrainHeight appears to be broken / unlreliable
 		// return true if the drill head penetrate the ground
 		bool GroundContact()
 		{
@@ -210,9 +211,9 @@ namespace KERBALISM
 			// get distance from drill head to terrain
 			// - the drill head transform of stock parts doesn't refer to the drill head (of course),
 			//   but to the start of the extendible portion of the drill
-			// - terrain altitude evaluation is not very reliable, so allow for some error
 			return Lib.TerrainHeight(vessel.mainBody, drill_head.position) < length * 1.5;
 		}
+		*/
 
 		// action groups
 		[KSPAction("#KERBALISM_Harvester_Action")] public void Action(KSPActionParam param) { Toggle(); }
