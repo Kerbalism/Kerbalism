@@ -12,13 +12,20 @@ namespace KERBALISM
 	{
 		private class BackgroundDelegate
 		{
-			internal Action<Vessel, ProtoPartSnapshot, ProtoPartModuleSnapshot, PartModule, Part, double> action;
+			internal MethodInfo methodInfo;
 
+#if KSP18
+			// non-generic actions are too new to be used in pre-KSP18 times.
+			internal Action<Vessel, ProtoPartSnapshot, ProtoPartModuleSnapshot, PartModule, Part, double> action;
+#endif
 			public BackgroundDelegate(MethodInfo methodInfo)
 			{
+				this.methodInfo = methodInfo;
+#if KSP18
 				action = (Action<Vessel, ProtoPartSnapshot, ProtoPartModuleSnapshot, PartModule, Part, double>)Delegate.CreateDelegate(typeof(Action<Vessel, ProtoPartSnapshot, ProtoPartModuleSnapshot, PartModule, Part, double>), methodInfo);
+#endif
+				}
 			}
-		}
 
 		private static readonly Dictionary<string, BackgroundDelegate> apiDelegates = new Dictionary<string, BackgroundDelegate>();
 		private static readonly List<string> unsupportedModules = new List<string>();
@@ -160,9 +167,13 @@ namespace KERBALISM
 						try
 						{
 							BackgroundDelegate bgd = apiDelegates[e.module_prefab.moduleName];
+#if KSP18
 							bgd.action(v, e.p, e.m, e.module_prefab, e.part_prefab, elapsed_s);
+#else
+							bgd.methodInfo.Invoke(null, new object[] { v, e.p, e.m, e.module_prefab, e.part_prefab, elapsed_s });
+#endif
 						}
-						catch(Exception ex)
+						catch (Exception ex)
 						{
 							Lib.Log("BackgroundUpdate in PartModule " + e.module_prefab.moduleName + " excepted: " + ex.Message + "\n" + ex.ToString());
 						}
