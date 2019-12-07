@@ -10,8 +10,17 @@ namespace KERBALISM
 
 	public static class Background
 	{
-		private static readonly Dictionary<string, Action<Vessel, ProtoPartSnapshot, ProtoPartModuleSnapshot, PartModule, Part, double>> apiDelegates
-			= new Dictionary<string, Action<Vessel, ProtoPartSnapshot, ProtoPartModuleSnapshot, PartModule, Part, double>>();
+		private class BackgroundDelegate
+		{
+			internal Action<Vessel, ProtoPartSnapshot, ProtoPartModuleSnapshot, PartModule, Part, double> action;
+
+			public BackgroundDelegate(MethodInfo methodInfo)
+			{
+				action = (Action<Vessel, ProtoPartSnapshot, ProtoPartModuleSnapshot, PartModule, Part, double>)Delegate.CreateDelegate(typeof(Action<Vessel, ProtoPartSnapshot, ProtoPartModuleSnapshot, PartModule, Part, double>), methodInfo);
+			}
+		}
+
+		private static readonly Dictionary<string, BackgroundDelegate> apiDelegates = new Dictionary<string, BackgroundDelegate>();
 		private static readonly List<string> unsupportedModules = new List<string>();
 
 		private static Type[] backgroundUpdateSignature = { typeof(Vessel), typeof(ProtoPartSnapshot), typeof(ProtoPartModuleSnapshot), typeof(PartModule), typeof(Part), typeof(double) };
@@ -32,9 +41,7 @@ namespace KERBALISM
 				return false;
 			}
 
-			var apiDelegate = Delegate.CreateDelegate(
-							typeof(Action<Vessel, ProtoPartSnapshot, ProtoPartModuleSnapshot, PartModule, Part, double>), methodInfo);
-			apiDelegates[module_prefab.moduleName] = (Action< Vessel, ProtoPartSnapshot, ProtoPartModuleSnapshot, PartModule, Part, double >)apiDelegate;
+			apiDelegates[module_prefab.moduleName] = new BackgroundDelegate(methodInfo);
 
 			return true;
 		}
@@ -152,8 +159,8 @@ namespace KERBALISM
 					case Module_type.APIModule:
 						try
 						{
-							Action<Vessel, ProtoPartSnapshot, ProtoPartModuleSnapshot, PartModule, Part, double> f = apiDelegates[e.module_prefab.moduleName];
-							f(v, e.p, e.m, e.module_prefab, e.part_prefab, elapsed_s);
+							BackgroundDelegate bgd = apiDelegates[e.module_prefab.moduleName];
+							bgd.action(v, e.p, e.m, e.module_prefab, e.part_prefab, elapsed_s);
 						}
 						catch(Exception ex)
 						{
