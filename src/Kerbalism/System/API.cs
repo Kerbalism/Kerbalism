@@ -418,27 +418,31 @@ namespace KERBALISM
 		}
 
 
-		// --- VESSEL --------------------------------------------------------------
+		// --- RESOURCES ------------------------------------------------------------
 
-		public static double VesselConnectionRate(Vessel v)
+		public static void ConsumeResource(Vessel v, string resource_name, double quantity, string title)
 		{
-			var vi = v.KerbalismData();
-			if (!vi.IsSimulated) return 0.0;
-			return vi.Connection.rate;
+			ResourceCache.Consume(v, resource_name, quantity, title);
 		}
 
-		public static bool VesselConnectionLinked(Vessel v)
+		public static void ProduceResource(Vessel v, string resource_name, double quantity, string title)
 		{
-			var vi = v.KerbalismData();
-			if (!vi.IsSimulated) return false;
-			return vi.Connection.linked;
+			ResourceCache.Produce(v, resource_name, quantity, title);
 		}
 
-		public static int VesselConnectionTransmitting(Vessel v)
+		public static double ResourceAmount(Vessel v, string resource_name)
 		{
-			var vi = v.KerbalismData();
-			if (!vi.IsSimulated) return 0;
-			return vi.filesTransmitted.Count;
+			return ResourceCache.GetResource(v, resource_name).Amount;
+		}
+
+		public static double ResourceCapacity(Vessel v, string resource_name)
+		{
+			return ResourceCache.GetResource(v, resource_name).Capacity;
+		}
+
+		public static double ResourceLevel(Vessel v, string resource_name)
+		{
+			return ResourceCache.GetResource(v, resource_name).Level;
 		}
 
 		// --- SCIENCE --------------------------------------------------------------
@@ -559,8 +563,28 @@ namespace KERBALISM
 
 		// --- COMMUNICATION --------------------------------------------------------------
 
-		public static CommInfo Comm = new CommInfo();
+		public static double VesselConnectionRate(Vessel v)
+		{
+			var vi = v.KerbalismData();
+			if (!vi.IsSimulated) return 0.0;
+			return vi.Connection.rate;
+		}
 
+		public static bool VesselConnectionLinked(Vessel v)
+		{
+			var vi = v.KerbalismData();
+			if (!vi.IsSimulated) return false;
+			return vi.Connection.linked;
+		}
+
+		public static int VesselConnectionTransmitting(Vessel v)
+		{
+			var vi = v.KerbalismData();
+			if (!vi.IsSimulated) return 0;
+			return vi.filesTransmitted.Count;
+		}
+
+		public static CommInfo Comm = new CommInfo();
 		public class CommInfo
 		{
 			//This is the list of methods that should be activated when the event fires

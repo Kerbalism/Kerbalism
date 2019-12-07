@@ -2,12 +2,43 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Reflection;
 
 
 namespace KERBALISM
 {
+
 	public static class Background
 	{
+		private static readonly Dictionary<string, Action<Vessel, ProtoPartSnapshot, ProtoPartModuleSnapshot, PartModule, Part, double>> apiDelegates
+			= new Dictionary<string, Action<Vessel, ProtoPartSnapshot, ProtoPartModuleSnapshot, PartModule, Part, double>>();
+		private static readonly List<string> unsupportedModules = new List<string>();
+
+		private static Type[] backgroundUpdateSignature = { typeof(Vessel), typeof(ProtoPartSnapshot), typeof(ProtoPartModuleSnapshot), typeof(PartModule), typeof(Part), typeof(double) };
+
+		/// <summary>
+		/// Scan all part modules for API implementations
+		/// </summary>
+		private static bool ModuleImplementsAPI(PartModule module_prefab)
+		{
+			if (unsupportedModules.Contains(module_prefab.moduleName))
+				return false;
+
+			MethodInfo methodInfo = module_prefab.GetType().GetMethod("BackgroundUpdate", backgroundUpdateSignature);
+
+			if(methodInfo == null)
+			{
+				unsupportedModules.Add(module_prefab.moduleName);
+				return false;
+			}
+
+			var apiDelegate = Delegate.CreateDelegate(
+							typeof(Action<Vessel, ProtoPartSnapshot, ProtoPartModuleSnapshot, PartModule, Part, double>), methodInfo);
+			apiDelegates[module_prefab.moduleName] = (Action< Vessel, ProtoPartSnapshot, ProtoPartModuleSnapshot, PartModule, Part, double >)apiDelegate;
+
+			return true;
+		}
+
 		public enum Module_type
 		{
 			Reliability = 0,
@@ -32,11 +63,17 @@ namespace KERBALISM
 			FNGenerator,
 			NonRechargeBattery,
 			KerbalismProcess,
-			SolarPanelFixer
+			SolarPanelFixer,
+
+			/// <summary>Module implementing the kerbalism background API</summary>
+			APIModule
 		}
 
 		public static Module_type ModuleType(string module_name)
 		{
+			if (apiDelegates.ContainsKey(module_name))
+				return Module_type.APIModule;
+
 			switch (module_name)
 			{
 				case "Reliability": return Module_type.Reliability;
@@ -111,6 +148,18 @@ namespace KERBALISM
 					case Module_type.CryoTank: ProcessCryoTank(v, e.p, e.m, e.module_prefab, resources, ec, elapsed_s); break;
 					case Module_type.FNGenerator: ProcessFNGenerator(v, e.p, e.m, e.module_prefab, ec, elapsed_s); break;
 					case Module_type.SolarPanelFixer: SolarPanelFixer.BackgroundUpdate(v, e.m, e.module_prefab as SolarPanelFixer, vd, ec, elapsed_s); break;
+
+					case Module_type.APIModule:
+						try
+						{
+							Action<Vessel, ProtoPartSnapshot, ProtoPartModuleSnapshot, PartModule, Part, double> f = apiDelegates[e.module_prefab.moduleName];
+							f(v, e.p, e.m, e.module_prefab, e.part_prefab, elapsed_s);
+						}
+						catch(Exception ex)
+						{
+							Lib.Log("BackgroundUpdate in PartModule " + e.module_prefab.moduleName + " excepted: " + ex.Message + "\n" + ex.ToString());
+						}
+						break;
 				}
 			}
 		}
@@ -144,11 +193,6 @@ namespace KERBALISM
 					// TODO : this is to migrate pre-3.1 saves using WarpFixer to the new SolarPanelFixer. At some point in the future we can remove this code.
 					if (m.moduleName == "WarpFixer") MigrateWarpFixer(v, part_prefab, p, m);
 
-					// get module type
-					// if the type is unknown, skip it
-					Module_type type = ModuleType(m.moduleName);
-					if (type == Module_type.Unknown) continue;
-
 					// get the module prefab
 					// if the prefab doesn't contain this module, skip it
 					PartModule module_prefab = Lib.ModulePrefab(module_prefabs, m.moduleName, PD);
@@ -157,6 +201,17 @@ namespace KERBALISM
 					// if the module is disabled, skip it
 					// note: this must be done after ModulePrefab is called, so that indexes are right
 					if (!Lib.Proto.GetBool(m, "isEnabled")) continue;
+
+					// get module type
+					// if the type is unknown, skip it
+					Module_type type = ModuleType(m.moduleName);
+					if (type == Module_type.Unknown)
+					{
+						if(ModuleImplementsAPI(module_prefab))
+							type = Module_type.APIModule;
+						else
+							continue;
+					}
 
 					var entry = new BackgroundPM();
 					entry.p = p;
