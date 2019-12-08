@@ -12,20 +12,31 @@ namespace KERBALISM
 	{
 		private class BackgroundDelegate
 		{
-			internal MethodInfo methodInfo;
-
 #if KSP18
-			// non-generic actions are too new to be used in pre-KSP18 times.
+			// non-generic actions are too new to be used in pre-KSP18
 			internal Action<Vessel, ProtoPartSnapshot, ProtoPartModuleSnapshot, PartModule, Part, double> action;
+#else
+			internal MethodInfo methodInfo;
 #endif
 			public BackgroundDelegate(MethodInfo methodInfo)
 			{
-				this.methodInfo = methodInfo;
 #if KSP18
 				action = (Action<Vessel, ProtoPartSnapshot, ProtoPartModuleSnapshot, PartModule, Part, double>)Delegate.CreateDelegate(typeof(Action<Vessel, ProtoPartSnapshot, ProtoPartModuleSnapshot, PartModule, Part, double>), methodInfo);
+#else
+				this.methodInfo = methodInfo;
 #endif
-				}
 			}
+
+			public void invoke(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule module_prefab, Part part_prefab, double elapsed_s)
+			{
+				// TODO optimize this for performance. is there a faster way to call the method?
+#if KSP18
+				action(v, p, m, module_prefab, part_prefab, elapsed_s);
+#else
+				methodInfo.Invoke(null, new object[] { v, p, m, module_prefab, part_prefab, elapsed_s });
+#endif
+			}
+		}
 
 		private static readonly Dictionary<string, BackgroundDelegate> apiDelegates = new Dictionary<string, BackgroundDelegate>();
 		private static readonly List<string> unsupportedModules = new List<string>();
@@ -167,11 +178,7 @@ namespace KERBALISM
 						try
 						{
 							BackgroundDelegate bgd = apiDelegates[e.module_prefab.moduleName];
-#if KSP18
-							bgd.action(v, e.p, e.m, e.module_prefab, e.part_prefab, elapsed_s);
-#else
-							bgd.methodInfo.Invoke(null, new object[] { v, e.p, e.m, e.module_prefab, e.part_prefab, elapsed_s });
-#endif
+							bgd.invoke(v, e.p, e.m, e.module_prefab, e.part_prefab, elapsed_s);
 						}
 						catch (Exception ex)
 						{

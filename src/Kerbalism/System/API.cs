@@ -432,19 +432,12 @@ namespace KERBALISM
 
 		public static void ProcessResources(Vessel v, List<KeyValuePair<string, double>> resources, string title)
 		{
-			Lib.Log("ProcessResources called for vessel " + v);
 			foreach(var p in resources)
 			{
 				if (p.Value < 0)
-				{
-					Lib.Log("Consuming " + p.Key + " amount " + p.Value + " for " + title);
 					ResourceCache.Consume(v, p.Key, -p.Value, title);
-				}
 				else
-				{
-					Lib.Log("Producing " + p.Key + " amount " + p.Value + " for " + title);
 					ResourceCache.Produce(v, p.Key, p.Value, title);
-				}
 			}
 		}
 
