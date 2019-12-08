@@ -143,7 +143,7 @@ namespace KERBALISM
 						{
 							// transform input into output resource
 							// - rules always dump excess overboard (because it is waste)
-							ResourceRecipe recipe = new ResourceRecipe((Part)null, name); // kerbals are not associated with a part
+							ResourceRecipe recipe = new ResourceRecipe(name);
 							recipe.AddInput(input, required);
 							recipe.AddOutput(output, required * ratio, true);
 							resources.AddRecipe(recipe);

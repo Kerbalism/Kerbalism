@@ -288,7 +288,7 @@ namespace KERBALISM
 			if (Lib.Proto.GetBool(m, "generatorIsActive"))
 			{
 				// create and commit recipe
-				ResourceRecipe recipe = new ResourceRecipe(p, "generator");
+				ResourceRecipe recipe = new ResourceRecipe("generator");
 				foreach (ModuleResource ir in generator.resHandler.inputResources)
 				{
 					recipe.AddInput(ir.name, ir.rate * elapsed_s);
@@ -341,7 +341,7 @@ namespace KERBALISM
 					  : converter.EfficiencyBonus * (converter.SpecialistBonusBase + (converter.SpecialistEfficiencyFactor * (exp_level + 1)));
 
 					// create and commit recipe
-					ResourceRecipe recipe = new ResourceRecipe(p, "converter");
+					ResourceRecipe recipe = new ResourceRecipe("converter");
 					foreach (var ir in converter.inputList)
 					{
 						recipe.AddInput(ir.ResourceName, ir.Ratio * exp_bonus * elapsed_s);
@@ -406,7 +406,7 @@ namespace KERBALISM
 					if (abundance > harvester.HarvestThreshold)
 					{
 						// create and commit recipe
-						ResourceRecipe recipe = new ResourceRecipe(p, "drill");
+						ResourceRecipe recipe = new ResourceRecipe("drill");
 						foreach (var ir in harvester.inputList)
 						{
 							recipe.AddInput(ir.ResourceName, ir.Ratio * elapsed_s);
@@ -474,7 +474,7 @@ namespace KERBALISM
 						double res_amount = abundance * asteroid_drill.Efficiency * exp_bonus * elapsed_s;
 
 						// transform EC into mined resource
-						ResourceRecipe recipe = new ResourceRecipe(p, "asteroidDrill");
+						ResourceRecipe recipe = new ResourceRecipe("asteroidDrill");
 						recipe.AddInput("ElectricCharge", asteroid_drill.PowerConsumption * elapsed_s);
 						recipe.AddOutput(res_name, res_amount, true);
 						resources.AddRecipe(recipe);
