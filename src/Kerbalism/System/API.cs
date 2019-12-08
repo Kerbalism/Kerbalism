@@ -430,9 +430,35 @@ namespace KERBALISM
 			ResourceCache.Produce(v, resource_name, quantity, title);
 		}
 
+		public static void ProcessResources(Vessel v, List<KeyValuePair<string, double>> resources, string title)
+		{
+			Lib.Log("ProcessResources called for vessel " + v);
+			foreach(var p in resources)
+			{
+				if (p.Value < 0)
+				{
+					Lib.Log("Consuming " + p.Key + " amount " + p.Value + " for " + title);
+					ResourceCache.Consume(v, p.Key, -p.Value, title);
+				}
+				else
+				{
+					Lib.Log("Producing " + p.Key + " amount " + p.Value + " for " + title);
+					ResourceCache.Produce(v, p.Key, p.Value, title);
+				}
+			}
+		}
+
 		public static double ResourceAmount(Vessel v, string resource_name)
 		{
 			return ResourceCache.GetResource(v, resource_name).Amount;
+		}
+
+		public static List<double> ResourceAmounts(Vessel v, List<string> resource_names)
+		{
+			List<double> result = new List<double>(resource_names.Count);
+			foreach (var name in resource_names)
+				result.Add(ResourceCache.GetResource(v, name).Amount);
+			return result;
 		}
 
 		public static double ResourceCapacity(Vessel v, string resource_name)
@@ -440,9 +466,25 @@ namespace KERBALISM
 			return ResourceCache.GetResource(v, resource_name).Capacity;
 		}
 
+		public static List<double> ResourceCapacities(Vessel v, List<string> resource_names)
+		{
+			List<double> result = new List<double>(resource_names.Count);
+			foreach (var name in resource_names)
+				result.Add(ResourceCache.GetResource(v, name).Capacity);
+			return result;
+		}
+
 		public static double ResourceLevel(Vessel v, string resource_name)
 		{
 			return ResourceCache.GetResource(v, resource_name).Level;
+		}
+
+		public static List<double> ResourceLevels(Vessel v, List<string> resource_names)
+		{
+			List<double> result = new List<double>(resource_names.Count);
+			foreach (var name in resource_names)
+				result.Add(ResourceCache.GetResource(v, name).Level);
+			return result;
 		}
 
 		// --- SCIENCE --------------------------------------------------------------
