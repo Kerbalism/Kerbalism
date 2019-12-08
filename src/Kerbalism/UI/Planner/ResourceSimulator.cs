@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Reflection;
 using System.Collections.Generic;
 using ModuleWheels;
 
@@ -9,6 +10,28 @@ namespace KERBALISM.Planner
 	///<summary> Planners simulator for resources contained, produced and consumed within the vessel </summary>
 	public class ResourceSimulator
 	{
+		private class PlannerDelegate
+		{
+			internal MethodInfo methodInfo;
+
+			public PlannerDelegate(MethodInfo methodInfo)
+			{
+				this.methodInfo = methodInfo;
+			}
+
+			internal string Invoke(PartModule m, List<KeyValuePair<string, double>> resourcesList, CelestialBody body, Dictionary<string, double> environment)
+			{
+				var result = methodInfo.Invoke(m, new object[] { resourcesList, body, environment });
+				if (result != null) return result.ToString();
+				return "unknown";
+			}
+		}
+
+		private static readonly Dictionary<string, PlannerDelegate> apiDelegates = new Dictionary<string, PlannerDelegate>();
+		private static readonly List<string> unsupportedModules = new List<string>();
+
+		private static Type[] plannerMethodSignature = { typeof(List<KeyValuePair<string, double>>), typeof(CelestialBody), typeof(Dictionary<string, double>) };
+
 		/// <summary>
 		/// run simulator to get statistics a fraction of a second after the vessel would spawn
 		/// in the configured environment (celestial body, orbit height and presence of sunlight)
@@ -33,7 +56,7 @@ namespace KERBALISM.Planner
 			RunSimulator(parts, env, va);
 		}
 
-		/// <summary>run a single timestamp of the simulator</simulator>
+		/// <summary>run a single timestamp of the simulator</summary>
 		private void RunSimulator(List<Part> parts, EnvironmentAnalyzer env, VesselAnalyzer va)
 		{
 			// clear previous resource state
@@ -85,93 +108,98 @@ namespace KERBALISM.Planner
 					if (!m.isEnabled)
 						continue;
 
-					switch (m.moduleName)
+					if (IsApiModule(m))
 					{
-						case "Greenhouse":
-							Process_greenhouse(m as Greenhouse, env, va);
-							break;
-						case "GravityRing":
-							Process_ring(m as GravityRing);
-							break;
-						case "Emitter":
-							Process_emitter(m as Emitter);
-							break;
-						case "Laboratory":
-							Process_laboratory(m as Laboratory);
-							break;
-						case "Experiment":
-							Process_experiment(m as Experiment);
-							break;
-						case "ModuleCommand":
-							Process_command(m as ModuleCommand);
-							break;
-						case "ModuleGenerator":
-							Process_generator(m as ModuleGenerator, p);
-							break;
-						case "ModuleResourceConverter":
-							Process_converter(m as ModuleResourceConverter, va);
-							break;
-						case "ModuleKPBSConverter":
-							Process_converter(m as ModuleResourceConverter, va);
-							break;
-						case "ModuleResourceHarvester":
-							Process_harvester(m as ModuleResourceHarvester, va);
-							break;
-						case "ModuleScienceConverter":
-							Process_stocklab(m as ModuleScienceConverter);
-							break;
-						case "ModuleActiveRadiator":
-							Process_radiator(m as ModuleActiveRadiator);
-							break;
-						case "ModuleWheelMotor":
-							Process_wheel_motor(m as ModuleWheelMotor);
-							break;
-						case "ModuleWheelMotorSteering":
-							Process_wheel_steering(m as ModuleWheelMotorSteering);
-							break;
-						case "ModuleLight":
-							Process_light(m as ModuleLight);
-							break;
-						case "ModuleColoredLensLight":
-							Process_light(m as ModuleLight);
-							break;
-						case "ModuleMultiPointSurfaceLight":
-							Process_light(m as ModuleLight);
-							break;
-						case "KerbalismScansat":
-							Process_scanner(m as KerbalismScansat);
-							break;
-						case "FissionGenerator":
-							Process_fission_generator(p, m);
-							break;
-						case "ModuleRadioisotopeGenerator":
-							Process_radioisotope_generator(p, m);
-							break;
-						case "ModuleCryoTank":
-							Process_cryotank(p, m);
-							break;
-						case "ModuleRTAntennaPassive":
-						case "ModuleRTAntenna":
-							Process_rtantenna(m);
-							break;
-						case "ModuleDataTransmitter":
-							Process_datatransmitter(m as ModuleDataTransmitter);
-							break;
-						case "ModuleEngines":
-							Process_engines(m as ModuleEngines);
-							break;
-						case "ModuleEnginesFX":
-							Process_enginesfx(m as ModuleEnginesFX);
-							break;
-						case "ModuleRCS":
-							Process_rcs(m as ModuleRCS);
-							break;
-						case "ModuleRCSFX":
-							Process_rcsfx(m as ModuleRCSFX);
-							break;
-						case "SolarPanelFixer":
-							Process_solarPanel(m as SolarPanelFixer, env);
-							break;
+						Process_apiModule(m, env, va);
+					}
+					else
+					{
+						switch (m.moduleName)
+						{
+							case "Greenhouse":
+								Process_greenhouse(m as Greenhouse, env, va);
+								break;
+							case "GravityRing":
+								Process_ring(m as GravityRing);
+								break;
+							case "Emitter":
+								Process_emitter(m as Emitter);
+								break;
+							case "Laboratory":
+								Process_laboratory(m as Laboratory);
+								break;
+							case "Experiment":
+								Process_experiment(m as Experiment);
+								break;
+							case "ModuleCommand":
+								Process_command(m as ModuleCommand);
+								break;
+							case "ModuleGenerator":
+								Process_generator(m as ModuleGenerator, p);
+								break;
+							case "ModuleResourceConverter":
+								Process_converter(m as ModuleResourceConverter, va);
+								break;
+							case "ModuleKPBSConverter":
+								Process_converter(m as ModuleResourceConverter, va);
+								break;
+							case "ModuleResourceHarvester":
+								Process_harvester(m as ModuleResourceHarvester, va);
+								break;
+							case "ModuleScienceConverter":
+								Process_stocklab(m as ModuleScienceConverter);
+								break;
+							case "ModuleActiveRadiator":
+								Process_radiator(m as ModuleActiveRadiator);
+								break;
+							case "ModuleWheelMotor":
+								Process_wheel_motor(m as ModuleWheelMotor);
+								break;
+							case "ModuleWheelMotorSteering":
+								Process_wheel_steering(m as ModuleWheelMotorSteering);
+								break;
+							case "ModuleLight":
+							case "ModuleColoredLensLight":
+							case "ModuleMultiPointSurfaceLight":
+								Process_light(m as ModuleLight);
+								Process_light(m as ModuleLight);
+								Process_light(m as ModuleLight);
+								break;
+							case "KerbalismScansat":
+								Process_scanner(m as KerbalismScansat);
+								break;
+							case "FissionGenerator":
+								Process_fission_generator(p, m);
+								break;
+							case "ModuleRadioisotopeGenerator":
+								Process_radioisotope_generator(p, m);
+								break;
+							case "ModuleCryoTank":
+								Process_cryotank(p, m);
+								break;
+							case "ModuleRTAntennaPassive":
+							case "ModuleRTAntenna":
+								Process_rtantenna(m);
+								break;
+							case "ModuleDataTransmitter":
+								Process_datatransmitter(m as ModuleDataTransmitter);
+								break;
+							case "ModuleEngines":
+								Process_engines(m as ModuleEngines);
+								break;
+							case "ModuleEnginesFX":
+								Process_enginesfx(m as ModuleEnginesFX);
+								break;
+							case "ModuleRCS":
+								Process_rcs(m as ModuleRCS);
+								break;
+							case "ModuleRCSFX":
+								Process_rcsfx(m as ModuleRCSFX);
+								break;
+							case "SolarPanelFixer":
+								Process_solarPanel(m as SolarPanelFixer, env);
+								break;
+						}
 					}
 				}
 			}
@@ -197,7 +225,55 @@ namespace KERBALISM.Planner
 				pair.Value.Clamp();
 		}
 
-		/// <summary>obtain information on resource metrics for any resource contained within simulated vessel</simulator>
+		private void Process_apiModule(PartModule m, EnvironmentAnalyzer env, VesselAnalyzer va)
+		{
+			List<KeyValuePair<string, double>> resourcesList = new List<KeyValuePair<string, double>>();
+
+			Dictionary<string, double> environment = new Dictionary<string, double>();
+			environment["altitude"] = env.altitude;
+			environment["orbital_period"] = env.orbital_period;
+			environment["shadow_period"] = env.shadow_period;
+			environment["shadow_time"] = env.shadow_time;
+			environment["albedo_flux"] = env.albedo_flux;
+			environment["solar_flux"] = env.solar_flux;
+			environment["sun_dist"] = env.sun_dist;
+			environment["temperature"] = env.temperature;
+			environment["total_flux"] = env.total_flux;
+			environment["temperature"] = env.temperature;
+
+			Lib.Log("resource count before call " + resourcesList.Count);
+
+			string title = apiDelegates[m.moduleName].Invoke(m, resourcesList, env.body, environment);
+
+			Lib.Log("resource count after call " + resourcesList.Count);
+
+			foreach (var p in resourcesList)
+			{
+				var res = Resource(p.Key);
+				if (p.Value >= 0)
+					res.Produce(p.Value, title);
+				else
+					res.Consume(-p.Value, title);
+			}
+		}
+
+		private bool IsApiModule(PartModule m)
+		{
+			if (apiDelegates.ContainsKey(m.moduleName)) return true;
+			if (unsupportedModules.Contains(m.moduleName)) return false;
+
+			MethodInfo methodInfo = m.GetType().GetMethod("PlannerUpdate", plannerMethodSignature);
+			if (methodInfo == null)
+			{
+				unsupportedModules.Add(m.moduleName);
+				return false;
+			}
+
+			apiDelegates[m.moduleName] = new PlannerDelegate(methodInfo);
+			return true;
+		}
+
+		/// <summary>obtain information on resource metrics for any resource contained within simulated vessel</summary>
 		public SimulatedResource Resource(string name)
 		{
 			SimulatedResource res;
@@ -209,14 +285,14 @@ namespace KERBALISM.Planner
 			return res;
 		}
 
-		/// <summary>transfer per-part resources to the simulator</simulator>
+		/// <summary>transfer per-part resources to the simulator</summary>
 		void Process_part(Part p, string res_name)
 		{
 			SimulatedResourceView res = Resource(res_name).GetSimulatedResourceView(p);
 			res.AddPartResources(p);
 		}
 
-		/// <summary>process a rule and add/remove the resources from the simulator</simulator>
+		/// <summary>process a rule and add/remove the resources from the simulator</summary>
 		private void Process_rule_inner_body(double k, Part p, Rule r, EnvironmentAnalyzer env, VesselAnalyzer va)
 		{
 			// deduce rate per-second
