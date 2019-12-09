@@ -195,7 +195,7 @@ namespace KERBALISM
 		public bool malfunction = true;
 
 		[GameParameters.CustomParameterUI("Space Weather", toolTip = "Show a message for CME events\n(Preset, can be changed per vessel)")]
-		public bool storm = true;
+		public bool storm = false;
 
 		[GameParameters.CustomParameterUI("Scripts", toolTip = "Show a message when scripts are executed\n(Preset, can be changed per vessel)")]
 		public bool script = false;
