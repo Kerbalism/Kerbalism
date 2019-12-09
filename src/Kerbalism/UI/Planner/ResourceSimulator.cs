@@ -240,6 +240,7 @@ namespace KERBALISM.Planner
 			environment["temperature"] = env.temperature;
 			environment["total_flux"] = env.total_flux;
 			environment["temperature"] = env.temperature;
+			environment["sunlight"] = Planner.Sunlight == Planner.SunlightState.Shadow ? 0 : 1;
 
 			Lib.Log("resource count before call " + resourcesList.Count);
 
