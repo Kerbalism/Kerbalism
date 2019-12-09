@@ -596,7 +596,7 @@
 
     <!-- we can't iterate over multiple ItemGroups (MinKSPVersion and MaxKSPVersion) in the same property , so split the parsing -->
     <PropertyGroup>
-      <VersionFileURL>"URL": "http://ksp-avc.cybutek.net/version.php?id=559"</VersionFileURL>
+      <VersionFileURL>"URL": "https://raw.githubusercontent.com/Kerbalism/Kerbalism/master/GameData/Kerbalism/Kerbalism.version"</VersionFileURL>
       <VersionFileDownloadLink>"DOWNLOAD": "$(KerbalismDownloadLink)"</VersionFileDownloadLink>
       <VersionFileChangelogLink>"CHANGE_LOG_URL": "$(KerbalismChangelogLink)"</VersionFileChangelogLink>
       <VersionFileKerbalismVersion>"VERSION": {"MAJOR": $(KerbalismVersionMajor), "MINOR": $(KerbalismVersionMinor), "PATCH": 0, "BUILD": 0}</VersionFileKerbalismVersion>
