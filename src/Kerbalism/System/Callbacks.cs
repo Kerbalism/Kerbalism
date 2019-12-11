@@ -89,8 +89,6 @@ namespace KERBALISM
 			GameEvents.onNewVesselCreated.Add(this.VesselCreated);
 			GameEvents.onPartCouple.Add(this.VesselDock);
 
-			GameEvents.OnVesselRollout.Add(this.VesselRollout);
-
 			GameEvents.onVesselChange.Add((v) => { OnVesselModified(v); });
 			GameEvents.onVesselStandardModification.Add((v) => { OnVesselStandardModification(v); });
 
@@ -361,15 +359,6 @@ namespace KERBALISM
 			Cache.PurgeVesselCaches(e.from.vessel);
 			// Update docked to vessel
 			this.OnVesselModified(e.to.vessel);
-		}
-
-		void VesselRollout(ShipConstruct newVessel)
-		{
-			var vessel = FlightGlobals.ActiveVessel;
-			foreach (var m in vessel.FindPartModulesImplementing<IModuleRollout>())
-			{
-				m.OnRollout();
-			}
 		}
 
 		void AddEditorCategory()

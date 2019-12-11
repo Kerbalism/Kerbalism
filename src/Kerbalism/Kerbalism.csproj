@@ -277,7 +277,6 @@
     <Compile Include="Database\ReliabilityInfo.cs" />
     <Compile Include="Database\VesselHabitatInfo.cs" />
     <Compile Include="GlobalSuppressions.cs" />
-    <Compile Include="System\ModuleInterfaces.cs" />
     <Compile Include="Patches\TooltipController_CrewAC_SetTooltip.cs" />
   </ItemGroup>
   <!-- ///////////////////////////////////////////////////// -->
