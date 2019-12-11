@@ -18,7 +18,7 @@ namespace KERBALISM
     public static class Settings
     {
 		private static string MODS_INCOMPATIBLE = "TacLifeSupport,Snacks,BackgroundResources,BackgroundProcessing,DynamicBatteryStorage,KolonyTools,USILifeSupport";
-		private static string MODS_WARNING = "RemoteTech";
+		private static string MODS_WARNING = "RemoteTech,ResearchBodies";
 		private static string MODS_SCIENCE = "KEI,[x] Science!";
 
 		public static void Parse()

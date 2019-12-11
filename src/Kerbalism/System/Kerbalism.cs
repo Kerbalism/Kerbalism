@@ -501,7 +501,7 @@ namespace KERBALISM
 			{
 				msg += "<color=#FF4500>Mods with limited compatibility found:</color>\n";
 				foreach (var m in warningModsFound) msg += "- " + m + "\n";
-				msg += "You might have problems with these mods. Consider removing them.\n\n";
+				msg += "You might have problems with these mods. Please consult the FAQ on on kerbalism.github.io\n\n";
 			}
 
 			if (!string.IsNullOrEmpty(msg))
