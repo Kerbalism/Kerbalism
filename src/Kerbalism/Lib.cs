@@ -25,9 +25,12 @@ namespace KERBALISM
 		}
 
 		[Conditional("DEBUG"), Conditional("DEVBUILD")]
-		public static void LogDebug(string msg, params object[] param)
+		public static void LogDebug(string message, params object[] param)
 		{
-			Log(msg, param);
+			StackTrace stackTrace = new StackTrace();
+			UnityEngine.Debug.Log(string.Format("[Kerbalism] debug {0}.{1} {2}", stackTrace.GetFrame(1).GetMethod().ReflectedType.Name,
+				stackTrace.GetFrame(1).GetMethod().Name, string.Format(message, param)));
+			UnityEngine.Debug.Log(stackTrace);
 		}
 
 		[Conditional("DEBUG"), Conditional("DEVBUILD")]
