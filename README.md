@@ -6,6 +6,8 @@
 
 Kerbalism is a mod for Kerbal Space Program that alters the game to add life support, radiation, failures and an entirely new way of doing science.
 
+### Frequently Asked Questions: [FAQ]
+
 ## Current version : 3.1 
 
 **What's new** : [New and Noteworthy]   
