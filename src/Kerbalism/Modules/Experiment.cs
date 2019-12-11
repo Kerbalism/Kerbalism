@@ -9,7 +9,7 @@ using static KERBALISM.ExperimentRequirements;
 namespace KERBALISM
 {
 
-	public class Experiment : PartModule, ISpecifics, IModuleInfo, IPartMassModifier, IModuleRollout, IConfigurable
+	public class Experiment : PartModule, ISpecifics, IModuleInfo, IPartMassModifier, IConfigurable
 	{
 		// config
 		[KSPField] public string experiment_id;               // id of associated experiment definition
@@ -40,6 +40,7 @@ namespace KERBALISM
 		[KSPField(isPersistant = true)] public bool shrouded = false;
 		[KSPField(isPersistant = true)] public double remainingSampleMass = 0.0;
 		[KSPField(isPersistant = true)] public uint privateHdId = 0;
+		[KSPField(isPersistant = true)] public bool firstStart = true;
 
 		/// <summary> never set this directly, use the "State" property </summary>
 		[KSPField(isPersistant = true)] private RunningState expState = RunningState.Stopped;
@@ -189,23 +190,24 @@ namespace KERBALISM
 				{
 					if (hd.experiment_id == experiment_id) privateHdId = part.flightID;
 				}
+
+				if(firstStart)
+				{
+					FirstStart();
+					firstStart = false;
+				}
 			}
 		}
 
-		/// <summary>Called by Callbacks just after rollout to launch pad</summary>
-		public void OnRollout()
+		private void FirstStart()
 		{
-			if (!Lib.ModuleEnableInScienceAndCareer(this)) return;
-
 			// initialize the remaining sample mass
 			// this needs to be done only once just after launch
 			if (!sample_collecting && ExpInfo.SampleMass > 0.0)
 			{
 				remainingSampleMass = ExpInfo.SampleMass * sample_amount;
-				if(Double.IsNaN(remainingSampleMass))
-				{
-					Lib.LogDebug("ERROR: remainingSampleMass is NaN on rollout " + ExpInfo.ExperimentId + " " + ExpInfo.SampleMass + " / " + sample_amount);
-				}
+				if(double.IsNaN(remainingSampleMass))
+					Lib.LogDebug("ERROR: remainingSampleMass is NaN on first start " + ExpInfo.ExperimentId + " " + ExpInfo.SampleMass + " / " + sample_amount);
 			}
 		}
 
