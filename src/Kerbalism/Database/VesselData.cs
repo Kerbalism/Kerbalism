@@ -54,7 +54,20 @@ namespace KERBALISM
 		public PartData GetPartData(uint flightID)
 		{
 			PartData pd;
-			parts.TryGetValue(flightID, out pd);
+			// in some cases (KIS added parts), we might try to get partdata before it is added by part-adding events
+			// so we implement a fallback here
+			if (!parts.TryGetValue(flightID, out pd))
+			{
+				foreach (Part p in Vessel.parts)
+				{
+					if (p.flightID == flightID)
+					{
+						pd = new PartData(p);
+						parts.Add(flightID, pd);
+						Lib.LogDebug("VesselData : newly created part '{0}' added to vessel '{1}'", p.partInfo.title, Vessel.vesselName);
+					}
+				}
+			}
 			return pd;
 		}
 
@@ -515,8 +528,8 @@ namespace KERBALISM
 				{
 					toVD.parts.Add(data.from.flightID, new PartData(data.from));
 					Lib.LogDebug("VesselData : newly created part '{0}' added to vessel '{1}'", data.from.partInfo.title, data.to.vessel.vesselName);
-					return;
 				}
+				return;
 			}
 
 			// add all partdata of the docking vessel to the docked to vessel
