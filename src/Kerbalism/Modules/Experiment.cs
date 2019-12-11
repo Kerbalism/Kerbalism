@@ -203,7 +203,7 @@ namespace KERBALISM
 		{
 			// initialize the remaining sample mass
 			// this needs to be done only once just after launch
-			if (!sample_collecting && ExpInfo.SampleMass > 0.0)
+			if (!sample_collecting && ExpInfo.SampleMass > 0.0 && remainingSampleMass == 0)
 			{
 				remainingSampleMass = ExpInfo.SampleMass * sample_amount;
 				if(double.IsNaN(remainingSampleMass))
