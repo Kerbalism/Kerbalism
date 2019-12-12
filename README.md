@@ -97,7 +97,7 @@ It includes [MiniAVC]. If you opt-in, it will use the Internet to check whether 
 [KSP forums thread]: https://forum.kerbalspaceprogram.com/index.php?/topic/172400-131144-kerbalism-v171/
 [Discord]: https://discord.gg/3JAE2JE
 
-[Module Manager]: https://github.com/sarbian/ModuleManager/releases
+[Module Manager]: https://ksp.sarbian.com/jenkins/job/ModuleManager/lastStableBuild/
 [CommunityResourcePack]: https://github.com/BobPalmer/CommunityResourcePack/releases
 [MiniAVC]: https://ksp.cybutek.net/miniavc/Documents/README.htm
 [KSP-AVC Plugin]: https://forum.kerbalspaceprogram.com/index.php?/topic/72169-13-12-ksp-avc-add-on-version-checker-plugin-1162-miniavc-ksp-avc-online-2016-10-13/
