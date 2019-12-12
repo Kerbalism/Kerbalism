@@ -796,11 +796,14 @@ namespace KERBALISM
                 shieldedRadiation += nearbyEmitters;
             }
 
-            //if (v.loaded) Lib.Log("Radiation " + v + " before clamp: " + Lib.HumanReadableRadiation(radiation));
+			var passiveShielding = PassiveShield.Total(v);
+			shieldedRadiation -= passiveShielding;
 
-            // clamp radiation to positive range
-            // note: we avoid radiation going to zero by using a small positive value
-            radiation = Math.Max(radiation, Nominal);
+			//if (v.loaded) Lib.Log("Radiation " + v + " before clamp: " + Lib.HumanReadableRadiation(radiation));
+
+			// clamp radiation to positive range
+			// note: we avoid radiation going to zero by using a small positive value
+			radiation = Math.Max(radiation, Nominal);
             shieldedRadiation = Math.Max(shieldedRadiation, Nominal);
 
             //	if (v.loaded) Lib.Log("Radiation " + v + " after clamp: " + Lib.HumanReadableRadiation(radiation));
