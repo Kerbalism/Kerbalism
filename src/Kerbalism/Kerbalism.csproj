@@ -278,6 +278,7 @@
     <Compile Include="Database\VesselHabitatInfo.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="Patches\TooltipController_CrewAC_SetTooltip.cs" />
+    <Compile Include="Modules\Sandbags.cs" />
   </ItemGroup>
   <!-- ///////////////////////////////////////////////////// -->
   <!-- ////////// IMPORT DEFAULT MS BUILD PROCESS ////////// -->
