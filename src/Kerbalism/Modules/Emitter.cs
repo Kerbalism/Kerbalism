@@ -8,10 +8,13 @@ namespace KERBALISM
 	public class Emitter : PartModule, ISpecifics
 	{
 		// config
-		[KSPField(isPersistant = true)] public double radiation;  // radiation in rad/s
-		[KSPField(isPersistant = true)] public double ec_rate;    // EC consumption rate per-second (optional)
 		[KSPField] public bool toggle;                            // true if the effect can be toggled on/off
 		[KSPField] public string active;                          // name of animation to play when enabling/disabling
+		[KSPField] public string title = string.Empty;            // GUI name of the status action in the PAW
+
+		// persisted for simplicity, so that the values are available in Total() below
+		[KSPField(isPersistant = true)] public double radiation;  // radiation in rad/s
+		[KSPField(isPersistant = true)] public double ec_rate;    // EC consumption rate per-second (optional)
 
 		// persistent
 		[KSPField(isPersistant = true)] public bool running;
@@ -31,7 +34,11 @@ namespace KERBALISM
 			if (Lib.DisableScenario(this)) return;
 
 			// update RMB ui
-			Fields["Status"].guiName = radiation >= 0.0 ? "Radiation" : "Active shielding";
+			if (string.IsNullOrEmpty(title))
+				Fields["Status"].guiName = radiation >= 0.0 ? "Radiation" : "Active shielding";
+			else
+				Fields["Status"].guiName = title;
+
 			Events["Toggle"].active = toggle;
 			Actions["Action"].active = toggle;
 
