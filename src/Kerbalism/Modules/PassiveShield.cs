@@ -13,7 +13,7 @@ namespace KERBALISM
 		[KSPField] public string disengageActionTitle = "empty";  // what the empty action should be called
 		[KSPField] public string disabledTitle = "stowed";        // what to display in the status text while not deployed
 
-		[KSPField] public bool toggle;                            // true if the effect can be toggled on/off
+		[KSPField] public bool toggle = true;                     // true if the effect can be toggled on/off
 		[KSPField] public string animation;                       // name of animation to play when enabling/disabling
 		[KSPField] public float added_mass = 1.5f;                // mass added when deployed, in tons
 		[KSPField] public bool require_eva = true;                // true if only accessible by EVA
@@ -26,8 +26,14 @@ namespace KERBALISM
 		// persistent
 		[KSPField(isPersistant = true)] public bool deployed = false; // currently deployed
 
+
+#if KSP15_16
+		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "_")]
+#else
+		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "_", groupName = "Radiation", groupDisplayName = "Radiation")]
+#endif
 		// rmb status
-		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "_")] public string Status;  // rate of radiation emitted/shielded
+		public string Status;  // rate of radiation emitted/shielded
 
 		Animator deploy_anim;
 		CrewSpecs deploy_cs;
@@ -45,7 +51,7 @@ namespace KERBALISM
 			if(toggle)
 			{
 				Events["Toggle"].guiActiveUnfocused = require_eva;
-				Events["Toggle"].guiActive = !require_eva;
+				Events["Toggle"].guiActive = !require_eva || Lib.IsEditor();
 			}
 
 			// deal with non-toggable
@@ -98,24 +104,31 @@ namespace KERBALISM
 			ResourceCache.GetResource(v, "ElectricCharge").Consume(sandbags.ec_rate * elapsed_s, sandbags.title);
 		}
 
+#if KSP15_16
 		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true)]
+#else
+		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true, groupName = "Radiation", groupDisplayName = "Radiation")]
+#endif
 		public void Toggle()
 		{
-			// disable for dead eva kerbals
-			Vessel v = FlightGlobals.ActiveVessel;
-			if (v == null || EVA.IsDead(v)) return;
-
-			if(!deploy_cs.Check(v))
+			if (Lib.IsFlight())
 			{
-				Message.Post
-				(
-				  Lib.TextVariant
-				  (
-					"I don't know how this works!"
-				  ),
-				  deploy_cs.Warning()
-				);
-				return;
+
+				// disable for dead eva kerbals
+				Vessel v = FlightGlobals.ActiveVessel;
+				if (v == null || EVA.IsDead(v)) return;
+				if (!deploy_cs.Check(v))
+				{
+					Message.Post
+					(
+					  Lib.TextVariant
+					  (
+						"I don't know how this works!"
+					  ),
+					  deploy_cs.Warning()
+					);
+					return;
+				}
 			}
 
 			// switch status

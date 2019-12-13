@@ -20,8 +20,13 @@ namespace KERBALISM
 		[KSPField(isPersistant = true)] public bool running;
 		[KSPField(isPersistant = true)] public double radiation_impact = 1.0; // calculated based on vessel design
 
+#if KSP15_16
+		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "_")]
+#else
+		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "_", groupName = "Radiation", groupDisplayName = "Radiation")]
+#endif
 		// rmb status
-		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "_")] public string Status;  // rate of radiation emitted/shielded
+		public string Status;  // rate of radiation emitted/shielded
 
 		// animations
 		Animator active_anim;
@@ -172,7 +177,11 @@ namespace KERBALISM
 		}
 
 
+#if KSP15_16
 		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true)]
+#else
+		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true, groupName = "Radiation", groupDisplayName = "Radiation")]
+#endif
 		public void Toggle()
 		{
 			// switch status
