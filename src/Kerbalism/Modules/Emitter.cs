@@ -8,11 +8,11 @@ namespace KERBALISM
 	public class Emitter : PartModule, ISpecifics
 	{
 		// config
-		[KSPField] public bool toggle;                            // true if the effect can be toggled on/off
 		[KSPField] public string active;                          // name of animation to play when enabling/disabling
 		[KSPField] public string title = string.Empty;            // GUI name of the status action in the PAW
 
-		// persisted for simplicity, so that the values are available in Total() below
+		// persisted for simplicity, so that the values are available in proto modules
+		[KSPField(isPersistant = true)] public bool toggle;       // true if the effect can be toggled on/off
 		[KSPField(isPersistant = true)] public double radiation;  // radiation in rad/s
 		[KSPField(isPersistant = true)] public double ec_rate;    // EC consumption rate per-second (optional)
 
