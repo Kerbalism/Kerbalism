@@ -49,6 +49,7 @@ namespace KERBALISM
 		public bool deviceTransmit;   // vessel wide automation : enable/disable data transmission
 
 		// other persisted fields
+		private List<ResourceUpdateDelegate> resourceUpdateDelegates = null; // all part modules that have a ResourceUpdate method
 		private Dictionary<uint, PartData> parts; // all parts by flightID
 		public Dictionary<uint, PartData>.ValueCollection PartDatas => parts.Values;
 		public PartData GetPartData(uint flightID)
@@ -311,7 +312,6 @@ namespace KERBALISM
 				if (vd.sunlightFactor > 0.99) vd.sunlightFactor = 1.0;
 			}
 		}
-
 		#endregion
 
 		#region evaluated vessel state information properties
@@ -463,6 +463,50 @@ namespace KERBALISM
 			Evaluated = true;
 		}
 
+		/// <summary>
+		/// Call ResourceUpdate on all part modules that have that method
+		/// </summary>
+		public void ResourceUpdate(VesselResources resources, double elapsed_s)
+		{
+			// only do this for loaded vessels. unloaded vessels will be handled in Background.cs
+			if (!Vessel.loaded) return;
+
+			if(resourceUpdateDelegates == null)
+			{
+				resourceUpdateDelegates = new List<ResourceUpdateDelegate>();
+				foreach(var part in Vessel.parts)
+				{
+					foreach(var module in part.Modules)
+					{
+						if (!module.isEnabled) continue;
+						var resourceUpdateDelegate = ResourceUpdateDelegate.Instance(module);
+						if (resourceUpdateDelegate != null) resourceUpdateDelegates.Add(resourceUpdateDelegate);
+					}
+				}
+			}
+
+			if (resourceUpdateDelegates.Count == 0) return;
+
+			List<ResourceInfo> allResources = resources.GetAllResources(Vessel);
+			Dictionary<string, double> availableResources = new Dictionary<string, double>();
+			foreach (var ri in allResources)
+				availableResources[ri.ResourceName] = ri.Amount;
+			List<KeyValuePair<string, double>> resourceChangeRequests = new List<KeyValuePair<string, double>>();
+
+			foreach(var resourceUpdateDelegate in resourceUpdateDelegates)
+			{
+				resourceChangeRequests.Clear();
+				string title = resourceUpdateDelegate.invoke(availableResources, resourceChangeRequests);
+				if (resourceChangeRequests.Count == 0) continue;
+				foreach (var rc in resourceChangeRequests)
+				{
+					if (rc.Value > 0) resources.Produce(Vessel, rc.Key, rc.Value * elapsed_s, title);
+					if (rc.Value < 0) resources.Consume(Vessel, rc.Key, -rc.Value * elapsed_s, title);
+				}
+			}
+		}
+
+
 		#endregion
 
 		#region events handling
@@ -472,6 +516,7 @@ namespace KERBALISM
 			if (!IsSimulated)
 				return;
 
+			resourceUpdateDelegates = null;
 			ResetReliabilityStatus();
 			habitatInfo = new VesselHabitatInfo(null);
 			EvaluateStatus();

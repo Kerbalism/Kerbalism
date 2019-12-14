@@ -279,6 +279,7 @@
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="Patches\TooltipController_CrewAC_SetTooltip.cs" />
     <Compile Include="Modules\PassiveShield.cs" />
+    <Compile Include="Database\ResourceUpdateDelegate.cs" />
   </ItemGroup>
   <!-- ///////////////////////////////////////////////////// -->
   <!-- ////////// IMPORT DEFAULT MS BUILD PROCESS ////////// -->

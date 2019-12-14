@@ -9,16 +9,13 @@ namespace KERBALISM
 	{
 		// config
 		[KSPField] public string active;                          // name of animation to play when enabling/disabling
-		[KSPField] public string title = string.Empty;            // GUI name of the status action in the PAW
 
-		// persisted for simplicity, so that the values are available in proto modules
-		[KSPField(isPersistant = true)] public bool toggle;       // true if the effect can be toggled on/off
-		[KSPField(isPersistant = true)] public double radiation;  // radiation in rad/s
-		[KSPField(isPersistant = true)] public double ec_rate;    // EC consumption rate per-second (optional)
-
-		// persistent
+		[KSPField(isPersistant = true)] public string title = string.Empty;     // GUI name of the status action in the PAW
+		[KSPField(isPersistant = true)] public bool toggle;						// true if the effect can be toggled on/off
+		[KSPField(isPersistant = true)] public double radiation;				// radiation in rad/s
+		[KSPField(isPersistant = true)] public double ec_rate;					// EC consumption rate per-second (optional)
 		[KSPField(isPersistant = true)] public bool running;
-		[KSPField(isPersistant = true)] public double radiation_impact = 1.0; // calculated based on vessel design
+		[KSPField(isPersistant = true)] public double radiation_impact = 1.0;	// calculated based on vessel design
 
 #if KSP15_16
 		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "_")]
@@ -40,7 +37,7 @@ namespace KERBALISM
 
 			// update RMB ui
 			if (string.IsNullOrEmpty(title))
-				Fields["Status"].guiName = radiation >= 0.0 ? "Radiation" : "Active shielding";
+				Fields["Status"].guiName = radiation >= 0.0 ? "Radiation" : "Active shield";
 			else
 				Fields["Status"].guiName = title;
 
@@ -150,30 +147,53 @@ namespace KERBALISM
 		{
 			if (!radiation_impact_calculated)
 				radiation_impact_calculated = CalculateRadiationImpact();
+		}
 
-			// do nothing else in the editor
-			if (Lib.IsEditor()) return;
+		/// <summary>
+		/// We're always going to call you for resource handling.  You tell us what to produce or consume.  Here's how it'll look when your vessel is NOT loaded
+		/// </summary>
+		/// <param name="v">the vessel (unloaded)</param>
+		/// <param name="part_snapshot">proto part snapshot (contains all non-persistant KSPFields)</param>
+		/// <param name="module_snapshot">proto part module snapshot (contains all non-persistant KSPFields)</param>
+		/// <param name="proto_part_module">proto part module snapshot (contains all non-persistant KSPFields)</param>
+		/// <param name="proto_part">proto part snapshot (contains all non-persistant KSPFields)</param>
+		/// <param name="availableResources">key-value pair containing all available resources and their currently available amount on the vessel. if the resource is not in there, it's not available</param>
+		/// <param name="resourceChangeRequest">key-value pair that contains the resource names and the units per second that you want to produce/consume (produce: positive, consume: negative)</param>
+		/// <param name="elapsed_s">how much time elapsed since the last time. note this can be very long, minutes and hours depending on warp speed</param>
+		/// <returns>the title to be displayed in the resource tooltip</returns>
+		public static string BackgroundUpdate(Vessel v,
+			ProtoPartSnapshot part_snapshot, ProtoPartModuleSnapshot module_snapshot,
+			PartModule proto_part_module, Part proto_part,
+			Dictionary<string, double> availableResources, List<KeyValuePair<string, double>> resourceChangeRequest,
+			double elapsed_s)
+		{
+			Emitter emitter = proto_part_module as Emitter;
+			if (emitter == null) return string.Empty;
 
-			// if enabled, and there is ec consumption
-			if (running && ec_rate > double.Epsilon)
+			if (Lib.Proto.GetBool(module_snapshot, "running") && emitter.ec_rate > 0)
 			{
-				// get resource cache
-				ResourceInfo ec = ResourceCache.GetResource(vessel, "ElectricCharge");
-
-				// consume EC
-				ec.Consume(ec_rate * Kerbalism.elapsed_s, "emitter");
+				resourceChangeRequest.Add(new KeyValuePair<string, double>("ElectricCharge", -emitter.ec_rate));
 			}
+
+			return "active shield";
 		}
 
 
-		public static void BackgroundUpdate(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, Emitter emitter, ResourceInfo ec, double elapsed_s)
+		/// <summary>
+		/// We're also always going to call you when you're loaded.  Since you're loaded, this will be your PartModule, just like you'd expect in KSP. Will only be called while in flight, not in the editor
+		/// </summary>
+		/// <param name="availableResources">key-value pair containing all available resources and their currently available amount on the vessel. if the resource is not in there, it's not available</param>
+		/// <param name="resourceChangeRequest">key-value pair that contains the resource names and the units per second that you want to produce/consume (produce: positive, consume: negative)</param>
+		/// <returns></returns>
+		public virtual string ResourceUpdate(Dictionary<string, double> availableResources, List<KeyValuePair<string, double>> resourceChangeRequest)
 		{
-			// if enabled, and EC is required
-			if (Lib.Proto.GetBool(m, "running") && emitter.ec_rate > double.Epsilon)
+			// if enabled, and there is ec consumption
+			if (running && ec_rate > 0)
 			{
-				// consume EC
-				ec.Consume(emitter.ec_rate * elapsed_s, "emitter");
+				resourceChangeRequest.Add(new KeyValuePair<string, double>("ElectricCharge", -ec_rate));
 			}
+
+			return "active shield";
 		}
 
 

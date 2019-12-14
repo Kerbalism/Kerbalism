@@ -311,6 +311,11 @@ namespace KERBALISM
 					Profile.Execute(v, vd, resources, elapsed_s);
 					UnityEngine.Profiling.Profiler.EndSample();
 
+					UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Loaded.Profile");
+					// part module resource updates
+					vd.ResourceUpdate(resources, elapsed_s);
+					UnityEngine.Profiling.Profiler.EndSample(); 
+
 					UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Loaded.Resource");
 					// apply deferred requests
 					resources.Sync(v, vd, elapsed_s);

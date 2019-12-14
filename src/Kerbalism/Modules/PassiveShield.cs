@@ -83,25 +83,52 @@ namespace KERBALISM
 
 			// allow sandbag filling only when landed
 			Events["Toggle"].active = toggle && (vessel.Landed || deployed);
-
-			// if there is ec consumption
-			if (deployed && ec_rate != 0)
-			{
-				// get resource cache
-				ResourceCache.GetResource(vessel, "ElectricCharge").Consume(ec_rate * Kerbalism.elapsed_s, title);
-			}
 		}
 
-		public static void BackgroundUpdate(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule pm, Part part, double elapsed_s)
+		/// <summary>
+		/// We're always going to call you for resource handling.  You tell us what to produce or consume.  Here's how it'll look when your vessel is NOT loaded
+		/// </summary>
+		/// <param name="v">the vessel (unloaded)</param>
+		/// <param name="part_snapshot">proto part snapshot (contains all non-persistant KSPFields)</param>
+		/// <param name="module_snapshot">proto part module snapshot (contains all non-persistant KSPFields)</param>
+		/// <param name="proto_part_module">proto part module snapshot (contains all non-persistant KSPFields)</param>
+		/// <param name="proto_part">proto part snapshot (contains all non-persistant KSPFields)</param>
+		/// <param name="availableResources">key-value pair containing all available resources and their currently available amount on the vessel. if the resource is not in there, it's not available</param>
+		/// <param name="resourceChangeRequest">key-value pair that contains the resource names and the units per second that you want to produce/consume (produce: positive, consume: negative)</param>
+		/// <param name="elapsed_s">how much time elapsed since the last time. note this can be very long, minutes and hours depending on warp speed</param>
+		/// <returns>the title to be displayed in the resource tooltip</returns>
+		public static string BackgroundUpdate(Vessel v, ProtoPartSnapshot p,
+			ProtoPartModuleSnapshot m, PartModule pm, Part part,
+			Dictionary<string, double> availableResources, List<KeyValuePair<string, double>> resourceChangeRequest, double elapsed_s)
 		{
-			PassiveShield sandbags = pm as PassiveShield;
-			if (sandbags == null) return;
-			if (sandbags.ec_rate == 0) return;
+			PassiveShield passiveShield = pm as PassiveShield;
+			if (passiveShield == null) return string.Empty;
+			if (passiveShield.ec_rate > 0) return string.Empty;
 
 			bool deployed = Lib.Proto.GetBool(m, "deployed");
-			if (!deployed) return;
+			if(deployed)
+			{
+				resourceChangeRequest.Add(new KeyValuePair<string, double>("ElectricCharge", -passiveShield.ec_rate));
+			}
 
-			ResourceCache.GetResource(v, "ElectricCharge").Consume(sandbags.ec_rate * elapsed_s, sandbags.title);
+			return passiveShield.title;
+		}
+
+		/// <summary>
+		/// We're also always going to call you when you're loaded.  Since you're loaded, this will be your PartModule, just like you'd expect in KSP. Will only be called while in flight, not in the editor
+		/// </summary>
+		/// <param name="availableResources">key-value pair containing all available resources and their currently available amount on the vessel. if the resource is not in there, it's not available</param>
+		/// <param name="resourceChangeRequest">key-value pair that contains the resource names and the units per second that you want to produce/consume (produce: positive, consume: negative)</param>
+		/// <returns></returns>
+		public virtual string ResourceUpdate(Dictionary<string, double> availableResources, List<KeyValuePair<string, double>> resourceChangeRequest)
+		{
+			// if there is ec consumption
+			if (deployed && ec_rate > 0)
+			{
+				resourceChangeRequest.Add(new KeyValuePair<string, double>("ElectricCharge", -ec_rate));
+			}
+
+			return title;
 		}
 
 #if KSP15_16

@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 using System.Reflection;
 
 
@@ -12,56 +11,59 @@ namespace KERBALISM
 	{
 		private class BackgroundDelegate
 		{
+			private static Type[] signature = { typeof(Vessel), typeof(ProtoPartSnapshot), typeof(ProtoPartModuleSnapshot), typeof(PartModule), typeof(Part), typeof(Dictionary<string, double>), typeof(List<KeyValuePair<string, double>>), typeof(double) };
+
 #if KSP18
 			// non-generic actions are too new to be used in pre-KSP18
-			internal Action<Vessel, ProtoPartSnapshot, ProtoPartModuleSnapshot, PartModule, Part, double> action;
+			internal Func<Vessel, ProtoPartSnapshot, ProtoPartModuleSnapshot, PartModule, Part, Dictionary<string, double>, List<KeyValuePair<string, double>>, double, string> function;
 #else
 			internal MethodInfo methodInfo;
 #endif
-			public BackgroundDelegate(MethodInfo methodInfo)
+			private BackgroundDelegate(MethodInfo methodInfo)
 			{
 #if KSP18
-				action = (Action<Vessel, ProtoPartSnapshot, ProtoPartModuleSnapshot, PartModule, Part, double>)Delegate.CreateDelegate(typeof(Action<Vessel, ProtoPartSnapshot, ProtoPartModuleSnapshot, PartModule, Part, double>), methodInfo);
+				function = (Func<Vessel, ProtoPartSnapshot, ProtoPartModuleSnapshot, PartModule, Part, Dictionary<string, double>, List<KeyValuePair<string, double>>, double, string>)Delegate.CreateDelegate(typeof(Func<Vessel, ProtoPartSnapshot, ProtoPartModuleSnapshot, PartModule, Part, Dictionary<string, double>, List<KeyValuePair<string, double>>, double, string>), methodInfo);
 #else
 				this.methodInfo = methodInfo;
 #endif
 			}
 
-			public void invoke(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule module_prefab, Part part_prefab, double elapsed_s)
+			public string invoke(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule module_prefab, Part part_prefab, Dictionary<string, double> availableRresources, List<KeyValuePair<string, double>> resourceChangeRequest, double elapsed_s)
 			{
-				// TODO optimize this for performance. is there a faster way to call the method?
+				// TODO optimize this for performance
 #if KSP18
-				action(v, p, m, module_prefab, part_prefab, elapsed_s);
+				return function(v, p, m, module_prefab, part_prefab, availableRresources, resourceChangeRequest, elapsed_s);
 #else
-				methodInfo.Invoke(null, new object[] { v, p, m, module_prefab, part_prefab, elapsed_s });
+				var result = methodInfo.Invoke(null, new object[] { v, p, m, module_prefab, part_prefab, availableRresources, resourceChangeRequest, elapsed_s });
+				if(result == null) return module_prefab.moduleName;
+				return result.ToString();
 #endif
 			}
-		}
 
-		private static readonly Dictionary<string, BackgroundDelegate> apiDelegates = new Dictionary<string, BackgroundDelegate>();
-		private static readonly List<string> unsupportedModules = new List<string>();
-
-		private static Type[] backgroundUpdateSignature = { typeof(Vessel), typeof(ProtoPartSnapshot), typeof(ProtoPartModuleSnapshot), typeof(PartModule), typeof(Part), typeof(double) };
-
-		/// <summary>
-		/// Scan all part modules for API implementations
-		/// </summary>
-		private static bool ModuleImplementsAPI(PartModule module_prefab)
-		{
-			if (unsupportedModules.Contains(module_prefab.moduleName))
-				return false;
-
-			MethodInfo methodInfo = module_prefab.GetType().GetMethod("BackgroundUpdate", backgroundUpdateSignature);
-
-			if(methodInfo == null)
+			public static BackgroundDelegate Instance(PartModule module_prefab)
 			{
-				unsupportedModules.Add(module_prefab.moduleName);
-				return false;
+				BackgroundDelegate result = null;
+
+				var type = module_prefab.GetType();
+				supportedModules.TryGetValue(type, out result);
+				if (result != null) return result;
+
+				if (unsupportedModules.Contains(type)) return null;
+
+				MethodInfo methodInfo = type.GetMethod("BackgroundUpdate", signature);
+				if (methodInfo == null)
+				{
+					unsupportedModules.Add(type);
+					return null;
+				}
+
+				result = new BackgroundDelegate(methodInfo);
+				supportedModules[type] = result;
+				return result;
 			}
 
-			apiDelegates[module_prefab.moduleName] = new BackgroundDelegate(methodInfo);
-
-			return true;
+			private static readonly Dictionary<Type, BackgroundDelegate> supportedModules = new Dictionary<Type, BackgroundDelegate>();
+			private static readonly List<Type> unsupportedModules = new List<Type>();
 		}
 
 		public enum Module_type
@@ -71,7 +73,6 @@ namespace KERBALISM
 			Greenhouse,
 			GravityRing,
 			Harvester,
-			Emitter,
 			Laboratory,
 			Command,
 			Generator,
@@ -96,9 +97,6 @@ namespace KERBALISM
 
 		public static Module_type ModuleType(string module_name)
 		{
-			if (apiDelegates.ContainsKey(module_name))
-				return Module_type.APIModule;
-
 			switch (module_name)
 			{
 				case "Reliability": return Module_type.Reliability;
@@ -106,7 +104,6 @@ namespace KERBALISM
 				case "Greenhouse": return Module_type.Greenhouse;
 				case "GravityRing": return Module_type.GravityRing;
 				case "Harvester": return Module_type.Harvester;
-				case "Emitter": return Module_type.Emitter;
 				case "Laboratory": return Module_type.Laboratory;
 				case "ModuleCommand": return Module_type.Command;
 				case "ModuleGenerator": return Module_type.Generator;
@@ -149,6 +146,11 @@ namespace KERBALISM
 			// get most used resource handlers
 			ResourceInfo ec = resources.GetResource(v, "ElectricCharge");
 
+			List<ResourceInfo> allResources = resources.GetAllResources(v);
+			Dictionary<string, double> apiResources = new Dictionary<string, double>();
+			foreach (var ri in allResources)
+				apiResources[ri.ResourceName] = ri.Amount;
+
 			foreach(var e in Background_PMs(v))
 			{
 				switch(e.type)
@@ -157,7 +159,6 @@ namespace KERBALISM
 					case Module_type.Experiment: (e.module_prefab as Experiment).BackgroundUpdate(v, vd, e.m, ec, resources, elapsed_s); break; // experiments use the prefab as a singleton instead of a static method
 					case Module_type.Greenhouse: Greenhouse.BackgroundUpdate(v, e.m, e.module_prefab as Greenhouse, vd, resources, elapsed_s); break;
 					case Module_type.GravityRing: GravityRing.BackgroundUpdate(v, e.p, e.m, e.module_prefab as GravityRing, ec, elapsed_s); break;
-					case Module_type.Emitter: Emitter.BackgroundUpdate(v, e.p, e.m, e.module_prefab as Emitter, ec, elapsed_s); break;
 					case Module_type.Harvester: Harvester.BackgroundUpdate(v, e.m, e.module_prefab as Harvester, elapsed_s); break; // Kerbalism ground and air harvester module
 					case Module_type.Laboratory: Laboratory.BackgroundUpdate(v, e.p, e.m, e.module_prefab as Laboratory, ec, elapsed_s); break;
 					case Module_type.Command: ProcessCommand(v, e.p, e.m, e.module_prefab as ModuleCommand, resources, elapsed_s); break;
@@ -173,18 +174,7 @@ namespace KERBALISM
 					case Module_type.CryoTank: ProcessCryoTank(v, e.p, e.m, e.module_prefab, resources, ec, elapsed_s); break;
 					case Module_type.FNGenerator: ProcessFNGenerator(v, e.p, e.m, e.module_prefab, ec, elapsed_s); break;
 					case Module_type.SolarPanelFixer: SolarPanelFixer.BackgroundUpdate(v, e.m, e.module_prefab as SolarPanelFixer, vd, ec, elapsed_s); break;
-
-					case Module_type.APIModule:
-						try
-						{
-							BackgroundDelegate bgd = apiDelegates[e.module_prefab.moduleName];
-							bgd.invoke(v, e.p, e.m, e.module_prefab, e.part_prefab, elapsed_s);
-						}
-						catch (Exception ex)
-						{
-							Lib.Log("BackgroundUpdate in PartModule " + e.module_prefab.moduleName + " excepted: " + ex.Message + "\n" + ex.ToString());
-						}
-						break;
+					case Module_type.APIModule: ProcessApiModule(v, e.p, e.m, e.part_prefab, e.module_prefab, resources, apiResources, elapsed_s); break;
 				}
 			}
 		}
@@ -232,7 +222,8 @@ namespace KERBALISM
 					Module_type type = ModuleType(m.moduleName);
 					if (type == Module_type.Unknown)
 					{
-						if(ModuleImplementsAPI(module_prefab))
+						var backgroundDelegate = BackgroundDelegate.Instance(module_prefab);
+						if (backgroundDelegate != null)
 							type = Module_type.APIModule;
 						else
 							continue;
@@ -250,6 +241,29 @@ namespace KERBALISM
 
 			Cache.SetVesselObjectsCache(v, "background", result);
 			return result;
+		}
+
+		private static void ProcessApiModule(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m,
+			Part part_prefab, PartModule module_prefab, VesselResources resources, Dictionary<string, double> availableResources, double elapsed_s)
+		{
+			List<KeyValuePair<string, double>> resourceChangeRequeset = new List<KeyValuePair<string, double>>();
+			try
+			{
+				string title = BackgroundDelegate.Instance(module_prefab).invoke(v, p, m, module_prefab, part_prefab, availableResources, resourceChangeRequeset, elapsed_s);
+
+				// make sure we have a good title if we need one
+				if (resourceChangeRequeset.Count > 0 && string.IsNullOrEmpty(title)) title = part_prefab.partInfo.title;
+
+				foreach(var cr in resourceChangeRequeset)
+				{
+					if (cr.Value > 0) resources.Produce(v, cr.Key, cr.Value * elapsed_s, title);
+					else if (cr.Value < 0) resources.Consume(v, cr.Key, -cr.Value * elapsed_s, title);
+				}
+			}
+			catch (Exception ex)
+			{
+				Lib.Log("BackgroundUpdate in PartModule " + module_prefab.moduleName + " excepted: " + ex.Message + "\n" + ex.ToString());
+			}
 		}
 
 		static void ProcessFNGenerator(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule fission_generator, ResourceInfo ec, double elapsed_s)
