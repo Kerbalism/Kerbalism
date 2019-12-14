@@ -583,6 +583,7 @@ namespace KERBALISM
 
 
 			FieldsDefaultInit();
+			cfg_storm |= Features.SpaceWeather && Lib.CrewCount(vessel) > 0;
 
 			Lib.LogDebug("VesselData ctor (new vessel) : id '" + VesselId + "' (" + Vessel.vesselName + "), part count : " + parts.Count);
 			UnityEngine.Profiling.Profiler.EndSample();
@@ -608,6 +609,7 @@ namespace KERBALISM
 			if (node == null)
 			{
 				FieldsDefaultInit();
+				cfg_storm |= Features.SpaceWeather && Lib.CrewCount(protoVessel.vesselRef) > 0;
 				Lib.LogDebug("VesselData ctor (created from protovessel) : id '" + VesselId + "' (" + protoVessel.vesselName + "), part count : " + parts.Count);
 			}
 			else
