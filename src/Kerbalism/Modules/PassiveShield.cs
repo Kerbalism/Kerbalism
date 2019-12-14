@@ -17,6 +17,7 @@ namespace KERBALISM
 		[KSPField] public string animation;                       // name of animation to play when enabling/disabling
 		[KSPField] public float added_mass = 1.5f;                // mass added when deployed, in tons
 		[KSPField] public bool require_eva = true;                // true if only accessible by EVA
+		[KSPField] public bool require_landed = true;             // true if only deployable when landed
 		[KSPField] public string crew_operate = "true";           // operator crew requirement. true means anyone
 
 		// persisted for simplicity, so that the values are available in Total() below
@@ -82,7 +83,8 @@ namespace KERBALISM
 			if (Lib.IsEditor()) return;
 
 			// allow sandbag filling only when landed
-			Events["Toggle"].active = toggle && (vessel.Landed || deployed);
+			bool allowDeploy = vessel.Landed || !require_landed;
+			Events["Toggle"].active = toggle && (allowDeploy || deployed);
 		}
 
 		/// <summary>
