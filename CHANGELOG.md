@@ -1,6 +1,6 @@
 ## v3.2 for all versions of KSP from 1.5.0 to 1.8.9
 
- - 2019-xx-xx
+ - 2019-12-14
 
 ### Changes since the last release
 
@@ -10,8 +10,22 @@
 * Fixed remaining duration display for very long durations (lampeh)
 * Fixed invisible data being saved during time warp (Got)
 * Fixed facility level requirement evaluation in science mode for surface samples (Sir Mortimer)
-* fix restock+ sample capsule patch (Got)
-
+* Fix restock+ sample capsule patch (Got)
+* Engine ignition failure probability tweaks
+* Repairing an engine resets it to new state, and now can be done with engines that only have 1-2 ignitions
+* Experiments attached using KIS will now work as expected
+* Removed mod warning for DynamicBatteryStorage, the latest version disables itself when Kerbalism is present
+* API changes for background simulation and planner support of 3rd party part modules
+* Added some fixes and checks to avoid corrupting the science data bases when loading older saves
+* Fixed ground contact check for harvesters
+* New inline and surface attached container parts (TAC-LS with changed textures), the old parts are being phased out
+* MoltenRegolithExtraction is now available sooner in the tech tree
+* Storm warning preset changed to false, except for crewed vessels
+* Added ResearchBodies to the list of mods we warn about, see FAQ on kerbalism.github.io
+* New part module for passive shielding
+* Add crew experiments to the MLP science lab only, not to all parts that have the lab module
+* Don't allow emitter toggling in automation when vessel is unloaded and emitter cannot be toggled, like a NERVA
+* Better presets for dump valve settings for water recycler and sabatier processes
 
 ## v3.1 for all versions of KSP from 1.5.0 to 1.8.9
 
