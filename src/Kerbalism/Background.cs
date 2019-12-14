@@ -32,7 +32,9 @@ namespace KERBALISM
 			{
 				// TODO optimize this for performance
 #if KSP18
-				return function(v, p, m, module_prefab, part_prefab, availableRresources, resourceChangeRequest, elapsed_s);
+				var result = function(v, p, m, module_prefab, part_prefab, availableRresources, resourceChangeRequest, elapsed_s);
+				if (string.IsNullOrEmpty(result)) result = module_prefab.moduleName;
+				return result;
 #else
 				var result = methodInfo.Invoke(null, new object[] { v, p, m, module_prefab, part_prefab, availableRresources, resourceChangeRequest, elapsed_s });
 				if(result == null) return module_prefab.moduleName;
@@ -147,11 +149,12 @@ namespace KERBALISM
 			ResourceInfo ec = resources.GetResource(v, "ElectricCharge");
 
 			List<ResourceInfo> allResources = resources.GetAllResources(v);
-			Dictionary<string, double> apiResources = new Dictionary<string, double>();
+			Dictionary<string, double> availableResources = new Dictionary<string, double>();
 			foreach (var ri in allResources)
-				apiResources[ri.ResourceName] = ri.Amount;
+				availableResources[ri.ResourceName] = ri.Amount;
+			List<KeyValuePair<string, double>> resourceChangeRequests = new List<KeyValuePair<string, double>>();
 
-			foreach(var e in Background_PMs(v))
+			foreach (var e in Background_PMs(v))
 			{
 				switch(e.type)
 				{
@@ -174,7 +177,7 @@ namespace KERBALISM
 					case Module_type.CryoTank: ProcessCryoTank(v, e.p, e.m, e.module_prefab, resources, ec, elapsed_s); break;
 					case Module_type.FNGenerator: ProcessFNGenerator(v, e.p, e.m, e.module_prefab, ec, elapsed_s); break;
 					case Module_type.SolarPanelFixer: SolarPanelFixer.BackgroundUpdate(v, e.m, e.module_prefab as SolarPanelFixer, vd, ec, elapsed_s); break;
-					case Module_type.APIModule: ProcessApiModule(v, e.p, e.m, e.part_prefab, e.module_prefab, resources, apiResources, elapsed_s); break;
+					case Module_type.APIModule: ProcessApiModule(v, e.p, e.m, e.part_prefab, e.module_prefab, resources, availableResources, resourceChangeRequests, elapsed_s); break;
 				}
 			}
 		}
@@ -244,17 +247,15 @@ namespace KERBALISM
 		}
 
 		private static void ProcessApiModule(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m,
-			Part part_prefab, PartModule module_prefab, VesselResources resources, Dictionary<string, double> availableResources, double elapsed_s)
+			Part part_prefab, PartModule module_prefab, VesselResources resources, Dictionary<string, double> availableResources, List<KeyValuePair<string, double>> resourceChangeRequests, double elapsed_s)
 		{
-			List<KeyValuePair<string, double>> resourceChangeRequeset = new List<KeyValuePair<string, double>>();
+			resourceChangeRequests.Clear();
+
 			try
 			{
-				string title = BackgroundDelegate.Instance(module_prefab).invoke(v, p, m, module_prefab, part_prefab, availableResources, resourceChangeRequeset, elapsed_s);
+				string title = BackgroundDelegate.Instance(module_prefab).invoke(v, p, m, module_prefab, part_prefab, availableResources, resourceChangeRequests, elapsed_s);
 
-				// make sure we have a good title if we need one
-				if (resourceChangeRequeset.Count > 0 && string.IsNullOrEmpty(title)) title = part_prefab.partInfo.title;
-
-				foreach(var cr in resourceChangeRequeset)
+				foreach(var cr in resourceChangeRequests)
 				{
 					if (cr.Value > 0) resources.Produce(v, cr.Key, cr.Value * elapsed_s, title);
 					else if (cr.Value < 0) resources.Consume(v, cr.Key, -cr.Value * elapsed_s, title);

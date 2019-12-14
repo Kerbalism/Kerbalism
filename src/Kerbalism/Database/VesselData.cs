@@ -487,7 +487,8 @@ namespace KERBALISM
 
 			if (resourceUpdateDelegates.Count == 0) return;
 
-			List<ResourceInfo> allResources = resources.GetAllResources(Vessel);
+			List<ResourceInfo> allResources = resources.GetAllResources(Vessel); // there might be some performance to be gained by caching the list of all resource
+
 			Dictionary<string, double> availableResources = new Dictionary<string, double>();
 			foreach (var ri in allResources)
 				availableResources[ri.ResourceName] = ri.Amount;
@@ -497,7 +498,6 @@ namespace KERBALISM
 			{
 				resourceChangeRequests.Clear();
 				string title = resourceUpdateDelegate.invoke(availableResources, resourceChangeRequests);
-				if (resourceChangeRequests.Count == 0) continue;
 				foreach (var rc in resourceChangeRequests)
 				{
 					if (rc.Value > 0) resources.Produce(Vessel, rc.Key, rc.Value * elapsed_s, title);
@@ -505,7 +505,6 @@ namespace KERBALISM
 				}
 			}
 		}
-
 
 		#endregion
 
