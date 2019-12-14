@@ -5,12 +5,12 @@
 ### Changes since the last release
 
 * Spanish localization (elbuglione)
-* Some adjustments to engine failure probabilities (Sir Mortimer)
-* DMagic Orbital Science experiments tweaked to make them a bit easier to finish (Sir Mortimer)
+* Some adjustments to engine failure probabilities
+* DMagic Orbital Science experiments tweaked to make them a bit easier to finish
 * Fixed remaining duration display for very long durations (lampeh)
 * Fixed invisible data being saved during time warp (Got)
-* Fixed facility level requirement evaluation in science mode for surface samples (Sir Mortimer)
-* Fix restock+ sample capsule patch (Got)
+* Fixed facility level requirement evaluation in science mode for surface samples
+* Fix restock+ sample capsule patch
 * Engine ignition failure probability tweaks
 * Repairing an engine resets it to new state, and now can be done with engines that only have 1-2 ignitions
 * Experiments attached using KIS will now work as expected
@@ -26,6 +26,7 @@
 * Add crew experiments to the MLP science lab only, not to all parts that have the lab module
 * Don't allow emitter toggling in automation when vessel is unloaded and emitter cannot be toggled, like a NERVA
 * Better presets for dump valve settings for water recycler and sabatier processes
+* Some config fixes and improvements by GordonDry
 
 ## v3.1 for all versions of KSP from 1.5.0 to 1.8.9
 
