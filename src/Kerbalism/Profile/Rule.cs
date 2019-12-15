@@ -88,15 +88,10 @@ namespace KERBALISM
 				rd.lifetime = lifetime_enabled && lifetime;
 
 				// influence consumption by elapsed time
-				double step; ;
+				double step = elapsed_s;
 
-				// if continous
-				if (interval == 0.0)
-				{
-					step = elapsed_s;
-				}
 				// if interval-based
-				else
+				if (interval > 0.0)
 				{
 					// accumulate time
 					rd.time_since += elapsed_s;
