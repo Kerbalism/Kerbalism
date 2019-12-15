@@ -733,13 +733,15 @@ namespace KERBALISM
                 {
                     Vector3d direction;
                     double distance;
-                    if (Sim.IsBodyVisible(v, position, body, v.KerbalismData().EnvVisibleBodies, out direction, out distance))
-                    {
-                        var r0 = RadiationR0(rb);
-                        var r1 = DistanceRadiation(r0, distance);
-                        radiation += r1;
+					if (Sim.IsBodyVisible(v, position, body, v.KerbalismData().EnvVisibleBodies, out direction, out distance))
+					{
+						var r0 = RadiationR0(rb);
+						var r1 = DistanceRadiation(r0, distance);
 
-                        //if (v.loaded) Lib.Log("Radiation " + v + " from surface of " + body + ": " + Lib.HumanReadableRadiation(radiation) + " gamma: " + Lib.HumanReadableRadiation(r1));
+						// clamp to max. surface radiation. when loading on a rescaled system, the vessel can appear to be within the sun for a few ticks
+						radiation += Math.Min(r1, rb.radiation_surface);
+
+						//if (v.loaded) Lib.Log("Radiation " + v + " from surface of " + body + ": " + Lib.HumanReadableRadiation(radiation) + " gamma: " + Lib.HumanReadableRadiation(r1));
                     }
                 }
 
@@ -758,10 +760,15 @@ namespace KERBALISM
             //if (v.loaded) Lib.Log("Radiation " + v + " after gamma: " + Lib.HumanReadableRadiation(radiation) + " transparency: " + gamma_transparency);
 
             // add surface radiation of the body itself
-            radiation += DistanceRadiation(RadiationR0(Info(v.mainBody)), v.altitude);
-            //if (v.loaded) Lib.Log("Radiation " + v + " from current main body: " + Lib.HumanReadableRadiation(radiation) + " gamma: " + Lib.HumanReadableRadiation(DistanceRadiation(RadiationR0(Info(v.mainBody)), v.altitude)));
+			if(Lib.IsSun(v.mainBody) && v.altitude < v.mainBody.Radius)
+			if(v.altitude > v.mainBody.Radius)
+			{
+				radiation += DistanceRadiation(RadiationR0(Info(v.mainBody)), v.altitude);
 
-            shieldedRadiation = radiation;
+			}
+			//if (v.loaded) Lib.Log("Radiation " + v + " from current main body: " + Lib.HumanReadableRadiation(radiation) + " gamma: " + Lib.HumanReadableRadiation(DistanceRadiation(RadiationR0(Info(v.mainBody)), v.altitude)));
+
+			shieldedRadiation = radiation;
 
             // if there is a storm in progress
             if (Storm.InProgress(v))
@@ -889,9 +896,10 @@ namespace KERBALISM
                     var r0 = RadiationR0(rb);
                     var r1 = DistanceRadiation(r0, distance);
 
-                    // Lib.Log("Surface radiation on " + b + " from " + body + ": " + Lib.HumanReadableRadiation(r1) + " distance " + distance);
+					// Lib.Log("Surface radiation on " + b + " from " + body + ": " + Lib.HumanReadableRadiation(r1) + " distance " + distance);
 
-                    radiation += r1;
+					// clamp to max. surface radiation. when loading on a rescaled system, the vessel can appear to be within the sun for a few ticks
+					radiation += Math.Min(r1, rb.radiation_surface);
                 }
 
                 // avoid loops in the chain
@@ -905,10 +913,12 @@ namespace KERBALISM
 
             // scale radiation by gamma transparency if inside atmosphere
             radiation *= gamma_transparency;
-            // Lib.Log("srf scaled on " + b + ": " + Lib.HumanReadableRadiation(radiation));
+			// Lib.Log("srf scaled on " + b + ": " + Lib.HumanReadableRadiation(radiation));
 
-            // add surface radiation of the body itself
-            radiation += DistanceRadiation(RadiationR0(Info(b)), b.Radius);
+			// add surface radiation of the body itself
+			RadiationBody bodyInfo = Info(b);
+			// clamp to max. bodyInfo.radiation_surface to avoid extreme radiation effects while loading a vessel on rescaled systems
+            radiation += Math.Min(bodyInfo.radiation_surface, DistanceRadiation(RadiationR0(bodyInfo), b.Radius));
 
             // Lib.Log("Radiation on " + b + ": " + Lib.HumanReadableRadiation(radiation) + ", own surface radiation " + Lib.HumanReadableRadiation(DistanceRadiation(RadiationR0(Info(b)), b.Radius)));
 
