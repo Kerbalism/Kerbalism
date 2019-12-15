@@ -94,7 +94,7 @@ It includes [MiniAVC]. If you opt-in, it will use the Internet to check whether 
 [Contributing]: https://github.com/Kerbalism/Kerbalism/blob/master/CONTRIBUTING.md
 [BuildSystem]: https://github.com/Kerbalism/Kerbalism/blob/master/BuildSystem/README.MD
 [System/API.cs]: https://github.com/Kerbalism/Kerbalism/blob/master/src/System/API.cs
-[KSP forums thread]: https://forum.kerbalspaceprogram.com/index.php?/topic/172400-131144-kerbalism-v171/
+[KSP forums thread]: https://forum.kerbalspaceprogram.com/index.php?/topic/190382-150-181-kerbalism-32/
 [Discord]: https://discord.gg/3JAE2JE
 
 [Module Manager]: https://ksp.sarbian.com/jenkins/job/ModuleManager/lastStableBuild/
