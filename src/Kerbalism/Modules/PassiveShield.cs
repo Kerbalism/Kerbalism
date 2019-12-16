@@ -5,7 +5,7 @@ using KSP.Localization;
 
 namespace KERBALISM
 {
-	public class PassiveShield: PartModule, IPartMassModifier
+	public class PassiveShield: PartModule, IPartMassModifier, IKerbalismModule
 	{
 		// config
 		[KSPField] public string title = "Sandbags";              // GUI name of the status action in the PAW
@@ -90,24 +90,24 @@ namespace KERBALISM
 		/// <summary>
 		/// We're always going to call you for resource handling.  You tell us what to produce or consume.  Here's how it'll look when your vessel is NOT loaded
 		/// </summary>
-		/// <param name="v">the vessel (unloaded)</param>
-		/// <param name="part_snapshot">proto part snapshot (contains all non-persistant KSPFields)</param>
-		/// <param name="module_snapshot">proto part module snapshot (contains all non-persistant KSPFields)</param>
-		/// <param name="proto_part_module">proto part module snapshot (contains all non-persistant KSPFields)</param>
+		/// <param name="vessel">the vessel (unloaded)</param>
 		/// <param name="proto_part">proto part snapshot (contains all non-persistant KSPFields)</param>
+		/// <param name="proto_module">proto part module snapshot (contains all non-persistant KSPFields)</param>
+		/// <param name="partModule">proto part module snapshot (contains all non-persistant KSPFields)</param>
+		/// <param name="part">proto part snapshot (contains all non-persistant KSPFields)</param>
 		/// <param name="availableResources">key-value pair containing all available resources and their currently available amount on the vessel. if the resource is not in there, it's not available</param>
 		/// <param name="resourceChangeRequest">key-value pair that contains the resource names and the units per second that you want to produce/consume (produce: positive, consume: negative)</param>
 		/// <param name="elapsed_s">how much time elapsed since the last time. note this can be very long, minutes and hours depending on warp speed</param>
 		/// <returns>the title to be displayed in the resource tooltip</returns>
-		public static string BackgroundUpdate(Vessel v, ProtoPartSnapshot p,
-			ProtoPartModuleSnapshot m, PartModule pm, Part part,
+		public static string BackgroundUpdate(Vessel vessel, ProtoPartSnapshot proto_part,
+			ProtoPartModuleSnapshot proto_module, PartModule partModule, Part part,
 			Dictionary<string, double> availableResources, List<KeyValuePair<string, double>> resourceChangeRequest, double elapsed_s)
 		{
-			PassiveShield passiveShield = pm as PassiveShield;
+			PassiveShield passiveShield = partModule as PassiveShield;
 			if (passiveShield == null) return string.Empty;
 			if (passiveShield.ec_rate > 0) return string.Empty;
 
-			bool deployed = Lib.Proto.GetBool(m, "deployed");
+			bool deployed = Lib.Proto.GetBool(proto_module, "deployed");
 			if(deployed)
 			{
 				resourceChangeRequest.Add(new KeyValuePair<string, double>("ElectricCharge", -passiveShield.ec_rate));
@@ -116,12 +116,6 @@ namespace KERBALISM
 			return passiveShield.title;
 		}
 
-		/// <summary>
-		/// We're also always going to call you when you're loaded.  Since you're loaded, this will be your PartModule, just like you'd expect in KSP. Will only be called while in flight, not in the editor
-		/// </summary>
-		/// <param name="availableResources">key-value pair containing all available resources and their currently available amount on the vessel. if the resource is not in there, it's not available</param>
-		/// <param name="resourceChangeRequest">key-value pair that contains the resource names and the units per second that you want to produce/consume (produce: positive, consume: negative)</param>
-		/// <returns></returns>
 		public virtual string ResourceUpdate(Dictionary<string, double> availableResources, List<KeyValuePair<string, double>> resourceChangeRequest)
 		{
 			// if there is ec consumption
@@ -131,6 +125,11 @@ namespace KERBALISM
 			}
 
 			return title;
+		}
+
+		public string PlannerUpdate(List<KeyValuePair<string, double>> resourceChangeRequest, CelestialBody body, Dictionary<string, double> environment)
+		{
+			return ResourceUpdate(null, resourceChangeRequest);
 		}
 
 #if KSP15_16

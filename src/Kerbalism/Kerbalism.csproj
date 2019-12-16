@@ -280,6 +280,7 @@
     <Compile Include="Patches\TooltipController_CrewAC_SetTooltip.cs" />
     <Compile Include="Modules\PassiveShield.cs" />
     <Compile Include="Database\ResourceUpdateDelegate.cs" />
+    <Compile Include="Modules\IKerbalismModule.cs" />
   </ItemGroup>
   <!-- ///////////////////////////////////////////////////// -->
   <!-- ////////// IMPORT DEFAULT MS BUILD PROCESS ////////// -->

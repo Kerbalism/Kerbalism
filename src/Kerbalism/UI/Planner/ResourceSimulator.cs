@@ -12,7 +12,13 @@ namespace KERBALISM.Planner
 	{
 		private class PlannerDelegate
 		{
-			internal MethodInfo methodInfo;
+			internal MethodInfo methodInfo = null;
+			internal IKerbalismModule module = null;
+
+			public PlannerDelegate(IKerbalismModule module)
+			{
+				this.module = module;
+			}
 
 			public PlannerDelegate(MethodInfo methodInfo)
 			{
@@ -21,6 +27,12 @@ namespace KERBALISM.Planner
 
 			internal string Invoke(PartModule m, List<KeyValuePair<string, double>> resourcesList, CelestialBody body, Dictionary<string, double> environment)
 			{
+				IKerbalismModule km = m as IKerbalismModule;
+				if(km != null)
+				{
+					return km.PlannerUpdate(resourcesList, body, environment);
+				}
+
 				var result = methodInfo.Invoke(m, new object[] { resourcesList, body, environment });
 				if (result != null) return result.ToString();
 				return "unknown";
@@ -108,7 +120,7 @@ namespace KERBALISM.Planner
 					if (!m.isEnabled)
 						continue;
 
-					if (IsApiModule(m))
+					if (IsModuleKerbalismAware(m))
 					{
 						Process_apiModule(m, env, va);
 					}
@@ -121,9 +133,6 @@ namespace KERBALISM.Planner
 								break;
 							case "GravityRing":
 								Process_ring(m as GravityRing);
-								break;
-							case "Emitter":
-								Process_emitter(m as Emitter);
 								break;
 							case "Laboratory":
 								Process_laboratory(m as Laboratory);
@@ -243,9 +252,12 @@ namespace KERBALISM.Planner
 			environment["sunlight"] = Planner.Sunlight == Planner.SunlightState.Shadow ? 0 : 1;
 
 			Lib.Log("resource count before call " + resourcesList.Count);
-
-			string title = apiDelegates[m.moduleName].Invoke(m, resourcesList, env.body, environment);
-
+			string title;
+			IKerbalismModule km = m as IKerbalismModule;
+			if (km != null)
+				title = km.PlannerUpdate(resourcesList, env.body, environment);
+			else
+				title = apiDelegates[m.moduleName].Invoke(m, resourcesList, env.body, environment);
 			Lib.Log("resource count after call " + resourcesList.Count);
 
 			foreach (var p in resourcesList)
@@ -258,8 +270,10 @@ namespace KERBALISM.Planner
 			}
 		}
 
-		private bool IsApiModule(PartModule m)
+		private bool IsModuleKerbalismAware(PartModule m)
 		{
+			if (m is IKerbalismModule) return true;
+
 			if (apiDelegates.ContainsKey(m.moduleName)) return true;
 			if (unsupportedModules.Contains(m.moduleName)) return false;
 
@@ -425,13 +439,6 @@ namespace KERBALISM.Planner
 		{
 			if (ring.deployed)
 				Resource("ElectricCharge").Consume(ring.ec_rate, "gravity ring");
-		}
-
-
-		void Process_emitter(Emitter emitter)
-		{
-			if (emitter.running)
-				Resource("ElectricCharge").Consume(emitter.ec_rate, "emitter");
 		}
 
 
