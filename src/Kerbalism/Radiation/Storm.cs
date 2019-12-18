@@ -22,8 +22,8 @@ namespace KERBALISM
                 var sun = Lib.GetParentSun(body);
                 var avgDuration = PreferencesRadiation.Instance.AvgStormDuration;
 
-                // retry after 3 * average storm duration + jitter (to avoid recalc spikes)
-                bd.storm_generation = now + avgDuration * 3 + avgDuration * Lib.RandomDouble();
+                // retry after 5 * average storm duration + jitter (to avoid recalc spikes)
+                bd.storm_generation = now + avgDuration * 5 + avgDuration * Lib.RandomDouble();
 
                 var rb = Radiation.Info(sun);
                 var activity = rb.solar_cycle > 0 ? rb.SolarActivity() : 1.0;
@@ -127,6 +127,9 @@ namespace KERBALISM
 
             // only consider vessels in interplanetary space
             if (!Lib.IsSun(v.mainBody)) return;
+
+			// disregard EVAs
+			if (v.isEVA) return;
 
             var bd = vd.stormData;
             CreateStorm(bd, v.mainBody, vd.EnvMainSun.Distance);

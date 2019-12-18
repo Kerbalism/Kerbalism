@@ -88,7 +88,7 @@ namespace KERBALISM
             ComfortPlants = Lib.ConfigValue(cfg, "ComfortPlants", 0.1f);
 
 			StormFrequency = Lib.ConfigValue(cfg, "StormFrequency", 0.4f);
-			StormDurationHours = Lib.ConfigValue(cfg, "StormDurationHours", 6);
+			StormDurationHours = Lib.ConfigValue(cfg, "StormDurationHours", 2);
 			StormEjectionSpeed = Lib.ConfigValue(cfg, "StormEjectionSpeed", 0.33f);
 			ShieldingEfficiency = Lib.ConfigValue(cfg, "ShieldingEfficiency", 0.9f);
 			StormRadiation = Lib.ConfigValue(cfg, "StormRadiation", 5.0f);

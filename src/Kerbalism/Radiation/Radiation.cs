@@ -740,9 +740,10 @@ namespace KERBALISM
 
 						// clamp to max. surface radiation. when loading on a rescaled system, the vessel can appear to be within the sun for a few ticks
 						radiation += Math.Min(r1, rb.radiation_surface);
-
-						//if (v.loaded) Lib.Log("Radiation " + v + " from surface of " + body + ": " + Lib.HumanReadableRadiation(radiation) + " gamma: " + Lib.HumanReadableRadiation(r1));
-                    }
+#if DEBUG_RADIATION
+						if (v.loaded) Lib.Log("Radiation " + v + " from surface of " + body + ": " + Lib.HumanReadableRadiation(radiation) + " gamma: " + Lib.HumanReadableRadiation(r1));
+#endif
+					}
                 }
 
                 // avoid loops in the chain
@@ -752,21 +753,27 @@ namespace KERBALISM
             // add extern radiation
             radiation += Settings.ExternRadiation / 3600.0;
 
-            //if (v.loaded) Lib.Log("Radiation " + v + " extern: " + Lib.HumanReadableRadiation(radiation) + " gamma: " + Lib.HumanReadableRadiation(PreferencesStorm.Instance.ExternRadiation));
+#if DEBUG_RADIATION
+			if (v.loaded) Lib.Log("Radiation " + v + " extern: " + Lib.HumanReadableRadiation(radiation) + " gamma: " + Lib.HumanReadableRadiation(Settings.ExternRadiation));
+#endif
 
-            // apply gamma transparency if inside atmosphere
-            radiation *= gamma_transparency;
+			// apply gamma transparency if inside atmosphere
+			radiation *= gamma_transparency;
 
-            //if (v.loaded) Lib.Log("Radiation " + v + " after gamma: " + Lib.HumanReadableRadiation(radiation) + " transparency: " + gamma_transparency);
-
-            // add surface radiation of the body itself
+#if DEBUG_RADIATION
+			if (v.loaded) Lib.Log("Radiation " + v + " after gamma: " + Lib.HumanReadableRadiation(radiation) + " transparency: " + gamma_transparency);
+#endif
+			// add surface radiation of the body itself
 			if(Lib.IsSun(v.mainBody) && v.altitude < v.mainBody.Radius)
 			if(v.altitude > v.mainBody.Radius)
 			{
 				radiation += DistanceRadiation(RadiationR0(Info(v.mainBody)), v.altitude);
 
 			}
-			//if (v.loaded) Lib.Log("Radiation " + v + " from current main body: " + Lib.HumanReadableRadiation(radiation) + " gamma: " + Lib.HumanReadableRadiation(DistanceRadiation(RadiationR0(Info(v.mainBody)), v.altitude)));
+
+#if DEBUG_RADIATION
+			if (v.loaded) Lib.Log("Radiation " + v + " from current main body: " + Lib.HumanReadableRadiation(radiation) + " gamma: " + Lib.HumanReadableRadiation(DistanceRadiation(RadiationR0(Info(v.mainBody)), v.altitude)));
+#endif
 
 			shieldedRadiation = radiation;
 
@@ -793,30 +800,39 @@ namespace KERBALISM
             radiation += emitterRadiation;
             shieldedRadiation += emitterRadiation;
 
-            //if (v.loaded) Lib.Log("Radiation " + v + " after emitters: " + Lib.HumanReadableRadiation(radiation));
+#if DEBUG_RADIATION
+			if (v.loaded) Lib.Log("Radiation " + v + " after emitters: " + Lib.HumanReadableRadiation(radiation) + " shielded " + Lib.HumanReadableRadiation(shieldedRadiation));
+#endif
 
-            // for EVAs, add the effect of nearby emitters
-            if (v.isEVA)
+			// for EVAs, add the effect of nearby emitters
+			if (v.isEVA)
             {
                 var nearbyEmitters = Emitter.Nearby(v);
-                radiation += nearbyEmitters;
+				radiation += nearbyEmitters;
                 shieldedRadiation += nearbyEmitters;
-            }
+#if DEBUG_RADIATION
+				if (v.loaded) Lib.Log("Radiation " + v + " nearby emitters " + Lib.HumanReadableRadiation(nearbyEmitters));
+#endif
+			}
 
 			var passiveShielding = PassiveShield.Total(v);
 			shieldedRadiation -= passiveShielding;
 
-			//if (v.loaded) Lib.Log("Radiation " + v + " before clamp: " + Lib.HumanReadableRadiation(radiation));
+#if DEBUG_RADIATION
+			if (v.loaded) Lib.Log("Radiation " + v + " passiveShielding " + Lib.HumanReadableRadiation(passiveShielding));
+			if (v.loaded) Lib.Log("Radiation " + v + " before clamp: " + Lib.HumanReadableRadiation(radiation) + " shielded " + Lib.HumanReadableRadiation(shieldedRadiation));
+#endif
 
 			// clamp radiation to positive range
 			// note: we avoid radiation going to zero by using a small positive value
 			radiation = Math.Max(radiation, Nominal);
             shieldedRadiation = Math.Max(shieldedRadiation, Nominal);
 
-            //	if (v.loaded) Lib.Log("Radiation " + v + " after clamp: " + Lib.HumanReadableRadiation(radiation));
-
-            // return radiation
-            return radiation;
+#if DEBUG_RADIATION
+			if (v.loaded) Lib.Log("Radiation " + v + " after clamp: " + Lib.HumanReadableRadiation(radiation) + " shielded " + Lib.HumanReadableRadiation(shieldedRadiation));
+#endif
+			// return radiation
+			return radiation;
         }
 
         /// <summary>
