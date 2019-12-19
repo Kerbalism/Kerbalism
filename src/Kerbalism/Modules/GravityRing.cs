@@ -1,4 +1,5 @@
-﻿using KSP.Localization;
+﻿using System.Collections.Generic;
+using KSP.Localization;
 
 namespace KERBALISM
 {
@@ -18,15 +19,22 @@ namespace KERBALISM
 		[KSPField] public float SpinRate = 20.0f;                          // Speed of the centrifuge rotation in deg/s
 		[KSPField] public float SpinAccelerationRate = 1.0f;               // Rate at which the SpinRate accelerates (deg/s/s)
 
+		// counterweights
+		[KSPField] public string counterWeightRotate = string.Empty;
+		[KSPField] public bool counterWeightRotateIsTransform = true;
+		[KSPField] public float counterWeightSpinRate = 40.0f;
+		[KSPField] public float counterWeightSpinAccelerationRate = 2.0f;
+
 		private bool waitRotation = false;
 		public bool isHabitat = false;
 
 		// animations
 		public Animator deploy_anim;
 		private Animator rotate_anim;
+		private Animator counterWeightRotate_anim;
 
-		// Add compatibility
 		public Transformator rotate_transf;
+		public Transformator counterWeightRotate_transf;
 
 		// pseudo-ctor
 		public override void OnStart(StartState state)
@@ -39,6 +47,9 @@ namespace KERBALISM
 
 			if (rotateIsTransform) rotate_transf = new Transformator(part, rotate, SpinRate, SpinAccelerationRate);
 			else rotate_anim = new Animator(part, rotate);
+
+			if(counterWeightRotateIsTransform) counterWeightRotate_transf = new Transformator(part, counterWeightRotate, counterWeightSpinRate, counterWeightSpinAccelerationRate, false);
+			else counterWeightRotate_anim = new Animator(part, counterWeightRotate);
 
 			// set animation state / invert animation
 			deploy_anim.Still(deployed ? 1.0f : 0.0f);
@@ -53,15 +64,12 @@ namespace KERBALISM
 			{
 				return rotate_transf.IsRotating() && !rotate_transf.IsStopping();
 			}
-			else
-			{
-				return rotate_anim.Playing();
-			}
+			return rotate_anim.Playing();
 		}
 
-		private void Set_rotation(bool rotate)
+		private void Set_rotation(bool rotation)
 		{
-			if (rotate)
+			if (rotation)
 			{
 				if (rotateIsTransform)
 				{
@@ -73,6 +81,25 @@ namespace KERBALISM
 					rotate_anim.Resume(false);
 					// Call Play() only if necessary
 					if (!rotate_anim.Playing()) rotate_anim.Play(false, true);
+				}
+
+				if (counterWeightRotateIsTransform)
+				{
+					// Call Play() only if necessary
+					if (!counterWeightRotate_transf.IsRotating())
+					{
+						Lib.Log("KGR: set rotation -> play " + rotation);
+						counterWeightRotate_transf.Play();
+					}
+				}
+				else
+				{
+					if(counterWeightRotate_anim != null)
+					{
+						counterWeightRotate_anim.Resume(false);
+						// Call Play() only if necessary
+						if (!counterWeightRotate_anim.Playing()) counterWeightRotate_anim.Play(false, true);
+					}
 				}
 			}
 			else
@@ -86,6 +113,24 @@ namespace KERBALISM
 				{
 					// Call Stop only if necessary
 					if (rotate_anim.Playing()) rotate_anim.Pause();
+				}
+
+				if (counterWeightRotateIsTransform)
+				{
+					// Call Stop only if necessary
+					if (!counterWeightRotate_transf.IsStopping())
+					{
+						Lib.Log("KGR: set rotation -> stop " + rotation);
+						counterWeightRotate_transf.Stop();
+					}
+				}
+				else
+				{
+					if(counterWeightRotate_anim != null)
+					{
+						// Call Stop only if necessary
+						if (counterWeightRotate_anim.Playing()) counterWeightRotate_anim.Pause();
+					}
 				}
 			}
 		}
@@ -164,6 +209,11 @@ namespace KERBALISM
 				}
 
 				if (rotateIsTransform && rotate_transf != null) rotate_transf.DoSpin();
+				if (counterWeightRotateIsTransform && counterWeightRotate_transf != null)
+				{
+					Lib.Log("KGR: counterweight do spin");
+					counterWeightRotate_transf.DoSpin();
+				}
 			}
 		}
 
