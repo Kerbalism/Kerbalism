@@ -30,7 +30,6 @@ namespace KERBALISM
 			StackTrace stackTrace = new StackTrace();
 			UnityEngine.Debug.Log(string.Format("[Kerbalism] debug {0}.{1} {2}", stackTrace.GetFrame(1).GetMethod().ReflectedType.Name,
 				stackTrace.GetFrame(1).GetMethod().Name, string.Format(message, param)));
-			UnityEngine.Debug.Log(stackTrace);
 		}
 
 		[Conditional("DEBUG"), Conditional("DEVBUILD")]
