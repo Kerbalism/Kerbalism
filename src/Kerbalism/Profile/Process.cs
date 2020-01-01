@@ -104,7 +104,7 @@ namespace KERBALISM
 			// remember that when a process is enabled the units of process are stored in the PartModule as a pseudo-resource
 			double k = Modifiers.Evaluate(v, vd, resources, modifiers);
 
-			ResourceRecipe recipe = new ResourceRecipe((Part)null, name);
+			ResourceRecipe recipe = new ResourceRecipe(name);
 			ExecuteRecipe(k, resources, elapsed_s, recipe);
 		}
 

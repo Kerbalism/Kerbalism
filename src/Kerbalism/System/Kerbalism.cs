@@ -311,6 +311,11 @@ namespace KERBALISM
 					Profile.Execute(v, vd, resources, elapsed_s);
 					UnityEngine.Profiling.Profiler.EndSample();
 
+					UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Loaded.Profile");
+					// part module resource updates
+					vd.ResourceUpdate(resources, elapsed_s);
+					UnityEngine.Profiling.Profiler.EndSample(); 
+
 					UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Loaded.Resource");
 					// apply deferred requests
 					resources.Sync(v, vd, elapsed_s);
@@ -501,7 +506,7 @@ namespace KERBALISM
 			{
 				msg += "<color=#FF4500>Mods with limited compatibility found:</color>\n";
 				foreach (var m in warningModsFound) msg += "- " + m + "\n";
-				msg += "You might have problems with these mods. Consider removing them.\n\n";
+				msg += "You might have problems with these mods. Please consult the FAQ on on kerbalism.github.io\n\n";
 			}
 
 			if (!string.IsNullOrEmpty(msg))
@@ -629,6 +634,11 @@ namespace KERBALISM
 				HashSet<string> labels = new HashSet<string>();
 				foreach (AvailablePart p in PartLoader.LoadedPartsList)
 				{
+					// workaround for FindModulesImplementing nullrefs in 1.8 when called on the strange kerbalEVA_RD_Exp prefab
+					// due to the (private) cachedModuleLists being null on it
+					if (p.partPrefab.Modules.Count == 0)
+						continue;
+
 					foreach (Configure cfg in p.partPrefab.FindModulesImplementing<Configure>())
 					{
 						foreach (ConfigureSetup setup in cfg.Setups())

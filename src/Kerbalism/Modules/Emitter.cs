@@ -5,20 +5,25 @@ using KSP.Localization;
 
 namespace KERBALISM
 {
-	public class Emitter : PartModule, ISpecifics
+	public class Emitter : PartModule, ISpecifics, IKerbalismModule
 	{
 		// config
-		[KSPField(isPersistant = true)] public double radiation;  // radiation in rad/s
-		[KSPField(isPersistant = true)] public double ec_rate;    // EC consumption rate per-second (optional)
-		[KSPField] public bool toggle;                            // true if the effect can be toggled on/off
 		[KSPField] public string active;                          // name of animation to play when enabling/disabling
 
-		// persistent
+		[KSPField(isPersistant = true)] public string title = string.Empty;     // GUI name of the status action in the PAW
+		[KSPField(isPersistant = true)] public bool toggle;						// true if the effect can be toggled on/off
+		[KSPField(isPersistant = true)] public double radiation;				// radiation in rad/s
+		[KSPField(isPersistant = true)] public double ec_rate;					// EC consumption rate per-second (optional)
 		[KSPField(isPersistant = true)] public bool running;
-		[KSPField(isPersistant = true)] public double radiation_impact = 1.0; // calculated based on vessel design
+		[KSPField(isPersistant = true)] public double radiation_impact = 1.0;	// calculated based on vessel design
 
+#if KSP15_16
+		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "_")]
+#else
+		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "_", groupName = "Radiation", groupDisplayName = "Radiation")]
+#endif
 		// rmb status
-		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "_")] public string Status;  // rate of radiation emitted/shielded
+		public string Status;  // rate of radiation emitted/shielded
 
 		// animations
 		Animator active_anim;
@@ -31,7 +36,10 @@ namespace KERBALISM
 			if (Lib.DisableScenario(this)) return;
 
 			// update RMB ui
-			Fields["Status"].guiName = radiation >= 0.0 ? "Radiation" : "Active shielding";
+			if (string.IsNullOrEmpty(title))
+				title = radiation >= 0.0 ? "Radiation" : "Active shield";
+
+			Fields["Status"].guiName = title;
 			Events["Toggle"].active = toggle;
 			Actions["Action"].active = toggle;
 
@@ -138,34 +146,48 @@ namespace KERBALISM
 		{
 			if (!radiation_impact_calculated)
 				radiation_impact_calculated = CalculateRadiationImpact();
-
-			// do nothing else in the editor
-			if (Lib.IsEditor()) return;
-
-			// if enabled, and there is ec consumption
-			if (running && ec_rate > double.Epsilon)
-			{
-				// get resource cache
-				ResourceInfo ec = ResourceCache.GetResource(vessel, "ElectricCharge");
-
-				// consume EC
-				ec.Consume(ec_rate * Kerbalism.elapsed_s, "emitter");
-			}
 		}
 
-
-		public static void BackgroundUpdate(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, Emitter emitter, ResourceInfo ec, double elapsed_s)
+		// See IKerbalismModule
+		public static string BackgroundUpdate(Vessel v,
+			ProtoPartSnapshot part_snapshot, ProtoPartModuleSnapshot module_snapshot,
+			PartModule proto_part_module, Part proto_part,
+			Dictionary<string, double> availableResources, List<KeyValuePair<string, double>> resourceChangeRequest,
+			double elapsed_s)
 		{
-			// if enabled, and EC is required
-			if (Lib.Proto.GetBool(m, "running") && emitter.ec_rate > double.Epsilon)
+			Emitter emitter = proto_part_module as Emitter;
+			if (emitter == null) return string.Empty;
+
+			if (Lib.Proto.GetBool(module_snapshot, "running") && emitter.ec_rate > 0)
 			{
-				// consume EC
-				ec.Consume(emitter.ec_rate * elapsed_s, "emitter");
+				resourceChangeRequest.Add(new KeyValuePair<string, double>("ElectricCharge", -emitter.ec_rate));
 			}
+
+			return emitter.title;
+		}
+
+		public virtual string ResourceUpdate(Dictionary<string, double> availableResources, List<KeyValuePair<string, double>> resourceChangeRequest)
+		{
+			// if enabled, and there is ec consumption
+			if (running && ec_rate > 0)
+			{
+				resourceChangeRequest.Add(new KeyValuePair<string, double>("ElectricCharge", -ec_rate));
+			}
+
+			return title;
+		}
+
+		public string PlannerUpdate(List<KeyValuePair<string, double>> resourceChangeRequest, CelestialBody body, Dictionary<string, double> environment)
+		{
+			return ResourceUpdate(null, resourceChangeRequest);
 		}
 
 
+#if KSP15_16
 		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true)]
+#else
+	[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true, groupName = "Radiation", groupDisplayName = "Radiation")]
+#endif
 		public void Toggle()
 		{
 			// switch status
@@ -217,7 +239,7 @@ namespace KERBALISM
 				var vd = n.KerbalismData();
 				if (!vd.IsSimulated) continue;
 
-				foreach (var emitter in Lib.FindModules<Emitter>(v))
+				foreach (var emitter in Lib.FindModules<Emitter>(n))
 				{
 					if (emitter.part == null || emitter.part.transform == null) continue;
 					if (emitter.radiation <= 0) continue; // ignore shielding effects here

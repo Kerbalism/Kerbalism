@@ -336,7 +336,7 @@ namespace KERBALISM
 
 		private int GetFacilityLevel(SpaceCenterFacility facility)
 		{
-			if (!ScenarioUpgradeableFacilities.Instance.enabled)
+			if (ScenarioUpgradeableFacilities.Instance == null || !ScenarioUpgradeableFacilities.Instance.enabled)
 				return int.MaxValue;
 
 

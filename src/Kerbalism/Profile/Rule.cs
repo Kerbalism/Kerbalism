@@ -88,15 +88,10 @@ namespace KERBALISM
 				rd.lifetime = lifetime_enabled && lifetime;
 
 				// influence consumption by elapsed time
-				double step; ;
+				double step = elapsed_s;
 
-				// if continous
-				if (interval == 0.0)
-				{
-					step = elapsed_s;
-				}
 				// if interval-based
-				else
+				if (interval > 0.0)
 				{
 					// accumulate time
 					rd.time_since += elapsed_s;
@@ -143,7 +138,7 @@ namespace KERBALISM
 						{
 							// transform input into output resource
 							// - rules always dump excess overboard (because it is waste)
-							ResourceRecipe recipe = new ResourceRecipe((Part)null, name); // kerbals are not associated with a part
+							ResourceRecipe recipe = new ResourceRecipe(name);
 							recipe.AddInput(input, required);
 							recipe.AddOutput(output, required * ratio, true);
 							resources.AddRecipe(recipe);

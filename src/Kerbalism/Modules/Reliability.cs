@@ -134,10 +134,16 @@ namespace KERBALISM
 			vessel.KerbalismData().ResetReliabilityStatus();
 
 			bool fail = false;
+			bool launchpad = vessel.situation == Vessel.Situations.PRELAUNCH || ignitions <= 1 && vessel.situation == Vessel.Situations.LANDED;
 
 			if (turnon_failure_probability > 0)
 			{
+				// q = quality indicator
 				var q = quality ? Settings.QualityScale : 1.0;
+				if (launchpad) q /= 2.5; // the very first ignition is more likely to fail
+
+				q += Lib.Clamp(ignitions - 1, 0.0, 6.0) / 20.0; // subsequent ignition failures become less and less likely, reducing by up to 30%
+
 				if (Lib.RandomDouble() < (turnon_failure_probability * PreferencesReliability.Instance.ignitionFailureChance) / q)
 				{
 					fail = true;
@@ -152,6 +158,7 @@ namespace KERBALISM
 			if (rated_ignitions > 0)
 			{
 				int total_ignitions = EffectiveIgnitions(quality, rated_ignitions);
+				if (ignitions >= total_ignitions * 0.9) needMaintenance = true;
 				if (ignitions > total_ignitions)
 				{
 					var q = (quality ? Settings.QualityScale : 1.0) * Lib.RandomDouble();
@@ -176,13 +183,20 @@ namespace KERBALISM
 
 				next = Planetarium.GetUniversalTime() + Lib.RandomDouble() * 2.0;
 
-				if(Lib.RandomDouble() < 0.1)
-				{
-					// delayed ignition failure
-					next += Lib.RandomDouble() * 10;
-				}
+				var fuelSystemFailureProbability = 0.1;
+				if (launchpad) fuelSystemFailureProbability = 0.5;
 
-				FlightLogger.fetch?.LogEvent(part.partInfo.title + " failure on ignition");
+				if(Lib.RandomDouble() < fuelSystemFailureProbability)
+				{
+					// broken fuel line -> delayed kaboom
+					explode = true;
+					next += Lib.RandomDouble() * 10 + 4;
+					FlightLogger.fetch?.LogEvent(part.partInfo.title + " fuel system leak caused destruction of the engine");
+				}
+				else
+				{
+					FlightLogger.fetch?.LogEvent(part.partInfo.title + " failure on ignition");
+				}
 			}
 			return fail;
 		}
@@ -373,7 +387,10 @@ namespace KERBALISM
 					var f = rated_operation_duration;
 					if (quality) f *= Settings.QualityScale;
 
-					// random^3 so we get an exponentially increasing probability
+					// extend engine burn duration by preference value 
+					f /= PreferencesReliability.Instance.engineOperationFailureChance;
+
+					// random^3 so we get an exponentially increasing failure probability
 					var p = Math.Pow(Lib.RandomDouble(), 3);
 
 					// 1-p turns the probability of failure into one of non-failure
@@ -382,7 +399,7 @@ namespace KERBALISM
 					// 35% guaranteed burn duration
 					var guaranteed_operation = f * 0.35;
 
-					fail_duration = guaranteed_operation + (f - guaranteed_operation/2) * p;
+					fail_duration = guaranteed_operation + f * p;
 #if DEBUG_RELIABILITY
 					Lib.Log(part.partInfo.title + " will fail after " + Lib.HumanReadableDuration(fail_duration) + " burn time");
 #endif
@@ -392,11 +409,11 @@ namespace KERBALISM
 				{
 					next = now;
 					enforce_breakdown = true;
-					explode = Lib.RandomDouble() < 0.35;
+					explode = Lib.RandomDouble() < 0.2;
 #if DEBUG_RELIABILITY
-					Lib.Log("Reliability: " + part.partInfo.title + " fails because of overstress");
+					Lib.Log("Reliability: " + part.partInfo.title + " fails because of material fatigue");
 #endif
-					FlightLogger.fetch?.LogEvent(part.partInfo.title + " failed because of overstress");
+					FlightLogger.fetch?.LogEvent(part.partInfo.title + " failed because of material fatigue");
 				}
 			}
 
@@ -486,8 +503,9 @@ namespace KERBALISM
 			// get normalized time to failure
 			double time_k = (Planetarium.GetUniversalTime() - last) / (next - last);
 			needMaintenance = mtbf > 0 && time_k > 0.35;
-			if (rated_ignitions > 0 && ignitions > Math.Ceiling(EffectiveIgnitions(quality, rated_ignitions) * 0.7)) needMaintenance = true;
-			if (rated_operation_duration > 0 && operation_duration > EffectiveDuration(quality, rated_operation_duration) * 0.7) needMaintenance = true;
+
+			if (rated_ignitions > 0 && ignitions >= Math.Ceiling(EffectiveIgnitions(quality, rated_ignitions) * 0.4)) needMaintenance = true;
+			if (rated_operation_duration > 0 && operation_duration >= EffectiveDuration(quality, rated_operation_duration) * 0.4) needMaintenance = true;
 
 			v.KerbalismData().ResetReliabilityStatus();
 
@@ -552,9 +570,8 @@ namespace KERBALISM
 			lastRunningCheck = 0;
 			last_inspection = Planetarium.GetUniversalTime();
 
-			operation_duration = Math.Min(operation_duration, EffectiveDuration(quality, rated_operation_duration) * 0.3);
-			ignitions = Math.Min(ignitions, (int)(EffectiveIgnitions(quality, rated_ignitions) * 0.3));
-
+			operation_duration = 0;
+			ignitions = 0;
 			fail_duration = 0;
 			vessel.KerbalismData().ResetReliabilityStatus();
 

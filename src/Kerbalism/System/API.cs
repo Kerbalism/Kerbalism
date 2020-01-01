@@ -41,8 +41,11 @@ namespace KERBALISM
 		/// </summary>
 		public double rate = 0.0;
 
-		/// <summary> ec cost </summary>
+		/// <summary> ec cost while transmitting at the above rate </summary>
 		public double ec = 0.0;
+
+		/// <summary> ec cost while not transmitting </summary>
+		public double ec_idle = 0.0;
 
 		/// <summary> link quality indicator for the UI, any value from 0-1.
 		/// you MUST set this to >= 0 in your mod, otherwise the comm status
@@ -287,7 +290,7 @@ namespace KERBALISM
 					}
 					catch (Exception e)
 					{
-						Lib.Log("Exception in event receiver", e);
+						Lib.Log("RadiationFieldChanged: Exception in event receiver " + e.Message + "\n" + e.ToString());
 					}
 				}
 			}
@@ -415,161 +418,144 @@ namespace KERBALISM
 		}
 
 
-		// --- VESSEL --------------------------------------------------------------
+		// --- RESOURCES ------------------------------------------------------------
 
-		public static double VesselConnectionRate(Vessel v)
+		public static void ConsumeResource(Vessel v, string resource_name, double quantity, string title)
 		{
-			var vi = v.KerbalismData();
-			if (!vi.IsSimulated) return 0.0;
-			return vi.Connection.rate;
+			ResourceCache.Consume(v, resource_name, quantity, title);
 		}
 
-		public static bool VesselConnectionLinked(Vessel v)
+		public static void ProduceResource(Vessel v, string resource_name, double quantity, string title)
 		{
-			var vi = v.KerbalismData();
-			if (!vi.IsSimulated) return false;
-			return vi.Connection.linked;
+			ResourceCache.Produce(v, resource_name, quantity, title);
 		}
 
-		public static int VesselConnectionTransmitting(Vessel v)
+		public static void ProcessResources(Vessel v, List<KeyValuePair<string, double>> resources, string title)
 		{
-			var vi = v.KerbalismData();
-			if (!vi.IsSimulated) return 0;
-			return vi.filesTransmitted.Count;
+			foreach(var p in resources)
+			{
+				if (p.Value < 0)
+					ResourceCache.Consume(v, p.Key, -p.Value, title);
+				else
+					ResourceCache.Produce(v, p.Key, p.Value, title);
+			}
+		}
+
+		public static double ResourceAmount(Vessel v, string resource_name)
+		{
+			return ResourceCache.GetResource(v, resource_name).Amount;
+		}
+
+		public static List<double> ResourceAmounts(Vessel v, List<string> resource_names)
+		{
+			List<double> result = new List<double>(resource_names.Count);
+			foreach (var name in resource_names)
+				result.Add(ResourceCache.GetResource(v, name).Amount);
+			return result;
+		}
+
+		public static double ResourceCapacity(Vessel v, string resource_name)
+		{
+			return ResourceCache.GetResource(v, resource_name).Capacity;
+		}
+
+		public static List<double> ResourceCapacities(Vessel v, List<string> resource_names)
+		{
+			List<double> result = new List<double>(resource_names.Count);
+			foreach (var name in resource_names)
+				result.Add(ResourceCache.GetResource(v, name).Capacity);
+			return result;
+		}
+
+		public static double ResourceLevel(Vessel v, string resource_name)
+		{
+			return ResourceCache.GetResource(v, resource_name).Level;
+		}
+
+		public static List<double> ResourceLevels(Vessel v, List<string> resource_names)
+		{
+			List<double> result = new List<double>(resource_names.Count);
+			foreach (var name in resource_names)
+				result.Add(ResourceCache.GetResource(v, name).Level);
+			return result;
 		}
 
 		// --- SCIENCE --------------------------------------------------------------
 
-/*
-
-
-	// return size of a file in a vessel drive
-	public static double FileSize(Vessel v, string subject_id)
-	{
-		if (!v.KerbalismData().IsValid) return 0.0;
-
-		foreach (var d in Drive.GetDrives(v, true))
+		public static ExperimentStateChanged OnExperimentStateChanged = new ExperimentStateChanged();
+		public class ExperimentStateChanged
 		{
-			if (d.files.ContainsKey(subject_id))
-				return d.files[subject_id].size;
-		}
+			internal List<Action<Vessel, string, bool>> receivers = new List<Action<Vessel, string, bool>>();
+			public void Add(Action<Vessel, string, bool> receiver) { if (!receivers.Contains(receiver)) receivers.Add(receiver); }
+			public void Remove(Action<Vessel, string, bool> receiver) { if (receivers.Contains(receiver)) receivers.Remove(receiver); }
 
-		return 0.0;
-	}
-
-	// return size of a sample in a vessel drive
-	public static double SampleSize(Vessel v, string subject_id)
-	{
-		if (!v.KerbalismData().IsValid) return 0.0;
-		foreach (var d in Drive.GetDrives(v, true))
-		{
-			if (d.samples.ContainsKey(subject_id))
-				return d.samples[subject_id].size;
-		}
-
-		return 0.0;
-	}
-
-	// store a file on a vessel
-	public static bool StoreFile(Vessel v, string subject_id, double amount)
-	{
-		if (!v.KerbalismData().IsValid) return false;
-		return Drive.FileDrive(v, amount).Record_file(subject_id, amount);
-	}
-
-	// store a sample on a vessel
-	public static bool StoreSample(Vessel v, string subject_id, double amount, double mass = 0)
-	{
-		if (!v.KerbalismData().IsValid) return false;
-		return Drive.SampleDrive(v, amount, subject_id).Record_sample(subject_id, amount, mass);
-	}
-
-	// remove a file from a vessel
-	public static void RemoveFile(Vessel v, string subject_id, double amount)
-	{
-		if (!v.KerbalismData().IsValid) return;
-		foreach (var d in Drive.GetDrives(v, true))
-			d.Delete_file(subject_id, amount);
-	}
-
-	// remove a sample from a vessel
-	public static double RemoveSample(Vessel v, string subject_id, double amount)
-	{
-		if (!v.KerbalismData().IsValid) return 0;
-		double massRemoved = 0;
-		foreach (var d in Drive.GetDrives(v, true))
-			massRemoved += d.Delete_sample(subject_id, amount);
-		return massRemoved;
-	}
-
-	public static ScienceEvent OnScienceReceived = new ScienceEvent();
-
-	public class ScienceEvent
-	{
-		//This is the list of methods that should be activated when the event fires
-		private List<Action<float, ScienceSubject, ProtoVessel, bool>> listeningMethods = new List<Action<float, ScienceSubject, ProtoVessel, bool>>();
-
-		//This adds an event to the List of listening methods
-		public void Add(Action<float, ScienceSubject, ProtoVessel, bool> method)
-		{
-			//We only add it if it isn't already added. Just in case.
-			if (!listeningMethods.Contains(method))
+			public void Notify(Vessel vessel, string experiment_id, Experiment.ExpStatus oldStatus, Experiment.ExpStatus newStatus)
 			{
-				listeningMethods.Add(method);
-			}
-		}
-
-		//This removes and event from the List
-		public void Remove(Action<float, ScienceSubject, ProtoVessel, bool> method)
-		{
-			//We also only remove it if it's actually in the list.
-			if (listeningMethods.Contains(method))
-			{
-				listeningMethods.Remove(method);
-			}
-		}
-
-		//This fires the event off, activating all the listening methods.
-		public void Notify(float credits, ScienceSubject subject, ProtoVessel pv, bool subjectCompleted)
-		{
-			//Loop through the list of listening methods and Invoke them.
-			foreach (Action<float, ScienceSubject, ProtoVessel, bool> method in listeningMethods)
-			{
-				method.Invoke(credits, subject, pv, subjectCompleted);
-			}
-		}
-	}
-
-
-
-	public class StringBoolStateChanged
-	{
-		internal List<Action<Vessel, string, bool>> receivers = new List<Action<Vessel, string, bool>>();
-		public void Add(Action<Vessel, string, bool> receiver) { if (!receivers.Contains(receiver)) receivers.Add(receiver); }
-		public void Remove(Action<Vessel, string, bool> receiver) { if (receivers.Contains(receiver)) receivers.Remove(receiver); }
-
-		public void Notify(Vessel vessel, string experiment_id, bool state)
-		{
-			foreach (Action<Vessel, string, bool> receiver in receivers)
-			{
-				try
+				bool wasRunning = oldStatus == Experiment.ExpStatus.Forced || oldStatus == Experiment.ExpStatus.Running;
+				bool isRunning = newStatus == Experiment.ExpStatus.Forced || newStatus == Experiment.ExpStatus.Running;
+				if (wasRunning == isRunning) return;
+				foreach (Action<Vessel, string, bool> receiver in receivers)
 				{
-					receiver.Invoke(vessel, experiment_id, state);
-				}
-				catch (Exception e)
-				{
-					Lib.Log("Exception in event receiver", e);
+					try
+					{
+						receiver.Invoke(vessel, experiment_id, isRunning);
+					}
+					catch (Exception e)
+					{
+						Lib.Log("ExperimentStateChanged: Exception in event receiver " + e.Message + "\n" + e.ToString());
+					}
 				}
 			}
 		}
-	}
 
-	public static StringBoolStateChanged OnTransmitStateChanged = new StringBoolStateChanged();
+		/// <summary> Returns true if the experiment is currently active and collecting data </summary>
+		public static bool ExperimentIsRunning(Vessel vessel, string experiment_id)
+		{
+			if (!Features.Science) return false;
 
-	// not yet...
-	//public static StringBoolStateChanged OnExperimentStateChanged = new StringBoolStateChanged();
+			if (vessel.loaded)
+			{
+				foreach (Experiment e in vessel.FindPartModulesImplementing<Experiment>())
+				{
+					if (e.enabled && e.experiment_id == experiment_id &&
+						(e.State == Experiment.RunningState.Running || e.State == Experiment.RunningState.Forced))
+						return true;
+				}
+			}
+			else
+			{
+				var PD = new Dictionary<string, Lib.Module_prefab_data>();
+				foreach (ProtoPartSnapshot p in vessel.protoVessel.protoPartSnapshots)
+				{
+					// get part prefab (required for module properties)
+					Part part_prefab = PartLoader.getPartInfoByName(p.partName).partPrefab;
+					// get all module prefabs
+					var module_prefabs = part_prefab.FindModulesImplementing<PartModule>();
+					// clear module indexes
+					PD.Clear();
+					foreach (ProtoPartModuleSnapshot m in p.modules)
+					{
+						// get the module prefab
+						// if the prefab doesn't contain this module, skip it
+						PartModule module_prefab = Lib.ModulePrefab(module_prefabs, m.moduleName, PD);
+						if (!module_prefab) continue;
+						// if the module is disabled, skip it
+						// note: this must be done after ModulePrefab is called, so that indexes are right
+						if (!Lib.Proto.GetBool(m, "isEnabled")) continue;
 
-*/
+						if (m.moduleName == "Experiment"
+							&& ((Experiment)module_prefab).experiment_id == experiment_id)
+						{
+							var state = Lib.Proto.GetEnum(m, "expState", Experiment.RunningState.Stopped);
+							if (state == Experiment.RunningState.Running || state == Experiment.RunningState.Forced)
+								return true;
+						}
+					}
+				}
+			}
+
+			return false;
+		}
 
 		// --- FAILURES --------------------------------------------------------------
 
@@ -612,8 +598,28 @@ namespace KERBALISM
 
 		// --- COMMUNICATION --------------------------------------------------------------
 
-		public static CommInfo Comm = new CommInfo();
+		public static double VesselConnectionRate(Vessel v)
+		{
+			var vi = v.KerbalismData();
+			if (!vi.IsSimulated) return 0.0;
+			return vi.Connection.rate;
+		}
 
+		public static bool VesselConnectionLinked(Vessel v)
+		{
+			var vi = v.KerbalismData();
+			if (!vi.IsSimulated) return false;
+			return vi.Connection.linked;
+		}
+
+		public static int VesselConnectionTransmitting(Vessel v)
+		{
+			var vi = v.KerbalismData();
+			if (!vi.IsSimulated) return 0;
+			return vi.filesTransmitted.Count;
+		}
+
+		public static CommInfo Comm = new CommInfo();
 		public class CommInfo
 		{
 			//This is the list of methods that should be activated when the event fires
@@ -656,7 +662,7 @@ namespace KERBALISM
 						handler.Invoke(null, new object[] { antennaInfo, pv });
 						if (antennaInfo.strength > -1) return;
 					} catch(Exception e) {
-						Lib.Log("Kerbalism: CommInfo handler threw exception " + e.Message + "\n" + e.ToString());
+						Lib.Log("CommInfo handler threw exception " + e.Message + "\n" + e.ToString());
 					}
 				}
 			}

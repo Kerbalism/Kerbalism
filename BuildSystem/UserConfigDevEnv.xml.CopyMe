@@ -52,6 +52,7 @@
     <!-- Note : the non-windows path is the default on OSX, it probably won't work with a linux install -->
     <KSPDevDllsRelativePath>KSP_x64_Data\Managed</KSPDevDllsRelativePath>
     <!-- Note 2 : not sure this will be evaluated correctly from Monodevelop.-->
+    <KSPDevDllsRelativePath Condition="$([MSBuild]::IsOsPlatform('OSX'))">KSP.app/Contents/Resources/Data/Managed</KSPDevDllsRelativePath>
     <KSPDevDllsRelativePath Condition="$([MSBuild]::IsOsPlatform('Linux'))">KSP_Data\Managed</KSPDevDllsRelativePath>
     
   </PropertyGroup>

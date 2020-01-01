@@ -168,6 +168,39 @@ namespace KERBALISM
 			UnityEngine.Profiling.Profiler.EndSample();
 		}
 
+		internal List<ResourceInfo> GetAllResources(Vessel v)
+		{
+			List<string> knownResources = new List<string>();
+			List<ResourceInfo> result = new List<ResourceInfo>();
+
+			if (v.loaded)
+			{
+				foreach (Part p in v.Parts)
+				{
+					foreach (PartResource r in p.Resources)
+					{
+						if (knownResources.Contains(r.resourceName)) continue;
+						knownResources.Add(r.resourceName);
+						result.Add(GetResource(v, r.resourceName));
+					}
+				}
+			}
+			else
+			{
+				foreach (ProtoPartSnapshot p in v.protoVessel.protoPartSnapshots)
+				{
+					foreach (ProtoPartResourceSnapshot r in p.resources)
+					{
+						if (knownResources.Contains(r.resourceName)) continue;
+						knownResources.Add(r.resourceName);
+						result.Add(GetResource(v, r.resourceName));
+					}
+				}
+			}
+
+			return result;
+		}
+
 		/// <summary> record deferred production of a resource (shortcut) </summary>
 		/// <param name="brokerName">short ui-friendly name for the producer</param>
 		public void Produce(Vessel v, string resource_name, double quantity, string brokerName)
@@ -567,16 +600,7 @@ namespace KERBALISM
 
 		private string name;
 
-		public ResourceRecipe(Part p, string name)
-		{
-			this.inputs = new List<Entry>();
-			this.outputs = new List<Entry>();
-			this.cures = new List<Entry>();
-			this.left = 1.0;
-			this.name = name;
-		}
-
-		public ResourceRecipe(ProtoPartSnapshot p, string name)
+		public ResourceRecipe(string name)
 		{
 			this.inputs = new List<Entry>();
 			this.outputs = new List<Entry>();

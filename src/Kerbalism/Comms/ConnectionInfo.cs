@@ -24,8 +24,11 @@ namespace KERBALISM
 		/// <summary> science data rate. note that internal transmitters can not transmit science data only telemetry data </summary>
 		public double rate = 0.0;
 
-		/// <summary> transmitter ec cost</summary>
+		/// <summary> transmitter ec cost while transmitting</summary>
 		public double ec = 0.0;
+
+		/// <summary> transmitter ec cost while idle</summary>
+		public double ec_idle = 0.0;
 
 		/// <summary> signal strength </summary>
 		public double strength = 0.0;
@@ -44,9 +47,7 @@ namespace KERBALISM
 		{
 			if (double.IsNaN(value) || double.IsInfinity(value))
 			{
-#if DEBUG || DEVBUILD
-				Lib.Log("ERROR: Comms: invalid value: " + name + " on " + v + " (" + value + ")");
-#endif
+				Lib.LogDebug("ERROR: Comms: invalid value: " + name + " on " + v + " (" + value + ")");
 				value = 0;
 			}
 			return value;
@@ -65,7 +66,8 @@ namespace KERBALISM
 
 			AntennaInfo ai = GetAntennaInfo(v, powered, storm);
 
-			ec = SanityCheck(ai.ec, "EC", v);
+			ec = SanityCheck(ai.ec, "ec", v);
+			ec_idle = SanityCheck(ai.ec_idle, "ec_idle", v);
 			rate = SanityCheck(ai.rate, "rate", v) * PreferencesScience.Instance.transmitFactor;
 			linked = ai.linked;
 			strength = SanityCheck(ai.strength, "strength", v);

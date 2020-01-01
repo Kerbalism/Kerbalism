@@ -74,9 +74,9 @@ namespace KERBALISM
 				0,
 				TextAnchor.UpperLeft,
 				5f,
-				TextAnchor.UpperRight,
-				TextAnchor.UpperRight,
-				-100, -100);
+				TextAnchor.UpperLeft,
+				TextAnchor.UpperLeft,
+				280, -100);
 
 			KsmGuiHeader mainHeader = new KsmGuiHeader(window, "SCIENCE ARCHIVE");
 			new KsmGuiIconButton(mainHeader, Textures.KsmGuiTexHeaderClose, () => Close());
@@ -207,7 +207,7 @@ namespace KERBALISM
 				else if (vesselFilter.Enabled && vesselFilter.IsOn && !vesselExpInfos.Contains(exp.ToggleId.expInfo))
 					visible = false;
 
-				if (ROCFilter.IsOn && ROCExpInfos.Contains(exp.ToggleId.expInfo))
+				if (ROCFilter != null && ROCFilter.IsOn && ROCExpInfos.Contains(exp.ToggleId.expInfo))
 					visible = false;
 
 				if (exp.Enabled != visible)

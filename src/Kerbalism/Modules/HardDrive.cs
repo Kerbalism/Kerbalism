@@ -8,7 +8,7 @@ using UnityEngine;
 namespace KERBALISM
 {
 
-	public class HardDrive : PartModule, IScienceDataContainer, ISpecifics, IModuleInfo, IPartMassModifier, IPartCostModifier //, IModuleRollout
+	public class HardDrive : PartModule, IScienceDataContainer, ISpecifics, IModuleInfo, IPartMassModifier, IPartCostModifier
 	{
 		[KSPField] public double dataCapacity = -1;             // base drive capacity, in Mb. -1 = unlimited
 		[KSPField] public int sampleCapacity = -1;              // base drive capacity, in slots. -1 = unlimited
@@ -502,9 +502,7 @@ namespace KERBALISM
 			if(Double.IsNaN(result))
 			{
 				Lib.Log("Drive mass is NaN: esc " + effectiveSampleCapacity + " scm " + sampleCapacityMass + " dedcm " + effectiveDataCapacity + " dcm " + dataCapacityMass + " tsm " + totalSampleMass);
-//#if !DEBUG && !DEVBUILD
 				return 0;
-//#endif
 			}
 
 			return (float)result;

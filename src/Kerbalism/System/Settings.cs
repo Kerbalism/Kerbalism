@@ -17,8 +17,8 @@ namespace KERBALISM
 
     public static class Settings
     {
-		private static string MODS_INCOMPATIBLE = "TacLifeSupport,Snacks,BackgroundResources,BackgroundProcessing,DynamicBatteryStorage,KolonyTools,USILifeSupport";
-		private static string MODS_WARNING = "RemoteTech";
+		private static string MODS_INCOMPATIBLE = "TacLifeSupport,Snacks,BackgroundResources,BackgroundProcessing,KolonyTools,USILifeSupport";
+		private static string MODS_WARNING = "RemoteTech,ResearchBodies";
 		private static string MODS_SCIENCE = "KEI,[x] Science!";
 
 		public static void Parse()
@@ -88,7 +88,7 @@ namespace KERBALISM
             ComfortPlants = Lib.ConfigValue(cfg, "ComfortPlants", 0.1f);
 
 			StormFrequency = Lib.ConfigValue(cfg, "StormFrequency", 0.4f);
-			StormDurationHours = Lib.ConfigValue(cfg, "StormDurationHours", 6);
+			StormDurationHours = Lib.ConfigValue(cfg, "StormDurationHours", 2);
 			StormEjectionSpeed = Lib.ConfigValue(cfg, "StormEjectionSpeed", 0.33f);
 			ShieldingEfficiency = Lib.ConfigValue(cfg, "ShieldingEfficiency", 0.9f);
 			StormRadiation = Lib.ConfigValue(cfg, "StormRadiation", 5.0f);

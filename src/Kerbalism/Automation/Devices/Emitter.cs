@@ -44,8 +44,11 @@ namespace KERBALISM
 
 		public override void Toggle()
 		{
+			if (!Lib.Proto.GetBool(protoModule, "toggle")) return;
 			Ctrl(!Lib.Proto.GetBool(protoModule, "running"));
 		}
+
+		public override bool IsVisible => Lib.Proto.GetBool(protoModule, "toggle");
 	}
 
 

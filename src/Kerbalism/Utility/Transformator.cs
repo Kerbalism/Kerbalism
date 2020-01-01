@@ -1,74 +1,81 @@
 ﻿using UnityEngine;
+using System;
 
 namespace KERBALISM
 {
 	public sealed class Transformator
 	{
 		private readonly Part part;
-		private Transform transf;
+		private Transform transform;
 		private readonly string name;
 
 		private Quaternion baseAngles;
 
-		private float rotationRateGoal = 0f;
-		private float CurrentSpinRate = 0f;
+		private float rotationRateGoal;
+		private float CurrentSpinRate;
 
-		private readonly float SpinRate = 0f;
-		private readonly float spinAccel = 0f;
+		private readonly float SpinRate;
+		private readonly float spinAccel;
+		private readonly bool rotate_iva;
 
-		public Transformator(Part p, string transf_name, float SpinRate, float spinAccel)
+		public Transformator(Part p, string transf_name, float SpinRate, float spinAccel, bool iva = true)
 		{
-			transf = null;
+			transform = null;
 			name = string.Empty;
 			part = p;
+			rotate_iva = iva;
 
 			if (transf_name.Length > 0)
 			{
-				Lib.DebugLog("Looking for : {0}", transf_name);
-				Transform[] transfArray = p.FindModelTransforms(transf_name);
-				if (transfArray.Length > 0)
+				//Lib.Log("Looking for : {0}", transf_name);
+				transform = p.FindModelTransform(transf_name);
+				if (transform != null)
 				{
-					Lib.DebugLog("Transform has been found");
 					name = transf_name;
+					//Lib.Log("Transform {0} has been found", name);
 
-					transf = transfArray[0];
 					this.SpinRate = SpinRate;
 					this.spinAccel = spinAccel;
-					baseAngles = transf.localRotation;
+					baseAngles = transform.localRotation;
 				}
 			}
 		}
 
 		public void Play()
 		{
-			Lib.DebugLog("Playing Transformation");
-			if (transf != null) rotationRateGoal = 1.0f;
+			//Lib.Log("Playing Transformation {0}", name);
+			if (transform != null) rotationRateGoal = 1.0f;
 		}
 
 		public void Stop()
 		{
-			Lib.DebugLog("Stopping Transformation");
-			if (transf != null) rotationRateGoal = 0.0f;
+			//Lib.Log("Stopping Transformation {0}", name);
+			if (transform != null) rotationRateGoal = 0.0f;
 		}
 
 		public void DoSpin()
 		{
 			CurrentSpinRate = Mathf.MoveTowards(CurrentSpinRate, rotationRateGoal * SpinRate, TimeWarp.fixedDeltaTime * spinAccel);
 			float spin = Mathf.Clamp(TimeWarp.fixedDeltaTime * CurrentSpinRate, -10.0f, 10.0f);
+			//Lib.Log("Transform {0} spin rate {1}", name, CurrentSpinRate);
 			// Part rotation
-			transf.Rotate(Vector3.forward * spin);
-			// IVA rotation
-			if (part.internalModel != null) part.internalModel.transform.Rotate(Vector3.forward * (spin * -1));
+			transform.Rotate(Vector3.forward * spin);
+
+			if(rotate_iva && part.internalModel != null)
+			{
+				// IVA rotation
+				if (part.internalModel != null) part.internalModel.transform.Rotate(Vector3.forward * (spin * -1));
+			}
 		}
 
 		public bool IsRotating()
 		{
-			return CurrentSpinRate > (float.Epsilon * SpinRate);
+			return Math.Abs(CurrentSpinRate) > Math.Abs(float.Epsilon * SpinRate);
 		}
 
 		public bool IsStopping()
 		{
-			return rotationRateGoal <= float.Epsilon;
+			return Math.Abs(rotationRateGoal) <= float.Epsilon;
 		}
 	}
 }

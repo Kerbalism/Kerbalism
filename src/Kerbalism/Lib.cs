@@ -24,8 +24,16 @@ namespace KERBALISM
 				stackTrace.GetFrame(1).GetMethod().Name, string.Format(msg, param)));
 		}
 
-		[Conditional("DEBUG")]
-		public static void DebugLog(string message, params object[] param)
+		[Conditional("DEBUG"), Conditional("DEVBUILD")]
+		public static void LogDebug(string message, params object[] param)
+		{
+			StackTrace stackTrace = new StackTrace();
+			UnityEngine.Debug.Log(string.Format("[Kerbalism] debug {0}.{1} {2}", stackTrace.GetFrame(1).GetMethod().ReflectedType.Name,
+				stackTrace.GetFrame(1).GetMethod().Name, string.Format(message, param)));
+		}
+
+		[Conditional("DEBUG"), Conditional("DEVBUILD")]
+		public static void LogDebugStack(string message, params object[] param)
 		{
 			StackTrace stackTrace = new StackTrace();
 			UnityEngine.Debug.Log(string.Format("[Kerbalism] debug {0}.{1} {2}", stackTrace.GetFrame(1).GetMethod().ReflectedType.Name,
@@ -757,16 +765,16 @@ namespace KERBALISM
 				if (d <= double.Epsilon) return "none";
 				if (double.IsInfinity(d) || double.IsNaN(d)) return "perpetual";
 
-				int hours_in_day = (int)HoursInDay;
-				int days_in_year = (int)DaysInYear;
+				long hours_in_day = (long)HoursInDay;
+				long days_in_year = (long)DaysInYear;
 
-				int duration_seconds = (int)d;
+				long duration_seconds = (long)d;
 
-				int seconds = duration_seconds % 60;
-				int minutes = (duration_seconds / 60) % 60;
-				int hours = (duration_seconds / 3600) % hours_in_day;
-				int days = (duration_seconds / (3600 * hours_in_day)) % days_in_year;
-				int years = duration_seconds / (3600 * hours_in_day * days_in_year);
+				long seconds = duration_seconds % 60;
+				long minutes = (duration_seconds / 60) % 60;
+				long hours = (duration_seconds / 3600) % hours_in_day;
+				long days = (duration_seconds / (3600 * hours_in_day)) % days_in_year;
+				long years = duration_seconds / (3600 * hours_in_day * days_in_year);
 
 
 				// seconds
@@ -792,15 +800,15 @@ namespace KERBALISM
 				double hours_in_day = HoursInDay;
 				double days_in_year = DaysInYear;
 
-				int duration = (int)d;
-				int seconds = duration % 60;
+				long duration = (long)d;
+				long seconds = duration % 60;
 				duration /= 60;
-				int minutes = duration % 60;
+				long minutes = duration % 60;
 				duration /= 60;
-				int hours = duration % (int)hours_in_day;
-				duration /= (int)hours_in_day;
-				int days = duration % (int)days_in_year;
-				int years = duration / (int)days_in_year;
+				long hours = duration % (long)hours_in_day;
+				duration /= (long)hours_in_day;
+				long days = duration % (long)days_in_year;
+				long years = duration / (long)days_in_year;
 
 				string result = string.Empty;
 				if (years > 0) result += years + "y ";
@@ -1147,6 +1155,7 @@ namespace KERBALISM
 				target == null ? null : target.celestialBody ?? target.vessel?.mainBody;
 		}
 
+		/* this appears to be broken / working unreliably, use a raycast instead
 		/// <summary
 		/// return terrain height at point specified
 		///- body terrain must be loaded for this to work: use it only for loaded vessels
@@ -1159,6 +1168,7 @@ namespace KERBALISM
 			Vector3d radial = QuaternionD.AngleAxis(latlong.y, Vector3d.down) * QuaternionD.AngleAxis(latlong.x, Vector3d.forward) * Vector3d.right;
 			return (pos - body.position).magnitude - pqs.GetSurfaceHeight(radial);
 		}
+		*/
 #endregion
 
 #region VESSEL
@@ -1769,7 +1779,7 @@ namespace KERBALISM
 				var res = p.Resources[res_name];
 				res.flowState = enable;
 			} else {
-				Lib.DebugLog("Resource " + res_name + " not in part " + p.name);
+				Lib.LogDebugStack("Resource " + res_name + " not in part " + p.name);
 			}
 		}
 
@@ -1783,7 +1793,7 @@ namespace KERBALISM
 				res.amount = res.maxAmount;
 			}
 			else {
-				Lib.DebugLog("Resource " + res_name + " not in part " + p.name); }
+				Lib.LogDebugStack("Resource " + res_name + " not in part " + p.name); }
 		}
 
 		/// <summary> Sets the amount of a resource in the specified part to zero </summary>
@@ -1793,7 +1803,7 @@ namespace KERBALISM
 			if (p.Resources.Contains(res_name))
 				p.Resources[res_name].amount = 0.0;
 			else {
-				Lib.DebugLog("Resource " + res_name + " not in part " + p.name); }
+				Lib.LogDebugStack("Resource " + res_name + " not in part " + p.name); }
 		}
 
 		/// <summary> Set the enabled/disabled state of a process

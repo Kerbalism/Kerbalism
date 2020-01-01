@@ -73,7 +73,7 @@ namespace KERBALISM
 			}
 			else if (hasEnergyChanged != hasEnergy)
 			{
-				Lib.DebugLog("Energy state has changed: {0}", hasEnergy);
+				Lib.LogDebugStack("Energy state has changed: {0}", hasEnergy);
 
 				hasEnergyChanged = hasEnergy;
 				lastBrokenState = false;
@@ -176,6 +176,8 @@ namespace KERBALISM
 		// Some modules need to constantly update the UI 
 		public virtual void Constant_OnGUI(bool isEnabled)
 		{
+			// wtf?
+			/*
 			try
 			{
 			}
@@ -183,11 +185,12 @@ namespace KERBALISM
 			{
 				Lib.Log("'" + part.partInfo.title + "' : " + e.Message);
 			}
+			*/
 		}
 
 		public void ToggleActions(PartModule partModule, bool value)
 		{
-			Lib.DebugLog("Part '{0}'.'{1}', setting actions to {2}", partModule.part.partInfo.title, partModule.moduleName, value ? "ON" : "OFF");
+			//Lib.LogDebugStack("Part '{0}'.'{1}', setting actions to {2}", partModule.part.partInfo.title, partModule.moduleName, value ? "ON" : "OFF");
 			foreach (BaseAction ac in partModule.Actions)
 			{
 				ac.active = value;

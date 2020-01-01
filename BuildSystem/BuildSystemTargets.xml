@@ -206,7 +206,7 @@
     <Message Text="[KERBALISM-BUILD-DEBUG] 'BuildSystem\UserConfigDevEnv.xml' not found. You need to create it to build Kerbalism" Condition="! Exists('UserConfigDevEnv.xml')" Importance="high" />
     <Message Text="[KERBALISM-BUILD-DEBUG] Can't find the KSP assemblies in '$(KSPDevPath)\$(KSPDevDllsRelativePath)'. Check your 'BuildSystem\UserConfigDevEnv.xml file'." Condition="! Exists('$(KSPDevPath)\$(KSPDevDllsRelativePath)\Assembly-CSharp.dll')" Importance="high" />
 
-    <Error Condition="(! Exists('UserConfigDevEnv.xml')) OR (! Exists('$(KSPDevPath)\$(KSPDevDllsRelativePath)\Assembly-CSharp.dll'))" Text=""/>
+    <Error Condition="(! Exists('UserConfigDevEnv.xml')) OR (! Exists('$(KSPDevPath)\$(KSPDevDllsRelativePath)\Assembly-CSharp.dll'))" Text="UserConfigDevEnv.xml or $(KSPDevPath)\$(KSPDevDllsRelativePath)\Assembly-CSharp.dll does not exist"/>
 
     <Message Text="[KERBALISM-BUILD-DEBUG] Building for KSP version tag : $(KSPDevVersion)" Importance="high" />
     <Message Text="[KERBALISM-BUILD-DEBUG] Cleaning build output folder..." Importance="high" />
@@ -368,8 +368,8 @@
     <Copy SourceFiles="$(ReadmeFilePath);$(ChangelogFilePath)" DestinationFolder="$(DeploymentOutputPath)\temp" />
 
     <!-- Put some warnings for dumb users-->
-    <WriteLinesToFile File="$(DeploymentOutputPath)\temp\WARNING - Kerbalism require the CommunityResourcePack mod" />
-    <WriteLinesToFile File="$(DeploymentOutputPath)\temp\WARNING - Kerbalism require the ModuleManager plugin" />
+    <WriteLinesToFile File="$(DeploymentOutputPath)\temp\WARNING - Kerbalism requires the CommunityResourcePack mod" />
+    <WriteLinesToFile File="$(DeploymentOutputPath)\temp\WARNING - Kerbalism requires the ModuleManager plugin" />
 
     <!-- create the kerbalism zip from the temp folder -->
     <ZipDirectory SourceDirectory="$(DeploymentOutputPath)\temp" DestinationFile="$(KerbalismZipPath)" />
@@ -596,7 +596,7 @@
 
     <!-- we can't iterate over multiple ItemGroups (MinKSPVersion and MaxKSPVersion) in the same property , so split the parsing -->
     <PropertyGroup>
-      <VersionFileURL>"URL": "http://ksp-avc.cybutek.net/version.php?id=559"</VersionFileURL>
+      <VersionFileURL>"URL": "https://raw.githubusercontent.com/Kerbalism/Kerbalism/master/GameData/Kerbalism/Kerbalism.version"</VersionFileURL>
       <VersionFileDownloadLink>"DOWNLOAD": "$(KerbalismDownloadLink)"</VersionFileDownloadLink>
       <VersionFileChangelogLink>"CHANGE_LOG_URL": "$(KerbalismChangelogLink)"</VersionFileChangelogLink>
       <VersionFileKerbalismVersion>"VERSION": {"MAJOR": $(KerbalismVersionMajor), "MINOR": $(KerbalismVersionMinor), "PATCH": 0, "BUILD": 0}</VersionFileKerbalismVersion>

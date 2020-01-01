@@ -89,8 +89,6 @@ namespace KERBALISM
 			GameEvents.onNewVesselCreated.Add(this.VesselCreated);
 			GameEvents.onPartCouple.Add(this.VesselDock);
 
-			GameEvents.OnVesselRollout.Add(this.VesselRollout);
-
 			GameEvents.onVesselChange.Add((v) => { OnVesselModified(v); });
 			GameEvents.onVesselStandardModification.Add((v) => { OnVesselStandardModification(v); });
 
@@ -363,15 +361,6 @@ namespace KERBALISM
 			this.OnVesselModified(e.to.vessel);
 		}
 
-		void VesselRollout(ShipConstruct newVessel)
-		{
-			var vessel = FlightGlobals.ActiveVessel;
-			foreach (var m in vessel.FindPartModulesImplementing<IModuleRollout>())
-			{
-				m.OnRollout();
-			}
-		}
-
 		void AddEditorCategory()
 		{
 			if (PartLoader.LoadedPartsList.Find(k => k.tags.IndexOf("_kerbalism", StringComparison.Ordinal) >= 0) != null)
@@ -391,6 +380,11 @@ namespace KERBALISM
 			HashSet<string> labels = new HashSet<string>();
 			foreach (AvailablePart p in PartLoader.LoadedPartsList)
 			{
+				// workaround for FindModulesImplementing nullrefs in 1.8 when called on the strange kerbalEVA_RD_Exp prefab
+				// due to the (private) cachedModuleLists being null on it
+				if (p.partPrefab.Modules.Count == 0)
+					continue;
+
 				foreach (Configure cfg in p.partPrefab.FindModulesImplementing<Configure>())
 				{
 					foreach (ConfigureSetup setup in cfg.Setups())

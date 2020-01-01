@@ -133,7 +133,8 @@ namespace KERBALISM
 			// while not transmitting, transmitters only use 10-20% of that
 			ec_transmitter *= antennaInfo.transmitting ? Settings.TransmitterActiveEcFactor : Settings.TransmitterPassiveEcFactor;
 
-			antennaInfo.ec += ec_transmitter;
+			antennaInfo.ec = ec_transmitter * Settings.TransmitterActiveEcFactor;
+			antennaInfo.ec_idle = ec_transmitter * Settings.TransmitterPassiveEcFactor;
 
 			Init();
 
@@ -240,7 +241,11 @@ namespace KERBALISM
 				double signalStrength = 1 - ((link.start.position - link.end.position).magnitude / Math.Sqrt(antennaPower * link.end.antennaRelay.power));
 				signalStrength = (3 - (2 * signalStrength)) * Math.Pow(signalStrength, 2);
 
-				string name = Lib.Ellipsis(Localizer.Format(link.end.name).Replace("Kerbin", "DSN"), 35);
+				string name = Localizer.Format(link.end.displayName);
+				if(link.end.isHome)
+					name = name.Replace("Kerbin", "DSN");
+				name = Lib.Ellipsis(name, 35);
+
 				string value = Lib.HumanReadablePerc(Math.Ceiling(signalStrength * 10000) / 10000, "F2");
 				string tooltip = "Distance: " + Lib.HumanReadableDistance((link.start.position - link.end.position).magnitude) +
 					"\nMax Distance: " + Lib.HumanReadableDistance(Math.Sqrt((link.start.antennaTransmit.power + link.start.antennaRelay.power) * link.end.antennaRelay.power));

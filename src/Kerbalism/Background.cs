@@ -1,13 +1,73 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
+using System.Reflection;
 
 
 namespace KERBALISM
 {
+
 	public static class Background
 	{
+		private class BackgroundDelegate
+		{
+			private static Type[] signature = { typeof(Vessel), typeof(ProtoPartSnapshot), typeof(ProtoPartModuleSnapshot), typeof(PartModule), typeof(Part), typeof(Dictionary<string, double>), typeof(List<KeyValuePair<string, double>>), typeof(double) };
+
+#if KSP18
+			// non-generic actions are too new to be used in pre-KSP18
+			internal Func<Vessel, ProtoPartSnapshot, ProtoPartModuleSnapshot, PartModule, Part, Dictionary<string, double>, List<KeyValuePair<string, double>>, double, string> function;
+#else
+			internal MethodInfo methodInfo;
+#endif
+			private BackgroundDelegate(MethodInfo methodInfo)
+			{
+#if KSP18
+				function = (Func<Vessel, ProtoPartSnapshot, ProtoPartModuleSnapshot, PartModule, Part, Dictionary<string, double>, List<KeyValuePair<string, double>>, double, string>)Delegate.CreateDelegate(typeof(Func<Vessel, ProtoPartSnapshot, ProtoPartModuleSnapshot, PartModule, Part, Dictionary<string, double>, List<KeyValuePair<string, double>>, double, string>), methodInfo);
+#else
+				this.methodInfo = methodInfo;
+#endif
+			}
+
+			public string invoke(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule module_prefab, Part part_prefab, Dictionary<string, double> availableRresources, List<KeyValuePair<string, double>> resourceChangeRequest, double elapsed_s)
+			{
+				// TODO optimize this for performance
+#if KSP18
+				var result = function(v, p, m, module_prefab, part_prefab, availableRresources, resourceChangeRequest, elapsed_s);
+				if (string.IsNullOrEmpty(result)) result = module_prefab.moduleName;
+				return result;
+#else
+				var result = methodInfo.Invoke(null, new object[] { v, p, m, module_prefab, part_prefab, availableRresources, resourceChangeRequest, elapsed_s });
+				if(result == null) return module_prefab.moduleName;
+				return result.ToString();
+#endif
+			}
+
+			public static BackgroundDelegate Instance(PartModule module_prefab)
+			{
+				BackgroundDelegate result = null;
+
+				var type = module_prefab.GetType();
+				supportedModules.TryGetValue(type, out result);
+				if (result != null) return result;
+
+				if (unsupportedModules.Contains(type)) return null;
+
+				MethodInfo methodInfo = type.GetMethod("BackgroundUpdate", signature);
+				if (methodInfo == null)
+				{
+					unsupportedModules.Add(type);
+					return null;
+				}
+
+				result = new BackgroundDelegate(methodInfo);
+				supportedModules[type] = result;
+				return result;
+			}
+
+			private static readonly Dictionary<Type, BackgroundDelegate> supportedModules = new Dictionary<Type, BackgroundDelegate>();
+			private static readonly List<Type> unsupportedModules = new List<Type>();
+		}
+
 		public enum Module_type
 		{
 			Reliability = 0,
@@ -15,7 +75,6 @@ namespace KERBALISM
 			Greenhouse,
 			GravityRing,
 			Harvester,
-			Emitter,
 			Laboratory,
 			Command,
 			Generator,
@@ -32,7 +91,10 @@ namespace KERBALISM
 			FNGenerator,
 			NonRechargeBattery,
 			KerbalismProcess,
-			SolarPanelFixer
+			SolarPanelFixer,
+
+			/// <summary>Module implementing the kerbalism background API</summary>
+			APIModule
 		}
 
 		public static Module_type ModuleType(string module_name)
@@ -44,7 +106,6 @@ namespace KERBALISM
 				case "Greenhouse": return Module_type.Greenhouse;
 				case "GravityRing": return Module_type.GravityRing;
 				case "Harvester": return Module_type.Harvester;
-				case "Emitter": return Module_type.Emitter;
 				case "Laboratory": return Module_type.Laboratory;
 				case "ModuleCommand": return Module_type.Command;
 				case "ModuleGenerator": return Module_type.Generator;
@@ -87,7 +148,13 @@ namespace KERBALISM
 			// get most used resource handlers
 			ResourceInfo ec = resources.GetResource(v, "ElectricCharge");
 
-			foreach(var e in Background_PMs(v))
+			List<ResourceInfo> allResources = resources.GetAllResources(v);
+			Dictionary<string, double> availableResources = new Dictionary<string, double>();
+			foreach (var ri in allResources)
+				availableResources[ri.ResourceName] = ri.Amount;
+			List<KeyValuePair<string, double>> resourceChangeRequests = new List<KeyValuePair<string, double>>();
+
+			foreach (var e in Background_PMs(v))
 			{
 				switch(e.type)
 				{
@@ -95,7 +162,6 @@ namespace KERBALISM
 					case Module_type.Experiment: (e.module_prefab as Experiment).BackgroundUpdate(v, vd, e.m, ec, resources, elapsed_s); break; // experiments use the prefab as a singleton instead of a static method
 					case Module_type.Greenhouse: Greenhouse.BackgroundUpdate(v, e.m, e.module_prefab as Greenhouse, vd, resources, elapsed_s); break;
 					case Module_type.GravityRing: GravityRing.BackgroundUpdate(v, e.p, e.m, e.module_prefab as GravityRing, ec, elapsed_s); break;
-					case Module_type.Emitter: Emitter.BackgroundUpdate(v, e.p, e.m, e.module_prefab as Emitter, ec, elapsed_s); break;
 					case Module_type.Harvester: Harvester.BackgroundUpdate(v, e.m, e.module_prefab as Harvester, elapsed_s); break; // Kerbalism ground and air harvester module
 					case Module_type.Laboratory: Laboratory.BackgroundUpdate(v, e.p, e.m, e.module_prefab as Laboratory, ec, elapsed_s); break;
 					case Module_type.Command: ProcessCommand(v, e.p, e.m, e.module_prefab as ModuleCommand, resources, elapsed_s); break;
@@ -111,6 +177,7 @@ namespace KERBALISM
 					case Module_type.CryoTank: ProcessCryoTank(v, e.p, e.m, e.module_prefab, resources, ec, elapsed_s); break;
 					case Module_type.FNGenerator: ProcessFNGenerator(v, e.p, e.m, e.module_prefab, ec, elapsed_s); break;
 					case Module_type.SolarPanelFixer: SolarPanelFixer.BackgroundUpdate(v, e.m, e.module_prefab as SolarPanelFixer, vd, ec, elapsed_s); break;
+					case Module_type.APIModule: ProcessApiModule(v, e.p, e.m, e.part_prefab, e.module_prefab, resources, availableResources, resourceChangeRequests, elapsed_s); break;
 				}
 			}
 		}
@@ -144,11 +211,6 @@ namespace KERBALISM
 					// TODO : this is to migrate pre-3.1 saves using WarpFixer to the new SolarPanelFixer. At some point in the future we can remove this code.
 					if (m.moduleName == "WarpFixer") MigrateWarpFixer(v, part_prefab, p, m);
 
-					// get module type
-					// if the type is unknown, skip it
-					Module_type type = ModuleType(m.moduleName);
-					if (type == Module_type.Unknown) continue;
-
 					// get the module prefab
 					// if the prefab doesn't contain this module, skip it
 					PartModule module_prefab = Lib.ModulePrefab(module_prefabs, m.moduleName, PD);
@@ -157,6 +219,18 @@ namespace KERBALISM
 					// if the module is disabled, skip it
 					// note: this must be done after ModulePrefab is called, so that indexes are right
 					if (!Lib.Proto.GetBool(m, "isEnabled")) continue;
+
+					// get module type
+					// if the type is unknown, skip it
+					Module_type type = ModuleType(m.moduleName);
+					if (type == Module_type.Unknown)
+					{
+						var backgroundDelegate = BackgroundDelegate.Instance(module_prefab);
+						if (backgroundDelegate != null)
+							type = Module_type.APIModule;
+						else
+							continue;
+					}
 
 					var entry = new BackgroundPM();
 					entry.p = p;
@@ -170,6 +244,27 @@ namespace KERBALISM
 
 			Cache.SetVesselObjectsCache(v, "background", result);
 			return result;
+		}
+
+		private static void ProcessApiModule(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m,
+			Part part_prefab, PartModule module_prefab, VesselResources resources, Dictionary<string, double> availableResources, List<KeyValuePair<string, double>> resourceChangeRequests, double elapsed_s)
+		{
+			resourceChangeRequests.Clear();
+
+			try
+			{
+				string title = BackgroundDelegate.Instance(module_prefab).invoke(v, p, m, module_prefab, part_prefab, availableResources, resourceChangeRequests, elapsed_s);
+
+				foreach(var cr in resourceChangeRequests)
+				{
+					if (cr.Value > 0) resources.Produce(v, cr.Key, cr.Value * elapsed_s, title);
+					else if (cr.Value < 0) resources.Consume(v, cr.Key, -cr.Value * elapsed_s, title);
+				}
+			}
+			catch (Exception ex)
+			{
+				Lib.Log("BackgroundUpdate in PartModule " + module_prefab.moduleName + " excepted: " + ex.Message + "\n" + ex.ToString());
+			}
 		}
 
 		static void ProcessFNGenerator(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule fission_generator, ResourceInfo ec, double elapsed_s)
@@ -208,7 +303,7 @@ namespace KERBALISM
 			if (Lib.Proto.GetBool(m, "generatorIsActive"))
 			{
 				// create and commit recipe
-				ResourceRecipe recipe = new ResourceRecipe(p, "generator");
+				ResourceRecipe recipe = new ResourceRecipe("generator");
 				foreach (ModuleResource ir in generator.resHandler.inputResources)
 				{
 					recipe.AddInput(ir.name, ir.rate * elapsed_s);
@@ -261,7 +356,7 @@ namespace KERBALISM
 					  : converter.EfficiencyBonus * (converter.SpecialistBonusBase + (converter.SpecialistEfficiencyFactor * (exp_level + 1)));
 
 					// create and commit recipe
-					ResourceRecipe recipe = new ResourceRecipe(p, "converter");
+					ResourceRecipe recipe = new ResourceRecipe("converter");
 					foreach (var ir in converter.inputList)
 					{
 						recipe.AddInput(ir.ResourceName, ir.Ratio * exp_bonus * elapsed_s);
@@ -326,7 +421,7 @@ namespace KERBALISM
 					if (abundance > harvester.HarvestThreshold)
 					{
 						// create and commit recipe
-						ResourceRecipe recipe = new ResourceRecipe(p, "drill");
+						ResourceRecipe recipe = new ResourceRecipe("drill");
 						foreach (var ir in harvester.inputList)
 						{
 							recipe.AddInput(ir.ResourceName, ir.Ratio * elapsed_s);
@@ -394,7 +489,7 @@ namespace KERBALISM
 						double res_amount = abundance * asteroid_drill.Efficiency * exp_bonus * elapsed_s;
 
 						// transform EC into mined resource
-						ResourceRecipe recipe = new ResourceRecipe(p, "asteroidDrill");
+						ResourceRecipe recipe = new ResourceRecipe("asteroidDrill");
 						recipe.AddInput("ElectricCharge", asteroid_drill.PowerConsumption * elapsed_s);
 						recipe.AddOutput(res_name, res_amount, true);
 						resources.AddRecipe(recipe);

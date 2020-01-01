@@ -40,6 +40,8 @@ namespace KERBALISM
 			if (HighLogic.CurrentGame.flightState != null)
 			{
 				ConfigNode vesselsNode = node.GetNode("vessels2");
+				if (vesselsNode == null)
+					vesselsNode = new ConfigNode();
 				// HighLogic.CurrentGame.flightState.protoVessels is what is used by KSP to persist vessels
 				// It is always available and synchronized in OnLoad, no matter the scene, excepted on the first OnLoad in a new game
 				foreach (ProtoVessel pv in HighLogic.CurrentGame.flightState.protoVessels)
@@ -47,13 +49,13 @@ namespace KERBALISM
 					if (pv.vesselID == Guid.Empty)
 					{
 						// It seems flags are saved with an empty GUID. skip them.
-						Lib.Log("Skipping VesselData load for vessel with empty GUID :" + pv.vesselName);
+						Lib.LogDebug("Skipping VesselData load for vessel with empty GUID :" + pv.vesselName);
 						continue;
 					}
 
 					VesselData vd = new VesselData(pv, vesselsNode.GetNode(pv.vesselID.ToString()));
 					vessels.Add(pv.vesselID, vd);
-					Lib.Log("VesselData loaded for vessel " + pv.vesselName);
+					Lib.LogDebug("VesselData loaded for vessel " + pv.vesselName);
 				}
 			}
 			UnityEngine.Profiling.Profiler.EndSample();
@@ -143,7 +145,7 @@ namespace KERBALISM
 				if (pv.vesselID == Guid.Empty)
 				{
 					// It seems flags are saved with an empty GUID. skip them.
-					Lib.Log("Skipping VesselData save for vessel with empty GUID :" + pv.vesselName);
+					Lib.LogDebug("Skipping VesselData save for vessel with empty GUID :" + pv.vesselName);
 					continue;
 				}
 
@@ -185,7 +187,7 @@ namespace KERBALISM
 			VesselData vd;
 			if (!vessels.TryGetValue(vessel.id, out vd))
 			{
-				Lib.Log("Creating Vesseldata for new vessel " + vessel.vesselName);
+				Lib.LogDebug("Creating Vesseldata for new vessel " + vessel.vesselName);
 				vd = new VesselData(vessel);
 				vessels.Add(vessel.id, vd);
 			}

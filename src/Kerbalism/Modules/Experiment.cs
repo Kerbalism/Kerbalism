@@ -9,7 +9,7 @@ using static KERBALISM.ExperimentRequirements;
 namespace KERBALISM
 {
 
-	public class Experiment : PartModule, ISpecifics, IModuleInfo, IPartMassModifier, IModuleRollout, IConfigurable
+	public class Experiment : PartModule, ISpecifics, IModuleInfo, IPartMassModifier, IConfigurable
 	{
 		// config
 		[KSPField] public string experiment_id;               // id of associated experiment definition
@@ -40,6 +40,7 @@ namespace KERBALISM
 		[KSPField(isPersistant = true)] public bool shrouded = false;
 		[KSPField(isPersistant = true)] public double remainingSampleMass = 0.0;
 		[KSPField(isPersistant = true)] public uint privateHdId = 0;
+		[KSPField(isPersistant = true)] public bool firstStart = true;
 
 		/// <summary> never set this directly, use the "State" property </summary>
 		[KSPField(isPersistant = true)] private RunningState expState = RunningState.Stopped;
@@ -73,7 +74,10 @@ namespace KERBALISM
 			set
 			{
 				expState = value;
-				status = GetStatus(value, Subject, issue);
+
+				var newStatus = GetStatus(value, Subject, issue);
+				API.OnExperimentStateChanged.Notify(vessel, experiment_id, status, newStatus);
+				status = newStatus;
 			}
 		}
 
@@ -186,23 +190,24 @@ namespace KERBALISM
 				{
 					if (hd.experiment_id == experiment_id) privateHdId = part.flightID;
 				}
+
+				if(firstStart)
+				{
+					FirstStart();
+					firstStart = false;
+				}
 			}
 		}
 
-		/// <summary>Called by Callbacks just after rollout to launch pad</summary>
-		public void OnRollout()
+		private void FirstStart()
 		{
-			if (!Lib.ModuleEnableInScienceAndCareer(this)) return;
-
 			// initialize the remaining sample mass
 			// this needs to be done only once just after launch
-			if (!sample_collecting && ExpInfo.SampleMass > 0.0)
+			if (!sample_collecting && ExpInfo.SampleMass > 0.0 && remainingSampleMass == 0)
 			{
 				remainingSampleMass = ExpInfo.SampleMass * sample_amount;
-				if(Double.IsNaN(remainingSampleMass))
-				{
-					Lib.Log("ERROR: remainingSampleMass is NaN on rollout " + ExpInfo.ExperimentId + " " + ExpInfo.SampleMass + " / " + sample_amount);
-				}
+				if(double.IsNaN(remainingSampleMass))
+					Lib.LogDebug("ERROR: remainingSampleMass is NaN on first start " + ExpInfo.ExperimentId + " " + ExpInfo.SampleMass + " / " + sample_amount);
 			}
 		}
 
@@ -324,7 +329,9 @@ namespace KERBALISM
 				out issue);
 			UnityEngine.Profiling.Profiler.EndSample();
 
-			status = GetStatus(expState, subject, issue);
+			var newStatus = GetStatus(expState, subject, issue);
+			API.OnExperimentStateChanged.Notify(vessel, experiment_id, status, newStatus);
+			status = newStatus;
 
 			UnityEngine.Profiling.Profiler.EndSample();
 		}
@@ -356,8 +363,8 @@ namespace KERBALISM
 			int situationId = Lib.Proto.GetInt(m, "situationId", 0);
 			double remainingSampleMass = Lib.Proto.GetDouble(m, "remainingSampleMass", 0.0);
 			uint privateHdId = Lib.Proto.GetUInt(m, "privateHdId", 0u);
+			var oldStatus = Lib.Proto.GetEnum<ExpStatus>(m, "status", ExpStatus.Stopped);
 
-			
 			string issue;
 			SubjectData subjectData;
 
@@ -376,12 +383,15 @@ namespace KERBALISM
 				out issue);
 			UnityEngine.Profiling.Profiler.EndSample();
 
+			var newStatus = GetStatus(expState, subjectData, issue);
 			Lib.Proto.Set(m, "situationId", situationId);
-			Lib.Proto.Set(m, "status", GetStatus(expState, subjectData, issue));
+			Lib.Proto.Set(m, "status", newStatus);
 			Lib.Proto.Set(m, "issue", issue);
 
 			if (expInfo.SampleMass > 0.0)
 				Lib.Proto.Set(m, "remainingSampleMass", remainingSampleMass);
+
+			API.OnExperimentStateChanged.Notify(v, experiment_id, oldStatus, newStatus);
 
 			UnityEngine.Profiling.Profiler.EndSample();
 		}
@@ -663,7 +673,7 @@ namespace KERBALISM
 
 			if (deployAnimator.Playing())
 				return State; // nervous clicker? wait for it, goddamnit.
-			
+
 			if (Running)
 			{
 				if (setForcedRun && expState == RunningState.Running)
@@ -739,13 +749,15 @@ namespace KERBALISM
 		private static void ProtoSetState(Vessel v, Experiment prefab, ProtoPartModuleSnapshot protoModule, RunningState expState)
 		{
 			Lib.Proto.Set(protoModule, "expState", expState);
-			Lib.Proto.Set(protoModule, "status",
-				GetStatus
-				(
-					expState,
-					ScienceDB.GetSubjectData(ScienceDB.GetExperimentInfo(prefab.experiment_id), prefab.GetSituation(v.KerbalismData())),
-					Lib.Proto.GetString(protoModule, "issue")
-				));
+
+			var oldStatus = Lib.Proto.GetEnum<ExpStatus>(protoModule, "status", ExpStatus.Stopped);
+			var newStatus = GetStatus(expState,
+				ScienceDB.GetSubjectData(ScienceDB.GetExperimentInfo(prefab.experiment_id), prefab.GetSituation(v.KerbalismData())),
+				Lib.Proto.GetString(protoModule, "issue")
+			);
+			Lib.Proto.Set(protoModule, "status", newStatus);
+
+			API.OnExperimentStateChanged.Notify(v, prefab.experiment_id, oldStatus, newStatus);
 		}
 
 		/// <summary> works for loaded and unloaded vessel. very slow method, don't use it every tick </summary>

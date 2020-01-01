@@ -73,7 +73,7 @@ namespace KERBALISM
 			// create window
 			dialog_items = new DialogGUIVerticalLayout();
 			multi_dialog = new MultiOptionDialog(
-			   "TrajectoriesProfilerWindow",
+			   "KerbalismProfilerWindow",
 			   "",
 			   GetTitle(),
 			   HighLogic.UISkin,

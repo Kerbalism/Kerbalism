@@ -550,14 +550,14 @@ namespace KERBALISM
                 {
                     if (m.moduleName == "ModuleConnectedLivingSpace")
                     {
-                        Lib.DebugLog("Part '{0}', CLS has been {1}", part.partInfo.title, isPassable ? "enabled" : "disabled");
+                        Lib.LogDebugStack("Part '{0}', CLS has been {1}", part.partInfo.title, isPassable ? "enabled" : "disabled");
                         Lib.ReflectionValue(m, "passable", isPassable);
                     }
                 }
             }
 
-            Lib.DebugLog("CrewCapacity: '{0}'", part.CrewCapacity);
-            Lib.DebugLog("CrewTransferAvailable: '{0}'", isPassable);
+            Lib.LogDebugStack("CrewCapacity: '{0}'", part.CrewCapacity);
+            Lib.LogDebugStack("CrewTransferAvailable: '{0}'", isPassable);
             part.crewTransferAvailable = isPassable;
         }
 
@@ -572,12 +572,12 @@ namespace KERBALISM
                 {
                     if (ative)
                     {
-                        Lib.DebugLog("Part '{0}', Spawning IVA.", part.partInfo.title);
+                        Lib.LogDebugStack("Part '{0}', Spawning IVA.", part.partInfo.title);
                         part.SpawnIVA();
                     }
                     else
                     {
-                        Lib.DebugLog("Part '{0}', Destroying IVA.", part.partInfo.title);
+                        Lib.LogDebugStack("Part '{0}', Destroying IVA.", part.partInfo.title);
                         part.DespawnIVA();
                     }
                     RefreshDialog();
