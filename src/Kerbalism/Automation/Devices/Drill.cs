@@ -6,87 +6,62 @@ using KSP.Localization;
 
 namespace KERBALISM
 {
-
-
-	public sealed class DrillDevice : Device
+	public sealed class DrillDevice : LoadedDevice<ModuleResourceHarvester>
 	{
-		public DrillDevice(ModuleResourceHarvester drill)
-		{
-			this.drill = drill;
-		}
+		public DrillDevice(ModuleResourceHarvester module) : base(module) { }
 
-		public override string Name()
-		{
-			return "drill";
-		}
+		public override string Name => "drill";
 
-		public override uint Part()
+		public override string Status
 		{
-			return drill.part.flightID;
-		}
-
-		public override string Info()
-		{
-			if (drill.AlwaysActive) return Localizer.Format("#KERBALISM_Generic_ALWAYSON");
-			return drill.IsActivated ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_ON") + "</color>" : "<color=red>" + Localizer.Format("#KERBALISM_Generic_OFF") + "</color>";
+			get
+			{
+				if (module.AlwaysActive) return Localizer.Format("#KERBALISM_Generic_ALWAYSON");
+				return Lib.Color(module.IsActivated, Localizer.Format("#KERBALISM_Generic_ON"), Lib.Kolor.Green, Localizer.Format("#KERBALISM_Generic_OFF"), Lib.Kolor.Yellow);
+			}
 		}
 
 		public override void Ctrl(bool value)
 		{
-			if (drill.AlwaysActive) return;
-			if (value) drill.StartResourceConverter();
-			else drill.StopResourceConverter();
+			if (module.AlwaysActive) return;
+			if (value) module.StartResourceConverter();
+			else module.StopResourceConverter();
 		}
 
 		public override void Toggle()
 		{
-			Ctrl(!drill.IsActivated);
+			Ctrl(!module.IsActivated);
 		}
-
-		ModuleResourceHarvester drill;
 	}
 
 
-	public sealed class ProtoDrillDevice : Device
+	public sealed class ProtoDrillDevice : ProtoDevice<ModuleResourceHarvester>
 	{
-		public ProtoDrillDevice(ProtoPartModuleSnapshot drill, ModuleResourceHarvester prefab, uint part_id)
-		{
-			this.drill = drill;
-			this.prefab = prefab;
-			this.part_id = part_id;
-		}
+		public ProtoDrillDevice(ModuleResourceHarvester prefab, ProtoPartSnapshot protoPart, ProtoPartModuleSnapshot protoModule)
+			: base(prefab, protoPart, protoModule) { }
 
-		public override string Name()
-		{
-			return "drill";
-		}
+		public override string Name => "drill";
 
-		public override uint Part()
+		public override string Status
 		{
-			return part_id;
-		}
-
-		public override string Info()
-		{
-			if (prefab.AlwaysActive) Localizer.Format("#KERBALISM_Generic_ALWAYSON");
-			bool is_on = Lib.Proto.GetBool(drill, "IsActivated");
-			return is_on ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_ON") + "</color>" : "<color=red>" + Localizer.Format("#KERBALISM_Generic_OFF") + "</color>";
+			get
+			{
+				if (prefab.AlwaysActive) Localizer.Format("#KERBALISM_Generic_ALWAYSON");
+				bool is_on = Lib.Proto.GetBool(protoModule, "IsActivated");
+				return Lib.Color(is_on, Localizer.Format("#KERBALISM_Generic_ON"), Lib.Kolor.Green, Localizer.Format("#KERBALISM_Generic_OFF"), Lib.Kolor.Yellow);
+			}
 		}
 
 		public override void Ctrl(bool value)
 		{
 			if (prefab.AlwaysActive) return;
-			Lib.Proto.Set(drill, "IsActivated", value);
+			Lib.Proto.Set(protoModule, "IsActivated", value);
 		}
 
 		public override void Toggle()
 		{
-			Ctrl(!Lib.Proto.GetBool(drill, "IsActivated"));
+			Ctrl(!Lib.Proto.GetBool(protoModule, "IsActivated"));
 		}
-
-		private readonly ProtoPartModuleSnapshot drill;
-		private ModuleResourceHarvester prefab;
-		private readonly uint part_id;
 	}
 
 

@@ -12,15 +12,14 @@ namespace KERBALISM
 		/// <summary> True if CommNet initialization has begin </summary>
 		public static bool NetworkInitializing = false;
 
-		public static void Update(Vessel v, Vessel_info vi, VesselData vd, Resource_info ec, double elapsed_s)
+		public static void Update(Vessel v, VesselData vd, ResourceInfo ec, double elapsed_s)
 		{
 			if(!Lib.IsVessel(v))
 				return;
 
-			// consume ec for transmitters
-			ec.Consume(vi.connection.ec * elapsed_s, "comms");
+			// EC consumption is handled in Science update
 
-			Cache.WarpCache(v).dataCapacity = vi.connection.rate * elapsed_s;
+			Cache.WarpCache(v).dataCapacity = vd.deviceTransmit ? vd.Connection.rate * elapsed_s : 0.0;
 
 			// do nothing if network is not ready
 			if (!NetworkInitialized) return;
@@ -30,14 +29,14 @@ namespace KERBALISM
 			// - do not send messages for EVA kerbals
 			if (!v.isEVA && v.situation != Vessel.Situations.PRELAUNCH)
 			{
-				if (!vd.msg_signal && !vi.connection.linked)
+				if (!vd.msg_signal && !vd.Connection.linked)
 				{
 					vd.msg_signal = true;
 					if (vd.cfg_signal)
 					{
 						string subtext = Localizer.Format("#KERBALISM_UI_transmissiondisabled");
 
-						switch (vi.connection.status)
+						switch (vd.Connection.status)
 						{
 
 							case LinkStatus.plasma:
@@ -47,7 +46,7 @@ namespace KERBALISM
 								subtext = Localizer.Format("#KERBALISM_UI_Stormblackout");
 								break;
 							default:
-								if (vi.crew_count == 0)
+								if (vd.CrewCount == 0)
 								{
 									switch (Settings.UnlinkedControl)
 									{
@@ -65,14 +64,14 @@ namespace KERBALISM
 						Message.Post(Severity.warning, Lib.BuildString(Localizer.Format("#KERBALISM_UI_signallost"), " <b>", v.vesselName, "</b>"), subtext);
 					}
 				}
-				else if (vd.msg_signal && vi.connection.linked)
+				else if (vd.msg_signal && vd.Connection.linked)
 				{
 					vd.msg_signal = false;
 					if (vd.cfg_signal)
 					{
 						Message.Post(Severity.relax, Lib.BuildString("<b>", v.vesselName, "</b> ", Localizer.Format("#KERBALISM_UI_signalback")),
-						  vi.connection.status == LinkStatus.direct_link ? Localizer.Format("#KERBALISM_UI_directlink") :
-							Lib.BuildString(Localizer.Format("#KERBALISM_UI_relayby"), " <b>", vi.connection.target_name, "</b>"));
+						  vd.Connection.status == LinkStatus.direct_link ? Localizer.Format("#KERBALISM_UI_directlink") :
+							Lib.BuildString(Localizer.Format("#KERBALISM_UI_relayby"), " <b>", vd.Connection.target_name, "</b>"));
 					}
 				}
 			}

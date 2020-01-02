@@ -6,85 +6,49 @@ using KSP.Localization;
 
 namespace KERBALISM
 {
-
-
-	public sealed class EmitterDevice : Device
+	public sealed class EmitterDevice : LoadedDevice<Emitter>
 	{
-		public EmitterDevice(Emitter emitter)
-		{
-			this.emitter = emitter;
-		}
+		public EmitterDevice(Emitter module) : base(module) { }
 
-		public override string Name()
-		{
-			return "emitter";
-		}
+		public override string Name => "emitter";
 
-		public override uint Part()
-		{
-			return emitter.part.flightID;
-		}
-
-		public override string Info()
-		{
-			return emitter.running ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_ON") + " </color>" : "<color=red>" + Localizer.Format("#KERBALISM_Generic_DISABLED") + "</color>";
-		}
+		public override string Status => Lib.Color(module.running, Localizer.Format("#KERBALISM_Generic_ON"), Lib.Kolor.Green, Localizer.Format("#KERBALISM_Generic_OFF"), Lib.Kolor.Yellow);
 
 		public override void Ctrl(bool value)
 		{
-			if (!emitter.toggle) return;
-			if (emitter.running != value) emitter.Toggle();
+			if (!module.toggle) return;
+			if (module.running != value) module.Toggle();
 		}
 
 		public override void Toggle()
 		{
-			Ctrl(!emitter.running);
+			Ctrl(!module.running);
 		}
 
-		public override bool IsVisible()
-		{
-			return emitter.toggle;
-		}
-
-		Emitter emitter;
+		public override bool IsVisible => module.toggle;
 	}
 
-
-	public sealed class ProtoEmitterDevice : Device
+	public sealed class ProtoEmitterDevice : ProtoDevice<Emitter>
 	{
-		public ProtoEmitterDevice(ProtoPartModuleSnapshot emitter, uint part_id)
-		{
-			this.emitter = emitter;
-			this.part_id = part_id;
-		}
+		public ProtoEmitterDevice(Emitter prefab, ProtoPartSnapshot protoPart, ProtoPartModuleSnapshot protoModule)
+			: base(prefab, protoPart, protoModule) { }
 
-		public override string Name()
-		{
-			return "emitter";
-		}
+		public override string Name => "emitter";
 
-		public override uint Part()
-		{
-			return part_id;
-		}
-
-		public override string Info()
-		{
-			return Lib.Proto.GetBool(emitter, "running") ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_ACTIVE") + "</color>" : "<color=red>" + Localizer.Format("#KERBALISM_Generic_DISABLED") + "</color>";
-		}
+		public override string Status => Lib.Color(Lib.Proto.GetBool(protoModule, "running"), Localizer.Format("#KERBALISM_Generic_ACTIVE"), Lib.Kolor.Green, Localizer.Format("#KERBALISM_Generic_DISABLED"), Lib.Kolor.Yellow);
 
 		public override void Ctrl(bool value)
 		{
-			Lib.Proto.Set(emitter, "running", value);
+			Lib.Proto.Set(protoModule, "running", value);
 		}
 
 		public override void Toggle()
 		{
-			Ctrl(!Lib.Proto.GetBool(emitter, "running"));
+			if (!Lib.Proto.GetBool(protoModule, "toggle")) return;
+			Ctrl(!Lib.Proto.GetBool(protoModule, "running"));
 		}
 
-		private readonly ProtoPartModuleSnapshot emitter;
-		private readonly uint part_id;
+		public override bool IsVisible => Lib.Proto.GetBool(protoModule, "toggle");
 	}
 
 

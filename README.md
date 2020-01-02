@@ -6,13 +6,16 @@
 
 Kerbalism is a mod for Kerbal Space Program that alters the game to add life support, radiation, failures and an entirely new way of doing science.
 
-## Current version : 3.0.2 
+### Frequently Asked Questions: [FAQ]
 
-**Download** : **[Github releases]** - **[CKAN]**\
-**Docs & support** : **[Github wiki]** - **[Discord]** - [Github issues] - [KSP forums thread]\
-**License** : [Unlicense] (public domain)\
-**KSP version** : 1.4.x to 1.7.x\
-**Requires** : [Module Manager], [CommunityResourcePack]\
+## Current version : 3.2
+
+**What's new** : [New and Noteworthy]   
+**Download** : **[Github releases]** - **[CKAN]**  
+**Docs & support** : **[Github wiki]** - **[Discord]** - [FAQ] - [Github issues] - [KSP forums thread]  
+**License** : [Unlicense] (public domain)  
+**KSP version** : 1.5.x to 1.8.x  
+**Requires** : [Module Manager], [CommunityResourcePack]  
 **[Mod compatibility]** - [Changelog] - [Dev Builds]
 
 ## Download and installation
@@ -35,6 +38,7 @@ Make sure to install exactly one configuration pack only.\
 Don't combine packs unless there is explicit instructions to do so.
 - [ROKerbalism](https://github.com/Standecco/ROKerbalism) for Realism Overhaul / RP-1 by standecco
 - [SIMPLEX Living](https://spacedock.info/mod/2067) by theJesuit
+- [KerbalismScienceOnly](https://github.com/Kerbalism/KerbalismScienceOnly/releases) for Kerbalism with the science feature only
 
 **Installation checklist** for the "GameData" folder required content : 
 
@@ -90,10 +94,10 @@ It includes [MiniAVC]. If you opt-in, it will use the Internet to check whether 
 [Contributing]: https://github.com/Kerbalism/Kerbalism/blob/master/CONTRIBUTING.md
 [BuildSystem]: https://github.com/Kerbalism/Kerbalism/blob/master/BuildSystem/README.MD
 [System/API.cs]: https://github.com/Kerbalism/Kerbalism/blob/master/src/System/API.cs
-[KSP forums thread]: https://forum.kerbalspaceprogram.com/index.php?/topic/172400-131144-kerbalism-v171/
+[KSP forums thread]: https://forum.kerbalspaceprogram.com/index.php?/topic/190382-150-181-kerbalism-32/
 [Discord]: https://discord.gg/3JAE2JE
 
-[Module Manager]: https://github.com/sarbian/ModuleManager/releases
+[Module Manager]: https://ksp.sarbian.com/jenkins/job/ModuleManager/lastStableBuild/
 [CommunityResourcePack]: https://github.com/BobPalmer/CommunityResourcePack/releases
 [MiniAVC]: https://ksp.cybutek.net/miniavc/Documents/README.htm
 [KSP-AVC Plugin]: https://forum.kerbalspaceprogram.com/index.php?/topic/72169-13-12-ksp-avc-add-on-version-checker-plugin-1162-miniavc-ksp-avc-online-2016-10-13/
@@ -101,3 +105,6 @@ It includes [MiniAVC]. If you opt-in, it will use the Internet to check whether 
 [Unlicense]: https://github.com/Kerbalism/Kerbalism/blob/master/LICENSE
 
 [KerbalismBanner]: https://github.com/Kerbalism/Kerbalism/raw/master/misc/img/banner.png
+
+[New and Noteworthy]: https://github.com/Kerbalism/Kerbalism/wiki/New-And-Noteworthy
+[FAQ]: https://github.com/Kerbalism/Kerbalism/wiki/FAQ

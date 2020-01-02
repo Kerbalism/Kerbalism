@@ -141,6 +141,21 @@ namespace KERBALISM
 			DoConfigure();
 		}
 
+		public List<ConfigureSetup> GetUnlockedSetups()
+		{
+			List<ConfigureSetup> unlockedSetups = new List<ConfigureSetup>();
+			foreach (ConfigureSetup setup in setups)
+			{
+				// if unlocked
+				if (setup.tech.Length == 0 || Lib.HasTech(setup.tech))
+				{
+					// unlock
+					unlockedSetups.Add(setup);
+				}
+			}
+			return unlockedSetups;
+		}
+
 		public void DoConfigure()
 		{
 			// shortcut to resource library
@@ -151,16 +166,7 @@ namespace KERBALISM
 			extra_mass = 0.0;
 
 			// find modules unlocked by tech
-			unlocked = new List<ConfigureSetup>();
-			foreach (ConfigureSetup setup in setups)
-			{
-				// if unlocked
-				if (setup.tech.Length == 0 || Lib.HasTech(setup.tech))
-				{
-					// unlock
-					unlocked.Add(setup);
-				}
-			}
+			unlocked = GetUnlockedSetups();
 
 			// make sure configuration include all available slots
 			// this also create default configuration
@@ -199,13 +205,13 @@ namespace KERBALISM
 					// if the module exist
 					if (m != null)
 					{
-						// call configure/deconfigure functions on module if available
-						if (m is IConfigurable configurable_module)
-							configurable_module.Configure(active);
-
 						// enable/disable the module
 						m.isEnabled = active;
 						m.enabled = active;
+
+						// call configure/deconfigure functions on module if available
+						if (m is IConfigurable configurable_module)
+							configurable_module.Configure(active);
 					}
 				}
 
@@ -228,6 +234,9 @@ namespace KERBALISM
 						// if previously selected
 						if (prev_active)
 						{
+							// if this is a visible+tweakeable resource and symmetric = false, clear the symmetry setup
+							RemoveSymmetryOnVisibleResourceSwitch(cr.name);
+
 							// remove the resources
 							prev_count = prev_count == 0 ? 1 : prev_count;
 							Lib.RemoveResource(part, cr.name, amount * prev_count, capacity * prev_count);
@@ -236,6 +245,9 @@ namespace KERBALISM
 						// if selected
 						if (active && capacity > 0.0)
 						{
+							// if this is a visible+tweakeable resource and symmetric = false, clear the symmetry setup
+							RemoveSymmetryOnVisibleResourceSwitch(cr.name);
+
 							// add the resources
 							// - in flight, do not add amount
 							Lib.AddResource(part, cr.name, Lib.IsFlight() ? 0.0 : amount * count, capacity * count);
@@ -298,8 +310,32 @@ namespace KERBALISM
 			// refresh VAB ui
 			if (Lib.IsEditor()) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
 
+			Callbacks.onConfigure.Fire(part, this);
+
 			// this was configured at least once
 			initialized = true;
+		}
+
+		/// <summary>if this is a visible+tweakeable resource and symmetric = false, clear the symmetry setup</summary>
+		// This is needed because stock expect the same resources on symmetry counterparts, to synchronize the amounts when it's PAW-tweaked
+		// TODO : Remove the whole symmetric thing when we drop support for KSP versions lower than 1.7
+		// Since 1.7.2, there is an advanced PAW option to remove symmetry from parts. Once we drop support for older versions, the player will
+		// always have the option to break symmetry if it doesn't want the same setup in symmetric parts.
+		// See https://github.com/Kerbalism/Kerbalism/issues/457
+		private void RemoveSymmetryOnVisibleResourceSwitch(string resName)
+		{
+			// only :
+			// - in the editor
+		    // - if we don't propagate the configure setup to symmetry counterparts
+			// - if there are symmetry counterparts
+			if (!Lib.IsEditor() || symmetric || part.symmetryCounterparts.Count == 0) return;
+
+			// only if the resource is visible/tweakeable
+			PartResourceDefinition res = PartResourceLibrary.Instance.GetDefinition(resName);
+			if (!res.isVisible && !res.isTweakable) return;
+
+			Lib.EditorClearSymmetry(part);
+			Message.Post(Lib.BuildString("Symmetry on ", part.partInfo.title, "\nhas been removed because of switching the ", res.displayName, " capacity."));
 		}
 
 		void OnGUI()
@@ -329,8 +365,11 @@ namespace KERBALISM
 			}
 		}
 
-
+#if KSP15_16
 		[KSPEvent(guiActive = true, guiActiveUnfocused = true, guiActiveEditor = true, guiName = "_", active = false)]
+#else
+		[KSPEvent(guiActive = true, guiActiveUnfocused = true, guiActiveEditor = true, guiName = "_", active = false, groupName = "Configuration", groupDisplayName = "Configuration")]
+#endif
 		public void ToggleWindow()
 		{
 			// in flight
@@ -487,7 +526,7 @@ namespace KERBALISM
 			if (!Lib.IsEditor())
 			{
 				// if part doesn't exist anymore
-				if (FlightGlobals.FindPartByID(part.flightID) == null) return;
+				if (part.flightID == 0 || FlightGlobals.FindPartByID(part.flightID) == null) return;
 			}
 			// inside the editor
 			else
@@ -543,6 +582,10 @@ namespace KERBALISM
 		// utility, used as callback in panel select
 		void Change_setup(int change, int selected_i, ref int setup_i)
 		{
+
+
+
+
 			if (setup_i + change == unlocked.Count) setup_i = 0;
 			else if (setup_i + change < 0) setup_i = unlocked.Count - 1;
 			else setup_i += change;
@@ -573,7 +616,7 @@ namespace KERBALISM
 	}
 
 
-	public sealed class ConfigureSetup
+	public class ConfigureSetup
 	{
 		public ConfigureSetup(ConfigNode node, Configure cfg)
 		{
@@ -729,7 +772,7 @@ namespace KERBALISM
 	}
 
 
-	public sealed class ConfigureModule
+	public class ConfigureModule
 	{
 		public ConfigureModule(ConfigNode node)
 		{
@@ -762,7 +805,7 @@ namespace KERBALISM
 	}
 
 
-	public sealed class ConfigureResource
+	public class ConfigureResource
 	{
 		public ConfigureResource(ConfigNode node)
 		{

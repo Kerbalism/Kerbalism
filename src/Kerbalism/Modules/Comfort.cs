@@ -41,7 +41,7 @@ namespace KERBALISM
 	}
 
 
-	public sealed class Comforts
+	public class Comforts
 	{
 		public Comforts(Vessel v, bool env_firm_ground, bool env_not_alone, bool env_call_home)
 		{

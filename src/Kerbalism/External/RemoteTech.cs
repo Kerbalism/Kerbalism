@@ -45,9 +45,8 @@ namespace KERBALISM
 
 		public static void Startup()
 		{
-			Lib.Log("RemoteTech Startup");
 			if (!Enabled) return;
-			Lib.Log("RemoteTech is enabled");
+			Lib.Log("RemoteTech starting up");
 
 			var handler = typeof(RemoteTech).GetMethod("RTCommInfoHandler");
 			API.Comm.Add(handler);

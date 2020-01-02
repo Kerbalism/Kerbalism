@@ -221,18 +221,16 @@ namespace KERBALISM.Planner
 			{
 				if (sb.Length > 0)
 					sb.Append("\n");
-				sb.Append("<b><color=#00ff00>");
-				sb.Append(Lib.HumanReadableRate(pair.Value.value));
-				sb.Append("</color></b>\t");
+				sb.Append(Lib.Color(Lib.HumanReadableRate(pair.Value.value), Lib.Kolor.PosRate, true));
+				sb.Append("\t");
 				sb.Append(pair.Key);
 			}
 			foreach (KeyValuePair<string, Wrapper> pair in red)
 			{
 				if (sb.Length > 0)
 					sb.Append("\n");
-				sb.Append("<b><color=#ffaa00>");
-				sb.Append(Lib.HumanReadableRate(pair.Value.value));
-				sb.Append("</color></b>\t");
+				sb.Append(Lib.Color(Lib.HumanReadableRate(pair.Value.value), Lib.Kolor.NegRate, true));
+				sb.Append("\t");
 				sb.Append(pair.Key);
 			}
 			if (harvests.Count > 0)

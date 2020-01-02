@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Reflection;
 using System.Collections.Generic;
 using ModuleWheels;
 
@@ -9,6 +10,28 @@ namespace KERBALISM.Planner
 	///<summary> Planners simulator for resources contained, produced and consumed within the vessel </summary>
 	public class ResourceSimulator
 	{
+		private class PlannerDelegate
+		{
+			internal MethodInfo methodInfo;
+
+			public PlannerDelegate(MethodInfo methodInfo)
+			{
+				this.methodInfo = methodInfo;
+			}
+
+			internal string Invoke(PartModule m, List<KeyValuePair<string, double>> resourcesList, CelestialBody body, Dictionary<string, double> environment)
+			{
+				var result = methodInfo.Invoke(m, new object[] { resourcesList, body, environment });
+				if (result != null) return result.ToString();
+				return "unknown";
+			}
+		}
+
+		private static readonly Dictionary<string, PlannerDelegate> apiDelegates = new Dictionary<string, PlannerDelegate>();
+		private static readonly List<string> unsupportedModules = new List<string>();
+
+		private static Type[] plannerMethodSignature = { typeof(List<KeyValuePair<string, double>>), typeof(CelestialBody), typeof(Dictionary<string, double>) };
+
 		/// <summary>
 		/// run simulator to get statistics a fraction of a second after the vessel would spawn
 		/// in the configured environment (celestial body, orbit height and presence of sunlight)
@@ -33,7 +56,7 @@ namespace KERBALISM.Planner
 			RunSimulator(parts, env, va);
 		}
 
-		/// <summary>run a single timestamp of the simulator</simulator>
+		/// <summary>run a single timestamp of the simulator</summary>
 		private void RunSimulator(List<Part> parts, EnvironmentAnalyzer env, VesselAnalyzer va)
 		{
 			// clear previous resource state
@@ -45,13 +68,17 @@ namespace KERBALISM.Planner
 				for (int i = 0; i < p.Resources.Count; ++i)
 				{
 					Process_part(p, p.Resources[i].resourceName);
+#if DEBUG_RESOURCES
+					p.Resources[i].isVisible = true;
+					p.Resources[i].isTweakable = true;
+#endif
 				}
 			}
 
 			// process all rules
 			foreach (Rule r in Profile.rules)
 			{
-				if ((r.input.Length > 0 || (r.monitor && r.output.Length > 0)) && r.rate > 0.0)
+				if (r.input.Length > 0 && r.rate > 0.0)
 				{
 					Process_rule(parts, r, env, va);
 				}
@@ -81,96 +108,98 @@ namespace KERBALISM.Planner
 					if (!m.isEnabled)
 						continue;
 
-					switch (m.moduleName)
+					if (IsApiModule(m))
 					{
-						case "Greenhouse":
-							Process_greenhouse(m as Greenhouse, env, va);
-							break;
-						case "GravityRing":
-							Process_ring(m as GravityRing);
-							break;
-						case "Emitter":
-							Process_emitter(m as Emitter);
-							break;
-						case "Laboratory":
-							Process_laboratory(m as Laboratory);
-							break;
-						case "Experiment":
-							Process_experiment(m as Experiment);
-							break;
-						case "ModuleCommand":
-							Process_command(m as ModuleCommand);
-							break;
-						case "ModuleDeployableSolarPanel":
-							Process_panel(m as ModuleDeployableSolarPanel, env);
-							break;
-						case "ModuleGenerator":
-							Process_generator(m as ModuleGenerator, p);
-							break;
-						case "ModuleResourceConverter":
-							Process_converter(m as ModuleResourceConverter, va);
-							break;
-						case "ModuleKPBSConverter":
-							Process_converter(m as ModuleResourceConverter, va);
-							break;
-						case "ModuleResourceHarvester":
-							Process_harvester(m as ModuleResourceHarvester, va);
-							break;
-						case "ModuleScienceConverter":
-							Process_stocklab(m as ModuleScienceConverter);
-							break;
-						case "ModuleActiveRadiator":
-							Process_radiator(m as ModuleActiveRadiator);
-							break;
-						case "ModuleWheelMotor":
-							Process_wheel_motor(m as ModuleWheelMotor);
-							break;
-						case "ModuleWheelMotorSteering":
-							Process_wheel_steering(m as ModuleWheelMotorSteering);
-							break;
-						case "ModuleLight":
-							Process_light(m as ModuleLight);
-							break;
-						case "ModuleColoredLensLight":
-							Process_light(m as ModuleLight);
-							break;
-						case "ModuleMultiPointSurfaceLight":
-							Process_light(m as ModuleLight);
-							break;
-						case "KerbalismScansat":
-							Process_scanner(m as KerbalismScansat);
-							break;
-						case "ModuleCurvedSolarPanel":
-							Process_curved_panel(p, m, env);
-							break;
-						case "FissionGenerator":
-							Process_fission_generator(p, m);
-							break;
-						case "ModuleRadioisotopeGenerator":
-							Process_radioisotope_generator(p, m);
-							break;
-						case "ModuleCryoTank":
-							Process_cryotank(p, m);
-							break;
-						case "ModuleRTAntennaPassive":
-						case "ModuleRTAntenna":
-							Process_rtantenna(m);
-							break;
-						case "ModuleDataTransmitter":
-							Process_datatransmitter(m as ModuleDataTransmitter);
-							break;
-						case "ModuleEngines":
-							Process_engines(m as ModuleEngines);
-							break;
-						case "ModuleEnginesFX":
-							Process_enginesfx(m as ModuleEnginesFX);
-							break;
-						case "ModuleRCS":
-							Process_rcs(m as ModuleRCS);
-							break;
-						case "ModuleRCSFX":
-							Process_rcsfx(m as ModuleRCSFX);
-							break;
+						Process_apiModule(m, env, va);
+					}
+					else
+					{
+						switch (m.moduleName)
+						{
+							case "Greenhouse":
+								Process_greenhouse(m as Greenhouse, env, va);
+								break;
+							case "GravityRing":
+								Process_ring(m as GravityRing);
+								break;
+							case "Emitter":
+								Process_emitter(m as Emitter);
+								break;
+							case "Laboratory":
+								Process_laboratory(m as Laboratory);
+								break;
+							case "Experiment":
+								Process_experiment(m as Experiment);
+								break;
+							case "ModuleCommand":
+								Process_command(m as ModuleCommand);
+								break;
+							case "ModuleGenerator":
+								Process_generator(m as ModuleGenerator, p);
+								break;
+							case "ModuleResourceConverter":
+								Process_converter(m as ModuleResourceConverter, va);
+								break;
+							case "ModuleKPBSConverter":
+								Process_converter(m as ModuleResourceConverter, va);
+								break;
+							case "ModuleResourceHarvester":
+								Process_harvester(m as ModuleResourceHarvester, va);
+								break;
+							case "ModuleScienceConverter":
+								Process_stocklab(m as ModuleScienceConverter);
+								break;
+							case "ModuleActiveRadiator":
+								Process_radiator(m as ModuleActiveRadiator);
+								break;
+							case "ModuleWheelMotor":
+								Process_wheel_motor(m as ModuleWheelMotor);
+								break;
+							case "ModuleWheelMotorSteering":
+								Process_wheel_steering(m as ModuleWheelMotorSteering);
+								break;
+							case "ModuleLight":
+							case "ModuleColoredLensLight":
+							case "ModuleMultiPointSurfaceLight":
+								Process_light(m as ModuleLight);
+								Process_light(m as ModuleLight);
+								Process_light(m as ModuleLight);
+								break;
+							case "KerbalismScansat":
+								Process_scanner(m as KerbalismScansat);
+								break;
+							case "FissionGenerator":
+								Process_fission_generator(p, m);
+								break;
+							case "ModuleRadioisotopeGenerator":
+								Process_radioisotope_generator(p, m);
+								break;
+							case "ModuleCryoTank":
+								Process_cryotank(p, m);
+								break;
+							case "ModuleRTAntennaPassive":
+							case "ModuleRTAntenna":
+								Process_rtantenna(m);
+								break;
+							case "ModuleDataTransmitter":
+								Process_datatransmitter(m as ModuleDataTransmitter);
+								break;
+							case "ModuleEngines":
+								Process_engines(m as ModuleEngines);
+								break;
+							case "ModuleEnginesFX":
+								Process_enginesfx(m as ModuleEnginesFX);
+								break;
+							case "ModuleRCS":
+								Process_rcs(m as ModuleRCS);
+								break;
+							case "ModuleRCSFX":
+								Process_rcsfx(m as ModuleRCSFX);
+								break;
+							case "SolarPanelFixer":
+								Process_solarPanel(m as SolarPanelFixer, env);
+								break;
+						}
 					}
 				}
 			}
@@ -196,7 +225,56 @@ namespace KERBALISM.Planner
 				pair.Value.Clamp();
 		}
 
-		/// <summary>obtain information on resource metrics for any resource contained within simulated vessel</simulator>
+		private void Process_apiModule(PartModule m, EnvironmentAnalyzer env, VesselAnalyzer va)
+		{
+			List<KeyValuePair<string, double>> resourcesList = new List<KeyValuePair<string, double>>();
+
+			Dictionary<string, double> environment = new Dictionary<string, double>();
+			environment["altitude"] = env.altitude;
+			environment["orbital_period"] = env.orbital_period;
+			environment["shadow_period"] = env.shadow_period;
+			environment["shadow_time"] = env.shadow_time;
+			environment["albedo_flux"] = env.albedo_flux;
+			environment["solar_flux"] = env.solar_flux;
+			environment["sun_dist"] = env.sun_dist;
+			environment["temperature"] = env.temperature;
+			environment["total_flux"] = env.total_flux;
+			environment["temperature"] = env.temperature;
+			environment["sunlight"] = Planner.Sunlight == Planner.SunlightState.Shadow ? 0 : 1;
+
+			Lib.Log("resource count before call " + resourcesList.Count);
+
+			string title = apiDelegates[m.moduleName].Invoke(m, resourcesList, env.body, environment);
+
+			Lib.Log("resource count after call " + resourcesList.Count);
+
+			foreach (var p in resourcesList)
+			{
+				var res = Resource(p.Key);
+				if (p.Value >= 0)
+					res.Produce(p.Value, title);
+				else
+					res.Consume(-p.Value, title);
+			}
+		}
+
+		private bool IsApiModule(PartModule m)
+		{
+			if (apiDelegates.ContainsKey(m.moduleName)) return true;
+			if (unsupportedModules.Contains(m.moduleName)) return false;
+
+			MethodInfo methodInfo = m.GetType().GetMethod("PlannerUpdate", plannerMethodSignature);
+			if (methodInfo == null)
+			{
+				unsupportedModules.Add(m.moduleName);
+				return false;
+			}
+
+			apiDelegates[m.moduleName] = new PlannerDelegate(methodInfo);
+			return true;
+		}
+
+		/// <summary>obtain information on resource metrics for any resource contained within simulated vessel</summary>
 		public SimulatedResource Resource(string name)
 		{
 			SimulatedResource res;
@@ -208,14 +286,14 @@ namespace KERBALISM.Planner
 			return res;
 		}
 
-		/// <summary>transfer per-part resources to the simulator</simulator>
+		/// <summary>transfer per-part resources to the simulator</summary>
 		void Process_part(Part p, string res_name)
 		{
 			SimulatedResourceView res = Resource(res_name).GetSimulatedResourceView(p);
 			res.AddPartResources(p);
 		}
 
-		/// <summary>process a rule and add/remove the resources from the simulator</simulator>
+		/// <summary>process a rule and add/remove the resources from the simulator</summary>
 		private void Process_rule_inner_body(double k, Part p, Rule r, EnvironmentAnalyzer env, VesselAnalyzer va)
 		{
 			// deduce rate per-second
@@ -228,20 +306,11 @@ namespace KERBALISM.Planner
 			}
 			else if (rate > double.Epsilon)
 			{
-				// simulate recipe if output_only is false
-				if (!r.monitor)
-				{
-					// - rules always dump excess overboard (because it is waste)
-					SimulatedRecipe recipe = new SimulatedRecipe(p, r.name);
-					recipe.Input(r.input, rate * k);
-					recipe.Output(r.output, rate * k * r.ratio, true);
-					recipes.Add(recipe);
-				}
-				// only simulate output
-				else
-				{
-					Resource(r.output).Produce(rate * k, r.name);
-				}
+				// - rules always dump excess overboard (because it is waste)
+				SimulatedRecipe recipe = new SimulatedRecipe(p, r.name);
+				recipe.Input(r.input, rate * k);
+				recipe.Output(r.output, rate * k * r.ratio, true);
+				recipes.Add(recipe);
 			}
 		}
 
@@ -378,9 +447,9 @@ namespace KERBALISM.Planner
 
 		void Process_experiment(Experiment exp)
 		{
-			if (exp.recording)
+			if (exp.Running)
 			{
-				Resource("ElectricCharge").Consume(exp.ec_rate, exp.sample_mass < float.Epsilon ? "sensor" : "experiment");
+				Resource("ElectricCharge").Consume(exp.ec_rate, exp.ExpInfo.SampleMass == 0.0 ? "sensor" : "experiment");
 			}
 		}
 
@@ -391,13 +460,6 @@ namespace KERBALISM.Planner
 			{
 				Resource(res.name).Consume(res.rate, "command");
 			}
-		}
-
-
-		void Process_panel(ModuleDeployableSolarPanel panel, EnvironmentAnalyzer env)
-		{
-			double generated = panel.resHandler.outputResources[0].rate * env.solar_flux / Sim.SolarFluxAtHome();
-			Resource("ElectricCharge").Produce(generated, "solar panel");
 		}
 
 
@@ -515,22 +577,6 @@ namespace KERBALISM.Planner
 		void Process_scanner(KerbalismScansat m)
 		{
 			Resource("ElectricCharge").Consume(m.ec_rate, "scanner");
-		}
-
-
-		void Process_curved_panel(Part p, PartModule m, EnvironmentAnalyzer env)
-		{
-			// note: assume half the components are in sunlight, and average inclination is half
-
-			// get total rate
-			double tot_rate = Lib.ReflectionValue<float>(m, "TotalEnergyRate");
-
-			// get number of components
-			int components = p.FindModelTransforms(Lib.ReflectionValue<string>(m, "PanelTransformName")).Length;
-
-			// approximate output
-			// 0.7071: average clamped cosine
-			Resource("ElectricCharge").Produce(tot_rate * 0.7071 * env.solar_flux / Sim.SolarFluxAtHome(), "curved panel");
 		}
 
 
@@ -710,6 +756,30 @@ namespace KERBALISM.Planner
 						break;
 					case "LqdHydrogen":     // added for cryotanks and any other supported mod that uses Liquid Hydrogen
 						Resource("LqdHydrogen").Consume(thrust_flow * fuel.ratio, "rcs");
+						break;
+				}
+			}
+		}
+
+		void Process_solarPanel(SolarPanelFixer spf, EnvironmentAnalyzer env)
+		{
+			if (spf.part.editorStarted && spf.isInitialized && spf.isEnabled && spf.editorEnabled)
+			{
+				double editorOutput = 0.0;
+				switch (Planner.Sunlight)
+				{
+					case Planner.SunlightState.SunlightNominal:
+						editorOutput = spf.nominalRate * (env.solar_flux / Sim.SolarFluxAtHome);
+						if (editorOutput > 0.0) Resource("ElectricCharge").Produce(editorOutput, "solar panel (nominal)");
+						break;
+					case Planner.SunlightState.SunlightSimulated:
+						// create a sun direction according to the shadows direction in the VAB / SPH
+						Vector3d sunDir = EditorDriver.editorFacility == EditorFacility.VAB ? new Vector3d(1.0, 1.0, 0.0).normalized : new Vector3d(0.0, 1.0, -1.0).normalized;
+						string occludingPart = null;
+						double effiencyFactor = spf.SolarPanel.GetCosineFactor(sunDir, true) * spf.SolarPanel.GetOccludedFactor(sunDir, out occludingPart, true);
+						double distanceFactor = env.solar_flux / Sim.SolarFluxAtHome;
+						editorOutput = spf.nominalRate * effiencyFactor * distanceFactor;
+						if (editorOutput > 0.0) Resource("ElectricCharge").Produce(editorOutput, "solar panel (estimated)");
 						break;
 				}
 			}

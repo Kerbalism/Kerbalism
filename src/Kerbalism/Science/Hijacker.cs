@@ -35,7 +35,10 @@ namespace KERBALISM
 				ScienceData data = page.pageData;
 
 				// collect and deduce all info necessary
-				MetaData meta = new MetaData(data, page.host);
+				MetaData meta = new MetaData(data, page.host, page.xmitDataScalar);
+
+				if (meta.subjectData == null)
+					continue;
 
 				// ignore non-collectable experiments
 				if (!meta.is_collectable)
@@ -44,47 +47,46 @@ namespace KERBALISM
 					continue;					
 				}
 
-				// record data
 				bool recorded = false;
+				bool partial_record = false;
+
 				if (!meta.is_sample)
 				{
-					Drive drive = Drive.FileDrive(meta.vessel, data.dataAmount);
-					recorded = drive.Record_file(data.subjectID, data.dataAmount);
+					var remaining = RecordData(data, meta);
+					if (remaining > 0) partial_record = true;
+					recorded = remaining < data.dataAmount;
 				}
 				else
 				{
-					Drive drive = Drive.SampleDrive(meta.vessel, data.dataAmount, data.subjectID);
-
-					var experimentInfo = Science.Experiment(data.subjectID);
-					var sampleMass = Science.GetSampleMass(data.subjectID);
-					var mass = sampleMass / experimentInfo.max_amount * data.dataAmount;
-
-					recorded = drive.Record_sample(data.subjectID, data.dataAmount, mass);
+					Drive drive = Drive.SampleDrive(meta.vessel.KerbalismData(), data.dataAmount, meta.subjectData);
+					if (drive != null)
+						recorded = drive.Record_sample(meta.subjectData, data.dataAmount, meta.subjectData.ExpInfo.MassPerMB * data.dataAmount, true);
 				}
 
 				if (recorded)
 				{
-					// render experiment inoperable if necessary
-					if (!meta.is_rerunnable)
+					if(!partial_record)
 					{
-						meta.experiment.SetInoperable();
+						// render experiment inoperable if necessary
+						if (!meta.is_rerunnable)
+						{
+							meta.experiment.SetInoperable();
+						}
+
+						// inform the user
+						Message.Post(
+							Lib.BuildString("<b>", meta.subjectData.FullTitle, "</b> recorded"),
+							!meta.is_rerunnable ? Localizer.Format("#KERBALISM_Science_inoperable") : string.Empty
+						);
 					}
 
 					// dump the data
 					page.OnDiscardData(data);
-
-					// inform the user
-					var exp = Science.Experiment(data.subjectID);
-					Message.Post(
-						Lib.BuildString("<b>", exp.FullName(data.subjectID), "</b> recorded"),
-						!meta.is_rerunnable ? Localizer.Format("#KERBALISM_Science_inoperable") : string.Empty
-					);
 				}
 				else
 				{
-					var exp = Science.Experiment(data.subjectID);
 					Message.Post(
-						Lib.Color("red", Lib.BuildString(exp.FullName(data.subjectID), " can not be stored")),
+						Lib.Color(Lib.BuildString(meta.subjectData.FullTitle, " can not be stored"), Lib.Kolor.Red),
 						"Not enough space on hard drive"
 					);
 				}
@@ -94,9 +96,32 @@ namespace KERBALISM
 			dialog.Dismiss();
 		}
 
+		internal static double RecordData(ScienceData data, MetaData meta)
+		{
+			double remaining = data.dataAmount;
+
+			foreach(var drive in Drive.GetDrives(meta.vessel.KerbalismData(), false))
+			{
+				var size = Math.Min(remaining, drive.FileCapacityAvailable());
+				if(size > 0)
+				{
+					drive.Record_file(meta.subjectData, size, true, true);
+					remaining -= size;
+				}
+			}
+
+			if (remaining > 0)
+			{
+				Message.Post(
+					Lib.Color(Lib.BuildString(meta.subjectData.FullTitle, " stored partially"), Lib.Kolor.Orange),
+					"Not enough space on hard drive"
+				);
+			}
+			return remaining;
+		}
+
 		ExperimentsResultDialog dialog;
 	}
-
 
 	// Manipulate science dialog callbacks to remove the data from the experiment
 	// (rendering it inoperable) and store it in the vessel drive. The same data
@@ -125,7 +150,7 @@ namespace KERBALISM
 			ExperimentResultDialogPage page = dialog.currentPage;
 
 			// collect and deduce all data necessary just once
-			MetaData meta = new MetaData(data, page.host);
+			MetaData meta = new MetaData(data, page.host, page.xmitDataScalar);
 
 			if (!meta.is_collectable)
 			{
@@ -160,6 +185,9 @@ namespace KERBALISM
 				return;
 			}
 
+			if (meta.subjectData == null)
+				return;
+
 			// if this is a sample and we are trying to send it, warn the user and do nothing else
 			if (meta.is_sample && send)
 			{
@@ -169,20 +197,19 @@ namespace KERBALISM
 
 			// record data in the drive
 			bool recorded = false;
+			bool partial_record = false;
+
 			if (!meta.is_sample)
 			{
-				Drive drive = Drive.FileDrive(meta.vessel, data.dataAmount);
-				recorded = drive.Record_file(data.subjectID, data.dataAmount);
+				var remaining = MiniHijacker.RecordData(data, meta);
+				if (remaining > 0) partial_record = true;
+				recorded = remaining < data.dataAmount;
 			}
 			else
 			{
-				Drive drive = Drive.SampleDrive(meta.vessel, data.dataAmount, data.subjectID);
-
-				var experimentInfo = Science.Experiment(data.subjectID);
-				var sampleMass = Science.GetSampleMass(data.subjectID);
-				var mass = sampleMass / experimentInfo.max_amount * data.dataAmount;
-
-				recorded = drive.Record_sample(data.subjectID, data.dataAmount, mass);
+				Drive drive = Drive.SampleDrive(meta.vessel.KerbalismData(), data.dataAmount, meta.subjectData);
+				if (drive != null)
+					recorded = drive.Record_sample(meta.subjectData, data.dataAmount, meta.subjectData.ExpInfo.MassPerMB * data.dataAmount, true);
 			}
 
 			if (recorded)
@@ -195,23 +222,24 @@ namespace KERBALISM
 				}
 
 				// render experiment inoperable if necessary
-				if (!meta.is_rerunnable) meta.experiment.SetInoperable();
+				if (!meta.is_rerunnable && !partial_record) meta.experiment.SetInoperable();
 
 				// dismiss the dialog and popups
 				Dismiss(data);
 
-				var exp = Science.Experiment(data.subjectID);
-				// inform the user
-				Message.Post(
-					Lib.BuildString("<b>", exp.FullName(data.subjectID), "</b> recorded"),
-					!meta.is_rerunnable ? Localizer.Format("#KERBALISM_Science_inoperable") : string.Empty
-				);
+				if(!partial_record)
+				{
+					// inform the user
+					Message.Post(
+						Lib.BuildString("<b>", meta.subjectData.FullTitle, "</b> recorded"),
+						!meta.is_rerunnable ? Localizer.Format("#KERBALISM_Science_inoperable") : string.Empty
+					);
+				}
 			}
 			else
 			{
-				var exp = Science.Experiment(data.subjectID);
 				Message.Post(
-					Lib.Color("red", Lib.BuildString(exp.FullName(data.subjectID), " can not be stored")),
+					Lib.Color(Lib.BuildString(meta.subjectData.FullTitle, " can not be stored"), Lib.Kolor.Red),
 					"Not enough space on hard drive"
 				);
 			}
@@ -241,7 +269,7 @@ namespace KERBALISM
 
 	public sealed class MetaData
 	{
-		public MetaData(ScienceData data, Part host)
+		public MetaData(ScienceData data, Part host, float xmitScalar)
 		{
 			// find the part containing the data
 			part = host;
@@ -249,8 +277,12 @@ namespace KERBALISM
 			// get the vessel
 			vessel = part.vessel;
 
+			subjectData = ScienceDB.GetSubjectDataFromStockId(data.subjectID);
+			if (subjectData == null)
+				return;
+
 			// get the container module storing the data
-			container = Science.Container(part, Science.Experiment(data.subjectID).id);
+			container = Science.Container(part, subjectData.ExpInfo.ExperimentId);
 
 			// get the stock experiment module storing the data (if that's the case)
 			experiment = container != null ? container as ModuleScienceExperiment : null;
@@ -261,7 +293,7 @@ namespace KERBALISM
 			// determine if this is a sample (non-transmissible)
 			// - if this is a third-party data container/experiment module, we assume it is transmissible
 			// - stock experiment modules are considered sample if xmit scalar is below a threshold instead
-			is_sample = experiment != null && experiment.xmitDataScalar < 0.666f;
+			is_sample = xmitScalar < Science.maxXmitDataScalarForSample;
 
 			// determine if the container/experiment can collect the data multiple times
 			// - if this is a third-party data container/experiment, we assume it can collect multiple times
@@ -275,6 +307,7 @@ namespace KERBALISM
 		public bool is_sample;                          // true if the data can't be transmitted
 		public bool is_rerunnable;                      // true if the container/experiment can collect data multiple times
 		public bool is_collectable;                     // true if data can be collected from the module / part
+		public SubjectData subjectData;
 	}
 
 

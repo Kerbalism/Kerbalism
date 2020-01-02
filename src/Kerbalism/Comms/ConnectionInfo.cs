@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System;
 
 namespace KERBALISM
 {
@@ -25,8 +24,11 @@ namespace KERBALISM
 		/// <summary> science data rate. note that internal transmitters can not transmit science data only telemetry data </summary>
 		public double rate = 0.0;
 
-		/// <summary> transmitter ec cost</summary>
+		/// <summary> transmitter ec cost while transmitting</summary>
 		public double ec = 0.0;
+
+		/// <summary> transmitter ec cost while idle</summary>
+		public double ec_idle = 0.0;
 
 		/// <summary> signal strength </summary>
 		public double strength = 0.0;
@@ -41,6 +43,16 @@ namespace KERBALISM
 			return new ConnectionInfo(v, powered, storm);
 		}
 
+		private static double SanityCheck(double value, string name, Vessel v)
+		{
+			if (double.IsNaN(value) || double.IsInfinity(value))
+			{
+				Lib.LogDebug("ERROR: Comms: invalid value: " + name + " on " + v + " (" + value + ")");
+				value = 0;
+			}
+			return value;
+		}
+
 		/// <summary> Creates a <see cref="ConnectionInfo"/> object for the specified vessel from it's antenna modules</summary>
 		private ConnectionInfo(Vessel v, bool powered, bool storm)
 		{
@@ -48,11 +60,17 @@ namespace KERBALISM
 			if (!powered)
 				return;
 
+			// wait until network is initialized (2 seconds after load)
+			if (!Communications.NetworkInitialized)
+				return;
+
 			AntennaInfo ai = GetAntennaInfo(v, powered, storm);
-			ec = ai.ec;
-			rate = ai.rate * PreferencesScience.Instance.transmitFactor;
+
+			ec = SanityCheck(ai.ec, "ec", v);
+			ec_idle = SanityCheck(ai.ec_idle, "ec_idle", v);
+			rate = SanityCheck(ai.rate, "rate", v) * PreferencesScience.Instance.transmitFactor;
 			linked = ai.linked;
-			strength = ai.strength;
+			strength = SanityCheck(ai.strength, "strength", v);
 			target_name = ai.target_name;
 			control_path = ai.control_path;
 
@@ -72,19 +90,17 @@ namespace KERBALISM
 			AntennaInfo ai = new AntennaInfo();
 			ai.powered = powered;
 			ai.storm = storm;
-			ai.transmitting = !string.IsNullOrEmpty(Science.Transmitting(v, true));
+			ai.transmitting = v.KerbalismData().filesTransmitted.Count > 0;
 
 			API.Comm.Init(ai, v);
 			if (ai.strength > -1)
 				return ai;
 
-#if !KSP170 && !KSP16 && !KSP15 && !KSP14
-			// Serenity
+#if !KSP15_16
 			var cluster = Serenity.GetScienceCluster(v);
 			if (cluster != null)
 				return new AntennaInfoSerenity(v, cluster, storm, ai.transmitting).AntennaInfo();
 #endif
-
 			// if CommNet is enabled
 			if (HighLogic.fetch.currentGame.Parameters.Difficulty.EnableCommNet)
 				return new AntennaInfoCommNet(v, powered, storm, ai.transmitting).AntennaInfo();

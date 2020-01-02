@@ -8,81 +8,47 @@ namespace KERBALISM
 {
 
 
-	public sealed class RingDevice : Device
+	public sealed class RingDevice : LoadedDevice<GravityRing>
 	{
-		public RingDevice(GravityRing ring)
-		{
-			this.ring = ring;
-		}
+		public RingDevice(GravityRing module) : base(module) { }
 
-		public override string Name()
-		{
-			return "gravity ring";
-		}
+		public override string Name => "gravity ring";
 
-		public override uint Part()
-		{
-			return ring.part.flightID;
-		}
-
-		public override string Info()
-		{
-			return ring.deployed ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_DEPLOYED") + "</color>" : "<color=red>" + Localizer.Format("#KERBALISM_Generic_RETRACTED") + "</color>";
-		}
+		public override string Status => Lib.Color(module.deployed, Localizer.Format("#KERBALISM_Generic_DEPLOYED"), Lib.Kolor.Green, Localizer.Format("#KERBALISM_Generic_RETRACTED"), Lib.Kolor.Yellow);
 
 		public override void Ctrl(bool value)
 		{
-			if (ring.deployed != value)
+			if (module.deployed != value)
 			{
-				ring.Toggle();
+				module.Toggle();
 			}
 		}
 
 		public override void Toggle()
 		{
-			Ctrl(!ring.deployed);
+			Ctrl(!module.deployed);
 		}
-
-		GravityRing ring;
 	}
 
 
-	public sealed class ProtoRingDevice : Device
+	public sealed class ProtoRingDevice : ProtoDevice<GravityRing>
 	{
-		public ProtoRingDevice(ProtoPartModuleSnapshot ring, uint part_id)
-		{
-			this.ring = ring;
-			this.part_id = part_id;
-		}
+		public ProtoRingDevice(GravityRing prefab, ProtoPartSnapshot protoPart, ProtoPartModuleSnapshot protoModule)
+			: base(prefab, protoPart, protoModule) { }
 
-		public override string Name()
-		{
-			return "gravity ring";
-		}
+		public override string Name => "gravity ring";
 
-		public override uint Part()
-		{
-			return part_id;
-		}
-
-		public override string Info()
-		{
-			bool deployed = Lib.Proto.GetBool(ring, "deployed");
-			return deployed ? "<color=cyan>" + Localizer.Format("#KERBALISM_Generic_DEPLOYED") + "</color>" : "<color=red>" + Localizer.Format("#KERBALISM_Generic_RETRACTED") + "</color>";
-		}
+		public override string Status => Lib.Color(Lib.Proto.GetBool(protoModule, "deployed"), Localizer.Format("#KERBALISM_Generic_DEPLOYED"), Lib.Kolor.Green, Localizer.Format("#KERBALISM_Generic_RETRACTED"), Lib.Kolor.Yellow);
 
 		public override void Ctrl(bool value)
 		{
-			Lib.Proto.Set(ring, "deployed", value);
+			Lib.Proto.Set(protoModule, "deployed", value);
 		}
 
 		public override void Toggle()
 		{
-			Ctrl(!Lib.Proto.GetBool(ring, "deployed"));
+			Ctrl(!Lib.Proto.GetBool(protoModule, "deployed"));
 		}
-
-		private readonly ProtoPartModuleSnapshot ring;
-		private readonly uint part_id;
 	}
 
 

@@ -17,8 +17,6 @@ namespace KERBALISM
 			// get KerbalEVA module
 			KerbalEVA kerbal = Lib.FindModules<KerbalEVA>(v)[0];
 
-			Vessel_info vi = Cache.VesselInfo(v);
-
 			// Stock KSP adds 5 units of monoprop to EVAs. We want to limit that amount
 			// to whatever was available in the ship, so we don't magically create EVA prop out of nowhere
 			if(Cache.HasVesselObjectsCache(v, "eva_prop"))
@@ -29,12 +27,12 @@ namespace KERBALISM
 			}
 
 			// get resource handler
-			Resource_info ec = ResourceCache.Info(v, "ElectricCharge");
+			ResourceInfo ec = ResourceCache.GetResource(v, "ElectricCharge");
 
 			// determine if headlamps need ec
 			// - not required if there is no EC capacity in eva kerbal (no ec supply in profile)
 			// - not required if no EC cost for headlamps is specified (set by the user)
-			bool need_ec = ec.capacity > double.Epsilon && Settings.HeadLampsCost > double.Epsilon;
+			bool need_ec = ec.Capacity > double.Epsilon && Settings.HeadLampsCost > double.Epsilon;
 
 			// consume EC for the headlamps
 			if (need_ec && kerbal.lampOn)
@@ -43,7 +41,7 @@ namespace KERBALISM
 			}
 
 			// force the headlamps on/off
-			HeadLamps(kerbal, kerbal.lampOn && (!need_ec || ec.amount > double.Epsilon));
+			HeadLamps(kerbal, kerbal.lampOn && (!need_ec || ec.Amount > double.Epsilon));
 
 			// if dead
 			if (IsDead(v))

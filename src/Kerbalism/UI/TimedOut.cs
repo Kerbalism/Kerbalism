@@ -9,10 +9,10 @@ namespace KERBALISM
 
 	public static class TimedOut
 	{
-		public static bool Timeout(this Panel p, Vessel_info vi)
+		public static bool Timeout(this Panel p, VesselData vd)
 		{
-			if (!vi.connection.linked && vi.crew_count == 0)
-			{
+			if (!vd.Connection.linked && vd.CrewCount == 0 && !vd.Vessel.isEVA)
+			{ 
 				p.AddHeader(msg[((int)Time.realtimeSinceStartup) % msg.Length]);
 				return true;
 			}

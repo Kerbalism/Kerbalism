@@ -1,32 +1,97 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using Harmony;
 using KSP.UI.Screens;
-using KSP.UI.Screens.SpaceCenter.MissionSummaryDialog;
 using UnityEngine;
 
 
 namespace KERBALISM
 {
+	// OnPartDie is not called for the root part
+	// OnPartWillDie works but isn't available in 1.5/1.6
+	// Until we drop 1.5/1.6 support, we use this patch instead
+	[HarmonyPatch(typeof(Part))]
+	[HarmonyPatch("Die")]
+	class Part_Die
+	{
+		static bool Prefix(Part __instance)
+		{
+			// replicate OnPartWillDie
+			if (__instance.State == PartStates.DEAD)
+				return true;
 
+			Kerbalism.Callbacks.OnPartWillDie(__instance);
+
+			return true; // continue to Part.Die()
+		}
+	}
+
+	// Create a "OnPartAfterDecouple" event that happen after the decoupling is complete, 
+	// and where you have access to the old vessel and the new vessel.
+	[HarmonyPatch(typeof(Part))]
+	[HarmonyPatch("decouple")]
+	class Part_decouple
+	{
+		static bool Prefix(Part __instance, out Vessel __state)
+		{
+			// get the vessel of the part, before decoupling
+			__state = __instance.vessel;
+			return true; // continue to Part.decouple()
+		}
+
+		static void Postfix(Part __instance, Vessel __state)
+		{
+			// only fire the event if a new vessel has been created
+			if (__instance.vessel != null && __state != null && __instance.vessel != __state)
+			{
+				Kerbalism.Callbacks.OnPartAfterDecouple(__instance, __state, __instance.vessel);
+			}
+		}
+	}
+
+	// Create a "OnPartAfterUndock" event that happen after the undocking is complete, 
+	// and where you have access to the old vessel and the new vessel.
+	[HarmonyPatch(typeof(Part))]
+	[HarmonyPatch("Undock")]
+	class Part_Undock
+	{
+		static bool Prefix(Part __instance, out Vessel __state)
+		{
+			// get the vessel of the part, before decoupling
+			__state = __instance.vessel;
+			return true; // continue to Part.decouple()
+		}
+
+		static void Postfix(Part __instance, Vessel __state)
+		{
+			// only fire the event if a new vessel has been created
+			if (__instance.vessel != null && __state != null && __instance.vessel != __state)
+			{
+				Kerbalism.Callbacks.OnPartAfterUndock(__instance, __state, __instance.vessel);
+			}
+		}
+	}
 
 	public sealed class Callbacks
 	{
+		public static EventData<Part, Configure> onConfigure = new EventData<Part, Configure>("onConfigure");
+
 		public Callbacks()
 		{
+			GameEvents.onPartCouple.Add(OnPartCouple);
+
 			GameEvents.onCrewOnEva.Add(this.ToEVA);
 			GameEvents.onCrewBoardVessel.Add(this.FromEVA);
-			GameEvents.onVesselRecoveryProcessing.Add(this.VesselRecoveryProcessing);
 			GameEvents.onVesselRecovered.Add(this.VesselRecovered);
 			GameEvents.onVesselTerminated.Add(this.VesselTerminated);
 			GameEvents.onVesselWillDestroy.Add(this.VesselDestroyed);
 			GameEvents.onNewVesselCreated.Add(this.VesselCreated);
 			GameEvents.onPartCouple.Add(this.VesselDock);
 
-			GameEvents.onVesselChange.Add((v) => { Cache.PurgeObjects(v); });
-			GameEvents.onVesselStandardModification.Add((v) => { Cache.PurgeObjects(v); });
+			GameEvents.onVesselChange.Add((v) => { OnVesselModified(v); });
+			GameEvents.onVesselStandardModification.Add((v) => { OnVesselStandardModification(v); });
 
-			GameEvents.onPartDie.Add(this.PartDestroyed);
 			GameEvents.OnTechnologyResearched.Add(this.TechResearched);
 			GameEvents.onGUIEditorToolbarReady.Add(this.AddEditorCategory);
 
@@ -48,7 +113,7 @@ namespace KERBALISM
 			GameEvents.onGUILaunchScreenSpawn.Add((_) => visible = false);
 			GameEvents.onGUILaunchScreenDespawn.Add(() => visible = true);
 
-			GameEvents.onGameSceneSwitchRequested.Add((_) => { visible = false; Cache.PurgeObjects(); Science.CreditAllDeferred(); });
+			GameEvents.onGameSceneSwitchRequested.Add((_) => visible = false);
 			GameEvents.onGUIApplicationLauncherReady.Add(() => visible = true);
 
 			GameEvents.CommNet.OnNetworkInitialized.Add(() => Kerbalism.Fetch.StartCoroutine(NetworkInitialized()));
@@ -57,24 +122,72 @@ namespace KERBALISM
 			GameEvents.onEditorShipModified.Add((sc) => Planner.Planner.EditorShipModifiedEvent(sc));
 		}
 
+		private void OnPartCouple(GameEvents.FromToAction<Part, Part> data)
+		{
+			VesselData.OnPartCouple(data);
+		}
+
+		// Called by an harmony patch, happens every time a part is decoupled (decouplers, joint failure...)
+		// but only if a new vessel has been created in the process
+		public void OnPartAfterUndock(Part part, Vessel oldVessel, Vessel newVessel)
+		{
+			VesselData.OnDecoupleOrUndock(oldVessel, newVessel);
+		}
+
+		// Called by an harmony patch, happens every time a part is undocked
+		// but only if a new vessel has been created in the process
+		public void OnPartAfterDecouple(Part part, Vessel oldVessel, Vessel newVessel)
+		{
+			VesselData.OnDecoupleOrUndock(oldVessel, newVessel);
+		}
+
+		// Called by an harmony patch, exactly the same as the stock OnPartWillDie (that is not available in 1.5/1.6)
+		public void OnPartWillDie(Part p)
+		{
+			// do nothing in the editor
+			if (Lib.IsEditor())
+				return;
+
+			// remove part from vesseldata
+			VesselData.OnPartWillDie(p);
+
+			// update vessel
+			this.OnVesselModified(p.vessel);
+		}
+
+		private void OnVesselStandardModification(Vessel vessel)
+		{
+			// avoid this being called on vessel launch, when vessel is not yet properly initialized
+			if (!vessel.loaded && vessel.protoVessel == null) return;
+			OnVesselModified(vessel);
+		}
+
+		private void OnVesselModified(Vessel vessel)
+		{
+			foreach(var emitter in vessel.FindPartModulesImplementing<Emitter>())
+				emitter.Recalculate();
+
+			Cache.PurgeVesselCaches(vessel);
+			//vessel.KerbalismData().UpdateOnVesselModified();
+		}
+
 		public IEnumerator NetworkInitialized()
 		{
 			yield return new WaitForSeconds(2);
-			Lib.DebugLog("NetworkInitialized");
 			Communications.NetworkInitialized = true;
 			RemoteTech.Startup();
 		}
 
 		void ToEVA(GameEvents.FromToAction<Part, Part> data)
 		{
-			Cache.PurgeObjects(data.from.vessel);
-			Cache.PurgeObjects(data.to.vessel);
+			OnVesselModified(data.from.vessel);
+			OnVesselModified(data.to.vessel);
 
 			// get total crew in the origin vessel
 			double tot_crew = Lib.CrewCount(data.from.vessel) + 1.0;
 
 			// get vessel resources handler
-			Vessel_resources resources = ResourceCache.Get(data.from.vessel);
+			VesselResources resources = ResourceCache.Get(data.from.vessel);
 
 			// setup supply resources capacity in the eva kerbal
 			Profile.SetupEva(data.to);
@@ -93,7 +206,7 @@ namespace KERBALISM
 					continue;
 				}
 
-				double quantity = Math.Min(resources.Info(data.from.vessel, res.resourceName).amount / tot_crew, res.maxAmount);
+				double quantity = Math.Min(resources.GetResource(data.from.vessel, res.resourceName).Amount / tot_crew, res.maxAmount);
 				// remove resource from vessel
 				quantity = data.from.RequestResource(res.resourceName, quantity);
 
@@ -114,7 +227,7 @@ namespace KERBALISM
 			Cache.SetVesselObjectsCache(data.to.vessel, "eva_prop", evaPropQuantity);
 
 			// Airlock loss
-			resources.Consume(data.from.vessel, "Nitrogen", PreferencesLifeSupport.Instance.evaAtmoLoss, "airlock");
+			resources.Consume(data.from.vessel, "Nitrogen", Settings.LifeSupportAtmoLoss, "airlock");
 
 			// show warning if there is little or no EVA propellant in the suit
 			if (evaPropQuantity <= 0.05 && !Lib.Landed(data.from.vessel))
@@ -128,12 +241,16 @@ namespace KERBALISM
 			EVA.HeadLamps(kerbal, false);
 
 			// execute script
-			DB.Vessel(data.from.vessel).computer.Execute(data.from.vessel, ScriptType.eva_out);
+			data.from.vessel.KerbalismData().computer.Execute(data.from.vessel, ScriptType.eva_out);
 		}
 
 
 		void FromEVA(GameEvents.FromToAction<Part, Part> data)
 		{
+			// contract configurator calls this event with both parts being the same when it adds a passenger
+			if (data.from == data.to)
+				return;
+
 			String prop_name = Lib.EvaPropellantName();
 
 			// for each resource in the eva kerbal
@@ -149,100 +266,16 @@ namespace KERBALISM
 			// merge drives data
 			Drive.Transfer(data.from.vessel, data.to.vessel, true);
 
-			// forget vessel data
-			DB.vessels.Remove(Lib.VesselID(data.from.vessel));
-			Drive.Purge(data.from.vessel);
+			// forget EVA vessel data
+			Cache.PurgeVesselCaches(data.from.vessel);
+			//Drive.Purge(data.from.vessel);
 
-			Cache.PurgeObjects(data.from.vessel);
-			Cache.PurgeObjects(data.to.vessel);
+			// update boarded vessel
+			this.OnVesselModified(data.to.vessel);
 
 			// execute script
-			DB.Vessel(data.to.vessel).computer.Execute(data.to.vessel, ScriptType.eva_in);
+			data.to.vessel.KerbalismData().computer.Execute(data.to.vessel, ScriptType.eva_in);
 		}
-
-
-		void VesselRecoveryProcessing(ProtoVessel v, MissionRecoveryDialog dialog, float score)
-		{
-			// note:
-			// this function accumulate science stored in drives on recovery,
-			// and visualize the data in the recovery dialog window
-
-			// do nothing if science system is disabled, or in sandbox mode
-			if (!Features.Science || HighLogic.CurrentGame.Mode == Game.Modes.SANDBOX)
-				return;
-
-			var vesselID = Lib.VesselID(v);
-			// get the drive data from DB
-			if (!DB.vessels.ContainsKey(vesselID))
-				return;
-
-			foreach (Drive drive in Drive.GetDrives(v))
-			{
-				// for each file in the drive
-				foreach (KeyValuePair<string, File> p in drive.files)
-				{
-					// shortcuts
-					string filename = p.Key;
-					File file = p.Value;
-
-					// de-buffer partially transmitted data
-					file.size += file.buff;
-					file.buff = 0.0;
-
-					// get subject
-					ScienceSubject subject = ResearchAndDevelopment.GetSubjectByID(filename);
-
-					// credit science
-					float credits = Science.Credit(filename, file.size, false, v, true);
-
-					// create science widged
-					ScienceSubjectWidget widged = ScienceSubjectWidget.Create
-					(
-					  subject,            // subject
-					  (float)file.size,   // data gathered
-					  credits,            // science points
-					  dialog              // recovery dialog
-					);
-
-					// add widget to dialog
-					dialog.AddDataWidget(widged);
-
-					// add science credits to total
-					dialog.scienceEarned += (float)credits;
-				}
-
-				// for each sample in the drive
-				// for each file in the drive
-				foreach (KeyValuePair<string, Sample> p in drive.samples)
-				{
-					// shortcuts
-					string filename = p.Key;
-					Sample sample = p.Value;
-
-					// get subject
-					ScienceSubject subject = ResearchAndDevelopment.GetSubjectByID(filename);
-
-					// credit science
-					float credits = Science.Credit(filename, sample.size, false, v, true);
-
-					// create science widged
-					ScienceSubjectWidget widged = ScienceSubjectWidget.Create
-					(
-					  subject,            // subject
-					  (float)sample.size, // data gathered
-					  credits,            // science points
-					  dialog              // recovery dialog
-					);
-
-					// add widget to dialog
-					dialog.AddDataWidget(widged);
-
-					// add science credits to total
-					dialog.scienceEarned += (float)credits;
-				}
-			}
-		}
-
 
 		void VesselRecovered(ProtoVessel pv, bool b)
 		{
@@ -266,12 +299,9 @@ namespace KERBALISM
 				DB.RecoverKerbal(c.name);
 			}
 
-			DB.vessels.Remove(Lib.VesselID(pv));
-
 			// purge the caches
 			ResourceCache.Purge(pv);
-			Drive.Purge(pv);
-			Cache.PurgeObjects(pv);
+			Cache.PurgeVesselCaches(pv);
 		}
 
 
@@ -281,26 +311,22 @@ namespace KERBALISM
 			foreach (ProtoCrewMember c in pv.GetVesselCrew())
 				DB.KillKerbal(c.name, true);
 
-			DB.vessels.Remove(Lib.VesselID(pv));
-
 			// purge the caches
 			ResourceCache.Purge(pv);
-			Drive.Purge(pv);
-			Cache.PurgeObjects(pv);
+			Cache.PurgeVesselCaches(pv);
+			//Drive.Purge(pv);
 		}
 
 		void VesselCreated(Vessel v)
 		{
-#if !KSP170 && !KSP16 && !KSP15 && !KSP14
+#if !KSP15_16
 			if (Serenity.GetModuleGroundExpControl(v) != null)
-				v.vesselName = Lib.BuildString(v.mainBody.name, " Surface Experiment ", Lib.Greek());
+				v.vesselName = Lib.BuildString(v.mainBody.name, " Site ", Lib.Greek());
 #endif
 		}
 
 		void VesselDestroyed(Vessel v)
 		{
-			DB.vessels.Remove(Lib.VesselID(v));
-
 			// rescan the damn kerbals
 			// - vessel crew is empty at destruction time
 			// - we can't even use the flightglobal roster, because sometimes it isn't updated yet at this point
@@ -311,10 +337,10 @@ namespace KERBALISM
 				foreach (ProtoCrewMember c in Lib.CrewList(ov))
 					kerbals_alive.Add(c.name);
 			}
-			foreach (KeyValuePair<string, KerbalData> p in DB.Kerbals())
+			foreach (string key in DB.Kerbals().Keys)
 			{
-				if (!kerbals_alive.Contains(p.Key))
-					kerbals_dead.Add(p.Key);
+				if (!kerbals_alive.Contains(key))
+					kerbals_dead.Add(key);
 			}
 			foreach (string n in kerbals_dead)
 			{
@@ -322,65 +348,24 @@ namespace KERBALISM
 				DB.KillKerbal(n, false);
 			}
 
-
 			// purge the caches
-			ResourceCache.Purge(v);
-			Drive.Purge(v);
-			Cache.PurgeObjects(v);
+			ResourceCache.Purge(v);		// works with loaded and unloaded vessels
+			//Drive.Purge(v);				// works with loaded and unloaded vessels
+			Cache.PurgeVesselCaches(v); // works with loaded and unloaded vessels
 		}
 
 		void VesselDock(GameEvents.FromToAction<Part, Part> e)
 		{
-			var fromVessel = e.from.vessel;
-			DB.vessels.Remove(Lib.VesselID(fromVessel));
-
-			// note:
-			//  we do not forget vessel data here, it just became inactive
-			//  and ready to be implicitly activated again on undocking
-			//  we do however tweak the data of the vessel being docked a bit,
-			//  to avoid states getting out of sync, leading to unintuitive behaviours
-			VesselData vd = DB.Vessel(fromVessel);
-			vd.msg_belt = false;
-			vd.msg_signal = false;
-			vd.storm_age = 0.0;
-			vd.storm_time = 0.0;
-			vd.storm_state = 0;
-			vd.supplies.Clear();
-			vd.scansat_id.Clear();
-
-			Cache.PurgeObjects();
-		}
-
-		void PartDestroyed(Part p)
-		{
-			// do nothing in the editor
-			if (Lib.IsEditor())
-				return;
-
-			var vi = Cache.VesselInfo(p.vessel);
-			if (!vi.is_valid)
-				return;
-
-			Cache.PurgeObjects(p.vessel);
-
-			if(DB.drives.ContainsKey(p.flightID))
-			{
-				foreach(var pair in DB.drives[p.flightID].files)
-				{
-					if(pair.Value.buff > double.Epsilon)
-					{
-						Science.Credit(pair.Key, pair.Value.buff, true, p.vessel.protoVessel, true);
-					}
-				}
-			}
-			DB.drives.Remove(p.flightID);
+			Cache.PurgeVesselCaches(e.from.vessel);
+			// Update docked to vessel
+			this.OnVesselModified(e.to.vessel);
 		}
 
 		void AddEditorCategory()
 		{
 			if (PartLoader.LoadedPartsList.Find(k => k.tags.IndexOf("_kerbalism", StringComparison.Ordinal) >= 0) != null)
 			{
-				RUI.Icons.Selectable.Icon icon = new RUI.Icons.Selectable.Icon("Kerbalism", Icons.category_normal, Icons.category_selected);
+				RUI.Icons.Selectable.Icon icon = new RUI.Icons.Selectable.Icon("Kerbalism", Textures.category_normal, Textures.category_selected);
 				PartCategorizer.Category category = PartCategorizer.Instance.filters.Find(k => string.Equals(k.button.categoryName, "filter by function", StringComparison.OrdinalIgnoreCase));
 				PartCategorizer.AddCustomSubcategoryFilter(category, "Kerbalism", "Kerbalism", icon, k => k.tags.IndexOf("_kerbalism", StringComparison.Ordinal) >= 0);
 			}
@@ -395,6 +380,11 @@ namespace KERBALISM
 			HashSet<string> labels = new HashSet<string>();
 			foreach (AvailablePart p in PartLoader.LoadedPartsList)
 			{
+				// workaround for FindModulesImplementing nullrefs in 1.8 when called on the strange kerbalEVA_RD_Exp prefab
+				// due to the (private) cachedModuleLists being null on it
+				if (p.partPrefab.Modules.Count == 0)
+					continue;
+
 				foreach (Configure cfg in p.partPrefab.FindModulesImplementing<Configure>())
 				{
 					foreach (ConfigureSetup setup in cfg.Setups())

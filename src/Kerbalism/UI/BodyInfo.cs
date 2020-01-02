@@ -5,8 +5,6 @@ using UnityEngine;
 
 namespace KERBALISM
 {
-
-
 	public static class BodyInfo
 	{
 		public static void Body_info(this Panel p)
@@ -15,21 +13,22 @@ namespace KERBALISM
 			if (!MapView.MapIsEnabled) return;
 
 			// only show if there is a selected body and that body is not the sun
-			CelestialBody body = Lib.SelectedBody();
-			if (body == null || (body.flightGlobalsIndex == 0 && !Features.Radiation)) return;
+			CelestialBody body = Lib.MapViewSelectedBody();
+			if (body == null || (Lib.IsSun(body) && !Features.Radiation)) return;
 
-			// shortcut
-			CelestialBody sun = FlightGlobals.Bodies[0];
+			// calculate radiation at body surface
+			double surfaceRadiation = Radiation.ComputeSurface(body, Sim.GammaTransparency(body, 0.0));
 
-			// for all bodies except the sun
-			if (body != sun)
+			// for all bodies except sun(s)
+			if (!Lib.IsSun(body))
 			{
+				CelestialBody mainSun;
+				Vector3d sun_dir;
+				double sun_dist;
+				double solar_flux = Sim.SolarFluxAtBody(body, false, out mainSun, out sun_dir, out sun_dist);
+				solar_flux *= Sim.AtmosphereFactor(body, 0.7071);
+
 				// calculate simulation values
-				double atmo_factor = Sim.AtmosphereFactor(body, 0.7071);
-				double gamma_factor = Sim.GammaTransparency(body, 0.0);
-				double sun_dist = Sim.Apoapsis(Lib.PlanetarySystem(body)) - sun.Radius - body.Radius;
-				Vector3d sun_dir = (sun.position - body.position).normalized;
-				double solar_flux = Sim.SolarFlux(sun_dist) * atmo_factor;
 				double albedo_flux = Sim.AlbedoFlux(body, body.position + sun_dir * body.Radius);
 				double body_flux = Sim.BodyFlux(body, 0.0);
 				double total_flux = solar_flux + albedo_flux + body_flux + Sim.BackgroundFlux();
@@ -39,9 +38,6 @@ namespace KERBALISM
 				double total_flux_min = Sim.AlbedoFlux(body, body.position - sun_dir * body.Radius) + body_flux + Sim.BackgroundFlux();
 				double temperature_min = Sim.BlackBodyTemperature(total_flux_min);
 
-				// calculate radiation at body surface
-				double radiation = Radiation.ComputeSurface(body, gamma_factor);
-
 				// surface panel
 				string temperature_str = body.atmosphere
 				  ? Lib.HumanReadableTemp(temperature)
@@ -49,7 +45,7 @@ namespace KERBALISM
 				p.AddSection("SURFACE");
 				p.AddContent("temperature", temperature_str);
 				p.AddContent("solar flux", Lib.HumanReadableFlux(solar_flux));
-				if (Features.Radiation) p.AddContent("radiation", Lib.HumanReadableRadiation(radiation));
+				if (Features.Radiation) p.AddContent("radiation", Lib.HumanReadableRadiation(surfaceRadiation));
 
 				// atmosphere panel
 				if (body.atmosphere)
@@ -67,14 +63,32 @@ namespace KERBALISM
 				p.AddSection("RADIATION");
 
 				string inner, outer, pause;
-				RadiationLevels(body, out inner, out outer, out pause);
+				double activity, cycle;
+				RadiationLevels(body, out inner, out outer, out pause, out activity, out cycle);
 
-				p.AddContent(Lib.BuildString("inner belt: ", Lib.Color("#cccccc", inner)),
-					Radiation.show_inner ? "<color=green>show</color>" : "<color=red>hide</color>", string.Empty, () => p.Toggle(ref Radiation.show_inner));
-				p.AddContent(Lib.BuildString("outer belt: ", Lib.Color("#cccccc", outer)),
-					Radiation.show_outer ? "<color=green>show</color>" : "<color=red>hide</color>", string.Empty, () => p.Toggle(ref Radiation.show_outer));
-				p.AddContent(Lib.BuildString("magnetopause: ", Lib.Color("#cccccc", pause)),
-					Radiation.show_pause ? "<color=green>show</color>" : "<color=red>hide</color>", string.Empty, () => p.Toggle(ref Radiation.show_pause));
+				if (Storm.sun_observation_quality > 0.5 && activity > -1)
+				{
+					string title = "solar activity";
+
+					if(Storm.sun_observation_quality > 0.7)
+					{
+						title = Lib.BuildString(title, ": ", Lib.Color(Lib.HumanReadableDuration(cycle) + " cycle", Lib.Kolor.LightGrey));
+					}
+
+					p.AddContent(title, Lib.HumanReadablePerc(activity));
+				}
+
+				if (Storm.sun_observation_quality > 0.8)
+				{
+					p.AddContent("radiation on surface:", Lib.HumanReadableRadiation(surfaceRadiation));
+				}
+
+				p.AddContent(Lib.BuildString("inner belt: ", Lib.Color(inner, Lib.Kolor.LightGrey)),
+					Radiation.show_inner ? Lib.Color("show", Lib.Kolor.Green) : Lib.Color("hide", Lib.Kolor.Red), string.Empty, () => p.Toggle(ref Radiation.show_inner));
+				p.AddContent(Lib.BuildString("outer belt: ", Lib.Color(outer, Lib.Kolor.LightGrey)),
+					Radiation.show_outer ? Lib.Color("show", Lib.Kolor.Green) : Lib.Color("hide", Lib.Kolor.Red), string.Empty, () => p.Toggle(ref Radiation.show_outer));
+				p.AddContent(Lib.BuildString("magnetopause: ", Lib.Color(pause, Lib.Kolor.LightGrey)),
+					Radiation.show_pause ? Lib.Color("show", Lib.Kolor.Green) : Lib.Color("hide", Lib.Kolor.Red), string.Empty, () => p.Toggle(ref Radiation.show_pause));
 			}
 
 			// explain the user how to toggle the BodyInfo window
@@ -82,33 +96,36 @@ namespace KERBALISM
 			p.AddContent("<i>Press <b>B</b> to open this window again</i>");
 
 			// set metadata
-			p.Title(Lib.BuildString(Lib.Ellipsis(body.bodyName, Styles.ScaleStringLength(24)), " <color=#cccccc>BODY INFO</color>"));
+			p.Title(Lib.BuildString(Lib.Ellipsis(body.bodyName, Styles.ScaleStringLength(24)), " ", Lib.Color("BODY INFO", Lib.Kolor.LightGrey)));
 		}
 
-		private static void RadiationLevels(CelestialBody body, out string inner, out string outer, out string pause)
+		private static void RadiationLevels(CelestialBody body, out string inner, out string outer, out string pause, out double activity, out double cycle)
 		{
-			// TODO cache this information in RadiationBody
-
-			double rad = PreferencesStorm.Instance.externRadiation;
-			var rbSun = Radiation.Info(FlightGlobals.Bodies[0]);
-			rad += rbSun.radiation_pause;
+			// TODO cache this information somewhere
 
 			var rb = Radiation.Info(body);
+			double rad = Settings.ExternRadiation / 3600.0;
+			var rbSun = Radiation.Info(Lib.GetParentSun(body));
+			rad += rbSun.radiation_pause;
 
 			if (rb.inner_visible)
-				inner = rb.model.has_inner ? "~" + Lib.HumanReadableRadiation(Math.Max(0, rad + rb.radiation_inner) / 3600.0) : "n/a";
+				inner = rb.model.has_inner ? "~" + Lib.HumanReadableRadiation(Math.Max(0, rad + rb.radiation_inner)) : "n/a";
 			else
 				inner = "unknown";
 
 			if (rb.outer_visible)
-				outer = rb.model.has_outer ? "~" + Lib.HumanReadableRadiation(Math.Max(0, rad + rb.radiation_outer) / 3600.0) : "n/a";
+				outer = rb.model.has_outer ? "~" + Lib.HumanReadableRadiation(Math.Max(0, rad + rb.radiation_outer)) : "n/a";
 			else
 				outer = "unknown";
 
 			if (rb.pause_visible)
-				pause = rb.model.has_pause ? "~" + Lib.HumanReadableRadiation(Math.Max(0, rad + rb.radiation_pause) / 3600.0) : "n/a";
+				pause = rb.model.has_pause ? "∆" + Lib.HumanReadableRadiation(Math.Abs(rb.radiation_pause)) : "n/a";
 			else
 				pause = "unknown";
+
+			activity = -1;
+			cycle = rb.solar_cycle;
+			if(cycle > 0) activity = rb.SolarActivity();
 		}
 	}
 

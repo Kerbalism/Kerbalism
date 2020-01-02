@@ -46,11 +46,14 @@ namespace KERBALISM
 				// calculate signed distance
 				D = dist_func(p);
 
-				// if inside
-				if (D <= 0.0f && D > -thickness)
+				if (D <= 0.0f) // if inside
 				{
-					points.Add(p);
-					++i;
+					// this displays the exact radiation field border
+					if(D <= 0.0 && D > - thickness)
+					{
+						points.Add(p);
+						++i;
+					}
 				}
 
 				// count samples

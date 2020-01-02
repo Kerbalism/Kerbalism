@@ -25,7 +25,7 @@ namespace KERBALISM
 		public bool isConsuming;                            // Module is consuming energy
 		public bool hasEnergyChanged;                       // Energy state has changed since last update?
 		public bool hasFixedEnergyChanged;                  // Energy state has changed since last fixed update?
-		public Resource_info resources;
+		public ResourceInfo resources;
 
 		public PartModule module;                           // component cache, the Reliability.cs is one to many, instead the Deploy will be one to one
 		public KeyValuePair<bool, double> modReturn;        // Return from DeviceEC
@@ -39,8 +39,8 @@ namespace KERBALISM
 			module = part.FindModulesImplementing<PartModule>().FindLast(k => k.moduleName == type);
 
 			// get energy from cache
-			resources = ResourceCache.Info(vessel, "ElectricCharge");
-			hasEnergy = resources.amount > double.Epsilon;
+			resources = ResourceCache.GetResource(vessel, "ElectricCharge");
+			hasEnergy = resources.Amount > double.Epsilon;
 
 			// Force the update to run at least once
 			lastBrokenState = !isBroken;
@@ -59,8 +59,8 @@ namespace KERBALISM
 			if (!Lib.IsFlight() || module == null) return;
 
 			// get energy from cache
-			resources = ResourceCache.Info(vessel, "ElectricCharge");
-			hasEnergy = resources.amount > double.Epsilon;
+			resources = ResourceCache.GetResource(vessel, "ElectricCharge");
+			hasEnergy = resources.Amount > double.Epsilon;
 
 			// Update UI only if hasEnergy has changed or if is broken state has changed
 			if (isBroken)
@@ -73,7 +73,7 @@ namespace KERBALISM
 			}
 			else if (hasEnergyChanged != hasEnergy)
 			{
-				Lib.DebugLog("Energy state has changed: {0}", hasEnergy);
+				Lib.LogDebugStack("Energy state has changed: {0}", hasEnergy);
 
 				hasEnergyChanged = hasEnergy;
 				lastBrokenState = false;
@@ -176,6 +176,8 @@ namespace KERBALISM
 		// Some modules need to constantly update the UI 
 		public virtual void Constant_OnGUI(bool isEnabled)
 		{
+			// wtf?
+			/*
 			try
 			{
 			}
@@ -183,18 +185,19 @@ namespace KERBALISM
 			{
 				Lib.Log("'" + part.partInfo.title + "' : " + e.Message);
 			}
+			*/
 		}
 
 		public void ToggleActions(PartModule partModule, bool value)
 		{
-			Lib.DebugLog("Part '{0}'.'{1}', setting actions to {2}", partModule.part.partInfo.title, partModule.moduleName, value ? "ON" : "OFF");
+			//Lib.LogDebugStack("Part '{0}'.'{1}', setting actions to {2}", partModule.part.partInfo.title, partModule.moduleName, value ? "ON" : "OFF");
 			foreach (BaseAction ac in partModule.Actions)
 			{
 				ac.active = value;
 			}
 		}
 
-		public static void BackgroundUpdate(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, Deploy deploy, Resource_info ec, double elapsed_s)
+		public static void BackgroundUpdate(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, Deploy deploy, ResourceInfo ec, double elapsed_s)
 		{
 			if (deploy.isConsuming) ec.Consume(deploy.extra_Cost * elapsed_s, "deploy");
 		}

@@ -74,37 +74,37 @@ namespace KERBALISM
 			dump = new DumpSpecs(Lib.ConfigValue(node, "dump", "false"), Lib.ConfigValue(node, "dump_valve", "false"));
 		}
 
-		private void ExecuteRecipe(double k, Vessel_resources resources,  double elapsed_s, Resource_recipe recipe)
+		private void ExecuteRecipe(double k, VesselResources resources,  double elapsed_s, ResourceRecipe recipe)
 		{
 			// only execute processes if necessary
 			if (Math.Abs(k) < double.Epsilon) return;
 
 			foreach (var p in inputs)
 			{
-				recipe.Input(p.Key, p.Value * k * elapsed_s);
+				recipe.AddInput(p.Key, p.Value * k * elapsed_s);
 			}
 			foreach (var p in outputs)
 			{
-				recipe.Output(p.Key, p.Value * k * elapsed_s, dump.Check(p.Key));
+				recipe.AddOutput(p.Key, p.Value * k * elapsed_s, dump.Check(p.Key));
 			}
 			foreach (var p in cures)
 			{
 				// TODO this assumes that the cure modifies always put the resource first
 				// works: modifier = _SickbayRDU,zerog works
 				// fails: modifier = zerog,_SickbayRDU
-				recipe.Cure(p.Key, p.Value * k * elapsed_s, modifiers[0]);
+				recipe.AddCure(p.Key, p.Value * k * elapsed_s, modifiers[0]);
 			}
-			resources.Transform(recipe);
+			resources.AddRecipe(recipe);
 		}
 
-		public void Execute(Vessel v, Vessel_info vi, Vessel_resources resources, double elapsed_s)
+		public void Execute(Vessel v, VesselData vd, VesselResources resources, double elapsed_s)
 		{
 			// evaluate modifiers
 			// if a given PartModule has a larger than 1 capacity for a process, then the multiplication happens here
 			// remember that when a process is enabled the units of process are stored in the PartModule as a pseudo-resource
-			double k = Modifiers.Evaluate(v, vi, resources, modifiers);
+			double k = Modifiers.Evaluate(v, vd, resources, modifiers);
 
-			Resource_recipe recipe = new Resource_recipe((Part)null, name);
+			ResourceRecipe recipe = new ResourceRecipe(name);
 			ExecuteRecipe(k, resources, elapsed_s, recipe);
 		}
 

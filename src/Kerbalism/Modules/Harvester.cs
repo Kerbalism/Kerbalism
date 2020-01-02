@@ -19,7 +19,7 @@ namespace KERBALISM
 		[KSPField] public double abundance_rate = 0.1;            // abundance level at which rate is specified (10% by default)
 		[KSPField] public double ec_rate = 0.0;                   // rate of ec consumption per-second, irregardless of abundance
 		[KSPField] public string drill = string.Empty;            // the drill head transform
-		[KSPField] public double length = 5.0;                    // tolerable distance between drill head and the ground (length of the extendible part)
+		[KSPField] public float length = 5f;                    // tolerable distance between drill head and the ground (length of the extendible part)
 
 		// persistence
 		[KSPField(isPersistant = true)] public bool deployed;     // true if the harvester is deployed
@@ -97,10 +97,10 @@ namespace KERBALISM
 				crew_gain = Lib.Clamp(crew_gain, 1, Settings.MaxHarvesterBonus);
 				rate *= crew_gain;
 
-				Resource_recipe recipe = new Resource_recipe(harvester.part, "harvester");
-				recipe.Input("ElectricCharge", harvester.ec_rate * elapsed_s);
-				recipe.Output(harvester.resource, harvester.rate * (abundance/harvester.abundance_rate) * elapsed_s, false);
-				ResourceCache.Transform(v, recipe);
+				ResourceRecipe recipe = new ResourceRecipe("harvester");
+				recipe.AddInput("ElectricCharge", harvester.ec_rate * elapsed_s);
+				recipe.AddOutput(harvester.resource, harvester.rate * (abundance/harvester.abundance_rate) * elapsed_s, false);
+				ResourceCache.AddRecipe(v, recipe);
 			}
 		}
 
@@ -204,10 +204,8 @@ namespace KERBALISM
 			// if there is no drill transform specified, or if the specified one doesn't exist, assume ground contact
 			if (drill_head == null) return true;
 
-			// get distance from drill head to terrain
-			// - the drill head transform of stock parts doesn't refer to the drill head (of course),
-			//   but to the start of the extendible portion of the drill
-			return Lib.TerrainHeight(vessel.mainBody, drill_head.position) < length;
+			// Replicating ModuleResourceHarvester.CheckForImpact()
+			return Physics.Raycast(drill_head.position, drill_head.forward, length, 32768);
 		}
 
 		// action groups

@@ -1,16 +1,45 @@
 ﻿using System;
-
+using UnityEngine;
+using System.Collections.Generic;
 
 namespace KERBALISM
 {
-
-
 	public static class Sim
 	{
-		// --------------------------------------------------------------------------
-		// GENERAL
-		// --------------------------------------------------------------------------
+		#region pseudo-ctor
+		public static void Init()
+		{
+			Sim.SolarFluxAtHome = 0.0;
+			// Search for "LightShifter" components, added by Kopernicus to bodies that are stars
+			foreach (CelestialBody body in FlightGlobals.Bodies)
+			{
+				foreach (var c in body.scaledBody.GetComponentsInChildren<MonoBehaviour>(true))
+				{
+					if (c.GetType().ToString().Contains("LightShifter"))
+					{
+						double starFluxAtHome = Lib.ReflectionValue<double>(c, "solarLuminosity");
+						suns.Add(new SunData(body.flightGlobalsIndex, starFluxAtHome));
+						if (starFluxAtHome > 1.0) Sim.SolarFluxAtHome += starFluxAtHome;
+					}
+				}
+			}
 
+			// if nothing was found, assume the sun is the stock default
+			if (suns.Count == 0)
+			{
+				suns.Add(new SunData(0, PhysicsGlobals.SolarLuminosityAtHome));
+				Sim.SolarFluxAtHome = PhysicsGlobals.SolarLuminosityAtHome;
+			}
+
+			// calculate each sun total flux (must be done after the "suns" list is populated
+			foreach (SunData sd in suns) sd.InitSolarFluxTotal();
+
+			// get scaled space planetary layer for physic raytracing
+			planetaryLayerMask = 1 << LayerMask.NameToLayer("Scaled Scenery");
+		}
+		#endregion
+
+		#region GENERAL
 		// return period of an orbit at specified altitude over a body
 		public static double OrbitalPeriod(CelestialBody body, double altitude)
 		{
@@ -74,14 +103,22 @@ namespace KERBALISM
 		// return apoapsis of a body orbit
 		public static double Apoapsis(CelestialBody body)
 		{
-			return (1.0 + body.orbit.eccentricity) * body.orbit.semiMajorAxis;
+			if (body != null && body.orbit != null)
+			{
+				return (1.0 + body.orbit.eccentricity) * body.orbit.semiMajorAxis;
+			}
+			return 0;
 		}
 
 
 		// return periapsis of a body orbit
 		public static double Periapsis(CelestialBody body)
 		{
-			return (1.0 - body.orbit.eccentricity) * body.orbit.semiMajorAxis;
+			if (body != null && body.orbit != null)
+			{
+				return (1.0 - body.orbit.eccentricity) * body.orbit.semiMajorAxis;
+			}
+			return 0;
 		}
 
 
@@ -100,110 +137,202 @@ namespace KERBALISM
 			return (1.0 - v.orbit.eccentricity) * v.orbit.semiMajorAxis;
 		}
 
+		#endregion
 
-		// get distance from the sun
-		public static double SunDistance(Vector3d pos)
+		#region RAYTRACING
+		/// <summary>Scaled space planetary layer for physic raytracing</summary>
+		private static int planetaryLayerMask = int.MaxValue;
+
+		/// <summary>Return true if there is no CelestialBody between the vessel position and the 'end' point. Beware that this uses a (very slow) physic raycast.</summary>
+		/// <param name="endNegOffset">distance from which the ray will stop before hitting the 'end' point, put the body radius here if the end point is a CB</param>
+		public static bool RaytracePhysic(Vessel vessel, Vector3d vesselPos, Vector3d end, double endNegOffset = 0.0)
 		{
-			CelestialBody sun = FlightGlobals.Bodies[0];
-			return Vector3d.Distance(pos, sun.position) - sun.Radius;
+			// for unloaded vessels, position in scaledSpace is 1 fixedUpdate frame desynchronized :
+			if (!vessel.loaded)
+				vesselPos += vessel.mainBody.position - vessel.mainBody.getTruePositionAtUT(Planetarium.GetUniversalTime() + TimeWarp.fixedDeltaTime);
+
+			// convert vessel position to scaled space
+			ScaledSpace.LocalToScaledSpace(ref vesselPos);
+			ScaledSpace.LocalToScaledSpace(ref end);
+			Vector3d dir = end - vesselPos;
+			if (endNegOffset > 0) dir -= dir.normalized * (endNegOffset * ScaledSpace.InverseScaleFactor);
+
+			return !Physics.Raycast(vesselPos, dir, (float)dir.magnitude, planetaryLayerMask);
 		}
 
-
-		// --------------------------------------------------------------------------
-		// RAYTRACING
-		// --------------------------------------------------------------------------
-
-		// return true if the ray 'dir' starting at 'p' and of length 'dist' doesn't hit 'body'
-		// - p: ray origin
-		// - dir: ray direction
-		// - dist: ray length
-		// - body: obstacle
-		public static bool Raytrace(Vector3d p, Vector3d dir, double dist, CelestialBody body)
+		/// <summary> return true if the ray 'dir' starting at 'start' and of length 'dist' doesn't hit 'body'</summary>
+		/// <param name="start">ray origin</param>
+		/// <param name="dir">ray direction</param>
+		/// <param name="dist">ray length</param>
+		/// <param name="body">obstacle to check against</param>
+		public static bool RayAvoidBody(Vector3d start, Vector3d dir, double dist, CelestialBody body)
 		{
 			// ray from origin to body center
-			Vector3d diff = body.position - p;
+			Vector3d diff = body.position - start;
 
 			// projection of origin->body center ray over the raytracing direction
 			double k = Vector3d.Dot(diff, dir);
 
 			// the ray doesn't hit body if its minimal analytical distance along the ray is less than its radius
-			// simplified from 'p + dir * k - body.position'
+			// simplified from 'start + dir * k - body.position'
 			return k < 0.0 || k > dist || (dir * k - diff).magnitude > body.Radius;
 		}
 
-
-		// return true if the body is visible from the vessel
-		// - vessel: origin
-		// - body: target
-		// - dir: will contain normalized vector from vessel to body
-		// - dist: will contain distance from vessel to body surface
-		// - return: true if visible, false otherwise
-		public static bool RaytraceBody(Vessel vessel, Vector3d vessel_pos, CelestialBody body, out Vector3d dir, out double dist)
+		/// <summary>return true if 'body' is visible from 'vesselPos'. Very fast method.</summary>
+		/// <param name="occludingBodies">the bodies that will be checked for occlusion</param>
+		/// <param name="bodyDir">normalized vector from vessel to body</param>
+		/// <param name="bodyDist">distance from vessel to body surface</param>
+		/// <returns></returns>
+		public static bool IsBodyVisible(Vessel vessel, Vector3d vesselPos, CelestialBody body, List<CelestialBody> occludingBodies, out Vector3d bodyDir, out double bodyDist)
 		{
-			// shortcuts
-			CelestialBody mainbody = vessel.mainBody;
-			CelestialBody refbody = mainbody.referenceBody;
-
 			// generate ray parameters
-			dir = body.position - vessel_pos;
-			dist = dir.magnitude;
-			dir /= dist;
-			dist -= body.Radius;
+			bodyDir = body.position - vesselPos;
+			bodyDist = bodyDir.magnitude;
+			bodyDir /= bodyDist;
+			bodyDist -= body.Radius;
 
-			// raytrace
-			return (body == mainbody || Raytrace(vessel_pos, dir, dist, mainbody))
-				&& (body == refbody || refbody == null || Raytrace(vessel_pos, dir, dist, refbody));
+			// for very small bodies the analytic method is very unreliable at high latitudes
+			// we use a physic raycast (a lot slower)
+			if (Lib.Landed(vessel) && vessel.mainBody.Radius < 100000.0 && (vessel.latitude < -45.0 || vessel.latitude > 45.0))
+				return RaytracePhysic(vessel, vesselPos, body.position, body.Radius);
+
+			// check if the ray intersect one of the provided bodies
+			foreach (CelestialBody occludingBody in occludingBodies)
+			{
+				if (occludingBody == body) continue;
+				if (!RayAvoidBody(vesselPos, bodyDir, bodyDist, occludingBody)) return false;
+			}
+			
+			return true;
 		}
 
-		//only use this for signal calculations
-		public static bool RaytracePos(Vessel vessel, Vector3d vessel_pos, Vector3d target, out Vector3d dir, out double dist)
+		/// <summary>return the list of bodies whose apparent diameter is greater than 10 arcmin from the 'position' POV</summary>
+		public static List<CelestialBody> GetLargeBodies(Vector3d position)
 		{
-			CelestialBody mainbody_v = vessel.mainBody;
-			CelestialBody mainbody_p = FlightGlobals.GetHomeBody();
-			CelestialBody refbody_v = mainbody_v.referenceBody;
-			CelestialBody refbody_p = mainbody_p.referenceBody;
-
-			dir = target - vessel_pos;
-			dist = dir.magnitude;
-			dir /= dist;
-
-			return Raytrace(vessel_pos, dir, dist, mainbody_v)
-				&& Raytrace(vessel_pos, dir, dist, mainbody_p)
-				&& (refbody_v == null || Raytrace(vessel_pos, dir, dist, refbody_v))
-				&& (refbody_p == null || Raytrace(vessel_pos, dir, dist, refbody_p));
+			List <CelestialBody> visibleBodies = new List<CelestialBody>();
+			foreach (CelestialBody occludingBody in FlightGlobals.Bodies)
+			{
+				// if apparent diameter > ~10 arcmin (~0.003 radians), consider the body for occlusion checks
+				// real apparent diameters at earth : sun/moon ~ 30 arcmin, Venus ~ 1 arcmin max
+				double apparentSize = (occludingBody.Radius * 2.0) / (occludingBody.position - position).magnitude;
+				if (apparentSize > 0.003) visibleBodies.Add(occludingBody);
+			}
+			return visibleBodies;
 		}
+		#endregion
 
+		#region SUN/STARS
+		/// <summary>
+		/// Solar luminosity from all stars/suns at the home body, in W/m².
+		/// Use this instead of PhysicsGlobals.SolarLuminosityAtHome
+		/// </summary>
+		public static double SolarFluxAtHome { get; private set; }
 
-		// return true if a vessel is visible from another one
-		// - a: origin
-		// - b: target
-		// - dir: will contain normalized vector from a to b
-		// - dist: will contain distance between a and b
-		// - return: true if visible, false otherwise
-		public static bool RaytraceVessel(Vessel a, Vessel b, Vector3d pos_a, Vector3d pos_b, out Vector3d dir, out double dist)
+		/// <summary>List of all suns/stars, with reference to their CB and their (total) luminosity</summary>
+		public static readonly List<SunData> suns = new List<SunData>();
+		public class SunData
 		{
-			// shortcuts
-			CelestialBody mainbody_a = a.mainBody;
-			CelestialBody mainbody_b = b.mainBody;
-			CelestialBody refbody_a = mainbody_a.referenceBody;
-			CelestialBody refbody_b = mainbody_b.referenceBody;
+			public CelestialBody body;
+			public int bodyIndex;
+			private double solarFluxAtAU;
+			private double solarFluxTotal;
 
-			// generate ray parameters
-			dir = pos_b - pos_a;
-			dist = dir.magnitude;
-			dir /= dist;
+			public SunData(int bodyIndex, double solarFluxAtAU)
+			{
+				body = FlightGlobals.Bodies[bodyIndex];
+				this.bodyIndex = bodyIndex;
+				this.solarFluxAtAU = solarFluxAtAU;
+			}
 
-			// raytrace
-			return Raytrace(pos_a, dir, dist, mainbody_a)
-				&& Raytrace(pos_a, dir, dist, mainbody_b)
-				&& (refbody_a == null || Raytrace(pos_a, dir, dist, refbody_a))
-				&& (refbody_b == null || Raytrace(pos_a, dir, dist, refbody_b));
+			// This must be called after "suns" SunData list is populated (because it use AU > Lib.IsSun)
+			public void InitSolarFluxTotal()
+			{
+				this.solarFluxTotal = solarFluxAtAU * AU * AU * Math.PI * 4.0;
+			}
+
+			/// <summary>Luminosity in W/m² at the given distance from this sun/star</summary>
+			/// <param name="fromSunSurface">true if the 'distance' is from the sun surface</param>
+			public double SolarFlux(double distance, bool fromSunSurface = true)
+			{
+				// note: for consistency we always consider distances to bodies to be relative to the surface
+				// however, flux, luminosity and irradiance consider distance to the sun center, and not surface
+				if (fromSunSurface) distance += body.Radius;
+
+				// calculate solar flux
+				return solarFluxTotal / (Math.PI * 4 * distance * distance);
+			}
 		}
 
-		// --------------------------------------------------------------------------
-		// TEMPERATURE
-		// --------------------------------------------------------------------------
+		static double au = 0.0;
+		/// <summary> Distance between the home body and its main sun</summary>
+		public static double AU
+		{
+			get
+			{
+				if (au == 0.0)
+				{
+					CelestialBody home = FlightGlobals.GetHomeBody();
+					au = (home.position - Lib.GetParentSun(home).position).magnitude;
+				}
+				return au;
+			}
+		}
 
+		// get distance from the sun
+		public static double SunDistance(Vector3d pos, CelestialBody sun)
+		{
+			return Vector3d.Distance(pos, sun.position) - sun.Radius;
+		}
+
+		/// <summary>Estimated solar flux from the first parent sun of the given body, including other neighbouring stars/suns (binary systems handling)</summary>
+		/// <param name="body"></param>
+		/// <param name="worstCase">if true, we use the largest distance between the body and the sun</param>
+		/// <param name="mainSun"></param>
+		/// <param name="mainSunDirection"></param>
+		/// <param name="mainSunDistance"></param>
+		/// <returns></returns>
+		public static double SolarFluxAtBody(CelestialBody body, bool worstCase, out CelestialBody mainSun, out Vector3d mainSunDirection, out double mainSunDistance)
+		{
+			// get first parent sun
+			mainSun = Lib.GetParentSun(body);
+
+			// get direction and distance
+			mainSunDirection = (mainSun.position - body.position).normalized;
+			if (worstCase)
+				mainSunDistance = Sim.Apoapsis(Lib.GetParentPlanet(body)) - mainSun.Radius - body.Radius;
+			else
+				mainSunDistance = Sim.SunDistance(body.position, mainSun);
+
+			// get solar flux
+			int mainSunIndex = mainSun.flightGlobalsIndex;
+			Sim.SunData mainSunData = Sim.suns.Find(pr => pr.bodyIndex == mainSunIndex);
+			double solarFlux = mainSunData.SolarFlux(mainSunDistance);
+			// multiple suns handling (binary systems...)
+			foreach (Sim.SunData otherSun in Sim.suns)
+			{
+				if (otherSun.body == mainSun) continue;
+				Vector3d otherSunDir = (otherSun.body.position - body.position).normalized;
+				double otherSunDist;
+				if (worstCase)
+					otherSunDist = Sim.Apoapsis(Lib.GetParentPlanet(body)) - otherSun.body.Radius;
+				else
+					otherSunDist = Sim.SunDistance(body.position, otherSun.body);
+				// account only for other suns that have approximatively the same direction (+/- 30°), discard the others
+				if (Vector3d.Angle(otherSunDir, mainSunDirection) > 30.0) continue;
+				solarFlux += otherSun.SolarFlux(otherSunDist);
+			}
+			return solarFlux;
+		}
+
+		public static double SunBodyAngle(Vessel vessel, Vector3d vesselPos, CelestialBody sun)
+		{
+			// orbit around sun?
+			if (vessel.mainBody == sun) return 0.0;
+			return Vector3d.Angle(vessel.mainBody.position - vesselPos, vessel.mainBody.position - sun.position);
+		}
+		#endregion
+
+		#region TEMPERATURE
 		// calculate temperature in K from irradiance in W/m2, as per Stefan-Boltzmann equation
 		public static double BlackBodyTemperature(double flux)
 		{
@@ -213,7 +342,7 @@ namespace KERBALISM
 		// calculate irradiance in W/m2 from solar flux reflected on a celestial body in direction of the vessel
 		public static double AlbedoFlux(CelestialBody body, Vector3d pos)
 		{
-			CelestialBody sun = FlightGlobals.Bodies[0];
+			CelestialBody sun = Lib.GetParentSun(body);
 			Vector3d sun_dir = sun.position - body.position;
 			double sun_dist = sun_dir.magnitude;
 			sun_dir /= sun_dist;
@@ -227,16 +356,16 @@ namespace KERBALISM
 			// used to scale with distance
 			double d = Math.Min((body.Radius + body.atmosphereDepth) / (body.Radius + body_dist), 1.0);
 
-			return SolarFlux(sun_dist)                            // solar radiation
-			  * body.albedo                                       // reflected
-			  * Math.Max(0.0, Vector3d.Dot(sun_dir, body_dir))    // clamped cosine
-			  * d * d;                                            // scale with distance
+			return suns.Find(p => p.body == sun).SolarFlux(sun_dist)	// solar radiation
+			  * body.albedo												// reflected
+			  * Math.Max(0.0, Vector3d.Dot(sun_dir, body_dir))			// clamped cosine
+			  * d * d;													// scale with distance
 		}
 
 		// return irradiance from the surface of a body in W/m2
 		public static double BodyFlux(CelestialBody body, double altitude)
 		{
-			CelestialBody sun = FlightGlobals.Bodies[0];
+			CelestialBody sun = Lib.GetParentSun(body);
 			Vector3d sun_dir = sun.position - body.position;
 			double sun_dist = sun_dir.magnitude;
 			sun_dir /= sun_dist;
@@ -305,7 +434,7 @@ namespace KERBALISM
 			  * SurfaceGravity(body);
 
 			// solar flux striking the body
-			double solar_flux = SolarFlux(sun_dist);
+			double solar_flux = suns.Find(p => p.body == sun).SolarFlux(sun_dist);
 
 			// duration of lit and unlit periods
 			double half_day = body.solarDayLength * 0.5;
@@ -345,19 +474,16 @@ namespace KERBALISM
 		}
 
 		// return temperature of a vessel
-		public static double Temperature(Vessel v, Vector3d position, double sunlight, double atmo_factor, out double solar_flux, out double albedo_flux, out double body_flux, out double total_flux)
+		public static double Temperature(Vessel v, Vector3d position, double solar_flux, out double albedo_flux, out double body_flux, out double total_flux)
 		{
 			// get vessel body
 			CelestialBody body = v.mainBody;
 
-			// get solar radiation
-			solar_flux = SolarFlux(SunDistance(position)) * sunlight * atmo_factor;
-
 			// get albedo radiation
-			albedo_flux = body.flightGlobalsIndex == 0 ? 0.0 : AlbedoFlux(body, position);
+			albedo_flux = Lib.IsSun(body) ? 0.0 : AlbedoFlux(body, position);
 
 			// get cooling radiation from the body
-			body_flux = body.flightGlobalsIndex == 0 ? 0.0 : BodyFlux(body, v.altitude);
+			body_flux = Lib.IsSun(body) ? 0.0 : BodyFlux(body, v.altitude);
 
 			// calculate total flux
 			total_flux = solar_flux + albedo_flux + body_flux + BackgroundFlux();
@@ -379,50 +505,16 @@ namespace KERBALISM
 			return temp;
 		}
 
-		// return sun luminosity
-		public static double SolarLuminosity()
-		{
-			// return solar luminosity
-			// note: it is 0 before loading first vessel in a game session, we compute it in that case
-			if (PhysicsGlobals.SolarLuminosity <= double.Epsilon)
-			{
-				double A = Lib.PlanetarySystem(FlightGlobals.GetHomeBody()).orbit.semiMajorAxis;
-				return A * A * 12.566370614359172 * PhysicsGlobals.SolarLuminosityAtHome;
-			}
-			return PhysicsGlobals.SolarLuminosity;
-		}
-
-		// return energy flux from the sun
-		// - distance from the sun surface
-		public static double SolarFlux(double dist)
-		{
-			// note: for consistency we always consider distances to bodies to be relative to the surface
-			// however, flux, luminosity and irradiance consider distance to the sun center, and not surface
-			dist += FlightGlobals.Bodies[0].Radius;
-
-			// calculate solar flux
-			return SolarLuminosity() / (12.566370614359172 * dist * dist);
-		}
-
-		// return solar flux at home
-		public static double SolarFluxAtHome()
-		{
-			return PhysicsGlobals.SolarLuminosityAtHome;
-		}
-
 		// return difference from survival temperature
 		// - as a special case, there is no temp difference when landed on the home body
 		public static double TempDiff(double k, CelestialBody body, bool landed)
 		{
 			if (body.flightGlobalsIndex == FlightGlobals.GetHomeBodyIndex() && landed) return 0.0;
-			return Math.Max(Math.Abs(k - PreferencesLifeSupport.Instance.survivalTemperature) - PreferencesLifeSupport.Instance.survivalRange, 0.0);
+			return Math.Max(Math.Abs(k - Settings.LifeSupportSurvivalTemperature) - Settings.LifeSupportSurvivalRange, 0.0);
 		}
+		#endregion
 
-
-		// --------------------------------------------------------------------------
-		// ATMOSPHERE
-		// --------------------------------------------------------------------------
-
+		#region ATMOSPHERE
 		// return proportion of flux not blocked by atmosphere
 		// - position: sampling point
 		// - sun_dir: normalized vector from sampling point to the sun
@@ -468,6 +560,57 @@ namespace KERBALISM
 				double q = Ra * cos_a;
 				double path = Math.Sqrt(q * q + 2.0 * Ra * Ya + Ya * Ya) - q;
 				return body.GetSolarPowerFactor(density) * Ya / path;
+			}
+			return 1.0;
+		}
+
+		// determine average atmospheric absorption factor over the daylight period (not the whole day)
+		// - by doing an average of values at midday, sunrise and an intermediate value
+		// - using the current sun direction at the given position to approximate
+		//   the influence of high latitudes and of the inclinaison of the body orbit
+		public static double AtmosphereFactorAnalytic(CelestialBody body, Vector3d position, Vector3d sun_dir)
+		{
+			// only for atmospheric bodies whose rotation period is less than 120 hours
+			if (body.rotationPeriod > 432000.0)
+				return AtmosphereFactor(body, position, sun_dir);
+
+			// get up vector & altitude
+			Vector3d radialOut = position - body.position;
+			double altitude = radialOut.magnitude;
+			radialOut /= altitude; // normalize
+			altitude -= body.Radius;
+			altitude = Math.Abs(altitude); //< deal with underwater & fp precision issues
+
+			double static_pressure = body.GetPressure(altitude);
+			if (static_pressure > 0.0)
+			{
+				Vector3d[] sunDirs = new Vector3d[3];
+
+				// east - sunrise
+				sunDirs[0] = body.getRFrmVel﻿(position).normalized;
+				// perpendicular vector
+				Vector3d sunUp = Vector3d.Cross(sunDirs[0], sun_dir).normalized;
+				// midday vector (along the radial plane + an angle depending on the original vesselSundir)
+				sunDirs[1] = Vector3d.Cross(sunUp, sunDirs[0]).normalized;
+				// invert midday vector if it's pointing toward the ground (checking against radial-out vector)
+				if (Vector3d.Dot(sunDirs[1], radialOut) < 0.0) sunDirs[1] *= -1.0;
+				// get an intermediate vector between sunrise and midday
+				sunDirs[2] = (sunDirs[0] + sunDirs[1]).normalized;
+
+				double density = body.GetDensity(static_pressure, body.GetTemperature(altitude));
+
+				// nonrefracting radially symmetrical atmosphere model [Schoenberg 1929]
+				double Ra = body.Radius + altitude;
+				double Ya = body.atmosphereDepth - altitude;
+				double atmo_factor_analytic = 0.0;
+				for (int i = 0; i < 3; i++)
+				{
+					double q = Ra * Math.Max(0.0, Vector3d.Dot(radialOut, sunDirs[i]));
+					double path = Math.Sqrt(q * q + 2.0 * Ra * Ya + Ya * Ya) - q;
+					atmo_factor_analytic += body.GetSolarPowerFactor(density) * Ya / path;
+				}
+				atmo_factor_analytic /= 3.0;
+				return atmo_factor_analytic;
 			}
 			return 1.0;
 		}
@@ -556,20 +699,16 @@ namespace KERBALISM
 			var body = v.mainBody;
 			return body.atmosphere && v.altitude > body.atmosphereDepth * 5.0 && v.altitude <= body.atmosphereDepth * 25.0;
 		}
+		#endregion
 
-
-		// --------------------------------------------------------------------------
-		// GRAVIOLI
-		// --------------------------------------------------------------------------
-
+		#region GRAVIOLI
 		public static double Graviolis(Vessel v)
 		{
-			double dist = Vector3d.Distance(v.GetWorldPos3D(), FlightGlobals.Bodies[0].position);
+			double dist = Vector3d.Distance(v.GetWorldPos3D(), Lib.GetParentSun(v.mainBody).position);
 			double au = dist / FlightGlobals.GetHomeBody().orbit.semiMajorAxis;
-			return 1.0 - Math.Min(au, 1.0); // 0 at 1AU -> 1 at sun position
+			return 1.0 - Math.Min(AU, 1.0); // 0 at 1AU -> 1 at sun position
 		}
+		#endregion
 	}
-
-
 } // KERBALISM
 

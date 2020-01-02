@@ -37,6 +37,9 @@ namespace KERBALISM
 					t.Events["StopTransmission"].active = false;
 					t.Actions["StartTransmissionAction"].active = false;
 
+					// ignore broken / disabled transmitters
+					if (!t.isEnabled) continue;
+
 					if (t.antennaType == AntennaType.INTERNAL) // do not include internal data rate, ec cost only
 						antennaInfo.ec += t.DataResourceCost * t.DataRate;
 					else
@@ -87,6 +90,10 @@ namespace KERBALISM
 					ModuleDataTransmitter t = pair.Key;
 					ProtoPartSnapshot p = pair.Value;
 
+					// ignore broken/disabled transmitters
+					var mdt = p.FindModule("ModuleDataTransmitter");
+					if (mdt != null && !Lib.Proto.GetBool(mdt, "isEnabled", true)) continue;
+
 					if (t.antennaType == AntennaType.INTERNAL) // do not include internal data rate, ec cost only
 						antennaInfo.ec += t.DataResourceCost * t.DataRate;
 					else
@@ -118,6 +125,7 @@ namespace KERBALISM
 
 			if (transmitterCount > 1)
 				antennaInfo.rate = Math.Pow(antennaInfo.rate, 1.0 / transmitterCount);
+
 			else if (transmitterCount == 0)
 				antennaInfo.rate = 0;
 
@@ -125,9 +133,16 @@ namespace KERBALISM
 			// while not transmitting, transmitters only use 10-20% of that
 			ec_transmitter *= antennaInfo.transmitting ? Settings.TransmitterActiveEcFactor : Settings.TransmitterPassiveEcFactor;
 
-			antennaInfo.ec += ec_transmitter;
+			antennaInfo.ec = ec_transmitter * Settings.TransmitterActiveEcFactor;
+			antennaInfo.ec_idle = ec_transmitter * Settings.TransmitterPassiveEcFactor;
 
 			Init();
+
+			if (antennaInfo.linked && transmitterCount > 0)
+			{
+				var bitsPerMB = 1024.0 * 1024.0 * 8.0;
+				antennaInfo.rate += Settings.DataRateMinimumBitsPerSecond / bitsPerMB;
+			}
 
 			return antennaInfo;
 		}
@@ -210,7 +225,7 @@ namespace KERBALISM
 				{
 					Vessel firstHop = Lib.CommNodeToVessel(v.Connection.ControlPath.First.end);
 					// Get rate from the firstHop, each Hop will do the same logic, then we will have the min rate for whole path
-					antennaInfo.rate = Math.Min(Cache.VesselInfo(FlightGlobals.FindVessel(firstHop.id)).connection.rate, antennaInfo.rate);
+					antennaInfo.rate = Math.Min(firstHop.KerbalismData().Connection.rate, antennaInfo.rate);
 				}
 			}
 			// is loss of connection due to plasma blackout
@@ -226,10 +241,14 @@ namespace KERBALISM
 				double signalStrength = 1 - ((link.start.position - link.end.position).magnitude / Math.Sqrt(antennaPower * link.end.antennaRelay.power));
 				signalStrength = (3 - (2 * signalStrength)) * Math.Pow(signalStrength, 2);
 
-				string name = Lib.Ellipsis(Localizer.Format(link.end.name).Replace("Kerbin", "DSN"), 35);
+				string name = Localizer.Format(link.end.displayName);
+				if(link.end.isHome)
+					name = name.Replace("Kerbin", "DSN");
+				name = Lib.Ellipsis(name, 35);
+
 				string value = Lib.HumanReadablePerc(Math.Ceiling(signalStrength * 10000) / 10000, "F2");
-				string tooltip = "Distance: " + Lib.HumanReadableRange((link.start.position - link.end.position).magnitude) +
-					"\nMax Distance: " + Lib.HumanReadableRange(Math.Sqrt((link.start.antennaTransmit.power + link.start.antennaRelay.power) * link.end.antennaRelay.power));
+				string tooltip = "Distance: " + Lib.HumanReadableDistance((link.start.position - link.end.position).magnitude) +
+					"\nMax Distance: " + Lib.HumanReadableDistance(Math.Sqrt((link.start.antennaTransmit.power + link.start.antennaRelay.power) * link.end.antennaRelay.power));
 				antennaInfo.control_path.Add(new string[] { name, value, tooltip });
 			}
 		}

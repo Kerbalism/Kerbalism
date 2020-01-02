@@ -65,8 +65,8 @@ namespace KERBALISM
 										// workaround for old savegames
 										if (mResource == null || packet_size == null || packet_Interval == null)
 										{
-											Lib.DebugLog("Old SaveGame PartModule ModuleRTAntenna for part '{0}' on unloaded vessel '{1}', using default values as a workaround", p.partName, v.vesselName);
-											Lib.DebugLog("ElectricCharge isNull: '{0}', RTPacketSize isNull: '{1}', RTPacketInterval isNull: '{2}'", mResource == null, packet_size == null, packet_Interval == null);
+											Lib.LogDebugStack("Old SaveGame PartModule ModuleRTAntenna for part '{0}' on unloaded vessel '{1}', using default values as a workaround", p.partName, v.vesselName);
+											Lib.LogDebugStack("ElectricCharge isNull: '{0}', RTPacketSize isNull: '{1}', RTPacketInterval isNull: '{2}'", mResource == null, packet_size == null, packet_Interval == null);
 											rate += 6.6666;          // 6.67 Mb/s in 100% factor
 											ec += 0.025;             // 25 W/s
 										}
@@ -79,7 +79,7 @@ namespace KERBALISM
 								}
 								if (!mFound)
 								{
-									Lib.DebugLog("Could not find PartModule ModuleRTAntenna for part {0} on unloaded vessel {1}, using default values as a workaround", p.partName, v.vesselName);
+									Lib.LogDebugStack("Could not find PartModule ModuleRTAntenna for part {0} on unloaded vessel {1}, using default values as a workaround", p.partName, v.vesselName);
 									rate += 6.6666;          // 6.67 Mb/s in 100% factor
 									ec += 0.025;             // 25 W/s
 								}
@@ -119,8 +119,9 @@ namespace KERBALISM
 						if (status != (int)LinkStatus.direct_link)
 						{
 							Vessel target = FlightGlobals.FindVessel(controlPath[0]);
-							strength *= Cache.VesselInfo(target).connection.strength;
-							rate = Math.Min(Cache.VesselInfo(target).connection.rate, rate * strength);
+							ConnectionInfo ci = target.KerbalismData().Connection;
+							strength *= ci.strength;
+							rate = Math.Min(ci.rate, rate * strength);
 						}
 						else rate *= strength;
 					}
@@ -131,8 +132,8 @@ namespace KERBALISM
 					{
 						var name = Lib.Ellipsis(RemoteTech.GetSatelliteName(i) + " \\ " + RemoteTech.GetSatelliteName(id), 35);
 						var value = Lib.HumanReadablePerc(Math.Ceiling((1 - (RemoteTech.GetCommsDistance(i, id) / RemoteTech.GetCommsMaxDistance(i, id))) * 10000) / 10000, "F2");
-						var tooltip = "Distance: " + Lib.HumanReadableRange(RemoteTech.GetCommsDistance(i, id)) +
-							"\nMax Distance: " + Lib.HumanReadableRange(RemoteTech.GetCommsMaxDistance(i, id));
+						var tooltip = "Distance: " + Lib.HumanReadableDistance(RemoteTech.GetCommsDistance(i, id)) +
+							"\nMax Distance: " + Lib.HumanReadableDistance(RemoteTech.GetCommsMaxDistance(i, id));
 						control_path.Add(new string[] { name, value, tooltip });
 						i = id;
 					}

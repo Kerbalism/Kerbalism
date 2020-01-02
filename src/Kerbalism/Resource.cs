@@ -3,50 +3,279 @@ using System.Collections.Generic;
 
 namespace KERBALISM
 {
-	/// <summary>
-	/// this class gives a view on resources, either per part or vessel wide
-	/// the caller can use this in much the same way as Resource_info class
-	/// </summary>
-	/// <remarks>
-	/// typically the resource simulator works on the sum of all resources in the vessel
-	/// sometimes resources cannot flow between parts, and this class hides the difference between the two cases
-	/// </remarks>
-	public abstract class Resource_info_view
+	/// <summary>Global cache for storing and accessing VesselResources (and ResourceInfo) handlers in all vessels, with shortcut for common methods</summary>
+	public static class ResourceCache
 	{
-		protected Resource_info_view() { }
-		public abstract double deferred { get; }
-		public abstract double amount { get; }
-		public abstract double capacity { get; }
+		// resource cache
+		static Dictionary<Guid, VesselResources> entries;
 
-		/// <summary>record a deferred production</summary>
-		public abstract void Produce(double quantity, string tag);
-		/// <summary>record a deferred consumption</summary>
-		public abstract void Consume(double quantity, string tag);
+		/// <summary> pseudo-ctor </summary>
+		public static void Init()
+		{
+			entries = new Dictionary<Guid, VesselResources>();
+		}
+
+		/// <summary> clear all resource information for all vessels </summary>
+		public static void Clear()
+		{
+			entries.Clear();
+		}
+
+		/// <summary> Reset the whole resource simulation for the vessel </summary>
+		public static void Purge(Vessel v)
+		{
+			entries.Remove(v.id);
+		}
+
+		/// <summary> Reset the whole resource simulation for the vessel </summary>
+		public static void Purge(ProtoVessel pv)
+		{
+			entries.Remove(pv.vesselID);
+		}
+
+		/// <summary> Return the VesselResources handler for this vessel </summary>
+		public static VesselResources Get(Vessel v)
+		{
+			// try to get existing entry if any
+			VesselResources entry;
+			if (entries.TryGetValue(v.id, out entry)) return entry;
+
+			// create new entry
+			entry = new VesselResources();
+
+			// remember new entry
+			entries.Add(v.id, entry);
+
+			// return new entry
+			return entry;
+		}
+
+		/// <summary> return a resource handler (shortcut) </summary>
+		public static ResourceInfo GetResource(Vessel v, string resource_name)
+		{
+			return Get(v).GetResource(v, resource_name);
+		}
+
+		/// <summary> record deferred production of a resource (shortcut) </summary>
+		/// <param name="brokerName">short ui-friendly name for the producer</param>
+		public static void Produce(Vessel v, string resource_name, double quantity, string brokerName)
+		{
+			GetResource(v, resource_name).Produce(quantity, brokerName);
+		}
+
+		/// <summary> record deferred consumption of a resource (shortcut) </summary>
+		/// <param name="brokerName">short ui-friendly name for the consumer</param>
+		public static void Consume(Vessel v, string resource_name, double quantity, string brokerName)
+		{
+			GetResource(v, resource_name).Consume(quantity, brokerName);
+		}
+
+		/// <summary> register deferred execution of a recipe (shortcut)</summary>
+		public static void AddRecipe(Vessel v, ResourceRecipe recipe)
+		{
+			Get(v).AddRecipe(recipe);
+		}
 	}
 
 	/// <summary>
-	/// Class that contains:
-	/// * For a single vessel
-	/// * For a single resource
-	/// all the information the simulator needs
+	/// Handler for the vessel resources simulator.
+	/// Allow access to the resource handler (ResourceInfo) for all resources on the vessel
+	/// and also stores of all recorded recipes (ResourceRecipe)
 	/// </summary>
-	/// <remarks>
-	/// It also contains all needed functionality to synchronize resource information between the
-	/// kerbalism simulator and the kerbal space per part information
-	/// </remarks>
-	public sealed class Resource_info
+	public sealed class VesselResources
 	{
-		public Resource_info(Vessel v, string res_name)
+		private Dictionary<string, ResourceInfo> resources = new Dictionary<string, ResourceInfo>(32);
+		private List<ResourceRecipe> recipes = new List<ResourceRecipe>(4);
+
+		/// <summary> return a VesselResources handler </summary>
+		public ResourceInfo GetResource(Vessel v, string resource_name)
+		{
+			// try to get existing entry if any
+			ResourceInfo res;
+			if (resources.TryGetValue(resource_name, out res)) return res;
+
+			// create new entry
+			res = new ResourceInfo(v, resource_name);
+
+			// remember new entry
+			resources.Add(resource_name, res);
+
+			// return new entry
+			return res;
+		}
+
+		/// <summary>
+		/// Main vessel resource simulation update method.
+		/// Execute all recipes to get final deferred amounts, then for each resource apply deferred requests, 
+		/// synchronize the new amount in all parts and update ResourceInfo information properties (rates, brokers...)
+		/// </summary>
+		public void Sync(Vessel v, VesselData vd, double elapsed_s)
+		{
+			// execute all recorded recipes
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Resource.ExecuteRecipes");
+			ResourceRecipe.ExecuteRecipes(v, this, recipes);
+			UnityEngine.Profiling.Profiler.EndSample();
+
+			// forget the recipes
+			recipes.Clear();
+
+			// apply all deferred requests and synchronize to vessel
+			// PartResourceList is slow and VERY garbagey to iterate over (because it's a dictionary disguised as a list),
+			// so acquiring a full list of all resources in a single loop is faster and less ram consuming than a
+			// "n ResourceInfo" * "n parts" * "n PartResource" loop (can easily result in 1000+ calls to p.Resources.dict.Values)
+			// It's also faster for unloaded vessels in the case of the ProtoPartResourceSnapshot lists, at the cost of a bit of garbage
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Resource.SyncAll");
+			if (v.loaded)
+			{
+				Dictionary<string, List<PartResource>> resInfos = new Dictionary<string, List<PartResource>>(resources.Count);
+				foreach (ResourceInfo resInfo in resources.Values)
+					resInfos.Add(resInfo.ResourceName, new List<PartResource>());
+
+				foreach (Part p in v.Parts)
+				{
+					foreach (PartResource r in p.Resources.dict.Values)
+					{
+						if (r.flowState && resInfos.ContainsKey(r.resourceName))
+						{
+							resInfos[r.resourceName].Add(r);
+						}
+					}
+				}
+
+				foreach (ResourceInfo resInfo in resources.Values)
+					resInfo.Sync(v, vd, elapsed_s, resInfos[resInfo.ResourceName], null);
+			}
+			else
+			{
+				Dictionary<string, List<ProtoPartResourceSnapshot>> resInfos = new Dictionary<string, List<ProtoPartResourceSnapshot>>(resources.Count);
+				foreach (ResourceInfo resInfo in resources.Values)
+					resInfos.Add(resInfo.ResourceName, new List<ProtoPartResourceSnapshot>());
+
+				foreach (ProtoPartSnapshot p in v.protoVessel.protoPartSnapshots)
+				{
+					foreach (ProtoPartResourceSnapshot r in p.resources)
+					{
+						if (r.flowState && resInfos.ContainsKey(r.resourceName))
+						{
+							resInfos[r.resourceName].Add(r);
+						}
+					}
+				}
+
+				foreach (ResourceInfo resInfo in resources.Values)
+					resInfo.Sync(v, vd, elapsed_s, null, resInfos[resInfo.ResourceName]);
+			}
+			UnityEngine.Profiling.Profiler.EndSample();
+		}
+
+		internal List<ResourceInfo> GetAllResources(Vessel v)
+		{
+			List<string> knownResources = new List<string>();
+			List<ResourceInfo> result = new List<ResourceInfo>();
+
+			if (v.loaded)
+			{
+				foreach (Part p in v.Parts)
+				{
+					foreach (PartResource r in p.Resources)
+					{
+						if (knownResources.Contains(r.resourceName)) continue;
+						knownResources.Add(r.resourceName);
+						result.Add(GetResource(v, r.resourceName));
+					}
+				}
+			}
+			else
+			{
+				foreach (ProtoPartSnapshot p in v.protoVessel.protoPartSnapshots)
+				{
+					foreach (ProtoPartResourceSnapshot r in p.resources)
+					{
+						if (knownResources.Contains(r.resourceName)) continue;
+						knownResources.Add(r.resourceName);
+						result.Add(GetResource(v, r.resourceName));
+					}
+				}
+			}
+
+			return result;
+		}
+
+		/// <summary> record deferred production of a resource (shortcut) </summary>
+		/// <param name="brokerName">short ui-friendly name for the producer</param>
+		public void Produce(Vessel v, string resource_name, double quantity, string brokerName)
+		{
+			GetResource(v, resource_name).Produce(quantity, brokerName);
+		}
+
+		/// <summary> record deferred consumption of a resource (shortcut) </summary>
+		/// <param name="tag">short ui-friendly name for the consumer</param>
+		public void Consume(Vessel v, string resource_name, double quantity, string tag)
+		{
+			GetResource(v, resource_name).Consume(quantity, tag);
+		}
+
+		/// <summary> record deferred execution of a recipe (shortcut) </summary>
+		public void AddRecipe(ResourceRecipe recipe)
+		{
+			recipes.Add(recipe);
+		}
+	}
+
+	/// <summary>
+	/// Handler for a single resource on a vessel. Expose vessel-wide information about amounts, rates and brokers (consumers/producers).
+	/// Responsible for synchronization between the resource simulator and the actual resources present on each part. 
+	/// </summary>
+	public sealed class ResourceInfo
+	{
+		/// <summary> Associated resource name</summary>
+		public string ResourceName { get; private set; }
+
+		/// <summary> Rate of change in amount per-second, this is purely for visualization</summary>
+		public double Rate { get; private set; }
+
+		/// <summary> Rate of change in amount per-second, including average rate for interval-based rules</summary>
+		public double AverageRate { get; private set; }
+
+		/// <summary> Amount vs capacity, or 0 if there is no capacity</summary>
+		public double Level { get; private set; }
+
+		/// <summary> True if an interval-based rule consumption/production was processed in the last simulation step</summary>
+		public bool IntervalRuleHappened { get; private set; }
+
+		/// <summary> Not yet consumed or produced amount that will be synchronized to the vessel parts in Sync()</summary>
+		public double Deferred { get; private set; }
+
+		/// <summary> Amount of resource</summary>
+		public double Amount { get; private set; }
+
+		/// <summary> Storage capacity of resource</summary>
+		public double Capacity { get; private set; }
+
+		/// <summary> Simulated average rate of interval-based rules in amount per-second. This is for information only, the resource is not consumed</summary>
+		private double intervalRulesRate;
+
+		/// <summary> Amount consumed/produced by interval-based rules in this simulation step</summary>
+		private double intervalRuleAmount;
+
+		/// <summary>Dictionary of all consumers and producers (key) and how much amount they did add/remove (value).</summary>
+		private Dictionary<string, double> brokersResourceAmounts;
+
+		/// <summary>Dictionary of all interval-based rules (key) and their simulated average rate (value). This is for information only, the resource is not consumed</summary>
+		private Dictionary<string, double> intervalRuleBrokersRates;
+
+		/// <summary>Ctor</summary>
+		public ResourceInfo(Vessel v, string res_name)
 		{
 			// remember resource name
-			resource_name = res_name;
+			ResourceName = res_name;
 
-			_deferred = 0;
-			_amount = 0;
-			_capacity = 0;
+			Deferred = 0;
+			Amount = 0;
+			Capacity = 0;
 
-			_protocol = new Dictionary<string, double>();
-			_vessel_wide_view = new Resource_info_view_impl(resource_name, this);
+			brokersResourceAmounts = new Dictionary<string, double>();
+			intervalRuleBrokersRates = new Dictionary<string, double>();
 
 			// get amount & capacity
 			if (v.loaded)
@@ -55,12 +284,12 @@ namespace KERBALISM
 				{
 					foreach (PartResource r in p.Resources)
 					{
-						if (r.resourceName == resource_name)
+						if (r.resourceName == ResourceName)
 						{
 							if (r.flowState) // has the user chosen to make a flowable resource flow
 							{
-								_amount += r.amount;
-								_capacity += r.maxAmount;
+								Amount += r.amount;
+								Capacity += r.maxAmount;
 							}
 						}
 #if DEBUG_RESOURCES
@@ -76,12 +305,12 @@ namespace KERBALISM
 				{
 					foreach (ProtoPartResourceSnapshot r in p.resources)
 					{
-						if (r.flowState && r.resourceName == resource_name)
+						if (r.flowState && r.resourceName == ResourceName)
 						{
 							if (r.flowState) // has the user chosen to make a flowable resource flow
 							{
-								_amount += r.amount;
-								_capacity += r.maxAmount;
+								Amount += r.amount;
+								Capacity += r.maxAmount;
 							}
 						}
 					}
@@ -89,87 +318,56 @@ namespace KERBALISM
 			}
 
 			// calculate level
-			level = capacity > double.Epsilon ? amount / capacity : 0.0;
+			Level = Capacity > double.Epsilon ? Amount / Capacity : 0.0;
 		}
 
-		/// <summary>Implementation of Resource_info_view</summary>
-		/// <remarks>Only constructed by Resource_info class to hide the dependencies between the two classes</remarks>
-		private class Resource_info_view_impl : Resource_info_view
+		/// <summary>Record a production, it will be stored in "Deferred" and later synchronized to the vessel in Sync()</summary>
+		/// <param name="brokerName">origin of the production, will be available in the UI</param>
+		public void Produce(double quantity, string brokerName)
 		{
-			public Resource_info_view_impl(string resource_name, Resource_info i)
-			{
-				info = i;
-			}
+			Deferred += quantity;
 
-			private Resource_info info;
+			// keep track of every producer contribution for UI/debug purposes
+			if (Math.Abs(quantity) < 1e-10) return;
 
-			public override double deferred
-			{
-				get => info._deferred;
-			}
-			public override double amount
-			{
-				get => info._amount;
-			}
-			public override double capacity
-			{
-				get => info._capacity;
-			}
-
-			public override void Produce(double quantity, string tag)
-			{
-				info.Produce(quantity, tag);
-			}
-			public override void Consume(double quantity, string tag)
-			{
-				info.Consume(quantity, tag);
-			}
-		}
-
-		public Resource_info_view GetResourceInfoView()
-		{
-			return _vessel_wide_view;
-		}
-
-		/// <summary>record a deferred production for the vessel wide bookkeeping</summary>
-		public void Produce(double quantity, string tag)
-		{
-			_deferred += quantity;
-
-			var key = resource_name + " produce " + tag;
-			double p = quantity;
-			if (_protocol.ContainsKey(key))
-				_protocol[key] += p;
+			if (brokersResourceAmounts.ContainsKey(brokerName))
+				brokersResourceAmounts[brokerName] += quantity;
 			else
-				_protocol.Add(key, p);
+				brokersResourceAmounts.Add(brokerName, quantity);
 		}
 
-		/// <summary>record a deferred consumption for the vessel wide bookkeeping</summary>
-		public void Consume(double quantity, string tag)
+		/// <summary>Record a consumption, it will be stored in "Deferred" and later synchronized to the vessel in Sync()</summary>
+		/// <param name="brokerName">origin of the consumption, will be available in the UI</param>
+		public void Consume(double quantity, string brokerName)
 		{
-			_deferred -= quantity;
+			Deferred -= quantity;
 
-			var key = resource_name + " consume " + tag;
-			double p = quantity;
-			if (_protocol.ContainsKey(key))
-				_protocol[key] += p;
+			// keep track of every consumer contribution for UI/debug purposes
+			if (Math.Abs(quantity) < 1e-10) return;
+
+			if (brokersResourceAmounts.ContainsKey(brokerName))
+				brokersResourceAmounts[brokerName] -= quantity;
 			else
-				_protocol.Add(key, p);
+				brokersResourceAmounts.Add(brokerName, -quantity);
 		}
 
-		/// <summary>synchronize resources from from cache to vessel</summary>
+		/// <summary>synchronize resources from cache to vessel</summary>
 		/// <remarks>
 		/// this function will also sync from vessel to cache so you can always use the
-		/// Resource_info interface to get information about resources
+		/// ResourceInfo interface to get information about resources
 		/// </remarks>
-		public void Sync(Vessel v, double elapsed_s)
+		public void Sync(Vessel v, VesselData vd, double elapsed_s, List<PartResource> loadedResList, List<ProtoPartResourceSnapshot> unloadedResList)
 		{
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Resource.Sync");
 			// # OVERVIEW
-			// - deferred consumption/production is accumulated, then this function called
-			// - detect amount/capacity in vessel
-			// - clamp deferred to amount/capacity
-			// - apply deferred
-			// - update cached amount [disabled, see comments]
+			// - consumption/production is accumulated in "Deferred", then this function called
+			// - save previous step amount/capacity
+			// - part loop 1 : detect new amount/capacity
+			// - if amount has changed, this mean there is non-Kerbalism producers/consumers on the vessel
+			// - if non-Kerbalism producers are detected on a loaded vessel, prevent high timewarp rates
+			// - clamp "Deferred" to amount/capacity
+			// - part loop 2 : apply "Deferred" to all parts
+			// - apply "Deferred" to amount
 			// - calculate change rate per-second
 			// - calculate resource level
 			// - reset deferred
@@ -186,79 +384,133 @@ namespace KERBALISM
 			// In case [B], the simulation became incoherent and from that point anything can happen,
 			// like for example insta-death by co2 poisoning or climatization.
 			// To avoid the consequences of [B]:
-			// - we hacked the stock solar panel to use the resource cache
+			// - we hacked the solar panels to use the resource cache (SolarPanelFixer)
 			// - we detect incoherency on loaded vessels, and forbid the two highest warp speeds
 
-			// remember amount currently known, to calculate rate later on
-			// this is explicitly vessel wide amount (even for non-flowing resources), because it is used
-			// to visualize rate and restrict timewarp, which is only done per vessel
-			double old_amount = amount;
+			// remember vessel-wide amount currently known, to calculate rate and detect non-Kerbalism brokers
+			double oldAmount = Amount;
 
-			// remember capacity currently known, to detect flow state changes
-			// this is explicitly vessel wide amount (even for non-flowing resources), because it is used
-			// to restrict timewarp
-			double old_capacity = capacity;
+			// remember vessel-wide capacity currently known, to detect flow state changes
+			double oldCapacity = Capacity;
 
 			// iterate over all enabled resource containers and detect amount/capacity again
 			// - this detect production/consumption from stock and third-party mods
 			//   that by-pass the resource cache, and flow state changes in general
-			_amount = 0.0;
-			_capacity = 0.0;
+			Amount = 0.0;
+			Capacity = 0.0;
 
-			// PLEASE READ
-			// because only the first loop is garuanteed to run, we sync back non-flowing part
-			// specific resources right here, rather than in the second loop
-			// this is to avoid performance impact of introducing a third loop
-			// the part specific amount or capacity does not count towards the global capacity
-			// because these resources cannot flow freely
-			// an example of a non-flowing resource would be enriched uranium
 			if (v.loaded)
 			{
-				foreach (Part p in v.Parts)
+				foreach (PartResource r in loadedResList)
 				{
-					foreach (PartResource r in p.Resources)
-					{
-						if (r.resourceName == resource_name)
-						{
-							// a resource is either tracked vessel wide, or per part, but not both
-							// the sum should always be realistic
-							if (r.flowState)
-							{
-								_amount += r.amount;
-								_capacity += r.maxAmount;
-							}
-						}
-					}
+					Amount += r.amount;
+					Capacity += r.maxAmount;
 				}
 			}
 			else
 			{
-				foreach (ProtoPartSnapshot p in v.protoVessel.protoPartSnapshots)
+				foreach (ProtoPartResourceSnapshot r in unloadedResList)
 				{
-					foreach (ProtoPartResourceSnapshot r in p.resources)
+					Amount += r.amount;
+					Capacity += r.maxAmount;
+				}
+			}
+
+			// As we haven't yet synchronized anything, changes to amount can only come from non-Kerbalism producers or consumers
+			double unsupportedBrokersRate = Amount - oldAmount;
+			// Avoid false detection due to precision errors
+			if (Math.Abs(unsupportedBrokersRate) < 1e-05) unsupportedBrokersRate = 0.0;
+			// Calculate the resulting rate
+			unsupportedBrokersRate /= elapsed_s;
+
+			// Detect flow state changes
+			bool flowStateChanged = Capacity - oldCapacity > 1e-05;
+
+			// clamp consumption/production to vessel amount/capacity
+			// - if deferred is negative, then amount is guaranteed to be greater than zero
+			// - if deferred is positive, then capacity - amount is guaranteed to be greater than zero
+			Deferred = Lib.Clamp(Deferred, -Amount, Capacity - Amount);
+
+			// apply deferred consumption/production to all parts, simulating ALL_VESSEL_BALANCED
+			// - iterating again is faster than using a temporary list of valid PartResources
+			// - avoid very small values in deferred consumption/production
+			if (Math.Abs(Deferred) > 1e-10)
+			{
+				if (v.loaded)
+				{
+					foreach (PartResource r in loadedResList)
 					{
-						if (r.resourceName == resource_name)
-						{
-							// a resource is either tracked vessel wide, or per part, but not both
-							// the sum should always be realistic
-							if (r.flowState)
-							{
-								_amount += r.amount;
-								_capacity += r.maxAmount;
-							}
-						}
+						// calculate consumption/production coefficient for the part
+						double k = Deferred < 0.0
+						  ? r.amount / Amount
+						  : (r.maxAmount - r.amount) / (Capacity - Amount);
+
+						// apply deferred consumption/production
+						r.amount += Deferred * k;
+					}
+				}
+				else
+				{
+					foreach (ProtoPartResourceSnapshot r in unloadedResList)
+					{
+						// calculate consumption/production coefficient for the part
+						double k = Deferred < 0.0
+						  ? r.amount / Amount
+						  : (r.maxAmount - r.amount) / (Capacity - Amount);
+
+						// apply deferred consumption/production
+						r.amount += Deferred * k;
 					}
 				}
 			}
 
+			// update amount, to get correct rate and levels at all times
+			Amount += Deferred;
+
+			// reset deferred production/consumption
+			Deferred = 0.0;
+
+			// recalculate level
+			Level = Capacity > 0.0 ? Amount / Capacity : 0.0;
+
+			// calculate rate of change per-second
+			// - don't update rate during warp blending (stock modules have instabilities during warp blending) 
+			// - ignore interval-based rules consumption/production
+			if (!v.loaded || !Kerbalism.WarpBlending) Rate = (Amount - oldAmount - intervalRuleAmount) / elapsed_s;
+
+			// calculate average rate of change per-second from interval-based rules
+			intervalRulesRate = 0.0;
+			foreach (var rb in intervalRuleBrokersRates)
+			{
+				intervalRulesRate += rb.Value;
+			}
+
+			// AverageRate is the exposed property that include simulated rate from interval-based rules.
+			// For consistency with how "Rate" is calculated, we only add the simulated rate if there is some capacity or amount for it to have an effect
+			AverageRate = Rate;
+			if ((intervalRulesRate > 0.0 && Level < 1.0) || (intervalRulesRate < 0.0 && Level > 0.0)) AverageRate += intervalRulesRate;
+
+			// For visualization purpose, update the VesselData.supplies brokers list, merging all detected sources :
+			// - normal brokers that use Consume() or Produce()
+			// - "virtual" brokers from interval-based rules
+			// - non-Kerbalism brokers (aggregated rate)
+			vd.Supply(ResourceName).UpdateResourceBrokers(brokersResourceAmounts, intervalRuleBrokersRates, unsupportedBrokersRate, elapsed_s);
+
+			//Lib.Log("RESOURCE UPDATE : " + v);
+			//foreach (var rb in vd.Supply(ResourceName).ResourceBrokers)
+			//	Lib.Log(Lib.BuildString(ResourceName, " : ", rb.rate.ToString("+0.000000;-0.000000;+0.000000"), "/s (", rb.name, ")"));
+			//Lib.Log("RESOURCE UPDATE END");
+
+			// reset amount added/removed from interval-based rules
+			IntervalRuleHappened = intervalRuleAmount > 0.0;
+			intervalRuleAmount = 0.0;
+
 			// if incoherent producers are detected, do not allow high timewarp speed
-			// - ignore incoherent consumers (no negative consequences for player)
-			// - ignore flow state changes (avoid issue with process controllers)
-			// - unloaded vessels can't be incoherent, we are in full control there
 			// - can be disabled in settings
-			// - avoid false detection due to precision errors in stock amounts
-			// note that this is applied to all resources including non-flowing resources restricted to parts
-			if (Settings.EnforceCoherency && v.loaded && TimeWarp.CurrentRateIndex >= 6 && amount - old_amount > 1e-05 && capacity - old_capacity < 1e-05)
+			// - unloaded vessels can't be incoherent, we are in full control there
+			// - ignore incoherent consumers (no negative consequences for player)
+			// - ignore flow state changes (avoid issue with process controllers and other things) 
+			if (Settings.EnforceCoherency && v.loaded && TimeWarp.CurrentRate > 1000.0 && unsupportedBrokersRate > 0.0 && !flowStateChanged)
 			{
 				Message.Post
 				(
@@ -266,211 +518,63 @@ namespace KERBALISM
 				  Lib.BuildString
 				  (
 					!v.isActiveVessel ? Lib.BuildString("On <b>", v.vesselName, "</b>\na ") : "A ",
-					"producer of <b>", resource_name, "</b> has\n",
+					"producer of <b>", ResourceName, "</b> has\n",
 					"incoherent behavior at high warp speed.\n",
 					"<i>Unload the vessel before warping</i>"
 				  )
 				);
-				Lib.StopWarp(5);
+				Lib.StopWarp(1000.0);
 			}
 
-			// clamp consumption/production to vessel amount/capacity
-			// - if deferred is negative, then amount is guaranteed to be greater than zero
-			// - if deferred is positive, then capacity - amount is guaranteed to be greater than zero
-			_deferred = Lib.Clamp(_deferred, -_amount, _capacity - _amount);
+			// reset brokers
+			brokersResourceAmounts.Clear();
+			intervalRuleBrokersRates.Clear();
 
-			// apply deferred consumption/production, simulating ALL_VESSEL_BALANCED
-			// - iterating again is faster than using a temporary list of valid PartResources
-			// - avoid very small values in deferred consumption/production
-			if (Math.Abs(_deferred) > 1e-10)
-			{
-				if (v.loaded)
-				{
-					foreach (Part p in v.parts)
-					{
-						foreach (PartResource r in p.Resources)
-						{
-							if (r.flowState && r.resourceName == resource_name)
-							{
-								// calculate consumption/production coefficient for the part
-								double k = _deferred < 0.0
-								  ? r.amount / _amount
-								  : (r.maxAmount - r.amount) / (_capacity - _amount);
-
-								// apply deferred consumption/production
-								r.amount += _deferred * k;
-							}
-						}
-					}
-				}
-				else
-				{
-					foreach (ProtoPartSnapshot p in v.protoVessel.protoPartSnapshots)
-					{
-						foreach (ProtoPartResourceSnapshot r in p.resources)
-						{
-							if (r.flowState && r.resourceName == resource_name)
-							{
-								// calculate consumption/production coefficient for the part
-								double k = _deferred < 0.0
-								  ? r.amount / _amount
-								  : (r.maxAmount - r.amount) / (_capacity - _amount);
-
-								// apply deferred consumption/production
-								r.amount += _deferred * k;
-							}
-						}
-					}
-				}
-			}
-
-			// update amount, to get correct rate and levels at all times
-			_amount += _deferred;
-
-			// calculate rate of change per-second
-			// - don't update rate during and immediately after warp blending (stock modules have instabilities during warp blending)
-			// - don't update rate during the simulation steps where meal is consumed, to avoid counting it twice
-			// note that we explicitly read vessel average resources here, even for non-flowing resources, because this is
-			// for visualization which is per vessel
-			if ((!v.loaded || Kerbalism.warp_blending > 50) && !meal_happened) rate = (amount - old_amount) / elapsed_s;
-
-			// recalculate level
-			level = capacity > double.Epsilon ? amount / capacity : 0.0;
-
-			// reset deferred production/consumption
-			_deferred = 0.0;
-
-			if(_protocol.Count > 0)
-			{
-				if (PreferencesLifeSupport.Instance.resourceLogging)
-				{
-					Lib.Log("RESOURCE BLOCK " + v);
-					foreach (var p in _protocol)
-						Lib.Log(p.Key + " @ " + (p.Value / elapsed_s));
-					Lib.Log("RESOURCE BLOCK END");
-				}
-				_protocol.Clear();
-			}
-
-			// reset meal flag
-			meal_happened = false;
+			// reset amount added/removed from interval-based rules
+			intervalRuleAmount = 0.0;
+			UnityEngine.Profiling.Profiler.EndSample();
 		}
 
-		/// <summary>estimate time until depletion</summary>
-		public double Depletion(int crew_count)
+		/// <summary>estimate time until depletion, including the simulated rate from interval-based rules</summary>
+		public double DepletionTime()
 		{
-			// calculate all interval-normalized rates from related rules
-			double meal_rate = 0.0;
-			if (crew_count > 0)
-			{
-				foreach (Rule rule in Profile.rules)
-				{
-					if (rule.interval > 0)
-					{
-						if (rule.input == resource_name) meal_rate -= rule.rate / rule.interval;
-						if (rule.output == resource_name) meal_rate += rule.rate / rule.interval;
-					}
-				}
-				meal_rate *= (double)crew_count;
-			}
-
-			// calculate total rate of change
-			double delta = rate + meal_rate;
-
 			// return depletion
-			return amount <= 1e-10 ? 0.0 : delta >= -1e-10 ? double.NaN : amount / -delta;
+			return Amount <= 1e-10 ? 0.0 : AverageRate >= -1e-10 ? double.NaN : Amount / -AverageRate;
 		}
 
 		/// <summary>Inform that meal has happened in this simulation step</summary>
 		/// <remarks>A simulation step can cover many physics ticks, especially for unloaded vessels</remarks>
-		public void SetMealHappened()
+		public void UpdateIntervalRule(double amount, double averageRate, string ruleName)
 		{
-			meal_happened = true;
-		}
+			intervalRuleAmount += amount;
+			intervalRulesRate += averageRate;
 
-		// Enforce that modification happens through official accessor functions
-		// Many external classes need to read these values, and they want convenient access
-		// However direct modification of these members from outside would make the coupling with this class far too high
-		public string resource_name
-		{
-			get {
-				return _resource_name;
-			}
-			private set {
-				_resource_name = value;
-			}
+			if (intervalRuleBrokersRates.ContainsKey(ruleName))
+				intervalRuleBrokersRates[ruleName] += averageRate;
+			else
+				intervalRuleBrokersRates.Add(ruleName, averageRate);
 		}
-		public double rate
-		{
-			get {
-				return _rate;
-			}
-			private set {
-				_rate = value;
-			}
-		}
-		public double level
-		{
-			get {
-				return _level;
-			}
-			private set {
-				_level = value;
-			}
-		}
-		public bool meal_happened
-		{
-			get {
-				return _meal_happened;
-			}
-			private set {
-				_meal_happened = value;
-			}
-		}
-
-		// the setters don't exist because they cannot be implemented
-		// the getters provide the total value for the vessel, this is typically either:
-		// * vessel wide value if resource_name can flow between parts
-		// * sum of all part specific values if resource_name cannot flow between parts
-		// this means the getters here are meant for visualization purposes, not for the actual simulation
-		public double deferred
-		{
-			get {
-				return _deferred;
-			}
-		}
-		public double amount
-		{
-			get {
-				return _amount;
-			}
-		}
-		public double capacity
-		{
-			get {
-				return _capacity;
-			}
-		}
-
-		private string _resource_name; // associated resource name
-		private double _rate;          // rate of change in amount per-second, this is purely for visualization so don't track per part
-		private double _level;         // amount vs capacity, or 0 if there is no capacity
-		private bool _meal_happened;   // true if a meal-like consumption/production was processed in the last simulation step
-
-		private double _deferred; // accumulate deferred requests
-		private double _amount;   // amount of resource
-		private double _capacity; // storage capacity of resource
-
-		private Dictionary<string,  double> _protocol;
-
-		private Resource_info_view _vessel_wide_view;
 	}
 
-	/// <summary>destription of how to convert inputs to outputs</summary>
-	/// <remarks>
-	/// this class is also responsible for executing the recipe, such that it is actualized in the Resource_info
-	/// </remarks>
-	public sealed class Resource_recipe
+	/// <summary>
+	/// ResourceRecipe is a mean of converting inputs to outputs.
+	/// It does so in relation with the rest of the resource simulation to detect available amounts for inputs and available capacity for outputs.
+	/// Outputs can be defined a "dumpeable" to avoid this last limitation.
+	/// </summary>
+
+	// TODO : (GOTMACHINE) the "combined" feature (ability for an input to substitute another if not available) added a lot of complexity to the Recipe code,
+	// all in the purpose of fixes for the habitat resource-based atmosphere system.
+	// If at some point we rewrite habitat and get ride of said resources, "combined" will not be needed anymore,
+	// so it would be a good idea to revert the changes made in this commit :
+	// https://github.com/Kerbalism/Kerbalism/commit/91a154b0eeda8443d9dd888c2e40ca511c5adfa3#diff-ffbaadfd7e682c9dcb3912d5f8c5cabb
+
+	// TODO : (GOTMACHINE) At some point, we want to use "virtual" resources in recipes.
+	// Their purpose would be to give the ability to scale the non-resource output of a pure consumer.
+	// Example : to scale antenna data rate by EC availability, define an "antennaOutput" virtual resource and a recipe that convert EC to antennaOutput
+	// then check "antennaOutput" availability to scale the amount of data sent
+	// This would also allow removing the "Cures" thing.
+
+	public sealed class ResourceRecipe
 	{
 		public struct Entry
 		{
@@ -489,35 +593,24 @@ namespace KERBALISM
 			public bool dump;
 		}
 
-		public Resource_recipe(Part p, string name)
+		public List<Entry> inputs;   // set of input resources
+		public List<Entry> outputs;  // set of output resources
+		public List<Entry> cures;    // set of cures
+		public double left;     // what proportion of the recipe is left to execute
+
+		private string name;
+
+		public ResourceRecipe(string name)
 		{
 			this.inputs = new List<Entry>();
 			this.outputs = new List<Entry>();
 			this.cures = new List<Entry>();
 			this.left = 1.0;
-			this.loaded_part = p;
 			this.name = name;
 		}
 
-		public Resource_recipe(ProtoPartSnapshot p, string name)
-		{
-			this.inputs = new List<Entry>();
-			this.outputs = new List<Entry>();
-			this.cures = new List<Entry>();
-			this.left = 1.0;
-			this.unloaded_part = p;
-			this.name = name;
-		}
-
-		private Resource_info_view GetResourceInfoView(Vessel v, Vessel_resources resources, string resource_name)
-		{
-			return resources.Info(v, resource_name).GetResourceInfoView();
-		}
-
-		/// <summary>
-		/// add an input to the recipe
-		/// </summary>
-		public void Input(string resource_name, double quantity)
+		/// <summary>add an input to the recipe</summary>
+		public void AddInput(string resource_name, double quantity)
 		{
 			if (quantity > double.Epsilon) //< avoid division by zero
 			{
@@ -525,10 +618,8 @@ namespace KERBALISM
 			}
 		}
 
-		/// <summary>
-		/// add a combined input to the recipe
-		/// /// </summary>
-		public void Input(string resource_name, double quantity, string combined)
+		/// <summary>add a combined input to the recipe</summary>
+		public void AddInput(string resource_name, double quantity, string combined)
 		{
 			if (quantity > double.Epsilon) //< avoid division by zero
 			{
@@ -536,8 +627,8 @@ namespace KERBALISM
 			}
 		}
 
-		// add an output to the recipe
-		public void Output(string resource_name, double quantity, bool dump)
+		/// <summary>add an output to the recipe</summary>
+		public void AddOutput(string resource_name, double quantity, bool dump)
 		{
 			if (quantity > double.Epsilon) //< avoid division by zero
 			{
@@ -545,8 +636,8 @@ namespace KERBALISM
 			}
 		}
 
-		// add a cure to the recipe
-		public void Cure(string cure, double quantity, string resource_name)
+		/// <summary>add a cure to the recipe</summary>
+		public void AddCure(string cure, double quantity, string resource_name)
 		{
 			if (quantity > double.Epsilon) //< avoid division by zero
 			{
@@ -554,8 +645,30 @@ namespace KERBALISM
 			}
 		}
 
-		// execute the recipe
-		public bool Execute(Vessel v, Vessel_resources resources)
+		/// <summary>Execute all recipes and record deferred consumption/production for inputs/ouputs</summary>
+		public static void ExecuteRecipes(Vessel v, VesselResources resources, List<ResourceRecipe> recipes)
+		{
+			bool executing = true;
+			while (executing)
+			{
+				executing = false;
+				for (int i = 0; i < recipes.Count; ++i)
+				{
+					ResourceRecipe recipe = recipes[i];
+					if (recipe.left > double.Epsilon)
+					{
+						executing |= recipe.ExecuteRecipeStep(v, resources);
+					}
+				}
+			}
+		}
+
+		/// <summary>
+		/// Execute the recipe and record deferred consumption/production for inputs/ouputs.
+		/// This need to be called multiple times until left &lt;= 0.0 for complete execution of the recipe.
+		/// return true if recipe execution is completed, false otherwise
+		/// </summary>
+		private bool ExecuteRecipeStep(Vessel v, VesselResources resources)
 		{
 			// determine worst input ratio
 			// - pure input recipes can just underflow
@@ -565,7 +678,8 @@ namespace KERBALISM
 				for (int i = 0; i < inputs.Count; ++i)
 				{
 					Entry e = inputs[i];
-					Resource_info_view res = GetResourceInfoView(v, resources, e.name);
+					ResourceInfo res = resources.GetResource(v, e.name);
+
 					// handle combined inputs
 					if (e.combined != null)
 					{
@@ -573,21 +687,21 @@ namespace KERBALISM
 						if (e.combined != "")
 						{
 							Entry sec_e = inputs.Find(x => x.name.Contains(e.combined));
-							Resource_info_view sec = GetResourceInfoView(v, resources, sec_e.name);
-							double pri_worst = Lib.Clamp((res.amount + res.deferred) * e.inv_quantity, 0.0, worst_input);
+							ResourceInfo sec = resources.GetResource(v, sec_e.name);
+							double pri_worst = Lib.Clamp((res.Amount + res.Deferred) * e.inv_quantity, 0.0, worst_input);
 							if (pri_worst > 0.0)
 							{
 								worst_input = pri_worst;
 							}
 							else
 							{
-								worst_input = Lib.Clamp((sec.amount + sec.deferred) * sec_e.inv_quantity, 0.0, worst_input);
+								worst_input = Lib.Clamp((sec.Amount + sec.Deferred) * sec_e.inv_quantity, 0.0, worst_input);
 							}
 						}
 					}
 					else
 					{
-						worst_input = Lib.Clamp((res.amount + res.deferred) * e.inv_quantity, 0.0, worst_input);
+						worst_input = Lib.Clamp((res.Amount + res.Deferred) * e.inv_quantity, 0.0, worst_input);
 					}
 				}
 			}
@@ -602,8 +716,8 @@ namespace KERBALISM
 					Entry e = outputs[i];
 					if (!e.dump) // ignore outputs that can dump overboard
 					{
-						Resource_info_view res = GetResourceInfoView(v, resources, e.name);
-						worst_output = Lib.Clamp((res.capacity - (res.amount + res.deferred)) * e.inv_quantity, 0.0, worst_output);
+						ResourceInfo res = resources.GetResource(v, e.name);
+						worst_output = Lib.Clamp((res.Capacity - (res.Amount + res.Deferred)) * e.inv_quantity, 0.0, worst_output);
 					}
 				}
 			}
@@ -615,7 +729,7 @@ namespace KERBALISM
 			for (int i = 0; i < inputs.Count; ++i)
 			{
 				Entry e = inputs[i];
-				Resource_info_view res = GetResourceInfoView(v, resources, e.name);
+				ResourceInfo res = resources.GetResource(v, e.name);
 				// handle combined inputs
 				if (e.combined != null)
 				{
@@ -623,15 +737,15 @@ namespace KERBALISM
 					if (e.combined != "")
 					{
 						Entry sec_e = inputs.Find(x => x.name.Contains(e.combined));
-						Resource_info_view sec = GetResourceInfoView(v, resources, sec_e.name);
+						ResourceInfo sec = resources.GetResource(v, sec_e.name);
 						double need = (e.quantity * worst_io) + (sec_e.quantity * worst_io);
 						// do we have enough primary to satisfy needs, if so don't consume secondary
-						if (res.amount + res.deferred >= need) resources.Consume(v, e.name, need, name);
+						if (res.Amount + res.Deferred >= need) resources.Consume(v, e.name, need, name);
 						// consume primary if any available and secondary
 						else
 						{
-							need -= res.amount + res.deferred;
-							res.Consume(res.amount + res.deferred, name);
+							need -= res.Amount + res.Deferred;
+							res.Consume(res.Amount + res.Deferred, name);
 							sec.Consume(need, name);
 						}
 					}
@@ -646,7 +760,7 @@ namespace KERBALISM
 			for (int i = 0; i < outputs.Count; ++i)
 			{
 				Entry e = outputs[i];
-				Resource_info_view res = GetResourceInfoView(v, resources, e.name);
+				ResourceInfo res = resources.GetResource(v, e.name);
 				res.Produce(e.quantity * worst_io, name);
 			}
 
@@ -676,156 +790,7 @@ namespace KERBALISM
 			return worst_io > double.Epsilon;
 		}
 
-		public List<Entry> inputs;   // set of input resources
-		public List<Entry> outputs;  // set of output resources
-		public List<Entry> cures;    // set of cures
-		public double left;     // what proportion of the recipe is left to execute
 
-		private string name;
-		private Part loaded_part = null; // one of these is null
-		private ProtoPartSnapshot unloaded_part = null;
-	}
-
-	/// <summary>
-	/// contains all resource recipes that are pending or being executed on this vessel
-	/// it also contains the information for all resources contained within this vessel
-	/// </summary>
-	/// <remarks>
-	/// processes use psuedo-resources as a multiplier for their recipes, these
-	/// pseudo resources are also contained within
-	/// </remarks>
-	public sealed class Vessel_resources
-	{
-		// return a resource handler
-		public Resource_info Info(Vessel v, string resource_name)
-		{
-			// try to get existing entry if any
-			Resource_info res;
-			if (resources.TryGetValue(resource_name, out res)) return res;
-
-			// create new entry
-			res = new Resource_info(v, resource_name);
-
-			// remember new entry
-			resources.Add(resource_name, res);
-
-			// return new entry
-			return res;
-		}
-
-		// apply deferred requests for a vessel and synchronize the new amount in the vessel
-		public void Sync(Vessel v, double elapsed_s)
-		{
-			// execute all possible recipes
-			bool executing = true;
-			while (executing)
-			{
-				executing = false;
-				for (int i = 0; i < recipes.Count; ++i)
-				{
-					Resource_recipe recipe = recipes[i];
-					if (recipe.left > double.Epsilon)
-					{
-						executing |= recipe.Execute(v, this);
-					}
-				}
-			}
-
-			// forget the recipes
-			recipes.Clear();
-
-			// apply all deferred requests and synchronize to vessel
-			foreach (var pair in resources) pair.Value.Sync(v, elapsed_s);
-		}
-
-		// record deferred production of a resource (shortcut)
-		public void Produce(Vessel v, string resource_name, double quantity, string tag)
-		{
-			Info(v, resource_name).Produce(quantity, tag);
-		}
-
-		// record deferred consumption of a resource (shortcut)
-		public void Consume(Vessel v, string resource_name, double quantity, string tag)
-		{
-			Info(v, resource_name).Consume(quantity, tag);
-		}
-
-		// record deferred execution of a recipe
-		public void Transform(Resource_recipe recipe)
-		{
-			recipes.Add(recipe);
-		}
-
-		public Dictionary<string, Resource_info> resources = new Dictionary<string, Resource_info>(32);
-		public List<Resource_recipe> recipes = new List<Resource_recipe>(4);
-	}
-
-	/// <summary>cache for the resources of all vessels</summary>
-	public static class ResourceCache
-	{
-		public static void Init()
-		{
-			entries = new Dictionary<Guid, Vessel_resources>();
-		}
-
-		public static void Clear()
-		{
-			entries.Clear();
-		}
-
-		public static void Purge(Vessel v)
-		{
-			entries.Remove(v.id);
-		}
-
-		public static void Purge(ProtoVessel pv)
-		{
-			entries.Remove(pv.vesselID);
-		}
-
-		// return resource cache for a vessel
-		public static Vessel_resources Get(Vessel v)
-		{
-			// try to get existing entry if any
-			Vessel_resources entry;
-			if (entries.TryGetValue(v.id, out entry)) return entry;
-
-			// create new entry
-			entry = new Vessel_resources();
-
-			// remember new entry
-			entries.Add(v.id, entry);
-
-			// return new entry
-			return entry;
-		}
-
-		// return a resource handler (shortcut)
-		public static Resource_info Info(Vessel v, string resource_name)
-		{
-			return Get(v).Info(v, resource_name);
-		}
-
-		// register deferred production of a resource (shortcut)
-		public static void Produce(Vessel v, string resource_name, double quantity, string tag)
-		{
-			Info(v, resource_name).Produce(quantity, tag);
-		}
-
-		// register deferred consumption of a resource (shortcut)
-		public static void Consume(Vessel v, string resource_name, double quantity, string tag)
-		{
-			Info(v, resource_name).Consume(quantity, tag);
-		}
-
-		// register deferred execution of a recipe (shortcut)
-		public static void Transform(Vessel v, Resource_recipe recipe)
-		{
-			Get(v).Transform(recipe);
-		}
-
-		// resource cache
-		static Dictionary<Guid, Vessel_resources> entries;
 	}
 
 	// equalize/vent a vessel
@@ -866,7 +831,7 @@ namespace KERBALISM
 			// intial value
 			for (int i = 0; i < resourceName.Length; i++)
 			{
-				totalAmount[i] = new Resource_info(v, resourceName[i]).rate;        // Get generate rate for each resource
+				totalAmount[i] = new ResourceInfo(v, resourceName[i]).Rate;        // Get generate rate for each resource
 				maxAmount[i] = 0;
 
 				totalE[i] = 0;
@@ -881,14 +846,11 @@ namespace KERBALISM
 				mannedisPriority[i] = false;
 			}
 
-			double max_pressure = 1.0;
 			foreach (Habitat partHabitat in v.FindPartModulesImplementing<Habitat>())
 			{
 				// Skip disabled habitats
 				if (partHabitat.state != Habitat.State.disabled)
 				{
-					max_pressure = Math.Min(max_pressure, partHabitat.max_pressure);
-
 					// Has flag to be Equalized?
 					equalize |= partHabitat.needEqualize;
 
@@ -923,9 +885,6 @@ namespace KERBALISM
 				}
 			}
 
-			Cache.VesselInfo(v).max_pressure = max_pressure;
-			Cache.SetVesselObjectsCache<double>(v, "max_pressure", max_pressure);
-
 			if (!equalize) return;
 
 			for (int i = 0; i < resourceName.Length; i++)
@@ -935,8 +894,8 @@ namespace KERBALISM
 
 				// Manned is priority?
 				// If resource amount is less then maxAmount in manned habitat and it's flagged to equalize, define as priority
-				// Using Atmosphere, N2, O2 as Priority trigger (we don't want to use CO2 or Humidity as a trigger)
-				if (resourceName[i] != "WasteAtmosphere" && resourceName[i] != "MoistAtmosphere" && equalize)
+				// Using Atmosphere, N2, O2 as Priority trigger (we don't want to use CO2 as a trigger)
+				if (resourceName[i] != "WasteAtmosphere" && equalize)
 				{
 					mannedisPriority[i] = maxP[i] - totalP[i] > 0;
 				}
@@ -1069,7 +1028,7 @@ namespace KERBALISM
 		const double equalize_speed = 0.01;  // equalization/venting mutiple speed per-second, in proportion to amount
 
 		// Resources to equalize
-		public static string[] resourceName = new string[3] { "Atmosphere", "WasteAtmosphere", "MoistAtmosphere" };
+		public static string[] resourceName = new string[2] { "Atmosphere", "WasteAtmosphere" };
 
 		// Resources to equalize
 		public static double precision = 0.00001;
