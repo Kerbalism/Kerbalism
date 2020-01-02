@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using KSP.Localization;
 
 
 namespace KERBALISM
@@ -42,25 +43,25 @@ namespace KERBALISM
 				string temperature_str = body.atmosphere
 				  ? Lib.HumanReadableTemp(temperature)
 				  : Lib.BuildString(Lib.HumanReadableTemp(temperature_min), " / ", Lib.HumanReadableTemp(temperature));
-				p.AddSection("SURFACE");
-				p.AddContent("temperature", temperature_str);
-				p.AddContent("solar flux", Lib.HumanReadableFlux(solar_flux));
-				if (Features.Radiation) p.AddContent("radiation", Lib.HumanReadableRadiation(surfaceRadiation));
+				p.AddSection(Localizer.Format("#KERBALISM_BodyInfo_SURFACE"));//"SURFACE"
+				p.AddContent(Localizer.Format("#KERBALISM_BodyInfo_temperature"), temperature_str);//"temperature"
+				p.AddContent(Localizer.Format("#KERBALISM_BodyInfo_solarflux"), Lib.HumanReadableFlux(solar_flux));//"solar flux"
+				if (Features.Radiation) p.AddContent(Localizer.Format("#KERBALISM_BodyInfo_radiation"), Lib.HumanReadableRadiation(surfaceRadiation));//"radiation"
 
 				// atmosphere panel
 				if (body.atmosphere)
 				{
-					p.AddSection("ATMOSPHERE");
-					p.AddContent("breathable", Sim.Breathable(body) ? "yes" : "no");
-					p.AddContent("light absorption", Lib.HumanReadablePerc(1.0 - Sim.AtmosphereFactor(body, 0.7071)));
-					if (Features.Radiation) p.AddContent("gamma absorption", Lib.HumanReadablePerc(1.0 - Sim.GammaTransparency(body, 0.0)));
+					p.AddSection(Localizer.Format("#KERBALISM_BodyInfo_ATMOSPHERE"));//"ATMOSPHERE"
+					p.AddContent(Localizer.Format("#KERBALISM_BodyInfo_breathable"), Sim.Breathable(body) ? Localizer.Format("#KERBALISM_BodyInfo_breathable_yes") : Localizer.Format("#KERBALISM_BodyInfo_breathable_no"));//"breathable""yes""no"
+					p.AddContent(Localizer.Format("#KERBALISM_BodyInfo_lightabsorption"), Lib.HumanReadablePerc(1.0 - Sim.AtmosphereFactor(body, 0.7071)));//"light absorption"
+					if (Features.Radiation) p.AddContent(Localizer.Format("#KERBALISM_BodyInfo_gammaabsorption"), Lib.HumanReadablePerc(1.0 - Sim.GammaTransparency(body, 0.0)));//"gamma absorption"
 				}
 			}
 
 			// radiation panel
 			if (Features.Radiation)
 			{
-				p.AddSection("RADIATION");
+				p.AddSection(Localizer.Format("#KERBALISM_BodyInfo_RADIATION"));//"RADIATION"
 
 				string inner, outer, pause;
 				double activity, cycle;
@@ -68,11 +69,11 @@ namespace KERBALISM
 
 				if (Storm.sun_observation_quality > 0.5 && activity > -1)
 				{
-					string title = "solar activity";
+					string title = Localizer.Format("#KERBALISM_BodyInfo_solaractivity");//"solar activity"
 
 					if(Storm.sun_observation_quality > 0.7)
 					{
-						title = Lib.BuildString(title, ": ", Lib.Color(Lib.HumanReadableDuration(cycle) + " cycle", Lib.Kolor.LightGrey));
+						title = Lib.BuildString(title, ": ", Lib.Color(Lib.HumanReadableDuration(cycle) + " cycle", Lib.Kolor.LightGrey));//
 					}
 
 					p.AddContent(title, Lib.HumanReadablePerc(activity));
@@ -80,23 +81,23 @@ namespace KERBALISM
 
 				if (Storm.sun_observation_quality > 0.8)
 				{
-					p.AddContent("radiation on surface:", Lib.HumanReadableRadiation(surfaceRadiation));
+					p.AddContent(Localizer.Format("#KERBALISM_BodyInfo_radiationonsurface"), Lib.HumanReadableRadiation(surfaceRadiation));//"radiation on surface:"
 				}
 
-				p.AddContent(Lib.BuildString("inner belt: ", Lib.Color(inner, Lib.Kolor.LightGrey)),
-					Radiation.show_inner ? Lib.Color("show", Lib.Kolor.Green) : Lib.Color("hide", Lib.Kolor.Red), string.Empty, () => p.Toggle(ref Radiation.show_inner));
-				p.AddContent(Lib.BuildString("outer belt: ", Lib.Color(outer, Lib.Kolor.LightGrey)),
-					Radiation.show_outer ? Lib.Color("show", Lib.Kolor.Green) : Lib.Color("hide", Lib.Kolor.Red), string.Empty, () => p.Toggle(ref Radiation.show_outer));
-				p.AddContent(Lib.BuildString("magnetopause: ", Lib.Color(pause, Lib.Kolor.LightGrey)),
-					Radiation.show_pause ? Lib.Color("show", Lib.Kolor.Green) : Lib.Color("hide", Lib.Kolor.Red), string.Empty, () => p.Toggle(ref Radiation.show_pause));
+				p.AddContent(Lib.BuildString(Localizer.Format("#KERBALISM_BodyInfo_innerbelt") + " ", Lib.Color(inner, Lib.Kolor.LightGrey)),//"inner belt: "
+					Radiation.show_inner ? Lib.Color(Localizer.Format("#KERBALISM_BodyInfo_show"), Lib.Kolor.Green) : Lib.Color(Localizer.Format("#KERBALISM_BodyInfo_hide"), Lib.Kolor.Red), string.Empty, () => p.Toggle(ref Radiation.show_inner));//"show""hide"
+				p.AddContent(Lib.BuildString(Localizer.Format("#KERBALISM_BodyInfo_outerbelt") + " ", Lib.Color(outer, Lib.Kolor.LightGrey)),//"outer belt: "
+					Radiation.show_outer ? Lib.Color(Localizer.Format("#KERBALISM_BodyInfo_show"), Lib.Kolor.Green) : Lib.Color(Localizer.Format("#KERBALISM_BodyInfo_hide"), Lib.Kolor.Red), string.Empty, () => p.Toggle(ref Radiation.show_outer));//"show""hide"
+				p.AddContent(Lib.BuildString(Localizer.Format("#KERBALISM_BodyInfo_magnetopause") + " ", Lib.Color(pause, Lib.Kolor.LightGrey)),//"magnetopause: "
+					Radiation.show_pause ? Lib.Color(Localizer.Format("#KERBALISM_BodyInfo_show"), Lib.Kolor.Green) : Lib.Color(Localizer.Format("#KERBALISM_BodyInfo_hide"), Lib.Kolor.Red), string.Empty, () => p.Toggle(ref Radiation.show_pause));//"show""hide"
 			}
 
 			// explain the user how to toggle the BodyInfo window
 			p.AddContent(string.Empty);
-			p.AddContent("<i>Press <b>B</b> to open this window again</i>");
+			p.AddContent("<i>" + Localizer.Format("#KERBALISM_BodyInfo_BodyInfoToggleHelp", "<b>B</b>") + "</i>");//"Press <<1>> to open this window again"
 
 			// set metadata
-			p.Title(Lib.BuildString(Lib.Ellipsis(body.bodyName, Styles.ScaleStringLength(24)), " ", Lib.Color("BODY INFO", Lib.Kolor.LightGrey)));
+			p.Title(Lib.BuildString(Lib.Ellipsis(body.bodyName, Styles.ScaleStringLength(24)), " ", Lib.Color(Localizer.Format("#KERBALISM_BodyInfo_title"), Lib.Kolor.LightGrey)));//"BODY INFO"
 		}
 
 		private static void RadiationLevels(CelestialBody body, out string inner, out string outer, out string pause, out double activity, out double cycle)
@@ -111,17 +112,17 @@ namespace KERBALISM
 			if (rb.inner_visible)
 				inner = rb.model.has_inner ? "~" + Lib.HumanReadableRadiation(Math.Max(0, rad + rb.radiation_inner)) : "n/a";
 			else
-				inner = "unknown";
+				inner = Localizer.Format("#KERBALISM_BodyInfo_unknown");//"unknown"
 
 			if (rb.outer_visible)
 				outer = rb.model.has_outer ? "~" + Lib.HumanReadableRadiation(Math.Max(0, rad + rb.radiation_outer)) : "n/a";
 			else
-				outer = "unknown";
+				outer = Localizer.Format("#KERBALISM_BodyInfo_unknown");//"unknown"
 
 			if (rb.pause_visible)
 				pause = rb.model.has_pause ? "∆" + Lib.HumanReadableRadiation(Math.Abs(rb.radiation_pause)) : "n/a";
 			else
-				pause = "unknown";
+				pause = Localizer.Format("#KERBALISM_BodyInfo_unknown");//"unknown"
 
 			activity = -1;
 			cycle = rb.solar_cycle;

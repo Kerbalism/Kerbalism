@@ -175,7 +175,7 @@ namespace KERBALISM
 		// return short description of a script, or the time-out message
 		static string Description()
 		{
-			if (script_index == 0) return "<i>Control vessel components directly</i>";
+			if (script_index == 0) return "<i>"+Localizer.Format("#Kerbalism_UI_1000020") +"</i>";//Control vessel components directly
 			switch ((ScriptType)script_index)
 			{
 				case ScriptType.landed: return Localizer.Format("#Kerbalism_UI_1000000");        // #Kerbalism_UI_1000000 = <i>Called on landing</i>
