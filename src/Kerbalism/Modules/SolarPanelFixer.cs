@@ -31,6 +31,10 @@ namespace KERBALISM
 	public class SolarPanelFixer : PartModule
 	{
 		#region Declarations
+		/// <summary>Unit to show in the UI, this is the only configurable field for this module</summary>
+		[KSPField]
+		public string EcUIUnit = "EC/s";
+
 		/// <summary>Main PAW info label</summary>
 		[KSPField(guiActive = true, guiActiveEditor = false, guiName = "Solar panel")]
 		public string panelStatus = string.Empty;
@@ -91,6 +95,7 @@ namespace KERBALISM
 		private ExposureState exposureState;
 		private string mainOccludingPart;
 		private string rateFormat;
+		private StringBuilder sb;
 
 		public enum PanelState
 		{
@@ -165,6 +170,8 @@ namespace KERBALISM
 
 		public override void OnStart(StartState startState)
 		{
+			sb = new StringBuilder(256);
+
 			// don't break tutorial scenarios
 			// TODO : does this actually work ?
 			if (Lib.DisableScenario(this)) return;
@@ -258,19 +265,19 @@ namespace KERBALISM
 			{
 				case ExposureState.InShadow:
 					panelStatus = "<color=#ff2222>in shadow</color>";
-					if (currentOutput > 0.001) panelStatus = Lib.BuildString(currentOutput.ToString(rateFormat), " EC/s, ", panelStatus);
+					if (currentOutput > 0.001) panelStatus = Lib.BuildString(currentOutput.ToString(rateFormat), " ", EcUIUnit, ", ", panelStatus);
 					break;
 				case ExposureState.OccludedTerrain:
 					panelStatus = "<color=#ff2222>occluded by terrain</color>";
-					if (currentOutput > 0.001) panelStatus = Lib.BuildString(currentOutput.ToString(rateFormat), " EC/s, ", panelStatus);
+					if (currentOutput > 0.001) panelStatus = Lib.BuildString(currentOutput.ToString(rateFormat), " ", EcUIUnit, ", ", panelStatus);
 					break;
 				case ExposureState.OccludedPart:
 					panelStatus = Lib.BuildString("<color=#ff2222>occluded by ", mainOccludingPart, "</color>");
-					if (currentOutput > 0.001) panelStatus = Lib.BuildString(currentOutput.ToString(rateFormat), " EC/s, ", panelStatus);
+					if (currentOutput > 0.001) panelStatus = Lib.BuildString(currentOutput.ToString(rateFormat), " ", EcUIUnit, ", ", panelStatus);
 					break;
 				case ExposureState.BadOrientation:
 					panelStatus = "<color=#ff2222>bad orientation</color>";
-					if (currentOutput > 0.001) panelStatus = Lib.BuildString(currentOutput.ToString(rateFormat), " EC/s, ", panelStatus);
+					if (currentOutput > 0.001) panelStatus = Lib.BuildString(currentOutput.ToString(rateFormat), " ", EcUIUnit, ", ", panelStatus);
 					break;
 				case ExposureState.Disabled:
 					switch (state)
@@ -284,9 +291,10 @@ namespace KERBALISM
 					}
 					break;
 				case ExposureState.Exposed:
-					StringBuilder sb = new StringBuilder(256);
+					sb.Length = 0;
 					sb.Append(currentOutput.ToString(rateFormat));
-					sb.Append(" EC/s");
+					sb.Append(" ");
+					sb.Append(EcUIUnit);
 					if (analyticSunlight)
 					{
 						sb.Append(", analytic ");
@@ -562,14 +570,14 @@ namespace KERBALISM
 					case "SSTUSolarPanelStatic": SolarPanel = new SSTUStaticPanel();  break;
 					case "SSTUSolarPanelDeployable": SolarPanel = new SSTUVeryComplexPanel(); break;
 					case "SSTUModularPart": SolarPanel = new SSTUVeryComplexPanel(); break;
+					case "ModuleROSolar": SolarPanel = new ROConfigurablePanel(); break;
 					case "KopernicusSolarPanel":
 						Lib.Log("WARNING : Part '" + part.partInfo.title + "' use the KopernicusSolarPanel module, please remove it from your config. Kerbalism has it's own support for Kopernicus");
 						continue;
+					default:
+						if (pm is ModuleDeployableSolarPanel)
+							SolarPanel = new StockPanel(); break;
 				}
-
-				// stock module and derivatives
-				if (pm is ModuleDeployableSolarPanel)
-					SolarPanel = new StockPanel();
 
 				if (SolarPanel != null)
 				{
@@ -780,8 +788,9 @@ namespace KERBALISM
 			public override bool OnStart(bool initialized, ref double nominalRate)
 			{
 				// hide stock ui
-				foreach (BaseField field in panelModule.Fields)
-					field.guiActive = false;
+				panelModule.Fields["sunAOA"].guiActive = false;
+				panelModule.Fields["flowRate"].guiActive = false;
+				panelModule.Fields["status"].guiActive = false;
 
 				if (sunCatcherPivot == null)
 					sunCatcherPivot = panelModule.part.FindModelComponent<Transform>(panelModule.pivotName);
@@ -887,7 +896,7 @@ namespace KERBALISM
 
 			public override PanelState GetState()
 			{
-				if (!panelModule.isTracking)
+				if (!panelModule.useAnimation)
 				{
 					if (panelModule.deployState == ModuleDeployablePart.DeployState.BROKEN)
 						return PanelState.Broken;
@@ -1480,9 +1489,40 @@ namespace KERBALISM
 			public override bool SupportProtoAutomation(ProtoPartModuleSnapshot protoModule) { return false; }
 		}
 		#endregion
+
+		#region ROSolar switcheable/resizeable MDSP derivative (ModuleROSolar
+		// Made by PaP for RO. Implement in-editor model switching / resizing on top of the stock module.
+		// Current version (v0.2) doesn't seem to have tracking panels, may need further work to get those working.
+		// Plugin is here : https://github.com/KSP-RO/ROLibrary/blob/master/Source/ROLib/Modules/ModuleROSolar.cs
+		// Configs are here : https://github.com/KSP-RO/ROSolar
+		// Require the following MM patch to work :
+		/*
+		@PART[*]:HAS[@MODULE[ModuleROSolar]]:AFTER[zzzKerbalism]
+		{
+			MODULE
+			{
+				name = SolarPanelFixer
+			}
+		}
+		*/
+		private class ROConfigurablePanel : StockPanel
+		{
+			public override PanelState GetState()
+			{
+				// We set the resHandler rate to 0 in StockPanel.OnStart(), and ModuleROSolar set it back
+				// to the new nominal rate after some switching/resizing has been done (see ModuleROSolar.RecalculateStats()),
+				// so don't complicate things by using events and just call StockPanel.OnStart() if we detect a non-zero rate.
+				if (Lib.IsEditor() && panelModule.resHandler.outputResources[0].rate != 0.0)
+					OnStart(false, ref fixerModule.nominalRate);
+
+				return base.GetState();
+			}
+		}
+
+		#endregion
 	}
 
-#region Utility class for drawing vectors on screen
+	#region Utility class for drawing vectors on screen
 	// Source : https://github.com/sarbian/DebugStuff/blob/master/DebugDrawer.cs
 	// By Sarbian, released under MIT I think
 	[KSPAddon(KSPAddon.Startup.Instantly, true)]
