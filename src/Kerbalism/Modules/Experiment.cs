@@ -184,6 +184,13 @@ namespace KERBALISM
 
 			ExpInfo = ScienceDB.GetExperimentInfo(experiment_id);
 
+			if (ExpInfo == null)
+			{
+				enabled = isEnabled = moduleIsEnabled = false;
+				Lib.Log($"Error : ExpInfo for experiment_id `{experiment_id}` is null, does the config definition exists ?");
+				return;
+			}
+
 			if (Lib.IsFlight())
 			{
 				foreach (var hd in part.FindModulesImplementing<HardDrive>())
