@@ -65,7 +65,7 @@ namespace KERBALISM
 					{
 						if (!hasVesselDeviceSection)
 						{
-							p.AddSection("VESSEL DEVICES");
+							p.AddSection(Localizer.Format("#KERBALISM_DevManager_VESSELDEVICES"));//"VESSEL DEVICES"
 							hasVesselDeviceSection = true;
 						}
 					}
@@ -74,7 +74,7 @@ namespace KERBALISM
 					{
 						if (!hasModuleDeviceSection)
 						{
-							p.AddSection("MODULE DEVICES");
+							p.AddSection(Localizer.Format("#KERBALISM_DevManager_MODULEDEVICES"));//"MODULE DEVICES"
 							hasModuleDeviceSection = true;
 						}
 					}
@@ -130,7 +130,7 @@ namespace KERBALISM
 					{
 						if (!hasVesselDeviceSection)
 						{
-							p.AddSection("VESSEL DEVICES");
+							p.AddSection(Localizer.Format("#KERBALISM_DevManager_VESSELDEVICES"));//"VESSEL DEVICES"
 							hasVesselDeviceSection = true;
 						}
 					}
@@ -139,7 +139,7 @@ namespace KERBALISM
 					{
 						if (!hasModuleDeviceSection)
 						{
-							p.AddSection("MODULE DEVICES");
+							p.AddSection(Localizer.Format("#KERBALISM_DevManager_MODULEDEVICES"));//"MODULE DEVICES"
 							hasModuleDeviceSection = true;
 						}
 					}
@@ -168,7 +168,7 @@ namespace KERBALISM
 			// no devices case
 			if (deviceCount == 0)
 			{
-				p.AddContent("<i>no devices</i>");
+				p.AddContent("<i>"+Localizer.Format("#KERBALISM_DevManager_nodevices") +"</i>");//no devices
 			}
 		}
 

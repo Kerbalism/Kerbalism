@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
+using KSP.Localization;
 
 
 namespace KERBALISM
@@ -45,7 +46,7 @@ namespace KERBALISM
 			valve_i = dump_specs.ValveIndex;
 
 			// set action group ui
-			Actions["Action"].guiName = Lib.BuildString("Start/Stop ", title);
+			Actions["Action"].guiName = Lib.BuildString(Localizer.Format("#KERBALISM_ProcessController_Start_Stop") +" ", title);//"Start/Stop
 
 			// hide toggle if specified
 			Events["Toggle"].active = toggle;
@@ -88,14 +89,14 @@ namespace KERBALISM
 		public void Update()
 		{
 			// update rmb ui
-			Events["Toggle"].guiName = Lib.StatusToggle(title, broken ? "broken" : running ? "running" : "stopped");
-			Events["DumpValve"].guiName = Lib.StatusToggle("Dump", dump_specs.valves[valve_i]);
+			Events["Toggle"].guiName = Lib.StatusToggle(title, broken ? Localizer.Format("#KERBALISM_ProcessController_broken") : running ? Localizer.Format("#KERBALISM_ProcessController_running") : Localizer.Format("#KERBALISM_ProcessController_stopped"));//"broken""running""stopped"
+			Events["DumpValve"].guiName = Lib.StatusToggle(Localizer.Format("#KERBALISM_ProcessController_Dump"), dump_specs.valves[valve_i]);//"Dump"
 		}
 
 #if KSP15_16
 		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true)]
 #else
-		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true, groupName = "Processes", groupDisplayName = "Processes")]
+		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true, groupName = "Processes", groupDisplayName = "#KERBALISM_Group_Processes")]//Processes
 #endif
 		public void Toggle()
 		{
@@ -105,7 +106,7 @@ namespace KERBALISM
 #if KSP15_16
 		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "Dump", active = true)]
 #else
-		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "Dump", active = true, groupName = "Processes", groupDisplayName = "Processes")]
+		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "#KERBALISM_ProcessController_Dump", active = true, groupName = "Processes", groupDisplayName = "#KERBALISM_Group_Processes")]//"Dump""Processes"
 #endif
 		public void DumpValve()
 		{
@@ -153,7 +154,7 @@ namespace KERBALISM
 					if (!process.modifiers.Contains(pair.Key))
 						specs.Add(pair.Key, Lib.BuildString("<color=#ffaa00>", Lib.HumanReadableRate(pair.Value * capacity), "</color>"));
 					else
-						specs.Add("Half-life", Lib.HumanReadableDuration(0.5 / pair.Value));
+						specs.Add(Localizer.Format("#KERBALISM_ProcessController_info1"), Lib.HumanReadableDuration(0.5 / pair.Value));//"Half-life"
 				}
 				foreach (KeyValuePair<string, double> pair in process.outputs)
 				{

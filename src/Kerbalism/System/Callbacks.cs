@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Harmony;
 using KSP.UI.Screens;
 using UnityEngine;
+using KSP.Localization;
 
 
 namespace KERBALISM
@@ -233,7 +234,7 @@ namespace KERBALISM
 			if (evaPropQuantity <= 0.05 && !Lib.Landed(data.from.vessel))
 			{
 				Message.Post(Severity.danger,
-					Lib.BuildString("There isn't any <b>", prop_name, "</b> in the EVA suit"), "Don't let the ladder go!");
+					Localizer.Format("#KERBALISM_CallBackMsg_EvaNoMP", "<b>"+prop_name+"</b>"), Localizer.Format("#KERBALISM_CallBackMsg_EvaNoMP2"));//Lib.BuildString("There isn't any <<1>> in the EVA suit")"Don't let the ladder go!"
 			}
 
 			// turn off headlamp light, to avoid stock bug that show them for a split second when going on eva
@@ -401,8 +402,8 @@ namespace KERBALISM
 				{
 					Message.Post
 					(
-					  "<color=#00ffff><b>PROGRESS</b></color>\nOur scientists just made a breakthrough",
-					  Lib.BuildString("We now have access to <b>", label, "</b>")
+					  "<color=#00ffff><b>"+Localizer.Format("#KERBALISM_CallBackMsg_PROGRESS") +"</b></color>\n"+Localizer.Format("#KERBALISM_CallBackMsg_PROGRESS2"),//PROGRESS""Our scientists just made a breakthrough
+					  Localizer.Format("#KERBALISM_CallBackMsg_PROGRESS3", "<b>"+label+"</b>")//Lib.BuildString("We now have access to <<1>>)
 					);
 				}
 			}

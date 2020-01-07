@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Text;
 using UnityEngine;
+using KSP.Localization;
 
 
 namespace KERBALISM
@@ -32,11 +33,11 @@ namespace KERBALISM
 	{
 		#region Declarations
 		/// <summary>Main PAW info label</summary>
-		[KSPField(guiActive = true, guiActiveEditor = false, guiName = "Solar panel")]
+		[KSPField(guiActive = true, guiActiveEditor = false, guiName = "#KERBALISM_SolarPanelFixer_Solarpanel")]//Solar panel
 		public string panelStatus = string.Empty;
 
-		[KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "Solar panel output")]
-		[UI_Toggle(enabledText = "<color=#00ff00>simulated</color>", disabledText = "<color=#ffff00>ignored</color>")]
+		[KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#KERBALISM_SolarPanelFixer_Solarpaneloutput")]//Solar panel output
+		[UI_Toggle(enabledText = "<color=#00ff00>"+ "#KERBALISM_SolarPanelFixer_simulated" + "</color>", disabledText = "<color=#ffff00>"+ "#KERBALISM_SolarPanelFixer_ignored" + "</color>")]//simulated""ignored
 		public bool editorEnabled = true;
 
 		/// <summary>nominal rate at 1 UA (Kerbin distance from the sun)</summary>
@@ -118,12 +119,12 @@ namespace KERBALISM
 
 		#region KSP/Unity methods + background update
 
-		[KSPEvent(active = true, guiActive = true, guiName = "Select tracked star")]
+		[KSPEvent(active = true, guiActive = true, guiName = "Select tracked star")]//
 		public void ManualTracking()
 		{
 			// Assemble the buttons
 			DialogGUIBase[] options = new DialogGUIBase[Sim.suns.Count + 1];
-			options[0] = new DialogGUIButton("Automatic", () => { manualTracking = false; }, true);
+			options[0] = new DialogGUIButton("Automatic", () => { manualTracking = false; }, true);//
 			for (int i = 0; i < Sim.suns.Count; i++)
 			{
 				CelestialBody body = Sim.suns[i].body;
@@ -136,9 +137,9 @@ namespace KERBALISM
 			}
 
 			PopupDialog.SpawnPopupDialog(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new MultiOptionDialog(
-				"SelectTrackingBody",
-				"Select the star you want to track with this solar panel.",
-				"Select tracked star",
+				"SelectTrackingBody",//
+				"Select the star you want to track with this solar panel.",//
+				"Select tracked star",//
 				UISkinManager.GetSkin("MainMenuSkin"),
 				options), false, UISkinManager.GetSkin("MainMenuSkin"));
 		}
@@ -240,7 +241,7 @@ namespace KERBALISM
 			if (Events["ManualTracking"].active && (state == PanelState.Extended || state == PanelState.ExtendedFixed || state == PanelState.Static))
 			{
 				Events["ManualTracking"].guiActive = true;
-				Events["ManualTracking"].guiName = Lib.BuildString("Tracked star ", manualTracking ? ": " : "[Auto] : ", FlightGlobals.Bodies[trackedSunIndex].bodyDisplayName.Replace("^N", ""));
+				Events["ManualTracking"].guiName = Lib.BuildString(Localizer.Format("#KERBALISM_SolarPanelFixer_Trackedstar") +" ", manualTracking ? ": " : Localizer.Format("#KERBALISM_SolarPanelFixer_AutoTrack"), FlightGlobals.Bodies[trackedSunIndex].bodyDisplayName.Replace("^N", ""));//"Tracked star"[Auto] : "
 			}
 			else
 			{
@@ -257,19 +258,19 @@ namespace KERBALISM
 			switch (exposureState)
 			{
 				case ExposureState.InShadow:
-					panelStatus = "<color=#ff2222>in shadow</color>";
+					panelStatus = "<color=#ff2222>" +Localizer.Format("#KERBALISM_SolarPanelFixer_inshadow") +"</color>";//in shadow
 					if (currentOutput > 0.001) panelStatus = Lib.BuildString(currentOutput.ToString(rateFormat), " EC/s, ", panelStatus);
 					break;
 				case ExposureState.OccludedTerrain:
-					panelStatus = "<color=#ff2222>occluded by terrain</color>";
+					panelStatus = "<color=#ff2222>"+Localizer.Format("#KERBALISM_SolarPanelFixer_occludedbyterrain") +"</color>";//occluded by terrain
 					if (currentOutput > 0.001) panelStatus = Lib.BuildString(currentOutput.ToString(rateFormat), " EC/s, ", panelStatus);
 					break;
 				case ExposureState.OccludedPart:
-					panelStatus = Lib.BuildString("<color=#ff2222>occluded by ", mainOccludingPart, "</color>");
+					panelStatus = Lib.BuildString("<color=#ff2222>"+Localizer.Format("#KERBALISM_SolarPanelFixer_occludedby") +" ", mainOccludingPart, "</color>");//occluded by
 					if (currentOutput > 0.001) panelStatus = Lib.BuildString(currentOutput.ToString(rateFormat), " EC/s, ", panelStatus);
 					break;
 				case ExposureState.BadOrientation:
-					panelStatus = "<color=#ff2222>bad orientation</color>";
+					panelStatus = "<color=#ff2222>"+Localizer.Format("#KERBALISM_SolarPanelFixer_badorientation") +"</color>";//bad orientation
 					if (currentOutput > 0.001) panelStatus = Lib.BuildString(currentOutput.ToString(rateFormat), " EC/s, ", panelStatus);
 					break;
 				case ExposureState.Disabled:
@@ -289,17 +290,17 @@ namespace KERBALISM
 					sb.Append(" EC/s");
 					if (analyticSunlight)
 					{
-						sb.Append(", analytic ");
+						sb.Append(", "+Localizer.Format("#KERBALISM_SolarPanelFixer_analytic") +" ");//analytic
 						sb.Append(persistentFactor.ToString("P0"));
 					}
 					else
 					{
-						sb.Append(", exposure ");
+						sb.Append(", "+Localizer.Format("#KERBALISM_SolarPanelFixer_exposure") +" ");//exposure
 						sb.Append(exposureFactor.ToString("P0"));
 					}
 					if (wearFactor < 1.0)
 					{
-						sb.Append(", wear : ");
+						sb.Append(", "+Localizer.Format("#KERBALISM_SolarPanelFixer_wear") +" : ");//wear
 						sb.Append((1.0 - wearFactor).ToString("P0"));
 					}
 					panelStatus = sb.ToString();

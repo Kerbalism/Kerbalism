@@ -378,16 +378,16 @@ namespace KERBALISM
 						if (stockExpModule.experimentID == ExperimentId)
 						{
 							ModuleInfo = Lib.Color(Title, Lib.Kolor.Cyan, true);
-							ModuleInfo += "\nData size: ";
+							ModuleInfo += "\nData size: ";//
 							ModuleInfo += Lib.HumanReadableDataSize(DataSize);
 							if (stockExpModule.xmitDataScalar < Science.maxXmitDataScalarForSample)
 							{
-								ModuleInfo += "\nWill generate a sample.";
-								ModuleInfo += "\nSample size: ";
+								ModuleInfo += "\nWill generate a sample.";//
+								ModuleInfo += "\nSample size: ";//
 								ModuleInfo += Lib.HumanReadableSampleSize(DataSize);
 							}
 							ModuleInfo += "\n\n";
-							ModuleInfo += Lib.Color("Situations:\n", Lib.Kolor.Cyan, true);
+							ModuleInfo += Lib.Color("Situations:\n", Lib.Kolor.Cyan, true);//
 
 							foreach (string s in AvailableSituations())
 								ModuleInfo += Lib.BuildString("• <b>", s, "</b>\n");
@@ -403,7 +403,7 @@ namespace KERBALISM
 						if (groundExpModule.experimentId == ExperimentId)
 						{
 							ModuleInfo = Lib.Color(Title, Lib.Kolor.Cyan, true);
-							ModuleInfo += "\nData size: ";
+							ModuleInfo += "\nData size: ";//
 							ModuleInfo += Lib.HumanReadableDataSize(DataSize);
 							ModuleInfo += "\n\n";
 							ModuleInfo += groundExpModule.GetInfo();
@@ -415,10 +415,10 @@ namespace KERBALISM
 				// special cases
 				if (ExperimentId == "asteroidSample")
 				{
-					ModuleInfo = "Asteroid samples can be taken by kerbals on EVA";
-					ModuleInfo += "\nSample size: ";
+					ModuleInfo = "Asteroid samples can be taken by kerbals on EVA";//
+					ModuleInfo += "\nSample size: ";//
 					ModuleInfo += Lib.HumanReadableSampleSize(DataSize);
-					ModuleInfo += "\nSample mass: ";
+					ModuleInfo += "\nSample mass: ";//
 					ModuleInfo += Lib.HumanReadableMass(DataSize * Settings.AsteroidSampleMassPerMB);
 				}
 #if !KSP15_16
@@ -429,24 +429,24 @@ namespace KERBALISM
 					if (rocDef != null)
 					{
 						ModuleInfo = Lib.Color(rocDef.displayName, Lib.Kolor.Cyan, true);
-						ModuleInfo += "\n- Analyse with a scanner arm";
-						ModuleInfo += "\n  Data size: ";
+						ModuleInfo += "\n- Analyse with a scanner arm";//
+						ModuleInfo += "\n  Data size: ";//
 						ModuleInfo += Lib.HumanReadableDataSize(DataSize);
 
 						if (rocDef.smallRoc)
 						{
-							ModuleInfo += "\n- Collectable on EVA as a sample";
-							ModuleInfo += "\nSample size: ";
+							ModuleInfo += "\n- Collectable on EVA as a sample";//
+							ModuleInfo += "\nSample size: ";//
 							ModuleInfo += Lib.HumanReadableSampleSize(DataSize);
 						}
 						else
 						{
-							ModuleInfo += "\n- Can't be collected on EVA";
+							ModuleInfo += "\n- Can't be collected on EVA";//
 						}
 
 						foreach (RocCBDefinition body in rocDef.myCelestialBodies)
 						{
-							ModuleInfo += Lib.Color("\n\nFound on " + body.name + "'s :", Lib.Kolor.Cyan, true);
+							ModuleInfo += Lib.Color("\n\nFound on " + body.name + "'s :", Lib.Kolor.Cyan, true);//
 							foreach (string biome in body.biomes)
 							{
 								ModuleInfo += "\n- ";
@@ -485,7 +485,7 @@ namespace KERBALISM
 				{
 					if (situation.IsBodyBiomesRelevantForExperiment(this))
 					{
-						result.Add(Lib.BuildString(situation.Title(), " (biomes)"));
+						result.Add(Lib.BuildString(situation.Title(), " (biomes)"));//
 					}
 					else if (situation.IsVirtualBiomesRelevantForExperiment(this))
 					{
@@ -608,19 +608,19 @@ namespace KERBALISM
 			private class Atmospheric : BodyCondition
 			{
 				public override bool TestCondition(CelestialBody body) => body.atmosphere;
-				public override string Title => "atmospheric";
+				public override string Title => "atmospheric";//
 			}
 
 			private class NonAtmospheric : BodyCondition
 			{
 				public override bool TestCondition(CelestialBody body) => !body.atmosphere;
-				public override string Title => "non-atmospheric";
+				public override string Title => "non-atmospheric";//
 			}
 
 			private class Gaseous : BodyCondition
 			{
 				public override bool TestCondition(CelestialBody body) => body.hasSolidSurface;
-				public override string Title => "gaseous";
+				public override string Title => "gaseous";//
 			}
 
 			private class Solid : BodyCondition

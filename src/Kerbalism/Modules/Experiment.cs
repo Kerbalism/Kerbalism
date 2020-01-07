@@ -267,10 +267,10 @@ namespace KERBALISM
 					Events["ShowPopup"].active = false;
 				}
 
-				Events["Prepare"].guiName = Lib.BuildString("Prepare <b>", ExpInfo.Title, "</b>");
+				Events["Prepare"].guiName = Lib.BuildString(Localizer.Format("#KERBALISM_Moudule_Experiment_Prepare") +" <b>", ExpInfo.Title, "</b>");//Prepare
 				Events["Prepare"].active = !didPrepare && prepare_cs != null && subject == null;
 
-				Events["Reset"].guiName = Lib.BuildString("Reset <b>", ExpInfo.Title, "</b>");
+				Events["Reset"].guiName = Lib.BuildString(Localizer.Format("#KERBALISM_Moudule_Experiment_Reset") +" <b>", ExpInfo.Title, "</b>");//Reset
 				// we need a reset either if we have recorded data or did a setup
 				bool resetActive = (reset_cs != null || prepare_cs != null) && subject != null;
 				Events["Reset"].active = resetActive;
@@ -415,7 +415,7 @@ namespace KERBALISM
 			else
 			{
 				lastSituationId = vd.VesselSituations.FirstSituation.Id;
-				mainIssue = "invalid situation";
+				mainIssue = Localizer.Format("#KERBALISM_Moudule_Experiment_issue1");//"invalid situation"
 				return;
 			}
 
@@ -426,19 +426,19 @@ namespace KERBALISM
 
 			if (isShrouded && !prefab.allow_shrouded)
 			{
-				mainIssue = "shrouded";
+				mainIssue = Localizer.Format("#KERBALISM_Moudule_Experiment_issue2");//"shrouded"
 				return;
 			}
 
 			if (subjectHasChanged && prefab.crew_reset.Length > 0)
 			{
-				mainIssue = "reset required";
+				mainIssue = Localizer.Format("#KERBALISM_Moudule_Experiment_issue3");//"reset required"
 				return;
 			}
 
 			if (ec.Amount == 0.0 && prefab.ec_rate > 0.0)
 			{
-				mainIssue = "no Electricity";
+				mainIssue = Localizer.Format("#KERBALISM_Moudule_Experiment_issue4");//"no Electricity"
 				return;
 			}
 
@@ -447,7 +447,7 @@ namespace KERBALISM
 				var cs = new CrewSpecs(prefab.crew_operate);
 				if (!cs && Lib.CrewCount(v) > 0)
 				{
-					mainIssue = "crew on board";
+					mainIssue = Localizer.Format("#KERBALISM_Moudule_Experiment_issue5");//"crew on board"
 					return;
 				}
 				else if (cs && !cs.Check(v))
@@ -459,32 +459,32 @@ namespace KERBALISM
 
 			if (!prefab.sample_collecting && remainingSampleMass <= 0.0 && expInfo.SampleMass > 0.0)
 			{
-				mainIssue = "depleted";
+				mainIssue = Localizer.Format("#KERBALISM_Moudule_Experiment_issue6");//"depleted"
 				return;
 			}
 
 			if (!didPrepare && !string.IsNullOrEmpty(prefab.crew_prepare))
 			{
-				mainIssue = "not prepared";
+				mainIssue = Localizer.Format("#KERBALISM_Moudule_Experiment_issue7");//"not prepared"
 				return;
 			}
 
 			if (!v.loaded && subjectData.Situation.AtmosphericFlight())
 			{
-				mainIssue = "background flight";
+				mainIssue = Localizer.Format("#KERBALISM_Moudule_Experiment_issue8");//"background flight"
 				return;
 			}
 
 			RequireResult[] reqResults;
 			if (!prefab.Requirements.TestRequirements(v, out reqResults))
 			{
-				mainIssue = "unmet requirement";
+				mainIssue = Localizer.Format("#KERBALISM_Moudule_Experiment_issue9");//"unmet requirement"
 				return;
 			}
 
 			if (!HasRequiredResources(v, resourceDefs, resources, out mainIssue))
 			{
-				mainIssue = "missing resource";
+				mainIssue = Localizer.Format("#KERBALISM_Moudule_Experiment_issue10");//"missing resource"
 				return;
 			}
 
@@ -498,7 +498,7 @@ namespace KERBALISM
 			Drive drive = GetDrive(vd, hdId, chunkSize, subjectData);
 			if (drive == null)
 			{
-				mainIssue = "no storage space";
+				mainIssue = Localizer.Format("#KERBALISM_Moudule_Experiment_issue11");//"no storage space"
 				return;
 			}
 
@@ -520,7 +520,7 @@ namespace KERBALISM
 
 			if (available <= 0.0)
 			{
-				mainIssue = "no storage space";
+				mainIssue = Localizer.Format("#KERBALISM_Moudule_Experiment_issue11");//"no storage space"
 				return;
 			}
 
@@ -551,7 +551,7 @@ namespace KERBALISM
 
 			if (prodFactor == 0.0)
 			{
-				mainIssue = "missing resource";
+				mainIssue = Localizer.Format("#KERBALISM_Moudule_Experiment_issue10");//"missing resource"
 				return;
 			}
 
@@ -631,7 +631,7 @@ namespace KERBALISM
 				var ri = res.GetResource(v, p.Key);
 				if (ri.Amount == 0.0)
 				{
-					issue = "missing " + ri.ResourceName;
+					issue = Localizer.Format("#KERBALISM_Moudule_Experiment_issue12", ri.ResourceName);//"missing " + 
 					return false;
 				}
 			}
@@ -806,7 +806,7 @@ namespace KERBALISM
 #if KSP15_16
 		[KSPEvent(guiActiveUnfocused = true, guiActive = true, guiActiveEditor = true, guiName = "_", active = true)]
 #else
-		[KSPEvent(guiActiveUnfocused = true, guiActive = true, guiActiveEditor = true, guiName = "_", active = true, groupName = "Science", groupDisplayName = "Science")]
+		[KSPEvent(guiActiveUnfocused = true, guiActive = true, guiActiveEditor = true, guiName = "_", active = true, groupName = "Science", groupDisplayName = "#KERBALISM_Group_Science")]//Science
 #endif
 		public void ToggleEvent()
 		{
@@ -816,7 +816,7 @@ namespace KERBALISM
 #if KSP15_16
 		[KSPEvent(guiActiveUnfocused = true, guiActive = true, guiName = "_", active = true)]
 #else
-		[KSPEvent(guiActiveUnfocused = true, guiActive = true, guiName = "_", active = true, groupName = "Science", groupDisplayName = "Science")]
+		[KSPEvent(guiActiveUnfocused = true, guiActive = true, guiName = "_", active = true, groupName = "Science", groupDisplayName = "#KERBALISM_Group_Science")]//Science
 #endif
 		public void ShowPopup()
 		{
@@ -826,7 +826,7 @@ namespace KERBALISM
 #if KSP15_16
 		[KSPEvent(guiActiveUnfocused = true, guiName = "_", active = false)]
 #else
-		[KSPEvent(guiActiveUnfocused = true, guiName = "_", active = false, groupName = "Science", groupDisplayName = "Science")]
+		[KSPEvent(guiActiveUnfocused = true, guiName = "_", active = false, groupName = "Science", groupDisplayName = "#KERBALISM_Group_Science")]//Science
 #endif
 		public void Prepare()
 		{
@@ -844,9 +844,9 @@ namespace KERBALISM
 				Message.Post(
 				  Lib.TextVariant
 				  (
-					"I'm not qualified for this",
-					"I will not even know where to start",
-					"I'm afraid I can't do that"
+					Localizer.Format("#KERBALISM_Moudule_Experiment_Message1"),//"I'm not qualified for this"
+					Localizer.Format("#KERBALISM_Moudule_Experiment_Message2"),//"I will not even know where to start"
+					Localizer.Format("#KERBALISM_Moudule_Experiment_Message3")//"I'm afraid I can't do that"
 				  ),
 				  reset_cs.Warning()
 				);
@@ -855,11 +855,11 @@ namespace KERBALISM
 			didPrepare = true;
 
 			Message.Post(
-			  "Preparation Complete",
+			  Localizer.Format("#KERBALISM_Moudule_Experiment_Message4"),//"Preparation Complete"
 			  Lib.TextVariant
 			  (
-				"Ready to go",
-				"Let's start doing some science!"
+				Localizer.Format("#KERBALISM_Moudule_Experiment_Message5"),//"Ready to go"
+				Localizer.Format("#KERBALISM_Moudule_Experiment_Message6")//"Let's start doing some science!"
 			  )
 			);
 		}
@@ -867,7 +867,7 @@ namespace KERBALISM
 #if KSP15_16
 		[KSPEvent(guiActiveUnfocused = true, guiName = "_", active = false)]
 #else
-		[KSPEvent(guiActiveUnfocused = true, guiName = "_", active = false, groupName = "Science", groupDisplayName = "Science")]
+		[KSPEvent(guiActiveUnfocused = true, guiName = "_", active = false, groupName = "Science", groupDisplayName = "#KERBALISM_Group_Science")]//Science
 #endif
 		public void Reset()
 		{
@@ -892,9 +892,9 @@ namespace KERBALISM
 					Message.Post(
 					  Lib.TextVariant
 					  (
-						"I'm not qualified for this",
-						"I will not even know where to start",
-						"I'm afraid I can't do that"
+						Localizer.Format("#KERBALISM_Moudule_Experiment_Message1"),//"I'm not qualified for this"
+						Localizer.Format("#KERBALISM_Moudule_Experiment_Message2"),//"I will not even know where to start"
+						Localizer.Format("#KERBALISM_Moudule_Experiment_Message3")//"I'm afraid I can't do that"
 					  ),
 					  reset_cs.Warning()
 					);
@@ -908,11 +908,11 @@ namespace KERBALISM
 			if(showMessage)
 			{
 				Message.Post(
-				  "Reset Done",
+				  Localizer.Format("#KERBALISM_Moudule_Experiment_Message7"),//"Reset Done"
 				  Lib.TextVariant
 				  (
-					"It's good to go again",
-					"Ready for the next bit of science"
+					Localizer.Format("#KERBALISM_Moudule_Experiment_Message8"),//"It's good to go again"
+					Localizer.Format("#KERBALISM_Moudule_Experiment_Message9")//"Ready for the next bit of science"
 				  )
 				);
 			}
@@ -939,10 +939,10 @@ namespace KERBALISM
 		{
 			switch (state)
 			{
-				case RunningState.Stopped: return Lib.Color("stopped", Lib.Kolor.Yellow);
-				case RunningState.Running: return Lib.Color("started", Lib.Kolor.Green);
-				case RunningState.Forced: return Lib.Color("forced run", Lib.Kolor.Red);
-				case RunningState.Broken: return Lib.Color("broken", Lib.Kolor.Red);
+				case RunningState.Stopped: return Lib.Color(Localizer.Format("#KERBALISM_Moudule_Experiment_runningstate1"), Lib.Kolor.Yellow);//"stopped"
+				case RunningState.Running: return Lib.Color(Localizer.Format("#KERBALISM_Moudule_Experiment_runningstate2"), Lib.Kolor.Green);//"started"
+				case RunningState.Forced: return Lib.Color(Localizer.Format("#KERBALISM_Moudule_Experiment_runningstate3"), Lib.Kolor.Red);//"forced run"
+				case RunningState.Broken: return Lib.Color(Localizer.Format("#KERBALISM_Moudule_Experiment_runningstate4"), Lib.Kolor.Red);//"broken"
 				default: return string.Empty;
 			}
 
@@ -952,12 +952,12 @@ namespace KERBALISM
 		{
 			switch (status)
 			{
-				case ExpStatus.Stopped: return Lib.Color("stopped", Lib.Kolor.Yellow);
-				case ExpStatus.Running: return Lib.Color("running", Lib.Kolor.Green);
-				case ExpStatus.Forced: return Lib.Color("forced run", Lib.Kolor.Red);
-				case ExpStatus.Waiting: return Lib.Color("waiting", Lib.Kolor.Science);
-				case ExpStatus.Broken: return Lib.Color("broken", Lib.Kolor.Red);
-				case ExpStatus.Issue: return Lib.Color(string.IsNullOrEmpty(issue) ? "issue" : issue, Lib.Kolor.Orange);
+				case ExpStatus.Stopped: return Lib.Color(Localizer.Format("#KERBALISM_Moudule_Experiment_runningstate1"), Lib.Kolor.Yellow);//"stopped"
+				case ExpStatus.Running: return Lib.Color(Localizer.Format("#KERBALISM_Moudule_Experiment_runningstate5"), Lib.Kolor.Green);//"running"
+				case ExpStatus.Forced: return Lib.Color(Localizer.Format("#KERBALISM_Moudule_Experiment_runningstate3"), Lib.Kolor.Red);//"forced run"
+				case ExpStatus.Waiting: return Lib.Color(Localizer.Format("#KERBALISM_Moudule_Experiment_runningstate6"), Lib.Kolor.Science);//"waiting"
+				case ExpStatus.Broken: return Lib.Color(Localizer.Format("#KERBALISM_Moudule_Experiment_runningstate4"), Lib.Kolor.Red);//"broken"
+				case ExpStatus.Issue: return Lib.Color(string.IsNullOrEmpty(issue) ? Localizer.Format("#KERBALISM_Moudule_Experiment_issue_title") : issue, Lib.Kolor.Orange);//"issue"
 				default: return string.Empty;
 			}
 		}
@@ -978,7 +978,7 @@ namespace KERBALISM
 			if (subjectData != null)
 				return Lib.BuildString(Lib.HumanReadableScience(subjectData.ScienceCollectedTotal), " / ", Lib.HumanReadableScience(subjectData.ScienceMaxValue));
 			else
-				return Lib.Color("none", Lib.Kolor.Science, true);
+				return Lib.Color(Localizer.Format("#KERBALISM_Moudule_Experiment_ScienceValuenone"), Lib.Kolor.Science, true);//"none"
 		}
 
 		// specifics support
@@ -989,7 +989,7 @@ namespace KERBALISM
 			if (Requirements.Requires.Length > 0)
 			{
 				specs.Add(string.Empty);
-				specs.Add(Lib.Color("Requires:", Lib.Kolor.Cyan, true));
+				specs.Add(Lib.Color(Localizer.Format("#KERBALISM_Moudule_Experiment_Requires"), Lib.Kolor.Cyan, true));//"Requires:"
 				foreach (RequireDef req in Requirements.Requires)
 					specs.Add(Lib.BuildString("• <b>", ReqName(req.require), "</b>"), ReqValueFormat(req.require, req.value));
 			}
@@ -1015,24 +1015,24 @@ namespace KERBALISM
 			double expSize = expInfo.DataSize;
 			if (expInfo.SampleMass == 0.0)
 			{
-				specs.Add("Data size", Lib.HumanReadableDataSize(expSize));
-				specs.Add("Data rate", Lib.HumanReadableDataRate(prefab.data_rate));
-				specs.Add("Duration", Lib.HumanReadableDuration(expSize / prefab.data_rate));
+				specs.Add(Localizer.Format("#KERBALISM_Moudule_Experiment_Specifics_info1"), Lib.HumanReadableDataSize(expSize));//"Data size"
+				specs.Add(Localizer.Format("#KERBALISM_Moudule_Experiment_Specifics_info2"), Lib.HumanReadableDataRate(prefab.data_rate));//"Data rate"
+				specs.Add(Localizer.Format("#KERBALISM_Moudule_Experiment_Specifics_info3"), Lib.HumanReadableDuration(expSize / prefab.data_rate));//"Duration"
 			}
 			else
 			{
-				specs.Add("Sample size", Lib.HumanReadableSampleSize(expSize));
-				specs.Add("Sample mass", Lib.HumanReadableMass(expInfo.SampleMass));
+				specs.Add(Localizer.Format("#KERBALISM_Moudule_Experiment_Specifics_info4"), Lib.HumanReadableSampleSize(expSize));//"Sample size"
+				specs.Add(Localizer.Format("#KERBALISM_Moudule_Experiment_Specifics_info5"), Lib.HumanReadableMass(expInfo.SampleMass));//"Sample mass"
 				if (expInfo.SampleMass > 0.0 && !prefab.sample_collecting)
-					specs.Add("Samples", prefab.sample_amount.ToString("F2"));
-				specs.Add("Duration", Lib.HumanReadableDuration(expSize / prefab.data_rate));
+					specs.Add(Localizer.Format("#KERBALISM_Moudule_Experiment_Specifics_info6"), prefab.sample_amount.ToString("F2"));//"Samples"
+				specs.Add(Localizer.Format("#KERBALISM_Moudule_Experiment_Specifics_info7_sample"), Lib.HumanReadableDuration(expSize / prefab.data_rate));//"Duration"
 			}
 
 			List<string> situations = expInfo.AvailableSituations();
 			if (situations.Count > 0)
 			{
 				specs.Add(string.Empty);
-				specs.Add(Lib.Color("Situations:", Lib.Kolor.Cyan, true));
+				specs.Add(Lib.Color(Localizer.Format("#KERBALISM_Moudule_Experiment_Specifics_Situations"), Lib.Kolor.Cyan, true));//"Situations:"
 				foreach (string s in situations) specs.Add(Lib.BuildString("• <b>", s, "</b>"));
 			}
 
@@ -1043,26 +1043,26 @@ namespace KERBALISM
 			}
 
 			specs.Add(string.Empty);
-			specs.Add(Lib.Color("Needs:", Lib.Kolor.Cyan, true));
+			specs.Add(Lib.Color(Localizer.Format("#KERBALISM_Moudule_Experiment_Specifics_info8"), Lib.Kolor.Cyan, true));//"Needs:"
 
-			specs.Add("EC", Lib.HumanReadableRate(prefab.ec_rate));
+			specs.Add(Localizer.Format("#KERBALISM_Moudule_Experiment_Specifics_info9"), Lib.HumanReadableRate(prefab.ec_rate));//"EC"
 			foreach (var p in ParseResources(prefab.resources))
 				specs.Add(p.Key, Lib.HumanReadableRate(p.Value));
 
 			if (prefab.crew_prepare.Length > 0)
 			{
 				var cs = new CrewSpecs(prefab.crew_prepare);
-				specs.Add("Preparation", cs ? cs.Info() : "none");
+				specs.Add(Localizer.Format("#KERBALISM_Moudule_Experiment_Specifics_info10"), cs ? cs.Info() : Localizer.Format("#KERBALISM_Moudule_Experiment_Specifics_info10_none"));//"Preparation""none"
 			}
 			if (prefab.crew_operate.Length > 0)
 			{
 				var cs = new CrewSpecs(prefab.crew_operate);
-				specs.Add("Operation", cs ? cs.Info() : "unmanned");
+				specs.Add(Localizer.Format("#KERBALISM_Moudule_Experiment_Specifics_info11"), cs ? cs.Info() : Localizer.Format("#KERBALISM_Moudule_Experiment_Specifics_info11_unmanned"));//"Operation""unmanned"
 			}
 			if (prefab.crew_reset.Length > 0)
 			{
 				var cs = new CrewSpecs(prefab.crew_reset);
-				specs.Add("Reset", cs ? cs.Info() : "none");
+				specs.Add(Localizer.Format("#KERBALISM_Moudule_Experiment_Specifics_info12"), cs ? cs.Info() : Localizer.Format("#KERBALISM_Moudule_Experiment_Specifics_info12_none"));//"Reset""none"
 			}
 
 			return specs;
@@ -1095,7 +1095,7 @@ namespace KERBALISM
 
 		public static void PostMultipleRunsMessage(string title, string vesselName)
 		{
-			Message.Post(Lib.Color("ALREADY RUNNING", Lib.Kolor.Orange, true), "Can't start " + title + " a second time on vessel " + vesselName);
+			Message.Post(Lib.Color(Localizer.Format("#KERBALISM_Moudule_Experiment_MultipleRunsMessage_title"), Lib.Kolor.Orange, true), Localizer.Format("#KERBALISM_Moudule_Experiment_MultipleRunsMessage", title,vesselName));//"ALREADY RUNNING""Can't start " +  + " a second time on vessel " + 
 		}
 
 #endregion

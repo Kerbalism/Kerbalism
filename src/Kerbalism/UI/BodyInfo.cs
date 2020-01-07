@@ -73,7 +73,7 @@ namespace KERBALISM
 
 					if(Storm.sun_observation_quality > 0.7)
 					{
-						title = Lib.BuildString(title, ": ", Lib.Color(Lib.HumanReadableDuration(cycle) + " cycle", Lib.Kolor.LightGrey));//
+						title = Lib.BuildString(title, ": ", Lib.Color(Localizer.Format("#KERBALISM_BodyInfo_stormcycle", Lib.HumanReadableDuration(cycle)), Lib.Kolor.LightGrey));// <<1>> cycle
 					}
 
 					p.AddContent(title, Lib.HumanReadablePerc(activity));

@@ -8,10 +8,10 @@ namespace KERBALISM
 	public class PassiveShield: PartModule, IPartMassModifier, IKerbalismModule
 	{
 		// config
-		[KSPField] public string title = "Sandbags";              // GUI name of the status action in the PAW
-		[KSPField] public string engageActionTitle = "fill";      // what the deploy action should be called
-		[KSPField] public string disengageActionTitle = "empty";  // what the empty action should be called
-		[KSPField] public string disabledTitle = "stowed";        // what to display in the status text while not deployed
+		[KSPField] public string title = Localizer.Format("#KERBALISM_PassiveShield_Sandbags");//"Sandbags"              // GUI name of the status action in the PAW
+		[KSPField] public string engageActionTitle = Localizer.Format("#KERBALISM_PassiveShield_fill");//"fill"      // what the deploy action should be called
+		[KSPField] public string disengageActionTitle = Localizer.Format("#KERBALISM_PassiveShield_empty");//"empty"  // what the empty action should be called
+		[KSPField] public string disabledTitle = Localizer.Format("#KERBALISM_PassiveShield_stowed");// "stowed"       // what to display in the status text while not deployed
 
 		[KSPField] public bool toggle = true;                     // true if the effect can be toggled on/off
 		[KSPField] public string animation;                       // name of animation to play when enabling/disabling
@@ -31,7 +31,7 @@ namespace KERBALISM
 #if KSP15_16
 		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "_")]
 #else
-		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "_", groupName = "Radiation", groupDisplayName = "Radiation")]
+		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "_", groupName = "Radiation", groupDisplayName = "#KERBALISM_Group_Radiation")]//Radiation
 #endif
 		// rmb status
 		public string Status;  // rate of radiation emitted/shielded
@@ -73,7 +73,7 @@ namespace KERBALISM
 		public void Update()
 		{
 			// update ui
-			Status = deployed ? Lib.BuildString("absorbing ", Lib.HumanReadableRadiation(Math.Abs(radiation))) : disabledTitle;
+			Status = deployed ? Lib.BuildString(Localizer.Format("#KERBALISM_PassiveShield_absorbing") +" ", Lib.HumanReadableRadiation(Math.Abs(radiation))) : disabledTitle;//"absorbing
 			Events["Toggle"].guiName = Lib.StatusToggle(title, deployed ? disengageActionTitle : engageActionTitle);
 		}
 
@@ -135,7 +135,7 @@ namespace KERBALISM
 #if KSP15_16
 		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true)]
 #else
-		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true, groupName = "Radiation", groupDisplayName = "Radiation")]
+		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true, groupName = "Radiation", groupDisplayName = "#KERBALISM_Group_Radiation")]//Radiation
 #endif
 		public void Toggle()
 		{
@@ -151,7 +151,7 @@ namespace KERBALISM
 					(
 					  Lib.TextVariant
 					  (
-						"I don't know how this works!"
+						Localizer.Format("#KERBALISM_PassiveShield_MessagePost")//"I don't know how this works!"
 					  ),
 					  deploy_cs.Warning()
 					);

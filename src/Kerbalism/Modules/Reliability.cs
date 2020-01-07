@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using KSP.Localization;
 
 namespace KERBALISM
 {
@@ -43,7 +44,7 @@ namespace KERBALISM
 		[KSPField(guiActive = false, guiActiveEditor = true, guiName = "_")]
 		public string Status;  // show component status
 #else
-		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "_", groupName = "Reliability", groupDisplayName = "Reliability")]
+		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "_", groupName = "Reliability", groupDisplayName = "#KERBALISM_Group_Reliability")]//Reliability
 		public string Status; // show component status
 #endif
 
@@ -90,9 +91,9 @@ namespace KERBALISM
 			repair_cs = new CrewSpecs(repair);
 
 			// setup ui
-			Events["Inspect"].guiName = Lib.BuildString("Inspect <b>", title, "</b>");
-			Events["Repair"].guiName = Lib.BuildString("Repair <b>", title, "</b>");
-
+			Events["Inspect"].guiName = Localizer.Format("#KERBALISM_Reliability_Inspect", "<b>"+title+"</b>");//Lib.BuildString("Inspect <<1>>)
+			Events["Repair"].guiName = Localizer.Format("#KERBALISM_Reliability_Repair", "<b>"+title+"</b>");//Lib.BuildString("Repair <<1>>)
+			
 			// sync monobehaviour state with module state
 			// - required as the monobehaviour state is not serialized
 			if (broken)
@@ -221,7 +222,7 @@ namespace KERBALISM
 				// update ui
 				if (broken)
 				{
-					Status = critical ? Lib.Color("critical failure", Lib.Kolor.Red) : Lib.Color("malfunction", Lib.Kolor.Yellow);
+					Status = critical ? Lib.Color(Localizer.Format("#KERBALISM_Reliability_criticalfailure"), Lib.Kolor.Red) : Lib.Color(Localizer.Format("#KERBALISM_Reliability_malfunction"), Lib.Kolor.Yellow);//"critical failure""malfunction"
 				}
 				else
 				{
@@ -230,14 +231,14 @@ namespace KERBALISM
 						if (rated_operation_duration > 0)
 						{
 							double effective_duration = EffectiveDuration(quality, rated_operation_duration);
-							Status = Lib.BuildString("remaining burn: ", Lib.HumanReadableDuration(Math.Max(0, effective_duration - operation_duration)));
+							Status = Lib.BuildString(Localizer.Format("#KERBALISM_Reliability_burnremaining") +" ", Lib.HumanReadableDuration(Math.Max(0, effective_duration - operation_duration)));//"remaining burn:"
 						}
 						if (rated_ignitions > 0)
 						{
 							int effective_ignitions = EffectiveIgnitions(quality, rated_ignitions);
 							Status = Lib.BuildString(Status,
 								(string.IsNullOrEmpty(Status) ? "" : ", "),
-								"ignitions: ", Math.Max(0, effective_ignitions - ignitions).ToString());
+								Localizer.Format("#KERBALISM_Reliability_ignitions") +" ", Math.Max(0, effective_ignitions - ignitions).ToString());//"ignitions:"
 						}
 					}
 
@@ -247,18 +248,18 @@ namespace KERBALISM
 						var current = vessel.KerbalismData().EnvRadiation * 3600.0;
 						if(rated < current)
 						{
-							Status = Lib.BuildString(Status, (string.IsNullOrEmpty(Status) ? "" : ", "), Lib.Color("taking radiation damage", Lib.Kolor.Orange));
+							Status = Lib.BuildString(Status, (string.IsNullOrEmpty(Status) ? "" : ", "), Lib.Color(Localizer.Format("#KERBALISM_Reliability_takingradiationdamage"), Lib.Kolor.Orange));//"taking radiation damage"
 						}
 					}
 				}
 
-				if (string.IsNullOrEmpty(Status)) Status = "nominal";
+				if (string.IsNullOrEmpty(Status)) Status = Localizer.Format("#KERBALISM_nominal");//"nominal"
 
 				Events["Inspect"].active = !broken && !needMaintenance;
 				Events["Repair"].active = repair_cs && (broken || needMaintenance) && !critical;
 
 				if(needMaintenance) {
-					Events["Repair"].guiName = Lib.BuildString("Service <b>", title, "</b>");
+					Events["Repair"].guiName = Localizer.Format("#KERBALISM_Reliability_Service", "<b>"+title+"</b>");//Lib.BuildString("Service <<1>>")
 				}
 
 				RunningCheck();
@@ -279,7 +280,7 @@ namespace KERBALISM
 			else
 			{
 				// update ui
-				Events["Quality"].guiName = Lib.StatusToggle(Lib.BuildString("<b>", title, "</b> quality"), quality ? "high" : "standard");
+				Events["Quality"].guiName = Lib.StatusToggle(Localizer.Format("#KERBALISM_Reliability_qualityinfo", "<b>"+title+"</b>"), quality ? Localizer.Format("#KERBALISM_Reliability_qualityhigh") : Localizer.Format("#KERBALISM_Reliability_qualitystandard"));//Lib.BuildString(<<1>> quality")"high""standard"
 
 				Status = string.Empty;
 				if(mtbf > 0 && PreferencesReliability.Instance.mtbfFailures)
@@ -287,7 +288,7 @@ namespace KERBALISM
 					double effective_mtbf = EffectiveMTBF(quality, mtbf);
 					Status = Lib.BuildString(Status,
 							(string.IsNullOrEmpty(Status) ? "" : ", "),
-							"MTBF: ", Lib.HumanReadableDuration(effective_mtbf));
+							Localizer.Format("#KERBALISM_Reliability_MTBF") +" ", Lib.HumanReadableDuration(effective_mtbf));//"MTBF:"
 				}
 
 				if (rated_operation_duration > 0 && PreferencesReliability.Instance.engineFailures)
@@ -295,7 +296,7 @@ namespace KERBALISM
 					double effective_duration = EffectiveDuration(quality, rated_operation_duration);
 					Status = Lib.BuildString(Status,
 						(string.IsNullOrEmpty(Status) ? "" : ", "),
-						"Burn time: ",
+						Localizer.Format("#KERBALISM_Reliability_Burntime") +" ",//"Burn time:
 						Lib.HumanReadableDuration(effective_duration));
 				}
 
@@ -304,7 +305,7 @@ namespace KERBALISM
 					int effective_ignitions = EffectiveIgnitions(quality, rated_ignitions);
 					Status = Lib.BuildString(Status,
 						(string.IsNullOrEmpty(Status) ? "" : ", "),
-						"ignitions: ", effective_ignitions.ToString());
+						Localizer.Format("#KERBALISM_Reliability_ignitions") +" ", effective_ignitions.ToString());//"ignitions:
 				}
 
 				if (rated_radiation > 0 && PreferencesReliability.Instance.mtbfFailures)
@@ -467,7 +468,7 @@ namespace KERBALISM
 #if KSP15_16
 		[KSPEvent(guiActiveEditor = true, guiName = "_", active = true)]
 #else
-		[KSPEvent(guiActiveEditor = true, guiName = "_", active = true, groupName = "Reliability", groupDisplayName = "Reliability")]
+		[KSPEvent(guiActiveEditor = true, guiName = "_", active = true, groupName = "Reliability", groupDisplayName = "#KERBALISM_Group_Reliability")]//Reliability
 #endif
 		// toggle between standard and high quality
 		public void Quality()
@@ -491,7 +492,7 @@ namespace KERBALISM
 #if KSP15_16
 		[KSPEvent(guiActiveUnfocused = true, guiName = "_", active = false)]
 #else
-		[KSPEvent(guiActiveUnfocused = true, guiName = "_", active = false, groupName = "Reliability", groupDisplayName = "Reliability")]
+		[KSPEvent(guiActiveUnfocused = true, guiName = "_", active = false, groupName = "Reliability", groupDisplayName = "#KERBALISM_Group_Reliability")]//Reliability
 #endif
 		// show a message with some hint on time to next failure
 		public void Inspect()
@@ -514,21 +515,21 @@ namespace KERBALISM
 			{
 				last_inspection = Planetarium.GetUniversalTime();
 				Message.Post(Lib.TextVariant(
-					"It is practically new",
-					"It is in good shape",
-					"This will last for ages",
-					"Brand new!",
-					"Doesn't look used. Is this even turned on?"
+					Localizer.Format("#KERBALISM_Reliability_MessagePost1"),//"It is practically new"
+					Localizer.Format("#KERBALISM_Reliability_MessagePost2"),//"It is in good shape"
+					Localizer.Format("#KERBALISM_Reliability_MessagePost3"),//"This will last for ages"
+					Localizer.Format("#KERBALISM_Reliability_MessagePost4"),//"Brand new!"
+					Localizer.Format("#KERBALISM_Reliability_MessagePost5")//"Doesn't look used. Is this even turned on?"
 				));
 			}
 			else
 			{
 				Message.Post(Lib.TextVariant(
-					"Looks like it's going to fall off soon.",
-					"Better get the duck tape ready!",
-					"It is reaching its operational limits.",
-					"How is this still working?",
-					"It could fail at any moment now."
+					Localizer.Format("#KERBALISM_Reliability_MessagePost6"),//"Looks like it's going to fall off soon."
+					Localizer.Format("#KERBALISM_Reliability_MessagePost7"),//"Better get the duck tape ready!"
+					Localizer.Format("#KERBALISM_Reliability_MessagePost8"),//"It is reaching its operational limits."
+					Localizer.Format("#KERBALISM_Reliability_MessagePost9"),//"How is this still working?"
+					Localizer.Format("#KERBALISM_Reliability_MessagePost10")//"It could fail at any moment now."
 				));
 			}
 		}
@@ -536,7 +537,7 @@ namespace KERBALISM
 #if KSP15_16
 		[KSPEvent(guiActiveUnfocused = true, guiName = "_", active = false)]
 #else
-		[KSPEvent(guiActiveUnfocused = true, guiName = "_", active = false, groupName = "Reliability", groupDisplayName = "Reliability")]
+		[KSPEvent(guiActiveUnfocused = true, guiName = "_", active = false, groupName = "Reliability", groupDisplayName = "#KERBALISM_Group_Reliability")]//Reliability
 #endif
 		// repair malfunctioned component
 		public void Repair()
@@ -552,9 +553,9 @@ namespace KERBALISM
 				(
 				  Lib.TextVariant
 				  (
-					"I'm not qualified for this",
-					"I will not even know where to start",
-					"I'm afraid I can't do that"
+					Localizer.Format("#KERBALISM_Reliability_MessagePost11"),//"I'm not qualified for this"
+					Localizer.Format("#KERBALISM_Reliability_MessagePost12"),//"I will not even know where to start"
+					Localizer.Format("#KERBALISM_Reliability_MessagePost13")//"I'm afraid I can't do that"
 				  ),
 				  repair_cs.Warning()
 				);
@@ -598,26 +599,26 @@ namespace KERBALISM
 				// notify user
 				Message.Post
 				(
-				  Lib.BuildString("<b>", title, "</b> repaired"),
+				  Localizer.Format("#KERBALISM_Reliability_MessagePost14", "<b>"+title+"</b>"),//Lib.BuildString("<<1>> repaired")
 				  Lib.TextVariant
 				  (
-					"A powerkick did the trick.",
-					"Duct tape, is there something it can't fix?",
-					"Fully operational again.",
-					"We are back in business."
+					Localizer.Format("#KERBALISM_Reliability_MessagePost15"),//"A powerkick did the trick."
+					Localizer.Format("#KERBALISM_Reliability_MessagePost16"),//"Duct tape, is there something it can't fix?"
+					Localizer.Format("#KERBALISM_Reliability_MessagePost17"),//"Fully operational again."
+					Localizer.Format("#KERBALISM_Reliability_MessagePost18")//"We are back in business."
 				  )
 				);
 			} else {
 				// notify user
 				Message.Post
 				(
-				  Lib.BuildString("<b>", title, "</b> serviced"),
+				  Localizer.Format("#KERBALISM_Reliability_MessagePost19", "<b>"+title+"</b>"),//Lib.BuildString(<<1>> serviced")
 				  Lib.TextVariant
 				  (
-					"I don't know how this was still working.",
-					"Fastened that loose screw.",
-					"Someone forgot a toothpick in there.",
-					"As good as new!"
+					Localizer.Format("#KERBALISM_Reliability_MessagePost20"),//"I don't know how this was still working."
+					Localizer.Format("#KERBALISM_Reliability_MessagePost21"),//"Fastened that loose screw."
+					Localizer.Format("#KERBALISM_Reliability_MessagePost22"),//"Someone forgot a toothpick in there."
+					Localizer.Format("#KERBALISM_Reliability_MessagePost23")//"As good as new!"
 				  )
 				);
 			}
@@ -777,35 +778,35 @@ namespace KERBALISM
 		public Specifics Specs()
 		{
 			Specifics specs = new Specifics();
-			if (redundancy.Length > 0) specs.Add("Redundancy", redundancy);
-			specs.Add("Repair", new CrewSpecs(repair).Info());
+			if (redundancy.Length > 0) specs.Add(Localizer.Format("#KERBALISM_Reliability_info1"), redundancy);//"Redundancy"
+			specs.Add(Localizer.Format("#KERBALISM_Reliability_info2"), new CrewSpecs(repair).Info());//"Repair"
 
 			
 
 			specs.Add(string.Empty);
-			specs.Add("<color=#00ffff>Standard quality</color>");
-			if(mtbf > 0) specs.Add("MTBF", Lib.HumanReadableDuration(EffectiveMTBF(false, mtbf)));
-			if (turnon_failure_probability > 0) specs.Add("Ignition failures", Lib.HumanReadablePerc(turnon_failure_probability, "F1"));
-			if (rated_operation_duration > 0) specs.Add("Rated burn duration", Lib.HumanReadableDuration(EffectiveDuration(false, rated_operation_duration)));
-			if (rated_ignitions > 0) specs.Add("Rated ignitions", EffectiveIgnitions(false, rated_ignitions).ToString());
-			if (mtbf > 0 && rated_radiation > 0) specs.Add("Radiation rating", Lib.HumanReadableRadiation(rated_radiation / 3600.0));
+			specs.Add("<color=#00ffff>"+Localizer.Format("#KERBALISM_Reliability_info3") +"</color>");//Standard quality
+			if(mtbf > 0) specs.Add(Localizer.Format("#KERBALISM_Reliability_info4"), Lib.HumanReadableDuration(EffectiveMTBF(false, mtbf)));//"MTBF"
+			if (turnon_failure_probability > 0) specs.Add(Localizer.Format("#KERBALISM_Reliability_info5"), Lib.HumanReadablePerc(turnon_failure_probability, "F1"));//"Ignition failures"
+			if (rated_operation_duration > 0) specs.Add(Localizer.Format("#KERBALISM_Reliability_info6"), Lib.HumanReadableDuration(EffectiveDuration(false, rated_operation_duration)));//"Rated burn duration"
+			if (rated_ignitions > 0) specs.Add(Localizer.Format("#KERBALISM_Reliability_info7"), EffectiveIgnitions(false, rated_ignitions).ToString());//"Rated ignitions"
+			if (mtbf > 0 && rated_radiation > 0) specs.Add(Localizer.Format("#KERBALISM_Reliability_info8"), Lib.HumanReadableRadiation(rated_radiation / 3600.0));//"Radiation rating"
 
 			specs.Add(string.Empty);
-			specs.Add("<color=#00ffff>High quality</color>");
-			if (extra_cost > double.Epsilon) specs.Add("Extra cost", Lib.HumanReadableCost(extra_cost * part.partInfo.cost));
-			if (extra_mass > double.Epsilon) specs.Add("Extra mass", Lib.HumanReadableMass(extra_mass * part.partInfo.partPrefab.mass));
-			if (mtbf > 0) specs.Add("MTBF", Lib.HumanReadableDuration(EffectiveMTBF(true, mtbf)));
-			if (turnon_failure_probability > 0) specs.Add("Ignition failures", Lib.HumanReadablePerc(turnon_failure_probability / Settings.QualityScale, "F1"));
-			if (rated_operation_duration > 0) specs.Add("Rated burn duration", Lib.HumanReadableDuration(EffectiveDuration(true, rated_operation_duration)));
-			if (rated_ignitions > 0) specs.Add("Rated ignitions", EffectiveIgnitions(true, rated_ignitions).ToString());
-			if (mtbf > 0 && rated_radiation > 0) specs.Add("Radiation rating", Lib.HumanReadableRadiation(Settings.QualityScale * rated_radiation / 3600.0));
+			specs.Add("<color=#00ffff>"+Localizer.Format("#KERBALISM_Reliability_info9") +"</color>");//High quality
+			if (extra_cost > double.Epsilon) specs.Add(Localizer.Format("#KERBALISM_Reliability_info10"), Lib.HumanReadableCost(extra_cost * part.partInfo.cost));//"Extra cost"
+			if (extra_mass > double.Epsilon) specs.Add(Localizer.Format("#KERBALISM_Reliability_info4"), Lib.HumanReadableMass(extra_mass * part.partInfo.partPrefab.mass));//"Extra mass"
+			if (mtbf > 0) specs.Add(Localizer.Format("#KERBALISM_Reliability_info4"), Lib.HumanReadableDuration(EffectiveMTBF(true, mtbf)));//"MTBF"
+			if (turnon_failure_probability > 0) specs.Add(Localizer.Format("#KERBALISM_Reliability_info5"), Lib.HumanReadablePerc(turnon_failure_probability / Settings.QualityScale, "F1"));//"Ignition failures"
+			if (rated_operation_duration > 0) specs.Add(Localizer.Format("#KERBALISM_Reliability_info6"), Lib.HumanReadableDuration(EffectiveDuration(true, rated_operation_duration)));//"Rated burn duration"
+			if (rated_ignitions > 0) specs.Add(Localizer.Format("#KERBALISM_Reliability_info7"), EffectiveIgnitions(true, rated_ignitions).ToString());//"Rated ignitions"
+			if (mtbf > 0 && rated_radiation > 0) specs.Add(Localizer.Format("#KERBALISM_Reliability_info8"), Lib.HumanReadableRadiation(Settings.QualityScale * rated_radiation / 3600.0));//"Radiation rating"
 
 			return specs;
 		}
 
 		// module info support
 		public string GetModuleTitle() { return Lib.BuildString(title, " Reliability"); }
-		public override string GetModuleDisplayName() { return Lib.BuildString(title, " Reliability"); }
+		public override string GetModuleDisplayName() { return Lib.BuildString(title, " "+Localizer.Format("#KERBALISM_Reliability_Reliability")); }//Reliability
 		public string GetPrimaryField() { return string.Empty; }
 		public Callback<Rect> GetDrawModulePanelCallback() { return null; }
 
@@ -1026,8 +1027,8 @@ namespace KERBALISM
 					Message.Post
 					(
 					  Severity.warning,
-					  Lib.BuildString("<b>", title, "</b> malfunctioned on <b>", v.vesselName, "</b>"),
-					  "We can still repair it"
+					  Localizer.Format("#KERBALISM_Reliability_MessagePost24", "<b>"+title+"</b>","<b>"+v.vesselName+"</b>"),//Lib.BuildString(<<1>> malfunctioned on <<2>>)
+					  Localizer.Format("#KERBALISM_Reliability_MessagePost25")//"We can still repair it"
 					);
 				}
 				else
@@ -1035,8 +1036,8 @@ namespace KERBALISM
 					Message.Post
 					(
 					  Severity.danger,
-					  Lib.BuildString("<b>", title, "</b> failed on <b>", v.vesselName, "</b>"),
-					  "It is gone for good"
+					  Localizer.Format("#KERBALISM_Reliability_MessagePost26", "<b>" + title + "</b>", "<b>" + v.vesselName + "</b>"),//Lib.BuildString(<<1>> failed on <<2>>)
+					  Localizer.Format("#KERBALISM_Reliability_MessagePost27")//"It is gone for good"
 					);
 				}
 			}
@@ -1047,8 +1048,8 @@ namespace KERBALISM
 		{
 			Message.Post
 			(
-			  Lib.BuildString("There has been a problem with <b>", title, "</b> on <b>", v.vesselName, "</b>"),
-			  "We were able to fix it remotely, this time"
+			  Localizer.Format("#KERBALISM_Reliability_MessagePost28", "<b>" + title + "</b>", "<b>" + v.vesselName + "</b>"),//Lib.BuildString("There has been a problem with <<1>> on <<2>>)
+			  Localizer.Format("#KERBALISM_Reliability_MessagePost29")//"We were able to fix it remotely, this time"
 			);
 		}
 
