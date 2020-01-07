@@ -124,12 +124,12 @@ namespace KERBALISM
 
 		#region KSP/Unity methods + background update
 
-		[KSPEvent(active = true, guiActive = true, guiName = "Select tracked star")]//
+		[KSPEvent(active = true, guiActive = true, guiName = "#KERBALISM_SolarPanelFixer_Selecttrackedstar")]//Select tracked star
 		public void ManualTracking()
 		{
 			// Assemble the buttons
 			DialogGUIBase[] options = new DialogGUIBase[Sim.suns.Count + 1];
-			options[0] = new DialogGUIButton("Automatic", () => { manualTracking = false; }, true);//
+			options[0] = new DialogGUIButton(Localizer.Format("#KERBALISM_SolarPanelFixer_Automatic"), () => { manualTracking = false; }, true);//"Automatic"
 			for (int i = 0; i < Sim.suns.Count; i++)
 			{
 				CelestialBody body = Sim.suns[i].body;
@@ -142,9 +142,9 @@ namespace KERBALISM
 			}
 
 			PopupDialog.SpawnPopupDialog(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new MultiOptionDialog(
-				"SelectTrackingBody",//
-				"Select the star you want to track with this solar panel.",//
-				"Select tracked star",//
+				Localizer.Format("#KERBALISM_SolarPanelFixer_SelectTrackingBody"),//"SelectTrackingBody"
+				Localizer.Format("#KERBALISM_SolarPanelFixer_SelectTrackedstar_msg"),//"Select the star you want to track with this solar panel."
+				Localizer.Format("#KERBALISM_SolarPanelFixer_Selecttrackedstar"),//"Select tracked star"
 				UISkinManager.GetSkin("MainMenuSkin"),
 				options), false, UISkinManager.GetSkin("MainMenuSkin"));
 		}
@@ -265,30 +265,30 @@ namespace KERBALISM
 			switch (exposureState)
 			{
 				case ExposureState.InShadow:
-					panelStatus = "<color=#ff2222>in shadow</color>";
+					panelStatus = "<color=#ff2222>"+Localizer.Format("#KERBALISM_SolarPanelFixer_inshadow") +"</color>";//in shadow
 					if (currentOutput > 0.001) panelStatus = Lib.BuildString(currentOutput.ToString(rateFormat), " ", EcUIUnit, ", ", panelStatus);
 					break;
 				case ExposureState.OccludedTerrain:
-					panelStatus = "<color=#ff2222>occluded by terrain</color>";
+					panelStatus = "<color=#ff2222>"+Localizer.Format("#KERBALISM_SolarPanelFixer_occludedbyterrain") +"</color>";//occluded by terrain
 					if (currentOutput > 0.001) panelStatus = Lib.BuildString(currentOutput.ToString(rateFormat), " ", EcUIUnit, ", ", panelStatus);
 					break;
 				case ExposureState.OccludedPart:
-					panelStatus = Lib.BuildString("<color=#ff2222>occluded by ", mainOccludingPart, "</color>");
+					panelStatus = Lib.BuildString("<color=#ff2222>", Localizer.Format("#KERBALISM_SolarPanelFixer_occludedby", mainOccludingPart), "</color>");//occluded by 
 					if (currentOutput > 0.001) panelStatus = Lib.BuildString(currentOutput.ToString(rateFormat), " ", EcUIUnit, ", ", panelStatus);
 					break;
 				case ExposureState.BadOrientation:
-					panelStatus = "<color=#ff2222>bad orientation</color>";
+					panelStatus = "<color=#ff2222>"+Localizer.Format("#KERBALISM_SolarPanelFixer_badorientation") +"</color>";//bad orientation
 					if (currentOutput > 0.001) panelStatus = Lib.BuildString(currentOutput.ToString(rateFormat), " ", EcUIUnit, ", ", panelStatus);
 					break;
 				case ExposureState.Disabled:
 					switch (state)
 					{
-						case PanelState.Retracted: panelStatus = "retracted"; break;
-						case PanelState.Extending: panelStatus = "extending"; break;
-						case PanelState.Retracting: panelStatus = "retracting"; break;
-						case PanelState.Broken: panelStatus = "broken"; break;
-						case PanelState.Failure: panelStatus = "failure"; break;
-						case PanelState.Unknown: panelStatus = "invalid state"; break;
+						case PanelState.Retracted: panelStatus = Localizer.Format("#KERBALISM_SolarPanelFixer_retracted"); break;//"retracted"
+						case PanelState.Extending: panelStatus = Localizer.Format("#KERBALISM_SolarPanelFixer_extending"); break;//"extending"
+						case PanelState.Retracting: panelStatus = Localizer.Format("#KERBALISM_SolarPanelFixer_retracting"); break;//"retracting"
+						case PanelState.Broken: panelStatus = Localizer.Format("#KERBALISM_SolarPanelFixer_broken"); break;//"broken"
+						case PanelState.Failure: panelStatus = Localizer.Format("#KERBALISM_SolarPanelFixer_failure"); break;//"failure"
+						case PanelState.Unknown: panelStatus = Localizer.Format("#KERBALISM_SolarPanelFixer_invalidstate"); break;//"invalid state"
 					}
 					break;
 				case ExposureState.Exposed:
