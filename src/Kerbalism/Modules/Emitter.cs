@@ -37,7 +37,7 @@ namespace KERBALISM
 
 			// update RMB ui
 			if (string.IsNullOrEmpty(title))
-				title = radiation >= 0.0 ? "Radiation" : "Active shield";//
+				title = radiation >= 0.0 ? "Radiation" : "Active shield";
 
 			Fields["Status"].guiName = title;
 			Events["Toggle"].active = toggle;

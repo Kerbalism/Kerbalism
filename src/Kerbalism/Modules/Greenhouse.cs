@@ -178,7 +178,7 @@ namespace KERBALISM
 				foreach (ModuleResource output in resHandler.outputResources)
 				{
 					// if atmosphere is breathable disable Oxygen
-					if (output.name == "Oxygen") recipe.AddOutput(output.name, vd.EnvBreathable ? 0.0 : output.rate * Kerbalism.elapsed_s, true);//
+					if (output.name == "Oxygen") recipe.AddOutput(output.name, vd.EnvBreathable ? 0.0 : output.rate * Kerbalism.elapsed_s, true);
 					else recipe.AddOutput(output.name, output.rate * Kerbalism.elapsed_s, true);
 				}
 				resources.AddRecipe(recipe);
@@ -196,7 +196,7 @@ namespace KERBALISM
 				foreach (ModuleResource input in resHandler.inputResources)
 				{
 					// combine WasteAtmosphere and CO2 if both exist
-					if (input.name == "WasteAtmosphere" || input.name == "CarbonDioxide")//
+					if (input.name == "WasteAtmosphere" || input.name == "CarbonDioxide")
 					{
 						if (dis_WACO2 || vd.EnvBreathable) continue;    // skip if already checked or atmosphere is breathable
 						if (WACO2)
@@ -204,7 +204,7 @@ namespace KERBALISM
 							if (resources.GetResource(vessel, "WasteAtmosphere").Amount <= double.Epsilon && resources.GetResource(vessel, "CarbonDioxide").Amount <= double.Epsilon)
 							{
 								inputs = false;
-								missing_res = "CarbonDioxide";//
+								missing_res = "CarbonDioxide";
 								break;
 							}
 							dis_WACO2 = true;
@@ -229,7 +229,7 @@ namespace KERBALISM
 					// notify the user when crop can be harvested
 					if (growth >= 0.99)
 					{
-						Message.Post(Lib.BuildString("On <b>", vessel.vesselName, "</b> the crop is ready to be harvested"));//
+						Message.Post(Lib.BuildString("On <b>", vessel.vesselName, "</b> the crop is ready to be harvested"));
 						growth = 1.0;
 					}
 				}
@@ -314,7 +314,7 @@ namespace KERBALISM
 							if (resources.GetResource(v, "WasteAtmosphere").Amount <= double.Epsilon && resources.GetResource(v, "CarbonDioxide").Amount <= double.Epsilon)
 							{
 								inputs = false;
-								missing_res = "CarbonDioxide";//
+								missing_res = "CarbonDioxide";
 								break;
 							}
 							dis_WACO2 = true;
@@ -339,7 +339,7 @@ namespace KERBALISM
 					// notify the user when crop can be harvested
 					if (growth >= 0.99)
 					{
-						Message.Post(Lib.BuildString("On <b>", v.vesselName, "</b> the crop is ready to be harvested"));//
+						Message.Post(Lib.BuildString("On <b>", v.vesselName, "</b> the crop is ready to be harvested"));
 						growth = 1.0;
 					}
 				}
@@ -524,7 +524,7 @@ namespace KERBALISM
 
 		// contract objective support
 		public bool CheckContractObjectiveValidity() { return true; }
-		public string GetContractObjectiveType() { return "Greenhouse"; }//
+		public string GetContractObjectiveType() { return "Greenhouse"; }
 
 
 		// return data about all greenhouses in a vessel
@@ -559,7 +559,7 @@ namespace KERBALISM
 			}
 			else
 			{
-				foreach (ProtoPartModuleSnapshot m in Lib.FindModules(v.protoVessel, "Greenhouse"))//
+				foreach (ProtoPartModuleSnapshot m in Lib.FindModules(v.protoVessel, "Greenhouse"))
 				{
 					if (Lib.Proto.GetBool(m, "active"))
 					{
