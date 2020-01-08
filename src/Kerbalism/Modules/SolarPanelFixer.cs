@@ -298,17 +298,23 @@ namespace KERBALISM
 					sb.Append(EcUIUnit);
 					if (analyticSunlight)
 					{
-						sb.Append(", "+Localizer.Format("#KERBALISM_SolarPanelFixer_analytic") +" ");//analytic
+						sb.Append(", ");
+						sb.Append(Localizer.Format("#KERBALISM_SolarPanelFixer_analytic"));//analytic
+						sb.Append(" ");
 						sb.Append(persistentFactor.ToString("P0"));
 					}
 					else
 					{
-						sb.Append(", "+Localizer.Format("#KERBALISM_SolarPanelFixer_exposure") +" ");//exposure
+						sb.Append(", ");
+						sb.Append(Localizer.Format("#KERBALISM_SolarPanelFixer_exposure"));//exposure
+						sb.Append(" ");
 						sb.Append(exposureFactor.ToString("P0"));
 					}
 					if (wearFactor < 1.0)
 					{
-						sb.Append(", "+Localizer.Format("#KERBALISM_SolarPanelFixer_wear") +" : ");//wear
+						sb.Append(", ");
+						sb.Append(Localizer.Format("#KERBALISM_SolarPanelFixer_wear"));//wear
+						sb.Append(" : ");
 						sb.Append((1.0 - wearFactor).ToString("P0"));
 					}
 					panelStatus = sb.ToString();

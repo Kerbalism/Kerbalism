@@ -87,7 +87,7 @@ namespace KERBALISM
 			if (slots > MAX_SLOTS)
 				slots = MAX_SLOTS;
 
-			Actions["Action"].guiName = Lib.BuildString(Localizer.Format("#KERBALISM_Sickbay_Start_Stop") +" ", title);//"Start/Stop"
+			Actions["Action"].guiName = Lib.BuildString(Localizer.Format("#KERBALISM_Sickbay_Start_Stop") ," ", title);//"Start/Stop"
 
 			foreach (string s in patients.Split(','))
 			{

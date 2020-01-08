@@ -84,11 +84,11 @@ namespace KERBALISM
 					p.AddContent(Localizer.Format("#KERBALISM_BodyInfo_radiationonsurface"), Lib.HumanReadableRadiation(surfaceRadiation));//"radiation on surface:"
 				}
 
-				p.AddContent(Lib.BuildString(Localizer.Format("#KERBALISM_BodyInfo_innerbelt") + " ", Lib.Color(inner, Lib.Kolor.LightGrey)),//"inner belt: "
+				p.AddContent(Lib.BuildString(Localizer.Format("#KERBALISM_BodyInfo_innerbelt") , " ", Lib.Color(inner, Lib.Kolor.LightGrey)),//"inner belt: "
 					Radiation.show_inner ? Lib.Color(Localizer.Format("#KERBALISM_BodyInfo_show"), Lib.Kolor.Green) : Lib.Color(Localizer.Format("#KERBALISM_BodyInfo_hide"), Lib.Kolor.Red), string.Empty, () => p.Toggle(ref Radiation.show_inner));//"show""hide"
-				p.AddContent(Lib.BuildString(Localizer.Format("#KERBALISM_BodyInfo_outerbelt") + " ", Lib.Color(outer, Lib.Kolor.LightGrey)),//"outer belt: "
+				p.AddContent(Lib.BuildString(Localizer.Format("#KERBALISM_BodyInfo_outerbelt") , " ", Lib.Color(outer, Lib.Kolor.LightGrey)),//"outer belt: "
 					Radiation.show_outer ? Lib.Color(Localizer.Format("#KERBALISM_BodyInfo_show"), Lib.Kolor.Green) : Lib.Color(Localizer.Format("#KERBALISM_BodyInfo_hide"), Lib.Kolor.Red), string.Empty, () => p.Toggle(ref Radiation.show_outer));//"show""hide"
-				p.AddContent(Lib.BuildString(Localizer.Format("#KERBALISM_BodyInfo_magnetopause") + " ", Lib.Color(pause, Lib.Kolor.LightGrey)),//"magnetopause: "
+				p.AddContent(Lib.BuildString(Localizer.Format("#KERBALISM_BodyInfo_magnetopause") , " ", Lib.Color(pause, Lib.Kolor.LightGrey)),//"magnetopause: "
 					Radiation.show_pause ? Lib.Color(Localizer.Format("#KERBALISM_BodyInfo_show"), Lib.Kolor.Green) : Lib.Color(Localizer.Format("#KERBALISM_BodyInfo_hide"), Lib.Kolor.Red), string.Empty, () => p.Toggle(ref Radiation.show_pause));//"show""hide"
 			}
 

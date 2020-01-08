@@ -285,11 +285,11 @@ namespace KERBALISM
 			if (string.IsNullOrEmpty(file.resultText))
 			{
 				subjectResultText = Lib.TextVariant(
-					"Our researchers will jump on it right now",
-					"This cause some excitement",
-					"These results are causing a brouhaha in R&D",
-					"Our scientists look very confused",
-					"The scientists won't believe these readings");
+					"Our researchers will jump on it right now",//
+					"This cause some excitement",//
+					"These results are causing a brouhaha in R&D",//
+					"Our scientists look very confused",//
+					"The scientists won't believe these readings");//
 			}
 			else
 			{
@@ -298,8 +298,8 @@ namespace KERBALISM
 			subjectResultText = Lib.WordWrapAtLength(subjectResultText, 70);
 			Message.Post(Lib.BuildString(
 				file.subjectData.FullTitle,
-				" transmitted\n",
-				timesCompleted == 1 ? Lib.HumanReadableScience(file.subjectData.ScienceMaxValue, false) : Lib.Color("no science gain : we already had this data", Lib.Kolor.Orange, true)),
+				" transmitted\n",//
+				timesCompleted == 1 ? Lib.HumanReadableScience(file.subjectData.ScienceMaxValue, false) : Lib.Color("no science gain : we already had this data", Lib.Kolor.Orange, true)),//
 				subjectResultText);
 		}
 
@@ -331,11 +331,11 @@ namespace KERBALISM
 			if (result == string.Empty && useGenericIfNotFound)
 			{
 				result = Lib.TextVariant(
-					  "Our researchers will jump on it right now",
-					  "This cause some excitement",
-					  "These results are causing a brouhaha in R&D",
-					  "Our scientists look very confused",
-					  "The scientists won't believe these readings");
+					  "Our researchers will jump on it right now",//
+					  "This cause some excitement",//
+					  "These results are causing a brouhaha in R&D",//
+					  "Our scientists look very confused",//
+					  "The scientists won't believe these readings");//
 			}
 			return result;
 		}

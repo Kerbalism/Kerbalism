@@ -12,9 +12,9 @@ namespace KERBALISM
 			get
 			{
 				if (module.SolarPanel.IsRetractable())
-					return "solar panel (deployable)";
+					return Localizer.Format("#KERBALISM_SolarPanel_deployable");//"solar panel (deployable)"
 				else
-					return "solar panel (non retractable)";
+					return Localizer.Format("#KERBALISM_SolarPanel_nonretractable");//"solar panel (non retractable)"
 			}
 		}
 
@@ -29,7 +29,7 @@ namespace KERBALISM
 					case SolarPanelFixer.PanelState.Extended: return Lib.Color(Localizer.Format("#KERBALISM_Generic_EXTENDED"), Lib.Kolor.Green);
 					case SolarPanelFixer.PanelState.Retracting: return Localizer.Format("#KERBALISM_Generic_RETRACTING");
 				}
-				return "unknown";
+				return Localizer.Format("#KERBALISM_Statu_unknown");//"unknown"
 			}
 		}
 
@@ -58,9 +58,9 @@ namespace KERBALISM
 			get
 			{
 				if (prefab.SolarPanel.IsRetractable())
-					return "solar panel (deployable)";
+					return Localizer.Format("#KERBALISM_SolarPanel_deployable");//"solar panel (deployable)"
 				else
-					return "solar panel (non retractable)";
+					return Localizer.Format("#KERBALISM_SolarPanel_nonretractable");//"solar panel (non retractable)"
 			}
 		}
 
@@ -76,7 +76,7 @@ namespace KERBALISM
 					case "Retracted": return Lib.Color(Localizer.Format("#KERBALISM_Generic_RETRACTED"), Lib.Kolor.Yellow);
 					case "Extended": return Lib.Color(Localizer.Format("#KERBALISM_Generic_EXTENDED"), Lib.Kolor.Green);
 				}
-				return "unknown";
+				return Localizer.Format("#KERBALISM_Statu_unknown");//"unknown"
 			}
 		}
 

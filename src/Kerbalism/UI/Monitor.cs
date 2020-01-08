@@ -265,7 +265,7 @@ namespace KERBALISM
 			const string tooltip = "#KERBALISM_Monitor_tooltip";//"\n<i>(middle-click to popout in a window, middle-click again to close popout)</i>"
 			VesselData vd = v.KerbalismData();
 			GUILayout.BeginHorizontal(Styles.entry_container);
-			GUILayout.Label(new GUIContent(Lib.Color(page == MonitorPage.telemetry, " "+Localizer.Format("#KERBALISM_Monitor_INFO"), Lib.Kolor.Green, Lib.Kolor.None, true), Textures.small_info, Localizer.Format("#KERBALISM_Monitor_INFO_desc") + Localizer.Format(tooltip)), config_style);//INFO"Telemetry readings"
+			GUILayout.Label(new GUIContent(Lib.Color(page == MonitorPage.telemetry, " " + Localizer.Format("#KERBALISM_Monitor_INFO"), Lib.Kolor.Green, Lib.Kolor.None, true), Textures.small_info, Localizer.Format("#KERBALISM_Monitor_INFO_desc") + Localizer.Format(tooltip)), config_style);//INFO"Telemetry readings"
 			if (Lib.IsClicked()) page = MonitorPage.telemetry;
 			else if (Lib.IsClicked(2))
 			{
@@ -276,7 +276,7 @@ namespace KERBALISM
 			}
 			if (Features.Science)
 			{
-				GUILayout.Label(new GUIContent(Lib.Color(page == MonitorPage.data, " "+Localizer.Format("#KERBALISM_Monitor_DATA"), Lib.Kolor.Green, Lib.Kolor.None, true), Textures.small_folder, Localizer.Format("#KERBALISM_Monitor_DATA_desc") + Localizer.Format(tooltip)), config_style);//DATA"Stored files and samples"
+				GUILayout.Label(new GUIContent(Lib.Color(page == MonitorPage.data, " " + Localizer.Format("#KERBALISM_Monitor_DATA"), Lib.Kolor.Green, Lib.Kolor.None, true), Textures.small_folder, Localizer.Format("#KERBALISM_Monitor_DATA_desc") + Localizer.Format(tooltip)), config_style);//DATA"Stored files and samples"
 				if (Lib.IsClicked()) page = MonitorPage.data;
 				else if (Lib.IsClicked(2))
 				{
@@ -288,7 +288,7 @@ namespace KERBALISM
 			}
 			if (Features.Automation)
 			{
-				GUILayout.Label(new GUIContent(Lib.Color(page == MonitorPage.scripts, " "+Localizer.Format("#KERBALISM_Monitor_AUTO"), Lib.Kolor.Green, Lib.Kolor.None, true), Textures.small_console, Localizer.Format("#KERBALISM_Monitor_AUTO_desc") + Localizer.Format(tooltip)), config_style);//AUTO"Control and automate components"
+				GUILayout.Label(new GUIContent(Lib.Color(page == MonitorPage.scripts, " " + Localizer.Format("#KERBALISM_Monitor_AUTO"), Lib.Kolor.Green, Lib.Kolor.None, true), Textures.small_console, Localizer.Format("#KERBALISM_Monitor_AUTO_desc") + Localizer.Format(tooltip)), config_style);//AUTO"Control and automate components"
 				if (Lib.IsClicked()) page = MonitorPage.scripts;
 				else if (Lib.IsClicked(2))
 				{
@@ -300,7 +300,7 @@ namespace KERBALISM
 			}
 			if (Features.Reliability)
 			{
-				GUILayout.Label(new GUIContent(Lib.Color(page == MonitorPage.failures, " "+Localizer.Format("#KERBALISM_Monitor_FAILURES"), Lib.Kolor.Green, Lib.Kolor.None, true), Textures.small_wrench, Localizer.Format("#KERBALISM_Monitor_FAILURES_desc") + Localizer.Format(tooltip)), config_style);//FAILURES"See failures and maintenance state"
+				GUILayout.Label(new GUIContent(Lib.Color(page == MonitorPage.failures, " " + Localizer.Format("#KERBALISM_Monitor_FAILURES"), Lib.Kolor.Green, Lib.Kolor.None, true), Textures.small_wrench, Localizer.Format("#KERBALISM_Monitor_FAILURES_desc") + Localizer.Format(tooltip)), config_style);//FAILURES"See failures and maintenance state"
 				if (Lib.IsClicked()) page = MonitorPage.failures;
 				else if (Lib.IsClicked(2))
 				{
@@ -312,7 +312,7 @@ namespace KERBALISM
 			}
 			if (PreferencesMessages.Instance.stockMessages != true)
 			{
-				GUILayout.Label(new GUIContent(Lib.Color(page == MonitorPage.log, " "+Localizer.Format("#KERBALISM_Monitor_LOG"), Lib.Kolor.Green, Lib.Kolor.None, true), Textures.small_notes, Localizer.Format("#KERBALISM_Monitor_LOG_desc") + Localizer.Format(tooltip)), config_style);//LOG"See previous notifications"
+				GUILayout.Label(new GUIContent(Lib.Color(page == MonitorPage.log, " " + Localizer.Format("#KERBALISM_Monitor_LOG"), Lib.Kolor.Green, Lib.Kolor.None, true), Textures.small_notes, Localizer.Format("#KERBALISM_Monitor_LOG_desc") + Localizer.Format(tooltip)), config_style);//LOG"See previous notifications"
 				if (Lib.IsClicked()) page = MonitorPage.log;
 				else if (Lib.IsClicked(2))
 				{
@@ -322,7 +322,7 @@ namespace KERBALISM
 						UI.Open((p) => p.Logman(v));
 				}
 			}
-			GUILayout.Label(new GUIContent(Lib.Color(page == MonitorPage.config, " "+Localizer.Format("#KERBALISM_Monitor_CFG"), Lib.Kolor.Green, Lib.Kolor.None, true), Textures.small_config, Localizer.Format("#KERBALISM_Monitor_CFG_desc") + Localizer.Format(tooltip)), config_style);//CFG"Configure the vessel"
+			GUILayout.Label(new GUIContent(Lib.Color(page == MonitorPage.config, " " + Localizer.Format("#KERBALISM_Monitor_CFG"), Lib.Kolor.Green, Lib.Kolor.None, true), Textures.small_config, Localizer.Format("#KERBALISM_Monitor_CFG_desc") + Localizer.Format(tooltip)), config_style);//CFG"Configure the vessel"
 			if (Lib.IsClicked()) page = MonitorPage.config;
 			else if (Lib.IsClicked(2))
 			{
@@ -408,7 +408,7 @@ namespace KERBALISM
 				if (greenhouse.issue.Length > 0)
 				{
 					if (!icons.Contains(Textures.plant_yellow)) icons.Add(Textures.plant_yellow);
-					tooltips.Add(Lib.BuildString(Localizer.Format("#KERBALISM_Monitor_Greenhouse") +" <b>", greenhouse.issue, "</b>"));//"Greenhouse:"
+					tooltips.Add(Lib.BuildString(Localizer.Format("#KERBALISM_Monitor_Greenhouse"), " <b>", greenhouse.issue, "</b>"));//"Greenhouse:"
 				}
 			}
 		}
@@ -471,7 +471,7 @@ namespace KERBALISM
 
 		void Problem_poisoning(VesselData vd, ref List<Texture2D> icons, ref List<string> tooltips)
 		{
-			string poisoning_str = Lib.BuildString(Localizer.Format("#KERBALISM_Monitor_CO2level") +" <b>", Lib.HumanReadablePerc(vd.Poisoning), "</b>");//CO2 level in internal atmosphere:
+			string poisoning_str = Lib.BuildString(Localizer.Format("#KERBALISM_Monitor_CO2level") ," <b>", Lib.HumanReadablePerc(vd.Poisoning), "</b>");//CO2 level in internal atmosphere:
 			if (vd.Poisoning >= Settings.PoisoningThreshold)
 			{
 				icons.Add(Textures.recycle_red);
@@ -492,7 +492,7 @@ namespace KERBALISM
 
 				var bd = Lib.IsSun(v.mainBody) ? v.KerbalismData().stormData : DB.Storm(Lib.GetParentPlanet(v.mainBody).name);
 				var tti = bd.storm_time - Planetarium.GetUniversalTime();
-				tooltips.Add(Lib.BuildString(Lib.Color(Localizer.Format("#KERBALISM_Monitor_ejectionincoming"), Lib.Kolor.Orange), "\n<i>"+Localizer.Format("#KERBALISM_Monitor_TimetoimpactCoronalmass"), Lib.HumanReadableDuration(tti), "</i>"));//"Coronal mass ejection incoming"Time to impact:
+				tooltips.Add(Lib.BuildString(Lib.Color(Localizer.Format("#KERBALISM_Monitor_ejectionincoming"), Lib.Kolor.Orange), "\n<i>", Localizer.Format("#KERBALISM_Monitor_TimetoimpactCoronalmass"), Lib.HumanReadableDuration(tti), "</i>"));//"Coronal mass ejection incoming"Time to impact:
 			}
 			if (Storm.InProgress(v))
 			{
@@ -500,7 +500,7 @@ namespace KERBALISM
 
 				var bd = Lib.IsSun(v.mainBody) ? v.KerbalismData().stormData : DB.Storm(Lib.GetParentPlanet(v.mainBody).name);
 				var remainingDuration = bd.storm_time + bd.displayed_duration - Planetarium.GetUniversalTime();
-				tooltips.Add(Lib.BuildString(Lib.Color(Localizer.Format("#KERBALISM_Monitor_Solarstorminprogress"), Lib.Kolor.Red), "\n<i>" + Localizer.Format("#KERBALISM_Monitor_SolarstormRemaining") , Lib.HumanReadableDuration(remainingDuration), "</i>"));//"Solar storm in progress"Remaining duration:
+				tooltips.Add(Lib.BuildString(Lib.Color(Localizer.Format("#KERBALISM_Monitor_Solarstorminprogress"), Lib.Kolor.Red), "\n<i>", Localizer.Format("#KERBALISM_Monitor_SolarstormRemaining"), Lib.HumanReadableDuration(remainingDuration), "</i>"));//"Solar storm in progress"Remaining duration:
 			}
 		}
 
@@ -545,7 +545,7 @@ namespace KERBALISM
 
 			string tooltip = Lib.BuildString
 			(
-			  "<align=left /><b>"+Localizer.Format("#KERBALISM_Monitor_name") +"\t"+Localizer.Format("#KERBALISM_Monitor_level") +"\t"+Localizer.Format("#KERBALISM_Monitor_duration") +"</b>\n",//name"level"duration
+			  "<align=left /><b>", Localizer.Format("#KERBALISM_Monitor_name"), "\t", Localizer.Format("#KERBALISM_Monitor_level"), "\t" + Localizer.Format("#KERBALISM_Monitor_duration"), "</b>\n",//name"level"duration
 			  Lib.Color(Lib.BuildString("EC\t", Lib.HumanReadablePerc(ec.Level), "\t", depletion <= double.Epsilon ? Localizer.Format("#KERBALISM_Monitor_depleted") : Lib.HumanReadableDuration(depletion)),//"depleted"
 			  ec.Level <= 0.005 ? Lib.Kolor.Red : ec.Level <= low_threshold ? Lib.Kolor.Orange : Lib.Kolor.None)
 			);

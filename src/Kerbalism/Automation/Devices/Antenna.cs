@@ -51,15 +51,15 @@ namespace KERBALISM
 							return specialCase.animSpeed > 0 ? Localizer.Format("#KERBALISM_Generic_EXTENDING")
 															 : Localizer.Format("#KERBALISM_Generic_RETRACTING");
 						}
-						return specialCase.animSpeed > 0 ? Lib.Color("deployed", Lib.Kolor.Green) : Lib.Color("retracted", Lib.Kolor.Yellow);
+						return specialCase.animSpeed > 0 ? Lib.Color(Localizer.Format("#KERBALISM_Antenna_statu_deployed"), Lib.Kolor.Green) : Lib.Color(Localizer.Format("#KERBALISM_Antenna_statu_retracted"), Lib.Kolor.Yellow);//"deployed""retracted"
 					case "ModuleDataTransmitter":
-						return "fixed";
+						return Localizer.Format("#KERBALISM_Antenna_statu_fixed");//"fixed"
 					case "ModuleRTAntenna":
 						return Lib.ReflectionValue<bool>(module, "IsRTActive")
 						  ? Lib.Color(Localizer.Format("#KERBALISM_Generic_ACTIVE"), Lib.Kolor.Green)
 						  : Lib.Color(Localizer.Format("#KERBALISM_Generic_INACTIVE"), Lib.Kolor.Yellow);
 				}
-				return "unknown";
+				return Localizer.Format("#KERBALISM_Antenna_statu_unknown");//"unknown"
 			}
 		}
 
@@ -166,7 +166,7 @@ namespace KERBALISM
 						  ? Lib.Color(Localizer.Format("#KERBALISM_Generic_ACTIVE"), Lib.Kolor.Green)
 						  : Lib.Color(Localizer.Format("#KERBALISM_Generic_INACTIVE"), Lib.Kolor.Yellow);
 				}
-				return "unknown";
+				return Localizer.Format("#KERBALISM_Antenna_statu_unknown");//"unknown"
 			}
 		}
 
