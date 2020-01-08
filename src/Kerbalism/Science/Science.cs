@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
 using UnityEngine;
+using KSP.Localization;
 
 
 namespace KERBALISM
@@ -285,11 +286,11 @@ namespace KERBALISM
 			if (string.IsNullOrEmpty(file.resultText))
 			{
 				subjectResultText = Lib.TextVariant(
-					"Our researchers will jump on it right now",
-					"This cause some excitement",
-					"These results are causing a brouhaha in R&D",
-					"Our scientists look very confused",
-					"The scientists won't believe these readings");
+					Localizer.Format("#KERBALISM_SciencresultText1"),//"Our researchers will jump on it right now"
+					Localizer.Format("#KERBALISM_SciencresultText2"),//"This cause some excitement"
+					Localizer.Format("#KERBALISM_SciencresultText3"),//"These results are causing a brouhaha in R&D"
+					Localizer.Format("#KERBALISM_SciencresultText4"),//"Our scientists look very confused"
+					Localizer.Format("#KERBALISM_SciencresultText5"));//"The scientists won't believe these readings"
 			}
 			else
 			{
@@ -298,8 +299,8 @@ namespace KERBALISM
 			subjectResultText = Lib.WordWrapAtLength(subjectResultText, 70);
 			Message.Post(Lib.BuildString(
 				file.subjectData.FullTitle,
-				" transmitted\n",
-				timesCompleted == 1 ? Lib.HumanReadableScience(file.subjectData.ScienceMaxValue, false) : Lib.Color("no science gain : we already had this data", Lib.Kolor.Orange, true)),//
+				" ",Localizer.Format("#KERBALISM_Scienctransmitted_title"),"\n",//transmitted
+				timesCompleted == 1 ? Lib.HumanReadableScience(file.subjectData.ScienceMaxValue, false) : Lib.Color(Localizer.Format("#KERBALISM_Nosciencegain"), Lib.Kolor.Orange, true)),//"no science gain : we already had this data"
 				subjectResultText);
 		}
 
@@ -331,11 +332,11 @@ namespace KERBALISM
 			if (result == string.Empty && useGenericIfNotFound)
 			{
 				result = Lib.TextVariant(
-					  "Our researchers will jump on it right now",
-					  "This cause some excitement",
-					  "These results are causing a brouhaha in R&D",
-					  "Our scientists look very confused",
-					  "The scientists won't believe these readings");
+					  Localizer.Format("#KERBALISM_SciencresultText1"),//"Our researchers will jump on it right now"
+					  Localizer.Format("#KERBALISM_SciencresultText2"),//"This cause some excitement"
+					  Localizer.Format("#KERBALISM_SciencresultText3"),//"These results are causing a brouhaha in R&D"
+					  Localizer.Format("#KERBALISM_SciencresultText4"),//"Our scientists look very confused"
+					  Localizer.Format("#KERBALISM_SciencresultText5"));//"The scientists won't believe these readings"
 			}
 			return result;
 		}
