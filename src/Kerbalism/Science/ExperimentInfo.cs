@@ -485,7 +485,7 @@ namespace KERBALISM
 				{
 					if (situation.IsBodyBiomesRelevantForExperiment(this))
 					{
-						result.Add(Lib.BuildString(situation.Title(), " (biomes)"));//
+						result.Add(Lib.BuildString(situation.Title(), " ", Localizer.Format("#KERBALISM_Situation_biomes")));//(biomes)"
 					}
 					else if (situation.IsVirtualBiomesRelevantForExperiment(this))
 					{
