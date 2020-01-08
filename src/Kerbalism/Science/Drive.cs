@@ -16,6 +16,7 @@ namespace KERBALISM
 			this.dataCapacity = dataCapacity;
 			this.sampleCapacity = sampleCapacity;
 			this.name = name;
+			this.is_private = is_private;
 		}
 
 		public Drive(ConfigNode node)
