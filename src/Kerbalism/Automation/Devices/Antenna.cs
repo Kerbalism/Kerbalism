@@ -1,154 +1,110 @@
 ﻿using KSP.Localization;
-using static ModuleDeployablePart;
+using System.Collections.Generic;
 
 namespace KERBALISM
 {
-	public sealed class AntennaDevice : LoadedDevice<PartModule>
-	{
-		private readonly ModuleAnimateGeneric specialCase;
-		private readonly ModuleDeployableAntenna animDefault;
-		private readonly string ModuleName;
+	// note : theoretically ModuleDataTransmitter can handle multiple animation modules, we don't support it.
 
-		public AntennaDevice(PartModule module, string ModuleName) : base(module)
+	public sealed class AntennaDevice : LoadedDevice<ModuleDataTransmitter>
+	{
+		private readonly IScalarModule deployFxModule;
+
+		public AntennaDevice(ModuleDataTransmitter module) : base(module)
 		{
-			this.ModuleName = ModuleName;
-			if (ModuleName == "ModuleDataTransmitter")
+			List<IScalarModule> deployFxModules = Lib.ReflectionValue<List<IScalarModule>>(module, "deployFxModules");
+			if (deployFxModules != null && deployFxModules.Count > 0)
 			{
-				// do we have an animation
-				animDefault = module.part.FindModuleImplementing<ModuleDeployableAntenna>();
-				specialCase = module.part.FindModuleImplementing<ModuleAnimateGeneric>();
-				if (animDefault != null) this.ModuleName = "ModuleDeployableAntenna";
-				else if (specialCase != null && !module.part.name.Contains("Lander"))
-				{
-					// the Mk-2 lander can has doors that can be opened via a ModuleAnimateGeneric
-					// and would show up as "antenna" in automation.
-					this.ModuleName = "ModuleAnimateGeneric";
-				}
+				deployFxModule = deployFxModules[0];
 			}
 		}
 
-		public override string Name => "antenna";
+		public override bool IsVisible => deployFxModule != null;
+
+		public override string Name
+		{
+			get
+			{
+				switch (module.antennaType)
+				{
+					case AntennaType.INTERNAL: return Lib.BuildString("internal antenna, ", module.powerText);
+					case AntennaType.DIRECT: return Lib.BuildString("direct antenna, ", module.powerText);
+					case AntennaType.RELAY: return Lib.BuildString("relay antenna, ", module.powerText);
+					default: return string.Empty;
+				}
+			}
+		}
 
 		public override string Status
 		{
 			get
 			{
-				switch (ModuleName)
-				{
-					case "ModuleDeployableAntenna":
-						switch (animDefault.deployState)
-						{
-							case DeployState.EXTENDED: return Lib.Color(Localizer.Format("#KERBALISM_Generic_EXTENDED"), Lib.Kolor.Green);
-							case DeployState.RETRACTED: return Lib.Color(Localizer.Format("#KERBALISM_Generic_RETRACTED"), Lib.Kolor.Yellow);
-							case DeployState.BROKEN: return Lib.Color(Localizer.Format("#KERBALISM_Generic_BROKEN"), Lib.Kolor.Red);
-							case DeployState.EXTENDING: return Localizer.Format("#KERBALISM_Generic_EXTENDING");
-							case DeployState.RETRACTING: return Localizer.Format("#KERBALISM_Generic_RETRACTING");
-						}
-						break;
-					case "ModuleAnimateGeneric":
-						if (specialCase.aniState == ModuleAnimateGeneric.animationStates.MOVING)
-						{
-							return specialCase.animSpeed > 0 ? Localizer.Format("#KERBALISM_Generic_EXTENDING")
-															 : Localizer.Format("#KERBALISM_Generic_RETRACTING");
-						}
-						return specialCase.animSpeed > 0 ? Lib.Color("deployed", Lib.Kolor.Green) : Lib.Color("retracted", Lib.Kolor.Yellow);
-					case "ModuleDataTransmitter":
-						return "fixed";
-					case "ModuleRTAntenna":
-						return Lib.ReflectionValue<bool>(module, "IsRTActive")
-						  ? Lib.Color(Localizer.Format("#KERBALISM_Generic_ACTIVE"), Lib.Kolor.Green)
-						  : Lib.Color(Localizer.Format("#KERBALISM_Generic_INACTIVE"), Lib.Kolor.Yellow);
-				}
-				return "unknown";
+				if (!deployFxModule.CanMove)
+					return Lib.Color("unavailable", Lib.Kolor.Orange);
+				else if (deployFxModule.IsMoving())
+					return Localizer.Format("deploying");
+				else if (deployFxModule.GetScalar == 1f)
+					return Lib.Color(Localizer.Format("#KERBALISM_Generic_EXTENDED"), Lib.Kolor.Green);
+				else if (deployFxModule.GetScalar == 0f)
+					return Lib.Color(Localizer.Format("#KERBALISM_Generic_RETRACTED"), Lib.Kolor.Yellow);
+
+				return "error";
 			}
 		}
 
 		public override void Ctrl(bool value)
 		{
-			switch (ModuleName)
-			{
-				case "ModuleDeployableAntenna":
-					if (animDefault.deployState == DeployState.BROKEN) return;
-					if (value) animDefault.Extend(); else animDefault.Retract(); break;
-				case "ModuleAnimateGeneric": specialCase.Toggle(); break;
-				case "ModuleRTAntenna": Lib.ReflectionValue(module, "IsRTActive", value); break;
-			}
+			if (deployFxModule.CanMove && !deployFxModule.IsMoving())
+				deployFxModule.SetScalar(value ? 1f : 0f);
 		}
 
 		public override void Toggle()
 		{
-			switch (ModuleName)
-			{
-				case "ModuleDeployableAntenna":
-					Ctrl(!(animDefault.deployState == DeployState.EXTENDED));
-					break;
-				case "ModuleAnimateGeneric":
-					Ctrl(true);
-					break;
-				case "ModuleRTAntenna":
-					Ctrl(!Lib.ReflectionValue<bool>(module, "IsRTActive"));
-					break;
-			}
-		}
-
-		public override bool IsVisible
-		{
-			get
-			{
-				switch (ModuleName)
-				{
-					case "ModuleDataTransmitter":
-						return false;
-					default:
-						return true;
-				}
-			}
+			if (deployFxModule.CanMove && !deployFxModule.IsMoving())
+				deployFxModule.SetScalar(deployFxModule.GetScalar == 0f ? 1f : 0f);
 		}
 	}
 
-	public sealed class ProtoAntennaDevice : ProtoDevice<PartModule>
+	public sealed class ProtoAntennaDevice : ProtoDevice<ModuleDataTransmitter>
 	{
-		private readonly string ModuleName;
-		private readonly ProtoPartModuleSnapshot antenna;
+		private readonly ProtoPartModuleSnapshot scalarModuleSnapshot;
 
-		public ProtoAntennaDevice(PartModule prefab, ProtoPartSnapshot protoPart, ProtoPartModuleSnapshot protoModule, string ModuleName)
+		public ProtoAntennaDevice(ModuleDataTransmitter prefab, ProtoPartSnapshot protoPart, ProtoPartModuleSnapshot protoModule)
 			: base(prefab, protoPart, protoModule)
 		{
-			if (ModuleName == "ModuleDataTransmitter")
+			if (prefab.DeployFxModuleIndices != null && prefab.DeployFxModuleIndices.Length > 0 && prefab.part.Modules[prefab.DeployFxModuleIndices[0]] is IScalarModule)
 			{
-				this.ModuleName = "ModuleDataTransmitter";
-				this.antenna = protoModule;
-
-				if (protoPart.FindModule("ModuleDeployableAntenna") != null)
-				{
-					this.ModuleName = "ModuleDeployableAntenna";
-					this.antenna = protoPart.FindModule("ModuleDeployableAntenna");
-				}
-				else if (protoPart.FindModule("ModuleAnimateGeneric") != null
-					&& !protoPart.partName.Contains("Lander")) // see above
-				{
-					this.ModuleName = "ModuleAnimateGeneric";
-					this.antenna = protoPart.FindModule("ModuleAnimateGeneric");
-				}
-			}
-			else
-			{
-				this.antenna = protoModule;
-				this.ModuleName = ModuleName;
+				scalarModuleSnapshot = protoPart.modules[prefab.DeployFxModuleIndices[0]];
 			}
 		}
 
-		public override string Name => "antenna";
+		public override bool IsVisible => scalarModuleSnapshot != null;
+
+		public override string Name
+		{
+			get
+			{
+				switch (prefab.antennaType)
+				{
+					case AntennaType.INTERNAL: return Lib.BuildString("internal antenna, ", prefab.powerText);
+					case AntennaType.DIRECT: return Lib.BuildString("direct antenna, ", prefab.powerText);
+					case AntennaType.RELAY: return Lib.BuildString("relay antenna, ", prefab.powerText);
+					default: return string.Empty;
+				}
+			}
+		}
 
 		public override string Status
 		{
 			get
 			{
-				switch (ModuleName)
+				if (protoPart.shielded)
+					return Lib.Color("unavailable", Lib.Kolor.Orange);
+
+				switch (scalarModuleSnapshot.moduleName)
 				{
 					case "ModuleDeployableAntenna":
-						string state = Lib.Proto.GetString(antenna, "deployState");
-						switch (state)
+					case "ModuleDeployablePart":
+						switch (Lib.Proto.GetString(scalarModuleSnapshot, "deployState"))
 						{
 							case "EXTENDED": return Lib.Color(Localizer.Format("#KERBALISM_Generic_EXTENDED"), Lib.Kolor.Green);
 							case "RETRACTED": return Lib.Color(Localizer.Format("#KERBALISM_Generic_RETRACTED"), Lib.Kolor.Yellow);
@@ -156,68 +112,49 @@ namespace KERBALISM
 						}
 						break;
 					case "ModuleAnimateGeneric":
-						return Lib.Proto.GetFloat(antenna, "animSpeed") > 0 ?
+						return Lib.Proto.GetFloat(scalarModuleSnapshot, "animTime") > 0f ?
 							Lib.Color(Localizer.Format("#KERBALISM_Generic_EXTENDED"), Lib.Kolor.Green) :
 							Lib.Color(Localizer.Format("#KERBALISM_Generic_RETRACTED"), Lib.Kolor.Yellow);
-					case "ModuleDataTransmitter":
-						return "fixed";
-					case "ModuleRTAntenna":
-						return Lib.Proto.GetBool(antenna, "IsRTActive")
-						  ? Lib.Color(Localizer.Format("#KERBALISM_Generic_ACTIVE"), Lib.Kolor.Green)
-						  : Lib.Color(Localizer.Format("#KERBALISM_Generic_INACTIVE"), Lib.Kolor.Yellow);
 				}
 				return "unknown";
 			}
 		}
 
-		public override bool IsVisible
-		{
-			get
-			{
-				switch (ModuleName)
-				{
-					case "ModuleDataTransmitter":
-						return false;
-					default:
-						return true;
-				}
-			}
-		}
-
 		public override void Ctrl(bool value)
 		{
-			switch (ModuleName)
+			if (protoPart.shielded)
+				return;
+
+			switch (scalarModuleSnapshot.moduleName)
 			{
 				case "ModuleDeployableAntenna":
-					if (Lib.Proto.GetString(antenna, "deployState") == "BROKEN") return;
-					Lib.Proto.Set(antenna, "deployState", value ? "EXTENDED" : "RETRACTED");
+				case "ModuleDeployablePart":
+					if (Lib.Proto.GetString(scalarModuleSnapshot, "deployState") == "BROKEN")
+						return;
+
+					Lib.Proto.Set(scalarModuleSnapshot, "deployState", value ? "EXTENDED" : "RETRACTED");
 					break;
+
 				case "ModuleAnimateGeneric":
-					Lib.Proto.Set(antenna, "animSpeed", !value ? 1f : 0f);
-					Lib.Proto.Set(antenna, "animTime", !value ? 1f : 0f);
-					break;
-				case "ModuleRTAntenna":
-					Lib.Proto.Set(antenna, "IsRTActive", value);
+					Lib.Proto.Set(scalarModuleSnapshot, "animTime", value ? 1f : 0f);
 					break;
 			}
+
+			Lib.Proto.Set(protoModule, "canComm", value);
 		}
 
 		public override void Toggle()
 		{
-			switch (ModuleName)
+			switch (scalarModuleSnapshot.moduleName)
 			{
 				case "ModuleDeployableAntenna":
-					Ctrl(Lib.Proto.GetString(antenna, "deployState") != "EXTENDED");
+				case "ModuleDeployablePart":
+					Ctrl(Lib.Proto.GetString(scalarModuleSnapshot, "deployState") == "RETRACTED");
 					break;
 				case "ModuleAnimateGeneric":
-					Ctrl(Lib.Proto.GetFloat(antenna, "animSpeed") > 0);
-					break;
-				case "ModuleRTAntenna":
-					Ctrl(!Lib.Proto.GetBool(antenna, "IsRTActive"));
+					Ctrl(Lib.Proto.GetFloat(scalarModuleSnapshot, "animTime") == 0f);
 					break;
 			}
 		}
-
-
 	}
 }
