@@ -96,7 +96,7 @@ namespace KERBALISM
 
 			// top header
 			KsmGuiHeader topHeader = new KsmGuiHeader(window, expInfo.Title, default, 120);
-			topHeader.TextObject.SetTooltipText(Lib.BuildString(Localizer.Format("#KERBALISM_SCIENCEARCHIVE_onvessel") +" ", Lib.Bold(v.vesselName), "\n", Localizer.Format("#KERBALISM_SCIENCEARCHIVE_onpart") + " ", Lib.Bold(partName)));//"on vessel :"on part :
+			topHeader.TextObject.SetTooltipText(Lib.BuildString(Localizer.Format("#KERBALISM_SCIENCEARCHIVE_onvessel") ," ", Lib.Bold(v.vesselName), "\n", Localizer.Format("#KERBALISM_SCIENCEARCHIVE_onpart") , " ", Lib.Bold(partName)));//"on vessel :"on part :
 			rndVisibilityButton = new KsmGuiIconButton(topHeader, Textures.KsmGuiTexHeaderRnD, ToggleArchivePanel, Localizer.Format("#KERBALISM_SCIENCEARCHIVE_showarchive"));//"show science archive"
 			rndVisibilityButton.MoveAsFirstChild();
 			expInfoVisibilityButton = new KsmGuiIconButton(topHeader, Textures.KsmGuiTexHeaderInfo, ToggleExpInfo, Localizer.Format("#KERBALISM_SCIENCEARCHIVE_showexperimentinfo"));//"show experiment info"
@@ -186,9 +186,12 @@ namespace KERBALISM
 
 			sb.Length = 0;
 
-			sb.Append(Localizer.Format("#KERBALISM_SCIENCEARCHIVE_state") +" :<pos=20em>");//state
+			sb.Append(Localizer.Format("#KERBALISM_SCIENCEARCHIVE_state"));//state
+			sb.Append(" :<pos=20em>");
 			sb.Append(Lib.Bold(RunningStateInfo(expState)));
-			sb.Append("\n"+Localizer.Format("#KERBALISM_SCIENCEARCHIVE_status") +" :<pos=20em>");//status
+			sb.Append("\n");
+			sb.Append(Localizer.Format("#KERBALISM_SCIENCEARCHIVE_status"));//status
+			sb.Append(" :<pos=20em>");
 			sb.Append(Lib.Bold(StatusInfo(status, issue)));
 
 			if (status == ExpStatus.Running)
@@ -200,35 +203,48 @@ namespace KERBALISM
 			{
 				sb.Append(", ");
 				sb.Append(Lib.Color(subjectData.PercentCollectedTotal.ToString("P1"), Lib.Kolor.Yellow, true));
-				sb.Append(" "+Localizer.Format("#KERBALISM_SCIENCEARCHIVE_collected"));//collected
+				sb.Append(" ");
+				sb.Append(Localizer.Format("#KERBALISM_SCIENCEARCHIVE_collected"));//collected
 			}
 
 			if (isSample && !moduleOrPrefab.sample_collecting)
 			{
-				sb.Append("\n"+Localizer.Format("#KERBALISM_SCIENCEARCHIVE_samples") +" :<pos=20em>");//samples
+				sb.Append("\n");
+				sb.Append(Localizer.Format("#KERBALISM_SCIENCEARCHIVE_samples"));//samples
+				sb.Append(" :<pos=20em>");
 				sb.Append(Lib.Color((remainingSampleMass / expInfo.SampleMass).ToString("F1"), Lib.Kolor.Yellow, true));
 				sb.Append(" (");
 				sb.Append(Lib.Color(Lib.HumanReadableMass(remainingSampleMass), Lib.Kolor.Yellow, true));
 				sb.Append(")");
 			}
 
-			sb.Append("\n"+Localizer.Format("#KERBALISM_SCIENCEARCHIVE_situation") +" :<pos=20em>");//situation
+			sb.Append("\n");
+			sb.Append(Localizer.Format("#KERBALISM_SCIENCEARCHIVE_situation"));//situation
+			sb.Append(" :<pos=20em>");
 			sb.Append(Lib.Color(vd.VesselSituations.GetExperimentSituation(expInfo).GetTitleForExperiment(expInfo), Lib.Kolor.Yellow, true));
 
 			if (subjectData == null)
 			{
-				sb.Append("\n"+Localizer.Format("#KERBALISM_SCIENCEARCHIVE_retrieved") +" :<pos=20em>");//retrieved
+				sb.Append("\n");
+				sb.Append(Localizer.Format("#KERBALISM_SCIENCEARCHIVE_retrieved"));//retrieved
+				sb.Append(" :<pos=20em>");
 				sb.Append(Lib.Color(Localizer.Format("#KERBALISM_SCIENCEARCHIVE_invalidsituation"), Lib.Kolor.Yellow, true));//"invalid situation"
 
-				sb.Append("\n"+Localizer.Format("#KERBALISM_SCIENCEARCHIVE_collected") +" :<pos=20em>");//collected
+				sb.Append("\n");
+				sb.Append(Localizer.Format("#KERBALISM_SCIENCEARCHIVE_collected"));//collected
+				sb.Append(" :<pos=20em>");
 				sb.Append(Lib.Color(Localizer.Format("#KERBALISM_SCIENCEARCHIVE_invalidsituation"), Lib.Kolor.Yellow, true));//"invalid situation"
 
-				sb.Append("\n"+Localizer.Format("#KERBALISM_SCIENCEARCHIVE_value") +" :<pos=20em>");//value
+				sb.Append("\n");
+				sb.Append(Localizer.Format("#KERBALISM_SCIENCEARCHIVE_value"));//value
+				sb.Append(" :<pos=20em>");
 				sb.Append(Lib.Color(Localizer.Format("#KERBALISM_SCIENCEARCHIVE_invalidsituation"), Lib.Kolor.Yellow, true));//"invalid situation"
 			}
 			else
 			{
-				sb.Append("\n"+Localizer.Format("#KERBALISM_SCIENCEARCHIVE_retrieved") +" :<pos=20em>");//retrieved
+				sb.Append("\n");
+				sb.Append(Localizer.Format("#KERBALISM_SCIENCEARCHIVE_retrieved"));//retrieved
+				sb.Append(" :<pos=20em>");
 				if (subjectData.TimesCompleted > 0)
 					sb.Append(Lib.Color(Lib.BuildString(subjectData.TimesCompleted.ToString(), subjectData.TimesCompleted > 1 ? " times" : " time"), Lib.Kolor.Yellow));//
 				else
@@ -241,19 +257,25 @@ namespace KERBALISM
 					sb.Append(")");
 				}
 
-				sb.Append("\n"+Localizer.Format("#KERBALISM_SCIENCEARCHIVE_collected") +" :<pos=20em>");//collected
+				sb.Append("\n");
+				sb.Append(Localizer.Format("#KERBALISM_SCIENCEARCHIVE_collected"));//collected
+				sb.Append(" :<pos=20em>");
 				sb.Append(Lib.Color(subjectData.ScienceRetrievedInKSC.ToString("F1"), Lib.Kolor.Science, true));
 				sb.Append(Lib.InlineSpriteScience);
-				sb.Append(" "+Localizer.Format("#KERBALISM_SCIENCEARCHIVE_inRnD"));//in RnD
+				sb.Append(" ");
+				sb.Append(Localizer.Format("#KERBALISM_SCIENCEARCHIVE_inRnD"));//in RnD
 				if (subjectData.ScienceCollectedInFlight > 0.05)
 				{
 					sb.Append(" (");
 					sb.Append(Lib.Color(Lib.BuildString("+", subjectData.ScienceCollectedInFlight.ToString("F1")), Lib.Kolor.Science, true));
 					sb.Append(Lib.InlineSpriteScience);
-					sb.Append(" "+Localizer.Format("#KERBALISM_SCIENCEARCHIVE_inflight"));//in flight)
+					sb.Append(" ");
+					sb.Append(Localizer.Format("#KERBALISM_SCIENCEARCHIVE_inflight"));//in flight)
 				}
 
-				sb.Append("\n"+Localizer.Format("#KERBALISM_SCIENCEARCHIVE_value") +" :<pos=20em>");//value
+				sb.Append("\n");
+				sb.Append(Localizer.Format("#KERBALISM_SCIENCEARCHIVE_value"));//value
+				sb.Append(" :<pos=20em>");
 				sb.Append(Lib.Color(subjectData.ScienceMaxValue.ToString("F1"), Lib.Kolor.Science, true));
 				sb.Append(Lib.InlineSpriteScience);
 			}
@@ -281,7 +303,9 @@ namespace KERBALISM
 				{
 					sb.Append(" : ");
 					sb.Append(Lib.Color(ReqValueFormat(req.requireDef.require, req.requireDef.value), Lib.Kolor.Yellow, true));
-					sb.Append("\n<indent=5em>"+Localizer.Format("#KERBALISM_SCIENCEARCHIVE_current") +" : "); // match the checkbox indentation//"current"
+					sb.Append("\n<indent=5em>"); // match the checkbox indentation
+					sb.Append(Localizer.Format("#KERBALISM_SCIENCEARCHIVE_current"));//"current"
+					sb.Append(" : ");
 					sb.Append(Lib.Color(req.isValid, ReqValueFormat(req.requireDef.require, req.value), Lib.Kolor.Green, Lib.Kolor.Orange, true));
 					sb.Append("</indent>");
 				}

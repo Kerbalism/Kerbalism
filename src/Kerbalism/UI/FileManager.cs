@@ -76,7 +76,7 @@ namespace KERBALISM
 
 			if(filesCount > 0 || totalDataCapacity > 0)
 			{
-				var title = Localizer.Format("#KERBALISM_FILEMANAGER_DataCapacity", Lib.HumanReadableDataSize(usedDataCapacity));//"DATA " + 
+				var title = Localizer.Format("#KERBALISM_FILEMANAGER_DataCapacity") + " " + Lib.HumanReadableDataSize(usedDataCapacity);//"DATA " 
 				if (!unlimitedData) title += Localizer.Format("#KERBALISM_FILEMANAGER_DataAvailable", Lib.HumanReadablePerc((totalDataCapacity - usedDataCapacity) / totalDataCapacity));//Lib.BuildString(" (", Lib.HumanReadablePerc((totalDataCapacity - usedDataCapacity) / totalDataCapacity), " available)");
 				p.AddSection(title);
 
@@ -132,12 +132,12 @@ namespace KERBALISM
 			if (file.transmitRate > 0.0)
 			{
 				if (file.size > 0.0)
-					exp_tooltip = Lib.Color(Lib.BuildString(exp_tooltip, "\n"+Localizer.Format("#KERBALISM_FILEMANAGER_TransmittingRate", Lib.HumanReadableDataRate(file.transmitRate)), " : <i>", Lib.HumanReadableCountdown(file.size / file.transmitRate), "</i>"), Lib.Kolor.Cyan);//Transmitting at <<1>>
+					exp_tooltip = Lib.Color(Lib.BuildString(exp_tooltip, "\n", Localizer.Format("#KERBALISM_FILEMANAGER_TransmittingRate", Lib.HumanReadableDataRate(file.transmitRate)), " : <i>", Lib.HumanReadableCountdown(file.size / file.transmitRate), "</i>"), Lib.Kolor.Cyan);//Transmitting at <<1>>
 				else
-					exp_tooltip = Lib.Color(Lib.BuildString(exp_tooltip, "\n"+Localizer.Format("#KERBALISM_FILEMANAGER_TransmittingRate", Lib.HumanReadableDataRate(file.transmitRate))), Lib.Kolor.Cyan);//Transmitting at <<1>>
+					exp_tooltip = Lib.Color(Lib.BuildString(exp_tooltip, "\n", Localizer.Format("#KERBALISM_FILEMANAGER_TransmittingRate", Lib.HumanReadableDataRate(file.transmitRate))), Lib.Kolor.Cyan);//Transmitting at <<1>>
 			}
 			else if (v.KerbalismData().Connection.rate > 0.0)
-				exp_tooltip = Lib.BuildString(exp_tooltip, "\n"+Localizer.Format("#KERBALISM_FILEMANAGER_Transmitduration") +"<i>", Lib.HumanReadableDuration(file.size / v.KerbalismData().Connection.rate), "</i>");//Transmit duration : 
+				exp_tooltip = Lib.BuildString(exp_tooltip, "\n", Localizer.Format("#KERBALISM_FILEMANAGER_Transmitduration"), "<i>", Lib.HumanReadableDuration(file.size / v.KerbalismData().Connection.rate), "</i>");//Transmit duration : 
 			if (!string.IsNullOrEmpty(file.resultText))
 				exp_tooltip = Lib.BuildString(exp_tooltip, "\n", Lib.WordWrapAtLength(file.resultText, 50));
 
@@ -161,7 +161,7 @@ namespace KERBALISM
 			p.AddRightIcon(Textures.toggle_red, Localizer.Format("#KERBALISM_FILEMANAGER_Delete"), () =>//"Delete the file"
 				{
 					Lib.Popup(Localizer.Format("#KERBALISM_FILEMANAGER_Warning_title"),//"Warning!"
-						Lib.BuildString(Localizer.Format("#KERBALISM_FILEMANAGER_DeleteConfirm", file.subjectData.FullTitle), "?"),//"Do you really want to delete <<1>>", 
+						Localizer.Format("#KERBALISM_FILEMANAGER_DeleteConfirm", file.subjectData.FullTitle),//Lib.BuildString(, "?"),//"Do you really want to delete <<1>>", 
 				        new DialogGUIButton(Localizer.Format("#KERBALISM_FILEMANAGER_DeleteConfirm_button1"), () => drive.Delete_file(file.subjectData)),//"Delete it"
 						new DialogGUIButton(Localizer.Format("#KERBALISM_FILEMANAGER_DeleteConfirm_button2"), () => { }));//"Keep it"
 				}
@@ -195,7 +195,7 @@ namespace KERBALISM
 			p.AddRightIcon(Textures.toggle_red, Localizer.Format("#KERBALISM_FILEMANAGER_Dumpsample"), () =>//"Dump the sample"
 				{
 					Lib.Popup(Localizer.Format("#KERBALISM_FILEMANAGER_Warning_title"),//"Warning!"
-						Lib.BuildString(Localizer.Format("#KERBALISM_FILEMANAGER_DumpConfirm", sample.subjectData.FullTitle), "?"),//"Do you really want to dump <<1>>", 
+						Localizer.Format("#KERBALISM_FILEMANAGER_DumpConfirm", sample.subjectData.FullTitle),//"Do you really want to dump <<1>>?", 
 						new DialogGUIButton(Localizer.Format("#KERBALISM_FILEMANAGER_DumpConfirm_button1"), () => drive.Delete_sample(sample.subjectData)),//"Dump it"
 							  new DialogGUIButton(Localizer.Format("#KERBALISM_FILEMANAGER_DumpConfirm_button2"), () => { }));//"Keep it"
 				}

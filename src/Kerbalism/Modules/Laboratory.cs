@@ -291,7 +291,7 @@ namespace KERBALISM
 				else
 				{
 					Message.Post(
-						Lib.Color(Lib.BuildString(Localizer.Format("#KERBALISM_Laboratory_Analysis"), " "+Localizer.Format("#KERBALISM_Laboratory_stopped")), Lib.Kolor.Red),//"stopped"
+						Lib.Color(Lib.BuildString(Localizer.Format("#KERBALISM_Laboratory_Analysis"), " ", Localizer.Format("#KERBALISM_Laboratory_stopped")), Lib.Kolor.Red),//"stopped"
 						Localizer.Format("#KERBALISM_Laboratory_Notspace")//"Not enough space on hard drive"
 					);
 

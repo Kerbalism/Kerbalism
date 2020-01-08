@@ -550,7 +550,7 @@ namespace KERBALISM
 			}
 
 			// set metadata
-			p.Title(Lib.BuildString(Localizer.Format("#KERBALISM_Moudule_Configure") + " " + "<color=#cccccc>", Lib.Ellipsis(title, Styles.ScaleStringLength(40)), "</color>"));//Configure
+			p.Title(Lib.BuildString(Localizer.Format("#KERBALISM_Moudule_Configure") , " " , "<color=#cccccc>", Lib.Ellipsis(title, Styles.ScaleStringLength(40)), "</color>"));//Configure
 			p.Width(Styles.ScaleWidthFloat(300.0f));
 		}
 
@@ -608,9 +608,9 @@ namespace KERBALISM
 		public ModifierChangeWhen GetModuleMassChangeWhen() { return ModifierChangeWhen.CONSTANTLY; }
 
 		// module info support
-		public string GetModuleTitle() { return Lib.BuildString("<size=1><color=#00000000>00</color></size>" + Localizer.Format("#KERBALISM_Moudule_Configurable") + " ", title); } // attempt to display at the top//Configurable
-		public override string GetModuleDisplayName() { return Lib.BuildString("<size=1><color=#00000000>00</color></size>" + Localizer.Format("#KERBALISM_Moudule_Configurable") + " ", title); } // attempt to display at the top//Configurable
-		public string GetPrimaryField() { return Lib.BuildString("<size=1><color=#00000000>00</color></size>" + Localizer.Format("#KERBALISM_Moudule_Configurable") + " ", title); } // attempt to display at the top//Configurable
+		public string GetModuleTitle() { return Lib.BuildString("<size=1><color=#00000000>00</color></size>", Localizer.Format("#KERBALISM_Moudule_Configurable"), " ", title); } // attempt to display at the top//Configurable
+		public override string GetModuleDisplayName() { return Lib.BuildString("<size=1><color=#00000000>00</color></size>", Localizer.Format("#KERBALISM_Moudule_Configurable"), " ", title); } // attempt to display at the top//Configurable
+		public string GetPrimaryField() { return Lib.BuildString("<size=1><color=#00000000>00</color></size>", Localizer.Format("#KERBALISM_Moudule_Configurable"), " ", title); } // attempt to display at the top//Configurable
 		public Callback<Rect> GetDrawModulePanelCallback() { return null; }
 
 	}

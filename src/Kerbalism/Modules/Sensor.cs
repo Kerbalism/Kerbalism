@@ -165,9 +165,9 @@ namespace KERBALISM
 				case "gravioli":
 					return Lib.BuildString
 					(
-						Localizer.Format("#KERBALISM_Sensor_Graviolidetection", "<b>"+vd.EnvGravioli.ToString("F2")+"</b>\n\n"),//"Gravioli detection events per-year: 
-						"<i>"+Localizer.Format("#KERBALISM_Sensor_info1") +"\n",//The elusive negative gravioli particle\nseems to be much harder to detect than expected.
-						Localizer.Format("#KERBALISM_Sensor_info2") +"</i>"//" On the other\nhand there seems to be plenty\nof useless positive graviolis around."
+						Localizer.Format("#KERBALISM_Sensor_Graviolidetection", "<b>" + vd.EnvGravioli.ToString("F2") + "</b>\n\n"),//"Gravioli detection events per-year: 
+						"<i>", Localizer.Format("#KERBALISM_Sensor_info1"), "\n",//The elusive negative gravioli particle\nseems to be much harder to detect than expected.
+						Localizer.Format("#KERBALISM_Sensor_info2"), "</i>"//" On the other\nhand there seems to be plenty\nof useless positive graviolis around."
 					);
 			}
 			return string.Empty;

@@ -67,9 +67,9 @@ namespace KERBALISM
 			}
 			else
 			{
-				foreach (ProtoPartModuleSnapshot m in Lib.FindModules(v.protoVessel, Localizer.Format("#KERBALISM_TELEMETRY_Sensor")))//"Sensor"
+				foreach (ProtoPartModuleSnapshot m in Lib.FindModules(v.protoVessel, "Sensor"))
 				{
-					readings.Add(Lib.Proto.GetString(m, Localizer.Format("#KERBALISM_TELEMETRY_Sensor_type")));//"type"
+					readings.Add(Lib.Proto.GetString(m, "type"));
 				}
 			}
 			readings.Remove(string.Empty);
@@ -80,7 +80,7 @@ namespace KERBALISM
 			{
 				var exposureString = vd.SolarPanelsAverageExposure.ToString("P1");
 				if (vd.SolarPanelsAverageExposure < 0.2) exposureString = Lib.Color(exposureString, Lib.Kolor.Orange);
-				p.AddContent(Localizer.Format("#KERBALISM_TELEMETRY_SolarPanelsAverageExposure"), exposureString, "<b>"+Localizer.Format("#KERBALISM_TELEMETRY_Exposureignoringbodiesocclusion") +"</b>\n<i>"+Localizer.Format("#KERBALISM_TELEMETRY_Exposureignoringbodiesocclusion_desc") +"</i>");//"solar panels average exposure"Exposure ignoring bodies occlusion"Won't change on unloaded vessels\nMake sure to optimize it before switching
+				p.AddContent(Localizer.Format("#KERBALISM_TELEMETRY_SolarPanelsAverageExposure"), exposureString, "<b>"+Localizer.Format("#KERBALISM_TELEMETRY_Exposureignoringbodiesocclusion") +"</b>\n<i>"+Localizer.Format("#KERBALISM_TELEMETRY_Exposureignoringbodiesocclusion_desc") +"</i>");//"solar panels average exposure""Exposure ignoring bodies occlusion""Won't change on unloaded vessels\nMake sure to optimize it before switching
 			}
 
 			foreach (string type in readings)
@@ -177,11 +177,24 @@ namespace KERBALISM
 				}
 				else
 				{
-					sb.Append("<b>"+Localizer.Format("#KERBALISM_TELEMETRY_nochange") +"</b>");//no change
+					sb.Append("<b>");
+					sb.Append(Localizer.Format("#KERBALISM_TELEMETRY_nochange"));//no change
+					sb.Append("</b>");
 				}
 
-				if (res.AverageRate < 0.0 && res.Level < 0.0001) sb.Append(" <i>"+Localizer.Format("#KERBALISM_TELEMETRY_empty") +"</i>");//(empty)
-				else if (res.AverageRate > 0.0 && res.Level > 0.9999) sb.Append(" <i>"+Localizer.Format("#KERBALISM_TELEMETRY_full") +"</i>");//(full)
+				if (res.AverageRate < 0.0 && res.Level < 0.0001)
+				{
+					sb.Append(" <i>");
+					sb.Append(Localizer.Format("#KERBALISM_TELEMETRY_empty"));//(empty)
+					sb.Append("</i>");
+				}
+				else if (res.AverageRate > 0.0 && res.Level > 0.9999)
+				{
+					sb.Append(" <i>");
+					sb.Append(Localizer.Format("#KERBALISM_TELEMETRY_full"));//(full)
+					sb.Append("</i>");
+
+				}
 				else sb.Append("   "); // spaces to prevent alignement issues
 
 				sb.Append("\t");
@@ -293,14 +306,14 @@ namespace KERBALISM
 				string tooltip = greenhouse.growth < 0.99 ? Lib.BuildString
 				(
 				  "<align=left />",
-				  Localizer.Format("#KERBALISM_TELEMETRY_timetoharvest") +"\t<b>", Lib.HumanReadableDuration(greenhouse.tta), "</b>\n",//"time to harvest"
-				  Localizer.Format("#KERBALISM_TELEMETRY_growth") +"\t\t<b>", Lib.HumanReadablePerc(greenhouse.growth), "</b>\n",//"growth"
-				  Localizer.Format("#KERBALISM_TELEMETRY_naturallighting") +"\t<b>", Lib.HumanReadableFlux(greenhouse.natural), "</b>\n",//"natural lighting"
-				  Localizer.Format("#KERBALISM_TELEMETRY_artificiallighting") +"\t<b>", Lib.HumanReadableFlux(greenhouse.artificial), "</b>"//"artificial lighting"
+				  Localizer.Format("#KERBALISM_TELEMETRY_timetoharvest"), "\t<b>", Lib.HumanReadableDuration(greenhouse.tta), "</b>\n",//"time to harvest"
+				  Localizer.Format("#KERBALISM_TELEMETRY_growth"), "\t\t<b>", Lib.HumanReadablePerc(greenhouse.growth), "</b>\n",//"growth"
+				  Localizer.Format("#KERBALISM_TELEMETRY_naturallighting"), "\t<b>", Lib.HumanReadableFlux(greenhouse.natural), "</b>\n",//"natural lighting"
+				  Localizer.Format("#KERBALISM_TELEMETRY_artificiallighting"), "\t<b>", Lib.HumanReadableFlux(greenhouse.artificial), "</b>"//"artificial lighting"
 				) : string.Empty;
 
 				// render it
-				p.AddContent(Lib.BuildString(Localizer.Format("#KERBALISM_TELEMETRY_crop") +" #", (i + 1).ToString()), state, tooltip);//"crop"
+				p.AddContent(Lib.BuildString(Localizer.Format("#KERBALISM_TELEMETRY_crop"), " #", (i + 1).ToString()), state, tooltip);//"crop"
 
 				// issues too, why not
 				p.AddRightIcon(greenhouse.issue.Length == 0 ? Textures.plant_white : Textures.plant_yellow, tooltip);

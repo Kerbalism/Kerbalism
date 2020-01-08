@@ -73,7 +73,7 @@ namespace KERBALISM
 		public void Update()
 		{
 			// update ui
-			Status = deployed ? Lib.BuildString(Localizer.Format("#KERBALISM_PassiveShield_absorbing") +" ", Lib.HumanReadableRadiation(Math.Abs(radiation))) : disabledTitle;//"absorbing
+			Status = deployed ? Lib.BuildString(Localizer.Format("#KERBALISM_PassiveShield_absorbing") ," ", Lib.HumanReadableRadiation(Math.Abs(radiation))) : disabledTitle;//"absorbing
 			Events["Toggle"].guiName = Lib.StatusToggle(title, deployed ? disengageActionTitle : engageActionTitle);
 		}
 
