@@ -112,6 +112,7 @@ namespace KERBALISM
 			}
 
 			if (Lib.IsFlight() && hdId == 0) hdId = part.flightID;
+
 			if (drive == null)
 			{
 				if (!Lib.IsFlight())
@@ -131,8 +132,6 @@ namespace KERBALISM
 						drive = vessel.KerbalismData().GetPartData(part.flightID).Drive;
 					}
 				}
-					
-					//DB.Drive(hdId, title, effectiveDataCapacity, effectiveSampleCapacity);
 			}
 
 			UpdateCapacity();
@@ -153,38 +152,6 @@ namespace KERBALISM
 				result.Add(new KeyValuePair<string, int>(Lib.HumanReadableSampleSize(sampleCapacity * i), sampleCapacity * i));
 			return result;
 		}
-
-		//public override void OnLoad(ConfigNode node)
-		//{
-		//	base.OnLoad(node);
-
-		//	if (HighLogic.LoadedScene == GameScenes.LOADING)
-		//	{
-		//		drive = new Drive(title, effectiveDataCapacity, effectiveSampleCapacity); // unused, 
-		//		return;
-		//	}
-		//}
-
-		/// <summary>Called by Callbacks just after rollout to launch pad</summary>
-		//public void OnRollout()
-		//{
-		//	if (Lib.DisableScenario(this)) return;
-
-		//	// register the drive in the kerbalism DB
-		//	// this needs to be done only once just after launch
-		//	VesselData vd = vessel.KerbalismData();
-		//	hdId = part.flightID;
-		//	PartData pd = vd.GetPartData(hdId);
-		//	if (pd != null)
-		//	{
-		//		drive = new Drive(part.partInfo.title, effectiveDataCapacity, effectiveSampleCapacity, !string.IsNullOrEmpty(experiment_id));
-		//		pd.Drive = drive;
-		//	}
-
-		//	UpdateCapacity();
-
-		//	if (vessel != null) Cache.RemoveVesselObjectsCache(vessel, "drives");
-		//}
 
 		public void FixedUpdate()
 		{
