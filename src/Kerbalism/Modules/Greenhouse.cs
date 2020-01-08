@@ -404,7 +404,7 @@ namespace KERBALISM
 			growth = 0.0;
 
 			// show message
-			Message.Post(Lib.BuildString(Localizer.Format("#KERBALISM_Greenhouse_msg_1", "<color=ffffff>" + vessel.vesselName + "</color> "), Localizer.Format("#KERBALISM_Greenhouse_msg_2", "<color=ffffff>" +crop_size.ToString("F0")+" " + crop_resource + "</color>")));//"On <<1>>"harvest produced <<1>>", 
+			Message.Post(Lib.BuildString(Localizer.Format("#KERBALISM_Greenhouse_msg_1", "<color=ffffff>" + vessel.vesselName + "</color> "), Localizer.Format("#KERBALISM_Greenhouse_msg_2", "<color=ffffff>" + crop_size.ToString("F0") + " " + crop_resource + "</color>")));//"On <<1>>""harvest produced <<1>>", 
 
 			// record first harvest
 			if (!Lib.Landed(vessel)) DB.landmarks.space_harvest = true;

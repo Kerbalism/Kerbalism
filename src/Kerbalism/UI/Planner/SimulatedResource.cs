@@ -236,7 +236,9 @@ namespace KERBALISM.Planner
 			}
 			if (harvests.Count > 0)
 			{
-				sb.Append("\n\n<b>"+Localizer.Format("#KERBALISM_Harvests") +"</b>");//Harvests
+				sb.Append("\n\n<b>");
+				sb.Append(Localizer.Format("#KERBALISM_Harvests"));//Harvests
+				sb.Append("</b>");
 				foreach (string s in harvests)
 				{
 					sb.Append("\n");

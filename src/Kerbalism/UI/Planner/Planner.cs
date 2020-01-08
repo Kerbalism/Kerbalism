@@ -338,8 +338,8 @@ namespace KERBALISM.Planner
 			// generate details tooltips
 			string living_space_tooltip = Lib.BuildString
 			(
-				Localizer.Format("#KERBALISM_Planner_volumepercapita") +"<b>\t", Lib.HumanReadableVolume(vessel_analyzer.volume / Math.Max(vessel_analyzer.crew_count, 1)), "</b>\n",//"volume per-capita:
-				Localizer.Format("#KERBALISM_Planner_ideallivingspace") +"<b>\t", Lib.HumanReadableVolume(PreferencesComfort.Instance.livingSpace), "</b>"//"ideal living space:
+				Localizer.Format("#KERBALISM_Planner_volumepercapita") ,"<b>\t", Lib.HumanReadableVolume(vessel_analyzer.volume / Math.Max(vessel_analyzer.crew_count, 1)), "</b>\n",//"volume per-capita:
+				Localizer.Format("#KERBALISM_Planner_ideallivingspace") ,"<b>\t", Lib.HumanReadableVolume(PreferencesComfort.Instance.livingSpace), "</b>"//"ideal living space:
 			);
 			p.AddContent(Localizer.Format("#KERBALISM_Planner_livingspace"), Habitat.Living_space_to_string(vessel_analyzer.living_space), living_space_tooltip);//"living space"
 

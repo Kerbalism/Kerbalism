@@ -21,7 +21,7 @@ namespace KERBALISM
 			get
 			{
 			return animator != null && !module.deployed
-			  ? "not deployed"
+			  ? Localizer.Format("#KERBALISM_Generic_notdeployed")//"not deployed"
 			  : !module.running
 			  ? Lib.Color(Localizer.Format("#KERBALISM_Generic_STOPPED"), Lib.Kolor.Yellow)
 			  : module.issue.Length == 0
@@ -65,7 +65,7 @@ namespace KERBALISM
 				string issue = Lib.Proto.GetString(protoModule, "issue");
 
 				return animator != null && !deployed
-				  ? "not deployed"
+				  ? Localizer.Format("#KERBALISM_Generic_notdeployed")//"not deployed"
 				  : !running
 				  ? Lib.Color(Localizer.Format("#KERBALISM_Generic_STOPPED"), Lib.Kolor.Yellow)
 				  : issue.Length == 0

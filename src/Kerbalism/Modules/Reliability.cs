@@ -231,14 +231,14 @@ namespace KERBALISM
 						if (rated_operation_duration > 0)
 						{
 							double effective_duration = EffectiveDuration(quality, rated_operation_duration);
-							Status = Lib.BuildString(Localizer.Format("#KERBALISM_Reliability_burnremaining") +" ", Lib.HumanReadableDuration(Math.Max(0, effective_duration - operation_duration)));//"remaining burn:"
+							Status = Lib.BuildString(Localizer.Format("#KERBALISM_Reliability_burnremaining") ," ", Lib.HumanReadableDuration(Math.Max(0, effective_duration - operation_duration)));//"remaining burn:"
 						}
 						if (rated_ignitions > 0)
 						{
 							int effective_ignitions = EffectiveIgnitions(quality, rated_ignitions);
 							Status = Lib.BuildString(Status,
 								(string.IsNullOrEmpty(Status) ? "" : ", "),
-								Localizer.Format("#KERBALISM_Reliability_ignitions") +" ", Math.Max(0, effective_ignitions - ignitions).ToString());//"ignitions:"
+								Localizer.Format("#KERBALISM_Reliability_ignitions") ," ", Math.Max(0, effective_ignitions - ignitions).ToString());//"ignitions:"
 						}
 					}
 
@@ -806,7 +806,7 @@ namespace KERBALISM
 
 		// module info support
 		public string GetModuleTitle() { return Lib.BuildString(title, " Reliability"); }
-		public override string GetModuleDisplayName() { return Lib.BuildString(title, " "+Localizer.Format("#KERBALISM_Reliability_Reliability")); }//Reliability
+		public override string GetModuleDisplayName() { return Lib.BuildString(title, " ",Localizer.Format("#KERBALISM_Reliability_Reliability")); }//Reliability
 		public string GetPrimaryField() { return string.Empty; }
 		public Callback<Rect> GetDrawModulePanelCallback() { return null; }
 

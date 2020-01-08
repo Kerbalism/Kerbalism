@@ -46,7 +46,7 @@ namespace KERBALISM
 			valve_i = dump_specs.ValveIndex;
 
 			// set action group ui
-			Actions["Action"].guiName = Lib.BuildString(Localizer.Format("#KERBALISM_ProcessController_Start_Stop") +" ", title);//"Start/Stop
+			Actions["Action"].guiName = Lib.BuildString(Localizer.Format("#KERBALISM_ProcessController_Start_Stop"), " ", title);//"Start/Stop
 
 			// hide toggle if specified
 			Events["Toggle"].active = toggle;
