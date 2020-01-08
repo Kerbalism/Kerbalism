@@ -4,6 +4,7 @@ using System.Configuration;
 using System.Diagnostics;
 using System.Threading;
 using UnityEngine;
+using KSP.Localization;
 
 
 namespace KERBALISM
@@ -962,7 +963,7 @@ namespace KERBALISM
                 // show the message
                 if (inside_belt && !vd.msg_belt && must_warn)
                 {
-                    Message.Post(Lib.BuildString("<b>", v.vesselName, "</b> is crossing <i>", v.mainBody.bodyName, " radiation belt</i>"), "Exposed to extreme radiation");
+					Message.Post(Localizer.Format("#KERBALISM_BeltWarnings_msg", "<b>" + v.vesselName + "</b>", "<i>" + v.mainBody.bodyName + "</i>"), Localizer.Format("#KERBALISM_BeltWarnings_msgSubtext"));//<<1>> is crossing <<2>> radiation belt)"Exposed to extreme radiation"
                     vd.msg_belt = true;
                 }
                 else if (!inside_belt && vd.msg_belt)
