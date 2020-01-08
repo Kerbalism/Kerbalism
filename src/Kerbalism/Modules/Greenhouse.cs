@@ -229,7 +229,7 @@ namespace KERBALISM
 					// notify the user when crop can be harvested
 					if (growth >= 0.99)
 					{
-						Message.Post(Lib.BuildString("On <b>", vessel.vesselName, "</b> the crop is ready to be harvested"));
+						Message.Post(Localizer.Format("#KERBALISM_harvestedready_msg", "<b>" + vessel.vesselName + "</b>"));//Lib.BuildString("On <<1>> the crop is ready to be harvested")
 						growth = 1.0;
 					}
 				}
@@ -339,7 +339,7 @@ namespace KERBALISM
 					// notify the user when crop can be harvested
 					if (growth >= 0.99)
 					{
-						Message.Post(Lib.BuildString("On <b>", v.vesselName, "</b> the crop is ready to be harvested"));
+						Message.Post(Localizer.Format("#KERBALISM_harvestedready_msg", "<b>" + v.vesselName + "</b>"));//Lib.BuildString("On <<1>> the crop is ready to be harvested")
 						growth = 1.0;
 					}
 				}

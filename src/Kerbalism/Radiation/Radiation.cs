@@ -562,7 +562,7 @@ namespace KERBALISM
                         show_pause = false;
 
                         // tell the user and do nothing
-                        Message.Post("<color=#00ffff><b>Fitting particles to signed distance fields</b></color>", "Come back in a minute");
+                        Message.Post("<color=#00ffff>"+Localizer.Format("#KERBALISM_Fittingparticles_msg") +"<b></b></color>", Localizer.Format("#KERBALISM_ComebackLater_msg"));//"Fitting particles to signed distance fields""Come back in a minute"
                         return;
                     }
 
