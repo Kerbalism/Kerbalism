@@ -335,7 +335,7 @@ namespace KERBALISM
 			if (!res.isVisible && !res.isTweakable) return;
 
 			Lib.EditorClearSymmetry(part);
-			Message.Post(Lib.BuildString("Symmetry on ", part.partInfo.title, "\nhas been removed because of switching the ", res.displayName, " capacity."));
+			Message.Post(Localizer.Format("#KERBALISM_RemoveSymmetry_msg", part.partInfo.title, res.displayName));//Lib.BuildString("Symmetry on <<1>>\nhas been removed because of switching the <<2>> capacity.")
 		}
 
 		void OnGUI()

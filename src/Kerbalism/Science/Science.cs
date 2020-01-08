@@ -298,7 +298,7 @@ namespace KERBALISM
 			subjectResultText = Lib.WordWrapAtLength(subjectResultText, 70);
 			Message.Post(Lib.BuildString(
 				file.subjectData.FullTitle,
-				" transmitted\n",//
+				" transmitted\n",
 				timesCompleted == 1 ? Lib.HumanReadableScience(file.subjectData.ScienceMaxValue, false) : Lib.Color("no science gain : we already had this data", Lib.Kolor.Orange, true)),//
 				subjectResultText);
 		}

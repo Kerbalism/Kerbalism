@@ -587,7 +587,7 @@ namespace KERBALISM
 					kd.rescue = false;
 
 					// show a message
-					Message.Post(Lib.BuildString("We found <b>", c.name, "</b>"), Lib.BuildString((c.gender == ProtoCrewMember.Gender.Male ? "He" : "She"), "'s still alive!"));
+					Message.Post(Lib.BuildString(Localizer.Format("#KERBALISM_Rescuemission_msg1")," <b>", c.name, "</b>"), Lib.BuildString((c.gender == ProtoCrewMember.Gender.Male ? Localizer.Format("#KERBALISM_Kerbal_Male") : Localizer.Format("#KERBALISM_Kerbal_Female")), Localizer.Format("#KERBALISM_Rescuemission_msg2")));//We found xx  "He"/"She"'s still alive!"
 				}
 			}
 
@@ -747,13 +747,13 @@ namespace KERBALISM
 			{
 				if (!Message.IsMuted())
 				{
-					Message.Post("Messages muted", "Be careful out there");//
+					Message.Post(Localizer.Format("#KERBALISM_Messagesmuted"), Localizer.Format("#KERBALISM_Messagesmuted_subtext"));//"Messages muted""Be careful out there"
 					Message.Mute();
 				}
 				else
 				{
 					Message.Unmute();
-					Message.Post("Messages unmuted");//
+					Message.Post(Localizer.Format("#KERBALISM_Messagesunmuted"));//"Messages unmuted"
 				}
 			}
 
@@ -907,20 +907,20 @@ namespace KERBALISM
 			switch (breakdown)
 			{
 				case KerbalBreakdown.mumbling:
-					text = "$ON_VESSEL$KERBAL has been in space for too long";//
-					subtext = "Mumbling incoherently";//
+					text = Localizer.Format("#KERBALISM_Kerbalmumbling");//"$ON_VESSEL$KERBAL has been in space for too long"
+					subtext = Localizer.Format("#KERBALISM_Kerbalmumbling_subtext");//"Mumbling incoherently"
 					break;
 				case KerbalBreakdown.fat_finger:
-					text = "$ON_VESSEL$KERBAL is pressing buttons at random on the control panel";//
-					subtext = "Science data has been lost";//
+					text = Localizer.Format("#KERBALISM_Kerbalfatfinger_subtext");//"$ON_VESSEL$KERBAL is pressing buttons at random on the control panel"
+					subtext = Localizer.Format("#KERBALISM_Kerbalfatfinger_subtext");//"Science data has been lost"
 					break;
 				case KerbalBreakdown.rage:
-					text = "$ON_VESSEL$KERBAL is possessed by a blind rage";//
-					subtext = "A component has been damaged";//
+					text = Localizer.Format("#KERBALISM_Kerbalrage");//"$ON_VESSEL$KERBAL is possessed by a blind rage"
+					subtext = Localizer.Format("#KERBALISM_Kerbalrage_subtext");//"A component has been damaged"
 					break;
 				case KerbalBreakdown.wrong_valve:
-					text = "$ON_VESSEL$KERBAL opened the wrong valve";//
-					subtext = res.ResourceName + " has been lost";//
+					text = Localizer.Format("#KERBALISM_Kerbalwrongvalve");//"$ON_VESSEL$KERBAL opened the wrong valve"
+					subtext = res.ResourceName + " " + Localizer.Format("#KERBALISM_Kerbalwrongvalve_subtext");//has been lost"
 					break;
 			}
 
