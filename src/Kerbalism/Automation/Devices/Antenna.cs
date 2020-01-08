@@ -160,7 +160,7 @@ namespace KERBALISM
 							Lib.Color(Localizer.Format("#KERBALISM_Generic_EXTENDED"), Lib.Kolor.Green) :
 							Lib.Color(Localizer.Format("#KERBALISM_Generic_RETRACTED"), Lib.Kolor.Yellow);
 					case "ModuleDataTransmitter":
-						return "fixed";//
+						return "fixed";
 					case "ModuleRTAntenna":
 						return Lib.Proto.GetBool(antenna, "IsRTActive")
 						  ? Lib.Color(Localizer.Format("#KERBALISM_Generic_ACTIVE"), Lib.Kolor.Green)

@@ -246,7 +246,7 @@ namespace KERBALISM
 				sb.Append(Localizer.Format("#KERBALISM_SCIENCEARCHIVE_retrieved"));//retrieved
 				sb.Append(" :<pos=20em>");
 				if (subjectData.TimesCompleted > 0)
-					sb.Append(Lib.Color(Lib.BuildString(subjectData.TimesCompleted.ToString(), subjectData.TimesCompleted > 1 ? " times" : " time"), Lib.Kolor.Yellow));//
+					sb.Append(Lib.Color(Lib.BuildString(subjectData.TimesCompleted.ToString(), subjectData.TimesCompleted > 1 ? " times" : " time"), Lib.Kolor.Yellow));
 				else
 					sb.Append(Lib.Color(Localizer.Format("#KERBALISM_SCIENCEARCHIVE_never"), Lib.Kolor.Yellow));//"never"
 

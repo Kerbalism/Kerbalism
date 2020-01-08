@@ -33,7 +33,7 @@ namespace KERBALISM
 		public Specifics Specs()
 		{
 			Specifics specs = new Specifics();
-			specs.Add("bonus", bonus);//
+			specs.Add("bonus", bonus);
 			return specs;
 		}
 
@@ -77,7 +77,7 @@ namespace KERBALISM
 			else
 			{
 				// scan parts for comfort
-				foreach (ProtoPartModuleSnapshot m in Lib.FindModules(v.protoVessel, Localizer.Format("#KERBALISM_Moudule_Comfort")))//"Comfort"
+				foreach (ProtoPartModuleSnapshot m in Lib.FindModules(v.protoVessel, "Comfort"))
 				{
 					switch (Lib.Proto.GetString(m, "bonus"))
 					{
@@ -93,7 +93,7 @@ namespace KERBALISM
 				// scan parts for gravity ring
 				if (Lib.IsPowered(v))
 				{
-					firm_ground |= Lib.HasModule(v.protoVessel, "GravityRing", k => Lib.Proto.GetBool(k, "deployed"));//
+					firm_ground |= Lib.HasModule(v.protoVessel, "GravityRing", k => Lib.Proto.GetBool(k, "deployed"));
 				}
 			}
 
@@ -126,7 +126,7 @@ namespace KERBALISM
 					if (!m.isEnabled) continue;
 
 					// comfort
-					if (m.moduleName == Localizer.Format("#KERBALISM_Moudule_Comfort"))//"Comfort"
+					if (m.moduleName == "Comfort") 
 					{
 						Comfort c = m as Comfort;
 						switch (c.bonus)
@@ -141,7 +141,7 @@ namespace KERBALISM
 					}
 					// gravity ring
 					// - ignoring if ec is present or not here
-					else if (m.moduleName == "GravityRing")//
+					else if (m.moduleName == "GravityRing")
 					{
 						GravityRing ring = m as GravityRing;
 						firm_ground |= ring.deployed;

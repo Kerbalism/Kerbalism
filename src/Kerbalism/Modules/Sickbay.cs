@@ -266,13 +266,13 @@ namespace KERBALISM
 		public string GetModuleTitle()
 		{
 			if (slots == 0 && !cureEverybody) return String.Empty;
-			return Lib.BuildString("<size=1><color=#00000000>01</color></size>", title);//
+			return Lib.BuildString("<size=1><color=#00000000>01</color></size>", title);
 		}
 
 		public override string GetModuleDisplayName()
 		{
 			if(slots == 0 && !cureEverybody) return String.Empty;
-			return Lib.BuildString("<size=1><color=#00000000>01</color></size>", title);//
+			return Lib.BuildString("<size=1><color=#00000000>01</color></size>", title);
 		}
 
 		public string GetPrimaryField() { return string.Empty; }
