@@ -117,7 +117,7 @@ namespace KERBALISM
 			{
 				if (!Lib.IsFlight())
 				{
-					drive = new Drive(title, effectiveDataCapacity, effectiveSampleCapacity);
+					drive = new Drive(title, effectiveDataCapacity, effectiveSampleCapacity, !string.IsNullOrEmpty(experiment_id));
 				}
 				else
 				{
@@ -189,8 +189,8 @@ namespace KERBALISM
 				drive.dataCapacity = effectiveDataCapacity;
 				drive.sampleCapacity = effectiveSampleCapacity;
 
-				Fields["sampleCapacityUI"].guiActiveEditor = sampleCapacity > 0;
-				Fields["dataCapacityUI"].guiActiveEditor = dataCapacity > 0;
+				Fields["sampleCapacityUI"].guiActiveEditor = sampleCapacity > 0 && !IsPrivate();
+				Fields["dataCapacityUI"].guiActiveEditor = dataCapacity > 0 && !IsPrivate();
 
 				if (update)
 				{
