@@ -299,7 +299,7 @@ namespace KERBALISM
 			Message.Post(Lib.BuildString(
 				file.subjectData.FullTitle,
 				" transmitted\n",
-				timesCompleted == 1 ? Lib.HumanReadableScience(file.subjectData.ScienceMaxValue, false) : Lib.Color("no science gain : we already had this data", Lib.Kolor.Orange, true)),
+				timesCompleted == 1 ? Lib.HumanReadableScience(file.subjectData.ScienceMaxValue, false) : Lib.Color("no science gain : we already had this data", Lib.Kolor.Orange, true)),//
 				subjectResultText);
 		}
 
