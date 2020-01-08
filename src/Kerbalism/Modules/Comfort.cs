@@ -77,7 +77,7 @@ namespace KERBALISM
 			else
 			{
 				// scan parts for comfort
-				foreach (ProtoPartModuleSnapshot m in Lib.FindModules(v.protoVessel, Localizer.Format("#KERBALISM_Moudule_Comfort")))//"Comfort"
+				foreach (ProtoPartModuleSnapshot m in Lib.FindModules(v.protoVessel, "Comfort"))//
 				{
 					switch (Lib.Proto.GetString(m, "bonus"))
 					{
@@ -126,7 +126,7 @@ namespace KERBALISM
 					if (!m.isEnabled) continue;
 
 					// comfort
-					if (m.moduleName == Localizer.Format("#KERBALISM_Moudule_Comfort"))//"Comfort"
+					if (m.moduleName == "Comfort") //
 					{
 						Comfort c = m as Comfort;
 						switch (c.bonus)

@@ -89,7 +89,7 @@ namespace KERBALISM
 			reconfigure_cs = new CrewSpecs(reconfigure);
 
 			// set toggle window button label
-			Events["ToggleWindow"].guiName = Lib.BuildString(Localizer.Format("#KERBALISM_Moudule_Configure") +" <b>", title, "</b>");//"Configure"
+			Events["ToggleWindow"].guiName = Lib.BuildString(Localizer.Format("#KERBALISM_Moudule_Configure"), " <b>", title, "</b>");//"Configure"
 
 			// only show toggle in flight if this is reconfigurable
 			Events["ToggleWindow"].active = Lib.IsEditor() || reconfigure_cs;
