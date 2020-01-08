@@ -76,7 +76,7 @@ namespace KERBALISM
 
 			if(filesCount > 0 || totalDataCapacity > 0)
 			{
-				var title = Localizer.Format("#KERBALISM_FILEMANAGER_DataCapacity" + " " + Lib.HumanReadableDataSize(usedDataCapacity));//"DATA " 
+				var title = Localizer.Format("#KERBALISM_FILEMANAGER_DataCapacity") + " " + Lib.HumanReadableDataSize(usedDataCapacity);//"DATA " 
 				if (!unlimitedData) title += Localizer.Format("#KERBALISM_FILEMANAGER_DataAvailable", Lib.HumanReadablePerc((totalDataCapacity - usedDataCapacity) / totalDataCapacity));//Lib.BuildString(" (", Lib.HumanReadablePerc((totalDataCapacity - usedDataCapacity) / totalDataCapacity), " available)");
 				p.AddSection(title);
 
