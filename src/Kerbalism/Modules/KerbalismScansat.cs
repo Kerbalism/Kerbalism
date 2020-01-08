@@ -111,7 +111,7 @@ namespace KERBALISM
 					{
 						StartScan();
 						vd.scansat_id.Remove(part.flightID);
-						if (vd.cfg_ec) Message.Post(Localizer.Format("#KERBALISM_Scansat_sensorresumed", "<b>"+vessel.vesselName+"</b>"));//Lib.BuildString("SCANsat sensor resumed operations on <<1>>)
+						if (vd.cfg_ec) Message.Post(Localizer.Format("#KERBALISM_Scansat_sensorresumed", "<b>" + vessel.vesselName + "</b>"));//Lib.BuildString("SCANsat sensor resumed operations on <<1>>)
 					}
 				}
 			}

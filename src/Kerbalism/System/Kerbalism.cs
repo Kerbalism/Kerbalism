@@ -479,11 +479,11 @@ namespace KERBALISM
 			var configNodes = GameDatabase.Instance.GetConfigs("Kerbalism");
 			if (configNodes.Length > 1)
 			{
-				msg += "<color=#FF4500>Multiple configurations detected</color>\nHint: delete KerbalismConfig if you are using a custom config pack.\n\n";//
+				msg += "<color=#FF4500>Multiple configurations detected</color>\nHint: delete KerbalismConfig if you are using a custom config pack.\n\n";
 			}
 			else if (configNodes.Length == 0)
 			{
-				msg += "<color=#FF4500>No configuration found</color>\nYou need KerbalismConfig (or any other Kerbalism config pack).\n\n";//
+				msg += "<color=#FF4500>No configuration found</color>\nYou need KerbalismConfig (or any other Kerbalism config pack).\n\n";
 			}
 
 			if (Features.Habitat && Settings.CheckForCRP)
@@ -492,27 +492,27 @@ namespace KERBALISM
 				var reslib = PartResourceLibrary.Instance.resourceDefinitions;
 				if (!reslib.Contains("Oxygen") || !reslib.Contains("Water") || !reslib.Contains("Shielding"))
 				{
-					msg += "<color=#FF4500>CommunityResourcePack (CRP) is not installed</color>\nYou REALLY need CRP for Kerbalism!\n\n";//
+					msg += "<color=#FF4500>CommunityResourcePack (CRP) is not installed</color>\nYou REALLY need CRP for Kerbalism!\n\n";
 				}
 			}
 
 			if (incompatibleModsFound.Count > 0)
 			{
-				msg += "<color=#FF4500>Mods with known incompatibilities found:</color>\n";//
+				msg += "<color=#FF4500>Mods with known incompatibilities found:</color>\n";
 				foreach (var m in incompatibleModsFound) msg += "- " + m + "\n";
-				msg += "Kerbalism will not run properly with these mods. Please remove them.\n\n";//
+				msg += "Kerbalism will not run properly with these mods. Please remove them.\n\n";
 			}
 
 			if (warningModsFound.Count > 0)
 			{
-				msg += "<color=#FF4500>Mods with limited compatibility found:</color>\n";//
+				msg += "<color=#FF4500>Mods with limited compatibility found:</color>\n";
 				foreach (var m in warningModsFound) msg += "- " + m + "\n";
-				msg += "You might have problems with these mods. Please consult the FAQ on on kerbalism.github.io\n\n";//
+				msg += "You might have problems with these mods. Please consult the FAQ on on kerbalism.github.io\n\n";
 			}
 
 			if (!string.IsNullOrEmpty(msg))
 			{
-				msg = "<b>KERBALISM WARNING</b>\n\n" + msg;//
+				msg = "<b>KERBALISM WARNING</b>\n\n" + msg;
 				ScreenMessage sm = new ScreenMessage(msg, 60, ScreenMessageStyle.UPPER_LEFT);
 				sm.color = Color.cyan;
 				ScreenMessages.PostScreenMessage(sm);

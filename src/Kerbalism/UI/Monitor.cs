@@ -680,7 +680,7 @@ namespace KERBALISM
 		Vessel selected_v;
 
 		// filter placeholder
-		const string filter_placeholder = "SEARCH...";//
+		const string filter_placeholder = "SEARCH...";
 
 		// current filter values
 		string filter = string.Empty;

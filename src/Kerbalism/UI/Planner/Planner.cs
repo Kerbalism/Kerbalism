@@ -531,7 +531,7 @@ namespace KERBALISM.Planner
 
 			// generate status string for pressurization
 			string atmo_status = !Features.Pressure                     //< feature disabled
-			  ? "n/a"//
+			  ? "n/a"
 			  : atmo_res.consumed <= double.Epsilon                     //< unnecessary
 			  ? Localizer.Format("#KERBALISM_Planner_pressurizationunnecessary")//"not required"
 			  : atmo_res.produced <= double.Epsilon                     //< no pressure control
@@ -552,7 +552,7 @@ namespace KERBALISM.Planner
 
 #region FIELDS_PROPERTIES
 		// store situations and altitude multipliers
-		private static readonly string[] situations = { "Landed", "Low Orbit", "Orbit", "High Orbit" };//
+		private static readonly string[] situations = { "Landed", "Low Orbit", "Orbit", "High Orbit" };
 		private static readonly double[] altitude_mults = { 0.0, 0.33, 1.0, 3.0 };
 
 		// styles

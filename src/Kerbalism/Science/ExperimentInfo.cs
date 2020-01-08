@@ -485,7 +485,7 @@ namespace KERBALISM
 				{
 					if (situation.IsBodyBiomesRelevantForExperiment(this))
 					{
-						result.Add(Lib.BuildString(situation.Title(), " (biomes)"));//
+						result.Add(Lib.BuildString(situation.Title(), " (biomes)"));
 					}
 					else if (situation.IsVirtualBiomesRelevantForExperiment(this))
 					{
@@ -608,19 +608,19 @@ namespace KERBALISM
 			private class Atmospheric : BodyCondition
 			{
 				public override bool TestCondition(CelestialBody body) => body.atmosphere;
-				public override string Title => "atmospheric";//
+				public override string Title => "atmospheric";
 			}
 
 			private class NonAtmospheric : BodyCondition
 			{
 				public override bool TestCondition(CelestialBody body) => !body.atmosphere;
-				public override string Title => "non-atmospheric";//
+				public override string Title => "non-atmospheric";
 			}
 
 			private class Gaseous : BodyCondition
 			{
 				public override bool TestCondition(CelestialBody body) => body.hasSolidSurface;
-				public override string Title => "gaseous";//
+				public override string Title => "gaseous";
 			}
 
 			private class Solid : BodyCondition
