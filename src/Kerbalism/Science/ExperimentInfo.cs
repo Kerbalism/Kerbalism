@@ -387,7 +387,7 @@ namespace KERBALISM
 								ModuleInfo += Lib.HumanReadableSampleSize(DataSize);
 							}
 							ModuleInfo += "\n\n";
-							ModuleInfo += Lib.Color("#KERBALISM_Experimentinfo_Situations", Lib.Kolor.Cyan, true);//"Situations:\n"
+							ModuleInfo += Lib.Color(Localizer.Format("#KERBALISM_Experimentinfo_Situations"), Lib.Kolor.Cyan, true);//"Situations:\n"
 
 							foreach (string s in AvailableSituations())
 								ModuleInfo += Lib.BuildString("• <b>", s, "</b>\n");

@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using KSP.Localization;
 
 namespace KERBALISM
 {
@@ -447,53 +448,53 @@ namespace KERBALISM
 		{
 			switch (req)
 			{
-				case Require.OrbitMinInclination:      return "Min. inclination ";
-				case Require.OrbitMaxInclination:      return "Max. inclination ";
-				case Require.OrbitMinEccentricity:     return "Min. eccentricity ";
-				case Require.OrbitMaxEccentricity:     return "Max. eccentricity ";
-				case Require.OrbitMinArgOfPeriapsis:   return "Min. argument of Pe ";
-				case Require.OrbitMaxArgOfPeriapsis:   return "Max. argument of Pe ";
-				case Require.TemperatureMin:           return "Min. temperature ";
-				case Require.TemperatureMax:           return "Max. temperature ";
-				case Require.AltitudeMin:              return "Min. altitude ";
-				case Require.AltitudeMax:              return "Max. altitude ";
-				case Require.RadiationMin:             return "Min. radiation ";
-				case Require.RadiationMax:             return "Max. radiation ";
-				case Require.VolumePerCrewMin:         return "Min. vol./crew ";
-				case Require.VolumePerCrewMax:         return "Max. vol./crew ";
-				case Require.SunAngleMin:              return "Min sun-surface angle";
-				case Require.SunAngleMax:              return "Max sun-surface angle";
-				case Require.SurfaceSpeedMin:          return "Min. surface speed ";
-				case Require.SurfaceSpeedMax:          return "Max. surface speed ";
-				case Require.VerticalSpeedMin:         return "Min. vertical speed ";
-				case Require.VerticalSpeedMax:         return "Max. vertical speed ";
-				case Require.SpeedMin:                 return "Min. speed ";
-				case Require.SpeedMax:                 return "Max. speed ";
-				case Require.DynamicPressureMin:       return "Min dynamic pressure";
-				case Require.DynamicPressureMax:       return "Max dynamic pressure";
-				case Require.StaticPressureMin:        return "Min. pressure " ;
-				case Require.StaticPressureMax:        return "Max. pressure ";
-				case Require.AtmDensityMin:            return "Min. atm. density ";
-				case Require.AtmDensityMax:            return "Max. atm. density ";
-				case Require.AltAboveGroundMin:        return "Min ground altitude";
-				case Require.AltAboveGroundMax:        return "Max ground altitude";
-				case Require.MaxAsteroidDistance:      return "Max asteroid distance";
-				case Require.AtmosphereAltMin:         return "Min atmosphere altitude ";
-				case Require.AtmosphereAltMax:         return "Max atmosphere altitude ";
-				case Require.CrewMin:                  return "Min. crew ";
-				case Require.CrewMax:                  return "Max. crew ";
-				case Require.CrewCapacityMin:          return "Min. crew capacity ";
-				case Require.CrewCapacityMax:          return "Max. crew capacity ";
-				case Require.AstronautComplexLevelMin: return "Astronaut Complex min level ";
-				case Require.AstronautComplexLevelMax: return "Astronaut Complex max level ";
-				case Require.TrackingStationLevelMin:  return "Tracking Station min level ";
-				case Require.TrackingStationLevelMax:  return "Tracking Station max level ";
-				case Require.MissionControlLevelMin:   return "Mission Control min level ";
-				case Require.MissionControlLevelMax:   return "Mission Control max level ";
-				case Require.AdministrationLevelMin:   return "Administration min level ";
-				case Require.AdministrationLevelMax:   return "Administration max level ";
-				case Require.Part:                     return "Need part " ;
-				case Require.Module:                   return "Need module " ;
+				case Require.OrbitMinInclination:      return Localizer.Format("#KERBALISM_ExperimentReq_OrbitMinInclination");//"Min. inclination "
+				case Require.OrbitMaxInclination:      return Localizer.Format("#KERBALISM_ExperimentReq_OrbitMaxInclination");//"Max. inclination "
+				case Require.OrbitMinEccentricity:     return Localizer.Format("#KERBALISM_ExperimentReq_OrbitMinEccentricity");//"Min. eccentricity "
+				case Require.OrbitMaxEccentricity:     return Localizer.Format("#KERBALISM_ExperimentReq_OrbitMaxEccentricity");//"Max. eccentricity "
+				case Require.OrbitMinArgOfPeriapsis:   return Localizer.Format("#KERBALISM_ExperimentReq_OrbitMinArgOfPeriapsis");//"Min. argument of Pe "
+				case Require.OrbitMaxArgOfPeriapsis:   return Localizer.Format("#KERBALISM_ExperimentReq_OrbitMaxArgOfPeriapsis");//"Max. argument of Pe "
+				case Require.TemperatureMin:           return Localizer.Format("#KERBALISM_ExperimentReq_TemperatureMin");//"Min. temperature "
+				case Require.TemperatureMax:           return Localizer.Format("#KERBALISM_ExperimentReq_TemperatureMax");//"Max. temperature "
+				case Require.AltitudeMin:              return Localizer.Format("#KERBALISM_ExperimentReq_AltitudeMin");//"Min. altitude "
+				case Require.AltitudeMax:              return Localizer.Format("#KERBALISM_ExperimentReq_AltitudeMax");//"Max. altitude "
+				case Require.RadiationMin:             return Localizer.Format("#KERBALISM_ExperimentReq_RadiationMin");//"Min. radiation "
+				case Require.RadiationMax:             return Localizer.Format("#KERBALISM_ExperimentReq_RadiationMax");//"Max. radiation "
+				case Require.VolumePerCrewMin:         return Localizer.Format("#KERBALISM_ExperimentReq_VolumePerCrewMin");//"Min. vol./crew "
+				case Require.VolumePerCrewMax:         return Localizer.Format("#KERBALISM_ExperimentReq_VolumePerCrewMax");//"Max. vol./crew "
+				case Require.SunAngleMin:              return Localizer.Format("#KERBALISM_ExperimentReq_SunAngleMin");//"Min sun-surface angle"
+				case Require.SunAngleMax:              return Localizer.Format("#KERBALISM_ExperimentReq_SunAngleMax");//"Max sun-surface angle"
+				case Require.SurfaceSpeedMin:          return Localizer.Format("#KERBALISM_ExperimentReq_SurfaceSpeedMin");//"Min. surface speed "
+				case Require.SurfaceSpeedMax:          return Localizer.Format("#KERBALISM_ExperimentReq_SurfaceSpeedMax");//"Max. surface speed "
+				case Require.VerticalSpeedMin:         return Localizer.Format("#KERBALISM_ExperimentReq_VerticalSpeedMin");//"Min. vertical speed "
+				case Require.VerticalSpeedMax:         return Localizer.Format("#KERBALISM_ExperimentReq_VerticalSpeedMax");//"Max. vertical speed "
+				case Require.SpeedMin:                 return Localizer.Format("#KERBALISM_ExperimentReq_SpeedMin");//"Min. speed "
+				case Require.SpeedMax:                 return Localizer.Format("#KERBALISM_ExperimentReq_SpeedMax");//"Max. speed "
+				case Require.DynamicPressureMin:       return Localizer.Format("#KERBALISM_ExperimentReq_DynamicPressureMin");//"Min dynamic pressure"
+				case Require.DynamicPressureMax:       return Localizer.Format("#KERBALISM_ExperimentReq_DynamicPressureMax");//"Max dynamic pressure"
+				case Require.StaticPressureMin:        return  Localizer.Format("#KERBALISM_ExperimentReq_StaticPressureMin");//"Min. pressure "
+				case Require.StaticPressureMax:        return Localizer.Format("#KERBALISM_ExperimentReq_StaticPressureMax");//"Max. pressure "
+				case Require.AtmDensityMin:            return Localizer.Format("#KERBALISM_ExperimentReq_AtmDensityMin");//"Min. atm. density "
+				case Require.AtmDensityMax:            return Localizer.Format("#KERBALISM_ExperimentReq_AtmDensityMax");//"Max. atm. density "
+				case Require.AltAboveGroundMin:        return Localizer.Format("#KERBALISM_ExperimentReq_AltAboveGroundMin");//"Min ground altitude"
+				case Require.AltAboveGroundMax:        return Localizer.Format("#KERBALISM_ExperimentReq_AltAboveGroundMax");//"Max ground altitude"
+				case Require.MaxAsteroidDistance:      return Localizer.Format("#KERBALISM_ExperimentReq_MaxAsteroidDistance");//"Max asteroid distance"
+				case Require.AtmosphereAltMin:         return Localizer.Format("#KERBALISM_ExperimentReq_AtmosphereAltMin");//"Min atmosphere altitude "
+				case Require.AtmosphereAltMax:         return Localizer.Format("#KERBALISM_ExperimentReq_AtmosphereAltMax");//"Max atmosphere altitude "
+				case Require.CrewMin:                  return Localizer.Format("#KERBALISM_ExperimentReq_CrewMin");//"Min. crew "
+				case Require.CrewMax:                  return Localizer.Format("#KERBALISM_ExperimentReq_CrewMax");//"Max. crew "
+				case Require.CrewCapacityMin:          return Localizer.Format("#KERBALISM_ExperimentReq_CrewCapacityMin");//"Min. crew capacity "
+				case Require.CrewCapacityMax:          return Localizer.Format("#KERBALISM_ExperimentReq_CrewCapacityMax");//"Max. crew capacity "
+				case Require.AstronautComplexLevelMin: return Localizer.Format("#KERBALISM_ExperimentReq_AstronautComplexLevelMin");//"Astronaut Complex min level "
+				case Require.AstronautComplexLevelMax: return Localizer.Format("#KERBALISM_ExperimentReq_AstronautComplexLevelMin");//"Astronaut Complex max level "
+				case Require.TrackingStationLevelMin:  return Localizer.Format("#KERBALISM_ExperimentReq_TrackingStationLevelMin");//"Tracking Station min level "
+				case Require.TrackingStationLevelMax:  return Localizer.Format("#KERBALISM_ExperimentReq_TrackingStationLevelMax");//"Tracking Station max level "
+				case Require.MissionControlLevelMin:   return Localizer.Format("#KERBALISM_ExperimentReq_MissionControlLevelMin");//"Mission Control min level "
+				case Require.MissionControlLevelMax:   return Localizer.Format("#KERBALISM_ExperimentReq_MissionControlLevelMax");//"Mission Control max level "
+				case Require.AdministrationLevelMin:   return Localizer.Format("#KERBALISM_ExperimentReq_AdministrationLevelMin");//"Administration min level "
+				case Require.AdministrationLevelMax:   return Localizer.Format("#KERBALISM_ExperimentReq_AdministrationLevelMax");//"Administration max level "
+				case Require.Part:                                  return Localizer.Format("#KERBALISM_ExperimentReq_Part");//"Need part "
+				case Require.Module:                   return  Localizer.Format("#KERBALISM_ExperimentReq_Module");//"Need module "
 
 				case Require.AbsoluteZero:
 				case Require.InnerBelt:

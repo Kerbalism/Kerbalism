@@ -402,8 +402,8 @@ namespace KERBALISM
 				{
 					Message.Post
 					(
-					  "<color=#00ffff><b>"+Localizer.Format("#KERBALISM_CallBackMsg_PROGRESS") +"</b></color>\n"+Localizer.Format("#KERBALISM_CallBackMsg_PROGRESS2"),//PROGRESS""Our scientists just made a breakthrough
-					  Localizer.Format("#KERBALISM_CallBackMsg_PROGRESS3", "<b>"+label+"</b>")//Lib.BuildString("We now have access to <<1>>)
+					  "<color=#00ffff><b>" + Localizer.Format("#KERBALISM_CallBackMsg_PROGRESS") + "</b></color>\n" + Localizer.Format("#KERBALISM_CallBackMsg_PROGRESS2"),//PROGRESS""Our scientists just made a breakthrough
+					  Lib.BuildString("We now have access to \n<b>", label, "</b>")
 					);
 				}
 			}

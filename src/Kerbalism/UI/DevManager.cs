@@ -25,7 +25,7 @@ namespace KERBALISM
 			if (!vd.IsSimulated) return;
 
 			// set metadata
-			p.Title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(20)), Lib.Color("#KERBALISM_UI_devman", Lib.Kolor.LightGrey)));
+			p.Title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(20)), Lib.Color(Localizer.Format("#KERBALISM_UI_devman"), Lib.Kolor.LightGrey)));
 			p.Width(Styles.ScaleWidthFloat(355.0f));
 			p.paneltype = Panel.PanelType.scripts;
 
