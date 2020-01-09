@@ -483,7 +483,7 @@ namespace KERBALISM
 			  .Replace("$VESSEL", BuildString("<b>", v_name, "</b>"))
 			  .Replace("$KERBAL", "<b>" + c_name + "</b>")
 			  .Replace("$ON_VESSEL", v != null && v.isActiveVessel ? "" : BuildString("On <b>", v_name, "</b>, "))
-			  .Replace("$HIS_HER", c != null && c.gender == ProtoCrewMember.Gender.Male ? "his" : "her");
+			  .Replace("$HIS_HER", c != null && c.gender == ProtoCrewMember.Gender.Male ? Localizer.Format("#KERBALISM_Kerbal_his") : Localizer.Format("#KERBALISM_Kerbal_her"));//"his""her"
 		}
 
 		///<summary>make the first letter uppercase</summary>
