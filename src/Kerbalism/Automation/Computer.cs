@@ -250,6 +250,7 @@ namespace KERBALISM
 						case "Greenhouse":                   device = new GreenhouseDevice(m as Greenhouse);                     break;
 						case "GravityRing":                  device = new RingDevice(m as GravityRing);                          break;
 						case "Emitter":                      device = new EmitterDevice(m as Emitter);                           break;
+						case "Harvester":                    device = new HarvesterDevice(m as Harvester);                         break;
 						case "Laboratory":                   device = new LaboratoryDevice(m as Laboratory);                     break;
 						case "Experiment":                   device = new ExperimentDevice(m as Experiment);                     break;
 						case "SolarPanelFixer":				 device = new PanelDevice(m as SolarPanelFixer);					  break;
@@ -312,6 +313,7 @@ namespace KERBALISM
 							case "Greenhouse":                   device = new ProtoGreenhouseDevice(module_prefab as Greenhouse, p, m);            break;
 							case "GravityRing":                  device = new ProtoRingDevice(module_prefab as GravityRing, p, m);                 break;
 							case "Emitter":                      device = new ProtoEmitterDevice(module_prefab as Emitter, p, m);                  break;
+							case "Harvester":                    device = new ProtoHarvesterDevice(module_prefab as Harvester, p, m);              break;
 							case "Laboratory":                   device = new ProtoLaboratoryDevice(module_prefab as Laboratory, p, m);            break;
 							case "Experiment":					 device = new ProtoExperimentDevice(module_prefab as Experiment, p, m, v);         break;
 							case "SolarPanelFixer":              device = new ProtoPanelDevice(module_prefab as SolarPanelFixer, p, m);            break;
