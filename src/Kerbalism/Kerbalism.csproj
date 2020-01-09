@@ -115,6 +115,7 @@
   <ItemGroup>
     <Compile Include="Automation\Computer.cs" />
     <Compile Include="Automation\Device.cs" />
+    <Compile Include="Automation\Devices\AntennaRT.cs" />
     <Compile Include="Automation\Devices\Antenna.cs" />
     <Compile Include="Automation\Devices\Harvester.cs" />
     <Compile Include="Automation\Devices\Laboratory.cs" />

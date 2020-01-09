@@ -191,6 +191,7 @@ namespace KERBALISM.Planner
 								Process_rtantenna(m);
 								break;
 							case "ModuleDataTransmitter":
+							case "ModuleDataTransmitterFeedeable": // NearFutureExploration derivative
 								Process_datatransmitter(m as ModuleDataTransmitter);
 								break;
 							case "ModuleEngines":
