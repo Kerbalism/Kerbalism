@@ -41,7 +41,7 @@ namespace KERBALISM
 		public string panelStatus = string.Empty;
 
 		[KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#KERBALISM_SolarPanelFixer_Solarpaneloutput")]//Solar panel output
-		[UI_Toggle(enabledText = "<color=#00ff00>"+ "#KERBALISM_SolarPanelFixer_simulated" + "</color>", disabledText = "<color=#ffff00>"+ "#KERBALISM_SolarPanelFixer_ignored" + "</color>")]//simulated""ignored
+		[UI_Toggle(enabledText = "#KERBALISM_SolarPanelFixer_simulated", disabledText = "#KERBALISM_SolarPanelFixer_ignored")]//<color=#00ff00>simulated</color>""<color=#ffff00>ignored</color>
 		public bool editorEnabled = true;
 
 		/// <summary>nominal rate at 1 UA (Kerbin distance from the sun)</summary>

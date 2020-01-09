@@ -192,11 +192,11 @@ namespace KERBALISM
 					// broken fuel line -> delayed kaboom
 					explode = true;
 					next += Lib.RandomDouble() * 10 + 4;
-					FlightLogger.fetch?.LogEvent(part.partInfo.title + " fuel system leak caused destruction of the engine");
+					FlightLogger.fetch?.LogEvent(Localizer.Format("#KERBALISM_FlightLogger_Destruction", part.partInfo.title));// <<1>> fuel system leak caused destruction of the engine"
 				}
 				else
 				{
-					FlightLogger.fetch?.LogEvent(part.partInfo.title + " failure on ignition");
+					FlightLogger.fetch?.LogEvent(Localizer.Format("#KERBALISM_FlightLogger_Ignition", part.partInfo.title));// <<1>> failure on ignition"
 				}
 			}
 			return fail;
@@ -414,7 +414,7 @@ namespace KERBALISM
 #if DEBUG_RELIABILITY
 					Lib.Log("Reliability: " + part.partInfo.title + " fails because of material fatigue");
 #endif
-					FlightLogger.fetch?.LogEvent(part.partInfo.title + " failed because of material fatigue");
+					FlightLogger.fetch?.LogEvent(Localizer.Format("#KERBALISM_FlightLogger_MaterialFatigue", part.partInfo.title));// <<1>> failed because of material fatigue"
 				}
 			}
 

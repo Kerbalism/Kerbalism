@@ -85,9 +85,9 @@ namespace KERBALISM
 			{
 				switch (prefab.antennaType)
 				{
-					case AntennaType.INTERNAL: return Lib.BuildString("internal antenna, ", prefab.powerText);
-					case AntennaType.DIRECT: return Lib.BuildString("direct antenna, ", prefab.powerText);
-					case AntennaType.RELAY: return Lib.BuildString("relay antenna, ", prefab.powerText);
+					case AntennaType.INTERNAL: return Lib.BuildString("internal antenna, ", prefab.powerText);//
+					case AntennaType.DIRECT: return Lib.BuildString("direct antenna, ", prefab.powerText);//
+					case AntennaType.RELAY: return Lib.BuildString("relay antenna, ", prefab.powerText);//
 					default: return string.Empty;
 				}
 			}
