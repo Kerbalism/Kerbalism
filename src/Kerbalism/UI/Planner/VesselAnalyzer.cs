@@ -119,14 +119,12 @@ namespace KERBALISM.Planner
 					// RemoteTech enabled, passive's don't count
 					if (m.moduleName == "ModuleRTAntenna")
 						has_comms = true;
-					else if (m.moduleName == "ModuleDataTransmitter")
+					else if (m is ModuleDataTransmitter mdt)
 					{
 						// CommNet enabled and external transmitter
 						if (HighLogic.fetch.currentGame.Parameters.Difficulty.EnableCommNet)
-						{
-							if (Lib.ReflectionValue<AntennaType>(m, "antennaType") != AntennaType.INTERNAL)
+							if (mdt.antennaType != AntennaType.INTERNAL)
 								has_comms = true;
-						}
 						// the simple stupid always connected signal system
 						else
 							has_comms = true;

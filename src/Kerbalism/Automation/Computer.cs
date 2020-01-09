@@ -263,9 +263,10 @@ namespace KERBALISM
 						case "ModuleMultiPointSurfaceLight": device = new LightDevice(m as ModuleLight);                         break;
 						case "SCANsat":                      device = new ScannerDevice(m);                                      break;
 						case "ModuleSCANresourceScanner":    device = new ScannerDevice(m);                                      break;
+						case "ModuleDataTransmitter":
+						case "ModuleDataTransmitterFeedeable": device = new AntennaDevice(m as ModuleDataTransmitter);           break;
 						case "ModuleRTAntenna":
-						case "ModuleDataTransmitter":        device = new AntennaDevice(m, m.moduleName);                              break;
-						case "ModuleRTAntennaPassive":       device = new AntennaDevice(m, "ModuleRTAntenna"); break;
+						case "ModuleRTAntennaPassive":       device = new AntennaRTDevice(m);                                    break;
 						default: continue;
 					}
 
@@ -324,9 +325,10 @@ namespace KERBALISM
 							case "ModuleMultiPointSurfaceLight": device = new ProtoLightDevice(module_prefab as ModuleLight, p, m);                break;
 							case "SCANsat":                      device = new ProtoScannerDevice(module_prefab, p, m, v);                          break;
 							case "ModuleSCANresourceScanner":    device = new ProtoScannerDevice(module_prefab, p, m, v);                          break;
+							case "ModuleDataTransmitter":
+							case "ModuleDataTransmitterFeedeable": device = new ProtoAntennaDevice(module_prefab as ModuleDataTransmitter, p, m);  break;
 							case "ModuleRTAntenna":
-							case "ModuleDataTransmitter":        device = new ProtoAntennaDevice(module_prefab, p, m, m.moduleName);               break;
-							case "ModuleRTAntennaPassive":       device = new ProtoAntennaDevice(module_prefab, p, m, "ModuleRTAntenna");          break;
+							case "ModuleRTAntennaPassive":       device = new ProtoAntennaRTDevice(module_prefab, p, m);                           break;
 							default: continue;
 						}
 
