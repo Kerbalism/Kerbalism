@@ -134,6 +134,9 @@ namespace KERBALISM.Planner
 							case "GravityRing":
 								Process_ring(m as GravityRing);
 								break;
+							case "Harvester":
+								Process_harvester(m as Harvester);
+								break;
 							case "Laboratory":
 								Process_laboratory(m as Laboratory);
 								break;
@@ -153,7 +156,7 @@ namespace KERBALISM.Planner
 								Process_converter(m as ModuleResourceConverter, va);
 								break;
 							case "ModuleResourceHarvester":
-								Process_harvester(m as ModuleResourceHarvester, va);
+								Process_stockharvester(m as ModuleResourceHarvester, va);
 								break;
 							case "ModuleScienceConverter":
 								Process_stocklab(m as ModuleScienceConverter);
@@ -442,6 +445,16 @@ namespace KERBALISM.Planner
 				Resource("ElectricCharge").Consume(ring.ec_rate, "gravity ring");
 		}
 
+		void Process_harvester(Harvester harvester)
+		{
+			if (harvester.running)
+			{
+				SimulatedRecipe recipe = new SimulatedRecipe(harvester.part, "harvester");
+				if (harvester.ec_rate > double.Epsilon) recipe.Input("ElectricCharge", harvester.ec_rate);
+				recipe.Output(harvester.resource, harvester.rate, true);
+				recipes.Add(recipe);
+			}
+		}
 
 		void Process_laboratory(Laboratory lab)
 		{
@@ -515,7 +528,7 @@ namespace KERBALISM.Planner
 		}
 
 
-		void Process_harvester(ModuleResourceHarvester harvester, VesselAnalyzer va)
+		void Process_stockharvester(ModuleResourceHarvester harvester, VesselAnalyzer va)
 		{
 			// calculate experience bonus
 			float exp_bonus = harvester.UseSpecialistBonus
