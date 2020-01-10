@@ -5,6 +5,7 @@ using UnityEngine;
 using KSP.Localization;
 using System.Collections;
 using static KERBALISM.ExperimentRequirements;
+using System.Linq;
 
 namespace KERBALISM
 {
@@ -25,12 +26,13 @@ namespace KERBALISM
 		[KSPField] public string crew_prepare = string.Empty; // prepare crew. if set, experiment will require crew to set up before it can start recording 
 		[KSPField] public string resources = string.Empty;    // resources consumed by this experiment
 		[KSPField] public bool hide_when_unavailable = false; // don't show UI when the experiment is unavailable
+		[KSPField] public bool use_animation_group = false;   // if true, deploy/retract animations will managed by the first found ModuleAnimationGroup
 
 		// animations
 		[KSPField] public string anim_deploy = string.Empty; // deploy animation
 		[KSPField] public bool anim_deploy_reverse = false;
 
-		[KSPField] public string anim_loop = string.Empty; // deploy animation
+		[KSPField] public string anim_loop = string.Empty; // loop animation
 		[KSPField] public bool anim_loop_reverse = false;
 
 		// persistence
@@ -56,12 +58,11 @@ namespace KERBALISM
 		// animations
 		internal Animator deployAnimator;
 		internal Animator loopAnimator;
+		public ModuleAnimationGroup AnimationGroup { get; private set; }
 
 		private CrewSpecs operator_cs;
 		private CrewSpecs reset_cs;
 		private CrewSpecs prepare_cs;
-		
-		// private double next_check = 0;
 
 		#region state/status
 
@@ -120,11 +121,8 @@ namespace KERBALISM
 
 		public void Configure(bool enable)
 		{
-			if (Lib.ModuleEnableInScienceAndCareer(this))
-			{
 				enabled = enable;
 				isEnabled = enable;
-			}
 		}
 
 		public override void OnLoad(ConfigNode node)
@@ -135,14 +133,14 @@ namespace KERBALISM
 				Requirements = new ExperimentRequirements(requires);
 			}
 
+			if (use_animation_group)
+				AnimationGroup = part.Modules.OfType<ModuleAnimationGroup>().FirstOrDefault();
+
 			base.OnLoad(node);
 		}
 
 		public override void OnStart(StartState state)
 		{
-			// experiments are only available in science and career games
-			if (!Lib.ModuleEnableInScienceAndCareer(this)) return;
-
 			// create animators
 			deployAnimator = new Animator(part, anim_deploy);
 			deployAnimator.reversed = anim_deploy_reverse;
@@ -154,6 +152,12 @@ namespace KERBALISM
 			deployAnimator.Still(Running ? 1.0 : 0.0);
 			loopAnimator.Still(Running ? 1.0 : 0.0);
 			if (Running) loopAnimator.Play(false, true);
+
+			if (use_animation_group && AnimationGroup == null)
+				AnimationGroup = part.Modules.OfType<ModuleAnimationGroup>().FirstOrDefault();
+
+			if (AnimationGroup != null && !AnimationGroup.isDeployed && Running)
+				AnimationGroup.DeployModule();
 
 			// parse crew specs
 			if(!string.IsNullOrEmpty(crew_operate))
@@ -316,6 +320,15 @@ namespace KERBALISM
 				situation = GetSituation(vd);
 				subject = ScienceDB.GetSubjectData(ExpInfo, situation, out situationId);
 				UnityEngine.Profiling.Profiler.EndSample();
+				return;
+			}
+
+			if (AnimationGroup != null && !AnimationGroup.isDeployed && Running)
+			{
+				situation = GetSituation(vd);
+				subject = ScienceDB.GetSubjectData(ExpInfo, situation, out situationId);
+				UnityEngine.Profiling.Profiler.EndSample();
+				Toggle();
 				return;
 			}
 
@@ -670,7 +683,17 @@ namespace KERBALISM
 					State = RunningState.Running;
 				}
 
-				deployAnimator.Play(!Running, false);
+				if (AnimationGroup != null)
+				{
+					// extend automatically, retract manually
+					if (Running && !AnimationGroup.isDeployed)
+						AnimationGroup.DeployModule();
+				}
+				else
+				{
+					deployAnimator.Play(!Running, false);
+				}
+
 				GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
 				return State;
 			}
@@ -678,8 +701,9 @@ namespace KERBALISM
 			if (Lib.IsFlight() && !vessel.IsControllable)
 				return State;
 
-			if (deployAnimator.Playing())
-				return State; // nervous clicker? wait for it, goddamnit.
+			// nervous clicker? wait for it, goddamnit.
+			if ((AnimationGroup != null && AnimationGroup.DeployAnimation.isPlaying) || deployAnimator.Playing())
+				return State;
 
 			if (Running)
 			{
@@ -690,7 +714,12 @@ namespace KERBALISM
 				}
 				// stop experiment
 				// plays the deploy animation in reverse
-				Action stop = delegate () { State = RunningState.Stopped; deployAnimator.Play(true, false); };
+				// if an external deploy animation module is used, we don't retract automatically
+				Action stop = delegate ()
+				{
+					State = RunningState.Stopped;
+					deployAnimator.Play(true, false);
+				};
 
 				// wait for loop animation to stop before deploy animation
 				if (loopAnimator.Playing())
@@ -706,13 +735,24 @@ namespace KERBALISM
 					PostMultipleRunsMessage(ExpInfo.Title, vessel.vesselName);
 					return State;
 				}
+
 				// start experiment
 				// play the deploy animation, when it's done start the loop animation
-				deployAnimator.Play(false, false, delegate ()
+				if (AnimationGroup != null)
 				{
+					if (!AnimationGroup.isDeployed)
+						AnimationGroup.DeployModule();
+
 					State = setForcedRun ? RunningState.Forced : RunningState.Running;
-					loopAnimator.Play(false, true);
-				});
+				}
+				else
+				{
+					deployAnimator.Play(false, false, delegate ()
+					{
+						State = setForcedRun ? RunningState.Forced : RunningState.Running;
+						loopAnimator.Play(false, true);
+					});
+				}
 			}
 			return State;
 		}
@@ -726,7 +766,6 @@ namespace KERBALISM
 				ProtoSetState(v, prefab, protoModule, expState);
 				return expState;
 			}
-				
 
 			if (!IsRunning(expState))
 			{

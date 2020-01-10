@@ -46,10 +46,7 @@ namespace KERBALISM
 	class VesselRecovery_OnVesselRecovered {
 		static bool Prefix(ref ProtoVessel pv, ref bool quick) {
 
-			if (!Science.GameHasRnD) return true;
-
 			if (pv == null) return true;
-
 
 			// get a hard drive. any hard drive will do, no need to find a specific one.
 			ProtoPartModuleSnapshot protoHardDrive = null;

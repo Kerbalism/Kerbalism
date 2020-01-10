@@ -1,4 +1,5 @@
-﻿using System;
+﻿using KSP.Localization;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -84,7 +85,17 @@ namespace KERBALISM
 
 		public void CheckRnD()
 		{
-			RnDSubject = ResearchAndDevelopment.GetSubjectByID(StockSubjectId);
+			if (Science.GameHasRnD)
+			{
+				RnDSubject = ResearchAndDevelopment.GetSubjectByID(StockSubjectId);
+			}
+			else
+			{
+				ScienceSubject savedSubject;
+				if (ScienceDB.sandboxSubjects.TryGetValue(StockSubjectId, out savedSubject))
+					RnDSubject = savedSubject;
+			}
+
 			if (RnDSubject == null)
 			{
 				PercentRetrieved = 0.0;
@@ -117,23 +128,42 @@ namespace KERBALISM
 
 		public void CreateSubjectInRnD()
 		{
-			if (ExistsInRnD || ResearchAndDevelopment.Instance == null)
+			if (ExistsInRnD)
 				return;
 
-			// try to get it, might be already created in some corner-case situations
-			RnDSubject = ResearchAndDevelopment.GetSubjectByID(StockSubjectId);
-			if (RnDSubject != null)
-				Lib.Log("CreateSubjectInRnD : ScienceSubject " + StockSubjectId + "exists already, this should not be happening !");
+			Dictionary<string, ScienceSubject> subjectsDB;
 
-			if (RnDSubject == null)
+			if (Science.GameHasRnD)
 			{
-				// get subjects container using reflection
-				Dictionary<string, ScienceSubject> subjects = Lib.ReflectionValue<Dictionary<string, ScienceSubject>>
+				if (ResearchAndDevelopment.Instance == null)
+					return;
+
+				// get subjects dictionary using reflection
+				subjectsDB = Lib.ReflectionValue<Dictionary<string, ScienceSubject>>
 				(
 					ResearchAndDevelopment.Instance,
 					"scienceSubjects"
 				);
 
+				// try to get the subject, might be already created in some corner-case situations
+				RnDSubject = ResearchAndDevelopment.GetSubjectByID(StockSubjectId);
+			}
+			else
+			{
+				subjectsDB = ScienceDB.sandboxSubjects;
+
+				// try to get the subject, might be already created in some corner-case situations
+				ScienceSubject savedSubject;
+				if (subjectsDB.TryGetValue(StockSubjectId, out savedSubject))
+					RnDSubject = savedSubject;
+			}
+
+			if (RnDSubject != null)
+			{
+				Lib.Log("CreateSubjectInRnD : ScienceSubject " + StockSubjectId + "exists already, this should not be happening !");
+			}
+			else
+			{
 				// create new subject
 				RnDSubject = new ScienceSubject
 				(
@@ -144,8 +174,8 @@ namespace KERBALISM
 					(float)ScienceMaxValue
 				);
 
-				// add it to RnD
-				subjects.Add(StockSubjectId, RnDSubject);
+				// add it to RnD or sandbox DB
+				subjectsDB.Add(StockSubjectId, RnDSubject);
 			}
 
 			SetAsPersistent();
@@ -180,13 +210,12 @@ namespace KERBALISM
 		/// </summary>
 		public int UpdateSubjectCompletion(double scienceAdded)
 		{
-			if (!Science.GameHasRnD) return -1;
-
 			PercentRetrieved = ((PercentRetrieved * ScienceMaxValue) + scienceAdded) / ScienceMaxValue;
 			int newTimesCompleted = GetTimesCompleted(PercentRetrieved);
 			if (newTimesCompleted > TimesCompleted)
 			{
 				TimesCompleted = newTimesCompleted;
+				OnSubjectCompleted();
 				return TimesCompleted;
 			}
 			return -1;
@@ -199,14 +228,20 @@ namespace KERBALISM
 
 		public void AddScienceToRnDSubject(double scienceValue)
 		{
-			if (!Science.GameHasRnD)
-				return;
-
 			if (!ExistsInRnD)
 				CreateSubjectInRnD();
 
 			RnDSubject.science = Math.Min((float)(RnDSubject.science + scienceValue), RnDSubject.scienceCap);
 			RnDSubject.scientificValue = ResearchAndDevelopment.GetSubjectValue(RnDSubject.science, RnDSubject);
+		}
+
+		public void OnSubjectCompleted()
+		{
+			if (ExpInfo.UnlockResourceSurvey)
+			{
+				ResourceMap.Instance.UnlockPlanet(Situation.Body.flightGlobalsIndex);
+				Message.Post(Localizer.Format("#autoLOC_259361", Situation.BodyTitle) + "</color>");
+			}
 		}
 	}
 
