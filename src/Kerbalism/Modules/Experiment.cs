@@ -10,14 +10,14 @@ using System.Linq;
 namespace KERBALISM
 {
 
-	public class Experiment : PartModule, ISpecifics, IModuleInfo, IPartMassModifier, IConfigurable
+	public class Experiment : PartModule, ISpecifics, IModuleInfo, IPartMassModifier, IConfigurable, IMultipleDragCube
 	{
 		// config
 		[KSPField] public string experiment_id;               // id of associated experiment definition
 		[KSPField] public string experiment_desc = string.Empty;  // some nice lines of text
 		[KSPField] public double data_rate;                   // sampling rate in Mb/s
 		[KSPField] public double ec_rate;                     // EC consumption rate per-second
-		[KSPField] public double sample_amount = 0.0;		  // the amount of samples this unit is shipped with
+		[KSPField] public double sample_amount = 0.0;         // the amount of samples this unit is shipped with
 		[KSPField] public bool sample_collecting = false;     // if set to true, the experiment will generate mass out of nothing
 		[KSPField] public bool allow_shrouded = true;         // true if data can be transmitted
 		[KSPField] public string requires = string.Empty;     // additional requirements that must be met
@@ -26,6 +26,8 @@ namespace KERBALISM
 		[KSPField] public string crew_prepare = string.Empty; // prepare crew. if set, experiment will require crew to set up before it can start recording 
 		[KSPField] public string resources = string.Empty;    // resources consumed by this experiment
 		[KSPField] public bool hide_when_unavailable = false; // don't show UI when the experiment is unavailable
+		[KSPField] public string retractedDragCube = "Retracted";
+		[KSPField] public string deployedDragCube = "Deployed";
 		[KSPField] public bool use_animation_group = false;   // if true, deploy/retract animations will managed by the first found ModuleAnimationGroup
 
 		// animations
@@ -59,6 +61,7 @@ namespace KERBALISM
 		internal Animator deployAnimator;
 		internal Animator loopAnimator;
 		public ModuleAnimationGroup AnimationGroup { get; private set; }
+
 
 		private CrewSpecs operator_cs;
 		private CrewSpecs reset_cs;
@@ -121,8 +124,8 @@ namespace KERBALISM
 
 		public void Configure(bool enable)
 		{
-				enabled = enable;
-				isEnabled = enable;
+			enabled = enable;
+			isEnabled = enable;
 		}
 
 		public override void OnLoad(ConfigNode node)
@@ -150,6 +153,8 @@ namespace KERBALISM
 
 			// set initial animation states
 			deployAnimator.Still(Running ? 1.0 : 0.0);
+			SetDragCubes(Running);
+
 			loopAnimator.Still(Running ? 1.0 : 0.0);
 			if (Running) loopAnimator.Play(false, true);
 
@@ -160,7 +165,7 @@ namespace KERBALISM
 				AnimationGroup.DeployModule();
 
 			// parse crew specs
-			if(!string.IsNullOrEmpty(crew_operate))
+			if (!string.IsNullOrEmpty(crew_operate))
 				operator_cs = new CrewSpecs(crew_operate);
 			if (!string.IsNullOrEmpty(crew_reset))
 				reset_cs = new CrewSpecs(crew_reset);
@@ -202,7 +207,7 @@ namespace KERBALISM
 					if (hd.experiment_id == experiment_id) privateHdId = part.flightID;
 				}
 
-				if(firstStart)
+				if (firstStart)
 				{
 					FirstStart();
 					firstStart = false;
@@ -217,7 +222,7 @@ namespace KERBALISM
 			if (!sample_collecting && ExpInfo.SampleMass > 0.0 && remainingSampleMass == 0)
 			{
 				remainingSampleMass = ExpInfo.SampleMass * sample_amount;
-				if(double.IsNaN(remainingSampleMass))
+				if (double.IsNaN(remainingSampleMass))
 					Lib.LogDebug("ERROR: remainingSampleMass is NaN on first start " + ExpInfo.ExperimentId + " " + ExpInfo.SampleMass + " / " + sample_amount);
 			}
 		}
@@ -423,7 +428,7 @@ namespace KERBALISM
 			ref int lastSituationId, ref double remainingSampleMass, out SubjectData subjectData, out string mainIssue)
 		{
 			mainIssue = string.Empty;
-			
+
 			subjectData = ScienceDB.GetSubjectData(expInfo, vs);
 
 			bool subjectHasChanged;
@@ -561,7 +566,7 @@ namespace KERBALISM
 
 			if (prefab.ec_rate > 0.0)
 				prodFactor = Math.Min(prodFactor, Lib.Clamp(ec.Amount / (prefab.ec_rate * elapsed_s), 0.0, 1.0));
-			
+
 			foreach (ObjectPair<string, double> p in resourceDefs)
 			{
 				if (p.Value <= 0.0) continue;
@@ -692,6 +697,7 @@ namespace KERBALISM
 				else
 				{
 					deployAnimator.Play(!Running, false);
+					SetDragCubes(Running);
 				}
 
 				GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
@@ -719,6 +725,7 @@ namespace KERBALISM
 				{
 					State = RunningState.Stopped;
 					deployAnimator.Play(true, false);
+					SetDragCubes(false);
 				};
 
 				// wait for loop animation to stop before deploy animation
@@ -751,6 +758,7 @@ namespace KERBALISM
 					{
 						State = setForcedRun ? RunningState.Forced : RunningState.Running;
 						loopAnimator.Play(false, true);
+						SetDragCubes(true);
 					});
 				}
 			}
@@ -933,7 +941,7 @@ namespace KERBALISM
 			// check trait
 			if (!reset_cs.Check(v))
 			{
-				if(showMessage)
+				if (showMessage)
 				{
 					Message.Post(
 					  Lib.TextVariant
@@ -951,7 +959,7 @@ namespace KERBALISM
 			situationId = 0;
 			didPrepare = false;
 
-			if(showMessage)
+			if (showMessage)
 			{
 				Message.Post(
 				  "Reset Done",
@@ -962,7 +970,7 @@ namespace KERBALISM
 				  )
 				);
 			}
-			return true; 
+			return true;
 		}
 
 		// action groups
@@ -1129,9 +1137,9 @@ namespace KERBALISM
 		public string GetPrimaryField() { return string.Empty; }
 		public Callback<Rect> GetDrawModulePanelCallback() { return null; }
 
-#endregion
+		#endregion
 
-#region utility / other
+		#region utility / other
 
 		public void ReliablityEvent(bool breakdown)
 		{
@@ -1144,9 +1152,9 @@ namespace KERBALISM
 			Message.Post(Lib.Color("ALREADY RUNNING", Lib.Kolor.Orange, true), "Can't start " + title + " a second time on vessel " + vesselName);
 		}
 
-#endregion
+		#endregion
 
-#region sample mass
+		#region sample mass
 
 		internal static double RestoreSampleMass(double restoredAmount, ProtoPartModuleSnapshot m, string id)
 		{
@@ -1183,7 +1191,7 @@ namespace KERBALISM
 
 		// IPartMassModifier
 		public float GetModuleMass(float defaultMass, ModifierStagingSituation sit) {
-			if(Double.IsNaN(remainingSampleMass))
+			if (Double.IsNaN(remainingSampleMass))
 			{
 #if DEBUG || DEVBUILD // this is logspammy, don't do it in releases
 				Lib.Log("ERROR: Experiment remaining sample mass is NaN " + experiment_id);
@@ -1193,6 +1201,51 @@ namespace KERBALISM
 			return (float)remainingSampleMass;
 		}
 		public ModifierChangeWhen GetModuleMassChangeWhen() { return ModifierChangeWhen.CONSTANTLY; }
+
+		#endregion
+
+		#region drag cubes
+
+		private void SetDragCubes(bool deployed)
+		{
+			if (deployAnimator == null)
+				return;
+
+			part.DragCubes.SetCubeWeight(retractedDragCube, deployed ? 0f : 1f);
+			part.DragCubes.SetCubeWeight(deployedDragCube, deployed ? 1f : 0f);
+		}
+
+
+		public bool IsMultipleCubesActive
+		{
+			get
+			{
+				if (deployAnimator == null)
+				{
+					deployAnimator = new Animator(part, anim_deploy);
+					deployAnimator.reversed = anim_deploy_reverse;
+				}
+				return deployAnimator.IsDefined;
+			}
+		}
+
+		public string[] GetDragCubeNames() => new string[] { retractedDragCube, deployedDragCube };
+
+		public void AssumeDragCubePosition(string name)
+		{
+			if (deployAnimator == null)
+			{
+				deployAnimator = new Animator(part, anim_deploy);
+				deployAnimator.reversed = anim_deploy_reverse;
+			}
+
+			if (name == retractedDragCube)
+				deployAnimator.Still(0.0);
+			else if (name == deployedDragCube)
+				deployAnimator.Still(1.0);
+		}
+
+		public bool UsesProceduralDragCubes() => false;
 
 		#endregion
 	}
