@@ -270,9 +270,6 @@ namespace KERBALISM
 
 		private static void SubjectXmitCompleted(File file, int timesCompleted, Vessel v)
 		{
-			if (!GameHasRnD)
-				return;
-
 			// fire science transmission game event. This is used by stock contracts and a few other things.
 			GameEvents.OnScienceRecieved.Fire(timesCompleted == 1 ? (float)file.subjectData.ScienceMaxValue : 0f, file.subjectData.RnDSubject, v.protoVessel, false);
 
