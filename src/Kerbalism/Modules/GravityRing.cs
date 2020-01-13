@@ -246,7 +246,7 @@ namespace KERBALISM
 #if KSP15_16
 		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "#KERBALISM_GravityRing_Toggle", active = true)]
 #else
-		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "#KERBALISM_GravityRing_Toggle", active = true, groupName = "Habitat", groupDisplayName = "Habitat")]
+		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "#KERBALISM_GravityRing_Toggle", active = true, groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
 #endif
 		public void Toggle()
 		{
@@ -289,9 +289,9 @@ namespace KERBALISM
 		public Specifics Specs()
 		{
 			Specifics specs = new Specifics();
-			specs.Add("bonus", "firm-ground");
+			specs.Add(Localizer.Format("#KERBALISM_GravityRing_info1"), "firm-ground");//"bonus"
 			specs.Add("EC/s", Lib.HumanReadableRate(ec_rate));
-			specs.Add("deployable", deploy.Length > 0 ? "yes" : "no");
+			specs.Add(Localizer.Format("#KERBALISM_GravityRing_info2"), deploy.Length > 0 ? Localizer.Format("#KERBALISM_GravityRing_yes") : Localizer.Format("#KERBALISM_GravityRing_no"));//"deployable""yes""no"
 			return specs;
 		}
 	}

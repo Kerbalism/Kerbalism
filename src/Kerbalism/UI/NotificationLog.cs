@@ -1,4 +1,5 @@
 ﻿using System;
+using KSP.Localization;
 
 namespace KERBALISM
 {
@@ -6,14 +7,14 @@ namespace KERBALISM
 	{
 		public static void Logman(this Panel p, Vessel v)
 		{
-			p.Title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(40)), " ", Lib.Color("ALL LOGS", Lib.Kolor.LightGrey)));
+			p.Title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(40)), " ", Lib.Color(Localizer.Format("#KERBALISM_LogMan_ALLLOGS"), Lib.Kolor.LightGrey)));//"ALL LOGS"
 			p.Width(Styles.ScaleWidthFloat(465.0f));
 			p.paneltype = Panel.PanelType.log;
 
-			p.AddSection("LOGS");
+			p.AddSection(Localizer.Format("#KERBALISM_LogMan_LOGS"));//"LOGS"
 			if (Message.all_logs == null || Message.all_logs.Count == 0)
 			{
-				p.AddContent("<i>no logs</i>", string.Empty);
+				p.AddContent("<i>"+Localizer.Format("#KERBALISM_LogMan_nologs") +"</i>", string.Empty);//no logs
 			}
 			else
 			{
@@ -27,7 +28,7 @@ namespace KERBALISM
 					}
 					else
 					{
-						p.AddContent(Lib.Color("ALERT   ", Lib.Kolor.Yellow), log.msg.Replace("\n", ". "));
+						p.AddContent(Lib.Color(Localizer.Format("#KERBALISM_LogMan_ALERT"), Lib.Kolor.Yellow), log.msg.Replace("\n", ". "));//"ALERT   "
 					}
 					if (Message.all_logs.Count > 1)
 					{

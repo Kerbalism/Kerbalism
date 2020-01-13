@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Experience;
 using UnityEngine;
+using KSP.Localization;
 
 
 namespace KERBALISM
@@ -19,7 +20,7 @@ namespace KERBALISM
 #if KSP15_16
 		[KSPField(guiActive = true, guiName = "_")] public string Status;
 #else
-		[KSPField(guiActive = true, guiName = "_", groupName = "Sensors", groupDisplayName = "Sensors", groupStartCollapsed = true)] public string Status;
+		[KSPField(guiActive = true, guiName = "_", groupName = "Sensors", groupDisplayName = "#KERBALISM_Group_Sensors", groupStartCollapsed = true)] public string Status;//Sensors
 #endif
 
 		// animations
@@ -65,7 +66,7 @@ namespace KERBALISM
 		// part tooltip
 		public override string GetInfo()
 		{
-			return Specs().Info("Add telemetry readings to the part ui, and to the telemetry panel");
+			return Specs().Info(Localizer.Format("#KERBALISM_Sensor_info"));//"Add telemetry readings to the part ui, and to the telemetry panel"
 		}
 
 
@@ -73,7 +74,7 @@ namespace KERBALISM
 		public Specifics Specs()
 		{
 			var specs = new Specifics();
-			specs.Add("Type", type);
+			specs.Add(Localizer.Format("#KERBALISM_Sensor_Type"), type);//"Type"
 			return specs;
 		}
 
@@ -115,7 +116,7 @@ namespace KERBALISM
 				case "radiation": return Lib.HumanReadableRadiation(vd.EnvRadiation);
 				case "habitat_radiation": return Lib.HumanReadableRadiation(HabitatRadiation(vd));
 				case "pressure": return Lib.HumanReadablePressure(v.mainBody.GetPressure(v.altitude));
-				case "gravioli": return vd.EnvGravioli < 0.33 ? "nothing here" : vd.EnvGravioli < 0.66 ? "almost one" : "WOW!";
+				case "gravioli": return vd.EnvGravioli < 0.33 ? Localizer.Format("#KERBALISM_Sensor_shorttextinfo1") : vd.EnvGravioli < 0.66 ? Localizer.Format("#KERBALISM_Sensor_shorttextinfo2") : Localizer.Format("#KERBALISM_Sensor_shorttextinfo3");//"nothing here""almost one""WOW!"
 			}
 			return string.Empty;
 		}
@@ -134,9 +135,9 @@ namespace KERBALISM
 					return Lib.BuildString
 					(
 						"<align=left />",
-						String.Format("{0,-14}\t<b>{1}</b>\n", "solar flux", Lib.HumanReadableFlux(vd.EnvSolarFluxTotal)),
-						String.Format("{0,-14}\t<b>{1}</b>\n", "albedo flux", Lib.HumanReadableFlux(vd.EnvAlbedoFlux)),
-						String.Format("{0,-14}\t<b>{1}</b>", "body flux", Lib.HumanReadableFlux(vd.EnvBodyFlux))
+						String.Format("{0,-14}\t<b>{1}</b>\n", Localizer.Format("#KERBALISM_Sensor_solarflux"), Lib.HumanReadableFlux(vd.EnvSolarFluxTotal)),//"solar flux"
+						String.Format("{0,-14}\t<b>{1}</b>\n", Localizer.Format("#KERBALISM_Sensor_albedoflux"), Lib.HumanReadableFlux(vd.EnvAlbedoFlux)),//"albedo flux"
+						String.Format("{0,-14}\t<b>{1}</b>", Localizer.Format("#KERBALISM_Sensor_bodyflux"), Lib.HumanReadableFlux(vd.EnvBodyFlux))//"body flux"
 					);
 
 				case "radiation":
@@ -146,27 +147,27 @@ namespace KERBALISM
 					return Lib.BuildString
 					(
 						"<align=left />",
-						String.Format("{0,-14}\t<b>{1}</b>\n", "environment", Lib.HumanReadableRadiation(vd.EnvRadiation, false)),
-						String.Format("{0,-14}\t<b>{1}</b>", "habitats", Lib.HumanReadableRadiation(HabitatRadiation(vd), false))
+						String.Format("{0,-14}\t<b>{1}</b>\n", Localizer.Format("#KERBALISM_Sensor_environment"), Lib.HumanReadableRadiation(vd.EnvRadiation, false)),//"environment"
+						String.Format("{0,-14}\t<b>{1}</b>", Localizer.Format("#KERBALISM_Sensor_habitats"), Lib.HumanReadableRadiation(HabitatRadiation(vd), false))//"habitats"
 					);
 
 				case "pressure":
 					return vd.EnvUnderwater
-					  ? "inside <b>ocean</b>"
+					  ? Localizer.Format("#KERBALISM_Sensor_insideocean")//"inside <b>ocean</b>"
 					  : vd.EnvInAtmosphere
-					  ? Lib.BuildString("inside <b>atmosphere</b> (", vd.EnvBreathable ? "breathable" : "not breathable", ")")
+					  ? Localizer.Format("#KERBALISM_Sensor_insideatmosphere", vd.EnvBreathable ? Localizer.Format("#KERBALISM_Sensor_breathable") : Localizer.Format("#KERBALISM_Sensor_notbreathable"))//"breathable""not breathable"                  //Lib.BuildString("inside <b>atmosphere</b> (", vd.EnvBreathable ? "breathable" : "not breathable", ")")
 					  : Sim.InsideThermosphere(v)
-					  ? "inside <b>thermosphere</b>"
+					  ? Localizer.Format("#KERBALISM_Sensor_insidethermosphere")//"inside <b>thermosphere</b>""
 					  : Sim.InsideExosphere(v)
-					  ? "inside <b>exosphere</b>"
+					  ? Localizer.Format("#KERBALISM_Sensor_insideexosphere")//"inside <b>exosphere</b>"
 					  : string.Empty;
 
 				case "gravioli":
 					return Lib.BuildString
 					(
-						"Gravioli detection events per-year: <b>", vd.EnvGravioli.ToString("F2"), "</b>\n\n",
-						"<i>The elusive negative gravioli particle\nseems to be much harder to detect\n",
-						"than expected. On the other\nhand there seems to be plenty\nof useless positive graviolis around.</i>"
+						Localizer.Format("#KERBALISM_Sensor_Graviolidetection", "<b>" + vd.EnvGravioli.ToString("F2") + "</b>\n\n"),//"Gravioli detection events per-year: 
+						"<i>", Localizer.Format("#KERBALISM_Sensor_info1"), "\n",//The elusive negative gravioli particle\nseems to be much harder to detect than expected.
+						Localizer.Format("#KERBALISM_Sensor_info2"), "</i>"//" On the other\nhand there seems to be plenty\nof useless positive graviolis around."
 					);
 			}
 			return string.Empty;

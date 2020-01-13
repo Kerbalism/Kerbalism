@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Harmony;
 using Harmony.ILCopying;
 using UnityEngine;
+using KSP.Localization;
 
 namespace KERBALISM
 {
@@ -143,16 +144,16 @@ namespace KERBALISM
 				(
 					new MultiOptionDialog
 					(
-						"scienceResults", "", pv.vesselName + " recovery", HighLogic.UISkin, new Rect(0.3f, 0.5f, 350f, 100f),
+						"scienceResults", "", pv.vesselName + " "+Localizer.Format("#KERBALISM_VesselRecovery_title"), HighLogic.UISkin, new Rect(0.3f, 0.5f, 350f, 100f),//" recovery"
 						new DialogGUIVerticalLayout
 						(
-							new DialogGUIBox("SCIENCE RECOVERED : " + Lib.Color(scienceToCredit.ToString("F1") + " CREDITS", Lib.Kolor.Science, true), 340f, 30f),
+							new DialogGUIBox(Localizer.Format("#KERBALISM_VesselRecovery_info") + " : " + Lib.Color(scienceToCredit.ToString("F1") + " " + Localizer.Format("#KERBALISM_VesselRecovery_CREDITS"), Lib.Kolor.Science, true), 340f, 30f),//"SCIENCE RECOVERED"" CREDITS"
 							new DialogGUIScrollList
 							(
 								new Vector2(340f, 250f), false, true,
 								new DialogGUIVerticalLayout(labels.ToArray())
 							),
-							new DialogGUIButton("OK", null, 340f, 30f, true, HighLogic.UISkin.button)
+							new DialogGUIButton(Localizer.Format("#KERBALISM_VesselRecovery_OKbutton"), null, 340f, 30f, true, HighLogic.UISkin.button)//"OK"
 						)
 					),
 					false, HighLogic.UISkin

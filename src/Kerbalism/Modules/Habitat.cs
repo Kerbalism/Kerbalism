@@ -27,9 +27,9 @@ namespace KERBALISM
 		[KSPField(guiActive = false, guiActiveEditor = true, guiName = "#KERBALISM_Habitat_Surface")]
 		public string Surface;
 #else
-        [KSPField(guiActive = false, guiActiveEditor = true, guiName = "#KERBALISM_Habitat_Volume", groupName = "Habitat", groupDisplayName = "Habitat")]
+        [KSPField(guiActive = false, guiActiveEditor = true, guiName = "#KERBALISM_Habitat_Volume", groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
         public string Volume;
-        [KSPField(guiActive = false, guiActiveEditor = true, guiName = "#KERBALISM_Habitat_Surface", groupName = "Habitat", groupDisplayName = "Habitat")]
+        [KSPField(guiActive = false, guiActiveEditor = true, guiName = "#KERBALISM_Habitat_Surface", groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
         public string Surface;
 #endif
         // animations
@@ -405,15 +405,15 @@ namespace KERBALISM
 #if KSP15_16
 		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true)]
 #else
-        [KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true, groupName = "Habitat", groupDisplayName = "Habitat")]
+        [KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true, groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
 #endif
         public void Toggle()
         {
             // if manned, we can't depressurize
             if (Lib.IsCrewed(part) && (state == State.enabled || state == State.pressurizing))
             {
-                Message.Post(Lib.BuildString("Can't disable <b>", Lib.PartName(part), " habitat</b> while crew is inside"));
-                return;
+                Message.Post(Localizer.Format("#KERBALISM_Habitat_postmsg", Lib.PartName(part)));//"Can't disable <b><<1>> habitat</b> while crew is inside"//Lib.BuildString("Can't disable <b>", , " habitat</b> while crew is inside"
+				return;
             }
 
             // Need be equalized
@@ -448,12 +448,12 @@ namespace KERBALISM
         public Specifics Specs()
         {
             Specifics specs = new Specifics();
-            specs.Add("Volume", Lib.HumanReadableVolume(volume > double.Epsilon ? volume : Lib.PartVolume(part)));
-            specs.Add("Surface", Lib.HumanReadableSurface(surface > double.Epsilon ? surface : Lib.PartSurface(part)));
-            specs.Add("Pressurized", max_pressure >= Settings.PressureThreshold ? "yes" : "no");
-            if (inflate.Length > 0) specs.Add("Inflatable", "yes");
+            specs.Add(Localizer.Format("#KERBALISM_Habitat_info1"), Lib.HumanReadableVolume(volume > double.Epsilon ? volume : Lib.PartVolume(part)));//"Volume"
+            specs.Add(Localizer.Format("#KERBALISM_Habitat_info2"), Lib.HumanReadableSurface(surface > double.Epsilon ? surface : Lib.PartSurface(part)));//"Surface"
+            specs.Add(Localizer.Format("#KERBALISM_Habitat_info3"), max_pressure >= Settings.PressureThreshold ? Localizer.Format("#KERBALISM_Habitat_yes") : Localizer.Format("#KERBALISM_Habitat_no"));//"Pressurized""yes""no"
+            if (inflate.Length > 0) specs.Add(Localizer.Format("#KERBALISM_Habitat_info4"), Localizer.Format("#KERBALISM_Habitat_yes"));//"Inflatable""yes"
             if (PhysicsGlobals.KerbalCrewMass > 0)
-                specs.Add("Added mass per crew", Lib.HumanReadableMass(PhysicsGlobals.KerbalCrewMass));
+                specs.Add(Localizer.Format("#KERBALISM_Habitat_info5"), Lib.HumanReadableMass(PhysicsGlobals.KerbalCrewMass));//"Added mass per crew"
 
             return specs;
         }
@@ -510,17 +510,17 @@ namespace KERBALISM
         // return a verbose description of shielding capability
         public static string Shielding_to_string(double v)
         {
-            return v <= double.Epsilon ? "none" : Lib.BuildString((20.0 * v / PreferencesRadiation.Instance.shieldingEfficiency).ToString("F2"), " mm");
+            return v <= double.Epsilon ? Localizer.Format("#KERBALISM_Habitat_none") : Lib.BuildString((20.0 * v / PreferencesRadiation.Instance.shieldingEfficiency).ToString("F2"), " mm");//"none"
         }
 
         // traduce living space value to string
         public static string Living_space_to_string(double v)
         {
-            if (v >= 0.99) return "ideal";
-            else if (v >= 0.75) return "good";
-            else if (v >= 0.5) return "modest";
-            else if (v >= 0.25) return "poor";
-            else return "cramped";
+            if (v >= 0.99) return Localizer.Format("#KERBALISM_Habitat_Summary1");//"ideal"
+            else if (v >= 0.75) return Localizer.Format("#KERBALISM_Habitat_Summary2");//"good"
+            else if (v >= 0.5) return Localizer.Format("#KERBALISM_Habitat_Summary3");//"modest"
+            else if (v >= 0.25) return Localizer.Format("#KERBALISM_Habitat_Summary4");//"poor"
+            else return Localizer.Format("#KERBALISM_Habitat_Summary5");//"cramped"
         }
 
         // enable/disable dialog "Transfer crew" on UI
@@ -609,6 +609,6 @@ namespace KERBALISM
             depressurizing,  // hab is depressurizing (between enabled and disabled)
         }
 
-        public override string GetModuleDisplayName() { return "Habitat"; }
+        public override string GetModuleDisplayName() { return Localizer.Format("#KERBALISM_Habitat"); }//"Habitat"
     }
 }

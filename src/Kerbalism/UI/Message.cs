@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using KSP.Localization;
 
 
 namespace KERBALISM
@@ -139,11 +140,11 @@ namespace KERBALISM
 			string title = "";
 			switch (severity)
 			{
-				case Severity.relax: title = Lib.BuildString(Lib.Color("RELAX", Lib.Kolor.Green, true), "\n"); break;
-				case Severity.warning: title = Lib.BuildString(Lib.Color("WARNING", Lib.Kolor.Yellow, true), "\n"); Lib.StopWarp(); break; 
-				case Severity.danger: title = Lib.BuildString(Lib.Color("DANGER", Lib.Kolor.Red, true), "\n"); Lib.StopWarp(); break; 
-				case Severity.fatality: title = Lib.BuildString(Lib.Color("FATALITY", Lib.Kolor.Red, true), "\n"); Lib.StopWarp(); break; 
-				case Severity.breakdown: title = Lib.BuildString(Lib.Color("BREAKDOWN", Lib.Kolor.Orange, true), "\n"); Lib.StopWarp(); break; 
+				case Severity.relax: title = Lib.BuildString(Lib.Color(Localizer.Format("#KERBALISM_Message_RELAX"), Lib.Kolor.Green, true), "\n"); break;//"RELAX"
+				case Severity.warning: title = Lib.BuildString(Lib.Color(Localizer.Format("#KERBALISM_Message_WARNING"), Lib.Kolor.Yellow, true), "\n"); Lib.StopWarp(); break; //"WARNING"
+				case Severity.danger: title = Lib.BuildString(Lib.Color(Localizer.Format("#KERBALISM_Message_DANGER"), Lib.Kolor.Red, true), "\n"); Lib.StopWarp(); break; //"DANGER"
+				case Severity.fatality: title = Lib.BuildString(Lib.Color(Localizer.Format("#KERBALISM_Message_FATALITY"), Lib.Kolor.Red, true), "\n"); Lib.StopWarp(); break; //"FATALITY"
+				case Severity.breakdown: title = Lib.BuildString(Lib.Color(Localizer.Format("#KERBALISM_Message_BREAKDOWN"), Lib.Kolor.Orange, true), "\n"); Lib.StopWarp(); break; //"BREAKDOWN"
 			}
 			if (subtext.Length == 0) Post(Lib.BuildString(title, text));
 			else Post(Lib.BuildString(title, text, "\n<i>", subtext, "</i>"));

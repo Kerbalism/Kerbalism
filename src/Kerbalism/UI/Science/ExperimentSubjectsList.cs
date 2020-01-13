@@ -8,6 +8,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using static KERBALISM.ScienceDB;
+using KSP.Localization;
 
 namespace KERBALISM
 {
@@ -19,31 +20,31 @@ namespace KERBALISM
 
 		public ExperimentSubjectList(KsmGuiBase parent, ExperimentInfo expInfo) : base(parent)
 		{
-			KnownSubjectsToggle = new KsmGuiToggle(this, "Show only known subjects", true, ToggleKnownSubjects, null, -1, 21);
+			KnownSubjectsToggle = new KsmGuiToggle(this, Localizer.Format("#KERBALISM_SCIENCEARCHIVE_Showonlyknownsubjects"), true, ToggleKnownSubjects, null, -1, 21);//"Show only known subjects"
 
 			KsmGuiBase listHeader = new KsmGuiBase(this);
 			listHeader.SetLayoutElement(true, false, -1, 16);
 			listHeader.AddImageComponentWithColor(KsmGuiStyle.boxColor);
 
-			KsmGuiText rndHeaderText = new KsmGuiText(listHeader, "RnD", "Science points\nretrieved in RnD", TextAlignmentOptions.Left);
+			KsmGuiText rndHeaderText = new KsmGuiText(listHeader, Localizer.Format("#KERBALISM_SCIENCEARCHIVE_RnD"), Localizer.Format("#KERBALISM_SCIENCEARCHIVE_RnD_desc"), TextAlignmentOptions.Left);//"RnD""Science points\nretrieved in RnD"
 			rndHeaderText.TextComponent.color = Lib.KolorToColor(Lib.Kolor.Science);
 			rndHeaderText.TextComponent.fontStyle = FontStyles.Bold;
 			rndHeaderText.TopTransform.SetAnchorsAndPosition(TextAnchor.MiddleLeft, TextAnchor.MiddleLeft, 10, 0);
 			rndHeaderText.TopTransform.SetSizeDelta(50, 16);
 
-			KsmGuiText flightHeaderText = new KsmGuiText(listHeader, "Flight", "Science points\ncollected in all vessels", TextAlignmentOptions.Left);
+			KsmGuiText flightHeaderText = new KsmGuiText(listHeader, Localizer.Format("#KERBALISM_SCIENCEARCHIVE_Flight"), Localizer.Format("#KERBALISM_SCIENCEARCHIVE_Flight_desc"), TextAlignmentOptions.Left);//"Flight""Science points\ncollected in all vessels"
 			flightHeaderText.TextComponent.color = Lib.KolorToColor(Lib.Kolor.Science);
 			flightHeaderText.TextComponent.fontStyle = FontStyles.Bold;
 			flightHeaderText.TopTransform.SetAnchorsAndPosition(TextAnchor.MiddleLeft, TextAnchor.MiddleLeft, 60, 0);
 			flightHeaderText.TopTransform.SetSizeDelta(50, 16);
 
-			KsmGuiText valueHeaderText = new KsmGuiText(listHeader, "Value", "Remaining science value\naccounting for data retrieved in RnD\nand collected in flight", TextAlignmentOptions.Left);
+			KsmGuiText valueHeaderText = new KsmGuiText(listHeader, Localizer.Format("#KERBALISM_SCIENCEARCHIVE_Value"), Localizer.Format("#KERBALISM_SCIENCEARCHIVE_Value_desc"), TextAlignmentOptions.Left);//"Value""Remaining science value\naccounting for data retrieved in RnD\nand collected in flight"
 			valueHeaderText.TextComponent.color = Lib.KolorToColor(Lib.Kolor.Science);
 			valueHeaderText.TextComponent.fontStyle = FontStyles.Bold;
 			valueHeaderText.TopTransform.SetAnchorsAndPosition(TextAnchor.MiddleLeft, TextAnchor.MiddleLeft, 110, 0);
 			valueHeaderText.TopTransform.SetSizeDelta(50, 16);
 
-			KsmGuiText completedHeaderText = new KsmGuiText(listHeader, "Completed", "How many times the subject\nhas been retrieved in RnD", TextAlignmentOptions.Left);
+			KsmGuiText completedHeaderText = new KsmGuiText(listHeader, Localizer.Format("#KERBALISM_SCIENCEARCHIVE_Completed"), Localizer.Format("#KERBALISM_SCIENCEARCHIVE_Completed_desc"), TextAlignmentOptions.Left);//"Completed""How many times the subject\nhas been retrieved in RnD"
 			completedHeaderText.TextComponent.color = Lib.KolorToColor(Lib.Kolor.Yellow);
 			completedHeaderText.TextComponent.fontStyle = FontStyles.Bold;
 			completedHeaderText.TopTransform.SetAnchorsAndPosition(TextAnchor.MiddleLeft, TextAnchor.MiddleLeft, 160, 0);

@@ -25,7 +25,7 @@ namespace KERBALISM
 			if (!vd.IsSimulated) return;
 
 			// set metadata
-			p.Title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(20)), Lib.Color("#KERBALISM_UI_devman", Lib.Kolor.LightGrey)));
+			p.Title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(20)), Lib.Color(Localizer.Format("#KERBALISM_UI_devman"), Lib.Kolor.LightGrey)));
 			p.Width(Styles.ScaleWidthFloat(355.0f));
 			p.paneltype = Panel.PanelType.scripts;
 
@@ -65,7 +65,7 @@ namespace KERBALISM
 					{
 						if (!hasVesselDeviceSection)
 						{
-							p.AddSection("VESSEL DEVICES");
+							p.AddSection(Localizer.Format("#KERBALISM_DevManager_VESSELDEVICES"));//"VESSEL DEVICES"
 							hasVesselDeviceSection = true;
 						}
 					}
@@ -74,7 +74,7 @@ namespace KERBALISM
 					{
 						if (!hasModuleDeviceSection)
 						{
-							p.AddSection("MODULE DEVICES");
+							p.AddSection(Localizer.Format("#KERBALISM_DevManager_MODULEDEVICES"));//"MODULE DEVICES"
 							hasModuleDeviceSection = true;
 						}
 					}
@@ -130,7 +130,7 @@ namespace KERBALISM
 					{
 						if (!hasVesselDeviceSection)
 						{
-							p.AddSection("VESSEL DEVICES");
+							p.AddSection(Localizer.Format("#KERBALISM_DevManager_VESSELDEVICES"));//"VESSEL DEVICES"
 							hasVesselDeviceSection = true;
 						}
 					}
@@ -139,7 +139,7 @@ namespace KERBALISM
 					{
 						if (!hasModuleDeviceSection)
 						{
-							p.AddSection("MODULE DEVICES");
+							p.AddSection(Localizer.Format("#KERBALISM_DevManager_MODULEDEVICES"));//"MODULE DEVICES"
 							hasModuleDeviceSection = true;
 						}
 					}
@@ -168,14 +168,14 @@ namespace KERBALISM
 			// no devices case
 			if (deviceCount == 0)
 			{
-				p.AddContent("<i>no devices</i>");
+				p.AddContent("<i>"+Localizer.Format("#KERBALISM_DevManager_nodevices") +"</i>");//no devices
 			}
 		}
 
 		// return short description of a script, or the time-out message
 		static string Description()
 		{
-			if (script_index == 0) return "<i>Control vessel components directly</i>";
+			if (script_index == 0) return "<i>"+Localizer.Format("#Kerbalism_UI_1000020") +"</i>";//Control vessel components directly
 			switch ((ScriptType)script_index)
 			{
 				case ScriptType.landed: return Localizer.Format("#Kerbalism_UI_1000000");        // #Kerbalism_UI_1000000 = <i>Called on landing</i>

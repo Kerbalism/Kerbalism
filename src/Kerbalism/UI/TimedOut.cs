@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
-
+using KSP.Localization;
 
 namespace KERBALISM
 {
@@ -21,20 +21,20 @@ namespace KERBALISM
 
 		static string[] msg =
 		{
-	"<i>Connection in progress</i>",
-	"<i>Connection in progress.</i>",
-	"<i>Connection in progress..</i>",
-	"<i>Connection in progress...</i>",
-	"<i>Connection in progress....</i>",
-	"<i>Connection in progress.....</i>",
-	"<b><color=#ff3333><i>Connection timed-out</i></color></b>",
-	"<b><color=#ff3333><i>Connection timed-out</i></color></b>",
-	"<b><color=#ff3333><i>Connection timed-out</i></color></b>",
-	"<b><color=#ff3333><i>Connection timed-out</i></color></b>",
-	"<b><color=#ff3333><i>Connection timed-out</i></color></b>",
-	"<i>New tentative in 3s</i>",
-	"<i>New tentative in 2s</i>",
-	"<i>New tentative in 1s</i>"
+	"<i>"+Localizer.Format("#KERBALISM_TimeoutMsg1")+"</i>",//Connection in progress
+	"<i>"+Localizer.Format("#KERBALISM_TimeoutMsg1")+".</i>",//Connection in progress.
+	"<i>"+Localizer.Format("#KERBALISM_TimeoutMsg1")+"..</i>",//Connection in progress..
+	"<i>"+Localizer.Format("#KERBALISM_TimeoutMsg1")+"...</i>",//Connection in progress...
+	"<i>"+Localizer.Format("#KERBALISM_TimeoutMsg1")+"....</i>",//Connection in progress....
+	"<i>"+Localizer.Format("#KERBALISM_TimeoutMsg1")+".....</i>",//Connection in progress.....
+	"<b><color=#ff3333><i>"+Localizer.Format("#KERBALISM_TimeoutMsg2")+"</i></color></b>",//Connection timed-out
+	"<b><color=#ff3333><i>"+Localizer.Format("#KERBALISM_TimeoutMsg2")+"</i></color></b>",//Connection timed-out
+	"<b><color=#ff3333><i>"+Localizer.Format("#KERBALISM_TimeoutMsg2")+"</i></color></b>",//Connection timed-out
+	"<b><color=#ff3333><i>"+Localizer.Format("#KERBALISM_TimeoutMsg2")+"</i></color></b>",//Connection timed-out
+	"<b><color=#ff3333><i>"+Localizer.Format("#KERBALISM_TimeoutMsg2")+"</i></color></b>",//Connection timed-out
+	"<i>"+Localizer.Format("#KERBALISM_TimeoutMsg3","3s")+"</i>",//New tentative in <<1>>
+	"<i>"+Localizer.Format("#KERBALISM_TimeoutMsg3","2s")+"</i>",//New tentative in <<1>>
+	"<i>"+Localizer.Format("#KERBALISM_TimeoutMsg3","1s")+"</i>"//New tentative in <<1>>
   };
 	}
 

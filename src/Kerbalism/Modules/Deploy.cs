@@ -12,12 +12,12 @@ namespace KERBALISM
 		[KSPField] public double extra_Deploy = 0;          // extra eergy cost to do a deploy(animation)
 
 		// Support Reliability
-		[KSPField(isPersistant = true, guiName = "IsBroken", guiUnits = "", guiFormat = "")]
+		[KSPField(isPersistant = true, guiName = "#KERBALISM_Deploy_isBroken", guiUnits = "", guiFormat = "")]//IsBroken
 		public bool isBroken;                               // is it broken
 		public bool lastBrokenState;                        // broken state has changed since last update?
 		public bool lastFixedBrokenState;                   // broken state has changed since last fixed update?
 
-		[KSPField(guiName = "EC Usage", guiUnits = "/s", guiFormat = "F3")]
+		[KSPField(guiName = "#KERBALISM_Deploy_actualCost", guiUnits = "/s", guiFormat = "F3")]//EC Usage
 		public double actualCost = 0;                       // Energy Consume
 
 		// Vessel info

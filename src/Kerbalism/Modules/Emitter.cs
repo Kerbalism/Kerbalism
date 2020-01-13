@@ -20,7 +20,7 @@ namespace KERBALISM
 #if KSP15_16
 		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "_")]
 #else
-		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "_", groupName = "Radiation", groupDisplayName = "Radiation")]
+		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "_", groupName = "Radiation", groupDisplayName = "#KERBALISM_Group_Radiation")]//Radiation
 #endif
 		// rmb status
 		public string Status;  // rate of radiation emitted/shielded
@@ -138,7 +138,7 @@ namespace KERBALISM
 		public void Update()
 		{
 			// update ui
-			Status = running ? Lib.HumanReadableRadiation(Math.Abs(radiation)) : "none";
+			Status = running ? Lib.HumanReadableRadiation(Math.Abs(radiation)) : Localizer.Format("#KERBALISM_Emitter_none");//"none"
 			Events["Toggle"].guiName = Lib.StatusToggle(Localizer.Format("#kerbalism-activeshield_Part_title").Replace("Shield", "shield"), running ? Localizer.Format("#KERBALISM_Generic_ACTIVE") : Localizer.Format("#KERBALISM_Generic_DISABLED")); //i'm lazy lol
 		}
 
@@ -186,7 +186,7 @@ namespace KERBALISM
 #if KSP15_16
 		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true)]
 #else
-	[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true, groupName = "Radiation", groupDisplayName = "Radiation")]
+	[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true, groupName = "Radiation", groupDisplayName = "#KERBALISM_Group_Radiation")]//Radiation
 #endif
 		public void Toggle()
 		{

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using KSP.Localization;
 
 
 namespace KERBALISM
@@ -39,11 +40,11 @@ namespace KERBALISM
 		[KSPField(guiActive = true, guiName = "#KERBALISM_Greenhouse_status_tta")]
 		public string status_tta;                // time to harvest
 #else
-		[KSPField(guiActive = true, guiName = "#KERBALISM_Greenhouse_status_natural", groupName = "Greenhouse", groupDisplayName = "Greenhouse")]
+		[KSPField(guiActive = true, guiName = "#KERBALISM_Greenhouse_status_natural", groupName = "Greenhouse", groupDisplayName = "#KERBALISM_Group_Greenhouse")]//Greenhouse
 		public string status_natural;        // natural lighting
-		[KSPField(guiActive = true, guiName = "#KERBALISM_Greenhouse_status_artificial", groupName = "Greenhouse", groupDisplayName = "Greenhouse")]
+		[KSPField(guiActive = true, guiName = "#KERBALISM_Greenhouse_status_artificial", groupName = "Greenhouse", groupDisplayName = "#KERBALISM_Group_Greenhouse")]//Greenhouse
 		public string status_artificial;  // artificial lighting
-		[KSPField(guiActive = true, guiName = "#KERBALISM_Greenhouse_status_tta", groupName = "Greenhouse", groupDisplayName = "Greenhouse")]
+		[KSPField(guiActive = true, guiName = "#KERBALISM_Greenhouse_status_tta", groupName = "Greenhouse", groupDisplayName = "#KERBALISM_Group_Greenhouse")]//Greenhouse
 		public string status_tta;                // time to harvest
 #endif
 
@@ -110,8 +111,8 @@ namespace KERBALISM
 				if (plants_anim != null) plants_anim.Still(growth);
 
 				// update ui
-				string status = issue.Length > 0 ? Lib.BuildString("<color=yellow>", issue, "</color>") : growth > 0.99 ? "ready to harvest" : "growing";
-				Events["Toggle"].guiName = Lib.StatusToggle("Greenhouse", active ? status : "disabled");
+				string status = issue.Length > 0 ? Lib.BuildString("<color=yellow>", issue, "</color>") : growth > 0.99 ? Localizer.Format("#KERBALISM_TELEMETRY_readytoharvest") : Localizer.Format("#KERBALISM_TELEMETRY_growing");//"ready to harvest""growing"
+				Events["Toggle"].guiName = Lib.StatusToggle(Localizer.Format("#KERBALISM_Greenhouse_Greenhouse"), active ? status : Localizer.Format("#KERBALISM_Greenhouse_disabled"));//"Greenhouse""disabled"
 				Fields["status_natural"].guiActive = active && growth < 0.99;
 				Fields["status_artificial"].guiActive = active && growth < 0.99;
 				Fields["status_tta"].guiActive = active && growth < 0.99;
@@ -128,7 +129,7 @@ namespace KERBALISM
 			else
 			{
 				// update ui
-				Events["Toggle"].guiName = Lib.StatusToggle("Greenhouse", active ? "enabled" : "disabled");
+				Events["Toggle"].guiName = Lib.StatusToggle(Localizer.Format("#KERBALISM_Greenhouse_Greenhouse"), active ? Localizer.Format("#KERBALISM_Greenhouse_enabled") : Localizer.Format("#KERBALISM_Greenhouse_disabled"));//"Greenhouse""enabled""disabled"
 			}
 		}
 
@@ -228,7 +229,7 @@ namespace KERBALISM
 					// notify the user when crop can be harvested
 					if (growth >= 0.99)
 					{
-						Message.Post(Lib.BuildString("On <b>", vessel.vesselName, "</b> the crop is ready to be harvested"));
+						Message.Post(Localizer.Format("#KERBALISM_harvestedready_msg", "<b>" + vessel.vesselName + "</b>"));//Lib.BuildString("On <<1>> the crop is ready to be harvested")
 						growth = 1.0;
 					}
 				}
@@ -238,10 +239,10 @@ namespace KERBALISM
 
 				// update issues
 				issue =
-				  !inputs ? Lib.BuildString("missing ", missing_res)
-				: !lighting ? "insufficient lighting"
-				: !pressure ? "insufficient pressure"
-				: !radiation ? "excessive radiation"
+				  !inputs ? Lib.BuildString(Localizer.Format("#KERBALISM_Greenhouse_resoucesmissing", missing_res))//"missing <<1>>"
+				: !lighting ? Localizer.Format("#KERBALISM_Greenhouse_issue1")//"insufficient lighting"
+				: !pressure ? Localizer.Format("#KERBALISM_Greenhouse_issue2")//"insufficient pressure"
+				: !radiation ? Localizer.Format("#KERBALISM_Greenhouse_issue3")//"excessive radiation"
 				: string.Empty;
 			}
 		}
@@ -338,7 +339,7 @@ namespace KERBALISM
 					// notify the user when crop can be harvested
 					if (growth >= 0.99)
 					{
-						Message.Post(Lib.BuildString("On <b>", v.vesselName, "</b> the crop is ready to be harvested"));
+						Message.Post(Localizer.Format("#KERBALISM_harvestedready_msg", "<b>" + v.vesselName + "</b>"));//Lib.BuildString("On <<1>> the crop is ready to be harvested")
 						growth = 1.0;
 					}
 				}
@@ -348,10 +349,10 @@ namespace KERBALISM
 
 				// update issues
 				string issue =
-				  !inputs ? Lib.BuildString("missing ", missing_res)
-				: !lighting ? "insufficient lighting"
-				: !pressure ? "insufficient pressure"
-				: !radiation ? "excessive radiation"
+				  !inputs ? Lib.BuildString(Localizer.Format("#KERBALISM_Greenhouse_resoucesmissing", missing_res))//"missing ", missing_res
+				: !lighting ? Localizer.Format("#KERBALISM_Greenhouse_issue1")//"insufficient lighting"
+				: !pressure ? Localizer.Format("#KERBALISM_Greenhouse_issue2")//"insufficient pressure"
+				: !radiation ? Localizer.Format("#KERBALISM_Greenhouse_issue3")//"excessive radiation"
 				: string.Empty;
 
 				// update protomodule data
@@ -367,7 +368,7 @@ namespace KERBALISM
 #if KSP15_16
 		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_")]
 #else
-		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", groupName = "Greenhouse", groupDisplayName = "Greenhouse")]
+		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", groupName = "Greenhouse", groupDisplayName = "#KERBALISM_Group_Greenhouse")]//Greenhouse
 #endif
 		// toggle greenhouse
 		public void Toggle()
@@ -387,7 +388,7 @@ namespace KERBALISM
 #if KSP15_16
 		[KSPEvent(guiActive = true, guiActiveUnfocused = true, guiName = "#KERBALISM_Greenhouse_Harvest", active = false)]
 #else
-		[KSPEvent(guiActive = true, guiActiveUnfocused = true, guiName = "#KERBALISM_Greenhouse_Harvest", active = false, groupName = "Greenhouse", groupDisplayName = "Greenhouse")]
+		[KSPEvent(guiActive = true, guiActiveUnfocused = true, guiName = "#KERBALISM_Greenhouse_Harvest", active = false, groupName = "Greenhouse", groupDisplayName = "#KERBALISM_Group_Greenhouse")]//Greenhouse
 #endif
 		// harvest
 		public void Harvest()
@@ -403,8 +404,7 @@ namespace KERBALISM
 			growth = 0.0;
 
 			// show message
-			Message.Post(Lib.BuildString("On <color=ffffff>", vessel.vesselName, "</color> harvest produced <color=ffffff>",
-			  crop_size.ToString("F0"), " ", crop_resource, "</color>"));
+			Message.Post(Lib.BuildString(Localizer.Format("#KERBALISM_Greenhouse_msg_1", "<color=ffffff>" + vessel.vesselName + "</color> "), Localizer.Format("#KERBALISM_Greenhouse_msg_2", "<color=ffffff>" + crop_size.ToString("F0") + " " + crop_resource + "</color>")));//"On <<1>>""harvest produced <<1>>", 
 
 			// record first harvest
 			if (!Lib.Landed(vessel)) DB.landmarks.space_harvest = true;
@@ -413,7 +413,7 @@ namespace KERBALISM
 #if KSP15_16
 		[KSPEvent(guiActive = true, guiActiveUnfocused = true, guiName = "#KERBALISM_Greenhouse_EmergencyHarvest", active = false)]
 #else
-		[KSPEvent(guiActive = true, guiActiveUnfocused = true, guiName = "#KERBALISM_Greenhouse_EmergencyHarvest", active = false, groupName = "Greenhouse", groupDisplayName = "Greenhouse")]
+		[KSPEvent(guiActive = true, guiActiveUnfocused = true, guiName = "#KERBALISM_Greenhouse_EmergencyHarvest", active = false, groupName = "Greenhouse", groupDisplayName = "#KERBALISM_Group_Greenhouse")]//Greenhouse
 #endif
 		// emergency harvest
 		public void EmergencyHarvest()
@@ -432,8 +432,7 @@ namespace KERBALISM
 			growth = 0.0;
 
 			// show message
-			Message.Post(Lib.BuildString("On <color=ffffff>", vessel.vesselName, "</color> emergency harvest produced <color=ffffff>",
-			  reduced_harvest.ToString("F0"), " ", crop_resource, "</color>"));
+			Message.Post(Lib.BuildString(Localizer.Format("#KERBALISM_Greenhouse_msg_1", "<color=ffffff>" + vessel.vesselName + "</color> "), Localizer.Format("#KERBALISM_Greenhouse_msg_3", " <color=ffffff>"+ reduced_harvest.ToString("F0")+ " " + crop_resource +"</color>")));//"On <<1>>""emergency harvest produced"
 
 			// record first harvest
 			if (!Lib.Landed(vessel)) DB.landmarks.space_harvest = true;
@@ -446,7 +445,7 @@ namespace KERBALISM
 		// part tooltip
 		public override string GetInfo()
 		{
-			return Specs().Info("Grow crops in space and on the surface of celestial bodies, even far from the sun.");
+			return Specs().Info(Localizer.Format("#KERBALISM_Greenhouse_desc"));//"Grow crops in space and on the surface of celestial bodies, even far from the sun."
 		}
 
 
@@ -455,14 +454,14 @@ namespace KERBALISM
 		{
 			Specifics specs = new Specifics();
 
-			specs.Add("Harvest size", Lib.HumanReadableAmount(crop_size, " " + crop_resource));
-			specs.Add("Harvest time", Lib.HumanReadableDuration(1.0 / crop_rate));
-			specs.Add("Lighting tolerance", Lib.HumanReadableFlux(light_tolerance));
-			if (pressure_tolerance > double.Epsilon) specs.Add("Pressure tolerance", Lib.HumanReadablePressure(Sim.PressureAtSeaLevel() * pressure_tolerance));
-			if (radiation_tolerance > double.Epsilon) specs.Add("Radiation tolerance", Lib.HumanReadableRadiation(radiation_tolerance));
-			specs.Add("Lamps EC rate", Lib.HumanReadableRate(ec_rate));
+			specs.Add(Localizer.Format("#KERBALISM_Greenhouse_info1"), Lib.HumanReadableAmount(crop_size, " " + crop_resource));//"Harvest size"
+			specs.Add(Localizer.Format("#KERBALISM_Greenhouse_info2"), Lib.HumanReadableDuration(1.0 / crop_rate));//"Harvest time"
+			specs.Add(Localizer.Format("#KERBALISM_Greenhouse_info3"), Lib.HumanReadableFlux(light_tolerance));//"Lighting tolerance"
+			if (pressure_tolerance > double.Epsilon) specs.Add(Localizer.Format("#KERBALISM_Greenhouse_info4"), Lib.HumanReadablePressure(Sim.PressureAtSeaLevel() * pressure_tolerance));//"Pressure tolerance"
+			if (radiation_tolerance > double.Epsilon) specs.Add(Localizer.Format("#KERBALISM_Greenhouse_info5"), Lib.HumanReadableRadiation(radiation_tolerance));//"Radiation tolerance"
+			specs.Add(Localizer.Format("#KERBALISM_Greenhouse_info6"), Lib.HumanReadableRate(ec_rate));//"Lamps EC rate"
 			specs.Add(string.Empty);
-			specs.Add("<color=#00ffff>Required resources</color>");
+			specs.Add("<color=#00ffff>" + Localizer.Format("#KERBALISM_Greenhouse_info7") + "</color>");//Required resources
 
 			// do we have combined WasteAtmosphere and CO2
 			Set_WACO2();
@@ -476,15 +475,15 @@ namespace KERBALISM
 					ModuleResource sec;
 					if (input.name == "WasteAtmosphere") sec = resHandler.inputResources.Find(x => x.name.Contains("CarbonDioxide"));
 					else sec = resHandler.inputResources.Find(x => x.name.Contains("WasteAtmosphere"));
-					specs.Add("CarbonDioxide", Lib.BuildString("<color=#ffaa00>", Lib.HumanReadableRate(input.rate + sec.rate), "</color>"));
-					specs.Add("Crops can also use the CO2 in the atmosphere without a scrubber.");
+					specs.Add(Localizer.Format("#KERBALISM_Greenhouse_CarbonDioxide"), Lib.BuildString("<color=#ffaa00>", Lib.HumanReadableRate(input.rate + sec.rate), "</color>"));//"CarbonDioxide"
+					specs.Add(Localizer.Format("#KERBALISM_Greenhouse_CarbonDioxide_desc"));//"Crops can also use the CO2 in the atmosphere without a scrubber."
 					dis_WACO2 = true;
 				}
 				else
 					specs.Add(input.name, Lib.BuildString("<color=#ffaa00>", Lib.HumanReadableRate(input.rate), "</color>"));
 			}
 			specs.Add(string.Empty);
-			specs.Add("<color=#00ffff>By-products</color>");
+			specs.Add("<color=#00ffff>"+Localizer.Format("#KERBALISM_Greenhouse_Byproducts") +"</color>");//By-products
 			foreach (ModuleResource output in resHandler.outputResources)
 			{
 				specs.Add(output.name, Lib.BuildString("<color=#00ff00>", Lib.HumanReadableRate(output.rate), "</color>"));
@@ -580,8 +579,8 @@ namespace KERBALISM
 		}
 
 		// module info support
-		public string GetModuleTitle() { return "<size=1><color=#00000000>00</color></size>Greenhouse"; } // attempt to display at the top
-		public override string GetModuleDisplayName() { return "<size=1><color=#00000000>00</color></size>Greenhouse"; } // Attempt to display at top of tooltip
+		public string GetModuleTitle() { return "<size=1><color=#00000000>00</color></size>Greenhouse"; } // attempt to display at the top//""+Localizer.Format("#KERBALISM_Greenhouse")
+		public override string GetModuleDisplayName() { return "<size=1><color=#00000000>00</color></size>"+Localizer.Format("#KERBALISM_Greenhouse"); } // Attempt to display at top of tooltip//"Greenhouse"
 		public string GetPrimaryField() { return String.Empty; }
 		public Callback<Rect> GetDrawModulePanelCallback() { return null; }
 	}

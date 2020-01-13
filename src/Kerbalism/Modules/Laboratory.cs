@@ -47,7 +47,7 @@ namespace KERBALISM
 		private static readonly string localized_noSample = Localizer.Format("#KERBALISM_Laboratory_NoSample");
 		private static readonly string localized_cleaned = Localizer.Format("#KERBALISM_Laboratory_Cleaned");
 		private static readonly string localized_results = Localizer.Format("#KERBALISM_Laboratory_Results");
-		private static readonly string localized_noStorage = "No storage available";
+		private static readonly string localized_noStorage = Localizer.Format("#KERBALISM_Laboratory_Nostorage");//"No storage available"
 
 		public override void OnStart(StartState state)
 		{
@@ -173,7 +173,7 @@ namespace KERBALISM
 #if KSP15_16
 		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "Toggle Lab", active = true)]
 #else
-		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "Toggle Lab", active = true, groupName = "Science", groupDisplayName = "Science")]
+		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "#KERBALISM_Laboratory_Toggle", active = true, groupName = "Science", groupDisplayName = "#KERBALISM_Group_Science")]//"Toggle Lab"Science
 #endif
 		public void Toggle()
 		{
@@ -186,7 +186,7 @@ namespace KERBALISM
 #if KSP15_16
 		[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "Clean Lab", active = true)]
 #else
-		[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "Clean Lab", active = true, groupName = "Science", groupDisplayName = "Science")]
+		[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "#KERBALISM_Laboratory_Clean", active = true, groupName = "Science", groupDisplayName = "#KERBALISM_Group_Science")]//Clean Lab""Science
 #endif
 		public void CleanExperiments()
 		{
@@ -291,8 +291,8 @@ namespace KERBALISM
 				else
 				{
 					Message.Post(
-						Lib.Color(Lib.BuildString(Localizer.Format("#KERBALISM_Laboratory_Analysis"), " stopped"), Lib.Kolor.Red),
-						"Not enough space on hard drive"
+						Lib.Color(Lib.BuildString(Localizer.Format("#KERBALISM_Laboratory_Analysis"), " ", Localizer.Format("#KERBALISM_Laboratory_stopped")), Lib.Kolor.Red),//"stopped"
+						Localizer.Format("#KERBALISM_Laboratory_Notspace")//"Not enough space on hard drive"
 					);
 
 					return Status.NO_STORAGE;

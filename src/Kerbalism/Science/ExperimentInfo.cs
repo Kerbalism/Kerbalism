@@ -380,16 +380,16 @@ namespace KERBALISM
 						if (stockExpModule.experimentID == ExperimentId)
 						{
 							ModuleInfo = Lib.Color(Title, Lib.Kolor.Cyan, true);
-							ModuleInfo += "\nData size: ";
+							ModuleInfo += "\n"+Localizer.Format("#KERBALISM_Experimentinfo_Datasize") +": ";//Data size
 							ModuleInfo += Lib.HumanReadableDataSize(DataSize);
 							if (stockExpModule.xmitDataScalar < Science.maxXmitDataScalarForSample)
 							{
-								ModuleInfo += "\nWill generate a sample.";
-								ModuleInfo += "\nSample size: ";
+								ModuleInfo += "\n"+Localizer.Format("#KERBALISM_Experimentinfo_generatesample");//Will generate a sample.
+								ModuleInfo += "\n" + Localizer.Format("#KERBALISM_Experimentinfo_Samplesize") + " ";//Sample size:
 								ModuleInfo += Lib.HumanReadableSampleSize(DataSize);
 							}
 							ModuleInfo += "\n\n";
-							ModuleInfo += Lib.Color("Situations:\n", Lib.Kolor.Cyan, true);
+							ModuleInfo += Lib.Color(Localizer.Format("#KERBALISM_Experimentinfo_Situations"), Lib.Kolor.Cyan, true);//"Situations:\n"
 
 							foreach (string s in AvailableSituations())
 								ModuleInfo += Lib.BuildString("• <b>", s, "</b>\n");
@@ -405,7 +405,7 @@ namespace KERBALISM
 						if (groundExpModule.experimentId == ExperimentId)
 						{
 							ModuleInfo = Lib.Color(Title, Lib.Kolor.Cyan, true);
-							ModuleInfo += "\nData size: ";
+							ModuleInfo += "\n" + Localizer.Format("#KERBALISM_Experimentinfo_Datasize") + ": ";//Data size
 							ModuleInfo += Lib.HumanReadableDataSize(DataSize);
 							ModuleInfo += "\n\n";
 							ModuleInfo += groundExpModule.GetInfo();
@@ -417,10 +417,10 @@ namespace KERBALISM
 				// special cases
 				if (ExperimentId == "asteroidSample")
 				{
-					ModuleInfo = "Asteroid samples can be taken by kerbals on EVA";
-					ModuleInfo += "\nSample size: ";
+					ModuleInfo = Localizer.Format("#KERBALISM_Experimentinfo_Asteroid");//"Asteroid samples can be taken by kerbals on EVA"
+					ModuleInfo += "\n"+Localizer.Format("#KERBALISM_Experimentinfo_Samplesize") +" ";//Sample size:
 					ModuleInfo += Lib.HumanReadableSampleSize(DataSize);
-					ModuleInfo += "\nSample mass: ";
+					ModuleInfo += "\n"+Localizer.Format("#KERBALISM_Experimentinfo_Samplemass") +" ";//Sample mass:
 					ModuleInfo += Lib.HumanReadableMass(DataSize * Settings.AsteroidSampleMassPerMB);
 				}
 #if !KSP15_16
@@ -431,24 +431,24 @@ namespace KERBALISM
 					if (rocDef != null)
 					{
 						ModuleInfo = Lib.Color(rocDef.displayName, Lib.Kolor.Cyan, true);
-						ModuleInfo += "\n- Analyse with a scanner arm";
-						ModuleInfo += "\n  Data size: ";
+						ModuleInfo += "\n- " + Localizer.Format("#KERBALISM_Experimentinfo_scannerarm");//Analyse with a scanner arm
+						ModuleInfo += "\n  "+Localizer.Format("#KERBALISM_Experimentinfo_Datasize") +": ";//Data size
 						ModuleInfo += Lib.HumanReadableDataSize(DataSize);
 
 						if (rocDef.smallRoc)
 						{
-							ModuleInfo += "\n- Collectable on EVA as a sample";
-							ModuleInfo += "\nSample size: ";
+							ModuleInfo += "\n- " + Localizer.Format("#KERBALISM_Experimentinfo_smallRoc");//Collectable on EVA as a sample"
+							ModuleInfo += "\n"+Localizer.Format("#KERBALISM_Experimentinfo_Samplesize") +" ";//Sample size:
 							ModuleInfo += Lib.HumanReadableSampleSize(DataSize);
 						}
 						else
 						{
-							ModuleInfo += "\n- Can't be collected on EVA";
+							ModuleInfo += "\n- "+Localizer.Format("#KERBALISM_Experimentinfo_smallRoc2");//Can't be collected on EVA
 						}
 
 						foreach (RocCBDefinition body in rocDef.myCelestialBodies)
 						{
-							ModuleInfo += Lib.Color("\n\nFound on " + body.name + "'s :", Lib.Kolor.Cyan, true);
+							ModuleInfo += Lib.Color("\n\n" + Localizer.Format("#KERBALISM_Experimentinfo_smallRoc3", body.name), Lib.Kolor.Cyan, true);//"Found on <<1>>'s :"
 							foreach (string biome in body.biomes)
 							{
 								ModuleInfo += "\n- ";
@@ -487,7 +487,7 @@ namespace KERBALISM
 				{
 					if (situation.IsBodyBiomesRelevantForExperiment(this))
 					{
-						result.Add(Lib.BuildString(situation.Title(), " (biomes)"));
+						result.Add(Lib.BuildString(situation.Title(), " ", Localizer.Format("#KERBALISM_Situation_biomes")));//(biomes)"
 					}
 					else if (situation.IsVirtualBiomesRelevantForExperiment(this))
 					{

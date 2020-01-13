@@ -9,6 +9,7 @@ using static KERBALISM.ExperimentRequirements;
 using static KERBALISM.Experiment;
 using KERBALISM.KsmGui;
 using static KERBALISM.ScienceDB;
+using KSP.Localization;
 
 namespace KERBALISM
 {
@@ -95,12 +96,12 @@ namespace KERBALISM
 
 			// top header
 			KsmGuiHeader topHeader = new KsmGuiHeader(window, expInfo.Title, default, 120);
-			topHeader.TextObject.SetTooltipText(Lib.BuildString("on vessel : ", Lib.Bold(v.vesselName), "\n", "on part : ", Lib.Bold(partName)));
-			rndVisibilityButton = new KsmGuiIconButton(topHeader, Textures.KsmGuiTexHeaderRnD, ToggleArchivePanel, "show science archive");
+			topHeader.TextObject.SetTooltipText(Lib.BuildString(Localizer.Format("#KERBALISM_SCIENCEARCHIVE_onvessel") ," ", Lib.Bold(v.vesselName), "\n", Localizer.Format("#KERBALISM_SCIENCEARCHIVE_onpart") , " ", Lib.Bold(partName)));//"on vessel :"on part :
+			rndVisibilityButton = new KsmGuiIconButton(topHeader, Textures.KsmGuiTexHeaderRnD, ToggleArchivePanel, Localizer.Format("#KERBALISM_SCIENCEARCHIVE_showarchive"));//"show science archive"
 			rndVisibilityButton.MoveAsFirstChild();
-			expInfoVisibilityButton = new KsmGuiIconButton(topHeader, Textures.KsmGuiTexHeaderInfo, ToggleExpInfo, "show experiment info");
+			expInfoVisibilityButton = new KsmGuiIconButton(topHeader, Textures.KsmGuiTexHeaderInfo, ToggleExpInfo, Localizer.Format("#KERBALISM_SCIENCEARCHIVE_showexperimentinfo"));//"show experiment info"
 			expInfoVisibilityButton.MoveAsFirstChild();
-			new KsmGuiIconButton(topHeader, Textures.KsmGuiTexHeaderClose, () => window.Close(), "close");
+			new KsmGuiIconButton(topHeader, Textures.KsmGuiTexHeaderClose, () => window.Close(), Localizer.Format("#KERBALISM_SCIENCEARCHIVE_closebutton"));//"close"
 
 			// 2 columns
 			KsmGuiHorizontalLayout panels = new KsmGuiHorizontalLayout(window, 5, 0, 0, 0, 0);
@@ -111,7 +112,7 @@ namespace KERBALISM
 			leftPanel.Enabled = false;
 
 			// right panel : experiment info
-			expInfoHeader = new KsmGuiHeader(leftPanel, "EXPERIMENT INFO");
+			expInfoHeader = new KsmGuiHeader(leftPanel, Localizer.Format("#KERBALISM_SCIENCEARCHIVE_EXPERIMENTINFO"));//"EXPERIMENT INFO"
 			expInfoBox = new KsmGuiTextBox(leftPanel, SpecsWithoutRequires(expInfo, moduleOrPrefab).Info());
 			expInfoBox.SetLayoutElement(false, true, 160);
 			
@@ -120,7 +121,7 @@ namespace KERBALISM
 			rightPanel.SetLayoutElement(false, true, -1, -1, 230);
 
 			// right panel : experiment status
-			new KsmGuiHeader(rightPanel, "STATUS");
+			new KsmGuiHeader(rightPanel, Localizer.Format("#KERBALISM_SCIENCEARCHIVE_STATUS"));//"STATUS"
 			statusBox = new KsmGuiTextBox(rightPanel, "_");
 			statusBox.TextObject.TextComponent.enableWordWrapping = false;
 			statusBox.TextObject.TextComponent.overflowMode = TMPro.TextOverflowModes.Truncate;
@@ -130,7 +131,7 @@ namespace KERBALISM
 			// right panel : buttons
 			KsmGuiHorizontalLayout buttons = new KsmGuiHorizontalLayout(rightPanel, 5);
 
-			forcedRunButton = new KsmGuiButton(buttons, "forced run", ToggleForcedRun, "force experiment to run even\nif there is no science value left");
+			forcedRunButton = new KsmGuiButton(buttons, Localizer.Format("#KERBALISM_SCIENCEARCHIVE_forcedrun"), ToggleForcedRun, Localizer.Format("#KERBALISM_SCIENCEARCHIVE_forcedrun_desc"));//"forced run""force experiment to run even\nif there is no science value left"
 			forcedRunButton.SetUpdateAction(UpdateForcedRunButton);
 
 			startStopButton = new KsmGuiButton(buttons, "_", Toggle);
@@ -139,7 +140,7 @@ namespace KERBALISM
 			// right panel : experiment requirements
 			if (moduleOrPrefab.Requirements.Requires.Length > 0)
 			{
-				new KsmGuiHeader(rightPanel, "REQUIREMENTS");
+				new KsmGuiHeader(rightPanel, Localizer.Format("#KERBALISM_SCIENCEARCHIVE_REQUIREMENTS"));//"REQUIREMENTS"
 				requirementsBox = new KsmGuiTextBox(rightPanel, "_");
 				requirementsBox.SetLayoutElement(false, false, 230);
 				requirementsBox.SetUpdateAction(RequirementsUpdate);
@@ -185,9 +186,12 @@ namespace KERBALISM
 
 			sb.Length = 0;
 
-			sb.Append("state :<pos=20em>");
+			sb.Append(Localizer.Format("#KERBALISM_SCIENCEARCHIVE_state"));//state
+			sb.Append(" :<pos=20em>");
 			sb.Append(Lib.Bold(RunningStateInfo(expState)));
-			sb.Append("\nstatus :<pos=20em>");
+			sb.Append("\n");
+			sb.Append(Localizer.Format("#KERBALISM_SCIENCEARCHIVE_status"));//status
+			sb.Append(" :<pos=20em>");
 			sb.Append(Lib.Bold(StatusInfo(status, issue)));
 
 			if (status == ExpStatus.Running)
@@ -199,39 +203,52 @@ namespace KERBALISM
 			{
 				sb.Append(", ");
 				sb.Append(Lib.Color(subjectData.PercentCollectedTotal.ToString("P1"), Lib.Kolor.Yellow, true));
-				sb.Append(" collected");
+				sb.Append(" ");
+				sb.Append(Localizer.Format("#KERBALISM_SCIENCEARCHIVE_collected"));//collected
 			}
 
 			if (isSample && !moduleOrPrefab.sample_collecting)
 			{
-				sb.Append("\nsamples :<pos=20em>");
+				sb.Append("\n");
+				sb.Append(Localizer.Format("#KERBALISM_SCIENCEARCHIVE_samples"));//samples
+				sb.Append(" :<pos=20em>");
 				sb.Append(Lib.Color((remainingSampleMass / expInfo.SampleMass).ToString("F1"), Lib.Kolor.Yellow, true));
 				sb.Append(" (");
 				sb.Append(Lib.Color(Lib.HumanReadableMass(remainingSampleMass), Lib.Kolor.Yellow, true));
 				sb.Append(")");
 			}
 
-			sb.Append("\nsituation :<pos=20em>");
+			sb.Append("\n");
+			sb.Append(Localizer.Format("#KERBALISM_SCIENCEARCHIVE_situation"));//situation
+			sb.Append(" :<pos=20em>");
 			sb.Append(Lib.Color(vd.VesselSituations.GetExperimentSituation(expInfo).GetTitleForExperiment(expInfo), Lib.Kolor.Yellow, true));
 
 			if (subjectData == null)
 			{
-				sb.Append("\nretrieved :<pos=20em>");
-				sb.Append(Lib.Color("invalid situation", Lib.Kolor.Yellow, true));
+				sb.Append("\n");
+				sb.Append(Localizer.Format("#KERBALISM_SCIENCEARCHIVE_retrieved"));//retrieved
+				sb.Append(" :<pos=20em>");
+				sb.Append(Lib.Color(Localizer.Format("#KERBALISM_SCIENCEARCHIVE_invalidsituation"), Lib.Kolor.Yellow, true));//"invalid situation"
 
-				sb.Append("\ncollected :<pos=20em>");
-				sb.Append(Lib.Color("invalid situation", Lib.Kolor.Yellow, true));
+				sb.Append("\n");
+				sb.Append(Localizer.Format("#KERBALISM_SCIENCEARCHIVE_collected"));//collected
+				sb.Append(" :<pos=20em>");
+				sb.Append(Lib.Color(Localizer.Format("#KERBALISM_SCIENCEARCHIVE_invalidsituation"), Lib.Kolor.Yellow, true));//"invalid situation"
 
-				sb.Append("\nvalue :<pos=20em>");
-				sb.Append(Lib.Color("invalid situation", Lib.Kolor.Yellow, true));
+				sb.Append("\n");
+				sb.Append(Localizer.Format("#KERBALISM_SCIENCEARCHIVE_value"));//value
+				sb.Append(" :<pos=20em>");
+				sb.Append(Lib.Color(Localizer.Format("#KERBALISM_SCIENCEARCHIVE_invalidsituation"), Lib.Kolor.Yellow, true));//"invalid situation"
 			}
 			else
 			{
-				sb.Append("\nretrieved :<pos=20em>");
+				sb.Append("\n");
+				sb.Append(Localizer.Format("#KERBALISM_SCIENCEARCHIVE_retrieved"));//retrieved
+				sb.Append(" :<pos=20em>");
 				if (subjectData.TimesCompleted > 0)
 					sb.Append(Lib.Color(Lib.BuildString(subjectData.TimesCompleted.ToString(), subjectData.TimesCompleted > 1 ? " times" : " time"), Lib.Kolor.Yellow));
 				else
-					sb.Append(Lib.Color("never", Lib.Kolor.Yellow));
+					sb.Append(Lib.Color(Localizer.Format("#KERBALISM_SCIENCEARCHIVE_never"), Lib.Kolor.Yellow));//"never"
 
 				if (subjectData.PercentRetrieved > 0.0)
 				{
@@ -240,19 +257,25 @@ namespace KERBALISM
 					sb.Append(")");
 				}
 
-				sb.Append("\ncollected :<pos=20em>");
+				sb.Append("\n");
+				sb.Append(Localizer.Format("#KERBALISM_SCIENCEARCHIVE_collected"));//collected
+				sb.Append(" :<pos=20em>");
 				sb.Append(Lib.Color(subjectData.ScienceRetrievedInKSC.ToString("F1"), Lib.Kolor.Science, true));
 				sb.Append(Lib.InlineSpriteScience);
-				sb.Append(" in RnD");
+				sb.Append(" ");
+				sb.Append(Localizer.Format("#KERBALISM_SCIENCEARCHIVE_inRnD"));//in RnD
 				if (subjectData.ScienceCollectedInFlight > 0.05)
 				{
 					sb.Append(" (");
 					sb.Append(Lib.Color(Lib.BuildString("+", subjectData.ScienceCollectedInFlight.ToString("F1")), Lib.Kolor.Science, true));
 					sb.Append(Lib.InlineSpriteScience);
-					sb.Append(" in flight)");
+					sb.Append(" ");
+					sb.Append(Localizer.Format("#KERBALISM_SCIENCEARCHIVE_inflight"));//in flight)
 				}
 
-				sb.Append("\nvalue :<pos=20em>");
+				sb.Append("\n");
+				sb.Append(Localizer.Format("#KERBALISM_SCIENCEARCHIVE_value"));//value
+				sb.Append(" :<pos=20em>");
 				sb.Append(Lib.Color(subjectData.ScienceMaxValue.ToString("F1"), Lib.Kolor.Science, true));
 				sb.Append(Lib.InlineSpriteScience);
 			}
@@ -280,7 +303,9 @@ namespace KERBALISM
 				{
 					sb.Append(" : ");
 					sb.Append(Lib.Color(ReqValueFormat(req.requireDef.require, req.requireDef.value), Lib.Kolor.Yellow, true));
-					sb.Append("\n<indent=5em>current : "); // match the checkbox indentation
+					sb.Append("\n<indent=5em>"); // match the checkbox indentation
+					sb.Append(Localizer.Format("#KERBALISM_SCIENCEARCHIVE_current"));//"current"
+					sb.Append(" : ");
 					sb.Append(Lib.Color(req.isValid, ReqValueFormat(req.requireDef.require, req.value), Lib.Kolor.Green, Lib.Kolor.Orange, true));
 					sb.Append("</indent>");
 				}
@@ -293,11 +318,11 @@ namespace KERBALISM
 		{
 			if (IsRunning(expState))
 			{
-				startStopButton.SetText("stop");
+				startStopButton.SetText(Localizer.Format("#KERBALISM_SCIENCEARCHIVE_stop"));//"stop"
 			}
 			else
 			{
-				startStopButton.SetText("start");
+				startStopButton.SetText(Localizer.Format("#KERBALISM_SCIENCEARCHIVE_start"));//"start"
 			}
 
 			startStopButton.SetInteractable(!IsBroken(expState));
@@ -333,21 +358,21 @@ namespace KERBALISM
 				// create the RnD archive on demand, as this is is a bit laggy and takes quite a lot of memory
 				if (rndArchiveHeader == null)
 				{
-					rndArchiveHeader = new KsmGuiHeader(window, "SCIENCE ARCHIVE");
+					rndArchiveHeader = new KsmGuiHeader(window, Localizer.Format("#KERBALISM_SCIENCEARCHIVE_title"));//"SCIENCE ARCHIVE"
 					rndArchiveView = new ExperimentSubjectList(window, expInfo);
 					rndArchiveView.SetLayoutElement(true, false, 320, -1, -1, 250);
 				}
 				rndArchiveHeader.Enabled = true;
 				rndArchiveView.Enabled = true;
 				rndVisibilityButton.SetIconColor(Lib.Kolor.Yellow);
-				rndVisibilityButton.SetTooltipText("hide science archive");
+				rndVisibilityButton.SetTooltipText(Localizer.Format("#KERBALISM_SCIENCEARCHIVE_hidearchive"));//"hide science archive"
 			}
 			else
 			{
 				rndArchiveHeader.Enabled = false;
 				rndArchiveView.Enabled = false;
 				rndVisibilityButton.SetIconColor(Color.white);
-				rndVisibilityButton.SetTooltipText("show science archive");
+				rndVisibilityButton.SetTooltipText(Localizer.Format("#KERBALISM_SCIENCEARCHIVE_showarchive"));//"show science archive"
 			}
 			window.RebuildLayout();
 		}
@@ -358,13 +383,13 @@ namespace KERBALISM
 			{
 				leftPanel.Enabled = false;
 				expInfoVisibilityButton.SetIconColor(Color.white);
-				expInfoVisibilityButton.SetTooltipText("show experiment info");
+				expInfoVisibilityButton.SetTooltipText(Localizer.Format("#KERBALISM_SCIENCEARCHIVE_showexperimentinfo"));//"show experiment info"
 			}
 			else
 			{
 				leftPanel.Enabled = true;
 				expInfoVisibilityButton.SetIconColor(Lib.Kolor.Yellow);
-				expInfoVisibilityButton.SetTooltipText("hide experiment info");
+				expInfoVisibilityButton.SetTooltipText(Localizer.Format("#KERBALISM_SCIENCEARCHIVE_hideexperimentinfo"));//"hide experiment info"
 				expInfoHeader.TextObject.TextComponent.alignment = TMPro.TextAlignmentOptions.Center; // strange bug
 			}
 			window.RebuildLayout();

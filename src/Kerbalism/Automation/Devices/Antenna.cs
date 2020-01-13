@@ -85,9 +85,9 @@ namespace KERBALISM
 			{
 				switch (prefab.antennaType)
 				{
-					case AntennaType.INTERNAL: return Lib.BuildString("internal antenna, ", prefab.powerText);
-					case AntennaType.DIRECT: return Lib.BuildString("direct antenna, ", prefab.powerText);
-					case AntennaType.RELAY: return Lib.BuildString("relay antenna, ", prefab.powerText);
+					case AntennaType.INTERNAL: return Lib.BuildString("internal antenna, ", prefab.powerText);//
+					case AntennaType.DIRECT: return Lib.BuildString("direct antenna, ", prefab.powerText);//
+					case AntennaType.RELAY: return Lib.BuildString("relay antenna, ", prefab.powerText);//
 					default: return string.Empty;
 				}
 			}
@@ -116,7 +116,7 @@ namespace KERBALISM
 							Lib.Color(Localizer.Format("#KERBALISM_Generic_EXTENDED"), Lib.Kolor.Green) :
 							Lib.Color(Localizer.Format("#KERBALISM_Generic_RETRACTED"), Lib.Kolor.Yellow);
 				}
-				return "unknown";
+				return Localizer.Format("#KERBALISM_Antenna_statu_unknown");//"unknown"
 			}
 		}
 

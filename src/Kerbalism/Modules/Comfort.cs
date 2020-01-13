@@ -37,7 +37,7 @@ namespace KERBALISM
 			return specs;
 		}
 
-		public override string GetModuleDisplayName() { return "Comfort"; }
+		public override string GetModuleDisplayName() { return Localizer.Format("#KERBALISM_Moudule_Comfort"); }//"Comfort"
 	}
 
 
@@ -126,7 +126,7 @@ namespace KERBALISM
 					if (!m.isEnabled) continue;
 
 					// comfort
-					if (m.moduleName == "Comfort")
+					if (m.moduleName == "Comfort") 
 					{
 						Comfort c = m as Comfort;
 						switch (c.bonus)
@@ -180,11 +180,11 @@ namespace KERBALISM
 
 		public string Summary()
 		{
-			if (factor >= 0.99) return "ideal";
-			else if (factor >= 0.66) return "good";
-			else if (factor >= 0.33) return "modest";
-			else if (factor > 0.1) return "poor";
-			else return "none";
+			if (factor >= 0.99) return Localizer.Format("#KERBALISM_Moudule_Comfort_Summary1");//"ideal"
+			else if (factor >= 0.66) return Localizer.Format("#KERBALISM_Moudule_Comfort_Summary2");//"good"
+			else if (factor >= 0.33) return Localizer.Format("#KERBALISM_Moudule_Comfort_Summary3");//"modest"
+			else if (factor > 0.1) return Localizer.Format("#KERBALISM_Moudule_Comfort_Summary4");//"poor"
+			else return Localizer.Format("#KERBALISM_Moudule_Comfort_Summary5");//"none"
 		}
 
 		public bool firm_ground;
