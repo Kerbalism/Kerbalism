@@ -480,6 +480,17 @@ namespace KERBALISM
 			return result;
 		}
 
+		public static List<KeyValuePair<string, double>> ResourceBrokers(Vessel v, string resource_name)
+		{
+			List<SupplyData.ResourceBroker> brokers = v.KerbalismData().Supply(resource_name).ResourceBrokers;
+			List<KeyValuePair<string, double>> apiBrokers = new List<KeyValuePair<string, double>>();
+			foreach (SupplyData.ResourceBroker rb in brokers)
+			{
+				apiBrokers.Add(new KeyValuePair<string, double>(rb.name, rb.rate));
+			}
+			return apiBrokers;
+		}
+
 		// --- SCIENCE --------------------------------------------------------------
 
 		public static ExperimentStateChanged OnExperimentStateChanged = new ExperimentStateChanged();
