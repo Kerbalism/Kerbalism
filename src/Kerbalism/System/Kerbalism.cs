@@ -198,6 +198,8 @@ namespace KERBALISM
 
 		public override void OnSave(ConfigNode node)
 		{
+			if (!enabled) return;
+
 			// serialize data
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.DB.Save");
 			DB.Save(node);
@@ -462,6 +464,13 @@ namespace KERBALISM
 
 		private void SanityCheck()
 		{
+			if (!Settings.loaded)
+			{
+				DisplayWarning("<color=#FF4500>No configuration found</color>\nYou need KerbalismConfig (or any other Kerbalism config pack).");
+				enabled = false;
+				return;
+			}
+
 			List<string> incompatibleMods = Settings.IncompatibleMods();
 			List<string> warningMods = Settings.WarningMods();
 
@@ -480,10 +489,6 @@ namespace KERBALISM
 			if (configNodes.Length > 1)
 			{
 				msg += "<color=#FF4500>Multiple configurations detected</color>\nHint: delete KerbalismConfig if you are using a custom config pack.\n\n";
-			}
-			else if (configNodes.Length == 0)
-			{
-				msg += "<color=#FF4500>No configuration found</color>\nYou need KerbalismConfig (or any other Kerbalism config pack).\n\n";
 			}
 
 			if (Features.Habitat && Settings.CheckForCRP)
@@ -510,18 +515,20 @@ namespace KERBALISM
 				msg += "You might have problems with these mods. Please consult the FAQ on on kerbalism.github.io\n\n";
 			}
 
-			if (!string.IsNullOrEmpty(msg))
-			{
-				msg = "<b>KERBALISM WARNING</b>\n\n" + msg;
-				ScreenMessage sm = new ScreenMessage(msg, 60, ScreenMessageStyle.UPPER_LEFT);
-				sm.color = Color.cyan;
-				ScreenMessages.PostScreenMessage(sm);
-				ScreenMessages.PostScreenMessage(msg, true);
-				Lib.Log("Sanity check: " + msg);
-			}
+			DisplayWarning(msg);
 		}
 
+		private static void DisplayWarning(string msg)
+		{
+			if (string.IsNullOrEmpty(msg)) return;
 
+			msg = "<b>KERBALISM WARNING</b>\n\n" + msg;
+			ScreenMessage sm = new ScreenMessage(msg, 20, ScreenMessageStyle.UPPER_CENTER);
+			sm.color = Color.cyan;
+			ScreenMessages.PostScreenMessage(sm);
+			ScreenMessages.PostScreenMessage(msg, true);
+			Lib.Log("Sanity check: " + msg);
+		}
 	}
 
 	public sealed class MapCameraScript: MonoBehaviour
