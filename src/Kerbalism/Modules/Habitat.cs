@@ -550,14 +550,14 @@ namespace KERBALISM
                 {
                     if (m.moduleName == "ModuleConnectedLivingSpace")
                     {
-                        Lib.LogDebugStack("Part '{0}', CLS has been {1}", part.partInfo.title, isPassable ? "enabled" : "disabled");
+                        Lib.LogDebug("Part '{0}', CLS has been {1}", part.partInfo.title, isPassable ? "enabled" : "disabled");
                         Lib.ReflectionValue(m, "passable", isPassable);
                     }
                 }
             }
 
-            Lib.LogDebugStack("CrewCapacity: '{0}'", part.CrewCapacity);
-            Lib.LogDebugStack("CrewTransferAvailable: '{0}'", isPassable);
+            Lib.LogDebug("CrewCapacity: '{0}'", part.CrewCapacity);
+            Lib.LogDebug("CrewTransferAvailable: '{0}'", isPassable);
             part.crewTransferAvailable = isPassable;
         }
 

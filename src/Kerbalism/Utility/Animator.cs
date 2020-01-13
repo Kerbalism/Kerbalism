@@ -10,6 +10,8 @@ namespace KERBALISM
 		private readonly string name;
 		public bool reversed = false;
 
+		public bool IsDefined => anim != null;
+
 		public Animator(Part p, string anim_name)
 		{
 			anim = null;

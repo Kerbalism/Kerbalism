@@ -170,11 +170,13 @@ namespace KERBALISM
 		/// <summary> Cache the information returned by GetInfo() in the first found module using that experiment</summary>
 		public string ModuleInfo { get; private set; } = string.Empty;
 
+		public bool UnlockResourceSurvey { get; private set; }
+
 		public bool IsROC { get; private set; }
 
 		public bool HasDBSubjects { get; private set; }
 
-		public bool IgnoreBodyRestrictions { get; private set; }
+		public bool IgnoreBodyRestrictions { get; private set; } 
 
 		public ExperimentInfo(ScienceExperiment stockDef, ConfigNode expInfoNode)
 		{
@@ -205,7 +207,7 @@ namespace KERBALISM
 			else
 				DataSize = this.stockDef.scienceCap * this.stockDef.dataScale;
 #endif
-
+			UnlockResourceSurvey = Lib.ConfigValue(expInfoNode, "UnlockResourceSurvey", false);
 			SampleMass = Lib.ConfigValue(expInfoNode, "SampleMass", 0.0);
 			IsSample = SampleMass > 0.0;
 			if (IsSample)

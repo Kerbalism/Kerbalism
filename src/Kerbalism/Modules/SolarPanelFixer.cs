@@ -98,6 +98,8 @@ namespace KERBALISM
 		private string rateFormat;
 		private StringBuilder sb;
 
+		public const string BROKER_NAME = "solar panel";
+
 		public enum PanelState
 		{
 			Unknown = 0,
@@ -503,7 +505,7 @@ namespace KERBALISM
 			ResourceInfo ec = ResourceCache.GetResource(vessel, "ElectricCharge");
 
 			// produce EC
-			ec.Produce(currentOutput * Kerbalism.elapsed_s, "solar panel");
+			ec.Produce(currentOutput * Kerbalism.elapsed_s, BROKER_NAME);
 			UnityEngine.Profiling.Profiler.EndSample();
 		}
 
@@ -548,7 +550,7 @@ namespace KERBALISM
 			double output = nominalRate * efficiencyFactor;
 
 			// produce EC
-			ec.Produce(output * elapsed_s, "solar panel");
+			ec.Produce(output * elapsed_s, BROKER_NAME);
 			UnityEngine.Profiling.Profiler.EndSample();
 		}
 		#endregion
@@ -958,6 +960,11 @@ namespace KERBALISM
 			{
 				panelModule.trackingBody = body;
 				panelModule.GetTrackingBodyTransforms();
+			}
+
+			public override void OnUpdate()
+			{
+				panelModule.flowRate = (float)fixerModule.currentOutput;
 			}
 		}
 #endregion
