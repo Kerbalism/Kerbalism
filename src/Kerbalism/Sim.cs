@@ -48,8 +48,7 @@ namespace KERBALISM
 			return 2.0 * Math.PI * Math.Sqrt(Ra * Ra * Ra / body.gravParameter);
 		}
 
-
-		// return period in shadow of an orbit at specified altitude over a body
+		/// <summary>period in shadow of an orbit at specified altitude over a body</summary>
 		public static double ShadowPeriod(CelestialBody body, double altitude)
 		{
 			if (altitude <= double.Epsilon) return body.rotationPeriod * 0.5;
@@ -58,32 +57,89 @@ namespace KERBALISM
 			return (2.0 * Ra * Ra / h) * Math.Asin(body.Radius / Ra);
 		}
 
-		// return orbital period of the specified vessel
+		/// <summary>orbital period of the specified vessel</summary>
 		public static double OrbitalPeriod(Vessel v)
 		{
 			if (Lib.Landed(v) || double.IsNaN(v.orbit.inclination))
-			{
 				return v.mainBody.rotationPeriod;
-			}
-			else
-			{
-				return v.orbit.period;
-			}
+
+			return v.orbit.period;
 		}
 
-		// return period in shadow of the specified vessel orbit
+		/// <summary>Period in shadow of the vessels orbit.<br/>
+		/// Limitations:<br/>
+		/// 1. This method assumes the orbit is an ellipse / circle which is not
+		/// changing or being altered by other bodies.<br/>
+		/// 2. It assumes the sun's rays are parallel across the orbiting
+		/// planet, although all bodies are small enough and far enough from the
+		/// sun for this to be nearly true.<br/>
+		/// 3. The method does not take into account darkness caused by eclipses
+		/// of a different body than the orbited body, for example, orbiting
+		/// Laythe but Jool blocks the sun.<br/>
+		/// 4. The method gives the longest amount of time spent in darkness, which for
+		/// some orbits (e.g.polar orbits), will only be experienced periodically.
+		/// It ignores inclination, the argument of periapsis and the beta angle
+		/// (the angle the sun is in relation to the orbit). Even polar orbits above the
+		/// day/night terminator line (which would be in the sun all the time) will
+		/// be treated as orbits passing the nadir at apoapsis.
+		/// </summary>
 		public static double ShadowPeriod(Vessel v)
 		{
-			if (Lib.Landed(v) || double.IsNaN(v.orbit.inclination))
-			{
+			if (Lib.Landed(v) || double.IsNaN(v.orbit.inclination) || v.orbit == null)
 				return v.mainBody.rotationPeriod * 0.5;
-			}
-			else
-			{
-				double Ra = v.altitude + v.mainBody.Radius;
-				double h = Math.Sqrt(Ra * v.mainBody.gravParameter);
-				return (2.0 * Ra * Ra / h) * Math.Asin(v.mainBody.Radius / Ra);
-			}
+
+			// the old method: this calculates the period for circular orbits
+			// double Ra = v.altitude + v.mainBody.Radius;
+			// double h = Math.Sqrt(Ra * v.mainBody.gravParameter);
+			// return (2.0 * Ra * Ra / h) * Math.Asin(v.mainBody.Radius / Ra);
+
+			// Calculation for elliptical orbits
+
+			// see https://wiki.kerbalspaceprogram.com/wiki/Orbit_darkness_time
+
+			// Limitations:
+			//
+			// - This method assumes the orbit is an ellipse / circle which is not
+			// changing or being altered by other bodies.
+			//
+			// - It also assumes the sun's rays are parallel across the orbiting
+			// planet, although all bodies are small enough and far enough from the
+			// sun for this to be nearly true.
+			//
+			// - The method does not take into account darkness caused by eclipses
+			// of a different body than the orbited body, for example, orbiting
+			// Laythe but Jool blocks the sun.
+			//
+			// - The method gives the longest amount of time spent in darkness, which for some
+			// orbits (e.g.polar orbits), will only be experienced periodically.
+			
+			// The formula:
+			// Td = (2ab / h) (asin(R/b) + eR/b)
+			// a is the semi-major axis
+			// b the semi-minor axis
+			// h the specific angular momentum
+			// e the eccentricity
+			// R the radius of the planet or moon
+			// For reference these terms can be calculated by knowing the apoapsis(Ap), periapsis(Pe) and body to orbit:
+			// h = sqrt(lµ)
+			// l = (2 * ra * rp) / (ra + rp)
+			// µ = G * M, the gravitational parameter
+			// ra = Ap + R (apoapsis from center of the body)
+			// rp = Pe + R (periapsis from center of the body)
+
+			var R = v.mainBody.Radius;
+			var ra = v.orbit.ApR;
+			var rp = v.orbit.PeR;
+			var a = v.orbit.semiMajorAxis;
+			var b = v.orbit.semiMinorAxis;
+			var e = v.orbit.eccentricity;
+			var l = (2 * ra * rp) / (ra + rp);
+			var µ = v.mainBody.gravParameter;
+			var h = Math.Sqrt(l * µ);
+
+			var Td = (2 * a * b / h) * (Math.Asin(R / b) + e * R / b);
+
+			return Td;
 		}
 
 

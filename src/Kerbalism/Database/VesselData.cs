@@ -244,7 +244,7 @@ namespace KERBALISM
 			/// Require the 'visibleBodies' variable to be set.
 			/// </summary>
 			// at the two highest timewarp speed, the number of sun visibility samples drop to the point that
-			// the quantization error first became noticeable, and then exceed 100%, to solve this :
+			// the quantization error first became noticeable, and then exceed 100%, to solve this:
 			// - we switch to an analytical estimation of the sunlight/shadow period
 			// - atmo_factor become an average atmospheric absorption factor over the daylight period (not the whole day)
 			public static void UpdateSunsInfo(VesselData vd, Vector3d vesselPosition)
@@ -264,10 +264,8 @@ namespace KERBALISM
 					{
 						// get sun direction and distance
 						Lib.DirectionAndDistance(vesselPosition, sunInfo.sunData.body, out sunInfo.direction, out sunInfo.distance);
-						// analytical estimation of the portion of orbit that was in sunlight, current limitations :
-						// - the result is dependant on the vessel altitude at the time of evaluation, 
-						//   consequently it gives inconsistent behavior with highly eccentric orbits
-						// - this totally ignore the orbit inclinaison, polar orbits will be treated as equatorial orbits
+						// analytical estimation of the portion of orbit that was in sunlight.
+						// it has some limitations, see the comments on Sim.ShadowPeriod
 						sunInfo.sunlightFactor = 1.0 - Sim.ShadowPeriod(v) / Sim.OrbitalPeriod(v);
 						// get atmospheric absorbtion
 						// for atmospheric bodies whose rotation period is less than 120 hours,
