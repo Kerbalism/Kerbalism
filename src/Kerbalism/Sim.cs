@@ -76,17 +76,38 @@ namespace KERBALISM
 		/// 3. The method does not take into account darkness caused by eclipses
 		/// of a different body than the orbited body, for example, orbiting
 		/// Laythe but Jool blocks the sun.<br/>
-		/// 4. The method gives the longest amount of time spent in darkness, which for
-		/// some orbits (e.g.polar orbits), will only be experienced periodically.
+		/// 4. The method calculates the longest amount of time spent in darkness, which for
+		/// some orbits (e.g.polar orbits) will only be experienced periodically.
 		/// It ignores inclination, the argument of periapsis and the beta angle
 		/// (the angle the sun is in relation to the orbit). Even polar orbits above the
 		/// day/night terminator line (which would be in the sun all the time) will
-		/// be treated as orbits passing the nadir at apoapsis.
+		/// be treated as orbits passing the nadir at apoapsis.<br/>
+		/// 5. We err on the light side: if more than half the orbit period is calculated
+		/// to be in shadow by this formula, we invert the result and assume it is in light
+		/// instead.
 		/// </summary>
 		public static double ShadowPeriod(Vessel v)
 		{
 			if (Lib.Landed(v) || double.IsNaN(v.orbit.inclination) || v.orbit == null)
 				return v.mainBody.rotationPeriod * 0.5;
+
+			var now = Planetarium.GetUniversalTime();
+			var step = v.orbit.period / 30;
+			var nextOrbit = now + v.orbit.period;
+
+			var mainBodyAsList = new List<CelestialBody>();
+			mainBodyAsList.Add(v.mainBody);
+
+			int visible = 0;
+			while (now < nextOrbit)
+			{
+				Vector3d position = v.orbit.getPositionAtUT(now);
+				Vector3d bodyDir;
+				double bodyDist;
+				if(IsBodyVisible(v, position, v.KerbalismData().EnvMainSun.SunData.body, mainBodyAsList, out bodyDir, out bodyDist))
+					visible++;
+				now += step;
+			}
 
 			// the old method: this calculates the period for circular orbits
 			// double Ra = v.altitude + v.mainBody.Radius;
@@ -138,6 +159,15 @@ namespace KERBALISM
 			var h = Math.Sqrt(l * µ);
 
 			var Td = (2 * a * b / h) * (Math.Asin(R / b) + e * R / b);
+
+			// err on the light side:
+			// if more than half the orbit duration is in shadow, invert
+			// the result. this will be wrong when the apoapsis is near nadir.
+			// this is just... WRONG, I know, but it is wrong in a good way.
+			// f.i. a very eccentric orbit with the apoapsis above one of the
+			// poles won't be assumed to spend most of the time in shadow.
+			if (Td > v.orbit.period / 2)
+				return v.orbit.period - Td;
 
 			return Td;
 		}
