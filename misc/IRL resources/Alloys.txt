@@ -1,0 +1,510 @@
+Material Austenitic Stainless Steel
+Elements						C		Mn	P		S		Si		Cr	Ni	N		Fe
+ElementCount					.0008	.02	.0004	.0003	.0075	.20	.12	.0010	.65
+Density_kg__m3					8030
+YieldStrength_MPa				290
+UltimateTensileStrength_MPa		621
+YoungsModulus_GPa				193
+ShearModulus_GPa				77
+SpecificHeat_J__kg_K			500
+MeltingPoint_K					1727
+ThermalConductivity_W__m_K		21.4
+ThermalExpansion__K				9.4e-6
+Resistivity_Ohm_m				116e-8
+RelativePermeability			7
+RefractiveIndex					Iron
+RoughnessCoefficient			.35
+
+Material Martensitic Stainless Steel
+Elements						C		Cr		Fe		Mn		Mo		Ni		P		Si		S
+ElementCount					.0037	.0040	.9725	.0013	.0010	.0050	.0030	.0080	.0015
+Density_kg__m3					7740
+YieldStrength_MPa				1900
+UltimateTensileStrength_MPa		2070
+YoungsModulus_GPa				200
+ShearModulus_GPa				83.9
+SpecificHeat_J__kg_K			460
+MeltingPoint_K					1856
+ThermalConductivity_W__m_K		28.7
+ThermalExpansion__K				11.6e-6
+Resistivity_Ohm_m				570e-9
+RelativePermeability			95
+TotalMagneticMoment				.04
+RefractiveIndex					Iron
+RoughnessCoefficient			0.5
+
+Material Ferritic Stainless Steel
+Elements						Fe		C		Mn		P		S		Si	Cr		Ni		N		Ti		Nb
+ElementCount					.8545	.0002	.0075	.00040	.00020	.01	.1170	.0050	.0002	.0025	.0025
+Density_kg__m3					7740
+YieldStrength_MPa				1655
+UltimateTensileStrength_MPa		1793
+YoungsModulus_GPa				200
+ShearModulus_GPa				83
+SpecificHeat_J__kg_K			460
+MeltingPoint_K					1883
+ThermalConductivity_W__m_K		30.5
+ThermalExpansion__K				10.5e-6
+Resistivity_Ohm_m				67.8e-9
+RelativePermeability			1800
+TotalMagneticMoment				.69
+Remanence_T						1.03
+RefractiveIndex					Iron
+RoughnessCoefficient			0.2
+
+Material Maraging Steel
+Elements						Fe		Ni		Co		Mo		Ti		Si		Al		C		P		S		Mn
+ElementCount					.680	.190	.0789	.046	.003	.0010	.0005	.0003	.0001	.0001	.0001
+Density_kg__m3					8100
+YieldStrength_MPa				2400
+UltimateTensileStrength_MPa		3500
+YoungsModulus_GPa				210
+ShearModulus_GPa				77
+SpecificHeat_J__kg_K			813
+MeltingPoint_K					1686
+ThermalConductivity_W__m_K		25.5
+ThermalExpansion__K				11.3e-6
+Resistivity_Ohm_m				1.74e-7
+RelativePermeability			120
+RefractiveIndex					Iron
+RoughnessCoefficient			.7
+
+Material Carbon Steel
+Elements						Fe		Mn		C		S		P
+ElementCount					.9758	.0165	.0040	.00330	.00040
+Density_kg__m3					7850
+YieldStrength_MPa				620
+UltimateTensileStrength_MPa		745
+YoungsModulus_GPa				210
+ShearModulus_GPa				80.0
+SpecificHeat_J__kg_K			472
+MeltingPoint_K					1783
+ThermalConductivity_W__m_K		49.8
+ThermalExpansion__K				13.9e-6
+Resistivity_Ohm_m				1.74e-7
+RelativePermeability			28.6
+RefractiveIndex					Iron
+RoughnessCoefficient			.9
+
+Material Nickel Chromium Iron
+Elements						Ni	Cr		Fe	Mn	Cu		Si		C		S
+ElementCount					.72	.15835	.10	.01	.005	.005	.0015	.00015
+Density_kg__m3					8440
+YieldStrength_MPa				1100
+UltimateTensileStrength_MPa		1170
+YoungsModulus_GPa				207.5
+ShearModulus_GPa				79
+SpecificHeat_J__kg_K			670
+MeltingPoint_K					1698
+ThermalConductivity_W__m_K		25.2
+ThermalExpansion__K				7.1e-6
+Resistivity_Ohm_m				138e-8
+RelativePermeability			1.0006
+ThermoelectricSensitivity_V__K	20.0e-6
+RefractiveIndex					Nickel
+RoughnessCoefficient			.6
+
+Material Nickel Chromium Cobalt
+Elements						Ni		Cr	Co		Mo		Ti	Fe	Al		Si		Mn		Cu		C		Zr		B
+ElementCount					.54864	.19	.135	.043	.03	.02	.015	.015	.001	.001	.0008	.0005	.00006
+Density_kg__m3					8200
+YieldStrength_MPa				910
+UltimateTensileStrength_MPa		1335
+YoungsModulus_GPa				204
+ShearModulus_GPa				83.43
+SpecificHeat_J__kg_K			520
+MeltingPoint_K					1633
+ThermalConductivity_W__m_K		24.5
+ThermalExpansion__K				17.8e-6
+Resistivity_Ohm_m				1.24e-6
+RelativePermeability			1.002
+ThermoelectricSensitivity_V__K	18.5e-6
+RefractiveIndex					Nickel
+RoughnessCoefficient			.4
+
+Material Titanium Aluminum Tin
+Elements						Ti	Al	Sn
+ElementCount					5	2.5	1
+Density_kg__m3					4480
+YieldStrength_MPa				827
+UltimateTensileStrength_MPa		861
+YoungsModulus_GPa				177
+ShearModulus_GPa				84
+SpecificHeat_J__kg_K			787
+MeltingPoint_K					1863
+ThermalConductivity_W__m_K		7.8
+ThermalExpansion__K				9.4e-6
+Resistivity_Ohm_m				1.6e-6
+RefractiveIndex					Titanium
+RoughnessCoefficient			.9
+
+Material Cobalt Chromium Nickel
+Elements						Be		C		Cr	Co	Fe		Mn		Mo	Ni
+ElementCount					.0010	.0015	.21	.41	.205	.025	.08	.16
+Density_kg__m3					8300
+YieldStrength_MPa				520
+UltimateTensileStrength_MPa		860
+YoungsModulus_GPa				189.6
+ShearModulus_GPa				72
+SpecificHeat_J__kg_K			430
+MeltingPoint_K					1700
+ThermalConductivity_W__m_K		12.5
+ThermalExpansion__K				7.1e-6
+Resistivity_Ohm_m				9.96e-7
+RelativePermeability			1.00085
+RefractiveIndex					Cobalt
+RoughnessCoefficient			.9
+
+Material Aluminum Silicon Magnesium
+Elements						Al	Cr		Cu		Fe		Mg		Mn		Si		Ti		Zn
+ElementCount					.97	.0040	.012	.0050	.014	.011	.018	.0020	.0025
+Density_kg__m3					2720
+YieldStrength_MPa				345
+UltimateTensileStrength_MPa		390
+YoungsModulus_GPa				68.9
+ShearModulus_GPa				24
+SpecificHeat_J__kg_K			900
+MeltingPoint_K					933.47
+ThermalConductivity_W__m_K		237
+ThermalExpansion__K				23.1e-6
+Resistivity_Ohm_m				4.65e-8
+RefractiveIndex					Aluminum
+RoughnessCoefficient			0.5
+
+Material Constantan
+Elements						Cu	Ni
+ElementCount					.55	.45
+Density_kg__m3					8900
+YieldStrength_MPa				74
+UltimateTensileStrength_MPa		860
+YoungsModulus_GPa				162
+ShearModulus_GPa				58
+SpecificHeat_J__kg_K			390
+MeltingPoint_K					1573
+ThermalConductivity_W__m_K		19.5
+ThermalExpansion__K				14.9e-6
+Resistivity_Ohm_m				5e-7
+ThermoelectricSensitivity_V__K	-40e-6
+RefractiveIndex					Copper
+RoughnessCoefficient			0.9
+
+Material Vanadium Chromium Steel
+Elements						Fe	V	Cr	C		Mo		Si		Mn		S
+ElementCount					.79	.10	.05	.025	.017	.011	.006	.001
+Density_kg__m3					7450
+YieldStrength_MPa				5171
+UltimateTensileStrength_MPa		5205
+YoungsModulus_GPa				190
+ShearModulus_GPa				81
+MeltingPoint_K					1494
+SpecificHeat_J__kg_K			460
+ThermalConductivity_W__m_K		24.7
+ThermalExpansion__K				10.72e-6
+Resistivity_Ohm_m				520e-9
+RefractiveIndex					Vanadium
+RoughnessCoefficient			0.7
+
+Material Aluminum Copper Lithium
+Elements						Al	Cu		Li		Mg		Ag		Zr
+ElementCount					.92	.054	.013	.004	.004	.005
+Density_kg__m3					2630
+YieldStrength_MPa				505
+UltimateTensileStrength_MPa		595
+YoungsModulus_GPa				73.1
+ShearModulus_GPa				27.985
+MeltingPoint_K					916
+SpecificHeat_J__kg_K			864
+ThermalConductivity_W__m_K		120
+ThermalExpansion__K				24.1e-6
+Resistivity_Ohm_m				5.7e-8
+RefractiveIndex					Aluminum
+RoughnessCoefficient			0.6
+
+Material Aluminum Zinc Magnesium
+Elements						Al		Zn		Mg		Cu		Fe		Zr		Si		Mn		Cr
+ElementCount					.8573	.0830	.0300	.0240	.0015	.0015	.0012	.0010	.0005
+Density_kg__m3					2850
+YieldStrength_MPa				680
+UltimateTensileStrength_MPa		710
+YoungsModulus_GPa				68.95
+ShearModulus_GPa				42.3
+MeltingPoint_K					938
+SpecificHeat_J__kg_K			1050
+ThermalConductivity_W__m_K		190
+ThermalExpansion__K				23.4e-6
+Resistivity_Ohm_m				4.94e-8
+RefractiveIndex					Aluminum
+RoughnessCoefficient			0.5
+
+Material Zirconium Copper
+Elements						Cu	Zr
+ElementCount					.94	.06
+Density_kg__m3					5732
+YieldStrength_MPa				1008
+UltimateTensileStrength_MPa		1366
+YoungsModulus_GPa				128.9
+ShearModulus_GPa				45
+SpecificHeat_J__kg_K			385
+MeltingPoint_K					1373
+ThermalConductivity_W__m_K		366.9
+ThermalExpansion__K				16.92e-6
+Resistivity_Ohm_m				1.8e-8
+RefractiveIndex					Copper
+RoughnessCoefficient			.1
+
+Material Beryllium Copper
+Elements						Cu		Be	Al		Co
+ElementCount					.976	.02	.0020	.0020
+Density_kg__m3					8248.61
+YieldStrength_MPa				1103
+UltimateTensileStrength_MPa		1380
+YoungsModulus_GPa				127.6
+ShearModulus_GPa				48
+SpecificHeat_J__kg_K			360
+MeltingPoint_K					1253
+ThermalConductivity_W__m_K		121.2
+ThermalExpansion__K				17.82e-6
+Resistivity_Ohm_m				6.2e-8
+RelativePermittivity			1.003
+RefractiveIndex					Copper
+RoughnessCoefficient			.2
+
+Material Nickel Iron Molybdenum
+Elements						Ni	Fe		Mo		Mn		Si		C
+ElementCount					.80	.1493	.0420	.0050	.0035	.0002
+Density_kg__m3					8700
+YieldStrength_MPa				280
+UltimateTensileStrength_MPa		700
+YoungsModulus_GPa				225
+ShearModulus_GPa				87.2
+SpecificHeat_J__kg_K			460
+MeltingPoint_K					1713
+ThermalConductivity_W__m_K		19
+ThermalExpansion__K				12e-6
+Resistivity_Ohm_m				55e-8
+RelativePermeability			200000
+TotalMagneticMoment				.99
+Remanence_T						.7
+RefractiveIndex					Nickel
+RoughnessCoefficient			.5
+
+Material Iron Silicon Nanoalloy
+Elements						Fe		Si		B	Nb	Cu
+ElementCount					.735	.155	.07	.03	.01
+IsPorous						true
+IsNanostructured				true
+Density_kg__m3					7350
+MeltingPoint_K					473
+Resistivity_Ohm_m				115e-8
+RelativePermeability			200000
+TotalMagneticMoment				2.21
+Remanence_T						.6
+RefractiveIndex					Iron
+RoughnessCoefficient			.99
+
+Material Magnetic Metal Glass
+Elements						Co	Fe	Si	B	N
+ElementCount					.75	.10	.07	.05	.03
+Density_kg__m3					7590
+YieldStrength_MPa				1000
+UltimateTensileStrength_MPa		1100
+YoungsModulus_GPa				110
+ShearModulus_GPa				42.3
+SpecificHeat_J__kg_K			564.8
+MeltingPoint_K					923
+ThermalConductivity_W__m_K		9
+ThermalExpansion__K				7.6e-6
+Resistivity_Ohm_m				130e-8
+RelativePermeability			1000000
+Remanence_T						1.1
+TotalMagneticMoment				.69
+RefractiveIndex					Cobalt
+RoughnessCoefficient			.05
+
+Material Aluminum Nickel Cobalt
+Elements						Fe	Ni	Al	Co
+ElementCount					.55	.28	.12	.05
+Density_kg__m3					7300
+YieldStrength_MPa				300
+UltimateTensileStrength_MPa		412
+YoungsModulus_GPa				200
+ShearModulus_GPa				150
+SpecificHeat_J__kg_K			500
+MeltingPoint_K					863
+ThermalConductivity_W__m_K		15
+ThermalExpansion__K				11e-6
+Resistivity_Ohm_m				47e-8
+RelativePermeability			4
+TotalMagneticMoment				.6
+Remanence_T						1.35
+RefractiveIndex					Aluminum
+RoughnessCoefficient			.1
+
+Material Tungsten Rhenium
+Elements						W	Re
+ElementCount					.75	.25
+Density_kg__m3					19700
+YieldStrength_MPa				672
+UltimateTensileStrength_MPa		1379
+YoungsModulus_GPa				430
+ShearModulus_GPa				159
+SpecificHeat_J__kg_K			156
+MeltingPoint_K					3323
+ThermalConductivity_W__m_K		70.2
+ThermalExpansion__K				5.04e-6
+Resistivity_Ohm_m				2.90e-7
+ThermoelectricSensitivity_V__K	-14.2e-6
+RefractiveIndex					Tungsten
+RoughnessCoefficient			.9
+
+Material Platinum Molybdenum
+Elements						Pt	Mo
+ElementCount					.87	.13
+Density_kg__m3					19550
+YieldStrength_MPa				190
+UltimateTensileStrength_MPa		331
+YoungsModulus_GPa				212.6
+ShearModulus_GPa				77.99
+SpecificHeat_J__kg_K			138.5
+MeltingPoint_K					2061
+ThermalConductivity_W__m_K		36.81
+ThermalExpansion__K				9.00e-6
+Resistivity_Ohm_m				1.96-7
+ThermoelectricSensitivity_V__K	-11.5e-6
+RefractiveIndex					Platinum
+RoughnessCoefficient			.8
+
+Material Gamma Titanium Aluminide
+Elements						Ti	Al
+ElementCount					.64	.36
+Density_kg__m3					3910
+YieldStrength_MPa				650
+UltimateTensileStrength_MPa		800
+YoungsModulus_GPa				176
+ShearModulus_GPa				70.7
+SpecificHeat_J__kg_K			2970
+MeltingPoint_K					1733
+ThermalConductivity_W__m_K		28
+ThermalExpansion__K				12.2e-6
+Resistivity_Ohm_m				1.109e-6
+RefractiveIndex					Titanium
+RoughnessCoefficient			.3
+
+Material Alpha-2 Titanium Aluminide
+Elements						Ti	Al
+ElementCount					3	1
+Density_kg__m3					4200
+YieldStrength_MPa				990
+UltimateTensileStrength_MPa		1140
+YoungsModulus_GPa				145
+ShearModulus_GPa				58.3
+SpecificHeat_J__kg_K			2970
+MeltingPoint_K					1873
+ThermalConductivity_W__m_K		22
+ThermalExpansion__K				15e-6
+Resistivity_Ohm_m				1.356e-6
+RefractiveIndex					Titanium
+RoughnessCoefficient			.05
+
+Material Beta Titanium
+Elements						Ti	Al	Zr	Mo	Cr	Fe	Sn
+ElementCount					.82	.05	.04	.04	.02	.01	.02
+Density_kg__m3					4690
+YieldStrength_MPa				1520
+UltimateTensileStrength_MPa		1600
+YoungsModulus_GPa				122
+ShearModulus_GPa				45.9
+MeltingPoint_K					1875
+SpecificHeat_J__kg_K			508
+ThermalConductivity_W__m_K		6.7
+ThermalExpansion__K				8.2e-6
+Resistivity_Ohm_m				1.5e-6
+RefractiveIndex					Titanium
+RoughnessCoefficient			.9
+
+Material Neodymium Iron Boron
+Elements						Nd	Fe	B
+ElementCount					2	14	1
+Density_kg__m3					7800
+YieldStrength_MPa				75
+UltimateTensileStrength_MPa		80
+YoungsModulus_GPa				160
+ShearModulus_GPa				65
+SpecificHeat_J__kg_K			440
+MeltingPoint_K					583
+ThermalConductivity_W__m_K		9.00
+ThermalExpansion__K				5.2e-6
+Resistivity_Ohm_m				1.60e-6
+RelativePermeability			1.05
+TotalMagneticMoment				1.95
+Remanence_T						1.3
+RefractiveIndex					Iron
+RoughnessCoefficient			.25
+
+Material Samarium Cobalt
+Elements						Sm	Co
+ElementCount					1	5
+Density_kg__m3					8400
+YieldStrength_MPa				35
+UltimateTensileStrength_MPa		45
+YoungsModulus_GPa				150
+ShearModulus_GPa				59
+SpecificHeat_J__kg_K			390
+MeltingPoint_K					1072
+ThermalConductivity_W__m_K		12.0
+ThermalExpansion__K				10.0e-6
+Resistivity_Ohm_m				8.5e-7
+RelativePermeability			1.05
+TotalMagneticMoment				.9
+Remanence_T						1.16
+RefractiveIndex					Cobalt
+RoughnessCoefficient			.2
+
+Material Aluminum Beryllium
+Elements						Be		Al		C		O
+ElementCount					.609	.38		.001	.010
+Density_kg__m3					2071
+YieldStrength_MPa				322
+UltimateTensileStrength_MPa		447
+YoungsModulus_GPa				193
+ShearModulus_GPa				82
+MeltingPoint_K					1355
+SpecificHeat_J__kg_K			1560
+ThermalConductivity_W__m_K		210
+ThermalExpansion__K				13.91e-6
+Resistivity_Ohm_m				3.50e-8
+RefractiveIndex					Beryllium
+RoughnessCoefficient			.8
+
+Material Amorphous Zirconium Steel
+Elements						Zr	Cu	Ni	Al	Nb
+ElementCount					.585	.156	.128	.103	.028
+Density_kg__m3				6690	
+YieldStrength_MPa				2758
+UltimateTensileStrength_MPa		2758
+YoungsModulus_GPa				86.0
+ShearModulus_GPa				31.2
+SpecificHeat_J__kg_K			420
+MeltingPoint_K					1057
+ThermalConductivity_W__m_K		3.5
+ThermalExpansion__K				10.1e-6
+Resistivity_Ohm_m				1.6e-6
+RelativePermeability			.99994
+RefractiveIndex					Zirconium
+RoughnessCoefficient			.25
+
+Material Magnesium Aluminum Zinc
+Elements				Mg	Al	Zn
+ElementCount				.915	.08	.005
+Density_kg__m3				1810
+YieldStrength_MPa			275
+UltimateTensileStrength_MPa		380
+YoungsModulus_GPa			47
+ShearModulus_GPa			17
+MeltingPoint_K				883
+SpecificHeat_J__kg_K			1050
+ThermalConductivity_W__m_K		84
+ThermalExpansion__K			27.2e-6
+Resistivity_Ohm_m			1.45e-7
+RefractiveIndex				Magnesium
+RoughnessCoefficient			0.5

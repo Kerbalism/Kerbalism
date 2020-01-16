@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <!-- /////////////////////////////////////////////////// -->
+  <!-- //////// COMMON PROPERTIES FOR ALL PROJECTS /////// -->
+  <!-- /////////////////////////////////////////////////// -->
+
+  <!--
+     Note : all paths defined here are also defined in the "BuildSystemTargets.xml" file
+     This file is intended to be imported from the *.csproj files, we can't import 
+     "BuildSystemTargets.xml" in the project files because : 
+     1. It create a circular reference
+     1. The relative "RepoBasePath" is different for the build system and the projects 
+     To differentiate the properties defined here, they are suffixed with "PR"
+     -->
+  
+  <PropertyGroup>
+    <!-- We use up to C# version 7.1 (Visual Studio 2017 is required) -->
+    <LangVersion>7.1</LangVersion>
+
+    <!-- Always target x64 -->
+    <PlatformTarget>x64</PlatformTarget>
+
+    <!-- Repository base path (relative to the *.csproj files)-->
+    <RepoBasePathPR>..\..</RepoBasePathPR>
+
+    <!-- Binaries output path (those are MSBuild standard properties, so not suffixed) -->
+    <OutputPath Condition="$(Configuration)==Debug" >$(RepoBasePathPR)\BuildSystem\BinariesDebug</OutputPath>
+    <OutputPath Condition="$(Configuration)==Release" >$(RepoBasePathPR)\BuildSystem\BinariesRelease</OutputPath>
+    <IntermediateOutputPath>$(OutputPath)\obj</IntermediateOutputPath>
+
+    <!-- Reference paths-->
+    <KSPReferenceDllsPathPR>$(RepoBasePathPR)\BuildSystem\References\KSPReferenceDlls</KSPReferenceDllsPathPR>
+    
+    <!-- GameData paths-->
+    <GameDataKerbalismPathPR>$(RepoBasePathPR)\GameData\Kerbalism</GameDataKerbalismPathPR>
+    <GameDataKerbalismConfigPathPR>$(RepoBasePathPR)\GameData\KerbalismConfig</GameDataKerbalismConfigPathPR>
+    
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,94 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{D07330FA-DEA1-4190-963D-31F4C81E8C82}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>KerbalismBootstrap</RootNamespace>
+    <AssemblyName>KerbalismBootstrap</AssemblyName>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>false</Deterministic>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>none</DebugType>
+    <Optimize>true</Optimize>
+    <DefineConstants>
+    </DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <Import Condition="Exists('..\..\BuildSystem\UserConfigDevEnv.xml')" Project="..\..\BuildSystem\UserConfigDevEnv.xml" />
+  <Import Condition="Exists('..\..\BuildSystem\ProjectsCommonProperties.xml')" Project="..\..\BuildSystem\ProjectsCommonProperties.xml" />
+
+
+  <PropertyGroup>
+    <!-- The bootstrapper need to work on pre-1.8 KSP versions, so we keep it targeting .NET 3.5 -->
+    <!-- this require it to be built against pre-1.8 dlls-->
+    <!-- Note that in the debug configuration it will use whatever framework version is defined in UserConfigDevEnv.xml -->
+    <TargetFrameworkVersion>$(FrameworkVersionOverride)</TargetFrameworkVersion>
+    <EffectiveKSPDllPath Condition="'$(Configuration)' == 'Debug'">$(KSPDevPath)\$(KSPDevDllsRelativePath)</EffectiveKSPDllPath>
+    <EffectiveKSPDllPath Condition="'$(Configuration)' == 'Release'">$(KSPReferenceDllsPathPR)</EffectiveKSPDllPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    
+    <!-- System Dlls -->
+    <Reference Include="System">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Core">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Xml">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Xml.Linq">
+      <Private>False</Private>
+    </Reference>
+
+    <!-- KSP Dlls -->
+    <Reference Include="$(EffectiveKSPDllPath)\Assembly-CSharp.dll">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="$(EffectiveKSPDllPath)\Assembly-CSharp-firstpass.dll">
+      <Private>False</Private>
+    </Reference>
+    
+    <!-- load all UnityEngine Dlls (since 1.8 we only need those) -->
+    <Reference Include="$(EffectiveKSPDllPath)\UnityEngine*.dll">
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="Bootstrap.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <!-- use default build targets -->
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- This target is called before the build, you can use it for debugging the build system -->
+  <Target Name="BeforeBuild">
+    <!--
+    <ConvertToAbsolutePath Paths="$(OutputPath)">
+      <Output TaskParameter="AbsolutePaths" PropertyName="OutputPathAbs" />
+    </ConvertToAbsolutePath>
+    <Message Text="KerbalismBootstrap build MSBuildProjectDirectory='$(MSBuildProjectDirectory)'" Importance="high" />
+    <Message Text="KerbalismBootstrap build OutputPathAbs='$(OutputPathAbs)'" Importance="high" />
+    -->
+  </Target>
+</Project>

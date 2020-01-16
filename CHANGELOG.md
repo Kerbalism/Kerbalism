@@ -1,7 +1,281 @@
-## v1.8.1 for KSP 1.4.x and 1.3.1
- - 2018-xx-x
+## v3.2 for all versions of KSP from 1.5.0 to 1.8.9
+
+ - 2019-12-14
 
 ### Changes since the last release
+
+* Spanish localization (elbuglione)
+* Some adjustments to engine failure probabilities
+* DMagic Orbital Science experiments tweaked to make them a bit easier to finish
+* Fixed remaining duration display for very long durations (lampeh)
+* Fixed invisible data being saved during time warp (Got)
+* Fixed facility level requirement evaluation in science mode for surface samples
+* Fix restock+ sample capsule patch
+* Engine ignition failure probability tweaks
+* Repairing an engine resets it to new state, and now can be done with engines that only have 1-2 ignitions
+* Experiments attached using KIS will now work as expected
+* Removed mod warning for DynamicBatteryStorage, the latest version disables itself when Kerbalism is present
+* API changes for background simulation and planner support of 3rd party part modules
+* Added some fixes and checks to avoid corrupting the science data bases when loading older saves
+* Fixed ground contact check for harvesters
+* New inline and surface attached container parts (TAC-LS with changed textures), the old parts are being phased out
+* MoltenRegolithExtraction is now available sooner in the tech tree
+* Storm warning preset changed to false, except for crewed vessels
+* Added ResearchBodies to the list of mods we warn about, see FAQ on kerbalism.github.io
+* New part module for passive shielding
+* Add crew experiments to the MLP science lab only, not to all parts that have the lab module
+* Don't allow emitter toggling in automation when vessel is unloaded and emitter cannot be toggled, like a NERVA
+* Better presets for dump valve settings for water recycler and sabatier processes
+* Some config fixes and improvements by GordonDry
+
+## v3.1 for all versions of KSP from 1.5.0 to 1.8.9
+
+ - 2019-10-28
+
+### Changes since the last release
+
+* Support tilted magnetic fields and radiation belts with offsets (Sir Mortimer)
+* Updated the RSS radiation model according to http://evildrganymede.net/work/magfield.htm (Sir Mortimer)
+* Fixed an error in new science support for DMOS (Sir Mortimer)
+* Breaking Grounds DLC: Fixed the science value indication when the transmission is complete (Sir Mortimer)
+* Added mod support to query the radiation model, as well as toggle visibility of belts and magnetopause (Sir Mortimer)
+* Added mod support for CME prediction accuracy that influences the probability that you get an advanced warning, and its accuracy (Sir Mortimer)
+* Configs for SoundingRockets (Arthur, Breach Candy)
+* New "SolarPanelFixer" partmodule replacing the "WarpFixer" module. **Unloaded vessels will have incorrect solar panel EC rates until reloaded** (Got)
+* Support for (almost all) SSTU solar panels, require SSTU version 0.11.49.161 min (Got)
+* Added an editor PAW option to consider / not consider solar panels in the planner (Got)
+* Added a third sunlight option in the planner : when slected, solar panel output is estimated using the VAB/SPH sun direction, with tracking/occlusion handling (Got)
+* Kopernicus stars support in the simulation and Solar Panels, including multi-star systems support (Got)
+* Improvements to the sunlight flux evaluation and occlusion checks (Got)
+* Improved sunlight raytracing code, now checking occlusion against all bodies whose apparent diameter is greater than 10 arcmin from the vessel POV (Got)
+* Added an additional vertical position offset to tooltips so they don't hide what is under the cursor (Got)
+* Auto-assign reference bodies for radiation calculations (Shiolle)
+* Fixed DMOS experiment restriction to plantary space. This breaks some DMOS contracts that require experiments in solar orbit (Sir Mortimer)
+* Improved shielding efficiency calculation (Free Thinker)
+* Apply artificial radiation sources after Gamma Transparency is applied (Free Thinker)
+* Fixed the configuration for EVA kerbals, a problem introduced by Serenity (Sir Mortimer)
+* Added support for Universal Storage 2 fuel cells (lordcirth)
+* Added config for Unkerballed start tech tree (Sir Mortimer)
+* Added config for a new ReStock+ probe core RC-XL001 (Sir Mortimer)
+* Radiation values in settings now take a preset from Settings.cfg (Sir Mortimer)
+* Added radiation source to kerbal atomics engines (Shiolle)
+* When transmitting data, prioritize the file with the highest relative value (Sir Mortimer)
+* Changed the way science data is handled on recovered vessels. This should provide compatibility with stock KSP (Breaking Grounds) and other mods (Got, Sir Mortimer)
+* Added basic science information to telemetry (connection status, total science gain, last data transmitted) (Sir Mortimer)
+* Fix for taking an asteroid not working (issue #458) (Got)
+* Fix for incoherent resource producers not being detected and failing to trigger the 1000x warp limit (Got)
+* Fixed `[PartSet]: Failed to add Resource XXXXX...` log spam (Got)
+* Implemented resource rate per consumer/producer information tooltip in the Supply section of the vessel telemetry panel (Got)
+* Support configs for SSTU, require SSTU version 0.11.49.161 min (Got, Steamp0rt, Arthur)
+* Better handling of multiple hard drives in one part (#479) (Sir Mortimer)
+* Fixed gravity ring disappearing with Community Category Kit (CoriW)
+* Broken antennas / data transmitters will no longer transmit data (Sir Mortimer)
+* Fixes for Breaking Grounds: the return contracts now are doable, and the rover arm scans are drastically reduced in data size (Sir Mortimer)
+* UI windows made a bit wider, and they now are all the same widths (Sir Mortimer)
+* Some configuration fixes for DMagic Orbital Science (Sir Mortimer)
+* Reliability changes: engine failures depending on ignitions and burn duration, radiation damage to solar panels, transmitters and reaction wheels (Sir Mortimer, Valerian)
+* Account for distance between radiation emitters (NERVs, RTGs etc.) and habitats when calculating the effect of radiation (Sir Mortimer)
+* EVAs will receive radiation from nearby emitters (Sir Mortimer)
+* Lead was replaced by a lighter alloy composite as a shielding material. For our type of radiation, it provides the same shielding effect with less mass. (Sir Mortimer)
+* Warn users about incompatible mods or missing CommunityResourcePack (Sir Mortimer)
+* Dropped support for KSP 1.4 (Sir Mortimer)
+* Kidney-shaped radiation belts (EagleEyeLogic)
+* Added surface gamma radiation to celestial bodies (Sir Mortimer)
+* Detect habitat shielding against CMEs using raytracing from habitats to the sun (Sir Mortimer)
+* Added a warning when CRP is missing, or known mods with incompatibilities are installed (Sir Mortimer)
+* Hard drives with customizable capacity (Sir Mortimer)
+* Intensity, duration and frequency of CME events depend on solar cycle (Sir Mortimer)
+* Many fixes in science gathering and transmission (Got)
+* Added a science archive window, available in flight, KSC and editors (Got)
+* All configs moved to KerbalismConfig folder, even the ones that remained in Kerbalism core previously (Got)
+* Overall cleanup and improvement of UI windows (Got)
+* Radiation unit can be changed from rad to Sievert in the cfg file (Sir Mortimer)
+* Reorganized in-game preferences, added some new options, removed some old and obscure ones. Now with easy/normal/moderate/hard presets. (Sir Mortimer)
+* Atmosphere humidity removed. Humidity controller removed. (Got)
+* Show career radiation dosis in Kerbal info window (Sir Mortimer)
+* Added + fixed radiation configs for Atomic Age and mK2Expansion (Shaddow Phönix)
+* Fixed life support slot upgrades in SSPX (Hauke Lampe)
+* Unpressurized habitats include a fair warning in the part description and title (zer0Kerbal)
+
+## v3.0.2 for all versions of KSP from 1.4.0 to 1.7.x
+
+ - 2019-06-08
+
+### Changes since the last release
+
+* ACTUALLY fixed the unintended need to repeat the same experiments multiple times for full science value. (SirMortimer, Arthur)
+
+## v3.0.1 for all versions of KSP from 1.4.0 to 1.7.x
+
+ - 2019-06-08
+
+### Changes since the last release
+
+* Fixed the unintended need to repeat the same experiments multiple times for full science value. (Arthur)
+
+## v3.0 for all versions of KSP from 1.4.0 to 1.7.x
+
+ - 2019-06-07
+
+### Changes since the last release
+
+* New Science system. See https://github.com/Kerbalism/Kerbalism/wiki/Science-System (Sir Mortimer, Arthur, and a lot of people who helped)
+* Add Reliability to USI Nuclear Reactors (PiezPiedPy)
+* Fix ISRU capacities for CryoTanks and USI (PiezPiedPy)
+* Correct LH2 storage capacities of the Radial container for AirlineKuisine, CryoTanks and USI (PiezPiedPy)
+* Near Future Electrical tweaks: Uranite drilling, storage and ISRU processing added (PiezPiedPy)
+* Textures Unlimited support (HaullyGames)
+* Update habitats for the new V2 and Making History DLC pods (PiezPiedPy)
+* Recalculated habitat atmosphere leakage, was originally calculated for a Human day which is 4x longer (PiezPiedPy)
+* Added an 'EVA's available' indicator to the Planner and Monitor (PiezPiedPy)
+* Optimized Planner: Part 1 - Chill the stuttering in VAB/SPH (PiezPiedPy)
+* Reduced Mass of ECLSS and Chemical Processors from 450kg to 40kg (Sir Mortimer)
+* CO2 poisoning warning message will pop up sooner to give you some time to fix the issue (Sir Mortimer)
+* Preemptive maintenance: if a component is found not to be in very good condition during inspection, it can be serviced to avoid a failure (Sir Mortimer)
+* Fixed emitters (shields) can be used in automation tab again (Sir Mortimer)
+* Processes ECLSS, Fuel Cells, Chemical Plant etc. can be controlled from automation tab again (Sir Mortimer)
+* Added Kerbalism flags (Mzxs)
+* Adjusted N2 leakage (Sir Mortimer)
+* When analyzing science in a lab, don't drive people crazy with the "Transmission finished" message for every bit of researched data (Sir Mortimer)
+* Going to EVA will now loose a nominal amount of nitrogen to the airlock. The amount can be changed in the settings (Sir Mortimer)
+* Fixed the bug where monoprop appeared out of nowhere when leaving a vessel that had none in it (#288) (Sir Mortimer)
+* Monoprop+O2 fuel cell is now available sooner in the tech tree. Basic Science unlocks this process along with the fuel cell (Sir Mortimer)
+* Added LSS system diagrams, and a small guide on how to set up O2 + water recycling (Sir Mortimer)
+* Hide Sickbay from automation if it is unavailable (Sir Mortimer)
+* Reverted the part-specific process handling introduced with PR #280 as it caused other issues (Sir Mortimer)
+* Fixed the issue with placing parts in a symmetry group > 2 in the editor (Sir Mortimer)
+* Added API: mods now can register callbacks for failure events triggered by Kerbalism Reliability (Sir Mortimer)
+* Added API: mods now can provide their own communication characteristics (antenna info). Currently we just support RemoteTech, this allows other mods to support Kerbalism (Sir Mortimer)
+* Fixed #249: NEOS incompatibility (Sir Mortimer)
+* Added option for automated sample analysis, works like automated data transmission (Sir Mortimer)
+* SCANsat support for new science system (Sir Mortimer)
+* Some changes to the communication system: data rates, EC consumption and range calculation changed (Sir Mortimer)
+* Support for solar panel efficiency curve. Panels can degrade over time. (Sir Mortimer)
+* KER Parts will act as hard drives (Sir Mortimer)
+* A lot of new experiments (Arthur, theJesuit)
+* Mod Support for new science: DMagic Orbital Science, Station Science (Arthur)
+* Some performance improvements with caches (Sir Mortimer)
+* Added support for Breaking Ground surface experiments (steamp0rt, Gotmachine, SirMortimer)
+* Split Kerbalism into core and config packages for better usability with other configurations (looking at you, RO)
+
+
+------------------------------------------------------------------------------------------------------
+
+## v2.1.2 for all versions of KSP from 1.3.1 to 1.6.x
+
+ - 2019-02-04
+
+### Changes since the last release
+
+* Fix Kerbalism parts search filters and missing tab in the VAB/SPH (PiezPiedPy)
+* Fix processes not calculating capacities correctly (PiezPiedPy)
+* Made the PartUpgrade for module slots require ProfileDefault (theJesuit)
+* Took away some of the Partupgrade as I upgraded my MM fu. (theJesuit)
+* Fixed compatability with Module Manager 4.x (steamp0rt, with lots of help from blowfish)
+
+------------------------------------------------------------------------------------------------------
+
+## v2.1.1 for KSP 1.6.x, 1.5.x , 1.4.x and 1.3.1
+ - 2018-12-22
+
+### Changes since the last release
+
+* Updated for KSP 1.6.x
+
+------------------------------------------------------------------------------------------------------
+
+## v2.1.0 for KSP 1.5.x , 1.4.x and 1.3.1
+ - 2018-12-18
+
+### Changes since the last release
+
+* xmitDataScalar = 1 for Bluedog DB early probes. (Gordon Dry)
+* Add support patch for the USI-NF compatibility patch. (Gordon Dry)
+* Make CCK play nice with FilterExtensions. (Gordon Dry)
+* Added sickbay RDU to four additional parts (with 1 slot each):
+* Bluedog_DB - MOL Orbital Habitation SegmentS
+* StationPartsExpansionRedux - PTD-5 'Sunrise' Habitation Module
+* NearFutureSpacecraft - PPD-24 Itinerant Service Container
+* Duna Direct's Kerbin Return Vehicle (KRV) (Gordon Dry)
+* Sickbay TV is only available in crewable parts (crew >3) without a laboratory now and it uses 0.25 EC/s instead of 12 EC/s. It's 64x less effective now - and same as effective as 100% comfort. (Gordon Dry)
+* Sickbay RDU now uses 3.5 EC/s instead of 35 EC/s but also works 5x slower (cures 0.02 rad/h now). (Gordon Dry)
+* Added support for Kerbalow KA-330 Inflatable Space Hotel. (Gordon Dry)
+* Added missing xmitDataScalar to Support/OrbitalScience.cfg and also added UniversalStorage2 compatibility. (Gordon Dry)
+* Converted all remaining png and mbm textures to dds (Gordon Dry)
+* The connection signal icon alternates between yellow and red when signal strength is below 5%. (HaullyGames)
+* Connection: connection rate is minimum rate in ControlPath. (HaullyGames)
+* Kerbals on EVA got a radio to transmit science data. Antenna range limited to 35km. (Gordon Dry)
+* File Manager shows remaining transmission time when hovering over file. (HaullyGames)
+* RemoteTech - Added signal strength based on Dist/maxDist. (HaullyGames)
+* Added "Set as Target" in Monitor. (HaullyGames)
+* Panel - Define the hover area to be the same size of font size. (HaullyGames)
+* Increased SCANSat experiment sizes. A planetary map shouldn't be smaller than a temperature reading. (Sir Mortimer)
+* Connection Manager Panel, click in signal Icon to open the Connection Panel. (HaullyGames)
+* CommNet: disable stock transmission buttons and transmission action group. (HaullyGames)
+* Add support for per-part resource simulation which is ONLY used for resources that are NO_FLOW, such as EnrichedUranium. (madman2003)
+* Fix support for dump options that don't use valves. (madman2003)
+* Make the planner outputs less quirky by running the simulator several cycles to reach steady state. (madman2003)
+* NearFutureSolar: Add reliability for curved solar panels. (madman2003)
+* NearFutureElectrical: Support Reactors and Reprocessor. (madman2003)
+* Don't show resources in telemetry that have practically zero value, avoid flickering telemetry. (madman2003)
+* Don't fill habitat with CO2 rich atmosphere when enabling habitat in VAB. (madman2003)
+* Air pump should only work on planets with naturally breathable atmosphere. (madman2003)
+
+------------------------------------------------------------------------------------------------------
+
+## v2.0.0 for KSP 1.5.x , 1.4.x and 1.3.1
+ - 2018-19-10
+
+### Changes since the last release
+
+* Support for KSP 1.5.x
+
+* Also "normal" launch clamps' generators are not simulated in planner by default (Gordon Dry)
+* Quick fix to crewable launch towers like the FASA Launch Tower: disable the habitat by default and disable simulating the generator in planner by default (Gordon Dry)
+* Dump valve not saving its state on vessel change, bug fixed (PiezPiedPy)
+* Fixed SSPX IVA rotation. (HaullyGames)
+* Kerbals consume slightly different amounts of food, water and oxygen, and react differently to stress and radiation. When under stress they can make mistakes, some do better than others. (Sir Mortimer)
+* A laboratory with high level crew members in it will work faster (Sir Mortimer)
+* Harvesters will work better with an engineer on board. (Sir Mortimer)
+* Fixed another icons sometimes not displaying bug (PiezPiedPy)
+* SSPX 2.5m Greenhouse now producing food at the expected rate. (theJesuit)
+* ResourceBalance run the pressurizing\depressurizing (old "equalize\venting"), it gives priority to habitats with crew. (HaullyGames)
+* Habitats equalize/venting function changed to pressurizing/depressurizing, crewed habitats have priority while multiple habitats are pressurizing. (HaullyGames)
+* New AirPump process added to control pressure in breathable environment. (HaullyGames)
+* Fixed missing N2 when mod is added in an existing game. (HaullyGames)
+* Fixed issue with CommNet not updating for unloaded vessels (leomike, HaullyGames)
+* Added bandwidth preferences in Game Settings. (HaullyGames)
+* Added 'GoTo' button in Penal, the vesselType button allowed to change to other vessel. (HaullyGames)
+* Fixed Orbital Science experiments size (Sir Mortimer)
+* Fixed antenna consumption and Automation controller to antennas with GenericAnimation. (HaullyGames)
+* Automation has devices sorted by name. (HaullyGames)
+* Updated docs for the recent 1/16 buff (Sir Mortimer)
+* Don't show fixed antennas in device manager (Sir Mortimer)
+
+------------------------------------------------------------------------------------------------------
+
+## v1.9.0 for KSP 1.4.x and 1.3.1
+ - 2018-15-9
+
+### Changes since the last release
+
+* Kerbal LS rates have been recalculated based on 1/16 of a Humans consumption due to their size and day length (PiezPiedPy)
+* A dump valve has been added to the Fuel Cells (PiezPiedPy)
+* Reliability added to the active shield and slightly increased its effectiveness (PiezPiedPy)
+* Vessels with RemoteTech antennas fitted that where missing on the monitor due to old SaveGames, bug fixed (PiezPiedPy)
+* Stock antennas can now be controlled by automation (Yaar Podshipnik)
+* Devices shown in the device manager are now sorted (Sir Mortimer)
+* Fixed the EC issue when accelerating to extremely fast time warp while a vessel is in shadow (Sir Mortimer)
+* Improved vessel search in monitor: you can search for the name of the central body and the vessel name (Sir Mortimer)
+* Added vessel type icons and filter buttons to include/exclude vessels in the monitor list (Sir Mortimer, PiezPiedPy)
+* SSPX PDT-6 'Star' Utility Module balanced: shield strength, costs, tech level requirement and reliability (Sir Mortimer)
+* SSPX greenhouses have been rebalanced and missing exercise equipment for some SSPX parts added (Dr.Jet)
+* If Community Category Kit is installed then Kerbalism will place its parts into CCK respective categories (Sir Mortimer)
+* Game preferences now includes Kerbalism settings that previously were in Settings.cfg (Sir Mortimer)
+
+### Known Issues
+
+* KerboKatz FrameLimiter mod is known to make the Icons disappear
 
 ------------------------------------------------------------------------------------------------------
 
@@ -12,30 +286,29 @@
 
  * Kerbalism documents are now available here: https://kerbalism.readthedocs.io Note they are still a Work in Progress
 
- * Fixed the icons sometimes not displaying bug and icon scaling bug (PiezPiedPy) 
+ * Fixed the icons sometimes not displaying bug and icon scaling bug (PiezPiedPy)
  * RemoteTech support now integrates correctly with the planner and signal system (PiezPiedPy)
  * Improved RemoteTech support (simulate in planner buttons, reliability, antenna EC consumption) (Gordon Dry & PiezPiedPy)
  * RemoteTech antennas will need power even if vessel is unloaded (Sir Mortimer)
  * RemoteTech antennas fitted to Vessels without power will no longer relay signals to other vessels (Sir Mortimer)
  * RemoteTech antennas can now be enabled/disabled in Automation (Sir Mortimer)
  * RemoteTech antennas can now break down due to reliability failures (Sir Mortimer)
- * Chemical Plant and ECLSS parts are now surface attachable, ECLSS part capacity increased to support 3 crew (PiezPiedPy) 
- * Added support for ConfigurableContainers, they now have 6 additional tank config's as defined below:
-   KerbalismSupplies (Food, Water) - KerbalismBreathing (Oxygen, Nitrogen)
-   KerbalismWaste (Waste, WasteWater) - KerbalismGreenhouse (CarbonDioxide, Ammonia, Water)
-   KerbalismFuelcellH2 (Oxygen, Hydrogen) - KerbalismFuelcellMP (Oxygen, MonoPropellant)  (Gordon Dry)
- * Containers have had their volume and mass calculated with a calculator (PiezPiedPy) 
+ * Chemical Plant and ECLSS parts are now surface attachable, ECLSS part capacity increased to support 3 crew (PiezPiedPy)
+ * Added support for ConfigurableContainers, they now have 6 additional tank configs as defined below:
+ * KerbalismSupplies (Food, Water) - KerbalismBreathing (Oxygen, Nitrogen)
+ * KerbalismWaste (Waste, WasteWater) - KerbalismGreenhouse (CarbonDioxide, Ammonia, Water)
+ * KerbalismFuelcellH2 (Oxygen, Hydrogen) - KerbalismFuelcellMP (Oxygen, MonoPropellant)  (Gordon Dry)
+ * Containers have had their volume and mass calculated with a calculator (PiezPiedPy)
  * Science labs can now reset experiments (PiezPiedPy)
  * CryoTanks are now simulated in the background, also fuel boiloff is simulated in the planner (PiezPiedPy)
  * Reverted the Quick'n'dirty fix for GPOSpeedFuelPump because it has been fixed with v1.8.14 (Gordon Dry)
  * Added a fix to make sure there is a module Reliability for parachutes, also for RealChute/RealChuteFAR (Gordon Dry)
  * Scaled the ISRU's capacity to be more representative of their size (PiezPiedPy)
- * All priority type processes have been removed and replaced with a Dump button that configures the dumped resource type(s)
-   to dump overboard, the Dump button is also usable InFlight allowing for changes of strategies on the go (PiezPiedPy)
+ * All priority type processes have been removed and replaced with a Dump button that configures the dumped resource type(s) to dump overboard, the Dump button is also usable InFlight allowing for changes of strategies on the go (PiezPiedPy)
  * Overhaul of all Chemical Plant and ISRU processes using CRP densities and molar masses (PiezPiedPy)
  * SOE process now converts wasted Carbon into Shielding, Haber process now needs EC (PiezPiedPy)
- * Hydrazine process now outputs Oxygen and requires EC and A New Nitrogen injected Hydrazine process added (PiezPiedPy) 
- * Vessel group filter can now search for vessel names that contain multiple words (Sir Mortimer) 
+ * Hydrazine process now outputs Oxygen and requires EC and A New Nitrogen injected Hydrazine process added (PiezPiedPy)
+ * Vessel group filter can now search for vessel names that contain multiple words (Sir Mortimer)
  * Changed the Small Supply Container to be 0.625m in diameter instead of 0.5m (Gordon Dry)
  * Added radiation belts to ExtraSolar planets and moons - science definition texts still missing (Gordon Dry)
  * Fixed a commented out bracket in another patch that hindered the Bluedog_DB Geiger counter from being a sensor (Gordon Dry)
@@ -43,7 +316,7 @@
  * Fixed MRE not running when shielding is full or does not exist on a vessel (PiezPiedPy)
  * MRE process now outputs a small amount of CO2 (PiezPiedPy)
  * GeigerCounter science experiment fixes for OPM and NewHorizons. Also SEP support fixes (Gordon Dry)
- * Rebalanced Sabatier and Anthraquinone processes to output LiquidFuel and Oxidizer at Stock ratio of 9:11 (PiezPiedPy) 
+ * Rebalanced Sabatier and Anthraquinone processes to output LiquidFuel and Oxidizer at Stock ratio of 9:11 (PiezPiedPy)
  * Rebalanced H2+O2 and LH2+O2 fuel cells to output more realistic EC levels (PiezPiedPy)
  * Some tooltip colors changed from a nasty hard to see red to a nice gold (PiezPiedPy)
  * Fixed antennas bug having no science data rate in languages other than English (PiezPiedPy)
@@ -82,10 +355,7 @@
  * Recalculated pressure control EC consumption to be more realistic (PiezPiedPy)
  * Increase all crewable parts' EC because ECLSS uses EC constantly, you wanna survive in the Apollo LM, right? (Gordon Dry, PiezPiedPy)
  * Quick'n'dirty fix for GPOSpeedFuelPump to avoid shielding to be pumpable by default (Gordon Dry)
- * Reliability: mtbf depends mass;
-     lighter parts last longer - max. ~16 years (~64 years in high quality),
-     heavier parts last shorter - min. ~4 years (~16 years in high quality).
-     Built in reliability modules don't take the whole part's mass into account, but their respective extra_mass (Gordon Dry)
+ * Reliability: mtbf depends mass; lighter parts last longer - max. ~16 years (~64 years in high quality), heavier parts last shorter - min. ~4 years (~16 years in high quality). Built in reliability modules don't take the whole part's mass into account, but their respective extra_mass (Gordon Dry)
  * Greenhouses now act like a scrubber and also will not use CO2 or produce O2 when in a breathable atmosphere (PiezPiedPy)
  * Reliability: mass and cost difference between standard and high quality is now relative to the part type (Gordon Dry)
  * Allow vessel config when there is no vessel signal (PiezPiedPy)
@@ -94,7 +364,7 @@
  * Added LH2+O2 processes to the Fuel Cells for USI and CryoTanks Support (PiezPiedPy)
  * Added Hydrogen Liquefaction and Liquid Hydrogen Evaporator processes to USI and CryoTanks Support (PiezPiedPy)
  * Fixed CryoTanks NRE in Planner and added LH2 to radial tanks for CryoTanks Support (PiezPiedPy)
- 
+
 ### For Developers
 
 ------------------------------------------------------------------------------------------------------
@@ -108,18 +378,7 @@
  * Pressure and CO2 Poisoning rates are back to normal (PiezPiedPy)
  * GravityRing NRE's in VAB/SPH bug fixed (PiezPiedPy)
  * Click through prevention added (some things can still be clicked through the windows, due to using KSP's old style Gui) (PiezPiedPy)
- * Overhaul to transmitter use, planning and monitoring, data rates, signal strength, EC cost and targets now work. Internal  
-     transmitters are separate from external transmitters and will only transmit telemetry and command control, they are also  
-     shown separately in the planner and are constantly powered unless you run out of EC, with the added benefit of loosing  
-     contact with DSN and subsequent control.  
-     External transmitters will lose contact when retracted, break, or if you run out of EC rendering long distance comms, call  
-     home and your ability to transmit science to zero. External transmitters will also stop using EC when retracted.  
-     EVA suits now contain a small internal transmitter for transmitting telemetry and controlling remote probes and rovers etc.  
-     All transmitters have had their EC usage changed to more realistic values and are also combinable. There is a minor drawback  
-     though, when changing scenes with the [ESC]Pause menu you may notice the target readout pointing to the wrong vessel and  
-     some signals that where previously dis-connected wrongly connecting back online, simply changing scene from for example  
-     the Space Center to Tracking Station will solve all errors in the network.  
-	 *Thanks to (PiezPiedPy) for the transmitter overhaul.* 
+ * Overhaul to transmitter use, planning and monitoring, data rates, signal strength, EC cost and targets now work. Internal transmitters are separate from external transmitters and will only transmit telemetry and command control, they are also shown separately in the planner and are constantly powered unless you run out of EC, with the added benefit of loosing contact with DSN and subsequent control. External transmitters will lose contact when retracted, break, or if you run out of EC rendering long distance comms, call home and your ability to transmit science to zero. External transmitters will also stop using EC when retracted. EVA suits now contain a small internal transmitter for transmitting telemetry and controlling remote probes and rovers etc. All transmitters have had their EC usage changed to more realistic values and are also combinable. There is a minor drawback though, when changing scenes with the [ESC]Pause menu you may notice the target readout pointing to the wrong vessel and some signals that where previously dis-connected wrongly connecting back online, simply changing scene from for example the Space Center to Tracking Station will solve all errors in the network. *Thanks to (PiezPiedPy) for the transmitter overhaul.*
 
  * Nitrogen added to pods on rescue, Humidity controller now detects breathable atmospheres (PiezPiedPy)
  * Kerbalism Communotron 8 transmitter is back (PiezPiedPy)
@@ -143,7 +402,7 @@
 
  * Harvesters can now extract Nitrogen from the surface (JadeOfMom)
  * Filters can now extract Ammonia from the atmosphere (JadeOfMom)
- * New parts MiniPump and RadialPump to extract Water, Nitrogen and Ammonia from oceans (thanks to JadeOfMom for the Harvesters and PiezPiedPy for the parts) 
+ * New parts MiniPump and RadialPump to extract Water, Nitrogen and Ammonia from oceans (thanks to JadeOfMom for the Harvesters and PiezPiedPy for the parts)
  * Harvesters are now spec'd at 10% abundance by default (madman2003)
  ** The percentage is specified in the UI when selecting the process the harvester will run
  ** The percentage can be overruled for individual parts
@@ -172,7 +431,7 @@
  * Give Greenhouses the basic resources needed to run (madman2003)
  * There is now a help file on GitHub for those wishing to report bugs or contribute to Kerbalism.
    see [CONTRIBUTING.md](https://github.com/MoreRobustThanYou/Kerbalism/blob/master/CONTRIBUTING.md)
- 
+
 ### For Developers
 
  * Profile importing is now available to modders who wish to import their own processes, rules, supplies etc (thanks to PiezPiedPy)
@@ -201,7 +460,7 @@
 
 1.4.3
   - RemoteTech antennas now show in the Ship Monitor
-   
+
 1.4.2
   - Updated B9Switch config
 
@@ -214,10 +473,10 @@
 
 1.4.1.2
   - Implement player101's science fix.
-  
+
 1.4.1.1
   - Actually fix relay strength this time
-   
+
 1.2.9
   - ported to KSP 1.3.0.1804
   - improved SSTU support patch (@Maxzhao1999)
@@ -883,4 +1142,3 @@
 
 0.9.9.0
   First public release
-

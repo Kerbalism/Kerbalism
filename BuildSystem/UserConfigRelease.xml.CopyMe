@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
+//////////////                                                                //////////////
+//////////////   AFTER COPYING IT, DONT PUT THIS FILE INSIDE THE KERBALISM    //////////////
+//////////////       REPOSITORY, PUT IT SOMEWHERE ELSE ON YOUR COMPUTER       //////////////
+//////////////                                                                //////////////
+////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
+-->
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
+    <PropertyGroup>
+        <!-- Password for the KSP binaries archives, this is required to build the release configuration -->
+        <KSPDllArchivesPassword>mypassword</KSPDllArchivesPassword>
+
+        <!-- GitHub OAuth Token for your github account, only needed to upload releases -->
+        <!-- Will allow you to upload (dev and official) releases on the kerbalism repositories if you have the appropriate authorizations-->
+        <!-- To generate it, go to your guthub account Settings > Developer settings > Personal access tokens (https://github.com/settings/tokens) -->
+        <GithubOAuthToken>mytoken</GithubOAuthToken>
+
+        <!-- Login/password for your Spacedock account, only needed to upload releases -->
+        <!-- To upload releases on Spacedock, the maintainer must have added your account there-->
+        <SpacedockLogin>mylogin</SpacedockLogin>
+        <SpacedockPassword>mypassword</SpacedockPassword>
+    </PropertyGroup>
+</Project>

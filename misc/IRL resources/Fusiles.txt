@@ -1,0 +1,57 @@
+Material Deuterium
+Elements						D
+ElementCount					2
+Density_kg__m3					162.4
+EnthalpyOfFormation_kJ__mol		0
+BondDissociationEnergy_kJ__mol	443.3197
+GibbsFreeEnergyOfFormation_kJ__mol	0
+MeltingPoint_K					18.73
+BoilingPoint_K					23.67
+ThermalConductivity_W__m_K		.13007
+SpecificHeat_J__kg_K			5200
+Viscosity_Pa_s					12.6e-6
+RefractiveIndex					Deuterium
+Dissociation
+	Products						Monatomic Deuterium
+	ProductCounts					2
+
+Material Tritium
+Elements						T
+ElementCount					2
+Density_kg__m3					220
+EnthalpyOfFormation_kJ__mol		0
+BondDissociationEnergy_kJ__mol	446.67
+GibbsFreeEnergyOfFormation_kJ__mol	0
+MeltingPoint_K					20.62
+BoilingPoint_K					25.04
+
+Material Lithium-6
+Elements						Li-6
+ElementCount					1
+Density_kg__m3					534
+YieldStrength_MPa				.5281
+UltimateTensileStrength_MPa		15
+YoungsModulus_GPa				4.9
+ShearModulus_GPa				4.2
+SpecificHeat_J__kg_K			3580
+MeltingPoint_K					453.69
+BoilingPoint_K					1615
+ThermalConductivity_W__m_K		71.2
+ThermalExpansion__K				46e-6
+Resistivity_Ohm_m				92.8
+RefractiveIndex					Lithium
+RoughnessCoefficient			0.8
+
+Material Helium-3
+Elements						He-3
+ElementCount					1
+Density_kg__m3					125
+EnthalpyOfFormation_kJ__mol		0
+BondDissociationEnergy_kJ__mol	0
+GibbsFreeEnergyOfFormation_kJ__mol	0
+MeltingPoint_K					.95
+BoilingPoint_K					4.222
+SpecificHeat_J__kg_K			5193.12
+ThermalConductivity_W__m_K		.1513
+Viscosity_Pa_s					.000019
+Resistivity_Ohm_m				1e-8

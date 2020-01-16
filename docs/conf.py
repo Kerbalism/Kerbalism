@@ -24,13 +24,13 @@ source_parsers = {
 # -- Project information -----------------------------------------------------
 
 project = u'Kerbalism'
-copyright = u'2018 Kerbalism'
-author = u'N70 PiezPiedPy Gordon-Dry'
+copyright = u'2018-2019 Kerbalism'
+author = u'N70 PiezPiedPy Gordon-Dry Sir-Mortimer'
 
 # The short X.Y version
-version = u'1.7.2'
+version = u'2.1.1'
 # The full version, including alpha/beta/rc tags
-release = u'v1.7.2'
+release = u'v2.1.1'
 
 
 # -- General configuration ---------------------------------------------------

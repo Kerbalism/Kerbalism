@@ -1,0 +1,335 @@
+ChemicalReaction Nitrocellulose
+Reactants						Nitrocellulose
+ReactantCounts					2
+Products						Water	Carbon Monoxide	Carbon Dioxide	Nitrogen
+ProductCounts					7		9				3				2
+ActivationEnergy_kJ__mol		319.91
+AutoignitionTemperature_K		494
+
+ChemicalReaction Octogen
+Reactants						Octogen
+ReactantCounts					1
+Products						Carbon Monoxide	Water	Nitrogen
+ProductCounts					4				4		4
+ActivationEnergy_kJ__mol		169
+AutoignitionTemperature_K		650
+
+ChemicalReaction Cyclonite
+Reactants						Cyclonite
+ReactantCounts					1
+Products						Carbon Monoxide	Water	Nitrogen
+ProductCounts					3				3		3
+ActivationEnergy_kJ__mol		156
+AutoignitionTemperature_K		533
+
+ChemicalReaction Nitroglycerin
+Reactants						Nitroglycerin
+ReactantCounts					4
+Products						Carbon Monoxide	Water	Nitrogen	Oxygen
+ProductCounts					12				10		6			7
+ActivationEnergy_kJ__mol		83.68
+AutoignitionTemperature_K		343
+
+ChemicalReaction PETN
+Reactants						PETN
+ReactantCounts					1
+Products						Carbon Monoxide	Carbon Dioxide	Water	Nitrogen
+ProductCounts					1				2				4		2				
+ActivationEnergy_kJ__mol		196
+AutoignitionTemperature_K		463
+
+ChemicalReaction Barium Nitrate
+Reactants						Barium Nitrate
+ReactantCounts					2
+Products						Barium Oxide	Nitrogen Dioxide	Oxygen
+ProductCounts					2				4					1
+
+ChemicalReaction TNT
+Reactants						TNT
+ReactantCounts					2
+Products						Nitrogen	Water	Carbon Monoxide	Graphite
+ProductCounts					3			5		7				7
+ActivationEnergy_kJ__mol		100.4
+AutoignitionTemperature_K		573
+
+ChemicalReaction LOX LH2
+Reactants						Oxygen	Hydrogen
+ReactantCounts					1		2
+Products						Water
+ProductCounts					2
+ActivationEnergy_kJ__mol		295
+AutoignitionTemperature_K		773
+CharacteristicLength_m			.889
+
+ChemicalReaction LOX RP-1
+Reactants					Oxygen		RP-1
+ReactantCounts					37		2
+Products						Carbon Dioxide	Water
+ProductCounts					24		26
+ActivationEnergy_kJ__mol		12.0
+AutoignitionTemperature_K		673
+CharacteristicLength_m			1.143
+
+ChemicalReaction LOX Methane
+Reactants						Oxygen	Methane
+ReactantCounts					2		1
+Products						Carbon Dioxide	Water
+ProductCounts					1				2
+ActivationEnergy_kJ__mol		238
+AutoignitionTemperature_K		853
+CharacteristicLength_m			1.27
+
+ChemicalReaction LOX Ethane
+Reactants						Ethane	Oxygen
+ReactantCounts					2		7
+Products						Carbon Dioxide	Water
+ProductCounts					4				6
+ActivationEnergy_kJ__mol		217
+AutoignitionTemperature_K		745
+CharacteristicLength_m			1.27
+
+ChemicalReaction LOX Propane
+Reactants						Propane	Oxygen
+ReactantCounts					1		5
+Products						Carbon Dioxide	Water
+ProductCounts					3				4
+ActivationEnergy_kJ__mol		217
+AutoignitionTemperature_K		813
+CharacteristicLength_m			1.27
+
+ChemicalReaction LOX Butane
+Reactants						Butane	Oxygen
+ReactantCounts					2		13
+Products						Carbon Dioxide	Water
+ProductCounts					8				10
+ActivationEnergy_kJ__mol		184
+AutoignitionTemperature_K		561
+CharacteristicLength_m			1.27
+
+ChemicalReaction LOX Pentane
+Reactants						Pentane	Oxygen
+ReactantCounts					1		8
+Products						Carbon Dioxide	Water
+ProductCounts					5				6
+ActivationEnergy_kJ__mol		-4.18
+AutoignitionTemperature_K		533.1
+CharacteristicLength_m			1.27
+
+ChemicalReaction LOX Decane
+Reactants						Decane	Oxygen
+ReactantCounts					2		31
+Products						Carbon Dioxide	Water
+ProductCounts					20				22
+ActivationEnergy_kJ__mol		1.33
+AutoignitionTemperature_K		483.1
+CharacteristicLength_m			1.27
+
+ChemicalReaction LOX Hydrazine
+Reactants						Oxygen	Hydrazine
+ReactantCounts					3		1
+Products						Water	Nitrogen Dioxide
+ProductCounts					2		2
+ActivationEnergy_kJ__mol		5.014
+AutoignitionTemperature_K		543
+CharacteristicLength_m			.8
+
+ChemicalReaction Fluorine Hydrogen
+Reactants						Fluorine	Hydrogen
+ReactantCounts					1			1
+Products						Hydrogen Fluoride
+ProductCounts					2
+ActivationEnergy_kJ__mol		82.8
+AutoignitionTemperature_K		773
+CharacteristicLength_m			.6604
+
+ChemicalReaction Fluorine Methane
+Reactants						Fluorine	Methane
+ReactantCounts					4			1
+Products						Hydrogen Fluoride	Tetrafluoromethane
+ProductCounts					4					1
+ActivationEnergy_kJ__mol		47.0
+AutoignitionTemperature_K		853
+CharacteristicLength_m			1.
+
+ChemicalReaction Fluorine Ammonia
+Reactants						Fluorine	Ammonia
+ReactantCounts					5			2
+Products						Hydrogen Fluoride	Tetrafluorohydrazine
+ProductCounts					6					1
+ActivationEnergy_kJ__mol		54.04
+AutoignitionTemperature_K		924
+CharacteristicLength_m			.9
+
+ChemicalReaction Fluorine Hydrazine
+Reactants						Fluorine	Hydrazine
+ReactantCounts					5			1
+Products						Hydrogen Fluoride	Nitrogen Trifluoride
+ProductCounts					2					4
+ActivationEnergy_kJ__mol		14.2
+AutoignitionTemperature_K		543
+CharacteristicLength_m			.71
+
+ChemicalReaction Hydrazine
+Reactants						Hydrazine
+ReactantCounts					3
+Products						Ammonia	Nitrogen
+ProductCounts					4		2
+ActivationEnergy_kJ__mol		251
+AutoignitionTemperature_K		543
+CharacteristicLength_m			.7112
+
+ChemicalReaction Nitromethane
+Reactants						Nitromethane
+ReactantCounts					2
+Products						Carbon Monoxide	Water	Hydrogen	Nitrogen
+ProductCounts					2				2		1			1
+ActivationEnergy_kJ__mol		212
+AutoignitionTemperature_K		690
+CharacteristicLength_m			1.1
+
+ChemicalReaction Nitrous Oxide
+Reactants						Nitrous Oxide
+ReactantCounts					2
+Products						Nitrogen	Oxygen
+ProductCounts					2		1
+ActivationEnergy_kJ__mol		250
+AutoignitionTemperature_K		850
+CharacteristicLength_m			.9
+
+ChemicalReaction Nitrous Oxide RP-1
+Reactants					Nitrous Oxide		RP-1
+ReactantCounts					37			1
+Products						Nitrogen		Water		Carbon Dioxide
+ProductCounts					37		13		12
+ActivationEnergy_kJ__mol		250
+AutoignitionTemperature_K		850
+CharacteristicLength_m			.9
+
+ChemicalReaction Hydrogen Peroxide
+Reactants						Hydrogen Peroxide
+ReactantCounts					2
+Products						Water	Oxygen
+ProductCounts					2		1
+ActivationEnergy_kJ__mol		196
+AutoignitionTemperature_K		423
+CharacteristicLength_m			1.78
+
+ChemicalReaction Hydrogen Peroxide RP-1
+Reactants					Hydrogen Peroxide			RP-1
+ReactantCounts					37				1
+Products						Water	Carbon Dioxide
+ProductCounts					50	12
+ActivationEnergy_kJ__mol		17.6
+AutoignitionTemperature_K		493
+CharacteristicLength_m			1.52
+
+ChemicalReaction Ethylene Oxide
+Reactants						Ethylene Oxide
+ReactantCounts					1
+Products						Carbon Monoxide	Methane
+ProductCounts					1				1
+CharacteristicLength_m			1.5
+ActivationEnergy_kJ__mol		241
+AutoignitionTemperature_K		763
+
+ChemicalReaction Iron Thermite
+Reactants						Hematite	Aluminum
+ReactantCounts					1			2
+Products						Aluminum Oxide	Iron
+ProductCounts					1				2
+ActivationEnergy_kJ__mol		145
+AutoignitionTemperature_K		1272
+
+ChemicalReaction Copper Thermite
+Reactants						Tenorite	Aluminum
+ReactantCounts					3			2
+Products						Aluminum Oxide	Copper
+ProductCounts					1				3
+ActivationEnergy_kJ__mol		145
+AutoignitionTemperature_K		1272
+
+ChemicalReaction Silicon Thermite
+Reactants						Silicon Dioxide	Aluminum
+ReactantCounts					3				4
+Products						Aluminum Oxide	Silicon
+ProductCounts					2				3
+ActivationEnergy_kJ__mol		145
+AutoignitionTemperature_K		1272
+
+ChemicalReaction Iron Nanothermite
+Reactants						Hematite	Aluminum
+ReactantCounts					1			2
+Products						Aluminum Oxide	Iron
+ProductCounts					1				2
+ActivationEnergy_kJ__mol		17.4
+AutoignitionTemperature_K		728.9
+
+ChemicalReaction Copper Nanothermite
+Reactants						Tenorite	Aluminum
+ReactantCounts					3			2
+Products						Aluminum Oxide	Copper
+ProductCounts					1				3
+ActivationEnergy_kJ__mol		17.4
+AutoignitionTemperature_K		886
+
+ChemicalReaction Silicon Nanothermite
+Reactants						Silicon Dioxide	Aluminum
+ReactantCounts					3				4
+Products						Aluminum Oxide	Silicon
+ProductCounts					2				3
+ActivationEnergy_kJ__mol		17.4
+AutoignitionTemperature_K		886
+
+ChemicalReaction Chlorine Hydrogen
+Reactants				Chlorine		Hydrogen
+ReactantCounts				1			1
+Products				Hydrogen Chloride
+ProductCounts				2
+ActivationEnergy_kJ__mol		82.8
+AutoignitionTemperature_K		773
+CharacteristicLength_m			.6604
+
+ChemicalReaction Fluorine RP-1
+Reactants				Fluorine			RP-1
+ReactantCounts				38			1
+Products				Hydrogen Fluoride	Tetrafluoromethane
+ProductCounts				26			12
+ActivationEnergy_kJ__mol			12
+AutoignitionTemperature_K		483.1
+CharacteristicLength_m			.873
+
+ChemicalReaction NTO Hydrazine
+Reactants				Dinitrogen Tetroxide	Hydrazine
+ReactantCounts				1			2
+Products				Water	Nitrogen
+ProductCounts				4	3
+ActivationEnergy_kJ__mol		59.4
+AutoignitionTemperature_K		543
+CharacteristicLength_m			.825
+
+ChemicalReaction NTO MMH
+Reactants				Dinitrogen Tetroxide	Monomethylhydrazine
+ReactantCounts				5			4
+Products				Water	Nitrogen	Carbon Dioxide
+ProductCounts				12	9		4
+ActivationEnergy_kJ__mol		25
+AutoignitionTemperature_K		469
+CharacteristicLength_m			.746
+
+ChemicalReaction NTO UDMH
+Reactants				Dinitrogen Tetroxide	Unsymmetrical Dimethylhydrazine
+ReactantCounts				2			1
+Products				Water	Nitrogen	Carbon Dioxide
+ProductCounts				4	3		2
+ActivationEnergy_kJ__mol		22
+AutoignitionTemperature_K		522
+CharacteristicLength_m			1.12
+
+ChemicalReaction WFNA Hydrazine
+Reactants				Nitric Acid	Hydrazine
+ReactantCounts				4		5
+Products				Water	Nitrogen
+ProductCounts				12		7
+ActivationEnergy_kJ__mol		21.6
+AutoignitionTemperature_K		543
+CharacteristicLength_m			.825

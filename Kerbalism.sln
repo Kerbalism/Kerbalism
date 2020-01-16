@@ -1,37 +1,58 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27130.2036
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29009.5
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kerbalism", "src\Kerbalism.csproj", "{7CF587A9-6E49-46E8-AB3F-87B80A6276DA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KerbalismBuild", "src\KerbalismBuild\KerbalismBuild.csproj", "{1C9C2C4A-FC39-4F84-B4A2-1A5E38C14815}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KerbalismBootstrap", "src\KerbalismBootstrap\KerbalismBootstrap.csproj", "{D07330FA-DEA1-4190-963D-31F4C81E8C82}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kerbalism", "src\Kerbalism\Kerbalism.csproj", "{7CF587A9-6E49-46E8-AB3F-87B80A6276DA}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{6AEED929-B0AF-4EB1-82A0-84B98C5BA185}"
 	ProjectSection(SolutionItems) = preProject
-		.editorconfig = .editorconfig
+		.gitignore = .gitignore
 		.travis.yml = .travis.yml
 		CHANGELOG.md = CHANGELOG.md
-		GameData\Kerbalism\Kerbalism.version = GameData\Kerbalism\Kerbalism.version
+		README.md = README.md
+		GameData\Kerbalism\VersionConfig.xml = GameData\Kerbalism\VersionConfig.xml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "BuildSystem", "BuildSystem", "{F7A47BB9-1697-4ECA-AECD-9FC4A36B3BBD}"
+	ProjectSection(SolutionItems) = preProject
+		buildsystem\BuildSystemTargets.xml = buildsystem\BuildSystemTargets.xml
+		buildsystem\ProjectsCommonProperties.xml = buildsystem\ProjectsCommonProperties.xml
+		BuildSystem\README.MD = BuildSystem\README.MD
+		BuildSystem\Utility\UploadGitHubRelease.cs = BuildSystem\Utility\UploadGitHubRelease.cs
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "User IDE - dev settings", "User IDE - dev settings", "{BFB3522D-10B4-4A7D-80C5-D7BE32C91C0B}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+		BuildSystem\UserConfigDevEnv.xml = BuildSystem\UserConfigDevEnv.xml
 	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug 1.3|Any CPU = Debug 1.3|Any CPU
 		Debug|Any CPU = Debug|Any CPU
-		Release 1.3|Any CPU = Release 1.3|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{7CF587A9-6E49-46E8-AB3F-87B80A6276DA}.Debug 1.3|Any CPU.ActiveCfg = Debug 1.3|Any CPU
-		{7CF587A9-6E49-46E8-AB3F-87B80A6276DA}.Debug 1.3|Any CPU.Build.0 = Debug 1.3|Any CPU
+		{1C9C2C4A-FC39-4F84-B4A2-1A5E38C14815}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1C9C2C4A-FC39-4F84-B4A2-1A5E38C14815}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1C9C2C4A-FC39-4F84-B4A2-1A5E38C14815}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1C9C2C4A-FC39-4F84-B4A2-1A5E38C14815}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D07330FA-DEA1-4190-963D-31F4C81E8C82}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D07330FA-DEA1-4190-963D-31F4C81E8C82}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7CF587A9-6E49-46E8-AB3F-87B80A6276DA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{7CF587A9-6E49-46E8-AB3F-87B80A6276DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{7CF587A9-6E49-46E8-AB3F-87B80A6276DA}.Release 1.3|Any CPU.ActiveCfg = Release 1.3|Any CPU
-		{7CF587A9-6E49-46E8-AB3F-87B80A6276DA}.Release 1.3|Any CPU.Build.0 = Release 1.3|Any CPU
 		{7CF587A9-6E49-46E8-AB3F-87B80A6276DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{7CF587A9-6E49-46E8-AB3F-87B80A6276DA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{F7A47BB9-1697-4ECA-AECD-9FC4A36B3BBD} = {6AEED929-B0AF-4EB1-82A0-84B98C5BA185}
+		{BFB3522D-10B4-4A7D-80C5-D7BE32C91C0B} = {6AEED929-B0AF-4EB1-82A0-84B98C5BA185}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BE63E70D-469E-4AE2-894C-A7946813FAEE}

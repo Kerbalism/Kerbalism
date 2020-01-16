@@ -1,0 +1,62 @@
+FusionReaction Deuterium Tritium
+Fusor1							Deuterium
+Fusor2							Tritium
+AverageNeutronEnergy_MeV		14.088
+AverageChargedEnergy_MeV		3.5
+AstrophysicalFactor_keV_b		1.2e4
+
+FusionReaction Deuterium Deuterium
+Fusor1							Deuterium
+Fusor2							Deuterium
+AverageNeutronEnergy_MeV		1.224
+AverageChargedEnergy_MeV		2.425
+AstrophysicalFactor_keV_b		55
+
+FusionReaction Deuterium Helium
+Fusor1							Deuterium
+Fusor2							Helium-3
+AverageNeutronEnergy_MeV		0
+AverageChargedEnergy_MeV		9.15
+AstrophysicalFactor_keV_b		5.9e3
+
+FusionReaction Tritium Tritium
+Fusor1							Tritium
+Fusor2							Tritium
+AverageNeutronEnergy_MeV		3.78
+AverageChargedEnergy_MeV		7.55
+AstrophysicalFactor_keV_b		138
+
+FusionReaction Helium Helium
+Fusor1							Helium-3
+Fusor2							Helium-3
+AverageNeutronEnergy_MeV		0
+AverageChargedEnergy_MeV		12.86
+AstrophysicalFactor_keV_b		5.4e3
+
+FusionReaction Proton Boron
+Fusor1							Proton Mass
+Fusor2							Boron
+AverageNeutronEnergy_MeV		0
+AverageChargedEnergy_MeV		8.68
+AstrophysicalFactor_keV_b		2e5
+
+FusionReaction Proton Lithium-7
+Fusor1							Proton Mass
+Fusor2							Lithium
+AverageNeutronEnergy_MeV		0
+AverageChargedEnergy_MeV		17.35
+AstrophysicalFactor_keV_b		80
+
+FusionReaction Proton Lithium-6
+Fusor1							Proton Mass
+Fusor2							Lithium-6
+AverageNeutronEnergy_MeV		0
+AverageChargedEnergy_MeV		4.02
+AstrophysicalFactor_keV_b		5.5e3
+
+FusionReaction Deuterium Lithium-6
+Fusor1							Deuterium
+Fusor2							Lithium-6
+AverageNeutronEnergy_MeV		.186
+AverageChargedEnergy_MeV		8.154
+AstrophysicalFactor_keV_b		6.75e4

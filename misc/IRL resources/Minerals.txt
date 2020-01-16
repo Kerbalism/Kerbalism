@@ -1,0 +1,129 @@
+Material Olivine
+Elements						Mg	Fe	Si	O
+ElementCount					1	1	1	4
+Density_kg__m3					3200
+
+Material Wollastonite
+Elements						Ca	Si	O
+ElementCount					1	2	6
+Density_kg__m3					2670
+
+Material Plagioclase
+Elements						Na	Ca	Al	Si	O
+ElementCount					.5	.5	1.5	2.5	8
+Density_kg__m3					2760
+
+Material Calcium Phosphate
+Elements						Ca		P		H		O
+ElementCount					1.6667	1.6667	1.6667	6.6667
+Density_kg__m3					3140
+
+Material Troilite
+Elements						Fe	S
+ElementCount					1	1
+Density_kg__m3					4610
+
+Material Tetrataenite
+Elements						Fe	Ni
+ElementCount					1	1
+Density_kg__m3					8220
+
+Material Enstatite
+Elements						Mg	Si	O
+ElementCount					1	1	3
+Density_kg__m3					3200
+
+Material Ferrosilite
+Elements						Fe	Si	O
+ElementCount					1	1	3
+Density_kg__m3					3300
+
+Material Fayalite
+Elements						Fe	Si	O
+ElementCount					2	1	4
+Density_kg__m3					4392
+
+Material Chromite
+Elements						Fe	Cr	O
+ElementCount					1	2	4
+Density_kg__m3					4800
+
+Material Sodium Feldspar
+Elements						Na	Al	Si	O
+ElementCount					1	1	3	8
+Density_kg__m3					4392
+
+Material Wustite
+Elements						Fe	O
+ElementCount					1	1
+Density_kg__m3					5700
+EnthalpyOfFormation_kJ__mol		-272
+ThermalConductivity_W__m_K		3.0
+
+Material Magnetite
+Elements						Fe	O
+ElementCount					3	4
+Density_kg__m3					5180
+EnthalpyOfFormation_kJ__mol		-1118
+ThermalConductivity_W__m_K		3.3
+
+Material Hematite
+Elements						Fe	O
+ElementCount					2	3
+Density_kg__m3					5242
+EnthalpyOfFormation_kJ__mol		-824.2
+GibbsFreeEnergyOfFormation_kJ__mol	-742.2
+BulkModulus_GPa					174.4
+SpecificHeat_J__kg_K			650.64
+MeltingPoint_K					1838
+Resistivity_Ohm_m				2.80
+ThermalConductivity_W__m_K		3.9
+
+Material Tenorite
+Elements						Cu	O
+ElementCount					1	1
+Density_kg__m3					6315
+EnthalpyOfFormation_kJ__mol		-156
+GibbsFreeEnergyOfFormation_kJ__mol	-127
+SpecificHeat_J__kg_K			513.02
+YoungsModulus_GPa				81.6
+ShearModulus_GPa				32.64
+MeltingPoint_K					1599
+BoilingPoint_K					2270
+RelativePermittivity			18.1
+BandGap_eV						1.2
+ThermalConductivity_W__m_K		.1365
+
+Material Phyllosilicate
+Elements						Mg	Fe	Si	O	H
+ElementCount					1.5	1.5	2	9	4
+Density_kg__m3					2900
+
+Material Diopside
+Elements						Mg	Ca	Si	O
+ElementCount					1	1	2	6
+Density_kg__m3					3278
+
+Material Hedenbergite
+Elements						Fe	Ca	Si	O
+ElementCount					1	1	2	6
+Density_kg__m3					3560
+
+Material Calcite
+Elements						Ca	C	O
+ElementCount					1	1	3
+Density_kg__m3					2710.2
+EnthalpyOfFormation_kJ__mol		-1207
+YoungsModulus_GPa				69.9
+ShearModulus_GPa				35
+MeltingPoint_K					1612
+SpecificHeat_J__kg_K			849.4
+ThermalConductivity_W__m_K		5.526
+ThermalExpansion__K				8.65e-6
+RefractiveIndex					Calcite
+RoughnessCoefficient			.9
+
+Material Kamacite
+Elements						Fe	Ni
+ElementCount					.9	.1
+Density_kg__m3					7900

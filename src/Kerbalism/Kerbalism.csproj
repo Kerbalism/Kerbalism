@@ -1,0 +1,307 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- /////////////////////////////////////////////////// -->
+  <!-- /////////////// COMMON PROPERTIES ///////////////// -->
+  <!-- /////////////////////////////////////////////////// -->
+  <PropertyGroup>
+    <ProjectGuid>{7CF587A9-6E49-46E8-AB3F-87B80A6276DA}</ProjectGuid>
+    <ProjectTypeGuids>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <NoWin32Manifest>False</NoWin32Manifest>
+    <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
+    <AllowUnsafeBlocks>False</AllowUnsafeBlocks>
+    <NoStdLib>False</NoStdLib>
+    <TreatWarningsAsErrors>False</TreatWarningsAsErrors>
+    <WarningLevel>4</WarningLevel>
+    <SignAssembly>False</SignAssembly>
+    <RootNamespace>KERBALISM</RootNamespace>
+    <AssemblyName>Kerbalism</AssemblyName>
+  </PropertyGroup>
+  <!-- /////////////////////////////////////////////////// -->
+  <!-- //////////// DEBUG CONFIGURATION SETUP //////////// -->
+  <!-- /////////////////////////////////////////////////// -->
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
+    <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
+    <ErrorReport>prompt</ErrorReport>
+    <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
+    <Prefer32Bit>false</Prefer32Bit>
+    <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
+    <NoWarn>IDE0018</NoWarn>
+  </PropertyGroup>
+  <!-- ///////////////////////////////////////////////////// -->
+  <!-- //////////// RELEASE CONFIGURATION SETUP //////////// -->
+  <!-- ///////////////////////////////////////////////////// -->
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
+    <WarningLevel>4</WarningLevel>
+    <DebugType>none</DebugType>
+    <Prefer32Bit>false</Prefer32Bit>
+    <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
+    <NoWarn>IDE0018</NoWarn>
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+  <!-- /////////////////////////////////////////////////// -->
+  <!-- ///////// BUILD SYSTEM AND USER OVERRIDES ///////// -->
+  <!-- /////////////////////////////////////////////////// -->
+  <Import Condition="Exists('..\..\BuildSystem\UserConfigDevEnv.xml')" Project="..\..\BuildSystem\UserConfigDevEnv.xml" />
+  <Import Condition="Exists('..\..\BuildSystem\ProjectsCommonProperties.xml')" Project="..\..\BuildSystem\ProjectsCommonProperties.xml" />
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+    <!-- Note : this is overriden by the build engine, but in order to have the correct constants in the IDE, it has to be there too -->
+    <DefineConstants>TRACE;DEBUG;$(DebugDefineConstants);KSP$(KSPDevVersion)</DefineConstants>
+    <DebugType>$(DebugTypeOverride)</DebugType>
+    <DebugType Condition="'$(DebugTypeOverride)' == ''">none</DebugType>
+  </PropertyGroup>
+  <PropertyGroup>
+    <TargetFrameworkVersion>$(FrameworkVersionOverride)</TargetFrameworkVersion>
+    <EffectiveKSPDllPath Condition="'$(Configuration)' == 'Debug'">$(KSPDevPath)\$(KSPDevDllsRelativePath)</EffectiveKSPDllPath>
+    <EffectiveKSPDllPath Condition="'$(Configuration)' == 'Release'">$(KSPReferenceDllsPathPR)</EffectiveKSPDllPath>
+  </PropertyGroup>
+  <!-- ///////////////////////////////////////////////////// -->
+  <!-- //////////////////// REFERENCES ///////////////////// -->
+  <!-- ///////////////////////////////////////////////////// -->
+  <ItemGroup>
+    <!-- System Dlls -->
+    <Reference Include="System">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Core">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Xml">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Xml.Linq">
+      <Private>False</Private>
+    </Reference>
+    <!-- Harmony reference, get it from the gamedata folder -->
+    <Reference Include="Harmony">
+      <HintPath>$(GameDataKerbalismPathPR)\0Harmony.1.2.0.1.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <!-- KSP Dlls -->
+    <Reference Include="$(EffectiveKSPDllPath)\Assembly-CSharp.dll">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="$(EffectiveKSPDllPath)\Assembly-CSharp-firstpass.dll">
+      <Private>False</Private>
+    </Reference>
+    <!-- load all UnityEngine Dlls (since 1.8 we only need those) -->
+    <Reference Include="$(EffectiveKSPDllPath)\UnityEngine*.dll">
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+  <!-- Unity Dlls (don't exists anymore since KSP 1.8, so test for their existence) -->
+  <!-- Note : this is done in choose block instead of simple condition on the reference -->
+  <!-- because Visual Studio is bypassing those. -->
+  <Choose>
+    <When Condition="Exists('$(EffectiveKSPDllPath)\Assembly-UnityScript.dll')">
+      <ItemGroup>
+        <Reference Include="$(EffectiveKSPDllPath)\Assembly-UnityScript.dll">
+          <Private>False</Private>
+        </Reference>
+        <Reference Include="$(EffectiveKSPDllPath)\Assembly-UnityScript-firstpass.dll">
+          <Private>False</Private>
+        </Reference>
+      </ItemGroup>
+    </When>
+  </Choose>
+  <!-- ///////////////////////////////////////////////////// -->
+  <!-- ///////////////////// COMPILES ////////////////////// -->
+  <!-- ///////////////////////////////////////////////////// -->
+  <ItemGroup>
+    <Compile Include="Automation\Computer.cs" />
+    <Compile Include="Automation\Device.cs" />
+    <Compile Include="Automation\Devices\Antenna.cs" />
+    <Compile Include="Automation\Devices\Harvester.cs" />
+    <Compile Include="Automation\Devices\Laboratory.cs" />
+    <Compile Include="Automation\Devices\Experiment.cs" />
+    <Compile Include="Automation\Devices\Scanner.cs" />
+    <Compile Include="Automation\Script.cs" />
+    <Compile Include="Automation\VesselDevices\VesselTransmit.cs" />
+    <Compile Include="Background.cs" />
+    <Compile Include="Cache.cs" />
+    <Compile Include="Automation\Devices\Converter.cs" />
+    <Compile Include="Automation\Devices\Drill.cs" />
+    <Compile Include="Automation\Devices\Emitter.cs" />
+    <Compile Include="Automation\Devices\Generator.cs" />
+    <Compile Include="Automation\Devices\Greenhouse.cs" />
+    <Compile Include="Automation\Devices\Light.cs" />
+    <Compile Include="Automation\Devices\Panel.cs" />
+    <Compile Include="Automation\Devices\Process.cs" />
+    <Compile Include="Automation\Devices\Ring.cs" />
+    <Compile Include="Comms\AntennaInfoCommNet.cs" />
+    <Compile Include="Comms\AntennaInfoRT.cs" />
+    <Compile Include="Contracts\CrossBelt.cs" />
+    <Compile Include="Contracts\CrossHeliopause.cs" />
+    <Compile Include="Contracts\MannedOrbit.cs" />
+    <Compile Include="Contracts\SpaceAnalysis.cs" />
+    <Compile Include="Contracts\SpaceHarvest.cs" />
+    <Compile Include="Database\DB.cs" />
+    <Compile Include="Database\KerbalData.cs" />
+    <Compile Include="Database\LandmarkData.cs" />
+    <Compile Include="Database\PartData.cs" />
+    <Compile Include="Database\RuleData.cs" />
+    <Compile Include="Database\VesselSituations.cs" />
+    <Compile Include="Science\SubjectData.cs" />
+    <Compile Include="Database\SupplyData.cs" />
+    <Compile Include="Database\UIData.cs" />
+    <Compile Include="Database\VesselData.cs" />
+    <Compile Include="Modules\Deploy.cs" />
+    <Compile Include="DeviceEC.cs" />
+    <Compile Include="Automation\Devices\LandingGear.cs" />
+    <Compile Include="External\RemoteTech.cs" />
+    <Compile Include="External\ModuleManager.cs" />
+    <Compile Include="External\SCANsat.cs" />
+    <Compile Include="Modules\Harvester.cs" />
+    <Compile Include="Modules\Emitter.cs" />
+    <Compile Include="Modules\Greenhouse.cs" />
+    <Compile Include="Modules\HardDrive.cs" />
+    <Compile Include="Modules\Laboratory.cs" />
+    <Compile Include="Modules\ProcessController.cs" />
+    <Compile Include="Modules\Sensor.cs" />
+    <Compile Include="Modules\Experiment.cs" />
+    <Compile Include="Modules\Reliability.cs" />
+    <Compile Include="Modules\SolarPanelFixer.cs" />
+    <Compile Include="Patches\ModuleAsteroid_performSampleExperiment.cs" />
+    <Compile Include="Profile\Modifiers.cs" />
+    <Compile Include="Profile\Process.cs" />
+    <Compile Include="Renderer\LineRenderer.cs" />
+    <Compile Include="Renderer\ParticleMesh.cs" />
+    <Compile Include="Renderer\ParticleRenderer.cs" />
+    <Compile Include="Science\Drive.cs" />
+    <Compile Include="Science\ExperimentRequirements.cs" />
+    <Compile Include="Science\ExperimentInfo.cs" />
+    <Compile Include="Science\File.cs" />
+    <Compile Include="Science\Hijacker.cs" />
+    <Compile Include="Science\Sample.cs" />
+    <Compile Include="Science\Science.cs" />
+    <Compile Include="Comms\ConnectionInfo.cs" />
+    <Compile Include="Comms\Communications.cs" />
+    <Compile Include="Science\ScienceDB.cs" />
+    <Compile Include="Science\ScienceSituation.cs" />
+    <Compile Include="Science\Situation.cs" />
+    <Compile Include="System\API.cs" />
+    <Compile Include="System\Callbacks.cs" />
+    <Compile Include="UI\ConnManager.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiInterfaces.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiBase.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiButton.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiHeader.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiIcon.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiLayoutOptimizer.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiMasterController.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiScrollView.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiText.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiTextBox.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiLib.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiToggle.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiToggleList.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiVerticalLayout.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiHorizontalLayout.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiIconButton.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiStyle.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiTooltip.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiTooltipController.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiVerticalSection.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiWindow.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiUpdate.cs" />
+    <Compile Include="UI\Planner\EnvironmentAnalyzer.cs" />
+    <Compile Include="UI\Planner\ResourceSimulator.cs" />
+    <Compile Include="UI\Planner\SimulatedRecipe.cs" />
+    <Compile Include="UI\Planner\SimulatedResource.cs" />
+    <Compile Include="UI\Planner\SimulatedResourceView.cs" />
+    <Compile Include="UI\Planner\VesselAnalyzer.cs" />
+    <Compile Include="UI\Science\ExperimentSubjectsList.cs" />
+    <Compile Include="UI\Science\ExperimentPopup.cs" />
+    <Compile Include="UI\Science\ScienceArchiveWindow.cs" />
+    <Compile Include="Utility\GotoVessel.cs" />
+    <Compile Include="System\Loader.cs" />
+    <Compile Include="System\Settings.cs" />
+    <Compile Include="UI\BodyInfo.cs" />
+    <Compile Include="UI\DevManager.cs" />
+    <Compile Include="UI\FileManager.cs" />
+    <Compile Include="UI\Textures.cs" />
+    <Compile Include="UI\NotificationLog.cs" />
+    <Compile Include="UI\Panel.cs" />
+    <Compile Include="UI\TimedOut.cs" />
+    <Compile Include="UI\Window.cs" />
+    <Compile Include="UI\Launcher.cs" />
+    <Compile Include="UI\Message.cs" />
+    <Compile Include="UI\Monitor.cs" />
+    <Compile Include="UI\Planner\Planner.cs" />
+    <Compile Include="UI\Styles.cs" />
+    <Compile Include="UI\Telemetry.cs" />
+    <Compile Include="UI\Tooltip.cs" />
+    <Compile Include="UI\UI.cs" />
+    <Compile Include="Modules\Configure.cs" />
+    <Compile Include="Modules\Comfort.cs" />
+    <Compile Include="Modules\GravityRing.cs" />
+    <Compile Include="Modules\Habitat.cs" />
+    <Compile Include="Modules\PlannerController.cs" />
+    <Compile Include="EVA.cs" />
+    <Compile Include="Resource.cs" />
+    <Compile Include="Profile\Profile.cs" />
+    <Compile Include="Profile\Supply.cs" />
+    <Compile Include="Profile\Rule.cs" />
+    <Compile Include="Sim.cs" />
+    <Compile Include="System\Features.cs" />
+    <Compile Include="System\Kerbalism.cs" />
+    <Compile Include="Lib.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="UI\VesselConfig.cs" />
+    <Compile Include="Utility\Animator.cs" />
+    <Compile Include="Utility\Archive.cs" />
+    <Compile Include="Utility\CrewSpecs.cs" />
+    <Compile Include="Utility\DumpSpec.cs" />
+    <Compile Include="Utility\Highlighter.cs" />
+    <Compile Include="Utility\Profiler.cs" />
+    <Compile Include="Utility\Space.cs" />
+    <Compile Include="Utility\Specifics.cs" />
+    <Compile Include="Utility\Transformator.cs" />
+    <Compile Include="System\Preferences.cs" />
+    <Compile Include="Modules\Sickbay.cs" />
+    <Compile Include="Automation\Devices\Sickbay.cs" />
+    <Compile Include="Modules\KerbalismScansat.cs" />
+    <Compile Include="Patches\DeployedScienceExperiment_SendDataToComms.cs" />
+    <Compile Include="Comms\AntennaInfoSerenity.cs" />
+    <Compile Include="Utility\Serenity.cs" />
+    <Compile Include="Patches\VesselRecovery_OnVesselRecovered.cs" />
+    <Compile Include="Radiation\Radiation.cs" />
+    <Compile Include="Radiation\StormData.cs" />
+    <Compile Include="Radiation\Storm.cs" />
+    <Compile Include="UI\FailuresManager.cs" />
+    <Compile Include="Database\ReliabilityInfo.cs" />
+    <Compile Include="Database\VesselHabitatInfo.cs" />
+    <Compile Include="GlobalSuppressions.cs" />
+    <Compile Include="Patches\TooltipController_CrewAC_SetTooltip.cs" />
+    <Compile Include="Modules\PassiveShield.cs" />
+    <Compile Include="Database\ResourceUpdateDelegate.cs" />
+  </ItemGroup>
+  <!-- ///////////////////////////////////////////////////// -->
+  <!-- ////////// IMPORT DEFAULT MS BUILD PROCESS ////////// -->
+  <!-- ///////////////////////////////////////////////////// -->
+  <ItemGroup />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- This target is called before the build, you can use it for debugging the build system -->
+  <Target Name="BeforeBuild">
+    <!--
+    <ConvertToAbsolutePath Paths="$(OutputPath)">
+      <Output TaskParameter="AbsolutePaths" PropertyName="OutputPathAbs" />
+    </ConvertToAbsolutePath>
+    <Message Text="Kerbalism build MSBuildProjectDirectory='$(MSBuildProjectDirectory)'" Importance="high" />
+    <Message Text="Kerbalism build OutputPathAbs='$(OutputPathAbs)'" Importance="high" />
+    -->
+  </Target>
+  <!-- ///////////////////////////////////////////////////// -->
+  <!-- ///////////////// KSP-AVC THINGHY /////////////////// -->
+  <!-- ///////////////////////////////////////////////////// -->
+  <ProjectExtensions>
+    <VisualStudio>
+      <UserProperties __JSONSchema="https://gist.githubusercontent.com/janbrohl/c614d2b4a2aee805d93428a2cbc44df5/raw/fdfc6366cd9b1b4f512d2d25778d1ebf209358d6/ksp-avc.schema.json" />
+    </VisualStudio>
+  </ProjectExtensions>
+</Project>
