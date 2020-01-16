@@ -91,7 +91,6 @@ namespace KERBALISM
 			if (Lib.Landed(v) || double.IsNaN(v.orbit.inclination) || v.orbit == null)
 				return v.mainBody.rotationPeriod * 0.5;
 
-
 			// the old method: this calculates the period for circular orbits
 			// double Ra = v.altitude + v.mainBody.Radius;
 			// double h = Math.Sqrt(Ra * v.mainBody.gravParameter);
@@ -155,6 +154,48 @@ namespace KERBALISM
 			return Td;
 		}
 
+		/// <summary>
+		/// This expects to be called repeatedly
+		/// </summary>
+		public static double SampleSunFactor(Vessel v, double elapsedSeconds)
+		{
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Sim.SunFactor2");
+
+			// assume 50% exposure for landed vessels (half the period is night)
+			// this is bad for inclined bodies, but we're not landing on uranus
+			// any time soon
+			if(Lib.Landed(v) || double.IsNaN(v.orbit.inclination) || v.orbit == null)
+				return 0.5;
+
+			int sunSamples = 0;
+			int sampleCount = 0;
+
+			var now = Planetarium.GetUniversalTime();
+			double step = Math.Max(120.0, elapsedSeconds / 40);
+			var sun = v.KerbalismData().EnvMainSun.SunData.body;
+			var occluders = v.KerbalismData().EnvVisibleBodies;
+			double calculatedDuration = 0;
+			double maxCalculation = Math.Min(elapsedSeconds * 1.5, v.orbit.period);
+
+			// calculate for one orbit or 1.5 times the amount we need, whichever is shorter
+			while (calculatedDuration < maxCalculation)
+			{
+				Vector3d position = v.orbit.getPositionAtUT(now + sampleCount * step);
+				Vector3d direction;
+				double distance;
+				if (IsBodyVisible(v, position, sun, occluders, out direction, out distance))
+					sunSamples++;
+
+				sampleCount++;
+				calculatedDuration = step * sampleCount;
+			}
+
+			UnityEngine.Profiling.Profiler.EndSample();
+
+			double sunFactor = (double)sunSamples / (double)sampleCount;
+			// Lib.Log("Vessel " + v + " sun factor: " + sunFactor + " " + sunSamples + "/" + sampleCount + " #s=" + sampleCount + " e=" + elapsedSeconds + " step=" + step);
+			return sunFactor;
+		}
 
 		// return rotation speed at body surface
 		public static double SurfaceSpeed(CelestialBody body)

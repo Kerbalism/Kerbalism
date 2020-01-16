@@ -102,6 +102,8 @@ namespace KERBALISM
 			ModsScience = Lib.ConfigValue(cfg, "ModsScience", MODS_SCIENCE);
 			CheckForCRP = Lib.ConfigValue(cfg, "CheckForCRP", true);
 
+			UseSamplingSunFactor = Lib.ConfigValue(cfg, "UseSamplingSunFactor", false);
+
 			loaded = true;
 		}
 
@@ -197,6 +199,8 @@ namespace KERBALISM
 		public static string ModsWarning;
 		public static string ModsScience;
 		public static bool CheckForCRP;
+
+		public static bool UseSamplingSunFactor;
 
 		public static bool loaded { get; private set; } = false;
 	}

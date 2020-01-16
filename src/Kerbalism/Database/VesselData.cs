@@ -247,7 +247,7 @@ namespace KERBALISM
 			// the quantization error first became noticeable, and then exceed 100%, to solve this:
 			// - we switch to an analytical estimation of the sunlight/shadow period
 			// - atmo_factor become an average atmospheric absorption factor over the daylight period (not the whole day)
-			public static void UpdateSunsInfo(VesselData vd, Vector3d vesselPosition)
+			public static void UpdateSunsInfo(VesselData vd, Vector3d vesselPosition, double elapsedSeconds)
 			{
 				Vessel v = vd.Vessel;
 				double lastSolarFlux = 0.0;
@@ -266,7 +266,18 @@ namespace KERBALISM
 						Lib.DirectionAndDistance(vesselPosition, sunInfo.sunData.body, out sunInfo.direction, out sunInfo.distance);
 						// analytical estimation of the portion of orbit that was in sunlight.
 						// it has some limitations, see the comments on Sim.ShadowPeriod
-						sunInfo.sunlightFactor = 1.0 - Sim.ShadowPeriod(v) / Sim.OrbitalPeriod(v);
+
+						if (Settings.UseSamplingSunFactor)
+							// sampling estimation of the portion of orbit that is in sunlight
+							// until we will calculate again
+							sunInfo.sunlightFactor = Sim.SampleSunFactor(v, elapsedSeconds);
+
+						else
+							// analytical estimation of the portion of orbit that was in sunlight.
+							// it has some limitations, see the comments on Sim.ShadowPeriod
+							sunInfo.sunlightFactor = 1.0 - Sim.ShadowPeriod(v) / Sim.OrbitalPeriod(v);
+
+
 						// get atmospheric absorbtion
 						// for atmospheric bodies whose rotation period is less than 120 hours,
 						// determine analytic atmospheric absorption over a single body revolution instead
@@ -873,7 +884,7 @@ namespace KERBALISM
 			// get the 'visibleBodies' and 'sunsInfo' lists, the 'mainSun', 'solarFluxTotal' variables.
 			// require the situation variables to be evaluated first
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.VesselData.Sunlight");
-			SunInfo.UpdateSunsInfo(this, position);
+			SunInfo.UpdateSunsInfo(this, position, elapsedSeconds);
 			UnityEngine.Profiling.Profiler.EndSample();
 			sunBodyAngle = Sim.SunBodyAngle(Vessel, position, mainSun.SunData.body);
 
