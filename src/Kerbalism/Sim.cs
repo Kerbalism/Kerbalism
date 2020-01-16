@@ -91,23 +91,6 @@ namespace KERBALISM
 			if (Lib.Landed(v) || double.IsNaN(v.orbit.inclination) || v.orbit == null)
 				return v.mainBody.rotationPeriod * 0.5;
 
-			var now = Planetarium.GetUniversalTime();
-			var step = v.orbit.period / 30;
-			var nextOrbit = now + v.orbit.period;
-
-			var mainBodyAsList = new List<CelestialBody>();
-			mainBodyAsList.Add(v.mainBody);
-
-			int visible = 0;
-			while (now < nextOrbit)
-			{
-				Vector3d position = v.orbit.getPositionAtUT(now);
-				Vector3d bodyDir;
-				double bodyDist;
-				if(IsBodyVisible(v, position, v.KerbalismData().EnvMainSun.SunData.body, mainBodyAsList, out bodyDir, out bodyDist))
-					visible++;
-				now += step;
-			}
 
 			// the old method: this calculates the period for circular orbits
 			// double Ra = v.altitude + v.mainBody.Radius;
