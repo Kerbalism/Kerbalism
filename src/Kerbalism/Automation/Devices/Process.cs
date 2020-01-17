@@ -12,6 +12,10 @@ namespace KERBALISM
 
 		public override bool IsVisible => module.toggle;
 
+		public override string DisplayName => module.title;
+
+		public override string Tooltip => Lib.BuildString(base.Tooltip, "\n", Lib.Bold("Process capacity :"),"\n", module.ModuleInfo);
+
 		public override string Status => Lib.Color(module.IsRunning(), Localizer.Format("#KERBALISM_Generic_RUNNING"), Lib.Kolor.Green, Localizer.Format("#KERBALISM_Generic_STOPPED"), Lib.Kolor.Yellow);
 
 		public override void Ctrl(bool value)
@@ -30,9 +34,13 @@ namespace KERBALISM
 		public ProtoProcessDevice(ProcessController prefab, ProtoPartSnapshot protoPart, ProtoPartModuleSnapshot protoModule)
 			: base(prefab, protoPart, protoModule) { }
 
-		public override string Status => Lib.Color(Lib.Proto.GetBool(protoModule, "running"), Localizer.Format("#KERBALISM_Generic_RUNNING"), Lib.Kolor.Green, Localizer.Format("#KERBALISM_Generic_STOPPED"), Lib.Kolor.Yellow);
-
 		public override bool IsVisible => prefab.toggle;
+
+		public override string DisplayName => prefab.title;
+
+		public override string Tooltip => Lib.BuildString(base.Tooltip, "\n", Lib.Bold("Process capacity :"), "\n", prefab.ModuleInfo);
+
+		public override string Status => Lib.Color(Lib.Proto.GetBool(protoModule, "running"), Localizer.Format("#KERBALISM_Generic_RUNNING"), Lib.Kolor.Green, Localizer.Format("#KERBALISM_Generic_STOPPED"), Lib.Kolor.Yellow);
 
 		public override void Ctrl(bool value)
 		{

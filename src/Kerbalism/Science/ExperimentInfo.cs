@@ -351,16 +351,14 @@ namespace KERBALISM
 					continue;
 				}
 
-				bool partHasExperimentModule = false;
-
 				foreach (PartModule module in ap.partPrefab.Modules)
 				{
 					if (module is Experiment expModule)
 					{
-						if (expModule.experiment_id == ExperimentId)
+						// don't show configurable experiments
+						if (!expModule.isConfigurable && expModule.experiment_id == ExperimentId)
 						{
-							expModule.ExpInfo = this; // works inside the ExperimentInfo ctor, but make sure it's called at the end of it.
-							partHasExperimentModule = true;
+							expModule.ExpInfo = this;
 
 							// get module info for the ExperimentInfo, once
 							if (string.IsNullOrEmpty(ModuleInfo))
@@ -458,21 +456,6 @@ namespace KERBALISM
 					}
 				}
 #endif
-
-
-				if (partHasExperimentModule && !ap.name.StartsWith("kerbalEVA"))
-				{
-					ap.moduleInfos.Clear();
-					ap.resourceInfos.Clear();
-					try
-					{
-						Lib.ReflectionCall(PartLoader.Instance, "CompilePartInfo", new Type[] { typeof(AvailablePart), typeof(Part) }, new object[] { ap, ap.partPrefab });
-					}
-					catch (Exception ex)
-					{
-						Lib.Log("Could not patch the moduleInfo for part " + ap.name + " - " + ex.Message + "\n" + ex.StackTrace);
-					}
-				}
 			}
 		}
 

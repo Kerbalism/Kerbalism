@@ -130,7 +130,7 @@ namespace KERBALISM
 
 				// part prefabs hacks
 				Profile.SetupPods(); // add supply resources to pods
-				Misc.TweakPartIcons(); // various tweaks to the part icons in the editor
+				Misc.PartPrefabsTweaks(); // part prefabs tweaks, must be called after ScienceDB.Init() 
 
 				// Create KsmGui windows
 				new ScienceArchiveWindow();
@@ -425,10 +425,7 @@ namespace KERBALISM
 		void Update()
 		{
 			if (!didSanityCheck)
-			{
 				SanityCheck();
-				didSanityCheck = true;
-			}
 
 			if (!Communications.NetworkInitializing)
 			{
@@ -464,6 +461,17 @@ namespace KERBALISM
 
 		private void SanityCheck()
 		{
+			// fix PostScreenMessage() not being available for a few updates after scene load since KSP 1.8
+			if (ScreenMessages.PostScreenMessage("") == null)
+			{
+				didSanityCheck = false;
+				return;
+			}
+			else
+			{
+				didSanityCheck = true;
+			}
+
 			if (!Settings.loaded)
 			{
 				DisplayWarning("<color=#FF4500>No configuration found</color>\nYou need KerbalismConfig (or any other Kerbalism config pack).");
@@ -525,6 +533,7 @@ namespace KERBALISM
 			msg = "<b>KERBALISM WARNING</b>\n\n" + msg;
 			ScreenMessage sm = new ScreenMessage(msg, 20, ScreenMessageStyle.UPPER_CENTER);
 			sm.color = Color.cyan;
+
 			ScreenMessages.PostScreenMessage(sm);
 			ScreenMessages.PostScreenMessage(msg, true);
 			Lib.Log("Sanity check: " + msg);
@@ -675,74 +684,118 @@ namespace KERBALISM
 			}
 		}
 
-		public static void TweakPartIcons()
+		public static void PartPrefabsTweaks()
 		{
-			foreach (AvailablePart p in PartLoader.LoadedPartsList)
+			foreach (AvailablePart ap in PartLoader.LoadedPartsList)
 			{
 				// scale part icons of the radial container variants
-				switch (p.name)
+				switch (ap.name)
 				{
 					case "kerbalism-container-radial-small":
-						p.iconPrefab.transform.GetChild(0).localScale *= 0.60f;
-						p.iconScale *= 0.60f;
+						ap.iconPrefab.transform.GetChild(0).localScale *= 0.60f;
+						ap.iconScale *= 0.60f;
 						break;
 					case "kerbalism-container-radial-medium":
-						p.iconPrefab.transform.GetChild(0).localScale *= 0.85f;
-						p.iconScale *= 0.85f;
+						ap.iconPrefab.transform.GetChild(0).localScale *= 0.85f;
+						ap.iconScale *= 0.85f;
 						break;
 					case "kerbalism-container-radial-big":
-						p.iconPrefab.transform.GetChild(0).localScale *= 1.10f;
-						p.iconScale *= 1.10f;
+						ap.iconPrefab.transform.GetChild(0).localScale *= 1.10f;
+						ap.iconScale *= 1.10f;
 						break;
 					case "kerbalism-container-radial-huge":
-						p.iconPrefab.transform.GetChild(0).localScale *= 1.33f;
-						p.iconScale *= 1.33f;
+						ap.iconPrefab.transform.GetChild(0).localScale *= 1.33f;
+						ap.iconScale *= 1.33f;
 						break;
 					case "kerbalism-container-inline-375":
-						p.iconPrefab.transform.GetChild(0).localScale *= 1.33f;
-						p.iconScale *= 1.33f;
+						ap.iconPrefab.transform.GetChild(0).localScale *= 1.33f;
+						ap.iconScale *= 1.33f;
 						break;
 				}
 
 				// force a non-lexical order in the editor
-				switch (p.name)
+				switch (ap.name)
 				{
 					case "kerbalism-container-inline-0625":
-						p.title = Lib.BuildString("<size=1><color=#00000000>00</color></size>", p.title);
+						ap.title = Lib.BuildString("<size=1><color=#00000000>00</color></size>", ap.title);
 						break;
 					case "kerbalism-container-inline-125":
-						p.title = Lib.BuildString("<size=1><color=#00000000>01</color></size>", p.title);
+						ap.title = Lib.BuildString("<size=1><color=#00000000>01</color></size>", ap.title);
 						break;
 					case "kerbalism-container-inline-250":
-						p.title = Lib.BuildString("<size=1><color=#00000000>02</color></size>", p.title);
+						ap.title = Lib.BuildString("<size=1><color=#00000000>02</color></size>", ap.title);
 						break;
 					case "kerbalism-container-inline-375":
-						p.title = Lib.BuildString("<size=1><color=#00000000>03</color></size>", p.title);
+						ap.title = Lib.BuildString("<size=1><color=#00000000>03</color></size>", ap.title);
 						break;
 					case "kerbalism-container-radial-small":
-						p.title = Lib.BuildString("<size=1><color=#00000000>04</color></size>", p.title);
+						ap.title = Lib.BuildString("<size=1><color=#00000000>04</color></size>", ap.title);
 						break;
 					case "kerbalism-container-radial-medium":
-						p.title = Lib.BuildString("<size=1><color=#00000000>05</color></size>", p.title);
+						ap.title = Lib.BuildString("<size=1><color=#00000000>05</color></size>", ap.title);
 						break;
 					case "kerbalism-container-radial-big":
-						p.title = Lib.BuildString("<size=1><color=#00000000>06</color></size>", p.title);
+						ap.title = Lib.BuildString("<size=1><color=#00000000>06</color></size>", ap.title);
 						break;
 					case "kerbalism-container-radial-huge":
-						p.title = Lib.BuildString("<size=1><color=#00000000>07</color></size>", p.title);
+						ap.title = Lib.BuildString("<size=1><color=#00000000>07</color></size>", ap.title);
 						break;
 					case "kerbalism-greenhouse":
-						p.title = Lib.BuildString("<size=1><color=#00000000>08</color></size>", p.title);
+						ap.title = Lib.BuildString("<size=1><color=#00000000>08</color></size>", ap.title);
 						break;
 					case "kerbalism-gravityring":
-						p.title = Lib.BuildString("<size=1><color=#00000000>09</color></size>", p.title);
+						ap.title = Lib.BuildString("<size=1><color=#00000000>09</color></size>", ap.title);
 						break;
 					case "kerbalism-activeshield":
-						p.title = Lib.BuildString("<size=1><color=#00000000>10</color></size>", p.title);
+						ap.title = Lib.BuildString("<size=1><color=#00000000>10</color></size>", ap.title);
 						break;
 					case "kerbalism-chemicalplant":
-						p.title = Lib.BuildString("<size=1><color=#00000000>11</color></size>", p.title);
+						ap.title = Lib.BuildString("<size=1><color=#00000000>11</color></size>", ap.title);
 						break;
+				}
+
+				// recompile some part infos (this is normally done by KSP on loading, after each part prefab is compiled)
+				// This is needed because :
+				// - We can't check interdependent modules when OnLoad() is called, since the other modules may not be loaded yet
+				// - The science DB needs the system/bodies to be instantiated, which is done after the part compilation
+				bool partNeedsInfoRecompile = false;
+
+				foreach (PartModule module in ap.partPrefab.Modules)
+				{
+					// we want to remove the editor part tooltip module infos widgets that are switchable trough the configure module
+					// because the clutter the UI quite a bit. To do so, every module that implements IConfigurable is made to return
+					// an empty string in their GetInfo() if the IConfigurable.ModuleIsConfigured() is ever called on them.
+					if (module is Configure configure)
+					{
+						List<IConfigurable> configurables = configure.GetIConfigurableModules();
+
+						if (configurables.Count > 0)
+							partNeedsInfoRecompile = true;
+
+						foreach (IConfigurable configurable in configurables)
+							configurable.ModuleIsConfigured();
+					}
+					// note that the experiment modules on the prefab gets initialized from the scienceDB init, which also do
+					// a LoadedPartsList loop to get the scienceDB module infos. So this has to be called after the scienceDB init.
+					else if (module is Experiment)
+					{
+						partNeedsInfoRecompile = true;
+					}
+				}
+
+				// for some reason this crashes on the EVA kerbals parts
+				if (partNeedsInfoRecompile && !ap.name.StartsWith("kerbalEVA"))
+				{
+					ap.moduleInfos.Clear();
+					ap.resourceInfos.Clear();
+					try
+					{
+						Lib.ReflectionCall(PartLoader.Instance, "CompilePartInfo", new Type[] { typeof(AvailablePart), typeof(Part) }, new object[] { ap, ap.partPrefab });
+					}
+					catch (Exception ex)
+					{
+						Lib.Log("Could not patch the moduleInfo for part " + ap.name + " - " + ex.Message + "\n" + ex.StackTrace);
+					}
 				}
 			}
 		}

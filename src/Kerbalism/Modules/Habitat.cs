@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace KERBALISM
 {
-    public class Habitat : PartModule, ISpecifics
+    public class Habitat : PartModule, ISpecifics, IModuleInfo
     {
         // config
         [KSPField] public double volume = 0.0;                      // habitable volume in m^3, deduced from bounding box if not specified
@@ -610,5 +610,16 @@ namespace KERBALISM
         }
 
         public override string GetModuleDisplayName() { return Localizer.Format("#KERBALISM_Habitat"); }//"Habitat"
-    }
+
+		public string GetModuleTitle() => Localizer.Format("#KERBALISM_Habitat");
+		public Callback<Rect> GetDrawModulePanelCallback() => null;
+		public string GetPrimaryField()
+		{
+			return Lib.BuildString(
+				Lib.Bold(Localizer.Format("#KERBALISM_Habitat") + " " + Localizer.Format("#KERBALISM_Habitat_info1")), // "Habitat" + "Volume"
+				" : ",
+				Lib.HumanReadableVolume(volume > double.Epsilon ? volume : Lib.PartVolume(part)));
+		}
+			
+	}
 }

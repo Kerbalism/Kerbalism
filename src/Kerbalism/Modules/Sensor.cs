@@ -66,9 +66,8 @@ namespace KERBALISM
 		// part tooltip
 		public override string GetInfo()
 		{
-			return Specs().Info(Localizer.Format("#KERBALISM_Sensor_info"));//"Add telemetry readings to the part ui, and to the telemetry panel"
+			return Specs().Info();
 		}
-
 
 		// specifics support
 		public Specifics Specs()
