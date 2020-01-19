@@ -1337,6 +1337,14 @@ namespace KERBALISM
 
 		public static Vessel CommNodeToVessel(CommNode node)
 		{
+			// Iterating over all vessels will work for recovering the vessel from a CommNode.However,
+			// since CommNodes are created when Vessels are, you can almost certainly cache this in a
+			// reasonable manner.
+			// (Vessel creates a CommNetVessel which creates the CommNode.They're established no
+			// later than OnStart())
+			// We would either need something to monitor new Vessel creation (ie after staging events)
+			// OR you want a fallback for cache misses.
+
 			// Is is home return null
 			if (node.isHome) return null;
 

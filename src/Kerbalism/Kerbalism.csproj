@@ -282,6 +282,7 @@
     <Compile Include="Modules\PassiveShield.cs" />
     <Compile Include="Database\ResourceUpdateDelegate.cs" />
     <Compile Include="Modules\IKerbalismModule.cs" />
+    <Compile Include="Patches\ModuleDataTransmitter_GetInfo.cs" />
   </ItemGroup>
   <!-- ///////////////////////////////////////////////////// -->
   <!-- ////////// IMPORT DEFAULT MS BUILD PROCESS ////////// -->
