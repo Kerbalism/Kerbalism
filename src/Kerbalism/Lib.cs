@@ -2188,6 +2188,20 @@ namespace KERBALISM
 			);
 		}
 
+		public static PopupDialog Popup(string title, string msg, float width, params DialogGUIBase[] buttons)
+		{
+			return PopupDialog.SpawnPopupDialog
+			(
+				new Vector2(0.5f, 0.5f),
+				new Vector2(0.5f, 0.5f),
+				new MultiOptionDialog(title, msg, title, HighLogic.UISkin, width, buttons),
+				false,
+				HighLogic.UISkin,
+				true,
+				string.Empty
+			);
+		}
+
 		public static string Greek() {
 			string[] letters = {
 				"Alpha",

@@ -142,7 +142,7 @@ namespace KERBALISM
 				}
 				catch (Exception e)
 				{
-					string fatalError = "FATAL ERROR : Kerbalism core init has failed :" + "\n" + e.Message + "\n" + e.StackTrace + "\n";
+					string fatalError = "FATAL ERROR : Kerbalism core init has failed :" + "\n" + e.ToString();
 					Lib.Log(fatalError);
 					LoadFailedPopup(fatalError);
 				}
@@ -169,7 +169,7 @@ namespace KERBALISM
 				}
 				catch (Exception e)
 				{
-					string fatalError = "FATAL ERROR : Kerbalism save game init has failed :" + "\n" + e.Message + "\n" + e.StackTrace + "\n";
+					string fatalError = "FATAL ERROR : Kerbalism save game init has failed :" + "\n" + e.ToString();
 					Lib.Log(fatalError);
 					LoadFailedPopup(fatalError);
 				}
@@ -198,7 +198,7 @@ namespace KERBALISM
 			}
 			catch (Exception e)
 			{
-				string fatalError = "FATAL ERROR : Kerbalism save game load has failed :" + "\n" + e.Message + "\n" + e.StackTrace;
+				string fatalError = "FATAL ERROR : Kerbalism save game load has failed :" + "\n" + e.ToString();
 				Lib.Log(fatalError);
 				LoadFailedPopup(fatalError);
 			}
@@ -235,13 +235,12 @@ namespace KERBALISM
 
 		private void LoadFailedPopup(string error)
 		{
-			string popupMsg = "Kerbalism has encountered an unrecoverable error\n\n";
-			popupMsg += "<b>It is recommended to close KSP</b>\n\n";
-			popupMsg += "Please report it at <b>kerbalism.github.io</b> or in the <b>kerbalism discord</b>\n\n";
-			popupMsg += "A screenshot of this message and your ksp.log file would be appreciated\n\n";
+			string popupMsg = "Kerbalism has encountered an unrecoverable error and KSP must be closed\n\n";
+			popupMsg += "Report it at <b>kerbalism.github.io</b>, in the <b>kerbalism discord</b> or at the KSP forums thread\n\n";
+			popupMsg += "Please provide a screenshot of this message, and your ksp.log file found in your KSP install folder\n\n";
 			popupMsg += error;
 
-			Lib.Popup("Kerbalism fatal error", popupMsg);
+			Lib.Popup("Kerbalism fatal error", popupMsg, 600f);
 		}
 
 		#endregion
