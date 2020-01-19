@@ -27,7 +27,6 @@ namespace KERBALISM
 
 			// Antenna rating: 500km
 			specs.Add(Localizer.Format("#autoLOC_7001006", Lib.HumanReadableDistance(__instance.antennaPower)));
-			specs.Add("");
 
 			double ec = __instance.DataResourceCost * __instance.DataRate;
 			specs.Add("EC (idle)", Lib.BuildString("<color=#ffaa00>", Lib.HumanReadableRate(ec * Settings.TransmitterPassiveEcFactor), "</color>"));
