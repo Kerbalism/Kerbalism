@@ -1210,17 +1210,22 @@ namespace KERBALISM
 		}
 
 
-		///<summary>return set of crew on a vessel</summary>
+		///<summary>return set of crew on a vessel. Works on loaded and unloaded vessels</summary>
 		public static List<ProtoCrewMember> CrewList(Vessel v)
 		{
 			return v.loaded ? v.GetVesselCrew() : v.protoVessel.GetVesselCrew();
 		}
 
-
-		///<summary>return crew count of a vessel</summary>
+		///<summary>return crew count of a vessel. Works on loaded and unloaded vessels</summary>
 		public static int CrewCount(Vessel v)
 		{
 			return v.isEVA ? 1 : CrewList(v).Count;
+		}
+
+		///<summary>return crew count of a protovessel</summary>
+		public static int CrewCount(ProtoVessel pv)
+		{
+			return pv.vesselType == VesselType.EVA ? 1 : pv.GetVesselCrew().Count();
 		}
 
 		///<summary>return crew capacity of a vessel</summary>
