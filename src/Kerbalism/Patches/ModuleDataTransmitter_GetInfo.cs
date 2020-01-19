@@ -19,26 +19,35 @@ namespace KERBALISM
 			// Patch only if science is enabled
 			if (!Features.Science) return true;
 
-			Specifics specs = new Specifics();
+			string text = CultureInfo.CurrentCulture.TextInfo.ToTitleCase(__instance.antennaType.displayDescription());
 
 			// Antenna type: direct
-			string text = CultureInfo.CurrentCulture.TextInfo.ToTitleCase(__instance.antennaType.displayDescription());
-			specs.Add(Localizer.Format("#autoLOC_7001005", text));
+			string result = Localizer.Format("#autoLOC_7001005", text);
 
 			// Antenna rating: 500km
-			specs.Add(Localizer.Format("#autoLOC_7001006", Lib.HumanReadableDistance(__instance.antennaPower)));
+			result += Localizer.Format("#autoLOC_7001006", Lib.HumanReadableDistance(__instance.antennaPower));
+			result += "\n";
+
+			var dsn1 = CommNet.CommNetScenario.RangeModel.GetMaximumRange(__instance.antennaPower, GameVariables.Instance.GetDSNRange(0f));
+			var dsn2 = CommNet.CommNetScenario.RangeModel.GetMaximumRange(__instance.antennaPower, GameVariables.Instance.GetDSNRange(0.5f));
+			var dsn3 = CommNet.CommNetScenario.RangeModel.GetMaximumRange(__instance.antennaPower, GameVariables.Instance.GetDSNRange(1f));
+			result += Lib.BuildString(Localizer.Format("#autoLOC_236834"), " ", Lib.HumanReadableDistance(dsn1));
+			result += Lib.BuildString(Localizer.Format("#autoLOC_236835"), " ", Lib.HumanReadableDistance(dsn2));
+			result += Lib.BuildString(Localizer.Format("#autoLOC_236836"), " ", Lib.HumanReadableDistance(dsn3));
 
 			double ec = __instance.DataResourceCost * __instance.DataRate;
-			specs.Add("EC (idle)", Lib.BuildString("<color=#ffaa00>", Lib.HumanReadableRate(ec * Settings.TransmitterPassiveEcFactor), "</color>"));
 
-			if (__instance.antennaType != AntennaType.INTERNAL)
+			Specifics specs = new Specifics();
+			specs.Add("EC (idle)", Lib.Color(Lib.HumanReadableRate(ec * Settings.TransmitterPassiveEcFactor), Lib.Kolor.Orange));
+
+			if (__instance.antennaType != AntennaType.INTERNAL) 
 			{
-				specs.Add("EC (transmitting)", Lib.BuildString("<color=#ffaa00>", Lib.HumanReadableRate(ec * Settings.TransmitterActiveEcFactor), "</color>"));
+				specs.Add("EC (transmitting)", Lib.Color(Lib.HumanReadableRate(ec * Settings.TransmitterActiveEcFactor), Lib.Kolor.Orange));
 				specs.Add("");
 				specs.Add("Max. speed", Lib.HumanReadableDataRate(__instance.DataRate));
 			}
 
-			__result = specs.Info();
+			__result = Lib.BuildString(result, "\n\n", specs.Info());
 
 			// don't call default implementation
 			return false;
