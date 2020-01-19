@@ -112,31 +112,40 @@ namespace KERBALISM
 			// everything in there will be called only one time : the first time a game is loaded from the main menu
 			if (!IsCoreGameInitDone)
 			{
-				// core game systems
-				Sim.Init();         // find suns (Kopernicus support)
-				Radiation.Init();   // create the radiation fields
-				ScienceDB.Init();   // build the science database (needs Sim.Init() and Radiation.Init() first)
-				Science.Init();     // register the science hijacker
+				try
+				{
+					// core game systems
+					Sim.Init();         // find suns (Kopernicus support)
+					Radiation.Init();   // create the radiation fields
+					ScienceDB.Init();   // build the science database (needs Sim.Init() and Radiation.Init() first)
+					Science.Init();     // register the science hijacker
 
-				// static graphic components
-				LineRenderer.Init();
-				ParticleRenderer.Init();
-				Highlighter.Init();
+					// static graphic components
+					LineRenderer.Init();
+					ParticleRenderer.Init();
+					Highlighter.Init();
 
-				// UI
-				Textures.Init();                      // set up the icon textures
-				UI.Init();                                  // message system, main gui, launcher
-				KsmGui.KsmGuiMasterController.Init(); // setup the new gui framework
+					// UI
+					Textures.Init();                      // set up the icon textures
+					UI.Init();                                  // message system, main gui, launcher
+					KsmGui.KsmGuiMasterController.Init(); // setup the new gui framework
 
-				// part prefabs hacks
-				Profile.SetupPods(); // add supply resources to pods
-				Misc.PartPrefabsTweaks(); // part prefabs tweaks, must be called after ScienceDB.Init() 
+					// part prefabs hacks
+					Profile.SetupPods(); // add supply resources to pods
+					Misc.PartPrefabsTweaks(); // part prefabs tweaks, must be called after ScienceDB.Init() 
 
-				// Create KsmGui windows
-				new ScienceArchiveWindow();
+					// Create KsmGui windows
+					new ScienceArchiveWindow();
 
-				// GameEvents callbacks
-				Callbacks = new Callbacks();
+					// GameEvents callbacks
+					Callbacks = new Callbacks();
+				}
+				catch (Exception e)
+				{
+					string fatalError = "FATAL ERROR : Kerbalism core init has failed :" + "\n" + e.Message + "\n" + e.StackTrace + "\n";
+					Lib.Log(fatalError);
+					LoadFailedPopup(fatalError);
+				}
 
 				IsCoreGameInitDone = true;
 			}
@@ -144,16 +153,25 @@ namespace KERBALISM
 			// everything in there will be called every time a savegame (or a new game) is loaded from the main menu
 			if (!IsSaveGameInitDone)
 			{
-				Cache.Init();
-				ResourceCache.Init();
-				
-				// prepare storm data
-				foreach (CelestialBody body in FlightGlobals.Bodies)
+				try
 				{
-					if (Storm.Skip_body(body))
-						continue;
-					Storm_data sd = new Storm_data { body = body };
-					storm_bodies.Add(sd);
+					Cache.Init();
+					ResourceCache.Init();
+
+					// prepare storm data
+					foreach (CelestialBody body in FlightGlobals.Bodies)
+					{
+						if (Storm.Skip_body(body))
+							continue;
+						Storm_data sd = new Storm_data { body = body };
+						storm_bodies.Add(sd);
+					}
+				}
+				catch (Exception e)
+				{
+					string fatalError = "FATAL ERROR : Kerbalism save game init has failed :" + "\n" + e.Message + "\n" + e.StackTrace + "\n";
+					Lib.Log(fatalError);
+					LoadFailedPopup(fatalError);
 				}
 
 				IsSaveGameInitDone = true;
@@ -172,9 +190,18 @@ namespace KERBALISM
 			ResourceCache.Clear();
 
 			// deserialize our database
-			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.DB.Load");
-			DB.Load(node);
-			UnityEngine.Profiling.Profiler.EndSample();
+			try
+			{
+				UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.DB.Load");
+				DB.Load(node);
+				UnityEngine.Profiling.Profiler.EndSample();
+			}
+			catch (Exception e)
+			{
+				string fatalError = "FATAL ERROR : Kerbalism save game load has failed :" + "\n" + e.Message + "\n" + e.StackTrace;
+				Lib.Log(fatalError);
+				LoadFailedPopup(fatalError);
+			}
 
 			// I'm smelling the hacky mess in here.
 			Communications.NetworkInitialized = false;
@@ -204,6 +231,17 @@ namespace KERBALISM
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.DB.Save");
 			DB.Save(node);
 			UnityEngine.Profiling.Profiler.EndSample();
+		}
+
+		private void LoadFailedPopup(string error)
+		{
+			string popupMsg = "Kerbalism has encountered an unrecoverable error\n\n";
+			popupMsg += "<b>It is recommended to close KSP</b>\n\n";
+			popupMsg += "Please report it at <b>kerbalism.github.io</b> or in the <b>kerbalism discord</b>\n\n";
+			popupMsg += "A screenshot of this message and your ksp.log file would be appreciated\n\n";
+			popupMsg += error;
+
+			Lib.Popup("Kerbalism fatal error", popupMsg);
 		}
 
 		#endregion
