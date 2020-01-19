@@ -457,13 +457,13 @@ namespace KERBALISM
 
 			if (effectiveSampleCapacity > sampleCapacity && sampleCapacity > 0)
 			{
-				var sampleMultiplier = effectiveSampleCapacity / sampleCapacity;
+				var sampleMultiplier = (effectiveSampleCapacity / sampleCapacity) - 1;
 				result += sampleMultiplier * sampleCapacityMass;
 			}
 
 			if (effectiveDataCapacity > dataCapacity && dataCapacity > 0)
 			{
-				var dataMultiplier = effectiveDataCapacity / dataCapacity;
+				var dataMultiplier = (effectiveDataCapacity / dataCapacity) - 1.0;
 				result += dataMultiplier * dataCapacityMass;
 			}
 
@@ -484,13 +484,13 @@ namespace KERBALISM
 
 			if(effectiveSampleCapacity > sampleCapacity && sampleCapacity > 0)
 			{
-				var sampleMultiplier = effectiveSampleCapacity / sampleCapacity;
+				var sampleMultiplier = (effectiveSampleCapacity / sampleCapacity) - 1;
 				result += sampleMultiplier * sampleCapacityCost;
 			}
 
 			if (effectiveDataCapacity > dataCapacity && dataCapacity > 0)
 			{
-				var dataMultiplier = effectiveDataCapacity / dataCapacity;
+				var dataMultiplier = (effectiveDataCapacity / dataCapacity) - 1.0;
 				result += dataMultiplier * dataCapacityCost;
 			}
 

@@ -1670,14 +1670,14 @@ namespace KERBALISM
 		/// <summary> Adds the specified resource amount and capacity to a part,
 		/// the resource is created if it doesn't already exist </summary>
 		///<summary>poached from https://github.com/blowfishpro/B9PartSwitch/blob/master/B9PartSwitch/Extensions/PartExtensions.cs
-		public static void AddResource(Part p, string res_name, double amount, double capacity)
+		public static PartResource AddResource(Part p, string res_name, double amount, double capacity)
 		{
 			var reslib = PartResourceLibrary.Instance.resourceDefinitions;
 			// if the resource is not known, log a warning and do nothing
 			if (!reslib.Contains(res_name))
 			{
 				Lib.Log(Lib.BuildString("error while adding ", res_name, ": the resource doesn't exist"));
-				return;
+				return null;
 			}
 			var resourceDefinition = reslib[res_name];
 
@@ -1717,6 +1717,8 @@ namespace KERBALISM
 
 				resource.amount = amount;
 			}
+
+			return resource;
 		}
 
 		/// <summary> Removes the specified resource amount and capacity from a part,

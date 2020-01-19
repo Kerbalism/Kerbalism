@@ -191,13 +191,16 @@ namespace KERBALISM
                 Lib.AddResource(part, "WasteAtmosphere", 0.0, volume * 1e3);
 
                 // add external surface shielding
-                Lib.AddResource(part, "Shielding", 0.0, surface);
+                PartResource shieldingRes = Lib.AddResource(part, "Shielding", 0.0, surface);
 
-                // inflatable habitats can't be shielded (but still need the capacity) unless they have rigid walls
-                part.Resources["Shielding"].isTweakable = (Get_inflate_string().Length == 0) || inflatableUsingRigidWalls;
+				// add the cost of shielding to the base part cost
+				part.partInfo.cost += (float)surface * shieldingRes.info.unitCost;
 
-                // if shielding feature is disabled, just hide it
-                part.Resources["Shielding"].isVisible = Features.Shielding && part.Resources["Shielding"].isTweakable;
+				// inflatable habitats can't be shielded (but still need the capacity) unless they have rigid walls
+				shieldingRes.isTweakable = (Get_inflate_string().Length == 0) || inflatableUsingRigidWalls;
+
+				// if shielding feature is disabled, just hide it
+				shieldingRes.isVisible = Features.Shielding && shieldingRes.isTweakable;
 
                 configured = true;
             }
