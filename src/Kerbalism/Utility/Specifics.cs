@@ -39,8 +39,14 @@ namespace KERBALISM
 				sb.Append(desc);
 				sb.Append("</i>\n\n");
 			}
+			bool firstEntry = true;
 			foreach (Entry e in entries)
 			{
+				if (!firstEntry)
+					sb.Append("\n");
+				else
+					firstEntry = false;
+
 				sb.Append(e.label);
 				if (e.value.Length > 0)
 				{
@@ -48,7 +54,6 @@ namespace KERBALISM
 					sb.Append(e.value);
 					sb.Append("</b>");
 				}
-				sb.Append("\n");
 			}
 			return sb.ToString();
 		}

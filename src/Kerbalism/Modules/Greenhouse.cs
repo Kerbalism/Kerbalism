@@ -56,6 +56,7 @@ namespace KERBALISM
 		Renderer lamps_rdr;
 		public bool WACO2 = false;        // true if we have combined WasteAtmosphere and CarbonDioxide
 
+		private bool isConfigurable = false;
 
 		public void Configure(bool enable) {
 			active = enable;
@@ -65,6 +66,7 @@ namespace KERBALISM
 			}
 		}
 
+		public void ModuleIsConfigured() => isConfigurable = true;
 
 		public override void OnStart(StartState state)
 		{
@@ -445,7 +447,10 @@ namespace KERBALISM
 		// part tooltip
 		public override string GetInfo()
 		{
-			return Specs().Info(Localizer.Format("#KERBALISM_Greenhouse_desc"));//"Grow crops in space and on the surface of celestial bodies, even far from the sun."
+			if (!isConfigurable)
+				return Specs().Info(Localizer.Format("#KERBALISM_Greenhouse_desc"));//"Grow crops in space and on the surface of celestial bodies, even far from the sun."
+			else
+				return string.Empty;
 		}
 
 

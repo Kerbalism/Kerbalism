@@ -17,6 +17,10 @@ namespace KERBALISM
 	{
 		// configure the module
 		void Configure(bool enable);
+
+		// called only if the module is part of a configure setup, and only on the prefab
+		// see Kerbalism.
+		void ModuleIsConfigured();
 	}
 
 
@@ -141,6 +145,8 @@ namespace KERBALISM
 			DoConfigure();
 		}
 
+		void IConfigurable.ModuleIsConfigured() { }
+
 		public List<ConfigureSetup> GetUnlockedSetups()
 		{
 			List<ConfigureSetup> unlockedSetups = new List<ConfigureSetup>();
@@ -154,6 +160,23 @@ namespace KERBALISM
 				}
 			}
 			return unlockedSetups;
+		}
+
+		public List<IConfigurable> GetIConfigurableModules()
+		{
+			List<IConfigurable> modules = new List<IConfigurable>();
+			foreach (ConfigureSetup setup in setups)
+			{
+				foreach (ConfigureModule cm in setup.modules)
+				{
+					// try to find the module
+					PartModule m = Find_module(cm);
+
+					if (m != null && m is IConfigurable configurable_module)
+						modules.Add(configurable_module);
+				}
+			}
+			return modules;
 		}
 
 		public void DoConfigure()
@@ -469,13 +492,13 @@ namespace KERBALISM
 				if (tech_title.StartsWith("#", StringComparison.Ordinal)) tech_title = tech_id;
 
 				// add tech name
-				specs.Add(string.Empty);
-				specs.Add(Lib.BuildString("<color=#00ffff>", tech_title, ":</color>"));
+				//specs.Add(string.Empty);
+				//specs.Add(Lib.BuildString("<color=#00ffff>", tech_title, ":</color>"));
 
 				// add setup names
 				foreach (string setup_name in setup_names)
 				{
-					specs.Add(Lib.BuildString("• <b>", setup_name, "</b>"));
+					specs.Add(Lib.BuildString("• <b>", setup_name, "</b>\n   at ", Lib.Color(tech_title, Lib.Kolor.Science)));
 				}
 			}
 
@@ -610,7 +633,7 @@ namespace KERBALISM
 		// module info support
 		public string GetModuleTitle() { return Lib.BuildString("<size=1><color=#00000000>00</color></size>", Localizer.Format("#KERBALISM_Moudule_Configurable"), " ", title); } // attempt to display at the top//Configurable
 		public override string GetModuleDisplayName() { return Lib.BuildString("<size=1><color=#00000000>00</color></size>", Localizer.Format("#KERBALISM_Moudule_Configurable"), " ", title); } // attempt to display at the top//Configurable
-		public string GetPrimaryField() { return Lib.BuildString("<size=1><color=#00000000>00</color></size>", Localizer.Format("#KERBALISM_Moudule_Configurable"), " ", title); } // attempt to display at the top//Configurable
+		public string GetPrimaryField() { return string.Empty; }
 		public Callback<Rect> GetDrawModulePanelCallback() { return null; }
 
 	}

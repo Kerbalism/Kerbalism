@@ -62,10 +62,11 @@ namespace KERBALISM
 		internal Animator loopAnimator;
 		public ModuleAnimationGroup AnimationGroup { get; private set; }
 
-
 		private CrewSpecs operator_cs;
 		private CrewSpecs reset_cs;
 		private CrewSpecs prepare_cs;
+
+		public bool isConfigurable = false;
 
 		#region state/status
 
@@ -127,6 +128,8 @@ namespace KERBALISM
 			enabled = enable;
 			isEnabled = enable;
 		}
+
+		public void ModuleIsConfigured() => isConfigurable = true;
 
 		public override void OnLoad(ConfigNode node)
 		{
@@ -1125,7 +1128,7 @@ namespace KERBALISM
 		// part tooltip
 		public override string GetInfo()
 		{
-			if (ExpInfo != null)
+			if (!isConfigurable && ExpInfo != null)
 				return Specs().Info();
 
 			return string.Empty;

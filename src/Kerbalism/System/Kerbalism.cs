@@ -112,31 +112,40 @@ namespace KERBALISM
 			// everything in there will be called only one time : the first time a game is loaded from the main menu
 			if (!IsCoreGameInitDone)
 			{
-				// core game systems
-				Sim.Init();         // find suns (Kopernicus support)
-				Radiation.Init();   // create the radiation fields
-				ScienceDB.Init();   // build the science database (needs Sim.Init() and Radiation.Init() first)
-				Science.Init();     // register the science hijacker
+				try
+				{
+					// core game systems
+					Sim.Init();         // find suns (Kopernicus support)
+					Radiation.Init();   // create the radiation fields
+					ScienceDB.Init();   // build the science database (needs Sim.Init() and Radiation.Init() first)
+					Science.Init();     // register the science hijacker
 
-				// static graphic components
-				LineRenderer.Init();
-				ParticleRenderer.Init();
-				Highlighter.Init();
+					// static graphic components
+					LineRenderer.Init();
+					ParticleRenderer.Init();
+					Highlighter.Init();
 
-				// UI
-				Textures.Init();                      // set up the icon textures
-				UI.Init();                                  // message system, main gui, launcher
-				KsmGui.KsmGuiMasterController.Init(); // setup the new gui framework
+					// UI
+					Textures.Init();                      // set up the icon textures
+					UI.Init();                                  // message system, main gui, launcher
+					KsmGui.KsmGuiMasterController.Init(); // setup the new gui framework
 
-				// part prefabs hacks
-				Profile.SetupPods(); // add supply resources to pods
-				Misc.TweakPartIcons(); // various tweaks to the part icons in the editor
+					// part prefabs hacks
+					Profile.SetupPods(); // add supply resources to pods
+					Misc.PartPrefabsTweaks(); // part prefabs tweaks, must be called after ScienceDB.Init() 
 
-				// Create KsmGui windows
-				new ScienceArchiveWindow();
+					// Create KsmGui windows
+					new ScienceArchiveWindow();
 
-				// GameEvents callbacks
-				Callbacks = new Callbacks();
+					// GameEvents callbacks
+					Callbacks = new Callbacks();
+				}
+				catch (Exception e)
+				{
+					string fatalError = "FATAL ERROR : Kerbalism core init has failed :" + "\n" + e.ToString();
+					Lib.Log(fatalError);
+					LoadFailedPopup(fatalError);
+				}
 
 				IsCoreGameInitDone = true;
 			}
@@ -144,16 +153,25 @@ namespace KERBALISM
 			// everything in there will be called every time a savegame (or a new game) is loaded from the main menu
 			if (!IsSaveGameInitDone)
 			{
-				Cache.Init();
-				ResourceCache.Init();
-				
-				// prepare storm data
-				foreach (CelestialBody body in FlightGlobals.Bodies)
+				try
 				{
-					if (Storm.Skip_body(body))
-						continue;
-					Storm_data sd = new Storm_data { body = body };
-					storm_bodies.Add(sd);
+					Cache.Init();
+					ResourceCache.Init();
+
+					// prepare storm data
+					foreach (CelestialBody body in FlightGlobals.Bodies)
+					{
+						if (Storm.Skip_body(body))
+							continue;
+						Storm_data sd = new Storm_data { body = body };
+						storm_bodies.Add(sd);
+					}
+				}
+				catch (Exception e)
+				{
+					string fatalError = "FATAL ERROR : Kerbalism save game init has failed :" + "\n" + e.ToString();
+					Lib.Log(fatalError);
+					LoadFailedPopup(fatalError);
 				}
 
 				IsSaveGameInitDone = true;
@@ -172,9 +190,18 @@ namespace KERBALISM
 			ResourceCache.Clear();
 
 			// deserialize our database
-			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.DB.Load");
-			DB.Load(node);
-			UnityEngine.Profiling.Profiler.EndSample();
+			try
+			{
+				UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.DB.Load");
+				DB.Load(node);
+				UnityEngine.Profiling.Profiler.EndSample();
+			}
+			catch (Exception e)
+			{
+				string fatalError = "FATAL ERROR : Kerbalism save game load has failed :" + "\n" + e.ToString();
+				Lib.Log(fatalError);
+				LoadFailedPopup(fatalError);
+			}
 
 			// I'm smelling the hacky mess in here.
 			Communications.NetworkInitialized = false;
@@ -198,10 +225,22 @@ namespace KERBALISM
 
 		public override void OnSave(ConfigNode node)
 		{
+			if (!enabled) return;
+
 			// serialize data
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.DB.Save");
 			DB.Save(node);
 			UnityEngine.Profiling.Profiler.EndSample();
+		}
+
+		private void LoadFailedPopup(string error)
+		{
+			string popupMsg = "Kerbalism has encountered an unrecoverable error and KSP must be closed\n\n";
+			popupMsg += "Report it at <b>kerbalism.github.io</b>, in the <b>kerbalism discord</b> or at the KSP forums thread\n\n";
+			popupMsg += "Please provide a screenshot of this message, and your ksp.log file found in your KSP install folder\n\n";
+			popupMsg += error;
+
+			Lib.Popup("Kerbalism fatal error", popupMsg, 600f);
 		}
 
 		#endregion
@@ -423,10 +462,7 @@ namespace KERBALISM
 		void Update()
 		{
 			if (!didSanityCheck)
-			{
 				SanityCheck();
-				didSanityCheck = true;
-			}
 
 			if (!Communications.NetworkInitializing)
 			{
@@ -462,6 +498,24 @@ namespace KERBALISM
 
 		private void SanityCheck()
 		{
+			// fix PostScreenMessage() not being available for a few updates after scene load since KSP 1.8
+			if (ScreenMessages.PostScreenMessage("") == null)
+			{
+				didSanityCheck = false;
+				return;
+			}
+			else
+			{
+				didSanityCheck = true;
+			}
+
+			if (!Settings.loaded)
+			{
+				DisplayWarning("<color=#FF4500>No configuration found</color>\nYou need KerbalismConfig (or any other Kerbalism config pack).");
+				enabled = false;
+				return;
+			}
+
 			List<string> incompatibleMods = Settings.IncompatibleMods();
 			List<string> warningMods = Settings.WarningMods();
 
@@ -480,10 +534,6 @@ namespace KERBALISM
 			if (configNodes.Length > 1)
 			{
 				msg += "<color=#FF4500>Multiple configurations detected</color>\nHint: delete KerbalismConfig if you are using a custom config pack.\n\n";
-			}
-			else if (configNodes.Length == 0)
-			{
-				msg += "<color=#FF4500>No configuration found</color>\nYou need KerbalismConfig (or any other Kerbalism config pack).\n\n";
 			}
 
 			if (Features.Habitat && Settings.CheckForCRP)
@@ -510,18 +560,21 @@ namespace KERBALISM
 				msg += "You might have problems with these mods. Please consult the FAQ on on kerbalism.github.io\n\n";
 			}
 
-			if (!string.IsNullOrEmpty(msg))
-			{
-				msg = "<b>KERBALISM WARNING</b>\n\n" + msg;
-				ScreenMessage sm = new ScreenMessage(msg, 60, ScreenMessageStyle.UPPER_LEFT);
-				sm.color = Color.cyan;
-				ScreenMessages.PostScreenMessage(sm);
-				ScreenMessages.PostScreenMessage(msg, true);
-				Lib.Log("Sanity check: " + msg);
-			}
+			DisplayWarning(msg);
 		}
 
+		private static void DisplayWarning(string msg)
+		{
+			if (string.IsNullOrEmpty(msg)) return;
 
+			msg = "<b>KERBALISM WARNING</b>\n\n" + msg;
+			ScreenMessage sm = new ScreenMessage(msg, 20, ScreenMessageStyle.UPPER_CENTER);
+			sm.color = Color.cyan;
+
+			ScreenMessages.PostScreenMessage(sm);
+			ScreenMessages.PostScreenMessage(msg, true);
+			Lib.Log("Sanity check: " + msg);
+		}
 	}
 
 	public sealed class MapCameraScript: MonoBehaviour
@@ -668,74 +721,118 @@ namespace KERBALISM
 			}
 		}
 
-		public static void TweakPartIcons()
+		public static void PartPrefabsTweaks()
 		{
-			foreach (AvailablePart p in PartLoader.LoadedPartsList)
+			foreach (AvailablePart ap in PartLoader.LoadedPartsList)
 			{
 				// scale part icons of the radial container variants
-				switch (p.name)
+				switch (ap.name)
 				{
 					case "kerbalism-container-radial-small":
-						p.iconPrefab.transform.GetChild(0).localScale *= 0.60f;
-						p.iconScale *= 0.60f;
+						ap.iconPrefab.transform.GetChild(0).localScale *= 0.60f;
+						ap.iconScale *= 0.60f;
 						break;
 					case "kerbalism-container-radial-medium":
-						p.iconPrefab.transform.GetChild(0).localScale *= 0.85f;
-						p.iconScale *= 0.85f;
+						ap.iconPrefab.transform.GetChild(0).localScale *= 0.85f;
+						ap.iconScale *= 0.85f;
 						break;
 					case "kerbalism-container-radial-big":
-						p.iconPrefab.transform.GetChild(0).localScale *= 1.10f;
-						p.iconScale *= 1.10f;
+						ap.iconPrefab.transform.GetChild(0).localScale *= 1.10f;
+						ap.iconScale *= 1.10f;
 						break;
 					case "kerbalism-container-radial-huge":
-						p.iconPrefab.transform.GetChild(0).localScale *= 1.33f;
-						p.iconScale *= 1.33f;
+						ap.iconPrefab.transform.GetChild(0).localScale *= 1.33f;
+						ap.iconScale *= 1.33f;
 						break;
 					case "kerbalism-container-inline-375":
-						p.iconPrefab.transform.GetChild(0).localScale *= 1.33f;
-						p.iconScale *= 1.33f;
+						ap.iconPrefab.transform.GetChild(0).localScale *= 1.33f;
+						ap.iconScale *= 1.33f;
 						break;
 				}
 
 				// force a non-lexical order in the editor
-				switch (p.name)
+				switch (ap.name)
 				{
 					case "kerbalism-container-inline-0625":
-						p.title = Lib.BuildString("<size=1><color=#00000000>00</color></size>", p.title);
+						ap.title = Lib.BuildString("<size=1><color=#00000000>00</color></size>", ap.title);
 						break;
 					case "kerbalism-container-inline-125":
-						p.title = Lib.BuildString("<size=1><color=#00000000>01</color></size>", p.title);
+						ap.title = Lib.BuildString("<size=1><color=#00000000>01</color></size>", ap.title);
 						break;
 					case "kerbalism-container-inline-250":
-						p.title = Lib.BuildString("<size=1><color=#00000000>02</color></size>", p.title);
+						ap.title = Lib.BuildString("<size=1><color=#00000000>02</color></size>", ap.title);
 						break;
 					case "kerbalism-container-inline-375":
-						p.title = Lib.BuildString("<size=1><color=#00000000>03</color></size>", p.title);
+						ap.title = Lib.BuildString("<size=1><color=#00000000>03</color></size>", ap.title);
 						break;
 					case "kerbalism-container-radial-small":
-						p.title = Lib.BuildString("<size=1><color=#00000000>04</color></size>", p.title);
+						ap.title = Lib.BuildString("<size=1><color=#00000000>04</color></size>", ap.title);
 						break;
 					case "kerbalism-container-radial-medium":
-						p.title = Lib.BuildString("<size=1><color=#00000000>05</color></size>", p.title);
+						ap.title = Lib.BuildString("<size=1><color=#00000000>05</color></size>", ap.title);
 						break;
 					case "kerbalism-container-radial-big":
-						p.title = Lib.BuildString("<size=1><color=#00000000>06</color></size>", p.title);
+						ap.title = Lib.BuildString("<size=1><color=#00000000>06</color></size>", ap.title);
 						break;
 					case "kerbalism-container-radial-huge":
-						p.title = Lib.BuildString("<size=1><color=#00000000>07</color></size>", p.title);
+						ap.title = Lib.BuildString("<size=1><color=#00000000>07</color></size>", ap.title);
 						break;
 					case "kerbalism-greenhouse":
-						p.title = Lib.BuildString("<size=1><color=#00000000>08</color></size>", p.title);
+						ap.title = Lib.BuildString("<size=1><color=#00000000>08</color></size>", ap.title);
 						break;
 					case "kerbalism-gravityring":
-						p.title = Lib.BuildString("<size=1><color=#00000000>09</color></size>", p.title);
+						ap.title = Lib.BuildString("<size=1><color=#00000000>09</color></size>", ap.title);
 						break;
 					case "kerbalism-activeshield":
-						p.title = Lib.BuildString("<size=1><color=#00000000>10</color></size>", p.title);
+						ap.title = Lib.BuildString("<size=1><color=#00000000>10</color></size>", ap.title);
 						break;
 					case "kerbalism-chemicalplant":
-						p.title = Lib.BuildString("<size=1><color=#00000000>11</color></size>", p.title);
+						ap.title = Lib.BuildString("<size=1><color=#00000000>11</color></size>", ap.title);
 						break;
+				}
+
+				// recompile some part infos (this is normally done by KSP on loading, after each part prefab is compiled)
+				// This is needed because :
+				// - We can't check interdependent modules when OnLoad() is called, since the other modules may not be loaded yet
+				// - The science DB needs the system/bodies to be instantiated, which is done after the part compilation
+				bool partNeedsInfoRecompile = false;
+
+				foreach (PartModule module in ap.partPrefab.Modules)
+				{
+					// we want to remove the editor part tooltip module infos widgets that are switchable trough the configure module
+					// because the clutter the UI quite a bit. To do so, every module that implements IConfigurable is made to return
+					// an empty string in their GetInfo() if the IConfigurable.ModuleIsConfigured() is ever called on them.
+					if (module is Configure configure)
+					{
+						List<IConfigurable> configurables = configure.GetIConfigurableModules();
+
+						if (configurables.Count > 0)
+							partNeedsInfoRecompile = true;
+
+						foreach (IConfigurable configurable in configurables)
+							configurable.ModuleIsConfigured();
+					}
+					// note that the experiment modules on the prefab gets initialized from the scienceDB init, which also do
+					// a LoadedPartsList loop to get the scienceDB module infos. So this has to be called after the scienceDB init.
+					else if (module is Experiment)
+					{
+						partNeedsInfoRecompile = true;
+					}
+				}
+
+				// for some reason this crashes on the EVA kerbals parts
+				if (partNeedsInfoRecompile && !ap.name.StartsWith("kerbalEVA"))
+				{
+					ap.moduleInfos.Clear();
+					ap.resourceInfos.Clear();
+					try
+					{
+						Lib.ReflectionCall(PartLoader.Instance, "CompilePartInfo", new Type[] { typeof(AvailablePart), typeof(Part) }, new object[] { ap, ap.partPrefab });
+					}
+					catch (Exception ex)
+					{
+						Lib.Log("Could not patch the moduleInfo for part " + ap.name + " - " + ex.Message + "\n" + ex.StackTrace);
+					}
 				}
 			}
 		}

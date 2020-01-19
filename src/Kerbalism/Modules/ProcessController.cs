@@ -23,8 +23,17 @@ namespace KERBALISM
 		// index of currently active dump valve
 		[KSPField(isPersistant = true)] public int valve_i = 0;
 
+		// caching of GetInfo() for automation tooltip
+		public string ModuleInfo { get; private set; }
+
 		private DumpSpecs dump_specs;
 		private bool broken = false;
+		private bool isConfigurable = false;
+
+		public override void OnLoad(ConfigNode node)
+		{
+			ModuleInfo = GetInfo();
+		}
 
 		public void Start()
 		{
@@ -78,6 +87,8 @@ namespace KERBALISM
 			else
 				Lib.RemoveResource(part, resource, 0.0, capacity);
 		}
+
+		public void ModuleIsConfigured() => isConfigurable = true;
 
 		///<summary> Call this when process controller breaks down or is repaired </summary>
 		public void ReliablityEvent(bool breakdown)
@@ -135,7 +146,7 @@ namespace KERBALISM
 		// part tooltip
 		public override string GetInfo()
 		{
-			return Specs().Info(desc);
+			return isConfigurable ? string.Empty : Specs().Info(desc);
 		}
 
 		public bool IsRunning() {
@@ -170,12 +181,12 @@ namespace KERBALISM
 		public string GetPrimaryField() { return string.Empty; }
 		public Callback<Rect> GetDrawModulePanelCallback() { return null; }
 
-
 		// animation group support
 		public void EnableModule() { }
 		public void DisableModule() { }
 		public bool ModuleIsActive() { return broken ? false : running; }
 		public bool IsSituationValid() { return true; }
+
 	}
 
 
