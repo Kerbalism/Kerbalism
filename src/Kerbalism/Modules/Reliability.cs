@@ -794,7 +794,7 @@ namespace KERBALISM
 			specs.Add(string.Empty);
 			specs.Add("<color=#00ffff>"+Localizer.Format("#KERBALISM_Reliability_info9") +"</color>");//High quality
 			if (extra_cost > double.Epsilon) specs.Add(Localizer.Format("#KERBALISM_Reliability_info10"), Lib.HumanReadableCost(extra_cost * part.partInfo.cost));//"Extra cost"
-			if (extra_mass > double.Epsilon) specs.Add(Localizer.Format("#KERBALISM_Reliability_info4"), Lib.HumanReadableMass(extra_mass * part.partInfo.partPrefab.mass));//"Extra mass"
+			if (extra_mass > double.Epsilon) specs.Add(Localizer.Format("#KERBALISM_Reliability_info11"), Lib.HumanReadableMass(extra_mass * part.partInfo.partPrefab.mass));//"Extra mass"
 			if (mtbf > 0) specs.Add(Localizer.Format("#KERBALISM_Reliability_info4"), Lib.HumanReadableDuration(EffectiveMTBF(true, mtbf)));//"MTBF"
 			if (turnon_failure_probability > 0) specs.Add(Localizer.Format("#KERBALISM_Reliability_info5"), Lib.HumanReadablePerc(turnon_failure_probability / Settings.QualityScale, "F1"));//"Ignition failures"
 			if (rated_operation_duration > 0) specs.Add(Localizer.Format("#KERBALISM_Reliability_info6"), Lib.HumanReadableDuration(EffectiveDuration(true, rated_operation_duration)));//"Rated burn duration"
