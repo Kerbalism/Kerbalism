@@ -4,8 +4,8 @@ using UnityEngine;
 
 namespace KERBALISM
 {
-    public class Habitat : PartModule, ISpecifics, IModuleInfo
-    {
+    public class Habitat : PartModule, ISpecifics, IModuleInfo, IPartCostModifier
+	{
         // config
         [KSPField] public double volume = 0.0;                      // habitable volume in m^3, deduced from bounding box if not specified
         [KSPField] public double surface = 0.0;                     // external surface in m^2, deduced from bounding box if not specified
@@ -45,6 +45,7 @@ namespace KERBALISM
 
         State prev_state;                      // State during previous GPU frame update
         private bool configured = false;       // true if configure method has been executed
+		private float shieldingCost;
 
         // pseudo-ctor
         public override void OnStart(StartState state)
@@ -194,7 +195,7 @@ namespace KERBALISM
                 PartResource shieldingRes = Lib.AddResource(part, "Shielding", 0.0, surface);
 
 				// add the cost of shielding to the base part cost
-				part.partInfo.cost += (float)surface * shieldingRes.info.unitCost;
+				shieldingCost = (float)surface * shieldingRes.info.unitCost;
 
 				// inflatable habitats can't be shielded (but still need the capacity) unless they have rigid walls
 				shieldingRes.isTweakable = (Get_inflate_string().Length == 0) || inflatableUsingRigidWalls;
@@ -623,6 +624,8 @@ namespace KERBALISM
 				" : ",
 				Lib.HumanReadableVolume(volume > double.Epsilon ? volume : Lib.PartVolume(part)));
 		}
-			
+
+		public float GetModuleCost(float defaultCost, ModifierStagingSituation sit) => shieldingCost;
+		public ModifierChangeWhen GetModuleCostChangeWhen() => ModifierChangeWhen.CONSTANTLY;
 	}
 }
