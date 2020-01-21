@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
+using KSP.Localization;
 
 
 namespace KERBALISM
@@ -278,7 +279,7 @@ namespace KERBALISM
 			else
 				maxPower = double.Parse(maxPowerStr.Replace(" KW", ""));
 
-			ec.Produce(maxPower * elapsed_s, "KSPIE generator");
+			ec.Produce(maxPower * elapsed_s, Localizer.Format("#KERBALISM_UI_KSPIEGenerator"));//"KSPIE generator"
 		}
 
 		static void ProcessCommand(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleCommand command, VesselResources resources, double elapsed_s)
@@ -292,7 +293,7 @@ namespace KERBALISM
 				foreach (ModuleResource ir in command.resHandler.inputResources)
 				{
 					// consume the resource
-					resources.Consume(v, ir.name, ir.rate * elapsed_s, "command");
+					resources.Consume(v, ir.name, ir.rate * elapsed_s, Localizer.Format("#KERBALISM_UI_Command"));//"command"
 				}
 			}
 		}
@@ -519,7 +520,7 @@ namespace KERBALISM
 			if (Lib.Proto.GetBool(m, "IsActivated"))
 			{
 				// consume ec
-				ec.Consume(lab.powerRequirement * elapsed_s, "science converter");
+				ec.Consume(lab.powerRequirement * elapsed_s, Localizer.Format("#KERBALISM_UI_ScienceConverter"));//"science converter"
 			}
 		}
 
@@ -528,7 +529,7 @@ namespace KERBALISM
 		{
 			if (light.useResources && Lib.Proto.GetBool(m, "isOn"))
 			{
-				ec.Consume(light.resourceAmount * elapsed_s, "light");
+				ec.Consume(light.resourceAmount * elapsed_s, Localizer.Format("#KERBALISM_UI_Light"));//"light"
 			}
 		}
 
@@ -594,7 +595,7 @@ namespace KERBALISM
 			double power = Lib.ReflectionValue<float>(fission_generator, "PowerGeneration");
 			var reactor = p.modules.Find(k => k.moduleName == "FissionReactor");
 			double tweakable = reactor == null ? 1.0 : Lib.ConfigValue(reactor.moduleValues, "CurrentPowerPercent", 100.0) * 0.01;
-			ec.Produce(power * tweakable * elapsed_s, "fission reactor");
+			ec.Produce(power * tweakable * elapsed_s, Localizer.Format("#KERBALISM_UI_FissionReactor"));//"fission reactor"
 		}
 
 
@@ -606,7 +607,7 @@ namespace KERBALISM
 			double half_life = Lib.ReflectionValue<float>(radioisotope_generator, "HalfLife");
 			double mission_time = v.missionTime / (3600.0 * Lib.HoursInDay * Lib.DaysInYear);
 			double remaining = Math.Pow(2.0, (-mission_time) / half_life);
-			ec.Produce(power * remaining * elapsed_s, "RTG");
+			ec.Produce(power * remaining * elapsed_s, Localizer.Format("#KERBALISM_UI_RTG"));//"RTG"
 		}
 
 
@@ -666,13 +667,13 @@ namespace KERBALISM
 						boiloff_rate = Lib.ReflectionValue<float>(item, "boiloffRate") / 360000.0f;
 
 						// let it boil off
-						fuel.Consume(amount * (1.0 - Math.Pow(1.0 - boiloff_rate, elapsed_s)), "boiloff");
+						fuel.Consume(amount * (1.0 - Math.Pow(1.0 - boiloff_rate, elapsed_s)), Localizer.Format("#KERBALISM_UI_Boiloff"));//"boiloff"
 					}
 				}
 			}
 
 			// apply EC consumption
-			ec.Consume(total_cost * elapsed_s, "cryo tank");
+			ec.Consume(total_cost * elapsed_s, Localizer.Format("#KERBALISM_UI_CryoTank"));//"cryo tank"
 		}
 
 		// TODO : this is to migrate pre-3.1 saves using WarpFixer to the new SolarPanelFixer. At some point in the future we can remove this code.

@@ -229,7 +229,7 @@ namespace KERBALISM
 				ResourceInfo ec = ResourceCache.GetResource(vessel, "ElectricCharge");
 
 				// consume ec
-				ec.Consume(ec_rate * Kerbalism.elapsed_s, "gravity ring");
+				ec.Consume(ec_rate * Kerbalism.elapsed_s, Localizer.Format("#KERBALISM_UI_GravityRing"));//"gravity ring"
 			}
 		}
 
@@ -239,7 +239,7 @@ namespace KERBALISM
 			if (ring.deploy.Length == 0 || Lib.Proto.GetBool(m, "deployed"))
 			{
 				// consume ec
-				ec.Consume(ring.ec_rate * elapsed_s, "gravity ring");
+				ec.Consume(ring.ec_rate * elapsed_s, Localizer.Format("#KERBALISM_UI_GravityRing"));//"gravity ring"
 			}
 		}
 

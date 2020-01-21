@@ -79,7 +79,7 @@ namespace KERBALISM
 			if (!Features.Science) return;
 
 			// consume ec for transmitters
-			ec.Consume(vd.Connection.ec_idle * elapsed_s, "comms (idle)");
+			ec.Consume(vd.Connection.ec_idle * elapsed_s, Localizer.Format("#KERBALISM_UI_CommsIdle"));//"comms (idle)"
 
 			// avoid corner-case when RnD isn't live during scene changes
 			// - this avoid losing science if the buffer reach threshold during a scene change
@@ -185,7 +185,7 @@ namespace KERBALISM
 			// consume EC cost for transmission (ec_idle is consumed above)
 			double transmittedCapacity = totalTransmitCapacity - remainingTransmitCapacity;
 			double transmissionCost = (vd.Connection.ec - vd.Connection.ec_idle) * (transmittedCapacity / vd.Connection.rate);
-			ec.Consume(transmissionCost, "comms (xmit)");
+			ec.Consume(transmissionCost, Localizer.Format("#KERBALISM_UI_CommsXmit"));//"comms (xmit)"
 
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Science.Update-AddScience");
 

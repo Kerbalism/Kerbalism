@@ -159,7 +159,7 @@ namespace KERBALISM
 				artificial = Math.Max(light_tolerance - natural, 0.0);
 
 				// consume EC for the lamps, scaled by artificial light intensity
-				if (artificial > double.Epsilon) ec.Consume(ec_rate * (artificial / light_tolerance) * Kerbalism.elapsed_s, "greenhouse");
+				if (artificial > double.Epsilon) ec.Consume(ec_rate * (artificial / light_tolerance) * Kerbalism.elapsed_s, Localizer.Format("#KERBALISM_UI_Greenhouse"));//"greenhouse"
 
 				// reset artificial lighting if there is no ec left
 				// - comparing against amount in previous simulation step
@@ -268,7 +268,7 @@ namespace KERBALISM
 				double artificial = Math.Max(g.light_tolerance - natural, 0.0);
 
 				// consume EC for the lamps, scaled by artificial light intensity
-				if (artificial > double.Epsilon) ec.Consume(g.ec_rate * (artificial / g.light_tolerance) * elapsed_s, "greenhouse");
+				if (artificial > double.Epsilon) ec.Consume(g.ec_rate * (artificial / g.light_tolerance) * elapsed_s, Localizer.Format("#KERBALISM_UI_Greenhouse"));//"greenhouse"
 
 				// reset artificial lighting if there is no ec left
 				// note: comparing against amount in previous simulation step
@@ -400,7 +400,7 @@ namespace KERBALISM
 			if (v == null || EVA.IsDead(v)) return;
 
 			// produce reduced quantity of food, proportional to current growth
-			ResourceCache.Produce(vessel, crop_resource, crop_size, "greenhouse");
+			ResourceCache.Produce(vessel, crop_resource, crop_size, Localizer.Format("#KERBALISM_UI_Greenhouse"));//"greenhouse"
 
 			// reset growth
 			growth = 0.0;
@@ -428,7 +428,7 @@ namespace KERBALISM
 			double reduced_harvest = crop_size * growth * 0.5;
 
 			// produce reduced quantity of food, proportional to current growth
-			ResourceCache.Produce(vessel, crop_resource, reduced_harvest, "greenhouse");
+			ResourceCache.Produce(vessel, crop_resource, reduced_harvest, Localizer.Format("#KERBALISM_UI_Greenhouse"));//"greenhouse"
 
 			// reset growth
 			growth = 0.0;

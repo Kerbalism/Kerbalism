@@ -272,12 +272,12 @@ namespace KERBALISM
 					if (subject != null)
 					{
 						Events["ToggleEvent"].guiName = Lib.StatusToggle(Lib.Ellipsis(ExpInfo.Title, Styles.ScaleStringLength(25)), StatusInfo(status, issue));
-						Events["ShowPopup"].guiName = Lib.StatusToggle("info", Lib.BuildString(ScienceValue(Subject), " ", State == RunningState.Forced ? subject.PercentCollectedTotal.ToString("P0") : RunningCountdown(ExpInfo, Subject, data_rate)));
+						Events["ShowPopup"].guiName = Lib.StatusToggle(Localizer.Format("#KERBALISM_Toggle_info"), Lib.BuildString(ScienceValue(Subject), " ", State == RunningState.Forced ? subject.PercentCollectedTotal.ToString("P0") : RunningCountdown(ExpInfo, Subject, data_rate)));//"info"
 					}
 					else
 					{
 						Events["ToggleEvent"].guiName = Lib.StatusToggle(Lib.Ellipsis(ExpInfo.Title, Styles.ScaleStringLength(25)), StatusInfo(status, issue));
-						Events["ShowPopup"].guiName = Lib.StatusToggle("info", vd.VesselSituations.FirstSituationTitle);
+						Events["ShowPopup"].guiName = Lib.StatusToggle(Localizer.Format("#KERBALISM_Toggle_info"), vd.VesselSituations.FirstSituationTitle);//"info"
 					}
 				}
 				else
@@ -286,10 +286,10 @@ namespace KERBALISM
 					Events["ShowPopup"].active = false;
 				}
 
-				Events["Prepare"].guiName = Lib.BuildString(Localizer.Format("#KERBALISM_Moudule_Experiment_Prepare") +" <b>", ExpInfo.Title, "</b>");//Prepare
+				Events["Prepare"].guiName = Lib.BuildString(Localizer.Format("#KERBALISM_Moudule_Experiment_Prepare"), " <b>", ExpInfo.Title, "</b>");//Prepare
 				Events["Prepare"].active = !didPrepare && prepare_cs != null && subject == null;
 
-				Events["Reset"].guiName = Lib.BuildString(Localizer.Format("#KERBALISM_Moudule_Experiment_Reset") +" <b>", ExpInfo.Title, "</b>");//Reset
+				Events["Reset"].guiName = Lib.BuildString(Localizer.Format("#KERBALISM_Moudule_Experiment_Reset"), " <b>", ExpInfo.Title, "</b>");//Reset
 				// we need a reset either if we have recorded data or did a setup
 				bool resetActive = (reset_cs != null || prepare_cs != null) && subject != null;
 				Events["Reset"].active = resetActive;
@@ -618,9 +618,9 @@ namespace KERBALISM
 			}
 
 			// consume resources
-			ec.Consume(prefab.ec_rate * elapsed_s, "experiment");
+			ec.Consume(prefab.ec_rate * elapsed_s, Localizer.Format("#KERBALISM_UI_Experiment"));//"experiment"
 			foreach (ObjectPair<string, double> p in resourceDefs)
-				resources.Consume(v, p.Key, p.Value * elapsed_s, "experiment");
+				resources.Consume(v, p.Key, p.Value * elapsed_s, Localizer.Format("#KERBALISM_UI_Experiment"));//"experiment"
 
 			if (!prefab.sample_collecting)
 			{

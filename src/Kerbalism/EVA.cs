@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using KSP.Localization;
 
 
 namespace KERBALISM
@@ -37,7 +38,7 @@ namespace KERBALISM
 			// consume EC for the headlamps
 			if (need_ec && kerbal.lampOn)
 			{
-				ec.Consume(Settings.HeadLampsCost * Kerbalism.elapsed_s, "headlamp");
+				ec.Consume(Settings.HeadLampsCost * Kerbalism.elapsed_s, Localizer.Format("#KERBALISM_UI_Headlamp"));//"headlamp"
 			}
 
 			// force the headlamps on/off
