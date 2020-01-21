@@ -432,13 +432,13 @@ namespace KERBALISM
 					{
 						if (!r.breakdown) health_severity = Math.Max(health_severity, 2);
 						else stress_severity = Math.Max(stress_severity, 2);
-						tooltips.Add(Lib.BuildString(c.name, ": <b>", r.name, "</b>"));
+						tooltips.Add(Lib.BuildString(c.name, ": <b>", r.title, "</b>"));
 					}
 					else if (rd.problem > r.warning_threshold)
 					{
 						if (!r.breakdown) health_severity = Math.Max(health_severity, 1);
 						else stress_severity = Math.Max(stress_severity, 1);
-						tooltips.Add(Lib.BuildString(c.name, ": <b>", r.name, "</b>"));
+						tooltips.Add(Lib.BuildString(c.name, ": <b>", r.title, "</b>"));
 					}
 				}
 

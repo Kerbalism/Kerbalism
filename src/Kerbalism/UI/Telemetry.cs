@@ -256,7 +256,7 @@ namespace KERBALISM
 					RuleData rd = kd.Rule(r.name);
 
 					// add to the tooltip
-					tooltips.Add(Lib.BuildString("<b>", Lib.HumanReadablePerc(rd.problem / r.fatal_threshold), "</b>\t", Lib.SpacesOnCaps(r.name).ToLower()));
+					tooltips.Add(Lib.BuildString("<b>", Lib.HumanReadablePerc(rd.problem / r.fatal_threshold), "</b>\t", r.title));
 
 					// analyze issue
 					if (rd.problem > r.danger_threshold)
