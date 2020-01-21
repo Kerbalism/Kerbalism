@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using KSP.Localization;
 using UnityEngine;
 
@@ -300,7 +300,7 @@ namespace KERBALISM
                     if (Math.Truncate(Math.Abs((perctDeployed + ResourceBalance.precision) - 1.0) * 100000) / 100000 > ResourceBalance.precision)
                     {
                         // No inflatable can be enabled been pressurizing
-                        status_str = Localizer.Format("#KERBALISM_Habitat_pressurizing");
+                        status_str = Local.Habitat_pressurizing;
                     }
                     else
                     {
@@ -313,12 +313,12 @@ namespace KERBALISM
                     Set_pressurized(false);
                     break;
                 case State.pressurizing:
-                    status_str = Get_inflate_string().Length == 0 ? Localizer.Format("#KERBALISM_Habitat_pressurizing") : Localizer.Format("#KERBALISM_Habitat_inflating");
+                    status_str = Get_inflate_string().Length == 0 ? Local.Habitat_pressurizing : Local.Habitat_inflating;
                     status_str += string.Format("{0:p2}", perctDeployed);
                     Set_pressurized(false);
                     break;
                 case State.depressurizing:
-                    status_str = Get_inflate_string().Length == 0 ? Localizer.Format("#KERBALISM_Habitat_depressurizing") : Localizer.Format("#KERBALISM_Habitat_deflating");
+                    status_str = Get_inflate_string().Length == 0 ? Local.Habitat_depressurizing : Local.Habitat_deflating;
                     status_str += string.Format("{0:p2}", perctDeployed);
                     Set_pressurized(false);
                     break;
@@ -452,12 +452,12 @@ namespace KERBALISM
         public Specifics Specs()
         {
             Specifics specs = new Specifics();
-            specs.Add(Localizer.Format("#KERBALISM_Habitat_info1"), Lib.HumanReadableVolume(volume > double.Epsilon ? volume : Lib.PartVolume(part)));//"Volume"
-            specs.Add(Localizer.Format("#KERBALISM_Habitat_info2"), Lib.HumanReadableSurface(surface > double.Epsilon ? surface : Lib.PartSurface(part)));//"Surface"
-            specs.Add(Localizer.Format("#KERBALISM_Habitat_info3"), max_pressure >= Settings.PressureThreshold ? Localizer.Format("#KERBALISM_Habitat_yes") : Localizer.Format("#KERBALISM_Habitat_no"));//"Pressurized""yes""no"
-            if (inflate.Length > 0) specs.Add(Localizer.Format("#KERBALISM_Habitat_info4"), Localizer.Format("#KERBALISM_Habitat_yes"));//"Inflatable""yes"
+            specs.Add(Local.Habitat_info1, Lib.HumanReadableVolume(volume > double.Epsilon ? volume : Lib.PartVolume(part)));//"Volume"
+            specs.Add(Local.Habitat_info2, Lib.HumanReadableSurface(surface > double.Epsilon ? surface : Lib.PartSurface(part)));//"Surface"
+            specs.Add(Local.Habitat_info3, max_pressure >= Settings.PressureThreshold ? Local.Habitat_yes : Local.Habitat_no);//"Pressurized""yes""no"
+            if (inflate.Length > 0) specs.Add(Local.Habitat_info4, Local.Habitat_yes);//"Inflatable""yes"
             if (PhysicsGlobals.KerbalCrewMass > 0)
-                specs.Add(Localizer.Format("#KERBALISM_Habitat_info5"), Lib.HumanReadableMass(PhysicsGlobals.KerbalCrewMass));//"Added mass per crew"
+                specs.Add(Local.Habitat_info5, Lib.HumanReadableMass(PhysicsGlobals.KerbalCrewMass));//"Added mass per crew"
 
             return specs;
         }
@@ -514,17 +514,17 @@ namespace KERBALISM
         // return a verbose description of shielding capability
         public static string Shielding_to_string(double v)
         {
-            return v <= double.Epsilon ? Localizer.Format("#KERBALISM_Habitat_none") : Lib.BuildString((20.0 * v / PreferencesRadiation.Instance.shieldingEfficiency).ToString("F2"), " mm");//"none"
+            return v <= double.Epsilon ? Local.Habitat_none : Lib.BuildString((20.0 * v / PreferencesRadiation.Instance.shieldingEfficiency).ToString("F2"), " mm");//"none"
         }
 
         // traduce living space value to string
         public static string Living_space_to_string(double v)
         {
-            if (v >= 0.99) return Localizer.Format("#KERBALISM_Habitat_Summary1");//"ideal"
-            else if (v >= 0.75) return Localizer.Format("#KERBALISM_Habitat_Summary2");//"good"
-            else if (v >= 0.5) return Localizer.Format("#KERBALISM_Habitat_Summary3");//"modest"
-            else if (v >= 0.25) return Localizer.Format("#KERBALISM_Habitat_Summary4");//"poor"
-            else return Localizer.Format("#KERBALISM_Habitat_Summary5");//"cramped"
+            if (v >= 0.99) return Local.Habitat_Summary1;//"ideal"
+            else if (v >= 0.75) return Local.Habitat_Summary2;//"good"
+            else if (v >= 0.5) return Local.Habitat_Summary3;//"modest"
+            else if (v >= 0.25) return Local.Habitat_Summary4;//"poor"
+            else return Local.Habitat_Summary5;//"cramped"
         }
 
         // enable/disable dialog "Transfer crew" on UI
@@ -613,14 +613,14 @@ namespace KERBALISM
             depressurizing,  // hab is depressurizing (between enabled and disabled)
         }
 
-        public override string GetModuleDisplayName() { return Localizer.Format("#KERBALISM_Habitat"); }//"Habitat"
+        public override string GetModuleDisplayName() { return Local.Habitat; }//"Habitat"
 
-		public string GetModuleTitle() => Localizer.Format("#KERBALISM_Habitat");
+		public string GetModuleTitle() => Local.Habitat;
 		public Callback<Rect> GetDrawModulePanelCallback() => null;
 		public string GetPrimaryField()
 		{
 			return Lib.BuildString(
-				Lib.Bold(Localizer.Format("#KERBALISM_Habitat") + " " + Localizer.Format("#KERBALISM_Habitat_info1")), // "Habitat" + "Volume"
+				Lib.Bold(Local.Habitat + " " + Local.Habitat_info1), // "Habitat" + "Volume"
 				" : ",
 				Lib.HumanReadableVolume(volume > double.Epsilon ? volume : Lib.PartVolume(part)));
 		}

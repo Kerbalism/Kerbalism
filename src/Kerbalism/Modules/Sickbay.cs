@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using System;
 using KSP.Localization;
@@ -87,7 +87,7 @@ namespace KERBALISM
 			if (slots > MAX_SLOTS)
 				slots = MAX_SLOTS;
 
-			Actions["Action"].guiName = Lib.BuildString(Localizer.Format("#KERBALISM_Sickbay_Start_Stop") ," ", title);//"Start/Stop"
+			Actions["Action"].guiName = Lib.BuildString(Local.Sickbay_Start_Stop ," ", title);//"Start/Stop"
 
 			foreach (string s in patients.Split(','))
 			{
@@ -188,7 +188,7 @@ namespace KERBALISM
 		private void UpdateActions()
 		{
 			Events["Toggle"].active = slots > 0 || cureEverybody;
-			Events["Toggle"].guiName = Lib.StatusToggle(title, running ? Localizer.Format("#KERBALISM_Sickbay_running") : Localizer.Format("#KERBALISM_Sickbay_stopped"));//"running""stopped"
+			Events["Toggle"].guiName = Lib.StatusToggle(title, running ? Local.Sickbay_running : Local.Sickbay_stopped);//"running""stopped"
 
 			if (!Lib.IsFlight())
 				return;
@@ -257,8 +257,8 @@ namespace KERBALISM
 		{
 			if (slots == 0 && !cureEverybody) return null;
 			Specifics specs = new Specifics();
-			if(cureEverybody) specs.Add(Localizer.Format("#KERBALISM_Sickbay_info1"), Localizer.Format("#KERBALISM_Sickbay_info2"));//"Cures""All kerbals in part"
-			else if(slots > 0) specs.Add(Localizer.Format("#KERBALISM_Sickbay_info3"),  Localizer.Format("#KERBALISM_Sickbay_info4", slots));//"Capacity""<<1>> Kerbals"
+			if(cureEverybody) specs.Add(Local.Sickbay_info1, Local.Sickbay_info2);//"Cures""All kerbals in part"
+			else if(slots > 0) specs.Add(Local.Sickbay_info3,  Localizer.Format("#KERBALISM_Sickbay_info4", slots));//"Capacity""<<1>> Kerbals"
 			return specs;
 		}
 

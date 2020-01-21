@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using KSP.Localization;
@@ -93,7 +93,7 @@ namespace KERBALISM
 			reconfigure_cs = new CrewSpecs(reconfigure);
 
 			// set toggle window button label
-			Events["ToggleWindow"].guiName = Lib.BuildString(Localizer.Format("#KERBALISM_Moudule_Configure"), " <b>", title, "</b>");//"Configure"
+			Events["ToggleWindow"].guiName = Lib.BuildString(Local.Module_Configure, " <b>", title, "</b>");//"Configure"
 
 			// only show toggle in flight if this is reconfigurable
 			Events["ToggleWindow"].active = Lib.IsEditor() || reconfigure_cs;
@@ -405,14 +405,14 @@ namespace KERBALISM
 				// check trait
 				if (!reconfigure_cs.Check(v))
 				{
-					Message.Post(Localizer.Format("#KERBALISM_Configure_noconfigure"), reconfigure_cs.Warning());
+					Message.Post(Local.Configure_noconfigure, reconfigure_cs.Warning());
 					return;
 				}
 
 				// warn the user about potential resource loss
 				if (Resource_loss())
 				{
-					Message.Post(Severity.warning, Localizer.Format("#KERBALISM_Configure_dumpexcess"));
+					Message.Post(Severity.warning, Local.Configure_dumpexcess);
 				}
 			}
 
@@ -450,10 +450,10 @@ namespace KERBALISM
 		public Specifics Specs()
 		{
 			Specifics specs = new Specifics();
-			specs.Add(Localizer.Format("#KERBALISM_Moudule_Configure_Slots"), slots.ToString());//"Slots"
-			specs.Add(Localizer.Format("#KERBALISM_Moudule_Configure_Reconfigure"), new CrewSpecs(reconfigure).Info());//"Reconfigure"
+			specs.Add(Local.Module_Configure_Slots, slots.ToString());//"Slots"
+			specs.Add(Local.Module_Configure_Reconfigure, new CrewSpecs(reconfigure).Info());//"Reconfigure"
 			specs.Add(string.Empty);
-			specs.Add(Localizer.Format("#KERBALISM_Moudule_Configure_Setups"));//"Setups:"
+			specs.Add(Local.Module_Configure_Setups);//"Setups:"
 
 			// organize setups by tech required, and add the ones without tech
 			Dictionary<string, List<string>> org = new Dictionary<string, List<string>>();
@@ -573,7 +573,7 @@ namespace KERBALISM
 			}
 
 			// set metadata
-			p.Title(Lib.BuildString(Localizer.Format("#KERBALISM_Moudule_Configure") , " " , "<color=#cccccc>", Lib.Ellipsis(title, Styles.ScaleStringLength(40)), "</color>"));//Configure
+			p.Title(Lib.BuildString(Local.Module_Configure , " " , "<color=#cccccc>", Lib.Ellipsis(title, Styles.ScaleStringLength(40)), "</color>"));//Configure
 			p.Width(Styles.ScaleWidthFloat(300.0f));
 		}
 
@@ -631,8 +631,8 @@ namespace KERBALISM
 		public ModifierChangeWhen GetModuleMassChangeWhen() { return ModifierChangeWhen.CONSTANTLY; }
 
 		// module info support
-		public string GetModuleTitle() { return Lib.BuildString("<size=1><color=#00000000>00</color></size>", Localizer.Format("#KERBALISM_Moudule_Configurable"), " ", title); } // attempt to display at the top//Configurable
-		public override string GetModuleDisplayName() { return Lib.BuildString("<size=1><color=#00000000>00</color></size>", Localizer.Format("#KERBALISM_Moudule_Configurable"), " ", title); } // attempt to display at the top//Configurable
+		public string GetModuleTitle() { return Lib.BuildString("<size=1><color=#00000000>00</color></size>", Local.Module_Configurable, " ", title); } // attempt to display at the top//Configurable
+		public override string GetModuleDisplayName() { return Lib.BuildString("<size=1><color=#00000000>00</color></size>", Local.Module_Configurable, " ", title); } // attempt to display at the top//Configurable
 		public string GetPrimaryField() { return string.Empty; }
 		public Callback<Rect> GetDrawModulePanelCallback() { return null; }
 
@@ -750,7 +750,7 @@ namespace KERBALISM
 			if (visible_resources.Count > 0)
 			{
 				// add resources title
-				details.Add(new Detail("<b><color=#00ffff>"+Localizer.Format("#KERBALISM_Moudule_Resources") +"</color></b>"));//Resources
+				details.Add(new Detail("<b><color=#00ffff>"+Local.Module_Resources +"</color></b>"));//Resources
 
 				// for each visible resource
 				foreach (ConfigureResource cr in visible_resources)
@@ -763,9 +763,9 @@ namespace KERBALISM
 			// generate extra details
 			if (mass > double.Epsilon || cost > double.Epsilon)
 			{
-				details.Add(new Detail("<b><color=#00ffff>"+Localizer.Format("#KERBALISM_Moudule_Extra") +"</color></b>"));//Extra
-				if (mass > double.Epsilon) details.Add(new Detail(Localizer.Format("#KERBALISM_Moudule_mass"), Lib.HumanReadableMass(mass)));//"mass"
-				if (cost > double.Epsilon) details.Add(new Detail(Localizer.Format("#KERBALISM_Moudule_cost"), Lib.HumanReadableCost(cost)));//"cost"
+				details.Add(new Detail("<b><color=#00ffff>"+Local.Module_Extra +"</color></b>"));//Extra
+				if (mass > double.Epsilon) details.Add(new Detail(Local.Module_mass, Lib.HumanReadableMass(mass)));//"mass"
+				if (cost > double.Epsilon) details.Add(new Detail(Local.Module_cost, Lib.HumanReadableCost(cost)));//"cost"
 			}
 		}
 

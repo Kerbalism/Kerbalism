@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using KSP.Localization;
@@ -8,10 +8,10 @@ namespace KERBALISM
 	public class PassiveShield: PartModule, IPartMassModifier, IKerbalismModule
 	{
 		// config
-		[KSPField] public string title = Localizer.Format("#KERBALISM_PassiveShield_Sandbags");//"Sandbags"              // GUI name of the status action in the PAW
-		[KSPField] public string engageActionTitle = Localizer.Format("#KERBALISM_PassiveShield_fill");//"fill"      // what the deploy action should be called
-		[KSPField] public string disengageActionTitle = Localizer.Format("#KERBALISM_PassiveShield_empty");//"empty"  // what the empty action should be called
-		[KSPField] public string disabledTitle = Localizer.Format("#KERBALISM_PassiveShield_stowed");// "stowed"       // what to display in the status text while not deployed
+		[KSPField] public string title = Local.PassiveShield_Sandbags;//"Sandbags"              // GUI name of the status action in the PAW
+		[KSPField] public string engageActionTitle = Local.PassiveShield_fill;//"fill"      // what the deploy action should be called
+		[KSPField] public string disengageActionTitle = Local.PassiveShield_empty;//"empty"  // what the empty action should be called
+		[KSPField] public string disabledTitle = Local.PassiveShield_stowed;// "stowed"       // what to display in the status text while not deployed
 
 		[KSPField] public bool toggle = true;                     // true if the effect can be toggled on/off
 		[KSPField] public string animation;                       // name of animation to play when enabling/disabling
@@ -73,7 +73,7 @@ namespace KERBALISM
 		public void Update()
 		{
 			// update ui
-			Status = deployed ? Lib.BuildString(Localizer.Format("#KERBALISM_PassiveShield_absorbing") ," ", Lib.HumanReadableRadiation(Math.Abs(radiation))) : disabledTitle;//"absorbing
+			Status = deployed ? Lib.BuildString(Local.PassiveShield_absorbing ," ", Lib.HumanReadableRadiation(Math.Abs(radiation))) : disabledTitle;//"absorbing
 			Events["Toggle"].guiName = Lib.StatusToggle(title, deployed ? disengageActionTitle : engageActionTitle);
 		}
 
@@ -151,7 +151,7 @@ namespace KERBALISM
 					(
 					  Lib.TextVariant
 					  (
-						Localizer.Format("#KERBALISM_PassiveShield_MessagePost")//"I don't know how this works!"
+						Local.PassiveShield_MessagePost//"I don't know how this works!"
 					  ),
 					  deploy_cs.Warning()
 					);

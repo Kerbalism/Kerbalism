@@ -1,4 +1,4 @@
-﻿using KSP.Localization;
+using KSP.Localization;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
@@ -25,7 +25,7 @@ namespace KERBALISM
 			if (!vd.IsSimulated) return;
 
 			// set metadata
-			p.Title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(20)), Lib.Color(Localizer.Format("#KERBALISM_UI_devman"), Lib.Kolor.LightGrey)));
+			p.Title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(20)), Lib.Color(Local.UI_devman, Lib.Kolor.LightGrey)));
 			p.Width(Styles.ScaleWidthFloat(355.0f));
 			p.paneltype = Panel.PanelType.scripts;
 
@@ -42,7 +42,7 @@ namespace KERBALISM
 				// draw section title and desc
 				p.AddSection
 				(
-				  Localizer.Format("#KERBALISM_UI_devices"),
+				  Local.UI_devices,
 				  Description(),
 				  () => p.Prev(ref script_index, (int)ScriptType.last),
 				  () => p.Next(ref script_index, (int)ScriptType.last),
@@ -65,7 +65,7 @@ namespace KERBALISM
 					{
 						if (!hasVesselDeviceSection)
 						{
-							p.AddSection(Localizer.Format("#KERBALISM_DevManager_VESSELDEVICES"));//"VESSEL DEVICES"
+							p.AddSection(Local.DevManager_VESSELDEVICES);//"VESSEL DEVICES"
 							hasVesselDeviceSection = true;
 						}
 					}
@@ -74,7 +74,7 @@ namespace KERBALISM
 					{
 						if (!hasModuleDeviceSection)
 						{
-							p.AddSection(Localizer.Format("#KERBALISM_DevManager_MODULEDEVICES"));//"MODULE DEVICES"
+							p.AddSection(Local.DevManager_MODULEDEVICES);//"MODULE DEVICES"
 							hasModuleDeviceSection = true;
 						}
 					}
@@ -130,7 +130,7 @@ namespace KERBALISM
 					{
 						if (!hasVesselDeviceSection)
 						{
-							p.AddSection(Localizer.Format("#KERBALISM_DevManager_VESSELDEVICES"));//"VESSEL DEVICES"
+							p.AddSection(Local.DevManager_VESSELDEVICES);//"VESSEL DEVICES"
 							hasVesselDeviceSection = true;
 						}
 					}
@@ -139,7 +139,7 @@ namespace KERBALISM
 					{
 						if (!hasModuleDeviceSection)
 						{
-							p.AddSection(Localizer.Format("#KERBALISM_DevManager_MODULEDEVICES"));//"MODULE DEVICES"
+							p.AddSection(Local.DevManager_MODULEDEVICES);//"MODULE DEVICES"
 							hasModuleDeviceSection = true;
 						}
 					}
@@ -148,7 +148,7 @@ namespace KERBALISM
 					p.AddContent
 					(
 					  dev.DisplayName,
-					  state == -1 ? Lib.Color(Localizer.Format("#KERBALISM_UI_dontcare"), Lib.Kolor.DarkGrey) : Lib.Color(state == 0, Local.Generic_OFF, Lib.Kolor.Yellow, Local.Generic_ON, Lib.Kolor.Green),
+					  state == -1 ? Lib.Color(Local.UI_dontcare, Lib.Kolor.DarkGrey) : Lib.Color(state == 0, Local.Generic_OFF, Lib.Kolor.Yellow, Local.Generic_ON, Lib.Kolor.Green),
 					  string.Empty,
 					  () =>
 					  {
@@ -168,7 +168,7 @@ namespace KERBALISM
 			// no devices case
 			if (deviceCount == 0)
 			{
-				p.AddContent("<i>"+Localizer.Format("#KERBALISM_DevManager_nodevices") +"</i>");//no devices
+				p.AddContent("<i>"+Local.DevManager_nodevices +"</i>");//no devices
 			}
 		}
 

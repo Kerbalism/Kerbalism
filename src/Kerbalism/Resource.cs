@@ -1,4 +1,4 @@
-﻿using KSP.Localization;
+using KSP.Localization;
 using System;
 using System.Collections.Generic;
 
@@ -25,27 +25,27 @@ namespace KERBALISM
 		private static Dictionary<string, ResourceBroker> brokersDict = new Dictionary<string, ResourceBroker>();
 		private static List<ResourceBroker> brokersList = new List<ResourceBroker>();
 
-		public static ResourceBroker Generic = GetOrCreate("Others", BrokerCategory.Unknown, Localizer.Format("#KERBALISM_Brokers_Others"));
-		public static ResourceBroker SolarPanel = GetOrCreate("SolarPanel", BrokerCategory.SolarPanel, Localizer.Format("#KERBALISM_Brokers_SolarPanel"));
-		public static ResourceBroker KSPIEGenerator = GetOrCreate("KSPIEGenerator", BrokerCategory.Generator, Localizer.Format("#KERBALISM_Brokers_KSPIEGenerator"));
-		public static ResourceBroker FissionReactor = GetOrCreate("FissionReactor", BrokerCategory.Converter, Localizer.Format("#KERBALISM_Brokers_FissionReactor"));
-		public static ResourceBroker RTG = GetOrCreate("RTG", BrokerCategory.RTG, Localizer.Format("#KERBALISM_Brokers_RTG"));
-		public static ResourceBroker ScienceLab = GetOrCreate("ScienceLab", BrokerCategory.Science, Localizer.Format("#KERBALISM_Brokers_ScienceLab"));
-		public static ResourceBroker Light = GetOrCreate("Light", BrokerCategory.VesselSystem, Localizer.Format("#KERBALISM_Brokers_Light"));
-		public static ResourceBroker Boiloff = GetOrCreate("Boiloff", BrokerCategory.VesselSystem, Localizer.Format("#KERBALISM_Brokers_Boiloff"));
-		public static ResourceBroker Cryotank = GetOrCreate("Cryotank", BrokerCategory.VesselSystem, Localizer.Format("#KERBALISM_Brokers_Cryotank"));
-		public static ResourceBroker Greenhouse = GetOrCreate("Greenhouse", BrokerCategory.VesselSystem, Localizer.Format("#KERBALISM_Brokers_Greenhouse"));
-		public static ResourceBroker Deploy = GetOrCreate("Deploy", BrokerCategory.VesselSystem, Localizer.Format("#KERBALISM_Brokers_Deploy"));
-		public static ResourceBroker Experiment = GetOrCreate("Experiment", BrokerCategory.Science, Localizer.Format("#KERBALISM_Brokers_Experiment"));
-		public static ResourceBroker Command = GetOrCreate("Command", BrokerCategory.VesselSystem, Localizer.Format("#KERBALISM_Brokers_Command"));
-		public static ResourceBroker GravityRing = GetOrCreate("GravityRing", BrokerCategory.RTG, Localizer.Format("#KERBALISM_Brokers_GravityRing"));
-		public static ResourceBroker Scanner = GetOrCreate("Scanner", BrokerCategory.VesselSystem, Localizer.Format("#KERBALISM_Brokers_Scanner"));
-		public static ResourceBroker Laboratory = GetOrCreate("Laboratory", BrokerCategory.Science, Localizer.Format("#KERBALISM_Brokers_Laboratory"));
-		public static ResourceBroker CommsIdle = GetOrCreate("CommsIdle", BrokerCategory.Comms, Localizer.Format("#KERBALISM_Brokers_CommsIdle"));
-		public static ResourceBroker CommsXmit = GetOrCreate("CommsXmit", BrokerCategory.Comms, Localizer.Format("#KERBALISM_Brokers_CommsXmit"));
-		public static ResourceBroker StockConverter = GetOrCreate("StockConverter", BrokerCategory.Converter, Localizer.Format("#KERBALISM_Brokers_StockConverter"));
-		public static ResourceBroker StockDrill = GetOrCreate("Converter", BrokerCategory.Harvester, Localizer.Format("#KERBALISM_Brokers_StockDrill"));
-		public static ResourceBroker Harvester = GetOrCreate("Harvester", BrokerCategory.Harvester, Localizer.Format("#KERBALISM_Brokers_Harvester"));
+		public static ResourceBroker Generic = GetOrCreate("Others", BrokerCategory.Unknown, Local.Brokers_Others);
+		public static ResourceBroker SolarPanel = GetOrCreate("SolarPanel", BrokerCategory.SolarPanel, Local.Brokers_SolarPanel);
+		public static ResourceBroker KSPIEGenerator = GetOrCreate("KSPIEGenerator", BrokerCategory.Generator, Local.Brokers_KSPIEGenerator);
+		public static ResourceBroker FissionReactor = GetOrCreate("FissionReactor", BrokerCategory.Converter, Local.Brokers_FissionReactor);
+		public static ResourceBroker RTG = GetOrCreate("RTG", BrokerCategory.RTG, Local.Brokers_RTG);
+		public static ResourceBroker ScienceLab = GetOrCreate("ScienceLab", BrokerCategory.Science, Local.Brokers_ScienceLab);
+		public static ResourceBroker Light = GetOrCreate("Light", BrokerCategory.VesselSystem, Local.Brokers_Light);
+		public static ResourceBroker Boiloff = GetOrCreate("Boiloff", BrokerCategory.VesselSystem, Local.Brokers_Boiloff);
+		public static ResourceBroker Cryotank = GetOrCreate("Cryotank", BrokerCategory.VesselSystem, Local.Brokers_Cryotank);
+		public static ResourceBroker Greenhouse = GetOrCreate("Greenhouse", BrokerCategory.VesselSystem, Local.Brokers_Greenhouse);
+		public static ResourceBroker Deploy = GetOrCreate("Deploy", BrokerCategory.VesselSystem, Local.Brokers_Deploy);
+		public static ResourceBroker Experiment = GetOrCreate("Experiment", BrokerCategory.Science, Local.Brokers_Experiment);
+		public static ResourceBroker Command = GetOrCreate("Command", BrokerCategory.VesselSystem, Local.Brokers_Command);
+		public static ResourceBroker GravityRing = GetOrCreate("GravityRing", BrokerCategory.RTG, Local.Brokers_GravityRing);
+		public static ResourceBroker Scanner = GetOrCreate("Scanner", BrokerCategory.VesselSystem, Local.Brokers_Scanner);
+		public static ResourceBroker Laboratory = GetOrCreate("Laboratory", BrokerCategory.Science, Local.Brokers_Laboratory);
+		public static ResourceBroker CommsIdle = GetOrCreate("CommsIdle", BrokerCategory.Comms, Local.Brokers_CommsIdle);
+		public static ResourceBroker CommsXmit = GetOrCreate("CommsXmit", BrokerCategory.Comms, Local.Brokers_CommsXmit);
+		public static ResourceBroker StockConverter = GetOrCreate("StockConverter", BrokerCategory.Converter, Local.Brokers_StockConverter);
+		public static ResourceBroker StockDrill = GetOrCreate("Converter", BrokerCategory.Harvester, Local.Brokers_StockDrill);
+		public static ResourceBroker Harvester = GetOrCreate("Harvester", BrokerCategory.Harvester, Local.Brokers_Harvester);
 
 		public string Id { get; private set; }
 		public BrokerCategory Category { get; private set; }

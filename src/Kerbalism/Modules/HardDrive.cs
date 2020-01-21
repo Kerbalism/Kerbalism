@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
@@ -203,7 +203,7 @@ namespace KERBALISM
 			if (Lib.IsFlight())
 			{
 				// show DATA UI button, with size info
-				Events["ToggleUI"].guiName = Lib.StatusToggle(Localizer.Format("#KERBALISM_HardDrive_Data"), drive.Empty() ? Localizer.Format("#KERBALISM_HardDrive_Dataempty") : drive.Size());//"Data""empty"
+				Events["ToggleUI"].guiName = Lib.StatusToggle(Local.HardDrive_Data, drive.Empty() ? Local.HardDrive_Dataempty : drive.Size());//"Data""empty"
 				Events["ToggleUI"].active = !IsPrivate();
 
 				// show TakeData eva action button, if there is something to take
@@ -315,8 +315,8 @@ namespace KERBALISM
 			{
 				Message.Post
 				(
-					Lib.Color(Lib.BuildString(Localizer.Format("#KERBALISM_HardDrive_WARNING_title")), Lib.Kolor.Red, true),//"WARNING: not evering copied"
-					Lib.BuildString(Localizer.Format("#KERBALISM_HardDrive_WARNING"))//"Storage is at capacity"
+					Lib.Color(Lib.BuildString(Local.HardDrive_WARNING_title), Lib.Kolor.Red, true),//"WARNING: not evering copied"
+					Lib.BuildString(Local.HardDrive_WARNING)//"Storage is at capacity"
 				);
 			}
 		}
@@ -337,8 +337,8 @@ namespace KERBALISM
 			{
 				Message.Post
 				(
-					Lib.Color(Lib.BuildString(Localizer.Format("#KERBALISM_HardDrive_WARNING_title")), Lib.Kolor.Red, true),//"WARNING: not evering copied"
-					Lib.BuildString(Localizer.Format("#KERBALISM_HardDrive_WARNING"))//"Storage is at capacity"
+					Lib.Color(Lib.BuildString(Local.HardDrive_WARNING_title), Lib.Kolor.Red, true),//"WARNING: not evering copied"
+					Lib.BuildString(Local.HardDrive_WARNING)//"Storage is at capacity"
 				);
 			}
 		}
@@ -440,14 +440,14 @@ namespace KERBALISM
 		public Specifics Specs()
 		{
 			Specifics specs = new Specifics();
-			specs.Add(Localizer.Format("#KERBALISM_HardDrive_info1"), dataCapacity >= 0 ? Lib.HumanReadableDataSize(dataCapacity) : Localizer.Format("#KERBALISM_HardDrive_Capacityunlimited"));//"File capacity""unlimited"
-			specs.Add(Localizer.Format("#KERBALISM_HardDrive_info2"), sampleCapacity >= 0 ? Lib.HumanReadableSampleSize(sampleCapacity) : Localizer.Format("#KERBALISM_HardDrive_Capacityunlimited"));//"Sample capacity""unlimited"
+			specs.Add(Local.HardDrive_info1, dataCapacity >= 0 ? Lib.HumanReadableDataSize(dataCapacity) : Local.HardDrive_Capacityunlimited);//"File capacity""unlimited"
+			specs.Add(Local.HardDrive_info2, sampleCapacity >= 0 ? Lib.HumanReadableSampleSize(sampleCapacity) : Local.HardDrive_Capacityunlimited);//"Sample capacity""unlimited"
 			return specs;
 		}
 
 		// module info support
 		public string GetModuleTitle() { return "Hard Drive"; }
-		public override string GetModuleDisplayName() { return Localizer.Format("#KERBALISM_HardDrive"); }//"Hard Drive"
+		public override string GetModuleDisplayName() { return Local.HardDrive; }//"Hard Drive"
 		public string GetPrimaryField() { return string.Empty; }
 		public Callback<Rect> GetDrawModulePanelCallback() { return null; }
 

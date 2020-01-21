@@ -1,4 +1,4 @@
-﻿// ====================================================================================================================
+// ====================================================================================================================
 // Functions that other mods can call to interact with Kerbalism. If you don't build against it, call these using
 // reflection. All functions work transparently with loaded and unloaded vessels, unless otherwise specified.
 // ====================================================================================================================

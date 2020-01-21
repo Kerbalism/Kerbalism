@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Experience;
 using UnityEngine;
@@ -286,10 +286,10 @@ namespace KERBALISM
 					Events["ShowPopup"].active = false;
 				}
 
-				Events["Prepare"].guiName = Lib.BuildString(Localizer.Format("#KERBALISM_Moudule_Experiment_Prepare") +" <b>", ExpInfo.Title, "</b>");//Prepare
+				Events["Prepare"].guiName = Lib.BuildString(Local.Module_Experiment_Prepare +" <b>", ExpInfo.Title, "</b>");//Prepare
 				Events["Prepare"].active = !didPrepare && prepare_cs != null && subject == null;
 
-				Events["Reset"].guiName = Lib.BuildString(Localizer.Format("#KERBALISM_Moudule_Experiment_Reset") +" <b>", ExpInfo.Title, "</b>");//Reset
+				Events["Reset"].guiName = Lib.BuildString(Local.Module_Experiment_Reset +" <b>", ExpInfo.Title, "</b>");//Reset
 				// we need a reset either if we have recorded data or did a setup
 				bool resetActive = (reset_cs != null || prepare_cs != null) && subject != null;
 				Events["Reset"].active = resetActive;
@@ -443,7 +443,7 @@ namespace KERBALISM
 			else
 			{
 				lastSituationId = vd.VesselSituations.FirstSituation.Id;
-				mainIssue = Localizer.Format("#KERBALISM_Moudule_Experiment_issue1");//"invalid situation"
+				mainIssue = Local.Module_Experiment_issue1;//"invalid situation"
 				return;
 			}
 
@@ -454,19 +454,19 @@ namespace KERBALISM
 
 			if (isShrouded && !prefab.allow_shrouded)
 			{
-				mainIssue = Localizer.Format("#KERBALISM_Moudule_Experiment_issue2");//"shrouded"
+				mainIssue = Local.Module_Experiment_issue2;//"shrouded"
 				return;
 			}
 
 			if (subjectHasChanged && prefab.crew_reset.Length > 0)
 			{
-				mainIssue = Localizer.Format("#KERBALISM_Moudule_Experiment_issue3");//"reset required"
+				mainIssue = Local.Module_Experiment_issue3;//"reset required"
 				return;
 			}
 
 			if (ec.Amount == 0.0 && prefab.ec_rate > 0.0)
 			{
-				mainIssue = Localizer.Format("#KERBALISM_Moudule_Experiment_issue4");//"no Electricity"
+				mainIssue = Local.Module_Experiment_issue4;//"no Electricity"
 				return;
 			}
 
@@ -475,7 +475,7 @@ namespace KERBALISM
 				var cs = new CrewSpecs(prefab.crew_operate);
 				if (!cs && Lib.CrewCount(v) > 0)
 				{
-					mainIssue = Localizer.Format("#KERBALISM_Moudule_Experiment_issue5");//"crew on board"
+					mainIssue = Local.Module_Experiment_issue5;//"crew on board"
 					return;
 				}
 				else if (cs && !cs.Check(v))
@@ -487,32 +487,32 @@ namespace KERBALISM
 
 			if (!prefab.sample_collecting && remainingSampleMass <= 0.0 && expInfo.SampleMass > 0.0)
 			{
-				mainIssue = Localizer.Format("#KERBALISM_Moudule_Experiment_issue6");//"depleted"
+				mainIssue = Local.Module_Experiment_issue6;//"depleted"
 				return;
 			}
 
 			if (!didPrepare && !string.IsNullOrEmpty(prefab.crew_prepare))
 			{
-				mainIssue = Localizer.Format("#KERBALISM_Moudule_Experiment_issue7");//"not prepared"
+				mainIssue = Local.Module_Experiment_issue7;//"not prepared"
 				return;
 			}
 
 			if (!v.loaded && subjectData.Situation.AtmosphericFlight())
 			{
-				mainIssue = Localizer.Format("#KERBALISM_Moudule_Experiment_issue8");//"background flight"
+				mainIssue = Local.Module_Experiment_issue8;//"background flight"
 				return;
 			}
 
 			RequireResult[] reqResults;
 			if (!prefab.Requirements.TestRequirements(v, out reqResults))
 			{
-				mainIssue = Localizer.Format("#KERBALISM_Moudule_Experiment_issue9");//"unmet requirement"
+				mainIssue = Local.Module_Experiment_issue9;//"unmet requirement"
 				return;
 			}
 
 			if (!HasRequiredResources(v, resourceDefs, resources, out mainIssue))
 			{
-				mainIssue = Localizer.Format("#KERBALISM_Moudule_Experiment_issue10");//"missing resource"
+				mainIssue = Local.Module_Experiment_issue10;//"missing resource"
 				return;
 			}
 
@@ -526,7 +526,7 @@ namespace KERBALISM
 			Drive drive = GetDrive(vd, hdId, chunkSize, subjectData);
 			if (drive == null)
 			{
-				mainIssue = Localizer.Format("#KERBALISM_Moudule_Experiment_issue11");//"no storage space"
+				mainIssue = Local.Module_Experiment_issue11;//"no storage space"
 				return;
 			}
 
@@ -548,7 +548,7 @@ namespace KERBALISM
 
 			if (available <= 0.0)
 			{
-				mainIssue = Localizer.Format("#KERBALISM_Moudule_Experiment_issue11");//"no storage space"
+				mainIssue = Local.Module_Experiment_issue11;//"no storage space"
 				return;
 			}
 
@@ -579,7 +579,7 @@ namespace KERBALISM
 
 			if (prodFactor == 0.0)
 			{
-				mainIssue = Localizer.Format("#KERBALISM_Moudule_Experiment_issue10");//"missing resource"
+				mainIssue = Local.Module_Experiment_issue10;//"missing resource"
 				return;
 			}
 
@@ -659,7 +659,7 @@ namespace KERBALISM
 				var ri = res.GetResource(v, p.Key);
 				if (ri.Amount == 0.0)
 				{
-					issue = Localizer.Format("#KERBALISM_Moudule_Experiment_issue12", ri.ResourceName);//"missing " + 
+					issue = Localizer.Format("#KERBALISM_Module_Experiment_issue12", ri.ResourceName);//"missing " + 
 					return false;
 				}
 			}
@@ -901,9 +901,9 @@ namespace KERBALISM
 				Message.Post(
 				  Lib.TextVariant
 				  (
-					Localizer.Format("#KERBALISM_Moudule_Experiment_Message1"),//"I'm not qualified for this"
-					Localizer.Format("#KERBALISM_Moudule_Experiment_Message2"),//"I will not even know where to start"
-					Localizer.Format("#KERBALISM_Moudule_Experiment_Message3")//"I'm afraid I can't do that"
+					Local.Module_Experiment_Message1,//"I'm not qualified for this"
+					Local.Module_Experiment_Message2,//"I will not even know where to start"
+					Local.Module_Experiment_Message3//"I'm afraid I can't do that"
 				  ),
 				  reset_cs.Warning()
 				);
@@ -912,11 +912,11 @@ namespace KERBALISM
 			didPrepare = true;
 
 			Message.Post(
-			  Localizer.Format("#KERBALISM_Moudule_Experiment_Message4"),//"Preparation Complete"
+			  Local.Module_Experiment_Message4,//"Preparation Complete"
 			  Lib.TextVariant
 			  (
-				Localizer.Format("#KERBALISM_Moudule_Experiment_Message5"),//"Ready to go"
-				Localizer.Format("#KERBALISM_Moudule_Experiment_Message6")//"Let's start doing some science!"
+				Local.Module_Experiment_Message5,//"Ready to go"
+				Local.Module_Experiment_Message6//"Let's start doing some science!"
 			  )
 			);
 		}
@@ -949,9 +949,9 @@ namespace KERBALISM
 					Message.Post(
 					  Lib.TextVariant
 					  (
-						Localizer.Format("#KERBALISM_Moudule_Experiment_Message1"),//"I'm not qualified for this"
-						Localizer.Format("#KERBALISM_Moudule_Experiment_Message2"),//"I will not even know where to start"
-						Localizer.Format("#KERBALISM_Moudule_Experiment_Message3")//"I'm afraid I can't do that"
+						Local.Module_Experiment_Message1,//"I'm not qualified for this"
+						Local.Module_Experiment_Message2,//"I will not even know where to start"
+						Local.Module_Experiment_Message3//"I'm afraid I can't do that"
 					  ),
 					  reset_cs.Warning()
 					);
@@ -965,11 +965,11 @@ namespace KERBALISM
 			if (showMessage)
 			{
 				Message.Post(
-				  Localizer.Format("#KERBALISM_Moudule_Experiment_Message7"),//"Reset Done"
+				  Local.Module_Experiment_Message7,//"Reset Done"
 				  Lib.TextVariant
 				  (
-					Localizer.Format("#KERBALISM_Moudule_Experiment_Message8"),//"It's good to go again"
-					Localizer.Format("#KERBALISM_Moudule_Experiment_Message9")//"Ready for the next bit of science"
+					Local.Module_Experiment_Message8,//"It's good to go again"
+					Local.Module_Experiment_Message9//"Ready for the next bit of science"
 				  )
 				);
 			}
@@ -996,10 +996,10 @@ namespace KERBALISM
 		{
 			switch (state)
 			{
-				case RunningState.Stopped: return Lib.Color(Localizer.Format("#KERBALISM_Moudule_Experiment_runningstate1"), Lib.Kolor.Yellow);//"stopped"
-				case RunningState.Running: return Lib.Color(Localizer.Format("#KERBALISM_Moudule_Experiment_runningstate2"), Lib.Kolor.Green);//"started"
-				case RunningState.Forced: return Lib.Color(Localizer.Format("#KERBALISM_Moudule_Experiment_runningstate3"), Lib.Kolor.Red);//"forced run"
-				case RunningState.Broken: return Lib.Color(Localizer.Format("#KERBALISM_Moudule_Experiment_runningstate4"), Lib.Kolor.Red);//"broken"
+				case RunningState.Stopped: return Lib.Color(Local.Module_Experiment_runningstate1, Lib.Kolor.Yellow);//"stopped"
+				case RunningState.Running: return Lib.Color(Local.Module_Experiment_runningstate2, Lib.Kolor.Green);//"started"
+				case RunningState.Forced: return Lib.Color(Local.Module_Experiment_runningstate3, Lib.Kolor.Red);//"forced run"
+				case RunningState.Broken: return Lib.Color(Local.Module_Experiment_runningstate4, Lib.Kolor.Red);//"broken"
 				default: return string.Empty;
 			}
 
@@ -1009,12 +1009,12 @@ namespace KERBALISM
 		{
 			switch (status)
 			{
-				case ExpStatus.Stopped: return Lib.Color(Localizer.Format("#KERBALISM_Moudule_Experiment_runningstate1"), Lib.Kolor.Yellow);//"stopped"
-				case ExpStatus.Running: return Lib.Color(Localizer.Format("#KERBALISM_Moudule_Experiment_runningstate5"), Lib.Kolor.Green);//"running"
-				case ExpStatus.Forced: return Lib.Color(Localizer.Format("#KERBALISM_Moudule_Experiment_runningstate3"), Lib.Kolor.Red);//"forced run"
-				case ExpStatus.Waiting: return Lib.Color(Localizer.Format("#KERBALISM_Moudule_Experiment_runningstate6"), Lib.Kolor.Science);//"waiting"
-				case ExpStatus.Broken: return Lib.Color(Localizer.Format("#KERBALISM_Moudule_Experiment_runningstate4"), Lib.Kolor.Red);//"broken"
-				case ExpStatus.Issue: return Lib.Color(string.IsNullOrEmpty(issue) ? Localizer.Format("#KERBALISM_Moudule_Experiment_issue_title") : issue, Lib.Kolor.Orange);//"issue"
+				case ExpStatus.Stopped: return Lib.Color(Local.Module_Experiment_runningstate1, Lib.Kolor.Yellow);//"stopped"
+				case ExpStatus.Running: return Lib.Color(Local.Module_Experiment_runningstate5, Lib.Kolor.Green);//"running"
+				case ExpStatus.Forced: return Lib.Color(Local.Module_Experiment_runningstate3, Lib.Kolor.Red);//"forced run"
+				case ExpStatus.Waiting: return Lib.Color(Local.Module_Experiment_runningstate6, Lib.Kolor.Science);//"waiting"
+				case ExpStatus.Broken: return Lib.Color(Local.Module_Experiment_runningstate4, Lib.Kolor.Red);//"broken"
+				case ExpStatus.Issue: return Lib.Color(string.IsNullOrEmpty(issue) ? Local.Module_Experiment_issue_title : issue, Lib.Kolor.Orange);//"issue"
 				default: return string.Empty;
 			}
 		}
@@ -1035,7 +1035,7 @@ namespace KERBALISM
 			if (subjectData != null)
 				return Lib.BuildString(Lib.HumanReadableScience(subjectData.ScienceCollectedTotal), " / ", Lib.HumanReadableScience(subjectData.ScienceMaxValue));
 			else
-				return Lib.Color(Localizer.Format("#KERBALISM_Moudule_Experiment_ScienceValuenone"), Lib.Kolor.Science, true);//"none"
+				return Lib.Color(Local.Module_Experiment_ScienceValuenone, Lib.Kolor.Science, true);//"none"
 		}
 
 		// specifics support
@@ -1046,7 +1046,7 @@ namespace KERBALISM
 			if (Requirements.Requires.Length > 0)
 			{
 				specs.Add(string.Empty);
-				specs.Add(Lib.Color(Localizer.Format("#KERBALISM_Moudule_Experiment_Requires"), Lib.Kolor.Cyan, true));//"Requires:"
+				specs.Add(Lib.Color(Local.Module_Experiment_Requires, Lib.Kolor.Cyan, true));//"Requires:"
 				foreach (RequireDef req in Requirements.Requires)
 					specs.Add(Lib.BuildString("• <b>", ReqName(req.require), "</b>"), ReqValueFormat(req.require, req.value));
 			}
@@ -1059,7 +1059,7 @@ namespace KERBALISM
 			var specs = new Specifics();
 			if (expInfo == null)
 			{
-				specs.Add(Localizer.Format("#KERBALISM_ExperimentInfo_Unknown"));
+				specs.Add(Local.ExperimentInfo_Unknown);
 				return specs;
 			}
 
@@ -1072,24 +1072,24 @@ namespace KERBALISM
 			double expSize = expInfo.DataSize;
 			if (expInfo.SampleMass == 0.0)
 			{
-				specs.Add(Localizer.Format("#KERBALISM_Moudule_Experiment_Specifics_info1"), Lib.HumanReadableDataSize(expSize));//"Data size"
-				specs.Add(Localizer.Format("#KERBALISM_Moudule_Experiment_Specifics_info2"), Lib.HumanReadableDataRate(prefab.data_rate));//"Data rate"
-				specs.Add(Localizer.Format("#KERBALISM_Moudule_Experiment_Specifics_info3"), Lib.HumanReadableDuration(expSize / prefab.data_rate));//"Duration"
+				specs.Add(Local.Module_Experiment_Specifics_info1, Lib.HumanReadableDataSize(expSize));//"Data size"
+				specs.Add(Local.Module_Experiment_Specifics_info2, Lib.HumanReadableDataRate(prefab.data_rate));//"Data rate"
+				specs.Add(Local.Module_Experiment_Specifics_info3, Lib.HumanReadableDuration(expSize / prefab.data_rate));//"Duration"
 			}
 			else
 			{
-				specs.Add(Localizer.Format("#KERBALISM_Moudule_Experiment_Specifics_info4"), Lib.HumanReadableSampleSize(expSize));//"Sample size"
-				specs.Add(Localizer.Format("#KERBALISM_Moudule_Experiment_Specifics_info5"), Lib.HumanReadableMass(expInfo.SampleMass));//"Sample mass"
+				specs.Add(Local.Module_Experiment_Specifics_info4, Lib.HumanReadableSampleSize(expSize));//"Sample size"
+				specs.Add(Local.Module_Experiment_Specifics_info5, Lib.HumanReadableMass(expInfo.SampleMass));//"Sample mass"
 				if (expInfo.SampleMass > 0.0 && !prefab.sample_collecting)
-					specs.Add(Localizer.Format("#KERBALISM_Moudule_Experiment_Specifics_info6"), prefab.sample_amount.ToString("F2"));//"Samples"
-				specs.Add(Localizer.Format("#KERBALISM_Moudule_Experiment_Specifics_info7_sample"), Lib.HumanReadableDuration(expSize / prefab.data_rate));//"Duration"
+					specs.Add(Local.Module_Experiment_Specifics_info6, prefab.sample_amount.ToString("F2"));//"Samples"
+				specs.Add(Local.Module_Experiment_Specifics_info7_sample, Lib.HumanReadableDuration(expSize / prefab.data_rate));//"Duration"
 			}
 
 			List<string> situations = expInfo.AvailableSituations();
 			if (situations.Count > 0)
 			{
 				specs.Add(string.Empty);
-				specs.Add(Lib.Color(Localizer.Format("#KERBALISM_Moudule_Experiment_Specifics_Situations"), Lib.Kolor.Cyan, true));//"Situations:"
+				specs.Add(Lib.Color(Local.Module_Experiment_Specifics_Situations, Lib.Kolor.Cyan, true));//"Situations:"
 				foreach (string s in situations) specs.Add(Lib.BuildString("• <b>", s, "</b>"));
 			}
 
@@ -1100,26 +1100,26 @@ namespace KERBALISM
 			}
 
 			specs.Add(string.Empty);
-			specs.Add(Lib.Color(Localizer.Format("#KERBALISM_Moudule_Experiment_Specifics_info8"), Lib.Kolor.Cyan, true));//"Needs:"
+			specs.Add(Lib.Color(Local.Module_Experiment_Specifics_info8, Lib.Kolor.Cyan, true));//"Needs:"
 
-			specs.Add(Localizer.Format("#KERBALISM_Moudule_Experiment_Specifics_info9"), Lib.HumanReadableRate(prefab.ec_rate));//"EC"
+			specs.Add(Local.Module_Experiment_Specifics_info9, Lib.HumanReadableRate(prefab.ec_rate));//"EC"
 			foreach (var p in ParseResources(prefab.resources))
 				specs.Add(p.Key, Lib.HumanReadableRate(p.Value));
 
 			if (prefab.crew_prepare.Length > 0)
 			{
 				var cs = new CrewSpecs(prefab.crew_prepare);
-				specs.Add(Localizer.Format("#KERBALISM_Moudule_Experiment_Specifics_info10"), cs ? cs.Info() : Localizer.Format("#KERBALISM_Moudule_Experiment_Specifics_info10_none"));//"Preparation""none"
+				specs.Add(Local.Module_Experiment_Specifics_info10, cs ? cs.Info() : Local.Module_Experiment_Specifics_info10_none);//"Preparation""none"
 			}
 			if (prefab.crew_operate.Length > 0)
 			{
 				var cs = new CrewSpecs(prefab.crew_operate);
-				specs.Add(Localizer.Format("#KERBALISM_Moudule_Experiment_Specifics_info11"), cs ? cs.Info() : Localizer.Format("#KERBALISM_Moudule_Experiment_Specifics_info11_unmanned"));//"Operation""unmanned"
+				specs.Add(Local.Module_Experiment_Specifics_info11, cs ? cs.Info() : Local.Module_Experiment_Specifics_info11_unmanned);//"Operation""unmanned"
 			}
 			if (prefab.crew_reset.Length > 0)
 			{
 				var cs = new CrewSpecs(prefab.crew_reset);
-				specs.Add(Localizer.Format("#KERBALISM_Moudule_Experiment_Specifics_info12"), cs ? cs.Info() : Localizer.Format("#KERBALISM_Moudule_Experiment_Specifics_info12_none"));//"Reset""none"
+				specs.Add(Local.Module_Experiment_Specifics_info12, cs ? cs.Info() : Local.Module_Experiment_Specifics_info12_none);//"Reset""none"
 			}
 
 			return specs;
@@ -1152,7 +1152,7 @@ namespace KERBALISM
 
 		public static void PostMultipleRunsMessage(string title, string vesselName)
 		{
-			Message.Post(Lib.Color(Localizer.Format("#KERBALISM_Moudule_Experiment_MultipleRunsMessage_title"), Lib.Kolor.Orange, true), Localizer.Format("#KERBALISM_Moudule_Experiment_MultipleRunsMessage", title,vesselName));//"ALREADY RUNNING""Can't start " +  + " a second time on vessel " + 
+			Message.Post(Lib.Color(Local.Module_Experiment_MultipleRunsMessage_title, Lib.Kolor.Orange, true), Localizer.Format("#KERBALISM_Module_Experiment_MultipleRunsMessage", title,vesselName));//"ALREADY RUNNING""Can't start " +  + " a second time on vessel " + 
 		}
 
 		#endregion

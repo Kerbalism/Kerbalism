@@ -1,4 +1,4 @@
-﻿using KSP.Localization;
+using KSP.Localization;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -24,7 +24,7 @@ namespace KERBALISM
 			if (!vd.IsSimulated) return;
 
 			// set metadata
-			p.Title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(20)), " ", Lib.Color(Localizer.Format("#KERBALISM_QualityManagement_title"), Lib.Kolor.LightGrey)));//"Quality Management"
+			p.Title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(20)), " ", Lib.Color(Local.QualityManagement_title, Lib.Kolor.LightGrey)));//"Quality Management"
 			p.Width(Styles.ScaleWidthFloat(355.0f));
 			p.paneltype = Panel.PanelType.failures;
 
@@ -57,13 +57,13 @@ namespace KERBALISM
 			// no devices case
 			if (deviceCount == 0)
 			{
-				p.AddContent("<i>"+Localizer.Format("#KERBALISM_QualityManagement_noqualityinfo") +"</i>");//no quality info
+				p.AddContent("<i>"+Local.QualityManagement_noqualityinfo +"</i>");//no quality info
 			}
 		}
 
 		private static string Group2Section(string group)
 		{
-			if (string.IsNullOrEmpty(group)) return Localizer.Format("#KERBALISM_QualityManagement_Misc");//"Misc"
+			if (string.IsNullOrEmpty(group)) return Local.QualityManagement_Misc;//"Misc"
 			return group;
 		}
 
@@ -71,18 +71,18 @@ namespace KERBALISM
 		{
 			if (ri.broken)
 			{
-				if (ri.critical) return Lib.Color(Localizer.Format("#KERBALISM_QualityManagement_busted"), Lib.Kolor.Red);//"busted"
-				return Lib.Color(Localizer.Format("#KERBALISM_QualityManagement_needsrepair"), Lib.Kolor.Orange);//"needs repair"
+				if (ri.critical) return Lib.Color(Local.QualityManagement_busted, Lib.Kolor.Red);//"busted"
+				return Lib.Color(Local.QualityManagement_needsrepair, Lib.Kolor.Orange);//"needs repair"
 			}
 			if (ri.NeedsMaintenance())
 			{
-				return Lib.Color(Localizer.Format("#KERBALISM_QualityManagement_needsservice"), Lib.Kolor.Yellow);//"needs service"
+				return Lib.Color(Local.QualityManagement_needsservice, Lib.Kolor.Yellow);//"needs service"
 			}
 
-			if (ri.rel_duration > 0.75) return Lib.Color(Localizer.Format("#KERBALISM_QualityManagement_operationduration"), Lib.Kolor.Yellow);//"operation duration"
-			if (ri.rel_ignitions > 0.95) return Lib.Color(Localizer.Format("#KERBALISM_QualityManagement_ignitionlimit"), Lib.Kolor.Yellow);//"ignition limit"
+			if (ri.rel_duration > 0.75) return Lib.Color(Local.QualityManagement_operationduration, Lib.Kolor.Yellow);//"operation duration"
+			if (ri.rel_ignitions > 0.95) return Lib.Color(Local.QualityManagement_ignitionlimit, Lib.Kolor.Yellow);//"ignition limit"
 			
-			return Lib.Color(Localizer.Format("#KERBALISM_QualityManagement_good"), Lib.Kolor.Green);//"good"
+			return Lib.Color(Local.QualityManagement_good, Lib.Kolor.Green);//"good"
 		}
 	}
 

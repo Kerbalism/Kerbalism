@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using KSP.Localization;
@@ -515,7 +515,7 @@ namespace KERBALISM
 			if (allMoved)
 				Message.Post
 				(
-					Lib.HumanReadableDataSize(dataAmount) + " " + Localizer.Format("#KERBALISM_Science_ofdatatransfer"),
+					Lib.HumanReadableDataSize(dataAmount) + " " + Local.Science_ofdatatransfer,
 				 	Lib.BuildString(Local.Generic_FROM, " <b>", src.vesselName, "</b> ", Local.Generic_TO, " <b>", dst.vesselName, "</b>")
 				);
 			else

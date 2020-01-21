@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using KSP.Localization;
 
@@ -55,7 +55,7 @@ namespace KERBALISM
 			valve_i = dump_specs.ValveIndex;
 
 			// set action group ui
-			Actions["Action"].guiName = Lib.BuildString(Localizer.Format("#KERBALISM_ProcessController_Start_Stop"), " ", title);//"Start/Stop
+			Actions["Action"].guiName = Lib.BuildString(Local.ProcessController_Start_Stop, " ", title);//"Start/Stop
 
 			// hide toggle if specified
 			Events["Toggle"].active = toggle;
@@ -100,8 +100,8 @@ namespace KERBALISM
 		public void Update()
 		{
 			// update rmb ui
-			Events["Toggle"].guiName = Lib.StatusToggle(title, broken ? Localizer.Format("#KERBALISM_ProcessController_broken") : running ? Localizer.Format("#KERBALISM_ProcessController_running") : Localizer.Format("#KERBALISM_ProcessController_stopped"));//"broken""running""stopped"
-			Events["DumpValve"].guiName = Lib.StatusToggle(Localizer.Format("#KERBALISM_ProcessController_Dump"), dump_specs.valves[valve_i]);//"Dump"
+			Events["Toggle"].guiName = Lib.StatusToggle(title, broken ? Local.ProcessController_broken : running ? Local.ProcessController_running : Local.ProcessController_stopped);//"broken""running""stopped"
+			Events["DumpValve"].guiName = Lib.StatusToggle(Local.ProcessController_Dump, dump_specs.valves[valve_i]);//"Dump"
 		}
 
 #if KSP15_16
@@ -165,7 +165,7 @@ namespace KERBALISM
 					if (!process.modifiers.Contains(pair.Key))
 						specs.Add(pair.Key, Lib.BuildString("<color=#ffaa00>", Lib.HumanReadableRate(pair.Value * capacity), "</color>"));
 					else
-						specs.Add(Localizer.Format("#KERBALISM_ProcessController_info1"), Lib.HumanReadableDuration(0.5 / pair.Value));//"Half-life"
+						specs.Add(Local.ProcessController_info1, Lib.HumanReadableDuration(0.5 / pair.Value));//"Half-life"
 				}
 				foreach (KeyValuePair<string, double> pair in process.outputs)
 				{

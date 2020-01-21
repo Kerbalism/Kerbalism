@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Harmony;
@@ -234,7 +234,7 @@ namespace KERBALISM
 			if (evaPropQuantity <= 0.05 && !Lib.Landed(data.from.vessel))
 			{
 				Message.Post(Severity.danger,
-					Localizer.Format("#KERBALISM_CallBackMsg_EvaNoMP", "<b>"+prop_name+"</b>"), Localizer.Format("#KERBALISM_CallBackMsg_EvaNoMP2"));//Lib.BuildString("There isn't any <<1>> in the EVA suit")"Don't let the ladder go!"
+					Localizer.Format("#KERBALISM_CallBackMsg_EvaNoMP", "<b>"+prop_name+"</b>"), Local.CallBackMsg_EvaNoMP2);//Lib.BuildString("There isn't any <<1>> in the EVA suit")"Don't let the ladder go!"
 			}
 
 			// turn off headlamp light, to avoid stock bug that show them for a split second when going on eva
@@ -402,7 +402,7 @@ namespace KERBALISM
 				{
 					Message.Post
 					(
-					  "<color=#00ffff><b>" + Localizer.Format("#KERBALISM_CallBackMsg_PROGRESS") + "</b></color>\n" + Localizer.Format("#KERBALISM_CallBackMsg_PROGRESS2"),//PROGRESS""Our scientists just made a breakthrough
+					  "<color=#00ffff><b>" + Local.CallBackMsg_PROGRESS + "</b></color>\n" + Local.CallBackMsg_PROGRESS2,//PROGRESS""Our scientists just made a breakthrough
 					  Lib.BuildString("We now have access to \n<b>", label, "</b>")
 					);
 				}

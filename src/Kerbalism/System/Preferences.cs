@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Reflection;
 using KSP.IO;
 using KSP.Localization;
@@ -84,7 +84,7 @@ namespace KERBALISM
 
 		public override int SectionOrder { get { return 1; } }
 
-		public override string Title { get { return Localizer.Format("#KERBALISM_Preferences_Reliability"); } }//"Reliability"
+		public override string Title { get { return Local.Preferences_Reliability; } }//"Reliability"
 
 		private static PreferencesReliability instance;
 
@@ -157,7 +157,7 @@ namespace KERBALISM
 
 		public override int SectionOrder { get { return 2; } }
 
-		public override string Title { get { return Localizer.Format("#KERBALISM_Preferences_Science"); } }//"Science"
+		public override string Title { get { return Local.Preferences_Science; } }//"Science"
 
 		private static PreferencesScience instance;
 
@@ -217,7 +217,7 @@ namespace KERBALISM
 
 		public override int SectionOrder { get { return 0; } }
 
-		public override string Title { get { return Localizer.Format("#KERBALISM_Preferences_Notifications"); } }//"Notifications"
+		public override string Title { get { return Local.Preferences_Notifications; } }//"Notifications"
 
 		private static PreferencesMessages instance;
 
@@ -305,7 +305,7 @@ namespace KERBALISM
 
 		public override int SectionOrder { get { return 1; } }
 
-		public override string Title { get { return Localizer.Format("#KERBALISM_Preferences_Comfort"); } }//"Comfort"
+		public override string Title { get { return Local.Preferences_Comfort; } }//"Comfort"
 
 		private static PreferencesComfort instance;
 
@@ -395,7 +395,7 @@ namespace KERBALISM
 
 		public override int SectionOrder { get { return 0; } }
 
-		public override string Title { get { return Localizer.Format("#KERBALISM_Preferences_Radiation"); } }//"Radiation"
+		public override string Title { get { return Local.Preferences_Radiation; } }//"Radiation"
 
 		private static PreferencesRadiation instance;
 

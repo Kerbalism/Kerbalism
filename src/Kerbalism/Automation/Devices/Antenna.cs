@@ -1,4 +1,4 @@
-﻿using KSP.Localization;
+using KSP.Localization;
 using System.Collections.Generic;
 
 namespace KERBALISM
@@ -47,7 +47,7 @@ namespace KERBALISM
 				else if (deployFxModule.GetScalar < 1f)
 					return Lib.Color(Local.Generic_RETRACTED, Lib.Kolor.Yellow);
 
-				return Localizer.Format("#KERBALISM_Antenna_statu_unknown");
+				return Local.Antenna_statu_unknown;
 			}
 		}
 
@@ -128,7 +128,7 @@ namespace KERBALISM
 							Lib.Color(Local.Generic_EXTENDED, Lib.Kolor.Green) :
 							Lib.Color(Local.Generic_RETRACTED, Lib.Kolor.Yellow);
 				}
-				return Localizer.Format("#KERBALISM_Antenna_statu_unknown");//"unknown"
+				return Local.Antenna_statu_unknown;//"unknown"
 			}
 		}
 

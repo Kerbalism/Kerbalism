@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using KSP.Localization;
@@ -61,37 +61,37 @@ namespace KERBALISM
 				else
 					sb.Append(module.ExpInfo.Title);
 				sb.Append("\n");
-				sb.Append(Localizer.Format("#KERBALISM_Experiment_on"));//on
+				sb.Append(Local.Experiment_on);//on
 				sb.Append(" ");
 				sb.Append(module.part.partInfo.title);
 				sb.Append("\n");
-				sb.Append(Localizer.Format("#KERBALISM_Experiment_status"));//status :
+				sb.Append(Local.Experiment_status);//status :
 				sb.Append(" ");
 				sb.Append(Experiment.StatusInfo(module.Status));
 
 				if (module.Status == Experiment.ExpStatus.Issue)
 				{
 					sb.Append("\n");
-					sb.Append(Localizer.Format("#KERBALISM_Experiment_issue"));//issue :
+					sb.Append(Local.Experiment_issue);//issue :
 					sb.Append(" ");
 					sb.Append(Lib.Color(module.issue, Lib.Kolor.Orange));
 				}
 				sb.Append("\n");
-				sb.Append(Localizer.Format("#KERBALISM_Experiment_sciencevalue"));//science value :
+				sb.Append(Local.Experiment_sciencevalue);//science value :
 				sb.Append(" ");
 				sb.Append(scienceValue);
 
 				if (module.Status == Experiment.ExpStatus.Running)
 				{
 					sb.Append("\n");
-					sb.Append(Localizer.Format("#KERBALISM_Experiment_completion"));//completion :
+					sb.Append(Local.Experiment_completion);//completion :
 					sb.Append(" ");
 					sb.Append(Experiment.RunningCountdown(module.ExpInfo, module.Subject, module.data_rate, false));
 				}
 				else if (module.Subject != null && module.Status == Experiment.ExpStatus.Forced)
 				{
 					sb.Append("\n");
-					sb.Append(Localizer.Format("#KERBALISM_Experiment_completion"));//completion :
+					sb.Append(Local.Experiment_completion);//completion :
 					sb.Append(" ");
 					sb.Append(module.Subject.PercentCollectedTotal.ToString("P0"));
 				}
@@ -185,37 +185,37 @@ namespace KERBALISM
 				else
 					sb.Append(expInfo.Title);
 				sb.Append("\n");
-				sb.Append(Localizer.Format("#KERBALISM_Experiment_on"));//on
+				sb.Append(Local.Experiment_on);//on
 				sb.Append(" ");
 				sb.Append(prefab.part.partInfo.title);
 				sb.Append("\n");
-				sb.Append(Localizer.Format("#KERBALISM_Experiment_status"));//status :
+				sb.Append(Local.Experiment_status);//status :
 				sb.Append(" ");
 				sb.Append(Experiment.StatusInfo(status));
 
 				if (status == Experiment.ExpStatus.Issue)
 				{
 					sb.Append("\n");
-					sb.Append(Localizer.Format("#KERBALISM_Experiment_issue"));//issue :
+					sb.Append(Local.Experiment_issue);//issue :
 					sb.Append(" ");
 					sb.Append(Lib.Color(issue, Lib.Kolor.Orange));
 				}
 				sb.Append("\n");
-				sb.Append(Localizer.Format("#KERBALISM_Experiment_sciencevalue"));//science value :
+				sb.Append(Local.Experiment_sciencevalue);//science value :
 				sb.Append(" ");
 				sb.Append(scienceValue);
 
 				if (status == Experiment.ExpStatus.Running)
 				{
 					sb.Append("\n");
-					sb.Append(Localizer.Format("#KERBALISM_Experiment_completion"));//completion :
+					sb.Append(Local.Experiment_completion);//completion :
 					sb.Append(" ");
 					sb.Append(Experiment.RunningCountdown(expInfo, subject, prefab.data_rate, false));
 				}
 				else if (subject != null && status == Experiment.ExpStatus.Forced)
 				{
 					sb.Append("\n");
-					sb.Append(Localizer.Format("#KERBALISM_Experiment_completion"));//completion :
+					sb.Append(Local.Experiment_completion);//completion :
 					sb.Append(" ");
 					sb.Append(subject.PercentCollectedTotal.ToString("P0"));
 				}

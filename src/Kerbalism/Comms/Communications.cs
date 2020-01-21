@@ -1,4 +1,4 @@
-﻿using KSP.Localization;
+using KSP.Localization;
 
 namespace KERBALISM
 {
@@ -34,16 +34,16 @@ namespace KERBALISM
 					vd.msg_signal = true;
 					if (vd.cfg_signal)
 					{
-						string subtext = Localizer.Format("#KERBALISM_UI_transmissiondisabled");
+						string subtext = Local.UI_transmissiondisabled;
 
 						switch (vd.Connection.status)
 						{
 
 							case LinkStatus.plasma:
-								subtext = Localizer.Format("#KERBALISM_UI_Plasmablackout");
+								subtext = Local.UI_Plasmablackout;
 								break;
 							case LinkStatus.storm:
-								subtext = Localizer.Format("#KERBALISM_UI_Stormblackout");
+								subtext = Local.UI_Stormblackout;
 								break;
 							default:
 								if (vd.CrewCount == 0)
@@ -51,17 +51,17 @@ namespace KERBALISM
 									switch (Settings.UnlinkedControl)
 									{
 										case UnlinkedCtrl.none:
-											subtext = Localizer.Format("#KERBALISM_UI_noctrl");
+											subtext = Local.UI_noctrl;
 											break;
 										case UnlinkedCtrl.limited:
-											subtext = Localizer.Format("#KERBALISM_UI_limitedcontrol");
+											subtext = Local.UI_limitedcontrol;
 											break;
 									}
 								}
 								break;
 						}
 
-						Message.Post(Severity.warning, Lib.BuildString(Localizer.Format("#KERBALISM_UI_signallost"), " <b>", v.vesselName, "</b>"), subtext);
+						Message.Post(Severity.warning, Lib.BuildString(Local.UI_signallost, " <b>", v.vesselName, "</b>"), subtext);
 					}
 				}
 				else if (vd.msg_signal && vd.Connection.linked)
@@ -69,9 +69,9 @@ namespace KERBALISM
 					vd.msg_signal = false;
 					if (vd.cfg_signal)
 					{
-						Message.Post(Severity.relax, Lib.BuildString("<b>", v.vesselName, "</b> ", Localizer.Format("#KERBALISM_UI_signalback")),
-						  vd.Connection.status == LinkStatus.direct_link ? Localizer.Format("#KERBALISM_UI_directlink") :
-							Lib.BuildString(Localizer.Format("#KERBALISM_UI_relayby"), " <b>", vd.Connection.target_name, "</b>"));
+						Message.Post(Severity.relax, Lib.BuildString("<b>", v.vesselName, "</b> ", Local.UI_signalback),
+						  vd.Connection.status == LinkStatus.direct_link ? Local.UI_directlink :
+							Lib.BuildString(Local.UI_relayby, " <b>", vd.Connection.target_name, "</b>"));
 					}
 				}
 			}
