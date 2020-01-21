@@ -14,7 +14,7 @@ namespace KERBALISM
 			SolarPanel,
 			Harvester,
 			RTG,
-			FuellCell,
+			FuelCell,
 			ECLSS,
 			VesselSystem,
 			Kerbal,

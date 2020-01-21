@@ -481,14 +481,18 @@ namespace KERBALISM
 			return result;
 		}
 
+
+
 		/// <summary>
 		/// Return a list of all consumers and producers for that resource.
-		/// The double value is the positive of negative rate (in unit/s) for that broker
-		/// The string[] array always contain 3 strings :
-		/// The first is the category (see the ResourceBroker.BrokerCategory enum)
-		/// The second is the broker id
-		/// The third is the broker localized title
 		/// </summary>
+		/*
+		The double value is the positive or negative rate (in unit/s) for that broker
+		The string[] array always contain 3 strings :
+		- The first is the category (see the ResourceBroker.BrokerCategory enum)
+		- The second is the broker id
+		- The third is the broker localized title
+		*/
 		public static List<KeyValuePair<string[], double>> ResourceBrokers(Vessel v, string resource_name)
 		{
 			List<SupplyData.ResourceBrokerRate> brokers = v.KerbalismData().Supply(resource_name).ResourceBrokers;
