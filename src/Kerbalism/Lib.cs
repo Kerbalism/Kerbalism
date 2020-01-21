@@ -1337,6 +1337,14 @@ namespace KERBALISM
 
 		public static Vessel CommNodeToVessel(CommNode node)
 		{
+			// Iterating over all vessels will work for recovering the vessel from a CommNode.However,
+			// since CommNodes are created when Vessels are, you can almost certainly cache this in a
+			// reasonable manner.
+			// (Vessel creates a CommNetVessel which creates the CommNode.They're established no
+			// later than OnStart())
+			// We would either need something to monitor new Vessel creation (ie after staging events)
+			// OR you want a fallback for cache misses.
+
 			// Is is home return null
 			if (node.isHome) return null;
 
@@ -1662,14 +1670,14 @@ namespace KERBALISM
 		/// <summary> Adds the specified resource amount and capacity to a part,
 		/// the resource is created if it doesn't already exist </summary>
 		///<summary>poached from https://github.com/blowfishpro/B9PartSwitch/blob/master/B9PartSwitch/Extensions/PartExtensions.cs
-		public static void AddResource(Part p, string res_name, double amount, double capacity)
+		public static PartResource AddResource(Part p, string res_name, double amount, double capacity)
 		{
 			var reslib = PartResourceLibrary.Instance.resourceDefinitions;
 			// if the resource is not known, log a warning and do nothing
 			if (!reslib.Contains(res_name))
 			{
 				Lib.Log(Lib.BuildString("error while adding ", res_name, ": the resource doesn't exist"));
-				return;
+				return null;
 			}
 			var resourceDefinition = reslib[res_name];
 
@@ -1709,6 +1717,8 @@ namespace KERBALISM
 
 				resource.amount = amount;
 			}
+
+			return resource;
 		}
 
 		/// <summary> Removes the specified resource amount and capacity from a part,
