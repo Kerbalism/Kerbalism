@@ -33,6 +33,8 @@ namespace KERBALISM
 
 		public void Start()
 		{
+			Local.HackerMan();
+
 			// log version
 			Lib.Log("Version : " + Lib.KerbalismVersion + " - Build : " + Lib.KerbalismDevBuild);
 
