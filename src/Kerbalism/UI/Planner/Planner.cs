@@ -253,9 +253,9 @@ namespace KERBALISM.Planner
 			(
 				"<align=left />" +
 				String.Format("<b>{0,-14}\t{1,-15}\t{2}</b>\n", Local.Planner_Source, Local.Planner_Flux, Local.Planner_Temp),//"Source""Flux""Temp"
-				String.Format("{0,-14}\t{1,-15}\t{2}\n", Local.Planner_solar, env_analyzer.solar_flux > 0.0 ? Lib.HumanReadableFlux(env_analyzer.solar_flux) : Local.none, Lib.HumanReadableTemp(Sim.BlackBodyTemperature(env_analyzer.solar_flux))),//"solar""none"
-				String.Format("{0,-14}\t{1,-15}\t{2}\n", Local.Planner_albedo, env_analyzer.albedo_flux > 0.0 ? Lib.HumanReadableFlux(env_analyzer.albedo_flux) : Local.none, Lib.HumanReadableTemp(Sim.BlackBodyTemperature(env_analyzer.albedo_flux))),//"albedo""none"
-				String.Format("{0,-14}\t{1,-15}\t{2}\n", Local.Planner_body, env_analyzer.body_flux > 0.0 ? Lib.HumanReadableFlux(env_analyzer.body_flux) : Local.none, Lib.HumanReadableTemp(Sim.BlackBodyTemperature(env_analyzer.body_flux))),//"body""none"
+				String.Format("{0,-14}\t{1,-15}\t{2}\n", Local.Planner_solar, env_analyzer.solar_flux > 0.0 ? Lib.HumanReadableFlux(env_analyzer.solar_flux) : Local.Generic_NONE, Lib.HumanReadableTemp(Sim.BlackBodyTemperature(env_analyzer.solar_flux))),//"solar""none"
+				String.Format("{0,-14}\t{1,-15}\t{2}\n", Local.Planner_albedo, env_analyzer.albedo_flux > 0.0 ? Lib.HumanReadableFlux(env_analyzer.albedo_flux) : Local.Generic_NONE, Lib.HumanReadableTemp(Sim.BlackBodyTemperature(env_analyzer.albedo_flux))),//"albedo""none"
+				String.Format("{0,-14}\t{1,-15}\t{2}\n", Local.Planner_body, env_analyzer.body_flux > 0.0 ? Lib.HumanReadableFlux(env_analyzer.body_flux) : Local.Generic_NONE, Lib.HumanReadableTemp(Sim.BlackBodyTemperature(env_analyzer.body_flux))),//"body""none"
 				String.Format("{0,-14}\t{1,-15}\t{2}\n", Local.Planner_background, Lib.HumanReadableFlux(Sim.BackgroundFlux()), Lib.HumanReadableTemp(Sim.BlackBodyTemperature(Sim.BackgroundFlux()))),//"background"
 				String.Format("{0,-14}\t\t{1,-15}\t{2}", Local.Planner_total, Lib.HumanReadableFlux(env_analyzer.total_flux), Lib.HumanReadableTemp(Sim.BlackBodyTemperature(env_analyzer.total_flux)))//"total"
 			);

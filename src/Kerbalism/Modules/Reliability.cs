@@ -253,7 +253,7 @@ namespace KERBALISM
 					}
 				}
 
-				if (string.IsNullOrEmpty(Status)) Status = Local.nominal;//"nominal"
+				if (string.IsNullOrEmpty(Status)) Status = Local.Generic_NOMINAL;//"nominal"
 
 				Events["Inspect"].active = !broken && !needMaintenance;
 				Events["Repair"].active = repair_cs && (broken || needMaintenance) && !critical;

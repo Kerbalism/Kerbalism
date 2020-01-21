@@ -9,26 +9,62 @@ using System.Text.RegularExpressions;
 
 namespace KERBALISM
 {
-	// regexp for creating a field in this file from a loc config line
-	// search : \#KERBALISM_(.*?) = (.*)\r\n
-	// replace : public static string $1 = GetLoc("$1"); // "$2"\r\n
-
-	// replace Localization.Format by a static field defined here :
-	// search : Localizer.Format\(\"\#KERBALISM_(.*?)\"\)
-	// replace : Local.$1
-
 	// Localization cache
 	public static class Local
 	{
 		private const string prefix = "#KERBALISM_";
 		private static string GetLoc(string template) => Localizer.Format(prefix + template);
 
+		// utility method for development, will generate a localization config template based on the contents of this file
+		// Note that this assume that parametrized strings (using <<x>>) are put as comments in this file with the following format :
+		// #KERBALISM_BodyInfo_BodyInfoToggleHelp "Press <<1>> to open this window again"
+		static void GenerateLocTemplate(bool english = false)
+		{
+			string[] localCachelines = System.IO.File.ReadAllLines(@"C:\Users\Got\source\repos\Kerbalism\Kerbalism\src\Kerbalism\LocalizationCache.cs");
+			List<string> locFile = new List<string>();
+			foreach (string line in localCachelines)
+			{
+				// public static string (.*?) = GetLoc.*//.*?"(.*)"
+				Match locMatch = Regex.Match(line, "public static string (.*?) = GetLoc.*//.*?\"(.*)\"");
+				if (locMatch.Success)
+				{
+					if (english)
+						locFile.Add("#KERBALISM_" + locMatch.Groups[1].Value + " = " + locMatch.Groups[2].Value);
+					else
+						locFile.Add("#KERBALISM_" + locMatch.Groups[1].Value + " = " + "// \"" + locMatch.Groups[2].Value + "\"");
+					
+					continue;
+				}
+
+				// //.*(#.*?) .*?"(.*<<.*>>.*)"
+				Match parameterLocMatch = Regex.Match(line, "//.*(#.*?) .*?\"(.*<<.*>>.*)\"");
+				if (parameterLocMatch.Success)
+				{
+					if (english)
+						locFile.Add(parameterLocMatch.Groups[1].Value + " = " + parameterLocMatch.Groups[2].Value);
+					else
+						locFile.Add(parameterLocMatch.Groups[1].Value + " = " + "// \"" + parameterLocMatch.Groups[2].Value + "\"");
+					continue;
+				}
+
+				// .*(//.*)
+				Match commentMatch = Regex.Match(line, ".*(//.*)");
+				if (commentMatch.Success)
+				{
+					locFile.Add(commentMatch.Groups[1].Value);
+					continue;
+				}
+			}
+			System.IO.File.WriteAllLines(@"C:\Users\Got\Desktop\loctest\loctemplate.txt", locFile);
+		}
 
 		////////////////////////////////////////////////////////////////////
+		// START OF LOCALIZATION FIELDS
+		////////////////////////////////////////////////////////////////////
 
-		// Modules Localization
-
-		//Group
+		////////////////////////////////////////////////////////////////////
+		// PartModules PAW UI Groups
+		////////////////////////////////////////////////////////////////////
 		public static string Group_Science = GetLoc("Group_Science"); // "Science"
 		public static string Group_Greenhouse = GetLoc("Group_Greenhouse"); // "Greenhouse"
 		public static string Group_Habitat = GetLoc("Group_Habitat"); // "Habitat"
@@ -39,8 +75,8 @@ namespace KERBALISM
 		public static string Group_Sensors = GetLoc("Group_Sensors"); // "Sensors"
 
 		////////////////////////////////////////////////////////////////////
-
-		// Generic Localization
+		// Generic strings
+		////////////////////////////////////////////////////////////////////
 		public static string Generic_ON = GetLoc("Generic_ON"); // "on"
 		public static string Generic_OFF = GetLoc("Generic_OFF"); // "off"
 		public static string Generic_ENABLED = GetLoc("Generic_ENABLED"); // "enabled"
@@ -69,10 +105,17 @@ namespace KERBALISM
 		public static string Generic_SLOT = GetLoc("Generic_SLOT"); // "slot"
 		public static string Generic_AVERAGE = GetLoc("Generic_AVERAGE"); // "average"
 		public static string Generic_notdeployed = GetLoc("Generic_notdeployed"); // "not deployed"
+		public static string Generic_PERPETUAL = GetLoc("Generic_PERPETUAL"); // "perpetual"
+		public static string Generic_NEVER = GetLoc("Generic_NEVER"); // "never"
+		public static string Generic_NOMINAL = GetLoc("Generic_NOMINAL"); // "nominal"
+		//$HIS_HER
+		public static string Kerbal_his = GetLoc("Kerbal_his"); // "his"
+		public static string Kerbal_her = GetLoc("Kerbal_her"); // "her"
 
 		////////////////////////////////////////////////////////////////////
 		// Hardcoded resource brokers (consumers/producers) localization
 		// Shown in the resource telemetry tooltip
+		////////////////////////////////////////////////////////////////////
 		public static string Brokers_Others = GetLoc("Brokers_Others"); // "others"
 		public static string Brokers_SolarPanel = GetLoc("Brokers_SolarPanel"); // "solar panel"
 		public static string Brokers_KSPIEGenerator = GetLoc("Brokers_KSPIEGenerator"); // "KSPIE generator"
@@ -96,34 +139,8 @@ namespace KERBALISM
 		public static string Brokers_Harvester = GetLoc("Brokers_Harvester"); // "harvester"
 
 		////////////////////////////////////////////////////////////////////
-
-		// UI Localization
-
-		// Signals
-		public static string UI_signallost = GetLoc("UI_signallost"); // "Signal lost with"
-		public static string UI_signalback = GetLoc("UI_signalback"); // "signal is back"
-		public static string UI_relayby = GetLoc("UI_relayby"); // "Relayed by"
-		public static string UI_directlink = GetLoc("UI_directlink"); // "We got a direct link with the space center"
-		public static string UI_noctrl = GetLoc("UI_noctrl"); // "Remote control disabled"
-		public static string UI_limitedcontrol = GetLoc("UI_limitedcontrol"); // "Limited control available"
-		public static string UI_telemetry = GetLoc("UI_telemetry"); // "telemetry"
-		public static string UI_DSNconnected = GetLoc("UI_DSNconnected"); // "DSN connected"
-		public static string UI_sciencerate = GetLoc("UI_sciencerate"); // "science rate"
-		public static string UI_strength = GetLoc("UI_strength"); // "strength"
-		public static string UI_target = GetLoc("UI_target"); // "target"
-		public static string UI_transmitting = GetLoc("UI_transmitting"); // "transmitting"
-		public static string UI_Signalrelayed = GetLoc("UI_Signalrelayed"); // "Signal relayed"
-		public static string UI_Plasmablackout = GetLoc("UI_Plasmablackout"); // "Plasma blackout"
-		public static string UI_Stormblackout = GetLoc("UI_Stormblackout"); // "Storm blackout"
-		public static string UI_transmissiondisabled = GetLoc("UI_transmissiondisabled"); // "Data transmission disabled"
-
-		// Devices
-		public static string UI_devman = GetLoc("UI_devman"); // "DEV MANAGER"
-		public static string UI_devices = GetLoc("UI_devices"); // "DEVICES"
-		public static string UI_dontcare = GetLoc("UI_dontcare"); // "don't care"
-		public static string UI_scriptvessel = GetLoc("UI_scriptvessel"); // "Script called on vessel"
-
 		//Contracts
+		////////////////////////////////////////////////////////////////////
 		public static string Contracts_radTitle = GetLoc("Contracts_radTitle"); // "Cross the radiation belt"
 		public static string Contracts_radDesc = GetLoc("Contracts_radDesc"); // "A brilliant scientist predicted two belts of super-charged particles surrounding the planet. Now we need to confirm their existence and find out how deadly they really are."
 		public static string Contracts_radComplete = GetLoc("Contracts_radComplete"); // "The mission confirmed the presence of two radiation belts around the planet. Early data suggest extreme levels of radiation."
@@ -140,33 +157,16 @@ namespace KERBALISM
 		public static string Contracts_sampleDesc = GetLoc("Contracts_sampleDesc"); // "The Laboratory can analyze samples in space, in theory. We should check if this actually work by and analyzing some samples in space."
 		public static string Contracts_sampleComplete = GetLoc("Contracts_sampleComplete"); // "Our Laboratory analysis was good, perhaps even better than the ones done usually by our scientists at mission control. But don't tell'em."
 
-		//Comfort
-		public static string Comfort_firmground = GetLoc("Comfort_firmground"); // "firm ground"
-		public static string Comfort_exercise = GetLoc("Comfort_exercise"); // "exercise"
-		public static string Comfort_notalone = GetLoc("Comfort_notalone"); // "not alone"
-		public static string Comfort_callhome = GetLoc("Comfort_callhome"); // "call home"
-		public static string Comfort_panorama = GetLoc("Comfort_panorama"); // "panorama"
-		public static string Comfort_factor = GetLoc("Comfort_factor"); // "factor"
-		public static string Comfort_plants = GetLoc("Comfort_plants"); // "plants"
-		public static string Configure_noconfigure = GetLoc("Configure_noconfigure"); // "Can't reconfigure the component"
-		public static string Configure_dumpexcess = GetLoc("Configure_dumpexcess"); // "Reconfiguring will dump resources in excess of capacity."
-		public static string Science_ofdatatransfer = GetLoc("Science_ofdatatransfer"); // "of data transfered"
-		public static string Science_inoperable = GetLoc("Science_inoperable"); // "The experiment is now inoperable, resetting will require a <b>Scientist</b>"
-
-		//lib
-		public static string none = GetLoc("none"); // "none"
-		public static string perpetual = GetLoc("perpetual"); // "perpetual"
-		public static string never = GetLoc("never"); // "never"
-		public static string nominal = GetLoc("nominal"); // "nominal"
-		public static string noslots = GetLoc("noslots"); // "no "
-
-		//Body Info
+		////////////////////////////////////////////////////////////////////
+		// Body info UI
+		////////////////////////////////////////////////////////////////////
+		// #KERBALISM_BodyInfo_BodyInfoToggleHelp "Press <<1>> to open this window again"
+		// #KERBALISM_BodyInfo_stormcycle "<<1>> cycle"
 		public static string BodyInfo_title = GetLoc("BodyInfo_title"); // "BODY INFO"
 		public static string BodyInfo_SURFACE = GetLoc("BodyInfo_SURFACE"); // "SURFACE"
 		public static string BodyInfo_temperature = GetLoc("BodyInfo_temperature"); // "temperature"
 		public static string BodyInfo_solarflux = GetLoc("BodyInfo_solarflux"); // "solar flux"
 		public static string BodyInfo_radiation = GetLoc("BodyInfo_radiation"); // "radiation"
-																				// #KERBALISM_BodyInfo_stormcycle // "<<1>> cycle"
 		public static string BodyInfo_ATMOSPHERE = GetLoc("BodyInfo_ATMOSPHERE"); // "ATMOSPHERE"
 		public static string BodyInfo_breathable = GetLoc("BodyInfo_breathable"); // "breathable"
 		public static string BodyInfo_breathable_yes = GetLoc("BodyInfo_breathable_yes"); // "yes"
@@ -182,63 +182,14 @@ namespace KERBALISM
 		public static string BodyInfo_show = GetLoc("BodyInfo_show"); // "show"
 		public static string BodyInfo_hide = GetLoc("BodyInfo_hide"); // "hide"
 		public static string BodyInfo_unknown = GetLoc("BodyInfo_unknown"); // "unknown"
-		// #KERBALISM_BodyInfo_BodyInfoToggleHelp // "Press <<1>> to open this window again"
 
-		//CONNECTION MANAGER
-		public static string ConnManager_title = GetLoc("ConnManager_title"); // "CONNECTION MANAGER"
-		public static string ConnManager_CONTROLPATH = GetLoc("ConnManager_CONTROLPATH"); // "CONTROL PATH"
-		public static string ConnManager_noconnection = GetLoc("ConnManager_noconnection"); // "no connection"
-
-		//DEV Manager
-		public static string DevManager_VESSELDEVICES = GetLoc("DevManager_VESSELDEVICES"); // "VESSEL DEVICES"
-		public static string DevManager_MODULEDEVICES = GetLoc("DevManager_MODULEDEVICES"); // "MODULE DEVICES"
-		public static string DevManager_nodevices = GetLoc("DevManager_nodevices"); // "no devices"
-
-		//Quality Management
-		public static string QualityManagement_title = GetLoc("QualityManagement_title"); // "Quality Management"
-		public static string QualityManagement_noqualityinfo = GetLoc("QualityManagement_noqualityinfo"); // "no quality info"
-		public static string QualityManagement_Misc = GetLoc("QualityManagement_Misc"); // "Misc"
-		public static string QualityManagement_busted = GetLoc("QualityManagement_busted"); // "busted"
-		public static string QualityManagement_needsrepair = GetLoc("QualityManagement_needsrepair"); // "needs repair"
-		public static string QualityManagement_needsservice = GetLoc("QualityManagement_needsservice"); // "needs service"
-		public static string QualityManagement_operationduration = GetLoc("QualityManagement_operationduration"); // "operation duration"
-		public static string QualityManagement_ignitionlimit = GetLoc("QualityManagement_ignitionlimit"); // "ignition limit"
-		public static string QualityManagement_good = GetLoc("QualityManagement_good"); // "good"
-
-		//FILE MANAGER
-		public static string FILEMANAGER_title = GetLoc("FILEMANAGER_title"); // "FILE MANAGER"
-		public static string FILEMANAGER_DataCapacity = GetLoc("FILEMANAGER_DataCapacity"); // "DATA"
-		// #KERBALISM_FILEMANAGER_DataAvailable // "(<<1>> available)"
-		public static string FILEMANAGER_nofiles = GetLoc("FILEMANAGER_nofiles"); // "no files"
-		// #KERBALISM_FILEMANAGER_SAMPLESMass // "SAMPLES <<1>>"
-		public static string FILEMANAGER_SAMPLESAvailable = GetLoc("FILEMANAGER_SAMPLESAvailable"); // "available"
-		public static string FILEMANAGER_nosamples = GetLoc("FILEMANAGER_nosamples"); // "no samples"
-		// #KERBALISM_FILEMANAGER_TransmittingRate // "Transmitting at <<1>>"
-		public static string FILEMANAGER_Transmitduration = GetLoc("FILEMANAGER_Transmitduration"); // "Transmit duration :"
-		public static string FILEMANAGER_send = GetLoc("FILEMANAGER_send"); // "Flag the file for transmission to <b>DSN</b>"
-		public static string FILEMANAGER_Delete = GetLoc("FILEMANAGER_Delete"); // "Delete the file"
-		public static string FILEMANAGER_Warning_title = GetLoc("FILEMANAGER_Warning_title"); // "Warning!"
-		// #KERBALISM_FILEMANAGER_DeleteConfirm // "Do you really want to delete <<1>>?"
-		public static string FILEMANAGER_DeleteConfirm_button1 = GetLoc("FILEMANAGER_DeleteConfirm_button1"); // "Delete it"
-		public static string FILEMANAGER_DeleteConfirm_button2 = GetLoc("FILEMANAGER_DeleteConfirm_button2"); // "Keep it"
-		public static string FILEMANAGER_analysis = GetLoc("FILEMANAGER_analysis"); // "Flag the file for analysis in a <b>laboratory</b>"
-		public static string FILEMANAGER_Dumpsample = GetLoc("FILEMANAGER_Dumpsample"); // "Dump the sample"
-																						// #KERBALISM_FILEMANAGER_DumpConfirm // "Do you really want to dump <<1>>?"
-		public static string FILEMANAGER_DumpConfirm_button1 = GetLoc("FILEMANAGER_DumpConfirm_button1"); // "Dump it"
-		public static string FILEMANAGER_DumpConfirm_button2 = GetLoc("FILEMANAGER_DumpConfirm_button2"); // "Keep it"
-
-		//Message 
-		public static string Message_RELAX = GetLoc("Message_RELAX"); // "RELAX"
-		public static string Message_WARNING = GetLoc("Message_WARNING"); // "WARNING"
-		public static string Message_DANGER = GetLoc("Message_DANGER"); // "DANGER"
-		public static string Message_FATALITY = GetLoc("Message_FATALITY"); // "FATALITY"
-		public static string Message_BREAKDOWN = GetLoc("Message_BREAKDOWN"); // "BREAKDOWN"
-
-		//Monitor
+		////////////////////////////////////////////////////////////////////
+		// Monitor UI
+		////////////////////////////////////////////////////////////////////
+		// #KERBALISM_Monitor_GoComfirm // "Do you really want go to <<1>> vessel?"
 		public static string Monitor_novessels = GetLoc("Monitor_novessels"); // "no vessels"
 		public static string Monitor_Gotovessel = GetLoc("Monitor_Gotovessel"); // "Go to vessel!"
 		public static string Monitor_Warning_title = GetLoc("Monitor_Warning_title"); // "Warning!"
-		// #KERBALISM_Monitor_GoComfirm // "Do you really want go to <<1>> vessel?"
 		public static string Monitor_GoComfirm_button1 = GetLoc("Monitor_GoComfirm_button1"); // "Go"
 		public static string Monitor_GoComfirm_button2 = GetLoc("Monitor_GoComfirm_button2"); // "Target"
 		public static string Monitor_GoComfirm_button3 = GetLoc("Monitor_GoComfirm_button3"); // "Stay"
@@ -272,7 +223,109 @@ namespace KERBALISM
 		public static string Monitor_Malfunctions = GetLoc("Monitor_Malfunctions"); // "Malfunctions"
 		public static string Monitor_Criticalfailures = GetLoc("Monitor_Criticalfailures"); // "Critical failures"
 
-		//TELEMETRY
+		////////////////////////////////////////////////////////////////////
+		// Telemetry/Planner UI : Signal
+		////////////////////////////////////////////////////////////////////
+		public static string UI_signallost = GetLoc("UI_signallost"); // "Signal lost with"
+		public static string UI_signalback = GetLoc("UI_signalback"); // "signal is back"
+		public static string UI_relayby = GetLoc("UI_relayby"); // "Relayed by"
+		public static string UI_directlink = GetLoc("UI_directlink"); // "We got a direct link with the space center"
+		public static string UI_noctrl = GetLoc("UI_noctrl"); // "Remote control disabled"
+		public static string UI_limitedcontrol = GetLoc("UI_limitedcontrol"); // "Limited control available"
+		public static string UI_telemetry = GetLoc("UI_telemetry"); // "telemetry"
+		public static string UI_DSNconnected = GetLoc("UI_DSNconnected"); // "DSN connected"
+		public static string UI_sciencerate = GetLoc("UI_sciencerate"); // "science rate"
+		public static string UI_strength = GetLoc("UI_strength"); // "strength"
+		public static string UI_target = GetLoc("UI_target"); // "target"
+		public static string UI_transmitting = GetLoc("UI_transmitting"); // "transmitting"
+		public static string UI_Signalrelayed = GetLoc("UI_Signalrelayed"); // "Signal relayed"
+		public static string UI_Plasmablackout = GetLoc("UI_Plasmablackout"); // "Plasma blackout"
+		public static string UI_Stormblackout = GetLoc("UI_Stormblackout"); // "Storm blackout"
+		public static string UI_transmissiondisabled = GetLoc("UI_transmissiondisabled"); // "Data transmission disabled"
+
+		////////////////////////////////////////////////////////////////////
+		// Telemetry/Planner UI : Automation
+		////////////////////////////////////////////////////////////////////
+		public static string UI_devman = GetLoc("UI_devman"); // "DEV MANAGER"
+		public static string UI_devices = GetLoc("UI_devices"); // "DEVICES"
+		public static string UI_dontcare = GetLoc("UI_dontcare"); // "don't care"
+		public static string UI_scriptvessel = GetLoc("UI_scriptvessel"); // "Script called on vessel"
+		public static string DevManager_VESSELDEVICES = GetLoc("DevManager_VESSELDEVICES"); // "VESSEL DEVICES"
+		public static string DevManager_MODULEDEVICES = GetLoc("DevManager_MODULEDEVICES"); // "MODULE DEVICES"
+		public static string DevManager_nodevices = GetLoc("DevManager_nodevices"); // "no devices"
+
+		////////////////////////////////////////////////////////////////////
+		// Telemetry/Planner UI : Comfort
+		////////////////////////////////////////////////////////////////////
+		public static string Comfort_firmground = GetLoc("Comfort_firmground"); // "firm ground"
+		public static string Comfort_exercise = GetLoc("Comfort_exercise"); // "exercise"
+		public static string Comfort_notalone = GetLoc("Comfort_notalone"); // "not alone"
+		public static string Comfort_callhome = GetLoc("Comfort_callhome"); // "call home"
+		public static string Comfort_panorama = GetLoc("Comfort_panorama"); // "panorama"
+		public static string Comfort_factor = GetLoc("Comfort_factor"); // "factor"
+		public static string Comfort_plants = GetLoc("Comfort_plants"); // "plants"
+		public static string Configure_noconfigure = GetLoc("Configure_noconfigure"); // "Can't reconfigure the component"
+		public static string Configure_dumpexcess = GetLoc("Configure_dumpexcess"); // "Reconfiguring will dump resources in excess of capacity."
+		public static string Science_ofdatatransfer = GetLoc("Science_ofdatatransfer"); // "of data transfered"
+		public static string Science_inoperable = GetLoc("Science_inoperable"); // "The experiment is now inoperable, resetting will require a <b>Scientist</b>"
+
+		////////////////////////////////////////////////////////////////////
+		// Telemetry/Planner UI : CONNECTION MANAGER
+		////////////////////////////////////////////////////////////////////
+		public static string ConnManager_title = GetLoc("ConnManager_title"); // "CONNECTION MANAGER"
+		public static string ConnManager_CONTROLPATH = GetLoc("ConnManager_CONTROLPATH"); // "CONTROL PATH"
+		public static string ConnManager_noconnection = GetLoc("ConnManager_noconnection"); // "no connection"
+
+		////////////////////////////////////////////////////////////////////
+		// Telemetry/Planner UI : reliability / quality
+		////////////////////////////////////////////////////////////////////
+		public static string QualityManagement_title = GetLoc("QualityManagement_title"); // "Quality Management"
+		public static string QualityManagement_noqualityinfo = GetLoc("QualityManagement_noqualityinfo"); // "no quality info"
+		public static string QualityManagement_Misc = GetLoc("QualityManagement_Misc"); // "Misc"
+		public static string QualityManagement_busted = GetLoc("QualityManagement_busted"); // "busted"
+		public static string QualityManagement_needsrepair = GetLoc("QualityManagement_needsrepair"); // "needs repair"
+		public static string QualityManagement_needsservice = GetLoc("QualityManagement_needsservice"); // "needs service"
+		public static string QualityManagement_operationduration = GetLoc("QualityManagement_operationduration"); // "operation duration"
+		public static string QualityManagement_ignitionlimit = GetLoc("QualityManagement_ignitionlimit"); // "ignition limit"
+		public static string QualityManagement_good = GetLoc("QualityManagement_good"); // "good"
+
+		////////////////////////////////////////////////////////////////////
+		// Monitor UI : file manager
+		////////////////////////////////////////////////////////////////////
+		// #KERBALISM_FILEMANAGER_DataAvailable // "(<<1>> available)"
+		// #KERBALISM_FILEMANAGER_SAMPLESMass // "SAMPLES <<1>>"
+		// #KERBALISM_FILEMANAGER_TransmittingRate // "Transmitting at <<1>>"
+		// #KERBALISM_FILEMANAGER_DeleteConfirm // "Do you really want to delete <<1>>?"
+		// #KERBALISM_FILEMANAGER_DumpConfirm // "Do you really want to dump <<1>>?"
+		public static string FILEMANAGER_title = GetLoc("FILEMANAGER_title"); // "FILE MANAGER"
+		public static string FILEMANAGER_DataCapacity = GetLoc("FILEMANAGER_DataCapacity"); // "DATA"
+		public static string FILEMANAGER_nofiles = GetLoc("FILEMANAGER_nofiles"); // "no files"
+		public static string FILEMANAGER_SAMPLESAvailable = GetLoc("FILEMANAGER_SAMPLESAvailable"); // "available"
+		public static string FILEMANAGER_nosamples = GetLoc("FILEMANAGER_nosamples"); // "no samples"
+		public static string FILEMANAGER_Transmitduration = GetLoc("FILEMANAGER_Transmitduration"); // "Transmit duration :"
+		public static string FILEMANAGER_send = GetLoc("FILEMANAGER_send"); // "Flag the file for transmission to <b>DSN</b>"
+		public static string FILEMANAGER_Delete = GetLoc("FILEMANAGER_Delete"); // "Delete the file"
+		public static string FILEMANAGER_Warning_title = GetLoc("FILEMANAGER_Warning_title"); // "Warning!"
+		public static string FILEMANAGER_DeleteConfirm_button1 = GetLoc("FILEMANAGER_DeleteConfirm_button1"); // "Delete it"
+		public static string FILEMANAGER_DeleteConfirm_button2 = GetLoc("FILEMANAGER_DeleteConfirm_button2"); // "Keep it"
+		public static string FILEMANAGER_analysis = GetLoc("FILEMANAGER_analysis"); // "Flag the file for analysis in a <b>laboratory</b>"
+		public static string FILEMANAGER_Dumpsample = GetLoc("FILEMANAGER_Dumpsample"); // "Dump the sample"																
+		public static string FILEMANAGER_DumpConfirm_button1 = GetLoc("FILEMANAGER_DumpConfirm_button1"); // "Dump it"
+		public static string FILEMANAGER_DumpConfirm_button2 = GetLoc("FILEMANAGER_DumpConfirm_button2"); // "Keep it"
+
+		////////////////////////////////////////////////////////////////////
+		// Messages
+		////////////////////////////////////////////////////////////////////
+		public static string Message_RELAX = GetLoc("Message_RELAX"); // "RELAX"
+		public static string Message_WARNING = GetLoc("Message_WARNING"); // "WARNING"
+		public static string Message_DANGER = GetLoc("Message_DANGER"); // "DANGER"
+		public static string Message_FATALITY = GetLoc("Message_FATALITY"); // "FATALITY"
+		public static string Message_BREAKDOWN = GetLoc("Message_BREAKDOWN"); // "BREAKDOWN"
+
+		////////////////////////////////////////////////////////////////////
+		// Monitor : main telemetry panel UI
+		////////////////////////////////////////////////////////////////////
+		// #KERBALISM_TimeoutMsg3 // "New tentative in <<1>> (s)"
 		public static string TELEMETRY_title = GetLoc("TELEMETRY_title"); // "TELEMETRY"
 		public static string TELEMETRY_EVASUIT = GetLoc("TELEMETRY_EVASUIT"); // "EVA SUIT"
 		public static string TELEMETRY_ENVIRONMENT = GetLoc("TELEMETRY_ENVIRONMENT"); // "ENVIRONMENT"
@@ -314,7 +367,10 @@ namespace KERBALISM
 		public static string TELEMETRY_crop = GetLoc("TELEMETRY_crop"); // "crop"
 		public static string TimeoutMsg1 = GetLoc("TimeoutMsg1"); // "Connection in progress"
 		public static string TimeoutMsg2 = GetLoc("TimeoutMsg2"); // "Connection timed-out"
-																  // #KERBALISM_TimeoutMsg3 // "New tentative in <<1>>//in <<1>>(s)"
+
+		////////////////////////////////////////////////////////////////////
+		// Monitor : vessel config UI
+		////////////////////////////////////////////////////////////////////
 		public static string VESSELCONFIG_title = GetLoc("VESSELCONFIG_title"); // "VESSEL CONFIG"
 		public static string VESSELCONFIG_RENDERING = GetLoc("VESSELCONFIG_RENDERING"); // "RENDERING"
 		public static string VESSELCONFIG_Highlightfailed = GetLoc("VESSELCONFIG_Highlightfailed"); // "highlight malfunctions"
@@ -333,7 +389,9 @@ namespace KERBALISM
 		public static string VESSELCONFIG_ScriptExe = GetLoc("VESSELCONFIG_ScriptExe"); // "Receive a message when\nscripts are executed"
 		public static string VESSELCONFIG_script = GetLoc("VESSELCONFIG_script"); // "script"
 
-		//Science Archive Window
+		////////////////////////////////////////////////////////////////////
+		// Science Archive Window
+		////////////////////////////////////////////////////////////////////
 		public static string SCIENCEARCHIVE_title = GetLoc("SCIENCEARCHIVE_title"); // "SCIENCE ARCHIVE"
 		public static string SCIENCEARCHIVE_hidearchive = GetLoc("SCIENCEARCHIVE_hidearchive"); // "hide science archive"
 		public static string SCIENCEARCHIVE_EXPERIMENTS = GetLoc("SCIENCEARCHIVE_EXPERIMENTS"); // "EXPERIMENTS"
@@ -375,7 +433,9 @@ namespace KERBALISM
 		public static string SCIENCEARCHIVE_Completed = GetLoc("SCIENCEARCHIVE_Completed"); // "Completed"
 		public static string SCIENCEARCHIVE_Completed_desc = GetLoc("SCIENCEARCHIVE_Completed_desc"); // "How many times the subject\nhas been retrieved in RnD"
 
-		// ********** Module: KERBALISM.Emitter
+		////////////////////////////////////////////////////////////////////
+		// Module : Emitter
+		////////////////////////////////////////////////////////////////////
 		public static string Emitter_Action = GetLoc("Emitter_Action"); // "Toggle Active Shield"
 		public static string Emitter_EmitIonizing = GetLoc("Emitter_EmitIonizing"); // "Emit ionizing radiation"
 		public static string Emitter_ReduceIncoming = GetLoc("Emitter_ReduceIncoming"); // "Reduce incoming radiation"
@@ -383,11 +443,15 @@ namespace KERBALISM
 		public static string Emitter_ActiveShielding = GetLoc("Emitter_ActiveShielding"); // "Active shielding"
 		public static string Emitter_none = GetLoc("Emitter_none"); // "none"
 
-		// ********** Module: KERBALISM.Deploy
+		////////////////////////////////////////////////////////////////////
+		// Module : Deploy
+		////////////////////////////////////////////////////////////////////
 		public static string Deploy_actualCost = GetLoc("Deploy_actualCost"); // "EC Usage"
 		public static string Deploy_isBroken = GetLoc("Deploy_isBroken"); // "Is broken"
 
-		//Moudule--Configure
+		////////////////////////////////////////////////////////////////////
+		// Module : Configure
+		////////////////////////////////////////////////////////////////////
 		public static string Module_Configure = GetLoc("Module_Configure"); // "Configure"
 		public static string Module_Configure_Slots = GetLoc("Module_Configure_Slots"); // "Slots"
 		public static string Module_Configure_Reconfigure = GetLoc("Module_Configure_Reconfigure"); // "Reconfigure"
@@ -398,7 +462,9 @@ namespace KERBALISM
 		public static string Module_mass = GetLoc("Module_mass"); // "mass"
 		public static string Module_cost = GetLoc("Module_cost"); // "cost"
 
-		//Moudule--Comfort
+		////////////////////////////////////////////////////////////////////
+		// Module : Comfort
+		////////////////////////////////////////////////////////////////////
 		public static string Module_Comfort = GetLoc("Module_Comfort"); // "Comfort"
 		public static string Module_Comfort_Summary1 = GetLoc("Module_Comfort_Summary1"); // "ideal"
 		public static string Module_Comfort_Summary2 = GetLoc("Module_Comfort_Summary2"); // "good"
@@ -406,7 +472,11 @@ namespace KERBALISM
 		public static string Module_Comfort_Summary4 = GetLoc("Module_Comfort_Summary4"); // "poor"
 		public static string Module_Comfort_Summary5 = GetLoc("Module_Comfort_Summary5"); // "none"
 
-		//Moudule--Experiment
+		////////////////////////////////////////////////////////////////////
+		// Module : Experiment
+		////////////////////////////////////////////////////////////////////
+		// #KERBALISM_Module_Experiment_issue12 // "missing <<1>>" // missing [Resource Name]
+		// #KERBALISM_Module_Experiment_MultipleRunsMessage // "Can't start <<1>> a second time on vessel <<2>>"
 		public static string Module_Experiment_Prepare = GetLoc("Module_Experiment_Prepare"); // "Prepare"
 		public static string Module_Experiment_Reset = GetLoc("Module_Experiment_Reset"); // "Reset"
 		public static string Module_Experiment_issue_title = GetLoc("Module_Experiment_issue_title"); // "issue"
@@ -421,7 +491,6 @@ namespace KERBALISM
 		public static string Module_Experiment_issue9 = GetLoc("Module_Experiment_issue9"); // "unmet requirement"
 		public static string Module_Experiment_issue10 = GetLoc("Module_Experiment_issue10"); // "missing resource"
 		public static string Module_Experiment_issue11 = GetLoc("Module_Experiment_issue11"); // "no storage space"
-																								// #KERBALISM_Module_Experiment_issue12 // "missing <<1>>                   //missing [Resource Name]"
 		public static string Module_Experiment_runningstate1 = GetLoc("Module_Experiment_runningstate1"); // "stopped"
 		public static string Module_Experiment_runningstate2 = GetLoc("Module_Experiment_runningstate2"); // "started"
 		public static string Module_Experiment_runningstate3 = GetLoc("Module_Experiment_runningstate3"); // "forced run"
@@ -446,8 +515,7 @@ namespace KERBALISM
 		public static string Module_Experiment_Specifics_info11_unmanned = GetLoc("Module_Experiment_Specifics_info11_unmanned"); // "unmanned"
 		public static string Module_Experiment_Specifics_info12 = GetLoc("Module_Experiment_Specifics_info12"); // "Reset"
 		public static string Module_Experiment_Specifics_info12_none = GetLoc("Module_Experiment_Specifics_info12_none"); // "none"
-		public static string Module_Experiment_MultipleRunsMessage_title = GetLoc("Module_Experiment_MultipleRunsMessage_title"); // "ALREADY RUNNING"
-																																	// #KERBALISM_Module_Experiment_MultipleRunsMessage // "Can't start <<1>> a second time on vessel <<2>>"
+		public static string Module_Experiment_MultipleRunsMessage_title = GetLoc("Module_Experiment_MultipleRunsMessage_title"); // "ALREADY RUNNING"																														
 		public static string Module_Experiment_Message1 = GetLoc("Module_Experiment_Message1"); // "I'm not qualified for this"
 		public static string Module_Experiment_Message2 = GetLoc("Module_Experiment_Message2"); // "I will not even know where to start"
 		public static string Module_Experiment_Message3 = GetLoc("Module_Experiment_Message3"); // "I'm afraid I can't do that"
@@ -458,7 +526,13 @@ namespace KERBALISM
 		public static string Module_Experiment_Message8 = GetLoc("Module_Experiment_Message8"); // "It's good to go again"
 		public static string Module_Experiment_Message9 = GetLoc("Module_Experiment_Message9"); // "Ready for the next bit of science"
 
-		//Moudule--Greenhouse
+		////////////////////////////////////////////////////////////////////
+		// Module : Greenhouse
+		////////////////////////////////////////////////////////////////////
+		// #KERBALISM_Greenhouse_msg_1 // "On <<1>> "
+		// #KERBALISM_Greenhouse_msg_2 // "harvest produced <<1>>"
+		// #KERBALISM_Greenhouse_msg_3 // "emergency harvest produced <<1>>"
+		// #KERBALISM_Greenhouse_resoucesmissing // "missing <<1>>"
 		public static string Greenhouse = GetLoc("Greenhouse"); // "Greenhouse"
 		public static string Greenhouse_Action = GetLoc("Greenhouse_Action"); // "Enable/Disable Greenhouse"
 		public static string Greenhouse_EmergencyHarvest = GetLoc("Greenhouse_EmergencyHarvest"); // "Emergency Harvest"
@@ -469,14 +543,10 @@ namespace KERBALISM
 		public static string Greenhouse_Greenhouse = GetLoc("Greenhouse_Greenhouse"); // "Greenhouse"
 		public static string Greenhouse_desc = GetLoc("Greenhouse_desc"); // "Grow crops in space and on the surface of celestial bodies, even far from the sun."
 		public static string Greenhouse_disabled = GetLoc("Greenhouse_disabled"); // "disabled"
-		public static string Greenhouse_enabled = GetLoc("Greenhouse_enabled"); // "enabled"
-																				// #KERBALISM_Greenhouse_resoucesmissing // "missing <<1>>"
+		public static string Greenhouse_enabled = GetLoc("Greenhouse_enabled"); // "enabled"																	
 		public static string Greenhouse_issue1 = GetLoc("Greenhouse_issue1"); // "insufficient lighting"
 		public static string Greenhouse_issue2 = GetLoc("Greenhouse_issue2"); // "insufficient pressure"
 		public static string Greenhouse_issue3 = GetLoc("Greenhouse_issue3"); // "excessive radiation"
-		// #KERBALISM_Greenhouse_msg_1 // "On <<1>> "
-		// #KERBALISM_Greenhouse_msg_2 // "harvest produced <<1>>"
-		// #KERBALISM_Greenhouse_msg_3 // "emergency harvest produced <<1>>"
 		public static string Greenhouse_info1 = GetLoc("Greenhouse_info1"); // "Harvest size"
 		public static string Greenhouse_info2 = GetLoc("Greenhouse_info2"); // "Harvest time"
 		public static string Greenhouse_info3 = GetLoc("Greenhouse_info3"); // "Lighting tolerance"
@@ -488,7 +558,10 @@ namespace KERBALISM
 		public static string Greenhouse_CarbonDioxide_desc = GetLoc("Greenhouse_CarbonDioxide_desc"); // "Crops can also use the CO2 in the atmosphere without a scrubber."
 		public static string Greenhouse_Byproducts = GetLoc("Greenhouse_Byproducts"); // "By-products"
 
-		//Moudule--Habitat
+		////////////////////////////////////////////////////////////////////
+		// Module : Habitat
+		////////////////////////////////////////////////////////////////////
+		// #KERBALISM_Habitat_postmsg "Can't disable <b><<1>> habitat</b> while crew is inside"
 		public static string Habitat = GetLoc("Habitat"); // "Habitat"
 		public static string Habitat_Action = GetLoc("Habitat_Action"); // "Enable/Disable Habitat"
 		public static string Habitat_Surface = GetLoc("Habitat_Surface"); // "Surface"
@@ -510,9 +583,10 @@ namespace KERBALISM
 		public static string Habitat_Summary3 = GetLoc("Habitat_Summary3"); // "modest"
 		public static string Habitat_Summary4 = GetLoc("Habitat_Summary4"); // "poor"
 		public static string Habitat_Summary5 = GetLoc("Habitat_Summary5"); // "cramped"
-																			// #KERBALISM_Habitat_postmsg // "Can't disable <b><<1>> habitat</b> while crew is inside"
 
-		//Moudule--HardDrive
+		////////////////////////////////////////////////////////////////////
+		// Module : HardDrive
+		////////////////////////////////////////////////////////////////////
 		public static string HardDrive = GetLoc("HardDrive"); // "Hard Drive"
 		public static string HardDrive_StoreData = GetLoc("HardDrive_StoreData"); // "Store data"
 		public static string HardDrive_TakeData = GetLoc("HardDrive_TakeData"); // "Take data"
@@ -528,7 +602,9 @@ namespace KERBALISM
 		public static string HardDrive_info2 = GetLoc("HardDrive_info2"); // "Sample capacity"
 		public static string HardDrive_Capacityunlimited = GetLoc("HardDrive_Capacityunlimited"); // "unlimited"
 
-		//Moudule--GravityRing
+		////////////////////////////////////////////////////////////////////
+		// Module : GravityRing
+		////////////////////////////////////////////////////////////////////
 		public static string GravityRing_Action = GetLoc("GravityRing_Action"); // "Deploy/Retract Ring"
 		public static string GravityRing_Toggle = GetLoc("GravityRing_Toggle"); // "Deploy"
 		public static string GravityRing_yes = GetLoc("GravityRing_yes"); // "yes"
@@ -536,7 +612,10 @@ namespace KERBALISM
 		public static string GravityRing_info1 = GetLoc("GravityRing_info1"); // "bonus"
 		public static string GravityRing_info2 = GetLoc("GravityRing_info2"); // "deployable"
 
-		//Module--Harvester
+		////////////////////////////////////////////////////////////////////
+		// Module : Harvester
+		////////////////////////////////////////////////////////////////////
+		// #KERBALISM_Harvester_generatedescription // "Extract <<1>> from <<2>>"
 		public static string Harvester_Action = GetLoc("Harvester_Action"); // "Start/Stop Harvester"
 		public static string Harvester_running = GetLoc("Harvester_running"); // "running"
 		public static string Harvester_stopped = GetLoc("Harvester_stopped"); // "stopped"
@@ -546,8 +625,7 @@ namespace KERBALISM
 		public static string Harvester_atmo_valid = GetLoc("Harvester_atmo_valid"); // "not in atmosphere"
 		public static string Harvester_space_valid = GetLoc("Harvester_space_valid"); // "not in space"
 		public static string Harvester_pressurebelow = GetLoc("Harvester_pressurebelow"); // "pressure below threshold"
-		public static string Harvester_abundancebelow = GetLoc("Harvester_abundancebelow"); // "abundance below threshold"
-																							// #KERBALISM_Harvester_generatedescription // "Extract <<1>> from <<2>>"
+		public static string Harvester_abundancebelow = GetLoc("Harvester_abundancebelow"); // "abundance below threshold"																				
 		public static string Harvester_source1 = GetLoc("Harvester_source1"); // "the surface"
 		public static string Harvester_source2 = GetLoc("Harvester_source2"); // "the ocean"
 		public static string Harvester_source3 = GetLoc("Harvester_source3"); // "the atmosphere"
@@ -560,13 +638,18 @@ namespace KERBALISM
 		public static string Harvester_info6 = GetLoc("Harvester_info6"); // "at abundance"
 		public static string Harvester_info7 = GetLoc("Harvester_info7"); // "ec consumption"
 
-		//Scansat
-		public static string Scansat_Scannerhalted = GetLoc("Scansat_Scannerhalted"); // "Scanner halted"
+		////////////////////////////////////////////////////////////////////
+		// Module : ScanSat
+		////////////////////////////////////////////////////////////////////
 		// #KERBALISM_Scansat_Scannerhalted_text // "Scanner halted on <<1>>. No storage left on vessel."
 		// #KERBALISM_Scansat_sensorresumed // "SCANsat sensor resumed operations on <<1>>"
 		// #KERBALISM_Scansat_sensordisabled // "SCANsat sensor was disabled on <<1>>"
+		public static string Scansat_Scannerhalted = GetLoc("Scansat_Scannerhalted"); // "Scanner halted"
 
-		//Moudule--Laboratory
+		////////////////////////////////////////////////////////////////////
+		// Module : Laboratory
+		////////////////////////////////////////////////////////////////////
+		// #KERBALISM_Laboratory_Analyzed // "Our laboratory on <<1>> analyzed <<2>>"
 		public static string Laboratory_Title = GetLoc("Laboratory_Title"); // "Laboratory"
 		public static string Laboratory_Toggle = GetLoc("Laboratory_Toggle"); // "Toggle Lab"
 		public static string Laboratory_Clean = GetLoc("Laboratory_Clean"); // "Clean Lab"
@@ -582,11 +665,12 @@ namespace KERBALISM
 		public static string Laboratory_ECrate = GetLoc("Laboratory_ECrate"); // "EC rate"
 		public static string Laboratory_rate = GetLoc("Laboratory_rate"); // "Analysis rate"
 		public static string Laboratory_Analysis = GetLoc("Laboratory_Analysis"); // "ANALYSIS COMPLETED"
-		// #KERBALISM_Laboratory_Analyzed // "Our laboratory on <<1>> analyzed <<2>>"
 		public static string Laboratory_Results = GetLoc("Laboratory_Results"); // "The results can be transmitted now"
 		public static string Laboratory_Nostorage = GetLoc("Laboratory_Nostorage"); // "No storage available"
 
-		//Moudule--PassiveShield
+		////////////////////////////////////////////////////////////////////
+		// Module : PassiveShield
+		////////////////////////////////////////////////////////////////////
 		public static string PassiveShield_Sandbags = GetLoc("PassiveShield_Sandbags"); // "Sandbags"
 		public static string PassiveShield_fill = GetLoc("PassiveShield_fill"); // "fill"
 		public static string PassiveShield_empty = GetLoc("PassiveShield_empty"); // "empty"
@@ -594,11 +678,15 @@ namespace KERBALISM
 		public static string PassiveShield_absorbing = GetLoc("PassiveShield_absorbing"); // "absorbing"
 		public static string PassiveShield_MessagePost = GetLoc("PassiveShield_MessagePost"); // "I don't know how this works!"
 
-		//Moudule--PlannerController
+		////////////////////////////////////////////////////////////////////
+		// Module : PlannerController
+		////////////////////////////////////////////////////////////////////
 		public static string PlannerController_yes = GetLoc("PlannerController_yes"); // "yes"
 		public static string PlannerController_no = GetLoc("PlannerController_no"); // "no"
 
-		//Moudule--ProcessController
+		////////////////////////////////////////////////////////////////////
+		// Module : ProcessController
+		////////////////////////////////////////////////////////////////////
 		public static string ProcessController_Start_Stop = GetLoc("ProcessController_Start_Stop"); // "Start/Stop"
 		public static string ProcessController_broken = GetLoc("ProcessController_broken"); // "broken"
 		public static string ProcessController_running = GetLoc("ProcessController_running"); // "running"
@@ -606,17 +694,24 @@ namespace KERBALISM
 		public static string ProcessController_Dump = GetLoc("ProcessController_Dump"); // "Dump"
 		public static string ProcessController_info1 = GetLoc("ProcessController_info1"); // "Half-life"
 
-		//Moudule--Reliability
-		public static string Reliability_Reliability = GetLoc("Reliability_Reliability"); // "Reliability"
+		////////////////////////////////////////////////////////////////////
+		// Module : Reliability
+		////////////////////////////////////////////////////////////////////
 		// #KERBALISM_Reliability_Inspect // "Inspect <<1>>"
 		// #KERBALISM_Reliability_Repair // "Repair <<1>>"
+		// #KERBALISM_Reliability_Service // "Service <<1>>"
+		// #KERBALISM_Reliability_qualityinfo // "<<1>> quality"
+		// #KERBALISM_Reliability_MessagePost14 // "<<1>> repaired"
+		// #KERBALISM_Reliability_MessagePost19 // "<<1>> serviced"
+		// #KERBALISM_Reliability_MessagePost24 // "<<1>> malfunctioned on <<2>>"
+		// #KERBALISM_Reliability_MessagePost26 // "<<1>> failed on <<2>>"
+		// #KERBALISM_Reliability_MessagePost28 // "There has been a problem with <<1>> on <<2>>"
+		public static string Reliability_Reliability = GetLoc("Reliability_Reliability"); // "Reliability"
 		public static string Reliability_criticalfailure = GetLoc("Reliability_criticalfailure"); // "critical failure"
 		public static string Reliability_malfunction = GetLoc("Reliability_malfunction"); // "malfunction"
 		public static string Reliability_burnremaining = GetLoc("Reliability_burnremaining"); // "remaining burn:"
 		public static string Reliability_ignitions = GetLoc("Reliability_ignitions"); // "ignitions:"
 		public static string Reliability_takingradiationdamage = GetLoc("Reliability_takingradiationdamage"); // "taking radiation damage"
-		// #KERBALISM_Reliability_Service // "Service <<1>>"
-		// #KERBALISM_Reliability_qualityinfo // "<<1>> quality"
 		public static string Reliability_qualityhigh = GetLoc("Reliability_qualityhigh"); // "high"
 		public static string Reliability_qualitystandard = GetLoc("Reliability_qualitystandard"); // "standard"
 		public static string Reliability_MTBF = GetLoc("Reliability_MTBF"); // "MTBF:                //Mean Time Between Failures(I guess)"
@@ -634,21 +729,16 @@ namespace KERBALISM
 		public static string Reliability_MessagePost11 = GetLoc("Reliability_MessagePost11"); // "I'm not qualified for this"
 		public static string Reliability_MessagePost12 = GetLoc("Reliability_MessagePost12"); // "I will not even know where to start"
 		public static string Reliability_MessagePost13 = GetLoc("Reliability_MessagePost13"); // "I'm afraid I can't do that"
-		// #KERBALISM_Reliability_MessagePost14 // "<<1>> repaired"
 		public static string Reliability_MessagePost15 = GetLoc("Reliability_MessagePost15"); // "A powerkick did the trick."
 		public static string Reliability_MessagePost16 = GetLoc("Reliability_MessagePost16"); // "Duct tape, is there something it can't fix?"
 		public static string Reliability_MessagePost17 = GetLoc("Reliability_MessagePost17"); // "Fully operational again."
 		public static string Reliability_MessagePost18 = GetLoc("Reliability_MessagePost18"); // "We are back in business."
-		// #KERBALISM_Reliability_MessagePost19 // "<<1>> serviced"
 		public static string Reliability_MessagePost20 = GetLoc("Reliability_MessagePost20"); // "I don't know how this was still working."
 		public static string Reliability_MessagePost21 = GetLoc("Reliability_MessagePost21"); // "Fastened that loose screw."
 		public static string Reliability_MessagePost22 = GetLoc("Reliability_MessagePost22"); // "Someone forgot a toothpick in there."
 		public static string Reliability_MessagePost23 = GetLoc("Reliability_MessagePost23"); // "As good as new!"
-		// #KERBALISM_Reliability_MessagePost24 // "<<1>> malfunctioned on <<2>>"
 		public static string Reliability_MessagePost25 = GetLoc("Reliability_MessagePost25"); // "We can still repair it"
-		// #KERBALISM_Reliability_MessagePost26 // "<<1>> failed on <<2>>"
 		public static string Reliability_MessagePost27 = GetLoc("Reliability_MessagePost27"); // "It is gone for good"
-		// #KERBALISM_Reliability_MessagePost28 // "There has been a problem with <<1>> on <<2>>"
 		public static string Reliability_MessagePost29 = GetLoc("Reliability_MessagePost29"); // "We were able to fix it remotely, this time"
 		public static string Reliability_info1 = GetLoc("Reliability_info1"); // "Redundancy"
 		public static string Reliability_info2 = GetLoc("Reliability_info2"); // "Repair"
@@ -662,7 +752,10 @@ namespace KERBALISM
 		public static string Reliability_info10 = GetLoc("Reliability_info10"); // "Extra cost"
 		public static string Reliability_info11 = GetLoc("Reliability_info11"); // "Extra mass"
 
-		//Moudule--Sensor
+		////////////////////////////////////////////////////////////////////
+		// Module : Sensor
+		////////////////////////////////////////////////////////////////////
+		// #KERBALISM_Sensor_insideatmosphere // "inside <b>atmosphere</b>(<<1>>)"
 		public static string Sensor_info = GetLoc("Sensor_info"); // "Add telemetry readings to the part ui, and to the telemetry panel"
 		public static string Sensor_Type = GetLoc("Sensor_Type"); // "Type"
 		public static string Sensor_shorttextinfo1 = GetLoc("Sensor_shorttextinfo1"); // "nothing here"
@@ -674,7 +767,6 @@ namespace KERBALISM
 		public static string Sensor_environment = GetLoc("Sensor_environment"); // "environment"
 		public static string Sensor_habitats = GetLoc("Sensor_habitats"); // "habitats"
 		public static string Sensor_insideocean = GetLoc("Sensor_insideocean"); // "inside <b>ocean</b>"
-		// #KERBALISM_Sensor_insideatmosphere // "inside <b>atmosphere</b>(<<1>>)"
 		public static string Sensor_breathable = GetLoc("Sensor_breathable"); // "breathable"
 		public static string Sensor_notbreathable = GetLoc("Sensor_notbreathable"); // "not breathable"
 		public static string Sensor_insidethermosphere = GetLoc("Sensor_insidethermosphere"); // "inside <b>thermosphere</b>"
@@ -683,26 +775,30 @@ namespace KERBALISM
 		public static string Sensor_info1 = GetLoc("Sensor_info1"); // "The elusive negative gravioli particle\nseems to be much harder to detect than expected."
 		public static string Sensor_info2 = GetLoc("Sensor_info2"); // "On the other\nhand there seems to be plenty\nof useless positive graviolis around."
 
-		//Moudule--Sickbay
+		////////////////////////////////////////////////////////////////////
+		// Module : Sickbay
+		////////////////////////////////////////////////////////////////////
+		// #KERBALISM_Sickbay_cureEverybody // "<<1>>: dismiss <<2>>" //<<2>> -> patientName
+		// #KERBALISM_Sickbay_cureEverybody2 // "<<1>>: cure <<2>>"
+		// #KERBALISM_Sickbay_info4 // "<<1>> Kerbals"
 		public static string Sickbay_cure = GetLoc("Sickbay_cure"); // "cure"
 		public static string Sickbay_Start_Stop = GetLoc("Sickbay_Start_Stop"); // "Start/Stop"
 		public static string Sickbay_running = GetLoc("Sickbay_running"); // "running"
 		public static string Sickbay_stopped = GetLoc("Sickbay_stopped"); // "stopped"
-		// #KERBALISM_Sickbay_cureEverybody // "<<1>>: dismiss <<2>>                 //<<2>>---patientName"
-		// #KERBALISM_Sickbay_cureEverybody2 // "<<1>>: cure <<2>>"
 		public static string Sickbay_info1 = GetLoc("Sickbay_info1"); // "Cures"
 		public static string Sickbay_info2 = GetLoc("Sickbay_info2"); // "All kerbals in part"
 		public static string Sickbay_info3 = GetLoc("Sickbay_info3"); // "Capacity"
-																	  // #KERBALISM_Sickbay_info4 // "<<1>> Kerbals"
 
-		//Moudule--SolarPanelFixer
+		////////////////////////////////////////////////////////////////////
+		// Module : SolarPanelFixer
+		////////////////////////////////////////////////////////////////////
+		// #KERBALISM_SolarPanelFixer_occludedby // "occluded by <<1>>"
 		public static string SolarPanelFixer_Solarpanel = GetLoc("SolarPanelFixer_Solarpanel"); // "Solar panel"
 		public static string SolarPanelFixer_Solarpaneloutput = GetLoc("SolarPanelFixer_Solarpaneloutput"); // "Solar panel output"
 		public static string SolarPanelFixer_simulated = GetLoc("SolarPanelFixer_simulated"); // "<color=#00ff00>simulated</color>"
 		public static string SolarPanelFixer_ignored = GetLoc("SolarPanelFixer_ignored"); // "<color=#ffff00>ignored</color>"
 		public static string SolarPanelFixer_inshadow = GetLoc("SolarPanelFixer_inshadow"); // "in shadow"
 		public static string SolarPanelFixer_occludedbyterrain = GetLoc("SolarPanelFixer_occludedbyterrain"); // "occluded by terrain"
-		// #KERBALISM_SolarPanelFixer_occludedby // "occluded by <<1>>                    //occluded by (xxx)"
 		public static string SolarPanelFixer_badorientation = GetLoc("SolarPanelFixer_badorientation"); // "bad orientation"
 		public static string SolarPanelFixer_analytic = GetLoc("SolarPanelFixer_analytic"); // "analytic"
 		public static string SolarPanelFixer_exposure = GetLoc("SolarPanelFixer_exposure"); // "exposure"
@@ -717,21 +813,22 @@ namespace KERBALISM
 		public static string SolarPanelFixer_broken = GetLoc("SolarPanelFixer_broken"); // "broken"
 		public static string SolarPanelFixer_failure = GetLoc("SolarPanelFixer_failure"); // "failure"
 		public static string SolarPanelFixer_invalidstate = GetLoc("SolarPanelFixer_invalidstate"); // "invalid state"
-
-		//For Kopernicus
 		public static string SolarPanelFixer_Trackedstar = GetLoc("SolarPanelFixer_Trackedstar"); // "Tracked star"
 		public static string SolarPanelFixer_AutoTrack = GetLoc("SolarPanelFixer_AutoTrack"); // "[Auto] : "
 
-		//UI--Planner--ResourcesSimulator
-		public static string Harvests = GetLoc("Harvests"); // "Harvests"
 
-		//Callback
+
+		////////////////////////////////////////////////////////////////////
+		// Class : Callbacks
+		////////////////////////////////////////////////////////////////////
 		// #KERBALISM_CallBackMsg_EvaNoMP // "There isn't any <<1>> in the EVA suit"
 		public static string CallBackMsg_EvaNoMP2 = GetLoc("CallBackMsg_EvaNoMP2"); // "Don't let the ladder go!"
 		public static string CallBackMsg_PROGRESS = GetLoc("CallBackMsg_PROGRESS"); // "PROGRESS"
 		public static string CallBackMsg_PROGRESS2 = GetLoc("CallBackMsg_PROGRESS2"); // "Our scientists just made a breakthrough"
 
-		//Preferences
+		////////////////////////////////////////////////////////////////////
+		// Class : Preferences
+		////////////////////////////////////////////////////////////////////
 		public static string Preferences_Reliability = GetLoc("Preferences_Reliability"); // "Reliability"
 		public static string HighlightMalfunctions = GetLoc("HighlightMalfunctions"); // "Highlight Malfunctions"
 		public static string HighlightMalfunctions_desc = GetLoc("HighlightMalfunctions_desc"); // "Highlight faild parts in flight"
@@ -814,7 +911,10 @@ namespace KERBALISM
 		public static string ShieldingEfficiency = GetLoc("ShieldingEfficiency"); // "Shielding Efficiency"
 		public static string ShieldingEfficiency_desc = GetLoc("ShieldingEfficiency_desc"); // "Proportion of radiation blocked by shielding (at max amount)"
 
-		//Planner
+		////////////////////////////////////////////////////////////////////
+		// Planner UI
+		////////////////////////////////////////////////////////////////////
+		public static string Harvests = GetLoc("Harvests"); // "Harvests"
 		public static string Planner_Targetbody = GetLoc("Planner_Targetbody"); // "Target body"
 		public static string Planner_SunlightNominal = GetLoc("Planner_SunlightNominal"); // "In sunlight\n<b>Nominal</b> solar panel output"
 		public static string Planner_SunlightSimulated = GetLoc("Planner_SunlightSimulated"); // "In sunlight\n<b>Estimated</b> solar panel output\n<i>Sunlight direction : look at the shadows !</i>"
@@ -867,7 +967,6 @@ namespace KERBALISM
 		public static string Planner_emission = GetLoc("Planner_emission"); // "emission"
 		public static string Planner_activeshielding = GetLoc("Planner_activeshielding"); // "active shielding"
 		public static string Planner_shielding = GetLoc("Planner_shielding"); // "shielding"
-
 		//traduce the redundancy metric to string
 		public static string Planner_none = GetLoc("Planner_none"); // "none"
 		public static string Planner_poor = GetLoc("Planner_poor"); // "poor"
@@ -898,7 +997,9 @@ namespace KERBALISM
 		public static string Planner_scrubbing = GetLoc("Planner_scrubbing"); // "scrubbing"
 		public static string Planner_pressurization = GetLoc("Planner_pressurization"); // "pressurization"
 
-		//Device tootip
+		////////////////////////////////////////////////////////////////////
+		// Automation > Devices
+		////////////////////////////////////////////////////////////////////
 		public static string Statu_unknown = GetLoc("Statu_unknown"); // "unknown"
 		public static string Antenna_statu_unknown = GetLoc("Antenna_statu_unknown"); // "unknown"
 		public static string Experiment_on = GetLoc("Experiment_on"); // "on                        //on partinfo.title"
@@ -909,17 +1010,21 @@ namespace KERBALISM
 		public static string SolarPanel_deployable = GetLoc("SolarPanel_deployable"); // "solar panel (deployable)"
 		public static string SolarPanel_nonretractable = GetLoc("SolarPanel_nonretractable"); // "solar panel (non retractable)"
 
-		//Storm msg
+		////////////////////////////////////////////////////////////////////
+		// Class : Storm
+		////////////////////////////////////////////////////////////////////
 		// #KERBALISM_Storm_msg1 // "The coronal mass ejection hit <<1>> system"
+		// #KERBALISM_Storm_msg2 // "Our observatories report a coronal mass ejection directed toward  <<1>> system"
+		// #KERBALISM_Storm_msg3 // "The solar storm at <<1>> system is over"
+		// #KERBALISM_Storm_msg4 // "The solar storm around <<1>> is over"
+		// #KERBALISM_Storm_msg5 // "The coronal mass ejection hit <<1>>"
+		// #KERBALISM_Storm_msg6 // "Our observatories report a coronal mass ejection directed toward <<1>>"
 		public static string Storm_msg1text = GetLoc("Storm_msg1text"); // "Storm duration:"
-																		// #KERBALISM_Storm_msg2 // "Our observatories report a coronal mass ejection directed toward  <<1>> system"
 		public static string Storm_msg2text = GetLoc("Storm_msg2text"); // "Time to impact:"
-																		// #KERBALISM_Storm_msg3 // "The solar storm at <<1>> system is over"
-																		// #KERBALISM_Storm_msg4 // "The solar storm around <<1>> is over"
-																		// #KERBALISM_Storm_msg5 // "The coronal mass ejection hit <<1>>"
-																		// #KERBALISM_Storm_msg6 // "Our observatories report a coronal mass ejection directed toward <<1>>"
 
-		//Experiment info
+		////////////////////////////////////////////////////////////////////
+		// Science > ExperimentInfo
+		////////////////////////////////////////////////////////////////////
 		public static string ExperimentInfo_Unknown = GetLoc("ExperimentInfo_Unknown"); // "Unknown"
 		public static string Experimentinfo_Datasize = GetLoc("Experimentinfo_Datasize"); // "Data size"
 		public static string Experimentinfo_generatesample = GetLoc("Experimentinfo_generatesample"); // "Will generate a sample."
@@ -932,22 +1037,20 @@ namespace KERBALISM
 		public static string Experimentinfo_smallRoc2 = GetLoc("Experimentinfo_smallRoc2"); // "Can't be collected on EVA"
 																							// #KERBALISM_Experimentinfo_smallRoc3 // "Found on <<1>>'s :"
 
+		////////////////////////////////////////////////////////////////////
+		// ???
+		////////////////////////////////////////////////////////////////////
 		//show warning message when a vessel cross a radiation belt
 		// #KERBALISM_BeltWarnings_msg // "<<1>> is crossing <<2>> radiation belt"
+		// Remove Symmetry On Visible Resource Switch
+		// #KERBALISM_RemoveSymmetrymsg // "Symmetry on <<1>>\nhas been removed because of switching the <<2>> capacity."
+		// Notify the user when crop can be harvested
+		// #KERBALISM_harvestedready_msg // "On <<1>> the crop is ready to be harvested"
 		public static string BeltWarnings_msgSubtext = GetLoc("BeltWarnings_msgSubtext"); // "Exposed to extreme radiation"
-
-		//Tell the user and do nothing
 		public static string Fittingparticles_msg = GetLoc("Fittingparticles_msg"); // "Fitting particles to signed distance fields"
 		public static string ComebackLater_msg = GetLoc("ComebackLater_msg"); // "Come back in a minute"
 
-		//Remove Symmetry On Visible Resource Switch
-		// #KERBALISM_RemoveSymmetrymsg // "Symmetry on <<1>>\nhas been removed because of switching the <<2>> capacity."
-
-		//Notify the user when crop can be harvested
-		// #KERBALISM_harvestedready_msg // "On <<1>> the crop is ready to be harvested"
-
-		//Kerbal belong to a rescue mission
-
+		// Kerbal belong to a rescue mission
 		//eg. we found Bill Kerman He's still alive!
 		public static string Rescuemission_msg1 = GetLoc("Rescuemission_msg1"); // "We found"
 		public static string Kerbal_Male = GetLoc("Kerbal_Male"); // "He"
@@ -967,8 +1070,11 @@ namespace KERBALISM
 		public static string Kerbalrage = GetLoc("Kerbalrage"); // "$ON_VESSEL$KERBAL is possessed by a blind rage"
 		public static string Kerbalrage_subtext = GetLoc("Kerbalrage_subtext"); // "A component has been damaged"
 		public static string Kerbalwrongvalve = GetLoc("Kerbalwrongvalve"); // "$ON_VESSEL$KERBAL opened the wrong valve"
-		public static string Kerbalwrongvalve_subtext = GetLoc("Kerbalwrongvalve_subtext"); // "has been lost                     //eg.[Resource Name] has been lost"
+		public static string Kerbalwrongvalve_subtext = GetLoc("Kerbalwrongvalve_subtext"); // "has been lost" //eg.[Resource Name] has been lost
 
+		////////////////////////////////////////////////////////////////////
+		// Science
+		////////////////////////////////////////////////////////////////////
 		//Science messages
 		public static string Scienctransmitted_title = GetLoc("Scienctransmitted_title"); // "transmitted"
 		public static string Nosciencegain = GetLoc("Nosciencegain"); // "no science gain : we already had this data"
@@ -1002,10 +1108,6 @@ namespace KERBALISM
 		public static string Situation_Interstellar = GetLoc("Situation_Interstellar"); // "interstellar"
 		public static string Situation_Reentry = GetLoc("Situation_Reentry"); // "reentry"
 		public static string Situation_Storm = GetLoc("Situation_Storm"); // "solar storm"
-
-		//$HIS_HER
-		public static string Kerbal_his = GetLoc("Kerbal_his"); // "his"
-		public static string Kerbal_her = GetLoc("Kerbal_her"); // "her"
 
 		//Log Manager
 		public static string LogMan_LOGS = GetLoc("LogMan_LOGS"); // "LOGS"
