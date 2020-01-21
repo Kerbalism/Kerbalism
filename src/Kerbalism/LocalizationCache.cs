@@ -1,9 +1,4 @@
-using System;
-using System.IO;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using KSP.Localization;
 using System.Text.RegularExpressions;
 
@@ -63,7 +58,7 @@ namespace KERBALISM
 					continue;
 				}
 			}
-			System.IO.File.WriteAllLines(@"C:\Users\Got\Desktop\loctest\loctemplate.txt", locFile);
+			System.IO.File.WriteAllLines(@"C:\Users\Got\Desktop\loctest\loctemplate.txt", locFile.ToArray());
 		}
 
 		////////////////////////////////////////////////////////////////////
