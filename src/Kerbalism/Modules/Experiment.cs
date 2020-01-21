@@ -618,9 +618,9 @@ namespace KERBALISM
 			}
 
 			// consume resources
-			ec.Consume(prefab.ec_rate * elapsed_s, "experiment");
+			ec.Consume(prefab.ec_rate * elapsed_s, ResourceBroker.Experiment);
 			foreach (ObjectPair<string, double> p in resourceDefs)
-				resources.Consume(v, p.Key, p.Value * elapsed_s, "experiment");
+				resources.Consume(v, p.Key, p.Value * elapsed_s, ResourceBroker.Experiment);
 
 			if (!prefab.sample_collecting)
 			{

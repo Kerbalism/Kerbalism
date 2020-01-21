@@ -37,7 +37,7 @@ namespace KERBALISM
 			// consume EC for the headlamps
 			if (need_ec && kerbal.lampOn)
 			{
-				ec.Consume(Settings.HeadLampsCost * Kerbalism.elapsed_s, "headlamp");
+				ec.Consume(Settings.HeadLampsCost * Kerbalism.elapsed_s, ResourceBroker.Light);
 			}
 
 			// force the headlamps on/off

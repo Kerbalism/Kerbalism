@@ -11,6 +11,7 @@ namespace KERBALISM
 		public Rule(ConfigNode node)
 		{
 			name = Lib.ConfigValue(node, "name", string.Empty);
+			title = Lib.ConfigValue(node, "title", name);
 			input = Lib.ConfigValue(node, "input", string.Empty);
 			output = Lib.ConfigValue(node, "output", string.Empty);
 			interval = Lib.ConfigValue(node, "interval", 0.0);
@@ -29,6 +30,7 @@ namespace KERBALISM
 			danger_message = Lib.ConfigValue(node, "danger_message", string.Empty);
 			fatal_message = Lib.ConfigValue(node, "fatal_message", string.Empty);
 			relax_message = Lib.ConfigValue(node, "relax_message", string.Empty);
+			broker = ResourceBroker.GetOrCreate(name, ResourceBroker.BrokerCategory.Kerbal, title);
 
 			if (warning_message.Length > 0 && warning_message[0] == '#') Lib.Log("Broken translation: " + warning_message);
 			if (danger_message.Length > 0 && danger_message[0] == '#') Lib.Log("Broken translation: " + danger_message);
@@ -120,8 +122,8 @@ namespace KERBALISM
 					if (interval > 0.0)
 					{
 						double ratePerStep = resRate / interval;
-						res.UpdateIntervalRule(-required, -ratePerStep, name);
-						if (output.Length > 0) ResourceCache.GetResource(v, output).UpdateIntervalRule(required * ratio, ratePerStep * ratio, name);
+						res.UpdateIntervalRule(-required, -ratePerStep, broker);
+						if (output.Length > 0) ResourceCache.GetResource(v, output).UpdateIntervalRule(required * ratio, ratePerStep * ratio, broker);
 					}
 
 					// if continuous, or if one or more intervals elapsed
@@ -131,14 +133,14 @@ namespace KERBALISM
 						if (output.Length == 0)
 						{
 							// simply consume (that is faster)
-							res.Consume(required, name);
+							res.Consume(required, broker);
 						}
 						// if there is an output
 						else
 						{
 							// transform input into output resource
 							// - rules always dump excess overboard (because it is waste)
-							ResourceRecipe recipe = new ResourceRecipe(name);
+							ResourceRecipe recipe = new ResourceRecipe(broker);
 							recipe.AddInput(input, required);
 							recipe.AddOutput(output, required * ratio, true);
 							resources.AddRecipe(recipe);
@@ -273,6 +275,7 @@ namespace KERBALISM
 
 
 		public string name;               // unique name for the rule
+		public string title;              // UI title
 		public string input;              // resource consumed, if any
 		public string output;             // resource produced, if any
 		public double interval;           // if 0 the rule is executed per-second, else it is executed every 'interval' seconds
@@ -291,6 +294,7 @@ namespace KERBALISM
 		public string fatal_message;      // .
 		public string relax_message;      // .
 		public bool lifetime;             // does this value accumulate over the lifetime of a kerbal
+		public ResourceBroker broker;
 	}
 
 

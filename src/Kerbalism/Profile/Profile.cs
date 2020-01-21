@@ -29,7 +29,7 @@ namespace KERBALISM
 				}
 				catch (Exception e)
 				{
-					Lib.Log(Lib.BuildString("warning: failed to load rule (reason: ", e.Message, ")"));
+					Lib.Log("warning: failed to load rule\n" + e.ToString());
 				}
 			}
 
@@ -50,7 +50,7 @@ namespace KERBALISM
 				}
 				catch (Exception e)
 				{
-					Lib.Log(Lib.BuildString("warning: failed to load supply (reason: ", e.Message, ")"));
+					Lib.Log("warning: failed to load supply\n" + e.ToString());
 				}
 			}
 
@@ -71,7 +71,7 @@ namespace KERBALISM
 				}
 				catch (Exception e)
 				{
-					Lib.Log(Lib.BuildString("warning: failed to load process (reason: ", e.Message, ")"));
+					Lib.Log("warning: failed to load process\n" + e.ToString());
 				}
 			}
 		}

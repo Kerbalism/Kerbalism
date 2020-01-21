@@ -147,7 +147,7 @@ namespace KERBALISM
 
 			bool is_scanning = Lib.Proto.GetBool(scanner, "scanning");
 			if(is_scanning && kerbalismScansat.ec_rate > double.Epsilon)
-				ec.Consume(kerbalismScansat.ec_rate * elapsed_s, "scanner");
+				ec.Consume(kerbalismScansat.ec_rate * elapsed_s, ResourceBroker.Scanner);
 
 			if (!Features.Science)
 			{

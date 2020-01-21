@@ -664,7 +664,7 @@ namespace KERBALISM
 						break;
 					}
 				}
-				ResourceCache.Produce(v, monoprop_name, monoprop_amount, "rescue");
+				ResourceCache.Produce(v, monoprop_name, monoprop_amount, ResourceBroker.Generic);
 
 				// give the vessel some supplies
 				Profile.SetupRescue(v);
@@ -1036,7 +1036,7 @@ namespace KERBALISM
 					Reliability.CauseMalfunction(v);
 					break;
 				case KerbalBreakdown.wrong_valve:
-					res.Consume(res.Amount * res_penalty, "breakdown");
+					res.Consume(res.Amount * res_penalty, ResourceBroker.Generic);
 					break;
 			}
 

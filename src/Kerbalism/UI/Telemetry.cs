@@ -205,11 +205,11 @@ namespace KERBALISM
 				sb.Append(res.Level.ToString("P0"));
 				sb.Append(")");
 
-				List<SupplyData.ResourceBroker> brokers = vd.Supply(supply.resource).ResourceBrokers;
+				List<SupplyData.ResourceBrokerRate> brokers = vd.Supply(supply.resource).ResourceBrokers;
 				if (brokers.Count > 0)
 				{
 					sb.Append("\n<b>------------    \t------------</b>");
-					foreach (SupplyData.ResourceBroker rb in brokers)
+					foreach (SupplyData.ResourceBrokerRate rb in brokers)
 					{
 						sb.Append("\n");
 						sb.Append(Lib.Color(rb.rate > 0.0,
@@ -217,7 +217,7 @@ namespace KERBALISM
 							Lib.BuildString("-", Lib.HumanReadableRate(Math.Abs(rb.rate)), "   "), Lib.Kolor.NegRate, // spaces to mitigate alignement issues
 							true)); 
 						sb.Append("\t");
-						sb.Append(rb.name);
+						sb.Append(rb.broker.Title);
 					}
 				}
 

@@ -107,7 +107,7 @@ namespace KERBALISM
 					{
 						// consume EC
 						ec = ResourceCache.GetResource(vessel, "ElectricCharge");
-						ec.Consume(ec_rate * Kerbalism.elapsed_s, "laboratory");
+						ec.Consume(ec_rate * Kerbalism.elapsed_s, ResourceBroker.Laboratory);
 
 						// if there was ec
 						// - comparing against amount in previous simulation step
@@ -154,7 +154,7 @@ namespace KERBALISM
 					if (background_sample != null)
 					{
 						// consume EC
-						ec.Consume(lab.ec_rate * elapsed_s, "laboratory");
+						ec.Consume(lab.ec_rate * elapsed_s, ResourceBroker.Laboratory);
 
 						// if there was ec
 						// - comparing against amount in previous simulation step
