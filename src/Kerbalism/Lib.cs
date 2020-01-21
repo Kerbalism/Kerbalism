@@ -993,9 +993,9 @@ namespace KERBALISM
 
 		public static string HumanReadableSampleSize(int slots)
 		{
-			if (slots <= 0) return Lib.BuildString(Localizer.Format("#KERBALISM_noslots"), Localizer.Format("#KERBALISM_Generic_SLOT"));//"no "
+			if (slots <= 0) return Lib.BuildString(Localizer.Format("#KERBALISM_noslots"), Local.Generic_SLOT);//"no "
 
-			return Lib.BuildString(slots.ToString(), " ", slots > 1 ? Localizer.Format("#KERBALISM_Generic_SLOTS") : Localizer.Format("#KERBALISM_Generic_SLOT"));
+			return Lib.BuildString(slots.ToString(), " ", slots > 1 ? Local.Generic_SLOTS : Local.Generic_SLOT);
 		}
 
 		public static int SampleSizeToSlots(double size)

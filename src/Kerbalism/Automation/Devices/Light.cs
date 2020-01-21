@@ -12,7 +12,7 @@ namespace KERBALISM
 
 		public override string Name => "light";
 
-		public override string Status => Lib.Color(module.isOn, Localizer.Format("#KERBALISM_Generic_ON"), Lib.Kolor.Green, Localizer.Format("#KERBALISM_Generic_OFF"), Lib.Kolor.Yellow);
+		public override string Status => Lib.Color(module.isOn, Local.Generic_ON, Lib.Kolor.Green, Local.Generic_OFF, Lib.Kolor.Yellow);
 
 		public override void Ctrl(bool value)
 		{
@@ -34,7 +34,7 @@ namespace KERBALISM
 
 		public override string Name => "light";
 
-		public override string Status => Lib.Color(Lib.Proto.GetBool(protoModule, "isOn"), Localizer.Format("#KERBALISM_Generic_ON"), Lib.Kolor.Green, Localizer.Format("#KERBALISM_Generic_OFF"), Lib.Kolor.Yellow);
+		public override string Status => Lib.Color(Lib.Proto.GetBool(protoModule, "isOn"), Local.Generic_ON, Lib.Kolor.Green, Local.Generic_OFF, Lib.Kolor.Yellow);
 
 		public override void Ctrl(bool value)
 		{

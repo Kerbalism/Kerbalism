@@ -159,7 +159,7 @@ namespace KERBALISM
 		public void Update()
 		{
 			// update RMB ui
-			Events["Toggle"].guiName = deployed ? Localizer.Format("#KERBALISM_Generic_RETRACT") : Localizer.Format("#KERBALISM_Generic_DEPLOY");
+			Events["Toggle"].guiName = deployed ? Local.Generic_RETRACT : Local.Generic_DEPLOY;
 			Events["Toggle"].active = (deploy.Length > 0) && (part.FindModuleImplementing<Habitat>() == null) && !deploy_anim.Playing() && !waitRotation && ResourceCache.GetResource(vessel, "ElectricCharge").Amount > ec_rate;
 
 			// in flight

@@ -16,7 +16,7 @@ namespace KERBALISM
 
 		public override string Tooltip => Lib.BuildString(base.Tooltip, "\n", Lib.Bold("Process capacity :"),"\n", module.ModuleInfo);
 
-		public override string Status => Lib.Color(module.IsRunning(), Localizer.Format("#KERBALISM_Generic_RUNNING"), Lib.Kolor.Green, Localizer.Format("#KERBALISM_Generic_STOPPED"), Lib.Kolor.Yellow);
+		public override string Status => Lib.Color(module.IsRunning(), Local.Generic_RUNNING, Lib.Kolor.Green, Local.Generic_STOPPED, Lib.Kolor.Yellow);
 
 		public override void Ctrl(bool value)
 		{
@@ -40,7 +40,7 @@ namespace KERBALISM
 
 		public override string Tooltip => Lib.BuildString(base.Tooltip, "\n", Lib.Bold("Process capacity :"), "\n", prefab.ModuleInfo);
 
-		public override string Status => Lib.Color(Lib.Proto.GetBool(protoModule, "running"), Localizer.Format("#KERBALISM_Generic_RUNNING"), Lib.Kolor.Green, Localizer.Format("#KERBALISM_Generic_STOPPED"), Lib.Kolor.Yellow);
+		public override string Status => Lib.Color(Lib.Proto.GetBool(protoModule, "running"), Local.Generic_RUNNING, Lib.Kolor.Green, Local.Generic_STOPPED, Lib.Kolor.Yellow);
 
 		public override void Ctrl(bool value)
 		{

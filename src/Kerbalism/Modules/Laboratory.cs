@@ -41,8 +41,8 @@ namespace KERBALISM
 		// localized strings
 		private static readonly string localized_title = Lib.BuildString("<size=1><color=#00000000>00</color></size>", Localizer.Format("#KERBALISM_Laboratory_Title"));
 		private static readonly string localized_toggle = Localizer.Format("#KERBALISM_Laboratory_Toggle");
-		private static readonly string localized_enabled = Localizer.Format("#KERBALISM_Generic_ENABLED");
-		private static readonly string localized_disabled = Localizer.Format("#KERBALISM_Generic_DISABLED");
+		private static readonly string localized_enabled = Local.Generic_ENABLED;
+		private static readonly string localized_disabled = Local.Generic_DISABLED;
 		private static readonly string localized_noEC = Lib.Color(Localizer.Format("#KERBALISM_Laboratory_NoEC"), Lib.Kolor.Orange);
 		private static readonly string localized_noSample = Localizer.Format("#KERBALISM_Laboratory_NoSample");
 		private static readonly string localized_cleaned = Localizer.Format("#KERBALISM_Laboratory_Cleaned");

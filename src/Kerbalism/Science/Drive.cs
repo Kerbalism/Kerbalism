@@ -516,13 +516,13 @@ namespace KERBALISM
 				Message.Post
 				(
 					Lib.HumanReadableDataSize(dataAmount) + " " + Localizer.Format("#KERBALISM_Science_ofdatatransfer"),
-				 	Lib.BuildString(Localizer.Format("#KERBALISM_Generic_FROM"), " <b>", src.vesselName, "</b> ", Localizer.Format("#KERBALISM_Generic_TO"), " <b>", dst.vesselName, "</b>")
+				 	Lib.BuildString(Local.Generic_FROM, " <b>", src.vesselName, "</b> ", Local.Generic_TO, " <b>", dst.vesselName, "</b>")
 				);
 			else
 				Message.Post
 				(
 					Lib.Color(Lib.BuildString("WARNING: not evering copied"), Lib.Kolor.Red, true),
-					Lib.BuildString(Localizer.Format("#KERBALISM_Generic_FROM"), " <b>", src.vesselName, "</b> ", Localizer.Format("#KERBALISM_Generic_TO"), " <b>", dst.vesselName, "</b>")
+					Lib.BuildString(Local.Generic_FROM, " <b>", src.vesselName, "</b> ", Local.Generic_TO, " <b>", dst.vesselName, "</b>")
 				);
 		}
 

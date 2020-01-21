@@ -43,9 +43,9 @@ namespace KERBALISM
 				else if (deployFxModule.IsMoving())
 					return Localizer.Format("deploying");
 				else if (deployFxModule.GetScalar == 1f)
-					return Lib.Color(Localizer.Format("#KERBALISM_Generic_EXTENDED"), Lib.Kolor.Green);
+					return Lib.Color(Local.Generic_EXTENDED, Lib.Kolor.Green);
 				else if (deployFxModule.GetScalar < 1f)
-					return Lib.Color(Localizer.Format("#KERBALISM_Generic_RETRACTED"), Lib.Kolor.Yellow);
+					return Lib.Color(Local.Generic_RETRACTED, Lib.Kolor.Yellow);
 
 				return Localizer.Format("#KERBALISM_Antenna_statu_unknown");
 			}
@@ -118,15 +118,15 @@ namespace KERBALISM
 					case "ModuleDeployablePart":
 						switch (Lib.Proto.GetString(scalarModuleSnapshot, "deployState"))
 						{
-							case "EXTENDED": return Lib.Color(Localizer.Format("#KERBALISM_Generic_EXTENDED"), Lib.Kolor.Green);
-							case "RETRACTED": return Lib.Color(Localizer.Format("#KERBALISM_Generic_RETRACTED"), Lib.Kolor.Yellow);
-							case "BROKEN": return Lib.Color(Localizer.Format("#KERBALISM_Generic_BROKEN"), Lib.Kolor.Red);
+							case "EXTENDED": return Lib.Color(Local.Generic_EXTENDED, Lib.Kolor.Green);
+							case "RETRACTED": return Lib.Color(Local.Generic_RETRACTED, Lib.Kolor.Yellow);
+							case "BROKEN": return Lib.Color(Local.Generic_BROKEN, Lib.Kolor.Red);
 						}
 						break;
 					case "ModuleAnimateGeneric":
 						return Lib.Proto.GetFloat(scalarModuleSnapshot, "animTime") > 0f ?
-							Lib.Color(Localizer.Format("#KERBALISM_Generic_EXTENDED"), Lib.Kolor.Green) :
-							Lib.Color(Localizer.Format("#KERBALISM_Generic_RETRACTED"), Lib.Kolor.Yellow);
+							Lib.Color(Local.Generic_EXTENDED, Lib.Kolor.Green) :
+							Lib.Color(Local.Generic_RETRACTED, Lib.Kolor.Yellow);
 				}
 				return Localizer.Format("#KERBALISM_Antenna_statu_unknown");//"unknown"
 			}

@@ -148,7 +148,7 @@ namespace KERBALISM
 					p.AddContent
 					(
 					  dev.DisplayName,
-					  state == -1 ? Lib.Color(Localizer.Format("#KERBALISM_UI_dontcare"), Lib.Kolor.DarkGrey) : Lib.Color(state == 0, Localizer.Format("#KERBALISM_Generic_OFF"), Lib.Kolor.Yellow, Localizer.Format("#KERBALISM_Generic_ON"), Lib.Kolor.Green),
+					  state == -1 ? Lib.Color(Localizer.Format("#KERBALISM_UI_dontcare"), Lib.Kolor.DarkGrey) : Lib.Color(state == 0, Local.Generic_OFF, Lib.Kolor.Yellow, Local.Generic_ON, Lib.Kolor.Green),
 					  string.Empty,
 					  () =>
 					  {

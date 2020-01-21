@@ -47,5 +47,6 @@ namespace KERBALISM
 		public static string Generic_SLOTS = GetLoc("Generic_SLOTS"); // "slots"
 		public static string Generic_SLOT = GetLoc("Generic_SLOT"); // "slot"
 		public static string Generic_AVERAGE = GetLoc("Generic_AVERAGE"); // "average"
+		public static string Generic_notdeployed = GetLoc("Generic_notdeployed"); // "not deployed"
 	}
 }

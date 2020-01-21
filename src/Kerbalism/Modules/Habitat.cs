@@ -304,12 +304,12 @@ namespace KERBALISM
                     }
                     else
                     {
-                        status_str = Localizer.Format("#KERBALISM_Generic_ENABLED");
+                        status_str = Local.Generic_ENABLED;
                     }
                     Set_pressurized(true);
                     break;
                 case State.disabled:
-                    status_str = Localizer.Format("#KERBALISM_Generic_DISABLED");
+                    status_str = Local.Generic_DISABLED;
                     Set_pressurized(false);
                     break;
                 case State.pressurizing:

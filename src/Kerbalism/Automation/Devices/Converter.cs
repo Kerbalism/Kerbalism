@@ -10,7 +10,7 @@ namespace KERBALISM
 	{
 		public ConverterDevice(ModuleResourceConverter module) : base(module) { }
 
-		public override string Status => module.AlwaysActive ? Localizer.Format("#KERBALISM_Generic_ALWAYSON") : Lib.Color(module.IsActivated, Localizer.Format("#KERBALISM_Generic_ON"), Lib.Kolor.Green, Localizer.Format("#KERBALISM_Generic_OFF"), Lib.Kolor.Yellow);
+		public override string Status => module.AlwaysActive ? Local.Generic_ALWAYSON : Lib.Color(module.IsActivated, Local.Generic_ON, Lib.Kolor.Green, Local.Generic_OFF, Lib.Kolor.Yellow);
 
 		public override void Ctrl(bool value)
 		{
@@ -35,9 +35,9 @@ namespace KERBALISM
 		{
 			get
 			{
-				if (prefab.AlwaysActive) return Localizer.Format("#KERBALISM_Generic_ALWAYSON");
+				if (prefab.AlwaysActive) return Local.Generic_ALWAYSON;
 				bool is_on = Lib.Proto.GetBool(protoModule, "IsActivated");
-				return Lib.Color(is_on, Localizer.Format("#KERBALISM_Generic_ON"), Lib.Kolor.Green, Localizer.Format("#KERBALISM_Generic_OFF"), Lib.Kolor.Yellow);
+				return Lib.Color(is_on, Local.Generic_ON, Lib.Kolor.Green, Local.Generic_OFF, Lib.Kolor.Yellow);
 			}
 		}
 

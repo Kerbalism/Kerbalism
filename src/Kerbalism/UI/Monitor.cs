@@ -622,15 +622,15 @@ namespace KERBALISM
 
 			// signal strength
 			var strength = Math.Ceiling(conn.strength * 10000) / 10000;
-			string signal_str = strength > 0.001 ? Lib.HumanReadablePerc(strength, "F2") : Lib.Color(Lib.Italic(Localizer.Format("#KERBALISM_Generic_NO")), Lib.Kolor.Orange);
+			string signal_str = strength > 0.001 ? Lib.HumanReadablePerc(strength, "F2") : Lib.Color(Lib.Italic(Local.Generic_NO), Lib.Kolor.Orange);
 
 			// target name
-			string target_str = conn.linked ? conn.target_name : Localizer.Format("#KERBALISM_Generic_NONE");
+			string target_str = conn.linked ? conn.target_name : Local.Generic_NONE;
 
 			// transmitting info
 			string comms_str;
 			if (!conn.linked)
-				comms_str = Localizer.Format("#KERBALISM_Generic_NOTHING");
+				comms_str = Local.Generic_NOTHING;
 			else if (vd.filesTransmitted.Count == 0)
 				comms_str = Localizer.Format("#KERBALISM_UI_telemetry");
 			else
@@ -641,7 +641,7 @@ namespace KERBALISM
 			(
 			  "<align=left />",
 			  String.Format("{0,-14}\t<b>{1}</b>\n", Localizer.Format("#KERBALISM_UI_DSNconnected"), conn.linked ?
-					Lib.Color(Localizer.Format("#KERBALISM_Generic_YES"), Lib.Kolor.Green) : Lib.Color(Lib.Italic(Localizer.Format("#KERBALISM_Generic_NO")), Lib.Kolor.Orange)),
+					Lib.Color(Local.Generic_YES, Lib.Kolor.Green) : Lib.Color(Lib.Italic(Local.Generic_NO), Lib.Kolor.Orange)),
 			  String.Format("{0,-14}\t<b>{1}</b>\n", Localizer.Format("#KERBALISM_UI_sciencerate"), Lib.HumanReadableDataRate(conn.rate)),
 			  String.Format("{0,-14}\t<b>{1}</b>\n", Localizer.Format("#KERBALISM_UI_strength"), signal_str),
 			  String.Format("{0,-14}\t<b>{1}</b>\n", Localizer.Format("#KERBALISM_UI_target"), target_str),
