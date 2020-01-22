@@ -1178,5 +1178,9 @@ namespace KERBALISM
 		public static string VesselRecovery_CREDITS = GetLoc("VesselRecovery_CREDITS"); // "CREDITS"
 		public static string VesselRecovery_OKbutton = GetLoc("VesselRecovery_OKbutton"); // "OK"
 
+		//Statu Toggle
+		public static string StatuToggle_info = GetLoc("StatuToggle_info");//info
+		public static string StatuToggle_Habitat = GetLoc("StatuToggle_Habitat");//Habitat
+
 	}
 }

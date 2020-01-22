@@ -324,7 +324,7 @@ namespace KERBALISM
                     break;
             }
 
-            Events["Toggle"].guiName = Lib.StatusToggle(Localizer.Format("#KERBALISM_Toggle_Habitat"), status_str);//"Habitat"
+            Events["Toggle"].guiName = Lib.StatusToggle(Local.StatuToggle_Habitat, status_str);//"Habitat"Localizer.Format("#KERBALISM_Toggle_Habitat")
 
             // Changing this animation when we expect rotation will not work because
             // Unity disables other animations when playing the inflation animation.
