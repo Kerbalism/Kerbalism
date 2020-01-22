@@ -1,8 +1,110 @@
-﻿using System;
+using KSP.Localization;
+using System;
 using System.Collections.Generic;
 
 namespace KERBALISM
 {
+	public class ResourceBroker
+	{
+		public enum BrokerCategory
+		{
+			Unknown,
+			Generator,
+			Converter,
+			SolarPanel,
+			Harvester,
+			RTG,
+			FuelCell,
+			ECLSS,
+			VesselSystem,
+			Kerbal,
+			Comms,
+			Science
+		}
+
+		private static Dictionary<string, ResourceBroker> brokersDict = new Dictionary<string, ResourceBroker>();
+		private static List<ResourceBroker> brokersList = new List<ResourceBroker>();
+
+		public static ResourceBroker Generic = GetOrCreate("Others", BrokerCategory.Unknown, Local.Brokers_Others);
+		public static ResourceBroker SolarPanel = GetOrCreate("SolarPanel", BrokerCategory.SolarPanel, Local.Brokers_SolarPanel);
+		public static ResourceBroker KSPIEGenerator = GetOrCreate("KSPIEGenerator", BrokerCategory.Generator, Local.Brokers_KSPIEGenerator);
+		public static ResourceBroker FissionReactor = GetOrCreate("FissionReactor", BrokerCategory.Converter, Local.Brokers_FissionReactor);
+		public static ResourceBroker RTG = GetOrCreate("RTG", BrokerCategory.RTG, Local.Brokers_RTG);
+		public static ResourceBroker ScienceLab = GetOrCreate("ScienceLab", BrokerCategory.Science, Local.Brokers_ScienceLab);
+		public static ResourceBroker Light = GetOrCreate("Light", BrokerCategory.VesselSystem, Local.Brokers_Light);
+		public static ResourceBroker Boiloff = GetOrCreate("Boiloff", BrokerCategory.VesselSystem, Local.Brokers_Boiloff);
+		public static ResourceBroker Cryotank = GetOrCreate("Cryotank", BrokerCategory.VesselSystem, Local.Brokers_Cryotank);
+		public static ResourceBroker Greenhouse = GetOrCreate("Greenhouse", BrokerCategory.VesselSystem, Local.Brokers_Greenhouse);
+		public static ResourceBroker Deploy = GetOrCreate("Deploy", BrokerCategory.VesselSystem, Local.Brokers_Deploy);
+		public static ResourceBroker Experiment = GetOrCreate("Experiment", BrokerCategory.Science, Local.Brokers_Experiment);
+		public static ResourceBroker Command = GetOrCreate("Command", BrokerCategory.VesselSystem, Local.Brokers_Command);
+		public static ResourceBroker GravityRing = GetOrCreate("GravityRing", BrokerCategory.RTG, Local.Brokers_GravityRing);
+		public static ResourceBroker Scanner = GetOrCreate("Scanner", BrokerCategory.VesselSystem, Local.Brokers_Scanner);
+		public static ResourceBroker Laboratory = GetOrCreate("Laboratory", BrokerCategory.Science, Local.Brokers_Laboratory);
+		public static ResourceBroker CommsIdle = GetOrCreate("CommsIdle", BrokerCategory.Comms, Local.Brokers_CommsIdle);
+		public static ResourceBroker CommsXmit = GetOrCreate("CommsXmit", BrokerCategory.Comms, Local.Brokers_CommsXmit);
+		public static ResourceBroker StockConverter = GetOrCreate("StockConverter", BrokerCategory.Converter, Local.Brokers_StockConverter);
+		public static ResourceBroker StockDrill = GetOrCreate("Converter", BrokerCategory.Harvester, Local.Brokers_StockDrill);
+		public static ResourceBroker Harvester = GetOrCreate("Harvester", BrokerCategory.Harvester, Local.Brokers_Harvester);
+
+		public string Id { get; private set; }
+		public BrokerCategory Category { get; private set; }
+		public string Title { get; private set; }
+		public string[] BrokerInfo { get; private set; }
+
+		public override int GetHashCode() => hashcode;
+		private int hashcode;
+
+		private ResourceBroker(string id, BrokerCategory category = BrokerCategory.Unknown, string title = null)
+		{
+			Id = id;
+			Category = category;
+
+			if (string.IsNullOrEmpty(title))
+				Title = id;
+			else
+				Title = title;
+
+			BrokerInfo = new string[] { Category.ToString(), Id, Title};
+
+			hashcode = id.GetHashCode();
+
+			brokersDict.Add(id, this);
+			brokersList.Add(this);
+		}
+
+		public static IEnumerator<ResourceBroker> List()
+		{
+			return brokersList.GetEnumerator();
+		}
+
+		public static ResourceBroker GetOrCreate(string id)
+		{
+			ResourceBroker rb;
+			if (brokersDict.TryGetValue(id, out rb))
+				return rb;
+
+			return new ResourceBroker(id, BrokerCategory.Unknown, id);
+		}
+
+		public static ResourceBroker GetOrCreate(string id, BrokerCategory type, string title)
+		{
+			ResourceBroker rb;
+			if (brokersDict.TryGetValue(id, out rb))
+				return rb;
+
+			return new ResourceBroker(id, type, title);
+		}
+
+		public static string GetTitle(string id)
+		{
+			ResourceBroker rb;
+			if (brokersDict.TryGetValue(id, out rb))
+				return rb.Title;
+			return null;
+		}
+	}
+
 	/// <summary>Global cache for storing and accessing VesselResources (and ResourceInfo) handlers in all vessels, with shortcut for common methods</summary>
 	public static class ResourceCache
 	{
@@ -58,16 +160,16 @@ namespace KERBALISM
 
 		/// <summary> record deferred production of a resource (shortcut) </summary>
 		/// <param name="brokerName">short ui-friendly name for the producer</param>
-		public static void Produce(Vessel v, string resource_name, double quantity, string brokerName)
+		public static void Produce(Vessel v, string resource_name, double quantity, ResourceBroker broker)
 		{
-			GetResource(v, resource_name).Produce(quantity, brokerName);
+			GetResource(v, resource_name).Produce(quantity, broker);
 		}
 
 		/// <summary> record deferred consumption of a resource (shortcut) </summary>
 		/// <param name="brokerName">short ui-friendly name for the consumer</param>
-		public static void Consume(Vessel v, string resource_name, double quantity, string brokerName)
+		public static void Consume(Vessel v, string resource_name, double quantity, ResourceBroker broker)
 		{
-			GetResource(v, resource_name).Consume(quantity, brokerName);
+			GetResource(v, resource_name).Consume(quantity, broker);
 		}
 
 		/// <summary> register deferred execution of a recipe (shortcut)</summary>
@@ -203,16 +305,16 @@ namespace KERBALISM
 
 		/// <summary> record deferred production of a resource (shortcut) </summary>
 		/// <param name="brokerName">short ui-friendly name for the producer</param>
-		public void Produce(Vessel v, string resource_name, double quantity, string brokerName)
+		public void Produce(Vessel v, string resource_name, double quantity, ResourceBroker broker)
 		{
-			GetResource(v, resource_name).Produce(quantity, brokerName);
+			GetResource(v, resource_name).Produce(quantity, broker);
 		}
 
 		/// <summary> record deferred consumption of a resource (shortcut) </summary>
 		/// <param name="tag">short ui-friendly name for the consumer</param>
-		public void Consume(Vessel v, string resource_name, double quantity, string tag)
+		public void Consume(Vessel v, string resource_name, double quantity, ResourceBroker broker)
 		{
-			GetResource(v, resource_name).Consume(quantity, tag);
+			GetResource(v, resource_name).Consume(quantity, broker);
 		}
 
 		/// <summary> record deferred execution of a recipe (shortcut) </summary>
@@ -259,10 +361,10 @@ namespace KERBALISM
 		private double intervalRuleAmount;
 
 		/// <summary>Dictionary of all consumers and producers (key) and how much amount they did add/remove (value).</summary>
-		private Dictionary<string, double> brokersResourceAmounts;
+		private Dictionary<ResourceBroker, double> brokersResourceAmounts;
 
 		/// <summary>Dictionary of all interval-based rules (key) and their simulated average rate (value). This is for information only, the resource is not consumed</summary>
-		private Dictionary<string, double> intervalRuleBrokersRates;
+		private Dictionary<ResourceBroker, double> intervalRuleBrokersRates;
 
 		/// <summary>Ctor</summary>
 		public ResourceInfo(Vessel v, string res_name)
@@ -274,8 +376,8 @@ namespace KERBALISM
 			Amount = 0;
 			Capacity = 0;
 
-			brokersResourceAmounts = new Dictionary<string, double>();
-			intervalRuleBrokersRates = new Dictionary<string, double>();
+			brokersResourceAmounts = new Dictionary<ResourceBroker, double>();
+			intervalRuleBrokersRates = new Dictionary<ResourceBroker, double>();
 
 			// get amount & capacity
 			if (v.loaded)
@@ -323,32 +425,32 @@ namespace KERBALISM
 
 		/// <summary>Record a production, it will be stored in "Deferred" and later synchronized to the vessel in Sync()</summary>
 		/// <param name="brokerName">origin of the production, will be available in the UI</param>
-		public void Produce(double quantity, string brokerName)
+		public void Produce(double quantity, ResourceBroker broker)
 		{
 			Deferred += quantity;
 
 			// keep track of every producer contribution for UI/debug purposes
 			if (Math.Abs(quantity) < 1e-10) return;
 
-			if (brokersResourceAmounts.ContainsKey(brokerName))
-				brokersResourceAmounts[brokerName] += quantity;
+			if (brokersResourceAmounts.ContainsKey(broker))
+				brokersResourceAmounts[broker] += quantity;
 			else
-				brokersResourceAmounts.Add(brokerName, quantity);
+				brokersResourceAmounts.Add(broker, quantity);
 		}
 
 		/// <summary>Record a consumption, it will be stored in "Deferred" and later synchronized to the vessel in Sync()</summary>
 		/// <param name="brokerName">origin of the consumption, will be available in the UI</param>
-		public void Consume(double quantity, string brokerName)
+		public void Consume(double quantity, ResourceBroker broker)
 		{
 			Deferred -= quantity;
 
 			// keep track of every consumer contribution for UI/debug purposes
 			if (Math.Abs(quantity) < 1e-10) return;
 
-			if (brokersResourceAmounts.ContainsKey(brokerName))
-				brokersResourceAmounts[brokerName] -= quantity;
+			if (brokersResourceAmounts.ContainsKey(broker))
+				brokersResourceAmounts[broker] -= quantity;
 			else
-				brokersResourceAmounts.Add(brokerName, -quantity);
+				brokersResourceAmounts.Add(broker, -quantity);
 		}
 
 		/// <summary>synchronize resources from cache to vessel</summary>
@@ -544,15 +646,15 @@ namespace KERBALISM
 
 		/// <summary>Inform that meal has happened in this simulation step</summary>
 		/// <remarks>A simulation step can cover many physics ticks, especially for unloaded vessels</remarks>
-		public void UpdateIntervalRule(double amount, double averageRate, string ruleName)
+		public void UpdateIntervalRule(double amount, double averageRate, ResourceBroker broker)
 		{
 			intervalRuleAmount += amount;
 			intervalRulesRate += averageRate;
 
-			if (intervalRuleBrokersRates.ContainsKey(ruleName))
-				intervalRuleBrokersRates[ruleName] += averageRate;
+			if (intervalRuleBrokersRates.ContainsKey(broker))
+				intervalRuleBrokersRates[broker] += averageRate;
 			else
-				intervalRuleBrokersRates.Add(ruleName, averageRate);
+				intervalRuleBrokersRates.Add(broker, averageRate);
 		}
 	}
 
@@ -598,15 +700,15 @@ namespace KERBALISM
 		public List<Entry> cures;    // set of cures
 		public double left;     // what proportion of the recipe is left to execute
 
-		private string name;
+		private ResourceBroker broker;
 
-		public ResourceRecipe(string name)
+		public ResourceRecipe(ResourceBroker broker)
 		{
 			this.inputs = new List<Entry>();
 			this.outputs = new List<Entry>();
 			this.cures = new List<Entry>();
 			this.left = 1.0;
-			this.name = name;
+			this.broker = broker;
 		}
 
 		/// <summary>add an input to the recipe</summary>
@@ -740,19 +842,19 @@ namespace KERBALISM
 						ResourceInfo sec = resources.GetResource(v, sec_e.name);
 						double need = (e.quantity * worst_io) + (sec_e.quantity * worst_io);
 						// do we have enough primary to satisfy needs, if so don't consume secondary
-						if (res.Amount + res.Deferred >= need) resources.Consume(v, e.name, need, name);
+						if (res.Amount + res.Deferred >= need) resources.Consume(v, e.name, need, broker);
 						// consume primary if any available and secondary
 						else
 						{
 							need -= res.Amount + res.Deferred;
-							res.Consume(res.Amount + res.Deferred, name);
-							sec.Consume(need, name);
+							res.Consume(res.Amount + res.Deferred, broker);
+							sec.Consume(need, broker);
 						}
 					}
 				}
 				else 
 				{
-					res.Consume(e.quantity * worst_io, name);
+					res.Consume(e.quantity * worst_io, broker);
 				}
 			}
 
@@ -761,7 +863,7 @@ namespace KERBALISM
 			{
 				Entry e = outputs[i];
 				ResourceInfo res = resources.GetResource(v, e.name);
-				res.Produce(e.quantity * worst_io, name);
+				res.Produce(e.quantity * worst_io, broker);
 			}
 
 			// produce cures

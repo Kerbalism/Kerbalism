@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using KSP.Localization;
@@ -54,7 +54,7 @@ namespace KERBALISM
 			// in editor, merely update ui button label
 			if (Lib.IsEditor())
 			{
-				Events["Toggle"].guiName = Lib.StatusToggle(title, running ? Localizer.Format("#KERBALISM_Harvester_running") : Localizer.Format("#KERBALISM_Harvester_stopped"));//"running""stopped"
+				Events["Toggle"].guiName = Lib.StatusToggle(title, running ? Local.Harvester_running : Local.Harvester_stopped);//"running""stopped"
 			}
 
 			// if in flight, and the stock planet resource system is online
@@ -72,13 +72,13 @@ namespace KERBALISM
 				if (deployed)
 				{
 					string status = !running
-					  ? Localizer.Format("#KERBALISM_Harvester_stopped")//"stopped"
+					  ? Local.Harvester_stopped//"stopped"
 					  : issue.Length == 0
-					  ? Localizer.Format("#KERBALISM_Harvester_running")//"running"
+					  ? Local.Harvester_running//"running"
 					  : Lib.BuildString("<color=yellow>", issue, "</color>");
 
 					Events["Toggle"].guiName = Lib.StatusToggle(title, status);
-					Abundance = abundance > double.Epsilon ? Lib.HumanReadablePerc(abundance, "F2") : Localizer.Format("#KERBALISM_Harvester_none");//"none"
+					Abundance = abundance > double.Epsilon ? Lib.HumanReadablePerc(abundance, "F2") : Local.Harvester_none;//"none"
 				}
 			}
 		}
@@ -97,7 +97,7 @@ namespace KERBALISM
 				crew_gain = Lib.Clamp(crew_gain, 1, Settings.MaxHarvesterBonus);
 				rate *= crew_gain;
 
-				ResourceRecipe recipe = new ResourceRecipe("harvester");
+				ResourceRecipe recipe = new ResourceRecipe(ResourceBroker.Harvester);
 				recipe.AddInput("ElectricCharge", harvester.ec_rate * elapsed_s);
 				recipe.AddOutput(harvester.resource, harvester.rate * (abundance/harvester.abundance_rate) * elapsed_s, false);
 				ResourceCache.AddRecipe(v, recipe);
@@ -162,35 +162,35 @@ namespace KERBALISM
 			{
 				case 0:
 					bool land_valid = vessel.Landed && GroundContact();
-					if (!land_valid) return Localizer.Format("#KERBALISM_Harvester_land_valid");//"no ground contact"
+					if (!land_valid) return Local.Harvester_land_valid;//"no ground contact"
 					break;
 
 				case 1:
 					bool ocean_valid = body.ocean && (vessel.Splashed || vessel.altitude < 0.0);
-					if (!ocean_valid) return Localizer.Format("#KERBALISM_Harvester_ocean_valid");//"not in ocean"
+					if (!ocean_valid) return Local.Harvester_ocean_valid;//"not in ocean"
 					break;
 
 				case 2:
 					bool atmo_valid = body.atmosphere && vessel.altitude < body.atmosphereDepth;
-					if (!atmo_valid) return Localizer.Format("#KERBALISM_Harvester_atmo_valid");//"not in atmosphere"
+					if (!atmo_valid) return Local.Harvester_atmo_valid;//"not in atmosphere"
 					break;
 
 				case 3:
 					bool space_valid = vessel.altitude > body.atmosphereDepth || !body.atmosphere;
-					if (!space_valid) return Localizer.Format("#KERBALISM_Harvester_space_valid");//"not in space"
+					if (!space_valid) return Local.Harvester_space_valid;//"not in space"
 					break;
 			}
 
 			// check against pressure
 			if (type == 2 && body.GetPressure(vessel.altitude) < min_pressure)
 			{
-				return Localizer.Format("#KERBALISM_Harvester_pressurebelow");//"pressure below threshold"
+				return Local.Harvester_pressurebelow;//"pressure below threshold"
 			}
 
 			// check against abundance
 			if (abundance < min_abundance)
 			{
-				return Localizer.Format("#KERBALISM_Harvester_abundancebelow");//"abundance below threshold"
+				return Local.Harvester_abundancebelow;//"abundance below threshold"
 			}
 
 			// all good
@@ -219,10 +219,10 @@ namespace KERBALISM
 			string source = string.Empty;
 			switch (type)
 			{
-				case 0: source = Localizer.Format("#KERBALISM_Harvester_source1"); break;//"the surface"
-				case 1: source = Localizer.Format("#KERBALISM_Harvester_source2"); break;//"the ocean"
-				case 2: source = Localizer.Format("#KERBALISM_Harvester_source3"); break;//"the atmosphere"
-				case 3: source = Localizer.Format("#KERBALISM_Harvester_source4"); break;//"space"
+				case 0: source = Local.Harvester_source1; break;//"the surface"
+				case 1: source = Local.Harvester_source2; break;//"the ocean"
+				case 2: source = Local.Harvester_source3; break;//"the atmosphere"
+				case 3: source = Local.Harvester_source4; break;//"space"
 			}
 			string desc = Localizer.Format("#KERBALISM_Harvester_generatedescription", resource,source);//Lib.BuildString("Extract ", , " from ", )
 
@@ -234,13 +234,13 @@ namespace KERBALISM
 		public Specifics Specs()
 		{
 			Specifics specs = new Specifics();
-			specs.Add(Localizer.Format("#KERBALISM_Harvester_info1"), ((HarvestTypes)type).ToString());//"type"
-			specs.Add(Localizer.Format("#KERBALISM_Harvester_info2"), resource);//"resource"
-			if (min_abundance > double.Epsilon) specs.Add(Localizer.Format("#KERBALISM_Harvester_info3"), Lib.HumanReadablePerc(min_abundance, "F2"));//"min abundance"
-			if (type == 2 && min_pressure > double.Epsilon) specs.Add(Localizer.Format("#KERBALISM_Harvester_info4"), Lib.HumanReadablePressure(min_pressure));//"min pressure"
-			specs.Add(Localizer.Format("#KERBALISM_Harvester_info5"), Lib.HumanReadableRate(rate));//"extraction rate"
-			specs.Add(Localizer.Format("#KERBALISM_Harvester_info6"), Lib.HumanReadablePerc(abundance_rate, "F2"));//"at abundance"
-			if (ec_rate > double.Epsilon) specs.Add(Localizer.Format("#KERBALISM_Harvester_info7"), Lib.HumanReadableRate(ec_rate));//"ec consumption"
+			specs.Add(Local.Harvester_info1, ((HarvestTypes)type).ToString());//"type"
+			specs.Add(Local.Harvester_info2, resource);//"resource"
+			if (min_abundance > double.Epsilon) specs.Add(Local.Harvester_info3, Lib.HumanReadablePerc(min_abundance, "F2"));//"min abundance"
+			if (type == 2 && min_pressure > double.Epsilon) specs.Add(Local.Harvester_info4, Lib.HumanReadablePressure(min_pressure));//"min pressure"
+			specs.Add(Local.Harvester_info5, Lib.HumanReadableRate(rate));//"extraction rate"
+			specs.Add(Local.Harvester_info6, Lib.HumanReadablePerc(abundance_rate, "F2"));//"at abundance"
+			if (ec_rate > double.Epsilon) specs.Add(Local.Harvester_info7, Lib.HumanReadableRate(ec_rate));//"ec consumption"
 			return specs;
 		}
 

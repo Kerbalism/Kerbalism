@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using ModuleWheels;
 using KSP.Localization;
@@ -116,7 +116,7 @@ namespace KERBALISM
 			}
 
 			// If isConsuming
-			if (isConsuming && resources != null) resources.Consume(actualCost * Kerbalism.elapsed_s, Localizer.Format("#KERBALISM_UI_Deploy"));//"deploy"
+			if (isConsuming && resources != null) resources.Consume(actualCost * Kerbalism.elapsed_s, ResourceBroker.Deploy);
 		}
 
 		public virtual bool GetIsConsuming()
@@ -199,7 +199,7 @@ namespace KERBALISM
 
 		public static void BackgroundUpdate(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, Deploy deploy, ResourceInfo ec, double elapsed_s)
 		{
-			if (deploy.isConsuming) ec.Consume(deploy.extra_Cost * elapsed_s, Localizer.Format("#KERBALISM_UI_Deploy"));//"deploy"
+			if (deploy.isConsuming) ec.Consume(deploy.extra_Cost * elapsed_s, ResourceBroker.Deploy);
 		}
 	}
 }

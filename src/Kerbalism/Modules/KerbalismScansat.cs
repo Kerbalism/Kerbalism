@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using KSP.Localization;
@@ -100,7 +100,7 @@ namespace KERBALISM
 							warp_buffer = 0;
 							StopScan();
 							vd.scansat_id.Add(part.flightID);
-							Message.Post(Lib.Color(Localizer.Format("#KERBALISM_Scansat_Scannerhalted"), Lib.Kolor.Red, true), Localizer.Format("#KERBALISM_Scansat_Scannerhalted_text", "<b>" + vessel.vesselName + "</b>"));//"Scanner halted""Scanner halted on <<1>>. No storage left on vessel."
+							Message.Post(Lib.Color(Local.Scansat_Scannerhalted, Lib.Kolor.Red, true), Localizer.Format("#KERBALISM_Scansat_Scannerhalted_text", "<b>" + vessel.vesselName + "</b>"));//"Scanner halted""Scanner halted on <<1>>. No storage left on vessel."
 						}
 					}
 				}
@@ -147,7 +147,7 @@ namespace KERBALISM
 
 			bool is_scanning = Lib.Proto.GetBool(scanner, "scanning");
 			if(is_scanning && kerbalismScansat.ec_rate > double.Epsilon)
-				ec.Consume(kerbalismScansat.ec_rate * elapsed_s, Localizer.Format("#KERBALISM_UI_Scanner"));//"scanner"
+				ec.Consume(kerbalismScansat.ec_rate * elapsed_s, ResourceBroker.Scanner);
 
 			if (!Features.Science)
 			{

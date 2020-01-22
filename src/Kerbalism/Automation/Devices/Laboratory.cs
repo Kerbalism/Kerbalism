@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using KSP.Localization;
@@ -10,7 +10,7 @@ namespace KERBALISM
 	{
 		public LaboratoryDevice(Laboratory module) : base(module) { }
 
-		public override string Status => Lib.Color(module.running, Localizer.Format("#KERBALISM_Generic_ACTIVE"), Lib.Kolor.Green, Localizer.Format("#KERBALISM_Generic_DISABLED"), Lib.Kolor.Yellow);
+		public override string Status => Lib.Color(module.running, Local.Generic_ACTIVE, Lib.Kolor.Green, Local.Generic_DISABLED, Lib.Kolor.Yellow);
 
 		public override void Ctrl(bool value)
 		{
@@ -29,7 +29,7 @@ namespace KERBALISM
 		public ProtoLaboratoryDevice(Laboratory prefab, ProtoPartSnapshot protoPart, ProtoPartModuleSnapshot protoModule)
 			: base(prefab, protoPart, protoModule) { }
 
-		public override string Status => Lib.Color(Lib.Proto.GetBool(protoModule, "running"), Localizer.Format("#KERBALISM_Generic_ACTIVE"), Lib.Kolor.Green, Localizer.Format("#KERBALISM_Generic_DISABLED"), Lib.Kolor.Yellow);
+		public override string Status => Lib.Color(Lib.Proto.GetBool(protoModule, "running"), Local.Generic_ACTIVE, Lib.Kolor.Green, Local.Generic_DISABLED, Lib.Kolor.Yellow);
 
 		public override void Ctrl(bool value)
 		{

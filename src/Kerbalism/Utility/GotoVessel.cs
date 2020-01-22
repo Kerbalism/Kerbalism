@@ -1,4 +1,4 @@
-﻿namespace KERBALISM
+namespace KERBALISM
 {
 	public static class GotoVessel
 	{

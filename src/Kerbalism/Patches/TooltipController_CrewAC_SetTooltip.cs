@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using Harmony;
 using KSP.UI.TooltipTypes;
 
@@ -21,7 +21,7 @@ namespace KERBALISM
 				if (!crewRules.ContainsKey(rule.name)) continue;
 
 				var level = crewRules[rule.name].problem / rule.fatal_threshold;
-				sb.Append(Lib.BuildString("<b>Career ", rule.name, "</b>: ", Lib.HumanReadablePerc(level), "\n"));
+				sb.Append(Lib.BuildString("<b>Career ", rule.title, "</b>: ", Lib.HumanReadablePerc(level), "\n"));
 			}
 
 			if(sb.Length > 0)

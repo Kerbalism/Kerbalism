@@ -1,4 +1,4 @@
-﻿using KSP.Localization;
+using KSP.Localization;
 using System.Collections.Generic;
 
 namespace KERBALISM
@@ -43,24 +43,36 @@ namespace KERBALISM
 				else if (deployFxModule.IsMoving())
 					return Localizer.Format("deploying");
 				else if (deployFxModule.GetScalar == 1f)
-					return Lib.Color(Localizer.Format("#KERBALISM_Generic_EXTENDED"), Lib.Kolor.Green);
-				else if (deployFxModule.GetScalar == 0f)
-					return Lib.Color(Localizer.Format("#KERBALISM_Generic_RETRACTED"), Lib.Kolor.Yellow);
+					return Lib.Color(Local.Generic_EXTENDED, Lib.Kolor.Green);
+				else if (deployFxModule.GetScalar < 1f)
+					return Lib.Color(Local.Generic_RETRACTED, Lib.Kolor.Yellow);
 
-				return "error";
+				return Local.Antenna_statu_unknown;
 			}
 		}
 
 		public override void Ctrl(bool value)
 		{
 			if (deployFxModule.CanMove && !deployFxModule.IsMoving())
-				deployFxModule.SetScalar(value ? 1f : 0f);
+			{
+				// ModuleAnimateGeneric.SetScalar() is borked
+				if (deployFxModule is ModuleAnimateGeneric mac && mac.animSwitch != value)
+					mac.Toggle();
+				else
+					deployFxModule.SetScalar(value ? 1f : 0f);
+			}
 		}
 
 		public override void Toggle()
 		{
 			if (deployFxModule.CanMove && !deployFxModule.IsMoving())
-				deployFxModule.SetScalar(deployFxModule.GetScalar == 0f ? 1f : 0f);
+			{
+				// ModuleAnimateGeneric.SetScalar() is borked
+				if (deployFxModule is ModuleAnimateGeneric mac)
+					mac.Toggle();
+				else
+					deployFxModule.SetScalar(deployFxModule.GetScalar == 0f ? 1f : 0f);
+			}
 		}
 	}
 
@@ -106,17 +118,17 @@ namespace KERBALISM
 					case "ModuleDeployablePart":
 						switch (Lib.Proto.GetString(scalarModuleSnapshot, "deployState"))
 						{
-							case "EXTENDED": return Lib.Color(Localizer.Format("#KERBALISM_Generic_EXTENDED"), Lib.Kolor.Green);
-							case "RETRACTED": return Lib.Color(Localizer.Format("#KERBALISM_Generic_RETRACTED"), Lib.Kolor.Yellow);
-							case "BROKEN": return Lib.Color(Localizer.Format("#KERBALISM_Generic_BROKEN"), Lib.Kolor.Red);
+							case "EXTENDED": return Lib.Color(Local.Generic_EXTENDED, Lib.Kolor.Green);
+							case "RETRACTED": return Lib.Color(Local.Generic_RETRACTED, Lib.Kolor.Yellow);
+							case "BROKEN": return Lib.Color(Local.Generic_BROKEN, Lib.Kolor.Red);
 						}
 						break;
 					case "ModuleAnimateGeneric":
 						return Lib.Proto.GetFloat(scalarModuleSnapshot, "animTime") > 0f ?
-							Lib.Color(Localizer.Format("#KERBALISM_Generic_EXTENDED"), Lib.Kolor.Green) :
-							Lib.Color(Localizer.Format("#KERBALISM_Generic_RETRACTED"), Lib.Kolor.Yellow);
+							Lib.Color(Local.Generic_EXTENDED, Lib.Kolor.Green) :
+							Lib.Color(Local.Generic_RETRACTED, Lib.Kolor.Yellow);
 				}
-				return Localizer.Format("#KERBALISM_Antenna_statu_unknown");//"unknown"
+				return Local.Antenna_statu_unknown;//"unknown"
 			}
 		}
 
@@ -137,6 +149,7 @@ namespace KERBALISM
 
 				case "ModuleAnimateGeneric":
 					Lib.Proto.Set(scalarModuleSnapshot, "animTime", value ? 1f : 0f);
+					Lib.Proto.Set(scalarModuleSnapshot, "animSwitch", !value); // animSwitch is true when retracted
 					break;
 			}
 
@@ -152,7 +165,8 @@ namespace KERBALISM
 					Ctrl(Lib.Proto.GetString(scalarModuleSnapshot, "deployState") == "RETRACTED");
 					break;
 				case "ModuleAnimateGeneric":
-					Ctrl(Lib.Proto.GetFloat(scalarModuleSnapshot, "animTime") == 0f);
+					// animSwitch is true when retracted
+					Ctrl(Lib.Proto.GetBool(scalarModuleSnapshot, "animSwitch"));
 					break;
 			}
 		}

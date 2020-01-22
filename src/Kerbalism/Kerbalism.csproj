@@ -147,6 +147,7 @@
     <Compile Include="Database\PartData.cs" />
     <Compile Include="Database\RuleData.cs" />
     <Compile Include="Database\VesselSituations.cs" />
+    <Compile Include="LocalizationCache.cs" />
     <Compile Include="Science\SubjectData.cs" />
     <Compile Include="Database\SupplyData.cs" />
     <Compile Include="Database\UIData.cs" />
@@ -282,6 +283,7 @@
     <Compile Include="Modules\PassiveShield.cs" />
     <Compile Include="Database\ResourceUpdateDelegate.cs" />
     <Compile Include="Modules\IKerbalismModule.cs" />
+    <Compile Include="Patches\ModuleDataTransmitter_GetInfo.cs" />
   </ItemGroup>
   <!-- ///////////////////////////////////////////////////// -->
   <!-- ////////// IMPORT DEFAULT MS BUILD PROCESS ////////// -->

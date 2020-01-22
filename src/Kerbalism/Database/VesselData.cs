@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 
@@ -507,10 +507,11 @@ namespace KERBALISM
 			{
 				resourceChangeRequests.Clear();
 				string title = resourceUpdateDelegate.invoke(availableResources, resourceChangeRequests);
+				ResourceBroker broker = ResourceBroker.GetOrCreate(title);
 				foreach (var rc in resourceChangeRequests)
 				{
-					if (rc.Value > 0) resources.Produce(Vessel, rc.Key, rc.Value * elapsed_s, title);
-					if (rc.Value < 0) resources.Consume(Vessel, rc.Key, -rc.Value * elapsed_s, title);
+					if (rc.Value > 0) resources.Produce(Vessel, rc.Key, rc.Value * elapsed_s, broker);
+					if (rc.Value < 0) resources.Consume(Vessel, rc.Key, -rc.Value * elapsed_s, broker);
 				}
 			}
 		}

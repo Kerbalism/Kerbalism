@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Contracts;
 using KSP.Localization;
 
@@ -33,17 +33,17 @@ namespace KERBALISM.CONTRACTS
 
 		protected override string GetTitle()
 		{
-			return Localizer.Format("#KERBALISM_Contracts_radTitle");
+			return Local.Contracts_radTitle;
 		}
 
 		protected override string GetDescription()
 		{
-			return Localizer.Format("#KERBALISM_Contracts_radDesc");
+			return Local.Contracts_radDesc;
 		}
 
 		protected override string MessageCompleted()
 		{
-			return Localizer.Format("#KERBALISM_Contracts_radComplete");
+			return Local.Contracts_radComplete;
 		}
 
 		public override bool MeetRequirements()
@@ -74,7 +74,7 @@ namespace KERBALISM.CONTRACTS
 
 		protected override string GetTitle()
 		{
-			return Localizer.Format("#KERBALISM_Contracts_radTitle");
+			return Local.Contracts_radTitle;
 		}
 
 		protected override void OnUpdate()

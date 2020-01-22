@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using KSP.Localization;
 
 namespace KERBALISM
@@ -159,7 +159,7 @@ namespace KERBALISM
 		public void Update()
 		{
 			// update RMB ui
-			Events["Toggle"].guiName = deployed ? Localizer.Format("#KERBALISM_Generic_RETRACT") : Localizer.Format("#KERBALISM_Generic_DEPLOY");
+			Events["Toggle"].guiName = deployed ? Local.Generic_RETRACT : Local.Generic_DEPLOY;
 			Events["Toggle"].active = (deploy.Length > 0) && (part.FindModuleImplementing<Habitat>() == null) && !deploy_anim.Playing() && !waitRotation && ResourceCache.GetResource(vessel, "ElectricCharge").Amount > ec_rate;
 
 			// in flight
@@ -229,7 +229,7 @@ namespace KERBALISM
 				ResourceInfo ec = ResourceCache.GetResource(vessel, "ElectricCharge");
 
 				// consume ec
-				ec.Consume(ec_rate * Kerbalism.elapsed_s, Localizer.Format("#KERBALISM_UI_GravityRing"));//"gravity ring"
+				ec.Consume(ec_rate * Kerbalism.elapsed_s, ResourceBroker.GravityRing);
 			}
 		}
 
@@ -239,7 +239,7 @@ namespace KERBALISM
 			if (ring.deploy.Length == 0 || Lib.Proto.GetBool(m, "deployed"))
 			{
 				// consume ec
-				ec.Consume(ring.ec_rate * elapsed_s, Localizer.Format("#KERBALISM_UI_GravityRing"));//"gravity ring"
+				ec.Consume(ring.ec_rate * elapsed_s, ResourceBroker.GravityRing);
 			}
 		}
 
@@ -289,9 +289,9 @@ namespace KERBALISM
 		public Specifics Specs()
 		{
 			Specifics specs = new Specifics();
-			specs.Add(Localizer.Format("#KERBALISM_GravityRing_info1"), "firm-ground");//"bonus"
+			specs.Add(Local.GravityRing_info1, "firm-ground");//"bonus"
 			specs.Add("EC/s", Lib.HumanReadableRate(ec_rate));
-			specs.Add(Localizer.Format("#KERBALISM_GravityRing_info2"), deploy.Length > 0 ? Localizer.Format("#KERBALISM_GravityRing_yes") : Localizer.Format("#KERBALISM_GravityRing_no"));//"deployable""yes""no"
+			specs.Add(Local.GravityRing_info2, deploy.Length > 0 ? Local.GravityRing_yes : Local.GravityRing_no);//"deployable""yes""no"
 			return specs;
 		}
 	}

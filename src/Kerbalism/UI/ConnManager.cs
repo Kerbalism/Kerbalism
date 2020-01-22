@@ -1,4 +1,4 @@
-﻿using KSP.Localization;
+using KSP.Localization;
 namespace KERBALISM
 {
 	public static class ConnManager
@@ -20,7 +20,7 @@ namespace KERBALISM
 			if (!vd.IsSimulated) return;
 
 			// set metadata
-			p.Title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(40)), " ", Lib.Color(Localizer.Format("#KERBALISM_ConnManager_title"), Lib.Kolor.LightGrey)));//"CONNECTION MANAGER"
+			p.Title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(40)), " ", Lib.Color(Local.ConnManager_title, Lib.Kolor.LightGrey)));//"CONNECTION MANAGER"
 			p.Width(Styles.ScaleWidthFloat(365.0f));
 			p.paneltype = Panel.PanelType.connection;
 
@@ -28,7 +28,7 @@ namespace KERBALISM
 			if (!Lib.IsControlUnit(v) &&  p.Timeout(vd)) return;
 
 			// draw ControlPath section
-			p.AddSection(Localizer.Format("#KERBALISM_ConnManager_CONTROLPATH"));//"CONTROL PATH"
+			p.AddSection(Local.ConnManager_CONTROLPATH);//"CONTROL PATH"
 			if (vd.Connection.linked)
 			{
 				if(vd.Connection.control_path != null)
@@ -43,7 +43,7 @@ namespace KERBALISM
 					}
 				}
 			}
-			else p.AddContent("<i>"+Localizer.Format("#KERBALISM_ConnManager_noconnection") +"</i>", string.Empty);//no connection
+			else p.AddContent("<i>"+Local.ConnManager_noconnection +"</i>", string.Empty);//no connection
 		}
 	}
 }

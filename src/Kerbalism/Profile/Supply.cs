@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using KSP.Localization;
 
@@ -132,7 +132,7 @@ namespace KERBALISM
 			}
 
 			// add resource to the vessel
-			ResourceCache.Produce(v, resource, on_rescue, Localizer.Format("#KERBALISM_UI_Rescue"));//"rescue"
+			ResourceCache.Produce(v, resource, on_rescue, ResourceBroker.Generic);
 		}
 
 

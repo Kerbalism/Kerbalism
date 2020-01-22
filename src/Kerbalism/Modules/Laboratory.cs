@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using KSP.Localization;
@@ -39,15 +39,15 @@ namespace KERBALISM
 		private ResourceInfo ec = null;                            // resource info for EC
 
 		// localized strings
-		private static readonly string localized_title = Lib.BuildString("<size=1><color=#00000000>00</color></size>", Localizer.Format("#KERBALISM_Laboratory_Title"));
-		private static readonly string localized_toggle = Localizer.Format("#KERBALISM_Laboratory_Toggle");
-		private static readonly string localized_enabled = Localizer.Format("#KERBALISM_Generic_ENABLED");
-		private static readonly string localized_disabled = Localizer.Format("#KERBALISM_Generic_DISABLED");
-		private static readonly string localized_noEC = Lib.Color(Localizer.Format("#KERBALISM_Laboratory_NoEC"), Lib.Kolor.Orange);
-		private static readonly string localized_noSample = Localizer.Format("#KERBALISM_Laboratory_NoSample");
-		private static readonly string localized_cleaned = Localizer.Format("#KERBALISM_Laboratory_Cleaned");
-		private static readonly string localized_results = Localizer.Format("#KERBALISM_Laboratory_Results");
-		private static readonly string localized_noStorage = Localizer.Format("#KERBALISM_Laboratory_Nostorage");//"No storage available"
+		private static readonly string localized_title = Lib.BuildString("<size=1><color=#00000000>00</color></size>", Local.Laboratory_Title);
+		private static readonly string localized_toggle = Local.Laboratory_Toggle;
+		private static readonly string localized_enabled = Local.Generic_ENABLED;
+		private static readonly string localized_disabled = Local.Generic_DISABLED;
+		private static readonly string localized_noEC = Lib.Color(Local.Laboratory_NoEC, Lib.Kolor.Orange);
+		private static readonly string localized_noSample = Local.Laboratory_NoSample;
+		private static readonly string localized_cleaned = Local.Laboratory_Cleaned;
+		private static readonly string localized_results = Local.Laboratory_Results;
+		private static readonly string localized_noStorage = Local.Laboratory_Nostorage;//"No storage available"
 
 		public override void OnStart(StartState state)
 		{
@@ -55,8 +55,8 @@ namespace KERBALISM
 			if (Lib.DisableScenario(this)) return;
 
 			// set UI text
-			Actions["Action"].guiName = Localizer.Format("#KERBALISM_Laboratory_Action");
-			Events["CleanExperiments"].guiName = Localizer.Format("#KERBALISM_Laboratory_Clean");
+			Actions["Action"].guiName = Local.Laboratory_Action;
+			Events["CleanExperiments"].guiName = Local.Laboratory_Clean;
 
 			// do nothing in the editors and when compiling parts
 			if (!Lib.IsFlight()) return;
@@ -107,7 +107,7 @@ namespace KERBALISM
 					{
 						// consume EC
 						ec = ResourceCache.GetResource(vessel, "ElectricCharge");
-						ec.Consume(ec_rate * Kerbalism.elapsed_s, Localizer.Format("#KERBALISM_UI_Laboratory"));//"laboratory"
+						ec.Consume(ec_rate * Kerbalism.elapsed_s, ResourceBroker.Laboratory);
 
 						// if there was ec
 						// - comparing against amount in previous simulation step
@@ -154,7 +154,7 @@ namespace KERBALISM
 					if (background_sample != null)
 					{
 						// consume EC
-						ec.Consume(lab.ec_rate * elapsed_s, Localizer.Format("#KERBALISM_UI_Laboratory"));//"laboratory"
+						ec.Consume(lab.ec_rate * elapsed_s, ResourceBroker.Laboratory);
 
 						// if there was ec
 						// - comparing against amount in previous simulation step
@@ -218,17 +218,17 @@ namespace KERBALISM
 
 		public override string GetInfo()
 		{
-			return Specs().Info(Localizer.Format("#KERBALISM_Laboratory_Specs"));
+			return Specs().Info(Local.Laboratory_Specs);
 		}
 
 		// specifics support
 		public Specifics Specs()
 		{
 			Specifics specs = new Specifics();
-			specs.Add(Localizer.Format("#KERBALISM_Laboratory_Researcher"), new CrewSpecs(researcher).Info());
-			if (cleaner) specs.Add(Localizer.Format("#KERBALISM_Laboratory_CanClean"));
-			specs.Add(Localizer.Format("#KERBALISM_Laboratory_ECrate"), Lib.HumanReadableRate(ec_rate));
-			specs.Add(Localizer.Format("#KERBALISM_Laboratory_rate"), Lib.HumanReadableDataRate(analysis_rate));
+			specs.Add(Local.Laboratory_Researcher, new CrewSpecs(researcher).Info());
+			if (cleaner) specs.Add(Local.Laboratory_CanClean);
+			specs.Add(Local.Laboratory_ECrate, Lib.HumanReadableRate(ec_rate));
+			specs.Add(Local.Laboratory_rate, Lib.HumanReadableDataRate(analysis_rate));
 			return specs;
 		}
 
@@ -291,8 +291,8 @@ namespace KERBALISM
 				else
 				{
 					Message.Post(
-						Lib.Color(Lib.BuildString(Localizer.Format("#KERBALISM_Laboratory_Analysis"), " ", Localizer.Format("#KERBALISM_Laboratory_stopped")), Lib.Kolor.Red),//"stopped"
-						Localizer.Format("#KERBALISM_Laboratory_Notspace")//"Not enough space on hard drive"
+						Lib.Color(Lib.BuildString(Local.Laboratory_Analysis, " ", Local.Laboratory_stopped), Lib.Kolor.Red),//"stopped"
+						Local.Laboratory_Notspace//"Not enough space on hard drive"
 					);
 
 					return Status.NO_STORAGE;
@@ -309,7 +309,7 @@ namespace KERBALISM
 				{
 					// only inform the user if auto-analyze is turned off
 					// otherwise we could be spamming "Analysis complete" messages
-					Message.Post(Lib.BuildString(Lib.Color(Localizer.Format("#KERBALISM_Laboratory_Analysis"), Lib.Kolor.Science, true), "\n",
+					Message.Post(Lib.BuildString(Lib.Color(Local.Laboratory_Analysis, Lib.Kolor.Science, true), "\n",
 						Localizer.Format("#KERBALISM_Laboratory_Analyzed", Lib.Bold(v.vesselName), Lib.Bold(subject.FullTitle))), localized_results);
 				}
 

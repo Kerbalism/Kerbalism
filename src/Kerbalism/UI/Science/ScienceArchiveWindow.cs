@@ -1,4 +1,4 @@
-﻿using KERBALISM.KsmGui;
+using KERBALISM.KsmGui;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -79,19 +79,19 @@ namespace KERBALISM
 				TextAnchor.UpperLeft,
 				280, -100);
 
-			KsmGuiHeader mainHeader = new KsmGuiHeader(window, Localizer.Format("#KERBALISM_SCIENCEARCHIVE_title"));//"SCIENCE ARCHIVE"
+			KsmGuiHeader mainHeader = new KsmGuiHeader(window, Local.SCIENCEARCHIVE_title);//"SCIENCE ARCHIVE"
 			new KsmGuiIconButton(mainHeader, Textures.KsmGuiTexHeaderClose, () => Close());
 
 			KsmGuiHorizontalLayout columns = new KsmGuiHorizontalLayout(window, 5, 0, 0, 5, 0);
 
 			KsmGuiVerticalLayout experimentColumn = new KsmGuiVerticalLayout(columns, 5);
 			experimentColumn.SetLayoutElement(false, true, 160);
-			new KsmGuiHeader(experimentColumn, Localizer.Format("#KERBALISM_SCIENCEARCHIVE_EXPERIMENTS"));//"EXPERIMENTS"
+			new KsmGuiHeader(experimentColumn, Local.SCIENCEARCHIVE_EXPERIMENTS);//"EXPERIMENTS"
 
-			researchFilter = new KsmGuiToggle(experimentColumn, Localizer.Format("#KERBALISM_SCIENCEARCHIVE_filter1"), true, OnToggleResearchedFilter);//"filter by researched"
+			researchFilter = new KsmGuiToggle(experimentColumn, Local.SCIENCEARCHIVE_filter1, true, OnToggleResearchedFilter);//"filter by researched"
 			if (Kerbalism.SerenityEnabled)
-				ROCFilter = new KsmGuiToggle(experimentColumn, Localizer.Format("#KERBALISM_SCIENCEARCHIVE_filter2"), true, OnToggleROCFilter);//"filter ROCs"
-			vesselFilter = new KsmGuiToggle(experimentColumn, Localizer.Format("#KERBALISM_SCIENCEARCHIVE_filter3"), false, OnToggleVesselFilter);//"filter by current vessel"
+				ROCFilter = new KsmGuiToggle(experimentColumn, Local.SCIENCEARCHIVE_filter2, true, OnToggleROCFilter);//"filter ROCs"
+			vesselFilter = new KsmGuiToggle(experimentColumn, Local.SCIENCEARCHIVE_filter3, false, OnToggleVesselFilter);//"filter by current vessel"
 			
 			KsmGuiVerticalScrollView experimentsScrollView = new KsmGuiVerticalScrollView(experimentColumn, 0, 0, 0, 0, 0);
 			experimentsScrollView.SetLayoutElement(true, true, 160);
@@ -114,7 +114,7 @@ namespace KERBALISM
 			currentExperiment.experimentSubjectList.Enabled = true;
 
 			KsmGuiVerticalLayout expInfoColumn = new KsmGuiVerticalLayout(columns, 5);
-			new KsmGuiHeader(expInfoColumn, Localizer.Format("#KERBALISM_SCIENCEARCHIVE_EXPERIMENTINFO"));//"EXPERIMENT INFO"
+			new KsmGuiHeader(expInfoColumn, Local.SCIENCEARCHIVE_EXPERIMENTINFO);//"EXPERIMENT INFO"
 			KsmGuiVerticalScrollView expInfoScrollView = new KsmGuiVerticalScrollView(expInfoColumn);
 			expInfoScrollView.SetLayoutElement(false, true, 200);
 			expInfoText = new KsmGuiText(expInfoScrollView, currentExperiment.expInfo.ModuleInfo);

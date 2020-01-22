@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using KSP.Localization;
@@ -21,11 +21,11 @@ namespace KERBALISM
 			get
 			{
 			return animator != null && !module.deployed
-			  ? Localizer.Format("#KERBALISM_Generic_notdeployed")//"not deployed"
+			  ? Local.Generic_notdeployed//"not deployed"
 			  : !module.running
-			  ? Lib.Color(Localizer.Format("#KERBALISM_Generic_STOPPED"), Lib.Kolor.Yellow)
+			  ? Lib.Color(Local.Generic_STOPPED, Lib.Kolor.Yellow)
 			  : module.issue.Length == 0
-			  ? Lib.Color(Localizer.Format("#KERBALISM_Generic_RUNNING"), Lib.Kolor.Green)
+			  ? Lib.Color(Local.Generic_RUNNING, Lib.Kolor.Green)
 			  : Lib.Color(module.issue, Lib.Kolor.Red);
 			}
 		}
@@ -65,11 +65,11 @@ namespace KERBALISM
 				string issue = Lib.Proto.GetString(protoModule, "issue");
 
 				return animator != null && !deployed
-				  ? Localizer.Format("#KERBALISM_Generic_notdeployed")//"not deployed"
+				  ? Local.Generic_notdeployed//"not deployed"
 				  : !running
-				  ? Lib.Color(Localizer.Format("#KERBALISM_Generic_STOPPED"), Lib.Kolor.Yellow)
+				  ? Lib.Color(Local.Generic_STOPPED, Lib.Kolor.Yellow)
 				  : issue.Length == 0
-				  ? Lib.Color(Localizer.Format("#KERBALISM_Generic_RUNNING"), Lib.Kolor.Green)
+				  ? Lib.Color(Local.Generic_RUNNING, Lib.Kolor.Green)
 				  : Lib.Color(issue, Lib.Kolor.Red);
 			}
 		}

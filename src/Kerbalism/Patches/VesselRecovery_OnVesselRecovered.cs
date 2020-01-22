@@ -144,16 +144,16 @@ namespace KERBALISM
 				(
 					new MultiOptionDialog
 					(
-						"scienceResults", "", pv.vesselName + " "+Localizer.Format("#KERBALISM_VesselRecovery_title"), HighLogic.UISkin, new Rect(0.3f, 0.5f, 350f, 100f),//" recovery"
+						"scienceResults", "", pv.vesselName + " "+Local.VesselRecovery_title, HighLogic.UISkin, new Rect(0.3f, 0.5f, 350f, 100f),//" recovery"
 						new DialogGUIVerticalLayout
 						(
-							new DialogGUIBox(Localizer.Format("#KERBALISM_VesselRecovery_info") + " : " + Lib.Color(scienceToCredit.ToString("F1") + " " + Localizer.Format("#KERBALISM_VesselRecovery_CREDITS"), Lib.Kolor.Science, true), 340f, 30f),//"SCIENCE RECOVERED"" CREDITS"
+							new DialogGUIBox(Local.VesselRecovery_info + " : " + Lib.Color(scienceToCredit.ToString("F1") + " " + Local.VesselRecovery_CREDITS, Lib.Kolor.Science, true), 340f, 30f),//"SCIENCE RECOVERED"" CREDITS"
 							new DialogGUIScrollList
 							(
 								new Vector2(340f, 250f), false, true,
 								new DialogGUIVerticalLayout(labels.ToArray())
 							),
-							new DialogGUIButton(Localizer.Format("#KERBALISM_VesselRecovery_OKbutton"), null, 340f, 30f, true, HighLogic.UISkin.button)//"OK"
+							new DialogGUIButton(Local.VesselRecovery_OKbutton, null, 340f, 30f, true, HighLogic.UISkin.button)//"OK"
 						)
 					),
 					false, HighLogic.UISkin

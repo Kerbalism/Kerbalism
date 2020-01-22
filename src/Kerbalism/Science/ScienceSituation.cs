@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -185,18 +185,18 @@ namespace KERBALISM
 		{
 			switch (situation)
 			{
-				case ScienceSituation.None:          return Localizer.Format("#KERBALISM_Situation_None");//"none"
-				case ScienceSituation.SrfLanded:     return Localizer.Format("#KERBALISM_Situation_Landed");//"landed"
-				case ScienceSituation.SrfSplashed:   return Localizer.Format("#KERBALISM_Situation_Splashed");//"splashed"
-				case ScienceSituation.FlyingLow:     return Localizer.Format("#KERBALISM_Situation_Flyinglow");//"flying low"
-				case ScienceSituation.FlyingHigh:    return Localizer.Format("#KERBALISM_Situation_Flyinghigh");//"flying high"
-				case ScienceSituation.InSpaceLow:    return Localizer.Format("#KERBALISM_Situation_Spacelow");//"space low"
-				case ScienceSituation.InSpaceHigh:   return Localizer.Format("#KERBALISM_Situation_SpaceHigh");//"space high"
-				case ScienceSituation.Surface:       return Localizer.Format("#KERBALISM_Situation_Surface");//"surface"
-				case ScienceSituation.Flying:        return Localizer.Format("#KERBALISM_Situation_Flying");//"flying"
-				case ScienceSituation.Space:         return Localizer.Format("#KERBALISM_Situation_Space");//"space"
-				case ScienceSituation.BodyGlobal:    return Localizer.Format("#KERBALISM_Situation_BodyGlobal");//"global"
-				default:                             return Localizer.Format("#KERBALISM_Situation_None");//"none"
+				case ScienceSituation.None:          return Local.Situation_None;//"none"
+				case ScienceSituation.SrfLanded:     return Local.Situation_Landed;//"landed"
+				case ScienceSituation.SrfSplashed:   return Local.Situation_Splashed;//"splashed"
+				case ScienceSituation.FlyingLow:     return Local.Situation_Flyinglow;//"flying low"
+				case ScienceSituation.FlyingHigh:    return Local.Situation_Flyinghigh;//"flying high"
+				case ScienceSituation.InSpaceLow:    return Local.Situation_Spacelow;//"space low"
+				case ScienceSituation.InSpaceHigh:   return Local.Situation_SpaceHigh;//"space high"
+				case ScienceSituation.Surface:       return Local.Situation_Surface;//"surface"
+				case ScienceSituation.Flying:        return Local.Situation_Flying;//"flying"
+				case ScienceSituation.Space:         return Local.Situation_Space;//"space"
+				case ScienceSituation.BodyGlobal:    return Local.Situation_BodyGlobal;//"global"
+				default:                             return Local.Situation_None;//"none"
 			}
 		}
 
@@ -204,16 +204,16 @@ namespace KERBALISM
 		{
 			switch (virtualBiome)
 			{
-				case VirtualBiome.NoBiome:            return Localizer.Format("#KERBALISM_Situation_NoBiome");//"global"
-				case VirtualBiome.NorthernHemisphere: return Localizer.Format("#KERBALISM_Situation_NorthernHemisphere");//"north hemisphere"
-				case VirtualBiome.SouthernHemisphere: return Localizer.Format("#KERBALISM_Situation_SouthernHemisphere");//"south hemisphere"
-				case VirtualBiome.InnerBelt:          return Localizer.Format("#KERBALISM_Situation_InnerBelt");//"inner belt"
-				case VirtualBiome.OuterBelt:          return Localizer.Format("#KERBALISM_Situation_OuterBelt");//"outer belt"
-				case VirtualBiome.Magnetosphere:      return Localizer.Format("#KERBALISM_Situation_Magnetosphere");//"magnetosphere"
-				case VirtualBiome.Interstellar:       return Localizer.Format("#KERBALISM_Situation_Interstellar");//"interstellar"
-				case VirtualBiome.Reentry:            return Localizer.Format("#KERBALISM_Situation_Reentry");//"reentry"
-				case VirtualBiome.Storm:              return Localizer.Format("#KERBALISM_Situation_Storm");//"solar storm"
-				default:                              return Localizer.Format("#KERBALISM_Situation_None");//"none"
+				case VirtualBiome.NoBiome:            return Local.Situation_NoBiome;//"global"
+				case VirtualBiome.NorthernHemisphere: return Local.Situation_NorthernHemisphere;//"north hemisphere"
+				case VirtualBiome.SouthernHemisphere: return Local.Situation_SouthernHemisphere;//"south hemisphere"
+				case VirtualBiome.InnerBelt:          return Local.Situation_InnerBelt;//"inner belt"
+				case VirtualBiome.OuterBelt:          return Local.Situation_OuterBelt;//"outer belt"
+				case VirtualBiome.Magnetosphere:      return Local.Situation_Magnetosphere;//"magnetosphere"
+				case VirtualBiome.Interstellar:       return Local.Situation_Interstellar;//"interstellar"
+				case VirtualBiome.Reentry:            return Local.Situation_Reentry;//"reentry"
+				case VirtualBiome.Storm:              return Local.Situation_Storm;//"solar storm"
+				default:                              return Local.Situation_None;//"none"
 			}
 		}
 

@@ -1,4 +1,4 @@
-﻿// ====================================================================================================================
+// ====================================================================================================================
 // Functions that other mods can call to interact with Kerbalism. If you don't build against it, call these using
 // reflection. All functions work transparently with loaded and unloaded vessels, unless otherwise specified.
 // ====================================================================================================================
@@ -422,22 +422,23 @@ namespace KERBALISM
 
 		public static void ConsumeResource(Vessel v, string resource_name, double quantity, string title)
 		{
-			ResourceCache.Consume(v, resource_name, quantity, title);
+			ResourceCache.Consume(v, resource_name, quantity, ResourceBroker.GetOrCreate(title));
 		}
 
 		public static void ProduceResource(Vessel v, string resource_name, double quantity, string title)
 		{
-			ResourceCache.Produce(v, resource_name, quantity, title);
+			ResourceCache.Produce(v, resource_name, quantity, ResourceBroker.GetOrCreate(title));
 		}
 
 		public static void ProcessResources(Vessel v, List<KeyValuePair<string, double>> resources, string title)
 		{
-			foreach(var p in resources)
+			ResourceBroker broker = ResourceBroker.GetOrCreate(title);
+			foreach (var p in resources)
 			{
 				if (p.Value < 0)
-					ResourceCache.Consume(v, p.Key, -p.Value, title);
+					ResourceCache.Consume(v, p.Key, -p.Value, broker);
 				else
-					ResourceCache.Produce(v, p.Key, p.Value, title);
+					ResourceCache.Produce(v, p.Key, p.Value, broker);
 			}
 		}
 
@@ -480,13 +481,25 @@ namespace KERBALISM
 			return result;
 		}
 
-		public static List<KeyValuePair<string, double>> ResourceBrokers(Vessel v, string resource_name)
+
+
+		/// <summary>
+		/// Return a list of all consumers and producers for that resource.
+		/// </summary>
+		/*
+		The double value is the positive or negative rate (in unit/s) for that broker
+		The string[] array always contain 3 strings :
+		- The first is the category (see the ResourceBroker.BrokerCategory enum)
+		- The second is the broker id
+		- The third is the broker localized title
+		*/
+		public static List<KeyValuePair<string[], double>> ResourceBrokers(Vessel v, string resource_name)
 		{
-			List<SupplyData.ResourceBroker> brokers = v.KerbalismData().Supply(resource_name).ResourceBrokers;
-			List<KeyValuePair<string, double>> apiBrokers = new List<KeyValuePair<string, double>>();
-			foreach (SupplyData.ResourceBroker rb in brokers)
+			List<SupplyData.ResourceBrokerRate> brokers = v.KerbalismData().Supply(resource_name).ResourceBrokers;
+			List<KeyValuePair<string[], double>> apiBrokers = new List<KeyValuePair<string[], double>>();
+			foreach (SupplyData.ResourceBrokerRate rb in brokers)
 			{
-				apiBrokers.Add(new KeyValuePair<string, double>(rb.name, rb.rate));
+				apiBrokers.Add(new KeyValuePair<string[], double>(rb.broker.BrokerInfo, rb.rate));
 			}
 			return apiBrokers;
 		}

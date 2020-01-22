@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using KSP.Localization;
@@ -138,8 +138,8 @@ namespace KERBALISM
 		public void Update()
 		{
 			// update ui
-			Status = running ? Lib.HumanReadableRadiation(Math.Abs(radiation)) : Localizer.Format("#KERBALISM_Emitter_none");//"none"
-			Events["Toggle"].guiName = Lib.StatusToggle(Localizer.Format("#kerbalism-activeshield_Part_title").Replace("Shield", "shield"), running ? Localizer.Format("#KERBALISM_Generic_ACTIVE") : Localizer.Format("#KERBALISM_Generic_DISABLED")); //i'm lazy lol
+			Status = running ? Lib.HumanReadableRadiation(Math.Abs(radiation)) : Local.Emitter_none;//"none"
+			Events["Toggle"].guiName = Lib.StatusToggle(Localizer.Format("#kerbalism-activeshield_Part_title").Replace("Shield", "shield"), running ? Local.Generic_ACTIVE : Local.Generic_DISABLED); //i'm lazy lol
 		}
 
 		public void FixedUpdate()
@@ -209,8 +209,8 @@ namespace KERBALISM
 		public override string GetInfo()
 		{
 			string desc = radiation > double.Epsilon
-			  ? Localizer.Format("#KERBALISM_Emitter_EmitIonizing")
-			  : Localizer.Format("#KERBALISM_Emitter_ReduceIncoming");
+			  ? Local.Emitter_EmitIonizing
+			  : Local.Emitter_ReduceIncoming;
 
 			return Specs().Info(desc);
 		}
@@ -219,7 +219,7 @@ namespace KERBALISM
 		public Specifics Specs()
 		{
 			Specifics specs = new Specifics();
-			specs.Add(radiation >= 0.0 ? Localizer.Format("#KERBALISM_Emitter_Emitted") : Localizer.Format("#KERBALISM_Emitter_ActiveShielding"), Lib.HumanReadableRadiation(Math.Abs(radiation)));
+			specs.Add(radiation >= 0.0 ? Local.Emitter_Emitted : Local.Emitter_ActiveShielding, Lib.HumanReadableRadiation(Math.Abs(radiation)));
 			if (ec_rate > double.Epsilon) specs.Add("EC/s", Lib.HumanReadableRate(ec_rate));
 			return specs;
 		}

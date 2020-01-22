@@ -32,6 +32,16 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "User IDE - dev settings", "
 		BuildSystem\UserConfigDevEnv.xml = BuildSystem\UserConfigDevEnv.xml
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Localization", "Localization", "{C39748D3-9B9D-4BC8-9F3D-7894152C140D}"
+	ProjectSection(SolutionItems) = preProject
+		GameData\Kerbalism\Localization\de.cfg = GameData\Kerbalism\Localization\de.cfg
+		GameData\Kerbalism\Localization\en-us.cfg = GameData\Kerbalism\Localization\en-us.cfg
+		GameData\Kerbalism\Localization\es-es.cfg = GameData\Kerbalism\Localization\es-es.cfg
+		GameData\Kerbalism\Localization\pt-br.cfg = GameData\Kerbalism\Localization\pt-br.cfg
+		GameData\Kerbalism\Localization\ru.cfg = GameData\Kerbalism\Localization\ru.cfg
+		GameData\Kerbalism\Localization\zh-cn.cfg = GameData\Kerbalism\Localization\zh-cn.cfg
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -53,6 +63,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{F7A47BB9-1697-4ECA-AECD-9FC4A36B3BBD} = {6AEED929-B0AF-4EB1-82A0-84B98C5BA185}
 		{BFB3522D-10B4-4A7D-80C5-D7BE32C91C0B} = {6AEED929-B0AF-4EB1-82A0-84B98C5BA185}
+		{C39748D3-9B9D-4BC8-9F3D-7894152C140D} = {6AEED929-B0AF-4EB1-82A0-84B98C5BA185}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BE63E70D-469E-4AE2-894C-A7946813FAEE}

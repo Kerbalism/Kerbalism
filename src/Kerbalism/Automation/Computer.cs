@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Collections.Generic;
 using KSP.Localization;
 
@@ -82,7 +82,7 @@ namespace KERBALISM
 				// - unless the script is empty (can happen when being edited)
 				if (script.states.Count > 0 && v.KerbalismData().cfg_script)
 				{
-					Message.Post(Lib.BuildString(Localizer.Format("#KERBALISM_UI_scriptvessel"), " <b>", v.vesselName, "</b>"));
+					Message.Post(Lib.BuildString(Local.UI_scriptvessel, " <b>", v.vesselName, "</b>"));
 				}
 			}
 		}

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using KSP.Localization;
@@ -113,8 +113,8 @@ namespace KERBALISM
 				if (plants_anim != null) plants_anim.Still(growth);
 
 				// update ui
-				string status = issue.Length > 0 ? Lib.BuildString("<color=yellow>", issue, "</color>") : growth > 0.99 ? Localizer.Format("#KERBALISM_TELEMETRY_readytoharvest") : Localizer.Format("#KERBALISM_TELEMETRY_growing");//"ready to harvest""growing"
-				Events["Toggle"].guiName = Lib.StatusToggle(Localizer.Format("#KERBALISM_Greenhouse_Greenhouse"), active ? status : Localizer.Format("#KERBALISM_Greenhouse_disabled"));//"Greenhouse""disabled"
+				string status = issue.Length > 0 ? Lib.BuildString("<color=yellow>", issue, "</color>") : growth > 0.99 ? Local.TELEMETRY_readytoharvest : Local.TELEMETRY_growing;//"ready to harvest""growing"
+				Events["Toggle"].guiName = Lib.StatusToggle(Local.Greenhouse_Greenhouse, active ? status : Local.Greenhouse_disabled);//"Greenhouse""disabled"
 				Fields["status_natural"].guiActive = active && growth < 0.99;
 				Fields["status_artificial"].guiActive = active && growth < 0.99;
 				Fields["status_tta"].guiActive = active && growth < 0.99;
@@ -131,7 +131,7 @@ namespace KERBALISM
 			else
 			{
 				// update ui
-				Events["Toggle"].guiName = Lib.StatusToggle(Localizer.Format("#KERBALISM_Greenhouse_Greenhouse"), active ? Localizer.Format("#KERBALISM_Greenhouse_enabled") : Localizer.Format("#KERBALISM_Greenhouse_disabled"));//"Greenhouse""enabled""disabled"
+				Events["Toggle"].guiName = Lib.StatusToggle(Local.Greenhouse_Greenhouse, active ? Local.Greenhouse_enabled : Local.Greenhouse_disabled);//"Greenhouse""enabled""disabled"
 			}
 		}
 
@@ -159,14 +159,14 @@ namespace KERBALISM
 				artificial = Math.Max(light_tolerance - natural, 0.0);
 
 				// consume EC for the lamps, scaled by artificial light intensity
-				if (artificial > double.Epsilon) ec.Consume(ec_rate * (artificial / light_tolerance) * Kerbalism.elapsed_s, Localizer.Format("#KERBALISM_UI_Greenhouse"));//"greenhouse"
+				if (artificial > double.Epsilon) ec.Consume(ec_rate * (artificial / light_tolerance) * Kerbalism.elapsed_s, ResourceBroker.Greenhouse);
 
 				// reset artificial lighting if there is no ec left
 				// - comparing against amount in previous simulation step
 				if (ec.Amount <= double.Epsilon) artificial = 0.0;
 
 				// execute recipe
-				ResourceRecipe recipe = new ResourceRecipe("greenhouse");
+				ResourceRecipe recipe = new ResourceRecipe(ResourceBroker.Greenhouse);
 				foreach (ModuleResource input in resHandler.inputResources)
 				{
 					// WasteAtmosphere is primary combined input
@@ -242,9 +242,9 @@ namespace KERBALISM
 				// update issues
 				issue =
 				  !inputs ? Lib.BuildString(Localizer.Format("#KERBALISM_Greenhouse_resoucesmissing", missing_res))//"missing <<1>>"
-				: !lighting ? Localizer.Format("#KERBALISM_Greenhouse_issue1")//"insufficient lighting"
-				: !pressure ? Localizer.Format("#KERBALISM_Greenhouse_issue2")//"insufficient pressure"
-				: !radiation ? Localizer.Format("#KERBALISM_Greenhouse_issue3")//"excessive radiation"
+				: !lighting ? Local.Greenhouse_issue1//"insufficient lighting"
+				: !pressure ? Local.Greenhouse_issue2//"insufficient pressure"
+				: !radiation ? Local.Greenhouse_issue3//"excessive radiation"
 				: string.Empty;
 			}
 		}
@@ -268,14 +268,14 @@ namespace KERBALISM
 				double artificial = Math.Max(g.light_tolerance - natural, 0.0);
 
 				// consume EC for the lamps, scaled by artificial light intensity
-				if (artificial > double.Epsilon) ec.Consume(g.ec_rate * (artificial / g.light_tolerance) * elapsed_s, Localizer.Format("#KERBALISM_UI_Greenhouse"));//"greenhouse"
+				if (artificial > double.Epsilon) ec.Consume(g.ec_rate * (artificial / g.light_tolerance) * elapsed_s, ResourceBroker.Greenhouse);
 
 				// reset artificial lighting if there is no ec left
 				// note: comparing against amount in previous simulation step
 				if (ec.Amount <= double.Epsilon) artificial = 0.0;
 
 				// execute recipe
-				ResourceRecipe recipe = new ResourceRecipe("greenhouse");
+				ResourceRecipe recipe = new ResourceRecipe(ResourceBroker.Greenhouse);
 				foreach (ModuleResource input in g.resHandler.inputResources) //recipe.Input(input.name, input.rate * elapsed_s);
 				{
 					// WasteAtmosphere is primary combined input
@@ -352,9 +352,9 @@ namespace KERBALISM
 				// update issues
 				string issue =
 				  !inputs ? Lib.BuildString(Localizer.Format("#KERBALISM_Greenhouse_resoucesmissing", missing_res))//"missing ", missing_res
-				: !lighting ? Localizer.Format("#KERBALISM_Greenhouse_issue1")//"insufficient lighting"
-				: !pressure ? Localizer.Format("#KERBALISM_Greenhouse_issue2")//"insufficient pressure"
-				: !radiation ? Localizer.Format("#KERBALISM_Greenhouse_issue3")//"excessive radiation"
+				: !lighting ? Local.Greenhouse_issue1//"insufficient lighting"
+				: !pressure ? Local.Greenhouse_issue2//"insufficient pressure"
+				: !radiation ? Local.Greenhouse_issue3//"excessive radiation"
 				: string.Empty;
 
 				// update protomodule data
@@ -400,7 +400,7 @@ namespace KERBALISM
 			if (v == null || EVA.IsDead(v)) return;
 
 			// produce reduced quantity of food, proportional to current growth
-			ResourceCache.Produce(vessel, crop_resource, crop_size, Localizer.Format("#KERBALISM_UI_Greenhouse"));//"greenhouse"
+			ResourceCache.Produce(vessel, crop_resource, crop_size, ResourceBroker.Greenhouse);
 
 			// reset growth
 			growth = 0.0;
@@ -428,7 +428,7 @@ namespace KERBALISM
 			double reduced_harvest = crop_size * growth * 0.5;
 
 			// produce reduced quantity of food, proportional to current growth
-			ResourceCache.Produce(vessel, crop_resource, reduced_harvest, Localizer.Format("#KERBALISM_UI_Greenhouse"));//"greenhouse"
+			ResourceCache.Produce(vessel, crop_resource, reduced_harvest, ResourceBroker.Greenhouse);
 
 			// reset growth
 			growth = 0.0;
@@ -448,7 +448,7 @@ namespace KERBALISM
 		public override string GetInfo()
 		{
 			if (!isConfigurable)
-				return Specs().Info(Localizer.Format("#KERBALISM_Greenhouse_desc"));//"Grow crops in space and on the surface of celestial bodies, even far from the sun."
+				return Specs().Info(Local.Greenhouse_desc);//"Grow crops in space and on the surface of celestial bodies, even far from the sun."
 			else
 				return string.Empty;
 		}
@@ -459,14 +459,14 @@ namespace KERBALISM
 		{
 			Specifics specs = new Specifics();
 
-			specs.Add(Localizer.Format("#KERBALISM_Greenhouse_info1"), Lib.HumanReadableAmount(crop_size, " " + crop_resource));//"Harvest size"
-			specs.Add(Localizer.Format("#KERBALISM_Greenhouse_info2"), Lib.HumanReadableDuration(1.0 / crop_rate));//"Harvest time"
-			specs.Add(Localizer.Format("#KERBALISM_Greenhouse_info3"), Lib.HumanReadableFlux(light_tolerance));//"Lighting tolerance"
-			if (pressure_tolerance > double.Epsilon) specs.Add(Localizer.Format("#KERBALISM_Greenhouse_info4"), Lib.HumanReadablePressure(Sim.PressureAtSeaLevel() * pressure_tolerance));//"Pressure tolerance"
-			if (radiation_tolerance > double.Epsilon) specs.Add(Localizer.Format("#KERBALISM_Greenhouse_info5"), Lib.HumanReadableRadiation(radiation_tolerance));//"Radiation tolerance"
-			specs.Add(Localizer.Format("#KERBALISM_Greenhouse_info6"), Lib.HumanReadableRate(ec_rate));//"Lamps EC rate"
+			specs.Add(Local.Greenhouse_info1, Lib.HumanReadableAmount(crop_size, " " + crop_resource));//"Harvest size"
+			specs.Add(Local.Greenhouse_info2, Lib.HumanReadableDuration(1.0 / crop_rate));//"Harvest time"
+			specs.Add(Local.Greenhouse_info3, Lib.HumanReadableFlux(light_tolerance));//"Lighting tolerance"
+			if (pressure_tolerance > double.Epsilon) specs.Add(Local.Greenhouse_info4, Lib.HumanReadablePressure(Sim.PressureAtSeaLevel() * pressure_tolerance));//"Pressure tolerance"
+			if (radiation_tolerance > double.Epsilon) specs.Add(Local.Greenhouse_info5, Lib.HumanReadableRadiation(radiation_tolerance));//"Radiation tolerance"
+			specs.Add(Local.Greenhouse_info6, Lib.HumanReadableRate(ec_rate));//"Lamps EC rate"
 			specs.Add(string.Empty);
-			specs.Add("<color=#00ffff>" + Localizer.Format("#KERBALISM_Greenhouse_info7") + "</color>");//Required resources
+			specs.Add("<color=#00ffff>" + Local.Greenhouse_info7 + "</color>");//Required resources
 
 			// do we have combined WasteAtmosphere and CO2
 			Set_WACO2();
@@ -480,15 +480,15 @@ namespace KERBALISM
 					ModuleResource sec;
 					if (input.name == "WasteAtmosphere") sec = resHandler.inputResources.Find(x => x.name.Contains("CarbonDioxide"));
 					else sec = resHandler.inputResources.Find(x => x.name.Contains("WasteAtmosphere"));
-					specs.Add(Localizer.Format("#KERBALISM_Greenhouse_CarbonDioxide"), Lib.BuildString("<color=#ffaa00>", Lib.HumanReadableRate(input.rate + sec.rate), "</color>"));//"CarbonDioxide"
-					specs.Add(Localizer.Format("#KERBALISM_Greenhouse_CarbonDioxide_desc"));//"Crops can also use the CO2 in the atmosphere without a scrubber."
+					specs.Add(Local.Greenhouse_CarbonDioxide, Lib.BuildString("<color=#ffaa00>", Lib.HumanReadableRate(input.rate + sec.rate), "</color>"));//"CarbonDioxide"
+					specs.Add(Local.Greenhouse_CarbonDioxide_desc);//"Crops can also use the CO2 in the atmosphere without a scrubber."
 					dis_WACO2 = true;
 				}
 				else
 					specs.Add(input.name, Lib.BuildString("<color=#ffaa00>", Lib.HumanReadableRate(input.rate), "</color>"));
 			}
 			specs.Add(string.Empty);
-			specs.Add("<color=#00ffff>"+Localizer.Format("#KERBALISM_Greenhouse_Byproducts") +"</color>");//By-products
+			specs.Add("<color=#00ffff>"+Local.Greenhouse_Byproducts +"</color>");//By-products
 			foreach (ModuleResource output in resHandler.outputResources)
 			{
 				specs.Add(output.name, Lib.BuildString("<color=#00ff00>", Lib.HumanReadableRate(output.rate), "</color>"));
@@ -584,8 +584,8 @@ namespace KERBALISM
 		}
 
 		// module info support
-		public string GetModuleTitle() { return "<size=1><color=#00000000>00</color></size>Greenhouse"; } // attempt to display at the top//""+Localizer.Format("#KERBALISM_Greenhouse")
-		public override string GetModuleDisplayName() { return "<size=1><color=#00000000>00</color></size>"+Localizer.Format("#KERBALISM_Greenhouse"); } // Attempt to display at top of tooltip//"Greenhouse"
+		public string GetModuleTitle() { return "<size=1><color=#00000000>00</color></size>Greenhouse"; } // attempt to display at the top//""+Local.Greenhouse
+		public override string GetModuleDisplayName() { return "<size=1><color=#00000000>00</color></size>"+Local.Greenhouse; } // Attempt to display at top of tooltip//"Greenhouse"
 		public string GetPrimaryField() { return String.Empty; }
 		public Callback<Rect> GetDrawModulePanelCallback() { return null; }
 	}

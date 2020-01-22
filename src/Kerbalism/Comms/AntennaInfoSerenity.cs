@@ -1,4 +1,4 @@
-﻿#if !KSP15_16
+#if !KSP15_16
 using System.Collections.Generic;
 using System;
 using KSP.Localization;

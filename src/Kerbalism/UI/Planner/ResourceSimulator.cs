@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Reflection;
 using System.Collections.Generic;
@@ -322,7 +322,7 @@ namespace KERBALISM.Planner
 			else if (rate > double.Epsilon)
 			{
 				// - rules always dump excess overboard (because it is waste)
-				SimulatedRecipe recipe = new SimulatedRecipe(p, r.name);
+				SimulatedRecipe recipe = new SimulatedRecipe(p, r.title);
 				recipe.Input(r.input, rate * k);
 				recipe.Output(r.output, rate * k * r.ratio, true);
 				recipes.Add(recipe);
@@ -341,7 +341,7 @@ namespace KERBALISM.Planner
 		private void Process_process_inner_body(double k, Part p, Process pr, EnvironmentAnalyzer env, VesselAnalyzer va)
 		{
 			// prepare recipe
-			SimulatedRecipe recipe = new SimulatedRecipe(p, pr.name);
+			SimulatedRecipe recipe = new SimulatedRecipe(p, pr.title);
 			foreach (KeyValuePair<string, double> input in pr.inputs)
 			{
 				recipe.Input(input.Key, input.Value * k);

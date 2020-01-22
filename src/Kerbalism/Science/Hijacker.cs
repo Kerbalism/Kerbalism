@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using KSP.UI.Screens.Flight.Dialogs;
@@ -76,7 +76,7 @@ namespace KERBALISM
 						// inform the user
 						Message.Post(
 							Lib.BuildString("<b>", meta.subjectData.FullTitle, "</b> recorded"),
-							!meta.is_rerunnable ? Localizer.Format("#KERBALISM_Science_inoperable") : string.Empty
+							!meta.is_rerunnable ? Local.Science_inoperable : string.Empty
 						);
 					}
 
@@ -232,7 +232,7 @@ namespace KERBALISM
 					// inform the user
 					Message.Post(
 						Lib.BuildString("<b>", meta.subjectData.FullTitle, "</b> recorded"),
-						!meta.is_rerunnable ? Localizer.Format("#KERBALISM_Science_inoperable") : string.Empty
+						!meta.is_rerunnable ? Local.Science_inoperable : string.Empty
 					);
 				}
 			}

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using KSP.Localization;
@@ -13,7 +13,7 @@ namespace KERBALISM
 		public override string Name => "generator";
 
 		public override string Status
-			=> module.isAlwaysActive ? Localizer.Format("#KERBALISM_Generic_ALWAYSON") : Lib.Color(module.generatorIsActive, Localizer.Format("#KERBALISM_Generic_ON"), Lib.Kolor.Green, Localizer.Format("#KERBALISM_Generic_OFF"),  Lib.Kolor.Yellow);
+			=> module.isAlwaysActive ? Local.Generic_ALWAYSON : Lib.Color(module.generatorIsActive, Local.Generic_ON, Lib.Kolor.Green, Local.Generic_OFF,  Lib.Kolor.Yellow);
 
 		public override void Ctrl(bool value)
 		{
@@ -42,9 +42,9 @@ namespace KERBALISM
 		{
 			get
 			{
-				if (prefab.isAlwaysActive) return Localizer.Format("#KERBALISM_Generic_ALWAYSON");
+				if (prefab.isAlwaysActive) return Local.Generic_ALWAYSON;
 				bool is_on = Lib.Proto.GetBool(protoModule, "generatorIsActive");
-				return Lib.Color(is_on, Localizer.Format("#KERBALISM_Generic_ON"), Lib.Kolor.Green, Localizer.Format("#KERBALISM_Generic_OFF"), Lib.Kolor.Yellow);
+				return Lib.Color(is_on, Local.Generic_ON, Lib.Kolor.Green, Local.Generic_OFF, Lib.Kolor.Yellow);
 			}
 		}
 

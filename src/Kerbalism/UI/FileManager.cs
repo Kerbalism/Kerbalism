@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using KSP.Localization;
@@ -29,7 +29,7 @@ namespace KERBALISM
 			if (!vd.IsSimulated) return;
 
 			// set metadata
-			p.Title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(40)), " ", Lib.Color(Localizer.Format("#KERBALISM_FILEMANAGER_title"), Lib.Kolor.LightGrey)));//"FILE MANAGER"
+			p.Title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(40)), " ", Lib.Color(Local.FILEMANAGER_title, Lib.Kolor.LightGrey)));//"FILE MANAGER"
 			p.Width(Styles.ScaleWidthFloat(465.0f));
 			p.paneltype = Panel.PanelType.data;
 
@@ -76,7 +76,7 @@ namespace KERBALISM
 
 			if(filesCount > 0 || totalDataCapacity > 0)
 			{
-				var title = Localizer.Format("#KERBALISM_FILEMANAGER_DataCapacity") + " " + Lib.HumanReadableDataSize(usedDataCapacity);//"DATA " 
+				var title = Local.FILEMANAGER_DataCapacity + " " + Lib.HumanReadableDataSize(usedDataCapacity);//"DATA " 
 				if (!unlimitedData) title += Localizer.Format("#KERBALISM_FILEMANAGER_DataAvailable", Lib.HumanReadablePerc((totalDataCapacity - usedDataCapacity) / totalDataCapacity));//Lib.BuildString(" (", Lib.HumanReadablePerc((totalDataCapacity - usedDataCapacity) / totalDataCapacity), " available)");
 				p.AddSection(title);
 
@@ -88,13 +88,13 @@ namespace KERBALISM
 					}
 				}
 
-				if(filesCount == 0) p.AddContent("<i>"+Localizer.Format("#KERBALISM_FILEMANAGER_nofiles") +"</i>", string.Empty);//no files
+				if(filesCount == 0) p.AddContent("<i>"+Local.FILEMANAGER_nofiles +"</i>", string.Empty);//no files
 			}
 
 			if(samplesCount > 0 || totalSlots > 0)
 			{
 				var title = Localizer.Format("#KERBALISM_FILEMANAGER_SAMPLESMass", Lib.HumanReadableMass(totalMass)) + " " + Lib.HumanReadableSampleSize(usedSlots);//"SAMPLES " + 
-				if (totalSlots > 0 && !unlimitedSamples) title += ", " + Lib.HumanReadableSampleSize(totalSlots) + " "+Localizer.Format("#KERBALISM_FILEMANAGER_SAMPLESAvailable");//available
+				if (totalSlots > 0 && !unlimitedSamples) title += ", " + Lib.HumanReadableSampleSize(totalSlots) + " "+Local.FILEMANAGER_SAMPLESAvailable;//available
 				p.AddSection(title);
 
 				foreach (var drive in drives)
@@ -105,7 +105,7 @@ namespace KERBALISM
 					}
 				}
 
-				if (samplesCount == 0) p.AddContent("<i>"+Localizer.Format("#KERBALISM_FILEMANAGER_nosamples")+"</i>", string.Empty);//no samples
+				if (samplesCount == 0) p.AddContent("<i>"+Local.FILEMANAGER_nosamples+"</i>", string.Empty);//no samples
 			}
 		}
 
@@ -137,7 +137,7 @@ namespace KERBALISM
 					exp_tooltip = Lib.Color(Lib.BuildString(exp_tooltip, "\n", Localizer.Format("#KERBALISM_FILEMANAGER_TransmittingRate", Lib.HumanReadableDataRate(file.transmitRate))), Lib.Kolor.Cyan);//Transmitting at <<1>>
 			}
 			else if (v.KerbalismData().Connection.rate > 0.0)
-				exp_tooltip = Lib.BuildString(exp_tooltip, "\n", Localizer.Format("#KERBALISM_FILEMANAGER_Transmitduration"), "<i>", Lib.HumanReadableDuration(file.size / v.KerbalismData().Connection.rate), "</i>");//Transmit duration : 
+				exp_tooltip = Lib.BuildString(exp_tooltip, "\n", Local.FILEMANAGER_Transmitduration, "<i>", Lib.HumanReadableDuration(file.size / v.KerbalismData().Connection.rate), "</i>");//Transmit duration : 
 			if (!string.IsNullOrEmpty(file.resultText))
 				exp_tooltip = Lib.BuildString(exp_tooltip, "\n", Lib.WordWrapAtLength(file.resultText, 50));
 
@@ -157,13 +157,13 @@ namespace KERBALISM
 			p.AddContent(exp_label, size, exp_tooltip, (Action)null, () => Highlighter.Set(partId, Color.cyan));
 
 			bool send = drive.GetFileSend(file.subjectData.Id);
-			p.AddRightIcon(send ? Textures.send_cyan : Textures.send_black, Localizer.Format("#KERBALISM_FILEMANAGER_send"), () => { drive.Send(file.subjectData.Id, !send); });//"Flag the file for transmission to <b>DSN</b>"
-			p.AddRightIcon(Textures.toggle_red, Localizer.Format("#KERBALISM_FILEMANAGER_Delete"), () =>//"Delete the file"
+			p.AddRightIcon(send ? Textures.send_cyan : Textures.send_black, Local.FILEMANAGER_send, () => { drive.Send(file.subjectData.Id, !send); });//"Flag the file for transmission to <b>DSN</b>"
+			p.AddRightIcon(Textures.toggle_red, Local.FILEMANAGER_Delete, () =>//"Delete the file"
 				{
-					Lib.Popup(Localizer.Format("#KERBALISM_FILEMANAGER_Warning_title"),//"Warning!"
+					Lib.Popup(Local.FILEMANAGER_Warning_title,//"Warning!"
 						Localizer.Format("#KERBALISM_FILEMANAGER_DeleteConfirm", file.subjectData.FullTitle),//Lib.BuildString(, "?"),//"Do you really want to delete <<1>>", 
-				        new DialogGUIButton(Localizer.Format("#KERBALISM_FILEMANAGER_DeleteConfirm_button1"), () => drive.Delete_file(file.subjectData)),//"Delete it"
-						new DialogGUIButton(Localizer.Format("#KERBALISM_FILEMANAGER_DeleteConfirm_button2"), () => { }));//"Keep it"
+				        new DialogGUIButton(Local.FILEMANAGER_DeleteConfirm_button1, () => drive.Delete_file(file.subjectData)),//"Delete it"
+						new DialogGUIButton(Local.FILEMANAGER_DeleteConfirm_button2, () => { }));//"Keep it"
 				}
 			);
 		}
@@ -191,13 +191,13 @@ namespace KERBALISM
 			if (!string.IsNullOrEmpty(sample.resultText)) exp_tooltip = Lib.BuildString(exp_tooltip, "\n", Lib.WordWrapAtLength(sample.resultText, 50));
 
 			p.AddContent(exp_label, Lib.HumanReadableSampleSize(sample.size), exp_tooltip, (Action)null, () => Highlighter.Set(partId, Color.cyan));
-			p.AddRightIcon(sample.analyze ? Textures.lab_cyan : Textures.lab_black, Localizer.Format("#KERBALISM_FILEMANAGER_analysis"), () => { sample.analyze = !sample.analyze; });//"Flag the file for analysis in a <b>laboratory</b>"
-			p.AddRightIcon(Textures.toggle_red, Localizer.Format("#KERBALISM_FILEMANAGER_Dumpsample"), () =>//"Dump the sample"
+			p.AddRightIcon(sample.analyze ? Textures.lab_cyan : Textures.lab_black, Local.FILEMANAGER_analysis, () => { sample.analyze = !sample.analyze; });//"Flag the file for analysis in a <b>laboratory</b>"
+			p.AddRightIcon(Textures.toggle_red, Local.FILEMANAGER_Dumpsample, () =>//"Dump the sample"
 				{
-					Lib.Popup(Localizer.Format("#KERBALISM_FILEMANAGER_Warning_title"),//"Warning!"
+					Lib.Popup(Local.FILEMANAGER_Warning_title,//"Warning!"
 						Localizer.Format("#KERBALISM_FILEMANAGER_DumpConfirm", sample.subjectData.FullTitle),//"Do you really want to dump <<1>>?", 
-						new DialogGUIButton(Localizer.Format("#KERBALISM_FILEMANAGER_DumpConfirm_button1"), () => drive.Delete_sample(sample.subjectData)),//"Dump it"
-							  new DialogGUIButton(Localizer.Format("#KERBALISM_FILEMANAGER_DumpConfirm_button2"), () => { }));//"Keep it"
+						new DialogGUIButton(Local.FILEMANAGER_DumpConfirm_button1, () => drive.Delete_sample(sample.subjectData)),//"Dump it"
+							  new DialogGUIButton(Local.FILEMANAGER_DumpConfirm_button2, () => { }));//"Keep it"
 				}
 			);
 		}

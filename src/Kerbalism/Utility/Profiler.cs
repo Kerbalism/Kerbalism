@@ -1,4 +1,4 @@
-﻿#if DEBUG_PROFILER
+#if DEBUG_PROFILER
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;

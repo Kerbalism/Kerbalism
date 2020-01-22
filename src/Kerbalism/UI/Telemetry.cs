@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
@@ -25,7 +25,7 @@ namespace KERBALISM
 			if (!vd.IsSimulated) return;
 
 			// set metadata
-			p.Title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(20)), " ", Lib.Color(Localizer.Format("#KERBALISM_TELEMETRY_title"), Lib.Kolor.LightGrey)));//"TELEMETRY"
+			p.Title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(20)), " ", Lib.Color(Local.TELEMETRY_title, Lib.Kolor.LightGrey)));//"TELEMETRY"
 			p.Width(Styles.ScaleWidthFloat(355.0f));
 			p.paneltype = Panel.PanelType.telemetry;
 
@@ -47,7 +47,7 @@ namespace KERBALISM
 			Render_environment(p, v, vd);
 
 			// collapse eva kerbal sections into one
-			if (v.isEVA) p.Collapse(Localizer.Format("#KERBALISM_TELEMETRY_EVASUIT"));//"EVA SUIT"
+			if (v.isEVA) p.Collapse(Local.TELEMETRY_EVASUIT);//"EVA SUIT"
 		}
 
 
@@ -74,20 +74,20 @@ namespace KERBALISM
 			}
 			readings.Remove(string.Empty);
 
-			p.AddSection(Localizer.Format("#KERBALISM_TELEMETRY_ENVIRONMENT"));//"ENVIRONMENT"
+			p.AddSection(Local.TELEMETRY_ENVIRONMENT);//"ENVIRONMENT"
 
 			if (vd.SolarPanelsAverageExposure >= 0.0)
 			{
 				var exposureString = vd.SolarPanelsAverageExposure.ToString("P1");
 				if (vd.SolarPanelsAverageExposure < 0.2) exposureString = Lib.Color(exposureString, Lib.Kolor.Orange);
-				p.AddContent(Localizer.Format("#KERBALISM_TELEMETRY_SolarPanelsAverageExposure"), exposureString, "<b>"+Localizer.Format("#KERBALISM_TELEMETRY_Exposureignoringbodiesocclusion") +"</b>\n<i>"+Localizer.Format("#KERBALISM_TELEMETRY_Exposureignoringbodiesocclusion_desc") +"</i>");//"solar panels average exposure""Exposure ignoring bodies occlusion""Won't change on unloaded vessels\nMake sure to optimize it before switching
+				p.AddContent(Local.TELEMETRY_SolarPanelsAverageExposure, exposureString, "<b>"+Local.TELEMETRY_Exposureignoringbodiesocclusion +"</b>\n<i>"+Local.TELEMETRY_Exposureignoringbodiesocclusion_desc +"</i>");//"solar panels average exposure""Exposure ignoring bodies occlusion""Won't change on unloaded vessels\nMake sure to optimize it before switching
 			}
 
 			foreach (string type in readings)
 			{
 				p.AddContent(type.ToLower().Replace('_', ' '), Sensor.Telemetry_content(v, vd, type), Sensor.Telemetry_tooltip(v, vd, type));
 			}
-			if (readings.Count == 0) p.AddContent("<i>"+Localizer.Format("#KERBALISM_TELEMETRY_nosensorsinstalled") +"</i>");//no sensors installed
+			if (readings.Count == 0) p.AddContent("<i>"+Local.TELEMETRY_nosensorsinstalled +"</i>");//no sensors installed
 		}
 
 		static void Render_habitat(Panel p, Vessel v, VesselData vd)
@@ -99,17 +99,17 @@ namespace KERBALISM
 			if (vd.CrewCount == 0) return;
 
 			// render panel, add some content based on enabled features
-			p.AddSection(Localizer.Format("#KERBALISM_TELEMETRY_HABITAT"));//"HABITAT"
-			if (Features.Poisoning) p.AddContent(Localizer.Format("#KERBALISM_TELEMETRY_co2level"), Lib.Color(vd.Poisoning > Settings.PoisoningThreshold, Lib.HumanReadablePerc(vd.Poisoning, "F2"), Lib.Kolor.Yellow));//"co2 level"
-			if (Features.Radiation && v.isEVA) p.AddContent(Localizer.Format("#KERBALISM_TELEMETRY_radiation"), Lib.HumanReadableRadiation(vd.EnvHabitatRadiation));//"radiation"
+			p.AddSection(Local.TELEMETRY_HABITAT);//"HABITAT"
+			if (Features.Poisoning) p.AddContent(Local.TELEMETRY_co2level, Lib.Color(vd.Poisoning > Settings.PoisoningThreshold, Lib.HumanReadablePerc(vd.Poisoning, "F2"), Lib.Kolor.Yellow));//"co2 level"
+			if (Features.Radiation && v.isEVA) p.AddContent(Local.TELEMETRY_radiation, Lib.HumanReadableRadiation(vd.EnvHabitatRadiation));//"radiation"
 
 			if (!v.isEVA)
 			{
-				if (Features.Pressure) p.AddContent(Localizer.Format("#KERBALISM_TELEMETRY_pressure"), Lib.HumanReadablePressure(vd.Pressure * Sim.PressureAtSeaLevel()));//"pressure"
-				if (Features.Shielding) p.AddContent(Localizer.Format("#KERBALISM_TELEMETRY_shielding"), Habitat.Shielding_to_string(vd.Shielding));//"shielding"
-				if (Features.LivingSpace) p.AddContent(Localizer.Format("#KERBALISM_TELEMETRY_livingspace"), Habitat.Living_space_to_string(vd.LivingSpace));//"living space"
-				if (Features.Comfort) p.AddContent(Localizer.Format("#KERBALISM_TELEMETRY_comfort"), vd.Comforts.Summary(), vd.Comforts.Tooltip());//"comfort"
-				if (Features.Pressure) p.AddContent(Localizer.Format("#KERBALISM_TELEMETRY_EVAsavailable"), vd.EnvBreathable ? Localizer.Format("#KERBALISM_TELEMETRY_EnvBreathable") : Lib.HumanReadableInteger(vd.Evas), vd.EnvBreathable ? Localizer.Format("#KERBALISM_TELEMETRY_Breathableatm") : Localizer.Format("#KERBALISM_TELEMETRY_approx"));//"EVA's available""infinite""breathable atmosphere""approx (derived from stored N2)"
+				if (Features.Pressure) p.AddContent(Local.TELEMETRY_pressure, Lib.HumanReadablePressure(vd.Pressure * Sim.PressureAtSeaLevel()));//"pressure"
+				if (Features.Shielding) p.AddContent(Local.TELEMETRY_shielding, Habitat.Shielding_to_string(vd.Shielding));//"shielding"
+				if (Features.LivingSpace) p.AddContent(Local.TELEMETRY_livingspace, Habitat.Living_space_to_string(vd.LivingSpace));//"living space"
+				if (Features.Comfort) p.AddContent(Local.TELEMETRY_comfort, vd.Comforts.Summary(), vd.Comforts.Tooltip());//"comfort"
+				if (Features.Pressure) p.AddContent(Local.TELEMETRY_EVAsavailable, vd.EnvBreathable ? Local.TELEMETRY_EnvBreathable : Lib.HumanReadableInteger(vd.Evas), vd.EnvBreathable ? Local.TELEMETRY_Breathableatm : Local.TELEMETRY_approx);//"EVA's available""infinite""breathable atmosphere""approx (derived from stored N2)"
 			}
 		}
 
@@ -118,14 +118,14 @@ namespace KERBALISM
 			// don't show env panel in eva kerbals
 			if (v.isEVA) return;
 
-			p.AddSection(Localizer.Format("#KERBALISM_TELEMETRY_TRANSMISSION"));//"TRANSMISSION"
+			p.AddSection(Local.TELEMETRY_TRANSMISSION);//"TRANSMISSION"
 
 			// comm status
 			if (vd.filesTransmitted.Count > 0)
 			{
 				double transmitRate = 0.0;
 				StringBuilder tooltip = new StringBuilder();
-				tooltip.Append(string.Format("<align=left /><b>{0,-15}\t{1}</b>\n", Localizer.Format("#KERBALISM_TELEMETRY_TRANSMISSION_rate"), Localizer.Format("#KERBALISM_TELEMETRY_filetransmitted")));//"rate""file transmitted"
+				tooltip.Append(string.Format("<align=left /><b>{0,-15}\t{1}</b>\n", Local.TELEMETRY_TRANSMISSION_rate, Local.TELEMETRY_filetransmitted));//"rate""file transmitted"
 				for (int i = 0; i < vd.filesTransmitted.Count; i++)
 				{
 					transmitRate += vd.filesTransmitted[i].transmitRate;
@@ -133,17 +133,17 @@ namespace KERBALISM
 					if (i < vd.filesTransmitted.Count - 1) tooltip.Append("\n");
 				}
 				
-				p.AddContent(Localizer.Format("#KERBALISM_TELEMETRY_transmitting"), Lib.BuildString(vd.filesTransmitted.Count.ToString(), vd.filesTransmitted.Count > 1 ? " files at " : " file at ",  Lib.HumanReadableDataRate(transmitRate)), tooltip.ToString());//"transmitting"
+				p.AddContent(Local.TELEMETRY_transmitting, Lib.BuildString(vd.filesTransmitted.Count.ToString(), vd.filesTransmitted.Count > 1 ? " files at " : " file at ",  Lib.HumanReadableDataRate(transmitRate)), tooltip.ToString());//"transmitting"
 			}
 			else
 			{
-				p.AddContent(Localizer.Format("#KERBALISM_TELEMETRY_maxtransmissionrate"), Lib.HumanReadableDataRate(vd.Connection.rate));//"max transmission rate"
+				p.AddContent(Local.TELEMETRY_maxtransmissionrate, Lib.HumanReadableDataRate(vd.Connection.rate));//"max transmission rate"
 			}
 
-			p.AddContent(Localizer.Format("#KERBALISM_TELEMETRY_target"), vd.Connection.target_name);//"target"
+			p.AddContent(Local.TELEMETRY_target, vd.Connection.target_name);//"target"
 
 			// total science gained by vessel
-			p.AddContent(Localizer.Format("#KERBALISM_TELEMETRY_totalsciencetransmitted"), Lib.HumanReadableScience(vd.scienceTransmitted, false));//"total science transmitted"
+			p.AddContent(Local.TELEMETRY_totalsciencetransmitted, Lib.HumanReadableScience(vd.scienceTransmitted, false));//"total science transmitted"
 		}
 
 		static void Render_supplies(Panel p, Vessel v, VesselData vd, VesselResources resources)
@@ -159,7 +159,7 @@ namespace KERBALISM
 				if (res.Capacity <= 1e-10) continue;
 
 				// render panel title, if not done already
-				if (supplies == 0) p.AddSection(Localizer.Format("#KERBALISM_TELEMETRY_SUPPLIES"));//"SUPPLIES"
+				if (supplies == 0) p.AddSection(Local.TELEMETRY_SUPPLIES);//"SUPPLIES"
 
 				// determine label
 				var resource = PartResourceLibrary.Instance.resourceDefinitions[supply.resource];
@@ -178,20 +178,20 @@ namespace KERBALISM
 				else
 				{
 					sb.Append("<b>");
-					sb.Append(Localizer.Format("#KERBALISM_TELEMETRY_nochange"));//no change
+					sb.Append(Local.TELEMETRY_nochange);//no change
 					sb.Append("</b>");
 				}
 
 				if (res.AverageRate < 0.0 && res.Level < 0.0001)
 				{
 					sb.Append(" <i>");
-					sb.Append(Localizer.Format("#KERBALISM_TELEMETRY_empty"));//(empty)
+					sb.Append(Local.TELEMETRY_empty);//(empty)
 					sb.Append("</i>");
 				}
 				else if (res.AverageRate > 0.0 && res.Level > 0.9999)
 				{
 					sb.Append(" <i>");
-					sb.Append(Localizer.Format("#KERBALISM_TELEMETRY_full"));//(full)
+					sb.Append(Local.TELEMETRY_full);//(full)
 					sb.Append("</i>");
 
 				}
@@ -205,11 +205,11 @@ namespace KERBALISM
 				sb.Append(res.Level.ToString("P0"));
 				sb.Append(")");
 
-				List<SupplyData.ResourceBroker> brokers = vd.Supply(supply.resource).ResourceBrokers;
+				List<SupplyData.ResourceBrokerRate> brokers = vd.Supply(supply.resource).ResourceBrokers;
 				if (brokers.Count > 0)
 				{
 					sb.Append("\n<b>------------    \t------------</b>");
-					foreach (SupplyData.ResourceBroker rb in brokers)
+					foreach (SupplyData.ResourceBrokerRate rb in brokers)
 					{
 						sb.Append("\n");
 						sb.Append(Lib.Color(rb.rate > 0.0,
@@ -217,7 +217,7 @@ namespace KERBALISM
 							Lib.BuildString("-", Lib.HumanReadableRate(Math.Abs(rb.rate)), "   "), Lib.Kolor.NegRate, // spaces to mitigate alignement issues
 							true)); 
 						sb.Append("\t");
-						sb.Append(rb.name);
+						sb.Append(rb.broker.Title);
 					}
 				}
 
@@ -236,7 +236,7 @@ namespace KERBALISM
 			if (crew.Count == 0 || Profile.rules.Count == 0) return;
 
 			// panel section
-			p.AddSection(Localizer.Format("#KERBALISM_TELEMETRY_VITALS"));//"VITALS"
+			p.AddSection(Local.TELEMETRY_VITALS);//"VITALS"
 
 			// for each crew
 			foreach (ProtoCrewMember kerbal in crew)
@@ -256,7 +256,7 @@ namespace KERBALISM
 					RuleData rd = kd.Rule(r.name);
 
 					// add to the tooltip
-					tooltips.Add(Lib.BuildString("<b>", Lib.HumanReadablePerc(rd.problem / r.fatal_threshold), "</b>\t", Lib.SpacesOnCaps(r.name).ToLower()));
+					tooltips.Add(Lib.BuildString("<b>", Lib.HumanReadablePerc(rd.problem / r.fatal_threshold), "</b>\t", r.title));
 
 					// analyze issue
 					if (rd.problem > r.danger_threshold)
@@ -276,7 +276,7 @@ namespace KERBALISM
 				string name = kerbal.name.ToLower().Replace(" kerman", string.Empty);
 
 				// render selectable title
-				p.AddContent(Lib.Ellipsis(name, Styles.ScaleStringLength(30)), kd.disabled ? Lib.Color(Localizer.Format("#KERBALISM_TELEMETRY_HYBERNATED"), Lib.Kolor.Cyan) : string.Empty);//"HYBERNATED"
+				p.AddContent(Lib.Ellipsis(name, Styles.ScaleStringLength(30)), kd.disabled ? Lib.Color(Local.TELEMETRY_HYBERNATED, Lib.Kolor.Cyan) : string.Empty);//"HYBERNATED"
 				p.AddRightIcon(health_severity == 0 ? Textures.health_white : health_severity == 1 ? Textures.health_yellow : Textures.health_red, tooltip);
 				p.AddRightIcon(stress_severity == 0 ? Textures.brain_white : stress_severity == 1 ? Textures.brain_yellow : Textures.brain_red, tooltip);
 			}
@@ -288,7 +288,7 @@ namespace KERBALISM
 			if (vd.Greenhouses.Count == 0) return;
 
 			// panel section
-			p.AddSection(Localizer.Format("#KERBALISM_TELEMETRY_GREENHOUSE"));//"GREENHOUSE"
+			p.AddSection(Local.TELEMETRY_GREENHOUSE);//"GREENHOUSE"
 
 			// for each greenhouse
 			for (int i = 0; i < vd.Greenhouses.Count; ++i)
@@ -299,21 +299,21 @@ namespace KERBALISM
 				string state = greenhouse.issue.Length > 0
 				  ? Lib.Color(greenhouse.issue, Lib.Kolor.Yellow)
 				  : greenhouse.growth >= 0.99
-				  ? Lib.Color(Localizer.Format("#KERBALISM_TELEMETRY_readytoharvest"), Lib.Kolor.Green)//"ready to harvest"
-				  : Localizer.Format("#KERBALISM_TELEMETRY_growing");//"growing"
+				  ? Lib.Color(Local.TELEMETRY_readytoharvest, Lib.Kolor.Green)//"ready to harvest"
+				  : Local.TELEMETRY_growing;//"growing"
 
 				// tooltip with summary
 				string tooltip = greenhouse.growth < 0.99 ? Lib.BuildString
 				(
 				  "<align=left />",
-				  Localizer.Format("#KERBALISM_TELEMETRY_timetoharvest"), "\t<b>", Lib.HumanReadableDuration(greenhouse.tta), "</b>\n",//"time to harvest"
-				  Localizer.Format("#KERBALISM_TELEMETRY_growth"), "\t\t<b>", Lib.HumanReadablePerc(greenhouse.growth), "</b>\n",//"growth"
-				  Localizer.Format("#KERBALISM_TELEMETRY_naturallighting"), "\t<b>", Lib.HumanReadableFlux(greenhouse.natural), "</b>\n",//"natural lighting"
-				  Localizer.Format("#KERBALISM_TELEMETRY_artificiallighting"), "\t<b>", Lib.HumanReadableFlux(greenhouse.artificial), "</b>"//"artificial lighting"
+				  Local.TELEMETRY_timetoharvest, "\t<b>", Lib.HumanReadableDuration(greenhouse.tta), "</b>\n",//"time to harvest"
+				  Local.TELEMETRY_growth, "\t\t<b>", Lib.HumanReadablePerc(greenhouse.growth), "</b>\n",//"growth"
+				  Local.TELEMETRY_naturallighting, "\t<b>", Lib.HumanReadableFlux(greenhouse.natural), "</b>\n",//"natural lighting"
+				  Local.TELEMETRY_artificiallighting, "\t<b>", Lib.HumanReadableFlux(greenhouse.artificial), "</b>"//"artificial lighting"
 				) : string.Empty;
 
 				// render it
-				p.AddContent(Lib.BuildString(Localizer.Format("#KERBALISM_TELEMETRY_crop"), " #", (i + 1).ToString()), state, tooltip);//"crop"
+				p.AddContent(Lib.BuildString(Local.TELEMETRY_crop, " #", (i + 1).ToString()), state, tooltip);//"crop"
 
 				// issues too, why not
 				p.AddRightIcon(greenhouse.issue.Length == 0 ? Textures.plant_white : Textures.plant_yellow, tooltip);

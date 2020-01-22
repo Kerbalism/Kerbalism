@@ -562,7 +562,7 @@ namespace KERBALISM
                         show_pause = false;
 
                         // tell the user and do nothing
-                        Message.Post("<color=#00ffff>"+Localizer.Format("#KERBALISM_Fittingparticles_msg") +"<b></b></color>", Localizer.Format("#KERBALISM_ComebackLater_msg"));//"Fitting particles to signed distance fields""Come back in a minute"
+                        Message.Post("<color=#00ffff>"+Local.Fittingparticles_msg +"<b></b></color>", Local.ComebackLater_msg);//"Fitting particles to signed distance fields""Come back in a minute"
                         return;
                     }
 
@@ -963,7 +963,7 @@ namespace KERBALISM
                 // show the message
                 if (inside_belt && !vd.msg_belt && must_warn)
                 {
-					Message.Post(Localizer.Format("#KERBALISM_BeltWarnings_msg", "<b>" + v.vesselName + "</b>", "<i>" + v.mainBody.bodyName + "</i>"), Localizer.Format("#KERBALISM_BeltWarnings_msgSubtext"));//<<1>> is crossing <<2>> radiation belt"Exposed to extreme radiation"
+					Message.Post(Localizer.Format("#KERBALISM_BeltWarnings_msg", "<b>" + v.vesselName + "</b>", "<i>" + v.mainBody.bodyName + "</i>"), Local.BeltWarnings_msgSubtext);//<<1>> is crossing <<2>> radiation belt"Exposed to extreme radiation"
                     vd.msg_belt = true;
                 }
                 else if (!inside_belt && vd.msg_belt)

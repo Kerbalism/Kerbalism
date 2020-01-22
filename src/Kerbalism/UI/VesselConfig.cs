@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using KSP.Localization;
@@ -23,7 +23,7 @@ namespace KERBALISM
 			if (!vd.IsSimulated) return;
 
 			// set metadata
-			p.Title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(20)), " ", Lib.Color(Localizer.Format("#KERBALISM_VESSELCONFIG_title"), Lib.Kolor.LightGrey)));//"VESSEL CONFIG"
+			p.Title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(20)), " ", Lib.Color(Local.VESSELCONFIG_title, Lib.Kolor.LightGrey)));//"VESSEL CONFIG"
 			p.Width(Styles.ScaleWidthFloat(355.0f));
 			p.paneltype = Panel.PanelType.config;
 
@@ -31,48 +31,48 @@ namespace KERBALISM
 			string tooltip;
 			if (Features.Reliability)
 			{
-				p.AddSection(Localizer.Format("#KERBALISM_VESSELCONFIG_RENDERING"));//"RENDERING"
+				p.AddSection(Local.VESSELCONFIG_RENDERING);//"RENDERING"
 			}
 			if (Features.Reliability)
 			{
-				tooltip = Localizer.Format("#KERBALISM_VESSELCONFIG_Highlightfailed_desc");//"Highlight failed components"
-				p.AddContent(Localizer.Format("#KERBALISM_VESSELCONFIG_Highlightfailed"), string.Empty, tooltip);//"highlight malfunctions"
+				tooltip = Local.VESSELCONFIG_Highlightfailed_desc;//"Highlight failed components"
+				p.AddContent(Local.VESSELCONFIG_Highlightfailed, string.Empty, tooltip);//"highlight malfunctions"
 				p.AddRightIcon(vd.cfg_highlights ? Textures.toggle_green : Textures.toggle_red, tooltip, () => p.Toggle(ref vd.cfg_highlights));
 			}
 
 			// toggle messages
-			p.AddSection(Localizer.Format("#KERBALISM_VESSELCONFIG_MESSAGES"));//"MESSAGES"
-			tooltip = Localizer.Format("#KERBALISM_VESSELCONFIG_EClow");//"Receive a message when\nElectricCharge level is low"
-			p.AddContent(Localizer.Format("#KERBALISM_VESSELCONFIG_battery"), string.Empty, tooltip);//"battery"
+			p.AddSection(Local.VESSELCONFIG_MESSAGES);//"MESSAGES"
+			tooltip = Local.VESSELCONFIG_EClow;//"Receive a message when\nElectricCharge level is low"
+			p.AddContent(Local.VESSELCONFIG_battery, string.Empty, tooltip);//"battery"
 			p.AddRightIcon(vd.cfg_ec ? Textures.toggle_green : Textures.toggle_red, tooltip, () => p.Toggle(ref vd.cfg_ec));
 			if (Features.Supplies)
 			{
-				tooltip = Localizer.Format("#KERBALISM_VESSELCONFIG_Supplylow");//"Receive a message when\nsupply resources level is low"
-				p.AddContent(Localizer.Format("#KERBALISM_VESSELCONFIG_supply"), string.Empty, tooltip);//"supply"
+				tooltip = Local.VESSELCONFIG_Supplylow;//"Receive a message when\nsupply resources level is low"
+				p.AddContent(Local.VESSELCONFIG_supply, string.Empty, tooltip);//"supply"
 				p.AddRightIcon(vd.cfg_supply ? Textures.toggle_green : Textures.toggle_red, tooltip, () => p.Toggle(ref vd.cfg_supply));
 			}
 			if (API.Comm.handlers.Count > 0 || HighLogic.fetch.currentGame.Parameters.Difficulty.EnableCommNet)
 			{
-				tooltip = Localizer.Format("#KERBALISM_VESSELCONFIG_Signallost");//"Receive a message when signal is lost or obtained"
-				p.AddContent(Localizer.Format("#KERBALISM_VESSELCONFIG_signal"), string.Empty, tooltip);//"signal"
+				tooltip = Local.VESSELCONFIG_Signallost;//"Receive a message when signal is lost or obtained"
+				p.AddContent(Local.VESSELCONFIG_signal, string.Empty, tooltip);//"signal"
 				p.AddRightIcon(vd.cfg_signal ? Textures.toggle_green : Textures.toggle_red, tooltip, () => p.Toggle(ref vd.cfg_signal));
 			}
 			if (Features.Reliability)
 			{
-				tooltip = Localizer.Format("#KERBALISM_VESSELCONFIG_Componentfail");//"Receive a message\nwhen a component fail"
-				p.AddContent(Localizer.Format("#KERBALISM_VESSELCONFIG_reliability"), string.Empty, tooltip);//"reliability"
+				tooltip = Local.VESSELCONFIG_Componentfail;//"Receive a message\nwhen a component fail"
+				p.AddContent(Local.VESSELCONFIG_reliability, string.Empty, tooltip);//"reliability"
 				p.AddRightIcon(vd.cfg_malfunction ? Textures.toggle_green : Textures.toggle_red, tooltip, () => p.Toggle(ref vd.cfg_malfunction));
 			}
 			if (Features.SpaceWeather)
 			{
-				tooltip = Localizer.Format("#KERBALISM_VESSELCONFIG_CMEevent");//"Receive a message\nduring CME events"
-				p.AddContent(Localizer.Format("#KERBALISM_VESSELCONFIG_storm"), string.Empty, tooltip);//"storm"
+				tooltip = Local.VESSELCONFIG_CMEevent;//"Receive a message\nduring CME events"
+				p.AddContent(Local.VESSELCONFIG_storm, string.Empty, tooltip);//"storm"
 				p.AddRightIcon(vd.cfg_storm ? Textures.toggle_green : Textures.toggle_red, tooltip, () => p.Toggle(ref vd.cfg_storm));
 			}
 			if (Features.Automation)
 			{
-				tooltip = Localizer.Format("#KERBALISM_VESSELCONFIG_ScriptExe");//"Receive a message when\nscripts are executed"
-				p.AddContent(Localizer.Format("#KERBALISM_VESSELCONFIG_script"), string.Empty, tooltip);//"script"
+				tooltip = Local.VESSELCONFIG_ScriptExe;//"Receive a message when\nscripts are executed"
+				p.AddContent(Local.VESSELCONFIG_script, string.Empty, tooltip);//"script"
 				p.AddRightIcon(vd.cfg_script ? Textures.toggle_green : Textures.toggle_red, tooltip, () => p.Toggle(ref vd.cfg_script));
 			}
 		}

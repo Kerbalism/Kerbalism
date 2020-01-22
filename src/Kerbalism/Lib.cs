@@ -483,7 +483,7 @@ namespace KERBALISM
 			  .Replace("$VESSEL", BuildString("<b>", v_name, "</b>"))
 			  .Replace("$KERBAL", "<b>" + c_name + "</b>")
 			  .Replace("$ON_VESSEL", v != null && v.isActiveVessel ? "" : BuildString("On <b>", v_name, "</b>, "))
-			  .Replace("$HIS_HER", c != null && c.gender == ProtoCrewMember.Gender.Male ? Localizer.Format("#KERBALISM_Kerbal_his") : Localizer.Format("#KERBALISM_Kerbal_her"));//"his""her"
+			  .Replace("$HIS_HER", c != null && c.gender == ProtoCrewMember.Gender.Male ? Local.Kerbal_his : Local.Kerbal_her);//"his""her"
 		}
 
 		///<summary>make the first letter uppercase</summary>
@@ -745,7 +745,7 @@ namespace KERBALISM
 		///<summary> Pretty-print a resource rate (rate is per second). Return an absolute value if a negative one is provided</summary>
 		public static string HumanReadableRate(double rate, string precision = "F3")
 		{
-			if (rate == 0.0) return Localizer.Format("#KERBALISM_none");//"none"
+			if (rate == 0.0) return Local.Generic_NONE;//"none"
 			rate = Math.Abs(rate);
 			if (rate >= 0.01) return BuildString(rate.ToString(precision), "/s");
 			rate *= 60.0; // per-minute
@@ -762,8 +762,8 @@ namespace KERBALISM
 		{
 			if (!fullprecison)
 			{
-				if (d <= double.Epsilon) return Localizer.Format("#KERBALISM_none");//"none"
-				if (double.IsInfinity(d) || double.IsNaN(d)) return Localizer.Format("#KERBALISM_perpetual");//"perpetual"
+				if (d <= double.Epsilon) return Local.Generic_NONE;//"none"
+				if (double.IsInfinity(d) || double.IsNaN(d)) return Local.Generic_PERPETUAL;//"perpetual"
 
 				long hours_in_day = (long)HoursInDay;
 				long days_in_year = (long)DaysInYear;
@@ -795,7 +795,7 @@ namespace KERBALISM
 			else
 			{
 				if (d <= double.Epsilon) return string.Empty;
-				if (double.IsInfinity(d) || double.IsNaN(d)) return Localizer.Format("#KERBALISM_never");//"never"
+				if (double.IsInfinity(d) || double.IsNaN(d)) return Local.Generic_NEVER;//"never"
 
 				double hours_in_day = HoursInDay;
 				double days_in_year = DaysInYear;
@@ -829,7 +829,7 @@ namespace KERBALISM
 		///<summary> Pretty-print a range (range is in meters) </summary>
 		public static string HumanReadableDistance(double distance)
 		{
-            if (distance == 0.0) return Localizer.Format("#KERBALISM_none");//"none"
+            if (distance == 0.0) return Local.Generic_NONE;//"none"
             if (distance < 0.0) return Lib.BuildString("-", HumanReadableDistance(-distance));
 			if (distance < 1000.0) return BuildString(distance.ToString("F1"), " m");
 			distance /= 1000.0;
@@ -879,7 +879,7 @@ namespace KERBALISM
 		///<summary> Pretty-print radiation rate </summary>
 		public static string HumanReadableRadiation(double rad, bool nominal = true)
 		{
-			if (nominal && rad <= Radiation.Nominal) return Localizer.Format("#KERBALISM_nominal");//"nominal"
+			if (nominal && rad <= Radiation.Nominal) return Local.Generic_NOMINAL;//"nominal"
 
 			rad *= 3600.0;
 			var unit = "rad/h";
@@ -949,13 +949,13 @@ namespace KERBALISM
 		///<summary> Format a value to 2 decimal places, or return 'none' </summary>
 		public static string HumanReadableAmount(double value, string append = "")
 		{
-			return (Math.Abs(value) <= double.Epsilon ? Localizer.Format("#KERBALISM_none") : BuildString(value.ToString("F2"), append));//"none"
+			return (Math.Abs(value) <= double.Epsilon ? Local.Generic_NONE : BuildString(value.ToString("F2"), append));//"none"
 		}
 
 		///<summary> Format an integer value, or return 'none' </summary>
 		public static string HumanReadableInteger(uint value, string append = "")
 		{
-			return (Math.Abs(value) <= 0 ? Localizer.Format("#KERBALISM_none") : BuildString(value.ToString("F0"), append));//"none"
+			return (Math.Abs(value) <= 0 ? Local.Generic_NONE : BuildString(value.ToString("F0"), append));//"none"
 		}
 
 		///<summary> Format data size, the size parameter is in MB (megabytes) </summary>
@@ -964,7 +964,7 @@ namespace KERBALISM
 			var bitsPerMB = 1024.0 * 1024.0 * 8.0;
 
 			size *= bitsPerMB; //< bits
-			if (size < 0.01) return Localizer.Format("#KERBALISM_none");//"none"
+			if (size < 0.01) return Local.Generic_NONE;//"none"
 			if (size <= 32.0) return BuildString(size.ToString("F0"), " b");
 			size /= 8; //< to bytes
 			if (size < 1024.0) return BuildString(size.ToString("F0"), " B");
@@ -983,7 +983,7 @@ namespace KERBALISM
 		{
 			// say "none" for rates < 0.5 bits per second
 			var bitsPerMB = 1024.0 * 1024.0 * 8.0;
-			return rate < 1/bitsPerMB/2.0 ? Localizer.Format("#KERBALISM_none") : Lib.BuildString(HumanReadableDataSize(rate), "/s");//"none"
+			return rate < 1/bitsPerMB/2.0 ? Local.Generic_NONE : Lib.BuildString(HumanReadableDataSize(rate), "/s");//"none"
 		}
 
 		public static string HumanReadableSampleSize(double size)
@@ -993,9 +993,9 @@ namespace KERBALISM
 
 		public static string HumanReadableSampleSize(int slots)
 		{
-			if (slots <= 0) return Lib.BuildString(Localizer.Format("#KERBALISM_noslots"), Localizer.Format("#KERBALISM_Generic_SLOT"));//"no "
+			if (slots <= 0) return Lib.BuildString(Local.Generic_NO, Local.Generic_SLOT);//"no "
 
-			return Lib.BuildString(slots.ToString(), " ", slots > 1 ? Localizer.Format("#KERBALISM_Generic_SLOTS") : Localizer.Format("#KERBALISM_Generic_SLOT"));
+			return Lib.BuildString(slots.ToString(), " ", slots > 1 ? Local.Generic_SLOTS : Local.Generic_SLOT);
 		}
 
 		public static int SampleSizeToSlots(double size)
@@ -1337,6 +1337,14 @@ namespace KERBALISM
 
 		public static Vessel CommNodeToVessel(CommNode node)
 		{
+			// Iterating over all vessels will work for recovering the vessel from a CommNode.However,
+			// since CommNodes are created when Vessels are, you can almost certainly cache this in a
+			// reasonable manner.
+			// (Vessel creates a CommNetVessel which creates the CommNode.They're established no
+			// later than OnStart())
+			// We would either need something to monitor new Vessel creation (ie after staging events)
+			// OR you want a fallback for cache misses.
+
 			// Is is home return null
 			if (node.isHome) return null;
 
@@ -1662,14 +1670,14 @@ namespace KERBALISM
 		/// <summary> Adds the specified resource amount and capacity to a part,
 		/// the resource is created if it doesn't already exist </summary>
 		///<summary>poached from https://github.com/blowfishpro/B9PartSwitch/blob/master/B9PartSwitch/Extensions/PartExtensions.cs
-		public static void AddResource(Part p, string res_name, double amount, double capacity)
+		public static PartResource AddResource(Part p, string res_name, double amount, double capacity)
 		{
 			var reslib = PartResourceLibrary.Instance.resourceDefinitions;
 			// if the resource is not known, log a warning and do nothing
 			if (!reslib.Contains(res_name))
 			{
 				Lib.Log(Lib.BuildString("error while adding ", res_name, ": the resource doesn't exist"));
-				return;
+				return null;
 			}
 			var resourceDefinition = reslib[res_name];
 
@@ -1709,6 +1717,8 @@ namespace KERBALISM
 
 				resource.amount = amount;
 			}
+
+			return resource;
 		}
 
 		/// <summary> Removes the specified resource amount and capacity from a part,

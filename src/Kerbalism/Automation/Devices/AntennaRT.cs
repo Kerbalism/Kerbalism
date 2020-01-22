@@ -1,4 +1,4 @@
-﻿using KSP.Localization;
+using KSP.Localization;
 using static ModuleDeployablePart;
 
 namespace KERBALISM
@@ -14,8 +14,8 @@ namespace KERBALISM
 			get
 			{
 				return Lib.ReflectionValue<bool>(module, "IsRTActive")
-					? Lib.Color(Localizer.Format("#KERBALISM_Generic_ACTIVE"), Lib.Kolor.Green)
-					: Lib.Color(Localizer.Format("#KERBALISM_Generic_INACTIVE"), Lib.Kolor.Yellow);
+					? Lib.Color(Local.Generic_ACTIVE, Lib.Kolor.Green)
+					: Lib.Color(Local.Generic_INACTIVE, Lib.Kolor.Yellow);
 			}
 		}
 
@@ -36,8 +36,8 @@ namespace KERBALISM
 			get
 			{
 				return Lib.Proto.GetBool(protoModule, "IsRTActive")
-						  ? Lib.Color(Localizer.Format("#KERBALISM_Generic_ACTIVE"), Lib.Kolor.Green)
-						  : Lib.Color(Localizer.Format("#KERBALISM_Generic_INACTIVE"), Lib.Kolor.Yellow);
+						  ? Lib.Color(Local.Generic_ACTIVE, Lib.Kolor.Green)
+						  : Lib.Color(Local.Generic_INACTIVE, Lib.Kolor.Yellow);
 			}
 		}
 
