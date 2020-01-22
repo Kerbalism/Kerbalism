@@ -77,7 +77,7 @@ namespace KERBALISM
 			if(filesCount > 0 || totalDataCapacity > 0)
 			{
 				var title = Local.FILEMANAGER_DataCapacity + " " + Lib.HumanReadableDataSize(usedDataCapacity);//"DATA " 
-				if (!unlimitedData) title += Localizer.Format("#KERBALISM_FILEMANAGER_DataAvailable", Lib.HumanReadablePerc((totalDataCapacity - usedDataCapacity) / totalDataCapacity));//Lib.BuildString(" (", Lib.HumanReadablePerc((totalDataCapacity - usedDataCapacity) / totalDataCapacity), " available)");
+				if (!unlimitedData) title += Local.FILEMANAGER_DataAvailable.Format(Lib.HumanReadablePerc((totalDataCapacity - usedDataCapacity) / totalDataCapacity));//Lib.BuildString(" (", Lib.HumanReadablePerc((totalDataCapacity - usedDataCapacity) / totalDataCapacity), " available)");
 				p.AddSection(title);
 
 				foreach (var drive in drives)
@@ -93,8 +93,8 @@ namespace KERBALISM
 
 			if(samplesCount > 0 || totalSlots > 0)
 			{
-				var title = Localizer.Format("#KERBALISM_FILEMANAGER_SAMPLESMass", Lib.HumanReadableMass(totalMass)) + " " + Lib.HumanReadableSampleSize(usedSlots);//"SAMPLES " + 
-				if (totalSlots > 0 && !unlimitedSamples) title += ", " + Lib.HumanReadableSampleSize(totalSlots) + " "+Local.FILEMANAGER_SAMPLESAvailable;//available
+				var title = Local.FILEMANAGER_SAMPLESMass.Format(Lib.HumanReadableMass(totalMass)) + " " + Lib.HumanReadableSampleSize(usedSlots);//"SAMPLES " + 
+				if (totalSlots > 0 && !unlimitedSamples) title += ", " + Lib.HumanReadableSampleSize(totalSlots) + " "+ Local.FILEMANAGER_SAMPLESAvailable;//available
 				p.AddSection(title);
 
 				foreach (var drive in drives)
@@ -132,9 +132,9 @@ namespace KERBALISM
 			if (file.transmitRate > 0.0)
 			{
 				if (file.size > 0.0)
-					exp_tooltip = Lib.Color(Lib.BuildString(exp_tooltip, "\n", Localizer.Format("#KERBALISM_FILEMANAGER_TransmittingRate", Lib.HumanReadableDataRate(file.transmitRate)), " : <i>", Lib.HumanReadableCountdown(file.size / file.transmitRate), "</i>"), Lib.Kolor.Cyan);//Transmitting at <<1>>
+					exp_tooltip = Lib.Color(Lib.BuildString(exp_tooltip, "\n", Local.FILEMANAGER_TransmittingRate.Format(Lib.HumanReadableDataRate(file.transmitRate)), " : <i>", Lib.HumanReadableCountdown(file.size / file.transmitRate), "</i>"), Lib.Kolor.Cyan);//Transmitting at <<1>>
 				else
-					exp_tooltip = Lib.Color(Lib.BuildString(exp_tooltip, "\n", Localizer.Format("#KERBALISM_FILEMANAGER_TransmittingRate", Lib.HumanReadableDataRate(file.transmitRate))), Lib.Kolor.Cyan);//Transmitting at <<1>>
+					exp_tooltip = Lib.Color(Lib.BuildString(exp_tooltip, "\n", Local.FILEMANAGER_TransmittingRate.Format(Lib.HumanReadableDataRate(file.transmitRate))), Lib.Kolor.Cyan);//Transmitting at <<1>>
 			}
 			else if (v.KerbalismData().Connection.rate > 0.0)
 				exp_tooltip = Lib.BuildString(exp_tooltip, "\n", Local.FILEMANAGER_Transmitduration, "<i>", Lib.HumanReadableDuration(file.size / v.KerbalismData().Connection.rate), "</i>");//Transmit duration : 
@@ -161,7 +161,7 @@ namespace KERBALISM
 			p.AddRightIcon(Textures.toggle_red, Local.FILEMANAGER_Delete, () =>//"Delete the file"
 				{
 					Lib.Popup(Local.FILEMANAGER_Warning_title,//"Warning!"
-						Localizer.Format("#KERBALISM_FILEMANAGER_DeleteConfirm", file.subjectData.FullTitle),//Lib.BuildString(, "?"),//"Do you really want to delete <<1>>", 
+						Local.FILEMANAGER_DeleteConfirm.Format(file.subjectData.FullTitle),//Lib.BuildString(, "?"),//"Do you really want to delete <<1>>", 
 				        new DialogGUIButton(Local.FILEMANAGER_DeleteConfirm_button1, () => drive.Delete_file(file.subjectData)),//"Delete it"
 						new DialogGUIButton(Local.FILEMANAGER_DeleteConfirm_button2, () => { }));//"Keep it"
 				}
@@ -195,7 +195,7 @@ namespace KERBALISM
 			p.AddRightIcon(Textures.toggle_red, Local.FILEMANAGER_Dumpsample, () =>//"Dump the sample"
 				{
 					Lib.Popup(Local.FILEMANAGER_Warning_title,//"Warning!"
-						Localizer.Format("#KERBALISM_FILEMANAGER_DumpConfirm", sample.subjectData.FullTitle),//"Do you really want to dump <<1>>?", 
+						Local.FILEMANAGER_DumpConfirm.Format(sample.subjectData.FullTitle),//"Do you really want to dump <<1>>?", 
 						new DialogGUIButton(Local.FILEMANAGER_DumpConfirm_button1, () => drive.Delete_sample(sample.subjectData)),//"Dump it"
 							  new DialogGUIButton(Local.FILEMANAGER_DumpConfirm_button2, () => { }));//"Keep it"
 				}

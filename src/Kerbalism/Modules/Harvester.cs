@@ -224,7 +224,7 @@ namespace KERBALISM
 				case 2: source = Local.Harvester_source3; break;//"the atmosphere"
 				case 3: source = Local.Harvester_source4; break;//"space"
 			}
-			string desc = Localizer.Format("#KERBALISM_Harvester_generatedescription", resource,source);//Lib.BuildString("Extract ", , " from ", )
+			string desc = Local.Harvester_generatedescription.Format(resource,source);//Lib.BuildString("Extract ", , " from ", )
 
 			// generate tooltip info
 			return Specs().Info(desc);

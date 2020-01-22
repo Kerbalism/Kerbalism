@@ -231,7 +231,7 @@ namespace KERBALISM
 					// notify the user when crop can be harvested
 					if (growth >= 0.99)
 					{
-						Message.Post(Localizer.Format("#KERBALISM_harvestedready_msg", "<b>" + vessel.vesselName + "</b>"));//Lib.BuildString("On <<1>> the crop is ready to be harvested")
+						Message.Post(Local.harvestedready_msg.Format("<b>" + vessel.vesselName + "</b>"));//Lib.BuildString("On <<1>> the crop is ready to be harvested")
 						growth = 1.0;
 					}
 				}
@@ -241,7 +241,7 @@ namespace KERBALISM
 
 				// update issues
 				issue =
-				  !inputs ? Lib.BuildString(Localizer.Format("#KERBALISM_Greenhouse_resoucesmissing", missing_res))//"missing <<1>>"
+				  !inputs ? Lib.BuildString(Local.Greenhouse_resoucesmissing.Format(missing_res))//"missing <<1>>"
 				: !lighting ? Local.Greenhouse_issue1//"insufficient lighting"
 				: !pressure ? Local.Greenhouse_issue2//"insufficient pressure"
 				: !radiation ? Local.Greenhouse_issue3//"excessive radiation"
@@ -341,7 +341,7 @@ namespace KERBALISM
 					// notify the user when crop can be harvested
 					if (growth >= 0.99)
 					{
-						Message.Post(Localizer.Format("#KERBALISM_harvestedready_msg", "<b>" + v.vesselName + "</b>"));//Lib.BuildString("On <<1>> the crop is ready to be harvested")
+						Message.Post(Local.harvestedready_msg.Format("<b>" + v.vesselName + "</b>"));//Lib.BuildString("On <<1>> the crop is ready to be harvested")
 						growth = 1.0;
 					}
 				}
@@ -351,7 +351,7 @@ namespace KERBALISM
 
 				// update issues
 				string issue =
-				  !inputs ? Lib.BuildString(Localizer.Format("#KERBALISM_Greenhouse_resoucesmissing", missing_res))//"missing ", missing_res
+				  !inputs ? Lib.BuildString(Local.Greenhouse_resoucesmissing.Format(missing_res))//"missing ", missing_res
 				: !lighting ? Local.Greenhouse_issue1//"insufficient lighting"
 				: !pressure ? Local.Greenhouse_issue2//"insufficient pressure"
 				: !radiation ? Local.Greenhouse_issue3//"excessive radiation"
@@ -406,7 +406,7 @@ namespace KERBALISM
 			growth = 0.0;
 
 			// show message
-			Message.Post(Lib.BuildString(Localizer.Format("#KERBALISM_Greenhouse_msg_1", "<color=ffffff>" + vessel.vesselName + "</color> "), Localizer.Format("#KERBALISM_Greenhouse_msg_2", "<color=ffffff>" + crop_size.ToString("F0") + " " + crop_resource + "</color>")));//"On <<1>>""harvest produced <<1>>", 
+			Message.Post(Lib.BuildString(Local.Greenhouse_msg_1.Format("<color=ffffff>" + vessel.vesselName + "</color> "), Local.Greenhouse_msg_2.Format("<color=ffffff>" + crop_size.ToString("F0") + " " + crop_resource + "</color>")));//"On <<1>>""harvest produced <<1>>", 
 
 			// record first harvest
 			if (!Lib.Landed(vessel)) DB.landmarks.space_harvest = true;
@@ -434,7 +434,7 @@ namespace KERBALISM
 			growth = 0.0;
 
 			// show message
-			Message.Post(Lib.BuildString(Localizer.Format("#KERBALISM_Greenhouse_msg_1", "<color=ffffff>" + vessel.vesselName + "</color> "), Localizer.Format("#KERBALISM_Greenhouse_msg_3", " <color=ffffff>"+ reduced_harvest.ToString("F0")+ " " + crop_resource +"</color>")));//"On <<1>>""emergency harvest produced"
+			Message.Post(Lib.BuildString(Local.Greenhouse_msg_1.Format("<color=ffffff>" + vessel.vesselName + "</color> "), Local.Greenhouse_msg_3.Format(" <color=ffffff>"+ reduced_harvest.ToString("F0")+ " " + crop_resource +"</color>")));//"On <<1>>""emergency harvest produced"
 
 			// record first harvest
 			if (!Lib.Landed(vessel)) DB.landmarks.space_harvest = true;

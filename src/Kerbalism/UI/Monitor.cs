@@ -221,7 +221,7 @@ namespace KERBALISM
 					{
 						p.SetLeftIcon(GetVesselTypeIcon(v.vesselType), Local.Monitor_Gotovessel, () => Lib.Popup//"Go to vessel!"
 						(Local.Monitor_Warning_title,//"Warning!"
-							Lib.BuildString(Localizer.Format("#KERBALISM_Monitor_GoComfirm", vessel_name)),//"Do you really want go to ", , " vessel?"
+							Lib.BuildString(Local.Monitor_GoComfirm.Format(vessel_name)),//"Do you really want go to ", , " vessel?"
 							new DialogGUIButton(Local.Monitor_GoComfirm_button1, () => { GotoVessel.JumpToVessel(v); }),//"Go"
 							new DialogGUIButton(Local.Monitor_GoComfirm_button2, () => { GotoVessel.SetVesselAsTarget(v); }),//"Target"
 							new DialogGUIButton(Local.Monitor_GoComfirm_button3, () => { })));//"Stay"
@@ -230,7 +230,7 @@ namespace KERBALISM
 					{
 						p.SetLeftIcon(GetVesselTypeIcon(v.vesselType), Local.Monitor_Gotovessel, () => Lib.Popup//"Go to vessel!"
 						(Local.Monitor_Warning_title,//"Warning!"
-							Lib.BuildString(Localizer.Format("#KERBALISM_Monitor_GoComfirm", vessel_name)),//"Do you really want go to ", , " vessel?"
+							Lib.BuildString(Local.Monitor_GoComfirm.Format(vessel_name)),//"Do you really want go to ", , " vessel?"
 							new DialogGUIButton(Local.Monitor_GoComfirm_button1, () => { GotoVessel.JumpToVessel(v); }),//"Go"
 							new DialogGUIButton(Local.Monitor_GoComfirm_button3, () => { })));//"Stay"
 					}
@@ -265,7 +265,7 @@ namespace KERBALISM
 			const string tooltip = "#KERBALISM_Monitor_tooltip";//"\n<i>(middle-click to popout in a window, middle-click again to close popout)</i>"
 			VesselData vd = v.KerbalismData();
 			GUILayout.BeginHorizontal(Styles.entry_container);
-			GUILayout.Label(new GUIContent(Lib.Color(page == MonitorPage.telemetry, " " + Local.Monitor_INFO, Lib.Kolor.Green, Lib.Kolor.None, true), Textures.small_info, Local.Monitor_INFO_desc + Localizer.Format(tooltip)), config_style);//INFO"Telemetry readings"
+			GUILayout.Label(new GUIContent(Lib.Color(page == MonitorPage.telemetry, " " + Local.Monitor_INFO, Lib.Kolor.Green, Lib.Kolor.None, true), Textures.small_info, Local.Monitor_INFO_desc + Local.Monitor_tooltip), config_style);//INFO"Telemetry readings"
 			if (Lib.IsClicked()) page = MonitorPage.telemetry;
 			else if (Lib.IsClicked(2))
 			{
@@ -276,7 +276,7 @@ namespace KERBALISM
 			}
 			if (Features.Science)
 			{
-				GUILayout.Label(new GUIContent(Lib.Color(page == MonitorPage.data, " " + Local.Monitor_DATA, Lib.Kolor.Green, Lib.Kolor.None, true), Textures.small_folder, Local.Monitor_DATA_desc + Localizer.Format(tooltip)), config_style);//DATA"Stored files and samples"
+				GUILayout.Label(new GUIContent(Lib.Color(page == MonitorPage.data, " " + Local.Monitor_DATA, Lib.Kolor.Green, Lib.Kolor.None, true), Textures.small_folder, Local.Monitor_DATA_desc + Local.Monitor_tooltip), config_style);//DATA"Stored files and samples"
 				if (Lib.IsClicked()) page = MonitorPage.data;
 				else if (Lib.IsClicked(2))
 				{
@@ -288,7 +288,7 @@ namespace KERBALISM
 			}
 			if (Features.Automation)
 			{
-				GUILayout.Label(new GUIContent(Lib.Color(page == MonitorPage.scripts, " " + Local.Monitor_AUTO, Lib.Kolor.Green, Lib.Kolor.None, true), Textures.small_console, Local.Monitor_AUTO_desc + Localizer.Format(tooltip)), config_style);//AUTO"Control and automate components"
+				GUILayout.Label(new GUIContent(Lib.Color(page == MonitorPage.scripts, " " + Local.Monitor_AUTO, Lib.Kolor.Green, Lib.Kolor.None, true), Textures.small_console, Local.Monitor_AUTO_desc + Local.Monitor_tooltip), config_style);//AUTO"Control and automate components"
 				if (Lib.IsClicked()) page = MonitorPage.scripts;
 				else if (Lib.IsClicked(2))
 				{
@@ -300,7 +300,7 @@ namespace KERBALISM
 			}
 			if (Features.Reliability)
 			{
-				GUILayout.Label(new GUIContent(Lib.Color(page == MonitorPage.failures, " " + Local.Monitor_FAILURES, Lib.Kolor.Green, Lib.Kolor.None, true), Textures.small_wrench, Local.Monitor_FAILURES_desc + Localizer.Format(tooltip)), config_style);//FAILURES"See failures and maintenance state"
+				GUILayout.Label(new GUIContent(Lib.Color(page == MonitorPage.failures, " " + Local.Monitor_FAILURES, Lib.Kolor.Green, Lib.Kolor.None, true), Textures.small_wrench, Local.Monitor_FAILURES_desc + Local.Monitor_tooltip), config_style);//FAILURES"See failures and maintenance state"
 				if (Lib.IsClicked()) page = MonitorPage.failures;
 				else if (Lib.IsClicked(2))
 				{
@@ -312,7 +312,7 @@ namespace KERBALISM
 			}
 			if (PreferencesMessages.Instance.stockMessages != true)
 			{
-				GUILayout.Label(new GUIContent(Lib.Color(page == MonitorPage.log, " " + Local.Monitor_LOG, Lib.Kolor.Green, Lib.Kolor.None, true), Textures.small_notes, Local.Monitor_LOG_desc + Localizer.Format(tooltip)), config_style);//LOG"See previous notifications"
+				GUILayout.Label(new GUIContent(Lib.Color(page == MonitorPage.log, " " + Local.Monitor_LOG, Lib.Kolor.Green, Lib.Kolor.None, true), Textures.small_notes, Local.Monitor_LOG_desc + Local.Monitor_tooltip), config_style);//LOG"See previous notifications"
 				if (Lib.IsClicked()) page = MonitorPage.log;
 				else if (Lib.IsClicked(2))
 				{
@@ -322,7 +322,7 @@ namespace KERBALISM
 						UI.Open((p) => p.Logman(v));
 				}
 			}
-			GUILayout.Label(new GUIContent(Lib.Color(page == MonitorPage.config, " " + Local.Monitor_CFG, Lib.Kolor.Green, Lib.Kolor.None, true), Textures.small_config, Local.Monitor_CFG_desc + Localizer.Format(tooltip)), config_style);//CFG"Configure the vessel"
+			GUILayout.Label(new GUIContent(Lib.Color(page == MonitorPage.config, " " + Local.Monitor_CFG, Lib.Kolor.Green, Lib.Kolor.None, true), Textures.small_config, Local.Monitor_CFG_desc + Local.Monitor_tooltip), config_style);//CFG"Configure the vessel"
 			if (Lib.IsClicked()) page = MonitorPage.config;
 			else if (Lib.IsClicked(2))
 			{

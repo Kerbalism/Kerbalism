@@ -139,7 +139,7 @@ namespace KERBALISM
 		{
 			// update ui
 			Status = running ? Lib.HumanReadableRadiation(Math.Abs(radiation)) : Local.Emitter_none;//"none"
-			Events["Toggle"].guiName = Lib.StatusToggle(Localizer.Format("#kerbalism-activeshield_Part_title").Replace("Shield", "shield"), running ? Local.Generic_ACTIVE : Local.Generic_DISABLED); //i'm lazy lol
+			Events["Toggle"].guiName = Lib.StatusToggle(part.partInfo.title, running ? Local.Generic_ACTIVE : Local.Generic_DISABLED);
 		}
 
 		public void FixedUpdate()
