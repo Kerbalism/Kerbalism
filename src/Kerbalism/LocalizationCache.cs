@@ -50,7 +50,8 @@ namespace KERBALISM
 		private const string PathToLocalizationCache = @"C:\Users\Got\source\repos\Kerbalism\Kerbalism\src\Kerbalism\LocalizationCache.cs";
 
 		// set this to true (and change the path) to generate on KSP startup
-		// the english localization file based on the contents of LocalizationCache.cs 
+		// the english localization file based on the contents of LocalizationCache.cs
+		// IMPORTANT : don't let this to true when commiting
 		public static bool GenerateEnglishLoc = false;
 		private const string PathToEnglishLocOutput = @"C:\Users\Got\Desktop\loctest\loctemplate.txt";
 
@@ -58,7 +59,8 @@ namespace KERBALISM
 		// the non-english localization file based on the contents of LocalizationCache.cs
 		// and an existing (partial) localization file
 		// untranslated strings will have the comment // UNTRANSLATED
-		public static bool UpdateNonEnglishLoc = true;
+		// IMPORTANT : don't let this to true when commiting
+		public static bool UpdateNonEnglishLoc = false;
 		private const string PathToExistingNonEnglishLoc = @"C:\Users\Got\source\repos\Kerbalism\Kerbalism\GameData\Kerbalism\Localization\ru.cfg";
 		private const string PathToNonEnglishLocOutput = @"C:\Users\Got\Desktop\loctest\ruLoc.txt";
 
