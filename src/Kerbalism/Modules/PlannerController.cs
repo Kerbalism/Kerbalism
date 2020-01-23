@@ -32,7 +32,7 @@ namespace KERBALISM
 		{
 			Events["Toggle"].guiName = Lib.StatusToggle
 			(
-			  Localizer.Format("#KERBALISM_StatuToggle_Simulate", title),//String.Format("Simulate {0} in planner", title)
+			  Local.StatuToggle_Simulate.Format(title),//String.Format("Simulate {0} in planner", title)
 			  considered ? "<b><color=#00ff00>"+ Local.PlannerController_yes + "</color></b>" : "<b><color=#ffff00>"+ Local.PlannerController_no + "</color></b>"//yes  no
 			);
 		}
