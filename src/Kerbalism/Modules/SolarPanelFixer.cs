@@ -273,7 +273,7 @@ namespace KERBALISM
 					if (currentOutput > 0.001) panelStatus = Lib.BuildString(currentOutput.ToString(rateFormat), " ", EcUIUnit, ", ", panelStatus);
 					break;
 				case ExposureState.OccludedPart:
-					panelStatus = Lib.BuildString("<color=#ff2222>", Localizer.Format("#KERBALISM_SolarPanelFixer_occludedby", mainOccludingPart), "</color>");//occluded by <<1>>
+					panelStatus = Lib.BuildString("<color=#ff2222>", Local.SolarPanelFixer_occludedby.Format(mainOccludingPart), "</color>");//occluded by 
 					if (currentOutput > 0.001) panelStatus = Lib.BuildString(currentOutput.ToString(rateFormat), " ", EcUIUnit, ", ", panelStatus);
 					break;
 				case ExposureState.BadOrientation:

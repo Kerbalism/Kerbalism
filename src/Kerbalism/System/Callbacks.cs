@@ -234,7 +234,7 @@ namespace KERBALISM
 			if (evaPropQuantity <= 0.05 && !Lib.Landed(data.from.vessel))
 			{
 				Message.Post(Severity.danger,
-					Localizer.Format("#KERBALISM_CallBackMsg_EvaNoMP", "<b>"+prop_name+"</b>"), Local.CallBackMsg_EvaNoMP2);//Lib.BuildString("There isn't any <<1>> in the EVA suit")"Don't let the ladder go!"
+					Local.CallBackMsg_EvaNoMP.Format("<b>"+prop_name+"</b>"), Local.CallBackMsg_EvaNoMP2);//Lib.BuildString("There isn't any <<1>> in the EVA suit")"Don't let the ladder go!"
 			}
 
 			// turn off headlamp light, to avoid stock bug that show them for a split second when going on eva

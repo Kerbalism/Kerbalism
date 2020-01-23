@@ -446,7 +446,7 @@ namespace KERBALISM
 
 						foreach (RocCBDefinition body in rocDef.myCelestialBodies)
 						{
-							ModuleInfo += Lib.Color("\n\n" + Localizer.Format("#KERBALISM_Experimentinfo_smallRoc3", body.name), Lib.Kolor.Cyan, true);//"Found on <<1>>'s :"
+							ModuleInfo += Lib.Color("\n\n" + Local.Experimentinfo_smallRoc3.Format(body.name), Lib.Kolor.Cyan, true);//"Found on <<1>>'s :"
 							foreach (string biome in body.biomes)
 							{
 								ModuleInfo += "\n- ";

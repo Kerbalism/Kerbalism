@@ -91,8 +91,8 @@ namespace KERBALISM
 			repair_cs = new CrewSpecs(repair);
 
 			// setup ui
-			Events["Inspect"].guiName = Localizer.Format("#KERBALISM_Reliability_Inspect", "<b>"+title+"</b>");//Lib.BuildString("Inspect <<1>>)
-			Events["Repair"].guiName = Localizer.Format("#KERBALISM_Reliability_Repair", "<b>"+title+"</b>");//Lib.BuildString("Repair <<1>>)
+			Events["Inspect"].guiName = Local.Reliability_Inspect.Format("<b>"+title+"</b>");//Lib.BuildString("Inspect <<1>>)
+			Events["Repair"].guiName = Local.Reliability_Repair.Format("<b>"+title+"</b>");//Lib.BuildString("Repair <<1>>)
 			
 			// sync monobehaviour state with module state
 			// - required as the monobehaviour state is not serialized
@@ -192,11 +192,11 @@ namespace KERBALISM
 					// broken fuel line -> delayed kaboom
 					explode = true;
 					next += Lib.RandomDouble() * 10 + 4;
-					FlightLogger.fetch?.LogEvent(Localizer.Format("#KERBALISM_FlightLogger_Destruction", part.partInfo.title));// <<1>> fuel system leak caused destruction of the engine"
+					FlightLogger.fetch?.LogEvent(Local.FlightLogger_Destruction.Format(part.partInfo.title));// <<1>> fuel system leak caused destruction of the engine"
 				}
 				else
 				{
-					FlightLogger.fetch?.LogEvent(Localizer.Format("#KERBALISM_FlightLogger_Ignition", part.partInfo.title));// <<1>> failure on ignition"
+					FlightLogger.fetch?.LogEvent(Local.FlightLogger_Ignition.Format(part.partInfo.title));// <<1>> failure on ignition"
 				}
 			}
 			return fail;
@@ -259,7 +259,7 @@ namespace KERBALISM
 				Events["Repair"].active = repair_cs && (broken || needMaintenance) && !critical;
 
 				if(needMaintenance) {
-					Events["Repair"].guiName = Localizer.Format("#KERBALISM_Reliability_Service", "<b>"+title+"</b>");//Lib.BuildString("Service <<1>>")
+					Events["Repair"].guiName = Local.Reliability_Service.Format("<b>"+title+"</b>");//Lib.BuildString("Service <<1>>")
 				}
 
 				RunningCheck();
@@ -280,7 +280,7 @@ namespace KERBALISM
 			else
 			{
 				// update ui
-				Events["Quality"].guiName = Lib.StatusToggle(Localizer.Format("#KERBALISM_Reliability_qualityinfo", "<b>"+title+"</b>"), quality ? Local.Reliability_qualityhigh : Local.Reliability_qualitystandard);//Lib.BuildString(<<1>> quality")"high""standard"
+				Events["Quality"].guiName = Lib.StatusToggle(Local.Reliability_qualityinfo.Format("<b>"+title+"</b>"), quality ? Local.Reliability_qualityhigh : Local.Reliability_qualitystandard);//Lib.BuildString(<<1>> quality")"high""standard"
 
 				Status = string.Empty;
 				if(mtbf > 0 && PreferencesReliability.Instance.mtbfFailures)
@@ -414,7 +414,7 @@ namespace KERBALISM
 #if DEBUG_RELIABILITY
 					Lib.Log("Reliability: " + part.partInfo.title + " fails because of material fatigue");
 #endif
-					FlightLogger.fetch?.LogEvent(Localizer.Format("#KERBALISM_FlightLogger_MaterialFatigue", part.partInfo.title));// <<1>> failed because of material fatigue"
+					FlightLogger.fetch?.LogEvent(Local.FlightLogger_MaterialFatigue.Format(part.partInfo.title));// <<1>> failed because of material fatigue"
 				}
 			}
 
@@ -599,7 +599,7 @@ namespace KERBALISM
 				// notify user
 				Message.Post
 				(
-				  Localizer.Format("#KERBALISM_Reliability_MessagePost14", "<b>"+title+"</b>"),//Lib.BuildString("<<1>> repaired")
+				  Local.Reliability_MessagePost14.Format("<b>"+title+"</b>"),//Lib.BuildString("<<1>> repaired")
 				  Lib.TextVariant
 				  (
 					Local.Reliability_MessagePost15,//"A powerkick did the trick."
@@ -612,7 +612,7 @@ namespace KERBALISM
 				// notify user
 				Message.Post
 				(
-				  Localizer.Format("#KERBALISM_Reliability_MessagePost19", "<b>"+title+"</b>"),//Lib.BuildString(<<1>> serviced")
+				  Local.Reliability_MessagePost19.Format("<b>"+title+"</b>"),//Lib.BuildString(<<1>> serviced")
 				  Lib.TextVariant
 				  (
 					Local.Reliability_MessagePost20,//"I don't know how this was still working."
@@ -1027,7 +1027,7 @@ namespace KERBALISM
 					Message.Post
 					(
 					  Severity.warning,
-					  Localizer.Format("#KERBALISM_Reliability_MessagePost24", "<b>"+title+"</b>","<b>"+v.vesselName+"</b>"),//Lib.BuildString(<<1>> malfunctioned on <<2>>)
+					  Local.Reliability_MessagePost24.Format("<b>"+title+"</b>","<b>"+v.vesselName+"</b>"),//Lib.BuildString(<<1>> malfunctioned on <<2>>)
 					  Local.Reliability_MessagePost25//"We can still repair it"
 					);
 				}
@@ -1036,7 +1036,7 @@ namespace KERBALISM
 					Message.Post
 					(
 					  Severity.danger,
-					  Localizer.Format("#KERBALISM_Reliability_MessagePost26", "<b>" + title + "</b>", "<b>" + v.vesselName + "</b>"),//Lib.BuildString(<<1>> failed on <<2>>)
+					  Local.Reliability_MessagePost26.Format("<b>" + title + "</b>", "<b>" + v.vesselName + "</b>"),//Lib.BuildString(<<1>> failed on <<2>>)
 					  Local.Reliability_MessagePost27//"It is gone for good"
 					);
 				}
@@ -1048,7 +1048,7 @@ namespace KERBALISM
 		{
 			Message.Post
 			(
-			  Localizer.Format("#KERBALISM_Reliability_MessagePost28", "<b>" + title + "</b>", "<b>" + v.vesselName + "</b>"),//Lib.BuildString("There has been a problem with <<1>> on <<2>>)
+			  Local.Reliability_MessagePost28.Format("<b>" + title + "</b>", "<b>" + v.vesselName + "</b>"),//Lib.BuildString("There has been a problem with <<1>> on <<2>>)
 			  Local.Reliability_MessagePost29//"We were able to fix it remotely, this time"
 			);
 		}

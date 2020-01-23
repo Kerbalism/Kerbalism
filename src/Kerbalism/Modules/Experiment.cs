@@ -659,7 +659,7 @@ namespace KERBALISM
 				var ri = res.GetResource(v, p.Key);
 				if (ri.Amount == 0.0)
 				{
-					issue = Localizer.Format("#KERBALISM_Module_Experiment_issue12", ri.ResourceName);//"missing " + 
+					issue = Local.Module_Experiment_issue12.Format(ri.ResourceName);//"missing " + 
 					return false;
 				}
 			}
@@ -1152,7 +1152,7 @@ namespace KERBALISM
 
 		public static void PostMultipleRunsMessage(string title, string vesselName)
 		{
-			Message.Post(Lib.Color(Local.Module_Experiment_MultipleRunsMessage_title, Lib.Kolor.Orange, true), Localizer.Format("#KERBALISM_Module_Experiment_MultipleRunsMessage", title,vesselName));//"ALREADY RUNNING""Can't start " +  + " a second time on vessel " + 
+			Message.Post(Lib.Color(Local.Module_Experiment_MultipleRunsMessage_title, Lib.Kolor.Orange, true), Local.Module_Experiment_MultipleRunsMessage.Format(title,vesselName));//"ALREADY RUNNING""Can't start " +  + " a second time on vessel " + 
 		}
 
 		#endregion

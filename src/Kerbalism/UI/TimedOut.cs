@@ -32,9 +32,9 @@ namespace KERBALISM
 	"<b><color=#ff3333><i>"+Local.TimeoutMsg2+"</i></color></b>",//Connection timed-out
 	"<b><color=#ff3333><i>"+Local.TimeoutMsg2+"</i></color></b>",//Connection timed-out
 	"<b><color=#ff3333><i>"+Local.TimeoutMsg2+"</i></color></b>",//Connection timed-out
-	"<i>"+Localizer.Format("#KERBALISM_TimeoutMsg3","3s")+"</i>",//New tentative in <<1>>
-	"<i>"+Localizer.Format("#KERBALISM_TimeoutMsg3","2s")+"</i>",//New tentative in <<1>>
-	"<i>"+Localizer.Format("#KERBALISM_TimeoutMsg3","1s")+"</i>"//New tentative in <<1>>
+	"<i>" + Local.TimeoutMsg3.Format("3s") + "</i>",//New tentative in <<1>>
+	"<i>" + Local.TimeoutMsg3.Format("2s") + "</i>",//New tentative in <<1>>
+	"<i>" + Local.TimeoutMsg3.Format("1s") + "</i>",//New tentative in <<1>>
   };
 	}
 
