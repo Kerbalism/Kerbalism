@@ -625,6 +625,12 @@ namespace KERBALISM
 		public static string SCIENCEARCHIVE_Value_desc = GetLoc("SCIENCEARCHIVE_Value_desc"); // "Remaining science value\naccounting for data retrieved in RnD\nand collected in flight"
 		public static string SCIENCEARCHIVE_Completed = GetLoc("SCIENCEARCHIVE_Completed"); // "Completed"
 		public static string SCIENCEARCHIVE_Completed_desc = GetLoc("SCIENCEARCHIVE_Completed_desc"); // "How many times the subject\nhas been retrieved in RnD"
+		public static string SCIENCEARCHIVE_info_Crew = GetLoc("SCIENCEARCHIVE_info_Crew");// "Crew"
+		public static string SCIENCEARCHIVE_info_levelReq = GetLoc("SCIENCEARCHIVE_info_levelReq");// "of level"
+		public static string SCIENCEARCHIVE_info_Req = GetLoc("SCIENCEARCHIVE_info_Req");// "is required"
+		public static string SCIENCEARCHIVE_info_no = GetLoc("SCIENCEARCHIVE_info_no");// "no"
+		public static string SCIENCEARCHIVE_info_anyone = GetLoc("SCIENCEARCHIVE_info_anyone");// "anyone"
+		public static string SCIENCEARCHIVE_info_level = GetLoc("SCIENCEARCHIVE_info_level"); // "level:"
 
 		////////////////////////////////////////////////////////////////////
 		// Module : Emitter
