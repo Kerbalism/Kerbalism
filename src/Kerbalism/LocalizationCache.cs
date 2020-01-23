@@ -1369,6 +1369,6 @@ namespace KERBALISM
 		//Statu Toggle
 		public static string StatuToggle_info = GetLoc("StatuToggle_info");//info
 		public static string StatuToggle_Habitat = GetLoc("StatuToggle_Habitat");//Habitat
-
+		public static ParamString StatuToggle_Simulate = new ParamString("StatuToggle_Simulate");// "Simulate <<1>> in planner"
 	}
 }
