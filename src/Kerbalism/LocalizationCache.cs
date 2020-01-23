@@ -146,9 +146,9 @@ namespace KERBALISM
 				{
 					string loc;
 					if (!foreignLocs.TryGetValue(locMatch.Groups[1].Value, out loc))
-						loc = locMatch.Groups[2].Value + @" \\ UNTRANSLATED";
+						loc = locMatch.Groups[2].Value + @" // UNTRANSLATED";
 					else
-						loc += " \\\\ \"" + locMatch.Groups[2].Value + "\"";
+						loc += " // \"" + locMatch.Groups[2].Value + "\"";
 
 					outputLoc.Add("#KERBALISM_" + locMatch.Groups[1].Value + " = " + loc);
 
@@ -161,9 +161,9 @@ namespace KERBALISM
 				{
 					string loc;
 					if (!foreignLocs.TryGetValue(parameterLocMatch.Groups[1].Value, out loc))
-						loc = parameterLocMatch.Groups[2].Value + @" \\ UNTRANSLATED";
+						loc = parameterLocMatch.Groups[2].Value + @" // UNTRANSLATED";
 					else
-						loc += " \\\\ \"" + parameterLocMatch.Groups[2].Value + "\"";
+						loc += " // \"" + parameterLocMatch.Groups[2].Value + "\"";
 
 					outputLoc.Add("#KERBALISM_" + parameterLocMatch.Groups[1].Value + " = " + loc);
 
