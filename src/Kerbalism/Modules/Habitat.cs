@@ -416,7 +416,7 @@ namespace KERBALISM
             // if manned, we can't depressurize
             if (Lib.IsCrewed(part) && (state == State.enabled || state == State.pressurizing))
             {
-                Message.Post(Localizer.Format("#KERBALISM_Habitat_postmsg", Lib.PartName(part)));//"Can't disable <b><<1>> habitat</b> while crew is inside"//Lib.BuildString("Can't disable <b>", , " habitat</b> while crew is inside"
+                Message.Post(Local.Habitat_postmsg.Format(Lib.PartName(part)));//"Can't disable <b><<1>> habitat</b> while crew is inside"//Lib.BuildString("Can't disable <b>", , " habitat</b> while crew is inside"
 				return;
             }
 

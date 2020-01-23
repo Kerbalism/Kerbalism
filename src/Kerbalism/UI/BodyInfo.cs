@@ -73,7 +73,7 @@ namespace KERBALISM
 
 					if(Storm.sun_observation_quality > 0.7)
 					{
-						title = Lib.BuildString(title, ": ", Lib.Color(Localizer.Format("#KERBALISM_BodyInfo_stormcycle", Lib.HumanReadableDuration(cycle)), Lib.Kolor.LightGrey));// <<1>> cycle
+						title = Lib.BuildString(title, ": ", Lib.Color(Local.BodyInfo_stormcycle.Format(Lib.HumanReadableDuration(cycle)), Lib.Kolor.LightGrey));// <<1>> cycle
 					}
 
 					p.AddContent(title, Lib.HumanReadablePerc(activity));
@@ -94,7 +94,7 @@ namespace KERBALISM
 
 			// explain the user how to toggle the BodyInfo window
 			p.AddContent(string.Empty);
-			p.AddContent("<i>" + Localizer.Format("#KERBALISM_BodyInfo_BodyInfoToggleHelp", "<b>B</b>") + "</i>");//"Press <<1>> to open this window again"
+			p.AddContent("<i>" + Local.BodyInfo_BodyInfoToggleHelp.Format("<b>B</b>") + "</i>");//"Press <<1>> to open this window again"
 
 			// set metadata
 			p.Title(Lib.BuildString(Lib.Ellipsis(body.bodyName, Styles.ScaleStringLength(24)), " ", Lib.Color(Local.BodyInfo_title, Lib.Kolor.LightGrey)));//"BODY INFO"

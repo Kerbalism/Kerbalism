@@ -41,7 +41,7 @@ namespace KERBALISM
 				if (!deployFxModule.CanMove)
 					return Lib.Color("unavailable", Lib.Kolor.Orange);
 				else if (deployFxModule.IsMoving())
-					return Localizer.Format("deploying");
+					return "deploying";
 				else if (deployFxModule.GetScalar == 1f)
 					return Lib.Color(Local.Generic_EXTENDED, Lib.Kolor.Green);
 				else if (deployFxModule.GetScalar < 1f)
