@@ -1199,9 +1199,9 @@ namespace KERBALISM
 			return (pos - body.position).magnitude - pqs.GetSurfaceHeight(radial);
 		}
 		*/
-#endregion
+		#endregion
 
-#region VESSEL
+		#region VESSEL
 		///<summary>return true if landed somewhere</summary>
 		public static bool Landed(Vessel v)
 		{
@@ -1401,9 +1401,9 @@ namespace KERBALISM
 
 			return a.precisePosition == b.precisePosition;
 		}
-#endregion
+		#endregion
 
-#region PART
+		#region PART
 		///<summary>get list of parts recursively, useful from the editors</summary>
 		public static List<Part> GetPartsRecursively(Part root)
 		{
@@ -1418,43 +1418,10 @@ namespace KERBALISM
 			return ret;
 		}
 
-		///<summary>return the name of a part</summary>
+		///<summary>return the name (not the title) of a part</summary>
 		public static string PartName(Part p)
 		{
 			return p.partInfo.name;
-		}
-
-		/// <summary>
-		/// return the volume of a part, in m^3
-		/// note: this can only be called when part has not been rotated
-		/// we could use the partPrefab bounding box, but then it isn't available in GetInfo()
-		/// </summary>
-		public static double PartVolume(Part p)
-		{
-			return PartVolume(p.GetPartRendererBound());
-		}
-
-		public static double PartVolume(Bounds bb)
-		{
-			return bb.size.x * bb.size.y * bb.size.z * 0.785398;
-		}
-
-		/// <summary>
-		/// return the surface of a part, in m^2
-		/// note: this can only be called when part has not been rotated
-		/// we could use the partPrefab bounding box, but then it isn't available in GetInfo()
-		/// </summary>
-		public static double PartSurface(Part p)
-		{
-			return PartSurface(p.GetPartRendererBound());
-		}
-
-		public static double PartSurface(Bounds bb)
-		{
-			double a = bb.extents.x;
-			double b = bb.extents.y;
-			double c = bb.extents.z;
-			return 2.0 * (a * b + a * c + b * c) * 0.95493;
 		}
 
 		public static int CrewCount(Part part)
@@ -1504,9 +1471,488 @@ namespace KERBALISM
 			EditorLogic.fetch.SetBackup();
 		}
 
-#endregion
+		#endregion
 
-#region MODULE
+		#region PART VOLUME/SURFACE
+
+		/// <summary>
+		/// return the volume of a part bounding box, in m^3
+		/// note: this can only be called when part has not been rotated
+		/// </summary>
+		public static double PartBoundsVolume(Part p, bool applyCylinderFactor = false)
+		{
+			return applyCylinderFactor ? BoundsVolume(GetPartBounds(p)) * 0.785398 : BoundsVolume(GetPartBounds(p));
+		}
+
+		/// <summary>
+		/// return the surface of a part bounding box, in m^2
+		/// note: this can only be called when part has not been rotated
+		/// </summary>
+		public static double PartBoundsSurface(Part p, bool applyCylinderFactor = false)
+		{
+			return applyCylinderFactor ? BoundsSurface(GetPartBounds(p)) * 0.95493 : BoundsSurface(GetPartBounds(p));
+		}
+
+		public static double BoundsVolume(Bounds bb)
+		{
+			return bb.size.x * bb.size.y * bb.size.z;
+		}
+
+		public static double BoundsSurface(Bounds bb)
+		{
+			double a = bb.size.x;
+			double b = bb.size.y;
+			double c = bb.size.z;
+			return 2.0 * (a * b + a * c + b * c);
+		}
+
+		public static double BoundsIntersectionVolume(Bounds a, Bounds b)
+		{
+			Vector3 aMin = a.min;
+			Vector3 aMax = a.max;
+			Vector3 bMin = b.min;
+			Vector3 bMax = b.max;
+
+			Vector3 intersectionSize = default;
+			intersectionSize.x = Math.Max(Math.Min(bMax.x, aMax.x) - Math.Max(bMin.x, aMin.x), 0f);
+			intersectionSize.y = Math.Max(Math.Min(bMax.y, aMax.y) - Math.Max(bMin.y, aMin.y), 0f);
+			intersectionSize.z = Math.Max(Math.Min(bMax.z, aMax.z) - Math.Max(bMin.z, aMin.z), 0f);
+
+			return intersectionSize.x * intersectionSize.y * intersectionSize.z;
+		}
+
+		/// <summary>
+		/// Get the part currently active geometry bounds. Similar to the Part.GetPartRendererBound() method but don't account for inactive renderers.
+		/// Note : bounds are world axis aligned, meaning they will change if the part is rotated.
+		/// </summary>
+		public static Bounds GetPartBounds(Part part) => GetTransformRootAndChildrensBounds(part.transform);
+
+		private static Bounds GetTransformRootAndChildrensBounds(Transform transform)
+		{
+			Bounds bounds = default;
+			Renderer[] renderers = transform.GetComponentsInChildren<Renderer>(false);
+
+			bool firstRenderer = true;
+			foreach (Renderer renderer in renderers)
+			{
+				if (!(renderer is MeshRenderer || renderer is SkinnedMeshRenderer))
+					continue;
+
+				if (firstRenderer)
+				{
+					bounds = renderer.bounds;
+					firstRenderer = false;
+					continue;
+				}
+				bounds.Encapsulate(renderer.bounds);
+			}
+
+			return bounds;
+		}
+
+		public enum VolumeAndSurfaceMethod
+		{
+			Best = 0,
+			Bounds,
+			Collider,
+			Mesh,
+			ColliderAndMeshAverage
+		}
+
+		/// <summary>
+		/// Try to estimate the part volume and surface by using 3 possible methods : 3D meshes, 3D collider meshes or axis aligned bounding box.
+		/// Uses the currently enabled meshes/colliders, and will work with skinned meshes (inflatables).
+		/// VERY SLOW, 20-100 ms per call, use it only once and cache the results
+		/// </summary>
+		/// <param name="part">
+		/// An axis aligned part, with its geometry in the desired state (mesh switching / animations).
+		/// Note that the method will still work with rotated parts but might be less accurate
+		/// </param>
+		/// <param name="method">"Best" will try to use the most accurate method between "Bounds", "Collider" or "Mesh"</param>
+		/// <param name="substractAttachementNodeSurface"> If true, for each active attachement node on the part, substract the disk area (matching the node size) that would be occupied by an attached part</param>
+		/// <param name="ignoreSkinnedMeshes">If true, the volume/surface of deformable meshes (ex : inflatables) will be ignored</param>
+		/// <param name="logAll">If true, the result of all 3 methods will be logged (this require the "Best" method to be selected)</param>
+		/// <param name="rootTransform">if specified, only bounds/meshes/colliders on this transform and its children will be used</param>
+		/// <returns>the method that was used</returns>
+
+		// Note on surface : surface in is kerbalism is meant as the surface of the habitat outer hull exposed to the environment,
+		// that's why it make sense to substract the attach node area, as that surface will usually by covered by connnected parts.
+
+		// As a general rule, at least one of the two mesh based methods will return very accurate results.
+		// This is very dependent on how the model is done. Specifically, results will be inaccurate in the following cases : 
+		// - non closed meshes, larger holes = higher error
+		// - overlapping meshes. Obviously any intersection will cause the volume/surface to be higher
+		// - surface area will only be accurate in the case of a single mesh per part. A large number of meshes will result in very inaccurate surface evaluation.
+		// - results may not be representative of the habitable volume if there are a lot of large structural or "technical" shapes like fuel tanks, shrouds, interstages, integrated engines, etc...
+
+		public static VolumeAndSurfaceMethod GetPartVolumeAndSurface(
+			Part part,
+			out double volume,
+			out double surface,
+			VolumeAndSurfaceMethod method = VolumeAndSurfaceMethod.Best,
+			bool substractAttachementNodeSurface = true,
+			bool ignoreSkinnedMeshes = false,
+			bool logAll = false,
+			Transform rootTransform = null)
+		{
+
+			if (rootTransform == null)
+				rootTransform = part.transform;
+
+			double meshVolume = 0.0;
+			double meshSurface = 0.0;
+			List<KeyValuePair<double, double>> meshesVolAndSurf = null;
+			if (logAll || method == VolumeAndSurfaceMethod.Mesh || method == VolumeAndSurfaceMethod.Best || method == VolumeAndSurfaceMethod.ColliderAndMeshAverage)
+			{
+				meshesVolAndSurf = GetPartMeshesVolumeAndSurface(rootTransform, ignoreSkinnedMeshes);
+
+				if (meshesVolAndSurf.Count() > 0)
+				{
+					meshesVolAndSurf.Sort((x, y) => y.Key.CompareTo(x.Key));
+					// Only account for meshes that are have at least 25% the volume of the biggest mesh, or are at least 0.5 m3, whatever is smaller
+					double maxMeshVolume = Math.Min(meshesVolAndSurf[0].Key * 0.25, 0.5);
+
+					for (int i = 0; i < meshesVolAndSurf.Count; i++)
+					{
+						KeyValuePair<double, double> volAndSurf = meshesVolAndSurf[i];
+
+						if (volAndSurf.Key < maxMeshVolume)
+							continue;
+
+						meshVolume += volAndSurf.Key;
+
+						// account for the full surface of the biggest mesh, then only half for the others
+						if (i == 0)
+							meshSurface += volAndSurf.Value;
+						else
+							meshSurface += volAndSurf.Value * 0.5;
+					}
+				}
+			}
+
+			double colliderVolume = 0.0;
+			double colliderSurface = 0.0;
+			List<KeyValuePair<double, double>> collidersVolAndSurf = null;
+			if (logAll || method == VolumeAndSurfaceMethod.Collider || method == VolumeAndSurfaceMethod.Best || method == VolumeAndSurfaceMethod.ColliderAndMeshAverage)
+			{
+				// Note that we only account for mesh colliders and ignore any box/sphere/capsule collider because :
+				// - they usually are used as an array of overlapping box colliders, giving very unreliable results
+				// - they are often used for hollow geometry like trusses
+				// - they are systematically used for a variety of non shape related things like ladders/handrails/hatches hitboxes (note that it is be possible to filter those by checking for the "Airlock" or "Ladder" tag on the gameobject)
+				collidersVolAndSurf = GetPartMeshCollidersVolumeAndSurface(rootTransform);
+
+				if (collidersVolAndSurf.Count() > 0)
+				{
+					collidersVolAndSurf.Sort((x, y) => y.Key.CompareTo(x.Key));
+					// Only acount for meshes that are have at least 25% the volume of the biggest mesh, or are at least 0.5 m3, whatever is smaller
+					// This helps at filtering out detail or structural meshes like hatches, end caps or trusses
+					double minColliderVolume = Math.Min(collidersVolAndSurf[0].Key * 0.25, 0.5);
+					for (int i = 0; i < collidersVolAndSurf.Count; i++)
+					{
+						KeyValuePair<double, double> volAndSurf = collidersVolAndSurf[i];
+
+						if (volAndSurf.Key < minColliderVolume)
+							continue;
+
+						colliderVolume += volAndSurf.Key;
+
+						// account for the full surface of the biggest collider, then only half for the others
+						if (i == 0)
+							colliderSurface += volAndSurf.Value;
+						else
+							colliderSurface += volAndSurf.Value * 0.5;
+					}
+				}
+			}
+
+			Bounds partBounds = GetTransformRootAndChildrensBounds(rootTransform);
+			double boundsVolume = partBounds.size.x * partBounds.size.y * partBounds.size.z;
+			double boundsSurface = BoundsSurface(partBounds);
+
+			// If the mesh or collider volume is greater than 80% the bounds volume, it is very likely
+			// that multiple overlapping meshes are used so we can't rely on that evaluation
+			// this may produce false positive on **very* box shaped parts, example : the stock mk2 lander in the rover variant
+			// we also filter out any result that is less than 0.25 m3
+			double validityFactor = 0.8;
+			bool colliderIsValid = colliderVolume < boundsVolume * validityFactor && colliderVolume > 0.25;
+			bool meshIsValid = meshVolume < boundsVolume * validityFactor && meshVolume > 0.25;
+
+			VolumeAndSurfaceMethod usedMethod;
+			if (!colliderIsValid && !meshIsValid)
+			{
+				usedMethod = VolumeAndSurfaceMethod.Bounds;
+				volume = boundsVolume * validityFactor;
+				surface = boundsSurface;
+			}
+			else if (method == VolumeAndSurfaceMethod.ColliderAndMeshAverage)
+			{
+				usedMethod = VolumeAndSurfaceMethod.ColliderAndMeshAverage;
+				volume = (meshVolume + colliderVolume) * 0.5;
+				surface = (meshSurface + colliderSurface) * 0.5;
+			}
+			// after testing against parts from various mods, it seems that the best result between colliders and meshes is very often the one that return the largest volume.
+			// it's also safer, better have a slightly overpowered part than a useless one. Specifically, this can be wrong in the following cases :
+			// - when there are a few overlapping meshes or colliders that were large enough to not be filtered
+			// - on complex parts with many "protruding" not habitable shapes, for example the BDB lunar lander ascent module
+			// - on parts that have hollow shapes that use a solid collider (shrouds, interstages...)
+			// Possible improvement : prioritize the method that use less different meshes to reduce the intersecting meshes cases.
+			// This may improve overall accuracy but may lead very wrong estimations in some specific cases.
+			// Another (complex) option could be to compute the bounding box of each mesh, then get the intersecting volume of every other mesh bounding box.
+			// Then exclude meshes that have a large enough intersected volume compared to their bounding box volume.
+			else if (method == VolumeAndSurfaceMethod.Mesh || (method == VolumeAndSurfaceMethod.Best && meshIsValid && (!colliderIsValid || meshVolume > colliderVolume)))
+			{
+				usedMethod = VolumeAndSurfaceMethod.Mesh;
+				volume = meshVolume;
+				surface = meshSurface;
+			}
+			else
+			{
+				usedMethod = VolumeAndSurfaceMethod.Collider;
+				volume = colliderVolume;
+				surface = colliderSurface;
+			}
+
+			double totalNodeSurface = 0.0;
+			if (substractAttachementNodeSurface)
+			{
+				foreach (AttachNode attachNode in part.attachNodes)
+				{
+					// its seems the standard way of disabling a node involve
+					// reducing the rendered radius to 0.001f
+					if (attachNode.radius < 0.1f)
+						continue;
+
+					switch (attachNode.size)
+					{
+						case 0: totalNodeSurface += 0.3068; break;// 0.625 m disc
+						case 1: totalNodeSurface += 1.2272; break;// 1.25 m disc
+						case 2: totalNodeSurface += 4.9090; break;// 2.5 m disc
+						case 3: totalNodeSurface += 11.045; break;// 3.75 m disc
+						case 4: totalNodeSurface += 19.635; break;// 5 m disc
+					}
+				}
+				surface = Math.Max(surface * 0.5, surface - totalNodeSurface);
+			}
+
+			if (logAll)
+			{
+				double rawColliderVolume = 0.0;
+				double rawColliderSurface = 0.0;
+				int colliderCount = 0;
+				if (collidersVolAndSurf != null)
+				{
+					rawColliderVolume = collidersVolAndSurf.Sum(p => p.Key);
+					rawColliderSurface = collidersVolAndSurf.Sum(p => p.Value);
+					colliderCount = collidersVolAndSurf.Count();
+				}
+
+				double rawMeshVolume = 0.0;
+				double rawMeshSurface = 0.0;
+				int meshCount = 0;
+				if (meshesVolAndSurf != null)
+				{
+					rawMeshVolume = meshesVolAndSurf.Sum(p => p.Key);
+					rawMeshSurface = meshesVolAndSurf.Sum(p => p.Value);
+					meshCount = meshesVolAndSurf.Count();
+				}
+
+				Log("====== Volume and surface evaluation for part : " + part.name + " ======");
+				Log("Substract attachement nodes surface : ENABLED=" + substractAttachementNodeSurface + " - NODES SURFACE=" + totalNodeSurface.ToString("F2") + "m2");
+				Log("Requested method : " + method.ToString() + " - Method used : " + usedMethod.ToString());
+				Log("Bounds method :   VOLUME=" + boundsVolume.ToString("F2") + "m3 - SURFACE=" + boundsSurface.ToString("F2") + "m2 - MAX VOLUME=" + (boundsVolume * validityFactor).ToString("F2") + "m3");
+				Log("Collider method : VOLUME=" + colliderVolume.ToString("F2") + "m3 - SURFACE=" + colliderSurface.ToString("F2") + "m2 - RAW VOLUME=" + rawColliderVolume.ToString("F2") + "m3 - RAW SURFACE=" + rawColliderSurface.ToString("F2") + "m2 - COLLIDERS COUNT=" + colliderCount.ToString());
+				Log("Mesh method :     VOLUME=" + meshVolume.ToString("F2") + "m3 - SURFACE=" + meshSurface.ToString("F2") + "m2 - RAW VOLUME=" + rawMeshVolume.ToString("F2") + "m3 - RAW SURFACE=" + rawMeshSurface.ToString("F2") + "m2 - MESHES COUNT=" + meshCount.ToString());
+				Log("Returned result : VOLUME=" + volume.ToString("F2") + "m3 - SURFACE=" + surface.ToString("F2") + "m2");
+			}
+
+			return usedMethod;
+		}
+
+		private static List<KeyValuePair<double, double>> GetPartMeshesVolumeAndSurface(Transform partRootTransform, bool ignoreSkinnedMeshes)
+		{
+			// Lib.LogDebug("FINDING MESH VOLUME / SURFACE");
+			List<KeyValuePair<double, double>> VolAndSurf = new List<KeyValuePair<double, double>>();
+
+			if (!ignoreSkinnedMeshes)
+			{
+				SkinnedMeshRenderer[] skinnedMeshRenderers = partRootTransform.GetComponentsInChildren<SkinnedMeshRenderer>(false);
+				for (int i = 0; i < skinnedMeshRenderers.Length; i++)
+				{
+					SkinnedMeshRenderer skinnedMeshRenderer = skinnedMeshRenderers[i];
+					Mesh animMesh = new Mesh();
+					skinnedMeshRenderer.BakeMesh(animMesh);
+
+					KeyValuePair<double, double> meshVolAndSurf = new KeyValuePair<double, double>(
+						MeshVolume(animMesh.vertices, animMesh.triangles),
+						MeshSurface(animMesh.vertices, animMesh.triangles));
+
+					// Lib.LogDebug("Using baked skinned mesh, volume=" + meshVolAndSurf.Key.ToString("F2") + " - surface=" + meshVolAndSurf.Value.ToString("F2") + " - name=" + skinnedMeshRenderer.transform.name);
+					VolAndSurf.Add(meshVolAndSurf);
+				}
+			}
+
+
+			MeshFilter[] meshFilters = partRootTransform.GetComponentsInChildren<MeshFilter>(false);
+			int count = meshFilters.Length;
+
+			if (count == 0)
+				return VolAndSurf;
+
+			foreach (MeshFilter meshFilter in meshFilters)
+			{
+				// Ignore colliders
+				if (meshFilter.gameObject.GetComponent<MeshCollider>() != null)
+				{
+					// Lib.LogDebug("Ignoring mesh collider : " + meshFilter.transform.name);
+					continue;
+				}
+
+				// Ignore colliders
+				MeshRenderer renderer = meshFilter.gameObject.GetComponent<MeshRenderer>();
+				if (renderer == null || !renderer.enabled)
+				{
+					// Lib.LogDebug("Ignoring mesh without renderer / disabled renderer : " + meshFilter.transform.name);
+					continue;
+				}
+
+				Mesh mesh = meshFilter.sharedMesh;
+				Vector3 scaleVector = meshFilter.transform.lossyScale;
+				float scale = scaleVector.x * scaleVector.y * scaleVector.z;
+
+				Vector3[] vertices;
+				if (scale != 1f)
+					vertices = ScaleMeshVertices(mesh.vertices, scaleVector);
+				else
+					vertices = mesh.vertices;
+
+				KeyValuePair<double, double> meshVolAndSurf = new KeyValuePair<double, double>(
+					MeshVolume(vertices, mesh.triangles),
+					MeshSurface(vertices, mesh.triangles));
+
+				// Lib.LogDebug("Using mesh, volume=" + meshVolAndSurf.Key.ToString("F2") + " - surface=" + meshVolAndSurf.Value.ToString("F2") + " - name=" + meshFilter.transform.name);
+				VolAndSurf.Add(meshVolAndSurf);
+			}
+
+			// Lib.LogDebug("MESHES VOLUME=" + VolAndSurf.Sum(f => f.Key).ToString("F2") + " - SURFACE=" + VolAndSurf.Sum(f => f.Value).ToString("F2") + " - COUNT=" + VolAndSurf.Count());
+
+			return VolAndSurf;
+		}
+
+		private static List<KeyValuePair<double, double>> GetPartMeshCollidersVolumeAndSurface(Transform partRootTransform)
+		{
+			// Lib.LogDebug("FINDING COLLIDERS VOLUME / SURFACE");
+
+			MeshCollider[] meshColliders = partRootTransform.GetComponentsInChildren<MeshCollider>(false);
+			int count = meshColliders.Length;
+
+			List<KeyValuePair<double, double>> VolAndSurf = new List<KeyValuePair<double, double>>(count);
+
+			if (count == 0)
+				return VolAndSurf;
+
+			foreach (MeshCollider meshCollider in meshColliders)
+			{
+				Mesh mesh = meshCollider.sharedMesh;
+				Vector3 scaleVector = meshCollider.transform.lossyScale;
+				float scale = scaleVector.x * scaleVector.y * scaleVector.z;
+
+				Vector3[] vertices;
+				if (scale != 1f)
+					vertices = ScaleMeshVertices(mesh.vertices, scaleVector);
+				else
+					vertices = mesh.vertices;
+
+				KeyValuePair<double, double> volAndSurf = new KeyValuePair<double, double>(
+					MeshVolume(vertices, mesh.triangles),
+					MeshSurface(vertices, mesh.triangles));
+
+				//Lib.LogDebug("Using collider mesh, volume=" + volAndSurf.Key.ToString("F2") + " - surface=" + volAndSurf.Value.ToString("F2") + " - name=" + meshCollider.transform.name);
+				VolAndSurf.Add(volAndSurf);
+			}
+
+			//Lib.LogDebug("COLLIDERS VOLUME=" + VolAndSurf.Sum(f => f.Key).ToString("F2") + " - SURFACE=" + VolAndSurf.Sum(f => f.Value).ToString("F2") + " - COUNT=" + VolAndSurf.Count());
+			return VolAndSurf;
+		}
+
+		/// <summary>
+		/// Scale a vertice array (note : this isn't enough to produce a valid unity mesh, would need to recalculate normals and UVs)
+		/// </summary>
+		private static Vector3[] ScaleMeshVertices(Vector3[] sourceVertices, Vector3 scale)
+		{
+			Vector3[] scaledVertices = new Vector3[sourceVertices.Length];
+			for (int i = 0; i < sourceVertices.Length; i++)
+			{
+				scaledVertices[i] = new Vector3(
+					sourceVertices[i].x * scale.x,
+					sourceVertices[i].y * scale.y,
+					sourceVertices[i].z * scale.z);
+			}
+			return scaledVertices;
+		}
+
+		/// <summary>
+		/// Calculate a mesh surface in m^2. WARNING : slow
+		/// Very accurate as long as the mesh is fully closed
+		/// </summary>
+		private static double MeshSurface(Vector3[] vertices, int[] triangles)
+		{
+			if (triangles.Length == 0)
+				return 0.0;
+
+			double sum = 0.0;
+
+			for (int i = 0; i < triangles.Length; i += 3)
+			{
+				Vector3 corner = vertices[triangles[i]];
+				Vector3 a = vertices[triangles[i + 1]] - corner;
+				Vector3 b = vertices[triangles[i + 2]] - corner;
+
+				sum += Vector3.Cross(a, b).magnitude;
+			}
+
+			return sum / 2.0;
+		}
+
+		/// <summary>
+		/// Calculate a mesh volume in m^3. WARNING : slow
+		/// Very accurate as long as the mesh is fully closed
+		/// </summary>
+		private static double MeshVolume(Vector3[] vertices, int[] triangles)
+		{
+			double volume = 0f;
+			if (triangles.Length == 0)
+				return volume;
+
+			Vector3 o = new Vector3(0f, 0f, 0f);
+			// Computing the center mass of the polyhedron as the fourth element of each mesh
+			for (int i = 0; i < triangles.Length; i++)
+			{
+				o += vertices[triangles[i]];
+			}
+			o = o / triangles.Length;
+
+			// Computing the sum of the volumes of all the sub-polyhedrons
+			for (int i = 0; i < triangles.Length; i += 3)
+			{
+				Vector3 p1 = vertices[triangles[i + 0]];
+				Vector3 p2 = vertices[triangles[i + 1]];
+				Vector3 p3 = vertices[triangles[i + 2]];
+				volume += SignedVolumeOfTriangle(p1, p2, p3, o);
+			}
+			return Math.Abs(volume);
+		}
+
+		private static float SignedVolumeOfTriangle(Vector3 p1, Vector3 p2, Vector3 p3, Vector3 o)
+		{
+			Vector3 v1 = p1 - o;
+			Vector3 v2 = p2 - o;
+			Vector3 v3 = p3 - o;
+
+			return Vector3.Dot(Vector3.Cross(v1, v2), v3) / 6f; ;
+		}
+		#endregion
+
+		#region MODULE
 		///<summary>
 		/// return all modules implementing a specific type in a vessel
 		/// note: disabled modules are not returned
@@ -1661,9 +2107,9 @@ namespace KERBALISM
 			// then we have no chances of finding the module prefab so we return null
 			return data.index < data.prefabs.Count ? data.prefabs[data.index++] : null;
 		}
-#endregion
+		#endregion
 
-#region RESOURCE
+		#region RESOURCE
 		/// <summary> Returns the amount of a resource in a part </summary>
 		public static double Amount(Part part, string resource_name, bool ignore_flow = false)
 		{
@@ -1907,9 +2353,9 @@ namespace KERBALISM
 			// then get the first resource and return capacity
 			return p.Resources.Count == 0 ? 0.0 : p.Resources[0].maxAmount;
 		}
-#endregion
+		#endregion
 
-#region SCIENCE DATA
+		#region SCIENCE DATA
 		///<summary>return true if there is experiment data on the vessel</summary>
 		public static bool HasData( Vessel v )
 		{
@@ -2028,9 +2474,9 @@ namespace KERBALISM
 			foreach (string tech_id in techs) n += HasTech( tech_id ) ? 1 : 0;
 			return n;
 		}
-#endregion
+		#endregion
 
-#region ASSETS
+		#region ASSETS
 		///<summary> Returns the path of the directory containing the DLL </summary>
 		public static string Directory()
 		{
@@ -2115,9 +2561,9 @@ namespace KERBALISM
 			}
 			return mat;
 		}
-#endregion
+		#endregion
 
-#region CONFIG
+		#region CONFIG
 		///<summary>get a config node from the config system</summary>
 		public static ConfigNode ParseConfig( string path )
 		{
@@ -2157,9 +2603,9 @@ namespace KERBALISM
 				return def_value;
 			}
 		}
-#endregion
+		#endregion
 
-#region UI
+		#region UI
 		/// <summary>Trigger a planner update</summary>
 		public static void RefreshPlanner()
 		{
@@ -2272,9 +2718,9 @@ namespace KERBALISM
 			int index = rand.Next(letters.Length);
 			return (string)letters[index];
 		}
-#endregion
+		#endregion
 
-#region PROTO
+		#region PROTO
 		public static class Proto
 		{
 			public static bool GetBool( ProtoPartModuleSnapshot m, string name, bool def_value = false )
@@ -2348,9 +2794,9 @@ namespace KERBALISM
 				module.moduleValues.SetValue( value_name, value.ToString(), true );
 			}
 		}
-#endregion
+		#endregion
 
-#region STRING PARSING
+		#region STRING PARSING
 		public static class Parse
 		{
 			public static bool ToBool( string s, bool def_value = false )
@@ -2408,7 +2854,7 @@ namespace KERBALISM
 #endregion
 	}
 
-#region UTILITY CLASSES
+	#region UTILITY CLASSES
 
 	public class ObjectPair<T, U>
 	{

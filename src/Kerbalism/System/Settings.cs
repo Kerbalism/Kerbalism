@@ -104,6 +104,9 @@ namespace KERBALISM
 
 			UseSamplingSunFactor = Lib.ConfigValue(cfg, "UseSamplingSunFactor", false);
 
+			// debug / logging
+			VolumeAndSurfaceLogging = Lib.ConfigValue(cfg, "VolumeAndSurfaceLogging", false);
+
 			loaded = true;
 		}
 
@@ -201,6 +204,9 @@ namespace KERBALISM
 		public static bool CheckForCRP;
 
 		public static bool UseSamplingSunFactor;
+
+		// debug / logging
+		public static bool VolumeAndSurfaceLogging;
 
 		public static bool loaded { get; private set; } = false;
 	}
