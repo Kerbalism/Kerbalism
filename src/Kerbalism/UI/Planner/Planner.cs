@@ -363,7 +363,7 @@ namespace KERBALISM.Planner
 			}
 			else
 			{
-				p.AddContent(Localizer.Format("KERBALISM_Planner_pressurized"), "n/a");//"pressurized"
+				p.AddContent(Local.Planner_pressurized, "n/a");//"pressurized"
 			}
 
 			// render life estimate

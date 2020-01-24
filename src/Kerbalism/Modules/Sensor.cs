@@ -154,7 +154,7 @@ namespace KERBALISM
 					return vd.EnvUnderwater
 					  ? Local.Sensor_insideocean//"inside <b>ocean</b>"
 					  : vd.EnvInAtmosphere
-					  ? Localizer.Format("#KERBALISM_Sensor_insideatmosphere", vd.EnvBreathable ? Localizer.Format("#KERBALISM_Sensor_breathable") : Local.Sensor_notbreathable)//"breathable""not breathable"                  //Lib.BuildString("inside <b>atmosphere</b> (", vd.EnvBreathable ? "breathable" : "not breathable", ")")
+					  ? Local.Sensor_insideatmosphere.Format(vd.EnvBreathable ? Local.Sensor_breathable : Local.Sensor_notbreathable)//"breathable""not breathable"                  //Lib.BuildString("inside <b>atmosphere</b> (", vd.EnvBreathable ? "breathable" : "not breathable", ")")
 					  : Sim.InsideThermosphere(v)
 					  ? Local.Sensor_insidethermosphere//"inside <b>thermosphere</b>""
 					  : Sim.InsideExosphere(v)
@@ -164,7 +164,7 @@ namespace KERBALISM
 				case "gravioli":
 					return Lib.BuildString
 					(
-						Localizer.Format("#KERBALISM_Sensor_Graviolidetection", "<b>" + vd.EnvGravioli.ToString("F2") + "</b>\n\n"),//"Gravioli detection events per-year: 
+						Local.Sensor_Graviolidetection + " <b>" + vd.EnvGravioli.ToString("F2") + "</b>\n\n",//"Gravioli detection events per-year: 
 						"<i>", Local.Sensor_info1, "\n",//The elusive negative gravioli particle\nseems to be much harder to detect than expected.
 						Local.Sensor_info2, "</i>"//" On the other\nhand there seems to be plenty\nof useless positive graviolis around."
 					);

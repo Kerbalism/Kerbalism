@@ -310,7 +310,7 @@ namespace KERBALISM
 					// only inform the user if auto-analyze is turned off
 					// otherwise we could be spamming "Analysis complete" messages
 					Message.Post(Lib.BuildString(Lib.Color(Local.Laboratory_Analysis, Lib.Kolor.Science, true), "\n",
-						Localizer.Format("#KERBALISM_Laboratory_Analyzed", Lib.Bold(v.vesselName), Lib.Bold(subject.FullTitle))), localized_results);
+						Local.Laboratory_Analyzed.Format(Lib.Bold(v.vesselName), Lib.Bold(subject.FullTitle))), localized_results);
 				}
 
 				if (PreferencesScience.Instance.transmitScience)

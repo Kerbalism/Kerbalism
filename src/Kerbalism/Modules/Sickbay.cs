@@ -205,7 +205,7 @@ namespace KERBALISM
 				{
 					BaseEvent e = Events["Toggle" + i++];
 					e.active = true;
-					e.guiName = Localizer.Format("#KERBALISM_Sickbay_cureEverybody", title,patientName);//Lib.BuildString(, ": dismiss ", )
+					e.guiName = Local.Sickbay_cureEverybody.Format(title,patientName);//Lib.BuildString(, ": dismiss ", )
 					slotsAvailable--;
 					if (slotsAvailable == 0)
 						break;
@@ -220,7 +220,7 @@ namespace KERBALISM
 
 						BaseEvent e = Events["Toggle" + i++];
 						e.active = true;
-						e.guiName = Localizer.Format("#KERBALISM_Sickbay_cureEverybody2", title,crew.name);//Lib.BuildString(, ": cure ", )
+						e.guiName = Local.Sickbay_cureEverybody2.Format(title,crew.name);//Lib.BuildString(, ": cure ", )
 						if (i > MAX_SLOTS)
 							break;
 					}
@@ -258,7 +258,7 @@ namespace KERBALISM
 			if (slots == 0 && !cureEverybody) return null;
 			Specifics specs = new Specifics();
 			if(cureEverybody) specs.Add(Local.Sickbay_info1, Local.Sickbay_info2);//"Cures""All kerbals in part"
-			else if(slots > 0) specs.Add(Local.Sickbay_info3,  Localizer.Format("#KERBALISM_Sickbay_info4", slots));//"Capacity""<<1>> Kerbals"
+			else if(slots > 0) specs.Add(Local.Sickbay_info3,  Local.Sickbay_info4.Format(slots.ToString()));//"Capacity""<<1>> Kerbals"
 			return specs;
 		}
 

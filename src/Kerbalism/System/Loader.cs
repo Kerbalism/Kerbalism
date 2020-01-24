@@ -35,8 +35,11 @@ namespace KERBALISM
 			// log version
 			Lib.Log("Version : " + Lib.KerbalismVersion + " - Build : " + Lib.KerbalismDevBuild);
 
-			if (Local.GenerateLocalizationTemplate)
-				Local.GenerateLocTemplate();
+			if (LocalHelpers.GenerateEnglishLoc)
+				LocalHelpers.GenerateLoc();
+
+			if (LocalHelpers.UpdateNonEnglishLoc)
+				LocalHelpers.RegenerateNonEnglishLoc();
 
 			Lib.Log("Forcing KSP to load resources...");
 			PartResourceLibrary.Instance.LoadDefinitions();
