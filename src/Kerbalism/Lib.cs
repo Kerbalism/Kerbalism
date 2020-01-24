@@ -747,14 +747,14 @@ namespace KERBALISM
 		{
 			if (rate == 0.0) return Local.Generic_NONE;//"none"
 			rate = Math.Abs(rate);
-			if (rate >= 0.01) return BuildString(rate.ToString(precision), "/s");
+			if (rate >= 0.01) return BuildString(rate.ToString(precision), Local.Generic_perSecond);//"/s"
 			rate *= 60.0; // per-minute
-			if (rate >= 0.01) return BuildString(rate.ToString(precision), "/m");
+			if (rate >= 0.01) return BuildString(rate.ToString(precision), Local.Generic_perMinute);//"/m"
 			rate *= 60.0; // per-hour
-			if (rate >= 0.01) return BuildString(rate.ToString(precision), "/h");
+			if (rate >= 0.01) return BuildString(rate.ToString(precision), Local.Generic_perHour);//"/h"
 			rate *= HoursInDay;  // per-day
-			if (rate >= 0.01) return BuildString(rate.ToString(precision), "/d");
-			return BuildString((rate * DaysInYear).ToString(precision), "/y");
+			if (rate >= 0.01) return BuildString(rate.ToString(precision), Local.Generic_perDay);//"/d"
+			return BuildString((rate * DaysInYear).ToString(precision), Local.Generic_perYear);//"/y"
 		}
 
 		///<summary> Pretty-print a duration (duration is in seconds, must be positive) </summary>
@@ -1016,7 +1016,7 @@ namespace KERBALISM
 			if (compact)
 				return Lib.Color(value.ToString("F1"), Kolor.Science, true);
 			else
-				return Lib.Color(Lib.BuildString(value.ToString("F1"), " CREDITS"), Kolor.Science);//
+				return Lib.Color(Lib.BuildString(value.ToString("F1"), " ", Local.SCIENCEARCHIVE_CREDITS), Kolor.Science);//CREDITS
 
 		}
 #endregion
