@@ -156,8 +156,13 @@ namespace KERBALISM
             Events["Toggle"].active = toggle;
             Actions["Action"].active = toggle;
 
-            // create animators
-            if (!hasGravityRing)
+#if DEBUG
+			Events["LogVolumeAndSurface"].active = true;
+#else
+			Events["LogVolumeAndSurface"].active = Settings.VolumeAndSurfaceLogging;
+#endif
+			// create animators
+			if (!hasGravityRing)
             {
                 inflate_anim = new Animator(part, inflate);
             }
@@ -301,8 +306,6 @@ namespace KERBALISM
                         part.Resources[resource].amount = 0.0;
                 }
 
-				Lib.GetPartVolumeAndSurface(part, out double volumeFound, out double surfaceFound, volumeAndSurfaceMethod, true, false, true);
-
 				// return new state
 				return State.disabled;
             }
@@ -328,8 +331,6 @@ namespace KERBALISM
                 // The other resources in ResourceBalance are waste resources
                 if (part.Resources.Contains("Atmosphere"))
                     part.Resources["Atmosphere"].amount = part.Resources["Atmosphere"].maxAmount;
-
-				Lib.GetPartVolumeAndSurface(part, out double volumeFound, out double surfaceFound, volumeAndSurfaceMethod, true, false, true);
 
 				// return new state
 				return State.enabled;
@@ -688,5 +689,15 @@ namespace KERBALISM
 
 		public float GetModuleCost(float defaultCost, ModifierStagingSituation sit) => shieldingCost;
 		public ModifierChangeWhen GetModuleCostChangeWhen() => ModifierChangeWhen.CONSTANTLY;
+
+#if KSP15_16
+		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true)]
+#else
+		[KSPEvent(guiActive = false, guiActiveEditor = true, guiName = "[Debug] log volume/surface", active = false, groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
+		public void LogVolumeAndSurface()
+		{
+			Lib.GetPartVolumeAndSurface(part, out double volumeFound, out double surfaceFound, Lib.VolumeAndSurfaceMethod.Best, true, false, true);
+		}
+#endif
 	}
 }
