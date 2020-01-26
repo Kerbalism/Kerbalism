@@ -99,7 +99,7 @@ namespace KERBALISM
 
 				ResourceRecipe recipe = new ResourceRecipe(ResourceBroker.Harvester);
 				recipe.AddInput("ElectricCharge", harvester.ec_rate * elapsed_s);
-				recipe.AddOutput(harvester.resource, harvester.rate * (abundance/harvester.abundance_rate) * elapsed_s, false);
+				recipe.AddOutput(harvester.resource, rate * (abundance/harvester.abundance_rate) * elapsed_s, false);
 				ResourceCache.AddRecipe(v, recipe);
 			}
 		}
