@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.IO;
 using KSP.Localization;
 using UnityEngine;
 
@@ -14,7 +16,10 @@ namespace KERBALISM
         [KSPField] public bool toggle = true;                       // show the enable/disable toggle
 		[KSPField] public double max_pressure = 1.0;                // max. sustainable pressure, in percent of sea level
 																	// for now this won't do anything
-		[KSPField] public Lib.VolumeAndSurfaceMethod volumeAndSurfaceMethod = Lib.VolumeAndSurfaceMethod.Best; // default method to use for calculating volume and surface
+
+		// method to use for calculating volume and surface
+		[KSPField] public Lib.VolumeAndSurfaceMethod volumeAndSurfaceMethod = Lib.VolumeAndSurfaceMethod.Best;
+		[KSPField] public bool substractAttachementNodesSurface = true;
 
 		// persistence
 		[KSPField(isPersistant = true)] public State state = State.enabled;
@@ -47,79 +52,93 @@ namespace KERBALISM
         private bool configured = false;       // true if configure method has been executed
 		private float shieldingCost;
 
+		// volume / surface cache
+		public static Dictionary<string, Lib.PartVolumeAndSurfaceInfo> habitatDatabase;
+		public const string habitatDataCacheNodeName = "KERBALISM_HABITAT_INFO";
+		public static string HabitatDataCachePath => Path.Combine(Lib.KerbalismRootPath, "HabitatData.cache");
+
+		// volume / surface evaluation at prefab compilation
 		public override void OnLoad(ConfigNode node)
 		{
 			// volume/surface calcs are quite slow and memory intensive, so we do them only once on the prefab
-			// then get the prefab values from OnStart
+			// then get the prefab values from OnStart. Moreover, we cache the results in the 
+			// Kerbalism\HabitatData.cache file and reuse those cached results on next game launch.
 			if (HighLogic.LoadedScene == GameScenes.LOADING)
 			{
-				Transform modelRoot = null;
-
-				if (Settings.VolumeAndSurfaceLogging)
+				if (volume <= 0.0 || surface <= 0.0)
 				{
-					foreach (PartModule pm in part.Modules)
+					if (habitatDatabase == null)
 					{
-						// Attempt at making this work with SSTU, try to get the "core" model and only do calcs on that. 
-						// Doesn't work very well, there is just too much dynamic stuff happening under the hood, I guess.
-						// letting this here as the results can still be usefull for determining the hardcoded config values
-						if (pm.moduleName == "SSTUModularPart")
+						ConfigNode dbRootNode = ConfigNode.Load(HabitatDataCachePath);
+						ConfigNode[] habInfoNodes = dbRootNode?.GetNodes(habitatDataCacheNodeName);
+						habitatDatabase = new Dictionary<string, Lib.PartVolumeAndSurfaceInfo>();
+
+						if (habInfoNodes != null)
 						{
-							try
+							for (int i = 0; i < habInfoNodes.Length; i++)
 							{
-								object coreModule = Lib.ReflectionValue<object>(pm, "coreModule"); // Type : ModelModule<SSTUModularPart>
-								modelRoot = Lib.ReflectionValue<Transform>(coreModule, "root"); // top level transform of the model
-							}
-							catch (Exception e)
-							{
-								Lib.Log("Exception while getting coreModule root transform on SSTUModularPart in part " + part.name);
-								Lib.Log(e.ToString());
-							}
-							if (modelRoot == null)
-							{
-								Lib.Log("Warning : couldn't get coreModule root transform on SSTUModularPart in part " + part.name);
+								string partName = habInfoNodes[i].GetValue("partName") ?? string.Empty;
+								if (!string.IsNullOrEmpty(partName) && !habitatDatabase.ContainsKey(partName))
+									habitatDatabase.Add(partName, new Lib.PartVolumeAndSurfaceInfo(habInfoNodes[i]));
 							}
 						}
 					}
-				}
 
-				if (volume <= 0.0 || surface <= 0.0)
-				{
-					// Find deploy/retract animations, either here on in the gravityring module
-					// then set the part to the deployed state before doing the volume/surface calcs
-					// if part has Gravity Ring, find it.
-					gravityRing = part.FindModuleImplementing<GravityRing>();
-					hasGravityRing = gravityRing != null;
-
-					// create animators and set the model to the deployed state
-					if (hasGravityRing)
+					// SSTU specific support copypasted from the old system, not sure how well this works
+					foreach (PartModule pm in part.Modules)
 					{
-						gravityRing.deploy_anim = new Animator(part, gravityRing.deploy);
-						gravityRing.deploy_anim.reversed = gravityRing.animBackwards;
-
-						if (gravityRing.deploy_anim.IsDefined)
-							gravityRing.deploy_anim.Still(1.0);
-					}
-					else
-					{
-						inflate_anim = new Animator(part, inflate);
-						inflate_anim.reversed = animBackwards;
-
-						if (inflate_anim.IsDefined)
-							inflate_anim.Still(1.0);
+						if (pm.moduleName == "SSTUModularPart")
+						{
+							Bounds bb = Lib.ReflectionCall<Bounds>(pm, "getModuleBounds", new Type[] { typeof(string) }, new string[] { "CORE" });
+							if (bb != null)
+							{
+								if (volume <= 0.0) volume = Lib.BoundsVolume(bb) * 0.785398; // assume it's a cylinder
+								if (surface <= 0.0) surface = Lib.BoundsSurface(bb) * 0.95493; // assume it's a cylinder
+							}
+							return;
+						}
 					}
 
-					// get surface and volume
-					Lib.GetPartVolumeAndSurface(part, out double volumeFound, out double surfaceFound, volumeAndSurfaceMethod, true, false, Settings.VolumeAndSurfaceLogging, modelRoot);
+					string configPartName = part.name.Replace('.', '_');
+					Lib.PartVolumeAndSurfaceInfo partInfo;
+					if (!habitatDatabase.TryGetValue(configPartName, out partInfo))
+					{
+						// Find deploy/retract animations, either here on in the gravityring module
+						// then set the part to the deployed state before doing the volume/surface calcs
+						// if part has Gravity Ring, find it.
+						gravityRing = part.FindModuleImplementing<GravityRing>();
+						hasGravityRing = gravityRing != null;
 
-					// calculate habitat internal volume
-					if (volume <= 0.0) volume = volumeFound;
+						// create animators and set the model to the deployed state
+						if (hasGravityRing)
+						{
+							gravityRing.deploy_anim = new Animator(part, gravityRing.deploy);
+							gravityRing.deploy_anim.reversed = gravityRing.animBackwards;
 
-					// calculate habitat external surface
-					if (surface <= 0.0) surface = surfaceFound;
-				}
-				else if (Settings.VolumeAndSurfaceLogging)
-				{
-					Lib.GetPartVolumeAndSurface(part, out double volumeFound, out double surfaceFound, volumeAndSurfaceMethod, true, false, Settings.VolumeAndSurfaceLogging, modelRoot);
+							if (gravityRing.deploy_anim.IsDefined)
+								gravityRing.deploy_anim.Still(1.0);
+						}
+						else
+						{
+							inflate_anim = new Animator(part, inflate);
+							inflate_anim.reversed = animBackwards;
+
+							if (inflate_anim.IsDefined)
+								inflate_anim.Still(1.0);
+						}
+
+						// get surface and volume
+						partInfo = Lib.GetPartVolumeAndSurface(part, Settings.VolumeAndSurfaceLogging);
+
+						habitatDatabase.Add(configPartName, partInfo);
+					}
+
+					partInfo.GetUsingMethod(
+						volumeAndSurfaceMethod != Lib.VolumeAndSurfaceMethod.Best ? volumeAndSurfaceMethod : partInfo.bestMethod,
+						out double infoVolume, out double infoSurface, substractAttachementNodesSurface);
+
+					if (volume <= 0.0) volume = infoVolume;
+					if (surface <= 0.0) surface = infoSurface;
 				}
 			}
 		}
@@ -140,11 +159,7 @@ namespace KERBALISM
 			if (volume <= 0.0 || surface <= 0.0)
 			{
 				Habitat prefab = part.partInfo.partPrefab.FindModuleImplementing<Habitat>();
-
-				// calculate habitat internal volume
 				if (volume <= 0.0) volume = prefab.volume;
-
-				// calculate habitat external surface
 				if (surface <= 0.0) surface = prefab.surface;
 			}
 
@@ -696,7 +711,7 @@ namespace KERBALISM
 		[KSPEvent(guiActive = false, guiActiveEditor = true, guiName = "[Debug] log volume/surface", active = false, groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
 		public void LogVolumeAndSurface()
 		{
-			Lib.GetPartVolumeAndSurface(part, out double volumeFound, out double surfaceFound, Lib.VolumeAndSurfaceMethod.Best, true, false, true);
+			Lib.GetPartVolumeAndSurface(part, true);
 		}
 #endif
 	}
