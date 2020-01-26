@@ -831,6 +831,7 @@ namespace KERBALISM
 		public static string Harvester_space_valid = GetLoc("Harvester_space_valid"); // "not in space"
 		public static string Harvester_pressurebelow = GetLoc("Harvester_pressurebelow"); // "pressure below threshold"
 		public static string Harvester_abundancebelow = GetLoc("Harvester_abundancebelow"); // "abundance below threshold"																				
+		public static string Harvester_simulatedabundance = GetLoc("Harvester_simulatedabundance"); // "Simulate at abundance"
 		public static string Harvester_source1 = GetLoc("Harvester_source1"); // "the surface"
 		public static string Harvester_source2 = GetLoc("Harvester_source2"); // "the ocean"
 		public static string Harvester_source3 = GetLoc("Harvester_source3"); // "the atmosphere"
