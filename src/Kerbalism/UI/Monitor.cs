@@ -262,7 +262,6 @@ namespace KERBALISM
 
 		void Render_menu(Vessel v)
 		{
-			const string tooltip = "#KERBALISM_Monitor_tooltip";//"\n<i>(middle-click to popout in a window, middle-click again to close popout)</i>"
 			VesselData vd = v.KerbalismData();
 			GUILayout.BeginHorizontal(Styles.entry_container);
 			GUILayout.Label(new GUIContent(Lib.Color(page == MonitorPage.telemetry, " " + Local.Monitor_INFO, Lib.Kolor.Green, Lib.Kolor.None, true), Textures.small_info, Local.Monitor_INFO_desc + Local.Monitor_tooltip), config_style);//INFO"Telemetry readings"
