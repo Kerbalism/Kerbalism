@@ -29,6 +29,11 @@ namespace KERBALISM
 		// show abundance level
 		[KSPField(guiActive = false, guiName = "_")] public string Abundance;
 
+		// In the editor, allow the user to tweak the abundance for simulation purposes
+		[KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#KERBALISM_Harvester_simulatedabundance")]
+		[UI_FloatRange(scene = UI_Scene.Editor, minValue = 0f, maxValue = 1f, stepIncrement = 0.01f)]
+		public float simulated_abundance = 0.1f;
+
 		// the drill head transform
 		Transform drill_head;
 
@@ -83,23 +88,28 @@ namespace KERBALISM
 			}
 		}
 
+		public static double AdjustedRate(Harvester harvester, CrewSpecs engineer_cs, List<ProtoCrewMember> crew, double abundance)
+		{
+			// Bonus(..., -2): a level 0 engineer will alreaday add 2 bonus points jsut because he's there,
+			// regardless of level. efficiency will raise further with higher levels.
+			int bonus = engineer_cs.Bonus(crew, -2);
+			double crew_gain = 1 + bonus * Settings.HarvesterCrewLevelBonus;
+			crew_gain = Lib.Clamp(crew_gain, 1, Settings.MaxHarvesterBonus);
+
+			return harvester.rate * crew_gain * (abundance / harvester.abundance_rate);
+		}
+
 		private static void ResourceUpdate(Vessel v, Harvester harvester, double min_abundance, double elapsed_s)
 		{
 			double abundance = SampleAbundance(v, harvester);
 			if (abundance > min_abundance)
 			{
-				double rate = harvester.rate;
-
-				// Bonus(..., -2): a level 0 engineer will alreaday add 2 bonus points jsut because he's there,
-				// regardless of level. efficiency will raise further with higher levels.
-				int bonus = engineer_cs.Bonus(v, -2);
-				double crew_gain = 1 + bonus * Settings.HarvesterCrewLevelBonus;
-				crew_gain = Lib.Clamp(crew_gain, 1, Settings.MaxHarvesterBonus);
-				rate *= crew_gain;
-
 				ResourceRecipe recipe = new ResourceRecipe(ResourceBroker.Harvester);
 				recipe.AddInput("ElectricCharge", harvester.ec_rate * elapsed_s);
-				recipe.AddOutput(harvester.resource, harvester.rate * (abundance/harvester.abundance_rate) * elapsed_s, false);
+				recipe.AddOutput(
+					harvester.resource,
+					Harvester.AdjustedRate(harvester, engineer_cs, Lib.CrewList(v), abundance) * elapsed_s,
+					dump: false);
 				ResourceCache.AddRecipe(v, recipe);
 			}
 		}
