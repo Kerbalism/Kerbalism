@@ -13,6 +13,8 @@ namespace KERBALISM
 
 		public Situation Situation { get; protected set; }
 
+		public List<SubjectData> OverridenSubjects { get; protected set; }
+
 		/// <summary> [SERIALIZED] percentage [0;x] of science retrieved, can be > 1 if subject has been retrieved more than once</summary>
 		public virtual double PercentRetrieved { get; protected set; }
 
@@ -81,6 +83,7 @@ namespace KERBALISM
 			ExpInfo = expInfo;
 			Situation = situation;
 			Id = Lib.BuildString(ExpInfo.ExperimentId, "@", Situation.Id.ToString());
+			OverridenSubjects = new List<SubjectData>();
 		}
 
 		public void CheckRnD()
@@ -226,22 +229,62 @@ namespace KERBALISM
 			ScienceDB.persistedSubjects.Add(this);
 		}
 
-		public void AddScienceToRnDSubject(double scienceValue)
+		public double RetrieveScience(double scienceValue, ProtoVessel fromVessel = null, File file = null)
 		{
 			if (!ExistsInRnD)
 				CreateSubjectInRnD();
 
+			double scienceRetrieved = Math.Min(ScienceRemainingToRetrieve, scienceValue);
+
+			ScienceDB.uncreditedScience += scienceRetrieved;
+
+			// fire subject completed events
+			int timesCompleted = UpdateSubjectCompletion(scienceValue);
+			if (timesCompleted > 0)
+				OnSubjectCompleted(fromVessel, file);
+
 			RnDSubject.science = Math.Min((float)(RnDSubject.science + scienceValue), RnDSubject.scienceCap);
 			RnDSubject.scientificValue = ResearchAndDevelopment.GetSubjectValue(RnDSubject.science, RnDSubject);
+
+			foreach (SubjectData overridenSubject in OverridenSubjects)
+				scienceRetrieved += overridenSubject.RetrieveScience(scienceValue);
+
+			return scienceRetrieved;
 		}
 
-		public void OnSubjectCompleted()
+		private void OnSubjectCompleted(ProtoVessel fromVessel = null, File file = null)
 		{
+			// fire science transmission game event. This is used by stock contracts and a few other things.
+			// note : in stock, it is fired with a null protovessel in some cases, so doing it should be safe.
+			GameEvents.OnScienceRecieved.Fire(TimesCompleted == 1 ? (float)ScienceMaxValue : 0f, RnDSubject, fromVessel, false);
+
 			if (ExpInfo.UnlockResourceSurvey)
 			{
 				ResourceMap.Instance.UnlockPlanet(Situation.Body.flightGlobalsIndex);
 				Message.Post(Localizer.Format("#autoLOC_259361", Situation.BodyTitle) + "</color>");
 			}
+
+			// notify the player
+			string subjectResultText;
+			if (file == null || string.IsNullOrEmpty(file.resultText))
+			{
+				subjectResultText = Lib.TextVariant(
+					Local.SciencresultText1,//"Our researchers will jump on it right now"
+					Local.SciencresultText2,//"This cause some excitement"
+					Local.SciencresultText3,//"These results are causing a brouhaha in R&D"
+					Local.SciencresultText4,//"Our scientists look very confused"
+					Local.SciencresultText5);//"The scientists won't believe these readings"
+			}
+			else
+			{
+				subjectResultText = file.resultText;
+			}
+			subjectResultText = Lib.WordWrapAtLength(subjectResultText, 70);
+			Message.Post(Lib.BuildString(
+				FullTitle,
+				" ", Local.Scienctransmitted_title, "\n",//transmitted
+				TimesCompleted == 1 ? Lib.HumanReadableScience(ScienceMaxValue, false) : Lib.Color(Local.Nosciencegain, Lib.Kolor.Orange, true)),//"no science gain : we already had this data"
+				subjectResultText);
 		}
 	}
 

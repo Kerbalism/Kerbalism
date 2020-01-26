@@ -176,7 +176,11 @@ namespace KERBALISM
 
 		public bool HasDBSubjects { get; private set; }
 
-		public bool IgnoreBodyRestrictions { get; private set; } 
+		public bool IgnoreBodyRestrictions { get; private set; }
+
+		public List<ExperimentInfo> OverridenExperiments { get; private set; }
+
+		private string[] overridenExperimentsId;
 
 		public ExperimentInfo(ScienceExperiment stockDef, ConfigNode expInfoNode)
 		{
@@ -207,6 +211,9 @@ namespace KERBALISM
 			else
 				DataSize = this.stockDef.scienceCap * this.stockDef.dataScale;
 #endif
+
+			overridenExperimentsId = expInfoNode.GetValues("OverridenExperiments");
+
 			UnlockResourceSurvey = Lib.ConfigValue(expInfoNode, "UnlockResourceSurvey", false);
 			SampleMass = Lib.ConfigValue(expInfoNode, "SampleMass", 0.0);
 			IsSample = SampleMass > 0.0;
@@ -329,6 +336,27 @@ namespace KERBALISM
 			// patch experiment prefabs and get module infos.
 			// must be done at the end of the ctor so everything in "this" is properly setup
 			SetupPrefabs();
+		}
+
+		public void SetupOverrides()
+		{
+			OverridenExperiments = new List<ExperimentInfo>();
+
+			foreach (string expId in overridenExperimentsId)
+			{
+				ExperimentInfo overridenInfo = ScienceDB.GetExperimentInfo(expId);
+				if (overridenInfo == null)
+					continue;
+
+				OverridenExperiments.Add(overridenInfo);
+
+				foreach (KeyValuePair<int, SubjectData> subjectInfo in ScienceDB.GetSubjectDictionary(this))
+				{
+					SubjectData overridenSubject = ScienceDB.GetSubjectData(overridenInfo, subjectInfo.Key);
+					if (overridenSubject != null)
+						subjectInfo.Value.OverridenSubjects.Add(overridenSubject);
+				}
+			}
 		}
 
 		/// <summary>

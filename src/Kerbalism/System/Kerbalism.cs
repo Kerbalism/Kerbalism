@@ -275,6 +275,9 @@ namespace KERBALISM
 			VesselData last_vd = null;
 			VesselResources last_resources = null;
 
+			// credit science at regular interval
+			ScienceDB.CreditScienceBuffer(elapsed_s);
+
 			foreach (VesselData vd in DB.VesselDatas)
 			{
 				vd.EarlyUpdate();
