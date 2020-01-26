@@ -447,15 +447,13 @@ namespace KERBALISM.Planner
 
 		void Process_harvester(Harvester harvester, VesselAnalyzer va)
 		{
-			if (harvester.running)
+			if (harvester.running && harvester.simulated_abundance > harvester.min_abundance)
 			{
-				double simulatedAbundance = 0.10;
-
 				SimulatedRecipe recipe = new SimulatedRecipe(harvester.part, "harvester");
 				if (harvester.ec_rate > double.Epsilon) recipe.Input("ElectricCharge", harvester.ec_rate);
 				recipe.Output(
 					harvester.resource,
-					Harvester.AdjustedRate(harvester, new CrewSpecs("Engineer@0"), va.crew, simulatedAbundance),
+					Harvester.AdjustedRate(harvester, new CrewSpecs("Engineer@0"), va.crew, harvester.simulated_abundance),
 					dump: false);
 				recipes.Add(recipe);
 			}

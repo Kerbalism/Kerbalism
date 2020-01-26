@@ -29,6 +29,11 @@ namespace KERBALISM
 		// show abundance level
 		[KSPField(guiActive = false, guiName = "_")] public string Abundance;
 
+		// In the editor, allow the user to tweak the abundance for simulation purposes
+		[KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#KERBALISM_Harvester_simulatedabundance")]
+		[UI_FloatRange(scene = UI_Scene.Editor, minValue = 0f, maxValue = 1f, stepIncrement = 0.01f)]
+		public float simulated_abundance = 0.1f;
+
 		// the drill head transform
 		Transform drill_head;
 
