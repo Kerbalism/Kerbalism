@@ -377,6 +377,8 @@ namespace KERBALISM
 
 			RunningState expState = Lib.Proto.GetEnum(m, "expState", RunningState.Stopped);
 			ExperimentInfo expInfo = ScienceDB.GetExperimentInfo(experiment_id); // from prefab
+			if (expInfo == null)
+				return;
 
 			if (!IsRunning(expState))
 			{
