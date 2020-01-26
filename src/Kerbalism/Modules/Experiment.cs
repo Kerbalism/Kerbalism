@@ -13,7 +13,7 @@ namespace KERBALISM
 	public class Experiment : PartModule, ISpecifics, IModuleInfo, IPartMassModifier, IConfigurable, IMultipleDragCube
 	{
 		// config
-		[KSPField] public string experiment_id;               // id of associated experiment definition
+		[KSPField] public string experiment_id = string.Empty;    // id of associated experiment definition
 		[KSPField] public string experiment_desc = string.Empty;  // some nice lines of text
 		[KSPField] public double data_rate;                   // sampling rate in Mb/s
 		[KSPField] public double ec_rate;                     // EC consumption rate per-second
