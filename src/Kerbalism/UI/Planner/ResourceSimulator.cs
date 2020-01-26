@@ -135,7 +135,7 @@ namespace KERBALISM.Planner
 								Process_ring(m as GravityRing);
 								break;
 							case "Harvester":
-								Process_harvester(m as Harvester);
+								Process_harvester(m as Harvester, va);
 								break;
 							case "Laboratory":
 								Process_laboratory(m as Laboratory);
@@ -445,13 +445,18 @@ namespace KERBALISM.Planner
 				Resource("ElectricCharge").Consume(ring.ec_rate, "gravity ring");
 		}
 
-		void Process_harvester(Harvester harvester)
+		void Process_harvester(Harvester harvester, VesselAnalyzer va)
 		{
 			if (harvester.running)
 			{
+				double simulatedAbundance = 0.10;
+
 				SimulatedRecipe recipe = new SimulatedRecipe(harvester.part, "harvester");
 				if (harvester.ec_rate > double.Epsilon) recipe.Input("ElectricCharge", harvester.ec_rate);
-				recipe.Output(harvester.resource, harvester.rate, true);
+				recipe.Output(
+					harvester.resource,
+					Harvester.AdjustedRate(harvester, new CrewSpecs("Engineer@0"), va.crew, simulatedAbundance),
+					dump: false);
 				recipes.Add(recipe);
 			}
 		}

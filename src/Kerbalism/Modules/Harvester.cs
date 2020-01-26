@@ -83,23 +83,28 @@ namespace KERBALISM
 			}
 		}
 
+		public static double AdjustedRate(Harvester harvester, CrewSpecs engineer_cs, List<ProtoCrewMember> crew, double abundance)
+		{
+			// Bonus(..., -2): a level 0 engineer will alreaday add 2 bonus points jsut because he's there,
+			// regardless of level. efficiency will raise further with higher levels.
+			int bonus = engineer_cs.Bonus(crew, -2);
+			double crew_gain = 1 + bonus * Settings.HarvesterCrewLevelBonus;
+			crew_gain = Lib.Clamp(crew_gain, 1, Settings.MaxHarvesterBonus);
+
+			return harvester.rate * crew_gain * (abundance / harvester.abundance_rate);
+		}
+
 		private static void ResourceUpdate(Vessel v, Harvester harvester, double min_abundance, double elapsed_s)
 		{
 			double abundance = SampleAbundance(v, harvester);
 			if (abundance > min_abundance)
 			{
-				double rate = harvester.rate;
-
-				// Bonus(..., -2): a level 0 engineer will alreaday add 2 bonus points jsut because he's there,
-				// regardless of level. efficiency will raise further with higher levels.
-				int bonus = engineer_cs.Bonus(v, -2);
-				double crew_gain = 1 + bonus * Settings.HarvesterCrewLevelBonus;
-				crew_gain = Lib.Clamp(crew_gain, 1, Settings.MaxHarvesterBonus);
-				rate *= crew_gain;
-
 				ResourceRecipe recipe = new ResourceRecipe(ResourceBroker.Harvester);
 				recipe.AddInput("ElectricCharge", harvester.ec_rate * elapsed_s);
-				recipe.AddOutput(harvester.resource, rate * (abundance/harvester.abundance_rate) * elapsed_s, false);
+				recipe.AddOutput(
+					harvester.resource,
+					Harvester.AdjustedRate(harvester, engineer_cs, Lib.CrewList(v), abundance) * elapsed_s,
+					dump: false);
 				ResourceCache.AddRecipe(v, recipe);
 			}
 		}
