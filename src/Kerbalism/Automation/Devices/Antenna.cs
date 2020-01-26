@@ -26,9 +26,9 @@ namespace KERBALISM
 			{
 				switch (module.antennaType)
 				{
-					case AntennaType.INTERNAL: return Lib.BuildString("internal antenna, ", module.powerText);
-					case AntennaType.DIRECT: return Lib.BuildString("direct antenna, ", module.powerText);
-					case AntennaType.RELAY: return Lib.BuildString("relay antenna, ", module.powerText);
+					case AntennaType.INTERNAL: return Lib.BuildString(Local.AntennaUI_type1, ", ", module.powerText);//internal antenna
+					case AntennaType.DIRECT: return Lib.BuildString(Local.AntennaUI_type2,", ", module.powerText);//direct antenna
+					case AntennaType.RELAY: return Lib.BuildString(Local.AntennaUI_type3, ", ", module.powerText);//relay antenna
 					default: return string.Empty;
 				}
 			}
@@ -39,9 +39,9 @@ namespace KERBALISM
 			get
 			{
 				if (!deployFxModule.CanMove)
-					return Lib.Color("unavailable", Lib.Kolor.Orange);
+					return Lib.Color(Local.AntennaUI_unavailable, Lib.Kolor.Orange);//"unavailable"
 				else if (deployFxModule.IsMoving())
-					return "deploying";
+					return Local.AntennaUI_deploying;//"deploying"
 				else if (deployFxModule.GetScalar == 1f)
 					return Lib.Color(Local.Generic_EXTENDED, Lib.Kolor.Green);
 				else if (deployFxModule.GetScalar < 1f)
@@ -97,9 +97,9 @@ namespace KERBALISM
 			{
 				switch (prefab.antennaType)
 				{
-					case AntennaType.INTERNAL: return Lib.BuildString("internal antenna, ", prefab.powerText);//
-					case AntennaType.DIRECT: return Lib.BuildString("direct antenna, ", prefab.powerText);//
-					case AntennaType.RELAY: return Lib.BuildString("relay antenna, ", prefab.powerText);//
+					case AntennaType.INTERNAL: return Lib.BuildString(Local.AntennaUI_type1, ", ", prefab.powerText);//internal antenna
+					case AntennaType.DIRECT: return Lib.BuildString(Local.AntennaUI_type2, ", ", prefab.powerText);//direct antenna
+					case AntennaType.RELAY: return Lib.BuildString(Local.AntennaUI_type3, ", ", prefab.powerText);//relay antenna
 					default: return string.Empty;
 				}
 			}
@@ -110,7 +110,7 @@ namespace KERBALISM
 			get
 			{
 				if (protoPart.shielded)
-					return Lib.Color("unavailable", Lib.Kolor.Orange);
+					return Lib.Color(Local.AntennaUI_unavailable, Lib.Kolor.Orange);//"unavailable"
 
 				switch (scalarModuleSnapshot.moduleName)
 				{

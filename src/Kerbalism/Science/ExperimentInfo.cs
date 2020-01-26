@@ -560,7 +560,7 @@ namespace KERBALISM
 
 				if (bodiesAllowed.Count > 0)
 				{
-					ExpInfoSB.Append(Lib.Color("Bodies allowed:\n", Lib.Kolor.Cyan, true));
+					ExpInfoSB.Append(Lib.Color(Local.Experimentinfo_Bodiesallowed + "\n", Lib.Kolor.Cyan, true));//Bodies allowed:
 					for (int i = bodiesAllowed.Count - 1; i >= 0; i--)
 					{
 						ExpInfoSB.Append(bodiesAllowed[i].Title);
@@ -573,7 +573,7 @@ namespace KERBALISM
 
 				if (bodiesNotAllowed.Count > 0)
 				{
-					ExpInfoSB.Append(Lib.Color("Bodies not allowed:\n", Lib.Kolor.Cyan, true));
+					ExpInfoSB.Append(Lib.Color(Local.Experimentinfo_Bodiesnotallowed + "\n", Lib.Kolor.Cyan, true));//Bodies not allowed:
 					for (int i = bodiesNotAllowed.Count - 1; i >= 0; i--)
 					{
 						ExpInfoSB.Append(bodiesNotAllowed[i].Title);
@@ -593,61 +593,61 @@ namespace KERBALISM
 			private class Atmospheric : BodyCondition
 			{
 				public override bool TestCondition(CelestialBody body) => body.atmosphere;
-				public override string Title => "atmospheric";
+				public override string Title => Local.Experimentinfo_BodyCondition1;//"atmospheric"
 			}
 
 			private class NonAtmospheric : BodyCondition
 			{
 				public override bool TestCondition(CelestialBody body) => !body.atmosphere;
-				public override string Title => "non-atmospheric";
+				public override string Title => Local.Experimentinfo_BodyCondition2;//"non-atmospheric"
 			}
 
 			private class Gaseous : BodyCondition
 			{
 				public override bool TestCondition(CelestialBody body) => body.hasSolidSurface;
-				public override string Title => "gaseous";
+				public override string Title => Local.Experimentinfo_BodyCondition3;//"gaseous"
 			}
 
 			private class Solid : BodyCondition
 			{
 				public override bool TestCondition(CelestialBody body) => !body.hasSolidSurface;
-				public override string Title => "solid";
+				public override string Title => Local.Experimentinfo_BodyCondition4;//"solid"
 			}
 
 			private class Oceanic : BodyCondition
 			{
 				public override bool TestCondition(CelestialBody body) => body.ocean;
-				public override string Title => "oceanic";
+				public override string Title => Local.Experimentinfo_BodyCondition5;//"oceanic"
 			}
 
 			private class HomeBody : BodyCondition
 			{
 				public override bool TestCondition(CelestialBody body) => body.isHomeWorld;
-				public override string Title => "home body";
+				public override string Title => Local.Experimentinfo_BodyCondition6;//"home body"
 			}
 
 			private class HomeBodyAndMoons : BodyCondition
 			{
 				public override bool TestCondition(CelestialBody body) => body.isHomeWorld || body.referenceBody.isHomeWorld;
-				public override string Title => "home body and its moons";
+				public override string Title => Local.Experimentinfo_BodyCondition7;//"home body and its moons"
 			}
 
 			private class Planets : BodyCondition
 			{
 				public override bool TestCondition(CelestialBody body) => !Lib.IsSun(body) && Lib.IsSun(body.referenceBody);
-				public override string Title => "planets";
+				public override string Title => Local.Experimentinfo_BodyCondition8;//"planets"
 			}
 
 			private class Moons : BodyCondition
 			{
 				public override bool TestCondition(CelestialBody body) => !Lib.IsSun(body) && !Lib.IsSun(body.referenceBody);
-				public override string Title => "moons";
+				public override string Title => Local.Experimentinfo_BodyCondition9;//"moons"
 			}
 
 			private class Suns : BodyCondition
 			{
 				public override bool TestCondition(CelestialBody body) => Lib.IsSun(body);
-				public override string Title => "suns";
+				public override string Title => Local.Experimentinfo_BodyCondition10;//"suns"
 			}
 
 			private class SpecificBody : BodyCondition

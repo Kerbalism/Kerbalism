@@ -279,6 +279,11 @@ namespace KERBALISM
 		public static string Generic_PERPETUAL = GetLoc("Generic_PERPETUAL"); // "perpetual"
 		public static string Generic_NEVER = GetLoc("Generic_NEVER"); // "never"
 		public static string Generic_NOMINAL = GetLoc("Generic_NOMINAL"); // "nominal"
+		public static string Generic_perSecond = GetLoc("Generic_perSecond"); // "/s"
+		public static string Generic_perMinute = GetLoc("Generic_perMinute"); // "/m"
+		public static string Generic_perHour = GetLoc("Generic_perHour"); // "/h"
+		public static string Generic_perDay = GetLoc("Generic_perDay"); // "/d"
+		public static string Generic_perYear = GetLoc("Generic_perYear"); // "/y"
 		//$HIS_HER
 		public static string Kerbal_his = GetLoc("Kerbal_his"); // "his"
 		public static string Kerbal_her = GetLoc("Kerbal_her"); // "her"
@@ -625,6 +630,13 @@ namespace KERBALISM
 		public static string SCIENCEARCHIVE_Value_desc = GetLoc("SCIENCEARCHIVE_Value_desc"); // "Remaining science value\naccounting for data retrieved in RnD\nand collected in flight"
 		public static string SCIENCEARCHIVE_Completed = GetLoc("SCIENCEARCHIVE_Completed"); // "Completed"
 		public static string SCIENCEARCHIVE_Completed_desc = GetLoc("SCIENCEARCHIVE_Completed_desc"); // "How many times the subject\nhas been retrieved in RnD"
+		public static string SCIENCEARCHIVE_info_Crew = GetLoc("SCIENCEARCHIVE_info_Crew");// "Crew"
+		public static string SCIENCEARCHIVE_info_levelReq = GetLoc("SCIENCEARCHIVE_info_levelReq");// "of level"
+		public static string SCIENCEARCHIVE_info_Req = GetLoc("SCIENCEARCHIVE_info_Req");// "is required"
+		public static string SCIENCEARCHIVE_info_no = GetLoc("SCIENCEARCHIVE_info_no");// "no"
+		public static string SCIENCEARCHIVE_info_anyone = GetLoc("SCIENCEARCHIVE_info_anyone");// "anyone"
+		public static string SCIENCEARCHIVE_info_level = GetLoc("SCIENCEARCHIVE_info_level"); // "level:"
+		public static string SCIENCEARCHIVE_CREDITS = GetLoc("SCIENCEARCHIVE_CREDITS");// "CREDITS"
 
 		////////////////////////////////////////////////////////////////////
 		// Module : Emitter
@@ -1227,6 +1239,18 @@ namespace KERBALISM
 		public static string Experimentinfo_smallRoc = GetLoc("Experimentinfo_smallRoc"); // "Collectable on EVA as a sample"
 		public static string Experimentinfo_smallRoc2 = GetLoc("Experimentinfo_smallRoc2"); // "Can't be collected on EVA"
 		public static ParamString Experimentinfo_smallRoc3 = new ParamString("Experimentinfo_smallRoc3"); // "Found on <<1>>'s :"
+		public static string Experimentinfo_Bodiesallowed = GetLoc("Experimentinfo_Bodiesallowed");// "Bodies allowed:"
+		public static string Experimentinfo_Bodiesnotallowed = GetLoc("Experimentinfo_Bodiesnotallowed");// "Bodies not allowed:"
+		public static string Experimentinfo_BodyCondition1 = GetLoc("Experimentinfo_BodyCondition1");// "atmospheric"
+		public static string Experimentinfo_BodyCondition2 = GetLoc("Experimentinfo_BodyCondition2");// "non-atmospheric"
+		public static string Experimentinfo_BodyCondition3 = GetLoc("Experimentinfo_BodyCondition3");// "gaseous"
+		public static string Experimentinfo_BodyCondition4 = GetLoc("Experimentinfo_BodyCondition4");// "solid"
+		public static string Experimentinfo_BodyCondition5 = GetLoc("Experimentinfo_BodyCondition5");// "oceanic"
+		public static string Experimentinfo_BodyCondition6 = GetLoc("Experimentinfo_BodyCondition6");// "home body"
+		public static string Experimentinfo_BodyCondition7 = GetLoc("Experimentinfo_BodyCondition7");// "home body and its moons"
+		public static string Experimentinfo_BodyCondition8 = GetLoc("Experimentinfo_BodyCondition8");// "planets"
+		public static string Experimentinfo_BodyCondition9 = GetLoc("Experimentinfo_BodyCondition9");// "moons"
+		public static string Experimentinfo_BodyCondition10 = GetLoc("Experimentinfo_BodyCondition10");// "suns"
 
 		////////////////////////////////////////////////////////////////////
 		// ???
@@ -1365,6 +1389,23 @@ namespace KERBALISM
 		public static string VesselRecovery_info = GetLoc("VesselRecovery_info"); // "SCIENCE RECOVERED "
 		public static string VesselRecovery_CREDITS = GetLoc("VesselRecovery_CREDITS"); // "CREDITS"
 		public static string VesselRecovery_OKbutton = GetLoc("VesselRecovery_OKbutton"); // "OK"
+
+		//Statu Toggle
+		public static string StatuToggle_info = GetLoc("StatuToggle_info"); //info
+		public static string StatuToggle_Habitat = GetLoc("StatuToggle_Habitat"); //Habitat
+		public static ParamString StatuToggle_Simulate = new ParamString("StatuToggle_Simulate"); // "Simulate <<1>> in planner"
+
+		//Antenna UI
+		public static string AntennaUI_unavailable = GetLoc("AntennaUI_unavailable"); // "unavailable"
+		public static string AntennaUI_deploying = GetLoc("AntennaUI_deploying"); // "deploying"
+		public static string AntennaUI_type1 = GetLoc("AntennaUI_type1"); // "internal antenna"
+		public static string AntennaUI_type2 = GetLoc("AntennaUI_type2"); // "direct antenna"
+		public static string AntennaUI_type3 = GetLoc("AntennaUI_type3"); // "relay antenna"
+
+		//Data Transmitter info
+		public static string DataTransmitter_ECidle = GetLoc("DataTransmitter_ECidle"); // "EC (idle)"
+		public static string DataTransmitter_ECTX = GetLoc("DataTransmitter_ECTX"); // "EC (transmitting)"
+		public static string DataTransmitter_Maxspeed = GetLoc("DataTransmitter_Maxspeed"); // "Max. speed"
 
 	}
 }
