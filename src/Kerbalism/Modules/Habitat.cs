@@ -709,10 +709,10 @@ namespace KERBALISM
 		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true)]
 #else
 		[KSPEvent(guiActive = false, guiActiveEditor = true, guiName = "[Debug] log volume/surface", active = false, groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
-		public void LogVolumeAndSurface()
+#endif
+        public void LogVolumeAndSurface()
 		{
 			Lib.GetPartVolumeAndSurface(part, true);
 		}
-#endif
 	}
 }
