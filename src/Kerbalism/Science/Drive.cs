@@ -526,6 +526,7 @@ namespace KERBALISM
 				);
 		}
 
+		/// <summary> delete all files/samples in the drive</summary>
 		public void DeleteDriveData()
 		{
 			foreach (File file in files.Values)
@@ -533,26 +534,19 @@ namespace KERBALISM
 
 			foreach (Sample sample in samples.Values)
 				sample.subjectData.RemoveDataCollectedInFlight(sample.size);
+
+			files.Clear();
+			samples.Clear();
 		}
 
-		public static void DeleteDrive(Vessel vessel, uint partFlightID)
-		{
-			PartData partData = vessel.KerbalismData().GetPartData(partFlightID);
-			if (partData != null)
-			{
-				partData.Drive.DeleteDriveData();
-				partData.Drive = null;
-			}
-		}
-
-		public static void DeleteDrives(Vessel vessel)
+		/// <summary> delete all files/samples in the vessel drives</summary>
+		public static void DeleteDrivesData(Vessel vessel)
 		{
 			foreach (PartData partData in vessel.KerbalismData().PartDatas)
 			{
-				if (partData != null)
+				if (partData.Drive != null)
 				{
 					partData.Drive.DeleteDriveData();
-					partData.Drive = null;
 				}
 			}
 		}
