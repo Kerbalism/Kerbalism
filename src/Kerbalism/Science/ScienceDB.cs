@@ -319,6 +319,7 @@ namespace KERBALISM
 			foreach (ExperimentInfo experimentInfo in ExperimentInfos)
 			{
 				experimentInfo.SetupIncludedExperiments();
+				experimentInfo.CompileModuleInfos();
 			}
 
 			Lib.Log("ScienceDB init done : " + subjectCount + " subjects found");
