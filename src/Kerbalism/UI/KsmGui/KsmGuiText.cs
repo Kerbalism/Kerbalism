@@ -35,11 +35,10 @@ namespace KERBALISM.KsmGui
 			if (tooltipText != null) SetTooltipText(tooltipText);
 		}
 
-		public void SetText(string text)
+		public string Text
 		{
-			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.KsmGuiText.SetText");
-			TextComponent.SetText(text);
-			UnityEngine.Profiling.Profiler.EndSample();
+			get => TextComponent.text;
+			set => TextComponent.SetText(value);
 		}
 
 		// workaround for a textmeshpro bug :

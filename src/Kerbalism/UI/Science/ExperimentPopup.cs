@@ -24,6 +24,7 @@ namespace KERBALISM
 		VesselData vd;
 
 		// state vars
+		bool canInteract;
 		bool isProto;
 		ExperimentInfo expInfo;
 		SubjectData subjectData;
@@ -151,12 +152,8 @@ namespace KERBALISM
 
 		private void GetData()
 		{
-			if(!vd.Connection.linked && vd.CrewCount == 0)
-			{
-				window.Close();
-				return;
-			}
-				
+			canInteract = vd.Connection.linked || vd.CrewCount > 0;
+
 			if (isProto)
 			{
 				status = Lib.Proto.GetEnum(protoModule, "status", ExpStatus.Stopped);
@@ -286,7 +283,7 @@ namespace KERBALISM
 				sb.Append(Lib.InlineSpriteScience);
 			}
 
-			statusBox.SetText(sb.ToString());
+			statusBox.Text = sb.ToString();
 		}
 
 		private void RequirementsUpdate()
@@ -317,26 +314,26 @@ namespace KERBALISM
 				}
 			}
 
-			requirementsBox.SetText(sb.ToString());
+			requirementsBox.Text = sb.ToString();
 		}
 
 		private void UpdateStartStopButton()
 		{
 			if (IsRunning(expState))
 			{
-				startStopButton.SetText(Local.SCIENCEARCHIVE_stop);//"stop"
+				startStopButton.Text = Local.SCIENCEARCHIVE_stop;//"stop"
 			}
 			else
 			{
-				startStopButton.SetText(Local.SCIENCEARCHIVE_start);//"start"
+				startStopButton.Text = Local.SCIENCEARCHIVE_start;//"start"
 			}
 
-			startStopButton.SetInteractable(!IsBroken(expState));
+			startStopButton.Interactable = canInteract && !IsBroken(expState);
 		}
 
 		private void UpdateForcedRunButton()
 		{
-			forcedRunButton.SetInteractable(expState == RunningState.Stopped || expState == RunningState.Running);
+			forcedRunButton.Interactable = canInteract && (expState == RunningState.Stopped || expState == RunningState.Running);
 		}
 
 		private void Toggle()

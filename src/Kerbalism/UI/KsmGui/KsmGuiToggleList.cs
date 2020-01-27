@@ -66,14 +66,16 @@ namespace KERBALISM.KsmGui
 			}
 		}
 
-		public void SetInteractable(bool interactable)
+		public bool Interactable
 		{
-			ToggleComponent.interactable = interactable;
+			get => ToggleComponent.interactable;
+			set => ToggleComponent.interactable = value;
 		}
 
-		public void SetText(string text)
+		public string Text
 		{
-			TextObject.SetText(text);
+			get => TextObject.Text;
+			set => TextObject.Text = value;
 		}
 
 		public void SetToggleOnChange(UnityAction<bool> action)

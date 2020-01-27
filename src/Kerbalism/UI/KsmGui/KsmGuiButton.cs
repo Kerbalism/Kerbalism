@@ -13,6 +13,7 @@ namespace KERBALISM.KsmGui
 		public Button ButtonComponent { get; private set; }
 		public KsmGuiText TextObject { get; private set; }
 		public KsmGuiIcon IconObject { get; private set; }
+
 		private UnityAction onClick;
 
 		public KsmGuiButton
@@ -56,14 +57,16 @@ namespace KERBALISM.KsmGui
 			if (tooltipText != null) SetTooltipText(tooltipText);
 		}
 
-		public void SetText(string text)
+		public string Text
 		{
-			TextObject.SetText(text);
+			get => TextObject.Text;
+			set => TextObject.Text = value;
 		}
 
-		public void SetInteractable(bool interactable)
+		public bool Interactable
 		{
-			ButtonComponent.interactable = interactable;
+			get => ButtonComponent.interactable;
+			set => ButtonComponent.interactable = value;
 		}
 
 		public void SetButtonOnClick(UnityAction action)
