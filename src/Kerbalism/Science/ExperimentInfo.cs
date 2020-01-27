@@ -227,10 +227,6 @@ namespace KERBALISM
 			VirtualBiomeMask = virtualBiomeMask;
 			stockDef.situationMask = stockSituationMask;
 			stockDef.biomeMask = stockBiomeMask;
-
-			// patch experiment prefabs and get module infos.
-			// must be done at the end of the ctor so everything in "this" is properly setup
-			SetupPrefabs();
 		}
 
 		public void SetupIncludedExperiments()
@@ -262,7 +258,7 @@ namespace KERBALISM
 		/// parts that have experiments can't get their module info (what is shown in the VAB tooltip) correctly setup
 		/// because the ExperimentInfo database isn't available at loading time, so we recompile their info manually.
 		/// </summary>
-		public void SetupPrefabs()
+		public void CompileModuleInfos()
 		{
 			if (PartLoader.LoadedPartsList == null)
 			{

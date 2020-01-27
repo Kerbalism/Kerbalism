@@ -1090,6 +1090,16 @@ namespace KERBALISM
 				specs.Add(Local.Module_Experiment_Specifics_info7_sample, Lib.HumanReadableDuration(expSize / prefab.data_rate));//"Duration"
 			}
 
+			if (expInfo.IncludedExperiments.Count > 0)
+			{
+				specs.Add(string.Empty);
+				specs.Add(Lib.Color("Included experiments:", Lib.Kolor.Cyan, true));
+				foreach (ExperimentInfo includedExp in expInfo.IncludedExperiments)
+				{
+					specs.Add("• " + includedExp.Title);
+				}
+			}
+
 			List<string> situations = expInfo.AvailableSituations();
 			if (situations.Count > 0)
 			{
