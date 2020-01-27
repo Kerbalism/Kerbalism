@@ -232,25 +232,30 @@ namespace KERBALISM
 				MassPerMB = 0.0;
 			}
 
-			if (IsROC)
+			// Patch stock science def restrictions as BodyAllowed/BodyNotAllowed restrictions
+			if (!(expInfoNode.HasValue("BodyAllowed") || expInfoNode.HasValue("BodyNotAllowed")))
 			{
-				// Parse the ROC definition name to find which body it's available on
-				// This rely on the ROC definitions having the body name in the ExperimentId
-				ConfigNode ROCBodyNode = new ConfigNode();
-				foreach (CelestialBody body in FlightGlobals.Bodies)
+				if (IsROC)
 				{
-					if (ExperimentId.IndexOf(body.name, StringComparison.OrdinalIgnoreCase) != -1)
+					// Parse the ROC definition name to find which body it's available on
+					// This rely on the ROC definitions having the body name in the ExperimentId
+					foreach (CelestialBody body in FlightGlobals.Bodies)
 					{
-						ROCBodyNode.AddValue("BodyAllowed", body.name);
-						break;
+						if (ExperimentId.IndexOf(body.name, StringComparison.OrdinalIgnoreCase) != -1)
+						{
+							expInfoNode.AddValue("BodyAllowed", body.name);
+							break;
+						}
 					}
 				}
-				ExpBodyConditions = new BodyConditions(ROCBodyNode);
+
+				if (stockDef.requireAtmosphere)
+					expInfoNode.AddValue("BodyAllowed", "Atmospheric");
+				else if (stockDef.requireNoAtmosphere)
+					expInfoNode.AddValue("BodyNotAllowed", "Atmospheric");
 			}
-			else
-			{
-				ExpBodyConditions = new BodyConditions(expInfoNode);
-			}
+
+			ExpBodyConditions = new BodyConditions(expInfoNode);
 
 			foreach (string virtualBiomeStr in expInfoNode.GetValues("VirtualBiome"))
 			{
