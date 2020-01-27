@@ -37,5 +37,12 @@ namespace KERBALISM
 				Drive = new Drive(node.GetNode("drive"));
 			}
 		}
+
+		/// <summary> Must be called if the part is destroyed </summary>
+		public void OnPartWillDie()
+		{
+			if (Drive != null)
+				Drive.DeleteDriveData();
+		}
 	}
 }

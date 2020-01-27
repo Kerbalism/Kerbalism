@@ -606,6 +606,7 @@ namespace KERBALISM
 		internal static void OnPartWillDie(Part part)
 		{
 			VesselData vd = part.vessel.KerbalismData();
+			vd.parts[part.flightID].OnPartWillDie();
 			vd.parts.Remove(part.flightID);
 			vd.UpdateOnVesselModified();
 			Lib.LogDebug("Removing dead part, vd.partcount={0}, v.partcount={1} (part '{2}' in vessel '{3}')", vd.parts.Count, part.vessel.parts.Count, part.partInfo.title, part.vessel.vesselName);

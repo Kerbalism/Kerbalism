@@ -315,7 +315,10 @@ namespace KERBALISM
 			// purge the caches
 			ResourceCache.Purge(pv);
 			Cache.PurgeVesselCaches(pv);
-			//Drive.Purge(pv);
+
+			// delete data on unloaded vessels only (this is handled trough OnPartWillDie for loaded vessels)
+			if (pv.vesselRef != null && !pv.vesselRef.loaded)
+				Drive.DeleteDrivesData(pv.vesselRef);
 		}
 
 		void VesselCreated(Vessel v)
@@ -351,8 +354,11 @@ namespace KERBALISM
 
 			// purge the caches
 			ResourceCache.Purge(v);		// works with loaded and unloaded vessels
-			//Drive.Purge(v);				// works with loaded and unloaded vessels
 			Cache.PurgeVesselCaches(v); // works with loaded and unloaded vessels
+
+			// delete data on unloaded vessels only (this is handled trough OnPartWillDie for loaded vessels)
+			if (!v.loaded)
+				Drive.DeleteDrivesData(v);
 		}
 
 		void VesselDock(GameEvents.FromToAction<Part, Part> e)
