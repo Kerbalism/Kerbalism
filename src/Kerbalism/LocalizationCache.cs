@@ -52,7 +52,7 @@ namespace KERBALISM
 		// set this to true (and change the path) to generate on KSP startup
 		// the english localization file based on the contents of LocalizationCache.cs
 		// IMPORTANT : don't let this to true when commiting
-		public static bool GenerateEnglishLoc = false;
+		public static bool GenerateEnglishLoc = true;
 		private const string PathToEnglishLocOutput = @"C:\Users\Got\Desktop\loctest\loctemplate.txt";
 
 		// set this to true (and change the paths) to generate on KSP startup
@@ -284,7 +284,9 @@ namespace KERBALISM
 		public static string Generic_perHour = GetLoc("Generic_perHour"); // "/h"
 		public static string Generic_perDay = GetLoc("Generic_perDay"); // "/d"
 		public static string Generic_perYear = GetLoc("Generic_perYear"); // "/y"
-		//$HIS_HER
+		public static string Generic_START = GetLoc("Generic_START"); // "start"
+		public static string Generic_STOP = GetLoc("Generic_STOP"); // "stop"
+																		//$HIS_HER
 		public static string Kerbal_his = GetLoc("Kerbal_his"); // "his"
 		public static string Kerbal_her = GetLoc("Kerbal_her"); // "her"
 
