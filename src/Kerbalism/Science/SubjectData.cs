@@ -13,7 +13,7 @@ namespace KERBALISM
 
 		public Situation Situation { get; protected set; }
 
-		public List<SubjectData> OverridenSubjects { get; protected set; }
+		public List<SubjectData> IncludedSubjects { get; protected set; }
 
 		/// <summary> [SERIALIZED] percentage [0;x] of science retrieved, can be > 1 if subject has been retrieved more than once</summary>
 		public virtual double PercentRetrieved { get; protected set; }
@@ -29,7 +29,7 @@ namespace KERBALISM
 		public virtual string Id { get; protected set; }
 
 		/// <summary> stock subject identifier ("experimentId@situation") </summary>
-		public virtual string StockSubjectId => Lib.BuildString(ExpInfo.ExperimentId, "@", Situation.GetStockIdForExperiment(ExpInfo));
+		public virtual string StockSubjectId { get; protected set; }
 
 		/// <summary> full description of the subject </summary>
 		public virtual string FullTitle => Lib.BuildString(ExpInfo.Title, " (", SituationTitle, ")");
@@ -83,7 +83,8 @@ namespace KERBALISM
 			ExpInfo = expInfo;
 			Situation = situation;
 			Id = Lib.BuildString(ExpInfo.ExperimentId, "@", Situation.Id.ToString());
-			OverridenSubjects = new List<SubjectData>();
+			StockSubjectId = Lib.BuildString(ExpInfo.ExperimentId, "@", Situation.GetStockIdForExperiment(ExpInfo));
+			IncludedSubjects = new List<SubjectData>();
 		}
 
 		public void CheckRnD()
@@ -218,7 +219,6 @@ namespace KERBALISM
 			if (newTimesCompleted > TimesCompleted)
 			{
 				TimesCompleted = newTimesCompleted;
-				OnSubjectCompleted();
 				return TimesCompleted;
 			}
 			return -1;
@@ -229,40 +229,66 @@ namespace KERBALISM
 			ScienceDB.persistedSubjects.Add(this);
 		}
 
-		public double RetrieveScience(double scienceValue, ProtoVessel fromVessel = null, File file = null)
+		public double RetrieveScience(double scienceValue, bool showMessage = false, ProtoVessel fromVessel = null, File file = null)
 		{
 			if (!ExistsInRnD)
 				CreateSubjectInRnD();
 
 			double scienceRetrieved = Math.Min(ScienceRemainingToRetrieve, scienceValue);
 
-			ScienceDB.uncreditedScience += scienceRetrieved;
+			if (!API.preventScienceCrediting)
+				ScienceDB.uncreditedScience += scienceRetrieved;
 
 			// fire subject completed events
 			int timesCompleted = UpdateSubjectCompletion(scienceValue);
 			if (timesCompleted > 0)
-				OnSubjectCompleted(fromVessel, file);
+				OnSubjectCompleted(showMessage, fromVessel, file);
 
 			RnDSubject.science = Math.Min((float)(RnDSubject.science + scienceValue), RnDSubject.scienceCap);
 			RnDSubject.scientificValue = ResearchAndDevelopment.GetSubjectValue(RnDSubject.science, RnDSubject);
 
-			foreach (SubjectData overridenSubject in OverridenSubjects)
-				scienceRetrieved += overridenSubject.RetrieveScience(scienceValue);
+			if (API.subjectsReceivedEventEnabled)
+			{
+				bool exists = false;
+				for (int i = 0; i < ScienceDB.subjectsReceivedBuffer.Count; i++)
+				{
+					if (ScienceDB.subjectsReceivedBuffer[i].id == RnDSubject.id)
+					{
+						ScienceDB.subjectsReceivedValueBuffer[i] += scienceRetrieved;
+						exists = true;
+						break;
+					}
+				}
+				if (!exists)
+				{
+					ScienceDB.subjectsReceivedBuffer.Add(RnDSubject);
+					ScienceDB.subjectsReceivedValueBuffer.Add(scienceRetrieved);
+				}
+			}
+
+			foreach (SubjectData overridenSubject in IncludedSubjects)
+				scienceRetrieved += overridenSubject.RetrieveScience(scienceValue, showMessage, fromVessel);
 
 			return scienceRetrieved;
 		}
 
-		private void OnSubjectCompleted(ProtoVessel fromVessel = null, File file = null)
+		private void OnSubjectCompleted(bool showMessage = false, ProtoVessel fromVessel = null, File file = null)
 		{
 			// fire science transmission game event. This is used by stock contracts and a few other things.
 			// note : in stock, it is fired with a null protovessel in some cases, so doing it should be safe.
-			GameEvents.OnScienceRecieved.Fire(TimesCompleted == 1 ? (float)ScienceMaxValue : 0f, RnDSubject, fromVessel, false);
+			if (API.preventScienceCrediting)
+				GameEvents.OnScienceRecieved.Fire(0f, RnDSubject, fromVessel, false);
+			else
+				GameEvents.OnScienceRecieved.Fire(TimesCompleted == 1 ? (float)ScienceMaxValue : 0f, RnDSubject, fromVessel, false);
 
 			if (ExpInfo.UnlockResourceSurvey)
 			{
 				ResourceMap.Instance.UnlockPlanet(Situation.Body.flightGlobalsIndex);
 				Message.Post(Localizer.Format("#autoLOC_259361", Situation.BodyTitle) + "</color>");
 			}
+
+			if (!showMessage)
+				return;
 
 			// notify the player
 			string subjectResultText;
@@ -296,11 +322,10 @@ namespace KERBALISM
 	public class UnknownSubjectData : SubjectData
 	{
 		private string extraSituationInfo;
-		private string subjectId;
 
 		public UnknownSubjectData(ExperimentInfo expInfo, Situation situation, string subjectId, ScienceSubject stockSubject = null, string extraSituationInfo = "") : base(expInfo, situation)
 		{
-			this.subjectId = subjectId;
+			StockSubjectId = subjectId;
 			this.extraSituationInfo = extraSituationInfo;
 			ExpInfo = expInfo;
 			Situation = situation;
@@ -311,9 +336,7 @@ namespace KERBALISM
 			PercentRetrieved = ExistsInRnD ? RnDSubject.science / ScienceMaxValue : 0.0;
 		}
 
-		public override string Id => subjectId;
-
-		public override string StockSubjectId => subjectId;
+		public override string Id => StockSubjectId;
 
 		public override string FullTitle =>
 			ExistsInRnD

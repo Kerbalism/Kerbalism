@@ -178,9 +178,9 @@ namespace KERBALISM
 
 		public bool IgnoreBodyRestrictions { get; private set; }
 
-		public List<ExperimentInfo> OverridenExperiments { get; private set; }
+		public List<ExperimentInfo> IncludedExperiments { get; private set; }
 
-		private string[] overridenExperimentsId;
+		private string[] includedExperimentsId;
 
 		public ExperimentInfo(ScienceExperiment stockDef, ConfigNode expInfoNode)
 		{
@@ -212,7 +212,7 @@ namespace KERBALISM
 				DataSize = this.stockDef.scienceCap * this.stockDef.dataScale;
 #endif
 
-			overridenExperimentsId = expInfoNode.GetValues("OverridenExperiments");
+			includedExperimentsId = expInfoNode.GetValues("IncludeExperiment");
 
 			UnlockResourceSurvey = Lib.ConfigValue(expInfoNode, "UnlockResourceSurvey", false);
 			SampleMass = Lib.ConfigValue(expInfoNode, "SampleMass", 0.0);
@@ -338,23 +338,27 @@ namespace KERBALISM
 			SetupPrefabs();
 		}
 
-		public void SetupOverrides()
+		public void SetupIncludedExperiments()
 		{
-			OverridenExperiments = new List<ExperimentInfo>();
+			IncludedExperiments = new List<ExperimentInfo>();
 
-			foreach (string expId in overridenExperimentsId)
+			foreach (string expId in includedExperimentsId)
 			{
-				ExperimentInfo overridenInfo = ScienceDB.GetExperimentInfo(expId);
-				if (overridenInfo == null)
+				ExperimentInfo includedInfo = ScienceDB.GetExperimentInfo(expId);
+				if (includedInfo == null)
 					continue;
 
-				OverridenExperiments.Add(overridenInfo);
+				if (IncludedExperiments.Contains(includedInfo))
+					continue;
+
+				IncludedExperiments.Add(includedInfo);
 
 				foreach (KeyValuePair<int, SubjectData> subjectInfo in ScienceDB.GetSubjectDictionary(this))
 				{
-					SubjectData overridenSubject = ScienceDB.GetSubjectData(overridenInfo, subjectInfo.Key);
-					if (overridenSubject != null)
-						subjectInfo.Value.OverridenSubjects.Add(overridenSubject);
+					SubjectData subjectToInclude = ScienceDB.GetSubjectData(includedInfo, subjectInfo.Key);
+
+					if (subjectToInclude != null)
+						subjectInfo.Value.IncludedSubjects.Add(subjectToInclude);
 				}
 			}
 		}
