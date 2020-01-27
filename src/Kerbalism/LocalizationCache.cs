@@ -60,7 +60,7 @@ namespace KERBALISM
 		// and an existing (partial) localization file
 		// untranslated strings will have the comment // UNTRANSLATED
 		// IMPORTANT : don't let this to true when commiting
-		public static bool UpdateNonEnglishLoc = true;
+		public static bool UpdateNonEnglishLoc = false;
 		private const string locLanguage = "ru";
 		private const string PathToExistingNonEnglishLoc = @"C:\Users\Got\source\repos\Kerbalism\Kerbalism\GameData\Kerbalism\Localization\" + locLanguage + ".cfg";
 		private const string PathToNonEnglishLocOutput = @"C:\Users\Got\Desktop\loctest\" + locLanguage + ".cfg";
