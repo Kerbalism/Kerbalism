@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using KSP.Localization;
@@ -60,27 +60,39 @@ namespace KERBALISM
 					sb.Append(module.Subject.FullTitle);
 				else
 					sb.Append(module.ExpInfo.Title);
-				sb.Append("\non ");
+				sb.Append("\n");
+				sb.Append(Local.Experiment_on);//on
+				sb.Append(" ");
 				sb.Append(module.part.partInfo.title);
-				sb.Append("\nstatus : ");
+				sb.Append("\n");
+				sb.Append(Local.Experiment_status);//status :
+				sb.Append(" ");
 				sb.Append(Experiment.StatusInfo(module.Status));
 
 				if (module.Status == Experiment.ExpStatus.Issue)
 				{
-					sb.Append("\nissue : ");
+					sb.Append("\n");
+					sb.Append(Local.Experiment_issue);//issue :
+					sb.Append(" ");
 					sb.Append(Lib.Color(module.issue, Lib.Kolor.Orange));
 				}
-				sb.Append("\nscience value : ");
+				sb.Append("\n");
+				sb.Append(Local.Experiment_sciencevalue);//science value :
+				sb.Append(" ");
 				sb.Append(scienceValue);
 
 				if (module.Status == Experiment.ExpStatus.Running)
 				{
-					sb.Append("\ncompletion : ");
+					sb.Append("\n");
+					sb.Append(Local.Experiment_completion);//completion :
+					sb.Append(" ");
 					sb.Append(Experiment.RunningCountdown(module.ExpInfo, module.Subject, module.data_rate, false));
 				}
 				else if (module.Subject != null && module.Status == Experiment.ExpStatus.Forced)
 				{
-					sb.Append("\ncompletion : ");
+					sb.Append("\n");
+					sb.Append(Local.Experiment_completion);//completion :
+					sb.Append(" ");
 					sb.Append(module.Subject.PercentCollectedTotal.ToString("P0"));
 				}
 
@@ -172,27 +184,39 @@ namespace KERBALISM
 					sb.Append(subject.FullTitle);
 				else
 					sb.Append(expInfo.Title);
-				sb.Append("\non ");
+				sb.Append("\n");
+				sb.Append(Local.Experiment_on);//on
+				sb.Append(" ");
 				sb.Append(prefab.part.partInfo.title);
-				sb.Append("\nstatus : ");
+				sb.Append("\n");
+				sb.Append(Local.Experiment_status);//status :
+				sb.Append(" ");
 				sb.Append(Experiment.StatusInfo(status));
 
 				if (status == Experiment.ExpStatus.Issue)
 				{
-					sb.Append("\nissue : ");
+					sb.Append("\n");
+					sb.Append(Local.Experiment_issue);//issue :
+					sb.Append(" ");
 					sb.Append(Lib.Color(issue, Lib.Kolor.Orange));
 				}
-				sb.Append("\nscience value : ");
+				sb.Append("\n");
+				sb.Append(Local.Experiment_sciencevalue);//science value :
+				sb.Append(" ");
 				sb.Append(scienceValue);
 
 				if (status == Experiment.ExpStatus.Running)
 				{
-					sb.Append("\ncompletion : ");
+					sb.Append("\n");
+					sb.Append(Local.Experiment_completion);//completion :
+					sb.Append(" ");
 					sb.Append(Experiment.RunningCountdown(expInfo, subject, prefab.data_rate, false));
 				}
 				else if (subject != null && status == Experiment.ExpStatus.Forced)
 				{
-					sb.Append("\ncompletion : ");
+					sb.Append("\n");
+					sb.Append(Local.Experiment_completion);//completion :
+					sb.Append(" ");
 					sb.Append(subject.PercentCollectedTotal.ToString("P0"));
 				}
 

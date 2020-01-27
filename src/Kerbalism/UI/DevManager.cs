@@ -1,4 +1,4 @@
-﻿using KSP.Localization;
+using KSP.Localization;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
@@ -25,7 +25,7 @@ namespace KERBALISM
 			if (!vd.IsSimulated) return;
 
 			// set metadata
-			p.Title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(20)), Lib.Color("#KERBALISM_UI_devman", Lib.Kolor.LightGrey)));
+			p.Title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(20)), Lib.Color(Local.UI_devman, Lib.Kolor.LightGrey)));
 			p.Width(Styles.ScaleWidthFloat(355.0f));
 			p.paneltype = Panel.PanelType.scripts;
 
@@ -42,7 +42,7 @@ namespace KERBALISM
 				// draw section title and desc
 				p.AddSection
 				(
-				  Localizer.Format("#KERBALISM_UI_devices"),
+				  Local.UI_devices,
 				  Description(),
 				  () => p.Prev(ref script_index, (int)ScriptType.last),
 				  () => p.Next(ref script_index, (int)ScriptType.last),
@@ -65,7 +65,7 @@ namespace KERBALISM
 					{
 						if (!hasVesselDeviceSection)
 						{
-							p.AddSection("VESSEL DEVICES");
+							p.AddSection(Local.DevManager_VESSELDEVICES);//"VESSEL DEVICES"
 							hasVesselDeviceSection = true;
 						}
 					}
@@ -74,7 +74,7 @@ namespace KERBALISM
 					{
 						if (!hasModuleDeviceSection)
 						{
-							p.AddSection("MODULE DEVICES");
+							p.AddSection(Local.DevManager_MODULEDEVICES);//"MODULE DEVICES"
 							hasModuleDeviceSection = true;
 						}
 					}
@@ -130,7 +130,7 @@ namespace KERBALISM
 					{
 						if (!hasVesselDeviceSection)
 						{
-							p.AddSection("VESSEL DEVICES");
+							p.AddSection(Local.DevManager_VESSELDEVICES);//"VESSEL DEVICES"
 							hasVesselDeviceSection = true;
 						}
 					}
@@ -139,7 +139,7 @@ namespace KERBALISM
 					{
 						if (!hasModuleDeviceSection)
 						{
-							p.AddSection("MODULE DEVICES");
+							p.AddSection(Local.DevManager_MODULEDEVICES);//"MODULE DEVICES"
 							hasModuleDeviceSection = true;
 						}
 					}
@@ -148,7 +148,7 @@ namespace KERBALISM
 					p.AddContent
 					(
 					  dev.DisplayName,
-					  state == -1 ? Lib.Color(Localizer.Format("#KERBALISM_UI_dontcare"), Lib.Kolor.DarkGrey) : Lib.Color(state == 0, Localizer.Format("#KERBALISM_Generic_OFF"), Lib.Kolor.Yellow, Localizer.Format("#KERBALISM_Generic_ON"), Lib.Kolor.Green),
+					  state == -1 ? Lib.Color(Local.UI_dontcare, Lib.Kolor.DarkGrey) : Lib.Color(state == 0, Local.Generic_OFF, Lib.Kolor.Yellow, Local.Generic_ON, Lib.Kolor.Green),
 					  string.Empty,
 					  () =>
 					  {
@@ -168,36 +168,36 @@ namespace KERBALISM
 			// no devices case
 			if (deviceCount == 0)
 			{
-				p.AddContent("<i>no devices</i>");
+				p.AddContent("<i>"+Local.DevManager_nodevices +"</i>");//no devices
 			}
 		}
 
 		// return short description of a script, or the time-out message
 		static string Description()
 		{
-			if (script_index == 0) return "<i>Control vessel components directly</i>";
+			if (script_index == 0) return Local.DevManager_TabManual;//Control vessel components directly
 			switch ((ScriptType)script_index)
 			{
-				case ScriptType.landed: return Localizer.Format("#Kerbalism_UI_1000000");        // #Kerbalism_UI_1000000 = <i>Called on landing</i>
-				case ScriptType.atmo: return Localizer.Format("#Kerbalism_UI_1000001");          // #Kerbalism_UI_1000001 = <i>Called on entering atmosphere</i>
-				case ScriptType.space: return Localizer.Format("#Kerbalism_UI_1000002");         // #Kerbalism_UI_1000002 = <i>Called on reaching space</i>
-				case ScriptType.sunlight: return Localizer.Format("#Kerbalism_UI_1000003");      // #Kerbalism_UI_1000003 = <i>Called when sun became visible</i>
-				case ScriptType.shadow: return Localizer.Format("#Kerbalism_UI_1000004");        // #Kerbalism_UI_1000004 = <i>Called when sun became occluded</i>
-				case ScriptType.power_high: return Localizer.Format("#Kerbalism_UI_1000005");    // #Kerbalism_UI_1000005 = <i>Called when EC level goes above 80%</i>
-				case ScriptType.power_low: return Localizer.Format("#Kerbalism_UI_1000006");     // #Kerbalism_UI_1000006 = <i>Called when EC level goes below 20%</i>
-				case ScriptType.rad_high: return Localizer.Format("#Kerbalism_UI_1000007");      // #Kerbalism_UI_1000007 = <i>Called when radiation exceed 0.05 rad/h</i>
-				case ScriptType.rad_low: return Localizer.Format("#Kerbalism_UI_1000008");       // #Kerbalism_UI_1000008 = <i>Called when radiation goes below 0.02 rad/h</i>
-				case ScriptType.linked: return Localizer.Format("#Kerbalism_UI_1000009");        // #Kerbalism_UI_1000009 = <i>Called when signal is regained</i>
-				case ScriptType.unlinked: return Localizer.Format("#Kerbalism_UI_1000010");      // #Kerbalism_UI_1000010 = <i>Called when signal is lost</i>
-				case ScriptType.eva_out: return Localizer.Format("#Kerbalism_UI_1000011");       // #Kerbalism_UI_1000011 = <i>Called when going out on EVA</i>
-				case ScriptType.eva_in: return Localizer.Format("#Kerbalism_UI_1000012");        // #Kerbalism_UI_1000012 = <i>Called when returning from EVA</i>
-				case ScriptType.action1: return Localizer.Format("#Kerbalism_UI_1000013");       // #Kerbalism_UI_1000013 = <i>Called by pressing <b>1</b> on the keyboard</i>
-				case ScriptType.action2: return Localizer.Format("#Kerbalism_UI_1000014");       // #Kerbalism_UI_1000014 = <i>Called by pressing <b>2</b> on the keyboard</i>
-				case ScriptType.action3: return Localizer.Format("#Kerbalism_UI_1000015");       // #Kerbalism_UI_1000015 = <i>Called by pressing <b>3</b> on the keyboard</i>
-				case ScriptType.action4: return Localizer.Format("#Kerbalism_UI_1000016");       // #Kerbalism_UI_1000016 = <i>Called by pressing <b>4</b> on the keyboard</i>
-				case ScriptType.action5: return Localizer.Format("#Kerbalism_UI_1000017");       // #Kerbalism_UI_1000017 = <i>Called by pressing <b>5</b> on the keyboard</i>
-				case ScriptType.drive_full: return Localizer.Format("#Kerbalism_UI_1000018");
-				case ScriptType.drive_empty: return Localizer.Format("#Kerbalism_UI_1000019");
+				case ScriptType.landed: return Local.DevManager_TabLanded;        // <i>Called on landing</i>
+				case ScriptType.atmo: return Local.DevManager_TabAtmo;          // <i>Called on entering atmosphere</i>
+				case ScriptType.space: return Local.DevManager_TabSpace;         // <i>Called on reaching space</i>
+				case ScriptType.sunlight: return Local.DevManager_TabSunlight;      // <i>Called when sun became visible</i>
+				case ScriptType.shadow: return Local.DevManager_TabShadow;        // <i>Called when sun became occluded</i>
+				case ScriptType.power_high: return Local.DevManager_TabPowerHigh;    // <i>Called when EC level goes above 80%</i>
+				case ScriptType.power_low: return Local.DevManager_TabPowerLow;     // <i>Called when EC level goes below 20%</i>
+				case ScriptType.rad_high: return Local.DevManager_TabRadHigh;      // <i>Called when radiation exceed 0.05 rad/h</i>
+				case ScriptType.rad_low: return Local.DevManager_TabRadLow;       // <i>Called when radiation goes below 0.02 rad/h</i>
+				case ScriptType.linked: return Local.DevManager_TabLinked;        // <i>Called when signal is regained</i>
+				case ScriptType.unlinked: return Local.DevManager_TabUnlinked;      // <i>Called when signal is lost</i>
+				case ScriptType.eva_out: return Local.DevManager_TabEVAOut;       // <i>Called when going out on EVA</i>
+				case ScriptType.eva_in: return Local.DevManager_TabEVAIn;        // <i>Called when returning from EVA</i>
+				case ScriptType.action1: return Local.DevManager_TabAct1;       // <i>Called by pressing <b>1</b> on the keyboard</i>
+				case ScriptType.action2: return Local.DevManager_TabAct2;       // <i>Called by pressing <b>2</b> on the keyboard</i>
+				case ScriptType.action3: return Local.DevManager_TabAct3;       // <i>Called by pressing <b>3</b> on the keyboard</i>
+				case ScriptType.action4: return Local.DevManager_TabAct4;       // <i>Called by pressing <b>4</b> on the keyboard</i>
+				case ScriptType.action5: return Local.DevManager_TabAct5;       // <i>Called by pressing <b>5</b> on the keyboard</i>
+				case ScriptType.drive_full: return Local.DevManager_TabDriveFull;
+				case ScriptType.drive_empty: return Local.DevManager_TabDriveEmpty;
 			}
 			return string.Empty;
 		}

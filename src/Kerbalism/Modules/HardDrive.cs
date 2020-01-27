@@ -1,7 +1,8 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
+using KSP.Localization;
 
 
 
@@ -37,11 +38,11 @@ namespace KERBALISM
 		public string Capacity;
 
 #else
-		[KSPField(isPersistant = false, guiName = "Data Capacity", guiActive = false, guiActiveEditor = false, groupName = "Science", groupDisplayName = "Science"), UI_ChooseOption(scene = UI_Scene.Editor)]
+		[KSPField(isPersistant = false, guiName = "#KERBALISM_HardDrive_DataCapacity", guiActive = false, guiActiveEditor = false, groupName = "Science", groupDisplayName = "#KERBALISM_Group_Science"), UI_ChooseOption(scene = UI_Scene.Editor)]//Data Capacity--Science
 		public string dataCapacityUI = "0";
-		[KSPField(isPersistant = false, guiName = "Sample Capacity", guiActive = false, guiActiveEditor = false, groupName = "Science", groupDisplayName = "Science"), UI_ChooseOption(scene = UI_Scene.Editor)]
+		[KSPField(isPersistant = false, guiName = "#KERBALISM_HardDrive_SampleCapacity", guiActive = false, guiActiveEditor = false, groupName = "Science", groupDisplayName = "#KERBALISM_Group_Science"), UI_ChooseOption(scene = UI_Scene.Editor)]//Sample Capacity--Science
 		public string sampleCapacityUI = "0";
-		[KSPField(guiActive = true, guiName = "Capacity", guiActiveEditor = true, groupName = "Science", groupDisplayName = "Science")]
+		[KSPField(guiActive = true, guiName = "#KERBALISM_HardDrive_Capacity", guiActiveEditor = true, groupName = "Science", groupDisplayName = "#KERBALISM_Group_Science")]//Capacity--Science
 		public string Capacity;
 #endif
 
@@ -112,11 +113,12 @@ namespace KERBALISM
 			}
 
 			if (Lib.IsFlight() && hdId == 0) hdId = part.flightID;
+
 			if (drive == null)
 			{
 				if (!Lib.IsFlight())
 				{
-					drive = new Drive(title, effectiveDataCapacity, effectiveSampleCapacity);
+					drive = new Drive(title, effectiveDataCapacity, effectiveSampleCapacity, !string.IsNullOrEmpty(experiment_id));
 				}
 				else
 				{
@@ -131,8 +133,6 @@ namespace KERBALISM
 						drive = vessel.KerbalismData().GetPartData(part.flightID).Drive;
 					}
 				}
-					
-					//DB.Drive(hdId, title, effectiveDataCapacity, effectiveSampleCapacity);
 			}
 
 			UpdateCapacity();
@@ -153,38 +153,6 @@ namespace KERBALISM
 				result.Add(new KeyValuePair<string, int>(Lib.HumanReadableSampleSize(sampleCapacity * i), sampleCapacity * i));
 			return result;
 		}
-
-		//public override void OnLoad(ConfigNode node)
-		//{
-		//	base.OnLoad(node);
-
-		//	if (HighLogic.LoadedScene == GameScenes.LOADING)
-		//	{
-		//		drive = new Drive(title, effectiveDataCapacity, effectiveSampleCapacity); // unused, 
-		//		return;
-		//	}
-		//}
-
-		/// <summary>Called by Callbacks just after rollout to launch pad</summary>
-		//public void OnRollout()
-		//{
-		//	if (Lib.DisableScenario(this)) return;
-
-		//	// register the drive in the kerbalism DB
-		//	// this needs to be done only once just after launch
-		//	VesselData vd = vessel.KerbalismData();
-		//	hdId = part.flightID;
-		//	PartData pd = vd.GetPartData(hdId);
-		//	if (pd != null)
-		//	{
-		//		drive = new Drive(part.partInfo.title, effectiveDataCapacity, effectiveSampleCapacity, !string.IsNullOrEmpty(experiment_id));
-		//		pd.Drive = drive;
-		//	}
-
-		//	UpdateCapacity();
-
-		//	if (vessel != null) Cache.RemoveVesselObjectsCache(vessel, "drives");
-		//}
 
 		public void FixedUpdate()
 		{
@@ -222,8 +190,8 @@ namespace KERBALISM
 				drive.dataCapacity = effectiveDataCapacity;
 				drive.sampleCapacity = effectiveSampleCapacity;
 
-				Fields["sampleCapacityUI"].guiActiveEditor = sampleCapacity > 0;
-				Fields["dataCapacityUI"].guiActiveEditor = dataCapacity > 0;
+				Fields["sampleCapacityUI"].guiActiveEditor = sampleCapacity > 0 && !IsPrivate();
+				Fields["dataCapacityUI"].guiActiveEditor = dataCapacity > 0 && !IsPrivate();
 
 				if (update)
 				{
@@ -235,7 +203,7 @@ namespace KERBALISM
 			if (Lib.IsFlight())
 			{
 				// show DATA UI button, with size info
-				Events["ToggleUI"].guiName = Lib.StatusToggle("Data", drive.Empty() ? "empty" : drive.Size());
+				Events["ToggleUI"].guiName = Lib.StatusToggle(Local.HardDrive_Data, drive.Empty() ? Local.HardDrive_Dataempty : drive.Size());//"Data""empty"
 				Events["ToggleUI"].active = !IsPrivate();
 
 				// show TakeData eva action button, if there is something to take
@@ -309,7 +277,7 @@ namespace KERBALISM
 #if KSP15_16
 		[KSPEvent(guiActive = true, guiName = "_", active = true)]
 #else
-		[KSPEvent(guiActive = true, guiName = "_", active = true, groupName = "Science", groupDisplayName = "Science")]
+		[KSPEvent(guiActive = true, guiName = "_", active = true, groupName = "Science", groupDisplayName = "#KERBALISM_Group_Science")]//Science
 #endif
 		public void ToggleUI()
 		{
@@ -319,7 +287,7 @@ namespace KERBALISM
 #if KSP15_16
 		[KSPEvent(guiName = "#KERBALISM_HardDrive_TransferData", active = false)]
 #else
-		[KSPEvent(guiName = "#KERBALISM_HardDrive_TransferData", active = false, groupName = "Science", groupDisplayName = "Science")]
+		[KSPEvent(guiName = "#KERBALISM_HardDrive_TransferData", active = false, groupName = "Science", groupDisplayName = "#KERBALISM_Group_Science")]//Science
 #endif
 		public void TransferData()
 		{
@@ -334,7 +302,7 @@ namespace KERBALISM
 #if KSP15_16
 		[KSPEvent(guiActive = false, guiActiveUnfocused = true, guiActiveUncommand = true, guiName = "#KERBALISM_HardDrive_TakeData", active = true)]
 #else
-		[KSPEvent(guiActive = false, guiActiveUnfocused = true, guiActiveUncommand = true, guiName = "#KERBALISM_HardDrive_TakeData", active = true, groupName = "Science", groupDisplayName = "Science")]
+		[KSPEvent(guiActive = false, guiActiveUnfocused = true, guiActiveUncommand = true, guiName = "#KERBALISM_HardDrive_TakeData", active = true, groupName = "Science", groupDisplayName = "#KERBALISM_Group_Science")]//Science
 #endif
 		public void TakeData()
 		{
@@ -347,8 +315,8 @@ namespace KERBALISM
 			{
 				Message.Post
 				(
-					Lib.Color(Lib.BuildString("WARNING: not evering copied"), Lib.Kolor.Red, true),
-					Lib.BuildString("Storage is at capacity")
+					Lib.Color(Lib.BuildString(Local.HardDrive_WARNING_title), Lib.Kolor.Red, true),//"WARNING: not evering copied"
+					Lib.BuildString(Local.HardDrive_WARNING)//"Storage is at capacity"
 				);
 			}
 		}
@@ -356,7 +324,7 @@ namespace KERBALISM
 #if KSP15_16
 		[KSPEvent(guiActive = false, guiActiveUnfocused = true, guiActiveUncommand = true, guiName = "#KERBALISM_HardDrive_TransferData", active = true)]
 #else
-		[KSPEvent(guiActive = false, guiActiveUnfocused = true, guiActiveUncommand = true, guiName = "#KERBALISM_HardDrive_TransferData", active = true, groupName = "Science", groupDisplayName = "Science")]
+		[KSPEvent(guiActive = false, guiActiveUnfocused = true, guiActiveUncommand = true, guiName = "#KERBALISM_HardDrive_TransferData", active = true, groupName = "Science", groupDisplayName = "#KERBALISM_Group_Science")]//Science
 #endif
 		public void StoreData()
 		{
@@ -369,8 +337,8 @@ namespace KERBALISM
 			{
 				Message.Post
 				(
-					Lib.Color(Lib.BuildString("WARNING: not evering copied"), Lib.Kolor.Red, true),
-					Lib.BuildString("Storage is at capacity")
+					Lib.Color(Lib.BuildString(Local.HardDrive_WARNING_title), Lib.Kolor.Red, true),//"WARNING: not evering copied"
+					Lib.BuildString(Local.HardDrive_WARNING)//"Storage is at capacity"
 				);
 			}
 		}
@@ -472,14 +440,14 @@ namespace KERBALISM
 		public Specifics Specs()
 		{
 			Specifics specs = new Specifics();
-			specs.Add("File capacity", dataCapacity >= 0 ? Lib.HumanReadableDataSize(dataCapacity) : "unlimited");
-			specs.Add("Sample capacity", sampleCapacity >= 0 ? Lib.HumanReadableSampleSize(sampleCapacity) : "unlimited");
+			specs.Add(Local.HardDrive_info1, dataCapacity >= 0 ? Lib.HumanReadableDataSize(dataCapacity) : Local.HardDrive_Capacityunlimited);//"File capacity""unlimited"
+			specs.Add(Local.HardDrive_info2, sampleCapacity >= 0 ? Lib.HumanReadableSampleSize(sampleCapacity) : Local.HardDrive_Capacityunlimited);//"Sample capacity""unlimited"
 			return specs;
 		}
 
 		// module info support
 		public string GetModuleTitle() { return "Hard Drive"; }
-		public override string GetModuleDisplayName() { return "Hard Drive"; }
+		public override string GetModuleDisplayName() { return Local.HardDrive; }//"Hard Drive"
 		public string GetPrimaryField() { return string.Empty; }
 		public Callback<Rect> GetDrawModulePanelCallback() { return null; }
 
@@ -489,13 +457,13 @@ namespace KERBALISM
 
 			if (effectiveSampleCapacity > sampleCapacity && sampleCapacity > 0)
 			{
-				var sampleMultiplier = effectiveSampleCapacity / sampleCapacity;
+				var sampleMultiplier = (effectiveSampleCapacity / sampleCapacity) - 1;
 				result += sampleMultiplier * sampleCapacityMass;
 			}
 
 			if (effectiveDataCapacity > dataCapacity && dataCapacity > 0)
 			{
-				var dataMultiplier = effectiveDataCapacity / dataCapacity;
+				var dataMultiplier = (effectiveDataCapacity / dataCapacity) - 1.0;
 				result += dataMultiplier * dataCapacityMass;
 			}
 
@@ -516,13 +484,13 @@ namespace KERBALISM
 
 			if(effectiveSampleCapacity > sampleCapacity && sampleCapacity > 0)
 			{
-				var sampleMultiplier = effectiveSampleCapacity / sampleCapacity;
+				var sampleMultiplier = (effectiveSampleCapacity / sampleCapacity) - 1;
 				result += sampleMultiplier * sampleCapacityCost;
 			}
 
 			if (effectiveDataCapacity > dataCapacity && dataCapacity > 0)
 			{
-				var dataMultiplier = effectiveDataCapacity / dataCapacity;
+				var dataMultiplier = (effectiveDataCapacity / dataCapacity) - 1.0;
 				result += dataMultiplier * dataCapacityCost;
 			}
 

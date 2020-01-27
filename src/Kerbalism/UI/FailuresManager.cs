@@ -1,4 +1,4 @@
-﻿using KSP.Localization;
+using KSP.Localization;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -24,7 +24,7 @@ namespace KERBALISM
 			if (!vd.IsSimulated) return;
 
 			// set metadata
-			p.Title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(20)), " ", Lib.Color("Quality Management", Lib.Kolor.LightGrey)));
+			p.Title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(20)), " ", Lib.Color(Local.QualityManagement_title, Lib.Kolor.LightGrey)));//"Quality Management"
 			p.Width(Styles.ScaleWidthFloat(355.0f));
 			p.paneltype = Panel.PanelType.failures;
 
@@ -57,13 +57,13 @@ namespace KERBALISM
 			// no devices case
 			if (deviceCount == 0)
 			{
-				p.AddContent("<i>no quality info</i>");
+				p.AddContent("<i>"+Local.QualityManagement_noqualityinfo +"</i>");//no quality info
 			}
 		}
 
 		private static string Group2Section(string group)
 		{
-			if (string.IsNullOrEmpty(group)) return "Misc";
+			if (string.IsNullOrEmpty(group)) return Local.QualityManagement_Misc;//"Misc"
 			return group;
 		}
 
@@ -71,18 +71,18 @@ namespace KERBALISM
 		{
 			if (ri.broken)
 			{
-				if (ri.critical) return Lib.Color("busted", Lib.Kolor.Red);
-				return Lib.Color("needs repair", Lib.Kolor.Orange);
+				if (ri.critical) return Lib.Color(Local.QualityManagement_busted, Lib.Kolor.Red);//"busted"
+				return Lib.Color(Local.QualityManagement_needsrepair, Lib.Kolor.Orange);//"needs repair"
 			}
 			if (ri.NeedsMaintenance())
 			{
-				return Lib.Color("needs service", Lib.Kolor.Yellow);
+				return Lib.Color(Local.QualityManagement_needsservice, Lib.Kolor.Yellow);//"needs service"
 			}
 
-			if (ri.rel_duration > 0.75) return Lib.Color("operation duration", Lib.Kolor.Yellow);
-			if (ri.rel_ignitions > 0.95) return Lib.Color("ignition limit", Lib.Kolor.Yellow);
-
-			return Lib.Color("good", Lib.Kolor.Green);
+			if (ri.rel_duration > 0.75) return Lib.Color(Local.QualityManagement_operationduration, Lib.Kolor.Yellow);//"operation duration"
+			if (ri.rel_ignitions > 0.95) return Lib.Color(Local.QualityManagement_ignitionlimit, Lib.Kolor.Yellow);//"ignition limit"
+			
+			return Lib.Color(Local.QualityManagement_good, Lib.Kolor.Green);//"good"
 		}
 	}
 

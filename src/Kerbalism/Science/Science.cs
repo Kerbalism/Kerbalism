@@ -1,9 +1,10 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
 using UnityEngine;
+using KSP.Localization;
 
 
 namespace KERBALISM
@@ -78,7 +79,7 @@ namespace KERBALISM
 			if (!Features.Science) return;
 
 			// consume ec for transmitters
-			ec.Consume(vd.Connection.ec_idle * elapsed_s, "comms (idle)");
+			ec.Consume(vd.Connection.ec_idle * elapsed_s, ResourceBroker.CommsIdle);
 
 			// avoid corner-case when RnD isn't live during scene changes
 			// - this avoid losing science if the buffer reach threshold during a scene change
@@ -184,7 +185,7 @@ namespace KERBALISM
 			// consume EC cost for transmission (ec_idle is consumed above)
 			double transmittedCapacity = totalTransmitCapacity - remainingTransmitCapacity;
 			double transmissionCost = (vd.Connection.ec - vd.Connection.ec_idle) * (transmittedCapacity / vd.Connection.rate);
-			ec.Consume(transmissionCost, "comms (xmit)");
+			ec.Consume(transmissionCost, ResourceBroker.CommsXmit);
 
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Science.Update-AddScience");
 
@@ -269,9 +270,6 @@ namespace KERBALISM
 
 		private static void SubjectXmitCompleted(File file, int timesCompleted, Vessel v)
 		{
-			if (!GameHasRnD)
-				return;
-
 			// fire science transmission game event. This is used by stock contracts and a few other things.
 			GameEvents.OnScienceRecieved.Fire(timesCompleted == 1 ? (float)file.subjectData.ScienceMaxValue : 0f, file.subjectData.RnDSubject, v.protoVessel, false);
 
@@ -285,11 +283,11 @@ namespace KERBALISM
 			if (string.IsNullOrEmpty(file.resultText))
 			{
 				subjectResultText = Lib.TextVariant(
-					"Our researchers will jump on it right now",
-					"This cause some excitement",
-					"These results are causing a brouhaha in R&D",
-					"Our scientists look very confused",
-					"The scientists won't believe these readings");
+					Local.SciencresultText1,//"Our researchers will jump on it right now"
+					Local.SciencresultText2,//"This cause some excitement"
+					Local.SciencresultText3,//"These results are causing a brouhaha in R&D"
+					Local.SciencresultText4,//"Our scientists look very confused"
+					Local.SciencresultText5);//"The scientists won't believe these readings"
 			}
 			else
 			{
@@ -298,8 +296,8 @@ namespace KERBALISM
 			subjectResultText = Lib.WordWrapAtLength(subjectResultText, 70);
 			Message.Post(Lib.BuildString(
 				file.subjectData.FullTitle,
-				" transmitted\n",
-				timesCompleted == 1 ? Lib.HumanReadableScience(file.subjectData.ScienceMaxValue, false) : Lib.Color("no science gain : we already had this data", Lib.Kolor.Orange, true)),
+				" ",Local.Scienctransmitted_title,"\n",//transmitted
+				timesCompleted == 1 ? Lib.HumanReadableScience(file.subjectData.ScienceMaxValue, false) : Lib.Color(Local.Nosciencegain, Lib.Kolor.Orange, true)),//"no science gain : we already had this data"
 				subjectResultText);
 		}
 
@@ -331,11 +329,11 @@ namespace KERBALISM
 			if (result == string.Empty && useGenericIfNotFound)
 			{
 				result = Lib.TextVariant(
-					  "Our researchers will jump on it right now",
-					  "This cause some excitement",
-					  "These results are causing a brouhaha in R&D",
-					  "Our scientists look very confused",
-					  "The scientists won't believe these readings");
+					  Local.SciencresultText1,//"Our researchers will jump on it right now"
+					  Local.SciencresultText2,//"This cause some excitement"
+					  Local.SciencresultText3,//"These results are causing a brouhaha in R&D"
+					  Local.SciencresultText4,//"Our scientists look very confused"
+					  Local.SciencresultText5);//"The scientists won't believe these readings"
 			}
 			return result;
 		}

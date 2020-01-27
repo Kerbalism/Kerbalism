@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
+using KSP.Localization;
 
 
 namespace KERBALISM
@@ -28,7 +29,7 @@ namespace KERBALISM
 			if (!vd.IsSimulated) return;
 
 			// set metadata
-			p.Title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(40)), " ", Lib.Color("FILE MANAGER", Lib.Kolor.LightGrey)));
+			p.Title(Lib.BuildString(Lib.Ellipsis(v.vesselName, Styles.ScaleStringLength(40)), " ", Lib.Color(Local.FILEMANAGER_title, Lib.Kolor.LightGrey)));//"FILE MANAGER"
 			p.Width(Styles.ScaleWidthFloat(465.0f));
 			p.paneltype = Panel.PanelType.data;
 
@@ -75,8 +76,8 @@ namespace KERBALISM
 
 			if(filesCount > 0 || totalDataCapacity > 0)
 			{
-				var title = "DATA " + Lib.HumanReadableDataSize(usedDataCapacity);
-				if(!unlimitedData) title += Lib.BuildString(" (", Lib.HumanReadablePerc((totalDataCapacity - usedDataCapacity) / totalDataCapacity), " available)");
+				var title = Local.FILEMANAGER_DataCapacity + " " + Lib.HumanReadableDataSize(usedDataCapacity);//"DATA " 
+				if (!unlimitedData) title += Local.FILEMANAGER_DataAvailable.Format(Lib.HumanReadablePerc((totalDataCapacity - usedDataCapacity) / totalDataCapacity));//Lib.BuildString(" (", Lib.HumanReadablePerc((totalDataCapacity - usedDataCapacity) / totalDataCapacity), " available)");
 				p.AddSection(title);
 
 				foreach (var drive in drives)
@@ -87,13 +88,13 @@ namespace KERBALISM
 					}
 				}
 
-				if(filesCount == 0) p.AddContent("<i>no files</i>", string.Empty);
+				if(filesCount == 0) p.AddContent("<i>"+Local.FILEMANAGER_nofiles +"</i>", string.Empty);//no files
 			}
 
 			if(samplesCount > 0 || totalSlots > 0)
 			{
-				var title = "SAMPLES " + Lib.HumanReadableMass(totalMass) + " " + Lib.HumanReadableSampleSize(usedSlots);
-				if (totalSlots > 0 && !unlimitedSamples) title += ", " + Lib.HumanReadableSampleSize(totalSlots) + " available";
+				var title = Local.FILEMANAGER_SAMPLESMass.Format(Lib.HumanReadableMass(totalMass)) + " " + Lib.HumanReadableSampleSize(usedSlots);//"SAMPLES " + 
+				if (totalSlots > 0 && !unlimitedSamples) title += ", " + Lib.HumanReadableSampleSize(totalSlots) + " "+ Local.FILEMANAGER_SAMPLESAvailable;//available
 				p.AddSection(title);
 
 				foreach (var drive in drives)
@@ -104,7 +105,7 @@ namespace KERBALISM
 					}
 				}
 
-				if (samplesCount == 0) p.AddContent("<i>no samples</i>", string.Empty);
+				if (samplesCount == 0) p.AddContent("<i>"+Local.FILEMANAGER_nosamples+"</i>", string.Empty);//no samples
 			}
 		}
 
@@ -131,12 +132,12 @@ namespace KERBALISM
 			if (file.transmitRate > 0.0)
 			{
 				if (file.size > 0.0)
-					exp_tooltip = Lib.Color(Lib.BuildString(exp_tooltip, "\nTransmitting at ", Lib.HumanReadableDataRate(file.transmitRate), " : <i>", Lib.HumanReadableCountdown(file.size / file.transmitRate), "</i>"), Lib.Kolor.Cyan);
+					exp_tooltip = Lib.Color(Lib.BuildString(exp_tooltip, "\n", Local.FILEMANAGER_TransmittingRate.Format(Lib.HumanReadableDataRate(file.transmitRate)), " : <i>", Lib.HumanReadableCountdown(file.size / file.transmitRate), "</i>"), Lib.Kolor.Cyan);//Transmitting at <<1>>
 				else
-					exp_tooltip = Lib.Color(Lib.BuildString(exp_tooltip, "\nTransmitting at ", Lib.HumanReadableDataRate(file.transmitRate)), Lib.Kolor.Cyan);
+					exp_tooltip = Lib.Color(Lib.BuildString(exp_tooltip, "\n", Local.FILEMANAGER_TransmittingRate.Format(Lib.HumanReadableDataRate(file.transmitRate))), Lib.Kolor.Cyan);//Transmitting at <<1>>
 			}
 			else if (v.KerbalismData().Connection.rate > 0.0)
-				exp_tooltip = Lib.BuildString(exp_tooltip, "\nTransmit duration : <i>", Lib.HumanReadableDuration(file.size / v.KerbalismData().Connection.rate), "</i>");
+				exp_tooltip = Lib.BuildString(exp_tooltip, "\n", Local.FILEMANAGER_Transmitduration, "<i>", Lib.HumanReadableDuration(file.size / v.KerbalismData().Connection.rate), "</i>");//Transmit duration : 
 			if (!string.IsNullOrEmpty(file.resultText))
 				exp_tooltip = Lib.BuildString(exp_tooltip, "\n", Lib.WordWrapAtLength(file.resultText, 50));
 
@@ -156,13 +157,13 @@ namespace KERBALISM
 			p.AddContent(exp_label, size, exp_tooltip, (Action)null, () => Highlighter.Set(partId, Color.cyan));
 
 			bool send = drive.GetFileSend(file.subjectData.Id);
-			p.AddRightIcon(send ? Textures.send_cyan : Textures.send_black, "Flag the file for transmission to <b>DSN</b>", () => { drive.Send(file.subjectData.Id, !send); });
-			p.AddRightIcon(Textures.toggle_red, "Delete the file", () =>
+			p.AddRightIcon(send ? Textures.send_cyan : Textures.send_black, Local.FILEMANAGER_send, () => { drive.Send(file.subjectData.Id, !send); });//"Flag the file for transmission to <b>DSN</b>"
+			p.AddRightIcon(Textures.toggle_red, Local.FILEMANAGER_Delete, () =>//"Delete the file"
 				{
-					Lib.Popup("Warning!",
-						Lib.BuildString("Do you really want to delete ", file.subjectData.FullTitle, "?"),
-				        new DialogGUIButton("Delete it", () => drive.Delete_file(file.subjectData)),
-						new DialogGUIButton("Keep it", () => { }));
+					Lib.Popup(Local.FILEMANAGER_Warning_title,//"Warning!"
+						Local.FILEMANAGER_DeleteConfirm.Format(file.subjectData.FullTitle),//Lib.BuildString(, "?"),//"Do you really want to delete <<1>>", 
+				        new DialogGUIButton(Local.FILEMANAGER_DeleteConfirm_button1, () => drive.Delete_file(file.subjectData)),//"Delete it"
+						new DialogGUIButton(Local.FILEMANAGER_DeleteConfirm_button2, () => { }));//"Keep it"
 				}
 			);
 		}
@@ -190,13 +191,13 @@ namespace KERBALISM
 			if (!string.IsNullOrEmpty(sample.resultText)) exp_tooltip = Lib.BuildString(exp_tooltip, "\n", Lib.WordWrapAtLength(sample.resultText, 50));
 
 			p.AddContent(exp_label, Lib.HumanReadableSampleSize(sample.size), exp_tooltip, (Action)null, () => Highlighter.Set(partId, Color.cyan));
-			p.AddRightIcon(sample.analyze ? Textures.lab_cyan : Textures.lab_black, "Flag the file for analysis in a <b>laboratory</b>", () => { sample.analyze = !sample.analyze; });
-			p.AddRightIcon(Textures.toggle_red, "Dump the sample", () =>
+			p.AddRightIcon(sample.analyze ? Textures.lab_cyan : Textures.lab_black, Local.FILEMANAGER_analysis, () => { sample.analyze = !sample.analyze; });//"Flag the file for analysis in a <b>laboratory</b>"
+			p.AddRightIcon(Textures.toggle_red, Local.FILEMANAGER_Dumpsample, () =>//"Dump the sample"
 				{
-					Lib.Popup("Warning!",
-						Lib.BuildString("Do you really want to dump ", sample.subjectData.FullTitle, "?"),
-						new DialogGUIButton("Dump it", () => drive.Delete_sample(sample.subjectData)),
-							  new DialogGUIButton("Keep it", () => { }));
+					Lib.Popup(Local.FILEMANAGER_Warning_title,//"Warning!"
+						Local.FILEMANAGER_DumpConfirm.Format(sample.subjectData.FullTitle),//"Do you really want to dump <<1>>?", 
+						new DialogGUIButton(Local.FILEMANAGER_DumpConfirm_button1, () => drive.Delete_sample(sample.subjectData)),//"Dump it"
+							  new DialogGUIButton(Local.FILEMANAGER_DumpConfirm_button2, () => { }));//"Keep it"
 				}
 			);
 		}

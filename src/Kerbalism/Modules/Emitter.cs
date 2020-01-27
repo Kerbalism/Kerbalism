@@ -1,11 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using KSP.Localization;
 
 namespace KERBALISM
 {
-	public class Emitter : PartModule, ISpecifics
+	public class Emitter : PartModule, ISpecifics, IKerbalismModule
 	{
 		// config
 		[KSPField] public string active;                          // name of animation to play when enabling/disabling
@@ -20,7 +20,7 @@ namespace KERBALISM
 #if KSP15_16
 		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "_")]
 #else
-		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "_", groupName = "Radiation", groupDisplayName = "Radiation")]
+		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "_", groupName = "Radiation", groupDisplayName = "#KERBALISM_Group_Radiation")]//Radiation
 #endif
 		// rmb status
 		public string Status;  // rate of radiation emitted/shielded
@@ -37,10 +37,9 @@ namespace KERBALISM
 
 			// update RMB ui
 			if (string.IsNullOrEmpty(title))
-				Fields["Status"].guiName = radiation >= 0.0 ? "Radiation" : "Active shield";
-			else
-				Fields["Status"].guiName = title;
+				title = radiation >= 0.0 ? "Radiation" : "Active shield";
 
+			Fields["Status"].guiName = title;
 			Events["Toggle"].active = toggle;
 			Actions["Action"].active = toggle;
 
@@ -139,8 +138,8 @@ namespace KERBALISM
 		public void Update()
 		{
 			// update ui
-			Status = running ? Lib.HumanReadableRadiation(Math.Abs(radiation)) : "none";
-			Events["Toggle"].guiName = Lib.StatusToggle(Localizer.Format("#kerbalism-activeshield_Part_title").Replace("Shield", "shield"), running ? Localizer.Format("#KERBALISM_Generic_ACTIVE") : Localizer.Format("#KERBALISM_Generic_DISABLED")); //i'm lazy lol
+			Status = running ? Lib.HumanReadableRadiation(Math.Abs(radiation)) : Local.Emitter_none;//"none"
+			Events["Toggle"].guiName = Lib.StatusToggle(part.partInfo.title, running ? Local.Generic_ACTIVE : Local.Generic_DISABLED);
 		}
 
 		public void FixedUpdate()
@@ -149,18 +148,7 @@ namespace KERBALISM
 				radiation_impact_calculated = CalculateRadiationImpact();
 		}
 
-		/// <summary>
-		/// We're always going to call you for resource handling.  You tell us what to produce or consume.  Here's how it'll look when your vessel is NOT loaded
-		/// </summary>
-		/// <param name="v">the vessel (unloaded)</param>
-		/// <param name="part_snapshot">proto part snapshot (contains all non-persistant KSPFields)</param>
-		/// <param name="module_snapshot">proto part module snapshot (contains all non-persistant KSPFields)</param>
-		/// <param name="proto_part_module">proto part module snapshot (contains all non-persistant KSPFields)</param>
-		/// <param name="proto_part">proto part snapshot (contains all non-persistant KSPFields)</param>
-		/// <param name="availableResources">key-value pair containing all available resources and their currently available amount on the vessel. if the resource is not in there, it's not available</param>
-		/// <param name="resourceChangeRequest">key-value pair that contains the resource names and the units per second that you want to produce/consume (produce: positive, consume: negative)</param>
-		/// <param name="elapsed_s">how much time elapsed since the last time. note this can be very long, minutes and hours depending on warp speed</param>
-		/// <returns>the title to be displayed in the resource tooltip</returns>
+		// See IKerbalismModule
 		public static string BackgroundUpdate(Vessel v,
 			ProtoPartSnapshot part_snapshot, ProtoPartModuleSnapshot module_snapshot,
 			PartModule proto_part_module, Part proto_part,
@@ -175,16 +163,9 @@ namespace KERBALISM
 				resourceChangeRequest.Add(new KeyValuePair<string, double>("ElectricCharge", -emitter.ec_rate));
 			}
 
-			return "active shield";
+			return emitter.title;
 		}
 
-
-		/// <summary>
-		/// We're also always going to call you when you're loaded.  Since you're loaded, this will be your PartModule, just like you'd expect in KSP. Will only be called while in flight, not in the editor
-		/// </summary>
-		/// <param name="availableResources">key-value pair containing all available resources and their currently available amount on the vessel. if the resource is not in there, it's not available</param>
-		/// <param name="resourceChangeRequest">key-value pair that contains the resource names and the units per second that you want to produce/consume (produce: positive, consume: negative)</param>
-		/// <returns></returns>
 		public virtual string ResourceUpdate(Dictionary<string, double> availableResources, List<KeyValuePair<string, double>> resourceChangeRequest)
 		{
 			// if enabled, and there is ec consumption
@@ -193,14 +174,19 @@ namespace KERBALISM
 				resourceChangeRequest.Add(new KeyValuePair<string, double>("ElectricCharge", -ec_rate));
 			}
 
-			return "active shield";
+			return title;
+		}
+
+		public string PlannerUpdate(List<KeyValuePair<string, double>> resourceChangeRequest, CelestialBody body, Dictionary<string, double> environment)
+		{
+			return ResourceUpdate(null, resourceChangeRequest);
 		}
 
 
 #if KSP15_16
 		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true)]
 #else
-		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true, groupName = "Radiation", groupDisplayName = "Radiation")]
+	[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true, groupName = "Radiation", groupDisplayName = "#KERBALISM_Group_Radiation")]//Radiation
 #endif
 		public void Toggle()
 		{
@@ -223,8 +209,8 @@ namespace KERBALISM
 		public override string GetInfo()
 		{
 			string desc = radiation > double.Epsilon
-			  ? Localizer.Format("#KERBALISM_Emitter_EmitIonizing")
-			  : Localizer.Format("#KERBALISM_Emitter_ReduceIncoming");
+			  ? Local.Emitter_EmitIonizing
+			  : Local.Emitter_ReduceIncoming;
 
 			return Specs().Info(desc);
 		}
@@ -233,7 +219,7 @@ namespace KERBALISM
 		public Specifics Specs()
 		{
 			Specifics specs = new Specifics();
-			specs.Add(radiation >= 0.0 ? Localizer.Format("#KERBALISM_Emitter_Emitted") : Localizer.Format("#KERBALISM_Emitter_ActiveShielding"), Lib.HumanReadableRadiation(Math.Abs(radiation)));
+			specs.Add(radiation >= 0.0 ? Local.Emitter_Emitted : Local.Emitter_ActiveShielding, Lib.HumanReadableRadiation(Math.Abs(radiation)));
 			if (ec_rate > double.Epsilon) specs.Add("EC/s", Lib.HumanReadableRate(ec_rate));
 			return specs;
 		}

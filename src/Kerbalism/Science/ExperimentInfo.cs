@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using KSP.Localization;
@@ -170,11 +170,13 @@ namespace KERBALISM
 		/// <summary> Cache the information returned by GetInfo() in the first found module using that experiment</summary>
 		public string ModuleInfo { get; private set; } = string.Empty;
 
+		public bool UnlockResourceSurvey { get; private set; }
+
 		public bool IsROC { get; private set; }
 
 		public bool HasDBSubjects { get; private set; }
 
-		public bool IgnoreBodyRestrictions { get; private set; }
+		public bool IgnoreBodyRestrictions { get; private set; } 
 
 		public ExperimentInfo(ScienceExperiment stockDef, ConfigNode expInfoNode)
 		{
@@ -205,7 +207,7 @@ namespace KERBALISM
 			else
 				DataSize = this.stockDef.scienceCap * this.stockDef.dataScale;
 #endif
-
+			UnlockResourceSurvey = Lib.ConfigValue(expInfoNode, "UnlockResourceSurvey", false);
 			SampleMass = Lib.ConfigValue(expInfoNode, "SampleMass", 0.0);
 			IsSample = SampleMass > 0.0;
 			if (IsSample)
@@ -349,16 +351,14 @@ namespace KERBALISM
 					continue;
 				}
 
-				bool partHasExperimentModule = false;
-
 				foreach (PartModule module in ap.partPrefab.Modules)
 				{
 					if (module is Experiment expModule)
 					{
-						if (expModule.experiment_id == ExperimentId)
+						// don't show configurable experiments
+						if (!expModule.isConfigurable && expModule.experiment_id == ExperimentId)
 						{
-							expModule.ExpInfo = this; // works inside the ExperimentInfo ctor, but make sure it's called at the end of it.
-							partHasExperimentModule = true;
+							expModule.ExpInfo = this;
 
 							// get module info for the ExperimentInfo, once
 							if (string.IsNullOrEmpty(ModuleInfo))
@@ -378,16 +378,16 @@ namespace KERBALISM
 						if (stockExpModule.experimentID == ExperimentId)
 						{
 							ModuleInfo = Lib.Color(Title, Lib.Kolor.Cyan, true);
-							ModuleInfo += "\nData size: ";
+							ModuleInfo += "\n"+Local.Experimentinfo_Datasize +": ";//Data size
 							ModuleInfo += Lib.HumanReadableDataSize(DataSize);
 							if (stockExpModule.xmitDataScalar < Science.maxXmitDataScalarForSample)
 							{
-								ModuleInfo += "\nWill generate a sample.";
-								ModuleInfo += "\nSample size: ";
+								ModuleInfo += "\n"+Local.Experimentinfo_generatesample;//Will generate a sample.
+								ModuleInfo += "\n" + Local.Experimentinfo_Samplesize + " ";//Sample size:
 								ModuleInfo += Lib.HumanReadableSampleSize(DataSize);
 							}
 							ModuleInfo += "\n\n";
-							ModuleInfo += Lib.Color("Situations:\n", Lib.Kolor.Cyan, true);
+							ModuleInfo += Lib.Color(Local.Experimentinfo_Situations, Lib.Kolor.Cyan, true);//"Situations:\n"
 
 							foreach (string s in AvailableSituations())
 								ModuleInfo += Lib.BuildString("• <b>", s, "</b>\n");
@@ -403,7 +403,7 @@ namespace KERBALISM
 						if (groundExpModule.experimentId == ExperimentId)
 						{
 							ModuleInfo = Lib.Color(Title, Lib.Kolor.Cyan, true);
-							ModuleInfo += "\nData size: ";
+							ModuleInfo += "\n" + Local.Experimentinfo_Datasize + ": ";//Data size
 							ModuleInfo += Lib.HumanReadableDataSize(DataSize);
 							ModuleInfo += "\n\n";
 							ModuleInfo += groundExpModule.GetInfo();
@@ -415,10 +415,10 @@ namespace KERBALISM
 				// special cases
 				if (ExperimentId == "asteroidSample")
 				{
-					ModuleInfo = "Asteroid samples can be taken by kerbals on EVA";
-					ModuleInfo += "\nSample size: ";
+					ModuleInfo = Local.Experimentinfo_Asteroid;//"Asteroid samples can be taken by kerbals on EVA"
+					ModuleInfo += "\n"+Local.Experimentinfo_Samplesize +" ";//Sample size:
 					ModuleInfo += Lib.HumanReadableSampleSize(DataSize);
-					ModuleInfo += "\nSample mass: ";
+					ModuleInfo += "\n"+Local.Experimentinfo_Samplemass +" ";//Sample mass:
 					ModuleInfo += Lib.HumanReadableMass(DataSize * Settings.AsteroidSampleMassPerMB);
 				}
 #if !KSP15_16
@@ -429,24 +429,24 @@ namespace KERBALISM
 					if (rocDef != null)
 					{
 						ModuleInfo = Lib.Color(rocDef.displayName, Lib.Kolor.Cyan, true);
-						ModuleInfo += "\n- Analyse with a scanner arm";
-						ModuleInfo += "\n  Data size: ";
+						ModuleInfo += "\n- " + Local.Experimentinfo_scannerarm;//Analyse with a scanner arm
+						ModuleInfo += "\n  "+Local.Experimentinfo_Datasize +": ";//Data size
 						ModuleInfo += Lib.HumanReadableDataSize(DataSize);
 
 						if (rocDef.smallRoc)
 						{
-							ModuleInfo += "\n- Collectable on EVA as a sample";
-							ModuleInfo += "\nSample size: ";
+							ModuleInfo += "\n- " + Local.Experimentinfo_smallRoc;//Collectable on EVA as a sample"
+							ModuleInfo += "\n"+Local.Experimentinfo_Samplesize +" ";//Sample size:
 							ModuleInfo += Lib.HumanReadableSampleSize(DataSize);
 						}
 						else
 						{
-							ModuleInfo += "\n- Can't be collected on EVA";
+							ModuleInfo += "\n- "+Local.Experimentinfo_smallRoc2;//Can't be collected on EVA
 						}
 
 						foreach (RocCBDefinition body in rocDef.myCelestialBodies)
 						{
-							ModuleInfo += Lib.Color("\n\nFound on " + body.name + "'s :", Lib.Kolor.Cyan, true);
+							ModuleInfo += Lib.Color("\n\n" + Local.Experimentinfo_smallRoc3.Format(body.name), Lib.Kolor.Cyan, true);//"Found on <<1>>'s :"
 							foreach (string biome in body.biomes)
 							{
 								ModuleInfo += "\n- ";
@@ -456,21 +456,6 @@ namespace KERBALISM
 					}
 				}
 #endif
-
-
-				if (partHasExperimentModule && !ap.name.StartsWith("kerbalEVA"))
-				{
-					ap.moduleInfos.Clear();
-					ap.resourceInfos.Clear();
-					try
-					{
-						Lib.ReflectionCall(PartLoader.Instance, "CompilePartInfo", new Type[] { typeof(AvailablePart), typeof(Part) }, new object[] { ap, ap.partPrefab });
-					}
-					catch (Exception ex)
-					{
-						Lib.Log("Could not patch the moduleInfo for part " + ap.name + " - " + ex.Message + "\n" + ex.StackTrace);
-					}
-				}
 			}
 		}
 
@@ -485,7 +470,7 @@ namespace KERBALISM
 				{
 					if (situation.IsBodyBiomesRelevantForExperiment(this))
 					{
-						result.Add(Lib.BuildString(situation.Title(), " (biomes)"));
+						result.Add(Lib.BuildString(situation.Title(), " ", Local.Situation_biomes));//(biomes)"
 					}
 					else if (situation.IsVirtualBiomesRelevantForExperiment(this))
 					{
@@ -575,7 +560,7 @@ namespace KERBALISM
 
 				if (bodiesAllowed.Count > 0)
 				{
-					ExpInfoSB.Append(Lib.Color("Bodies allowed:\n", Lib.Kolor.Cyan, true));
+					ExpInfoSB.Append(Lib.Color(Local.Experimentinfo_Bodiesallowed + "\n", Lib.Kolor.Cyan, true));//Bodies allowed:
 					for (int i = bodiesAllowed.Count - 1; i >= 0; i--)
 					{
 						ExpInfoSB.Append(bodiesAllowed[i].Title);
@@ -588,7 +573,7 @@ namespace KERBALISM
 
 				if (bodiesNotAllowed.Count > 0)
 				{
-					ExpInfoSB.Append(Lib.Color("Bodies not allowed:\n", Lib.Kolor.Cyan, true));
+					ExpInfoSB.Append(Lib.Color(Local.Experimentinfo_Bodiesnotallowed + "\n", Lib.Kolor.Cyan, true));//Bodies not allowed:
 					for (int i = bodiesNotAllowed.Count - 1; i >= 0; i--)
 					{
 						ExpInfoSB.Append(bodiesNotAllowed[i].Title);
@@ -608,61 +593,61 @@ namespace KERBALISM
 			private class Atmospheric : BodyCondition
 			{
 				public override bool TestCondition(CelestialBody body) => body.atmosphere;
-				public override string Title => "atmospheric";
+				public override string Title => Local.Experimentinfo_BodyCondition1;//"atmospheric"
 			}
 
 			private class NonAtmospheric : BodyCondition
 			{
 				public override bool TestCondition(CelestialBody body) => !body.atmosphere;
-				public override string Title => "non-atmospheric";
+				public override string Title => Local.Experimentinfo_BodyCondition2;//"non-atmospheric"
 			}
 
 			private class Gaseous : BodyCondition
 			{
 				public override bool TestCondition(CelestialBody body) => body.hasSolidSurface;
-				public override string Title => "gaseous";
+				public override string Title => Local.Experimentinfo_BodyCondition3;//"gaseous"
 			}
 
 			private class Solid : BodyCondition
 			{
 				public override bool TestCondition(CelestialBody body) => !body.hasSolidSurface;
-				public override string Title => "solid";
+				public override string Title => Local.Experimentinfo_BodyCondition4;//"solid"
 			}
 
 			private class Oceanic : BodyCondition
 			{
 				public override bool TestCondition(CelestialBody body) => body.ocean;
-				public override string Title => "oceanic";
+				public override string Title => Local.Experimentinfo_BodyCondition5;//"oceanic"
 			}
 
 			private class HomeBody : BodyCondition
 			{
 				public override bool TestCondition(CelestialBody body) => body.isHomeWorld;
-				public override string Title => "home body";
+				public override string Title => Local.Experimentinfo_BodyCondition6;//"home body"
 			}
 
 			private class HomeBodyAndMoons : BodyCondition
 			{
 				public override bool TestCondition(CelestialBody body) => body.isHomeWorld || body.referenceBody.isHomeWorld;
-				public override string Title => "home body and its moons";
+				public override string Title => Local.Experimentinfo_BodyCondition7;//"home body and its moons"
 			}
 
 			private class Planets : BodyCondition
 			{
 				public override bool TestCondition(CelestialBody body) => !Lib.IsSun(body) && Lib.IsSun(body.referenceBody);
-				public override string Title => "planets";
+				public override string Title => Local.Experimentinfo_BodyCondition8;//"planets"
 			}
 
 			private class Moons : BodyCondition
 			{
 				public override bool TestCondition(CelestialBody body) => !Lib.IsSun(body) && !Lib.IsSun(body.referenceBody);
-				public override string Title => "moons";
+				public override string Title => Local.Experimentinfo_BodyCondition9;//"moons"
 			}
 
 			private class Suns : BodyCondition
 			{
 				public override bool TestCondition(CelestialBody body) => Lib.IsSun(body);
-				public override string Title => "suns";
+				public override string Title => Local.Experimentinfo_BodyCondition10;//"suns"
 			}
 
 			private class SpecificBody : BodyCondition
