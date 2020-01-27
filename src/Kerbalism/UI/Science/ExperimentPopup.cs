@@ -151,6 +151,12 @@ namespace KERBALISM
 
 		private void GetData()
 		{
+			if(!vd.Connection.linked && vd.CrewCount == 0)
+			{
+				window.Close();
+				return;
+			}
+				
 			if (isProto)
 			{
 				status = Lib.Proto.GetEnum(protoModule, "status", ExpStatus.Stopped);
