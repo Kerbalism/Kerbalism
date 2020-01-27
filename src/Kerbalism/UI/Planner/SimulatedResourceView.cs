@@ -1,4 +1,4 @@
-﻿namespace KERBALISM.Planner
+namespace KERBALISM.Planner
 {
 
 	/// <summary> Offers a view on a single resource in the planners simulator,

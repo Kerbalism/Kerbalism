@@ -1,6 +1,7 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using KSP.Localization;
 
 namespace KERBALISM.Planner
 {
@@ -235,7 +236,9 @@ namespace KERBALISM.Planner
 			}
 			if (harvests.Count > 0)
 			{
-				sb.Append("\n\n<b>Harvests</b>");
+				sb.Append("\n\n<b>");
+				sb.Append(Local.Harvests);//Harvests
+				sb.Append("</b>");
 				foreach (string s in harvests)
 				{
 					sb.Append("\n");

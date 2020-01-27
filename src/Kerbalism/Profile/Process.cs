@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 
@@ -11,6 +11,8 @@ namespace KERBALISM
 		public Process(ConfigNode node)
 		{
 			name = Lib.ConfigValue(node, "name", string.Empty);
+			title = Lib.ConfigValue(node, "title", name);
+			broker = ResourceBroker.GetOrCreate(name, ResourceBroker.BrokerCategory.Converter, title);
 			modifiers = Lib.Tokenize(Lib.ConfigValue(node, "modifier", string.Empty), ',');
 
 			// check that name is specified
@@ -104,16 +106,18 @@ namespace KERBALISM
 			// remember that when a process is enabled the units of process are stored in the PartModule as a pseudo-resource
 			double k = Modifiers.Evaluate(v, vd, resources, modifiers);
 
-			ResourceRecipe recipe = new ResourceRecipe(name);
+			ResourceRecipe recipe = new ResourceRecipe(broker);
 			ExecuteRecipe(k, resources, elapsed_s, recipe);
 		}
 
 		public string name;                           // unique name for the process
+		public string title;                          // UI title
 		public List<string> modifiers;                // if specified, rates are influenced by the product of all environment modifiers
 		public Dictionary<string, double> inputs;     // input resources and rates
 		public Dictionary<string, double> outputs;    // output resources and rates
 		public Dictionary<string, double> cures;      // cures and rates
 		public DumpSpecs dump;                        // set of output resources that should dump overboard
+		public ResourceBroker broker;
 	}
 
 

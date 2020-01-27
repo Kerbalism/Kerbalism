@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
+using KSP.Localization;
 
 
 namespace KERBALISM
@@ -31,8 +32,8 @@ namespace KERBALISM
 		{
 			Events["Toggle"].guiName = Lib.StatusToggle
 			(
-			  String.Format("Simulate {0} in planner", title),
-			  considered ? "<b><color=#00ff00>yes</color></b>" : "<b><color=#ffff00>no</color></b>"
+			  Local.StatuToggle_Simulate.Format(title),//String.Format("Simulate {0} in planner", title)
+			  considered ? "<b><color=#00ff00>"+ Local.PlannerController_yes + "</color></b>" : "<b><color=#ffff00>"+ Local.PlannerController_no + "</color></b>"//yes  no
 			);
 		}
 

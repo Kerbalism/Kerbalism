@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using KSP.Localization;
@@ -16,6 +16,7 @@ namespace KERBALISM
 			this.dataCapacity = dataCapacity;
 			this.sampleCapacity = sampleCapacity;
 			this.name = name;
+			this.is_private = is_private;
 		}
 
 		public Drive(ConfigNode node)
@@ -514,14 +515,14 @@ namespace KERBALISM
 			if (allMoved)
 				Message.Post
 				(
-					Lib.HumanReadableDataSize(dataAmount) + " " + Localizer.Format("#KERBALISM_Science_ofdatatransfer"),
-				 	Lib.BuildString(Localizer.Format("#KERBALISM_Generic_FROM"), " <b>", src.vesselName, "</b> ", Localizer.Format("#KERBALISM_Generic_TO"), " <b>", dst.vesselName, "</b>")
+					Lib.HumanReadableDataSize(dataAmount) + " " + Local.Science_ofdatatransfer,
+				 	Lib.BuildString(Local.Generic_FROM, " <b>", src.vesselName, "</b> ", Local.Generic_TO, " <b>", dst.vesselName, "</b>")
 				);
 			else
 				Message.Post
 				(
 					Lib.Color(Lib.BuildString("WARNING: not evering copied"), Lib.Kolor.Red, true),
-					Lib.BuildString(Localizer.Format("#KERBALISM_Generic_FROM"), " <b>", src.vesselName, "</b> ", Localizer.Format("#KERBALISM_Generic_TO"), " <b>", dst.vesselName, "</b>")
+					Lib.BuildString(Local.Generic_FROM, " <b>", src.vesselName, "</b> ", Local.Generic_TO, " <b>", dst.vesselName, "</b>")
 				);
 		}
 

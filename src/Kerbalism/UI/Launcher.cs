@@ -1,4 +1,4 @@
-﻿using KSP.UI.Screens;
+using KSP.UI.Screens;
 using UnityEngine;
 
 
@@ -43,7 +43,7 @@ namespace KERBALISM
 				  | ApplicationLauncher.AppScenes.SPH;
 			}
 
-			if (Features.Science && (HighLogic.CurrentGame.Mode == Game.Modes.CAREER || HighLogic.CurrentGame.Mode == Game.Modes.SCIENCE_SANDBOX))
+			if (Features.Science)
 			{
 				if (generalMenuLauncher == null)
 				{

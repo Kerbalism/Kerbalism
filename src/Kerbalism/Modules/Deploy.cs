@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using ModuleWheels;
 using KSP.Localization;
@@ -12,12 +12,12 @@ namespace KERBALISM
 		[KSPField] public double extra_Deploy = 0;          // extra eergy cost to do a deploy(animation)
 
 		// Support Reliability
-		[KSPField(isPersistant = true, guiName = "IsBroken", guiUnits = "", guiFormat = "")]
+		[KSPField(isPersistant = true, guiName = "#KERBALISM_Deploy_isBroken", guiUnits = "", guiFormat = "")]//IsBroken
 		public bool isBroken;                               // is it broken
 		public bool lastBrokenState;                        // broken state has changed since last update?
 		public bool lastFixedBrokenState;                   // broken state has changed since last fixed update?
 
-		[KSPField(guiName = "EC Usage", guiUnits = "/s", guiFormat = "F3")]
+		[KSPField(guiName = "#KERBALISM_Deploy_actualCost", guiUnits = "/s", guiFormat = "F3")]//EC Usage
 		public double actualCost = 0;                       // Energy Consume
 
 		// Vessel info
@@ -116,7 +116,7 @@ namespace KERBALISM
 			}
 
 			// If isConsuming
-			if (isConsuming && resources != null) resources.Consume(actualCost * Kerbalism.elapsed_s, "deploy");
+			if (isConsuming && resources != null) resources.Consume(actualCost * Kerbalism.elapsed_s, ResourceBroker.Deploy);
 		}
 
 		public virtual bool GetIsConsuming()
@@ -199,7 +199,7 @@ namespace KERBALISM
 
 		public static void BackgroundUpdate(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, Deploy deploy, ResourceInfo ec, double elapsed_s)
 		{
-			if (deploy.isConsuming) ec.Consume(deploy.extra_Cost * elapsed_s, "deploy");
+			if (deploy.isConsuming) ec.Consume(deploy.extra_Cost * elapsed_s, ResourceBroker.Deploy);
 		}
 	}
 }

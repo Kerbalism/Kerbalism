@@ -1,9 +1,10 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Harmony;
 using KSP.UI.Screens;
 using UnityEngine;
+using KSP.Localization;
 
 
 namespace KERBALISM
@@ -227,13 +228,13 @@ namespace KERBALISM
 			Cache.SetVesselObjectsCache(data.to.vessel, "eva_prop", evaPropQuantity);
 
 			// Airlock loss
-			resources.Consume(data.from.vessel, "Nitrogen", Settings.LifeSupportAtmoLoss, "airlock");
+			resources.Consume(data.from.vessel, "Nitrogen", Settings.LifeSupportAtmoLoss, ResourceBroker.Generic);
 
 			// show warning if there is little or no EVA propellant in the suit
 			if (evaPropQuantity <= 0.05 && !Lib.Landed(data.from.vessel))
 			{
 				Message.Post(Severity.danger,
-					Lib.BuildString("There isn't any <b>", prop_name, "</b> in the EVA suit"), "Don't let the ladder go!");
+					Local.CallBackMsg_EvaNoMP.Format("<b>"+prop_name+"</b>"), Local.CallBackMsg_EvaNoMP2);//Lib.BuildString("There isn't any <<1>> in the EVA suit")"Don't let the ladder go!"
 			}
 
 			// turn off headlamp light, to avoid stock bug that show them for a split second when going on eva
@@ -401,8 +402,8 @@ namespace KERBALISM
 				{
 					Message.Post
 					(
-					  "<color=#00ffff><b>PROGRESS</b></color>\nOur scientists just made a breakthrough",
-					  Lib.BuildString("We now have access to <b>", label, "</b>")
+					  "<color=#00ffff><b>" + Local.CallBackMsg_PROGRESS + "</b></color>\n" + Local.CallBackMsg_PROGRESS2,//PROGRESS""Our scientists just made a breakthrough
+					  Lib.BuildString("We now have access to \n<b>", label, "</b>")
 					);
 				}
 			}

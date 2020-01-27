@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using UnityEngine;
 using System.Collections.Generic;
 
@@ -48,8 +48,7 @@ namespace KERBALISM
 			return 2.0 * Math.PI * Math.Sqrt(Ra * Ra * Ra / body.gravParameter);
 		}
 
-
-		// return period in shadow of an orbit at specified altitude over a body
+		/// <summary>period in shadow of an orbit at specified altitude over a body</summary>
 		public static double ShadowPeriod(CelestialBody body, double altitude)
 		{
 			if (altitude <= double.Epsilon) return body.rotationPeriod * 0.5;
@@ -58,34 +57,145 @@ namespace KERBALISM
 			return (2.0 * Ra * Ra / h) * Math.Asin(body.Radius / Ra);
 		}
 
-		// return orbital period of the specified vessel
+		/// <summary>orbital period of the specified vessel</summary>
 		public static double OrbitalPeriod(Vessel v)
 		{
 			if (Lib.Landed(v) || double.IsNaN(v.orbit.inclination))
-			{
 				return v.mainBody.rotationPeriod;
-			}
-			else
-			{
-				return v.orbit.period;
-			}
+
+			return v.orbit.period;
 		}
 
-		// return period in shadow of the specified vessel orbit
+		/// <summary>Period in shadow of the vessels orbit.<br/>
+		/// Limitations:<br/>
+		/// 1. This method assumes the orbit is an ellipse / circle which is not
+		/// changing or being altered by other bodies.<br/>
+		/// 2. It assumes the sun's rays are parallel across the orbiting
+		/// planet, although all bodies are small enough and far enough from the
+		/// sun for this to be nearly true.<br/>
+		/// 3. The method does not take into account darkness caused by eclipses
+		/// of a different body than the orbited body, for example, orbiting
+		/// Laythe but Jool blocks the sun.<br/>
+		/// 4. The method calculates the longest amount of time spent in darkness, which for
+		/// some orbits (e.g.polar orbits) will only be experienced periodically.
+		/// It ignores inclination, the argument of periapsis and the beta angle
+		/// (the angle the sun is in relation to the orbit). Even polar orbits above the
+		/// day/night terminator line (which would be in the sun all the time) will
+		/// be treated as orbits passing the nadir at apoapsis.<br/>
+		/// 5. We err on the light side: if more than half the orbit period is calculated
+		/// to be in shadow by this formula, we invert the result and assume it is in light
+		/// instead.
+		/// </summary>
 		public static double ShadowPeriod(Vessel v)
 		{
-			if (Lib.Landed(v) || double.IsNaN(v.orbit.inclination))
-			{
+			if (Lib.Landed(v) || double.IsNaN(v.orbit.inclination) || v.orbit == null)
 				return v.mainBody.rotationPeriod * 0.5;
-			}
-			else
-			{
-				double Ra = v.altitude + v.mainBody.Radius;
-				double h = Math.Sqrt(Ra * v.mainBody.gravParameter);
-				return (2.0 * Ra * Ra / h) * Math.Asin(v.mainBody.Radius / Ra);
-			}
+
+			// the old method: this calculates the period for circular orbits
+			// double Ra = v.altitude + v.mainBody.Radius;
+			// double h = Math.Sqrt(Ra * v.mainBody.gravParameter);
+			// return (2.0 * Ra * Ra / h) * Math.Asin(v.mainBody.Radius / Ra);
+
+			// Calculation for elliptical orbits
+
+			// see https://wiki.kerbalspaceprogram.com/wiki/Orbit_darkness_time
+
+			// Limitations:
+			//
+			// - This method assumes the orbit is an ellipse / circle which is not
+			// changing or being altered by other bodies.
+			//
+			// - It also assumes the sun's rays are parallel across the orbiting
+			// planet, although all bodies are small enough and far enough from the
+			// sun for this to be nearly true.
+			//
+			// - The method does not take into account darkness caused by eclipses
+			// of a different body than the orbited body, for example, orbiting
+			// Laythe but Jool blocks the sun.
+			//
+			// - The method gives the longest amount of time spent in darkness, which for some
+			// orbits (e.g.polar orbits), will only be experienced periodically.
+			
+			// The formula:
+			// Td = (2ab / h) (asin(R/b) + eR/b)
+			// a is the semi-major axis
+			// b the semi-minor axis
+			// h the specific angular momentum
+			// e the eccentricity
+			// R the radius of the planet or moon
+			// For reference these terms can be calculated by knowing the apoapsis(Ap), periapsis(Pe) and body to orbit:
+			// h = sqrt(lµ)
+			// l = (2 * ra * rp) / (ra + rp)
+			// µ = G * M, the gravitational parameter
+			// ra = Ap + R (apoapsis from center of the body)
+			// rp = Pe + R (periapsis from center of the body)
+
+			var R = v.mainBody.Radius;
+			var ra = v.orbit.ApR;
+			var rp = v.orbit.PeR;
+			var a = v.orbit.semiMajorAxis;
+			var b = v.orbit.semiMinorAxis;
+			var e = v.orbit.eccentricity;
+			var l = (2 * ra * rp) / (ra + rp);
+			var µ = v.mainBody.gravParameter;
+			var h = Math.Sqrt(l * µ);
+
+			var Td = (2 * a * b / h) * (Math.Asin(R / b) + e * R / b);
+
+			// err on the light side:
+			// if more than half the orbit duration is in shadow, invert
+			// the result. this will be wrong when the apoapsis is near nadir.
+			// this is just... WRONG, I know, but it is wrong in a good way.
+			// f.i. a very eccentric orbit with the apoapsis above one of the
+			// poles won't be assumed to spend most of the time in shadow.
+			if (Td > v.orbit.period / 2)
+				return v.orbit.period - Td;
+
+			return Td;
 		}
 
+		/// <summary>
+		/// This expects to be called repeatedly
+		/// </summary>
+		public static double SampleSunFactor(Vessel v, double elapsedSeconds)
+		{
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Sim.SunFactor2");
+
+			// assume 50% exposure for landed vessels (half the period is night)
+			// this is bad for inclined bodies, but we're not landing on uranus
+			// any time soon
+			if(Lib.Landed(v) || double.IsNaN(v.orbit.inclination) || v.orbit == null)
+				return 0.5;
+
+			int sunSamples = 0;
+			int sampleCount = 0;
+
+			var now = Planetarium.GetUniversalTime();
+			double step = Math.Max(120.0, elapsedSeconds / 40);
+			var sun = v.KerbalismData().EnvMainSun.SunData.body;
+			var occluders = v.KerbalismData().EnvVisibleBodies;
+			double calculatedDuration = 0;
+			double maxCalculation = Math.Min(elapsedSeconds * 1.5, v.orbit.period);
+
+			// calculate for one orbit or 1.5 times the amount we need, whichever is shorter
+			while (calculatedDuration < maxCalculation)
+			{
+				Vector3d position = v.orbit.getPositionAtUT(now + sampleCount * step);
+				Vector3d direction;
+				double distance;
+				if (IsBodyVisible(v, position, sun, occluders, out direction, out distance))
+					sunSamples++;
+
+				sampleCount++;
+				calculatedDuration = step * sampleCount;
+			}
+
+			UnityEngine.Profiling.Profiler.EndSample();
+
+			double sunFactor = (double)sunSamples / (double)sampleCount;
+			// Lib.Log("Vessel " + v + " sun factor: " + sunFactor + " " + sunSamples + "/" + sampleCount + " #s=" + sampleCount + " e=" + elapsedSeconds + " step=" + step);
+			return sunFactor;
+		}
 
 		// return rotation speed at body surface
 		public static double SurfaceSpeed(CelestialBody body)

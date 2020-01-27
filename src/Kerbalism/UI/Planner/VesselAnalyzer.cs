@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -30,7 +30,7 @@ namespace KERBALISM.Planner
 			// get number of kerbals assigned to the vessel in the editor
 			// note: crew manifest is not reset after root part is deleted
 			VesselCrewManifest manifest = KSP.UI.CrewAssignmentDialog.Instance.GetManifest();
-			List<ProtoCrewMember> crew = manifest.GetAllCrew(false).FindAll(k => k != null);
+			crew = manifest.GetAllCrew(false).FindAll(k => k != null);
 			crew_count = (uint)crew.Count;
 			crew_engineer = crew.Find(k => k.trait == "Engineer") != null;
 			crew_scientist = crew.Find(k => k.trait == "Scientist") != null;
@@ -119,14 +119,12 @@ namespace KERBALISM.Planner
 					// RemoteTech enabled, passive's don't count
 					if (m.moduleName == "ModuleRTAntenna")
 						has_comms = true;
-					else if (m.moduleName == "ModuleDataTransmitter")
+					else if (m is ModuleDataTransmitter mdt)
 					{
 						// CommNet enabled and external transmitter
 						if (HighLogic.fetch.currentGame.Parameters.Difficulty.EnableCommNet)
-						{
-							if (Lib.ReflectionValue<AntennaType>(m, "antennaType") != AntennaType.INTERNAL)
+							if (mdt.antennaType != AntennaType.INTERNAL)
 								has_comms = true;
-						}
 						// the simple stupid always connected signal system
 						else
 							has_comms = true;
@@ -244,6 +242,7 @@ namespace KERBALISM.Planner
 
 
 		// general
+		public List<ProtoCrewMember> crew;                  // full information on all crew
 		public uint crew_count;                             // crew member on board
 		public uint crew_capacity;                          // crew member capacity
 		public bool crew_engineer;                          // true if an engineer is among the crew

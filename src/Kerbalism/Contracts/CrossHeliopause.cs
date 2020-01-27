@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Contracts;
 using KSP.Localization;
@@ -33,17 +33,17 @@ namespace KERBALISM.CONTRACTS
 
 		protected override string GetTitle()
 		{
-			return Localizer.Format("#KERBALISM_Contracts_heliopauseTitle");
+			return Local.Contracts_heliopauseTitle;
 		}
 
 		protected override string GetDescription()
 		{
-			return Localizer.Format("#KERBALISM_Contracts_heliopauseDesc");
+			return Local.Contracts_heliopauseDesc;
 		}
 
 		protected override string MessageCompleted()
 		{
-			return Localizer.Format("#KERBALISM_Contracts_heliopauseComplete");
+			return Local.Contracts_heliopauseComplete;
 		}
 
 		public override bool MeetRequirements()
@@ -81,7 +81,7 @@ namespace KERBALISM.CONTRACTS
 
 		protected override string GetTitle()
 		{
-			return Localizer.Format("#KERBALISM_Contracts_heliopauseTitle");
+			return Local.Contracts_heliopauseTitle;
 		}
 
 		protected override void OnUpdate()

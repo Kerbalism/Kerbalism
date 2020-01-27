@@ -1,4 +1,4 @@
-﻿#if !KSP15_16
+#if !KSP15_16
 using Expansions.Serenity.DeployedScience.Runtime;
 
 namespace KERBALISM

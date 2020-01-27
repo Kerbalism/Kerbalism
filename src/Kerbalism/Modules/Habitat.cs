@@ -1,11 +1,11 @@
-﻿using System;
+using System;
 using KSP.Localization;
 using UnityEngine;
 
 namespace KERBALISM
 {
-    public class Habitat : PartModule, ISpecifics
-    {
+    public class Habitat : PartModule, ISpecifics, IModuleInfo, IPartCostModifier
+	{
         // config
         [KSPField] public double volume = 0.0;                      // habitable volume in m^3, deduced from bounding box if not specified
         [KSPField] public double surface = 0.0;                     // external surface in m^2, deduced from bounding box if not specified
@@ -27,9 +27,9 @@ namespace KERBALISM
 		[KSPField(guiActive = false, guiActiveEditor = true, guiName = "#KERBALISM_Habitat_Surface")]
 		public string Surface;
 #else
-        [KSPField(guiActive = false, guiActiveEditor = true, guiName = "#KERBALISM_Habitat_Volume", groupName = "Habitat", groupDisplayName = "Habitat")]
+        [KSPField(guiActive = false, guiActiveEditor = true, guiName = "#KERBALISM_Habitat_Volume", groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
         public string Volume;
-        [KSPField(guiActive = false, guiActiveEditor = true, guiName = "#KERBALISM_Habitat_Surface", groupName = "Habitat", groupDisplayName = "Habitat")]
+        [KSPField(guiActive = false, guiActiveEditor = true, guiName = "#KERBALISM_Habitat_Surface", groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
         public string Surface;
 #endif
         // animations
@@ -45,6 +45,7 @@ namespace KERBALISM
 
         State prev_state;                      // State during previous GPU frame update
         private bool configured = false;       // true if configure method has been executed
+		private float shieldingCost;
 
         // pseudo-ctor
         public override void OnStart(StartState state)
@@ -191,13 +192,16 @@ namespace KERBALISM
                 Lib.AddResource(part, "WasteAtmosphere", 0.0, volume * 1e3);
 
                 // add external surface shielding
-                Lib.AddResource(part, "Shielding", 0.0, surface);
+                PartResource shieldingRes = Lib.AddResource(part, "Shielding", 0.0, surface);
 
-                // inflatable habitats can't be shielded (but still need the capacity) unless they have rigid walls
-                part.Resources["Shielding"].isTweakable = (Get_inflate_string().Length == 0) || inflatableUsingRigidWalls;
+				// add the cost of shielding to the base part cost
+				shieldingCost = (float)surface * shieldingRes.info.unitCost;
 
-                // if shielding feature is disabled, just hide it
-                part.Resources["Shielding"].isVisible = Features.Shielding && part.Resources["Shielding"].isTweakable;
+				// inflatable habitats can't be shielded (but still need the capacity) unless they have rigid walls
+				shieldingRes.isTweakable = (Get_inflate_string().Length == 0) || inflatableUsingRigidWalls;
+
+				// if shielding feature is disabled, just hide it
+				shieldingRes.isVisible = Features.Shielding && shieldingRes.isTweakable;
 
                 configured = true;
             }
@@ -296,31 +300,31 @@ namespace KERBALISM
                     if (Math.Truncate(Math.Abs((perctDeployed + ResourceBalance.precision) - 1.0) * 100000) / 100000 > ResourceBalance.precision)
                     {
                         // No inflatable can be enabled been pressurizing
-                        status_str = Localizer.Format("#KERBALISM_Habitat_pressurizing");
+                        status_str = Local.Habitat_pressurizing;
                     }
                     else
                     {
-                        status_str = Localizer.Format("#KERBALISM_Generic_ENABLED");
+                        status_str = Local.Generic_ENABLED;
                     }
                     Set_pressurized(true);
                     break;
                 case State.disabled:
-                    status_str = Localizer.Format("#KERBALISM_Generic_DISABLED");
+                    status_str = Local.Generic_DISABLED;
                     Set_pressurized(false);
                     break;
                 case State.pressurizing:
-                    status_str = Get_inflate_string().Length == 0 ? Localizer.Format("#KERBALISM_Habitat_pressurizing") : Localizer.Format("#KERBALISM_Habitat_inflating");
+                    status_str = Get_inflate_string().Length == 0 ? Local.Habitat_pressurizing : Local.Habitat_inflating;
                     status_str += string.Format("{0:p2}", perctDeployed);
                     Set_pressurized(false);
                     break;
                 case State.depressurizing:
-                    status_str = Get_inflate_string().Length == 0 ? Localizer.Format("#KERBALISM_Habitat_depressurizing") : Localizer.Format("#KERBALISM_Habitat_deflating");
+                    status_str = Get_inflate_string().Length == 0 ? Local.Habitat_depressurizing : Local.Habitat_deflating;
                     status_str += string.Format("{0:p2}", perctDeployed);
                     Set_pressurized(false);
                     break;
             }
 
-            Events["Toggle"].guiName = Lib.StatusToggle("Habitat", status_str);
+            Events["Toggle"].guiName = Lib.StatusToggle(Local.StatuToggle_Habitat, status_str);//"Habitat"
 
             // Changing this animation when we expect rotation will not work because
             // Unity disables other animations when playing the inflation animation.
@@ -405,15 +409,15 @@ namespace KERBALISM
 #if KSP15_16
 		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true)]
 #else
-        [KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true, groupName = "Habitat", groupDisplayName = "Habitat")]
+        [KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true, groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
 #endif
         public void Toggle()
         {
             // if manned, we can't depressurize
             if (Lib.IsCrewed(part) && (state == State.enabled || state == State.pressurizing))
             {
-                Message.Post(Lib.BuildString("Can't disable <b>", Lib.PartName(part), " habitat</b> while crew is inside"));
-                return;
+                Message.Post(Local.Habitat_postmsg.Format(Lib.PartName(part)));//"Can't disable <b><<1>> habitat</b> while crew is inside"//Lib.BuildString("Can't disable <b>", , " habitat</b> while crew is inside"
+				return;
             }
 
             // Need be equalized
@@ -448,12 +452,12 @@ namespace KERBALISM
         public Specifics Specs()
         {
             Specifics specs = new Specifics();
-            specs.Add("Volume", Lib.HumanReadableVolume(volume > double.Epsilon ? volume : Lib.PartVolume(part)));
-            specs.Add("Surface", Lib.HumanReadableSurface(surface > double.Epsilon ? surface : Lib.PartSurface(part)));
-            specs.Add("Pressurized", max_pressure >= Settings.PressureThreshold ? "yes" : "no");
-            if (inflate.Length > 0) specs.Add("Inflatable", "yes");
+            specs.Add(Local.Habitat_info1, Lib.HumanReadableVolume(volume > double.Epsilon ? volume : Lib.PartVolume(part)));//"Volume"
+            specs.Add(Local.Habitat_info2, Lib.HumanReadableSurface(surface > double.Epsilon ? surface : Lib.PartSurface(part)));//"Surface"
+            specs.Add(Local.Habitat_info3, max_pressure >= Settings.PressureThreshold ? Local.Habitat_yes : Local.Habitat_no);//"Pressurized""yes""no"
+            if (inflate.Length > 0) specs.Add(Local.Habitat_info4, Local.Habitat_yes);//"Inflatable""yes"
             if (PhysicsGlobals.KerbalCrewMass > 0)
-                specs.Add("Added mass per crew", Lib.HumanReadableMass(PhysicsGlobals.KerbalCrewMass));
+                specs.Add(Local.Habitat_info5, Lib.HumanReadableMass(PhysicsGlobals.KerbalCrewMass));//"Added mass per crew"
 
             return specs;
         }
@@ -510,17 +514,17 @@ namespace KERBALISM
         // return a verbose description of shielding capability
         public static string Shielding_to_string(double v)
         {
-            return v <= double.Epsilon ? "none" : Lib.BuildString((20.0 * v / PreferencesRadiation.Instance.shieldingEfficiency).ToString("F2"), " mm");
+            return v <= double.Epsilon ? Local.Habitat_none : Lib.BuildString((20.0 * v / PreferencesRadiation.Instance.shieldingEfficiency).ToString("F2"), " mm");//"none"
         }
 
         // traduce living space value to string
         public static string Living_space_to_string(double v)
         {
-            if (v >= 0.99) return "ideal";
-            else if (v >= 0.75) return "good";
-            else if (v >= 0.5) return "modest";
-            else if (v >= 0.25) return "poor";
-            else return "cramped";
+            if (v >= 0.99) return Local.Habitat_Summary1;//"ideal"
+            else if (v >= 0.75) return Local.Habitat_Summary2;//"good"
+            else if (v >= 0.5) return Local.Habitat_Summary3;//"modest"
+            else if (v >= 0.25) return Local.Habitat_Summary4;//"poor"
+            else return Local.Habitat_Summary5;//"cramped"
         }
 
         // enable/disable dialog "Transfer crew" on UI
@@ -550,14 +554,14 @@ namespace KERBALISM
                 {
                     if (m.moduleName == "ModuleConnectedLivingSpace")
                     {
-                        Lib.LogDebugStack("Part '{0}', CLS has been {1}", part.partInfo.title, isPassable ? "enabled" : "disabled");
+                        Lib.LogDebug("Part '{0}', CLS has been {1}", part.partInfo.title, isPassable ? "enabled" : "disabled");
                         Lib.ReflectionValue(m, "passable", isPassable);
                     }
                 }
             }
 
-            Lib.LogDebugStack("CrewCapacity: '{0}'", part.CrewCapacity);
-            Lib.LogDebugStack("CrewTransferAvailable: '{0}'", isPassable);
+            Lib.LogDebug("CrewCapacity: '{0}'", part.CrewCapacity);
+            Lib.LogDebug("CrewTransferAvailable: '{0}'", isPassable);
             part.crewTransferAvailable = isPassable;
         }
 
@@ -609,6 +613,19 @@ namespace KERBALISM
             depressurizing,  // hab is depressurizing (between enabled and disabled)
         }
 
-        public override string GetModuleDisplayName() { return "Habitat"; }
-    }
+        public override string GetModuleDisplayName() { return Local.Habitat; }//"Habitat"
+
+		public string GetModuleTitle() => Local.Habitat;
+		public Callback<Rect> GetDrawModulePanelCallback() => null;
+		public string GetPrimaryField()
+		{
+			return Lib.BuildString(
+				Lib.Bold(Local.Habitat + " " + Local.Habitat_info1), // "Habitat" + "Volume"
+				" : ",
+				Lib.HumanReadableVolume(volume > double.Epsilon ? volume : Lib.PartVolume(part)));
+		}
+
+		public float GetModuleCost(float defaultCost, ModifierStagingSituation sit) => shieldingCost;
+		public ModifierChangeWhen GetModuleCostChangeWhen() => ModifierChangeWhen.CONSTANTLY;
+	}
 }

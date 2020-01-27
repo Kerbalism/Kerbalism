@@ -1,5 +1,6 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
+using KSP.Localization;
 
 
 namespace KERBALISM
@@ -22,8 +23,17 @@ namespace KERBALISM
 		// index of currently active dump valve
 		[KSPField(isPersistant = true)] public int valve_i = 0;
 
+		// caching of GetInfo() for automation tooltip
+		public string ModuleInfo { get; private set; }
+
 		private DumpSpecs dump_specs;
 		private bool broken = false;
+		private bool isConfigurable = false;
+
+		public override void OnLoad(ConfigNode node)
+		{
+			ModuleInfo = GetInfo();
+		}
 
 		public void Start()
 		{
@@ -45,7 +55,7 @@ namespace KERBALISM
 			valve_i = dump_specs.ValveIndex;
 
 			// set action group ui
-			Actions["Action"].guiName = Lib.BuildString("Start/Stop ", title);
+			Actions["Action"].guiName = Lib.BuildString(Local.ProcessController_Start_Stop, " ", title);//"Start/Stop
 
 			// hide toggle if specified
 			Events["Toggle"].active = toggle;
@@ -78,6 +88,8 @@ namespace KERBALISM
 				Lib.RemoveResource(part, resource, 0.0, capacity);
 		}
 
+		public void ModuleIsConfigured() => isConfigurable = true;
+
 		///<summary> Call this when process controller breaks down or is repaired </summary>
 		public void ReliablityEvent(bool breakdown)
 		{
@@ -88,14 +100,14 @@ namespace KERBALISM
 		public void Update()
 		{
 			// update rmb ui
-			Events["Toggle"].guiName = Lib.StatusToggle(title, broken ? "broken" : running ? "running" : "stopped");
-			Events["DumpValve"].guiName = Lib.StatusToggle("Dump", dump_specs.valves[valve_i]);
+			Events["Toggle"].guiName = Lib.StatusToggle(title, broken ? Local.ProcessController_broken : running ? Local.ProcessController_running : Local.ProcessController_stopped);//"broken""running""stopped"
+			Events["DumpValve"].guiName = Lib.StatusToggle(Local.ProcessController_Dump, dump_specs.valves[valve_i]);//"Dump"
 		}
 
 #if KSP15_16
 		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true)]
 #else
-		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true, groupName = "Processes", groupDisplayName = "Processes")]
+		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true, groupName = "Processes", groupDisplayName = "#KERBALISM_Group_Processes")]//Processes
 #endif
 		public void Toggle()
 		{
@@ -105,7 +117,7 @@ namespace KERBALISM
 #if KSP15_16
 		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "Dump", active = true)]
 #else
-		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "Dump", active = true, groupName = "Processes", groupDisplayName = "Processes")]
+		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "#KERBALISM_ProcessController_Dump", active = true, groupName = "Processes", groupDisplayName = "#KERBALISM_Group_Processes")]//"Dump""Processes"
 #endif
 		public void DumpValve()
 		{
@@ -134,7 +146,7 @@ namespace KERBALISM
 		// part tooltip
 		public override string GetInfo()
 		{
-			return Specs().Info(desc);
+			return isConfigurable ? string.Empty : Specs().Info(desc);
 		}
 
 		public bool IsRunning() {
@@ -153,7 +165,7 @@ namespace KERBALISM
 					if (!process.modifiers.Contains(pair.Key))
 						specs.Add(pair.Key, Lib.BuildString("<color=#ffaa00>", Lib.HumanReadableRate(pair.Value * capacity), "</color>"));
 					else
-						specs.Add("Half-life", Lib.HumanReadableDuration(0.5 / pair.Value));
+						specs.Add(Local.ProcessController_info1, Lib.HumanReadableDuration(0.5 / pair.Value));//"Half-life"
 				}
 				foreach (KeyValuePair<string, double> pair in process.outputs)
 				{
@@ -169,12 +181,12 @@ namespace KERBALISM
 		public string GetPrimaryField() { return string.Empty; }
 		public Callback<Rect> GetDrawModulePanelCallback() { return null; }
 
-
 		// animation group support
 		public void EnableModule() { }
 		public void DisableModule() { }
 		public bool ModuleIsActive() { return broken ? false : running; }
 		public bool IsSituationValid() { return true; }
+
 	}
 
 

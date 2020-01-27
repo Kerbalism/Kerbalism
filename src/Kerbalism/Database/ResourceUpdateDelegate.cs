@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
@@ -9,9 +9,9 @@ namespace KERBALISM
 	{
 		private static Type[] signature = { typeof(Dictionary<string, double>), typeof(List<KeyValuePair<string, double>>) };
 
-		internal MethodInfo methodInfo;
 		internal PartModule module;
 
+		internal MethodInfo methodInfo;
 		private ResourceUpdateDelegate(MethodInfo methodInfo, PartModule module)
 		{
 			this.methodInfo = methodInfo;
@@ -20,6 +20,10 @@ namespace KERBALISM
 
 		public string invoke(Dictionary<string, double> availableRresources, List<KeyValuePair<string, double>> resourceChangeRequest)
 		{
+			IKerbalismModule km = module as IKerbalismModule;
+			if (km != null)
+				return km.ResourceUpdate(availableRresources, resourceChangeRequest);
+
 			var title = methodInfo.Invoke(module, new object[] { availableRresources, resourceChangeRequest });
 			if (title == null) return module.moduleName;
 			return title.ToString();
@@ -28,7 +32,6 @@ namespace KERBALISM
 		public static ResourceUpdateDelegate Instance(PartModule module)
 		{
 			MethodInfo methodInfo = null;
-
 			var type = module.GetType();
 			supportedModules.TryGetValue(type, out methodInfo);
 			if (methodInfo != null) return new ResourceUpdateDelegate(methodInfo, module);
@@ -43,7 +46,6 @@ namespace KERBALISM
 			}
 
 			supportedModules[type] = methodInfo;
-
 			return new ResourceUpdateDelegate(methodInfo, module);
 		}
 

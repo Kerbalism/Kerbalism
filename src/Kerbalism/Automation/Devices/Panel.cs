@@ -1,4 +1,4 @@
-﻿using KSP.Localization;
+using KSP.Localization;
 using System;
 
 namespace KERBALISM
@@ -12,9 +12,9 @@ namespace KERBALISM
 			get
 			{
 				if (module.SolarPanel.IsRetractable())
-					return "solar panel (deployable)";
+					return Local.SolarPanel_deployable;//"solar panel (deployable)"
 				else
-					return "solar panel (non retractable)";
+					return Local.SolarPanel_nonretractable;//"solar panel (non retractable)"
 			}
 		}
 
@@ -24,12 +24,12 @@ namespace KERBALISM
 			{
 				switch (module.state)
 				{
-					case SolarPanelFixer.PanelState.Retracted: return Lib.Color(Localizer.Format("#KERBALISM_Generic_RETRACTED"), Lib.Kolor.Yellow);
-					case SolarPanelFixer.PanelState.Extending: return Localizer.Format("#KERBALISM_Generic_EXTENDING");
-					case SolarPanelFixer.PanelState.Extended: return Lib.Color(Localizer.Format("#KERBALISM_Generic_EXTENDED"), Lib.Kolor.Green);
-					case SolarPanelFixer.PanelState.Retracting: return Localizer.Format("#KERBALISM_Generic_RETRACTING");
+					case SolarPanelFixer.PanelState.Retracted: return Lib.Color(Local.Generic_RETRACTED, Lib.Kolor.Yellow);
+					case SolarPanelFixer.PanelState.Extending: return Local.Generic_EXTENDING;
+					case SolarPanelFixer.PanelState.Extended: return Lib.Color(Local.Generic_EXTENDED, Lib.Kolor.Green);
+					case SolarPanelFixer.PanelState.Retracting: return Local.Generic_RETRACTING;
 				}
-				return "unknown";
+				return Local.Statu_unknown;//"unknown"
 			}
 		}
 
@@ -58,9 +58,9 @@ namespace KERBALISM
 			get
 			{
 				if (prefab.SolarPanel.IsRetractable())
-					return "solar panel (deployable)";
+					return Local.SolarPanel_deployable;//"solar panel (deployable)"
 				else
-					return "solar panel (non retractable)";
+					return Local.SolarPanel_nonretractable;//"solar panel (non retractable)"
 			}
 		}
 
@@ -73,10 +73,10 @@ namespace KERBALISM
 				string state = Lib.Proto.GetString(protoModule, "state");
 				switch (state)
 				{
-					case "Retracted": return Lib.Color(Localizer.Format("#KERBALISM_Generic_RETRACTED"), Lib.Kolor.Yellow);
-					case "Extended": return Lib.Color(Localizer.Format("#KERBALISM_Generic_EXTENDED"), Lib.Kolor.Green);
+					case "Retracted": return Lib.Color(Local.Generic_RETRACTED, Lib.Kolor.Yellow);
+					case "Extended": return Lib.Color(Local.Generic_EXTENDED, Lib.Kolor.Green);
 				}
-				return "unknown";
+				return Local.Statu_unknown;//"unknown"
 			}
 		}
 
