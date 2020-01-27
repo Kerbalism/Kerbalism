@@ -1,4 +1,4 @@
-﻿namespace KERBALISM.Planner
+namespace KERBALISM.Planner
 {
 
     ///<summary> Planners simulator for the environment the vessel is presently in, according to the planners environment settings </summary>

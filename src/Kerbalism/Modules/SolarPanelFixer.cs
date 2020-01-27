@@ -1,10 +1,11 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using System.Text;
 using UnityEngine;
+using KSP.Localization;
 
 
 namespace KERBALISM
@@ -31,12 +32,16 @@ namespace KERBALISM
 	public class SolarPanelFixer : PartModule
 	{
 		#region Declarations
+		/// <summary>Unit to show in the UI, this is the only configurable field for this module</summary>
+		[KSPField]
+		public string EcUIUnit = "EC/s";
+
 		/// <summary>Main PAW info label</summary>
-		[KSPField(guiActive = true, guiActiveEditor = false, guiName = "Solar panel")]
+		[KSPField(guiActive = true, guiActiveEditor = false, guiName = "#KERBALISM_SolarPanelFixer_Solarpanel")]//Solar panel
 		public string panelStatus = string.Empty;
 
-		[KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "Solar panel output")]
-		[UI_Toggle(enabledText = "<color=#00ff00>simulated</color>", disabledText = "<color=#ffff00>ignored</color>")]
+		[KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#KERBALISM_SolarPanelFixer_Solarpaneloutput")]//Solar panel output
+		[UI_Toggle(enabledText = "#KERBALISM_SolarPanelFixer_simulated", disabledText = "#KERBALISM_SolarPanelFixer_ignored")]//<color=#00ff00>simulated</color>""<color=#ffff00>ignored</color>
 		public bool editorEnabled = true;
 
 		/// <summary>nominal rate at 1 UA (Kerbin distance from the sun)</summary>
@@ -91,6 +96,7 @@ namespace KERBALISM
 		private ExposureState exposureState;
 		private string mainOccludingPart;
 		private string rateFormat;
+		private StringBuilder sb;
 
 		public enum PanelState
 		{
@@ -118,12 +124,12 @@ namespace KERBALISM
 
 		#region KSP/Unity methods + background update
 
-		[KSPEvent(active = true, guiActive = true, guiName = "Select tracked star")]
+		[KSPEvent(active = true, guiActive = true, guiName = "#KERBALISM_SolarPanelFixer_Selecttrackedstar")]//Select tracked star
 		public void ManualTracking()
 		{
 			// Assemble the buttons
 			DialogGUIBase[] options = new DialogGUIBase[Sim.suns.Count + 1];
-			options[0] = new DialogGUIButton("Automatic", () => { manualTracking = false; }, true);
+			options[0] = new DialogGUIButton(Local.SolarPanelFixer_Automatic, () => { manualTracking = false; }, true);//"Automatic"
 			for (int i = 0; i < Sim.suns.Count; i++)
 			{
 				CelestialBody body = Sim.suns[i].body;
@@ -136,9 +142,9 @@ namespace KERBALISM
 			}
 
 			PopupDialog.SpawnPopupDialog(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new MultiOptionDialog(
-				"SelectTrackingBody",
-				"Select the star you want to track with this solar panel.",
-				"Select tracked star",
+				Local.SolarPanelFixer_SelectTrackingBody,//"SelectTrackingBody"
+				Local.SolarPanelFixer_SelectTrackedstar_msg,//"Select the star you want to track with this solar panel."
+				Local.SolarPanelFixer_Selecttrackedstar,//"Select tracked star"
 				UISkinManager.GetSkin("MainMenuSkin"),
 				options), false, UISkinManager.GetSkin("MainMenuSkin"));
 		}
@@ -165,6 +171,8 @@ namespace KERBALISM
 
 		public override void OnStart(StartState startState)
 		{
+			sb = new StringBuilder(256);
+
 			// don't break tutorial scenarios
 			// TODO : does this actually work ?
 			if (Lib.DisableScenario(this)) return;
@@ -240,7 +248,7 @@ namespace KERBALISM
 			if (Events["ManualTracking"].active && (state == PanelState.Extended || state == PanelState.ExtendedFixed || state == PanelState.Static))
 			{
 				Events["ManualTracking"].guiActive = true;
-				Events["ManualTracking"].guiName = Lib.BuildString("Tracked star ", manualTracking ? ": " : "[Auto] : ", FlightGlobals.Bodies[trackedSunIndex].bodyDisplayName.Replace("^N", ""));
+				Events["ManualTracking"].guiName = Lib.BuildString(Local.SolarPanelFixer_Trackedstar +" ", manualTracking ? ": " : Local.SolarPanelFixer_AutoTrack, FlightGlobals.Bodies[trackedSunIndex].bodyDisplayName.Replace("^N", ""));//"Tracked star"[Auto] : "
 			}
 			else
 			{
@@ -257,49 +265,56 @@ namespace KERBALISM
 			switch (exposureState)
 			{
 				case ExposureState.InShadow:
-					panelStatus = "<color=#ff2222>in shadow</color>";
-					if (currentOutput > 0.001) panelStatus = Lib.BuildString(currentOutput.ToString(rateFormat), " EC/s, ", panelStatus);
+					panelStatus = "<color=#ff2222>"+Local.SolarPanelFixer_inshadow +"</color>";//in shadow
+					if (currentOutput > 0.001) panelStatus = Lib.BuildString(currentOutput.ToString(rateFormat), " ", EcUIUnit, ", ", panelStatus);
 					break;
 				case ExposureState.OccludedTerrain:
-					panelStatus = "<color=#ff2222>occluded by terrain</color>";
-					if (currentOutput > 0.001) panelStatus = Lib.BuildString(currentOutput.ToString(rateFormat), " EC/s, ", panelStatus);
+					panelStatus = "<color=#ff2222>"+Local.SolarPanelFixer_occludedbyterrain +"</color>";//occluded by terrain
+					if (currentOutput > 0.001) panelStatus = Lib.BuildString(currentOutput.ToString(rateFormat), " ", EcUIUnit, ", ", panelStatus);
 					break;
 				case ExposureState.OccludedPart:
-					panelStatus = Lib.BuildString("<color=#ff2222>occluded by ", mainOccludingPart, "</color>");
-					if (currentOutput > 0.001) panelStatus = Lib.BuildString(currentOutput.ToString(rateFormat), " EC/s, ", panelStatus);
+					panelStatus = Lib.BuildString("<color=#ff2222>", Local.SolarPanelFixer_occludedby.Format(mainOccludingPart), "</color>");//occluded by 
+					if (currentOutput > 0.001) panelStatus = Lib.BuildString(currentOutput.ToString(rateFormat), " ", EcUIUnit, ", ", panelStatus);
 					break;
 				case ExposureState.BadOrientation:
-					panelStatus = "<color=#ff2222>bad orientation</color>";
-					if (currentOutput > 0.001) panelStatus = Lib.BuildString(currentOutput.ToString(rateFormat), " EC/s, ", panelStatus);
+					panelStatus = "<color=#ff2222>"+Local.SolarPanelFixer_badorientation +"</color>";//bad orientation
+					if (currentOutput > 0.001) panelStatus = Lib.BuildString(currentOutput.ToString(rateFormat), " ", EcUIUnit, ", ", panelStatus);
 					break;
 				case ExposureState.Disabled:
 					switch (state)
 					{
-						case PanelState.Retracted: panelStatus = "retracted"; break;
-						case PanelState.Extending: panelStatus = "extending"; break;
-						case PanelState.Retracting: panelStatus = "retracting"; break;
-						case PanelState.Broken: panelStatus = "broken"; break;
-						case PanelState.Failure: panelStatus = "failure"; break;
-						case PanelState.Unknown: panelStatus = "invalid state"; break;
+						case PanelState.Retracted: panelStatus = Local.SolarPanelFixer_retracted; break;//"retracted"
+						case PanelState.Extending: panelStatus = Local.SolarPanelFixer_extending; break;//"extending"
+						case PanelState.Retracting: panelStatus = Local.SolarPanelFixer_retracting; break;//"retracting"
+						case PanelState.Broken: panelStatus = Local.SolarPanelFixer_broken; break;//"broken"
+						case PanelState.Failure: panelStatus = Local.SolarPanelFixer_failure; break;//"failure"
+						case PanelState.Unknown: panelStatus = Local.SolarPanelFixer_invalidstate; break;//"invalid state"
 					}
 					break;
 				case ExposureState.Exposed:
-					StringBuilder sb = new StringBuilder(256);
+					sb.Length = 0;
 					sb.Append(currentOutput.ToString(rateFormat));
-					sb.Append(" EC/s");
+					sb.Append(" ");
+					sb.Append(EcUIUnit);
 					if (analyticSunlight)
 					{
-						sb.Append(", analytic ");
+						sb.Append(", ");
+						sb.Append(Local.SolarPanelFixer_analytic);//analytic
+						sb.Append(" ");
 						sb.Append(persistentFactor.ToString("P0"));
 					}
 					else
 					{
-						sb.Append(", exposure ");
+						sb.Append(", ");
+						sb.Append(Local.SolarPanelFixer_exposure);//exposure
+						sb.Append(" ");
 						sb.Append(exposureFactor.ToString("P0"));
 					}
 					if (wearFactor < 1.0)
 					{
-						sb.Append(", wear : ");
+						sb.Append(", ");
+						sb.Append(Local.SolarPanelFixer_wear);//wear
+						sb.Append(" : ");
 						sb.Append((1.0 - wearFactor).ToString("P0"));
 					}
 					panelStatus = sb.ToString();
@@ -488,7 +503,7 @@ namespace KERBALISM
 			ResourceInfo ec = ResourceCache.GetResource(vessel, "ElectricCharge");
 
 			// produce EC
-			ec.Produce(currentOutput * Kerbalism.elapsed_s, "solar panel");
+			ec.Produce(currentOutput * Kerbalism.elapsed_s, ResourceBroker.SolarPanel);
 			UnityEngine.Profiling.Profiler.EndSample();
 		}
 
@@ -533,7 +548,7 @@ namespace KERBALISM
 			double output = nominalRate * efficiencyFactor;
 
 			// produce EC
-			ec.Produce(output * elapsed_s, "solar panel");
+			ec.Produce(output * elapsed_s, ResourceBroker.SolarPanel);
 			UnityEngine.Profiling.Profiler.EndSample();
 		}
 		#endregion
@@ -562,14 +577,14 @@ namespace KERBALISM
 					case "SSTUSolarPanelStatic": SolarPanel = new SSTUStaticPanel();  break;
 					case "SSTUSolarPanelDeployable": SolarPanel = new SSTUVeryComplexPanel(); break;
 					case "SSTUModularPart": SolarPanel = new SSTUVeryComplexPanel(); break;
+					case "ModuleROSolar": SolarPanel = new ROConfigurablePanel(); break;
 					case "KopernicusSolarPanel":
 						Lib.Log("WARNING : Part '" + part.partInfo.title + "' use the KopernicusSolarPanel module, please remove it from your config. Kerbalism has it's own support for Kopernicus");
 						continue;
+					default:
+						if (pm is ModuleDeployableSolarPanel)
+							SolarPanel = new StockPanel(); break;
 				}
-
-				// stock module and derivatives
-				if (pm is ModuleDeployableSolarPanel)
-					SolarPanel = new StockPanel();
 
 				if (SolarPanel != null)
 				{
@@ -780,8 +795,9 @@ namespace KERBALISM
 			public override bool OnStart(bool initialized, ref double nominalRate)
 			{
 				// hide stock ui
-				foreach (BaseField field in panelModule.Fields)
-					field.guiActive = false;
+				panelModule.Fields["sunAOA"].guiActive = false;
+				panelModule.Fields["flowRate"].guiActive = false;
+				panelModule.Fields["status"].guiActive = false;
 
 				if (sunCatcherPivot == null)
 					sunCatcherPivot = panelModule.part.FindModelComponent<Transform>(panelModule.pivotName);
@@ -887,7 +903,7 @@ namespace KERBALISM
 
 			public override PanelState GetState()
 			{
-				if (!panelModule.isTracking)
+				if (!panelModule.useAnimation)
 				{
 					if (panelModule.deployState == ModuleDeployablePart.DeployState.BROKEN)
 						return PanelState.Broken;
@@ -942,6 +958,11 @@ namespace KERBALISM
 			{
 				panelModule.trackingBody = body;
 				panelModule.GetTrackingBodyTransforms();
+			}
+
+			public override void OnUpdate()
+			{
+				panelModule.flowRate = (float)fixerModule.currentOutput;
 			}
 		}
 #endregion
@@ -1480,9 +1501,40 @@ namespace KERBALISM
 			public override bool SupportProtoAutomation(ProtoPartModuleSnapshot protoModule) { return false; }
 		}
 		#endregion
+
+		#region ROSolar switcheable/resizeable MDSP derivative (ModuleROSolar
+		// Made by PaP for RO. Implement in-editor model switching / resizing on top of the stock module.
+		// Current version (v0.2) doesn't seem to have tracking panels, may need further work to get those working.
+		// Plugin is here : https://github.com/KSP-RO/ROLibrary/blob/master/Source/ROLib/Modules/ModuleROSolar.cs
+		// Configs are here : https://github.com/KSP-RO/ROSolar
+		// Require the following MM patch to work :
+		/*
+		@PART[*]:HAS[@MODULE[ModuleROSolar]]:AFTER[zzzKerbalism]
+		{
+			MODULE
+			{
+				name = SolarPanelFixer
+			}
+		}
+		*/
+		private class ROConfigurablePanel : StockPanel
+		{
+			public override PanelState GetState()
+			{
+				// We set the resHandler rate to 0 in StockPanel.OnStart(), and ModuleROSolar set it back
+				// to the new nominal rate after some switching/resizing has been done (see ModuleROSolar.RecalculateStats()),
+				// so don't complicate things by using events and just call StockPanel.OnStart() if we detect a non-zero rate.
+				if (Lib.IsEditor() && panelModule.resHandler.outputResources[0].rate != 0.0)
+					OnStart(false, ref fixerModule.nominalRate);
+
+				return base.GetState();
+			}
+		}
+
+		#endregion
 	}
 
-#region Utility class for drawing vectors on screen
+	#region Utility class for drawing vectors on screen
 	// Source : https://github.com/sarbian/DebugStuff/blob/master/DebugDrawer.cs
 	// By Sarbian, released under MIT I think
 	[KSPAddon(KSPAddon.Startup.Instantly, true)]

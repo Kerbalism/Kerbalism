@@ -1,4 +1,4 @@
-﻿#if DEBUG_PROFILER
+#if DEBUG_PROFILER
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -73,7 +73,7 @@ namespace KERBALISM
 			// create window
 			dialog_items = new DialogGUIVerticalLayout();
 			multi_dialog = new MultiOptionDialog(
-			   "TrajectoriesProfilerWindow",
+			   "KerbalismProfilerWindow",
 			   "",
 			   GetTitle(),
 			   HighLogic.UISkin,

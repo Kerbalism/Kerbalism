@@ -1,6 +1,5 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-
 
 namespace KERBALISM
 {
@@ -131,7 +130,7 @@ namespace KERBALISM
 			}
 
 			// add resource to the vessel
-			ResourceCache.Produce(v, resource, on_rescue, "rescue");
+			ResourceCache.Produce(v, resource, on_rescue, ResourceBroker.Generic);
 		}
 
 

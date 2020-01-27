@@ -1,4 +1,4 @@
-﻿using ModuleWheels;
+using ModuleWheels;
 using KSP.Localization;
 
 namespace KERBALISM

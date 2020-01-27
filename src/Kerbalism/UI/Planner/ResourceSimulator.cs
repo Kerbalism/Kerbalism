@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Reflection;
 using System.Collections.Generic;
@@ -12,7 +12,13 @@ namespace KERBALISM.Planner
 	{
 		private class PlannerDelegate
 		{
-			internal MethodInfo methodInfo;
+			internal MethodInfo methodInfo = null;
+			internal IKerbalismModule module = null;
+
+			public PlannerDelegate(IKerbalismModule module)
+			{
+				this.module = module;
+			}
 
 			public PlannerDelegate(MethodInfo methodInfo)
 			{
@@ -21,6 +27,12 @@ namespace KERBALISM.Planner
 
 			internal string Invoke(PartModule m, List<KeyValuePair<string, double>> resourcesList, CelestialBody body, Dictionary<string, double> environment)
 			{
+				IKerbalismModule km = m as IKerbalismModule;
+				if(km != null)
+				{
+					return km.PlannerUpdate(resourcesList, body, environment);
+				}
+
 				var result = methodInfo.Invoke(m, new object[] { resourcesList, body, environment });
 				if (result != null) return result.ToString();
 				return "unknown";
@@ -108,7 +120,7 @@ namespace KERBALISM.Planner
 					if (!m.isEnabled)
 						continue;
 
-					if (IsApiModule(m))
+					if (IsModuleKerbalismAware(m))
 					{
 						Process_apiModule(m, env, va);
 					}
@@ -122,8 +134,8 @@ namespace KERBALISM.Planner
 							case "GravityRing":
 								Process_ring(m as GravityRing);
 								break;
-							case "Emitter":
-								Process_emitter(m as Emitter);
+							case "Harvester":
+								Process_harvester(m as Harvester, va);
 								break;
 							case "Laboratory":
 								Process_laboratory(m as Laboratory);
@@ -144,7 +156,7 @@ namespace KERBALISM.Planner
 								Process_converter(m as ModuleResourceConverter, va);
 								break;
 							case "ModuleResourceHarvester":
-								Process_harvester(m as ModuleResourceHarvester, va);
+								Process_stockharvester(m as ModuleResourceHarvester, va);
 								break;
 							case "ModuleScienceConverter":
 								Process_stocklab(m as ModuleScienceConverter);
@@ -182,6 +194,7 @@ namespace KERBALISM.Planner
 								Process_rtantenna(m);
 								break;
 							case "ModuleDataTransmitter":
+							case "ModuleDataTransmitterFeedeable": // NearFutureExploration derivative
 								Process_datatransmitter(m as ModuleDataTransmitter);
 								break;
 							case "ModuleEngines":
@@ -243,9 +256,12 @@ namespace KERBALISM.Planner
 			environment["sunlight"] = Planner.Sunlight == Planner.SunlightState.Shadow ? 0 : 1;
 
 			Lib.Log("resource count before call " + resourcesList.Count);
-
-			string title = apiDelegates[m.moduleName].Invoke(m, resourcesList, env.body, environment);
-
+			string title;
+			IKerbalismModule km = m as IKerbalismModule;
+			if (km != null)
+				title = km.PlannerUpdate(resourcesList, env.body, environment);
+			else
+				title = apiDelegates[m.moduleName].Invoke(m, resourcesList, env.body, environment);
 			Lib.Log("resource count after call " + resourcesList.Count);
 
 			foreach (var p in resourcesList)
@@ -258,8 +274,10 @@ namespace KERBALISM.Planner
 			}
 		}
 
-		private bool IsApiModule(PartModule m)
+		private bool IsModuleKerbalismAware(PartModule m)
 		{
+			if (m is IKerbalismModule) return true;
+
 			if (apiDelegates.ContainsKey(m.moduleName)) return true;
 			if (unsupportedModules.Contains(m.moduleName)) return false;
 
@@ -307,7 +325,7 @@ namespace KERBALISM.Planner
 			else if (rate > double.Epsilon)
 			{
 				// - rules always dump excess overboard (because it is waste)
-				SimulatedRecipe recipe = new SimulatedRecipe(p, r.name);
+				SimulatedRecipe recipe = new SimulatedRecipe(p, r.title);
 				recipe.Input(r.input, rate * k);
 				recipe.Output(r.output, rate * k * r.ratio, true);
 				recipes.Add(recipe);
@@ -326,7 +344,7 @@ namespace KERBALISM.Planner
 		private void Process_process_inner_body(double k, Part p, Process pr, EnvironmentAnalyzer env, VesselAnalyzer va)
 		{
 			// prepare recipe
-			SimulatedRecipe recipe = new SimulatedRecipe(p, pr.name);
+			SimulatedRecipe recipe = new SimulatedRecipe(p, pr.title);
 			foreach (KeyValuePair<string, double> input in pr.inputs)
 			{
 				recipe.Input(input.Key, input.Value * k);
@@ -427,13 +445,19 @@ namespace KERBALISM.Planner
 				Resource("ElectricCharge").Consume(ring.ec_rate, "gravity ring");
 		}
 
-
-		void Process_emitter(Emitter emitter)
+		void Process_harvester(Harvester harvester, VesselAnalyzer va)
 		{
-			if (emitter.running)
-				Resource("ElectricCharge").Consume(emitter.ec_rate, "emitter");
+			if (harvester.running && harvester.simulated_abundance > harvester.min_abundance)
+			{
+				SimulatedRecipe recipe = new SimulatedRecipe(harvester.part, "harvester");
+				if (harvester.ec_rate > double.Epsilon) recipe.Input("ElectricCharge", harvester.ec_rate);
+				recipe.Output(
+					harvester.resource,
+					Harvester.AdjustedRate(harvester, new CrewSpecs("Engineer@0"), va.crew, harvester.simulated_abundance),
+					dump: false);
+				recipes.Add(recipe);
+			}
 		}
-
 
 		void Process_laboratory(Laboratory lab)
 		{
@@ -507,7 +531,7 @@ namespace KERBALISM.Planner
 		}
 
 
-		void Process_harvester(ModuleResourceHarvester harvester, VesselAnalyzer va)
+		void Process_stockharvester(ModuleResourceHarvester harvester, VesselAnalyzer va)
 		{
 			// calculate experience bonus
 			float exp_bonus = harvester.UseSpecialistBonus

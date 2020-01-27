@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using KSP.Localization;
@@ -16,8 +16,8 @@ namespace KERBALISM
 		{
 			get
 			{
-				if (module.AlwaysActive) return Localizer.Format("#KERBALISM_Generic_ALWAYSON");
-				return Lib.Color(module.IsActivated, Localizer.Format("#KERBALISM_Generic_ON"), Lib.Kolor.Green, Localizer.Format("#KERBALISM_Generic_OFF"), Lib.Kolor.Yellow);
+				if (module.AlwaysActive) return Local.Generic_ALWAYSON;
+				return Lib.Color(module.IsActivated, Local.Generic_ON, Lib.Kolor.Green, Local.Generic_OFF, Lib.Kolor.Yellow);
 			}
 		}
 
@@ -46,9 +46,9 @@ namespace KERBALISM
 		{
 			get
 			{
-				if (prefab.AlwaysActive) Localizer.Format("#KERBALISM_Generic_ALWAYSON");
+				if (prefab.AlwaysActive) return Local.Generic_ALWAYSON;
 				bool is_on = Lib.Proto.GetBool(protoModule, "IsActivated");
-				return Lib.Color(is_on, Localizer.Format("#KERBALISM_Generic_ON"), Lib.Kolor.Green, Localizer.Format("#KERBALISM_Generic_OFF"), Lib.Kolor.Yellow);
+				return Lib.Color(is_on, Local.Generic_ON, Lib.Kolor.Green, Local.Generic_OFF, Lib.Kolor.Yellow);
 			}
 		}
 

@@ -1,6 +1,7 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using System;
+using KSP.Localization;
 
 namespace KERBALISM
 {
@@ -27,7 +28,7 @@ namespace KERBALISM
 #if KSP15_16
 		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true)]
 #else
-		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true, groupName = "Habitat", groupDisplayName = "Habitat")]
+		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true, groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
 #endif
 		public void Toggle()
 		{
@@ -65,15 +66,15 @@ namespace KERBALISM
 		[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "cure", active = false)]
 		public void Toggle5() { Toggle(5); }
 #else
-		[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "cure", active = false, groupName = "Habitat", groupDisplayName = "Habitat")]
+		[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "#KERBALISM_Sickbay_cure", active = false, groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//cure"Habitat"
 		public void Toggle1() { Toggle(1); }
-		[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "cure", active = false, groupName = "Habitat", groupDisplayName = "Habitat")]
+		[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "#KERBALISM_Sickbay_cure", active = false, groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//cure"Habitat"
 		public void Toggle2() { Toggle(2); }
-		[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "cure", active = false, groupName = "Habitat", groupDisplayName = "Habitat")]
+		[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "#KERBALISM_Sickbay_cure", active = false, groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//cure"Habitat"
 		public void Toggle3() { Toggle(3); }
-		[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "cure", active = false, groupName = "Habitat", groupDisplayName = "Habitat")]
+		[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "#KERBALISM_Sickbay_cure", active = false, groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//cure"Habitat"
 		public void Toggle4() { Toggle(4); }
-		[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "cure", active = false, groupName = "Habitat", groupDisplayName = "Habitat")]
+		[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "#KERBALISM_Sickbay_cure", active = false, groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//cure"Habitat"
 		public void Toggle5() { Toggle(5); }
 #endif
 
@@ -86,7 +87,7 @@ namespace KERBALISM
 			if (slots > MAX_SLOTS)
 				slots = MAX_SLOTS;
 
-			Actions["Action"].guiName = Lib.BuildString("Start/Stop ", title);
+			Actions["Action"].guiName = Lib.BuildString(Local.Sickbay_Start_Stop ," ", title);//"Start/Stop"
 
 			foreach (string s in patients.Split(','))
 			{
@@ -187,7 +188,7 @@ namespace KERBALISM
 		private void UpdateActions()
 		{
 			Events["Toggle"].active = slots > 0 || cureEverybody;
-			Events["Toggle"].guiName = Lib.StatusToggle(title, running ? "running" : "stopped");
+			Events["Toggle"].guiName = Lib.StatusToggle(title, running ? Local.Sickbay_running : Local.Sickbay_stopped);//"running""stopped"
 
 			if (!Lib.IsFlight())
 				return;
@@ -204,7 +205,7 @@ namespace KERBALISM
 				{
 					BaseEvent e = Events["Toggle" + i++];
 					e.active = true;
-					e.guiName = Lib.BuildString(title, ": dismiss ", patientName);
+					e.guiName = Local.Sickbay_cureEverybody.Format(title,patientName);//Lib.BuildString(, ": dismiss ", )
 					slotsAvailable--;
 					if (slotsAvailable == 0)
 						break;
@@ -219,7 +220,7 @@ namespace KERBALISM
 
 						BaseEvent e = Events["Toggle" + i++];
 						e.active = true;
-						e.guiName = Lib.BuildString(title, ": cure ", crew.name);
+						e.guiName = Local.Sickbay_cureEverybody2.Format(title,crew.name);//Lib.BuildString(, ": cure ", )
 						if (i > MAX_SLOTS)
 							break;
 					}
@@ -256,8 +257,8 @@ namespace KERBALISM
 		{
 			if (slots == 0 && !cureEverybody) return null;
 			Specifics specs = new Specifics();
-			if(cureEverybody) specs.Add("Cures", "All kerbals in part");
-			else if(slots > 0) specs.Add("Capacity", slots + " Kerbals");
+			if(cureEverybody) specs.Add(Local.Sickbay_info1, Local.Sickbay_info2);//"Cures""All kerbals in part"
+			else if(slots > 0) specs.Add(Local.Sickbay_info3,  Local.Sickbay_info4.Format(slots.ToString()));//"Capacity""<<1>> Kerbals"
 			return specs;
 		}
 

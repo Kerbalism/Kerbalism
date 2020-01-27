@@ -4,6 +4,7 @@ using System.Configuration;
 using System.Diagnostics;
 using System.Threading;
 using UnityEngine;
+using KSP.Localization;
 
 
 namespace KERBALISM
@@ -561,7 +562,7 @@ namespace KERBALISM
                         show_pause = false;
 
                         // tell the user and do nothing
-                        Message.Post("<color=#00ffff><b>Fitting particles to signed distance fields</b></color>", "Come back in a minute");
+                        Message.Post("<color=#00ffff>"+Local.Fittingparticles_msg +"<b></b></color>", Local.ComebackLater_msg);//"Fitting particles to signed distance fields""Come back in a minute"
                         return;
                     }
 
@@ -740,9 +741,10 @@ namespace KERBALISM
 
 						// clamp to max. surface radiation. when loading on a rescaled system, the vessel can appear to be within the sun for a few ticks
 						radiation += Math.Min(r1, rb.radiation_surface);
-
-						//if (v.loaded) Lib.Log("Radiation " + v + " from surface of " + body + ": " + Lib.HumanReadableRadiation(radiation) + " gamma: " + Lib.HumanReadableRadiation(r1));
-                    }
+#if DEBUG_RADIATION
+						if (v.loaded) Lib.Log("Radiation " + v + " from surface of " + body + ": " + Lib.HumanReadableRadiation(radiation) + " gamma: " + Lib.HumanReadableRadiation(r1));
+#endif
+					}
                 }
 
                 // avoid loops in the chain
@@ -752,21 +754,27 @@ namespace KERBALISM
             // add extern radiation
             radiation += Settings.ExternRadiation / 3600.0;
 
-            //if (v.loaded) Lib.Log("Radiation " + v + " extern: " + Lib.HumanReadableRadiation(radiation) + " gamma: " + Lib.HumanReadableRadiation(PreferencesStorm.Instance.ExternRadiation));
+#if DEBUG_RADIATION
+			if (v.loaded) Lib.Log("Radiation " + v + " extern: " + Lib.HumanReadableRadiation(radiation) + " gamma: " + Lib.HumanReadableRadiation(Settings.ExternRadiation));
+#endif
 
-            // apply gamma transparency if inside atmosphere
-            radiation *= gamma_transparency;
+			// apply gamma transparency if inside atmosphere
+			radiation *= gamma_transparency;
 
-            //if (v.loaded) Lib.Log("Radiation " + v + " after gamma: " + Lib.HumanReadableRadiation(radiation) + " transparency: " + gamma_transparency);
-
-            // add surface radiation of the body itself
+#if DEBUG_RADIATION
+			if (v.loaded) Lib.Log("Radiation " + v + " after gamma: " + Lib.HumanReadableRadiation(radiation) + " transparency: " + gamma_transparency);
+#endif
+			// add surface radiation of the body itself
 			if(Lib.IsSun(v.mainBody) && v.altitude < v.mainBody.Radius)
 			if(v.altitude > v.mainBody.Radius)
 			{
 				radiation += DistanceRadiation(RadiationR0(Info(v.mainBody)), v.altitude);
 
 			}
-			//if (v.loaded) Lib.Log("Radiation " + v + " from current main body: " + Lib.HumanReadableRadiation(radiation) + " gamma: " + Lib.HumanReadableRadiation(DistanceRadiation(RadiationR0(Info(v.mainBody)), v.altitude)));
+
+#if DEBUG_RADIATION
+			if (v.loaded) Lib.Log("Radiation " + v + " from current main body: " + Lib.HumanReadableRadiation(radiation) + " gamma: " + Lib.HumanReadableRadiation(DistanceRadiation(RadiationR0(Info(v.mainBody)), v.altitude)));
+#endif
 
 			shieldedRadiation = radiation;
 
@@ -793,30 +801,39 @@ namespace KERBALISM
             radiation += emitterRadiation;
             shieldedRadiation += emitterRadiation;
 
-            //if (v.loaded) Lib.Log("Radiation " + v + " after emitters: " + Lib.HumanReadableRadiation(radiation));
+#if DEBUG_RADIATION
+			if (v.loaded) Lib.Log("Radiation " + v + " after emitters: " + Lib.HumanReadableRadiation(radiation) + " shielded " + Lib.HumanReadableRadiation(shieldedRadiation));
+#endif
 
-            // for EVAs, add the effect of nearby emitters
-            if (v.isEVA)
+			// for EVAs, add the effect of nearby emitters
+			if (v.isEVA)
             {
                 var nearbyEmitters = Emitter.Nearby(v);
-                radiation += nearbyEmitters;
+				radiation += nearbyEmitters;
                 shieldedRadiation += nearbyEmitters;
-            }
+#if DEBUG_RADIATION
+				if (v.loaded) Lib.Log("Radiation " + v + " nearby emitters " + Lib.HumanReadableRadiation(nearbyEmitters));
+#endif
+			}
 
 			var passiveShielding = PassiveShield.Total(v);
 			shieldedRadiation -= passiveShielding;
 
-			//if (v.loaded) Lib.Log("Radiation " + v + " before clamp: " + Lib.HumanReadableRadiation(radiation));
+#if DEBUG_RADIATION
+			if (v.loaded) Lib.Log("Radiation " + v + " passiveShielding " + Lib.HumanReadableRadiation(passiveShielding));
+			if (v.loaded) Lib.Log("Radiation " + v + " before clamp: " + Lib.HumanReadableRadiation(radiation) + " shielded " + Lib.HumanReadableRadiation(shieldedRadiation));
+#endif
 
 			// clamp radiation to positive range
 			// note: we avoid radiation going to zero by using a small positive value
 			radiation = Math.Max(radiation, Nominal);
             shieldedRadiation = Math.Max(shieldedRadiation, Nominal);
 
-            //	if (v.loaded) Lib.Log("Radiation " + v + " after clamp: " + Lib.HumanReadableRadiation(radiation));
-
-            // return radiation
-            return radiation;
+#if DEBUG_RADIATION
+			if (v.loaded) Lib.Log("Radiation " + v + " after clamp: " + Lib.HumanReadableRadiation(radiation) + " shielded " + Lib.HumanReadableRadiation(shieldedRadiation));
+#endif
+			// return radiation
+			return radiation;
         }
 
         /// <summary>
@@ -946,7 +963,7 @@ namespace KERBALISM
                 // show the message
                 if (inside_belt && !vd.msg_belt && must_warn)
                 {
-                    Message.Post(Lib.BuildString("<b>", v.vesselName, "</b> is crossing <i>", v.mainBody.bodyName, " radiation belt</i>"), "Exposed to extreme radiation");
+					Message.Post(Local.BeltWarnings_msg.Format("<b>" + v.vesselName + "</b>", "<i>" + v.mainBody.bodyName + "</i>"), Local.BeltWarnings_msgSubtext);//<<1>> is crossing <<2>> radiation belt"Exposed to extreme radiation"
                     vd.msg_belt = true;
                 }
                 else if (!inside_belt && vd.msg_belt)

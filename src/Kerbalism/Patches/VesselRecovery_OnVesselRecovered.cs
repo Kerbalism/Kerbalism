@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Harmony;
 using Harmony.ILCopying;
 using UnityEngine;
+using KSP.Localization;
 
 namespace KERBALISM
 {
@@ -46,10 +47,7 @@ namespace KERBALISM
 	class VesselRecovery_OnVesselRecovered {
 		static bool Prefix(ref ProtoVessel pv, ref bool quick) {
 
-			if (!Science.GameHasRnD) return true;
-
 			if (pv == null) return true;
-
 
 			// get a hard drive. any hard drive will do, no need to find a specific one.
 			ProtoPartModuleSnapshot protoHardDrive = null;
@@ -146,16 +144,16 @@ namespace KERBALISM
 				(
 					new MultiOptionDialog
 					(
-						"scienceResults", "", pv.vesselName + " recovery", HighLogic.UISkin, new Rect(0.3f, 0.5f, 350f, 100f),
+						"scienceResults", "", pv.vesselName + " "+Local.VesselRecovery_title, HighLogic.UISkin, new Rect(0.3f, 0.5f, 350f, 100f),//" recovery"
 						new DialogGUIVerticalLayout
 						(
-							new DialogGUIBox("SCIENCE RECOVERED : " + Lib.Color(scienceToCredit.ToString("F1") + " CREDITS", Lib.Kolor.Science, true), 340f, 30f),
+							new DialogGUIBox(Local.VesselRecovery_info + " : " + Lib.Color(scienceToCredit.ToString("F1") + " " + Local.VesselRecovery_CREDITS, Lib.Kolor.Science, true), 340f, 30f),//"SCIENCE RECOVERED"" CREDITS"
 							new DialogGUIScrollList
 							(
 								new Vector2(340f, 250f), false, true,
 								new DialogGUIVerticalLayout(labels.ToArray())
 							),
-							new DialogGUIButton("OK", null, 340f, 30f, true, HighLogic.UISkin.button)
+							new DialogGUIButton(Local.VesselRecovery_OKbutton, null, 340f, 30f, true, HighLogic.UISkin.button)//"OK"
 						)
 					),
 					false, HighLogic.UISkin

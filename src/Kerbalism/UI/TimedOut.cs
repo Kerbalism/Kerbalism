@@ -1,7 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
-
+using KSP.Localization;
 
 namespace KERBALISM
 {
@@ -21,20 +21,20 @@ namespace KERBALISM
 
 		static string[] msg =
 		{
-	"<i>Connection in progress</i>",
-	"<i>Connection in progress.</i>",
-	"<i>Connection in progress..</i>",
-	"<i>Connection in progress...</i>",
-	"<i>Connection in progress....</i>",
-	"<i>Connection in progress.....</i>",
-	"<b><color=#ff3333><i>Connection timed-out</i></color></b>",
-	"<b><color=#ff3333><i>Connection timed-out</i></color></b>",
-	"<b><color=#ff3333><i>Connection timed-out</i></color></b>",
-	"<b><color=#ff3333><i>Connection timed-out</i></color></b>",
-	"<b><color=#ff3333><i>Connection timed-out</i></color></b>",
-	"<i>New tentative in 3s</i>",
-	"<i>New tentative in 2s</i>",
-	"<i>New tentative in 1s</i>"
+	"<i>"+Local.TimeoutMsg1+"</i>",//Connection in progress
+	"<i>"+Local.TimeoutMsg1+".</i>",//Connection in progress.
+	"<i>"+Local.TimeoutMsg1+"..</i>",//Connection in progress..
+	"<i>"+Local.TimeoutMsg1+"...</i>",//Connection in progress...
+	"<i>"+Local.TimeoutMsg1+"....</i>",//Connection in progress....
+	"<i>"+Local.TimeoutMsg1+".....</i>",//Connection in progress.....
+	"<b><color=#ff3333><i>"+Local.TimeoutMsg2+"</i></color></b>",//Connection timed-out
+	"<b><color=#ff3333><i>"+Local.TimeoutMsg2+"</i></color></b>",//Connection timed-out
+	"<b><color=#ff3333><i>"+Local.TimeoutMsg2+"</i></color></b>",//Connection timed-out
+	"<b><color=#ff3333><i>"+Local.TimeoutMsg2+"</i></color></b>",//Connection timed-out
+	"<b><color=#ff3333><i>"+Local.TimeoutMsg2+"</i></color></b>",//Connection timed-out
+	"<i>" + Local.TimeoutMsg3.Format("3s") + "</i>",//New tentative in <<1>>
+	"<i>" + Local.TimeoutMsg3.Format("2s") + "</i>",//New tentative in <<1>>
+	"<i>" + Local.TimeoutMsg3.Format("1s") + "</i>",//New tentative in <<1>>
   };
 	}
 

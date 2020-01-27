@@ -1,22 +1,23 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Experience;
 using UnityEngine;
 using KSP.Localization;
 using System.Collections;
 using static KERBALISM.ExperimentRequirements;
+using System.Linq;
 
 namespace KERBALISM
 {
 
-	public class Experiment : PartModule, ISpecifics, IModuleInfo, IPartMassModifier, IConfigurable
+	public class Experiment : PartModule, ISpecifics, IModuleInfo, IPartMassModifier, IConfigurable, IMultipleDragCube
 	{
 		// config
-		[KSPField] public string experiment_id;               // id of associated experiment definition
+		[KSPField] public string experiment_id = string.Empty;    // id of associated experiment definition
 		[KSPField] public string experiment_desc = string.Empty;  // some nice lines of text
 		[KSPField] public double data_rate;                   // sampling rate in Mb/s
 		[KSPField] public double ec_rate;                     // EC consumption rate per-second
-		[KSPField] public double sample_amount = 0.0;		  // the amount of samples this unit is shipped with
+		[KSPField] public double sample_amount = 0.0;         // the amount of samples this unit is shipped with
 		[KSPField] public bool sample_collecting = false;     // if set to true, the experiment will generate mass out of nothing
 		[KSPField] public bool allow_shrouded = true;         // true if data can be transmitted
 		[KSPField] public string requires = string.Empty;     // additional requirements that must be met
@@ -25,12 +26,15 @@ namespace KERBALISM
 		[KSPField] public string crew_prepare = string.Empty; // prepare crew. if set, experiment will require crew to set up before it can start recording 
 		[KSPField] public string resources = string.Empty;    // resources consumed by this experiment
 		[KSPField] public bool hide_when_unavailable = false; // don't show UI when the experiment is unavailable
+		[KSPField] public string retractedDragCube = "Retracted";
+		[KSPField] public string deployedDragCube = "Deployed";
+		[KSPField] public bool use_animation_group = false;   // if true, deploy/retract animations will managed by the first found ModuleAnimationGroup
 
 		// animations
 		[KSPField] public string anim_deploy = string.Empty; // deploy animation
 		[KSPField] public bool anim_deploy_reverse = false;
 
-		[KSPField] public string anim_loop = string.Empty; // deploy animation
+		[KSPField] public string anim_loop = string.Empty; // loop animation
 		[KSPField] public bool anim_loop_reverse = false;
 
 		// persistence
@@ -56,12 +60,13 @@ namespace KERBALISM
 		// animations
 		internal Animator deployAnimator;
 		internal Animator loopAnimator;
+		public ModuleAnimationGroup AnimationGroup { get; private set; }
 
 		private CrewSpecs operator_cs;
 		private CrewSpecs reset_cs;
 		private CrewSpecs prepare_cs;
-		
-		// private double next_check = 0;
+
+		public bool isConfigurable = false;
 
 		#region state/status
 
@@ -120,12 +125,11 @@ namespace KERBALISM
 
 		public void Configure(bool enable)
 		{
-			if (Lib.ModuleEnableInScienceAndCareer(this))
-			{
-				enabled = enable;
-				isEnabled = enable;
-			}
+			enabled = enable;
+			isEnabled = enable;
 		}
+
+		public void ModuleIsConfigured() => isConfigurable = true;
 
 		public override void OnLoad(ConfigNode node)
 		{
@@ -135,14 +139,14 @@ namespace KERBALISM
 				Requirements = new ExperimentRequirements(requires);
 			}
 
+			if (use_animation_group)
+				AnimationGroup = part.Modules.OfType<ModuleAnimationGroup>().FirstOrDefault();
+
 			base.OnLoad(node);
 		}
 
 		public override void OnStart(StartState state)
 		{
-			// experiments are only available in science and career games
-			if (!Lib.ModuleEnableInScienceAndCareer(this)) return;
-
 			// create animators
 			deployAnimator = new Animator(part, anim_deploy);
 			deployAnimator.reversed = anim_deploy_reverse;
@@ -152,11 +156,19 @@ namespace KERBALISM
 
 			// set initial animation states
 			deployAnimator.Still(Running ? 1.0 : 0.0);
+			SetDragCubes(Running);
+
 			loopAnimator.Still(Running ? 1.0 : 0.0);
 			if (Running) loopAnimator.Play(false, true);
 
+			if (use_animation_group && AnimationGroup == null)
+				AnimationGroup = part.Modules.OfType<ModuleAnimationGroup>().FirstOrDefault();
+
+			if (AnimationGroup != null && !AnimationGroup.isDeployed && Running)
+				AnimationGroup.DeployModule();
+
 			// parse crew specs
-			if(!string.IsNullOrEmpty(crew_operate))
+			if (!string.IsNullOrEmpty(crew_operate))
 				operator_cs = new CrewSpecs(crew_operate);
 			if (!string.IsNullOrEmpty(crew_reset))
 				reset_cs = new CrewSpecs(crew_reset);
@@ -184,6 +196,13 @@ namespace KERBALISM
 
 			ExpInfo = ScienceDB.GetExperimentInfo(experiment_id);
 
+			if (ExpInfo == null)
+			{
+				enabled = isEnabled = moduleIsEnabled = false;
+				Lib.Log($"Error : ExpInfo for experiment_id `{experiment_id}` is null, does the config definition exists ?");
+				return;
+			}
+
 			if (Lib.IsFlight())
 			{
 				foreach (var hd in part.FindModulesImplementing<HardDrive>())
@@ -191,7 +210,7 @@ namespace KERBALISM
 					if (hd.experiment_id == experiment_id) privateHdId = part.flightID;
 				}
 
-				if(firstStart)
+				if (firstStart)
 				{
 					FirstStart();
 					firstStart = false;
@@ -206,7 +225,7 @@ namespace KERBALISM
 			if (!sample_collecting && ExpInfo.SampleMass > 0.0 && remainingSampleMass == 0)
 			{
 				remainingSampleMass = ExpInfo.SampleMass * sample_amount;
-				if(double.IsNaN(remainingSampleMass))
+				if (double.IsNaN(remainingSampleMass))
 					Lib.LogDebug("ERROR: remainingSampleMass is NaN on first start " + ExpInfo.ExperimentId + " " + ExpInfo.SampleMass + " / " + sample_amount);
 			}
 		}
@@ -253,12 +272,12 @@ namespace KERBALISM
 					if (subject != null)
 					{
 						Events["ToggleEvent"].guiName = Lib.StatusToggle(Lib.Ellipsis(ExpInfo.Title, Styles.ScaleStringLength(25)), StatusInfo(status, issue));
-						Events["ShowPopup"].guiName = Lib.StatusToggle("info", Lib.BuildString(ScienceValue(Subject), " ", State == RunningState.Forced ? subject.PercentCollectedTotal.ToString("P0") : RunningCountdown(ExpInfo, Subject, data_rate)));
+						Events["ShowPopup"].guiName = Lib.StatusToggle(Local.StatuToggle_info, Lib.BuildString(ScienceValue(Subject), " ", State == RunningState.Forced ? subject.PercentCollectedTotal.ToString("P0") : RunningCountdown(ExpInfo, Subject, data_rate)));//"info"
 					}
 					else
 					{
 						Events["ToggleEvent"].guiName = Lib.StatusToggle(Lib.Ellipsis(ExpInfo.Title, Styles.ScaleStringLength(25)), StatusInfo(status, issue));
-						Events["ShowPopup"].guiName = Lib.StatusToggle("info", vd.VesselSituations.FirstSituationTitle);
+						Events["ShowPopup"].guiName = Lib.StatusToggle(Local.StatuToggle_info, vd.VesselSituations.FirstSituationTitle);//"info"
 					}
 				}
 				else
@@ -267,10 +286,10 @@ namespace KERBALISM
 					Events["ShowPopup"].active = false;
 				}
 
-				Events["Prepare"].guiName = Lib.BuildString("Prepare <b>", ExpInfo.Title, "</b>");
+				Events["Prepare"].guiName = Lib.BuildString(Local.Module_Experiment_Prepare +" <b>", ExpInfo.Title, "</b>");//Prepare
 				Events["Prepare"].active = !didPrepare && prepare_cs != null && subject == null;
 
-				Events["Reset"].guiName = Lib.BuildString("Reset <b>", ExpInfo.Title, "</b>");
+				Events["Reset"].guiName = Lib.BuildString(Local.Module_Experiment_Reset +" <b>", ExpInfo.Title, "</b>");//Reset
 				// we need a reset either if we have recorded data or did a setup
 				bool resetActive = (reset_cs != null || prepare_cs != null) && subject != null;
 				Events["Reset"].active = resetActive;
@@ -312,6 +331,15 @@ namespace KERBALISM
 				return;
 			}
 
+			if (AnimationGroup != null && !AnimationGroup.isDeployed && Running)
+			{
+				situation = GetSituation(vd);
+				subject = ScienceDB.GetSubjectData(ExpInfo, situation, out situationId);
+				UnityEngine.Profiling.Profiler.EndSample();
+				Toggle();
+				return;
+			}
+
 			shrouded = part.ShieldedFromAirstream;
 
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Experiment.FixedUpdate.RunningUpdate");
@@ -349,6 +377,8 @@ namespace KERBALISM
 
 			RunningState expState = Lib.Proto.GetEnum(m, "expState", RunningState.Stopped);
 			ExperimentInfo expInfo = ScienceDB.GetExperimentInfo(experiment_id); // from prefab
+			if (expInfo == null)
+				return;
 
 			if (!IsRunning(expState))
 			{
@@ -403,7 +433,7 @@ namespace KERBALISM
 			ref int lastSituationId, ref double remainingSampleMass, out SubjectData subjectData, out string mainIssue)
 		{
 			mainIssue = string.Empty;
-			
+
 			subjectData = ScienceDB.GetSubjectData(expInfo, vs);
 
 			bool subjectHasChanged;
@@ -415,7 +445,7 @@ namespace KERBALISM
 			else
 			{
 				lastSituationId = vd.VesselSituations.FirstSituation.Id;
-				mainIssue = "invalid situation";
+				mainIssue = Local.Module_Experiment_issue1;//"invalid situation"
 				return;
 			}
 
@@ -426,19 +456,19 @@ namespace KERBALISM
 
 			if (isShrouded && !prefab.allow_shrouded)
 			{
-				mainIssue = "shrouded";
+				mainIssue = Local.Module_Experiment_issue2;//"shrouded"
 				return;
 			}
 
 			if (subjectHasChanged && prefab.crew_reset.Length > 0)
 			{
-				mainIssue = "reset required";
+				mainIssue = Local.Module_Experiment_issue3;//"reset required"
 				return;
 			}
 
 			if (ec.Amount == 0.0 && prefab.ec_rate > 0.0)
 			{
-				mainIssue = "no Electricity";
+				mainIssue = Local.Module_Experiment_issue4;//"no Electricity"
 				return;
 			}
 
@@ -447,7 +477,7 @@ namespace KERBALISM
 				var cs = new CrewSpecs(prefab.crew_operate);
 				if (!cs && Lib.CrewCount(v) > 0)
 				{
-					mainIssue = "crew on board";
+					mainIssue = Local.Module_Experiment_issue5;//"crew on board"
 					return;
 				}
 				else if (cs && !cs.Check(v))
@@ -459,32 +489,32 @@ namespace KERBALISM
 
 			if (!prefab.sample_collecting && remainingSampleMass <= 0.0 && expInfo.SampleMass > 0.0)
 			{
-				mainIssue = "depleted";
+				mainIssue = Local.Module_Experiment_issue6;//"depleted"
 				return;
 			}
 
 			if (!didPrepare && !string.IsNullOrEmpty(prefab.crew_prepare))
 			{
-				mainIssue = "not prepared";
+				mainIssue = Local.Module_Experiment_issue7;//"not prepared"
 				return;
 			}
 
 			if (!v.loaded && subjectData.Situation.AtmosphericFlight())
 			{
-				mainIssue = "background flight";
+				mainIssue = Local.Module_Experiment_issue8;//"background flight"
 				return;
 			}
 
 			RequireResult[] reqResults;
 			if (!prefab.Requirements.TestRequirements(v, out reqResults))
 			{
-				mainIssue = "unmet requirement";
+				mainIssue = Local.Module_Experiment_issue9;//"unmet requirement"
 				return;
 			}
 
 			if (!HasRequiredResources(v, resourceDefs, resources, out mainIssue))
 			{
-				mainIssue = "missing resource";
+				mainIssue = Local.Module_Experiment_issue10;//"missing resource"
 				return;
 			}
 
@@ -498,7 +528,7 @@ namespace KERBALISM
 			Drive drive = GetDrive(vd, hdId, chunkSize, subjectData);
 			if (drive == null)
 			{
-				mainIssue = "no storage space";
+				mainIssue = Local.Module_Experiment_issue11;//"no storage space"
 				return;
 			}
 
@@ -520,7 +550,7 @@ namespace KERBALISM
 
 			if (available <= 0.0)
 			{
-				mainIssue = "no storage space";
+				mainIssue = Local.Module_Experiment_issue11;//"no storage space"
 				return;
 			}
 
@@ -541,7 +571,7 @@ namespace KERBALISM
 
 			if (prefab.ec_rate > 0.0)
 				prodFactor = Math.Min(prodFactor, Lib.Clamp(ec.Amount / (prefab.ec_rate * elapsed_s), 0.0, 1.0));
-			
+
 			foreach (ObjectPair<string, double> p in resourceDefs)
 			{
 				if (p.Value <= 0.0) continue;
@@ -551,7 +581,7 @@ namespace KERBALISM
 
 			if (prodFactor == 0.0)
 			{
-				mainIssue = "missing resource";
+				mainIssue = Local.Module_Experiment_issue10;//"missing resource"
 				return;
 			}
 
@@ -590,9 +620,9 @@ namespace KERBALISM
 			}
 
 			// consume resources
-			ec.Consume(prefab.ec_rate * elapsed_s, "experiment");
+			ec.Consume(prefab.ec_rate * elapsed_s, ResourceBroker.Experiment);
 			foreach (ObjectPair<string, double> p in resourceDefs)
-				resources.Consume(v, p.Key, p.Value * elapsed_s, "experiment");
+				resources.Consume(v, p.Key, p.Value * elapsed_s, ResourceBroker.Experiment);
 
 			if (!prefab.sample_collecting)
 			{
@@ -631,7 +661,7 @@ namespace KERBALISM
 				var ri = res.GetResource(v, p.Key);
 				if (ri.Amount == 0.0)
 				{
-					issue = "missing " + ri.ResourceName;
+					issue = Local.Module_Experiment_issue12.Format(ri.ResourceName);//"missing " + 
 					return false;
 				}
 			}
@@ -663,7 +693,18 @@ namespace KERBALISM
 					State = RunningState.Running;
 				}
 
-				deployAnimator.Play(!Running, false);
+				if (AnimationGroup != null)
+				{
+					// extend automatically, retract manually
+					if (Running && !AnimationGroup.isDeployed)
+						AnimationGroup.DeployModule();
+				}
+				else
+				{
+					deployAnimator.Play(!Running, false);
+					SetDragCubes(Running);
+				}
+
 				GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
 				return State;
 			}
@@ -671,8 +712,9 @@ namespace KERBALISM
 			if (Lib.IsFlight() && !vessel.IsControllable)
 				return State;
 
-			if (deployAnimator.Playing())
-				return State; // nervous clicker? wait for it, goddamnit.
+			// nervous clicker? wait for it, goddamnit.
+			if ((AnimationGroup != null && AnimationGroup.DeployAnimation.isPlaying) || deployAnimator.Playing())
+				return State;
 
 			if (Running)
 			{
@@ -683,7 +725,13 @@ namespace KERBALISM
 				}
 				// stop experiment
 				// plays the deploy animation in reverse
-				Action stop = delegate () { State = RunningState.Stopped; deployAnimator.Play(true, false); };
+				// if an external deploy animation module is used, we don't retract automatically
+				Action stop = delegate ()
+				{
+					State = RunningState.Stopped;
+					deployAnimator.Play(true, false);
+					SetDragCubes(false);
+				};
 
 				// wait for loop animation to stop before deploy animation
 				if (loopAnimator.Playing())
@@ -699,13 +747,25 @@ namespace KERBALISM
 					PostMultipleRunsMessage(ExpInfo.Title, vessel.vesselName);
 					return State;
 				}
+
 				// start experiment
 				// play the deploy animation, when it's done start the loop animation
-				deployAnimator.Play(false, false, delegate ()
+				if (AnimationGroup != null)
 				{
+					if (!AnimationGroup.isDeployed)
+						AnimationGroup.DeployModule();
+
 					State = setForcedRun ? RunningState.Forced : RunningState.Running;
-					loopAnimator.Play(false, true);
-				});
+				}
+				else
+				{
+					deployAnimator.Play(false, false, delegate ()
+					{
+						State = setForcedRun ? RunningState.Forced : RunningState.Running;
+						loopAnimator.Play(false, true);
+						SetDragCubes(true);
+					});
+				}
 			}
 			return State;
 		}
@@ -719,7 +779,6 @@ namespace KERBALISM
 				ProtoSetState(v, prefab, protoModule, expState);
 				return expState;
 			}
-				
 
 			if (!IsRunning(expState))
 			{
@@ -806,7 +865,7 @@ namespace KERBALISM
 #if KSP15_16
 		[KSPEvent(guiActiveUnfocused = true, guiActive = true, guiActiveEditor = true, guiName = "_", active = true)]
 #else
-		[KSPEvent(guiActiveUnfocused = true, guiActive = true, guiActiveEditor = true, guiName = "_", active = true, groupName = "Science", groupDisplayName = "Science")]
+		[KSPEvent(guiActiveUnfocused = true, guiActive = true, guiActiveEditor = true, guiName = "_", active = true, groupName = "Science", groupDisplayName = "#KERBALISM_Group_Science")]//Science
 #endif
 		public void ToggleEvent()
 		{
@@ -816,7 +875,7 @@ namespace KERBALISM
 #if KSP15_16
 		[KSPEvent(guiActiveUnfocused = true, guiActive = true, guiName = "_", active = true)]
 #else
-		[KSPEvent(guiActiveUnfocused = true, guiActive = true, guiName = "_", active = true, groupName = "Science", groupDisplayName = "Science")]
+		[KSPEvent(guiActiveUnfocused = true, guiActive = true, guiName = "_", active = true, groupName = "Science", groupDisplayName = "#KERBALISM_Group_Science")]//Science
 #endif
 		public void ShowPopup()
 		{
@@ -826,7 +885,7 @@ namespace KERBALISM
 #if KSP15_16
 		[KSPEvent(guiActiveUnfocused = true, guiName = "_", active = false)]
 #else
-		[KSPEvent(guiActiveUnfocused = true, guiName = "_", active = false, groupName = "Science", groupDisplayName = "Science")]
+		[KSPEvent(guiActiveUnfocused = true, guiName = "_", active = false, groupName = "Science", groupDisplayName = "#KERBALISM_Group_Science")]//Science
 #endif
 		public void Prepare()
 		{
@@ -844,9 +903,9 @@ namespace KERBALISM
 				Message.Post(
 				  Lib.TextVariant
 				  (
-					"I'm not qualified for this",
-					"I will not even know where to start",
-					"I'm afraid I can't do that"
+					Local.Module_Experiment_Message1,//"I'm not qualified for this"
+					Local.Module_Experiment_Message2,//"I will not even know where to start"
+					Local.Module_Experiment_Message3//"I'm afraid I can't do that"
 				  ),
 				  reset_cs.Warning()
 				);
@@ -855,11 +914,11 @@ namespace KERBALISM
 			didPrepare = true;
 
 			Message.Post(
-			  "Preparation Complete",
+			  Local.Module_Experiment_Message4,//"Preparation Complete"
 			  Lib.TextVariant
 			  (
-				"Ready to go",
-				"Let's start doing some science!"
+				Local.Module_Experiment_Message5,//"Ready to go"
+				Local.Module_Experiment_Message6//"Let's start doing some science!"
 			  )
 			);
 		}
@@ -867,7 +926,7 @@ namespace KERBALISM
 #if KSP15_16
 		[KSPEvent(guiActiveUnfocused = true, guiName = "_", active = false)]
 #else
-		[KSPEvent(guiActiveUnfocused = true, guiName = "_", active = false, groupName = "Science", groupDisplayName = "Science")]
+		[KSPEvent(guiActiveUnfocused = true, guiName = "_", active = false, groupName = "Science", groupDisplayName = "#KERBALISM_Group_Science")]//Science
 #endif
 		public void Reset()
 		{
@@ -887,14 +946,14 @@ namespace KERBALISM
 			// check trait
 			if (!reset_cs.Check(v))
 			{
-				if(showMessage)
+				if (showMessage)
 				{
 					Message.Post(
 					  Lib.TextVariant
 					  (
-						"I'm not qualified for this",
-						"I will not even know where to start",
-						"I'm afraid I can't do that"
+						Local.Module_Experiment_Message1,//"I'm not qualified for this"
+						Local.Module_Experiment_Message2,//"I will not even know where to start"
+						Local.Module_Experiment_Message3//"I'm afraid I can't do that"
 					  ),
 					  reset_cs.Warning()
 					);
@@ -905,18 +964,18 @@ namespace KERBALISM
 			situationId = 0;
 			didPrepare = false;
 
-			if(showMessage)
+			if (showMessage)
 			{
 				Message.Post(
-				  "Reset Done",
+				  Local.Module_Experiment_Message7,//"Reset Done"
 				  Lib.TextVariant
 				  (
-					"It's good to go again",
-					"Ready for the next bit of science"
+					Local.Module_Experiment_Message8,//"It's good to go again"
+					Local.Module_Experiment_Message9//"Ready for the next bit of science"
 				  )
 				);
 			}
-			return true; 
+			return true;
 		}
 
 		// action groups
@@ -939,10 +998,10 @@ namespace KERBALISM
 		{
 			switch (state)
 			{
-				case RunningState.Stopped: return Lib.Color("stopped", Lib.Kolor.Yellow);
-				case RunningState.Running: return Lib.Color("started", Lib.Kolor.Green);
-				case RunningState.Forced: return Lib.Color("forced run", Lib.Kolor.Red);
-				case RunningState.Broken: return Lib.Color("broken", Lib.Kolor.Red);
+				case RunningState.Stopped: return Lib.Color(Local.Module_Experiment_runningstate1, Lib.Kolor.Yellow);//"stopped"
+				case RunningState.Running: return Lib.Color(Local.Module_Experiment_runningstate2, Lib.Kolor.Green);//"started"
+				case RunningState.Forced: return Lib.Color(Local.Module_Experiment_runningstate3, Lib.Kolor.Red);//"forced run"
+				case RunningState.Broken: return Lib.Color(Local.Module_Experiment_runningstate4, Lib.Kolor.Red);//"broken"
 				default: return string.Empty;
 			}
 
@@ -952,12 +1011,12 @@ namespace KERBALISM
 		{
 			switch (status)
 			{
-				case ExpStatus.Stopped: return Lib.Color("stopped", Lib.Kolor.Yellow);
-				case ExpStatus.Running: return Lib.Color("running", Lib.Kolor.Green);
-				case ExpStatus.Forced: return Lib.Color("forced run", Lib.Kolor.Red);
-				case ExpStatus.Waiting: return Lib.Color("waiting", Lib.Kolor.Science);
-				case ExpStatus.Broken: return Lib.Color("broken", Lib.Kolor.Red);
-				case ExpStatus.Issue: return Lib.Color(string.IsNullOrEmpty(issue) ? "issue" : issue, Lib.Kolor.Orange);
+				case ExpStatus.Stopped: return Lib.Color(Local.Module_Experiment_runningstate1, Lib.Kolor.Yellow);//"stopped"
+				case ExpStatus.Running: return Lib.Color(Local.Module_Experiment_runningstate5, Lib.Kolor.Green);//"running"
+				case ExpStatus.Forced: return Lib.Color(Local.Module_Experiment_runningstate3, Lib.Kolor.Red);//"forced run"
+				case ExpStatus.Waiting: return Lib.Color(Local.Module_Experiment_runningstate6, Lib.Kolor.Science);//"waiting"
+				case ExpStatus.Broken: return Lib.Color(Local.Module_Experiment_runningstate4, Lib.Kolor.Red);//"broken"
+				case ExpStatus.Issue: return Lib.Color(string.IsNullOrEmpty(issue) ? Local.Module_Experiment_issue_title : issue, Lib.Kolor.Orange);//"issue"
 				default: return string.Empty;
 			}
 		}
@@ -978,7 +1037,7 @@ namespace KERBALISM
 			if (subjectData != null)
 				return Lib.BuildString(Lib.HumanReadableScience(subjectData.ScienceCollectedTotal), " / ", Lib.HumanReadableScience(subjectData.ScienceMaxValue));
 			else
-				return Lib.Color("none", Lib.Kolor.Science, true);
+				return Lib.Color(Local.Module_Experiment_ScienceValuenone, Lib.Kolor.Science, true);//"none"
 		}
 
 		// specifics support
@@ -989,7 +1048,7 @@ namespace KERBALISM
 			if (Requirements.Requires.Length > 0)
 			{
 				specs.Add(string.Empty);
-				specs.Add(Lib.Color("Requires:", Lib.Kolor.Cyan, true));
+				specs.Add(Lib.Color(Local.Module_Experiment_Requires, Lib.Kolor.Cyan, true));//"Requires:"
 				foreach (RequireDef req in Requirements.Requires)
 					specs.Add(Lib.BuildString("• <b>", ReqName(req.require), "</b>"), ReqValueFormat(req.require, req.value));
 			}
@@ -1002,7 +1061,7 @@ namespace KERBALISM
 			var specs = new Specifics();
 			if (expInfo == null)
 			{
-				specs.Add(Localizer.Format("#KERBALISM_ExperimentInfo_Unknown"));
+				specs.Add(Local.ExperimentInfo_Unknown);
 				return specs;
 			}
 
@@ -1015,24 +1074,24 @@ namespace KERBALISM
 			double expSize = expInfo.DataSize;
 			if (expInfo.SampleMass == 0.0)
 			{
-				specs.Add("Data size", Lib.HumanReadableDataSize(expSize));
-				specs.Add("Data rate", Lib.HumanReadableDataRate(prefab.data_rate));
-				specs.Add("Duration", Lib.HumanReadableDuration(expSize / prefab.data_rate));
+				specs.Add(Local.Module_Experiment_Specifics_info1, Lib.HumanReadableDataSize(expSize));//"Data size"
+				specs.Add(Local.Module_Experiment_Specifics_info2, Lib.HumanReadableDataRate(prefab.data_rate));//"Data rate"
+				specs.Add(Local.Module_Experiment_Specifics_info3, Lib.HumanReadableDuration(expSize / prefab.data_rate));//"Duration"
 			}
 			else
 			{
-				specs.Add("Sample size", Lib.HumanReadableSampleSize(expSize));
-				specs.Add("Sample mass", Lib.HumanReadableMass(expInfo.SampleMass));
+				specs.Add(Local.Module_Experiment_Specifics_info4, Lib.HumanReadableSampleSize(expSize));//"Sample size"
+				specs.Add(Local.Module_Experiment_Specifics_info5, Lib.HumanReadableMass(expInfo.SampleMass));//"Sample mass"
 				if (expInfo.SampleMass > 0.0 && !prefab.sample_collecting)
-					specs.Add("Samples", prefab.sample_amount.ToString("F2"));
-				specs.Add("Duration", Lib.HumanReadableDuration(expSize / prefab.data_rate));
+					specs.Add(Local.Module_Experiment_Specifics_info6, prefab.sample_amount.ToString("F2"));//"Samples"
+				specs.Add(Local.Module_Experiment_Specifics_info7_sample, Lib.HumanReadableDuration(expSize / prefab.data_rate));//"Duration"
 			}
 
 			List<string> situations = expInfo.AvailableSituations();
 			if (situations.Count > 0)
 			{
 				specs.Add(string.Empty);
-				specs.Add(Lib.Color("Situations:", Lib.Kolor.Cyan, true));
+				specs.Add(Lib.Color(Local.Module_Experiment_Specifics_Situations, Lib.Kolor.Cyan, true));//"Situations:"
 				foreach (string s in situations) specs.Add(Lib.BuildString("• <b>", s, "</b>"));
 			}
 
@@ -1043,26 +1102,26 @@ namespace KERBALISM
 			}
 
 			specs.Add(string.Empty);
-			specs.Add(Lib.Color("Needs:", Lib.Kolor.Cyan, true));
+			specs.Add(Lib.Color(Local.Module_Experiment_Specifics_info8, Lib.Kolor.Cyan, true));//"Needs:"
 
-			specs.Add("EC", Lib.HumanReadableRate(prefab.ec_rate));
+			specs.Add(Local.Module_Experiment_Specifics_info9, Lib.HumanReadableRate(prefab.ec_rate));//"EC"
 			foreach (var p in ParseResources(prefab.resources))
 				specs.Add(p.Key, Lib.HumanReadableRate(p.Value));
 
 			if (prefab.crew_prepare.Length > 0)
 			{
 				var cs = new CrewSpecs(prefab.crew_prepare);
-				specs.Add("Preparation", cs ? cs.Info() : "none");
+				specs.Add(Local.Module_Experiment_Specifics_info10, cs ? cs.Info() : Local.Module_Experiment_Specifics_info10_none);//"Preparation""none"
 			}
 			if (prefab.crew_operate.Length > 0)
 			{
 				var cs = new CrewSpecs(prefab.crew_operate);
-				specs.Add("Operation", cs ? cs.Info() : "unmanned");
+				specs.Add(Local.Module_Experiment_Specifics_info11, cs ? cs.Info() : Local.Module_Experiment_Specifics_info11_unmanned);//"Operation""unmanned"
 			}
 			if (prefab.crew_reset.Length > 0)
 			{
 				var cs = new CrewSpecs(prefab.crew_reset);
-				specs.Add("Reset", cs ? cs.Info() : "none");
+				specs.Add(Local.Module_Experiment_Specifics_info12, cs ? cs.Info() : Local.Module_Experiment_Specifics_info12_none);//"Reset""none"
 			}
 
 			return specs;
@@ -1071,7 +1130,7 @@ namespace KERBALISM
 		// part tooltip
 		public override string GetInfo()
 		{
-			if (ExpInfo != null)
+			if (!isConfigurable && ExpInfo != null)
 				return Specs().Info();
 
 			return string.Empty;
@@ -1083,9 +1142,9 @@ namespace KERBALISM
 		public string GetPrimaryField() { return string.Empty; }
 		public Callback<Rect> GetDrawModulePanelCallback() { return null; }
 
-#endregion
+		#endregion
 
-#region utility / other
+		#region utility / other
 
 		public void ReliablityEvent(bool breakdown)
 		{
@@ -1095,12 +1154,12 @@ namespace KERBALISM
 
 		public static void PostMultipleRunsMessage(string title, string vesselName)
 		{
-			Message.Post(Lib.Color("ALREADY RUNNING", Lib.Kolor.Orange, true), "Can't start " + title + " a second time on vessel " + vesselName);
+			Message.Post(Lib.Color(Local.Module_Experiment_MultipleRunsMessage_title, Lib.Kolor.Orange, true), Local.Module_Experiment_MultipleRunsMessage.Format(title,vesselName));//"ALREADY RUNNING""Can't start " +  + " a second time on vessel " + 
 		}
 
-#endregion
+		#endregion
 
-#region sample mass
+		#region sample mass
 
 		internal static double RestoreSampleMass(double restoredAmount, ProtoPartModuleSnapshot m, string id)
 		{
@@ -1137,7 +1196,7 @@ namespace KERBALISM
 
 		// IPartMassModifier
 		public float GetModuleMass(float defaultMass, ModifierStagingSituation sit) {
-			if(Double.IsNaN(remainingSampleMass))
+			if (Double.IsNaN(remainingSampleMass))
 			{
 #if DEBUG || DEVBUILD // this is logspammy, don't do it in releases
 				Lib.Log("ERROR: Experiment remaining sample mass is NaN " + experiment_id);
@@ -1147,6 +1206,51 @@ namespace KERBALISM
 			return (float)remainingSampleMass;
 		}
 		public ModifierChangeWhen GetModuleMassChangeWhen() { return ModifierChangeWhen.CONSTANTLY; }
+
+		#endregion
+
+		#region drag cubes
+
+		private void SetDragCubes(bool deployed)
+		{
+			if (deployAnimator == null)
+				return;
+
+			part.DragCubes.SetCubeWeight(retractedDragCube, deployed ? 0f : 1f);
+			part.DragCubes.SetCubeWeight(deployedDragCube, deployed ? 1f : 0f);
+		}
+
+
+		public bool IsMultipleCubesActive
+		{
+			get
+			{
+				if (deployAnimator == null)
+				{
+					deployAnimator = new Animator(part, anim_deploy);
+					deployAnimator.reversed = anim_deploy_reverse;
+				}
+				return deployAnimator.IsDefined;
+			}
+		}
+
+		public string[] GetDragCubeNames() => new string[] { retractedDragCube, deployedDragCube };
+
+		public void AssumeDragCubePosition(string name)
+		{
+			if (deployAnimator == null)
+			{
+				deployAnimator = new Animator(part, anim_deploy);
+				deployAnimator.reversed = anim_deploy_reverse;
+			}
+
+			if (name == retractedDragCube)
+				deployAnimator.Still(0.0);
+			else if (name == deployedDragCube)
+				deployAnimator.Still(1.0);
+		}
+
+		public bool UsesProceduralDragCubes() => false;
 
 		#endregion
 	}

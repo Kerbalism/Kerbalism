@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 //using System.Linq;
@@ -254,6 +254,8 @@ namespace KERBALISM
 
 		private static readonly Dictionary<string, SubjectData> unknownSubjectDatas = new Dictionary<string, SubjectData>();
 
+		public static readonly Dictionary<string, ScienceSubject> sandboxSubjects = new Dictionary<string, ScienceSubject>();
+
 		public static double uncreditedScience;
 
 		/// <summary>
@@ -387,7 +389,18 @@ namespace KERBALISM
 		{
 			// RnD subjects don't exists in sandbox
 			if (!Science.GameHasRnD)
-				return;
+			{
+				// load sandbox science subjects
+				sandboxSubjects.Clear();
+				if (node.HasNode("sandboxScienceSubjects"))
+				{
+					foreach (var subjectNode in node.GetNode("sandboxScienceSubjects").GetNodes())
+					{
+						ScienceSubject subject = new ScienceSubject(subjectNode);
+						sandboxSubjects.Add(subject.id, subject);
+					}
+				}
+			}
 
 			// load uncredited science (transmission buffer)
 			uncreditedScience = Lib.ConfigValue(node, "uncreditedScience", 0.0);
@@ -415,8 +428,8 @@ namespace KERBALISM
 				}
 			}
 
-			if (ResearchAndDevelopment.Instance == null)
-				Lib.Log("ERROR : ResearchAndDevelopment.Instance is null on subjects load !");
+			//if (ResearchAndDevelopment.Instance == null)
+			//	Lib.Log("ERROR : ResearchAndDevelopment.Instance is null on subjects load !");
 
 			// remove unknown subjects from the database
 			foreach (SubjectData subjectData in unknownSubjectDatas.Values)
@@ -436,17 +449,27 @@ namespace KERBALISM
 
 
 			// find them again
-			foreach (ScienceSubject stockSubject in ResearchAndDevelopment.GetSubjects())
+			IEnumerable<ScienceSubject> stockSubjects;
+			if (Science.GameHasRnD)
+				stockSubjects = ResearchAndDevelopment.GetSubjects();
+			else
+				stockSubjects = sandboxSubjects.Values;
+
+			foreach (ScienceSubject stockSubject in stockSubjects)
 				if (!knownStockSubjectsId.Contains(stockSubject.id))
 					GetSubjectDataFromStockId(stockSubject.id, stockSubject);
 		}
 
 		public static void Save(ConfigNode node)
 		{
-			// RnD subjects don't exists in sandbox
+			// RnD subjects don't exists in sandbox, so we have our own subject persistence
 			if (!Science.GameHasRnD)
-				return;
-
+			{
+				ConfigNode sandboxSubjectsNode = node.AddNode("sandboxScienceSubjects");
+				foreach (ScienceSubject subject in sandboxSubjects.Values)
+					subject.Save(sandboxSubjectsNode.AddNode("subject"));
+			}
+				
 			// save uncredited science (transmission buffer)
 			node.AddValue("uncreditedScience", uncreditedScience);
 

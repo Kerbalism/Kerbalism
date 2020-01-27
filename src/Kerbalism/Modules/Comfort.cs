@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using KSP.Localization;
@@ -37,7 +37,7 @@ namespace KERBALISM
 			return specs;
 		}
 
-		public override string GetModuleDisplayName() { return "Comfort"; }
+		public override string GetModuleDisplayName() { return Local.Module_Comfort; }//"Comfort"
 	}
 
 
@@ -126,7 +126,7 @@ namespace KERBALISM
 					if (!m.isEnabled) continue;
 
 					// comfort
-					if (m.moduleName == "Comfort")
+					if (m.moduleName == "Comfort") 
 					{
 						Comfort c = m as Comfort;
 						switch (c.bonus)
@@ -163,28 +163,28 @@ namespace KERBALISM
 
 		public string Tooltip()
 		{
-			string yes = Lib.BuildString("<b><color=#00ff00>", Localizer.Format("#KERBALISM_Generic_YES"), " </color></b>");
-			string no = Lib.BuildString("<b><color=#ffaa00>", Localizer.Format("#KERBALISM_Generic_NO"), " </color></b>");
+			string yes = Lib.BuildString("<b><color=#00ff00>", Local.Generic_YES, " </color></b>");
+			string no = Lib.BuildString("<b><color=#ffaa00>", Local.Generic_NO, " </color></b>");
 			return Lib.BuildString
 			(
 				"<align=left />",
-				String.Format("{0,-14}\t{1}\n", Localizer.Format("#KERBALISM_Comfort_firmground"), firm_ground ? yes : no),
-				String.Format("{0,-14}\t{1}\n", Localizer.Format("#KERBALISM_Comfort_exercise"), exercise ? yes : no),
-				String.Format("{0,-14}\t{1}\n", Localizer.Format("#KERBALISM_Comfort_notalone"), not_alone ? yes : no),
-				String.Format("{0,-14}\t{1}\n", Localizer.Format("#KERBALISM_Comfort_callhome"), call_home ? yes : no),
-				String.Format("{0,-14}\t{1}\n", Localizer.Format("#KERBALISM_Comfort_panorama"), panorama ? yes : no),
-				String.Format("{0,-14}\t{1}\n", Localizer.Format("#KERBALISM_Comfort_plants"), plants ? yes : no),
-				String.Format("<i>{0,-14}</i>\t{1}", Localizer.Format("#KERBALISM_Comfort_factor"), Lib.HumanReadablePerc(factor))
+				String.Format("{0,-14}\t{1}\n", Local.Comfort_firmground, firm_ground ? yes : no),
+				String.Format("{0,-14}\t{1}\n", Local.Comfort_exercise, exercise ? yes : no),
+				String.Format("{0,-14}\t{1}\n", Local.Comfort_notalone, not_alone ? yes : no),
+				String.Format("{0,-14}\t{1}\n", Local.Comfort_callhome, call_home ? yes : no),
+				String.Format("{0,-14}\t{1}\n", Local.Comfort_panorama, panorama ? yes : no),
+				String.Format("{0,-14}\t{1}\n", Local.Comfort_plants, plants ? yes : no),
+				String.Format("<i>{0,-14}</i>\t{1}", Local.Comfort_factor, Lib.HumanReadablePerc(factor))
 			);
 		}
 
 		public string Summary()
 		{
-			if (factor >= 0.99) return "ideal";
-			else if (factor >= 0.66) return "good";
-			else if (factor >= 0.33) return "modest";
-			else if (factor > 0.1) return "poor";
-			else return "none";
+			if (factor >= 0.99) return Local.Module_Comfort_Summary1;//"ideal"
+			else if (factor >= 0.66) return Local.Module_Comfort_Summary2;//"good"
+			else if (factor >= 0.33) return Local.Module_Comfort_Summary3;//"modest"
+			else if (factor > 0.1) return Local.Module_Comfort_Summary4;//"poor"
+			else return Local.Module_Comfort_Summary5;//"none"
 		}
 
 		public bool firm_ground;

@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System;
 using System.Collections;
 
@@ -9,6 +9,8 @@ namespace KERBALISM
 		private Animation anim;
 		private readonly string name;
 		public bool reversed = false;
+
+		public bool IsDefined => anim != null;
 
 		public Animator(Part p, string anim_name)
 		{

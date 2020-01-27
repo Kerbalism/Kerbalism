@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 
@@ -118,10 +118,10 @@ namespace KERBALISM
 			return Lib.BuildString
 			(
 			  "<b>",
-			  (trait.Length == 0 ? "Crew" : trait),
+			  (trait.Length == 0 ? Local.SCIENCEARCHIVE_info_Crew : trait),//"Crew"
 			  "</b> ",
-			  (level == 0 ? string.Empty : "of level <b>" + level + "</b> "),
-			  "is required"
+			  (level == 0 ? string.Empty : Local.SCIENCEARCHIVE_info_levelReq + " <b>" + level + "</b> "),//of level
+			  Local.SCIENCEARCHIVE_info_Req//"is required"
 			);
 		}
 
@@ -130,9 +130,9 @@ namespace KERBALISM
 		/// </summary>
 		public string Info()
 		{
-			if (!enabled) return "no";
-			else if (trait.Length == 0) return "anyone";
-			else return Lib.BuildString(trait, (level == 0 ? string.Empty : " (level: " + level + ")"));
+			if (!enabled) return Local.SCIENCEARCHIVE_info_no;//"no"
+			else if (trait.Length == 0) return Local.SCIENCEARCHIVE_info_anyone;//"anyone"
+			else return Lib.BuildString(trait, (level == 0 ? string.Empty : " (" + Local.SCIENCEARCHIVE_info_level + " " + level + ")"));//"level:"
 		}
 
 		// can check if enabled by bool comparison

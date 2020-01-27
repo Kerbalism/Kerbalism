@@ -1,12 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 
 namespace KERBALISM
 {
-
-
 	public class SupplyData
 	{
 		public SupplyData()
@@ -25,34 +23,36 @@ namespace KERBALISM
 		}
 
 		public uint message;  // used to avoid sending messages multiple times
-		public List<ResourceBroker> ResourceBrokers { get; private set; } = new List<ResourceBroker>();
+		public List<ResourceBrokerRate> ResourceBrokers { get; private set; } = new List<ResourceBrokerRate>();
+		public static string LocAveragecache;
 
-		public struct ResourceBroker
+		public class ResourceBrokerRate
 		{
-			public string name;
+			public ResourceBroker broker;
 			public double rate;
-			public ResourceBroker(string name, double amount)
+			public ResourceBrokerRate(ResourceBroker broker, double amount)
 			{
-				this.name = name;
+				this.broker = broker;
 				this.rate = amount;
 			}
 		}
 
-		public void UpdateResourceBrokers(Dictionary<string, double> brokersResAmount, Dictionary<string, double> ruleBrokersRate, double unsupportedBrokersRate, double elapsedSeconds)
+		public void UpdateResourceBrokers(Dictionary<ResourceBroker, double> brokersResAmount, Dictionary<ResourceBroker, double> ruleBrokersRate, double unsupportedBrokersRate, double elapsedSeconds)
 		{
 			ResourceBrokers.Clear();
 
-			foreach (KeyValuePair<string, double> p in ruleBrokersRate)
+			foreach (KeyValuePair<ResourceBroker, double> p in ruleBrokersRate)
 			{
-				ResourceBrokers.Add(new ResourceBroker(Lib.BuildString(p.Key, " (avg.)"), p.Value));
+				ResourceBroker broker = ResourceBroker.GetOrCreate(p.Key.Id + "Avg", p.Key.Category, Lib.BuildString(p.Key.Title, " (", Local.Generic_AVERAGE, ")"));
+				ResourceBrokers.Add(new ResourceBrokerRate(broker, p.Value));
 			}
-			foreach (KeyValuePair<string, double> p in brokersResAmount)
+			foreach (KeyValuePair<ResourceBroker, double> p in brokersResAmount)
 			{
-				ResourceBrokers.Add(new ResourceBroker(p.Key, p.Value / elapsedSeconds));
+				ResourceBrokers.Add(new ResourceBrokerRate(p.Key, p.Value / elapsedSeconds));
 			}
 			if (unsupportedBrokersRate != 0.0)
 			{
-				ResourceBrokers.Add(new ResourceBroker("others", unsupportedBrokersRate)); 
+				ResourceBrokers.Add(new ResourceBrokerRate(ResourceBroker.Generic, unsupportedBrokersRate)); 
 			}
 		}
 	}
