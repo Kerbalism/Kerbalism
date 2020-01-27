@@ -269,7 +269,7 @@ namespace KERBALISM
 			}
 
 			foreach (SubjectData overridenSubject in IncludedSubjects)
-				scienceRetrieved += overridenSubject.RetrieveScience(scienceValue, showMessage, fromVessel);
+				scienceRetrieved += overridenSubject.RetrieveScience(scienceValue, showMessage && overridenSubject.TimesCompleted == 0, fromVessel);
 
 			return scienceRetrieved;
 		}
