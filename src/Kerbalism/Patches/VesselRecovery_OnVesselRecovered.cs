@@ -83,7 +83,7 @@ namespace KERBALISM
 					}
 					else
 					{
-						scienceToCredit += file.subjectData.RetrieveScience(subjectValue, pv);
+						scienceToCredit += file.subjectData.RetrieveScience(subjectValue, false, pv);
 
 						labels.Add(new DialogGUILabel(Lib.BuildString(
 							Lib.Color("+ " + subjectValue.ToString("F1"), Lib.Kolor.Science),
@@ -109,7 +109,7 @@ namespace KERBALISM
 					}
 					else
 					{
-						scienceToCredit += sample.subjectData.RetrieveScience(subjectValue, pv);
+						scienceToCredit += sample.subjectData.RetrieveScience(subjectValue, false, pv);
 
 						labels.Add(new DialogGUILabel(Lib.BuildString(
 							Lib.Color("+ " + subjectValue.ToString("F1"), Lib.Kolor.Science),

@@ -318,7 +318,7 @@ namespace KERBALISM
 
 			foreach (ExperimentInfo experimentInfo in ExperimentInfos)
 			{
-				experimentInfo.SetupOverrides();
+				experimentInfo.SetupIncludedExperiments();
 			}
 
 			Lib.Log("ScienceDB init done : " + subjectCount + " subjects found");
@@ -337,6 +337,28 @@ namespace KERBALISM
 					{
 						ScienceSubject subject = new ScienceSubject(subjectNode);
 						sandboxSubjects.Add(subject.id, subject);
+					}
+				}
+			}
+			else
+			{
+				// Load API subjects (require RnD)
+				subjectsReceivedBuffer.Clear();
+				subjectsReceivedValueBuffer.Clear();
+				ConfigNode APISubjects = new ConfigNode();
+				if (node.TryGetNode("APISubjects", ref APISubjects))
+				{
+					foreach (ConfigNode subjectNode in APISubjects.GetNodes("Subject"))
+					{
+						string subjectId = Lib.ConfigValue(subjectNode, "subjectId", string.Empty);
+						ScienceSubject subject = ResearchAndDevelopment.GetSubjectByID(subjectId);
+						if (subject == null)
+						{
+							Lib.Log($"Warning : API subject '{subjectId}' not found in ResearchAndDevelopment");
+							continue;
+						}
+						subjectsReceivedBuffer.Add(subject);
+						subjectsReceivedValueBuffer.Add(Lib.ConfigValue(subjectNode, "science", 0.0));
 					}
 				}
 			}
@@ -407,7 +429,21 @@ namespace KERBALISM
 				foreach (ScienceSubject subject in sandboxSubjects.Values)
 					subject.Save(sandboxSubjectsNode.AddNode("subject"));
 			}
-				
+			else
+			{
+				// save API subjects (only exists if game has RnD)
+				if (subjectsReceivedBuffer.Count > 0)
+				{
+					ConfigNode APISubjects = node.AddNode("APISubjects");
+					for (int i = 0; i < subjectsReceivedBuffer.Count; i++)
+					{
+						ConfigNode subjectNode = APISubjects.AddNode("Subject");
+						subjectNode.AddValue("subjectId", subjectsReceivedBuffer[i].id);
+						subjectNode.AddValue("science", subjectsReceivedValueBuffer[i]);
+					}
+				}
+			}
+
 			// save uncredited science (transmission buffer)
 			node.AddValue("uncreditedScience", uncreditedScience);
 
@@ -423,19 +459,43 @@ namespace KERBALISM
 		// We don't use "TransactionReasons.ScienceTransmission" because AddScience fire multiple events not meant to be fired continuously
 		// this avoid many side issues (ex : chatterer transmit sound playing continously, strategia "+0.0 science" popup...)
 		public static double uncreditedScience;
-		private static double realTimeElapsed = 0.0;
 
-		public static void CreditScienceBuffer(double elapsed_s)
+		// this is for the onSubjectsReceived API event
+		public static List<ScienceSubject> subjectsReceivedBuffer = new List<ScienceSubject>();
+		public static List<double> subjectsReceivedValueBuffer = new List<double>();
+
+		private static double realTimeElapsed = 0.0;
+		private static double realTimeElapsedAPI = 0.0;
+		private static double gameTimeElapsedAPI = 0.0;
+		public static void CreditScienceBuffers(double elapsed_s)
 		{
 			if (!Science.GameHasRnD)
 				return;
 
-			realTimeElapsed += TimeWarp.CurrentRate > 0f ? elapsed_s / TimeWarp.CurrentRate : 0f;
-			if (uncreditedScience > 0.1 && realTimeElapsed > 2.5)
+			if (!API.preventScienceCrediting)
 			{
-				ResearchAndDevelopment.Instance.AddScience((float)uncreditedScience, TransactionReasons.None);
-				uncreditedScience = 0.0;
-				realTimeElapsed = 0.0;
+				realTimeElapsed += TimeWarp.CurrentRate > 0f ? elapsed_s / TimeWarp.CurrentRate : 0f;
+				if (uncreditedScience > 0.1 && realTimeElapsed > 2.5)
+				{
+					ResearchAndDevelopment.Instance.AddScience((float)uncreditedScience, TransactionReasons.None);
+					uncreditedScience = 0.0;
+					realTimeElapsed = 0.0;
+				}
+			}
+
+			if (API.subjectsReceivedEventEnabled)
+			{
+				gameTimeElapsedAPI += elapsed_s;
+				realTimeElapsedAPI += TimeWarp.CurrentRate > 0f ? elapsed_s / TimeWarp.CurrentRate : 0f;
+
+				if (subjectsReceivedBuffer.Count > 0 && (gameTimeElapsedAPI > API.subjectsReceivedEventGameTimeInterval || realTimeElapsedAPI > API.subjectsReceivedEventRealTimeInterval))
+				{
+					API.onSubjectsReceived.Fire(subjectsReceivedBuffer, subjectsReceivedValueBuffer);
+					subjectsReceivedBuffer.Clear();
+					subjectsReceivedValueBuffer.Clear();
+					gameTimeElapsedAPI = 0.0;
+					realTimeElapsedAPI = 0.0;
+				}
 			}
 		}
 

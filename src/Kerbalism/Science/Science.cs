@@ -162,7 +162,7 @@ namespace KERBALISM
 
 				if (xmitScienceValue > 0.0)
 				{
-					scienceCredited += xmitFile.file.subjectData.RetrieveScience(xmitScienceValue);
+					scienceCredited += xmitFile.file.subjectData.RetrieveScience(xmitScienceValue, true, v.protoVessel, xmitFile.file);
 				}
 			}
 
