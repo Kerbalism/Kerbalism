@@ -251,8 +251,10 @@ namespace KERBALISM
 
 				if (stockDef.requireAtmosphere)
 					expInfoNode.AddValue("BodyAllowed", "Atmospheric");
+#if !KSP15_16
 				else if (stockDef.requireNoAtmosphere)
 					expInfoNode.AddValue("BodyNotAllowed", "Atmospheric");
+#endif
 			}
 
 			ExpBodyConditions = new BodyConditions(expInfoNode);
