@@ -199,7 +199,7 @@ namespace KERBALISM
 			VesselData vd;
 			if (!vessels.TryGetValue(protoVessel.vesselID, out vd))
 			{
-				Lib.Log("WARNING : VesselData for protovessel " + protoVessel.vesselName + ", ID=" + protoVessel.vesselID + " doesn't exist !");
+				Lib.Log("VesselData for protovessel " + protoVessel.vesselName + ", ID=" + protoVessel.vesselID + " doesn't exist !", Lib.LogLevel.Warning);
 				vd = new VesselData(protoVessel, null);
 				vessels.Add(protoVessel.vesselID, vd);
 			}

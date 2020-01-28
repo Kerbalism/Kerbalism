@@ -32,6 +32,13 @@ namespace KERBALISM
 		{
 			this.subjectData = subjectData;
 			this.size = size;
+
+			if (double.IsNaN(size))
+			{
+				Lib.LogStack($"Sample has a NaN size on creation : {subjectData.DebugStateInfo}", Lib.LogLevel.Error);
+				this.size = 0.0;
+			}
+
 			this.useStockCrediting = useStockCrediting;
 			if (string.IsNullOrEmpty(resultText))
 				this.resultText = ResearchAndDevelopment.GetResults(subjectData.StockSubjectId);
@@ -55,6 +62,12 @@ namespace KERBALISM
 				return null;
 
 			double size = Lib.ConfigValue(node, "size", 0.0);
+			if (double.IsNaN(size))
+			{
+				Lib.LogStack($"Sample has a NaN size on load : {subjectData.DebugStateInfo}", Lib.LogLevel.Error);
+				return null;
+			}
+
 			string resultText = Lib.ConfigValue(node, "resultText", "");
 			bool useStockCrediting = Lib.ConfigValue(node, "useStockCrediting", false);
 
@@ -75,6 +88,12 @@ namespace KERBALISM
 				return null;
 
 			double size = Lib.ConfigValue(node, "size", 0.0);
+			if (double.IsNaN(size))
+			{
+				Lib.LogStack($"Sample has a NaN size on load : {subjectData.DebugStateInfo}", Lib.LogLevel.Error);
+				return null;
+			}
+
 			string resultText = Lib.ConfigValue(node, "resultText", "");
 			bool useStockCrediting = Lib.ConfigValue(node, "useStockCrediting", false);
 

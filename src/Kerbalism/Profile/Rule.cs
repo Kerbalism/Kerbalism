@@ -32,10 +32,10 @@ namespace KERBALISM
 			relax_message = Lib.ConfigValue(node, "relax_message", string.Empty);
 			broker = ResourceBroker.GetOrCreate(name, ResourceBroker.BrokerCategory.Kerbal, title);
 
-			if (warning_message.Length > 0 && warning_message[0] == '#') Lib.Log("Broken translation: " + warning_message);
-			if (danger_message.Length > 0 && danger_message[0] == '#') Lib.Log("Broken translation: " + danger_message);
-			if (fatal_message.Length > 0 && fatal_message[0] == '#') Lib.Log("Broken translation: " + fatal_message);
-			if (relax_message.Length > 0 && relax_message[0] == '#') Lib.Log("Broken translation: " + relax_message);
+			if (warning_message.Length > 0 && warning_message[0] == '#') Lib.Log("Broken translation: " + warning_message, Lib.LogLevel.Warning);
+			if (danger_message.Length > 0 && danger_message[0] == '#') Lib.Log("Broken translation: " + danger_message, Lib.LogLevel.Warning);
+			if (fatal_message.Length > 0 && fatal_message[0] == '#') Lib.Log("Broken translation: " + fatal_message, Lib.LogLevel.Warning);
+			if (relax_message.Length > 0 && relax_message[0] == '#') Lib.Log("Broken translation: " + relax_message, Lib.LogLevel.Warning);
 
             // check that name is specified
             if (name.Length == 0) throw new Exception("skipping unnamed rule");

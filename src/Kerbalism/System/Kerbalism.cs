@@ -143,7 +143,7 @@ namespace KERBALISM
 				catch (Exception e)
 				{
 					string fatalError = "FATAL ERROR : Kerbalism core init has failed :" + "\n" + e.ToString();
-					Lib.Log(fatalError);
+					Lib.Log(fatalError, Lib.LogLevel.Error);
 					LoadFailedPopup(fatalError);
 				}
 
@@ -170,7 +170,7 @@ namespace KERBALISM
 				catch (Exception e)
 				{
 					string fatalError = "FATAL ERROR : Kerbalism save game init has failed :" + "\n" + e.ToString();
-					Lib.Log(fatalError);
+					Lib.Log(fatalError, Lib.LogLevel.Error);
 					LoadFailedPopup(fatalError);
 				}
 
@@ -199,7 +199,7 @@ namespace KERBALISM
 			catch (Exception e)
 			{
 				string fatalError = "FATAL ERROR : Kerbalism save game load has failed :" + "\n" + e.ToString();
-				Lib.Log(fatalError);
+				Lib.Log(fatalError, Lib.LogLevel.Error);
 				LoadFailedPopup(fatalError);
 			}
 

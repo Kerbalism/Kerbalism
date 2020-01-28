@@ -35,8 +35,8 @@ namespace KERBALISM
 					// check version is above 1.9, warn users if they are using an old version of RemoteTech
 					if (!((a.versionMajor >= 1) && (a.versionMinor >= 9)))
 					{
-						Lib.Log("**WARNING** RemoteTech version is below v1.9 - Kerbalism's signal system will not operate correctly with the version" +
-							" of RemoteTech currently installed." + Environment.NewLine + "Please update your installation of RemoteTech to the latest version.");
+						Lib.Log("RemoteTech version is below v1.9 - Kerbalism's signal system will not operate correctly with the version" +
+							" of RemoteTech currently installed." + Environment.NewLine + "Please update your installation of RemoteTech to the latest version.", Lib.LogLevel.Warning);
 					}
 					break;
 				}
