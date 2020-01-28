@@ -16,9 +16,10 @@ namespace KERBALISM.KsmGui
 			if (tooltipText != null) SetTooltipText(text);
 		}
 
-		public void SetText(string text)
+		public string Text
 		{
-			TextObject.SetText(text);
+			get => TextObject.Text;
+			set => TextObject.Text = value;
 		}
 	}
 }

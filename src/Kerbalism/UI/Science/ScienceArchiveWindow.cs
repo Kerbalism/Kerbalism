@@ -176,7 +176,7 @@ namespace KERBALISM
 			expInfoAndSubjects.experimentSubjectList.KnownSubjectsToggle.SetOnState(currentExperiment.experimentSubjectList.KnownSubjectsToggle.IsOn, true);
 			currentExperiment = expInfoAndSubjects;
 			expInfoAndSubjects.experimentSubjectList.Enabled = true;
-			expInfoText.SetText(expInfoAndSubjects.expInfo.ModuleInfo);
+			expInfoText.Text = expInfoAndSubjects.expInfo.ModuleInfo;
 			window.RebuildLayout();
 		}
 

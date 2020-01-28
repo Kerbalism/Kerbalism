@@ -130,7 +130,7 @@ namespace KERBALISM
 					}
 					else
 					{
-						drive = vessel.KerbalismData().GetPartData(part.flightID).Drive;
+						drive = pd.Drive;
 					}
 				}
 			}

@@ -148,11 +148,6 @@ namespace KERBALISM
 				// remove science collected (ignoring final science value clamped to subject completion)
 				xmitFile.file.subjectData.RemoveScienceCollectedInFlight(xmitScienceValue);
 
-				// fire subject completed events
-				int timesCompleted = xmitFile.file.subjectData.UpdateSubjectCompletion(xmitScienceValue);
-				if (timesCompleted > 0)
-					SubjectXmitCompleted(xmitFile.file, timesCompleted, v);
-
 				// save transmit rate for the file, and add it to the VesselData list of files being transmitted
 				if (xmitFile.isInWarpCache && xmitFile.realDriveFile != null)
 				{
@@ -165,16 +160,9 @@ namespace KERBALISM
 					vd.filesTransmitted.Add(xmitFile.file);
 				}
 
-				// clamp science value to subject max value
-				xmitScienceValue = Math.Min(xmitScienceValue, xmitFile.file.subjectData.ScienceRemainingToRetrieve);
-
 				if (xmitScienceValue > 0.0)
 				{
-					// add credits
-					scienceCredited += xmitScienceValue;
-
-					// credit the subject
-					xmitFile.file.subjectData.AddScienceToRnDSubject(xmitScienceValue);
+					scienceCredited += xmitFile.file.subjectData.RetrieveScience(xmitScienceValue, true, v.protoVessel, xmitFile.file);
 				}
 			}
 
@@ -186,22 +174,6 @@ namespace KERBALISM
 			double transmittedCapacity = totalTransmitCapacity - remainingTransmitCapacity;
 			double transmissionCost = (vd.Connection.ec - vd.Connection.ec_idle) * (transmittedCapacity / vd.Connection.rate);
 			ec.Consume(transmissionCost, ResourceBroker.CommsXmit);
-
-			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Science.Update-AddScience");
-
-			// Add science points, but wait until we have at least 0.1 points to add because AddScience is VERY slow
-			// We don't use "TransactionReasons.ScienceTransmission" because AddScience fire multiple events not meant to be fired continuously
-			// this avoid many side issues (ex : chatterer transmit sound playing continously, strategia "+0.0 science" popup...)
-			ScienceDB.uncreditedScience += scienceCredited;
-			if (ScienceDB.uncreditedScience > 0.1)
-			{
-				if (GameHasRnD)
-					ResearchAndDevelopment.Instance.AddScience((float)ScienceDB.uncreditedScience, TransactionReasons.None);
-				
-				ScienceDB.uncreditedScience = 0.0;
-			}
-
-			UnityEngine.Profiling.Profiler.EndSample();
 		}
 
 		private static void GetFilesToTransmit(Vessel v, VesselData vd)
@@ -264,41 +236,6 @@ namespace KERBALISM
 
 			}
 			UnityEngine.Profiling.Profiler.EndSample();
-		}
-
-
-
-		private static void SubjectXmitCompleted(File file, int timesCompleted, Vessel v)
-		{
-			// fire science transmission game event. This is used by stock contracts and a few other things.
-			GameEvents.OnScienceRecieved.Fire(timesCompleted == 1 ? (float)file.subjectData.ScienceMaxValue : 0f, file.subjectData.RnDSubject, v.protoVessel, false);
-
-			// fire our API event
-			// Note (GOT) : disabled, nobody is using it and i'm not sure what is the added value compared to the stock event,
-			// unless we fire it for every transmission tick, and in this case this is a very bad idea from a performance standpoint
-			// API.OnScienceReceived.Notify(credits, subject, pv, true);
-
-			// notify the player
-			string subjectResultText;
-			if (string.IsNullOrEmpty(file.resultText))
-			{
-				subjectResultText = Lib.TextVariant(
-					Local.SciencresultText1,//"Our researchers will jump on it right now"
-					Local.SciencresultText2,//"This cause some excitement"
-					Local.SciencresultText3,//"These results are causing a brouhaha in R&D"
-					Local.SciencresultText4,//"Our scientists look very confused"
-					Local.SciencresultText5);//"The scientists won't believe these readings"
-			}
-			else
-			{
-				subjectResultText = file.resultText;
-			}
-			subjectResultText = Lib.WordWrapAtLength(subjectResultText, 70);
-			Message.Post(Lib.BuildString(
-				file.subjectData.FullTitle,
-				" ",Local.Scienctransmitted_title,"\n",//transmitted
-				timesCompleted == 1 ? Lib.HumanReadableScience(file.subjectData.ScienceMaxValue, false) : Lib.Color(Local.Nosciencegain, Lib.Kolor.Orange, true)),//"no science gain : we already had this data"
-				subjectResultText);
 		}
 
 		// return module acting as container of an experiment

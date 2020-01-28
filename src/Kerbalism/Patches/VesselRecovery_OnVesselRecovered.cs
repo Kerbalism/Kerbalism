@@ -73,9 +73,8 @@ namespace KERBALISM
 			{
 				foreach (File file in drive.files.Values)
 				{
-					double totalScienceValue = file.subjectData.ScienceValue(file.size);
-					file.subjectData.RemoveScienceCollectedInFlight(totalScienceValue);
-					file.subjectData.UpdateSubjectCompletion(totalScienceValue);
+					double subjectValue = file.subjectData.ScienceValue(file.size);
+					file.subjectData.RemoveScienceCollectedInFlight(subjectValue);
 
 					if (file.useStockCrediting)
 					{
@@ -84,10 +83,8 @@ namespace KERBALISM
 					}
 					else
 					{
-						double subjectValue = file.subjectData.ScienceValue(file.size, true);
-						file.subjectData.AddScienceToRnDSubject(subjectValue);
-						scienceToCredit += subjectValue;
-						GameEvents.OnScienceRecieved.Fire((float)subjectValue, file.subjectData.RnDSubject, pv, false); // needed for contracts
+						scienceToCredit += file.subjectData.RetrieveScience(subjectValue, false, pv);
+
 						labels.Add(new DialogGUILabel(Lib.BuildString(
 							Lib.Color("+ " + subjectValue.ToString("F1"), Lib.Kolor.Science),
 							" (",
@@ -98,15 +95,12 @@ namespace KERBALISM
 							file.subjectData.FullTitle
 							)));
 					}
-
-					
 				}
 
 				foreach (Sample sample in drive.samples.Values)
 				{
-					double totalScienceValue = sample.subjectData.ScienceValue(sample.size);
-					sample.subjectData.RemoveScienceCollectedInFlight(totalScienceValue);
-					sample.subjectData.UpdateSubjectCompletion(totalScienceValue);
+					double subjectValue = sample.subjectData.ScienceValue(sample.size);
+					sample.subjectData.RemoveScienceCollectedInFlight(subjectValue);
 
 					if (sample.useStockCrediting)
 					{
@@ -115,10 +109,8 @@ namespace KERBALISM
 					}
 					else
 					{
-						double subjectValue = sample.subjectData.ScienceValue(sample.size, true);
-						sample.subjectData.AddScienceToRnDSubject(subjectValue);
-						scienceToCredit += subjectValue;
-						GameEvents.OnScienceRecieved.Fire((float)subjectValue, sample.subjectData.RnDSubject, pv, false); // needed for contracts
+						scienceToCredit += sample.subjectData.RetrieveScience(subjectValue, false, pv);
+
 						labels.Add(new DialogGUILabel(Lib.BuildString(
 							Lib.Color("+ " + subjectValue.ToString("F1"), Lib.Kolor.Science),
 							" (",
@@ -136,8 +128,6 @@ namespace KERBALISM
 
 			if (scienceToCredit > 0.0)
 			{
-				ResearchAndDevelopment.Instance.AddScience((float)scienceToCredit, TransactionReasons.VesselRecovery);
-
 				// ideally we should hack the stock dialog to add the little science widgets to it but I'm lazy
 				// plus it looks like crap anyway
 				PopupDialog.SpawnPopupDialog

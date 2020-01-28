@@ -203,6 +203,9 @@ namespace KERBALISM
 				return;
 			}
 
+			Actions["StartAction"].guiName = Local.Generic_START + ": " + ExpInfo.Title;
+			Actions["StopAction"].guiName = Local.Generic_STOP + ": " + ExpInfo.Title;
+
 			if (Lib.IsFlight())
 			{
 				foreach (var hd in part.FindModulesImplementing<HardDrive>())

@@ -349,7 +349,7 @@ namespace KERBALISM
 
 			public void UpdateText()
 			{
-				subjectText?.SetText(GetText());
+				if (subjectText != null) subjectText.Text = GetText();
 			}
 
 			public string GetText()
