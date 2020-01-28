@@ -67,6 +67,8 @@ namespace KERBALISM
 		/// <summary> percentage [0;1] of science collected. </summary>
 		public double PercentCollectedTotal => ScienceMaxValue == 0.0 ? 0.0 : (ScienceCollectedInFlight / ScienceMaxValue) + PercentRetrieved;
 
+		public string DebugStateInfo => $"{FullTitle} :\nExistsInRnD={ExistsInRnD} - ScienceMaxValue={ScienceMaxValue} - SciencePerMB={SciencePerMB} - ScienceCollectedInFlight={ScienceCollectedInFlight} - RnDSubject.science={RnDSubject?.science}";
+
 		/// <summary> science value for the given data size </summary>
 		public double ScienceValue(double dataSize, bool clampByScienceRetrieved = false, bool clampByScienceRetrievedAndCollected = false)
 		{

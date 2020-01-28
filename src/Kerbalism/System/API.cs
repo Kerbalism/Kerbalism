@@ -676,7 +676,7 @@ namespace KERBALISM
 			{
 				if(handler == null)
 				{
-					Lib.Log("Error: Kerbalism CommInfo.Add called with null handler");
+					Lib.Log("Kerbalism CommInfo.Add called with null handler", Lib.LogLevel.Error);
 					return;
 				}
 				//We only add it if it isn't already added. Just in case.

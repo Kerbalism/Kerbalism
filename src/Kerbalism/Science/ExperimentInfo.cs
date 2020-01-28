@@ -110,7 +110,7 @@ namespace KERBALISM
 				// make sure we don't produce NaN values down the line because of odd/wrong configs
 				if (DataSize <= 0.0)
 				{
-					Lib.Log("ERROR: " + ExperimentId + " has DataSize=" + DataSize + ", your configuration is broken!");
+					Lib.Log(ExperimentId + " has DataSize=" + DataSize + ", your configuration is broken!", Lib.LogLevel.Warning);
 					DataSize = 1.0;
 				}
 				MassPerMB = SampleMass / DataSize;
@@ -155,7 +155,7 @@ namespace KERBALISM
 				}
 				else
 				{
-					Lib.Log("ERROR : Experiment definition `{0}` has unknown VirtualBiome={1}", ExperimentId, virtualBiomeStr);
+					Lib.Log("Experiment definition `{0}` has unknown VirtualBiome={1}", Lib.LogLevel.Warning, ExperimentId, virtualBiomeStr);
 				}
 			}
 
@@ -193,7 +193,7 @@ namespace KERBALISM
 					}
 					else
 					{
-						Lib.Log("WARNING : Experiment definition `{0}` has unknown situation : `{1}`", ExperimentId, sitAtBiome[0]);
+						Lib.Log("Experiment definition `{0}` has unknown situation : `{1}`", Lib.LogLevel.Warning, ExperimentId, sitAtBiome[0]);
 					}
 				}
 			}
@@ -205,7 +205,7 @@ namespace KERBALISM
 
 			if (situationMask == 0)
 			{
-				Lib.Log("Experiment definition `{0}` : `0` situationMask is unsupported, patching to `BodyGlobal`", ExperimentId);
+				Lib.Log("Experiment definition `{0}` : `0` situationMask is unsupported, patching to `BodyGlobal`", Lib.LogLevel.Message, ExperimentId);
 				situationMask = ScienceSituation.BodyGlobal.BitValue();
 				HasDBSubjects = false;
 			}
@@ -219,7 +219,7 @@ namespace KERBALISM
 			uint stockBiomeMask;
 			if (!ScienceSituationUtils.ValidateSituationBitMask(ref situationMask, biomeMask, out stockSituationMask, out stockBiomeMask, out error))
 			{
-				Lib.Log("ERROR : Experiment definition `{0}` is incorrect :\n{1}", ExperimentId, error);
+				Lib.Log("Experiment definition `{0}` is incorrect :\n{1}", Lib.LogLevel.Error, ExperimentId, error);
 			}
 
 			SituationMask = situationMask;
