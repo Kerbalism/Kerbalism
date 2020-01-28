@@ -107,7 +107,6 @@ namespace KERBALISM
 			
 			double totalTransmitCapacity = vd.Connection.rate * elapsed_s;
 			double remainingTransmitCapacity = totalTransmitCapacity;
-			double scienceCredited = 0.0;
 
 			GetFilesToTransmit(v, vd);
 
@@ -162,13 +161,12 @@ namespace KERBALISM
 
 				if (xmitScienceValue > 0.0)
 				{
-					scienceCredited += xmitFile.file.subjectData.RetrieveScience(xmitScienceValue, true, v.protoVessel, xmitFile.file);
+					// add science to the subject (and eventually included subjects), trigger completion events, credit the science, return how much has been credited.
+					vd.scienceTransmitted += xmitFile.file.subjectData.RetrieveScience(xmitScienceValue, true, v.protoVessel, xmitFile.file);
 				}
 			}
 
 			UnityEngine.Profiling.Profiler.EndSample();
-
-			vd.scienceTransmitted += scienceCredited;
 
 			// consume EC cost for transmission (ec_idle is consumed above)
 			double transmittedCapacity = totalTransmitCapacity - remainingTransmitCapacity;

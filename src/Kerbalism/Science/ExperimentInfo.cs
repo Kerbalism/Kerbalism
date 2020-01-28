@@ -58,6 +58,7 @@ namespace KERBALISM
 		/// <summary> Cache the information returned by GetInfo() in the first found module using that experiment</summary>
 		public string ModuleInfo { get; private set; } = string.Empty;
 
+		/// <summary> If true, subject completion will enable the stock resource map for the corresponding body</summary>
 		public bool UnlockResourceSurvey { get; private set; }
 
 		public bool IsROC { get; private set; }
@@ -66,6 +67,7 @@ namespace KERBALISM
 
 		public bool IgnoreBodyRestrictions { get; private set; }
 
+		/// <summary> List of experiments that will be collected automatically alongside this one</summary>
 		public List<ExperimentInfo> IncludedExperiments { get; private set; }
 
 		private string[] includedExperimentsId;
@@ -100,6 +102,8 @@ namespace KERBALISM
 				DataSize = this.stockDef.scienceCap * this.stockDef.dataScale;
 #endif
 
+			// load the included experiments ids in a string array, we will populate the list after 
+			// all ExperimentInfos are created. (can't do it here as they may not exist yet)
 			includedExperimentsId = expInfoNode.GetValues("IncludeExperiment");
 
 			UnlockResourceSurvey = Lib.ConfigValue(expInfoNode, "UnlockResourceSurvey", false);
@@ -137,6 +141,7 @@ namespace KERBALISM
 					}
 				}
 
+				// parse the stock atmosphere restrictions into our own
 				if (stockDef.requireAtmosphere)
 					expInfoNode.AddValue("BodyAllowed", "Atmospheric");
 #if !KSP15_16
