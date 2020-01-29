@@ -56,17 +56,17 @@ namespace KERBALISM
 		}
 
 		/// <summary> record deferred production of a resource (shortcut) </summary>
-		/// <param name="brokerName">short ui-friendly name for the producer</param>
-		public static void Produce(Vessel v, string resource_name, double quantity, string brokerName)
+		/// <param name="broker">short ui-friendly name for the producer</param>
+		public static void Produce(Vessel v, string resource_name, double quantity, ResourceBroker broker)
 		{
-			GetResource(v, resource_name).Produce(quantity, brokerName);
+			GetResource(v, resource_name).Produce(quantity, broker);
 		}
 
 		/// <summary> record deferred consumption of a resource (shortcut) </summary>
-		/// <param name="brokerName">short ui-friendly name for the consumer</param>
-		public static void Consume(Vessel v, string resource_name, double quantity, string brokerName)
+		/// <param name="broker">short ui-friendly name for the consumer</param>
+		public static void Consume(Vessel v, string resource_name, double quantity, ResourceBroker broker)
 		{
-			GetResource(v, resource_name).Consume(quantity, brokerName);
+			GetResource(v, resource_name).Consume(quantity, broker);
 		}
 
 		/// <summary> register deferred execution of a recipe (shortcut)</summary>

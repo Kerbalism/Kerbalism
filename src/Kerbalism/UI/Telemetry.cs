@@ -33,7 +33,7 @@ namespace KERBALISM
 			if (p.Timeout(vd)) return;
 
 			// get resources
-			VesselResources resources = ResourceCache.Get(v);
+			VesselResHandler resources = ResourceCache.GetVesselHandler(v);
 
 			// get crew
 			var crew = Lib.CrewList(v);

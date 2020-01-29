@@ -40,10 +40,10 @@ namespace KERBALISM
 		private double intervalRuleAmount;
 
 		/// <summary>Dictionary of all consumers and producers (key) and how much amount they did add/remove (value).</summary>
-		private Dictionary<string, double> brokersResourceAmounts;
+		private Dictionary<ResourceBroker, double> brokersResourceAmounts;
 
 		/// <summary>Dictionary of all interval-based rules (key) and their simulated average rate (value). This is for information only, the resource is not consumed</summary>
-		private Dictionary<string, double> intervalRuleBrokersRates;
+		private Dictionary<ResourceBroker, double> intervalRuleBrokersRates;
 
 		/// <summary>Ctor</summary>
 		public VesselResource(Vessel v, string res_name)
@@ -55,8 +55,8 @@ namespace KERBALISM
 			Amount = 0;
 			Capacity = 0;
 
-			brokersResourceAmounts = new Dictionary<string, double>();
-			intervalRuleBrokersRates = new Dictionary<string, double>();
+			brokersResourceAmounts = new Dictionary<ResourceBroker, double>();
+			intervalRuleBrokersRates = new Dictionary<ResourceBroker, double>();
 
 			// get amount & capacity
 			if (v.loaded)
@@ -103,33 +103,33 @@ namespace KERBALISM
 		}
 
 		/// <summary>Record a production, it will be stored in "Deferred" and later synchronized to the vessel in Sync()</summary>
-		/// <param name="brokerName">origin of the production, will be available in the UI</param>
-		public void Produce(double quantity, string brokerName)
+		/// <param name="broker">origin of the production, will be available in the UI</param>
+		public void Produce(double quantity, ResourceBroker broker)
 		{
 			Deferred += quantity;
 
 			// keep track of every producer contribution for UI/debug purposes
 			if (Math.Abs(quantity) < 1e-10) return;
 
-			if (brokersResourceAmounts.ContainsKey(brokerName))
-				brokersResourceAmounts[brokerName] += quantity;
+			if (brokersResourceAmounts.ContainsKey(broker))
+				brokersResourceAmounts[broker] += quantity;
 			else
-				brokersResourceAmounts.Add(brokerName, quantity);
+				brokersResourceAmounts.Add(broker, quantity);
 		}
 
 		/// <summary>Record a consumption, it will be stored in "Deferred" and later synchronized to the vessel in Sync()</summary>
-		/// <param name="brokerName">origin of the consumption, will be available in the UI</param>
-		public void Consume(double quantity, string brokerName)
+		/// <param name="broker">origin of the consumption, will be available in the UI</param>
+		public void Consume(double quantity, ResourceBroker broker)
 		{
 			Deferred -= quantity;
 
 			// keep track of every consumer contribution for UI/debug purposes
 			if (Math.Abs(quantity) < 1e-10) return;
 
-			if (brokersResourceAmounts.ContainsKey(brokerName))
-				brokersResourceAmounts[brokerName] -= quantity;
+			if (brokersResourceAmounts.ContainsKey(broker))
+				brokersResourceAmounts[broker] -= quantity;
 			else
-				brokersResourceAmounts.Add(brokerName, -quantity);
+				brokersResourceAmounts.Add(broker, -quantity);
 		}
 
 		/// <summary>synchronize resources from cache to vessel</summary>
@@ -349,15 +349,15 @@ namespace KERBALISM
 
 		/// <summary>Inform that meal has happened in this simulation step</summary>
 		/// <remarks>A simulation step can cover many physics ticks, especially for unloaded vessels</remarks>
-		public void UpdateIntervalRule(double amount, double averageRate, string ruleName)
+		public void UpdateIntervalRule(double amount, double averageRate, ResourceBroker broker)
 		{
 			intervalRuleAmount += amount;
 			intervalRulesRate += averageRate;
 
-			if (intervalRuleBrokersRates.ContainsKey(ruleName))
-				intervalRuleBrokersRates[ruleName] += averageRate;
+			if (intervalRuleBrokersRates.ContainsKey(broker))
+				intervalRuleBrokersRates[broker] += averageRate;
 			else
-				intervalRuleBrokersRates.Add(ruleName, averageRate);
+				intervalRuleBrokersRates.Add(broker, averageRate);
 		}
 	}
 }

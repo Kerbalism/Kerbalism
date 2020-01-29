@@ -45,15 +45,15 @@ namespace KERBALISM
 		public List<Entry> cures;    // set of cures
 		public double left;     // what proportion of the recipe is left to execute
 
-		private string name;
+		private ResourceBroker broker;
 
-		public Recipe(string name)
+		public Recipe(ResourceBroker broker)
 		{
 			this.inputs = new List<Entry>();
 			this.outputs = new List<Entry>();
 			this.cures = new List<Entry>();
 			this.left = 1.0;
-			this.name = name;
+			this.broker = broker;
 		}
 
 		/// <summary>add an input to the recipe</summary>
@@ -187,19 +187,19 @@ namespace KERBALISM
 						IResource sec = resources.GetResource(v, sec_e.name);
 						double need = (e.quantity * worst_io) + (sec_e.quantity * worst_io);
 						// do we have enough primary to satisfy needs, if so don't consume secondary
-						if (res.Amount + res.Deferred >= need) resources.Consume(v, e.name, need, name);
+						if (res.Amount + res.Deferred >= need) resources.Consume(v, e.name, need, broker);
 						// consume primary if any available and secondary
 						else
 						{
 							need -= res.Amount + res.Deferred;
-							res.Consume(res.Amount + res.Deferred, name);
-							sec.Consume(need, name);
+							res.Consume(res.Amount + res.Deferred, broker);
+							sec.Consume(need, broker);
 						}
 					}
 				}
 				else
 				{
-					res.Consume(e.quantity * worst_io, name);
+					res.Consume(e.quantity * worst_io, broker);
 				}
 			}
 
@@ -208,7 +208,7 @@ namespace KERBALISM
 			{
 				Entry e = outputs[i];
 				IResource res = resources.GetResource(v, e.name);
-				res.Produce(e.quantity * worst_io, name);
+				res.Produce(e.quantity * worst_io, broker);
 			}
 
 			// produce cures

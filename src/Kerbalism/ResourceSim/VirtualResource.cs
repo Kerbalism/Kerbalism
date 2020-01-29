@@ -58,14 +58,14 @@ namespace KERBALISM
 
 		/// <summary>Record a consumption, it will be stored in 'Deferred' until the Sync() method synchronize it to 'Amount'</summary>
 		/// <param name="brokerName">origin of the consumption, will be available in the UI</param>
-		public void Produce(double quantity, string brokerName)
+		public void Produce(double quantity, ResourceBroker broker)
 		{
 			Deferred += quantity;
 		}
 
 		/// <summary>Record a production, it will be stored in 'Deferred' until the Sync() method synchronize it to 'Amount'</summary>
 		/// <param name="brokerName">origin of the production, will be available in the UI</param>
-		public void Consume(double quantity, string brokerName)
+		public void Consume(double quantity, ResourceBroker broker)
 		{
 			Deferred -= quantity;
 		}

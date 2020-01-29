@@ -356,7 +356,7 @@ namespace KERBALISM
 
 					UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Loaded.Profile");
 					// part module resource updates
-					vd.ResourceUpdate(resources, elapsed_s);
+					ResourceAPI.ResourceUpdate(v, vd, resources, elapsed_s);
 					UnityEngine.Profiling.Profiler.EndSample(); 
 
 					UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Loaded.Resource");

@@ -126,7 +126,7 @@ namespace KERBALISM
 						if (output.Length > 0)
 						{
 							VesselResource outputRes = (VesselResource)ResourceCache.GetResource(v, output);
-							outputRes.UpdateIntervalRule(required * ratio, ratePerStep * ratio, name);
+							outputRes.UpdateIntervalRule(required * ratio, ratePerStep * ratio, broker);
 						}
 					}
 

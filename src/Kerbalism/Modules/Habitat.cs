@@ -373,7 +373,7 @@ namespace KERBALISM
             switch (state)
             {
                 case State.enabled:
-                    if (Math.Truncate(Math.Abs((perctDeployed + ResourceBalance.precision) - 1.0) * 100000) / 100000 > ResourceBalance.precision)
+                    if (Math.Truncate(Math.Abs((perctDeployed + HabitatEqualizer.precision) - 1.0) * 100000) / 100000 > HabitatEqualizer.precision)
                     {
                         // No inflatable can be enabled been pressurizing
                         status_str = Local.Habitat_pressurizing;

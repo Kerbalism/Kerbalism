@@ -145,11 +145,11 @@
     <Compile Include="Database\KerbalData.cs" />
     <Compile Include="Database\LandmarkData.cs" />
     <Compile Include="Database\PartData.cs" />
-    <Compile Include="Database\PartModuleData.cs" />
-    <Compile Include="Database\Persistence.cs" />
     <Compile Include="Database\RuleData.cs" />
     <Compile Include="Database\VesselSituations.cs" />
     <Compile Include="LocalizationCache.cs" />
+    <Compile Include="ResourceSim\ResourceAPI.cs" />
+    <Compile Include="ResourceSim\ResourceBroker.cs" />
     <Compile Include="Science\SubjectData.cs" />
     <Compile Include="Database\SupplyData.cs" />
     <Compile Include="Database\UIData.cs" />
@@ -171,7 +171,6 @@
     <Compile Include="Modules\Experiment.cs" />
     <Compile Include="Modules\Reliability.cs" />
     <Compile Include="Modules\SolarPanelFixer.cs" />
-    <Compile Include="Modules\ThermalProcess.cs" />
     <Compile Include="Patches\ModuleAsteroid_performSampleExperiment.cs" />
     <Compile Include="Profile\Modifiers.cs" />
     <Compile Include="Profile\Process.cs" />

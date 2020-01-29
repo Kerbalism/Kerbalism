@@ -27,11 +27,11 @@
 		void Sync(Vessel v, VesselData vd, double elapsed_s);
 
 		/// <summary>Record a consumption, it will be stored in "Deferred" and later synchronized to the vessel in Sync()</summary>
-		/// <param name="brokerName">origin of the consumption, will be available in the UI</param>
-		void Consume(double quantity, string brokerName);
+		/// <param name="broker">origin of the consumption, will be available in the UI</param>
+		void Consume(double quantity, ResourceBroker broker);
 
 		/// <summary>Record a production, it will be stored in "Deferred" and later synchronized to the vessel in Sync()</summary>
-		/// <param name="brokerName">origin of the production, will be available in the UI</param>
-		void Produce(double quantity, string brokerName);
+		/// <param name="broker">origin of the production, will be available in the UI</param>
+		void Produce(double quantity, ResourceBroker broker);
 	}
 }

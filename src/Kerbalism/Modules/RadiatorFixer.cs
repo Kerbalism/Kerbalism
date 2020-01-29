@@ -103,14 +103,14 @@ namespace KERBALISM
 
 			if (inputResourceRate > 0.0)
 			{
-				Recipe recipe = new Recipe("radiator");
+				Recipe recipe = new Recipe(ResourceBroker.Radiator);
 				recipe.AddInput(inputResource, inputResourceRate * Kerbalism.elapsed_s);
 				recipe.AddOutput(outputResource, outputResourceRate * Kerbalism.elapsed_s, false);
 				ResourceCache.AddRecipe(vessel, recipe);
 			}
 			else
 			{
-				ResourceCache.Produce(vessel, outputResource, outputResourceRate * Kerbalism.elapsed_s, "radiator");
+				ResourceCache.Produce(vessel, outputResource, outputResourceRate * Kerbalism.elapsed_s, ResourceBroker.Radiator);
 			}
 		}
 
@@ -120,14 +120,14 @@ namespace KERBALISM
 
 			if (prefab.inputResourceRate > 0.0)
 			{
-				Recipe recipe = new Recipe("radiator");
+				Recipe recipe = new Recipe(ResourceBroker.Radiator);
 				recipe.AddInput(prefab.inputResource, prefab.inputResourceRate * elapsed_s);
 				recipe.AddOutput(prefab.outputResource, prefab.outputResourceRate * elapsed_s, false);
 				ResourceCache.AddRecipe(v, recipe);
 			}
 			else
 			{
-				ResourceCache.Produce(v, prefab.outputResource, prefab.outputResourceRate * elapsed_s, "radiator");
+				ResourceCache.Produce(v, prefab.outputResource, prefab.outputResourceRate * elapsed_s, ResourceBroker.Radiator);
 			}
 
 		}

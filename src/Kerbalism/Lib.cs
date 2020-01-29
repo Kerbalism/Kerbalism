@@ -2687,6 +2687,15 @@ namespace KERBALISM
 			*/
 		}
 
+		public static T ConfigEnum<T>(ConfigNode cfg, string key, T def_value)
+		{
+			if (TryParseValue(cfg.GetValue(key), typeof(T), out object value))
+			{
+				return (T)value;
+			}
+			return def_value;
+		}
+
 		///<summary>parse a serialized (config) value. Supports all value types including enums and common KSP/Unity types (vector, quaternion, color, matrix4x4...)</summary>
 		public static bool TryParseValue(string strValue, Type typeOfValue, out object value)
 		{

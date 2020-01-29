@@ -28,8 +28,10 @@ namespace KERBALISM
 
 
 		#region non-evaluated non-persisted fields
-		// there are probably a lot of candidates for this in the current codebase
 
+		/// <summary> all part modules that have a ResourceUpdate method </summary>
+		public List<ResourceUpdateDelegate> resourceUpdateDelegates = null; 
+																		
 		/// <summary>name of last file being transmitted, or empty if nothing is being transmitted</summary>
 		public List<File> filesTransmitted;
 
@@ -49,7 +51,7 @@ namespace KERBALISM
 		public bool deviceTransmit;   // vessel wide automation : enable/disable data transmission
 
 		// other persisted fields
-		private List<ResourceUpdateDelegate> resourceUpdateDelegates = null; // all part modules that have a ResourceUpdate method
+
 		private Dictionary<uint, PartData> parts; // all parts by flightID
 		public Dictionary<uint, PartData>.ValueCollection PartDatas => parts.Values;
 		public PartData GetPartData(uint flightID)
@@ -470,50 +472,6 @@ namespace KERBALISM
 			EvaluateStatus();
 			secSinceLastEval = 0.0;
 			Evaluated = true;
-		}
-
-		/// <summary>
-		/// Call ResourceUpdate on all part modules that have that method
-		/// </summary>
-		public void ResourceUpdate(VesselResources resources, double elapsed_s)
-		{
-			// only do this for loaded vessels. unloaded vessels will be handled in Background.cs
-			if (!Vessel.loaded) return;
-
-			if(resourceUpdateDelegates == null)
-			{
-				resourceUpdateDelegates = new List<ResourceUpdateDelegate>();
-				foreach(var part in Vessel.parts)
-				{
-					foreach(var module in part.Modules)
-					{
-						if (!module.isEnabled) continue;
-						var resourceUpdateDelegate = ResourceUpdateDelegate.Instance(module);
-						if (resourceUpdateDelegate != null) resourceUpdateDelegates.Add(resourceUpdateDelegate);
-					}
-				}
-			}
-
-			if (resourceUpdateDelegates.Count == 0) return;
-
-			List<ResourceInfo> allResources = resources.GetAllResources(Vessel); // there might be some performance to be gained by caching the list of all resource
-
-			Dictionary<string, double> availableResources = new Dictionary<string, double>();
-			foreach (var ri in allResources)
-				availableResources[ri.ResourceName] = ri.Amount;
-			List<KeyValuePair<string, double>> resourceChangeRequests = new List<KeyValuePair<string, double>>();
-
-			foreach(var resourceUpdateDelegate in resourceUpdateDelegates)
-			{
-				resourceChangeRequests.Clear();
-				string title = resourceUpdateDelegate.invoke(availableResources, resourceChangeRequests);
-				ResourceBroker broker = ResourceBroker.GetOrCreate(title);
-				foreach (var rc in resourceChangeRequests)
-				{
-					if (rc.Value > 0) resources.Produce(Vessel, rc.Key, rc.Value * elapsed_s, broker);
-					if (rc.Value < 0) resources.Consume(Vessel, rc.Key, -rc.Value * elapsed_s, broker);
-				}
-			}
 		}
 
 		#endregion
