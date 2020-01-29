@@ -166,7 +166,6 @@
     <Compile Include="Modules\HardDrive.cs" />
     <Compile Include="Modules\Laboratory.cs" />
     <Compile Include="Modules\ProcessController.cs" />
-    <Compile Include="Modules\RadiatorFixer.cs" />
     <Compile Include="Modules\Sensor.cs" />
     <Compile Include="Modules\Experiment.cs" />
     <Compile Include="Modules\Reliability.cs" />
@@ -291,7 +290,6 @@
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="Patches\TooltipController_CrewAC_SetTooltip.cs" />
     <Compile Include="Modules\PassiveShield.cs" />
-    <Compile Include="Database\ResourceUpdateDelegate.cs" />
     <Compile Include="Modules\IKerbalismModule.cs" />
     <Compile Include="Patches\ModuleDataTransmitter_GetInfo.cs" />
   </ItemGroup>

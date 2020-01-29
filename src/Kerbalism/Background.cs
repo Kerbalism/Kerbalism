@@ -65,7 +65,6 @@ namespace KERBALISM
 				case "FNGenerator": return Module_type.FNGenerator;
 				case "KerbalismProcess": return Module_type.KerbalismProcess;
 				case "SolarPanelFixer": return Module_type.SolarPanelFixer;
-				case "RadiatorFixer": return Module_type.RadiatorFixer;
 			}
 			return Module_type.Unknown;
 		}
@@ -117,7 +116,6 @@ namespace KERBALISM
 					case Module_type.FNGenerator: ProcessFNGenerator(v, e.p, e.m, e.module_prefab, ec, elapsed_s); break;
 					case Module_type.SolarPanelFixer: SolarPanelFixer.BackgroundUpdate(v, e.m, e.module_prefab as SolarPanelFixer, vd, ec, elapsed_s); break;
 					case Module_type.APIModule: ResourceAPI.BackgroundUpdate(v, e.p, e.m, e.part_prefab, e.module_prefab, resources, availableResources, resourceChangeRequests, elapsed_s); break;
-					case Module_type.RadiatorFixer: RadiatorFixer.BackgroundUpdate(v, e.p, e.m, e.module_prefab as RadiatorFixer, elapsed_s); break;
 				}
 			}
 		}
@@ -165,7 +163,7 @@ namespace KERBALISM
 					Module_type type = ModuleType(m.moduleName);
 					if (type == Module_type.Unknown)
 					{
-						var backgroundDelegate = ResourceAPI.BackgroundDelegate.Instance(module_prefab);
+						var backgroundDelegate = BackgroundDelegate.Instance(module_prefab);
 						if (backgroundDelegate != null)
 							type = Module_type.APIModule;
 						else
