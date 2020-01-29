@@ -40,7 +40,7 @@ namespace KERBALISM
 		public double inputResourceRate = 1.0;
 
 		[KSPField(isPersistant = true)]
-		public string outputResource = "Coolant";
+		public string outputResource = "KerbalismCoolant";
 
 		/// <summary> output in kW </summary>
 		[KSPField(isPersistant = true)]
