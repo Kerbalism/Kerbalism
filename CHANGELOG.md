@@ -1,3 +1,12 @@
+## v3.4 for all versions of KSP from 1.5.0 to 1.8.9
+
+ - 2020-01-29
+
+### Changes since the last release
+
+* Fixed game crashing NaN propagation bug happening when the M700 scanner was configured with the GRAVMAX experiment.
+* A few config fixes
+
 ## v3.3 for all versions of KSP from 1.5.0 to 1.8.9
 
  - 2020-01-27
@@ -11,7 +20,7 @@
 * Tinygrox took on the herculanean task of localizing all of Kerbalism, which means that now a lot of strings can be localized that previously were not. Chinese localization included. 
 * Harvester automation fixed by asazernik
 * Updated support for: Beyond Home (radiation models), BDB (science configuration), RealAntennas, ROSolar, stock antenna configurations, Near Future Exploration (reflectors), US2 (rtg), SSPX (rotating gravity ring counterweights), ReStockPlus (the new nuclear engine now emits radiation)
-* [API updates](https://github.com/Kerbalism/Kerbalism/wiki/TechGuide-~-C%23-API) and exensions (in preparation for RPR compatibility, and part modules that need to produce/consume vessel resources)
+* [API updates](https://github.com/Kerbalism/Kerbalism/wiki/TechGuide-~-C%23-API) and extensions (in preparation for RPR compatibility, and part modules that need to produce/consume vessel resources)
 * Improved data transmitter module info, now includes effective data rates and EC consumption
 * New formula to calculate the shadow period for elliptical orbits. And there is a new (experimental because potentially CPU hungry) method of estimating sun exposure during very fast time warping. Needs to be turned on in settings.
 * The stock M700 survey scanner is now integrated in the science system: on data retrieval, unlocks the resource map for this body
