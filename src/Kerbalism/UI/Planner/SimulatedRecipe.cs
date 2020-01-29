@@ -11,8 +11,8 @@ namespace KERBALISM.Planner
 		public SimulatedRecipe(Part p, string name)
 		{
 			this.name = name;
-			this.inputs = new List<ResourceRecipe.Entry>();
-			this.outputs = new List<ResourceRecipe.Entry>();
+			this.inputs = new List<Recipe.Entry>();
+			this.outputs = new List<Recipe.Entry>();
 			this.left = 1.0;
 			this.loaded_part = p;
 		}
@@ -24,7 +24,7 @@ namespace KERBALISM.Planner
 		{
 			if (quantity > double.Epsilon) //< avoid division by zero
 			{
-				inputs.Add(new ResourceRecipe.Entry(resource_name, quantity));
+				inputs.Add(new Recipe.Entry(resource_name, quantity));
 			}
 		}
 
@@ -35,7 +35,7 @@ namespace KERBALISM.Planner
 		{
 			if (quantity > double.Epsilon) //< avoid division by zero
 			{
-				inputs.Add(new ResourceRecipe.Entry(resource_name, quantity, true, combined));
+				inputs.Add(new Recipe.Entry(resource_name, quantity, true, combined));
 			}
 		}
 
@@ -44,7 +44,7 @@ namespace KERBALISM.Planner
 		{
 			if (quantity > double.Epsilon) //< avoid division by zero
 			{
-				outputs.Add(new ResourceRecipe.Entry(resource_name, quantity, dump));
+				outputs.Add(new Recipe.Entry(resource_name, quantity, dump));
 			}
 		}
 
@@ -57,7 +57,7 @@ namespace KERBALISM.Planner
 			{
 				for (int i = 0; i < inputs.Count; ++i)
 				{
-					ResourceRecipe.Entry e = inputs[i];
+					Recipe.Entry e = inputs[i];
 					SimulatedResourceView res = sim.Resource(e.name).GetSimulatedResourceView(loaded_part);
 					// handle combined inputs
 					if (e.combined != null)
@@ -65,7 +65,7 @@ namespace KERBALISM.Planner
 						// is combined resource the primary
 						if (e.combined != "")
 						{
-							ResourceRecipe.Entry sec_e = inputs.Find(x => x.name.Contains(e.combined));
+							Recipe.Entry sec_e = inputs.Find(x => x.name.Contains(e.combined));
 							SimulatedResourceView sec = sim.Resource(sec_e.name).GetSimulatedResourceView(loaded_part);
 							double pri_worst = Lib.Clamp(res.amount * e.inv_quantity, 0.0, worst_input);
 							if (pri_worst > 0.0)
@@ -85,7 +85,7 @@ namespace KERBALISM.Planner
 			{
 				for (int i = 0; i < outputs.Count; ++i)
 				{
-					ResourceRecipe.Entry e = outputs[i];
+					Recipe.Entry e = outputs[i];
 					if (!e.dump) // ignore outputs that can dump overboard
 					{
 						SimulatedResourceView res = sim.Resource(e.name).GetSimulatedResourceView(loaded_part);
@@ -100,7 +100,7 @@ namespace KERBALISM.Planner
 			// consume inputs
 			for (int i = 0; i < inputs.Count; ++i)
 			{
-				ResourceRecipe.Entry e = inputs[i];
+				Recipe.Entry e = inputs[i];
 				SimulatedResource res = sim.Resource(e.name);
 				// handle combined inputs
 				if (e.combined != null)
@@ -108,7 +108,7 @@ namespace KERBALISM.Planner
 					// is combined resource the primary
 					if (e.combined != "")
 					{
-						ResourceRecipe.Entry sec_e = inputs.Find(x => x.name.Contains(e.combined));
+						Recipe.Entry sec_e = inputs.Find(x => x.name.Contains(e.combined));
 						SimulatedResourceView sec = sim.Resource(sec_e.name).GetSimulatedResourceView(loaded_part);
 						double need = (e.quantity * worst_io) + (sec_e.quantity * worst_io);
 						// do we have enough primary to satisfy needs, if so don't consume secondary
@@ -130,7 +130,7 @@ namespace KERBALISM.Planner
 			// produce outputs
 			for (int i = 0; i < outputs.Count; ++i)
 			{
-				ResourceRecipe.Entry e = outputs[i];
+				Recipe.Entry e = outputs[i];
 				SimulatedResourceView res = sim.Resource(e.name).GetSimulatedResourceView(loaded_part);
 				res.Produce(e.quantity * worst_io, name);
 			}
@@ -144,8 +144,8 @@ namespace KERBALISM.Planner
 
 		// store inputs and outputs
 		public string name;                         // name used for consumer/producer tooltip
-		public List<ResourceRecipe.Entry> inputs;  // set of input resources
-		public List<ResourceRecipe.Entry> outputs; // set of output resources
+		public List<Recipe.Entry> inputs;  // set of input resources
+		public List<Recipe.Entry> outputs; // set of output resources
 		public double left;                         // what proportion of the recipe is left to execute
 		private Part loaded_part = null;            // part this recipe runs on, may be null for vessel wide recipe
 	}

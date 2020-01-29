@@ -349,7 +349,7 @@ namespace KERBALISM
 			RunningUpdate(
 				vessel, vd, GetSituation(vd), this, privateHdId, didPrepare, shrouded,
 				ResourceCache.GetResource(vessel, "ElectricCharge"),
-				ResourceCache.Get(vessel),
+				ResourceCache.GetVesselHandler(vessel),
 				ResourceDefs,
 				ExpInfo,
 				expState,
@@ -368,7 +368,7 @@ namespace KERBALISM
 		}
 
 		// note : we use a non-static method so it can be overriden
-		public virtual void BackgroundUpdate(Vessel v, VesselData vd, ProtoPartModuleSnapshot m, ResourceInfo ec, VesselResources resources, double elapsed_s)
+		public virtual void BackgroundUpdate(Vessel v, VesselData vd, ProtoPartModuleSnapshot m, IResource ec, VesselResHandler resources, double elapsed_s)
 		{
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Experiment.BackgroundUpdate");
 
@@ -431,7 +431,7 @@ namespace KERBALISM
 
 		private static void RunningUpdate(
 			Vessel v, VesselData vd, Situation vs, Experiment prefab, uint hdId, bool didPrepare, bool isShrouded,
-			ResourceInfo ec, VesselResources resources, List<ObjectPair<string, double>> resourceDefs,
+			IResource ec, VesselResHandler resources, List<ObjectPair<string, double>> resourceDefs,
 			ExperimentInfo expInfo, RunningState expState, double elapsed_s,
 			ref int lastSituationId, ref double remainingSampleMass, out SubjectData subjectData, out string mainIssue)
 		{
@@ -581,7 +581,7 @@ namespace KERBALISM
 			foreach (ObjectPair<string, double> p in resourceDefs)
 			{
 				if (p.Value <= 0.0) continue;
-				ResourceInfo ri = resources.GetResource(v, p.Key);
+				IResource ri = resources.GetResource(v, p.Key);
 				prodFactor = Math.Min(prodFactor, Lib.Clamp(ri.Amount / (p.Value * elapsed_s), 0.0, 1.0));
 			}
 
@@ -655,7 +655,7 @@ namespace KERBALISM
 			return drive;
 		}
 
-		private static bool HasRequiredResources(Vessel v, List<ObjectPair<string, double>> defs, VesselResources res, out string issue)
+		private static bool HasRequiredResources(Vessel v, List<ObjectPair<string, double>> defs, VesselResHandler res, out string issue)
 		{
 			issue = string.Empty;
 			if (defs.Count < 1)
@@ -667,7 +667,7 @@ namespace KERBALISM
 				var ri = res.GetResource(v, p.Key);
 				if (ri.Amount == 0.0)
 				{
-					issue = Local.Module_Experiment_issue12.Format(ri.ResourceName);//"missing " + 
+					issue = Local.Module_Experiment_issue12.Format(ri.Name);//"missing " + 
 					return false;
 				}
 			}

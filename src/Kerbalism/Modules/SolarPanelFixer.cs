@@ -500,14 +500,14 @@ namespace KERBALISM
 			}
 
 			// get resource handler
-			ResourceInfo ec = ResourceCache.GetResource(vessel, "ElectricCharge");
+			IResource ec = ResourceCache.GetResource(vessel, "ElectricCharge");
 
 			// produce EC
 			ec.Produce(currentOutput * Kerbalism.elapsed_s, ResourceBroker.SolarPanel);
 			UnityEngine.Profiling.Profiler.EndSample();
 		}
 
-		public static void BackgroundUpdate(Vessel v, ProtoPartModuleSnapshot m, SolarPanelFixer prefab, VesselData vd, ResourceInfo ec, double elapsed_s)
+		public static void BackgroundUpdate(Vessel v, ProtoPartModuleSnapshot m, SolarPanelFixer prefab, VesselData vd, IResource ec, double elapsed_s)
 		{
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.SolarPanelFixer.BackgroundUpdate");
 			// this is ugly spaghetti code but initializing the prefab at loading time is messy because the targeted solar panel module may not be loaded yet

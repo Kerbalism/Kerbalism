@@ -76,7 +76,7 @@ namespace KERBALISM
 			dump = new DumpSpecs(Lib.ConfigValue(node, "dump", "false"), Lib.ConfigValue(node, "dump_valve", "false"));
 		}
 
-		private void ExecuteRecipe(double k, VesselResources resources,  double elapsed_s, ResourceRecipe recipe)
+		private void ExecuteRecipe(double k, VesselResHandler resources,  double elapsed_s, Recipe recipe)
 		{
 			// only execute processes if necessary
 			if (Math.Abs(k) < double.Epsilon) return;
@@ -99,14 +99,14 @@ namespace KERBALISM
 			resources.AddRecipe(recipe);
 		}
 
-		public void Execute(Vessel v, VesselData vd, VesselResources resources, double elapsed_s)
+		public void Execute(Vessel v, VesselData vd, VesselResHandler resources, double elapsed_s)
 		{
 			// evaluate modifiers
 			// if a given PartModule has a larger than 1 capacity for a process, then the multiplication happens here
 			// remember that when a process is enabled the units of process are stored in the PartModule as a pseudo-resource
 			double k = Modifiers.Evaluate(v, vd, resources, modifiers);
 
-			ResourceRecipe recipe = new ResourceRecipe(broker);
+			Recipe recipe = new Recipe(broker);
 			ExecuteRecipe(k, resources, elapsed_s, recipe);
 		}
 

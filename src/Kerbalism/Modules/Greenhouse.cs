@@ -148,8 +148,8 @@ namespace KERBALISM
 				VesselData vd = vessel.KerbalismData();
 
 				// get resource cache
-				VesselResources resources = ResourceCache.Get(vessel);
-				ResourceInfo ec = resources.GetResource(vessel, "ElectricCharge");
+				VesselResHandler resources = ResourceCache.GetVesselHandler(vessel);
+				IResource ec = resources.GetResource(vessel, "ElectricCharge");
 
 				// deal with corner cases when greenhouse is assembled using KIS
 				if (double.IsNaN(growth) || double.IsInfinity(growth)) growth = 0.0;
@@ -166,7 +166,7 @@ namespace KERBALISM
 				if (ec.Amount <= double.Epsilon) artificial = 0.0;
 
 				// execute recipe
-				ResourceRecipe recipe = new ResourceRecipe(ResourceBroker.Greenhouse);
+				Recipe recipe = new Recipe(ResourceBroker.Greenhouse);
 				foreach (ModuleResource input in resHandler.inputResources)
 				{
 					// WasteAtmosphere is primary combined input
@@ -251,7 +251,7 @@ namespace KERBALISM
 
 
 		public static void BackgroundUpdate(Vessel v, ProtoPartModuleSnapshot m, Greenhouse g,
-											VesselData vd, VesselResources resources, double elapsed_s)
+											VesselData vd, VesselResHandler resources, double elapsed_s)
 		{
 			// get protomodule data
 			bool active = Lib.Proto.GetBool(m, "active");
@@ -261,7 +261,7 @@ namespace KERBALISM
 			if (active && growth < 0.99)
 			{
 				// get resource handler
-				ResourceInfo ec = resources.GetResource(v, "ElectricCharge");
+				IResource ec = resources.GetResource(v, "ElectricCharge");
 
 				// calculate natural and artificial lighting
 				double natural = vd.EnvSolarFluxTotal;
@@ -275,7 +275,7 @@ namespace KERBALISM
 				if (ec.Amount <= double.Epsilon) artificial = 0.0;
 
 				// execute recipe
-				ResourceRecipe recipe = new ResourceRecipe(ResourceBroker.Greenhouse);
+				Recipe recipe = new Recipe(ResourceBroker.Greenhouse);
 				foreach (ModuleResource input in g.resHandler.inputResources) //recipe.Input(input.name, input.rate * elapsed_s);
 				{
 					// WasteAtmosphere is primary combined input
