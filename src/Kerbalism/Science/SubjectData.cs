@@ -67,6 +67,8 @@ namespace KERBALISM
 		/// <summary> percentage [0;1] of science collected. </summary>
 		public double PercentCollectedTotal => ScienceMaxValue == 0.0 ? 0.0 : (ScienceCollectedInFlight / ScienceMaxValue) + PercentRetrieved;
 
+		public string DebugStateInfo => $"{FullTitle} :\nExistsInRnD={ExistsInRnD} - ScienceMaxValue={ScienceMaxValue} - SciencePerMB={SciencePerMB} - ScienceCollectedInFlight={ScienceCollectedInFlight} - RnDSubject.science={RnDSubject?.science}";
+
 		/// <summary> science value for the given data size </summary>
 		public double ScienceValue(double dataSize, bool clampByScienceRetrieved = false, bool clampByScienceRetrievedAndCollected = false)
 		{
@@ -229,6 +231,14 @@ namespace KERBALISM
 			ScienceDB.persistedSubjects.Add(this);
 		}
 
+		/// <summary>
+		/// Add science points to the RnD stock subject (create it if necessary), do it recursively for any included subject, then credit the total science gained.
+		/// </summary>
+		/// <param name="scienceValue">science point amount</param>
+		/// <param name="showMessage">if true, the "subject completed" message will be shown on screen if scienceValue is enough to complete the subject</param>
+		/// <param name="fromVessel">passed to the OnScienceRecieved gameevent on subject completion. Can be null if not available</param>
+		/// <param name="file">if not null, the "subject completed" completed message will use the result text stored in the file. If null, it will be a generic message</param>
+		/// <returns>The amount of science credited, accounting for the subject + included subjects remaining science value</returns>
 		public double RetrieveScience(double scienceValue, bool showMessage = false, ProtoVessel fromVessel = null, File file = null)
 		{
 			if (!ExistsInRnD)
@@ -316,8 +326,8 @@ namespace KERBALISM
 
 	/// <summary>
 	/// this is meant to handle subjects created by the stock system with the
-	/// ResearchAndDevelopment.GetExperimentSubject overload that take a "sourceUId" string.
-	/// In stock, it is only used by the asteroid samples, and I don't think there is any mod using that.
+	/// ResearchAndDevelopment.GetExperimentSubject overload that take a "sourceUId" string (asteroid samples)
+	/// It will also be used for subjects created by mods that use a custom format we can't interpret.
 	/// </summary>
 	public class UnknownSubjectData : SubjectData
 	{

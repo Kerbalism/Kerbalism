@@ -230,7 +230,7 @@ namespace KERBALISM
 				ScienceExperiment stockDef = ResearchAndDevelopment.GetExperiment(experimentId);
 				if (stockDef == null)
 				{
-					Lib.Log("ERROR : ScienceExperiment is null for experiment Id=" + experimentId + ", skipping...");
+					Lib.Log("ScienceExperiment is null for experiment Id=" + experimentId + ", skipping...", Lib.LogLevel.Warning);
 					continue;
 				}
 
@@ -319,6 +319,7 @@ namespace KERBALISM
 			foreach (ExperimentInfo experimentInfo in ExperimentInfos)
 			{
 				experimentInfo.SetupIncludedExperiments();
+				experimentInfo.CompileModuleInfos();
 			}
 
 			Lib.Log("ScienceDB init done : " + subjectCount + " subjects found");

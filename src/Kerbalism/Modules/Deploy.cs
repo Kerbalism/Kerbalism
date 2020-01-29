@@ -73,7 +73,7 @@ namespace KERBALISM
 			}
 			else if (hasEnergyChanged != hasEnergy)
 			{
-				Lib.LogDebugStack("Energy state has changed: {0}", hasEnergy);
+				Lib.LogDebugStack("Energy state has changed: {0}", Lib.LogLevel.Message, hasEnergy);
 
 				hasEnergyChanged = hasEnergy;
 				lastBrokenState = false;

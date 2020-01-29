@@ -15,8 +15,8 @@ namespace KERBALISM
 		// config
 		[KSPField] public string experiment_id = string.Empty;    // id of associated experiment definition
 		[KSPField] public string experiment_desc = string.Empty;  // some nice lines of text
-		[KSPField] public double data_rate;                   // sampling rate in Mb/s
-		[KSPField] public double ec_rate;                     // EC consumption rate per-second
+		[KSPField] public double data_rate = 0.001;               // sampling rate in Mb/s
+		[KSPField] public double ec_rate = 0.0;                   // EC consumption rate per-second
 		[KSPField] public double sample_amount = 0.0;         // the amount of samples this unit is shipped with
 		[KSPField] public bool sample_collecting = false;     // if set to true, the experiment will generate mass out of nothing
 		[KSPField] public bool allow_shrouded = true;         // true if data can be transmitted
@@ -199,7 +199,7 @@ namespace KERBALISM
 			if (ExpInfo == null)
 			{
 				enabled = isEnabled = moduleIsEnabled = false;
-				Lib.Log($"Error : ExpInfo for experiment_id `{experiment_id}` is null, does the config definition exists ?");
+				Lib.Log($"ExpInfo for experiment_id `{experiment_id}` is null, does the config definition exists ?", Lib.LogLevel.Error);
 				return;
 			}
 
@@ -229,7 +229,7 @@ namespace KERBALISM
 			{
 				remainingSampleMass = ExpInfo.SampleMass * sample_amount;
 				if (double.IsNaN(remainingSampleMass))
-					Lib.LogDebug("ERROR: remainingSampleMass is NaN on first start " + ExpInfo.ExperimentId + " " + ExpInfo.SampleMass + " / " + sample_amount);
+					Lib.LogDebug("remainingSampleMass is NaN on first start " + ExpInfo.ExperimentId + " " + ExpInfo.SampleMass + " / " + sample_amount, Lib.LogLevel.Error);
 			}
 		}
 
@@ -522,6 +522,14 @@ namespace KERBALISM
 			}
 
 			double chunkSizeMax = prefab.data_rate * elapsed_s;
+
+			// Never again generate NaNs
+			if (chunkSizeMax <= 0.0)
+			{
+				mainIssue = "Error : chunkSizeMax is 0.0";
+				return;
+			}
+
 			double chunkSize;
 			if (expState != RunningState.Forced)
 				chunkSize = Math.Min(chunkSizeMax, scienceRemaining / subjectData.SciencePerMB);
@@ -540,10 +548,13 @@ namespace KERBALISM
 			if (!expInfo.IsSample)
 			{
 				available = drive.FileCapacityAvailable();
+				if (double.IsNaN(available)) Lib.LogStack("drive.FileCapacityAvailable() returned NaN", Lib.LogLevel.Error);
+
 				if (drive.GetFileSend(subjectData.Id))
 				{
 					warpDrive = Cache.WarpCache(v);
 					available += warpDrive.FileCapacityAvailable();
+					if (double.IsNaN(available)) Lib.LogStack("warpDrive.FileCapacityAvailable() returned NaN", Lib.LogLevel.Error);
 				}
 			}
 			else
@@ -556,14 +567,6 @@ namespace KERBALISM
 				mainIssue = Local.Module_Experiment_issue11;//"no storage space"
 				return;
 			}
-
-			// TODO : disabled for now, I'm lazy
-			//if (!string.IsNullOrEmpty(issue))
-			//{
-			//	next_check = Planetarium.GetUniversalTime() + Math.Max(3, Kerbalism.elapsed_s * 3);
-			//	UnityEngine.Profiling.Profiler.EndSample();
-			//	return;
-			//}
 
 			chunkSize = Math.Min(chunkSize, available);
 
@@ -593,11 +596,11 @@ namespace KERBALISM
 			double massDelta = chunkSize * expInfo.MassPerMB;
 
 #if DEBUG || DEVBUILD
-			if (Double.IsNaN(chunkSize))
-				Lib.Log("ERROR: chunkSize is NaN " + expInfo.ExperimentId + " " + chunkSizeMax + " / " + prodFactor + " / " + available + " / " + ec.Amount + " / " + prefab.ec_rate + " / " + prefab.data_rate);
+			if (double.IsNaN(chunkSize))
+				Lib.Log("chunkSize is NaN " + expInfo.ExperimentId + " " + chunkSizeMax + " / " + prodFactor + " / " + available + " / " + ec.Amount + " / " + prefab.ec_rate + " / " + prefab.data_rate, Lib.LogLevel.Error);
 
-			if (Double.IsNaN(massDelta))
-				Lib.Log("ERROR: mass delta is NaN " + expInfo.ExperimentId + " " + expInfo.SampleMass + " / " + chunkSize + " / " + expInfo.DataSize);
+			if (double.IsNaN(massDelta))
+				Lib.Log("mass delta is NaN " + expInfo.ExperimentId + " " + expInfo.SampleMass + " / " + chunkSize + " / " + expInfo.DataSize, Lib.LogLevel.Error);
 #endif
 
 			if (!expInfo.IsSample)
@@ -1090,6 +1093,16 @@ namespace KERBALISM
 				specs.Add(Local.Module_Experiment_Specifics_info7_sample, Lib.HumanReadableDuration(expSize / prefab.data_rate));//"Duration"
 			}
 
+			if (expInfo.IncludedExperiments.Count > 0)
+			{
+				specs.Add(string.Empty);
+				specs.Add(Lib.Color("Included experiments:", Lib.Kolor.Cyan, true));
+				foreach (ExperimentInfo includedExp in expInfo.IncludedExperiments)
+				{
+					specs.Add("• " + includedExp.Title);
+				}
+			}
+
 			List<string> situations = expInfo.AvailableSituations();
 			if (situations.Count > 0)
 			{
@@ -1202,7 +1215,7 @@ namespace KERBALISM
 			if (Double.IsNaN(remainingSampleMass))
 			{
 #if DEBUG || DEVBUILD // this is logspammy, don't do it in releases
-				Lib.Log("ERROR: Experiment remaining sample mass is NaN " + experiment_id);
+				Lib.Log("Experiment remaining sample mass is NaN " + experiment_id, Lib.LogLevel.Error);
 #endif
 				return 0;
 			}

@@ -47,7 +47,7 @@ namespace KERBALISM
 		{
 			if (double.IsNaN(value) || double.IsInfinity(value))
 			{
-				Lib.LogDebug("ERROR: Comms: invalid value: " + name + " on " + v + " (" + value + ")");
+				Lib.LogDebug("Comms: invalid value: " + name + " on " + v + " (" + value + ")", Lib.LogLevel.Error);
 				value = 0;
 			}
 			return value;

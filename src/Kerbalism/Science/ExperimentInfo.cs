@@ -58,6 +58,7 @@ namespace KERBALISM
 		/// <summary> Cache the information returned by GetInfo() in the first found module using that experiment</summary>
 		public string ModuleInfo { get; private set; } = string.Empty;
 
+		/// <summary> If true, subject completion will enable the stock resource map for the corresponding body</summary>
 		public bool UnlockResourceSurvey { get; private set; }
 
 		public bool IsROC { get; private set; }
@@ -66,6 +67,7 @@ namespace KERBALISM
 
 		public bool IgnoreBodyRestrictions { get; private set; }
 
+		/// <summary> List of experiments that will be collected automatically alongside this one</summary>
 		public List<ExperimentInfo> IncludedExperiments { get; private set; }
 
 		private string[] includedExperimentsId;
@@ -100,6 +102,8 @@ namespace KERBALISM
 				DataSize = this.stockDef.scienceCap * this.stockDef.dataScale;
 #endif
 
+			// load the included experiments ids in a string array, we will populate the list after 
+			// all ExperimentInfos are created. (can't do it here as they may not exist yet)
 			includedExperimentsId = expInfoNode.GetValues("IncludeExperiment");
 
 			UnlockResourceSurvey = Lib.ConfigValue(expInfoNode, "UnlockResourceSurvey", false);
@@ -110,7 +114,7 @@ namespace KERBALISM
 				// make sure we don't produce NaN values down the line because of odd/wrong configs
 				if (DataSize <= 0.0)
 				{
-					Lib.Log("ERROR: " + ExperimentId + " has DataSize=" + DataSize + ", your configuration is broken!");
+					Lib.Log(ExperimentId + " has DataSize=" + DataSize + ", your configuration is broken!", Lib.LogLevel.Warning);
 					DataSize = 1.0;
 				}
 				MassPerMB = SampleMass / DataSize;
@@ -137,6 +141,7 @@ namespace KERBALISM
 					}
 				}
 
+				// parse the stock atmosphere restrictions into our own
 				if (stockDef.requireAtmosphere)
 					expInfoNode.AddValue("BodyAllowed", "Atmospheric");
 #if !KSP15_16
@@ -155,7 +160,7 @@ namespace KERBALISM
 				}
 				else
 				{
-					Lib.Log("ERROR : Experiment definition `{0}` has unknown VirtualBiome={1}", ExperimentId, virtualBiomeStr);
+					Lib.Log("Experiment definition `{0}` has unknown VirtualBiome={1}", Lib.LogLevel.Warning, ExperimentId, virtualBiomeStr);
 				}
 			}
 
@@ -193,7 +198,7 @@ namespace KERBALISM
 					}
 					else
 					{
-						Lib.Log("WARNING : Experiment definition `{0}` has unknown situation : `{1}`", ExperimentId, sitAtBiome[0]);
+						Lib.Log("Experiment definition `{0}` has unknown situation : `{1}`", Lib.LogLevel.Warning, ExperimentId, sitAtBiome[0]);
 					}
 				}
 			}
@@ -205,7 +210,7 @@ namespace KERBALISM
 
 			if (situationMask == 0)
 			{
-				Lib.Log("Experiment definition `{0}` : `0` situationMask is unsupported, patching to `BodyGlobal`", ExperimentId);
+				Lib.Log("Experiment definition `{0}` : `0` situationMask is unsupported, patching to `BodyGlobal`", Lib.LogLevel.Message, ExperimentId);
 				situationMask = ScienceSituation.BodyGlobal.BitValue();
 				HasDBSubjects = false;
 			}
@@ -219,7 +224,7 @@ namespace KERBALISM
 			uint stockBiomeMask;
 			if (!ScienceSituationUtils.ValidateSituationBitMask(ref situationMask, biomeMask, out stockSituationMask, out stockBiomeMask, out error))
 			{
-				Lib.Log("ERROR : Experiment definition `{0}` is incorrect :\n{1}", ExperimentId, error);
+				Lib.Log("Experiment definition `{0}` is incorrect :\n{1}", Lib.LogLevel.Error, ExperimentId, error);
 			}
 
 			SituationMask = situationMask;
@@ -227,10 +232,6 @@ namespace KERBALISM
 			VirtualBiomeMask = virtualBiomeMask;
 			stockDef.situationMask = stockSituationMask;
 			stockDef.biomeMask = stockBiomeMask;
-
-			// patch experiment prefabs and get module infos.
-			// must be done at the end of the ctor so everything in "this" is properly setup
-			SetupPrefabs();
 		}
 
 		public void SetupIncludedExperiments()
@@ -262,7 +263,7 @@ namespace KERBALISM
 		/// parts that have experiments can't get their module info (what is shown in the VAB tooltip) correctly setup
 		/// because the ExperimentInfo database isn't available at loading time, so we recompile their info manually.
 		/// </summary>
-		public void SetupPrefabs()
+		public void CompileModuleInfos()
 		{
 			if (PartLoader.LoadedPartsList == null)
 			{
