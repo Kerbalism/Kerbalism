@@ -1097,9 +1097,11 @@ namespace KERBALISM
 			{
 				specs.Add(string.Empty);
 				specs.Add(Lib.Color("Included experiments:", Lib.Kolor.Cyan, true));
-				foreach (ExperimentInfo includedExp in expInfo.IncludedExperiments)
+				List<string> includedExpInfos = new List<string>();
+				ExperimentInfo.GetIncludedExperimentTitles(expInfo, includedExpInfos);
+				foreach (string includedExp in includedExpInfos)
 				{
-					specs.Add("• " + includedExp.Title);
+					specs.Add("• " + includedExp);
 				}
 			}
 
