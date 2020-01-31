@@ -383,6 +383,15 @@ namespace KERBALISM
 
 				if (fail_duration <= 0)
 				{
+					// see https://www.desmos.com/calculator/l2sdoauiyw
+					// these values will give the following result:
+					// 0% failure at 40% of the operation duration
+					// 1.68% failure at 100% of the operation duration
+					// 100% failure at 140% of the operation duration
+
+					int r = 8; // the random number exponent
+					var g = 0.4; // guarantee factor
+
 					// calculate a random point on which the engine will fail
 
 					var f = rated_operation_duration;
@@ -391,14 +400,14 @@ namespace KERBALISM
 					// extend engine burn duration by preference value 
 					f /= PreferencesReliability.Instance.engineOperationFailureChance;
 
-					// random^3 so we get an exponentially increasing failure probability
-					var p = Math.Pow(Lib.RandomDouble(), 3);
+					// random^r so we get an exponentially increasing failure probability
+					var p = Math.Pow(Lib.RandomDouble(), r);
 
 					// 1-p turns the probability of failure into one of non-failure
 					p = 1 - p;
 
 					// 35% guaranteed burn duration
-					var guaranteed_operation = f * 0.35;
+					var guaranteed_operation = f * g;
 
 					fail_duration = guaranteed_operation + f * p;
 #if DEBUG_RELIABILITY
