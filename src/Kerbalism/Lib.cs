@@ -1475,7 +1475,7 @@ namespace KERBALISM
 
 		#endregion
 
-		#region PART VOLUME/SURFACE
+		#region PART VOLUME/SURFACE 
 
 		/// <summary>
 		/// return the volume of a part bounding box, in m^3
