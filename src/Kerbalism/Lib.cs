@@ -997,17 +997,15 @@ namespace KERBALISM
 
 			size *= bitsPerMB; //< bits
 			if (size < 0.01) return Local.Generic_NONE;//"none"
-			if (size <= 32.0) return BuildString(size.ToString("F0"), " b");
-			size /= 8; //< to bytes
-			if (size < 1024.0) return BuildString(size.ToString("F0"), " B");
+			if (size < 1024.0) return BuildString(size.ToString("F0"), " b");
 			size /= 1024.0;
-			if (size < 1024.0) return BuildString(size.ToString("F2"), " kB");
+			if (size < 1024.0) return BuildString(size.ToString("F2"), " kb");
 			size /= 1024.0;
-			if (size < 1024.0) return BuildString(size.ToString("F2"), " MB");
+			if (size < 1024.0) return BuildString(size.ToString("F2"), " Mb");
 			size /= 1024.0;
-			if (size < 1024.0) return BuildString(size.ToString("F2"), " GB");
+			if (size < 1024.0) return BuildString(size.ToString("F2"), " Gb");
 			size /= 1024.0;
-			return BuildString(size.ToString("F2"), " TB");
+			return BuildString(size.ToString("F2"), " Tb");
 		}
 
 		///<summary> Format data rate, the rate parameter is in Mb/s </summary>
