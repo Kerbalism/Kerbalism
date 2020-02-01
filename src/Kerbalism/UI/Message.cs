@@ -128,6 +128,7 @@ namespace KERBALISM
 			{
 				msg = Lib.BuildString(text, "\n<i>", subtext, "</i>"),
 			});
+			TruncateLogs();
 		}
 
 
@@ -153,8 +154,30 @@ namespace KERBALISM
 				title = title,
 				msg = Lib.BuildString(text, "\n<i>", subtext, "</i>"),
 			});
+			TruncateLogs();
 		}
 
+		// This is a bad workaround for the poor performance we have in the log window,
+		// which instantiates all GUI elements for every log message for every frame.
+		// Especially when viewing longer logs this can lead to a serious performance
+		// impact, so we keep the log length short.
+		// A good solution would have to re-implement the log using the new UI classes,
+		// and while doing that also fix the broken layouting we get with long messages.
+		private static void TruncateLogs()
+		{
+			while(all_logs.Count > 25)
+			{
+				// remove oldest entries at the front, keep the newest entries added at the end
+				all_logs.RemoveAt(0);
+			}
+		}
+
+		/// <summary> Clear all log lists. Called when a new game is loaded </summary>
+		public static void Clear()
+		{
+			all_logs.Clear();
+			instance.entries.Clear();
+		}
 
 		// disable rendering of messages
 		public static void Mute()
