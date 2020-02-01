@@ -4,9 +4,11 @@ using System.IO;
 using KSP.Localization;
 using UnityEngine;
 
-namespace KERBALISM
+namespace KERBALISM.Disabled
 {
-    public class Habitat : PartModule, ISpecifics, IModuleInfo, IPartCostModifier
+
+
+    public class Habitat2 : PartModule, ISpecifics, IModuleInfo, IPartCostModifier
 	{
         // config
         [KSPField] public double volume = 0.0;                      // habitable volume in m^3, deduced from bounding box if not specified
@@ -715,4 +717,5 @@ namespace KERBALISM
 			Lib.GetPartVolumeAndSurface(part, true);
 		}
 	}
+
 }

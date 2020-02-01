@@ -1473,6 +1473,114 @@ namespace KERBALISM
 			EditorLogic.fetch.SetBackup();
 		}
 
+		public static List<ProtoCrewMember> TryTransferCrewToPart(List<ProtoCrewMember> fromPartCrewMembers, Part fromPart, Part toPart, bool postTransferMessage = true)
+		{
+			List<ProtoCrewMember> crewLeft = new List<ProtoCrewMember>(fromPartCrewMembers.Count);
+
+			CrewTransfer transfer = null;
+			foreach (ProtoCrewMember crew in fromPartCrewMembers)
+			{
+				if (!toPart.crewTransferAvailable || toPart.protoModuleCrew.Count >= toPart.CrewCapacity)
+				{
+					crewLeft.Add(crew);
+					continue;
+				}
+
+				transfer = CrewTransfer.Create(fromPart, crew, null);
+
+				// create data for the onCrewTransferSelected event
+				CrewTransfer.CrewTransferData crewTransferData = new CrewTransfer.CrewTransferData
+				{
+					canTransfer = true,
+					crewMember = crew,
+					sourcePart = fromPart,
+					destPart = toPart,
+					transfer = transfer
+				};
+
+				// fire the event and check if we are authorized to do the transfer
+				GameEvents.onCrewTransferSelected.Fire(crewTransferData);
+				if (!crewTransferData.canTransfer)
+				{
+					crewLeft.Add(crew);
+					continue;
+				}
+
+				// replicate CrewTransfer.MoveCrewTo(Part p), but (1) allow to disable the screen message
+				fromPart.RemoveCrewmember(crew);
+				toPart.AddCrewmember(crew);
+				if (postTransferMessage)
+					ScreenMessages.PostScreenMessage(Localizer.Format("#autoLOC_111636", crew.name, toPart.partInfo.title), transfer.scMsgWarning);
+
+				GameEvents.onCrewTransferred.Fire(new GameEvents.HostedFromToAction<ProtoCrewMember, Part>(crew, fromPart, toPart));
+				Vessel.CrewWasModified(fromPart.vessel, toPart.vessel);
+				transfer.tgtPart = toPart;
+			}
+
+			// (2) only rebuild the IVA / portraits if there was a transfer on the active vessel
+			if (fromPart.vessel.isActiveVessel && crewLeft.Count < fromPartCrewMembers.Count)
+			{
+				FlightGlobals.ActiveVessel.DespawnCrew();
+				transfer.StartCoroutine(CallbackUtil.DelayedCallback(1, transfer.waitAndCompleteTransfer));
+			}
+
+			return crewLeft;
+		}
+
+		public static List<ProtoCrewMember> TryTransferCrewElsewhere(Part crewedPart, bool postTransferMessage = true)
+		{
+			List<ProtoCrewMember> partCrew = crewedPart.protoModuleCrew;
+			foreach (Part otherPart in crewedPart.vessel.Parts)
+			{
+				if (!otherPart.crewTransferAvailable || otherPart.protoModuleCrew.Count >= otherPart.CrewCapacity)
+					continue;
+
+				partCrew = TryTransferCrewToPart(partCrew, crewedPart, otherPart, postTransferMessage);
+
+				if (partCrew.Count == 0)
+					break;
+			}
+			return partCrew;
+		}
+
+		public static void EnablePartIVA(Part part, bool enable)
+		{
+			if (IsFlight())
+			{
+				if (part.vessel.isActiveVessel)
+				{
+					if (enable)
+					{
+						Lib.LogDebug("Part '{0}', Spawning IVA.", Lib.LogLevel.Message, part.partInfo.title);
+						part.SpawnIVA();
+					}
+					else
+					{
+						Lib.LogDebug("Part '{0}', Destroying IVA.", Lib.LogLevel.Message, part.partInfo.title);
+						part.DespawnIVA();
+					}
+				}
+			}
+		}
+
+		public static void EnablePartCrewTransfer(Part part, bool enable)
+		{
+			part.crewTransferAvailable = enable;
+
+			if (Lib.IsEditor())
+			{
+				GameEvents.onEditorPartEvent.Fire(ConstructionEventType.PartTweaked, part);
+				GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+			}
+			else if (Lib.IsFlight())
+			{
+				GameEvents.onVesselWasModified.Fire(part.vessel);
+			}
+
+			part.CheckTransferDialog();
+			MonoUtilities.RefreshContextWindows(part);
+		}
+
 		#endregion
 
 		#region PART VOLUME/SURFACE 
@@ -2044,9 +2152,9 @@ namespace KERBALISM
 		#region MODULE
 		///<summary>
 		/// return all modules implementing a specific type in a vessel
-		/// note: disabled modules are not returned
+		/// note: modules having isEnabled = false are not returned
 		/// </summary>
-		public static List<T> FindModules<T>(Vessel v) where T : class
+		public static List<T> FindModules<T>(Vessel v, Predicate<T> predicate = null) where T : PartModule
 		{
 			List<T> ret = new List<T>();
 			for (int i = 0; i < v.parts.Count; ++i)
@@ -2056,10 +2164,9 @@ namespace KERBALISM
 				{
 					PartModule m = p.Modules[j];
 					if (m.isEnabled)
-					{
 						if (m is T t)
-							ret.Add(t);
-					}
+							if (predicate == null || predicate.Invoke(t))
+								ret.Add(t);
 				}
 			}
 			return ret;
@@ -2226,7 +2333,7 @@ namespace KERBALISM
 			{
 				if ((res.flowState || ignore_flow) && res.resourceName == resource_name)
 				{
-					return res.maxAmount > double.Epsilon ? res.amount / res.maxAmount : 0.0;
+					return res.maxAmount > 0.0 ? res.amount / res.maxAmount : 0.0;
 				}
 			}
 			return 0.0;

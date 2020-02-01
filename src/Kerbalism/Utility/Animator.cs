@@ -10,18 +10,20 @@ namespace KERBALISM
 		private readonly string name;
 		public bool reversed = false;
 
-		public bool IsDefined => anim != null;
+		public bool IsDefined { get; private set; } = false;
 
-		public Animator(Part p, string anim_name)
+		public Animator(Part p, string anim_name, bool reversed = false)
 		{
 			anim = null;
 			name = string.Empty;
+			this.reversed = reversed;
 
 			if (anim_name.Length > 0)
 			{
 				Animation[] animations = p.FindModelAnimators(anim_name);
 				if (animations.Length > 0)
 				{
+					IsDefined = true;
 					anim = animations[0];
 					name = anim_name;
 				}
@@ -31,7 +33,7 @@ namespace KERBALISM
 		// Note: This function resets animation to the beginning
 		public void Play(bool reverse, bool loop, Action callback = null)
 		{
-			if(anim == null)
+			if(!IsDefined)
 			{
 				callback?.Invoke();
 				return;
@@ -40,7 +42,7 @@ namespace KERBALISM
 			Kerbalism.Fetch.StartCoroutine(PlayAnimation(reverse, loop, callback));
 		}
 
-		IEnumerator PlayAnimation(bool reverse, bool loop, Action callback = null)
+		private IEnumerator PlayAnimation(bool reverse, bool loop, Action callback = null)
 		{
 			if (reverse && callback != null) callback();
 
@@ -58,7 +60,7 @@ namespace KERBALISM
 
 		public void Stop(Action callback = null)
 		{
-			if (anim == null)
+			if (!IsDefined)
 			{
 				callback?.Invoke();
 				return;
@@ -67,7 +69,7 @@ namespace KERBALISM
 			Kerbalism.Fetch.StartCoroutine(StopAnimation(callback));
 		}
 
-		IEnumerator StopAnimation(Action callback = null)
+		private IEnumerator StopAnimation(Action callback = null)
 		{
 			anim.Stop(name);
 			yield return new WaitForSeconds(anim[name].length);
@@ -76,7 +78,7 @@ namespace KERBALISM
 
 		public void Pause()
 		{
-			if (anim != null)
+			if (IsDefined)
 			{
 				anim[name].speed = 0.0f;
 			}
@@ -84,7 +86,7 @@ namespace KERBALISM
 
 		public void Resume(bool reverse)
 		{
-			if (anim != null)
+			if (IsDefined)
 			{
 				if (reversed) reverse = !reverse;
 				anim[name].speed = !reverse ? 1.0f : -1.0f;
@@ -93,7 +95,7 @@ namespace KERBALISM
 
 		public void Still(double t)
 		{
-			if (anim != null)
+			if (IsDefined)
 			{
 				t = reversed ? 1 - t : t;
 				anim[name].normalizedTime = (float)t;
@@ -104,7 +106,7 @@ namespace KERBALISM
 
 		public bool Playing()
 		{
-			if (anim != null)
+			if (IsDefined)
 			{
 				return (anim[name].speed > float.Epsilon) && anim.IsPlaying(name);
 			}

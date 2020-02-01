@@ -135,6 +135,14 @@ namespace KERBALISM
 		public static bool SpaceWeather;                        // coronal mass ejections
 		public static bool Automation;                          // control vessel components using scripts
 
+		// habitat
+		public static string VolumeResource;                   // name of the pseudo-resource used for abstracting habitat volume
+		public static string SurfaceResource;                   // name of the pseudo-resource used for abstracting habitat surface
+		public static string AtmosphereResource;                // name of the pseudo-resource used for abstracting pressure
+		public static string WasteAtmosphereResource;           // name of the pseudo-resource used for abstracting atmosphere CO2
+		public static string ShieldingResource;                 // name of the pseudo-resource used for abstracting radiation shielding
+		public static double PressureSuitVolume;                // habitat volume per kerbal while in EVA or inside an unpressurized habitat
+
 		// pressure
 		public static double PressureFactor;                    // pressurized modifier value for vessels below the threshold
 		public static double PressureThreshold;                 // level of atmosphere resource that determine pressurized status

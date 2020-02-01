@@ -142,12 +142,15 @@
     <Compile Include="Contracts\SpaceAnalysis.cs" />
     <Compile Include="Contracts\SpaceHarvest.cs" />
     <Compile Include="Database\DB.cs" />
+    <Compile Include="Database\HabitatData.cs" />
     <Compile Include="Database\KerbalData.cs" />
     <Compile Include="Database\LandmarkData.cs" />
     <Compile Include="Database\PartData.cs" />
+    <Compile Include="Database\PartDataCollection.cs" />
     <Compile Include="Database\RuleData.cs" />
     <Compile Include="Database\VesselSituations.cs" />
     <Compile Include="LocalizationCache.cs" />
+    <Compile Include="Modules\Habitat2.cs" />
     <Compile Include="Science\SubjectData.cs" />
     <Compile Include="Database\SupplyData.cs" />
     <Compile Include="Database\UIData.cs" />

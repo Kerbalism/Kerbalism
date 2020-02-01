@@ -34,14 +34,10 @@ namespace KERBALISM
 		private int habitatIndex = -1;
 		private List<Habitat> habitats;
 
-		public double MaxPressure => maxPressure; private double maxPressure;
-
 		public VesselHabitatInfo(ConfigNode node)
 		{
 			if (node == null)
 				return;
-
-			maxPressure = Lib.ConfigValue(node, "maxPressure", 1.0);
 
 			if (!node.HasNode("sspi")) return;
 			foreach (var n in node.GetNode("sspi").GetNodes())
@@ -58,8 +54,6 @@ namespace KERBALISM
 
 		internal void Save(ConfigNode node)
 		{
-			node.AddValue("maxPressure", maxPressure);
-
 			var sspiNode = node.AddNode("sspi");
 			foreach (var entry in habitatShieldings)
 			{
@@ -151,9 +145,6 @@ namespace KERBALISM
 			if (habitats == null)
 			{
 				habitats = Lib.FindModules<Habitat>(v);
-				maxPressure = 1.0;
-				foreach (var habitat in habitats)
-					maxPressure = Math.Min(maxPressure, habitat.max_pressure);
 			}
 
 			if (!Features.Radiation || habitats.Count == 0)

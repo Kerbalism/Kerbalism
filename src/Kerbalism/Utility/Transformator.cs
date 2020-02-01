@@ -18,6 +18,8 @@ namespace KERBALISM
 		private readonly float spinAccel;
 		private readonly bool rotate_iva;
 
+		public bool IsDefined { get; private set; } = false;
+
 		public Transformator(Part p, string transf_name, float SpinRate, float spinAccel, bool iva = true)
 		{
 			transform = null;
@@ -32,7 +34,7 @@ namespace KERBALISM
 				if (transform != null)
 				{
 					name = transf_name;
-					//Lib.Log("Transform {0} has been found", name);
+					IsDefined = true;
 
 					this.SpinRate = SpinRate;
 					this.spinAccel = spinAccel;
@@ -44,17 +46,20 @@ namespace KERBALISM
 		public void Play()
 		{
 			//Lib.Log("Playing Transformation {0}", name);
-			if (transform != null) rotationRateGoal = 1.0f;
+			if (IsDefined) rotationRateGoal = 1.0f;
 		}
 
 		public void Stop()
 		{
 			//Lib.Log("Stopping Transformation {0}", name);
-			if (transform != null) rotationRateGoal = 0.0f;
+			if (IsDefined) rotationRateGoal = 0.0f;
 		}
 
 		public void DoSpin()
 		{
+			if (!IsDefined)
+				return;
+
 			CurrentSpinRate = Mathf.MoveTowards(CurrentSpinRate, rotationRateGoal * SpinRate, TimeWarp.fixedDeltaTime * spinAccel);
 			float spin = Mathf.Clamp(TimeWarp.fixedDeltaTime * CurrentSpinRate, -10.0f, 10.0f);
 			//Lib.Log("Transform {0} spin rate {1}", name, CurrentSpinRate);
@@ -70,12 +75,12 @@ namespace KERBALISM
 
 		public bool IsRotating()
 		{
-			return Math.Abs(CurrentSpinRate) > Math.Abs(float.Epsilon * SpinRate);
+			return IsDefined && (Math.Abs(CurrentSpinRate) > Math.Abs(float.Epsilon * SpinRate));
 		}
 
 		public bool IsStopping()
 		{
-			return Math.Abs(rotationRateGoal) <= float.Epsilon;
+			return IsDefined && (Math.Abs(rotationRateGoal) <= float.Epsilon);
 		}
 	}
 }
