@@ -175,6 +175,8 @@ namespace KERBALISM
 				}
 
 				IsSaveGameInitDone = true;
+
+				Message.Clear();
 			}
 
 			// eveything else will be called on every OnLoad() call :
