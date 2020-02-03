@@ -348,8 +348,11 @@ namespace KERBALISM
 		/// <summary>Available volume per crew</summary>
 		public double VolumePerCrew => volumePerCrew; double volumePerCrew;
 
-		/// <summary>comfort info</summary>
-		public Comforts Comforts => comforts; Comforts comforts;
+		/// <summary>enabled comforts</summary>
+		public int ComfortMask => comfortMask; int comfortMask;
+
+		/// <summary>comfort factor</summary>
+		public double ComfortFactor => comfortFactor; double comfortFactor;
 
 		/// <summary>some data about greenhouses</summary>
 		public List<Greenhouse.Data> Greenhouses => greenhouses; List<Greenhouse.Data> greenhouses;
@@ -789,16 +792,38 @@ namespace KERBALISM
 
 			// habitat data
 			habitatInfo.Update(Vessel);
-			volume = Habitat.GetVolume(Vessel);
-			surface = Habitat.GetSurface(Vessel);
-			pressure = Habitat.GetPressure(Vessel);
 
-			evas = (uint)(Math.Max(0, ResourceCache.GetResource(Vessel, "Nitrogen").Amount - 330) / Settings.LifeSupportAtmoLoss);
-			poisoning = Habitat.GetPoisoning(Vessel);
-			shielding = Habitat.Shielding(Vessel);
-			livingSpace = Habitat.Living_space(Vessel);
-			volumePerCrew = Habitat.VolumePerCrew(Vessel);
-			comforts = new Comforts(Vessel, EnvLanded, crewCount > 1, connection.linked && connection.rate > double.Epsilon);
+			volume = surface = 0.0;
+			comfortMask = 0;
+			double atmoAmount = 0.0, wasteAmount = 0.0, shieldingAmount = 0.0;
+			foreach (PartData partData in Parts)
+			{
+				if (partData.Habitat != null && partData.Habitat.habitatEnabled)
+				{
+					volume += partData.Habitat.enabledVolume;
+					surface += partData.Habitat.enabledSurface;
+					atmoAmount += partData.Habitat.atmoAmount;
+					wasteAmount += partData.Habitat.wasteAmount;
+					shieldingAmount += partData.Habitat.shieldingAmount;
+					comfortMask |= partData.Habitat.enabledComfortsMask;
+				}
+			}
+
+			pressure = atmoAmount / volume;
+			poisoning = wasteAmount / volume;
+
+			shielding = Radiation.ShieldingEfficiency(shieldingAmount / surface);
+
+			volumePerCrew = volume / Math.Max(1, crewCount);
+
+			// living space is the volume per-capita normalized against an 'ideal living space' and clamped in an acceptable range
+			livingSpace = Lib.Clamp(volumePerCrew / PreferencesComfort.Instance.livingSpace, 0.1, 1.0);
+
+			if (landed) comfortMask |= 1 << (int)HabitatData.Comfort.FirmGround;
+			if (crewCount > 1) comfortMask |= 1 << (int)HabitatData.Comfort.NotAlone;
+			if (connection.linked && connection.rate > 0.0) comfortMask |= 1 << (int)HabitatData.Comfort.CallHome;
+
+			comfortFactor = HabitatLib.GetComfortFactor(comfortMask);
 
 			// data about greenhouses
 			greenhouses = Greenhouse.Greenhouses(Vessel);

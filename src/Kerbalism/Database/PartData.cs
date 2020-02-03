@@ -25,24 +25,34 @@ namespace KERBALISM
 			PartName = protopart.partName;
 		}
 
-		public void Save(ConfigNode node)
+		public void Save(ConfigNode partCollectionNode)
 		{
-			// TODO: only save if there is something to save, change node parameter to be the parent node
-			// (create the "part" node here instead of in PartDataList, change the node parameter to the PartDataList node)
-			node.AddValue("name", PartName); // isn't technically needed, this is for sfs editing / debugging purposes
+			if (Drive == null && Habitat == null)
+				return;
+
+			ConfigNode partNode = partCollectionNode.AddNode(FlightId.ToString());
+			partNode.AddValue("name", PartName); // isn't technically needed, this is for sfs editing / debugging purposes
 			if (Drive != null)
 			{
-				ConfigNode driveNode = node.AddNode("drive");
+				ConfigNode driveNode = partNode.AddNode("drive");
 				Drive.Save(driveNode);
+			}
+			if (Habitat != null)
+			{
+				ConfigNode habitatNode = partNode.AddNode("habitat");
+				Habitat.Save(habitatNode);
 			}
 		}
 
-		public void Load(ConfigNode node)
+		public void Load(ConfigNode partDataNode)
 		{
-			if (node.HasNode("drive"))
-			{
-				Drive = new Drive(node.GetNode("drive"));
-			}
+			ConfigNode driveNode = partDataNode.GetNode("drive");
+			if (driveNode != null)
+				Drive = new Drive(driveNode);
+
+			ConfigNode habitatNode = partDataNode.GetNode("habitat");
+			if (habitatNode != null)
+				Habitat = new HabitatData(habitatNode);
 		}
 
 		/// <summary> Must be called if the part is destroyed </summary>

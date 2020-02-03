@@ -648,7 +648,7 @@ namespace KERBALISM
 			bool isFile = subjectData.ExpInfo.SampleMass == 0.0;
 			Drive drive = null;
 			if (hdId != 0)
-				drive = vesselData.GetPartData(hdId).Drive;
+				drive = vesselData.Parts.Get(hdId).Drive;
 			else
 				drive = isFile ? Drive.FileDrive(vesselData, chunkSize) : Drive.SampleDrive(vesselData, chunkSize, subjectData);
 			UnityEngine.Profiling.Profiler.EndSample();

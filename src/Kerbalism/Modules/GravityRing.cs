@@ -160,7 +160,7 @@ namespace KERBALISM
 		{
 			// update RMB ui
 			Events["Toggle"].guiName = deployed ? Local.Generic_RETRACT : Local.Generic_DEPLOY;
-			Events["Toggle"].active = (deploy.Length > 0) && (part.FindModuleImplementing<Habitat>() == null) && !deploy_anim.Playing() && !waitRotation && ResourceCache.GetResource(vessel, "ElectricCharge").Amount > ec_rate;
+			Events["Toggle"].active = (deploy.Length > 0) && (part.FindModuleImplementing<ModuleKsmHabitat>() == null) && !deploy_anim.Playing() && !waitRotation && ResourceCache.GetResource(vessel, "ElectricCharge").Amount > ec_rate;
 
 			// in flight
 			if (Lib.IsFlight())

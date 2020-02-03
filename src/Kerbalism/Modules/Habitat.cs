@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace KERBALISM.Disabled
 {
-
+	/*
 
     public class Habitat2 : PartModule, ISpecifics, IModuleInfo, IPartCostModifier
 	{
@@ -160,7 +160,7 @@ namespace KERBALISM.Disabled
 
 			if (volume <= 0.0 || surface <= 0.0)
 			{
-				Habitat prefab = part.partInfo.partPrefab.FindModuleImplementing<Habitat>();
+				ModuleKsmHabitat prefab = part.partInfo.partPrefab.FindModuleImplementing<ModuleKsmHabitat>();
 				if (volume <= 0.0) volume = prefab.volume;
 				if (surface <= 0.0) surface = prefab.surface;
 			}
@@ -717,5 +717,5 @@ namespace KERBALISM.Disabled
 			Lib.GetPartVolumeAndSurface(part, true);
 		}
 	}
-
+	*/
 }

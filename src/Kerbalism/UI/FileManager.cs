@@ -49,7 +49,7 @@ namespace KERBALISM
 			bool unlimitedData = false;
 			bool unlimitedSamples = false;
 
-			foreach (PartData partData in vd.PartDatas)
+			foreach (PartData partData in vd.Parts)
 			{
 				Drive drive = partData.Drive;
 				if (drive == null)

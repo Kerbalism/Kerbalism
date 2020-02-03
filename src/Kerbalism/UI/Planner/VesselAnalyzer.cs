@@ -18,11 +18,11 @@ namespace KERBALISM.Planner
 			// inverting their order avoided this corner-case
 
 			Analyze_crew(parts);
+			Analyze_comms(parts);
 			Analyze_habitat(parts, sim, env);
 			Analyze_radiation(parts, sim);
 			Analyze_reliability(parts);
-			Analyze_qol(parts, sim, env);
-			Analyze_comms(parts);
+			
 		}
 
 		void Analyze_crew(List<Part> parts)
@@ -70,11 +70,43 @@ namespace KERBALISM.Planner
 
 		void Analyze_habitat(List<Part> parts, ResourceSimulator sim, EnvironmentAnalyzer env)
 		{
-			// calculate total volume
-			volume = sim.Resource("Atmosphere").capacity / 1e3;
+			volume = surface = 0.0;
+			comfortMask = 0;
+			double atmoAmount = 0.0, wasteAmount = 0.0, shieldingAmount = 0.0;
+			foreach (Part part in parts)
+			{
+				foreach (ModuleKsmHabitat habitat in part.Modules.GetModules<ModuleKsmHabitat>())
+				{
+					HabitatData habitatData = habitat.HabitatData;
+					if (habitatData != null && habitatData.habitatEnabled)
+					{
+						volume += habitatData.enabledVolume;
+						surface += habitatData.enabledSurface;
+						atmoAmount += habitatData.atmoAmount;
+						wasteAmount += habitatData.wasteAmount;
+						shieldingAmount += habitatData.shieldingAmount;
+						comfortMask |= habitatData.enabledComfortsMask;
+					}
+				}
+			}
 
-			// calculate total surface
-			surface = sim.Resource("Shielding").capacity;
+			shielding = Radiation.ShieldingEfficiency(shieldingAmount / surface);
+
+			volume_per_crew = volume / Math.Max(1, crew_count);
+
+			// living space is the volume per-capita normalized against an 'ideal living space' and clamped in an acceptable range
+			living_space = Lib.Clamp(volume_per_crew / PreferencesComfort.Instance.livingSpace, 0.1, 1.0);
+
+			if (env.landed) comfortMask |= 1 << (int)HabitatData.Comfort.FirmGround;
+			if (crew_count > 1) comfortMask |= 1 << (int)HabitatData.Comfort.NotAlone;
+			if (has_comms) comfortMask |= 1 << (int)HabitatData.Comfort.CallHome;
+
+			comfortFactor = HabitatLib.GetComfortFactor(comfortMask);
+
+			// TODO: make pressure / scrubbing work, not sure how to do that.
+
+			//pressure = atmoAmount / volume;
+			//poisoning = wasteAmount / volume;
 
 			// determine if the vessel has pressure control capabilities
 			pressurized = sim.Resource("Atmosphere").produced > 0.0 || env.breathable;
@@ -208,18 +240,6 @@ namespace KERBALISM.Planner
 			high_quality /= Math.Max(components, 1u);
 		}
 
-		void Analyze_qol(List<Part> parts, ResourceSimulator sim, EnvironmentAnalyzer env)
-		{
-			// calculate living space factor
-			living_space = Lib.Clamp((volume / Math.Max(crew_count, 1u)) / PreferencesComfort.Instance.livingSpace, 0.1, 1.0);
-
-			// calculate comfort factor
-			comforts = new Comforts(parts, env.landed, crew_count > 1, has_comms);
-
-
-		}
-
-
 		// general
 		public List<ProtoCrewMember> crew;                  // full information on all crew
 		public uint crew_count;                             // crew member on board
@@ -243,8 +263,10 @@ namespace KERBALISM.Planner
 		public double shielding;                            // shielding factor
 
 		// quality-of-life related
+		public double volume_per_crew;                         // living space factor
 		public double living_space;                         // living space factor
-		public Comforts comforts;                           // comfort info
+		public int comfortMask;                           // comfort info
+		public double comfortFactor;                           // comfort info
 
 		// reliability-related
 		public uint components;                             // number of components that can fail

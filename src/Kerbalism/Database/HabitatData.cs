@@ -6,14 +6,21 @@ using System.Threading.Tasks;
 
 namespace KERBALISM
 {
+	/// <summary>
+	/// Vessel state independant structure for the Habitat PartModule. Try not to put any logic in here.
+	/// </summary>
 	public class HabitatData
 	{
 		public enum PressureState
 		{
 			Pressurized,
 			Depressurized,
+			PressurizingStart,
 			Pressurizing,
-			Depressurizing
+			PressurizingEnd,
+			DepressurizingStart,
+			Depressurizing,
+			DepressurizingEnd
 		}
 
 		public enum Comfort
@@ -26,46 +33,106 @@ namespace KERBALISM
 			Plants = 1 << 5
 		}
 
+		// TODO : make this a struct
 		public struct SunRadiationOccluders
 		{
-			public double distance = 1.0;
-			public double thickness = 1.0;
+			public double distance;
+			public double thickness;
+
+			public SunRadiationOccluders(double distance, double thickness)
+			{
+				this.distance = distance;
+				this.thickness = thickness;
+			}
 		}
 
-		public bool isEnabled; // can the habitat be occupied and does it count for global pressure/volume/comforts/radiation
-		public PressureState pressureState; // is the habitat pressurized
-		public bool isDeployed; // if deployable, is the habitat deployed ?
-		public bool isRotating; // if centrifuge, is the centrifuge spinning ?
-		public double volume; // habitable volume in m3
-		public double surface; // surface in m2
-		public double pressure; // [0;1] pressure in % of 1 atm
-		public int enabledComforts; // bitmask of currently available comforts
-		public double poisoning; // [0;1] % of CO2 in the air
-		public double radiationShielding; // radiation shielding level, 1.0 is 
+		/// <summary> can the habitat be occupied and does it count for global pressure/volume/comforts/radiation </summary>
+		public bool habitatEnabled;
+
+		/// <summary> pressure state </summary>
+		public PressureState pressureState;
+
+		/// <summary> if deployable, is the habitat deployed ? </summary>
+		public bool isDeployed;
+
+		/// <summary> if centrifuge, is the centrifuge spinning ? </summary>
+		public bool isRotating;
+
+		/// <summary> crew count </summary>
+		public int crewCount;
+
+		/// <summary> current habitable & pressurized volume in m3 </summary>
+		public double enabledVolume;
+
+		/// <summary> current atmosphere count (1 unit = 1 m3 of air at STP) </summary>
+		public double atmoAmount;
+
+		/// <summary> current poisonous atmosphere count (1 unit = 1 m3 of CO2 at STP) </summary>
+		public double wasteAmount; 
+
+		/// <summary> current shielding count (1 unit = 1 m2 of fully shielded surface, see Radiation.ShieldingEfficiency) </summary>
+		public double shieldingAmount;
+
+		/// <summary> current surface in m2 </summary>
+		public double enabledSurface;
+
+		/// <summary> bitmask of currently available comforts </summary>
+		public int enabledComfortsMask;
+
 		public double sunRadiation;
 		public List<SunRadiationOccluders> sunRadiationOccluders = new List<SunRadiationOccluders>();
 
-		public HabitatData(Habitat habitatModule)
+		public ModuleKsmHabitat module;
+
+		public HabitatData(ModuleKsmHabitat habitatModule = null)
 		{
-			isEnabled = habitatModule.habitatEnabled;
-			pressureState = habitatModule.pressureState;
-			isDeployed = habitatModule.isDeployed;
-			isRotating = habitatModule.isRotating;
-			enabledComforts = habitatModule.enabledComforts;
+			module = habitatModule;
+		}
 
-			if (isEnabled)
+		public void Save(ConfigNode habitatNode)
+		{
+			habitatNode.AddValue("habitatEnabled", habitatEnabled);
+			habitatNode.AddValue("pressureState", pressureState.ToString());
+			habitatNode.AddValue("isDeployed", isDeployed);
+			habitatNode.AddValue("isRotating", isRotating);
+			habitatNode.AddValue("crewCount", crewCount);
+			habitatNode.AddValue("enabledVolume", enabledVolume);
+			habitatNode.AddValue("atmoAmount", atmoAmount);
+			habitatNode.AddValue("wasteAmount", wasteAmount);
+			habitatNode.AddValue("shieldingAmount", shieldingAmount);
+			habitatNode.AddValue("enabledSurface", enabledSurface);
+			habitatNode.AddValue("enabledComfortsMask", enabledComfortsMask);
+			habitatNode.AddValue("sunRadiation", sunRadiation);
+
+			foreach (SunRadiationOccluders occluder in sunRadiationOccluders)
 			{
-				surface = habitatModule.surface;
-
-				if (pressureState == PressureState.Depressurized)
-					volume = Lib.CrewCount(habitatModule.part) * Settings.PressureSuitVolume;
-				else
-					volume = habitatModule.volume;
+				ConfigNode occluderNode = habitatNode.AddNode("occluder");
+				occluderNode.AddValue("distance", occluder.distance);
+				occluderNode.AddValue("thickness", occluder.thickness);
 			}
-			else
+		}
+
+		public HabitatData(ConfigNode habitatNode)
+		{
+			habitatEnabled = Lib.ConfigValue(habitatNode, "habitatEnabled", habitatEnabled);
+			pressureState = Lib.ConfigEnum(habitatNode, "pressureState", pressureState);
+			isDeployed = Lib.ConfigValue(habitatNode, "isDeployed", isDeployed);
+			isRotating = Lib.ConfigValue(habitatNode, "isRotating", isRotating);
+			crewCount = Lib.ConfigValue(habitatNode, "crewCount", crewCount);
+			enabledVolume = Lib.ConfigValue(habitatNode, "enabledVolume", enabledVolume);
+			atmoAmount = Lib.ConfigValue(habitatNode, "atmoAmount", atmoAmount);
+			wasteAmount = Lib.ConfigValue(habitatNode, "wasteAmount", wasteAmount);
+			shieldingAmount = Lib.ConfigValue(habitatNode, "shieldingAmount", shieldingAmount);
+			enabledSurface = Lib.ConfigValue(habitatNode, "enabledSurface", enabledSurface);
+			enabledComfortsMask = Lib.ConfigValue(habitatNode, "enabledComfortsMask", enabledComfortsMask);
+			sunRadiation = Lib.ConfigValue(habitatNode, "sunRadiation", sunRadiation);
+
+			sunRadiationOccluders.Clear();
+			foreach (ConfigNode occluderNode in habitatNode.GetNodes("occluder"))
 			{
-				surface = 0.0;
-				volume = 0.0;
+				double distance = Lib.ConfigValue(occluderNode, "distance", 1.0);
+				double thickness = Lib.ConfigValue(occluderNode, "thickness", 1.0);
+				sunRadiationOccluders.Add(new SunRadiationOccluders(distance, thickness));
 			}
 		}
 	}

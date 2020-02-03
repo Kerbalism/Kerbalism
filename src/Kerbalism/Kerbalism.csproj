@@ -243,7 +243,6 @@
     <Compile Include="UI\Tooltip.cs" />
     <Compile Include="UI\UI.cs" />
     <Compile Include="Modules\Configure.cs" />
-    <Compile Include="Modules\Comfort.cs" />
     <Compile Include="Modules\GravityRing.cs" />
     <Compile Include="Modules\Habitat.cs" />
     <Compile Include="Modules\PlannerController.cs" />

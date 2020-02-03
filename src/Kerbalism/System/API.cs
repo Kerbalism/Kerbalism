@@ -414,7 +414,7 @@ namespace KERBALISM
 		// return comfort factor
 		public static double Comfort(Vessel v)
 		{
-			return v.KerbalismData().Comforts.factor;
+			return v.KerbalismData().ComfortFactor;
 		}
 
 

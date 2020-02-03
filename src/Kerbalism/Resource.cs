@@ -46,6 +46,7 @@ namespace KERBALISM
 		public static ResourceBroker StockConverter = GetOrCreate("StockConverter", BrokerCategory.Converter, Local.Brokers_StockConverter);
 		public static ResourceBroker StockDrill = GetOrCreate("Converter", BrokerCategory.Harvester, Local.Brokers_StockDrill);
 		public static ResourceBroker Harvester = GetOrCreate("Harvester", BrokerCategory.Harvester, Local.Brokers_Harvester);
+		public static ResourceBroker Habitat = GetOrCreate("Habitat", BrokerCategory.VesselSystem, Local.Habitat);
 
 		public string Id { get; private set; }
 		public BrokerCategory Category { get; private set; }

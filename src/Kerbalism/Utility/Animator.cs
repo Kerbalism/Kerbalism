@@ -108,7 +108,7 @@ namespace KERBALISM
 		{
 			if (IsDefined)
 			{
-				return (anim[name].speed > float.Epsilon) && anim.IsPlaying(name);
+				return (anim[name].speed > 0f) && anim.IsPlaying(name);
 			}
 			return false;
 		}

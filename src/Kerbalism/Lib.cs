@@ -9,6 +9,7 @@ using UnityEngine;
 using CommNet;
 using KSP.Localization;
 using KSP.UI.Screens;
+using KSP.UI;
 
 namespace KERBALISM
 {
@@ -1473,12 +1474,29 @@ namespace KERBALISM
 			EditorLogic.fetch.SetBackup();
 		}
 
+		public static void EditorClearPartCrew(Part part)
+		{
+			PartCrewManifest partCrewManifest = ShipConstruction.ShipManifest.GetPartCrewManifest(part.craftID);
+
+			if (partCrewManifest != null)
+			{
+				for (int i = 0; i < partCrewManifest.partCrew.Length; i++)
+				{
+					partCrewManifest.RemoveCrewFromSeat(i);
+				}
+			}
+
+			CrewAssignmentDialog.Instance.RefreshCrewLists(ShipConstruction.ShipManifest, false, false);
+		}
+
+
+		// TODO : clean that, merge the two methods
 		public static List<ProtoCrewMember> TryTransferCrewToPart(List<ProtoCrewMember> fromPartCrewMembers, Part fromPart, Part toPart, bool postTransferMessage = true)
 		{
 			List<ProtoCrewMember> crewLeft = new List<ProtoCrewMember>(fromPartCrewMembers.Count);
-
-			CrewTransfer transfer = null;
-			foreach (ProtoCrewMember crew in fromPartCrewMembers)
+			ProtoCrewMember[] crewToTransfer = fromPartCrewMembers.ToArray();
+			//CrewTransfer transfer = null;
+			foreach (ProtoCrewMember crew in crewToTransfer)
 			{
 				if (!toPart.crewTransferAvailable || toPart.protoModuleCrew.Count >= toPart.CrewCapacity)
 				{
@@ -1486,42 +1504,35 @@ namespace KERBALISM
 					continue;
 				}
 
-				transfer = CrewTransfer.Create(fromPart, crew, null);
-
-				// create data for the onCrewTransferSelected event
-				CrewTransfer.CrewTransferData crewTransferData = new CrewTransfer.CrewTransferData
+				CrewTransfer.CrewTransferData transferData = new CrewTransfer.CrewTransferData()
 				{
-					canTransfer = true,
 					crewMember = crew,
 					sourcePart = fromPart,
 					destPart = toPart,
-					transfer = transfer
+					canTransfer = true
 				};
 
-				// fire the event and check if we are authorized to do the transfer
-				GameEvents.onCrewTransferSelected.Fire(crewTransferData);
-				if (!crewTransferData.canTransfer)
+				GameEvents.onCrewTransferSelected.Fire(transferData);
+				if (!transferData.canTransfer)
 				{
 					crewLeft.Add(crew);
 					continue;
 				}
 
-				// replicate CrewTransfer.MoveCrewTo(Part p), but (1) allow to disable the screen message
 				fromPart.RemoveCrewmember(crew);
 				toPart.AddCrewmember(crew);
-				if (postTransferMessage)
-					ScreenMessages.PostScreenMessage(Localizer.Format("#autoLOC_111636", crew.name, toPart.partInfo.title), transfer.scMsgWarning);
+
+				//if (postTransferMessage)
+					// ScreenMessages.PostScreenMessage(Localizer.Format("#autoLOC_111636", crew.name, toPart.partInfo.title), transfer.scMsgWarning);
 
 				GameEvents.onCrewTransferred.Fire(new GameEvents.HostedFromToAction<ProtoCrewMember, Part>(crew, fromPart, toPart));
-				Vessel.CrewWasModified(fromPart.vessel, toPart.vessel);
-				transfer.tgtPart = toPart;
 			}
 
 			// (2) only rebuild the IVA / portraits if there was a transfer on the active vessel
 			if (fromPart.vessel.isActiveVessel && crewLeft.Count < fromPartCrewMembers.Count)
 			{
 				FlightGlobals.ActiveVessel.DespawnCrew();
-				transfer.StartCoroutine(CallbackUtil.DelayedCallback(1, transfer.waitAndCompleteTransfer));
+				//transfer.StartCoroutine(CallbackUtil.DelayedCallback(1, transfer.waitAndCompleteTransfer));
 			}
 
 			return crewLeft;
@@ -1529,18 +1540,25 @@ namespace KERBALISM
 
 		public static List<ProtoCrewMember> TryTransferCrewElsewhere(Part crewedPart, bool postTransferMessage = true)
 		{
-			List<ProtoCrewMember> partCrew = crewedPart.protoModuleCrew;
+			List<ProtoCrewMember> crewLeft = crewedPart.protoModuleCrew;
+			int initialCrewCount = crewLeft.Count;
 			foreach (Part otherPart in crewedPart.vessel.Parts)
 			{
 				if (!otherPart.crewTransferAvailable || otherPart.protoModuleCrew.Count >= otherPart.CrewCapacity)
 					continue;
 
-				partCrew = TryTransferCrewToPart(partCrew, crewedPart, otherPart, postTransferMessage);
+				crewLeft = TryTransferCrewToPart(crewLeft, crewedPart, otherPart, postTransferMessage);
 
-				if (partCrew.Count == 0)
+				if (crewLeft.Count == 0)
 					break;
 			}
-			return partCrew;
+
+			if (initialCrewCount > crewLeft.Count)
+			{
+				Kerbalism.Fetch.StartCoroutine(CallbackUtil.DelayedCallback(1, FlightGlobals.ActiveVessel.SpawnCrew));
+			}
+
+			return crewLeft;
 		}
 
 		public static void EnablePartIVA(Part part, bool enable)
@@ -2154,7 +2172,7 @@ namespace KERBALISM
 		/// return all modules implementing a specific type in a vessel
 		/// note: modules having isEnabled = false are not returned
 		/// </summary>
-		public static List<T> FindModules<T>(Vessel v, Predicate<T> predicate = null) where T : PartModule
+		public static List<T> FindModules<T>(Vessel v, Predicate<T> predicate = null) where T : class
 		{
 			List<T> ret = new List<T>();
 			for (int i = 0; i < v.parts.Count; ++i)

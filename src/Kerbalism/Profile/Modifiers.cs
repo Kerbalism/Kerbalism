@@ -59,7 +59,7 @@ namespace KERBALISM
 						break;
 
 					case "comfort":
-						k /= vd.Comforts.factor;
+						k /= vd.ComfortFactor;
 						break;
 
 					case "pressure":
@@ -132,7 +132,7 @@ namespace KERBALISM
 						break;
 
 					case "comfort":
-						k /= va.comforts.factor;
+						k /= va.comfortFactor;
 						break;
 
 					case "pressure":

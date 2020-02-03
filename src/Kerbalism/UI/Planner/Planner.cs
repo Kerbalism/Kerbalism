@@ -341,12 +341,12 @@ namespace KERBALISM.Planner
 				Local.Planner_volumepercapita ,"<b>\t", Lib.HumanReadableVolume(vessel_analyzer.volume / Math.Max(vessel_analyzer.crew_count, 1)), "</b>\n",//"volume per-capita:
 				Local.Planner_ideallivingspace ,"<b>\t", Lib.HumanReadableVolume(PreferencesComfort.Instance.livingSpace), "</b>"//"ideal living space:
 			);
-			p.AddContent(Local.Planner_livingspace, Habitat.LivingSpaceToString(vessel_analyzer.living_space), living_space_tooltip);//"living space"
+			p.AddContent(Local.Planner_livingspace, HabitatLib.LivingSpaceFactorToString(vessel_analyzer.living_space), living_space_tooltip);//"living space"
 
 			// render comfort data
 			if (rule.modifiers.Contains("comfort"))
 			{
-				p.AddContent(Local.Planner_comfort, vessel_analyzer.comforts.Summary(), vessel_analyzer.comforts.Tooltip());//"comfort"
+				p.AddContent(Local.Planner_comfort, HabitatLib.ComfortSummary(vessel_analyzer.comfortFactor), HabitatLib.ComfortTooltip(vessel_analyzer.comfortMask, vessel_analyzer.comfortFactor));//"comfort"
 			}
 			else
 			{
@@ -431,7 +431,7 @@ namespace KERBALISM.Planner
 				p.AddContent(Local.Planner_emission, Lib.HumanReadableRadiation(vessel_analyzer.emitted), tooltip);//"emission"
 			else
 				p.AddContent(Local.Planner_activeshielding, Lib.HumanReadableRadiation(-vessel_analyzer.emitted), tooltip);//"active shielding"
-			p.AddContent(Local.Planner_shielding, rule.modifiers.Contains("shielding") ? Habitat.ShieldingToString(vessel_analyzer.shielding) : "N/A", tooltip);//"shielding"
+			p.AddContent(Local.Planner_shielding, rule.modifiers.Contains("shielding") ? HabitatLib.ShieldingToString(vessel_analyzer.shielding) : "N/A", tooltip);//"shielding"
 		}
 
 		///<summary> Add reliability sub-panel, including tooltips </summary>

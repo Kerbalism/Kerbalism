@@ -32,7 +32,7 @@ namespace KERBALISM
 	{
 		public Dictionary<uint, List<SunShieldingPartData>> habitatShieldings = new Dictionary<uint, List<SunShieldingPartData>>();
 		private int habitatIndex = -1;
-		private List<Habitat> habitats;
+		private List<ModuleKsmHabitat> habitats;
 
 		public VesselHabitatInfo(ConfigNode node)
 		{
@@ -144,7 +144,7 @@ namespace KERBALISM
 
 			if (habitats == null)
 			{
-				habitats = Lib.FindModules<Habitat>(v);
+				habitats = Lib.FindModules<ModuleKsmHabitat>(v);
 			}
 
 			if (!Features.Radiation || habitats.Count == 0)

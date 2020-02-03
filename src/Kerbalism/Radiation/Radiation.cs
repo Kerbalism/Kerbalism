@@ -1016,7 +1016,7 @@ namespace KERBALISM
         /// </summary>
         public static double ShieldingEfficiency(double shielding)
         {
-            return 1 - Math.Pow(1 - PreferencesRadiation.Instance.shieldingEfficiency, Lib.Clamp(shielding, 0.0, 1.0));
+            return 1 - Math.Pow(1 - PreferencesRadiation.Instance.shieldingEfficiency, Math.Max(shielding, 0.0));
         }
 
         static Dictionary<string, RadiationModel> models = new Dictionary<string, RadiationModel>(16);

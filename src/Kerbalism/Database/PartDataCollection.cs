@@ -26,15 +26,15 @@ namespace KERBALISM
 
 		public void Load(ConfigNode vesselDataNode)
 		{
-			ConfigNode partsNode = new ConfigNode();
-			if (vesselDataNode.TryGetNode("parts", ref partsNode))
+			ConfigNode partsNode = vesselDataNode.GetNode("parts");
+			if (partsNode == null)
+				return;
+
+			foreach (ConfigNode partDataNode in partsNode.GetNodes())
 			{
-				foreach (ConfigNode partDataNode in partsNode.GetNodes())
+				if (partDictionary.TryGetValue(Lib.Parse.ToUInt(partDataNode.name), out PartData partData))
 				{
-					if (partDictionary.TryGetValue(Lib.Parse.ToUInt(partDataNode.name), out PartData partData))
-					{
-						partData.Load(partDataNode);
-					}
+					partData.Load(partDataNode);
 				}
 			}
 		}
@@ -44,8 +44,7 @@ namespace KERBALISM
 			ConfigNode partsNode = vesselDataNode.AddNode("parts");
 			foreach (PartData partData in partList)
 			{
-				ConfigNode partNode = partsNode.AddNode(partData.FlightId.ToString());
-				partData.Save(partNode);
+				partData.Save(partsNode);
 			}
 		}
 
@@ -59,6 +58,7 @@ namespace KERBALISM
 
 		public bool TryGet(uint flightID, out PartData partData) => partDictionary.TryGetValue(flightID, out partData);
 
+		/// <summary> Get-or-create method. Needed in some corner cases (partmodules OnStart) when a part was created in flight (KIS)</summary>
 		public PartData Get(uint flightID)
 		{
 			// in some cases (KIS added parts), we might try to get partdata before it is added by part-adding events

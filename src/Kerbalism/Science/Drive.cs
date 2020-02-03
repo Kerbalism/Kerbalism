@@ -104,26 +104,26 @@ namespace KERBALISM
 			}
 		}
 
-		public void Save(ConfigNode node)
+		public void Save(ConfigNode driveNode)
 		{
 			// save science files
-			var files_node = node.AddNode("files");
+			var files_node = driveNode.AddNode("files");
 			foreach (File file in files.Values)
 			{
 				file.Save(files_node.AddNode(DB.To_safe_key(file.subjectData.Id)));
 			}
 
 			// save science samples
-			var samples_node = node.AddNode("samples");
+			var samples_node = driveNode.AddNode("samples");
 			foreach (Sample	sample in samples.Values)
 			{
 				sample.Save(samples_node.AddNode(DB.To_safe_key(sample.subjectData.Id)));
 			}
 
-			node.AddValue("name", name);
-			node.AddValue("is_private", is_private);
-			node.AddValue("dataCapacity", dataCapacity);
-			node.AddValue("sampleCapacity", sampleCapacity);
+			driveNode.AddValue("name", name);
+			driveNode.AddValue("is_private", is_private);
+			driveNode.AddValue("dataCapacity", dataCapacity);
+			driveNode.AddValue("sampleCapacity", sampleCapacity);
 
 			string fileNames = string.Empty;
 			foreach (string subjectId in fileSendFlags.Keys)
@@ -131,7 +131,7 @@ namespace KERBALISM
 				if (fileNames.Length > 0) fileNames += ",";
 				fileNames += subjectId;
 			}
-			node.AddValue("sendFileNames", fileNames);
+			driveNode.AddValue("sendFileNames", fileNames);
 		}
 
 
@@ -542,7 +542,7 @@ namespace KERBALISM
 		/// <summary> delete all files/samples in the vessel drives</summary>
 		public static void DeleteDrivesData(Vessel vessel)
 		{
-			foreach (PartData partData in vessel.KerbalismData().PartDatas)
+			foreach (PartData partData in vessel.KerbalismData().Parts)
 			{
 				if (partData.Drive != null)
 				{
@@ -556,7 +556,7 @@ namespace KERBALISM
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Drive.GetDrives");
 			List<Drive> drives = new List<Drive>();
 
-			foreach (PartData partData in vd.PartDatas)
+			foreach (PartData partData in vd.Parts)
 			{
 				if (partData.Drive != null && (includePrivate || !partData.Drive.is_private))
 				{

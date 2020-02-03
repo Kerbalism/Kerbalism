@@ -106,9 +106,9 @@ namespace KERBALISM
 			if (!v.isEVA)
 			{
 				if (Features.Pressure) p.AddContent(Local.TELEMETRY_pressure, Lib.HumanReadablePressure(vd.Pressure * Sim.PressureAtSeaLevel()));//"pressure"
-				if (Features.Shielding) p.AddContent(Local.TELEMETRY_shielding, Habitat.ShieldingToString(vd.Shielding));//"shielding"
-				if (Features.LivingSpace) p.AddContent(Local.TELEMETRY_livingspace, Habitat.LivingSpaceToString(vd.LivingSpace));//"living space"
-				if (Features.Comfort) p.AddContent(Local.TELEMETRY_comfort, vd.Comforts.Summary(), vd.Comforts.Tooltip());//"comfort"
+				if (Features.Shielding) p.AddContent(Local.TELEMETRY_shielding, HabitatLib.ShieldingToString(vd.Shielding));//"shielding"
+				if (Features.LivingSpace) p.AddContent(Local.TELEMETRY_livingspace, HabitatLib.LivingSpaceFactorToString(vd.LivingSpace));//"living space"
+				if (Features.Comfort) p.AddContent(Local.TELEMETRY_comfort, HabitatLib.ComfortSummary(vd.ComfortFactor), HabitatLib.ComfortTooltip(vd.ComfortMask, vd.ComfortFactor));//"comfort"
 				if (Features.Pressure) p.AddContent(Local.TELEMETRY_EVAsavailable, vd.EnvBreathable ? Local.TELEMETRY_EnvBreathable : Lib.HumanReadableInteger(vd.Evas), vd.EnvBreathable ? Local.TELEMETRY_Breathableatm : Local.TELEMETRY_approx);//"EVA's available""infinite""breathable atmosphere""approx (derived from stored N2)"
 			}
 		}
