@@ -95,7 +95,7 @@ namespace KERBALISM
 			{
 				// get script
 				ScriptType script_type = (ScriptType)script_index;
-				string script_name = script_type.ToString().Replace('_', ' ').ToUpper();
+				string script_name = Name().ToUpper();
 				Script script = v.KerbalismData().computer.Get(script_type);
 
 				// draw section title and desc
@@ -170,6 +170,35 @@ namespace KERBALISM
 			{
 				p.AddContent("<i>"+Local.DevManager_nodevices +"</i>");//no devices
 			}
+		}
+
+		// return short description of a script, or the time-out message
+		static string Name()
+		{
+			switch ((ScriptType)script_index)
+			{
+				case ScriptType.landed: return Local.DevManager_NameTabLanded;
+				case ScriptType.atmo: return Local.DevManager_NameTabAtmo;
+				case ScriptType.space: return Local.DevManager_NameTabSpace;
+				case ScriptType.sunlight: return Local.DevManager_NameTabSunlight;
+				case ScriptType.shadow: return Local.DevManager_NameTabShadow;
+				case ScriptType.power_high: return Local.DevManager_NameTabPowerHigh;
+				case ScriptType.power_low: return Local.DevManager_NameTabPowerLow;
+				case ScriptType.rad_high: return Local.DevManager_NameTabRadHigh;
+				case ScriptType.rad_low: return Local.DevManager_NameTabRadLow;
+				case ScriptType.linked: return Local.DevManager_NameTabLinked;
+				case ScriptType.unlinked: return Local.DevManager_NameTabUnlinked;
+				case ScriptType.eva_out: return Local.DevManager_NameTabEVAOut;
+				case ScriptType.eva_in: return Local.DevManager_NameTabEVAIn;
+				case ScriptType.action1: return Local.DevManager_NameTabAct1;
+				case ScriptType.action2: return Local.DevManager_NameTabAct2;
+				case ScriptType.action3: return Local.DevManager_NameTabAct3;
+				case ScriptType.action4: return Local.DevManager_NameTabAct4;
+				case ScriptType.action5: return Local.DevManager_NameTabAct5;
+				case ScriptType.drive_full: return Local.DevManager_NameTabDriveFull;
+				case ScriptType.drive_empty: return Local.DevManager_NameTabDriveEmpty;
+			}
+			return string.Empty;
 		}
 
 		// return short description of a script, or the time-out message
