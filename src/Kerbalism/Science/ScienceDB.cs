@@ -204,6 +204,7 @@ namespace KERBALISM
 		{
 			Lib.Log("ScienceDB init started");
 			int subjectCount = 0;
+			double totalScience = 0.0;
 
 			// get our extra defintions
 			ConfigNode[] expDefNodes = GameDatabase.Instance.GetConfigNodes("EXPERIMENT_DEFINITION");
@@ -274,6 +275,7 @@ namespace KERBALISM
 									subjectByExpThenSituationId[expInfo].Add(situation.Id, subjectData);
 									knownStockSubjectsId.Add(subjectData.StockSubjectId);
 									subjectCount++;
+									totalScience += subjectData.ScienceMaxValue;
 								}
 								
 								expBodiesSituationsBiomesSubject.AddSubject(expInfo, bodyIndex, scienceSituation, (int)virtualBiome, subjectData);
@@ -292,6 +294,7 @@ namespace KERBALISM
 									subjectByExpThenSituationId[expInfo].Add(situation.Id, subjectData);
 									knownStockSubjectsId.Add(subjectData.StockSubjectId);
 									subjectCount++;
+									totalScience += subjectData.ScienceMaxValue;
 								}
 
 								expBodiesSituationsBiomesSubject.AddSubject(expInfo, bodyIndex, scienceSituation, biomeIndex, subjectData);
@@ -308,6 +311,7 @@ namespace KERBALISM
 								subjectByExpThenSituationId[expInfo].Add(situation.Id, subjectData);
 								knownStockSubjectsId.Add(subjectData.StockSubjectId);
 								subjectCount++;
+								totalScience += subjectData.ScienceMaxValue;
 							}
 
 							expBodiesSituationsBiomesSubject.AddSubject(expInfo, bodyIndex, scienceSituation, -1, subjectData);
@@ -316,13 +320,43 @@ namespace KERBALISM
 				}
 			}
 
-			foreach (ExperimentInfo experimentInfo in ExperimentInfos)
+			// cache that call
+			IEnumerable<ExperimentInfo> experimentInfosCache = ExperimentInfos;
+
+			// first parse all the IncludeExperiment configs
+			foreach (ExperimentInfo experimentInfo in experimentInfosCache)
+				experimentInfo.ParseIncludedExperiments();
+
+			// then check for infinite recursion from bad configs
+			List<ExperimentInfo> chainedExperiments = new List<ExperimentInfo>();
+			foreach (ExperimentInfo experimentInfo in experimentInfosCache)
 			{
-				experimentInfo.SetupIncludedExperiments();
+				chainedExperiments.Clear();
+				ExperimentInfo.CheckIncludedExperimentsRecursion(experimentInfo, chainedExperiments);
+			}
+				
+			// now we are sure all the include experiment chains are valid
+			foreach (ExperimentInfo experimentInfo in experimentInfosCache)
+			{
+				// populate the included experiments chains at the subject level
+				foreach (KeyValuePair<int, SubjectData> subjectInfo in subjectByExpThenSituationId[experimentInfo])
+				{
+					foreach (ExperimentInfo includedInfo in experimentInfo.IncludedExperiments)
+					{
+						SubjectData subjectToInclude = GetSubjectData(includedInfo, subjectInfo.Key);
+
+						if (subjectToInclude != null)
+							subjectInfo.Value.IncludedSubjects.Add(subjectToInclude);
+					}
+				}
+
+				// Get the experiment description that will be shown in the science archive by calling GetInfo() on the first found partmodule using it
+				// TODO: this isn't ideal, if there are several modules with different values (ex : data rate, ec rate...), the archive info will use the first found one.
+				// Ideally we should revamp the whole handling of that (because it's a mess from the partmodule side too)
 				experimentInfo.CompileModuleInfos();
 			}
 
-			Lib.Log("ScienceDB init done : " + subjectCount + " subjects found");
+			Lib.Log($"ScienceDB init done : {subjectCount} subjects found, total science points : {totalScience.ToString("F1")}");
 		}
 
 		public static void Load(ConfigNode node)
@@ -586,11 +620,6 @@ namespace KERBALISM
 
 		}
 
-		public static Dictionary<int, SubjectData> GetSubjectDictionary(ExperimentInfo expInfo)
-		{
-			return subjectByExpThenSituationId[expInfo];
-		}
-
 		/// <summary>
 		/// Create our SubjectData by parsing the stock "experiment@situation" subject id string.
 		/// Used for asteroid samples, for compatibility with RnD archive data of removed mods and for converting stock ScienceData into SubjectData
@@ -663,6 +692,9 @@ namespace KERBALISM
 
 			if (subjectBody == null)
 			{
+				// TODO : DMOS asteroid experiments are doing : "magScan@AsteroidInSpaceLowCarbonaceous7051371", those subjects will be discarded entirely here
+				// because the body "Asteroid" doesn't exists, consequently it's impossible to create the Situation object.
+				// To handle that, maybe we could implement a derived class "UnknownSituation" from Situation that can handle a completely random subject format
 				Lib.Log("Could not parse the SubjectData from subjectId '" + stockSubjectId + "' : the body '" + bodyAndBiome[0] + "' doesn't exist");
 				return null;
 			}

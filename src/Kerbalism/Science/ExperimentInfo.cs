@@ -68,7 +68,7 @@ namespace KERBALISM
 		public bool IgnoreBodyRestrictions { get; private set; }
 
 		/// <summary> List of experiments that will be collected automatically alongside this one</summary>
-		public List<ExperimentInfo> IncludedExperiments { get; private set; }
+		public List<ExperimentInfo> IncludedExperiments { get; private set; } = new List<ExperimentInfo>();
 
 		private string[] includedExperimentsId;
 
@@ -234,29 +234,58 @@ namespace KERBALISM
 			stockDef.biomeMask = stockBiomeMask;
 		}
 
-		public void SetupIncludedExperiments()
+		public void ParseIncludedExperiments()
 		{
-			IncludedExperiments = new List<ExperimentInfo>();
-
 			foreach (string expId in includedExperimentsId)
 			{
 				ExperimentInfo includedInfo = ScienceDB.GetExperimentInfo(expId);
 				if (includedInfo == null)
+				{
+					Lib.Log($"Experiment `{ExperimentId}` define a IncludedExperiment `{expId}`, but that experiment doesn't exist", Lib.LogLevel.Warning);
 					continue;
-
-				if (IncludedExperiments.Contains(includedInfo))
+				}
+					
+				// early prevent duplicated entries
+				if (includedInfo.ExperimentId == ExperimentId || IncludedExperiments.Contains(includedInfo))
 					continue;
 
 				IncludedExperiments.Add(includedInfo);
-
-				foreach (KeyValuePair<int, SubjectData> subjectInfo in ScienceDB.GetSubjectDictionary(this))
-				{
-					SubjectData subjectToInclude = ScienceDB.GetSubjectData(includedInfo, subjectInfo.Key);
-
-					if (subjectToInclude != null)
-						subjectInfo.Value.IncludedSubjects.Add(subjectToInclude);
-				}
 			}
+		}
+
+		public static void CheckIncludedExperimentsRecursion(ExperimentInfo expInfoToCheck, List<ExperimentInfo> chainedExperiments)
+		{
+			List<ExperimentInfo> loopedExperiments = new List<ExperimentInfo>();
+			foreach (ExperimentInfo includedExp in expInfoToCheck.IncludedExperiments)
+			{
+				if (chainedExperiments.Contains(includedExp))
+				{
+					loopedExperiments.Add(includedExp);
+				}
+
+				chainedExperiments.Add(includedExp);
+			}
+
+			foreach (ExperimentInfo loopedExperiment in loopedExperiments)
+			{
+				expInfoToCheck.IncludedExperiments.Remove(loopedExperiment);
+				Lib.Log($"IncludedExperiment `{loopedExperiment.ExperimentId}` in experiment `{expInfoToCheck.ExperimentId}` would result in an infinite loop in the chain and has been removed", Lib.LogLevel.Warning);
+			}
+
+			foreach (ExperimentInfo includedExp in expInfoToCheck.IncludedExperiments)
+			{
+				CheckIncludedExperimentsRecursion(includedExp, chainedExperiments);
+			}
+		}
+
+		public static void GetIncludedExperimentTitles(ExperimentInfo expinfo, List<string> includedExperiments)
+		{
+			foreach (ExperimentInfo includedExpinfo in expinfo.IncludedExperiments)
+			{
+				includedExperiments.Add(includedExpinfo.Title);
+				GetIncludedExperimentTitles(includedExpinfo, includedExperiments);
+			}
+			includedExperiments.Sort((x, y) => x.CompareTo(y));
 		}
 
 		/// <summary>
