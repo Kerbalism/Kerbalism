@@ -5,292 +5,40 @@ using System.Diagnostics;
 using System.Threading;
 using UnityEngine;
 using KSP.Localization;
-
+using static KERBALISM.HabitatData;
 
 namespace KERBALISM
 {
-    // store data for a radiation environment model
-    // and can evaluate signed distance from the inner & outer belt and the magnetopause
-    public class RadiationModel
-    {
-        // ctor: default
-        public RadiationModel()
-        {
-        }
-
-        // ctor: deserialize
-        public RadiationModel(ConfigNode node)
-        {
-            name = Lib.ConfigValue(node, "name", "");
-
-            has_inner = Lib.ConfigValue(node, "has_inner", false);
-            inner_dist = Lib.ConfigValue(node, "inner_dist", 0.0f);
-            inner_radius = Lib.ConfigValue(node, "inner_radius", 0.0f);
-            inner_deform_xy = Lib.ConfigValue(node, "inner_deform_xy", 1.0f);
-            inner_compression = Lib.ConfigValue(node, "inner_compression", 1.0f);
-            inner_extension = Lib.ConfigValue(node, "inner_extension", 1.0f);
-            inner_border_dist = Lib.ConfigValue(node, "inner_border_dist", 0.0001f);
-            inner_border_radius = Lib.ConfigValue(node, "inner_border_radius", 0.0f);
-            inner_border_deform_xy = Lib.ConfigValue(node, "inner_border_deform_xy", 1.0f);
-            inner_deform = Lib.ConfigValue(node, "inner_deform", 0.0f);
-            inner_quality = Lib.ConfigValue(node, "inner_quality", 30.0f);
-
-            has_outer = Lib.ConfigValue(node, "has_outer", false);
-            outer_dist = Lib.ConfigValue(node, "outer_dist", 0.0f);
-            outer_radius = Lib.ConfigValue(node, "outer_radius", 0.0f);
-            outer_deform_xy = Lib.ConfigValue(node, "outer_deform_xy", 1.0f);
-            outer_compression = Lib.ConfigValue(node, "outer_compression", 1.0f);
-            outer_extension = Lib.ConfigValue(node, "outer_extension", 1.0f);
-            outer_border_dist = Lib.ConfigValue(node, "outer_border_dist", 0.001f);
-            outer_border_radius = Lib.ConfigValue(node, "outer_border_radius", 0.0f);
-            outer_border_deform_xy = Lib.ConfigValue(node, "outer_border_deform_xy", 1.0f);
-            outer_deform = Lib.ConfigValue(node, "outer_deform", 0.0f);
-            outer_quality = Lib.ConfigValue(node, "outer_quality", 40.0f);
-
-            has_pause = Lib.ConfigValue(node, "has_pause", false);
-            pause_radius = Lib.ConfigValue(node, "pause_radius", 0.0f);
-            pause_compression = Lib.ConfigValue(node, "pause_compression", 1.0f);
-            pause_extension = Lib.ConfigValue(node, "pause_extension", 1.0f);
-            pause_height_scale = Lib.ConfigValue(node, "pause_height_scale", 1.0f);
-            pause_deform = Lib.ConfigValue(node, "pause_deform", 0.0f);
-            pause_quality = Lib.ConfigValue(node, "pause_quality", 20.0f);
-        }
-
-
-        public float Inner_func(Vector3 p)
-        {
-            p.x *= p.x < 0.0f ? inner_extension : inner_compression;
-            float q1 = Mathf.Sqrt((p.x * p.x + p.z * p.z) * inner_deform_xy) - inner_dist;
-            float d1 = Mathf.Sqrt(q1 * q1 + p.y * p.y) - inner_radius;
-            float q2 = Mathf.Sqrt((p.x * p.x + p.z * p.z) * inner_border_deform_xy) - inner_border_dist;
-            float d2 = Mathf.Sqrt(q2 * q2 + p.y * p.y) - inner_border_radius;
-            return Mathf.Max(d1, -d2) + (inner_deform > 0.001 ? (Mathf.Sin(p.x * 5.0f) * Mathf.Sin(p.y * 7.0f) * Mathf.Sin(p.z * 6.0f)) * inner_deform : 0.0f);
-        }
-
-        public Vector3 Inner_domain()
-        {
-            float p = Mathf.Max((inner_dist + inner_radius), (inner_border_dist + inner_border_radius));
-            float w = p * Mathf.Sqrt(1 / Mathf.Min(inner_deform_xy, inner_border_deform_xy));
-            return new Vector3((w / inner_compression + w / inner_extension) * 0.5f, Mathf.Max(inner_radius, inner_border_radius), w) * (1.0f + inner_deform);
-        }
-
-        public Vector3 Inner_offset()
-        {
-            float p = Mathf.Max((inner_dist + inner_radius), (inner_border_dist + inner_border_radius));
-            float w = p * Mathf.Sqrt(1 / Mathf.Min(inner_deform_xy, inner_border_deform_xy));
-            return new Vector3(w / inner_compression - (w / inner_compression + w / inner_extension) * 0.5f, 0.0f, 0.0f);
-        }
-
-        public float Outer_func(Vector3 p)
-        {
-            p.x *= p.x < 0.0f ? outer_extension : outer_compression;
-            float q1 = Mathf.Sqrt((p.x * p.x + p.z * p.z) * outer_deform_xy) - outer_dist;
-            float d1 = Mathf.Sqrt(q1 * q1 + p.y * p.y) - outer_radius;
-            float q2 = Mathf.Sqrt((p.x * p.x + p.z * p.z) * outer_border_deform_xy) - outer_border_dist;
-            float d2 = Mathf.Sqrt(q2 * q2 + p.y * p.y) - outer_border_radius;
-            return Mathf.Max(d1, -d2) + (outer_deform > 0.001 ? (Mathf.Sin(p.x * 5.0f) * Mathf.Sin(p.y * 7.0f) * Mathf.Sin(p.z * 6.0f)) * outer_deform : 0.0f);
-        }
-
-        public Vector3 Outer_domain()
-        {
-            float p = Mathf.Max((outer_dist + outer_radius), (outer_border_dist + outer_border_radius));
-            float w = p * Mathf.Sqrt(1 / Mathf.Min(outer_deform_xy, outer_border_deform_xy));
-            return new Vector3((w / outer_compression + w / outer_extension) * 0.5f, Mathf.Max(outer_radius, outer_border_radius), w) * (1.0f + outer_deform);
-        }
-
-        public Vector3 Outer_offset()
-        {
-            float p = Mathf.Max((outer_dist + outer_radius), (outer_border_dist + outer_border_radius));
-            float w = p * Mathf.Sqrt(1 / Mathf.Min(outer_deform_xy, outer_border_deform_xy));
-            return new Vector3(w / outer_compression - (w / outer_compression + w / outer_extension) * 0.5f, 0.0f, 0.0f);
-        }
-
-        public float Pause_func(Vector3 p)
-        {
-            p.x *= p.x < 0.0f ? pause_extension : pause_compression;
-            p.y *= pause_height_scale;
-            return p.magnitude - pause_radius
-              + (pause_deform > 0.001 ? (Mathf.Sin(p.x * 5.0f) * Mathf.Sin(p.y * 7.0f) * Mathf.Sin(p.z * 6.0f)) * pause_deform : 0.0f);
-        }
-
-        public Vector3 Pause_domain()
-        {
-            return new Vector3((pause_radius / pause_compression + pause_radius / pause_extension) * 0.5f,
-              pause_radius / pause_height_scale, pause_radius) * (1.0f + pause_deform);
-        }
-
-        public Vector3 Pause_offset()
-        {
-            return new Vector3(pause_radius / pause_compression - (pause_radius / pause_compression + pause_radius / pause_extension) * 0.5f, 0.0f, 0.0f);
-        }
-
-        public bool Has_field()
-        {
-            return has_inner || has_outer || has_pause;
-        }
-
-
-        public string name;                     // name of the type of radiation environment
-
-        public bool has_inner;                  // true if there is an inner radiation ring
-        public float inner_dist;                // distance from inner belt center to body center
-        public float inner_radius;              // radius of inner belt torus
-        public float inner_deform_xy;           // wanted (high / diameter) ^ 2
-        public float inner_compression;         // compression factor in sun-exposed side
-        public float inner_extension;           // extension factor opposite to sun-exposed side
-        public float inner_border_dist;         // center of the inner torus we substract
-        public float inner_border_radius;       // radius of the inner torus we substract
-        public float inner_border_deform_xy;    // wanted (high / diameter) ^ 2
-        public float inner_deform;              // size of sin deformation (scale hard-coded to [5,7,6])
-        public float inner_quality;             // quality at the border
-
-        public bool has_outer;                  // true if there is an outer radiation ring
-        public float outer_dist;                // distance from outer belt center to body center
-        public float outer_radius;              // radius of outer belt torus
-        public float outer_deform_xy;           // wanted (high / diameter) ^ 2
-        public float outer_compression;         // compression factor in sun-exposed side
-        public float outer_extension;           // extension factor opposite to sun-exposed side
-        public float outer_border_dist;         // center of the outer torus we substract
-        public float outer_border_radius;       // radius of the outer torus we substract
-        public float outer_border_deform_xy;    // wanted (high / diameter) ^ 2
-        public float outer_deform;              // size of sin deformation (scale hard-coded to [5,7,6])
-        public float outer_quality;             // quality at the border
-
-        public bool has_pause;                  // true if there is a magnetopause
-        public float pause_radius;              // basic radius of magnetopause
-        public float pause_compression;         // compression factor in sun-exposed side
-        public float pause_extension;           // extension factor opposite to sun-exposed side
-        public float pause_height_scale;        // vertical compression factor
-        public float pause_deform;              // size of sin deformation (scale is hardcoded as [5,7,6])
-        public float pause_quality;             // quality at the border
-
-        public ParticleMesh inner_pmesh;        // used to render the inner belt
-        public ParticleMesh outer_pmesh;        // used to render the outer belt
-        public ParticleMesh pause_pmesh;        // used to render the magnetopause
-
-        // default radiation model
-        public static RadiationModel none = new RadiationModel();
-    }
-
-
-    // store data about radiation for a body
-    public class RadiationBody
-    {
-        // ctor: default
-        public RadiationBody(CelestialBody body)
-        {
-            this.model = RadiationModel.none;
-            this.body = body;
-            this.reference = 0;
-            this.geomagnetic_pole = new Vector3(0.0f, 1.0f, 0.0f);
-        }
-
-        // ctor: deserialize
-        public RadiationBody(ConfigNode node, Dictionary<string, RadiationModel> models, CelestialBody body)
-        {
-            name = Lib.ConfigValue(node, "name", "");
-            radiation_inner = Lib.ConfigValue(node, "radiation_inner", 0.0) / 3600.0;
-            radiation_inner_gradient = Lib.ConfigValue(node, "radiation_inner_gradient", 3.3);
-            radiation_outer = Lib.ConfigValue(node, "radiation_outer", 0.0) / 3600.0;
-            radiation_outer_gradient = Lib.ConfigValue(node, "radiation_outer_gradient", 2.2);
-            radiation_pause = Lib.ConfigValue(node, "radiation_pause", 0.0) / 3600.0;
-            radiation_surface = Lib.ConfigValue(node, "radiation_surface", -1.0) / 3600.0;
-            solar_cycle = Lib.ConfigValue(node, "solar_cycle", -1.0);
-            solar_cycle_offset = Lib.ConfigValue(node, "solar_cycle_offset", 0.0);
-            geomagnetic_pole_lat = Lib.ConfigValue(node, "geomagnetic_pole_lat", 90.0f);
-            geomagnetic_pole_lon = Lib.ConfigValue(node, "geomagnetic_pole_lon", 0.0f);
-            geomagnetic_offset = Lib.ConfigValue(node, "geomagnetic_offset", 0.0f);
-            reference = Lib.ConfigValue(node, "reference", Lib.GetParentSun(body).flightGlobalsIndex);
-
-            // get the radiation environment
-            if (!models.TryGetValue(Lib.ConfigValue(node, "radiation_model", ""), out model)) model = RadiationModel.none;
-
-            // get the body
-            this.body = body;
-
-            float lat = (float)(geomagnetic_pole_lat * Math.PI / 180.0);
-            float lon = (float)(geomagnetic_pole_lon * Math.PI / 180.0);
-
-            float x = Mathf.Cos(lat) * Mathf.Cos(lon);
-            float y = Mathf.Sin(lat);
-            float z = Mathf.Cos(lat) * Mathf.Sin(lon);
-            geomagnetic_pole = new Vector3(x, y, z).normalized;
-
-            if (Lib.IsSun(body))
-            {
-                // suns without a solar cycle configuration default to a cycle of 6 years
-                // (set to 0 if you really want none)
-                if (solar_cycle < 0)
-                    solar_cycle = Lib.HoursInDay * 3600 * Lib.DaysInYear * 6;
-
-                // add a rather nominal surface radiation for suns that have no config
-                // for comparison: the stock kerbin sun has a surface radiation of 47 rad/h, which gives 0.01 rad/h near Kerbin
-                // (set to 0 if you really want none)
-                if (radiation_surface < 0)
-                    radiation_surface = 10.0 * 3600.0;
-            }
-
-            // calculate point emitter strength r0 at center of body
-            if (radiation_surface > 0)
-                radiation_r0 = radiation_surface * 4 * Math.PI * body.Radius * body.Radius;
-        }
-
-        public string name;            // name of the body
-        public double radiation_inner; // rad/h inside inner belt
-        public double radiation_inner_gradient; // how quickly the radiation rises as you go deeper into the belt
-        public double radiation_outer; // rad/h inside outer belt
-        public double radiation_outer_gradient; // how quickly the radiation rises as you go deeper into the belt
-        public double radiation_pause; // rad/h inside magnetopause
-        public double radiation_surface; // rad/h of gamma radiation on the surface
-        public double radiation_r0 = 0.0; // rad/h of gamma radiation at the center of the body (calculated from radiation_surface)
-        public double solar_cycle;     // interval time of solar activity (11 years for sun)
-        public double solar_cycle_offset; // time to add to the universal time when calculating the cycle, used to have cycles that don't start at 0
-        public int reference;          // index of the body that determine x-axis of the gsm-space
-        public float geomagnetic_pole_lat = 90.0f;
-        public float geomagnetic_pole_lon = 0.0f;
-        public float geomagnetic_offset = 0.0f;
-        public Vector3 geomagnetic_pole;
-
-        public bool inner_visible = true;
-        public bool outer_visible = true;
-        public bool pause_visible = true;
-
-        // shortcut to the radiation environment
-        public RadiationModel model;
-
-        // shortcut to the body
-        public CelestialBody body;
-
-        /// <summary> Returns the magnetopause radiation level, accounting for solar activity cycles </summary>
-        public double RadiationPause()
-        {
-            if (solar_cycle > 0)
-            {
-                return radiation_pause + radiation_pause * 0.2 * SolarActivity();
-            }
-            return radiation_pause;
-        }
-
-        /// <summary> Return a number [-0.15 .. 1.05] that represents current solar activity, clamped to [0 .. 1] if clamp is true </summary>
-        public double SolarActivity(bool clamp = true)
-        {
-            if (solar_cycle <= 0) return 0;
-
-            var t = (solar_cycle_offset + Planetarium.GetUniversalTime()) / solar_cycle * 2 * Math.PI; // Math.Sin/Cos works with radians
-
-            // this gives a pseudo-erratic curve, see https://www.desmos.com/calculator/q5flvzvxia
-            // in range -0.15 .. 1.05
-            var r = (-Math.Cos(t) + Math.Sin(t * 75) / 5 + 0.9) / 2.0;
-            if (clamp) r = Lib.Clamp(r, 0.0, 1.0);
-            return r;
-        }
-    }
-
     // the radiation system
     public static class Radiation
     {
-        // pseudo-ctor
-        public static void Init()
+		#region DECLARATIONS
+		static Dictionary<string, RadiationModel> models = new Dictionary<string, RadiationModel>(16);
+		static Dictionary<string, RadiationBody> bodies = new Dictionary<string, RadiationBody>(32);
+
+		// thread used to do the particle-fitting
+		static Thread preprocess_thread;
+
+		// material used to render the fields
+		static Material mat;
+
+		// current visualization modes
+		public static bool show_inner;
+		public static bool show_outer;
+		public static bool show_pause;
+
+		// nominal radiation is used to never allow zero radiation
+		public static double Nominal = 0.0003 / 3600.0; // < 3 mrad/h is nominal
+
+		// habitat raytracing constants and cache
+		private static int partsLayerMask = (1 << LayerMask.NameToLayer("PhysicalObjects")) | LayerUtil.DefaultEquivalent;
+		private static RaycastHit[] sunRayHitsCache = new RaycastHit[100];
+		private static HashSet<uint> hittedPartsCache = new HashSet<uint>();
+
+		#endregion
+
+		/// <summary> pseudo-ctor </summary>
+		public static void Init()
         {
             // if radiation is disabled
             if (!Features.Radiation)
@@ -357,9 +105,10 @@ namespace KERBALISM
             preprocess_thread.Start();
         }
 
+		#region PARTICULES RENDERING
 
-        // do the particle-fitting in another thread
-        public static void Preprocess()
+		/// <summary>  do the particle-fitting in another thread</summary>
+		public static void Preprocess()
         {
             // deduce number of particles
             int inner_count = 150000;
@@ -420,15 +169,14 @@ namespace KERBALISM
             Lib.Log("particle-fitting completed in " + Lib.Seconds(Lib.Clocks() - time).ToString("F3") + " seconds");
         }
 
-
-        // generate gsm-space frame of reference
-        // - origin is at body position
-        // - the x-axis point to reference body
-        // - the rotation axis is used as y-axis initial guess
-        // - the space is then orthonormalized
-        // - if the reference body is the same as the body,
-        //   the galactic rotation vector is used as x-axis instead
-        public static Space Gsm_space(RadiationBody rb, bool tilted)
+		/// <summary> generate gsm-space frame of reference</summary>
+		// - origin is at body position
+		// - the x-axis point to reference body
+		// - the rotation axis is used as y-axis initial guess
+		// - the space is then orthonormalized
+		// - if the reference body is the same as the body,
+		//   the galactic rotation vector is used as x-axis instead
+		public static Space Gsm_space(RadiationBody rb, bool tilted)
         {
             CelestialBody body = rb.body;
             CelestialBody reference = FlightGlobals.Bodies[rb.reference];
@@ -496,8 +244,8 @@ namespace KERBALISM
         }
 
 
-        // render the fields of the interesting body
-        public static void Render()
+		/// <summary>  render the fields of the interesting body</summary>
+		public static void Render()
         {
             // get interesting body
             CelestialBody body = Interesting_body();
@@ -619,121 +367,258 @@ namespace KERBALISM
             }
         }
 
-        public static RadiationBody Info(CelestialBody body)
-        {
-            RadiationBody rb;
-            return bodies.TryGetValue(body.bodyName, out rb) ? rb : null; //< this should never happen
-        }
+		#endregion
 
-        /// <summary> Calculate radiation at a given distance to an emitter by inverse square law </summary>
-        public static double DistanceRadiation(double radiation, double distance)
-        {
-            // result = radiation / (4 * Pi * r^2)
-            return radiation / Math.Max(1.0, 4 * Math.PI * distance * distance);
-        }
+		#region BODY RELATED METHODS
 
-        /// <summary> Returns the radiation emitted by the body at the center, adjusted by solar activity cycle </summary>
-        private static double RadiationR0(RadiationBody rb)
-        {
-            // for easier configuration, the radiation model sets the radiation on the surface of the body.
-            // from there, it decreases according to the inverse square law with distance from the surface.
+		/// <summary> access radiation data about a specific body </summary>
+		public static RadiationBody Info(CelestialBody body)
+		{
+			RadiationBody rb;
+			return bodies.TryGetValue(body.bodyName, out rb) ? rb : null; //< this should never happen
+		}
 
-            var r0 = rb.radiation_r0; // precomputed
+		/// <summary> Returns the radiation emitted by the body at the center, adjusted by solar activity cycle </summary>
+		private static double RadiationR0(RadiationBody rb)
+		{
+			// for easier configuration, the radiation model sets the radiation on the surface of the body.
+			// from there, it decreases according to the inverse square law with distance from the surface.
 
-            // if there is a solar cycle, add a bit of radiation variation relative to current activity
+			var r0 = rb.radiation_r0; // precomputed
 
-            if (rb.solar_cycle > 0)
-            {
-                var activity = rb.SolarActivity() * 0.3;
-                r0 = r0 + r0 * activity;
-            }
+			// if there is a solar cycle, add a bit of radiation variation relative to current activity
 
-            return r0;
-        }
+			if (rb.solar_cycle > 0)
+			{
+				var activity = rb.SolarActivity() * 0.3;
+				r0 = r0 + r0 * activity;
+			}
 
-        // return the total environent radiation at position specified
-        public static double Compute(Vessel v, Vector3d position, double gamma_transparency, double sunlight, out bool blackout,
-                                     out bool magnetosphere, out bool inner_belt, out bool outer_belt, out bool interstellar, out double shieldedRadiation)
-        {
-            // prepare out parameters
-            blackout = false;
-            magnetosphere = false;
-            inner_belt = false;
-            outer_belt = false;
-            interstellar = false;
-            shieldedRadiation = 0.0;
+			return r0;
+		}
 
-            // no-op when Radiation is disabled
-            if (!Features.Radiation) return 0.0;
+		/// <summary>
+		/// Return the factor for the radiation in a belt at the given depth
+		/// </summary>
+		/// <param name="depth">distance from the border of the belt, in panetary radii. negative while in belt.</param>
+		/// <param name="scale">represents the 'thickness' of the belt (radius of the outer torus)</param>
+		/// <param name="gradient">represents how steeply the value will increase</param>
+		public static double RadiationInBelt(double depth, double scale, double gradient = 1.5)
+		{
+			return Lib.Clamp(gradient * -depth / scale, 0.0, 1.0);
+		}
 
-            // store stuff
-            Space gsm;
-            Vector3 p;
-            double D;
-            double r;
+		/// <summary> return the surface radiation for the body specified (used by body info panel)</summary>
+		public static double ComputeSurface(CelestialBody b, double gamma_transparency)
+		{
+			if (!Features.Radiation) return 0.0;
 
-            // accumulate radiation
-            double radiation = 0.0;
-            CelestialBody body = v.mainBody;
-            while (body != null)
-            {
-                // Compute radiation values from overlapping 3d fields (belts + magnetospheres)
+			// store stuff
+			Space gsm;
+			Vector3 p;
+			double D;
 
-                RadiationBody rb = Info(body);
-                RadiationModel mf = rb.model;
+			// transform to local space once
+			Vector3d position = ScaledSpace.LocalToScaledSpace(b.position);
 
-                // activity is [-0.15..1.05]
-                var activity = rb.SolarActivity(false);
+			// accumulate radiation
+			double radiation = 0.0;
+			CelestialBody body = b;
+			while (body != null)
+			{
+				RadiationBody rb = Info(body);
+				RadiationModel mf = rb.model;
 
-                if (mf.Has_field())
-                {
-                    // transform to local space once
-                    var scaled_position = ScaledSpace.LocalToScaledSpace(position);
+				var activity = rb.SolarActivity(false);
 
-                    // generate radii-normalized GSM space
-                    gsm = Gsm_space(rb, true);
+				if (mf.Has_field())
+				{
+					// generate radii-normalized GSM space
+					gsm = Gsm_space(rb, true);
 
-                    // move the point in GSM space
-                    p = gsm.Transform_in(scaled_position);
+					// move the poing in GSM space
+					p = gsm.Transform_in(position);
 
-                    // accumulate radiation and determine pause/belt flags
-                    if (mf.has_inner)
-                    {
-                        D = mf.Inner_func(p);
-                        inner_belt |= D < 0;
+					// accumulate radiation and determine pause/belt flags
+					if (mf.has_inner)
+					{
+						D = mf.Inner_func(p);
+						// allow for radiation field to grow/shrink with solar activity
+						D -= activity * 0.25 / mf.inner_radius;
 
-                        // allow for radiation field to grow/shrink with solar activity
-                        D -= activity * 0.25 / mf.inner_radius;
-                        r = RadiationInBelt(D, mf.inner_radius, rb.radiation_inner_gradient);
-                        radiation += r * rb.radiation_inner * (1 + activity * 0.3);
-                    }
-                    if (mf.has_outer)
-                    {
-                        D = mf.Outer_func(p);
-                        outer_belt |= D < 0;
+						var r = RadiationInBelt(D, mf.inner_radius, rb.radiation_inner_gradient);
+						radiation += r * rb.radiation_inner * (1 + activity * 0.3);
+					}
+					if (mf.has_outer)
+					{
+						D = mf.Outer_func(p);
+						// allow for radiation field to grow/shrink with solar activity
+						D -= activity * 0.25 / mf.outer_radius;
 
-                        // allow for radiation field to grow/shrink with solar activity
-                        D -= activity * 0.25 / mf.outer_radius;
-                        r = RadiationInBelt(D, mf.outer_radius, rb.radiation_outer_gradient);
-                        radiation += r * rb.radiation_outer * (1 + activity * 0.3);
-                    }
-                    if (mf.has_pause)
-                    {
-                        gsm = Gsm_space(rb, false);
-                        p = gsm.Transform_in(scaled_position);
-                        D = mf.Pause_func(p);
+						var r = RadiationInBelt(D, mf.outer_radius, rb.radiation_outer_gradient);
+						radiation += r * rb.radiation_outer * (1 + activity * 0.3);
+					}
+					if (mf.has_pause)
+					{
+						gsm = Gsm_space(rb, false);
+						p = gsm.Transform_in(position);
+						D = mf.Pause_func(p);
+						radiation += Lib.Clamp(D / -0.1332f, 0.0f, 1.0f) * rb.RadiationPause();
+					}
+				}
 
-                        radiation += Lib.Clamp(D / -0.1332f, 0.0f, 1.0f) * rb.RadiationPause();
+				if (rb.radiation_surface > 0 && body != b)
+				{
+					// add surface radiation emitted from other body
+					double distance = (b.position - body.position).magnitude;
+					var r0 = RadiationR0(rb);
+					var r1 = DistanceRadiation(r0, distance);
 
-                        magnetosphere |= D < 0.0f && !Lib.IsSun(rb.body); //< ignore heliopause
-                        interstellar |= D > 0.0f && Lib.IsSun(rb.body); //< outside heliopause
-                    }
-                }
+					// Lib.Log("Surface radiation on " + b + " from " + body + ": " + Lib.HumanReadableRadiation(r1) + " distance " + distance);
 
-                if (rb.radiation_surface > 0 && body != v.mainBody)
-                {
-                    Vector3d direction;
-                    double distance;
+					// clamp to max. surface radiation. when loading on a rescaled system, the vessel can appear to be within the sun for a few ticks
+					radiation += Math.Min(r1, rb.radiation_surface);
+				}
+
+				// avoid loops in the chain
+				body = (body.referenceBody != null && body.referenceBody.referenceBody == body) ? null : body.referenceBody;
+			}
+
+			// add extern radiation
+			radiation += Settings.ExternRadiation / 3600.0;
+
+			// Lib.Log("Radiation subtotal on " + b + ": " + Lib.HumanReadableRadiation(radiation) + ", gamma " + gamma_transparency);
+
+			// scale radiation by gamma transparency if inside atmosphere
+			radiation *= gamma_transparency;
+			// Lib.Log("srf scaled on " + b + ": " + Lib.HumanReadableRadiation(radiation));
+
+			// add surface radiation of the body itself
+			RadiationBody bodyInfo = Info(b);
+			// clamp to max. bodyInfo.radiation_surface to avoid extreme radiation effects while loading a vessel on rescaled systems
+			radiation += Math.Min(bodyInfo.radiation_surface, DistanceRadiation(RadiationR0(bodyInfo), b.Radius));
+
+			// Lib.Log("Radiation on " + b + ": " + Lib.HumanReadableRadiation(radiation) + ", own surface radiation " + Lib.HumanReadableRadiation(DistanceRadiation(RadiationR0(Info(b)), b.Radius)));
+
+			// Lib.Log("radiation " + radiation + " nominal " + Nominal);
+
+			// clamp radiation to positive range
+			// note: we avoid radiation going to zero by using a small positive value
+			radiation = Math.Max(radiation, Nominal);
+
+			return radiation;
+		}
+
+		/// <summary> deduce first interesting body for radiation in the body chain</summary>
+		private static CelestialBody Interesting_body(CelestialBody body)
+		{
+			if (Info(body).model.Has_field()) return body;      // main body has field
+			else if (body.referenceBody != null                 // it has a ref body
+			  && body.referenceBody.referenceBody != body)      // avoid loops in planet setup (eg: OPM)
+				return Interesting_body(body.referenceBody);      // recursively
+			else return null;                                   // nothing in chain
+		}
+
+		private static CelestialBody Interesting_body()
+		{
+			var target = PlanetariumCamera.fetch.target;
+			return
+				target == null
+			  ? null
+			  : target.celestialBody != null
+			  ? Interesting_body(target.celestialBody)
+			  : target.vessel != null
+			  ? Interesting_body(target.vessel.mainBody)
+			  : null;
+		}
+
+		#endregion
+
+		#region VESSEL RELATED METHODS
+
+		/// <summary> return the total environent radiation at position specified </summary>
+		public static double Compute(Vessel v, Vector3d position, double gamma_transparency, double sunlight, out bool blackout,
+									 out bool magnetosphere, out bool inner_belt, out bool outer_belt, out bool interstellar, out double shieldedRadiation)
+		{
+			// prepare out parameters
+			blackout = false;
+			magnetosphere = false;
+			inner_belt = false;
+			outer_belt = false;
+			interstellar = false;
+			shieldedRadiation = 0.0;
+
+			// no-op when Radiation is disabled
+			if (!Features.Radiation) return 0.0;
+
+			// store stuff
+			Space gsm;
+			Vector3 p;
+			double D;
+			double r;
+
+			// accumulate radiation
+			double radiation = 0.0;
+			CelestialBody body = v.mainBody;
+			while (body != null)
+			{
+				// Compute radiation values from overlapping 3d fields (belts + magnetospheres)
+
+				RadiationBody rb = Info(body);
+				RadiationModel mf = rb.model;
+
+				// activity is [-0.15..1.05]
+				var activity = rb.SolarActivity(false);
+
+				if (mf.Has_field())
+				{
+					// transform to local space once
+					var scaled_position = ScaledSpace.LocalToScaledSpace(position);
+
+					// generate radii-normalized GSM space
+					gsm = Gsm_space(rb, true);
+
+					// move the point in GSM space
+					p = gsm.Transform_in(scaled_position);
+
+					// accumulate radiation and determine pause/belt flags
+					if (mf.has_inner)
+					{
+						D = mf.Inner_func(p);
+						inner_belt |= D < 0;
+
+						// allow for radiation field to grow/shrink with solar activity
+						D -= activity * 0.25 / mf.inner_radius;
+						r = RadiationInBelt(D, mf.inner_radius, rb.radiation_inner_gradient);
+						radiation += r * rb.radiation_inner * (1 + activity * 0.3);
+					}
+					if (mf.has_outer)
+					{
+						D = mf.Outer_func(p);
+						outer_belt |= D < 0;
+
+						// allow for radiation field to grow/shrink with solar activity
+						D -= activity * 0.25 / mf.outer_radius;
+						r = RadiationInBelt(D, mf.outer_radius, rb.radiation_outer_gradient);
+						radiation += r * rb.radiation_outer * (1 + activity * 0.3);
+					}
+					if (mf.has_pause)
+					{
+						gsm = Gsm_space(rb, false);
+						p = gsm.Transform_in(scaled_position);
+						D = mf.Pause_func(p);
+
+						radiation += Lib.Clamp(D / -0.1332f, 0.0f, 1.0f) * rb.RadiationPause();
+
+						magnetosphere |= D < 0.0f && !Lib.IsSun(rb.body); //< ignore heliopause
+						interstellar |= D > 0.0f && Lib.IsSun(rb.body); //< outside heliopause
+					}
+				}
+
+				if (rb.radiation_surface > 0 && body != v.mainBody)
+				{
+					Vector3d direction;
+					double distance;
 					if (Sim.IsBodyVisible(v, position, body, v.KerbalismData().EnvVisibleBodies, out direction, out distance))
 					{
 						var r0 = RadiationR0(rb);
@@ -745,14 +630,14 @@ namespace KERBALISM
 						if (v.loaded) Lib.Log("Radiation " + v + " from surface of " + body + ": " + Lib.HumanReadableRadiation(radiation) + " gamma: " + Lib.HumanReadableRadiation(r1));
 #endif
 					}
-                }
+				}
 
-                // avoid loops in the chain
-                body = (body.referenceBody != null && body.referenceBody.referenceBody == body) ? null : body.referenceBody;
-            }
+				// avoid loops in the chain
+				body = (body.referenceBody != null && body.referenceBody.referenceBody == body) ? null : body.referenceBody;
+			}
 
-            // add extern radiation
-            radiation += Settings.ExternRadiation / 3600.0;
+			// add extern radiation
+			radiation += Settings.ExternRadiation / 3600.0;
 
 #if DEBUG_RADIATION
 			if (v.loaded) Lib.Log("Radiation " + v + " extern: " + Lib.HumanReadableRadiation(radiation) + " gamma: " + Lib.HumanReadableRadiation(Settings.ExternRadiation));
@@ -765,12 +650,12 @@ namespace KERBALISM
 			if (v.loaded) Lib.Log("Radiation " + v + " after gamma: " + Lib.HumanReadableRadiation(radiation) + " transparency: " + gamma_transparency);
 #endif
 			// add surface radiation of the body itself
-			if(Lib.IsSun(v.mainBody) && v.altitude < v.mainBody.Radius)
-			if(v.altitude > v.mainBody.Radius)
-			{
-				radiation += DistanceRadiation(RadiationR0(Info(v.mainBody)), v.altitude);
+			if (Lib.IsSun(v.mainBody) && v.altitude < v.mainBody.Radius)
+				if (v.altitude > v.mainBody.Radius)
+				{
+					radiation += DistanceRadiation(RadiationR0(Info(v.mainBody)), v.altitude);
 
-			}
+				}
 
 #if DEBUG_RADIATION
 			if (v.loaded) Lib.Log("Radiation " + v + " from current main body: " + Lib.HumanReadableRadiation(radiation) + " gamma: " + Lib.HumanReadableRadiation(DistanceRadiation(RadiationR0(Info(v.mainBody)), v.altitude)));
@@ -778,28 +663,28 @@ namespace KERBALISM
 
 			shieldedRadiation = radiation;
 
-            // if there is a storm in progress
-            if (Storm.InProgress(v))
-            {
-                // inside a magnetopause (except heliosphere), blackout the signal
-                // outside, add storm radiations modulated by sun visibility
-                if (magnetosphere) blackout = true;
-                else
-                {
-                    var vd = v.KerbalismData();
+			// if there is a storm in progress
+			if (Storm.InProgress(v))
+			{
+				// inside a magnetopause (except heliosphere), blackout the signal
+				// outside, add storm radiations modulated by sun visibility
+				if (magnetosphere) blackout = true;
+				else
+				{
+					var vd = v.KerbalismData();
 
-                    var activity = Info(vd.EnvMainSun.SunData.body).SolarActivity(false) / 2.0;
-                    var strength = PreferencesRadiation.Instance.StormRadiation * sunlight * (activity + 0.5);
+					var activity = Info(vd.EnvMainSun.SunData.body).SolarActivity(false) / 2.0;
+					var strength = PreferencesRadiation.Instance.StormRadiation * sunlight * (activity + 0.5);
 
-                    radiation += strength;
-                    shieldedRadiation += vd.EnvHabitatInfo.AverageHabitatRadiation(strength);
-                }
-            }
+					radiation += strength;
+					shieldedRadiation += GetHabitatSunRadiation(strength, vd);
+				}
+			}
 
-            // add emitter radiation after atmosphere transparency
-            var emitterRadiation = Emitter.Total(v);
-            radiation += emitterRadiation;
-            shieldedRadiation += emitterRadiation;
+			// add emitter radiation after atmosphere transparency
+			var emitterRadiation = Emitter.Total(v);
+			radiation += emitterRadiation;
+			shieldedRadiation += emitterRadiation;
 
 #if DEBUG_RADIATION
 			if (v.loaded) Lib.Log("Radiation " + v + " after emitters: " + Lib.HumanReadableRadiation(radiation) + " shielded " + Lib.HumanReadableRadiation(shieldedRadiation));
@@ -807,10 +692,10 @@ namespace KERBALISM
 
 			// for EVAs, add the effect of nearby emitters
 			if (v.isEVA)
-            {
-                var nearbyEmitters = Emitter.Nearby(v);
+			{
+				var nearbyEmitters = Emitter.Nearby(v);
 				radiation += nearbyEmitters;
-                shieldedRadiation += nearbyEmitters;
+				shieldedRadiation += nearbyEmitters;
 #if DEBUG_RADIATION
 				if (v.loaded) Lib.Log("Radiation " + v + " nearby emitters " + Lib.HumanReadableRadiation(nearbyEmitters));
 #endif
@@ -827,214 +712,172 @@ namespace KERBALISM
 			// clamp radiation to positive range
 			// note: we avoid radiation going to zero by using a small positive value
 			radiation = Math.Max(radiation, Nominal);
-            shieldedRadiation = Math.Max(shieldedRadiation, Nominal);
+			shieldedRadiation = Math.Max(shieldedRadiation, Nominal);
 
 #if DEBUG_RADIATION
 			if (v.loaded) Lib.Log("Radiation " + v + " after clamp: " + Lib.HumanReadableRadiation(radiation) + " shielded " + Lib.HumanReadableRadiation(shieldedRadiation));
 #endif
 			// return radiation
 			return radiation;
-        }
+		}
 
-        /// <summary>
-        /// Return the factor for the radiation in a belt at the given depth
-        /// </summary>
-        /// <param name="depth">distance from the border of the belt, in panetary radii. negative while in belt.</param>
-        /// <param name="scale">represents the 'thickness' of the belt (radius of the outer torus)</param>
-        /// <param name="gradient">represents how steeply the value will increase</param>
-        public static double RadiationInBelt(double depth, double scale, double gradient = 1.5)
-        {
-            return Lib.Clamp(gradient * -depth / scale, 0.0, 1.0);
-        }
+		/// <summary>
+		/// Do a physics raytrace between the habitat part and the sun, then save the thickness and distance of each intersected part.
+		/// <para/>Performance intensive operation.
+		/// <para/>Don't call this while the vessel is unloaded !
+		/// </summary>
+		public static void RaytraceHabitatSunRadiation(VesselData vd, HabitatData habitat)
+		{
+			if (!Features.Radiation) return;
 
-        // return the surface radiation for the body specified (used by body info panel)
-        public static double ComputeSurface(CelestialBody b, double gamma_transparency)
-        {
-            if (!Features.Radiation) return 0.0;
+			habitat.sunRadiationOccluders.Clear();
+			hittedPartsCache.Clear();
 
-            // store stuff
-            Space gsm;
-            Vector3 p;
-            double D;
+			Ray ray = new Ray(habitat.module.transform.position, vd.EnvMainSun.Direction);
+			int hitCount = Physics.RaycastNonAlloc(ray, sunRayHitsCache, 200f, partsLayerMask);
 
-            // transform to local space once
-            Vector3d position = ScaledSpace.LocalToScaledSpace(b.position);
+			for (int i = 0; i < hitCount - 1; i++)
+			{
+				RaycastHit hit = sunRayHitsCache[i];
+				if (hit.transform != null) // && hit.transform.gameObject != null)
+				{
+#if KSP15_16 || KSP17
+					Part blockingPart = Part.GetComponentUpwards<Part>(hit.transform.gameObject);
+#else
+					Part blockingPart = FlightGlobals.GetPartUpwardsCached(hit.transform.gameObject);
+#endif
+					if (blockingPart == null || blockingPart == habitat.module.part)
+						continue;
 
-            // accumulate radiation
-            double radiation = 0.0;
-            CelestialBody body = b;
-            while (body != null)
-            {
-                RadiationBody rb = Info(body);
-                RadiationModel mf = rb.model;
+					// avoid counting twice the same part (a part can have multiple colliders)
+					if (hittedPartsCache.Contains(blockingPart.flightID))
+						continue;
+					else
+						hittedPartsCache.Add(blockingPart.flightID);
 
-                var activity = rb.SolarActivity(false);
+					float mass = blockingPart.mass + blockingPart.resourceMass;
 
-                if (mf.Has_field())
-                {
-                    // generate radii-normalized GSM space
-                    gsm = Gsm_space(rb, true);
+					// divide part mass by the mass of aluminium (2699 kg/m³), cubic root of that
+					// gives a very rough approximation of the thickness, assuming it's a cube.
+					// So a 40.000 kg fuel tank would be equivalent to 2.45m aluminium.
+					float thickness = Mathf.Pow(mass / 2.699f, 1f / 3f);
 
-                    // move the poing in GSM space
-                    p = gsm.Transform_in(position);
+					habitat.sunRadiationOccluders.Add(new SunRadiationOccluder(hit.distance, thickness));
+				}
+			}
 
-                    // accumulate radiation and determine pause/belt flags
-                    if (mf.has_inner)
-                    {
-                        D = mf.Inner_func(p);
-                        // allow for radiation field to grow/shrink with solar activity
-                        D -= activity * 0.25 / mf.inner_radius;
+			// sort by distance, in reverse
+			habitat.sunRadiationOccluders.Sort((a, b) => b.distance.CompareTo(a.distance));
+		}
 
-                        var r = RadiationInBelt(D, mf.inner_radius, rb.radiation_inner_gradient);
-                        radiation += r * rb.radiation_inner * (1 + activity * 0.3);
-                    }
-                    if (mf.has_outer)
-                    {
-                        D = mf.Outer_func(p);
-                        // allow for radiation field to grow/shrink with solar activity
-                        D -= activity * 0.25 / mf.outer_radius;
+		/// <summary>
+		/// Compute an average radiation based on the radiation blocked by the raytraced occluders for every enabled habitat part on the vessel
+		/// <para/> Note : only used during solar storms
+		/// </summary>
+		public static double GetHabitatSunRadiation(double sunRadiation, VesselData vd)
+		{
+			double result = 0.0;
+			int enabledHabitatCount = 0;
 
-                        var r = RadiationInBelt(D, mf.outer_radius, rb.radiation_outer_gradient);
-                        radiation += r * rb.radiation_outer * (1 + activity * 0.3);
-                    }
-                    if (mf.has_pause)
-                    {
-                        gsm = Gsm_space(rb, false);
-                        p = gsm.Transform_in(position);
-                        D = mf.Pause_func(p);
-                        radiation += Lib.Clamp(D / -0.1332f, 0.0f, 1.0f) * rb.RadiationPause();
-                    }
-                }
+			foreach (PartData partData in vd.Parts)
+			{
+				if (partData.Habitat == null || !partData.Habitat.habitatEnabled)
+					continue;
 
-                if (rb.radiation_surface > 0 && body != b)
-                {
-                    // add surface radiation emitted from other body
-                    double distance = (b.position - body.position).magnitude;
-                    var r0 = RadiationR0(rb);
-                    var r1 = DistanceRadiation(r0, distance);
+				enabledHabitatCount++;
 
-					// Lib.Log("Surface radiation on " + b + " from " + body + ": " + Lib.HumanReadableRadiation(r1) + " distance " + distance);
+				double remainingRadiation = sunRadiation;
 
-					// clamp to max. surface radiation. when loading on a rescaled system, the vessel can appear to be within the sun for a few ticks
-					radiation += Math.Min(r1, rb.radiation_surface);
-                }
+				foreach (SunRadiationOccluder occluder in partData.Habitat.sunRadiationOccluders)
+				{
+					// for a 500 keV gamma ray, halfing thickness for aluminium is 3.05cm. But...
+					// Solar energetic particles (SEP) are high-energy particles coming from the Sun.
+					// They consist of protons, electrons and HZE ions with energy ranging from a few tens of keV
+					// to many GeV (the fastest particles can approach the speed of light, as in a
+					// "ground-level event"). This is why they are such a big problem for interplanetary space travel.
 
-                // avoid loops in the chain
-                body = (body.referenceBody != null && body.referenceBody.referenceBody == body) ? null : body.referenceBody;
-            }
+					// Note : we assume a big halfing thickness (1.0) for that kind of ionized radiation.
+					// so the following formula : bremsstrahlung = remainingRadiation / Math.Pow(2, occluder.thickness / halfingThickness);
+					// is simplified to : bremsstrahlung = remainingRadiation / Math.Pow(2, occluder.thickness);
 
-            // add extern radiation
-            radiation += Settings.ExternRadiation / 3600.0;
+					// halfing factor h = part thickness / halfing thickness
+					// remaining radiation = radiation / (2^h)
+					// However, what you loose in particle radiation you gain in gamma radiation (Bremsstrahlung)
 
-            // Lib.Log("Radiation subtotal on " + b + ": " + Lib.HumanReadableRadiation(radiation) + ", gamma " + gamma_transparency);
+					double bremsstrahlung = remainingRadiation / Math.Pow(2, occluder.thickness);
+					remainingRadiation -= bremsstrahlung;
 
-            // scale radiation by gamma transparency if inside atmosphere
-            radiation *= gamma_transparency;
-			// Lib.Log("srf scaled on " + b + ": " + Lib.HumanReadableRadiation(radiation));
+					result += Radiation.DistanceRadiation(bremsstrahlung, occluder.distance);
+				}
 
-			// add surface radiation of the body itself
-			RadiationBody bodyInfo = Info(b);
-			// clamp to max. bodyInfo.radiation_surface to avoid extreme radiation effects while loading a vessel on rescaled systems
-            radiation += Math.Min(bodyInfo.radiation_surface, DistanceRadiation(RadiationR0(bodyInfo), b.Radius));
+				result += remainingRadiation;
+			}
 
-            // Lib.Log("Radiation on " + b + ": " + Lib.HumanReadableRadiation(radiation) + ", own surface radiation " + Lib.HumanReadableRadiation(DistanceRadiation(RadiationR0(Info(b)), b.Radius)));
+			return enabledHabitatCount > 0 ? result / enabledHabitatCount : 0.0;
+		}
 
-            // Lib.Log("radiation " + radiation + " nominal " + Nominal);
+		/// <summary>
+		/// Calculate radiation shielding efficiency. Parameter shielding should be in range [0..1+] 
+		/// <para/>If you have a thickness which stops a known amount of radiation of a known and constant
+		/// type, then if you have a new thickness, you can calculate how much it stops by:
+		/// <para/>Stoppage = 1 - ((1 - AmountStoppedByKnownThickness)^(NewThickness / KnownThickness))
+		/// <para/>source : http://www.projectrho.com/public_html/rocket/radiation.php#id--Radiation_Shielding--Shielding--Shield_Rating
+		/// </summary>
+		// The default magic numbers are :
+		// - shieldingEfficiency (default 0.9) is for 20 mm of shielding material
+		// - 1 unit of shielding resource = 1m² of 20 mm thick shielding material
+		public static double ShieldingEfficiency(double shieldingFactor)
+		{
+			return 1 - Math.Pow(1 - PreferencesRadiation.Instance.shieldingEfficiency, Math.Max(shieldingFactor, 0.0));
+		}
 
-            // clamp radiation to positive range
-            // note: we avoid radiation going to zero by using a small positive value
-            radiation = Math.Max(radiation, Nominal);
+		/// <summary> return a verbose description of the vessel shielding factor</summary>
+		public static string VesselShieldingToString(double shieldingFactor)
+		{
+			return shieldingFactor <= 0.0 ? Local.Habitat_none : Lib.BuildString((20.0 * shieldingFactor / PreferencesRadiation.Instance.shieldingEfficiency).ToString("F2"), " mm");//"none"
+		}
 
-            return radiation;
-        }
+		/// <summary> show warning message when a vessel cross a radiation belt</summary>
+		public static void BeltWarnings(Vessel v, VesselData vd)
+		{
+			// if radiation is enabled
+			if (Features.Radiation)
+			{
+				// we only show the warning for manned vessels, or for all vessels the first time its crossed
+				bool must_warn = vd.CrewCount > 0 || !DB.landmarks.belt_crossing;
 
-        // show warning message when a vessel cross a radiation belt
-        public static void BeltWarnings(Vessel v, VesselData vd)
-        {
-            // if radiation is enabled
-            if (Features.Radiation)
-            {
-                // we only show the warning for manned vessels, or for all vessels the first time its crossed
-                bool must_warn = vd.CrewCount > 0 || !DB.landmarks.belt_crossing;
+				// are we inside a belt
+				bool inside_belt = vd.EnvInnerBelt || vd.EnvOuterBelt;
 
-                // are we inside a belt
-                bool inside_belt = vd.EnvInnerBelt || vd.EnvOuterBelt;
-
-                // show the message
-                if (inside_belt && !vd.msg_belt && must_warn)
-                {
+				// show the message
+				if (inside_belt && !vd.msg_belt && must_warn)
+				{
 					Message.Post(Local.BeltWarnings_msg.Format("<b>" + v.vesselName + "</b>", "<i>" + v.mainBody.bodyName + "</i>"), Local.BeltWarnings_msgSubtext);//<<1>> is crossing <<2>> radiation belt"Exposed to extreme radiation"
-                    vd.msg_belt = true;
-                }
-                else if (!inside_belt && vd.msg_belt)
-                {
-                    // no message after crossing the belt
-                    vd.msg_belt = false;
-                }
+					vd.msg_belt = true;
+				}
+				else if (!inside_belt && vd.msg_belt)
+				{
+					// no message after crossing the belt
+					vd.msg_belt = false;
+				}
 
-                // record first belt crossing
-                if (inside_belt) DB.landmarks.belt_crossing = true;
+				// record first belt crossing
+				if (inside_belt) DB.landmarks.belt_crossing = true;
 
-                // record first heliopause crossing
-                if (vd.EnvInterstellar) DB.landmarks.heliopause_crossing = true;
-            }
-        }
+				// record first heliopause crossing
+				if (vd.EnvInterstellar) DB.landmarks.heliopause_crossing = true;
+			}
+		}
 
-        // deduce first interesting body for radiation in the body chain
-        static CelestialBody Interesting_body(CelestialBody body)
+		#endregion
+
+		/// <summary> Calculate radiation at a given distance to an emitter by inverse square law </summary>
+		public static double DistanceRadiation(double radiation, double distance)
         {
-            if (Info(body).model.Has_field()) return body;      // main body has field
-            else if (body.referenceBody != null                 // it has a ref body
-              && body.referenceBody.referenceBody != body)      // avoid loops in planet setup (eg: OPM)
-                return Interesting_body(body.referenceBody);      // recursively
-            else return null;                                   // nothing in chain
+            // result = radiation / (4 * Pi * r^2)
+            return radiation / Math.Max(1.0, 4 * Math.PI * distance * distance);
         }
 
-        static CelestialBody Interesting_body()
-        {
-            var target = PlanetariumCamera.fetch.target;
-            return
-                target == null
-              ? null
-              : target.celestialBody != null
-              ? Interesting_body(target.celestialBody)
-              : target.vessel != null
-              ? Interesting_body(target.vessel.mainBody)
-              : null;
-        }
-
-        /// <summary>
-        /// Calculate radiation shielding efficiency. Parameter shielding should be in range [0..1]
-        /// <para>
-        /// If you have a thickness which stops a known amount of radiation of a known and constant
-        /// type, then if you have a new thickness, you can calculate how much it stops by:
-        /// </
-        /// Stoppage = 1 - ((1 - AmountStoppedByKnownThickness)^(NewThickness / KnownThickness))
-        /// <para>
-        /// source : http://www.projectrho.com/public_html/rocket/radiation.php#id--Radiation_Shielding--Shielding--Shield_Rating
-        /// </para>
-        /// </summary>
-        public static double ShieldingEfficiency(double shielding)
-        {
-            return 1 - Math.Pow(1 - PreferencesRadiation.Instance.shieldingEfficiency, Math.Max(shielding, 0.0));
-        }
-
-        static Dictionary<string, RadiationModel> models = new Dictionary<string, RadiationModel>(16);
-        static Dictionary<string, RadiationBody> bodies = new Dictionary<string, RadiationBody>(32);
-
-        // thread used to do the particle-fitting
-        static Thread preprocess_thread;
-
-        // material used to render the fields
-        static Material mat;
-
-        // current visualization modes
-        public static bool show_inner;
-        public static bool show_outer;
-        public static bool show_pause;
-
-        // nominal radiation is used to never allow zero radiation
-        public static double Nominal = 0.0003 / 3600.0; // < 3 mrad/h is nominal
     }
 
 } // KERBALISM

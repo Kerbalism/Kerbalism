@@ -843,11 +843,7 @@ namespace KERBALISM
 			else return Local.Module_Comfort_Summary5;//"none"
 		}
 
-		// return a verbose description of shielding capability
-		public static string ShieldingToString(double v)
-		{
-			return v <= 0.0 ? Local.Habitat_none : Lib.BuildString((20.0 * v / PreferencesRadiation.Instance.shieldingEfficiency).ToString("F2"), " mm");//"none"
-		}
+
 
 		// traduce living space value to string
 		public static string LivingSpaceFactorToString(double livingSpaceFactor)

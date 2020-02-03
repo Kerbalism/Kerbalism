@@ -27,6 +27,8 @@ namespace KERBALISM
 		// time since last update
 		private double secSinceLastEval;
 
+		// habitat radiation raytracing "one habitat per update cyle" counter.
+		private int partHabitatRaytraceNextIndex = -1;
 
 		#region non-evaluated non-persisted fields
 		// there are probably a lot of candidates for this in the current codebase
@@ -167,9 +169,6 @@ namespace KERBALISM
 		/// <summary> [environment] true if the vessel is currently in shadow, or least 90% of the time when in analytic mode</summary>
 		// this threshold is also used to ignore light coming from distant/weak stars 
 		public bool EnvInFullShadow => sunlightFactor < 0.1;
-
-		/// <summary> List of all habitats and their relevant sun shielding parts </summary>
-		public VesselHabitatInfo EnvHabitatInfo => habitatInfo; VesselHabitatInfo habitatInfo;
 
 		/// <summary> [environment] List of all stars/suns and the related data/calculations for the current vessel</summary>
 		public List<SunInfo> EnvSunsInfo => sunsInfo; List<SunInfo> sunsInfo;
@@ -513,7 +512,7 @@ namespace KERBALISM
 
 			resourceUpdateDelegates = null;
 			ResetReliabilityStatus();
-			habitatInfo = new VesselHabitatInfo(null);
+			// TODO: reset habitat radiation occluders
 			EvaluateStatus();
 
 			Lib.LogDebug("VesselData updated on vessel modified event ({0})", Lib.LogLevel.Message, Vessel.vesselName);
@@ -670,7 +669,6 @@ namespace KERBALISM
 			deviceTransmit = true;
 
 			stormData = new StormData(null);
-			habitatInfo = new VesselHabitatInfo(null);
 			computer = new Computer(null);
 			supplies = new Dictionary<string, SupplyData>();
 			scansat_id = new List<uint>();
@@ -697,7 +695,6 @@ namespace KERBALISM
 			scienceTransmitted = Lib.ConfigValue(node, "scienceTransmitted", 0.0);
 
 			stormData = new StormData(node.GetNode("StormData"));
-			habitatInfo = new VesselHabitatInfo(node.GetNode("SunShielding"));
 			computer = new Computer(node.GetNode("computer"));
 
 			supplies = new Dictionary<string, SupplyData>();
@@ -750,8 +747,6 @@ namespace KERBALISM
 				node.AddValue("scansat_id", id.ToString());
 			}
 
-			EnvHabitatInfo.Save(node.AddNode("SunShielding"));
-
 			Parts.Save(node);
 
 			if (Vessel != null)
@@ -790,24 +785,49 @@ namespace KERBALISM
 			// communications info
 			connection = ConnectionInfo.Update(Vessel, powered, EnvBlackout);
 
-			// habitat data
-			habitatInfo.Update(Vessel);
-
 			volume = surface = 0.0;
 			comfortMask = 0;
 			double atmoAmount = 0.0, wasteAmount = 0.0, shieldingAmount = 0.0;
-			foreach (PartData partData in Parts)
+
+			bool raytraceDone = false;
+
+			for (int i = 0; i < Parts.Count; i++)
 			{
-				if (partData.Habitat != null && partData.Habitat.habitatEnabled)
+				HabitatData habitat = Parts.AtIndex(i).Habitat;
+
+				if (habitat != null && habitat.habitatEnabled)
 				{
-					volume += partData.Habitat.enabledVolume;
-					surface += partData.Habitat.enabledSurface;
-					atmoAmount += partData.Habitat.atmoAmount;
-					wasteAmount += partData.Habitat.wasteAmount;
-					shieldingAmount += partData.Habitat.shieldingAmount;
-					comfortMask |= partData.Habitat.enabledComfortsMask;
+					volume += habitat.enabledVolume;
+					surface += habitat.enabledSurface;
+					atmoAmount += habitat.atmoAmount;
+					wasteAmount += habitat.wasteAmount;
+					shieldingAmount += habitat.shieldingAmount;
+					comfortMask |= habitat.enabledComfortsMask;
+
+					// radiation raytracing is only done while loaded.
+					if (Vessel.loaded && habitat.module != null)
+					{
+						// if partHabitatRaytraceNextIndex was reset to -1, raytrace all parts
+						if (partHabitatRaytraceNextIndex < 0)
+							Radiation.RaytraceHabitatSunRadiation(this, habitat);
+						// else only raytrace one habitat per update cycle to preserve performance
+						else if (!raytraceDone && i >= partHabitatRaytraceNextIndex)
+						{
+							Radiation.RaytraceHabitatSunRadiation(this, habitat);
+							partHabitatRaytraceNextIndex++;
+							raytraceDone = true;
+						}
+					}
 				}
 			}
+
+			// reset index if no habitat was processed (we reached end of list)
+			if (!raytraceDone)
+				partHabitatRaytraceNextIndex = 0;
+
+			// if we have done the first run of "raytrace all parts", now switch to one part per update cycle
+			if (Vessel.loaded && partHabitatRaytraceNextIndex < 0)
+				partHabitatRaytraceNextIndex = 0;
 
 			pressure = atmoAmount / volume;
 			poisoning = wasteAmount / volume;

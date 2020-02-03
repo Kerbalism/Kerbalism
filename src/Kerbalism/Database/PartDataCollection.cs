@@ -53,6 +53,7 @@ namespace KERBALISM
 		IEnumerator IEnumerable.GetEnumerator() => partList.GetEnumerator();
 		public int Count => partList.Count;
 		public PartData this[uint flightId] => partDictionary[flightId];
+		public PartData AtIndex(int index) => partList[index];
 
 		public bool Contains(uint flightID) => partDictionary.ContainsKey(flightID);
 

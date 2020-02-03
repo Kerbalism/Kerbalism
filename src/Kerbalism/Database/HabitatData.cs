@@ -33,13 +33,13 @@ namespace KERBALISM
 			Plants = 1 << 5
 		}
 
-		// TODO : make this a struct
-		public struct SunRadiationOccluders
-		{
-			public double distance;
-			public double thickness;
 
-			public SunRadiationOccluders(double distance, double thickness)
+		public struct SunRadiationOccluder
+		{
+			public float distance;
+			public float thickness;
+
+			public SunRadiationOccluder(float distance, float thickness)
 			{
 				this.distance = distance;
 				this.thickness = thickness;
@@ -80,7 +80,7 @@ namespace KERBALISM
 		public int enabledComfortsMask;
 
 		public double sunRadiation;
-		public List<SunRadiationOccluders> sunRadiationOccluders = new List<SunRadiationOccluders>();
+		public List<SunRadiationOccluder> sunRadiationOccluders = new List<SunRadiationOccluder>();
 
 		public ModuleKsmHabitat module;
 
@@ -104,7 +104,7 @@ namespace KERBALISM
 			habitatNode.AddValue("enabledComfortsMask", enabledComfortsMask);
 			habitatNode.AddValue("sunRadiation", sunRadiation);
 
-			foreach (SunRadiationOccluders occluder in sunRadiationOccluders)
+			foreach (SunRadiationOccluder occluder in sunRadiationOccluders)
 			{
 				ConfigNode occluderNode = habitatNode.AddNode("occluder");
 				occluderNode.AddValue("distance", occluder.distance);
@@ -130,9 +130,9 @@ namespace KERBALISM
 			sunRadiationOccluders.Clear();
 			foreach (ConfigNode occluderNode in habitatNode.GetNodes("occluder"))
 			{
-				double distance = Lib.ConfigValue(occluderNode, "distance", 1.0);
-				double thickness = Lib.ConfigValue(occluderNode, "thickness", 1.0);
-				sunRadiationOccluders.Add(new SunRadiationOccluders(distance, thickness));
+				float distance = Lib.ConfigValue(occluderNode, "distance", 1f);
+				float thickness = Lib.ConfigValue(occluderNode, "thickness", 1f);
+				sunRadiationOccluders.Add(new SunRadiationOccluder(distance, thickness));
 			}
 		}
 	}

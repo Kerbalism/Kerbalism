@@ -431,7 +431,7 @@ namespace KERBALISM.Planner
 				p.AddContent(Local.Planner_emission, Lib.HumanReadableRadiation(vessel_analyzer.emitted), tooltip);//"emission"
 			else
 				p.AddContent(Local.Planner_activeshielding, Lib.HumanReadableRadiation(-vessel_analyzer.emitted), tooltip);//"active shielding"
-			p.AddContent(Local.Planner_shielding, rule.modifiers.Contains("shielding") ? HabitatLib.ShieldingToString(vessel_analyzer.shielding) : "N/A", tooltip);//"shielding"
+			p.AddContent(Local.Planner_shielding, rule.modifiers.Contains("shielding") ? Radiation.VesselShieldingToString(vessel_analyzer.shielding) : "N/A", tooltip);//"shielding"
 		}
 
 		///<summary> Add reliability sub-panel, including tooltips </summary>

@@ -151,6 +151,8 @@
     <Compile Include="Database\VesselSituations.cs" />
     <Compile Include="LocalizationCache.cs" />
     <Compile Include="Modules\Habitat2.cs" />
+    <Compile Include="Radiation\RadiationBody.cs" />
+    <Compile Include="Radiation\RadiationModel.cs" />
     <Compile Include="Science\SubjectData.cs" />
     <Compile Include="Database\SupplyData.cs" />
     <Compile Include="Database\UIData.cs" />
@@ -279,7 +281,6 @@
     <Compile Include="Radiation\Storm.cs" />
     <Compile Include="UI\FailuresManager.cs" />
     <Compile Include="Database\ReliabilityInfo.cs" />
-    <Compile Include="Database\VesselHabitatInfo.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="Patches\TooltipController_CrewAC_SetTooltip.cs" />
     <Compile Include="Modules\PassiveShield.cs" />
