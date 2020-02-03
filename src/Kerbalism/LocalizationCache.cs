@@ -484,6 +484,27 @@ namespace KERBALISM
 		public static string DevManager_TabDriveFull = GetLoc("DevManager_TabDriveFull"); // "<i>Called when data free space is below 10%</i>"
 		public static string DevManager_TabDriveEmpty = GetLoc("DevManager_TabDriveEmpty"); // "<i>Called when data free space is above 85%</i>"
 
+		public static string DevManager_NameTabLanded = GetLoc("DevManager_NameTabLanded"); // "landed"
+		public static string DevManager_NameTabAtmo = GetLoc("DevManager_NameTabAtmo"); // "atmo"
+		public static string DevManager_NameTabSpace = GetLoc("DevManager_NameTabSpace"); // "space"
+		public static string DevManager_NameTabSunlight = GetLoc("DevManager_NameTabSunlight"); // "sunlight"
+		public static string DevManager_NameTabShadow = GetLoc("DevManager_NameTabShadow"); // "shadow"
+		public static string DevManager_NameTabPowerHigh = GetLoc("DevManager_NameTabPowerHigh"); // "power high"
+		public static string DevManager_NameTabPowerLow = GetLoc("DevManager_NameTabPowerLow"); // "power low"
+		public static string DevManager_NameTabRadHigh = GetLoc("DevManager_NameTabRadHigh"); // "rad high"
+		public static string DevManager_NameTabRadLow = GetLoc("DevManager_NameTabRadLow"); // "rad low"
+		public static string DevManager_NameTabLinked = GetLoc("DevManager_NameTabLinked"); // "linked"
+		public static string DevManager_NameTabUnlinked = GetLoc("DevManager_NameTabUnlinked"); // "unlinked"
+		public static string DevManager_NameTabEVAOut = GetLoc("DevManager_NameTabEVAOut"); // "EVA out"
+		public static string DevManager_NameTabEVAIn = GetLoc("DevManager_NameTabEVAIn"); // "EVA in"
+		public static string DevManager_NameTabAct1 = GetLoc("DevManager_NameTabAct1"); // "action 1"
+		public static string DevManager_NameTabAct2 = GetLoc("DevManager_NameTabAct2"); // "action 2"
+		public static string DevManager_NameTabAct3 = GetLoc("DevManager_NameTabAct3"); // "action 3"
+		public static string DevManager_NameTabAct4 = GetLoc("DevManager_NameTabAct4"); // "action 4"
+		public static string DevManager_NameTabAct5 = GetLoc("DevManager_NameTabAct5"); // "action 5"
+		public static string DevManager_NameTabDriveFull = GetLoc("DevManager_NameTabDriveFull"); // "drive full"
+		public static string DevManager_NameTabDriveEmpty = GetLoc("DevManager_NameTabDriveEmpty"); // "drive empty"
+
 		////////////////////////////////////////////////////////////////////
 		// Telemetry/Planner UI : Comfort
 		////////////////////////////////////////////////////////////////////
