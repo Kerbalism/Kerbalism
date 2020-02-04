@@ -40,7 +40,7 @@ namespace KERBALISM
 			// pressure
 			PressureSuitVolume = Lib.ConfigValue(cfg, "PressureSuitVolume", 0.1);
 			PressureFactor = Lib.ConfigValue(cfg, "PressureFactor", 10.0);
-			PressureThreshold = Lib.ConfigValue(cfg, "PressureThreshold", 0.9);
+			PressureThreshold = Lib.ConfigValue(cfg, "PressureThreshold", 0.6);
 
 			// poisoning
 			PoisoningFactor = Lib.ConfigValue(cfg, "PoisoningFactor", 0.0);
@@ -139,7 +139,7 @@ namespace KERBALISM
 		// habitat
 		public static double PressureSuitVolume;                // habitat volume per kerbal while in EVA or inside an unpressurized habitat
 		public static double PressureFactor;                    // pressurized modifier value for vessels below the threshold
-		public static double PressureThreshold;                 // level of atmosphere resource that determine pressurized status
+		public static double PressureThreshold;                 // below that threeshold, the vessel will be considered under partial pressure and kerbals will put their suits
 
 		// poisoning
 		public static double PoisoningFactor;                   // poisoning modifier value for vessels below threshold

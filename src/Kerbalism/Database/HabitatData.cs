@@ -14,6 +14,7 @@ namespace KERBALISM
 		public enum PressureState
 		{
 			Pressurized,
+			PressureDropped,
 			Depressurized,
 			PressurizingStart,
 			Pressurizing,

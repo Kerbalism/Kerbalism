@@ -97,16 +97,24 @@ namespace KERBALISM
 
 		// rmb ui status strings
 #if KSP15_16
-		[KSPField(guiActive = false, guiActiveEditor = true, guiName = "#KERBALISM_Habitat_Volume")]
-		public string pawInfo;
+		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "Pressure")]
+		public string mainPawInfo;
 #else
-		[KSPField(guiActive = false, guiActiveEditor = true, guiName = "#KERBALISM_Habitat_Volume", groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
-		public string pawInfo;
+		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "Pressure", groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
+		public string mainPawInfo;
+#endif
+
+#if KSP15_16
+		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "Status")]
+		public string suitPawInfo;
+#else
+		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "Pressure in suits", groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
+		public string suitPawInfo;
 #endif
 
 		#endregion
 
-#region INIT
+		#region INIT
 
 		// parsing configs at prefab compilation
 		public override void OnLoad(ConfigNode node)
@@ -204,15 +212,17 @@ namespace KERBALISM
 				isCentrifuge = (rotateTranformator != null && rotateTranformator.IsDefined) || (rotateAnimator != null && rotateAnimator.IsDefined);
 				hasShielding = Features.Radiation && maxShieldingFactor > 0.0;
 
-				// avoid incorrect pressure state
-				if (!canPressurize)
-					pressureState = PressureState.Depressurized;
+				// ensure proper initialization
+				if (!canPressurize || pressureState == PressureState.Depressurized)
+					pressureState = PressureState.DepressurizingStart;
+				else
+					pressureState = PressureState.PressurizingStart;
 
-				// precalculate shielding cost and add shielding
+				// precalculate shielding cost and add resources
 				volumeLiters = M3ToL(volume);
 				double currentVolumeLiters = canPressurize ? volumeLiters : 0.0;
-				atmoRes = Lib.AddResource(part, atmosphereResource, pressureState == PressureState.Depressurized ? 0.0 : currentVolumeLiters, currentVolumeLiters);
-				wasteRes = Lib.AddResource(part, wasteAtmosphereResource, 0.0, currentVolumeLiters);
+				atmoRes = Lib.AddResource(part, atmosphereResource, volumeLiters, volumeLiters);
+				wasteRes = Lib.AddResource(part, wasteAtmosphereResource, 0.0, volumeLiters);
 
 				if (hasShielding)
 				{
@@ -237,7 +247,7 @@ namespace KERBALISM
 			if (Lib.IsFlight())
 				data = vessel.KerbalismData().Parts.Get(part.flightID).Habitat;
 
-			// if not created (editor/new vessel), initialize it and setup pseudo-resources
+			// if not created (editor/new vessel), initialize the data and setup pseudo-resources
 			if (data == null)
 			{
 				data = new HabitatData(this);
@@ -259,10 +269,8 @@ namespace KERBALISM
 			if (hasShielding)
 				shieldRes = part.Resources[shieldingResource];
 
-
-			// set RMB UI status strings
-			pawInfo = "Size: " + Lib.HumanReadableVolume(volume) + " - " + Lib.HumanReadableSurface(surface);
-
+			ToggleHabitat(data.habitatEnabled);
+				
 			if (part.isVesselEVA)
 				Events["ToggleHabitat"].active = false;
 			else
@@ -328,31 +336,46 @@ namespace KERBALISM
 
 		public void Update()
 		{
+			double suitsVolume = data.crewCount * M3ToL(Settings.PressureSuitVolume);
+			double habPressure;
+			if (data.pressureState == PressureState.Depressurized)
+				habPressure = 0.0;
+			else
+				habPressure = (atmoRes.maxAmount - suitsVolume) > 0.0 ? Lib.Clamp((atmoRes.amount - suitsVolume) / (atmoRes.maxAmount - suitsVolume), 0.0, 1.0) : 0.0;
+
+			mainPawInfo =
+				Lib.Color(habPressure > Settings.PressureThreshold, habPressure.ToString("0.00 atm"), Lib.Kolor.Green, Lib.Kolor.Orange)
+				+ volume.ToString(" (0.0 m3)")
+				+ " - Crew: " + data.crewCount + "/" + part.CrewCapacity;
+
+			if (data.pressureState != PressureState.Pressurized && data.crewCount > 0)
+			{
+				suitPawInfo = Math.Min(atmoRes.amount / suitsVolume, 1.0).ToString("0.00 atm");
+				Fields["suitPawInfo"].guiActive = true;
+				Fields["suitPawInfo"].guiActiveEditor = true;
+			}
+			else
+			{
+				Fields["suitPawInfo"].guiActive = false;
+				Fields["suitPawInfo"].guiActiveEditor = false;
+			}
+
 			if (canPressurize)
 			{
-				double suitsVolume;
-				if (data.pressureState != PressureState.Pressurized)
-					suitsVolume = data.crewCount * M3ToL(Settings.PressureSuitVolume);
-				else
-					suitsVolume = 0.0;
-
-				double pressure = (atmoRes.maxAmount - suitsVolume) > 0.0 ? Lib.Clamp((atmoRes.amount - suitsVolume) / (atmoRes.maxAmount - suitsVolume), 0.0, 1.0) : 0.0;
-
 				switch (data.pressureState)
 				{
 					case PressureState.Pressurized:
-						pressureEvent.guiName = "Depressurize (" + pressure.ToString("P2") + ")";
+						pressureEvent.guiName = "Depressurize" + Lib.HumanReadableCountdown((data.atmoAmount - suitsVolume) / depressurizationSpeed);
 						break;
 					case PressureState.Depressurized:
-						pressureEvent.guiName = "Pressurize (" + pressure.ToString("P2") + ")";
+						pressureEvent.guiName = "Pressurize";
 						break;
 					case PressureState.Pressurizing:
-						
-						pressureEvent.guiName = "Pressurizing : " + pressure.ToString("P2");
+						pressureEvent.guiName = "Pressurizing...";
 						break;
 					case PressureState.Depressurizing:
-						
-						pressureEvent.guiName = "Depressurizing : " + pressure.ToString("P2"); break;
+						pressureEvent.guiName = "Depressurizing : " + Lib.HumanReadableCountdown((data.atmoAmount - suitsVolume) / depressurizationSpeed);
+						break;
 				}
 			}
 		}
@@ -373,7 +396,8 @@ namespace KERBALISM
 			VesselData vd = isEditor ? null : vessel.KerbalismData();
 
 			// constantly disable shielding flow when habitat is disabled, so it isn't accounted for in the resource sim
-			shieldRes.flowState = data.habitatEnabled;
+			if (hasShielding)
+				shieldRes.flowState = data.habitatEnabled;
 
 			// TODO : This will conflict with inflatables deployement. Maybe there is a better way to handle that ?
 			if (!isEditor && vd.EnvBreathable)
@@ -391,10 +415,24 @@ namespace KERBALISM
 				switch (data.pressureState)
 				{
 					case PressureState.Pressurized:
-
-						if ((data.crewCount == 0 && atmoRes.amount == 0.0) || (data.crewCount > 0 && atmoRes.amount <= data.crewCount * M3ToL(Settings.PressureSuitVolume)))
+						// if atmo drop below the kerbal in suits (or 0) volume, switch to depressurized state
+						if (atmoRes.amount <= data.crewCount * M3ToL(Settings.PressureSuitVolume))
 							data.pressureState = PressureState.DepressurizingStart;
+						// if pressure drop below the minimum habitable pressure, switch to partial pressure state
+						else if (atmoRes.amount / atmoRes.maxAmount < Settings.PressureThreshold)
+							data.pressureState = PressureState.PressureDropped;
+						break;
 
+					case PressureState.PressureDropped:
+						// set enabled volume to the kerbal in suits volume (or 0)
+						data.enabledVolume = data.crewCount * Settings.PressureSuitVolume;
+
+						// make the kerbals put their helmets
+						if (data.crewCount > 0 && vessel.isActiveVessel && part.internalModel != null)
+							Lib.RefreshIVAAndPortraits(); 
+
+						// go to pressurizing state
+						data.pressureState = PressureState.Pressurizing;
 						break;
 
 					case PressureState.Depressurized:
@@ -403,6 +441,8 @@ namespace KERBALISM
 					case PressureState.PressurizingStart:
 						atmoRes.maxAmount = volumeLiters;
 						wasteRes.maxAmount = volumeLiters;
+						atmoRes.flowState = true;
+						wasteRes.flowState = true;
 
 						if (isEditor)
 							data.pressureState = PressureState.PressurizingEnd;
@@ -413,45 +453,31 @@ namespace KERBALISM
 
 					case PressureState.Pressurizing:
 
-						if (atmoRes.amount > volumeLiters - 1e-06)
+						// if pressure go back to the minimum habitable pressure, switch to pressurized state
+						if (atmoRes.amount / atmoRes.maxAmount > Settings.PressureThreshold)
 							data.pressureState = PressureState.PressurizingEnd;
-
 						break;
 
 					case PressureState.PressurizingEnd:
-
-						//part.crewTransferAvailable = true; // not really needed, we handle transfer permissions trought events
 						data.enabledVolume = volume;
 
 						if (isEditor)
 						{
 							atmoRes.amount = volumeLiters;
 							wasteRes.amount = 0.0;
-							data.pressureState = PressureState.Pressurized;
 						}
 						else
 						{
 							// make the kerbals remove their helmets
 							// this works in conjunction with the SpawnCrew prefix patch that check if the part is pressurized or not on spawning the IVA.
 							if (data.crewCount > 0 && vessel.isActiveVessel && part.internalModel != null)
-							{
-								FlightGlobals.ActiveVessel.DespawnCrew();
-
-								// TODO : this seems to work, but it might be safer to fire onCrewTransferred
-								KerbalPortraitGallery.Instance.StartReset(vessel);
-								// ivaOverlay is private, this is a onCrewTransferred callback that destroy some gameobjects
-								// seems to work without calling it but might cause issues / memory leaks
-								//KerbalPortraitGallery.Instance.ivaOverlay.Dismiss(); 
-								Kerbalism.Fetch.StartCoroutine(CallbackUtil.DelayedCallback(1, FlightGlobals.ActiveVessel.SpawnCrew));
-							}
+								Lib.RefreshIVAAndPortraits();
 						}
 
 						data.pressureState = PressureState.Pressurized;
 						break;
 
 					case PressureState.DepressurizingStart:
-
-						//part.crewTransferAvailable = false; // not really needed, we handle transfer permissions trought events
 						data.enabledVolume = data.crewCount * Settings.PressureSuitVolume;
 						atmoRes.flowState = false;
 						wasteRes.flowState = false;
@@ -465,20 +491,11 @@ namespace KERBALISM
 							// make the kerbals put their helmets
 							// this works in conjunction with the SpawnCrew prefix patch that check if the part is pressurized or not on spawning the IVA.
 							if (data.crewCount > 0 && vessel.isActiveVessel && part.internalModel != null)
-							{
-								vessel.DespawnCrew();
+								Lib.RefreshIVAAndPortraits();
 
-								// TODO : this seems to work, but it might be safer to fire onCrewTransferred
-								KerbalPortraitGallery.Instance.StartReset(vessel);
-								// ivaOverlay is private, this is a onCrewTransferred callback that destroy some gameobjects
-								// seems to work without calling it but might cause issues / memory leaks
-								//KerbalPortraitGallery.Instance.ivaOverlay.Dismiss(); 
-								Kerbalism.Fetch.StartCoroutine(CallbackUtil.DelayedCallback(1, FlightGlobals.ActiveVessel.SpawnCrew));
-							}
 							data.pressureState = PressureState.Depressurizing;
 						}
 
-						
 						break;
 
 					case PressureState.Depressurizing:
@@ -543,11 +560,10 @@ namespace KERBALISM
 						data.wasteAmount = LToM3(M3ToL(data.enabledVolume) * (wasteRes.amount / wasteRes.maxAmount));
 						break;
 				}
-				data.shieldingAmount = shieldRes.amount;
+				data.shieldingAmount = hasShielding ? shieldRes.amount : 0.0;
 			}
 			else
 			{
-				data.enabledSurface = 0.0;
 				data.enabledVolume = 0.0;
 				data.atmoAmount = 0.0;
 				data.wasteAmount = 0.0;
@@ -604,14 +620,16 @@ namespace KERBALISM
 					ToggleRotate();
 
 				Events["ToggleHabitat"].guiName = "Enable habitat";
-				part.crewTransferAvailable = false;
+				//part.crewTransferAvailable = false;
+				habitatEnabled = false; // keep state in sync in the editor, but we don't care for that field in flight
 				ToggleHabitat(false);
 
 			}
 			else
 			{
 				Events["ToggleHabitat"].guiName = "Disable habitat";
-				part.crewTransferAvailable = true;
+				//part.crewTransferAvailable = true;
+				habitatEnabled = true; // keep state in sync in the editor, but we don't care for that field in flight
 				ToggleHabitat(true);
 			}
 		}
@@ -648,12 +666,12 @@ namespace KERBALISM
 
 		#endregion
 
-#region ENABLE / DISABLE PRESSURE & UI
+		#region ENABLE / DISABLE PRESSURE & UI
 
 #if KSP15_16
-		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true)]
+		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = false)]
 #else
-		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true, groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
+		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = false, groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
 #endif
 		public void TogglePressure()
 		{

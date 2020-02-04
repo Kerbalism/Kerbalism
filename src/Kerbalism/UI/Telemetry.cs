@@ -103,6 +103,10 @@ namespace KERBALISM
 			if (Features.Poisoning) p.AddContent(Local.TELEMETRY_co2level, Lib.Color(vd.Poisoning > Settings.PoisoningThreshold, Lib.HumanReadablePerc(vd.Poisoning, "F2"), Lib.Kolor.Yellow));//"co2 level"
 			if (Features.Radiation && v.isEVA) p.AddContent(Local.TELEMETRY_radiation, Lib.HumanReadableRadiation(vd.EnvHabitatRadiation));//"radiation"
 
+			p.AddContent("volume-debug", Lib.HumanReadableVolume(vd.Volume));
+			p.AddContent("surface-debug", Lib.HumanReadableSurface(vd.Surface));
+			p.AddContent("shielding-debug", vd.Shielding.ToString("F3"));
+
 			if (!v.isEVA)
 			{
 				if (Features.Pressure) p.AddContent(Local.TELEMETRY_pressure, Lib.HumanReadablePressure(vd.Pressure * Sim.PressureAtSeaLevel()));//"pressure"

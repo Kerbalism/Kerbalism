@@ -10,6 +10,8 @@ using CommNet;
 using KSP.Localization;
 using KSP.UI.Screens;
 using KSP.UI;
+using KSP.UI.Screens.Flight;
+using System.Collections;
 
 namespace KERBALISM
 {
@@ -1427,18 +1429,36 @@ namespace KERBALISM
 			return p.partInfo.name;
 		}
 
+		/// <summary>
+		/// In the editor, remove the symmetry constraint for this part and its symmetric counterparts. 
+		/// This method is available in stock (Part.RemoveFromSymmetry()) since 1.7.2, copied here for 1.4-1.6 compatibility
+		/// </summary>
+		public static void EditorClearSymmetry(Part part)
+		{
+			part.CleanSymmetryReferences();
+			if (part.stackIcon != null)
+			{
+				part.stackIcon.RemoveIcon();
+				part.stackIcon.CreateIcon();
+				if (StageManager.Instance != null) StageManager.Instance.SortIcons(true);
+			}
+			EditorLogic.fetch.SetBackup();
+		}
+
+		#endregion
+
+		#region CREW
+
 		public static int CrewCount(Part part)
 		{
 			// outside of the editors, it is easy
-			if (!Lib.IsEditor())
-			{
+			if (IsFlight())
 				return part.protoModuleCrew.Count;
-			}
 
 			// in the editor we need something more involved
-			Int64 part_id = 4294967296L + part.GetInstanceID();
-			var manifest = KSP.UI.CrewAssignmentDialog.Instance.GetManifest();
-			var part_manifest = manifest.GetCrewableParts().Find(k => k.PartID == part_id);
+			// Int64 part_id = 4294967296L + part.GetInstanceID();
+			VesselCrewManifest manifest = CrewAssignmentDialog.Instance.GetManifest();
+			PartCrewManifest part_manifest = manifest.PartManifests.Find(k => k.PartID == part.craftID);
 			if (part_manifest != null)
 			{
 				int result = 0;
@@ -1458,22 +1478,6 @@ namespace KERBALISM
 			return CrewCount(p) > 0;
 		}
 
-		/// <summary>
-		/// In the editor, remove the symmetry constraint for this part and its symmetric counterparts. 
-		/// This method is available in stock (Part.RemoveFromSymmetry()) since 1.7.2, copied here for 1.4-1.6 compatibility
-		/// </summary>
-		public static void EditorClearSymmetry(Part part)
-		{
-			part.CleanSymmetryReferences();
-			if (part.stackIcon != null)
-			{
-				part.stackIcon.RemoveIcon();
-				part.stackIcon.CreateIcon();
-				if (StageManager.Instance != null) StageManager.Instance.SortIcons(true);
-			}
-			EditorLogic.fetch.SetBackup();
-		}
-
 		public static void EditorClearPartCrew(Part part)
 		{
 			PartCrewManifest partCrewManifest = ShipConstruction.ShipManifest.GetPartCrewManifest(part.craftID);
@@ -1486,7 +1490,7 @@ namespace KERBALISM
 				}
 			}
 
-			CrewAssignmentDialog.Instance.RefreshCrewLists(ShipConstruction.ShipManifest, false, false);
+			CrewAssignmentDialog.Instance.RefreshCrewLists(ShipConstruction.ShipManifest, false, true);
 		}
 
 
@@ -1523,7 +1527,7 @@ namespace KERBALISM
 				toPart.AddCrewmember(crew);
 
 				//if (postTransferMessage)
-					// ScreenMessages.PostScreenMessage(Localizer.Format("#autoLOC_111636", crew.name, toPart.partInfo.title), transfer.scMsgWarning);
+				// ScreenMessages.PostScreenMessage(Localizer.Format("#autoLOC_111636", crew.name, toPart.partInfo.title), transfer.scMsgWarning);
 
 				GameEvents.onCrewTransferred.Fire(new GameEvents.HostedFromToAction<ProtoCrewMember, Part>(crew, fromPart, toPart));
 			}
@@ -1559,6 +1563,39 @@ namespace KERBALISM
 			}
 
 			return crewLeft;
+		}
+
+		/// <summary>
+		/// Rebuild the IVAs and and Kerbal portrait gallery. Called from the habitat module in conjunction
+		/// with the InternalModel_SpawnCrew patch to make kerbals put/take off their helmets. 
+		/// </summary>
+		public static void RefreshIVAAndPortraits()
+		{
+			// Prevent (redundant) calls to this from doing anything while the respawn coroutine hasn't run.
+			if (isIVARefreshRequested)
+				return;
+
+			isIVARefreshRequested = true;
+			FlightGlobals.ActiveVessel.DespawnCrew();
+
+			// Note : these methods are normally callbacks added to GameEvents.onCrewTransferred,
+			// but we don't want to call that here and it doesn't seem there is any other way than doing it manually
+			KerbalPortraitGallery.Instance.StartReset(FlightGlobals.ActiveVessel);
+			ReflectionValue<InternalSpaceOverlay>(KerbalPortraitGallery.Instance, "ivaOverlay")?.Dismiss();
+
+			Kerbalism.Fetch.StartCoroutine(SpawnIVAAndPortraits());
+		}
+
+		private static bool isIVARefreshRequested = false;
+
+		private static IEnumerator SpawnIVAAndPortraits()
+		{
+			// wait exactly one frame. More : doesn't work, less : doesn't work. don't ask, IDK.
+			for (int i = 0; i < 1; i++)
+				yield return null;
+
+			isIVARefreshRequested = false;
+			FlightGlobals.ActiveVessel.SpawnCrew();
 		}
 
 		public static void EnablePartIVA(Part part, bool enable)

@@ -1,11 +1,12 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Harmony;
 using KSP.UI.Screens;
 using UnityEngine;
 using KSP.Localization;
-
+using KSP.UI;
 
 namespace KERBALISM
 {
@@ -99,6 +100,9 @@ namespace KERBALISM
 			GameEvents.onCrewOnEva.Add(this.ToEVA);
 			GameEvents.onCrewBoardVessel.Add(this.FromEVA);
 
+			// in editor crew assignement trough the assignement dialog
+			BaseCrewAssignmentDialog.onCrewDialogChange.Add(EditorCrewChanged);
+
 			// habitat / EVA crew transfer handling
 			GameEvents.onCrewTransferred.Add(CrewTransferred);
 			GameEvents.onCrewTransferSelected.Add(CrewTransferSelected);
@@ -141,6 +145,75 @@ namespace KERBALISM
 
 			// add editor events
 			GameEvents.onEditorShipModified.Add((sc) => Planner.Planner.EditorShipModifiedEvent(sc));
+		}
+
+		private static bool crewAssignementRefreshWasJustFiredFromCrewChanged = false;
+
+		private void EditorCrewChanged(VesselCrewManifest crewManifest)
+		{
+			if (crewAssignementRefreshWasJustFiredFromCrewChanged)
+			{
+				crewAssignementRefreshWasJustFiredFromCrewChanged = false;
+				return;
+			}
+
+			bool needRefresh = false;
+			foreach (PartCrewManifest partManifest in crewManifest.PartManifests)
+			{
+				if (partManifest.NoSeats())
+					continue;
+
+				ModuleKsmHabitat habitat = EditorLogic.fetch.ship.parts.Find(p => p.craftID == partManifest.PartID)?.FindModuleImplementing<ModuleKsmHabitat>();
+
+				if (habitat != null)
+				{
+					if (!habitat.habitatEnabled || (habitat.isDeployable && !habitat.isDeployed))
+					{
+						if (habitat.HabitatData != null)
+							habitat.HabitatData.crewCount = 0;
+
+						foreach (ProtoCrewMember crew in partManifest.GetPartCrew())
+							if (crew != null)
+								Message.Post($"Can't put {crew.displayName} in {habitat.part.partInfo.title} : habitat is disabled");
+
+						for (int i = 0; i < partManifest.partCrew.Length; i++)
+						{
+							if (!string.IsNullOrEmpty(partManifest.partCrew[i]))
+							{
+								partManifest.RemoveCrewFromSeat(i);
+								
+								needRefresh |= true;
+							}
+						}
+					}
+					else
+					{
+						if (habitat.HabitatData != null)
+						{
+							int crewCount = 0;
+							for (int i = 0; i < partManifest.partCrew.Length; i++)
+							{
+								if (!string.IsNullOrEmpty(partManifest.partCrew[i]))
+								{
+									crewCount++;
+								}
+							}
+							habitat.HabitatData.crewCount = crewCount;
+							if (habitat.HabitatData.pressureState == HabitatData.PressureState.Depressurized)
+								habitat.HabitatData.pressureState = HabitatData.PressureState.DepressurizingStart;
+							else
+								habitat.HabitatData.pressureState = HabitatData.PressureState.PressurizingStart;
+						}
+					}
+				}
+			}
+
+			if (needRefresh)
+			{
+				// RefreshCrewLists() will call EditorCrewChanged...
+				crewAssignementRefreshWasJustFiredFromCrewChanged = true;
+				CrewAssignmentDialog.Instance.RefreshCrewLists(ShipConstruction.ShipManifest, false, true);
+			}
 		}
 
 		public bool AttemptBoard(KerbalEVA instance, Part part)
