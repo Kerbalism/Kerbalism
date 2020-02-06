@@ -199,10 +199,10 @@ namespace KERBALISM
 								}
 							}
 							habitat.HabitatData.crewCount = crewCount;
-							if (habitat.HabitatData.pressureState == HabitatData.PressureState.Depressurized)
-								habitat.HabitatData.pressureState = HabitatData.PressureState.DepressurizingStart;
+							if (habitat.HabitatData.pressureState == PartHabitat.PressureState.Depressurized)
+								habitat.HabitatData.pressureState = PartHabitat.PressureState.DepressurizingStart;
 							else
-								habitat.HabitatData.pressureState = HabitatData.PressureState.PressurizingStart;
+								habitat.HabitatData.pressureState = PartHabitat.PressureState.PressurizingStart;
 						}
 					}
 				}
@@ -221,7 +221,7 @@ namespace KERBALISM
 			bool canBoard = false;
 			if (part != null && part.vessel.KerbalismData().Parts.TryGet(part.flightID, out PartData partData))
 				if (partData.Habitat != null)
-					canBoard = partData.Habitat.pressureState == HabitatData.PressureState.Depressurized;
+					canBoard = partData.Habitat.pressureState == PartHabitat.PressureState.Depressurized;
 
 			if (!canBoard)
 				Message.Post($"Can't board {part.partInfo.title} while it is pressurized !");
@@ -237,7 +237,7 @@ namespace KERBALISM
 			{
 				if (fromPartData.Habitat != null)
 				{
-					FlightEVA.fetch.overrideEVA = fromPartData.Habitat.pressureState != HabitatData.PressureState.Depressurized;
+					FlightEVA.fetch.overrideEVA = fromPartData.Habitat.pressureState != PartHabitat.PressureState.Depressurized;
 				}
 			}
 
@@ -254,7 +254,7 @@ namespace KERBALISM
 			{
 				if (fromPartData.Habitat != null)
 				{
-					sourceIsPressurized = fromPartData.Habitat.pressureState == HabitatData.PressureState.Pressurized;
+					sourceIsPressurized = fromPartData.Habitat.pressureState == PartHabitat.PressureState.Pressurized;
 				}
 			}
 
@@ -264,7 +264,7 @@ namespace KERBALISM
 			{
 				if (toPartdata.Habitat != null)
 				{
-					targetIsEnabled = toPartdata.Habitat.pressureState == HabitatData.PressureState.Pressurized;
+					targetIsEnabled = toPartdata.Habitat.pressureState == PartHabitat.PressureState.Pressurized;
 					targetIsPressurized = toPartdata.Habitat.habitatEnabled;
 				}
 			}
@@ -301,7 +301,7 @@ namespace KERBALISM
 						Lib.LogStack($"From part {data.from.partInfo.title} : crew count old={fromPartData.Habitat.crewCount}, new={newCrewCount}, HabitatData is desynchronized !", Lib.LogLevel.Error);
 					}
 
-					if (fromPartData.Habitat.pressureState != HabitatData.PressureState.Pressurized)
+					if (fromPartData.Habitat.pressureState != PartHabitat.PressureState.Pressurized)
 					{
 						transferedAtmosphere = fromPartData.Habitat.atmoAmount / fromPartData.Habitat.crewCount;
 						transferedWasteAtmopshere = fromPartData.Habitat.wasteAmount / fromPartData.Habitat.crewCount;
@@ -320,7 +320,7 @@ namespace KERBALISM
 				if (toPartData.Habitat != null)
 				{
 					int newCrewCount = Lib.CrewCount(data.to);
-					if (toPartData.Habitat.pressureState != HabitatData.PressureState.Pressurized)
+					if (toPartData.Habitat.pressureState != PartHabitat.PressureState.Pressurized)
 					{
 						toPartData.Habitat.atmoAmount += transferedAtmosphere;
 						toPartData.Habitat.wasteAmount += transferedWasteAtmopshere;
@@ -475,7 +475,7 @@ namespace KERBALISM
 			}
 
 			// merge drives data
-			Drive.Transfer(data.from.vessel, data.to.vessel, true);
+			PartDrive.Transfer(data.from.vessel, data.to.vessel, true);
 
 			// forget EVA vessel data
 			Cache.PurgeVesselCaches(data.from.vessel);
@@ -528,7 +528,7 @@ namespace KERBALISM
 
 			// delete data on unloaded vessels only (this is handled trough OnPartWillDie for loaded vessels)
 			if (pv.vesselRef != null && !pv.vesselRef.loaded)
-				Drive.DeleteDrivesData(pv.vesselRef);
+				PartDrive.DeleteDrivesData(pv.vesselRef);
 		}
 
 		void VesselCreated(Vessel v)
@@ -568,7 +568,7 @@ namespace KERBALISM
 
 			// delete data on unloaded vessels only (this is handled trough OnPartWillDie for loaded vessels)
 			if (!v.loaded)
-				Drive.DeleteDrivesData(v);
+				PartDrive.DeleteDrivesData(v);
 		}
 
 		void VesselDock(GameEvents.FromToAction<Part, Part> e)

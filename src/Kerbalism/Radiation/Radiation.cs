@@ -5,7 +5,7 @@ using System.Diagnostics;
 using System.Threading;
 using UnityEngine;
 using KSP.Localization;
-using static KERBALISM.HabitatData;
+using static KERBALISM.PartHabitat;
 
 namespace KERBALISM
 {
@@ -726,7 +726,7 @@ namespace KERBALISM
 		/// <para/>Performance intensive operation.
 		/// <para/>Don't call this while the vessel is unloaded !
 		/// </summary>
-		public static void RaytraceHabitatSunRadiation(VesselData vd, HabitatData habitat)
+		public static void RaytraceHabitatSunRadiation(VesselData vd, PartHabitat habitat)
 		{
 			if (!Features.Radiation) return;
 

@@ -248,7 +248,7 @@ namespace KERBALISM
 						case "ProcessController":            device = new ProcessDevice(m as ProcessController);                 break;
 						case "Sickbay":                      device = new SickbayDevice(m as Sickbay);                           break;
 						case "Greenhouse":                   device = new GreenhouseDevice(m as Greenhouse);                     break;
-						case "GravityRing":                  device = new RingDevice(m as GravityRing);                          break;
+						//case "GravityRing":                  device = new RingDevice(m as GravityRing);                          break;
 						case "Emitter":                      device = new EmitterDevice(m as Emitter);                           break;
 						case "Harvester":                    device = new HarvesterDevice(m as Harvester);                         break;
 						case "Laboratory":                   device = new LaboratoryDevice(m as Laboratory);                     break;
@@ -311,7 +311,7 @@ namespace KERBALISM
 							case "ProcessController":            device = new ProtoProcessDevice(module_prefab as ProcessController, p, m);        break;
 							case "Sickbay":                      device = new ProtoSickbayDevice(module_prefab as Sickbay, p, m);                  break;
 							case "Greenhouse":                   device = new ProtoGreenhouseDevice(module_prefab as Greenhouse, p, m);            break;
-							case "GravityRing":                  device = new ProtoRingDevice(module_prefab as GravityRing, p, m);                 break;
+							//case "GravityRing":                  device = new ProtoRingDevice(module_prefab as GravityRing, p, m);                 break;
 							case "Emitter":                      device = new ProtoEmitterDevice(module_prefab as Emitter, p, m);                  break;
 							case "Harvester":                    device = new ProtoHarvesterDevice(module_prefab as Harvester, p, m);              break;
 							case "Laboratory":                   device = new ProtoLaboratoryDevice(module_prefab as Laboratory, p, m);            break;

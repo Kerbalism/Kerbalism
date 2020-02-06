@@ -1,86 +1,187 @@
 using UnityEngine;
 using System;
+using System.Collections;
 
 namespace KERBALISM
 {
 	public sealed class Transformator
 	{
-		private readonly Part part;
-		private Transform transform;
-		private readonly string name;
+		private Part part;
+		private Transform rotateTransform;
+		private Quaternion transformInitialRotation;
+		private Animator animator;
 
-		private Quaternion baseAngles;
+		private bool requestSpin;
+		private float currentSpinRate;
 
-		private float rotationRateGoal;
-		private float CurrentSpinRate;
+		public Callback onSpinRateReached;
+		public Callback onSpinStopped;
 
-		private readonly float SpinRate;
-		private readonly float spinAccel;
-		private readonly bool rotate_iva;
+		private float spinRate;
+		private float spinAccel;
+		private bool rotateIVA;
+		private bool invertPlayDirection;
 
 		public bool IsDefined { get; private set; } = false;
+		public bool IsAnimator { get; private set; }
+		public bool IsSpinning => IsDefined && currentSpinRate > 0f;
+		public bool IsAccelerating => IsDefined && requestSpin && currentSpinRate != spinRate;
+		public bool IsStopping => IsDefined && !requestSpin && currentSpinRate != 0f;
 
-		public Transformator(Part p, string transf_name, float SpinRate, float spinAccel, bool iva = true)
+		/// <summary> Create a transformator based on a transform </summary>
+		public Transformator(Part part, string transformName, float spinRate, float spinAccel, bool invertPlayDirection, bool rotateIVA)
 		{
-			transform = null;
-			name = string.Empty;
-			part = p;
-			rotate_iva = iva;
+			if (string.IsNullOrEmpty(transformName))
+				return;
 
-			if (transf_name.Length > 0)
+			this.part = part;
+			this.spinRate = spinRate;
+			this.spinAccel = spinAccel;
+			this.invertPlayDirection = invertPlayDirection;
+			this.rotateIVA = rotateIVA;
+
+			rotateTransform = part.FindModelTransform(transformName);
+			if (rotateTransform != null)
 			{
-				//Lib.Log("Looking for : {0}", transf_name);
-				transform = p.FindModelTransform(transf_name);
-				if (transform != null)
-				{
-					name = transf_name;
-					IsDefined = true;
-
-					this.SpinRate = SpinRate;
-					this.spinAccel = spinAccel;
-					baseAngles = transform.localRotation;
-				}
+				transformInitialRotation = rotateTransform.localRotation;
+				IsDefined = true;
+				IsAnimator = false;
 			}
 		}
 
-		public void Play()
+		/// <summary> Create a transformator based on an animation </summary>
+		public Transformator(Part part, string animationName, float spinRate, float spinAccel, bool invertPlayDirection)
 		{
-			//Lib.Log("Playing Transformation {0}", name);
-			if (IsDefined) rotationRateGoal = 1.0f;
+			if (string.IsNullOrEmpty(animationName))
+				return;
+
+			this.part = part;
+			this.spinRate = spinRate;
+			this.spinAccel = spinAccel;
+			this.invertPlayDirection = invertPlayDirection;
+			rotateIVA = false;
+
+			animator = new Animator(part, animationName);
+			IsDefined = animator.IsDefined;
+			IsAnimator = true;
 		}
 
-		public void Stop()
-		{
-			//Lib.Log("Stopping Transformation {0}", name);
-			if (IsDefined) rotationRateGoal = 0.0f;
-		}
-
-		public void DoSpin()
+		public void StartSpin(bool instantly = false)
 		{
 			if (!IsDefined)
 				return;
 
-			CurrentSpinRate = Mathf.MoveTowards(CurrentSpinRate, rotationRateGoal * SpinRate, TimeWarp.fixedDeltaTime * spinAccel);
-			float spin = Mathf.Clamp(TimeWarp.fixedDeltaTime * CurrentSpinRate, -10.0f, 10.0f);
-			//Lib.Log("Transform {0} spin rate {1}", name, CurrentSpinRate);
-			// Part rotation
-			transform.Rotate(Vector3.forward * spin);
+			requestSpin = true;
 
-			if(rotate_iva && part.internalModel != null)
+			if (instantly)
+				currentSpinRate = spinRate;
+		}
+
+		public void StopSpin(bool instantly = false)
+		{
+			if (!IsDefined)
+				return;
+
+			requestSpin = false;
+
+			if (instantly)
 			{
-				// IVA rotation
-				if (part.internalModel != null) part.internalModel.transform.Rotate(Vector3.forward * (spin * -1));
+				currentSpinRate = 0f;
+				if (IsAnimator)
+					animator.Still(0f);
+				else
+					rotateTransform.localRotation = transformInitialRotation;
+
+				onSpinStopped?.Invoke();
+				return;
 			}
 		}
 
-		public bool IsRotating()
+		public void Update()
 		{
-			return IsDefined && (Math.Abs(CurrentSpinRate) > Math.Abs(float.Epsilon * SpinRate));
+			if (!IsDefined)
+				return;
+
+			
+			// accelerating
+			if (requestSpin && currentSpinRate != spinRate)
+			{
+				currentSpinRate += spinAccel * TimeWarp.deltaTime;
+
+				if (currentSpinRate >= spinRate)
+				{
+					currentSpinRate = spinRate;
+					onSpinRateReached?.Invoke();
+				}
+			}
+			// decelerating
+			else if (!requestSpin && currentSpinRate != 0f)
+			{
+				float currentNormalizedTime;
+				if (IsAnimator)
+					currentNormalizedTime = animator.NormalizedTime;
+				else
+					currentNormalizedTime = (rotateTransform.localRotation.eulerAngles.z + transformInitialRotation.eulerAngles.z % 360f) / 360f;
+					
+				// calculate total rotation (in degrees) needed to stop, then clamp it to 1 rotation
+				float deltaToStop = (Mathf.Pow(currentSpinRate, 2f) / (2f * spinAccel)) % 360f;
+
+				// calculate rotation between current position and the zero position
+				float deltaToZero;
+				if (!invertPlayDirection && currentNormalizedTime != 0f) // currentNormalizedTime range is [0 ; 0.999...], it will never be 1.
+					deltaToZero = 1f - currentNormalizedTime;
+				else
+					deltaToZero = currentNormalizedTime;
+
+				deltaToZero *= 360f;
+
+				// decelerate when we are at the right spot to reach zero point
+				if (deltaToStop >= deltaToZero && deltaToStop <= deltaToZero + currentSpinRate) 
+					currentSpinRate =
+						currentSpinRate
+						- (spinAccel * TimeWarp.deltaTime) // remove speed using the acceleration rate
+						- (deltaToStop - deltaToZero); // compensate the current position to make sure we stop at the zero point (± the FP precison) 
+
+				// we will never exactly reach the stop point, so just force it
+				if (deltaToStop <= spinAccel * TimeWarp.deltaTime)
+				{
+					currentSpinRate = 0f;
+					if (IsAnimator)
+						animator.Still(0f);
+					else
+						rotateTransform.localRotation = transformInitialRotation;
+
+					onSpinStopped?.Invoke();
+					return;
+				}
+			}
+			// avoid reseting animations (and calling useless code)
+			if (currentSpinRate == 0f)
+				return;
+
+			// clamp visual effect to 10° / frame (note : not sure how that will interact with the stopping code... Should be fine ?)
+			float spinDelta = Mathf.Clamp(currentSpinRate * TimeWarp.deltaTime, 0f, 10f);
+			if (invertPlayDirection)
+				spinDelta *= -1f;
+
+			if (IsAnimator)
+			{
+				float targetNormalizedTime = (animator.NormalizedTime + (spinDelta / 360f)) % 1f;
+				animator.Still(targetNormalizedTime);
+			}
+			else
+			{
+				// Rotate the transform
+				rotateTransform.Rotate(Vector3.forward * spinDelta);
+
+				// IVA rotation
+				if (rotateIVA && part.internalModel != null)
+					part.internalModel.transform.Rotate(Vector3.forward * (invertPlayDirection ? spinDelta : -spinDelta)); // IVA transform seems to always be rotated 180° (?) 
+			}
+
+
 		}
 
-		public bool IsStopping()
-		{
-			return IsDefined && (Math.Abs(rotationRateGoal) <= float.Epsilon);
-		}
+
 	}
 }

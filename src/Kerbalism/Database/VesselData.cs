@@ -77,14 +77,20 @@ namespace KERBALISM
 		/// <summary> [environment] true if inside ocean</summary>
 		public bool EnvUnderwater => underwater; bool underwater;
 
-		/// <summary> [environment] true if inside breathable atmosphere</summary>
-		public bool EnvBreathable => breathable; bool breathable;
-
 		/// <summary> [environment] true if on the surface of a body</summary>
 		public bool EnvLanded => landed; bool landed;
 
+		/// <summary> current atmospheric pressure in atm</summary>
+		public double EnvStaticPressure => envStaticPressure; double envStaticPressure;
+
 		/// <summary> Is the vessel inside an atmosphere ?</summary>
 		public bool EnvInAtmosphere => inAtmosphere; bool inAtmosphere;
+
+		/// <summary> Is the vessel inside a breatheable atmosphere ?</summary>
+		public bool EnvInBreathableAtmosphere => inBreathableAtmosphere; bool inBreathableAtmosphere;
+
+		/// <summary> Is the vessel inside a breatheable atmosphere and at acceptable pressure conditions ?</summary>
+		public bool EnvInSurvivableAtmosphere => inSurvivableAtmosphere; bool inSurvivableAtmosphere;
 
 		/// <summary> [environment] true if in zero g</summary>
 		public bool EnvZeroG => zeroG; bool zeroG;
@@ -793,7 +799,7 @@ namespace KERBALISM
 
 			for (int i = 0; i < Parts.Count; i++)
 			{
-				HabitatData habitat = Parts.AtIndex(i).Habitat;
+				PartHabitat habitat = Parts.AtIndex(i).Habitat;
 
 				if (habitat != null && habitat.habitatEnabled)
 				{
@@ -839,16 +845,16 @@ namespace KERBALISM
 			// living space is the volume per-capita normalized against an 'ideal living space' and clamped in an acceptable range
 			livingSpace = Lib.Clamp(volumePerCrew / PreferencesComfort.Instance.livingSpace, 0.1, 1.0);
 
-			if (landed) comfortMask |= 1 << (int)HabitatData.Comfort.FirmGround;
-			if (crewCount > 1) comfortMask |= 1 << (int)HabitatData.Comfort.NotAlone;
-			if (connection.linked && connection.rate > 0.0) comfortMask |= 1 << (int)HabitatData.Comfort.CallHome;
+			if (landed) comfortMask |= 1 << (int)PartHabitat.Comfort.FirmGround;
+			if (crewCount > 1) comfortMask |= 1 << (int)PartHabitat.Comfort.NotAlone;
+			if (connection.linked && connection.rate > 0.0) comfortMask |= 1 << (int)PartHabitat.Comfort.CallHome;
 
 			comfortFactor = HabitatLib.GetComfortFactor(comfortMask);
 
 			// data about greenhouses
 			greenhouses = Greenhouse.Greenhouses(Vessel);
 
-			Drive.GetCapacity(this, out drivesFreeSpace, out drivesCapacity);
+			PartDrive.GetCapacity(this, out drivesFreeSpace, out drivesCapacity);
 
 			// solar panels data
 			if (Vessel.loaded)
@@ -878,10 +884,11 @@ namespace KERBALISM
 
 			// situation
 			underwater = Sim.Underwater(Vessel);
-			breathable = Sim.Breathable(Vessel, EnvUnderwater);
-			landed = Lib.Landed(Vessel);
-			
+			envStaticPressure = Sim.StaticPressureAtm(Vessel);
 			inAtmosphere = Vessel.mainBody.atmosphere && Vessel.altitude < Vessel.mainBody.atmosphereDepth;
+			inBreathableAtmosphere = Sim.InBreathableAtmosphere(Vessel, underwater);
+			inSurvivableAtmosphere = inBreathableAtmosphere && envStaticPressure < Settings.PressureThreshold;
+			landed = Lib.Landed(Vessel);
 			zeroG = !EnvLanded && !inAtmosphere;
 
 			visibleBodies = Sim.GetLargeBodies(position);

@@ -74,7 +74,7 @@ namespace KERBALISM
 
 					double size = expInfo.DataSize * coverage_delta / 100.0; // coverage is 0-100%
 					size += warp_buffer;
-					size = Drive.StoreFile(vessel, subject, size);
+					size = PartDrive.StoreFile(vessel, subject, size);
 					if (size > double.Epsilon)
 					{
 						// we filled all drives up to the brim but were unable to store everything
@@ -220,7 +220,7 @@ namespace KERBALISM
 					if (size > double.Epsilon)
 					{
 						// store what we can
-						foreach (var d in Drive.GetDrives(vd))
+						foreach (var d in PartDrive.GetDrives(vd))
 						{
 							var available = d.FileCapacityAvailable();
 							var chunk = Math.Min(size, available);

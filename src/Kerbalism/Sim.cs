@@ -763,19 +763,19 @@ namespace KERBALISM
 			return v.mainBody.ocean && v.altitude < safe_threshold;
 		}
 
+		public static double StaticPressureAtm(Vessel v)
+		{
+			return v.mainBody.GetPressure(v.altitude) * 0.0098692326671601278;
+		}
 
 		// return true if a vessel is inside a breathable atmosphere
-		public static bool Breathable(Vessel v, bool underwater)
+		public static bool InBreathableAtmosphere(Vessel v, bool underwater)
 		{
 			// a vessel is inside a breathable atmosphere if:
 			// - it is inside an atmosphere
-			// - the atmospheric pressure is above 25kPA
 			// - the body atmosphere is flagged as containing oxygen
 			// - it isn't underwater
-			CelestialBody body = v.mainBody;
-			return body.atmosphereContainsOxygen
-				&& body.GetPressure(v.altitude) > 25.0
-				&& !underwater;
+			return v.mainBody.atmosphereContainsOxygen && !underwater;
 		}
 
 		// return true if a celestial body atmosphere is breathable at surface conditions
@@ -787,12 +787,9 @@ namespace KERBALISM
 
 
 		// return pressure at sea level in kPA
-		public static double PressureAtSeaLevel()
-		{
-			// note: we could get the home body pressure at sea level, and deal with the case when it is atmosphere-less
-			// however this function can be called to generate part tooltips, and at that point the bodies are not ready
-			return 101.0;
-		}
+		// note: we could get the home body pressure at sea level, and deal with the case when it is atmosphere-less
+		// however this function can be called to generate part tooltips, and at that point the bodies are not ready
+		public static double PressureAtSeaLevel { get; } = 101.0;
 
 
 		// return true if vessel is inside the thermosphere

@@ -82,7 +82,7 @@ namespace KERBALISM
 					uint driveId = Lib.Parse.ToUInt(drive_node.name);
 					if (allParts.ContainsKey(driveId))
 					{
-						allParts[driveId].Drive = new Drive(drive_node);
+						allParts[driveId].Drive = new PartDrive(drive_node);
 					}
 				}
 			}

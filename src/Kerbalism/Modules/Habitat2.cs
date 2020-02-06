@@ -9,7 +9,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
-using static KERBALISM.HabitatData;
+using static KERBALISM.PartHabitat;
 using static KERBALISM.HabitatLib;
 
 namespace KERBALISM
@@ -19,7 +19,6 @@ namespace KERBALISM
 		#region FIELDS / PROPERTIES
 		// general config
 		[KSPField] public bool canPressurize = true;              // can the habitat be pressurized ?
-		[KSPField] public bool canDepressurize = true;            // can the habitat be depressurized ? (note : can't EVA from pressurized habitats)
 		[KSPField] public double maxShieldingFactor = 1.0;        // how much shielding can be applied, in % of the habitat surface (can be > 1.0)
 		[KSPField] public double depressurizationSpeed = 10.0;    // liters/second
 		[KSPField] public double reclaimAtmosphereFactor = 0.75;  // % of atmosphere that will be recovered when depressurizing (producing "reclaimResource" back)
@@ -40,17 +39,17 @@ namespace KERBALISM
 		[KSPField] public bool deployAnimReverse = false;   // deploy / inflate animation is reversed
 
 		[KSPField] public string rotateAnim = string.Empty;        // rotate animation, if any
-		[KSPField] public bool rotateAnimReverse = false;          // rotate animation is reversed
+		[KSPField] public bool rotateIsReversed = false;           // inverse rotation direction
 		[KSPField] public bool rotateIsTransform = false;          // rotateAnim is not an animation, but a Transform
-		[KSPField] public float rotateSpinRate = 20.0f;            // centrifuge transform rotation (deg/s)
-		[KSPField] public float rotateSpinAccelerationRate = 1.0f; // centrifuge transform acceleration (deg/s/s)
+		[KSPField] public float rotateSpinRate = 30.0f;            // centrifuge transform rotation (deg/s)
+		[KSPField] public float rotateAccelerationRate = 1.0f; // centrifuge transform acceleration (deg/s/s)
 		[KSPField] public bool rotateIVA = true;                   // should the IVA rotate with the transform ?
 
 		[KSPField] public string counterweightAnim = string.Empty;        // inflate animation, if any
-		[KSPField] public bool counterweightAnimReverse = false;          // rotate animation is reversed
+		[KSPField] public bool counterweightIsReversed = false;           // inverse rotation direction
 		[KSPField] public bool counterweightIsTransform = false;          // rotateAnim is not an animation, but a Transform
-		[KSPField] public float counterweightSpinRate = 20.0f;            // centrifuge transform rotation (deg/s)
-		[KSPField] public float counterweightSpinAccelerationRate = 1.0f; // centrifuge transform acceleration (deg/s/s)
+		[KSPField] public float counterweightSpinRate = 60.0f;            // centrifuge transform rotation (deg/s)
+		[KSPField] public float counterweightAccelerationRate = 2.0f; // centrifuge transform acceleration (deg/s/s)
 
 		// resources config
 		[KSPField] public string reclaimResource = "Nitrogen"; // Nitrogen
@@ -73,22 +72,24 @@ namespace KERBALISM
 		[KSPField(isPersistant = true)] public bool isRotating = false;
 
 		// internal state
-		private HabitatData data;
-		public HabitatData HabitatData => data;
+		private PartHabitat data;
+		public PartHabitat HabitatData => data;
 
 		// animations
 		private Animator deployAnimator;
-		private Animator rotateAnimator;
-		private Animator counterweightAnimator;
-		private Transformator rotateTranformator;
-		private Transformator counterweightTransformator;
+		private Transformator rotateAnimator;
+		private Transformator counterweightAnimator;
 
 		// caching frequently used things
 		private PartResource atmoRes;
 		private PartResource wasteRes;
 		private PartResource shieldRes;
+		private BaseEvent enableEvent;
 		private BaseEvent pressureEvent;
+		private BaseEvent deployEvent;
+		private BaseEvent rotateEvent;
 		private double volumeLiters;
+		private string reclaimResAbbr;
 
 		// static volume / surface cache
 		public static Dictionary<string, Lib.PartVolumeAndSurfaceInfo> habitatDatabase;
@@ -105,10 +106,10 @@ namespace KERBALISM
 #endif
 
 #if KSP15_16
-		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "Status")]
+		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "State")]
 		public string suitPawInfo;
 #else
-		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "Pressure in suits", groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
+		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "State", groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
 		public string suitPawInfo;
 #endif
 
@@ -139,7 +140,7 @@ namespace KERBALISM
 					}
 #else
 					if (Enum.TryParse(comfortString, out Comfort comfort))
-						fixedComfortsMask |= 1 << (int)comfort;
+						fixedComfortsMask |= (int)comfort;
 					else
 						Lib.Log($"Unrecognized comfort `{comfortString}` in ModuleKsmHabitat config for part {part.partName}");
 #endif
@@ -191,7 +192,7 @@ namespace KERBALISM
 					{
 						// set the model to the deployed state
 						if (isDeployable)
-							deployAnimator.Still(1.0);
+							deployAnimator.Still(1f);
 
 						// get surface and volume
 						partInfo = Lib.GetPartVolumeAndSurface(part, Settings.VolumeAndSurfaceLogging);
@@ -208,9 +209,11 @@ namespace KERBALISM
 				}
 
 				// determine habitat permanent state based on if animations exists and are valid
-				isDeployable = deployAnimator != null && deployAnimator.IsDefined;
-				isCentrifuge = (rotateTranformator != null && rotateTranformator.IsDefined) || (rotateAnimator != null && rotateAnimator.IsDefined);
+				isDeployable = deployAnimator.IsDefined;
+				isCentrifuge = rotateAnimator.IsDefined;
 				hasShielding = Features.Radiation && maxShieldingFactor > 0.0;
+
+				if (!isDeployable) isDeployed = true;
 
 				// ensure proper initialization
 				if (!canPressurize || pressureState == PressureState.Depressurized)
@@ -243,6 +246,12 @@ namespace KERBALISM
 			// setup animations and deduce if the hab is deployable / centrifuge
 			SetupAnimations();
 
+			enableEvent = Events["ToggleHabitat"];
+			pressureEvent = Events["TogglePressure"];
+			deployEvent = Events["ToggleDeploy"];
+			rotateEvent = Events["ToggleRotate"];
+			reclaimResAbbr = PartResourceLibrary.Instance.GetDefinition(reclaimResource).abbreviation;
+
 			// get internal state data
 			if (Lib.IsFlight())
 				data = vessel.KerbalismData().Parts.Get(part.flightID).Habitat;
@@ -250,13 +259,12 @@ namespace KERBALISM
 			// if not created (editor/new vessel), initialize the data and setup pseudo-resources
 			if (data == null)
 			{
-				data = new HabitatData(this);
+				data = new PartHabitat(this);
 				data.habitatEnabled = habitatEnabled;
 				data.pressureState = pressureState;
 				data.isDeployed = isDeployed;
 				data.isRotating = isRotating;
 				data.crewCount = Lib.CrewCount(part);
-				ToggleHabitat(habitatEnabled);
 
 				if (Lib.IsFlight())
 					vessel.KerbalismData().Parts.Get(part.flightID).Habitat = data;
@@ -264,34 +272,65 @@ namespace KERBALISM
 
 			data.module = this;
 
-			atmoRes = part.Resources[atmosphereResource];
-			wasteRes = part.Resources[wasteAtmosphereResource];
-			if (hasShielding)
-				shieldRes = part.Resources[shieldingResource];
-
-			ToggleHabitat(data.habitatEnabled);
-				
-			if (part.isVesselEVA)
-				Events["ToggleHabitat"].active = false;
-			else
-				Events["ToggleHabitat"].guiName = data.habitatEnabled ? "Disable habitat" : "Enable habitat";
-
-			if (canPressurize)
+			if (isDeployable)
 			{
-				pressureEvent = Events["TogglePressure"];
-				pressureEvent.active = true;
+				if (!data.habitatEnabled)
+					data.isDeployed = false;
+
+				if (!data.isDeployed)
+					data.pressureState = PressureState.DepressurizingStart;
+
+				deployAnimator.Still(data.isDeployed ? 1f : 0f);
 			}
-
-			if (isDeployable && (canRetract || !data.isDeployed))
+			else
 			{
-				Events["ToggleDeploy"].active = true;
-				Events["ToggleDeploy"].guiName = data.isDeployed ? "Retract" : "Deploy";
+				data.isDeployed = true;
 			}
 
 			if (isCentrifuge)
 			{
-				Events["ToggleRotate"].active = true;
-				Events["ToggleRotate"].guiName = data.isRotating ? "Stop rotation" : "Start rotation";
+				if (!data.habitatEnabled)
+					data.isRotating = false;
+
+				if (isDeployable && !data.isDeployed)
+					data.isRotating = false;
+
+				if (data.isRotating)
+					rotateAnimator.StartSpin(true);
+			}
+
+			atmoRes = part.Resources[atmosphereResource];
+			wasteRes = part.Resources[wasteAtmosphereResource];
+			if (hasShielding)
+				shieldRes = part.Resources[shieldingResource];
+				
+			if (part.isVesselEVA)
+			{
+				enableEvent.active = false;
+				Fields["mainPawInfo"].guiActive = false;
+			}
+			else
+			{
+				enableEvent.active = data.isDeployed;
+				enableEvent.guiName = data.habitatEnabled ? "Disable habitat" : "Enable habitat";
+			}
+
+
+			if (canPressurize)
+			{
+				pressureEvent.active = isDeployed;
+			}
+
+			if (isDeployable && (canRetract || !data.isDeployed))
+			{
+				deployEvent.active = true;
+				deployEvent.guiName = data.isDeployed ? "Retract" : "Deploy";
+			}
+
+			if (isCentrifuge)
+			{
+				rotateEvent.active = data.isDeployed;
+				rotateEvent.guiName = data.isRotating ? "Stop rotation" : "Start rotation";
 			}
 
 #if DEBUG
@@ -311,24 +350,17 @@ namespace KERBALISM
 
 		private void SetupAnimations()
 		{
-			if (deployAnim != string.Empty)
-				deployAnimator = new Animator(part, deployAnim, deployAnimReverse);
+			deployAnimator = new Animator(part, deployAnim, deployAnimReverse);
 
-			if (rotateAnim != string.Empty)
-			{
-				if (rotateIsTransform)
-					rotateTranformator = new Transformator(part, rotateAnim, rotateSpinRate, rotateSpinAccelerationRate, rotateIVA);
-				else
-					rotateAnimator = new Animator(part, rotateAnim, rotateAnimReverse);
-			}
+			if (rotateIsTransform)
+				rotateAnimator = new Transformator(part, rotateAnim, rotateSpinRate, rotateAccelerationRate, rotateIsReversed, rotateIVA);
+			else
+				rotateAnimator = new Transformator(part, rotateAnim, rotateSpinRate, rotateAccelerationRate, rotateIsReversed);
 
-			if (counterweightAnim != string.Empty)
-			{
-				if (rotateIsTransform)
-					rotateTranformator = new Transformator(part, counterweightAnim, counterweightSpinRate, counterweightSpinAccelerationRate);
-				else
-					counterweightAnimator = new Animator(part, counterweightAnim, counterweightAnimReverse);
-			}
+			if (counterweightIsTransform)
+				counterweightAnimator = new Transformator(part, counterweightAnim, counterweightSpinRate, counterweightAccelerationRate, counterweightIsReversed, false);
+			else
+				counterweightAnimator = new Transformator(part, counterweightAnim, counterweightSpinRate, counterweightAccelerationRate, counterweightIsReversed);
 		}
 
 
@@ -336,10 +368,38 @@ namespace KERBALISM
 
 		public void Update()
 		{
+			if (isCentrifuge)
+			{
+				if (!data.isDeployed)
+				{
+					rotateEvent.active = false;
+				}
+				else
+				{
+					rotateAnimator.Update();
+					counterweightAnimator.Update();
+
+					data.isRotating = rotateAnimator.IsSpinning;
+
+					deployEvent.active = !data.isRotating;
+					rotateEvent.active = true;
+
+					if (!data.isRotating)
+						rotateEvent.guiName = "Start rotation";
+					else if (rotateAnimator.IsStopping)
+						rotateEvent.guiName = "Start rotation (stopping...)";
+					else if (rotateAnimator.IsAccelerating)
+						rotateEvent.guiName = "Stop rotation (starting...)";
+					else
+						rotateEvent.guiName = "Stop rotation";
+				}
+			}
+
 			double suitsVolume = data.crewCount * M3ToL(Settings.PressureSuitVolume);
 			double habPressure;
-			if (data.pressureState == PressureState.Depressurized)
-				habPressure = 0.0;
+
+			if (data.pressureState == PressureState.Pressurized || data.pressureState == PressureState.Breatheable)
+				habPressure = atmoRes.amount / atmoRes.maxAmount;
 			else
 				habPressure = (atmoRes.maxAmount - suitsVolume) > 0.0 ? Lib.Clamp((atmoRes.amount - suitsVolume) / (atmoRes.maxAmount - suitsVolume), 0.0, 1.0) : 0.0;
 
@@ -348,16 +408,23 @@ namespace KERBALISM
 				+ volume.ToString(" (0.0 m3)")
 				+ " - Crew: " + data.crewCount + "/" + part.CrewCapacity;
 
-			if (data.pressureState != PressureState.Pressurized && data.crewCount > 0)
+			if (data.pressureState == PressureState.Breatheable)
+				suitPawInfo = "Depressurized (breathable conditions)";
+			else
+				suitPawInfo = data.pressureState.ToString();
+
+			if (data.crewCount > 0 && !(data.pressureState == PressureState.Pressurized || data.pressureState == PressureState.Breatheable))
 			{
-				suitPawInfo = Math.Min(atmoRes.amount / suitsVolume, 1.0).ToString("0.00 atm");
-				Fields["suitPawInfo"].guiActive = true;
-				Fields["suitPawInfo"].guiActiveEditor = true;
+				double suitsPressure = Math.Min(atmoRes.amount / suitsVolume, 1.0);
+				suitPawInfo += " - Suit pressure : " + Lib.Color(suitsPressure > Settings.PressureThreshold, suitsPressure.ToString("0.00 atm"), Lib.Kolor.Green, Lib.Kolor.Orange);
+				
+				//Fields["suitPawInfo"].guiActive = true;
+				//Fields["suitPawInfo"].guiActiveEditor = true;
 			}
 			else
 			{
-				Fields["suitPawInfo"].guiActive = false;
-				Fields["suitPawInfo"].guiActiveEditor = false;
+				//Fields["suitPawInfo"].guiActive = false;
+				//Fields["suitPawInfo"].guiActiveEditor = false;
 			}
 
 			if (canPressurize)
@@ -365,7 +432,8 @@ namespace KERBALISM
 				switch (data.pressureState)
 				{
 					case PressureState.Pressurized:
-						pressureEvent.guiName = "Depressurize" + Lib.HumanReadableCountdown((data.atmoAmount - suitsVolume) / depressurizationSpeed);
+						pressureEvent.guiName = "Depressurize : "
+						+ Lib.HumanReadableAmountCompact((atmoRes.amount - suitsVolume) * reclaimAtmosphereFactor) + " " + reclaimResAbbr + " reclaimed"; // maybe the % is better ?
 						break;
 					case PressureState.Depressurized:
 						pressureEvent.guiName = "Pressurize";
@@ -374,7 +442,7 @@ namespace KERBALISM
 						pressureEvent.guiName = "Pressurizing...";
 						break;
 					case PressureState.Depressurizing:
-						pressureEvent.guiName = "Depressurizing : " + Lib.HumanReadableCountdown((data.atmoAmount - suitsVolume) / depressurizationSpeed);
+						pressureEvent.guiName = "Depressurizing : " + Lib.HumanReadableCountdown((atmoRes.amount - suitsVolume) / depressurizationSpeed);
 						break;
 				}
 			}
@@ -394,157 +462,250 @@ namespace KERBALISM
 		{
 			bool isEditor = Lib.IsEditor();
 			VesselData vd = isEditor ? null : vessel.KerbalismData();
+			ResourceInfo atmoResInfo = ResourceCache.GetResource(vessel, atmosphereResource);
 
 			// constantly disable shielding flow when habitat is disabled, so it isn't accounted for in the resource sim
 			if (hasShielding)
 				shieldRes.flowState = data.habitatEnabled;
 
-			// TODO : This will conflict with inflatables deployement. Maybe there is a better way to handle that ?
-			if (!isEditor && vd.EnvBreathable)
+			// TODO: refactor that thing into a proper state machine :
+			// - have the loaded logic use data.module
+			// - add events for enable/disable/deploy/rotate actions
+			// Steady states :
+			// - Pressurized
+			// - Breatheable (depressurized but inside breatheable atmosphere/pressure external conditions)
+			// - Depressurized
+			// - Depressurizing
+			// - Pressurizing
+			// Events / state changes :
+			// - PressureDropped => from Pressurized to Pressurizing
+			// - BreatheableStart => from Depressurized or Pressurizing to Breatheable
+			// - PressurizingStart => Manually triggered
+			// - PressurizingEnd => from Pressurizing to Pressurized
+			// - DepressurizingStart => from Pressurized or Breatheable to Depressurized, or manually triggered
+			// - DepressurizingEnd => from Depressurizing to Depressurized
+
+			// Remarks :
+			// The kerbal in suits feature implemented as an atmosphere resource threshold isn't great :
+			// - Require a lot of code and edge case manangement to make it work
+			// - It results in some akward behavior
+			// A solution would be to use a separate atmo/waste resource for suits, managed from vesseldata : 
+			// - "suitAtmo.maxAmount = kerbal in suits count * suits volume"
+			// - suitAtmo.amount minimum is clamped to "hab pressure * suitAtmo.maxAmount"
+			// - there are two always active recipes (for atmo and waste) with "input = atmo, output = suitAtmo" / "input = suitWaste , output = waste"
+			// - the habitat module tell the kerbal in suit count
+			// - this would allow to remove all the complex stuff we are doing with habitat resources
+			// - this would prevent the weirdness in unpressurized habs and breathable situations
+
+			if (!isEditor && atmoResInfo.equalizeMode == ResourceInfo.EqualizeMode.NotSet)
+				atmoResInfo.equalizeMode = ResourceInfo.EqualizeMode.Enabled;
+
+			switch (data.pressureState)
 			{
-				atmoRes.maxAmount = volumeLiters;
-				wasteRes.maxAmount = volumeLiters;
-				atmoRes.amount = atmoRes.maxAmount;
-				wasteRes.amount = 0.0;
-				atmoRes.flowState = false;
-				wasteRes.flowState = false;
-				data.pressureState = PressureState.Pressurized;
-			}
-			else
-			{
-				switch (data.pressureState)
-				{
-					case PressureState.Pressurized:
-						// if atmo drop below the kerbal in suits (or 0) volume, switch to depressurized state
-						if (atmoRes.amount <= data.crewCount * M3ToL(Settings.PressureSuitVolume))
-							data.pressureState = PressureState.DepressurizingStart;
-						// if pressure drop below the minimum habitable pressure, switch to partial pressure state
-						else if (atmoRes.amount / atmoRes.maxAmount < Settings.PressureThreshold)
+				case PressureState.Pressurized:
+					// magic scrubbing inside atmosphere ?
+					if (!isEditor && vd.EnvInBreathableAtmosphere && vd.EnvStaticPressure > Settings.PressureThreshold)
+						wasteRes.amount = 0.0;
+					// if atmo drop below the kerbal in suits (or 0) volume, switch to depressurized state
+					if (atmoRes.amount <= data.crewCount * M3ToL(Settings.PressureSuitVolume))
+						data.pressureState = PressureState.DepressurizingStart;
+					// if pressure drop below the minimum habitable pressure, switch to partial pressure state
+					else if (atmoRes.amount / atmoRes.maxAmount < Settings.PressureThreshold)
+						data.pressureState = PressureState.PressureDropped;
+					break;
+
+				case PressureState.PressureDropped:
+					// set enabled volume to the kerbal in suits volume (or 0)
+					data.enabledVolume = data.crewCount * Settings.PressureSuitVolume;
+
+					// make the kerbals put their helmets
+					if (data.crewCount > 0 && vessel.isActiveVessel && part.internalModel != null)
+						Lib.RefreshIVAAndPortraits();
+
+					// go to pressurizing state
+					data.pressureState = PressureState.Pressurizing;
+
+					break;
+
+				case PressureState.BreatheableStart:
+					data.enabledVolume = volume;
+					atmoRes.maxAmount = volumeLiters;
+					wasteRes.maxAmount = volumeLiters;
+					atmoRes.flowState = false;
+					wasteRes.flowState = false;
+
+					if (!isEditor)
+						atmoResInfo.equalizeMode = ResourceInfo.EqualizeMode.Disabled;
+
+					// make the kerbals take out their helmets
+					if (data.crewCount > 0 && vessel.isActiveVessel && part.internalModel != null)
+						Lib.RefreshIVAAndPortraits();
+
+					data.pressureState = PressureState.Breatheable;
+					break;
+
+				case PressureState.Breatheable:
+
+					if (!isEditor)
+						atmoResInfo.equalizeMode = ResourceInfo.EqualizeMode.Disabled;
+
+					if (!isEditor && (!vd.EnvInBreathableAtmosphere || vd.EnvStaticPressure < Settings.PressureThreshold))
+					{
+						if (canPressurize)
 							data.pressureState = PressureState.PressureDropped;
+						else
+							data.pressureState = PressureState.DepressurizingStart;
 						break;
+					}
 
-					case PressureState.PressureDropped:
-						// set enabled volume to the kerbal in suits volume (or 0)
-						data.enabledVolume = data.crewCount * Settings.PressureSuitVolume;
+					atmoRes.amount = Math.Min(vd.EnvStaticPressure * atmoRes.maxAmount, atmoRes.maxAmount);
+					wasteRes.amount = 0.0; // magic scrubbing
 
-						// make the kerbals put their helmets
-						if (data.crewCount > 0 && vessel.isActiveVessel && part.internalModel != null)
-							Lib.RefreshIVAAndPortraits(); 
+					break;
 
-						// go to pressurizing state
+				case PressureState.Depressurized:
+
+					if (!isEditor && vd.EnvInBreathableAtmosphere && vd.EnvStaticPressure > Settings.PressureThreshold)
+						data.pressureState = PressureState.BreatheableStart;
+					break;
+
+				case PressureState.PressurizingStart:
+
+					if (!isEditor)
+						atmoResInfo.equalizeMode = ResourceInfo.EqualizeMode.Disabled;
+
+					atmoRes.maxAmount = volumeLiters;
+					wasteRes.maxAmount = volumeLiters;
+					atmoRes.flowState = true;
+					wasteRes.flowState = true;
+
+					if (isEditor)
+						data.pressureState = PressureState.PressurizingEnd;
+					else
 						data.pressureState = PressureState.Pressurizing;
+
+					break;
+
+				case PressureState.Pressurizing:
+
+					if (!isEditor)
+						atmoResInfo.equalizeMode = ResourceInfo.EqualizeMode.Disabled;
+
+					if (deployWithPressure && !data.isDeployed)
+						deployAnimator.Still((float)((atmoRes.amount / atmoRes.maxAmount) / Settings.PressureThreshold));
+
+					if (!isEditor && vd.EnvInBreathableAtmosphere && vd.EnvStaticPressure > Settings.PressureThreshold)
+						data.pressureState = PressureState.BreatheableStart;
+
+					// if pressure go back to the minimum habitable pressure, switch to pressurized state
+					if (atmoRes.amount / atmoRes.maxAmount > Settings.PressureThreshold)
+						data.pressureState = PressureState.PressurizingEnd;
+					break;
+
+				case PressureState.PressurizingEnd:
+
+					data.enabledVolume = volume;
+
+					if (isEditor)
+					{
+						atmoRes.amount = volumeLiters;
+						wasteRes.amount = 0.0;
+					}
+					else
+					{
+						// make the kerbals remove their helmets
+						// this works in conjunction with the SpawnCrew prefix patch that check if the part is pressurized or not on spawning the IVA.
+						if (data.crewCount > 0 && vessel.isActiveVessel && part.internalModel != null)
+							Lib.RefreshIVAAndPortraits();
+					}
+
+					if (isDeployable && deployWithPressure)
+					{
+						deployAnimator.Still(1f);
+						OnDeployCallback();
+					}
+
+					data.pressureState = PressureState.Pressurized;
+					break;
+
+				case PressureState.DepressurizingStart:
+					data.enabledVolume = data.crewCount * Settings.PressureSuitVolume;
+					atmoRes.flowState = false;
+					wasteRes.flowState = false;
+
+					if (isDeployable && canRetract && deployWithPressure)
+						OnRetractCallback();
+
+					if (isEditor)
+					{
+						data.pressureState = PressureState.DepressurizingEnd;
+					}
+					else
+					{
+						// make the kerbals put their helmets
+						// this works in conjunction with the SpawnCrew prefix patch that check if the part is pressurized or not on spawning the IVA.
+						if (data.crewCount > 0 && vessel.isActiveVessel && part.internalModel != null)
+							Lib.RefreshIVAAndPortraits();
+
+						data.pressureState = PressureState.Depressurizing;
+					}
+
+					break;
+
+				case PressureState.Depressurizing:
+
+					double atmoTarget = data.crewCount * M3ToL(Settings.PressureSuitVolume);
+
+					if (atmoRes.amount <= atmoTarget)
+					{
+						data.pressureState = PressureState.DepressurizingEnd;
 						break;
+					}
 
-					case PressureState.Depressurized:
-						break;
+					double newAtmoAmount = atmoRes.amount - (depressurizationSpeed * Kerbalism.elapsed_s);
+					newAtmoAmount = Math.Max(newAtmoAmount, atmoTarget);
 
-					case PressureState.PressurizingStart:
-						atmoRes.maxAmount = volumeLiters;
-						wasteRes.maxAmount = volumeLiters;
-						atmoRes.flowState = true;
-						wasteRes.flowState = true;
+					wasteRes.amount *= atmoRes.amount > 0.0 ? newAtmoAmount / atmoRes.amount : 1.0;
+					if (wasteRes.amount < 0.0) wasteRes.amount = 0.0;
 
-						if (isEditor)
-							data.pressureState = PressureState.PressurizingEnd;
-						else
-							data.pressureState = PressureState.Pressurizing;
+					if (reclaimAtmosphereFactor > 0.0 && newAtmoAmount / atmoRes.maxAmount >= 1.0 - reclaimAtmosphereFactor)
+					{
+						ResourceCache.Produce(vessel, reclaimResource, atmoRes.amount - newAtmoAmount, ResourceBroker.Habitat);
+					}
 
-						break;
+					atmoRes.amount = newAtmoAmount;
 
-					case PressureState.Pressurizing:
+					if (isDeployable && canRetract && deployWithPressure)
+						deployAnimator.Still((float)((atmoRes.amount / atmoRes.maxAmount) / Settings.PressureThreshold));
 
-						// if pressure go back to the minimum habitable pressure, switch to pressurized state
-						if (atmoRes.amount / atmoRes.maxAmount > Settings.PressureThreshold)
-							data.pressureState = PressureState.PressurizingEnd;
-						break;
+					break;
 
-					case PressureState.PressurizingEnd:
-						data.enabledVolume = volume;
+				case PressureState.DepressurizingEnd:
 
-						if (isEditor)
-						{
-							atmoRes.amount = volumeLiters;
-							wasteRes.amount = 0.0;
-						}
-						else
-						{
-							// make the kerbals remove their helmets
-							// this works in conjunction with the SpawnCrew prefix patch that check if the part is pressurized or not on spawning the IVA.
-							if (data.crewCount > 0 && vessel.isActiveVessel && part.internalModel != null)
-								Lib.RefreshIVAAndPortraits();
-						}
+					atmoRes.flowState = true;
+					wasteRes.flowState = true;
 
-						data.pressureState = PressureState.Pressurized;
-						break;
+					double depressurizedVolumeL = M3ToL(data.crewCount * Settings.PressureSuitVolume);
+					atmoRes.maxAmount = depressurizedVolumeL;
+					wasteRes.maxAmount = depressurizedVolumeL;
 
-					case PressureState.DepressurizingStart:
-						data.enabledVolume = data.crewCount * Settings.PressureSuitVolume;
-						atmoRes.flowState = false;
-						wasteRes.flowState = false;
+					if (isEditor)
+					{
+						atmoRes.amount = atmoRes.maxAmount;
+						wasteRes.amount = 0.0;
+					}
+					else
+					{
+						wasteRes.amount = Math.Min(wasteRes.amount, wasteRes.maxAmount);
+					}
 
-						if (isEditor)
-						{
-							data.pressureState = PressureState.DepressurizingEnd;
-						}
-						else
-						{
-							// make the kerbals put their helmets
-							// this works in conjunction with the SpawnCrew prefix patch that check if the part is pressurized or not on spawning the IVA.
-							if (data.crewCount > 0 && vessel.isActiveVessel && part.internalModel != null)
-								Lib.RefreshIVAAndPortraits();
+					if (isDeployable && canRetract && deployWithPressure)
+						deployAnimator.Still(0f);
 
-							data.pressureState = PressureState.Depressurizing;
-						}
-
-						break;
-
-					case PressureState.Depressurizing:
-
-						double atmoTarget = data.crewCount * M3ToL(Settings.PressureSuitVolume);
-
-						if (atmoRes.amount <= atmoTarget)
-						{
-							data.pressureState = PressureState.DepressurizingEnd;
-							break;
-						}
-
-						double newAtmoAmount = atmoRes.amount - (depressurizationSpeed * Kerbalism.elapsed_s);
-						newAtmoAmount = Math.Max(newAtmoAmount, atmoTarget);
-
-						wasteRes.amount *= atmoRes.amount > 0.0 ? newAtmoAmount / atmoRes.amount : 1.0;
-						if (wasteRes.amount < 0.0) wasteRes.amount = 0.0;
-
-						if (reclaimAtmosphereFactor > 0.0 && newAtmoAmount / atmoRes.maxAmount >= 1.0 - reclaimAtmosphereFactor)
-						{
-							ResourceCache.Produce(vessel, reclaimResource, atmoRes.amount - newAtmoAmount, ResourceBroker.Habitat);
-						}
-
-						atmoRes.amount = newAtmoAmount;
-						break;
-
-					case PressureState.DepressurizingEnd:
-
-						atmoRes.flowState = true;
-						wasteRes.flowState = true;
-
-						double depressurizedVolumeL = M3ToL(data.crewCount * Settings.PressureSuitVolume);
-						atmoRes.maxAmount = depressurizedVolumeL;
-						wasteRes.maxAmount = depressurizedVolumeL;
-
-						if (isEditor)
-						{
-							atmoRes.amount = atmoRes.maxAmount;
-							wasteRes.amount = 0.0;
-						}
-						else
-						{
-							wasteRes.amount = Math.Min(wasteRes.amount, wasteRes.maxAmount);
-						}
-
-						data.pressureState = PressureState.Depressurized;
-						break;
-				}
+					data.pressureState = PressureState.Depressurized;
+					break;
 			}
+
 
 			if (data.habitatEnabled)
 			{
@@ -561,6 +722,17 @@ namespace KERBALISM
 						break;
 				}
 				data.shieldingAmount = hasShielding ? shieldRes.amount : 0.0;
+
+				// we enable comforts based on the calculated pressure
+				if (data.pressureState == PressureState.Pressurized)
+					data.enabledComfortsMask = fixedComfortsMask;
+				else
+					data.enabledComfortsMask = 0;
+
+				if (data.isRotating)
+					data.enabledComfortsMask |= (int)Comfort.FirmGround;
+				else
+					data.enabledComfortsMask &= ~(int)Comfort.FirmGround;
 			}
 			else
 			{
@@ -583,12 +755,6 @@ namespace KERBALISM
 #endif
 		public void ToggleHabitat()
 		{
-			if (isDeployable && !data.habitatEnabled && !data.isDeployed)
-			{
-				ToggleDeploy();
-				return;
-			}
-
 			if (data.habitatEnabled && Lib.IsCrewed(part))
 			{
 				if (Lib.IsEditor())
@@ -619,48 +785,13 @@ namespace KERBALISM
 				if (data.isRotating)
 					ToggleRotate();
 
-				Events["ToggleHabitat"].guiName = "Enable habitat";
-				//part.crewTransferAvailable = false;
-				habitatEnabled = false; // keep state in sync in the editor, but we don't care for that field in flight
-				ToggleHabitat(false);
-
+				enableEvent.guiName = "Enable habitat";
+				data.habitatEnabled = false;
 			}
 			else
 			{
-				Events["ToggleHabitat"].guiName = "Disable habitat";
-				//part.crewTransferAvailable = true;
-				habitatEnabled = true; // keep state in sync in the editor, but we don't care for that field in flight
-				ToggleHabitat(true);
-			}
-		}
-
-		private void ToggleHabitat(bool enabled)
-		{
-			data.habitatEnabled = enabled;
-
-			if (enabled)
-			{
-				data.enabledSurface = surface;
-
-				if (data.pressureState == PressureState.Depressurized)
-				{
-					data.enabledVolume = data.crewCount * Settings.PressureSuitVolume;
-					data.enabledComfortsMask = 0;
-				}
-				else
-				{
-					data.enabledVolume = volume;
-					data.enabledComfortsMask = fixedComfortsMask;
-				}
-					
-				if (data.isRotating)
-					data.enabledComfortsMask |= 1 << (int)Comfort.FirmGround;
-			}
-			else
-			{
-				data.enabledSurface = 0.0;
-				data.enabledVolume = 0.0;
-				data.enabledComfortsMask = 0;
+				enableEvent.guiName = "Disable habitat";
+				data.habitatEnabled = true;
 			}
 		}
 
@@ -700,22 +831,57 @@ namespace KERBALISM
 #endif
 		public void ToggleDeploy()
 		{
+			bool isEditor = Lib.IsEditor();
 			if (data.isDeployed)
 			{
-				if (data.habitatEnabled)
+				if (deployWithPressure)
 				{
-					ToggleHabitat();
-
-					if (data.habitatEnabled)
-						return;
+					deployEvent.guiName = "Inflate";
+					data.pressureState = PressureState.DepressurizingStart;
 				}
-
-				deployAnimator.Play(false, false);
+				else
+				{
+					deployEvent.guiName = "Deploy";
+					deployAnimator.Play(true, false, OnRetractCallback, isEditor ? 5f : 1f);
+				}
 			}
 			else
 			{
-				deployAnimator.Play(true, false, ToggleHabitat);
+				if (deployWithPressure)
+				{
+					deployEvent.guiName = "Deflate";
+					data.pressureState = PressureState.PressurizingStart;
+				}
+				else
+				{
+					deployEvent.guiName = "Retract";
+					deployAnimator.Play(false, false, OnDeployCallback, isEditor ? 5f : 1f);
+				}
 			}
+		}
+
+		private void OnRetractCallback()
+		{
+			data.isDeployed = false;
+
+			enableEvent.active = false;
+			pressureEvent.active = false;
+
+			if (isCentrifuge)
+				rotateEvent.active = false;
+
+		}
+
+		private void OnDeployCallback()
+		{
+			data.isDeployed = true;
+
+			enableEvent.active = true;
+			deployEvent.active = canRetract;
+			pressureEvent.active = true;
+
+			if (!data.habitatEnabled)
+				ToggleHabitat();
 		}
 
 #if KSP15_16
@@ -725,15 +891,19 @@ namespace KERBALISM
 #endif
 		public void ToggleRotate()
 		{
-
+			bool isEditor = Lib.IsEditor();
+			if (data.isRotating)
+			{
+				rotateAnimator.StopSpin(isEditor);
+				counterweightAnimator.StopSpin(isEditor);
+			}
+			else if (data.habitatEnabled && (!isDeployable || (isDeployable && data.isDeployed)))
+			{
+				rotateAnimator.StartSpin(isEditor);
+				counterweightAnimator.StartSpin(isEditor);
+			}
 		}
 
-
-
-
-
-		// action groups
-		//[KSPAction("Enable/Disable Habitat")] public void Action(KSPActionParam param) { Toggle(); }
 
 		// debug
 #if KSP15_16
@@ -803,7 +973,7 @@ namespace KERBALISM
 			if (pd.Habitat == null)
 				return true;
 
-			bool needHelmets = pd.Habitat.pressureState != PressureState.Pressurized;
+			bool needHelmets = !(pd.Habitat.pressureState == PressureState.Pressurized || pd.Habitat.pressureState == PressureState.Breatheable);
 
 			foreach (InternalSeat internalSeat in __instance.seats)
 			{

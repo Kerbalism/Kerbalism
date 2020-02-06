@@ -74,14 +74,14 @@ namespace KERBALISM
 			if (Lib.DisableScenario(this)) return;
 
 			// create animators
-			if (shutters.Length > 0) shutters_anim = new Animator(part, shutters);
+			if (shutters.Length > 0) shutters_anim = new Animator(part, shutters, animBackwards);
 			if (plants.Length > 0) plants_anim = new Animator(part, plants);
 
 			// still-play shutters animation
-			if (shutters_anim != null) shutters_anim.Still((active ^ animBackwards) ? 1.0 : 0.0);
+			if (shutters_anim != null) shutters_anim.Still(active ? 1f : 0f);
 
 			// still-play plants animation
-			if (plants_anim != null) plants_anim.Still(growth);
+			if (plants_anim != null) plants_anim.Still((float)growth);
 
 			// cache lamps renderer
 			if (lamps.Length > 0)
@@ -110,7 +110,7 @@ namespace KERBALISM
 			if (Lib.IsFlight())
 			{
 				// still-play plants animation
-				if (plants_anim != null) plants_anim.Still(growth);
+				if (plants_anim != null) plants_anim.Still((float)growth);
 
 				// update ui
 				string status = issue.Length > 0 ? Lib.BuildString("<color=yellow>", issue, "</color>") : growth > 0.99 ? Local.TELEMETRY_readytoharvest : Local.TELEMETRY_growing;//"ready to harvest""growing"
@@ -170,17 +170,17 @@ namespace KERBALISM
 				foreach (ModuleResource input in resHandler.inputResources)
 				{
 					// WasteAtmosphere is primary combined input
-					if (WACO2 && input.name == "WasteAtmosphere") recipe.AddInput(input.name, vd.EnvBreathable ? 0.0 : input.rate * Kerbalism.elapsed_s, "CarbonDioxide");
+					if (WACO2 && input.name == "WasteAtmosphere") recipe.AddInput(input.name, vd.EnvInSurvivableAtmosphere ? 0.0 : input.rate * Kerbalism.elapsed_s, "CarbonDioxide");
 					// CarbonDioxide is secondary combined input
-					else if (WACO2 && input.name == "CarbonDioxide") recipe.AddInput(input.name, vd.EnvBreathable ? 0.0 : input.rate * Kerbalism.elapsed_s, "");
+					else if (WACO2 && input.name == "CarbonDioxide") recipe.AddInput(input.name, vd.EnvInSurvivableAtmosphere ? 0.0 : input.rate * Kerbalism.elapsed_s, "");
 					// if atmosphere is breathable disable WasteAtmosphere / CO2
-					else if (!WACO2 && (input.name == "CarbonDioxide" || input.name == "WasteAtmosphere")) recipe.AddInput(input.name, vd.EnvBreathable ? 0.0 : input.rate, "");
+					else if (!WACO2 && (input.name == "CarbonDioxide" || input.name == "WasteAtmosphere")) recipe.AddInput(input.name, vd.EnvInSurvivableAtmosphere ? 0.0 : input.rate, "");
 					else recipe.AddInput(input.name, input.rate * Kerbalism.elapsed_s);
 				}
 				foreach (ModuleResource output in resHandler.outputResources)
 				{
 					// if atmosphere is breathable disable Oxygen
-					if (output.name == "Oxygen") recipe.AddOutput(output.name, vd.EnvBreathable ? 0.0 : output.rate * Kerbalism.elapsed_s, true);
+					if (output.name == "Oxygen") recipe.AddOutput(output.name, vd.EnvInSurvivableAtmosphere ? 0.0 : output.rate * Kerbalism.elapsed_s, true);
 					else recipe.AddOutput(output.name, output.rate * Kerbalism.elapsed_s, true);
 				}
 				resources.AddRecipe(recipe);
@@ -200,7 +200,7 @@ namespace KERBALISM
 					// combine WasteAtmosphere and CO2 if both exist
 					if (input.name == "WasteAtmosphere" || input.name == "CarbonDioxide")
 					{
-						if (dis_WACO2 || vd.EnvBreathable) continue;    // skip if already checked or atmosphere is breathable
+						if (dis_WACO2 || vd.EnvInSurvivableAtmosphere) continue;    // skip if already checked or atmosphere is breathable
 						if (WACO2)
 						{
 							if (resources.GetResource(vessel, "WasteAtmosphere").Amount <= double.Epsilon && resources.GetResource(vessel, "CarbonDioxide").Amount <= double.Epsilon)
@@ -279,18 +279,18 @@ namespace KERBALISM
 				foreach (ModuleResource input in g.resHandler.inputResources) //recipe.Input(input.name, input.rate * elapsed_s);
 				{
 					// WasteAtmosphere is primary combined input
-					if (g.WACO2 && input.name == "WasteAtmosphere") recipe.AddInput(input.name, vd.EnvBreathable ? 0.0 : input.rate * elapsed_s, "CarbonDioxide");
+					if (g.WACO2 && input.name == "WasteAtmosphere") recipe.AddInput(input.name, vd.EnvInSurvivableAtmosphere ? 0.0 : input.rate * elapsed_s, "CarbonDioxide");
 					// CarbonDioxide is secondary combined input
-					else if (g.WACO2 && input.name == "CarbonDioxide") recipe.AddInput(input.name, vd.EnvBreathable ? 0.0 : input.rate * elapsed_s, "");
+					else if (g.WACO2 && input.name == "CarbonDioxide") recipe.AddInput(input.name, vd.EnvInSurvivableAtmosphere ? 0.0 : input.rate * elapsed_s, "");
 					// if atmosphere is breathable disable WasteAtmosphere / CO2
-					else if (!g.WACO2 && (input.name == "CarbonDioxide" || input.name == "WasteAtmosphere")) recipe.AddInput(input.name, vd.EnvBreathable ? 0.0 : input.rate, "");
+					else if (!g.WACO2 && (input.name == "CarbonDioxide" || input.name == "WasteAtmosphere")) recipe.AddInput(input.name, vd.EnvInSurvivableAtmosphere ? 0.0 : input.rate, "");
 					else
 						recipe.AddInput(input.name, input.rate * elapsed_s);
 				}
 				foreach (ModuleResource output in g.resHandler.outputResources)
 				{
 					// if atmosphere is breathable disable Oxygen
-					if (output.name == "Oxygen") recipe.AddOutput(output.name, vd.EnvBreathable ? 0.0 : output.rate * elapsed_s, true);
+					if (output.name == "Oxygen") recipe.AddOutput(output.name, vd.EnvInSurvivableAtmosphere ? 0.0 : output.rate * elapsed_s, true);
 					else recipe.AddOutput(output.name, output.rate * elapsed_s, true);
 				}
 				resources.AddRecipe(recipe);
@@ -310,7 +310,7 @@ namespace KERBALISM
 					// combine WasteAtmosphere and CO2 if both exist
 					if (input.name == "WasteAtmosphere" || input.name == "CarbonDioxide")
 					{
-						if (dis_WACO2 || vd.EnvBreathable) continue;    // skip if already checked or atmosphere is breathable
+						if (dis_WACO2 || vd.EnvInSurvivableAtmosphere) continue;    // skip if already checked or atmosphere is breathable
 						if (g.WACO2)
 						{
 							if (resources.GetResource(v, "WasteAtmosphere").Amount <= double.Epsilon && resources.GetResource(v, "CarbonDioxide").Amount <= double.Epsilon)
@@ -462,7 +462,7 @@ namespace KERBALISM
 			specs.Add(Local.Greenhouse_info1, Lib.HumanReadableAmount(crop_size, " " + crop_resource));//"Harvest size"
 			specs.Add(Local.Greenhouse_info2, Lib.HumanReadableDuration(1.0 / crop_rate));//"Harvest time"
 			specs.Add(Local.Greenhouse_info3, Lib.HumanReadableFlux(light_tolerance));//"Lighting tolerance"
-			if (pressure_tolerance > double.Epsilon) specs.Add(Local.Greenhouse_info4, Lib.HumanReadablePressure(Sim.PressureAtSeaLevel() * pressure_tolerance));//"Pressure tolerance"
+			if (pressure_tolerance > double.Epsilon) specs.Add(Local.Greenhouse_info4, Lib.HumanReadablePressure(Sim.PressureAtSeaLevel * pressure_tolerance));//"Pressure tolerance"
 			if (radiation_tolerance > double.Epsilon) specs.Add(Local.Greenhouse_info5, Lib.HumanReadableRadiation(radiation_tolerance));//"Radiation tolerance"
 			specs.Add(Local.Greenhouse_info6, Lib.HumanReadableRate(ec_rate));//"Lamps EC rate"
 			specs.Add(string.Empty);

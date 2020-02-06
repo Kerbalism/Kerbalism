@@ -148,18 +148,18 @@ namespace KERBALISM
 		public override void OnStart(StartState state)
 		{
 			// create animators
-			deployAnimator = new Animator(part, anim_deploy);
-			deployAnimator.reversed = anim_deploy_reverse;
+			deployAnimator = new Animator(part, anim_deploy, anim_deploy_reverse);
 
-			loopAnimator = new Animator(part, anim_loop);
-			loopAnimator.reversed = anim_loop_reverse;
+			loopAnimator = new Animator(part, anim_loop, anim_loop_reverse);
 
 			// set initial animation states
-			deployAnimator.Still(Running ? 1.0 : 0.0);
 			SetDragCubes(Running);
 
-			loopAnimator.Still(Running ? 1.0 : 0.0);
-			if (Running) loopAnimator.Play(false, true);
+			if (Running)
+			{
+				deployAnimator.Still(1f);
+				loopAnimator.Play(false, true);
+			}
 
 			if (use_animation_group && AnimationGroup == null)
 				AnimationGroup = part.Modules.OfType<ModuleAnimationGroup>().FirstOrDefault();
@@ -536,14 +536,14 @@ namespace KERBALISM
 			else
 				chunkSize = chunkSizeMax;
 
-			Drive drive = GetDrive(vd, hdId, chunkSize, subjectData);
+			PartDrive drive = GetDrive(vd, hdId, chunkSize, subjectData);
 			if (drive == null)
 			{
 				mainIssue = Local.Module_Experiment_issue11;//"no storage space"
 				return;
 			}
 
-			Drive warpDrive = null;
+			PartDrive warpDrive = null;
 			double available;
 			if (!expInfo.IsSample)
 			{
@@ -642,15 +642,15 @@ namespace KERBALISM
 			return vd.VesselSituations.GetExperimentSituation(ExpInfo);
 		}
 
-		private static Drive GetDrive(VesselData vesselData, uint hdId, double chunkSize, SubjectData subjectData)
+		private static PartDrive GetDrive(VesselData vesselData, uint hdId, double chunkSize, SubjectData subjectData)
 		{
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Experiment.GetDrive");
 			bool isFile = subjectData.ExpInfo.SampleMass == 0.0;
-			Drive drive = null;
+			PartDrive drive = null;
 			if (hdId != 0)
 				drive = vesselData.Parts.Get(hdId).Drive;
 			else
-				drive = isFile ? Drive.FileDrive(vesselData, chunkSize) : Drive.SampleDrive(vesselData, chunkSize, subjectData);
+				drive = isFile ? PartDrive.FileDrive(vesselData, chunkSize) : PartDrive.SampleDrive(vesselData, chunkSize, subjectData);
 			UnityEngine.Profiling.Profiler.EndSample();
 			return drive;
 		}
@@ -719,7 +719,7 @@ namespace KERBALISM
 				return State;
 
 			// nervous clicker? wait for it, goddamnit.
-			if ((AnimationGroup != null && AnimationGroup.DeployAnimation.isPlaying) || deployAnimator.Playing())
+			if ((AnimationGroup != null && AnimationGroup.DeployAnimation.isPlaying) || deployAnimator.Playing)
 				return State;
 
 			if (Running)
@@ -740,8 +740,8 @@ namespace KERBALISM
 				};
 
 				// wait for loop animation to stop before deploy animation
-				if (loopAnimator.Playing())
-					loopAnimator.Stop(stop);
+				if (loopAnimator.Playing)
+					loopAnimator.StopLoop(stop);
 				else
 					stop();
 			}
@@ -1245,8 +1245,7 @@ namespace KERBALISM
 			{
 				if (deployAnimator == null)
 				{
-					deployAnimator = new Animator(part, anim_deploy);
-					deployAnimator.reversed = anim_deploy_reverse;
+					deployAnimator = new Animator(part, anim_deploy, anim_deploy_reverse);
 				}
 				return deployAnimator.IsDefined;
 			}
@@ -1258,14 +1257,13 @@ namespace KERBALISM
 		{
 			if (deployAnimator == null)
 			{
-				deployAnimator = new Animator(part, anim_deploy);
-				deployAnimator.reversed = anim_deploy_reverse;
+				deployAnimator = new Animator(part, anim_deploy, anim_deploy_reverse);
 			}
 
 			if (name == retractedDragCube)
-				deployAnimator.Still(0.0);
+				deployAnimator.Still(0f);
 			else if (name == deployedDragCube)
-				deployAnimator.Still(1.0);
+				deployAnimator.Still(1f);
 		}
 
 		public bool UsesProceduralDragCubes() => false;

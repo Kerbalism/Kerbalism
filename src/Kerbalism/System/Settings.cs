@@ -40,7 +40,7 @@ namespace KERBALISM
 			// pressure
 			PressureSuitVolume = Lib.ConfigValue(cfg, "PressureSuitVolume", 0.1);
 			PressureFactor = Lib.ConfigValue(cfg, "PressureFactor", 10.0);
-			PressureThreshold = Lib.ConfigValue(cfg, "PressureThreshold", 0.6);
+			PressureThreshold = Lib.ConfigValue(cfg, "PressureThreshold", 0.5);
 
 			// poisoning
 			PoisoningFactor = Lib.ConfigValue(cfg, "PoisoningFactor", 0.0);

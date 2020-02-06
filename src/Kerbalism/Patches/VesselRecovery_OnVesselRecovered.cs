@@ -69,7 +69,7 @@ namespace KERBALISM
 
 			List<DialogGUIBase> labels = new List<DialogGUIBase>();
 
-			foreach (Drive drive in Drive.GetDrives(pv, true))
+			foreach (PartDrive drive in PartDrive.GetDrives(pv, true))
 			{
 				foreach (File file in drive.files.Values)
 				{

@@ -3,6 +3,7 @@ using KSP.Localization;
 
 namespace KERBALISM
 {
+	/*
 	public class GravityRing : PartModule, ISpecifics
 	{
 		// config
@@ -295,4 +296,5 @@ namespace KERBALISM
 			return specs;
 		}
 	}
+	*/
 }

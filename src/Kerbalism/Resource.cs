@@ -355,6 +355,10 @@ namespace KERBALISM
 		/// <summary> Storage capacity of resource</summary>
 		public double Capacity { get; private set; }
 
+		/// <summary> If set to true, the total amount will be redistributed evenly amongst all parts. Is reset to false after every Sunc (FixedUpdate)</summary>
+		public EqualizeMode equalizeMode = EqualizeMode.NotSet;
+		public enum EqualizeMode { NotSet, Enabled, Disabled}
+
 		/// <summary> Simulated average rate of interval-based rules in amount per-second. This is for information only, the resource is not consumed</summary>
 		private double intervalRulesRate;
 
@@ -544,28 +548,37 @@ namespace KERBALISM
 					foreach (PartResource r in loadedResList)
 					{
 						// calculate consumption/production coefficient for the part
-						double k = Deferred < 0.0
-						  ? r.amount / Amount
-						  : (r.maxAmount - r.amount) / (Capacity - Amount);
-
-						// apply deferred consumption/production
-						r.amount += Deferred * k;
+						if (equalizeMode == EqualizeMode.Enabled) // TODO:  check that only once, and put the two cases into separate methods
+						{
+							r.amount = (Amount + Deferred) * (r.maxAmount / Capacity);
+						}
+						else
+						{
+							double k = Deferred < 0.0 ? r.amount / Amount : (r.maxAmount - r.amount) / (Capacity - Amount);
+							// apply deferred consumption/production
+							r.amount += Deferred * k;
+						}
 					}
 				}
 				else
 				{
 					foreach (ProtoPartResourceSnapshot r in unloadedResList)
 					{
-						// calculate consumption/production coefficient for the part
-						double k = Deferred < 0.0
-						  ? r.amount / Amount
-						  : (r.maxAmount - r.amount) / (Capacity - Amount);
-
-						// apply deferred consumption/production
-						r.amount += Deferred * k;
+						if (equalizeMode == EqualizeMode.Enabled)
+						{
+							r.amount = (Amount + Deferred) * (r.maxAmount / Capacity);
+						}
+						else
+						{
+							double k = Deferred < 0.0 ? r.amount / Amount : (r.maxAmount - r.amount) / (Capacity - Amount);
+							// apply deferred consumption/production
+							r.amount += Deferred * k;
+						}
 					}
 				}
 			}
+
+			equalizeMode = EqualizeMode.NotSet;
 
 			// update amount, to get correct rate and levels at all times
 			Amount += Deferred;

@@ -142,13 +142,13 @@
     <Compile Include="Contracts\SpaceAnalysis.cs" />
     <Compile Include="Contracts\SpaceHarvest.cs" />
     <Compile Include="Database\DB.cs" />
-    <Compile Include="Database\HabitatData.cs" />
+    <Compile Include="VesselLogic\PartHabitat.cs" />
     <Compile Include="Database\KerbalData.cs" />
     <Compile Include="Database\LandmarkData.cs" />
     <Compile Include="Database\PartData.cs" />
     <Compile Include="Database\PartDataCollection.cs" />
     <Compile Include="Database\RuleData.cs" />
-    <Compile Include="Database\VesselSituations.cs" />
+    <Compile Include="VesselLogic\VesselSituations.cs" />
     <Compile Include="LocalizationCache.cs" />
     <Compile Include="Modules\Habitat2.cs" />
     <Compile Include="Radiation\RadiationBody.cs" />
@@ -179,7 +179,7 @@
     <Compile Include="Renderer\LineRenderer.cs" />
     <Compile Include="Renderer\ParticleMesh.cs" />
     <Compile Include="Renderer\ParticleRenderer.cs" />
-    <Compile Include="Science\Drive.cs" />
+    <Compile Include="VesselLogic\PartDrive.cs" />
     <Compile Include="Science\ExperimentRequirements.cs" />
     <Compile Include="Science\ExperimentInfo.cs" />
     <Compile Include="Science\File.cs" />
@@ -191,6 +191,7 @@
     <Compile Include="Science\ScienceDB.cs" />
     <Compile Include="Science\ScienceSituation.cs" />
     <Compile Include="Science\Situation.cs" />
+    <Compile Include="VesselLogic\VesselKerbalSuits.cs" />
     <Compile Include="System\API.cs" />
     <Compile Include="System\Callbacks.cs" />
     <Compile Include="UI\ConnManager.cs" />

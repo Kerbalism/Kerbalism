@@ -10,8 +10,8 @@ namespace KERBALISM
 		public uint FlightId { get; private set; }
 		public string PartName { get; private set; }
 
-		public Drive Drive { get; set; }
-		public HabitatData Habitat { get; set; }
+		public PartDrive Drive { get; set; }
+		public PartHabitat Habitat { get; set; }
 
 		public PartData(Part part)
 		{
@@ -48,11 +48,11 @@ namespace KERBALISM
 		{
 			ConfigNode driveNode = partDataNode.GetNode("drive");
 			if (driveNode != null)
-				Drive = new Drive(driveNode);
+				Drive = new PartDrive(driveNode);
 
 			ConfigNode habitatNode = partDataNode.GetNode("habitat");
 			if (habitatNode != null)
-				Habitat = new HabitatData(habitatNode);
+				Habitat = new PartHabitat(habitatNode);
 		}
 
 		/// <summary> Must be called if the part is destroyed </summary>

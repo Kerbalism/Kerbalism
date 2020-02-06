@@ -9,12 +9,14 @@ namespace KERBALISM
 	/// <summary>
 	/// Vessel state independant structure for the Habitat PartModule. Try not to put any logic in here.
 	/// </summary>
-	public class HabitatData
+	public class PartHabitat
 	{
 		public enum PressureState
 		{
 			Pressurized,
 			PressureDropped,
+			BreatheableStart,
+			Breatheable,
 			Depressurized,
 			PressurizingStart,
 			Pressurizing,
@@ -62,7 +64,7 @@ namespace KERBALISM
 		/// <summary> crew count </summary>
 		public int crewCount;
 
-		/// <summary> current habitable & pressurized volume in m3 </summary>
+		/// <summary> current habitable and pressurized volume in m3 </summary>
 		public double enabledVolume;
 
 		/// <summary> current atmosphere count (1 unit = 1 m3 of air at STP) </summary>
@@ -85,7 +87,7 @@ namespace KERBALISM
 
 		public ModuleKsmHabitat module;
 
-		public HabitatData(ModuleKsmHabitat habitatModule = null)
+		public PartHabitat(ModuleKsmHabitat habitatModule = null)
 		{
 			module = habitatModule;
 		}
@@ -113,7 +115,7 @@ namespace KERBALISM
 			}
 		}
 
-		public HabitatData(ConfigNode habitatNode)
+		public PartHabitat(ConfigNode habitatNode)
 		{
 			habitatEnabled = Lib.ConfigValue(habitatNode, "habitatEnabled", habitatEnabled);
 			pressureState = Lib.ConfigEnum(habitatNode, "pressureState", pressureState);

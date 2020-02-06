@@ -50,7 +50,7 @@ namespace KERBALISM
 			active_anim = new Animator(part, active);
 
 			// set animation initial state
-			active_anim.Still(running ? 0.0 : 1.0);
+			active_anim.Still(running ? 0f : 1f);
 		}
 
 		public class HabitatInfo

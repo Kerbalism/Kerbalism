@@ -981,6 +981,18 @@ namespace KERBALISM
 			return Lib.BuildString(v.ToString("F0"), " $");
 		}
 
+		///<summary> Format a large (positive) number using kilo / mega abbreviations </summary>
+		public static string HumanReadableAmountCompact(double value)
+		{
+			value = Math.Abs(value);
+			if (value >= 1000000.0)
+				return (value / 1000000.0).ToString("0.00M");
+			else if (value >= 1000.0)
+				return (value / 1000.0).ToString("0.00k");
+			else
+				return value.ToString("F0");
+		}
+
 		///<summary> Format a value to 2 decimal places, or return 'none' </summary>
 		public static string HumanReadableAmount(double value, string append = "")
 		{
@@ -2630,7 +2642,7 @@ namespace KERBALISM
 			// our own science system
 			else
 			{
-				foreach (var drive in Drive.GetDrives(v, true))
+				foreach (var drive in PartDrive.GetDrives(v, true))
 					if (drive.files.Count > 0) return true;
 				return false;
 			}
@@ -2677,7 +2689,7 @@ namespace KERBALISM
 			else
 			{
 				// select a file at random and remove it
-				foreach (var drive in Drive.GetDrives(v, true))
+				foreach (var drive in PartDrive.GetDrives(v, true))
 				{
 					if (drive.files.Count > 0) //< it should always be the case
 					{

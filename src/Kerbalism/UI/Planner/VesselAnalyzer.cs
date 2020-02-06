@@ -77,7 +77,7 @@ namespace KERBALISM.Planner
 			{
 				foreach (ModuleKsmHabitat habitat in part.Modules.GetModules<ModuleKsmHabitat>())
 				{
-					HabitatData habitatData = habitat.HabitatData;
+					PartHabitat habitatData = habitat.HabitatData;
 					if (habitatData != null && habitatData.habitatEnabled)
 					{
 						volume += habitatData.enabledVolume;
@@ -97,9 +97,9 @@ namespace KERBALISM.Planner
 			// living space is the volume per-capita normalized against an 'ideal living space' and clamped in an acceptable range
 			living_space = Lib.Clamp(volume_per_crew / PreferencesComfort.Instance.livingSpace, 0.1, 1.0);
 
-			if (env.landed) comfortMask |= 1 << (int)HabitatData.Comfort.FirmGround;
-			if (crew_count > 1) comfortMask |= 1 << (int)HabitatData.Comfort.NotAlone;
-			if (has_comms) comfortMask |= 1 << (int)HabitatData.Comfort.CallHome;
+			if (env.landed) comfortMask |= 1 << (int)PartHabitat.Comfort.FirmGround;
+			if (crew_count > 1) comfortMask |= 1 << (int)PartHabitat.Comfort.NotAlone;
+			if (has_comms) comfortMask |= 1 << (int)PartHabitat.Comfort.CallHome;
 
 			comfortFactor = HabitatLib.GetComfortFactor(comfortMask);
 

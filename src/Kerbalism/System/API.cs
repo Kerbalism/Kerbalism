@@ -137,7 +137,7 @@ namespace KERBALISM
 		// return true if the vessel specified is inside a breathable atmosphere
 		public static bool Breathable(Vessel v)
 		{
-			return v.KerbalismData().EnvBreathable;
+			return v.KerbalismData().EnvInSurvivableAtmosphere;
 		}
 
 

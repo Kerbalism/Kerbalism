@@ -27,11 +27,11 @@ namespace KERBALISM
 						break;
 
 					case "breathable":
-						k *= vd.EnvBreathable ? 1.0 : 0.0;
+						k *= vd.EnvInSurvivableAtmosphere ? 1.0 : 0.0;
 						break;
 
 					case "non_breathable":
-						k *= vd.EnvBreathable ? 0.0 : 1.0;
+						k *= vd.EnvInSurvivableAtmosphere ? 0.0 : 1.0;
 						break;
 
 					case "temperature":

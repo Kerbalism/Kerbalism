@@ -109,7 +109,7 @@ namespace KERBALISM
 			Entry entry = new Entry
 			{
 				msg = msg,
-				duration = Math.Max(4f, msg.Length / 25f),
+				duration = Math.Max(4f, msg.Length / 20f),
 				first_seen = 0
 			};
 
