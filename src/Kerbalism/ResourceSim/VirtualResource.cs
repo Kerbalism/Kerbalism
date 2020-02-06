@@ -70,7 +70,7 @@ namespace KERBALISM
 			Deferred -= quantity;
 		}
 
-		public static void LoadVirtualResources(Vessel v, ConfigNode vesselDataNode)
+		public static void Load(Vessel v, ConfigNode vesselDataNode)
 		{
 			foreach (ConfigNode node in vesselDataNode.GetNodes("VirtualResources"))
 			{
@@ -84,7 +84,7 @@ namespace KERBALISM
 			}
 		}
 
-		public static void SaveVirtualResources(Vessel v, ConfigNode node)
+		public static void Save(Vessel v, ConfigNode node)
 		{
 			if (v == null) return;
 			foreach (VirtualResource vRes in ResourceCache.GetVesselHandler(v).GetVirtualResources())

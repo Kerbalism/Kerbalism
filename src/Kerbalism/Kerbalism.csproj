@@ -181,7 +181,6 @@
     <Compile Include="Renderer\LineRenderer.cs" />
     <Compile Include="Renderer\ParticleMesh.cs" />
     <Compile Include="Renderer\ParticleRenderer.cs" />
-    <Compile Include="ResourceSim\HabitatEqualizer.cs" />
     <Compile Include="ResourceSim\IResource.cs" />
     <Compile Include="ResourceSim\VirtualResource.cs" />
     <Compile Include="ResourceSim\Recipe.cs" />

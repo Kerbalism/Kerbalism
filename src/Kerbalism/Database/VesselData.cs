@@ -51,7 +51,7 @@ namespace KERBALISM
 		public bool deviceTransmit;   // vessel wide automation : enable/disable data transmission
 
 		// other persisted fields
-		private List<ResourceUpdateDelegate> resourceUpdateDelegates = null; // all part modules that have a ResourceUpdate method
+		public List<ResourceUpdateDelegate> resourceUpdateDelegates = null; // all part modules that have a ResourceUpdate method
 		public PartDataCollection Parts { get; private set; }
 
 
@@ -334,11 +334,8 @@ namespace KERBALISM
 		/// <summary>enabled surface in m^2</summary> 
 		public double Surface => surface; double surface;
 
-		/// <summary>normalized pressure</summary>
-		public double Pressure => pressure; double pressure;
-
-		/// <summary>number of EVA's using available Nitrogen</summary>
-		public uint Evas => evas; uint evas;
+		/// <summary>normalized habitat pressure</summary>
+		public double HabitatPressure => habitatPressure; double habitatPressure;
 
 		/// <summary>waste atmosphere amount versus total atmosphere amount</summary>
 		public double Poisoning => poisoning; double poisoning;
@@ -790,7 +787,7 @@ namespace KERBALISM
 			if (Vessel.loaded && partHabitatRaytraceNextIndex < 0)
 				partHabitatRaytraceNextIndex = 0;
 
-			pressure = atmoAmount / volume;
+			habitatPressure = atmoAmount / volume;
 			poisoning = wasteAmount / volume;
 
 			shielding = Radiation.ShieldingEfficiency(shieldingAmount / surface);

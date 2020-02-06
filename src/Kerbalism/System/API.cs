@@ -406,7 +406,7 @@ namespace KERBALISM
 		public static double Pressure(Vessel v)
 		{
 			if (!Features.Pressure) return 0.0;
-			return v.KerbalismData().Pressure;
+			return v.KerbalismData().HabitatPressure;
 		}
 
 		// return level of co2 of internal habitat

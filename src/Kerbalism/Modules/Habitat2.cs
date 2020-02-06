@@ -462,7 +462,7 @@ namespace KERBALISM
 		{
 			bool isEditor = Lib.IsEditor();
 			VesselData vd = isEditor ? null : vessel.KerbalismData();
-			ResourceInfo atmoResInfo = ResourceCache.GetResource(vessel, atmosphereResource);
+			IResource atmoResInfo = ResourceCache.GetResource(vessel, atmosphereResource);
 
 			// constantly disable shielding flow when habitat is disabled, so it isn't accounted for in the resource sim
 			if (hasShielding)
@@ -497,8 +497,8 @@ namespace KERBALISM
 			// - this would allow to remove all the complex stuff we are doing with habitat resources
 			// - this would prevent the weirdness in unpressurized habs and breathable situations
 
-			if (!isEditor && atmoResInfo.equalizeMode == ResourceInfo.EqualizeMode.NotSet)
-				atmoResInfo.equalizeMode = ResourceInfo.EqualizeMode.Enabled;
+			//if (!isEditor && atmoResInfo.equalizeMode == ResourceInfo.EqualizeMode.NotSet)
+			//	atmoResInfo.equalizeMode = ResourceInfo.EqualizeMode.Enabled;
 
 			switch (data.pressureState)
 			{
@@ -534,8 +534,8 @@ namespace KERBALISM
 					atmoRes.flowState = false;
 					wasteRes.flowState = false;
 
-					if (!isEditor)
-						atmoResInfo.equalizeMode = ResourceInfo.EqualizeMode.Disabled;
+					//if (!isEditor)
+					//	atmoResInfo.equalizeMode = ResourceInfo.EqualizeMode.Disabled;
 
 					// make the kerbals take out their helmets
 					if (data.crewCount > 0 && vessel.isActiveVessel && part.internalModel != null)
@@ -546,8 +546,8 @@ namespace KERBALISM
 
 				case PressureState.Breatheable:
 
-					if (!isEditor)
-						atmoResInfo.equalizeMode = ResourceInfo.EqualizeMode.Disabled;
+					//if (!isEditor)
+					//	atmoResInfo.equalizeMode = ResourceInfo.EqualizeMode.Disabled;
 
 					if (!isEditor && (!vd.EnvInBreathableAtmosphere || vd.EnvStaticPressure < Settings.PressureThreshold))
 					{
@@ -571,8 +571,8 @@ namespace KERBALISM
 
 				case PressureState.PressurizingStart:
 
-					if (!isEditor)
-						atmoResInfo.equalizeMode = ResourceInfo.EqualizeMode.Disabled;
+					//if (!isEditor)
+					//	atmoResInfo.equalizeMode = ResourceInfo.EqualizeMode.Disabled;
 
 					atmoRes.maxAmount = volumeLiters;
 					wasteRes.maxAmount = volumeLiters;
@@ -588,8 +588,8 @@ namespace KERBALISM
 
 				case PressureState.Pressurizing:
 
-					if (!isEditor)
-						atmoResInfo.equalizeMode = ResourceInfo.EqualizeMode.Disabled;
+					//if (!isEditor)
+					//	atmoResInfo.equalizeMode = ResourceInfo.EqualizeMode.Disabled;
 
 					if (deployWithPressure && !data.isDeployed)
 						deployAnimator.Still((float)((atmoRes.amount / atmoRes.maxAmount) / Settings.PressureThreshold));

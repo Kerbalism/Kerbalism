@@ -63,7 +63,7 @@ namespace KERBALISM
 						break;
 
 					case "pressure":
-						k *= vd.Pressure > Settings.PressureThreshold ? 1.0 : Settings.PressureFactor;
+						k *= vd.HabitatPressure > Settings.PressureThreshold ? 1.0 : Settings.PressureFactor;
 						break;
 
 					case "poisoning":
