@@ -197,16 +197,16 @@ namespace KERBALISM.Disabled
                 case State.depressurizing: Set_flow(false); break;
             }
 
-            if (Get_inflate_string().Length == 0) // not inflatable
-            {
-                SetPassable(true);
-                UpdateIVA(true);
-            }
-            else
-            {
-                SetPassable(Math.Truncate(Math.Abs((perctDeployed + ResourceBalance.precision) - 1.0) * 100000) / 100000 <= ResourceBalance.precision);
-                UpdateIVA(Math.Truncate(Math.Abs((perctDeployed + ResourceBalance.precision) - 1.0) * 100000) / 100000 <= ResourceBalance.precision);
-            }
+			if (Get_inflate_string().Length == 0) // not inflatable
+			{
+				SetPassable(true);
+				UpdateIVA(true);
+			}
+			else
+			{
+				SetPassable(Math.Truncate(Math.Abs((perctDeployed + HabitatEqualizer.precision) - 1.0) * 100000) / 100000 <= HabitatEqualizer.precision);
+				UpdateIVA(Math.Truncate(Math.Abs((perctDeployed + HabitatEqualizer.precision) - 1.0) * 100000) / 100000 <= HabitatEqualizer.precision);
+			}
 
             if (Lib.IsFlight())
             {
@@ -300,54 +300,54 @@ namespace KERBALISM.Disabled
                 // All module are empty
                 bool cond1 = true;
 
-                // check amounts
-                foreach (string resource in ResourceBalance.resourceName)
-                {
-                    if (part.Resources.Contains(resource))
-                        cond1 &= part.Resources[resource].amount <= double.Epsilon;
-                }
+				// check amounts
+				foreach (string resource in HabitatEqualizer.resourceName)
+				{
+					if (part.Resources.Contains(resource))
+						cond1 &= part.Resources[resource].amount <= double.Epsilon;
+				}
 
                 // are all modules empty?
                 if (cond1) return State.disabled;
 
-                // Depressurize still in progress
-                return State.depressurizing;
-            }
-            // in the editors
-            else
-            {
-                // set amount to zero
-                foreach (string resource in ResourceBalance.resourceName)
-                {
-                    if (part.Resources.Contains(resource))
-                        part.Resources[resource].amount = 0.0;
-                }
+				// Depressurize still in progress
+				return State.depressurizing;
+			}
+			// in the editors
+			else
+			{
+				// set amount to zero
+				foreach (string resource in HabitatEqualizer.resourceName)
+				{
+					if (part.Resources.Contains(resource))
+						part.Resources[resource].amount = 0.0;
+				}
 
 				// return new state
 				return State.disabled;
             }
         }
 
-        State Pressurizing()
-        {
-            // in flight
-            if (Lib.IsFlight())
-            {
-                // full pressure the level is 99.9999% deployed or more
-                if (Math.Truncate(Math.Abs((perctDeployed + ResourceBalance.precision) - 1.0) * 100000) / 100000 <= ResourceBalance.precision)
-                {
-                    SetPassable(true);
-                    UpdateIVA(true);
-                    return State.enabled;
-                }
-                return State.pressurizing;
-            }
-            // in the editors
-            else
-            {
-                // The other resources in ResourceBalance are waste resources
-                if (part.Resources.Contains("Atmosphere"))
-                    part.Resources["Atmosphere"].amount = part.Resources["Atmosphere"].maxAmount;
+		State Pressurizing()
+		{
+			// in flight
+			if (Lib.IsFlight())
+			{
+				// full pressure the level is 99.9999% deployed or more
+				if (Math.Truncate(Math.Abs((perctDeployed + HabitatEqualizer.precision) - 1.0) * 100000) / 100000 <= HabitatEqualizer.precision)
+				{
+					SetPassable(true);
+					UpdateIVA(true);
+					return State.enabled;
+				}
+				return State.pressurizing;
+			}
+			// in the editors
+			else
+			{
+				// The other resources in ResourceBalance are waste resources
+				if (part.Resources.Contains("Atmosphere"))
+					part.Resources["Atmosphere"].amount = part.Resources["Atmosphere"].maxAmount;
 
 				// return new state
 				return State.enabled;
@@ -375,7 +375,7 @@ namespace KERBALISM.Disabled
             switch (state)
             {
                 case State.enabled:
-                    if (Math.Truncate(Math.Abs((perctDeployed + ResourceBalance.precision) - 1.0) * 100000) / 100000 > ResourceBalance.precision)
+                    if (Math.Truncate(Math.Abs((perctDeployed + HabitatEqualizer.precision) - 1.0) * 100000) / 100000 > HabitatEqualizer.precision)
                     {
                         // No inflatable can be enabled been pressurizing
                         status_str = Local.Habitat_pressurizing;
@@ -427,23 +427,23 @@ namespace KERBALISM.Disabled
 
             perctDeployed = Lib.Level(part, "Atmosphere", true);
 
-            // Only handle crewTransferred & Toggle, this way has less calls in FixedUpdate
-            // CrewTransferred Event occur after FixedUpdate, this must be check in crewtransferred
-            if (FixIVA)
-            {
-                if (Get_inflate_string().Length == 0) // it is not inflatable (We always going to show and cross those habitats)
-                {
-                    SetPassable(true);
-                    UpdateIVA(true);
-                }
-                else
-                {
-                    // Inflatable modules shows IVA and are passable only in 99.9999% deployed
-                    SetPassable(Lib.IsCrewed(part) || Math.Truncate(Math.Abs((perctDeployed + ResourceBalance.precision) - 1.0) * 100000) / 100000 <= ResourceBalance.precision);
-                    UpdateIVA(Math.Truncate(Math.Abs((perctDeployed + ResourceBalance.precision) - 1.0) * 100000) / 100000 <= ResourceBalance.precision);
-                }
-                FixIVA = false;
-            }
+			// Only handle crewTransferred & Toggle, this way has less calls in FixedUpdate
+			// CrewTransferred Event occur after FixedUpdate, this must be check in crewtransferred
+			if (FixIVA)
+			{
+				if (Get_inflate_string().Length == 0) // it is not inflatable (We always going to show and cross those habitats)
+				{
+					SetPassable(true);
+					UpdateIVA(true);
+				}
+				else
+				{
+					// Inflatable modules shows IVA and are passable only in 99.9999% deployed
+					SetPassable(Lib.IsCrewed(part) || Math.Truncate(Math.Abs((perctDeployed + HabitatEqualizer.precision) - 1.0) * 100000) / 100000 <= HabitatEqualizer.precision);
+					UpdateIVA(Math.Truncate(Math.Abs((perctDeployed + HabitatEqualizer.precision) - 1.0) * 100000) / 100000 <= HabitatEqualizer.precision);
+				}
+				FixIVA = false;
+			}
 
             // state machine
             switch (state)

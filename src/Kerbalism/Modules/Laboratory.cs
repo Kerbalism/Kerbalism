@@ -36,7 +36,7 @@ namespace KERBALISM
 		private static SubjectData background_sample = null;             // sample currently being analyzed in background simulation
 		private Status status = Status.DISABLED;                    // laboratory status
 		private string status_txt = string.Empty;                   // status string to show next to the ui button
-		private ResourceInfo ec = null;                            // resource info for EC
+		private IResource ec = null;                            // resource info for EC
 
 		// localized strings
 		private static readonly string localized_title = Lib.BuildString("<size=1><color=#00000000>00</color></size>", Local.Laboratory_Title);
@@ -130,7 +130,7 @@ namespace KERBALISM
 			else status = Status.DISABLED;
 		}
 
-		public static void BackgroundUpdate(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, Laboratory lab, ResourceInfo ec, double elapsed_s)
+		public static void BackgroundUpdate(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, Laboratory lab, IResource ec, double elapsed_s)
 		{
 			// if enabled
 			if (Lib.Proto.GetBool(m, "running"))

@@ -33,7 +33,7 @@ namespace KERBALISM
 			if (p.Timeout(vd)) return;
 
 			// get resources
-			VesselResources resources = ResourceCache.Get(v);
+			VesselResHandler resources = ResourceCache.GetVesselHandler(v);
 
 			// get crew
 			var crew = Lib.CrewList(v);
@@ -150,14 +150,14 @@ namespace KERBALISM
 			p.AddContent(Local.TELEMETRY_totalsciencetransmitted, Lib.HumanReadableScience(vd.scienceTransmitted, false));//"total science transmitted"
 		}
 
-		static void Render_supplies(Panel p, Vessel v, VesselData vd, VesselResources resources)
+		static void Render_supplies(Panel p, Vessel v, VesselData vd, VesselResHandler resources)
 		{
 			int supplies = 0;
 			// for each supply
 			foreach (Supply supply in Profile.supplies)
 			{
 				// get resource info
-				ResourceInfo res = resources.GetResource(v, supply.resource);
+				VesselResource res = (VesselResource)resources.GetResource(v, supply.resource);
 
 				// only show estimate if the resource is present
 				if (res.Capacity <= 1e-10) continue;

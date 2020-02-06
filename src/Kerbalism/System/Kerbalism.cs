@@ -273,7 +273,7 @@ namespace KERBALISM
 			Guid last_id = Guid.Empty;
 			Vessel last_v = null;
 			VesselData last_vd = null;
-			VesselResources last_resources = null;
+			VesselResHandler last_resources = null;
 
 			// credit science at regular interval
 			ScienceDB.CreditScienceBuffers(elapsed_s);
@@ -316,7 +316,7 @@ namespace KERBALISM
 					continue;
 
 				// get resource cache
-				VesselResources resources = ResourceCache.Get(v);
+				VesselResHandler resources = ResourceCache.GetVesselHandler(v);
 
 				// if loaded
 				if (v.loaded)
@@ -327,7 +327,7 @@ namespace KERBALISM
 					//UnityEngine.Profiling.Profiler.EndSample();
 
 					// get most used resource
-					ResourceInfo ec = resources.GetResource(v, "ElectricCharge");
+					IResource ec = resources.GetResource(v, "ElectricCharge");
 
 					UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Loaded.Radiation");
 					// show belt warnings
@@ -353,7 +353,7 @@ namespace KERBALISM
 
 					UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Loaded.Profile");
 					// part module resource updates
-					vd.ResourceUpdate(resources, elapsed_s);
+					ResourceAPI.ResourceUpdate(v, vd, resources, elapsed_s);
 					UnityEngine.Profiling.Profiler.EndSample(); 
 
 					UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Loaded.Resource");
@@ -403,7 +403,7 @@ namespace KERBALISM
 				//UnityEngine.Profiling.Profiler.EndSample();
 
 				// get most used resource
-				ResourceInfo last_ec = last_resources.GetResource(last_v, "ElectricCharge");
+				IResource last_ec = last_resources.GetResource(last_v, "ElectricCharge");
 
 				UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Unloaded.Radiation");
 				// show belt warnings
@@ -976,7 +976,7 @@ namespace KERBALISM
 			const double res_penalty = 0.1;        // proportion of food lost on 'depressed' and 'wrong_valve'
 
 			// get a supply resource at random
-			ResourceInfo res = null;
+			IResource res = null;
 			if (Profile.supplies.Count > 0)
 			{
 				Supply supply = Profile.supplies[Lib.RandomInt(Profile.supplies.Count)];
@@ -1017,7 +1017,7 @@ namespace KERBALISM
 					break;
 				case KerbalBreakdown.wrong_valve:
 					text = Local.Kerbalwrongvalve;//"$ON_VESSEL$KERBAL opened the wrong valve"
-					subtext = res.ResourceName + " " + Local.Kerbalwrongvalve_subtext;//has been lost"
+					subtext = res.Name + " " + Local.Kerbalwrongvalve_subtext;//has been lost"
 					break;
 			}
 

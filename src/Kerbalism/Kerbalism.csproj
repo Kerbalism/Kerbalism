@@ -153,6 +153,8 @@
     <Compile Include="Modules\Habitat2.cs" />
     <Compile Include="Radiation\RadiationBody.cs" />
     <Compile Include="Radiation\RadiationModel.cs" />
+    <Compile Include="ResourceSim\ResourceAPI.cs" />
+    <Compile Include="ResourceSim\ResourceBroker.cs" />
     <Compile Include="Science\SubjectData.cs" />
     <Compile Include="Database\SupplyData.cs" />
     <Compile Include="Database\UIData.cs" />
@@ -179,6 +181,13 @@
     <Compile Include="Renderer\LineRenderer.cs" />
     <Compile Include="Renderer\ParticleMesh.cs" />
     <Compile Include="Renderer\ParticleRenderer.cs" />
+    <Compile Include="ResourceSim\HabitatEqualizer.cs" />
+    <Compile Include="ResourceSim\IResource.cs" />
+    <Compile Include="ResourceSim\VirtualResource.cs" />
+    <Compile Include="ResourceSim\Recipe.cs" />
+    <Compile Include="ResourceSim\VesselResource.cs" />
+    <Compile Include="ResourceSim\VesselResHandler.cs" />
+    <Compile Include="ResourceSim\ResourceCache.cs" />
     <Compile Include="VesselLogic\PartDrive.cs" />
     <Compile Include="Science\ExperimentRequirements.cs" />
     <Compile Include="Science\ExperimentInfo.cs" />
@@ -250,7 +259,6 @@
     <Compile Include="Modules\Habitat.cs" />
     <Compile Include="Modules\PlannerController.cs" />
     <Compile Include="EVA.cs" />
-    <Compile Include="Resource.cs" />
     <Compile Include="Profile\Profile.cs" />
     <Compile Include="Profile\Supply.cs" />
     <Compile Include="Profile\Rule.cs" />
@@ -266,6 +274,7 @@
     <Compile Include="Utility\DumpSpec.cs" />
     <Compile Include="Utility\Highlighter.cs" />
     <Compile Include="Utility\Profiler.cs" />
+    <Compile Include="Utility\Serialization.cs" />
     <Compile Include="Utility\Space.cs" />
     <Compile Include="Utility\Specifics.cs" />
     <Compile Include="Utility\Transformator.cs" />
@@ -285,7 +294,6 @@
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="Patches\TooltipController_CrewAC_SetTooltip.cs" />
     <Compile Include="Modules\PassiveShield.cs" />
-    <Compile Include="Database\ResourceUpdateDelegate.cs" />
     <Compile Include="Modules\IKerbalismModule.cs" />
     <Compile Include="Patches\ModuleDataTransmitter_GetInfo.cs" />
   </ItemGroup>

@@ -2828,20 +2828,27 @@ namespace KERBALISM
 
 		#region CONFIG
 		///<summary>get a config node from the config system</summary>
-		public static ConfigNode ParseConfig( string path )
+		public static ConfigNode ParseConfig(string path)
 		{
-			return GameDatabase.Instance.GetConfigNode( path ) ?? new ConfigNode();
+			return GameDatabase.Instance.GetConfigNode(path) ?? new ConfigNode();
 		}
 
 		///<summary>get a set of config nodes from the config system</summary>
-		public static ConfigNode[] ParseConfigs( string path )
+		public static ConfigNode[] ParseConfigs(string path)
 		{
-			return GameDatabase.Instance.GetConfigNodes( path );
+			return GameDatabase.Instance.GetConfigNodes(path);
 		}
 
 		///<summary>get a value from config</summary>
-		public static T ConfigValue<T>( ConfigNode cfg, string key, T def_value )
+		public static T ConfigValue<T>(ConfigNode cfg, string key, T def_value)
 		{
+			object value;
+			if (TryParseValue(cfg.GetValue(key), typeof(T), out value))
+				return (T)value;
+			else
+				return def_value;
+
+			/*
 			try
 			{
 				return cfg.HasValue( key ) ? (T) Convert.ChangeType( cfg.GetValue( key ), typeof( T ) ) : def_value;
@@ -2851,20 +2858,135 @@ namespace KERBALISM
 				Lib.Log( "error while trying to parse '" + key + "' from " + cfg.name + " (" + e.Message + ")", Lib.LogLevel.Warning);
 				return def_value;
 			}
+			*/
 		}
 
-		///<summary>get an enum from config</summary>
-		public static T ConfigEnum<T>( ConfigNode cfg, string key, T def_value )
+		public static T ConfigEnum<T>(ConfigNode cfg, string key, T def_value)
 		{
-			try
+			if (TryParseValue(cfg.GetValue(key), typeof(T), out object value))
 			{
-				return cfg.HasValue( key ) ? (T) Enum.Parse( typeof( T ), cfg.GetValue( key ) ) : def_value;
+				return (T)value;
 			}
-			catch (Exception e)
+			return def_value;
+		}
+
+		///<summary>parse a serialized (config) value. Supports all value types including enums and common KSP/Unity types (vector, quaternion, color, matrix4x4...)</summary>
+		public static bool TryParseValue(string strValue, Type typeOfValue, out object value)
+		{
+			value = null;
+			if (string.IsNullOrEmpty(strValue))
+				return false;
+
+			if (typeof(Enum).IsAssignableFrom(typeOfValue))
 			{
-				Lib.Log( "invalid enum in '" + key + "' from " + cfg.name + " (" + e.Message + ")", Lib.LogLevel.Warning);
-				return def_value;
+				try
+				{
+					if (!Enum.IsDefined(typeOfValue, strValue)) return false;
+					value = Enum.Parse(typeOfValue, strValue);
+					return true;
+				}
+				catch
+				{
+					return false;
+				}
 			}
+			else if (typeOfValue == typeof(string))
+			{
+				value = strValue;
+				return true;
+			}
+			else if
+			(
+				typeOfValue == typeof(bool)
+				|| typeOfValue == typeof(byte)
+				|| typeOfValue == typeof(char)
+				|| typeOfValue == typeof(decimal)
+				|| typeOfValue == typeof(double)
+				|| typeOfValue == typeof(short)
+				|| typeOfValue == typeof(int)
+				|| typeOfValue == typeof(long)
+				|| typeOfValue == typeof(sbyte)
+				|| typeOfValue == typeof(float)
+				|| typeOfValue == typeof(string)
+				|| typeOfValue == typeof(ushort)
+				|| typeOfValue == typeof(uint)
+				|| typeOfValue == typeof(ulong)
+			)
+			{
+				try { value = Convert.ChangeType(strValue, typeOfValue); } catch { return false; }
+				return true;
+			}
+			else if (typeOfValue == typeof(Vector2))
+			{
+				if (!ParseExtensions.TryParseVector2(strValue, out Vector2 parsed)) return false;
+				value = parsed;
+				return true;
+			}
+			else if (typeOfValue == typeof(Vector2d))
+			{
+				if (!ParseExtensions.TryParseVector2d(strValue, out Vector2d parsed)) return false;
+				value = parsed;
+				return true;
+			}
+			else if (typeOfValue == typeof(Vector3))
+			{
+				if (!ParseExtensions.TryParseVector3(strValue, out Vector3 parsed)) return false;
+				value = parsed;
+				return true;
+			}
+			else if (typeOfValue == typeof(Vector3d))
+			{
+				if (!ParseExtensions.TryParseVector3d(strValue, out Vector3d parsed)) return false;
+				value = parsed;
+				return true;
+			}
+			else if (typeOfValue == typeof(Vector4))
+			{
+				if (!ParseExtensions.TryParseVector4(strValue, out Vector4 parsed)) return false;
+				value = parsed;
+				return true;
+			}
+			else if (typeOfValue == typeof(Vector4d))
+			{
+				if (!ParseExtensions.TryParseVector4d(strValue, out Vector4d parsed)) return false;
+				value = parsed;
+				return true;
+			}
+			else if (typeOfValue == typeof(Color))
+			{
+				if (!ParseExtensions.TryParseColor(strValue, out Color parsed)) return false;
+				value = parsed;
+				return true;
+			}
+			else if (typeOfValue == typeof(Color32))
+			{
+				if (!ParseExtensions.TryParseColor32(strValue, out Color32 parsed)) return false;
+				value = parsed;
+				return true;
+			}
+			else if (typeOfValue == typeof(Quaternion))
+			{
+				if (!ParseExtensions.TryParseQuaternion(strValue, out Quaternion parsed)) return false;
+				value = parsed;
+				return true;
+			}
+			else if (typeOfValue == typeof(QuaternionD))
+			{
+				if (!ParseExtensions.TryParseQuaternionD(strValue, out QuaternionD parsed)) return false;
+				value = parsed;
+				return true;
+			}
+			else if (typeOfValue == typeof(Matrix4x4))
+			{
+				value = ConfigNode.ParseMatrix4x4(strValue);
+				return true;
+			}
+			else if (typeOfValue == typeof(Guid))
+			{
+				try { value = new Guid(strValue); } catch { return false; }
+			}
+
+			return false;
 		}
 		#endregion
 

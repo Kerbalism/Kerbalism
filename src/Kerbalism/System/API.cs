@@ -125,6 +125,23 @@ namespace KERBALISM
 			}
 		}
 
+		// inject instant radiation dose to all kerbals (can use negative amounts)
+		public static void InjectRadiation(double amount)
+		{
+			foreach (Rule rule in Profile.rules)
+			{
+				if (rule.modifiers.Contains("radiation"))
+				{
+					foreach (KerbalData kd in DB.Kerbals().Values)
+					{
+						RuleData rd = kd.rules[rule.name];
+						rd.problem = Math.Max(rd.problem + amount, 0.0);
+					}
+
+				}
+			}
+		}
+
 
 		// --- ENVIRONMENT ----------------------------------------------------------
 
