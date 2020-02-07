@@ -33,7 +33,7 @@ namespace KERBALISM
 					{
 						if(files.ContainsKey(file.subjectData))
 						{
-							Lib.Log("Warning: discarding duplicate subject " + file.subjectData);
+							Lib.Log("discarding duplicate subject " + file.subjectData, Lib.LogLevel.Warning);
 						}
 						else
 						{
@@ -49,7 +49,7 @@ namespace KERBALISM
 							Lib.Log("Drive file load : converted '" + subject_id + "' to new format");
 							if(files.ContainsKey(file.subjectData))
 							{
-								Lib.Log("Warning: discarding duplicate converted subject " + file.subjectData);
+								Lib.Log("discarding duplicate converted subject " + file.subjectData, Lib.LogLevel.Warning);
 							}
 							else
 							{

@@ -78,7 +78,7 @@ namespace KERBALISM.KsmGui
 		{
 			// Unity will trhow an exception, but it doesn't hurt to know why
 			if (ksmGuiBase.TopObject.GetComponent<Graphic>() != null)
-				Lib.Log("KsmGui error : can't add a background color to " + ksmGuiBase.Name + ", the GameObject already has a graphic component");
+				Lib.Log("KsmGui error : can't add a background color to " + ksmGuiBase.Name + ", the GameObject already has a graphic component", Lib.LogLevel.Warning);
 
 			Image image = ksmGuiBase.TopObject.AddComponent<Image>();
 			image.color = color;

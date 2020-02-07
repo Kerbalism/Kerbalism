@@ -29,7 +29,7 @@ namespace KERBALISM
 				}
 				catch (Exception e)
 				{
-					Lib.Log("warning: failed to load rule\n" + e.ToString());
+					Lib.Log("failed to load rule\n" + e.ToString(), Lib.LogLevel.Warning);
 				}
 			}
 
@@ -50,7 +50,7 @@ namespace KERBALISM
 				}
 				catch (Exception e)
 				{
-					Lib.Log("warning: failed to load supply\n" + e.ToString());
+					Lib.Log("failed to load supply\n" + e.ToString(), Lib.LogLevel.Warning);
 				}
 			}
 
@@ -71,7 +71,7 @@ namespace KERBALISM
 				}
 				catch (Exception e)
 				{
-					Lib.Log("warning: failed to load process\n" + e.ToString());
+					Lib.Log("failed to load process\n" + e.ToString(), Lib.LogLevel.Warning);
 				}
 			}
 		}
@@ -150,7 +150,7 @@ namespace KERBALISM
 					}
 				}
 				// if we reach this point, the profile was not found
-				Lib.Log(Lib.BuildString("warning: profile '", Settings.Profile, "' was not found"));
+				Lib.Log(Lib.BuildString("profile '", Settings.Profile, "' was not found"), Lib.LogLevel.Warning);
 			}
 		}
 

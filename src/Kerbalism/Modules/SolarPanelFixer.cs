@@ -579,7 +579,7 @@ namespace KERBALISM
 					case "SSTUModularPart": SolarPanel = new SSTUVeryComplexPanel(); break;
 					case "ModuleROSolar": SolarPanel = new ROConfigurablePanel(); break;
 					case "KopernicusSolarPanel":
-						Lib.Log("WARNING : Part '" + part.partInfo.title + "' use the KopernicusSolarPanel module, please remove it from your config. Kerbalism has it's own support for Kopernicus");
+						Lib.Log("Part '" + part.partInfo.title + "' use the KopernicusSolarPanel module, please remove it from your config. Kerbalism has it's own support for Kopernicus", Lib.LogLevel.Warning);
 						continue;
 					default:
 						if (pm is ModuleDeployableSolarPanel)
@@ -595,7 +595,7 @@ namespace KERBALISM
 
 			if (SolarPanel == null)
 			{
-				Lib.Log("WARNING : Could not find a supported solar panel module, disabling SolarPanelFixer module...");
+				Lib.Log("Could not find a supported solar panel module, disabling SolarPanelFixer module...", Lib.LogLevel.Warning);
 				enabled = isEnabled = moduleIsEnabled = false;
 				return false;
 			}
@@ -806,7 +806,7 @@ namespace KERBALISM
 
 				if (sunCatcherPosition == null)
 				{
-					Lib.Log("ERROR : could not find suncatcher transform `{0}` in part `{1}`", panelModule.secondaryTransformName, panelModule.part.name);
+					Lib.Log("Could not find suncatcher transform `{0}` in part `{1}`", Lib.LogLevel.Error, panelModule.secondaryTransformName, panelModule.part.name);
 					return false;
 				}
 

@@ -16,28 +16,58 @@ namespace KERBALISM
 	{
 		#region UTILS
 
+		public enum LogLevel
+		{
+			Message,
+			Warning,
+			Error
+		}
+
+		private static void Log(MethodBase method, string message, LogLevel level)
+		{
+			switch (level)
+			{
+				default:
+					UnityEngine.Debug.Log(string.Format("[Kerbalism] {0}.{1} {2}", method.ReflectedType.Name, method.Name, message));
+					return;
+				case LogLevel.Warning:
+					UnityEngine.Debug.LogWarning(string.Format("[Kerbalism] {0}.{1} {2}", method.ReflectedType.Name, method.Name, message));
+					return;
+				case LogLevel.Error:
+					UnityEngine.Debug.LogError(string.Format("[Kerbalism] {0}.{1} {2}", method.ReflectedType.Name, method.Name, message));
+					return;
+			}
+		}
+
 		///<summary>write a message to the log</summary>
-		public static void Log(string msg, params object[] param)
+		public static void Log(string message, LogLevel level = LogLevel.Message, params object[] param)
 		{
 			StackTrace stackTrace = new StackTrace();
-			UnityEngine.Debug.Log(string.Format("[Kerbalism] {0}.{1} {2}", stackTrace.GetFrame(1).GetMethod().ReflectedType.Name,
-				stackTrace.GetFrame(1).GetMethod().Name, string.Format(msg, param)));
+			Log(stackTrace.GetFrame(1).GetMethod(), string.Format(message, param), level);
 		}
 
-		[Conditional("DEBUG"), Conditional("DEVBUILD")]
-		public static void LogDebug(string message, params object[] param)
+		///<summary>write a message and the call stack to the log</summary>
+		public static void LogStack(string message, LogLevel level = LogLevel.Message, params object[] param)
 		{
 			StackTrace stackTrace = new StackTrace();
-			UnityEngine.Debug.Log(string.Format("[Kerbalism] debug {0}.{1} {2}", stackTrace.GetFrame(1).GetMethod().ReflectedType.Name,
-				stackTrace.GetFrame(1).GetMethod().Name, string.Format(message, param)));
+			Log(stackTrace.GetFrame(1).GetMethod(), string.Format(message, param), level);
+			UnityEngine.Debug.Log(stackTrace);
 		}
 
+		///<summary>write a message to the log, only on DEBUG and DEVBUILD builds</summary>
 		[Conditional("DEBUG"), Conditional("DEVBUILD")]
-		public static void LogDebugStack(string message, params object[] param)
+		public static void LogDebug(string message, LogLevel level = LogLevel.Message, params object[] param)
 		{
 			StackTrace stackTrace = new StackTrace();
-			UnityEngine.Debug.Log(string.Format("[Kerbalism] debug {0}.{1} {2}", stackTrace.GetFrame(1).GetMethod().ReflectedType.Name,
-				stackTrace.GetFrame(1).GetMethod().Name, string.Format(message, param)));
+			Log(stackTrace.GetFrame(1).GetMethod(), string.Format(message, param), level);
+		}
+
+		///<summary>write a message and the full call stack to the log, only on DEBUG and DEVBUILD builds</summary>
+		[Conditional("DEBUG"), Conditional("DEVBUILD")]
+		public static void LogDebugStack(string message, LogLevel level = LogLevel.Message, params object[] param)
+		{
+			StackTrace stackTrace = new StackTrace();
+			Log(stackTrace.GetFrame(1).GetMethod(), string.Format(message, param), level);
 			UnityEngine.Debug.Log(stackTrace);
 		}
 
@@ -78,7 +108,7 @@ namespace KERBALISM
 				{
 					AssemblyLoader.LoadedAssembly bootstrap = AssemblyLoader.loadedAssemblies.FirstOrDefault(p => p.name == "KerbalismBootstrap");
 					if (bootstrap != null && bootstrap.assembly != null) kerbalismDevBuild = bootstrap.assembly.GetName().Version.Build;
-					else Lib.Log("ERROR : This is a dev build but KerbalismBootstrap wasn't found!");
+					else Lib.Log("This is a dev build but KerbalismBootstrap wasn't found!", Lib.LogLevel.Error);
 				}
 				return kerbalismDevBuild;
 			}
@@ -1676,7 +1706,7 @@ namespace KERBALISM
 			// if the resource is not known, log a warning and do nothing
 			if (!reslib.Contains(res_name))
 			{
-				Lib.Log(Lib.BuildString("error while adding ", res_name, ": the resource doesn't exist"));
+				Lib.Log(Lib.BuildString("error while adding ", res_name, ": the resource doesn't exist"), Lib.LogLevel.Error);
 				return null;
 			}
 			var resourceDefinition = reslib[res_name];
@@ -1758,7 +1788,7 @@ namespace KERBALISM
 			// if the resource is not in the part, log a warning and do nothing
 			if (!p.Resources.Contains( res_name ))
 			{
-				Lib.Log( Lib.BuildString( "error while setting capacity for ", res_name, ": the resource is not in the part" ) );
+				Lib.Log( Lib.BuildString( "error while setting capacity for ", res_name, ": the resource is not in the part" ), Lib.LogLevel.Error);
 				return;
 			}
 
@@ -1774,7 +1804,7 @@ namespace KERBALISM
 			// if the resource is not in the part, log a warning and do nothing
 			if (!p.Resources.Contains( res_name ))
 			{
-				Lib.Log( Lib.BuildString( "error while setting capacity for ", res_name, ": the resource is not in the part" ) );
+				Lib.Log( Lib.BuildString( "error while setting capacity for ", res_name, ": the resource is not in the part" ), Lib.LogLevel.Error);
 				return;
 			}
 
@@ -2109,7 +2139,7 @@ namespace KERBALISM
 			}
 			catch (Exception e)
 			{
-				Lib.Log( "error while trying to parse '" + key + "' from " + cfg.name + " (" + e.Message + ")" );
+				Lib.Log( "error while trying to parse '" + key + "' from " + cfg.name + " (" + e.Message + ")", Lib.LogLevel.Warning);
 				return def_value;
 			}
 		}
@@ -2123,7 +2153,7 @@ namespace KERBALISM
 			}
 			catch (Exception e)
 			{
-				Lib.Log( "invalid enum in '" + key + "' from " + cfg.name + " (" + e.Message + ")" );
+				Lib.Log( "invalid enum in '" + key + "' from " + cfg.name + " (" + e.Message + ")", Lib.LogLevel.Warning);
 				return def_value;
 			}
 		}

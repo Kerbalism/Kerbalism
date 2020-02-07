@@ -293,7 +293,7 @@ namespace KERBALISM
 				ScienceExperiment stockDef = ResearchAndDevelopment.GetExperiment(experimentId);
 				if (stockDef == null)
 				{
-					Lib.Log("ERROR : ScienceExperiment is null for experiment Id=" + experimentId + ", skipping...");
+					Lib.Log("ScienceExperiment is null for experiment Id=" + experimentId + ", skipping...", Lib.LogLevel.Warning);
 					continue;
 				}
 
@@ -640,6 +640,9 @@ namespace KERBALISM
 
 			if (subjectBody == null)
 			{
+				// TODO : DMOS asteroid experiments are doing : "magScan@AsteroidInSpaceLowCarbonaceous7051371", those subjects will be discarded entirely here
+				// because the body "Asteroid" doesn't exists, consequently it's impossible to create the Situation object.
+				// To handle that, maybe we could implement a derived class "UnknownSituation" from Situation that can handle a completely random subject format
 				Lib.Log("Could not parse the SubjectData from subjectId '" + stockSubjectId + "' : the body '" + bodyAndBiome[0] + "' doesn't exist");
 				return null;
 			}
