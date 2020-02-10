@@ -14,6 +14,7 @@ namespace KERBALISM
 		[KSPField] public string desc = string.Empty;     // description to show on tooltip
 		[KSPField] public double capacity = 1.0;          // amount of associated pseudo-resource
 		[KSPField] public bool toggle = true;             // show the enable/disable toggle button
+		[KSPField] public string id = string.Empty;       // needed for B9PS
 
 		// persistence/config
 		// note: the running state doesn't need to be serialized, as it can be deduced from resource flow
