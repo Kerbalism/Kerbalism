@@ -94,7 +94,7 @@ namespace KERBALISM
 			if (!Features.Automation) return;
 
 			// get current states
-			IResource ec = resources.GetResource(v, "ElectricCharge");
+			IResource ec = resources.GetResource("ElectricCharge");
 			bool sunlight = !vd.EnvInFullShadow;
 			bool power_low = ec.Level < 0.2;
 			bool power_high = ec.Level > 0.8;

@@ -41,7 +41,7 @@ namespace KERBALISM
 			if (entries.TryGetValue(v.id, out entry)) return entry;
 
 			// create new entry
-			entry = new VesselResHandler();
+			entry = new VesselResHandler(v);
 
 			// remember new entry
 			entries.Add(v.id, entry);
@@ -50,9 +50,26 @@ namespace KERBALISM
 			return entry;
 		}
 
+		/// <summary> Return the VesselResHandler handler for this vessel </summary>
+		public static VesselResHandler GetProtoVesselHandler(ProtoVessel pv)
+		{
+			// try to get existing entry if any
+			VesselResHandler entry;
+			if (entries.TryGetValue(pv.vesselID, out entry)) return entry;
+
+			// create new entry
+			entry = new VesselResHandler(pv);
+
+			// remember new entry
+			entries.Add(pv.vesselID, entry);
+
+			// return new entry
+			return entry;
+		}
+
 		public static IResource GetResource(Vessel v, string resource_name)
 		{
-			return GetVesselHandler(v).GetResource(v, resource_name);
+			return GetVesselHandler(v).GetResource(resource_name);
 		}
 
 		/// <summary> record deferred production of a resource (shortcut) </summary>

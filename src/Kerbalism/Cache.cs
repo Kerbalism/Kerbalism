@@ -10,7 +10,7 @@ namespace KERBALISM
 		public static void Init()
 		{
 			vesselObjects = new Dictionary<Guid, Dictionary<string, object>>();
-			warp_caches = new Dictionary<Guid, PartDrive>();
+			warp_caches = new Dictionary<Guid, Drive>();
 		}
 
 
@@ -53,16 +53,16 @@ namespace KERBALISM
 			Message.all_logs.Clear();
 		}
 
-		public static PartDrive WarpCache(Vessel v)
+		public static Drive WarpCache(Vessel v)
 		{
 			Guid id = Lib.VesselID(v);
 
 			// get from the cache, if it exist
-			PartDrive drive;
+			Drive drive;
 			if (warp_caches.TryGetValue(id, out drive))
 				return drive;
 			
-			drive = new PartDrive("warp cache drive", 0, 0);
+			drive = new Drive("warp cache drive", 0, 0);
 			warp_caches.Add(id, drive);
 			return drive;
 		}
@@ -150,7 +150,7 @@ namespace KERBALISM
 		}
 
 		// caches
-		private static Dictionary<Guid, PartDrive> warp_caches;
+		private static Dictionary<Guid, Drive> warp_caches;
 		private static Dictionary<Guid, Dictionary<string, System.Object>> vesselObjects;
 	}
 

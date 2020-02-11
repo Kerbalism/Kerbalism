@@ -769,13 +769,13 @@ namespace KERBALISM
 		}
 
 		// return true if a vessel is inside a breathable atmosphere
-		public static bool InBreathableAtmosphere(Vessel v, bool underwater)
+		public static bool InBreathableAtmosphere(Vessel v, bool inAtmosphere, bool underwater)
 		{
 			// a vessel is inside a breathable atmosphere if:
 			// - it is inside an atmosphere
 			// - the body atmosphere is flagged as containing oxygen
 			// - it isn't underwater
-			return v.mainBody.atmosphereContainsOxygen && !underwater;
+			return inAtmosphere && v.mainBody.atmosphereContainsOxygen && !underwater;
 		}
 
 		// return true if a celestial body atmosphere is breathable at surface conditions

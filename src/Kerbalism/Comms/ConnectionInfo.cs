@@ -13,7 +13,7 @@ namespace KERBALISM
 	}
 
 	/// <summary> Stores a single vessels communication info</summary>
-	public sealed class ConnectionInfo
+	public class ConnectionInfo
 	{
 		/// <summary> true if there is a connection back to DSN </summary>
 		public bool linked = false;
@@ -52,6 +52,8 @@ namespace KERBALISM
 			}
 			return value;
 		}
+
+		public ConnectionInfo() {}
 
 		/// <summary> Creates a <see cref="ConnectionInfo"/> object for the specified vessel from it's antenna modules</summary>
 		private ConnectionInfo(Vessel v, bool powered, bool storm)

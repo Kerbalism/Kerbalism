@@ -36,7 +36,7 @@ namespace KERBALISM
  			// time-out simulation
 			if (!Lib.IsControlUnit(v) && p.Timeout(vd)) return;
 
-			List<ObjectPair<uint, PartDrive>> drives = new List<ObjectPair<uint, PartDrive>>();
+			List<ObjectPair<uint, Drive>> drives = new List<ObjectPair<uint, Drive>>();
 
 			int filesCount = 0;
 			double usedDataCapacity = 0;
@@ -51,11 +51,11 @@ namespace KERBALISM
 
 			foreach (PartData partData in vd.Parts)
 			{
-				PartDrive drive = partData.Drive;
+				Drive drive = partData.Drive;
 				if (drive == null)
 					continue;
 
-				drives.Add(new ObjectPair<uint, PartDrive>(partData.FlightId, drive));
+				drives.Add(new ObjectPair<uint, Drive>(partData.FlightId, drive));
 
 				if (!drive.is_private)
 				{
@@ -109,7 +109,7 @@ namespace KERBALISM
 			}
 		}
 
-		static void Render_file(Panel p, uint partId, File file, PartDrive drive, bool short_strings, Vessel v)
+		static void Render_file(Panel p, uint partId, File file, Drive drive, bool short_strings, Vessel v)
 		{
 			// render experiment name
 			string exp_label = Lib.BuildString
@@ -168,7 +168,7 @@ namespace KERBALISM
 			);
 		}
 
-		static void Render_sample(Panel p, uint partId, Sample sample, PartDrive drive, bool short_strings)
+		static void Render_sample(Panel p, uint partId, Sample sample, Drive drive, bool short_strings)
 		{
 			// render experiment name
 			string exp_label = Lib.BuildString

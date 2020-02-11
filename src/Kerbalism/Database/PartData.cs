@@ -10,13 +10,13 @@ namespace KERBALISM
 		public uint FlightId { get; private set; }
 		public string PartName { get; private set; }
 
-		public PartDrive Drive { get; set; }
-		public PartHabitat Habitat { get; set; }
+		public Drive Drive { get; set; }
+		public HabitatData Habitat { get; set; }
 
 		public PartData(Part part)
 		{
 			FlightId = part.flightID;
-			PartName = part.partName;
+			PartName = part.name;
 		}
 
 		public PartData(ProtoPartSnapshot protopart)
@@ -48,11 +48,11 @@ namespace KERBALISM
 		{
 			ConfigNode driveNode = partDataNode.GetNode("drive");
 			if (driveNode != null)
-				Drive = new PartDrive(driveNode);
+				Drive = new Drive(driveNode);
 
 			ConfigNode habitatNode = partDataNode.GetNode("habitat");
 			if (habitatNode != null)
-				Habitat = new PartHabitat(habitatNode);
+				Habitat = new HabitatData(habitatNode);
 		}
 
 		/// <summary> Must be called if the part is destroyed </summary>
@@ -67,10 +67,5 @@ namespace KERBALISM
 		public bool Equals(PartData other) => other != null && other.FlightId == FlightId;
 
 		public override bool Equals(object obj) => obj is PartData other && Equals(other);
-
-		public static bool operator ==(PartData lhs, PartData rhs) => lhs.Equals(rhs);
-
-		public static bool operator !=(PartData lhs, PartData rhs) => !lhs.Equals(rhs);
-
 	}
 }

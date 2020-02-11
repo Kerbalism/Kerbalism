@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -37,10 +37,14 @@ namespace KERBALISM
 			SpaceWeather = Lib.ConfigValue(cfg, "SpaceWeather", false);
 			Automation = Lib.ConfigValue(cfg, "Automation", false);
 
-			// pressure
-			PressureSuitVolume = Lib.ConfigValue(cfg, "PressureSuitVolume", 0.1);
+			// habitat & pressure 
+			PressureSuitVolume = Lib.ConfigValue(cfg, "PressureSuitVolume", 100.0);
+			HabitatAtmoResource = Lib.ConfigValue(cfg, "HabitatAtmoResource", "Atmosphere");
+			HabitatWasteResource = Lib.ConfigValue(cfg, "HabitatWasteResource", "WasteAtmosphere");
+			DepressuriationDefaultRate = Lib.ConfigValue(cfg, "DepressuriationDefaultRate", 10.0);
 			PressureFactor = Lib.ConfigValue(cfg, "PressureFactor", 10.0);
-			PressureThreshold = Lib.ConfigValue(cfg, "PressureThreshold", 0.5);
+			PressureThreshold = Lib.ConfigValue(cfg, "PressureThreshold", 0.3);
+
 
 			// poisoning
 			PoisoningFactor = Lib.ConfigValue(cfg, "PoisoningFactor", 0.0);
@@ -137,7 +141,10 @@ namespace KERBALISM
 		public static bool Automation;                          // control vessel components using scripts
 
 		// habitat
-		public static double PressureSuitVolume;                // habitat volume per kerbal while in EVA or inside an unpressurized habitat
+		public static double PressureSuitVolume;                // pressure / EVA suit volume in liters, used for determining CO2 poisoning level while kerbals are in a depressurized habitat
+		public static string HabitatAtmoResource;               // habitat volume per kerbal while in EVA or inside an unpressurized habitat
+		public static string HabitatWasteResource;              // habitat volume per kerbal while in EVA or inside an unpressurized habitat
+		public static double DepressuriationDefaultRate;        // liters / second / √(m3) of habitat volume
 		public static double PressureFactor;                    // pressurized modifier value for vessels below the threshold
 		public static double PressureThreshold;                 // below that threeshold, the vessel will be considered under partial pressure and kerbals will put their suits
 

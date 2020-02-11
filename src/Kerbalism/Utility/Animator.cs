@@ -68,15 +68,15 @@ namespace KERBALISM
 			if (towardStart && anim[name].normalizedTime == 0f)
 				anim[name].normalizedTime = 1f; 
 			else if (anim[name].normalizedTime == 0f)
-				anim[name].normalizedTime = 0.0001f; // just so we don't fire the callback immediatly
+				anim[name].normalizedTime = float.Epsilon; // just so we don't fire the callback immediatly
 
 			anim.Play(name);
 
 			// if playing from start to end, wait for the end to fire the callback 
 			if (!inReverse && callback != null)
 			{
-				float lastNormalizedTime = 0f;
-				
+				float lastNormalizedTime = anim[name].normalizedTime;
+
 				while (true)
 				{
 					float newNormalizedTime = anim[name].normalizedTime;

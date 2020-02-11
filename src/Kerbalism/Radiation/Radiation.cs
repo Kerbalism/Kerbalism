@@ -5,7 +5,7 @@ using System.Diagnostics;
 using System.Threading;
 using UnityEngine;
 using KSP.Localization;
-using static KERBALISM.PartHabitat;
+using static KERBALISM.HabitatData;
 
 namespace KERBALISM
 {
@@ -36,6 +36,8 @@ namespace KERBALISM
 		private static HashSet<uint> hittedPartsCache = new HashSet<uint>();
 
 		#endregion
+
+		#region INIT
 
 		/// <summary> pseudo-ctor </summary>
 		public static void Init()
@@ -104,6 +106,8 @@ namespace KERBALISM
             };
             preprocess_thread.Start();
         }
+
+		#endregion
 
 		#region PARTICULES RENDERING
 
@@ -726,14 +730,14 @@ namespace KERBALISM
 		/// <para/>Performance intensive operation.
 		/// <para/>Don't call this while the vessel is unloaded !
 		/// </summary>
-		public static void RaytraceHabitatSunRadiation(VesselData vd, PartHabitat habitat)
+		public static void RaytraceHabitatSunRadiation(Vector3d mainSunDrection, HabitatData habitat)
 		{
 			if (!Features.Radiation) return;
 
 			habitat.sunRadiationOccluders.Clear();
 			hittedPartsCache.Clear();
 
-			Ray ray = new Ray(habitat.module.transform.position, vd.EnvMainSun.Direction);
+			Ray ray = new Ray(habitat.module.transform.position, mainSunDrection);
 			int hitCount = Physics.RaycastNonAlloc(ray, sunRayHitsCache, 200f, partsLayerMask);
 
 			for (int i = 0; i < hitCount - 1; i++)
@@ -781,7 +785,7 @@ namespace KERBALISM
 
 			foreach (PartData partData in vd.Parts)
 			{
-				if (partData.Habitat == null || !partData.Habitat.habitatEnabled)
+				if (partData.Habitat == null || !partData.Habitat.isEnabled)
 					continue;
 
 				enabledHabitatCount++;

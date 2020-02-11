@@ -63,7 +63,7 @@ namespace KERBALISM
 			List<ProtoCrewMember> deferred_kills = new List<ProtoCrewMember>();
 
 			// get input resource handler
-			VesselResource res = input.Length > 0 ? (VesselResource)resources.GetResource(v, input) : null;
+			VesselResource res = input.Length > 0 ? (VesselResource)resources.GetResource(input) : null;
 
 			// determine message variant
 			uint variant = vd.EnvTemperature < Settings.LifeSupportSurvivalTemperature ? 0 : 1u;

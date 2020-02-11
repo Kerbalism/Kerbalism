@@ -100,21 +100,38 @@ namespace KERBALISM
 
 			// render panel, add some content based on enabled features
 			p.AddSection(Local.TELEMETRY_HABITAT);//"HABITAT"
-			if (Features.Poisoning) p.AddContent(Local.TELEMETRY_co2level, Lib.Color(vd.Poisoning > Settings.PoisoningThreshold, Lib.HumanReadablePerc(vd.Poisoning, "F2"), Lib.Kolor.Yellow));//"co2 level"
-			if (Features.Radiation && v.isEVA) p.AddContent(Local.TELEMETRY_radiation, Lib.HumanReadableRadiation(vd.EnvHabitatRadiation));//"radiation"
+												  //if (Features.Poisoning) p.AddContent(Local.TELEMETRY_co2level, Lib.Color(vd.Poisoning > Settings.PoisoningThreshold, Lib.HumanReadablePerc(vd.Poisoning, "F2"), Lib.Kolor.Yellow));//"co2 level"
+												  //if (Features.Radiation && v.isEVA) p.AddContent(Local.TELEMETRY_radiation, Lib.HumanReadableRadiation(vd.EnvHabitatRadiation));//"radiation"
 
-			p.AddContent("volume-debug", Lib.HumanReadableVolume(vd.Volume));
-			p.AddContent("surface-debug", Lib.HumanReadableSurface(vd.Surface));
-			p.AddContent("shielding-debug", vd.Shielding.ToString("F3"));
 
-			if (!v.isEVA)
-			{
-				if (Features.Pressure) p.AddContent(Local.TELEMETRY_pressure, Lib.HumanReadablePressure(vd.HabitatPressure * Sim.PressureAtSeaLevel));//"pressure"
-				if (Features.Shielding) p.AddContent(Local.TELEMETRY_shielding, Radiation.VesselShieldingToString(vd.Shielding));//"shielding"
-				if (Features.LivingSpace) p.AddContent(Local.TELEMETRY_livingspace, HabitatLib.LivingSpaceFactorToString(vd.LivingSpace));//"living space"
-				if (Features.Comfort) p.AddContent(Local.TELEMETRY_comfort, HabitatLib.ComfortSummary(vd.ComfortFactor), HabitatLib.ComfortTooltip(vd.ComfortMask, vd.ComfortFactor));//"comfort"
-				//if (Features.Pressure) p.AddContent(Local.TELEMETRY_EVAsavailable, vd.EnvInSurvivableAtmosphere ? Local.TELEMETRY_EnvBreathable : Lib.HumanReadableInteger(vd.Evas), vd.EnvInSurvivableAtmosphere ? Local.TELEMETRY_Breathableatm : Local.TELEMETRY_approx);//"EVA's available""infinite""breathable atmosphere""approx (derived from stored N2)"
-			}
+			p.AddContent("livingVolume", vd.HabitatInfo.livingVolume.ToString("0.00 m3"));
+			p.AddContent("volumePerCrew", vd.HabitatInfo.volumePerCrew.ToString("0.00 m3"));
+			p.AddContent("livingSpaceModifier", vd.HabitatInfo.livingSpaceModifier.ToString("F2"));
+			p.AddContent("pressurizedSurface", vd.HabitatInfo.pressurizedSurface.ToString("0.00 m2"));
+			p.AddContent("pressurizedVolume", vd.HabitatInfo.pressurizedVolume.ToString("0.00 m3"));
+			p.AddContent("pressureAtm", vd.HabitatInfo.pressureAtm.ToString("0.00 atm"));
+			p.AddContent("pressureModifier", vd.HabitatInfo.pressureModifier.ToString("F2"));
+
+			p.AddContent("shieldingSurface", vd.HabitatInfo.shieldingSurface.ToString("0.00 m2"));
+			p.AddContent("shieldingAmount", vd.HabitatInfo.shieldingAmount.ToString("F2"));
+			p.AddContent("shieldingModifier", vd.HabitatInfo.shieldingModifier.ToString("F2"));
+			p.AddContent("poisoningLevel", vd.HabitatInfo.poisoningLevel.ToString("F2"));
+
+			p.AddContent("comfortModifier", vd.HabitatInfo.comfortModifier.ToString("F2"), HabitatLib.ComfortTooltip(vd.HabitatInfo.comfortMask, vd.HabitatInfo.comfortModifier));
+
+
+			//p.AddContent("volume-debug", Lib.HumanReadableVolume(vd.Volume));
+			//p.AddContent("surface-debug", Lib.HumanReadableSurface(vd.Surface));
+			//p.AddContent("shielding-debug", vd.Shielding.ToString("F3"));
+
+			//if (!v.isEVA)
+			//{
+			//	if (Features.Pressure) p.AddContent(Local.TELEMETRY_pressure, Lib.HumanReadablePressure(vd.HabitatPressure * Sim.PressureAtSeaLevel));//"pressure"
+			//	if (Features.Shielding) p.AddContent(Local.TELEMETRY_shielding, Radiation.VesselShieldingToString(vd.Shielding));//"shielding"
+			//	if (Features.LivingSpace) p.AddContent(Local.TELEMETRY_livingspace, HabitatLib.LivingSpaceFactorToString(vd.LivingSpace));//"living space"
+			//	if (Features.Comfort) p.AddContent(Local.TELEMETRY_comfort, HabitatLib.ComfortSummary(vd.ComfortFactor), HabitatLib.ComfortTooltip(vd.ComfortMask, vd.ComfortFactor));//"comfort"
+			//	//if (Features.Pressure) p.AddContent(Local.TELEMETRY_EVAsavailable, vd.EnvInSurvivableAtmosphere ? Local.TELEMETRY_EnvBreathable : Lib.HumanReadableInteger(vd.Evas), vd.EnvInSurvivableAtmosphere ? Local.TELEMETRY_Breathableatm : Local.TELEMETRY_approx);//"EVA's available""infinite""breathable atmosphere""approx (derived from stored N2)"
+			//}
 		}
 
 		static void Render_science(Panel p, Vessel v, VesselData vd)
@@ -157,7 +174,7 @@ namespace KERBALISM
 			foreach (Supply supply in Profile.supplies)
 			{
 				// get resource info
-				VesselResource res = (VesselResource)resources.GetResource(v, supply.resource);
+				VesselResource res = (VesselResource)resources.GetResource(supply.resource);
 
 				// only show estimate if the resource is present
 				if (res.Capacity <= 1e-10) continue;
@@ -170,7 +187,10 @@ namespace KERBALISM
 				string label = Lib.SpacesOnCaps(resource.displayName).ToLower();
 
 				StringBuilder sb = new StringBuilder();
-				
+
+				sb.Append("\t");
+				sb.Append(Lib.Bold(label));
+				sb.Append("\n");
 				sb.Append("<align=left />");
 				if (res.AverageRate != 0.0)
 				{
@@ -209,11 +229,11 @@ namespace KERBALISM
 				sb.Append(res.Level.ToString("P0"));
 				sb.Append(")");
 
-				List<SupplyData.ResourceBrokerRate> brokers = vd.Supply(supply.resource).ResourceBrokers;
+				List<ResourceBrokerRate> brokers = ((VesselResource)ResourceCache.GetResource(v, supply.resource)).ResourceBrokers;
 				if (brokers.Count > 0)
 				{
 					sb.Append("\n<b>------------    \t------------</b>");
-					foreach (SupplyData.ResourceBrokerRate rb in brokers)
+					foreach (ResourceBrokerRate rb in brokers)
 					{
 						sb.Append("\n");
 						sb.Append(Lib.Color(rb.rate > 0.0,

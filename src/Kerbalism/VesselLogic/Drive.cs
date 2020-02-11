@@ -6,9 +6,9 @@ using KSP.Localization;
 namespace KERBALISM
 {
 
-	public sealed class PartDrive
+	public sealed class Drive
 	{
-		public PartDrive(string name, double dataCapacity, int sampleCapacity, bool is_private = false)
+		public Drive(string name, double dataCapacity, int sampleCapacity, bool is_private = false)
 		{
 			this.files = new Dictionary<SubjectData, File>();
 			this.samples = new Dictionary<SubjectData, Sample>();
@@ -19,7 +19,7 @@ namespace KERBALISM
 			this.is_private = is_private;
 		}
 
-		public PartDrive(ConfigNode node)
+		public Drive(ConfigNode node)
 		{
 			// parse science  files
 			files = new Dictionary<SubjectData, File>();
@@ -303,7 +303,7 @@ namespace KERBALISM
 		}
 
 		// move all data to another drive
-		public bool Move(PartDrive destination, bool moveSamples)
+		public bool Move(Drive destination, bool moveSamples)
 		{
 			bool result = true;
 
@@ -432,7 +432,7 @@ namespace KERBALISM
 		}
 
 		// transfer data from a vessel to a drive
-		public static bool Transfer(Vessel src, PartDrive dst, bool samples)
+		public static bool Transfer(Vessel src, Drive dst, bool samples)
 		{
 			double dataAmount = 0.0;
 			int sampleSlots = 0;
@@ -462,7 +462,7 @@ namespace KERBALISM
 		}
 
 		// transfer data from a drive to a vessel
-		public static bool Transfer(PartDrive drive, Vessel dst, bool samples)
+		public static bool Transfer(Drive drive, Vessel dst, bool samples)
 		{
 			double dataAmount = drive.FilesSize();
 			int sampleSlots = drive.SamplesSize();
@@ -551,10 +551,10 @@ namespace KERBALISM
 			}
 		}
 
-		public static List<PartDrive> GetDrives (VesselData vd, bool includePrivate = false)
+		public static List<Drive> GetDrives (VesselData vd, bool includePrivate = false)
 		{
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Drive.GetDrives");
-			List<PartDrive> drives = new List<PartDrive>();
+			List<Drive> drives = new List<Drive>();
 
 			foreach (PartData partData in vd.Parts)
 			{
@@ -568,12 +568,12 @@ namespace KERBALISM
 			return drives;
 		}
 
-		public static List<PartDrive> GetDrives(Vessel v, bool includePrivate = false)
+		public static List<Drive> GetDrives(Vessel v, bool includePrivate = false)
 		{
 			return GetDrives(v.KerbalismData(), includePrivate);
 		}
 
-		public static List<PartDrive> GetDrives(ProtoVessel pv, bool includePrivate = false)
+		public static List<Drive> GetDrives(ProtoVessel pv, bool includePrivate = false)
 		{
 			return GetDrives(pv.KerbalismData(), includePrivate);
 		}
@@ -606,9 +606,9 @@ namespace KERBALISM
 		}
 
 		/// <summary> Get a drive for storing files. Will return null if there are no drives on the vessel </summary>
-		public static PartDrive FileDrive(VesselData vesselData, double size = 0.0)
+		public static Drive FileDrive(VesselData vesselData, double size = 0.0)
 		{
-			PartDrive result = null;
+			Drive result = null;
 			foreach (var drive in GetDrives(vesselData))
 			{
 				if (result == null)
@@ -634,9 +634,9 @@ namespace KERBALISM
 		}
 
 		/// <summary> Get a drive for storing samples. Will return null if there are no drives on the vessel </summary>
-		public static PartDrive SampleDrive(VesselData vesselData, double size = 0, SubjectData subject = null)
+		public static Drive SampleDrive(VesselData vesselData, double size = 0, SubjectData subject = null)
 		{
-			PartDrive result = null;
+			Drive result = null;
 			foreach (var drive in GetDrives(vesselData))
 			{
 				if (result == null)

@@ -46,7 +46,7 @@ namespace KERBALISM
 		public string Capacity;
 #endif
 
-		private PartDrive drive;
+		private Drive drive;
 		private double totalSampleMass;
 
 		List<KeyValuePair<string, double>> dataCapacities = null;
@@ -118,14 +118,14 @@ namespace KERBALISM
 			{
 				if (!Lib.IsFlight())
 				{
-					drive = new PartDrive(title, effectiveDataCapacity, effectiveSampleCapacity, !string.IsNullOrEmpty(experiment_id));
+					drive = new Drive(title, effectiveDataCapacity, effectiveSampleCapacity, !string.IsNullOrEmpty(experiment_id));
 				}
 				else
 				{
 					PartData pd = vessel.KerbalismData().Parts.Get(part.flightID);
 					if (pd.Drive == null)
 					{
-						drive = new PartDrive(part.partInfo.title, effectiveDataCapacity, effectiveSampleCapacity, !string.IsNullOrEmpty(experiment_id));
+						drive = new Drive(part.partInfo.title, effectiveDataCapacity, effectiveSampleCapacity, !string.IsNullOrEmpty(experiment_id));
 						pd.Drive = drive;
 					}
 					else
@@ -217,7 +217,7 @@ namespace KERBALISM
 				var transferVisible = !IsPrivate();
 				if(transferVisible)
 				{
-					transferVisible = PartDrive.GetDrives(vessel, true).Count > 1;
+					transferVisible = Drive.GetDrives(vessel, true).Count > 1;
 				}
 				Events["TransferData"].active = transferVisible;
 				Events["TransferData"].guiActive = transferVisible;
@@ -269,7 +269,7 @@ namespace KERBALISM
 			}
 		}
 
-		public PartDrive GetDrive()
+		public Drive GetDrive()
 		{
 			return drive;
 		}
@@ -311,7 +311,7 @@ namespace KERBALISM
 			if (v == null || EVA.IsDead(v)) return;
 
 			// transfer data
-			if(!PartDrive.Transfer(drive, v, PreferencesScience.Instance.sampleTransfer || Lib.CrewCount(v) > 0))
+			if(!Drive.Transfer(drive, v, PreferencesScience.Instance.sampleTransfer || Lib.CrewCount(v) > 0))
 			{
 				Message.Post
 				(
@@ -333,7 +333,7 @@ namespace KERBALISM
 			if (v == null || EVA.IsDead(v)) return;
 
 			// transfer data
-			if(!PartDrive.Transfer(v, drive, PreferencesScience.Instance.sampleTransfer || Lib.CrewCount(v) > 0))
+			if(!Drive.Transfer(v, drive, PreferencesScience.Instance.sampleTransfer || Lib.CrewCount(v) > 0))
 			{
 				Message.Post
 				(

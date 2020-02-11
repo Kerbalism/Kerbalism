@@ -536,14 +536,14 @@ namespace KERBALISM
 			else
 				chunkSize = chunkSizeMax;
 
-			PartDrive drive = GetDrive(vd, hdId, chunkSize, subjectData);
+			Drive drive = GetDrive(vd, hdId, chunkSize, subjectData);
 			if (drive == null)
 			{
 				mainIssue = Local.Module_Experiment_issue11;//"no storage space"
 				return;
 			}
 
-			PartDrive warpDrive = null;
+			Drive warpDrive = null;
 			double available;
 			if (!expInfo.IsSample)
 			{
@@ -581,7 +581,7 @@ namespace KERBALISM
 			foreach (ObjectPair<string, double> p in resourceDefs)
 			{
 				if (p.Value <= 0.0) continue;
-				IResource ri = resources.GetResource(v, p.Key);
+				IResource ri = resources.GetResource(p.Key);
 				prodFactor = Math.Min(prodFactor, Lib.Clamp(ri.Amount / (p.Value * elapsed_s), 0.0, 1.0));
 			}
 
@@ -628,7 +628,7 @@ namespace KERBALISM
 			// consume resources
 			ec.Consume(prefab.ec_rate * elapsed_s, ResourceBroker.Experiment);
 			foreach (ObjectPair<string, double> p in resourceDefs)
-				resources.Consume(v, p.Key, p.Value * elapsed_s, ResourceBroker.Experiment);
+				resources.Consume(p.Key, p.Value * elapsed_s, ResourceBroker.Experiment);
 
 			if (!prefab.sample_collecting)
 			{
@@ -642,15 +642,15 @@ namespace KERBALISM
 			return vd.VesselSituations.GetExperimentSituation(ExpInfo);
 		}
 
-		private static PartDrive GetDrive(VesselData vesselData, uint hdId, double chunkSize, SubjectData subjectData)
+		private static Drive GetDrive(VesselData vesselData, uint hdId, double chunkSize, SubjectData subjectData)
 		{
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Experiment.GetDrive");
 			bool isFile = subjectData.ExpInfo.SampleMass == 0.0;
-			PartDrive drive = null;
+			Drive drive = null;
 			if (hdId != 0)
 				drive = vesselData.Parts.Get(hdId).Drive;
 			else
-				drive = isFile ? PartDrive.FileDrive(vesselData, chunkSize) : PartDrive.SampleDrive(vesselData, chunkSize, subjectData);
+				drive = isFile ? Drive.FileDrive(vesselData, chunkSize) : Drive.SampleDrive(vesselData, chunkSize, subjectData);
 			UnityEngine.Profiling.Profiler.EndSample();
 			return drive;
 		}
@@ -664,7 +664,7 @@ namespace KERBALISM
 			// test if there are enough resources on the vessel
 			foreach (var p in defs)
 			{
-				var ri = res.GetResource(v, p.Key);
+				var ri = res.GetResource(p.Key);
 				if (ri.Amount == 0.0)
 				{
 					issue = Local.Module_Experiment_issue12.Format(ri.Name);//"missing " + 

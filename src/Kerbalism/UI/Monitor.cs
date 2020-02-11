@@ -470,13 +470,13 @@ namespace KERBALISM
 
 		void Problem_poisoning(VesselData vd, ref List<Texture2D> icons, ref List<string> tooltips)
 		{
-			string poisoning_str = Lib.BuildString(Local.Monitor_CO2level ," <b>", Lib.HumanReadablePerc(vd.Poisoning), "</b>");//CO2 level in internal atmosphere:
-			if (vd.Poisoning >= Settings.PoisoningThreshold)
+			string poisoning_str = Lib.BuildString(Local.Monitor_CO2level ," <b>", Lib.HumanReadablePerc(vd.HabitatInfo.poisoningLevel), "</b>");//CO2 level in internal atmosphere:
+			if (vd.HabitatInfo.poisoningLevel >= Settings.PoisoningThreshold)
 			{
 				icons.Add(Textures.recycle_red);
 				tooltips.Add(poisoning_str);
 			}
-			else if (vd.Poisoning > Settings.PoisoningThreshold / 1.25)
+			else if (vd.HabitatInfo.poisoningLevel > Settings.PoisoningThreshold / 1.25)
 			{
 				icons.Add(Textures.recycle_yellow);
 				tooltips.Add(poisoning_str);

@@ -44,11 +44,11 @@ namespace KERBALISM
 		{
 			public File file;
 			public double sciencePerMB; // caching this because it's slow to get
-			public PartDrive drive;
+			public Drive drive;
 			public bool isInWarpCache;
 			public File realDriveFile; // reference to the "real" file for files in the warp cache
 
-			public XmitFile(File file, PartDrive drive, double sciencePerMB, bool isInWarpCache, File realDriveFile = null)
+			public XmitFile(File file, Drive drive, double sciencePerMB, bool isInWarpCache, File realDriveFile = null)
 			{
 				this.file = file;
 				this.drive = drive;
@@ -97,7 +97,7 @@ namespace KERBALISM
 				|| ec.Amount < vd.Connection.ec_idle * elapsed_s)
 			{
 				// reset all files transmit rate
-				foreach (PartDrive drive in PartDrive.GetDrives(vd, true))
+				foreach (Drive drive in Drive.GetDrives(vd, true))
 					foreach (File f in drive.files.Values)
 						f.transmitRate = 0.0;
 
@@ -177,12 +177,12 @@ namespace KERBALISM
 		private static void GetFilesToTransmit(Vessel v, VesselData vd)
 		{
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Science.GetFilesToTransmit");
-			PartDrive warpCache = Cache.WarpCache(v);
+			Drive warpCache = Cache.WarpCache(v);
 
 			xmitFiles.Clear();
 			List<SubjectData> filesToRemove = new List<SubjectData>();
 
-			foreach (PartDrive drive in PartDrive.GetDrives(vd, true))
+			foreach (Drive drive in Drive.GetDrives(vd, true))
 			{
 				foreach (File f in drive.files.Values)
 				{

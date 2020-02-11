@@ -84,8 +84,7 @@ namespace KERBALISM
 			{
 				habitats = new List<ModuleKsmHabitat>();
 
-				List<Part> parts = Lib.GetPartsRecursively(EditorLogic.RootPart);
-				foreach (var p in parts)
+				foreach (var p in EditorLogic.fetch.ship.parts)
 				{
 					var habitat = p.FindModuleImplementing<ModuleKsmHabitat>();
 					if (habitat != null) habitats.Add(habitat);

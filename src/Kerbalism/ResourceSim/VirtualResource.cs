@@ -20,7 +20,23 @@ namespace KERBALISM
 		public string Name { get; private set; }
 
 		/// <summary> Amount of virtual resource. This can be set directly if needed.</summary>
-		public double Amount { get; set; }
+		public double Amount
+		{
+			get
+			{
+				return amount;
+			}
+			set
+			{
+				if (value < 0.0)
+					amount = 0.0;
+				else if (value > capacity)
+					amount = capacity;
+				else
+					amount = value;
+			}
+		}
+		private double amount;
 
 		/// <summary>
 		/// Storage capacity of the virtual resource. Will default to double.MaxValue unless explicitely defined
@@ -28,7 +44,24 @@ namespace KERBALISM
 		/// <para/>In the current state of things, if you intent to use Capacity in a VirtualResource it must be set manually 
 		/// from OnLoad or OnStart as there is no persistence for it.
 		/// </summary>
-		public double Capacity { get; set; }
+		public double Capacity
+		{
+			get
+			{
+				return capacity;
+			}
+			set
+			{
+				if (value < 0.0)
+					capacity = 0.0;
+				else
+					capacity = value;
+
+				if (amount > capacity)
+					amount = capacity;
+			}
+		}
+		private double capacity;
 
 		/// <summary> Not yet consumed or produced amount, will be synchronized to Amount in Sync()</summary>
 		public double Deferred { get; private set; }
@@ -48,12 +81,13 @@ namespace KERBALISM
 			IsNewInstance = true;
 		}
 
-		public void Sync(Vessel v, VesselData vd, double elapsed_s)
+		public bool ExecuteAndSyncToParts(double elapsed_s, List<ResourceWrapper> partResources = null)
 		{
 			IsNewInstance = false;
 			Amount += Deferred;
 			Deferred = 0.0;
 			Level = Capacity > 0.0 ? Amount / Capacity : 0.0;
+			return false;
 		}
 
 		/// <summary>Record a consumption, it will be stored in 'Deferred' until the Sync() method synchronize it to 'Amount'</summary>

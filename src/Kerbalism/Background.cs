@@ -32,7 +32,7 @@ namespace KERBALISM
 			KerbalismProcess,
 			SolarPanelFixer,
 			APIModule,
-			RadiatorFixer
+			ModuleKsmHabitat
 		}
 
 		public static Module_type ModuleType(string module_name)
@@ -65,6 +65,7 @@ namespace KERBALISM
 				case "FNGenerator": return Module_type.FNGenerator;
 				case "KerbalismProcess": return Module_type.KerbalismProcess;
 				case "SolarPanelFixer": return Module_type.SolarPanelFixer;
+				case "ModuleKsmHabitat": return Module_type.ModuleKsmHabitat;
 			}
 			return Module_type.Unknown;
 		}
@@ -84,7 +85,7 @@ namespace KERBALISM
 				return;
 
 			// get most used resource handlers
-			IResource ec = resources.GetResource(v, "ElectricCharge");
+			IResource ec = resources.GetResource("ElectricCharge");
 
 			List<IResource> allResources = ResourceAPI.GetAllResources(v, resources);
 			Dictionary<string, double> availableResources = new Dictionary<string, double>();
@@ -116,6 +117,7 @@ namespace KERBALISM
 					case Module_type.FNGenerator: ProcessFNGenerator(v, e.p, e.m, e.module_prefab, ec, elapsed_s); break;
 					case Module_type.SolarPanelFixer: SolarPanelFixer.BackgroundUpdate(v, e.m, e.module_prefab as SolarPanelFixer, vd, ec, elapsed_s); break;
 					case Module_type.APIModule: ResourceAPI.BackgroundUpdate(v, e.p, e.m, e.part_prefab, e.module_prefab, resources, availableResources, resourceChangeRequests, elapsed_s); break;
+					case Module_type.ModuleKsmHabitat: ModuleKsmHabitat.BackgroundUpdate(v, vd, e.p, e.module_prefab as ModuleKsmHabitat, elapsed_s); break;
 				}
 			}
 		}
@@ -211,7 +213,7 @@ namespace KERBALISM
 				foreach (ModuleResource ir in command.resHandler.inputResources)
 				{
 					// consume the resource
-					resources.Consume(v, ir.name, ir.rate * elapsed_s, ResourceBroker.Command);
+					resources.Consume(ir.name, ir.rate * elapsed_s, ResourceBroker.Command);
 				}
 			}
 		}
@@ -251,7 +253,7 @@ namespace KERBALISM
 				bool full = true;
 				foreach (var or in converter.outputList)
 				{
-					IResource res = resources.GetResource(v, or.ResourceName);
+					IResource res = resources.GetResource(or.ResourceName);
 					full &= (res.Level >= converter.FillAmount - double.Epsilon);
 				}
 
@@ -305,7 +307,7 @@ namespace KERBALISM
 			{
 				// do nothing if full
 				// note: comparing against previous amount
-				if (resources.GetResource(v, harvester.ResourceName).Level < harvester.FillAmount - double.Epsilon)
+				if (resources.GetResource(harvester.ResourceName).Level < harvester.FillAmount - double.Epsilon)
 				{
 					// deduce crew bonus
 					int exp_level = -1;
@@ -415,7 +417,7 @@ namespace KERBALISM
 
 						// if there was ec
 						// note: comparing against amount in previous simulation step
-						if (resources.GetResource(v, "ElectricCharge").Amount > double.Epsilon)
+						if (resources.GetResource("ElectricCharge").Amount > double.Epsilon)
 						{
 							// consume asteroid mass
 							Lib.Proto.Set(asteroid_info, "currentMassVal", (mass - res_density * res_amount));
@@ -557,7 +559,7 @@ namespace KERBALISM
 					continue;
 
 				//get fuel resource
-				IResource fuel = resources.GetResource(v, fuel_name);
+				IResource fuel = resources.GetResource(fuel_name);
 
 				// if there is some fuel
 				// note: comparing against amount in previous simulation step

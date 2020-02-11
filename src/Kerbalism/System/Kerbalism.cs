@@ -323,11 +323,11 @@ namespace KERBALISM
 				{
 					//UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Loaded.VesselDataEval");
 					// update the vessel info
-					vd.Evaluate(false, elapsed_s);
+					vd.Evaluate(false, resources, elapsed_s);
 					//UnityEngine.Profiling.Profiler.EndSample();
 
 					// get most used resource
-					IResource ec = resources.GetResource(v, "ElectricCharge");
+					IResource ec = resources.GetResource("ElectricCharge");
 
 					UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Loaded.Radiation");
 					// show belt warnings
@@ -358,7 +358,7 @@ namespace KERBALISM
 
 					UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Loaded.Resource");
 					// apply deferred requests
-					resources.Sync(v, vd, elapsed_s);
+					resources.VesselResourceUpdate(v, elapsed_s);
 					UnityEngine.Profiling.Profiler.EndSample();
 
 					// call automation scripts
@@ -399,11 +399,11 @@ namespace KERBALISM
 			{
 				//UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Unloaded.VesselDataEval");
 				// update the vessel info (high timewarp speeds reevaluation)
-				last_vd.Evaluate(false, last_time);
+				last_vd.Evaluate(false, last_resources, last_time);
 				//UnityEngine.Profiling.Profiler.EndSample();
 
 				// get most used resource
-				IResource last_ec = last_resources.GetResource(last_v, "ElectricCharge");
+				IResource last_ec = last_resources.GetResource("ElectricCharge");
 
 				UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Unloaded.Radiation");
 				// show belt warnings
@@ -434,7 +434,7 @@ namespace KERBALISM
 
 				UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Unloaded.Resource");
 				// apply deferred requests
-				last_resources.Sync(last_v, last_vd, last_time);
+				last_resources.VesselResourceUpdate(last_v, last_time);
 				UnityEngine.Profiling.Profiler.EndSample();
 
 				// call automation scripts

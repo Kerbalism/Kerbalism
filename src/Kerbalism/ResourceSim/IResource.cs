@@ -1,4 +1,6 @@
-﻿namespace KERBALISM
+﻿using System.Collections.Generic;
+
+namespace KERBALISM
 {
 	/// <summary>
 	/// Interface for common interactions with VesselResource and VirtualResource.
@@ -24,14 +26,14 @@
 		/// <summary> Amount vs capacity, or 0 if there is no capacity</summary>
 		double Level { get; }
 
-		void Sync(Vessel v, VesselData vd, double elapsed_s);
+		bool ExecuteAndSyncToParts(double elapsed_s, List<ResourceWrapper> partResources = null);
 
 		/// <summary>Record a consumption, it will be stored in "Deferred" and later synchronized to the vessel in Sync()</summary>
 		/// <param name="broker">origin of the consumption, will be available in the UI</param>
-		void Consume(double quantity, ResourceBroker broker);
+		void Consume(double quantity, ResourceBroker broker = null);
 
 		/// <summary>Record a production, it will be stored in "Deferred" and later synchronized to the vessel in Sync()</summary>
 		/// <param name="broker">origin of the production, will be available in the UI</param>
-		void Produce(double quantity, ResourceBroker broker);
+		void Produce(double quantity, ResourceBroker broker = null);
 	}
 }

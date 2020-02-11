@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace KERBALISM
 {
-	public class ResourceBroker
+	public class ResourceBroker : IEquatable<ResourceBroker>
 	{
 		public enum BrokerCategory
 		{
@@ -108,5 +108,27 @@ namespace KERBALISM
 				return rb.Title;
 			return null;
 		}
+
+		public bool Equals(ResourceBroker other)
+		{
+			return other != null && Id == other.Id;
+		}
+
+		public override bool Equals(object obj) => Equals((ResourceBroker)obj);
+	}
+
+	public class ResourceBrokerRate : IEquatable<ResourceBrokerRate>
+	{
+		public ResourceBroker broker;
+		public double rate;
+		public ResourceBrokerRate(ResourceBroker broker, double amount)
+		{
+			this.broker = broker;
+			this.rate = amount;
+		}
+
+		public override int GetHashCode() => broker.GetHashCode();
+		public bool Equals(ResourceBrokerRate other) => other != null && broker.Equals(other.broker);
+		public override bool Equals(object obj) => Equals((ResourceBrokerRate)obj);
 	}
 }

@@ -122,7 +122,7 @@ namespace KERBALISM
 
 		private static double HabitatRadiation(VesselData vd)
 		{
-			return (1.0 - vd.Shielding) * vd.EnvHabitatRadiation;
+			return (1.0 - vd.HabitatInfo.shieldingModifier) * vd.EnvHabitatRadiation;
 		}
 
 		// get readings tooltip
@@ -154,7 +154,7 @@ namespace KERBALISM
 					return vd.EnvUnderwater
 					  ? Local.Sensor_insideocean//"inside <b>ocean</b>"
 					  : vd.EnvInAtmosphere
-					  ? Local.Sensor_insideatmosphere.Format(vd.EnvInSurvivableAtmosphere ? Local.Sensor_breathable : Local.Sensor_notbreathable)//"breathable""not breathable"                  //Lib.BuildString("inside <b>atmosphere</b> (", vd.EnvBreathable ? "breathable" : "not breathable", ")")
+					  ? Local.Sensor_insideatmosphere.Format(vd.EnvInBreathableAtmosphere ? Local.Sensor_breathable : Local.Sensor_notbreathable)//"breathable""not breathable"                  //Lib.BuildString("inside <b>atmosphere</b> (", vd.EnvBreathable ? "breathable" : "not breathable", ")")
 					  : Sim.InsideThermosphere(v)
 					  ? Local.Sensor_insidethermosphere//"inside <b>thermosphere</b>""
 					  : Sim.InsideExosphere(v)

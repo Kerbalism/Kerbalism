@@ -8,6 +8,7 @@ namespace KERBALISM
 	{
 		private Part part;
 		private Transform rotateTransform;
+		private Vector3 rotateAxis;
 		private Quaternion transformInitialRotation;
 		private Animator animator;
 
@@ -29,7 +30,7 @@ namespace KERBALISM
 		public bool IsStopping => IsDefined && !requestSpin && currentSpinRate != 0f;
 
 		/// <summary> Create a transformator based on a transform </summary>
-		public Transformator(Part part, string transformName, float spinRate, float spinAccel, bool invertPlayDirection, bool rotateIVA)
+		public Transformator(Part part, string transformName, Vector3 rotateAxis, float spinRate, float spinAccel, bool invertPlayDirection, bool rotateIVA)
 		{
 			if (string.IsNullOrEmpty(transformName))
 				return;
@@ -38,6 +39,7 @@ namespace KERBALISM
 			this.spinRate = spinRate;
 			this.spinAccel = spinAccel;
 			this.invertPlayDirection = invertPlayDirection;
+			this.rotateAxis = rotateAxis;
 			this.rotateIVA = rotateIVA;
 
 			rotateTransform = part.FindModelTransform(transformName);
@@ -119,9 +121,15 @@ namespace KERBALISM
 			{
 				float currentNormalizedTime;
 				if (IsAnimator)
+				{
 					currentNormalizedTime = animator.NormalizedTime;
+				}
 				else
-					currentNormalizedTime = (rotateTransform.localRotation.eulerAngles.z + transformInitialRotation.eulerAngles.z % 360f) / 360f;
+				{
+					// get a [0 ; 1] factor representing the [0 ; 360]° angle from the start position to the current position
+					Vector3 eulerAngle = Vector3.Scale(rotateTransform.localRotation.eulerAngles + transformInitialRotation.eulerAngles, rotateAxis);
+					currentNormalizedTime = ((eulerAngle.x + eulerAngle.y + eulerAngle.z) % 360f) / 360f;
+				}
 					
 				// calculate total rotation (in degrees) needed to stop, then clamp it to 1 rotation
 				float deltaToStop = (Mathf.Pow(currentSpinRate, 2f) / (2f * spinAccel)) % 360f;
@@ -172,11 +180,11 @@ namespace KERBALISM
 			else
 			{
 				// Rotate the transform
-				rotateTransform.Rotate(Vector3.forward * spinDelta);
+				rotateTransform.Rotate(rotateAxis * spinDelta);
 
 				// IVA rotation
 				if (rotateIVA && part.internalModel != null)
-					part.internalModel.transform.Rotate(Vector3.forward * (invertPlayDirection ? spinDelta : -spinDelta)); // IVA transform seems to always be rotated 180° (?) 
+					part.internalModel.transform.Rotate(rotateAxis * (invertPlayDirection ? spinDelta : -spinDelta)); // IVA transform seems to always be rotated 180° (?) 
 			}
 
 

@@ -63,7 +63,7 @@ namespace KERBALISM
 			// put the data on the EVA kerbal drive.
 			if (FlightGlobals.ActiveVessel == null) return false;
 			double size = ___experiment.baseValue * ___experiment.dataScale;
-			PartDrive drive = PartDrive.SampleDrive(FlightGlobals.ActiveVessel.KerbalismData(), size);
+			Drive drive = Drive.SampleDrive(FlightGlobals.ActiveVessel.KerbalismData(), size);
 			if (drive != null)
 			{
 				double mass = size * Settings.AsteroidSampleMassPerMB;

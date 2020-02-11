@@ -778,18 +778,21 @@ namespace KERBALISM
 		public static string InlineSpriteFlask => "<sprite=\"CurrencySpriteAsset\" name=\"Flask\" color=#CE5DAE>";
 
 		///<summary> Pretty-print a resource rate (rate is per second). Return an absolute value if a negative one is provided</summary>
-		public static string HumanReadableRate(double rate, string precision = "F3")
+		public static string HumanReadableRate(double rate, string precision = "F3", string unit = "")
 		{
-			if (rate == 0.0) return Local.Generic_NONE;//"none"
+			if (unit != "")
+				unit = Lib.BuildString(" ", unit);
+
+			if (rate == 0.0)return Local.Generic_NONE;//"none"
 			rate = Math.Abs(rate);
-			if (rate >= 0.01) return BuildString(rate.ToString(precision), Local.Generic_perSecond);//"/s"
+			if (rate >= 0.01)return BuildString(rate.ToString(precision), unit, Local.Generic_perSecond);//"/s"
 			rate *= 60.0; // per-minute
-			if (rate >= 0.01) return BuildString(rate.ToString(precision), Local.Generic_perMinute);//"/m"
+			if (rate >= 0.01) return BuildString(rate.ToString(precision), unit, Local.Generic_perMinute);//"/m"
 			rate *= 60.0; // per-hour
-			if (rate >= 0.01) return BuildString(rate.ToString(precision), Local.Generic_perHour);//"/h"
+			if (rate >= 0.01) return BuildString(rate.ToString(precision), unit, Local.Generic_perHour);//"/h"
 			rate *= HoursInDay;  // per-day
-			if (rate >= 0.01) return BuildString(rate.ToString(precision), Local.Generic_perDay);//"/d"
-			return BuildString((rate * DaysInYear).ToString(precision), Local.Generic_perYear);//"/y"
+			if (rate >= 0.01) return BuildString(rate.ToString(precision), unit, Local.Generic_perDay);//"/d"
+			return BuildString((rate * DaysInYear).ToString(precision), unit, Local.Generic_perYear);//"/y"
 		}
 
 		///<summary> Pretty-print a duration (duration is in seconds, must be positive) </summary>
@@ -1470,7 +1473,7 @@ namespace KERBALISM
 			// in the editor we need something more involved
 			// Int64 part_id = 4294967296L + part.GetInstanceID();
 			VesselCrewManifest manifest = CrewAssignmentDialog.Instance.GetManifest();
-			PartCrewManifest part_manifest = manifest.PartManifests.Find(k => k.PartID == part.craftID);
+			PartCrewManifest part_manifest = manifest?.PartManifests.Find(k => k.PartID == part.craftID);
 			if (part_manifest != null)
 			{
 				int result = 0;
@@ -1528,6 +1531,7 @@ namespace KERBALISM
 					canTransfer = true
 				};
 
+				Callbacks.disableCrewTransferFailMessage = true; // avoid getting spammed for each transfer failure
 				GameEvents.onCrewTransferSelected.Fire(transferData);
 				if (!transferData.canTransfer)
 				{
@@ -1560,7 +1564,7 @@ namespace KERBALISM
 			int initialCrewCount = crewLeft.Count;
 			foreach (Part otherPart in crewedPart.vessel.Parts)
 			{
-				if (!otherPart.crewTransferAvailable || otherPart.protoModuleCrew.Count >= otherPart.CrewCapacity)
+				if (otherPart == crewedPart || !otherPart.crewTransferAvailable || otherPart.protoModuleCrew.Count >= otherPart.CrewCapacity)
 					continue;
 
 				crewLeft = TryTransferCrewToPart(crewLeft, crewedPart, otherPart, postTransferMessage);
@@ -2642,7 +2646,7 @@ namespace KERBALISM
 			// our own science system
 			else
 			{
-				foreach (var drive in PartDrive.GetDrives(v, true))
+				foreach (var drive in Drive.GetDrives(v, true))
 					if (drive.files.Count > 0) return true;
 				return false;
 			}
@@ -2689,7 +2693,7 @@ namespace KERBALISM
 			else
 			{
 				// select a file at random and remove it
-				foreach (var drive in PartDrive.GetDrives(v, true))
+				foreach (var drive in Drive.GetDrives(v, true))
 				{
 					if (drive.files.Count > 0) //< it should always be the case
 					{

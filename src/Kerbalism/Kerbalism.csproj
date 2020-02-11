@@ -136,13 +136,14 @@
     <Compile Include="Automation\Devices\Ring.cs" />
     <Compile Include="Comms\AntennaInfoCommNet.cs" />
     <Compile Include="Comms\AntennaInfoRT.cs" />
+    <Compile Include="Comms\ConnectionInfoEditor.cs" />
     <Compile Include="Contracts\CrossBelt.cs" />
     <Compile Include="Contracts\CrossHeliopause.cs" />
     <Compile Include="Contracts\MannedOrbit.cs" />
     <Compile Include="Contracts\SpaceAnalysis.cs" />
     <Compile Include="Contracts\SpaceHarvest.cs" />
     <Compile Include="Database\DB.cs" />
-    <Compile Include="VesselLogic\PartHabitat.cs" />
+    <Compile Include="VesselLogic\HabitatData.cs" />
     <Compile Include="Database\KerbalData.cs" />
     <Compile Include="Database\LandmarkData.cs" />
     <Compile Include="Database\PartData.cs" />
@@ -150,11 +151,14 @@
     <Compile Include="Database\RuleData.cs" />
     <Compile Include="VesselLogic\VesselSituations.cs" />
     <Compile Include="LocalizationCache.cs" />
-    <Compile Include="Modules\Habitat2.cs" />
+    <Compile Include="Modules\ModuleKsmHabitat.cs" />
     <Compile Include="Radiation\RadiationBody.cs" />
     <Compile Include="Radiation\RadiationModel.cs" />
-    <Compile Include="ResourceSim\ResourceAPI.cs" />
+    <Compile Include="ResourceSim\ResourceAPI\BackgroundDelegate.cs" />
+    <Compile Include="ResourceSim\ResourceAPI\ResourceAPI.cs" />
+    <Compile Include="ResourceSim\ResourceAPI\ResourceUpdateDelegate.cs" />
     <Compile Include="ResourceSim\ResourceBroker.cs" />
+    <Compile Include="ResourceSim\ResourceWrapper.cs" />
     <Compile Include="Science\SubjectData.cs" />
     <Compile Include="Database\SupplyData.cs" />
     <Compile Include="Database\UIData.cs" />
@@ -187,7 +191,7 @@
     <Compile Include="ResourceSim\VesselResource.cs" />
     <Compile Include="ResourceSim\VesselResHandler.cs" />
     <Compile Include="ResourceSim\ResourceCache.cs" />
-    <Compile Include="VesselLogic\PartDrive.cs" />
+    <Compile Include="VesselLogic\Drive.cs" />
     <Compile Include="Science\ExperimentRequirements.cs" />
     <Compile Include="Science\ExperimentInfo.cs" />
     <Compile Include="Science\File.cs" />
@@ -199,7 +203,6 @@
     <Compile Include="Science\ScienceDB.cs" />
     <Compile Include="Science\ScienceSituation.cs" />
     <Compile Include="Science\Situation.cs" />
-    <Compile Include="VesselLogic\VesselKerbalSuits.cs" />
     <Compile Include="System\API.cs" />
     <Compile Include="System\Callbacks.cs" />
     <Compile Include="UI\ConnManager.cs" />
@@ -254,8 +257,6 @@
     <Compile Include="UI\Tooltip.cs" />
     <Compile Include="UI\UI.cs" />
     <Compile Include="Modules\Configure.cs" />
-    <Compile Include="Modules\GravityRing.cs" />
-    <Compile Include="Modules\Habitat.cs" />
     <Compile Include="Modules\PlannerController.cs" />
     <Compile Include="EVA.cs" />
     <Compile Include="Profile\Profile.cs" />
@@ -293,13 +294,15 @@
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="Patches\TooltipController_CrewAC_SetTooltip.cs" />
     <Compile Include="Modules\PassiveShield.cs" />
-    <Compile Include="Modules\IKerbalismModule.cs" />
+    <Compile Include="ResourceSim\ResourceAPI\IKerbalismModule.cs" />
     <Compile Include="Patches\ModuleDataTransmitter_GetInfo.cs" />
   </ItemGroup>
   <!-- ///////////////////////////////////////////////////// -->
   <!-- ////////// IMPORT DEFAULT MS BUILD PROCESS ////////// -->
   <!-- ///////////////////////////////////////////////////// -->
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="ResourceSim\Editor\" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- This target is called before the build, you can use it for debugging the build system -->
   <Target Name="BeforeBuild">

@@ -59,6 +59,10 @@ namespace KERBALISM
 			// if queue is empty, do nothing
 			if (entries.Count == 0) return;
 
+			// don't show messages when in screenshot (F2) mode 
+			if (!KSP.UI.UIMasterController.Instance.screenMessageCanvas.enabled)
+				return;
+
 			// get current time
 			float time = Time.realtimeSinceStartup;
 

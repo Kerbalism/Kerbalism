@@ -165,71 +165,71 @@ namespace KERBALISM
 
 				ModuleKsmHabitat habitat = EditorLogic.fetch.ship.parts.Find(p => p.craftID == partManifest.PartID)?.FindModuleImplementing<ModuleKsmHabitat>();
 
-				if (habitat != null)
+				if (habitat == null || habitat.HabitatData == null)
+					continue;
+
+				HabitatData habData = habitat.HabitatData;
+
+				if (!habData.isEnabled || (habitat.isDeployable && !habData.isDeployed))
 				{
-					if (!habitat.habitatEnabled || (habitat.isDeployable && !habitat.isDeployed))
+					habData.crewCount = 0;
+
+					foreach (ProtoCrewMember crew in partManifest.GetPartCrew())
+						if (crew != null)
+							Message.Post($"Can't put {Lib.Bold(crew.displayName)} in {Lib.Bold(habitat.part.partInfo.title)}", "Habitat is disabled !");
+
+					for (int i = 0; i < partManifest.partCrew.Length; i++)
 					{
-						if (habitat.HabitatData != null)
-							habitat.HabitatData.crewCount = 0;
-
-						foreach (ProtoCrewMember crew in partManifest.GetPartCrew())
-							if (crew != null)
-								Message.Post($"Can't put {crew.displayName} in {habitat.part.partInfo.title} : habitat is disabled");
-
-						for (int i = 0; i < partManifest.partCrew.Length; i++)
+						if (!string.IsNullOrEmpty(partManifest.partCrew[i]))
 						{
-							if (!string.IsNullOrEmpty(partManifest.partCrew[i]))
-							{
-								partManifest.RemoveCrewFromSeat(i);
+							partManifest.RemoveCrewFromSeat(i);
 								
-								needRefresh |= true;
-							}
-						}
-					}
-					else
-					{
-						if (habitat.HabitatData != null)
-						{
-							int crewCount = 0;
-							for (int i = 0; i < partManifest.partCrew.Length; i++)
-							{
-								if (!string.IsNullOrEmpty(partManifest.partCrew[i]))
-								{
-									crewCount++;
-								}
-							}
-							habitat.HabitatData.crewCount = crewCount;
-							if (habitat.HabitatData.pressureState == PartHabitat.PressureState.Depressurized)
-								habitat.HabitatData.pressureState = PartHabitat.PressureState.DepressurizingStart;
-							else
-								habitat.HabitatData.pressureState = PartHabitat.PressureState.PressurizingStart;
+							needRefresh |= true;
 						}
 					}
 				}
+				else
+				{
+					int crewCount = 0;
+					for (int i = 0; i < partManifest.partCrew.Length; i++)
+					{
+						if (!string.IsNullOrEmpty(partManifest.partCrew[i]))
+						{
+							crewCount++;
+						}
+					}
+					habData.crewCount = crewCount;
+					if (habData.pressureState == HabitatData.PressureState.Depressurized)
+						habData.pressureState = HabitatData.PressureState.DepressurizingStartEvt;
+					else
+						habData.pressureState = HabitatData.PressureState.PressurizingStartEvt;
+				}
+
 			}
 
 			if (needRefresh)
 			{
-				// RefreshCrewLists() will call EditorCrewChanged...
+				// RefreshCrewLists() will call the current method trough the EditorCrewChanged event, so avoid an useless recursion.
 				crewAssignementRefreshWasJustFiredFromCrewChanged = true;
 				CrewAssignmentDialog.Instance.RefreshCrewLists(ShipConstruction.ShipManifest, false, true);
 			}
 		}
 
-		public bool AttemptBoard(KerbalEVA instance, Part part)
+		// TODO : allow boarding to non pressurized parts when inside atmosphere !!!!
+		public bool AttemptBoard(KerbalEVA instance, Part targetPart)
 		{
 			bool canBoard = false;
-			if (part != null && part.vessel.KerbalismData().Parts.TryGet(part.flightID, out PartData partData))
+			if (targetPart != null && targetPart.vessel.KerbalismData().Parts.TryGet(targetPart.flightID, out PartData partData))
 				if (partData.Habitat != null)
-					canBoard = partData.Habitat.pressureState == PartHabitat.PressureState.Depressurized;
+					canBoard = partData.Habitat.pressureState == HabitatData.PressureState.Depressurized;
 
 			if (!canBoard)
-				Message.Post($"Can't board {part.partInfo.title} while it is pressurized !");
+				Message.Post($"Can't board {Lib.Bold(targetPart.partInfo.title)}", "Depressurize it first !");
 
 			return canBoard;
 		}
 
-
+		// TODO : allow EVA from non pressurized parts when inside atmosphere !!!!
 		private void AttemptEVA(ProtoCrewMember crew, Part sourcePart, Transform hatchTransform)
 		{
 			FlightEVA.fetch.overrideEVA = true;
@@ -237,16 +237,17 @@ namespace KERBALISM
 			{
 				if (fromPartData.Habitat != null)
 				{
-					FlightEVA.fetch.overrideEVA = fromPartData.Habitat.pressureState != PartHabitat.PressureState.Depressurized;
+					FlightEVA.fetch.overrideEVA = fromPartData.Habitat.pressureState != HabitatData.PressureState.Depressurized;
 				}
 			}
 
 			if (FlightEVA.fetch.overrideEVA)
 			{
-				Message.Post($"Can't go on EVA from {sourcePart.partInfo.title} while it is pressurized !");
+				Message.Post($"Can't go on EVA from {Lib.Bold(sourcePart.partInfo.title)}", "Depressurize it first !");
 			}
 		}
 
+		public static bool disableCrewTransferFailMessage = false;
 		private void CrewTransferSelected(CrewTransfer.CrewTransferData data)
 		{
 			bool sourceIsPressurized = false;
@@ -254,7 +255,7 @@ namespace KERBALISM
 			{
 				if (fromPartData.Habitat != null)
 				{
-					sourceIsPressurized = fromPartData.Habitat.pressureState == PartHabitat.PressureState.Pressurized;
+					sourceIsPressurized = fromPartData.Habitat.pressureState == HabitatData.PressureState.Pressurized;
 				}
 			}
 
@@ -264,51 +265,62 @@ namespace KERBALISM
 			{
 				if (toPartdata.Habitat != null)
 				{
-					targetIsEnabled = toPartdata.Habitat.pressureState == PartHabitat.PressureState.Pressurized;
-					targetIsPressurized = toPartdata.Habitat.habitatEnabled;
+					targetIsEnabled = toPartdata.Habitat.isEnabled;
+					targetIsPressurized = toPartdata.Habitat.pressureState == HabitatData.PressureState.Pressurized; 
 				}
 			}
 
 			if (!targetIsEnabled)
 			{
-				Message.Post($"Can't transfer {data.crewMember.displayName} to {data.destPart?.partInfo.title} : the habitat is disabled");
+				if (!disableCrewTransferFailMessage)
+					Message.Post($"Can't transfer {Lib.Bold(data.crewMember.displayName)} to {Lib.Bold(data.destPart?.partInfo.title)}", "The habitat is disabled !");
+
 				data.canTransfer = false;
 			}
 			else if ((sourceIsPressurized && !targetIsPressurized) || (!sourceIsPressurized && targetIsPressurized))
 			{
-				Message.Post($"Can't transfer {data.crewMember.displayName} from {data.sourcePart?.partInfo.title} to {data.destPart?.partInfo.title} : one is pressurized and not the other");
+				if (!disableCrewTransferFailMessage)
+					Message.Post($"Can't transfer {Lib.Bold(data.crewMember.displayName)} from {Lib.Bold(data.sourcePart?.partInfo.title)}\nto {Lib.Bold(data.destPart?.partInfo.title)}", "One is pressurized and not the other !");
+
 				data.canTransfer = false;
 			}
 			else
 			{
 				data.canTransfer = true;
 			}
+
+			disableCrewTransferFailMessage = false;
 		}
 
 		private void CrewTransferred(GameEvents.HostedFromToAction<ProtoCrewMember, Part> data)
 		{
-			double transferedAtmosphere = 0.0;
-			double transferedWasteAtmopshere = 0.0;
+			if (data.from == data.to)
+				return;
+
+			double wasteTransferred = 0.0;
 
 			if (data.from != null && data.from.vessel.KerbalismData().Parts.TryGet(data.from.flightID, out PartData fromPartData))
 			{
 				
 				if (fromPartData.Habitat != null)
 				{
+					HabitatData fromHabitat = fromPartData.Habitat;
 					int newCrewCount = Lib.CrewCount(data.from);
-					if (fromPartData.Habitat.crewCount - newCrewCount != 1)
+					if (fromHabitat.crewCount - newCrewCount != 1)
 					{
-						Lib.LogStack($"From part {data.from.partInfo.title} : crew count old={fromPartData.Habitat.crewCount}, new={newCrewCount}, HabitatData is desynchronized !", Lib.LogLevel.Error);
+						Lib.LogStack($"From part {data.from.partInfo.title} : crew count old={fromHabitat.crewCount}, new={newCrewCount}, HabitatData is desynchronized !", Lib.LogLevel.Error);
 					}
 
-					if (fromPartData.Habitat.pressureState != PartHabitat.PressureState.Pressurized)
+					if (fromHabitat.pressureState == HabitatData.PressureState.AlwaysDepressurized
+						|| fromHabitat.pressureState == HabitatData.PressureState.Depressurized
+						|| fromHabitat.pressureState == HabitatData.PressureState.DepressurizingBelowThreshold
+						|| fromHabitat.pressureState == HabitatData.PressureState.Pressurizing
+						)
 					{
-						transferedAtmosphere = fromPartData.Habitat.atmoAmount / fromPartData.Habitat.crewCount;
-						transferedWasteAtmopshere = fromPartData.Habitat.wasteAmount / fromPartData.Habitat.crewCount;
-						fromPartData.Habitat.atmoAmount -= transferedAtmosphere;
-						fromPartData.Habitat.wasteAmount -= transferedWasteAtmopshere;
-						fromPartData.Habitat.enabledVolume = newCrewCount * Settings.PressureSuitVolume;
-						fromPartData.Habitat.module.SyncAfterCrewTransfered();
+						ResourceWrapper wasteRes = fromHabitat.module.WasteRes;
+						wasteTransferred = wasteRes.Amount / fromHabitat.crewCount;
+						wasteRes.Amount = newCrewCount > 0 ? wasteRes.Amount - wasteTransferred : 0.0;
+						wasteRes.Capacity = newCrewCount * Settings.PressureSuitVolume;
 					}
 
 					fromPartData.Habitat.crewCount = newCrewCount;
@@ -319,16 +331,13 @@ namespace KERBALISM
 			{
 				if (toPartData.Habitat != null)
 				{
-					int newCrewCount = Lib.CrewCount(data.to);
-					if (toPartData.Habitat.pressureState != PartHabitat.PressureState.Pressurized)
+					HabitatData toHabitat = toPartData.Habitat;
+					toHabitat.crewCount = Lib.CrewCount(data.to);
+					if (wasteTransferred > 0.0)
 					{
-						toPartData.Habitat.atmoAmount += transferedAtmosphere;
-						toPartData.Habitat.wasteAmount += transferedWasteAtmopshere;
-						toPartData.Habitat.enabledVolume = newCrewCount * Settings.PressureSuitVolume;
-						toPartData.Habitat.module.SyncAfterCrewTransfered();
+						ResourceWrapper wasteRes = toHabitat.module.WasteRes;
+						wasteRes.Amount = Math.Min(wasteRes.Amount + wasteTransferred, wasteRes.Capacity);
 					}
-
-					toPartData.Habitat.crewCount = newCrewCount;
 				}
 			}
 		}
@@ -417,7 +426,7 @@ namespace KERBALISM
 					continue;
 				}
 
-				double quantity = Math.Min(resources.GetResource(data.from.vessel, res.resourceName).Amount / tot_crew, res.maxAmount);
+				double quantity = Math.Min(resources.GetResource(res.resourceName).Amount / tot_crew, res.maxAmount);
 				// remove resource from vessel
 				quantity = data.from.RequestResource(res.resourceName, quantity);
 
@@ -438,7 +447,7 @@ namespace KERBALISM
 			Cache.SetVesselObjectsCache(data.to.vessel, "eva_prop", evaPropQuantity);
 
 			// Airlock loss
-			resources.Consume(data.from.vessel, "Nitrogen", Settings.LifeSupportAtmoLoss, ResourceBroker.Generic);
+			resources.Consume("Nitrogen", Settings.LifeSupportAtmoLoss, ResourceBroker.Generic);
 
 			// show warning if there is little or no EVA propellant in the suit
 			if (evaPropQuantity <= 0.05 && !Lib.Landed(data.from.vessel))
@@ -475,7 +484,7 @@ namespace KERBALISM
 			}
 
 			// merge drives data
-			PartDrive.Transfer(data.from.vessel, data.to.vessel, true);
+			Drive.Transfer(data.from.vessel, data.to.vessel, true);
 
 			// forget EVA vessel data
 			Cache.PurgeVesselCaches(data.from.vessel);
@@ -528,7 +537,7 @@ namespace KERBALISM
 
 			// delete data on unloaded vessels only (this is handled trough OnPartWillDie for loaded vessels)
 			if (pv.vesselRef != null && !pv.vesselRef.loaded)
-				PartDrive.DeleteDrivesData(pv.vesselRef);
+				Drive.DeleteDrivesData(pv.vesselRef);
 		}
 
 		void VesselCreated(Vessel v)
@@ -568,7 +577,7 @@ namespace KERBALISM
 
 			// delete data on unloaded vessels only (this is handled trough OnPartWillDie for loaded vessels)
 			if (!v.loaded)
-				PartDrive.DeleteDrivesData(v);
+				Drive.DeleteDrivesData(v);
 		}
 
 		void VesselDock(GameEvents.FromToAction<Part, Part> e)

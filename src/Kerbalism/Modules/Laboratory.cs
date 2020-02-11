@@ -240,7 +240,7 @@ namespace KERBALISM
 		// get next sample to analyze, return null if there isn't a sample
 		private static SubjectData NextSample(Vessel v)
 		{
-			foreach(var drive in PartDrive.GetDrives(v, true))
+			foreach(var drive in Drive.GetDrives(v, true))
 			{
 				// for each sample
 				foreach (Sample sample in drive.samples.Values)
@@ -258,8 +258,8 @@ namespace KERBALISM
 		private static Status Analyze(Vessel v, SubjectData subject, double amount)
 		{
 			Sample sample = null;
-			PartDrive sampleDrive = null;
-			foreach (var d in PartDrive.GetDrives(v, true))
+			Drive sampleDrive = null;
+			foreach (var d in Drive.GetDrives(v, true))
 			{
 				if (d.samples.ContainsKey(subject) && d.samples[subject].analyze)
 				{
@@ -276,7 +276,7 @@ namespace KERBALISM
 				amount = Math.Min(amount, sample.size);
 			}
 
-			PartDrive fileDrive = PartDrive.FileDrive(v.KerbalismData(), amount);
+			Drive fileDrive = Drive.FileDrive(v.KerbalismData(), amount);
 
 			if (fileDrive == null)
 				return Status.NO_STORAGE;

@@ -81,10 +81,11 @@ namespace KERBALISM
 
 			// when transmitting, transmitters need more EC for the signal amplifiers.
 			// while not transmitting, transmitters only use 10-20% of that
+			// note by got : the way this is done doesn't make any sense... why is ec_idle changing when transmitting ????
 			ec_transmitter *= antennaInfo.transmitting ? Settings.TransmitterActiveEcFactor : Settings.TransmitterPassiveEcFactor;
 
 			antennaInfo.ec = ec_transmitter * Settings.TransmitterActiveEcFactor;
-			antennaInfo.ec_idle = ec_transmitter * Settings.TransmitterPassiveEcFactor;
+			antennaInfo.ec_idle = ec_transmitter * Settings.TransmitterPassiveEcFactor;	
 
 			Init();
 

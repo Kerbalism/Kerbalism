@@ -1,7 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-
+using static KERBALISM.HabitatData;
 
 namespace KERBALISM
 {
@@ -27,9 +27,6 @@ namespace KERBALISM
 		// time since last update
 		private double secSinceLastEval;
 
-		// habitat radiation raytracing "one habitat per update cyle" counter.
-		private int partHabitatRaytraceNextIndex = -1;
-
 		#region non-evaluated non-persisted fields
 
 		/// <summary>name of last file being transmitted, or empty if nothing is being transmitted</summary>
@@ -53,8 +50,7 @@ namespace KERBALISM
 		// other persisted fields
 		public List<ResourceUpdateDelegate> resourceUpdateDelegates = null; // all part modules that have a ResourceUpdate method
 		public PartDataCollection Parts { get; private set; }
-
-
+		public VesselResHandler ResHandler { get; private set; }
 
 		public bool msg_signal;       // message flag: link status
 		public bool msg_belt;         // message flag: crossing radiation belt
@@ -86,10 +82,10 @@ namespace KERBALISM
 		public bool EnvInAtmosphere => inAtmosphere; bool inAtmosphere;
 
 		/// <summary> Is the vessel inside a breatheable atmosphere ?</summary>
-		public bool EnvInBreathableAtmosphere => inBreathableAtmosphere; bool inBreathableAtmosphere;
+		public bool EnvInOxygenAtmosphere => inOxygenAtmosphere; bool inOxygenAtmosphere;
 
 		/// <summary> Is the vessel inside a breatheable atmosphere and at acceptable pressure conditions ?</summary>
-		public bool EnvInSurvivableAtmosphere => inSurvivableAtmosphere; bool inSurvivableAtmosphere;
+		public bool EnvInBreathableAtmosphere => inBreathableAtmosphere; bool inBreathableAtmosphere;
 
 		/// <summary> [environment] true if in zero g</summary>
 		public bool EnvZeroG => zeroG; bool zeroG;
@@ -311,8 +307,7 @@ namespace KERBALISM
 		#endregion
 
 		#region evaluated vessel state information properties
-		// things like
-		// TODO : change all those fields to { get; private set; } properties
+
 		/// <summary>number of crew on the vessel</summary>
 		public int CrewCount => crewCount; int crewCount;
 
@@ -328,32 +323,8 @@ namespace KERBALISM
 		/// <summary>connection info</summary>
 		public ConnectionInfo Connection => connection; ConnectionInfo connection;
 
-		/// <summary>enabled volume in m^3</summary>
-		public double Volume => volume; double volume;
-
-		/// <summary>enabled surface in m^2</summary> 
-		public double Surface => surface; double surface;
-
-		/// <summary>normalized habitat pressure</summary>
-		public double HabitatPressure => habitatPressure; double habitatPressure;
-
-		/// <summary>waste atmosphere amount versus total atmosphere amount</summary>
-		public double Poisoning => poisoning; double poisoning;
-
-		/// <summary>shielding level</summary>
-		public double Shielding => shielding; double shielding;
-
-		/// <summary>living space factor</summary>
-		public double LivingSpace => livingSpace; double livingSpace;
-
-		/// <summary>Available volume per crew</summary>
-		public double VolumePerCrew => volumePerCrew; double volumePerCrew;
-
-		/// <summary>enabled comforts</summary>
-		public int ComfortMask => comfortMask; int comfortMask;
-
-		/// <summary>comfort factor</summary>
-		public double ComfortFactor => comfortFactor; double comfortFactor;
+		/// <summary>habitat info</summary>
+		public HabitatVesselData HabitatInfo => habitatInfo; HabitatVesselData habitatInfo;
 
 		/// <summary>some data about greenhouses</summary>
 		public List<Greenhouse.Data> Greenhouses => greenhouses; List<Greenhouse.Data> greenhouses;
@@ -414,7 +385,7 @@ namespace KERBALISM
 				{
 					Lib.LogDebug("VesselData : id '" + VesselId + "' (" + Vessel.vesselName + ") is now simulated (wasn't previously)");
 					IsSimulated = true;
-					Evaluate(true, Lib.RandomDouble());
+					Evaluate(true, ResourceCache.GetVesselHandler(v), Lib.RandomDouble());
 				}
 			}
 
@@ -443,7 +414,7 @@ namespace KERBALISM
 		/// <para/> - for loaded vessels : every gametime second 
 		/// <para/> - for unloaded vessels : at the beginning of every background update
 		/// </summary>
-		public void Evaluate(bool forced, double elapsedSeconds)
+		public void Evaluate(bool forced, VesselResHandler ResHandler, double elapsedSeconds)
 		{
 			if (!IsSimulated) return;
 
@@ -569,6 +540,7 @@ namespace KERBALISM
 
 			Vessel = vessel;
 			VesselId = Vessel.id;
+			ResHandler = ResourceCache.GetVesselHandler(vessel);
 
 			Parts = new PartDataCollection(this);
 			if (Vessel.loaded)
@@ -595,6 +567,7 @@ namespace KERBALISM
 			IsSimulated = false;
 
 			VesselId = protoVessel.vesselID;
+			ResHandler = ResourceCache.GetProtoVesselHandler(protoVessel);
 
 			Parts = new PartDataCollection(this);
 			Parts.Populate(protoVessel);
@@ -632,6 +605,7 @@ namespace KERBALISM
 			scansat_id = new List<uint>();
 			filesTransmitted = new List<File>();
 			vesselSituations = new VesselSituations(this);
+			habitatInfo = new HabitatVesselData();
 		}
 
 		private void Load(ConfigNode node)
@@ -671,6 +645,7 @@ namespace KERBALISM
 
 			filesTransmitted = new List<File>();
 			vesselSituations = new VesselSituations(this);
+			habitatInfo = new HabitatVesselData();
 		}
 
 		public void Save(ConfigNode node)
@@ -743,70 +718,18 @@ namespace KERBALISM
 			// communications info
 			connection = ConnectionInfo.Update(Vessel, powered, EnvBlackout);
 
-			volume = surface = 0.0;
-			comfortMask = 0;
-			double atmoAmount = 0.0, wasteAmount = 0.0, shieldingAmount = 0.0;
+			// TODO : cache the list
+			List<HabitatData> habitats = new List<HabitatData>();
+			foreach (PartData partData in Parts)
+				if (partData.Habitat != null)
+					habitats.Add(partData.Habitat);
 
-			bool raytraceDone = false;
-
-			for (int i = 0; i < Parts.Count; i++)
-			{
-				PartHabitat habitat = Parts.AtIndex(i).Habitat;
-
-				if (habitat != null && habitat.habitatEnabled)
-				{
-					volume += habitat.enabledVolume;
-					surface += habitat.enabledSurface;
-					atmoAmount += habitat.atmoAmount;
-					wasteAmount += habitat.wasteAmount;
-					shieldingAmount += habitat.shieldingAmount;
-					comfortMask |= habitat.enabledComfortsMask;
-
-					// radiation raytracing is only done while loaded.
-					if (Vessel.loaded && habitat.module != null)
-					{
-						// if partHabitatRaytraceNextIndex was reset to -1, raytrace all parts
-						if (partHabitatRaytraceNextIndex < 0)
-							Radiation.RaytraceHabitatSunRadiation(this, habitat);
-						// else only raytrace one habitat per update cycle to preserve performance
-						else if (!raytraceDone && i >= partHabitatRaytraceNextIndex)
-						{
-							Radiation.RaytraceHabitatSunRadiation(this, habitat);
-							partHabitatRaytraceNextIndex++;
-							raytraceDone = true;
-						}
-					}
-				}
-			}
-
-			// reset index if no habitat was processed (we reached end of list)
-			if (!raytraceDone)
-				partHabitatRaytraceNextIndex = 0;
-
-			// if we have done the first run of "raytrace all parts", now switch to one part per update cycle
-			if (Vessel.loaded && partHabitatRaytraceNextIndex < 0)
-				partHabitatRaytraceNextIndex = 0;
-
-			habitatPressure = atmoAmount / volume;
-			poisoning = wasteAmount / volume;
-
-			shielding = Radiation.ShieldingEfficiency(shieldingAmount / surface);
-
-			volumePerCrew = volume / Math.Max(1, crewCount);
-
-			// living space is the volume per-capita normalized against an 'ideal living space' and clamped in an acceptable range
-			livingSpace = Lib.Clamp(volumePerCrew / PreferencesComfort.Instance.livingSpace, 0.1, 1.0);
-
-			if (landed) comfortMask |= 1 << (int)PartHabitat.Comfort.FirmGround;
-			if (crewCount > 1) comfortMask |= 1 << (int)PartHabitat.Comfort.NotAlone;
-			if (connection.linked && connection.rate > 0.0) comfortMask |= 1 << (int)PartHabitat.Comfort.CallHome;
-
-			comfortFactor = HabitatLib.GetComfortFactor(comfortMask);
+			EvaluateHabitat(habitatInfo, habitats, connection, landed, crewCount, mainSun.Direction, Vessel.loaded);
 
 			// data about greenhouses
 			greenhouses = Greenhouse.Greenhouses(Vessel);
 
-			PartDrive.GetCapacity(this, out drivesFreeSpace, out drivesCapacity);
+			Drive.GetCapacity(this, out drivesFreeSpace, out drivesCapacity);
 
 			// solar panels data
 			if (Vessel.loaded)
@@ -838,8 +761,8 @@ namespace KERBALISM
 			underwater = Sim.Underwater(Vessel);
 			envStaticPressure = Sim.StaticPressureAtm(Vessel);
 			inAtmosphere = Vessel.mainBody.atmosphere && Vessel.altitude < Vessel.mainBody.atmosphereDepth;
-			inBreathableAtmosphere = Sim.InBreathableAtmosphere(Vessel, underwater);
-			inSurvivableAtmosphere = inBreathableAtmosphere && envStaticPressure < Settings.PressureThreshold;
+			inOxygenAtmosphere = Sim.InBreathableAtmosphere(Vessel, inAtmosphere, underwater);
+			inBreathableAtmosphere = inOxygenAtmosphere && envStaticPressure > Settings.PressureThreshold;
 			landed = Lib.Landed(Vessel);
 			zeroG = !EnvLanded && !inAtmosphere;
 
