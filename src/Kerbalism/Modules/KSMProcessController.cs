@@ -8,7 +8,7 @@ namespace KERBALISM
 	/// <summary>
 	/// Replacement for ProcessController
 	/// </summary>
-	public class KSMProcessController: PartModule, IModuleInfo, IAnimatedModule, ISpecifics, IConfigurable
+	public class KSMProcessController: PartModule, IModuleInfo, IAnimatedModule, ISpecifics
 	{
 		// config
 		[KSPField] public string resource = string.Empty; // pseudo-resource to control
@@ -31,7 +31,6 @@ namespace KERBALISM
 
 		private DumpSpecs dump_specs;
 		private bool broken = false;
-		private bool isConfigurable = false;
 
 		// When switching a process controller via B9PS, it will call OnLoad
 		// with the new prefab data. Remember which resource we've added,
@@ -52,8 +51,6 @@ namespace KERBALISM
 					return;
 				}
 
-				Lib.Log("ProcessController " + id + ": configuring (resource = " + resource + ")");
-				Configure(true);
 				InitProcess();
 			}
 		}
@@ -76,6 +73,12 @@ namespace KERBALISM
 			isEnabled = true;
 			enabled = true;
 
+			if (!string.IsNullOrEmpty(createdResource) && createdResource != resource)
+			{
+				RemoveResource();
+			}
+			CreateResource();
+
 			// get dump specs for associated process
 			dump_specs = Profile.processes.Find(x => x.modifiers.Contains(resource)).dump;
 
@@ -97,10 +100,8 @@ namespace KERBALISM
 			if (!toggle)
 				running = true;
 
-			CreateResource();
-
 			// set processes enabled state
-			Lib.SetProcessEnabledDisabled(part, resource, broken ? false : running, capacity);
+			Lib.AddResource(part, resource, running ? capacity : 0.0, 0.0, true);
 		}
 
 		public void Start()
@@ -114,9 +115,6 @@ namespace KERBALISM
 				Deactivate();
 				return;
 			}
-
-			// configure on start, must be executed with enabled true on parts first load.
-			Configure(true);
 
 			InitProcess();
 		}
@@ -137,7 +135,7 @@ namespace KERBALISM
 				// add the resource
 				// - always add the specified amount, even in flight
 				double amount = (!broken && running) ? capacity : 0.0;
-				Lib.AddResource(part, resource, amount, capacity, true);
+				Lib.AddResource(part, resource, 0.0, capacity, true);
 				createdResource = resource;
 			}
 			else
@@ -156,29 +154,14 @@ namespace KERBALISM
 			}
 		}
 
-		///<summary> Called by Configure.cs. Configures the controller to settings passed from the configure module</summary>
-		public void Configure(bool enable)
-		{
-			Lib.Log("ProcessController " + id + ": configure - enable = " + enable);
-
-			if(!string.IsNullOrEmpty(createdResource) && createdResource != resource)
-			{
-				RemoveResource();
-			}
-
-			if (enable)
-			{
-				CreateResource();
-			}
-		}
-
-		public void ModuleIsConfigured() => isConfigurable = true;
-
 		///<summary> Call this when process controller breaks down or is repaired </summary>
 		public void ReliablityEvent(bool breakdown)
 		{
+			double oldCapacity = !broken && running ? capacity : 0.0;
 			broken = breakdown;
-			Lib.SetProcessEnabledDisabled(part, resource, broken ? false : running, capacity);
+			double newCapacity = !broken && running ? capacity : 0.0;
+			double capacityChange = newCapacity - oldCapacity;
+			Lib.AddResource(part, resource, capacityChange, 0.0, true);
 		}
 
 		public void Update()
@@ -215,10 +198,11 @@ namespace KERBALISM
 		{
 			if (broken)
 				return;
-			
-			// switch status
+
+			double oldCapacity = running ? capacity : 0.0;
 			running = value;
-			Lib.SetProcessEnabledDisabled(part, resource, running, capacity);
+			double newCapacity = running ? capacity : 0.0;
+			Lib.AddResource(part, resource, newCapacity - oldCapacity, 0.0, true);
 
 			// refresh VAB/SPH ui
 			if (Lib.IsEditor()) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
@@ -230,7 +214,7 @@ namespace KERBALISM
 		// part tooltip
 		public override string GetInfo()
 		{
-			if (isConfigurable || string.IsNullOrEmpty(desc))
+			if (string.IsNullOrEmpty(desc))
 				return string.Empty;
 			return Specs().Info(desc);
 		}

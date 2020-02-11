@@ -2233,8 +2233,10 @@ namespace KERBALISM
 		/// <summary> Adds the specified resource amount and capacity to a part,
 		/// the resource is created if it doesn't already exist </summary>
 		///<summary>poached from https://github.com/blowfishpro/B9PartSwitch/blob/master/B9PartSwitch/Extensions/PartExtensions.cs
-		public static PartResource AddResource(Part p, string res_name, double amount, double capacity, bool extendExisting = false)
+		public static PartResource AddResource(Part p, string res_name, double amount, double capacity, bool incremental = false)
 		{
+			Lib.Log("add resource " + res_name + " amount=" + amount + " capacity=" + capacity + " delta=" + incremental);
+
 			var reslib = PartResourceLibrary.Instance.resourceDefinitions;
 			// if the resource is not known, log a warning and do nothing
 			if (!reslib.Contains(res_name))
@@ -2242,12 +2244,9 @@ namespace KERBALISM
 				Lib.Log(Lib.BuildString("error while adding ", res_name, ": the resource doesn't exist"), Lib.LogLevel.Error);
 				return null;
 			}
+
 			var resourceDefinition = reslib[res_name];
-
-			amount = Math.Min(amount, capacity);
-			amount = Math.Max(amount, 0);
 			PartResource resource = p.Resources[resourceDefinition.name];
-
 			if (resource == null)
 			{
 				Lib.Log("existing part resource is null, creating new");
@@ -2279,7 +2278,7 @@ namespace KERBALISM
 
 				PartResource simulationResource = p.SimulationResources?[resourceDefinition.name];
 
-				if (extendExisting)
+				if (incremental)
 				{
 					Lib.Log("extending max amount by " + capacity);
 
@@ -2418,13 +2417,20 @@ namespace KERBALISM
 		/// </para> </summary>
 		public static void SetProcessEnabledDisabled(Part p, string res_name, bool enable, double process_capacity)
 		{
+			if (!p.Resources.Contains(res_name))
+			{
+				Lib.AddResource(p, res_name, 0.0, process_capacity);
+			}
+
 			if (enable)
 			{
-				AddResource(p, res_name, process_capacity, 0.0, true);
+				SetResource(p, res_name, process_capacity, process_capacity);
 			}
 			else
 			{
-				AddResource(p, res_name, -process_capacity, 0.0, true);
+				// Never remove the resource capacity, otherwise checks against
+				// the pseudo resource might fail
+				SetResource(p, res_name, 0.0, process_capacity);
 			}
 		}
 
