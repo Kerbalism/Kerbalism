@@ -31,20 +31,29 @@ namespace KERBALISM
 		private bool broken = false;
 		private bool isConfigurable = false;
 
+		// When switching a process controller via B9PS, it will call OnLoad
+		// with the new prefab data. Remember which resource we've added,
+		// so we can remove the old resource before we add a new one after being
+		// switched to a different type.
+		private string previousResource = null;
+		private double previousCapacity = 0;
+		private double previousAmount = 0;
+
 		public override void OnLoad(ConfigNode node)
 		{
 			ModuleInfo = GetInfo();
+
+			if (Lib.IsEditor())
+			{
+				// this is odd, enabled will always be false. B9PS bug?
+				enabled = isEnabled;
+				Configure(isEnabled);
+				InitProcess();
+			}
 		}
 
-		public void Start()
+		protected void InitProcess()
 		{
-			// don't break tutorial scenarios
-			if (Lib.DisableScenario(this))
-				return;
-
-			// configure on start, must be executed with enabled true on parts first load.
-			Configure(true);
-
 			// get dump specs for associated process
 			dump_specs = Profile.processes.Find(x => x.modifiers.Contains(resource)).dump;
 
@@ -70,9 +79,30 @@ namespace KERBALISM
 			Lib.SetProcessEnabledDisabled(part, resource, broken ? false : running, capacity);
 		}
 
+		public void Start()
+		{
+			// don't break tutorial scenarios
+			if (Lib.DisableScenario(this))
+				return;
+
+			// configure on start, must be executed with enabled true on parts first load.
+			Configure(true);
+
+			InitProcess();
+		}
+
 		///<summary> Called by Configure.cs. Configures the controller to settings passed from the configure module</summary>
 		public void Configure(bool enable)
 		{
+			// remove previous resource if we were switched to a new type by B9PS
+			if(previousResource != null && resource != previousResource)
+			{
+				Lib.RemoveResource(part, previousResource, previousAmount, previousCapacity);
+				previousResource = null;
+				previousCapacity = 0;
+				previousAmount = 0;
+			}
+
 			if (enable)
 			{
 				// if never set
@@ -82,11 +112,18 @@ namespace KERBALISM
 				{
 					// add the resource
 					// - always add the specified amount, even in flight
+					double amount = (!broken && running) ? capacity : 0.0;
 					Lib.AddResource(part, resource, (!broken && running) ? capacity : 0.0, capacity);
+
+					previousResource = resource;
+					previousCapacity = capacity;
+					previousAmount = amount;
 				}
 			}
 			else
+			{
 				Lib.RemoveResource(part, resource, 0.0, capacity);
+			}
 		}
 
 		public void ModuleIsConfigured() => isConfigurable = true;
@@ -147,7 +184,9 @@ namespace KERBALISM
 		// part tooltip
 		public override string GetInfo()
 		{
-			return isConfigurable ? string.Empty : Specs().Info(desc);
+			if (isConfigurable || string.IsNullOrEmpty(desc))
+				return string.Empty;
+			return Specs().Info(desc);
 		}
 
 		public bool IsRunning() {
