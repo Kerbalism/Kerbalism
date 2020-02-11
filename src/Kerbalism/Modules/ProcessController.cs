@@ -14,7 +14,6 @@ namespace KERBALISM
 		[KSPField] public string desc = string.Empty;     // description to show on tooltip
 		[KSPField] public double capacity = 1.0;          // amount of associated pseudo-resource
 		[KSPField] public bool toggle = true;             // show the enable/disable toggle button
-		[KSPField] public string id = string.Empty;       // needed for B9PS
 
 		// persistence/config
 		// note: the running state doesn't need to be serialized, as it can be deduced from resource flow
@@ -31,48 +30,19 @@ namespace KERBALISM
 		private bool broken = false;
 		private bool isConfigurable = false;
 
-		// When switching a process controller via B9PS, it will call OnLoad
-		// with the new prefab data. Remember which resource we've added,
-		// so we can remove the old resource before we add a new one after being
-		// switched to a different type.
-		[KSPField(isPersistant = true)] string createdResource = string.Empty;
-
 		public override void OnLoad(ConfigNode node)
 		{
 			ModuleInfo = GetInfo();
-
-			if (Lib.IsEditor())
-			{
-				if (string.IsNullOrEmpty(resource))
-				{
-					Lib.Log("ProcessController " + id + ": deactivating");
-					Deactivate();
-					return;
-				}
-
-				Lib.Log("ProcessController " + id + ": configuring (resource = " + resource + ")");
-				Configure(true);
-				InitProcess();
-			}
 		}
 
-		protected void Deactivate()
+		public void Start()
 		{
-			Lib.Log("ProcessController " + id + ": shutting down, bye");
-			RemoveResource();
-			resource = string.Empty;
-			isEnabled = false;
-			enabled = false;
-			Events["DumpValve"].active = false;
-			Events["Toggle"].active = false;
-			Actions["Action"].active = false;
-		}
+			// don't break tutorial scenarios
+			if (Lib.DisableScenario(this))
+				return;
 
-		protected void InitProcess()
-		{
-			Lib.Log("ProcessController " + id + ": init process");
-			isEnabled = true;
-			enabled = true;
+			// configure on start, must be executed with enabled true on parts first load.
+			Configure(true);
 
 			// get dump specs for associated process
 			dump_specs = Profile.processes.Find(x => x.modifiers.Contains(resource)).dump;
@@ -95,79 +65,27 @@ namespace KERBALISM
 			if (!toggle)
 				running = true;
 
-			CreateResource();
-
 			// set processes enabled state
 			Lib.SetProcessEnabledDisabled(part, resource, broken ? false : running, capacity);
-		}
-
-		public void Start()
-		{
-			// don't break tutorial scenarios
-			if (Lib.DisableScenario(this))
-				return;
-
-			if (string.IsNullOrEmpty(resource))
-			{
-				Deactivate();
-				return;
-			}
-
-			// configure on start, must be executed with enabled true on parts first load.
-			Configure(true);
-
-			InitProcess();
-		}
-
-		protected void CreateResource()
-		{
-			// if never set
-			// - this is the case in the editor, the first time, or in flight
-			//   in the case the module was added post-launch, or EVA kerbals
-			// - resource will be != createdResource when controller was switched
-			//   to a different type in the editor
-			if (createdResource != resource)
-			{
-				RemoveResource();
-
-				Lib.Log("ProcessController " + id + ": new resource, creating " + resource);
-
-				// add the resource
-				// - always add the specified amount, even in flight
-				double amount = (!broken && running) ? capacity : 0.0;
-				Lib.AddResource(part, resource, amount, capacity, true);
-				createdResource = resource;
-			}
-			else
-			{
-				Lib.Log("ProcessController " + id + ": already created resource, not creating again " + resource);
-			}
-		}
-
-		protected void RemoveResource()
-		{
-			if (!string.IsNullOrEmpty(createdResource))
-			{
-				Lib.Log("ProcessController " + id + ": removing previously created resource " + createdResource);
-				Lib.RemoveResource(part, createdResource, 0.0, capacity);
-				createdResource = string.Empty;
-			}
 		}
 
 		///<summary> Called by Configure.cs. Configures the controller to settings passed from the configure module</summary>
 		public void Configure(bool enable)
 		{
-			Lib.Log("ProcessController " + id + ": configure - enable = " + enable);
-
-			if(!string.IsNullOrEmpty(createdResource) && createdResource != resource)
-			{
-				RemoveResource();
-			}
-
 			if (enable)
 			{
-				CreateResource();
+				// if never set
+				// - this is the case in the editor, the first time, or in flight
+				//   in the case the module was added post-launch, or EVA kerbals
+				if (!part.Resources.Contains(resource))
+				{
+					// add the resource
+					// - always add the specified amount, even in flight
+					Lib.AddResource(part, resource, (!broken && running) ? capacity : 0.0, capacity);
+				}
 			}
+			else
+				Lib.RemoveResource(part, resource, 0.0, capacity);
 		}
 
 		public void ModuleIsConfigured() => isConfigurable = true;
@@ -228,9 +146,7 @@ namespace KERBALISM
 		// part tooltip
 		public override string GetInfo()
 		{
-			if (isConfigurable || string.IsNullOrEmpty(desc))
-				return string.Empty;
-			return Specs().Info(desc);
+			return isConfigurable ? string.Empty : Specs().Info(desc);
 		}
 
 		public bool IsRunning() {
