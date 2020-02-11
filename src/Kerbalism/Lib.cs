@@ -553,18 +553,18 @@ namespace KERBALISM
 		{
 			switch (color)
 			{
-				case Kolor.None:		return "#FFFFFF"; // use this in the Color() methods if no color tag is to be applied
-				case Kolor.Green:		return "#88FF00"; // green whith slightly less red than the ksp ui default (CCFF00), for better contrast with yellow
-				case Kolor.Yellow:		return "#FFD200"; // ksp ui yellow
-				case Kolor.Orange:		return "#FF8000"; // ksp ui orange
-				case Kolor.Red:		    return "#FF3333"; // custom red
-				case Kolor.PosRate:	    return "#88FF00"; // green
-				case Kolor.NegRate:	    return "#FF8000"; // orange
-				case Kolor.Science:	    return "#6DCFF6"; // ksp science color
-				case Kolor.Cyan:		return "#00FFFF"; // cyan
-				case Kolor.LightGrey:	return "#CCCCCC"; // light grey
-				case Kolor.DarkGrey:	return "#999999"; // dark grey	
-				default:				return "#FEFEFE";
+				case Kolor.None: return "#FFFFFF"; // use this in the Color() methods if no color tag is to be applied
+				case Kolor.Green: return "#88FF00"; // green whith slightly less red than the ksp ui default (CCFF00), for better contrast with yellow
+				case Kolor.Yellow: return "#FFD200"; // ksp ui yellow
+				case Kolor.Orange: return "#FF8000"; // ksp ui orange
+				case Kolor.Red: return "#FF3333"; // custom red
+				case Kolor.PosRate: return "#88FF00"; // green
+				case Kolor.NegRate: return "#FF8000"; // orange
+				case Kolor.Science: return "#6DCFF6"; // ksp science color
+				case Kolor.Cyan: return "#00FFFF"; // cyan
+				case Kolor.LightGrey: return "#CCCCCC"; // light grey
+				case Kolor.DarkGrey: return "#999999"; // dark grey	
+				default: return "#FEFEFE";
 			}
 		}
 
@@ -573,18 +573,18 @@ namespace KERBALISM
 		{
 			switch (color)
 			{
-				case Kolor.None:      return new Color(1.000f, 1.000f, 1.000f); 
-				case Kolor.Green:     return new Color(0.533f, 1.000f, 0.000f);
-				case Kolor.Yellow:    return new Color(1.000f, 0.824f, 0.000f);
-				case Kolor.Orange:    return new Color(1.000f, 0.502f, 0.000f);
-				case Kolor.Red:       return new Color(1.000f, 0.200f, 0.200f);
-				case Kolor.PosRate:   return new Color(0.533f, 1.000f, 0.000f);
-				case Kolor.NegRate:   return new Color(1.000f, 0.502f, 0.000f);
-				case Kolor.Science:   return new Color(0.427f, 0.812f, 0.965f);
-				case Kolor.Cyan:      return new Color(0.000f, 1.000f, 1.000f);
+				case Kolor.None: return new Color(1.000f, 1.000f, 1.000f);
+				case Kolor.Green: return new Color(0.533f, 1.000f, 0.000f);
+				case Kolor.Yellow: return new Color(1.000f, 0.824f, 0.000f);
+				case Kolor.Orange: return new Color(1.000f, 0.502f, 0.000f);
+				case Kolor.Red: return new Color(1.000f, 0.200f, 0.200f);
+				case Kolor.PosRate: return new Color(0.533f, 1.000f, 0.000f);
+				case Kolor.NegRate: return new Color(1.000f, 0.502f, 0.000f);
+				case Kolor.Science: return new Color(0.427f, 0.812f, 0.965f);
+				case Kolor.Cyan: return new Color(0.000f, 1.000f, 1.000f);
 				case Kolor.LightGrey: return new Color(0.800f, 0.800f, 0.800f);
-				case Kolor.DarkGrey:  return new Color(0.600f, 0.600f, 0.600f);
-				default:              return new Color(1.000f, 1.000f, 1.000f);
+				case Kolor.DarkGrey: return new Color(0.600f, 0.600f, 0.600f);
+				default: return new Color(1.000f, 1.000f, 1.000f);
 			}
 		}
 
@@ -861,8 +861,8 @@ namespace KERBALISM
 		///<summary> Pretty-print a range (range is in meters) </summary>
 		public static string HumanReadableDistance(double distance)
 		{
-            if (distance == 0.0) return Local.Generic_NONE;//"none"
-            if (distance < 0.0) return Lib.BuildString("-", HumanReadableDistance(-distance));
+			if (distance == 0.0) return Local.Generic_NONE;//"none"
+			if (distance < 0.0) return Lib.BuildString("-", HumanReadableDistance(-distance));
 			if (distance < 1000.0) return BuildString(distance.ToString("F1"), " m");
 			distance /= 1000.0;
 			if (distance < 1000.0) return BuildString(distance.ToString("F1"), " Km");
@@ -917,18 +917,18 @@ namespace KERBALISM
 			var unit = "rad/h";
 			var prefix = "";
 
-			if(Settings.RadiationInSievert)
+			if (Settings.RadiationInSievert)
 			{
 				rad /= 100.0;
 				unit = "Sv/h";
 			}
 
-			if(rad < 0.00001)
+			if (rad < 0.00001)
 			{
 				rad *= 1000000;
 				prefix = "μ";
 			}
-			else if(rad < 0.01)
+			else if (rad < 0.01)
 			{
 				rad *= 1000;
 				prefix = "m";
@@ -1013,7 +1013,7 @@ namespace KERBALISM
 		{
 			// say "none" for rates < 0.5 bits per second
 			var bitsPerMB = 1024.0 * 1024.0 * 8.0;
-			return rate < 1/bitsPerMB/2.0 ? Local.Generic_NONE : Lib.BuildString(HumanReadableDataSize(rate), "/s");//"none"
+			return rate < 1 / bitsPerMB / 2.0 ? Local.Generic_NONE : Lib.BuildString(HumanReadableDataSize(rate), "/s");//"none"
 		}
 
 		public static string HumanReadableSampleSize(double size)
@@ -1049,7 +1049,7 @@ namespace KERBALISM
 				return Lib.Color(Lib.BuildString(value.ToString("F1"), " ", Local.SCIENCEARCHIVE_CREDITS), Kolor.Science);//CREDITS
 
 		}
-#endregion
+		#endregion
 
 		#region GAME LOGIC
 		///<summary>return true if the current scene is flight</summary>
@@ -1111,7 +1111,7 @@ namespace KERBALISM
 					return false;
 			}
 		}
-#endregion
+		#endregion
 
 		#region BODY
 
@@ -1291,7 +1291,7 @@ namespace KERBALISM
 			// - the user can change vessel type, in that case he is actually disabling this mod for the vessel
 			//   the alternative is to scan the vessel for ModuleCommand, but that is slower, and rescue vessels have no module command
 			// - flags have type set to 'station' for a single update, can still be detected as they have vesselID == 0
-			switch(v.vesselType)
+			switch (v.vesselType)
 			{
 				case VesselType.Debris:
 				case VesselType.Flag:
@@ -1726,16 +1726,16 @@ namespace KERBALISM
 			bool meshIsValid = results.meshVolume < results.boundsVolume * validityFactor && results.meshVolume > 0.25;
 
 
-				if (!colliderIsValid && !meshIsValid)
-					results.bestMethod = VolumeAndSurfaceMethod.Bounds;
-				else if (!colliderIsValid)
-					results.bestMethod = VolumeAndSurfaceMethod.Mesh;
-				else if (!meshIsValid)
-					results.bestMethod = VolumeAndSurfaceMethod.Collider;
-				else
-				{
+			if (!colliderIsValid && !meshIsValid)
+				results.bestMethod = VolumeAndSurfaceMethod.Bounds;
+			else if (!colliderIsValid)
+				results.bestMethod = VolumeAndSurfaceMethod.Mesh;
+			else if (!meshIsValid)
+				results.bestMethod = VolumeAndSurfaceMethod.Collider;
+			else
+			{
 				// we consider that both methods are accurate if the volume difference is less than 10%
-					double volumeDifference = Math.Abs(results.colliderVolume - results.meshVolume) / Math.Max(results.colliderVolume, results.meshVolume);
+				double volumeDifference = Math.Abs(results.colliderVolume - results.meshVolume) / Math.Max(results.colliderVolume, results.meshVolume);
 
 				// in case the returned volumes are similar, the method that use the less collider / mesh count will be more accurate for surface
 				if (volumeDifference < 0.2 && (usedCollidersCount != usedMeshCount))
@@ -1748,7 +1748,7 @@ namespace KERBALISM
 				// in other cases, the method that return the largest volume is usually right
 				else
 					results.bestMethod = results.colliderVolume > results.meshVolume ? VolumeAndSurfaceMethod.Collider : VolumeAndSurfaceMethod.Mesh;
-				}
+			}
 
 			foreach (AttachNode attachNode in part.attachNodes)
 			{
@@ -2069,7 +2069,7 @@ namespace KERBALISM
 				return Cache.VesselObjectsCache<bool>(v, "has_part:" + part_name);
 
 			bool ret = false;
-			foreach(string name in Tokenize(part_name, ','))
+			foreach (string name in Tokenize(part_name, ','))
 			{
 				if (v.loaded)
 					ret = v.parts.Find(k => k.name.StartsWith(part_name, StringComparison.Ordinal)) != null;
@@ -2233,7 +2233,7 @@ namespace KERBALISM
 		/// <summary> Adds the specified resource amount and capacity to a part,
 		/// the resource is created if it doesn't already exist </summary>
 		///<summary>poached from https://github.com/blowfishpro/B9PartSwitch/blob/master/B9PartSwitch/Extensions/PartExtensions.cs
-		public static PartResource AddResource(Part p, string res_name, double amount, double capacity)
+		public static PartResource AddResource(Part p, string res_name, double amount, double capacity, bool extendExisting = false)
 		{
 			var reslib = PartResourceLibrary.Instance.resourceDefinitions;
 			// if the resource is not known, log a warning and do nothing
@@ -2250,6 +2250,8 @@ namespace KERBALISM
 
 			if (resource == null)
 			{
+				Lib.Log("existing part resource is null, creating new");
+
 				resource = new PartResource(p);
 				resource.SetInfo(resourceDefinition);
 				resource.maxAmount = capacity;
@@ -2273,12 +2275,34 @@ namespace KERBALISM
 			}
 			else
 			{
-				resource.maxAmount = capacity;
+				Lib.Log("have existing part resource, max amount = " + resource.maxAmount);
 
 				PartResource simulationResource = p.SimulationResources?[resourceDefinition.name];
-				if (simulationResource != null) simulationResource.maxAmount = capacity;
 
-				resource.amount = amount;
+				if (extendExisting)
+				{
+					Lib.Log("extending max amount by " + capacity);
+
+					resource.maxAmount += capacity;
+					resource.amount += amount;
+					if (simulationResource != null)
+					{
+						simulationResource.maxAmount += capacity;
+						simulationResource.amount += amount;
+					}
+				}
+				else
+				{
+					Lib.Log("setting max amount to " + capacity);
+
+					resource.maxAmount = capacity;
+					resource.amount = amount;
+					if (simulationResource != null)
+					{
+						simulationResource.maxAmount = capacity;
+						simulationResource.amount = amount;
+					}
+				}
 			}
 
 			return resource;
@@ -2302,6 +2326,8 @@ namespace KERBALISM
 			// clamp amount to capacity just in case
 			res.amount = Math.Min(res.amount, res.maxAmount);
 
+			Lib.Log("remove resource " + res_name + "(-" + amount + "): maxAmount = " + res.maxAmount);
+
 			// if the resource is empty
 			if (res.maxAmount <= 0.005) //< deal with precision issues
 			{
@@ -2318,6 +2344,7 @@ namespace KERBALISM
 		///<summary>note: the resource must exist</summary>
 		public static void SetResourceCapacity( Part p, string res_name, double capacity )
 		{
+			Lib.Log("set resource capacity " + res_name + " to " + capacity);
 			// if the resource is not in the part, log a warning and do nothing
 			if (!p.Resources.Contains( res_name ))
 			{
@@ -2334,6 +2361,7 @@ namespace KERBALISM
 		///<summary>note: the resource must exist</summary>
 		public static void SetResource( Part p, string res_name, double amount, double capacity )
 		{
+			Lib.Log("set resource " + res_name + " to amount " + amount + " capacity " + capacity);
 			// if the resource is not in the part, log a warning and do nothing
 			if (!p.Resources.Contains( res_name ))
 			{
@@ -2390,20 +2418,13 @@ namespace KERBALISM
 		/// </para> </summary>
 		public static void SetProcessEnabledDisabled(Part p, string res_name, bool enable, double process_capacity)
 		{
-			if (!p.Resources.Contains(res_name))
-			{
-				Lib.AddResource(p, res_name, 0.0, process_capacity);
-			}
-
 			if (enable)
 			{
-				SetResource(p, res_name, process_capacity, process_capacity);
+				AddResource(p, res_name, process_capacity, 0.0, true);
 			}
 			else
 			{
-				// Never remove the resource capacity, otherwise checks against
-				// the pseudo resource might fail
-				SetResource(p, res_name, 0.0, process_capacity);
+				AddResource(p, res_name, -process_capacity, 0.0, true);
 			}
 		}
 

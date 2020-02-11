@@ -5,8 +5,10 @@ using KSP.Localization;
 
 namespace KERBALISM
 {
-
-	public class ProcessController: PartModule, IModuleInfo, IAnimatedModule, ISpecifics, IConfigurable
+	/// <summary>
+	/// Replacement for ProcessController
+	/// </summary>
+	public class KSMProcessController: PartModule, IModuleInfo, IAnimatedModule, ISpecifics, IConfigurable
 	{
 		// config
 		[KSPField] public string resource = string.Empty; // pseudo-resource to control
