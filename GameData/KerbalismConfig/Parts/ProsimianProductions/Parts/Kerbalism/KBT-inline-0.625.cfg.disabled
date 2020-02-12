@@ -1,0 +1,161 @@
+PART
+{
+	name = KBT-inline-0625
+	module = Part
+	author = Arkolis
+
+	title = #kerbalism-container-inline-0625_Part_title // #kerbalism-container-inline-0625_Part_title = New Small Supply Container
+	manufacturer = #kerbalism-container-inline-0625_Part_manufacturer // #kerbalism-container-inline-0625_Part_manufacturer = Nazari Storage Services
+	description = #kerbalism-container-inline-0625_Part_description // #kerbalism-container-inline-0625_Part_description = A valid alternative to starving.
+	category = Utility
+	subcategory = 0
+
+	rescaleFactor = 0.3225
+
+	node_stack_top = 0.0, 0.001, 0.0, 0.0, 1.0, 0.0, 1
+	//node_stack_bottom = 0.0, -0.2, 0.0, 0.0, -1.0, 0.0, 1
+	node_stack_bottom = 0.0, -0.401, 0.0, 0.0, -1.0, 0.0, 1
+	attachRules = 1,0,1,1,0
+
+	bulkheadProfiles = size0, srf
+	dragModelType = default
+	maximum_drag = 0.2
+	minimum_drag = 0.15
+	angularDrag = 2
+	crashTolerance = 6
+	maxTemp = 1600
+	breakingForce = 50
+	breakingTorque = 50
+
+	TechRequired = survivability
+	entryCost = 500
+	cost = 125
+	mass = 0.01  // 3.5 Layers, each layer consisting of 2x 2/2 twill 3k carbon fiber, 2x woven E-Glass, 5mm closed-cell PVC foam core (~9.5Kg m^2)
+	ContainerVolume = 53  // 72.80 Liters with ~20mm Wall Thickness removed
+
+	MODEL
+	{
+		model = KerbalismConfig/Parts/ProsimianProductions/Parts/Kerbalism/KBT-inline
+		//scale = 0.3, 0.55, 0.3
+	}
+
+	MODULE
+	{
+		name = ModulePartVariants
+		primaryColor = #ffffff
+		secondaryColor = #9a9a9a
+		baseVariant = pp_white
+
+		VARIANT
+		{
+			name = White
+			displayName = White
+			themeName = pp_white
+			primaryColor = #ffffff
+			secondaryColor = #9a9a9a
+			TEXTURE
+			{
+				materialName = stack_tank
+				mainTextureURL = KerbalismConfig/Parts/ProsimianProductions/Parts/Kerbalism/Stack_Dif
+			}
+		}
+		VARIANT
+		{
+			name = Green
+			displayName = Green Variant
+			themeName = pp_green
+			primaryColor = #5d695a
+			secondaryColor = #9a9a9a
+			TEXTURE
+			{
+				materialName = stack_tank
+				mainTextureURL = KerbalismConfig/Parts/ProsimianProductions/Parts/Kerbalism/Stack_Dif_green
+			}
+		}
+		VARIANT
+		{
+			name = Apollo
+			displayName = Blackand White Variant
+			themeName = pp_stripeBlack
+			primaryColor = #2D2D2D
+			secondaryColor = #C7C7C7
+			TEXTURE
+			{
+				materialName = stack_tank
+				mainTextureURL = KerbalismConfig/Parts/ProsimianProductions/Parts/Kerbalism/Stack_Base_stripe
+			}
+		}
+		VARIANT
+		{
+			name = Orange
+			displayName = Orange Variant
+			themeName = pp_orange
+			primaryColor = #AB6432
+			secondaryColor = #2D2D2D
+			TEXTURE
+			{
+				materialName = stack_tank
+				mainTextureURL = KerbalismConfig/Parts/ProsimianProductions/Parts/Kerbalism/Stack_Base_orange
+			}
+		}
+	}
+
+	MODULE
+	{
+		name = ModuleAnimateGeneric
+		animationName = Skel_DoorsAction
+		actionGUIName = #autoLOC_502068 //#autoLOC_502068 = Toggle
+		startEventGUIName = #autoLOC_502069 //#autoLOC_502069 = Open
+		endEventGUIName = #autoLOC_502051 //#autoLOC_502051 = Close
+		allowAnimationWhileShielded = False
+	}
+
+	MODULE
+	{
+		name = ModuleCargoBay
+		DeployModuleIndex = 0
+		closedPosition = 0
+		lookupRadius = 0.9
+		partTypeName = Service bay
+
+		//nodeOuterForeID = top
+		//nodeOuterAftID = bottom
+	}
+
+	MODULE
+	{
+		name = ModuleB9DisableTransform
+		transform = HardShell
+		transform = Side_tanksF
+		transform = Side_tanksB
+		transform = GeneratorB
+		transform = GeneratorF
+		transform = GeneratorR
+		transform = GeneratorL
+	}
+	MODULE
+	{
+		name = ModuleB9PartSwitch
+		moduleID = PlateSwitch
+		SUBTYPE
+		{
+			name = Full
+			transform = Plate_Bottom
+			transform = Plate_Top
+		}
+		SUBTYPE
+		{
+			name = Top Only
+			transform = Plate_Top
+		}
+		SUBTYPE
+		{
+			name = Bottom Only
+			transform = Plate_Bottom
+		}
+		SUBTYPE
+		{
+			name = No Plates
+		}
+	}
+}
