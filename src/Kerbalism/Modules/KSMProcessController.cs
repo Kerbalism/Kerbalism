@@ -226,8 +226,13 @@ namespace KERBALISM
 		// specifics support
 		public Specifics Specs()
 		{
-			Specifics specs = new Specifics();
 			Process process = Profile.processes.Find(k => k.modifiers.Contains(resource));
+			return Specifics(process, capacity);
+		}
+
+		public static Specifics Specifics(Process process, double capacity)
+		{
+			Specifics specs = new Specifics();
 			if (process != null)
 			{
 				foreach (KeyValuePair<string, double> pair in process.inputs)

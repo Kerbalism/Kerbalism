@@ -952,6 +952,7 @@ namespace KERBALISM
 		public static string ProcessController_stopped = GetLoc("ProcessController_stopped"); // "stopped"
 		public static string ProcessController_Dump = GetLoc("ProcessController_Dump"); // "Dump"
 		public static string ProcessController_info1 = GetLoc("ProcessController_info1"); // "Half-life"
+		public static string ProcessController_Capacity = GetLoc("ProcessController_Capacity"); // "Capacity: <<1>>"
 
 		////////////////////////////////////////////////////////////////////
 		// Module : Reliability

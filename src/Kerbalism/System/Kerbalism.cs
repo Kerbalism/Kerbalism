@@ -5,6 +5,7 @@ using UnityEngine;
 using Harmony;
 using KSP.UI.Screens;
 using KSP.Localization;
+using System.Collections;
 
 namespace KERBALISM
 {
@@ -774,6 +775,7 @@ namespace KERBALISM
 			iconScales["kerbalism-container-inline-prosemian-half-375"] = 1.33f;
 			iconScales["kerbalism-container-radial-pressurized-prosemian-huge"] = 1.33f;
 
+			
 			foreach (AvailablePart ap in PartLoader.LoadedPartsList)
 			{
 				// scale part icons of the radial container variants
@@ -817,6 +819,32 @@ namespace KERBALISM
 					else if (module is Experiment)
 					{
 						partNeedsInfoRecompile = true;
+					}
+					// inject process details into ModuleB9PartSwitch/SUBTYPE/descriptionDetail for process switchers
+					else if (module.moduleName == "ModuleB9PartSwitch")
+					{
+						var processControllers = ap.partPrefab.FindModulesImplementing<KSMProcessController>();
+						if (processControllers.Count == 0)
+							continue;
+
+						double capacity = processControllers[0].capacity;
+
+						var list = Lib.ReflectionValue<IList>(module, "subtypes");
+						if (list == null || list.Count == 0)
+							continue;
+
+						foreach (var subtype in list)
+						{
+							var subtypeName = Lib.ReflectionValue<string>(subtype, "subtypeName");
+							var process = Profile.processes.Find(p => p.modifiers.Contains(subtypeName));
+
+							if (process != null)
+							{
+								var specifics = KSMProcessController.Specifics(process, capacity);
+								var description = specifics.Info(Localizer.Format(Local.ProcessController_Capacity, capacity.ToString("F0")));
+								subtype.GetType().GetField("descriptionDetail", BindingFlags.Instance | BindingFlags.Public).SetValue(subtype, description);
+							}
+						}
 					}
 				}
 
