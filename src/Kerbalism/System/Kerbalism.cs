@@ -733,22 +733,33 @@ namespace KERBALISM
 				// scale part icons of the radial container variants
 				switch (ap.name)
 				{
+					case "kerbalism-container-inline-prosemian-full-0625":
 					case "kerbalism-container-radial-small":
+					case "kerbalism-container-radial-pressurized-prosemian-small":
+					case "kerbalism-container-radial-box-prosemian-small":
 						ap.iconPrefab.transform.GetChild(0).localScale *= 0.60f;
 						ap.iconScale *= 0.60f;
 						break;
+					case "kerbalism-container-inline-prosemian-full-125":
+					case "kerbalism-container-inline-prosemian-half-125":
 					case "kerbalism-container-radial-medium":
+					case "kerbalism-container-radial-pressurized-prosemian-medium":
+					case "kerbalism-container-radial-box-prosemian-normal":
 						ap.iconPrefab.transform.GetChild(0).localScale *= 0.85f;
 						ap.iconScale *= 0.85f;
 						break;
+					case "kerbalism-container-inline-prosemian-full-250":
+					case "kerbalism-container-inline-prosemian-half-250":
 					case "kerbalism-container-radial-big":
+					case "kerbalism-container-radial-pressurized-prosemian-big":
+					case "kerbalism-container-radial-box-prosemian-large":
 						ap.iconPrefab.transform.GetChild(0).localScale *= 1.10f;
 						ap.iconScale *= 1.10f;
 						break;
+					case "kerbalism-container-inline-prosemian-full-375":
+					case "kerbalism-container-inline-prosemian-half-375":
 					case "kerbalism-container-radial-huge":
-						ap.iconPrefab.transform.GetChild(0).localScale *= 1.33f;
-						ap.iconScale *= 1.33f;
-						break;
+					case "kerbalism-container-radial-pressurized-prosemian-huge":
 					case "kerbalism-container-inline-375":
 						ap.iconPrefab.transform.GetChild(0).localScale *= 1.33f;
 						ap.iconScale *= 1.33f;
