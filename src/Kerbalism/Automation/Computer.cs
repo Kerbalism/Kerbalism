@@ -246,14 +246,15 @@ namespace KERBALISM
 					switch (m.moduleName)
 					{
 						case "ProcessController":            device = new ProcessDevice(m as ProcessController);                 break;
+						case "KSMProcessController":		 device = new KSMProcessDevice(m as KSMProcessController);           break;
 						case "Sickbay":                      device = new SickbayDevice(m as Sickbay);                           break;
 						case "Greenhouse":                   device = new GreenhouseDevice(m as Greenhouse);                     break;
 						case "GravityRing":                  device = new RingDevice(m as GravityRing);                          break;
 						case "Emitter":                      device = new EmitterDevice(m as Emitter);                           break;
-						case "Harvester":                    device = new HarvesterDevice(m as Harvester);                         break;
+						case "Harvester":                    device = new HarvesterDevice(m as Harvester);                       break;
 						case "Laboratory":                   device = new LaboratoryDevice(m as Laboratory);                     break;
 						case "Experiment":                   device = new ExperimentDevice(m as Experiment);                     break;
-						case "SolarPanelFixer":				 device = new PanelDevice(m as SolarPanelFixer);					  break;
+						case "SolarPanelFixer":				 device = new PanelDevice(m as SolarPanelFixer);					 break;
 						case "ModuleGenerator":              device = new GeneratorDevice(m as ModuleGenerator);                 break;
 						case "ModuleResourceConverter":      device = new ConverterDevice(m as ModuleResourceConverter);         break;
 						case "ModuleKPBSConverter":          device = new ConverterDevice(m as ModuleResourceConverter);         break;
@@ -309,6 +310,7 @@ namespace KERBALISM
 						switch (m.moduleName)
 						{
 							case "ProcessController":            device = new ProtoProcessDevice(module_prefab as ProcessController, p, m);        break;
+							case "KSMProcessController":         device = new KSMProtoProcessDevice(module_prefab as KSMProcessController, p, m);  break;
 							case "Sickbay":                      device = new ProtoSickbayDevice(module_prefab as Sickbay, p, m);                  break;
 							case "Greenhouse":                   device = new ProtoGreenhouseDevice(module_prefab as Greenhouse, p, m);            break;
 							case "GravityRing":                  device = new ProtoRingDevice(module_prefab as GravityRing, p, m);                 break;
