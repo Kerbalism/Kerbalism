@@ -39,7 +39,7 @@ The values defined here will be propagated to :
       <KSPMaxMajor>1</KSPMaxMajor>
       <KSPMaxMinor>9</KSPMaxMinor>
       <KSPMaxBuild>9</KSPMaxBuild>
-      <KSPBuildVersion>1.9.0</KSPBuildVersion>
+      <KSPBuildVersion>1.8.0</KSPBuildVersion>
       <KSPNETFramework>v4.0</KSPNETFramework>
     </KBinVersionConstant>
 		<KBinVersionConstant Include="17">
