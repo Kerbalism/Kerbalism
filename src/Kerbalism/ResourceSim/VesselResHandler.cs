@@ -12,6 +12,9 @@ namespace KERBALISM
 	/// </summary>
 	public sealed class VesselResHandler
 	{
+
+		public VesselResource ElectricCharge { get; private set; }
+
 		private class VesselResourceInfo
 		{
 			public IResource resource;
@@ -52,6 +55,8 @@ namespace KERBALISM
 
 			foreach (VesselResourceInfo vesselResourceInfo in resources.Values)
 				((VesselResource)vesselResourceInfo.resource).InitAmounts(vesselResourceInfo.partResources);
+
+			ElectricCharge = (VesselResource)resources["ElectricCharge"].resource;
 		}
 
 		public VesselResHandler(Vessel v)
@@ -63,6 +68,8 @@ namespace KERBALISM
 
 			foreach (VesselResourceInfo vesselResourceInfo in resources.Values)
 				((VesselResource)vesselResourceInfo.resource).InitAmounts(vesselResourceInfo.partResources);
+
+			ElectricCharge = (VesselResource)resources["ElectricCharge"].resource;
 		}
 
 		public VesselResHandler(ProtoVessel pv)
@@ -74,6 +81,8 @@ namespace KERBALISM
 
 			foreach (VesselResourceInfo vesselResourceInfo in resources.Values)
 				((VesselResource)vesselResourceInfo.resource).InitAmounts(vesselResourceInfo.partResources);
+
+			ElectricCharge = (VesselResource)resources["ElectricCharge"].resource;
 		}
 
 		/// <summary>return the VesselResource object for this resource or create it if it doesn't exists</summary>

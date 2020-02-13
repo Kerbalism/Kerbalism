@@ -12,14 +12,14 @@ namespace KERBALISM
 		/// <summary> True if CommNet initialization has begin </summary>
 		public static bool NetworkInitializing = false;
 
-		public static void Update(Vessel v, VesselData vd, IResource ec, double elapsed_s)
+		public static void Update(Vessel v, VesselData vd, double elapsed_s)
 		{
 			if(!Lib.IsVessel(v))
 				return;
 
 			// EC consumption is handled in Science update
 
-			Cache.WarpCache(v).dataCapacity = vd.deviceTransmit ? vd.Connection.rate * elapsed_s : 0.0;
+			Cache.WarpCache(v).dataCapacity = vd.deviceTransmit ? vd.Connection.rate * elapsed_s * vd.ResHandler.ElectricCharge.AvailabilityFactor : 0.0;
 
 			// do nothing if network is not ready
 			if (!NetworkInitialized) return;

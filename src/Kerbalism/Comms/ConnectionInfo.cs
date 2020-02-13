@@ -59,8 +59,8 @@ namespace KERBALISM
 		private ConnectionInfo(Vessel v, bool powered, bool storm)
 		{
 			// return no connection if there is no ec left
-			if (!powered)
-				return;
+			//if (!powered)
+			//	return;
 
 			// wait until network is initialized (2 seconds after load)
 			if (!Communications.NetworkInitialized)

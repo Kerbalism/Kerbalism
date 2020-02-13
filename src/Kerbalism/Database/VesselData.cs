@@ -45,6 +45,8 @@ namespace KERBALISM
 		public bool cfg_highlights;   // show/hide malfunction highlights
 		public bool cfg_showlink;     // show/hide link line
 		public Computer computer;     // store scripts
+
+		// vessel wide toggles
 		public bool deviceTransmit;   // vessel wide automation : enable/disable data transmission
 
 		// other persisted fields
@@ -328,6 +330,10 @@ namespace KERBALISM
 
 		/// <summary>some data about greenhouses</summary>
 		public List<Greenhouse.Data> Greenhouses => greenhouses; List<Greenhouse.Data> greenhouses;
+
+		/// <summary>true if all command modules are hibernating (limited control and no transmission)</summary>
+		public bool Hibernating { get; private set; }
+		public bool hasNonHibernatingCommandModules = false;
 
 		/// <summary>true if vessel is powered</summary>
 		public bool Powered => powered; bool powered;
@@ -705,7 +711,7 @@ namespace KERBALISM
 		{
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.VesselData.EvaluateStatus");
 			// determine if there is enough EC for a powered state
-			powered = Lib.IsPowered(Vessel);
+			powered = Lib.IsPowered(Vessel, ResHandler.ElectricCharge);
 
 			// calculate crew info for the vessel
 			crewCount = Lib.CrewCount(Vessel);
@@ -717,6 +723,21 @@ namespace KERBALISM
 
 			// communications info
 			connection = ConnectionInfo.Update(Vessel, powered, EnvBlackout);
+			connection.linked &= ResHandler.ElectricCharge.CriticalConsumptionSatisfied;
+
+			// check ModuleCommand hibernation and 
+			if (Hibernating != !hasNonHibernatingCommandModules)
+			{
+				Hibernating = !hasNonHibernatingCommandModules;
+				if (!Hibernating)
+					deviceTransmit = true;
+			}
+
+			// this flag will be set by the ModuleCommand harmony patches / background update
+			hasNonHibernatingCommandModules = false;
+
+			if (Hibernating)
+				deviceTransmit = false;
 
 			// TODO : cache the list
 			List<HabitatData> habitats = new List<HabitatData>();

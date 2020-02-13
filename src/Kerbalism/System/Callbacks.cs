@@ -157,6 +157,16 @@ namespace KERBALISM
 				return;
 			}
 
+			// TODO : this fail (hard) when called from the launchpad interface crew transfer dialog
+			// The vessel doesn't exists there, and doesn't look there is any built-in reference to the shipconstruct / saved data
+			// So this is gonna be tricky to handle.
+			// Side note : check how mods that launch vessels from other places than the editor are handling that (KCT ? EPL ?)
+
+			if (KSP.UI.Screens.VesselSpawnDialog.Instance != null)
+			{
+				return;
+			}
+
 			bool needRefresh = false;
 			foreach (PartCrewManifest partManifest in crewManifest.PartManifests)
 			{
@@ -215,13 +225,19 @@ namespace KERBALISM
 			}
 		}
 
-		// TODO : allow boarding to non pressurized parts when inside atmosphere !!!!
 		public bool AttemptBoard(KerbalEVA instance, Part targetPart)
 		{
 			bool canBoard = false;
 			if (targetPart != null && targetPart.vessel.KerbalismData().Parts.TryGet(targetPart.flightID, out PartData partData))
+			{
 				if (partData.Habitat != null)
-					canBoard = partData.Habitat.pressureState == HabitatData.PressureState.Depressurized;
+				{
+					canBoard =
+						partData.Habitat.pressureState == HabitatData.PressureState.Depressurized
+						|| partData.Habitat.pressureState == HabitatData.PressureState.AlwaysDepressurized
+						|| partData.Habitat.pressureState == HabitatData.PressureState.Breatheable;
+				}
+			}
 
 			if (!canBoard)
 				Message.Post($"Can't board {Lib.Bold(targetPart.partInfo.title)}", "Depressurize it first !");
@@ -229,7 +245,6 @@ namespace KERBALISM
 			return canBoard;
 		}
 
-		// TODO : allow EVA from non pressurized parts when inside atmosphere !!!!
 		private void AttemptEVA(ProtoCrewMember crew, Part sourcePart, Transform hatchTransform)
 		{
 			FlightEVA.fetch.overrideEVA = true;
@@ -237,7 +252,10 @@ namespace KERBALISM
 			{
 				if (fromPartData.Habitat != null)
 				{
-					FlightEVA.fetch.overrideEVA = fromPartData.Habitat.pressureState != HabitatData.PressureState.Depressurized;
+					FlightEVA.fetch.overrideEVA =
+						!(fromPartData.Habitat.pressureState == HabitatData.PressureState.Depressurized
+						|| fromPartData.Habitat.pressureState == HabitatData.PressureState.AlwaysDepressurized
+						|| fromPartData.Habitat.pressureState == HabitatData.PressureState.Breatheable);
 				}
 			}
 

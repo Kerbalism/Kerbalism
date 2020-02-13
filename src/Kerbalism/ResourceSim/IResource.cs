@@ -30,7 +30,11 @@ namespace KERBALISM
 
 		/// <summary>Record a consumption, it will be stored in "Deferred" and later synchronized to the vessel in Sync()</summary>
 		/// <param name="broker">origin of the consumption, will be available in the UI</param>
-		void Consume(double quantity, ResourceBroker broker = null);
+		void Consume(double quantity, ResourceBroker broker = null, bool isCritical = false);
+
+		/// <summary>Record a consumption, it will be stored in "Deferred" and later synchronized to the vessel in Sync()</summary>
+		/// <param name="broker">origin of the consumption, will be available in the UI</param>
+		void RecipeConsume(double quantity, ResourceBroker broker);
 
 		/// <summary>Record a production, it will be stored in "Deferred" and later synchronized to the vessel in Sync()</summary>
 		/// <param name="broker">origin of the production, will be available in the UI</param>

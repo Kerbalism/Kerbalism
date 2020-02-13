@@ -243,7 +243,12 @@ namespace KERBALISM
 		public class GuidParser : ValueParser<Guid>
 		{
 			public override string Serialize(Guid value) => value.ToString("N", CultureInfo.InvariantCulture);
-			public override bool Deserialize(string strValue, out Guid value) => Guid.TryParseExact(strValue, "N", out value);
+			public override bool Deserialize(string strValue, out Guid value)
+			{
+				try { value = new Guid(strValue); } // Note : .NET 4.x has a tryParse method
+				catch (Exception) { value = Guid.Empty;  return false; } 
+				return true;
+			}
 		}
 
 		#endregion

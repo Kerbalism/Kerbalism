@@ -73,13 +73,14 @@ namespace KERBALISM
 		}
 
 		// consume EC for transmission, and transmit science data
-		public static void Update(Vessel v, VesselData vd, IResource ec, double elapsed_s)
+		public static void Update(Vessel v, VesselData vd, double elapsed_s)
 		{
 			// do nothing if science system is disabled
 			if (!Features.Science) return;
 
 			// consume ec for transmitters
-			ec.Consume(vd.Connection.ec_idle * elapsed_s, ResourceBroker.CommsIdle);
+			VesselResource ec = vd.ResHandler.ElectricCharge;
+			ec.Consume(vd.Connection.ec_idle * elapsed_s, ResourceBroker.CommsIdle, true);
 
 			// avoid corner-case when RnD isn't live during scene changes
 			// - this avoid losing science if the buffer reach threshold during a scene change
@@ -93,8 +94,7 @@ namespace KERBALISM
 			if (vd.Connection == null
 				|| !vd.Connection.linked
 				|| vd.Connection.rate <= 0.0
-				|| !vd.deviceTransmit
-				|| ec.Amount < vd.Connection.ec_idle * elapsed_s)
+				|| !vd.deviceTransmit)
 			{
 				// reset all files transmit rate
 				foreach (Drive drive in Drive.GetDrives(vd, true))
@@ -105,7 +105,7 @@ namespace KERBALISM
 				return;
 			}
 			
-			double totalTransmitCapacity = vd.Connection.rate * elapsed_s;
+			double totalTransmitCapacity = vd.Connection.rate * elapsed_s * ec.AvailabilityFactor;
 			double remainingTransmitCapacity = totalTransmitCapacity;
 
 			GetFilesToTransmit(v, vd);
@@ -169,8 +169,8 @@ namespace KERBALISM
 			UnityEngine.Profiling.Profiler.EndSample();
 
 			// consume EC cost for transmission (ec_idle is consumed above)
-			double transmittedCapacity = totalTransmitCapacity - remainingTransmitCapacity;
-			double transmissionCost = (vd.Connection.ec - vd.Connection.ec_idle) * (transmittedCapacity / vd.Connection.rate);
+			double transmittedTotal = totalTransmitCapacity - remainingTransmitCapacity;
+			double transmissionCost = (vd.Connection.ec - vd.Connection.ec_idle) * (transmittedTotal / (vd.Connection.rate * elapsed_s));
 			ec.Consume(transmissionCost, ResourceBroker.CommsXmit);
 		}
 

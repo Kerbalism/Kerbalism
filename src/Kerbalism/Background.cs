@@ -98,12 +98,12 @@ namespace KERBALISM
 				switch(e.type)
 				{
 					case Module_type.Reliability: Reliability.BackgroundUpdate(v, e.p, e.m, e.module_prefab as Reliability, elapsed_s); break;
-					case Module_type.Experiment: (e.module_prefab as Experiment).BackgroundUpdate(v, vd, e.m, ec, resources, elapsed_s); break; // experiments use the prefab as a singleton instead of a static method
+					case Module_type.Experiment: (e.module_prefab as Experiment).BackgroundUpdate(v, vd, e.m, elapsed_s); break; // experiments use the prefab as a singleton instead of a static method
 					case Module_type.Greenhouse: Greenhouse.BackgroundUpdate(v, e.m, e.module_prefab as Greenhouse, vd, resources, elapsed_s); break;
 					//case Module_type.GravityRing: GravityRing.BackgroundUpdate(v, e.p, e.m, e.module_prefab as GravityRing, ec, elapsed_s); break;
 					case Module_type.Harvester: Harvester.BackgroundUpdate(v, e.m, e.module_prefab as Harvester, elapsed_s); break; // Kerbalism ground and air harvester module
 					case Module_type.Laboratory: Laboratory.BackgroundUpdate(v, e.p, e.m, e.module_prefab as Laboratory, ec, elapsed_s); break;
-					case Module_type.Command: ProcessCommand(v, e.p, e.m, e.module_prefab as ModuleCommand, resources, elapsed_s); break;
+					case Module_type.Command: ProcessCommand(vd, e.p, e.m, e.module_prefab as ModuleCommand, elapsed_s); break;
 					case Module_type.Generator: ProcessGenerator(v, e.p, e.m, e.module_prefab as ModuleGenerator, resources, elapsed_s); break;
 					case Module_type.Converter: ProcessConverter(v, e.p, e.m, e.module_prefab as ModuleResourceConverter, resources, elapsed_s); break;
 					case Module_type.Drill: ProcessDrill(v, e.p, e.m, e.module_prefab as ModuleResourceHarvester, resources, elapsed_s); break; // Stock ground harvester module
@@ -202,19 +202,25 @@ namespace KERBALISM
 			ec.Produce(maxPower * elapsed_s, ResourceBroker.KSPIEGenerator);
 		}
 
-		static void ProcessCommand(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleCommand command, VesselResHandler resources, double elapsed_s)
+		static void ProcessCommand(VesselData vd, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleCommand command,  double elapsed_s)
 		{
-			// do not consume if this is a MCM with no crew
+			
+			bool hibernating = Lib.Proto.GetBool(m, "hibernation", false);
+			if (!hibernating)
+				vd.hasNonHibernatingCommandModules = true;
+
+			// do not consume if this is a MC with no crew
 			// rationale: for consistency, the game doesn't consume resources for MCM without crew in loaded vessels
-			//            this make some sense: you left a vessel with some battery and nobody on board, you expect it to not consume EC
+			// this make some sense: you left a vessel with some battery and nobody on board, you expect it to not consume EC
 			if (command.minimumCrew == 0 || p.protoModuleCrew.Count > 0)
 			{
-				// for each input resource
-				foreach (ModuleResource ir in command.resHandler.inputResources)
-				{
-					// consume the resource
-					resources.Consume(ir.name, ir.rate * elapsed_s, ResourceBroker.Command);
-				}
+				double ecRate = Lib.Proto.GetDouble(m, "hibernationMultiplier", 0.02);
+
+				if (hibernating)
+					ecRate *= Settings.HibernatingEcFactor;
+
+				VesselResource ec = vd.ResHandler.ElectricCharge;
+				ec.Consume(ecRate * elapsed_s, ResourceBroker.Command, true);
 			}
 		}
 

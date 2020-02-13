@@ -345,11 +345,10 @@ namespace KERBALISM
 
 			shrouded = part.ShieldedFromAirstream;
 
+
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Experiment.FixedUpdate.RunningUpdate");
 			RunningUpdate(
 				vessel, vd, GetSituation(vd), this, privateHdId, didPrepare, shrouded,
-				ResourceCache.GetResource(vessel, "ElectricCharge"),
-				ResourceCache.GetVesselHandler(vessel),
 				ResourceDefs,
 				ExpInfo,
 				expState,
@@ -368,7 +367,7 @@ namespace KERBALISM
 		}
 
 		// note : we use a non-static method so it can be overriden
-		public virtual void BackgroundUpdate(Vessel v, VesselData vd, ProtoPartModuleSnapshot m, IResource ec, VesselResHandler resources, double elapsed_s)
+		public virtual void BackgroundUpdate(Vessel v, VesselData vd, ProtoPartModuleSnapshot m, double elapsed_s)
 		{
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Experiment.BackgroundUpdate");
 
@@ -404,8 +403,6 @@ namespace KERBALISM
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Experiment.BackgroundUpdate.RunningUpdate");
 			RunningUpdate(
 				v, vd, GetSituation(vd), this, privateHdId, didPrepare, shrouded, // "this" is the prefab
-				ec,
-				resources,
 				ResourceDefs, // from prefab
 				expInfo,
 				expState,
@@ -431,7 +428,7 @@ namespace KERBALISM
 
 		private static void RunningUpdate(
 			Vessel v, VesselData vd, Situation vs, Experiment prefab, uint hdId, bool didPrepare, bool isShrouded,
-			IResource ec, VesselResHandler resources, List<ObjectPair<string, double>> resourceDefs,
+			List<ObjectPair<string, double>> resourceDefs,
 			ExperimentInfo expInfo, RunningState expState, double elapsed_s,
 			ref int lastSituationId, ref double remainingSampleMass, out SubjectData subjectData, out string mainIssue)
 		{
@@ -469,7 +466,7 @@ namespace KERBALISM
 				return;
 			}
 
-			if (ec.Amount == 0.0 && prefab.ec_rate > 0.0)
+			if (prefab.ec_rate > 0.0 && vd.ResHandler.ElectricCharge.AvailabilityFactor < 0.1)
 			{
 				mainIssue = Local.Module_Experiment_issue4;//"no Electricity"
 				return;
@@ -515,7 +512,7 @@ namespace KERBALISM
 				return;
 			}
 
-			if (!HasRequiredResources(v, resourceDefs, resources, out mainIssue))
+			if (!HasRequiredResources(v, resourceDefs, vd.ResHandler, out mainIssue))
 			{
 				mainIssue = Local.Module_Experiment_issue10;//"missing resource"
 				return;
@@ -568,36 +565,29 @@ namespace KERBALISM
 				return;
 			}
 
-			chunkSize = Math.Min(chunkSize, available);
+			chunkSizeMax = Math.Min(chunkSize, available);
 
-			// TODO : prodfactor rely on resource capacity, resulting in wrong (lower) rate at high timewarp speeds if resource capacity is too low
-			// There is no way to fix that currently, this is another example of why virtual ressource recipes are needed
-			double prodFactor;
-			prodFactor = chunkSize / chunkSizeMax;
+			double chunkProdFactor = chunkSize / chunkSizeMax;
+			double resourcesProdFactor = 1.0;
 
 			if (prefab.ec_rate > 0.0)
-				prodFactor = Math.Min(prodFactor, Lib.Clamp(ec.Amount / (prefab.ec_rate * elapsed_s), 0.0, 1.0));
+				resourcesProdFactor = Math.Min(resourcesProdFactor, vd.ResHandler.ElectricCharge.AvailabilityFactor);
 
-			foreach (ObjectPair<string, double> p in resourceDefs)
-			{
-				if (p.Value <= 0.0) continue;
-				IResource ri = resources.GetResource(p.Key);
-				prodFactor = Math.Min(prodFactor, Lib.Clamp(ri.Amount / (p.Value * elapsed_s), 0.0, 1.0));
-			}
+			foreach (ObjectPair<string, double> res in resourceDefs)
+				resourcesProdFactor = Math.Min(resourcesProdFactor, ((VesselResource)vd.ResHandler.GetResource(res.Key)).AvailabilityFactor);
 
-			if (prodFactor == 0.0)
+			if (resourcesProdFactor < 0.1)
 			{
 				mainIssue = Local.Module_Experiment_issue10;//"missing resource"
 				return;
 			}
 
-			chunkSize = chunkSizeMax * prodFactor;
-			elapsed_s *= prodFactor;
+			chunkSize = chunkSizeMax * Math.Min(chunkProdFactor, resourcesProdFactor);
 			double massDelta = chunkSize * expInfo.MassPerMB;
 
 #if DEBUG || DEVBUILD
 			if (double.IsNaN(chunkSize))
-				Lib.Log("chunkSize is NaN " + expInfo.ExperimentId + " " + chunkSizeMax + " / " + prodFactor + " / " + available + " / " + ec.Amount + " / " + prefab.ec_rate + " / " + prefab.data_rate, Lib.LogLevel.Error);
+				Lib.Log("chunkSize is NaN " + expInfo.ExperimentId + " " + chunkSizeMax + " / " + chunkProdFactor + " / " + resourcesProdFactor + " / " + available + " / " + vd.ResHandler.ElectricCharge.Amount + " / " + prefab.ec_rate + " / " + prefab.data_rate, Lib.LogLevel.Error);
 
 			if (double.IsNaN(massDelta))
 				Lib.Log("mass delta is NaN " + expInfo.ExperimentId + " " + expInfo.SampleMass + " / " + chunkSize + " / " + expInfo.DataSize, Lib.LogLevel.Error);
@@ -626,9 +616,11 @@ namespace KERBALISM
 			}
 
 			// consume resources
-			ec.Consume(prefab.ec_rate * elapsed_s, ResourceBroker.Experiment);
+			// note : Consume() calls should only factor in the drive available space limitation and not the
+			// the resource available factor in order to have each resource AvailabilityFactor calculated correctly
+			vd.ResHandler.ElectricCharge.Consume(prefab.ec_rate * elapsed_s * chunkProdFactor, ResourceBroker.Experiment);
 			foreach (ObjectPair<string, double> p in resourceDefs)
-				resources.Consume(p.Key, p.Value * elapsed_s, ResourceBroker.Experiment);
+				vd.ResHandler.Consume(p.Key, p.Value * elapsed_s * chunkProdFactor, ResourceBroker.Experiment);
 
 			if (!prefab.sample_collecting)
 			{

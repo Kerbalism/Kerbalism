@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace KERBALISM
 {
@@ -115,6 +112,8 @@ namespace KERBALISM
 		}
 
 		public override bool Equals(object obj) => Equals((ResourceBroker)obj);
+
+		public override string ToString() => Title;
 	}
 
 	public class ResourceBrokerRate : IEquatable<ResourceBrokerRate>

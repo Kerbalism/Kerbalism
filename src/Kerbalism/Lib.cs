@@ -1348,14 +1348,14 @@ namespace KERBALISM
 #endif
 		}
 
-		public static bool IsPowered(Vessel v)
+		public static bool IsPowered(Vessel v, VesselResource ecRes)
 		{
 #if !KSP15_16
 			var cluster = Serenity.GetScienceCluster(v);
 			if (cluster != null)
 				return cluster.IsPowered;
 #endif
-			return ResourceCache.GetResource(v, "ElectricCharge").Amount > double.Epsilon;
+			return ecRes.AvailabilityFactor > 0.1;
 		}
 
 		public static Guid VesselID(Vessel v)

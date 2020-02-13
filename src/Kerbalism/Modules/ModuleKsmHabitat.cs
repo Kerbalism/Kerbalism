@@ -1,17 +1,10 @@
 ﻿using Harmony;
-using KSP.UI;
-using KSP.UI.Screens.Flight;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 using static KERBALISM.HabitatData;
 using static KERBALISM.HabitatLib;
-using System.Collections;
 
 namespace KERBALISM
 {
@@ -25,8 +18,8 @@ namespace KERBALISM
 		[KSPField] public double reclaimAtmosphereFactor = 0.75;  // % of atmosphere that will be recovered when depressurizing (producing "reclaimResource" back)
 		[KSPField] public bool canRetract = true;                 // if false, can't be retracted once deployed
 		[KSPField] public bool deployWithPressure = false;        // if true, deploying is done by pressurizing
-		[KSPField] public double depressurizeECRate = 0.0;        // EC/s consumed while depressurizing
-		[KSPField] public double deployECRate = 0.0;              // EC/s consumed while deploying / inflating
+		[KSPField] public double depressurizeECRate = 1.0;        // EC/s consumed while depressurizing
+		[KSPField] public double deployECRate = 5.0;              // EC/s consumed while deploying / inflating
 		[KSPField] public double accelerateECRate = 15.0;          // EC/s consumed while accelerating / decelerating a centrifuge
 		[KSPField] public double rotateECRate = 2.0;              // EC/s consumed to sustain the centrifuge rotation
 
@@ -130,7 +123,7 @@ namespace KERBALISM
 					try
 					{
 						comfort = (Comfort)Enum.Parse(typeof(Comfort), comfortString);
-						fixedComfortsMask |= (int)comfort;
+						baseComfortsMask |= (int)comfort;
 					}
 					catch
 					{
@@ -398,9 +391,10 @@ namespace KERBALISM
 				data.isRotating = rotateAnimator.IsSpinning;
 			}
 
-			// I can't believe I never used that before...
+#if !KSP15_16
 			if (part.PartActionWindow == null)
 				return;
+#endif
 
 			int pawState = (enableEvent.active ? 1 << 0 : 0) | (pressureEvent.active ? 1 << 1 : 0) | (deployEvent.active ? 1 << 2 : 0) | (rotateEvent.active ? 1 << 3 : 0);
 
@@ -411,8 +405,10 @@ namespace KERBALISM
 
 			int newPawState = (enableEvent.active ? 1 << 0 : 0) | (pressureEvent.active ? 1 << 1 : 0) | (deployEvent.active ? 1 << 2 : 0) | (rotateEvent.active ? 1 << 3 : 0);
 
+#if !KSP15_16
 			if (pawState != newPawState)
 				part.PartActionWindow.displayDirty = true;
+#endif
 
 			double habPressure = atmoRes.Amount / atmoRes.Capacity;
 
@@ -529,11 +525,13 @@ namespace KERBALISM
 
 			VesselResource atmoResInfo = null;
 			VesselResource wasteResInfo = null;
+			VesselResource ecResInfo = null;
 
 			if (isFlight)
 			{
 				atmoResInfo = (VesselResource)vd.ResHandler.GetResource(Settings.HabitatAtmoResource);
 				wasteResInfo = (VesselResource)vd.ResHandler.GetResource(Settings.HabitatWasteResource);
+				ecResInfo = vd.ResHandler.ElectricCharge;
 			}
 
 			// TODO: refactor that huge switch into a proper state machine :
@@ -734,7 +732,7 @@ namespace KERBALISM
 				case PressureState.DepressurizingAboveThreshold:
 				case PressureState.DepressurizingBelowThreshold:
 
-					// if fully deprussirized, do to the depressurized state
+					// if fully depressurized, go to the depressurized state
 					if (atmoRes.Amount <= 0.0)
 					{
 						data.pressureState = PressureState.DepressurizingEndEvt;
@@ -752,7 +750,18 @@ namespace KERBALISM
 						data.pressureState = PressureState.DepressurizingPassThresholdEvt;
 					}
 
-					double newAtmoAmount = atmoRes.Amount - (data.module.depressurizationSpeed * elapsed_s);
+					double ecFactor;
+					if (data.module.depressurizeECRate > 0.0)
+					{
+						ecResInfo.Consume(data.module.depressurizeECRate * elapsed_s, ResourceBroker.Habitat);
+						ecFactor = ecResInfo.AvailabilityFactor;
+					}
+					else
+					{
+						ecFactor = 1.0;
+					}
+
+					double newAtmoAmount = atmoRes.Amount - (data.module.depressurizationSpeed * elapsed_s * ecFactor);
 					newAtmoAmount = Math.Max(newAtmoAmount, 0.0);
 
 					// we only vent CO2 when the kerbals aren't yet in their helmets

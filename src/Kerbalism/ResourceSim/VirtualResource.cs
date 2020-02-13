@@ -69,6 +69,11 @@ namespace KERBALISM
 		/// <summary> Amount vs capacity, or 0 if there is no capacity</summary>
 		public double Level { get; private set; }
 
+		private double availabilityFactor;
+
+		private double consumeRequests;
+		private double produceRequests;
+
 		public bool IsNewInstance { get; private set; }
 
 		public VirtualResource(string virtualName)
@@ -84,6 +89,12 @@ namespace KERBALISM
 		public bool ExecuteAndSyncToParts(double elapsed_s, List<ResourceWrapper> partResources = null)
 		{
 			IsNewInstance = false;
+
+			double starvation = Math.Abs(Math.Min(Amount + produceRequests - consumeRequests, 0.0));
+			availabilityFactor = consumeRequests > 0.0 ? starvation / consumeRequests : 1.0;
+			produceRequests = 0.0;
+			consumeRequests = 0.0;
+
 			Amount += Deferred;
 			Deferred = 0.0;
 			Level = Capacity > 0.0 ? Amount / Capacity : 0.0;
@@ -99,7 +110,14 @@ namespace KERBALISM
 
 		/// <summary>Record a production, it will be stored in 'Deferred' until the Sync() method synchronize it to 'Amount'</summary>
 		/// <param name="brokerName">origin of the production, will be available in the UI</param>
-		public void Consume(double quantity, ResourceBroker broker)
+		public void Consume(double quantity, ResourceBroker broker, bool isCritical = false)
+		{
+			consumeRequests += quantity;
+			quantity *= availabilityFactor;
+			Deferred -= quantity;
+		}
+
+		public void RecipeConsume(double quantity, ResourceBroker broker)
 		{
 			Deferred -= quantity;
 		}

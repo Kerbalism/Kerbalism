@@ -196,14 +196,14 @@ namespace KERBALISM
 						else
 						{
 							need -= res.Amount + res.Deferred;
-							res.Consume(res.Amount + res.Deferred, broker);
-							sec.Consume(need, broker);
+							res.RecipeConsume(res.Amount + res.Deferred, broker);
+							sec.RecipeConsume(need, broker);
 						}
 					}
 				}
 				else
 				{
-					res.Consume(e.quantity * worst_io, broker);
+					res.RecipeConsume(e.quantity * worst_io, broker);
 				}
 			}
 

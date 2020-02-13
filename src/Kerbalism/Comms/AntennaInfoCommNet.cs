@@ -36,7 +36,7 @@ namespace KERBALISM
 					// do not include internal data rate, ec cost only
 					if (t.antennaType == AntennaType.INTERNAL)
 					{
-						antennaInfo.ec += t.DataResourceCost * t.DataRate;
+						antennaInfo.ec_idle += t.DataResourceCost * t.DataRate;
 					}
 					else
 					{
@@ -62,7 +62,7 @@ namespace KERBALISM
 					// do not include internal data rate, ec cost only
 					if (prefab.antennaType == AntennaType.INTERNAL)
 					{
-						antennaInfo.ec += prefab.DataResourceCost * prefab.DataRate;
+						antennaInfo.ec_idle += prefab.DataResourceCost * prefab.DataRate;
 					}
 					else
 					{
@@ -81,15 +81,12 @@ namespace KERBALISM
 
 			// when transmitting, transmitters need more EC for the signal amplifiers.
 			// while not transmitting, transmitters only use 10-20% of that
-			// note by got : the way this is done doesn't make any sense... why is ec_idle changing when transmitting ????
-			ec_transmitter *= antennaInfo.transmitting ? Settings.TransmitterActiveEcFactor : Settings.TransmitterPassiveEcFactor;
-
 			antennaInfo.ec = ec_transmitter * Settings.TransmitterActiveEcFactor;
-			antennaInfo.ec_idle = ec_transmitter * Settings.TransmitterPassiveEcFactor;	
+			antennaInfo.ec_idle += ec_transmitter * Settings.TransmitterPassiveEcFactor;	
 
 			Init();
 
-			if (antennaInfo.linked && transmitterCount > 0)
+			if (transmitterCount > 0)
 			{
 				var bitsPerMB = 1024.0 * 1024.0 * 8.0;
 				antennaInfo.rate += Settings.DataRateMinimumBitsPerSecond / bitsPerMB;
