@@ -524,6 +524,7 @@ namespace KERBALISM
 
 			List<string> incompatibleMods = Settings.IncompatibleMods();
 			List<string> warningMods = Settings.WarningMods();
+			List<string> requiredMods = Settings.RequiredMods();
 
 			List<string> incompatibleModsFound = new List<string>();
 			List<string> warningModsFound = new List<string>();
@@ -532,6 +533,7 @@ namespace KERBALISM
 			{
 				if (incompatibleMods.Contains(a.name.ToLower())) incompatibleModsFound.Add(a.name);
 				if (warningMods.Contains(a.name.ToLower())) warningModsFound.Add(a.name);
+				requiredMods.Remove(a.name);
 			}
 
 			string msg = string.Empty;
@@ -550,6 +552,13 @@ namespace KERBALISM
 				{
 					msg += "<color=#FF4500>CommunityResourcePack (CRP) is not installed</color>\nYou REALLY need CRP for Kerbalism!\n\n";
 				}
+			}
+
+			if(requiredMods.Count > 0)
+			{
+				msg += "<color=#FF4500>Required Mods not found:</color>\n";
+				foreach (var m in requiredMods) msg += "- " + m + "\n";
+				msg += "Kerbalism will not run properly without it. Please install them.\n\n";
 			}
 
 			if (incompatibleModsFound.Count > 0)
