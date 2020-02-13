@@ -358,9 +358,15 @@ namespace KERBALISM
         }
 
 
-        // do the particle-fitting in another thread
+        /// <summary>
+        /// do the particle-fitting in another thread
+        /// </summary>
         public static void Preprocess()
         {
+            // #############################################################
+            // # DO NOT LOG FROM A THREAD IN UNITY. IT IS NOT THREAD SAFE. #
+            // #############################################################
+
             // deduce number of particles
             int inner_count = 150000;
             int outer_count = 600000;
@@ -371,9 +377,6 @@ namespace KERBALISM
                 outer_count /= 5;
                 pause_count /= 5;
             }
-
-            // start time
-            UInt64 time = Lib.Clocks();
 
             // create all magnetic fields and do particle-fitting
             List<string> done = new List<string>();
@@ -387,14 +390,6 @@ namespace KERBALISM
 
                 // add to the skip list
                 done.Add(mf.name);
-
-                // if it has a field
-                if (mf.Has_field())
-                {
-                    // some feedback in the log
-                    // note: can't use BuildString here, as it is not thread-safe
-                    Lib.Log("particle-fitting '" + mf.name + "'...");
-                }
 
                 // particle-fitting for the inner radiation belt
                 if (mf.has_inner)
@@ -414,10 +409,6 @@ namespace KERBALISM
                     mf.pause_pmesh = new ParticleMesh(mf.Pause_func, mf.Pause_domain(), mf.Pause_offset(), pause_count, mf.pause_quality);
                 }
             }
-
-            // measure time required
-            // note: can't use BuildString here, as it is not thread-safe
-            Lib.Log("particle-fitting completed in " + Lib.Seconds(Lib.Clocks() - time).ToString("F3") + " seconds");
         }
 
 
