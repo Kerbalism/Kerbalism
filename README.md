@@ -14,7 +14,7 @@ Kerbalism is a mod for Kerbal Space Program that alters the game to add life sup
 **Download** : **[Github releases]** - **[CKAN]**  
 **Docs & support** : **[Github wiki]** - **[Discord]** - [FAQ] - [Github issues] - [KSP forums thread]  
 **License** : [Unlicense] (public domain)  
-**KSP version** : 1.5.x to 1.8.x  
+**KSP version** : 1.5.x to 1.9.x  
 **Requires** : [Module Manager], [CommunityResourcePack]  
 **[Mod compatibility]** - [Changelog] - [Dev Builds]
 
