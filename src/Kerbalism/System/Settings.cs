@@ -17,6 +17,7 @@ namespace KERBALISM
 
 	public static class Settings
 	{
+		private static string MODS_REQUIRED = "";
 		private static string MODS_INCOMPATIBLE = "TacLifeSupport,Snacks,BackgroundResources,BackgroundProcessing,KolonyTools,USILifeSupport";
 		private static string MODS_WARNING = "RemoteTech,ResearchBodies,CommNetAntennasInfo";
 		private static string MODS_SCIENCE = "KEI,[x] Science!";
@@ -98,6 +99,7 @@ namespace KERBALISM
 			RadiationInSievert = Lib.ConfigValue(cfg, "RadiationInSievert", false);
 
 			ModsIncompatible = Lib.ConfigValue(cfg, "ModsIncompatible", MODS_INCOMPATIBLE);
+			ModsRequired = Lib.ConfigValue(cfg, "ModsRequired", MODS_REQUIRED);
 			ModsWarning = Lib.ConfigValue(cfg, "ModsWarning", MODS_WARNING);
 			ModsScience = Lib.ConfigValue(cfg, "ModsScience", MODS_SCIENCE);
 			CheckForCRP = Lib.ConfigValue(cfg, "CheckForCRP", true);
@@ -123,6 +125,12 @@ namespace KERBALISM
 		{
 			var result = Lib.Tokenize(ModsWarning.ToLower(), ',');
 			if (Features.Science) result.AddRange(Lib.Tokenize(ModsScience.ToLower(), ','));
+			return result;
+		}
+
+		internal static List<string> RequiredMods()
+		{
+			var result = Lib.Tokenize(ModsRequired.ToLower(), ',');
 			return result;
 		}
 
@@ -198,6 +206,7 @@ namespace KERBALISM
 		public static bool RadiationInSievert; // use Sievert iso. rad
 
 		// sanity check settings
+		public static string ModsRequired;
 		public static string ModsIncompatible;
 		public static string ModsWarning;
 		public static string ModsScience;

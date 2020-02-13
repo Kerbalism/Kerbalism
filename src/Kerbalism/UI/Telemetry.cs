@@ -85,7 +85,7 @@ namespace KERBALISM
 
 			foreach (string type in readings)
 			{
-				p.AddContent(type.ToLower().Replace('_', ' '), Sensor.Telemetry_content(v, vd, type), Sensor.Telemetry_tooltip(v, vd, type));
+				p.AddContent(type.Replace('_', ' '), Sensor.Telemetry_content(v, vd, type), Sensor.Telemetry_tooltip(v, vd, type));
 			}
 			if (readings.Count == 0) p.AddContent("<i>"+Local.TELEMETRY_nosensorsinstalled +"</i>");//no sensors installed
 		}
@@ -163,7 +163,7 @@ namespace KERBALISM
 
 				// determine label
 				var resource = PartResourceLibrary.Instance.resourceDefinitions[supply.resource];
-				string label = Lib.SpacesOnCaps(resource.displayName).ToLower();
+				string label = Lib.SpacesOnCaps(resource.displayName);
 
 				StringBuilder sb = new StringBuilder();
 				
@@ -273,7 +273,7 @@ namespace KERBALISM
 				string tooltip = Lib.BuildString("<align=left />", String.Join("\n", tooltips.ToArray()));
 
 				// generate kerbal name
-				string name = kerbal.name.ToLower().Replace(" kerman", string.Empty);
+				string name = kerbal.name.Replace(" Kerman", string.Empty);
 
 				// render selectable title
 				p.AddContent(Lib.Ellipsis(name, Styles.ScaleStringLength(30)), kd.disabled ? Lib.Color(Local.TELEMETRY_HYBERNATED, Lib.Kolor.Cyan) : string.Empty);//"HYBERNATED"

@@ -5,6 +5,7 @@ using UnityEngine;
 using Harmony;
 using KSP.UI.Screens;
 using KSP.Localization;
+using System.Collections;
 
 namespace KERBALISM
 {
@@ -132,7 +133,7 @@ namespace KERBALISM
 
 					// part prefabs hacks
 					Profile.SetupPods(); // add supply resources to pods
-					Misc.PartPrefabsTweaks(); // part prefabs tweaks, must be called after ScienceDB.Init() 
+					Misc.PartPrefabsTweaks(); // part prefabs tweaks, must be called after ScienceDB.Init()
 
 					// Create KsmGui windows
 					new ScienceArchiveWindow();
@@ -523,6 +524,7 @@ namespace KERBALISM
 
 			List<string> incompatibleMods = Settings.IncompatibleMods();
 			List<string> warningMods = Settings.WarningMods();
+			List<string> requiredMods = Settings.RequiredMods();
 
 			List<string> incompatibleModsFound = new List<string>();
 			List<string> warningModsFound = new List<string>();
@@ -531,6 +533,7 @@ namespace KERBALISM
 			{
 				if (incompatibleMods.Contains(a.name.ToLower())) incompatibleModsFound.Add(a.name);
 				if (warningMods.Contains(a.name.ToLower())) warningModsFound.Add(a.name);
+				requiredMods.Remove(a.name);
 			}
 
 			string msg = string.Empty;
@@ -549,6 +552,13 @@ namespace KERBALISM
 				{
 					msg += "<color=#FF4500>CommunityResourcePack (CRP) is not installed</color>\nYou REALLY need CRP for Kerbalism!\n\n";
 				}
+			}
+
+			if(requiredMods.Count > 0)
+			{
+				msg += "<color=#FF4500>Required Mods not found:</color>\n";
+				foreach (var m in requiredMods) msg += "- " + m + "\n";
+				msg += "Kerbalism will not run properly without it. Please install them.\n\n";
 			}
 
 			if (incompatibleModsFound.Count > 0)
@@ -728,72 +738,68 @@ namespace KERBALISM
 
 		public static void PartPrefabsTweaks()
 		{
+			List<string> partSequence = new List<string>();
+
+			partSequence.Add("kerbalism-container-inline-prosemian-full-0625");
+			partSequence.Add("kerbalism-container-inline-prosemian-full-125");
+			partSequence.Add("kerbalism-container-inline-prosemian-full-250");
+			partSequence.Add("kerbalism-container-inline-prosemian-full-375");
+
+			partSequence.Add("kerbalism-container-inline-prosemian-half-125");
+			partSequence.Add("kerbalism-container-inline-prosemian-half-250");
+			partSequence.Add("kerbalism-container-inline-prosemian-half-375");
+
+			partSequence.Add("kerbalism-container-radial-box-prosemian-small");
+			partSequence.Add("kerbalism-container-radial-box-prosemian-normal");
+			partSequence.Add("kerbalism-container-radial-box-prosemian-large");
+
+			partSequence.Add("kerbalism-container-radial-pressurized-prosemian-small");
+			partSequence.Add("kerbalism-container-radial-pressurized-prosemian-medium");
+			partSequence.Add("kerbalism-container-radial-pressurized-prosemian-big");
+			partSequence.Add("kerbalism-container-radial-pressurized-prosemian-huge");
+
+			partSequence.Add("kerbalism-greenhouse");
+			partSequence.Add("kerbalism-gravityring");
+			partSequence.Add("kerbalism-activeshield");
+			partSequence.Add("kerbalism-chemicalplant");
+
+
+			Dictionary<string, float> iconScales = new Dictionary<string, float>();
+
+			iconScales["kerbalism-container-inline-prosemian-full-0625"] = 0.6f;
+			iconScales["kerbalism-container-radial-pressurized-prosemian-small"] = 0.6f;
+			iconScales["kerbalism-container-radial-box-prosemian-small"] = 0.6f;
+
+			iconScales["kerbalism-container-inline-prosemian-full-125"] = 0.85f;
+			iconScales["kerbalism-container-inline-prosemian-half-125"] = 0.85f;
+			iconScales["kerbalism-container-radial-pressurized-prosemian-medium"] = 0.85f;
+			iconScales["kerbalism-container-radial-box-prosemian-normal"] = 0.85f;
+
+			iconScales["kerbalism-container-inline-prosemian-full-250"] = 1.1f;
+			iconScales["kerbalism-container-inline-prosemian-half-250"] = 1.1f;
+			iconScales["kerbalism-container-radial-pressurized-prosemian-big"] = 1.1f;
+			iconScales["kerbalism-container-radial-box-prosemian-large"] = 1.1f;
+
+			iconScales["kerbalism-container-inline-prosemian-full-375"] = 1.33f;
+			iconScales["kerbalism-container-inline-prosemian-half-375"] = 1.33f;
+			iconScales["kerbalism-container-radial-pressurized-prosemian-huge"] = 1.33f;
+
+			
 			foreach (AvailablePart ap in PartLoader.LoadedPartsList)
 			{
 				// scale part icons of the radial container variants
-				switch (ap.name)
+				if (iconScales.ContainsKey(ap.name))
 				{
-					case "kerbalism-container-radial-small":
-						ap.iconPrefab.transform.GetChild(0).localScale *= 0.60f;
-						ap.iconScale *= 0.60f;
-						break;
-					case "kerbalism-container-radial-medium":
-						ap.iconPrefab.transform.GetChild(0).localScale *= 0.85f;
-						ap.iconScale *= 0.85f;
-						break;
-					case "kerbalism-container-radial-big":
-						ap.iconPrefab.transform.GetChild(0).localScale *= 1.10f;
-						ap.iconScale *= 1.10f;
-						break;
-					case "kerbalism-container-radial-huge":
-						ap.iconPrefab.transform.GetChild(0).localScale *= 1.33f;
-						ap.iconScale *= 1.33f;
-						break;
-					case "kerbalism-container-inline-375":
-						ap.iconPrefab.transform.GetChild(0).localScale *= 1.33f;
-						ap.iconScale *= 1.33f;
-						break;
+					float scale = iconScales[ap.name];
+					ap.iconPrefab.transform.GetChild(0).localScale *= scale;
+					ap.iconScale *= scale;
 				}
 
 				// force a non-lexical order in the editor
-				switch (ap.name)
+				if (partSequence.Contains(ap.name))
 				{
-					case "kerbalism-container-inline-0625":
-						ap.title = Lib.BuildString("<size=1><color=#00000000>00</color></size>", ap.title);
-						break;
-					case "kerbalism-container-inline-125":
-						ap.title = Lib.BuildString("<size=1><color=#00000000>01</color></size>", ap.title);
-						break;
-					case "kerbalism-container-inline-250":
-						ap.title = Lib.BuildString("<size=1><color=#00000000>02</color></size>", ap.title);
-						break;
-					case "kerbalism-container-inline-375":
-						ap.title = Lib.BuildString("<size=1><color=#00000000>03</color></size>", ap.title);
-						break;
-					case "kerbalism-container-radial-small":
-						ap.title = Lib.BuildString("<size=1><color=#00000000>04</color></size>", ap.title);
-						break;
-					case "kerbalism-container-radial-medium":
-						ap.title = Lib.BuildString("<size=1><color=#00000000>05</color></size>", ap.title);
-						break;
-					case "kerbalism-container-radial-big":
-						ap.title = Lib.BuildString("<size=1><color=#00000000>06</color></size>", ap.title);
-						break;
-					case "kerbalism-container-radial-huge":
-						ap.title = Lib.BuildString("<size=1><color=#00000000>07</color></size>", ap.title);
-						break;
-					case "kerbalism-greenhouse":
-						ap.title = Lib.BuildString("<size=1><color=#00000000>08</color></size>", ap.title);
-						break;
-					case "kerbalism-gravityring":
-						ap.title = Lib.BuildString("<size=1><color=#00000000>09</color></size>", ap.title);
-						break;
-					case "kerbalism-activeshield":
-						ap.title = Lib.BuildString("<size=1><color=#00000000>10</color></size>", ap.title);
-						break;
-					case "kerbalism-chemicalplant":
-						ap.title = Lib.BuildString("<size=1><color=#00000000>11</color></size>", ap.title);
-						break;
+					int index = partSequence.IndexOf(ap.name);
+					ap.title = Lib.BuildString("<size=1><color=#00000000>" + index.ToString("00") + "</color></size>", ap.title);
 				}
 
 				// recompile some part infos (this is normally done by KSP on loading, after each part prefab is compiled)
@@ -822,6 +828,32 @@ namespace KERBALISM
 					else if (module is Experiment)
 					{
 						partNeedsInfoRecompile = true;
+					}
+					// inject process details into ModuleB9PartSwitch/SUBTYPE/descriptionDetail for process switchers
+					else if (module.moduleName == "ModuleB9PartSwitch")
+					{
+						var processControllers = ap.partPrefab.FindModulesImplementing<KSMProcessController>();
+						if (processControllers.Count == 0)
+							continue;
+
+						double capacity = processControllers[0].capacity;
+
+						var list = Lib.ReflectionValue<IList>(module, "subtypes");
+						if (list == null || list.Count == 0)
+							continue;
+
+						foreach (var subtype in list)
+						{
+							var subtypeName = Lib.ReflectionValue<string>(subtype, "subtypeName");
+							var process = Profile.processes.Find(p => p.modifiers.Contains(subtypeName));
+
+							if (process != null)
+							{
+								var specifics = KSMProcessController.Specifics(process, capacity);
+								var description = specifics.Info(Localizer.Format(Local.ProcessController_Capacity, capacity.ToString("F1")));
+								subtype.GetType().GetField("descriptionDetail", BindingFlags.Instance | BindingFlags.Public).SetValue(subtype, description);
+							}
+						}
 					}
 				}
 
