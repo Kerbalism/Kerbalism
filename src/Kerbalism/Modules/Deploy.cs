@@ -5,6 +5,7 @@ using KSP.Localization;
 
 namespace KERBALISM
 {
+	// note : do we really need this ??? Big mess for micro feature...
 	public class Deploy : PartModule
 	{
 		[KSPField] public string type;                      // component name

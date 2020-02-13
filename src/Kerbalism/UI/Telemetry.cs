@@ -235,6 +235,10 @@ namespace KERBALISM
 					sb.Append("\n<b>------------    \t------------</b>");
 					foreach (ResourceBrokerRate rb in brokers)
 					{
+						// exclude very tiny rates to avoid the ui flickering
+						if (rb.rate > -1e-09 && rb.rate < 1e-09)
+							continue;
+
 						sb.Append("\n");
 						sb.Append(Lib.Color(rb.rate > 0.0,
 							Lib.BuildString("+", Lib.HumanReadableRate(Math.Abs(rb.rate)), "   "), Lib.Kolor.PosRate, // spaces to mitigate alignement issues

@@ -326,9 +326,6 @@ namespace KERBALISM
 					vd.Evaluate(false, resources, elapsed_s);
 					//UnityEngine.Profiling.Profiler.EndSample();
 
-					// get most used resource
-					IResource ec = resources.GetResource("ElectricCharge");
-
 					UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Loaded.Radiation");
 					// show belt warnings
 					Radiation.BeltWarnings(v, vd);
@@ -401,9 +398,6 @@ namespace KERBALISM
 				// update the vessel info (high timewarp speeds reevaluation)
 				last_vd.Evaluate(false, last_resources, last_time);
 				//UnityEngine.Profiling.Profiler.EndSample();
-
-				// get most used resource
-				IResource last_ec = last_resources.GetResource("ElectricCharge");
 
 				UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Unloaded.Radiation");
 				// show belt warnings

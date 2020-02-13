@@ -63,14 +63,16 @@ namespace KERBALISM
 	{
 		static void Postfix(ModuleCommand __instance, ref VesselControlState ___localVesselControlState)
 		{
+			if (Lib.IsEditor())
+				return;
+
 			VesselData vd = __instance.vessel.KerbalismData();
 			if (!__instance.hibernation)
 				vd.hasNonHibernatingCommandModules = true;
 
 			VesselResource ec = vd.ResHandler.ElectricCharge;
 
-			// do not consume if this is a MC with no crew
-			// rationale: for consistency, the game doesn't consume resources for MCM without crew in loaded vessels
+			// do not consume if this is a non-probe MC with no crew
 			// this make some sense: you left a vessel with some battery and nobody on board, you expect it to not consume EC
 			if (__instance.minimumCrew == 0 || __instance.part.protoModuleCrew.Count > 0)
 			{

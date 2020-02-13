@@ -134,6 +134,8 @@
     <Compile Include="Automation\Devices\Panel.cs" />
     <Compile Include="Automation\Devices\Process.cs" />
     <Compile Include="Automation\Devices\Ring.cs" />
+    <Compile Include="Comms2\AntennaInfoBase.cs" />
+    <Compile Include="Comms2\AntennaInfoCommNet.cs" />
     <Compile Include="Comms\AntennaInfoCommNet.cs" />
     <Compile Include="Comms\AntennaInfoRT.cs" />
     <Compile Include="Comms\ConnectionInfoEditor.cs" />

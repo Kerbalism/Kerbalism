@@ -116,11 +116,11 @@ namespace KERBALISM
 
 		/// <summary>
 		/// Record a consumption, it will be stored in "Deferred" and later synchronized to the vessel in Sync()
-		/// <para/>IMPORTANT : quantity should NOT be scaled to the resource amount / availability when considerAvailablility is true
+		/// <para/>IMPORTANT : quantity should NEVER be scaled to the resource current amount / availability
 		/// </summary>
 		/// <param name="quantity">amount to consume. This should always be scaled by the timestep (elapsed_s)</param>
 		/// <param name="broker">source of the consumption, for UI purposes</param>
-		/// <param name="considerAvailablility">
+		/// <param name="isCritial">
 		/// if true, scale the consumption by the resource AvailabilityFactor, and consider it to determine AvailabilityFactor
 		/// this should always be true, excepted when called from a Recipe, as recipe inputs are already scaled by resource availability
 		/// </param>
@@ -378,11 +378,6 @@ namespace KERBALISM
 
 			foreach (KeyValuePair<ResourceBroker, double> p in brokersResAmount)
 			{
-				// note : we that here and not directly in the produce/consume methods because
-				// recipes do a lot of tiny increments for the the same broker
-				if (p.Value > -1e-07 && p.Value < 1e-07)
-					continue;
-
 				ResourceBrokers.Add(new ResourceBrokerRate(p.Key, p.Value / elapsedSeconds));
 			}
 

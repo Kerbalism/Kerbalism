@@ -134,7 +134,7 @@ namespace KERBALISM
 		/// <summary> [environment] true if vessel is inside exosphere</summary>
 		public bool EnvExosphere => exosphere; bool exosphere;
 
-		/// <summary> [environment] true if vessel is inside exosphere</summary>
+		/// <summary> [environment] true if vessel currently experienced a solar storm</summary>
 		public bool EnvStorm => inStorm; bool inStorm;
 
 		/// <summary> [environment] proportion of ionizing radiation not blocked by atmosphere</summary>

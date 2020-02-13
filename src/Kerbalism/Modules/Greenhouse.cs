@@ -148,8 +148,8 @@ namespace KERBALISM
 				VesselData vd = vessel.KerbalismData();
 
 				// get resource cache
-				VesselResHandler resources = ResourceCache.GetVesselHandler(vessel);
-				IResource ec = resources.GetResource("ElectricCharge");
+				VesselResHandler resources = vd.ResHandler;
+				VesselResource ec = resources.ElectricCharge;
 
 				// deal with corner cases when greenhouse is assembled using KIS
 				if (double.IsNaN(growth) || double.IsInfinity(growth)) growth = 0.0;
@@ -159,11 +159,10 @@ namespace KERBALISM
 				artificial = Math.Max(light_tolerance - natural, 0.0);
 
 				// consume EC for the lamps, scaled by artificial light intensity
-				if (artificial > double.Epsilon) ec.Consume(ec_rate * (artificial / light_tolerance) * Kerbalism.elapsed_s, ResourceBroker.Greenhouse);
+				if (artificial > 0.0) ec.Consume(ec_rate * (artificial / light_tolerance) * Kerbalism.elapsed_s, ResourceBroker.Greenhouse);
 
-				// reset artificial lighting if there is no ec left
-				// - comparing against amount in previous simulation step
-				if (ec.Amount <= double.Epsilon) artificial = 0.0;
+				// scale artificial by ec available
+				artificial *= ec.AvailabilityFactor;
 
 				// execute recipe
 				Recipe recipe = new Recipe(ResourceBroker.Greenhouse);
@@ -261,18 +260,17 @@ namespace KERBALISM
 			if (active && growth < 0.99)
 			{
 				// get resource handler
-				IResource ec = resources.GetResource("ElectricCharge");
+				VesselResource ec = resources.ElectricCharge;
 
 				// calculate natural and artificial lighting
 				double natural = vd.EnvSolarFluxTotal;
 				double artificial = Math.Max(g.light_tolerance - natural, 0.0);
 
 				// consume EC for the lamps, scaled by artificial light intensity
-				if (artificial > double.Epsilon) ec.Consume(g.ec_rate * (artificial / g.light_tolerance) * elapsed_s, ResourceBroker.Greenhouse);
+				if (artificial > 0.0) ec.Consume(g.ec_rate * (artificial / g.light_tolerance) * elapsed_s, ResourceBroker.Greenhouse);
 
-				// reset artificial lighting if there is no ec left
-				// note: comparing against amount in previous simulation step
-				if (ec.Amount <= double.Epsilon) artificial = 0.0;
+				// scale artificial by ec available
+				 artificial *= ec.AvailabilityFactor;
 
 				// execute recipe
 				Recipe recipe = new Recipe(ResourceBroker.Greenhouse);

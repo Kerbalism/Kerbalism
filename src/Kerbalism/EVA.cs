@@ -27,12 +27,12 @@ namespace KERBALISM
 			}
 
 			// get resource handler
-			IResource ec = ResourceCache.GetResource(v, "ElectricCharge");
+			VesselResource ec = v.KerbalismData().ResHandler.ElectricCharge;
 
 			// determine if headlamps need ec
 			// - not required if there is no EC capacity in eva kerbal (no ec supply in profile)
 			// - not required if no EC cost for headlamps is specified (set by the user)
-			bool need_ec = ec.Capacity > double.Epsilon && Settings.HeadLampsCost > double.Epsilon;
+			bool need_ec = ec.Capacity > 0.0 && Settings.HeadLampsCost > 0.0;
 
 			// consume EC for the headlamps
 			if (need_ec && kerbal.lampOn)
@@ -41,7 +41,7 @@ namespace KERBALISM
 			}
 
 			// force the headlamps on/off
-			HeadLamps(kerbal, kerbal.lampOn && (!need_ec || ec.Amount > double.Epsilon));
+			HeadLamps(kerbal, kerbal.lampOn && (!need_ec || ec.AvailabilityFactor == 0.0));
 
 			// if dead
 			if (IsDead(v))

@@ -102,7 +102,7 @@ namespace KERBALISM
 					case Module_type.Greenhouse: Greenhouse.BackgroundUpdate(v, e.m, e.module_prefab as Greenhouse, vd, resources, elapsed_s); break;
 					//case Module_type.GravityRing: GravityRing.BackgroundUpdate(v, e.p, e.m, e.module_prefab as GravityRing, ec, elapsed_s); break;
 					case Module_type.Harvester: Harvester.BackgroundUpdate(v, e.m, e.module_prefab as Harvester, elapsed_s); break; // Kerbalism ground and air harvester module
-					case Module_type.Laboratory: Laboratory.BackgroundUpdate(v, e.p, e.m, e.module_prefab as Laboratory, ec, elapsed_s); break;
+					case Module_type.Laboratory: Laboratory.BackgroundUpdate(v, e.p, e.m, e.module_prefab as Laboratory, elapsed_s); break;
 					case Module_type.Command: ProcessCommand(vd, e.p, e.m, e.module_prefab as ModuleCommand, elapsed_s); break;
 					case Module_type.Generator: ProcessGenerator(v, e.p, e.m, e.module_prefab as ModuleGenerator, resources, elapsed_s); break;
 					case Module_type.Converter: ProcessConverter(v, e.p, e.m, e.module_prefab as ModuleResourceConverter, resources, elapsed_s); break;
@@ -113,7 +113,7 @@ namespace KERBALISM
 					case Module_type.Scanner: KerbalismScansat.BackgroundUpdate(v, e.p, e.m, e.module_prefab as KerbalismScansat, e.part_prefab, vd, ec, elapsed_s); break;
 					case Module_type.FissionGenerator: ProcessFissionGenerator(v, e.p, e.m, e.module_prefab, ec, elapsed_s); break;
 					case Module_type.RadioisotopeGenerator: ProcessRadioisotopeGenerator(v, e.p, e.m, e.module_prefab, ec, elapsed_s); break;
-					case Module_type.CryoTank: ProcessCryoTank(v, e.p, e.m, e.module_prefab, resources, ec, elapsed_s); break;
+					case Module_type.CryoTank: ProcessCryoTank(v, vd, e.p, e.m, e.module_prefab, resources, elapsed_s); break;
 					case Module_type.FNGenerator: ProcessFNGenerator(v, e.p, e.m, e.module_prefab, ec, elapsed_s); break;
 					case Module_type.SolarPanelFixer: SolarPanelFixer.BackgroundUpdate(v, e.m, e.module_prefab as SolarPanelFixer, vd, ec, elapsed_s); break;
 					case Module_type.APIModule: ResourceAPI.BackgroundUpdate(v, e.p, e.m, e.part_prefab, e.module_prefab, resources, availableResources, resourceChangeRequests, elapsed_s); break;
@@ -209,8 +209,7 @@ namespace KERBALISM
 			if (!hibernating)
 				vd.hasNonHibernatingCommandModules = true;
 
-			// do not consume if this is a MC with no crew
-			// rationale: for consistency, the game doesn't consume resources for MCM without crew in loaded vessels
+			// do not consume if this is a non-probe MC with no crew
 			// this make some sense: you left a vessel with some battery and nobody on board, you expect it to not consume EC
 			if (command.minimumCrew == 0 || p.protoModuleCrew.Count > 0)
 			{
@@ -537,7 +536,7 @@ namespace KERBALISM
 		}
 
 
-		static void ProcessCryoTank(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule cryotank, VesselResHandler resources, IResource ec, double elapsed_s)
+		static void ProcessCryoTank(Vessel v, VesselData vd, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule cryotank, VesselResHandler resources, double elapsed_s)
 		{
 			// Note. Currently background simulation of Cryotanks has an irregularity in that boiloff of a fuel type in a tank removes resources from all tanks
 			// but at least some simulation is better than none ;)
@@ -545,6 +544,8 @@ namespace KERBALISM
 			// get list of fuels, do nothing if no fuels
 			IList fuels = Lib.ReflectionValue<IList>(cryotank, "fuels");
 			if (fuels == null) return;
+
+			VesselResource ec = vd.ResHandler.ElectricCharge;
 
 			// is cooling available, note: comparing against amount in previous simulation step
 			bool available = (Lib.Proto.GetBool(m, "CoolingEnabled") && ec.Amount > double.Epsilon);
@@ -554,7 +555,7 @@ namespace KERBALISM
 
 			string fuel_name = "";
 			double amount = 0.0;
-			double total_cost = 0.0;
+			double ecCost = 0.0;
 			double boiloff_rate = 0.0;
 
 			foreach (var item in fuels)
@@ -569,7 +570,7 @@ namespace KERBALISM
 
 				// if there is some fuel
 				// note: comparing against amount in previous simulation step
-				if (fuel.Amount > double.Epsilon)
+				if (fuel.Amount > 0.0)
 				{
 					// Try to find resource "fuel_name" in PartResources
 					ProtoPartResourceSnapshot proto_fuel = p.resources.Find(k => k.resourceName == fuel_name);
@@ -580,26 +581,29 @@ namespace KERBALISM
 					// get amount in the part
 					amount = proto_fuel.amount;
 
-					// if cooling is enabled and there is enough EC
-					if (available)
+					// calculate ec consumption
+					ecCost += cooling_cost * amount * 0.001;
+
+					if (ec.AvailabilityFactor > 0.0)
 					{
-						// calculate ec consumption
-						total_cost += cooling_cost * amount * 0.001;
-					}
-					// if cooling is disabled or there wasn't any EC
-					else
-					{
-						// get boiloff rate per-second
+						// get boiloff %/H, convert it to a per second multiplier (/100/3600)
 						boiloff_rate = Lib.ReflectionValue<float>(item, "boiloffRate") / 360000.0f;
 
-						// let it boil off
-						fuel.Consume(amount * (1.0 - Math.Pow(1.0 - boiloff_rate, elapsed_s)), ResourceBroker.Boiloff);
+						// scale boiloff by available ec
+						boiloff_rate *= 1.0 - ec.AvailabilityFactor;
+
+						if (boiloff_rate > 0.0)
+						{
+							// let it boil off
+							fuel.Consume(amount * (1.0 - Math.Pow(1.0 - boiloff_rate, elapsed_s)), ResourceBroker.Boiloff);
+						}
 					}
 				}
 			}
 
 			// apply EC consumption
-			ec.Consume(total_cost * elapsed_s, ResourceBroker.Cryotank);
+			if (ecCost > 0.0)
+				ec.Consume(ecCost * elapsed_s, ResourceBroker.Cryotank);
 		}
 
 		// TODO : this is to migrate pre-3.1 saves using WarpFixer to the new SolarPanelFixer. At some point in the future we can remove this code.

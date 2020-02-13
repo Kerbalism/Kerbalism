@@ -6,6 +6,15 @@ using KSP.Localization;
 
 namespace KERBALISM
 {
+	// Note (Got) : this whole thing :
+	// - should not be using it's own warp buffer, but use the warp drive instead
+	// - should not disable itself when there is no ec, but stay enabled and scale output by ec.AvailabilityFactor
+	// The current implementation will cause EC resource sim destabilization by putting it into a produce/not produce cycle
+	// it works by stopping/starting the scansat module dependning on ec availability
+	// Instead we should keep it enabled but reflection-scale the "covered %" by ec.AvailabilityFactor (and drive / warpdrive space)
+	// Not sure how feasible this is, but I fear the changes to the resource sim will cause this to work even more unreliably than before.
+	// I don't have time now to rewrite and test it, but that probably need to be done.
+
 	public class KerbalismScansat : PartModule
 	{
 		[KSPField] public string experimentType = string.Empty;
