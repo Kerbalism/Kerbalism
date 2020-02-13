@@ -727,6 +727,13 @@ namespace KERBALISM
 							if (res != null) res.flowState = false;
 						}
 						break;
+					case "KSMProcessController":
+						foreach (KSMProcessController pc in p.partPrefab.FindModulesImplementing<KSMProcessController>())
+						{
+							ProtoPartResourceSnapshot res = p.resources.Find(k => k.resourceName == pc.resource);
+							if (res != null) res.flowState = false;
+						}
+						break;
 				}
 
 				// show message
@@ -847,6 +854,10 @@ namespace KERBALISM
 					foreach (PartModule m in modules)
 						return (m as ProcessController).running;
 					return false;
+				case "KSMProcessController":
+					foreach (PartModule m in modules)
+						return (m as KSMProcessController).running;
+					return false;
 
 				case "ModuleLight":
 					foreach (PartModule m in modules)
@@ -887,6 +898,15 @@ namespace KERBALISM
 						foreach (PartModule m in modules)
 						{
 							(m as ProcessController).ReliablityEvent(b);
+						}
+					}
+					break;
+				case "KSMProcessController":
+					if (b)
+					{
+						foreach (PartModule m in modules)
+						{
+							(m as KSMProcessController).ReliablityEvent(b);
 						}
 					}
 					break;
