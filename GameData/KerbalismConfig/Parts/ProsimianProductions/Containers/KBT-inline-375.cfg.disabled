@@ -35,7 +35,7 @@ PART
 
 	MODEL
 	{
-		model = KerbalismConfig/Parts/ProsimianProductions/Parts/Kerbalism/KBT-inline
+		model = KerbalismConfig/Parts/ProsimianProductions/Containers/KBT-inline
 		//scale = 1.9, 1.9, 1.9
 	}
 
@@ -56,7 +56,7 @@ PART
 			TEXTURE
 			{
 				materialName = stack_tank
-				mainTextureURL = KerbalismConfig/Parts/ProsimianProductions/Parts/Kerbalism/Stack_Dif
+				mainTextureURL = KerbalismConfig/Parts/ProsimianProductions/Containers/Stack_Dif
 			}
 		}
 		VARIANT
@@ -69,7 +69,7 @@ PART
 			TEXTURE
 			{
 				materialName = stack_tank
-				mainTextureURL = KerbalismConfig/Parts/ProsimianProductions/Parts/Kerbalism/Stack_Dif_green
+				mainTextureURL = KerbalismConfig/Parts/ProsimianProductions/Containers/Stack_Dif_green
 			}
 		}
 		VARIANT
@@ -82,7 +82,7 @@ PART
 			TEXTURE
 			{
 				materialName = stack_tank
-				mainTextureURL = KerbalismConfig/Parts/ProsimianProductions/Parts/Kerbalism/Stack_Base_stripe
+				mainTextureURL = KerbalismConfig/Parts/ProsimianProductions/Containers/Stack_Base_stripe
 			}
 		}
 		VARIANT
@@ -95,7 +95,7 @@ PART
 			TEXTURE
 			{
 				materialName = stack_tank
-				mainTextureURL = KerbalismConfig/Parts/ProsimianProductions/Parts/Kerbalism/Stack_Base_orange
+				mainTextureURL = KerbalismConfig/Parts/ProsimianProductions/Containers/Stack_Base_orange
 			}
 		}
 	}

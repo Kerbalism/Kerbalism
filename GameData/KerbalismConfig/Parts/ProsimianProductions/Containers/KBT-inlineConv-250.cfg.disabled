@@ -1,6 +1,6 @@
 PART
 {
-	name = KBT-inline-250
+	name = KBT-inlineConvo-250
 	module = Part
 	author = Arkolis
 
@@ -35,7 +35,7 @@ PART
 
 	MODEL
 	{
-		model = KerbalismConfig/Parts/ProsimianProductions/Parts/Kerbalism/KBT-inline
+		model = KerbalismConfig/Parts/ProsimianProductions/Containers/KBT-inline
 		//scale = 1.25, 1.25, 1.25
 	}
 
@@ -56,7 +56,7 @@ PART
 			TEXTURE
 			{
 				materialName = stack_tank
-				mainTextureURL = KerbalismConfig/Parts/ProsimianProductions/Parts/Kerbalism/Stack_Dif
+				mainTextureURL = KerbalismConfig/Parts/ProsimianProductions/Containers/Stack_Dif
 			}
 		}
 		VARIANT
@@ -69,7 +69,7 @@ PART
 			TEXTURE
 			{
 				materialName = stack_tank
-				mainTextureURL = KerbalismConfig/Parts/ProsimianProductions/Parts/Kerbalism/Stack_Dif_green
+				mainTextureURL = KerbalismConfig/Parts/ProsimianProductions/Containers/Stack_Dif_green
 			}
 		}
 		VARIANT
@@ -82,7 +82,7 @@ PART
 			TEXTURE
 			{
 				materialName = stack_tank
-				mainTextureURL = KerbalismConfig/Parts/ProsimianProductions/Parts/Kerbalism/Stack_Base_stripe
+				mainTextureURL = KerbalismConfig/Parts/ProsimianProductions/Containers/Stack_Base_stripe
 			}
 		}
 		VARIANT
@@ -95,7 +95,7 @@ PART
 			TEXTURE
 			{
 				materialName = stack_tank
-				mainTextureURL = KerbalismConfig/Parts/ProsimianProductions/Parts/Kerbalism/Stack_Base_orange
+				mainTextureURL = KerbalismConfig/Parts/ProsimianProductions/Containers/Stack_Base_orange
 			}
 		}
 	}
@@ -117,26 +117,24 @@ PART
 		closedPosition = 0
 		lookupRadius = 0.9
 		partTypeName = Service bay
-
-		//nodeOuterForeID = top
-		//nodeOuterAftID = bottom
 	}
-
 	MODULE
 	{
 		name = ModuleB9DisableTransform
-		transform = HardShell
-		transform = Side_tanksF
-		transform = Side_tanksB
-		transform = GeneratorB
-		transform = GeneratorF
-		transform = GeneratorR
-		transform = GeneratorL
+		transform = Service-Shell
+		transform = Door
+		transform = Plate_Bottom
+		transform = Plate_Top
 	}
+
 	MODULE
 	{
 		name = ModuleB9PartSwitch
 		moduleID = PlateSwitch
+		SUBTYPE
+		{
+			name = No Plates
+		}
 		SUBTYPE
 		{
 			name = Full
@@ -153,9 +151,73 @@ PART
 			name = Bottom Only
 			transform = Plate_Bottom
 		}
+	}
+
+	MODULE
+	{
+		name = ModuleB9PartSwitch
+		title = Config
+		moduleID = meshSwitch
+
 		SUBTYPE
 		{
-			name = No Plates
+			name = Tank
+			transform = Central_frameSegs
+			transform = HardShell
+			transform = Side_tanksR
+			transform = Side_tanksL
+			transform = Side_tanksF
+			transform = Side_tanksB
+		}
+		SUBTYPE
+		{
+			name = Converters
+			transform = Central_frameSegs
+			transform = HardShell
+			transform = GeneratorB
+			transform = GeneratorF
+			transform = GeneratorR
+			transform = GeneratorL
+		}
+		SUBTYPE
+		{
+			name = Mix
+			transform = Central_frameSegs
+			transform = HardShell
+			transform = Side_tanksF
+			transform = Side_tanksB
+			transform = GeneratorR
+			transform = GeneratorL
+		}
+		SUBTYPE
+		{
+			name = MixSwap
+			transform = Central_frameSegs
+			transform = HardShell
+			transform = Side_tanksR
+			transform = Side_tanksL
+			transform = GeneratorB
+			transform = GeneratorF
+		}
+		SUBTYPE
+		{
+			name = MixServiceBay
+			transform = Central_frameSegs
+			transform = Service-Shell
+			transform = Door
+			transform = Side_tanksR
+			transform = GeneratorL
+			transform = GratesL
+		}
+		SUBTYPE
+		{
+			name = MixServiceBayB
+			transform = Central_frameSegs
+			transform = Service-Shell
+			transform = Door
+			transform = Side_tanksL
+			transform = GeneratorR
+			transform = GratesR
 		}
 	}
 }
