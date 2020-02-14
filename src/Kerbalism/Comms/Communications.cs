@@ -1,28 +1,25 @@
-using KSP.Localization;
+﻿using System;
 
 namespace KERBALISM
 {
-
-
-	public static class Communications
+	public class Communications
 	{
-		/// <summary> True if CommNet is initialized </summary>
-		public static bool NetworkInitialized = false;
-
-		/// <summary> True if CommNet initialization has begin </summary>
-		public static bool NetworkInitializing = false;
-
 		public static void Update(Vessel v, VesselData vd, double elapsed_s)
 		{
-			if(!Lib.IsVessel(v))
+			if (!Lib.IsVessel(v))
 				return;
 
-			// EC consumption is handled in Science update
-
-			Cache.WarpCache(v).dataCapacity = vd.deviceTransmit ? vd.Connection.rate * elapsed_s * vd.ResHandler.ElectricCharge.AvailabilityFactor : 0.0;
-
 			// do nothing if network is not ready
-			if (!NetworkInitialized) return;
+			if (!vd.CommHandler.IsReady)
+			{
+				Cache.WarpCache(v).dataCapacity = 0.0;
+				return;
+			}
+
+			if (vd.deviceTransmit)
+				Cache.WarpCache(v).dataCapacity = vd.Connection.rate * elapsed_s * vd.ResHandler.ElectricCharge.AvailabilityFactor;
+			else
+				Cache.WarpCache(v).dataCapacity = 0.0;
 
 			// maintain and send messages
 			// - do not send messages during/after solar storms
@@ -38,11 +35,10 @@ namespace KERBALISM
 
 						switch (vd.Connection.status)
 						{
-
-							case LinkStatus.plasma:
+							case (int)LinkStatus.plasma:
 								subtext = Local.UI_Plasmablackout;
 								break;
-							case LinkStatus.storm:
+							case (int)LinkStatus.storm:
 								subtext = Local.UI_Stormblackout;
 								break;
 							default:
@@ -70,14 +66,11 @@ namespace KERBALISM
 					if (vd.cfg_signal)
 					{
 						Message.Post(Severity.relax, Lib.BuildString("<b>", v.vesselName, "</b> ", Local.UI_signalback),
-						  vd.Connection.status == LinkStatus.direct_link ? Local.UI_directlink :
+						  vd.Connection.status == (int)LinkStatus.direct_link ? Local.UI_directlink :
 							Lib.BuildString(Local.UI_relayby, " <b>", vd.Connection.target_name, "</b>"));
 					}
 				}
 			}
 		}
 	}
-
-
-} // KERBALISM
-
+}

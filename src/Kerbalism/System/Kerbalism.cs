@@ -96,8 +96,8 @@ namespace KERBALISM
 			Fetch = this;
 
 			// You just don't know what you are doing, no ?
-			Communications.NetworkInitialized = false;
-			Communications.NetworkInitializing = false;
+			//Communications.NetworkInitialized = false;
+			//Communications.NetworkInitializing = false;
 
 			SerenityEnabled = Expansions.ExpansionsLoader.IsExpansionInstalled("Serenity");
 		}
@@ -204,8 +204,8 @@ namespace KERBALISM
 			}
 
 			// I'm smelling the hacky mess in here.
-			Communications.NetworkInitialized = false;
-			Communications.NetworkInitializing = false;
+			//Communications.NetworkInitialized = false;
+			//Communications.NetworkInitializing = false;
 
 			// detect if this is a different savegame
 			if (DB.uid != savegame_uid)
@@ -458,11 +458,11 @@ namespace KERBALISM
 			if (!didSanityCheck)
 				SanityCheck();
 
-			if (!Communications.NetworkInitializing)
-			{
-				Communications.NetworkInitializing = true;
-				StartCoroutine(Callbacks.NetworkInitialized());
-			}
+			//if (!Communications.NetworkInitializing)
+			//{
+			//	Communications.NetworkInitializing = true;
+			//	StartCoroutine(Callbacks.NetworkInitialized());
+			//}
 
 			// attach map renderer to planetarium camera once
 			if (MapView.MapIsEnabled && map_camera_script == null)

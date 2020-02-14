@@ -141,7 +141,7 @@ namespace KERBALISM
 			GameEvents.onGameSceneSwitchRequested.Add((_) => visible = false);
 			GameEvents.onGUIApplicationLauncherReady.Add(() => visible = true);
 
-			GameEvents.CommNet.OnNetworkInitialized.Add(() => Kerbalism.Fetch.StartCoroutine(NetworkInitialized()));
+			//GameEvents.CommNet.OnNetworkInitialized.Add(() => Kerbalism.Fetch.StartCoroutine(NetworkInitialized()));
 
 			// add editor events
 			GameEvents.onEditorShipModified.Add((sc) => Planner.Planner.EditorShipModifiedEvent(sc));
@@ -329,31 +329,48 @@ namespace KERBALISM
 						Lib.LogStack($"From part {data.from.partInfo.title} : crew count old={fromHabitat.crewCount}, new={newCrewCount}, HabitatData is desynchronized !", Lib.LogLevel.Error);
 					}
 
-					if (fromHabitat.pressureState == HabitatData.PressureState.AlwaysDepressurized
-						|| fromHabitat.pressureState == HabitatData.PressureState.Depressurized
-						|| fromHabitat.pressureState == HabitatData.PressureState.DepressurizingBelowThreshold
-						|| fromHabitat.pressureState == HabitatData.PressureState.Pressurizing
-						)
+					switch (fromHabitat.pressureState)
 					{
-						ResourceWrapper wasteRes = fromHabitat.module.WasteRes;
-						wasteTransferred = wasteRes.Amount / fromHabitat.crewCount;
-						wasteRes.Amount = newCrewCount > 0 ? wasteRes.Amount - wasteTransferred : 0.0;
-						wasteRes.Capacity = newCrewCount * Settings.PressureSuitVolume;
+						case HabitatData.PressureState.AlwaysDepressurized:
+						case HabitatData.PressureState.Depressurized:
+						case HabitatData.PressureState.Pressurizing:
+						case HabitatData.PressureState.DepressurizingBelowThreshold:
+
+							ResourceWrapper wasteRes = fromHabitat.module.WasteRes;
+							wasteTransferred = fromHabitat.crewCount > 0 ? wasteRes.Amount / fromHabitat.crewCount : 0.0;
+							wasteRes.Amount = newCrewCount > 0 ? wasteRes.Amount - wasteTransferred : 0.0;
+							wasteRes.Capacity = newCrewCount * Settings.PressureSuitVolume;
+							break;
 					}
 
 					fromPartData.Habitat.crewCount = newCrewCount;
 				}
 			}
-	
+
+			// TODO : this is called when going from a vessel to EVA, but the EVA modules OnStart() isn't yet called.
+			// in fact this will trigger the EVA VesselData creation. So this can't be relied upon for that case.
 			if (data.to != null && data.to.vessel.KerbalismData().Parts.TryGet(data.to.flightID, out PartData toPartData))
 			{
 				if (toPartData.Habitat != null)
 				{
 					HabitatData toHabitat = toPartData.Habitat;
 					toHabitat.crewCount = Lib.CrewCount(data.to);
+
+					ResourceWrapper wasteRes = toHabitat.module.WasteRes;
+
+					switch (toHabitat.pressureState)
+					{
+						case HabitatData.PressureState.AlwaysDepressurized:
+						case HabitatData.PressureState.Depressurized:
+						case HabitatData.PressureState.Pressurizing:
+						case HabitatData.PressureState.DepressurizingBelowThreshold:
+
+							wasteRes.Capacity = toHabitat.crewCount * Settings.PressureSuitVolume;
+							break;
+					}
+
 					if (wasteTransferred > 0.0)
 					{
-						ResourceWrapper wasteRes = toHabitat.module.WasteRes;
 						wasteRes.Amount = Math.Min(wasteRes.Amount + wasteTransferred, wasteRes.Capacity);
 					}
 				}
@@ -409,12 +426,12 @@ namespace KERBALISM
 			//vessel.KerbalismData().UpdateOnVesselModified();
 		}
 
-		public IEnumerator NetworkInitialized()
-		{
-			yield return new WaitForSeconds(2);
-			Communications.NetworkInitialized = true;
-			RemoteTech.Startup();
-		}
+		//public IEnumerator NetworkInitialized()
+		//{
+		//	yield return new WaitForSeconds(2);
+		//	Communications.NetworkInitialized = true;
+		//	RemoteTech.Startup();
+		//}
 
 		void ToEVA(GameEvents.FromToAction<Part, Part> data)
 		{

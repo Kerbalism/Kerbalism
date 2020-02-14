@@ -132,7 +132,13 @@ namespace KERBALISM
 				// determine how much data is transmitted
 				double transmitted = xmitFile.isInWarpCache ? xmitFile.file.size : Math.Min(xmitFile.file.size, remainingTransmitCapacity);
 
-				if (transmitted == 0.0)
+				// when data produced by experiments > transmit capacity while there are some files on the drives,
+				// due to floating point errors when substracting transmitted from remainingTransmitCapacity,
+				// we can sometimes have a remainingTransmitCapacity > 0.0 while everything in the warp drive has been
+				// transmitted. This will cause a tiny amount (~1e-20) of data from the drives to be transmitted, causing a
+				// flickering extra file in vd.filesTransmitted. That's why we use a threshold here instead of checking if
+				// transmitted == 0.0. 1e-12 is less than 0.001 bit/s at 0.02s timestep, so should be fine.
+				if (transmitted < 1e-12)
 					continue;
 
 				// consume transmit capacity

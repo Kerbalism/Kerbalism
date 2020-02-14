@@ -53,6 +53,7 @@ namespace KERBALISM
 		public List<ResourceUpdateDelegate> resourceUpdateDelegates = null; // all part modules that have a ResourceUpdate method
 		public PartDataCollection Parts { get; private set; }
 		public VesselResHandler ResHandler { get; private set; }
+		public CommHandler CommHandler { get; private set; }
 
 		public bool msg_signal;       // message flag: link status
 		public bool msg_belt;         // message flag: crossing radiation belt
@@ -60,6 +61,8 @@ namespace KERBALISM
 		private Dictionary<string, SupplyData> supplies; // supplies data
 		public List<uint> scansat_id; // used to remember scansat sensors that were disabled
 		public double scienceTransmitted;
+		public bool IsSerenityGroundController => isSerenityGroundController; bool isSerenityGroundController;
+
 		#endregion
 
 		#region evaluated environment properties
@@ -366,7 +369,7 @@ namespace KERBALISM
 
 		#region core update handling
 
-		/// <summary> Garanteed to be called for every VesselData in DB before any other method (FixedUpdate/Evaluate) is called </summary>
+		/// <summary> Garanteed to be called for every VesselData in DB before any other method (Update/Evaluate) is called </summary>
 		public void EarlyUpdate()
 		{
 			ExistsInFlight = false;
@@ -440,14 +443,14 @@ namespace KERBALISM
 
 		#region events handling
 
-		public void UpdateOnVesselModified()
+		public void UpdateOnPartAddedOrRemoved()
 		{
 			if (!IsSimulated)
 				return;
 
 			resourceUpdateDelegates = null;
 			ResetReliabilityStatus();
-			// TODO: reset habitat radiation occluders
+			CommHandler.ResetPartTransmitters();
 			EvaluateStatus();
 
 			Lib.LogDebug("VesselData updated on vessel modified event ({0})", Lib.LogLevel.Message, Vessel.vesselName);
@@ -475,8 +478,8 @@ namespace KERBALISM
 				}
 			}
 
-			newVD.UpdateOnVesselModified();
-			oldVD.UpdateOnVesselModified();
+			newVD.UpdateOnPartAddedOrRemoved();
+			oldVD.UpdateOnPartAddedOrRemoved();
 
 			Lib.LogDebug("Decoupling complete for new vessel, vd.partcount={1}, v.partcount={2} ({0})", Lib.LogLevel.Message, newVessel.vesselName, newVD.Parts.Count, newVessel.parts.Count);
 			Lib.LogDebug("Decoupling complete for old vessel, vd.partcount={1}, v.partcount={2} ({0})", Lib.LogLevel.Message, oldVessel.vesselName, oldVD.Parts.Count, oldVessel.parts.Count);
@@ -517,7 +520,7 @@ namespace KERBALISM
 			// reset a few things on the docked to vessel
 			toVD.supplies.Clear();
 			toVD.scansat_id.Clear();
-			toVD.UpdateOnVesselModified();
+			toVD.UpdateOnPartAddedOrRemoved();
 
 			Lib.LogDebug("Coupling complete to   vessel, vd.partcount={1}, v.partcount={2} ({0})", Lib.LogLevel.Message, toVessel.vesselName, toVD.Parts.Count, toVessel.parts.Count);
 			Lib.LogDebug("Coupling complete from vessel, vd.partcount={1}, v.partcount={2} ({0})", Lib.LogLevel.Message, fromVessel.vesselName, fromVD.Parts.Count, fromVessel.parts.Count);
@@ -528,7 +531,7 @@ namespace KERBALISM
 			VesselData vd = part.vessel.KerbalismData();
 			vd.Parts[part.flightID].OnPartWillDie();
 			vd.Parts.Remove(part.flightID);
-			vd.UpdateOnVesselModified();
+			vd.UpdateOnPartAddedOrRemoved();
 			Lib.LogDebug("Removing dead part, vd.partcount={0}, v.partcount={1} (part '{2}' in vessel '{3}')", Lib.LogLevel.Message, vd.Parts.Count, part.vessel.parts.Count, part.partInfo.title, part.vessel.vesselName);
 		}
 
@@ -555,7 +558,8 @@ namespace KERBALISM
 				// vessels can be created unloaded, asteroids for example
 				Parts.Populate(Vessel.protoVessel);
 
-			FieldsDefaultInit(vessel.protoVessel);
+			SetPersistedFieldsDefaults(vessel.protoVessel);
+			SetInstantiateDefaults(vessel.protoVessel);
 
 			Lib.LogDebug("VesselData ctor (new vessel) : id '" + VesselId + "' (" + Vessel.vesselName + "), part count : " + Parts.Count);
 			UnityEngine.Profiling.Profiler.EndSample();
@@ -580,7 +584,7 @@ namespace KERBALISM
 
 			if (node == null)
 			{
-				FieldsDefaultInit(protoVessel);
+				SetPersistedFieldsDefaults(protoVessel);
 				Lib.LogDebug("VesselData ctor (created from protovessel) : id '" + VesselId + "' (" + protoVessel.vesselName + "), part count : " + Parts.Count);
 			}
 			else
@@ -588,10 +592,13 @@ namespace KERBALISM
 				Load(node);
 				Lib.LogDebug("VesselData ctor (loaded from database) : id '" + VesselId + "' (" + protoVessel.vesselName + "), part count : " + Parts.Count);
 			}
+
+			SetInstantiateDefaults(protoVessel);
+
 			UnityEngine.Profiling.Profiler.EndSample();
 		}
 
-		private void FieldsDefaultInit(ProtoVessel pv)
+		private void SetPersistedFieldsDefaults(ProtoVessel pv)
 		{
 			msg_signal = false;
 			msg_belt = false;
@@ -604,14 +611,31 @@ namespace KERBALISM
 			cfg_highlights = PreferencesReliability.Instance.highlights;
 			cfg_showlink = true;
 			deviceTransmit = true;
-
+			// note : we check that at vessel creation and persist it, as the vesselType can be changed by the player
+#if !KSP15_16
+			isSerenityGroundController = pv.vesselType == VesselType.DeployedScienceController;
+#else
+			isSerenityGroundController = false;
+#endif
 			stormData = new StormData(null);
 			computer = new Computer(null);
 			supplies = new Dictionary<string, SupplyData>();
 			scansat_id = new List<uint>();
+		}
+
+		private void SetInstantiateDefaults(ProtoVessel protoVessel)
+		{
+#if !KSP15_16
+			// workaround for pre 3.6 saves not having isSerenityGroundController
+			if (!isSerenityGroundController && protoVessel.vesselType == VesselType.DeployedScienceController)
+				isSerenityGroundController = true;
+#endif
+
 			filesTransmitted = new List<File>();
 			vesselSituations = new VesselSituations(this);
 			habitatInfo = new HabitatVesselData();
+			connection = new ConnectionInfo();
+			CommHandler = CommHandler.GetProvider(this, isSerenityGroundController);
 		}
 
 		private void Load(ConfigNode node)
@@ -628,6 +652,8 @@ namespace KERBALISM
 			cfg_showlink = Lib.ConfigValue(node, "cfg_showlink", true);
 
 			deviceTransmit = Lib.ConfigValue(node, "deviceTransmit", true);
+
+			isSerenityGroundController = Lib.ConfigValue(node, "isSerenityGroundController", false);
 
 			solarPanelsAverageExposure = Lib.ConfigValue(node, "solarPanelsAverageExposure", -1.0);
 			scienceTransmitted = Lib.ConfigValue(node, "scienceTransmitted", 0.0);
@@ -648,10 +674,6 @@ namespace KERBALISM
 			}
 
 			Parts.Load(node);
-
-			filesTransmitted = new List<File>();
-			vesselSituations = new VesselSituations(this);
-			habitatInfo = new HabitatVesselData();
 		}
 
 		public void Save(ConfigNode node)
@@ -669,6 +691,8 @@ namespace KERBALISM
 
 			node.AddValue("deviceTransmit", deviceTransmit);
 
+			node.AddValue("isSerenityGroundController", isSerenityGroundController);
+			
 			node.AddValue("solarPanelsAverageExposure", solarPanelsAverageExposure);
 			node.AddValue("scienceTransmitted", scienceTransmitted);
 
@@ -722,10 +746,12 @@ namespace KERBALISM
 			critical = Reliability.HasCriticalFailure(Vessel);
 
 			// communications info
-			connection = ConnectionInfo.Update(Vessel, powered, EnvBlackout);
-			connection.linked &= ResHandler.ElectricCharge.CriticalConsumptionSatisfied;
+			CommHandler.UpdateConnection(connection);
 
-			// check ModuleCommand hibernation and 
+			// check ModuleCommand hibernation and
+			if (isSerenityGroundController)
+				hasNonHibernatingCommandModules = true;
+
 			if (Hibernating != !hasNonHibernatingCommandModules)
 			{
 				Hibernating = !hasNonHibernatingCommandModules;

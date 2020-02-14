@@ -14,6 +14,7 @@ namespace KERBALISM
 			{
 				if (a.name == "RemoteTech")
 				{
+					Installed = true;
 					RT_API = a.assembly.GetType("RemoteTech.API.API");
 					IsEnabled = RT_API.GetMethod("IsRemoteTechEnabled");
 					EnabledInSPC = RT_API.GetMethod("EnableInSPC");
@@ -38,37 +39,39 @@ namespace KERBALISM
 						Lib.Log("RemoteTech version is below v1.9 - Kerbalism's signal system will not operate correctly with the version" +
 							" of RemoteTech currently installed." + Environment.NewLine + "Please update your installation of RemoteTech to the latest version.", Lib.LogLevel.Warning);
 					}
+
+					API.Failure.Add(RTFailureHandler);
 					break;
 				}
 			}
 		}
 
-		public static void Startup()
-		{
-			if (!Enabled) return;
-			Lib.Log("RemoteTech starting up");
+		//public static void Startup()
+		//{
+		//	if (!Enabled) return;
+		//	Lib.Log("RemoteTech starting up");
 
-			var handler = typeof(RemoteTech).GetMethod("RTCommInfoHandler");
-			API.Comm.Add(handler);
+		//	var handler = typeof(RemoteTech).GetMethod("RTCommInfoHandler");
+		//	API.Comm.Add(handler);
 
-			API.Failure.Add(RTFailureHandler);
-		}
+			
+		//}
 
-		public static void RTCommInfoHandler(AntennaInfo antennaInfo, Vessel v)
-		{
-			var ai = new AntennaInfoRT(v, antennaInfo.powered, antennaInfo.storm);
-			antennaInfo.linked = ai.linked;
-			antennaInfo.ec = ai.ec;
-			antennaInfo.control_path = ai.control_path;
-			antennaInfo.rate = ai.rate;
-			antennaInfo.status = ai.status;
-			antennaInfo.strength = ai.strength;
-			antennaInfo.target_name = ai.target_name;
-		}
+		//public static void RTCommInfoHandler(Connection antennaInfo, Vessel v)
+		//{
+		//	var ai = new AntennaInfoRT(v, antennaInfo.powered, antennaInfo.storm);
+		//	antennaInfo.linked = ai.linked;
+		//	antennaInfo.ec = ai.ec;
+		//	antennaInfo.control_path = ai.control_path;
+		//	antennaInfo.rate = ai.rate;
+		//	antennaInfo.status = ai.status;
+		//	antennaInfo.strength = ai.strength;
+		//	antennaInfo.target_name = ai.target_name;
+		//}
 
 		public static void RTFailureHandler(Part part, string type, bool failure)
 		{
-			foreach (PartModule m in part.FindModulesImplementing<PartModule>())
+			foreach (PartModule m in part.Modules)
 			{
 				if (RemoteTech.IsAntenna(m))
 				{
@@ -76,6 +79,8 @@ namespace KERBALISM
 				}
 			}
 		}
+
+		public static bool Installed { get; private set; } = false;
 
 		/// <summary> Returns true if RemoteTech is enabled for the current game</summary>
 		public static bool Enabled

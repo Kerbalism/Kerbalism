@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace KERBALISM
 {
@@ -6,117 +6,78 @@ namespace KERBALISM
 	public enum LinkStatus
 	{
 		direct_link = 0,
-		indirect_link = 1,	// relayed signal
+		indirect_link = 1,  // relayed signal
 		no_link = 2,
-		plasma = 3,			// plasma blackout on reentry
-		storm = 4			// cme storm blackout
+		plasma = 3,         // plasma blackout on reentry
+		storm = 4           // cme storm blackout
 	}
 
-	/// <summary> Stores a single vessels communication info</summary>
-	public class ConnectionInfo
+	public sealed class ConnectionInfo
 	{
-		/// <summary> true if there is a connection back to DSN </summary>
-		public bool linked = false;
+		// ====================================================================
+		// VALUES SET BY KERBALISM (CommInfo API )
+		// ====================================================================
 
-		/// <summary> status of the connection </summary>
-		public LinkStatus status = LinkStatus.no_link;
+		/// <summary>
+		/// This will be set to true if the vessel currently is transmitting data.
+		/// </summary>
+		public bool transmitting = false;
 
-		/// <summary> science data rate. note that internal transmitters can not transmit science data only telemetry data </summary>
+		/// <summary>
+		/// Set to true if the vessel is currently subjected to a CME storm
+		/// </summary>
+		public bool storm = false;
+
+		/// <summary>
+		/// Set to true if the vessel has enough EC to operate
+		/// </summary>
+		public bool powered = true;
+
+
+		// ====================================================================
+		// VALUES TO SET FOR KERBALISM (CommInfo API)
+		// ====================================================================
+
+		/// <summary>
+		/// science data rate, in MB/s. note that internal transmitters can not transmit science data only telemetry data
+		/// </summary>
 		public double rate = 0.0;
 
-		/// <summary> transmitter ec cost while transmitting</summary>
+		/// <summary> ec cost while transmitting at the above rate </summary>
 		public double ec = 0.0;
 
-		/// <summary> transmitter ec cost while idle</summary>
+		/// <summary> ec cost while not transmitting </summary>
 		public double ec_idle = 0.0;
 
-		/// <summary> signal strength </summary>
-		public double strength = 0.0;
+		/// <summary> link quality indicator for the UI, any value from 0-1.
+		/// you MUST set this to >= 0 in your mod, otherwise the comm status
+		/// will either be handled by an other mod or by the stock implementation.
+		/// </summary>
+		public double strength = -1;
 
-		/// <summary> receiving node name </summary>
-		public string target_name = "";
+		/// <summary>
+		/// direct_link = 0, indirect_link = 1 (relayed signal), no_link = 2, plasma = 3 (plasma blackout on reentry), storm = 4 (cme storm blackout)
+		/// </summary>
+		public int status = 2;
 
-		public List<string[]> control_path = null;
+		/// <summary>
+		/// true if communication is established. if false, vessels can't transmit data and might be uncontrollable.
+		/// </summary>
+		public bool linked;
 
-		public static ConnectionInfo Update(Vessel v, bool powered, bool storm)
-		{
-			return new ConnectionInfo(v, powered, storm);
-		}
+		/// <summary>
+		/// The name of the thing at the other end of your radio beam (KSC, name of the relay, ...)
+		/// </summary>
+		public string target_name;
 
-		private static double SanityCheck(double value, string name, Vessel v)
-		{
-			if (double.IsNaN(value) || double.IsInfinity(value))
-			{
-				Lib.LogDebug("Comms: invalid value: " + name + " on " + v + " (" + value + ")", Lib.LogLevel.Error);
-				value = 0;
-			}
-			return value;
-		}
-
-		public ConnectionInfo() {}
-
-		/// <summary> Creates a <see cref="ConnectionInfo"/> object for the specified vessel from it's antenna modules</summary>
-		private ConnectionInfo(Vessel v, bool powered, bool storm)
-		{
-			// return no connection if there is no ec left
-			//if (!powered)
-			//	return;
-
-			// wait until network is initialized (2 seconds after load)
-			if (!Communications.NetworkInitialized)
-				return;
-
-			AntennaInfo ai = GetAntennaInfo(v, powered, storm);
-
-			ec = SanityCheck(ai.ec, "ec", v);
-			ec_idle = SanityCheck(ai.ec_idle, "ec_idle", v);
-			rate = SanityCheck(ai.rate, "rate", v) * PreferencesScience.Instance.transmitFactor;
-			linked = ai.linked;
-			strength = SanityCheck(ai.strength, "strength", v);
-			target_name = ai.target_name;
-			control_path = ai.control_path;
-
-			switch(ai.status)
-			{
-				case 0: status = LinkStatus.direct_link; break;
-				case 1: status = LinkStatus.indirect_link; break;
-				case 2: status = LinkStatus.no_link; break;
-				case 3: status = LinkStatus.plasma; break;
-				case 4: status = LinkStatus.storm; break;
-				default: status = LinkStatus.no_link; break;
-			}
-		}
-
-		private static AntennaInfo GetAntennaInfo(Vessel v, bool powered, bool storm)
-		{
-			AntennaInfo ai = new AntennaInfo();
-			ai.powered = powered;
-			ai.storm = storm;
-			ai.transmitting = v.KerbalismData().filesTransmitted.Count > 0;
-
-			API.Comm.Init(ai, v);
-			if (ai.strength > -1)
-				return ai;
-
-#if !KSP15_16
-			var cluster = Serenity.GetScienceCluster(v);
-			if (cluster != null)
-				return new AntennaInfoSerenity(v, cluster, storm, ai.transmitting).AntennaInfo();
-#endif
-			// if CommNet is enabled
-			if (HighLogic.fetch.currentGame.Parameters.Difficulty.EnableCommNet)
-				return new AntennaInfoCommNet(v, powered, storm, ai.transmitting).AntennaInfo();
-
-			// default: the simple stupid always connected signal system
-			AntennaInfo antennaInfo = new AntennaInfoCommNet(v, powered, storm, ai.transmitting).AntennaInfo();
-
-			antennaInfo.ec *= 0.16;
-			antennaInfo.linked = true;
-			antennaInfo.status = (int)LinkStatus.direct_link;
-			antennaInfo.strength = 1;    // 100 %
-			antennaInfo.target_name = "DSN: KSC";
-
-			return antennaInfo;
-		}
+		/// <summary>
+		/// Optional: communication path that will be displayed in the UI.
+		/// Each entry in the List is one "hop" in your path.
+		/// provide up to 3 values for each hop: string[] hop = { name, value, tooltip }
+		/// <para/>- name: the name of the relay/station
+		/// <para/>- value: link quality to that relay
+		/// <para/>- tooltip: anything you want to display, maybe link distance, frequency band used, ...
+		/// </summary>
+		public List<string[]> control_path = new List<string[]>();
 	}
-} // KERBALISM
+}

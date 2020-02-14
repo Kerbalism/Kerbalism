@@ -84,12 +84,12 @@ namespace KERBALISM.Planner
 			}
 
 			habitatInfo = new HabitatVesselData();
-			HabitatData.EvaluateHabitat(habitatInfo, habitats, connectionInfo, env.landed, (int)crew_count, Vector3d.zero, false);
+			//HabitatData.EvaluateHabitat(habitatInfo, habitats, connectionInfo, env.landed, (int)crew_count, Vector3d.zero, false);
 		}
 
 		void Analyze_comms(List<Part> parts, EnvironmentAnalyzer env)
 		{
-			connectionInfo = new ConnectionInfoEditor(parts, env);
+			//connectionInfo = new ConnectionInfoEditor(parts, env);
 		}
 
 		void Analyze_radiation(List<Part> parts, ResourceSimulator sim)
@@ -215,7 +215,7 @@ namespace KERBALISM.Planner
 		public double failure_year;                         // estimated failures per-year, averaged per-component
 		public Dictionary<string, int> redundancy;          // number of components per redundancy group
 
-		public ConnectionInfoEditor connectionInfo;
+		//public ConnectionInfoEditor connectionInfo;
 		public HabitatVesselData habitatInfo;
 	}
 
