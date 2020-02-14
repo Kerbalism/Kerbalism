@@ -8,7 +8,7 @@ namespace KERBALISM
 	/// <summary>
 	/// Replacement for ProcessController
 	/// </summary>
-	public class KSMProcessController: PartModule, IModuleInfo, IAnimatedModule, ISpecifics
+	public class ModuleKsmProcessController: PartModule, IModuleInfo, IAnimatedModule, ISpecifics
 	{
 		// config
 		[KSPField] public string resource = string.Empty; // pseudo-resource to control

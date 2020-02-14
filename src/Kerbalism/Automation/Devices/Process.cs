@@ -58,9 +58,9 @@ namespace KERBALISM
 	}
 
 
-	public sealed class KSMProcessDevice : LoadedDevice<KSMProcessController>
+	public sealed class KSMProcessDevice : LoadedDevice<ModuleKsmProcessController>
 	{
-		public KSMProcessDevice(KSMProcessController module) : base(module) { }
+		public KSMProcessDevice(ModuleKsmProcessController module) : base(module) { }
 
 		public override bool IsVisible => module.toggle;
 
@@ -81,9 +81,9 @@ namespace KERBALISM
 		}
 	}
 
-	public sealed class KSMProtoProcessDevice : ProtoDevice<KSMProcessController>
+	public sealed class KSMProtoProcessDevice : ProtoDevice<ModuleKsmProcessController>
 	{
-		public KSMProtoProcessDevice(KSMProcessController prefab, ProtoPartSnapshot protoPart, ProtoPartModuleSnapshot protoModule)
+		public KSMProtoProcessDevice(ModuleKsmProcessController prefab, ProtoPartSnapshot protoPart, ProtoPartModuleSnapshot protoModule)
 			: base(prefab, protoPart, protoModule) { }
 
 		public override bool IsVisible => prefab.toggle;

@@ -832,7 +832,7 @@ namespace KERBALISM
 					// inject process details into ModuleB9PartSwitch/SUBTYPE/descriptionDetail for process switchers
 					else if (module.moduleName == "ModuleB9PartSwitch")
 					{
-						var processControllers = ap.partPrefab.FindModulesImplementing<KSMProcessController>();
+						var processControllers = ap.partPrefab.FindModulesImplementing<ModuleKsmProcessController>();
 						if (processControllers.Count == 0)
 							continue;
 
@@ -849,7 +849,7 @@ namespace KERBALISM
 
 							if (process != null)
 							{
-								var specifics = KSMProcessController.Specifics(process, capacity);
+								var specifics = ModuleKsmProcessController.Specifics(process, capacity);
 								var description = specifics.Info(Localizer.Format(Local.ProcessController_Capacity, capacity.ToString("F1")));
 								subtype.GetType().GetField("descriptionDetail", BindingFlags.Instance | BindingFlags.Public).SetValue(subtype, description);
 							}
