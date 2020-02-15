@@ -33,12 +33,12 @@ namespace KERBALISM
 					{
 						string subtext = Local.UI_transmissiondisabled;
 
-						switch (vd.Connection.status)
+						switch (vd.Connection.Status)
 						{
-							case (int)LinkStatus.plasma:
+							case LinkStatus.plasma:
 								subtext = Local.UI_Plasmablackout;
 								break;
-							case (int)LinkStatus.storm:
+							case LinkStatus.storm:
 								subtext = Local.UI_Stormblackout;
 								break;
 							default:
@@ -66,7 +66,7 @@ namespace KERBALISM
 					if (vd.cfg_signal)
 					{
 						Message.Post(Severity.relax, Lib.BuildString("<b>", v.vesselName, "</b> ", Local.UI_signalback),
-						  vd.Connection.status == (int)LinkStatus.direct_link ? Local.UI_directlink :
+						  vd.Connection.Status == (int)LinkStatus.direct_link ? Local.UI_directlink :
 							Lib.BuildString(Local.UI_relayby, " <b>", vd.Connection.target_name, "</b>"));
 					}
 				}

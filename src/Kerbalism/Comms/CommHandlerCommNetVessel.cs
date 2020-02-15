@@ -109,6 +109,8 @@ namespace KERBALISM
 
 			// when transmitting, transmitters need more EC for the signal amplifiers.
 			// while not transmitting, transmitters only use 10-20% of that
+			// Note : ec_idle is substracted from ec before consumption in Science.Update().
+			// Didn't change that as this is what is expected by the RealAntenna API handler
 			connection.ec *= Settings.TransmitterActiveEcFactor;
 			connection.ec_idle += connection.ec * Settings.TransmitterPassiveEcFactor;
 		}

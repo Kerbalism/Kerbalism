@@ -20,7 +20,7 @@ namespace KERBALISM
 			if (v == null || v.connection == null)
 			{
 				connection.linked = false;
-				connection.status = (int)LinkStatus.no_link;
+				connection.Status = LinkStatus.no_link;
 				connection.strength = 0.0;
 				connection.rate = 0.0;
 				connection.target_name = string.Empty;
@@ -37,14 +37,14 @@ namespace KERBALISM
 			{
 				connection.linked = true;
 				var link = v.connection.ControlPath.First;
-				connection.status = link.hopType == HopType.Home ? (int)LinkStatus.direct_link : (int)LinkStatus.indirect_link;
+				connection.Status = link.hopType == HopType.Home ? LinkStatus.direct_link : LinkStatus.indirect_link;
 				connection.strength = link.signalStrength;
 
 				connection.rate = baseRate * Math.Pow(link.signalStrength, Settings.DataRateDampingExponent);
 
 				connection.target_name = Lib.Ellipsis(Localizer.Format(v.connection.ControlPath.First.end.displayName).Replace("Kerbin", "DSN"), 20);
 
-				if (connection.status != (int)LinkStatus.direct_link)
+				if (connection.Status != LinkStatus.direct_link)
 				{
 					Vessel firstHop = Lib.CommNodeToVessel(v.Connection.ControlPath.First.end);
 					// Get rate from the firstHop, each Hop will do the same logic, then we will have the min rate for whole path
@@ -54,7 +54,7 @@ namespace KERBALISM
 			// is loss of connection due to plasma blackout
 			else if (Lib.ReflectionValue<bool>(v.connection, "inPlasma"))  // calling InPlasma causes a StackOverflow :(
 			{
-				connection.status = (int)LinkStatus.plasma;
+				connection.Status = LinkStatus.plasma;
 			}
 
 			connection.control_path.Clear();
@@ -85,7 +85,7 @@ namespace KERBALISM
 				connection.control_path.Add(controlPoint);
 			}
 
-			// set minimal data rate to what is defined in Settings (1 bit/s) 
+			// set minimal data rate to what is defined in Settings (1 bit/s by default) 
 			if (connection.rate > 0.0 && connection.rate * bitsPerMB < Settings.DataRateMinimumBitsPerSecond)
 				connection.rate = Settings.DataRateMinimumBitsPerSecond / bitsPerMB;
 		}

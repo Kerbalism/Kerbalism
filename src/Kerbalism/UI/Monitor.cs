@@ -649,22 +649,22 @@ namespace KERBALISM
 
 			// create icon status
 			Texture2D image = Textures.signal_red;
-			switch (conn.status)
+			switch (conn.Status)
 			{
-				case (int)LinkStatus.direct_link:
+				case LinkStatus.direct_link:
 					image = conn.strength > 0.05 ? Textures.signal_white : Textures.iconSwitch(Textures.signal_yellow, image);   // or 5% signal strength
 					break;
 
-				case (int)LinkStatus.indirect_link:
+				case LinkStatus.indirect_link:
 					image = conn.strength > 0.05 ? Textures.signal_white : Textures.iconSwitch(Textures.signal_yellow, image);   // or 5% signal strength
 					tooltip += Lib.Color("\n" + Local.UI_Signalrelayed, Lib.Kolor.Yellow);
 					break;
 
-				case (int)LinkStatus.plasma:
+				case LinkStatus.plasma:
 					tooltip += Lib.Color(Lib.Italic("\n" + Local.UI_Plasmablackout), Lib.Kolor.Red);
 					break;
 
-				case (int)LinkStatus.storm:
+				case LinkStatus.storm:
 					tooltip += Lib.Color(Lib.Italic("\n" + Local.UI_Stormblackout), Lib.Kolor.Red);
 					break;
 			}

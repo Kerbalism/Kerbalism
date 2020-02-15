@@ -14,6 +14,15 @@ namespace KERBALISM
 
 	public sealed class ConnectionInfo
 	{
+		// Note : Do not change this class, it is used for the API handlers (as of 02-2020, RealAntenna is using it)
+		// That's also why it doesn't use the above enum directly
+
+		public LinkStatus Status
+		{
+			get => (LinkStatus)status;
+			set => status = (int)value;
+		}
+
 		// ====================================================================
 		// VALUES SET BY KERBALISM (CommInfo API )
 		// ====================================================================
@@ -43,7 +52,10 @@ namespace KERBALISM
 		/// </summary>
 		public double rate = 0.0;
 
-		/// <summary> ec cost while transmitting at the above rate </summary>
+		/// <summary>
+		/// ec cost while transmitting at the above rate
+		/// <para/> Note: ec_idle is substracted from ec in Science.Update(), it's silly but don't change it as this is what is expected from the RealAntenna API handler
+		/// </summary>
 		public double ec = 0.0;
 
 		/// <summary> ec cost while not transmitting </summary>

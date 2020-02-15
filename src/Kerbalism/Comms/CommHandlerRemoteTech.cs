@@ -5,6 +5,8 @@ namespace KERBALISM
 {
 	public class CommHandlerRemoteTech : CommHandler
 	{
+		const double bitsPerMB = 1024.0 * 1024.0 * 8.0;
+
 		private double baseRate;
 
 		private class UnloadedTransmitter
@@ -33,9 +35,9 @@ namespace KERBALISM
 
 				// is loss of connection due to a blackout
 				if (RemoteTech.GetCommsBlackout(vd.VesselId))
-					connection.status = connection.storm ? (int)LinkStatus.storm : (int)LinkStatus.plasma;
+					connection.Status = connection.storm ? LinkStatus.storm : LinkStatus.plasma;
 				else
-					connection.status = (int)LinkStatus.no_link;
+					connection.Status = LinkStatus.no_link;
 
 				connection.strength = 0.0;
 				connection.rate = 0.0;
@@ -45,15 +47,21 @@ namespace KERBALISM
 			}
 
 			connection.linked = RemoteTech.ConnectedToKSC(vd.VesselId);
-			connection.status = RemoteTech.TargetsKSC(vd.VesselId) ? (int)LinkStatus.direct_link : (int)LinkStatus.indirect_link;
-			connection.target_name = connection.status == (int)LinkStatus.direct_link ? Lib.Ellipsis("DSN: " + (RemoteTech.NameTargetsKSC(vd.VesselId) ?? ""), 20) :
+			connection.Status = RemoteTech.TargetsKSC(vd.VesselId) ? LinkStatus.direct_link : LinkStatus.indirect_link;
+			connection.target_name = connection.Status == LinkStatus.direct_link ? Lib.Ellipsis("DSN: " + (RemoteTech.NameTargetsKSC(vd.VesselId) ?? ""), 20) :
 				Lib.Ellipsis(RemoteTech.NameFirstHopToKSC(vd.VesselId) ?? "", 20);
 
 			Guid[] controlPath = null;
 			if (connection.linked) controlPath = RemoteTech.GetCommsControlPath(vd.VesselId);
 
 			// Get the lowest rate in ControlPath
-			if (controlPath != null)
+			if (controlPath == null)
+			{
+				connection.strength = 0.0;
+				connection.rate = 0.0;
+				connection.control_path.Clear();
+			}
+			else
 			{
 				// Get rate from the firstHop, each Hop will do the same logic, then we will have the lowest rate for the path
 				if (controlPath.Length > 0)
@@ -66,7 +74,7 @@ namespace KERBALISM
 					connection.rate = baseRate * connection.strength;
 
 					// If using relay, get the lowest rate
-					if (connection.status != (int)LinkStatus.direct_link)
+					if (connection.Status != LinkStatus.direct_link)
 					{
 						Vessel target = FlightGlobals.FindVessel(controlPath[0]);
 						ConnectionInfo ci = target.KerbalismData().Connection;
@@ -75,7 +83,7 @@ namespace KERBALISM
 					}
 				}
 
-				connection.control_path = new List<string[]>();
+				connection.control_path.Clear();
 				Guid i = vd.VesselId;
 				foreach (Guid id in controlPath)
 				{
@@ -87,6 +95,10 @@ namespace KERBALISM
 					i = id;
 				}
 			}
+
+			// set minimal data rate to what is defined in Settings (1 bit/s by default) 
+			if (connection.rate > 0.0 && connection.rate * bitsPerMB < Settings.DataRateMinimumBitsPerSecond)
+				connection.rate = Settings.DataRateMinimumBitsPerSecond / bitsPerMB;
 		}
 
 		protected override void UpdateTransmitters(ConnectionInfo connection, bool searchTransmitters)
@@ -128,7 +140,7 @@ namespace KERBALISM
 						connection.ec_idle += 0.0005;
 					}
 					// calculate external transmitters
-					else if (pm.moduleName == "ModuleRTAntenna")
+					else
 					{
 						ModuleResource mResource = pm.resHandler.inputResources.Find(r => r.name == "ElectricCharge");
 						// only include data rate and ec cost if transmitter is active
@@ -193,10 +205,11 @@ namespace KERBALISM
 			{
 				connection.ec_idle += connection.ec;
 				connection.ec *= Settings.TransmitterActiveEcFactor;
+				connection.ec += connection.ec_idle; // ec_idle is substracted from ec in Science.Update(), don't change that as this is what is expected by the RealAntenna API handler
 			}
 			else
 			{
-				connection.ec = (connection.ec * Settings.TransmitterActiveEcFactor) - connection.ec;
+				connection.ec *= Settings.TransmitterActiveEcFactor;
 			}
 		}
 
