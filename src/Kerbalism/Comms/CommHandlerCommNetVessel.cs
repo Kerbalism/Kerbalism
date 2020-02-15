@@ -103,7 +103,7 @@ namespace KERBALISM
 			}
 
 			if (transmitterCount > 1)
-				baseRate = Math.Pow(connection.rate, 1.0 / transmitterCount);
+				baseRate = Math.Pow(baseRate, 1.0 / transmitterCount);
 			else if (transmitterCount == 0)
 				baseRate = 0.0;
 

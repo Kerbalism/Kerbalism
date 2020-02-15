@@ -59,7 +59,8 @@ namespace KERBALISM
 				if (controlPath.Length > 0)
 				{
 					double dist = RemoteTech.GetCommsDistance(vd.VesselId, controlPath[0]);
-					connection.strength = 1 - (dist / Math.Max(RemoteTech.GetCommsMaxDistance(vd.VesselId, controlPath[0]), 1));
+					double maxDist = RemoteTech.GetCommsMaxDistance(vd.VesselId, controlPath[0]);
+					connection.strength = maxDist > 0.0 ? 1.0 - (dist / Math.Max(maxDist, 1.0)) : 0.0;
 					connection.strength = Math.Pow(connection.strength, Settings.DataRateDampingExponentRT);
 
 					connection.rate = baseRate * connection.strength;
@@ -78,7 +79,7 @@ namespace KERBALISM
 				Guid i = vd.VesselId;
 				foreach (Guid id in controlPath)
 				{
-					var name = Lib.Ellipsis(RemoteTech.GetSatelliteName(i) + " \\ " + RemoteTech.GetSatelliteName(id), 35);
+					var name = Lib.Ellipsis(RemoteTech.GetSatelliteName(i) + " \\ " + RemoteTech.GetSatelliteName(id), 50);
 					var value = Lib.HumanReadablePerc(Math.Ceiling((1 - (RemoteTech.GetCommsDistance(i, id) / RemoteTech.GetCommsMaxDistance(i, id))) * 10000) / 10000, "F2");
 					var tooltip = "Distance: " + Lib.HumanReadableDistance(RemoteTech.GetCommsDistance(i, id)) +
 						"\nMax Distance: " + Lib.HumanReadableDistance(RemoteTech.GetCommsMaxDistance(i, id));
@@ -98,8 +99,10 @@ namespace KERBALISM
 				RemoteTech.SetCommsBlackout(v.id, connection.storm);
 			}
 
-			baseRate = 0.0;
+			baseRate = 1.0;
 			connection.ec = 0.0;
+			connection.ec_idle = 0.0;
+			int transmitterCount = 0;
 
 			if (v.loaded)
 			{
@@ -121,14 +124,19 @@ namespace KERBALISM
 				{
 					// calculate internal (passive) transmitter ec usage @ 0.5W each
 					if (pm.moduleName == "ModuleRTAntennaPassive")
-						connection.ec += 0.0005;
+					{
+						connection.ec_idle += 0.0005;
+					}
 					// calculate external transmitters
 					else if (pm.moduleName == "ModuleRTAntenna")
 					{
+						ModuleResource mResource = pm.resHandler.inputResources.Find(r => r.name == "ElectricCharge");
 						// only include data rate and ec cost if transmitter is active
 						if (Lib.ReflectionValue<bool>(pm, "IsRTActive"))
 						{
-							baseRate += (Lib.ReflectionValue<float>(pm, "RTPacketSize") / Lib.ReflectionValue<float>(pm, "RTPacketInterval"));
+							baseRate *= (Lib.ReflectionValue<float>(pm, "RTPacketSize") / Lib.ReflectionValue<float>(pm, "RTPacketInterval"));
+							connection.ec += mResource.rate;
+							transmitterCount++;
 						}
 					}
 				}
@@ -151,25 +159,44 @@ namespace KERBALISM
 
 				foreach (UnloadedTransmitter mdt in unloadedTransmitters)
 				{
-					ModuleResource mResource = mdt.prefab.resHandler.inputResources.Find(r => r.name == "ElectricCharge");
-					float? packet_size = Lib.SafeReflectionValue<float>(mdt.prefab, "RTPacketSize");
-					float? packet_Interval = Lib.SafeReflectionValue<float>(mdt.prefab, "RTPacketInterval");
-
-					if (!Lib.Proto.GetBool(mdt.protoTransmitter, "IsRTActive", false))
-						continue;
-
-					// workaround for old savegames
-					if (mResource == null || packet_size == null || packet_Interval == null)
+					if (mdt.protoTransmitter.moduleName == "ModuleRTAntennaPassive")
 					{
-						baseRate += 6.6666;          // 6.67 Mb/s in 100% factor
-						connection.ec += 0.025;             // 25 W/s
+						connection.ec_idle += 0.0005;
 					}
 					else
 					{
-						baseRate += (float)packet_size / (float)packet_Interval;
-						connection.ec += mResource.rate;
+						ModuleResource mResource = mdt.prefab.resHandler.inputResources.Find(r => r.name == "ElectricCharge");
+						float? packet_size = Lib.SafeReflectionValue<float>(mdt.prefab, "RTPacketSize");
+						float? packet_Interval = Lib.SafeReflectionValue<float>(mdt.prefab, "RTPacketInterval");
+
+						if (!Lib.Proto.GetBool(mdt.protoTransmitter, "IsRTActive", false))
+							continue;
+
+						if (mResource != null && packet_size != null && packet_Interval != null)
+						{
+							baseRate *= (float)packet_size / (float)packet_Interval;
+							connection.ec += mResource.rate;
+							transmitterCount++;
+						}
 					}
 				}
+			}
+
+			if (transmitterCount > 1)
+				baseRate = Math.Pow(baseRate, 1.0 / transmitterCount);
+			else if (transmitterCount == 0)
+				baseRate = 0.0;
+
+			// when transmitting, transmitters need more EC for the signal amplifiers.
+			// while not transmitting, transmitters only use 10-20% of that
+			if (!v.loaded)
+			{
+				connection.ec_idle += connection.ec;
+				connection.ec *= Settings.TransmitterActiveEcFactor;
+			}
+			else
+			{
+				connection.ec = (connection.ec * Settings.TransmitterActiveEcFactor) - connection.ec;
 			}
 		}
 

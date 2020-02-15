@@ -46,29 +46,6 @@ namespace KERBALISM
 			}
 		}
 
-		//public static void Startup()
-		//{
-		//	if (!Enabled) return;
-		//	Lib.Log("RemoteTech starting up");
-
-		//	var handler = typeof(RemoteTech).GetMethod("RTCommInfoHandler");
-		//	API.Comm.Add(handler);
-
-			
-		//}
-
-		//public static void RTCommInfoHandler(Connection antennaInfo, Vessel v)
-		//{
-		//	var ai = new AntennaInfoRT(v, antennaInfo.powered, antennaInfo.storm);
-		//	antennaInfo.linked = ai.linked;
-		//	antennaInfo.ec = ai.ec;
-		//	antennaInfo.control_path = ai.control_path;
-		//	antennaInfo.rate = ai.rate;
-		//	antennaInfo.status = ai.status;
-		//	antennaInfo.strength = ai.strength;
-		//	antennaInfo.target_name = ai.target_name;
-		//}
-
 		public static void RTFailureHandler(Part part, string type, bool failure)
 		{
 			foreach (PartModule m in part.Modules)

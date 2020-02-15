@@ -254,7 +254,7 @@ namespace KERBALISM
 			if (Features.Reliability) Indicator_reliability(p, v, vd);
 
 			// signal indicator
-			if (API.Comm.handlers.Count > 0 || HighLogic.fetch.currentGame.Parameters.Difficulty.EnableCommNet) Indicator_signal(p, v, vd);
+			if (Features.Science) Indicator_signal(p, v, vd);
 
 			// done
 			return true;
