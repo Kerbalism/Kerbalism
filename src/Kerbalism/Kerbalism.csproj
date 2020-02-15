@@ -134,7 +134,7 @@
     <Compile Include="Automation\Devices\Panel.cs" />
     <Compile Include="Automation\Devices\Process.cs" />
     <Compile Include="Automation\Devices\Ring.cs" />
-    <Compile Include="Comms\Communications.cs" />
+    <Compile Include="Comms\CommsMessages.cs" />
     <Compile Include="Comms\CommHandler.cs" />
     <Compile Include="Comms\ConnectionInfo.cs" />
     <Compile Include="Comms\CommHandlerCommNetBase.cs" />

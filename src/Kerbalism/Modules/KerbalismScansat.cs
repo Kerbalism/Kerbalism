@@ -7,7 +7,7 @@ using KSP.Localization;
 namespace KERBALISM
 {
 	// Note (Got) : this whole thing :
-	// - should not be using it's own warp buffer, but use the warp drive instead
+	// - should not be using it's own warp buffer, but use the transmit buffer drive instead
 	// - should not disable itself when there is no ec, but stay enabled and scale output by ec.AvailabilityFactor
 	// The current implementation will cause EC resource sim destabilization by putting it into a produce/not produce cycle
 	// it works by stopping/starting the scansat module dependning on ec availability

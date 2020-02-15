@@ -540,7 +540,7 @@ namespace KERBALISM
 				return;
 			}
 
-			Drive warpDrive = null;
+			Drive bufferDrive = null;
 			double available;
 			if (!expInfo.IsSample)
 			{
@@ -549,8 +549,8 @@ namespace KERBALISM
 
 				if (drive.GetFileSend(subjectData.Id))
 				{
-					warpDrive = Cache.WarpCache(v);
-					available += warpDrive.FileCapacityAvailable();
+					bufferDrive = Cache.TransmitBufferDrive(v);
+					available += bufferDrive.FileCapacityAvailable();
 					if (double.IsNaN(available)) Lib.LogStack("warpDrive.FileCapacityAvailable() returned NaN", Lib.LogLevel.Error);
 				}
 			}
@@ -599,10 +599,10 @@ namespace KERBALISM
 
 			if (!expInfo.IsSample)
 			{
-				if (warpDrive != null)
+				if (bufferDrive != null)
 				{
-					double s = Math.Min(chunkSize, warpDrive.FileCapacityAvailable());
-					warpDrive.Record_file(subjectData, s, true);
+					double s = Math.Min(chunkSize, bufferDrive.FileCapacityAvailable());
+					bufferDrive.Record_file(subjectData, s, true);
 
 					if (chunkSize > s) // only write to persisted drive if the data cannot be transmitted in this tick
 						drive.Record_file(subjectData, chunkSize - s, true);

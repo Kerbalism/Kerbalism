@@ -7,6 +7,27 @@ namespace KERBALISM
 	/// <summary> Contains methods for RemoteTech's API</summary>
 	public static class RemoteTech
 	{
+		private static MethodInfo ModuleRTAntennaConsumptionMultiplier;
+		private static FieldInfo ModuleRTAntennaEnergyCost;
+
+		private static Type RT_API;
+		private static Func<bool> IsEnabled;
+		private static Action<bool> EnabledInSPC;
+		private static Func<Guid, bool> IsConnected;
+		private static Func<Guid, bool> IsConnectedKSC;
+		private static Func<Guid, bool> IsTargetKSC;
+		private static Func<Guid, string> NameTargetKSC;
+		private static Func<Guid, string> NameFirstHopKSC;
+		private static Func<Guid, double> SignalDelay;
+		private static Func<Guid, bool, string, bool> SetRadioBlackout;
+		private static Func<Guid, bool> GetRadioBlackout;
+		private static Func<Guid, bool, string, bool> SetPowerDown;
+		private static Func<Guid, bool> GetPowerDown;
+		private static Func<Guid, Guid[]> GetControlPath;
+		private static Func<Guid, Guid, double> GetDistance;
+		private static Func<Guid, Guid, double> GetMaxDistance;
+		private static Func<Guid, string> GetSatName;
+
 		// constructor
 		static RemoteTech()
 		{
@@ -16,22 +37,27 @@ namespace KERBALISM
 				{
 					Installed = true;
 					RT_API = a.assembly.GetType("RemoteTech.API.API");
-					IsEnabled = RT_API.GetMethod("IsRemoteTechEnabled");
-					EnabledInSPC = RT_API.GetMethod("EnableInSPC");
-					IsConnected = RT_API.GetMethod("HasAnyConnection");
-					IsConnectedKSC = RT_API.GetMethod("HasConnectionToKSC");
-					IsTargetKSC = RT_API.GetMethod("HasDirectGroundStation");
-					NameTargetKSC = RT_API.GetMethod("GetClosestDirectGroundStation");
-					NameFirstHopKSC = RT_API.GetMethod("GetFirstHopToKSC");
-					SignalDelay = RT_API.GetMethod("GetSignalDelayToKSC");
-					SetRadioBlackout = RT_API.GetMethod("SetRadioBlackoutGuid");
-					GetRadioBlackout = RT_API.GetMethod("GetRadioBlackoutGuid");
-					SetPowerDown = RT_API.GetMethod("SetPowerDownGuid");
-					GetPowerDown = RT_API.GetMethod("GetPowerDownGuid");
-					GetControlPath = RT_API.GetMethod("GetControlPath");
-					GetDistance = RT_API.GetMethod("GetRangeDistance");
-					GetMaxDistance = RT_API.GetMethod("GetMaxRangeDistance");
-					GetSatName = RT_API.GetMethod("GetName");
+
+					IsEnabled        = (Func<bool>)                    RT_API.GetMethod("IsRemoteTechEnabled")?.CreateDelegate(typeof(Func<bool>));
+					EnabledInSPC     = (Action<bool>)                  RT_API.GetMethod("EnableInSPC")?.CreateDelegate(typeof(Action<bool>));
+					IsConnected      = (Func<Guid, bool>)              RT_API.GetMethod("HasAnyConnection")?.CreateDelegate(typeof(Func<Guid, bool>));
+					IsConnectedKSC   = (Func<Guid, bool>)              RT_API.GetMethod("HasConnectionToKSC")?.CreateDelegate(typeof(Func<Guid, bool>));
+					IsTargetKSC      = (Func<Guid, bool>)              RT_API.GetMethod("HasDirectGroundStation")?.CreateDelegate(typeof(Func<Guid, bool>));
+					NameTargetKSC    = (Func<Guid, string>)            RT_API.GetMethod("GetClosestDirectGroundStation")?.CreateDelegate(typeof(Func<Guid, string>));
+					NameFirstHopKSC  = (Func<Guid, string>)            RT_API.GetMethod("GetFirstHopToKSC")?.CreateDelegate(typeof(Func<Guid, string>));
+					SignalDelay      = (Func<Guid, double>)            RT_API.GetMethod("GetSignalDelayToKSC")?.CreateDelegate(typeof(Func<Guid, double>));
+					SetRadioBlackout = (Func<Guid, bool, string, bool>)RT_API.GetMethod("SetRadioBlackoutGuid")?.CreateDelegate(typeof(Func<Guid, bool, string, bool>));
+					GetRadioBlackout = (Func<Guid, bool>)              RT_API.GetMethod("GetRadioBlackoutGuid")?.CreateDelegate(typeof(Func<Guid, bool>));
+					SetPowerDown     = (Func<Guid, bool, string, bool>)RT_API.GetMethod("SetPowerDownGuid")?.CreateDelegate(typeof(Func<Guid, bool, string, bool>));
+					GetPowerDown     = (Func<Guid, bool>)              RT_API.GetMethod("GetPowerDownGuid")?.CreateDelegate(typeof(Func<Guid, bool>));
+					GetControlPath   = (Func<Guid, Guid[]>)            RT_API.GetMethod("GetControlPath")?.CreateDelegate(typeof(Func<Guid, Guid[]>));
+					GetDistance      = (Func<Guid, Guid, double>)      RT_API.GetMethod("GetRangeDistance")?.CreateDelegate(typeof(Func<Guid, Guid, double>));
+					GetMaxDistance   = (Func<Guid, Guid, double>)      RT_API.GetMethod("GetMaxRangeDistance")?.CreateDelegate(typeof(Func<Guid, Guid, double>));
+					GetSatName       = (Func<Guid, string>)            RT_API.GetMethod("GetName")?.CreateDelegate(typeof(Func<Guid, string>));
+
+					Type ModuleRTAntennaType = a.assembly.GetType("RemoteTech.Modules.ModuleRTAntenna");
+					ModuleRTAntennaConsumptionMultiplier = ModuleRTAntennaType.GetProperty("ConsumptionMultiplier", BindingFlags.Instance | BindingFlags.NonPublic).GetGetMethod(true);
+					ModuleRTAntennaEnergyCost = ModuleRTAntennaType.GetField("EnergyCost");
 
 					// check version is above 1.9, warn users if they are using an old version of RemoteTech
 					if (!((a.versionMajor >= 1) && (a.versionMinor >= 9)))
@@ -50,7 +76,7 @@ namespace KERBALISM
 		{
 			foreach (PartModule m in part.Modules)
 			{
-				if (RemoteTech.IsAntenna(m))
+				if (RemoteTech.IsRTAntenna(m))
 				{
 					RemoteTech.SetBroken(m, failure);
 				}
@@ -60,84 +86,58 @@ namespace KERBALISM
 		public static bool Installed { get; private set; } = false;
 
 		/// <summary> Returns true if RemoteTech is enabled for the current game</summary>
-		public static bool Enabled
-		{
-			get { return RT_API != null && (bool)IsEnabled.Invoke(null, new Object[] { }); }
-		}
+		public static bool Enabled => IsEnabled != null && IsEnabled();
 
 		/// <summary> Enables RTCore in the Space Center scene</summary>
-		public static void EnableInSPC()
-		{
-			if (RT_API != null && EnabledInSPC != null)
-				EnabledInSPC.Invoke(null, new Object[] { true });
-		}
+		public static void EnableInSPC() => EnabledInSPC?.Invoke(true);
 
 		/// <summary> Returns true if the vessel has a connection back to KSC</summary>
-		public static bool ConnectedToKSC(Guid id)
-		{
-			return RT_API != null && (bool)IsConnectedKSC.Invoke(null, new Object[] { id });
-		}
+		public static bool ConnectedToKSC(Guid id) => IsConnectedKSC == null ? false : IsConnectedKSC(id);
 
 		/// <summary> Returns true if the vessel directly targets KSC</summary>
-		public static bool TargetsKSC(Guid id)
-		{
-			return RT_API != null && (bool)IsTargetKSC.Invoke(null, new Object[] { id });
-		}
+		public static bool TargetsKSC(Guid id) => IsTargetKSC == null ? false : IsTargetKSC(id);
 
 		/// <summary> Returns the name of the ground station directly targeted with the shortest link if any found by the vessel</summary>
-		public static string NameTargetsKSC(Guid id)
-		{
-			if (RT_API != null && NameTargetKSC != null)
-				return (string)NameTargetKSC.Invoke(null, new Object[] { id });
-			return null;
-		}
+		public static string NameTargetsKSC(Guid id) => NameTargetKSC?.Invoke(id);
 
 		/// <summary> Returns the name of the first hop vessel with the shortest link to KSC by the vessel</summary>
-		public static string NameFirstHopToKSC(Guid id)
-		{
-			if (RT_API != null && NameFirstHopKSC != null)
-				return (string)NameFirstHopKSC.Invoke(null, new Object[] { id });
-			return null;
-		}
+		public static string NameFirstHopToKSC(Guid id) => NameFirstHopKSC?.Invoke(id);
 
 		/// <summary> Returns true if the vessel has any connection</summary>
-		public static bool Connected(Guid id)
-		{
-			return RT_API != null && (bool)IsConnected.Invoke(null, new Object[] { id });
-		}
+		public static bool Connected(Guid id) => IsConnected != null && IsConnected(id);
 
 		/// <summary> Returns the signal delay of the shortest route to the KSC if any found</summary>
-		public static double GetSignalDelay(Guid id)
-		{
-			return (RT_API != null ? (double)SignalDelay.Invoke(null, new Object[] { id }) : 0);
-		}
+		public static double GetSignalDelay(Guid id) => SignalDelay == null ? 0.0 : SignalDelay(id);
 
 		/// <summary> Sets the comms Blackout state for the vessel</summary>
-		public static void SetCommsBlackout(Guid id, bool flag)
-		{
-			if (RT_API != null && SetRadioBlackout != null)
-				SetRadioBlackout.Invoke(null, new Object[] { id, flag, "Kerbalism" });
-		}
+		public static void SetCommsBlackout(Guid id, bool flag) => SetRadioBlackout?.Invoke(id, flag, "Kerbalism");
 
 		/// <summary> Gets the comms Blackout state of the vessel</summary>
-		public static bool GetCommsBlackout(Guid id)
-		{
-			return RT_API != null && GetRadioBlackout != null && (bool)GetRadioBlackout.Invoke(null, new Object[] { id });
-		}
+		public static bool GetCommsBlackout(Guid id) => GetRadioBlackout != null && GetRadioBlackout(id);
 
 		/// <summary> Sets the Powered down state for the vessel</summary>
-		public static void SetPoweredDown(Guid id, bool flag)
-		{
-			if (RT_API != null && SetPowerDown != null)
-				SetPowerDown.Invoke(null, new Object[] { id, flag, "Kerbalism" });
-			else SetCommsBlackout(id, flag);  // Workaround for earlier versions of RT
-		}
+		public static void SetPoweredDown(Guid id, bool flag) => SetPowerDown?.Invoke(id, flag, "Kerbalism");
 
 		/// <summary> Gets the Powered down state of the vessel</summary>
-		public static bool IsPoweredDown(Guid id)
-		{
-			return RT_API != null && GetPowerDown != null && (bool)GetPowerDown.Invoke(null, new Object[] { id });
-		}
+		public static bool IsPoweredDown(Guid id) => GetPowerDown != null && GetPowerDown(id);
+
+		/// <summary> Returns an array of all vessel ids in the control path </summary>
+		/// <param name="id"> Satellite id to be searched</param>
+		public static Guid[] GetCommsControlPath(Guid id) => GetControlPath == null ? new Guid[0] : GetControlPath(id);
+
+		/// <summary> Returns distance between 2 satellites</summary>
+		/// <param name="id_A">Satellite Source id</param>
+		/// <param name="id_B">Satellite Target id</param>
+		public static double GetCommsDistance(Guid id_A, Guid id_B) => GetDistance == null ? 0.0 : GetDistance(id_A, id_B);
+
+		/// <summary> Returns max distance between 2 satellites</summary>
+		/// <param name="id_A">Satellite Source id</param>
+		/// <param name="id_B">Satellite Target id</param>
+		public static double GetCommsMaxDistance(Guid id_A, Guid id_B) => GetMaxDistance == null ? 0.0 : GetMaxDistance(id_A, id_B);
+
+		/// <summary> Returns satellite name</summary>
+		/// <param name="id">Satellite id</param>
+		public static string GetSatelliteName(Guid id) => GetSatName == null ? "" : GetSatName(id);
 
 		/// <summary> Sets the Broken state for the vessel</summary>
 		public static void SetBroken(PartModule antenna, bool broken)
@@ -145,60 +145,17 @@ namespace KERBALISM
 			Lib.ReflectionValue(antenna, "IsRTBroken", broken);
 		}
 
+		public static float GetModuleRTAntennaConsumption(PartModule moduleRTAntenna)
+		{
+			return (float)ModuleRTAntennaConsumptionMultiplier.Invoke(moduleRTAntenna, null) * (float)ModuleRTAntennaEnergyCost.GetValue(moduleRTAntenna);
+		}
+
 		/// <summary> Returns true if the PartModule is a RemoteTech Antenna</summary>
-		public static bool IsAntenna(PartModule m)
+		private static bool IsRTAntenna(PartModule m)
 		{
 			// we test for moduleName, but could use the boolean IsRTAntenna here
 			return (m.moduleName == "ModuleRTAntenna" || m.moduleName == "ModuleRTAntennaPassive");
 		}
-
-		/// <summary> Returns an array of all vessel ids in the control path </summary>
-		/// <param name="id"> Satellite id to be searched</param>
-		public static Guid[] GetCommsControlPath(Guid id)
-		{
-			return RT_API != null && GetControlPath != null ? (Guid[])GetControlPath.Invoke(null, new Object[] { id }) : new Guid[0];
-		}
-
-		/// <summary> Returns distance between 2 satellites</summary>
-		/// <param name="id_A">Satellite Source id</param>
-		/// <param name="id_B">Satellite Target id</param>
-		public static double GetCommsDistance(Guid id_A, Guid id_B)
-		{
-			return RT_API != null && GetDistance != null ? (double)GetDistance.Invoke(null, new Object[] { id_A, id_B }) : 0.0;
-		}
-
-		/// <summary> Returns max distance between 2 satellites</summary>
-		/// <param name="id_A">Satellite Source id</param>
-		/// <param name="id_B">Satellite Target id</param>
-		public static double GetCommsMaxDistance(Guid id_A, Guid id_B)
-		{
-			return RT_API != null && GetMaxDistance != null ? (double)GetMaxDistance.Invoke(null, new Object[] { id_A, id_B }) : 0.0;
-		}
-
-		/// <summary> Returns satellite name</summary>
-		/// <param name="id">Satellite id</param>
-		public static string GetSatelliteName(Guid id)
-		{
-			return RT_API != null && GetSatName != null ? (string)GetSatName.Invoke(null, new Object[] { id }) : string.Empty;
-		}
-
-		private static Type RT_API;
-		private static MethodInfo IsEnabled;
-		private static MethodInfo EnabledInSPC;
-		private static MethodInfo IsConnected;
-		private static MethodInfo IsConnectedKSC;
-		private static MethodInfo IsTargetKSC;
-		private static MethodInfo NameTargetKSC;
-		private static MethodInfo NameFirstHopKSC;
-		private static MethodInfo SignalDelay;
-		private static MethodInfo SetRadioBlackout;
-		private static MethodInfo GetRadioBlackout;
-		private static MethodInfo SetPowerDown;
-		private static MethodInfo GetPowerDown;
-		private static MethodInfo GetControlPath;
-		private static MethodInfo GetDistance;
-		private static MethodInfo GetMaxDistance;
-		private static MethodInfo GetSatName;
 	}
 
 

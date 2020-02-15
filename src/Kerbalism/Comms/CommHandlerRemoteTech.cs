@@ -63,7 +63,6 @@ namespace KERBALISM
 			}
 			else
 			{
-				// Get rate from the firstHop, each Hop will do the same logic, then we will have the lowest rate for the path
 				if (controlPath.Length > 0)
 				{
 					double dist = RemoteTech.GetCommsDistance(vd.VesselId, controlPath[0]);
@@ -142,12 +141,12 @@ namespace KERBALISM
 					// calculate external transmitters
 					else
 					{
-						ModuleResource mResource = pm.resHandler.inputResources.Find(r => r.name == "ElectricCharge");
+						//ModuleResource mResource = pm.resHandler.inputResources.Find(r => r.name == "ElectricCharge");
 						// only include data rate and ec cost if transmitter is active
 						if (Lib.ReflectionValue<bool>(pm, "IsRTActive"))
 						{
 							baseRate *= (Lib.ReflectionValue<float>(pm, "RTPacketSize") / Lib.ReflectionValue<float>(pm, "RTPacketInterval"));
-							connection.ec += mResource.rate;
+							connection.ec += RemoteTech.GetModuleRTAntennaConsumption(pm); // mResource.rate;
 							transmitterCount++;
 						}
 					}
@@ -177,17 +176,18 @@ namespace KERBALISM
 					}
 					else
 					{
-						ModuleResource mResource = mdt.prefab.resHandler.inputResources.Find(r => r.name == "ElectricCharge");
-						float? packet_size = Lib.SafeReflectionValue<float>(mdt.prefab, "RTPacketSize");
-						float? packet_Interval = Lib.SafeReflectionValue<float>(mdt.prefab, "RTPacketInterval");
-
 						if (!Lib.Proto.GetBool(mdt.protoTransmitter, "IsRTActive", false))
 							continue;
 
-						if (mResource != null && packet_size != null && packet_Interval != null)
+						//ModuleResource mResource = mdt.prefab.resHandler.inputResources.Find(r => r.name == "ElectricCharge");
+						float? packet_size = Lib.SafeReflectionValue<float>(mdt.prefab, "RTPacketSize");
+						float? packet_Interval = Lib.SafeReflectionValue<float>(mdt.prefab, "RTPacketInterval");
+
+						//if (mResource != null && packet_size != null && packet_Interval != null)
+						if (packet_size != null && packet_Interval != null)
 						{
 							baseRate *= (float)packet_size / (float)packet_Interval;
-							connection.ec += mResource.rate;
+							connection.ec += RemoteTech.GetModuleRTAntennaConsumption(mdt.prefab); ; // mResource.rate;
 							transmitterCount++;
 						}
 					}
@@ -199,18 +199,23 @@ namespace KERBALISM
 			else if (transmitterCount == 0)
 				baseRate = 0.0;
 
+			connection.ec *= Settings.TransmitterActiveEcFactor;
+			connection.ec_idle += connection.ec * Settings.TransmitterPassiveEcFactor;
+
 			// when transmitting, transmitters need more EC for the signal amplifiers.
 			// while not transmitting, transmitters only use 10-20% of that
-			if (!v.loaded)
-			{
-				connection.ec_idle += connection.ec;
-				connection.ec *= Settings.TransmitterActiveEcFactor;
-				connection.ec += connection.ec_idle; // ec_idle is substracted from ec in Science.Update(), don't change that as this is what is expected by the RealAntenna API handler
-			}
-			else
-			{
-				connection.ec *= Settings.TransmitterActiveEcFactor;
-			}
+			//if (!v.loaded)
+			//{
+			//	connection.ec_idle += connection.ec;
+			//	connection.ec *= Settings.TransmitterActiveEcFactor;
+			//	connection.ec += connection.ec_idle; // ec_idle is substracted from ec in Science.Update(), don't change that as this is what is expected by the RealAntenna API handler
+			//}
+			//else
+			//{
+			//	connection.ec *= Settings.TransmitterActiveEcFactor;
+			//}
+
+
 		}
 
 		private void GetTransmittersLoaded(Vessel v)
@@ -219,8 +224,16 @@ namespace KERBALISM
 			{
 				foreach (PartModule pm in p.Modules)
 				{
-					if (pm.moduleName == "ModuleRTAntennaPassive" || pm.moduleName == "ModuleRTAntenna")
+					if (pm.moduleName == "ModuleRTAntennaPassive")
+					{
 						loadedTransmitters.Add(pm);
+					}
+					else if (pm.moduleName == "ModuleRTAntenna")
+					{
+						pm.Events["EventTransmit"].active = false;
+						pm.resHandler.inputResources.Clear(); // we handle consumption by ourselves
+						loadedTransmitters.Add(pm);
+					}
 				}
 			}
 		}

@@ -2,7 +2,7 @@
 
 namespace KERBALISM
 {
-	public class Communications
+	public class CommsMessages
 	{
 		public static void Update(Vessel v, VesselData vd, double elapsed_s)
 		{
@@ -11,15 +11,7 @@ namespace KERBALISM
 
 			// do nothing if network is not ready
 			if (!vd.CommHandler.IsReady)
-			{
-				Cache.WarpCache(v).dataCapacity = 0.0;
 				return;
-			}
-
-			if (vd.deviceTransmit)
-				Cache.WarpCache(v).dataCapacity = vd.Connection.rate * elapsed_s * vd.ResHandler.ElectricCharge.AvailabilityFactor;
-			else
-				Cache.WarpCache(v).dataCapacity = 0.0;
 
 			// maintain and send messages
 			// - do not send messages during/after solar storms
