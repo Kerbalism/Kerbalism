@@ -24,7 +24,7 @@ namespace KERBALISM
 		/// <summary> True if an interval-based rule consumption/production was processed in the last simulation step</summary>
 		public bool IntervalRuleHappened => intervalRuleHappened; bool intervalRuleHappened;
 
-		/// <summary> Not yet consumed or produced amount that will be synchronized to the vessel parts in Sync()</summary>
+		/// <summary> Not yet consumed or produced amount that will be synchronized to the vessel parts in ExecuteAndSyncToParts()</summary>
 		public double Deferred => deferred; double deferred;
 		private double deferredNonCriticalConsumers;
 
@@ -44,9 +44,11 @@ namespace KERBALISM
 		/// <summary> Amount consumed/produced by interval-based rules in this simulation step</summary>
 		private double intervalRuleAmount;
 
+		/// <summary> [0 ; 1] availability factor that will be applied to every Consume() call in the next simulation step</summary>
 		public double AvailabilityFactor => availabilityFactor;
 		private double availabilityFactor = 1.0;
 
+		/// <summary> true if all critical Consume() calls have been satisfied in the last sim step</summary>
 		public bool CriticalConsumptionSatisfied { get; private set; }
 
 		private double consumeRequests;
@@ -115,14 +117,14 @@ namespace KERBALISM
 		}
 
 		/// <summary>
-		/// Record a consumption, it will be stored in "Deferred" and later synchronized to the vessel in Sync()
-		/// <para/>IMPORTANT : quantity should NEVER be scaled to the resource current amount / availability
+		/// Record a consumption, it will be stored in "Deferred" and later synchronized to the vessel in ExecuteAndSyncToParts()
+		/// <para/>IMPORTANT : quantity should NEVER be scaled to the resource current amount or by the AvailabilityFactor.
 		/// </summary>
 		/// <param name="quantity">amount to consume. This should always be scaled by the timestep (elapsed_s)</param>
 		/// <param name="broker">source of the consumption, for UI purposes</param>
 		/// <param name="isCritial">
-		/// if true, scale the consumption by the resource AvailabilityFactor, and consider it to determine AvailabilityFactor
-		/// this should always be true, excepted when called from a Recipe, as recipe inputs are already scaled by resource availability
+		/// if false, scale the consumption by the resource AvailabilityFactor. If false, don't scale it by AvailabilityFactor.
+		/// <para/>You can know if all critical Consume() calls for this resource have been satified in last step by checking the CriticalConsumptionSatisfied property
 		/// </param>
 		public void Consume(double quantity, ResourceBroker broker = null, bool isCritial = false)
 		{
@@ -200,14 +202,12 @@ namespace KERBALISM
 			// - we detect incoherency on loaded vessels, and forbid the two highest warp speeds
 
 			// remember vessel-wide amount currently known, to calculate rate and detect non-Kerbalism brokers
-			double oldAmount = Amount;
+			double oldAmount = amount;
 
 			// remember vessel-wide capacity currently known, to detect flow state changes
-			double oldCapacity = Capacity;
+			double oldCapacity = capacity;
 
 			// iterate over all enabled resource containers and detect amount/capacity again
-			// - this detect production/consumption from stock and third-party mods
-			//   that by-pass the resource cache, and flow state changes in general
 			amount = 0.0;
 			capacity = 0.0;
 
@@ -220,33 +220,46 @@ namespace KERBALISM
 				}
 			}
 
-			CriticalConsumptionSatisfied = amount < consumeCriticalRequests ? amount + produceRequests >= consumeCriticalRequests : true;
+			// detect flow state changes
+			bool flowStateChanged = capacity - oldCapacity > 1e-05;
+
+			// As we haven't yet synchronized anything, changes to amount can only come from non-Kerbalism producers or consumers
+			double unknownBrokersRate = amount - oldAmount;
+			// Avoid false detection due to precision errors
+			if (Math.Abs(unknownBrokersRate) < 1e-05) unknownBrokersRate = 0.0;
+
+			// critical consumers are satisfied if there is enough produced + stored.
+			// we are sure of that because Recipes are processed after critical Consume() calls,
+			// and they will not underflow (consume more than what is available in amount + deferred)
+			// and non critical consumers have been isolated in deferredNonCriticalConsumers
+			CriticalConsumptionSatisfied = amount + produceRequests >= consumeCriticalRequests;
 			consumeRequests += consumeCriticalRequests;
 			consumeCriticalRequests = 0.0;
+
+			// untested  and not sure this is a good idea
+			// we need to test the behaviour of availabilityFactor when non kerbalism consumers are involved
+			//if (unsupportedBrokersRate < 0.0)
+			//	consumeRequests += Math.Abs(unsupportedBrokersRate);
 
 			// deduce the [0 ; 1] availability factor that will be applied to every Consume() call in the next simulation step
 			// The purpose of this is
 			// - To stabilize the resource sim when consumption > production instead of having in a perpetual "0 / max / 0 / max" cycle
 			// - To be able to scale the output of whatever the consumption request is for : comms data rate, experiment data rate,
 			//   anything that is doing some action based on a resource consumption.
+			// See excel simulation in misc/ResourceSim-AvailabilityFactor.xlsx
 
 			// calculate the resource "starvation" : how much of the consume requests can't be satisfied
 			double starvation = Math.Abs(Math.Min(amount + produceRequests - consumeRequests, 0.0));
 			availabilityFactor = consumeRequests > 0.0 ? Math.Max(1.0 - (starvation / consumeRequests), 0.0) : 1.0;
-
 			produceRequests = 0.0;
 			consumeRequests = 0.0;
 
-			// As we haven't yet synchronized anything, changes to amount can only come from non-Kerbalism producers or consumers
-			double unsupportedBrokersRate = amount - oldAmount;
-			// Avoid false detection due to precision errors
-			if (Math.Abs(unsupportedBrokersRate) < 1e-05) unsupportedBrokersRate = 0.0;
-			// Calculate the resulting rate
-			unsupportedBrokersRate /= elapsed_s;
-
-			// Detect flow state changes
-			bool flowStateChanged = capacity - oldCapacity > 1e-05;
-
+			// deferred currently is the result of :
+			// - all Produce() calls
+			// - all Recipes execution (which do not underfow the available quantity + production)
+			// - critical Consume() calls (wich can underflow the available quantity + production)
+			// To give priority to critical consumers, we kept non critical ones isolated, 
+			// but now is time to finally synchronise everyone.
 			deferred += deferredNonCriticalConsumers;
 			deferredNonCriticalConsumers = 0.0;
 
@@ -326,7 +339,7 @@ namespace KERBALISM
 			// - normal brokers that use Consume() or Produce()
 			// - "virtual" brokers from interval-based rules
 			// - non-Kerbalism brokers (aggregated rate)
-			UpdateResourceBrokers(brokersResourceAmounts, intervalRuleBrokersRates, unsupportedBrokersRate, elapsed_s);
+			UpdateResourceBrokers(brokersResourceAmounts, intervalRuleBrokersRates, unknownBrokersRate, elapsed_s);
 
 			// reset amount added/removed from interval-based rules
 			intervalRuleHappened = intervalRuleAmount > 0.0;
@@ -343,7 +356,7 @@ namespace KERBALISM
 			// - can be disabled in settings
 			// - ignore incoherent consumers (no negative consequences for player)
 			// - ignore flow state changes (avoid issue with process controllers and other things that alter resource capacities)
-			return Settings.EnforceCoherency && TimeWarp.CurrentRate > 1000.0 && unsupportedBrokersRate > 0.0 && !flowStateChanged;
+			return Settings.EnforceCoherency && TimeWarp.CurrentRate > 1000.0 && unknownBrokersRate > 0.0 && !flowStateChanged;
 		}
 
 		/// <summary>estimate time until depletion, including the simulated rate from interval-based rules</summary>
@@ -366,7 +379,7 @@ namespace KERBALISM
 				intervalRuleBrokersRates.Add(broker, averageRate);
 		}
 
-		public void UpdateResourceBrokers(Dictionary<ResourceBroker, double> brokersResAmount, Dictionary<ResourceBroker, double> ruleBrokersRate, double unsupportedBrokersRate, double elapsedSeconds)
+		public void UpdateResourceBrokers(Dictionary<ResourceBroker, double> brokersResAmount, Dictionary<ResourceBroker, double> ruleBrokersRate, double unknownBrokersRate, double elapsedSeconds)
 		{
 			ResourceBrokers.Clear();
 
@@ -381,9 +394,9 @@ namespace KERBALISM
 				ResourceBrokers.Add(new ResourceBrokerRate(p.Key, p.Value / elapsedSeconds));
 			}
 
-			if (unsupportedBrokersRate != 0.0)
+			if (unknownBrokersRate != 0.0)
 			{
-				ResourceBrokers.Add(new ResourceBrokerRate(ResourceBroker.Generic, unsupportedBrokersRate));
+				ResourceBrokers.Add(new ResourceBrokerRate(ResourceBroker.Generic, unknownBrokersRate / elapsedSeconds));
 			}
 		}
 	}

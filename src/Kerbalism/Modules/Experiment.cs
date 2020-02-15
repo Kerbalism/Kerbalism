@@ -567,22 +567,26 @@ namespace KERBALISM
 
 			chunkSizeMax = Math.Min(chunkSize, available);
 
-			double chunkProdFactor = chunkSize / chunkSizeMax;
+			double chunkProdFactor = chunkSizeMax / chunkSize;
 			double resourcesProdFactor = 1.0;
 
+			// note : since we can't scale the consume() amount by availability, when one of the resources (including EC)
+			// is partially available but not the others, this will cause over-consumption of these other resources
+			// Idally we should use a pure input recipe to avoid that but currently, recipes only scale inputs
+			// if they have an output, it might be interseting to lift that limitation.
 			if (prefab.ec_rate > 0.0)
 				resourcesProdFactor = Math.Min(resourcesProdFactor, vd.ResHandler.ElectricCharge.AvailabilityFactor);
 
 			foreach (ObjectPair<string, double> res in resourceDefs)
 				resourcesProdFactor = Math.Min(resourcesProdFactor, ((VesselResource)vd.ResHandler.GetResource(res.Key)).AvailabilityFactor);
 
-			if (resourcesProdFactor < 0.1)
+			if (resourcesProdFactor == 0.0)
 			{
 				mainIssue = Local.Module_Experiment_issue10;//"missing resource"
 				return;
 			}
 
-			chunkSize = chunkSizeMax * Math.Min(chunkProdFactor, resourcesProdFactor);
+			chunkSize = chunkSizeMax * resourcesProdFactor;
 			double massDelta = chunkSize * expInfo.MassPerMB;
 
 #if DEBUG || DEVBUILD
