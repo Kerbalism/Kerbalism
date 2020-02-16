@@ -17,7 +17,6 @@ namespace KERBALISM
 		[KSPField] public double capacity = 1.0;          // amount of associated pseudo-resource
 		[KSPField] public bool toggle = true;             // show the enable/disable toggle button
 		[KSPField] public string id = string.Empty;       // needed for B9PS
-		[KSPField] public bool available = true;          // used to enable/disable the module in B9PS and upgrades
 
 		// persistence/config
 		// note: the running state doesn't need to be serialized, as it can be deduced from resource flow
@@ -45,8 +44,9 @@ namespace KERBALISM
 
 			if (Lib.IsEditor())
 			{
-				if (!available || string.IsNullOrEmpty(resource))
+				if (string.IsNullOrEmpty(resource))
 				{
+					Lib.Log("ProcessController " + id + ": deactivating");
 					Deactivate();
 					return;
 				}
@@ -57,6 +57,7 @@ namespace KERBALISM
 
 		protected void Deactivate()
 		{
+			Lib.Log("ProcessController " + id + ": shutting down, bye");
 			RemoveResource();
 			resource = string.Empty;
 			isEnabled = false;
