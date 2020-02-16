@@ -316,6 +316,7 @@ namespace KERBALISM
 		public static string Generic_perYear = GetLoc("Generic_perYear"); // "/y"
 		public static string Generic_START = GetLoc("Generic_START"); // "start"
 		public static string Generic_STOP = GetLoc("Generic_STOP"); // "stop"
+		public static string Generic_search = GetLoc("Generic_search"); // "search"
 																		//$HIS_HER
 		public static string Kerbal_his = GetLoc("Kerbal_his"); // "his"
 		public static string Kerbal_her = GetLoc("Kerbal_her"); // "her"
@@ -430,6 +431,7 @@ namespace KERBALISM
 		public static string Monitor_depleted = GetLoc("Monitor_depleted"); // "depleted"
 		public static string Monitor_Malfunctions = GetLoc("Monitor_Malfunctions"); // "Malfunctions"
 		public static string Monitor_Criticalfailures = GetLoc("Monitor_Criticalfailures"); // "Critical failures"
+		public static string Monitor_Hidden_Vessels = GetLoc("Monitor_Hidden_Vessels"); // "Hidden vessels"
 
 		////////////////////////////////////////////////////////////////////
 		// Telemetry/Planner UI : Signal
@@ -638,7 +640,9 @@ namespace KERBALISM
 		public static string VESSELCONFIG_CMEevent = GetLoc("VESSELCONFIG_CMEevent"); // "Receive a message\nduring CME events"
 		public static string VESSELCONFIG_storm = GetLoc("VESSELCONFIG_storm"); // "storm"
 		public static string VESSELCONFIG_ScriptExe = GetLoc("VESSELCONFIG_ScriptExe"); // "Receive a message when\nscripts are executed"
-		public static string VESSELCONFIG_script = GetLoc("VESSELCONFIG_script"); // "script"
+		public static string VESSELCONFIG_script = GetLoc("VESSELCONFIG_script"); // "Script"
+		public static string VESSELCONFIG_ShowVessel = GetLoc("VESSELCONFIG_ShowVessel"); // "Show in vessels list"
+		public static string VESSELCONFIG_ShowVessel_desc = GetLoc("VESSELCONFIG_ShowVessel_desc"); // "Show this vessel in the vessels list"
 
 		////////////////////////////////////////////////////////////////////
 		// Science Archive Window
