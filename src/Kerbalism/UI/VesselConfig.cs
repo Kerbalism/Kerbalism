@@ -29,10 +29,12 @@ namespace KERBALISM
 
 			// toggle rendering
 			string tooltip;
-			if (Features.Reliability)
-			{
-				p.AddSection(Local.VESSELCONFIG_RENDERING);//"RENDERING"
-			}
+			p.AddSection(Local.VESSELCONFIG_RENDERING);//"RENDERING"
+
+			tooltip = Local.VESSELCONFIG_ShowVessel_desc;
+			p.AddContent(Local.VESSELCONFIG_ShowVessel, string.Empty, tooltip);
+			p.AddRightIcon(vd.cfg_show ? Textures.toggle_green : Textures.toggle_red, tooltip, () => p.Toggle(ref vd.cfg_show));
+
 			if (Features.Reliability)
 			{
 				tooltip = Local.VESSELCONFIG_Highlightfailed_desc;//"Highlight failed components"

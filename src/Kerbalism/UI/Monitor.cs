@@ -40,6 +40,9 @@ namespace KERBALISM
 			// initialize panel
 			panel = new Panel();
 
+			// by default don't show hidden vessels
+			filter_types.Add(VesselType.Unknown);
+
 			// auto-switch selected vessel on scene changes
 			GameEvents.onVesselChange.Add((Vessel v) => { if (selected_id != Guid.Empty) selected_id = v.id; });
 		}
@@ -161,9 +164,17 @@ namespace KERBALISM
 			return Math.Min(h, Screen.height * 0.75f);
 		}
 
-		bool Filter_match(VesselType vesselType, string tags)
+		bool Filter_match(Vessel vessel, string tags)
 		{
-			if(filter_types.Contains(vesselType)) return false;
+			// if vessels type is hidden, do not include vessel
+			if(filter_types.Contains(vessel.vesselType)) return false;
+
+			// if hidden vessels aren't visible, see if this vessel is hidden
+			if(filter_types.Contains(VesselType.Unknown))
+			{
+				if (!vessel.KerbalismData().cfg_show) return false;
+			}
+
 			if(filter.Length <= 0 || filter == filter_placeholder) return true;
 
 			List<string> filterTags = Lib.Tokenize(filter.ToLower(), ' ');
@@ -198,7 +209,7 @@ namespace KERBALISM
 			string body_name = v.mainBody.name.ToUpper();
 
 			// skip filtered vessels
-			if (!Filter_match(v.vesselType, body_name + " " + vessel_name)) return false;
+			if (!selected && !Filter_match(v, body_name + " " + vessel_name)) return false;
 
 			// render entry
 			p.AddHeader
@@ -353,6 +364,9 @@ namespace KERBALISM
 			if (Kerbalism.SerenityEnabled) Render_TypeFilterButon(VesselType.DeployedScienceController);
 #endif
 
+			// we abuse the type Unknown to show/hide vessels that have the hidden toggle set to on
+			Render_TypeFilterButon(VesselType.Unknown);
+
 			filter = Lib.TextFieldPlaceholder("Kerbalism_filter", filter, filter_placeholder, filter_style).ToUpper();
 			GUILayout.EndHorizontal();
 			GUILayout.Space(Styles.ScaleFloat(10.0f));
@@ -361,7 +375,9 @@ namespace KERBALISM
 		void Render_TypeFilterButon(VesselType type)
 		{
 			bool isFiltered = filter_types.Contains(type);
-			GUILayout.Label(new GUIContent(" ", GetVesselTypeIcon(type, isFiltered), type.displayDescription()), config_style);
+			GUILayout.Label(new GUIContent(" ", GetVesselTypeIcon(type, isFiltered),
+				type == VesselType.Unknown ? Local.Monitor_Hidden_Vessels : type.displayDescription()),
+				config_style);
 			if (Lib.IsClicked())
 			{
 				if(isFiltered) filter_types.Remove(type);
@@ -385,6 +401,7 @@ namespace KERBALISM
 #if !KSP15_16
 				case VesselType.DeployedScienceController: return disabled ? Textures.controller_black : Textures.controller_white;
 #endif
+				case VesselType.Unknown: return disabled ? Textures.sun_black : Textures.sun_white;
 				default: return Textures.empty; // this really shouldn't happen.
 			}
 		}
@@ -679,7 +696,7 @@ namespace KERBALISM
 		Vessel selected_v;
 
 		// filter placeholder
-		const string filter_placeholder = "SEARCH...";
+		string filter_placeholder = Local.Generic_search.ToUpper() + "...";
 
 		// current filter values
 		string filter = string.Empty;
