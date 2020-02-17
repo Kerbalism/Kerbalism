@@ -88,7 +88,7 @@ namespace KERBALISM
 					// Call Play() only if necessary
 					if (!counterWeightRotate_transf.IsRotating())
 					{
-						Lib.Log("KGR: set rotation -> play " + rotation);
+						// Lib.Log("KGR: set rotation -> play " + rotation);
 						counterWeightRotate_transf.Play();
 					}
 				}
@@ -120,7 +120,7 @@ namespace KERBALISM
 					// Call Stop only if necessary
 					if (!counterWeightRotate_transf.IsStopping())
 					{
-						Lib.Log("KGR: set rotation -> stop " + rotation);
+						// Lib.Log("KGR: set rotation -> stop " + rotation);
 						counterWeightRotate_transf.Stop();
 					}
 				}
@@ -211,7 +211,7 @@ namespace KERBALISM
 				if (rotateIsTransform && rotate_transf != null) rotate_transf.DoSpin();
 				if (counterWeightRotateIsTransform && counterWeightRotate_transf != null)
 				{
-					Lib.Log("KGR: counterweight do spin");
+					// Lib.Log("KGR: counterweight do spin");
 					counterWeightRotate_transf.DoSpin();
 				}
 			}

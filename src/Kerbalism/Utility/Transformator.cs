@@ -59,12 +59,13 @@ namespace KERBALISM
 			float spin = Mathf.Clamp(TimeWarp.fixedDeltaTime * CurrentSpinRate, -10.0f, 10.0f);
 			//Lib.Log("Transform {0} spin rate {1}", name, CurrentSpinRate);
 			// Part rotation
-			transform.Rotate(Vector3.forward * spin);
+			if (transform != null) transform.Rotate(Vector3.forward * spin);
 
 			if(rotate_iva && part.internalModel != null)
 			{
 				// IVA rotation
-				if (part.internalModel != null) part.internalModel.transform.Rotate(Vector3.forward * (spin * -1));
+				if (part.internalModel != null && part.internalModel.transform != null)
+					part.internalModel.transform.Rotate(Vector3.forward * (spin * -1));
 			}
 		}
 

@@ -758,6 +758,11 @@ namespace KERBALISM
 			partSequence.Add("kerbalism-container-radial-pressurized-prosemian-big");
 			partSequence.Add("kerbalism-container-radial-pressurized-prosemian-huge");
 
+			partSequence.Add("kerbalism-solenoid-short-small");
+			partSequence.Add("kerbalism-solenoid-long-small");
+			partSequence.Add("kerbalism-solenoid-short-large");
+			partSequence.Add("kerbalism-solenoid-long-large");
+
 			partSequence.Add("kerbalism-greenhouse");
 			partSequence.Add("kerbalism-gravityring");
 			partSequence.Add("kerbalism-activeshield");
@@ -774,6 +779,8 @@ namespace KERBALISM
 			iconScales["kerbalism-container-inline-prosemian-half-125"] = 0.85f;
 			iconScales["kerbalism-container-radial-pressurized-prosemian-medium"] = 0.85f;
 			iconScales["kerbalism-container-radial-box-prosemian-normal"] = 0.85f;
+			iconScales["kerbalism-solenoid-short-small"] = 0.85f;
+			iconScales["kerbalism-solenoid-long-small"] = 0.85f;
 
 			iconScales["kerbalism-container-inline-prosemian-full-250"] = 1.1f;
 			iconScales["kerbalism-container-inline-prosemian-half-250"] = 1.1f;
@@ -783,8 +790,10 @@ namespace KERBALISM
 			iconScales["kerbalism-container-inline-prosemian-full-375"] = 1.33f;
 			iconScales["kerbalism-container-inline-prosemian-half-375"] = 1.33f;
 			iconScales["kerbalism-container-radial-pressurized-prosemian-huge"] = 1.33f;
+			iconScales["kerbalism-solenoid-short-large"] = 1.33f;
+			iconScales["kerbalism-solenoid-long-large"] = 1.33f;
 
-			
+
 			foreach (AvailablePart ap in PartLoader.LoadedPartsList)
 			{
 				// scale part icons of the radial container variants
@@ -832,7 +841,7 @@ namespace KERBALISM
 					// inject process details into ModuleB9PartSwitch/SUBTYPE/descriptionDetail for process switchers
 					else if (module.moduleName == "ModuleB9PartSwitch")
 					{
-						var processControllers = ap.partPrefab.FindModulesImplementing<KSMProcessController>();
+						var processControllers = ap.partPrefab.FindModulesImplementing<ModuleKsmProcessController>();
 						if (processControllers.Count == 0)
 							continue;
 
@@ -849,7 +858,7 @@ namespace KERBALISM
 
 							if (process != null)
 							{
-								var specifics = KSMProcessController.Specifics(process, capacity);
+								var specifics = ModuleKsmProcessController.Specifics(process, capacity);
 								var description = specifics.Info(Localizer.Format(Local.ProcessController_Capacity, capacity.ToString("F1")));
 								subtype.GetType().GetField("descriptionDetail", BindingFlags.Instance | BindingFlags.Public).SetValue(subtype, description);
 							}
