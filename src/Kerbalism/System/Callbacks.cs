@@ -180,7 +180,7 @@ namespace KERBALISM
 
 				HabitatData habData = habitat.HabitatData;
 
-				if (!habData.isEnabled || (habitat.isDeployable && !habData.isDeployed))
+				if (!habData.isEnabled)
 				{
 					habData.crewCount = 0;
 
@@ -209,12 +209,7 @@ namespace KERBALISM
 						}
 					}
 					habData.crewCount = crewCount;
-					if (habData.pressureState == HabitatData.PressureState.Depressurized)
-						habData.pressureState = HabitatData.PressureState.DepressurizingStartEvt;
-					else
-						habData.pressureState = HabitatData.PressureState.PressurizingStartEvt;
 				}
-
 			}
 
 			if (needRefresh)
@@ -283,7 +278,11 @@ namespace KERBALISM
 			{
 				if (toPartdata.Habitat != null)
 				{
-					targetIsEnabled = toPartdata.Habitat.isEnabled;
+					// if hab isn't enabled, try to enable it. We do that because otherwise you can 
+					// brick your vessel by not being able to transfer back people in control parts.
+					if (toPartdata.Habitat.isEnabled || ModuleKsmHabitat.TryToggleHabitat(toPartdata.Habitat, data.destPart.vessel.loaded))
+						targetIsEnabled = true;
+
 					targetIsPressurized = toPartdata.Habitat.pressureState == HabitatData.PressureState.Pressurized; 
 				}
 			}
@@ -336,7 +335,7 @@ namespace KERBALISM
 						case HabitatData.PressureState.Pressurizing:
 						case HabitatData.PressureState.DepressurizingBelowThreshold:
 
-							ResourceWrapper wasteRes = fromHabitat.module.WasteRes;
+							PartResourceWrapper wasteRes = fromHabitat.module.WasteRes;
 							wasteTransferred = fromHabitat.crewCount > 0 ? wasteRes.Amount / fromHabitat.crewCount : 0.0;
 							wasteRes.Amount = newCrewCount > 0 ? wasteRes.Amount - wasteTransferred : 0.0;
 							wasteRes.Capacity = newCrewCount * Settings.PressureSuitVolume;
@@ -356,7 +355,7 @@ namespace KERBALISM
 					HabitatData toHabitat = toPartData.Habitat;
 					toHabitat.crewCount = Lib.CrewCount(data.to);
 
-					ResourceWrapper wasteRes = toHabitat.module.WasteRes;
+					PartResourceWrapper wasteRes = toHabitat.module.WasteRes;
 
 					switch (toHabitat.pressureState)
 					{
@@ -442,7 +441,7 @@ namespace KERBALISM
 			double tot_crew = Lib.CrewCount(data.from.vessel) + 1.0;
 
 			// get vessel resources handler
-			VesselResHandler resources = ResourceCache.GetVesselHandler(data.from.vessel);
+			VesselData vd = data.from.vessel.KerbalismData();
 
 			// setup supply resources capacity in the eva kerbal
 			Profile.SetupEva(data.to);
@@ -461,7 +460,7 @@ namespace KERBALISM
 					continue;
 				}
 
-				double quantity = Math.Min(resources.GetResource(res.resourceName).Amount / tot_crew, res.maxAmount);
+				double quantity = Math.Min(vd.ResHandler.GetResource(res.resourceName).Amount / tot_crew, res.maxAmount);
 				// remove resource from vessel
 				quantity = data.from.RequestResource(res.resourceName, quantity);
 
@@ -482,7 +481,7 @@ namespace KERBALISM
 			Cache.SetVesselObjectsCache(data.to.vessel, "eva_prop", evaPropQuantity);
 
 			// Airlock loss
-			resources.Consume("Nitrogen", Settings.LifeSupportAtmoLoss, ResourceBroker.Generic);
+			vd.ResHandler.Consume("Nitrogen", Settings.LifeSupportAtmoLoss, ResourceBroker.Generic);
 
 			// show warning if there is little or no EVA propellant in the suit
 			if (evaPropQuantity <= 0.05 && !Lib.Landed(data.from.vessel))
@@ -496,7 +495,7 @@ namespace KERBALISM
 			EVA.HeadLamps(kerbal, false);
 
 			// execute script
-			data.from.vessel.KerbalismData().computer.Execute(data.from.vessel, ScriptType.eva_out);
+			vd.computer.Execute(data.from.vessel, ScriptType.eva_out);
 		}
 
 
@@ -555,7 +554,6 @@ namespace KERBALISM
 			}
 
 			// purge the caches
-			ResourceCache.Purge(pv);
 			Cache.PurgeVesselCaches(pv);
 		}
 
@@ -567,7 +565,6 @@ namespace KERBALISM
 				DB.KillKerbal(c.name, true);
 
 			// purge the caches
-			ResourceCache.Purge(pv);
 			Cache.PurgeVesselCaches(pv);
 
 			// delete data on unloaded vessels only (this is handled trough OnPartWillDie for loaded vessels)
@@ -607,7 +604,6 @@ namespace KERBALISM
 			}
 
 			// purge the caches
-			ResourceCache.Purge(v);		// works with loaded and unloaded vessels
 			Cache.PurgeVesselCaches(v); // works with loaded and unloaded vessels
 
 			// delete data on unloaded vessels only (this is handled trough OnPartWillDie for loaded vessels)

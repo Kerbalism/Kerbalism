@@ -6,28 +6,32 @@ namespace KERBALISM
 {
 	public sealed class Transformator
 	{
+		public const float spinLossesFactor = 0.1f; // deg/s/s lost when energyFactor = 0.0f
+
 		private Part part;
 		private Transform rotateTransform;
 		private Vector3 rotateAxis;
 		private Quaternion transformInitialRotation;
 		private Animator animator;
 
-		private bool requestSpin;
-		private float currentSpinRate;
-
 		public Callback onSpinRateReached;
 		public Callback onSpinStopped;
 
-		private float spinRate;
+		private float nominalSpinRate;
+		private float targetSpinRate;
+		private float currentSpinRate;
 		private float spinAccel;
+		private float spinLosses; // deg/s/s lost when energyFactor = 0.0f
 		private bool rotateIVA;
 		private bool invertPlayDirection;
 
 		public bool IsDefined { get; private set; } = false;
 		public bool IsAnimator { get; private set; }
-		public bool IsSpinning => IsDefined && currentSpinRate > 0f;
-		public bool IsAccelerating => IsDefined && requestSpin && currentSpinRate != spinRate;
-		public bool IsStopping => IsDefined && !requestSpin && currentSpinRate != 0f;
+		public bool IsStopped => IsDefined && currentSpinRate == 0.0;
+		public bool IsSpinningNominal => IsDefined && currentSpinRate == nominalSpinRate;
+		public float TimeNeededToStartOrStop => nominalSpinRate / spinAccel;
+		public float CurrentSpeed => currentSpinRate;
+		public float NominalSpeed => nominalSpinRate;
 
 		/// <summary> Create a transformator based on a transform </summary>
 		public Transformator(Part part, string transformName, Vector3 rotateAxis, float spinRate, float spinAccel, bool invertPlayDirection, bool rotateIVA)
@@ -36,11 +40,12 @@ namespace KERBALISM
 				return;
 
 			this.part = part;
-			this.spinRate = spinRate;
+			this.nominalSpinRate = spinRate;
 			this.spinAccel = spinAccel;
 			this.invertPlayDirection = invertPlayDirection;
 			this.rotateAxis = rotateAxis;
 			this.rotateIVA = rotateIVA;
+			spinLosses = spinAccel * spinLossesFactor;
 
 			rotateTransform = part.FindModelTransform(transformName);
 			if (rotateTransform != null)
@@ -58,66 +63,81 @@ namespace KERBALISM
 				return;
 
 			this.part = part;
-			this.spinRate = spinRate;
+			this.nominalSpinRate = spinRate;
 			this.spinAccel = spinAccel;
 			this.invertPlayDirection = invertPlayDirection;
 			rotateIVA = false;
+			spinLosses = spinAccel * spinLossesFactor;
 
 			animator = new Animator(part, animationName);
 			IsDefined = animator.IsDefined;
 			IsAnimator = true;
 		}
 
-		public void StartSpin(bool instantly = false)
+		public void StartSpinInstantly()
 		{
 			if (!IsDefined)
 				return;
 
-			requestSpin = true;
-
-			if (instantly)
-				currentSpinRate = spinRate;
+			currentSpinRate = nominalSpinRate;
 		}
 
-		public void StopSpin(bool instantly = false)
+		public void StopSpinInstantly()
 		{
 			if (!IsDefined)
 				return;
 
-			requestSpin = false;
+			currentSpinRate = 0f;
+			if (IsAnimator)
+				animator.Still(0f);
+			else
+				rotateTransform.localRotation = transformInitialRotation;
 
-			if (instantly)
-			{
-				currentSpinRate = 0f;
-				if (IsAnimator)
-					animator.Still(0f);
-				else
-					rotateTransform.localRotation = transformInitialRotation;
+			onSpinStopped?.Invoke();
 
-				onSpinStopped?.Invoke();
-				return;
-			}
 		}
 
-		public void Update()
+		public void Update(bool requestSpin, bool loosingSpeed, float energyFactor = 1f)
 		{
 			if (!IsDefined)
 				return;
 
-			
-			// accelerating
-			if (requestSpin && currentSpinRate != spinRate)
-			{
-				currentSpinRate += spinAccel * TimeWarp.deltaTime;
+			if (requestSpin)
+				targetSpinRate = nominalSpinRate;
+			else
+				targetSpinRate = 0f;
 
-				if (currentSpinRate >= spinRate)
+
+			// loosing speed
+			if (requestSpin && loosingSpeed && currentSpinRate <= targetSpinRate)
+			{
+				currentSpinRate -= spinLosses * TimeWarp.deltaTime * (1f - energyFactor);
+				if (currentSpinRate <= 0f)
 				{
-					currentSpinRate = spinRate;
+					currentSpinRate = 0f;
+					targetSpinRate = 0f;
+				}
+			}
+			// accelerating, accouting for spinLosses
+			else if (requestSpin && currentSpinRate < targetSpinRate)
+			{
+				currentSpinRate += spinAccel * TimeWarp.deltaTime * energyFactor;
+				currentSpinRate -= spinLosses * TimeWarp.deltaTime;
+
+				if (currentSpinRate >= targetSpinRate)
+				{
+					currentSpinRate = targetSpinRate;
 					onSpinRateReached?.Invoke();
+				}
+				else if (currentSpinRate <= 0f)
+				{
+					currentSpinRate = 0f;
+					targetSpinRate = 0f;
 				}
 			}
 			// decelerating
-			else if (!requestSpin && currentSpinRate != 0f)
+			// Note : due to that being a mess to do, we ignore energyFactor (just assume the centrifuge is using brakes :P)
+			else if (!requestSpin && currentSpinRate > targetSpinRate)
 			{
 				float currentNormalizedTime;
 				if (IsAnimator)
@@ -131,7 +151,8 @@ namespace KERBALISM
 					currentNormalizedTime = ((eulerAngle.x + eulerAngle.y + eulerAngle.z) % 360f) / 360f;
 				}
 					
-				// calculate total rotation (in degrees) needed to stop, then clamp it to 1 rotation
+				// calculate total rotation (in degrees) needed to stop
+				// then get the modulo to know at which position we need to start decelerating
 				float deltaToStop = (Mathf.Pow(currentSpinRate, 2f) / (2f * spinAccel)) % 360f;
 
 				// calculate rotation between current position and the zero position
@@ -144,11 +165,14 @@ namespace KERBALISM
 				deltaToZero *= 360f;
 
 				// decelerate when we are at the right spot to reach zero point
-				if (deltaToStop >= deltaToZero && deltaToStop <= deltaToZero + currentSpinRate) 
+
+				float errorDelta = Lib.Clamp(deltaToStop - deltaToZero, 0f, spinAccel * TimeWarp.deltaTime);
+
+				if (deltaToStop >= deltaToZero && deltaToStop <= deltaToZero + currentSpinRate)
 					currentSpinRate =
 						currentSpinRate
 						- (spinAccel * TimeWarp.deltaTime) // remove speed using the acceleration rate
-						- (deltaToStop - deltaToZero); // compensate the current position to make sure we stop at the zero point (± the FP precison) 
+						- errorDelta; // compensate the current position to make sure we stop at the zero point (± the FP precison) 
 
 				// we will never exactly reach the stop point, so just force it
 				if (deltaToStop <= spinAccel * TimeWarp.deltaTime)

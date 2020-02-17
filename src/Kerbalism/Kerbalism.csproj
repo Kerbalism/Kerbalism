@@ -147,13 +147,16 @@
     <Compile Include="Contracts\SpaceAnalysis.cs" />
     <Compile Include="Contracts\SpaceHarvest.cs" />
     <Compile Include="Database\DB.cs" />
+    <Compile Include="Patches\InternalModel_SpawnCrew.cs" />
     <Compile Include="Patches\ModuleCommand.cs" />
+    <Compile Include="ResourceSim\ResourceWrapper.cs" />
     <Compile Include="VesselLogic\HabitatData.cs" />
     <Compile Include="Database\KerbalData.cs" />
     <Compile Include="Database\LandmarkData.cs" />
     <Compile Include="Database\PartData.cs" />
     <Compile Include="Database\PartDataCollection.cs" />
     <Compile Include="Database\RuleData.cs" />
+    <Compile Include="VesselLogic\VesselEnvironment.cs" />
     <Compile Include="VesselLogic\VesselSituations.cs" />
     <Compile Include="LocalizationCache.cs" />
     <Compile Include="Modules\ModuleKsmHabitat.cs" />
@@ -163,7 +166,7 @@
     <Compile Include="ResourceSim\ResourceAPI\ResourceAPI.cs" />
     <Compile Include="ResourceSim\ResourceAPI\ResourceUpdateDelegate.cs" />
     <Compile Include="ResourceSim\ResourceBroker.cs" />
-    <Compile Include="ResourceSim\ResourceWrapper.cs" />
+    <Compile Include="ResourceSim\PartResourceWrapper.cs" />
     <Compile Include="Science\SubjectData.cs" />
     <Compile Include="Database\SupplyData.cs" />
     <Compile Include="Database\UIData.cs" />
@@ -195,7 +198,7 @@
     <Compile Include="ResourceSim\Recipe.cs" />
     <Compile Include="ResourceSim\VesselResource.cs" />
     <Compile Include="ResourceSim\VesselResHandler.cs" />
-    <Compile Include="ResourceSim\ResourceCache.cs" />
+    <Compile Include="ResourceSim\EditorResourceHandler.cs" />
     <Compile Include="VesselLogic\Drive.cs" />
     <Compile Include="Science\ExperimentRequirements.cs" />
     <Compile Include="Science\ExperimentInfo.cs" />
@@ -302,9 +305,7 @@
   <!-- ///////////////////////////////////////////////////// -->
   <!-- ////////// IMPORT DEFAULT MS BUILD PROCESS ////////// -->
   <!-- ///////////////////////////////////////////////////// -->
-  <ItemGroup>
-    <Folder Include="ResourceSim\Editor\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- This target is called before the build, you can use it for debugging the build system -->
   <Target Name="BeforeBuild">

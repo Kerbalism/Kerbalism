@@ -67,20 +67,34 @@ namespace KERBALISM
 		public enum PressureState
 		{
 			Pressurized,
-			PressureDroppedEvt,
-			BreatheableStartEvt,
+			//PressureDroppedEvt,
+			//BreatheableStartEvt,
 			Breatheable,
 			AlwaysDepressurized,
-			AlwaysDepressurizedStartEvt,
+			//AlwaysDepressurizedStartEvt,
 			Depressurized,
-			PressurizingStartEvt,
+			//PressurizingStartEvt,
 			Pressurizing,
-			PressurizingEndEvt,
-			DepressurizingStartEvt,
+			//PressurizingEndEvt,
+			//DepressurizingStartEvt,
 			DepressurizingAboveThreshold,
-			DepressurizingPassThresholdEvt,
-			DepressurizingBelowThreshold,
-			DepressurizingEndEvt
+			//DepressurizingPassThresholdEvt,
+			DepressurizingBelowThreshold
+			//DepressurizingEndEvt
+		}
+
+		public enum AnimState
+		{
+			Retracted,
+			Deploying,
+			Retracting,
+			Deployed,
+			Accelerating,
+			Decelerating,
+			Rotating,
+			RotatingNotEnoughEC,
+			Stuck
+
 		}
 
 		public enum Comfort
@@ -121,11 +135,13 @@ namespace KERBALISM
 		/// <summary> pressure state </summary>
 		public PressureState pressureState = PressureState.AlwaysDepressurized;
 
-		/// <summary> if deployable, is the habitat deployed ? </summary>
-		public bool isDeployed = false;
+		public AnimState animState = AnimState.Retracted;
 
-		/// <summary> if centrifuge, is the centrifuge spinning ? </summary>
-		public bool isRotating = false;
+		/// <summary> if deployable, is the habitat deployed ? </summary>
+		//public bool isDeployed = false;
+
+		///// <summary> if centrifuge, is the centrifuge spinning ? </summary>
+		//public bool isRotating = false;
 
 		/// <summary> crew count </summary>
 		public int crewCount = 0;
@@ -139,14 +155,131 @@ namespace KERBALISM
 		/// <summary> current shielding count (1 unit = 1 m2 of fully shielded surface, see Radiation.ShieldingEfficiency) </summary>
 		public double shieldingAmount = 0.0;
 
-		/// <summary> used to know when to consume ec on unloaded vessels for deploy/retract and accelerate/decelerate centrifuges</summary>
-		public double animationTimer = 0.0;
+		/// <summary> used to know when to consume ec for deploy/retract and accelerate/decelerate centrifuges</summary>
+		public double animTimer = 0.0;
 
 		public double sunRadiation = 0.0; // TODO: IMPORTANT : this was in the codebase before but is unnused here. Check what this was for !!!!!
 
 		public List<SunRadiationOccluder> sunRadiationOccluders = new List<SunRadiationOccluder>();
 
 		public ModuleKsmHabitat module = null;
+
+		public ModuleKsmHabitat.HabitatUpdateHandler updateHandler;
+
+		public bool IsDeployed
+		{
+			get
+			{
+				switch (animState)
+				{
+					case AnimState.Deployed:
+					case AnimState.Accelerating:
+					case AnimState.Decelerating:
+					case AnimState.Rotating:
+					case AnimState.RotatingNotEnoughEC:
+					case AnimState.Stuck:
+						return true;
+					default:
+						return false;
+				}
+			}
+		}
+
+		public bool IsRotationNominal => animState == AnimState.Rotating;
+		public bool IsAccelerating => animState == AnimState.Accelerating;
+		public bool IsDecelerating => animState == AnimState.Decelerating;
+		public bool IsStuck => animState == AnimState.Stuck;
+
+		public bool IsRotationEnabled
+		{
+			get
+			{
+				switch (animState)
+				{
+					case AnimState.Accelerating:
+					case AnimState.Rotating:
+					case AnimState.RotatingNotEnoughEC:
+						return true;
+					default:
+						return false;
+				}
+			}
+		}
+
+		public bool IsRotationStopped
+		{
+			get
+			{
+				switch (animState)
+				{
+					case AnimState.Retracted:
+					case AnimState.Retracting:
+					case AnimState.Deploying:
+					case AnimState.Deployed:
+						return true;
+					default:
+						return false;
+				}
+			}
+		}
+
+		/// <summary>
+		/// Is the habitat pressurized above the pressure threshold
+		/// Note that when false, it doesn't mean kerbals need to be in their suits if they are in breathable atmosphere.
+		/// </summary>
+		public bool IsPressurized
+		{
+			get
+			{
+				switch (pressureState)
+				{
+					case PressureState.Pressurized:
+					case PressureState.DepressurizingAboveThreshold:
+						return true;
+					default:
+						return false;
+				}
+			}
+		}
+
+		/// <summary>
+		/// Are suits required. Note that this doesn't mean the habitat is depressurized.
+		/// </summary>
+		public bool RequireSuit
+		{
+			get
+			{
+				switch (pressureState)
+				{
+					case PressureState.AlwaysDepressurized:
+					case PressureState.Depressurized:
+					case PressureState.Pressurizing:
+					case PressureState.DepressurizingBelowThreshold:
+						return true;
+					default:
+						return false;
+				}
+			}
+		}
+
+		/// <summary>
+		/// Are suits required. Note that this doesn't mean the habitat is depressurized.
+		/// </summary>
+		public bool IsFullyDepressurized
+		{
+			get
+			{
+				switch (pressureState)
+				{
+					case PressureState.AlwaysDepressurized:
+					case PressureState.Breatheable:
+					case PressureState.Depressurized:
+						return true;
+					default:
+						return false;
+				}
+			}
+		}
 
 		public HabitatData() { }
 
@@ -157,8 +290,7 @@ namespace KERBALISM
 			baseComfortsMask = Lib.ConfigValue(habitatNode, "baseComfortsMask", baseComfortsMask);
 			isEnabled = Lib.ConfigValue(habitatNode, "habitatEnabled", isEnabled);
 			pressureState = Lib.ConfigEnum(habitatNode, "pressureState", pressureState);
-			isDeployed = Lib.ConfigValue(habitatNode, "isDeployed", isDeployed);
-			isRotating = Lib.ConfigValue(habitatNode, "isRotating", isRotating);
+			animState = Lib.ConfigEnum(habitatNode, "animState", animState);
 			crewCount = Lib.ConfigValue(habitatNode, "crewCount", crewCount);
 			atmoAmount = Lib.ConfigValue(habitatNode, "atmoAmount", atmoAmount);
 			wasteLevel = Lib.ConfigValue(habitatNode, "wasteLevel", wasteLevel);
@@ -182,8 +314,7 @@ namespace KERBALISM
 			habitatNode.AddValue("baseComfortsMask", baseComfortsMask);
 			habitatNode.AddValue("habitatEnabled", isEnabled);
 			habitatNode.AddValue("pressureState", pressureState.ToString());
-			habitatNode.AddValue("isDeployed", isDeployed);
-			habitatNode.AddValue("isRotating", isRotating);
+			habitatNode.AddValue("animState", animState.ToString());
 			habitatNode.AddValue("crewCount", crewCount);
 			habitatNode.AddValue("atmoAmount", atmoAmount);
 			habitatNode.AddValue("wasteLevel", wasteLevel);
@@ -235,7 +366,7 @@ namespace KERBALISM
 							info.shieldingAmount += habitat.shieldingAmount;
 
 							info.comfortMask |= habitat.baseComfortsMask;
-							if (habitat.isRotating)
+							if (habitat.IsRotationNominal)
 								info.comfortMask |= (int)Comfort.firmGround;
 
 							pressurizedPartsCrewCount += habitat.crewCount;
@@ -250,7 +381,7 @@ namespace KERBALISM
 							info.shieldingAmount += habitat.shieldingAmount;
 
 							info.comfortMask |= habitat.baseComfortsMask;
-							if (habitat.isRotating)
+							if (habitat.IsRotationNominal)
 								info.comfortMask |= (int)Comfort.firmGround;
 
 							pressurizedPartsAtmoAmount += habitat.atmoAmount;

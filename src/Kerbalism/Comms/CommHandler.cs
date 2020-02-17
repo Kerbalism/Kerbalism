@@ -44,6 +44,8 @@ namespace KERBALISM
 		/// <summary> Update the provided Connection </summary>
 		public void UpdateConnection(ConnectionInfo connection)
 		{
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.CommHandler.UpdateConnection");
+
 			UpdateInputs(connection);
 
 			if (API.Comm.handlers.Count == 0)
@@ -74,6 +76,7 @@ namespace KERBALISM
 					Lib.Log("CommInfo handler threw exception " + e.Message + "\n" + e.ToString(), Lib.LogLevel.Error);
 				}
 			}
+			UnityEngine.Profiling.Profiler.EndSample();
 		}
 
 		/// <summary>

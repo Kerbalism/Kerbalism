@@ -537,7 +537,7 @@ namespace KERBALISM
 				return;
 #endif
 
-			VesselResource ec = (VesselResource)ResourceCache.GetResource(v, "ElectricCharge");
+			VesselResource ec = vd.ResHandler.ElectricCharge;
 			Supply supply = Profile.supplies.Find(k => k.resource == "ElectricCharge");
 			double low_threshold = supply != null ? supply.low_threshold : 0.15;
 			double depletion = ec.DepletionTime();
@@ -564,9 +564,12 @@ namespace KERBALISM
 			uint max_severity = 0;
 			if (vd.CrewCount > 0)
 			{
-				foreach (Supply supply in Profile.supplies.FindAll(k => k.resource != "ElectricCharge"))
+				foreach (Supply supply in Profile.supplies)
 				{
-					VesselResource res = (VesselResource)ResourceCache.GetResource(v, supply.resource);
+					if (supply.resource == "ElectricCharge")
+						continue;
+
+					VesselResource res = (VesselResource)vd.ResHandler.GetResource(supply.resource);
 					double depletion = res.DepletionTime();
 
 					if (res.Capacity > double.Epsilon)

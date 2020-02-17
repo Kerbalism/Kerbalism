@@ -5,39 +5,6 @@ namespace KERBALISM
 {
 	public static class ResourceAPI
 	{
-		public static List<IResource> GetAllResources(Vessel v, VesselResHandler vesselResHandler)
-		{
-			List<string> knownResources = new List<string>();
-			List<IResource> result = new List<IResource>();
-
-			if (v.loaded)
-			{
-				foreach (Part p in v.Parts)
-				{
-					foreach (PartResource r in p.Resources)
-					{
-						if (knownResources.Contains(r.resourceName)) continue;
-						knownResources.Add(r.resourceName);
-						result.Add(vesselResHandler.GetResource(r.resourceName));
-					}
-				}
-			}
-			else
-			{
-				foreach (ProtoPartSnapshot p in v.protoVessel.protoPartSnapshots)
-				{
-					foreach (ProtoPartResourceSnapshot r in p.resources)
-					{
-						if (knownResources.Contains(r.resourceName)) continue;
-						knownResources.Add(r.resourceName);
-						result.Add(vesselResHandler.GetResource(r.resourceName));
-					}
-				}
-			}
-
-			return result;
-		}
-
 		/// <summary>
 		/// Call ResourceUpdate on all part modules that have that method
 		/// </summary>
@@ -62,17 +29,12 @@ namespace KERBALISM
 
 			if (vd.resourceUpdateDelegates.Count == 0) return;
 
-			List<IResource> allResources = GetAllResources(v, vesselResHandler); // there might be some performance to be gained by caching the list of all resource
-
-			Dictionary<string, double> availableResources = new Dictionary<string, double>();
-			foreach (IResource res in allResources)
-				availableResources[res.Name] = res.Amount;
 			List<KeyValuePair<string, double>> resourceChangeRequests = new List<KeyValuePair<string, double>>();
 
 			foreach (var resourceUpdateDelegate in vd.resourceUpdateDelegates)
 			{
 				resourceChangeRequests.Clear();
-				string title = resourceUpdateDelegate.invoke(availableResources, resourceChangeRequests);
+				string title = resourceUpdateDelegate.invoke(vesselResHandler.APIResources, resourceChangeRequests);
 				ResourceBroker broker = ResourceBroker.GetOrCreate(title);
 				foreach (var rc in resourceChangeRequests)
 				{
@@ -83,13 +45,13 @@ namespace KERBALISM
 		}
 
 		public static void BackgroundUpdate(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m,
-	Part part_prefab, PartModule module_prefab, VesselResHandler vesselResHandler, Dictionary<string, double> availableResources, List<KeyValuePair<string, double>> resourceChangeRequests, double elapsed_s)
+	Part part_prefab, PartModule module_prefab, VesselResHandler vesselResHandler, List<KeyValuePair<string, double>> resourceChangeRequests, double elapsed_s)
 		{
 			resourceChangeRequests.Clear();
 
 			try
 			{
-				string title = BackgroundDelegate.Instance(module_prefab).invoke(v, p, m, module_prefab, part_prefab, availableResources, resourceChangeRequests, elapsed_s);
+				string title = BackgroundDelegate.Instance(module_prefab).invoke(v, p, m, module_prefab, part_prefab, vesselResHandler.APIResources, resourceChangeRequests, elapsed_s);
 
 				foreach (var cr in resourceChangeRequests)
 				{

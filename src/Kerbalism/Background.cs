@@ -85,12 +85,7 @@ namespace KERBALISM
 				return;
 
 			// get most used resource handlers
-			IResource ec = resources.GetResource("ElectricCharge");
-
-			List<IResource> allResources = ResourceAPI.GetAllResources(v, resources);
-			Dictionary<string, double> availableResources = new Dictionary<string, double>();
-			foreach (var ri in allResources)
-				availableResources[ri.Name] = ri.Amount;
+			IResource ec = resources.ElectricCharge;
 			List<KeyValuePair<string, double>> resourceChangeRequests = new List<KeyValuePair<string, double>>();
 
 			foreach (var e in Background_PMs(v))
@@ -116,7 +111,7 @@ namespace KERBALISM
 					case Module_type.CryoTank: ProcessCryoTank(v, vd, e.p, e.m, e.module_prefab, resources, elapsed_s); break;
 					case Module_type.FNGenerator: ProcessFNGenerator(v, e.p, e.m, e.module_prefab, ec, elapsed_s); break;
 					case Module_type.SolarPanelFixer: SolarPanelFixer.BackgroundUpdate(v, e.m, e.module_prefab as SolarPanelFixer, vd, ec, elapsed_s); break;
-					case Module_type.APIModule: ResourceAPI.BackgroundUpdate(v, e.p, e.m, e.part_prefab, e.module_prefab, resources, availableResources, resourceChangeRequests, elapsed_s); break;
+					case Module_type.APIModule: ResourceAPI.BackgroundUpdate(v, e.p, e.m, e.part_prefab, e.module_prefab, resources, resourceChangeRequests, elapsed_s); break;
 					case Module_type.ModuleKsmHabitat: ModuleKsmHabitat.BackgroundUpdate(v, vd, e.p, e.module_prefab as ModuleKsmHabitat, elapsed_s); break;
 				}
 			}

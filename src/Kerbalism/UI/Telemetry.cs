@@ -32,9 +32,6 @@ namespace KERBALISM
 			// time-out simulation
 			if (p.Timeout(vd)) return;
 
-			// get resources
-			VesselResHandler resources = ResourceCache.GetVesselHandler(v);
-
 			// get crew
 			var crew = Lib.CrewList(v);
 
@@ -42,7 +39,7 @@ namespace KERBALISM
 			Render_crew(p, crew);
 			if (Features.Science) Render_science(p, v, vd);
 			Render_greenhouse(p, vd);
-			Render_supplies(p, v, vd, resources);
+			Render_supplies(p, v, vd);
 			Render_habitat(p, v, vd);
 			Render_environment(p, v, vd);
 
@@ -167,14 +164,15 @@ namespace KERBALISM
 			p.AddContent(Local.TELEMETRY_totalsciencetransmitted, Lib.HumanReadableScience(vd.scienceTransmitted, false));//"total science transmitted"
 		}
 
-		static void Render_supplies(Panel p, Vessel v, VesselData vd, VesselResHandler resources)
+		static void Render_supplies(Panel p, Vessel v, VesselData vd)
 		{
 			int supplies = 0;
+			StringBuilder sb = new StringBuilder();
 			// for each supply
 			foreach (Supply supply in Profile.supplies)
 			{
 				// get resource info
-				VesselResource res = (VesselResource)resources.GetResource(supply.resource);
+				VesselResource res = (VesselResource)vd.ResHandler.GetResource(supply.resource);
 
 				// only show estimate if the resource is present
 				if (res.Capacity <= 1e-10) continue;
@@ -186,10 +184,9 @@ namespace KERBALISM
 				var resource = PartResourceLibrary.Instance.resourceDefinitions[supply.resource];
 				string label = Lib.SpacesOnCaps(resource.displayName).ToLower();
 
-				StringBuilder sb = new StringBuilder();
+				sb.Length = 0;
 
-				sb.Append("\t");
-				sb.Append(Lib.Bold(label));
+				sb.Append(Lib.Color(label, Lib.Kolor.Yellow, true));
 				sb.Append("\n");
 				sb.Append("<align=left />");
 				if (res.AverageRate != 0.0)
@@ -229,7 +226,7 @@ namespace KERBALISM
 				sb.Append(res.Level.ToString("P0"));
 				sb.Append(")");
 
-				List<ResourceBrokerRate> brokers = ((VesselResource)ResourceCache.GetResource(v, supply.resource)).ResourceBrokers;
+				List<ResourceBrokerRate> brokers = ((VesselResource)vd.ResHandler.GetResource(supply.resource)).ResourceBrokers;
 				if (brokers.Count > 0)
 				{
 					sb.Append("\n<b>------------    \t------------</b>");
@@ -251,8 +248,41 @@ namespace KERBALISM
 
 				string rate_tooltip = sb.ToString();
 
+				sb.Length = 0;
+
+				if (res.AvailabilityFactor > 0.0 && res.AvailabilityFactor < 1.0)
+				{
+					sb.Append(Lib.Color(Local.Monitor_depleted, Lib.Kolor.Orange));
+					sb.Append(" - ");
+					sb.Append("satisfaction");
+					sb.Append(" ");
+					sb.Append(Lib.Color(res.AvailabilityFactor.ToString("P1"), Lib.Kolor.Orange));
+				}
+				else
+				{
+					double depletion = res.DepletionTime();
+					if (depletion > 3600.0 * Lib.HoursInDay * Lib.DaysInYear * 100.0) // more than 100 years = perpetual
+					{
+						sb.Append(Lib.Color(Local.Generic_PERPETUAL, Lib.Kolor.Green));
+					}
+					else if (depletion == 0.0)
+					{
+						sb.Append(Lib.Color(Local.Monitor_depleted, Lib.Kolor.Orange));
+					}
+					else
+					{
+						sb.Append("depletion in");
+						sb.Append(" ");
+						if (res.Level < supply.low_threshold)
+							sb.Append(Lib.Color(Lib.HumanReadableDuration(depletion), Lib.Kolor.Orange));
+						else
+							sb.Append(Lib.Color(Lib.HumanReadableDuration(depletion), Lib.Kolor.Green));
+
+					}
+				}
+
 				// finally, render resource supply
-				p.AddContent(label, Lib.HumanReadableDuration(res.DepletionTime()), rate_tooltip);
+				p.AddContent(label, sb.ToString(), rate_tooltip);
 				++supplies;
 			}
 		}

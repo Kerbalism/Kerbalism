@@ -9,8 +9,10 @@ namespace KERBALISM
 	/// </summary>
 	public class VesselResource : IResource
 	{
+		private ResourceWrapper resourceWrapper;
+
 		/// <summary> Associated resource name</summary>
-		public string Name => name; string name;
+		public string Name => resourceWrapper.name;
 
 		/// <summary> Rate of change in amount per-second, this is purely for visualization</summary>
 		public double Rate => rate; double rate;
@@ -29,10 +31,10 @@ namespace KERBALISM
 		private double deferredNonCriticalConsumers;
 
 		/// <summary> Amount of resource</summary>
-		public double Amount => amount; double amount;
+		public double Amount => resourceWrapper.amount;
 
 		/// <summary> Storage capacity of resource</summary>
-		public double Capacity => capacity; double capacity;
+		public double Capacity => resourceWrapper.capacity;
 
 		/// <summary> If enabled, the total resource amount will be redistributed evenly amongst all parts. Reset itself to "NotSet" after every ExecuteAndSyncToParts() call</summary>
 		public EqualizeMode equalizeMode = EqualizeMode.NotSet;
@@ -64,18 +66,21 @@ namespace KERBALISM
 		public List<ResourceBrokerRate> ResourceBrokers => resourceBrokers;  List<ResourceBrokerRate>resourceBrokers;
 
 		/// <summary>Ctor</summary>
-		public VesselResource(string res_name)
+		public VesselResource(ResourceWrapper resourceWrapper)
 		{
-			name = res_name;
+			this.resourceWrapper = resourceWrapper;
 			resourceBrokers = new List<ResourceBrokerRate>();
 			brokersResourceAmounts = new Dictionary<ResourceBroker, double>();
 			intervalRuleBrokersRates = new Dictionary<ResourceBroker, double>();
 		}
 
-		public void InitAmounts(List<ResourceWrapper> partResources)
+		public void SetWrapper(ResourceWrapper resourceWrapper)
 		{
-			amount = 0.0;
-			capacity = 0.0;
+			this.resourceWrapper = resourceWrapper;
+		}
+
+		public void Init()
+		{
 			deferred = 0.0;
 			deferredNonCriticalConsumers = 0.0;
 			consumeRequests = 0.0;
@@ -83,18 +88,8 @@ namespace KERBALISM
 			produceRequests = 0.0;
 			CriticalConsumptionSatisfied = true;
 
-			// get amount & capacity
-			foreach (ResourceWrapper partResource in partResources)
-			{
-				if (partResource.FlowState) // has the user chosen to make a flowable resource flow
-				{
-					amount += partResource.Amount;
-					capacity += partResource.Capacity;
-				}
-			}
-
 			// calculate level
-			level = capacity > 0.0 ? amount / capacity : 0.0;
+			level = resourceWrapper.capacity > 0.0 ? resourceWrapper.amount / resourceWrapper.capacity : 0.0;
 		}
 
 		/// <summary>Record a production, it will be stored in "Deferred" and later synchronized to the vessel in Sync()</summary>
@@ -171,60 +166,13 @@ namespace KERBALISM
 		/// this function will also sync from vessel to cache so you can always use the
 		/// VesselResource properties to get information about resources
 		/// </remarks>
-		public bool ExecuteAndSyncToParts(double elapsed_s, List<ResourceWrapper> partResources = null)
+		public bool ExecuteAndSyncToParts(double elapsed_s)
 		{
-			// # OVERVIEW
-			// - consumption/production is accumulated in "Deferred" from partmodules and other parts of Kerblism
-			// - then this is called last
-			// - save previous step amount/capacity
-			// - part loop 1 : detect new amount/capacity
-			// - if amount has changed, this mean there is non-Kerbalism producers/consumers on the vessel
-			// - if non-Kerbalism producers are detected on a loaded vessel, prevent high timewarp rates
-			// - clamp "Deferred" to amount/capacity
-			// - part loop 2 : apply "Deferred" to all parts
-			// - apply "Deferred" to amount
-			// - calculate rate of change per-second
-			// - calculate resource level
-			// - reset deferred
-
-			// # NOTE
-			// It is impossible to guarantee coherency in resource simulation of loaded vessels,
-			// if consumers/producers external to the resource cache exist in the vessel (#96).
-			// The effect is that the whole resource simulation become dependent on timestep again.
-			// From the user point-of-view, there are two cases:
-			// - (A) the timestep-dependent error is smaller than capacity
-			// - (B) the timestep-dependent error is bigger than capacity
-			// In case [A], there are no consequences except a slightly wrong computed level and rate.
-			// In case [B], the simulation became incoherent and from that point anything can happen,
-			// like for example insta-death by co2 poisoning or climatization.
-			// To avoid the consequences of [B]:
-			// - we hacked the solar panels to use the resource cache (SolarPanelFixer)
-			// - we detect incoherency on loaded vessels, and forbid the two highest warp speeds
-
-			// remember vessel-wide amount currently known, to calculate rate and detect non-Kerbalism brokers
-			double oldAmount = amount;
-
-			// remember vessel-wide capacity currently known, to detect flow state changes
-			double oldCapacity = capacity;
-
-			// iterate over all enabled resource containers and detect amount/capacity again
-			amount = 0.0;
-			capacity = 0.0;
-
-			foreach (ResourceWrapper partResource in partResources)
-			{
-				if (partResource.FlowState) // has the user chosen to make a flowable resource flow
-				{
-					amount += partResource.Amount;
-					capacity += partResource.Capacity;
-				}
-			}
-
 			// detect flow state changes
-			bool flowStateChanged = capacity - oldCapacity > 1e-05;
+			bool flowStateChanged = resourceWrapper.capacity - resourceWrapper.oldCapacity > 1e-05;
 
 			// As we haven't yet synchronized anything, changes to amount can only come from non-Kerbalism producers or consumers
-			double unknownBrokersRate = amount - oldAmount;
+			double unknownBrokersRate = resourceWrapper.amount - resourceWrapper.oldAmount;
 			// Avoid false detection due to precision errors
 			if (Math.Abs(unknownBrokersRate) < 1e-05) unknownBrokersRate = 0.0;
 
@@ -232,7 +180,7 @@ namespace KERBALISM
 			// we are sure of that because Recipes are processed after critical Consume() calls,
 			// and they will not underflow (consume more than what is available in amount + deferred)
 			// and non critical consumers have been isolated in deferredNonCriticalConsumers
-			CriticalConsumptionSatisfied = amount + produceRequests >= consumeCriticalRequests;
+			CriticalConsumptionSatisfied = resourceWrapper.amount + produceRequests >= consumeCriticalRequests;
 			consumeRequests += consumeCriticalRequests;
 			consumeCriticalRequests = 0.0;
 
@@ -249,7 +197,7 @@ namespace KERBALISM
 			// See excel simulation in misc/ResourceSim-AvailabilityFactor.xlsx
 
 			// calculate the resource "starvation" : how much of the consume requests can't be satisfied
-			double starvation = Math.Abs(Math.Min(amount + produceRequests - consumeRequests, 0.0));
+			double starvation = Math.Abs(Math.Min(resourceWrapper.amount + produceRequests - consumeRequests, 0.0));
 			availabilityFactor = consumeRequests > 0.0 ? Math.Max(1.0 - (starvation / consumeRequests), 0.0) : 1.0;
 			produceRequests = 0.0;
 			consumeRequests = 0.0;
@@ -266,62 +214,25 @@ namespace KERBALISM
 			// clamp consumption/production to vessel amount/capacity
 			// - if deferred is negative, then amount is guaranteed to be greater than zero
 			// - if deferred is positive, then capacity - amount is guaranteed to be greater than zero
-			deferred = Lib.Clamp(deferred, -amount, capacity - amount);
+			deferred = Lib.Clamp(deferred, -resourceWrapper.amount, resourceWrapper.capacity - resourceWrapper.amount);
 
-			if (capacity > 0.0)
-			{
-				if (equalizeMode == EqualizeMode.Enabled)
-				{
-					// apply deferred consumption/production to all parts, equally balancing the total amount amongst all parts
-					foreach (ResourceWrapper partResource in partResources)
-					{
-						if (partResource.FlowState) // has the user chosen to make a flowable resource flow
-						{
-							// apply deferred consumption/production
-							partResource.Amount = (amount + deferred) * (partResource.Capacity / capacity);
-						}
-					}
-				}
-				else
-				{
-					// apply deferred consumption/production to all parts, simulating ALL_VESSEL_BALANCED
-					// avoid very small values in deferred consumption/production
-					if (Math.Abs(deferred) > 1e-16)
-					{
-						foreach (ResourceWrapper partResource in partResources)
-						{
-							if (partResource.FlowState) // has the user chosen to make a flowable resource flow
-							{
-								// calculate consumption/production coefficient for the part
-								double k;
-								if (deferred < 0.0)
-									k = partResource.Amount / amount;
-								else
-									k = (partResource.Capacity - partResource.Amount) / (capacity - amount);
-
-								// apply deferred consumption/production
-								partResource.Amount += deferred * k;
-							}
-						}
-					}
-				}
-			}
+			resourceWrapper.SyncToPartResources(deferred, equalizeMode == EqualizeMode.Enabled);
 
 			equalizeMode = EqualizeMode.NotSet;
 
 			// update amount, to get correct rate and levels at all times
-			amount += deferred;
+			resourceWrapper.amount += deferred;
 
 			// reset deferred production/consumption
 			deferred = 0.0;
 
 			// recalculate level
-			level = capacity > 0.0 ? amount / capacity : 0.0;
+			level = resourceWrapper.capacity > 0.0 ? resourceWrapper.amount / resourceWrapper.capacity : 0.0;
 
 			// calculate rate of change per-second
 			// - don't update rate during warp blending (stock modules have instabilities during warp blending) 
 			// - ignore interval-based rules consumption/production
-			if (!Kerbalism.WarpBlending) rate = (amount - oldAmount - intervalRuleAmount) / elapsed_s;
+			if (!Kerbalism.WarpBlending) rate = (resourceWrapper.amount - resourceWrapper.oldAmount - intervalRuleAmount) / elapsed_s;
 
 			// calculate average rate of change per-second from interval-based rules
 			intervalRulesRate = 0.0;
@@ -363,7 +274,7 @@ namespace KERBALISM
 		public double DepletionTime()
 		{
 			// return depletion
-			return amount <= 1e-10 ? 0.0 : averageRate >= -1e-10 ? double.NaN : amount / -averageRate;
+			return resourceWrapper.amount <= 1e-10 ? 0.0 : averageRate >= -1e-10 ? double.PositiveInfinity : resourceWrapper.amount / -averageRate;
 		}
 
 		/// <summary>Inform that meal has happened in this simulation step</summary>

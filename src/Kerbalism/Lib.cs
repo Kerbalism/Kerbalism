@@ -2415,6 +2415,8 @@ namespace KERBALISM
 		///<summary>poached from https://github.com/blowfishpro/B9PartSwitch/blob/master/B9PartSwitch/Extensions/PartExtensions.cs
 		public static PartResource AddResource(Part p, string res_name, double amount, double capacity)
 		{
+			Lib.LogDebug($"Adding {amount.ToString("F1")}/{capacity.ToString("F1")} of {res_name} to {p.name}");
+
 			var reslib = PartResourceLibrary.Instance.resourceDefinitions;
 			// if the resource is not known, log a warning and do nothing
 			if (!reslib.Contains(res_name))

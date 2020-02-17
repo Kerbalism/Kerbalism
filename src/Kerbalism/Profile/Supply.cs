@@ -32,16 +32,13 @@ namespace KERBALISM
 		}
 
 
-		public void Execute(Vessel v, VesselData vd, VesselResHandler resources)
+		public void CheckMessages(Vessel v, VesselData vd, List<ProtoCrewMember> crew)
 		{
-			// get crew
-			List<ProtoCrewMember> crew = Lib.CrewList(v);
-
 			// get resource handler
-			IResource res = resources.GetResource(resource);
+			IResource res = vd.ResHandler.GetResource(resource);
 
 			// get data from db
-			SupplyData sd = v.KerbalismData().Supply(resource);
+			SupplyData sd = vd.Supply(resource);
 
 			// message obey user config
 			bool show_msg = resource == "ElectricCharge" ? vd.cfg_ec : vd.cfg_supply;
@@ -114,23 +111,23 @@ namespace KERBALISM
 		}
 
 
-		public void SetupRescue(Vessel v)
+		public void SetupRescue(VesselData vd)
 		{
 			// do nothing if no resource on rescue
 			if (on_rescue <= double.Epsilon) return;
 
 			// if the vessel has no capacity
-			if (ResourceCache.GetResource(v, resource).Capacity <= double.Epsilon)
+			if (vd.ResHandler.GetResource(resource).Capacity <= 0.0)
 			{
 				// find the first useful part
-				Part p = v.parts.Find(k => k.CrewCapacity > 0 || k.FindModuleImplementing<KerbalEVA>() != null);
+				Part p = vd.Vessel.parts.Find(k => k.CrewCapacity > 0 || k.FindModuleImplementing<KerbalEVA>() != null);
 
 				// add capacity
 				Lib.AddResource(p, resource, 0.0, on_rescue);
 			}
 
 			// add resource to the vessel
-			ResourceCache.Produce(v, resource, on_rescue, ResourceBroker.Generic);
+			vd.ResHandler.Produce(resource, on_rescue, ResourceBroker.Generic);
 		}
 
 

@@ -27,14 +27,31 @@ namespace KERBALISM
 		// time since last update
 		private double secSinceLastEval;
 
-		#region non-evaluated non-persisted fields
+		#region non-evaluated non-persisted fields & properties
 
-		/// <summary>name of last file being transmitted, or empty if nothing is being transmitted</summary>
+		/// <summary>
+		/// Resource handler for this vessel.
+		/// <para/> Note : this can be null, or not properly initialized while VesselData.IsSimulated is false.
+		/// <para/> Do not use it from PartModule.Start() / PartModule.OnStart(), and check VesselData.IsSimulated before using it from Update() / FixedUpdate()
+		/// </summary>
+		// This is unfortunate but cu
+		public VesselResHandler ResHandler { get; private set; }
+
+		/// <summary> comms handler for this vessel </summary>
+		public CommHandler CommHandler { get; private set; }
+
+		/// <summary> all part modules that have a ResourceUpdate method </summary>
+		public List<ResourceUpdateDelegate> resourceUpdateDelegates = null;
+
+		/// <summary>
+		/// List of files being transmitted, or empty if nothing is being transmitted
+		/// <para/> Note that the transmit rates stored in the File objects can be unreliable, do not use it apart from UI purposes
+		/// </summary>
 		public List<File> filesTransmitted;
 
 		#endregion
 
-		#region non-evaluated persisted fields
+		#region non-evaluated persisted fields & properties
 		// user defined persisted fields
 		public bool cfg_ec;           // enable/disable message: ec level
 		public bool cfg_supply;       // enable/disable message: supplies level
@@ -50,11 +67,8 @@ namespace KERBALISM
 		public bool deviceTransmit;   // vessel wide automation : enable/disable data transmission
 
 		// other persisted fields
-		public List<ResourceUpdateDelegate> resourceUpdateDelegates = null; // all part modules that have a ResourceUpdate method
-		public PartDataCollection Parts { get; private set; }
-		public VesselResHandler ResHandler { get; private set; }
-		public CommHandler CommHandler { get; private set; }
 
+		public PartDataCollection Parts { get; private set; }
 		public bool msg_signal;       // message flag: link status
 		public bool msg_belt;         // message flag: crossing radiation belt
 		public StormData stormData;
@@ -153,7 +167,7 @@ namespace KERBALISM
 		/// <summary> [environment] Sun that send the highest nominal solar flux (in W/m²) at vessel position</summary>
 		public SunInfo EnvMainSun => mainSun; SunInfo mainSun;
 
-		/// <summary> [environment] Angle of the main sun on the surface at vessel position</summary>
+		/// <summary> [environment] Angle of the main sun on the body surface at vessel position</summary>
 		public double EnvSunBodyAngle => sunBodyAngle; double sunBodyAngle;
 
 		/// <summary>
@@ -383,7 +397,7 @@ namespace KERBALISM
 			Vessel = v;
 			ExistsInFlight = true;
 
-			if (!ExistsInFlight || !CheckIfSimulated())
+			if (!CheckIfSimulated(out bool rescueJustLoaded))
 			{
 				IsSimulated = false;
 			}
@@ -392,10 +406,16 @@ namespace KERBALISM
 				// if vessel wasn't simulated previously : update everything immediately.
 				if (!IsSimulated)
 				{
-					Lib.LogDebug("VesselData : id '" + VesselId + "' (" + Vessel.vesselName + ") is now simulated (wasn't previously)");
+					Lib.LogDebug($"{Vessel.vesselName} is now simulated");
 					IsSimulated = true;
-					Evaluate(true, ResourceCache.GetVesselHandler(v), Lib.RandomDouble());
+					Evaluate(true, Lib.RandomDouble());
 				}
+			}
+
+			if (rescueJustLoaded)
+			{
+				Lib.LogDebug($"Rescue vessel {Vessel.vesselName} discovered, granting resources and enabling processing");
+				OnRescueVesselLoaded(Vessel);
 			}
 
 			if (isInit)
@@ -404,13 +424,13 @@ namespace KERBALISM
 			}
 		}
 
-		private bool CheckIfSimulated()
+		private bool CheckIfSimulated(out bool rescueJustLoaded)
 		{
 			// determine if this is a valid vessel
 			is_vessel = Lib.IsVessel(Vessel);
 
 			// determine if this is a rescue mission vessel
-			is_rescue = Misc.IsRescueMission(Vessel);
+			is_rescue = CheckRescueStatus(Vessel, out rescueJustLoaded);
 
 			// dead EVA are not valid vessels
 			is_eva_dead = EVA.IsDead(Vessel);
@@ -423,7 +443,7 @@ namespace KERBALISM
 		/// <para/> - for loaded vessels : every gametime second 
 		/// <para/> - for unloaded vessels : at the beginning of every background update
 		/// </summary>
-		public void Evaluate(bool forced, VesselResHandler ResHandler, double elapsedSeconds)
+		public void Evaluate(bool forced, double elapsedSeconds)
 		{
 			if (!IsSimulated) return;
 
@@ -439,6 +459,79 @@ namespace KERBALISM
 			Evaluated = true;
 		}
 
+		#endregion
+
+		#region rescue vessel handling
+		/// <summary> update the rescue state of kerbals when a vessel is loaded, return true if the vessek</summary>
+		public static bool CheckRescueStatus(Vessel v, out bool rescueJustLoaded)
+		{
+			bool isRescue = false;
+			rescueJustLoaded = false;
+
+			// deal with rescue missions
+			foreach (ProtoCrewMember c in Lib.CrewList(v))
+			{
+				// get kerbal data
+				// note : this whole thing rely on KerbalData.rescue being initialized to true
+				// when DB.Kerbal() (which is a get-or-create) is called for the first time
+				KerbalData kd = DB.Kerbal(c.name);
+
+				// flag the kerbal as not rescue at prelaunch
+				// if the KerbalData wasn't created during prelaunch, that code won't be called
+				// and KerbalData.rescue will stay at the default "true" value
+				if (v.situation == Vessel.Situations.PRELAUNCH)
+				{
+					kd.rescue = false;
+				}
+
+				if (kd.rescue)
+				{
+					if (!v.loaded)
+					{
+						isRescue |= true;
+					}
+					// we de-flag a rescue kerbal when the rescue vessel is first loaded
+					else
+					{
+						rescueJustLoaded |= true;
+						isRescue &= false;
+
+						// flag the kerbal as non-rescue
+						// note: enable life support mechanics for the kerbal
+						kd.rescue = false;
+
+						// show a message
+						Message.Post(Lib.BuildString(Local.Rescuemission_msg1, " <b>", c.name, "</b>"), Lib.BuildString((c.gender == ProtoCrewMember.Gender.Male ? Local.Kerbal_Male : Local.Kerbal_Female), Local.Rescuemission_msg2));//We found xx  "He"/"She"'s still alive!"
+					}
+				}
+			}
+			return isRescue;
+		}
+
+		/// <summary> Gift resources to a rescue vessel, to be called when a rescue vessel is first being loaded</summary>
+		public static void OnRescueVesselLoaded(Vessel v)
+		{
+			VesselData vd = v.KerbalismData();
+
+			// give the vessel some propellant usable on eva
+			string monoprop_name = Lib.EvaPropellantName();
+			double monoprop_amount = Lib.EvaPropellantCapacity();
+			foreach (var part in v.parts)
+			{
+				if (part.CrewCapacity > 0 || part.FindModuleImplementing<KerbalEVA>() != null)
+				{
+					if (Lib.Capacity(part, monoprop_name) <= double.Epsilon)
+					{
+						Lib.AddResource(part, monoprop_name, 0.0, monoprop_amount);
+					}
+					break;
+				}
+			}
+			vd.ResHandler.Produce(monoprop_name, monoprop_amount, ResourceBroker.Generic);
+
+			// give the vessel some supplies
+			Profile.SetupRescue(vd);
+		}
 		#endregion
 
 		#region events handling
@@ -549,14 +642,19 @@ namespace KERBALISM
 
 			Vessel = vessel;
 			VesselId = Vessel.id;
-			ResHandler = ResourceCache.GetVesselHandler(vessel);
 
 			Parts = new PartDataCollection(this);
 			if (Vessel.loaded)
+			{
 				Parts.Populate(Vessel);
+				ResHandler = new VesselResHandler(Vessel, VesselResHandler.VesselState.Loaded);
+			}
 			else
+			{
 				// vessels can be created unloaded, asteroids for example
 				Parts.Populate(Vessel.protoVessel);
+				ResHandler = new VesselResHandler(Vessel.protoVessel, VesselResHandler.VesselState.Unloaded);
+			}
 
 			SetPersistedFieldsDefaults(vessel.protoVessel);
 			SetInstantiateDefaults(vessel.protoVessel);
@@ -568,7 +666,7 @@ namespace KERBALISM
 		/// <summary>
 		/// This ctor is meant to be used in OnLoad only, but can be used as a fallback
 		/// with a null ConfigNode to create VesselData from a protovessel. 
-		/// The Vessel reference will be acquired in the next fixedupdate
+		/// The Vessel reference will be acquired in the first fixedupdate
 		/// </summary>
 		public VesselData(ProtoVessel protoVessel, ConfigNode node)
 		{
@@ -577,10 +675,10 @@ namespace KERBALISM
 			IsSimulated = false;
 
 			VesselId = protoVessel.vesselID;
-			ResHandler = ResourceCache.GetProtoVesselHandler(protoVessel);
 
 			Parts = new PartDataCollection(this);
 			Parts.Populate(protoVessel);
+			ResHandler = new VesselResHandler(protoVessel, VesselResHandler.VesselState.Unloaded);
 
 			if (node == null)
 			{
@@ -630,7 +728,6 @@ namespace KERBALISM
 			if (!isSerenityGroundController && protoVessel.vesselType == VesselType.DeployedScienceController)
 				isSerenityGroundController = true;
 #endif
-
 			filesTransmitted = new List<File>();
 			vesselSituations = new VesselSituations(this);
 			habitatInfo = new HabitatVesselData();

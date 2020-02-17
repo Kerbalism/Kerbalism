@@ -68,8 +68,7 @@ namespace KERBALISM
 		public void Execute(Vessel v, ScriptType type)
 		{
 			// do nothing if there is no EC left on the vessel
-			IResource ec = ResourceCache.GetResource(v, "ElectricCharge");
-			if (ec.Amount <= double.Epsilon) return;
+			if (!v.KerbalismData().ResHandler.ElectricCharge.CriticalConsumptionSatisfied) return;
 
 			// get the script
 			Script script;

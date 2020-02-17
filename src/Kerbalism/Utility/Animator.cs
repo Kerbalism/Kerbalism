@@ -8,7 +8,8 @@ namespace KERBALISM
 	{
 		private Animation anim;
 		private readonly string name;
-		public bool invertPlayDirection = false;
+		private bool invertPlayDirection = false;
+		private float playingSpeed;
 
 		public bool IsDefined { get; private set; } = false;
 
@@ -61,7 +62,9 @@ namespace KERBALISM
 			// if playing toward the start, fire the callback immediately
 			if (inReverse && callback != null) callback();
 
-			anim[name].speed = (towardStart ? -1f : 1f) * speed;
+			playingSpeed = (towardStart ? -1f : 1f) * speed;
+
+			anim[name].speed = playingSpeed;
 			anim[name].wrapMode = loop ? WrapMode.Loop : WrapMode.Once;
 
 			// normalizedTime is always reset to 0 when animation end is reached, so set it back manually to 1 to play backward
@@ -157,6 +160,16 @@ namespace KERBALISM
 				anim.Play(name);
 			}
 		}
+
+		public void ChangeSpeed(float normalizedSpeed)
+		{
+			if (IsDefined && anim.IsPlaying(name))
+			{
+				anim[name].speed = playingSpeed * normalizedSpeed;
+			}
+		}
+
+		public float AnimDuration => IsDefined ? anim[name].length : 0f;
 
 		public bool Playing => IsDefined ? (anim[name].speed != 0f) && anim.IsPlaying(name) : false;
 

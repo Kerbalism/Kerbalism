@@ -157,13 +157,6 @@ namespace KERBALISM
 
 		public static void Execute(Vessel v, VesselData vd, VesselResHandler resources, double elapsed_s)
 		{
-			// execute all supplies
-			foreach (Supply supply in supplies)
-			{
-				// this will just show warning messages if resources get low
-				supply.Execute(v, vd, resources);
-			}
-
 			// execute all rules
 			foreach (Rule rule in rules)
 			{
@@ -174,6 +167,19 @@ namespace KERBALISM
 			foreach (Process process in processes)
 			{
 				process.Execute(v, vd, resources, elapsed_s);
+			}
+		}
+
+		public static void CheckSupplies(Vessel v, VesselData vd)
+		{
+			// get crew
+			List<ProtoCrewMember> crew = Lib.CrewList(v);
+
+			// execute all supplies
+			foreach (Supply supply in supplies)
+			{
+				// this will just show warning messages if resources get low
+				supply.CheckMessages(v, vd, crew);
 			}
 		}
 
@@ -200,11 +206,11 @@ namespace KERBALISM
 		}
 
 
-		public static void SetupRescue(Vessel v)
+		public static void SetupRescue(VesselData vd)
 		{
 			foreach (Supply supply in supplies)
 			{
-				supply.SetupRescue(v);
+				supply.SetupRescue(vd);
 			}
 		}
 

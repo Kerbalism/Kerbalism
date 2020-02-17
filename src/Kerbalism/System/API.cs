@@ -372,62 +372,66 @@ namespace KERBALISM
 
 		public static void ConsumeResource(Vessel v, string resource_name, double quantity, string title)
 		{
-			ResourceCache.Consume(v, resource_name, quantity, ResourceBroker.GetOrCreate(title));
+			v.KerbalismData().ResHandler.Consume(resource_name, quantity, ResourceBroker.GetOrCreate(title));
 		}
 
 		public static void ProduceResource(Vessel v, string resource_name, double quantity, string title)
 		{
-			ResourceCache.Produce(v, resource_name, quantity, ResourceBroker.GetOrCreate(title));
+			v.KerbalismData().ResHandler.Produce(resource_name, quantity, ResourceBroker.GetOrCreate(title));
 		}
 
 		public static void ProcessResources(Vessel v, List<KeyValuePair<string, double>> resources, string title)
 		{
 			ResourceBroker broker = ResourceBroker.GetOrCreate(title);
+			VesselResHandler resHandler = v.KerbalismData().ResHandler;
 			foreach (var p in resources)
 			{
 				if (p.Value < 0)
-					ResourceCache.Consume(v, p.Key, -p.Value, broker);
+					resHandler.Consume(p.Key, -p.Value, broker);
 				else
-					ResourceCache.Produce(v, p.Key, p.Value, broker);
+					resHandler.Produce(p.Key, p.Value, broker);
 			}
 		}
 
 		public static double ResourceAmount(Vessel v, string resource_name)
 		{
-			return ResourceCache.GetResource(v, resource_name).Amount;
+			return v.KerbalismData().ResHandler.GetResource(resource_name).Amount;
 		}
 
 		public static List<double> ResourceAmounts(Vessel v, List<string> resource_names)
 		{
+			VesselResHandler resHandler = v.KerbalismData().ResHandler;
 			List<double> result = new List<double>(resource_names.Count);
 			foreach (var name in resource_names)
-				result.Add(ResourceCache.GetResource(v, name).Amount);
+				result.Add(resHandler.GetResource(name).Amount);
 			return result;
 		}
 
 		public static double ResourceCapacity(Vessel v, string resource_name)
 		{
-			return ResourceCache.GetResource(v, resource_name).Capacity;
+			return v.KerbalismData().ResHandler.GetResource(resource_name).Capacity;
 		}
 
 		public static List<double> ResourceCapacities(Vessel v, List<string> resource_names)
 		{
+			VesselResHandler resHandler = v.KerbalismData().ResHandler;
 			List<double> result = new List<double>(resource_names.Count);
 			foreach (var name in resource_names)
-				result.Add(ResourceCache.GetResource(v, name).Capacity);
+				result.Add(resHandler.GetResource(name).Capacity);
 			return result;
 		}
 
 		public static double ResourceLevel(Vessel v, string resource_name)
 		{
-			return ResourceCache.GetResource(v, resource_name).Level;
+			return v.KerbalismData().ResHandler.GetResource(resource_name).Level;
 		}
 
 		public static List<double> ResourceLevels(Vessel v, List<string> resource_names)
 		{
+			VesselResHandler resHandler = v.KerbalismData().ResHandler;
 			List<double> result = new List<double>(resource_names.Count);
 			foreach (var name in resource_names)
-				result.Add(ResourceCache.GetResource(v, name).Level);
+				result.Add(resHandler.GetResource(name).Level);
 			return result;
 		}
 
@@ -445,7 +449,7 @@ namespace KERBALISM
 		*/
 		public static List<KeyValuePair<string[], double>> ResourceBrokers(Vessel v, string resource_name)
 		{
-			List<ResourceBrokerRate> brokers = ((VesselResource)ResourceCache.GetResource(v, resource_name)).ResourceBrokers;
+			List<ResourceBrokerRate> brokers = ((VesselResource)v.KerbalismData().ResHandler.GetResource(resource_name)).ResourceBrokers;
 			List<KeyValuePair<string[], double>> apiBrokers = new List<KeyValuePair<string[], double>>();
 			foreach (ResourceBrokerRate rb in brokers)
 			{

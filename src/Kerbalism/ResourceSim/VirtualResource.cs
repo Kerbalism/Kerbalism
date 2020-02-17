@@ -86,7 +86,12 @@ namespace KERBALISM
 			IsNewInstance = true;
 		}
 
-		public bool ExecuteAndSyncToParts(double elapsed_s, List<ResourceWrapper> partResources = null)
+		public void Init()
+		{
+			throw new NotImplementedException();
+		}
+
+		public bool ExecuteAndSyncToParts(double elapsed_s)
 		{
 			IsNewInstance = false;
 
@@ -124,11 +129,12 @@ namespace KERBALISM
 
 		public static void Load(Vessel v, ConfigNode vesselDataNode)
 		{
+			VesselResHandler resHandler = v.KerbalismData().ResHandler;
 			foreach (ConfigNode node in vesselDataNode.GetNodes("VirtualResources"))
 			{
 				string resName = Lib.ConfigValue(node, "Name", string.Empty);
 				if (string.IsNullOrEmpty(resName)) return;
-				VirtualResource res = (VirtualResource)ResourceCache.GetResource(v, resName);
+				VirtualResource res = (VirtualResource)resHandler.GetResource(resName);
 				res.Amount = Lib.ConfigValue(node, "Amount", 0.0);
 				res.Capacity = Lib.ConfigValue(node, "Capacity", 0.0);
 				res.Level = res.Capacity > 0.0 ? res.Amount / res.Capacity : 0.0;
@@ -139,7 +145,8 @@ namespace KERBALISM
 		public static void Save(Vessel v, ConfigNode node)
 		{
 			if (v == null) return;
-			foreach (VirtualResource vRes in ResourceCache.GetVesselHandler(v).GetVirtualResources())
+			VesselResHandler resHandler = v.KerbalismData().ResHandler;
+			foreach (VirtualResource vRes in resHandler.GetVirtualResources())
 			{
 				if (vRes.Amount <= 0.0 && vRes.Capacity <= 0.0) continue;
 				ConfigNode vResNode = node.AddNode("VirtualResources");
@@ -148,5 +155,7 @@ namespace KERBALISM
 				node.AddValue("Capacity", vRes.Capacity);
 			}
 		}
+
+
 	}
 }

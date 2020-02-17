@@ -129,5 +129,6 @@ namespace KERBALISM
 		public override int GetHashCode() => broker.GetHashCode();
 		public bool Equals(ResourceBrokerRate other) => other != null && broker.Equals(other.broker);
 		public override bool Equals(object obj) => Equals((ResourceBrokerRate)obj);
+		public override string ToString() => broker.ToString() + ": " + rate.ToString("0.000000") + "/s";
 	}
 }

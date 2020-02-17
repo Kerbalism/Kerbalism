@@ -398,7 +398,7 @@ namespace KERBALISM
 			if (v == null || EVA.IsDead(v)) return;
 
 			// produce reduced quantity of food, proportional to current growth
-			ResourceCache.Produce(vessel, crop_resource, crop_size, ResourceBroker.Greenhouse);
+			vessel.KerbalismData().ResHandler.Produce(crop_resource, crop_size, ResourceBroker.Greenhouse);
 
 			// reset growth
 			growth = 0.0;
@@ -426,7 +426,7 @@ namespace KERBALISM
 			double reduced_harvest = crop_size * growth * 0.5;
 
 			// produce reduced quantity of food, proportional to current growth
-			ResourceCache.Produce(vessel, crop_resource, reduced_harvest, ResourceBroker.Greenhouse);
+			vessel.KerbalismData().ResHandler.Produce(crop_resource, reduced_harvest, ResourceBroker.Greenhouse);
 
 			// reset growth
 			growth = 0.0;

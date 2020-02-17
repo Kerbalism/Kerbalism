@@ -177,7 +177,7 @@ namespace KERBALISM
 		public static double Total(Vessel v)
 		{
 			// get resource cache
-			IResource ec = ResourceCache.GetResource(v, "ElectricCharge");
+			IResource ec = v.KerbalismData().ResHandler.GetResource("ElectricCharge");
 
 			double total = 0.0;
 			if (v.loaded)

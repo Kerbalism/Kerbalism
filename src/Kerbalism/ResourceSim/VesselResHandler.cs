@@ -5,27 +5,69 @@ using System.Linq;
 
 namespace KERBALISM
 {
-	/// <summary>
-	/// Handler for the vessel resources simulator.
-	/// Allow access to the resource information (IResource) for all resources on the vessel
-	/// and also stores of all recorded recipes (ResourceRecipe)
-	/// </summary>
-	public sealed class VesselResHandler
+	/*
+	 OVERVIEW OF THE RESOURCE SIM :
+	- For each vessel or shipconstruct, a VesselResHandler is instantiated
+	- It contains a dictionary of all individual resource handlers (one vessel-wide handler per resource)
+	- Resource handlers are either a Virtualresource or VesselResource. The IResource interface hide the implementation details
+	- The IResource interface provide Consume() and Produce() methods for direct consumptions/productions
+	- The VesselResHandler provide a AddRecipe() method for defining input/output processes
+	- Each resource handler store consumption/production sum in a "deferred" variable
+
+	IMPLEMENTATION DETAILS :
+	- VesselResHandler and VesselResource rely on a PartResourceWrapper abstract class that is used to hide
+	  the difference between the KSP PartResource and ProtoPartResourceSnapshot classes
+	- One of the reason this implementation is spread over multiple classes is because the KSP PartResourceList class is actually
+	  a dictionary, meaning that every iteration over the Part.Resources property instantiate a new list from the
+	  dictionary values, which is a huge performance/memory garbage issue since we need at least 2
+	  "foreach resource > foreach part > foreach partresource" loops (first to get amount/capacity, then to update amounts).
+	  To solve this, we do a single "foreach part > foreach partresource" loop and save a List of PartResource object references,
+	  then iterate over that list.
+	- Another constraint is that the VesselResHandler must be available from PartModule.Start()/OnStart(), and that
+	  the VesselResHandler and resource handlers references must stay the same when the vessel is changing state (loaded <> unloaded)
+	
+
+	OVERVIEW OF A SIMULATION STEP :
+	- Direct Consume()/Produce() calls from partmodules and other parts of Kerbalism are accumulated in the resource handler "deferred"
+	- Recipe objects are created trough AddRecipe() from partmodules and other parts of Kerbalism
+	- VesselResHandler.Update() is called : 
+	  - All Recipes are executed, and the inputs/outputs added in each resource "deferred".
+	  - Each resource amount/capacity (from previous step) is saved
+	  - All parts are iterated upon, the KSP part resource object reference is saved in each resource handler,
+	    and the new amount and capacity for each resource is calculated from each part resource object.
+	  - If amount has changed, this mean there is non-Kerbalism producers/consumers on the vessel
+	  - If non-Kerbalism producers are detected on a loaded vessel, we prevent high timewarp rates
+	  - For each resource handler :
+	    - clamp "deferred" to total amount/capacity
+		- distribute "deferred" amongst all part resource
+		- add "deferred" to total amount
+		- calculate rate of change per-second
+		- calculate resource level
+		- reset "deferred"
+
+	NOTE
+	It is impossible to guarantee coherency in resource simulation of loaded vessels,
+	if consumers/producers external to the resource cache exist in the vessel (#96).
+	The effect is that the whole resource simulation become dependent on timestep again.
+	From the user point-of-view, there are two cases:
+	- (A) the timestep-dependent error is smaller than capacity
+	- (B) the timestep-dependent error is bigger than capacity
+	In case [A], there are no consequences except a slightly wrong computed level and rate.
+	In case [B], the simulation became incoherent and from that point anything can happen,
+	like for example insta-death by co2 poisoning or climatization.
+	To avoid the consequences of [B]:
+	- we hacked the solar panels to use the resource cache (SolarPanelFixer)
+	- we detect incoherency on loaded vessels, and forbid the two highest warp speeds
+	*/
+
+	public class VesselResHandler
 	{
+		public enum VesselState { Loaded, Unloaded, Editor}
+		private VesselState currentState;
 
-		public VesselResource ElectricCharge { get; private set; }
+		public VesselResource ElectricCharge { get; protected set; }
 
-		private class VesselResourceInfo
-		{
-			public IResource resource;
-			public List<ResourceWrapper> partResources;
-
-			public VesselResourceInfo(IResource resource, List<ResourceWrapper> partResources)
-			{
-				this.resource = resource;
-				this.partResources = partResources;
-			}
-		}
+		public Dictionary<string, double> APIResources = new Dictionary<string, double>();
 
 		private static List<string> allResourceNames;
 		private static List<string> AllResourceNames
@@ -43,63 +85,73 @@ namespace KERBALISM
 			}
 		}
 
-		private Dictionary<string, VesselResourceInfo> resources = new Dictionary<string, VesselResourceInfo>(32);
 		private List<Recipe> recipes = new List<Recipe>(4);
+		private Dictionary<string, IResource> resources = new Dictionary<string, IResource>(32);
+		private Dictionary<string, ResourceWrapper> resourceWrappers = new Dictionary<string, ResourceWrapper>(32);
 
-		public VesselResHandler(ShipConstruct editorVessel)
+		public VesselResHandler(object vesselOrProtoVesselOrShipConstruct, VesselState state)
 		{
-			foreach (string resourceName in AllResourceNames)
-				resources.Add(resourceName, new VesselResourceInfo(new VesselResource(resourceName), new List<ResourceWrapper>()));
+			currentState = state;
 
-			SyncShipConstructPartResources(editorVessel);
+			switch (state)
+			{
+				case VesselState.Loaded:
+				case VesselState.Editor:
+					foreach (string resourceName in AllResourceNames)
+					{
+						ResourceWrapper resourceWrapper = new LoadedResourceWrapper(resourceName);
+						resourceWrappers.Add(resourceName, resourceWrapper);
+						resources.Add(resourceName, new VesselResource(resourceWrapper));
+					}
+					break;
+				case VesselState.Unloaded:
+					foreach (string resourceName in AllResourceNames)
+					{
+						ResourceWrapper resourceWrapper = new ProtoResourceWrapper(resourceName);
+						resourceWrappers.Add(resourceName, resourceWrapper);
+						resources.Add(resourceName, new VesselResource(resourceWrapper));
+					}
+					break;
+			}
 
-			foreach (VesselResourceInfo vesselResourceInfo in resources.Values)
-				((VesselResource)vesselResourceInfo.resource).InitAmounts(vesselResourceInfo.partResources);
+			switch (state)
+			{
+				case VesselState.Loaded:
+					SyncPartResources(((Vessel)vesselOrProtoVesselOrShipConstruct).parts);
+					break;
+				case VesselState.Unloaded:
+					SyncPartResources(((ProtoVessel)vesselOrProtoVesselOrShipConstruct).protoPartSnapshots);
+					break;
+				case VesselState.Editor:
+					SyncPartResources(((ShipConstruct)vesselOrProtoVesselOrShipConstruct).parts);
+					break;
+			}
 
-			ElectricCharge = (VesselResource)resources["ElectricCharge"].resource;
-		}
+			foreach (IResource resource in resources.Values)
+			{
+				resource.Init();
+				if (resource.Name == "ElectricCharge")
+					ElectricCharge = (VesselResource)resource;
 
-		public VesselResHandler(Vessel v)
-		{
-			foreach (string resourceName in AllResourceNames)
-				resources.Add(resourceName, new VesselResourceInfo(new VesselResource(resourceName), new List<ResourceWrapper>()));
-
-			SyncVesselPartResources(v);
-
-			foreach (VesselResourceInfo vesselResourceInfo in resources.Values)
-				((VesselResource)vesselResourceInfo.resource).InitAmounts(vesselResourceInfo.partResources);
-
-			ElectricCharge = (VesselResource)resources["ElectricCharge"].resource;
-		}
-
-		public VesselResHandler(ProtoVessel pv)
-		{
-			foreach (string resourceName in AllResourceNames)
-				resources.Add(resourceName, new VesselResourceInfo(new VesselResource(resourceName), new List<ResourceWrapper>()));
-
-			SyncProtoVesselPartResources(pv);
-
-			foreach (VesselResourceInfo vesselResourceInfo in resources.Values)
-				((VesselResource)vesselResourceInfo.resource).InitAmounts(vesselResourceInfo.partResources);
-
-			ElectricCharge = (VesselResource)resources["ElectricCharge"].resource;
+				APIResources.Add(resource.Name, resource.Amount);
+			}
 		}
 
 		/// <summary>return the VesselResource object for this resource or create it if it doesn't exists</summary>
 		public IResource GetResource(string resourceName)
 		{
 			// try to get existing entry if any
-			VesselResourceInfo resInfo;
-			if (resources.TryGetValue(resourceName, out resInfo))
-				return resInfo.resource;
+			IResource resource;
+			if (resources.TryGetValue(resourceName, out resource))
+				return resource;
 
-			resInfo = new VesselResourceInfo(new VirtualResource(resourceName), null);
+			resource = new VirtualResource(resourceName);
 
 			// remember new entry
-			resources.Add(resourceName, resInfo);
+			resources.Add(resourceName, resource);
 
 			// return new entry
-			return resInfo.resource;
+			return resource;
 		}
 
 		/// <summary>
@@ -113,60 +165,6 @@ namespace KERBALISM
 				if (res is VirtualResource) virtualResources.Add((VirtualResource)res);
 
 			return virtualResources;
-		}
-
-		/// <summary>
-		/// Main vessel resource simulation update method.
-		/// Execute all recipes to get final deferred amounts, then for each resource apply deferred requests, 
-		/// synchronize the new amount in all parts and update VesselResource information properties (rates, brokers...)
-		/// </summary>
-		public void VesselResourceUpdate(Vessel v, double elapsed_s)
-		{
-			// execute all recorded recipes
-			Recipe.ExecuteRecipes(this, recipes, v);
-
-			// forget the recipes
-			recipes.Clear();
-
-			Dictionary<string, VesselResourceInfo>.ValueCollection resourcesCollection = resources.Values;
-
-			foreach (VesselResourceInfo resourceInfo in resourcesCollection)
-				resourceInfo.partResources.Clear();
-
-			SyncVesselPartResources(v);
-
-			// apply all deferred requests and synchronize to vessel
-			foreach (VesselResourceInfo resourceInfo in resourcesCollection)
-			{
-				// Note : there is some resetting logic (deferred & brokers reset) in ExecuteAndSyncToParts that need to be applied, even if there are no parts.
-				if (resourceInfo.resource.ExecuteAndSyncToParts(elapsed_s, resourceInfo.partResources) && v.loaded)
-					CoherencyWarning(v, resourceInfo.resource.Name);
-			}
-		}
-
-		public void ShipConstructResourceUpdate(ShipConstruct ship, double elapsed_s)
-		{
-			// execute all recorded recipes
-			Recipe.ExecuteRecipes(this, recipes);
-
-			// forget the recipes
-			recipes.Clear();
-
-			Dictionary<string, VesselResourceInfo>.ValueCollection resourcesCollection = resources.Values;
-
-			foreach (VesselResourceInfo resourceInfo in resourcesCollection)
-				resourceInfo.partResources.Clear();
-
-			SyncShipConstructPartResources(ship);
-
-			// apply all deferred requests and synchronize to vessel
-			foreach (VesselResourceInfo resourceInfo in resourcesCollection)
-			{
-				//if (resourceInfo.partResources.Count == 0)
-				//	continue;
-
-				resourceInfo.resource.ExecuteAndSyncToParts(elapsed_s, resourceInfo.partResources);
-			}
 		}
 
 		/// <summary> record deferred production of a resource (shortcut) </summary>
@@ -189,8 +187,132 @@ namespace KERBALISM
 			recipes.Add(recipe);
 		}
 
+		public void ResourceUpdate(object vesselOrProtoVesselOrShipConstruct, VesselState state, double elapsed_s)
+		{
+			Vessel vessel = null;
+			ProtoVessel protoVessel = null;
+			ShipConstruct shipConstruct = null;
+
+			// execute all recorded recipes
+			switch (state)
+			{
+				case VesselState.Loaded:
+					vessel = (Vessel)vesselOrProtoVesselOrShipConstruct;
+					Recipe.ExecuteRecipes(this, recipes, vessel);
+					break;
+				case VesselState.Unloaded:
+					protoVessel = (ProtoVessel)vesselOrProtoVesselOrShipConstruct;
+					Recipe.ExecuteRecipes(this, recipes, protoVessel.vesselRef);
+					break;
+				case VesselState.Editor:
+					shipConstruct = (ShipConstruct)vesselOrProtoVesselOrShipConstruct;
+					//Recipe.ExecuteRecipes(this, recipes, vessel);
+					break;
+			}
+
+			// forget the recipes
+			recipes.Clear();
+
+			// if the vessel state has changed between loaded and unloaded,
+			// rebuild the resource wrappers
+			if (state != currentState)
+			{
+				Lib.LogDebug($"State changed for {(vessel != null ? vessel.vesselName : protoVessel?.vesselName)} from {currentState.ToString()} to {state.ToString()}, rebuilding resource wrappers");
+				currentState = state;
+				foreach (string resourceName in AllResourceNames)
+				{
+					ResourceWrapper oldWrapper = resourceWrappers[resourceName];
+					ResourceWrapper newWrapper;
+					switch (state)
+					{
+						case VesselState.Loaded:
+						case VesselState.Editor:
+							newWrapper = new LoadedResourceWrapper(oldWrapper);
+							break;
+						case VesselState.Unloaded:
+							newWrapper = new ProtoResourceWrapper(oldWrapper);
+							break;
+						default:
+							newWrapper = null;
+							break;
+					}
+
+					resourceWrappers[resourceName] = newWrapper;
+					((VesselResource)resources[resourceName]).SetWrapper(newWrapper);
+				}
+			}
+			else
+			{
+				// else just reset amount, capacity, and the part/protopart resource object references
+				foreach (ResourceWrapper resourceWrapper in resourceWrappers.Values)
+					resourceWrapper.ClearPartResources();
+			}
+
+			switch (state)
+			{
+				case VesselState.Loaded:
+					SyncPartResources(vessel.parts);
+					break;
+				case VesselState.Unloaded:
+					SyncPartResources(protoVessel.protoPartSnapshots);
+					break;
+				case VesselState.Editor:
+					SyncPartResources(shipConstruct.parts);
+					break;
+			}
+
+			// apply all deferred requests and synchronize to vessel
+			foreach (IResource resource in resources.Values)
+			{
+				if (resource.Capacity == 0.0)
+					continue;
+
+				if (resource.ExecuteAndSyncToParts(elapsed_s) && vessel != null && vessel.loaded)
+					CoherencyWarning(vessel, resource.Name);
+
+				APIResources[resource.Name] = resource.Amount;
+			}
+
+		}
+
+		private void SyncPartResources(List<Part> parts)
+		{
+			foreach (Part p in parts)
+			{
+				foreach (PartResource r in p.Resources)
+				{
+#if DEBUG_RESOURCES
+					// Force view all resource in Debug Mode
+					r.isVisible = true;
+#endif
+
+					if (!r.flowState)
+						continue;
+
+					((LoadedResourceWrapper)resourceWrappers[r.resourceName]).AddPartresources(r);
+				}
+			}
+		}
+
+		private void SyncPartResources(List<ProtoPartSnapshot> protoParts)
+		{
+			foreach (ProtoPartSnapshot p in protoParts)
+			{
+				foreach (ProtoPartResourceSnapshot r in p.resources)
+				{
+					if (!r.flowState)
+						continue;
+
+					((ProtoResourceWrapper)resourceWrappers[r.resourceName]).AddPartresources(r);
+				}
+			}
+		}
+
 		private void CoherencyWarning(Vessel v, string resourceName)
 		{
+			if (v == null)
+				return;
+
 			Message.Post
 			(
 				Severity.warning,
@@ -203,58 +325,6 @@ namespace KERBALISM
 				)
 			);
 			Lib.StopWarp(5);
-		}
-
-		// Note : One of the reason this is done here and not inside each IResource is because
-		// PartResourceList (type of Part.Resources) is a dictionary under the hood. This cause
-		// each loop operation over it to be quite slow and memory intensive, so we avoid repeating
-		// that Part > PartResource loop for every resource by doing it once from the vessel level object.
-		private void SyncVesselPartResources(Vessel v)
-		{
-			if (v.loaded)
-			{
-				foreach (Part p in v.Parts)
-				{
-					foreach (PartResource r in p.Resources)
-					{
-						resources[r.resourceName].partResources.Add(new PartResourceWrapper(r));
-#if DEBUG_RESOURCES
-						// Force view all resource in Debug Mode
-						r.isVisible = true;
-#endif
-					}
-				}
-			}
-			else
-			{
-				SyncProtoVesselPartResources(v.protoVessel);
-			}
-		}
-
-		private void SyncProtoVesselPartResources(ProtoVessel pv)
-		{
-			foreach (ProtoPartSnapshot p in pv.protoPartSnapshots)
-			{
-				foreach (ProtoPartResourceSnapshot r in p.resources)
-				{
-					resources[r.resourceName].partResources.Add(new ProtoPartResourceWrapper(r));
-				}
-			}
-		}
-
-		private void SyncShipConstructPartResources(ShipConstruct ship)
-		{
-			foreach (Part p in ship.Parts)
-			{
-				foreach (PartResource r in p.Resources)
-				{
-					resources[r.resourceName].partResources.Add(new PartResourceWrapper(r));
-#if DEBUG_RESOURCES
-					// Force view all resource in Debug Mode
-					r.isVisible = true;
-#endif
-				}
-			}
 		}
 	}
 }

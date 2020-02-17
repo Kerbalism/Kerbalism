@@ -26,7 +26,7 @@ namespace KERBALISM
 		public bool isConsuming;                            // Module is consuming energy
 		public bool hasEnergyChanged;                       // Energy state has changed since last update?
 		public bool hasFixedEnergyChanged;                  // Energy state has changed since last fixed update?
-		public IResource resources;
+		public IResource ecRes;
 
 		public PartModule module;                           // component cache, the Reliability.cs is one to many, instead the Deploy will be one to one
 		public KeyValuePair<bool, double> modReturn;        // Return from DeviceEC
@@ -40,8 +40,8 @@ namespace KERBALISM
 			module = part.FindModulesImplementing<PartModule>().FindLast(k => k.moduleName == type);
 
 			// get energy from cache
-			resources = ResourceCache.GetResource(vessel, "ElectricCharge");
-			hasEnergy = resources.Amount > double.Epsilon;
+			ecRes = vessel.KerbalismData().ResHandler.ElectricCharge;
+			hasEnergy = ecRes.Amount > double.Epsilon;
 
 			// Force the update to run at least once
 			lastBrokenState = !isBroken;
@@ -60,8 +60,7 @@ namespace KERBALISM
 			if (!Lib.IsFlight() || module == null) return;
 
 			// get energy from cache
-			resources = ResourceCache.GetResource(vessel, "ElectricCharge");
-			hasEnergy = resources.Amount > double.Epsilon;
+			hasEnergy = ecRes.Amount > double.Epsilon;
 
 			// Update UI only if hasEnergy has changed or if is broken state has changed
 			if (isBroken)
@@ -117,7 +116,7 @@ namespace KERBALISM
 			}
 
 			// If isConsuming
-			if (isConsuming && resources != null) resources.Consume(actualCost * Kerbalism.elapsed_s, ResourceBroker.Deploy);
+			if (isConsuming && ecRes != null) ecRes.Consume(actualCost * Kerbalism.elapsed_s, ResourceBroker.Deploy);
 		}
 
 		public virtual bool GetIsConsuming()
