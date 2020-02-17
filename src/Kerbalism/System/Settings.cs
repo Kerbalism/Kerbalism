@@ -130,7 +130,7 @@ namespace KERBALISM
 
 		internal static List<string> RequiredMods()
 		{
-			var result = Lib.Tokenize(ModsRequired.ToLower(), ',');
+			var result = Lib.Tokenize(ModsRequired, ',');
 			return result;
 		}
 
