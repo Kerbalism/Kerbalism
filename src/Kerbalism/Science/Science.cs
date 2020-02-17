@@ -170,8 +170,8 @@ namespace KERBALISM
 
 			// consume EC cost for transmission (ec_idle is consumed above)
 			double transmittedCapacity = totalTransmitCapacity - remainingTransmitCapacity;
-			double transmissionCost = (vd.Connection.ec - vd.Connection.ec_idle) * (transmittedCapacity / vd.Connection.rate);
-			ec.Consume(transmissionCost, ResourceBroker.CommsXmit);
+			double transmissionCost = (vd.Connection.ec - vd.Connection.ec_idle) * (transmittedCapacity / (vd.Connection.rate * elapsed_s));
+			ec.Consume(transmissionCost * elapsed_s, ResourceBroker.CommsXmit);
 		}
 
 		private static void GetFilesToTransmit(Vessel v, VesselData vd)
