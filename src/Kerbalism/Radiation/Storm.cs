@@ -95,7 +95,7 @@ namespace KERBALISM
                     case 2:
                         if (bd.msg_storm < 2)
                         {
-							Message.Post(Severity.danger, Local.Storm_msg1.Format("<b>"+ body.name + "</b>"),//"The coronal mass ejection hit <<1>> system  //Lib.BuildString( )
+							Message.Post(Severity.danger, Local.Storm_msg1.Format("<b>" + body.name + "</b>"),//"The coronal mass ejection hit <<1>> system  //Lib.BuildString( )
 								Lib.BuildString(Local.Storm_msg1text, " ", Lib.HumanReadableDuration(bd.displayed_duration)));//"Storm duration:"
                         }
                         break;
@@ -112,7 +112,7 @@ namespace KERBALISM
                     case 0:
                         if (bd.msg_storm == 2)
                         {
-                            Message.Post(Severity.relax, Local.Storm_msg3.Format("<b>"+ body.name+ "</b>"));//Lib.BuildString("The solar storm at <<1>> system is over")
+                            Message.Post(Severity.relax, Local.Storm_msg3.Format("<b>" + body.name + "</b>"));//Lib.BuildString("The solar storm at <<1>> system is over")
                         }
                         break;
                 }
@@ -151,7 +151,7 @@ namespace KERBALISM
                     case 2: // storm in progress
                         if (bd.msg_storm < 2)
                         {
-							Message.Post(Severity.danger, Local.Storm_msg5.Format("<b>", v.vesselName, "</b>"),//Lib.BuildString("The coronal mass ejection hit <<1>>)
+							Message.Post(Severity.danger, Local.Storm_msg5.Format("<b>" + v.vesselName + "</b>"),//Lib.BuildString("The coronal mass ejection hit <<1>>)
 							  Lib.BuildString(Local.Storm_msg1text, " ", Lib.HumanReadableDuration(bd.displayed_duration)));//"Storm duration:"
                         }
                         break;
