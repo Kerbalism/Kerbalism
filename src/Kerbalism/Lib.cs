@@ -769,10 +769,10 @@ namespace KERBALISM
 
 		#region HUMAN READABLE
 
-		public static string InlineSpriteScience => "<sprite=\"CurrencySpriteAsset\" name=\"Science\" color=#6DCFF6>";
-		public static string InlineSpriteFunds => "<sprite=\"CurrencySpriteAsset\" name=\"Funds\" color=#B4D455>";
-		public static string InlineSpriteReputation => "<sprite=\"CurrencySpriteAsset\" name=\"Reputation\" color=#E0D503>";
-		public static string InlineSpriteFlask => "<sprite=\"CurrencySpriteAsset\" name=\"Flask\" color=#CE5DAE>";
+		public const string InlineSpriteScience = "<sprite=\"CurrencySpriteAsset\" name=\"Science\" color=#6DCFF6>";
+		public const string InlineSpriteFunds = "<sprite=\"CurrencySpriteAsset\" name=\"Funds\" color=#B4D455>";
+		public const string InlineSpriteReputation = "<sprite=\"CurrencySpriteAsset\" name=\"Reputation\" color=#E0D503>";
+		public const string InlineSpriteFlask = "<sprite=\"CurrencySpriteAsset\" name=\"Flask\" color=#CE5DAE>";
 
 		///<summary> Pretty-print a resource rate (rate is per second). Return an absolute value if a negative one is provided</summary>
 		public static string HumanReadableRate(double rate, string precision = "F3")
@@ -794,40 +794,50 @@ namespace KERBALISM
 		{
 			if (!fullprecison)
 			{
-				if (d <= double.Epsilon) return Local.Generic_NONE;//"none"
 				if (double.IsInfinity(d) || double.IsNaN(d)) return Local.Generic_PERPETUAL;//"perpetual"
+				d = Math.Round(d);
+				if (d <= 0.0) return Local.Generic_NONE;//"none"
 
-				long hours_in_day = (long)HoursInDay;
-				long days_in_year = (long)DaysInYear;
-
-				long duration_seconds = (long)d;
-
-				long seconds = duration_seconds % 60;
-				long minutes = (duration_seconds / 60) % 60;
-				long hours = (duration_seconds / 3600) % hours_in_day;
-				long days = (duration_seconds / (3600 * hours_in_day)) % days_in_year;
-				long years = duration_seconds / (3600 * hours_in_day * days_in_year);
-
+				ulong hours_in_day = (ulong)HoursInDay;
+				ulong days_in_year = (ulong)DaysInYear;
+				ulong duration_seconds = (ulong)d;
 
 				// seconds
-				if (d < 60.0) return BuildString(seconds.ToString("F0"), "s");
-
+				if (d < 60.0)
+				{
+					ulong seconds = duration_seconds % 60ul;
+					return BuildString(seconds.ToString(), "s");
+				}
 				// minutes + seconds
-				if (d < 3600.0) return BuildString(minutes.ToString("F0"), "m ", seconds.ToString("F0"), "s");
-
+				if (d < 3600.0)
+				{
+					ulong seconds = duration_seconds % 60ul;
+					ulong minutes = (duration_seconds / 60ul) % 60ul;
+					return BuildString(minutes.ToString(), "m ", seconds.ToString("00"), "s");
+				}
 				// hours + minutes
-				if (d < 3600.0 * hours_in_day) return BuildString(hours.ToString("F0"), "h ", minutes.ToString("F0"), "m");
-
+				if (d < 3600.0 * HoursInDay)
+				{
+					ulong minutes = (duration_seconds / 60ul) % 60ul;
+					ulong hours = (duration_seconds / 3600ul) % hours_in_day;
+					return BuildString(hours.ToString(), "h ", minutes.ToString("00"), "m");
+				}
+				ulong days = (duration_seconds / (3600ul * hours_in_day)) % days_in_year;
 				// days + hours
-				if (d < 3600.0 * hours_in_day * days_in_year) return BuildString(days.ToString("F0"), "d ", hours.ToString("F0"), "h");
-
+				if (d < 3600.0 * HoursInDay * DaysInYear)
+				{
+					ulong hours = (duration_seconds / 3600ul) % hours_in_day;
+					return BuildString(days.ToString(), "d ", hours.ToString(), "h");
+				}
 				// years + days
-				return BuildString(years.ToString("F0"), "y ", days.ToString("F0"), "d");
+				ulong years = duration_seconds / (3600ul * hours_in_day * days_in_year);
+				return BuildString(years.ToString(), "y ", days.ToString(), "d");
 			}
 			else
 			{
-				if (d <= double.Epsilon) return string.Empty;
 				if (double.IsInfinity(d) || double.IsNaN(d)) return Local.Generic_NEVER;//"never"
+				d = Math.Round(d);
+				if (d <= 0.0) return Local.Generic_NONE;//"none"
 
 				double hours_in_day = HoursInDay;
 				double days_in_year = DaysInYear;
@@ -989,31 +999,50 @@ namespace KERBALISM
 		{
 			return (Math.Abs(value) <= 0 ? Local.Generic_NONE : BuildString(value.ToString("F0"), append));//"none"
 		}
+		// Note : config / code base unit for data rate / size is in megabyte (1000^2 bytes)
+		// For UI purposes we use the decimal units (B/kB/MB...), not the binary (1024^2 bytes) units
+		public const double BPerMB = 1000.0 * 1000.0;
+		public const double kBPerMB = 1000.0;
+		public const double GBPerMB = 1.0 / 1000.0;
+		public const double TBPerMB = 1.0 / (1000.0 * 1000.0);
+
+		public const double MBPerBTenth = 1.0 / (1000.0 * 1000.0 * 10.0);
+		public const double MBPerkB = 1.0 / 1000.0;
+		public const double MBPerGB = 1000.0;
+		public const double MBPerTB = 1000.0 * 1000.0;
 
 		///<summary> Format data size, the size parameter is in MB (megabytes) </summary>
 		public static string HumanReadableDataSize(double size)
 		{
-			var bitsPerMB = 1024.0 * 1024.0 * 8.0;
+			if (size < MBPerBTenth)  // min size is 0.1 byte
+				return Local.Generic_NONE;//"none"
+			if (size < MBPerkB)
+				return (size * BPerMB).ToString("0.0 B");
+			if (size < 1.0)
+				return (size * kBPerMB).ToString("0.00 kB");
+			if (size < MBPerGB)
+				return size.ToString("0.00 MB");
+			if (size < MBPerTB)
+				return (size * GBPerMB).ToString("0.00 GB");
 
-			size *= bitsPerMB; //< bits
-			if (size < 0.01) return Local.Generic_NONE;//"none"
-			if (size < 1024.0) return BuildString(size.ToString("F0"), " b");
-			size /= 1024.0;
-			if (size < 1024.0) return BuildString(size.ToString("F2"), " kb");
-			size /= 1024.0;
-			if (size < 1024.0) return BuildString(size.ToString("F2"), " Mb");
-			size /= 1024.0;
-			if (size < 1024.0) return BuildString(size.ToString("F2"), " Gb");
-			size /= 1024.0;
-			return BuildString(size.ToString("F2"), " Tb");
+			return (size * TBPerMB).ToString("0.00 TB");
 		}
 
-		///<summary> Format data rate, the rate parameter is in Mb/s </summary>
+		///<summary> Format data rate, the rate parameter is in MB/s </summary>
 		public static string HumanReadableDataRate(double rate)
 		{
-			// say "none" for rates < 0.5 bits per second
-			var bitsPerMB = 1024.0 * 1024.0 * 8.0;
-			return rate < 1/bitsPerMB/2.0 ? Local.Generic_NONE : Lib.BuildString(HumanReadableDataSize(rate), "/s");//"none"
+			if (rate < MBPerBTenth)  // min rate is 0.1 byte/s
+				return Local.Generic_NONE;//"none"
+			if (rate < MBPerkB)
+				return (rate * BPerMB).ToString("0.0 B/s");
+			if (rate < 1.0)
+				return (rate * kBPerMB).ToString("0.00 kB/s");
+			if (rate < MBPerGB)
+				return rate.ToString("0.00 MB/s");
+			if (rate < MBPerTB)
+				return (rate * GBPerMB).ToString("0.00 GB/s");
+
+			return (rate * TBPerMB).ToString("0.00 TB/s");
 		}
 
 		public static string HumanReadableSampleSize(double size)
