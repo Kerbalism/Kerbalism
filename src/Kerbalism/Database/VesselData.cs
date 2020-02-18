@@ -686,6 +686,7 @@ namespace KERBALISM
 			cfg_script = PreferencesMessages.Instance.script;
 			cfg_highlights = PreferencesReliability.Instance.highlights;
 			cfg_showlink = true;
+			cfg_show = true;
 			deviceTransmit = true;
 
 			stormData = new StormData(null);
