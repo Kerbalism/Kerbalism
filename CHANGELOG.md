@@ -9,7 +9,6 @@
 * Mesh/model based habitat volume/surface evaluation : improve accuracy for non explicitely supported parts (Got)
 * Adjusted existing habitat volume/surface configurations (stock, SSPX...) (Got)
 * Tweaked engine burn failure function to be more predictable (SirMortimer)
-* Always indicate data sizes + rates in bits, not bytes to avoid confusion (SirMortimer)
 * German localization (Woeller) + other localization fixes (TinyGrox)
 * Add CommNetAntennasInfo to incompatible mods warning (Got)
 * Feature #587 : Included experiment system : allow for tiered experiments (RP1 request). See wiki for documentation : https://github.com/Kerbalism/Kerbalism/wiki/TechGuide-~-Supporting-Science-Mods#includeexperiment (Got)
