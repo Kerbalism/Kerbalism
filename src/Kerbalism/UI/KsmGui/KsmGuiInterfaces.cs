@@ -7,12 +7,12 @@ namespace KERBALISM.KsmGui
 {
 	public interface IKsmGuiText
 	{
-		void SetText(string text);
+		string Text { get; set; }
 	}
 
 	public interface IKsmGuiInteractable
 	{
-		void SetInteractable(bool interactable);
+		bool Interactable { get; set; }
 	}
 
 	public interface IKsmGuiButton

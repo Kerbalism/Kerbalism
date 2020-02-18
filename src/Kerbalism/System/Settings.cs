@@ -18,7 +18,7 @@ namespace KERBALISM
 	public static class Settings
 	{
 		private static string MODS_INCOMPATIBLE = "TacLifeSupport,Snacks,BackgroundResources,BackgroundProcessing,KolonyTools,USILifeSupport";
-		private static string MODS_WARNING = "RemoteTech,ResearchBodies";
+		private static string MODS_WARNING = "RemoteTech,ResearchBodies,CommNetAntennasInfo";
 		private static string MODS_SCIENCE = "KEI,[x] Science!";
 
 		public static void Parse()
@@ -103,6 +103,9 @@ namespace KERBALISM
 			CheckForCRP = Lib.ConfigValue(cfg, "CheckForCRP", true);
 
 			UseSamplingSunFactor = Lib.ConfigValue(cfg, "UseSamplingSunFactor", false);
+
+			// debug / logging
+			VolumeAndSurfaceLogging = Lib.ConfigValue(cfg, "VolumeAndSurfaceLogging", false);
 
 			loaded = true;
 		}
@@ -201,6 +204,9 @@ namespace KERBALISM
 		public static bool CheckForCRP;
 
 		public static bool UseSamplingSunFactor;
+
+		// debug / logging
+		public static bool VolumeAndSurfaceLogging;
 
 		public static bool loaded { get; private set; } = false;
 	}

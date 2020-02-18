@@ -27,9 +27,10 @@ namespace KERBALISM.KsmGui
 			SetButtonOnClick(onClick);
 		}
 
-		public void SetInteractable(bool interactable)
+		public bool Interactable
 		{
-			ButtonComponent.interactable = interactable;
+			get => ButtonComponent.interactable;
+			set => ButtonComponent.interactable = value;
 		}
 
 		public void SetButtonOnClick(UnityAction action)

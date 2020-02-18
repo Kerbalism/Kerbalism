@@ -1,119 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using KSP.Localization;
 using System.Text;
-using System.Reflection;
-
-
-/*
- *
-EXPERIMENT_DEFINITION:NEEDS[FeatureScience]
-{
-	id = kerbalism_FLOAT
-	title = FLOAT
-	baseValue = 75
-	scienceCap = 75
-	dataScale = 1
-
-	requireAtmosphere = False
-	situationMask = 16
-	biomeMask = 0
-
-	KERBALISM_EXPERIMENT
-	{
-		Description = 
-
-		// file size in Mb. For samples, 1 slot = 1024Mb. Override stock "dataScale".
-		DataSize = 1500				
-
-		// maximum science points that can be gained. Override stock "scienceCap"
-		TotalValue = 75				
-
-		// if true, science points are credited only when the full DataSize is retrieved. If false, science points are credited continuously.
-		CreditWhenComplete = false	
-
-		// science value of the first complete file/sample retrieved. If not defined, will be set equal to TotalValue. Override stock "baseValue"
-		FirstRunValue = 50
-
-		// how many times DataSize needs to be collected to get the TotalValue.
-		// If not defined, default is TotalScienceValue / FirstScienceValue, rounded up.
-		// The value of each run after the first one is :
-		// MIN(FirstRunValue ; (ScienceValueLeft * SQRT(TimesCollectable - TimesCollected)) / (TimesCollectable - TimesCollected))
-		// In this example : run 1 = 50 pts, run 2 = 17.7 pts, run 3 = 7.3 pts
-		TimesCollectable = 3		
-
-		// sample mass in tons. if undefined or 0, the experiment produce a file
-		SampleMass = 0.0
-
-		// body restrictions, multiple lines allowed, can use BodyAllowed / BodyNotAllowed with either a body name or the following keywords :
-		// Atmospheric, NonAtmospheric, Gaseous, Solid, Oceanic, HomeBody, HomeBodyAndMoons, Planets, Moons, Suns
-		BodyAllowed = HomeBodyAndMoons	
-										
-		// Situation values will override the stock situationMask/biomeMask values
-		Situation = FlyingLow@Biomes 
-		Situation = FlyingHigh
-	}
-}
-
-EXPERIMENT_DEFINITION
-{
-	id = kerbalism_FLOAT
-	title = FLOAT
-	baseValue = 75
-	scienceCap = 75
-	dataScale = 1
-
-	KERBALISM_EXPERIMENT
-	{		
-		// sample mass in tons. if undefined or 0, the experiment produce a file
-		SampleMass = 0.0
-
-		// Body restrictions, multiple lines allowed (just don't use confictiong combinations).
-		// Can be "BodyAllowed = X" / "BodyNotAllowed = X" with either a body name or the following keywords :
-		// Atmospheric, NonAtmospheric, Gaseous, Solid, Oceanic, HomeBody, HomeBodyAndMoons, Planets, Moons, Suns
-		// Example : all bodies that have an atmosphere excepted Duna and all suns (suns are atmospheric bodies)
-		BodyAllowed = Atmospheric
-		BodyNotAllowed = Suns
-		BodyNotAllowed = Duna
-
-		// Optional : virtual biomes are hardcoded special biomes that will generate individual subjects
-		// Virtual biomes are enabled per situation and can't be combined with normal body biomes
-		// When using multiple virtual biomes that may be available at the same time, the priority is hardcoded (see list)
-		// Note that virtual biomes experiments are incompatible with the contract system, you may get contracts that are not doable.
-		// Multiple lines allowed, format is `VirtualBiome = VirtualBiomeKeyword`. Valid keywords are :
-		// - NoBiome : create a "biome-agostic" situation available when no virtual biome is available.
-		// - NorthernHemisphere : available when on/over the body north hemisphere. Lowest priority. Implemented DMOS contracts compatibility.
-		// - SouthernHemisphere : available when on/over the body south hemisphere. Lowest priority. Implemented DMOS contracts compatibility.
-		// - InnerBelt : available when inside the body inner radiation belt
-		// - OuterBelt : available when inside the body outer radiation belt
-		// - Magnetosphere : available when inside the body magnetosphere. Lower priority than the belt biomes.
-		// - Interstellar : available when in a sun SOI and outside the heliopause
-		// - Reentry : available when descending rapidly in atmosphere over mach 5 while apoapsis is outside the atmosphere. 
-		// Example : these 4 subjects will be available for every situation defined with `@VirtualBiomes`
-		VirtualBiome = NoBiome
-		VirtualBiome = InnerBelt
-		VirtualBiome = OuterBelt
-		VirtualBiome = Magnetosphere
-										
-		// Optional : situation values will create-or-replace the stock situationMask/biomeMask values.
-		// Multiple lines allowed, format is `Situation = SituationKeyword`, and append `@Biomes` or `@VirtualBiomes` to allow biomes or virtual biomes
-		// Valid situation keyword :
-		// - SrfLanded, SrfSplashed, FlyingLow, FlyingHigh, InSpaceLow, InSpaceHigh
-		// - Surface : valid when landed or splashed, uses the SrfLanded science value. Incompatible with SrfLanded/SrfSplashed.
-		// - Flying : valid when in atmosphere, uses the FlyingHigh science value. Incompatible with FlyingLow/FlyingHigh.
-		// - Space : valid when in space, uses the InSpaceLow science value. Incompatible with InSpaceLow/InSpaceHigh.
-		// - BodyGlobal : always valid, uses the InSpaceLow science value. Incompatible with all other situations.
-		// Example : normal body biomes for the landed+splashed situation and flying low, no biomes for flying high, and the virtual biomes for the space low+high situation
-		Situation = Surface@Biomes
-		Situation = FlyingLow@Biomes 
-		Situation = FlyingHigh
-		Situation = Space@VirtualBiomes
-	}
-}
-
-
-*/
 
 namespace KERBALISM
 {
@@ -170,13 +58,19 @@ namespace KERBALISM
 		/// <summary> Cache the information returned by GetInfo() in the first found module using that experiment</summary>
 		public string ModuleInfo { get; private set; } = string.Empty;
 
+		/// <summary> If true, subject completion will enable the stock resource map for the corresponding body</summary>
 		public bool UnlockResourceSurvey { get; private set; }
 
 		public bool IsROC { get; private set; }
 
 		public bool HasDBSubjects { get; private set; }
 
-		public bool IgnoreBodyRestrictions { get; private set; } 
+		public bool IgnoreBodyRestrictions { get; private set; }
+
+		/// <summary> List of experiments that will be collected automatically alongside this one</summary>
+		public List<ExperimentInfo> IncludedExperiments { get; private set; } = new List<ExperimentInfo>();
+
+		private string[] includedExperimentsId;
 
 		public ExperimentInfo(ScienceExperiment stockDef, ConfigNode expInfoNode)
 		{
@@ -207,6 +101,11 @@ namespace KERBALISM
 			else
 				DataSize = this.stockDef.scienceCap * this.stockDef.dataScale;
 #endif
+
+			// load the included experiments ids in a string array, we will populate the list after 
+			// all ExperimentInfos are created. (can't do it here as they may not exist yet)
+			includedExperimentsId = expInfoNode.GetValues("IncludeExperiment");
+
 			UnlockResourceSurvey = Lib.ConfigValue(expInfoNode, "UnlockResourceSurvey", false);
 			SampleMass = Lib.ConfigValue(expInfoNode, "SampleMass", 0.0);
 			IsSample = SampleMass > 0.0;
@@ -225,25 +124,33 @@ namespace KERBALISM
 				MassPerMB = 0.0;
 			}
 
-			if (IsROC)
+			// Patch stock science def restrictions as BodyAllowed/BodyNotAllowed restrictions
+			if (!(expInfoNode.HasValue("BodyAllowed") || expInfoNode.HasValue("BodyNotAllowed")))
 			{
-				// Parse the ROC definition name to find which body it's available on
-				// This rely on the ROC definitions having the body name in the ExperimentId
-				ConfigNode ROCBodyNode = new ConfigNode();
-				foreach (CelestialBody body in FlightGlobals.Bodies)
+				if (IsROC)
 				{
-					if (ExperimentId.IndexOf(body.name, StringComparison.OrdinalIgnoreCase) != -1)
+					// Parse the ROC definition name to find which body it's available on
+					// This rely on the ROC definitions having the body name in the ExperimentId
+					foreach (CelestialBody body in FlightGlobals.Bodies)
 					{
-						ROCBodyNode.AddValue("BodyAllowed", body.name);
-						break;
+						if (ExperimentId.IndexOf(body.name, StringComparison.OrdinalIgnoreCase) != -1)
+						{
+							expInfoNode.AddValue("BodyAllowed", body.name);
+							break;
+						}
 					}
 				}
-				ExpBodyConditions = new BodyConditions(ROCBodyNode);
+
+				// parse the stock atmosphere restrictions into our own
+				if (stockDef.requireAtmosphere)
+					expInfoNode.AddValue("BodyAllowed", "Atmospheric");
+#if !KSP15_16
+				else if (stockDef.requireNoAtmosphere)
+					expInfoNode.AddValue("BodyNotAllowed", "Atmospheric");
+#endif
 			}
-			else
-			{
-				ExpBodyConditions = new BodyConditions(expInfoNode);
-			}
+
+			ExpBodyConditions = new BodyConditions(expInfoNode);
 
 			foreach (string virtualBiomeStr in expInfoNode.GetValues("VirtualBiome"))
 			{
@@ -325,17 +232,67 @@ namespace KERBALISM
 			VirtualBiomeMask = virtualBiomeMask;
 			stockDef.situationMask = stockSituationMask;
 			stockDef.biomeMask = stockBiomeMask;
+		}
 
-			// patch experiment prefabs and get module infos.
-			// must be done at the end of the ctor so everything in "this" is properly setup
-			SetupPrefabs();
+		public void ParseIncludedExperiments()
+		{
+			foreach (string expId in includedExperimentsId)
+			{
+				ExperimentInfo includedInfo = ScienceDB.GetExperimentInfo(expId);
+				if (includedInfo == null)
+				{
+					Lib.Log($"Experiment `{ExperimentId}` define a IncludedExperiment `{expId}`, but that experiment doesn't exist", Lib.LogLevel.Warning);
+					continue;
+				}
+					
+				// early prevent duplicated entries
+				if (includedInfo.ExperimentId == ExperimentId || IncludedExperiments.Contains(includedInfo))
+					continue;
+
+				IncludedExperiments.Add(includedInfo);
+			}
+		}
+
+		public static void CheckIncludedExperimentsRecursion(ExperimentInfo expInfoToCheck, List<ExperimentInfo> chainedExperiments)
+		{
+			List<ExperimentInfo> loopedExperiments = new List<ExperimentInfo>();
+			foreach (ExperimentInfo includedExp in expInfoToCheck.IncludedExperiments)
+			{
+				if (chainedExperiments.Contains(includedExp))
+				{
+					loopedExperiments.Add(includedExp);
+				}
+
+				chainedExperiments.Add(includedExp);
+			}
+
+			foreach (ExperimentInfo loopedExperiment in loopedExperiments)
+			{
+				expInfoToCheck.IncludedExperiments.Remove(loopedExperiment);
+				Lib.Log($"IncludedExperiment `{loopedExperiment.ExperimentId}` in experiment `{expInfoToCheck.ExperimentId}` would result in an infinite loop in the chain and has been removed", Lib.LogLevel.Warning);
+			}
+
+			foreach (ExperimentInfo includedExp in expInfoToCheck.IncludedExperiments)
+			{
+				CheckIncludedExperimentsRecursion(includedExp, chainedExperiments);
+			}
+		}
+
+		public static void GetIncludedExperimentTitles(ExperimentInfo expinfo, List<string> includedExperiments)
+		{
+			foreach (ExperimentInfo includedExpinfo in expinfo.IncludedExperiments)
+			{
+				includedExperiments.Add(includedExpinfo.Title);
+				GetIncludedExperimentTitles(includedExpinfo, includedExperiments);
+			}
+			includedExperiments.Sort((x, y) => x.CompareTo(y));
 		}
 
 		/// <summary>
 		/// parts that have experiments can't get their module info (what is shown in the VAB tooltip) correctly setup
 		/// because the ExperimentInfo database isn't available at loading time, so we recompile their info manually.
 		/// </summary>
-		public void SetupPrefabs()
+		public void CompileModuleInfos()
 		{
 			if (PartLoader.LoadedPartsList == null)
 			{

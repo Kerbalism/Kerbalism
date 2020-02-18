@@ -13,6 +13,8 @@ namespace KERBALISM
 
 		public Situation Situation { get; protected set; }
 
+		public List<SubjectData> IncludedSubjects { get; protected set; }
+
 		/// <summary> [SERIALIZED] percentage [0;x] of science retrieved, can be > 1 if subject has been retrieved more than once</summary>
 		public virtual double PercentRetrieved { get; protected set; }
 
@@ -27,7 +29,7 @@ namespace KERBALISM
 		public virtual string Id { get; protected set; }
 
 		/// <summary> stock subject identifier ("experimentId@situation") </summary>
-		public virtual string StockSubjectId => Lib.BuildString(ExpInfo.ExperimentId, "@", Situation.GetStockIdForExperiment(ExpInfo));
+		public virtual string StockSubjectId { get; protected set; }
 
 		/// <summary> full description of the subject </summary>
 		public virtual string FullTitle => Lib.BuildString(ExpInfo.Title, " (", SituationTitle, ")");
@@ -83,6 +85,8 @@ namespace KERBALISM
 			ExpInfo = expInfo;
 			Situation = situation;
 			Id = Lib.BuildString(ExpInfo.ExperimentId, "@", Situation.Id.ToString());
+			StockSubjectId = Lib.BuildString(ExpInfo.ExperimentId, "@", Situation.GetStockIdForExperiment(ExpInfo));
+			IncludedSubjects = new List<SubjectData>();
 		}
 
 		public void CheckRnD()
@@ -217,7 +221,6 @@ namespace KERBALISM
 			if (newTimesCompleted > TimesCompleted)
 			{
 				TimesCompleted = newTimesCompleted;
-				OnSubjectCompleted();
 				return TimesCompleted;
 			}
 			return -1;
@@ -228,38 +231,111 @@ namespace KERBALISM
 			ScienceDB.persistedSubjects.Add(this);
 		}
 
-		public void AddScienceToRnDSubject(double scienceValue)
+		/// <summary>
+		/// Add science points to the RnD stock subject (create it if necessary), do it recursively for any included subject, then credit the total science gained.
+		/// </summary>
+		/// <param name="scienceValue">science point amount</param>
+		/// <param name="showMessage">if true, the "subject completed" message will be shown on screen if scienceValue is enough to complete the subject</param>
+		/// <param name="fromVessel">passed to the OnScienceRecieved gameevent on subject completion. Can be null if not available</param>
+		/// <param name="file">if not null, the "subject completed" completed message will use the result text stored in the file. If null, it will be a generic message</param>
+		/// <returns>The amount of science credited, accounting for the subject + included subjects remaining science value</returns>
+		public double RetrieveScience(double scienceValue, bool showMessage = false, ProtoVessel fromVessel = null, File file = null)
 		{
 			if (!ExistsInRnD)
 				CreateSubjectInRnD();
 
+			double scienceRetrieved = Math.Min(ScienceRemainingToRetrieve, scienceValue);
+
+			if (!API.preventScienceCrediting)
+				ScienceDB.uncreditedScience += scienceRetrieved;
+
+			// fire subject completed events
+			int timesCompleted = UpdateSubjectCompletion(scienceValue);
+			if (timesCompleted > 0)
+				OnSubjectCompleted(showMessage, fromVessel, file);
+
 			RnDSubject.science = Math.Min((float)(RnDSubject.science + scienceValue), RnDSubject.scienceCap);
 			RnDSubject.scientificValue = ResearchAndDevelopment.GetSubjectValue(RnDSubject.science, RnDSubject);
+
+			if (API.subjectsReceivedEventEnabled)
+			{
+				bool exists = false;
+				for (int i = 0; i < ScienceDB.subjectsReceivedBuffer.Count; i++)
+				{
+					if (ScienceDB.subjectsReceivedBuffer[i].id == RnDSubject.id)
+					{
+						ScienceDB.subjectsReceivedValueBuffer[i] += scienceRetrieved;
+						exists = true;
+						break;
+					}
+				}
+				if (!exists)
+				{
+					ScienceDB.subjectsReceivedBuffer.Add(RnDSubject);
+					ScienceDB.subjectsReceivedValueBuffer.Add(scienceRetrieved);
+				}
+			}
+
+			foreach (SubjectData overridenSubject in IncludedSubjects)
+				scienceRetrieved += overridenSubject.RetrieveScience(scienceValue, showMessage && overridenSubject.TimesCompleted == 0, fromVessel);
+
+			return scienceRetrieved;
 		}
 
-		public void OnSubjectCompleted()
+		private void OnSubjectCompleted(bool showMessage = false, ProtoVessel fromVessel = null, File file = null)
 		{
+			// fire science transmission game event. This is used by stock contracts and a few other things.
+			// note : in stock, it is fired with a null protovessel in some cases, so doing it should be safe.
+			if (API.preventScienceCrediting)
+				GameEvents.OnScienceRecieved.Fire(0f, RnDSubject, fromVessel, false);
+			else
+				GameEvents.OnScienceRecieved.Fire(TimesCompleted == 1 ? (float)ScienceMaxValue : 0f, RnDSubject, fromVessel, false);
+
 			if (ExpInfo.UnlockResourceSurvey)
 			{
 				ResourceMap.Instance.UnlockPlanet(Situation.Body.flightGlobalsIndex);
 				Message.Post(Localizer.Format("#autoLOC_259361", Situation.BodyTitle) + "</color>");
 			}
+
+			if (!showMessage)
+				return;
+
+			// notify the player
+			string subjectResultText;
+			if (file == null || string.IsNullOrEmpty(file.resultText))
+			{
+				subjectResultText = Lib.TextVariant(
+					Local.SciencresultText1,//"Our researchers will jump on it right now"
+					Local.SciencresultText2,//"This cause some excitement"
+					Local.SciencresultText3,//"These results are causing a brouhaha in R&D"
+					Local.SciencresultText4,//"Our scientists look very confused"
+					Local.SciencresultText5);//"The scientists won't believe these readings"
+			}
+			else
+			{
+				subjectResultText = file.resultText;
+			}
+			subjectResultText = Lib.WordWrapAtLength(subjectResultText, 70);
+			Message.Post(Lib.BuildString(
+				FullTitle,
+				" ", Local.Scienctransmitted_title, "\n",//transmitted
+				TimesCompleted == 1 ? Lib.HumanReadableScience(ScienceMaxValue, false) : Lib.Color(Local.Nosciencegain, Lib.Kolor.Orange, true)),//"no science gain : we already had this data"
+				subjectResultText);
 		}
 	}
 
 	/// <summary>
 	/// this is meant to handle subjects created by the stock system with the
-	/// ResearchAndDevelopment.GetExperimentSubject overload that take a "sourceUId" string.
-	/// In stock, it is only used by the asteroid samples, and I don't think there is any mod using that.
+	/// ResearchAndDevelopment.GetExperimentSubject overload that take a "sourceUId" string (asteroid samples)
+	/// It will also be used for subjects created by mods that use a custom format we can't interpret.
 	/// </summary>
 	public class UnknownSubjectData : SubjectData
 	{
 		private string extraSituationInfo;
-		private string subjectId;
 
 		public UnknownSubjectData(ExperimentInfo expInfo, Situation situation, string subjectId, ScienceSubject stockSubject = null, string extraSituationInfo = "") : base(expInfo, situation)
 		{
-			this.subjectId = subjectId;
+			StockSubjectId = subjectId;
 			this.extraSituationInfo = extraSituationInfo;
 			ExpInfo = expInfo;
 			Situation = situation;
@@ -270,9 +346,7 @@ namespace KERBALISM
 			PercentRetrieved = ExistsInRnD ? RnDSubject.science / ScienceMaxValue : 0.0;
 		}
 
-		public override string Id => subjectId;
-
-		public override string StockSubjectId => subjectId;
+		public override string Id => StockSubjectId;
 
 		public override string FullTitle =>
 			ExistsInRnD

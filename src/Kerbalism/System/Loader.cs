@@ -75,6 +75,18 @@ namespace KERBALISM
 			HarmonyInstance harmony = HarmonyInstance.Create("Kerbalism");
 			harmony.PatchAll(Assembly.GetExecutingAssembly());
 			var methods = harmony.GetPatchedMethods();
+
+			// register loading callbacks
+			if (HighLogic.LoadedScene == GameScenes.LOADING)
+			{
+				GameEvents.OnPartLoaderLoaded.Add(SaveHabitatData);
+			}
+			
+		}
+
+		void OnDestroy()
+		{
+			GameEvents.OnPartLoaderLoaded.Remove(SaveHabitatData);
 		}
 
 		// inject an MM patch on-the-fly, so that NEEDS[TypeId] can be used in MM patches
@@ -89,6 +101,21 @@ namespace KERBALISM
 			{
 				root.configs.Add(new UrlDir.UrlConfig(root, new ConfigNode(Lib.BuildString("@Kerbalism:FOR[", type, id, "]"))));
 			}
+		}
+
+		void SaveHabitatData()
+		{
+			ConfigNode fakeNode = new ConfigNode();
+
+			foreach (KeyValuePair<string, Lib.PartVolumeAndSurfaceInfo> habInfo in Habitat.habitatDatabase)
+			{
+				ConfigNode node = new ConfigNode(Habitat.habitatDataCacheNodeName);
+				node.AddValue("partName", habInfo.Key.Replace('.', '_'));
+				habInfo.Value.Save(node);
+				fakeNode.AddNode(node);
+			}
+
+			fakeNode.Save(Habitat.HabitatDataCachePath);
 		}
 	}
 

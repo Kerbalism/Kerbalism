@@ -45,6 +45,7 @@ namespace KERBALISM
 		public bool cfg_script;       // enable/disable message: scripts
 		public bool cfg_highlights;   // show/hide malfunction highlights
 		public bool cfg_showlink;     // show/hide link line
+		public bool cfg_show;         // show/hide vessel in monitor
 		public Computer computer;     // store scripts
 		public bool deviceTransmit;   // vessel wide automation : enable/disable data transmission
 
@@ -606,6 +607,7 @@ namespace KERBALISM
 		internal static void OnPartWillDie(Part part)
 		{
 			VesselData vd = part.vessel.KerbalismData();
+			vd.parts[part.flightID].OnPartWillDie();
 			vd.parts.Remove(part.flightID);
 			vd.UpdateOnVesselModified();
 			Lib.LogDebug("Removing dead part, vd.partcount={0}, v.partcount={1} (part '{2}' in vessel '{3}')", Lib.LogLevel.Message, vd.parts.Count, part.vessel.parts.Count, part.partInfo.title, part.vessel.vesselName);
@@ -684,6 +686,7 @@ namespace KERBALISM
 			cfg_script = PreferencesMessages.Instance.script;
 			cfg_highlights = PreferencesReliability.Instance.highlights;
 			cfg_showlink = true;
+			cfg_show = true;
 			deviceTransmit = true;
 
 			stormData = new StormData(null);
@@ -707,6 +710,7 @@ namespace KERBALISM
 			cfg_script = Lib.ConfigValue(node, "cfg_script", PreferencesMessages.Instance.script);
 			cfg_highlights = Lib.ConfigValue(node, "cfg_highlights", PreferencesReliability.Instance.highlights);
 			cfg_showlink = Lib.ConfigValue(node, "cfg_showlink", true);
+			cfg_show = Lib.ConfigValue(node, "cfg_show", true);
 
 			deviceTransmit = Lib.ConfigValue(node, "deviceTransmit", true);
 
@@ -756,6 +760,7 @@ namespace KERBALISM
 			node.AddValue("cfg_script", cfg_script);
 			node.AddValue("cfg_highlights", cfg_highlights);
 			node.AddValue("cfg_showlink", cfg_showlink);
+			node.AddValue("cfg_show", cfg_show);
 
 			node.AddValue("deviceTransmit", deviceTransmit);
 

@@ -29,9 +29,10 @@ namespace KERBALISM.KsmGui
 			TextObject.SetLayoutElement(true, false, textPreferredWidth, -1, -1, 16);
 		}
 
-		public void SetText(string text)
+		public string Text
 		{
-			TextObject.SetText(text);
+			get => TextObject.Text;
+			set => TextObject.Text = value;
 		}
 	}
 }

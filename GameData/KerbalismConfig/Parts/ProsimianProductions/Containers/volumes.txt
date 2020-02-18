@@ -1,0 +1,5 @@
+Volumes at rescaleFactor = 1.0:
+
+Radial storage box : 930,195 liters
+Radial pressure tank : 431,731 liters
+A tank "quarter" in the service module : 119.9 liters

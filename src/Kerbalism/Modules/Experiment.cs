@@ -203,6 +203,9 @@ namespace KERBALISM
 				return;
 			}
 
+			Actions["StartAction"].guiName = Local.Generic_START + ": " + ExpInfo.Title;
+			Actions["StopAction"].guiName = Local.Generic_STOP + ": " + ExpInfo.Title;
+
 			if (Lib.IsFlight())
 			{
 				foreach (var hd in part.FindModulesImplementing<HardDrive>())
@@ -1088,6 +1091,18 @@ namespace KERBALISM
 				if (expInfo.SampleMass > 0.0 && !prefab.sample_collecting)
 					specs.Add(Local.Module_Experiment_Specifics_info6, prefab.sample_amount.ToString("F2"));//"Samples"
 				specs.Add(Local.Module_Experiment_Specifics_info7_sample, Lib.HumanReadableDuration(expSize / prefab.data_rate));//"Duration"
+			}
+
+			if (expInfo.IncludedExperiments.Count > 0)
+			{
+				specs.Add(string.Empty);
+				specs.Add(Lib.Color("Included experiments:", Lib.Kolor.Cyan, true));
+				List<string> includedExpInfos = new List<string>();
+				ExperimentInfo.GetIncludedExperimentTitles(expInfo, includedExpInfos);
+				foreach (string includedExp in includedExpInfos)
+				{
+					specs.Add("• " + includedExp);
+				}
 			}
 
 			List<string> situations = expInfo.AvailableSituations();

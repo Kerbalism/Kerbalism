@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.IO;
 using KSP.Localization;
 using UnityEngine;
 
@@ -12,12 +14,15 @@ namespace KERBALISM
         [KSPField] public string inflate = string.Empty;            // inflate animation, if any
         [KSPField] public bool inflatableUsingRigidWalls = false;   // can shielding be applied to inflatable structure?
         [KSPField] public bool toggle = true;                       // show the enable/disable toggle
+		[KSPField] public double max_pressure = 1.0;                // max. sustainable pressure, in percent of sea level
+																	// for now this won't do anything
 
-        [KSPField] public double max_pressure = 1.0;                // max. sustainable pressure, in percent of sea level
-                                                                    // for now this won't do anything
+		// method to use for calculating volume and surface
+		[KSPField] public Lib.VolumeAndSurfaceMethod volumeAndSurfaceMethod = Lib.VolumeAndSurfaceMethod.Best;
+		[KSPField] public bool substractAttachementNodesSurface = true;
 
-        // persistence
-        [KSPField(isPersistant = true)] public State state = State.enabled;
+		// persistence
+		[KSPField(isPersistant = true)] public State state = State.enabled;
         [KSPField(isPersistant = true)] private double perctDeployed = 0;
 
         // rmb ui status strings
@@ -47,8 +52,99 @@ namespace KERBALISM
         private bool configured = false;       // true if configure method has been executed
 		private float shieldingCost;
 
-        // pseudo-ctor
-        public override void OnStart(StartState state)
+		// volume / surface cache
+		public static Dictionary<string, Lib.PartVolumeAndSurfaceInfo> habitatDatabase;
+		public const string habitatDataCacheNodeName = "KERBALISM_HABITAT_INFO";
+		public static string HabitatDataCachePath => Path.Combine(Lib.KerbalismRootPath, "HabitatData.cache");
+
+		// volume / surface evaluation at prefab compilation
+		public override void OnLoad(ConfigNode node)
+		{
+			// volume/surface calcs are quite slow and memory intensive, so we do them only once on the prefab
+			// then get the prefab values from OnStart. Moreover, we cache the results in the 
+			// Kerbalism\HabitatData.cache file and reuse those cached results on next game launch.
+			if (HighLogic.LoadedScene == GameScenes.LOADING)
+			{
+				if (volume <= 0.0 || surface <= 0.0)
+				{
+					if (habitatDatabase == null)
+					{
+						ConfigNode dbRootNode = ConfigNode.Load(HabitatDataCachePath);
+						ConfigNode[] habInfoNodes = dbRootNode?.GetNodes(habitatDataCacheNodeName);
+						habitatDatabase = new Dictionary<string, Lib.PartVolumeAndSurfaceInfo>();
+
+						if (habInfoNodes != null)
+						{
+							for (int i = 0; i < habInfoNodes.Length; i++)
+							{
+								string partName = habInfoNodes[i].GetValue("partName") ?? string.Empty;
+								if (!string.IsNullOrEmpty(partName) && !habitatDatabase.ContainsKey(partName))
+									habitatDatabase.Add(partName, new Lib.PartVolumeAndSurfaceInfo(habInfoNodes[i]));
+							}
+						}
+					}
+
+					// SSTU specific support copypasted from the old system, not sure how well this works
+					foreach (PartModule pm in part.Modules)
+					{
+						if (pm.moduleName == "SSTUModularPart")
+						{
+							Bounds bb = Lib.ReflectionCall<Bounds>(pm, "getModuleBounds", new Type[] { typeof(string) }, new string[] { "CORE" });
+							if (bb != null)
+							{
+								if (volume <= 0.0) volume = Lib.BoundsVolume(bb) * 0.785398; // assume it's a cylinder
+								if (surface <= 0.0) surface = Lib.BoundsSurface(bb) * 0.95493; // assume it's a cylinder
+							}
+							return;
+						}
+					}
+
+					string configPartName = part.name.Replace('.', '_');
+					Lib.PartVolumeAndSurfaceInfo partInfo;
+					if (!habitatDatabase.TryGetValue(configPartName, out partInfo))
+					{
+						// Find deploy/retract animations, either here on in the gravityring module
+						// then set the part to the deployed state before doing the volume/surface calcs
+						// if part has Gravity Ring, find it.
+						gravityRing = part.FindModuleImplementing<GravityRing>();
+						hasGravityRing = gravityRing != null;
+
+						// create animators and set the model to the deployed state
+						if (hasGravityRing)
+						{
+							gravityRing.deploy_anim = new Animator(part, gravityRing.deploy);
+							gravityRing.deploy_anim.reversed = gravityRing.animBackwards;
+
+							if (gravityRing.deploy_anim.IsDefined)
+								gravityRing.deploy_anim.Still(1.0);
+						}
+						else
+						{
+							inflate_anim = new Animator(part, inflate);
+							inflate_anim.reversed = animBackwards;
+
+							if (inflate_anim.IsDefined)
+								inflate_anim.Still(1.0);
+						}
+
+						// get surface and volume
+						partInfo = Lib.GetPartVolumeAndSurface(part, Settings.VolumeAndSurfaceLogging);
+
+						habitatDatabase.Add(configPartName, partInfo);
+					}
+
+					partInfo.GetUsingMethod(
+						volumeAndSurfaceMethod != Lib.VolumeAndSurfaceMethod.Best ? volumeAndSurfaceMethod : partInfo.bestMethod,
+						out double infoVolume, out double infoSurface, substractAttachementNodesSurface);
+
+					if (volume <= 0.0) volume = infoVolume;
+					if (surface <= 0.0) surface = infoSurface;
+				}
+			}
+		}
+
+		// pseudo-ctor
+		public override void OnStart(StartState state)
         {
             // don't break tutorial scenarios
             if (Lib.DisableScenario(this)) return;
@@ -60,22 +156,28 @@ namespace KERBALISM
             gravityRing = part.FindModuleImplementing<GravityRing>();
             hasGravityRing = gravityRing != null;
 
-            // calculate habitat internal volume
-            if (volume <= double.Epsilon) volume = GetVolume();
+			if (volume <= 0.0 || surface <= 0.0)
+			{
+				Habitat prefab = part.partInfo.partPrefab.FindModuleImplementing<Habitat>();
+				if (volume <= 0.0) volume = prefab.volume;
+				if (surface <= 0.0) surface = prefab.surface;
+			}
 
-            // calculate habitat external surface
-            if (surface <= double.Epsilon) surface = GetSurface();
-
-            // set RMB UI status strings
-            Volume = Lib.HumanReadableVolume(volume);
+			// set RMB UI status strings
+			Volume = Lib.HumanReadableVolume(volume);
             Surface = Lib.HumanReadableSurface(surface);
 
             // hide toggle if specified
             Events["Toggle"].active = toggle;
             Actions["Action"].active = toggle;
 
-            // create animators
-            if (!hasGravityRing)
+#if DEBUG
+			Events["LogVolumeAndSurface"].active = true;
+#else
+			Events["LogVolumeAndSurface"].active = Settings.VolumeAndSurfaceLogging;
+#endif
+			// create animators
+			if (!hasGravityRing)
             {
                 inflate_anim = new Animator(part, inflate);
             }
@@ -125,33 +227,7 @@ namespace KERBALISM
             return inflate;
         }
 
-        public double GetVolume()
-        {
-            foreach (PartModule pm in part.Modules)
-            {
-                if (pm.moduleName == "SSTUModularPart")
-                {
-                    Bounds bb = Lib.ReflectionCall<Bounds>(pm, "getModuleBounds", new Type[] { typeof(string) }, new string[] { "CORE" });
-                    return Lib.PartVolume(bb);
-                }
-            }
-            return Lib.PartVolume(part);
-        }
-
-        public double GetSurface()
-        {
-            foreach (PartModule pm in part.Modules)
-            {
-                if (pm.moduleName == "SSTUModularPart")
-                {
-                    Bounds bb = Lib.ReflectionCall<Bounds>(pm, "getModuleBounds", new Type[] { typeof(string) }, new string[] { "CORE" });
-                    return Lib.PartSurface(bb);
-                }
-            }
-            return Lib.PartSurface(part);
-        }
-
-        bool Get_inflate_anim_backwards()
+		bool Get_inflate_anim_backwards()
         {
             if (hasGravityRing)
             {
@@ -245,8 +321,8 @@ namespace KERBALISM
                         part.Resources[resource].amount = 0.0;
                 }
 
-                // return new state
-                return State.disabled;
+				// return new state
+				return State.disabled;
             }
         }
 
@@ -271,8 +347,8 @@ namespace KERBALISM
                 if (part.Resources.Contains("Atmosphere"))
                     part.Resources["Atmosphere"].amount = part.Resources["Atmosphere"].maxAmount;
 
-                // return new state
-                return State.enabled;
+				// return new state
+				return State.enabled;
             }
         }
 
@@ -452,8 +528,8 @@ namespace KERBALISM
         public Specifics Specs()
         {
             Specifics specs = new Specifics();
-            specs.Add(Local.Habitat_info1, Lib.HumanReadableVolume(volume > double.Epsilon ? volume : Lib.PartVolume(part)));//"Volume"
-            specs.Add(Local.Habitat_info2, Lib.HumanReadableSurface(surface > double.Epsilon ? surface : Lib.PartSurface(part)));//"Surface"
+            specs.Add(Local.Habitat_info1, Lib.HumanReadableVolume(volume > 0.0 ? volume : Lib.PartBoundsVolume(part)) + (volume > 0.0 ? "" : " (bounds)"));//"Volume"
+            specs.Add(Local.Habitat_info2, Lib.HumanReadableSurface(surface > 0.0 ? surface : Lib.PartBoundsSurface(part)) + (surface > 0.0 ? "" : " (bounds)"));//"Surface"
             specs.Add(Local.Habitat_info3, max_pressure >= Settings.PressureThreshold ? Local.Habitat_yes : Local.Habitat_no);//"Pressurized""yes""no"
             if (inflate.Length > 0) specs.Add(Local.Habitat_info4, Local.Habitat_yes);//"Inflatable""yes"
             if (PhysicsGlobals.KerbalCrewMass > 0)
@@ -622,10 +698,21 @@ namespace KERBALISM
 			return Lib.BuildString(
 				Lib.Bold(Local.Habitat + " " + Local.Habitat_info1), // "Habitat" + "Volume"
 				" : ",
-				Lib.HumanReadableVolume(volume > double.Epsilon ? volume : Lib.PartVolume(part)));
+				Lib.HumanReadableVolume(volume > 0.0 ? volume : Lib.PartBoundsVolume(part)),
+				volume > 0.0 ? "" : " (bounds)");
 		}
 
 		public float GetModuleCost(float defaultCost, ModifierStagingSituation sit) => shieldingCost;
 		public ModifierChangeWhen GetModuleCostChangeWhen() => ModifierChangeWhen.CONSTANTLY;
+
+#if KSP15_16
+		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true)]
+#else
+		[KSPEvent(guiActive = false, guiActiveEditor = true, guiName = "[Debug] log volume/surface", active = false, groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
+#endif
+        public void LogVolumeAndSurface()
+		{
+			Lib.GetPartVolumeAndSurface(part, true);
+		}
 	}
 }
