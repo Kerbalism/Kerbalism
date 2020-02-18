@@ -85,7 +85,7 @@ namespace KERBALISM
 			if (on_pod <= double.Epsilon) return;
 
 			// do nothing for EVA kerbals, that have now CrewCapacity
-			if (prefab.partInfo.name.StartsWith("kerbalEVA")) return;
+			if (prefab.FindModuleImplementing<KerbalEVA>() != null) return;
 
 			// do nothing if not manned
 			if (prefab.CrewCapacity == 0) return;
