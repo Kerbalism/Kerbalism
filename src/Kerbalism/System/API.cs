@@ -37,11 +37,11 @@ namespace KERBALISM
 		// ====================================================================
 
 		/// <summary>
-		/// science data rate, in MB/s. note that internal transmitters can not transmit science data only telemetry data
+		/// science data rate, in MB/s (1000^2 byte/s). Note that internal transmitters can not transmit science data only telemetry data
 		/// </summary>
 		public double rate = 0.0;
 
-		/// <summary> ec cost while transmitting at the above rate </summary>
+		/// <summary> ec cost while transmitting at the above rate. ec_idle is substracted from that value</summary>
 		public double ec = 0.0;
 
 		/// <summary> ec cost while not transmitting </summary>

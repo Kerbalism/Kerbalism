@@ -21,8 +21,9 @@ namespace KERBALISM
 		public virtual AntennaInfo AntennaInfo()
 		{
 			int transmitterCount = 0;
-			antennaInfo.rate = 1;
-			double ec_transmitter = 0;
+			antennaInfo.rate = 1.0;
+			antennaInfo.ec = 0.0;
+			antennaInfo.ec_idle = 0.0;
 
 			// if vessel is loaded
 			if (v.loaded)
@@ -36,13 +37,13 @@ namespace KERBALISM
 					// do not include internal data rate, ec cost only
 					if (t.antennaType == AntennaType.INTERNAL)
 					{
-						antennaInfo.ec += t.DataResourceCost * t.DataRate;
+						antennaInfo.ec_idle += t.DataResourceCost * t.DataRate;
 					}
 					else
 					{
 						antennaInfo.rate *= t.DataRate;
 						transmitterCount++;
-						ec_transmitter += t.DataResourceCost * t.DataRate;
+						antennaInfo.ec += t.DataResourceCost * t.DataRate;
 					}
 				}
 			}
@@ -62,13 +63,13 @@ namespace KERBALISM
 					// do not include internal data rate, ec cost only
 					if (prefab.antennaType == AntennaType.INTERNAL)
 					{
-						antennaInfo.ec += prefab.DataResourceCost * prefab.DataRate;
+						antennaInfo.ec_idle += prefab.DataResourceCost * prefab.DataRate;
 					}
 					else
 					{
 						antennaInfo.rate *= prefab.DataRate;
 						transmitterCount++;
-						ec_transmitter += prefab.DataResourceCost * prefab.DataRate;
+						antennaInfo.ec += prefab.DataResourceCost * prefab.DataRate;
 					}
 				}
 			}
@@ -81,10 +82,9 @@ namespace KERBALISM
 
 			// when transmitting, transmitters need more EC for the signal amplifiers.
 			// while not transmitting, transmitters only use 10-20% of that
-			ec_transmitter *= antennaInfo.transmitting ? Settings.TransmitterActiveEcFactor : Settings.TransmitterPassiveEcFactor;
-
-			antennaInfo.ec = ec_transmitter * Settings.TransmitterActiveEcFactor;
-			antennaInfo.ec_idle = ec_transmitter * Settings.TransmitterPassiveEcFactor;
+			antennaInfo.ec_idle *= Settings.TransmitterPassiveEcFactor; // apply passive factor to "internal" antennas always-consumed rate
+			antennaInfo.ec_idle += antennaInfo.ec * Settings.TransmitterPassiveEcFactor; // add "transmit" antennas always-consumed rate
+			antennaInfo.ec *= Settings.TransmitterActiveEcFactor; // adjust "transmit" antennas transmit-only rate by the factor
 
 			Init();
 

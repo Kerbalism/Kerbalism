@@ -1,3 +1,34 @@
+## v3.6 for all versions of KSP from 1.5.0 to 1.9.x
+
+ - 2020-02-18
+
+### Changes since the last release
+
+* New radial container parts (Arkolis), soft-deprecation of the old pressurized tanks and the TAC hex cans 
+* Ability to show/hide individual vessels in vessel list (SirMortimer)
+* Mesh/model based habitat volume/surface evaluation : improve accuracy for non explicitely supported parts (Got)
+* Adjusted existing habitat volume/surface configurations (stock, SSPX...) (Got)
+* Tweaked engine burn failure function to be more predictable (SirMortimer)
+* German localization (Woeller) + other localization fixes (TinyGrox)
+* Add CommNetAntennasInfo to incompatible mods warning (Got)
+* Feature #587 : Included experiment system : allow for tiered experiments (RP1 request). See wiki for documentation : https://github.com/Kerbalism/Kerbalism/wiki/TechGuide-~-Supporting-Science-Mods#includeexperiment (Got)
+* Feature #588 : API methods for Bureaucracy integration (Got)
+* Fixed incorrect EC consumption of antennas / transmitters (Got)
+* Fix for #546 : Account for stock requireAtmosphere/requireNoAtmosphere experiment definition restrictions (Got)
+* Fix for #544 : Disable interaction in experiment popup when control unavailable (Got)
+* Fix for #554 : In flight science now removed instantly when a part/vessel is destroyed (Got)
+* Fix for #568 : Missing experiment name in action groups (Got)
+* Fix for #596 : Universal Storage 2 goo canister animations (Got)
+
+## v3.5 for all versions of KSP from 1.5.0 to 1.9.x
+
+ - 2020-02-13
+
+### Changes since the last release
+
+* Compatibility update for KSP 1.9
+
+
 ## v3.4 for all versions of KSP from 1.5.0 to 1.8.9
 
  - 2020-01-29
