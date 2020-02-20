@@ -205,7 +205,7 @@ namespace KERBALISM.Planner
 				GUILayout.BeginHorizontal(Styles.title_container);
 
 				// body selector
-				GUILayout.Label(new GUIContent(FlightGlobals.Bodies[body_index].name, Local.Planner_Targetbody), leftmenu_style);//"Target body"
+				GUILayout.Label(new GUIContent(FlightGlobals.Bodies[body_index].bodyDisplayName, Local.Planner_Targetbody), leftmenu_style);//"Target body"
 				if (Lib.IsClicked())
 				{ body_index = (body_index + 1) % FlightGlobals.Bodies.Count; if (body_index == 0) ++body_index; enforceUpdate = true; }
 				else if (Lib.IsClicked(1))
