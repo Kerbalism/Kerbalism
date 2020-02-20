@@ -662,7 +662,6 @@ namespace KERBALISM
 			// gift resources
 			if (detected)
 			{
-				var reslib = PartResourceLibrary.Instance.resourceDefinitions;
 				var parts = Lib.GetPartsRecursively(v.rootPart);
 
 				// give the vessel some propellant usable on eva
@@ -679,10 +678,16 @@ namespace KERBALISM
 						break;
 					}
 				}
+
 				ResourceCache.Produce(v, monoprop_name, monoprop_amount, ResourceBroker.Generic);
 
 				// give the vessel some supplies
 				Profile.SetupRescue(v);
+
+				// sync vessel resources once to avoid posting "rescue mission scare messages"
+				// (messages about resource levels being low)
+				VesselResources resources = ResourceCache.Get(v);
+				resources.Sync(v, v.KerbalismData(), 1.0);
 			}
 		}
 
