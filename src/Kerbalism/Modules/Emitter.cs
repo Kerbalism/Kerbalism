@@ -50,15 +50,15 @@ namespace KERBALISM
 			active_anim = new Animator(part, active);
 
 			// set animation initial state
-			active_anim.Still(running ? 0.0 : 1.0);
+			active_anim.Still(running ? 0f : 1f);
 		}
 
 		public class HabitatInfo
 		{
-			public Habitat habitat;
+			public ModuleKsmHabitat habitat;
 			public float distance;
 
-			public HabitatInfo(Habitat habitat, float distance)
+			public HabitatInfo(ModuleKsmHabitat habitat, float distance)
 			{
 				this.habitat = habitat;
 				this.distance = distance;
@@ -78,22 +78,21 @@ namespace KERBALISM
 			if (part.transform == null) return;
 			var emitterPosition = part.transform.position;
 
-			List<Habitat> habitats;
+			List<ModuleKsmHabitat> habitats;
 
 			if (Lib.IsEditor())
 			{
-				habitats = new List<Habitat>();
+				habitats = new List<ModuleKsmHabitat>();
 
-				List<Part> parts = Lib.GetPartsRecursively(EditorLogic.RootPart);
-				foreach (var p in parts)
+				foreach (var p in EditorLogic.fetch.ship.parts)
 				{
-					var habitat = p.FindModuleImplementing<Habitat>();
+					var habitat = p.FindModuleImplementing<ModuleKsmHabitat>();
 					if (habitat != null) habitats.Add(habitat);
 				}
 			}
 			else
 			{
-				habitats = vessel.FindPartModulesImplementing<Habitat>();
+				habitats = vessel.FindPartModulesImplementing<ModuleKsmHabitat>();
 			}
 
 			habitatInfos = new List<HabitatInfo>();
@@ -260,7 +259,7 @@ namespace KERBALISM
 		public static double Total(Vessel v)
 		{
 			// get resource cache
-			ResourceInfo ec = ResourceCache.GetResource(v, "ElectricCharge");
+			VesselResource ec = v.KerbalismData().ResHandler.ElectricCharge;
 
 			double tot = 0.0;
 			if (v.loaded)

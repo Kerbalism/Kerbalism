@@ -265,7 +265,7 @@ namespace KERBALISM
 			if (Features.Reliability) Indicator_reliability(p, v, vd);
 
 			// signal indicator
-			if (API.Comm.handlers.Count > 0 || HighLogic.fetch.currentGame.Parameters.Difficulty.EnableCommNet) Indicator_signal(p, v, vd);
+			if (Features.Science) Indicator_signal(p, v, vd);
 
 			// done
 			return true;
@@ -487,13 +487,13 @@ namespace KERBALISM
 
 		void Problem_poisoning(VesselData vd, ref List<Texture2D> icons, ref List<string> tooltips)
 		{
-			string poisoning_str = Lib.BuildString(Local.Monitor_CO2level ," <b>", Lib.HumanReadablePerc(vd.Poisoning), "</b>");//CO2 level in internal atmosphere:
-			if (vd.Poisoning >= Settings.PoisoningThreshold)
+			string poisoning_str = Lib.BuildString(Local.Monitor_CO2level ," <b>", Lib.HumanReadablePerc(vd.HabitatInfo.poisoningLevel), "</b>");//CO2 level in internal atmosphere:
+			if (vd.HabitatInfo.poisoningLevel >= Settings.PoisoningThreshold)
 			{
 				icons.Add(Textures.recycle_red);
 				tooltips.Add(poisoning_str);
 			}
-			else if (vd.Poisoning > Settings.PoisoningThreshold / 1.25)
+			else if (vd.HabitatInfo.poisoningLevel > Settings.PoisoningThreshold / 1.25)
 			{
 				icons.Add(Textures.recycle_yellow);
 				tooltips.Add(poisoning_str);
@@ -554,7 +554,7 @@ namespace KERBALISM
 				return;
 #endif
 
-			ResourceInfo ec = ResourceCache.GetResource(v, "ElectricCharge");
+			VesselResource ec = vd.ResHandler.ElectricCharge;
 			Supply supply = Profile.supplies.Find(k => k.resource == "ElectricCharge");
 			double low_threshold = supply != null ? supply.low_threshold : 0.15;
 			double depletion = ec.DepletionTime();
@@ -581,9 +581,12 @@ namespace KERBALISM
 			uint max_severity = 0;
 			if (vd.CrewCount > 0)
 			{
-				foreach (Supply supply in Profile.supplies.FindAll(k => k.resource != "ElectricCharge"))
+				foreach (Supply supply in Profile.supplies)
 				{
-					ResourceInfo res = ResourceCache.GetResource(v, supply.resource);
+					if (supply.resource == "ElectricCharge")
+						continue;
+
+					VesselResource res = (VesselResource)vd.ResHandler.GetResource(supply.resource);
 					double depletion = res.DepletionTime();
 
 					if (res.Capacity > double.Epsilon)
@@ -666,7 +669,7 @@ namespace KERBALISM
 
 			// create icon status
 			Texture2D image = Textures.signal_red;
-			switch (conn.status)
+			switch (conn.Status)
 			{
 				case LinkStatus.direct_link:
 					image = conn.strength > 0.05 ? Textures.signal_white : Textures.iconSwitch(Textures.signal_yellow, image);   // or 5% signal strength

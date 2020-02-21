@@ -12,10 +12,28 @@ namespace KERBALISM
 
 		public override string Name => "data transmission";
 
-		public override string Status => Lib.Color(vesselData.deviceTransmit, Local.Generic_ENABLED, Lib.Kolor.Green, Local.Generic_DISABLED, Lib.Kolor.Yellow);
+		public override string Status
+		{
+			get
+			{
+				if (vesselData.Hibernating)
+				{
+					return Lib.Color(Local.Generic_DISABLED, Lib.Kolor.Orange) + Lib.BuildString(" (", "hibernating", ")");
+				}
+				return Lib.Color(vesselData.deviceTransmit, Local.Generic_ENABLED, Lib.Kolor.Green, Local.Generic_DISABLED, Lib.Kolor.Yellow);
+			}
+		}
 
-		public override void Ctrl(bool value) => vesselData.deviceTransmit = value;
+		public override void Ctrl(bool value)
+		{
+			if (!vesselData.Hibernating)
+				vesselData.deviceTransmit = value;
+		}
 
-		public override void Toggle() => vesselData.deviceTransmit = !vesselData.deviceTransmit;
+		public override void Toggle()
+		{
+			if (!vesselData.Hibernating)
+				vesselData.deviceTransmit = !vesselData.deviceTransmit;
+		}
 	}
 }

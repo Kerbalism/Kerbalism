@@ -11,7 +11,7 @@ namespace KERBALISM
 	public static class Modifiers
 	{
 		///<summary> Modifiers Evaluate method used for the Monitors background and current vessel simulation </summary>
-		public static double Evaluate(Vessel v, VesselData vd, VesselResources resources, List<string> modifiers)
+		public static double Evaluate(Vessel v, VesselData vd, VesselResHandler resources, List<string> modifiers)
 		{
 			double k = 1.0;
 			foreach (string mod in modifiers)
@@ -27,11 +27,23 @@ namespace KERBALISM
 						break;
 
 					case "breathable":
-						k *= vd.EnvBreathable ? 1.0 : 0.0;
+						k *= vd.EnvInBreathableAtmosphere ? 1.0 : 0.0;
 						break;
 
 					case "non_breathable":
-						k *= vd.EnvBreathable ? 0.0 : 1.0;
+						k *= vd.EnvInBreathableAtmosphere ? 0.0 : 1.0;
+						break;
+
+					case "oxygenAtmosphere":
+						k *= vd.EnvInOxygenAtmosphere ? 1.0 : 0.0;
+						break;
+
+					case "staticPressure":
+						k *= vd.EnvStaticPressure;
+						break;
+
+					case "vacuumLevel":
+						k *= 1.0 - Math.Min(vd.EnvStaticPressure, 1.0);
 						break;
 
 					case "temperature":
@@ -42,32 +54,36 @@ namespace KERBALISM
 						k *= vd.EnvHabitatRadiation;
 						break;
 
+					case "shieldingSurface":
+						k *= vd.HabitatInfo.shieldingSurface;
+						break;
+
 					case "shielding":
-						k *= 1.0 - vd.Shielding;
+						k *= 1.0 - vd.HabitatInfo.shieldingModifier;
 						break;
 
 					case "volume":
-						k *= vd.Volume;
+						k *= vd.HabitatInfo.livingVolume;
 						break;
 
 					case "surface":
-						k *= vd.Surface;
+						k *= vd.HabitatInfo.pressurizedSurface;
 						break;
 
 					case "living_space":
-						k /= vd.LivingSpace;
+						k /= vd.HabitatInfo.livingSpaceModifier;
 						break;
 
 					case "comfort":
-						k /= vd.Comforts.factor;
+						k /= vd.HabitatInfo.comfortModifier;
 						break;
 
 					case "pressure":
-						k *= vd.Pressure > Settings.PressureThreshold ? 1.0 : Settings.PressureFactor;
+						k *= vd.HabitatInfo.pressureModifier;
 						break;
 
 					case "poisoning":
-						k *= vd.Poisoning > Settings.PoisoningThreshold ? 1.0 : Settings.PoisoningFactor;
+						k *= vd.HabitatInfo.poisoningLevel > Settings.PoisoningThreshold ? 1.0 : Settings.PoisoningFactor;
 						break;
 
 					case "per_capita":
@@ -75,7 +91,7 @@ namespace KERBALISM
 						break;
 
 					default:
-						k *= resources.GetResource(v, mod).Amount;
+						k *= resources.GetResource(mod).Amount;
 						break;
 				}
 			}
@@ -132,7 +148,7 @@ namespace KERBALISM
 						break;
 
 					case "comfort":
-						k /= va.comforts.factor;
+						k /= va.comfortFactor;
 						break;
 
 					case "pressure":

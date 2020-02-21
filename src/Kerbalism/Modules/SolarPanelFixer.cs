@@ -165,11 +165,12 @@ namespace KERBALISM
 			if (!isEnabled)
 			{
 				ReliabilityEvent(true);
-				OnStart(StartState.None);
+				Start();
 			}
 		}
 
-		public override void OnStart(StartState startState)
+		// we use Start() because it will be called later than OnStart(), which might help in having the target modules properly initialized.
+		private void Start()
 		{
 			sb = new StringBuilder(256);
 
@@ -499,19 +500,16 @@ namespace KERBALISM
 				return;
 			}
 
-			// get resource handler
-			ResourceInfo ec = ResourceCache.GetResource(vessel, "ElectricCharge");
-
 			// produce EC
-			ec.Produce(currentOutput * Kerbalism.elapsed_s, ResourceBroker.SolarPanel);
+			vd.ResHandler.ElectricCharge.Produce(currentOutput * Kerbalism.elapsed_s, ResourceBroker.SolarPanel);
 			UnityEngine.Profiling.Profiler.EndSample();
 		}
 
-		public static void BackgroundUpdate(Vessel v, ProtoPartModuleSnapshot m, SolarPanelFixer prefab, VesselData vd, ResourceInfo ec, double elapsed_s)
+		public static void BackgroundUpdate(Vessel v, ProtoPartModuleSnapshot m, SolarPanelFixer prefab, VesselData vd, IResource ec, double elapsed_s)
 		{
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.SolarPanelFixer.BackgroundUpdate");
 			// this is ugly spaghetti code but initializing the prefab at loading time is messy because the targeted solar panel module may not be loaded yet
-			if (!prefab.isInitialized) prefab.OnStart(StartState.None);
+			if (!prefab.isInitialized) prefab.OnStartFinished(StartState.None);
 
 			string state = Lib.Proto.GetString(m, "state");
 			if (!(state == "Static" || state == "Extended" || state == "ExtendedFixed"))

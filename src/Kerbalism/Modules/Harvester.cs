@@ -104,13 +104,13 @@ namespace KERBALISM
 			double abundance = SampleAbundance(v, harvester);
 			if (abundance > min_abundance)
 			{
-				ResourceRecipe recipe = new ResourceRecipe(ResourceBroker.Harvester);
+				Recipe recipe = new Recipe(ResourceBroker.Harvester);
 				recipe.AddInput("ElectricCharge", harvester.ec_rate * elapsed_s);
 				recipe.AddOutput(
 					harvester.resource,
 					Harvester.AdjustedRate(harvester, engineer_cs, Lib.CrewList(v), abundance) * elapsed_s,
 					dump: false);
-				ResourceCache.AddRecipe(v, recipe);
+				v.KerbalismData().ResHandler.AddRecipe(recipe);
 			}
 		}
 

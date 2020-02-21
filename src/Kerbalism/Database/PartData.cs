@@ -5,37 +5,54 @@ using System.Text;
 
 namespace KERBALISM
 {
-	public class PartData
+	public class PartData : IEquatable<PartData>
 	{
 		public uint FlightId { get; private set; }
+		public string PartName { get; private set; }
 
 		public Drive Drive { get; set; }
+		public HabitatData Habitat { get; set; }
 
 		public PartData(Part part)
 		{
 			FlightId = part.flightID;
+			PartName = part.name;
 		}
 
 		public PartData(ProtoPartSnapshot protopart)
 		{
 			FlightId = protopart.flightID;
+			PartName = protopart.partName;
 		}
 
-		public void Save(ConfigNode node)
+		public void Save(ConfigNode partCollectionNode)
 		{
+			if (Drive == null && Habitat == null)
+				return;
+
+			ConfigNode partNode = partCollectionNode.AddNode(FlightId.ToString());
+			partNode.AddValue("name", PartName); // isn't technically needed, this is for sfs editing / debugging purposes
 			if (Drive != null)
 			{
-				ConfigNode driveNode = node.AddNode("drive");
+				ConfigNode driveNode = partNode.AddNode("drive");
 				Drive.Save(driveNode);
+			}
+			if (Habitat != null)
+			{
+				ConfigNode habitatNode = partNode.AddNode("habitat");
+				Habitat.Save(habitatNode);
 			}
 		}
 
-		public void Load(ConfigNode node)
+		public void Load(ConfigNode partDataNode)
 		{
-			if (node.HasNode("drive"))
-			{
-				Drive = new Drive(node.GetNode("drive"));
-			}
+			ConfigNode driveNode = partDataNode.GetNode("drive");
+			if (driveNode != null)
+				Drive = new Drive(driveNode);
+
+			ConfigNode habitatNode = partDataNode.GetNode("habitat");
+			if (habitatNode != null)
+				Habitat = new HabitatData(habitatNode);
 		}
 
 		/// <summary> Must be called if the part is destroyed </summary>
@@ -44,5 +61,11 @@ namespace KERBALISM
 			if (Drive != null)
 				Drive.DeleteDriveData();
 		}
+
+		public override int GetHashCode() => FlightId.GetHashCode();
+
+		public bool Equals(PartData other) => other != null && other.FlightId == FlightId;
+
+		public override bool Equals(object obj) => obj is PartData other && Equals(other);
 	}
 }

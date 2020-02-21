@@ -346,11 +346,12 @@ namespace KERBALISM
 		public static string Brokers_StockConverter = GetLoc("Brokers_StockConverter"); // "converter"
 		public static string Brokers_StockDrill = GetLoc("Brokers_StockDrill"); // "drill"
 		public static string Brokers_Harvester = GetLoc("Brokers_Harvester"); // "harvester"
+        public static string Brokers_Radiator = GetLoc("Brokers_Radiator"); // "radiator"
 
-		////////////////////////////////////////////////////////////////////
-		//Contracts
-		////////////////////////////////////////////////////////////////////
-		public static string Contracts_radTitle = GetLoc("Contracts_radTitle"); // "Cross the radiation belt"
+        ////////////////////////////////////////////////////////////////////
+        //Contracts
+        ////////////////////////////////////////////////////////////////////
+        public static string Contracts_radTitle = GetLoc("Contracts_radTitle"); // "Cross the radiation belt"
 		public static string Contracts_radDesc = GetLoc("Contracts_radDesc"); // "A brilliant scientist predicted two belts of super-charged particles surrounding the planet. Now we need to confirm their existence and find out how deadly they really are."
 		public static string Contracts_radComplete = GetLoc("Contracts_radComplete"); // "The mission confirmed the presence of two radiation belts around the planet. Early data suggest extreme levels of radiation."
 		public static string Contracts_heliopauseTitle = GetLoc("Contracts_heliopauseTitle"); // "Cross the heliopause"

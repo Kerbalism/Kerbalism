@@ -10,74 +10,7 @@ using System.Collections.Generic;
 
 namespace KERBALISM
 {
-	public class AntennaInfo
-	{
-		// ====================================================================
-		// VALUES SET BY KERBALISM
-		// ====================================================================
 
-		/// <summary>
-		/// This will be set to true if the vessel currently is transmitting data.
-		/// </summary>
-		public bool transmitting = false;
-
-		/// <summary>
-		/// Set to true if the vessel is currently subjected to a CME storm
-		/// </summary>
-		public bool storm = false;
-
-		/// <summary>
-		/// Set to true if the vessel has enough EC to operate
-		/// </summary>
-		public bool powered = true;
-
-
-		// ====================================================================
-		// VALUES TO SET FOR KERBALISM
-		// ====================================================================
-
-		/// <summary>
-		/// science data rate, in MB/s (1000^2 byte/s). Note that internal transmitters can not transmit science data only telemetry data
-		/// </summary>
-		public double rate = 0.0;
-
-		/// <summary> ec cost while transmitting at the above rate. ec_idle is substracted from that value</summary>
-		public double ec = 0.0;
-
-		/// <summary> ec cost while not transmitting </summary>
-		public double ec_idle = 0.0;
-
-		/// <summary> link quality indicator for the UI, any value from 0-1.
-		/// you MUST set this to >= 0 in your mod, otherwise the comm status
-		/// will either be handled by an other mod or by the stock implementation.
-		/// </summary>
-		public double strength = -1;
-
-		/// <summary>
-		/// direct_link = 0, indirect_link = 1 (relayed signal), no_link = 2, plasma = 3 (plasma blackout on reentry), storm = 4 (cme storm blackout)
-		/// </summary>
-		public int status = 2;
-
-		/// <summary>
-		/// true if communication is established. if false, vessels can't transmit data and might be uncontrollable.
-		/// </summary>
-		public bool linked;
-
-		/// <summary>
-		/// The name of the thing at the other end of your radio beam (KSC, name of the relay, ...)
-		/// </summary>
-		public string target_name;
-
-		/// <summary>
-		/// Optional: communication path that will be displayed in the UI.
-		/// Each entry in the List is one "hop" in your path.
-		/// provide up to 3 values for each hop: string[] hop = { name, value, tooltip }
-		/// - name: the name of the relay/station
-		/// - value: link quality to that relay
-		/// - tooltip: anything you want to display, maybe link distance, frequency band used, ...
-		/// </summary>
-		public List<string[]> control_path = null;
-	}
 
 	public static class API
 	{
@@ -125,6 +58,23 @@ namespace KERBALISM
 			}
 		}
 
+		// inject instant radiation dose to all kerbals (can use negative amounts)
+		public static void InjectRadiation(double amount)
+		{
+			foreach (Rule rule in Profile.rules)
+			{
+				if (rule.modifiers.Contains("radiation"))
+				{
+					foreach (KerbalData kd in DB.Kerbals().Values)
+					{
+						RuleData rd = kd.rules[rule.name];
+						rd.problem = Math.Max(rd.problem + amount, 0.0);
+					}
+
+				}
+			}
+		}
+
 
 		// --- ENVIRONMENT ----------------------------------------------------------
 
@@ -137,7 +87,7 @@ namespace KERBALISM
 		// return true if the vessel specified is inside a breathable atmosphere
 		public static bool Breathable(Vessel v)
 		{
-			return v.KerbalismData().EnvBreathable;
+			return v.KerbalismData().EnvInBreathableAtmosphere;
 		}
 
 
@@ -375,46 +325,46 @@ namespace KERBALISM
 		public static double Volume(Vessel v)
 		{
 			if (!Features.Habitat) return 0.0;
-			return v.KerbalismData().Volume;
+			return v.KerbalismData().HabitatInfo.livingVolume;
 		}
 
 		// return surface of internal habitat in m^2
 		public static double Surface(Vessel v)
 		{
 			if (!Features.Habitat) return 0.0;
-			return v.KerbalismData().Surface;
+			return v.KerbalismData().HabitatInfo.shieldingSurface;
 		}
 
 		// return normalized pressure of internal habitat
 		public static double Pressure(Vessel v)
 		{
 			if (!Features.Pressure) return 0.0;
-			return v.KerbalismData().Pressure;
+			return v.KerbalismData().HabitatInfo.pressureAtm;
 		}
 
 		// return level of co2 of internal habitat
 		public static double Poisoning(Vessel v)
 		{
 			if (!Features.Poisoning) return 0.0;
-			return v.KerbalismData().Poisoning;
+			return v.KerbalismData().HabitatInfo.poisoningLevel;
 		}
 
 		// return proportion of radiation blocked by shielding
 		public static double Shielding(Vessel v)
 		{
-			return v.KerbalismData().Shielding;
+			return v.KerbalismData().HabitatInfo.shieldingModifier;
 		}
 
 		// return living space factor
 		public static double LivingSpace(Vessel v)
 		{
-			return v.KerbalismData().LivingSpace;
+			return v.KerbalismData().HabitatInfo.livingSpaceModifier;
 		}
 
 		// return comfort factor
 		public static double Comfort(Vessel v)
 		{
-			return v.KerbalismData().Comforts.factor;
+			return v.KerbalismData().HabitatInfo.comfortModifier;
 		}
 
 
@@ -422,62 +372,66 @@ namespace KERBALISM
 
 		public static void ConsumeResource(Vessel v, string resource_name, double quantity, string title)
 		{
-			ResourceCache.Consume(v, resource_name, quantity, ResourceBroker.GetOrCreate(title));
+			v.KerbalismData().ResHandler.Consume(resource_name, quantity, ResourceBroker.GetOrCreate(title));
 		}
 
 		public static void ProduceResource(Vessel v, string resource_name, double quantity, string title)
 		{
-			ResourceCache.Produce(v, resource_name, quantity, ResourceBroker.GetOrCreate(title));
+			v.KerbalismData().ResHandler.Produce(resource_name, quantity, ResourceBroker.GetOrCreate(title));
 		}
 
 		public static void ProcessResources(Vessel v, List<KeyValuePair<string, double>> resources, string title)
 		{
 			ResourceBroker broker = ResourceBroker.GetOrCreate(title);
+			VesselResHandler resHandler = v.KerbalismData().ResHandler;
 			foreach (var p in resources)
 			{
 				if (p.Value < 0)
-					ResourceCache.Consume(v, p.Key, -p.Value, broker);
+					resHandler.Consume(p.Key, -p.Value, broker);
 				else
-					ResourceCache.Produce(v, p.Key, p.Value, broker);
+					resHandler.Produce(p.Key, p.Value, broker);
 			}
 		}
 
 		public static double ResourceAmount(Vessel v, string resource_name)
 		{
-			return ResourceCache.GetResource(v, resource_name).Amount;
+			return v.KerbalismData().ResHandler.GetResource(resource_name).Amount;
 		}
 
 		public static List<double> ResourceAmounts(Vessel v, List<string> resource_names)
 		{
+			VesselResHandler resHandler = v.KerbalismData().ResHandler;
 			List<double> result = new List<double>(resource_names.Count);
 			foreach (var name in resource_names)
-				result.Add(ResourceCache.GetResource(v, name).Amount);
+				result.Add(resHandler.GetResource(name).Amount);
 			return result;
 		}
 
 		public static double ResourceCapacity(Vessel v, string resource_name)
 		{
-			return ResourceCache.GetResource(v, resource_name).Capacity;
+			return v.KerbalismData().ResHandler.GetResource(resource_name).Capacity;
 		}
 
 		public static List<double> ResourceCapacities(Vessel v, List<string> resource_names)
 		{
+			VesselResHandler resHandler = v.KerbalismData().ResHandler;
 			List<double> result = new List<double>(resource_names.Count);
 			foreach (var name in resource_names)
-				result.Add(ResourceCache.GetResource(v, name).Capacity);
+				result.Add(resHandler.GetResource(name).Capacity);
 			return result;
 		}
 
 		public static double ResourceLevel(Vessel v, string resource_name)
 		{
-			return ResourceCache.GetResource(v, resource_name).Level;
+			return v.KerbalismData().ResHandler.GetResource(resource_name).Level;
 		}
 
 		public static List<double> ResourceLevels(Vessel v, List<string> resource_names)
 		{
+			VesselResHandler resHandler = v.KerbalismData().ResHandler;
 			List<double> result = new List<double>(resource_names.Count);
 			foreach (var name in resource_names)
-				result.Add(ResourceCache.GetResource(v, name).Level);
+				result.Add(resHandler.GetResource(name).Level);
 			return result;
 		}
 
@@ -495,9 +449,9 @@ namespace KERBALISM
 		*/
 		public static List<KeyValuePair<string[], double>> ResourceBrokers(Vessel v, string resource_name)
 		{
-			List<SupplyData.ResourceBrokerRate> brokers = v.KerbalismData().Supply(resource_name).ResourceBrokers;
+			List<ResourceBrokerRate> brokers = ((VesselResource)v.KerbalismData().ResHandler.GetResource(resource_name)).ResourceBrokers;
 			List<KeyValuePair<string[], double>> apiBrokers = new List<KeyValuePair<string[], double>>();
-			foreach (SupplyData.ResourceBrokerRate rb in brokers)
+			foreach (ResourceBrokerRate rb in brokers)
 			{
 				apiBrokers.Add(new KeyValuePair<string[], double>(rb.broker.BrokerInfo, rb.rate));
 			}
@@ -693,23 +647,6 @@ namespace KERBALISM
 				if (handlers.Contains(handler))
 				{
 					handlers.Remove(handler);
-				}
-			}
-
-			//This initializes an antennaInfo object. Connection info handlers must
-			//set antennaInfo.strength to a value >= 0, otherwise the antennaInfo will
-			//be passed to the next handler.
-			public void Init(AntennaInfo antennaInfo, Vessel pv)
-			{
-				//Loop through the list of listening methods and Invoke them.
-				foreach (MethodInfo handler in handlers)
-				{
-					try {
-						handler.Invoke(null, new object[] { antennaInfo, pv });
-						if (antennaInfo.strength > -1) return;
-					} catch(Exception e) {
-						Lib.Log("CommInfo handler threw exception " + e.Message + "\n" + e.ToString());
-					}
 				}
 			}
 		}

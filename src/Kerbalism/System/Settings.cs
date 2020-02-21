@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -19,7 +19,7 @@ namespace KERBALISM
 	{
 		private static string MODS_REQUIRED = "";
 		private static string MODS_INCOMPATIBLE = "TacLifeSupport,Snacks,BackgroundResources,BackgroundProcessing,KolonyTools,USILifeSupport";
-		private static string MODS_WARNING = "RemoteTech,ResearchBodies,CommNetAntennasInfo";
+		private static string MODS_WARNING = "ResearchBodies,CommNetAntennasInfo";
 		private static string MODS_SCIENCE = "KEI,[x] Science!";
 
 		public static void Parse()
@@ -38,9 +38,14 @@ namespace KERBALISM
 			SpaceWeather = Lib.ConfigValue(cfg, "SpaceWeather", false);
 			Automation = Lib.ConfigValue(cfg, "Automation", false);
 
-			// pressure
+			// habitat & pressure 
+			PressureSuitVolume = Lib.ConfigValue(cfg, "PressureSuitVolume", 100.0);
+			HabitatAtmoResource = Lib.ConfigValue(cfg, "HabitatAtmoResource", "Atmosphere");
+			HabitatWasteResource = Lib.ConfigValue(cfg, "HabitatWasteResource", "WasteAtmosphere");
+			DepressuriationDefaultRate = Lib.ConfigValue(cfg, "DepressuriationDefaultRate", 10.0);
 			PressureFactor = Lib.ConfigValue(cfg, "PressureFactor", 10.0);
-			PressureThreshold = Lib.ConfigValue(cfg, "PressureThreshold", 0.9);
+			PressureThreshold = Lib.ConfigValue(cfg, "PressureThreshold", 0.3);
+
 
 			// poisoning
 			PoisoningFactor = Lib.ConfigValue(cfg, "PoisoningFactor", 0.0);
@@ -76,6 +81,7 @@ namespace KERBALISM
 			UIPanelWidthScale = Lib.ConfigValue(cfg, "UIPanelWidthScale", 1.0f);
 			KerbalDeathReputationPenalty = Lib.ConfigValue(cfg, "KerbalDeathReputationPenalty", 100.0f);
 			KerbalBreakdownReputationPenalty = Lib.ConfigValue(cfg, "KerbalBreakdownReputationPenalty", 30f);
+			HibernatingEcFactor = Lib.ConfigValue(cfg, "HibernatingEcFactor", 0.001);
 
 			// save game settings presets
 			LifeSupportAtmoLoss = Lib.ConfigValue(cfg, "LifeSupportAtmoLoss", 50);
@@ -143,9 +149,13 @@ namespace KERBALISM
 		public static bool SpaceWeather;                        // coronal mass ejections
 		public static bool Automation;                          // control vessel components using scripts
 
-		// pressure
+		// habitat
+		public static double PressureSuitVolume;                // pressure / EVA suit volume in liters, used for determining CO2 poisoning level while kerbals are in a depressurized habitat
+		public static string HabitatAtmoResource;               // habitat volume per kerbal while in EVA or inside an unpressurized habitat
+		public static string HabitatWasteResource;              // habitat volume per kerbal while in EVA or inside an unpressurized habitat
+		public static double DepressuriationDefaultRate;        // liters / second / √(m3) of habitat volume
 		public static double PressureFactor;                    // pressurized modifier value for vessels below the threshold
-		public static double PressureThreshold;                 // level of atmosphere resource that determine pressurized status
+		public static double PressureThreshold;                 // below that threeshold, the vessel will be considered under partial pressure and kerbals will put their suits
 
 		// poisoning
 		public static double PoisoningFactor;                   // poisoning modifier value for vessels below threshold
@@ -182,7 +192,7 @@ namespace KERBALISM
 		public static float UIPanelWidthScale;                  // scale UI Panel Width by this factor, relative to KSP scaling settings, useful for high PPI screens
 		public static float KerbalDeathReputationPenalty;       // Reputation penalty when Kerbals dies
 		public static float KerbalBreakdownReputationPenalty;   // Reputation removed when Kerbals loose their marbles in space
-
+		public static double HibernatingEcFactor;               // % of ec consumed on hibernating probes (ModuleCommand.hibernationMultiplier is ignored by Kerbalism)
 
 		// presets for save game preferences
 

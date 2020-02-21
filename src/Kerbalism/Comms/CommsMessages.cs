@@ -1,28 +1,17 @@
-using KSP.Localization;
+﻿using System;
 
 namespace KERBALISM
 {
-
-
-	public static class Communications
+	public class CommsMessages
 	{
-		/// <summary> True if CommNet is initialized </summary>
-		public static bool NetworkInitialized = false;
-
-		/// <summary> True if CommNet initialization has begin </summary>
-		public static bool NetworkInitializing = false;
-
-		public static void Update(Vessel v, VesselData vd, ResourceInfo ec, double elapsed_s)
+		public static void Update(Vessel v, VesselData vd, double elapsed_s)
 		{
-			if(!Lib.IsVessel(v))
+			if (!Lib.IsVessel(v))
 				return;
 
-			// EC consumption is handled in Science update
-
-			Cache.WarpCache(v).dataCapacity = vd.deviceTransmit ? vd.Connection.rate * elapsed_s : 0.0;
-
 			// do nothing if network is not ready
-			if (!NetworkInitialized) return;
+			if (!vd.CommHandler.IsReady)
+				return;
 
 			// maintain and send messages
 			// - do not send messages during/after solar storms
@@ -36,9 +25,8 @@ namespace KERBALISM
 					{
 						string subtext = Local.UI_transmissiondisabled;
 
-						switch (vd.Connection.status)
+						switch (vd.Connection.Status)
 						{
-
 							case LinkStatus.plasma:
 								subtext = Local.UI_Plasmablackout;
 								break;
@@ -70,14 +58,11 @@ namespace KERBALISM
 					if (vd.cfg_signal)
 					{
 						Message.Post(Severity.relax, Lib.BuildString("<b>", v.vesselName, "</b> ", Local.UI_signalback),
-						  vd.Connection.status == LinkStatus.direct_link ? Local.UI_directlink :
+						  vd.Connection.Status == (int)LinkStatus.direct_link ? Local.UI_directlink :
 							Lib.BuildString(Local.UI_relayby, " <b>", vd.Connection.target_name, "</b>"));
 					}
 				}
 			}
 		}
 	}
-
-
-} // KERBALISM
-
+}

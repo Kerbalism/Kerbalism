@@ -148,18 +148,18 @@ namespace KERBALISM
 		public override void OnStart(StartState state)
 		{
 			// create animators
-			deployAnimator = new Animator(part, anim_deploy);
-			deployAnimator.reversed = anim_deploy_reverse;
+			deployAnimator = new Animator(part, anim_deploy, anim_deploy_reverse);
 
-			loopAnimator = new Animator(part, anim_loop);
-			loopAnimator.reversed = anim_loop_reverse;
+			loopAnimator = new Animator(part, anim_loop, anim_loop_reverse);
 
 			// set initial animation states
-			deployAnimator.Still(Running ? 1.0 : 0.0);
 			SetDragCubes(Running);
 
-			loopAnimator.Still(Running ? 1.0 : 0.0);
-			if (Running) loopAnimator.Play(false, true);
+			if (Running)
+			{
+				deployAnimator.Still(1f);
+				loopAnimator.Play(false, true);
+			}
 
 			if (use_animation_group && AnimationGroup == null)
 				AnimationGroup = part.Modules.OfType<ModuleAnimationGroup>().FirstOrDefault();
@@ -345,11 +345,10 @@ namespace KERBALISM
 
 			shrouded = part.ShieldedFromAirstream;
 
+
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Experiment.FixedUpdate.RunningUpdate");
 			RunningUpdate(
 				vessel, vd, GetSituation(vd), this, privateHdId, didPrepare, shrouded,
-				ResourceCache.GetResource(vessel, "ElectricCharge"),
-				ResourceCache.Get(vessel),
 				ResourceDefs,
 				ExpInfo,
 				expState,
@@ -368,7 +367,7 @@ namespace KERBALISM
 		}
 
 		// note : we use a non-static method so it can be overriden
-		public virtual void BackgroundUpdate(Vessel v, VesselData vd, ProtoPartModuleSnapshot m, ResourceInfo ec, VesselResources resources, double elapsed_s)
+		public virtual void BackgroundUpdate(Vessel v, VesselData vd, ProtoPartModuleSnapshot m, double elapsed_s)
 		{
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Experiment.BackgroundUpdate");
 
@@ -404,8 +403,6 @@ namespace KERBALISM
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Experiment.BackgroundUpdate.RunningUpdate");
 			RunningUpdate(
 				v, vd, GetSituation(vd), this, privateHdId, didPrepare, shrouded, // "this" is the prefab
-				ec,
-				resources,
 				ResourceDefs, // from prefab
 				expInfo,
 				expState,
@@ -431,7 +428,7 @@ namespace KERBALISM
 
 		private static void RunningUpdate(
 			Vessel v, VesselData vd, Situation vs, Experiment prefab, uint hdId, bool didPrepare, bool isShrouded,
-			ResourceInfo ec, VesselResources resources, List<ObjectPair<string, double>> resourceDefs,
+			List<ObjectPair<string, double>> resourceDefs,
 			ExperimentInfo expInfo, RunningState expState, double elapsed_s,
 			ref int lastSituationId, ref double remainingSampleMass, out SubjectData subjectData, out string mainIssue)
 		{
@@ -469,7 +466,7 @@ namespace KERBALISM
 				return;
 			}
 
-			if (ec.Amount == 0.0 && prefab.ec_rate > 0.0)
+			if (prefab.ec_rate > 0.0 && vd.ResHandler.ElectricCharge.AvailabilityFactor < 0.1)
 			{
 				mainIssue = Local.Module_Experiment_issue4;//"no Electricity"
 				return;
@@ -515,7 +512,7 @@ namespace KERBALISM
 				return;
 			}
 
-			if (!HasRequiredResources(v, resourceDefs, resources, out mainIssue))
+			if (!HasRequiredResources(v, resourceDefs, vd.ResHandler, out mainIssue))
 			{
 				mainIssue = Local.Module_Experiment_issue10;//"missing resource"
 				return;
@@ -543,7 +540,7 @@ namespace KERBALISM
 				return;
 			}
 
-			Drive warpDrive = null;
+			Drive bufferDrive = null;
 			double available;
 			if (!expInfo.IsSample)
 			{
@@ -552,8 +549,8 @@ namespace KERBALISM
 
 				if (drive.GetFileSend(subjectData.Id))
 				{
-					warpDrive = Cache.WarpCache(v);
-					available += warpDrive.FileCapacityAvailable();
+					bufferDrive = Cache.TransmitBufferDrive(v);
+					available += bufferDrive.FileCapacityAvailable();
 					if (double.IsNaN(available)) Lib.LogStack("warpDrive.FileCapacityAvailable() returned NaN", Lib.LogLevel.Error);
 				}
 			}
@@ -568,36 +565,33 @@ namespace KERBALISM
 				return;
 			}
 
-			chunkSize = Math.Min(chunkSize, available);
+			chunkSizeMax = Math.Min(chunkSize, available);
 
-			// TODO : prodfactor rely on resource capacity, resulting in wrong (lower) rate at high timewarp speeds if resource capacity is too low
-			// There is no way to fix that currently, this is another example of why virtual ressource recipes are needed
-			double prodFactor;
-			prodFactor = chunkSize / chunkSizeMax;
+			double chunkProdFactor = chunkSizeMax / chunkSize;
+			double resourcesProdFactor = 1.0;
 
+			// note : since we can't scale the consume() amount by availability, when one of the resources (including EC)
+			// is partially available but not the others, this will cause over-consumption of these other resources
+			// Idally we should use a pure input recipe to avoid that but currently, recipes only scale inputs
+			// if they have an output, it might be interseting to lift that limitation.
 			if (prefab.ec_rate > 0.0)
-				prodFactor = Math.Min(prodFactor, Lib.Clamp(ec.Amount / (prefab.ec_rate * elapsed_s), 0.0, 1.0));
+				resourcesProdFactor = Math.Min(resourcesProdFactor, vd.ResHandler.ElectricCharge.AvailabilityFactor);
 
-			foreach (ObjectPair<string, double> p in resourceDefs)
-			{
-				if (p.Value <= 0.0) continue;
-				ResourceInfo ri = resources.GetResource(v, p.Key);
-				prodFactor = Math.Min(prodFactor, Lib.Clamp(ri.Amount / (p.Value * elapsed_s), 0.0, 1.0));
-			}
+			foreach (ObjectPair<string, double> res in resourceDefs)
+				resourcesProdFactor = Math.Min(resourcesProdFactor, ((VesselResource)vd.ResHandler.GetResource(res.Key)).AvailabilityFactor);
 
-			if (prodFactor == 0.0)
+			if (resourcesProdFactor == 0.0)
 			{
 				mainIssue = Local.Module_Experiment_issue10;//"missing resource"
 				return;
 			}
 
-			chunkSize = chunkSizeMax * prodFactor;
-			elapsed_s *= prodFactor;
+			chunkSize = chunkSizeMax * resourcesProdFactor;
 			double massDelta = chunkSize * expInfo.MassPerMB;
 
 #if DEBUG || DEVBUILD
 			if (double.IsNaN(chunkSize))
-				Lib.Log("chunkSize is NaN " + expInfo.ExperimentId + " " + chunkSizeMax + " / " + prodFactor + " / " + available + " / " + ec.Amount + " / " + prefab.ec_rate + " / " + prefab.data_rate, Lib.LogLevel.Error);
+				Lib.Log("chunkSize is NaN " + expInfo.ExperimentId + " " + chunkSizeMax + " / " + chunkProdFactor + " / " + resourcesProdFactor + " / " + available + " / " + vd.ResHandler.ElectricCharge.Amount + " / " + prefab.ec_rate + " / " + prefab.data_rate, Lib.LogLevel.Error);
 
 			if (double.IsNaN(massDelta))
 				Lib.Log("mass delta is NaN " + expInfo.ExperimentId + " " + expInfo.SampleMass + " / " + chunkSize + " / " + expInfo.DataSize, Lib.LogLevel.Error);
@@ -605,10 +599,10 @@ namespace KERBALISM
 
 			if (!expInfo.IsSample)
 			{
-				if (warpDrive != null)
+				if (bufferDrive != null)
 				{
-					double s = Math.Min(chunkSize, warpDrive.FileCapacityAvailable());
-					warpDrive.Record_file(subjectData, s, true);
+					double s = Math.Min(chunkSize, bufferDrive.FileCapacityAvailable());
+					bufferDrive.Record_file(subjectData, s, true);
 
 					if (chunkSize > s) // only write to persisted drive if the data cannot be transmitted in this tick
 						drive.Record_file(subjectData, chunkSize - s, true);
@@ -626,9 +620,11 @@ namespace KERBALISM
 			}
 
 			// consume resources
-			ec.Consume(prefab.ec_rate * elapsed_s, ResourceBroker.Experiment);
+			// note : Consume() calls should only factor in the drive available space limitation and not the
+			// the resource available factor in order to have each resource AvailabilityFactor calculated correctly
+			vd.ResHandler.ElectricCharge.Consume(prefab.ec_rate * elapsed_s * chunkProdFactor, ResourceBroker.Experiment);
 			foreach (ObjectPair<string, double> p in resourceDefs)
-				resources.Consume(v, p.Key, p.Value * elapsed_s, ResourceBroker.Experiment);
+				vd.ResHandler.Consume(p.Key, p.Value * elapsed_s * chunkProdFactor, ResourceBroker.Experiment);
 
 			if (!prefab.sample_collecting)
 			{
@@ -648,14 +644,14 @@ namespace KERBALISM
 			bool isFile = subjectData.ExpInfo.SampleMass == 0.0;
 			Drive drive = null;
 			if (hdId != 0)
-				drive = vesselData.GetPartData(hdId).Drive;
+				drive = vesselData.Parts.Get(hdId).Drive;
 			else
 				drive = isFile ? Drive.FileDrive(vesselData, chunkSize) : Drive.SampleDrive(vesselData, chunkSize, subjectData);
 			UnityEngine.Profiling.Profiler.EndSample();
 			return drive;
 		}
 
-		private static bool HasRequiredResources(Vessel v, List<ObjectPair<string, double>> defs, VesselResources res, out string issue)
+		private static bool HasRequiredResources(Vessel v, List<ObjectPair<string, double>> defs, VesselResHandler res, out string issue)
 		{
 			issue = string.Empty;
 			if (defs.Count < 1)
@@ -664,10 +660,10 @@ namespace KERBALISM
 			// test if there are enough resources on the vessel
 			foreach (var p in defs)
 			{
-				var ri = res.GetResource(v, p.Key);
+				var ri = res.GetResource(p.Key);
 				if (ri.Amount == 0.0)
 				{
-					issue = Local.Module_Experiment_issue12.Format(ri.ResourceName);//"missing " + 
+					issue = Local.Module_Experiment_issue12.Format(ri.Name);//"missing " + 
 					return false;
 				}
 			}
@@ -719,7 +715,7 @@ namespace KERBALISM
 				return State;
 
 			// nervous clicker? wait for it, goddamnit.
-			if ((AnimationGroup != null && AnimationGroup.DeployAnimation.isPlaying) || deployAnimator.Playing())
+			if ((AnimationGroup != null && AnimationGroup.DeployAnimation.isPlaying) || deployAnimator.Playing)
 				return State;
 
 			if (Running)
@@ -740,8 +736,8 @@ namespace KERBALISM
 				};
 
 				// wait for loop animation to stop before deploy animation
-				if (loopAnimator.Playing())
-					loopAnimator.Stop(stop);
+				if (loopAnimator.Playing)
+					loopAnimator.StopLoop(stop);
 				else
 					stop();
 			}
@@ -1245,8 +1241,7 @@ namespace KERBALISM
 			{
 				if (deployAnimator == null)
 				{
-					deployAnimator = new Animator(part, anim_deploy);
-					deployAnimator.reversed = anim_deploy_reverse;
+					deployAnimator = new Animator(part, anim_deploy, anim_deploy_reverse);
 				}
 				return deployAnimator.IsDefined;
 			}
@@ -1258,14 +1253,13 @@ namespace KERBALISM
 		{
 			if (deployAnimator == null)
 			{
-				deployAnimator = new Animator(part, anim_deploy);
-				deployAnimator.reversed = anim_deploy_reverse;
+				deployAnimator = new Animator(part, anim_deploy, anim_deploy_reverse);
 			}
 
 			if (name == retractedDragCube)
-				deployAnimator.Still(0.0);
+				deployAnimator.Still(0f);
 			else if (name == deployedDragCube)
-				deployAnimator.Still(1.0);
+				deployAnimator.Still(1f);
 		}
 
 		public bool UsesProceduralDragCubes() => false;

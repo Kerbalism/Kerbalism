@@ -205,7 +205,7 @@ namespace KERBALISM
 		public bool stockMessages = false;
 
 		[GameParameters.CustomIntParameterUI("#KERBALISM_MessageDuration", minValue = 0, maxValue = 30, toolTip = "#KERBALISM_MessageDuration_desc")]//Message Duration--Duration of messages on screen in seconds
-		public int messageLength = 4;
+		public int messageLength = 8;
 
 		public override GameParameters.GameMode GameMode { get { return GameParameters.GameMode.ANY; } }
 

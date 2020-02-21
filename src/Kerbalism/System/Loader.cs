@@ -107,15 +107,15 @@ namespace KERBALISM
 		{
 			ConfigNode fakeNode = new ConfigNode();
 
-			foreach (KeyValuePair<string, Lib.PartVolumeAndSurfaceInfo> habInfo in Habitat.habitatDatabase)
+			foreach (KeyValuePair<string, Lib.PartVolumeAndSurfaceInfo> habInfo in ModuleKsmHabitat.habitatDatabase)
 			{
-				ConfigNode node = new ConfigNode(Habitat.habitatDataCacheNodeName);
+				ConfigNode node = new ConfigNode(ModuleKsmHabitat.habitatDataCacheNodeName);
 				node.AddValue("partName", habInfo.Key.Replace('.', '_'));
 				habInfo.Value.Save(node);
 				fakeNode.AddNode(node);
 			}
 
-			fakeNode.Save(Habitat.HabitatDataCachePath);
+			fakeNode.Save(ModuleKsmHabitat.HabitatDataCachePath);
 		}
 	}
 

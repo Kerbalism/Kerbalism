@@ -24,6 +24,7 @@ namespace KERBALISM
 		sealed class Entry
 		{
 			public string msg;
+			public float duration;
 			public float first_seen;
 		}
 
@@ -58,6 +59,10 @@ namespace KERBALISM
 			// if queue is empty, do nothing
 			if (entries.Count == 0) return;
 
+			// don't show messages when in screenshot (F2) mode 
+			if (!KSP.UI.UIMasterController.Instance.screenMessageCanvas.enabled)
+				return;
+
 			// get current time
 			float time = Time.realtimeSinceStartup;
 
@@ -68,7 +73,7 @@ namespace KERBALISM
 			if (e.first_seen <= float.Epsilon) e.first_seen = time;
 
 			// if visualized for too long, remove from the queue and skip this update
-			if (e.first_seen + PreferencesMessages.Instance.messageLength < time) { entries.Dequeue(); return; }
+			if (e.first_seen + Math.Min(e.duration, PreferencesMessages.Instance.messageLength) < time) { entries.Dequeue(); return; }
 
 			// calculate content size
 			GUIContent content = new GUIContent(e.msg);
@@ -108,6 +113,7 @@ namespace KERBALISM
 			Entry entry = new Entry
 			{
 				msg = msg,
+				duration = Math.Max(4f, msg.Length / 20f),
 				first_seen = 0
 			};
 
