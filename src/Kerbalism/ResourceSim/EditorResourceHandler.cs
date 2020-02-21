@@ -12,7 +12,10 @@ namespace KERBALISM
 		public static VesselResHandler GetHandler(ShipConstruct ship)
 		{
 			if (editorHandler == null || ship.persistentId != editorHandlerId)
+			{
 				editorHandler = new VesselResHandler(ship, VesselResHandler.VesselState.Editor);
+				editorHandlerId = ship.persistentId;
+			}
 
 			return editorHandler;
 		}

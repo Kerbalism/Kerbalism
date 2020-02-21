@@ -1,11 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace KERBALISM.VesselLogic
 {
+	/*
 	public class VesselEnvironment
 	{
 		public class SunInfo
@@ -247,4 +244,5 @@ namespace KERBALISM.VesselLogic
 		/// <summary> [environment] List of all stars/suns and the related data/calculations for the current vessel</summary>
 		public List<SunInfo> SunsInfo => sunsInfo; List<SunInfo> sunsInfo;
 	}
+	*/
 }
