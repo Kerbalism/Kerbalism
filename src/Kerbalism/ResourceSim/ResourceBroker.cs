@@ -48,6 +48,7 @@ namespace KERBALISM
 		public static ResourceBroker Harvester = GetOrCreate("Harvester", BrokerCategory.Harvester, Local.Brokers_Harvester);
 		public static ResourceBroker Radiator = GetOrCreate("Radiator", BrokerCategory.Radiator, Local.Brokers_Radiator);
 		public static ResourceBroker Habitat = GetOrCreate("Habitat", BrokerCategory.VesselSystem, Local.Habitat);
+		public static ResourceBroker Environment = GetOrCreate("Environment", BrokerCategory.Unknown, Local.Sensor_environment);
 
 		public string Id { get; private set; }
 		public BrokerCategory Category { get; private set; }

@@ -78,6 +78,7 @@ namespace KERBALISM
 		private VesselResource ecResInfo;
 		private VesselResource atmoResInfo;
 		private VesselResource wasteResInfo;
+		private VesselResource breathableResInfo;
 		private string reclaimResAbbr;
 		private BaseField mainInfoField;
 		private BaseField secInfoField;
@@ -314,6 +315,10 @@ namespace KERBALISM
 			atmoResInfo = (VesselResource)vesselResHandler.GetResource(Settings.HabitatAtmoResource);
 			wasteResInfo = (VesselResource)vesselResHandler.GetResource(Settings.HabitatWasteResource);
 
+			if (Settings.HabitatBreathableResourceRate > 0.0)
+				breathableResInfo = (VesselResource)vesselResHandler.GetResource(Settings.HabitatBreathableResource);
+
+
 			reclaimResAbbr = PartResourceLibrary.Instance.GetDefinition(reclaimResource).abbreviation;
 
 			// get persistent data
@@ -356,7 +361,7 @@ namespace KERBALISM
 				HabitatData.SetFlightReferenceFromPart(part, data);
 			}
 
-			data.updateHandler = new HabitatUpdateHandler(vessel, vd, data, atmoRes, wasteRes, shieldRes, atmoResInfo, wasteResInfo, ecResInfo);
+			data.updateHandler = new HabitatUpdateHandler(vessel, vd, data, atmoRes, wasteRes, shieldRes, atmoResInfo, wasteResInfo, breathableResInfo, ecResInfo);
 
 			// acquire a reference to the partmodule
 			data.module = this;
@@ -687,11 +692,16 @@ namespace KERBALISM
 					return;
 				}
 
+				VesselResource ecResInfo = vd.ResHandler.ElectricCharge;
 				VesselResource atmoResInfo = (VesselResource)vd.ResHandler.GetResource(Settings.HabitatAtmoResource);
 				VesselResource wasteResInfo = (VesselResource)vd.ResHandler.GetResource(Settings.HabitatWasteResource);
-				VesselResource ecResInfo = vd.ResHandler.ElectricCharge;
+				VesselResource breathableResInfo;
+				if (Settings.HabitatBreathableResourceRate > 0.0)
+					breathableResInfo = (VesselResource)vd.ResHandler.GetResource(Settings.HabitatBreathableResource);
+				else
+					breathableResInfo = null;
 
-				data.updateHandler = new HabitatUpdateHandler(v, vd, data, atmoRes, wasteRes, shieldRes, atmoResInfo, wasteResInfo, ecResInfo);
+				data.updateHandler = new HabitatUpdateHandler(v, vd, data, atmoRes, wasteRes, shieldRes, atmoResInfo, wasteResInfo, breathableResInfo, ecResInfo);
 			}
 
 			partData.Habitat.updateHandler.Update(elapsed_s);
@@ -712,6 +722,7 @@ namespace KERBALISM
 
 			private VesselResource atmoResInfo;
 			private VesselResource wasteResInfo;
+			private VesselResource breathableResInfo;
 			private VesselResource ecResInfo;
 
 			bool isEditor;
@@ -719,7 +730,7 @@ namespace KERBALISM
 
 			public HabitatUpdateHandler(Vessel vessel, VesselData vd, HabitatData data,
 				PartResourceWrapper atmoRes, PartResourceWrapper wasteRes, PartResourceWrapper shieldRes,
-				VesselResource atmoResInfo, VesselResource wasteResInfo, VesselResource ecResInfo)
+				VesselResource atmoResInfo, VesselResource wasteResInfo, VesselResource breathableResInfo, VesselResource ecResInfo)
 			{
 				this.vessel = vessel;
 				this.vd = vd;
@@ -730,6 +741,7 @@ namespace KERBALISM
 				this.atmoResInfo = atmoResInfo;
 				this.wasteResInfo = wasteResInfo;
 				this.ecResInfo = ecResInfo;
+				this.breathableResInfo = breathableResInfo;
 				isEditor = Lib.IsEditor();
 				isLoaded = (!isEditor && vessel.loaded) || isEditor;
 			}
@@ -925,9 +937,15 @@ namespace KERBALISM
 							break;
 						}
 
-						// TODO : magic oxygen supply too...
+						// magic oxygen supply
+						if (breathableResInfo != null && data.crewCount > 0)
+							breathableResInfo.Produce(data.crewCount * Settings.HabitatBreathableResourceRate * elapsed_s, ResourceBroker.Environment);
+
+						// magic scrubbing
+						wasteRes.Amount = 0.0; 
+
+						// equalize pressure with external pressure
 						atmoRes.Amount = Math.Min(vd.EnvStaticPressure * atmoRes.Capacity, atmoRes.Capacity);
-						wasteRes.Amount = 0.0; // magic scrubbing
 
 						break;
 					case PressureState.AlwaysDepressurized:
