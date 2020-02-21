@@ -113,7 +113,9 @@ namespace KERBALISM
 
 		/// <summary>
 		/// Record a consumption, it will be stored in "Deferred" and later synchronized to the vessel in ExecuteAndSyncToParts()
-		/// <para/>IMPORTANT : quantity should NEVER be scaled to the resource current amount or by the AvailabilityFactor.
+		/// <para/>IMPORTANT : quantity should NEVER be scaled by the AvailabilityFactor,
+		/// and you should avoid to use a "if resource amount == 0, don't consume" logic.
+		/// <para/> Instead, always consume the resource, and scale or disable the effect based on AvailabilityFactor.
 		/// </summary>
 		/// <param name="quantity">amount to consume. This should always be scaled by the timestep (elapsed_s)</param>
 		/// <param name="broker">source of the consumption, for UI purposes</param>

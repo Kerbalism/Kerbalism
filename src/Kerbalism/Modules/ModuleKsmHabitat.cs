@@ -925,6 +925,7 @@ namespace KERBALISM
 							break;
 						}
 
+						// TODO : magic oxygen supply too...
 						atmoRes.Amount = Math.Min(vd.EnvStaticPressure * atmoRes.Capacity, atmoRes.Capacity);
 						wasteRes.Amount = 0.0; // magic scrubbing
 
