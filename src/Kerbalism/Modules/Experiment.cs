@@ -160,6 +160,10 @@ namespace KERBALISM
 				deployAnimator.Still(1f);
 				loopAnimator.Play(false, true);
 			}
+			else
+			{
+				deployAnimator.Still(0f);
+			}
 
 			if (use_animation_group && AnimationGroup == null)
 				AnimationGroup = part.Modules.OfType<ModuleAnimationGroup>().FirstOrDefault();
