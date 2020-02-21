@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using KSP.Localization;
+using System.Linq;
 
 
 namespace KERBALISM
@@ -159,9 +159,9 @@ namespace KERBALISM
 
 			// concatenate messages posted at the same time and of same severity
 			MessageObject lastLog = all_logs.Count > 0 ? all_logs[all_logs.Count - 1] : null;
-			if (lastLog != null && lastLog.time == Planetarium.GetUniversalTime() && lastLog.msgSeverity == severity)
+			Entry lastEntry = instance.entries.LastOrDefault();
+			if (lastEntry != null && lastLog != null && lastLog.time == Planetarium.GetUniversalTime() && lastLog.msgSeverity == severity)
 			{
-				Entry lastEntry = instance.entries.Peek();
 				if (subtext.Length == 0)
 					lastLog.msg = Lib.BuildString(lastEntry.msg, "\n", text);
 				else
