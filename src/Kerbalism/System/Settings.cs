@@ -53,7 +53,7 @@ namespace KERBALISM
 			DataRateDampingExponentRT = Lib.ConfigValue(cfg, "DataRateDampingExponentRT", 6.0f);
 			DataRateSurfaceExperiment = Lib.ConfigValue(cfg, "DataRateSurfaceExperiment", 0.3f);
 			TransmitterActiveEcFactor = Lib.ConfigValue(cfg, "TransmitterActiveEcFactor", 1.5);
-			TransmitterPassiveEcFactor = Lib.ConfigValue(cfg, "TransmitterPassiveEcFactor", 0.2);
+			TransmitterPassiveEcFactor = Lib.ConfigValue(cfg, "TransmitterPassiveEcFactor", 0.04);
 
 			// science
 			ScienceDialog = Lib.ConfigValue(cfg, "ScienceDialog", true);

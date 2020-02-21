@@ -8,7 +8,7 @@ Kerbalism is a mod for Kerbal Space Program that alters the game to add life sup
 
 ### Frequently Asked Questions: [FAQ]
 
-## Current version: 3.6
+## Current version: 3.7
 
 **What's new** : [New and Noteworthy]   
 **Download** : **[Github releases]** - **[CKAN]**  
