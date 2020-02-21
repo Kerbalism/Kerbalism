@@ -157,11 +157,12 @@ namespace KERBALISM
 					// degenerate:
 					// - if the environment modifier is not telling to reset (by being zero)
 					// - if this rule is resource-less, or if there was not enough resource in the vessel
-					if (k > 0.0 && (input.Length == 0 || res.Amount <= double.Epsilon))
+					if (k > 0.0 && (input.Length == 0 || res.AvailabilityFactor < 1.0))
 					{
 						rd.problem += degeneration           // degeneration rate per-second or per-interval
 								   * k                       // product of environment modifiers
 								   * step                    // seconds elapsed or by number of steps
+								   * (input.Length == 0 ? 1.0 : 1.0 - res.AvailabilityFactor) // scale by resource availability
 								   * Variance(name, c, variance); // kerbal-specific variance
 					}
 					// else slowly recover
