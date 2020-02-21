@@ -1,3 +1,12 @@
+## v3.7 for all versions of KSP from 1.5.0 to 1.9.x
+
+ - 2020-02-21
+
+### Changes since the last release
+
+* Reverted antennas idle EC consumption to pre-3.6 levels : factor changed from 0.2 to 0.04
+* Removed logging calls from other threads
+
 ## v3.6 for all versions of KSP from 1.5.0 to 1.9.x
 
  - 2020-02-18

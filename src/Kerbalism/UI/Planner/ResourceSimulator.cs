@@ -697,10 +697,10 @@ namespace KERBALISM.Planner
 			switch (mdt.antennaType)
 			{
 				case AntennaType.INTERNAL:
-					Resource("ElectricCharge").Consume(mdt.DataResourceCost * mdt.DataRate, "communications (control)");
+					Resource("ElectricCharge").Consume(mdt.DataResourceCost * mdt.DataRate * Settings.TransmitterPassiveEcFactor, "communications (idle)");
 					break;
 				default:
-					Resource("ElectricCharge").Consume(mdt.DataResourceCost * mdt.DataRate, "communications (transmitting)");
+					Resource("ElectricCharge").Consume(mdt.DataResourceCost * mdt.DataRate * Settings.TransmitterActiveEcFactor, "communications (transmitting)");
 					break;
 			}
 		}
