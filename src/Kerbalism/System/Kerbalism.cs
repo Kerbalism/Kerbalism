@@ -698,6 +698,10 @@ namespace KERBALISM
 			partSequence.Add("kerbalism-activeshield");
 			partSequence.Add("kerbalism-chemicalplant");
 
+			partSequence.Add("kerbalism-experiment-beep");
+			partSequence.Add("kerbalism-experiment-ding");
+			partSequence.Add("kerbalism-experiment-tick");
+			partSequence.Add("kerbalism-experiment-wing");
 
 			Dictionary<string, float> iconScales = new Dictionary<string, float>();
 
