@@ -42,6 +42,8 @@ namespace KERBALISM
 			PressureSuitVolume = Lib.ConfigValue(cfg, "PressureSuitVolume", 100.0);
 			HabitatAtmoResource = Lib.ConfigValue(cfg, "HabitatAtmoResource", "Atmosphere");
 			HabitatWasteResource = Lib.ConfigValue(cfg, "HabitatWasteResource", "WasteAtmosphere");
+			HabitatBreathableResource = Lib.ConfigValue(cfg, "HabitatBreathableResource", "Oxygen");
+			HabitatBreathableResourceRate = Lib.ConfigValue(cfg, "HabitatBreathableResourceRate", 0.00172379825);
 			DepressuriationDefaultRate = Lib.ConfigValue(cfg, "DepressuriationDefaultRate", 10.0);
 			PressureFactor = Lib.ConfigValue(cfg, "PressureFactor", 10.0);
 			PressureThreshold = Lib.ConfigValue(cfg, "PressureThreshold", 0.3);
@@ -151,12 +153,14 @@ namespace KERBALISM
 
 		// habitat
 		public static double PressureSuitVolume;                // pressure / EVA suit volume in liters, used for determining CO2 poisoning level while kerbals are in a depressurized habitat
-		public static string HabitatAtmoResource;               // habitat volume per kerbal while in EVA or inside an unpressurized habitat
-		public static string HabitatWasteResource;              // habitat volume per kerbal while in EVA or inside an unpressurized habitat
+		public static string HabitatAtmoResource;               // resource used to manage habitat pressure
+		public static string HabitatWasteResource;              // resource used to manage habitat CO2 level (poisoning)
+		public static string HabitatBreathableResource;         // resource automagically produced when the habitat is under breathable external conditions (Oxygen in the default profile)
+		public static double HabitatBreathableResourceRate;     // per second, per kerbal production of the breathable resource. Should match the consumption defined in the breathing rule. Set it to 0 to disable it entirely.
 		public static double DepressuriationDefaultRate;        // liters / second / √(m3) of habitat volume
-		public static double PressureFactor;                    // pressurized modifier value for vessels below the threshold
-		public static double PressureThreshold;                 // below that threeshold, the vessel will be considered under partial pressure and kerbals will put their suits
-
+		public static double PressureFactor;                    // penalty multiplier applied to the "pressure" modifier when the vessel is fully depressurized
+		public static double PressureThreshold;                 // below that threshold, the vessel will be considered under non-survivable pressure and kerbals will put their helmets
+																// also determine the altitude threshold at which non-pressurized habitats can use the external air
 		// poisoning
 		public static double PoisoningFactor;                   // poisoning modifier value for vessels below threshold
 		public static double PoisoningThreshold;                // level of waste atmosphere resource that determine co2 poisoning status

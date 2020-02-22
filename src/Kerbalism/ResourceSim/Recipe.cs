@@ -25,6 +25,11 @@ namespace KERBALISM
 	// That would notably allow to call only once GetResource() at the entry ctor (instead of again and again for each recipe execution step)
 	// and change Recipe from okayish to lightning fast from a performance standpoint, as well as eliminate all heap memory allocations.
 
+	// TODO : currently, "pure input recipes can just underflow", which is an issue for AvailabilityFactor calculations.
+	// Since Recipes are assumed to auto-scale with availability, they register their consumptions in consumeCriticalRequests
+	// and aren't scaled by AvailabilityFactor. The fix is probably to just remove the "if (outputs.Count > 0)" condition, but
+	// I need to check that in detail before messing with this
+
 	public sealed class Recipe
 	{
 		public struct Entry

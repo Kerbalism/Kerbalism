@@ -198,9 +198,20 @@ namespace KERBALISM
 			//   anything that is doing some action based on a resource consumption.
 			// See excel simulation in misc/ResourceSim-AvailabilityFactor.xlsx
 
-			// calculate the resource "starvation" : how much of the consume requests can't be satisfied
-			double starvation = Math.Abs(Math.Min(resourceWrapper.amount + produceRequests - consumeRequests, 0.0));
-			availabilityFactor = consumeRequests > 0.0 ? Math.Max(1.0 - (starvation / consumeRequests), 0.0) : 1.0;
+
+			// if there are consumers, get the availability factor from the consume/produce ratio
+			if (consumeRequests > 0.0)
+			{
+				// calculate the resource "starvation" : how much of the consume requests can't be satisfied
+				double starvation = Math.Abs(Math.Min(resourceWrapper.amount + produceRequests - consumeRequests, 0.0));
+				availabilityFactor = Math.Max(1.0 - (starvation / consumeRequests), 0.0); 
+			}
+			// otherwise, just check the resource amount
+			else
+			{
+				availabilityFactor = resourceWrapper.amount == 0.0 ? 0.0 : 1.0;
+			}
+
 			produceRequests = 0.0;
 			consumeRequests = 0.0;
 

@@ -26,7 +26,7 @@ namespace KERBALISM
 		/// <summary> pressure (atm) of all pressurized habitats, enabled of not. Habitats using the outside air are ignored </summary>
 		public double pressureAtm = 0.0;
 
-		/// <summary> [0.0 ; 1.0] factor : amount of crew members not living with their helmets (pressurized hab / outside air) vs total crew count</summary>
+		/// <summary> [1.0 ; Settings.PressureFactor] Settings.PressureFactor multiplied by amount of crew members not living with their helmets (pressurized hab / outside air) vs total crew count</summary>
 		public double pressureModifier = 0.0;
 
 		/// <summary> [0.0 ; 1.0] % of CO2 in the air (averaged in case there is a mix of pressurized / outside air habitats)</summary>
@@ -450,7 +450,7 @@ namespace KERBALISM
 			info.volumePerCrew = crewCount > 0 ? info.livingVolume / crewCount : 0.0;
 			info.livingSpaceModifier = Lib.Clamp(info.volumePerCrew / PreferencesComfort.Instance.livingSpace, 0.1, 1.0);
 			info.pressureAtm = info.pressurizedVolume > 0.0 ? pressurizedPartsAtmoAmount / info.pressurizedVolume : 0.0;
-			info.pressureModifier = crewCount > 0 ? (double)pressurizedPartsCrewCount / (double)crewCount : info.pressurizedVolume > 0.0 ? 1.0 : 0.0;
+			info.pressureModifier = Math.Max(1.0, Settings.PressureFactor * (crewCount > 0 ? 1.0 - ((double)pressurizedPartsCrewCount / (double)crewCount) : 1.0)); // 1 when fully pressurized, 10 (Settings.PressureFactor) when fully depressurizd
 			info.poisoningLevel = wasteConsideredPartsCount > 0 ? info.poisoningLevel / wasteConsideredPartsCount : 0.0;
 			info.shieldingModifier = info.shieldingSurface > 0.0 ? Radiation.ShieldingEfficiency(info.shieldingAmount / info.shieldingSurface) : 0.0;
 
