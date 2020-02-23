@@ -50,22 +50,9 @@ namespace KERBALISM
 					Deactivate();
 					return;
 				}
-
-			}
-			InitProcess();
-		}
-
-#if !KSP15_16
-		public override void OnStart(StartState state)
-		{
-			if(uiGroup != null)
-			{
-				var g = new BasePAWGroup(uiGroup, uiGroup, false);
-				Events["Toggle"].group = g;
-				Events["DumpValve"].group = g;
+				InitProcess();
 			}
 		}
-#endif
 
 		protected void Deactivate()
 		{
@@ -114,7 +101,7 @@ namespace KERBALISM
 			Lib.AddResource(part, resource, running ? capacity : 0.0, 0.0, true);
 		}
 
-		public void Start()
+		public override void OnStart(StartState state)
 		{
 			// don't break tutorial scenarios
 			if (Lib.DisableScenario(this))
@@ -125,6 +112,15 @@ namespace KERBALISM
 				Deactivate();
 				return;
 			}
+
+#if !KSP15_16
+			if (uiGroup != null)
+			{
+				var g = new BasePAWGroup(uiGroup, uiGroup, false);
+				Events["Toggle"].group = g;
+				Events["DumpValve"].group = g;
+			}
+#endif
 
 			InitProcess();
 		}

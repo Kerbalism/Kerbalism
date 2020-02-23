@@ -772,6 +772,11 @@ namespace KERBALISM
 					{
 						partNeedsInfoRecompile = true;
 					}
+					// auto balance hard drive capacity
+					else if (module is HardDrive hardDrive)
+					{
+						AutoAssignHardDriveCapacity(ap, hardDrive);
+					}
 					// inject process details into ModuleB9PartSwitch/SUBTYPE/descriptionDetail for process switchers
 					else if (module.moduleName == "ModuleB9PartSwitch")
 					{
@@ -814,6 +819,103 @@ namespace KERBALISM
 						Lib.Log("Could not patch the moduleInfo for part " + ap.name + " - " + ex.Message + "\n" + ex.StackTrace);
 					}
 				}
+			}
+		}
+
+		/// <summary> Auto-Assign hard drive storage capacity based on the parts position in the tech tree and part cost </summary>
+		public static void AutoAssignHardDriveCapacity(AvailablePart ap, HardDrive hardDrive)
+		{
+			// don't touch drives assigned to an experiment
+			if (!string.IsNullOrEmpty(hardDrive.experiment_id))
+				return;
+
+			// no auto-assigning necessary
+			if (hardDrive.sampleCapacity != HardDrive.CAPACITY_AUTO && hardDrive.dataCapacity != HardDrive.CAPACITY_AUTO)
+				return;
+
+			// get cumulative science cost for this part
+			double maxScienceCost = 0;
+			double tier = 1.0;
+			double maxTier = 1.0;
+
+			// find start node and max. science cost
+			ProtoRDNode node = null;
+			ProtoRDNode maxNode = null;
+
+			foreach (var n in AssetBase.RnDTechTree.GetTreeNodes())
+			{
+				if (n.tech.scienceCost > maxScienceCost)
+				{
+					maxScienceCost = n.tech.scienceCost;
+					maxNode = n;
+				}
+				if (ap.TechRequired == n.tech.techID)
+					node = n;
+			}
+
+			if(node == null)
+			{
+				Lib.Log($"{ap.partPrefab.partInfo.name}: part not found in tech tree, skipping auto assignment", Lib.LogLevel.Warning);
+				return;
+			}
+
+			// add up science cost from start node and all the parents
+			// (we ignore teh requirement to unlock multiple nodes before this one)
+			while(node.parents.Count > 0)
+			{
+				tier++;
+				node = node.parents[0];
+			}
+
+			// determine max science cost and max tier
+			while(maxNode.parents.Count > 0)
+			{
+				maxTier++;
+				maxNode = maxNode.parents[0];
+			}
+
+			// see https://www.desmos.com/calculator/9oiyzsdxzv
+			//
+			// f = (tier / max. tier)^3
+			// capacity = f * max. capacity
+			// max. capacity factor 3GB (remember storages can be tweaked to 4x the base size, deep horizons had 8GB)
+			// with the variation effects, this caps out at about 10GB.
+
+			// add some part variance based on part cost
+			var t = tier - 1;
+			t += (ap.cost - 5000) / 10000;
+
+			double f = Math.Pow(t / maxTier, 3);
+			double dataCapacity = f * 3000;
+
+			dataCapacity = (int)(dataCapacity * 4) / 4.0; // set to a multiple of 0.25
+			if(dataCapacity > 2)
+				dataCapacity = (int)(dataCapacity * 2) / 2; // set to a multiple of 0.5
+			if (dataCapacity > 5)
+				dataCapacity = (int)(dataCapacity); // set to a multiple of 1
+			if (dataCapacity > 25)
+				dataCapacity = (int)(dataCapacity/5) * 5; // set to a multiple of 5
+			if (dataCapacity > 250)
+				dataCapacity = (int)(dataCapacity / 25) * 25; // set to a multiple of 25
+			if (dataCapacity > 250)
+				dataCapacity = (int)(dataCapacity / 50) * 50; // set to a multiple of 50
+			if (dataCapacity > 1000)
+				dataCapacity = (int)(dataCapacity / 250) * 250; // set to a multiple of 250
+
+			dataCapacity = Math.Max(dataCapacity, 0.25); // 0.25 minimum
+
+			double sampleCapacity = tier / maxTier * 8;
+			sampleCapacity = Math.Max(sampleCapacity, 1); // 1 minimum
+
+			if (hardDrive.dataCapacity == HardDrive.CAPACITY_AUTO)
+			{
+				hardDrive.dataCapacity = dataCapacity;
+				Lib.Log($"{ap.partPrefab.partInfo.name}: tier {tier}/{maxTier} part cost {ap.cost.ToString("F0")} data cap. {dataCapacity.ToString("F2")}", Lib.LogLevel.Message);
+			}
+			if (hardDrive.sampleCapacity == HardDrive.CAPACITY_AUTO)
+			{
+				hardDrive.sampleCapacity = (int)Math.Round(sampleCapacity);
+				Lib.Log($"{ap.partPrefab.partInfo.name}: tier {tier}/{maxTier} part cost {ap.cost.ToString("F0")} sample cap. {hardDrive.sampleCapacity}", Lib.LogLevel.Message);
 			}
 		}
 
