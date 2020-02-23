@@ -16,7 +16,8 @@ namespace KERBALISM
 		[KSPField] public string desc = string.Empty;     // description to show on tooltip
 		[KSPField] public double capacity = 1.0;          // amount of associated pseudo-resource
 		[KSPField] public bool toggle = true;             // show the enable/disable toggle button
-		[KSPField] public string id = string.Empty;       // needed for B9PS
+		[KSPField] public string uiGroup = null;          // display name of the UI group
+		[KSPField] public string id = string.Empty;       // id field for targeting individual modules with B9PS
 
 		// persistence/config
 		// note: the running state doesn't need to be serialized, as it can be deduced from resource flow
@@ -46,18 +47,28 @@ namespace KERBALISM
 			{
 				if (string.IsNullOrEmpty(resource))
 				{
-					Lib.Log("ProcessController " + id + ": deactivating");
 					Deactivate();
 					return;
 				}
 
-				InitProcess();
+			}
+			InitProcess();
+		}
+
+#if !KSP15_16
+		public override void OnStart(StartState state)
+		{
+			if(uiGroup != null)
+			{
+				var g = new BasePAWGroup(uiGroup, uiGroup, false);
+				Events["Toggle"].group = g;
+				Events["DumpValve"].group = g;
 			}
 		}
+#endif
 
 		protected void Deactivate()
 		{
-			Lib.Log("ProcessController " + id + ": shutting down, bye");
 			RemoveResource();
 			resource = string.Empty;
 			isEnabled = false;
@@ -69,7 +80,6 @@ namespace KERBALISM
 
 		protected void InitProcess()
 		{
-			Lib.Log("ProcessController " + id + ": init process");
 			isEnabled = true;
 			enabled = true;
 
@@ -130,17 +140,11 @@ namespace KERBALISM
 			{
 				RemoveResource();
 
-				Lib.Log("ProcessController " + id + ": new resource, creating " + resource);
-
 				// add the resource
 				// - always add the specified amount, even in flight
 				double amount = (!broken && running) ? capacity : 0.0;
 				Lib.AddResource(part, resource, 0.0, capacity, true);
 				createdResource = resource;
-			}
-			else
-			{
-				Lib.Log("ProcessController " + id + ": already created resource, not creating again " + resource);
 			}
 		}
 
@@ -148,7 +152,6 @@ namespace KERBALISM
 		{
 			if (!string.IsNullOrEmpty(createdResource))
 			{
-				Lib.Log("ProcessController " + id + ": removing previously created resource " + createdResource);
 				Lib.RemoveResource(part, createdResource, 0.0, capacity);
 				createdResource = string.Empty;
 			}
@@ -214,7 +217,7 @@ namespace KERBALISM
 		// part tooltip
 		public override string GetInfo()
 		{
-			if (string.IsNullOrEmpty(desc))
+			if (string.IsNullOrEmpty(resource))
 				return string.Empty;
 			return Specs().Info(desc);
 		}

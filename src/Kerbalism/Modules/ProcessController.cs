@@ -15,6 +15,8 @@ namespace KERBALISM
 		[KSPField] public double capacity = 1.0;          // amount of associated pseudo-resource
 		[KSPField] public bool toggle = true;             // show the enable/disable toggle button
 
+		[KSPField] public bool disableInEditor = false;   // phasing-out old configs: disable this module when it is loaded in the editor
+
 		// persistence/config
 		// note: the running state doesn't need to be serialized, as it can be deduced from resource flow
 		// but we find useful to set running to true in the cfg node for some processes, and not others
@@ -40,6 +42,13 @@ namespace KERBALISM
 			// don't break tutorial scenarios
 			if (Lib.DisableScenario(this))
 				return;
+
+			if (disableInEditor && Lib.IsEditor())
+			{
+				enabled = false;
+				isEnabled = false;
+				return;
+			}
 
 			// configure on start, must be executed with enabled true on parts first load.
 			Configure(true);
@@ -72,6 +81,13 @@ namespace KERBALISM
 		///<summary> Called by Configure.cs. Configures the controller to settings passed from the configure module</summary>
 		public void Configure(bool enable)
 		{
+			if (disableInEditor && Lib.IsEditor())
+			{
+				enabled = false;
+				isEnabled = false;
+				return;
+			}
+
 			if (enable)
 			{
 				// if never set
@@ -143,36 +159,27 @@ namespace KERBALISM
 		// action groups
 		[KSPAction("_")] public void Action(KSPActionParam param) { Toggle(); }
 
+		// specifics support
+		public Specifics Specs()
+		{
+			Process process = Profile.processes.Find(k => k.modifiers.Contains(resource));
+			return ModuleKsmProcessController.Specifics(process, capacity);
+		}
+
 		// part tooltip
 		public override string GetInfo()
 		{
-			return isConfigurable ? string.Empty : Specs().Info(desc);
+			if (disableInEditor)
+				return string.Empty;
+
+			if (isConfigurable)
+				return string.Empty;
+
+			return Specs().Info(desc);
 		}
 
 		public bool IsRunning() {
 			return running;
-		}
-
-		// specifics support
-		public Specifics Specs()
-		{
-			Specifics specs = new Specifics();
-			Process process = Profile.processes.Find(k => k.modifiers.Contains(resource));
-			if (process != null)
-			{
-				foreach (KeyValuePair<string, double> pair in process.inputs)
-				{
-					if (!process.modifiers.Contains(pair.Key))
-						specs.Add(pair.Key, Lib.BuildString("<color=#ffaa00>", Lib.HumanReadableRate(pair.Value * capacity), "</color>"));
-					else
-						specs.Add(Local.ProcessController_info1, Lib.HumanReadableDuration(0.5 / pair.Value));//"Half-life"
-				}
-				foreach (KeyValuePair<string, double> pair in process.outputs)
-				{
-					specs.Add(pair.Key, Lib.BuildString("<color=#00ff00>", Lib.HumanReadableRate(pair.Value * capacity), "</color>"));
-				}
-			}
-			return specs;
 		}
 
 		// module info support
