@@ -57,7 +57,7 @@ namespace KERBALISM
 				if (pin.Length > 0)
 				{
 					// still-play pin animation
-					pin_anim.Still(Telemetry_pin(vessel, vd, type));
+					pin_anim.Still((float)Telemetry_pin(vessel, vd, type));
 				}
 			}
 		}
@@ -86,7 +86,7 @@ namespace KERBALISM
 				case "temperature": return Math.Min(vd.EnvTemperature / 11000.0, 1.0);
 				case "radiation": return Math.Min(vd.EnvRadiation * 3600.0 / 11.0, 1.0);
 				case "habitat_radiation": return Math.Min(HabitatRadiation(vd) * 3600.0 / 11.0, 1.0);
-				case "pressure": return Math.Min(v.mainBody.GetPressure(v.altitude) / Sim.PressureAtSeaLevel() / 11.0, 1.0);
+				case "pressure": return Math.Min(v.mainBody.GetPressure(v.altitude) / Sim.PressureAtSeaLevel / 11.0, 1.0);
 				case "gravioli": return Math.Min(vd.EnvGravioli, 1.0);
 			}
 			return 0.0;
@@ -122,7 +122,7 @@ namespace KERBALISM
 
 		private static double HabitatRadiation(VesselData vd)
 		{
-			return (1.0 - vd.Shielding) * vd.EnvHabitatRadiation;
+			return (1.0 - vd.HabitatInfo.shieldingModifier) * vd.EnvHabitatRadiation;
 		}
 
 		// get readings tooltip
@@ -154,7 +154,7 @@ namespace KERBALISM
 					return vd.EnvUnderwater
 					  ? Local.Sensor_insideocean//"inside <b>ocean</b>"
 					  : vd.EnvInAtmosphere
-					  ? Local.Sensor_insideatmosphere.Format(vd.EnvBreathable ? Local.Sensor_breathable : Local.Sensor_notbreathable)//"breathable""not breathable"                  //Lib.BuildString("inside <b>atmosphere</b> (", vd.EnvBreathable ? "breathable" : "not breathable", ")")
+					  ? Local.Sensor_insideatmosphere.Format(vd.EnvInBreathableAtmosphere ? Local.Sensor_breathable : Local.Sensor_notbreathable)//"breathable""not breathable"                  //Lib.BuildString("inside <b>atmosphere</b> (", vd.EnvBreathable ? "breathable" : "not breathable", ")")
 					  : Sim.InsideThermosphere(v)
 					  ? Local.Sensor_insidethermosphere//"inside <b>thermosphere</b>""
 					  : Sim.InsideExosphere(v)

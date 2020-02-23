@@ -197,7 +197,7 @@ namespace KERBALISM
 				stretchHeight = true,
 				fixedWidth = 0,
 				fixedHeight = 0,
-				fontSize = Styles.ScaleInteger(12),
+				fontSize = Styles.ScaleInteger(14),
 				alignment = TextAnchor.MiddleCenter,
 				border = new RectOffset(0, 0, 0, 0),
 				padding = new RectOffset(Styles.ScaleInteger(2), Styles.ScaleInteger(2), Styles.ScaleInteger(2), Styles.ScaleInteger(2))

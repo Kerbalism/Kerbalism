@@ -57,13 +57,13 @@ namespace KERBALISM
 		}
 
 
-		public void Execute(Vessel v, VesselData vd, VesselResources resources, double elapsed_s)
+		public void Execute(Vessel v, VesselData vd, VesselResHandler resources, double elapsed_s)
 		{
 			// store list of crew to kill
 			List<ProtoCrewMember> deferred_kills = new List<ProtoCrewMember>();
 
 			// get input resource handler
-			ResourceInfo res = input.Length > 0 ? resources.GetResource(v, input) : null;
+			VesselResource res = input.Length > 0 ? (VesselResource)resources.GetResource(input) : null;
 
 			// determine message variant
 			uint variant = vd.EnvTemperature < Settings.LifeSupportSurvivalTemperature ? 0 : 1u;
@@ -123,7 +123,10 @@ namespace KERBALISM
 					{
 						double ratePerStep = resRate / interval;
 						res.UpdateIntervalRule(-required, -ratePerStep, broker);
-						if (output.Length > 0) ResourceCache.GetResource(v, output).UpdateIntervalRule(required * ratio, ratePerStep * ratio, broker);
+						if (output.Length > 0)
+						{
+							((VesselResource)resources.GetResource(output)).UpdateIntervalRule(required * ratio, ratePerStep * ratio, broker);
+						}
 					}
 
 					// if continuous, or if one or more intervals elapsed
@@ -140,7 +143,7 @@ namespace KERBALISM
 						{
 							// transform input into output resource
 							// - rules always dump excess overboard (because it is waste)
-							ResourceRecipe recipe = new ResourceRecipe(broker);
+							Recipe recipe = new Recipe(broker); // kerbals are not associated with a part
 							recipe.AddInput(input, required);
 							recipe.AddOutput(output, required * ratio, true);
 							resources.AddRecipe(recipe);
@@ -154,11 +157,12 @@ namespace KERBALISM
 					// degenerate:
 					// - if the environment modifier is not telling to reset (by being zero)
 					// - if this rule is resource-less, or if there was not enough resource in the vessel
-					if (k > 0.0 && (input.Length == 0 || res.Amount <= double.Epsilon))
+					if (k > 0.0 && (input.Length == 0 || res.AvailabilityFactor < 1.0))
 					{
 						rd.problem += degeneration           // degeneration rate per-second or per-interval
 								   * k                       // product of environment modifiers
 								   * step                    // seconds elapsed or by number of steps
+								   * (input.Length == 0 ? 1.0 : 1.0 - res.AvailabilityFactor) // scale by resource availability
 								   * Variance(name, c, variance); // kerbal-specific variance
 					}
 					// else slowly recover

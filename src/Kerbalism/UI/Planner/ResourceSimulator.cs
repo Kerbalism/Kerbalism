@@ -131,9 +131,9 @@ namespace KERBALISM.Planner
 							case "Greenhouse":
 								Process_greenhouse(m as Greenhouse, env, va);
 								break;
-							case "GravityRing":
-								Process_ring(m as GravityRing);
-								break;
+							//case "GravityRing":
+							//	Process_ring(m as GravityRing);
+							//	break;
 							case "Harvester":
 								Process_harvester(m as Harvester, va);
 								break;
@@ -439,11 +439,11 @@ namespace KERBALISM.Planner
 		}
 
 
-		void Process_ring(GravityRing ring)
-		{
-			if (ring.deployed)
-				Resource("ElectricCharge").Consume(ring.ec_rate, "gravity ring");
-		}
+		//void Process_ring(GravityRing ring)
+		//{
+		//	if (ring.deployed)
+		//		Resource("ElectricCharge").Consume(ring.ec_rate, "gravity ring");
+		//}
 
 		void Process_harvester(Harvester harvester, VesselAnalyzer va)
 		{
@@ -697,10 +697,10 @@ namespace KERBALISM.Planner
 			switch (mdt.antennaType)
 			{
 				case AntennaType.INTERNAL:
-					Resource("ElectricCharge").Consume(mdt.DataResourceCost * mdt.DataRate, "communications (control)");
+					Resource("ElectricCharge").Consume(mdt.DataResourceCost * mdt.DataRate * Settings.TransmitterPassiveEcFactor, "communications (idle)");
 					break;
 				default:
-					Resource("ElectricCharge").Consume(mdt.DataResourceCost * mdt.DataRate, "communications (transmitting)");
+					Resource("ElectricCharge").Consume(mdt.DataResourceCost * mdt.DataRate * Settings.TransmitterActiveEcFactor, "communications (transmitting)");
 					break;
 			}
 		}

@@ -65,7 +65,7 @@ namespace KERBALISM
 			deploy_anim = new Animator(part, animation);
 
 			// set animation initial state
-			deploy_anim.Still(deployed ? 1.0 : 0.0);
+			deploy_anim.Still(deployed ? 1f : 0f);
 
 			deploy_cs = new CrewSpecs(crew_operate);
 		}
@@ -177,7 +177,7 @@ namespace KERBALISM
 		public static double Total(Vessel v)
 		{
 			// get resource cache
-			ResourceInfo ec = ResourceCache.GetResource(v, "ElectricCharge");
+			IResource ec = v.KerbalismData().ResHandler.GetResource("ElectricCharge");
 
 			double total = 0.0;
 			if (v.loaded)

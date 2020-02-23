@@ -66,7 +66,7 @@ namespace KERBALISM
 				Dictionary<uint, PartData> allParts = new Dictionary<uint, PartData>();
 				foreach (VesselData vesselData in vessels.Values)
 				{
-					foreach (PartData partData in vesselData.PartDatas)
+					foreach (PartData partData in vesselData.Parts)
 					{
 						// we had a case of someone having a save with multiple parts having the same flightID
 						// 5 duplicates, all were asteroids.

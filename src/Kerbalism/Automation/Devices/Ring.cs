@@ -6,7 +6,7 @@ using KSP.Localization;
 
 namespace KERBALISM
 {
-
+	/*
 
 	public sealed class RingDevice : LoadedDevice<GravityRing>
 	{
@@ -50,6 +50,6 @@ namespace KERBALISM
 			Ctrl(!Lib.Proto.GetBool(protoModule, "deployed"));
 		}
 	}
-
+	*/
 
 } // KERBALISM

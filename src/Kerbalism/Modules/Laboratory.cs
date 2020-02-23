@@ -36,7 +36,7 @@ namespace KERBALISM
 		private static SubjectData background_sample = null;             // sample currently being analyzed in background simulation
 		private Status status = Status.DISABLED;                    // laboratory status
 		private string status_txt = string.Empty;                   // status string to show next to the ui button
-		private ResourceInfo ec = null;                            // resource info for EC
+		private VesselResource ec = null;                            // resource info for EC
 
 		// localized strings
 		private static readonly string localized_title = Lib.BuildString("<size=1><color=#00000000>00</color></size>", Local.Laboratory_Title);
@@ -63,6 +63,9 @@ namespace KERBALISM
 
 			// parse crew specs
 			researcher_cs = new CrewSpecs(researcher);
+
+			// get ec handler
+			ec = vessel.KerbalismData().ResHandler.ElectricCharge;
 		}
 
 		public void Update()
@@ -106,15 +109,14 @@ namespace KERBALISM
 					if (current_sample != null)
 					{
 						// consume EC
-						ec = ResourceCache.GetResource(vessel, "ElectricCharge");
 						ec.Consume(ec_rate * Kerbalism.elapsed_s, ResourceBroker.Laboratory);
 
 						// if there was ec
 						// - comparing against amount in previous simulation step
-						if (ec.Amount > double.Epsilon)
+						if (ec.AvailabilityFactor > 0.0)
 						{
 							// analyze the sample
-							status = Analyze(vessel, current_sample, rate * Kerbalism.elapsed_s);
+							status = Analyze(vessel, current_sample, rate * ec.AvailabilityFactor * Kerbalism.elapsed_s);
 							running = status == Status.RUNNING;
 						}
 						// if there was no ec
@@ -130,7 +132,7 @@ namespace KERBALISM
 			else status = Status.DISABLED;
 		}
 
-		public static void BackgroundUpdate(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, Laboratory lab, ResourceInfo ec, double elapsed_s)
+		public static void BackgroundUpdate(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, Laboratory lab, double elapsed_s)
 		{
 			// if enabled
 			if (Lib.Proto.GetBool(m, "running"))
@@ -153,15 +155,17 @@ namespace KERBALISM
 					// if there is a sample to analyze
 					if (background_sample != null)
 					{
+						VesselResource ec = v.KerbalismData().ResHandler.ElectricCharge;
+
 						// consume EC
 						ec.Consume(lab.ec_rate * elapsed_s, ResourceBroker.Laboratory);
 
 						// if there was ec
 						// - comparing against amount in previous simulation step
-						if (ec.Amount > double.Epsilon)
+						if (ec.AvailabilityFactor > 0.0)
 						{
 							// analyze the sample
-							var status = Analyze(v, background_sample, rate * elapsed_s);
+							var status = Analyze(v, background_sample, rate * ec.AvailabilityFactor * elapsed_s);
 							if (status != Status.RUNNING)
 								Lib.Proto.Set(m, "running", false);
 						}

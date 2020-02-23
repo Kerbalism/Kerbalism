@@ -42,14 +42,26 @@ namespace KERBALISM
 
 				List<Drive> drives = Drive.GetDrives(ControllerVessel, false);
 				SubjectData subjectData = ScienceDB.GetSubjectDataFromStockId(subject.id);
+				double sciencePerMB = subjectData.SciencePerMB;
+				if (sciencePerMB == 0.0)
+				{
+					Lib.Log($"SciencePerMB is 0 for {subjectData.FullTitle} !", Lib.LogLevel.Error);
+					__result = false;
+					return false;
+				}
+				float scienceValue = storedScienceData * subject.subjectValue;
+				double dataSize = scienceValue / subjectData.SciencePerMB;
 				foreach (Drive drive in drives) {
 					//Lib.Log(Lib.BuildString("BREAKING GROUND -- ", subject.id, " | ", storedScienceData.ToString()));
-					if(drive.Record_file(subjectData, storedScienceData, true)) {
+					if(drive.Record_file(subjectData, dataSize, true))
+					{
 						//Lib.Log("BREAKING GROUND -- file recorded!");
-						Lib.ReflectionValue<float>(__instance, "transmittedScienceData", transmittedScienceData + storedScienceData);
+						Lib.ReflectionValue<float>(__instance, "transmittedScienceData", transmittedScienceData + scienceValue);
 						Lib.ReflectionValue<float>(__instance, "storedScienceData", 0f);
 						break;
-					} else {
+					}
+					else
+					{
 						//Lib.Log("BREAKING GROUND -- file NOT recorded!");
 						__result = true;
 						return false;

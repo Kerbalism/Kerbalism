@@ -97,8 +97,8 @@ namespace KERBALISM
 			Fetch = this;
 
 			// You just don't know what you are doing, no ?
-			Communications.NetworkInitialized = false;
-			Communications.NetworkInitializing = false;
+			//Communications.NetworkInitialized = false;
+			//Communications.NetworkInitializing = false;
 
 			SerenityEnabled = Expansions.ExpansionsLoader.IsExpansionInstalled("Serenity");
 		}
@@ -157,7 +157,6 @@ namespace KERBALISM
 				try
 				{
 					Cache.Init();
-					ResourceCache.Init();
 
 					// prepare storm data
 					foreach (CelestialBody body in FlightGlobals.Bodies)
@@ -190,7 +189,6 @@ namespace KERBALISM
 
 			// always clear the caches
 			Cache.Clear();
-			ResourceCache.Clear();
 
 			// deserialize our database
 			try
@@ -207,8 +205,8 @@ namespace KERBALISM
 			}
 
 			// I'm smelling the hacky mess in here.
-			Communications.NetworkInitialized = false;
-			Communications.NetworkInitializing = false;
+			//Communications.NetworkInitialized = false;
+			//Communications.NetworkInitializing = false;
 
 			// detect if this is a different savegame
 			if (DB.uid != savegame_uid)
@@ -276,7 +274,6 @@ namespace KERBALISM
 			Guid last_id = Guid.Empty;
 			Vessel last_v = null;
 			VesselData last_vd = null;
-			VesselResources last_resources = null;
 
 			// credit science at regular interval
 			ScienceDB.CreditScienceBuffers(elapsed_s);
@@ -307,30 +304,20 @@ namespace KERBALISM
 					EVA.Update(v);
 				}
 
-				// keep track of rescue mission kerbals, and gift resources to their vessels on discovery
-				if (v.loaded && vd.is_vessel)
-				{
-					// manage rescue mission mechanics
-					Misc.ManageRescueMission(v);
-				}
-
 				// do nothing else for invalid vessels
 				if (!vd.IsSimulated)
 					continue;
 
-				// get resource cache
-				VesselResources resources = ResourceCache.Get(v);
-
 				// if loaded
 				if (v.loaded)
 				{
+					// get resource cache
+					VesselResHandler resources = vd.ResHandler;
+
 					//UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Loaded.VesselDataEval");
 					// update the vessel info
 					vd.Evaluate(false, elapsed_s);
 					//UnityEngine.Profiling.Profiler.EndSample();
-
-					// get most used resource
-					ResourceInfo ec = resources.GetResource(v, "ElectricCharge");
 
 					UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Loaded.Radiation");
 					// show belt warnings
@@ -341,15 +328,12 @@ namespace KERBALISM
 					UnityEngine.Profiling.Profiler.EndSample();
 
 					UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Loaded.Comms");
-					Communications.Update(v, vd, ec, elapsed_s);
+					CommsMessages.Update(v, vd, elapsed_s);
 					UnityEngine.Profiling.Profiler.EndSample();
-
-					// Habitat equalization
-					ResourceBalance.Equalizer(v);
 
 					UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Loaded.Science");
 					// transmit science data
-					Science.Update(v, vd, ec, elapsed_s);
+					Science.Update(v, vd, elapsed_s);
 					UnityEngine.Profiling.Profiler.EndSample();
 
 					UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Loaded.Profile");
@@ -357,15 +341,17 @@ namespace KERBALISM
 					Profile.Execute(v, vd, resources, elapsed_s);
 					UnityEngine.Profiling.Profiler.EndSample();
 
-					UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Loaded.Profile");
+					UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Loaded.ResourceAPI");
 					// part module resource updates
-					vd.ResourceUpdate(resources, elapsed_s);
+					ResourceAPI.ResourceUpdate(v, vd, resources, elapsed_s);
 					UnityEngine.Profiling.Profiler.EndSample(); 
 
 					UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Loaded.Resource");
 					// apply deferred requests
-					resources.Sync(v, vd, elapsed_s);
+					resources.ResourceUpdate(v, VesselResHandler.VesselState.Loaded, elapsed_s);
 					UnityEngine.Profiling.Profiler.EndSample();
+
+					Profile.CheckSupplies(v, vd);
 
 					// call automation scripts
 					vd.computer.Automate(v, vd, resources);
@@ -393,7 +379,6 @@ namespace KERBALISM
 						last_time = ud.time;
 						last_v = v;
 						last_vd = vd;
-						last_resources = resources;
 					}
 				}
 			}
@@ -403,13 +388,13 @@ namespace KERBALISM
 			// we will update the vessel whose most recent background update is the oldest
 			if (last_v != null)
 			{
+				// get resource cache
+				VesselResHandler resources = last_vd.ResHandler;
+
 				//UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Unloaded.VesselDataEval");
 				// update the vessel info (high timewarp speeds reevaluation)
 				last_vd.Evaluate(false, last_time);
 				//UnityEngine.Profiling.Profiler.EndSample();
-
-				// get most used resource
-				ResourceInfo last_ec = last_resources.GetResource(last_v, "ElectricCharge");
 
 				UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Unloaded.Radiation");
 				// show belt warnings
@@ -420,31 +405,33 @@ namespace KERBALISM
 				UnityEngine.Profiling.Profiler.EndSample();
 
 				UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Unloaded.Comms");
-				Communications.Update(last_v, last_vd, last_ec, last_time);
+				CommsMessages.Update(last_v, last_vd, last_time);
 				UnityEngine.Profiling.Profiler.EndSample();
 
 				UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Unloaded.Profile");
 				// apply rules
-				Profile.Execute(last_v, last_vd, last_resources, last_time);
+				Profile.Execute(last_v, last_vd, resources, last_time);
 				UnityEngine.Profiling.Profiler.EndSample();
 
 				UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Unloaded.Background");
 				// simulate modules in background
-				Background.Update(last_v, last_vd, last_resources, last_time);
+				Background.Update(last_v, last_vd, resources, last_time);
 				UnityEngine.Profiling.Profiler.EndSample();
 
 				UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Unloaded.Science");
 				// transmit science	data
-				Science.Update(last_v, last_vd, last_ec, last_time);
+				Science.Update(last_v, last_vd, last_time);
 				UnityEngine.Profiling.Profiler.EndSample();
 
 				UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Unloaded.Resource");
 				// apply deferred requests
-				last_resources.Sync(last_v, last_vd, last_time);
+				resources.ResourceUpdate(last_v.protoVessel, VesselResHandler.VesselState.Unloaded, last_time);
 				UnityEngine.Profiling.Profiler.EndSample();
 
+				Profile.CheckSupplies(last_v, last_vd);
+
 				// call automation scripts
-				last_vd.computer.Automate(last_v, last_vd, last_resources);
+				last_vd.computer.Automate(last_v, last_vd, resources);
 
 				// remove from unloaded data container
 				unloaded.Remove(last_vd.VesselId);
@@ -470,11 +457,11 @@ namespace KERBALISM
 			if (!didSanityCheck)
 				SanityCheck();
 
-			if (!Communications.NetworkInitializing)
-			{
-				Communications.NetworkInitializing = true;
-				StartCoroutine(Callbacks.NetworkInitialized());
-			}
+			//if (!Communications.NetworkInitializing)
+			//{
+			//	Communications.NetworkInitializing = true;
+			//	StartCoroutine(Callbacks.NetworkInitialized());
+			//}
 
 			// attach map renderer to planetarium camera once
 			if (MapView.MapIsEnabled && map_camera_script == null)
@@ -629,68 +616,6 @@ namespace KERBALISM
 			}
 		}
 
-		public static void ManageRescueMission(Vessel v)
-		{
-			// true if we detected this was a rescue mission vessel
-			bool detected = false;
-
-			// deal with rescue missions
-			foreach (ProtoCrewMember c in Lib.CrewList(v))
-			{
-				// get kerbal data
-				KerbalData kd = DB.Kerbal(c.name);
-
-				// flag the kerbal as not rescue at prelaunch
-				if (v.situation == Vessel.Situations.PRELAUNCH)
-					kd.rescue = false;
-
-				// if the kerbal belong to a rescue mission
-				if (kd.rescue)
-				{
-					// remember it
-					detected = true;
-
-					// flag the kerbal as non-rescue
-					// note: enable life support mechanics for the kerbal
-					kd.rescue = false;
-
-					// show a message
-					Message.Post(Lib.BuildString(Local.Rescuemission_msg1," <b>", c.name, "</b>"), Lib.BuildString((c.gender == ProtoCrewMember.Gender.Male ? Local.Kerbal_Male : Local.Kerbal_Female), Local.Rescuemission_msg2));//We found xx  "He"/"She"'s still alive!"
-				}
-			}
-
-			// gift resources
-			if (detected)
-			{
-				var parts = Lib.GetPartsRecursively(v.rootPart);
-
-				// give the vessel some propellant usable on eva
-				string monoprop_name = Lib.EvaPropellantName();
-				double monoprop_amount = Lib.EvaPropellantCapacity();
-				foreach (var part in parts)
-				{
-					if (part.CrewCapacity > 0 || part.FindModuleImplementing<KerbalEVA>() != null)
-					{
-						if (Lib.Capacity(part, monoprop_name) <= double.Epsilon)
-						{
-							Lib.AddResource(part, monoprop_name, 0.0, monoprop_amount);
-						}
-						break;
-					}
-				}
-
-				ResourceCache.Produce(v, monoprop_name, monoprop_amount, ResourceBroker.Generic);
-
-				// give the vessel some supplies
-				Profile.SetupRescue(v);
-
-				// sync vessel resources once to avoid posting "rescue mission scare messages"
-				// (messages about resource levels being low)
-				VesselResources resources = ResourceCache.Get(v);
-				resources.Sync(v, v.KerbalismData(), 1.0);
-			}
-		}
-
 		public static void TechDescriptions()
 		{
 			var rnd = RDController.Instance;
@@ -773,6 +698,10 @@ namespace KERBALISM
 			partSequence.Add("kerbalism-activeshield");
 			partSequence.Add("kerbalism-chemicalplant");
 
+			partSequence.Add("kerbalism-experiment-beep");
+			partSequence.Add("kerbalism-experiment-ding");
+			partSequence.Add("kerbalism-experiment-tick");
+			partSequence.Add("kerbalism-experiment-wing");
 
 			Dictionary<string, float> iconScales = new Dictionary<string, float>();
 
@@ -931,27 +860,6 @@ namespace KERBALISM
 			{ vd.computer.Execute(v, ScriptType.action5); }
 		}
 
-		// return true if the vessel is a rescue mission
-		public static bool IsRescueMission(Vessel v)
-		{
-			// avoid corner-case situation on the first update : rescue vessel handling code is called
-			// after the VesselData creation, causing Vesseldata evaluation to be delayed, causing anything
-			// that rely on it to fail on its first update or in OnStart
-			if (v.situation == Vessel.Situations.PRELAUNCH)
-				return false;
-
-			// if at least one of the crew is flagged as rescue, consider it a rescue mission
-			foreach (var c in Lib.CrewList(v))
-			{
-				if (DB.Kerbal(c.name).rescue)
-					return true;
-			}
-
-
-			// not a rescue mission
-			return false;
-		}
-
 		// kill a kerbal
 		// note: you can't kill a kerbal while iterating over vessel crew list, do it outside the loop
 		public static void Kill(Vessel v, ProtoCrewMember c)
@@ -1027,11 +935,11 @@ namespace KERBALISM
 			const double res_penalty = 0.1;        // proportion of food lost on 'depressed' and 'wrong_valve'
 
 			// get a supply resource at random
-			ResourceInfo res = null;
+			IResource res = null;
 			if (Profile.supplies.Count > 0)
 			{
 				Supply supply = Profile.supplies[Lib.RandomInt(Profile.supplies.Count)];
-				res = ResourceCache.GetResource(v, supply.resource);
+				res = v.KerbalismData().ResHandler.GetResource(supply.resource);
 			}
 
 			// compile list of events with condition satisfied
@@ -1068,7 +976,7 @@ namespace KERBALISM
 					break;
 				case KerbalBreakdown.wrong_valve:
 					text = Local.Kerbalwrongvalve;//"$ON_VESSEL$KERBAL opened the wrong valve"
-					subtext = res.ResourceName + " " + Local.Kerbalwrongvalve_subtext;//has been lost"
+					subtext = res.Name + " " + Local.Kerbalwrongvalve_subtext;//has been lost"
 					break;
 			}
 

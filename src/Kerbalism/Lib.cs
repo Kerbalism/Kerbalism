@@ -9,6 +9,9 @@ using UnityEngine;
 using CommNet;
 using KSP.Localization;
 using KSP.UI.Screens;
+using KSP.UI;
+using KSP.UI.Screens.Flight;
+using System.Collections;
 
 namespace KERBALISM
 {
@@ -775,18 +778,21 @@ namespace KERBALISM
 		public const string InlineSpriteFlask = "<sprite=\"CurrencySpriteAsset\" name=\"Flask\" color=#CE5DAE>";
 
 		///<summary> Pretty-print a resource rate (rate is per second). Return an absolute value if a negative one is provided</summary>
-		public static string HumanReadableRate(double rate, string precision = "F3")
+		public static string HumanReadableRate(double rate, string precision = "F3", string unit = "")
 		{
-			if (rate == 0.0) return Local.Generic_NONE;//"none"
+			if (unit != "")
+				unit = Lib.BuildString(" ", unit);
+
+			if (rate == 0.0)return Local.Generic_NONE;//"none"
 			rate = Math.Abs(rate);
-			if (rate >= 0.01) return BuildString(rate.ToString(precision), Local.Generic_perSecond);//"/s"
+			if (rate >= 0.01)return BuildString(rate.ToString(precision), unit, Local.Generic_perSecond);//"/s"
 			rate *= 60.0; // per-minute
-			if (rate >= 0.01) return BuildString(rate.ToString(precision), Local.Generic_perMinute);//"/m"
+			if (rate >= 0.01) return BuildString(rate.ToString(precision), unit, Local.Generic_perMinute);//"/m"
 			rate *= 60.0; // per-hour
-			if (rate >= 0.01) return BuildString(rate.ToString(precision), Local.Generic_perHour);//"/h"
+			if (rate >= 0.01) return BuildString(rate.ToString(precision), unit, Local.Generic_perHour);//"/h"
 			rate *= HoursInDay;  // per-day
-			if (rate >= 0.01) return BuildString(rate.ToString(precision), Local.Generic_perDay);//"/d"
-			return BuildString((rate * DaysInYear).ToString(precision), Local.Generic_perYear);//"/y"
+			if (rate >= 0.01) return BuildString(rate.ToString(precision), unit, Local.Generic_perDay);//"/d"
+			return BuildString((rate * DaysInYear).ToString(precision), unit, Local.Generic_perYear);//"/y"
 		}
 
 		///<summary> Pretty-print a duration (duration is in seconds, must be positive) </summary>
@@ -986,6 +992,18 @@ namespace KERBALISM
 		public static string HumanReadableCost(double v)
 		{
 			return Lib.BuildString(v.ToString("F0"), " $");
+		}
+
+		///<summary> Format a large (positive) number using kilo / mega abbreviations </summary>
+		public static string HumanReadableAmountCompact(double value)
+		{
+			value = Math.Abs(value);
+			if (value >= 1000000.0)
+				return (value / 1000000.0).ToString("0.00M");
+			else if (value >= 1000.0)
+				return (value / 1000.0).ToString("0.00k");
+			else
+				return value.ToString("F0");
 		}
 
 		///<summary> Format a value to 2 decimal places, or return 'none' </summary>
@@ -1357,14 +1375,14 @@ namespace KERBALISM
 #endif
 		}
 
-		public static bool IsPowered(Vessel v)
+		public static bool IsPowered(Vessel v, VesselResource ecRes)
 		{
 #if !KSP15_16
 			var cluster = Serenity.GetScienceCluster(v);
 			if (cluster != null)
 				return cluster.IsPowered;
 #endif
-			return ResourceCache.GetResource(v, "ElectricCharge").Amount > double.Epsilon;
+			return ecRes.AvailabilityFactor > 0.1;
 		}
 
 		public static Guid VesselID(Vessel v)
@@ -1453,18 +1471,36 @@ namespace KERBALISM
 			return p.partInfo.name;
 		}
 
+		/// <summary>
+		/// In the editor, remove the symmetry constraint for this part and its symmetric counterparts. 
+		/// This method is available in stock (Part.RemoveFromSymmetry()) since 1.7.2, copied here for 1.4-1.6 compatibility
+		/// </summary>
+		public static void EditorClearSymmetry(Part part)
+		{
+			part.CleanSymmetryReferences();
+			if (part.stackIcon != null)
+			{
+				part.stackIcon.RemoveIcon();
+				part.stackIcon.CreateIcon();
+				if (StageManager.Instance != null) StageManager.Instance.SortIcons(true);
+			}
+			EditorLogic.fetch.SetBackup();
+		}
+
+		#endregion
+
+		#region CREW
+
 		public static int CrewCount(Part part)
 		{
 			// outside of the editors, it is easy
-			if (!Lib.IsEditor())
-			{
+			if (IsFlight())
 				return part.protoModuleCrew.Count;
-			}
 
 			// in the editor we need something more involved
-			Int64 part_id = 4294967296L + part.GetInstanceID();
-			var manifest = KSP.UI.CrewAssignmentDialog.Instance.GetManifest();
-			var part_manifest = manifest.GetCrewableParts().Find(k => k.PartID == part_id);
+			// Int64 part_id = 4294967296L + part.GetInstanceID();
+			VesselCrewManifest manifest = CrewAssignmentDialog.Instance.GetManifest();
+			PartCrewManifest part_manifest = manifest?.PartManifests.Find(k => k.PartID == part.craftID);
 			if (part_manifest != null)
 			{
 				int result = 0;
@@ -1484,20 +1520,163 @@ namespace KERBALISM
 			return CrewCount(p) > 0;
 		}
 
-		/// <summary>
-		/// In the editor, remove the symmetry constraint for this part and its symmetric counterparts. 
-		/// This method is available in stock (Part.RemoveFromSymmetry()) since 1.7.2, copied here for 1.4-1.6 compatibility
-		/// </summary>
-		public static void EditorClearSymmetry(Part part)
+		public static void EditorClearPartCrew(Part part)
 		{
-			part.CleanSymmetryReferences();
-			if (part.stackIcon != null)
+			PartCrewManifest partCrewManifest = ShipConstruction.ShipManifest.GetPartCrewManifest(part.craftID);
+
+			if (partCrewManifest != null)
 			{
-				part.stackIcon.RemoveIcon();
-				part.stackIcon.CreateIcon();
-				if (StageManager.Instance != null) StageManager.Instance.SortIcons(true);
+				for (int i = 0; i < partCrewManifest.partCrew.Length; i++)
+				{
+					partCrewManifest.RemoveCrewFromSeat(i);
+				}
 			}
-			EditorLogic.fetch.SetBackup();
+
+			CrewAssignmentDialog.Instance.RefreshCrewLists(ShipConstruction.ShipManifest, false, true);
+		}
+
+
+		// TODO : clean that, merge the two methods
+		public static List<ProtoCrewMember> TryTransferCrewToPart(List<ProtoCrewMember> fromPartCrewMembers, Part fromPart, Part toPart, bool postTransferMessage = true)
+		{
+			List<ProtoCrewMember> crewLeft = new List<ProtoCrewMember>(fromPartCrewMembers.Count);
+			ProtoCrewMember[] crewToTransfer = fromPartCrewMembers.ToArray();
+			//CrewTransfer transfer = null;
+			foreach (ProtoCrewMember crew in crewToTransfer)
+			{
+				if (!toPart.crewTransferAvailable || toPart.protoModuleCrew.Count >= toPart.CrewCapacity)
+				{
+					crewLeft.Add(crew);
+					continue;
+				}
+
+				CrewTransfer.CrewTransferData transferData = new CrewTransfer.CrewTransferData()
+				{
+					crewMember = crew,
+					sourcePart = fromPart,
+					destPart = toPart,
+					canTransfer = true
+				};
+
+				Callbacks.disableCrewTransferFailMessage = true; // avoid getting spammed for each transfer failure
+				GameEvents.onCrewTransferSelected.Fire(transferData);
+				if (!transferData.canTransfer)
+				{
+					crewLeft.Add(crew);
+					continue;
+				}
+
+				fromPart.RemoveCrewmember(crew);
+				toPart.AddCrewmember(crew);
+
+				//if (postTransferMessage)
+				// ScreenMessages.PostScreenMessage(Localizer.Format("#autoLOC_111636", crew.name, toPart.partInfo.title), transfer.scMsgWarning);
+
+				GameEvents.onCrewTransferred.Fire(new GameEvents.HostedFromToAction<ProtoCrewMember, Part>(crew, fromPart, toPart));
+			}
+
+			// (2) only rebuild the IVA / portraits if there was a transfer on the active vessel
+			if (fromPart.vessel.isActiveVessel && crewLeft.Count < fromPartCrewMembers.Count)
+			{
+				FlightGlobals.ActiveVessel.DespawnCrew();
+				//transfer.StartCoroutine(CallbackUtil.DelayedCallback(1, transfer.waitAndCompleteTransfer));
+			}
+
+			return crewLeft;
+		}
+
+		public static List<ProtoCrewMember> TryTransferCrewElsewhere(Part crewedPart, bool postTransferMessage = true)
+		{
+			List<ProtoCrewMember> crewLeft = crewedPart.protoModuleCrew;
+			int initialCrewCount = crewLeft.Count;
+			foreach (Part otherPart in crewedPart.vessel.Parts)
+			{
+				if (otherPart == crewedPart || !otherPart.crewTransferAvailable || otherPart.protoModuleCrew.Count >= otherPart.CrewCapacity)
+					continue;
+
+				crewLeft = TryTransferCrewToPart(crewLeft, crewedPart, otherPart, postTransferMessage);
+
+				if (crewLeft.Count == 0)
+					break;
+			}
+
+			if (initialCrewCount > crewLeft.Count)
+			{
+				Kerbalism.Fetch.StartCoroutine(CallbackUtil.DelayedCallback(1, FlightGlobals.ActiveVessel.SpawnCrew));
+			}
+
+			return crewLeft;
+		}
+
+		/// <summary>
+		/// Rebuild the IVAs and and Kerbal portrait gallery. Called from the habitat module in conjunction
+		/// with the InternalModel_SpawnCrew patch to make kerbals put/take off their helmets. 
+		/// </summary>
+		public static void RefreshIVAAndPortraits()
+		{
+			// Prevent (redundant) calls to this from doing anything while the respawn coroutine hasn't run.
+			if (isIVARefreshRequested)
+				return;
+
+			isIVARefreshRequested = true;
+			FlightGlobals.ActiveVessel.DespawnCrew();
+
+			// Note : these methods are normally callbacks added to GameEvents.onCrewTransferred,
+			// but we don't want to call that here and it doesn't seem there is any other way than doing it manually
+			KerbalPortraitGallery.Instance.StartReset(FlightGlobals.ActiveVessel);
+			ReflectionValue<InternalSpaceOverlay>(KerbalPortraitGallery.Instance, "ivaOverlay")?.Dismiss();
+
+			Kerbalism.Fetch.StartCoroutine(SpawnIVAAndPortraits());
+		}
+
+		private static bool isIVARefreshRequested = false;
+
+		private static IEnumerator SpawnIVAAndPortraits()
+		{
+			// wait exactly one frame. More : doesn't work, less : doesn't work. don't ask, IDK.
+			for (int i = 0; i < 1; i++)
+				yield return null;
+
+			isIVARefreshRequested = false;
+			FlightGlobals.ActiveVessel.SpawnCrew();
+		}
+
+		public static void EnablePartIVA(Part part, bool enable)
+		{
+			if (IsFlight())
+			{
+				if (part.vessel.isActiveVessel)
+				{
+					if (enable)
+					{
+						Lib.LogDebug("Part '{0}', Spawning IVA.", Lib.LogLevel.Message, part.partInfo.title);
+						part.SpawnIVA();
+					}
+					else
+					{
+						Lib.LogDebug("Part '{0}', Destroying IVA.", Lib.LogLevel.Message, part.partInfo.title);
+						part.DespawnIVA();
+					}
+				}
+			}
+		}
+
+		public static void EnablePartCrewTransfer(Part part, bool enable)
+		{
+			part.crewTransferAvailable = enable;
+
+			if (Lib.IsEditor())
+			{
+				GameEvents.onEditorPartEvent.Fire(ConstructionEventType.PartTweaked, part);
+				GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+			}
+			else if (Lib.IsFlight())
+			{
+				GameEvents.onVesselWasModified.Fire(part.vessel);
+			}
+
+			part.CheckTransferDialog();
+			MonoUtilities.RefreshContextWindows(part);
 		}
 
 		#endregion
@@ -2071,9 +2250,9 @@ namespace KERBALISM
 		#region MODULE
 		///<summary>
 		/// return all modules implementing a specific type in a vessel
-		/// note: disabled modules are not returned
+		/// note: modules having isEnabled = false are not returned
 		/// </summary>
-		public static List<T> FindModules<T>(Vessel v) where T : class
+		public static List<T> FindModules<T>(Vessel v, Predicate<T> predicate = null) where T : class
 		{
 			List<T> ret = new List<T>();
 			for (int i = 0; i < v.parts.Count; ++i)
@@ -2083,10 +2262,9 @@ namespace KERBALISM
 				{
 					PartModule m = p.Modules[j];
 					if (m.isEnabled)
-					{
 						if (m is T t)
-							ret.Add(t);
-					}
+							if (predicate == null || predicate.Invoke(t))
+								ret.Add(t);
 				}
 			}
 			return ret;
@@ -2253,7 +2431,7 @@ namespace KERBALISM
 			{
 				if ((res.flowState || ignore_flow) && res.resourceName == resource_name)
 				{
-					return res.maxAmount > double.Epsilon ? res.amount / res.maxAmount : 0.0;
+					return res.maxAmount > 0.0 ? res.amount / res.maxAmount : 0.0;
 				}
 			}
 			return 0.0;
@@ -2708,20 +2886,27 @@ namespace KERBALISM
 
 		#region CONFIG
 		///<summary>get a config node from the config system</summary>
-		public static ConfigNode ParseConfig( string path )
+		public static ConfigNode ParseConfig(string path)
 		{
-			return GameDatabase.Instance.GetConfigNode( path ) ?? new ConfigNode();
+			return GameDatabase.Instance.GetConfigNode(path) ?? new ConfigNode();
 		}
 
 		///<summary>get a set of config nodes from the config system</summary>
-		public static ConfigNode[] ParseConfigs( string path )
+		public static ConfigNode[] ParseConfigs(string path)
 		{
-			return GameDatabase.Instance.GetConfigNodes( path );
+			return GameDatabase.Instance.GetConfigNodes(path);
 		}
 
 		///<summary>get a value from config</summary>
-		public static T ConfigValue<T>( ConfigNode cfg, string key, T def_value )
+		public static T ConfigValue<T>(ConfigNode cfg, string key, T def_value)
 		{
+			object value;
+			if (TryParseValue(cfg.GetValue(key), typeof(T), out value))
+				return (T)value;
+			else
+				return def_value;
+
+			/*
 			try
 			{
 				return cfg.HasValue( key ) ? (T) Convert.ChangeType( cfg.GetValue( key ), typeof( T ) ) : def_value;
@@ -2731,20 +2916,135 @@ namespace KERBALISM
 				Lib.Log( "error while trying to parse '" + key + "' from " + cfg.name + " (" + e.Message + ")", Lib.LogLevel.Warning);
 				return def_value;
 			}
+			*/
 		}
 
-		///<summary>get an enum from config</summary>
-		public static T ConfigEnum<T>( ConfigNode cfg, string key, T def_value )
+		public static T ConfigEnum<T>(ConfigNode cfg, string key, T def_value)
 		{
-			try
+			if (TryParseValue(cfg.GetValue(key), typeof(T), out object value))
 			{
-				return cfg.HasValue( key ) ? (T) Enum.Parse( typeof( T ), cfg.GetValue( key ) ) : def_value;
+				return (T)value;
 			}
-			catch (Exception e)
+			return def_value;
+		}
+
+		///<summary>parse a serialized (config) value. Supports all value types including enums and common KSP/Unity types (vector, quaternion, color, matrix4x4...)</summary>
+		public static bool TryParseValue(string strValue, Type typeOfValue, out object value)
+		{
+			value = null;
+			if (string.IsNullOrEmpty(strValue))
+				return false;
+
+			if (typeof(Enum).IsAssignableFrom(typeOfValue))
 			{
-				Lib.Log( "invalid enum in '" + key + "' from " + cfg.name + " (" + e.Message + ")", Lib.LogLevel.Warning);
-				return def_value;
+				try
+				{
+					if (!Enum.IsDefined(typeOfValue, strValue)) return false;
+					value = Enum.Parse(typeOfValue, strValue);
+					return true;
+				}
+				catch
+				{
+					return false;
+				}
 			}
+			else if (typeOfValue == typeof(string))
+			{
+				value = strValue;
+				return true;
+			}
+			else if
+			(
+				typeOfValue == typeof(bool)
+				|| typeOfValue == typeof(byte)
+				|| typeOfValue == typeof(char)
+				|| typeOfValue == typeof(decimal)
+				|| typeOfValue == typeof(double)
+				|| typeOfValue == typeof(short)
+				|| typeOfValue == typeof(int)
+				|| typeOfValue == typeof(long)
+				|| typeOfValue == typeof(sbyte)
+				|| typeOfValue == typeof(float)
+				|| typeOfValue == typeof(string)
+				|| typeOfValue == typeof(ushort)
+				|| typeOfValue == typeof(uint)
+				|| typeOfValue == typeof(ulong)
+			)
+			{
+				try { value = Convert.ChangeType(strValue, typeOfValue); } catch { return false; }
+				return true;
+			}
+			else if (typeOfValue == typeof(Vector2))
+			{
+				if (!ParseExtensions.TryParseVector2(strValue, out Vector2 parsed)) return false;
+				value = parsed;
+				return true;
+			}
+			else if (typeOfValue == typeof(Vector2d))
+			{
+				if (!ParseExtensions.TryParseVector2d(strValue, out Vector2d parsed)) return false;
+				value = parsed;
+				return true;
+			}
+			else if (typeOfValue == typeof(Vector3))
+			{
+				if (!ParseExtensions.TryParseVector3(strValue, out Vector3 parsed)) return false;
+				value = parsed;
+				return true;
+			}
+			else if (typeOfValue == typeof(Vector3d))
+			{
+				if (!ParseExtensions.TryParseVector3d(strValue, out Vector3d parsed)) return false;
+				value = parsed;
+				return true;
+			}
+			else if (typeOfValue == typeof(Vector4))
+			{
+				if (!ParseExtensions.TryParseVector4(strValue, out Vector4 parsed)) return false;
+				value = parsed;
+				return true;
+			}
+			else if (typeOfValue == typeof(Vector4d))
+			{
+				if (!ParseExtensions.TryParseVector4d(strValue, out Vector4d parsed)) return false;
+				value = parsed;
+				return true;
+			}
+			else if (typeOfValue == typeof(Color))
+			{
+				if (!ParseExtensions.TryParseColor(strValue, out Color parsed)) return false;
+				value = parsed;
+				return true;
+			}
+			else if (typeOfValue == typeof(Color32))
+			{
+				if (!ParseExtensions.TryParseColor32(strValue, out Color32 parsed)) return false;
+				value = parsed;
+				return true;
+			}
+			else if (typeOfValue == typeof(Quaternion))
+			{
+				if (!ParseExtensions.TryParseQuaternion(strValue, out Quaternion parsed)) return false;
+				value = parsed;
+				return true;
+			}
+			else if (typeOfValue == typeof(QuaternionD))
+			{
+				if (!ParseExtensions.TryParseQuaternionD(strValue, out QuaternionD parsed)) return false;
+				value = parsed;
+				return true;
+			}
+			else if (typeOfValue == typeof(Matrix4x4))
+			{
+				value = ConfigNode.ParseMatrix4x4(strValue);
+				return true;
+			}
+			else if (typeOfValue == typeof(Guid))
+			{
+				try { value = new Guid(strValue); } catch { return false; }
+			}
+
+			return false;
 		}
 		#endregion
 

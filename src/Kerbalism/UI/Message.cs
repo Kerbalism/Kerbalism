@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using KSP.Localization;
+using System.Linq;
 
 
 namespace KERBALISM
@@ -10,6 +10,7 @@ namespace KERBALISM
 
 	public enum Severity
 	{
+		none,
 		relax,    // something went back to nominal
 		warning,  // the user should start being worried about something
 		danger,   // the user should start panicking about something
@@ -24,13 +25,16 @@ namespace KERBALISM
 		sealed class Entry
 		{
 			public string msg;
+			public float duration;
 			public float first_seen;
 		}
 
 		public sealed class MessageObject
 		{
+			public Severity msgSeverity = Severity.none;
 			public string title;
 			public string msg;
+			public double time;
 		}
 
 		public static List<MessageObject> all_logs;
@@ -58,6 +62,10 @@ namespace KERBALISM
 			// if queue is empty, do nothing
 			if (entries.Count == 0) return;
 
+			// don't show messages when in screenshot (F2) mode 
+			if (!KSP.UI.UIMasterController.Instance.screenMessageCanvas.enabled)
+				return;
+
 			// get current time
 			float time = Time.realtimeSinceStartup;
 
@@ -68,7 +76,7 @@ namespace KERBALISM
 			if (e.first_seen <= float.Epsilon) e.first_seen = time;
 
 			// if visualized for too long, remove from the queue and skip this update
-			if (e.first_seen + PreferencesMessages.Instance.messageLength < time) { entries.Dequeue(); return; }
+			if (e.first_seen + Math.Min(e.duration, PreferencesMessages.Instance.messageLength) < time) { entries.Dequeue(); return; }
 
 			// calculate content size
 			GUIContent content = new GUIContent(e.msg);
@@ -108,6 +116,7 @@ namespace KERBALISM
 			Entry entry = new Entry
 			{
 				msg = msg,
+				duration = Math.Max(5f, msg.Length / 20f),
 				first_seen = 0
 			};
 
@@ -147,14 +156,36 @@ namespace KERBALISM
 				case Severity.fatality: title = Lib.BuildString(Lib.Color(Local.Message_FATALITY, Lib.Kolor.Red, true), "\n"); Lib.StopWarp(); break; //"FATALITY"
 				case Severity.breakdown: title = Lib.BuildString(Lib.Color(Local.Message_BREAKDOWN, Lib.Kolor.Orange, true), "\n"); Lib.StopWarp(); break; //"BREAKDOWN"
 			}
-			if (subtext.Length == 0) Post(Lib.BuildString(title, text));
-			else Post(Lib.BuildString(title, text, "\n<i>", subtext, "</i>"));
-			all_logs.Add(new MessageObject
+
+			// concatenate messages posted at the same time and of same severity
+			MessageObject lastLog = all_logs.Count > 0 ? all_logs[all_logs.Count - 1] : null;
+			Entry lastEntry = instance.entries.LastOrDefault();
+			if (lastEntry != null && lastLog != null && lastLog.time == Planetarium.GetUniversalTime() && lastLog.msgSeverity == severity)
 			{
-				title = title,
-				msg = Lib.BuildString(text, "\n<i>", subtext, "</i>"),
-			});
-			TruncateLogs();
+				if (subtext.Length == 0)
+					lastLog.msg = Lib.BuildString(lastEntry.msg, "\n", text);
+				else
+					lastLog.msg = Lib.BuildString(lastEntry.msg, "\n", text, "\n<i>", subtext, "</i>");
+
+				lastEntry.msg = lastLog.msg;
+				lastEntry.duration = Math.Max(5f, lastLog.msg.Length / 20f);
+			}
+			else
+			{
+				if (subtext.Length == 0)
+					Post(Lib.BuildString(title, text));
+				else
+					Post(Lib.BuildString(title, text, "\n<i>", subtext, "</i>"));
+
+				all_logs.Add(new MessageObject
+				{
+					title = title,
+					msg = Lib.BuildString(text, "\n<i>", subtext, "</i>"),
+					msgSeverity = severity,
+					time = Planetarium.GetUniversalTime()
+				}); ;
+				TruncateLogs();
+			}
 		}
 
 		// This is a bad workaround for the poor performance we have in the log window,
@@ -163,6 +194,9 @@ namespace KERBALISM
 		// impact, so we keep the log length short.
 		// A good solution would have to re-implement the log using the new UI classes,
 		// and while doing that also fix the broken layouting we get with long messages.
+		// Note on that (Got) : it would still cause performance issues if every message
+		// instantiate one text object. We should probably concatenate all messages into a
+		// single StringBuilder instance instead.
 		private static void TruncateLogs()
 		{
 			while(all_logs.Count > 25)

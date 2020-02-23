@@ -18,11 +18,11 @@ namespace KERBALISM.Planner
 			// inverting their order avoided this corner-case
 
 			Analyze_crew(parts);
-			Analyze_habitat(parts, sim, env);
+			Analyze_comms(parts, env);
+			Analyze_habitat(parts, env);
 			Analyze_radiation(parts, sim);
 			Analyze_reliability(parts);
-			Analyze_qol(parts, sim, env);
-			Analyze_comms(parts);
+			
 		}
 
 		void Analyze_crew(List<Part> parts)
@@ -68,69 +68,28 @@ namespace KERBALISM.Planner
 				crew_count = crew_capacity;
 		}
 
-		void Analyze_habitat(List<Part> parts, ResourceSimulator sim, EnvironmentAnalyzer env)
+		void Analyze_habitat(List<Part> parts, EnvironmentAnalyzer env)
 		{
-			// calculate total volume
-			volume = sim.Resource("Atmosphere").capacity / 1e3;
 
-			// calculate total surface
-			surface = sim.Resource("Shielding").capacity;
-
-			// determine if the vessel has pressure control capabilities
-			pressurized = sim.Resource("Atmosphere").produced > 0.0 || env.breathable;
-
-			// determine if the vessel has scrubbing capabilities
-			scrubbed = sim.Resource("WasteAtmosphere").consumed > 0.0 || env.breathable;
-
-			// scan the parts
-			double max_pressure = 1.0;
-			foreach (Part p in parts)
+			List<HabitatData> habitats = new List<HabitatData>();
+			foreach (Part part in parts)
 			{
-				// for each module
-				foreach (PartModule m in p.Modules)
+				foreach (ModuleKsmHabitat habitat in part.Modules.GetModules<ModuleKsmHabitat>())
 				{
-					// skip disabled modules
-					if (!m.isEnabled)
-						continue;
-
-					if (m.moduleName == "Habitat")
+					if (habitat.HabitatData != null)
 					{
-						Habitat h = m as Habitat;
-						max_pressure = Math.Min(max_pressure, h.max_pressure);
+						habitats.Add(habitat.HabitatData);
 					}
 				}
 			}
 
-			pressurized &= max_pressure >= Settings.PressureThreshold;
+			habitatInfo = new HabitatVesselData();
+			//HabitatData.EvaluateHabitat(habitatInfo, habitats, connectionInfo, env.landed, (int)crew_count, Vector3d.zero, false);
 		}
 
-		void Analyze_comms(List<Part> parts)
+		void Analyze_comms(List<Part> parts, EnvironmentAnalyzer env)
 		{
-			has_comms = false;
-			foreach (Part p in parts)
-			{
-
-				foreach (PartModule m in p.Modules)
-				{
-					// skip disabled modules
-					if (!m.isEnabled)
-						continue;
-
-					// RemoteTech enabled, passive's don't count
-					if (m.moduleName == "ModuleRTAntenna")
-						has_comms = true;
-					else if (m is ModuleDataTransmitter mdt)
-					{
-						// CommNet enabled and external transmitter
-						if (HighLogic.fetch.currentGame.Parameters.Difficulty.EnableCommNet)
-							if (mdt.antennaType != AntennaType.INTERNAL)
-								has_comms = true;
-						// the simple stupid always connected signal system
-						else
-							has_comms = true;
-					}
-				}
-			}
+			//connectionInfo = new ConnectionInfoEditor(parts, env);
 		}
 
 		void Analyze_radiation(List<Part> parts, ResourceSimulator sim)
@@ -160,14 +119,6 @@ namespace KERBALISM.Planner
 					}
 				}
 			}
-
-			// calculate shielding factor
-			double amount = sim.Resource("Shielding").amount;
-			double capacity = sim.Resource("Shielding").capacity;
-
-			shielding = capacity > 0
-				? Radiation.ShieldingEfficiency(amount / capacity)
-				: 0;
 		}
 
 		void Analyze_reliability(List<Part> parts)
@@ -229,18 +180,6 @@ namespace KERBALISM.Planner
 			high_quality /= Math.Max(components, 1u);
 		}
 
-		void Analyze_qol(List<Part> parts, ResourceSimulator sim, EnvironmentAnalyzer env)
-		{
-			// calculate living space factor
-			living_space = Lib.Clamp((volume / Math.Max(crew_count, 1u)) / PreferencesComfort.Instance.livingSpace, 0.1, 1.0);
-
-			// calculate comfort factor
-			comforts = new Comforts(parts, env.landed, crew_count > 1, has_comms);
-
-
-		}
-
-
 		// general
 		public List<ProtoCrewMember> crew;                  // full information on all crew
 		public uint crew_count;                             // crew member on board
@@ -252,20 +191,23 @@ namespace KERBALISM.Planner
 		public uint crew_scientist_maxlevel;                // experience level of top scientist on board
 		public uint crew_pilot_maxlevel;                    // experience level of top pilot on board
 
+		///////// TODO : REWIRE ALL THAT STUFF //////////////
+
 		// habitat
 		public double volume;                               // total volume in m^3
 		public double surface;                              // total surface in m^2
 		public bool pressurized;                            // true if the vessel has pressure control capabilities
 		public bool scrubbed;                               // true if the vessel has co2 scrubbing capabilities
-		public bool humid;                                  // true if the vessel has co2 scrubbing capabilities
+		public double shielding;                            // shielding factor
+		public double volume_per_crew;                         // living space factor
+		public double living_space;                         // living space factor
+		public int comfortMask;                           // comfort info
+		public double comfortFactor;                           // comfort info
+
+		///////// ENDTODO //////////////
 
 		// radiation related
 		public double emitted;                              // amount of radiation emitted by components
-		public double shielding;                            // shielding factor
-
-		// quality-of-life related
-		public double living_space;                         // living space factor
-		public Comforts comforts;                           // comfort info
 
 		// reliability-related
 		public uint components;                             // number of components that can fail
@@ -273,7 +215,8 @@ namespace KERBALISM.Planner
 		public double failure_year;                         // estimated failures per-year, averaged per-component
 		public Dictionary<string, int> redundancy;          // number of components per redundancy group
 
-		public bool has_comms;
+		//public ConnectionInfoEditor connectionInfo;
+		public HabitatVesselData habitatInfo;
 	}
 
 
