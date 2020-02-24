@@ -1430,6 +1430,8 @@ namespace KERBALISM
 		public static string ExperimentReq_MaxAsteroidDistance = GetLoc("ExperimentReq_MaxAsteroidDistance"); // "Max asteroid distance"
 		public static string ExperimentReq_AtmosphereAltMin = GetLoc("ExperimentReq_AtmosphereAltMin"); // "Min atmosphere altitude "
 		public static string ExperimentReq_AtmosphereAltMax = GetLoc("ExperimentReq_AtmosphereAltMax"); // "Max atmosphere altitude "
+		public static string ExperimentReq_AltitudeBodyRadiusMin = GetLoc("ExperimentReq_AltitudeBodyRadiusMin"); // "Min body radius altitude "
+		public static string ExperimentReq_AltitudeBodyRadiusMax = GetLoc("ExperimentReq_AltitudeBodyRadiusMax"); // "Max body radius altitude "
 		public static string ExperimentReq_CrewMin = GetLoc("ExperimentReq_CrewMin"); // "Min. crew "
 		public static string ExperimentReq_CrewMax = GetLoc("ExperimentReq_CrewMax"); // "Max. crew "
 		public static string ExperimentReq_CrewCapacityMin = GetLoc("ExperimentReq_CrewCapacityMin"); // "Min. crew capacity "

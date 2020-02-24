@@ -702,6 +702,7 @@ namespace KERBALISM
 			partSequence.Add("kerbalism-experiment-ding");
 			partSequence.Add("kerbalism-experiment-tick");
 			partSequence.Add("kerbalism-experiment-wing");
+			partSequence.Add("kerbalism-experiment-curve");
 
 			Dictionary<string, float> iconScales = new Dictionary<string, float>();
 

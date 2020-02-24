@@ -37,6 +37,8 @@ namespace KERBALISM
 			Greenhouse,
 			AtmosphereAltMin,
 			AtmosphereAltMax,
+			AltitudeBodyRadiusMin,
+			AltitudeBodyRadiusMax,
 
 			SunAngleMin,
 			SunAngleMax,
@@ -158,6 +160,9 @@ namespace KERBALISM
 
 					case Require.AtmosphereAltMin      : TestReq((c, r) => c >= r, v.mainBody.atmosphere ? v.altitude / v.mainBody.atmosphereDepth : double.NaN, (double)Requires[i].value, results[i]); break;
 					case Require.AtmosphereAltMax      : TestReq((c, r) => c <= r, v.mainBody.atmosphere ? v.altitude / v.mainBody.atmosphereDepth : double.NaN, (double)Requires[i].value, results[i]); break;
+
+					case Require.AltitudeBodyRadiusMin : TestReq((c, r) => c >= r, v.altitude / v.mainBody.Radius, (double)Requires[i].value, results[i]); break;
+					case Require.AltitudeBodyRadiusMax : TestReq((c, r) => c <= r, v.altitude / v.mainBody.Radius, (double)Requires[i].value, results[i]); break;
 
 					case Require.CrewMin                 : TestReq((c, r) => c >= r, vd.CrewCount,                                           (int)Requires[i].value, results[i]); break;
 					case Require.CrewMax                 : TestReq((c, r) => c <= r, vd.CrewCount,                                           (int)Requires[i].value, results[i]); break;
@@ -313,6 +318,8 @@ namespace KERBALISM
 				case Require.StaticPressureMax:
 				case Require.AtmDensityMin:
 				case Require.AtmDensityMax:
+				case Require.AltitudeBodyRadiusMin:
+				case Require.AltitudeBodyRadiusMax:
 				case Require.AltAboveGroundMin:
 				case Require.AltAboveGroundMax:
 				case Require.MaxAsteroidDistance:
@@ -391,6 +398,8 @@ namespace KERBALISM
 				case Require.OrbitMaxArgOfPeriapsis:
 				case Require.AtmosphereAltMin:
 				case Require.AtmosphereAltMax:
+				case Require.AltitudeBodyRadiusMin:
+				case Require.AltitudeBodyRadiusMax:
 					return ((double)reqValue).ToString("F2");
 				case Require.SunAngleMin:
 				case Require.SunAngleMax:
@@ -472,7 +481,7 @@ namespace KERBALISM
 				case Require.SpeedMax:                 return Local.ExperimentReq_SpeedMax;//"Max. speed "
 				case Require.DynamicPressureMin:       return Local.ExperimentReq_DynamicPressureMin;//"Min dynamic pressure"
 				case Require.DynamicPressureMax:       return Local.ExperimentReq_DynamicPressureMax;//"Max dynamic pressure"
-				case Require.StaticPressureMin:        return  Local.ExperimentReq_StaticPressureMin;//"Min. pressure "
+				case Require.StaticPressureMin:        return Local.ExperimentReq_StaticPressureMin;//"Min. pressure "
 				case Require.StaticPressureMax:        return Local.ExperimentReq_StaticPressureMax;//"Max. pressure "
 				case Require.AtmDensityMin:            return Local.ExperimentReq_AtmDensityMin;//"Min. atm. density "
 				case Require.AtmDensityMax:            return Local.ExperimentReq_AtmDensityMax;//"Max. atm. density "
@@ -481,6 +490,8 @@ namespace KERBALISM
 				case Require.MaxAsteroidDistance:      return Local.ExperimentReq_MaxAsteroidDistance;//"Max asteroid distance"
 				case Require.AtmosphereAltMin:         return Local.ExperimentReq_AtmosphereAltMin;//"Min atmosphere altitude "
 				case Require.AtmosphereAltMax:         return Local.ExperimentReq_AtmosphereAltMax;//"Max atmosphere altitude "
+				case Require.AltitudeBodyRadiusMin:    return Local.ExperimentReq_AltitudeBodyRadiusMin;//"Min body radius altitude "
+				case Require.AltitudeBodyRadiusMax:    return Local.ExperimentReq_AltitudeBodyRadiusMax;//"Max body radius altitude "
 				case Require.CrewMin:                  return Local.ExperimentReq_CrewMin;//"Min. crew "
 				case Require.CrewMax:                  return Local.ExperimentReq_CrewMax;//"Max. crew "
 				case Require.CrewCapacityMin:          return Local.ExperimentReq_CrewCapacityMin;//"Min. crew capacity "
@@ -493,8 +504,8 @@ namespace KERBALISM
 				case Require.MissionControlLevelMax:   return Local.ExperimentReq_MissionControlLevelMax;//"Mission Control max level "
 				case Require.AdministrationLevelMin:   return Local.ExperimentReq_AdministrationLevelMin;//"Administration min level "
 				case Require.AdministrationLevelMax:   return Local.ExperimentReq_AdministrationLevelMax;//"Administration max level "
-				case Require.Part:                                  return Local.ExperimentReq_Part;//"Need part "
-				case Require.Module:                   return  Local.ExperimentReq_Module;//"Need module "
+				case Require.Part:                     return Local.ExperimentReq_Part;//"Need part "
+				case Require.Module:                   return Local.ExperimentReq_Module;//"Need module "
 
 				case Require.AbsoluteZero:
 				case Require.InnerBelt:
