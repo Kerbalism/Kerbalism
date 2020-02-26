@@ -108,44 +108,59 @@ namespace KERBALISM
 			Fetch = null;
 		}
 
+		/// <summary> Initialize core game systems </summary>
+		private void CoreGameInit()
+		{
+			try
+			{
+				Sim.Init();         // find suns (Kopernicus support)
+				Radiation.Init();   // create the radiation fields
+				ScienceDB.Init();   // build the science database (needs Sim.Init() and Radiation.Init() first)
+				Science.Init();     // register the science hijacker
+
+				// static graphic components
+				LineRenderer.Init();
+				ParticleRenderer.Init();
+				Highlighter.Init();
+
+				// UI
+				Textures.Init();                      // set up the icon textures
+				UI.Init();                            // message system, main gui, launcher
+				KsmGui.KsmGuiMasterController.Init(); // setup the new gui framework
+
+				// part prefabs hacks
+				Profile.SetupPods(); // add supply resources to pods
+				Misc.PartPrefabsTweaks(); // part prefabs tweaks, must be called after ScienceDB.Init()
+
+				// Create KsmGui windows
+				new ScienceArchiveWindow();
+
+				// GameEvents callbacks
+				Callbacks = new Callbacks();
+			}
+			catch (Exception e)
+			{
+				string fatalError = "FATAL ERROR: Kerbalism core init has failed:" + "\n" + e.ToString();
+				Lib.Log(fatalError, Lib.LogLevel.Error);
+				LoadFailedPopup(fatalError);
+			}
+		}
+
 		public override void OnLoad(ConfigNode node)
 		{
 			// everything in there will be called only one time : the first time a game is loaded from the main menu
 			if (!IsCoreGameInitDone)
 			{
-				try
+				var kerbalismConfigNodes = GameDatabase.Instance.GetConfigs("Kerbalism");
+				if (kerbalismConfigNodes.Length < 1)
 				{
-					// core game systems
-					Sim.Init();         // find suns (Kopernicus support)
-					Radiation.Init();   // create the radiation fields
-					ScienceDB.Init();   // build the science database (needs Sim.Init() and Radiation.Init() first)
-					Science.Init();     // register the science hijacker
-
-					// static graphic components
-					LineRenderer.Init();
-					ParticleRenderer.Init();
-					Highlighter.Init();
-
-					// UI
-					Textures.Init();                      // set up the icon textures
-					UI.Init();                                  // message system, main gui, launcher
-					KsmGui.KsmGuiMasterController.Init(); // setup the new gui framework
-
-					// part prefabs hacks
-					Profile.SetupPods(); // add supply resources to pods
-					Misc.PartPrefabsTweaks(); // part prefabs tweaks, must be called after ScienceDB.Init()
-
-					// Create KsmGui windows
-					new ScienceArchiveWindow();
-
-					// GameEvents callbacks
-					Callbacks = new Callbacks();
+					string msg = "ERROR: No kerbalism configuration found.\n\nYou probably forgot to install KerbalismConfig.\n\n";
+					msg += "This is a fatal error and KSP must be closed.";
+					Lib.Popup("Kerbalism fatal error", msg, 600f);
 				}
-				catch (Exception e)
+				else
 				{
-					string fatalError = "FATAL ERROR : Kerbalism core init has failed :" + "\n" + e.ToString();
-					Lib.Log(fatalError, Lib.LogLevel.Error);
-					LoadFailedPopup(fatalError);
+					CoreGameInit();
 				}
 
 				IsCoreGameInitDone = true;
