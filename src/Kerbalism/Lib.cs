@@ -2847,6 +2847,49 @@ namespace KERBALISM
 			Graphics.DrawTexture( new Rect( 0, 0, 1, 1 ), src );
 		}
 
+		/// <summary>
+		/// This makes Kerbalism possibly future-proof for new KSP versions, without requiring user
+		/// intervention. With this, chances are that older Kerbalism versions will continue to work
+		/// with newer KSP versions (until now the shader folder had to be copied).
+		/// <para>
+		/// Since KSP 1.5 (and possibly before), it has not been necessary to recompile the shaders.
+		/// Kerbalism contained the same set of shader files for 1.5, 1.6, 1.7, 1.8 and 1.9. Chances
+		/// are that future versions of KSP will still continue to work with the old shaders. To avoid
+		/// the need to keep multiple copies of the same files, or manually rename the shader folder
+		/// after a KSP update, use the default shader folder for all versions. If needed, this can be
+		/// changed for future versions if they ever should require a new set of shaders.
+		/// </para>
+		/// </summary>
+		private static string GetShaderPath()
+		{
+			string platform = "windows";
+			if (Application.platform == RuntimePlatform.LinuxPlayer) platform = "linux";
+			else if (Application.platform == RuntimePlatform.OSXPlayer) platform = "osx";
+
+			int version = Versioning.version_major * 100 + Versioning.version_minor;
+
+			string shadersFolder;
+			switch (version)
+			{
+				// should it ever be necessary...
+				//case 105: // 1.5
+				//case 106: // 1.6
+				//case 107: // 1.7
+				//case 108: // 1.8
+				//case 109: // 1.9
+				//	shadersFolder = "15";
+				//	break;
+				//case 110: // 1.10
+				//	shadersFolder = "110";
+				//	break;
+				default:
+					shadersFolder = "15";
+					break;
+			}
+
+			return KSPUtil.ApplicationRootPath + "GameData/Kerbalism/Shaders/" + shadersFolder + "/_" + platform;
+		}
+
 		public static Dictionary<string, Material> shaders;
 		///<summary> Returns a material from the specified shader </summary>
 		public static Material GetShader( string name )
@@ -2854,11 +2897,8 @@ namespace KERBALISM
 			if (shaders == null)
 			{
 				shaders = new Dictionary<string, Material>();
-				string platform = "windows";
-				if (Application.platform == RuntimePlatform.LinuxPlayer) platform = "linux";
-				else if (Application.platform == RuntimePlatform.OSXPlayer) platform = "osx";
 #pragma warning disable CS0618 // WWW is obsolete
-				using (WWW www = new WWW("file://" + KSPUtil.ApplicationRootPath + "GameData/Kerbalism/Shaders/" + KSPVersionCompact + "/" + "_" + platform))
+				using (WWW www = new WWW("file://" + GetShaderPath()))
 #pragma warning restore CS0618
 				{
 					AssetBundle bundle = www.assetBundle;
