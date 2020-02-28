@@ -37,6 +37,11 @@ namespace KERBALISM
 		public abstract void ClearPartResources();
 
 		public abstract void SyncToPartResources(double deferred, bool equalizeMode);
+
+		public override string ToString()
+		{
+			return $"{name} : {amount.ToString("F1")} / {capacity.ToString("F1")}";
+		}
 	}
 
 	public abstract class ResourceWrapper<T> : ResourceWrapper

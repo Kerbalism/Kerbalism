@@ -323,5 +323,10 @@ namespace KERBALISM
 				ResourceBrokers.Add(new ResourceBrokerRate(ResourceBroker.Generic, unknownBrokersRate / elapsedSeconds));
 			}
 		}
+
+		public override string ToString()
+		{
+			return $"{Name} : {Amount.ToString("F1")} / {Capacity.ToString("F1")} ({Rate.ToString("+0.#######/s;-0.#######/s")})";
+		}
 	}
 }

@@ -1,5 +1,6 @@
 ﻿using CommNet;
 using Harmony;
+using static ModuleCommand;
 
 namespace KERBALISM
 {
@@ -61,7 +62,7 @@ namespace KERBALISM
 	[HarmonyPatch("FixedUpdate")]
 	class ModuleCommand_FixedUpdate
 	{
-		static void Postfix(ModuleCommand __instance, ref VesselControlState ___localVesselControlState)
+		static void Postfix(ModuleCommand __instance, ref VesselControlState ___localVesselControlState, ref ModuleControlState ___moduleState)
 		{
 			if (Lib.IsEditor())
 				return;
@@ -69,6 +70,10 @@ namespace KERBALISM
 			VesselData vd = __instance.vessel.KerbalismData();
 			if (!__instance.hibernation)
 				vd.hasNonHibernatingCommandModules = true;
+
+			// don't change anything if the command module doesn't require EC
+			if (__instance.hibernationMultiplier == 0.0)
+				return;
 
 			VesselResource ec = vd.ResHandler.ElectricCharge;
 
@@ -88,6 +93,7 @@ namespace KERBALISM
 			if (!ec.CriticalConsumptionSatisfied)
 			{
 				__instance.part.isControlSource = Vessel.ControlLevel.NONE;
+				___moduleState = ModuleControlState.NotEnoughResources;
 
 				if (__instance.minimumCrew > 0)
 					___localVesselControlState = VesselControlState.Kerbal;
