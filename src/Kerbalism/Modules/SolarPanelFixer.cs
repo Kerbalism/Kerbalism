@@ -6,7 +6,7 @@ using System.Reflection;
 using System.Text;
 using UnityEngine;
 using KSP.Localization;
-
+using KERBALISM.Planner;
 
 namespace KERBALISM
 {
@@ -29,7 +29,7 @@ namespace KERBALISM
 	// - We don't have any support for the animations, the target module must be able to keep handling them despite our hacks.
 	// - Depending on how "hackable" the target module is, we use different approaches :
 	//   either we disable the monobehavior and call the methods manually, or if possible we let it run and we just get/set what we need
-	public class SolarPanelFixer : PartModule
+	public class SolarPanelFixer : PartModule, IPlannerModule
 	{
 		#region Declarations
 		/// <summary>Unit to show in the UI, this is the only configurable field for this module</summary>
@@ -122,7 +122,7 @@ namespace KERBALISM
 		}
 		#endregion
 
-		#region KSP/Unity methods + background update
+		#region Init/Update methods
 
 		[KSPEvent(active = true, guiActive = true, guiName = "#KERBALISM_SolarPanelFixer_Selecttrackedstar")]//Select tracked star
 		public void ManualTracking()
@@ -549,6 +549,30 @@ namespace KERBALISM
 			ec.Produce(output * elapsed_s, ResourceBroker.SolarPanel);
 			UnityEngine.Profiling.Profiler.EndSample();
 		}
+
+		public void PlannerUpdate(VesselResHandler resHandler, EnvironmentAnalyzer environment, VesselAnalyzer vessel)
+		{
+			if (part.editorStarted && isInitialized && isEnabled && editorEnabled)
+			{
+				double editorOutput = 0.0;
+				switch (Planner.Planner.Sunlight)
+				{
+					case Planner.Planner.SunlightState.SunlightNominal:
+						editorOutput = nominalRate * (environment.solar_flux / Sim.SolarFluxAtHome);
+						if (editorOutput > 0.0) resHandler.ElectricCharge.Produce(editorOutput, ResourceBroker.GetOrCreate("solar panel (nominal)", ResourceBroker.BrokerCategory.SolarPanel, "solar panel (nominal)"));
+						break;
+					case Planner.Planner.SunlightState.SunlightSimulated:
+						// create a sun direction according to the shadows direction in the VAB / SPH
+						Vector3d sunDir = EditorDriver.editorFacility == EditorFacility.VAB ? new Vector3d(1.0, 1.0, 0.0).normalized : new Vector3d(0.0, 1.0, -1.0).normalized;
+						double effiencyFactor = SolarPanel.GetCosineFactor(sunDir, true) * SolarPanel.GetOccludedFactor(sunDir, out string occludingPart, true);
+						double distanceFactor = environment.solar_flux / Sim.SolarFluxAtHome;
+						editorOutput = nominalRate * effiencyFactor * distanceFactor;
+						if (editorOutput > 0.0) resHandler.ElectricCharge.Produce(editorOutput, ResourceBroker.GetOrCreate("solar panel (estimated)", ResourceBroker.BrokerCategory.SolarPanel, "solar panel (estimated)"));
+						break;
+				}
+			}
+		}
+
 		#endregion
 
 		#region Other methods

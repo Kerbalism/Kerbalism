@@ -15,7 +15,7 @@ namespace KERBALISM
 		/// <summary>
 		/// pseudo ctor for getting the right handler type
 		/// </summary>
-		public static CommHandler GetProvider(VesselData vd, bool isGroundController)
+		public static CommHandler GetHandler(VesselData vd, bool isGroundController)
 		{
 			CommHandler handler;
 
@@ -33,7 +33,7 @@ namespace KERBALISM
 				handler = new CommHandlerCommNetSerenity();
 #endif
 			else
-				handler = new CommProviderCommNetVessel();
+				handler = new CommHandlerCommNetVessel();
 
 			handler.vd = vd;
 			handler.resetTransmitters = true;

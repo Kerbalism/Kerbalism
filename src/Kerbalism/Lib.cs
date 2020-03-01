@@ -994,6 +994,17 @@ namespace KERBALISM
 			return Lib.BuildString(v.ToString("F0"), " $");
 		}
 
+		///<summary> Format an amount and capacity using kilo / mega abbreviations </summary>
+		public static string HumanReadableStorage(double amount, double capacity)
+		{
+			if (capacity >= 1000000.0)
+				return Lib.BuildString((amount / 1000000.0).ToString("0.00"), " / ", (capacity / 1000000.0).ToString("0.00 M"));
+			else if (capacity >= 1000.0)
+				return Lib.BuildString((amount / 1000.0).ToString("0.00"), " / ", (capacity / 1000.0).ToString("0.00 k"));
+			else
+				return Lib.BuildString(amount.ToString("0.0"), " / ", capacity.ToString("0.0"));
+		}
+
 		///<summary> Format a large (positive) number using kilo / mega abbreviations </summary>
 		public static string HumanReadableAmountCompact(double value)
 		{
@@ -1019,6 +1030,9 @@ namespace KERBALISM
 		}
 		// Note : config / code base unit for data rate / size is in megabyte (1000^2 bytes)
 		// For UI purposes we use the decimal units (B/kB/MB...), not the binary (1024^2 bytes) units
+
+		public const double bitsPerMB = 1000.0 * 1000.0 * 8.0;
+
 		public const double BPerMB = 1000.0 * 1000.0;
 		public const double kBPerMB = 1000.0;
 		public const double GBPerMB = 1.0 / 1000.0;

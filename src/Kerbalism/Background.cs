@@ -32,7 +32,8 @@ namespace KERBALISM
 			KerbalismProcess,
 			SolarPanelFixer,
 			APIModule,
-			ModuleKsmHabitat
+			ModuleKsmHabitat,
+			IBackgroundModule
 		}
 
 		public static Module_type ModuleType(string module_name)
@@ -95,7 +96,6 @@ namespace KERBALISM
 					case Module_type.Reliability: Reliability.BackgroundUpdate(v, e.p, e.m, e.module_prefab as Reliability, elapsed_s); break;
 					case Module_type.Experiment: (e.module_prefab as Experiment).BackgroundUpdate(v, vd, e.m, elapsed_s); break; // experiments use the prefab as a singleton instead of a static method
 					case Module_type.Greenhouse: Greenhouse.BackgroundUpdate(v, e.m, e.module_prefab as Greenhouse, vd, resources, elapsed_s); break;
-					//case Module_type.GravityRing: GravityRing.BackgroundUpdate(v, e.p, e.m, e.module_prefab as GravityRing, ec, elapsed_s); break;
 					case Module_type.Harvester: Harvester.BackgroundUpdate(v, e.m, e.module_prefab as Harvester, elapsed_s); break; // Kerbalism ground and air harvester module
 					case Module_type.Laboratory: Laboratory.BackgroundUpdate(v, e.p, e.m, e.module_prefab as Laboratory, elapsed_s); break;
 					case Module_type.Command: ProcessCommand(vd, e.p, e.m, e.module_prefab as ModuleCommand, elapsed_s); break;
@@ -113,6 +113,7 @@ namespace KERBALISM
 					case Module_type.SolarPanelFixer: SolarPanelFixer.BackgroundUpdate(v, e.m, e.module_prefab as SolarPanelFixer, vd, ec, elapsed_s); break;
 					case Module_type.APIModule: ResourceAPI.BackgroundUpdate(v, e.p, e.m, e.part_prefab, e.module_prefab, resources, resourceChangeRequests, elapsed_s); break;
 					case Module_type.ModuleKsmHabitat: ModuleKsmHabitat.BackgroundUpdate(v, vd, e.p, e.module_prefab as ModuleKsmHabitat, elapsed_s); break;
+					case Module_type.IBackgroundModule: ((IBackgroundModule)e.module_prefab).BackgroundUpdate(vd, e.p, e.m, elapsed_s); break;
 				}
 			}
 		}
@@ -156,15 +157,21 @@ namespace KERBALISM
 					if (!Lib.Proto.GetBool(m, "isEnabled")) continue;
 
 					// get module type
-					// if the type is unknown, skip it
 					Module_type type = ModuleType(m.moduleName);
 					if (type == Module_type.Unknown)
 					{
-						var backgroundDelegate = BackgroundDelegate.Instance(module_prefab);
-						if (backgroundDelegate != null)
-							type = Module_type.APIModule;
+						if (module_prefab is IBackgroundModule)
+						{
+							type = Module_type.IBackgroundModule;
+						}
 						else
-							continue;
+						{
+							var backgroundDelegate = BackgroundDelegate.Instance(module_prefab);
+							if (backgroundDelegate != null)
+								type = Module_type.APIModule;
+							else
+								continue;
+						}
 					}
 
 					var entry = new BackgroundPM();

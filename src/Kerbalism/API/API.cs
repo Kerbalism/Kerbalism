@@ -10,15 +10,18 @@ using System.Collections.Generic;
 
 namespace KERBALISM
 {
-
-
 	public static class API
 	{
-		// show a message in the ui
+		#region MISC
+		// Post an on screen message
 		public static void Message(string msg)
 		{
 			KERBALISM.Message.Post(msg);
 		}
+
+		#endregion
+
+		#region KERBALS
 
 		// kill a kerbal, even an EVA one
 		public static void Kill(Vessel v, ProtoCrewMember c)
@@ -75,8 +78,9 @@ namespace KERBALISM
 			}
 		}
 
+		#endregion
 
-		// --- ENVIRONMENT ----------------------------------------------------------
+		#region ENVIRONMENT
 
 		// return true if the vessel specified is in sunlight
 		public static bool InSunlight(Vessel v)
@@ -90,8 +94,9 @@ namespace KERBALISM
 			return v.KerbalismData().EnvInBreathableAtmosphere;
 		}
 
+		#endregion
 
-		// --- RADIATION ------------------------------------------------------------
+		#region RADIATION
 
 		/// <summary>return true if radiation is enabled</summary>
 		public static bool RadiationEnabled()
@@ -246,7 +251,9 @@ namespace KERBALISM
 			}
 		}
 
-		// --- SPACE WEATHER --------------------------------------------------------
+		#endregion
+
+		#region SOLAR STORMS
 
 		// return true if a solar storm is incoming at the vessel position
 		public static bool StormIncoming(Vessel v)
@@ -290,7 +297,9 @@ namespace KERBALISM
 			Storm.sun_observation_quality = Lib.Clamp(quality, 0.0f, 1.0f);
 		}
 
-		// --- RELIABILITY ----------------------------------------------------------
+		#endregion
+
+		#region RELIABILITY
 
 		// return true if at least a component has malfunctioned, or had a critical failure
 		public static bool Malfunction(Vessel v)
@@ -318,8 +327,46 @@ namespace KERBALISM
 			part.FindModulesImplementing<Reliability>().FindAll(k => k.isEnabled && k.broken).ForEach(k => k.Repair());
 		}
 
+		public static FailureInfo Failure = new FailureInfo();
 
-		// --- HABITAT --------------------------------------------------------------
+		public class FailureInfo
+		{
+			//This is the list of methods that should be activated when the event fires
+			internal List<Action<Part, string, bool>> receivers = new List<Action<Part, string, bool>>();
+
+			//This adds a connection info handler
+			public void Add(Action<Part, string, bool> receiver)
+			{
+				//We only add it if it isn't already added. Just in case.
+				if (!receivers.Contains(receiver))
+				{
+					receivers.Add(receiver);
+				}
+			}
+
+			//This removes a connection info handler
+			public void Remove(Action<Part, string, bool> receiver)
+			{
+				//We also only remove it if it's actually in the list.
+				if (receivers.Contains(receiver))
+				{
+					receivers.Remove(receiver);
+				}
+			}
+
+			public void Notify(Part part, string type, bool failure)
+			{
+				//Loop through the list of listening methods and Invoke them.
+				foreach (Action<Part, string, bool> receiver in receivers)
+				{
+					receiver.Invoke(part, type, failure);
+				}
+			}
+		}
+
+		#endregion
+
+		#region HABITAT
 
 		// return volume of internal habitat in m^3
 		public static double Volume(Vessel v)
@@ -367,30 +414,60 @@ namespace KERBALISM
 			return v.KerbalismData().HabitatInfo.comfortModifier;
 		}
 
+		#endregion
 
-		// --- RESOURCES ------------------------------------------------------------
+		#region RESOURCE SIM
 
+		/// <summary> Consume a resource through the kerbalism resource simulation, available for loaded and unloaded vessels </summary>
+		/// <param name="v">the vessel to consume the resource on</param>
+		/// <param name="resource_name">name of the resource to consume</param>
+		/// <param name="quantity">amount of resource to consume.
+		/// This should be scaled by the TimeWarp.fixedDeltaTime on loaded vessels or
+		/// by the kerbalism provided elapsed time on unloaded vessels </param>
+		/// <param name="title">origin of the resource consumer (shown in the UI)</param>
 		public static void ConsumeResource(Vessel v, string resource_name, double quantity, string title)
 		{
-			v.KerbalismData().ResHandler.Consume(resource_name, quantity, ResourceBroker.GetOrCreate(title));
+			v.KerbalismData().ResHandler.Consume(resource_name, quantity, ResourceBroker.GetOrCreate(title));	
 		}
 
+		/// <summary> Produce a resource through the kerbalism resource simulation, available for loaded and unloaded vessels </summary>
+		/// <param name="v">the vessel to produce the resource on</param>
+		/// <param name="resource_name">name of the resource to produce</param>
+		/// <param name="quantity">amount of resource to produce.
+		/// This should be scaled by the TimeWarp.fixedDeltaTime on loaded vessels or
+		/// by the kerbalism provided elapsed time on unloaded vessels </param>
+		/// <param name="title">origin of the resource producer (shown in the UI)</param>
 		public static void ProduceResource(Vessel v, string resource_name, double quantity, string title)
 		{
 			v.KerbalismData().ResHandler.Produce(resource_name, quantity, ResourceBroker.GetOrCreate(title));
 		}
 
-		public static void ProcessResources(Vessel v, List<KeyValuePair<string, double>> resources, string title)
+		/// <summary>
+		/// Register a recipe to be processed by the kerbalism resource simulation
+		/// A recipe is a combination of inputs and outputs, where the outputs are limited by the inputs availability
+		/// The recipe will also be limited by the storage capacity of outputs, unless you set the "dump" boolean to true
+		/// </summary>
+		/// <param name="v">the vessel to process the recipe on</param>
+		/// <param name="resources">array of inputs and outputs : resource names</param>
+		/// <param name="rates">array of inputs and outputs : postive rates are outputs, negative rates are inputs.
+		/// Rates must be scaled by the TimeWarp.fixedDeltaTime on loaded vessels or
+		/// by the kerbalism provided elapsed time on unloaded vessels</param>
+		/// <param name="dump">array of inputs and outputs : set to true to have an output not being limited by the storage capacity.
+		/// This has no effect on inputs, the value is ignored</param>
+		/// <param name="title">origin of the recipe (shown in the UI)</param>
+		public static void AddResourceRecipe(Vessel v, string[] resources, double[] rates, bool[] dump, string title)
 		{
-			ResourceBroker broker = ResourceBroker.GetOrCreate(title);
-			VesselResHandler resHandler = v.KerbalismData().ResHandler;
-			foreach (var p in resources)
+			Recipe recipe = new Recipe(ResourceBroker.GetOrCreate(title));
+
+			for (int i = 0; i < resources.Length; i++)
 			{
-				if (p.Value < 0)
-					resHandler.Consume(p.Key, -p.Value, broker);
+				if (rates[i] < 0.0)
+					recipe.AddInput(resources[i], -rates[i]);
 				else
-					resHandler.Produce(p.Key, p.Value, broker);
+					recipe.AddOutput(resources[i], rates[i], dump[i]);
 			}
+
+			v.KerbalismData().ResHandler.AddRecipe(recipe);
 		}
 
 		public static double ResourceAmount(Vessel v, string resource_name)
@@ -398,44 +475,15 @@ namespace KERBALISM
 			return v.KerbalismData().ResHandler.GetResource(resource_name).Amount;
 		}
 
-		public static List<double> ResourceAmounts(Vessel v, List<string> resource_names)
-		{
-			VesselResHandler resHandler = v.KerbalismData().ResHandler;
-			List<double> result = new List<double>(resource_names.Count);
-			foreach (var name in resource_names)
-				result.Add(resHandler.GetResource(name).Amount);
-			return result;
-		}
-
 		public static double ResourceCapacity(Vessel v, string resource_name)
 		{
 			return v.KerbalismData().ResHandler.GetResource(resource_name).Capacity;
 		}
 
-		public static List<double> ResourceCapacities(Vessel v, List<string> resource_names)
+		public static double ResourceAvailability(Vessel v, string resource_name)
 		{
-			VesselResHandler resHandler = v.KerbalismData().ResHandler;
-			List<double> result = new List<double>(resource_names.Count);
-			foreach (var name in resource_names)
-				result.Add(resHandler.GetResource(name).Capacity);
-			return result;
+			return ((VesselResource)v.KerbalismData().ResHandler.GetResource(resource_name)).AvailabilityFactor;
 		}
-
-		public static double ResourceLevel(Vessel v, string resource_name)
-		{
-			return v.KerbalismData().ResHandler.GetResource(resource_name).Level;
-		}
-
-		public static List<double> ResourceLevels(Vessel v, List<string> resource_names)
-		{
-			VesselResHandler resHandler = v.KerbalismData().ResHandler;
-			List<double> result = new List<double>(resource_names.Count);
-			foreach (var name in resource_names)
-				result.Add(resHandler.GetResource(name).Level);
-			return result;
-		}
-
-
 
 		/// <summary>
 		/// Return a list of all consumers and producers for that resource.
@@ -447,10 +495,11 @@ namespace KERBALISM
 		- The second is the broker id
 		- The third is the broker localized title
 		*/
+		private static List<KeyValuePair<string[], double>> apiBrokers = new List<KeyValuePair<string[], double>>();
 		public static List<KeyValuePair<string[], double>> ResourceBrokers(Vessel v, string resource_name)
 		{
 			List<ResourceBrokerRate> brokers = ((VesselResource)v.KerbalismData().ResHandler.GetResource(resource_name)).ResourceBrokers;
-			List<KeyValuePair<string[], double>> apiBrokers = new List<KeyValuePair<string[], double>>();
+			apiBrokers.Clear();
 			foreach (ResourceBrokerRate rb in brokers)
 			{
 				apiBrokers.Add(new KeyValuePair<string[], double>(rb.broker.BrokerInfo, rb.rate));
@@ -458,7 +507,49 @@ namespace KERBALISM
 			return apiBrokers;
 		}
 
-		// --- SCIENCE --------------------------------------------------------------
+		public static void PlannerConsumeResource(string resource_name, double quantity, string title)
+		{
+			EditorResourceHandler.Handler.Consume(resource_name, quantity, ResourceBroker.GetOrCreate(title));
+		}
+
+		public static void PlannerProduceResource(string resource_name, double quantity, string title)
+		{
+			EditorResourceHandler.Handler.Produce(resource_name, quantity, ResourceBroker.GetOrCreate(title));
+		}
+
+		public static void PlannerAddResourceRecipe(string[] resources, double[] rates, bool[] dump, string title)
+		{
+			Recipe recipe = new Recipe(ResourceBroker.GetOrCreate(title));
+
+			for (int i = 0; i < resources.Length; i++)
+			{
+				if (rates[i] < 0.0)
+					recipe.AddInput(resources[i], -rates[i]);
+				else
+					recipe.AddOutput(resources[i], rates[i], dump[i]);
+			}
+
+			EditorResourceHandler.Handler.AddRecipe(recipe);
+		}
+
+		public static double PlannerResourceAmount(string resource_name)
+		{
+			return EditorResourceHandler.Handler.GetResource(resource_name).Amount;
+		}
+
+		public static double PlannerResourceCapacity(string resource_name)
+		{
+			return EditorResourceHandler.Handler.GetResource(resource_name).Capacity;
+		}
+
+		public static double PlannerResourceAvailability(string resource_name)
+		{
+			return ((VesselResource)EditorResourceHandler.Handler.GetResource(resource_name)).AvailabilityFactor;
+		}
+
+		#endregion
+
+		#region SCIENCE
 
 		// Science crediting override and event (implemented for Bureaucracy)
 		/// <summary> set to true to prevent Kerbalism from doing any call to ResearchAndDevelopment.Instance.AddScience() </summary>
@@ -557,46 +648,9 @@ namespace KERBALISM
 			return false;
 		}
 
-		// --- FAILURES --------------------------------------------------------------
+		#endregion
 
-		public static FailureInfo Failure = new FailureInfo();
-
-		public class FailureInfo
-		{
-			//This is the list of methods that should be activated when the event fires
-			internal List<Action<Part, string, bool>> receivers = new List<Action<Part, string, bool>>();
-
-			//This adds a connection info handler
-			public void Add(Action<Part, string, bool> receiver)
-			{
-				//We only add it if it isn't already added. Just in case.
-				if (!receivers.Contains(receiver))
-				{
-					receivers.Add(receiver);
-				}
-			}
-
-			//This removes a connection info handler
-			public void Remove(Action<Part, string, bool> receiver)
-			{
-				//We also only remove it if it's actually in the list.
-				if (receivers.Contains(receiver))
-				{
-					receivers.Remove(receiver);
-				}
-			}
-
-			public void Notify(Part part, string type, bool failure)
-			{
-				//Loop through the list of listening methods and Invoke them.
-				foreach (Action<Part, string, bool> receiver in receivers)
-				{
-					receiver.Invoke(part, type, failure);
-				}
-			}
-		}
-
-		// --- COMMUNICATION --------------------------------------------------------------
+		#region COMMUNICATIONS
 
 		public static double VesselConnectionRate(Vessel v)
 		{
@@ -617,6 +671,32 @@ namespace KERBALISM
 			var vi = v.KerbalismData();
 			if (!vi.IsSimulated) return 0;
 			return vi.filesTransmitted.Count;
+		}
+
+		/// <summary> Call this to register an editor comms handler. Please call this as soon as possible (ex : in a static class constructor) </summary>
+		public static void EnableEditorCommHandler()
+		{
+			CommHandlerEditor.APIHandlerEnabled = true;
+		}
+
+		/// <summary>
+		/// register the API comm update method used in the editor. Method signature must match the following :
+		/// <para/> public static void MyHandlerUpdate(ConnectionInfoEditor connection)
+		/// <para/> See Comms/ConnectionInfoEditor.cs for details
+		/// </summary>
+		public static void RegisterEditorCommHandler(MethodInfo updateMethod)
+		{
+			try
+			{
+				CommHandlerEditor.APIHandlerUpdate = (Action<ConnectionInfoEditor>)Delegate.CreateDelegate(typeof(Action<ConnectionInfoEditor>), updateMethod);
+				CommHandlerEditor.APIHandlerEnabled = true;
+			}
+			catch (Exception e)
+			{
+				CommHandlerEditor.APIHandlerEnabled = false;
+				Lib.Log($"Failed to register editor API comm handler\n {e.ToString()}", Lib.LogLevel.Error);
+			}
+
 		}
 
 		public static CommInfo Comm = new CommInfo();
@@ -650,6 +730,8 @@ namespace KERBALISM
 				}
 			}
 		}
+
+		#endregion
 	}
 } // KERBALISM
 

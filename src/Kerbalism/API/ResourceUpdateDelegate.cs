@@ -7,8 +7,6 @@ namespace KERBALISM
 {
 	public class ResourceUpdateDelegate
 	{
-		private static Type[] signature = { typeof(Dictionary<string, double>), typeof(List<KeyValuePair<string, double>>) };
-
 		internal PartModule module;
 
 		internal MethodInfo methodInfo;
@@ -20,10 +18,6 @@ namespace KERBALISM
 
 		public string invoke(Dictionary<string, double> availableRresources, List<KeyValuePair<string, double>> resourceChangeRequest)
 		{
-			IKerbalismModule km = module as IKerbalismModule;
-			if (km != null)
-				return km.ResourceUpdate(availableRresources, resourceChangeRequest);
-
 			var title = methodInfo.Invoke(module, new object[] { availableRresources, resourceChangeRequest });
 			if (title == null) return module.moduleName;
 			return title.ToString();

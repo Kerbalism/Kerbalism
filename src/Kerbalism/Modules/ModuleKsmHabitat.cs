@@ -308,7 +308,7 @@ namespace KERBALISM
 			}
 			else
 			{
-				vesselResHandler = EditorResourceHandler.GetHandler(EditorLogic.fetch.ship);
+				vesselResHandler = EditorResourceHandler.Handler;
 			}
 
 			ecResInfo = vesselResHandler.ElectricCharge;
@@ -318,7 +318,6 @@ namespace KERBALISM
 			if (Settings.HabitatBreathableResourceRate > 0.0)
 				breathableResInfo = (VesselResource)vesselResHandler.GetResource(Settings.HabitatBreathableResource);
 
-
 			reclaimResAbbr = PartResourceLibrary.Instance.GetDefinition(reclaimResource).abbreviation;
 
 			// get persistent data
@@ -327,11 +326,11 @@ namespace KERBALISM
 			// - Part created in flight from a just launched vessel
 			if (data == null)
 			{
-				// in flight, we should have the data stored in VesselData > PartData, unless the part was created in flight (KIS...)
+				// in flight, we should have the data stored in VesselData > PartData, unless the part was created in flight (rescue, KIS...)
 				if (isFlight)
 					data = HabitatData.GetFlightReferenceFromPart(part);
 
-				// if all other cases, this is newly instantiated part from prefab. Create the data object and put the right values.
+				// if all other cases, this is newly instantiated part from prefab. Create the data object and put the default values.
 				if (data == null)
 				{
 					data = new HabitatData
@@ -344,16 +343,32 @@ namespace KERBALISM
 						isEnabled = !isDeployable
 					};
 
-					if (!canPressurize)
-						data.pressureState = PressureState.AlwaysDepressurized;
-					if (isDeployable)
-						data.pressureState = PressureState.Depressurized;
-					else
-						data.pressureState = PressureState.Pressurized;
-
-					// part was created in flight (KIS...) : set the VesselData / PartData reference
+					// part was created in flight (rescue, KIS...)
 					if (isFlight)
+					{
+						// set the VesselData / PartData reference
 						HabitatData.SetFlightReferenceFromPart(part, data);
+
+						// if part is manned (rescue vessel), force enabled and deployed
+						if (data.crewCount > 0)
+						{
+							data.animState = AnimState.Deployed;
+							data.isEnabled = true;
+						}
+
+						// don't pressurize (if it's a rescue, the player will likely go on EVA immediatly anyway)
+						data.pressureState = canPressurize ? PressureState.Depressurized : PressureState.AlwaysDepressurized;
+					}
+					// part was created in the editor : set pressurized state if available
+					else
+					{
+						if (!canPressurize)
+							data.pressureState = PressureState.AlwaysDepressurized;
+						if (isDeployable && !data.IsDeployed)
+							data.pressureState = PressureState.Depressurized;
+						else
+							data.pressureState = PressureState.Pressurized;
+					}
 				}
 			}
 			else if (isFlight)
@@ -768,7 +783,7 @@ namespace KERBALISM
 
 							if (data.module.deployAnimator.Playing)
 							{
-								if (data.module.deployECRate > 0.0)
+								if (!isEditor && data.module.deployECRate > 0.0)
 								{
 									ecResInfo.Consume(data.module.deployECRate * elapsed_s, ResourceBroker.Habitat);
 									data.module.deployAnimator.ChangeSpeed((float)ecResInfo.AvailabilityFactor);
@@ -783,7 +798,7 @@ namespace KERBALISM
 						case AnimState.Retracting:
 							if (data.module.deployAnimator.Playing)
 							{
-								if (data.module.deployECRate > 0.0)
+								if (!isEditor && data.module.deployECRate > 0.0)
 								{
 									ecResInfo.Consume(data.module.deployECRate * elapsed_s, ResourceBroker.Habitat);
 									data.module.deployAnimator.ChangeSpeed((float)ecResInfo.AvailabilityFactor);
@@ -797,7 +812,7 @@ namespace KERBALISM
 						case AnimState.Accelerating:
 							if (data.module.rotateAnimator.IsSpinningNominal)
 							{
-								if (data.module.rotateECRate > 0.0)
+								if (!isEditor && data.module.rotateECRate > 0.0)
 									ecResInfo.Consume(data.module.rotateECRate * elapsed_s, ResourceBroker.GravityRing);
 
 								data.animState = AnimState.Rotating;
@@ -809,7 +824,7 @@ namespace KERBALISM
 							}
 							else
 							{
-								if (data.module.accelerateECRate > 0.0)
+								if (!isEditor && data.module.accelerateECRate > 0.0)
 									ecResInfo.Consume(data.module.accelerateECRate * elapsed_s, ResourceBroker.GravityRing);
 							}
 							break;
@@ -832,7 +847,7 @@ namespace KERBALISM
 							}
 							break;
 						case AnimState.RotatingNotEnoughEC:
-							if (data.module.rotateECRate > 0.0)
+							if (!isEditor && data.module.rotateECRate > 0.0)
 							{
 								ecResInfo.Consume(data.module.rotateECRate * elapsed_s, ResourceBroker.GravityRing);
 
@@ -1148,7 +1163,7 @@ namespace KERBALISM
 				wasteRes.FlowState = false;
 
 				if (isEditor)
-					PressurizingEndEvt();
+					DepressurizingEndEvt();
 				else if (atmoRes.Amount / atmoRes.Capacity >= Settings.PressureThreshold)
 					data.pressureState = PressureState.DepressurizingAboveThreshold;
 				else
@@ -1344,7 +1359,7 @@ namespace KERBALISM
 			{
 				if (isEditor)
 				{
-					if (data.module.canPressurize && !data.IsPressurized)
+					if (data.module.canPressurize && data.IsPressurized)
 						TryTogglePressure(data, isLoaded);
 
 					if (data.isEnabled && !TryToggleHabitat(data, isLoaded))

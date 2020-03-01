@@ -134,8 +134,12 @@
     <Compile Include="Automation\Devices\Panel.cs" />
     <Compile Include="Automation\Devices\Process.cs" />
     <Compile Include="Automation\Devices\Ring.cs" />
+    <Compile Include="Comms\CommHandlerEditorRemoteTech.cs" />
+    <Compile Include="Comms\CommHandlerEditorCommNet.cs" />
+    <Compile Include="Comms\CommHandlerEditor.cs" />
     <Compile Include="Comms\CommsMessages.cs" />
     <Compile Include="Comms\CommHandler.cs" />
+    <Compile Include="Comms\ConnectionInfoEditor.cs" />
     <Compile Include="Comms\ConnectionInfo.cs" />
     <Compile Include="Comms\CommHandlerCommNetBase.cs" />
     <Compile Include="Comms\CommHandlerCommNetSerenity.cs" />
@@ -149,7 +153,9 @@
     <Compile Include="Database\DB.cs" />
     <Compile Include="Patches\InternalModel_SpawnCrew.cs" />
     <Compile Include="Patches\ModuleCommand.cs" />
+    <Compile Include="API\PartModuleAPI.cs" />
     <Compile Include="ResourceSim\ResourceWrapper.cs" />
+    <Compile Include="Modules\IPlannerModule.cs" />
     <Compile Include="VesselLogic\HabitatData.cs" />
     <Compile Include="Database\KerbalData.cs" />
     <Compile Include="Database\LandmarkData.cs" />
@@ -162,16 +168,15 @@
     <Compile Include="Modules\ModuleKsmHabitat.cs" />
     <Compile Include="Radiation\RadiationBody.cs" />
     <Compile Include="Radiation\RadiationModel.cs" />
-    <Compile Include="ResourceSim\ResourceAPI\BackgroundDelegate.cs" />
-    <Compile Include="ResourceSim\ResourceAPI\ResourceAPI.cs" />
-    <Compile Include="ResourceSim\ResourceAPI\ResourceUpdateDelegate.cs" />
+    <Compile Include="API\BackgroundDelegate.cs" />
+    <Compile Include="API\ResourceAPI.cs" />
+    <Compile Include="API\ResourceUpdateDelegate.cs" />
     <Compile Include="ResourceSim\ResourceBroker.cs" />
     <Compile Include="ResourceSim\PartResourceWrapper.cs" />
     <Compile Include="Science\SubjectData.cs" />
     <Compile Include="Database\SupplyData.cs" />
     <Compile Include="Database\UIData.cs" />
     <Compile Include="Database\VesselData.cs" />
-    <Compile Include="Modules\Deploy.cs" />
     <Compile Include="DeviceEC.cs" />
     <Compile Include="Automation\Devices\LandingGear.cs" />
     <Compile Include="External\RemoteTech.cs" />
@@ -209,7 +214,7 @@
     <Compile Include="Science\ScienceDB.cs" />
     <Compile Include="Science\ScienceSituation.cs" />
     <Compile Include="Science\Situation.cs" />
-    <Compile Include="System\API.cs" />
+    <Compile Include="API\API.cs" />
     <Compile Include="System\Callbacks.cs" />
     <Compile Include="UI\ConnManager.cs" />
     <Compile Include="UI\KsmGui\KsmGuiInterfaces.cs" />
@@ -236,9 +241,6 @@
     <Compile Include="UI\KsmGui\KsmGuiUpdate.cs" />
     <Compile Include="UI\Planner\EnvironmentAnalyzer.cs" />
     <Compile Include="UI\Planner\ResourceSimulator.cs" />
-    <Compile Include="UI\Planner\SimulatedRecipe.cs" />
-    <Compile Include="UI\Planner\SimulatedResource.cs" />
-    <Compile Include="UI\Planner\SimulatedResourceView.cs" />
     <Compile Include="UI\Planner\VesselAnalyzer.cs" />
     <Compile Include="UI\Science\ExperimentSubjectsList.cs" />
     <Compile Include="UI\Science\ExperimentPopup.cs" />
@@ -299,7 +301,7 @@
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="Patches\TooltipController_CrewAC_SetTooltip.cs" />
     <Compile Include="Modules\PassiveShield.cs" />
-    <Compile Include="ResourceSim\ResourceAPI\IKerbalismModule.cs" />
+    <Compile Include="Modules\IBackgroundModule.cs" />
     <Compile Include="Patches\ModuleDataTransmitter_GetInfo.cs" />
     <Compile Include="Modules\ModuleKsmProcessController.cs" />
   </ItemGroup>

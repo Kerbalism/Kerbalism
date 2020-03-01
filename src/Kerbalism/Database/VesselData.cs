@@ -734,7 +734,7 @@ namespace KERBALISM
 			vesselSituations = new VesselSituations(this);
 			habitatInfo = new HabitatVesselData();
 			connection = new ConnectionInfo();
-			CommHandler = CommHandler.GetProvider(this, isSerenityGroundController);
+			CommHandler = CommHandler.GetHandler(this, isSerenityGroundController);
 		}
 
 		private void Load(ConfigNode node)
@@ -872,7 +872,7 @@ namespace KERBALISM
 				if (partData.Habitat != null)
 					habitats.Add(partData.Habitat);
 
-			EvaluateHabitat(habitatInfo, habitats, connection, landed, crewCount, mainSun.Direction, Vessel.loaded);
+			EvaluateHabitat(habitatInfo, habitats, connection.linked && connection.rate > 0.0, landed, crewCount, mainSun.Direction, Vessel.loaded);
 
 			// data about greenhouses
 			greenhouses = Greenhouse.Greenhouses(Vessel);
