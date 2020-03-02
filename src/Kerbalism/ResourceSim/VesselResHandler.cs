@@ -62,7 +62,7 @@ namespace KERBALISM
 
 	public class VesselResHandler
 	{
-		public enum VesselState { Loaded, Unloaded, Editor}
+		public enum VesselState { Loaded, Unloaded, EditorInit, EditorStep, EditorFinalize}
 		private VesselState currentState;
 
 		public VesselResource ElectricCharge { get; protected set; }
@@ -89,14 +89,13 @@ namespace KERBALISM
 		private Dictionary<string, IResource> resources = new Dictionary<string, IResource>(32);
 		private Dictionary<string, ResourceWrapper> resourceWrappers = new Dictionary<string, ResourceWrapper>(32);
 
-		public VesselResHandler(object vesselOrProtoVesselOrShipConstruct, VesselState state)
+		public VesselResHandler(object vesselOrProtoVessel, VesselState state)
 		{
 			currentState = state;
 
 			switch (state)
 			{
 				case VesselState.Loaded:
-				case VesselState.Editor:
 					foreach (string resourceName in AllResourceNames)
 					{
 						ResourceWrapper resourceWrapper = new LoadedResourceWrapper(resourceName);
@@ -112,18 +111,30 @@ namespace KERBALISM
 						resources.Add(resourceName, new VesselResource(resourceWrapper));
 					}
 					break;
+				case VesselState.EditorStep:
+				case VesselState.EditorInit:
+				case VesselState.EditorFinalize:
+					foreach (string resourceName in AllResourceNames)
+					{
+						ResourceWrapper resourceWrapper = new EditorResourceWrapper(resourceName);
+						resourceWrappers.Add(resourceName, resourceWrapper);
+						resources.Add(resourceName, new VesselResource(resourceWrapper));
+					}
+					break;
 			}
 
 			switch (state)
 			{
 				case VesselState.Loaded:
-					SyncPartResources(((Vessel)vesselOrProtoVesselOrShipConstruct).parts);
+					SyncPartResources(((Vessel)vesselOrProtoVessel).parts);
 					break;
 				case VesselState.Unloaded:
-					SyncPartResources(((ProtoVessel)vesselOrProtoVesselOrShipConstruct).protoPartSnapshots);
+					SyncPartResources(((ProtoVessel)vesselOrProtoVessel).protoPartSnapshots);
 					break;
-				case VesselState.Editor:
-					SyncPartResources(((ShipConstruct)vesselOrProtoVesselOrShipConstruct).parts);
+				case VesselState.EditorStep:
+				case VesselState.EditorInit:
+				case VesselState.EditorFinalize:
+					SyncEditorPartResources(EditorLogic.fetch.ship.parts);
 					break;
 			}
 
@@ -187,35 +198,32 @@ namespace KERBALISM
 			recipes.Add(recipe);
 		}
 
-		public void ResourceUpdate(object vesselOrProtoVesselOrShipConstruct, VesselState state, double elapsed_s)
+		public void ResourceUpdate(object vesselOrProtoVessel, VesselState state, double elapsed_s)
 		{
 			Vessel vessel = null;
 			ProtoVessel protoVessel = null;
-			ShipConstruct shipConstruct = null;
 
 			// execute all recorded recipes
 			switch (state)
 			{
 				case VesselState.Loaded:
-					vessel = (Vessel)vesselOrProtoVesselOrShipConstruct;
+					vessel = (Vessel)vesselOrProtoVessel;
 					Recipe.ExecuteRecipes(this, recipes, vessel);
 					break;
 				case VesselState.Unloaded:
-					protoVessel = (ProtoVessel)vesselOrProtoVesselOrShipConstruct;
+					protoVessel = (ProtoVessel)vesselOrProtoVessel;
 					Recipe.ExecuteRecipes(this, recipes, protoVessel.vesselRef);
 					break;
-				case VesselState.Editor:
-					shipConstruct = (ShipConstruct)vesselOrProtoVesselOrShipConstruct;
-					//Recipe.ExecuteRecipes(this, recipes, vessel);
+				case VesselState.EditorStep:
+					Recipe.ExecuteRecipes(this, recipes, null);
 					break;
 			}
 
 			// forget the recipes
 			recipes.Clear();
 
-			// if the vessel state has changed between loaded and unloaded,
-			// rebuild the resource wrappers
-			if (state != currentState)
+			// if the vessel state has changed between loaded and unloaded, rebuild the resource wrappers
+			if ((state == VesselState.Loaded || state == VesselState.Unloaded) && state != currentState)
 			{
 				Lib.LogDebug($"State changed for {(vessel != null ? vessel.vesselName : protoVessel?.vesselName)} from {currentState.ToString()} to {state.ToString()}, rebuilding resource wrappers");
 				currentState = state;
@@ -226,7 +234,6 @@ namespace KERBALISM
 					switch (state)
 					{
 						case VesselState.Loaded:
-						case VesselState.Editor:
 							newWrapper = new LoadedResourceWrapper(oldWrapper);
 							break;
 						case VesselState.Unloaded:
@@ -241,11 +248,12 @@ namespace KERBALISM
 					((VesselResource)resources[resourceName]).SetWrapper(newWrapper);
 				}
 			}
+			// else just reset amount, capacity, and the part/protopart resource object references,
+			// excepted when this is an editor simulation step
 			else
 			{
-				// else just reset amount, capacity, and the part/protopart resource object references
 				foreach (ResourceWrapper resourceWrapper in resourceWrappers.Values)
-					resourceWrapper.ClearPartResources();
+					resourceWrapper.ClearPartResources(state != VesselState.EditorStep);
 			}
 
 			switch (state)
@@ -256,9 +264,12 @@ namespace KERBALISM
 				case VesselState.Unloaded:
 					SyncPartResources(protoVessel.protoPartSnapshots);
 					break;
-				case VesselState.Editor:
-					SyncPartResources(shipConstruct.parts);
+				case VesselState.EditorInit:
+					SyncEditorPartResources(EditorLogic.fetch.ship.parts);
 					break;
+				case VesselState.EditorFinalize:
+					SyncEditorPartResources(EditorLogic.fetch.ship.parts);
+					return;
 			}
 
 			// apply all deferred requests and synchronize to vessel
@@ -273,6 +284,26 @@ namespace KERBALISM
 				APIResources[resource.Name] = resource.Amount;
 			}
 
+		}
+
+
+		private void SyncEditorPartResources(List<Part> parts)
+		{
+			foreach (Part p in parts)
+			{
+				foreach (PartResource r in p.Resources)
+				{
+#if DEBUG_RESOURCES
+					// Force view all resource in Debug Mode
+					r.isVisible = true;
+#endif
+
+					if (!r.flowState)
+						continue;
+
+					((EditorResourceWrapper)resourceWrappers[r.resourceName]).AddPartresources(r);
+				}
+			}
 		}
 
 		private void SyncPartResources(List<Part> parts)

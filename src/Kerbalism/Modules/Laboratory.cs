@@ -2,12 +2,12 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using KSP.Localization;
-
+using KERBALISM.Planner;
 
 namespace KERBALISM
 {
 
-	public class Laboratory: PartModule, IModuleInfo, ISpecifics, IContractObjectiveModule
+	public class Laboratory: PartModule, IModuleInfo, ISpecifics, IContractObjectiveModule, IPlannerModule
 	{
 		// config
 		[KSPField] public double ec_rate;						// ec consumed per-second
@@ -174,11 +174,13 @@ namespace KERBALISM
 			}
 		}
 
-#if KSP15_16
-		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "Toggle Lab", active = true)]
-#else
+		public void PlannerUpdate(VesselResHandler resHandler, EnvironmentAnalyzer environment, VesselAnalyzer vessel)
+		{
+			if (running)
+				resHandler.ElectricCharge.Consume(ec_rate, ResourceBroker.Laboratory);
+		}
+
 		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "#KERBALISM_Laboratory_Toggle", active = true, groupName = "Science", groupDisplayName = "#KERBALISM_Group_Science")]//"Toggle Lab"Science
-#endif
 		public void Toggle()
 		{
 			running = !running;
@@ -187,11 +189,7 @@ namespace KERBALISM
 			if (Lib.IsEditor()) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
 		}
 
-#if KSP15_16
-		[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "Clean Lab", active = true)]
-#else
 		[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "#KERBALISM_Laboratory_Clean", active = true, groupName = "Science", groupDisplayName = "#KERBALISM_Group_Science")]//Clean Lab""Science
-#endif
 		public void CleanExperiments()
 		{
 			bool message = false;

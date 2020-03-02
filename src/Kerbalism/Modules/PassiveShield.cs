@@ -2,10 +2,11 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using KSP.Localization;
+using KERBALISM.Planner;
 
 namespace KERBALISM
 {
-	public class PassiveShield: PartModule, IPartMassModifier, IKerbalismModule
+	public class PassiveShield: PartModule, IPartMassModifier, IBackgroundModule, IPlannerModule
 	{
 		// config
 		[KSPField] public string title = Local.PassiveShield_Sandbags;//"Sandbags"              // GUI name of the status action in the PAW
@@ -28,11 +29,7 @@ namespace KERBALISM
 		[KSPField(isPersistant = true)] public bool deployed = false; // currently deployed
 
 
-#if KSP15_16
-		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "_")]
-#else
 		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "_", groupName = "Radiation", groupDisplayName = "#KERBALISM_Group_Radiation")]//Radiation
-#endif
 		// rmb status
 		public string Status;  // rate of radiation emitted/shielded
 
@@ -85,58 +82,26 @@ namespace KERBALISM
 			// allow sandbag filling only when landed
 			bool allowDeploy = vessel.Landed || !require_landed;
 			Events["Toggle"].active = toggle && (allowDeploy || deployed);
-		}
 
-		/// <summary>
-		/// We're always going to call you for resource handling.  You tell us what to produce or consume.  Here's how it'll look when your vessel is NOT loaded
-		/// </summary>
-		/// <param name="vessel">the vessel (unloaded)</param>
-		/// <param name="proto_part">proto part snapshot (contains all non-persistant KSPFields)</param>
-		/// <param name="proto_module">proto part module snapshot (contains all non-persistant KSPFields)</param>
-		/// <param name="partModule">proto part module snapshot (contains all non-persistant KSPFields)</param>
-		/// <param name="part">proto part snapshot (contains all non-persistant KSPFields)</param>
-		/// <param name="availableResources">key-value pair containing all available resources and their currently available amount on the vessel. if the resource is not in there, it's not available</param>
-		/// <param name="resourceChangeRequest">key-value pair that contains the resource names and the units per second that you want to produce/consume (produce: positive, consume: negative)</param>
-		/// <param name="elapsed_s">how much time elapsed since the last time. note this can be very long, minutes and hours depending on warp speed</param>
-		/// <returns>the title to be displayed in the resource tooltip</returns>
-		public static string BackgroundUpdate(Vessel vessel, ProtoPartSnapshot proto_part,
-			ProtoPartModuleSnapshot proto_module, PartModule partModule, Part part,
-			Dictionary<string, double> availableResources, List<KeyValuePair<string, double>> resourceChangeRequest, double elapsed_s)
-		{
-			PassiveShield passiveShield = partModule as PassiveShield;
-			if (passiveShield == null) return string.Empty;
-			if (passiveShield.ec_rate > 0) return string.Empty;
-
-			bool deployed = Lib.Proto.GetBool(proto_module, "deployed");
-			if(deployed)
-			{
-				resourceChangeRequest.Add(new KeyValuePair<string, double>("ElectricCharge", -passiveShield.ec_rate));
-			}
-
-			return passiveShield.title;
-		}
-
-		public virtual string ResourceUpdate(Dictionary<string, double> availableResources, List<KeyValuePair<string, double>> resourceChangeRequest)
-		{
-			// if there is ec consumption
 			if (deployed && ec_rate > 0)
-			{
-				resourceChangeRequest.Add(new KeyValuePair<string, double>("ElectricCharge", -ec_rate));
-			}
-
-			return title;
+				vessel.KerbalismData().ResHandler.ElectricCharge.Consume(ec_rate * Kerbalism.elapsed_s, ResourceBroker.PassiveShield);
 		}
 
-		public string PlannerUpdate(List<KeyValuePair<string, double>> resourceChangeRequest, CelestialBody body, Dictionary<string, double> environment)
+		public void BackgroundUpdate(VesselData vd, ProtoPartSnapshot protoPart, ProtoPartModuleSnapshot protoModule, double elapsed_s)
 		{
-			return ResourceUpdate(null, resourceChangeRequest);
+			if (ec_rate == 0.0 || !Lib.Proto.GetBool(protoModule, "deployed"))
+				return;
+
+			vd.ResHandler.ElectricCharge.Consume(ec_rate * elapsed_s, ResourceBroker.GetOrCreate(title));
 		}
 
-#if KSP15_16
-		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true)]
-#else
+		public void PlannerUpdate(VesselResHandler resHandler, EnvironmentAnalyzer environment, VesselAnalyzer vessel)
+		{
+			if (deployed && ec_rate > 0)
+				resHandler.ElectricCharge.Consume(ec_rate, ResourceBroker.GetOrCreate(title));
+		}
+
 		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true, groupName = "Radiation", groupDisplayName = "#KERBALISM_Group_Radiation")]//Radiation
-#endif
 		public void Toggle()
 		{
 			if (Lib.IsFlight())

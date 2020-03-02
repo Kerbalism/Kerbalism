@@ -97,60 +97,31 @@ namespace KERBALISM
 		// PAW UI
 		// Note : the 4 bool using a UI_Toggle shouldn't by used from code.
 		// To change the state from code, use the static Toggle() methods
-#if KSP15_16
-		[KSPField]
-#else
 		[KSPField(groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
-#endif
 		public string mainPAWInfo;
 
-#if KSP15_16
-		[KSPField]
-#else
 		[KSPField(groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
-#endif
 		public string secPAWInfo;
 
-#if KSP15_16
-		[KSPField]
-#else
 		[KSPField(groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
-#endif
 		[UI_Toggle(scene = UI_Scene.All, requireFullControl = false, affectSymCounterparts = UI_Scene.None)]
 		public bool habitatEnabled;
 
-#if KSP15_16
-		[KSPField]
-#else
 		[KSPField(groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
-#endif
 		[UI_Toggle(scene = UI_Scene.All, affectSymCounterparts = UI_Scene.None)]
 		public bool pressureEnabled;
 
-#if KSP15_16
-		[KSPField]
-#else
 		[KSPField(groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
-#endif
 		[UI_Toggle(scene = UI_Scene.All, affectSymCounterparts = UI_Scene.None)]
 		public bool deployEnabled;
 
 
-#if KSP15_16
-		[KSPField]
-#else
 		[KSPField(groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
-#endif
 		[UI_Toggle(scene = UI_Scene.All, affectSymCounterparts = UI_Scene.None)]
 		public bool rotationEnabled;
 
-#if KSP15_16
-		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "debug")]
-		public string debugInfo;
-#else
 		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "debug", groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
 		public string debugInfo;
-#endif
 
 		#endregion
 
@@ -165,23 +136,10 @@ namespace KERBALISM
 				baseComfortsMask = 0;
 				foreach (string comfortString in node.GetValues("comfort"))
 				{
-#if KSP15_16 || KSP17
-					Comfort comfort;
-					try
-					{
-						comfort = (Comfort)Enum.Parse(typeof(Comfort), comfortString);
-						baseComfortsMask |= (int)comfort;
-					}
-					catch
-					{
-						Lib.Log($"Unrecognized comfort `{comfortString}` in ModuleKsmHabitat config for part {part.name}");
-					}
-#else
 					if (Enum.TryParse(comfortString, out Comfort comfort))
 						baseComfortsMask |= (int)comfort;
 					else
 						Lib.Log($"Unrecognized comfort `{comfortString}` in ModuleKsmHabitat config for part {part.partName}");
-#endif
 				}
 
 				// instanciate animations from config
@@ -308,7 +266,7 @@ namespace KERBALISM
 			}
 			else
 			{
-				vesselResHandler = EditorResourceHandler.GetHandler(EditorLogic.fetch.ship);
+				vesselResHandler = EditorResourceHandler.Handler;
 			}
 
 			ecResInfo = vesselResHandler.ElectricCharge;
@@ -318,7 +276,6 @@ namespace KERBALISM
 			if (Settings.HabitatBreathableResourceRate > 0.0)
 				breathableResInfo = (VesselResource)vesselResHandler.GetResource(Settings.HabitatBreathableResource);
 
-
 			reclaimResAbbr = PartResourceLibrary.Instance.GetDefinition(reclaimResource).abbreviation;
 
 			// get persistent data
@@ -327,11 +284,11 @@ namespace KERBALISM
 			// - Part created in flight from a just launched vessel
 			if (data == null)
 			{
-				// in flight, we should have the data stored in VesselData > PartData, unless the part was created in flight (KIS...)
+				// in flight, we should have the data stored in VesselData > PartData, unless the part was created in flight (rescue, KIS...)
 				if (isFlight)
 					data = HabitatData.GetFlightReferenceFromPart(part);
 
-				// if all other cases, this is newly instantiated part from prefab. Create the data object and put the right values.
+				// if all other cases, this is newly instantiated part from prefab. Create the data object and put the default values.
 				if (data == null)
 				{
 					data = new HabitatData
@@ -344,16 +301,32 @@ namespace KERBALISM
 						isEnabled = !isDeployable
 					};
 
-					if (!canPressurize)
-						data.pressureState = PressureState.AlwaysDepressurized;
-					if (isDeployable)
-						data.pressureState = PressureState.Depressurized;
-					else
-						data.pressureState = PressureState.Pressurized;
-
-					// part was created in flight (KIS...) : set the VesselData / PartData reference
+					// part was created in flight (rescue, KIS...)
 					if (isFlight)
+					{
+						// set the VesselData / PartData reference
 						HabitatData.SetFlightReferenceFromPart(part, data);
+
+						// if part is manned (rescue vessel), force enabled and deployed
+						if (data.crewCount > 0)
+						{
+							data.animState = AnimState.Deployed;
+							data.isEnabled = true;
+						}
+
+						// don't pressurize (if it's a rescue, the player will likely go on EVA immediatly anyway)
+						data.pressureState = canPressurize ? PressureState.Depressurized : PressureState.AlwaysDepressurized;
+					}
+					// part was created in the editor : set pressurized state if available
+					else
+					{
+						if (!canPressurize)
+							data.pressureState = PressureState.AlwaysDepressurized;
+						if (isDeployable && !data.IsDeployed)
+							data.pressureState = PressureState.Depressurized;
+						else
+							data.pressureState = PressureState.Pressurized;
+					}
 				}
 			}
 			else if (isFlight)
@@ -511,10 +484,8 @@ namespace KERBALISM
 			deployField.guiActive = deployField.guiActiveEditor = CanToggleDeploy;
 			rotateField.guiActive = rotateField.guiActiveEditor = CanToggleRotate;
 
-#if !KSP15_16
 			if (part.PartActionWindow == null)
 				return;
-#endif
 
 			debugInfo = (data.isEnabled ? "Enabled - " : "Disabled - ") + data.pressureState.ToString() + " - " + data.animState.ToString();
 
@@ -768,7 +739,7 @@ namespace KERBALISM
 
 							if (data.module.deployAnimator.Playing)
 							{
-								if (data.module.deployECRate > 0.0)
+								if (!isEditor && data.module.deployECRate > 0.0)
 								{
 									ecResInfo.Consume(data.module.deployECRate * elapsed_s, ResourceBroker.Habitat);
 									data.module.deployAnimator.ChangeSpeed((float)ecResInfo.AvailabilityFactor);
@@ -783,7 +754,7 @@ namespace KERBALISM
 						case AnimState.Retracting:
 							if (data.module.deployAnimator.Playing)
 							{
-								if (data.module.deployECRate > 0.0)
+								if (!isEditor && data.module.deployECRate > 0.0)
 								{
 									ecResInfo.Consume(data.module.deployECRate * elapsed_s, ResourceBroker.Habitat);
 									data.module.deployAnimator.ChangeSpeed((float)ecResInfo.AvailabilityFactor);
@@ -797,7 +768,7 @@ namespace KERBALISM
 						case AnimState.Accelerating:
 							if (data.module.rotateAnimator.IsSpinningNominal)
 							{
-								if (data.module.rotateECRate > 0.0)
+								if (!isEditor && data.module.rotateECRate > 0.0)
 									ecResInfo.Consume(data.module.rotateECRate * elapsed_s, ResourceBroker.GravityRing);
 
 								data.animState = AnimState.Rotating;
@@ -809,7 +780,7 @@ namespace KERBALISM
 							}
 							else
 							{
-								if (data.module.accelerateECRate > 0.0)
+								if (!isEditor && data.module.accelerateECRate > 0.0)
 									ecResInfo.Consume(data.module.accelerateECRate * elapsed_s, ResourceBroker.GravityRing);
 							}
 							break;
@@ -832,7 +803,7 @@ namespace KERBALISM
 							}
 							break;
 						case AnimState.RotatingNotEnoughEC:
-							if (data.module.rotateECRate > 0.0)
+							if (!isEditor && data.module.rotateECRate > 0.0)
 							{
 								ecResInfo.Consume(data.module.rotateECRate * elapsed_s, ResourceBroker.GravityRing);
 
@@ -1148,7 +1119,7 @@ namespace KERBALISM
 				wasteRes.FlowState = false;
 
 				if (isEditor)
-					PressurizingEndEvt();
+					DepressurizingEndEvt();
 				else if (atmoRes.Amount / atmoRes.Capacity >= Settings.PressureThreshold)
 					data.pressureState = PressureState.DepressurizingAboveThreshold;
 				else
@@ -1344,7 +1315,7 @@ namespace KERBALISM
 			{
 				if (isEditor)
 				{
-					if (data.module.canPressurize && !data.IsPressurized)
+					if (data.module.canPressurize && data.IsPressurized)
 						TryTogglePressure(data, isLoaded);
 
 					if (data.isEnabled && !TryToggleHabitat(data, isLoaded))
@@ -1466,11 +1437,7 @@ namespace KERBALISM
 		}
 
 		// debug
-#if KSP15_16
-		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_")]
-#else
 		[KSPEvent(guiActive = false, guiActiveEditor = true, guiName = "[Debug] log volume/surface", groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
-#endif
 		public void LogVolumeAndSurface() => Lib.GetPartVolumeAndSurface(part, true);
 
 		#endregion

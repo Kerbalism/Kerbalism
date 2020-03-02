@@ -11,10 +11,10 @@ namespace KERBALISM
 	public class ModuleKsmProcessController: PartModule, IModuleInfo, IAnimatedModule, ISpecifics
 	{
 		// config
-		[KSPField] public string resource = string.Empty; // pseudo-resource to control
-		[KSPField] public string title = string.Empty;    // name to show on ui
-		[KSPField] public string desc = string.Empty;     // description to show on tooltip
-		[KSPField] public double capacity = 1.0;          // amount of associated pseudo-resource
+		[KSPField(isPersistant = true)] public string resource = string.Empty; // pseudo-resource to control
+		[KSPField(isPersistant = true)] public string title = string.Empty;    // name to show on ui
+		[KSPField(isPersistant = true)] public string desc = string.Empty;     // description to show on tooltip
+		[KSPField(isPersistant = true)] public double capacity = 1.0;          // amount of associated pseudo-resource
 		[KSPField] public bool toggle = true;             // show the enable/disable toggle button
 		[KSPField] public string uiGroup = null;          // display name of the UI group
 		[KSPField] public string id = string.Empty;       // id field for targeting individual modules with B9PS
@@ -27,9 +27,6 @@ namespace KERBALISM
 		// index of currently active dump valve
 		[KSPField(isPersistant = true)] public int valve_i = 0;
 
-		// caching of GetInfo() for automation tooltip
-		public string ModuleInfo { get; private set; }
-
 		private DumpSpecs dump_specs;
 		private bool broken = false;
 
@@ -41,8 +38,6 @@ namespace KERBALISM
 
 		public override void OnLoad(ConfigNode node)
 		{
-			ModuleInfo = GetInfo();
-
 			if (Lib.IsEditor())
 			{
 				if (string.IsNullOrEmpty(resource))
@@ -113,14 +108,12 @@ namespace KERBALISM
 				return;
 			}
 
-#if !KSP15_16
 			if (uiGroup != null)
 			{
 				var g = new BasePAWGroup(uiGroup, uiGroup, false);
 				Events["Toggle"].group = g;
 				Events["DumpValve"].group = g;
 			}
-#endif
 
 			InitProcess();
 		}
@@ -170,21 +163,13 @@ namespace KERBALISM
 			Events["DumpValve"].guiName = Lib.StatusToggle(Local.ProcessController_Dump, dump_specs.valves[valve_i]);//"Dump"
 		}
 
-#if KSP15_16
-		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true)]
-#else
 		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true, groupName = "Processes", groupDisplayName = "#KERBALISM_Group_Processes")]//Processes
-#endif
 		public void Toggle()
 		{
 			SetRunning(!running);
 		}
 
-#if KSP15_16
-		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "Dump", active = true)]
-#else
 		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "#KERBALISM_ProcessController_Dump", active = true, groupName = "Processes", groupDisplayName = "#KERBALISM_Group_Processes")]//"Dump""Processes"
-#endif
 		public void DumpValve()
 		{
 			valve_i = dump_specs.NextValve;

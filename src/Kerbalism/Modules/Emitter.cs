@@ -2,10 +2,11 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using KSP.Localization;
+using KERBALISM.Planner;
 
 namespace KERBALISM
 {
-	public class Emitter : PartModule, ISpecifics, IKerbalismModule
+	public class Emitter : PartModule, ISpecifics, IBackgroundModule, IPlannerModule
 	{
 		// config
 		[KSPField] public string active;                          // name of animation to play when enabling/disabling
@@ -17,12 +18,7 @@ namespace KERBALISM
 		[KSPField(isPersistant = true)] public bool running;
 		[KSPField(isPersistant = true)] public double radiation_impact = 1.0;	// calculated based on vessel design
 
-#if KSP15_16
-		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "_")]
-#else
 		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "_", groupName = "Radiation", groupDisplayName = "#KERBALISM_Group_Radiation")]//Radiation
-#endif
-		// rmb status
 		public string Status;  // rate of radiation emitted/shielded
 
 		// animations
@@ -145,48 +141,24 @@ namespace KERBALISM
 		{
 			if (!radiation_impact_calculated)
 				radiation_impact_calculated = CalculateRadiationImpact();
+
+			if (ec_rate > 0.0 && running)
+				vessel.KerbalismData().ResHandler.ElectricCharge.Consume(ec_rate * Kerbalism.elapsed_s, ResourceBroker.GetOrCreate(title));
 		}
 
-		// See IKerbalismModule
-		public static string BackgroundUpdate(Vessel v,
-			ProtoPartSnapshot part_snapshot, ProtoPartModuleSnapshot module_snapshot,
-			PartModule proto_part_module, Part proto_part,
-			Dictionary<string, double> availableResources, List<KeyValuePair<string, double>> resourceChangeRequest,
-			double elapsed_s)
+		public void BackgroundUpdate(VesselData vd, ProtoPartSnapshot protoPart, ProtoPartModuleSnapshot protoModule, double elapsed_s)
 		{
-			Emitter emitter = proto_part_module as Emitter;
-			if (emitter == null) return string.Empty;
-
-			if (Lib.Proto.GetBool(module_snapshot, "running") && emitter.ec_rate > 0)
-			{
-				resourceChangeRequest.Add(new KeyValuePair<string, double>("ElectricCharge", -emitter.ec_rate));
-			}
-
-			return emitter.title;
+			if (ec_rate > 0.0 && Lib.Proto.GetBool(protoModule, "running"))
+				vd.ResHandler.ElectricCharge.Consume(ec_rate * elapsed_s, ResourceBroker.GetOrCreate(title));
 		}
 
-		public virtual string ResourceUpdate(Dictionary<string, double> availableResources, List<KeyValuePair<string, double>> resourceChangeRequest)
+		public void PlannerUpdate(VesselResHandler resHandler, EnvironmentAnalyzer environment, VesselAnalyzer vessel)
 		{
-			// if enabled, and there is ec consumption
-			if (running && ec_rate > 0)
-			{
-				resourceChangeRequest.Add(new KeyValuePair<string, double>("ElectricCharge", -ec_rate));
-			}
-
-			return title;
+			if (ec_rate > 0.0 && running)
+				resHandler.ElectricCharge.Consume(ec_rate, ResourceBroker.GetOrCreate(title));
 		}
 
-		public string PlannerUpdate(List<KeyValuePair<string, double>> resourceChangeRequest, CelestialBody body, Dictionary<string, double> environment)
-		{
-			return ResourceUpdate(null, resourceChangeRequest);
-		}
-
-
-#if KSP15_16
-		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true)]
-#else
-	[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true, groupName = "Radiation", groupDisplayName = "#KERBALISM_Group_Radiation")]//Radiation
-#endif
+		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true, groupName = "Radiation", groupDisplayName = "#KERBALISM_Group_Radiation")]//Radiation
 		public void Toggle()
 		{
 			// switch status

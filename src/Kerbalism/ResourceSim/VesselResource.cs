@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
 
 namespace KERBALISM
 {
@@ -9,10 +10,24 @@ namespace KERBALISM
 	/// </summary>
 	public class VesselResource : IResource
 	{
+		private static StringBuilder sb = new StringBuilder();
+
 		private ResourceWrapper resourceWrapper;
 
 		/// <summary> Associated resource name</summary>
 		public string Name => resourceWrapper.name;
+
+		/// <summary> Shortcut to the resource definition "displayName" </summary>
+		public string Title => PartResourceLibrary.Instance.resourceDefinitions[resourceWrapper.name].displayName;
+
+		/// <summary> Shortcut to the resource definition "abbreviation" </summary>
+		public string Abbreviation => PartResourceLibrary.Instance.resourceDefinitions[resourceWrapper.name].abbreviation;
+
+		/// <summary> Shortcut to the resource definition "density" </summary>
+		public float Density => PartResourceLibrary.Instance.resourceDefinitions[resourceWrapper.name].density;
+
+		/// <summary> Shortcut to the resource definition "unitCost" </summary>
+		public float UnitCost => PartResourceLibrary.Instance.resourceDefinitions[resourceWrapper.name].unitCost;
 
 		/// <summary> Rate of change in amount per-second, this is purely for visualization</summary>
 		public double Rate => rate; double rate;
@@ -52,6 +67,12 @@ namespace KERBALISM
 
 		/// <summary> true if all critical Consume() calls have been satisfied in the last sim step</summary>
 		public bool CriticalConsumptionSatisfied { get; private set; }
+
+		/// <summary> last step consumption requests. For visualization only, can be greater than what was actually consumed </summary>
+		public double ConsumeRequests { get; private set; }
+
+		/// <summary> last step production requests. For visualization only, can be greater than what was actually produced </summary>
+		public double ProduceRequests { get; private set; }
 
 		private double consumeRequests;
 		private double consumeCriticalRequests;
@@ -212,6 +233,8 @@ namespace KERBALISM
 				availabilityFactor = resourceWrapper.amount == 0.0 ? 0.0 : 1.0;
 			}
 
+			ProduceRequests = produceRequests;
+			ConsumeRequests = consumeRequests;
 			produceRequests = 0.0;
 			consumeRequests = 0.0;
 
@@ -326,7 +349,71 @@ namespace KERBALISM
 
 		public override string ToString()
 		{
-			return $"{Name} : {Amount.ToString("F1")} / {Capacity.ToString("F1")} ({Rate.ToString("+0.#######/s;-0.#######/s")})";
+			return $"{Name} : {Lib.HumanReadableStorage(Amount, Capacity)} ({Rate.ToString("+0.#######/s;-0.#######/s")})";
+		}
+
+		public string BrokersListTooltip()
+		{
+			sb.Length = 0;
+
+			sb.Append(Lib.Color(Title, Lib.Kolor.Yellow, true));
+			sb.Append("\n");
+			sb.Append("<align=left />");
+			if (AverageRate != 0.0)
+			{
+				sb.Append(Lib.Color(AverageRate > 0.0,
+					Lib.BuildString("+", Lib.HumanReadableRate(Math.Abs(AverageRate))), Lib.Kolor.PosRate,
+					Lib.BuildString("-", Lib.HumanReadableRate(Math.Abs(AverageRate))), Lib.Kolor.NegRate,
+					true));
+			}
+			else
+			{
+				sb.Append("<b>");
+				sb.Append(Local.TELEMETRY_nochange);//no change
+				sb.Append("</b>");
+			}
+
+			if (AverageRate < 0.0 && Level < 0.0001)
+			{
+				sb.Append(" <i>");
+				sb.Append(Local.TELEMETRY_empty);//(empty)
+				sb.Append("</i>");
+			}
+			else if (AverageRate > 0.0 && Level > 0.9999)
+			{
+				sb.Append(" <i>");
+				sb.Append(Local.TELEMETRY_full);//(full)
+				sb.Append("</i>");
+
+			}
+			else sb.Append("   "); // spaces to prevent alignement issues
+
+			sb.Append("\t");
+			sb.Append(Lib.HumanReadableStorage(Amount, Capacity));
+			sb.Append(" (");
+			sb.Append(Level.ToString("P0"));
+			sb.Append(")");
+
+			if (resourceBrokers.Count > 0)
+			{
+				sb.Append("\n<b>------------    \t------------</b>");
+				foreach (ResourceBrokerRate rb in resourceBrokers)
+				{
+					// exclude very tiny rates to avoid the ui flickering
+					if (rb.rate > -1e-09 && rb.rate < 1e-09)
+						continue;
+
+					sb.Append("\n");
+					sb.Append(Lib.Color(rb.rate > 0.0,
+						Lib.BuildString("+", Lib.HumanReadableRate(Math.Abs(rb.rate)), "   "), Lib.Kolor.PosRate, // spaces to mitigate alignement issues
+						Lib.BuildString("-", Lib.HumanReadableRate(Math.Abs(rb.rate)), "   "), Lib.Kolor.NegRate, // spaces to mitigate alignement issues
+						true));
+					sb.Append("\t");
+					sb.Append(rb.broker.Title);
+				}
+			}
+
+			return sb.ToString();
 		}
 	}
 }

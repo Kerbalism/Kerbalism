@@ -360,9 +360,7 @@ namespace KERBALISM
 			Render_TypeFilterButon(VesselType.Relay);
 			Render_TypeFilterButon(VesselType.EVA);
 
-#if !KSP15_16
 			if (Kerbalism.SerenityEnabled) Render_TypeFilterButon(VesselType.DeployedScienceController);
-#endif
 
 			// we abuse the type Unknown to show/hide vessels that have the hidden toggle set to on
 			Render_TypeFilterButon(VesselType.Unknown);
@@ -398,9 +396,7 @@ namespace KERBALISM
 				case VesselType.Rover:   return disabled ? Textures.rover_black :   Textures.rover_white;
 				case VesselType.Ship:    return disabled ? Textures.ship_black :    Textures.ship_white;
 				case VesselType.Station: return disabled ? Textures.station_black : Textures.station_white;
-#if !KSP15_16
 				case VesselType.DeployedScienceController: return disabled ? Textures.controller_black : Textures.controller_white;
-#endif
 				case VesselType.Unknown: return disabled ? Textures.sun_black : Textures.sun_white;
 				default: return Textures.empty; // this really shouldn't happen.
 			}
@@ -549,10 +545,8 @@ namespace KERBALISM
 
 		void Indicator_ec(Panel p, Vessel v, VesselData vd)
 		{
-#if !KSP15_16
 			if (v.vesselType == VesselType.DeployedScienceController)
 				return;
-#endif
 
 			VesselResource ec = vd.ResHandler.ElectricCharge;
 			Supply supply = Profile.supplies.Find(k => k.resource == "ElectricCharge");

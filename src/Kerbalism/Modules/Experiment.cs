@@ -6,11 +6,12 @@ using KSP.Localization;
 using System.Collections;
 using static KERBALISM.ExperimentRequirements;
 using System.Linq;
+using KERBALISM.Planner;
 
 namespace KERBALISM
 {
 
-	public class Experiment : PartModule, ISpecifics, IModuleInfo, IPartMassModifier, IConfigurable, IMultipleDragCube
+	public class Experiment : PartModule, ISpecifics, IModuleInfo, IPartMassModifier, IConfigurable, IMultipleDragCube, IPlannerModule
 	{
 		// config
 		[KSPField] public string experiment_id = string.Empty;    // id of associated experiment definition
@@ -674,6 +675,11 @@ namespace KERBALISM
 			return true;
 		}
 
+		public void PlannerUpdate(VesselResHandler resHandler, EnvironmentAnalyzer environment, VesselAnalyzer vessel)
+		{
+			if (Running) resHandler.ElectricCharge.Consume(ec_rate, ResourceBroker.Experiment);
+		}
+
 		#endregion
 
 		#region user interaction
@@ -868,31 +874,19 @@ namespace KERBALISM
 			return false;
 		}
 
-#if KSP15_16
-		[KSPEvent(guiActiveUnfocused = true, guiActive = true, guiActiveEditor = true, guiName = "_", active = true)]
-#else
 		[KSPEvent(guiActiveUnfocused = true, guiActive = true, guiActiveEditor = true, guiName = "_", active = true, groupName = "Science", groupDisplayName = "#KERBALISM_Group_Science")]//Science
-#endif
 		public void ToggleEvent()
 		{
 			Toggle();
 		}
 
-#if KSP15_16
-		[KSPEvent(guiActiveUnfocused = true, guiActive = true, guiName = "_", active = true)]
-#else
 		[KSPEvent(guiActiveUnfocused = true, guiActive = true, guiName = "_", active = true, groupName = "Science", groupDisplayName = "#KERBALISM_Group_Science")]//Science
-#endif
 		public void ShowPopup()
 		{
 			new ExperimentPopup(vessel, this, part.flightID, part.partInfo.title);
 		}
 
-#if KSP15_16
-		[KSPEvent(guiActiveUnfocused = true, guiName = "_", active = false)]
-#else
 		[KSPEvent(guiActiveUnfocused = true, guiName = "_", active = false, groupName = "Science", groupDisplayName = "#KERBALISM_Group_Science")]//Science
-#endif
 		public void Prepare()
 		{
 			// disable for dead eva kerbals
@@ -929,11 +923,7 @@ namespace KERBALISM
 			);
 		}
 
-#if KSP15_16
-		[KSPEvent(guiActiveUnfocused = true, guiName = "_", active = false)]
-#else
 		[KSPEvent(guiActiveUnfocused = true, guiName = "_", active = false, groupName = "Science", groupDisplayName = "#KERBALISM_Group_Science")]//Science
-#endif
 		public void Reset()
 		{
 			Reset(true);

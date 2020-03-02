@@ -18,7 +18,7 @@ namespace KERBALISM.Planner
 			// inverting their order avoided this corner-case
 
 			Analyze_crew(parts);
-			Analyze_comms(parts, env);
+			Analyze_comms(env);
 			Analyze_habitat(parts, env);
 			Analyze_radiation(parts, sim);
 			Analyze_reliability(parts);
@@ -70,7 +70,6 @@ namespace KERBALISM.Planner
 
 		void Analyze_habitat(List<Part> parts, EnvironmentAnalyzer env)
 		{
-
 			List<HabitatData> habitats = new List<HabitatData>();
 			foreach (Part part in parts)
 			{
@@ -84,12 +83,19 @@ namespace KERBALISM.Planner
 			}
 
 			habitatInfo = new HabitatVesselData();
-			//HabitatData.EvaluateHabitat(habitatInfo, habitats, connectionInfo, env.landed, (int)crew_count, Vector3d.zero, false);
+			bool canTransmit = connection.maxDsnDistance < connection.maxRange && connection.maxDistanceRate > 0.0;
+			HabitatData.EvaluateHabitat(habitatInfo, habitats, canTransmit, env.landed, (int)crew_count, Vector3d.zero, false);
 		}
 
-		void Analyze_comms(List<Part> parts, EnvironmentAnalyzer env)
+		void Analyze_comms(EnvironmentAnalyzer env)
 		{
-			//connectionInfo = new ConnectionInfoEditor(parts, env);
+			if (commHandler == null)
+				commHandler = CommHandlerEditor.GetHandler();
+
+			if (commHandler == null)
+				return;
+
+			commHandler.Update(connection, env.minHomeDistance, env.maxHomeDistance);
 		}
 
 		void Analyze_radiation(List<Part> parts, ResourceSimulator sim)
@@ -215,8 +221,10 @@ namespace KERBALISM.Planner
 		public double failure_year;                         // estimated failures per-year, averaged per-component
 		public Dictionary<string, int> redundancy;          // number of components per redundancy group
 
-		//public ConnectionInfoEditor connectionInfo;
 		public HabitatVesselData habitatInfo;
+
+		private static CommHandlerEditor commHandler;
+		public ConnectionInfoEditor connection = new ConnectionInfoEditor();
 	}
 
 

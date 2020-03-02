@@ -6,8 +6,6 @@ namespace KERBALISM
 {
 	public class CommHandlerCommNetBase : CommHandler
 	{
-		const double bitsPerMB = 1024.0 * 1024.0 * 8.0;
-
 		/// <summary> base data rate set in derived classes from UpdateTransmitters()</summary>
 		protected double baseRate = 0.0;
 
@@ -86,8 +84,8 @@ namespace KERBALISM
 			}
 
 			// set minimal data rate to what is defined in Settings (1 bit/s by default) 
-			if (connection.rate > 0.0 && connection.rate * bitsPerMB < Settings.DataRateMinimumBitsPerSecond)
-				connection.rate = Settings.DataRateMinimumBitsPerSecond / bitsPerMB;
+			if (connection.rate > 0.0 && connection.rate * Lib.bitsPerMB < Settings.DataRateMinimumBitsPerSecond)
+				connection.rate = Settings.DataRateMinimumBitsPerSecond / Lib.bitsPerMB;
 		}
 	}
 }

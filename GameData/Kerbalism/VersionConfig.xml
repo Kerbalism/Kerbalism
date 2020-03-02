@@ -13,14 +13,15 @@ The values defined here will be propagated to :
     <!-- 
     Kerbalism major and minor version numbers 
     -->
-		<KerbalismVersionMajor>3</KerbalismVersionMajor>
-		<KerbalismVersionMinor>7</KerbalismVersionMinor>
+		<KerbalismVersionMajor>4</KerbalismVersionMajor>
+		<KerbalismVersionMinor>0</KerbalismVersionMinor>
     <!-- 
     Must match the `include=XXXX` of a KBinVersionConstant item, 
     used to determine the lowest and highest supported KSP version in the Kerbalism.version KSP-AVC file.
     -->
 		<KBinMaxVersion>18</KBinMaxVersion>
-		<KBinMinVersion>15_16</KBinMinVersion>
+		<KBinMinVersion>18</KBinMinVersion>
+		<!-- <KBinMinVersion>15_16</KBinMinVersion> -->
 	</PropertyGroup>
     <!-- 
     KBinVersionConstant items : 
@@ -42,6 +43,7 @@ The values defined here will be propagated to :
       <KSPBuildVersion>1.8.0</KSPBuildVersion>
       <KSPNETFramework>v4.6</KSPNETFramework>
     </KBinVersionConstant>
+<!--
 		<KBinVersionConstant Include="17">
 			<KSPMinMajor>1</KSPMinMajor>
 			<KSPMinMinor>7</KSPMinMinor>
@@ -62,5 +64,6 @@ The values defined here will be propagated to :
 			<KSPBuildVersion>1.6.1</KSPBuildVersion>
       <KSPNETFramework>v3.5</KSPNETFramework>
 		</KBinVersionConstant>
+-->
 	</ItemGroup>
 </Project>
