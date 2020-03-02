@@ -14,7 +14,7 @@ namespace KERBALISM
 
 		public override string DisplayName => module.title;
 
-		public override string Tooltip => Lib.BuildString(base.Tooltip, "\n", Lib.Bold("Process capacity :"),"\n", module.ModuleInfo);
+		public override string Tooltip => Lib.BuildString(base.Tooltip, "\n", Local.ProcessController_Capacity, ":\n", module.ModuleInfo);
 
 		public override string Status => Lib.Color(module.IsRunning(), Local.Generic_RUNNING, Lib.Kolor.Green, Local.Generic_STOPPED, Lib.Kolor.Yellow);
 
@@ -38,7 +38,7 @@ namespace KERBALISM
 
 		public override string DisplayName => prefab.title;
 
-		public override string Tooltip => Lib.BuildString(base.Tooltip, "\n", Lib.Bold("Process capacity :"), "\n", prefab.ModuleInfo);
+		public override string Tooltip => Lib.BuildString(base.Tooltip, "\n", Local.ProcessController_Capacity, "\n", prefab.ModuleInfo);
 
 		public override string Status => Lib.Color(Lib.Proto.GetBool(protoModule, "running"), Local.Generic_RUNNING, Lib.Kolor.Green, Local.Generic_STOPPED, Lib.Kolor.Yellow);
 
@@ -62,11 +62,9 @@ namespace KERBALISM
 	{
 		public KSMProcessDevice(ModuleKsmProcessController module) : base(module) { }
 
-		public override bool IsVisible => module.toggle;
+		public override bool IsVisible => module.toggle && !string.IsNullOrEmpty(module.resource);
 
 		public override string DisplayName => module.title;
-
-		public override string Tooltip => Lib.BuildString(base.Tooltip, "\n", Lib.Bold("Process capacity :"), "\n", module.ModuleInfo);
 
 		public override string Status => Lib.Color(module.IsRunning(), Local.Generic_RUNNING, Lib.Kolor.Green, Local.Generic_STOPPED, Lib.Kolor.Yellow);
 
@@ -86,11 +84,9 @@ namespace KERBALISM
 		public KSMProtoProcessDevice(ModuleKsmProcessController prefab, ProtoPartSnapshot protoPart, ProtoPartModuleSnapshot protoModule)
 			: base(prefab, protoPart, protoModule) { }
 
-		public override bool IsVisible => prefab.toggle;
+		public override bool IsVisible => prefab.toggle && !string.IsNullOrEmpty(Lib.Proto.GetString(protoModule, "resource"));
 
-		public override string DisplayName => prefab.title;
-
-		public override string Tooltip => Lib.BuildString(base.Tooltip, "\n", Lib.Bold("Process capacity :"), "\n", prefab.ModuleInfo);
+		public override string DisplayName => Lib.Proto.GetString(protoModule, "title");
 
 		public override string Status => Lib.Color(Lib.Proto.GetBool(protoModule, "running"), Local.Generic_RUNNING, Lib.Kolor.Green, Local.Generic_STOPPED, Lib.Kolor.Yellow);
 
