@@ -712,11 +712,7 @@ namespace KERBALISM
 			cfg_show = true;
 			deviceTransmit = true;
 			// note : we check that at vessel creation and persist it, as the vesselType can be changed by the player
-#if !KSP15_16
 			isSerenityGroundController = pv.vesselType == VesselType.DeployedScienceController;
-#else
-			isSerenityGroundController = false;
-#endif
 			stormData = new StormData(null);
 			computer = new Computer(null);
 			supplies = new Dictionary<string, SupplyData>();
@@ -725,11 +721,9 @@ namespace KERBALISM
 
 		private void SetInstantiateDefaults(ProtoVessel protoVessel)
 		{
-#if !KSP15_16
 			// workaround for pre 3.6 saves not having isSerenityGroundController
 			if (!isSerenityGroundController && protoVessel.vesselType == VesselType.DeployedScienceController)
 				isSerenityGroundController = true;
-#endif
 			filesTransmitted = new List<File>();
 			vesselSituations = new VesselSituations(this);
 			habitatInfo = new HabitatVesselData();

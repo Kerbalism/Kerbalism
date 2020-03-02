@@ -97,60 +97,31 @@ namespace KERBALISM
 		// PAW UI
 		// Note : the 4 bool using a UI_Toggle shouldn't by used from code.
 		// To change the state from code, use the static Toggle() methods
-#if KSP15_16
-		[KSPField]
-#else
 		[KSPField(groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
-#endif
 		public string mainPAWInfo;
 
-#if KSP15_16
-		[KSPField]
-#else
 		[KSPField(groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
-#endif
 		public string secPAWInfo;
 
-#if KSP15_16
-		[KSPField]
-#else
 		[KSPField(groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
-#endif
 		[UI_Toggle(scene = UI_Scene.All, requireFullControl = false, affectSymCounterparts = UI_Scene.None)]
 		public bool habitatEnabled;
 
-#if KSP15_16
-		[KSPField]
-#else
 		[KSPField(groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
-#endif
 		[UI_Toggle(scene = UI_Scene.All, affectSymCounterparts = UI_Scene.None)]
 		public bool pressureEnabled;
 
-#if KSP15_16
-		[KSPField]
-#else
 		[KSPField(groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
-#endif
 		[UI_Toggle(scene = UI_Scene.All, affectSymCounterparts = UI_Scene.None)]
 		public bool deployEnabled;
 
 
-#if KSP15_16
-		[KSPField]
-#else
 		[KSPField(groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
-#endif
 		[UI_Toggle(scene = UI_Scene.All, affectSymCounterparts = UI_Scene.None)]
 		public bool rotationEnabled;
 
-#if KSP15_16
-		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "debug")]
-		public string debugInfo;
-#else
 		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "debug", groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
 		public string debugInfo;
-#endif
 
 		#endregion
 
@@ -165,23 +136,10 @@ namespace KERBALISM
 				baseComfortsMask = 0;
 				foreach (string comfortString in node.GetValues("comfort"))
 				{
-#if KSP15_16 || KSP17
-					Comfort comfort;
-					try
-					{
-						comfort = (Comfort)Enum.Parse(typeof(Comfort), comfortString);
-						baseComfortsMask |= (int)comfort;
-					}
-					catch
-					{
-						Lib.Log($"Unrecognized comfort `{comfortString}` in ModuleKsmHabitat config for part {part.name}");
-					}
-#else
 					if (Enum.TryParse(comfortString, out Comfort comfort))
 						baseComfortsMask |= (int)comfort;
 					else
 						Lib.Log($"Unrecognized comfort `{comfortString}` in ModuleKsmHabitat config for part {part.partName}");
-#endif
 				}
 
 				// instanciate animations from config
@@ -526,10 +484,8 @@ namespace KERBALISM
 			deployField.guiActive = deployField.guiActiveEditor = CanToggleDeploy;
 			rotateField.guiActive = rotateField.guiActiveEditor = CanToggleRotate;
 
-#if !KSP15_16
 			if (part.PartActionWindow == null)
 				return;
-#endif
 
 			debugInfo = (data.isEnabled ? "Enabled - " : "Disabled - ") + data.pressureState.ToString() + " - " + data.animState.ToString();
 
@@ -1481,11 +1437,7 @@ namespace KERBALISM
 		}
 
 		// debug
-#if KSP15_16
-		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_")]
-#else
 		[KSPEvent(guiActive = false, guiActiveEditor = true, guiName = "[Debug] log volume/surface", groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
-#endif
 		public void LogVolumeAndSurface() => Lib.GetPartVolumeAndSurface(part, true);
 
 		#endregion

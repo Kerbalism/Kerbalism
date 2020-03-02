@@ -28,10 +28,8 @@ namespace KERBALISM
 				handler = new CommHandler();
 			else if (RemoteTech.Installed)
 				handler = new CommHandlerRemoteTech();
-#if !KSP15_16
 			else if (isGroundController)
 				handler = new CommHandlerCommNetSerenity();
-#endif
 			else
 				handler = new CommHandlerCommNetVessel();
 

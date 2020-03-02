@@ -88,9 +88,6 @@ namespace KERBALISM
 			else
 				Title = stockDef.experimentTitle;
 
-#if KSP15_16
-			DataSize = this.stockDef.baseValue * this.stockDef.dataScale;
-#else
 			// A new bool field was added in 1.7 for serenity : applyScienceScale
 			// if not specified, the default is `true`, which is the case for all non-serenity science defs
 			// serenity ground experiments and ROCs have applyScienceScale = false.
@@ -100,7 +97,6 @@ namespace KERBALISM
 				DataSize = this.stockDef.baseValue * this.stockDef.dataScale;
 			else
 				DataSize = this.stockDef.scienceCap * this.stockDef.dataScale;
-#endif
 
 			// load the included experiments ids in a string array, we will populate the list after 
 			// all ExperimentInfos are created. (can't do it here as they may not exist yet)
@@ -144,10 +140,8 @@ namespace KERBALISM
 				// parse the stock atmosphere restrictions into our own
 				if (stockDef.requireAtmosphere)
 					expInfoNode.AddValue("BodyAllowed", "Atmospheric");
-#if !KSP15_16
 				else if (stockDef.requireNoAtmosphere)
 					expInfoNode.AddValue("BodyNotAllowed", "Atmospheric");
-#endif
 			}
 
 			ExpBodyConditions = new BodyConditions(expInfoNode);
@@ -354,7 +348,6 @@ namespace KERBALISM
 						}
 					}
 
-#if !KSP15_16
 					else if (module is ModuleGroundExperiment groundExpModule)
 					{
 						if (groundExpModule.experimentId == ExperimentId)
@@ -366,7 +359,6 @@ namespace KERBALISM
 							ModuleInfo += groundExpModule.GetInfo();
 						}
 					}
-#endif
 				}
 
 				// special cases
@@ -378,7 +370,6 @@ namespace KERBALISM
 					ModuleInfo += "\n"+Local.Experimentinfo_Samplemass +" ";//Sample mass:
 					ModuleInfo += Lib.HumanReadableMass(DataSize * Settings.AsteroidSampleMassPerMB);
 				}
-#if !KSP15_16
 				else if (IsROC)
 				{
 					string rocType = ExperimentId.Substring(ExperimentId.IndexOf('_') + 1);
@@ -412,7 +403,6 @@ namespace KERBALISM
 						}
 					}
 				}
-#endif
 			}
 		}
 

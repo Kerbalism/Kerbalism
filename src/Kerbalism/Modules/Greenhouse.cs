@@ -32,21 +32,12 @@ namespace KERBALISM
 		[KSPField(isPersistant = true)] public string issue;              // first detected issue, or empty if there is none
 
 		// rmb ui status
-#if KSP15_16
-		[KSPField(guiActive = true, guiName = "#KERBALISM_Greenhouse_status_natural")]
-		public string status_natural;        // natural lighting
-		[KSPField(guiActive = true, guiName = "#KERBALISM_Greenhouse_status_artificial")]
-		public string status_artificial;  // artificial lighting
-		[KSPField(guiActive = true, guiName = "#KERBALISM_Greenhouse_status_tta")]
-		public string status_tta;                // time to harvest
-#else
 		[KSPField(guiActive = true, guiName = "#KERBALISM_Greenhouse_status_natural", groupName = "Greenhouse", groupDisplayName = "#KERBALISM_Group_Greenhouse")]//Greenhouse
 		public string status_natural;        // natural lighting
 		[KSPField(guiActive = true, guiName = "#KERBALISM_Greenhouse_status_artificial", groupName = "Greenhouse", groupDisplayName = "#KERBALISM_Group_Greenhouse")]//Greenhouse
 		public string status_artificial;  // artificial lighting
 		[KSPField(guiActive = true, guiName = "#KERBALISM_Greenhouse_status_tta", groupName = "Greenhouse", groupDisplayName = "#KERBALISM_Group_Greenhouse")]//Greenhouse
 		public string status_tta;                // time to harvest
-#endif
 
 		// animations
 		Animator shutters_anim;
@@ -429,11 +420,7 @@ namespace KERBALISM
 		}
 
 
-#if KSP15_16
-		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_")]
-#else
 		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", groupName = "Greenhouse", groupDisplayName = "#KERBALISM_Group_Greenhouse")]//Greenhouse
-#endif
 		// toggle greenhouse
 		public void Toggle()
 		{
@@ -449,11 +436,7 @@ namespace KERBALISM
 			if (Lib.IsEditor()) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
 		}
 
-#if KSP15_16
-		[KSPEvent(guiActive = true, guiActiveUnfocused = true, guiName = "#KERBALISM_Greenhouse_Harvest", active = false)]
-#else
 		[KSPEvent(guiActive = true, guiActiveUnfocused = true, guiName = "#KERBALISM_Greenhouse_Harvest", active = false, groupName = "Greenhouse", groupDisplayName = "#KERBALISM_Group_Greenhouse")]//Greenhouse
-#endif
 		// harvest
 		public void Harvest()
 		{
@@ -474,11 +457,7 @@ namespace KERBALISM
 			if (!Lib.Landed(vessel)) DB.landmarks.space_harvest = true;
 		}
 
-#if KSP15_16
-		[KSPEvent(guiActive = true, guiActiveUnfocused = true, guiName = "#KERBALISM_Greenhouse_EmergencyHarvest", active = false)]
-#else
 		[KSPEvent(guiActive = true, guiActiveUnfocused = true, guiName = "#KERBALISM_Greenhouse_EmergencyHarvest", active = false, groupName = "Greenhouse", groupDisplayName = "#KERBALISM_Group_Greenhouse")]//Greenhouse
-#endif
 		// emergency harvest
 		public void EmergencyHarvest()
 		{
