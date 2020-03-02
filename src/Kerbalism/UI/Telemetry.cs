@@ -180,74 +180,6 @@ namespace KERBALISM
 				// render panel title, if not done already
 				if (supplies == 0) p.AddSection(Local.TELEMETRY_SUPPLIES);//"SUPPLIES"
 
-				// determine label
-				var resource = PartResourceLibrary.Instance.resourceDefinitions[supply.resource];
-				string label = Lib.SpacesOnCaps(resource.displayName);
-
-				sb.Length = 0;
-
-				sb.Append(Lib.Color(label, Lib.Kolor.Yellow, true));
-				sb.Append("\n");
-				sb.Append("<align=left />");
-				if (res.AverageRate != 0.0)
-				{
-					sb.Append(Lib.Color(res.AverageRate > 0.0,
-						Lib.BuildString("+", Lib.HumanReadableRate(Math.Abs(res.AverageRate))), Lib.Kolor.PosRate,
-						Lib.BuildString("-", Lib.HumanReadableRate(Math.Abs(res.AverageRate))), Lib.Kolor.NegRate,
-						true));
-				}
-				else
-				{
-					sb.Append("<b>");
-					sb.Append(Local.TELEMETRY_nochange);//no change
-					sb.Append("</b>");
-				}
-
-				if (res.AverageRate < 0.0 && res.Level < 0.0001)
-				{
-					sb.Append(" <i>");
-					sb.Append(Local.TELEMETRY_empty);//(empty)
-					sb.Append("</i>");
-				}
-				else if (res.AverageRate > 0.0 && res.Level > 0.9999)
-				{
-					sb.Append(" <i>");
-					sb.Append(Local.TELEMETRY_full);//(full)
-					sb.Append("</i>");
-
-				}
-				else sb.Append("   "); // spaces to prevent alignement issues
-
-				sb.Append("\t");
-				sb.Append(res.Amount.ToString("F1"));
-				sb.Append("/");
-				sb.Append(res.Capacity.ToString("F1"));
-				sb.Append(" (");
-				sb.Append(res.Level.ToString("P0"));
-				sb.Append(")");
-
-				List<ResourceBrokerRate> brokers = ((VesselResource)vd.ResHandler.GetResource(supply.resource)).ResourceBrokers;
-				if (brokers.Count > 0)
-				{
-					sb.Append("\n<b>------------    \t------------</b>");
-					foreach (ResourceBrokerRate rb in brokers)
-					{
-						// exclude very tiny rates to avoid the ui flickering
-						if (rb.rate > -1e-09 && rb.rate < 1e-09)
-							continue;
-
-						sb.Append("\n");
-						sb.Append(Lib.Color(rb.rate > 0.0,
-							Lib.BuildString("+", Lib.HumanReadableRate(Math.Abs(rb.rate)), "   "), Lib.Kolor.PosRate, // spaces to mitigate alignement issues
-							Lib.BuildString("-", Lib.HumanReadableRate(Math.Abs(rb.rate)), "   "), Lib.Kolor.NegRate, // spaces to mitigate alignement issues
-							true)); 
-						sb.Append("\t");
-						sb.Append(rb.broker.Title);
-					}
-				}
-
-				string rate_tooltip = sb.ToString();
-
 				sb.Length = 0;
 
 				if (res.AvailabilityFactor > 0.0 && res.AvailabilityFactor < 1.0)
@@ -282,7 +214,7 @@ namespace KERBALISM
 				}
 
 				// finally, render resource supply
-				p.AddContent(label, sb.ToString(), rate_tooltip);
+				p.AddContent(Lib.SpacesOnCaps(res.Title), sb.ToString(), res.BrokersListTooltip());
 				++supplies;
 			}
 		}

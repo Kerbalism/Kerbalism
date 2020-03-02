@@ -2,12 +2,13 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using KSP.Localization;
+using KERBALISM.Planner;
 
 namespace KERBALISM
 {
 
 
-	public class Harvester : PartModule, IAnimatedModule, IModuleInfo, ISpecifics, IContractObjectiveModule
+	public class Harvester : PartModule, IAnimatedModule, IModuleInfo, ISpecifics, IContractObjectiveModule, IPlannerModule
 	{
 		// config
 		[KSPField] public string title = string.Empty;            // name to show on ui
@@ -108,8 +109,8 @@ namespace KERBALISM
 				recipe.AddInput("ElectricCharge", harvester.ec_rate * elapsed_s);
 				recipe.AddOutput(
 					harvester.resource,
-					Harvester.AdjustedRate(harvester, engineer_cs, Lib.CrewList(v), abundance) * elapsed_s,
-					dump: false);
+					AdjustedRate(harvester, engineer_cs, Lib.CrewList(v), abundance) * elapsed_s,
+					false);
 				v.KerbalismData().ResHandler.AddRecipe(recipe);
 			}
 		}
@@ -130,6 +131,20 @@ namespace KERBALISM
 			if (Lib.Proto.GetBool(m, "deployed") && Lib.Proto.GetBool(m, "running") && Lib.Proto.GetString(m, "issue").Length == 0)
 			{
 				ResourceUpdate(v, harvester, Lib.Proto.GetDouble(m, "min_abundance"), elapsed_s);
+			}
+		}
+
+		public void PlannerUpdate(VesselResHandler resHandler, EnvironmentAnalyzer environment, VesselAnalyzer vessel)
+		{
+			if (running && simulated_abundance > min_abundance)
+			{
+				Recipe recipe = new Recipe(ResourceBroker.Harvester);
+				if (ec_rate > 0.0)
+					recipe.AddInput("ElectricCharge", ec_rate);
+
+				recipe.AddOutput(resource, AdjustedRate(this, engineer_cs, vessel.crew, simulated_abundance), false);
+
+				resHandler.AddRecipe(recipe);
 			}
 		}
 

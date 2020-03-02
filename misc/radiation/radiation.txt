@@ -1,3 +1,10 @@
+Astrum speaketh thusly in https://www.youtube.com/watch?v=_GeapdGbGEc:
+Rover missions to mars measured how much radiation astrounauts would experience while en route: 0.66 sievert (365 day trip)
+On earth: 0.0025 sievert in 365 days
+Shielding material: Hydrogenated boron nitride nanotubes
+Mars has no magnetosphere and only a very thin atmosphere. Radiation exposure on mars: 0.00064 sieverts per day
+
+
 From https://en.wikipedia.org/wiki/Solar_cycle:
 
 The occurrence frequency of coronal mass ejections and flares is strongly modulated by the cycle. Flares of any given size are some 50 times more frequent at solar maximum than at minimum. Large coronal mass ejections occur on average a few times a day at solar maximum, down to one every few days at solar minimum. The size of these events themselves does not depend sensitively on the phase of the solar cycle.

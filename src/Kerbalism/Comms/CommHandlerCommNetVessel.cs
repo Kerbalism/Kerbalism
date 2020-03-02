@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace KERBALISM
 {
-	public class CommProviderCommNetVessel : CommHandlerCommNetBase
+	public class CommHandlerCommNetVessel : CommHandlerCommNetBase
 	{
 		private class UnloadedTransmitter
 		{
@@ -18,7 +18,7 @@ namespace KERBALISM
 		}
 
 		private List<UnloadedTransmitter> unloadedTransmitters;
-		private List<ModuleDataTransmitter> loadedTransmitters;
+		protected List<ModuleDataTransmitter> loadedTransmitters;
 
 		protected override void UpdateTransmitters(ConnectionInfo connection, bool searchTransmitters)
 		{
@@ -35,12 +35,12 @@ namespace KERBALISM
 				if (loadedTransmitters == null)
 				{
 					loadedTransmitters = new List<ModuleDataTransmitter>();
-					GetTransmittersLoaded(v);
+					GetTransmittersLoaded(v.parts);
 				}
 				else if (searchTransmitters)
 				{
 					loadedTransmitters.Clear();
-					GetTransmittersLoaded(v);
+					GetTransmittersLoaded(v.parts);
 				}
 
 				if (unloadedTransmitters != null)
@@ -116,9 +116,9 @@ namespace KERBALISM
 			connection.ec *= Settings.TransmitterActiveEcFactor; // adjust "transmit" antennas transmit-only rate by the factor
 		}
 
-		private void GetTransmittersLoaded(Vessel v)
+		protected void GetTransmittersLoaded(List<Part> vesselParts)
 		{
-			foreach (Part p in v.parts)
+			foreach (Part p in vesselParts)
 			{
 				foreach (PartModule pm in p.Modules)
 				{

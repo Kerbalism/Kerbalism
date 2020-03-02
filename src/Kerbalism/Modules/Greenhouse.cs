@@ -2,12 +2,12 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using KSP.Localization;
-
+using KERBALISM.Planner;
 
 namespace KERBALISM
 {
 
-	public class Greenhouse : PartModule, IModuleInfo, ISpecifics, IContractObjectiveModule, IConfigurable
+	public class Greenhouse : PartModule, IModuleInfo, ISpecifics, IContractObjectiveModule, IConfigurable, IPlannerModule
 	{
 		// config
 		[KSPField] public string crop_resource;         // name of resource produced by harvests
@@ -361,6 +361,70 @@ namespace KERBALISM
 				Lib.Proto.Set(m, "tta", tta);
 				Lib.Proto.Set(m, "issue", issue);
 				Lib.Proto.Set(m, "growth", growth);
+			}
+		}
+
+		public void PlannerUpdate(VesselResHandler resHandler, EnvironmentAnalyzer environment, VesselAnalyzer vessel)
+		{
+			// skip disabled greenhouses
+			if (!active)
+				return;
+
+			// shortcut to resources
+			IResource ec = resHandler.ElectricCharge;
+			IResource res = resHandler.GetResource(crop_resource);
+
+			// calculate natural and artificial lighting
+			double natural = environment.solar_flux;
+			double artificial = Math.Max(light_tolerance - natural, 0.0);
+
+			// if lamps are on and artificial lighting is required
+			if (artificial > 0.0)
+			{
+				// consume ec for the lamps
+				ec.Consume(ec_rate * (artificial / light_tolerance), ResourceBroker.Greenhouse);
+			}
+
+			// execute recipe
+			Recipe recipe = new Recipe(ResourceBroker.Greenhouse);
+			foreach (ModuleResource input in this.resHandler.inputResources)
+			{
+				// WasteAtmosphere is primary combined input
+				if (WACO2 && input.name == "WasteAtmosphere")
+					recipe.AddInput(input.name, environment.breathable ? 0.0 : input.rate, "CarbonDioxide");
+				// CarbonDioxide is secondary combined input
+				else if (WACO2 && input.name == "CarbonDioxide")
+					recipe.AddInput(input.name, environment.breathable ? 0.0 : input.rate, "");
+				// if atmosphere is breathable disable WasteAtmosphere / CO2
+				else if (!WACO2 && (input.name == "CarbonDioxide" || input.name == "WasteAtmosphere"))
+					recipe.AddInput(input.name, environment.breathable ? 0.0 : input.rate, "");
+				else
+					recipe.AddInput(input.name, input.rate);
+			}
+			foreach (ModuleResource output in this.resHandler.outputResources)
+			{
+				// if atmosphere is breathable disable Oxygen
+				if (output.name == "Oxygen")
+					recipe.AddOutput(output.name, environment.breathable ? 0.0 : output.rate, true);
+				else
+					recipe.AddOutput(output.name, output.rate, true);
+			}
+			resHandler.AddRecipe(recipe);
+
+			// determine environment conditions
+			bool lighting = natural + artificial >= light_tolerance;
+			bool pressure = vessel.pressurized || pressure_tolerance <= double.Epsilon;
+			bool radiation = (environment.landed ? environment.surface_rad : environment.magnetopause_rad) * (1.0 - vessel.shielding) < radiation_tolerance;
+
+			// if all conditions apply
+			// note: we are assuming the inputs are satisfied, we can't really do otherwise here
+			if (lighting && pressure && radiation)
+			{
+				// produce food
+				res.Produce(crop_size * crop_rate, ResourceBroker.Greenhouse);
+
+				// add harvest info
+				//res.harvests.Add(Lib.BuildString(g.crop_size.ToString("F0"), " in ", Lib.HumanReadableDuration(1.0 / g.crop_rate)));
 			}
 		}
 

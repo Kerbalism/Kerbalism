@@ -2,12 +2,12 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using KSP.Localization;
-
+using KERBALISM.Planner;
 
 namespace KERBALISM
 {
 
-	public class Laboratory: PartModule, IModuleInfo, ISpecifics, IContractObjectiveModule
+	public class Laboratory: PartModule, IModuleInfo, ISpecifics, IContractObjectiveModule, IPlannerModule
 	{
 		// config
 		[KSPField] public double ec_rate;						// ec consumed per-second
@@ -172,6 +172,12 @@ namespace KERBALISM
 					}
 				}
 			}
+		}
+
+		public void PlannerUpdate(VesselResHandler resHandler, EnvironmentAnalyzer environment, VesselAnalyzer vessel)
+		{
+			if (running)
+				resHandler.ElectricCharge.Consume(ec_rate, ResourceBroker.Laboratory);
 		}
 
 #if KSP15_16

@@ -164,7 +164,7 @@ namespace KERBALISM
 						break;
 
 					default:
-						k *= sim.Resource(mod).amount;
+						k *= sim.handler.GetResource(mod).Amount;
 						break;
 				}
 			}

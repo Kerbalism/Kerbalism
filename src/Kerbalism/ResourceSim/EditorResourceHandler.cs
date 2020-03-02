@@ -3,21 +3,24 @@ using System.Collections.Generic;
 
 namespace KERBALISM
 {
-	/// <summary>Global cache for storing and accessing VesselResHandler (and each VesselResource) in all vessels, with shortcut for common methods</summary>
+	/// <summary> Access to the editor resource handler</summary>
 	public static class EditorResourceHandler
 	{
 		static VesselResHandler editorHandler;
 		static uint editorHandlerId;
 
-		public static VesselResHandler GetHandler(ShipConstruct ship)
+		public static VesselResHandler Handler
 		{
-			if (editorHandler == null || ship.persistentId != editorHandlerId)
+			get
 			{
-				editorHandler = new VesselResHandler(ship, VesselResHandler.VesselState.Editor);
-				editorHandlerId = ship.persistentId;
-			}
+				if (editorHandler == null || EditorLogic.fetch.ship.persistentId != editorHandlerId)
+				{
+					editorHandler = new VesselResHandler(null, VesselResHandler.VesselState.EditorStep);
+					editorHandlerId = EditorLogic.fetch.ship.persistentId;
+				}
 
-			return editorHandler;
+				return editorHandler;
+			}
 		}
 	}
 }

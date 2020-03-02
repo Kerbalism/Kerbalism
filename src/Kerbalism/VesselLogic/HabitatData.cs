@@ -336,7 +336,7 @@ namespace KERBALISM
 
 		public static HabitatData GetFlightReferenceFromProtoPart(Vessel vessel, ProtoPartSnapshot part) => vessel.KerbalismData().Parts.Get(part.flightID).Habitat;
 
-		public static void EvaluateHabitat(HabitatVesselData info, List<HabitatData> habitats, ConnectionInfo connection, bool landed, int crewCount, Vector3d mainSunDrection, bool isLoadedVessel)
+		public static void EvaluateHabitat(HabitatVesselData info, List<HabitatData> habitats, bool canTransmit, bool landed, int crewCount, Vector3d mainSunDrection, bool isLoadedVessel)
 		{
 			// TODO : fix the Waste management for kerbal in depressurized habs :
 			// As it is, manned depressurized parts CO2 level is ignored, and waste produced by the kerbals in them will be added
@@ -456,7 +456,7 @@ namespace KERBALISM
 
 			if (landed) info.comfortMask |= (int)Comfort.firmGround;
 			if (crewCount > 1) info.comfortMask |= (int)Comfort.notAlone;
-			if (connection.linked && connection.rate > 0.0) info.comfortMask |= (int)Comfort.callHome;
+			if (canTransmit) info.comfortMask |= (int)Comfort.callHome;
 
 			info.comfortModifier = HabitatLib.GetComfortFactor(info.comfortMask);
 		}

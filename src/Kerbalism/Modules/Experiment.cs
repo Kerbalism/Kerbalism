@@ -6,11 +6,12 @@ using KSP.Localization;
 using System.Collections;
 using static KERBALISM.ExperimentRequirements;
 using System.Linq;
+using KERBALISM.Planner;
 
 namespace KERBALISM
 {
 
-	public class Experiment : PartModule, ISpecifics, IModuleInfo, IPartMassModifier, IConfigurable, IMultipleDragCube
+	public class Experiment : PartModule, ISpecifics, IModuleInfo, IPartMassModifier, IConfigurable, IMultipleDragCube, IPlannerModule
 	{
 		// config
 		[KSPField] public string experiment_id = string.Empty;    // id of associated experiment definition
@@ -672,6 +673,11 @@ namespace KERBALISM
 				}
 			}
 			return true;
+		}
+
+		public void PlannerUpdate(VesselResHandler resHandler, EnvironmentAnalyzer environment, VesselAnalyzer vessel)
+		{
+			if (Running) resHandler.ElectricCharge.Consume(ec_rate, ResourceBroker.Experiment);
 		}
 
 		#endregion

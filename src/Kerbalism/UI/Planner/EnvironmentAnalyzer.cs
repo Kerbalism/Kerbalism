@@ -1,3 +1,5 @@
+using System;
+
 namespace KERBALISM.Planner
 {
 
@@ -25,7 +27,30 @@ namespace KERBALISM.Planner
             shadow_time = shadow_period / orbital_period;
             zerog = !landed && (!body.atmosphere || body.atmosphereDepth < altitude);
 
-            RadiationBody rb = Radiation.Info(body);
+			CelestialBody homeBody = FlightGlobals.GetHomeBody();
+			CelestialBody parentPlanet = Lib.GetParentPlanet(body);
+
+			if (body == homeBody)
+			{
+				minHomeDistance = maxHomeDistance = Math.Max(altitude, 500.0);
+			}
+			else if (parentPlanet == homeBody)
+			{
+				minHomeDistance = Sim.Periapsis(body);
+				maxHomeDistance = Sim.Apoapsis(body);
+			}
+			else if (Lib.IsSun(body))
+			{
+				minHomeDistance = Math.Abs(altitude - Sim.Periapsis(homeBody));
+				maxHomeDistance = altitude + Sim.Apoapsis(homeBody);
+			}
+			else
+			{
+				minHomeDistance = Math.Abs(Sim.Periapsis(parentPlanet) - Sim.Periapsis(homeBody));
+				maxHomeDistance = Sim.Apoapsis(parentPlanet) + Sim.Apoapsis(homeBody);
+			}
+
+			RadiationBody rb = Radiation.Info(body);
             RadiationBody sun_rb = Radiation.Info(mainSun); // TODO Kopernicus support: not sure if/how this work with multiple suns/stars
             gamma_transparency = Sim.GammaTransparency(body, 0.0);
 
@@ -72,7 +97,9 @@ namespace KERBALISM.Planner
 
 		public CelestialBody body;                            // target body
         public double altitude;                               // target altitude
-        public bool landed;                                   // true if landed
+		public double minHomeDistance;                        // min distance from KSC
+		public double maxHomeDistance;                        // max distance from KSC
+		public bool landed;                                   // true if landed
         public bool breathable;                               // true if inside breathable atmosphere
         public bool zerog;                                    // true if the vessel is experiencing zero g
         public double atmo_factor;                            // proportion of sun flux not absorbed by the atmosphere
