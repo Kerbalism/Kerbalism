@@ -5,8 +5,6 @@ using UnityEngine;
 
 namespace KERBALISM
 {
-
-
 	public class RuleData
 	{
 		public RuleData()

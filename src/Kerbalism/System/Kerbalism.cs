@@ -814,7 +814,7 @@ namespace KERBALISM
 
 							if (process != null)
 							{
-								var specifics = ModuleKsmProcessController.Specifics(process, capacity);
+								var specifics = process.Specifics(capacity);
 								var description = specifics.Info(Localizer.Format(Local.ProcessController_Capacity, capacity.ToString("F1")));
 								subtype.GetType().GetField("descriptionDetail", BindingFlags.Instance | BindingFlags.Public).SetValue(subtype, description);
 							}

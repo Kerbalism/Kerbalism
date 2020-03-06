@@ -125,7 +125,7 @@ namespace KERBALISM.Planner
 		public void ExecuteRule(Rule r, EnvironmentAnalyzer env, VesselAnalyzer va)
 		{
 			// evaluate modifiers
-			double k = Modifiers.Evaluate(env, va, this, r.modifiers);
+			double k = Modifiers.Evaluate(env, va, this, r.modifiers, null);
 
 			// deduce rate per-second
 			double rate = va.crew_count * (r.interval > 0.0 ? r.rate / r.interval : r.rate);
@@ -148,7 +148,7 @@ namespace KERBALISM.Planner
 		/// <summary>execute a process</summary>
 		private void ExecuteProcess(Process pr, EnvironmentAnalyzer env, VesselAnalyzer va)
 		{
-			double k = Modifiers.Evaluate(env, va, this, pr.modifiers);
+			double k = Modifiers.Evaluate(env, va, this, pr.modifiers, pr.scalars);
 
 			// prepare recipe
 			Recipe recipe = new Recipe(pr.broker);
@@ -158,7 +158,9 @@ namespace KERBALISM.Planner
 			}
 			foreach (KeyValuePair<string, double> output in pr.outputs)
 			{
-				recipe.AddOutput(output.Key, output.Value * k, pr.dump.Check(output.Key));
+				// this used the dump specs from the static process definition, which is no longer available
+				// need to keep a list of ProcessData objects in the editor and get the dump settings from there
+				// TODO recipe.AddOutput(output.Key, output.Value * k, pr.dump.Check(output.Key));
 			}
 			handler.AddRecipe(recipe);
 		}

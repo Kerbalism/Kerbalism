@@ -69,7 +69,7 @@ namespace KERBALISM
 			uint variant = vd.EnvTemperature < Settings.LifeSupportSurvivalTemperature ? 0 : 1u;
 
 			// get product of all environment modifiers
-			double k = Modifiers.Evaluate(v, vd, resources, modifiers);
+			double k = Modifiers.Evaluate(v, vd, resources, modifiers, null);
 
 			bool lifetime_enabled = PreferencesRadiation.Instance.lifetime;
 

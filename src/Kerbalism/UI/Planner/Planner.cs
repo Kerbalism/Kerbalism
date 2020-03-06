@@ -354,7 +354,7 @@ namespace KERBALISM.Planner
 			}
 
 			// render life estimate
-			double mod = Modifiers.Evaluate(env_analyzer, vessel_analyzer, resource_sim, rule.modifiers);
+			double mod = Modifiers.Evaluate(env_analyzer, vessel_analyzer, resource_sim, rule.modifiers, null);
 			p.AddContent(Local.Planner_lifeestimate, Lib.HumanReadableDuration(rule.fatal_threshold / (rule.degeneration * mod)));//"duration"
 		}
 
@@ -385,7 +385,7 @@ namespace KERBALISM.Planner
 			List<string> modifiers_except_radiation = new List<string>();
 			foreach (string s in rule.modifiers)
 			{ if (s != "radiation") modifiers_except_radiation.Add(s); }
-			double mod = Modifiers.Evaluate(env_analyzer, vessel_analyzer, resource_sim, modifiers_except_radiation);
+			double mod = Modifiers.Evaluate(env_analyzer, vessel_analyzer, resource_sim, modifiers_except_radiation, null);
 
 			// calculate life expectancy at various radiation levels
 			double[] estimates = new double[7];

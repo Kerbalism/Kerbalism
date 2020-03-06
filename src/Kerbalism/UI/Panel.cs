@@ -82,8 +82,7 @@ namespace KERBALISM
 				left = left,
 				right = right,
 				sort = sort,
-				needsSort = false,
-				entries = new List<Entry>()
+				needsSort = false
 			};
 			sections.Add(p);
 		}
@@ -101,10 +100,33 @@ namespace KERBALISM
 			};
 			if (sections.Count > 0) {
 				Section section = sections[sections.Count - 1];
-				section.entries.Add(e);
+				section.AddEntry(e);
 				section.needsSort = section.sort;
 			}
 		}
+
+		public void AddCheckbox(bool selected, string label, string tooltip = "", Action click = null, Action hover = null)
+		{
+			Checkbox c = new Checkbox
+			{
+				label = label,
+				tooltip = tooltip,
+				click = click,
+				hover = hover,
+				icon = new Icon
+				{
+					texture = selected ? Textures.toggle_green : Textures.toggle_red,
+					tooltip = tooltip,
+					click = click
+				}
+			};
+			if (sections.Count > 0)
+			{
+				Section section = sections[sections.Count - 1];
+				section.AddCheckbox(c);
+			}
+		}
+
 
 		///<summary> Adds an icon to the last added header or content (doesn't support sections) </summary>
 		public void AddRightIcon(Texture2D texture, string tooltip = "", Action click = null)
@@ -177,31 +199,20 @@ namespace KERBALISM
 				}
 
 				// entries
-				if(p.needsSort) {
-					p.needsSort = false;
-					p.entries.Sort((a, b) => string.Compare(a.label, b.label, StringComparison.Ordinal));
-				}
-				foreach (Entry e in p.entries)
+				if(p.entries != null && p.entries.Count > 0)
 				{
-					GUILayout.BeginHorizontal(Styles.entry_container);
-					if (e.leftIcon != null)
+					if (p.needsSort)
 					{
-						GUILayout.Label(new GUIContent(e.leftIcon.texture, e.leftIcon.tooltip), Styles.left_icon);
-						if (e.leftIcon.click != null && Lib.IsClicked())
-							callbacks.Add(e.leftIcon.click);
+						p.needsSort = false;
+						p.entries.Sort((a, b) => string.Compare(a.label, b.label, StringComparison.Ordinal));
 					}
-					GUILayout.Label(new GUIContent(e.label, e.tooltip), Styles.entry_label, GUILayout.Height(Styles.entry_label.fontSize));
-					if (e.hover != null && Lib.IsHover()) callbacks.Add(e.hover);
-					GUILayout.Label(new GUIContent(e.value, e.tooltip), Styles.entry_value, GUILayout.Height(Styles.entry_value.fontSize));
-					if (e.click != null && Lib.IsClicked()) callbacks.Add(e.click);
-					if (e.hover != null && Lib.IsHover()) callbacks.Add(e.hover);
-					foreach (Icon i in e.icons)
-					{
-						GUILayout.Label(new GUIContent(i.texture, i.tooltip), Styles.right_icon);
-						if (i.click != null && Lib.IsClicked()) callbacks.Add(i.click);
-					}
-					GUILayout.EndHorizontal();
+
+					foreach (Entry e in p.entries)
+						RenderEntry(e);
 				}
+
+				if (p.checkboxes != null && p.checkboxes.Count > 0)
+					RenderCheckboxes(p.checkboxes);
 
 				// spacing
 				GUILayout.Space(Styles.ScaleFloat(10.0f));
@@ -215,15 +226,68 @@ namespace KERBALISM
 			}
 		}
 
+		private void RenderEntry(Entry e)
+		{
+			GUILayout.BeginHorizontal(Styles.entry_container);
+			if (e.leftIcon != null)
+			{
+				GUILayout.Label(new GUIContent(e.leftIcon.texture, e.leftIcon.tooltip), Styles.left_icon);
+				if (e.leftIcon.click != null && Lib.IsClicked())
+					callbacks.Add(e.leftIcon.click);
+			}
+			GUILayout.Label(new GUIContent(e.label, e.tooltip), Styles.entry_label, GUILayout.Height(Styles.entry_label.fontSize));
+			if (e.hover != null && Lib.IsHover()) callbacks.Add(e.hover);
+			GUILayout.Label(new GUIContent(e.value, e.tooltip), Styles.entry_value, GUILayout.Height(Styles.entry_value.fontSize));
+			if (e.click != null && Lib.IsClicked()) callbacks.Add(e.click);
+			if (e.hover != null && Lib.IsHover()) callbacks.Add(e.hover);
+			foreach (Icon i in e.icons)
+			{
+				GUILayout.Label(new GUIContent(i.texture, i.tooltip), Styles.right_icon);
+				if (i.click != null && Lib.IsClicked()) callbacks.Add(i.click);
+			}
+			GUILayout.EndHorizontal();
+		}
+
+		private void RenderCheckboxes(List<Checkbox> checkboxes)
+		{
+			GUILayout.BeginHorizontal();
+			for (int i = 0; i < checkboxes.Count; i++)
+			{
+				if(i > 0 && i % columns == 0)
+				{
+					GUILayout.EndHorizontal();
+					GUILayout.BeginHorizontal();
+				}
+
+				Checkbox c = checkboxes[i];
+
+				GUILayout.Label(new GUIContent(c.icon.texture, c.icon.tooltip), Styles.left_icon);
+				if (c.icon.click != null && Lib.IsClicked())
+					callbacks.Add(c.icon.click);
+
+				GUILayout.Label(new GUIContent(c.label, c.tooltip), Styles.entry_checkbox, GUILayout.Height(Styles.entry_label.fontSize));
+				if(c.click != null && Lib.IsClicked())
+					callbacks.Add(c.click);
+				if (c.hover != null && Lib.IsHover()) callbacks.Add(c.hover);
+
+				if ((i + 1) % columns > 0)
+					GUILayout.FlexibleSpace();
+			}
+
+			GUILayout.EndHorizontal();
+		}
+
 		public float Height()
 		{
-			float h = 0.0f;
-
-			h += Styles.ScaleFloat((float)headers.Count * 27.0f);
+			float h = Styles.ScaleFloat((headers.Count) * 27.0f);
 
 			foreach (Section p in sections)
 			{
-				h += Styles.ScaleFloat(18.0f + (float)p.entries.Count * 16.0f + 16.0f);
+				if(p.entries != null && p.entries.Count > 0)
+					h += Styles.ScaleFloat(18.0f + p.entries.Count * 16.0f + 16.0f);
+				if (p.checkboxes != null && p.checkboxes.Count > 0)
+					h += Styles.ScaleFloat(18.0f + (1 + p.checkboxes.Count / columns) * 16.0f + 16.0f);
+
 				if (p.desc.Length > 0)
 				{
 					h += Styles.desc.CalcHeight(new GUIContent(p.desc), min_width - Styles.ScaleWidthFloat(20.0f));
@@ -264,7 +328,11 @@ namespace KERBALISM
 			if (sections.Count > 0)
 			{
 				sections[0].title = title;
-				for (int i = 1; i < sections.Count; ++i) sections[0].entries.AddRange(sections[i].entries);
+				for (int i = 1; i < sections.Count; ++i)
+				{
+					sections[0].AddEntries(sections[i].entries);
+					sections[0].AddCheckboxes(sections[i].checkboxes);
+				}
 			}
 			while (sections.Count > 1) sections.RemoveAt(sections.Count - 1);
 		}
@@ -309,7 +377,35 @@ namespace KERBALISM
 			public Action right;
 			public Boolean sort;
 			public Boolean needsSort;
-			public List<Entry> entries;
+			public List<Entry> entries { get; private set; }
+			public List<Checkbox> checkboxes { get; private set; }
+
+			internal void AddEntry(Entry e)
+			{
+				if (entries == null) entries = new List<Entry>();
+				entries.Add(e);
+			}
+
+			internal void AddEntries(List<Entry> list)
+			{
+				if (list == null) return;
+				if (entries == null) entries = new List<Entry>();
+				entries.AddRange(list);
+			}
+
+			internal void AddCheckbox(Checkbox c)
+			{
+				if (checkboxes == null) checkboxes = new List<Checkbox>();
+				checkboxes.Add(c);
+			}
+
+			internal void AddCheckboxes(List<Checkbox> list)
+			{
+				if (list == null) return;
+				if (checkboxes == null) checkboxes = new List<Checkbox>();
+				checkboxes.AddRange(list);
+			}
+
 		}
 
 		sealed class Entry
@@ -321,6 +417,15 @@ namespace KERBALISM
 			public Action hover;
 			public List<Icon> icons;
 			public Icon leftIcon;
+		}
+
+		sealed class Checkbox
+		{
+			public string label;
+			public string tooltip;
+			public Action click;
+			public Action hover;
+			public Icon icon;
 		}
 
 		sealed class Icon
@@ -336,5 +441,7 @@ namespace KERBALISM
 		string win_title;        // metadata stored in panel
 		float min_width;         // metadata stored in panel
 		public PanelType paneltype;
+
+		private int columns = 2;
 	}
 } // KERBALISM

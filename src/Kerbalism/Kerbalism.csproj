@@ -132,7 +132,6 @@
     <Compile Include="Automation\Devices\Greenhouse.cs" />
     <Compile Include="Automation\Devices\Light.cs" />
     <Compile Include="Automation\Devices\Panel.cs" />
-    <Compile Include="Automation\Devices\Process.cs" />
     <Compile Include="Automation\Devices\Ring.cs" />
     <Compile Include="Comms\CommHandlerEditorRemoteTech.cs" />
     <Compile Include="Comms\CommHandlerEditorCommNet.cs" />
@@ -187,7 +186,6 @@
     <Compile Include="Modules\Greenhouse.cs" />
     <Compile Include="Modules\HardDrive.cs" />
     <Compile Include="Modules\Laboratory.cs" />
-    <Compile Include="Modules\ProcessController.cs" />
     <Compile Include="Modules\Sensor.cs" />
     <Compile Include="Modules\Experiment.cs" />
     <Compile Include="Modules\Reliability.cs" />
@@ -279,7 +277,6 @@
     <Compile Include="Utility\Animator.cs" />
     <Compile Include="Utility\Archive.cs" />
     <Compile Include="Utility\CrewSpecs.cs" />
-    <Compile Include="Utility\DumpSpec.cs" />
     <Compile Include="Utility\Highlighter.cs" />
     <Compile Include="Utility\Profiler.cs" />
     <Compile Include="Utility\Serialization.cs" />
@@ -304,6 +301,8 @@
     <Compile Include="Modules\IBackgroundModule.cs" />
     <Compile Include="Patches\ModuleDataTransmitter_GetInfo.cs" />
     <Compile Include="Modules\ModuleKsmProcessController.cs" />
+    <Compile Include="VesselLogic\ProcessData.cs" />
+    <Compile Include="Automation\VesselDevices\VesselProcess.cs" />
   </ItemGroup>
   <!-- ///////////////////////////////////////////////////// -->
   <!-- ////////// IMPORT DEFAULT MS BUILD PROCESS ////////// -->

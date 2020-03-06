@@ -157,17 +157,16 @@ namespace KERBALISM
 
 		public static void Execute(Vessel v, VesselData vd, VesselResHandler resources, double elapsed_s)
 		{
-			// execute all rules
-			foreach (Rule rule in rules)
+			if(vd.CrewCount > 0)
 			{
-				rule.Execute(v, vd, resources, elapsed_s);
+				// execute all rules
+				foreach (Rule rule in rules)
+				{
+					rule.Execute(v, vd, resources, elapsed_s);
+				}
 			}
 
-			// execute all processes
-			foreach (Process process in processes)
-			{
-				process.Execute(v, vd, resources, elapsed_s);
-			}
+			vd.VesselProcesses.Execute(v, vd, resources, elapsed_s);
 		}
 
 		public static void CheckSupplies(Vessel v, VesselData vd)

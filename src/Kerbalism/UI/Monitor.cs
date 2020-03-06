@@ -540,7 +540,7 @@ namespace KERBALISM
 			}
 
 			// generate problem icon
-			p.AddRightIcon(problem_icon, String.Join("\n", problem_tooltips.ToArray()));
+			p.AddRightIcon(problem_icon, string.Join("\n", problem_tooltips.ToArray()), () => { page = MonitorPage.telemetry; });
 		}
 
 		void Indicator_ec(Panel p, Vessel v, VesselData vd)
@@ -566,7 +566,7 @@ namespace KERBALISM
 			  ? Textures.battery_yellow
 			  : Textures.battery_white;
 
-			p.AddRightIcon(image, tooltip);
+			p.AddRightIcon(image, tooltip, () => { page = MonitorPage.telemetry; });
 		}
 
 		void Indicator_supplies(Panel p, Vessel v, VesselData vd)
@@ -603,7 +603,7 @@ namespace KERBALISM
 			  ? Textures.box_yellow
 			  : Textures.box_white;
 
-			p.AddRightIcon(image, string.Join("\n", tooltips.ToArray()));
+			p.AddRightIcon(image, string.Join("\n", tooltips.ToArray()), () => { page = MonitorPage.telemetry; });
 		}
 
 		void Indicator_reliability(Panel p, Vessel v, VesselData vd)
@@ -626,7 +626,7 @@ namespace KERBALISM
 				tooltip = Local.Monitor_Criticalfailures;//"Critical failures"
 			}
 
-			p.AddRightIcon(image, tooltip);
+			p.AddRightIcon(image, tooltip, () => { page = MonitorPage.failures; });
 		}
 
 		void Indicator_signal(Panel p, Vessel v, VesselData vd)

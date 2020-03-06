@@ -12,6 +12,7 @@ namespace KERBALISM
 
 		public Drive Drive { get; set; }
 		public HabitatData Habitat { get; set; }
+		public List<PartProcessData> Processes { get; set; }
 
 		public PartData(Part part)
 		{
@@ -27,21 +28,39 @@ namespace KERBALISM
 
 		public void Save(ConfigNode partCollectionNode)
 		{
-			if (Drive == null && Habitat == null)
+			if (Drive == null && Habitat == null && Processes == null)
 				return;
 
 			ConfigNode partNode = partCollectionNode.AddNode(FlightId.ToString());
 			partNode.AddValue("name", PartName); // isn't technically needed, this is for sfs editing / debugging purposes
+
 			if (Drive != null)
 			{
 				ConfigNode driveNode = partNode.AddNode("drive");
 				Drive.Save(driveNode);
 			}
+
 			if (Habitat != null)
 			{
 				ConfigNode habitatNode = partNode.AddNode("habitat");
 				Habitat.Save(habitatNode);
 			}
+
+			if (Processes != null)
+			{
+				ConfigNode processesNode = partNode.AddNode("processes");
+				foreach(var process in Processes)
+				{
+					process.Save(processesNode.AddNode(DB.To_safe_key(process.processName)));
+				}
+			}
+		}
+
+		public void Add(PartProcessData data)
+		{
+			if (Processes == null)
+				Processes = new List<PartProcessData>();
+			Processes.Add(data);
 		}
 
 		public void Load(ConfigNode partDataNode)
@@ -53,6 +72,14 @@ namespace KERBALISM
 			ConfigNode habitatNode = partDataNode.GetNode("habitat");
 			if (habitatNode != null)
 				Habitat = new HabitatData(habitatNode);
+
+			ConfigNode processesNode = partDataNode.GetNode("processes");
+			if(processesNode != null)
+			{
+				Processes = new List<PartProcessData>();
+				foreach (var pn in processesNode.GetNodes())
+					Processes.Add(new PartProcessData(pn));
+			}
 		}
 
 		/// <summary> Must be called if the part is destroyed </summary>
@@ -60,6 +87,9 @@ namespace KERBALISM
 		{
 			if (Drive != null)
 				Drive.DeleteDriveData();
+
+			// TODO unregister all processes
+			if (Processes != null) { }
 		}
 
 		public override int GetHashCode() => FlightId.GetHashCode();

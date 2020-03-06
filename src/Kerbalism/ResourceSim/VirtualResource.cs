@@ -70,7 +70,6 @@ namespace KERBALISM
 		public double Level { get; private set; }
 
 		private double availabilityFactor;
-
 		private double consumeRequests;
 		private double produceRequests;
 
@@ -86,10 +85,7 @@ namespace KERBALISM
 			IsNewInstance = true;
 		}
 
-		public void Init()
-		{
-			throw new NotImplementedException();
-		}
+		public void Init() { }
 
 		public bool ExecuteAndSyncToParts(double elapsed_s)
 		{
@@ -155,7 +151,5 @@ namespace KERBALISM
 				node.AddValue("Capacity", vRes.Capacity);
 			}
 		}
-
-
 	}
 }

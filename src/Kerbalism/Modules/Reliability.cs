@@ -700,16 +700,10 @@ namespace KERBALISM
 					Lib.Proto.Set(proto_module, "isEnabled", false);
 				}
 
-				// type-specific hacks
+				// TODO type-specific hacks
+				/*
 				switch (reliability.type)
 				{
-					case "ProcessController":
-						foreach (ProcessController pc in p.partPrefab.FindModulesImplementing<ProcessController>())
-						{
-							ProtoPartResourceSnapshot res = p.resources.Find(k => k.resourceName == pc.resource);
-							if (res != null) res.flowState = false;
-						}
-						break;
 					case "ModuleKsmProcessController":
 						foreach (ModuleKsmProcessController pc in p.partPrefab.FindModulesImplementing<ModuleKsmProcessController>())
 						{
@@ -718,6 +712,7 @@ namespace KERBALISM
 						}
 						break;
 				}
+				*/
 
 				// show message
 				Broken_msg(v, reliability.title, critical);
@@ -833,10 +828,6 @@ namespace KERBALISM
 
 			switch (type)
 			{
-				case "ProcessController":
-					foreach (PartModule m in modules)
-						return (m as ProcessController).running;
-					return false;
 				case "ModuleKsmProcessController":
 					foreach (PartModule m in modules)
 						return (m as ModuleKsmProcessController).running;
@@ -875,15 +866,8 @@ namespace KERBALISM
 
 			switch (type)
 			{
-				case "ProcessController":
-					if (b)
-					{
-						foreach (PartModule m in modules)
-						{
-							(m as ProcessController).ReliablityEvent(b);
-						}
-					}
-					break;
+				// TODO
+				/*
 				case "ModuleKsmProcessController":
 					if (b)
 					{
@@ -893,7 +877,7 @@ namespace KERBALISM
 						}
 					}
 					break;
-
+				*/
 				case "ModuleDeployableRadiator":
 					if (b)
 					{

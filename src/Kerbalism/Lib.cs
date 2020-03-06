@@ -615,7 +615,6 @@ namespace KERBALISM
 			return BuildString("<b>", s, "</b>");
 		}
 
-
 		///<summary>return string in italic</summary>
 		public static string Italic(string s)
 		{
