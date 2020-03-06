@@ -104,7 +104,7 @@ namespace KERBALISM
 				section.needsSort = section.sort;
 			}
 		}
-
+		
 		public void AddCheckbox(bool selected, string label, string tooltip = "", Action click = null, Action hover = null)
 		{
 			Checkbox c = new Checkbox
@@ -279,18 +279,22 @@ namespace KERBALISM
 
 		public float Height()
 		{
-			float h = Styles.ScaleFloat((headers.Count) * 27.0f);
+			float h = Styles.ScaleFloat(headers.Count * 27.0f);
 
 			foreach (Section p in sections)
 			{
+				h += Styles.ScaleFloat(18.0f + 16.0f);
+
 				if(p.entries != null && p.entries.Count > 0)
-					h += Styles.ScaleFloat(18.0f + p.entries.Count * 16.0f + 16.0f);
+					h += Styles.ScaleFloat(p.entries.Count * 16.0f);
+
 				if (p.checkboxes != null && p.checkboxes.Count > 0)
-					h += Styles.ScaleFloat(18.0f + (1 + p.checkboxes.Count / columns) * 16.0f + 16.0f);
+					h += Styles.ScaleFloat((1 + p.checkboxes.Count / columns) * 16.0f);
 
 				if (p.desc.Length > 0)
 				{
-					h += Styles.desc.CalcHeight(new GUIContent(p.desc), min_width - Styles.ScaleWidthFloat(20.0f));
+					var descriptionHeight = Styles.desc.CalcHeight(new GUIContent(p.desc), min_width - Styles.ScaleWidthFloat(20.0f));
+					h += descriptionHeight;
 				}
 			}
 
