@@ -338,7 +338,7 @@ namespace KERBALISM
 
 			private void OnTogglePart()
 			{
-				ModuleKsmProcessController.SetRunning(data, vd.Vessel.loaded);
+				ModuleKsmProcessController.Toggle(data, vd.Vessel.loaded);
 			}
 		}
 	}

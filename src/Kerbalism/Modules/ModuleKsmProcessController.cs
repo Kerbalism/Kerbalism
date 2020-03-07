@@ -23,13 +23,8 @@ namespace KERBALISM
 		public bool running;
 
 		// internal state
-		private PartProcessData data;
-		public PartProcessData ProcessData => data;
+		public PartProcessData ProcessData => partData; PartProcessData partData;
 		private bool broken = false;
-
-		// caching frequently used things
-		private VesselData vd;
-		private VesselResHandler vesselResHandler;
 
 		private BaseField runningField;
 
@@ -38,74 +33,90 @@ namespace KERBALISM
 		{
 			if (HighLogic.LoadedScene == GameScenes.LOADING)
 			{
-				data = new PartProcessData(processName, capacity, id)
-				{
-					isRunning = running,
-					isBroken = broken
-				};
+				// needed for part module info
+				partData = new PartProcessData(processName, capacity, id, running, broken);
 				return;
 			}
 
-			data = null;
-
-			if (Lib.IsEditor())
+			if (Lib.IsFlight() && string.IsNullOrEmpty(processName))
 			{
-				ConfigNode editorDataNode = node.GetNode("EditorProcessData");
-				if (editorDataNode != null)
-					data = new PartProcessData(editorDataNode);
+				Lib.LogDebug($"Loaded in flight without process, disabling");
+				enabled = false;
+				isEnabled = false;
 			}
+
+			// data will be restored from OnLoad only in the following cases:
+			// - Part created in the editor from a saved ship (not a freshly instantiated part from the part list)
+			// - Part created in flight from a just launched vessel
+			ConfigNode editorDataNode = node.GetNode("EditorProcessData");
+			if (editorDataNode != null)
+				partData = new PartProcessData(editorDataNode);
+
+			// we might be restarted after a configuration change
+			if (Lib.IsEditor())
+				StartInternal();
 		}
 
 		// this is only for editor <--> editor and editor -> flight persistence
 		public override void OnSave(ConfigNode node)
 		{
-			if (Lib.IsEditor() && data != null)
+			if (Lib.IsEditor() && partData != null)
 			{
 				ConfigNode processDataNode = node.AddNode("EditorProcessData");
-				data.Save(processDataNode);
+				partData.Save(processDataNode);
 			}
 		}
 
 		public override void OnStart(StartState state)
 		{
+			if (string.IsNullOrEmpty(id))
+			{
+				// auto-assign ID
+				id = part.partName + "." + part.Modules.IndexOf(this);
+				Lib.Log($"ProcessController `{processName}` on {part.partName} without id. Auto-assigning `{id}`, but you really should set a unique id in your configuration", Lib.LogLevel.Warning);
+			}
+
+			StartInternal();
+		}
+
+		/// <summary>  start the module. must be idempotent: expect to be called several times </summary>
+		private void StartInternal()
+		{
+			Lib.LogDebug($"ProcessController {id} on {part.partName} starting with process '{processName}'");
+
+			if (string.IsNullOrEmpty(processName))
+			{
+				Lib.LogDebug($"No process, disabling module");
+				isEnabled = false;
+				enabled = false;
+				return;
+			}
+
 			bool isFlight = Lib.IsFlight();
 
-			// auto-assign ID
-			if(string.IsNullOrEmpty(id) && !string.IsNullOrEmpty(processName))
-				id = processName + "." + part.Modules.IndexOf(this);
-
-			if (isFlight)
+			// make sure part data is valid (if we have it), we might be restarting with a different configuration
+			if(partData != null && partData.processName != processName)
 			{
-				vd = vessel.KerbalismData();
-				vesselResHandler = vd.ResHandler;
-			}
-			else
-			{
-				vesselResHandler = EditorResourceHandler.Handler;
+				Lib.LogDebug($"Restarting with different process '{processName}' (was '{partData.processName}'), discarding old part data");
+				partData = null;
 			}
 
 			// get persistent data
-			// data will be restored from OnLoad (and therefore not null) only in the following cases :
-			// - Part created in the editor from a saved ship (not a freshly instantiated part from the part list)
-			// - Part created in flight from a just launched vessel
-			if (data == null)
+			if (partData == null)
 			{
 				// in flight, we should have the data stored in VesselData > PartData, unless the part was created in flight (rescue, KIS...)
 				if (isFlight)
-					data = PartProcessData.GetFlightReferenceFromPart(part, id);
+					partData = PartProcessData.GetFlightReferenceFromPart(part, id);
 
-				// if all other cases, this is newly instantiated part from prefab. Create the data object and set default values.
-				if (data == null)
+				// if all other cases, this is a newly instantiated part from prefab. Create the data object and set default values.
+				if (partData == null)
 				{
-					data = new PartProcessData(processName, capacity, id)
-					{
-						isRunning = running,
-						isBroken = broken
-					};
+					Lib.LogDebug($"Instantiating new part data with processName '{processName}'");
+					partData = new PartProcessData(processName, capacity, id, running, broken);
 
-					if(data.process == null)
+					if(!string.IsNullOrEmpty(processName) && partData.process == null)
 					{
-						Lib.Log($"Invalid process `{processName}` in ModuleKsmProcessController id {id} for part {part.partName}", Lib.LogLevel.Error);
+						Lib.Log($"Invalid process '{processName}' in ModuleKsmProcessController id {id} for part {part.partName}", Lib.LogLevel.Error);
 						isEnabled = false;
 						enabled = false;
 						return;
@@ -115,24 +126,24 @@ namespace KERBALISM
 					if (isFlight)
 					{
 						// set the VesselData / PartData reference
-						PartProcessData.SetFlightReferenceFromPart(part, data);
+						PartProcessData.SetFlightReferenceFromPart(part, partData);
 					}
 				}
 			}
 			else if (isFlight)
 			{
-				PartProcessData.SetFlightReferenceFromPart(part, data);
+				PartProcessData.SetFlightReferenceFromPart(part, partData);
 			}
 
-			data.module = this;
+			partData.module = this;
 
 			// PAW setup
-			running = data.process != null && data.isRunning;
+			running = partData.process != null && partData.isRunning;
 
 			runningField = Fields["running"];
-			runningField.OnValueModified += (field) => SetRunning(data, true);
-			runningField.guiActive = runningField.guiActiveEditor = data.process != null && data.process.canToggle;
-			runningField.guiName = data.process.title;
+			runningField.OnValueModified += (field) => Toggle(partData, true);
+			runningField.guiActive = runningField.guiActiveEditor = partData.process != null && partData.process.canToggle;
+			runningField.guiName = partData.process?.title;
 
 			((UI_Toggle)runningField.uiControlFlight).enabledText = Lib.Color(Local.Generic_ENABLED.ToLower(), Lib.Kolor.Green);
 			((UI_Toggle)runningField.uiControlFlight).disabledText = Lib.Color(Local.Generic_DISABLED.ToLower(), Lib.Kolor.Yellow);
@@ -146,19 +157,19 @@ namespace KERBALISM
 		public void OnDestroy()
 		{
 			// clear loaded module reference to avoid memory leaks
-			if (data != null)
-				data.module = null;
+			if (partData != null)
+				partData.module = null;
 		}
 
-		public static void SetRunning(PartProcessData data, bool isLoaded)
+		public static void Toggle(PartProcessData partData, bool isLoaded)
 		{
-			if (data.isBroken)
+			if (partData.isBroken)
 				return;
 
-			data.isRunning = !data.isRunning;
-
+			partData.isRunning = !partData.isRunning;
+	
 			if (isLoaded)
-				data.module.running = data.isRunning;
+				partData.module.running = partData.isRunning;
 
 			// refresh VAB/SPH ui
 			if (Lib.IsEditor()) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
@@ -167,9 +178,9 @@ namespace KERBALISM
 		// part tooltip
 		public override string GetInfo()
 		{
-			if (string.IsNullOrEmpty(processName) || data == null || data.process == null)
+			if (string.IsNullOrEmpty(processName) || partData == null || partData.process == null)
 				return string.Empty;
-			return Specs().Info(data.process.desc);
+			return Specs().Info(partData.process.desc);
 		}
 
 		public bool IsRunning() {
@@ -186,8 +197,8 @@ namespace KERBALISM
 		}
 
 		// module info support
-		public string GetModuleTitle() { return data?.process?.title; }
-		public override string GetModuleDisplayName() { return data?.process?.title; }
+		public string GetModuleTitle() { return partData?.process?.title; }
+		public override string GetModuleDisplayName() { return partData?.process?.title; }
 		public string GetPrimaryField() { return string.Empty; }
 		public Callback<Rect> GetDrawModulePanelCallback() { return null; }
 

@@ -183,14 +183,17 @@ namespace KERBALISM
 		public double processCapacity;	// this part modules capacity to run this process
 		public string processId;		// id of the process controller part module
 		public ModuleKsmProcessController module = null;
-		public bool isRunning;			// true/false, if process controller is turned on or not
-		public bool isBroken;           // true if process controller is broken
-		public Process process { get; private set; }			// the process associated with the process name, for convenience
+		public bool isRunning;  // true/false, if process controller is turned on or not
+		public bool isBroken;   // true if process controller is broken
+		public Process process { get; private set; } // the process associated with the process name, for convenience
 
-		public PartProcessData(string name, double capacity, string id) {
+		public PartProcessData(string name, double capacity, string id, bool running, bool broken)
+		{
 			processName = name;
 			processCapacity = capacity;
 			processId = id;
+			isRunning = running;
+			isBroken = broken;
 
 			process = Profile.processes.Find(p => p.name == processName);
 		}
@@ -220,6 +223,5 @@ namespace KERBALISM
 		public static PartProcessData GetFlightReferenceFromPart(Part part, string id) => part.vessel.KerbalismData().Parts.Get(part.flightID).Processes?.Find(d => d.processId == id);
 
 		public static PartProcessData GetFlightReferenceFromProtoPart(Vessel vessel, ProtoPartSnapshot part, string id) => vessel.KerbalismData().Parts.Get(part.flightID).Processes?.Find(d => d.processId == id);
-
 	}
 }
