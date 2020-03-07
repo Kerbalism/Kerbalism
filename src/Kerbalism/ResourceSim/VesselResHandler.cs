@@ -148,7 +148,7 @@ namespace KERBALISM
 			}
 		}
 
-		/// <summary>return the VesselResource object for this resource or create it if it doesn't exists</summary>
+		/// <summary>return the VesselResource object for this resource or create a virtual resource if the resource doesn't exists</summary>
 		public IResource GetResource(string resourceName)
 		{
 			// try to get existing entry if any
@@ -275,7 +275,10 @@ namespace KERBALISM
 			// apply all deferred requests and synchronize to vessel
 			foreach (IResource resource in resources.Values)
 			{
-				if (resource.Capacity == 0.0)
+				// note : we try to exclude resources that aren't relevant here to save some
+				// performance, but this might have minor side effects, like brokers not being reset
+				// after a vessel part count change for example. 
+				if (!resource.NeedUpdate)
 					continue;
 
 				if (resource.ExecuteAndSyncToParts(elapsed_s) && vessel != null && vessel.loaded)
@@ -325,6 +328,8 @@ namespace KERBALISM
 			}
 		}
 
+		// note : this can fail if called on a vessel with a resource that was removed (mod uninstalled),
+		// since the resource is serialized on the protovessel, but doesn't exist in the resource library
 		private void SyncPartResources(List<ProtoPartSnapshot> protoParts)
 		{
 			foreach (ProtoPartSnapshot p in protoParts)

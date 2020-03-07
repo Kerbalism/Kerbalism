@@ -26,6 +26,8 @@ namespace KERBALISM
 		/// <summary> Amount vs capacity, or 0 if there is no capacity</summary>
 		double Level { get; }
 
+		bool NeedUpdate { get; }
+
 		/// <summary> Called at the VesselResHandler instantiation, after the ResourceWrapper amount and capacity has been evaluated </summary>
 		void Init();
 

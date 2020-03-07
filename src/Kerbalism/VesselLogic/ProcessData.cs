@@ -37,7 +37,7 @@ namespace KERBALISM
 		internal void Evaluate(List<PartProcessData> partProcessDatas, VesselResHandler resHandler)
 		{
 			// reset all newTotalCapacities so we know which processes were removed or changed capacities
-			foreach (var vesselProcess in processes)
+			foreach (VesselProcessData vesselProcess in processes)
 				vesselProcess.newTotalCapacity = -1; // will delete all processes with negative capacity later
 
 			// sum up the toal capacities from all process part data objects to their corresponding vessel process entries
@@ -49,7 +49,7 @@ namespace KERBALISM
 					continue;
 				}
 
-				var vesselProcess = processes.Find(d => d.processName == partProcessData.processName);
+				VesselProcessData vesselProcess = processes.Find(d => d.processName == partProcessData.processName);
 				if (vesselProcess == null)
 				{
 					// found a part process data node without a corresponding vessel process.
@@ -92,7 +92,7 @@ namespace KERBALISM
 			// execute all processes on vessel
 			foreach (var p in processes)
 			{
-				if(p.enabled)
+				if (p.enabled)
 					p.process.Execute(v, vd, resources, elapsed_s, p.maxSetting, p.dumpedOutputs);
 			}
 		}

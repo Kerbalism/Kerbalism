@@ -69,6 +69,8 @@ namespace KERBALISM
 		/// <summary> Amount vs capacity, or 0 if there is no capacity</summary>
 		public double Level { get; private set; }
 
+		public bool NeedUpdate => true;
+
 		private double availabilityFactor;
 		private double consumeRequests;
 		private double produceRequests;

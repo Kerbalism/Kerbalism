@@ -777,21 +777,37 @@ namespace KERBALISM
 		public const string InlineSpriteFlask = "<sprite=\"CurrencySpriteAsset\" name=\"Flask\" color=#CE5DAE>";
 
 		///<summary> Pretty-print a resource rate (rate is per second). Return an absolute value if a negative one is provided</summary>
-		public static string HumanReadableRate(double rate, string precision = "F3", string unit = "")
+		public static string HumanReadableRate(double rate, string format = "F3", string unit = "", bool showSign = false)
 		{
+			if (rate == 0.0)
+				return Local.Generic_NONE;//"none"
+
 			if (unit != "")
 				unit = Lib.BuildString(" ", unit);
 
-			if (rate == 0.0)return Local.Generic_NONE;//"none"
+			string sign;
+			if (showSign)
+				sign = rate >= 0.0 ? "+" : "-";
+			else
+				sign = "";
+
 			rate = Math.Abs(rate);
-			if (rate >= 0.01)return BuildString(rate.ToString(precision), unit, Local.Generic_perSecond);//"/s"
+			if (rate >= 0.01)
+				return BuildString(sign, rate.ToString(format), unit, Local.Generic_perSecond);//"/s"
+
 			rate *= 60.0; // per-minute
-			if (rate >= 0.01) return BuildString(rate.ToString(precision), unit, Local.Generic_perMinute);//"/m"
+			if (rate >= 0.01)
+				return BuildString(sign, rate.ToString(format), unit, Local.Generic_perMinute);//"/m"
+
 			rate *= 60.0; // per-hour
-			if (rate >= 0.01) return BuildString(rate.ToString(precision), unit, Local.Generic_perHour);//"/h"
+			if (rate >= 0.01)
+				return BuildString(sign, rate.ToString(format), unit, Local.Generic_perHour);//"/h"
+
 			rate *= HoursInDay;  // per-day
-			if (rate >= 0.01) return BuildString(rate.ToString(precision), unit, Local.Generic_perDay);//"/d"
-			return BuildString((rate * DaysInYear).ToString(precision), unit, Local.Generic_perYear);//"/y"
+			if (rate >= 0.01)
+				return BuildString(sign, rate.ToString(format), unit, Local.Generic_perDay);//"/d"
+
+			return BuildString(sign, (rate * DaysInYear).ToString(format), unit, Local.Generic_perYear);//"/y"
 		}
 
 		///<summary> Pretty-print a duration (duration is in seconds, must be positive) </summary>

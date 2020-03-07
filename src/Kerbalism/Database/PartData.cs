@@ -8,7 +8,7 @@ namespace KERBALISM
 	public class PartData : IEquatable<PartData>
 	{
 		public uint FlightId { get; private set; }
-		public string PartName { get; private set; }
+		public AvailablePart PartInfo { get; private set; }
 
 		public Drive Drive { get; set; }
 		public HabitatData Habitat { get; set; }
@@ -17,13 +17,13 @@ namespace KERBALISM
 		public PartData(Part part)
 		{
 			FlightId = part.flightID;
-			PartName = part.name;
+			PartInfo = part.partInfo;
 		}
 
 		public PartData(ProtoPartSnapshot protopart)
 		{
 			FlightId = protopart.flightID;
-			PartName = protopart.partName;
+			PartInfo = protopart.partInfo;
 		}
 
 		public void Save(ConfigNode partCollectionNode)
@@ -32,7 +32,7 @@ namespace KERBALISM
 				return;
 
 			ConfigNode partNode = partCollectionNode.AddNode(FlightId.ToString());
-			partNode.AddValue("name", PartName); // isn't technically needed, this is for sfs editing / debugging purposes
+			partNode.AddValue("name", PartInfo.title); // isn't technically needed, this is for sfs editing / debugging purposes
 
 			if (Drive != null)
 			{

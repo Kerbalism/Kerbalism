@@ -8,12 +8,16 @@ namespace KERBALISM
 {
 	public class VesselProcessDevice : VesselDevice
 	{
-		public VesselProcessData vesselProcess { get; private set; }
+		private readonly DeviceIcon icon;
+		private readonly VesselProcessData vesselProcess;
 
 		public VesselProcessDevice(Vessel v, VesselData vd, VesselProcessData process) : base(v, vd)
 		{
 			vesselProcess = process;
+			icon = new DeviceIcon(Textures.wrench_white, "open process window", () => new ProcessPopup(vesselProcess, vd));
 		}
+
+		public override DeviceIcon Icon => icon;
 
 		public override string Name => vesselProcess.process.title;
 

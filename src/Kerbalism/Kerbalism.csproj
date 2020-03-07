@@ -155,6 +155,9 @@
     <Compile Include="API\PartModuleAPI.cs" />
     <Compile Include="ResourceSim\ResourceWrapper.cs" />
     <Compile Include="Modules\IPlannerModule.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiSlider.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiTextButton.cs" />
+    <Compile Include="UI\ProcessPopup.cs" />
     <Compile Include="VesselLogic\HabitatData.cs" />
     <Compile Include="Database\KerbalData.cs" />
     <Compile Include="Database\LandmarkData.cs" />

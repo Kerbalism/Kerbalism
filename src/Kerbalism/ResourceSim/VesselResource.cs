@@ -86,6 +86,8 @@ namespace KERBALISM
 
 		public List<ResourceBrokerRate> ResourceBrokers => resourceBrokers;  List<ResourceBrokerRate>resourceBrokers;
 
+		public bool NeedUpdate => !(Capacity == 0.0 && deferred == 0.0 && resourceBrokers.Count == 0);
+
 		/// <summary>Ctor</summary>
 		public VesselResource(ResourceWrapper resourceWrapper)
 		{
@@ -328,22 +330,22 @@ namespace KERBALISM
 
 		public void UpdateResourceBrokers(Dictionary<ResourceBroker, double> brokersResAmount, Dictionary<ResourceBroker, double> ruleBrokersRate, double unknownBrokersRate, double elapsedSeconds)
 		{
-			ResourceBrokers.Clear();
+			resourceBrokers.Clear();
 
 			foreach (KeyValuePair<ResourceBroker, double> p in ruleBrokersRate)
 			{
 				ResourceBroker broker = ResourceBroker.GetOrCreate(p.Key.Id + "Avg", p.Key.Category, Lib.BuildString(p.Key.Title, " (", Local.Generic_AVERAGE, ")"));
-				ResourceBrokers.Add(new ResourceBrokerRate(broker, p.Value));
+				resourceBrokers.Add(new ResourceBrokerRate(broker, p.Value));
 			}
 
 			foreach (KeyValuePair<ResourceBroker, double> p in brokersResAmount)
 			{
-				ResourceBrokers.Add(new ResourceBrokerRate(p.Key, p.Value / elapsedSeconds));
+				resourceBrokers.Add(new ResourceBrokerRate(p.Key, p.Value / elapsedSeconds));
 			}
 
 			if (unknownBrokersRate != 0.0)
 			{
-				ResourceBrokers.Add(new ResourceBrokerRate(ResourceBroker.Generic, unknownBrokersRate / elapsedSeconds));
+				resourceBrokers.Add(new ResourceBrokerRate(ResourceBroker.Generic, unknownBrokersRate / elapsedSeconds));
 			}
 		}
 
@@ -409,6 +411,55 @@ namespace KERBALISM
 						Lib.BuildString("-", Lib.HumanReadableRate(Math.Abs(rb.rate)), "   "), Lib.Kolor.NegRate, // spaces to mitigate alignement issues
 						true));
 					sb.Append("\t");
+					sb.Append(rb.broker.Title);
+				}
+			}
+
+			return sb.ToString();
+		}
+
+		public string BrokerListTooltipTMP()
+		{
+			sb.Length = 0;
+
+			sb.Append(Lib.Color(Title, Lib.Kolor.Yellow, true));
+			sb.Append("\n");
+			sb.Append("<align=\"left\">");
+			if (AverageRate != 0.0)
+			{
+				sb.Append(Lib.Color(AverageRate > 0.0,
+					Lib.HumanReadableRate(AverageRate, "F3", "", true), Lib.Kolor.PosRate,
+					Lib.HumanReadableRate(AverageRate, "F3", "", true), Lib.Kolor.NegRate,
+					true));
+			}
+			else
+			{
+				sb.Append("<b>");
+				sb.Append(Local.TELEMETRY_nochange);//no change
+				sb.Append("</b>");
+			}
+
+			sb.Append("<pos=80px>");
+			sb.Append(Lib.HumanReadableStorage(Amount, Capacity));
+			sb.Append(" (");
+			sb.Append(Level.ToString("P0"));
+			sb.Append(")");
+
+			if (resourceBrokers.Count > 0)
+			{
+				sb.Append("\n<b>------------<pos=80px>------------</b>");
+				foreach (ResourceBrokerRate rb in resourceBrokers)
+				{
+					// exclude very tiny rates to avoid the ui flickering
+					if (rb.rate > -1e-09 && rb.rate < 1e-09)
+						continue;
+
+					sb.Append("\n");
+					sb.Append(Lib.Color(rb.rate > 0.0,
+						Lib.HumanReadableRate(rb.rate, "F3", "", true), Lib.Kolor.PosRate,
+						Lib.HumanReadableRate(rb.rate, "F3", "", true), Lib.Kolor.NegRate,
+						true));
+					sb.Append("<pos=80px>");
 					sb.Append(rb.broker.Title);
 				}
 			}
