@@ -90,7 +90,7 @@ namespace KERBALISM
 		static void Render_habitat(Panel p, Vessel v, VesselData vd)
 		{
 			// if habitat feature is disabled, do not show the panel
-			if (!Features.Habitat) return;
+			if (!Features.LifeSupport) return;
 
 			// if vessel is unmanned, do not show the panel
 			if (vd.CrewCount == 0) return;

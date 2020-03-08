@@ -89,9 +89,6 @@ namespace KERBALISM
 		// call scripts automatically when conditions are met
 		public void Automate(Vessel v, VesselData vd, VesselResHandler resources)
 		{
-			// do nothing if automation is disabled
-			if (!Features.Automation) return;
-
 			// get current states
 			IResource ec = resources.GetResource("ElectricCharge");
 			bool sunlight = !vd.EnvInFullShadow;

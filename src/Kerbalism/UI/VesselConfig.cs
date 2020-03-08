@@ -30,7 +30,7 @@ namespace KERBALISM
 			p.AddSection(Local.VESSELCONFIG_RENDERING);//"RENDERING"
 
 			p.AddCheckbox(vd.cfg_show, Local.VESSELCONFIG_ShowVessel, Local.VESSELCONFIG_ShowVessel_desc, click: () => p.Toggle(ref vd.cfg_show));
-			if (Features.Reliability)
+			if (Features.Failures)
 				p.AddCheckbox(vd.cfg_highlights, Local.VESSELCONFIG_Highlightfailed, Local.VESSELCONFIG_Highlightfailed_desc, click: () => p.Toggle(ref vd.cfg_highlights));
 
 			// toggle messages
@@ -38,20 +38,19 @@ namespace KERBALISM
 
 			p.AddCheckbox(vd.cfg_ec, Local.VESSELCONFIG_battery, Local.VESSELCONFIG_EClow, click: () => p.Toggle(ref vd.cfg_ec));
 
-			if (Features.Supplies)
+			if (Features.LifeSupport)
 				p.AddCheckbox(vd.cfg_supply, Local.VESSELCONFIG_supply, Local.VESSELCONFIG_Supplylow, click: () => p.Toggle(ref vd.cfg_supply));
 
 			if (API.Comm.handlers.Count > 0 || HighLogic.fetch.currentGame.Parameters.Difficulty.EnableCommNet)
 				p.AddCheckbox(vd.cfg_signal, Local.VESSELCONFIG_signal, Local.VESSELCONFIG_Signallost, click: () => p.Toggle(ref vd.cfg_signal));
 
-			if (Features.Reliability)
+			if (Features.Failures)
 				p.AddCheckbox(vd.cfg_malfunction, Local.VESSELCONFIG_reliability, Local.VESSELCONFIG_Componentfail, click: () => p.Toggle(ref vd.cfg_malfunction));
 
-			if (Features.SpaceWeather)
+			if (Features.Radiation)
 				p.AddCheckbox(vd.cfg_storm, Local.VESSELCONFIG_storm, Local.VESSELCONFIG_CMEevent, click: () => p.Toggle(ref vd.cfg_storm));
 
-			if (Features.Automation)
-				p.AddCheckbox(vd.cfg_script, Local.VESSELCONFIG_script, Local.VESSELCONFIG_ScriptExe, click: () => p.Toggle(ref vd.cfg_script));
+			p.AddCheckbox(vd.cfg_script, Local.VESSELCONFIG_script, Local.VESSELCONFIG_ScriptExe, click: () => p.Toggle(ref vd.cfg_script));
 		}
 	}
 

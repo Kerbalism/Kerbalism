@@ -259,10 +259,10 @@ namespace KERBALISM
 			Indicator_ec(p, v, vd);
 
 			// supply indicator
-			if (Features.Supplies) Indicator_supplies(p, v, vd);
+			if (Features.LifeSupport) Indicator_supplies(p, v, vd);
 
 			// reliability indicator
-			if (Features.Reliability) Indicator_reliability(p, v, vd);
+			if (Features.Failures) Indicator_reliability(p, v, vd);
 
 			// signal indicator
 			if (Features.Science) Indicator_signal(p, v, vd);
@@ -296,19 +296,18 @@ namespace KERBALISM
 						UI.Open((p) => p.Fileman(v));
 				}
 			}
-			if (Features.Automation)
+
+			GUILayout.Label(new GUIContent(Lib.Color(page == MonitorPage.scripts, " " + Local.Monitor_AUTO, Lib.Kolor.Green, Lib.Kolor.None, true), Textures.small_console, Local.Monitor_AUTO_desc + Local.Monitor_tooltip), config_style);//AUTO"Control and automate components"
+			if (Lib.IsClicked()) page = MonitorPage.scripts;
+			else if (Lib.IsClicked(2))
 			{
-				GUILayout.Label(new GUIContent(Lib.Color(page == MonitorPage.scripts, " " + Local.Monitor_AUTO, Lib.Kolor.Green, Lib.Kolor.None, true), Textures.small_console, Local.Monitor_AUTO_desc + Local.Monitor_tooltip), config_style);//AUTO"Control and automate components"
-				if (Lib.IsClicked()) page = MonitorPage.scripts;
-				else if (Lib.IsClicked(2))
-				{
-					if (UI.window.PanelType == Panel.PanelType.scripts)
-						UI.window.Close();
-					else
-						UI.Open((p) => p.Devman(v));
-				}
+				if (UI.window.PanelType == Panel.PanelType.scripts)
+					UI.window.Close();
+				else
+					UI.Open((p) => p.Devman(v));
 			}
-			if (Features.Reliability)
+
+			if (Features.Failures)
 			{
 				GUILayout.Label(new GUIContent(Lib.Color(page == MonitorPage.failures, " " + Local.Monitor_FAILURES, Lib.Kolor.Green, Lib.Kolor.None, true), Textures.small_wrench, Local.Monitor_FAILURES_desc + Local.Monitor_tooltip), config_style);//FAILURES"See failures and maintenance state"
 				if (Lib.IsClicked()) page = MonitorPage.failures;
@@ -524,11 +523,11 @@ namespace KERBALISM
 
 			// detect problems
 			Problem_sunlight(vd, ref problem_icons, ref problem_tooltips);
-			if (Features.SpaceWeather) Problem_storm(v, ref problem_icons, ref problem_tooltips);
+			if (Features.Radiation) Problem_storm(v, ref problem_icons, ref problem_tooltips);
 			if (crew.Count > 0 && Profile.rules.Count > 0) Problem_kerbals(crew, ref problem_icons, ref problem_tooltips);
 			if (crew.Count > 0 && Features.Radiation) Problem_radiation(vd, ref problem_icons, ref problem_tooltips);
 			Problem_greenhouses(v, vd.Greenhouses, ref problem_icons, ref problem_tooltips);
-			if (Features.Poisoning) Problem_poisoning(vd, ref problem_icons, ref problem_tooltips);
+			if (Features.LifeSupport) Problem_poisoning(vd, ref problem_icons, ref problem_tooltips);
 
 			// choose problem icon
 			const UInt64 problem_icon_time = 3;

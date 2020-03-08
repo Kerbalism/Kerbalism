@@ -28,15 +28,15 @@ namespace KERBALISM.Planner
 
 			// special panels
 			// - stress & radiation panels require that a rule using the living_space/radiation modifier exist (current limitation)
-			if (Features.LivingSpace && Profile.rules.Find(k => k.modifiers.Contains("living_space")) != null)
+			if (Features.LifeSupport && Profile.rules.Find(k => k.modifiers.Contains("living_space")) != null)
 				panel_special.Add("qol");
 			if (Features.Radiation && Profile.rules.Find(k => k.modifiers.Contains("radiation")) != null)
 				panel_special.Add("radiation");
-			if (Features.Reliability)
+			if (Features.Failures)
 				panel_special.Add("reliability");
 
 			// environment panels
-			if (Features.Pressure || Features.Poisoning)
+			if (Features.LifeSupport)
 				panel_environment.Add("habitat");
 
 			panel_environment.Add("environment");
@@ -539,7 +539,7 @@ namespace KERBALISM.Planner
 			string waste_tooltip = waste_res.BrokersListTooltip();
 
 			// generate status string for scrubbing
-			string waste_status = !Features.Poisoning                   //< feature disabled
+			string waste_status = !Features.LifeSupport                   //< feature disabled
 			  ? "n/a"
 			  : waste_res.ProduceRequests <= double.Epsilon                    //< unnecessary
 			  ? Local.Planner_scrubbingunnecessary//"not required"
@@ -550,7 +550,7 @@ namespace KERBALISM.Planner
 			  : Lib.Color(Local.Planner_sufficientscrubbing, Lib.Kolor.Green);//"good"                    //< sufficient scrubbing
 
 			// generate status string for pressurization
-			string atmo_status = !Features.Pressure                     //< feature disabled
+			string atmo_status = !Features.LifeSupport                     //< feature disabled
 			  ? "n/a"
 			  : atmo_res.ConsumeRequests <= double.Epsilon                     //< unnecessary
 			  ? Local.Planner_pressurizationunnecessary//"not required"

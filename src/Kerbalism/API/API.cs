@@ -258,14 +258,14 @@ namespace KERBALISM
 		// return true if a solar storm is incoming at the vessel position
 		public static bool StormIncoming(Vessel v)
 		{
-			if (!Features.SpaceWeather) return false;
+			if (!Features.Radiation) return false;
 			return v.KerbalismData().IsSimulated && Storm.Incoming(v);
 		}
 
 		// return true if a solar storm is in progress at the vessel position
 		public static bool StormInProgress(Vessel v)
 		{
-			if (!Features.SpaceWeather) return false;
+			if (!Features.Radiation) return false;
 			VesselData vd = v.KerbalismData();
 			return vd.IsSimulated && vd.EnvStorm;
 		}
@@ -304,14 +304,14 @@ namespace KERBALISM
 		// return true if at least a component has malfunctioned, or had a critical failure
 		public static bool Malfunction(Vessel v)
 		{
-			if (!Features.Reliability) return false;
+			if (!Features.Failures) return false;
 			return v.KerbalismData().Malfunction;
 		}
 
 		// return true if at least a componet had a critical failure
 		public static bool Critical(Vessel v)
 		{
-			if (!Features.Reliability) return false;
+			if (!Features.Failures) return false;
 			return v.KerbalismData().Critical;
 		}
 
@@ -371,28 +371,28 @@ namespace KERBALISM
 		// return volume of internal habitat in m^3
 		public static double Volume(Vessel v)
 		{
-			if (!Features.Habitat) return 0.0;
+			if (!Features.LifeSupport) return 0.0;
 			return v.KerbalismData().HabitatInfo.livingVolume;
 		}
 
 		// return surface of internal habitat in m^2
 		public static double Surface(Vessel v)
 		{
-			if (!Features.Habitat) return 0.0;
+			if (!Features.LifeSupport) return 0.0;
 			return v.KerbalismData().HabitatInfo.shieldingSurface;
 		}
 
 		// return normalized pressure of internal habitat
 		public static double Pressure(Vessel v)
 		{
-			if (!Features.Pressure) return 0.0;
+			if (!Features.LifeSupport) return 0.0;
 			return v.KerbalismData().HabitatInfo.pressureAtm;
 		}
 
 		// return level of co2 of internal habitat
 		public static double Poisoning(Vessel v)
 		{
-			if (!Features.Poisoning) return 0.0;
+			if (!Features.LifeSupport) return 0.0;
 			return v.KerbalismData().HabitatInfo.poisoningLevel;
 		}
 

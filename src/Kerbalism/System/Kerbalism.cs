@@ -152,10 +152,15 @@ namespace KERBALISM
 			// everything in there will be called only one time : the first time a game is loaded from the main menu
 			if (!IsCoreGameInitDone)
 			{
-				var kerbalismConfigNodes = GameDatabase.Instance.GetConfigs("Kerbalism");
-				if (kerbalismConfigNodes.Length < 1)
+				if (GameDatabase.Instance.GetConfigs("Kerbalism").Length < 1)
 				{
 					string msg = "ERROR: No kerbalism configuration found.\n\nYou probably forgot to install KerbalismConfig.\n\n";
+					msg += "This is a fatal error and KSP must be closed.";
+					Lib.Popup("Kerbalism fatal error", msg, 600f);
+				}
+				else if (GameDatabase.Instance.GetConfigs("Profile").Length < 1)
+				{
+					string msg = "ERROR: No kerbalism profile found.\n\nYou probably forgot to install KerbalismConfig.\n\n";
 					msg += "This is a fatal error and KSP must be closed.";
 					Lib.Popup("Kerbalism fatal error", msg, 600f);
 				}
@@ -547,7 +552,7 @@ namespace KERBALISM
 				msg += "<color=#FF4500>Multiple configurations detected</color>\nHint: delete KerbalismConfig if you are using a custom config pack.\n\n";
 			}
 
-			if (Features.Habitat && Settings.CheckForCRP)
+			if (Features.LifeSupport && Settings.CheckForCRP)
 			{
 				// check for CRP
 				var reslib = PartResourceLibrary.Instance.resourceDefinitions;

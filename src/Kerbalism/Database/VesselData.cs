@@ -708,7 +708,7 @@ namespace KERBALISM
             cfg_supply = PreferencesMessages.Instance.supply;
             cfg_signal = PreferencesMessages.Instance.signal;
             cfg_malfunction = PreferencesMessages.Instance.malfunction;
-            cfg_storm = Features.SpaceWeather && PreferencesMessages.Instance.storm && Lib.CrewCount(pv) > 0;
+            cfg_storm = Features.Radiation && PreferencesMessages.Instance.storm && Lib.CrewCount(pv) > 0;
             cfg_script = PreferencesMessages.Instance.script;
             cfg_highlights = PreferencesReliability.Instance.highlights;
             cfg_showlink = true;
