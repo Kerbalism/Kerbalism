@@ -771,8 +771,10 @@ namespace KERBALISM
                 scansat_id.Add(Lib.Parse.ToUInt(s));
             }
 
-            vesselProcesses = new VesselProcesses(node.GetNode("processes"));
+			VesselVirtualResource.Load(this, node);
+			vesselProcesses = new VesselProcesses(node.GetNode("processes"));
             Parts.Load(node);
+			
         }
 
         public void Save(ConfigNode node)
@@ -810,7 +812,8 @@ namespace KERBALISM
                 node.AddValue("scansat_id", id.ToString());
             }
 
-            VesselProcesses.Save(node.AddNode("processes"));
+			VesselVirtualResource.Save(this, node);
+			VesselProcesses.Save(node.AddNode("processes"));
             Parts.Save(node);
 
             if (Vessel != null)

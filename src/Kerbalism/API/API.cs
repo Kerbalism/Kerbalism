@@ -482,7 +482,7 @@ namespace KERBALISM
 
 		public static double ResourceAvailability(Vessel v, string resource_name)
 		{
-			return ((VesselResource)v.KerbalismData().ResHandler.GetResource(resource_name)).AvailabilityFactor;
+			return v.KerbalismData().ResHandler.GetResource(resource_name).AvailabilityFactor;
 		}
 
 		/// <summary>
@@ -498,7 +498,7 @@ namespace KERBALISM
 		private static List<KeyValuePair<string[], double>> apiBrokers = new List<KeyValuePair<string[], double>>();
 		public static List<KeyValuePair<string[], double>> ResourceBrokers(Vessel v, string resource_name)
 		{
-			List<ResourceBrokerRate> brokers = ((VesselResource)v.KerbalismData().ResHandler.GetResource(resource_name)).ResourceBrokers;
+			List<ResourceBrokerRate> brokers = v.KerbalismData().ResHandler.GetResource(resource_name).ResourceBrokers;
 			apiBrokers.Clear();
 			foreach (ResourceBrokerRate rb in brokers)
 			{
@@ -509,12 +509,12 @@ namespace KERBALISM
 
 		public static void PlannerConsumeResource(string resource_name, double quantity, string title)
 		{
-			EditorResourceHandler.Handler.Consume(resource_name, quantity, ResourceBroker.GetOrCreate(title));
+			EditorResHandler.Handler.Consume(resource_name, quantity, ResourceBroker.GetOrCreate(title));
 		}
 
 		public static void PlannerProduceResource(string resource_name, double quantity, string title)
 		{
-			EditorResourceHandler.Handler.Produce(resource_name, quantity, ResourceBroker.GetOrCreate(title));
+			EditorResHandler.Handler.Produce(resource_name, quantity, ResourceBroker.GetOrCreate(title));
 		}
 
 		public static void PlannerAddResourceRecipe(string[] resources, double[] rates, bool[] dump, string title)
@@ -529,22 +529,22 @@ namespace KERBALISM
 					recipe.AddOutput(resources[i], rates[i], dump[i]);
 			}
 
-			EditorResourceHandler.Handler.AddRecipe(recipe);
+			EditorResHandler.Handler.AddRecipe(recipe);
 		}
 
 		public static double PlannerResourceAmount(string resource_name)
 		{
-			return EditorResourceHandler.Handler.GetResource(resource_name).Amount;
+			return EditorResHandler.Handler.GetResource(resource_name).Amount;
 		}
 
 		public static double PlannerResourceCapacity(string resource_name)
 		{
-			return EditorResourceHandler.Handler.GetResource(resource_name).Capacity;
+			return EditorResHandler.Handler.GetResource(resource_name).Capacity;
 		}
 
 		public static double PlannerResourceAvailability(string resource_name)
 		{
-			return ((VesselResource)EditorResourceHandler.Handler.GetResource(resource_name)).AvailabilityFactor;
+			return EditorResHandler.Handler.GetResource(resource_name).AvailabilityFactor;
 		}
 
 		#endregion

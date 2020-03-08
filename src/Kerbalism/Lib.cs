@@ -1398,7 +1398,7 @@ namespace KERBALISM
 			return Serenity.GetScienceCluster(v) != null;
 		}
 
-		public static bool IsPowered(Vessel v, VesselResource ecRes)
+		public static bool IsPowered(Vessel v, VesselKSPResource ecRes)
 		{
 			var cluster = Serenity.GetScienceCluster(v);
 			if (cluster != null)

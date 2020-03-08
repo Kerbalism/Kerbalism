@@ -150,7 +150,7 @@ namespace KERBALISM.Planner
 				// get vessel resources
 				panel_resource.Clear();
 				foreach (string res in supplies)
-					if (EditorResourceHandler.Handler.GetResource(res).Capacity > 0.0)
+					if (EditorResHandler.Handler.GetResource(res).Capacity > 0.0)
 						panel_resource.Add(res);
 
 				// reset current panel if necessary
@@ -271,7 +271,7 @@ namespace KERBALISM.Planner
 		private static void AddSubPanelEC(Panel p)
 		{
 			// get simulated resource
-			VesselResource res = EditorResourceHandler.Handler.ElectricCharge;
+			VesselKSPResource res = EditorResHandler.Handler.ElectricCharge;
 
 			// create tooltip
 			string tooltip = res.BrokersListTooltip();
@@ -281,7 +281,7 @@ namespace KERBALISM.Planner
 			p.AddContent(Local.Planner_storage, Lib.HumanReadableStorage(res.Amount, res.Capacity), tooltip);//"storage"
 			p.AddContent(Local.Planner_consumed, Lib.HumanReadableRate(res.ConsumeRequests), tooltip);//"consumed"
 			p.AddContent(Local.Planner_produced, Lib.HumanReadableRate(res.ProduceRequests), tooltip);//"produced"
-			p.AddContent(Local.Planner_duration, Lib.HumanReadableDuration(res.DepletionTime()));//"duration"
+			p.AddContent(Local.Planner_duration, res.DepletionInfo);//"duration"
 		}
 
 		///<summary> Add supply resource sub-panel, including tooltips </summary>
@@ -293,7 +293,7 @@ namespace KERBALISM.Planner
 		private static void AddSubPanelResource(Panel p, string res_name)
 		{
 			// get simulated resource
-			VesselResource res = (VesselResource)EditorResourceHandler.Handler.GetResource(res_name);
+			VesselKSPResource res = (VesselKSPResource)EditorResHandler.Handler.GetResource(res_name);
 
 			// create tooltip
 			string tooltip = res.BrokersListTooltip();
@@ -305,7 +305,7 @@ namespace KERBALISM.Planner
 			p.AddContent(Local.Planner_storage, Lib.BuildString(Lib.HumanReadableStorage(res.Amount, res.Capacity), " (" + Lib.HumanReadableMass(res.Amount * res.Density) + ")"), tooltip);//"storage"
 			p.AddContent(Local.Planner_consumed, Lib.HumanReadableRate(res.ConsumeRequests), tooltip);//"consumed"
 			p.AddContent(Local.Planner_produced, Lib.HumanReadableRate(res.ProduceRequests), tooltip);//"produced"
-			p.AddContent(Local.Planner_duration, Lib.HumanReadableDuration(res.DepletionTime()));//"duration"
+			p.AddContent(Local.Planner_duration, res.DepletionInfo);//"duration"
 		}
 
 		///<summary> Add stress sub-panel, including tooltips </summary>
@@ -531,8 +531,8 @@ namespace KERBALISM.Planner
 		private static void AddSubPanelHabitat(Panel p)
 		{
 
-			VesselResource atmo_res = (VesselResource)resource_sim.handler.GetResource("Atmosphere");
-			VesselResource waste_res = (VesselResource)resource_sim.handler.GetResource("WasteAtmosphere");
+			VesselKSPResource atmo_res = (VesselKSPResource)resource_sim.handler.GetResource("Atmosphere");
+			VesselKSPResource waste_res = (VesselKSPResource)resource_sim.handler.GetResource("WasteAtmosphere");
 
 			// generate tooltips
 			string atmo_tooltip = atmo_res.BrokersListTooltip();

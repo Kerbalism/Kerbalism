@@ -14,10 +14,10 @@ namespace KERBALISM
 			title = Lib.ConfigValue(node, "title", name);
 			input = Lib.ConfigValue(node, "input", string.Empty);
 			output = Lib.ConfigValue(node, "output", string.Empty);
-			interval = Lib.ConfigValue(node, "interval", 0.0);
 			rate = Lib.ConfigValue(node, "rate", 0.0);
 			ratio = Lib.ConfigValue(node, "ratio", 0.0);
 			degeneration = Lib.ConfigValue(node, "degeneration", 0.0);
+			regeneration = Lib.ConfigValue(node, "regeneration", 0.002);
 			variance = Lib.ConfigValue(node, "variance", 0.0);
 			individuality = Lib.ConfigValue(node, "individuality", 0.0);
 			modifiers = Lib.Tokenize(Lib.ConfigValue(node, "modifier", string.Empty), ',');
@@ -63,7 +63,7 @@ namespace KERBALISM
 			List<ProtoCrewMember> deferred_kills = new List<ProtoCrewMember>();
 
 			// get input resource handler
-			VesselResource res = input.Length > 0 ? (VesselResource)resources.GetResource(input) : null;
+			VesselResource res = input.Length > 0 ? resources.GetResource(input) : null;
 
 			// determine message variant
 			uint variant = vd.EnvTemperature < Settings.LifeSupportSurvivalTemperature ? 0 : 1u;
@@ -89,22 +89,6 @@ namespace KERBALISM
 				RuleData rd = kd.Rule(name);
 				rd.lifetime = lifetime_enabled && lifetime;
 
-				// influence consumption by elapsed time
-				double step = elapsed_s;
-
-				// if interval-based
-				if (interval > 0.0)
-				{
-					// accumulate time
-					rd.time_since += elapsed_s;
-
-					// determine number of intervals that has passed (can be 2 or more if elapsed_s > interval * 2)
-					step = Math.Floor(rd.time_since / interval);
-
-					// consume time
-					rd.time_since -= step * interval;
-				}
-
 				// if there is a resource specified
 				if (res != null && rate > double.Epsilon)
 				{
@@ -116,60 +100,41 @@ namespace KERBALISM
 
 					// determine amount of resource to consume
 					
-					double required = resRate * step;       // seconds elapsed or interval amount
+					double required = resRate * elapsed_s;       // influence consumption by elapsed time
 
-					// remember if a meal is consumed/produced in this simulation step
-					if (interval > 0.0)
+					// if there is no output
+					if (output.Length == 0)
 					{
-						double ratePerStep = resRate / interval;
-						res.UpdateIntervalRule(-required, -ratePerStep, broker);
-						if (output.Length > 0)
-						{
-							((VesselResource)resources.GetResource(output)).UpdateIntervalRule(required * ratio, ratePerStep * ratio, broker);
-						}
+						// simply consume (that is faster)
+						res.Consume(required, broker);
 					}
-
-					// if continuous, or if one or more intervals elapsed
-					if (step > 0.0)
+					// if there is an output
+					else
 					{
-						// if there is no output
-						if (output.Length == 0)
-						{
-							// simply consume (that is faster)
-							res.Consume(required, broker);
-						}
-						// if there is an output
-						else
-						{
-							// transform input into output resource
-							// - rules always dump excess overboard (because it is waste)
-							Recipe recipe = new Recipe(broker); // kerbals are not associated with a part
-							recipe.AddInput(input, required);
-							recipe.AddOutput(output, required * ratio, true);
-							resources.AddRecipe(recipe);
-						}
+						// transform input into output resource
+						// - rules always dump excess overboard (because it is waste)
+						Recipe recipe = new Recipe(broker); // kerbals are not associated with a part
+						recipe.AddInput(input, required);
+						recipe.AddOutput(output, required * ratio, true);
+						resources.AddRecipe(recipe);
 					}
 				}
 
-				// if continuous, or if one or more intervals elapsed
-				if (step > 0.0)
+				// degenerate:
+				// - if the environment modifier is not telling to reset (by being zero)
+				// - if this rule is resource-less, or if there was not enough resource in the vessel
+				if (k > 0.0 && (input.Length == 0 || res.AvailabilityFactor < 1.0))
 				{
-					// degenerate:
-					// - if the environment modifier is not telling to reset (by being zero)
-					// - if this rule is resource-less, or if there was not enough resource in the vessel
-					if (k > 0.0 && (input.Length == 0 || res.AvailabilityFactor < 1.0))
-					{
-						rd.problem += degeneration           // degeneration rate per-second or per-interval
-								   * k                       // product of environment modifiers
-								   * step                    // seconds elapsed or by number of steps
-								   * (input.Length == 0 ? 1.0 : 1.0 - res.AvailabilityFactor) // scale by resource availability
-								   * Variance(name, c, variance); // kerbal-specific variance
-					}
-					// else slowly recover
-					else
-					{
-						rd.problem *= 1.0 / (1.0 + Math.Max(interval, 1.0) * step * 0.002);
-					}
+					rd.problem += degeneration           // degeneration rate per-second or per-interval
+								* k                       // product of environment modifiers
+								* elapsed_s                    // seconds elapsed
+								* (input.Length == 0 ? 1.0 : 1.0 - res.AvailabilityFactor) // scale by resource availability
+								* Variance(name, c, variance); // kerbal-specific variance
+				}
+				// else slowly recover
+				else
+				{
+					rd.problem = Math.Max(rd.problem - (regeneration * elapsed_s), 0.0);
 				}
 
 				bool do_breakdown = false;
@@ -207,7 +172,7 @@ namespace KERBALISM
 				if (rd.problem >= fatal_threshold)
 				{
 #if DEBUG || DEVBUILD
-					Lib.Log("Rule " + name + " kills " + c.name + " at " + rd.problem + " " + degeneration + "/" + k + "/" + step + "/" + Variance(name, c, variance));
+					Lib.Log("Rule " + name + " kills " + c.name + " at " + rd.problem + " " + degeneration + "/" + k + "/" + Variance(name, c, variance));
 #endif
 					if (fatal_message.Length > 0)
 						Message.Post(breakdown ? Severity.breakdown : Severity.fatality, Lib.ExpandMsg(fatal_message, v, c, variant));
@@ -282,10 +247,10 @@ namespace KERBALISM
 		public string title;              // UI title
 		public string input;              // resource consumed, if any
 		public string output;             // resource produced, if any
-		public double interval;           // if 0 the rule is executed per-second, else it is executed every 'interval' seconds
 		public double rate;               // amount of input resource to consume at each execution
 		public double ratio;              // ratio of output resource in relation to input consumed
-		public double degeneration;       // amount to add to the degeneration at each execution (when we must degenerate)
+		public double degeneration;       // degeneration/second added when modifiers evaluation > 0 or input resource is unavailable
+		public double regeneration;       // degeneration/second removed when modifiers evaluation == 0 and input resource is available
 		public double variance;           // variance for degeneration rate, unique per-kerbal and in range [1.0-x, 1.0+x]
 		public double individuality;      // variance for process rate, unique per-kerbal and in range [1.0-x, 1.0+x]
 		public List<string> modifiers;    // if specified, rates are influenced by the product of all environment modifiers

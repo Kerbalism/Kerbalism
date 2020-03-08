@@ -134,7 +134,7 @@ namespace KERBALISM
 				for (int i = 0; i < inputs.Count; ++i)
 				{
 					Entry e = inputs[i];
-					IResource res = resources.GetResource(e.name);
+					VesselResource res = resources.GetResource(e.name);
 
 					// handle combined inputs
 					if (e.combined != null)
@@ -143,7 +143,7 @@ namespace KERBALISM
 						if (e.combined != "")
 						{
 							Entry sec_e = inputs.Find(x => x.name.Contains(e.combined));
-							IResource sec = resources.GetResource(sec_e.name);
+							VesselResource sec = resources.GetResource(sec_e.name);
 							double pri_worst = Lib.Clamp((res.Amount + res.Deferred) * e.inv_quantity, 0.0, worst_input);
 							if (pri_worst > 0.0)
 							{
@@ -172,7 +172,7 @@ namespace KERBALISM
 					Entry e = outputs[i];
 					if (!e.dump) // ignore outputs that can dump overboard
 					{
-						IResource res = resources.GetResource(e.name);
+						VesselResource res = resources.GetResource(e.name);
 						worst_output = Lib.Clamp((res.Capacity - (res.Amount + res.Deferred)) * e.inv_quantity, 0.0, worst_output);
 					}
 				}
@@ -185,7 +185,7 @@ namespace KERBALISM
 			for (int i = 0; i < inputs.Count; ++i)
 			{
 				Entry e = inputs[i];
-				IResource res = resources.GetResource(e.name);
+				VesselResource res = resources.GetResource(e.name);
 				// handle combined inputs
 				if (e.combined != null)
 				{
@@ -193,7 +193,7 @@ namespace KERBALISM
 					if (e.combined != "")
 					{
 						Entry sec_e = inputs.Find(x => x.name.Contains(e.combined));
-						IResource sec = resources.GetResource(sec_e.name);
+						VesselResource sec = resources.GetResource(sec_e.name);
 						double need = (e.quantity * worst_io) + (sec_e.quantity * worst_io);
 						// do we have enough primary to satisfy needs, if so don't consume secondary
 						if (res.Amount + res.Deferred >= need) resources.Consume(e.name, need, broker);
@@ -216,7 +216,7 @@ namespace KERBALISM
 			for (int i = 0; i < outputs.Count; ++i)
 			{
 				Entry e = outputs[i];
-				IResource res = resources.GetResource(e.name);
+				VesselResource res = resources.GetResource(e.name);
 				res.Produce(e.quantity * worst_io, broker);
 			}
 

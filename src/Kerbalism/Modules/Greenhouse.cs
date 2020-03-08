@@ -140,7 +140,7 @@ namespace KERBALISM
 
 				// get resource cache
 				VesselResHandler resources = vd.ResHandler;
-				VesselResource ec = resources.ElectricCharge;
+				VesselKSPResource ec = resources.ElectricCharge;
 
 				// deal with corner cases when greenhouse is assembled using KIS
 				if (double.IsNaN(growth) || double.IsInfinity(growth)) growth = 0.0;
@@ -251,7 +251,7 @@ namespace KERBALISM
 			if (active && growth < 0.99)
 			{
 				// get resource handler
-				VesselResource ec = resources.ElectricCharge;
+				VesselKSPResource ec = resources.ElectricCharge;
 
 				// calculate natural and artificial lighting
 				double natural = vd.EnvSolarFluxTotal;
@@ -362,8 +362,8 @@ namespace KERBALISM
 				return;
 
 			// shortcut to resources
-			IResource ec = resHandler.ElectricCharge;
-			IResource res = resHandler.GetResource(crop_resource);
+			VesselResource ec = resHandler.ElectricCharge;
+			VesselResource res = resHandler.GetResource(crop_resource);
 
 			// calculate natural and artificial lighting
 			double natural = environment.solar_flux;

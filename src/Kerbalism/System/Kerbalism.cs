@@ -1059,7 +1059,7 @@ namespace KERBALISM
 			const double res_penalty = 0.1;        // proportion of food lost on 'depressed' and 'wrong_valve'
 
 			// get a supply resource at random
-			IResource res = null;
+			VesselResource res = null;
 			if (Profile.supplies.Count > 0)
 			{
 				Supply supply = Profile.supplies[Lib.RandomInt(Profile.supplies.Count)];

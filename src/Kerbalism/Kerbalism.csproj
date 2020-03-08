@@ -199,12 +199,12 @@
     <Compile Include="Renderer\LineRenderer.cs" />
     <Compile Include="Renderer\ParticleMesh.cs" />
     <Compile Include="Renderer\ParticleRenderer.cs" />
-    <Compile Include="ResourceSim\IResource.cs" />
-    <Compile Include="ResourceSim\VirtualResource.cs" />
-    <Compile Include="ResourceSim\Recipe.cs" />
     <Compile Include="ResourceSim\VesselResource.cs" />
+    <Compile Include="ResourceSim\VesselVirtualResource.cs" />
+    <Compile Include="ResourceSim\Recipe.cs" />
+    <Compile Include="ResourceSim\VesselKSPResource.cs" />
     <Compile Include="ResourceSim\VesselResHandler.cs" />
-    <Compile Include="ResourceSim\EditorResourceHandler.cs" />
+    <Compile Include="ResourceSim\EditorResHandler.cs" />
     <Compile Include="VesselLogic\Drive.cs" />
     <Compile Include="Science\ExperimentRequirements.cs" />
     <Compile Include="Science\ExperimentInfo.cs" />

@@ -75,10 +75,10 @@ namespace KERBALISM
 		private PartResourceWrapper wasteRes;
 		private PartResourceWrapper shieldRes;
 		private VesselResHandler vesselResHandler;
-		private VesselResource ecResInfo;
-		private VesselResource atmoResInfo;
-		private VesselResource wasteResInfo;
-		private VesselResource breathableResInfo;
+		private VesselKSPResource ecResInfo;
+		private VesselKSPResource atmoResInfo;
+		private VesselKSPResource wasteResInfo;
+		private VesselKSPResource breathableResInfo;
 		private string reclaimResAbbr;
 		private BaseField mainInfoField;
 		private BaseField secInfoField;
@@ -266,15 +266,15 @@ namespace KERBALISM
 			}
 			else
 			{
-				vesselResHandler = EditorResourceHandler.Handler;
+				vesselResHandler = EditorResHandler.Handler;
 			}
 
 			ecResInfo = vesselResHandler.ElectricCharge;
-			atmoResInfo = (VesselResource)vesselResHandler.GetResource(Settings.HabitatAtmoResource);
-			wasteResInfo = (VesselResource)vesselResHandler.GetResource(Settings.HabitatWasteResource);
+			atmoResInfo = (VesselKSPResource)vesselResHandler.GetResource(Settings.HabitatAtmoResource);
+			wasteResInfo = (VesselKSPResource)vesselResHandler.GetResource(Settings.HabitatWasteResource);
 
 			if (Settings.HabitatBreathableResourceRate > 0.0)
-				breathableResInfo = (VesselResource)vesselResHandler.GetResource(Settings.HabitatBreathableResource);
+				breathableResInfo = (VesselKSPResource)vesselResHandler.GetResource(Settings.HabitatBreathableResource);
 
 			reclaimResAbbr = PartResourceLibrary.Instance.GetDefinition(reclaimResource).abbreviation;
 
@@ -663,12 +663,12 @@ namespace KERBALISM
 					return;
 				}
 
-				VesselResource ecResInfo = vd.ResHandler.ElectricCharge;
-				VesselResource atmoResInfo = (VesselResource)vd.ResHandler.GetResource(Settings.HabitatAtmoResource);
-				VesselResource wasteResInfo = (VesselResource)vd.ResHandler.GetResource(Settings.HabitatWasteResource);
-				VesselResource breathableResInfo;
+				VesselKSPResource ecResInfo = vd.ResHandler.ElectricCharge;
+				VesselKSPResource atmoResInfo = (VesselKSPResource)vd.ResHandler.GetResource(Settings.HabitatAtmoResource);
+				VesselKSPResource wasteResInfo = (VesselKSPResource)vd.ResHandler.GetResource(Settings.HabitatWasteResource);
+				VesselKSPResource breathableResInfo;
 				if (Settings.HabitatBreathableResourceRate > 0.0)
-					breathableResInfo = (VesselResource)vd.ResHandler.GetResource(Settings.HabitatBreathableResource);
+					breathableResInfo = (VesselKSPResource)vd.ResHandler.GetResource(Settings.HabitatBreathableResource);
 				else
 					breathableResInfo = null;
 
@@ -691,17 +691,17 @@ namespace KERBALISM
 			private PartResourceWrapper wasteRes;
 			private PartResourceWrapper shieldRes;
 
-			private VesselResource atmoResInfo;
-			private VesselResource wasteResInfo;
-			private VesselResource breathableResInfo;
-			private VesselResource ecResInfo;
+			private VesselKSPResource atmoResInfo;
+			private VesselKSPResource wasteResInfo;
+			private VesselKSPResource breathableResInfo;
+			private VesselKSPResource ecResInfo;
 
 			bool isEditor;
 			bool isLoaded;
 
 			public HabitatUpdateHandler(Vessel vessel, VesselData vd, HabitatData data,
 				PartResourceWrapper atmoRes, PartResourceWrapper wasteRes, PartResourceWrapper shieldRes,
-				VesselResource atmoResInfo, VesselResource wasteResInfo, VesselResource breathableResInfo, VesselResource ecResInfo)
+				VesselKSPResource atmoResInfo, VesselKSPResource wasteResInfo, VesselKSPResource breathableResInfo, VesselKSPResource ecResInfo)
 			{
 				this.vessel = vessel;
 				this.vd = vd;
@@ -959,7 +959,7 @@ namespace KERBALISM
 					case PressureState.Pressurizing:
 
 						if (!isEditor)
-							atmoResInfo.equalizeMode = VesselResource.EqualizeMode.Disabled;
+							atmoResInfo.equalizeMode = VesselKSPResource.EqualizeMode.Disabled;
 
 						if (vessel.loaded && data.module.deployWithPressure && data.animState == AnimState.Deploying)
 							data.module.deployAnimator.Still(Math.Min((float)(atmoRes.Amount / (atmoRes.Capacity * Settings.PressureThreshold)), 1f));
@@ -1028,11 +1028,11 @@ namespace KERBALISM
 				// set equalizaton mode if it hasn't been explictely disabled in the breathable / depressurizing states
 				if (!isEditor)
 				{
-					if (atmoResInfo.equalizeMode == VesselResource.EqualizeMode.NotSet)
-						atmoResInfo.equalizeMode = VesselResource.EqualizeMode.Enabled;
+					if (atmoResInfo.equalizeMode == VesselKSPResource.EqualizeMode.NotSet)
+						atmoResInfo.equalizeMode = VesselKSPResource.EqualizeMode.Enabled;
 
-					if (wasteResInfo.equalizeMode == VesselResource.EqualizeMode.NotSet)
-						wasteResInfo.equalizeMode = VesselResource.EqualizeMode.Enabled;
+					if (wasteResInfo.equalizeMode == VesselKSPResource.EqualizeMode.NotSet)
+						wasteResInfo.equalizeMode = VesselKSPResource.EqualizeMode.Enabled;
 				}
 			}
 
@@ -1074,7 +1074,7 @@ namespace KERBALISM
 
 				if (!isEditor)
 				{
-					atmoResInfo.equalizeMode = VesselResource.EqualizeMode.Disabled;
+					atmoResInfo.equalizeMode = VesselKSPResource.EqualizeMode.Disabled;
 					data.pressureState = PressureState.Pressurizing;
 				}
 				else

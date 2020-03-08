@@ -18,7 +18,7 @@ namespace KERBALISM.Planner
 		/// </summary>
 		public void Analyze(List<Part> parts, EnvironmentAnalyzer env, VesselAnalyzer va)
 		{
-			handler = EditorResourceHandler.Handler;
+			handler = EditorResHandler.Handler;
 
 			// reset and re-find all resources amounts and capacities
 			handler.ResourceUpdate(null, VesselResHandler.VesselState.EditorInit, 1.0);
@@ -128,7 +128,7 @@ namespace KERBALISM.Planner
 			double k = Modifiers.Evaluate(env, va, this, r.modifiers, null);
 
 			// deduce rate per-second
-			double rate = va.crew_count * (r.interval > 0.0 ? r.rate / r.interval : r.rate);
+			double rate = va.crew_count * r.rate;
 
 			// prepare recipe
 			if (r.output.Length == 0)

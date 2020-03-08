@@ -187,7 +187,7 @@ namespace KERBALISM
 				this.window = window;
 				resName = inputOrOutput.Key;
 				baseResRate = isInput ? -inputOrOutput.Value : inputOrOutput.Value;
-				resource = (VesselResource)window.vd.ResHandler.GetResource(resName);
+				resource = window.vd.ResHandler.GetResource(resName);
 				dump = window.processData.dumpedOutputs.Contains(resName);
 
 				SetLayoutElement(true, false, -1, 16);

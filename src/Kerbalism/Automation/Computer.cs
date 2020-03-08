@@ -90,7 +90,7 @@ namespace KERBALISM
 		public void Automate(Vessel v, VesselData vd, VesselResHandler resources)
 		{
 			// get current states
-			IResource ec = resources.GetResource("ElectricCharge");
+			VesselResource ec = resources.GetResource("ElectricCharge");
 			bool sunlight = !vd.EnvInFullShadow;
 			bool power_low = ec.Level < 0.2;
 			bool power_high = ec.Level > 0.8;

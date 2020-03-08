@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace KERBALISM
 {
 	/// <summary> Access to the editor resource handler</summary>
-	public static class EditorResourceHandler
+	public static class EditorResHandler
 	{
 		static VesselResHandler editorHandler;
 		static uint editorHandlerId;

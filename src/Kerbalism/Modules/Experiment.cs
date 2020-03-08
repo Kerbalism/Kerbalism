@@ -583,7 +583,7 @@ namespace KERBALISM
 				resourcesProdFactor = Math.Min(resourcesProdFactor, vd.ResHandler.ElectricCharge.AvailabilityFactor);
 
 			foreach (ObjectPair<string, double> res in resourceDefs)
-				resourcesProdFactor = Math.Min(resourcesProdFactor, ((VesselResource)vd.ResHandler.GetResource(res.Key)).AvailabilityFactor);
+				resourcesProdFactor = Math.Min(resourcesProdFactor, ((VesselKSPResource)vd.ResHandler.GetResource(res.Key)).AvailabilityFactor);
 
 			if (resourcesProdFactor == 0.0)
 			{
