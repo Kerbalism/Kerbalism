@@ -72,8 +72,8 @@ namespace KERBALISM
 			if (string.IsNullOrEmpty(id))
 			{
 				// auto-assign ID
-				id = part.partName + "." + part.Modules.IndexOf(this);
-				Lib.Log($"ProcessController `{processName}` on {part.partName} without id. Auto-assigning `{id}`, but you really should set a unique id in your configuration", Lib.LogLevel.Warning);
+				id = part.name + "." + part.Modules.IndexOf(this);
+				Lib.Log($"ProcessController `{processName}` on {part.name} without id. Auto-assigning `{id}`, but you really should set a unique id in your configuration", Lib.LogLevel.Warning);
 			}
 
 			StartInternal();
@@ -82,7 +82,7 @@ namespace KERBALISM
 		/// <summary>  start the module. must be idempotent: expect to be called several times </summary>
 		private void StartInternal()
 		{
-			Lib.LogDebug($"ProcessController {id} on {part.partName} starting with process '{processName}'");
+			Lib.LogDebug($"ProcessController {id} on {part.name} starting with process '{processName}'");
 
 			if (string.IsNullOrEmpty(processName))
 			{
