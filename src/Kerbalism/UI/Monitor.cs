@@ -548,15 +548,14 @@ namespace KERBALISM
 			if (v.vesselType == VesselType.DeployedScienceController)
 				return;
 
-			VesselResource ec = vd.ResHandler.ElectricCharge;
+			VesselKSPResource ec = vd.ResHandler.ElectricCharge;
 			Supply supply = Profile.supplies.Find(k => k.resource == "ElectricCharge");
 			double low_threshold = supply != null ? supply.low_threshold : 0.15;
-			double depletion = ec.DepletionTime();
 
 			string tooltip = Lib.BuildString
 			(
 			  "<align=left /><b>", Local.Monitor_name, "\t", Local.Monitor_level, "\t" + Local.Monitor_duration, "</b>\n",//name"level"duration
-			  Lib.Color(Lib.BuildString("EC\t", Lib.HumanReadablePerc(ec.Level), "\t", depletion <= double.Epsilon ? Local.Monitor_depleted : Lib.HumanReadableDuration(depletion)),//"depleted"
+			  Lib.Color(Lib.BuildString("EC\t", Lib.HumanReadablePerc(ec.Level), "\t", ec.DepletionInfo),
 			  ec.Level <= 0.005 ? Lib.Kolor.Red : ec.Level <= low_threshold ? Lib.Kolor.Orange : Lib.Kolor.None)
 			);
 
@@ -580,14 +579,15 @@ namespace KERBALISM
 					if (supply.resource == "ElectricCharge")
 						continue;
 
-					VesselResource res = (VesselResource)vd.ResHandler.GetResource(supply.resource);
-					double depletion = res.DepletionTime();
+					VesselResource res = vd.ResHandler.GetResource(supply.resource);
 
 					if (res.Capacity > double.Epsilon)
 					{
-						if (tooltips.Count == 0) tooltips.Add(String.Format("<align=left /><b>{0,-18}\t" + Local.Monitor_level + "\t" + Local.Monitor_duration + "</b>", Local.Monitor_name));//level"duration"name"
+						if (tooltips.Count == 0)
+							tooltips.Add(String.Format("<align=left /><b>{0,-18}\t" + Local.Monitor_level + "\t" + Local.Monitor_duration + "</b>", Local.Monitor_name));//level"duration"name"
+
 						tooltips.Add(Lib.Color(
-							String.Format("{0,-18}\t{1}\t{2}", supply.resource, Lib.HumanReadablePerc(res.Level), depletion <= double.Epsilon ? Local.Monitor_depleted : Lib.HumanReadableDuration(depletion)),//"depleted"
+							String.Format("{0,-18}\t{1}\t{2}", supply.resource, Lib.HumanReadablePerc(res.Level), res.DepletionInfo),//"depleted"
 							res.Level <= 0.005 ? Lib.Kolor.Red : res.Level <= supply.low_threshold ? Lib.Kolor.Orange : Lib.Kolor.None
 						));
 

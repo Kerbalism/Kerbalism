@@ -75,7 +75,7 @@ namespace KERBALISM
 			if (__instance.hibernationMultiplier == 0.0)
 				return;
 
-			VesselResource ec = vd.ResHandler.ElectricCharge;
+			VesselKSPResource ec = vd.ResHandler.ElectricCharge;
 
 			// do not consume if this is a non-probe MC with no crew
 			// this make some sense: you left a vessel with some battery and nobody on board, you expect it to not consume EC

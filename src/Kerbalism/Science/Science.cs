@@ -79,7 +79,7 @@ namespace KERBALISM
 			if (!Features.Science) return;
 
 			// consume ec for transmitters
-			VesselResource ec = vd.ResHandler.ElectricCharge;
+			VesselKSPResource ec = vd.ResHandler.ElectricCharge;
 			ec.Consume(vd.Connection.ec_idle * elapsed_s, ResourceBroker.CommsIdle, true);
 
 			// avoid corner-case when RnD isn't live during scene changes

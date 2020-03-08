@@ -35,7 +35,7 @@ namespace KERBALISM
 		public void CheckMessages(Vessel v, VesselData vd, List<ProtoCrewMember> crew)
 		{
 			// get resource handler
-			IResource res = vd.ResHandler.GetResource(resource);
+			VesselResource res = vd.ResHandler.GetResource(resource);
 
 			// get data from db
 			SupplyData sd = vd.Supply(resource);

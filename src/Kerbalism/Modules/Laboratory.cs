@@ -36,7 +36,7 @@ namespace KERBALISM
 		private static SubjectData background_sample = null;             // sample currently being analyzed in background simulation
 		private Status status = Status.DISABLED;                    // laboratory status
 		private string status_txt = string.Empty;                   // status string to show next to the ui button
-		private VesselResource ec = null;                            // resource info for EC
+		private VesselKSPResource ec = null;                            // resource info for EC
 
 		// localized strings
 		private static readonly string localized_title = Lib.BuildString("<size=1><color=#00000000>00</color></size>", Local.Laboratory_Title);
@@ -155,7 +155,7 @@ namespace KERBALISM
 					// if there is a sample to analyze
 					if (background_sample != null)
 					{
-						VesselResource ec = v.KerbalismData().ResHandler.ElectricCharge;
+						VesselKSPResource ec = v.KerbalismData().ResHandler.ElectricCharge;
 
 						// consume EC
 						ec.Consume(lab.ec_rate * elapsed_s, ResourceBroker.Laboratory);

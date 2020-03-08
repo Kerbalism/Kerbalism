@@ -86,7 +86,7 @@ namespace KERBALISM
 				return;
 
 			// get most used resource handlers
-			IResource ec = resources.ElectricCharge;
+			VesselResource ec = resources.ElectricCharge;
 			List<KeyValuePair<string, double>> resourceChangeRequests = new List<KeyValuePair<string, double>>();
 
 			foreach (var e in Background_PMs(v))
@@ -190,7 +190,7 @@ namespace KERBALISM
 
 
 
-		static void ProcessFNGenerator(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule fission_generator, IResource ec, double elapsed_s)
+		static void ProcessFNGenerator(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule fission_generator, VesselResource ec, double elapsed_s)
 		{
 			string maxPowerStr = Lib.Proto.GetString(m, "MaxPowerStr");
 			double maxPower = 0;
@@ -220,7 +220,7 @@ namespace KERBALISM
 				if (hibernating)
 					ecRate *= Settings.HibernatingEcFactor;
 
-				VesselResource ec = vd.ResHandler.ElectricCharge;
+				VesselKSPResource ec = vd.ResHandler.ElectricCharge;
 				ec.Consume(ecRate * elapsed_s, ResourceBroker.Command, true);
 			}
 		}
@@ -260,7 +260,7 @@ namespace KERBALISM
 				bool full = true;
 				foreach (var or in converter.outputList)
 				{
-					IResource res = resources.GetResource(or.ResourceName);
+					VesselResource res = resources.GetResource(or.ResourceName);
 					full &= (res.Level >= converter.FillAmount - double.Epsilon);
 				}
 
@@ -438,7 +438,7 @@ namespace KERBALISM
 		}
 
 
-		static void ProcessStockLab(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleScienceConverter lab, IResource ec, double elapsed_s)
+		static void ProcessStockLab(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleScienceConverter lab, VesselResource ec, double elapsed_s)
 		{
 			// note: we are only simulating the EC consumption
 			// note: there is no easy way to 'stop' the lab when there isn't enough EC
@@ -452,7 +452,7 @@ namespace KERBALISM
 		}
 
 
-		static void ProcessLight(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleLight light, IResource ec, double elapsed_s)
+		static void ProcessLight(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleLight light, VesselResource ec, double elapsed_s)
 		{
 			if (light.useResources && Lib.Proto.GetBool(m, "isOn"))
 			{
@@ -515,7 +515,7 @@ namespace KERBALISM
 		}
 		*/
 
-		static void ProcessFissionGenerator(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule fission_generator, IResource ec, double elapsed_s)
+		static void ProcessFissionGenerator(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule fission_generator, VesselResource ec, double elapsed_s)
 		{
 			// note: ignore heat
 
@@ -526,7 +526,7 @@ namespace KERBALISM
 		}
 
 
-		static void ProcessRadioisotopeGenerator(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule radioisotope_generator, IResource ec, double elapsed_s)
+		static void ProcessRadioisotopeGenerator(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule radioisotope_generator, VesselResource ec, double elapsed_s)
 		{
 			// note: doesn't support easy mode
 
@@ -547,7 +547,7 @@ namespace KERBALISM
 			IList fuels = Lib.ReflectionValue<IList>(cryotank, "fuels");
 			if (fuels == null) return;
 
-			VesselResource ec = vd.ResHandler.ElectricCharge;
+			VesselKSPResource ec = vd.ResHandler.ElectricCharge;
 
 			// is cooling available, note: comparing against amount in previous simulation step
 			bool available = (Lib.Proto.GetBool(m, "CoolingEnabled") && ec.Amount > double.Epsilon);
@@ -568,7 +568,7 @@ namespace KERBALISM
 					continue;
 
 				//get fuel resource
-				IResource fuel = resources.GetResource(fuel_name);
+				VesselResource fuel = resources.GetResource(fuel_name);
 
 				// if there is some fuel
 				// note: comparing against amount in previous simulation step

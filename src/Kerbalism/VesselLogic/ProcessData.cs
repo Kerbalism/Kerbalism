@@ -156,10 +156,10 @@ namespace KERBALISM
 
 			foreach(var res in process.scalars)
 			{
-				if(resHandler.GetResource(res) is VirtualResource vr)
+				if(resHandler.GetResource(res) is VesselVirtualResource vr)
 				{
-					vr.Capacity = capacity;
-					vr.Amount = capacity;
+					vr.SetCapacity(capacity);
+					vr.SetAmount(capacity);
 				}
 			}
 		}
