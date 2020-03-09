@@ -52,7 +52,7 @@ namespace KERBALISM
 			foreach (UrlDir.UrlConfig url in GameDatabase.Instance.root.AllConfigs) { root = url.parent; break; }
 
 			// inject MM patches on-the-fly, so that profile/features can be queried with NEEDS[]
-			if (Features.Failures) Inject(root, "Kerbalism", "Reliability");
+			if (Features.Failures) Inject(root, "Kerbalism", "Failures");
 			if (Features.Science) Inject(root, "Kerbalism", "Science");
 			if (Features.Radiation) Inject(root, "Kerbalism", "Radiation");
 			if (Features.LifeSupport) Inject(root, "Kerbalism", "LifeSupport");
